@@ -81,6 +81,14 @@ const NON_AIM_WEAPONS := ["fists", "knife", "axe", "knuckles", "bat", "grenade"]
 ## escolhidos medindo a velocidade da mão nas chaves do clipe: `Attack` tem o golpe descendente (pico ~19,7 m/s) em
 ## t = 1,1 s; `Punch_Forward_with_Both_Fists` estende as mãos à frente em t ≈ 0,95 s. O trecho começa perto do contato
 ## para o impacto visível acompanhar o dano, que é aplicado no aperto do botão.
+## Clipes da UAL para pistola e magnum (`ual/` = biblioteca retargetada para o Dante): [clipe, início, fim] em s.
+## Só tocam com o jogador parado: o clipe pega o corpo inteiro e, andando, os pés deslizariam.
+## O braço continua indo para a empunhadura (`_apply_combat_weapon_pose` roda depois do clipe).
+const GUN_CLIPS := {
+	"pistol": {"shoot": ["ual/Pistol_Shoot", 0.0, 0.35], "reload": "ual/Pistol_Reload"},
+	"magnum": {"shoot": ["ual/Pistol_Shoot", 0.0, 0.35], "reload": "ual/Pistol_Reload"},
+}
+const GUN_CLIP_MAX_SPEED := 0.4
 const MELEE_CLIPS := {
 	"unarmed": ["Punch_Forward_with_Both_Fists", 0.75, 1.3],
 	"knuckles": ["Punch_Forward_with_Both_Fists", 0.75, 1.3],
@@ -224,6 +232,7 @@ var _clip_start := 0.0
 var _clip_end := 0.0
 var _clip_age := 0.0
 var _clip_weapon := ""
+var _clip_rate := 1.0
 var _recoil := 0.0
 var _cheat_last := -100.0
 var _tracer_materials: Dictionary = {}
@@ -797,8 +806,33 @@ func _start_combat_clip(id: String, data: Dictionary) -> bool:
 	_clip_start = float(spec[1])
 	_clip_end = float(spec[2])
 	_clip_age = 0.0
+	_clip_rate = 1.0
 	_clip_weapon = id
 	return true
+
+## Clipe de arma de fogo da UAL. `rate` estica o clipe para caber no tempo real (recarga).
+func _play_gun_clip(id: String, kind: String, rate: float = 1.0) -> void:
+	var spec: Dictionary = GUN_CLIPS.get(id, {})
+	if spec.is_empty() or not is_instance_valid(player) or not "animation" in player: return
+	if player is CharacterBody3D and (player as CharacterBody3D).velocity.length() > GUN_CLIP_MAX_SPEED: return
+	var animation: AnimationPlayer = player.animation
+	if animation == null: return
+	var start := 0.0
+	var clip: String
+	var end: float
+	if kind == "shoot":
+		clip = spec.shoot[0]; start = float(spec.shoot[1]); end = float(spec.shoot[2])
+	else:
+		clip = spec.reload
+		if not animation.has_animation(clip): return
+		end = animation.get_animation(clip).length
+	if not animation.has_animation(clip): return
+	_clip_name = clip
+	_clip_start = start
+	_clip_end = end
+	_clip_age = 0.0
+	_clip_rate = rate
+	_clip_weapon = id
 
 func _cancel_combat_clip() -> void:
 	_clip_name = ""
@@ -813,7 +847,7 @@ func _update_combat_clip(delta: float) -> void:
 		_cancel_combat_clip()
 		return
 	_clip_age += delta
-	var time := _clip_start + _clip_age
+	var time := _clip_start + _clip_age * _clip_rate
 	if time >= _clip_end:
 		_cancel_combat_clip()
 		return
@@ -1078,6 +1112,7 @@ func _stall_fire_at(target: Vector3) -> bool:
 				report_observed_crime(4, player.global_position, "gunfire")
 		else:
 			report_observed_crime(1 if data.get("suppressed", false) else 4, player.global_position, "suppressed" if data.get("suppressed", false) else "gunfire")
+	_play_gun_clip(id, "shoot")
 	changed.emit()
 	return true
 
@@ -1378,6 +1413,9 @@ func reload_weapon() -> bool:
 	_reload_total = reload_timer
 	reloading_id = id
 	_play_reload_audio(id, float(data.get("reload_multiplier", 1.0)))
+	var reload_spec: Dictionary = GUN_CLIPS.get(id, {})
+	if not reload_spec.is_empty() and is_instance_valid(player) and "animation" in player and player.animation != null and player.animation.has_animation(reload_spec.reload):
+		_play_gun_clip(id, "reload", player.animation.get_animation(reload_spec.reload).length / maxf(_reload_total, 0.1))
 	return true
 
 func cycle_weapon(step: int) -> bool:

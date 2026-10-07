@@ -2,6 +2,9 @@ extends CharacterBody3D
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 
 const DANTE := preload("res://assets/dante.glb")
+## Clipes da Universal Animation Library (CC0) retargetados para o esqueleto do Dante
+## (`tools/retarget_ual_to_dante.gd`); entram como biblioteca "ual", sem tocar nos clipes originais.
+const UAL_LIBRARY := "res://assets/animation_library/dante_ual.res"
 const CIVILIAN := preload("res://assets/CivilianModel.gd")
 const OUTFIT_APPEARANCE := preload("res://assets/outfits/MeshyDanteAppearance.gd")
 const PROTECTION := preload("res://gameplay/DamageProtection.gd")
@@ -134,6 +137,8 @@ func _ready() -> void:
 		model.rotation.y = PI
 		visual.add_child(model)
 		animation = model.find_child("AnimationPlayer", true, false) as AnimationPlayer
+		if animation and not animation.has_animation_library("ual") and ResourceLoader.exists(UAL_LIBRARY):
+			animation.add_animation_library("ual", load(UAL_LIBRARY))
 		skeleton = model.find_child("Skeleton3D", true, false) as Skeleton3D
 		if skeleton:
 			hips = skeleton.find_bone("Hips")
