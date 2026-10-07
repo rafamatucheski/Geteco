@@ -39,6 +39,8 @@ var _money := 0
 var _slot := ""
 var _pending := ""
 var _base: Dictionary = {}
+## Quem prepara o carro: o Digo no deserto, o mecânico na Maciota.
+var mechanic_name := "Digo"
 
 func _ready() -> void:
 	layer = 36
@@ -206,7 +208,7 @@ func show_vehicle(car_id: String, parts: Dictionary, owned: Array, wins: int, mo
 	_pending = ""
 	_base = PERF.measure(_car_id,_parts)
 	var label := str(FLEET.spec(car_id).get("label",car_id))
-	_title.text = "Digo · %s" % label
+	_title.text = "%s · %s" % [mechanic_name,label]
 	_wallet.text = "R$ %s   ·   %d de %d vitórias" % [_money_text(_money),_wins,RACE_WINS.maximum()]
 	_message.text = ""
 	_rebuild_tabs()

@@ -58,6 +58,7 @@ var police_motor_pool
 var personal_car
 var jessica
 var desert
+var maciota_workshop
 var mining
 var dialogue_voice: AudioStreamPlayer
 var speech_voice: AudioStreamPlayer
@@ -544,6 +545,9 @@ func _ready() -> void:
 	desert = preload("res://runtime/desert/DesertRuntime.gd").new()
 	world.add_child(desert)
 	desert.configure(self)
+	maciota_workshop = preload("res://runtime/MaciotaWorkshop.gd").new()
+	world.add_child(maciota_workshop)
+	maciota_workshop.configure(self)
 	mining = preload("res://runtime/MiningRuntime.gd").new()
 	world.add_child(mining)
 	mining.configure(self)
@@ -1218,6 +1222,7 @@ func interact() -> bool:
 			return true
 		"mechanic":
 			if state.intro.stage != "complete": return _intro_interact("mechanic")
+			if maciota_workshop != null and maciota_workshop.open_menu(): return true
 			show_services("garage")
 			return true
 		"part": return _intro_interact("workbench")
