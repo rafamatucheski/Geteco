@@ -1,6 +1,7 @@
 extends RefCounted
 ## Slot -> part ID, persisted per vehicle. Unlocks are earned by distinct race wins.
 const CARS := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
+const STREET := preload("res://gameplay/desert_cars/StreetPowertrainCatalog.gd")
 const PARTS := {
 	"street_cam":{"label":"Comando de rua", "slot":"engine", "cost":1800, "wins":1, "effect":"Torque +12%; resposta em baixa −4%", "torque":1.12, "low":.96},
 	"race_cam":{"label":"Comando de competição", "slot":"engine", "cost":5600, "wins":4, "effect":"Torque +25%; resposta em baixa −16%", "torque":1.25, "low":.84},
@@ -24,12 +25,18 @@ static func clean_parts(parts: Dictionary) -> Dictionary:
 		if PARTS.has(id) and str(PARTS[id].slot) == str(slot): result[str(slot)] = id
 	return result
 
+## Ficha de partida: carro do deserto ou carro do jogo base com perfil mecânico.
+static func base_spec(car_id: String) -> Dictionary:
+	return STREET.spec(car_id) if STREET.has(car_id) else CARS.spec(car_id)
+
 static func tuned_spec(car_id: String, parts: Dictionary = {}) -> Dictionary:
-	var s := CARS.spec(car_id)
+	var s := base_spec(car_id)
 	if s.is_empty(): s = CARS.spec("desert_faisca")
 	# Teto da direção livre: o motor completo chegaria a 200-276 km/h fora das provas.
 	# A arrancada usa o próprio motor e ignora este valor (45 m/s = teto do jogo base).
-	s.merge({"street_cap_mps":45.0, "low_response":1.0, "boost_gain":.12 if s.get("factory_turbo",false) else 0.0,
+	# Carros do jogo base trazem o teto próprio (a velocidade final que já tinham).
+	if not s.has("street_cap_mps"): s["street_cap_mps"] = 45.0
+	s.merge({"low_response":1.0, "boost_gain":.12 if s.get("factory_turbo",false) else 0.0,
 		"spool_seconds":.3, "dirt_grip":1.0, "nitro_force":0.0, "nitro_seconds":0.0, "exhaust":0.0},true)
 	for id in clean_parts(parts).values():
 		var p: Dictionary = PARTS[id]

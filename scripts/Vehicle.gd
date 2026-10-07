@@ -247,7 +247,7 @@ func _ready() -> void:
 
 	preload("res://gameplay/icecream/IceCreamVan.gd").attach(self)
 	preload("res://gameplay/mining/MiningFleet.gd").attach(self)
-	if archetype in preload("res://gameplay/desert_cars/DesertCarCatalog.gd").IDS:
+	if archetype in preload("res://gameplay/desert_cars/DesertCarCatalog.gd").IDS or preload("res://gameplay/desert_cars/StreetPowertrainCatalog.gd").has(archetype):
 		preload("res://gameplay/desert_cars/DesertCarAdapter.gd").attach(self)
 
 func set_external_driver(active: bool) -> void:

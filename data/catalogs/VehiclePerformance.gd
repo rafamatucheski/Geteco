@@ -6,6 +6,7 @@ extends RefCounted
 const FLEET := preload("res://runtime/FleetCatalog.gd")
 const DESERT := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
 const DRIVETRAIN := preload("res://gameplay/desert_cars/DesertDrivetrain.gd")
+const STREET := preload("res://gameplay/desert_cars/StreetPowertrainCatalog.gd")
 const STEP := 1.0/120.0
 const HUNDRED_KMH := 100.0/3.6
 const QUARTER_KM := 400.0
@@ -15,7 +16,7 @@ const EXCLUDED := ["american_dump_truck","american_tanker_truck","boxrunner","ca
 	"courier_van","dock_delivery_van","medic_box","polar_van","police_cruiser","police_suv","police_transport",
 	"port_forklift","rescue_pumper","route_city","snow_plow_truck","towmaster","army_tank",
 	"bike_cruiser","bike_sport","bike_urban","bike_police"]
-const CLASSES := [["S",80.0],["A",65.0],["B",50.0],["C",35.0],["D",0.0]]
+const CLASSES := [["S",85.0],["A",70.0],["B",55.0],["C",40.0],["D",0.0]]
 static var _cache := {}
 
 static func tunable_ids() -> Array:
@@ -30,17 +31,18 @@ static func eligible(id: String) -> bool:
 	return FLEET.all().has(id)
 
 ## Mede 0-100 km/h, 400 m, velocidade final e devolve as notas 0-100.
-## `parts` só tem efeito nos carros do deserto, que já têm motor completo.
+## `parts` só tem efeito nos carros com motor completo (deserto e os migrados).
 static func measure(id: String, parts: Dictionary = {}) -> Dictionary:
 	var key := id+"|"+JSON.stringify(parts)
 	if _cache.has(key): return _cache[key]
 	var spec := FLEET.spec(id)
-	var run := _run_desert(id,parts) if id in DESERT.IDS else _run_linear(spec)
+	var motor := id in DESERT.IDS or STREET.has(id)
+	var run := _run_motor(id,parts) if motor else _run_linear(spec)
 	run["braking"] = float(spec.get("braking",1000.0))
 	run["turn_speed"] = float(spec.get("turn_speed",2.5))
 	run["id"] = id
 	run["label"] = str(spec.get("label",id))
-	run["model"] = "motor" if id in DESERT.IDS else "linear"
+	run["model"] = "motor" if motor else "linear"
 	run.merge(_ratings(run),true)
 	_cache[key] = run
 	return run
@@ -54,16 +56,19 @@ static func _run_linear(spec: Dictionary) -> Dictionary:
 	else: quarter = vmax/a+(QUARTER_KM-vmax*vmax/(2.0*a))/vmax
 	return {"zero_to_100":HUNDRED_KMH/a if vmax >= HUNDRED_KMH else INF, "quarter":quarter, "top_kmh":vmax*3.6}
 
-static func _run_desert(id: String, parts: Dictionary) -> Dictionary:
+## Mede como o jogador sente fora das provas: motor completo com o limitador de rua.
+static func _run_motor(id: String, parts: Dictionary) -> Dictionary:
 	var d = DRIVETRAIN.new()
 	d.configure(id,parts)
+	var cap := float(d.spec.street_cap_mps)
 	d.stage(5.0,.5)
 	d.launch()
 	var t := 0.0
 	var zero_to_100 := INF
 	var quarter := INF
 	while t < SIM_SECONDS:
-		d.step(STEP,1.0,true)
+		d.step(STEP,clampf((cap-d.speed_mps)/(cap*.08),0.0,1.0),true)
+		d.speed_mps = minf(d.speed_mps,cap)
 		if d.rpm >= d.ideal_shift_rpm and d.gear < d.spec.gears.size(): d.shift_up()
 		t += STEP
 		if zero_to_100 == INF and d.speed_mps >= HUNDRED_KMH: zero_to_100 = t
@@ -77,7 +82,7 @@ static func _ratings(run: Dictionary) -> Dictionary:
 	var quarter := float(run.quarter) if float(run.quarter) != INF else 40.0
 	var r := {
 		"rate_accel": _scale(quarter,30.0,15.0),
-		"rate_speed": _scale(float(run.top_kmh),120.0,260.0),
+		"rate_speed": _scale(float(run.top_kmh),90.0,170.0),
 		"rate_handling": _scale(float(run.turn_speed),1.8,3.7),
 		"rate_braking": _scale(float(run.braking),700.0,1800.0)}
 	r["score"] = .34*r.rate_accel+.30*r.rate_speed+.20*r.rate_handling+.16*r.rate_braking

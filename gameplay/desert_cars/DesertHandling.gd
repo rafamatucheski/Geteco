@@ -7,7 +7,7 @@ var _configured := false
 
 func configure(specification: Dictionary) -> void:
 	super.configure(specification)
-	if specification.get("desert_car",false):
+	if specification.get("desert_car",false) or specification.get("full_powertrain",false):
 		drive.configure(str(specification.id),specification.get("installed_parts",{}))
 		_configured = true
 
