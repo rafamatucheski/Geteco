@@ -27,7 +27,9 @@ static func clean_parts(parts: Dictionary) -> Dictionary:
 static func tuned_spec(car_id: String, parts: Dictionary = {}) -> Dictionary:
 	var s := CARS.spec(car_id)
 	if s.is_empty(): s = CARS.spec("desert_faisca")
-	s.merge({"low_response":1.0, "boost_gain":.12 if s.get("factory_turbo",false) else 0.0,
+	# Teto da direção livre: o motor completo chegaria a 200-276 km/h fora das provas.
+	# A arrancada usa o próprio motor e ignora este valor (45 m/s = teto do jogo base).
+	s.merge({"street_cap_mps":45.0, "low_response":1.0, "boost_gain":.12 if s.get("factory_turbo",false) else 0.0,
 		"spool_seconds":.3, "dirt_grip":1.0, "nitro_force":0.0, "nitro_seconds":0.0, "exhaust":0.0},true)
 	for id in clean_parts(parts).values():
 		var p: Dictionary = PARTS[id]

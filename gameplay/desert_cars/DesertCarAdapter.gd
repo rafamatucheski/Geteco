@@ -20,7 +20,7 @@ static func attach(car: CharacterBody3D, parts: Dictionary = {}) -> bool:
 	handling.configure(s)
 	car.handling = handling
 	car.set_meta("desert_powertrain",handling.drive)
-	car.max_forward_speed = float(s.max_speed)/16.0
+	car.max_forward_speed = minf(float(s.max_speed)/16.0,float(s.street_cap_mps))
 	car.drive_acceleration = float(s.acceleration)/160.0
 	var condition := float(car.health)/maxf(1.0,float(car.max_health))
 	if not car.has_meta("desert_base_max_health"): car.set_meta("desert_base_max_health",float(car.max_health))
