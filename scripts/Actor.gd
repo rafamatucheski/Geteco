@@ -1210,26 +1210,30 @@ func _fall_over(impact := Vector3.ZERO) -> void:
 	if _reaction_tween != null: _reaction_tween.kill()
 	preload("res://gameplay/CharacterFallPresentation3D.gd").apply_fall(self, visual, impact)
 
-func on_player_death() -> void:
+## Morte do jogador: alterna entre o clipe do Dante e `ual/Death01` (a queda de costas da UAL).
+## `variant` fixa a escolha (testes e capturas); -1 sorteia.
+func on_player_death(variant := -1) -> void:
 	if dead: return
 	dead = true
 	set_physics_process(false)
 	collision_layer = 0
 	collision_mask = 0
-	if animation != null and animation.has_animation("dying_backwards"):
+	var death_clip := "dying_backwards"
+	if (variant if variant >= 0 else randi() % 2) == 1 and animation != null and animation.has_animation("ual/Death01"): death_clip = "ual/Death01"
+	if animation != null and animation.has_animation(death_clip):
 		if _reaction_tween != null: _reaction_tween.kill()
 		var from_pose := _capture_pose()
 		clear_combat_weapon_pose()
 		visual.rotation.x = 0.0
 		_reaction_tween = create_tween()
 		_reaction_tween.tween_method(func(time: float):
-			_pose_clip("dying_backwards", time)
+			_pose_clip(death_clip, time)
 			if time < 0.20: _apply_blend(from_pose, _capture_pose(), smoothstep(0, 0.20, time))
 			var hip := skeleton.get_bone_pose_position(hips)
 			hip.x = hip_rest.x
 			hip.z = hip_rest.z
 			skeleton.set_bone_pose_position(hips, hip)
-		, 0.0, animation.get_animation("dying_backwards").length, animation.get_animation("dying_backwards").length)
+		, 0.0, animation.get_animation(death_clip).length, animation.get_animation(death_clip).length)
 	else:
 		_fall_over(Vector3.BACK)
 
