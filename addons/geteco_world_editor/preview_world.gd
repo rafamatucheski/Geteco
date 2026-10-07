@@ -38,18 +38,24 @@ func run() -> void:
 		return
 	var region: Node3D = scene.production._mount_region(area,focus)
 	if region.terrain != null: focus.y = region.terrain.surface_height_at(Vector2(focus.x,focus.z))
+	elif area == "desert": focus.y = region._ground_height(Vector2(focus.x,focus.z))
 	scene.player.teleport(focus+Vector3.UP*.1)
 	scene.player.controlled_automatically = true
 	scene.player.hide()
 	scene.production._commit_logical_region(area)
 	region.set_focus(focus)
-	var cell := Vector2i(floori(focus.x/64),floori(focus.z/64))
+	var cell_size := 96.0 if area == "desert" else 64.0
+	var cell := Vector2i(floori(focus.x/cell_size),floori(focus.z/cell_size))
 	var aspect := float(root.size.x)/maxf(1,float(root.size.y))
 	var radius := clampi(ceili(camera_size*aspect*.5/64.0+.5),1,3)
 	region.retention_radius = radius
 	for x in range(-radius,radius+1):
-		for z in range(-radius,radius+1): region._ensure_chunk(cell+Vector2i(x,z))
-	for i in 8: await process_frame
+		for z in range(-radius,radius+1):
+			if area == "desert": region._ensure_chunk_surfaces(cell+Vector2i(x,z))
+			else: region._ensure_chunk(cell+Vector2i(x,z))
+	for i in 1800:
+		await process_frame
+		if region.is_streaming_idle(): break
 	for overlay in scene.find_children("*","CanvasLayer",true,false): overlay.hide()
 	root.get_node("V2Settings").show_fps = false
 	root.get_node("V2Settings")._update_fps_overlay()

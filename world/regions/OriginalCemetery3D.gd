@@ -145,5 +145,6 @@ func _flush() -> void:
 		for i in instances.instance_count: instances.set_instance_transform(i,batches[color][i])
 		var display := MultiMeshInstance3D.new()
 		display.multimesh = instances
+		if Engine.get_meta("geteco_live_preview_build",false): display.set_meta("preview_instance_transforms",batches[color])
 		add_child(display)
 	batches.clear()

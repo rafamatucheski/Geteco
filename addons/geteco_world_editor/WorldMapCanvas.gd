@@ -260,7 +260,7 @@ func pick_candidates(p: Vector2) -> Array[String]:
 			elif row.type == "piece":
 				# Authored curbs/ramps are visible above the road surface. The road's
 				# broad sidewalk click target must not swallow their selection.
-				if row.get("ground",false): level = 1
+				if row.get("ground",false): level = 0 if row.get("parts",[]).is_empty() else 1
 				# Exact footprints avoid selecting empty space beside roofs or skew paths.
 				if not row.get("parts",[]).is_empty():
 					hit = false

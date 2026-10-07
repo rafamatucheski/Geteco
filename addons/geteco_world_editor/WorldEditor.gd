@@ -33,6 +33,7 @@ var deleted_menu: MenuButton
 var deleted_ids: Array[String] = []
 var load_error := ""
 var locations: OptionButton
+var region_selector: OptionButton
 var location_ids: Array[String] = []
 var asset_search: LineEdit
 var asset_filter: OptionButton
@@ -105,6 +106,7 @@ func _ready() -> void:
 	actions_bar.add_theme_constant_override("v_separation",4)
 	add_child(actions_bar)
 	var regions := OptionButton.new()
+	region_selector = regions
 	for label in ["Mundo inteiro","Harbor","Montanha","Deserto"]: regions.add_item(label)
 	regions.select(1)
 	regions.item_selected.connect(func(index):
@@ -244,6 +246,10 @@ func _load_catalog() -> void:
 		return
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
 	if parsed is Dictionary and parsed.get("regions") is Dictionary: catalog = parsed.regions
+	if not catalog.has("desert"):
+		var desert := preload("res://addons/geteco_world_editor/WorldDesertCatalog.gd").read()
+		if not desert.is_empty(): catalog.desert = desert
+	if catalog.has("desert"): preload("res://addons/geteco_world_editor/WorldDesertCatalog.gd").add_locations(catalog.desert)
 	SESSION_CONTEXT.upgrade(catalog,SESSION_CONTEXT.read(),FileAccess.get_modified_time(SESSION_CONTEXT.PATH)>FileAccess.get_modified_time(path))
 	DATA.normalize_catalog_heights(catalog)
 	preload("res://runtime/UrbanTransitPresentation.gd").upgrade_editor_catalog(catalog)
@@ -268,6 +274,7 @@ func _switch_region(value: String) -> void:
 	_refresh()
 
 func _refresh() -> void:
+	if region_selector != null: region_selector.select(["harbor","mountain","desert"].find(region)+1)
 	canvas.cancel_drag()
 	canvas.objects = {}
 	for area in ["harbor","mountain","desert"]:
@@ -672,10 +679,12 @@ func _remove_road_point() -> void:
 	_commit(row)
 
 func save() -> bool:
-	junction_editor.finish()
-	canvas.finish_drag()
+	# finish_drag emits selection even when idle, rebuilding the property controls.
+	# Apply the focused number before that rebuild can discard its pending text.
 	var focused := get_viewport().gui_get_focus_owner()
 	if focused is LineEdit and focused.get_parent() is SpinBox: focused.get_parent().apply()
+	junction_editor.finish()
+	canvas.finish_drag()
 	if not load_error.is_empty():
 		status.text = load_error
 		return false
@@ -816,6 +825,7 @@ func _update_locations() -> void:
 	locations.add_item("Ir para local…")
 	var rows: Array = []
 	for row in canvas.objects.values():
+		if row.get("kind","") == "terrain": continue
 		if row.type == "context" or (row.type == "piece" and row.get("editor_region","") == "desert") or (row.type == "building" and (row.get("locked",false) or row.get("service_building",false))):
 			rows.append(row)
 	rows.sort_custom(func(a,b): return str(a.get("label",a.id)).naturalnocasecmp_to(str(b.get("label",b.id))) < 0)

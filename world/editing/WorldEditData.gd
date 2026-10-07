@@ -3,7 +3,7 @@ extends RefCounted
 ## JSON shared by editor and production; no editor nodes or frame loop in the game.
 const PATH := "res://world/editing/world_edits.json"
 const TYPES := ["tree", "building", "road", "light", "prop", "piece", "ground"]
-const PROP_TYPES := ["pallet", "pallet_stack", "crate", "barrel", "dumpster", "trash_bags", "bin", "barrier", "footbridge"]
+const PROP_TYPES := ["pallet", "pallet_stack", "crate", "barrel", "dumpster", "trash_bags", "bin", "barrier", "footbridge", "desert_cactus", "desert_rock"]
 const BUILDING_TYPES := ["office", "brownstone", "warehouse", "corner_shop", "cobra_house", "l_shaped_block"] + preload("res://world/urban_detail/UrbanSkylineCatalog.gd").TYPES + preload("res://world/urban_detail/UrbanLowriseCatalog.gd").TYPES
 const BUILDING_LABELS := ["Comercial","Residencial","Galpão","Loja","Casa dos Cobra","Prédio em L"] + preload("res://world/urban_detail/UrbanSkylineCatalog.gd").LABELS + preload("res://world/urban_detail/UrbanLowriseCatalog.gd").LABELS
 const LOCKED_BUILDINGS := ["Garage", "NorthFrontage0", "NorthFrontage2", "NorthFrontage3", "NorthFrontage4", "Police", "Clinic", "NorthFireStation", "CanalHomesWest", "NorthgateAuto"]

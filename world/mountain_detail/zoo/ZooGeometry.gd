@@ -49,6 +49,14 @@ func flush(parent: Node3D) -> void:
 			mm.set_instance_color(i,groups[key][i][1])
 		var instance:=MultiMeshInstance3D.new()
 		instance.multimesh=mm
+		if Engine.get_meta("geteco_live_preview_build",false):
+			var transforms: Array = []
+			var colors: Array = []
+			for item in groups[key]:
+				transforms.append(item[0])
+				colors.append(item[1])
+			instance.set_meta("preview_instance_transforms",transforms)
+			instance.set_meta("preview_instance_colors",colors)
 		instance.material_override=materials[bits[1]]
 		parent.add_child(instance)
 	groups.clear()

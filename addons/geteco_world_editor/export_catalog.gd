@@ -6,6 +6,15 @@ const SESSION_CONTEXT := preload("res://addons/geteco_world_editor/WorldSessionC
 func _initialize() -> void: call_deferred("run")
 func run() -> void:
 	Engine.set_meta("geteco_world_edit_document",DATA.empty_document())
+	Engine.set_meta("geteco_live_preview_build",true)
+	if "--desert-only" in OS.get_cmdline_user_args():
+		Engine.set_meta("geteco_live_preview_build",true)
+		var desert := await preload("res://addons/geteco_world_editor/WorldDesertCatalog.gd").build(root)
+		if desert.is_empty(): quit(1); return
+		if not write_document(desert,preload("res://addons/geteco_world_editor/WorldDesertCatalog.gd").PATH): quit(1); return
+		print("WORLD_EDITOR_DESERT_OK ",desert.coverage)
+		quit()
+		return
 	if "--session-only" in OS.get_cmdline_user_args():
 		var supplement := SESSION_CONTEXT.build(root)
 		if not write_document(supplement,SESSION_CONTEXT.PATH): quit(1); return
@@ -70,6 +79,9 @@ func run() -> void:
 					result.regions[id].terrain.append([x*64,z*64,64,64,color.to_html(false)])
 		region.free()
 		await process_frame
+	Engine.set_meta("geteco_live_preview_build",true)
+	result.regions.desert = await preload("res://addons/geteco_world_editor/WorldDesertCatalog.gd").build(root)
+	if result.regions.desert.is_empty(): quit(1); return
 	if not write_document(result,"res://addons/geteco_world_editor/base_catalog.json"): quit(1); return
 	print("WORLD_EDITOR_CATALOG_OK ",JSON.stringify({"harbor":result.regions.harbor.coverage,"mountain":result.regions.mountain.coverage}))
 	quit()

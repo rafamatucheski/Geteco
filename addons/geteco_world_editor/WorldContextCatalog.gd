@@ -106,7 +106,10 @@ static func collect(node: Node,parts: Array,skip_pieces := false) -> void:
 		var material: Material = node.material_override
 		if material == null and mm.mesh.get_surface_count() > 0: material = mm.mesh.surface_get_material(0)
 		var count := mm.instance_count if mm.visible_instance_count < 0 else mini(mm.instance_count,mm.visible_instance_count)
-		for i in count: part(mm.mesh,node.global_transform*mm.get_instance_transform(i),material,parts)
+		var transforms: Array = node.get_meta("preview_instance_transforms",node.get_meta("editor_transforms",[]))
+		for i in count:
+			var transform: Transform3D = transforms[i] if i<transforms.size() else mm.get_instance_transform(i)
+			part(mm.mesh,node.global_transform*transform,material,parts)
 	for child in node.get_children(): collect(child,parts,skip_pieces)
 
 static func part(mesh: Mesh,transform: Transform3D,material: Material,parts: Array) -> void:
@@ -119,6 +122,9 @@ static func part(mesh: Mesh,transform: Transform3D,material: Material,parts: Arr
 		var colors: PackedColorArray = arrays[Mesh.ARRAY_COLOR] if arrays[Mesh.ARRAY_COLOR] != null else PackedColorArray()
 		var mat: Material = material if material != null else mesh.surface_get_material(surface)
 		var tint := Color("657c68")
+		if mat is ShaderMaterial:
+			var shader_color: Variant = mat.get_shader_parameter("base_color")
+			if shader_color is Color: tint = shader_color
 		if mat is BaseMaterial3D:
 			tint = mat.albedo_color
 			if mat.albedo_texture is NoiseTexture2D and mat.albedo_texture.color_ramp != null: tint *= mat.albedo_texture.color_ramp.sample(.5)

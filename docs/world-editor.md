@@ -1,5 +1,17 @@
 # Editor do mundo Geteco
 
+## Harbor, montanha e deserto — 06/10/2026
+
+O seletor de regiões e as visões 2D, 3D e lado a lado agora incluem **Deserto**. A base foi regenerada dos construtores atuais: fachadas, Santa Lua, Horizonte, encontro da arrancada, mineração, ruínas, ferrovia, relevo e vegetação. **Atualizar base** também regenera o deserto. O mapa 2D usa silhuetas simplificadas por setor para o cenário extenso; a prévia 3D usa os modelos reais.
+
+As dez casas decorativas do deserto, os quatro caminhões estacionados, o banco exterior do Horizonte e a caixa d’água permitem transformação e exclusão. A biblioteca permite colocar os objetos existentes, prédios, árvores e pisos no deserto, além dos novos cacto e rocha de arenito, com miniaturas renderizadas. A edição usa o mesmo histórico, Ctrl+S e arquivo `world/editing/world_edits.json`. Documentos anteriores, com apenas Harbor e montanha, continuam aceitos. As mudanças do deserto são carregadas pela partida e acompanham o descarregamento/recarga de setores, incluindo as colisões.
+
+Prédios com serviço/interior, infraestrutura elétrica, vias existentes, terreno procedural e alvos de atividades continuam protegidos. Vias e luzes novas no deserto são recusadas explicitamente, pois esses sistemas têm integrações próprias. A ferramenta não é um editor de NPCs, missões ou interiores. A presença do cenário autorado da trilha do jipe na ferramenta não certifica sua integração jogável.
+
+A prévia inclui os cenários de sessão próximos ao foco: Vértice, bosque, Posto do Tonico, skate, Torque, conexão da montanha, portão norte, saída do forte e marcações da descida. O Maciota usa a posição industrial atual. O portão aparece no estado de obra concluída para editar a geografia; a progressão da campanha e a barreira no jogo permanecem governadas pela missão final.
+
+Validação e limites desta atualização: [editor-todos-mapas-20261006.md](reviews/editor-todos-mapas-20261006.md).
+
 Abra `D:/geteco/game/project.godot` no Godot e clique na aba **Mundo**, ao lado de 2D/3D/Script. O plugin já está habilitado. Se o projeto já estava aberto, reabra-o ou ative **Mundo Geteco** em Projeto → Configurações do projeto → Plugins.
 
 ## Prédios com serviços — 26/09

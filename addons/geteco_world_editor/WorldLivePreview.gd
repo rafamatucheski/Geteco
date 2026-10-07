@@ -228,6 +228,9 @@ func _restore_instance_transforms(node: Node) -> void:
 		for index in mini(transforms.size(),node.multimesh.instance_count):
 			node.multimesh.set_instance_transform(index,transforms[index])
 		node.remove_meta("preview_instance_transforms")
+		var colors: Array = node.get_meta("preview_instance_colors",[])
+		for index in mini(colors.size(),node.multimesh.instance_count): node.multimesh.set_instance_color(index,colors[index])
+		node.remove_meta("preview_instance_colors")
 	for child in node.get_children(): _restore_instance_transforms(child)
 
 func _render_once() -> void:

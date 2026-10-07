@@ -10,6 +10,10 @@ static func entry(label: String,row: Dictionary,tags := "") -> Dictionary:
 	return {"label":label,"row":row,"search":normalized(label+" "+tags+" "+str(row.get("model",""))),"type":row.type,"action":"place"}
 static func build(catalog: Dictionary) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
+	for spec in [["Cacto do deserto","desert_cactus",[1.5,1.5],"788551"],["Rocha de arenito","desert_rock",[1.8,1.6],"9f7d56"]]:
+		var row := DATA.new_entity("prop",Vector2.ZERO)
+		row.merge({"model":spec[1],"size":spec[2],"color":spec[3]},true)
+		result.append(entry(spec[0],row,"deserto vegetacao pedra mapa 2"))
 	for spec in preload("res://world/urban_detail/UrbanLowriseCatalog.gd").PRESETS:
 		var row := DATA.new_entity("building",Vector2.ZERO)
 		row.merge({"model":spec[1],"size":spec[2].duplicate(),"height":spec[3],"color":spec[4]},true)

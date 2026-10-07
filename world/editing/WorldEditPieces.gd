@@ -34,6 +34,13 @@ static func _points(node: Node, points: Array[Vector3]) -> void:
 	if node is MeshInstance3D and node.mesh != null:
 		var bounds: AABB = node.mesh.get_aabb()
 		for corner in 8: points.append(node.global_transform*bounds.get_endpoint(corner))
+	elif node is MultiMeshInstance3D and node.multimesh != null and node.multimesh.mesh != null:
+		var bounds: AABB = node.multimesh.mesh.get_aabb()
+		var transforms: Array = node.get_meta("preview_instance_transforms",node.get_meta("editor_transforms",[]))
+		var count: int = node.multimesh.instance_count if node.multimesh.visible_instance_count<0 else node.multimesh.visible_instance_count
+		for i in count:
+			var transform: Transform3D = transforms[i] if i<transforms.size() else node.multimesh.get_instance_transform(i)
+			for corner in 8: points.append(node.global_transform*transform*bounds.get_endpoint(corner))
 	for child in node.get_children(): _points(child,points)
 
 static func collect(root: Node) -> Array[Node3D]:

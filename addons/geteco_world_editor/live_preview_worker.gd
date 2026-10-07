@@ -42,6 +42,9 @@ func build(request: Dictionary) -> void:
 	if area not in ["harbor","mountain","desert"]: respond({"revision":last_revision,"error":"Região inválida"}); return
 	Engine.set_meta("geteco_world_edit_document",request.document)
 	var region: Node3D = REGION.build_region(area,focus)
+	if region==null:
+		respond({"revision":last_revision,"error":"O cenário tem erros de script. Corrija-os antes de atualizar a prévia."})
+		return
 	root.add_child(region)
 	if region.terrain != null: focus.y = region.terrain.surface_height_at(Vector2(focus.x,focus.z))
 	elif area == "desert": focus.y = region._ground_height(Vector2(focus.x,focus.z))
@@ -66,10 +69,11 @@ func build(request: Dictionary) -> void:
 		var garage := GARAGE_FACADE.new()
 		garage.name = "MaciotaFacade"
 		# ProductionWorld exterior_origin plus MaciotaPlace's facade offset.
-		garage.position = Vector3(790.0/16-.5,0,1495.0/16)
+		garage.position = preload("res://world/maciota/MaciotaPlace.gd").INDUSTRIAL_ORIGIN+Vector3(-.5,0,0)
 		garage.set_meta("editor_id","building/Garage")
 		region.add_child(garage)
 	# Duplicate built geometry, then strip behaviour before it can enter the editor.
+	preload("res://addons/geteco_world_editor/WorldSessionContext.gd").build_preview(region,area,focus)
 	var snapshot: Node3D = region.duplicate(0)
 	snapshot.name = "WorldPreviewGeometry"
 	clean(snapshot,snapshot)
@@ -91,7 +95,7 @@ func clean(node: Node, owner_root: Node) -> void:
 	node.scene_file_path = ""
 	if node != owner_root: node.owner = owner_root
 	for key in node.get_meta_list():
-		if key not in [&"editor_id",&"preview_instance_transforms"]: node.remove_meta(key)
+		if key not in [&"editor_id",&"preview_instance_transforms",&"preview_instance_colors"]: node.remove_meta(key)
 	if node is CollisionObject3D:
 		node.collision_layer = 0
 		node.collision_mask = 0

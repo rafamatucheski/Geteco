@@ -247,6 +247,7 @@ func _flush_part() -> void:
 		var instance := MultiMeshInstance3D.new()
 		instance.name = id + "Parts"
 		instance.multimesh = mesh
+		if Engine.get_meta("geteco_live_preview_build",false): instance.set_meta("preview_instance_transforms",_batches[id])
 		instance.material_override = _material(id)
 		_part_root.add_child(instance)
 	_surfaces.clear()

@@ -745,6 +745,7 @@ func _flush() -> void:
 		var instance := MultiMeshInstance3D.new()
 		instance.name = "CanalTunnelBatch_" + id
 		instance.multimesh = multimesh
+		if Engine.get_meta("geteco_live_preview_build",false): instance.set_meta("preview_instance_transforms",transforms)
 		instance.material_override = material(id)
 		if id in ["glass", "water", "water_depth", "seabed", "ceiling_lamp", "cat_eye", "neon_teal", "neon_orange", "roof_top", "hazard"]:
 			instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

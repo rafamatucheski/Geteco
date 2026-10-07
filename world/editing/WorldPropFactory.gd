@@ -36,6 +36,20 @@ static func pallet(parent: Node3D,y: float) -> void:
 	for z in [-.4,-.2,0,.2,.4]: box(parent,Vector3(0,y+.20,z),Vector3(1.2,.07,.15),Color("b99768"))
 	for z in [-.4,0,.4]: box(parent,Vector3(0,y+.025,z),Vector3(1.2,.05,.15),Color("937149"))
 static func create(row: Dictionary) -> Node3D:
+	if str(row.model) in ["desert_cactus","desert_rock"]:
+		var art: Node3D
+		if row.model == "desert_cactus":
+			art = preload("res://world/desert/DesertArchitecture.gd").cactus(2.6)
+			for mesh in art.find_children("*","MeshInstance3D",true,false):
+				mesh.material_override = material(Color(str(row.get("color","788551"))))
+		else:
+			art = Node3D.new()
+			preload("res://world/desert/DesertSurfaceRocks.gd").rock(art,"Sandstone",Vector3(0,.45,0),Vector3(1.8,1,1.6),Color(str(row.get("color","9f7d56"))),true)
+		art.name = "WorldProp_"+str(row.model)
+		art.scale = Vector3.ONE*float(row.scale)
+		art.rotation.y = deg_to_rad(float(row.get("rotation",0)))
+		art.set_meta("editor_id",row.id)
+		return art
 	if str(row.model) == "footbridge":
 		# Passarela tem medidas próprias (largura x comprimento total) e colisão
 		# andável; a caixa sólida genérica dos objetos a bloquearia inteira.

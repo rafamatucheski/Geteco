@@ -6,7 +6,9 @@ const PIECES := preload("res://world/editing/WorldEditPieces.gd")
 var _piece_changes: Dictionary = {}
 
 static func build_region(id: String, first_focus: Vector3 = Vector3.INF) -> Node3D:
-	if id == "desert": return preload("res://world/editing/EditableDesertRegion.gd").build_region(id,first_focus)
+	if id == "desert":
+		var desert_script = load("res://world/editing/EditableDesertRegion.gd")
+		return desert_script.build_region(id,first_focus) if desert_script!=null and desert_script.can_instantiate() else null
 	if id not in ["harbor", "mountain"]: return null
 	var region = load("res://world/editing/EditableRegion.gd").new()
 	region.region_id = id

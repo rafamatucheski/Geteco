@@ -10,7 +10,7 @@ const MOUNTAIN_PREFIX := "context/mountain/session/"
 # 6: túnel do canal, pista de skate, Torque e saída do forte (05/10), montados fora dos
 # registros de região; sem eles o mapa 2D mostrava chão vazio nesses lugares.
 # 7: portão norte (ponte da continuação norte), montado pela conexão só no jogo.
-const VERSION := 7
+const VERSION := 8
 
 class ForestSnapshot extends "res://gameplay/urban_v1/FreightOutskirts.gd":
 	var editor_batches := {}
@@ -19,6 +19,10 @@ class ForestSnapshot extends "res://gameplay/urban_v1/FreightOutskirts.gd":
 		# Preserve the actual generator's CPU data before it uploads and clears it.
 		editor_batches = _batches.duplicate(true)
 		super._flush()
+		for child in get_children():
+			if child is MultiMeshInstance3D and editor_batches.has(str(child.name)):
+				child.set_meta("preview_instance_transforms",editor_batches[str(child.name)].transforms)
+				child.set_meta("preview_instance_colors",editor_batches[str(child.name)].colors)
 
 static func read() -> Dictionary:
 	if not FileAccess.file_exists(PATH): return {}
@@ -148,7 +152,74 @@ static func build(parent: Node) -> Dictionary:
 	var fort_id := MOUNTAIN_PREFIX+"fort_exit"
 	mountain_rows[fort_id] = CONTEXT.from_node(fort,fort_id,"Saída secreta do forte","fort_exit",fort_script.WORLD_POSITION)
 	fort.free()
+	var downhill = preload("res://activities/mountain_downhill/MountainDownhillProps.gd").new()
+	parent.add_child(downhill)
+	downhill.build(preload("res://activities/mountain_downhill/MountainDownhillCourse.gd").new())
+	var downhill_id := MOUNTAIN_PREFIX+"downhill"
+	mountain_rows[downhill_id] = CONTEXT.from_node(downhill,downhill_id,"Descida da Meia Noite","downhill",downhill.course.grid(0).origin)
+	downhill.free()
+	var jeep := Node3D.new()
+	parent.add_child(jeep)
+	for record in preload("res://world/mountain_jeep/MountainJeepCourse.gd").records():
+		preload("res://world/mountain_jeep/MountainJeepScenery.gd").build(jeep,record)
+	var jeep_id := MOUNTAIN_PREFIX+"jeep"
+	mountain_rows[jeep_id] = CONTEXT.from_node(jeep,jeep_id,"Trilha dos Pinheiros · cenário autorado","mountain_jeep",preload("res://world/mountain_jeep/MountainJeepCourse.gd").start())
+	jeep.free()
 	return {"version":VERSION,"context":rows,"mountain_context":mountain_rows}
+
+static func build_preview(parent: Node3D, area: String, focus: Vector3) -> void:
+	# Session-owned art was present in 2D but absent from the live 3D worker.
+	# Build only nearby static presentation; never configure gameplay controllers.
+	if area == "harbor":
+		var definitions := [
+			["res://gameplay/urban_v1/VerticeCompany.gd",Vector3(-340,0,-80),150.0,PREFIX+"vertice"],
+			["res://gameplay/urban_v1/FreightOutskirts.gd",Vector3(-340,0,-80),210.0,PREFIX+"vertice_woodland"],
+			["res://gameplay/urban_v1/TruckersVillageVisuals.gd",Vector3(-330,0,100),160.0,PREFIX+"truckers_village"],
+			["res://activities/skate/SkatePark.gd",preload("res://activities/skate/SkateParkLayout.gd").CENTER,90.0,PREFIX+"skate_park"],
+			["res://world/places/classic_meet/ClassicMeetSite.gd",Vector3(420,0,124),90.0,PREFIX+"torque"]]
+		for definition in definitions:
+			if focus.distance_to(definition[1]) > float(definition[2]): continue
+			var node = ForestSnapshot.new() if str(definition[0]).ends_with("FreightOutskirts.gd") else load(definition[0]).new()
+			node.process_mode = Node.PROCESS_MODE_DISABLED
+			parent.add_child(node)
+			_remove_actors(node)
+			_preview_batches(node)
+			node.set_meta("editor_id",definition[3])
+	if area in ["harbor","mountain"] and focus.distance_to(Vector3(475,0,-285)) < 240:
+		var connection := preload("res://world/regions/WorldConnection3D.gd").new()
+		connection.process_mode = Node.PROCESS_MODE_DISABLED
+		parent.add_child(connection)
+		connection.set_meta("editor_id","context/harbor/world_connection")
+	if area == "harbor" and focus.distance_to(preload("res://world/north_gateway/NorthGatewayLayout.gd").WORK_POSITION)<180:
+		var gateway := preload("res://world/north_gateway/NorthGatewayScenery.gd").new()
+		parent.add_child(gateway)
+		gateway.build(true)
+		gateway.set_meta("editor_id",PREFIX+"north_gateway")
+	if area == "mountain":
+		var downhill = preload("res://activities/mountain_downhill/MountainDownhillProps.gd").new()
+		parent.add_child(downhill)
+		downhill.build(preload("res://activities/mountain_downhill/MountainDownhillCourse.gd").new())
+		downhill.set_meta("editor_id",MOUNTAIN_PREFIX+"downhill")
+		var jeep := Node3D.new()
+		parent.add_child(jeep)
+		jeep.set_meta("editor_id",MOUNTAIN_PREFIX+"jeep")
+		for record in preload("res://world/mountain_jeep/MountainJeepCourse.gd").records():
+			if (record.position as Vector3).distance_to(focus)<160:
+				preload("res://world/mountain_jeep/MountainJeepScenery.gd").build(jeep,record)
+		var fort_script := preload("res://gameplay/urban_v1/fort/MountainFortExit3D.gd")
+		if focus.distance_to(fort_script.WORLD_POSITION)<120:
+			var fort = fort_script.new()
+			fort.process_mode = Node.PROCESS_MODE_DISABLED
+			parent.add_child(fort)
+			fort.global_position = fort_script.WORLD_POSITION
+			fort._build()
+			fort.set_meta("editor_id",MOUNTAIN_PREFIX+"fort_exit")
+
+static func _preview_batches(node: Node) -> void:
+	if node.has_meta("editor_transforms"):
+		node.set_meta("preview_instance_transforms",node.get_meta("editor_transforms"))
+		if node.has_meta("editor_colors"): node.set_meta("preview_instance_colors",node.get_meta("editor_colors"))
+	for child in node.get_children(): _preview_batches(child)
 
 static func _collect_village(node: Node,parts: Array) -> void:
 	if node is MeshInstance3D and node.mesh != null:
