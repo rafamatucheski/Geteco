@@ -251,6 +251,8 @@ func _load_catalog() -> void:
 		if not desert.is_empty(): catalog.desert = desert
 	if catalog.has("desert"): preload("res://addons/geteco_world_editor/WorldDesertCatalog.gd").add_locations(catalog.desert)
 	SESSION_CONTEXT.upgrade(catalog,SESSION_CONTEXT.read(),FileAccess.get_modified_time(SESSION_CONTEXT.PATH)>FileAccess.get_modified_time(path))
+	# Lugares do runtime que o catálogo gravado não tem (supermercado, arcade, parque...).
+	preload("res://addons/geteco_world_editor/WorldPlaceCatalog.gd").add_missing(catalog)
 	DATA.normalize_catalog_heights(catalog)
 	preload("res://runtime/UrbanTransitPresentation.gd").upgrade_editor_catalog(catalog)
 	if catalog.has("harbor"):

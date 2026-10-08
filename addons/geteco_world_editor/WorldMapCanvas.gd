@@ -17,6 +17,8 @@ var context_mesh: ArrayMesh
 # Triângulos de cada parte de contexto, em coordenadas do mundo; calculados uma vez por carga.
 var context_triangles := {}
 var mesh_key := []
+var polygon_ok := {}
+var road_ready := false
 var context_cells := {}
 var visible_part_ids: Array = []
 var cached_cells := Rect2i(-999999,-999999,0,0)
@@ -119,9 +121,9 @@ func _draw() -> void:
 	for tile in terrain:
 		draw_rect(Rect2(screen(Vector2(tile[0],tile[1])),Vector2(tile[2],tile[3])*zoom),Color(tile[4]))
 	for poly in land_polygons:
-		var points := PackedVector2Array()
-		for p in poly: points.append(screen(DATA.point(p)))
-		if points.size() >= 3: draw_colored_polygon(points,Color("43524b"))
+		var world := PackedVector2Array()
+		for p in poly: world.append(DATA.point(p))
+		_fill(world,Color("43524b"))
 	# A peça arrastada sai da malha estática e é desenhada à parte (_draw_piece_preview).
 	# Assim o arraste não cai num caminho que triangula cada parte a cada quadro.
 	var excluded := selected_id if dragging and drag_row.get("type", "")=="piece" else ""
@@ -148,9 +150,7 @@ func _draw_foreground() -> void:
 	for id in ground_ids:
 		var row: Dictionary = objects[id]
 		if not allowed(row): continue
-		var polygon := corners(row)
-		for i in polygon.size(): polygon[i] = screen(polygon[i])
-		if not Geometry2D.triangulate_polygon(polygon).is_empty(): draw_colored_polygon(polygon,Color(row.color) if row.get("paving",false) else preload("res://world/editing/WorldGroundFactory.gd").color(row.surface))
+		_fill(corners(row),Color(row.color) if row.get("paving",false) else preload("res://world/editing/WorldGroundFactory.gd").color(row.surface))
 	_draw_piece_preview()
 	for row in objects.values():
 		if row.type != "context": continue
@@ -173,8 +173,8 @@ func _draw_foreground() -> void:
 		match str(row.type):
 			"building", "prop", "piece", "ground":
 				var polygon := corners(row)
+				if row.type not in ["piece","ground"]: _fill(polygon,Color(row.get("color","859591")).darkened(.15))
 				for i in polygon.size(): polygon[i] = screen(polygon[i])
-				if row.type not in ["piece","ground"]: draw_colored_polygon(polygon,Color(row.get("color","859591")).darkened(.15))
 				polygon.append(polygon[0])
 				draw_polyline(polygon,Color("e7c678") if active else Color("8a9e9c"),2.5 if active else 1.0,true)
 				if row.get("locked",false): draw_circle(p,3,Color("e59889"))
@@ -208,35 +208,44 @@ func _draw_foreground() -> void:
 	draw_string(ThemeDB.fallback_font,Vector2(18,size.y-18),"%s · X %.1f  Z %.1f · %.1f px/m" % [region.capitalize(),center.x,center.y,zoom],HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color("b4c9c6"))
 	if junction_editor != null: junction_editor.draw_on(self,false)
 func _draw_roads() -> void:
-	var roads: Array = []
-	for row in objects.values():
-		if row.type == "road" and allowed(row):
-			var source: Dictionary = row.duplicate(true)
-			source.surface = row.get("surface","asphalt")
-			source.urban = region == "harbor" and not row.get("pathway",false)
-			roads.append(source)
-	roads.sort_custom(func(a,b): return a.id < b.id)
-	road_drawing.configure(roads)
-	for polygon in road_drawing.pavement:
-		var points := PackedVector2Array()
-		for p in polygon: points.append(screen(p))
-		if points.size() >= 3: draw_colored_polygon(points,Color("aaa9a1"))
+	# Reconstruir o traçado custa ~19 ms por quadro. Arrastar um objeto que não é rua e mover
+	# a câmera não mudam as ruas, então reaproveitam o traçado já calculado.
+	var roads_static: bool = (dragging and str(drag_row.get("type","")) != "road") or panning
+	if not roads_static or not road_ready:
+		var roads: Array = []
+		for row in objects.values():
+			if row.type == "road" and allowed(row):
+				var source: Dictionary = row.duplicate(true)
+				source.surface = row.get("surface","asphalt")
+				source.urban = region == "harbor" and not row.get("pathway",false)
+				roads.append(source)
+		roads.sort_custom(func(a,b): return a.id < b.id)
+		road_drawing.configure(roads)
+		road_ready = true
+	for polygon in road_drawing.pavement: _fill(PackedVector2Array(polygon),Color("aaa9a1"))
 	# Draw the whole network per layer, never a complete street over another one.
 	for layer in ["border","fill"]:
 		for surface in road_drawing.surfaces:
 			var color := Color("596967") if layer == "border" else (Color("3b4852") if surface.surface == "asphalt" else Color("796652"))
-			for polygon in surface[layer]:
-				var points := PackedVector2Array()
-				for p in polygon: points.append(screen(p))
-				if points.size() >= 3: draw_colored_polygon(points,color)
+			for polygon in surface[layer]: _fill(PackedVector2Array(polygon),color)
 	for mark in road_drawing.markings:
 		var line := PackedVector2Array()
 		for p in mark.points: line.append(screen(p))
 		if line.size() >= 2: draw_polyline(line,Color("e7c678") if mark.id == selected_id else Color("b4ac82"),1.5,true)
-	for polygon in road_drawing.crossings:
-		var points := PackedVector2Array()
-		for p in polygon: points.append(screen(p))
-		if points.size() >= 3: draw_colored_polygon(points,Color("eeeade"))
+	for polygon in road_drawing.crossings: _fill(PackedVector2Array(polygon),Color("eeeade"))
+
+# Triangulação de contorno inválido imprime "Invalid polygon data" a cada chamada. Verifica
+# cada polígono uma vez, em coordenadas do mundo (a tela muda com pan/zoom), e só desenha os válidos.
+func _fill(world: PackedVector2Array, color: Color) -> void:
+	if world.size() < 3: return
+	var key := hash(world)
+	if not polygon_ok.has(key):
+		if polygon_ok.size() > 20000: polygon_ok.clear()
+		polygon_ok[key] = not Geometry2D.triangulate_polygon(world).is_empty()
+	if not polygon_ok[key]: return
+	var points := PackedVector2Array()
+	for p in world: points.append(screen(p))
+	draw_colored_polygon(points,color)
 
 func pick_candidates(p: Vector2) -> Array[String]:
 	var hits: Array = []
@@ -571,6 +580,7 @@ func rebuild_context() -> void:
 	context_cells.clear()
 	context_triangles.clear()
 	mesh_key = []
+	road_ready = false
 	cached_cells = Rect2i(-999999,-999999,0,0)
 	for index in context_parts.size():
 		var part: Array = context_parts[index]
