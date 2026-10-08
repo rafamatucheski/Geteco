@@ -1,11 +1,13 @@
 extends SceneTree
-## Katana nas costas: fica presa à coluna quando guardada, o clipe de sacar (withdraw) toca ao
-## equipar e o de guardar (sheathe) ao trocar de arma. Usa o Dante real e os clipes do Mixamo.
+## Katana nas costas: fica presa à coluna quando guardada; ao equipar, o clipe da greatsword toca ao
+## contrário (sacar) com a espada na mão, e ao trocar de arma toca para frente (guardar) até as costas.
+## Também confere, no esqueleto real do Dante, que a espada na mão chega exatamente à posição das costas.
 const ACTOR := preload("res://scripts/Actor.gd")
 const GAMEPLAY := preload("res://gameplay/Gameplay.gd")
 
 class State extends RefCounted:
 	var owned := true
+	var equipped_weapon := "fists"
 	func owns_weapon(id: String) -> bool: return owned and id == "katana"
 	func weapons_allowed() -> bool: return true
 	func can_attack() -> bool: return true
@@ -23,48 +25,76 @@ func check(ok: bool, label: String) -> void:
 func frames(count: int) -> void:
 	for i in count: await physics_frame
 
-func run_clip(gp, actor, seconds: float) -> void:
-	var steps := int(ceil(seconds * 60.0))
-	for i in steps: gp._update_sheath(1.0 / 60.0)
+func run_clip(gp, seconds: float) -> void:
+	for i in int(ceil(seconds * 60.0)): gp._update_sheath(1.0 / 60.0)
 
 func run() -> void:
+	await geometry()
 	var stage := Node3D.new()
 	root.add_child(stage)
 	var actor := ACTOR.new(); actor.is_player = true; actor.controlled_automatically = true
 	stage.add_child(actor)
 	await frames(3)
 	var gp := GAMEPLAY.new()
+	gp.set_physics_process(false)
+	gp.set_process(false)
 	stage.add_child(gp)
 	gp.player = actor
 	gp.state = State.new()
 	gp.enabled = true
 	gp.health = 100.0
 	gp._build_socket()
-	check(gp.back_katana != null, "katana das costas criada no osso da coluna")
-	check(actor.animation.has_animation("mixsword/withdraw_katana") and actor.animation.has_animation("mixsword/sheathe_katana"), "clipes de sacar e guardar carregados")
+	check(gp.back_katana != null and gp.hand_katana != null, "katana das costas (coluna) e da mão (sacar/guardar) criadas")
+	check(actor.animation.has_animation("mixsword/sheathe_greatsword"), "clipe da greatsword carregado")
 	gp._update_back_katana("fists")
-	check(gp.back_katana.visible, "sem katana na mão, ela fica nas costas")
+	check(gp.back_katana.visible and not gp.hand_katana.visible, "sem katana na mão, ela fica nas costas")
 	gp._update_back_katana("katana")
 	check(gp._sheath_clip == "mixsword/sheathe_greatsword" and gp._sheath_kind == "draw", "equipar a katana toca o clipe da greatsword para sacar")
-	check(gp.back_katana.visible and gp._sheath_drawing(), "durante o saque a katana ainda está nas costas e a mão espera")
+	gp._update_back_katana("katana")
+	check(gp.back_katana.visible and not gp.hand_katana.visible, "no primeiro instante do saque a espada ainda está nas costas (a mão ainda está chegando)")
 	gp._update_sheath(0.5)
+	gp._update_back_katana("katana")
+	check(gp.hand_katana.visible and not gp.back_katana.visible, "durante o saque a espada está na mão, não nas costas")
 	var clip_length: float = actor.animation.get_animation("mixsword/sheathe_greatsword").length
 	check(actor.combat_clip == "mixsword/sheathe_greatsword" and absf(actor.combat_clip_time - (clip_length - 0.5 * gp.SHEATH_RATE)) < 0.02, "sacar toca a greatsword ao contrário: termina na guarda de duas mãos")
-	await run_clip(gp, actor, 1.6)
-	check(gp._sheath_clip == "" and not gp._sheath_drawing(), "saque termina sozinho")
-	check(actor.combat_clip == "", "clipe liberado para a locomoção ao terminar o saque")
+	await run_clip(gp, 1.6)
+	check(gp._sheath_clip == "" and actor.combat_clip == "", "saque termina e devolve a locomoção")
 	gp._update_back_katana("katana")
-	check(not gp.back_katana.visible, "katana na mão: sai das costas")
+	check(not gp.back_katana.visible and not gp.hand_katana.visible, "katana sacada: sai das costas e a pose de combate assume")
 	gp._update_back_katana("fists")
-	check(gp._sheath_clip == "mixsword/sheathe_greatsword" and gp._sheath_kind == "holster", "trocar de arma toca o clipe de guardar da greatsword")
+	check(gp._sheath_clip == "mixsword/sheathe_greatsword" and gp._sheath_kind == "holster", "trocar de arma toca o guardar")
 	gp._update_sheath(0.5)
 	check(absf(actor.combat_clip_time - 0.5 * gp.SHEATH_RATE) < 0.02, "guardar toca para frente, até a espada nas costas")
-	check(not gp.back_katana.visible, "durante guardar a katana ainda não voltou às costas")
-	await run_clip(gp, actor, 1.8)
 	gp._update_back_katana("fists")
-	check(gp.back_katana.visible, "depois de guardar, a katana volta às costas")
+	check(gp.hand_katana.visible and not gp.back_katana.visible, "durante o guardar a espada continua na mão")
+	await run_clip(gp, 1.8)
+	gp._update_back_katana("fists")
+	check(gp.back_katana.visible and not gp.hand_katana.visible, "depois de guardar, a katana volta às costas")
 	gp.state.owned = false
 	gp._update_back_katana("fists")
-	check(not gp.back_katana.visible, "sem a katana no inventário, nada aparece nas costas")
+	check(not gp.back_katana.visible and not gp.hand_katana.visible, "sem a katana no inventário, nada aparece")
 	print("BACK_KATANA_SHEATH checks=", checks, " failures=", failures)
 	quit(0 if failures.is_empty() else 1)
+
+## Posições medidas no esqueleto do Dante com o clipe tocando de fato.
+func geometry() -> void:
+	var dante: Node = (load("res://assets/dante.glb") as PackedScene).instantiate()
+	root.add_child(dante)
+	var skeleton: Skeleton3D = dante.find_child("Skeleton3D", true, false)
+	var player := dante.find_child("AnimationPlayer", true, false) as AnimationPlayer
+	player.add_animation_library("mixsword", load("res://assets/dante/mixamo/dante_mixamo_sword.res"))
+	player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
+	var clip := "mixsword/sheathe_greatsword"
+	player.play(clip)
+	player.seek(player.get_animation(clip).length, true); player.advance(0.0)
+	await process_frame
+	var hand := skeleton.get_bone_global_pose(skeleton.find_bone("RightHand")).orthonormalized() * GAMEPLAY.HAND_KATANA_SHEATHED
+	var back := skeleton.get_bone_global_pose(skeleton.find_bone("Spine02")).orthonormalized() * GAMEPLAY.BACK_KATANA_LOCAL
+	check(hand.origin.distance_to(back.origin) < 0.02 and (-hand.basis.z).dot(-back.basis.z) > 0.999, "no fim do guardar a espada da mão coincide com a das costas (sem salto)")
+	var spine := skeleton.get_bone_global_pose(skeleton.find_bone("Spine02")).origin
+	check(back.origin.z < spine.z - 0.08 and (-back.basis.z).y < -0.8, "nas costas: cabo atrás da coluna (%.2f m) e lâmina descendo" % (spine.z - back.origin.z))
+	player.seek(0.0, true); player.advance(0.0)
+	await process_frame
+	var guard := skeleton.get_bone_global_pose(skeleton.find_bone("RightHand")).orthonormalized() * GAMEPLAY.HAND_KATANA_GUARD
+	check((-guard.basis.z).z > 0.5, "na guarda (fim do sacar) a lâmina aponta para a frente")
+	dante.free()

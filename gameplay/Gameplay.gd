@@ -192,6 +192,9 @@ var _left_knuckles: Node3D
 var socket: Node3D
 ## Katana guardada nas costas (preso à coluna) e o clipe de sacar/guardar do Mixamo tocado no Dante.
 var back_katana: Node3D
+## Katana presa à mão direita só durante sacar/guardar: segue a mão do clipe, então a espada sai das
+## costas e volta para elas junto com o gesto.
+var hand_katana: Node3D
 var _sheath_clip := ""
 var _sheath_kind := ""
 var _sheath_length := 0.0
@@ -454,17 +457,21 @@ func _build_socket() -> void:
 ## Posição e rumo estimados pelo esqueleto, não medidos na tela: conferir no jogo.
 func _build_back_katana() -> void:
 	var skeleton := player.find_child("Skeleton3D", true, false) as Skeleton3D
-	if skeleton == null or skeleton.find_bone("Spine02") < 0: return
+	if skeleton == null or skeleton.find_bone("Spine02") < 0 or skeleton.find_bone("RightHand") < 0: return
+	back_katana = _katana_on_bone(skeleton, "Spine02", "BackKatana")
+	back_katana.transform = BACK_KATANA_LOCAL
+	hand_katana = _katana_on_bone(skeleton, "RightHand", "SheathHandKatana")
+
+func _katana_on_bone(skeleton: Skeleton3D, bone: String, node_name: String) -> Node3D:
 	var attachment := BoneAttachment3D.new()
-	attachment.bone_name = "Spine02"
+	attachment.bone_name = bone
 	skeleton.add_child(attachment)
-	back_katana = Node3D.new()
-	back_katana.name = "BackKatana"
-	attachment.add_child(back_katana)
-	var tip_direction := Vector3(0.6, -0.8, 0.0).normalized()
-	back_katana.transform = Transform3D(Basis.looking_at(tip_direction, Vector3.UP), Vector3(-0.12, 0.12, -0.14))
-	KATANA_MODEL.build(back_katana, false, Color("68cfff"))
-	back_katana.visible = false
+	var katana := Node3D.new()
+	katana.name = node_name
+	attachment.add_child(katana)
+	KATANA_MODEL.build(katana, false, Color("68cfff"))
+	katana.visible = false
+	return katana
 
 func equipped() -> String:
 	return String(state.equipped_weapon) if state != null else ""
@@ -554,7 +561,7 @@ func _update_visual() -> void:
 			_mount_flashlight()
 		if player.has_method("set_combat_weapon_mount"):
 			player.set_combat_weapon_mount(gun, POSE.GRIPS.get(id, Vector3.ZERO))
-	gun.visible = attack_allowed() and id != "" and id != "fists" and bool(_pose_frame.get("visible", true)) and not _sheath_drawing()
+	gun.visible = attack_allowed() and id != "" and id != "fists" and bool(_pose_frame.get("visible", true)) and _sheath_clip == ""
 	# A arma e as palmas usam o mesmo alvo em espaço do Actor. Isso preserva a
 	# orientação do cabo dentro da mão; não há mais um prop plano girado só em Y.
 	if gun.visible and not _pose_frame.is_empty() and is_instance_valid(player.visual):
@@ -987,8 +994,13 @@ func _update_back_katana(id: String) -> void:
 	_sheath_last_id = id
 	if back_katana == null or not is_instance_valid(player): return
 	var carried: bool = state != null and bool(state.owns_weapon("katana")) and not bool(player.get("dead"))
-	var drawing: bool = _sheath_drawing()
-	back_katana.visible = carried and ((id != "katana" and _sheath_clip == "") or drawing)
+	var moving: bool = _sheath_clip != ""
+	# O Actor leva COMBAT_BLEND (0,08 s) para passar da locomoção ao clipe: no início do saque a mão ainda
+	# não chegou às costas, então a espada só troca de lugar depois disso.
+	var in_hand: bool = moving and not (_sheath_kind == "draw" and _sheath_age < SHEATH_HANDOFF)
+	# Durante o clipe a espada está na mão; fora dele, nas costas ou na pose de combate.
+	back_katana.visible = carried and ((id != "katana" and not moving) or (moving and not in_hand))
+	if hand_katana != null: hand_katana.visible = carried and in_hand
 
 func _sheath_drawing() -> bool:
 	return _sheath_kind == "draw" and _sheath_clip != ""
@@ -997,6 +1009,14 @@ func _sheath_drawing() -> bool:
 ## mãos e termina com a espada nas costas. Guardar toca para frente; sacar toca ao contrário e termina
 ## em duas mãos, que é a pose de combate da katana. Tocado a 0,6× porque o clipe tem só 0,73 s.
 const SHEATH_RATE := 0.6
+const SHEATH_HANDOFF := 0.1
+## Medidas no esqueleto do Dante com o clipe da greatsword (cabo = origem da katana, ponta em -Z):
+## nas costas (osso Spine02), o cabo fica onde a mão direita termina o guardar, atrás do ombro direito,
+## e a lâmina desce até atrás do quadril esquerdo. Na mão (osso RightHand), a pegada do último quadro
+## coincide com a das costas; a do primeiro quadro segue o eixo entre as duas mãos na guarda.
+const BACK_KATANA_LOCAL := Transform3D(Vector3(0.9194, 0.3636, -0.1498), Vector3(-0.1279, -0.0835, -0.9883), Vector3(-0.3718, 0.9278, -0.0303), Vector3(-0.2682, 0.6383, -0.1395))
+const HAND_KATANA_SHEATHED := Transform3D(Vector3(-0.4291, -0.1897, -0.8831), Vector3(-0.8707, 0.3469, 0.3486), Vector3(0.2402, 0.9185, -0.3141), Vector3.ZERO)
+const HAND_KATANA_GUARD := Transform3D(Vector3(0.4451, -0.8449, -0.2967), Vector3(-0.1447, -0.3949, 0.9073), Vector3(-0.8837, -0.3609, -0.2980), Vector3.ZERO)
 
 func _start_sheath(kind: String) -> void:
 	if not is_instance_valid(player) or not "animation" in player or player.animation == null: return
@@ -1025,6 +1045,10 @@ func _update_sheath(delta: float) -> void:
 			clip_time = player.animation.get_animation(_sheath_clip).length - clip_time
 		player.combat_clip = _sheath_clip
 		player.combat_clip_time = maxf(clip_time, 0.0)
+		# A pegada gira junto com o clipe: guarda (lâmina à frente) no início, posição das costas no fim.
+		if hand_katana != null and _sheath_clip.ends_with("sheathe_greatsword"):
+			var progress := clampf(player.combat_clip_time / player.animation.get_animation(_sheath_clip).length, 0.0, 1.0)
+			hand_katana.transform = HAND_KATANA_GUARD.interpolate_with(HAND_KATANA_SHEATHED, progress)
 
 func _end_sheath() -> void:
 	_sheath_clip = ""
