@@ -2287,6 +2287,11 @@ func _combo_pitch() -> float:
 ## machado), mais grave e forte no golpe pesado. A faca mantém os contatos da V1.
 func _melee_hit_sound(id: String, actor: Node3D, point: Vector3, amount: float) -> void:
 	if id == "katana":
+		# Lâmina de aço em carne: o corte úmido por baixo e o raspar do aço por cima, mais baixo.
+		if not katana_style().saber and _impact_material(actor) == "flesh":
+			_play_stream(KATANA_AUDIO.cut(_rng.randi_range(0, 2)), point, -3.0, _rng.randf_range(0.94, 1.06))
+			_play_stream(AUDIO.knife_sample(_rng.randi_range(0, 2)), point, -14.0, 0.75)
+			return
 		_play_stream(KATANA_AUDIO.stream("swing") if katana_style().saber else AUDIO.knife_sample(_rng.randi_range(0, 2)), point, -7.0, 0.7)
 		return
 	if id == "knife" or _impact_material(actor) != "flesh" or not MELEE_HIT_KIND.has(id):
