@@ -72,6 +72,8 @@ static func apply_fall(actor: Node3D, visual: Node3D, impact := Vector3.ZERO) ->
 	# BodyFlight3D (arremesso por carro/explosão) é dono da pose até pousar.
 	if actor.has_meta("street_pose_owned"): return
 	_cancel_hit(actor)
+	# Civis e policiais caem com os clipes de morte do Mixamo; sem a biblioteca, segue a queda procedural.
+	if preload("res://gameplay/MixamoDeath.gd").play(actor, visual, impact): return
 	var impact_flat := Vector3(impact.x, 0.0, impact.z)
 	var motion := Vector3.ZERO
 	if actor is CharacterBody3D:

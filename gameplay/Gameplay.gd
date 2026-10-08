@@ -993,13 +993,20 @@ func _update_back_katana(id: String) -> void:
 func _sheath_drawing() -> bool:
 	return _sheath_kind == "draw" and _sheath_clip != ""
 
+## A katana usa o clipe da greatsword do Mixamo ("Sheath A Great Sword 1"): ele parte da guarda de duas
+## mãos e termina com a espada nas costas. Guardar toca para frente; sacar toca ao contrário e termina
+## em duas mãos, que é a pose de combate da katana. Tocado a 0,6× porque o clipe tem só 0,73 s.
+const SHEATH_RATE := 0.6
+
 func _start_sheath(kind: String) -> void:
-	var clip := "mixsword/withdraw_katana" if kind == "draw" else "mixsword/sheathe_katana"
 	if not is_instance_valid(player) or not "animation" in player or player.animation == null: return
-	if not player.animation.has_animation(clip): return
+	var clip := "mixsword/sheathe_greatsword"
+	if not player.animation.has_animation(clip):
+		clip = "mixsword/withdraw_katana" if kind == "draw" else "mixsword/sheathe_katana"
+		if not player.animation.has_animation(clip): return
 	_sheath_kind = kind
 	_sheath_clip = clip
-	_sheath_length = player.animation.get_animation(clip).length
+	_sheath_length = player.animation.get_animation(clip).length / SHEATH_RATE
 	_sheath_age = 0.0
 
 func _update_sheath(delta: float) -> void:
@@ -1012,8 +1019,12 @@ func _update_sheath(delta: float) -> void:
 		_end_sheath()
 		return
 	if "combat_clip" in player:
+		var clip_time := _sheath_age * SHEATH_RATE
+		# Só o clipe da greatsword vai ao contrário ao sacar; os de reserva já têm o sentido certo.
+		if _sheath_kind == "draw" and _sheath_clip.ends_with("sheathe_greatsword"):
+			clip_time = player.animation.get_animation(_sheath_clip).length - clip_time
 		player.combat_clip = _sheath_clip
-		player.combat_clip_time = _sheath_age
+		player.combat_clip_time = maxf(clip_time, 0.0)
 
 func _end_sheath() -> void:
 	_sheath_clip = ""
