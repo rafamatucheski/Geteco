@@ -19,7 +19,7 @@ static func profile(id: String, identity: String) -> Vector2i:
 	if id not in CIVILIAN or identity.is_empty(): return Vector2i.ZERO
 	var value := (id + ":usage:" + identity).hash()
 	var roll := value % 10
-	return Vector2i(0 if roll < 4 else (1 if roll < 8 else 2), ((value / 10) % 4) if id in BEDS else 0)
+	return Vector2i(0 if roll < 4 else (1 if roll < 8 else 2), (int(float(value) / 10.0) % 4) if id in BEDS else 0)
 
 static func apply(model: Node3D, id: String, identity: String, paints: Array[StandardMaterial3D]) -> void:
 	if not enabled: return
@@ -74,7 +74,7 @@ static func _texture(level: int) -> ImageTexture:
 	for scratch in (14 if level == 1 else 30):
 		var start := Vector2i(rng.randi_range(2, 110), rng.randi_range(2, 125))
 		for step in rng.randi_range(3, 15):
-			var at := start + Vector2i(step, int(step / 7))
+			var at := start + Vector2i(step, floori(float(step) / 7.0))
 			image.set_pixel(at.x, at.y, Color(.48, .46, .41, rng.randf_range(.3, .72)))
 	image.generate_mipmaps()
 	var texture := ImageTexture.create_from_image(image)

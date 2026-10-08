@@ -34,7 +34,8 @@ func build(authored_course) -> void:
 			_box(gate,Vector3(side*4.4,.12,0),Vector3(.3,.24,.3),dark)
 		if i == course.gate_offsets.size()-1:
 			for cell in 16:
-				_box(gate,Vector3(-3.75+float(cell%8)*1.075,.006,float(cell/8)*.3),Vector3(1.075,.012,.3),white if cell%2 == (cell/8)%2 else dark)
+				var row := floori(float(cell)/8.0)
+				_box(gate,Vector3(-3.75+float(cell%8)*1.075,.006,float(row)*.3),Vector3(1.075,.012,.3),white if cell%2 == row%2 else dark)
 
 func show_checkpoint(index: int, active: bool) -> void:
 	for i in gates.size(): gates[i].visible = active and i >= index and i <= index+1

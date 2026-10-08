@@ -1,4 +1,5 @@
 extends PanelContainer
+signal rage_requested
 const STYLE := preload("res://ui/GameStyle.gd")
 const GLYPH := preload("res://ui/hud/HUDGlyph.gd")
 var health_bar: ProgressBar
@@ -7,6 +8,9 @@ var cold_bar: ProgressBar
 var cold_row: HBoxContainer
 var cold_icon: Control
 var cold_label: Label
+var rage_bar: ProgressBar
+var rage_row: HBoxContainer
+var rage_action: Button
 var _values := {}
 var _tweens := {}
 var _cold_hold := 0.0
@@ -23,6 +27,23 @@ func _ready() -> void:
 	cold_bar = _row(column,"cold",STYLE.COLD)
 	cold_row = cold_bar.get_parent(); cold_icon=cold_row.get_child(0); cold_row.hide(); cold_row.modulate.a=0
 	cold_label = STYLE.label("",14,STYLE.TEXT); cold_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT; column.add_child(cold_label); cold_label.hide()
+	rage_bar = _row(column,"rage",Color("e35469"))
+	rage_row = rage_bar.get_parent(); rage_row.hide()
+	rage_action = Button.new(); rage_action.name="ActivateRage"; rage_action.text="RAGE"; rage_action.flat=true
+	rage_action.focus_mode=Control.FOCUS_NONE; rage_action.add_theme_font_size_override("font_size",12)
+	rage_action.pressed.connect(func(): rage_requested.emit())
+	column.add_child(rage_action); rage_action.hide()
+
+func update_rage(status: Dictionary, input_hint: String) -> void:
+	var unlocked := bool(status.get("unlocked", false))
+	rage_row.visible = unlocked
+	rage_action.visible = unlocked
+	if not unlocked: return
+	var active := bool(status.get("active", false))
+	rage_bar.value = float(status.get("seconds_left", 0.0)) / 15.0 * 100.0 if active else float(status.get("charge", 0.0))
+	var rage_ready := bool(status.get("ready", false))
+	rage_action.disabled = not rage_ready
+	rage_action.text = "RAGE · %.1fs" % float(status.get("seconds_left", 0.0)) if active else ((input_hint + " · RAGE") if rage_ready else "RAGE · %d%%" % roundi(float(status.get("charge", 0.0))))
 func _row(column: VBoxContainer, symbol: String, color: Color) -> ProgressBar:
 	var row := HBoxContainer.new(); row.add_theme_constant_override("separation",10); column.add_child(row)
 	row.add_child(GLYPH.new(symbol,color))

@@ -3,6 +3,7 @@ const PROFILE := preload("res://audio/VehicleEngineProfile.gd")
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const CRASH := preload("res://audio/VehicleCrashAudio.gd")
 var failures: Array[String] = []
+var checks := 0
 
 func _initialize() -> void:
 	call_deferred("run")
@@ -34,26 +35,43 @@ func run() -> void:
 	tires._update_skid_audio(false, 0.0, 0.0)
 	_check(not tires.skid_audio.playing, "skid WAV stops when grip returns")
 	CRASH.play(car, null, car.global_position, 200.0)
+	# Contact voices now live in the shared bounded pool, not beside the car.
+	var pool = scene.get_node_or_null("ContactAudio")
 	var crash_playing := false
-	for child in scene.get_children():
-		if child is AudioStreamPlayer3D and child.playing and child.stream is AudioStreamWAV:
-			crash_playing = true
+	if pool != null:
+		for voice in pool.voices:
+			if voice.playing and voice.stream is AudioStreamWAV:
+				crash_playing = true
 	_check(crash_playing, "recorded V1 crash take plays in V2")
 	var second_car := VEHICLE.new()
 	second_car.archetype = "nimbus_minivan"
 	scene.add_child(second_car)
 	second_car.set_physics_process(false)
-	car.set_meta("crash_audio_ms", -999999)
+	var before: int = pool.played_count if pool != null else 0
 	CRASH.play(car, second_car, car.global_position, 200.0)
+	_check(pool != null and pool.played_count == before,
+		"same-source collision is suppressed during source cooldown")
+	# The pool clock uses physics ticks. Let the source and rejected contact
+	# release naturally; resetting the old crash_audio_ms metadata does nothing.
+	var release_frames := ceili(maxf(CRASH.SOURCE_COOLDOWN, CRASH.CONTACT_RELEASE)
+		* Engine.physics_ticks_per_second) + 1
+	for frame in release_frames: await physics_frame
+	CRASH.play(car, second_car, car.global_position, 200.0)
+	_check(pool != null and pool.played_count == before + 1,
+		"new collision plays after source cooldown and contact release")
 	var metal_contact := false
-	for child in scene.get_children():
-		if child is AudioStreamPlayer3D and child.stream != null and "metal_" in child.stream.resource_path:
-			metal_contact = true
+	if pool != null:
+		for voice in pool.voices:
+			if voice.playing and voice.stream != null and "metal_" in voice.stream.resource_path:
+				metal_contact = true
 	_check(metal_contact, "vehicle-to-vehicle collision uses V1 metal take")
+	CRASH.play(car, second_car, car.global_position, 200.0)
+	_check(pool != null and pool.played_count == before + 1,
+		"repeated collision does not stack contact voices")
 	scene.queue_free()
 	await process_frame
 	if failures.is_empty():
-		print("VEHICLE_SOUND_MIGRATION: PASS")
+		print("VEHICLE_SOUND_MIGRATION: PASS checks=", checks)
 		quit(0)
 	else:
 		for failure in failures: push_error(failure)
@@ -61,4 +79,5 @@ func run() -> void:
 		quit(1)
 
 func _check(ok: bool, label: String) -> void:
+	checks += 1
 	if not ok: failures.append(label)

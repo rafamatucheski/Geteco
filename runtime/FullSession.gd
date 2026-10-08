@@ -53,6 +53,9 @@ var motocross
 var skate
 var services
 var storefronts
+var wine
+var upside_world: Node
+var arcade
 var robberies
 var arrival
 var garage_rewards
@@ -68,12 +71,17 @@ var dialogue_card: DIALOGUE_CARD
 var speech_caption: DIALOGUE_CAPTION
 var speech_active := false
 var residence_services
+var cats
 var mountain_progression
 var mountain_activities
 var cold
 var passenger_transport
+var railway
+var railway_world
+var regional_coach
 var urban_operations
 var port_container_loot
+var armored_transport
 var field_inventory
 var action_serial := 0
 var rebinding_action := ""
@@ -91,25 +99,41 @@ var sewer_hatch: Node3D
 var sewer_entry_origin := Vector3.ZERO
 var weapon_shop_entrance: Node
 var special_place_entrance: Node
+var building_entrance: Node
+var building_social: Node
+var service_roofs: Node
+var coastal_lookout: Node
+var amusement_park: Node
+var fishing: Node
+var fishing_runtime: Node
 var door_transition: CanvasLayer
 var last_save_error := ""
 var _checkpoint_retry: Timer
 
 func _uses_walkup_access(id: String) -> bool:
-	return (weapon_shop_entrance != null and weapon_shop_entrance.handles_place(id)) or (special_place_entrance != null and special_place_entrance.handles_place(id))
+	return (weapon_shop_entrance != null and weapon_shop_entrance.handles_place(id)) or (special_place_entrance != null and special_place_entrance.handles_place(id)) or (building_entrance != null and building_entrance.handles_place(id))
 
 func _arrival_sequence_blocked() -> bool:
 	return arrival != null and (arrival.controls_locked or arrival.phase == "opening")
 
 func is_transition_blocked() -> bool:
+	if regional_coach != null and regional_coach.busy(): return true
+	if railway != null and railway.busy(): return true
 	return not transition_kind.is_empty() or vehicle_transition_busy or rescue_pending or arrest_pending or respawn_busy or (jessica != null and jessica.riding) or (controller != null and controller.travel_busy) or _arrival_sequence_blocked()
 
 func has_position_transition() -> bool:
+	if regional_coach != null and (regional_coach.landing or regional_coach._boarding): return true
+	if railway != null and railway.landing: return true
 	# A guided passenger ride locks input but still needs real floor, traffic
 	# and streaming. Only admission/recovery owns an independent focus point.
 	return not transition_kind.is_empty() or vehicle_transition_busy or rescue_pending or arrest_pending or respawn_busy or (controller != null and controller.travel_busy) or (arrival != null and arrival.controls_locked and not arrival.riding) or (arrival != null and arrival.phase == "opening")
 
 func blocks_driving_change() -> bool:
+	if amusement_park != null and amusement_park.active: return true
+	if fishing != null and fishing.controls_locked(): return true
+	if coastal_lookout != null and coastal_lookout.active: return true
+	if building_entrance != null and building_entrance.falling: return true
+	if service_roofs != null and service_roofs.is_active(): return true
 	if desert != null and desert.busy(): return true
 	return is_transition_blocked() or not ready_for_play or (jessica != null and jessica.riding) or (motocross != null and motocross.mounted) or (skate != null and skate.controls_locked())
 
@@ -118,6 +142,12 @@ func allows_saved_driver_animation() -> bool:
 
 func _begin_transition(kind: String, _vehicle := false) -> int:
 	if not transition_kind.is_empty() or (controller != null and controller.travel_busy): return -1
+	if arcade != null: arcade.close()
+	if fishing != null: fishing.cancel_attempt("Pesca encerrada.")
+	if coastal_lookout != null: coastal_lookout.leave()
+	if amusement_park != null:
+		amusement_park.leave()
+		if amusement_park.active: return -1
 	if mountain_activities != null: mountain_activities.cancel_attempt()
 	transition_generation += 1
 	transition_kind = kind
@@ -203,6 +233,7 @@ func _restore_transition_player_lock(previous: bool, token: int) -> void:
 
 func _discard_place_candidate(candidate: Node3D, owned: bool) -> void:
 	if not is_instance_valid(candidate): return
+	if building_entrance != null and candidate == building_entrance.staged: building_entrance.departed(candidate)
 	if candidate == world.maciota_place: candidate.set_interior_active(false)
 	elif owned: candidate.queue_free()
 
@@ -456,6 +487,23 @@ func _ready() -> void:
 	special_place_entrance = preload("res://runtime/SpecialPlaceEntrance.gd").new()
 	special_place_entrance.session = self
 	add_child(special_place_entrance)
+	building_entrance = preload("res://runtime/HarborBuildingRuntime.gd").new()
+	building_entrance.session = self
+	add_child(building_entrance)
+	building_social = preload("res://runtime/BuildingSocialInteraction.gd").new()
+	building_social.session = self
+	add_child(building_social)
+	service_roofs = preload("res://runtime/HarborServiceRoofRuntime.gd").new()
+	service_roofs.session = self
+	add_child(service_roofs)
+	if not Engine.get_meta("coastal_lookout_baseline",false):
+		coastal_lookout = preload("res://runtime/coastal_lookout/CoastalLookoutRuntime.gd").new()
+		coastal_lookout.configure(world)
+		add_child(coastal_lookout)
+	if not Engine.get_meta("amusement_park_baseline",false):
+		amusement_park = preload("res://runtime/amusement_park/AmusementParkRuntime.gd").new()
+		amusement_park.configure(self)
+		add_child(amusement_park)
 	anchor = Node3D.new()
 	world.add_child(anchor)
 	objective = _label(Vector2(530,24),20)
@@ -513,6 +561,10 @@ func _ready() -> void:
 	residence_services = preload("res://runtime/ResidenceServices.gd").new()
 	world.add_child(residence_services)
 	residence_services.configure(self)
+	if not Engine.get_meta("cats_baseline",false):
+		cats = preload("res://runtime/cats/CatRuntime.gd").new()
+		world.add_child(cats)
+		cats.configure(self)
 	mountain_progression = preload("res://activities/MountainProgression.gd").new()
 	world.add_child(mountain_progression)
 	mountain_progression.configure(self)
@@ -527,6 +579,18 @@ func _ready() -> void:
 	storefronts = preload("res://runtime/HarborStorefronts.gd").new()
 	world.hud.add_child(storefronts)
 	storefronts.configure(self)
+	if not Engine.get_meta("curitiba_cellar_baseline",false):
+		wine = preload("res://gameplay/wine/WineRuntime.gd").new()
+		world.add_child(wine)
+		wine.configure(self)
+	if not Engine.get_meta("upside_world_baseline",false):
+		upside_world = preload("res://runtime/upside_world/UpsideWorldRuntime.gd").new()
+		upside_world.configure(self)
+		add_child(upside_world)
+	if not Engine.get_meta("arcade_baseline",false):
+		arcade = preload("res://activities/arcade/ArcadeRuntime.gd").new()
+		world.add_child(arcade)
+		arcade.configure(self)
 	robberies = preload("res://runtime/Robberies.gd").new()
 	if state.world_state.has("robberies") and not robberies.restore_snapshot(state.world_state.robberies): controller.save_invalid = true
 	world.add_child(robberies)
@@ -576,14 +640,43 @@ func _ready() -> void:
 	port_container_loot = preload("res://gameplay/urban_v1/PortContainerLoot.gd").new()
 	port_container_loot.configure(self)
 	world.add_child(port_container_loot)
+	armored_transport = preload("res://gameplay/armored/ArmoredTransport.gd").new()
+	armored_transport.configure(self)
+	world.add_child(armored_transport)
 	field_inventory = preload("res://systems/inventory/FieldInventoryRuntime.gd").new()
 	world.add_child(field_inventory)
 	field_inventory.configure(self)
+	if not Engine.get_meta("fishing_baseline",false):
+		fishing = preload("res://activities/fishing/Fishing.gd").new()
+		world.add_child(fishing)
+		fishing.configure(self)
+		fishing_runtime = preload("res://runtime/FishingRuntime.gd").new()
+		fishing_runtime.session = self
+		add_child(fishing_runtime)
 	if not world.get_meta("skip_cold",false):
 		cold = preload("res://runtime/ColdSurvival.gd").new()
 		cold.configure(self)
 		if state.world_state.has("cold") and not cold.restore(state.world_state.cold): controller.save_invalid = true
 		world.add_child(cold)
+	if "--railway-baseline" not in OS.get_cmdline_user_args():
+		railway_world = preload("res://world/railway/RailwayWorld.gd").new()
+		railway_world.configure(controller)
+		world.add_child(railway_world)
+		railway = preload("res://runtime/railway/RailwayTransit.gd").new()
+		railway.name = "RailwayTransit"
+		railway.configure(self)
+		world.add_child(railway)
+		var railway_ui := preload("res://ui/railway/RailwayUI.gd").new()
+		world.add_child(railway_ui)
+		railway_ui.configure(railway)
+	regional_coach = preload("res://runtime/regional/RegionalCoachTransit.gd").new()
+	regional_coach.name = "RegionalCoachTransit"
+	regional_coach.configure(self)
+	world.add_child(regional_coach)
+	var coach_ui := preload("res://ui/railway/RailwayUI.gd").new()
+	world.add_child(coach_ui)
+	coach_ui.name = "RegionalCoachUI"
+	coach_ui.configure(regional_coach)
 
 func _label(point: Vector2,size_value: int) -> Label:
 	var result := Label.new()
@@ -664,6 +757,10 @@ func restore_location() -> void:
 		if pedestrian.get("region","") == state.region_id:
 			var coordinates: Array = pedestrian.position
 			point = Vector3(coordinates[0],coordinates[1],coordinates[2])-Vector3.UP*.08
+		var saved_roof: Dictionary = state.world_state.get("harbor_service_roof",{})
+		if not saved_roof.is_empty() and str(saved_roof.get("place","")) == "":
+			var roof_return: Array = saved_roof["return"]
+			point = Vector3(roof_return[0],roof_return[1],roof_return[2])-Vector3.UP*.08
 		var seated: Dictionary = _saved_garage_driver()
 		if not seated.is_empty():
 			var size: Array = preload("res://runtime/FleetCatalog.gd").spec(seated.archetype).bounds_size
@@ -690,6 +787,7 @@ func restore_location() -> void:
 	elif state.campaign.active_id == "cobra_contact":
 		mission_world.begin_tow_job({"story":true,"kind":"local"})
 	await _restore_outdoor_driver()
+	if service_roofs != null and not await service_roofs.restore_saved(): restore_blocked = true
 	ready_for_play = true
 	if personal_car != null: personal_car.refresh()
 	if activities != null: activities.refresh_achievements()
@@ -798,7 +896,8 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 		destination = candidate_room.interior_spawn
 		candidate_room.set_interior_active(true)
 	else:
-		candidate_room = PLACES.create_place(id)
+		var embedded_building: bool = building_entrance != null and building_entrance.handles_place(id)
+		candidate_room = await building_entrance.prepare_room(id,autosave) if embedded_building else PLACES.create_place(id)
 		if candidate_room == null:
 			if SEWER_NETWORK.is_manhole(id) and sewer_entry_origin.is_finite():
 				world.player.teleport(sewer_entry_origin)
@@ -808,13 +907,16 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 			_finish_transition(token)
 			return false
 		owns_candidate = true
-		if candidate_room.has_method("prepare_session"): candidate_room.prepare_session(self,autosave)
-		candidate_room.position = Vector3(0,0,-2400)
-		world.add_child(candidate_room)
+		if not embedded_building:
+			if candidate_room.has_method("prepare_session"): candidate_room.prepare_session(self,autosave)
+			candidate_room.position = Vector3(0,0,-2400)
+			world.add_child(candidate_room)
 		candidate_return = candidate_room.definition.return_position
 		for entry in controller.region.entries:
 			if entry.id == local_access_id: candidate_return = entry.return_position
 		destination = candidate_room.spawn_position
+		if embedded_building and building_entrance.walking_admission:
+			destination = world.player.global_position-Vector3.UP*.04
 	controller.region.set_focus(candidate_return)
 	for i in 2:
 		await get_tree().physics_frame
@@ -839,6 +941,26 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 		_finish_transition(token)
 		show_message("Entrada bloqueada.")
 		return false
+	# Bueiro: Dante anda até a borda, a tampa desliza e ele desce a escada antes do véu cobrir a troca.
+	if SEWER_NETWORK.is_manhole(id) and is_instance_valid(sewer_hatch):
+		var descent: Node = SEWER_DESCENT.new()
+		descent.setup(world.player, sewer_hatch, func() -> bool: return _owns_transition(token) and world.gameplay.health > 0)
+		if descent.can_run():
+			add_child(descent)
+			var descended: bool = await descent.descend()
+			descent.queue_free()
+			if not descended:
+				_discard_place_candidate(candidate_room,owns_candidate)
+				controller.region.set_focus(world.player.global_position)
+				if sewer_entry_origin.is_finite():
+					world.player.teleport(sewer_entry_origin)
+					_close_sewer_hatch_for_transition(token)
+					sewer_entry_origin = Vector3.ZERO
+				_restore_transition_player_lock(was_player_locked,token)
+				_finish_transition(token)
+				return false
+		else:
+			descent.free()
 	# Lojas com acesso a pé têm a própria câmera; nas demais portas a sala já foi
 	# admitida e o véu cobre só a troca, entre a aproximação e a revelação.
 	var animated := autosave and not _uses_walkup_access(id)
@@ -889,47 +1011,99 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 	_restore_transition_player_lock(was_player_locked,token)
 	if id != "maciota":
 		_install_service_npc()
-	# Bueiro: Dante anda até a borda, a tampa desliza e ele desce a escada antes do véu cobrir a troca.
-	if SEWER_NETWORK.is_manhole(id) and is_instance_valid(sewer_hatch):
-		var descent: Node = SEWER_DESCENT.new()
-		descent.setup(world.player, sewer_hatch, func() -> bool: return _owns_transition(token) and world.gameplay.health > 0)
-		if descent.can_run():
-			add_child(descent)
-			var descended: bool = await descent.descend()
-			descent.queue_free()
-			if not descended:
-				_discard_place_candidate(candidate_room,owns_candidate)
-				controller.region.set_focus(world.player.global_position)
-				if sewer_entry_origin.is_finite():
-					world.player.teleport(sewer_entry_origin)
-					_close_sewer_hatch_for_transition(token)
-					sewer_entry_origin = Vector3.ZERO
-				_restore_transition_player_lock(was_player_locked,token)
-				_finish_transition(token)
-				return false
-		else:
-			descent.free()
 		_update_reward()
 	if room.has_method("on_session_entered"): room.on_session_entered(self)
+	if building_entrance != null and building_entrance.handles_place(id): building_entrance.entered()
 	_finish_transition(token)
 	arrival.on_location_changed()
 	garage_rewards.on_location_changed()
 	_refresh_routine_context()
 	sync_dispatch_location()
 	if autosave: save_game()
+	if upside_world != null: upside_world.arm_entry(id, not autosave)
+	return true
+
+func complete_upside_return(provider: Node, illusion_token: int) -> bool:
+	# The illusion owns its curtain and transition; this adapter owns real-world
+	# admission and reuses the ordinary room/NPC/camera departure transaction.
+	if provider != upside_world or not provider.owns(illusion_token) or state.place_id != "harbor_haunted_house": return false
+	var original_return := return_point
+	var trace := {"result":"searching","attempts":[]}
+	provider.set_meta("return_trace",trace)
+	for candidate: Vector3 in provider.return_candidates():
+		if not candidate.is_finite() or candidate.distance_to(original_return) < 35.0: continue
+		return_point = candidate - Vector3.UP * .08
+		controller.region.set_focus(candidate)
+		controller.region.prepare_collision_at(candidate)
+		await get_tree().physics_frame
+		await get_tree().physics_frame
+		if not provider.owns(illusion_token) or world.gameplay.health <= 0 or rescue_pending or arrest_pending: return false
+		var attempt := {"point":str(candidate),"clear":_upside_landing_clear(candidate)}
+		trace.attempts.append(attempt)
+		if not attempt.clear: continue
+		if provider._released:
+			if not provider.prepare_departure_retry(illusion_token): return false
+		elif not provider.release_for_return(illusion_token):
+			trace.result = "room_blocked"
+			return_point = original_return
+			controller.region.set_focus(original_return)
+			return false
+		var departed: bool = await leave_place()
+		attempt["departed"] = departed
+		attempt["place_after"] = state.place_id
+		attempt["generation"] = transition_generation
+		if departed:
+			if not provider.finish_return(illusion_token):
+				trace.result = "completion_interrupted"
+				return false
+			trace.result = "returned"
+			close_menu()
+			save_game()
+			return true
+		# A pedestrian or newly streamed solid may occupy the chosen pavement
+		# during the normal door fade. Keep our curtain and try another candidate;
+		# aborting here used to strand the living visitor drunk inside Umbra.
+		if not provider.owns(illusion_token) or state.place_id != "harbor_haunted_house" or world.gameplay.health <= 0 or rescue_pending or arrest_pending or not transition_kind.is_empty(): return false
+		world.player.input_locked = true
+	trace.result = "all_candidates_blocked"
+	return_point = original_return
+	controller.region.set_focus(original_return)
+	# A refused departure already returned our transition token. Release only
+	# our own remaining input lock before the runtime cancels on the safe room.
+	if provider._released and provider.owns(illusion_token) and transition_kind.is_empty(): close_menu()
+	return false
+
+func _upside_landing_clear(point: Vector3) -> bool:
+	# Authored public pavements only, full capsule, a flat supporting surface,
+	# and a margin against nearby or approaching live vehicles.
+	if not position_clear(point): return false
+	var query := PhysicsRayQueryParameters3D.create(point + Vector3.UP * .25, point - Vector3.UP * .45, 1)
+	var ground: Dictionary = world.get_world_3d().direct_space_state.intersect_ray(query)
+	if ground.is_empty() or ground.normal.y < .85 or absf(ground.position.y - point.y) > .25: return false
+	for vehicle in controller.vehicles:
+		if not is_instance_valid(vehicle): continue
+		var offset: Vector3 = vehicle.global_position - point
+		offset.y = 0.0
+		var future: Vector3 = vehicle.global_position + vehicle.velocity * .75 - point
+		future.y = 0.0
+		if offset.length_squared() < 12.25 or future.length_squared() < 12.25: return false
 	return true
 
 func leave_place() -> bool:
 	if is_transition_blocked() or state.place_id.is_empty() or not is_instance_valid(room): return false
+	if service_roofs != null and service_roofs.is_active(): service_roofs.clear(true)
 	var token := _begin_transition("leave_place")
 	if token < 0: return false
 	var leaving_room: Node3D = room
 	var was_player_locked: bool = world.player.input_locked
+	var was_sewer_exit: bool = SEWER_NETWORK.is_manhole(state.place_id)
 	if SEWER_NETWORK.is_manhole(state.place_id):
 		sewer_hatch = _find_sewer_hatch(state.place_id)
 		if is_instance_valid(sewer_hatch):
 			world.player.input_locked = true
-	var leaving_return := _clear_return_point(state.place_id, return_point)
+	var continuous_departure: bool = building_entrance != null and building_entrance.handles_place(state.place_id) and building_entrance.walking_departure
+	var leaving_return: Vector3 = world.player.global_position-Vector3.UP*.08 if continuous_departure else _clear_return_point(state.place_id, return_point)
+	if continuous_departure and not position_clear(world.player.global_position): leaving_return = Vector3.INF
 	world.player.input_locked = true
 	if not leaving_return.is_finite():
 		if is_instance_valid(sewer_hatch):
@@ -960,6 +1134,7 @@ func leave_place() -> bool:
 	controller.region.set_focus(leaving_return)
 	if state.place_id=="harbor_bank": robberies.bank_departed()
 	if state.place_id=="remote_coal_mine" and mining != null and is_instance_valid(mining.raid): mining.raid.departed()
+	if building_entrance != null: building_entrance.departed(leaving_room)
 	if leaving_room == world.maciota_place: leaving_room.set_interior_active(false)
 	else: leaving_room.queue_free()
 	_clear_service_npcs()
@@ -987,12 +1162,18 @@ func leave_place() -> bool:
 	world.camera.target_size = saved_size
 	world.camera.locked = false
 	world.camera.initialized = false
-	var was_sewer_exit: bool = SEWER_NETWORK.is_manhole(state.place_id)
 	world.camera._process(1)
 	if animated:
 		world.camera.reveal_exterior(world.player.global_position, maxf(8.0, saved_size * 0.78), saved_size, 0.42)
 		await door_transition.fade_to(0.0, 0.42)
 		world.camera.clear_store_focus()
+	if ascent != null:
+		await ascent.ascend(leaving_return)
+		ascent.queue_free()
+		if is_instance_valid(sewer_hatch):
+			_close_sewer_hatch_after_exit(sewer_hatch)
+			sewer_hatch = null
+		world.player.teleport(leaving_return+Vector3.UP*.08)
 	world.player.input_locked = was_player_locked
 	_finish_transition(token)
 	close_menu()
@@ -1028,6 +1209,10 @@ func _close_sewer_hatch_after_exit(hatch: Node3D) -> void:
 
 
 func _clear_return_point(place_id: String, desired: Vector3) -> Vector3:
+	if upside_world != null and upside_world.busy() and upside_world._released and place_id == "harbor_haunted_house":
+		# The return belongs to a different facade. Revalidate its exact authored
+		# pavement, including live vehicles, instead of offsetting from Umbra.
+		return desired if _upside_landing_clear(desired + Vector3.UP * .08) else Vector3.INF
 	# Keep the authored V1 return first. A streamed pedestrian or a facade edge
 	# must not trap the player inside forever, so test a few small points farther
 	# along the same exterior approach before refusing the transition.
@@ -1051,13 +1236,6 @@ func _clear_return_point(place_id: String, desired: Vector3) -> Vector3:
 	for offset: Vector3 in definition.get("return_clearance_offsets",[]):
 		var candidate: Vector3 = desired + offset
 		if position_clear(candidate + Vector3.UP * .08): return candidate
-	if ascent != null:
-		await ascent.ascend(leaving_return)
-		ascent.queue_free()
-		if is_instance_valid(sewer_hatch):
-			_close_sewer_hatch_after_exit(sewer_hatch)
-			sewer_hatch = null
-		world.player.teleport(leaving_return+Vector3.UP*.08)
 	return Vector3.INF
 
 func sync_dispatch_location() -> void:
@@ -1141,7 +1319,36 @@ func _clear_service_npcs() -> void:
 	room_npc = null
 
 func nearest() -> Dictionary:
+	if upside_world != null and upside_world.busy(): return {}
 	if rescue_pending or arrest_pending or world.gameplay.health <= 0: return {}
+	if arcade != null:
+		var arcade_action: Dictionary = arcade.nearest_action()
+		if not arcade_action.is_empty(): return arcade_action
+	if cats != null:
+		var cat_action: Dictionary = cats.nearest_action()
+		if not cat_action.is_empty(): return cat_action
+	if amusement_park != null:
+		var park_action: Dictionary = amusement_park.nearest_action()
+		if not park_action.is_empty(): return park_action
+	if fishing != null:
+		var fishing_action: Dictionary = fishing.nearest_action()
+		if not fishing_action.is_empty(): return fishing_action
+	if coastal_lookout != null:
+		var lookout_action: Dictionary = coastal_lookout.nearest_action()
+		if not lookout_action.is_empty(): return lookout_action
+	if regional_coach != null:
+		var coach_action: Dictionary = regional_coach.nearest_action()
+		if not coach_action.is_empty(): return coach_action
+	if building_entrance != null and building_entrance.falling: return {}
+	if service_roofs != null:
+		var roof_action: Dictionary = service_roofs.nearest_action()
+		if not roof_action.is_empty() or service_roofs.is_active(): return roof_action
+	if railway != null:
+		var railway_action: Dictionary = railway.nearest_action()
+		if not railway_action.is_empty(): return railway_action
+	if armored_transport != null:
+		var armored_action: Dictionary = armored_transport.nearest_action()
+		if not armored_action.is_empty(): return armored_action
 	if mountain_activities != null and mountain_activities.busy():
 		var pack_active_action: Dictionary = mountain_activities.nearest_action()
 		if not pack_active_action.is_empty(): return pack_active_action
@@ -1173,11 +1380,13 @@ func nearest() -> Dictionary:
 		if not jessica_action.is_empty(): return jessica_action
 	var arrival_action: Dictionary = arrival.nearest_action()
 	if is_instance_valid(room) and room.has_method("nearest_action"):
+		var rooftop_action: Dictionary = building_entrance.nearest_action() if building_entrance != null else {}
+		if not rooftop_action.is_empty(): return rooftop_action
 		var room_action: Dictionary = room.nearest_action()
 		if not room_action.is_empty(): return room_action
 	if not arrival_action.is_empty(): return arrival_action
 	if not world.driving.occupied and not state.place_id.is_empty() and is_instance_valid(room):
-		if not _uses_walkup_access(state.place_id) and world.player.position.distance_to(room.exit_position) < 1.45: return {"id":"exit","label":"Sair","silent":preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").is_building(state.place_id)}
+		if not _uses_walkup_access(state.place_id) and world.player.position.distance_to(room.exit_position) < 1.45: return {"id":"exit","label":"Sair","silent":state.place_id in ["harbor_arcade","harbor_curitiba_cellar","harbor_haunted_house"] or preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").is_building(state.place_id)}
 	var personal_action: Dictionary = personal_car.nearest_action()
 	if not personal_action.is_empty(): return personal_action
 	var residence_action: Dictionary = residence_services.nearest_action()
@@ -1194,11 +1403,14 @@ func nearest() -> Dictionary:
 		return vehicle_action if not vehicle_action.is_empty() else activities.nearest_action()
 	var point: Vector3 = world.player.position
 	if not state.place_id.is_empty():
-		if not _uses_walkup_access(state.place_id) and point.distance_to(room.exit_position) < 1.45: return {"id":"exit","label":"Sair","silent":preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").is_building(state.place_id)}
+		if not _uses_walkup_access(state.place_id) and point.distance_to(room.exit_position) < 1.45: return {"id":"exit","label":"Sair","silent":state.place_id in ["harbor_arcade","harbor_curitiba_cellar","harbor_haunted_house"] or preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").is_building(state.place_id)}
 		var robbery_action: Dictionary = robberies.nearest_action()
 		if not robbery_action.is_empty(): return robbery_action
 		var original_action: Dictionary = services.nearest_action()
 		if not original_action.is_empty() and not _service_threatened(str(original_action.get("target", ""))): return original_action
+		if wine != null:
+			var wine_action: Dictionary = wine.nearest_action()
+			if not wine_action.is_empty(): return wine_action
 		var branch_urban_action: Dictionary = urban_operations.nearest_action() if urban_operations != null else {}
 		if not branch_urban_action.is_empty(): return branch_urban_action
 		var interior_routine_action: Dictionary = _routine_director().nearest_action() if _routine_director() != null else {}
@@ -1219,6 +1431,9 @@ func nearest() -> Dictionary:
 			# caixa do assalto. Não exponha um "Atender" que não produz resultado.
 			if primary_available and not _service_threatened() and point.distance_to(service_point) < 1.5:
 				return {"id":"service","label":"Comprar" if service == "supermarket" else "Falar com Vance" if state.place_id in ["harbor_ammunation", "mountain_gunshop"] else "Atender"}
+		if building_social != null:
+			var social_action: Dictionary = building_social.nearest_action()
+			if not social_action.is_empty(): return social_action
 		return {}
 	var activity_action: Dictionary = activities.nearest_action()
 	if not activity_action.is_empty(): return activity_action
@@ -1232,7 +1447,7 @@ func nearest() -> Dictionary:
 			return {"id":"enter","place":entry.place_id,"access":entry.id,"label":"","silent":true}
 		if _uses_walkup_access(entry.place_id): continue
 		if point.distance_to(entry.position) < 1.5:
-			return {"id":"enter","place":entry.place_id,"access":entry.id,"label":"Entrar","silent":preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").is_building(entry.place_id)}
+			return {"id":"enter","place":entry.place_id,"access":entry.id,"label":"Entrar","silent":entry.place_id in ["harbor_arcade","harbor_curitiba_cellar","harbor_haunted_house"] or preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").is_building(entry.place_id)}
 	var mission_action: Dictionary = mission_world.nearest_action()
 	if not mission_action.is_empty(): return mission_action
 	return passenger_transport.nearest_action()
@@ -1240,7 +1455,12 @@ func nearest() -> Dictionary:
 func interact() -> bool:
 	if modal or not ready_for_play: return false
 	var action := nearest()
+	if action.get("id", "") == "building_social": return building_social.open(action.target)
 	if action.get("id","") == "building_stairs": return await action.provider.use_stairs()
+	if action.get("id","") == "building_lockpick": return await action.provider.perform(action)
+	if action.get("id","") == "building_rooftop_jump": return await building_entrance.jump_from_roof()
+	if action.get("id","") == "service_roof_stairs": return await service_roofs.use_stairs()
+	if action.get("id","") == "service_roof_jump": return await service_roofs.jump_from_roof()
 	if mining != null and action.get("id","") == "mining": return mining.perform(action)
 	if desert != null and action.get("id","") in ["desert","desert_story","desert_drag"]: return desert.perform(action)
 	if mountain_activities != null and mountain_activities.handles(action): return mountain_activities.perform(action)
@@ -1250,6 +1470,15 @@ func interact() -> bool:
 	if str(action.get("id","")).begins_with("ski_"): return mountain_progression.perform(action.target)
 	if str(action.get("id","")).begins_with("arrival_"): return arrival.perform(action.id)
 	match str(action.get("id","")):
+		"cat_adopt": return cats.perform(str(action.target))
+		"fishing": return fishing.perform(str(action.target))
+		"wine": return wine.perform(str(action.target))
+		"arcade": return arcade.perform(str(action.target))
+		"coastal_binoculars": return coastal_lookout.perform(str(action.target))
+		"amusement_park": return amusement_park.perform(str(action.target))
+		"railway": return railway.perform(str(action.target))
+		"regional_coach": return regional_coach.perform(str(action.target))
+		"armored_transport": return armored_transport.perform(int(action.target))
 		"field_inventory": return field_inventory.perform(str(action.target))
 		"port_container": return port_container_loot.perform(str(action.target))
 		"passenger_transport": return passenger_transport.perform(action.target)
@@ -1315,6 +1544,31 @@ func _intro_interact(id: String) -> bool:
 
 func _input(event: InputEvent) -> void:
 	get_node("/root/GameInput").observe_event(event)
+	if upside_world != null and upside_world.busy():
+		if upside_world.handle_input(event): get_viewport().set_input_as_handled()
+		return
+	if building_social != null and building_social.handle_input(event):
+		get_viewport().set_input_as_handled()
+		return
+	if arcade != null and arcade.handle_input(event):
+		get_viewport().set_input_as_handled()
+		return
+	if amusement_park != null and amusement_park.handle_input(event):
+		get_viewport().set_input_as_handled()
+		return
+	if fishing != null and fishing.handle_input(event):
+		get_viewport().set_input_as_handled()
+		return
+	if coastal_lookout != null and coastal_lookout.handle_input(event):
+		get_viewport().set_input_as_handled()
+		return
+	if regional_coach != null and regional_coach.handle_input(event):
+		get_viewport().set_input_as_handled()
+		return
+	if railway != null and railway.handle_input(event):
+		get_viewport().set_input_as_handled()
+		return
+	if armored_transport != null and is_instance_valid(armored_transport.minigame) and armored_transport.minigame.active: return
 	if port_container_loot != null and is_instance_valid(port_container_loot.minigame) and port_container_loot.minigame.active: return
 	if urban_operations != null and is_instance_valid(urban_operations.village_leisure) and is_instance_valid(urban_operations.village_leisure.ui) and urban_operations.village_leisure.ui.active: return
 	if transition_kind == "ski_lift" and mountain_progression != null and mountain_progression.lift.riding:
@@ -1403,6 +1657,10 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 	var wants_interact := event.is_action_pressed("interact")
+	# Handle before GUI focus consumes V/R3, after modal/vehicle guards.
+	if event.is_action_pressed("rage") and not event.is_echo() and not world.driving.occupied:
+		if world.gameplay.request_rage(): get_viewport().set_input_as_handled()
+		return
 	if world.gameplay.handle_arsenal_input(event):
 		get_viewport().set_input_as_handled()
 		return
@@ -1445,10 +1703,13 @@ func _process(delta: float) -> void:
 		if notice_time <= 0.0: clear_speech()
 		elif is_instance_valid(speech_caption): speech_caption.visible = not get_tree().paused
 	if not ready_for_play or get_tree().paused: return
-	weapon_shop_entrance.update(delta)
-	special_place_entrance.update(delta)
+	service_roofs.update(delta)
+	if not service_roofs.is_active():
+		weapon_shop_entrance.update(delta)
+		special_place_entrance.update(delta)
+		building_entrance.update(delta)
 	if is_instance_valid(world.driving.car) and is_instance_valid(world.driving.car.equipment): world.driving.car.equipment.set_input_enabled(not modal)
-	if not modal and not world.driving.occupied and not get_tree().paused:
+	if not modal and not world.driving.occupied and not get_tree().paused and (building_social == null or not building_social.blocks_gameplay_input()):
 		var aim: Vector3 = world.gameplay.aim_from_screen(get_viewport().get_mouse_position())
 		var controls = get_node("/root/GameInput")
 		if controls.using_gamepad or controls.get_meta("touch_controls_active", false) or not controls.touch_aim.is_zero_approx():
@@ -1467,7 +1728,8 @@ func _process(delta: float) -> void:
 	tick = 0
 	_refresh_reward_feedback()
 	if not modal and not world.driving.occupied:
-		if not state.place_id.is_empty() and state.place_id != "maciota": _collect_reward(room)
+		if service_roofs.is_active(): pass
+		elif not state.place_id.is_empty() and state.place_id != "maciota": _collect_reward(room)
 		elif state.place_id.is_empty():
 			for source in get_tree().get_nodes_in_group("native_world_rewards"): _collect_reward(source)
 	var ammo: Dictionary = state.get_ammo(state.equipped_weapon)
@@ -1493,13 +1755,26 @@ func _process(delta: float) -> void:
 		var pack_objective: String = mountain_activities.objective()
 		if not pack_objective.is_empty(): objective.text = pack_objective
 	var action := nearest()
+	if fishing != null and fishing.active: objective.text = fishing.objective()
 	var silent_exit: bool = action.get("id","") == "exit" and state.place_id in ["vertice_undercroft","remote_coal_mine"]
 	prompt.text = "" if modal or action.is_empty() or action.get("silent",false) or silent_exit else "E  "+str(action.label)
-	if not modal and action.get("id","") == "port_container":
+	if not modal and action.get("id","") in ["port_container","railway","regional_coach","fishing","building_social"]:
 		prompt.text = get_node("/root/GameInput").hint("interact")+"  "+str(action.label)
 
 func _update_world_indicator() -> void:
+	if upside_world != null and upside_world.busy():
+		if is_instance_valid(marker): marker.hide()
+		if is_instance_valid(arrow): arrow.hide()
+		return
 	if not ready_for_play or not is_instance_valid(marker) or not is_instance_valid(arrow): return
+	if fishing != null and fishing.controls_locked():
+		marker.hide()
+		arrow.hide()
+		return
+	if service_roofs != null and service_roofs.is_active():
+		marker.hide()
+		arrow.hide()
+		return
 	if desert != null and is_instance_valid(desert.drag) and desert.drag.active:
 		marker.hide()
 		arrow.hide()
@@ -1508,14 +1783,12 @@ func _update_world_indicator() -> void:
 	if state.intro.stage != "complete": target = world.maciota_place.entry_position
 	if arrival.active: target = arrival.target
 	if freight_active: target = freight_target
-	if state.place_id.is_empty() and state.region_id=="harbor" and not world.driving.occupied:
-		var access_distance:=10.0
-		for entry in controller.region.entries:
-			if not preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").is_building(entry.place_id): continue
-			var distance: float=world.player.global_position.distance_to(entry.position)
-			if distance<access_distance:
-				access_distance=distance
-				target=entry.position
+	if arcade != null and state.region_id == "harbor" and state.place_id.is_empty():
+		var arcade_entry := preload("res://world/places/arcade/ArcadePlace.gd").EXTERIOR + Vector3(0,0,6.3)
+		if world.player.global_position.distance_squared_to(arcade_entry) < 144.0: target = arcade_entry
+	if wine != null and state.region_id == "harbor" and state.place_id.is_empty():
+		var cellar_entry := preload("res://world/places/curitiba_cellar/CuritibaCellarPlace.gd").EXTERIOR + Vector3(0,0,6.7)
+		if world.player.global_position.distance_squared_to(cellar_entry) < 144.0: target = cellar_entry
 	if mining != null and state.region_id == "desert" and state.place_id.is_empty() and world.player.global_position.distance_to(preload("res://world/mining/MiningLayout.gd").SECRET_ENTRY)<14.0:
 		target = preload("res://world/mining/MiningLayout.gd").SECRET_ENTRY
 	if not state.place_id.is_empty() and is_instance_valid(room):
@@ -1529,16 +1802,20 @@ func _update_world_indicator() -> void:
 	if mountain_activities != null and not mountain_activities.objective().is_empty():
 		var pack_target: Vector3 = mountain_activities.target_position()
 		if pack_target.is_finite(): target = pack_target
+	if fishing != null and fishing.active: target = fishing.target_position()
 	var maciota_exterior_marker: bool = state.place_id.is_empty() and target.is_equal_approx(world.maciota_place.entry_position)
 	var automatic_shop_exit: bool = _uses_walkup_access(state.place_id) and is_instance_valid(room) and target.is_equal_approx(room.exit_position)
-	marker.visible = target.is_finite() and not maciota_exterior_marker and not automatic_shop_exit and not world.camera.is_position_behind(target)
-	if marker.visible: marker.position = world.camera.unproject_position(target+Vector3.UP*.06)
-	var screen: Vector2 = world.camera.unproject_position(target) if target.is_finite() else Vector2(640,360)
+	var indicator_camera: Camera3D = amusement_park.view if amusement_park != null and amusement_park.house_view and is_instance_valid(amusement_park.view) else world.camera
+	marker.visible = target.is_finite() and not maciota_exterior_marker and not automatic_shop_exit and not indicator_camera.is_position_behind(target)
+	if marker.visible: marker.position = indicator_camera.unproject_position(target+Vector3.UP*.06)
+	var screen: Vector2 = indicator_camera.unproject_position(target) if target.is_finite() else Vector2(640,360)
 	arrow.visible = state.place_id.is_empty() and not Rect2(40,90,1200,520).has_point(screen)
 	arrow.position = Vector2(clampf(screen.x,40,1220),clampf(screen.y,90,610))
 	arrow.rotation = (screen-Vector2(640,360)).angle()+PI/2
 
 func _menu(title: String) -> void:
+	if building_social != null and building_social.active: building_social.close()
+	if arcade != null and arcade.active: arcade.close()
 	clear_speech()
 	if is_instance_valid(dialogue_card): dialogue_card.hide()
 	if is_instance_valid(dialogue_voice): dialogue_voice.stop()
@@ -1602,6 +1879,8 @@ func close_menu() -> void:
 	panel.hide()
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 	world.player.input_locked = world.gameplay.health <= 0 or is_transition_blocked() or (desert != null and desert.busy()) or (passenger_transport != null and passenger_transport.riding) or (motocross != null and motocross.mounted) or (skate != null and skate.controls_locked())
+	if fishing != null and fishing.controls_locked(): world.player.input_locked = true
+	if amusement_park != null and amusement_park.active: world.player.input_locked = true
 	if is_instance_valid(world.driving.car): world.driving.car.input_locked = is_transition_blocked() or (desert != null and desert.controls_locked())
 func show_dialogue(dialogue_lines: Array, on_done := Callable()) -> void:
 	lines = dialogue_lines.duplicate(true)
@@ -1730,6 +2009,7 @@ func _show_services_available(service: String) -> void:
 func _show_shop(category: String) -> void:
 	_menu("R$ %d"%state.economy.balance)
 	for item in state.economy.storefront(category):
+		if category == "weapon" and item.id == "katana" and not item.unlocked: continue
 		var label := str(item.get("name",item.get("label",item.id)))
 		_button(label+(" · Equipar" if item.owned else " · R$ %d"%item.price),func():
 			if not item.owned:
@@ -1762,6 +2042,9 @@ func _show_shop(category: String) -> void:
 func _show_customization() -> void:
 	var catalog = preload("res://gameplay/WeaponCustomization.gd")
 	var id: String = state.equipped_weapon
+	if id == "katana":
+		_show_saber_customization()
+		return
 	_menu("Personalizar · "+str(WEAPONS.WEAPONS[id].label))
 	for part in catalog.PARTS:
 		if not catalog.supports(id,part): continue
@@ -1775,6 +2058,15 @@ func _show_customization() -> void:
 			save_game()
 			_show_customization())
 	_button("Voltar",func(): _show_shop("weapon"))
+func _show_saber_customization() -> void:
+	_menu("Katana")
+	panel.hide()
+	var custom_panel := preload("res://runtime/TakeshiSaberPanel.gd").new()
+	custom_panel.configure(self)
+	world.hud.add_child(custom_panel)
+	custom_panel.closed.connect(func(): _show_shop("weapon"))
+	menu_closed = func():
+		if is_instance_valid(custom_panel): custom_panel.queue_free()
 func _transaction() -> String:
 	action_serial += 1
 	return "%d_%d_%d"%[Time.get_unix_time_from_system(),Time.get_ticks_usec(),action_serial]
@@ -1783,6 +2075,7 @@ func apply_outfit() -> void:
 	var outfit: String = state.economy.outfit
 	if mountain_progression != null and mountain_progression.data.rental: outfit = "dante_ski"
 	if world.player.has_method("set_outfit"): world.player.set_outfit(outfit)
+	preload("res://activities/amusement_park/AmusementParkCosmetics.gd").apply(world.player,state.world_state)
 
 func advance_residence_time(target: float) -> bool:
 	if target not in [.36,.84] or not can_rest_at_residence(): return false
@@ -1865,6 +2158,24 @@ func _refresh_reward_feedback() -> void:
 			notice.text = ""
 			notice.hide()
 func save_block_reason() -> String:
+	if upside_world != null and upside_world.busy(): return "Aguarde a visão passar."
+	if arcade != null and arcade.active: return "Saia do fliperama para salvar."
+	if amusement_park != null and amusement_park.active: return "Termine o passeio para salvar."
+	if fishing != null:
+		var fishing_reason: String = fishing.save_block_reason()
+		if not fishing_reason.is_empty(): return fishing_reason
+	if coastal_lookout != null and coastal_lookout.active: return "Saia do binóculo para salvar."
+	if building_entrance != null and building_entrance.falling: return "Aguarde chegar ao chão."
+	if service_roofs != null and service_roofs.falling: return "Aguarde chegar ao chão."
+	if regional_coach != null:
+		var coach_reason: String = regional_coach.save_block_reason()
+		if not coach_reason.is_empty(): return coach_reason
+	if railway != null:
+		var railway_reason: String = railway.save_block_reason()
+		if not railway_reason.is_empty(): return railway_reason
+	if armored_transport != null:
+		var armored_reason: String = armored_transport.save_block_reason()
+		if not armored_reason.is_empty(): return armored_reason
 	if mountain_activities != null:
 		var pack_reason: String = mountain_activities.save_block_reason()
 		if not pack_reason.is_empty(): return pack_reason
@@ -1935,6 +2246,7 @@ func save_game(manual := false) -> bool:
 	if mining != null: mining.write_snapshot()
 	controller.capture_player_vehicle()
 	if cold != null: state.world_state.cold = cold.snapshot()
+	if wine != null: state.world_state.wine_cellar = wine.snapshot()
 	if garage_rewards != null: state.world_state.garage_rewards = garage_rewards.snapshot()
 	if arrival != null: state.world_state.arrival = arrival.snapshot()
 	if robberies != null: state.world_state.robberies = robberies.snapshot()
@@ -1966,6 +2278,13 @@ func save_game(manual := false) -> bool:
 	_save_indicator().acknowledge()
 	return true
 func load_game() -> void:
+	if upside_world != null and upside_world.busy() and upside_world._released:
+		show_message("Aguarde a conclusão da transição para carregar.")
+		return
+	if upside_world != null: upside_world.cancel("load")
+	if fishing != null: fishing.cancel_attempt("Pesca encerrada.")
+	if coastal_lookout != null: coastal_lookout.leave()
+	if amusement_park != null: amusement_park.leave()
 	if desert != null and desert.busy(): show_message("Encerre a prova para carregar."); return
 	if jessica != null and jessica.riding:
 		show_message("Aguarde Jessica estacionar para carregar."); return
@@ -1980,6 +2299,11 @@ func load_game() -> void:
 	var result := get_tree().reload_current_scene()
 	if result != OK: show_message("Não foi possível carregar o jogo (%d)." % result)
 func return_to_main_menu() -> void:
+	if upside_world != null and upside_world.busy() and upside_world._released:
+		show_message("Aguarde a conclusão da transição.")
+		return
+	if upside_world != null: upside_world.cancel("main_menu")
+	if amusement_park != null: amusement_park.leave()
 	if desert != null: desert.cancel_attempt()
 	if mining != null: mining.cancel_attempt()
 	if is_transition_blocked() or (passenger_transport != null and passenger_transport.riding):
@@ -2074,8 +2398,15 @@ func _show_v1_arrest_presentation() -> void:
 
 func _on_arrest() -> void:
 	if arrest_pending or rescue_pending: return
-	interrupt_dialogue()
+	if upside_world != null: upside_world.cancel("arrest")
 	arrest_pending = true
+	# Gameplay's arrest signal already owns this lock; illusion cleanup must
+	# not release it while the custody presentation is running.
+	world.player.input_locked = true
+	if amusement_park != null: amusement_park.leave()
+	if regional_coach != null: regional_coach.cancel_for_transition()
+	if railway != null: railway.cancel_for_transition()
+	interrupt_dialogue()
 	if desert != null: desert.cancel_attempt()
 	if mining != null: mining.cancel_attempt()
 	prompt.text = ""
@@ -2088,12 +2419,21 @@ func _on_arrest() -> void:
 	mountain_progression.cancel_attempt()
 	if mountain_activities != null: mountain_activities.cancel_attempt()
 	mission_world.cancel_attempt("player_arrest")
+	# Service/mission teardown may restore an earlier input snapshot.
+	# Custody takes final ownership before yielding to the presentation.
+	world.player.input_locked = true
 	await _show_v1_arrest_presentation()
 	if not arrest_pending or not is_inside_tree(): return
 	await _respawn()
 
 func _on_death() -> void:
+	if upside_world != null: upside_world.cancel("death",false)
 	if rescue_pending: return
+	if fishing != null: fishing.cancel_attempt("Pesca interrompida.")
+	if coastal_lookout != null: coastal_lookout.leave()
+	if amusement_park != null: amusement_park.leave()
+	if regional_coach != null: regional_coach.cancel_for_transition()
+	if railway != null: railway.cancel_for_transition()
 	bank_death_loss = robberies.player_died() if robberies != null else 0
 	# The old arrest coroutine must not select custody or consume this rescue.
 	arrest_pending = false
@@ -2132,6 +2472,7 @@ func _on_death() -> void:
 	await _respawn()
 
 func _respawn() -> void:
+	if upside_world != null: upside_world.cancel("rescue",false)
 	if respawn_busy: return
 	var token := _begin_transition("rescue")
 	if token < 0:
@@ -2160,6 +2501,8 @@ func _respawn() -> void:
 			world.driving.car.external_input = false
 			world.driving.car.throttle_input = 0
 	if passenger_transport != null: passenger_transport.cancel_for_transition()
+	if building_entrance != null: building_entrance.reset()
+	if service_roofs != null: service_roofs.clear(true)
 	if is_instance_valid(room):
 		if room == world.maciota_place: room.set_interior_active(false)
 		else: room.queue_free()
@@ -2172,6 +2515,7 @@ func _respawn() -> void:
 	if is_instance_valid(world.dispatch): world.dispatch.dismiss_all("rescue")
 	sync_dispatch_location()
 	if cold != null: cold.recover_after_rescue()
+	if wine != null: wine.recover()
 	world.player.teleport(destination)
 	_sync_location_presentation()
 	world.player.collision_layer = 2

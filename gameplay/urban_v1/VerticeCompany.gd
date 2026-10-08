@@ -399,7 +399,7 @@ func _physics_process(delta: float) -> void:
 	if session == null or not session.ready_for_play: return
 	var player = session.world.player
 	if not is_instance_valid(player): return
-	var harbor: bool = session.state.region_id == "harbor" and session.state.place_id.is_empty()
+	var harbor: bool = session.state.region_id == "harbor" and session.urban_operations.world_is_continuous()
 	var near: bool = harbor and player.global_position.distance_to(ORIGIN+Vector3(0,0,24)) < 150
 	var truck_near := false
 	if harbor:
@@ -427,7 +427,7 @@ func _physics_process(delta: float) -> void:
 		if is_instance_valid(truck) and truck.health>0 and truck.global_position.distance_to(ORIGIN+Vector3(0,0,78))<15: target = 1.0
 	gate_amount = move_toward(gate_amount,target,delta*.7)
 	gate.position.x = -14.5*gate_amount
-	var interior := inside(player.global_position)
+	var interior: bool = session.state.place_id.is_empty() and inside(player.global_position) and not player.get_meta("harbor_service_rooftop",false)
 	_set_inside(interior)
 	var at_door := p.distance_to(Vector3(35,0,30))<3
 	var threshold_occupied := absf(p.x-35)<1.7 and absf(p.z-30)<1.3 and office_amount>.4

@@ -214,7 +214,7 @@ class Bandit extends "res://gameplay/CobraAgent.gd":
 		var move := destination-global_position; move.y=0
 		move=Vector3.ZERO if move.length()<.2 else _steering.steer(self,move.normalized(),delta)*(1.8 if engaged else .55)
 		velocity.x=move.x; velocity.z=move.z
-		velocity.y=-1 if is_on_floor() else maxf(-18,velocity.y-20*delta)
+		velocity.y=-1.0 if is_on_floor() else maxf(-18,velocity.y-20*delta)
 		move_and_slide()
 		gait+=Vector2(velocity.x,velocity.z).length()*delta*3.4
 		var facing := direction if engaged else move

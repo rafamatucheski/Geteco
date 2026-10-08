@@ -83,6 +83,14 @@ const OUTFITS := {
 		"print": {"style": 1, "regions": [JACKET], "a": Color("f9ca24"), "b": Color("ffffff"), "scale": 34.0},
 		"accessories": [["shades", Color("1b1b1f")], ["necklace", Color("f5f0e6")]],
 	},
+	"dante_lume": {
+		"regions": {JACKET:[Color("306875"), .10], SHIRT:[Color("d5ac58"), .15], PANTS:[Color("202d36"), .5], BOOTS:[Color("ddcfb2"), .2]},
+		"zones": {FOREARM:[Color("25444e"), .7, [JACKET]]},
+	},
+	"dante_midnight": {
+		"regions": {JACKET:[Color("352842"), .15], SHIRT:[Color("a13f59"), .15], PANTS:[Color("20212c"), .4], BOOTS:[Color("18191e"), .35]},
+		"accessories": [["scarf", Color("a13f59")]],
+	},
 	"dante_badboy": {
 		# Regata preta: braços inteiros em pele; bermuda esportiva; tênis branco.
 		"regions": {JACKET: [Color("141418"), 0.12], SHIRT: [Color("141418"), 0.12], PANTS: [Color("30336b"), 0.3], BELT: [Color("30336b"), 0.3], BOOTS: [Color("f2f2f2"), 0.3]},
@@ -154,6 +162,9 @@ static func _dress(skeleton: Skeleton3D, accessories: Array) -> void:
 	for item in accessories:
 		var kind: String = item[0]
 		var color: Color = item[1]
+		var previous_head_count := 0
+		if kind in ["shades", "goggles"]:
+			previous_head_count = _space(skeleton, spaces, "Head").get_child_count()
 		match kind:
 			"beanie": _beanie(_space(skeleton, spaces, "Head"), color)
 			"cowboy_hat": _cowboy_hat(_space(skeleton, spaces, "Head"), color)
@@ -170,6 +181,10 @@ static func _dress(skeleton: Skeleton3D, accessories: Array) -> void:
 			"suspenders": _suspenders(_space(skeleton, spaces, "Spine01"), color)
 			"vest": _vest(_space(skeleton, spaces, "Spine01"), color)
 			"shoulder_pad": _shoulder_pad(_space(skeleton, spaces, "LeftArm"), color)
+		if kind in ["shades", "goggles"]:
+			var head_space: Node3D = spaces["Head"]
+			for index in range(previous_head_count, head_space.get_child_count()):
+				head_space.get_child(index).set_meta("outfit_accessory_kind", kind)
 
 ## Nó que acompanha o osso, com filhos escritos no espaço de repouso do modelo
 ## (em pé, olhando para +Z). Assim as medidas vêm direto da malha importada.

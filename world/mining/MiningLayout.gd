@@ -79,6 +79,15 @@ static func haul_sample(local: Vector2) -> Vector2:
 
 static func terrain_height(local: Vector2) -> float:
 	var radius := (local-PIT_CENTER).length()
+	# Authored fault sectors break concentric circles into uneven quarry cuts.
+	# Preserve the entire 36 m work floor and blend the first ledge gradually;
+	# the unchanged road sampler below still owns the complete 14 m haul route.
+	var angle := fposmod((local-PIT_CENTER).angle(), TAU)
+	var sector := angle / TAU * 12.0
+	var index := floori(sector)
+	var cuts := [0.0,7.0,-3.0,9.0,2.0,-6.0,5.0,-8.0,3.0,8.0,-5.0,1.0]
+	var fault := lerpf(cuts[index % 12], cuts[(index+1) % 12], sector-float(index))
+	radius += fault * smoothstep(36.0, 57.0, radius)
 	var rings := [Vector2(0,-28),Vector2(34,-28),Vector2(43,-21),Vector2(57,-21),Vector2(65,-14),Vector2(80,-14),Vector2(88,-7),Vector2(101,-7),Vector2(110,0),Vector2(170,0)]
 	var height := 0.0
 	for i in range(1,rings.size()):
@@ -95,6 +104,13 @@ static func machine_spawns() -> Array[Dictionary]:
 		{"id":"mineradora_tractor","archetype":"mining_tractor","point":world(Vector3(-11,-28,5)),"yaw":0.0},
 		{"id":"mineradora_haul","archetype":"mining_haul_truck","point":world(Vector3(-100,0,55)),"yaw":.12},
 		{"id":"mineradora_haul_pit","archetype":"mining_haul_truck","point":world(Vector3(6,-28,6)),"yaw":PI*.5},
+		# Clear of the conveyor stockpile (centred at -14,-23) and adit spoil.
+		# Nose points southeast into the open aisle, away from the ore at z=-3.
+		{"id":"mineradora_escape","archetype":"desert_bison","point":world(Vector3(-12,-28,-10)),"yaw":-PI*.75},
+		{"id":"mineradora_employee_1","archetype":"desert_faisca","point":world(Vector3(-58.6,0,100)),"yaw":0.0},
+		{"id":"mineradora_employee_2","archetype":"ranch_single","point":world(Vector3(-49.2,0,100)),"yaw":0.0},
+		{"id":"mineradora_employee_3","archetype":"desert_siroco","point":world(Vector3(-44.5,0,100)),"yaw":0.0},
+		{"id":"mineradora_employee_4","archetype":"station_wagon","point":world(Vector3(-35.1,0,100)),"yaw":0.0},
 	]
 
 static func cargo_spawns() -> Array[Vector3]:

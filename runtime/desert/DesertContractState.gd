@@ -19,7 +19,9 @@ static func valid(value: Variant) -> bool:
 	return active.is_empty() or (LAST.has(active) and value[active]>0 and value[active]<LAST[active])
 
 static func data(world: Dictionary) -> Dictionary:
-	return world.get(KEY,defaults()).duplicate(true)
+	var value: Variant=world.get(KEY,defaults())
+	# A present malformed prerequisite is invalid, not a new/absent contract.
+	return value.duplicate(true) if value is Dictionary else {}
 
 static func validate_wallet(world: Dictionary, wallet: Dictionary) -> bool:
 	if world.has(KEY) and not valid(world[KEY]): return false
@@ -45,6 +47,7 @@ static func advance(world: Dictionary, wallet: RefCounted, id: String, expected:
 
 static func track(world: Dictionary, id: String) -> void:
 	var state:=data(world)
+	if not valid(state): return
 	if id.is_empty() or (LAST.has(id) and state[id]>0 and state[id]<LAST[id]):
 		state.active=id
 		world[KEY]=state

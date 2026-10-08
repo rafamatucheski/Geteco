@@ -15,7 +15,7 @@ func run() -> void:
 	root.size=Vector2i(1280,720)
 	output=FIXTURE.output_dir("mining-measure")
 	fingerprint=source_fingerprint()
-	for directory in ["res://world/mining","res://world/mining/coal","res://world/mining/operation","res://gameplay/mining"]:
+	for directory in ["res://world/mining","res://world/mining/coal","res://world/mining/operation","res://gameplay/mining","res://audio/mining"]:
 		for filename in DirAccess.get_files_at(directory):
 			if filename.ends_with(".gd") or filename.ends_with(".gdshader"):
 				var source: String=directory+"/"+filename
@@ -23,7 +23,7 @@ func run() -> void:
 	fingerprint["res://runtime/MiningRuntime.gd"]=FileAccess.get_sha256("res://runtime/MiningRuntime.gd")
 	for directory in ["res://world/desert/village","res://world/desert/expansion","res://runtime/desert/expansion"]:
 		_fingerprint_tree(directory)
-	for source in ["res://world/places/PlaceCatalog.gd","res://data/catalogs/VehicleDoorSpecs.gd","res://runtime/FleetCatalog.gd"]:
+	for source in ["res://world/places/PlaceCatalog.gd","res://data/catalogs/VehicleDoorSpecs.gd","res://runtime/FleetCatalog.gd","res://scripts/CameraRig.gd","res://scripts/Actor.gd","res://gameplay/Gameplay.gd","res://gameplay/CombatAudio.gd"]:
 		fingerprint[source]=FileAccess.get_sha256(source)
 	var at:=Vector3(-180,.08,-1645)
 	var snapshot:=FIXTURE.full_snapshot(at,true)
@@ -92,8 +92,18 @@ func run() -> void:
 		world.session.weather.time_of_day=.45
 		world.session.weather._update()
 		await create_timer(2).timeout
+		await RenderingServer.frame_post_draw
+		root.get_texture().get_image().save_png(output.path_join("pit-day-gameplay.png"))
 		# Additional composition review only. Measurements above keep ordinary
 		# gameplay cameras; this explicitly labelled overview has a diagnostic lens.
+		world.production.region.set_retention_radius(2)
+		var bounds: Rect2 = preload("res://world/mining/MiningLayout.gd").BOUNDS
+		for x in range(floori(bounds.position.x / 96), ceili(bounds.end.x / 96)):
+			for z in range(floori(bounds.position.y / 96), ceili(bounds.end.y / 96)):
+				world.production.region.prepare_collision_at(Vector3((x + .5) * 96, 0, (z + .5) * 96))
+		for frame in 900:
+			await physics_frame
+			if world.production.region.is_streaming_idle(): break
 		world.camera.set_process(false)
 		world.camera.far=600
 		world.camera.size=280
@@ -101,6 +111,15 @@ func run() -> void:
 		world.camera.look_at(Vector3(-180,-8,-1750))
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png(output.path_join("mine-overview-diagnostic.png"))
+		for id in ["mining_backhoe", "mining_tractor", "mining_haul_truck"]:
+			for car in world.production.vehicles:
+				if not is_instance_valid(car) or car.archetype != id: continue
+				world.camera.size = 13 if id != "mining_haul_truck" else 18
+				world.camera.position = car.global_position + Vector3(12, 10, -12)
+				world.camera.look_at(car.global_position + Vector3.UP * 1.3)
+				await RenderingServer.frame_post_draw
+				root.get_texture().get_image().save_png(output.path_join(id + "-detail-diagnostic.png"))
+				break
 		world.camera.set_process(true)
 	var stable:=fingerprint==source_fingerprint(fingerprint)
 	var report:={"source_stable":stable,"scenarios":reports,"source_sha256_start":fingerprint,"source_sha256_end":source_fingerprint(fingerprint),"engine":Engine.get_version_info().string,"gpu":RenderingServer.get_video_adapter_name(),"cpu":OS.get_processor_name(),"renderer":RenderingServer.get_current_rendering_method(),"resolution":str(root.size),"vsync":DisplayServer.window_get_vsync_mode(),"max_fps":Engine.max_fps,"population":world.production.requested_population,"save":path,"notes":"Real Main with native .NET routes; same cameras; 10s warmup + 30s samples. Provisional goal 60 FPS/16.67ms; >5% p95/p99 increase requests finite confirmation. Fixture relocation does not prove route traversal."}

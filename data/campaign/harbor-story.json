@@ -9,5 +9,5 @@
   "reveal_act": 2,
   "maciota_past": "Dante recuperou um veículo de cliente roubado durante um transporte de Maciota e demonstrou que ele havia sido enganado. Isso salvou a reputação e a oficina de Maciota.",
   "jessica": {"name":"Jessica","car":"jessica_jetta_gli","relationship":"encontros e confiança, sem namoro ou pontuação oculta","next_encounter":"corrida na cidade do deserto"},
-  "act_two": {"destination":"desert","opening":"Vicente recebe Dante com rancor. Os trabalhos e corridas revelam a operação armada. Jessica reaparece e vence Dante numa prova.","ending":"Dante mostra a prova ao irmão, que pergunta o que fazer com os oito anos perdidos."}
+  "act_two": {"destination":"desert","opening":"Vicente recebe Dante com rancor. Os trabalhos e corridas revelam a operação armada. Jessica reaparece e enfrenta Dante numa prova cujo resultado depende da corrida física.","ending":"Dante mostra a prova ao irmão, que pergunta o que fazer com os oito anos perdidos."}
 }

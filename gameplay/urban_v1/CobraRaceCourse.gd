@@ -114,11 +114,11 @@ static func forward(index: int) -> Vector3:
 	return POINTS[at-1].direction_to(POINTS[at+1])
 static func grid(index: int) -> Vector3:
 	return Vector3(GRID_X + floori(index/2.0)*8.0, .10, GRID_Z + (-1.22 if index%2==0 else 1.22))
-static func passing_lanes(offset: float) -> Array[float]:
+static func passing_lanes(lane_offset: float) -> Array[float]:
 	# Larguras do grafo: acesso Cobra 5,25 m; Eastgate/Market/Union 7,5 m;
 	# Foundry e Quay 14 m (quatro faixas). A curva usa uma faixa interior.
-	if offset<60: return [-2.35,0.0]
-	if offset<190: return [-3.75,0.0]
+	if lane_offset<60: return [-2.35,0.0]
+	if lane_offset<190: return [-3.75,0.0]
 	return [3.5,-3.5,0.0]
 static func offset(point: Vector3, checkpoint: int) -> float:
 	var measured := curve().get_closest_offset(point)

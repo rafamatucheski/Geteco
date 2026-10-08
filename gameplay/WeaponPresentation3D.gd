@@ -89,16 +89,26 @@ static func build(root: Node3D, id: String) -> void:
 		_box(root,"Slide",Vector3(0,0.052,-0.05),Vector3(0.038,0.036,0.181),steel)
 		_box(root,"FrontSight",Vector3(0,0.075,-0.121),Vector3(0.007,0.011,0.009),dark)
 		for x in [-0.012,0.012]:
-			_box(root,"RearSight",Vector3(x,0.075,0.025),Vector3(0.008,0.010,0.012),dark)
+			_box(root,"RearSightLeft" if x < 0.0 else "RearSightRight",Vector3(x,0.075,0.025),Vector3(0.008,0.010,0.012),dark)
 		_box(root,"EjectionPort",Vector3(0.0195,0.055,-0.06),Vector3(0.002,0.019,0.037),dark)
 		_cylinder(root,"Barrel",Vector3(0,0.055,-0.145),0.013,0.014,dark,Vector3(90,0,0))
 		_cylinder(root,"Bore",Vector3(0,0.055,-0.153),0.0075,0.002,rubber,Vector3(90,0,0))
 		for z in [-0.005,0.004,0.013,0.022]:
-			_box(root,"SlideSerration",Vector3(0,0.054,z),Vector3(0.039,0.029,0.003),dark)
+			_box(root,"SlideSerration_%s" % str(z),Vector3(0,0.054,z),Vector3(0.039,0.029,0.003),dark)
 		_box(root,"MagazineBase",Vector3(0,-0.065,0.02),Vector3(0.037,0.009,0.043),rubber)
 		for y in [-0.015,-0.027,-0.039,-0.051]:
 			_box(root,"GripTexture",Vector3(0,y,0.02),Vector3(0.036,0.003,0.034),rubber)
 		_trigger_guard(root,Vector3(0,-0.014,-0.047),dark)
+		# These details belong to the slide and must travel with it during recoil
+		# and reload. Keep the barrel and grip attached to the stationary frame.
+		var slide := root.get_node("Slide") as Node3D
+		for child in root.get_children():
+			if child.name == "FrontSight" or String(child.name).begins_with("RearSight") or String(child.name).begins_with("SlideSerration") or child.name == "EjectionPort":
+				var detail := child as Node3D
+				var local := detail.transform
+				root.remove_child(detail)
+				slide.add_child(detail)
+				detail.transform = slide.transform.affine_inverse() * local
 
 static func _trigger_guard(root: Node3D, p: Vector3, mat: Material) -> void:
 	_box(root,"GuardBottom",p+Vector3(0,-0.018,0),Vector3(0.015,0.008,0.057),mat)

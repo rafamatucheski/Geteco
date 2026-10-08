@@ -64,9 +64,9 @@ func _physics_process(delta: float) -> void:
 	for i in 3:
 		var angle := _elapsed*.095+float(i)*.36
 		var radius := 18.0+float(i)*5.0
-		var position := _flock_center+Vector3(cos(angle)*radius,sin(angle*1.7+float(i))*.7,sin(angle)*radius)
-		var basis := Basis(Vector3.UP,-angle).rotated(Vector3.FORWARD,.14)
-		_birds.multimesh.set_instance_transform(i,Transform3D(basis,position))
+		var bird_position := _flock_center+Vector3(cos(angle)*radius,sin(angle*1.7+float(i))*.7,sin(angle)*radius)
+		var bird_basis := Basis(Vector3.UP,-angle).rotated(Vector3.FORWARD,.14)
+		_birds.multimesh.set_instance_transform(i,Transform3D(bird_basis,bird_position))
 		if _reset_flock: _birds.multimesh.reset_instance_physics_interpolation(i)
 	_reset_flock=false
 	_tick+=delta

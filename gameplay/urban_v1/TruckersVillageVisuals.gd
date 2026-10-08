@@ -64,6 +64,7 @@ func _ready() -> void:
 	_part("belt",BELT_POINT-ORIGIN)
 	_part("crank",CRANK_POINT-ORIGIN)
 	_flush()
+	preload("res://world/places/harbor_buildings/HarborBuildingExteriorAccess.gd").install(self,"TruckersStationStore")
 	tonico = preload("res://gameplay/urban_v1/TruckersVillageResident.gd").new()
 	tonico.configure({"id":"tonico","variant":3,"stationary":true,"position":TONICO_POINT-ORIGIN})
 	add_child(tonico)
@@ -82,8 +83,8 @@ func _process(delta: float) -> void:
 		return
 	var at := _player.global_position
 	var station_at: Vector3 = STATION_TRANSFORM.affine_inverse()*(at-ORIGIN)
-	set_cutaway(Rect2(-48,-27,41,29).has_point(Vector2(station_at.x,station_at.z)))
-	var tire_inside := Rect2(-278,97,18,16).has_point(Vector2(at.x,at.z))
+	set_cutaway(station_at.y<3.0 and Rect2(-48,-27,41,29).has_point(Vector2(station_at.x,station_at.z)))
+	var tire_inside := at.y<3.0 and Rect2(-278,97,18,16).has_point(Vector2(at.x,at.z))
 	if tire_inside != _tire_cutaway:
 		_tire_cutaway = tire_inside
 		_fade_mesh(_tire_roof,tire_inside)
@@ -151,7 +152,7 @@ func _station() -> void:
 	_box(Vector3(-30,3.37,-34),Vector3(25,.23,11),"755541",Vector3(0,0,.025))
 	for x in range(-42,-17): _box(Vector3(x,3.51,-34),Vector3(.06,.045,11),"8e6750")
 	_box(Vector3(-30,3.0,-28.78),Vector3(10,.6,.18),"666d58")
-	_label("Posto do Tonico",Vector3(-30,3.03,-28.66),.024)
+	_label("Tonico",Vector3(-30,3.03,-28.66),.024)
 	for x in [-44.0,-12.0]:
 		for z in [-23.0,-5.0]:
 			_box(Vector3(x,2.7,z),Vector3(.34,5.4,.34),"aaa18b")

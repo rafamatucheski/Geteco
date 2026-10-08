@@ -29,8 +29,8 @@ static func build_chunk(parent: Node3D, rect: Rect2, completed:=false) -> void:
 		# Warning triangle is a functional road sign without explanatory text.
 		for x in [334.5,350.5]:
 			G.box(gate,"RoadSignPole",Vector3(x,1.05,-1756),Vector3(.095,2.1,.095),Color("757d72"),true)
-			var sign:=G.box(gate,"FallingRockWarning",Vector3(x,1.93,-1756),Vector3(.95,.95,.07),Color("d9a843"))
-			sign.rotation.z=PI*.25
+			var warning_sign:=G.box(gate,"FallingRockWarning",Vector3(x,1.93,-1756),Vector3(.95,.95,.07),Color("d9a843"))
+			warning_sign.rotation.z=PI*.25
 			for p in [Vector3(-.17,2.15,.047),Vector3(.05,1.92,.047),Vector3(.2,1.71,.047)]:
 				G.box(gate,"FallingRockSymbol",Vector3(x,p.y,-1756+p.z)+Vector3(p.x,0,0),Vector3(.17,.18,.025),Color("393e37"))
 		set_completed(gate,completed)

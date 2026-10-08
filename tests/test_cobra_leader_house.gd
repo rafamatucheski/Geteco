@@ -81,8 +81,9 @@ func finish_dialogue(session) -> String:
 	var spoken: Array[String] = []
 	var count := 0
 	while session.dialogue_open and count < 40:
-		for child in session.column.get_children():
-			if child is Label: spoken.append(child.text)
+		# FullSession presents spoken lines in the shared DialogueCard; the
+		# service-menu column remains hidden and no longer contains this text.
+		if is_instance_valid(session.dialogue_card): spoken.append(session.dialogue_card.message.text)
 		count += 1
 		session._advance_dialogue()
 	return "\n".join(spoken)
@@ -190,12 +191,15 @@ func run() -> void:
 		if world.production.region.is_streaming_idle(): break
 	await settle()
 	check(session.position_clear(world.player.global_position),"authored house street entrance admits the full player capsule")
-	check(session.mission_world.nearest_action().get("target","") == "leader_house","physical entrance offers the post-race action")
-	check(session.mission_world.perform("leader_house"),"actual mission adapter admits house entry")
+	check(session.mission_world.nearest_action().get("target","") != "leader_house","physical entrance has no explicit post-race entry action")
+	world.player.set_physics_process(true)
+	world.player.controlled_automatically = true
+	world.player.automatic_direction = session.weapon_shop_entrance._inward("cobra_leader_house")
 	deadline = Time.get_ticks_msec()+15000
 	while Time.get_ticks_msec() < deadline:
 		await physics_frame
 		if session.state.place_id == "cobra_leader_house" and session.state.campaign.step == 7: break
+	world.player.automatic_direction = Vector3.ZERO
 	check(session.state.place_id == "cobra_leader_house" and session.state.campaign.step == 7,"entering the real room advances to the list")
 	if session.state.place_id != "cobra_leader_house": world.free(); quit(1); return
 	var room: Node3D = session.room

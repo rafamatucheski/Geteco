@@ -6,6 +6,18 @@ const DRIVER := preload("res://activities/mountain_downhill/MountainDownhillDriv
 var world
 var checks := 0
 var failures: Array[String] = []
+var frame_samples: Array[float] = []
+var sample_frames := false
+var previous_frame_usec := 0
+var driving_script: GDScript = DRIVER
+var observation_seconds := 0.0
+
+func _process(_delta: float) -> bool:
+	var now := Time.get_ticks_usec()
+	if sample_frames and previous_frame_usec > 0:
+		frame_samples.append(float(now-previous_frame_usec)/1000.0)
+	previous_frame_usec = now
+	return false
 
 func _initialize() -> void:
 	create_timer(330).timeout.connect(func(): push_error("MOUNTAIN_DOWNHILL bounded runtime timeout"); quit(3))
@@ -24,6 +36,16 @@ func run() -> void:
 		push_error("Run with --no-save; player saves must remain untouched.")
 		quit(2)
 		return
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--driver-reference="):
+			driving_script = GDScript.new()
+			driving_script.source_code = FileAccess.get_file_as_string(argument.trim_prefix("--driver-reference="))
+			if driving_script.reload() != OK:
+				push_error("Cannot load explicitly requested reference driver")
+				quit(2)
+				return
+		if argument.begins_with("--observe-seconds="):
+			observation_seconds = clampf(argument.trim_prefix("--observe-seconds=").to_float(),35.0,240.0)
 	seed(5102026)
 	world = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival",true)
@@ -91,6 +113,11 @@ func run() -> void:
 	await frames(3)
 	check(race.perform("start") and race.active,"night start builds actual seven-car grid")
 	if not race.active: finish(); return
+	if driving_script != DRIVER:
+		for entry in race.racers:
+			if entry.player: continue
+			entry.pilot = driving_script.new()
+			entry.pilot.setup(entry.car,race.course,int(entry.index))
 	check(race.racers.size()==7 and race.racers.filter(func(e): return not e.player).size()==6,"exactly six competitive rivals plus Dante")
 	check(not race.save_block_reason().is_empty(),"active attempt blocks saving")
 	for entry in race.racers:
@@ -120,24 +147,73 @@ func run() -> void:
 	finish()
 
 func drive_race(race,car) -> void:
-	var driver := DRIVER.new()
+	sample_frames = true
+	var driver = driving_script.new()
 	driver.setup(car,race.course,0)
 	driver.lane = -1.8
 	driver.desired_lane = -1.8
 	var rivals: Array = race.racers.duplicate()
-	var deadline := Time.get_ticks_msec()+245000
+	var deadline := Time.get_ticks_msec()+int((observation_seconds if observation_seconds>0.0 else 245.0)*1000.0)
 	var next_report := Time.get_ticks_msec()
+	var next_contact_report := Time.get_ticks_msec()
 	while race.active and Time.get_ticks_msec()<deadline:
 		driver.tick(1.0/float(Engine.physics_ticks_per_second),false,int(race.racers[6].run.checkpoint))
 		await physics_frame
+		if "--diagnose-contacts" in OS.get_cmdline_user_args() and Time.get_ticks_msec()>=next_contact_report:
+			next_contact_report = Time.get_ticks_msec()+250
+			for entry in rivals:
+				if entry.player or not is_instance_valid(entry.car) or int(entry.run.checkpoint) not in [7,8]: continue
+				var body = entry.car
+				var offset: float = race.course.nearest_offset(body.global_position)
+				var contacts: Array = []
+				var merge_blocker: Dictionary = {}
+				if entry.pilot.desired_lane<0.0 and absf(float(body.speed))<3.0:
+					if not entry.pilot._lane_clear(offset,clampf(4.0+absf(float(body.speed))*.27,4.0,12.0),1.8):
+						var blocked: Array = body.get_world_3d().direct_space_state.intersect_shape(entry.pilot.lane_query,1)
+						if not blocked.is_empty():
+							merge_blocker = {"body":str(blocked[0].collider.get_path()),"query_point":str(entry.pilot.lane_query.transform.origin)}
+				var sensor: Dictionary = {}
+				var nearest := INF
+				var reach := minf(55.0,5.0+float(body.speed)*float(body.speed)/10.0)
+				var origin: Vector3 = body.global_position+Vector3.UP*.65-body.global_basis.z*(body.half_length+.2)
+				for side in [-.8,0.0,.8]:
+					var from: Vector3 = origin+body.global_basis.x*float(body.half_width)*side
+					var query := PhysicsRayQueryParameters3D.create(from,from-body.global_basis.z*reach,7,[body.get_rid()])
+					var hit: Dictionary = body.get_world_3d().direct_space_state.intersect_ray(query)
+					if not hit.is_empty() and from.distance_to(hit.position)<nearest:
+						nearest = from.distance_to(hit.position)
+						sensor = {"body":str(hit.collider.get_path()),"point":str(hit.position),"distance":nearest,"normal":str(hit.normal)}
+						if hit.collider.is_in_group("drivable"):
+							sensor.merge({"vehicle_id":hit.collider.vehicle_id,"archetype":hit.collider.archetype,"traffic":hit.collider.traffic,"ambient":hit.collider.get_meta("ambient_traffic",false),"rival":hit.collider.get_meta("mountain_downhill_rival",false),"speed":hit.collider.speed,"heading_dot":(-body.global_basis.z).dot(-hit.collider.global_basis.z)})
+				for j in body.get_slide_collision_count():
+					var contact = body.get_slide_collision(j)
+					contacts.append({"body":str(contact.get_collider().get_path()),"normal":str(contact.get_normal())})
+				print("DOWNHILL_CONTACT ",{"name":entry.name,"time":entry.run.elapsed,"gate":entry.run.checkpoint,"offset":offset,"point":str(body.global_position),"yaw":body.rotation.y,"lane":entry.pilot.lane,"actual_lane":(body.global_position-race.course.point(offset)).dot(race.course.direction(offset).cross(Vector3.UP).normalized()),"speed":body.speed,"steer":body.steer_input,"gap":entry.pilot.gap,"reverse":entry.pilot.reverse_left,"contacts":contacts,"sensor":sensor,"merge_blocker":merge_blocker})
 		if Time.get_ticks_msec()>=next_report:
 			next_report = Time.get_ticks_msec()+10000
-			print("DOWNHILL_RACERS ",rivals.map(func(e): return {"name":e.name,"gate":e.run.checkpoint,"finish":e.run.finish,"failure":e.run.failure,"point":str(e.car.global_position) if is_instance_valid(e.car) else "freed"}))
+			print("DOWNHILL_RACERS ",rivals.map(func(e): return {"name":e.name,"gate":e.run.checkpoint,"finish":e.run.finish,"failure":e.run.failure,"point":str(e.car.global_position) if is_instance_valid(e.car) else "freed","speed":e.car.speed if is_instance_valid(e.car) else 0,"recoveries":e.pilot.recoveries if e.pilot != null else driver.recoveries,"gap":e.pilot.gap if e.pilot != null else driver.gap}))
 	var dante: Dictionary = {}
 	for e in rivals: if e.player: dante = {"gate":e.run.checkpoint,"finish":e.run.finish,"failure":e.run.failure,"elapsed":e.run.elapsed,"speed":e.car.speed if is_instance_valid(e.car) else -1,"health":e.car.health if is_instance_valid(e.car) else -1}
 	print("DOWNHILL_DANTE_END ",dante," last=",race.last_result," active=",race.active)
+	print("DOWNHILL_RESULTS ",rivals.map(func(e): return {"name":e.name,"gate":e.run.checkpoint,"progress":e.run.progress,"finish":e.run.finish,"failure":e.run.failure}))
+	sample_frames = false
+	if not frame_samples.is_empty():
+		for argument in OS.get_cmdline_user_args():
+			if argument.begins_with("--frame-samples="):
+				var output := FileAccess.open(argument.trim_prefix("--frame-samples="),FileAccess.WRITE)
+				if output != null:
+					output.store_string(JSON.stringify({"frame_ms_in_order":frame_samples,"renderer":RenderingServer.get_current_rendering_method(),"vsync":DisplayServer.window_get_vsync_mode(),"max_fps":Engine.max_fps,"viewport":str(root.size)}))
+		frame_samples.sort()
+		var total := 0.0
+		for sample in frame_samples: total += sample
+		print("DOWNHILL_FRAME_TIME ",{"frames":frame_samples.size(),"seconds":total/1000.0,"fps":float(frame_samples.size())*1000.0/total,"p50":frame_samples[int(frame_samples.size()*.5)],"p95":frame_samples[int(frame_samples.size()*.95)],"p99":frame_samples[int(frame_samples.size()*.99)],"max":frame_samples.back(),"over33":frame_samples.filter(func(v): return v>33.3).size(),"over66":frame_samples.filter(func(v): return v>66.7).size(),"renderer":RenderingServer.get_current_rendering_method(),"vsync":DisplayServer.window_get_vsync_mode(),"max_fps":Engine.max_fps,"viewport":root.size})
 	car.set_external_driver(false)
 	car.controlled = world.driving.occupied and world.driving.car==car
+	if observation_seconds>0.0:
+		print("DOWNHILL_BOUNDED_OBSERVATION seconds=",observation_seconds," reference_driver=",driving_script != DRIVER)
+		race.cancel_attempt()
+		check(not race.active and race.snapshot().finishes==0,"bounded measurement cancels without granting a finish or prize")
+		return
 	check(not race.active and race.last_result.get("finished",false),"player completes full route using physics and ordered checkpoints")
 	var final_gate: int = race.course.gate_offsets.size()
 	check(rivals.filter(func(e): return not e.player and int(e.run.checkpoint)>=final_gate-3).size()==6,"all six rivals stay competitive through most of the course")

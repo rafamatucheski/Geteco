@@ -114,7 +114,7 @@ func refresh_context() -> void:
 	if session == null or session.state == null or not is_instance_valid(session.world.player): return
 	var focus: Vector3 = session.world.driving.car.global_position if session.world.driving.occupied else session.world.player.global_position
 	var center := Vector3(4885.0 * SCALE, 0.0, 3400.0 * SCALE)
-	var should_activate: bool = session.state.region_id == "harbor" and session.state.place_id.is_empty() and focus.distance_to(center) <= ACTIVE_DISTANCE
+	var should_activate: bool = session.state.region_id == "harbor" and session.urban_operations.world_is_continuous() and focus.distance_to(center) <= ACTIVE_DISTANCE
 	if should_activate == active: return
 	active = should_activate
 	for index in cranes.size():

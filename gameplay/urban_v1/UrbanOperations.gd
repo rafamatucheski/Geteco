@@ -90,13 +90,17 @@ func _ready() -> void:
 	secret_passage.state_changed.connect(_secret_state_changed)
 
 func refresh_context() -> void:
-	if is_instance_valid(village): village.set_region_active(session.state.region_id == "harbor" and session.state.place_id.is_empty())
-	if is_instance_valid(village) and is_instance_valid(village.homes): village.homes.set_region_active(session.state.region_id == "harbor" and session.state.place_id.is_empty())
-	if is_instance_valid(village_residents): village_residents.set_region_active(session.state.region_id == "harbor" and session.state.place_id.is_empty())
+	var village_visible: bool = session.state.region_id == "harbor" and world_is_continuous()
+	if is_instance_valid(village): village.set_region_active(village_visible)
+	if is_instance_valid(village) and is_instance_valid(village.homes): village.homes.set_region_active(village_visible)
+	if is_instance_valid(village_residents): village_residents.set_region_active(village_visible)
 	if is_instance_valid(port): port.refresh_context()
 	if is_instance_valid(cemetery): cemetery.refresh_context()
 	if is_instance_valid(cargo_handling): cargo_handling.refresh_context()
-	if is_instance_valid(secret_passage): secret_passage.set_region_active(session.state.region_id == "harbor" and session.state.place_id.is_empty())
+	if is_instance_valid(secret_passage): secret_passage.set_region_active(village_visible)
+
+func world_is_continuous() -> bool:
+	return session.state.place_id.is_empty() or (session.building_entrance != null and session.building_entrance.in_building()) or (session.service_roofs != null and session.service_roofs.is_active())
 
 func nearest_action() -> Dictionary:
 	var secret_action: Dictionary = secret_passage.nearest_action() if is_instance_valid(secret_passage) else {}

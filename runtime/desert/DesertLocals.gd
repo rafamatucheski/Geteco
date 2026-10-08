@@ -44,8 +44,8 @@ func _process(delta: float) -> void:
 			if actor.controlled_automatically: continue
 			var pause := fposmod(_elapsed+float(routine.identity%11),22.0)>17.0
 			actor.speed=0.0 if pause else 1.15
-			var model: Node3D=actor.visual.get_child(0)
-			model.activity="talk" if pause else ""
+			var routine_model: Node3D=actor.visual.get_child(0)
+			routine_model.activity="talk" if pause else ""
 			continue
 		if locals.has(routine.id):
 			locals.erase(routine.id)

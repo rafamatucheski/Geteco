@@ -52,12 +52,15 @@ func _run() -> void:
 			check(support_distance < 0.080, "%s mantém o apoio no volume da mão real (%.3f m)" % [id, support_distance])
 		pose.attack(id)
 		var attacked: Dictionary
+		var shotgun_pump_seen := false
 		for attack_tick in 10:
 			attacked = pose.update(id, 1.0 / 60.0, true, false, 0.0, false, false, 0.0)
+			if float(attacked.get("pump", 0.0)) > 0.02: shotgun_pump_seen = true
 			actor._pose_locomotion(Vector3.ZERO, 0.0, Vector3.ZERO, 0.0)
 			actor.set_combat_weapon_pose(id, attacked)
 			actor._apply_combat_weapon_pose()
 		check(finite_vector(attacked.right) and finite_vector(attacked.gun_origin), "%s anima ataque sem alterar lógica" % id)
+		if id == "shotgun": check(shotgun_pump_seen, "shotgun bombeia após o disparo")
 		model.global_transform = actor.combat_weapon_transform(grip)
 		if bool(attacked.left_grip) and data.SUPPORT_GRIPS.has(id):
 			var attack_support_distance := actor.combat_palm_position("Left").distance_to(model.to_global(attacked.get("support_point", data.SUPPORT_GRIPS[id])))
@@ -71,5 +74,7 @@ func _run() -> void:
 		check(stream != null and String(stream.resource_path).begins_with("res://") and stream.get_length() > 0.03, "%s usa AudioStream importado com conteúdo (editor/PCK)" % id)
 	for id in audio.RELOAD_WEAPONS:
 		check(audio.reload_take(id, rng) != null and audio.reload_seconds(id) >= audio.MIN_RELOAD, "%s possui banco/duração de recarga" % id)
+	var pump := audio.shotgun_pump()
+	check(pump != null and pump.get_length() >= 0.30 and pump.get_length() <= 0.36, "shotgun possui efeito curto de bombeamento após o disparo")
 	print("WEAPON_PRESENTATION_CONTRACT checks=%d failures=%s" % [checks, failures])
 	quit(0 if failures.is_empty() else 1)

@@ -185,6 +185,8 @@ func _tree(point: Vector2, rng: RandomNumberGenerator) -> void:
 	_put("trunk",Vector3(point.x,0,point.y),Vector3(radius/.04,height,radius/.04),rng.randf()*TAU,Color.WHITE)
 	var crown_size := rng.randf_range(4.3,6.4)
 	_put("crown_%d"%rng.randi_range(0,2),Vector3(point.x,height*0.70,point.y),Vector3(crown_size,height*.54,crown_size*.94),rng.randf()*TAU,Color.WHITE)
+	if preload("res://runtime/FishingLocation.gd").reserved(point,2.5): return
+	if preload("res://world/places/amusement_park/AmusementParkLayout.gd").reserved(point,3.5): return
 	var collider := CollisionShape3D.new()
 	var shape := CylinderShape3D.new()
 	shape.radius = radius
@@ -195,6 +197,8 @@ func _tree(point: Vector2, rng: RandomNumberGenerator) -> void:
 	tree_positions.append(Vector3(point.x,0,point.y))
 
 func _put(kind: String, point: Vector3, scale_value: Vector3, yaw: float, tint: Color) -> void:
+	if preload("res://runtime/FishingLocation.gd").reserved(Vector2(point.x,point.z),2.5 if kind == "trunk" or kind.begins_with("crown_") else .7): return
+	if preload("res://world/places/amusement_park/AmusementParkLayout.gd").reserved(Vector2(point.x,point.z),3.5 if kind == "trunk" or kind.begins_with("crown_") else .7): return
 	var cell := Vector2i(floori(point.x/CELL),floori(point.z/CELL))
 	var key := "%s_%d_%d" % [kind,cell.x,cell.y]
 	if not _batches.has(key): _batches[key] = {"kind":kind,"cell":cell,"transforms":[],"colors":[]}

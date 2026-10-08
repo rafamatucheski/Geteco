@@ -89,7 +89,7 @@ static func _ring() -> AudioStreamWAV:
 	var bytes := PackedByteArray()
 	var rate := 22050
 	bytes.resize(int(rate*1.4)*2)
-	for i in bytes.size()/2:
+	for i in floori(float(bytes.size())/2.0):
 		var t := float(i)/rate
 		var pulse := fmod(t,.72)
 		var envelope := clampf(minf(pulse/.015,(.48-pulse)/.035),0,1)

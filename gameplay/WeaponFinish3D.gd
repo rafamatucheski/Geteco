@@ -8,7 +8,7 @@ static func apply(root: Node3D, id: String, muzzle: Vector3) -> void:
 	var dark := GEO._mat(Color("20272b"), 0.55, 0.48)
 	var rubber := GEO._mat(Color("181b1c"), 0.0, 0.84)
 	var brass := GEO._mat(Color("a78a50"), 0.7, 0.4)
-	if id in ["ak47", "m4a1", "smg", "micro_smg", "shotgun", "sawed_off", "magnum"]:
+	if id in ["ak47", "m4a1", "smg", "micro_smg", "shotgun", "magnum"]:
 		# Dark recessed muzzle surrounded by a steel lip, not a solid capped cylinder.
 		var tip := muzzle + Vector3(0, 0, 0.021)
 		GEO._cylinder(root, "MuzzleLip", tip, 0.016, 0.014, steel, Vector3(90,0,0))
@@ -37,7 +37,7 @@ static func apply(root: Node3D, id: String, muzzle: Vector3) -> void:
 			if id == "m4a1":
 				var lens := GEO._mat(Color("346269"),0.45,0.22)
 				GEO._box(root,"SightLens",Vector3(0,0.067,-0.0555),Vector3(0.024,0.023,0.001),lens)
-	elif id in ["shotgun", "sawed_off"]:
+	elif id == "shotgun":
 		GEO._trigger_guard(root,Vector3(0,-0.035,0.0),dark)
 		GEO._box(root,"EjectionRecess",Vector3(0.025,0.018,0),Vector3(0.002,0.025,0.065),rubber)
 		var pump := root.get_node_or_null("Pump") as Node3D
@@ -86,7 +86,7 @@ static func apply(root: Node3D, id: String, muzzle: Vector3) -> void:
 		for z in [0.025,0.045,0.065,0.085]:
 			GEO._cylinder(root,"GripBinding",Vector3(0,0,z),0.020 if id != "knife" else 0.017,0.004,rubber,Vector3(90,0,0))
 	_finish_meshes(root)
-	for moving_name in ["Pump","ReloadCylinder"]:
+	for moving_name in ["Pump","ReloadCylinder","BreakActionBarrels","Slide"]:
 		var moving := root.get_node_or_null(NodePath(moving_name)) as Node3D
 		if moving: _batch_static(moving)
 	_batch_static(root)
@@ -163,7 +163,7 @@ static func _batch_static(root: Node3D) -> void:
 		var ancestor: Node = child
 		var moving := false
 		while ancestor != root:
-			if ancestor.name in ["Pump","LoadedRocket","ReloadCylinder"]: moving = true
+			if ancestor.name in ["Pump","LoadedRocket","ReloadCylinder","BreakActionBarrels","Slide","CurvedMagazine"]: moving = true
 			ancestor = ancestor.get_parent()
 		if moving: continue
 		if child.mesh == null or child.mesh.get_surface_count() == 0: continue

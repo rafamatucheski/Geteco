@@ -1,5 +1,7 @@
 # Harbor — prédios acessíveis, leva 1
 
+Registro histórico de **06/10/2026**, restrito aos dois primeiros prédios. A implementação de **07/10/2026** substitui seus acessos por portas contínuas, amplia o catálogo para 59 edifícios/119 pavimentos e acrescenta 24 coberturas aos serviços existentes. Consulte o [inventário atualizado](../harbor-interiores-por-levas.md), o [conteúdo atual](../harbor-building-content-20261007.md) e o [checklist com evidências atuais](../interior-standard-checklist.md). As medições abaixo não certificam essa ampliação.
+
 ## Entrega e cobertura
 
 Customs House e Union Lofts: **2 fachadas, 2 interiores independentes, 8 plantas**, com térreo e três andares em cada prédio. As plantas acompanham as três linhas superiores de janelas das fachadas existentes. O catálogo completo de levas está em [harbor-interiores-por-levas.md](../harbor-interiores-por-levas.md).

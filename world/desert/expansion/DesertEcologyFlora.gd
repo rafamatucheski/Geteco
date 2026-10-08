@@ -120,7 +120,7 @@ static func _prickly(data: Dictionary,pose: Transform3D) -> void:
 		var pad := Transform3D(pose.basis*Basis(Vector3.FORWARD,tilt),pose*pads[i])
 		G.ellipsoid(data,pad,Vector3(.19,.28,.054) if i<3 else Vector3(.145,.205,.045),green.lightened(float(i%3)*.035),8,5)
 		for mark in 4:
-			var at := Vector3(-.07+float(mark%2)*.14,-.08+float(mark/2)*.15,.052)
+			var at := Vector3(-.07+float(mark%2)*.14,-.08+float(floori(float(mark)/2.0))*.15,.052)
 			G.branch(data,pad*at,pad*(at+Vector3(.01,.014,.012)),.011,.003,Color("c2b280"),3)
 	G.ellipsoid(data,pose.translated_local(Vector3(.40,1.195,0)),Vector3(.045,.055,.041),Color("94624c"),6,3)
 

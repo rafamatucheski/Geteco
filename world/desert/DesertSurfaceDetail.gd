@@ -9,7 +9,7 @@ static var _grass_material: ShaderMaterial
 static var _pebble_mesh: SphereMesh
 static var _grass_mesh: ArrayMesh
 
-static func build_chunk(chunk: Node3D, rect: Rect2, roads: Array, clear: Callable, height_at := Callable()) -> void:
+static func build_chunk(chunk: Node3D, rect: Rect2, _roads: Array, clear: Callable, height_at := Callable()) -> void:
 	_prepare_resources()
 	var rng := RandomNumberGenerator.new()
 	rng.seed=absi(int(rect.position.x)*73856093^int(rect.position.y)*19349663)+771

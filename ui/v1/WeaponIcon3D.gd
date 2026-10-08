@@ -49,6 +49,9 @@ func _load_textures() -> void:
 		var image := Image.new()
 		var error := image.load_svg_from_buffer(bytes) if source.ext == "svg" else image.load_png_from_buffer(bytes)
 		if error == OK: icon_textures[id] = ImageTexture.create_from_image(image)
+	var sword := Image.new()
+	var sword_svg := '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="64" viewBox="0 0 160 64"><path d="M44 42 Q97 28 151 7 Q116 39 48 48 Z" fill="#d5e3ed"/><path d="M8 50 L40 41 L44 49 L12 59 Z" fill="#303943"/><path d="M38 34 L46 32 L53 56 L45 58 Z" fill="#c3a469"/><path d="M15 48 L19 57 M25 46 L29 54 M34 43 L38 52" stroke="#b9a88b" stroke-width="2"/></svg>'
+	if sword.load_svg_from_string(sword_svg) == OK: icon_textures["katana"] = ImageTexture.create_from_image(sword)
 
 func set_weapon(id: String) -> void:
 	weapon_id = id

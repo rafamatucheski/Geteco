@@ -58,7 +58,7 @@ func begin(id: String) -> bool:
 	_visual_global = _player.visual.global_transform
 	_quality_viewport = get_viewport()
 	quality_state = {"msaa_3d":_quality_viewport.msaa_3d,"scaling_3d_scale":_quality_viewport.scaling_3d_scale,"scaling_3d_mode":_quality_viewport.scaling_3d_mode,"screen_space_aa":_quality_viewport.screen_space_aa}
-	_quality_viewport.msaa_3d = maxi(_quality_viewport.msaa_3d,Viewport.MSAA_4X)
+	_quality_viewport.msaa_3d = maxi(_quality_viewport.msaa_3d,Viewport.MSAA_4X) as Viewport.MSAA
 	_quality_viewport.scaling_3d_scale = maxf(_quality_viewport.scaling_3d_scale,1.0)
 	station = id
 	camera = Camera3D.new()

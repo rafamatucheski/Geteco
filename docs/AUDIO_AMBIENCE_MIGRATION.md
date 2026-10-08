@@ -39,11 +39,15 @@ Nenhum arquivo de combate, áudio de arma ou arquivo mantido pelo Claude foi alt
 
 ## Integrações ainda necessárias
 
-- Quando atividades de carga/guincho expuserem eventos públicos de engate, descarga e entrega, o integrador deve encaminhá-los para um método público do bridge (ou acrescentar sinais próprios). Nesta rodada, apenas estados públicos de corrida oferecem transições inequívocas; inferir efeitos de carga por polling criaria falsos positivos.
+- Atualização de 07/10/2026: `MissionWorld.tow_event` publica `loaded`, `unloaded` e `delivered` somente após operações bem-sucedidas. `ActivityAudioBridge` conecta o sinal ao iniciar e reutiliza os cues funcionais `mission_start`, `checkpoint` e `complete`, nas duas vozes existentes. São confirmações de atividade, não gravações mecânicas exclusivas do guincho. Recusas, restauração e cancelamento não reproduzem essas confirmações; não foi acrescentado polling de carga. O teste dirigido é `tests/test_tow_audio_events.gd`.
 - Se novos pisos forem adicionados, o integrador deve marcar o `StaticBody3D`/pai com identidade de superfície ou registrar a estrada em `NativeRegion.roads`; hoje o resolver usa os colliders e registros reais já existentes. Uma futura propriedade `footstep_surface` no collider pode substituir os aliases por nome sem alterar `WorldAudio`.
 - Se o sistema de interiores passar a publicar um perfil acústico por lugar, encaminhar `state.place_id` e o perfil a `AmbienceProfile.targets`; não se deve adicionar leitos genéricos a salas sem fonte V1 correspondente.
 
 ## Validação pendente
+
+Atualização de 07/10/2026: a tentativa de baseline renderizada do guincho foi interrompida quando outras sessões iniciaram testes e renderização concorrentes, após o gate inicial de exclusividade. Nenhuma métrica dessa tentativa aprova performance. A comparação antes/depois e a revisão auditiva na sessão completa permanecem pendentes; evidência em `evidence/tow-events-20261007/benchmark-limitation.txt`. O registro abaixo descreve a rodada original da migração.
+
+Em janela posterior exclusiva, Godot 4.7.2 .NET executou `tests/test_tow_audio_events.gd`: **20 verificações, zero falhas**, após build C# sem erros ou avisos. A referência congelada de `MissionWorld` anterior à correção reproduziu a ausência do sinal público (saída 1). O teste final verificou operações reais de carga/descarga/entrega e reprodução dos streams, recusa sem cue, restauração e cancelamento silenciosos, origem incompatível, rebind sem duplicação e desconexão ao liberar o bridge. A fixture controla a autorização de espaço livre; não certifica colisão física da baia nem mixagem auditiva no mundo completo. Logs: `evidence/tow-events-20261007/functional-baseline.log` e `functional-final.log`.
 
 Por instrução desta rodada, Godot, testes, benchmarks e commits **não foram executados**. A inspeção estática confirma caminhos, símbolos e a cadeia de instanciação, mas não valida comportamento audível, colisão, mixagem nem performance.
 

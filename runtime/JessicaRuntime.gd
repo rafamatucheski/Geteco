@@ -388,7 +388,7 @@ func _plan_getaway(via_foundry := true) -> Dictionary:
 	var parking: Vector3 = Vector3(bay.x-3.25,0,session.world.maciota_place.to_global(session.world.maciota_place.exterior_origin).z+2.9)
 	var corridor_z: float = session.world.maciota_place.entry_position.z+1.2
 	var road_turn_radius: float = 5.6
-	var quay_target: Vector3 = Vector3(186 if via_foundry else 189.75,0,corridor_z-road_turn_radius)
+	var quay_target: Vector3 = Vector3(186.0 if via_foundry else 189.75,0.0,corridor_z-road_turn_radius)
 	var quay_lane: Dictionary = router.nearest_edge(quay_target,false,Vector3.BACK)
 	route_legs = {"itinerary":"foundry_quay" if via_foundry else "union_market_quay",
 		"start":str(car.global_position),"start_heading":str(-car.global_basis.z),

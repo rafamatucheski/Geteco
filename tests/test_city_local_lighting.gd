@@ -3,6 +3,8 @@ const LIGHTING := preload("res://world/city_look/CityLocalLighting.gd")
 const FRAGILE := preload("res://gameplay/street_physics/FragileProps3D.gd")
 class Clock extends RefCounted:
 	var time_of_day := .93
+	var embedded := false
+	func _embedded_building() -> bool: return embedded
 class Session extends RefCounted:
 	var weather := Clock.new()
 class World extends Node3D:
@@ -75,6 +77,10 @@ func run() -> void:
 	controller.state.place_id = "maciota"
 	lighting.refresh()
 	check(lighting.assignments.is_empty(),"interior transition disables outdoor pool")
+	controller.session.weather.embedded = true
+	lighting.refresh()
+	check(lighting.assignments.size()==1,"physical building and roof retain nearby night lighting")
+	controller.session.weather.embedded = false
 	controller.state.place_id = ""
 	controller.state.region_id = "mountain"
 	lighting.refresh()

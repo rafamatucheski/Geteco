@@ -1,0 +1,128 @@
+[
+  {
+    "file": "casing_hard_0.wav",
+    "seconds": 0.16,
+    "peak_dbfs": -6.17,
+    "sha256": "6b4397bd6834b348eaf2a2a74a2e51caa06cd6aa85ce2106f92dcf1276bb17a2"
+  },
+  {
+    "file": "casing_metal_0.wav",
+    "seconds": 0.24,
+    "peak_dbfs": -6.12,
+    "sha256": "e217db0dec506c15b5f6eccc3e596316fa6b3fe89a85d0d574ab92ab3ec670a3"
+  },
+  {
+    "file": "casing_wood_0.wav",
+    "seconds": 0.13,
+    "peak_dbfs": -6.53,
+    "sha256": "6d04898f69f78143f716962f84c05ae1af22df61cb3dc68df29ebf8c320709b7"
+  },
+  {
+    "file": "casing_soft_0.wav",
+    "seconds": 0.085,
+    "peak_dbfs": -7.23,
+    "sha256": "9327611bf9d250c3b92b05d7b717630f289178803918d96297f58e257eaee5c7"
+  },
+  {
+    "file": "casing_snow_0.wav",
+    "seconds": 0.1,
+    "peak_dbfs": -7.29,
+    "sha256": "1fed1d3de8f6f62e2869cc33c0cb09f5cff4d255e44efbf0c1113956180b96ae"
+  },
+  {
+    "file": "impact_soil_0.wav",
+    "seconds": 0.22,
+    "peak_dbfs": -6.0,
+    "sha256": "42c7c14d26ff97e524bdcf5dc7a05f971a77f1e6b83b837abfab81f4946f77bb"
+  },
+  {
+    "file": "impact_snow_0.wav",
+    "seconds": 0.17,
+    "peak_dbfs": -6.0,
+    "sha256": "d7044293fbf67ff9aefbf70ff785362e348ca5f8a3c9a1034c4d66b16aa80ae7"
+  },
+  {
+    "file": "casing_hard_1.wav",
+    "seconds": 0.16,
+    "peak_dbfs": -6.4,
+    "sha256": "8765b8c17b40cbbfd04a3169bc61737e9123a634dc98ca08c34d5f1705476792"
+  },
+  {
+    "file": "casing_metal_1.wav",
+    "seconds": 0.24,
+    "peak_dbfs": -6.27,
+    "sha256": "b93bb9ac90cf8b9313301db97515ed21a9a3c899b5659e6cbadab34c5e208bc3"
+  },
+  {
+    "file": "casing_wood_1.wav",
+    "seconds": 0.13,
+    "peak_dbfs": -6.47,
+    "sha256": "6f210e0d2142acb0ab8c9ae1f742d556f81ee9cde01ee75ad2d9ec9168f9c356"
+  },
+  {
+    "file": "casing_soft_1.wav",
+    "seconds": 0.085,
+    "peak_dbfs": -7.4,
+    "sha256": "7ace0f993feffd521c4e91142f2af287f482b213ec37b1edc544b75de2664396"
+  },
+  {
+    "file": "casing_snow_1.wav",
+    "seconds": 0.1,
+    "peak_dbfs": -7.45,
+    "sha256": "222d6185b04ffc71cd32bfaf87ed06bccb6fb5909bba8e41b71d026c70c99365"
+  },
+  {
+    "file": "impact_soil_1.wav",
+    "seconds": 0.22,
+    "peak_dbfs": -6.0,
+    "sha256": "4bd6833fbd7ef581a03b501cbc06f12c3b3eee9ccf19070544c3336ec2b1c1f5"
+  },
+  {
+    "file": "impact_snow_1.wav",
+    "seconds": 0.17,
+    "peak_dbfs": -6.0,
+    "sha256": "1482030ff5247a66d168bac4c4ec281e833d58c1108972698a6e6363663fa414"
+  },
+  {
+    "file": "casing_hard_2.wav",
+    "seconds": 0.16,
+    "peak_dbfs": -6.08,
+    "sha256": "25cd8266873a4a4549f6ba6904bf4f3f17c09bd01213941fc9b210f305be1ec2"
+  },
+  {
+    "file": "casing_metal_2.wav",
+    "seconds": 0.24,
+    "peak_dbfs": -6.05,
+    "sha256": "a57959f8dbd0e23e355b68edb45062ee98271e2bcef4f3cb2e3c02aa61923e7f"
+  },
+  {
+    "file": "casing_wood_2.wav",
+    "seconds": 0.13,
+    "peak_dbfs": -6.61,
+    "sha256": "105f4af7855fb4999ee58f57efab5aed9d0a65afa1908b331a3b54944717d2ea"
+  },
+  {
+    "file": "casing_soft_2.wav",
+    "seconds": 0.085,
+    "peak_dbfs": -7.37,
+    "sha256": "3003e974a0757b8aefa56647912279925bdf002c2d6a464834eade4d37c980b2"
+  },
+  {
+    "file": "casing_snow_2.wav",
+    "seconds": 0.1,
+    "peak_dbfs": -7.42,
+    "sha256": "bed70e93d67a854ad8e1423bdab2609cff6de5ec457f57afc1fe7fdc1d085ce8"
+  },
+  {
+    "file": "impact_soil_2.wav",
+    "seconds": 0.22,
+    "peak_dbfs": -6.0,
+    "sha256": "cd930dfe3a696bbbb2dc9a6d0181a381924ce2915f023bf8edb97ad99e5198a2"
+  },
+  {
+    "file": "impact_snow_2.wav",
+    "seconds": 0.17,
+    "peak_dbfs": -6.0,
+    "sha256": "89200cdd1a94a3d80259ffbfc859ae178829e1151ee96cfb2ba05692a12e4e41"
+  }
+]

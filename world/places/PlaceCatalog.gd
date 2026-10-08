@@ -124,6 +124,10 @@ static func definitions() -> Array[Dictionary]:
 		if definition.id == "harbor_police":
 			definition.camera_size = 16.0
 			definition.camera_target = Vector3(0, .7, -.6)
+		if definition.id == "harbor_clothing":
+			# The existing transit platform in front of Union is 20 cm above
+			# the pavement. FullSession still checks the entire body and support.
+			definition["return_clearance_offsets"] = [Vector3(0,.2,0),Vector3(0,.2,.75),Vector3(.8,.2,.75),Vector3(-.8,.2,.75)]
 		definition["npc_model"] = ""
 		definition["npc_point"] = Vector3.ZERO
 		if definition.id == "harbor_bank":
@@ -133,24 +137,30 @@ static func definitions() -> Array[Dictionary]:
 		if definition.id == "harbor_sewer":
 			definition.spawn = Vector3(-5,0,-.85)
 			definition.exit = Vector3(-5,0,-.85)
+		if SEWERS.is_extra(definition.id): SEWERS.decorate(definition)
 		if definition.id == "santa_mare_hold":
 			definition.camera_size = 14.5
 			definition.camera_target = Vector3(0,.45,0)
 			definition.npcs = [
-		if SEWERS.is_extra(definition.id): SEWERS.decorate(definition)
 				{"id":"santa_mare_hold_crew_01","name":"Lucas","model":"res://world/places/SantaMareCrewModel3D.gd","appearance":{},"local_position":Vector3(-1.4,0,1.1)},
 				{"id":"santa_mare_hold_crew_02","name":"Mara","model":"res://world/places/SantaMareCrewModel3D.gd","appearance":{},"local_position":Vector3(1.6,0,-2.5)},
 			]
 	result.append(preload("res://gameplay/urban_v1/VerticeUndercroftPlace.gd").definition_data())
 	result.append(preload("res://gameplay/urban_v1/MountainFortPlace.gd").definition_data())
 	result.append(preload("res://world/places/supermarket/SupermarketPlace.gd").definition_data())
+	if not Engine.get_meta("curitiba_cellar_baseline",false):
+		result.append(preload("res://world/places/curitiba_cellar/CuritibaCellarPlace.gd").definition_data())
+	if not Engine.get_meta("arcade_baseline",false):
+		result.append(preload("res://world/places/arcade/ArcadePlace.gd").definition_data())
 	result.append(preload("res://world/places/cobra_house/CobraLeaderHouse.gd").definition_data())
 	result.append_array(preload("res://world/desert/DesertLayout.gd").place_definitions())
+	result.append_array(preload("res://world/desert/underground/DesertUnderground.gd").definitions())
 	result.append(preload("res://world/mining/coal/CoalMinePlace.gd").definition_data())
 	result.append_array(preload("res://world/desert/village/DesertVillageHomes.gd").definitions())
 	result.append_array(preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").definitions())
+	if preload("res://world/places/amusement_park/AmusementParkLayout.gd").enabled():
+		result.append(preload("res://world/places/amusement_park/HauntedHousePlace.gd").definition_data())
 	return result
-	result.append_array(preload("res://world/desert/underground/DesertUnderground.gd").definitions())
 static func get_definition(id: String) -> Dictionary:
 	for definition in definitions():
 		if definition.id == id: return definition
@@ -158,6 +168,18 @@ static func get_definition(id: String) -> Dictionary:
 static func create_place(id: String) -> Node3D:
 	var definition := get_definition(id)
 	if definition.is_empty(): return null
+	if id == "harbor_arcade":
+		var arcade = preload("res://world/places/arcade/ArcadePlace.gd").new()
+		arcade.definition = definition
+		return arcade
+	if id == "harbor_haunted_house":
+		var haunted = preload("res://world/places/amusement_park/HauntedHousePlace.gd").new()
+		haunted.definition = definition
+		return haunted
+	if id == "harbor_curitiba_cellar":
+		var cellar = preload("res://world/places/curitiba_cellar/CuritibaCellarPlace.gd").new()
+		cellar.definition = definition
+		return cellar
 	if preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").is_building(id):
 		var building = preload("res://world/places/harbor_buildings/HarborBuildingPlace.gd").new()
 		building.definition = definition

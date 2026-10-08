@@ -24,6 +24,7 @@ func _process(delta: float) -> void:
 	_scan-=delta
 	if _scan>0: return
 	_scan=.5
+	var world_visible: bool = session.urban_operations.world_is_continuous()
 	var spawned := false
 	for i in SPOTS.size():
 		var id := "tonico_parked_%d"%i
@@ -38,7 +39,7 @@ func _process(delta: float) -> void:
 		if is_instance_valid(car):
 			_capture(id,car)
 			var occupied: bool = car==session.world.driving.car and session.world.driving.occupied
-			var active: bool = occupied or (session.state.region_id==str(car.get_meta("region_id","harbor")) and session.state.place_id.is_empty() and car.global_position.distance_to(session.world.player.global_position)<125)
+			var active: bool = occupied or (session.state.region_id==str(car.get_meta("region_id","harbor")) and world_visible and car.global_position.distance_to(session.world.player.global_position)<125)
 			if active==not car.get_meta("village_parked_suspended",false): continue
 			if active:
 				session.controller.region.prepare_collision_at(car.global_position)
@@ -48,7 +49,7 @@ func _process(delta: float) -> void:
 			car.collision_layer=4 if active else 0
 			car.set_physics_process(active and car.health>0)
 			continue
-		if spawned or session.state.region_id!="harbor" or not session.state.place_id.is_empty(): continue
+		if spawned or session.state.region_id!="harbor" or not world_visible: continue
 		var record: Dictionary = saved.get(id,{})
 		if not record.is_empty() and record.health<=0: continue
 		var point: Vector3 = ORIGIN+SPOTS[i][1]

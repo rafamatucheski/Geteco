@@ -13,6 +13,8 @@ func _initialize() -> void:
 	_adversarial()
 	_concentrated()
 	_real_edits()
+	_rotated_buildings()
+	_transit_native_footprint()
 	_initial_prepare()
 	print("%s CITY_CONTEXT_INDEX checks=%d failures=%d" % ["PASS" if failures == 0 else "FAIL", checks, failures])
 	quit(0 if failures == 0 else 1)
@@ -179,6 +181,65 @@ func _real_edits() -> void:
 	else: Engine.remove_meta("geteco_world_edit_document")
 	_check(FileAccess.get_sha256(DATA.PATH) == saved_hash, "arquivo oficial de edição preservado")
 	region.free()
+
+
+func _rotated_buildings() -> void:
+	# Use the same native model as edited building 48; compare the context
+	# against its generated wall mesh, not against a copy of the index formula.
+	for angle in [90.0,37.0]:
+		var region := REGION.new()
+		var data := _building("new_1790426066_503_97028106",Vector2(7,92),Vector2(8.55372619628906,12.8305902481079))
+		data.kind = "urban_infill"
+		data.height_override = 12.0
+		data.editor_rotation = deg_to_rad(angle)
+		region.buildings.append(data)
+		var art := preload("res://world/urban_detail/UrbanSkylineBuilding.gd").new()
+		art.setup(data)
+		art.position = data.position
+		art.rotation.y = data.editor_rotation
+		art._ready()
+		var body := art.visuals_root.get_node("BrickInfill") as MeshInstance3D
+		var actual_bounds := art.transform*art.visuals_root.transform*body.transform*body.mesh.get_aabb()
+		var actual_rect := Rect2(Vector2(actual_bounds.position.x,actual_bounds.position.z),Vector2(actual_bounds.size.x,actual_bounds.size.z))
+		var context := DRESSING._context(region,Rect2(-32,64,80,64))
+		_check(context.buildings.size()==1 and context.buildings[0].rect.is_equal_approx(actual_rect),"rotated %.0f footprint matches generated native wall"%angle)
+		var batches := {}
+		DRESSING._building_surroundings(context,batches)
+		var count := 0
+		for kind in ["dumpster","trash_bags"]:
+			for placement: Transform3D in batches.get(kind,[]):
+				count += 1
+				var mesh: Mesh = preload("res://world/city_look/CityPropKit.gd").mesh(kind)
+				var bounds := placement*mesh.get_aabb()
+				var rect := Rect2(Vector2(bounds.position.x,bounds.position.z),Vector2(bounds.size.x,bounds.size.z))
+				_check(not actual_rect.intersects(rect),"rotated %.0f %s stays outside native walls"%[angle,kind])
+				for reserved: Rect2 in context.transit_reservations:
+					_check(not reserved.intersects(rect),"rotated %.0f %s stays outside edited transit"%[angle,kind])
+		_check(count>0,"rotated %.0f preserves generated alley details"%angle)
+		art.free()
+		region.free()
+
+
+func _transit_native_footprint() -> void:
+	var presentation: Node = load("res://runtime/UrbanTransitPresentation.gd").new()
+	presentation.configure(null)
+	var definition: Dictionary = presentation.definitions[1]
+	var reserved := preload("res://world/city_look/CityTransitReservations.gd").footprint(definition)
+	var station := UrbanStationModel3D.new()
+	station.build(float(definition.angle),false)
+	var edit: Dictionary = definition.get("edit",{})
+	var stretch: Array = edit.get("stretch",[1,1])
+	var basis := Basis(Vector3.UP,deg_to_rad(float(edit.get("rotation",0))))*Basis.from_scale(Vector3(float(stretch[0]),1,float(stretch[1])))
+	var transform := Transform3D(basis*Basis.from_scale(Vector3(18.0/16.0,1,18.0*UrbanStationModel3D.FLOOR_Y/16.0)),definition.position)
+	var count := 0
+	for shape: CollisionShape3D in station.collision_body.get_children():
+		var bounds := transform*shape.transform*shape.shape.get_debug_mesh().get_aabb()
+		var footprint := Rect2(Vector2(bounds.position.x,bounds.position.z),Vector2(bounds.size.x,bounds.size.z))
+		_check(reserved.encloses(footprint),"transit reservation contains actual %s collider"%str(shape.get_meta("interior_solid_id","")))
+		count += 1
+	_check(count>10,"transit fixture built real platform, tube, benches and boarding gates")
+	station.free()
+	presentation.free()
 
 
 func _initial_prepare() -> void:

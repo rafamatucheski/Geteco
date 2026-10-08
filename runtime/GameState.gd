@@ -6,6 +6,7 @@ const INTRO := preload("res://systems/Progression.gd")
 const MISSIONS := preload("res://data/campaign/HarborMissions.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const SCHEMA_VERSION := 3
+const DEFAULT_WORLD_STATE := {"time":.32,"weather":0,"vehicles":[],"rewards":[],"outfit":"dante_classic"}
 const RPG_REWARD_CANONICAL := "mountain_waterfall_secret_rpg_01"
 const RPG_REWARD_V2_ALIAS := "mountain_cave_rpg"
 const CARGO_REWARDS := [
@@ -20,7 +21,7 @@ var world
 var region_id := "harbor"
 var place_id := ""
 var checkpoint_id := "maciota"
-var world_state: Dictionary = {"time":.32,"weather":0,"vehicles":[],"rewards":[],"outfit":"dante_classic"}
+var world_state: Dictionary = DEFAULT_WORLD_STATE.duplicate(true)
 var combat_state: Dictionary = {}
 var equipped_weapon: String:
 	get: return economy.equipped_weapon
@@ -76,7 +77,13 @@ func restore_snapshot(data: Dictionary) -> bool:
 		if not position is Array or position.size() != 3: return false
 		for coordinate in position:
 			if typeof(coordinate) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(coordinate)) or absf(float(coordinate)) > 100000: return false
+	if not preload("res://activities/fishing/FishingState.gd").validate_world(data.world,data.economy): return false
+	if not preload("res://activities/amusement_park/AmusementParkCosmeticState.gd").validate_world(data.world,data.economy): return false
 	if data.world.has("harbor_building_floors") and not preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").valid_floors(data.world.harbor_building_floors): return false
+	if data.world.has("harbor_building_unlocks") and not preload("res://world/places/harbor_buildings/HarborBuildingContent.gd").valid_unlocks(data.world.harbor_building_unlocks,preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").definitions()): return false
+	if data.world.has("harbor_service_roof"):
+		if not preload("res://world/places/harbor_buildings/HarborServiceRoofCatalog.gd").valid_snapshot(data.world.harbor_service_roof): return false
+		if not data.world.harbor_service_roof.is_empty() and (data.region_id != "harbor" or data.place_id != data.world.harbor_service_roof.place): return false
 	var next_economy = ECONOMY.new()
 	var next_campaign = CAMPAIGN.new()
 	var next_canonical_campaign = CANONICAL_CAMPAIGN.new()
@@ -86,6 +93,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 	var time_value: Variant = data.world.get("time",.32)
 	if typeof(time_value) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(time_value)) or time_value < 0 or time_value > 1: return false
 	if not data.world.get("rewards",[]) is Array or not data.world.get("vehicles",[]) is Array: return false
+	if data.world.has("armored_transport") and not preload("res://gameplay/armored/ArmoredSchedule.gd").valid_saved(data.world.armored_transport): return false
 	if data.world.has("mountain_zoo") and not preload("res://world/mountain_detail/zoo/ZooTicketState.gd").valid(data.world.mountain_zoo,data.economy): return false
 	if data.world.has("ashbend_secret_car_claimed") and not data.world.ashbend_secret_car_claimed is bool: return false
 	if data.world.has("remote_coal_secret_revealed") and not data.world.remote_coal_secret_revealed is bool: return false
@@ -145,6 +153,11 @@ func restore_snapshot(data: Dictionary) -> bool:
 		if data.world.garage_rewards.vehicles.has("personal_monaliza") and not data.campaign.completed.has("primeiro_giro"): return false
 	if data.world.has("cold"):
 		if not data.world.cold is Dictionary or not preload("res://runtime/ColdSurvival.gd").validate_snapshot(data.world.cold): return false
+	if data.world.has("wine_cellar"):
+		if not preload("res://gameplay/wine/WineState.gd").validate_wallet(data.world.wine_cellar,data.economy): return false
+	else:
+		for receipt in data.economy.get("transactions",{}):
+			if str(receipt).begins_with("spend:curitiba_wine_"): return false
 	if data.world.has("port_containers") and not preload("res://gameplay/urban_v1/PortContainerState.gd").validate_snapshot(data.world.port_containers): return false
 	# Optional for compatibility with V2 saves written before port/cemetery state
 	# existed. Once present, both halves are mandatory and validated atomically.
@@ -180,6 +193,8 @@ func _migrate_intro(data: Dictionary) -> bool:
 	economy = ECONOMY.new()
 	campaign = CAMPAIGN.new()
 	canonical_campaign = CANONICAL_CAMPAIGN.new()
+	world_state = DEFAULT_WORLD_STATE.duplicate(true)
+	combat_state = {}
 	for item in legacy.snapshot().inventory:
 		if item == "garage_part": economy.grant_item(item)
 		elif preload("res://gameplay/WeaponCatalog.gd").WEAPONS.has(item): economy.grant_weapon(item)

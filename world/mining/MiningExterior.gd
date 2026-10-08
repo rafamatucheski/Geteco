@@ -9,6 +9,7 @@ const GRID := 3.0
 const OWNED_GROUND := Rect2(-326,-1910,300,365)
 static var _ground_material: ShaderMaterial
 static var _wall_material: ShaderMaterial
+static var _road_material: ShaderMaterial
 static var _outline := PackedVector2Array()
 static var _surface_scenes: Dictionary={}
 static var _height_tiles: Dictionary={}
@@ -126,7 +127,12 @@ static func _ground_outline() -> PackedVector2Array:
 	for i in 72:
 		var angle := float(i)*TAU/72.0
 		var south := maxf(sin(angle),0)
-		var roughness := sin(angle*5)*1.7+sin(angle*9)*1.2
+		var sectors := [0.0,9.0,-5.0,4.0,12.0,-7.0,5.0,-9.0,8.0,-4.0,11.0,-3.0]
+		var sector := float(i) / 6.0
+		var cut := lerpf(sectors[int(sector)%12],sectors[(int(sector)+1)%12],fposmod(sector,1.0))
+		# Stronger broken excavation outline to the north; retain the authored
+		# southern apron, access and parking clearance.
+		var roughness := (sin(angle*5)*1.7+sin(angle*9)*1.2) + cut*(1.0-south)
 		var radius := Vector2(136-36*south+roughness,136+17*south+roughness)
 		_outline.append(LAYOUT.PIT_CENTER+Vector2(cos(angle),sin(angle))*radius)
 	return _outline
@@ -153,12 +159,12 @@ static func surface_height(point: Vector2) -> float:
 		if ((a+c)*.5-offset-LAYOUT.PIT_CENTER).length()<110: parts.append(polygon)
 		else: parts=Geometry2D.intersect_polygons(polygon,_ground_outline())
 		parts=_carve_roads(parts,(a+c)*.5-offset)
-		var triangles := PackedVector3Array()
+		var tile_triangles := PackedVector3Array()
 		for part in parts:
 			for index in Geometry2D.triangulate_polygon(part):
 				var p: Vector2=part[index]
-				triangles.append(Vector3(p.x+offset.x,bench_height(p),p.y+offset.y))
-		_height_tiles[key]=triangles
+				tile_triangles.append(Vector3(p.x+offset.x,bench_height(p),p.y+offset.y))
+		_height_tiles[key]=tile_triangles
 	var triangles: PackedVector3Array=_height_tiles[key]
 	for i in range(0,triangles.size(),3):
 		var a := Vector2(triangles[i].x,triangles[i].z)
@@ -221,7 +227,12 @@ static func _build_access(parent: Node3D,rect: Rect2) -> void:
 			for index in Geometry2D.triangulate_polygon(part):
 				var point: Vector2=part[index]
 				faces.append(Vector3(point.x,_triangle_height(point,row.faces),point.y))
-	_emit(parent,"MineGravelAccess",faces,_surface(false),faces)
+	# Compacted pale gravel separates the usable spiral from the raw benches.
+	# Color belongs to the same physical mesh: no floating overlay or z-fighting.
+	if _road_material == null:
+		_road_material = _surface(false).duplicate() as ShaderMaterial
+		_road_material.set_shader_parameter("ground_color", Color("77766f"))
+	_emit(parent,"MineGravelAccess",faces,_road_material,faces)
 
 static func _prepare_roads() -> void:
 	if not _road_triangles.is_empty(): return
@@ -317,6 +328,11 @@ static func build_chunk(parent: Node3D, rect: Rect2) -> Array[OmniLight3D]:
 			parent.add_child(light)
 			lights.append(light)
 	batch.finish()
+	preload("res://world/mining/MiningRouteDressing.gd").build(parent, local_rect, surface_height)
+	if local_rect.has_point(Vector2(13, 0)):
+		var ambience := preload("res://audio/mining/MiningAmbience.gd").new()
+		ambience.position = LAYOUT.CENTER + Vector3(13, -26, 0)
+		parent.add_child(ambience)
 	_build_access_markers(parent,rect)
 	return lights
 
@@ -342,44 +358,27 @@ static func _guardhouse(b: RefCounted) -> void:
 	for y in [1.45,2.3,3.15,4.0,4.85]: b.box("BarrierStripe",Vector3(8.95+(y-3.28)*.18,y,134.105),Vector3(.18,.32,.025),"red",false,Vector3(0,0,-.18))
 	b.box("GateNamePanel",Vector3(-10,2.5,132),Vector3(6.4,1.4,.15),"steel",true)
 	for x in [-12.7,-7.3]: b.box("NamePanelLeg",Vector3(x,1.3,132),Vector3(.14,2.6,.14),"steel",true)
-	var sign := Label3D.new()
-	sign.name="MineProperName"
-	sign.text="SERRA BRUTA"
-	sign.position=Vector3(-10,2.52,132.10)
-	sign.font_size=58
-	sign.pixel_size=.011
-	sign.modulate=Color("ddcba2")
-	sign.outline_size=0
-	b.root.add_child(sign)
+	var name_label := Label3D.new()
+	name_label.name="MineProperName"
+	name_label.text="SERRA BRUTA"
+	name_label.position=Vector3(-10,2.52,132.10)
+	name_label.font_size=58
+	name_label.pixel_size=.011
+	name_label.modulate=Color("ddcba2")
+	name_label.outline_size=0
+	b.root.add_child(name_label)
 
 static func _parking(b: RefCounted) -> void:
-	# Six useful spaces and a wide aisle; only four contain parked employee cars.
+	# Employee vehicles are real fleet instances owned by MiningOperation.
 	for i in 7: b.box("WornParkingStripe",Vector3(-61+float(i)*4.7,.030,100),Vector3(.12,.018,7.2),"white")
 	for i in 6:
 		b.box("WheelStop",Vector3(-58.65+float(i)*4.7,.13,96.4),Vector3(2.2,.26,.3),"concrete",true)
-	for record in [{"p":Vector3(-58.6,0,100),"c":"blue"},{"p":Vector3(-49.2,0,100),"c":"cream"},{"p":Vector3(-44.5,0,100),"c":"red"},{"p":Vector3(-35.1,0,100),"c":"steel"}]:
-		_parked_car(b,record.p,record.c)
 	b.box("ParkingFarEdge",Vector3(-46,.18,93.9),Vector3(34,.36,.35),"concrete",true)
 	# Bench and lockers are set behind the parking stops, outside car manoeuvres.
 	b.box("BreakBenchSeat",Vector3(-64,.48,88),Vector3(3,.13,.65),"timber",true)
 	b.box("BreakBenchBack",Vector3(-64,.92,87.71),Vector3(3,.7,.08),"timber",true)
 	for x in [-65,-63]: b.box("BreakBenchLeg",Vector3(x,.23,88),Vector3(.16,.46,.5),"steel",true)
 	for i in 3: b.box("WorkerLocker",Vector3(-63+float(i)*.8,1.08,82),Vector3(.75,2.16,.7),"blue",true)
-
-static func _parked_car(b: RefCounted, at: Vector3, finish: String) -> void:
-	b.box("EmployeeCarChassis",at+Vector3(0,.6,0),Vector3(1.85,.53,4.35),finish,true)
-	b.box("EmployeeCarCabin",at+Vector3(0,1.1,-.08),Vector3(1.57,.62,2.22),finish,true)
-	b.box("DustyWindscreen",at+Vector3(0,1.12,1.045),Vector3(1.40,.46,.035),"glass")
-	b.box("RearWindscreen",at+Vector3(0,1.12,-1.206),Vector3(1.40,.46,.035),"glass")
-	for side in [-1.0,1.0]:
-		b.box("CarSideWindow",at+Vector3(side*.793,1.14,-.05),Vector3(.025,.40,1.8),"glass")
-		b.box("CarPillar",at+Vector3(side*.814,1.13,0),Vector3(.026,.44,.10),finish)
-		for z in [-1.32,1.38]:
-			b.cylinder("EmployeeWheel",at+Vector3(side*.92,.35,z),.37,.21,"rubber",false,Vector3(0,0,PI*.5))
-			b.cylinder("EmployeeWheelHub",at+Vector3(side*1.035,.35,z),.19,.026,"steel",false,Vector3(0,0,PI*.5))
-		b.box("EmployeeHeadlight",at+Vector3(side*.63,.63,2.18),Vector3(.38,.17,.025),"white")
-		b.box("EmployeeTaillight",at+Vector3(side*.67,.64,-2.18),Vector3(.32,.19,.025),"red")
-	b.box("CarDustSill",at+Vector3(0,.43,2.196),Vector3(1.8,.16,.03),"trail")
 
 static func _crusher(b: RefCounted) -> void:
 	var at := Vector3(13,-28,0)
@@ -395,6 +394,20 @@ static func _crusher(b: RefCounted) -> void:
 		b.box("HopperRim",at+Vector3(side*3.45,5.75,0),Vector3(.28,1.2,6.7),"yellow",true,Vector3(0,0,side*.24))
 		b.box("HopperEnd",at+Vector3(0,5.75,side*3.15),Vector3(7,1.2,.28),"yellow",true,Vector3(-side*.24,0,0))
 	b.cylinder("CrusherDriveMotor",at+Vector3(-3.32,2.45,0),1.1,1.2,"steel",true,Vector3(0,0,PI*.5))
+	# Gear housing, jaw ribs and bolted inspection plates make the machinery
+	# readable at human scale. All ornament hugs its existing solid envelope.
+	for x in [-2.45,-1.75,-1.05,-.35,.35,1.05,1.75,2.45]:
+		b.box("CrusherJawRib",at+Vector3(x,3.15,2.83),Vector3(.12,3.1,.06),"rust")
+	for side in [-1.0,1.0]:
+		b.box("CrusherInspectionPlate",at+Vector3(side*2.87,2.7,.3),Vector3(.055,1.15,1.7),"steel")
+		for y in [2.22,3.18]:
+			for z in [-.43,1.03]: b.box("CrusherPlateBolt",at+Vector3(side*2.91,y,z),Vector3(.08,.11,.11),"cream")
+		for y in [1.6,1.95,2.3,2.65,3.0,3.35,3.7]:
+			b.box("MotorCoolingRib",at+Vector3(-3.32,y,side*.77),Vector3(1.14,.055,.10),"rubber")
+	# Guarded maintenance ladder is physically on the crusher, away from the
+	# floor aisle; narrow rungs sit against its already solid front face.
+	for x in [-.63,.63]: b.box("CrusherLadderRail",at+Vector3(x,2.75,2.9),Vector3(.075,4.5,.075),"steel")
+	for index in 13: b.box("CrusherLadderRung",at+Vector3(0,.65+float(index)*.33,2.93),Vector3(1.26,.075,.075),"steel")
 	# A diagonal ore belt ties the crusher to a stockpile, leaving the floor
 	# underneath visually and physically readable (no invisible tall box).
 	var start := at+Vector3(0,1.7,-3)
@@ -411,6 +424,12 @@ static func _crusher(b: RefCounted) -> void:
 	for i in 8:
 		var p := start.lerp(end,float(i)/8.0)
 		b.rock("ConveyorOre",p+Vector3(0,.30,0),Vector3(.65,.40,.70),"ore_dark",false,float(i))
+	for index in 19:
+		var p := start.lerp(end, float(index)/18.0)
+		b.box("ConveyorBeltJoint",p+Vector3.UP*.108,Vector3(2.04,.016,.05),"steel",false,basis.get_euler())
+		for side in [-1.0,1.0]:
+			var edge: Vector3 = basis.x * side * 1.19
+			b.box("ConveyorFrameBracket",p+edge,Vector3(.23,.28,.14),"steel",false,basis.get_euler())
 	b.rock("StockpileCore",Vector3(end.x,at.y+1.75,end.z),Vector3(11.5,4.2,10),"ore_dark",true,.2)
 	for i in 10:
 		var angle := float(i)*2.399
@@ -429,13 +448,13 @@ static func _service_corner(b: RefCounted) -> void:
 		b.box("ContainerDoor",at+Vector3(x,1.47,-2.13),Vector3(2.3,2.55,.065),"blue")
 		b.box("DoorLockBar",at+Vector3(x+.65,1.47,-2.18),Vector3(.045,2.42,.045),"steel")
 	for i in 4:
-		var p := at+Vector3(9+float(i%2)*1.2,0,-1.5+float(i/2)*1.2)
+		var p := at+Vector3(9+float(i%2)*1.2,0,-1.5+floori(float(i)/2.0)*1.2)
 		b.cylinder("OilDrum",p+Vector3(0,.56,0),.46,1.12,"rust",true)
 		for y in [.23,.88]: b.cylinder("DrumBand",p+Vector3(0,y,0),.48,.07,"steel")
 	b.cylinder("DieselTank",Vector3(74,1.45,70),1.35,6.0,"cream",true,Vector3(0,0,PI*.5))
 	for x in [72,76]: b.box("TankCradle",Vector3(x,.45,70),Vector3(.45,.9,2.3),"rust",true)
 	b.box("DieselPump",Vector3(70,.92,72.3),Vector3(.65,1.84,.62),"yellow",true)
-	for i in 5: b.cylinder("SpareHaulerTyre",Vector3(66.8+float(i%2)*2.1,.29+float(i/2)*.57,78),1.06,.57,"rubber",true)
+	for i in 5: b.cylinder("SpareHaulerTyre",Vector3(66.8+float(i%2)*2.1,.29+floori(float(i)/2.0)*.57,78),1.06,.57,"rubber",true)
 	for i in 5: b.box("TimberPile",Vector3(73,.18+float(i)*.21,96),Vector3(7,.18,.36),"timber",true,Vector3(0,float(i%2)*.05,0))
 
 static func _hidden_adit(b: RefCounted) -> void:
@@ -460,6 +479,18 @@ static func _hidden_adit(b: RefCounted) -> void:
 	# the full southern approach and return point remain unobstructed.
 	b.box("AbandonedOreCart",at+Vector3(-4.8,.74,3.0),Vector3(1.7,1.3,2.3),"rust",true,Vector3(0,.32,.12))
 	b.box("CartCoal",at+Vector3(-4.8,1.37,3),Vector3(1.42,.10,2.04),"coal")
+	for side in [-1.0,1.0]:
+		for z in [2.4,3.55]:
+			b.cylinder("AbandonedCartWheel",at+Vector3(-4.8+side*.85,.3,z),.29,.12,"steel",false,Vector3(0,0,PI*.5))
+		b.box("CartSideBrace",at+Vector3(-4.8+side*.84,.8,3),Vector3(.06,.10,2.12),"steel",false,Vector3(0,.32,.12))
+	# Rivets, splintered timber and repair straps stay on the portal frame;
+	# the return marker and the full opening keep their existing free space.
+	for side in [-1.0,1.0]:
+		for y in [.45,1.7,2.7]:
+			b.box("AditTimberRepairStrap",at+Vector3(side*1.64,y,.25),Vector3(.39,.13,.025),"steel")
+			for dx in [-.12,.12]: b.box("AditStrapBolt",at+Vector3(side*1.64+dx,y,.272),Vector3(.06,.06,.02),"rust")
+		for y in [.75,1.3,2.2]:
+			b.box("AditTimberSplit",at+Vector3(side*1.67,y,.248),Vector3(.022,.37,.018),"recess",false,Vector3(0,0,side*.13))
 	for i in 6: b.rock("HiddenAditSpoil",at+Vector3(6.5+float(i%2)*1.4,.4+float(i%3)*.33,2+float(i)*1.3),Vector3(2.6,1.8,2.3),"ore_dark",true,float(i))
 
 static func _tower(b: RefCounted, at: Vector3, height: float) -> void:
@@ -511,7 +542,7 @@ static func _fence(b: RefCounted, rect: Rect2) -> void:
 				b.beam("FenceWire",Vector3(v.x,.3,v.y),Vector3(v.x,2.15,v.y),.018,"steel")
 
 static func _build_access_markers(parent: Node3D,rect: Rect2) -> void:
-	var b: RefCounted
+	var b: RefCounted = null
 	for i in range(1,LAYOUT.ACCESS.size()-1):
 		var p: Vector2=LAYOUT.ACCESS[i]
 		if not rect.has_point(p): continue

@@ -42,7 +42,7 @@ func _build() -> void:
 	for index in 4: barrel(Vector3(3.4 + index * 0.55, 0, -5.4 - (index % 2) * 0.2), "#6a4a2a")
 	# Garrafas em estantes na parede leste e engradados de cacto.
 	box(Vector3(9.6, 0.9, -5.5), Vector3(3.0, 1.8, 0.4), "#4a3320", false, "Shelf")
-	for index in 12: cyl(Vector3(8.4 + (index % 6) * 0.45, 0.5 + (index / 6) * 0.7, -5.3), 0.07, 0.34, ["#3a5a3e", "#8a6a2c", "#41596a"][index % 3])
+	for index in 12: cyl(Vector3(8.4 + (index % 6) * 0.45, 0.5 + floori(float(index) / 6.0) * 0.7, -5.3), 0.07, 0.34, ["#3a5a3e", "#8a6a2c", "#41596a"][index % 3])
 	crate(Vector3(3.6, 0, -4.8), Vector3(0.8, 0.6, 0.8), "#5a4128", 0.3)
 	# Mesa de pôquer com cartas, fichas e três cadeiras.
 	box(Vector3(-5.0, 0.4, 2.6), Vector3(2.2, 0.8, 1.4), "#1f4a2f", false, "Table")
@@ -53,7 +53,7 @@ func _build() -> void:
 	for wall in [Rect2(5.0, 0.4, 0.4, 3.4), Rect2(5.0, 5.0, 0.4, 1.5), Rect2(5.4, 0.4, 5.6, 0.4)]:
 		box(Vector3(wall.get_center().x, 1.2, wall.get_center().y), Vector3(wall.size.x, 2.4, wall.size.y), "#5a4a38", false, "BunkWall")
 	box(Vector3(4.7, 1.0, 4.4), Vector3(0.3, 2.0, 1.3), "#4a3320")
-	for index in 6: cyl(Vector3(4.6, 0.4 + (index % 3) * 0.55, 3.95 + (index / 3) * 0.9), 0.07, 0.3, ["#3a5a3e", "#8a6a2c"][index % 2])
+	for index in 6: cyl(Vector3(4.6, 0.4 + (index % 3) * 0.55, 3.95 + floori(float(index) / 3.0) * 0.9), 0.07, 0.3, ["#3a5a3e", "#8a6a2c"][index % 2])
 	for cot in [Vector2(7.0, 1.6), Vector2(9.4, 1.6)]:
 		box(Vector3(cot.x, 0.25, cot.y), Vector3(1.8, 0.3, 0.8), "#4a4a3a", false, "Cot")
 		box(Vector3(cot.x, 0.43, cot.y), Vector3(1.7, 0.06, 0.7), "#5a4040")

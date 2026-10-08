@@ -11,6 +11,7 @@ const LOCATIONS := {
 	"raul":ROSTER.LEADERS.raul+Vector3(0,.05,0),
 	"jessica":ROSTER.LEADERS.jessica+Vector3(0,.05,0),
 	"nadir":ROSTER.LEADERS.nadir+Vector3(0,.05,0),
+	"rauhz":Vector3(-947,.05,-1244),
 	"bia":Vector3(-151,.05,-943),
 }
 const MANIFEST := Vector3(266,.05,-758)
@@ -128,6 +129,7 @@ func perform(target: String, offer_jobs := true) -> bool:
 			if data.jessica_met: _say([["Jessica","Agora você conhece essa reta. E aquela conversa com seu irmão ainda está te esperando."]])
 			else: _say([["Jessica","Olha quem saiu de Harbor. Meu carro está pronto, Dante."],["Dante","Você também corre por aqui?"],["Jessica","Com essa turma desde antes de você chegar. Sobe na tabela e a gente se encontra na largada."]])
 		"nadir": _say([["Nadir","Na minha prova, uma troca ruim custa a corrida inteira. Prepare o carro com o Digo."]])
+		"rauhz": _say([["Rauhz","Passou pelo Nadir? Então falta nós dois. Meu Focus já está pronto."],["Dante","O preto?"],["Rauhz","MK1, 2002. Na última largada, cada troca conta."]])
 		"bia": _say([["Bia","Relação curta sai forte e acaba cedo. Turbo grande pede giro. Escolha a preparação para a pista."],["Bia","Digo atende lá dentro. Depois de correr com ele, a oficina fica à sua disposição."]])
 		_: return false
 	return true

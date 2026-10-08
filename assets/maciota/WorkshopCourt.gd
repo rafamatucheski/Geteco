@@ -17,7 +17,10 @@ func _ready() -> void:
 	# south edge z99.6875). The front stays open across the 111m service corridor.
 	for spec in [
 		[Vector3(-15.25,.74,-.15),Vector3(.16,1.48,1.1)],
-		[Vector3(-8.125,.74,-.7),Vector3(14.25,1.48,.16)],
+		# A 2.6m pedestrian gate meets FreightOffice's east entrance without
+		# crossing the M8 parking bay at x=-10.5.
+		[Vector3(-11.525,.74,-.7),Vector3(7.45,1.48,.16)],
+		[Vector3(-3.10,.74,-.7),Vector3(4.20,1.48,.16)],
 		[Vector3(-1.0,.74,-2.5),Vector3(.16,1.48,3.6)],
 		[Vector3(4.5,.74,-4.3),Vector3(11.0,1.48,.16)],
 		[Vector3(10.0,.74,.6),Vector3(.16,1.48,9.8)],
@@ -31,7 +34,7 @@ func _ready() -> void:
 		body.add_child(collision)
 	for x in [-1.0,3.5,7.5,10.0]:
 		_post(t,body,Vector3(x,.90,-4.3))
-	for x in [-15.25,-11.0,-6.5,-2.0,-1.0]:
+	for x in [-15.25,-11.0,-7.9,-5.1,-2.0,-1.0]:
 		_post(t,body,Vector3(x,.90,-.7))
 	for z in [.4]:
 		_post(t,body,Vector3(-15.25,.90,z))

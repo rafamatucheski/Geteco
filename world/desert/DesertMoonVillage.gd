@@ -305,7 +305,7 @@ static func _courtyard(parts: Array[Dictionary]) -> void:
 	for i in 5:
 		_box(parts,"HangingLaundry",Vector3(-23.8+float(i)*1.35,2.7,-33),Vector3(.72,.92,.028),"chalk" if i%2==0 else "cream")
 	for i in 5:
-		_box(parts,"StackedFirewood",Vector3(27.5,.17+float(i/3)*.25,22+float(i%3)*.35),Vector3(1.8,.25,.27),"wood",true)
+		_box(parts,"StackedFirewood",Vector3(27.5,.17+float(floori(float(i)/3.0))*.25,22+float(i%3)*.35),Vector3(1.8,.25,.27),"wood",true)
 	_box(parts,"StoneTrough",Vector3(22,.4,28),Vector3(3.8,.8,1.2),"stone",true)
 	_box(parts,"TroughDarkBasin",Vector3(22,.808,28),Vector3(3.36,.03,.84),"glass")
 

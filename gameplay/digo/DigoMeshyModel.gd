@@ -18,8 +18,8 @@ func _ready() -> void:
 	for side in ["Left", "Right"]:
 		var bone := skeleton.find_bone("mixamorig_" + side + "Arm")
 		var parent := skeleton.get_bone_parent(bone)
-		var basis := skeleton.get_bone_global_rest(parent).basis
-		var axis := basis.inverse() * Vector3.FORWARD
+		var parent_basis := skeleton.get_bone_global_rest(parent).basis
+		var axis := parent_basis.inverse() * Vector3.FORWARD
 		var angle := deg_to_rad(32.0 if side == "Left" else -32.0)
 		skeleton.set_bone_pose_rotation(bone, Quaternion(axis.normalized(), angle) * skeleton.get_bone_rest(bone).basis.get_rotation_quaternion())
 	_spine = skeleton.find_bone("mixamorig_Spine2")

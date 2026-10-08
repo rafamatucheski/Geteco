@@ -83,6 +83,13 @@
   "cobra_race_clue": [
     {
       "speaker": "Maciota",
+      "pt": "Mandou bem na corrida, Dante. Separei uma mala reforçada pra tua busca pelo Vicente. Está no porta-malas da Monaliza; pega quando precisar levar mais coisa.",
+      "en": "Good race, Dante. I set aside a sturdy travel bag for your search for Vicente. It is in the Monaliza's trunk. Pick it up when you need to carry more supplies.",
+      "source": "Travel bag reward 2026-10-07",
+      "line": 1
+    },
+    {
+      "speaker": "Maciota",
       "pt": "O motorista falou comigo: deixou teu irmão perto da casa de uma moradora em Ashbend. Os Cobras estão cobrando dela. Ajuda a mulher e pergunta o que viu.",
       "en": "The driver called me: he dropped your brother near the home of a resident in Ashbend. The Cobras are extorting her. Help her and ask what she saw.",
       "source": "world/harbor/campaign/CobraCampaignController.gd",

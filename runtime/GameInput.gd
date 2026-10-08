@@ -29,6 +29,7 @@ const AIM_TURN_SPEED_MIN := 3.0
 const AIM_TURN_SPEED_MAX := 20.0
 const AIM_RESPONSE_CURVE := 1.25
 const KEYS := {
+	"rage": [KEY_V],
 	"skate_ollie": [KEY_SPACE], "skate_flip": [KEY_Q], "skate_shove": [KEY_R],
 	"tank_fire": [],
 	"surrender": [KEY_K],
@@ -55,6 +56,7 @@ const KEYS := {
 
 }
 const LABELS := {
+	"rage": ["Ativar RAGE", "Activate RAGE"],
 	"skate_ollie": ["Skate: ollie", "Skate: ollie"],
 	"skate_flip": ["Skate: kickflip", "Skate: kickflip"],
 	"skate_shove": ["Skate: shove-it", "Skate: shove-it"],
@@ -82,6 +84,7 @@ const LABELS := {
 	"siren_toggle": ["Sirene", "Siren"],
 }
 const PAD := {
+	"rage": JOY_BUTTON_RIGHT_STICK,
 	"skate_ollie": JOY_BUTTON_A, "skate_flip": JOY_BUTTON_RIGHT_SHOULDER, "skate_shove": JOY_BUTTON_LEFT_SHOULDER,
 	"inventory": JOY_BUTTON_DPAD_LEFT,
 	"tank_fire": JOY_BUTTON_B,
@@ -107,6 +110,8 @@ const UI_PAD := {
 ## Only pairs whose consumers are mutually exclusive may intentionally share a binding.
 ## Keep this list narrow: `interact` and `vehicle_interact` can both be live on foot.
 const CONTEXTUAL_BINDING_PAIRS := [
+	["rage", "horn"],
+	["rage", "siren_toggle"],
 	["sprint", "motorcycle_wheelie"],
 	["fire", "tank_fire"],
 	["vehicle_interact", "exit_vehicle"],

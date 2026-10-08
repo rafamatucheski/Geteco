@@ -15,6 +15,7 @@ extends RefCounted
 ## meio da carroceria em vez da cabine.
 
 const DOORS := {
+	"armored_truck": {"class":"truck","zf":-2.06,"zr":-1.04,"sill":.87,"belt":1.99,"top":2.60,"x":1.16,"seat_z":-1.50},
 	"jessica_jetta_gli": {"zf":-.85,"zr":.22,"sill":.32,"belt":.99,"top":1.46,"x":.91,"seat_z":-.16},
 	"digo_amarok_2014": {"class":"tall","zf":-1.03,"zr":.17,"sill":.49,"belt":1.23,"top":1.86,"x":.965},
 	"digo_gol_1993": {"zf": -.60, "zr": .62, "sill": .30, "belt": .91, "top": 1.43, "x": .82, "seat_z": .04},
@@ -115,6 +116,10 @@ static func layout(spec: Dictionary, side: int, skin: float, angle: float, hull_
 	var lateral := maxf(skin + .42, hull_half_width + .36)
 	var reach := length + .34
 	var stand_z := front + sqrt(maxf(reach * reach - pow(lateral - hinge_x, 2.0), 0.0))
+	# Wide industrial decks can put the lateral point so far out that the arc
+	# calculation brings it forward of the open leaf. Their authored approach
+	# stays behind the door before crossing the deck toward the cabin.
+	stand_z = maxf(stand_z,float(spec.get("stand_z_min",stand_z)))
 	var stand := Vector3(s * lateral, 0.0, stand_z)
 	# Onde o corpo cruza o plano da lataria: dentro do vão, longe dos dois montantes.
 	var gate_z := rear - clampf(length * .34, .24, .42)

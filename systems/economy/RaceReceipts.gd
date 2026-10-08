@@ -37,11 +37,11 @@ static func _pages(data: Dictionary, domain: String) -> Dictionary:
 	return data.get("receipt_ledger",{}).get("events",{}).get("pages",{}).get(domain,{})
 
 static func _code(data: Dictionary, domain: String, serial: int) -> int:
-	var page: String = _pages(data,domain).get(str((serial-1)/PAGE_SIZE),"")
+	var page: String = _pages(data,domain).get(str(int(float(serial-1)/PAGE_SIZE)),"")
 	return 0 if page.is_empty() else page.unicode_at((serial-1)%PAGE_SIZE)-65
 
 static func _part(code: int, domain: String, side: int) -> int:
-	if domain=="motocross": return code%5 if side==0 else code/5
+	if domain=="motocross": return code%5 if side==0 else int(float(code)/5)
 	return (code>>side)&1
 
 static func _amount(domain: String, side: int, part: int) -> int:
@@ -77,7 +77,7 @@ static func record(data: Dictionary, kind: String, receipt_id: String, amount: i
 	if not ledger.has("events"): ledger.events={"codec":CODEC,"pages":{}}
 	if not ledger.events.pages.has(domain): ledger.events.pages[domain]={}
 	var pages: Dictionary = ledger.events.pages[domain]
-	var page_key := str((serial-1)/PAGE_SIZE)
+	var page_key := str(int(float(serial-1)/PAGE_SIZE))
 	var offset := (serial-1)%PAGE_SIZE
 	var page: String = pages.get(page_key,"A".repeat(PAGE_SIZE))
 	# Strings are immutable values. Only this bounded page is replaced; copies
@@ -127,7 +127,7 @@ static func validate(data: Dictionary) -> bool:
 		for key in pages:
 			if not key is String or not key.is_valid_int(): return false
 			var index: int = key.to_int()
-			if index<0 or index>(MAX_SERIAL-1)/PAGE_SIZE or key!=str(index): return false
+			if index<0 or index>int(float(MAX_SERIAL-1)/PAGE_SIZE) or key!=str(index): return false
 			var page: Variant = pages[key]
 			if not page is String or page.length()!=PAGE_SIZE: return false
 			var any := false

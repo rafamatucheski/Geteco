@@ -15,6 +15,9 @@ signal weapon_fired(weapon_id: String, origin: Vector3)
 signal npc_gunfire(origin: Vector3, direction: Vector3, shooter: Node3D)
 signal explosion_occurred(origin: Vector3, radius: float, source: Node)
 const CATALOG = preload("res://gameplay/WeaponCatalog.gd")
+const KATANA_MODEL := preload("res://gameplay/KatanaModel.gd")
+const KATANA_AUDIO := preload("res://gameplay/KatanaAudio.gd")
+const RAGE := preload("res://gameplay/KatanaRage.gd")
 const ARSENAL = preload("res://gameplay/ArsenalWeapon3D.gd")
 const POSE = preload("res://gameplay/WeaponPoseData.gd")
 const OFFICER = preload("res://gameplay/PoliceAgent.gd")
@@ -26,6 +29,7 @@ const AUDIO = preload("res://gameplay/CombatAudio.gd")
 const PROTECTION = preload("res://gameplay/DamageProtection.gd")
 const BLAST_QUERY := preload("res://gameplay/BlastQuery.gd")
 const EFFECTS = preload("res://gameplay/CombatEffects.gd")
+const WEAPON_SURFACE = preload("res://gameplay/WeaponSurface.gd")
 const RIG_POSE = preload("res://gameplay/WeaponRigPose.gd")
 const LOOT = preload("res://gameplay/LootPickup.gd")
 const CASH_DROP_RULES = preload("res://gameplay/CashDropRules.gd")
@@ -76,7 +80,7 @@ const SWING_DURATION := 0.26
 ## o corpo segura o rumo por AIM_HOLD depois de cada golpe/disparo (o clique dura um quadro e o corpo piscaria de volta
 ## para a direção do movimento). Escolha da adaptação, não calibrada.
 const AIM_HOLD := 0.3
-const NON_AIM_WEAPONS := ["fists", "knife", "axe", "knuckles", "bat", "grenade"]
+const NON_AIM_WEAPONS := ["fists", "knife", "axe", "knuckles", "bat", "katana", "grenade"]
 ## Clipes do `dante.glb` para golpes: [clipe, início, fim] em segundos, tocados a 1,0× (sem acelerar). Trechos
 ## escolhidos medindo a velocidade da mão nas chaves do clipe: `Attack` tem o golpe descendente (pico ~19,7 m/s) em
 ## t = 1,1 s; `Punch_Forward_with_Both_Fists` estende as mãos à frente em t ≈ 0,95 s. O trecho começa perto do contato
@@ -160,6 +164,12 @@ var player: CharacterBody3D
 var camera: Camera3D
 var state: RefCounted
 var health := 100.0
+var rage: Node
+var katana_wounds: Node3D
+var _katana_style := ""
+var _katana_combo := -1
+var _katana_attack_clock := -10.0
+var _saber_hum: AudioStreamPlayer3D
 var _last_arrest_warning_msec := -10000
 var armor := 0.0
 var stars := 0
@@ -180,6 +190,13 @@ var gun: Node3D
 ## Segunda soqueira, no punho esquerdo (V1 `MeshyDanteRig.sync_knuckles`).
 var _left_knuckles: Node3D
 var socket: Node3D
+## Katana guardada nas costas (preso à coluna) e o clipe de sacar/guardar do Mixamo tocado no Dante.
+var back_katana: Node3D
+var _sheath_clip := ""
+var _sheath_kind := ""
+var _sheath_length := 0.0
+var _sheath_age := 0.0
+var _sheath_last_id := ""
 var visual_id := "@unbuilt"
 var contact_age := 10.0
 var _occupancy: Dictionary = {}
@@ -211,6 +228,7 @@ var _reload_audio: AudioStreamPlayer3D
 var _recent_impacts: Array[Dictionary] = []
 ## Identifica cada ataque/explosão: vários chumbos da mesma escopeta na mesma vítima são UMA denúncia.
 var _attack_serial := 0
+var _shotgun_pump_sound_serial := -1
 ## Só dentro do laço de chumbos de `fire_at`: fora dele, golpes repetidos (chamadas diretas de `_damage`) contam.
 var _in_pellet_volley := false
 var _crime_attack: Dictionary = {}
@@ -279,6 +297,7 @@ func configure(p_world: Node3D, p_player: CharacterBody3D, p_camera: Camera3D, p
 	_rng.randomize()
 
 func _exit_tree() -> void:
+	if is_instance_valid(rage): rage.cancel("shutdown")
 	_clear_chain_explosions()
 	# Stop active playbacks before releasing their cached streams. AudioServer
 	# may otherwise still own the mixer playback during scene teardown.
@@ -299,6 +318,19 @@ func _exit_tree() -> void:
 		voice.stream = null
 
 func _ready() -> void:
+	rage = RAGE.new()
+	rage.name = "KatanaRage"
+	rage.gameplay = self
+	add_child(rage)
+	katana_wounds = preload("res://gameplay/KatanaWounds.gd").new()
+	katana_wounds.name = "KatanaWounds"
+	add_child(katana_wounds)
+	_saber_hum = AudioStreamPlayer3D.new()
+	_saber_hum.name = "SaberHum"
+	_saber_hum.volume_db = -22.0
+	_saber_hum.max_distance = 18.0
+	_saber_hum.bus = "SFX" if AudioServer.get_bus_index("SFX") >= 0 else "Master"
+	add_child(_saber_hum)
 	police_case = POLICE_CASE.new()
 	police_case.name = "PoliceCaseDirector"
 	police_case.configure(self)
@@ -380,6 +412,7 @@ func _ready() -> void:
 	effects.name = "CombatEffects"
 	add_child(effects)
 	effects.carry_source = player
+	effects.casing_contact.connect(_casing_contact)
 	call_deferred("_prewarm_effects")
 	for index in PAIN_VOICES:
 		var voice := _combat_voice(sfx_bus)
@@ -414,12 +447,39 @@ func _build_socket() -> void:
 	# top-level, o BoneAttachment não reaplica o osso um quadro depois e não
 	# separa o cabo da palma durante movimento/recuo.
 	gun.top_level = true
+	_build_back_katana()
+
+## Katana presa nas costas: o modelo vai no osso da coluna e aparece quando a arma não está na mão.
+## Cabo no ombro direito (−X), lâmina descendo até o quadril esquerdo (+X); a ponta fica em −Z do modelo.
+## Posição e rumo estimados pelo esqueleto, não medidos na tela: conferir no jogo.
+func _build_back_katana() -> void:
+	var skeleton := player.find_child("Skeleton3D", true, false) as Skeleton3D
+	if skeleton == null or skeleton.find_bone("Spine02") < 0: return
+	var attachment := BoneAttachment3D.new()
+	attachment.bone_name = "Spine02"
+	skeleton.add_child(attachment)
+	back_katana = Node3D.new()
+	back_katana.name = "BackKatana"
+	attachment.add_child(back_katana)
+	var tip_direction := Vector3(0.6, -0.8, 0.0).normalized()
+	back_katana.transform = Transform3D(Basis.looking_at(tip_direction, Vector3.UP), Vector3(-0.12, 0.12, -0.14))
+	KATANA_MODEL.build(back_katana, false, Color("68cfff"))
+	back_katana.visible = false
 
 func equipped() -> String:
 	return String(state.equipped_weapon) if state != null else ""
 
 func attack_allowed() -> bool:
+	if is_instance_valid(player) and player.has_meta("coastal_binoculars_active"): return false
+	if _railway_controls_locked(): return false
 	return enabled and state != null and state.can_attack() and health > 0 and not get_tree().paused and not police_surrendering()
+
+func _railway_controls_locked() -> bool:
+	var active_session = world.get("session") if is_instance_valid(world) else null
+	if active_session == null: return false
+	var transit = active_session.get("railway")
+	var coach = active_session.get("regional_coach")
+	return (transit != null and transit.busy()) or (coach != null and coach.busy())
 
 func _physics_process(delta: float) -> void:
 	var began := STALL_WORK.begin()
@@ -429,10 +489,13 @@ func _physics_process(delta: float) -> void:
 func _stall_physics_tick(delta: float) -> void:
 	_advance_chain_explosions()
 	if state == null or not enabled: return
-	_combat_clock += delta
+	# NPC rounds, police and world effects keep scaled time. Only Dante's own
+	# attack/animation clocks use his normal time while RAGE owns slow motion.
+	var player_delta := delta / RAGE.WORLD_SCALE if is_instance_valid(rage) and rage.active else delta
+	_combat_clock += player_delta
 	if god_mode or not _god_marked.is_empty(): _sync_god_mode()
 	_advance_police_rounds(delta)
-	cooldown = maxf(0, cooldown - delta)
+	cooldown = maxf(0, cooldown - player_delta)
 	if reload_timer > 0:
 		reload_timer = maxf(0, reload_timer - delta)
 		if not attack_allowed() or equipped() != reloading_id:
@@ -443,16 +506,20 @@ func _stall_physics_tick(delta: float) -> void:
 			state.reload_weapon(reloading_id, int(weapon_data(reloading_id).magazine_size))
 			reloading_id = ""
 			changed.emit()
-	_update_aim(delta)
-	_update_weapon_pose(delta)
+	_update_aim(player_delta)
+	_update_weapon_pose(player_delta)
 	_update_visual()
+	_update_saber_audio()
+	if is_instance_valid(katana_wounds): katana_wounds.effects = effects
+	effects.update_weapon_feedback(self, delta)
 	_update_swing_trail(delta)
 	_update_contact()
 	_update_swing_sound()
 	_update_shoves(delta)
-	_update_combat_clip(delta)
-	_update_swing(delta)
-	_update_recoil(delta)
+	_update_combat_clip(player_delta)
+	_update_sheath(player_delta)
+	_update_swing(player_delta)
+	_update_recoil(player_delta)
 	_update_muzzle_and_flame(delta)
 	_update_police(delta)
 	_update_effects(delta)
@@ -461,6 +528,13 @@ func _stall_physics_tick(delta: float) -> void:
 func _update_visual() -> void:
 	if gun == null: return
 	var id := equipped()
+	var blade_style := {}
+	if id == "katana":
+		blade_style = katana_style()
+		var style_key := str(blade_style)
+		if style_key != _katana_style:
+			visual_id = "@katana_style"
+			_katana_style = style_key
 	if id != visual_id:
 		for child in gun.get_children():
 			if child == flashlight: continue
@@ -471,7 +545,7 @@ func _update_visual() -> void:
 		_muzzle_light = null
 		_muzzle_timer = 0.0
 		if id != "" and id != "fists" and CATALOG.WEAPONS.has(id):
-			var muzzle := ARSENAL.build(gun, id)
+			var muzzle := KATANA_MODEL.build(gun, blade_style.saber, blade_style.color) if id == "katana" else ARSENAL.build(gun, id)
 			CUSTOM.fit(gun, id, customization, muzzle)
 			_build_muzzle_flash(id, muzzle)
 			_mount_flashlight()
@@ -508,6 +582,20 @@ func _update_visual() -> void:
 		laser.look_at(end)
 		laser.scale.z = maxf(0.01, origin.distance_to(end))
 		laser.material_override.albedo_color = Color("58e07c") if laser_part == "laser_green" else Color("e5493c")
+
+func katana_style() -> Dictionary:
+	var honor: Dictionary = state.world_state.get("takeshi", {}) if state != null else {}
+	return {"saber": bool(honor.get("saber_unlocked", false)), "color": Color.from_string(str(honor.get("saber_color", "68cfffff")), Color("68cfff"))}
+
+func _update_saber_audio() -> void:
+	if not is_instance_valid(_saber_hum): return
+	var should_play: bool = equipped() == "katana" and gun.visible and katana_style().saber
+	if should_play:
+		_saber_hum.global_position = player.global_position + Vector3.UP
+		if not _saber_hum.playing:
+			_saber_hum.stream = KATANA_AUDIO.stream("hum")
+			_saber_hum.play()
+	elif _saber_hum.playing: _saber_hum.stop()
 
 ## Lanterna na lente da peça montada (WeaponCustomization.fit, "TacticalFlashlight"),
 ## não na origem da arma. Inclinada para baixo: com a câmera alta, um facho reto na
@@ -557,10 +645,17 @@ func _update_weapon_pose(delta: float) -> void:
 				changed.emit()
 		rig.loaded = int(ammo.get("magazine", 0)) > 0
 	_pose_frame = _rig_pose.update(id, delta, aiming, reload_timer > 0.0, progress, moving, sprinting, float(player.phase), rig)
+	if id == "shotgun" and reload_timer <= 0.0 and float(_pose_frame.get("pump", 0.0)) > 0.02 and _shotgun_pump_sound_serial != _attack_serial:
+		_shotgun_pump_sound_serial = _attack_serial
+		_play_stream(AUDIO.shotgun_pump(), player.global_position, -8.0 + _rng.randf_range(-1.0, 1.0), _rng.randf_range(0.97, 1.03), 12.0)
+	if id == "katana":
+		_pose_frame = preload("res://gameplay/KatanaMoveset.gd").pose(_katana_combo,_rig_pose.action_age,sprinting,float(player.phase))
 	if player.has_method("set_combat_weapon_pose"):
 		player.set_combat_weapon_pose(id, _pose_frame)
 
 func _update_weapon_parts(id: String) -> void:
+	if id == "sawed_off":
+		preload("res://gameplay/SawedOffPresentation.gd").update_parts(gun, float(_pose_frame.get("break_open", 0.0)))
 	var pump := gun.get_node_or_null("Pump") as Node3D
 	if pump != null: pump.position.z = -0.16 + float(_pose_frame.get("pump", 0.0))
 	var slide := gun.get_node_or_null("Slide") as Node3D
@@ -700,6 +795,7 @@ func _update_muzzle_and_flame(delta: float) -> void:
 		_prune_clock = 0.0
 		_prune_combat_registers()
 	if is_instance_valid(_reload_audio) and _reload_audio.playing and reload_timer <= 0.0: _reload_audio.stop()
+	if is_instance_valid(_reload_audio) and _reload_audio.playing and is_instance_valid(player): _reload_audio.global_position = player.global_position
 	if is_instance_valid(_flame_audio) and _flame_audio.playing and is_instance_valid(player): _flame_audio.global_position = player.global_position
 	if is_instance_valid(_flame_audio) and _flame_audio.playing and (_flame_clock <= 0.0 or not attack_allowed() or equipped() != "flamethrower" or reload_timer > 0.0):
 		_flame_audio.stop()
@@ -710,7 +806,7 @@ func _hit_effect(hit: Dictionary, amount: float, direction: Vector3) -> void:
 	if not is_instance_valid(effects): return
 	var collider: Object = hit.collider
 	if not is_instance_valid(collider): return
-	var material := _impact_material(collider)
+	var material := _impact_material(collider, hit.position, hit.normal)
 	if material == "flesh":
 		if _is_invulnerable(collider): return
 		effects.blood(hit.position, direction, amount)
@@ -864,18 +960,95 @@ func _cancel_combat_clip() -> void:
 ## Interrompe (e a locomoção retoma no quadro seguinte) ao trocar de arma, morrer, bloquear ataque
 ## (garagem, veículo, ski, transição) ou terminar o trecho. Na pausa este método não roda, então o clipe congela junto.
 func _update_combat_clip(delta: float) -> void:
-	if _clip_name == "": return
+	if _clip_name == "":
+		if is_instance_valid(player) and player.get("combat_clip") == "ual/Sword_Idle": player.combat_clip = ""
+		return
 	if not attack_allowed() or equipped() != _clip_weapon:
 		_cancel_combat_clip()
 		return
 	_clip_age += delta
 	var time := _clip_start + _clip_age * _clip_rate
-	if time >= _clip_end:
+	if (_clip_rate > 0.0 and time >= _clip_end) or (_clip_rate < 0.0 and time <= _clip_end):
 		_cancel_combat_clip()
 		return
 	if "combat_clip" in player:
 		player.combat_clip = _clip_name
 		player.combat_clip_time = time
+
+## Sacar (katana guardada → mão) e guardar (mão → costas) com os clipes do Mixamo. Só dispara na troca
+## de arma; sem o clipe na biblioteca, a troca segue instantânea.
+func _update_back_katana(id: String) -> void:
+	if id != _sheath_last_id and _sheath_last_id != "":
+		if id == "katana": _start_sheath("draw")
+		elif _sheath_last_id == "katana": _start_sheath("holster")
+	_sheath_last_id = id
+	if back_katana == null or not is_instance_valid(player): return
+	var carried := state != null and state.owns_weapon("katana") and not bool(player.get("dead"))
+	var drawing := _sheath_drawing()
+	back_katana.visible = carried and ((id != "katana" and _sheath_clip == "") or drawing)
+
+func _sheath_drawing() -> bool:
+	return _sheath_kind == "draw" and _sheath_clip != ""
+
+func _start_sheath(kind: String) -> void:
+	var clip := "mixsword/withdraw_katana" if kind == "draw" else "mixsword/sheathe_katana"
+	if not is_instance_valid(player) or not "animation" in player or player.animation == null: return
+	if not player.animation.has_animation(clip): return
+	_sheath_kind = kind
+	_sheath_clip = clip
+	_sheath_length = player.animation.get_animation(clip).length
+	_sheath_age = 0.0
+
+func _update_sheath(delta: float) -> void:
+	if _sheath_clip == "": return
+	if not is_instance_valid(player) or bool(player.get("dead")) or not attack_allowed():
+		_end_sheath()
+		return
+	_sheath_age += delta
+	if _sheath_age >= _sheath_length:
+		_end_sheath()
+		return
+	if "combat_clip" in player:
+		player.combat_clip = _sheath_clip
+		player.combat_clip_time = _sheath_age
+
+func _end_sheath() -> void:
+	_sheath_clip = ""
+	_sheath_kind = ""
+	if is_instance_valid(player) and "combat_clip" in player and str(player.combat_clip).begins_with("mixsword/"):
+		player.combat_clip = ""
+
+func _play_katana_clip() -> void:
+	if not is_instance_valid(player): return
+	_katana_combo = (_katana_combo + 1) % 3
+	_katana_attack_clock = _combat_clock
+	# Cycle even with deliberate clicks: returning cuts have their own authored
+	# hand/blade paths, rather than reversing or speeding up the same clip.
+	_cancel_combat_clip()
+	_clip_name = ""
+	_clip_start = 0.05
+	_clip_end = 1.25
+	_clip_rate = 1.7
+	_clip_age = 0.0
+	_clip_weapon = "katana"
+	_aim_hold = 0.8
+	if not _pending_swing.is_empty(): _pending_swing.time = _katana_contact_time() - 0.05
+
+func request_rage() -> bool:
+	# Keyboard, controller and HUD share context checks and feedback.
+	if not is_instance_valid(rage) or not rage.unlocked() or not _free_play_ok() or get_tree().paused: return false
+	if rage.activate(): return true
+	if rage.active: return true
+	if equipped() != "katana":
+		message.emit("Equipe a katana para ativar o RAGE.")
+	elif rage.charge < RAGE.CAPACITY:
+		message.emit("RAGE: %d%%. Receba dano de combate para carregar." % floori(rage.charge))
+	else:
+		message.emit("RAGE indisponível nesta situação.")
+	return true
+
+func _katana_contact_time() -> float:
+	return preload("res://gameplay/KatanaMoveset.gd").CONTACT[maxi(_katana_combo,0)]
 
 ## Coice de arma de fogo com o `recoil` e a velocidade de retorno de `WeaponPoseData.PROFILES`.
 func _update_recoil(delta: float) -> void:
@@ -1080,10 +1253,12 @@ func _stall_fire_at(target: Vector3) -> bool:
 		# ignoravam a arma na mão; ficam fora do golpe.
 		_start_swing(data, direction)
 		_play_punch_clip(id)
-		_pending_contact = {"id": id, "target": target, "data": data, "time": float(RIG_POSE.MELEE_CONTACT.get(id, 0.14))}
+		if id == "katana": _play_katana_clip()
+		_pending_contact = {"id": id, "target": target, "data": data, "time": _katana_contact_time() if id == "katana" else float(RIG_POSE.MELEE_CONTACT.get(id, 0.14))}
 	else:
 		_in_pellet_volley = true
-		if not data.get("is_flame", false): effects.shell(origin - direction * 0.12, direction, player.global_position.y)
+		if not data.get("is_flame", false):
+			effects.weapon_shot(id, gun.to_global(Vector3(0.025, 0.05, -0.025)), direction, int(state.get_ammo(id).get("magazine", 0)))
 		# Chumbos no mesmo corpo viram UM respingo com o dano somado: oito respingos,
 		# oito vozes de dor e até sete poças no mesmo cadáver (o corpo ainda está no
 		# espaço de física durante a rajada) deixavam a escopeta estranha.
@@ -1107,7 +1282,7 @@ func _stall_fire_at(target: Vector3) -> bool:
 							if damage_look.has_method("ignite"): damage_look.ignite(player)
 				else:
 					_damage_bullet(hit.collider, amount, player)
-					_impact_sound(hit.collider, end, float(amount))
+					_impact_sound(hit.collider, end, float(amount), hit.normal)
 					if _impact_material(hit.collider) == "flesh":
 						var key: int = hit.collider.get_instance_id()
 						if flesh_hits.has(key): flesh_hits[key].amount += float(amount)
@@ -1236,11 +1411,14 @@ func _melee(origin: Vector3, direction: Vector3, data: Dictionary, id: String = 
 		if result.collider is Node3D: candidates.append(result.collider)
 	candidates.sort_custom(func(a: Node3D, b: Node3D): return a.global_position.distance_squared_to(origin) < b.global_position.distance_squared_to(origin))
 	for actor in candidates:
+		if _is_invulnerable(actor) or actor.get("dead") == true: continue
 		var target := actor.global_position + Vector3.UP
 		var ray := PhysicsRayQueryParameters3D.create(origin, target, 7, [player.get_rid()])
 		var obstruction := get_world_3d().direct_space_state.intersect_ray(ray)
 		if not obstruction.is_empty() and obstruction.collider != actor: continue
+		var was_living: bool = actor.get("dead") != true
 		_damage(actor, float(data.damage), player)
+		if id == "katana" and was_living and actor.get("dead") == true and is_instance_valid(katana_wounds): katana_wounds.sever_defeated(actor, direction, _katana_combo)
 		_melee_hit_sound(id if id != "" else String(data.get("stance", "")), actor, target, float(data.damage))
 		_hit_effect({"collider": actor, "position": target, "normal": -direction}, float(data.damage), direction)
 		_melee_impact(actor, direction, id)
@@ -1467,6 +1645,7 @@ func equip_slot(id: String) -> bool:
 
 ## Jogo livre: sessão pronta, sem menu/remapeamento/abertura/cofre em minigame.
 func _free_play_ok() -> bool:
+	if _railway_controls_locked(): return false
 	var session: Variant = world.get("session") if is_instance_valid(world) else null
 	if session != null:
 		if not session.ready_for_play or session.modal or not session.rebinding_action.is_empty(): return false
@@ -1478,6 +1657,9 @@ func _free_play_ok() -> bool:
 ## `weapon_previous` e `weapon_slot_1..10` estão mapeados em GameInput mas o FullSession só trata
 ## `weapon_next`/`unarmed`. Trata-se aqui, depois do `_input` do FullSession e só em jogo livre.
 func _unhandled_input(event: InputEvent) -> void:
+	if InputMap.has_action("rage") and event.is_action_pressed("rage") and not event.is_echo():
+		if request_rage(): get_viewport().set_input_as_handled()
+		return
 	# Circle also closes menus. Only unconsumed gameplay events may surrender;
 	# polling Input after closing a modal used the same press a second time.
 	if event.is_action_pressed("surrender") and not event.is_echo():
@@ -1738,8 +1920,9 @@ func _trace_explosion_cost(stage: String, started: int) -> int:
 	print("EXPLOSION_STAGE ",stage," ms=",float(ended-started)/1000.0)
 	return Time.get_ticks_usec()
 
-func damage_player(amount: float) -> void:
-	_apply_player_damage(amount, true)
+## `from` é a posição de quem causou o dano (INF se não houver); a morte cai no lado oposto.
+func damage_player(amount: float, from := Vector3.INF) -> void:
+	_apply_player_damage(amount, true, from)
 
 func damage_environment(amount: float) -> void:
 	# Cold and other environmental damage do not consume ballistic armor or crime.
@@ -1758,12 +1941,14 @@ func police_arrest_warning() -> void:
 	_last_arrest_warning_msec = now
 	police_warning_issued.emit()
 
-func _apply_player_damage(amount: float, use_armor: bool) -> void:
+func _apply_player_damage(amount: float, use_armor: bool, from := Vector3.INF) -> void:
 	if god_mode: return
 	if not is_finite(amount) or amount <= 0 or health <= 0 or state == null or not state.weapons_allowed(): return
 	var absorbed := minf(armor, amount * 0.65) if use_armor else 0.0
 	armor -= absorbed
+	var prior_health := health
 	health = maxf(0, health - (amount - absorbed))
+	if use_armor and is_instance_valid(rage): rage.add_damage(prior_health - health + absorbed)
 	# Environmental damage is not an open wound, even when it is lethal.
 	if use_armor: player_wounded.emit(health <= 0.0)
 	if health > 0.0:
@@ -1771,11 +1956,13 @@ func _apply_player_damage(amount: float, use_armor: bool) -> void:
 		if use_armor and player.has_method("present_hit"): player.present_hit()
 	changed.emit()
 	if health == 0 and not _dead_notified:
+		if is_instance_valid(rage): rage.cancel("death")
 		_clear_chain_explosions()
 		_dead_notified = true
 		player.input_locked = true
 		if use_armor and is_instance_valid(effects): effects.stain(player.global_position, 0.8)
-		if player.has_method("on_player_death"): player.on_player_death()
+		var push := player.global_position - from if from.is_finite() else Vector3.ZERO
+		if player.has_method("on_player_death"): player.on_player_death(-1, push)
 		player_died.emit()
 
 func heal(amount: float) -> bool:
@@ -1785,6 +1972,7 @@ func heal(amount: float) -> bool:
 	return true
 
 func respawn() -> void:
+	if is_instance_valid(rage): rage.cancel("respawn")
 	_clear_chain_explosions()
 	health = 100
 	armor = 0
@@ -1887,11 +2075,11 @@ func civilian_shoot(shooter: CharacterBody3D, origin: Vector3, amount: float) ->
 	var target: Vector3 = player.global_position + Vector3.UP
 	var direction := origin.direction_to(target).rotated(Vector3.UP, _rng.randf_range(-0.11, 0.11))
 	var data := CATALOG.get_weapon("pistol")
-	var token: Dictionary = effects.police_tracer(origin, direction, 55.0) if is_instance_valid(effects) else {}
+	var token: Dictionary = effects.police_tracer(origin, direction, 32.0) if is_instance_valid(effects) else {}
 	if is_instance_valid(effects): effects.muzzle_smoke(origin, direction)
 	var bridge := PhysicsRayQueryParameters3D.create(shooter.global_position + Vector3.UP * 1.1, origin, 7, [shooter.get_rid()])
 	var blocked := get_world_3d().direct_space_state.intersect_ray(bridge)
-	_police_rounds.append({"point": origin, "direction": direction, "speed": 55.0,
+	_police_rounds.append({"point": origin, "direction": direction, "speed": 32.0,
 		"distance": 0.0, "range": float(data.get("max_range", 420.0)) / 16.0,
 		"damage": amount, "data": data, "source": weakref(shooter), "rid": shooter.get_rid(), "visual": token, "blocked": blocked})
 	_play_stream(AUDIO.gunfire_take("pistol", _rng), origin, NPC_GUNFIRE_DB, _rng.randf_range(0.95, 1.05), HEARING_GUNFIRE)
@@ -1910,12 +2098,13 @@ func police_shoot(officer: CharacterBody3D, amount: float, weapon_id: String = "
 	var spread := 0.10 if tactical else 0.13
 	var direction := origin.direction_to(suspect.global_position + Vector3.UP).rotated(Vector3.UP, _rng.randf_range(-spread, spread))
 	var data := CATALOG.get_weapon(weapon_id)
-	var token: Dictionary = effects.police_tracer(origin, direction, 75.0 if tactical else 55.0) if is_instance_valid(effects) else {}
+	var police_bullet_speed := 45.0 if tactical else 34.0
+	var token: Dictionary = effects.police_tracer(origin, direction, police_bullet_speed) if is_instance_valid(effects) else {}
 	if is_instance_valid(effects): effects.muzzle_smoke(origin, direction)
 	# A muzzle beyond a thin wall must not start the projectile on its far side.
 	var bridge := PhysicsRayQueryParameters3D.create(officer.global_position + Vector3.UP * 1.1, origin, 7, [officer.get_rid()])
 	var blocked := get_world_3d().direct_space_state.intersect_ray(bridge)
-	_police_rounds.append({"point": origin, "direction": direction, "speed": 75.0 if tactical else 55.0,
+	_police_rounds.append({"point": origin, "direction": direction, "speed": police_bullet_speed,
 		"distance": 0.0, "range": float(data.get("max_range", 420.0)) / 16.0,
 		"damage": amount, "data": data, "source": weakref(officer), "rid": officer.get_rid(), "visual": token, "blocked": blocked})
 	visual.attack()
@@ -1939,7 +2128,7 @@ func _advance_police_rounds(delta: float) -> void:
 			var data: Dictionary = round_index.data
 			var damage := CATALOG.distance_damage(int(round_index.damage), float(round_index.distance) * 16.0, float(data.get("falloff_start", 170.0)), float(data.get("max_range", 420.0)), float(data.get("min_damage_ratio", 0.25)))
 			_damage_bullet(hit.collider, damage, round_index.source.get_ref())
-			_impact_sound(hit.collider, end, damage)
+			_impact_sound(hit.collider, end, damage, hit.normal)
 			_hit_effect(hit, damage, round_index.direction)
 		if finished: _police_rounds.remove_at(index)
 
@@ -2044,6 +2233,7 @@ func _update_swing_sound() -> void:
 	var data: Dictionary = _pending_swing.data
 	_pending_swing = {}
 	var stream: AudioStream = AUDIO.knife_sample(-1) if id == "knife" else AUDIO.melee_whoosh(String(MELEE_SOUND_KIND.get(id, "punch")))
+	if id == "katana": stream = KATANA_AUDIO.stream("swing") if katana_style().saber else AUDIO.melee_whoosh("axe")
 	# V1 `Player._melee_attack`: o volume do catálogo. Tom por golpe do combo (pesado
 	# mais grave e mais forte) e um pouco de acaso, para a sequência não soar repetida.
 	var heavy := _rig_pose.heavy_attack()
@@ -2058,6 +2248,9 @@ func _combo_pitch() -> float:
 ## Acerto corpo a corpo no corpo: som próprio de cada arma (soco, soqueira, taco,
 ## machado), mais grave e forte no golpe pesado. A faca mantém os contatos da V1.
 func _melee_hit_sound(id: String, actor: Node3D, point: Vector3, amount: float) -> void:
+	if id == "katana":
+		_play_stream(KATANA_AUDIO.stream("swing") if katana_style().saber else AUDIO.knife_sample(_rng.randi_range(0, 2)), point, -7.0, 0.7)
+		return
 	if id == "knife" or _impact_material(actor) != "flesh" or not MELEE_HIT_KIND.has(id):
 		if id == "knife" and _impact_material(actor) == "flesh":
 			_play_stream(AUDIO.knife_sample(_rng.randi_range(0, 2)), actor.global_position, -13.0)
@@ -2104,27 +2297,26 @@ func projectile_bounce(point: Vector3, speed: float) -> void:
 	if speed < 1.2: return
 	_play_stream(AUDIO.grenade_bounce(), point, -16.0 + clampf(speed - 2.0, 0.0, 6.0), _rng.randf_range(0.9, 1.12))
 
-## Material do que foi atingido (V1 `ImpactMaterial.resolve`): `impact_material` autorado, gente = corpo,
-## veículo = metal, o resto = concreto. Sem nomes de objeto.
-func _impact_material(collider: Object) -> String:
-	var current := collider as Node
-	for depth in 4:
-		if not is_instance_valid(current): break
-		var authored := String(current.get_meta("impact_material", ""))
-		if authored in ["flesh", "metal", "concrete", "wood", "glass"]: return authored
-		if String(current.get_meta("gameplay_role", "")) != "" or (current is CharacterBody3D and "dead" in current): return "flesh"
-		if "half_length" in current and "speed" in current: return "metal"
-		current = current.get_parent()
-	return "concrete"
+## Point and normal distinguish real terrain contact from a wall above it.
+func _impact_material(collider: Object, point := Vector3.INF, normal := Vector3.ZERO) -> String:
+	return WEAPON_SURFACE.resolve(collider, point, normal)
+
+func _casing_contact(point: Vector3, material: String, speed: float, shotgun: bool) -> void:
+	var family := WEAPON_SURFACE.casing_family(material)
+	var volume := -20.0 + clampf(speed - 3.0, -4.0, 1.0)
+	if family in ["soft", "snow"]: volume -= 11.0
+	# Polymer shotgun hulls have less ring than a small brass case.
+	if shotgun: volume -= 3.0
+	_play_stream(AUDIO.contact_take("casing_" + family, _rng), point, volume, _rng.randf_range(0.96, 1.04) * (0.8 if shotgun else 1.0), 9.0)
 
 ## Som de contato. Impactos do mesmo material no mesmo instante (chumbo) compartilham uma voz, como no V1.
-func _impact_sound(collider: Object, point: Vector3, amount: float) -> void:
-	var material := _impact_material(collider)
+func _impact_sound(collider: Object, point: Vector3, amount: float, normal := Vector3.ZERO) -> void:
+	var material := _impact_material(collider, point, normal)
 	_recent_impacts = _recent_impacts.filter(func(entry): return _combat_clock - float(entry.time) < IMPACT_GROUP_SECONDS)
 	for entry in _recent_impacts:
 		if entry.material == material: return
 	_recent_impacts.append({"time": _combat_clock, "material": material})
-	_play_stream(AUDIO.take("impact_" + material, _rng), point, -14.0 + clampf((amount - 15.0) / 15.0, -0.8, 2.0))
+	_play_stream(AUDIO.impact_take(material, _rng), point, -14.0 + clampf((amount - 15.0) / 15.0, -0.8, 2.0))
 
 func police_evasion_seconds() -> float:
 	if police_case != null and police_case.descending: return 8.0
@@ -2190,6 +2382,9 @@ func spawn_officer() -> CharacterBody3D:
 	return null
 
 func on_region_changed() -> void:
+	if is_instance_valid(rage): rage.cancel("region")
+	if is_instance_valid(katana_wounds): katana_wounds.clear()
+	if is_instance_valid(_saber_hum): _saber_hum.stop()
 	_clear_chain_explosions()
 	if is_instance_valid(police_air): police_air.clear_response()
 	if police_case != null:
@@ -2403,10 +2598,14 @@ func clear_loot() -> void:
 
 func snapshot() -> Dictionary:
 	var result := {"health": health, "armor": armor, "crime_points": crime_points, "hidden_time": hidden_time, "customization": customization.duplicate(true)}
+	result["rage_charge"] = rage.charge if is_instance_valid(rage) else 0.0
 	if police_case != null: result["police_case"] = police_case.snapshot()
 	return result
 
 static func validate_snapshot(data: Dictionary) -> bool:
+	if data.has("rage_charge"):
+		var value: Variant = data.rage_charge
+		if not (value is float or value is int) or not is_finite(float(value)) or float(value) < 0.0 or float(value) > RAGE.CAPACITY: return false
 	if data.has("police_case") and (not data.police_case is Dictionary or not POLICE_CASE.validate(data.police_case)): return false
 	for key in ["health", "armor", "crime_points", "hidden_time"]:
 		if not data.has(key) or (typeof(data[key]) != TYPE_FLOAT and typeof(data[key]) != TYPE_INT) or not is_finite(float(data[key])): return false
@@ -2420,6 +2619,7 @@ static func validate_snapshot(data: Dictionary) -> bool:
 
 func restore_state(data: Dictionary) -> bool:
 	if not validate_snapshot(data): return false
+	if is_instance_valid(rage): rage.restore(float(data.get("rage_charge", 0.0)))
 	_clear_chain_explosions()
 	var restored_customization: Dictionary = CUSTOM.normalize(data.get("customization", {}))
 	clear_wanted()

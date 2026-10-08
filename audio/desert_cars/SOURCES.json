@@ -1,0 +1,32 @@
+[
+  {
+    "file": "bison_idle.wav",
+    "title": "dv6_idle_outside.wav",
+    "author": "Mihacappy",
+    "page": "https://freesound.org/people/Mihacappy/sounds/819134/",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "download": "https://cdn.freesound.org/previews/819/819134_10594370-hq.mp3",
+    "source_sha256": "2f6608c70a30f4191ff01f66299773445de96b7fdbc80883846afb016121e95e",
+    "output_sha256": "a8b7f84dabafc4f80f220c1736586163ddc796a28d4aa94b4b43fbe0b71a1c41",
+    "changes": "HQ MP3 preview decoded; seconds 2-6; mono; 35 Hz high-pass; 22050 Hz; 200 ms overlap; gain normalization; 8 guard frames",
+    "seconds": 3.8003628117913832,
+    "peak": 0.74,
+    "rms": 0.11895979125012522
+  },
+  {
+    "file": "coyote_idle.wav",
+    "title": "Eight-cylinder engine idling.wav",
+    "author": "Lumamorph",
+    "page": "https://freesound.org/people/Lumamorph/sounds/636066/",
+    "license": "CC-BY-4.0",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "download": "https://cdn.freesound.org/previews/636/636066_10150854-hq.mp3",
+    "source_sha256": "e9249fc60681969109b8f20eec0147b9590ddda0795cb0168f0c0418c98c0976",
+    "output_sha256": "6ded24ca47103944537f4d7d8adbc7c090993befdb536100295945503bf60d62",
+    "changes": "HQ MP3 preview decoded; seconds 2-6; mono; 35 Hz high-pass; 22050 Hz; 200 ms overlap; gain normalization; 8 guard frames",
+    "seconds": 3.8003628117913832,
+    "peak": 0.7399999999999999,
+    "rms": 0.23885621870322818
+  }
+]

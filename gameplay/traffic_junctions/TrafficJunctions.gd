@@ -296,17 +296,102 @@ static func _box_in_crossing(half: Vector3, pose: Transform3D, center: Vector3, 
 		if absf(offset.dot(normal)) > hull_radius + road_radius: return false
 	return true
 
+static func _completed_exit_axis(key: Vector3i, id: int, entry_axis: bool) -> bool:
+	# Nearby crossings can overlap a car's tail after its turn has finished.
+	# Keep the physical lease, but classify that completed movement by its exit.
+	# Otherwise two opposite turns each hold N/S while waiting to enter E/W.
+	if not junctions.has(key) or not is_instance_id_valid(id): return entry_axis
+	var car := instance_from_id(id) as Node3D
+	if car == null or not car.is_inside_tree() or not car.has_method("junction_collision_bodies") or not car.has_method("_route_ahead"): return entry_axis
+	if car.get("traffic") != true or car.get("controlled") == true or car.get("external_input") == true: return entry_axis
+	if float(car.get("speed")) < -.1 or float(car.get("bypass_side")) != 0.0 or float(car.get("bypass_blend")) > .01 or car.get("_merging_back") == true: return entry_axis
+	var route := car.get("route") as Curve3D
+	if route == null: return entry_axis
+	var bodies: Array = car.call("junction_collision_bodies")
+	# Articulated tails need their own complete-turn proof; preserve their entry.
+	if bodies.size() != 1 or bodies[0] != car: return entry_axis
+	var heading := -car.global_basis.z
+	heading.y = 0.0
+	heading = heading.normalized()
+	var exit_axis := _axis_a(key, heading)
+	if exit_axis == entry_axis: return entry_axis
+	var axis: Vector2 = axes.get(key, Vector2.RIGHT)
+	if not exit_axis: axis = axis.orthogonal()
+	if absf(Vector2(heading.x, heading.z).dot(axis)) < .985: return entry_axis
+	var length := route.get_baked_length()
+	var span := float(car.get("half_length")) + .5
+	if length <= span * 2.0: return entry_axis
+	var at := route.get_closest_offset(car.global_position)
+	var crossed := route.get_closest_offset(junctions[key])
+	var open: bool = route.get_meta("traffic_open", false)
+	var progress := at - crossed if open else fposmod(at - crossed + length * .5, length) - length * .5
+	if progress <= span: return entry_axis
+	var center := route.sample_baked(at, true)
+	if center.distance_to(car.global_position) > .8: return entry_axis
+	var rear := route.sample_baked(maxf(0.0, at - span) if open else fposmod(at - span, length), true)
+	var front := route.sample_baked(minf(length, at + span) if open else fposmod(at + span, length), true)
+	# Both halves of the entire hull must lie on the straight outgoing segment.
+	if rear.direction_to(center).dot(heading) < .985 or center.direction_to(front).dot(heading) < .985: return entry_axis
+	if not occupies(key, id): return entry_axis
+	return exit_axis
+
+static func _tight_turn(car: Node3D, key: Vector3i) -> Dictionary:
+	if car == null or not car.is_inside_tree() or not car.has_method("_route_ahead"): return {}
+	if car.get("traffic") != true or car.get("controlled") == true or car.get("external_input") == true: return {}
+	var route := car.get("route") as Curve3D
+	if route == null or car.get("_junction_route") != route: return {}
+	var rows: Array = car.get("_junction_list")
+	for index in rows.size():
+		var row: Dictionary = rows[index]
+		if row.key != key: continue
+		var next_index := index + 1
+		if next_index >= rows.size():
+			if bool(route.get_meta("traffic_open", false)): return {}
+			next_index = 0
+		var next: Dictionary = rows[next_index]
+		if next.key == key or not junctions.has(next.key): return {}
+		var distance := float(next.offset) - float(row.offset)
+		if distance <= 0: distance += route.get_baked_length()
+		if distance > EXIT * 2.0 + float(car.get("half_length")) * 2.0: return {}
+		var delta: Vector3 = junctions[next.key] - junctions[key]
+		if absf(delta.y) > .5: return {}
+		delta.y = 0
+		var heading: Vector3 = row.get("heading", Vector3.ZERO)
+		if heading.length_squared() < .01 or delta.length_squared() < .01: return {}
+		if absf(heading.normalized().dot(delta.normalized())) >= .7071: return {}
+		return {"next":next.key,"heading":heading.normalized()}
+	return {}
+
+static func _turn_queue_blocked(key: Vector3i, car: Node3D, gap: float) -> bool:
+	var turn := _tight_turn(car,key)
+	if turn.is_empty(): return false
+	# Drivers keep an admitted token until departure. On this short turning link,
+	# early reservations could admit a whole queue before its leader reaches the
+	# crossing. Decide at the stop line, where physical queue occupancy is known.
+	if gap > 1.6: return true
+	for other in _prune(key):
+		if other == car.get_instance_id(): continue
+		var predecessor := instance_from_id(other) as Node3D
+		if predecessor == null or not predecessor.is_inside_tree() or predecessor.get_world_3d() != car.get_world_3d(): continue
+		if not occupies(key,other): continue
+		var previous := _tight_turn(predecessor,key)
+		if previous.is_empty() or previous.next != turn.next: continue
+		if (previous.heading as Vector3).dot(turn.heading) > .95: return true
+	return false
+
 static func _cross_traffic_inside(key: Vector3i, id: int, axis_a: bool) -> bool:
 	var inside := _prune(key)
 	var requester := instance_from_id(id) as Node3D
 	var world: World3D = requester.get_world_3d() if requester != null and requester.is_inside_tree() else null
 	for other in inside:
-		if other == id or bool(inside[other][0]) == axis_a: continue
+		if other == id: continue
 		# A graph rebuild can overlap two scene lifetimes. Bodies in independent
 		# physics worlds cannot obstruct this requester, even at identical XYZ.
 		if world != null:
 			var body := instance_from_id(other) as Node3D
 			if body != null and body.is_inside_tree() and body.get_world_3d() != world: continue
+		inside[other][0] = _completed_exit_axis(key, other, bool(inside[other][0]))
+		if bool(inside[other][0]) == axis_a: continue
 		return true
 	return false
 
@@ -328,6 +413,7 @@ static func request(key: Vector3i, id: int, heading: Vector3, gap: float, speed:
 	# Quem já passou da faixa (nasceu ali, foi empurrado) não fica parado no meio da via.
 	if gap < -1.5: allowed = true
 	elif allowed and _cross_traffic_inside(key, id, axis_a): allowed = false
+	elif allowed and _turn_queue_blocked(key, instance_from_id(id) as Node3D, gap): allowed = false
 	if allowed:
 		inside[id] = [axis_a, Time.get_ticks_msec()]
 		owners[key] = inside

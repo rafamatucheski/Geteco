@@ -70,7 +70,7 @@ func run() -> void:
 	world.session.weather.weather_state=0
 	world.session.weather.weather_timer=3600
 	world.session.weather._update()
-	if "--machines-only" in OS.get_cmdline_user_args():
+	if "--machines-only" in OS.get_cmdline_user_args() or "--escape-vehicle-only" in OS.get_cmdline_user_args():
 		await machines()
 		finish(0 if failures.is_empty() else 1)
 		return
@@ -129,18 +129,22 @@ func machines() -> void:
 	world.camera.initialized=false
 	await create_timer(4).timeout
 	await photo("machine-yard")
-	for id in ["mining_backhoe","mining_tractor","mining_haul_truck"]:
+	var ids: Array = ["desert_bison"] if "--escape-vehicle-only" in OS.get_cmdline_user_args() else ["mining_backhoe","mining_tractor","mining_haul_truck","desert_bison"]
+	for id in ids:
 		var selected: CharacterBody3D
 		for car in world.production.vehicles:
-			if is_instance_valid(car) and car.archetype==id: selected=car; break
+			if not is_instance_valid(car) or car.archetype!=id: continue
+			if id=="desert_bison" and car.vehicle_id!="mineradora_escape": continue
+			selected=car
+			break
 		if not check(is_instance_valid(selected),"site spawned "+id): continue
-		world.player.teleport(selected.driver_door_anchor(1)+selected.global_basis.x*.45+Vector3.UP*.08)
-		await frames(5)
+		if not check(await prepare_machine_access(selected),"streamed floor and door ready "+id): continue
 		if not check(world.driving.interact(),"ordinary boarding accepted "+id): continue
 		var deadline:=Time.get_ticks_msec()+10000
 		while world.driving.is_body_transition_active() and Time.get_ticks_msec()<deadline: await physics_frame
 		if not check(world.driving.occupied and world.driving.car==selected,"driver seated in "+id): continue
-		check(selected.has_node("MiningMachine"),"machine controls attached "+id)
+		if id.begins_with("mining_"): check(selected.has_node("MiningMachine"),"machine controls attached "+id)
+		else: check(selected.vehicle_id=="mineradora_escape","escape pickup is the authored persistent vehicle")
 		await photo(id+"-seated")
 		if id=="mining_backhoe" and "--lift-input" in OS.get_cmdline_user_args(): await lift_inputs(selected)
 		var start: Vector3=selected.global_position
@@ -158,6 +162,29 @@ func machines() -> void:
 		check(not world.driving.occupied and not world.player.input_locked,"disembark restores actor "+id)
 	check(world.session.save_game(),"equipment checkpoint saved")
 	check(preload("res://gameplay/mining/MiningOperation.gd").validate_snapshot(world.session.state.world_state.get("mining_equipment",null)),"parked equipment has valid persistent snapshots")
+
+func prepare_machine_access(selected: CharacterBody3D) -> bool:
+	# This fixture jumps between the upper yard and the pit. Wait for the same
+	# residency/ground admission the real walking approach would already load.
+	var at: Vector3 = selected.driver_door_anchor(1)+selected.global_basis.x*.45+Vector3.UP*.08
+	world.production.region.set_focus(at)
+	world.production.region.prepare_collision_at(at)
+	world.production.region.prepare_collision_at(selected.global_position)
+	world.player.teleport(at)
+	var deadline := Time.get_ticks_msec()+8000
+	var ready := false
+	while is_instance_valid(selected) and Time.get_ticks_msec()<deadline:
+		await physics_frame
+		var floor_query := PhysicsRayQueryParameters3D.create(selected.global_position+Vector3.UP*.5,selected.global_position-Vector3.UP*1.5,1,[selected.get_rid()])
+		var floor_hit: Dictionary = world.get_world_3d().direct_space_state.intersect_ray(floor_query)
+		ready = not selected.has_meta("awaiting_ground") and selected.collision_layer!=0 and selected.is_visible_in_tree() and not floor_hit.is_empty()
+		if ready: break
+	if not is_instance_valid(selected): return false
+	await frames(2)
+	var option: Dictionary = world.driving._entry_option()
+	var candidate: CharacterBody3D = option.get("car")
+	print("MINING_BOARDING_DIAGNOSTIC ",JSON.stringify({"id":selected.vehicle_id,"point":str(selected.global_position),"player":str(world.player.global_position),"door":str(selected.driver_door_anchor(1)),"awaiting_ground":selected.has_meta("awaiting_ground"),"visible":selected.is_visible_in_tree(),"layer":selected.collision_layer,"speed":selected.speed,"health":selected.health,"option":candidate.vehicle_id if is_instance_valid(candidate) else "","gap":option.get("gap",-1)}))
+	return ready
 
 func key(code: int,pressed: bool) -> void:
 	var event:=InputEventKey.new()

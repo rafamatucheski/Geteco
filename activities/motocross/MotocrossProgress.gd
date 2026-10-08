@@ -129,7 +129,7 @@ static func _tally_compact_entries(value: Dictionary, wallet: Dictionary, totals
 		for i in LEVELS.size():
 			if amount==int(LEVELS[i].fee): level=i
 		if level<0: return false
-		var prize: int = code/5
+		var prize: int = floori(float(code)/5.0)
 		if prize>0:
 			if int(RACES.MOTO_PRIZES[prize-1])!=amount+int(LEVELS[level].bonus): return false
 			totals.wins[level]+=count

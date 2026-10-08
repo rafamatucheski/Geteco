@@ -101,7 +101,7 @@ func _update(force: bool) -> void:
 func _night_factor() -> float:
 	var session = controller.get("session")
 	if session == null or not is_instance_valid(session.get("weather")): return 0.0
-	var inside: bool = not String(controller.state.place_id).is_empty()
+	var inside: bool = not String(controller.state.place_id).is_empty() and not session.weather._embedded_building()
 	if inside: return 0.0
 	var daylight: float = ATMOSPHERE.daylight_at(float(session.weather.time_of_day))
 	# Postes acendem no fim da tarde, antes do escuro total, como na rua real.
@@ -231,6 +231,10 @@ func _follow_silhouettes() -> void:
 
 
 func _uses_interior_depth() -> bool:
+	var session = controller.get("session")
+	if session != null:
+		if session.building_entrance != null and session.building_entrance.on_rooftop(): return false
+		if session.service_roofs != null and session.service_roofs.is_active(): return false
 	if not String(controller.state.place_id).is_empty(): return true
 	# Continuous underground rooms keep the outdoor place id. Their active
 	# camera owns depth presentation, so the street outline must also yield.
@@ -268,7 +272,8 @@ func _update_neon_labels(night: float) -> void:
 func _orient_sun() -> void:
 	var sun = controller.get("sun") if controller != null else null
 	if sun == null or not is_instance_valid(sun): return
-	if not String(controller.state.place_id).is_empty(): return
+	var session = controller.get("session")
+	if not String(controller.state.place_id).is_empty() and (session==null or not is_instance_valid(session.weather) or not session.weather._embedded_building()): return
 	sun.rotation_degrees.y = -135.0
 	if controller.state.region_id == "harbor":
 		sun.rotation_degrees.x = maxf(sun.rotation_degrees.x, -35.0)

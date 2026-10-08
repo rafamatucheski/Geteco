@@ -13,6 +13,12 @@ const CACHE_MARGIN := 8.0
 const MAX_VERTEX_SAMPLES := 4096
 ## Conservative authored field bound:17+29+2.4+3.5=51.9m, plateau22m; all blends convex.
 const FIELD_HEIGHT_CEILING := 60.0
+## Falling past successive quarry benches must not repeatedly lower/raise the
+## view between safety samples. Retain the raised view until clearance settles.
+const PITCH_RELEASE_DELAY := .85
+const PITCH_RELEASE_SPEED := deg_to_rad(8.0)
+var _retained_pitch := 0.0
+var _pitch_release_clock := 0.0
 var _pitch := 0.0
 var _distance := 0.0
 var _minimum_pitch := 0.0
@@ -38,7 +44,7 @@ var _cached_pitch := 0.0
 var _cached_distance := 0.0
 var _query_bounds := BOUNDS
 
-func offset_for(focus: Vector3,nominal: Vector3,delta: float,snap: bool,enabled: bool,view_size := Vector2(36,20),near_clip := .1,target_position := Vector3.INF,target_radius := 3.4,target_velocity := Vector3.ZERO) -> Vector3:
+func offset_for(focus: Vector3,nominal: Vector3,delta: float,snap: bool,enabled: bool,view_size := Vector2(36,20),near_clip := .1,target_position := Vector3.INF,target_radius := 3.4,target_velocity := Vector3.ZERO,falling := false) -> Vector3:
 	var nominal_length := nominal.length()
 	var flat := Vector3(nominal.x,0,nominal.z)
 	var direction := flat.normalized()
@@ -49,6 +55,8 @@ func offset_for(focus: Vector3,nominal: Vector3,delta: float,snap: bool,enabled:
 	var local := enabled and _query_bounds.grow(24.0).has_point(planar_focus)
 	if not enabled:
 		_active=false
+		_retained_pitch=base_pitch
+		_pitch_release_clock=0.0
 		_pitch=base_pitch
 		_distance=nominal_length
 		return nominal
@@ -97,10 +105,22 @@ func offset_for(focus: Vector3,nominal: Vector3,delta: float,snap: bool,enabled:
 		_last_near=near_clip
 		_cached_pitch=candidate_pitch
 		_cached_distance=candidate_distance
-		if fresh: _pitch=_desired_pitch
+		if fresh:
+			_pitch=_desired_pitch
+			_retained_pitch=_desired_pitch
+			_pitch_release_clock=PITCH_RELEASE_DELAY
 		_active=true
-	# Raise immediately only to the proven minimum; the3degree advance reserve smooths normal motion.
-	_pitch=maxf(_minimum_pitch,lerpf(_pitch,_desired_pitch,1.0-exp(-6.0*maxf(delta,0))))
+	# Safety still raises the lens immediately. Lowering waits for sustained
+	# clearance, then has a bounded rate, instead of chasing every bench edge.
+	if falling: _retained_pitch=maxf(_retained_pitch,_pitch)
+	if _desired_pitch>=_retained_pitch-deg_to_rad(.25):
+		_retained_pitch=maxf(_retained_pitch,_desired_pitch)
+		_pitch_release_clock=PITCH_RELEASE_DELAY
+	else:
+		_pitch_release_clock=PITCH_RELEASE_DELAY if falling else maxf(0.0,_pitch_release_clock-maxf(delta,0))
+		if _pitch_release_clock<=0.0:
+			_retained_pitch=move_toward(_retained_pitch,_desired_pitch,PITCH_RELEASE_SPEED*maxf(delta,0))
+	_pitch=maxf(_minimum_pitch,lerpf(_pitch,_retained_pitch,1.0-exp(-6.0*maxf(delta,0))))
 	var required_distance := _required_distance(focus,_pitch,nominal_length,view_size,near_clip)
 	_distance=maxf(required_distance,lerpf(_distance,required_distance,1.0-exp(-5.0*maxf(delta,0))))
 	_near_clearance=focus.y+(_distance-near_clip)*sin(_pitch)-view_size.y*.5*cos(_pitch)-_near_height

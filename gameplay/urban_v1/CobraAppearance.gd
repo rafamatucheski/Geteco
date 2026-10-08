@@ -27,7 +27,7 @@ static func dress(model: Node3D) -> void:
 			var badge := insignia(.22)
 			badge.name = "CobraInsigniaFront" if side > 0 else "CobraInsigniaBack"
 			badge.position = Vector3(0, .22, side * (profile.chest.y + .005))
-			badge.rotation = Vector3(PI*.5, PI if side < 0 else 0, 0)
+			badge.rotation = Vector3(PI*.5, PI if side < 0 else 0.0, 0.0)
 			body.spine.add_child(badge)
 		return
 	if shirt == null:
@@ -56,7 +56,7 @@ static func dress(model: Node3D) -> void:
 			var badge := insignia(.28)
 			badge.name = "CobraInsigniaFront" if side<0 else "CobraInsigniaBack"
 			badge.position = Vector3(0,.025,front-.004 if side<0 else back+.004)
-			badge.rotation = Vector3(PI*.5,PI if side>0 else 0,0)
+			badge.rotation = Vector3(PI*.5,PI if side>0 else 0.0,0.0)
 			torso.add_child(badge)
 
 static func arms(model: Node3D, aiming: bool) -> void:

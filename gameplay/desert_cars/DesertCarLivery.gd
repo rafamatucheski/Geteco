@@ -346,7 +346,7 @@ static func _number_badge(
 	_side_rect(st, x, side, z, y, width, height * 1.16, background, layer)
 	# Seven-segment numerals are geometric race identifiers, not a font/label
 	# viewport. Reverse the local horizontal axis on the far side for legibility.
-	_digit(st, x, side, z + side * height * .34, y, int(number / 10), height, ink, layer + 1)
+	_digit(st, x, side, z + side * height * .34, y, floori(float(number) / 10.0), height, ink, layer + 1)
 	_digit(st, x, side, z - side * height * .34, y, number % 10, height, ink, layer + 1)
 
 
@@ -649,7 +649,7 @@ static func _curve_point(
 	var shoulder: float = float(spec.get("shoulder", .76))
 	if absf(normal.x) > .5:
 		var side := signf(normal.x)
-		var gap := absf(point.x) - float(spec["size"][0]) * .48 + .002
+		var side_gap := absf(point.x) - float(spec["size"][0]) * .48 + .002
 		var side_y := point.y
 		# The upper fender stripe follows the descending haunch, keeping its
 		# thickness instead of hovering above the rounded nose and rear deck.
@@ -659,12 +659,12 @@ static func _curve_point(
 			)
 			var anchor := maxf(shoulder - .035, float(spec.wheel_radius) * 2.0 + .014)
 			side_y = minf(anchor, top.y - .013) + (point.y - anchor)
-		var surface: Vector3 = shape.call("side_point", spec, side, point.z, side_y)
-		return surface + Vector3(side * gap, 0, 0)
+		var side_surface: Vector3 = shape.call("side_point", spec, side, point.z, side_y)
+		return side_surface + Vector3(side * side_gap, 0, 0)
 	if point.y > shoulder + .12:
-		var gap := point.y - (float(spec["size"][1]) - .0075) + .002
-		var surface: Vector3 = shape.call("roof_point", spec, point.x, point.z)
-		return surface + Vector3(0, gap, 0)
+		var roof_gap := point.y - (float(spec["size"][1]) - .0075) + .002
+		var roof_surface: Vector3 = shape.call("roof_point", spec, point.x, point.z)
+		return roof_surface + Vector3(0, roof_gap, 0)
 	var gap := point.y - shoulder + .002
 	var surface: Vector3 = shape.call("deck_point", spec, point.x, point.z)
 	return surface + Vector3(0, gap, 0)

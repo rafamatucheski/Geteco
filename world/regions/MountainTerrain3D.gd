@@ -165,4 +165,5 @@ func build_chunk(parent: Node3D, rect: Rect2, shore_edges: Array[Dictionary] = [
 	result.add_child(body)
 	# Only the explicit bridge water spans have permanent exposed banks.
 	preload("res://world/regions/MountainBridgeShore.gd").build_chunk(parent,rect,self,shore_edges)
+	preload("res://world/regions/MountainTerrain3DPilot.gd").attach(self,result,rect,chunk_material.get_shader_parameter("trail_mask"))
 	return result

@@ -1,0 +1,51 @@
+# Integração dos terrenos com a grama — 08/10/2026
+
+Escopo: **2 exteriores existentes**, Parque Lume e Lago Sereno, incluindo o encontro local da estrada de terra com a entrada do lago. **0 interiores alterados**. Pedido: reduzir a aparência de terrenos recortados e integrar melhor os pisos à grama. As atrações, os palhaços, as máquinas, as árvores e a transferência do lago estão registrados na [etapa anterior](park-countryside-20261007.md).
+
+## Alteração e critérios
+
+No parque, o pavimento bege contínuo foi substituído por uma composição de gramado sob a montanha-russa, áreas plantadas junto ao perímetro, pavimento neutro e caminhos claros. As peças horizontais dividem o mesmo plano, sem sobrepor um piso novo à placa anterior. Uma borda mineral acompanha a cerca; a transição exterior mistura terra e grama e desce de 0,025 m até a cota do gramado, terminando antes da calçada. O suporte físico inclui essa transição. A entrada, o acesso a Umbra, a estação, o guarda-roupa e os colecionáveis mantêm suas posições.
+
+No lago, as três faixas visuais de cascalho/terra/grama e o pátio angular deram lugar a uma mistura no próprio chão nativo. Máscaras em coordenadas mundiais acompanham a margem, o estacionamento, o balcão e o acesso. A textura e a escala da grama acompanham o entorno. A estrada e seu acostamento recebem o mesmo acabamento somente nos chunks da entrada; fora da máscara local conservam a mistura rural existente. A borda de pedra junto à água, plataformas, obstáculos, IDs de pesca e geometria da estrada foram preservados.
+
+São superfícies estáticas e materiais opacos, sem novas luzes, NPCs ou rotinas por frame. Não há arbustos ou névoa acrescentados para cobrir emendas. O modo de comparação `recreation_ground_before`, selecionado antes de construir o Main, preserva os pisos anteriores para um A/B com o mesmo restante do código; a execução normal usa o acabamento novo.
+
+Critérios: percursos livres e apoiados, materiais legíveis e coerentes com o entorno, perímetro acabado, ausência de buracos/alternância de planos nos trechos observados, retorno determinístico. Desempenho: alvo provisório de 60 FPS / 16,67 ms na máquina de referência, janelas renderizadas de 30 s, investigar aumento superior a 5% em p95/p99, separar admissão e regime estável. Headless e capturas não aprovam desempenho.
+
+## Validação dirigida
+
+Godot **4.7.2 .NET**, `Harbor.csproj` compilado antes do motor, zero erros/avisos. Saves isolados, `--no-save`, sem gravação nos saves do usuário. O caminho nativo C# é exigido na comparação Main. As verificações anteriores de comércio, inventário, pesca e persistência são reutilizadas enquanto esses comportamentos permanecem inalterados.
+
+- Parque: `test_amusement_park_ground.gd`, **16/16**. Apoio físico dos **529 triângulos** visuais, área horizontal composta compatível com o contorno, seis percursos varridos com Dante e palhaço, reconstrução determinística. A primeira fixture iniciou uma trajetória sobre uma floreira existente; o trajeto foi corrigido para o corredor livre, sem alterar o produto ou relaxar a colisão. [Resultado físico e proveniência](../../evidence/amusement-park-ground-session-196080-6248021/physics_result.json).
+- Lago: `test_fishing_relocation.gd`, **21/21**, e `test_fishing_site.gd`, **71/71**. Acesso, terreno, sólidos, pescadores e retorno. [Log de acesso/terreno](../../evidence/fishing-ground-relocation-20261008.log), [log físico](../../evidence/fishing-ground-physical-20261008.log).
+
+Lago no Main renderizado: **76/76 verificações**, incluindo embarque real, rodas sobre estrada/entrada/estacionamento, desembarque, caminhada até o balcão, volta completa pela margem seca e saída/retorno com suporte e uma população de cinco pescadores. [Relatório](../../evidence/fishing-ground-after-186436-6762190/report.json). As posições iniciais e os saltos finais de residência são preparação de fixture; o percurso local foi percorrido fisicamente.
+
+Fotos reais do lago: [antes](../../evidence/park-countryside-after-188984-6034472/fishing_overview.png), [depois](../../evidence/fishing-ground-after-186436-6762190/fishing_overview.png), [entrada em ângulo oblíquo](../../evidence/fishing-ground-after-186436-6762190/apron-oblique.png), [estacionamento](../../evidence/fishing-ground-after-186436-6762190/parking.png), [margem](../../evidence/fishing-ground-after-186436-6762190/bank-12.png). A vista geral repete posição, alvo, FOV e neblina da câmera anterior; o estado residente e o instante da simulação podem diferir. Essas fotos comparam acabamento, não desempenho.
+
+Inspeção das fotos do lago: entrada e estacionamento perderam a placa angular, a terra acompanha o uso e a margem, as plataformas continuam apoiadas e o caminho permanece legível. A execução gravou **1.439 frames / 78,400 s**, todos decodificados, sem falhas de escrita ou saltos do contador de frames renderizados; fontes estáveis. Foram inspecionadas 80 amostras da volta inteira e dois trechos de 33 frames consecutivos nas emendas z=0 do ramal e x=-512 da margem, sem buraco, alternância de planos ou corte de chunk observado nesses recortes. [Revisão temporal e limites](../../evidence/fishing-ground-after-186436-6762190/visual-review.md), [integridade](../../evidence/fishing-ground-after-186436-6762190/frame-analysis.json), [vídeo com os intervalos originais](../../evidence/fishing-ground-after-186436-6762190/route-timestamped.mp4). Captura com readback/JPEG e limite temporário de 30 FPS não representa o desempenho normal.
+
+Parque no Main renderizado: serviço C# ativo, piso novo admitido, caminhada real por grama/entrada/grama e jardim/pavimento com apoio, quatro palhaços residentes e fontes de produto estáveis. [Resultado bruto preservado](../../evidence/amusement-park-ground-session-196080-6248021/result.json): **6 checks passaram e 2 falharam por um critério incorreto da fixture**, que exigia mais de 50 imagens apesar de 30 FPS ser somente um teto. Foram gravados **43 e 45 frames consecutivos**, sem saltos, durante **2,998 s e 3,052 s**. O custo de captura reduz sua frequência; isso não é medição de desempenho. A exigência futura foi corrigida para duração e integridade do registro. O motor não foi repetido para transformar o histórico em um resultado verde.
+
+A [auditoria offline do parque](../../evidence/amusement-park-ground-session-196080-6248021/temporal_offline.json) preserva o hash do resultado original, decodifica todos os 88 JPEGs, confirma dimensões/contadores e registra a travessia com o corpo apoiado. A conclusão de continuidade vem desses dados, sem substituir os dois resultados originais por aprovações fictícias.
+
+A [revisão visual do parque](../../evidence/amusement-park-ground-session-196080-6248021/review.json) cobre os sete PNGs e todos os 88 frames apresentados em quatro folhas de contato; não houve popping ou alternância de piso observado nesses dois percursos curtos. Inspeção de frames em folhas de contato não equivale a reprodução integral em velocidade normal.
+
+Fotos reais do parque: [antes](../../evidence/park-countryside-after-188984-6034472/park_overview.png), [depois](../../evidence/amusement-park-ground-session-196080-6248021/park_overview.png), [câmera de jogo](../../evidence/amusement-park-ground-session-196080-6248021/park_walk.png), [entrada norte](../../evidence/amusement-park-ground-session-196080-6248021/entry_north_joint.png), [entrada sul](../../evidence/amusement-park-ground-session-196080-6248021/entry_south_joint.png), [canto sudoeste](../../evidence/amusement-park-ground-session-196080-6248021/southwest_corner.png), [canto noroeste](../../evidence/amusement-park-ground-session-196080-6248021/northwest_corner.png), [chanfro nordeste](../../evidence/amusement-park-ground-session-196080-6248021/northeast_bevel.png). A vista geral repete a câmera anterior. O gramado quebra a placa contínua; bordas sob a cerca e quinas da entrada não apresentam vãos nas vistas inspecionadas. O encontro construído permanece nítido e a grama externa mantém sua textura mundial.
+
+## Desempenho — pendente por concorrência
+
+A tentativa anterior à edição não encontrou janela sem outros motores no prazo finito. Foi então preservado o acabamento original em um seletor de construção para comparar antigo/novo com o mesmo Main, fontes e estado de jogo, sem reverter arquivos compartilhados.
+
+O runner `tests/measure/run_recreation_ground_comparison.ps1` iniciou o modo anterior após 15 segundos sem outro Godot. Em **08/10/2026 03:04:28 UTC**, outra sessão iniciou `measure_katana_session.gd`, antes de completar a primeira janela estável. A proteção interrompeu somente a fixture própria (console 139364 / filho 196492); os processos alheios foram preservados. [Log parcial](../../evidence/recreation-ground-20261008-000301-before.log), [auditoria dos processos](../../evidence/recreation-ground-20261008-000301-processes.jsonl).
+
+Não há par de janelas isoladas de 30 s para esta alteração. **Desempenho não aprovado; comparação antes/depois pendente.** Não usar o FPS do HUD ou as sequências com captura de imagens para preencher essa lacuna. O runner permanece disponível para uma janela exclusiva; novas execuções equivalentes não foram iniciadas sem mudança da condição externa.
+
+## Estado por critério e cobertura
+
+| Local | Visual | Física | Temporal | Performance |
+| --- | --- | --- | --- | --- |
+| Parque Lume | Aprovado nas vistas diurnas de jogo, geral e cinco oblíquas | Aprovado no suporte, percursos e reconstrução dirigidos | Registros íntegros; revisão limitada aos dois cruzamentos de material | Pendente: A/B interrompido por concorrência |
+| Lago Sereno e terminal da estrada | Aprovado na entrada e margem diurnas observadas | Aprovado no carro, caminhada, obstáculos e retorno | Registros íntegros; amostras da volta e dois trechos consecutivos inspecionados | Pendente: A/B interrompido por concorrência |
+
+Não houve reprodução humana integral de todo o registro temporal, nem cobertura de chuva, noite ou Android. As evidências não certificam iluminação, água, todos os terrenos ou desempenho global. Oclusão dos sólidos existentes permanece coberta separadamente na etapa anterior; não foram alterados os modelos/volumes desses obstáculos. Revisão visual de chão e apoio físico não substituem essa evidência de profundidade.

@@ -14,9 +14,9 @@ extends Node3D
 
 const WORK := preload("res://runtime/StallWorkTrace.gd")
 
-const LIFETIME := 18.0
-const FADE_DURATION := 6.0
-const CORPSE_LIFETIME := 240.0
+const LIFETIME := 10.0
+const FADE_DURATION := 3.0
+const CORPSE_LIFETIME := 12.0
 const MAX_STAINS := 64
 const MAX_CORPSES := 5
 const CORPSE_FADE_SECONDS := 0.45

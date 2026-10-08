@@ -64,26 +64,24 @@ func _player_alive() -> bool:
 func _entry_option(allow_transition := false) -> Dictionary:
 	if is_body_transition_active() or (not allow_transition and _external_transition_blocked()): return {}
 	if occupied or world.player.input_locked: return {}
-	var candidate: CharacterBody3D = car if is_instance_valid(car) else null
-	if not "--sandbox" in OS.get_cmdline_user_args():
-		candidate = null
-		var distance := 5.0
-		for possible in get_tree().get_nodes_in_group("drivable"):
-			if not possible is CharacterBody3D or not possible.is_visible_in_tree() or possible.collision_layer == 0 or possible.has_meta("awaiting_ground"): continue
-			if possible.health <= 0 or not _speed_allows_entry(possible): continue
-			var separation: float = possible.global_position.distance_to(world.player.position)
-			if separation < distance:
-				candidate = possible
-				distance = separation
-	if not is_instance_valid(candidate) or not _speed_allows_entry(candidate) or candidate.health <= 0: return {}
-	var reach := JACK_DOOR_REACH if absf(candidate.speed) > .5 else 1.8
 	var best := {}
-	for side in (candidate.boarding_sides() if candidate.has_method("boarding_sides") else [-1,1]):
-		var door: Vector3 = candidate.driver_door_anchor(side) if candidate.has_method("driver_door_anchor") else candidate.to_global(Vector3(side*(candidate.half_width+.51),0,0.15))
-		var gap: float = world.player.position.distance_to(door)
-		if gap > reach or (not best.is_empty() and gap >= float(best.gap)): continue
-		var ray := PhysicsRayQueryParameters3D.create(world.player.position+Vector3.UP*.9,door+Vector3.UP*.9,7,[world.player.get_rid(),candidate.get_rid()])
-		if world.get_world_3d().direct_space_state.intersect_ray(ray).is_empty(): best = {"car":candidate,"side":side,"door":door,"gap":gap}
+	var candidates: Array = [car] if "--sandbox" in OS.get_cmdline_user_args() else get_tree().get_nodes_in_group("drivable")
+	for candidate in candidates:
+		if not is_instance_valid(candidate) or not candidate is CharacterBody3D: continue
+		if not candidate.is_visible_in_tree() or candidate.collision_layer == 0 or candidate.has_meta("awaiting_ground"): continue
+		if candidate.health <= 0 or not _speed_allows_entry(candidate): continue
+		var reach := JACK_DOOR_REACH if absf(candidate.speed) > .5 else 1.8
+		# A haul-truck door can be over five metres from its centre. Keep the
+		# broad phase proportional to the hull, then choose by actual door reach;
+		# a nearby car with an inaccessible door must not hide another car's door.
+		var radius := Vector2(float(candidate.half_width) + .54, float(candidate.half_length)).length() + reach
+		if candidate.global_position.distance_squared_to(world.player.position) > radius * radius: continue
+		for side in (candidate.boarding_sides() if candidate.has_method("boarding_sides") else [-1,1]):
+			var door: Vector3 = candidate.driver_door_anchor(side) if candidate.has_method("driver_door_anchor") else candidate.to_global(Vector3(side*(candidate.half_width+.51),0,0.15))
+			var gap: float = world.player.position.distance_to(door)
+			if gap > reach or (not best.is_empty() and gap >= float(best.gap)): continue
+			var ray := PhysicsRayQueryParameters3D.create(world.player.position+Vector3.UP*.9,door+Vector3.UP*.9,7,[world.player.get_rid(),candidate.get_rid()])
+			if world.get_world_3d().direct_space_state.intersect_ray(ray).is_empty(): best = {"car":candidate,"side":side,"door":door,"gap":gap}
 	# A porta mais perto de quem aperta, não a primeira da lista (sempre a esquerda).
 	return best
 
@@ -156,6 +154,8 @@ func _begin_entry(candidate: CharacterBody3D, side: int) -> bool:
 	car.controlled = false
 	car.external_input = false
 	car.input_locked = true
+	# Door construction and VehicleInterior must read the original materials.
+	if world.camera.has_method("release_exterior_reveal"): world.camera.release_exterior_reveal()
 	if is_instance_valid(world.production): car.ensure_equipment(world)
 	# A folha da porta é recortada do casco ANTES de vidro e teto ficarem translúcidos: o
 	# recorte precisa das malhas originais, e o vidro trocado depois vale também para a folha

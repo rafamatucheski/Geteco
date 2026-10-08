@@ -1,0 +1,1210 @@
+{
+  "date": "2026-10-07",
+  "scope": "Inventário documental do workspace, com correções e validações posteriores identificadas por card e evidência; sem certificação global",
+  "cards": [
+    {
+      "id": "coastal-lighthouse-20261007",
+      "title": "Farol costeiro: subida a pé e binóculo para o deserto",
+      "status": "implemented",
+      "area": "mundo",
+      "description": "Farol acessível em Harbor, com passeio exclusivo para pedestres, duas voltas de subida, galeria a 24,2 m e binóculo funcional voltado para a cidade do deserto. Rochas com ondas, lanterna iluminada e recorte visual que mantém Dante visível. Corrigidos os prédios ausentes no panorama, a borda artificial do oceano e as faces da cúpula. A ponte do deserto continua bloqueada até a missão final. Subida/descida, colisões, oclusão, controles, save no topo e descarregamento/reentrada verificados no Godot 4.7.2 .NET com C# ativo.",
+      "sources": [
+        "docs/mirante-costeiro-20261007.md",
+        "world/places/coastal_lookout/CoastalLookout.gd",
+        "runtime/coastal_lookout/CoastalLookoutRuntime.gd",
+        "world/places/coastal_lookout/LookoutDistantCity.gd",
+        "world/places/coastal_lookout/LookoutDistantSea.gd",
+        "docs/concepts/coastal-lookout/farol-no-jogo.png",
+        "docs/concepts/coastal-lookout/farol-binoculo-cidade.png"
+      ]
+    },
+    {
+      "id": "coastal-lighthouse-validation-20261007",
+      "title": "Farol: desempenho medido e validações restantes",
+      "status": "partial",
+      "area": "qualidade",
+      "description": "15 checks de circulação física, 63 de profundidade com jogador/NPC, 36 do binóculo, nove do panorama e 30 de restauração/reentrada com templates passaram. Malhas preparadas durante o carregamento; todos os nós ativos são liberados ao sair. Medição diurna em Main/Mobile, RTX 4060 Laptop, 1920×1080: 142,85–143,97 FPS, p95 de 10,516–11,573 ms, sem regressão relevante de p95/p99 frente ao baseline. O pico da primeira aproximação caiu de 1.564,718 para 96,439 ms; ainda ultrapassa o alvo de um frame. Há sequências de 30 s de dia e de noite sem lacunas, mas a triagem não é certificação temporal integral.",
+      "next": "Investigar o pico residual da aproximação e os frames lentos isolados; completar inspeção temporal integral, cenários de chuva/tempestade e benchmark noturno dedicado. Não estender a validação local para todo o jogo.",
+      "sources": [
+        "docs/mirante-costeiro-20261007.md",
+        "evidence/coastal-lighthouse-physics-final.log",
+        "evidence/coastal-lighthouse-depth-127480-5695854/report.json",
+        "evidence/coastal-lookout-capture-54888-5791978/report.json",
+        "evidence/coastal-lookout-capture-32208-5733504/report.json",
+        "evidence/coastal-lookout-before-lighthouse-72420-6507806/report.json",
+        "evidence/coastal-lookout-after-lighthouse-cached-64768-5758937/report.json"
+      ]
+    },
+    {
+      "id": "inv-001",
+      "title": "Mundo 3D e regiões em streaming",
+      "status": "implemented",
+      "area": "mundo",
+      "description": "Harbor, montanha e deserto têm construtores e sessão de produção. GDScript e C# coexistem; a versão comum do Godot não substitui o runtime .NET.",
+      "sources": [
+        "runtime/ProductionWorld.gd",
+        "runtime/FullSession.gd",
+        "project.godot"
+      ]
+    },
+    {
+      "id": "inv-002",
+      "title": "Ponte norte em construção e acesso leste",
+      "status": "implemented",
+      "area": "mundo",
+      "description": "A liberação norte acompanha a conclusão final da campanha de Harbor. O acesso lateral à montanha é independente; obra, barreiras e restauração precisam manter o mesmo gate.",
+      "sources": [
+        "world/north_gateway/NorthGatewayPolicy.gd",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "inv-003",
+      "title": "Oceano, costa, água e frio",
+      "status": "implemented",
+      "area": "mundo",
+      "description": "Mar com ondas e espuma, proteções costeiras, sobrevivência na água fria, fontes de calor e recuperação regional têm implementações e registros próprios.",
+      "sources": [
+        "docs/harbor-ocean.md",
+        "docs/coastal-protection.md",
+        "docs/water-cold-migration.md",
+        "docs/heat-streaming-integration.md"
+      ]
+    },
+    {
+      "id": "inv-004",
+      "title": "Clima, dia/noite, lua e atmosfera regional",
+      "status": "implemented",
+      "area": "mundo",
+      "description": "Chuva, poças, céu, ciclo de lua e ambientes regionais existem. Não é aprovação temporal de todas as combinações de clima e região.",
+      "sources": [
+        "runtime/Weather.gd",
+        "docs/regional-atmosphere-migration.md",
+        "docs/weather-presentation-migration-20260928.md"
+      ]
+    },
+    {
+      "id": "inv-005",
+      "title": "Montanha: terreno, floresta, lago e fauna",
+      "status": "implemented",
+      "area": "mundo",
+      "description": "Relevo, neve, trilhas, árvores, rochas e vida selvagem compõem a região. Ursos e demais fauna possuem sistemas próprios; revisões locais não certificam todo o bioma.",
+      "sources": [
+        "docs/mountain-terrain-migration.md",
+        "docs/terrain-dressing-migration.md",
+        "docs/reviews/mountain-zoo-20261003.md",
+        "gameplay/wildlife"
+      ]
+    },
+    {
+      "id": "inv-006",
+      "title": "Terrain3D: piloto local de 64 × 64 m",
+      "status": "partial",
+      "area": "mundo",
+      "description": "Uma malha exportada pelo Terrain3D foi integrada a um trecho da montanha. Não é uma conversão de toda a região para a extensão nativa.",
+      "sources": [
+        "docs/reviews/terrain3d-mountain-20261006.md",
+        "world/regions/MountainTerrain3DPilot.gd"
+      ]
+    },
+    {
+      "id": "inv-007",
+      "title": "Terrain3D nativo instável",
+      "status": "issue",
+      "area": "mundo",
+      "description": "A integração nativa foi reprovada antes da medição por instabilidade. A malha exportada não demonstra que a extensão nativa ficou estável; uso prolongado no editor continua sem certificação.",
+      "sources": [
+        "docs/reviews/terrain3d-mountain-20261006.md"
+      ]
+    },
+    {
+      "id": "inv-008",
+      "title": "Passarela de pedestres",
+      "status": "implemented",
+      "area": "mundo",
+      "description": "Passarela física com escadas, guarda-corpo e civis atravessando; peça disponível no editor. Não confundir com os projetos rodoviários elevados.",
+      "sources": [
+        "docs/plano-passarela-tunel-elevado-20260927.md",
+        "tests/test_footbridge.gd"
+      ]
+    },
+    {
+      "id": "inv-009",
+      "title": "Túnel do canal e vias em níveis",
+      "status": "partial",
+      "area": "mundo",
+      "description": "Há CanalTunnel3D e recorte de câmera no código atual, posteriores ao plano de 27/09. O plano não serve mais como prova de ausência; reconfirmar cada trecho, conexão, acesso e validação integrada.",
+      "sources": [
+        "world/urban_detail/CanalTunnel3D.gd",
+        "world/urban_detail/TunnelCutaway.gd",
+        "docs/plano-passarela-tunel-elevado-20260927.md"
+      ]
+    },
+    {
+      "id": "inv-010",
+      "title": "Editor MUNDO: três mapas e biblioteca",
+      "status": "implemented",
+      "area": "ferramentas",
+      "description": "Editor integra Harbor, montanha e deserto, documento compartilhado, biblioteca, prévia 3D, peças, ruas e exportação de base. Os 793/861/424 registros do relatório são daquele snapshot, não total de objetos jogáveis.",
+      "sources": [
+        "docs/reviews/editor-todos-mapas-20261006.md",
+        "world/editing/WorldEditRuntime.gd"
+      ]
+    },
+    {
+      "id": "inv-011",
+      "title": "Editor de cruzamentos e pavimentação",
+      "status": "implemented",
+      "area": "ferramentas",
+      "description": "Ajustes por braço/sentido, persistência e identidade dos encontros; ferramentas de ruas, chão e tubos possuem documentação própria.",
+      "sources": [
+        "docs/junction-editor.md",
+        "docs/tube-editor.md",
+        "world/editing/WorldEditRoads.gd",
+        "world/editing/WorldGroundFactory.gd"
+      ]
+    },
+    {
+      "id": "inv-012",
+      "title": "Biblioteca urbana e fachadas",
+      "status": "implemented",
+      "area": "objetos",
+      "description": "Prédios, telhados, escadas externas, calhas, caixas d’água, equipamentos e detalhes de fachada são construídos por bibliotecas e fábricas. O índice de arquivos abaixo cobre os geradores e recursos.",
+      "sources": [
+        "docs/urban-assets-20260926.md",
+        "world/urban_detail/UrbanSkylineCatalog.gd",
+        "world/urban_detail/UrbanLowriseCatalog.gd",
+        "world/editing/WorldPropFactory.gd"
+      ]
+    },
+    {
+      "id": "inv-013",
+      "title": "Objetos de rua e física",
+      "status": "implemented",
+      "area": "objetos",
+      "description": "Postes, hidrantes, lixeiras, mobiliário, barreiras e detalhes de rua têm construção e integração física específicas. Nem toda decoração é destrutível ou tem collider.",
+      "sources": [
+        "world/city_look/CityPropKit.gd",
+        "world/urban_detail/HarborProp3D.gd",
+        "docs/STREET_PHYSICS_2026-09-22.md"
+      ]
+    },
+    {
+      "id": "inv-014",
+      "title": "Natureza, superfícies e vegetação",
+      "status": "implemented",
+      "area": "objetos",
+      "description": "Árvores, rochas, capim, neve, cascalho e terrenos usam recursos e geração procedural. A contagem de arquivos não equivale à quantidade de instâncias no cenário.",
+      "sources": [
+        "docs/terrain-dressing-migration.md",
+        "world/regions/natural_ground.gdshader"
+      ]
+    },
+    {
+      "id": "inv-015",
+      "title": "Maciota: garagem e oficina",
+      "status": "implemented",
+      "area": "lugares",
+      "description": "Garagem, atendimento, recompensas e modificações têm fluxos próprios. Maciota e mecânico são imortais; interior bloqueia armas e preserva inventário. Regras permanecem obrigatórias.",
+      "sources": [
+        "docs/maciota-migration.md",
+        "docs/garage-reward-migration.md",
+        "runtime/MaciotaWorkshop.gd",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "inv-016",
+      "title": "Ammu-Nation de Harbor e da montanha",
+      "status": "implemented",
+      "area": "lugares",
+      "description": "Duas lojas com entrada, catálogo, compra e apresentação de armas e acessórios. Pendências globais de câmera/performance não são encerradas por existirem modelos ou testes.",
+      "sources": [
+        "runtime/HarborAmmunationCatalog.gd",
+        "world/places/AmmunationModel.gd",
+        "runtime/WeaponShopEntrance.gd"
+      ]
+    },
+    {
+      "id": "inv-017",
+      "title": "North Pier: banco e assalto",
+      "status": "implemented",
+      "area": "lugares",
+      "description": "Banco com cofre, segurança, combate e roubo integrado à resposta urbana. Há evidência de Main; save/load em disco durante o assalto não foi certificado pelo relatório de 02/10.",
+      "sources": [
+        "docs/reviews/bank-gameplay-20261002.md",
+        "runtime/Robberies.gd"
+      ]
+    },
+    {
+      "id": "inv-018",
+      "title": "Boa Praça: supermercado",
+      "status": "implemented",
+      "area": "lugares",
+      "description": "Interior com 1.224 produtos de cenário, quatro clientes, dois funcionários e caixas. Oito compras: maçã, água, suco, iogurte, pão, cereal, sanduíche e primeiros socorros; colete e recompensa persistente.",
+      "sources": [
+        "docs/reviews/supermarket-20261003.md",
+        "world/places/supermarket"
+      ]
+    },
+    {
+      "id": "inv-019",
+      "title": "Union e lojas de inverno",
+      "status": "implemented",
+      "area": "lugares",
+      "description": "Union, Último Abrigo, Boutique Alpina e Casacos da Vila têm roupas/serviços e modelos. Manequins devem manter proporções humanas; catálogo de roupas separado do inventário de armas.",
+      "sources": [
+        "world/places/PlaceCatalog.gd",
+        "data/catalogs/OutfitCatalog.gd",
+        "world/places/ShopMannequin.gd"
+      ]
+    },
+    {
+      "id": "inv-020",
+      "title": "Harbor Patrol, Bay Medical e Northgate Fire",
+      "status": "implemented",
+      "area": "lugares",
+      "description": "Delegacia, hospital e bombeiros possuem interiores e serviços, com integração de prisão, resgate e emergências. Cobertura de cada câmera/clima segue o checklist.",
+      "sources": [
+        "docs/services-migration.md",
+        "world/places/PlaceCatalog.gd",
+        "docs/interior-standard-checklist.md"
+      ]
+    },
+    {
+      "id": "inv-021",
+      "title": "Fuel, Northgate Auto e Torque",
+      "status": "implemented",
+      "area": "lugares",
+      "description": "Posto/conveniência e oficinas possuem conteúdo e serviços; Torque recebeu identidade e revisão própria. Não classificar todos os prédios apenas como fachadas.",
+      "sources": [
+        "docs/robbery-migration.md",
+        "docs/reviews/torque-20261004.md",
+        "runtime/Services.gd"
+      ]
+    },
+    {
+      "id": "inv-022",
+      "title": "Três casas compráveis e vida doméstica",
+      "status": "implemented",
+      "area": "lugares",
+      "description": "Westgate Garden, Quayside e Canal North têm compra e interações presenciais, descanso, armazenamento e suportes de armas. Comparações específicas não aprovam todo o conjunto.",
+      "sources": [
+        "docs/residence-living.md",
+        "data/catalogs/ResidenceCatalog.gd",
+        "runtime/ResidenceServices.gd"
+      ]
+    },
+    {
+      "id": "inv-023",
+      "title": "59 edifícios acessíveis e 178 pavimentos",
+      "status": "partial",
+      "area": "lugares",
+      "description": "Catálogo dinâmico amplia Harbor com interiores e rooftops, incluindo edifícios editados. Contagem de 07/10 inclui 119 níveis internos e 59 rooftops; não somar aos registros da base como prédios adicionais independentes.",
+      "sources": [
+        "docs/harbor-building-content-20261007.md",
+        "world/places/harbor_buildings/HarborBuildingCatalog.gd",
+        "runtime/HarborBuildingRuntime.gd"
+      ]
+    },
+    {
+      "id": "inv-024",
+      "title": "Moradores, mobiliário e segredos dos prédios",
+      "status": "implemented",
+      "area": "lugares",
+      "description": "Salas mobiliadas por função, moradores, ambientes trancados, recompensas persistentes e arte de loot. Física e profundidade têm evidências por lotes; móveis procedurais não são plantas autorais únicas.",
+      "sources": [
+        "docs/harbor-building-content-20261007.md",
+        "world/places/harbor_buildings/HarborBuildingContent.gd",
+        "world/places/harbor_buildings/HarborBuildingSecrets.gd"
+      ]
+    },
+    {
+      "id": "inv-025",
+      "title": "Rooftops e acessos dos serviços",
+      "status": "partial",
+      "area": "lugares",
+      "description": "Escadas, coberturas, circulação, oportunidades de salto e rooftops de serviços estão implementados. Fotos de Maciota e bombeiros cobrem vistas específicas, não todas as regras de combate ou iluminação.",
+      "sources": [
+        "runtime/HarborServiceRoofRuntime.gd",
+        "world/places/harbor_buildings/HarborServiceRoofCatalog.gd",
+        "docs/harbor-building-content-20261007.md"
+      ]
+    },
+    {
+      "id": "inv-026",
+      "title": "Casa do líder Cobra",
+      "status": "implemented",
+      "area": "lugares",
+      "description": "Edifício e entrada próprios, integrados ao bairro Cobra e às revisões de acesso. Há mudanças locais em andamento; não considerar só a antiga fachada.",
+      "sources": [
+        "world/places/cobra_house/CobraLeaderHouse.gd",
+        "world/places/cobra_house/CobraLeaderEntrance.gd",
+        "tests/test_cobra_leader_walkup.gd"
+      ]
+    },
+    {
+      "id": "inv-027",
+      "title": "Chalés, Summit, Estação Zero e caverna",
+      "status": "implemented",
+      "area": "lugares",
+      "description": "Chalé dos Pinhais, Encosta, Posto Florestal, quatro chalés da vila, abrigo dos lenhadores, Summit, bunker e Caverna da Queda constam do catálogo, com serviços/recompensas próprios.",
+      "sources": [
+        "world/places/PlaceCatalog.gd",
+        "docs/interior-standard-checklist.md"
+      ]
+    },
+    {
+      "id": "inv-028",
+      "title": "Santa Lua: quatro casas e rotinas noturnas",
+      "status": "implemented",
+      "area": "lugares",
+      "description": "Quatro casas do deserto com plantas/fachadas distintas, moradores noturnos, dinheiro, água e sanduíche. Mortes de moradores não persistem entre visitas; isso é limite descrito, não um save de morte implementado.",
+      "sources": [
+        "docs/reviews/santa-lua-20261006.md"
+      ]
+    },
+    {
+      "id": "inv-029",
+      "title": "Serra Bruta e Galeria Santa Brasa",
+      "status": "implemented",
+      "area": "lugares",
+      "description": "Mina com cava de 28 m, espiral de 14 m, seis postos de mineiros, maquinário e galeria. Assalto tem quatro bandidos, bolsa de R$ 12 mil e três reforços exteriores; pagamento e reposição seguem regras próprias.",
+      "sources": [
+        "docs/mina-serra-bruta.md",
+        "docs/reviews/mining-experience-20261007.md",
+        "runtime/MiningRuntime.gd"
+      ]
+    },
+    {
+      "id": "inv-030",
+      "title": "Mineração: limites de operação",
+      "status": "partial",
+      "area": "lugares",
+      "description": "Retroescavadeira agora tem giro, lança, braço e caçamba traseiros independentes, com comandos no HUD e 74 verificações aprovadas. Caminhão ainda não simula carga/despejo de minério a granel; guarita não é interior acessível. Comparativo isolado de performance permanece pendente.",
+      "sources": [
+        "docs/mina-serra-bruta.md",
+        "docs/reviews/backhoe-hydraulics-20261007.md",
+        "gameplay/mining/MiningFleet.gd"
+      ]
+    },
+    {
+      "id": "inv-031",
+      "title": "Porto, Santa Mare e porão",
+      "status": "implemented",
+      "area": "lugares",
+      "description": "Navio, cais, contêineres, guindastes, trabalhadores, segurança e porão com recompensa. Logística, fretes e coleta de contêineres possuem controladores próprios.",
+      "sources": [
+        "docs/SANTA_MARE_3D_CHECKLIST.md",
+        "docs/port-container-lockpick.md",
+        "gameplay/urban_v1/PortOperations.gd",
+        "gameplay/urban_v1/PortLogistics.gd"
+      ]
+    },
+    {
+      "id": "inv-032",
+      "title": "Vértice, Vila dos Caminhoneiros e Neco",
+      "status": "implemented",
+      "area": "lugares",
+      "description": "Logística da empresa, vila com casas/frota/rotinas, ferro-velho com prensa e pagamento de sucata. São sistemas/lugares distintos.",
+      "sources": [
+        "docs/vertice-logistics.md",
+        "docs/truckers-village.md",
+        "docs/neco-delivery-integration.md"
+      ]
+    },
+    {
+      "id": "inv-033",
+      "title": "Cemitério e casa do zelador",
+      "status": "implemented",
+      "area": "lugares",
+      "description": "Cemitério, circulação funerária, apresentação e casa do zelador têm implementação própria, integrada às operações urbanas.",
+      "sources": [
+        "gameplay/urban_v1/CemeteryOperations.gd",
+        "world/places/PlaceCatalog.gd"
+      ]
+    },
+    {
+      "id": "inv-034",
+      "title": "Esgoto e rede subterrânea",
+      "status": "implemented",
+      "area": "lugares",
+      "description": "Esgoto com arma secreta e atmosfera, conectado a conteúdo de investigação/rede subterrânea. Arquivo de Vicente e forte não se resumem ao esgoto inicial.",
+      "sources": [
+        "world/places/SewerModel.gd",
+        "world/places/SewerAtmosphere3D.gd",
+        "docs/secret-headquarters.md"
+      ]
+    },
+    {
+      "id": "inv-035",
+      "title": "Frota base: carros, utilitários e pesados",
+      "status": "implemented",
+      "area": "veiculos",
+      "description": "49 entradas no catálogo exportado: civis, esportivos, vans, picapes, táxi, ônibus, ambulância, bombeiro, guincho, caminhões, limpa-neve e empilhadeira. Lista completa com nomes/IDs abaixo.",
+      "sources": [
+        "assets/fleet/catalog.json",
+        "runtime/FleetCatalog.gd"
+      ]
+    },
+    {
+      "id": "inv-036",
+      "title": "Motos: Vortex, Ironhorse, Cometa e policial",
+      "status": "implemented",
+      "area": "veiculos",
+      "description": "Três modelos base — Vortex RR 900, Ironhorse 1700 e Cometa City 250 — mais variante policial. Motocross usa atividade própria; não confundir variante com modelo exportado adicional.",
+      "sources": [
+        "data/catalogs/MotorcycleCatalog.gd",
+        "runtime/FleetCatalog.gd",
+        "docs/motocross.md"
+      ]
+    },
+    {
+      "id": "inv-037",
+      "title": "Grau e controle de motocicletas",
+      "status": "implemented",
+      "area": "veiculos",
+      "description": "Sistema de empinar, apresentação e validações específicas de wheelie, além da direção normal e atividades de motocross.",
+      "sources": [
+        "gameplay/MotorcycleWheelie.gd",
+        "docs/motorcycle-wheelie.md",
+        "docs/reviews/motorcycle-wheelie-20261004.md"
+      ]
+    },
+    {
+      "id": "inv-038",
+      "title": "Oito carros do deserto",
+      "status": "implemented",
+      "area": "veiculos",
+      "description": "Faísca GT, Coyote 440, Siroco T, Bison D, Mirage R e edições Faísca RX, Coyote 440 Drag e Mirage GT; compra/save aceitam os oito IDs. Mecânica, carrocerias, portas, adesivos e iluminação próprios.",
+      "sources": [
+        "gameplay/desert_cars/DesertCarCatalog.gd",
+        "docs/reviews/desert-cars-20261006.md"
+      ]
+    },
+    {
+      "id": "inv-039",
+      "title": "Digo: Gol 1993 e Amarok 2014",
+      "status": "implemented",
+      "area": "veiculos",
+      "description": "Dois veículos autorados com cabine, portas e identidade próprias; detalhes de pátio e comércio documentados. Não estão entre os 49 modelos da base.",
+      "sources": [
+        "docs/digo.md",
+        "docs/reviews/digo-cabins-20261003.md",
+        "runtime/FleetCatalog.gd"
+      ]
+    },
+    {
+      "id": "inv-040",
+      "title": "Jessica: Jetta GLI",
+      "status": "implemented",
+      "area": "veiculos",
+      "description": "Carro e integração de Jessica têm controladores próprios; o catálogo resolve jessica_jetta_gli fora da frota base.",
+      "sources": [
+        "gameplay/jessica/JessicaCarSpec.gd",
+        "runtime/JessicaRuntime.gd"
+      ]
+    },
+    {
+      "id": "inv-041",
+      "title": "Ironback V8 e garagem do chefe",
+      "status": "implemented",
+      "area": "veiculos",
+      "description": "Recompensa Cobra com ID, especificação e regras próprias; garagem guarda veículos especiais e concessão/persistência.",
+      "sources": [
+        "runtime/GarageRewardFleet.gd",
+        "world/places/PortBossStock.gd",
+        "docs/garage-reward-migration.md"
+      ]
+    },
+    {
+      "id": "inv-042",
+      "title": "Tanque e camburão tático",
+      "status": "implemented",
+      "area": "veiculos",
+      "description": "Blindado dirigível com canhão, esmagamento, destruição e persistência; camburão e moto policial complementam a resposta terrestre. Qualidade do mix e benchmark global permanecem separados.",
+      "sources": [
+        "docs/tank-control.md",
+        "runtime/FleetCatalog.gd"
+      ]
+    },
+    {
+      "id": "inv-043",
+      "title": "Máquinas dirigíveis da mineração",
+      "status": "implemented",
+      "area": "veiculos",
+      "description": "Retroescavadeira, trator carregador e caminhão de mineração; instâncias operacionais podem incluir dois caminhões do mesmo modelo. Pá/carga, caçamba, danos e save usam sistemas produtivos.",
+      "sources": [
+        "gameplay/mining/MiningFleet.gd",
+        "docs/mina-serra-bruta.md"
+      ]
+    },
+    {
+      "id": "inv-044",
+      "title": "Sorveteiros e vans de serviço",
+      "status": "implemented",
+      "area": "veiculos",
+      "description": "Veículos de sorvete com modelos, cabines e fluxo de embarque revisados; atividades e áudio têm módulos próprios.",
+      "sources": [
+        "docs/reviews/icecream-vans-20261003.md",
+        "gameplay/icecream"
+      ]
+    },
+    {
+      "id": "inv-045",
+      "title": "Encontro Aurora e carros clássicos",
+      "status": "implemented",
+      "area": "veiculos",
+      "description": "Agenda noturna, dois Gol, duas Parati, dois Passat, capôs/motores e seis visitantes. Conteúdo de exposição não equivale a seis novos veículos compráveis; o encontro é exterior.",
+      "sources": [
+        "docs/reviews/classic-car-meet-20261002.md",
+        "world/places/classic_meet"
+      ]
+    },
+    {
+      "id": "inv-046",
+      "title": "Embarque, roubo, portas e ocupantes",
+      "status": "implemented",
+      "area": "veiculos",
+      "description": "Aproximação física, portas por veículo, cabine, motorista sentado, saída e roubo integram direção. Variações de veículos exigem evidência específica.",
+      "sources": [
+        "gameplay/VehicleBoardingPresentation.gd",
+        "gameplay/VehicleBreakIn.gd",
+        "data/catalogs/VehicleDoorSpecs.gd",
+        "docs/motorista-sentado-20260928.md"
+      ]
+    },
+    {
+      "id": "inv-047",
+      "title": "Pintura, preparação e acabamento",
+      "status": "implemented",
+      "area": "veiculos",
+      "description": "Pinturas, duas cores, acabamento, desempenho e oficina têm dados próprios. Detalhes de pesados não comprovam toda a próxima camada de desgaste/carga.",
+      "sources": [
+        "docs/vehicle-paint-migration.md",
+        "docs/fleet-visual-finish.md",
+        "data/catalogs/VehiclePerformance.gd"
+      ]
+    },
+    {
+      "id": "inv-048",
+      "title": "Batidas, fogo, explosões e carcaças",
+      "status": "implemented",
+      "area": "veiculos",
+      "description": "Dano, carcaça, abandono e efeitos de pneus participam do gameplay e da física. Não significa destruição estrutural de prédios.",
+      "sources": [
+        "scripts/Vehicle.gd",
+        "gameplay/VehicleBailout.gd",
+        "gameplay/vehicle_effects/VehicleTireEffects.gd",
+        "docs/tank-control.md"
+      ]
+    },
+    {
+      "id": "inv-049",
+      "title": "Táxi e transporte de passageiros",
+      "status": "implemented",
+      "area": "transporte",
+      "description": "PassengerTransport é instanciado em FullSession; TaxiService/TaxiRank existem. A auditoria antiga que descrevia o adaptador desconectado foi superada por essa conexão, sem certificar todos os fluxos atuais.",
+      "sources": [
+        "runtime/FullSession.gd",
+        "runtime/PassengerTransport.gd",
+        "runtime/TaxiService.gd",
+        "runtime/TaxiRank.gd"
+      ]
+    },
+    {
+      "id": "inv-050",
+      "title": "Linha 510: dois biarticulados e seis estações",
+      "status": "partial",
+      "area": "transporte",
+      "description": "Dois ônibus de três corpos, filas e embarque/desembarque, 18 identidades de passageiros, capacidade operacional 36 por ônibus e horário 05h–02h. Corrigida colisão que continuava ativa fora da região/interiores. Circuito renderizado das seis estações e ciclo de suspensão aprovados; comparativo isolado de performance ainda pendente.",
+      "sources": [
+        "docs/biarticulated-transit.md"
+      ]
+    },
+    {
+      "id": "inv-051",
+      "title": "Trem e quatro estações",
+      "status": "partial",
+      "area": "transporte",
+      "description": "Harbor Central, Northgate, Pinhais e Cobre; vias elevadas, plataformas/acessos, trem articulado, câmera interna/externa, destino e viagem rápida. Cobre respeita o final do ato 1. Já não é apenas backlog.",
+      "sources": [
+        "world/railway/RailwayNetwork.gd",
+        "runtime/railway/RailwayTransit.gd",
+        "docs/interior-standard-checklist.md"
+      ]
+    },
+    {
+      "id": "inv-052",
+      "title": "Comboio de carros-fortes North Pier ↔ Cobre",
+      "status": "partial",
+      "area": "transporte",
+      "description": "Dois carros-fortes, dois veículos de escolta, tripulação finita, carga/descarga e horários. R$ 40 mil por carro, até R$ 80 mil por comboio; assalto e fuga têm recibos. Chuva, streaming e desempenho comparativo pendentes.",
+      "sources": [
+        "docs/ideia-carro-forte-entre-cidades-20261006.md",
+        "gameplay/armored/ArmoredTransport.gd"
+      ]
+    },
+    {
+      "id": "inv-053",
+      "title": "Semáforos, PARE, filas e reserva de cruzamentos",
+      "status": "implemented",
+      "area": "transito",
+      "description": "Grafo dirigido, junções, prioridade e desvio têm controladores produtivos. Alterações atuais em conclusão de curva/fila exigem validação por cenário, não aprovação de toda a malha.",
+      "sources": [
+        "gameplay/traffic_junctions/TrafficJunctions.gd",
+        "gameplay/traffic_yield/TrafficYieldController.gd",
+        "gameplay/NativeTrafficRoutes.gd"
+      ]
+    },
+    {
+      "id": "inv-054",
+      "title": "Avenidas duplicadas e ultrapassagem",
+      "status": "implemented",
+      "area": "transito",
+      "description": "Westgate, Dock, Foundry e Quay têm duas faixas por sentido e integração com BRT. O antigo card genérico de mudança de faixa como inexistente ficou desatualizado.",
+      "sources": [
+        "docs/biarticulated-transit.md"
+      ]
+    },
+    {
+      "id": "inv-055",
+      "title": "Dante: locomoção, mira e combate",
+      "status": "implemented",
+      "area": "combate",
+      "description": "Movimentação, poses, golpes, projéteis, dano, sangue, fogo e quedas têm módulos produtivos; arma e acessórios possuem rig/presentation próprios.",
+      "sources": [
+        "gameplay/Gameplay.gd",
+        "gameplay/MeleeMoveset.gd",
+        "gameplay/WeaponPresentation3D.gd",
+        "gameplay/CharacterFallPresentation3D.gd"
+      ]
+    },
+    {
+      "id": "inv-056",
+      "title": "Acabamento das armas em revisão local",
+      "status": "partial",
+      "area": "combate",
+      "description": "Há alterações locais de rig, superfície, acabamento, contatos e apresentação da escopeta serrada. Presença de testes novos não significa que esta rodada auditou seus resultados.",
+      "sources": [
+        "gameplay/SawedOffPresentation.gd",
+        "gameplay/WeaponSurface.gd",
+        "gameplay/WeaponRigPose.gd",
+        "tests/test_sawed_off_presentation.gd"
+      ]
+    },
+    {
+      "id": "inv-057",
+      "title": "Procura, perseguição e resposta policial",
+      "status": "implemented",
+      "area": "policia",
+      "description": "Polícia, despacho, agentes, variantes terrestres e resposta por nível têm implementação e documentação. A cobertura deve incluir prisão, morte, transições e recuperação.",
+      "sources": [
+        "docs/police-response.md",
+        "gameplay/police_response",
+        "gameplay/dispatch",
+        "gameplay/PoliceAgent.gd"
+      ]
+    },
+    {
+      "id": "inv-058",
+      "title": "Bombeiros, ambulância e resgate",
+      "status": "implemented",
+      "area": "policia",
+      "description": "Despacho de emergência, combate ao fogo, atendimento, transporte e rotinas civis compõem a cadeia urbana.",
+      "sources": [
+        "docs/gameplay-migration.md",
+        "gameplay/emergency",
+        "docs/NPC_ROUTINES_MIGRATION.md"
+      ]
+    },
+    {
+      "id": "inv-059",
+      "title": "Pedestres, trabalhadores e reações civis",
+      "status": "implemented",
+      "area": "personagens",
+      "description": "Rotinas, ameaças, fuga, multidões e trabalhadores de serviços, porto, vila e mina usam atores e controladores próprios. Não há certificação de todas as combinações de caos.",
+      "sources": [
+        "docs/civilian-reactions-v1.md",
+        "docs/NPC_ROUTINES_MIGRATION.md",
+        "gameplay/civilian_reactions",
+        "gameplay/crowd"
+      ]
+    },
+    {
+      "id": "inv-060",
+      "title": "Inventário em grade, coleta e cura",
+      "status": "implemented",
+      "area": "sistemas",
+      "description": "Inventário de campo, arraste, capacidade, coleta, alimentos/cura e bagagem conectados à sessão; economia valida transações e recibos.",
+      "sources": [
+        "docs/inventory-grid.md",
+        "systems/inventory/FieldInventoryRuntime.gd"
+      ]
+    },
+    {
+      "id": "inv-061",
+      "title": "Economia, compras e recompensas únicas",
+      "status": "implemented",
+      "area": "sistemas",
+      "description": "Carteira, itens e recibos compartilhados sustentam missões, roubos, casas, lojas e recompensas; não criar contabilidade paralela por atividade.",
+      "sources": [
+        "systems/economy",
+        "systems/Progression.gd",
+        "runtime/GameState.gd"
+      ]
+    },
+    {
+      "id": "inv-062",
+      "title": "Save, checkpoints e importação V1",
+      "status": "implemented",
+      "area": "sistemas",
+      "description": "Persistência e checkpoints com contratos específicos por sistema. Importação V1 preserva progresso compatível; salvar durante transições perigosas é bloqueado em fluxos próprios.",
+      "sources": [
+        "docs/save-checkpoints.md",
+        "docs/campaign-migration.md",
+        "migration",
+        "runtime/GameState.gd"
+      ]
+    },
+    {
+      "id": "inv-063",
+      "title": "Conquistas, coletáveis e atividades opcionais",
+      "status": "implemented",
+      "area": "sistemas",
+      "description": "Catálogos de conquistas/coletáveis, corridas, drift e guincho já existem. Não confundir os coletáveis atuais com a ideia ainda não implementada das dez fitas do piloto.",
+      "sources": [
+        "data/catalogs/AchievementCatalog.gd",
+        "data/catalogs/CollectibleCatalog.gd",
+        "data/catalogs/RaceCatalog.gd",
+        "data/catalogs/DriftZoneCatalog.gd",
+        "data/catalogs/TowJobs.gd"
+      ]
+    },
+    {
+      "id": "inv-064",
+      "title": "Menu, loading, pausa e configurações",
+      "status": "implemented",
+      "area": "interface",
+      "description": "Menu animado, carregamento, HUD, pausa e ajustes de vídeo/áudio/controles têm implementação. Teste de controle físico e distribuição deve ser tratado separadamente.",
+      "sources": [
+        "ui/PauseMenu.gd",
+        "runtime/Settings.gd",
+        "docs/sky-menu-20260925.md",
+        "docs/controller-layout.md"
+      ]
+    },
+    {
+      "id": "inv-065",
+      "title": "Mapa M, minimapa e destino",
+      "status": "partial",
+      "area": "interface",
+      "description": "Atlas reúne Harbor, montanha e deserto a partir de dados reais, símbolos, filtros, zoom, toque/controle e entradas exteriores. Marcador dura na sessão; não salva nem calcula rota GPS. Performance comparativa pendente.",
+      "sources": [
+        "docs/reviews/world-map-20261007.md",
+        "ui/hud/WorldMapData.gd",
+        "ui/hud/MapUI.gd"
+      ]
+    },
+    {
+      "id": "inv-066",
+      "title": "Android e controles móveis",
+      "status": "partial",
+      "area": "plataformas",
+      "description": "Preparação, controles e rodadas 0.3.1/0.3.2 documentadas. Não equivale a certificar a versão atual num aparelho ou publicar uma build final.",
+      "sources": [
+        "docs/android.md",
+        "docs/android-032-validation.md",
+        "tests/test_android_controls.gd"
+      ]
+    },
+    {
+      "id": "inv-067",
+      "title": "Distribuição Windows atual",
+      "status": "unverified",
+      "area": "plataformas",
+      "description": "Exportação completa .NET ainda precisa ser reconfirmada em pacote final. Neste lote, a suspeita de ausência de mountain-story-dialogue.json foi descartada: mini-PCK Windows real, com presets originais, carregou o arquivo com hash exato e os quatro grupos de diálogos mesmo sem filtro explícito. Presets preservados; isso não certifica EXE completo nem APK Android. O bug histórico de WAV já tinha correção documentada.",
+      "sources": [
+        "docs/EXPORT_READINESS.md",
+        "export_presets.cfg",
+        "Harbor.csproj",
+        "evidence/export-mountain-dialogue-20261007/relatorio.md"
+      ]
+    },
+    {
+      "id": "inv-068",
+      "title": "Pausa histórica de 1,7 segundo sem causa fechada",
+      "status": "issue",
+      "area": "performance",
+      "description": "A assinatura de 1709,627 ms não foi reproduzida nas capturas dirigidas finais. Não existe correção causal demonstrada; ausência de reprodução não encerra o problema.",
+      "sources": [
+        "docs/reviews/stall-1709-investigation-20261005.md"
+      ]
+    },
+    {
+      "id": "inv-069",
+      "title": "Otimizações de arquitetura e C#",
+      "status": "partial",
+      "area": "performance",
+      "description": "Há correções e análises de carregamento, navegação, despacho, JIT, first draw e input. Cada resultado é local; não comprovam eliminação de toda travada nem paridade por fallback GDScript.",
+      "sources": [
+        "docs/reviews/performance-architecture-20261002.md",
+        "docs/reviews/router-jit-continuation-20261005.md",
+        "docs/reviews/sdl-input-stalls-20261005.md"
+      ]
+    },
+    {
+      "id": "inv-070",
+      "title": "Benchmarks recentes contaminados por concorrência",
+      "status": "issue",
+      "area": "performance",
+      "description": "Trem, mapa, prédios, carro-forte, mina e instrumentos da arrancada registram medições afetadas por outras sessões ou mudanças compartilhadas. Agendar comparativos isolados e manter diferenças/picos visíveis; não aprovar FPS por média ou screenshot.",
+      "sources": [
+        "docs/interior-standard-checklist.md",
+        "docs/reviews/world-map-20261007.md",
+        "docs/reviews/mining-experience-20261007.md",
+        "docs/reviews/drag-race-redesign-20261007.md",
+        "docs/ideia-carro-forte-entre-cidades-20261006.md"
+      ]
+    },
+    {
+      "id": "inv-071",
+      "title": "Interiores: cobertura global ainda aberta",
+      "status": "partial",
+      "area": "qualidade",
+      "description": "Há validações físicas e de profundidade por lotes, correções de fachada e recorte móvel do trem. O checklist continua com limites de câmera, temporalidade e frame time; não declarar todos os interiores concluídos.",
+      "sources": [
+        "docs/interior-standard-checklist.md",
+        "docs/harbor-building-content-20261007.md"
+      ]
+    },
+    {
+      "id": "inv-072",
+      "title": "Luzes, sombras e reflexos por cenário",
+      "status": "partial",
+      "area": "qualidade",
+      "description": "Há revisões temporais locais, mas chuva, retorno de streaming e todas as câmeras não estão integralmente cobertos. Fotografia bonita e cobertura de luz não comprovam ausência de flickering.",
+      "sources": [
+        "docs/LIGHTING_GLITCH_REVIEW.md",
+        "docs/interior-standard-checklist.md",
+        "docs/reviews/desert-cars-20261006.md"
+      ]
+    },
+    {
+      "id": "inv-073",
+      "title": "Pendências antigas do board de setembro",
+      "status": "unverified",
+      "area": "qualidade",
+      "description": "Cabine de caminhão, carro abaixo do mapa, primeira entrada na Ammu-Nation e achados do vídeo são pendências históricas a reconfirmar. O test_activities foi reproduzido e corrigido no lote de 07/10; possui card próprio com evidência final. Os demais itens não foram automaticamente reabertos como bugs atuais.",
+      "sources": [
+        "docs/historico/painel-geteco-antes-20261007.html",
+        "docs/video-review-20260924-action-plan.md",
+        "docs/claude-ammo-performance-20260925.md"
+      ]
+    },
+    {
+      "id": "inv-074",
+      "title": "Revisões estáticas de ciclo de vida e loading",
+      "status": "unverified",
+      "area": "qualidade",
+      "description": "Revisões de 07/10 reconciliaram guardas atuais de transição, geração de interiores e região/lugar (LIFE-01 a LIFE-03 e parte de LIFE-04). Corrigidos em lotes específicos: callbacks antigos no embarque de Maciota (17/17) e slot órfão com temporário inválido que bloqueava novo jogo (24/24). Relatórios históricos não comprovam falhas atuais; loading/exportação e custos restantes seguem a reconfirmar. Neste lote, corrigida a contaminação de mundo/combate na migração schema 1 sobre estado reutilizado (14/14 e regressão de save aprovada). A suspeita de JSON de diálogos ausente no pacote não se confirmou no mini-PCK Windows; exportação integral permanece pendente.",
+      "sources": [
+        "docs/reviews/static-lifecycle-review.md",
+        "docs/reviews/static-loading-review.md",
+        "docs/reviews/static-runtime-cost-review.md",
+        "evidence/schema1-state-fix-20261007/result.txt",
+        "evidence/export-mountain-dialogue-20261007/relatorio.md"
+      ],
+      "next": "Retomar achados remanescentes de loading/custos e validar os fluxos históricos com cobertura específica; não reabrir automaticamente itens já tratados no código."
+    },
+    {
+      "id": "inv-075",
+      "title": "Prédios destrutíveis em larga escala",
+      "status": "planned",
+      "area": "objetos",
+      "description": "Dano progressivo de fachada, partes estruturais caindo e colapso geral continuam proposta do board anterior. Carros/objetos destrutíveis não comprovam destruição de edifícios. Definir escopo e orçamento antes de implementar.",
+      "sources": [
+        "docs/historico/painel-geteco-antes-20261007.html"
+      ]
+    },
+    {
+      "id": "inv-076",
+      "title": "Dez fitas e esconderijo secreto do piloto",
+      "status": "planned",
+      "area": "atividades",
+      "description": "Coletar dez fitas em qualquer ordem, liberar galpão, carro exclusivo com nitro/faróis escamoteáveis e pista de saltos. Locais/modelo/revelação ainda em aberto; disco voador é alternativa não escolhida.",
+      "sources": [
+        "docs/plano-coletaveis-20260928.md"
+      ]
+    },
+    {
+      "id": "inv-077",
+      "title": "Expansão do forte e recompensa narrativa",
+      "status": "planned",
+      "area": "lugares",
+      "description": "Alojamento, arsenal e comando adicionais, novos tipos de soldados e maior revelação sobre Vicente/setor lacrado seguem propostas. Não contar salas sugeridas como áreas acessíveis existentes.",
+      "sources": [
+        "docs/fort-operation-plan.md"
+      ]
+    },
+    {
+      "id": "inv-078",
+      "title": "Pesados: acabamento futuro restante",
+      "status": "partial",
+      "area": "veiculos",
+      "description": "Detalhes já aplicados coexistem com propostas de luzes marcadoras, desgaste e carga. Reconciliar item a item com HeavyVehicleDetail/VehicleFinish antes de declarar o plano completo.",
+      "sources": [
+        "docs/plano-veiculos-pesados-20260928.md",
+        "runtime/HeavyVehicleDetail.gd",
+        "runtime/VehicleFinish.gd"
+      ]
+    },
+    {
+      "id": "inv-079",
+      "title": "Cidade 4: direção visual definida",
+      "status": "planned",
+      "area": "mundo",
+      "description": "Última cidade deve ser mais escura, com neblina, cinzas e baixa saturação, tendo GTA IV como referência. Direção aprovada não é mapa nem campanha implementados.",
+      "sources": [
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "inv-080",
+      "status": "implemented",
+      "area": "atividades",
+      "title": "Motocross Vértice: quatro níveis e três motos",
+      "description": "Circuito de cerca de 402 m, saltos e curvas inclinadas; treino/aluguel e provas Iniciante, Intermediário, Avançado e Expert. Trilha 250, Faísca 250 e Víbora 125 têm física distinta; vitória intermediária concede moto própria persistida.",
+      "sources": [
+        "docs/motocross.md",
+        "activities/motocross/Motocross.gd"
+      ]
+    },
+    {
+      "id": "inv-081",
+      "status": "implemented",
+      "area": "atividades",
+      "title": "Skate e parque",
+      "description": "SkateBody, poses, parque, atores ambientais e montagem/desmontagem estão conectados à FullSession. Posse e recorde persistem; leitura do código não certifica todas as manobras, quedas e recuperações.",
+      "sources": [
+        "activities/skate/Skate.gd",
+        "activities/skate/SkatePark.gd",
+        "runtime/FullSession.gd"
+      ]
+    },
+    {
+      "id": "inv-082",
+      "status": "partial",
+      "area": "atividades",
+      "title": "Piano de chão na Union Plaza",
+      "description": "Oito teclas respondem aos passos do jogador e civis; desafio de sete notas, sem prêmio financeiro. Travessia física integrada documentada; áudio ouvido, interrupções/streaming e benchmark pendentes.",
+      "sources": [
+        "docs/reviews/union-piano-20261002.md",
+        "activities/UnionPiano.gd"
+      ]
+    },
+    {
+      "id": "inv-083",
+      "status": "implemented",
+      "area": "atividades",
+      "title": "Forte da Serra: operação militar e subida",
+      "description": "Ante-sala, sala de operações, coberturas, cinco soldados iniciais e quatro reforços, câmeras/alarme, saque de R$ 9 mil + M4A1/150 balas e elevador para a saída de pedra na serra. Expansões de salas são backlog separado.",
+      "sources": [
+        "docs/fort-operation-plan.md"
+      ]
+    },
+    {
+      "id": "inv-084",
+      "status": "implemented",
+      "area": "mundo",
+      "title": "Deserto: cidade, rodovias e parada de caminhões",
+      "description": "Arquitetura de adobe/reboco, rodovias de chegada, reta sul, posto de caminhões, banco Cobre, Miragem e oficina do Digo têm layout/construção próprios. Não é apenas um mapa sugerido.",
+      "sources": [
+        "docs/mapa2-deserto.md",
+        "world/desert/DesertLayout.gd",
+        "world/desert/DesertArchitecture.gd"
+      ]
+    },
+    {
+      "id": "inv-085",
+      "status": "implemented",
+      "area": "mundo",
+      "title": "Ruínas, ferrovia abandonada e formações do deserto",
+      "description": "Dunas, leito seco, salina, arco natural, basalto/pedra equilibrada, ferrovia abandonada de aproximadamente 940 m, estação e vagão compõem a expansão. A ferrovia abandonada é distinta do transporte de passageiros novo.",
+      "sources": [
+        "docs/reviews/desert-expansion-20261006.md",
+        "world/desert/expansion"
+      ]
+    },
+    {
+      "id": "inv-086",
+      "status": "partial",
+      "area": "mundo",
+      "title": "Cânion, acampamento e abrigos da fronteira",
+      "description": "Relevo, bandidos, casa abandonada e cabana contínuas no exterior. Recompensas/pista têm recibos; entradas dessas ruínas não são portais para novas salas. Revisão temporal/visual e comparativo têm limites explícitos.",
+      "sources": [
+        "docs/deserto-fronteira-validacao-20261006.md",
+        "world/desert/DesertBanditCamp.gd",
+        "runtime/desert/DesertFrontierRuntime.gd"
+      ]
+    },
+    {
+      "id": "inv-087",
+      "status": "issue",
+      "area": "qualidade",
+      "title": "Sombras do cânion: serrilhado residual",
+      "description": "Refinamento local da malha melhorou dentes grandes, mas serrilhado fino segue visível no relatório. O recorte da câmera foi investigado separadamente; não atribuir tudo às aves nem ocultar o problema desligando sombras.",
+      "sources": [
+        "docs/deserto-fronteira-validacao-20261006.md"
+      ]
+    },
+    {
+      "id": "inv-088",
+      "status": "partial",
+      "area": "mundo",
+      "title": "Passagem norte do deserto",
+      "description": "DesertNorthPass e restauração de posição estão conectados ao runtime. Sua existência não comprova mapa/campanha completa da cidade seguinte; conferir gate e destinos com a continuidade narrativa.",
+      "sources": [
+        "runtime/desert/north_pass/DesertNorthPass.gd",
+        "runtime/desert/DesertActivities.gd",
+        "runtime/FullSession.gd"
+      ]
+    },
+    {
+      "id": "inv-089",
+      "status": "implemented",
+      "area": "combate",
+      "title": "Customização, laser, lanterna e apresentação",
+      "description": "Acessórios e personalização têm catálogos e geometria ligados às armas, com rigs/poses de mira e disparo. A versão atual inclui revisões concorrentes; validação global de todas as combinações segue separada.",
+      "sources": [
+        "gameplay/WeaponCustomization.gd",
+        "gameplay/WeaponAttachmentVisuals.gd",
+        "gameplay/ArsenalWeapon3D.gd"
+      ]
+    },
+    {
+      "id": "inv-090",
+      "status": "partial",
+      "area": "lugares",
+      "title": "Serra Viva: zoológico da montanha",
+      "description": "Doze animais, quatro espécies — girafas, leões, macacos-vervet e zebras — em quatro recintos, bilheteria de R$ 30/visita e quatro visitantes. Física, ingresso, áudio e percurso têm evidências locais; aprovação integral continua pendente.",
+      "sources": [
+        "docs/reviews/mountain-zoo-20261003.md"
+      ]
+    },
+    {
+      "id": "inv-091",
+      "status": "issue",
+      "area": "performance",
+      "title": "Zoológico: custo panorâmico e avisos no encerramento",
+      "description": "Comparações panorâmicas registram custo incremental e performance não aprovada. Sessões completas encerraram com 16 objetos/2 recursos e cinco instâncias de renderização alocados; origem não estabelecida. Não tratar automaticamente como vazamento causado pelo zoológico.",
+      "sources": [
+        "docs/reviews/mountain-zoo-20261003.md"
+      ]
+    },
+    {
+      "id": "inv-092",
+      "status": "issue",
+      "area": "performance",
+      "title": "Deserto: regressão documentada em ponte e expansão",
+      "description": "Relatório do mapa registra ponte p95/p99 de 4,130/5,318 para 6,639/8,201 ms e seis picos acima de 66,7 ms na rodovia. Expansão registra aumento de p95 na estação (+16,5%) e ecologia (+9,5%). São pendências medidas, distintas dos comparativos invalidados por concorrência.",
+      "sources": [
+        "docs/mapa2-deserto.md",
+        "docs/reviews/desert-expansion-20261006.md"
+      ]
+    },
+    {
+      "id": "inv-093",
+      "status": "implemented",
+      "area": "veiculos",
+      "title": "Preparação do deserto: 25 opções",
+      "description": "Catálogo atual possui 20 opções mecânicas e cinco neons — ciano, magenta, âmbar, violeta e branco. Atualiza a contagem antiga de 13 peças do documento; posse, aplicação e custos dependem do sistema de oficina.",
+      "sources": [
+        "gameplay/desert_cars/DesertTuning.gd"
+      ]
+    },
+    {
+      "id": "inv-094",
+      "status": "implemented",
+      "area": "combate",
+      "title": "Peças e acabamentos do arsenal",
+      "description": "WeaponCustomization define 62 peças/acabamentos distribuídos em 13 slots. Essa contagem inclui opções visuais e não representa 62 novas armas nem certifica todas as combinações.",
+      "sources": [
+        "gameplay/WeaponCustomization.gd"
+      ]
+    },
+    {
+      "id": "fix-activities-20261007",
+      "status": "implemented",
+      "area": "qualidade",
+      "title": "Atividades e guincho: teste legado corrigido",
+      "description": "Baseline reproduziu campanha ausente na fixture e expectativa obsoleta de zero corridas em Harbor. Fixture agora usa CampaignRuntime real com missão de guincho válida; verifica as duas corridas autoradas e exclusão das cinco rotas legadas. Recusa de contrato paralelo preserva veículos/carga. Final: 72 verificações, sem erro de script; produção inalterada.",
+      "sources": [
+        "activities/test_activities.gd",
+        "evidence/board-fixes-20261007/activities/baseline.log",
+        "evidence/board-fixes-20261007/activities/baseline.err",
+        "evidence/board-fixes-20261007/activities/final.log"
+      ]
+    },
+    {
+      "id": "fix-arrival-boarding-20261007",
+      "title": "Embarque de Maciota: callback corrigido, 17/17 checks",
+      "status": "partial",
+      "area": "qualidade",
+      "description": "Lote 07/10: baseline original reproduziu 4 falhas em 13 verificações. Corrigida a propriedade da tentativa após cada caminhada e timer: geração/carro/motorista antigos não alteram fase, controle, câmera, cápsula ou progresso da nova tentativa. Final 17/17 no Godot 4.7.2 .NET, incluindo entrada normal e recuperação do carro destruído. Teste dirigido usa corrotinas/timer reais e atores leves; não certifica o passeio completo no Main nem FPS.",
+      "sources": [
+        "runtime/Arrival.gd",
+        "tests/test_arrival_boarding_generation.gd",
+        "docs/reviews/static-lifecycle-review.md",
+        "evidence/arrival-boarding-20261007/baseline.log",
+        "evidence/arrival-boarding-20261007/final.log",
+        "evidence/arrival-boarding-20261007/relatorio.md"
+      ],
+      "next": "Validar o embarque na sessão real renderizada e o comparativo de performance em janela exclusiva. Correção funcional dirigida aprovada; integração/apresentação/performance permanecem pendentes."
+    },
+    {
+      "id": "regional-coach-20261007",
+      "title": "Ônibus regional: Harbor, gelo e deserto",
+      "status": "partial",
+      "area": "transporte",
+      "description": "Menu com viagem rápida e percurso físico, seis passageiros sentados, motorista, Dante real e câmeras interna/externa. Gate do deserto preservado. Seis direções rápidas, percursos completos Harbor–gelo e deserto–Harbor, pausa, save e recuperação verificados. Curva do gelo corrigida; Cobre ganhou parada com cobertura e banco, 10/10 checks e comparativo local sem regressão relevante. Performance das viagens ainda não certificada.",
+      "sources": [
+        "docs/regional-coach.md",
+        "runtime/regional/RegionalCoachTransit.gd",
+        "tests/test_regional_coach_session.gd",
+        "docs/biarticulated-transit.md"
+      ],
+      "next": "Certificar as quatro direções restantes por condução completa e medir desempenho das viagens. Conferir sonda de apoio ausente/inclinada em (704.2005, 0, -386.3814), registrada na varredura local: percurso Harbor–gelo passou, mas esse ponto não está certificado."
+    },
+    {
+      "id": "fix-orphan-slot-20261007",
+      "title": "Save: slot com temporário inválido pode ser reutilizado",
+      "status": "implemented",
+      "area": "qualidade",
+      "description": "Corrigido bloqueio que impedia novo jogo em slot contendo somente .tmp inválido. O menu habilita esse caso e a seleção preserva os bytes em arquivo diagnóstico único antes de liberar o slot; falha de preservação recusa a operação. Principal, backup, temporário válido e progresso anterior continuam protegidos. Baseline 20 checks/4 falhas; final 24/24 no Godot 4.7.2 .NET, com menu real, arquivos isolados, SaveStore e recarga. Falha de rename foi injetada; concorrência de escrita no mesmo slot não foi ensaiada.",
+      "sources": [
+        "runtime/SessionLaunch.gd",
+        "ui/MainMenu.gd",
+        "tests/test_orphan_save_slots.gd",
+        "evidence/orphan-slot-20261007/relatorio.md",
+        "evidence/orphan-slot-20261007/final.log"
+      ]
+    },
+    {
+      "id": "fix-schema1-reused-state-20261007",
+      "title": "Save antigo: migração limpa o estado da sessão anterior",
+      "status": "implemented",
+      "area": "qualidade",
+      "description": "Corrigida migração schema 1 em GameState reutilizado: recompensas, clima, horário, saúde e colete da sessão anterior não contaminam o progresso importado. Os defaults de mundo são compartilhados com um estado novo; inventário legado e restrição de armas da garagem são preservados. Entrada inválida não altera o estado. Baseline com 6 falhas em 14 checks; final 14/14 e regressão test_full_save sem falhas no Godot 4.7.2 .NET. SaveStore real, arquivos temporários isolados, gravação moderna e recarga pelo disco validados. Escopo de persistência, sem certificação visual ou global do jogo.",
+      "sources": [
+        "runtime/GameState.gd",
+        "tests/test_schema1_reused_state.gd",
+        "tests/test_full_save.gd",
+        "evidence/schema1-state-fix-20261007/result.txt",
+        "evidence/schema1-state-fix-20261007/final.log",
+        "evidence/schema1-state-fix-20261007/full-save.log"
+      ]
+    }
+  ],
+  "extra_agents": 2
+}

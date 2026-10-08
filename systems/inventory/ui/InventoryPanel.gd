@@ -44,7 +44,10 @@ func refresh() -> void:
 	var header:=_row(outer)
 	_label(header,"INVENTÁRIO",18).size_flags_horizontal=SIZE_EXPAND_FILL
 	_button(header,"Roupas",func(): wardrobe_visible=not wardrobe_visible; selected_outfit=""; refresh())
-	var trunk:=_button(header,"Monaliza",func(): trunk_visible=not trunk_visible; refresh())
+	if adapter.session.get("wine") != null:
+		_button(header,"Vinhos",func(): adapter.close(); adapter.session.wine.open_bag())
+	var travel_bag: bool = adapter.travel_bag_available()
+	var trunk:=_button(header,"Monaliza · mala" if travel_bag else "Monaliza",func(): trunk_visible=not trunk_visible; refresh())
 	trunk.name="ToggleTrunk"; trunk.tooltip_text="Armas e munição • acesso pelo porta-malas"; trunk.modulate=GOLD if trunk_visible else Color.WHITE
 	_button(header,"×",adapter.close).tooltip_text="Fechar"
 	body=_row(outer,16)
@@ -89,6 +92,13 @@ func refresh() -> void:
 		lock_label.modulate=STYLE.MUTED if access else GOLD
 		lock_label.tooltip_text="Até 6 pilhas de munição, com 99 tiros por pilha. Outros itens não entram."
 		_board(right,"trunk",snapshot,60)
+		if travel_bag:
+			var offer := _label(right,"Presente do Maciota pela vitória na Prova de rua. Retire sua mala aqui.",12)
+			offer.custom_minimum_size.x=240; offer.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+			var take := _button(right,"Trocar mochila por mala" if kind=="backpack" else "Retirar mala do Maciota",func(): adapter.claim_travel_bag(),not access)
+			take.name="ClaimTravelBag"
+			var hint := _label(right,"24 espaços · bloqueia armas longas.\n"+("Seus itens passam para a mala; a mochila fica vazia no chão." if kind=="backpack" else "Solte a mala atual antes de retirar esta." if kind=="handbag" else "A mala fica na mão esquerda."),12)
+			hint.custom_minimum_size.x=240; hint.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; hint.modulate=STYLE.MUTED
 	details=_column(left,5); details.custom_minimum_size.x=296
 	feedback=_label(left,"",12); feedback.custom_minimum_size.x=296; feedback.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; feedback.hide(); feedback.modulate=GOLD
 	var footer:=_row(outer)

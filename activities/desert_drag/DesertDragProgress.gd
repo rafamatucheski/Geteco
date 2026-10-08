@@ -1,7 +1,7 @@
 extends RefCounted
 ## Only completed, physically timed races enter this ledger. Attempts are transient.
 const KEY := "desert_drag"
-const RIVALS := ["digo", "livia", "raul", "jessica", "nadir"]
+const RIVALS := ["digo", "livia", "raul", "jessica", "nadir", "rauhz"]
 const RECEIPTS := preload("res://systems/economy/RecurringReceipts.gd")
 
 static func defaults() -> Dictionary:
@@ -47,6 +47,11 @@ static func current_rival(world: Dictionary) -> String:
 		if rival not in saved.wins: return rival
 	return RIVALS.back()
 
+static func can_race(world: Dictionary, rival: String) -> bool:
+	var saved := data(world)
+	if not validate_snapshot(saved) or rival not in RIVALS: return false
+	return rival == current_rival(world) or rival in saved.wins
+
 static func reward_amount(rival: String) -> int:
 	var index := RIVALS.find(rival)
 	return 3000+(index+1)*1000 if index>=0 else 0
@@ -83,7 +88,7 @@ static func claim_rewards(world: Dictionary, economy) -> int:
 
 static func record_finish(world: Dictionary, rival: String, won: bool, seconds: float) -> Dictionary:
 	var saved := data(world)
-	if not validate_snapshot(saved) or rival != current_rival(world): return {}
+	if not can_race(world,rival): return {}
 	if not is_finite(seconds) or seconds <= 0 or seconds > 65 or saved.finishes >= 1000000: return {}
 	var first_win: bool = won and rival not in saved.wins
 	saved.finishes += 1

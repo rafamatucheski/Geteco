@@ -17,8 +17,8 @@ static func create_model(id: String) -> Node3D:
 
 static func door_spec(id: String) -> Dictionary:
 	if id not in IDS: return {}
-	if id == "mining_haul_truck": return {"class":"truck","zf":-3.45,"zr":-1.95,"sill":1.15,"belt":2.00,"top":3.55,"x":1.08}
-	return {"class":"truck","zf":-.70,"zr":.85,"sill":.96,"belt":1.65,"top":2.88,"x":.89}
+	if id == "mining_haul_truck": return {"class":"truck","zf":-3.40,"zr":-1.90,"sill":1.18,"belt":1.90,"top":3.55,"x":.94,"stand_z_min":-1.48}
+	return {"class":"truck","zf":-.65,"zr":.85,"sill":.98,"belt":1.70,"top":2.88,"x":.94}
 
 static func attach(car: CharacterBody3D) -> void:
 	if car.archetype not in IDS or car.has_node("MiningMachine"): return

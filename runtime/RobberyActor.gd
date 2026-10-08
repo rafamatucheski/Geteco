@@ -116,8 +116,8 @@ func _support_corpse() -> void:
 		var mesh: MeshInstance3D = entry.node
 		if not is_instance_valid(mesh): continue
 		var box: AABB = entry.box
-		var transform := mesh.global_transform
-		for corner in 8: bottom = minf(bottom, (transform * box.get_endpoint(corner)).y)
+		var mesh_transform := mesh.global_transform
+		for corner in 8: bottom = minf(bottom, (mesh_transform * box.get_endpoint(corner)).y)
 	if is_finite(bottom): visual.global_position.y += _floor_y + .012 - bottom
 
 func _death_blood() -> void:

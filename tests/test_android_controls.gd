@@ -94,6 +94,35 @@ func run() -> void:
 	world.session.motocross.mounted = false
 	world.player.input_locked = false
 	touch._refresh()
+	# The activity's real input adapter is sufficient here; venue physics and
+	# paid tournament progression are exercised by test_fishing_session.gd.
+	var fishing = world.session.get("fishing")
+	check(is_instance_valid(fishing), "sessão disponibiliza controlador de pesca para toque")
+	if is_instance_valid(fishing):
+		fishing._old_lock = world.player.input_locked
+		fishing._old_facing = world.player.combat_facing
+		fishing._old_weapon = world.session.state.equipped_weapon
+		fishing.active = true
+		fishing.phase = "ready"
+		world.player.input_locked = true
+		touch._refresh()
+		check(touch.playable and touch.fishing and not Input.emulate_mouse_from_touch, "vara mantém toque jogável com pedestre travado")
+		check(touch.buttons.size()==3 and touch.buttons.has("interact") and touch.buttons.has("exit_vehicle") and touch.buttons.has("pause_game"), "pesca oferece somente Pescar, Sair e Pausa")
+		check(touch.buttons.interact.label=="Pescar" and touch.buttons.exit_vehicle.label=="Sair", "ações da vara têm rótulos funcionais")
+		await finger(70, touch.move_center + Vector2(touch.radius*.8,0), true)
+		await finger(71, touch.aim_center + Vector2(0,-touch.radius*.8), true)
+		check(touch.fingers.is_empty() and controls.touch_move.is_zero_approx() and controls.touch_aim.is_zero_approx(), "pesca não captura dedos nos antigos analógicos")
+		await finger(70, Vector2.ZERO, false)
+		await finger(71, Vector2.ZERO, false)
+		await button("interact",72,true)
+		check(Input.is_action_pressed("interact") and fishing.phase=="charging" and not Input.is_action_pressed("fire"), "segurar Pescar prepara arremesso sem ataque emulado")
+		await button("interact",72,false)
+		check(not Input.is_action_pressed("interact") and fishing.phase=="casting", "soltar Pescar transmite soltura do arremesso")
+		await button("exit_vehicle",73,true)
+		touch._refresh()
+		check(not fishing.active and not touch.fishing and not world.player.input_locked, "Sair devolve controles normais do pedestre")
+		touch.release_all()
+		await process_frame
 	var cargo_lock = world.session.port_container_loot.minigame
 	world.session.modal = true
 	cargo_lock.begin(2, 0)
@@ -107,16 +136,29 @@ func run() -> void:
 	await create_timer(.2).timeout
 	check(not cargo_lock.active and not world.session.modal, "Voltar cancela gazua")
 	var bank_lock = world.session.robberies.lockpick
+	# This is the touch/minigame adapter fixture, opened outdoors. The heist's
+	# room lifecycle correctly closes any vault left outside harbor_bank; hold
+	# only that unrelated owner loop while the real dial and input keep running.
+	var robbery_processing: bool = world.session.robberies.is_physics_processing()
+	world.session.robberies.set_physics_process(false)
+	var bank_cancellations := [0]
+	var cancelled_once := func(): bank_cancellations[0] += 1
+	bank_lock.cancelled.connect(cancelled_once)
 	world.session.modal = true
+	world.player.input_locked = true
 	bank_lock.begin()
 	touch._refresh()
 	check(touch.buttons.has("ui_accept"), "cofre recebe botão Travar")
 	await button("ui_accept", 22, true)
 	await button("ui_accept", 22, false)
 	check(bank_lock.pins + bank_lock.mistakes == 1, "toque no cofre produz uma única tentativa")
-	await button("ui_cancel", 23, true)
+	touch._refresh()
+	check(bank_lock.active and world.session.modal and touch.buttons.has("ui_cancel") and bank_cancellations[0]==0, "cofre permanece ativo e oferece Voltar antes da desistência")
+	if touch.buttons.has("ui_cancel"): await button("ui_cancel", 23, true)
 	await create_timer(.2).timeout
-	check(not bank_lock.active and not world.session.modal, "Voltar cancela cofre")
+	check(not bank_lock.active and not world.session.modal and bank_cancellations[0]==1, "Voltar cancela cofre exatamente uma vez")
+	bank_lock.cancelled.disconnect(cancelled_once)
+	world.session.robberies.set_physics_process(robbery_processing)
 	# A troca de contexto libera toques antes de permitir dirigir ou abrir menus.
 	await finger(8, touch.move_center + Vector2(touch.radius, 0), true)
 	touch.release_all()
@@ -175,6 +217,7 @@ func run() -> void:
 		await button("more", 30, true)
 		check(controls.vehicle_input().x > .5 and controls.vehicle_input().y > .5, "abrir opções preserva direção e acelerador")
 		var audio = world.production.world_audio
+		audio._set_station(0) # Stable starting point for next/previous and off/on input checks.
 		var station: int = audio.radio_index
 		await button("radio_next",31,true)
 		await button("radio_next",31,false)

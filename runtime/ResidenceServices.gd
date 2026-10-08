@@ -3,6 +3,7 @@ extends Node
 ## Physical furniture actions; residence owns persistence, backpack owns inventory.
 const WEAPONS := preload("res://gameplay/WeaponCatalog.gd")
 const HOMES := preload("res://data/catalogs/ResidenceCatalog.gd")
+const CATS := preload("res://runtime/cats/CatAdoption.gd")
 var session
 var _home := ""
 var _menu_health := 0.0
@@ -384,7 +385,7 @@ func _rest_for(minutes: int) -> void:
 func _rest_tick(amount: float) -> void:
 	_rest_progress = amount
 	var minute := int(fposmod(_rest_start*1440.0+amount*_rest_minutes,1440.0))
-	if is_instance_valid(_rest_clock): _rest_clock.text = "%02d:%02d\n+%d min"%[minute/60,minute%60,int(amount*_rest_minutes)]
+	if is_instance_valid(_rest_clock): _rest_clock.text = "%02d:%02d\n+%d min"%[floori(float(minute)/60.0),minute%60,int(amount*_rest_minutes)]
 
 func _complete_rest() -> void:
 	if not _menu_available() or not session.can_rest_at_residence():
@@ -439,6 +440,44 @@ func _save() -> void:
 	if _station != "save" or not _menu_available(): return
 	session.close_menu()
 	if session.save_game(true): session.show_message("Jogo salvo.")
+	_home_menu()
+
+func _home_menu() -> void:
+	if _station != "save" or not _menu_available(): return
+	_station_menu("Casa")
+	session._button("Salvar jogo", _save)
+	session._button("Caminhas e brinquedos", _cat_shop)
+	session._button("Fechar", session.close_menu)
+	_focus()
+
+func _cat_shop() -> void:
+	if _station != "save" or not _menu_available(): return
+	_station_menu("Caminhas e brinquedos")
+	var residence = session.activities.residence
+	var status := Label.new()
+	status.text = "%d/10 gatos adotados · R$ %d" % [residence.cat_count(), session.state.economy.balance]
+	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	session.column.add_child(status)
+	var furniture: Dictionary = residence.cat_furniture()
+	for id in CATS.FURNITURE:
+		var item: Dictionary = CATS.FURNITURE[id]
+		var amount := int(furniture[id])
+		var full := amount >= int(item.limit)
+		var label := "%s · %d/%d" % [str(item.label), amount, int(item.limit)]
+		if not full: label += " · R$ %d" % int(item.price)
+		session._button(label, _buy_cat_furniture.bind(str(id)))
+		var button: Button = session.column.get_child(session.column.get_child_count() - 1)
+		button.disabled = full or session.state.economy.balance < int(item.price)
+	session._button("Voltar", _home_menu)
+	_focus()
+
+func _buy_cat_furniture(id: String) -> void:
+	if _station != "save" or not _menu_available(): return
+	if session.activities.residence.buy_cat_furniture(id):
+		session.save_game()
+	else:
+		session.show_message("Compra indisponível.")
+	_cat_shop()
 
 func _chest() -> void:
 	if not _menu_available(): return

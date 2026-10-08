@@ -35,7 +35,7 @@ func _process(delta: float) -> void:
 func refresh() -> void:
 	var night := 0.0
 	if controller != null and controller.session != null and is_instance_valid(controller.session.weather):
-		if controller.state.place_id.is_empty() and controller.state.region_id == "harbor":
+		if (controller.state.place_id.is_empty() or controller.session.weather._embedded_building()) and controller.state.region_id == "harbor":
 			night = 1.0-smoothstep(.25,.70,ATMOSPHERE.daylight_at(controller.session.weather.time_of_day))
 	if night <= .01:
 		apply_sources([],Vector3.ZERO,0.0)

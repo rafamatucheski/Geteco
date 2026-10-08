@@ -204,7 +204,7 @@ static func _cart(b: RefCounted, at: Vector3) -> void:
 		for z in [-.57,.57]:
 			b.cylinder("MineCartWheel",at+Vector3(side*.6,.25,z),.25,.12,"steel",true,Vector3(0,0,PI*.5))
 	for i in 4:
-		b.box("OreInsideCart",at+Vector3(-.4+float(i%2)*.74,.59,float(i/2)*.63-.4),Vector3(.65,.29,.55),"stone")
+		b.box("OreInsideCart",at+Vector3(-.4+float(i%2)*.74,.59,float(floori(float(i)/2.0))*.63-.4),Vector3(.65,.29,.55),"stone")
 
 static func _bench(b: RefCounted, at: Vector3) -> void:
 	# One full footprint blocks walking through the seat, including its underside.

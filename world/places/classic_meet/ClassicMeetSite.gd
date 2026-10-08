@@ -29,6 +29,7 @@ func _ready() -> void:
 	_build_furniture()
 	_build_lighting()
 	_flush_meshes()
+	preload("res://world/places/harbor_buildings/HarborBuildingExteriorAccess.gd").install(self,"TorqueStore")
 	set_night_lighting(false, false)
 
 func parking_slots() -> Array[Dictionary]:
@@ -153,18 +154,18 @@ func _build_store() -> void:
 		_box("glass",Vector3(x,1.38,5.91),Vector3(1.12,2.56,.11))
 		_box("chrome",Vector3(x+(-.48 if x>0 else .48),1.25,5.77),Vector3(.045,.55,.045))
 	for x in [-1.21,0,1.21]: _box("chrome",Vector3(x,1.38,5.81),Vector3(.065,2.65,.08))
-	var sign := Label3D.new()
-	sign.name = "TorqueName"
-	sign.text = "TORQUE"
-	sign.font = preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
-	sign.font_size = 100
-	sign.pixel_size = .013
-	sign.outline_size = 0
-	sign.modulate = Color("fff5e6")
-	sign.position = Vector3(.35,3.49,5.59)
-	sign.rotation.y = PI
-	sign.no_depth_test = false
-	add_child(sign)
+	var name_label := Label3D.new()
+	name_label.name = "TorqueName"
+	name_label.text = "TORQUE"
+	name_label.font = preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
+	name_label.font_size = 100
+	name_label.pixel_size = .013
+	name_label.outline_size = 0
+	name_label.modulate = Color("fff5e6")
+	name_label.position = Vector3(.35,3.49,5.59)
+	name_label.rotation.y = PI
+	name_label.no_depth_test = false
+	add_child(name_label)
 	# Emblema de velocidade sem slogans ou legendas na fachada.
 	for i in 4:
 		_angled_box("orange",Vector3(-4.1+i*.37,3.48,5.56),Vector3(.22,.7,.06),-.38)
@@ -296,12 +297,12 @@ func _cylinder(material: String, point: Vector3, radius: float, height: float, a
 	mesh.radial_segments = 16
 	_append_mesh(material,mesh,Transform3D(Basis.from_euler(angles),point))
 
-func _append_mesh(material: String, mesh: Mesh, transform: Transform3D) -> void:
+func _append_mesh(material: String, mesh: Mesh, mesh_transform: Transform3D) -> void:
 	if not _surfaces.has(material):
 		var surface := SurfaceTool.new()
 		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 		_surfaces[material] = surface
-	_surfaces[material].append_from(mesh,0,transform)
+	_surfaces[material].append_from(mesh,0,mesh_transform)
 
 func _paving_panel(point: Vector3, size: Vector3) -> void:
 	var node := MeshInstance3D.new()

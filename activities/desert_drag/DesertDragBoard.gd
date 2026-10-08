@@ -1,145 +1,217 @@
 extends Control
-## Static NPC photos and handwritten chalk. Race progress stays in the save ledger.
+## A static race-entry screen: no live portraits or per-frame UI work.
 signal closed
 signal race_requested(identity: String)
+signal instruments_requested
+signal takeshi_requested
 const PROGRESS := preload("res://activities/desert_drag/DesertDragProgress.gd")
-const NAMES := ["Digo","Lívia","Raul","Jessica","Nadir"]
-var handwriting: Font
+const NAMES := ["Digo", "Lívia", "Raul", "Jessica", "Nadir", "Rauhz"]
+const ATLAS_IDS := ["digo", "livia", "raul", "jessica", "nadir"]
+const ROW_STEP := 72
+const ROW_HEIGHT := 65
+const INK := Color("f0f3f5")
+const MUTED := Color("8f9ba7")
+const AMBER := Color("ffbc55")
+const CYAN := Color("66d5dd")
+var font: Font
+var bold: Font
 var photos: Dictionary = {}
 var wins: Array = []
+var best: Dictionary = {}
 var selected := "digo"
 var current := "digo"
 var strike: Dictionary = {}
 var rows: Array[Button] = []
 var race_button: Button
+var instruments_button: Button
+var takeshi_button: Button
 var message := ""
-var _animation: Tween
 
 func _ready() -> void:
-	if ResourceLoader.exists("res://assets/fonts/caveat/Caveat.ttf"):
-		handwriting=load("res://assets/fonts/caveat/Caveat.ttf")
-	else:
-		handwriting=FontFile.new()
-		handwriting.load_dynamic_font("res://assets/fonts/caveat/Caveat.ttf")
-	for id in PROGRESS.RIVALS:
-		# Loading PNG bytes also supports first-run capture before editor imports.
-		var path: String="res://assets/desert_drag/portraits/"+id+".png"
-		photos[id]=load(path) if ResourceLoader.exists(path) else ImageTexture.create_from_image(Image.load_from_file(path))
-	custom_minimum_size=Vector2(900,640)
-	size=custom_minimum_size
+	font = _font("Regular")
+	bold = _font("SemiBold")
+	var atlas_path := "res://assets/desert_drag/portraits/roster-cinematic.png"
+	var atlas: Texture2D
+	if ResourceLoader.exists(atlas_path): atlas = load(atlas_path)
+	elif FileAccess.file_exists(atlas_path): atlas = ImageTexture.create_from_image(Image.load_from_file(atlas_path))
+	for index in PROGRESS.RIVALS.size():
+		var id: String = PROGRESS.RIVALS[index]
+		if atlas != null and id in ATLAS_IDS:
+			var portrait := AtlasTexture.new()
+			portrait.atlas = atlas
+			var column_width := float(atlas.get_width()) / float(ATLAS_IDS.size())
+			portrait.region = Rect2(float(ATLAS_IDS.find(id)) * column_width, 0, column_width, atlas.get_height())
+			portrait.filter_clip = true
+			photos[id] = portrait
+		else:
+			var path: String = "res://assets/desert_drag/portraits/" + id + ".png"
+			photos[id] = load(path) if ResourceLoader.exists(path) else ImageTexture.create_from_image(Image.load_from_file(path))
+	custom_minimum_size = Vector2(900, 640)
+	size = custom_minimum_size
 	resized.connect(queue_redraw)
 	for i in PROGRESS.RIVALS.size():
 		var row := Button.new()
-		row.name=PROGRESS.RIVALS[i]
-		row.position=Vector2(40,112+i*86)
-		row.size=Vector2(470,80)
-		row.flat=true
-		row.tooltip_text=NAMES[i]
-		row.add_theme_stylebox_override("normal",StyleBoxEmpty.new())
-		row.add_theme_stylebox_override("hover",_style(Color(1,1,1,.06)))
-		row.add_theme_stylebox_override("pressed",_style(Color(1,1,1,.10)))
-		row.add_theme_stylebox_override("focus",_style(Color(1,1,1,.08)))
+		row.name = PROGRESS.RIVALS[i]
+		row.position = Vector2(30, 134 + i * ROW_STEP)
+		row.size = Vector2(477, ROW_HEIGHT)
+		row.flat = true
+		row.tooltip_text = NAMES[i]
+		row.add_theme_stylebox_override("normal", StyleBoxEmpty.new())
+		row.add_theme_stylebox_override("hover", _style(Color(1, 1, 1, .045)))
+		row.add_theme_stylebox_override("pressed", _style(Color(1, 1, 1, .07)))
+		row.add_theme_stylebox_override("focus", _style(Color.TRANSPARENT, CYAN))
 		row.pressed.connect(select_rival.bind(str(PROGRESS.RIVALS[i])))
+		row.focus_entered.connect(select_rival.bind(str(PROGRESS.RIVALS[i])))
 		add_child(row)
 		rows.append(row)
 	var close := Button.new()
-	close.text="Fechar  ×"
-	close.position=Vector2(741,27)
-	close.size=Vector2(125,42)
+	close.text = "FECHAR  ×"
+	close.position = Vector2(736, 30)
+	close.size = Vector2(132, 40)
+	_button_style(close, false)
 	close.pressed.connect(func(): closed.emit())
 	add_child(close)
-	race_button=Button.new()
-	race_button.position=Vector2(561,510)
-	race_button.size=Vector2(286,50)
-	race_button.add_theme_stylebox_override("normal",_style(Color("e0c892")))
-	race_button.add_theme_stylebox_override("hover",_style(Color("f3dfa9")))
-	race_button.add_theme_color_override("font_color",Color("263830"))
-	race_button.add_theme_font_override("font",handwriting)
-	race_button.add_theme_font_size_override("font_size",30)
+	instruments_button = Button.new()
+	instruments_button.text = "PAINÉIS"
+	instruments_button.position = Vector2(582,30)
+	instruments_button.size = Vector2(140,40)
+	_button_style(instruments_button,false)
+	instruments_button.pressed.connect(func(): instruments_requested.emit())
+	add_child(instruments_button)
+	takeshi_button = Button.new()
+	takeshi_button.name = "TakeshiChallenge"
+	takeshi_button.text = "TAKESHI"
+	takeshi_button.position = Vector2(554,592)
+	takeshi_button.size = Vector2(150,28)
+	_button_style(takeshi_button,false)
+	takeshi_button.add_theme_font_size_override("font_size",15)
+	takeshi_button.pressed.connect(func(): takeshi_requested.emit())
+	add_child(takeshi_button)
+	race_button = Button.new()
+	race_button.position = Vector2(551, 511)
+	race_button.size = Vector2(317, 54)
+	_button_style(race_button, true)
 	race_button.pressed.connect(func(): race_requested.emit(selected))
 	add_child(race_button)
 	_update_button()
 
+func _font(weight: String) -> Font:
+	var path := "res://assets/fonts/barlow/BarlowSemiCondensed-" + weight + ".ttf"
+	if ResourceLoader.exists(path): return load(path)
+	var file := FontFile.new()
+	file.load_dynamic_font(path)
+	return file
+
 func show_progress(state: Dictionary, newly_won := "") -> void:
-	wins=state.get("wins",[]).duplicate()
-	current=PROGRESS.RIVALS.back()
+	wins = state.get("wins", []).duplicate()
+	best = state.get("best", {}).duplicate()
+	current = PROGRESS.RIVALS.back()
 	for id in PROGRESS.RIVALS:
-		if id not in wins: current=id; break
-	selected=current
-	message=""
-	if _animation: _animation.kill()
+		if id not in wins:
+			current = id
+			break
+	if newly_won in wins: selected = newly_won
+	elif selected not in wins and selected != current: selected = current
+	message = ""
 	strike.clear()
-	for id in wins: strike[id]=0.0 if id==newly_won else 1.0
-	if newly_won in wins:
-		selected=newly_won
-		_animation=create_tween()
-		_animation.tween_method(func(value: float): strike[newly_won]=value; queue_redraw(),0.0,1.0,.65).set_delay(.25)
+	for id in wins: strike[id] = 1.0
 	_update_button()
 	rows[PROGRESS.RIVALS.find(selected)].grab_focus()
 	queue_redraw()
 
 func select_rival(id: String) -> void:
 	if id not in PROGRESS.RIVALS: return
-	selected=id
-	message=""
+	selected = id
+	message = ""
 	_update_button()
 	queue_redraw()
 
 func set_message(text: String) -> void:
-	message=text
+	message = text
 	queue_redraw()
 
 func _update_button() -> void:
-	if race_button==null: return
-	race_button.disabled=selected!=current
-	race_button.text="Correr" if selected==current else ("Vencido" if selected in wins else "Vença "+NAMES[PROGRESS.RIVALS.find(current)])
+	if race_button == null: return
+	race_button.disabled = selected != current and selected not in wins
+	race_button.text = "REVANCHE  →" if selected in wins else ("CORRER  →" if selected == current else "VENÇA " + NAMES[PROGRESS.RIVALS.find(current)].to_upper())
 
-func _style(color: Color) -> StyleBoxFlat:
+func _style(color: Color, border := Color.TRANSPARENT) -> StyleBoxFlat:
 	var box := StyleBoxFlat.new()
-	box.bg_color=color
-	box.set_corner_radius_all(4)
+	box.bg_color = color
+	box.border_color = border
+	box.set_border_width_all(1 if border.a > 0.0 else 0)
+	box.set_corner_radius_all(3)
 	return box
 
-func _draw() -> void:
-	if handwriting==null: return
-	draw_style_box(_style(Color(0,0,0,.35)),Rect2(9,12,900,640))
-	draw_style_box(_style(Color("624936")),Rect2(0,0,900,640))
-	draw_rect(Rect2(12,12,876,616),Color("283e37"))
-	draw_rect(Rect2(18,18,864,604),Color("243a33"))
-	# Deterministic faint chalk grain; no textures or per-frame background work.
-	for i in 110:
-		var x := 26.0+fmod(float(i*137),844.0)
-		var y := 23.0+fmod(float(i*71),586.0)
-		draw_line(Vector2(x,y),Vector2(minf(x+24,875),y+.4),Color(1,1,1,.025),1)
-	var chalk := Color("ede8d3")
-	draw_string(handwriting,Vector2(43,76),"Arrancadas",HORIZONTAL_ALIGNMENT_LEFT,-1,52,chalk)
-	draw_string(handwriting,Vector2(535,69),"%d / 5"%wins.size(),HORIZONTAL_ALIGNMENT_LEFT,-1,31,Color("d5bf88"))
-	draw_line(Vector2(42,92),Vector2(856,94),Color(chalk,.38),1.5,true)
-	draw_line(Vector2(530,114),Vector2(527,562),Color(chalk,.2),1,true)
-	for i in PROGRESS.RIVALS.size():
-		var id: String=PROGRESS.RIVALS[i]
-		var y := 118.0+float(i)*86
-		if id==selected: draw_style_box(_style(Color(1,1,1,.07)),Rect2(40,y-6,470,80))
-		draw_rect(Rect2(55,y,66,70),Color("e1d8c3"))
-		draw_texture_rect(photos[id],Rect2(59,y+4,58,58),false)
-		draw_string(handwriting,Vector2(140,y+45),"%02d"%(i+1),HORIZONTAL_ALIGNMENT_LEFT,-1,26,Color("b6b8a0"))
-		draw_string(handwriting,Vector2(192,y+47),NAMES[i],HORIZONTAL_ALIGNMENT_LEFT,-1,39,chalk if id==current or id in wins else Color("9ba797"))
-		if id in wins: _draw_strike(Vector2(186,y+33),minf(handwriting.get_string_size(NAMES[i],HORIZONTAL_ALIGNMENT_LEFT,-1,39).x+24,275),float(strike.get(id,1.0)))
-		elif id==current: draw_string(handwriting,Vector2(456,y+45),"←",HORIZONTAL_ALIGNMENT_LEFT,-1,32,Color("ddc58f"))
-	var index := PROGRESS.RIVALS.find(selected)
-	draw_rect(Rect2(583,120,240,269),Color("e8dfcb"))
-	draw_texture_rect(photos[selected],Rect2(593,130,220,220),false)
-	draw_string(handwriting,Vector2(603,380),NAMES[index],HORIZONTAL_ALIGNMENT_LEFT,204,32,Color("343c32"))
-	draw_string(handwriting,Vector2(577,438),"800 m",HORIZONTAL_ALIGNMENT_LEFT,-1,33,chalk)
-	draw_string(handwriting,Vector2(577,475),"R$ %d"%PROGRESS.reward_amount(selected),HORIZONTAL_ALIGNMENT_LEFT,-1,31,Color("d5bf88"))
-	if not message.is_empty():
-		draw_multiline_string(ThemeDB.fallback_font,Vector2(45,591),message,HORIZONTAL_ALIGNMENT_LEFT,808,16,2,Color("eed4b7"))
+func _button_style(button: Button, primary: bool) -> void:
+	button.add_theme_font_override("font", bold)
+	button.add_theme_font_size_override("font_size", 23 if primary else 17)
+	button.add_theme_color_override("font_color", Color("13171d") if primary else INK)
+	button.add_theme_color_override("font_hover_color", Color("13171d") if primary else INK)
+	button.add_theme_color_override("font_pressed_color", Color("13171d") if primary else INK)
+	button.add_theme_color_override("font_disabled_color", MUTED)
+	button.add_theme_stylebox_override("normal", _style(AMBER if primary else Color("222b34")))
+	button.add_theme_stylebox_override("hover", _style(Color("ffce7b") if primary else Color("34414e")))
+	button.add_theme_stylebox_override("pressed", _style(Color("e0a145") if primary else Color("425261")))
+	button.add_theme_stylebox_override("disabled", _style(Color("222b34")))
+	button.add_theme_stylebox_override("focus", _style(Color.TRANSPARENT, CYAN))
 
-func _draw_strike(at: Vector2, width: float, fraction: float) -> void:
-	var points := PackedVector2Array()
-	for i in 29:
-		var t := minf(float(i)/28.0,fraction)
-		points.append(at+Vector2(width*t,sin(t*18.0)*1.5-t*5.0))
-		if t>=fraction: break
-	if points.size()>1: draw_polyline(points,Color("e8dfcb"),3.0,true)
-	if fraction>.65: draw_line(at+Vector2(width*.1,6),at+Vector2(width*(fraction-.65)/.35,2),Color("e8dfcb"),1.5,true)
+func _label(at: Vector2, text: String, point_size: int, color := INK, strong := false, width := -1.0) -> void:
+	draw_string(bold if strong else font, at, text, HORIZONTAL_ALIGNMENT_LEFT, width, point_size, color)
+
+func _portrait(id: String, destination: Rect2, tint := Color.WHITE) -> void:
+	var photo: Texture2D = photos[id]
+	var extent := Vector2(photo.get_size())
+	# Keep the portrait's authored proportions. The tall atlas is cropped to a
+	# headshot; the fallback render is already square. No face stretching.
+	var crop := Vector2(extent.x, extent.x * destination.size.y / destination.size.x)
+	if crop.y > extent.y: crop = Vector2(extent.y * destination.size.x / destination.size.y, extent.y)
+	var origin := Vector2((extent.x - crop.x) * .5, minf(extent.y * .06, extent.y - crop.y))
+	draw_texture_rect_region(photo, destination, Rect2(origin, crop), tint)
+
+func _draw() -> void:
+	if font == null: return
+	draw_style_box(_style(Color(0, 0, 0, .35)), Rect2(7, 9, 900, 640))
+	draw_style_box(_style(Color("11171e"), Color("34414e")), Rect2(0, 0, 900, 640))
+	draw_rect(Rect2(0, 0, 900, 4), AMBER)
+	_label(Vector2(32, 32), "DESERTO / 800 M", 15, MUTED, true)
+	_label(Vector2(30, 79), "ARRANCADAS", 43, INK, true)
+	_label(Vector2(450, 46), "%02d / %02d" % [wins.size(),PROGRESS.RIVALS.size()], 26, AMBER, true)
+	_label(Vector2(450, 69), "VITÓRIAS", 13, MUTED, true)
+	draw_line(Vector2(30, 95), Vector2(868, 95), Color("34414e"), 1)
+	_label(Vector2(42, 120), "ADVERSÁRIOS", 14, MUTED, true)
+	_label(Vector2(400, 120), "STATUS", 14, MUTED, true)
+	for i in PROGRESS.RIVALS.size():
+		var id: String = PROGRESS.RIVALS[i]
+		var y := 134.0 + float(i) * ROW_STEP
+		var unlocked: bool = id == current or id in wins
+		var chosen: bool = id == selected
+		draw_style_box(_style(Color("263340") if chosen else Color("19222c")), Rect2(30, y, 477, ROW_HEIGHT))
+		if chosen: draw_rect(Rect2(30, y, 3, ROW_HEIGHT), AMBER)
+		_label(Vector2(45, y + 44), "%02d" % (i + 1), 23, AMBER if chosen else MUTED, true)
+		_portrait(id, Rect2(85, y + 5, 55, 55), Color.WHITE if unlocked else Color(.53, .58, .63))
+		_label(Vector2(160, y + 43), NAMES[i].to_upper(), 27, INK if unlocked else MUTED, true)
+		var status := "REVANCHE" if id in wins else ("DISPONÍVEL" if id == current else "BLOQUEADO")
+		_label(Vector2(394, y + 42), status, 14, CYAN if id in wins else (AMBER if id == current else MUTED), true)
+	var index := PROGRESS.RIVALS.find(selected)
+	draw_rect(Rect2(551, 110, 317, 278), Color("1b2630"))
+	_portrait(selected, Rect2(609, 110, 202, 278))
+	draw_rect(Rect2(551, 329, 317, 59), Color(.045, .065, .085, .93))
+	_label(Vector2(568, 368), NAMES[index].to_upper(), 34, INK, true)
+	_label(Vector2(551, 414), "PRIMEIRA VITÓRIA" if selected not in wins else "PRÊMIO CONQUISTADO", 13, MUTED, true)
+	_label(Vector2(551, 447), "R$ %d" % PROGRESS.reward_amount(selected), 29, AMBER, true)
+	_label(Vector2(741, 414), "SEU RECORDE", 13, MUTED, true)
+	_label(Vector2(741, 447), "%.3f s" % float(best[selected]) if best.has(selected) else "—", 27, INK, true)
+	if selected in wins:
+		_label(Vector2(551, 485), "REVANCHE · MELHORE SEU TEMPO", 15, CYAN, true)
+	elif selected != current:
+		_label(Vector2(551, 485), "VENÇA " + NAMES[PROGRESS.RIVALS.find(current)].to_upper() + " PARA LIBERAR", 15, MUTED, true)
+	elif selected=="rauhz":
+		_label(Vector2(551, 485), "FINAL · FOCUS MK1 2002", 15, AMBER, true)
+	draw_line(Vector2(30, 581), Vector2(868, 581), Color("34414e"), 1)
+	if not message.is_empty():
+		draw_multiline_string(font, Vector2(32, 605), message, HORIZONTAL_ALIGNMENT_LEFT, 835, 17, 2, AMBER)
+	else:
+		_label(Vector2(32, 610), "↑ ↓  SELECIONAR", 15, MUTED)
+		_label(Vector2(214, 610), "TAB  AÇÕES  /  ENTER  ATIVAR", 15, MUTED)
+		_label(Vector2(739, 610), "ESC  VOLTAR", 15, MUTED)

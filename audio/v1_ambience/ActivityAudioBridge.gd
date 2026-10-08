@@ -9,6 +9,7 @@ var previous_mountain_mode := ""
 var previous_mountain_gate := 0
 var previous_campaign_gate := -1
 var previous_campaign_countdown := -1
+var tow_source: Node
 
 func _ready() -> void:
 	for index in 2:
@@ -18,6 +19,22 @@ func _ready() -> void:
 		voice.volume_db = -8
 		add_child(voice)
 		voices.append(voice)
+	if world != null and world.session != null and "mission_world" in world.session:
+		bind_tow_events(world.session.mission_world)
+
+func bind_tow_events(source: Node) -> void:
+	if is_instance_valid(tow_source) and tow_source.is_connected("tow_event",on_tow_event):
+		tow_source.disconnect("tow_event",on_tow_event)
+	tow_source = source if is_instance_valid(source) and source.has_signal("tow_event") else null
+	if is_instance_valid(tow_source):
+		tow_source.connect("tow_event",on_tow_event)
+
+## These are activity confirmations, not mechanical winch recordings.
+func on_tow_event(kind: String) -> void:
+	match kind:
+		"loaded": _play("mission_start")
+		"unloaded": _play("checkpoint")
+		"delivered": _play("complete")
 
 func _process(_delta: float) -> void:
 	if world == null or world.session == null: return
@@ -81,6 +98,7 @@ func _play(kind: String) -> void:
 	voice.play()
 
 func _exit_tree() -> void:
+	bind_tow_events(null)
 	for voice in voices:
 		if is_instance_valid(voice):
 			voice.stop()

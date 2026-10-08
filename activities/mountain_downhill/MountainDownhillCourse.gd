@@ -39,10 +39,10 @@ func direction(offset: float) -> Vector3:
 
 func grid(index: int) -> Transform3D:
 	var offset := 34.0-floori(float(index)/2.0)*8.0
-	var forward := direction(offset)
-	var right := forward.cross(Vector3.UP).normalized()
+	var grid_forward := direction(offset)
+	var right := grid_forward.cross(Vector3.UP).normalized()
 	var lane := -1.8 if index%2 == 0 else 1.8
-	return Transform3D(Basis(Vector3.UP,atan2(-forward.x,-forward.z)),point(offset)+right*lane+Vector3.UP*.08)
+	return Transform3D(Basis(Vector3.UP,atan2(-grid_forward.x,-grid_forward.z)),point(offset)+right*lane+Vector3.UP*.08)
 
 func gate(index: int) -> Vector3:
 	return point(gate_offsets[clampi(index,0,gate_offsets.size()-1)])

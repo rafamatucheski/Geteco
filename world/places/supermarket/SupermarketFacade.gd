@@ -27,14 +27,14 @@ func _ready() -> void:
 		box("DrainPipe",Vector3(side*7.2,1.95,-4.7),Vector3(.09,3.9,.09),"687c71",false,true)
 	box("Fascia",Vector3(0,3.5,5.55),Vector3(14.5,1.0,.32),"295d47")
 	box("Canopy",Vector3(0,2.98,6.05),Vector3(14.5,.12,1.35),"dbcfab")
-	var sign := Label3D.new()
-	sign.text = "BOA PRAÇA"
-	sign.font_size = 100
-	sign.pixel_size = .010
-	sign.position = Vector3(0,3.52,5.73)
-	sign.modulate = Color("f3e4b4")
-	sign.outline_size = 0
-	add_child(sign)
+	var name_label := Label3D.new()
+	name_label.text = "BOA PRAÇA"
+	name_label.font_size = 100
+	name_label.pixel_size = .010
+	name_label.position = Vector3(0,3.52,5.73)
+	name_label.modulate = Color("f3e4b4")
+	name_label.outline_size = 0
+	add_child(name_label)
 	for side in [-1,1]:
 		var leaf := Node3D.new()
 		leaf.position = Vector3(side*.66,0,5.52)

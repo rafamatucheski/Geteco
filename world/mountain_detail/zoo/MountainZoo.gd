@@ -38,8 +38,8 @@ func _ready() -> void:
 		GEO.solid(self,"EntrancePost",Vector3(x,1.7,20),Vector3(.32,3.4,.32))
 	g.part("box",Vector3(0,3.4,20),Vector3(4.6,.7,.30),"355347")
 	GEO.solid(self,"EntranceBeam",Vector3(0,3.4,20),Vector3(4.6,.7,.30))
-	var sign:=Label3D.new(); sign.text="Serra Viva"; sign.font_size=72; sign.pixel_size=.008
-	sign.position=Vector3(0,3.41,20.17); sign.modulate=Color("f0deb0"); sign.outline_size=0; add_child(sign)
+	var name_label:=Label3D.new(); name_label.text="Serra Viva"; name_label.font_size=72; name_label.pixel_size=.008
+	name_label.position=Vector3(0,3.41,20.17); name_label.modulate=Color("f0deb0"); name_label.outline_size=0; add_child(name_label)
 	# Small open service booth; visitors stay outside the counter.
 	for row in [[Vector3(-3.2,.48,22.5),Vector3(2.1,.96,1.8)],[Vector3(-4.2,1.7,21.3),Vector3(.16,2.5,.16)],[Vector3(-2.2,1.7,21.3),Vector3(.16,2.5,.16)],[Vector3(-3.2,2.85,22),Vector3(2.7,.22,3.0)]]:
 		g.part("box",row[0],row[1],"806044"); GEO.solid(self,"TicketBooth",row[0],row[1])
@@ -87,7 +87,7 @@ func _pen(g: RefCounted, center: Vector3, species: String) -> void:
 	for x in [-5.5,5.5]:
 		var rock:=center+Vector3(x,.35,-4.3)
 		g.part("round",rock,Vector3(1.5,.8,1.1),"77776c"); GEO.solid(self,"HabitatRock",rock,Vector3(1.3,.7,1))
-		for i in 5: g.part("round",center+Vector3(x+(i%2)*.25,.22,-5+(i/2)*.18),Vector3(.65,.6,.6),"62704b")
+		for i in 5: g.part("round",center+Vector3(x+(i%2)*.25,.22,-5+floori(float(i)/2.0)*.18),Vector3(.65,.6,.6),"62704b")
 	var trough:=center+Vector3(3.5,.22,4.9)
 	g.part("box",trough,Vector3(2,.44,1.1),"77776c")
 	g.part("box",trough+Vector3(0,.23,0),Vector3(1.7,.025,.8),"64898b")

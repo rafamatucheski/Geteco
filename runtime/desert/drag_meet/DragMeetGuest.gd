@@ -20,13 +20,15 @@ func _ready() -> void:
 	for old in visual.get_children():
 		visual.remove_child(old)
 		old.queue_free()
-	person = CIVILIAN.new()
+	person = _create_person()
 	person.appearance_locked = true
 	person.appearance_variant = identity
 	person.coat_color = specification.coat
 	person.pants_color = Color("30353e")
-	person.wardrobe_overrides = {"female":identity%3==0,"top":1,"bottom":0,"shoe":0,"backpack":false,"bag":0,
-		"inner":Color("ded6bf"),"accent":specification.coat,"hat":1 if identity%5==0 else 0}
+	person.wardrobe_overrides = {"female":identity%3==0,"top":2,"bottom":0,"shoe":0,"backpack":false,"bag":0,
+		"body_profile":{"bust":false},"head_scale":Vector3.ONE*.94,
+		"hair":4 if identity%3==0 else identity%3,"beard":0 if identity%3==0 else identity%2,
+		"inner":Color("a7a398"),"accent":specification.coat.darkened(.2),"hat":1 if identity%5==0 else 0}
 	person.rotation.y = PI
 	visual.add_child(person)
 	_home = global_position
@@ -40,6 +42,9 @@ func _ready() -> void:
 	# Local threat control uses the productive Gameplay signals; this actor is
 	# never enrolled in world.people or independently trimmed by ambient density.
 	controlled_automatically = true
+
+func _create_person() -> Node3D:
+	return CIVILIAN.new()
 
 func _physics_process(delta: float) -> void:
 	if dead: return

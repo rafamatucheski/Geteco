@@ -12,6 +12,8 @@ func _draw() -> void:
 	var s := minf(size.x,size.y)/24.0
 	draw_set_transform((size-Vector2.ONE*24*s)*.5,0,Vector2.ONE*s)
 	match kind:
+		"rage":
+			draw_colored_polygon(PackedVector2Array([Vector2(14,1),Vector2(5,13),Vector2(11,13),Vector2(8,23),Vector2(21,9),Vector2(14,9)]),ink)
 		"heart":
 			draw_circle(Vector2(7,8),5,ink); draw_circle(Vector2(17,8),5,ink)
 			draw_colored_polygon(PackedVector2Array([Vector2(2,9),Vector2(22,9),Vector2(12,22)]),ink)

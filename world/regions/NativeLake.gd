@@ -7,6 +7,7 @@ const PINE = preload("res://world/regions/NativePine.gd")
 var water_polygon := PackedVector2Array()
 var dry_polygons: Array[PackedVector2Array] = []
 var materials: Dictionary = {}
+var cargo_surface: RefCounted
 ## Espelho d'água do lago alpino abaixo do chão, dentro da bacia de LakeBasins (0,6 m).
 const ALPINE_WATER_Y := -.2
 const WATER_SHADER := preload("res://world/regions/mountain_lake.gdshader")
@@ -26,27 +27,24 @@ func _ready() -> void:
 		# fica sempre sob o chão.
 		_basin_water()
 	else:
-		_surface("GlacialShore",_points(data.shore),.007,Color("2a241e"))
 		water_polygon = _points(data.shallow)
 		water_polygon = _smooth(_clear_roads(water_polygon))
-		_surface("GlacialShallows",water_polygon,.042,Color("175b6a"),true)
-		_surface("GlacialDeepColor",_points(data.deep),.048,Color("0b2f3a"),true)
-		_surface("FrozenCascade",_points(data.frozen_fall),.09,Color("709ba6"))
 		var island := _points(data.is_rock,Vector2(245,-65))
 		dry_polygons.append(island)
-		_surface("CacheIsland",island,.085,Color("423a31"))
-		_surface("IslandMoss",_points(data.is_moss,Vector2(245,-65)),.09,Color("22331f"))
-		_surface("OriginalRowboat",_points(data.rowboat,Vector2(245,-65)),.10,Color("6d4c35"))
-		_strip(Vector2(205,-45)*SCALE,Vector2(170,-25)*SCALE,14*SCALE,.06,Color("4e3725"))
+		var camp := _points(data.camp_ground,Vector2(180,180))
+		dry_polygons.append(camp)
+		for point in [Vector2(45,105),Vector2(58,75),Vector2(65,50)]:
+			dry_polygons.append(_points([[-12,-9],[11,-10],[13,9],[-10,10]],point))
+		cargo_surface=preload("res://world/regions/CargoLakeSurface.gd").new()
+		cargo_surface.build(self,data)
+		var dressing=preload("res://world/regions/CargoLakeDressing.gd").new()
+		dressing.name="CargoLakeDressing"
+		add_child(dressing)
 		var tree := PINE.create(7,true)
 		tree.position = Vector3(265*SCALE,.05,-80*SCALE)
 		tree.scale = Vector3.ONE*1.15
 		add_child(tree)
 		_box(tree,Vector3(0,1.3,0),Vector3(.4,2.6,.4),Color("554333"),true)
-		var camp := _points(data.camp_ground,Vector2(180,180))
-		dry_polygons.append(camp)
-		_surface("SmugglerCampsite",camp,.08,Color("382e22")) # Dry shelf above the moving shallow water.
-		for point in [Vector2(120,220),Vector2(135,235)]: _box(self,Vector3(point.x*SCALE,.4,point.y*SCALE),Vector3(1.5,.8,1.25),Color("59402b"),true)
 		var fire_center := Vector2(205,160)*SCALE
 		var heat := Marker3D.new()
 		heat.name = "OriginalCampHeatSource"
@@ -62,12 +60,6 @@ func _ready() -> void:
 		var fuel := preload("res://runtime/cold/FireArt.gd").fuel()
 		fuel.position.y = .08
 		heat.add_child(fuel)
-		var positions := [Vector2(-135,-75),Vector2(95,-60),Vector2(-95,65),Vector2(45,80),Vector2(-54,-177),Vector2(-31,-168),Vector2(-66,-158)]
-		for i in positions.size(): _ice(positions[i],i,[.85,.6,1.0,.55,.8,.5,.4][i])
-		for point in [Vector2(45,105),Vector2(58,75),Vector2(65,50)]:
-			var stone := _points([[-12,-9],[11,-10],[13,9],[-10,10]],point)
-			dry_polygons.append(stone)
-			_surface("SteppingStone",stone,.09,Color("57656a"))
 	add_to_group("native_water_surface")
 func contains_water(world_position: Vector3) -> bool:
 	var local := to_local(world_position)

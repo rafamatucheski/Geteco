@@ -23,15 +23,15 @@ func _init(parent: Node3D, label: String, at: Vector3) -> void:
 	body.set_meta("vehicle_surface", "hard")
 	root.add_child(body)
 
-func box(label: String, at: Vector3, size: Vector3, finish: String, solid := true, rotation := Vector3.ZERO) -> void:
-	_add("box", finish, Transform3D(Basis.from_euler(rotation) * Basis.from_scale(size), at))
+func box(label: String, at: Vector3, size: Vector3, material_finish: String, solid := true, rotation := Vector3.ZERO) -> void:
+	_add("box", material_finish, Transform3D(Basis.from_euler(rotation) * Basis.from_scale(size), at))
 	if not solid: return
 	var shape := BoxShape3D.new()
 	shape.size = size
 	_collision(label, at, rotation, shape)
 
-func cylinder(label: String, at: Vector3, radius: float, height: float, finish: String, solid := true, rotation := Vector3.ZERO) -> void:
-	_add("cylinder", finish, Transform3D(Basis.from_euler(rotation) * Basis.from_scale(Vector3(radius, height, radius)), at))
+func cylinder(label: String, at: Vector3, radius: float, height: float, material_finish: String, solid := true, rotation := Vector3.ZERO) -> void:
+	_add("cylinder", material_finish, Transform3D(Basis.from_euler(rotation) * Basis.from_scale(Vector3(radius, height, radius)), at))
 	if not solid: return
 	var shape := CylinderShape3D.new()
 	shape.radius = radius
@@ -63,10 +63,10 @@ func rail_collision(label: String, at: Vector3, size: Vector3, rotation := Vecto
 	collider.set_meta("desert_relic_solid",label)
 	(rail_step_bodies[top] as StaticBody3D).add_child(collider)
 
-func beam(label: String, start: Vector3, end: Vector3, width: float, finish: String, solid := true) -> void:
+func beam(label: String, start: Vector3, end: Vector3, width: float, material_finish: String, solid := true) -> void:
 	var delta := end - start
 	var frame := Basis(Quaternion(Vector3.UP, delta.normalized()))
-	box(label, (start + end) * .5, Vector3(width, delta.length(), width), finish, solid, frame.get_euler())
+	box(label, (start + end) * .5, Vector3(width, delta.length(), width), material_finish, solid, frame.get_euler())
 
 func _add(shape: String, finish: String, transform: Transform3D) -> void:
 	var key := shape + ":" + finish

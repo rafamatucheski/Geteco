@@ -15,17 +15,13 @@ const CROSS_SECTION := [
 	Vector2(.46,.93),Vector2(.52,.98),Vector2(.57,1),Vector2(.66,.87),
 	Vector2(.77,.61),Vector2(.89,.27),Vector2(1,0),
 ]
-static var _stone: StandardMaterial3D
+static var _stone: ShaderMaterial
 
-static func material() -> StandardMaterial3D:
+static func material() -> ShaderMaterial:
 	if _stone!=null: return _stone
-	_stone=StandardMaterial3D.new()
-	_stone.vertex_color_use_as_albedo=true
-	_stone.vertex_color_is_srgb=true
-	_stone.albedo_color=Color.WHITE
-	_stone.roughness=1.0
-	_stone.metallic=0.0
-	_stone.metallic_specular=0.0
+	_stone=ShaderMaterial.new()
+	_stone.shader=preload("res://world/desert/sandstone_horizon.gdshader")
+	_stone.set_shader_parameter("stone_noise",preload("res://runtime/atmosphere/drag_cloud_noise.tres"))
 	return _stone
 
 static func build() -> Node3D:

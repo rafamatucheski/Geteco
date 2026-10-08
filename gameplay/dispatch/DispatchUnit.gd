@@ -290,12 +290,12 @@ func _suspend_bodies() -> void:
 	if crew != null: bodies.append(crew)
 	for body in bodies:
 		if not is_instance_valid(body): continue
-		var state := {"body":body,"layer":body.collision_layer,"mask":body.collision_mask,
+		var body_state := {"body":body,"layer":body.collision_layer,"mask":body.collision_mask,
 			"physics":body.is_physics_processing(),"owner":null}
-		_suspended_bodies[body.get_instance_id()] = state
+		_suspended_bodies[body.get_instance_id()] = body_state
 		var motion: Node = body.get_node_or_null("BodyFlight3D")
 		if is_instance_valid(motion) and motion.has_method("suspend_for_dispatch"):
-			motion.suspend_for_dispatch(state)
+			motion.suspend_for_dispatch(body_state)
 		body.collision_layer = 0
 		body.collision_mask = 0
 		body.velocity = Vector3.ZERO
@@ -305,22 +305,22 @@ func _suspend_bodies() -> void:
 ## Cada pessoa viva precisa de cápsula livre no ponto onde ficou; senão a
 ## unidade inteira continua suspensa em vez de sobrepor um sólido novo.
 func _bodies_clear() -> bool:
-	for state in _suspended_bodies.values():
+	for body_state in _suspended_bodies.values():
 		# References may have been freed by a child effect while the unit slept.
-		var body: Variant = state.body
+		var body: Variant = body_state.body
 		if not is_instance_valid(body) or body.is_queued_for_deletion() or body.dead: continue
 		var exclude: Array[RID] = [vehicle.get_rid(), body.get_rid()]
-		var motion: Node = state.owner.get_ref() if state.owner != null else null
+		var motion: Node = body_state.owner.get_ref() if body_state.owner != null else null
 		if is_instance_valid(motion):
 			if not motion.suspension_clear(exclude): return false
-		elif int(state.layer) != 0 and not controller.capsule_clear(body.global_position, exclude): return false
+		elif int(body_state.layer) != 0 and not controller.capsule_clear(body.global_position, exclude): return false
 	return true
 
 func _resume_bodies() -> void:
-	for state in _suspended_bodies.values():
-		var body: Variant = state.body
+	for body_state in _suspended_bodies.values():
+		var body: Variant = body_state.body
 		if not is_instance_valid(body) or body.is_queued_for_deletion(): continue
-		var motion: Node = state.owner.get_ref() if state.owner != null else null
+		var motion: Node = body_state.owner.get_ref() if body_state.owner != null else null
 		# A dead actor must release a paused child owner too; it cannot tick itself.
 		if is_instance_valid(motion): motion.resume_from_dispatch()
 		if body.dead:
@@ -328,9 +328,9 @@ func _resume_bodies() -> void:
 			body.set_physics_process(false)
 			body.show()
 			continue
-		body.collision_layer = int(state.layer)
-		body.collision_mask = int(state.mask)
-		body.set_physics_process(bool(state.physics))
+		body.collision_layer = int(body_state.layer)
+		body.collision_mask = int(body_state.mask)
+		body.set_physics_process(bool(body_state.physics))
 		body.show()
 	_suspended_bodies.clear()
 

@@ -1,0 +1,262 @@
+{
+  "date": "2026-10-08",
+  "period": "2026-10-07 a 2026-10-08",
+  "scope": "Reconciliação de relatórios locais, fontes alteradas e histórico Git de 07–08/10. Resultados citados são evidências documentadas; esta atualização não reexecuta nem certifica o jogo inteiro.",
+  "cards": [
+    {
+      "id": "parque-lume-20261008",
+      "title": "Parque Lume: montanha-russa, Umbra e seis cosméticos",
+      "status": "partial",
+      "area": "atividades",
+      "description": "Montanha-russa com embarque, câmera e recuperação; Umbra em primeira pessoa; seis segredos persistentes e cabine de roupas. Ampliação exterior com mobiliário, quatro palhaços e máquinas Aurora/Pingo. Testes e fotos reais documentados por cenário.",
+      "sources": [
+        "docs/reviews/amusement-park-20261007.md",
+        "docs/reviews/park-countryside-20261007.md"
+      ],
+      "next": "Completar comparação isolada de desempenho e inspeção temporal integral; preservar falhas e reprises de fixture registradas."
+    },
+    {
+      "id": "pesca-lago-sereno-20261008",
+      "title": "Lago Sereno: pesca e transferência para a área rural",
+      "status": "partial",
+      "area": "atividades",
+      "description": "Pesca com regras de espécies/peso, vara, HUD e estado; Lago Sereno transferido para (-500, 0, -35), com acesso rural arborizado. Implementação e testes dedicados presentes; revisão documenta a transferência e seus cenários reais.",
+      "sources": [
+        "activities/fishing/FishingRules.gd",
+        "runtime/FishingRuntime.gd",
+        "docs/reviews/park-countryside-20261007.md"
+      ],
+      "next": "Concluir comparação isolada de performance; não extrapolar a validação da transferência para todos os casos da pesca."
+    },
+    {
+      "id": "pisos-recreacao-20261008",
+      "title": "Parque e lago: pisos integrados à grama",
+      "status": "partial",
+      "area": "mundo",
+      "description": "Dois exteriores existentes, zero interiores alterados. Parque com gramado, caminhos e borda mineral; lago e estrada com mistura local no chão nativo. Registro do parque preserva 6 checks aprovados e 2 falhas de fixture; auditoria offline confirma 88 frames contínuos sem reescrever o resultado original.",
+      "sources": [
+        "docs/reviews/recreation-ground-blend-20261008.md"
+      ],
+      "next": "Comparação antes/depois renderizada de 30 s pendente; capturas não certificam FPS."
+    },
+    {
+      "id": "fagulha-20261008",
+      "title": "Fagulha: quatro fliperamas jogáveis",
+      "status": "partial",
+      "area": "lugares",
+      "description": "Um lugar e um interior novos entre Boa Praça e Ammu-Nation. Bola de Aço, Blocos, Pista Neon e Último Round; Lia/Ivo, recordes persistentes e saída/recuperação. Regras 85/85; física e profundidade 261/261 com limites de execução registrados.",
+      "sources": [
+        "docs/reviews/fagulha-arcade-20261007.md"
+      ],
+      "next": "Comparação isolada de performance e Android físico pendentes; conferir limites e avisos do relatório."
+    },
+    {
+      "id": "cellar-20261008",
+      "title": "Curitiba Cellar: Nelson, Luísa, vinhos e embriaguez",
+      "status": "partial",
+      "area": "lugares",
+      "description": "Um lugar/interior novo entre Union e Fuel, oito rótulos, estoque por taças, compra e presente persistentes. Física, profundidade, diálogos funcionais e recuperação documentados. Exterior p95 10,754 → 10,641 ms no cenário medido; não certifica integralmente o efeito de embriaguez.",
+      "sources": [
+        "docs/reviews/curitiba-cellar-20261007.md",
+        "docs/interior-standard-checklist.md"
+      ],
+      "next": "Comparação isolada do custo da embriaguez e gravações de Nelson/Luísa pendentes."
+    },
+    {
+      "id": "umbra-ilusao-20261008",
+      "title": "Umbra: arena ilusória e retorno sóbrio",
+      "status": "partial",
+      "area": "atividades",
+      "description": "Entrada com álcool ≥90 inicia visita de 10–15 s jogáveis em primeira pessoa, quatro monstros sem dano, saída pública segura e álcool zerado. Pausa, munição, estoque, save e cancelamentos protegidos. Main 71/71, ciclo de vida 65/65, obstáculo durante fade 67/67; evidências anteriores reutilizadas com seu escopo.",
+      "sources": [
+        "docs/reviews/upside-world-20261007.md"
+      ],
+      "next": "Performance comparativa isolada, inspeção temporal integral e pico de criação pendentes; p99 exterior +6,85% na confirmação concorrente não foi aprovado."
+    },
+    {
+      "id": "moradores-social-20261008",
+      "title": "Moradores: conversa, emoções, denúncia e recuperação",
+      "status": "partial",
+      "area": "jogabilidade",
+      "description": "Conversar, brincar, acalmar e intimidar; personalidades e reação à mira sustentada, denúncia e cancelamento em perigo. Nenhum lugar novo. Interface 37 checks, reações 40/40, Main 33/33; colisão/oclusão 581/581 no Customs. Maciota e mecânico ficam fora da inscrição social.",
+      "sources": [
+        "docs/building-social-interactions-20261007.md"
+      ],
+      "next": "Comparação isolada de frame time pendente; cobertura real desta rodada limitada a Customs, quatro pisos internos e cobertura."
+    },
+    {
+      "id": "mala-maciota-20261008",
+      "title": "Maciota: mala de viagem após Prova de rua",
+      "status": "partial",
+      "area": "inventario",
+      "description": "Retirada opcional no porta-malas da Monaliza após vitória efetiva; troca preserva os itens e deixa mochila vazia em solo livre. Recibo único, save, 24 espaços e bloqueio de armas longas. Main 54 checks; regressões inventário 36 + 11 e economia 169. Fala integrada em PT/EN.",
+      "sources": [
+        "docs/reviews/travel-bag-20261007.md"
+      ],
+      "next": "Comparativo posterior de desempenho pendente por concorrência; não aprovar apenas pela baseline."
+    },
+    {
+      "id": "gatos-20261008",
+      "title": "Gatos: adoção, móveis e integração às residências",
+      "status": "partial",
+      "area": "jogabilidade",
+      "description": "Código local conecta dez identidades de gatos, adoção condicionada à casa, caminha/bolinha/arranhador, compras com recibos e estado validado. Modelos, áudio, layout e testes de física/profundidade/sessão presentes. Nesta atualização a evidência é a integração no código, sem nova certificação funcional.",
+      "sources": [
+        "runtime/cats/CatAdoption.gd",
+        "runtime/cats/CatRuntime.gd",
+        "tests/test_cat_session.gd"
+      ],
+      "next": "Reconciliação de resultados dos testes e validação renderizada/performance pendentes nesta coleta."
+    },
+    {
+      "id": "aviao-cobras-20261008",
+      "title": "Avião dos Cobras: fuselagem, câmera, coleta e save",
+      "status": "partial",
+      "area": "mundo",
+      "description": "Reforma do avião existente, recorte da fuselagem e câmera elevada, sinais sonoros de proximidade e remoção do sólido após coleta. Reconciliação de recibos na carga fria preserva R$ 1.800 e SMG/20 munições. Circulação, profundidade, persistência e frame time locais documentados.",
+      "sources": [
+        "docs/reviews/cargo-plane-20261007.md"
+      ],
+      "next": "Cobertura adicional de noite/clima, viagem completa cidade→lago e escuta humana não certificadas."
+    },
+    {
+      "id": "lago-carga-20261008",
+      "title": "Lago do avião: margens, gelo e cargas",
+      "status": "partial",
+      "area": "mundo",
+      "description": "Superfícies e objetos reformados mantendo polígonos de água e cinco exclusões secas. Sete batches e 12 sólidos, sem luzes ou loop novo. Main 38/38 e fogueira 80/80; p95 10,906 → 10,840 ms e p99 14,076 → 13,689 ms, sem regressão observada na amostra documentada.",
+      "sources": [
+        "docs/reviews/cargo-lake-20261007.md"
+      ],
+      "next": "Tráfego estritamente fixado, outros climas e cobertura global da montanha não certificados."
+    },
+    {
+      "id": "takeshi-20261008",
+      "title": "Takeshi: duelo opcional, Supra A80 e prêmio único",
+      "status": "partial",
+      "area": "atividades",
+      "description": "Desafio separado dos seis rivais do campeonato, com diálogo e Supra A80 preparado. Primeira vitória concede escolha persistente entre carro e katana; carro libera katana na loja por R$ 300.000. Seis falas PT integradas preservando as gravações anteriores.",
+      "sources": [
+        "docs/reviews/takeshi-drag-katana-20261008.md",
+        "data/TakeshiRewardSpec.gd"
+      ],
+      "next": "Performance sem baseline válido e revisão auditiva de “subestimei” pendentes; testes funcionais têm escopo no relatório."
+    },
+    {
+      "id": "katana-20261008",
+      "title": "Katana e sabre: três cortes e RAGE",
+      "status": "partial",
+      "area": "combate",
+      "description": "Revisão final de 08/10: 45 de dano, intervalo 0,78 s, três trajetórias de duas mãos, hit-stop e corrida com guarda baixa. RAGE completa com 40 pontos de dano de combate incluindo absorção pelo colete; invencibilidade não carrega. V/R3 ativa 0,1 de tempo global por 15 s reais preservando Dante; cancelamentos e garagem protegidos. Sabre custa R$ 150.000 uma vez e permite qualquer cor. Teste dedicado 35 checks e Main 36 checks aprovados.",
+      "sources": [
+        "docs/reviews/takeshi-drag-katana-20261008.md",
+        "gameplay/KatanaRage.gd",
+        "gameplay/KatanaMoveset.gd"
+      ],
+      "next": "Performance não aprovada: aço 99,59 → 58,98 FPS, p95 14,91 → 29,128 ms; sabre/RAGE p95 32,260 ms. Concorrência observada não demonstra a causa; investigar com comparação isolada."
+    },
+    {
+      "id": "reveal-20261008",
+      "title": "Câmera exterior: janela suave para mostrar Dante",
+      "status": "partial",
+      "area": "interface",
+      "description": "Janela transparente em objetos entre câmera e alvo: raio 4 m a pé e 7 m no carro, antecipação e restauração de materiais; colisões preservadas. Correção de materiais temporários herdados pelo telhado e pelas portas. Contrato 23 checks, câmera aprovada e acessos 755 checks em 59 lugares.",
+      "sources": [
+        "docs/reviews/exterior-reveal-20261008.md"
+      ],
+      "next": "Benchmark controlado antes/depois pendente; cobertura visual atual restrita a MarketHall e viaduto."
+    },
+    {
+      "id": "ual-mixamo-20261008",
+      "title": "Dante: UAL, golpes, pistola e mortes Mixamo",
+      "status": "partial",
+      "area": "combate",
+      "description": "Commits de 07–08/10 integram biblioteca UAL CC0 e retarget para Dante, tiros/recargas de pistola e Magnum, Jab/Cross e soqueira correndo. Três reações de morte Mixamo e ferramenta/biblioteca retargetadas foram commitadas em 08/10. Fontes e ferramentas verificadas nesta coleta; não houve nova execução de combate.",
+      "sources": [
+        "tools/retarget_ual_to_dante.gd",
+        "tools/retarget_mixamo_death_to_dante.gd",
+        "tests/test_dante_directional_death.gd"
+      ],
+      "next": "Reconfirmar apresentação e regressões na versão conjunta; importação de animação não certifica todo o combate."
+    },
+    {
+      "id": "esgoto-editor-20261008",
+      "title": "Bueiros e editor MUNDO: rede, acessos e cache 2D",
+      "status": "partial",
+      "area": "mundo",
+      "description": "Commits de 07/10 acrescentam rede com salas, moradores e segredos, abertura da tampa/escada, Cano Entupido e Cisterna Velha, entradas subterrâneas do deserto e edição de posição/rotação. Commits de 08/10 retêm triangulação e desenho de ruas no mapa 2D, corrigem polígonos e lugares ausentes.",
+      "sources": [
+        "world/editing/WorldManholes.gd",
+        "world/places/sewers/SewerNetwork.gd",
+        "tools/list_map_sewers.gd"
+      ],
+      "next": "Esta coleta confere histórico e fontes; não acrescenta aprovação global de rede ou performance do editor."
+    },
+    {
+      "id": "audio-acabamento-20261008",
+      "title": "Áudio, veículos, armas e clima: alterações locais reunidas",
+      "status": "partial",
+      "area": "qualidade",
+      "description": "Trabalho local inclui cadência de passos, contatos das armas, áudio da mineração, gravações de motores Bison/Coyote com atribuição, ajustes de mix e tuning/apresentação da frota. Chuva da arrancada, céu local e efeitos atmosféricos têm novas fontes integradas. Testes dedicados presentes, sem nova certificação auditiva ou temporal nesta atualização.",
+      "sources": [
+        "audio/FootstepCadence.gd",
+        "audio/desert_cars/SOURCES.json",
+        "gameplay/WeaponSurface.gd",
+        "runtime/atmosphere/DragRaceRain.gd"
+      ],
+      "next": "Reconciliar testes e escuta por cenário; benchmarks/iluminação temporal não aprovados pela presença de fontes."
+    }
+  ],
+  "updates": {
+    "inv-023": {
+      "description": "Catálogo de 59 edifícios, 119 pisos internos e 59 rooftops (178 pavimentos). Conteúdo documentado: 200 recompensas persistentes, 38 salas trancadas e 183 estações de moradores em 108 pisos. Não somar edifícios da base como lugares independentes.",
+      "sources": [
+        "docs/harbor-building-content-20261007.md",
+        "world/places/harbor_buildings/HarborBuildingCatalog.gd",
+        "docs/reviews/exterior-reveal-20261008.md"
+      ],
+      "next": "Concluir cobertura e checks pendentes do checklist; contrato de acesso não certifica apresentação de todos os interiores."
+    },
+    "inv-024": {
+      "description": "Mobiliário por função, 38 salas trancadas, 200 recompensas e moradores com estações autoradas. Interações sociais acrescentadas sem novos interiores; cobertura da conversa em Customs e performance pendente estão no card próprio."
+    },
+    "inv-010": {
+      "description": "Editor dos três mapas e biblioteca; 07/10 integra edição de bueiros/entradas subterrâneas. Em 08/10 retém geometria de polígonos e ruas no 2D, corrige erros de triangulação e lugares ausentes. Histórico de commits confere a entrega; sem novo benchmark nesta coleta."
+    },
+    "inv-034": {
+      "description": "Rede subterrânea ampliada com salas, moradores, segredos, Cano Entupido e Cisterna Velha; tampa/escada de entrada e saída. Bueiros mais escuros e distintos; editor permite mover/girar seus acessos. Não extrapolar validações de trechos para toda a rede."
+    },
+    "inv-065": {
+      "next": "Comparação isolada de desempenho do mapa M pendente; correções de cache do editor 2D são outro componente e não encerram esta pendência."
+    },
+    "inv-029": {
+      "sources": [
+        "docs/mina-serra-bruta.md",
+        "docs/reviews/mining-experience-20261007.md"
+      ],
+      "description": "Serra Bruta e Galeria Santa Brasa: seis mineiros, minério volumétrico, máquinas dirigíveis, quatro bandidos, bolsa/emboscada de R$ 12 mil e áudio posicional. Mina detalhada com britagem, partículas, acessos e circulação. Funcionalidade documentada por cenário; performance comparativa não aprovada."
+    },
+    "inv-030": {
+      "next": "Caminhão sem carga/despejo a granel; guarita sem interior. Retroescavadeira implementada, comparação isolada de performance ainda inconclusiva."
+    },
+    "desert-drag": {
+      "sources": [
+        "docs/reviews/drag-race-redesign-20261007.md",
+        "docs/reviews/rauhz-focus-final-20261007.md",
+        "docs/reviews/takeshi-drag-katana-20261008.md"
+      ],
+      "next": "FPS específico da final, comparação isolada da revisão e escuta pendentes. Takeshi é desafio opcional separado, não um sétimo rival do campeonato."
+    },
+    "weapon-catalog": {
+      "title": "Arsenal: catálogo ampliado com katana",
+      "description": "As 16 entradas anteriores permanecem; katana integrada com dano, três cortes, RAGE e apresentação de sabre. Transformação não significa arma independente. Conferir IDs no catálogo para contagem atual; animações, efeitos e desempenho têm escopos de validação próprios.",
+      "sources": [
+        "gameplay/WeaponCatalog.gd",
+        "docs/reviews/takeshi-drag-katana-20261008.md"
+      ]
+    },
+    "inv-055": {
+      "description": "Locomoção, mira e combate de Dante; UAL retargetada integra socos, soqueira, tiros/recargas e mortes. Mixamo acrescenta três reações direcionais. Katana e RAGE com testes dirigidos e pendências de performance próprias."
+    }
+  }
+}

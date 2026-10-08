@@ -31,4 +31,14 @@ func run() -> void:
 	panel.show_vehicle("sedan_classic",{"neon":"neon_magenta"},["neon_magenta"],1,800,{"archetype":"sedan_classic","paint":Color("284d79")})
 	panel._select_slot("neon")
 	await _shot("4_sedan_neon")
+	panel.show_vehicle("desert_coyote",{"paint":"paint_ocean","finish":"finish_satin","wheels":"wheels_bronze","neon":"neon_cyan"},["paint_ocean","finish_satin","wheels_bronze","neon_cyan"],4,12400,{"archetype":"desert_coyote","paint":Color("284d79")})
+	panel._select_slot("paint")
+	await process_frame
+	panel._preview({})
+	panel._showroom.reset_view()
+	await _shot("5_coyote_pintura")
+	panel._select_slot("wheels")
+	await process_frame
+	panel._preview({})
+	await _shot("6_coyote_aros")
 	quit(0)

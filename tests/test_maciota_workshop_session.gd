@@ -89,7 +89,13 @@ func _run() -> void:
 	if not await _press_part("ecu_1"): _finish(1); return
 	_check(session.state.economy.balance == before-int(TUNING.PARTS.ecu_1.cost),"GUI ECU purchase debits the real wallet once")
 	if not await _press_part("neon_cyan"): _finish(1); return
-	var expected := {"ecu":"ecu_1","neon":"neon_cyan"}
+	for style in ["paint_ocean","finish_satin","wheels_bronze"]:
+		if not await _press_part(style): _finish(1); return
+	var expected := {"ecu":"ecu_1","neon":"neon_cyan","paint":"paint_ocean","finish":"finish_satin","wheels":"wheels_bronze"}
+	_check(car._paint.materials[0].albedo_color == Color("285968"),"purchased paint reaches real vehicle")
+	_check(is_equal_approx(car._paint.materials[0].roughness,.58),"purchased satin finish reaches real vehicle")
+	var appearance: RefCounted = car.get_meta("tuning_appearance")
+	_check(not appearance._rims.is_empty() and appearance._rims[0].albedo_color == Color("a58450"),"purchased bronze reaches real rims")
 	_check(car.get_meta("desert_parts") == expected,"GUI purchases install both parts on the parked car")
 	_check(car.get_meta("desert_powertrain") == car.handling.drive,"installed part uses the actual free-driving powertrain")
 	_check(car.get_node_or_null("DesertCarNeon") != null,"neon part adds the underglow kit to the real car")
@@ -135,6 +141,7 @@ func _run() -> void:
 	_check(session.state.place_id == "maciota","cold reload restores the real garage interior")
 	_check(car != null and car.vehicle_id == CAR_ID,"the same car is restored after the cold reload")
 	_check(car != null and car.get_meta("desert_parts",{}) == expected,"tuning survives the cold reload on the car")
+	_check(car._paint.materials[0].albedo_color == Color("285968") and is_equal_approx(car._paint.materials[0].roughness,.58),"paint and finish survive cold reload")
 	_check(session.state.economy.balance == balance,"reload never recharges purchases")
 	if not _check(await session.leave_place(),"real garage exit restores the exterior"): _finish(1); return
 	await _frames(50)

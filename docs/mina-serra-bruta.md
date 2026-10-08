@@ -9,10 +9,11 @@ Implementação de 06/10/2026, no deserto do mapa 2. O ramal de terra sai da rod
 - Vento com poeira e areia leve junto ao chão; dois emissores, 64 partículas, acompanhando a altura real da cava e suspensos em interiores ou fora da região.
 - Retroescavadeira, trator carregador e dois caminhões de mineração usam o embarque, direção, danos e persistência da frota normal.
 - **PgUp/PgDn** levantam/baixam a pá; **B** prende/solta uma pedra, um carro vazio ou uma moto próxima. A carga continua física e bloqueia obstáculos. **N**, segurado no caminhão, inclina a caçamba.
+- Na retroescavadeira parada, **U/O** giram a traseira, **Home/End** erguem/baixam o braço, **Insert/Delete** articulam o antebraço e **vírgula/ponto** giram a caçamba traseira. As quatro juntas são independentes da pá frontal e param diante do chão, de pessoas e de sólidos. Menus, transições, ausência de motorista e motor desligado bloqueiam os comandos.
 - Túnel discreto no fundo, acessado por **E**, leva à Galeria Santa Brasa. Uma ala contém um segredo independente; a outra guarda uma operação clandestina, quatro bandidos armados e uma bolsa de **R$ 12.000**.
 - Pegar a bolsa não altera o saldo. O pagamento ocorre uma vez, após sair vivo pelo acesso. Morte, resgate ou cancelamento perdem a bolsa; salvar durante o transporte do dinheiro fica bloqueado. O recibo da recompensa e o estado da fuga são validados juntos ao carregar o save.
 
-A pá frontal da retroescavadeira é operável; o braço traseiro tem geometria e colisão, mas não possui comando hidráulico independente. A basculação do caminhão é articulada, sem simulação de carregamento e despejo de minério a granel. A guarita é um volume exterior fechado, não um segundo interior acessível.
+As duas extremidades da retroescavadeira são articuladas e físicas. A fixação de cargas por **B** pertence à pá frontal; a caçamba traseira não cria minério nem modifica o terreno. As poses hidráulicas retornam à posição de transporte quando a máquina é recriada, como ocorre com a pá frontal. A basculação do caminhão é articulada, sem simulação de carregamento e despejo de minério a granel. A guarita é um volume exterior fechado, não um segundo interior acessível.
 
 ## Contratos da implementação
 

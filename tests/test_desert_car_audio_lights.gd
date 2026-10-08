@@ -59,6 +59,27 @@ func run() -> void:
 		for i in 30: sound._process(.05)
 		check(sound._bank.size() == 7 and sound._layers.all(func(p): return p.playing), id+": loaded engine bands play")
 		check(sound._layers.all(func(p): return p.attenuation_model == AudioStreamPlayer3D.ATTENUATION_DISABLED and p.max_distance == 0 and p.panning_strength == 0), id+": driver audio is foreground like the existing fleet")
+		# The same listener used by drag must hear the motor above tire squeal.
+		sound.drivetrain.wheelspin = 1.0
+		for i in 20: sound._process(.05)
+		check(sound._tire.playing and sound._tire.volume_db <= -27.9 and sound._tire.max_db <= -24.0 and sound._tire.unit_size <= 4.0, id+": wheelspin remains below the engine with bounded near-listener gain")
+		var tires: Node = car.effects.tire_effects
+		tires._update_skid_audio(true, 20.0, 0.0)
+		check(not is_instance_valid(tires.skid_audio) or not tires.skid_audio.playing, id+": powertrain wheelspin does not stack a second longitudinal squeal")
+		car.brake_input = true
+		tires._update_skid_audio(true, 20.0, 0.0)
+		check(is_instance_valid(tires.skid_audio) and tires.skid_audio.playing, id+": braking retains its tire sound during wheelspin")
+		check(tires.skid_audio.volume_db <= -22.0 and tires.skid_audio.max_db <= -22.0 and tires.skid_audio.unit_size <= 4.0, id+": generic skid has a bounded close-listener mix")
+		var expected_bus: StringName = &"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master"
+		check(sound._tire.bus == expected_bus and tires.skid_audio.bus == expected_bus, id+": tire effects preserve user SFX routing")
+		car.brake_input = false
+		tires._update_skid_audio(true, 20.0, 10.0)
+		check(tires.skid_audio.playing, id+": lateral drift remains audible during wheelspin")
+		sound.drivetrain.wheelspin = 0.0
+		for i in 20: sound._process(.05)
+		tires._update_skid_audio(true, 20.0, 0.0)
+		check(not sound._tire.playing and tires.skid_audio.playing, id+": generic tire voice resumes when powertrain wheelspin stops")
+		tires._update_skid_audio(false, 0.0, 0.0)
 		# A detached cinematic/drag camera must not mute the occupied car.
 		camera.position = Vector3(0,100,100)
 		for i in 6: sound._process(.05)

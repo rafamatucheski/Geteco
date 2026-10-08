@@ -130,7 +130,8 @@ func _create(index: int) -> Dictionary:
 	node.set_meta("desert_wildlife",true)
 	add_child(node)
 	var body := _instances(node,"Body",_sphere_mesh(),18 if snake else 6)
-	var parts := _instances(node,"Head" if snake else "LegsTailClaws",_sphere_mesh() if snake else _limb_mesh(),3 if snake else 25)
+	var part_mesh: Mesh = _sphere_mesh() if snake else _limb_mesh()
+	var parts := _instances(node,"Head" if snake else "LegsTailClaws",part_mesh,3 if snake else 25)
 	var result := {"node":node,"snake":snake,"body":body,"parts":parts,"active":false,"anchor":Vector2.ZERO,"phase":float(index)*1.79,"travel":0.0,"animation_time":0.0,"height_previous":0.0,"height_target":0.0,"height_current":0.0}
 	if snake: _animate_snake(result,0)
 	else: _animate_scorpion(result,0)
@@ -185,8 +186,8 @@ static func _segment(mesh: MultiMesh,index: int,a: Vector3,b: Vector3,radius: fl
 	var up := (b-a).normalized()
 	var right := up.cross(Vector3.FORWARD).normalized()
 	if right.length_squared()<.1: right=Vector3.RIGHT
-	var basis := Basis(right*radius,up*a.distance_to(b),right.cross(up)*radius)
-	mesh.set_instance_transform(index,Transform3D(basis,(a+b)*.5))
+	var limb_basis := Basis(right*radius,up*a.distance_to(b),right.cross(up)*radius)
+	mesh.set_instance_transform(index,Transform3D(limb_basis,(a+b)*.5))
 	mesh.set_instance_color(index,color)
 
 static func _instances(parent: Node3D,label: String,mesh: Mesh,count: int) -> MultiMesh:

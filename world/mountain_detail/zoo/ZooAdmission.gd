@@ -68,7 +68,7 @@ func _physics_process(delta: float) -> void:
 	if not near:
 		if _initialized: _clear_visitors()
 		if _player_granted:
-			var ticket:=state(); ticket.active=false; ticket.inside=false
+			var inactive_ticket:=state(); inactive_ticket.active=false; inactive_ticket.inside=false
 			_allow_player(false)
 		return
 	if not _initialized: _initialize_staff()
@@ -91,7 +91,7 @@ func _physics_process(delta: float) -> void:
 		_update_visitor(visitor,waiting,delta)
 		var at: Vector3=zoo.to_local(visitor.actor.global_position)
 		if visitor.paid and absf(at.z-20)<2.8 and absf(at.x)<2: gate_open=true
-	gate_visual.position.y=move_toward(gate_visual.position.y,2.5 if gate_open else 0,delta*3)
+	gate_visual.position.y=move_toward(gate_visual.position.y,2.5 if gate_open else 0.0,delta*3)
 func _initialize_staff() -> void:
 	_initialized=true
 	cashier=ACTOR.new(); cashier.name="ZooCashier"; cashier.identity=624

@@ -216,7 +216,13 @@ func _emit(parent: Node3D, id: String, polygons: Array[PackedVector2Array], rect
 						var top_b := Vector3(b.x,_height(b)+offset,b.y)
 						var low_c := Vector3(c.x,_height(c),c.y)
 						var low_d := Vector3(d.x,_height(d),d.y)
-						edge_faces.append_array(PackedVector3Array([top_b,top_a,low_d,top_b,low_d,low_c]))
+						var bevel := PackedVector3Array([top_b,top_a,low_d,top_b,low_d,low_c])
+						# The bridge transition is visible asphalt too. This strip lies
+						# outside the road polygon, meeting its top only at the edge.
+						if absf(a.y-LAYOUT.BOUNDS.end.y)<.0001 and absf(b.y-LAYOUT.BOUNDS.end.y)<.0001:
+							vertices.append_array(bevel)
+						else:
+							edge_faces.append_array(bevel)
 				var indices := Geometry2D.triangulate_polygon(part)
 				for index in indices:
 					var p := part[index]
@@ -245,6 +251,10 @@ func _emit(parent: Node3D, id: String, polygons: Array[PackedVector2Array], rect
 		shape.set_faces(physical_faces); collider.shape=shape; body.add_child(collider); node.add_child(body)
 
 func _height(point: Vector2) -> float:
+	# The perimeter bevel reaches onto the flat bridge deck. Extrapolating the
+	# first descending terrain interval raised its foot by 1.2 mm, enough for a
+	# grounded box hull to strike its edge instead of climbing the bevel.
+	if point.y>=LAYOUT.BOUNDS.end.y: return LAYOUT.BRIDGE_END.y
 	if point.y<=-448: return 0.0
 	var low := floorf(point.y/8)*8
 	var high := minf(low+8,LAYOUT.BOUNDS.end.y)

@@ -323,7 +323,7 @@ func _update_hud() -> void:
 	if not is_instance_valid(status) or racers.size()!=7: return
 	var place := standings().find(racers[6])+1
 	var seconds := int(racers[6].run.elapsed)
-	status.text = "LARGADA · %d"%ceili(countdown) if countdown>0 else "CHECKPOINT %d/%d · %d/7 · %02d:%02d"%[mini(int(racers[6].run.checkpoint)+1,course.gate_offsets.size()),course.gate_offsets.size(),place,seconds/60,seconds%60]
+	status.text = "LARGADA · %d"%ceili(countdown) if countdown>0 else "CHECKPOINT %d/%d · %d/7 · %02d:%02d"%[mini(int(racers[6].run.checkpoint)+1,course.gate_offsets.size()),course.gate_offsets.size(),place,floori(float(seconds)/60.0),seconds%60]
 	var lines := PackedStringArray()
 	var ordered := standings()
 	for i in ordered.size():

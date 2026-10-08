@@ -29,7 +29,13 @@ func run() -> void:
 	controls.release_cargo()
 	check(controls._withdrawal_load()==rock,"release clearance preserves recent-load history before contact")
 	# Represent the small solver overlap of a resting rigid ore rock.
-	rock.position.y=controls._bucket_shape.global_position.y+.15+.57
+	var bottom := INF
+	for child in rock.get_children():
+		if child is CollisionShape3D and child.shape is ConvexPolygonShape3D:
+			for point in child.shape.points:
+				bottom = minf(bottom,(rock.global_basis*(child.transform*point)).y)
+	check(is_finite(bottom),"contact fixture reads the current fractured ore collision geometry")
+	rock.position.y=controls._bucket_shape.global_position.y+.15-bottom-.01
 	rock.force_update_transform()
 	var contact_query:=PhysicsShapeQueryParameters3D.new()
 	contact_query.shape=controls._bucket_shape.shape

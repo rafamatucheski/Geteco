@@ -17,6 +17,7 @@ static func records() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	for data in car_spots():
 		result.append({"kind":"drag_meet","position":data.position,"type":"car","data":data})
+	result.append_array(strip_records())
 	for data in [
 		{"position":Vector3(-1024,0,-1305),"color":Color("b7613b"),"size":12.0},
 		{"position":Vector3(-992,0,-1304),"color":Color("d0b954"),"size":10.0},
@@ -55,6 +56,29 @@ static func records() -> Array[Dictionary]:
 	for x in range(-916,-759,9):
 		result.append({"kind":"drag_meet","position":Vector3(x,0,-1329),"type":"barrier","data":{}})
 	result.append({"kind":"drag_workshop","position":LAYOUT.drag_workshop_point()})
+	return result
+
+## Six finite spectator pockets follow the race, independently of the paddock's
+## proximity-controlled population. Streaming owns every car, person and barrier.
+static func strip_records() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	var models := ["desert_mirage_gt","desert_faisca_rally","desert_coyote_drag","desert_siroco"]
+	var paints := [Color("8d4936"),Color("acb3b9"),Color("314b62"),Color("727545")]
+	for pocket in 6:
+		var x := -843.0 + float(pocket) * 143.0
+		var side := 1.0 if pocket in [1,4] else -1.0
+		var spectator_z := -1320.0 + side * 11.0
+		for offset in [-4.0,4.0]:
+			result.append({"kind":"drag_meet","position":Vector3(x+offset,0,-1320.0+side*8.3),"type":"barrier","data":{}})
+		for slot in 4:
+			var point := Vector3(x-3.6+float(slot)*2.4,.03,spectator_z)
+			var data := {"team":"strip","point":point,"walk_end":point,"focus":Vector3(x,0,-1320),
+				"coat":paints[(pocket+slot)%paints.size()],"roamer":false,"identity":11000+pocket*4+slot}
+			result.append({"kind":"drag_meet","position":point,"type":"strip_spectator","data":data})
+		for slot in 2:
+			var car := _car("strip_%d_%d"%[pocket,slot],Vector3(x+(-10.0 if slot==0 else 10.0),0,-1320.0+side*14.3),models[(pocket+slot)%models.size()],PI*.5)
+			car.paint=paints[(pocket+slot)%paints.size()]
+			result.append({"kind":"drag_meet","position":car.position,"type":"strip_car","data":car})
 	return result
 
 static func car_spots() -> Array[Dictionary]:
@@ -172,7 +196,13 @@ static func build_record(parent: Node3D, record: Dictionary) -> void:
 	node.set_meta("drag_meet_prop",str(record.type))
 	parent.add_child(node)
 	match str(record.type):
-		"car": _parked_car(node,record.data)
+		"car", "strip_car": _parked_car(node,record.data)
+		"strip_spectator":
+			var spectator := preload("res://runtime/desert/drag_meet/DragStripSpectator.gd").new()
+			spectator.identity=int(record.data.identity)
+			spectator.specification=record.data
+			spectator.set_meta("region_id","desert")
+			node.add_child(spectator)
 		"tent": _tent(node,record.data)
 		"tables": _tables(node)
 		"tires": _tires(node)
@@ -181,13 +211,13 @@ static func build_record(parent: Node3D, record: Dictionary) -> void:
 		"barrier": _barrier(node)
 		"pit_tools": _pit_tools(node)
 		"team_box": _team_box(node)
-	if str(record.type)!="car": _finish_props(node)
+	if str(record.type) not in ["car","strip_car","strip_spectator"]: _finish_props(node)
 	MATERIALS.batch_visuals(node)
 
 static func _parked_car(node: Node3D, data: Dictionary) -> void:
 	node.name="DragMeetCar_"+str(data.id)
 	node.rotation.y=float(data.yaw)
-	node.set_meta("drag_meet_car_id",str(data.id))
+	node.set_meta("drag_strip_car_id" if str(data.id).begins_with("strip_") else "drag_meet_car_id",str(data.id))
 	node.set_meta("desert_car_id",str(data.model))
 	var model := FLEET.create(str(data.model))
 	if model!=null:

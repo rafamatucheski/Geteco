@@ -103,6 +103,8 @@ func _hazards() -> Array:
 ## Só carros do tráfego ambiente, em rota, inteiros e em jogo.
 func _yieldable(vehicle: Variant) -> bool:
 	if not is_instance_valid(vehicle) or not vehicle.traffic or vehicle.controlled or vehicle.route == null: return false
+	# Convoys use traffic physics but retain ownership of their private route.
+	if vehicle.get_meta("armored_transport", false): return false
 	if vehicle.health <= 0.0 or not vehicle.visible or not vehicle.is_physics_processing(): return false
 	if vehicle.has_meta("awaiting_ground") or vehicle.get_meta("dispatch_unit", false) or vehicle.get_meta("residence_vehicle", false): return false
 	return true

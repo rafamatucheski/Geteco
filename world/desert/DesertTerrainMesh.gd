@@ -229,7 +229,7 @@ static func diagnostics() -> Dictionary:
 	for values in _tiles.values():
 		var faces: PackedVector3Array=values
 		tile_vertices+=faces.size()
-	return {"cells":_meshes.size(),"tiles":_tiles.size(),"tile_kinds":_kinds.duplicate(),"triangles":vertex_count/3,"render_vertex_normal_payload_bytes":vertex_count*24,"cpu_cell_face_payload_bytes":vertex_count*12,"cpu_tile_face_payload_bytes":tile_vertices*12,"scratch_released":_scratch_released,"released_sample_count":_released_sample_count,"refinement_cache_count":_refinement.size(),"sample_count":_samples.size(),"sample_numeric_payload_bytes_lower_bound":_samples.size()*24,"memory_note":"Numeric payload counts only. Dictionary/Variant/allocator overhead, GPU packing, mesh storage and physics acceleration structure excluded. Not measured total memory.","normal_sample_radius":2.0,"base_step":STEP,"refined_step":STEP*.5}
+	return {"cells":_meshes.size(),"tiles":_tiles.size(),"tile_kinds":_kinds.duplicate(),"triangles":int(float(vertex_count)/3.0),"render_vertex_normal_payload_bytes":vertex_count*24,"cpu_cell_face_payload_bytes":vertex_count*12,"cpu_tile_face_payload_bytes":tile_vertices*12,"scratch_released":_scratch_released,"released_sample_count":_released_sample_count,"refinement_cache_count":_refinement.size(),"sample_count":_samples.size(),"sample_numeric_payload_bytes_lower_bound":_samples.size()*24,"memory_note":"Numeric payload counts only. Dictionary/Variant/allocator overhead, GPU packing, mesh storage and physics acceleration structure excluded. Not measured total memory.","normal_sample_radius":2.0,"base_step":STEP,"refined_step":STEP*.5}
 
 static func flat_remainders(rect: Rect2) -> Array[Rect2]:
 	var overlap := rect.intersection(FIELD.BOUNDS)

@@ -4,6 +4,7 @@
 
 - Dois bolsos iniciais, mais doze células na mochila (4 × 3). A mala oferece 24 (4 × 6), conforme a capacidade da implementação anterior. Apenas uma bagagem pode estar equipada.
 - A mochila inicial é descoberta uma única vez ao abrir o porta-malas da Monaliza conquistada no Primeiro Giro. Não há mochilas/malas gratuitas nas lojas ou na montanha. Saves antigos mantêm sua bagagem e os itens de migração.
+- Após vencer **Prova de rua** (`cobra_race`), Maciota oferece uma mala reforçada para a busca por Vicente. A conversa pós-corrida informa a retirada no porta-malas da Monaliza; o inventário também sinaliza a oferta para saves que já venceram. É preciso estar a pé junto ao carro parado e vivo. A ação **Trocar mochila por mala** transfere os itens nas mesmas células e deixa a mochila vazia em solo livre, recuperável. Sem espaço no chão, nenhuma alteração é aplicada. A retirada e o recibo `monaliza_travel_bag` são publicados juntos e salvos pelo fluxo existente, uma vez por save. Uma mala já equipada precisa ser solta antes de retirar o presente.
 - Armas longas **guardadas na grade** ocupam 4 × 1. Armas equipadas no corpo ficam no equipamento; demais armas guardadas ocupam 2 × 1. Arraste posiciona por célula; giro exige um retângulo livre que caiba na grade.
 - Até 99 tiros vinculados a cada arma, somando carregador e reserva junto da arma. O carregador mantém o tamanho do catálogo, limitado a 99. A munição adicional usa pilhas de até 99 em células de 1 × 1; comprar sem espaço cancela a transação integralmente.
 - A Monaliza pode ser consultada à distância. Todas as mutações pelo adaptador exigem a checagem real de distância, obstrução, velocidade e estado do veículo em `PersonalCar._near_trunk()`. Manter uma tela antiga aberta não preserva o acesso.
@@ -40,15 +41,14 @@ Os pontos ficam nos acessos exteriores e se baseiam nas coordenadas do catálogo
 |---|---|
 | Fuel, Harbor | Água e sanduíche |
 | Bay Medical, Harbor | Maçã |
-| Union, Harbor | Mochila |
-| Ammu-Nation, Harbor | Mala de mão |
 | Chalé dos Pinhais | Maçã |
 | Summit | Água |
-| Último Abrigo | Mochila |
 
-Esses oito pontos não representam uma distribuição completa por todas as lojas/casas. Não foram adicionados fome/sede, restock, animações de alimentação nem menus de venda de alimentos; o pedido de comer/encontrar está integrado como coleta e recuperação de vida.
+Esses cinco pontos não representam uma distribuição completa por todas as lojas/casas. As antigas bagagens nas lojas foram removidas; a progressão da Monaliza acima é o caminho de conquista. A casa comprada também oferece uma mochila pelo serviço doméstico. Não foram adicionados fome/sede, restock, animações de alimentação nem menus de venda de alimentos; o pedido de comer/encontrar está integrado como coleta e recuperação de vida.
 
 ## Validação e evidências
+
+- Conquista da mala (07/10): [fluxo, testes, vozes e limites de desempenho](reviews/travel-bag-20261007.md).
 
 - `tests/test_inventory_grid.gd`: grade, capacidade, pilhas, movimentação atômica, consumo, propriedade, compras, migração, save, exclusividade da bagagem e restrições da garagem.
 - `tests/test_inventory_field.gd`: Main real, coleta no mundo, UI compacta, cura, acesso remoto/físico à Monaliza, perda de acesso com tela aberta, drop/recuperação, snapshot completo e garagem.

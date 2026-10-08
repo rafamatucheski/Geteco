@@ -20,7 +20,7 @@ var _hud_layer: CanvasLayer
 var _hud_panel: PanelContainer
 var _bucket_shape: CollisionShape3D
 var _bucket_body: AnimatableBody3D
-var _rear_shapes: Array[CollisionShape3D] = []
+var rear: Node
 var _released_load: WeakRef
 
 func _ready() -> void:
@@ -47,31 +47,16 @@ func _ready() -> void:
 		vehicle.add_collision_exception_with(_bucket_body)
 	_bed = vehicle.visual.get_node_or_null("DumpBed")
 	if vehicle.archetype == "mining_backhoe":
-		_rear_collision(Vector3(0,1.10,1.55),Vector3(0,2.9,2.35),.32)
-		_rear_collision(Vector3(0,2.9,2.35),Vector3(0,1.1,2.9),.25)
-		var back := CollisionShape3D.new()
-		var bucket_box := BoxShape3D.new()
-		bucket_box.size = Vector3(.85,.70,.70)
-		back.shape = bucket_box
-		back.position = Vector3(0,.89,2.8)
-		vehicle.add_child(back)
-		_rear_shapes.append(back)
+		rear = preload("res://gameplay/mining/BackhoeHydraulics.gd").new()
+		rear.name = "RearHydraulics"
+		add_child(rear)
+		rear.configure(vehicle)
 	_last_vehicle = vehicle.global_transform
 	add_to_group("mining_machine")
 	vehicle.destroyed.connect(_carrier_destroyed)
 	_update_model()
 	# Idle industrial vehicles sleep alongside the base vehicle. Only this tiny
 	# gate runs; no broad-phase scans, HUD nodes or load queries until occupied.
-
-func _rear_collision(a: Vector3, b: Vector3, width: float) -> void:
-	var shape := CollisionShape3D.new()
-	var beam := BoxShape3D.new()
-	beam.size = Vector3(width,a.distance_to(b),width)
-	shape.shape = beam
-	shape.position = (a+b)*.5
-	shape.quaternion = Quaternion(Vector3.UP,(b-a).normalized())
-	vehicle.add_child(shape)
-	_rear_shapes.append(shape)
 
 func active() -> bool:
 	if not is_instance_valid(vehicle) or not vehicle.controlled or vehicle.external_input or vehicle.input_locked or vehicle.engine_disabled or vehicle.health <= 0: return false
@@ -109,11 +94,20 @@ func _physics_process(delta: float) -> void:
 	if is_instance_valid(cargo) and (cargo.is_queued_for_deletion() or (cargo.get("health") != null and float(cargo.get("health")) <= 0)): release_cargo()
 	var direction := float(Input.is_physical_key_pressed(KEY_PAGEUP))-float(Input.is_physical_key_pressed(KEY_PAGEDOWN))
 	operate(direction,delta)
+	if rear != null:
+		operate_rear(Vector4(
+			float(Input.is_physical_key_pressed(KEY_O))-float(Input.is_physical_key_pressed(KEY_U)),
+			float(Input.is_physical_key_pressed(KEY_END))-float(Input.is_physical_key_pressed(KEY_HOME)),
+			float(Input.is_physical_key_pressed(KEY_INSERT))-float(Input.is_physical_key_pressed(KEY_DELETE)),
+			float(Input.is_physical_key_pressed(KEY_PERIOD))-float(Input.is_physical_key_pressed(KEY_COMMA))),delta)
 	if _bed != null:
 		dump = move_toward(dump, 1.0 if Input.is_physical_key_pressed(KEY_N) else 0.0, delta*.42)
 		_bed.rotation.x = -dump*.72
 	_label.text = "PgUp / PgDn  Erguer / baixar pá     B  Prender / soltar carga" if _anchor != null else "N (segurar)  Inclinar caçamba"
 	if is_instance_valid(cargo): _label.text += "     Carga presa"
+	if rear != null:
+		_label.text += "\nU / O  Girar traseira    Home / End  Braço    Ins / Del  Antebraço    , / .  Caçamba"
+		if absf(vehicle.speed) > .65: _label.text += "\nPare para operar a traseira"
 
 func _make_hud() -> void:
 	_hud_layer = CanvasLayer.new()
@@ -127,7 +121,7 @@ func _make_hud() -> void:
 	_hud_panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
 	_hud_panel.offset_left = -390
 	_hud_panel.offset_right = 390
-	_hud_panel.offset_top = -60
+	_hud_panel.offset_top = -82 if rear != null else -60
 	_hud_panel.offset_bottom = -18
 	_hud_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var panel := StyleBoxFlat.new()
@@ -179,19 +173,15 @@ func operate(direction: float, delta: float) -> bool:
 		cargo.global_transform = desired
 	_last_vehicle = vehicle.global_transform
 	_last_lift = lift
+	if rear != null: rear.accept_motion()
 	return not is_equal_approx(lift,previous)
 
 func _rear_clear() -> bool:
-	if _rear_shapes.is_empty() or vehicle.global_transform.is_equal_approx(_last_vehicle): return true
-	var state := vehicle.get_world_3d().direct_space_state
-	for shape in _rear_shapes:
-		var query := PhysicsShapeQueryParameters3D.new()
-		query.shape = shape.shape
-		query.transform = shape.global_transform
-		query.collision_mask = 7
-		query.exclude = _carrier_rids()
-		if not state.intersect_shape(query,1).is_empty(): return false
-	return true
+	return rear == null or vehicle.global_transform.is_equal_approx(_last_vehicle) or rear.carrier_motion_clear(_carrier_rids())
+
+func operate_rear(direction: Vector4, delta: float) -> bool:
+	if rear == null or absf(vehicle.speed) > .65 or vehicle.health <= 0 or vehicle.engine_disabled: return false
+	return rear.operate(direction,delta,_carrier_rids())
 
 func _bucket_motion_clear(previous: Transform3D) -> bool:
 	var query := PhysicsShapeQueryParameters3D.new()
@@ -414,5 +404,3 @@ func _carrier_rids() -> Array[RID]:
 func _exit_tree() -> void:
 	release_cargo()
 	if is_instance_valid(_bucket_body) and not vehicle.is_queued_for_deletion(): _bucket_body.queue_free()
-	for shape in _rear_shapes:
-		if is_instance_valid(shape) and not vehicle.is_queued_for_deletion(): shape.queue_free()

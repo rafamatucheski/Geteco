@@ -1,7 +1,7 @@
 extends RefCounted
 ## One-shot cleanup, owned by the destroyed node and paused with gameplay.
-const DELAY := 10.0
-const DURATION := 2.0
+const DELAY := 4.0
+const DURATION := 1.2
 
 static func schedule(body: Node3D, delay := DELAY) -> void:
 	if not is_instance_valid(body) or body.has_meta("destroyed_cleanup"): return

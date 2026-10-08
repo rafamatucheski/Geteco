@@ -88,9 +88,10 @@ func _available() -> bool:
 
 func _site() -> Node3D:
 	if not is_instance_valid(session): return null
-	var region: Node3D=session.controller.regions.get("desert")
+	# Streaming may leave a freed reference; validate before any typed assignment.
+	var region: Variant=session.controller.regions.get("desert")
 	if not is_instance_valid(region): return null
-	var site: Node3D=region.get("abandoned_site")
+	var site: Variant=region.get("abandoned_site")
 	if not is_instance_valid(site) or not site.is_inside_tree() or site.is_queued_for_deletion():
 		_observed_site=null
 		return null

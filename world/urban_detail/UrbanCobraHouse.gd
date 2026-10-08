@@ -39,6 +39,8 @@ func build() -> void:
 	# Stovepipe / brick chimney
 	add_chimney(visuals_root, Vector3(half_w * 0.35, height + 0.8, house_center_z - 0.4), 1.2, 1)
 	_build_authored_identity(house_center_z, house_front_z, house_depth)
+	if building_id == "CourtyardHouse":
+		preload("res://world/places/cobra_house/CobraLeaderEntrance.gd").install(self,house_front_z)
 
 func _build_authored_identity(house_center_z: float, house_front_z: float, house_depth: float) -> void:
 	# The V1 sites are deliberately not eight copies of one bungalow. Preserve

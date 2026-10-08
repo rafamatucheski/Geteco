@@ -103,7 +103,7 @@ func _physics_process(delta: float) -> void:
 		movement = _steering.steer(self, movement.normalized(), delta) * (38.0 + tier * 3) / 16.0
 	velocity.x = movement.x
 	velocity.z = movement.z
-	velocity.y = -1 if is_on_floor() else velocity.y - 20 * delta
+	velocity.y = -1.0 if is_on_floor() else velocity.y - 20 * delta
 	move_and_slide()
 	gait += Vector2(velocity.x, velocity.z).length() * delta * 3.4
 	visual.update_pose(delta, sees_target, false, 0.0, gait)
@@ -135,14 +135,14 @@ func receive_damage(amount: float, _source: Node = null) -> void:
 	health = maxf(0, health - amount)
 	cooldown = minf(cooldown, 0.4)
 	if health > 0:
-		var impact_dir: Vector3 = (global_position - (_source as Node3D).global_position).normalized() if _source is Node3D else Vector3.ZERO
-		preload("res://gameplay/CharacterFallPresentation3D.gd").apply_hit(self, visual, impact_dir, amount)
+		var hit_direction: Vector3 = (global_position - (_source as Node3D).global_position).normalized() if _source is Node3D else Vector3.ZERO
+		preload("res://gameplay/CharacterFallPresentation3D.gd").apply_hit(self, visual, hit_direction, amount)
 		return
 	dead = true
 	collision_layer = 0
 	collision_mask = 0
 	set_physics_process(false)
-	var impact_dir: Vector3 = (global_position - (_source as Node3D).global_position).normalized() if _source is Node3D else Vector3.ZERO
-	preload("res://gameplay/CharacterFallPresentation3D.gd").apply_fall(self, visual, impact_dir)
+	var fall_direction: Vector3 = (global_position - (_source as Node3D).global_position).normalized() if _source is Node3D else Vector3.ZERO
+	preload("res://gameplay/CharacterFallPresentation3D.gd").apply_fall(self, visual, fall_direction)
 	gameplay.drop_ammo(global_position, weapon_id)
 	died.emit()

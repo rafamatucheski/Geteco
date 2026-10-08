@@ -4,6 +4,7 @@ extends RefCounted
 ## Arms use the existing rig lengths. Gun orientation is independent of the
 ## forearm so raising the elbow never points the barrel into the sky.
 const PROFILES := {
+	"katana": [Vector3(0.18, 0.95, -0.25), Vector3.ZERO, 0.0, 16.0],
 	"pistol": [Vector3(0.19, 0.96, -0.27), Vector3.ZERO, 0.11, 15.0],
 	"magnum": [Vector3(0.17, 0.99, -0.26), Vector3(-0.10, -0.04, 0.01), 0.22, 9.0],
 	"smg": [Vector3(0.07, 0.94, -0.16), Vector3(-0.05, 0.0, -0.12), 0.055, 21.0],
@@ -24,6 +25,7 @@ const PROFILES := {
 
 # Mesh-space centres of the actual handles, not the receiver or barrel.
 const GRIPS := {
+	"katana": Vector3(0, 0, 0.04),
 	"pistol": Vector3(0, -0.03, 0.02), "magnum": Vector3(0, -0.05, 0.03),
 	"smg": Vector3(0, -0.05, 0.03), "shotgun": Vector3(0, -0.04, 0.07),
 	"sawed_off": Vector3(0, -0.05, 0.05), "ak47": Vector3(0, -0.06, 0.04),
@@ -44,7 +46,8 @@ const GRIPS := {
 }
 const SUPPORT_GRIPS := {
 	"pistol": Vector3(-0.038, -0.033, 0.02),
-	"sawed_off": Vector3(-0.012, -0.018, -0.055),
+	# Compact pistol grip: the support palm wraps the firing hand, not the barrels.
+	"sawed_off": Vector3(-0.038, -0.053, 0.05),
 	# Mão esquerda no fim do cabo, junto ao calcanhar (vai até 0,16): mais acima, o pé
 	# do cabo entrava no peito quando as mãos passavam junto ao tronco.
 	"axe": Vector3(0, 0, 0.135),

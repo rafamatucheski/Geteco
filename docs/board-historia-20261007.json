@@ -1,0 +1,678 @@
+{
+  "scope": "Inventário inicial por leitura estática em 07/10/2026, complementado pelas correções/testes explicitados nos cards. Implemented significa código integrado evidenciado, não certificação global ou revisão auditiva.",
+  "cards": [
+    {
+      "id": "historia-abertura",
+      "title": "Chegada: ligação, barco e Maciota",
+      "status": "implemented",
+      "area": "historia",
+      "description": "Abertura HomeCall, chegada jogável, reconhecimento de Dante e passeio na M8 preta até a oficina; pulo e checkpoint. Evidência histórica de abertura e passeio físico; sem nova execução nesta auditoria.",
+      "sources": [
+        "runtime/ArrivalDialogue.gd",
+        "docs/story-harbor-act1-20261005.md"
+      ]
+    },
+    {
+      "id": "primeiro_giro",
+      "title": "Primeiro Giro",
+      "status": "implemented",
+      "area": "historia",
+      "description": "Helena no North Pier → comprovante → peça no porto → Maciota; Monaliza concedida depois. Recompensa de missão R$ 150.",
+      "sources": [
+        "data/campaign/HarborMissions.gd",
+        "runtime/MissionWorld.gd",
+        "docs/story-harbor-act1-20261005.md"
+      ]
+    },
+    {
+      "id": "cobra_contact",
+      "title": "Dentro do território",
+      "status": "implemented",
+      "area": "historia",
+      "description": "Ferrugem → guincho real/carregar cliente → baia de Neco → ordem de serviço. Recompensa de missão R$ 120.",
+      "sources": [
+        "data/campaign/HarborMissions.gd",
+        "runtime/MissionWorld.gd",
+        "docs/story-harbor-act1-20261005.md"
+      ]
+    },
+    {
+      "id": "cobra_race",
+      "title": "Prova de rua",
+      "status": "implemented",
+      "area": "historia",
+      "description": "Corrida até as docas, quatro checkpoints, largada às 21h. Recompensa de missão R$ 200.",
+      "sources": [
+        "data/campaign/HarborMissions.gd",
+        "runtime/MissionWorld.gd",
+        "docs/story-harbor-act1-20261005.md"
+      ]
+    },
+    {
+      "id": "cobra_collection",
+      "title": "A conta chega",
+      "status": "implemented",
+      "area": "historia",
+      "description": "Conversa e proteção da moradora contra cobradores dos Cobras. Recompensa de missão R$ 250.",
+      "sources": [
+        "data/campaign/HarborMissions.gd",
+        "runtime/MissionWorld.gd",
+        "docs/story-harbor-act1-20261005.md"
+      ]
+    },
+    {
+      "id": "jessica_bank",
+      "title": "Serviço com Jessica",
+      "status": "implemented",
+      "area": "historia",
+      "description": "Saque bancário real separado da recompensa, passageiro no Jetta branco, fuga física, desembarque e conversa. Fluxo Main documentado 65/65; performance da fuga pendente. Recompensa de missão R$ 500.",
+      "sources": [
+        "data/campaign/HarborMissions.gd",
+        "runtime/MissionWorld.gd",
+        "docs/story-harbor-act1-20261005.md"
+      ]
+    },
+    {
+      "id": "cobra_supply",
+      "title": "Cortar o abastecimento",
+      "status": "implemented",
+      "area": "historia",
+      "description": "Encontro de combate e recuperação dos registros de carga dos Cobras. Recompensa de missão R$ 350.",
+      "sources": [
+        "data/campaign/HarborMissions.gd",
+        "runtime/MissionWorld.gd",
+        "docs/story-harbor-act1-20261005.md"
+      ]
+    },
+    {
+      "id": "cobra_finale",
+      "title": "A última volta",
+      "status": "implemented",
+      "area": "historia",
+      "description": "Vitória contra Takeshi, entrada na casa e lista que aponta Vicente; Ironback. A conclusão autoriza abrir a ponte norte. Recompensa de missão R$ 600.",
+      "sources": [
+        "data/campaign/HarborMissions.gd",
+        "runtime/MissionWorld.gd",
+        "docs/story-harbor-act1-20261005.md"
+      ]
+    },
+    {
+      "id": "historia-canonico-legado",
+      "title": "Campanha V1 arquivada: 9 beats e 4 contratos",
+      "status": "partial",
+      "area": "historia",
+      "description": "Catálogo e compatibilidade de saves preservados; não somar como nove novas missões jogáveis. Beats: prologue_call, bus_terminal_arrival, port_vehicle_job, trap_and_arrest, ankle_monitor_release, garage_and_contracts, contracts_arc, final_race, district_one_aftermath. Contratos: lista_quente, duas_chaves, patio_17, isca_para_o_rei. Premissa anterior não substitui irmão vivo da história atual.",
+      "sources": [
+        "data/campaign/campaign_v1.json",
+        "systems/campaign/CanonicalCampaign.gd",
+        "docs/campaign-migration.md"
+      ]
+    },
+    {
+      "id": "historia-deserto",
+      "title": "Ato 2: encontro com Vicente e prova da armação",
+      "status": "implemented",
+      "area": "historia",
+      "description": "DesertCampaign já integra chegada ao deserto, Vicente ressentido pelos oito anos, manifesto no Miragem, prova bancária com Irene no Cobre, reencontro/corrida de Jessica e entrega da prova ao irmão. O doc de Harbor de 05/10 que chama todo o ato 2 de futuro está superado pelo código e doc do deserto de 06/10.",
+      "sources": [
+        "runtime/desert/DesertCampaign.gd",
+        "runtime/desert/DesertRuntime.gd",
+        "runtime/desert/DesertStoryState.gd",
+        "docs/mapa2-deserto.md"
+      ]
+    },
+    {
+      "id": "historia-jessica-canon",
+      "title": "Jessica: roteiro alinhado ao resultado físico",
+      "status": "implemented",
+      "area": "historia",
+      "description": "Corrigida em 07/10 a afirmação desatualizada de vitória obrigatória de Jessica no ato 2. O registro agora descreve o reencontro e a disputa com resultado físico, conforme DesertCampaign e o relatório atual do deserto. O relatório histórico de Harbor recebeu a mesma reconciliação. Alteração apenas textual; não muda corrida, progressão, diálogos ou dublagem.",
+      "sources": [
+        "data/campaign/harbor-story.json",
+        "runtime/desert/DesertCampaign.gd",
+        "docs/mapa2-deserto.md",
+        "docs/story-harbor-act1-20261005.md"
+      ]
+    },
+    {
+      "id": "historia-continuacao",
+      "title": "Continuação após deserto e fechamento da história",
+      "status": "planned",
+      "area": "historia",
+      "description": "Não foi encontrada nesta leitura uma campanha completa das cidades posteriores ou desfecho de Dante/Vicente. Preservar revelação da armação e reação aos oito anos; desenvolver continuidade, antagonismo e resolução. Cidade 4 tem direção visual definida (escura, cinza, neblina, referência GTA IV), não comprovação de campanha pronta.",
+      "sources": [
+        "data/campaign/harbor-story.json",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "mountain-cargo",
+      "title": "Carga dos Cobras",
+      "status": "partial",
+      "area": "historia",
+      "description": "Side quest integrada à sessão em 06/10, duas descobertas físicas no avião; recibos separados da SMG/dinheiro antigos. Estado/runtime têm testes documentados; percurso real, apresentação, oclusão e performance ainda pendentes.",
+      "sources": [
+        "activities/mountain_story/MountainStory.gd",
+        "systems/campaign/MountainStoryProgress.gd",
+        "runtime/MountainActivities.gd",
+        "docs/integracao-montanha-20261005.md"
+      ]
+    },
+    {
+      "id": "mountain-vicente",
+      "title": "Rastro de Vicente",
+      "status": "partial",
+      "area": "historia",
+      "description": "Segunda side quest integrada após pista do avião: caverna, anotação e arruela em cordão, passagem recente rumo ao deserto sem antecipar revelação maior. O pacote totaliza quatro descobertas. Caminhada física lago–caverna e validação visual integral pendentes.",
+      "sources": [
+        "data/campaign/mountain-story-dialogue.json",
+        "activities/mountain_story/MountainStory.gd",
+        "docs/integracao-montanha-20261005.md"
+      ]
+    },
+    {
+      "id": "secret-network",
+      "title": "Arquivo de Vicente, porão, keypad e QG",
+      "status": "partial",
+      "area": "historia",
+      "description": "Pasta opcional após cobra_finale, seis fragmentos, pistas, código 1951, casa/anexo/porão/estante, túnel, energia e rotas Vila/esgoto. Setor selado ambientado; continuação e certificação de performance pendentes.",
+      "sources": [
+        "runtime/SecretFileRuntime.gd",
+        "runtime/SecretNetworkProgression.gd",
+        "docs/secret-headquarters.md"
+      ]
+    },
+    {
+      "id": "secret-audio",
+      "title": "Quatro gravações do Arquivo de Vicente",
+      "status": "planned",
+      "area": "audio",
+      "description": "audio_vicente_field, audio_maintenance_shift, audio_blackout e audio_sealed_sector têm estado/ícones, mas SecretFileRuntime informa gravação danificada: streams autorados ainda faltam.",
+      "sources": [
+        "runtime/SecretFileRuntime.gd",
+        "runtime/SecretNetworkProgression.gd",
+        "docs/secret-headquarters.md"
+      ]
+    },
+    {
+      "id": "secret-next",
+      "title": "Ramais Porto Sul/serra e setor selado",
+      "status": "planned",
+      "area": "historia",
+      "description": "Ramais route_south_port_drain e route_mountain_outfall ainda descritos como continuação a liberar em terminais físicos. Desenvolver setor selado sem confirmar origem sobrenatural antes da decisão de cânone.",
+      "sources": [
+        "runtime/SecretNetworkProgression.gd",
+        "docs/secret-headquarters.md"
+      ]
+    },
+    {
+      "id": "desert-parts",
+      "title": "Peças na estrada",
+      "status": "implemented",
+      "area": "historia",
+      "description": "Bia → entrega a Raul → devolução do recibo à Bia; R$ 1.200 únicos. Contatos, HUD, save e pagamento idempotente; relatório final de sessão 68 checks. Percursos rodoviários completos não cobertos pelo teste.",
+      "sources": [
+        "runtime/desert/DesertContracts.gd",
+        "runtime/desert/DesertContractState.gd",
+        "docs/reviews/desert-contracts-20261006.md"
+      ]
+    },
+    {
+      "id": "desert-rail",
+      "title": "O último ramal",
+      "status": "implemented",
+      "area": "historia",
+      "description": "Raul → livro de despachos na estação antiga → lacre do vagão → Raul; R$ 2.200 únicos. Independente da prova de Vicente. Contatos, HUD, save e pagamento idempotente; relatório final de sessão 68 checks. Percursos rodoviários completos não cobertos pelo teste.",
+      "sources": [
+        "runtime/desert/DesertContracts.gd",
+        "runtime/desert/DesertContractState.gd",
+        "docs/reviews/desert-contracts-20261006.md"
+      ]
+    },
+    {
+      "id": "desert-water",
+      "title": "Água para Santa Lua",
+      "status": "partial",
+      "area": "historia",
+      "description": "Runtime conectado: depois de O último ramal, Joana pelo rádio pede conjunto de irrigação do vagão, instalação na bomba, abertura da válvula e confirmação; R$ 1.800. Lote atual corrigiu erro na leitura de pré-requisito malformado e mutação indevida ao acompanhar contrato; 115 checks de estado/contratos/recibos passaram. Isso não comprova percurso físico completo, que permanece a reconfirmar.",
+      "sources": [
+        "runtime/desert/community/DesertCommunityRuntime.gd",
+        "runtime/desert/community/DesertCommunityState.gd",
+        "runtime/desert/DesertActivities.gd"
+      ]
+    },
+    {
+      "id": "tonico-service",
+      "title": "Serviço de Tonico",
+      "status": "implemented",
+      "area": "historia",
+      "description": "Correia e manivela para bomba da Vila dos Caminhoneiros, escolhas de comércio, recibo e R$ 450; atividade opcional separada da campanha.",
+      "sources": [
+        "gameplay/urban_v1/TruckersVillageQuest.gd",
+        "docs/story-harbor-act1-20261005.md"
+      ]
+    },
+    {
+      "id": "harbor-races",
+      "title": "Corridas opcionais de Harbor",
+      "status": "implemented",
+      "area": "atividades",
+      "description": "2 provas conectadas: Volta do Porto (harbor_docks, R$ 400 + melhor tempo 200) e Circuito Foundry (harbor_foundry, R$ 650 + melhor tempo 300). Não confundir com catálogo histórico de cinco da CityDemo.",
+      "sources": [
+        "activities/ActivityDefinitions.gd",
+        "activities/Activities.gd",
+        "activities/Motorsport.gd"
+      ]
+    },
+    {
+      "id": "harbor-drift",
+      "title": "Duas zonas de drift",
+      "status": "implemented",
+      "area": "atividades",
+      "description": "Pátio Westgate (harbor_westgate) e Pátio dos Armazéns (harbor_cold_storage), respectivamente R$ 150/200 por 1.000 pontos.",
+      "sources": [
+        "activities/ActivityDefinitions.gd"
+      ]
+    },
+    {
+      "id": "tow-jobs",
+      "title": "Cinco contratos de guincho",
+      "status": "implemented",
+      "area": "atividades",
+      "description": "Primeiro reboque R$ 1.800; Esportivo do outro lado R$ 3.200; Viatura fora de serviço R$ 4.200; Colecionador sem sorte R$ 4.800; Encomenda da madrugada R$ 6.000. Sequência repetível, separada do guincho narrativo.",
+      "sources": [
+        "data/catalogs/TowJobs.gd",
+        "activities/Activities.gd"
+      ]
+    },
+    {
+      "id": "mountain-ski",
+      "title": "Três provas de esqui e expedição",
+      "status": "implemented",
+      "area": "atividades",
+      "description": "Primeira descida, Slalom do Pinhal e Pista da Sombra. A terceira exige três pistas da expedição; recompensas/recordes e progresso próprios.",
+      "sources": [
+        "activities/MountainProgression.gd",
+        "docs/story-harbor-act1-20261005.md"
+      ]
+    },
+    {
+      "id": "mountain-downhill",
+      "title": "Descida da Meia Noite: sete carros",
+      "status": "partial",
+      "area": "atividades",
+      "description": "Dante + seis NPCs físicos, 20h–5h, limite 240 s e primeira vitória R$ 2.400; conectado à sessão. Lote 07/10: IA distingue veículos de obstáculos, restringe ultrapassagens a retas e tenta retornar à direita com corredor livre. Sensores: 9 checks aprovados. Corrida física final: 32/33 checks, Dante 4º em 47,29 s e nenhum rival desclassificado; apenas três rivais chegaram. Akira/Ícaro/Ren ficaram nos checkpoints 8/7/10. Competitividade dos seis NÃO resolvida; performance e faróis não aprovados.",
+      "sources": [
+        "activities/mountain_downhill",
+        "systems/campaign/MountainDownhillProgress.gd",
+        "docs/integracao-montanha-20261005.md",
+        "activities/mountain_downhill/MountainDownhillDriver.gd",
+        "tests/test_mountain_downhill_driver.gd",
+        "tests/test_mountain_downhill_runtime.gd",
+        "evidence/downhill-fix-20261007/preventive.log",
+        "evidence/downhill-fix-20261007/relatorio.md"
+      ],
+      "next": "Resolver encontros com trânsito contrário e bloqueio entre rivais na curva (corredor de retorno ocupado); validar os seis competitivos em corrida física. Comparação de performance ainda inconclusiva. Não considerar este card concluído."
+    },
+    {
+      "id": "mountain-jeep",
+      "title": "Trilha dos Pinheiros",
+      "status": "partial",
+      "area": "atividades",
+      "description": "Trilha própria ~300 m, duas cristas, checkpoints, desert_jeep_4x4 persistente, limite provisório 110 s e R$ 700 únicos. Sessão/percurso testados; volta física inteira, cristas/chunks nos dois sentidos, solo visual/colisão e performance pendentes.",
+      "sources": [
+        "activities/mountain_jeep",
+        "world/mountain_jeep",
+        "systems/campaign/MountainJeepProgress.gd",
+        "docs/integracao-montanha-20261005.md"
+      ]
+    },
+    {
+      "id": "desert-drag",
+      "title": "Arrancada: seis rivais, final de Rauhz e preparação",
+      "status": "implemented",
+      "area": "atividades",
+      "description": "Digo, Lívia, Raul, Jessica, Nadir e final contra Rauhz após cinco vitórias; 800 m, dois carros físicos, troca de marcha, nitro, queimada/cancelamento, prêmio único e revanche/recordes. Terminar contra Digo libera oficina; 25 opções de preparação (20 mecânicas e cinco neons). Rauhz dirige Focus MK1 2002 exclusivo do rival, primeira vitória R$ 9.000; saves antigos preservados. Relatório da outra sessão registra 27 checks do contrato e 24 no Main final. FPS específico da final e revisão auditiva permanecem pendentes.",
+      "sources": [
+        "activities/desert_drag",
+        "runtime/desert/drag_meet/DragMeetRoster.gd",
+        "docs/mapa2-deserto.md",
+        "docs/reviews/drag-race-redesign-20261007.md",
+        "gameplay/desert_cars/DesertTuning.gd",
+        "docs/reviews/rauhz-focus-final-20261007.md",
+        "gameplay/desert_cars/RauhzFocusModel.gd"
+      ]
+    },
+    {
+      "id": "drag-instruments",
+      "title": "Cinco painéis de arrancada",
+      "status": "implemented",
+      "area": "atividades",
+      "description": "Clássico e Barras grátis; Street após 1 rival/R$ 1.500; Pro após 3/R$ 3.500; Campeão após 5/R$ 6.500. Loja/seleção/recibos/save e uso na corrida documentados (48 verificações integradas); comparação FPS inconclusiva.",
+      "sources": [
+        "docs/reviews/drag-race-redesign-20261007.md"
+      ]
+    },
+    {
+      "id": "mining-clearance",
+      "title": "Limpeza da cava",
+      "status": "unverified",
+      "area": "atividades",
+      "description": "Contrato conectado à sessão do deserto; três entregas e recibo serra_bruta_clearance, R$ 1.800; pode pausar acompanhamento. Não confundir com saque de R$ 12 mil da galeria; evidência específica de conclusão do contrato não conferida nesta leitura.",
+      "sources": [
+        "gameplay/mining/jobs/MiningYardJob.gd",
+        "gameplay/mining/jobs/MiningYardJobState.gd",
+        "runtime/desert/DesertActivities.gd"
+      ]
+    },
+    {
+      "id": "mining-loot",
+      "title": "Galeria Santa Brasa: saque e emboscada",
+      "status": "implemented",
+      "area": "atividades",
+      "description": "Bolsa sonora, três reforços ao sair; R$ 12.000 únicos após eliminar emboscada ou afastar 52 m. Morte/cancelamento descartam saque pendente; save bloqueado na tentativa. Conteúdo com evidência funcional, sem aprovação global de performance.",
+      "sources": [
+        "docs/reviews/mining-experience-20261007.md"
+      ]
+    },
+    {
+      "id": "desert-wash",
+      "title": "Prova do leito seco",
+      "status": "partial",
+      "area": "atividades",
+      "description": "Prova integrada a DesertActivities, com checkpoints, cancelamento, prêmio único e restauração. Reconciliadas duas evidências históricas: conclusão física em 34,137889 s com prêmio, failures=[] e source_stable=true; o runner cobre pausa, cancelamento/retry e antiteleporte. Os relatórios não guardam hashes dos fontes e não comprovam equivalência à versão atual. Capturas funcionais não aprovam FPS. Nenhuma falha nova foi reproduzida neste lote.",
+      "sources": [
+        "activities/desert_wash/DesertWash.gd",
+        "activities/desert_wash/DesertWashCourse.gd",
+        "runtime/desert/DesertActivities.gd",
+        "evidence/desert-wash-after-115524-5439527/report.json",
+        "evidence/desert-wash-after-26684-6966886/report.json"
+      ],
+      "next": "Revalidar a versão atual e medir desempenho em janela exclusiva; não tratar os relatórios históricos como rodada nova."
+    },
+    {
+      "id": "desert-discoveries",
+      "title": "Segredos e esconderijos do deserto",
+      "status": "implemented",
+      "area": "atividades",
+      "description": "Quatro achados da expansão (R$ 950/1.650/1.250/700) persistidos em desert_discoveries. Casa abandonada e cabana têm recibos próprios de R$ 5.000 cada; pista manuscrita de Vicente na casa. Não são seis missões principais.",
+      "sources": [
+        "runtime/desert/expansion/DesertDiscoveryState.gd",
+        "runtime/desert/DesertSecretState.gd",
+        "docs/reviews/desert-expansion-20261006.md",
+        "docs/deserto-fronteira-validacao-20261006.md"
+      ]
+    },
+    {
+      "id": "characters-main",
+      "title": "Elenco narrativo principal",
+      "status": "implemented",
+      "area": "personagens",
+      "description": "Dante Ferraz; Vicente Ferraz; Maciota; mecânico da garagem; Jessica; Helena; Ferrugem; Neco; moradora de Ashbend; Takeshi; Digo; Tonico. Presença em diálogos/runtime; ser persona de voz não prova NPC físico em todos os casos. Maciota e mecânico devem permanecer imortais; garagem sem armas.",
+      "sources": [
+        "data/campaign/HarborMissions.gd",
+        "data/campaign/harbor-story.json",
+        "runtime/desert/DesertCampaign.gd",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "id": "characters-desert",
+      "title": "Elenco do deserto",
+      "status": "implemented",
+      "area": "personagens",
+      "description": "Vicente, Lívia, Raul, Nadir, Bia, Irene e Jessica têm especificações próprias em DesertCharacter; Digo participa de corrida/oficina. Joana atua pelo rádio da cooperativa (não inferir ator físico).",
+      "sources": [
+        "runtime/desert/DesertCharacter.gd",
+        "runtime/desert/DesertCampaign.gd",
+        "runtime/desert/community/DesertCommunityRuntime.gd"
+      ]
+    },
+    {
+      "id": "characters-services",
+      "title": "Personagens de serviços e comércio",
+      "status": "implemented",
+      "area": "personagens",
+      "description": "8 registros OriginalResidentData: Sargento Morales, Detetive Ribeiro, Policial Ferreira, Dente de Ouro, Dona Cida, Capitão Rocha, Enfermeira Clara e Dr. Miguel. 3 atendentes adicionais autorados na montanha: Nina, Clara e Bento; não somar à força como 11 pessoas globalmente únicas.",
+      "sources": [
+        "world/places/OriginalResidentData.json",
+        "world/places/OriginalResidents.gd"
+      ]
+    },
+    {
+      "id": "characters-santa-lua",
+      "title": "Moradores das quatro casas de Santa Lua",
+      "status": "implemented",
+      "area": "personagens",
+      "description": "Dia 6h–18h casas vazias; noite cozinha/leitura/dois dormindo. Só sala visitada mantém morador ativo; morte não persiste entre visitas. Recompensas das casas e 12 coletas persistem. Performance dos quatro interiores não certificada.",
+      "sources": [
+        "docs/reviews/santa-lua-20261006.md"
+      ]
+    },
+    {
+      "id": "radio-stations",
+      "title": "Doze rádios veiculares",
+      "status": "implemented",
+      "area": "audio",
+      "description": "Porto FM, Noite, Groove, Brisa, Neon, Arcade, Pesada, Reggae, Club, Estrada, Cruise e Fronteira Country. Estação, desligado e posição memorizados por carro; redução de volume em diálogo; roda/R/LB/RB conforme controles. Country tem três faixas instrumentais completas e créditos CC0.",
+      "sources": [
+        "audio/WorldAudio.gd",
+        "audio/desert_country/CREDITS.md",
+        "docs/reviews/santa-lua-20261006.md"
+      ]
+    },
+    {
+      "id": "voice-english",
+      "title": "Dublagem inglesa: 241 falas únicas",
+      "status": "implemented",
+      "area": "audio",
+      "description": "production/catalog contêm 241 falas geradas; recordings contém 510 vínculos/aliases, todos apontando para arquivos presentes. Não são 510 falas únicas nem garantia de cobertura total dos diálogos novos. Idioma de voz independente das legendas; seleção/hash de persona/texto. Sem revisão auditiva nesta auditoria.",
+      "sources": [
+        "audio/mission_voices/en/catalog.json",
+        "audio/mission_voices/en/production.json",
+        "audio/mission_voices/en/recordings.json",
+        "audio/ExpressiveVoice.gd"
+      ]
+    },
+    {
+      "id": "voice-portuguese",
+      "title": "Dublagem portuguesa e Maciota barítono",
+      "status": "partial",
+      "area": "audio",
+      "description": "Banco geral: 87 vínculos; banco Maciota barítono: 40 vínculos, todos com arquivos presentes. Maciota e caller usam exclusivamente o banco barítono. Histórico Harbor PT: 70 tomadas produzidas, 68 asr_checked, 2 review_required, 19 ausentes no roteiro desse lote. Esses números são de bancos sobrepostos, não somar como total de falas únicas.",
+      "sources": [
+        "audio/mission_voices/recordings.json",
+        "audio/mission_voices/maciota_baritone/recordings.json",
+        "audio/mission_voices/harbor_story/production.json",
+        "audio/ExpressiveVoice.gd"
+      ]
+    },
+    {
+      "id": "voice-coverage",
+      "title": "Concluir cobertura e revisão artística das vozes",
+      "status": "partial",
+      "area": "audio",
+      "description": "Conferir falas novas de Bia/Raul, Joana e demais atividades contra manifestos atuais; docs de 06/10 registram contratos sem gravação, mas banco EN posterior cresceu. Falta arquivo deve resultar em legenda/silêncio para diálogo autorado; ASR e existência de WAV não aprovam interpretação/timbre. Quatro fitas de Vicente seguem sem streams.",
+      "sources": [
+        "docs/reviews/desert-contracts-20261006.md",
+        "audio/VisibleDialogueVoice.gd",
+        "audio/ExpressiveVoice.gd",
+        "runtime/SecretFileRuntime.gd"
+      ]
+    },
+    {
+      "id": "audio-ambience",
+      "title": "Ambiência regional, clima e superfícies",
+      "status": "implemented",
+      "area": "audio",
+      "description": "WorldAudio conectado à ProductionWorld: cidade/costa/porto/natureza/montanha/interiores, emissões de gaivotas/navio/pássaros/cão/oficina/sucata; passos por piso seco/molhado, madeira, metal, neve etc.; chuva/trovão, vento. Terra/neve reutilizam passo macio legado. Integração estática não certifica mixagem humana/performance.",
+      "sources": [
+        "audio/WorldAudio.gd",
+        "audio/v1_ambience/AmbienceProfile.gd",
+        "audio/v1_ambience/SurfaceResolver3D.gd",
+        "audio/weather/WeatherAudioMixer.gd",
+        "docs/AUDIO_AMBIENCE_MIGRATION.md"
+      ]
+    },
+    {
+      "id": "audio-vehicles",
+      "title": "Áudio de veículos, equipamentos e acidentes",
+      "status": "implemented",
+      "area": "audio",
+      "description": "Bancos de motor/RPM/carga, superfície/pneus, turbo/troca, freio a ar, batidas, veículos próximos, serviços, tanque, Amarok Digo e carros do deserto. Áudio específico de mineração e urso presente. Som existente não implica todas as situações auditivamente aprovadas.",
+      "sources": [
+        "audio/VehicleEngineProfile.gd",
+        "audio/VehicleRoadAudio.gd",
+        "audio/VehicleCrashAudio.gd",
+        "audio/vehicle_ambience/NearbyVehicleAudio.gd",
+        "audio/service_vehicles/ServiceVehicleAudio.gd",
+        "audio/tank/TankAudio.gd",
+        "audio/mining/MiningAmbience.gd",
+        "audio/wildlife/BearAudio.gd"
+      ]
+    },
+    {
+      "id": "audio-contact",
+      "title": "Sons de armas, recarga, contato e recompensas",
+      "status": "implemented",
+      "area": "audio",
+      "description": "CombatAudio, contatos de projétil/cápsulas por material, impactos corporais, recargas, recompensas e cues de largada/checkpoint/conclusão; arquivos e módulos presentes. Esta auditoria não executou nem ouviu o jogo.",
+      "sources": [
+        "gameplay/CombatAudio.gd",
+        "gameplay/RewardAudio.gd",
+        "audio/weapon_contacts/bank.json",
+        "assets/gameplay/audio/reload",
+        "audio/v1_ambience/ActivityAudioBridge.gd"
+      ]
+    },
+    {
+      "id": "audio-known-tests",
+      "title": "Áudio veicular: falhas legadas corrigidas",
+      "status": "implemented",
+      "area": "audio",
+      "description": "Correção de 07/10: fixture passa a inspecionar o pool ContactAudio e respeitar cooldown por ticks físicos, verificando supressão e liberação sem empilhamento. Baseline reproduziu as duas falhas; teste final passou 28 verificações e colisão física real confirmou emissão do som (10 verificações de dano). Produção inalterada; sem certificação auditiva/FPS.",
+      "sources": [
+        "audio/test_vehicle_sound_migration.gd",
+        "docs/reviews/drag-race-redesign-20261007.md",
+        "evidence/audio-board-fix-20261007/fixed.log",
+        "evidence/audio-board-fix-20261007/physical-contact.log"
+      ]
+    },
+    {
+      "id": "audio-tow-events",
+      "title": "Guincho: confirmações sonoras conectadas, 20/20 checks",
+      "status": "partial",
+      "area": "audio",
+      "description": "Lote 07/10: MissionWorld publica loaded/unloaded/delivered após sucesso; ActivityAudioBridge liga os eventos aos cues funcionais V1 existentes, reutilizando duas vozes. Não são novas gravações mecânicas. Original falhou por ausência do sinal; final 20/20 no Godot 4.7.2 .NET. Cobertos carga/descarga/entrega, recusas, restauração e cancelamento silenciosos, duplicação, origem inválida, rebind e limpeza. Revisão auditiva no Main e performance ainda pendentes; baseline renderizada interrompida por concorrência.",
+      "sources": [
+        "docs/AUDIO_AMBIENCE_MIGRATION.md",
+        "audio/v1_ambience/ActivityAudioBridge.gd",
+        "runtime/MissionWorld.gd",
+        "tests/test_tow_audio_events.gd",
+        "evidence/tow-events-20261007/functional-baseline.log",
+        "evidence/tow-events-20261007/functional-final.log"
+      ],
+      "next": "Ouvir confirmações no fluxo completo da sessão real e comparar frame time antes/depois em janela exclusiva. Contrato funcional dirigido aprovado; audibilidade, integração completa e FPS não certificados."
+    },
+    {
+      "id": "weapon-catalog",
+      "title": "Arsenal: 16 entradas",
+      "status": "implemented",
+      "area": "atividades",
+      "description": "Catálogo define punhos, soqueira de bronze, faca de combate, taco de beisebol, machado de lenhador, pistola, Magnum, SMG, shotgun, sawed-off, AK-47, M4A1, RPG, lança-chamas, granada e rifle de caça; inclui estatísticas, preço, munição, cadência e atributos de som. Contagem inclui punhos; catálogo não certifica todas as animações/efeitos/combate.",
+      "sources": [
+        "gameplay/WeaponCatalog.gd",
+        "docs/combat-parity-v1.md"
+      ]
+    },
+    {
+      "id": "fix-community-corrupt-save-20261007",
+      "title": "Santa Lua: save malformado rejeitado sem erro ou perda de estado",
+      "status": "implemented",
+      "area": "qualidade",
+      "description": "DesertContractState agora distingue ausência de contrato de dado presente inválido. null, array, string, número e booleano são recusados sem erro de script; mudar acompanhamento não sobrescreve dados inválidos. GameState preserva carteira e progresso após recusa. Baseline reproduziu 5 falhas e erros de tipo; final 28/28 na regressão, 39/39 nos contratos e 48/48 em Santa Lua (115). Build .NET sem erros/avisos. Escopo de validação de estado, não percurso integrado da missão.",
+      "sources": [
+        "runtime/desert/DesertContractState.gd",
+        "tests/test_desert_community_corrupt_save.gd",
+        "tests/test_desert_contracts.gd",
+        "tests/test_desert_community.gd",
+        "evidence/community-state-fix-20261007/test_desert_community_corrupt_save.log",
+        "evidence/community-state-fix-20261007/test_desert_contracts.log",
+        "evidence/community-state-fix-20261007/test_desert_community.log"
+      ]
+    }
+  ],
+  "catalogs": {
+    "harbor_mission_ids": [
+      "primeiro_giro",
+      "cobra_contact",
+      "cobra_race",
+      "cobra_collection",
+      "jessica_bank",
+      "cobra_supply",
+      "cobra_finale"
+    ],
+    "radio_ids": [
+      "porto_fm",
+      "porto_noite",
+      "porto_groove",
+      "porto_brisa",
+      "porto_neon",
+      "porto_arcade",
+      "porto_pesada",
+      "porto_reggae",
+      "porto_club",
+      "porto_estrada",
+      "porto_cruise",
+      "fronteira_country"
+    ],
+    "weapon_ids": [
+      "fists",
+      "knuckles",
+      "knife",
+      "bat",
+      "axe",
+      "pistol",
+      "magnum",
+      "smg",
+      "shotgun",
+      "sawed_off",
+      "ak47",
+      "m4a1",
+      "rpg",
+      "flamethrower",
+      "grenade",
+      "hunting_rifle"
+    ],
+    "voice_counts": {
+      "english_unique_generated": 241,
+      "english_recording_aliases": 510,
+      "portuguese_general_bindings": 87,
+      "maciota_baritone_bindings": 40,
+      "harbor_historical_generated": 70,
+      "harbor_historical_asr_checked": 68,
+      "harbor_historical_review_required": 2,
+      "harbor_historical_missing": 19
+    },
+    "audio_media_by_folder": {
+      "acoustic": 124,
+      "body_impacts": 6,
+      "contact_foley": 61,
+      "desert_cars": 2,
+      "digo": 2,
+      "footsteps": 32,
+      "icecream": 1,
+      "living_city": 39,
+      "menu": 1,
+      "mission_voices": 371,
+      "regional": 11,
+      "tank": 11,
+      "v1_ambience": 4,
+      "vehicle_crashes": 20,
+      "vehicle_fx": 12,
+      "weapon_contacts": 21,
+      "weather": 5
+    },
+    "count_warning": "Contagens de mídia são arquivos físicos wav/ogg/mp3/flac recursivos (incluem fontes/legados), não sons únicos ativos nem percentual de conclusão."
+  }
+}

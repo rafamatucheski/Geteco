@@ -99,6 +99,8 @@ func tick(delta: float, hold: bool, next_checkpoint: int) -> void:
 func _sense(offset: float, look: float) -> void:
 	gap = INF
 	leader_speed = 0.0
+	var leader_is_vehicle := false
+	var leader_oncoming := false
 	var reach := minf(55.0,5.0+float(car.speed)*float(car.speed)/10.0)
 	var origin: Vector3 = car.global_position+Vector3.UP*.65-car.global_basis.z*(car.half_length+.2)
 	for side in [-.8,0.0,.8]:
@@ -108,19 +110,47 @@ func _sense(offset: float, look: float) -> void:
 		if not hit.is_empty() and from.distance_to(hit.position)<gap:
 			gap = from.distance_to(hit.position)
 			leader_speed = maxf(0.0,hit.collider.velocity.dot(-car.global_basis.z)) if hit.collider is CharacterBody3D else 0.0
-	if is_finite(gap) and pass_cooldown<=0.0:
+			leader_is_vehicle = hit.collider is Node and hit.collider.is_in_group("drivable")
+			leader_oncoming = leader_is_vehicle and (-car.global_basis.z).dot(-hit.collider.global_basis.z)<-.4
+	# The two-wide grid is not permission to remain in opposing traffic. Return
+	# to the right as soon as the physical corridor is free after the start or
+	# a pass, before an approaching car closes that opportunity.
+	if desired_lane<0.0 and pass_cooldown<=0.0 and reverse_left<=0.0 and _lane_clear(offset,look,1.8):
+		desired_lane = 1.8
+		pass_cooldown = 2.0
+		return
+	# A guardrail seen across a bend is not a car to overtake. Reserve enough
+	# straight road for the full two-second lane change, not just its end point.
+	if leader_is_vehicle and not leader_oncoming and pass_cooldown<=0.0 and reverse_left<=0.0 and leader_speed<cap-2.0 and _passing_straight(offset):
 		var alternative := -1.8 if desired_lane>=0 else 1.8
 		if _lane_clear(offset,look,alternative):
 			desired_lane = alternative
 			pass_cooldown = 2.0
 
+func _passing_straight(offset: float) -> bool:
+	var ahead := maxf(18.0,absf(float(car.speed))*2.5)
+	var direction: Vector3 = course.direction(offset)
+	for i in range(1,7):
+		if direction.dot(course.direction(offset+ahead*float(i)/6.0)) < .985: return false
+	return true
+
 func _lane_clear(offset: float, look: float, alternative: float) -> bool:
 	# Sweep the actual transition corridor as well as the destination lane.
+	var start_forward: Vector3 = course.direction(offset)
+	var displacement: Vector3 = car.global_position-course.point(offset)
+	var actual_lane := displacement.dot(start_forward.cross(Vector3.UP).normalized())
 	for fraction in [0.0,.5,1.0]:
 		var at := minf(offset+maxf(8.0,look)*fraction,float(course.length)-.5)
 		var forward: Vector3 = course.direction(at)
-		var lateral := lerpf(lane,alternative,fraction)
+		var lateral := lerpf(actual_lane,alternative,fraction)
 		var center: Vector3 = course.point(at)+forward.cross(Vector3.UP).normalized()*lateral+Vector3.UP*.65
+		lane_query.transform = Transform3D(Basis(Vector3.UP,atan2(-forward.x,-forward.z)),center)
+		if not car.get_world_3d().direct_space_state.intersect_shape(lane_query,1).is_empty(): return false
+	# A car alongside or closing from behind also owns the destination lane.
+	for behind in [4.0,8.0,12.0]:
+		var at := maxf(0.0,offset-behind)
+		var forward: Vector3 = course.direction(at)
+		var center: Vector3 = course.point(at)+forward.cross(Vector3.UP).normalized()*alternative+Vector3.UP*.65
 		lane_query.transform = Transform3D(Basis(Vector3.UP,atan2(-forward.x,-forward.z)),center)
 		if not car.get_world_3d().direct_space_state.intersect_shape(lane_query,1).is_empty(): return false
 	return true

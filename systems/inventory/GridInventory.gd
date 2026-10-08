@@ -1,7 +1,7 @@
 extends RefCounted
 ## Pure spatial storage. Callers commit a whole candidate only after success.
 const WEAPONS := preload("res://gameplay/WeaponCatalog.gd")
-const LONG := ["shotgun","sawed_off","ak47","m4a1","hunting_rifle","rpg","flamethrower"]
+const LONG := ["shotgun","sawed_off","ak47","m4a1","hunting_rifle","rpg","flamethrower","katana"]
 const TRUNK_SIZE := Vector2i(4,6)
 const TRUNK_AMMO_SLOTS := 6
 const ITEMS := {

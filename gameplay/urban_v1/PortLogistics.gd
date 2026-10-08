@@ -44,7 +44,7 @@ func _physics_process(delta: float) -> void:
 		_work_shift_open = _shift_open()
 		_tick_replacements()
 		if active: _ensure_work_vehicles()
-		elif session.state.region_id == "harbor" and session.state.place_id.is_empty() and _work_shift_open:
+		elif session.state.region_id == "harbor" and session.urban_operations.world_is_continuous() and _work_shift_open:
 			# A visitor going straight to the company must still see its fleet.
 			# Budget one spawn per scan, on prepared native port ground.
 			for i in work_trucks.size():
@@ -56,11 +56,11 @@ func _physics_process(delta: float) -> void:
 				if is_instance_valid(region) and region.prepare_collision_at(point): _spawn_work_truck(i)
 				break
 		_sync_work_vehicle_visibility()
-		var harbor: bool = session.state.region_id == "harbor" and session.state.place_id.is_empty()
+		var harbor: bool = session.state.region_id == "harbor" and session.urban_operations.world_is_continuous()
 		depot.set_region_active(harbor)
 		outskirts.visible = harbor
 		outskirts._trunks.collision_layer = 1 if harbor else 0
-	if session.state.region_id != "harbor" or not session.state.place_id.is_empty(): return
+	if session.state.region_id != "harbor" or not session.urban_operations.world_is_continuous(): return
 	for index in work_trucks.size():
 		var state: Dictionary = work_trucks[index]
 		var vehicle = state.truck
@@ -88,7 +88,7 @@ func _sync_work_vehicle_visibility() -> void:
 	for state in work_trucks:
 		var vehicle = state.truck
 		if not is_instance_valid(vehicle) or state.phase in ["freight","freight_pending","interrupted"] or vehicle.controlled: continue
-		var resident: bool = session.state.region_id == "harbor" and session.state.place_id.is_empty()
+		var resident: bool = session.state.region_id == "harbor" and session.urban_operations.world_is_continuous()
 		vehicle.visible = resident
 		if state.phase == "destroyed":
 			vehicle.set_physics_process(resident and not vehicle.has_meta("awaiting_ground"))

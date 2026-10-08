@@ -83,7 +83,10 @@ func configure(vehicle: CharacterBody3D) -> bool:
 	trim.albedo_color = Color("30373d")
 	trim.metallic = .15
 	trim.roughness = .45
-	var moving_glass := (glass.material_override as StandardMaterial3D).duplicate() as StandardMaterial3D
+	var glass_material := glass.material_override as StandardMaterial3D
+	if glass_material == null and glass.mesh.get_surface_count() > 0:
+		glass_material = glass.get_active_material(0) as StandardMaterial3D
+	var moving_glass: StandardMaterial3D = glass_material.duplicate() as StandardMaterial3D if glass_material != null else StandardMaterial3D.new()
 	# The opened pane needs enough sky reflection to read against dark asphalt.
 	moving_glass.albedo_color = Color("35566a")
 	moving_glass.metallic = .3

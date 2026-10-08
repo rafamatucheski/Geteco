@@ -7,6 +7,12 @@ const DANTE := preload("res://assets/dante.glb")
 const UAL_LIBRARY := "res://assets/animation_library/dante_ual.res"
 ## `ladder/Ladder_Descend`: o `Fast_Ladder_Climb` ao contrário (`tools/make_ladder_descend.gd`).
 const LADDER_LIBRARY := "res://assets/animation_library/dante_ladder.res"
+## Quedas da morte do Mixamo (`tools/retarget_mixamo_death_to_dante.gd`): biblioteca "mixamo" com
+## death_left, death_right e death_forward. O quadril anda com a queda, então não é travado.
+const MIXAMO_DEATH_LIBRARY := "res://assets/dante/mixamo/dante_mixamo_death.res"
+## Sacar e guardar a espada (`tools/retarget_mixamo_sword_to_dante.gd`): biblioteca "mixsword" com
+## withdraw_katana, sheathe_katana e sheathe_greatsword.
+const MIXAMO_SWORD_LIBRARY := "res://assets/dante/mixamo/dante_mixamo_sword.res"
 const LADDER_CLIPS := ["Fast_Ladder_Climb", "ladder/Ladder_Descend"]
 const CIVILIAN := preload("res://assets/CivilianModel.gd")
 const OUTFIT_APPEARANCE := preload("res://assets/outfits/MeshyDanteAppearance.gd")
@@ -146,6 +152,10 @@ func _ready() -> void:
 			animation.add_animation_library("ual", load(UAL_LIBRARY))
 		if animation and not animation.has_animation_library("ladder") and ResourceLoader.exists(LADDER_LIBRARY):
 			animation.add_animation_library("ladder", load(LADDER_LIBRARY))
+		if animation and not animation.has_animation_library("mixamo") and ResourceLoader.exists(MIXAMO_DEATH_LIBRARY):
+			animation.add_animation_library("mixamo", load(MIXAMO_DEATH_LIBRARY))
+		if animation and not animation.has_animation_library("mixsword") and ResourceLoader.exists(MIXAMO_SWORD_LIBRARY):
+			animation.add_animation_library("mixsword", load(MIXAMO_SWORD_LIBRARY))
 		skeleton = model.find_child("Skeleton3D", true, false) as Skeleton3D
 		if skeleton:
 			hips = skeleton.find_bone("Hips")
@@ -178,6 +188,8 @@ func _physics_process(delta: float) -> void:
 	STALL_WORK.finish_slow("actor.physics", began, 10000, self)
 
 func _stall_physics_tick(delta: float) -> void:
+	var rage_speed := float(get_meta("katana_rage_speed", 1.0)) if is_player else 1.0
+	delta *= rage_speed
 	var lod_scale := 1.0
 	if not is_player and (not controlled_automatically or get_meta(&"civilian_reaction_lod", false)):
 		var view_camera := get_viewport().get_camera_3d()
@@ -226,6 +238,12 @@ func _stall_physics_tick(delta: float) -> void:
 		direction = motion.normalized()
 		target_speed = motion.length()
 	if input_locked: direction = Vector3.ZERO
+	# Intoxication alters voluntary movement through the real swept capsule.
+	if is_player and not input_locked and not controlled_automatically and not (is_instance_valid(ski_controller) and ski_controller.skiing):
+		var intoxication := clampf(float(get_meta("alcohol_intensity",0.0)),0.0,1.0)
+		if intoxication > 0.0:
+			direction = direction.rotated(Vector3.UP,float(get_meta("alcohol_sway",0.0)) * intoxication * .14)
+			target_speed *= 1.0 - intoxication * .22
 	if is_player and has_meta("police_restraint_left"):
 		var restraint := maxf(0.0, float(get_meta("police_restraint_left")) - delta)
 		if restraint <= 0.0: remove_meta("police_restraint_left")
@@ -244,7 +262,11 @@ func _stall_physics_tick(delta: float) -> void:
 	velocity.y = -1.0 if is_on_floor() else velocity.y - 20.0 * delta
 	STEP.try_step(self, Vector3(velocity.x, 0, velocity.z) * (delta / lod_scale))
 	var move_began := STALL_WORK.begin()
+	# move_and_slide reads engine delta internally. Compensate only the player's
+	# swept velocity, then restore physical units for camera, footsteps and combat.
+	velocity *= rage_speed
 	move_and_slide()
+	velocity /= rage_speed
 	STALL_WORK.finish_slow("actor.move_and_slide", move_began, 10000, self)
 	if lod_scale != 1.0:
 		velocity.x /= lod_scale
@@ -263,6 +285,12 @@ func _stall_physics_tick(delta: float) -> void:
 		# Camada de combate: o clipe de golpe entra e sai com uma mistura curta de poses (nada de corte seco); sem
 		# clipe, só locomoção. A pose é sempre escolhida aqui; `Gameplay` só informa clipe e tempo.
 		var combat_wanted := is_player and combat_clip != "" and animation.has_animation(combat_clip)
+		var sword_legs := {}
+		if combat_wanted and combat_weapon_id == "katana" and actual_speed > MOVING_SPEED_EPSILON:
+			_pose_locomotion(direction, target_speed, displacement, actual_speed, delta)
+			for bone_name in ["Hips", "LeftUpLeg", "LeftLeg", "LeftFoot", "LeftToeBase", "RightUpLeg", "RightLeg", "RightFoot", "RightToeBase"]:
+				var index := skeleton.find_bone(bone_name)
+				if index >= 0: sword_legs[index] = skeleton.get_bone_pose(index)
 		if combat_wanted:
 			_last_clip = combat_clip
 			_last_clip_time = combat_clip_time
@@ -278,6 +306,7 @@ func _stall_physics_tick(delta: float) -> void:
 			_apply_blend(locomotion_pose, _capture_pose(), _combat_weight)
 		else:
 			_pose_locomotion(direction, target_speed, displacement, actual_speed, delta)
+		for index in sword_legs: skeleton.set_bone_pose(index, sword_legs[index])
 		if is_player: _clip_palms = {"Left": _clip_palm("Left"), "Right": _clip_palm("Right")}
 		if hips >= 0:
 			var hip_position := skeleton.get_bone_pose_position(hips)
@@ -637,6 +666,11 @@ func clear_combat_weapon_pose() -> void:
 	combat_weapon_pose = {}
 
 func _apply_combat_weapon_pose() -> void:
+	if combat_weapon_pose.get("native_sword", false) and skeleton != null:
+		# Preserve the imported sword move, including its elbow and wrist arcs.
+		_set_combat_grips(true, false, true, false, false, true)
+		if is_instance_valid(combat_weapon_mount): combat_weapon_mount.global_transform = combat_weapon_transform(combat_weapon_grip)
+		return
 	_elbow_previous = _elbow_solved.duplicate()
 	var support_hand_before: Quaternion = _presented_arm_rotations.get(_combat_bones.get("LeftHand", -1), Quaternion.IDENTITY)
 	var had_support_hand := _presented_arm_rotations.has(_combat_bones.get("LeftHand", -1))
@@ -675,7 +709,7 @@ func _apply_combat_weapon_pose() -> void:
 	var dip := 0.0 if clip_punch else float(pose.get("dip", 0.0))
 	var step := 0.0 if clip_punch else float(pose.get("step", 0.0))
 	var weight_shift := absf(dip) > 0.0005 or absf(step) > 0.0005
-	if combat_weapon_id in ["fists", "knuckles", "knife", "axe", "bat"] and (absf(hip_yaw) > 0.001 or weight_shift) and _locomotion_weight <= 0.0 and hips >= 0:
+	if combat_weapon_id in ["fists", "knuckles", "knife", "axe", "bat", "katana"] and (absf(hip_yaw) > 0.001 or weight_shift) and _locomotion_weight <= 0.0 and hips >= 0:
 		var chest_before: Basis = skeleton.get_bone_global_pose(_combat_bones.Spine02).basis
 		var planted := _turn_time >= 1.0
 		if planted and weight_shift:
@@ -762,13 +796,13 @@ func _apply_combat_weapon_pose() -> void:
 		if roll is float and (right_solve if side == "Right" else left_solve):
 			var hand_bone: int = _combat_bones[side + "Hand"]
 			var axis := (_combat_rests[hand_bone].origin as Vector3).normalized()
-			var straight := Quaternion(axis, float(roll) * (1.0 if side == "Right" else -1.0)) * _combat_rests[hand_bone].basis.get_rotation_quaternion()
+			var straight_rotation := Quaternion(axis, float(roll) * (1.0 if side == "Right" else -1.0)) * _combat_rests[hand_bone].basis.get_rotation_quaternion()
 			var weight := right_weight if side == "Right" else left_weight
-			skeleton.set_bone_pose_rotation(hand_bone, skeleton.get_bone_pose_rotation(hand_bone).slerp(straight, weight).normalized())
+			skeleton.set_bone_pose_rotation(hand_bone, skeleton.get_bone_pose_rotation(hand_bone).slerp(straight_rotation, weight).normalized())
 	# Taco/machado: a forma "agarrar" do modelo só dobra os dedos pela metade e a mão
 	# lia espalmada no cabo; o punho fechado (polegar corrigido) envolve o cabo.
-	var wrap := bool(pose.get("grip_as_fist", false))
-	_set_combat_grips(right_grip, left_grip, bool(pose.get("right_fist", false)) or (wrap and right_grip), bool(pose.get("left_fist", false)) or (wrap and left_grip), not right_solve, not left_solve or left_weight < 0.5)
+	var fist_grip := bool(pose.get("grip_as_fist", false))
+	_set_combat_grips(right_grip, left_grip, bool(pose.get("right_fist", false)) or (fist_grip and right_grip), bool(pose.get("left_fist", false)) or (fist_grip and left_grip), not right_solve, not left_solve or left_weight < 0.5)
 	_stabilize_combat_pose()
 	if lock_support and bool(pose.get("support_locked", false)):
 		# Resolve support against the realized (angularly constrained) weapon,
@@ -1154,6 +1188,16 @@ func combat_realized_palm_basis(side: String) -> Basis:
 func combat_weapon_transform(grip: Vector3) -> Transform3D:
 	if combat_weapon_pose.is_empty() or not is_instance_valid(visual):
 		return Transform3D(global_basis, global_position)
+	if combat_weapon_pose.get("native_sword", false) and skeleton != null and _combat_bones.has("RightHand"):
+		var index: int = _combat_bones.RightHand
+		var chain := skeleton.get_bone_pose(index)
+		var parent := skeleton.get_bone_parent(index)
+		while parent >= 0:
+			chain = skeleton.get_bone_pose(parent) * chain
+			parent = skeleton.get_bone_parent(parent)
+		var hand_basis := (skeleton.global_basis * chain.basis).orthonormalized()
+		var blade_basis: Basis = hand_basis * combat_weapon_pose.get("native_sword_basis", Basis(Vector3.UP, PI))
+		return Transform3D(blade_basis, _clip_palm("Right") - blade_basis * grip)
 	var local_basis: Basis = combat_weapon_pose.basis
 	if combat_weapon_pose.get("right_wrist_roll") is float:
 		# Pulso reto (soqueira no soco): o prop segue a mão real, não a base pedida.
@@ -1205,7 +1249,8 @@ func receive_damage(amount: float, source: Node = null) -> void:
 	if PROTECTION.is_protected(self): return
 	if is_player:
 		var branch_gameplay = get_parent().get("gameplay")
-		if branch_gameplay: branch_gameplay.damage_player(amount)
+		var from: Vector3 = (source as Node3D).global_position if source is Node3D else Vector3.INF
+		if branch_gameplay: branch_gameplay.damage_player(amount, from)
 		return
 	var vehicle_source: bool = is_instance_valid(source) and source.has_method("is_player_damage_source") and source.is_player_damage_source()
 	health = maxf(0,health-amount)
@@ -1238,14 +1283,24 @@ func _fall_over(impact := Vector3.ZERO) -> void:
 
 ## Morte do jogador: alterna entre o clipe do Dante e `ual/Death01` (a queda de costas da UAL).
 ## `variant` fixa a escolha (testes e capturas); -1 sorteia.
-func on_player_death(variant := -1) -> void:
+## `push` é a direção em que o golpe empurra o corpo (do atacante para o jogador). Sem direção,
+## o sorteio antigo continua valendo.
+var last_death_clip := ""
+
+func on_player_death(variant := -1, push := Vector3.ZERO) -> void:
 	if dead: return
 	dead = true
 	set_physics_process(false)
 	collision_layer = 0
 	collision_mask = 0
 	var death_clip := "dying_backwards"
-	if (variant if variant >= 0 else randi() % 2) == 1 and animation != null and animation.has_animation("ual/Death01"): death_clip = "ual/Death01"
+	var directional := _directional_death_clip(push)
+	if not directional.is_empty():
+		death_clip = directional
+	elif (variant if variant >= 0 else randi() % 2) == 1 and animation != null and animation.has_animation("ual/Death01"): death_clip = "ual/Death01"
+	# Clipes do Mixamo levam o quadril junto com a queda; os antigos ficam presos ao lugar.
+	var lock_hips := not death_clip.begins_with("mixamo/")
+	last_death_clip = death_clip
 	if animation != null and animation.has_animation(death_clip):
 		if _reaction_tween != null: _reaction_tween.kill()
 		var from_pose := _capture_pose()
@@ -1255,6 +1310,7 @@ func on_player_death(variant := -1) -> void:
 		_reaction_tween.tween_method(func(time: float):
 			_pose_clip(death_clip, time)
 			if time < 0.20: _apply_blend(from_pose, _capture_pose(), smoothstep(0, 0.20, time))
+			if not lock_hips: return
 			var hip := skeleton.get_bone_pose_position(hips)
 			hip.x = hip_rest.x
 			hip.z = hip_rest.z
@@ -1262,6 +1318,20 @@ func on_player_death(variant := -1) -> void:
 		, 0.0, animation.get_animation(death_clip).length, animation.get_animation(death_clip).length)
 	else:
 		_fall_over(Vector3.BACK)
+
+## Queda pelo lado do empurrão, no referencial do modelo (rosto em +z, esquerda do Dante em +x,
+## medidos nos ossos de repouso e na queda de `dying_backwards`). Vazio = sem clipe direcional.
+func _directional_death_clip(push: Vector3) -> String:
+	if animation == null or skeleton == null: return ""
+	var flat := Vector3(push.x, 0.0, push.z)
+	if flat.length_squared() < 0.0001: return ""
+	var local := skeleton.global_transform.basis.inverse() * flat.normalized()
+	var clip := ""
+	if absf(local.z) >= absf(local.x):
+		clip = "mixamo/death_forward" if local.z > 0.0 else "dying_backwards"
+	else:
+		clip = "mixamo/death_left" if local.x > 0.0 else "mixamo/death_right"
+	return clip if animation.has_animation(clip) else ""
 
 func present_hit() -> void:
 	if not is_player or dead: return

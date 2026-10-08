@@ -3,6 +3,7 @@ extends CharacterBody3D
 const CIVILIAN := preload("res://assets/CivilianModel.gd")
 const CREW_OUTFIT := preload("res://runtime/desert/drag_meet/DragMeetWardrobe.gd")
 const LOOKS := {
+	"rauhz":{"name":"Rauhz","variant":9517,"coat":"14171b","pants":"292d33","skin":"d6aa91","hair":"584232","height":1.02,"build":1,"female":false,"hat":0,"beard":1,"glasses":false},
 	"vicente":{"name":"Vicente","variant":9511,"coat":"6b5142","pants":"292d30","skin":"c38d6e","hair":"25201d","height":1.04,"build":1,"female":false,"hat":0,"beard":2,"glasses":false},
 	"livia":{"name":"Lívia","variant":9512,"coat":"be6038","pants":"343539","skin":"8e5d42","hair":"1f1a17","height":.97,"build":0,"female":true,"hat":0,"beard":0,"glasses":true},
 	"raul":{"name":"Raul","variant":9513,"coat":"65764c","pants":"625344","skin":"d2a37c","hair":"6d675e","height":1.07,"build":2,"female":false,"hat":1,"beard":3,"glasses":false},
@@ -33,6 +34,7 @@ func _ready() -> void:
 	add_child(shape)
 	if identity_id=="jessica":
 		visual = preload("res://gameplay/jessica/JessicaModel.gd").new()
+		CREW_OUTFIT.style_rival(visual,identity_id)
 		add_child(visual)
 		add_to_group("jessica_character")
 		return
@@ -42,6 +44,7 @@ func _ready() -> void:
 	visual.coat_color = Color(look.coat)
 	visual.pants_color = Color(look.pants)
 	visual.wardrobe_overrides = {"female":look.female,"height":look.height,"build":look.build,"skin":Color(look.skin),"hair_color":Color(look.hair),"hat":look.hat,"beard":look.beard,"glasses":look.glasses,"bag":0,"backpack":false,"top":1,"bottom":0,"shoe":0}
+	CREW_OUTFIT.style_rival(visual,identity_id)
 	if identity_id=="vicente": CREW_OUTFIT.dress(visual)
 	add_child(visual)
 	if identity_id=="vicente": CREW_OUTFIT.insignia(visual)

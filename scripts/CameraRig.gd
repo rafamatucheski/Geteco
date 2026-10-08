@@ -51,7 +51,10 @@ var heading := 0.0
 var target_size := WALK_SIZE_CLOSE
 var focus := Vector3.ZERO
 var initialized := false
-var locked := false
+var locked := false:
+	set(value):
+		locked = value
+		if value and _exterior_reveal != null: _exterior_reveal.release()
 var offset := EXTERIOR_OFFSET
 var scope_reticle: Control
 var _smoothed_lead := Vector3.ZERO
@@ -75,6 +78,8 @@ var preview_view := false
 var _preview_blend := 0.0
 var _container_blend := 0.0
 var _container_focus := Vector3.ZERO
+var _building_approach_blend := 0.0
+var _cargo_plane_blend := 0.0
 # Túnel do canal: 0 fora, 1 no fundo (cresce com a profundidade do alvo na rampa).
 # Perspectiva traseira no túnel, dirigindo ou a pé; visão normal na rua.
 var _tunnel_blend := 0.0
@@ -104,6 +109,7 @@ const TUNNEL_BLEND_RATE := 1.6
 const TUNNEL_CUTAWAY_START := 0.3
 var _cutaway := TUNNEL_CUTAWAY.new()
 var _desert_terrain_camera := preload("res://world/desert/DesertTerrainCamera.gd").new()
+var _exterior_reveal := preload("res://scripts/camera/ExteriorReveal.gd").new()
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -130,11 +136,25 @@ func _exterior_view_offset() -> Vector3:
 	# Never change authored interior offsets, target, zoom, or heading.
 	if locked: return offset
 	var exterior := offset.lerp(PREVIEW_OFFSET.rotated(Vector3.UP, PREVIEW_HEADING), _preview_blend)
+	# Two narrow building entrances sit behind neighboring rooflines. Raise
+	# only the approaching walking view, retaining the player's orbit heading.
+	var approach_direction := Vector2(exterior.x,exterior.z).normalized()*5.0
+	exterior = exterior.lerp(Vector3(approach_direction.x,35.0,approach_direction.y),_building_approach_blend)
 	exterior = exterior.lerp(TUNNEL_OFFSET, smoothstep(0.0, 1.0, _tunnel_blend))
+	# A asa alta cruza a visão diagonal do corredor. Elevar apenas esta área
+	# conserva o avião sólido e libera a visão de Dante/carga em toda a órbita.
+	exterior = exterior.lerp(Vector3(0,33.6,12.2),smoothstep(0.0,1.0,_cargo_plane_blend))
 	# Tiny Z offset keeps look_at's up vector non-collinear at the overhead view.
 	return exterior.lerp(Vector3(0,35,.15),_container_blend)
 
 func _process(delta: float) -> void:
+	# Dante moves in real time during his katana ability. Follow/orbit must share
+	# that clock; the rest of the world and cameras following vehicles stay scaled.
+	if not locked and is_instance_valid(target) and target.has_meta("katana_rage_speed"):
+		delta *= float(target.get_meta("katana_rage_speed", 1.0))
+	if not get_tree().paused:
+		_building_approach_blend = move_toward(_building_approach_blend,1.0 if has_meta("harbor_building_approach") and not locked else 0.0,maxf(0,delta)/.45)
+		_cargo_plane_blend = move_toward(_cargo_plane_blend,1.0 if has_meta("cargo_plane_view") and not locked else 0.0,maxf(0,delta)/.45)
 	var container_view := has_meta("port_container_focus") and not locked
 	if container_view: _container_focus = get_meta("port_container_focus")
 	if not get_tree().paused:
@@ -148,6 +168,7 @@ func _process(delta: float) -> void:
 		# Production sights follow the shot; do not overlay a second cross at screen centre.
 		scope_reticle.visible = scoped and not (combat != null and combat.has_method("aim_feedback_active"))
 	if _store_focus_active:
+		_exterior_reveal.release()
 		_tunnel_safety.restore_environment()
 		_store_focus_elapsed = minf(_store_focus_duration, _store_focus_elapsed + maxf(delta, 0.0))
 		var t := _store_focus_elapsed / _store_focus_duration
@@ -163,6 +184,7 @@ func _process(delta: float) -> void:
 		look_at(focus)
 		return
 	if not is_instance_valid(target):
+		_exterior_reveal.release()
 		_tunnel_safety.restore_environment()
 		return
 	delta = maxf(delta,0.0) if is_finite(delta) else 0.0
@@ -208,10 +230,16 @@ func _process(delta: float) -> void:
 	else:
 		size = lerpf(size,desired_size,1.0-exp(-FOLLOW_RATE*delta))
 	var exterior_offset := _exterior_view_offset().rotated(Vector3.UP, heading)
-	exterior_offset = _desert_terrain_camera.offset_for(focus,exterior_offset,delta,snap,not locked and _tunnel_blend<.001,Vector2(size*get_viewport().get_visible_rect().size.aspect(),size),near,actual,3.4 if _is_vehicle_target() else .8,_flat_velocity())
+	var falling: bool = target is CharacterBody3D and target.velocity.y < -1.0 and not target.is_on_floor()
+	exterior_offset = _desert_terrain_camera.offset_for(focus,exterior_offset,delta,snap,not locked and _tunnel_blend<.001,Vector2(size*get_viewport().get_visible_rect().size.aspect(),size),near,actual,3.4 if _is_vehicle_target() else .8,_flat_velocity(),falling)
 	global_position = focus + exterior_offset
 	look_at(focus)
 	_update_tunnel_chase(actual, delta, snap)
+	# look_at resets this basis each frame; the small roll never accumulates.
+	var alcohol_roll := float(get_meta("alcohol_intensity",0.0)) * float(get_meta("alcohol_sway",0.0)) * .016
+	if not is_zero_approx(alcohol_roll): rotate_object_local(Vector3.FORWARD,alcohol_roll)
+	# Restore this effect before authored tunnel/interior visibility takes over.
+	_exterior_reveal.update(self,target,_is_vehicle_target(),_flat_velocity(),delta,not locked and _tunnel_blend < .001 and _tunnel_chase_blend < .001 and projection == Camera3D.PROJECTION_ORTHOGONAL and not get_tree().paused)
 	_update_cutaway()
 	_was_locked = locked
 
@@ -459,6 +487,7 @@ func _ensure_scope_reticle() -> void:
 	scope_reticle.hide()
 
 func _exit_tree() -> void:
+	_exterior_reveal.release()
 	_tunnel_safety.restore_environment()
 	if is_instance_valid(_chase_roof_vehicle): VEHICLE_INTERIOR.set_low_camera_roof(_chase_roof_vehicle, false)
 	_cutaway.release()
@@ -466,6 +495,9 @@ func _exit_tree() -> void:
 	if is_instance_valid(scope_reticle):
 		scope_reticle.hide()
 		scope_reticle.queue_free()
+
+func release_exterior_reveal() -> void:
+	_exterior_reveal.release()
 
 func _camera_input_blocked() -> bool:
 	if locked or _store_focus_active or get_tree().paused: return true

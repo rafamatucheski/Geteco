@@ -16,9 +16,10 @@ var skipped := 0
 var meter_bus := -1
 var recorder: AudioEffectRecord
 var audio_peak := -100.0
+var review_ids: Array[String] = ["desert_faisca", "desert_mirage_gt"]
 
 func _initialize() -> void:
-	create_timer(240).timeout.connect(func(): push_error("AV session timeout"); quit(2))
+	create_timer(360).timeout.connect(func(): push_error("AV session timeout"); quit(2))
 	run.call_deferred()
 
 func check(ok: bool, label: String) -> void:
@@ -31,35 +32,38 @@ func frames(count: int) -> void:
 
 func run() -> void:
 	if DisplayServer.get_name() == "headless" or "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--cars="):
+			review_ids.clear()
+			for id in arg.trim_prefix("--cars=").split(","):
+				if id not in preload("res://gameplay/desert_cars/DesertCarCatalog.gd").IDS: quit(2); return
+				review_ids.append(id)
 	output = FIXTURE.output_dir("desert-audio-lights")
 	root.size = Vector2i(1280,720)
 	Engine.max_fps = 30
+	var at: Vector3 = preload("res://world/desert/DesertLayout.gd").drag_start_point() + Vector3(12,.1,0)
+	var spawn := at+Vector3(0,0,8)
+	var snapshot: Dictionary = FIXTURE.full_snapshot(spawn,true)
+	snapshot.region_id = "desert"
+	snapshot.world.pedestrian = {"region":"desert","position":[spawn.x,spawn.y,spawn.z]}
+	snapshot.world.time = .9
+	var save_path := FIXTURE.write_fixture(output,"checkpoint.json",snapshot)
+	check(not save_path.is_empty(), "isolated desert checkpoint validates")
+	if not failures.is_empty(): finish(); return
 	world = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival",true)
+	world.set_meta("menu_save_path",save_path)
 	root.add_child(world)
 	current_scene = world
 	for i in 3600:
 		await physics_frame
-		if world.session != null and world.session.ready_for_play: break
+		if world.session != null and world.session.ready_for_play and world.production.startup_streaming_settled: break
 	check(world.session != null and world.session.ready_for_play, "Main session ready")
 	if not failures.is_empty(): finish(); return
-	check(world.session.controller.no_save, "user saves protected")
+	check(world.session.controller.no_save and world.production.store.path == save_path and not world.production.save_invalid, "isolated save and user saves protected")
 	world.dispatch.router.nearest_edge(world.player.global_position)
 	check(world.dispatch.router._native != null, "C# route backend active")
-	var intro: Dictionary = world.session.state.intro.snapshot()
-	intro.phase = "complete"
-	intro.location_id = "harbor_street"
-	intro.inventory = {}
-	intro.completed_missions = [preload("res://data/GarageSequence.gd").ID]
-	check(world.session.state.intro.restore_snapshot(intro), "intro fixture")
-	var fixture: Dictionary = FIXTURE.full_snapshot(world.player.global_position,true,true)
-	check(world.session.state.campaign.restore_snapshot(fixture.campaign), "campaign unlock fixture")
-	var at: Vector3 = preload("res://world/desert/DesertLayout.gd").drag_start_point() + Vector3(12,.1,0)
-	# Keep Dante outside the spawn hull: production correctly rejects overlap.
-	check(world.production.travel("desert",at+Vector3(0,0,8)), "travel to desert")
-	for i in 900:
-		await physics_frame
-		if not world.production.travel_busy and world.session.ready_for_play: break
+	if world.session.modal: world.session.close_menu()
 	await frames(120)
 	world.session.weather.weather_state = 0
 	world.session.weather.weather_timer = 3600
@@ -76,7 +80,7 @@ func run() -> void:
 	RenderingServer.frame_post_draw.connect(capture)
 	started = Time.get_ticks_usec()
 	recording = true
-	for id in ["desert_faisca", "desert_mirage_gt"]:
+	for id in review_ids:
 		phase = id+"_boarding"
 		world.production.region.prepare_collision_at(at)
 		await physics_frame
@@ -92,7 +96,8 @@ func run() -> void:
 		check(car.controlled and not car.input_locked, id+": boarding completes")
 		if not failures.is_empty(): finish(); return
 		var sound: Node = car.get_node("DesertCarAudio")
-		for voice in sound._layers: voice.bus = "DesertAVCapture"
+		for voice in sound.get_children():
+			if voice is AudioStreamPlayer3D: voice.bus = "DesertAVCapture"
 		audio_peak = -100
 		phase = id+"_idle_night"
 		var equipment: Node = car.ensure_equipment(world)
@@ -129,7 +134,7 @@ func run() -> void:
 
 func capture() -> void:
 	if not recording: return
-	if samples.size() >= 3200:
+	if samples.size() >= 1600*review_ids.size():
 		recording = false
 		check(false,"capture frame limit reached")
 		finish.call_deferred()

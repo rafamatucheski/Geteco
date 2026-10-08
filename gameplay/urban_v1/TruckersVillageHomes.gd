@@ -102,6 +102,10 @@ func set_loot_collected(index: int,collected: bool) -> void:
 
 func _physics_process(delta: float) -> void:
 	if not is_instance_valid(player): return
+	if session!=null and not session.state.place_id.is_empty():
+		if current_home>=0: _set_inside(-1)
+		return
+	if player.get_meta("harbor_service_rooftop",false): return
 	_scan -= delta
 	if _scan<=0:
 		_scan = .12

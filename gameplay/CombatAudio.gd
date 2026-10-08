@@ -32,11 +32,18 @@ const GUNFIRE_FAMILIES := ["pistol", "magnum", "smg", "shotgun", "sawed_off", "a
 const SUPPRESSED_FAMILIES := ["pistol", "smg", "shotgun", "ak47", "m4a1", "hunting_rifle"]
 const SHORT_FAMILIES := ["hurt", "panic", "impact_concrete", "impact_flesh", "impact_glass", "impact_metal", "impact_wood", "reward_pickup", "reward_cash"]
 const SINGLE_SAMPLES := ["reward_weapon.wav", "reward_collectible.wav", "reward_achievement.wav"]
+const CONTACT_DIR := "res://audio/weapon_contacts/"
+const CONTACT_FAMILIES := ["casing_hard", "casing_metal", "casing_wood", "casing_soft", "casing_snow", "impact_soil", "impact_snow"]
+static var _contacts: Dictionary = {}
+static var _last_contact_take: Dictionary = {}
 
 ## Load every authored take under the loading curtain, without choosing a take,
 ## advancing gameplay RNG, starting a voice or changing the no-repeat history.
 ## Batches are bounded to one family; filesystem work runs on loader threads.
 static func prewarm_gameplay_banks(tree: SceneTree) -> void:
+	for family in CONTACT_FAMILIES:
+		for index in RELOAD_TAKES: _contact_sample(family, index)
+		await tree.process_frame
 	for family in GUNFIRE_FAMILIES:
 		await _prewarm_family(family,GUNFIRE_TAKES,tree)
 	for family in SUPPRESSED_FAMILIES:
@@ -50,6 +57,7 @@ static func prewarm_gameplay_banks(tree: SceneTree) -> void:
 	for family in GUN_BODY:
 		gun_body(family)
 		await tree.process_frame
+	shotgun_pump()
 	punch_swing()
 	bat_swing()
 	for kind in WHOOSH_SPEC: melee_whoosh(kind)
@@ -110,6 +118,24 @@ static func wav(relative_path: String) -> AudioStream:
 ## Um take aleatório de `<prefixo>_<0..2>.wav` (nulo se a família não existir).
 static func take(prefix: String, rng: RandomNumberGenerator) -> AudioStream:
 	return wav("%s_%d.wav" % [prefix, rng.randi_range(0, RELOAD_TAKES - 1)])
+
+static func _contact_sample(family: String, index: int) -> AudioStream:
+	var key := "%s_%d" % [family, index]
+	if not _contacts.has(key):
+		var path := CONTACT_DIR + key + ".wav"
+		_contacts[key] = load(path) as AudioStream if ResourceLoader.exists(path) else null
+	return _contacts[key]
+
+static func contact_take(family: String, rng: RandomNumberGenerator) -> AudioStream:
+	var index := rng.randi_range(0, RELOAD_TAKES - 1)
+	if int(_last_contact_take.get(family, -1)) == index: index = (index + 1) % RELOAD_TAKES
+	_last_contact_take[family] = index
+	return _contact_sample(family, index)
+
+static func impact_take(material: String, rng: RandomNumberGenerator) -> AudioStream:
+	if material == "snow": return contact_take("impact_snow", rng)
+	if material in ["dirt", "sand", "grass"]: return contact_take("impact_soil", rng)
+	return take("impact_" + material, rng)
 
 ## Take de tiro/explosão entre os 5 disponíveis, sem repetir o take anterior da mesma
 ## família — replica `AudioStreamRandomizer.PLAYBACK_RANDOM_NO_REPEATS` da V1.
@@ -420,6 +446,32 @@ static func gun_body(kind: String) -> AudioStream:
 		data.encode_s16(i * 2, clampi(int(tanh(thump * 0.95 + roll * 0.55) * 0.9 * 32767.0), -32768, 32767))
 	_generated[key] = _make(data, rate)
 	return _generated[key]
+
+## Deslizamento da telha e fechamento do ferrolho, sincronizados ao bombeamento após o tiro.
+static func shotgun_pump() -> AudioStream:
+	if _generated.has("shotgun_pump"): return _generated["shotgun_pump"]
+	var rate := 22050
+	var count := int(rate * 0.34)
+	var data := PackedByteArray()
+	data.resize(count * 2)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 1467
+	var low := 0.0
+	for i in count:
+		var t := float(i) / float(rate)
+		var noise := rng.randf_range(-1.0, 1.0)
+		low += (noise - low) * 0.055
+		var pull := smoothstep(0.008, 0.035, t) * (1.0 - smoothstep(0.105, 0.15, t))
+		var push := smoothstep(0.155, 0.185, t) * (1.0 - smoothstep(0.245, 0.29, t))
+		var scrape := (noise - low) * (pull * 0.15 + push * 0.19) + low * (pull * 0.10 + push * 0.13)
+		var first_click := noise * exp(-absf(t - 0.012) * 620.0) * 0.26
+		var close_time := maxf(0.0, t - 0.265)
+		var close_thunk := sin(TAU * 112.0 * close_time) * exp(-close_time * 66.0) * 0.30
+		var close_click := (noise - low) * exp(-absf(t - 0.265) * 510.0) * 0.30
+		var sample := tanh((scrape + first_click + close_thunk + close_click) * 1.4) * 0.82
+		data.encode_s16(i * 2, clampi(int(sample * 32767.0), -32768, 32767))
+	_generated["shotgun_pump"] = _make(data, rate)
+	return _generated["shotgun_pump"]
 
 ## Soltura: atrito da manga e estalo seco da alavanca, sem assobio tonal.
 static func grenade_throw() -> AudioStream:

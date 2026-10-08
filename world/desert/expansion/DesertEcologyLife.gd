@@ -113,13 +113,13 @@ func _physics_process(delta: float) -> void:
 		if not bool(animal.active): continue
 		var node: Node3D=animal.node
 		var target: Vector3=animal.target
-		var velocity := target-node.position
-		velocity.y=0
-		var moving := velocity.length_squared()>.00015
+		var movement_vector := target-node.position
+		movement_vector.y=0
+		var moving := movement_vector.length_squared()>.00015
 		if moving:
 			var speed := 1.35 if animal.rabbit else .34
 			node.position=node.position.move_toward(target,speed*delta)
-			node.rotation.y=lerp_angle(node.rotation.y,atan2(-velocity.x,-velocity.z),minf(delta*8,1.0))
+			node.rotation.y=lerp_angle(node.rotation.y,atan2(-movement_vector.x,-movement_vector.z),minf(delta*8,1.0))
 		var skin: Node3D=animal.skin
 		# Small fore/hind-foot lift reads as a hop at real hare proportions.
 		skin.position.y=absf(sin(_clock*13.0+float(animal.phase)))*.055 if moving and animal.rabbit else 0.0

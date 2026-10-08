@@ -125,7 +125,7 @@ func _show_slots(new_game: bool) -> void:
 		button.text = row.label
 		button.custom_minimum_size.y = 58
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.disabled = row.exists if new_game else not row.valid
+		button.disabled = (row.exists and not row.reusable) if new_game else not row.valid
 		if not button.disabled: enabled_options += 1
 		button.pressed.connect(func(): _start(str(row.id), new_game))
 		%SlotListContainer.add_child(button)

@@ -88,6 +88,7 @@ static func _height_variance_factor(p_building_id: String, p_building_kind: Stri
 			return lerpf(0.85, 1.30, t)
 
 func _ready() -> void:
+	add_to_group("exterior_reveal_building")
 	if visuals_root == null:
 		visuals_root = Node3D.new()
 		visuals_root.name = "Visuals"

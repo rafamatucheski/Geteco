@@ -227,6 +227,12 @@ func _update_skid_audio(audible: bool, road_speed: float, lateral_speed: float) 
 	STALL_WORK.finish_slow("vehicle_tires.skid_audio",began,5000,vehicle)
 
 func _stall_update_skid_audio(audible: bool, road_speed: float, lateral_speed: float) -> void:
+	# A burnout already has its own voice in the shared powertrain mixer. Avoid
+	# summing the same tire recording twice, while preserving braking and drift.
+	if audible and vehicle.get("brake_input") != true and lateral_speed <= maxf(0.0, road_speed) * .15:
+		var powertrain_audio := vehicle.get_node_or_null("DesertCarAudio")
+		if is_instance_valid(powertrain_audio) and powertrain_audio.has_method("has_wheelspin_voice") and powertrain_audio.has_wheelspin_voice():
+			audible = false
 	if not audible:
 		if is_instance_valid(skid_audio) and skid_audio.playing: skid_audio.stop()
 		return
@@ -241,11 +247,12 @@ func _stall_update_skid_audio(audible: bool, road_speed: float, lateral_speed: f
 		skid_audio.name = "VehicleSkid"
 		skid_audio.stream = stream
 		skid_audio.max_distance = 55.0
-		skid_audio.unit_size = 14.0
+		skid_audio.unit_size = 4.0
+		skid_audio.max_db = -22.0
 		skid_audio.bus = &"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master"
 		vehicle.add_child(skid_audio)
 		STALL_WORK.finish("vehicle_tires.skid_voice",began,{"kind":kind})
-	skid_audio.volume_db = lerpf(-24.0, -11.0, clampf(road_speed / 16.25, 0.0, 1.0))
+	skid_audio.volume_db = lerpf(-30.0, -22.0, clampf(road_speed / 16.25, 0.0, 1.0))
 	skid_audio.pitch_scale = lerpf(0.88, 1.12, clampf(lateral_speed / 11.25, 0.0, 1.0))
 	if not skid_audio.playing: skid_audio.play()
 

@@ -3,8 +3,8 @@ extends Node
 const FLEET := preload("res://gameplay/mining/MiningFleet.gd")
 const LAYOUT := preload("res://world/mining/MiningLayout.gd")
 const ORIGIN := LAYOUT.CENTER
-const VEHICLE_IDS := ["mineradora_backhoe","mineradora_tractor","mineradora_haul","mineradora_haul_pit"]
-const ARCHETYPES := ["mining_backhoe","mining_tractor","mining_haul_truck","mining_haul_truck"]
+const VEHICLE_IDS := ["mineradora_backhoe","mineradora_tractor","mineradora_haul","mineradora_haul_pit","mineradora_escape","mineradora_employee_1","mineradora_employee_2","mineradora_employee_3","mineradora_employee_4"]
+const ARCHETYPES := ["mining_backhoe","mining_tractor","mining_haul_truck","mining_haul_truck","desert_bison","desert_faisca","ranch_single","desert_siroco","station_wagon"]
 var session: Node
 var world: Node3D
 var _clock := 0.0
@@ -123,17 +123,22 @@ static func create_rock(index: int) -> RigidBody3D:
 	rock.angular_damp = 1.2
 	rock.add_to_group("mining_cargo")
 	rock.set_meta("mining_origin_height",.58)
-	var mesh := SphereMesh.new()
-	mesh.radius = .66+float(index%3)*.07
-	mesh.height = 1.15
-	mesh.radial_segments = 7
-	mesh.rings = 3
+	# Fractured quarry blocks, with the same maximum load envelope as before.
+	var mesh: Mesh = preload("res://world/mining/MiningBatch.gd").mesh("rock")
+	var radius := .66+float(index%3)*.07
+	var rock_scale := Vector3(radius/.56,1.15/1.08,radius/.56)
 	var visual := MeshInstance3D.new()
 	visual.mesh = mesh
+	visual.scale = rock_scale
 	visual.material_override = preload("res://world/mining/operation/MiningMachineModel.gd").material("ore_rock",Color("797164"))
 	rock.add_child(visual)
 	var shape := CollisionShape3D.new()
-	shape.shape = mesh.create_convex_shape()
+	var convex := ConvexPolygonShape3D.new()
+	var vertices: PackedVector3Array = mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	var points := PackedVector3Array()
+	for vertex in vertices: points.append(vertex*rock_scale)
+	convex.points = points
+	shape.shape = convex
 	rock.add_child(shape)
 	return rock
 

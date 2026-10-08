@@ -1,0 +1,19 @@
+Field-recorded idle layers used by the desert roster
+
+coyote_idle.wav is adapted from "Eight-cylinder engine idling.wav" by Lumamorph.
+https://freesound.org/people/Lumamorph/sounds/636066/
+Licensed under Creative Commons Attribution 4.0 International (CC BY 4.0).
+https://creativecommons.org/licenses/by/4.0/
+Changes: excerpt, mono conversion, high-pass filtering, sample-rate conversion,
+crossfaded loop and gain normalization. No endorsement by the author is implied.
+
+bison_idle.wav is adapted from "dv6_idle_outside.wav" by Mihacappy.
+https://freesound.org/people/Mihacappy/sounds/819134/
+Dedicated under CC0 1.0: https://creativecommons.org/publicdomain/zero/1.0/
+Changes: excerpt, mono conversion, high-pass filtering, sample-rate conversion,
+crossfaded loop and gain normalization.
+
+These are real idle recordings used as character references for fictional cars.
+They are not recordings of the fictional Coyote or Bison, nor complete sampled
+RPM banks. Other engine layers remain the project's offline combustion synthesis.
+Exact files, preparation and SHA256 checksums are recorded in SOURCES.json.

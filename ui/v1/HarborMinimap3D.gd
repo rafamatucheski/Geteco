@@ -29,6 +29,7 @@ var _cached_connection := false
 var _roads: Array[Dictionary] = []
 var _buildings: Array[Rect2] = []
 var _entries := PackedVector2Array()
+var _rail_stations: Array[Dictionary] = []
 var _drawn_center := Vector2(INF, INF)
 var _drawn_heading := INF
 var _drawn_objective := Vector2(INF, INF)
@@ -42,6 +43,8 @@ var route_points := PackedVector2Array()
 var background: Panel
 
 func _ready() -> void:
+	if "--railway-baseline" not in OS.get_cmdline_user_args():
+		_rail_stations = preload("res://world/railway/RailwayNetwork.gd").stations()
 	name = "Minimap"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	custom_minimum_size = PANEL_SIZE
@@ -153,6 +156,10 @@ func refresh() -> void:
 	if world.session.freight_active and world.session.freight_target.is_finite():
 		var delivery: Vector3 = world.session.freight_target
 		objective_target = Vector2(delivery.x, delivery.z)
+	var fishing: Variant = world.session.get("fishing")
+	if is_instance_valid(fishing) and fishing.active and not fishing.controls_locked():
+		var fishing_target: Vector3 = fishing.target_position()
+		if fishing_target.is_finite(): objective_target = Vector2(fishing_target.x,fishing_target.z)
 	_sync_navigation(actor)
 	if not was_visible or _redraw_required or center.distance_squared_to(_drawn_center) > 0.0025 or absf(angle_difference(heading, _drawn_heading)) > 0.01 or absf(map_scale - _drawn_scale) > .002 or not objective_target.is_equal_approx(_drawn_objective):
 		_drawn_center = center
@@ -244,7 +251,8 @@ func edge_marker(point: Vector2) -> Vector2:
 	return MAP_SIZE * 0.5 + offset / maxf(1.0, factor)
 
 func draw_map(target: Control) -> void:
-	CARTOGRAPHY.contours(target,MAP_SIZE,center,map_scale)
+	# Keep the navigation background quiet while panning and changing zoom.
+	# Decorative contours are reserved for the full-size map.
 	if not is_instance_valid(world) or not is_instance_valid(world.production) or not is_instance_valid(world.production.region): return
 	var map_area := Rect2(center - MAP_SIZE / (2.0 * map_scale), MAP_SIZE / map_scale)
 	for rect in _buildings:
@@ -264,6 +272,13 @@ func draw_map(target: Control) -> void:
 			if not bounds.intersects(Rect2(a, Vector2.ZERO).expand(b).grow(4), true): continue
 			target.draw_line(a, b, STYLE.INK, 4, true)
 			target.draw_line(a, b, STYLE.WAYPOINT, 1.5, true)
+	for station in _rail_stations:
+		var entry: Vector3 = station.entry
+		var point := Vector2(entry.x,entry.z)
+		if map_area.has_point(point): preload("res://ui/hud/MapSymbols.gd").draw(target,project(point),"train",7.0)
+	var fishing_entry := preload("res://runtime/FishingLocation.gd").ENTRY
+	var fishing_point := Vector2(fishing_entry.x,fishing_entry.z)
+	if map_area.has_point(fishing_point): preload("res://ui/hud/MapSymbols.gd").draw(target,project(fishing_point),"fishing",7.0)
 	if objective_target != Vector2.ZERO and center.distance_to(objective_target) >= 3.0:
 		var marker := edge_marker(objective_target)
 		target.draw_circle(marker, 8, STYLE.INK)

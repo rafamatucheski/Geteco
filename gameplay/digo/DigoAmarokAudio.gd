@@ -17,7 +17,7 @@ func _ready() -> void:
 	if _rumble == null:
 		_rumble = RUMBLE.duplicate() as AudioStreamWAV
 		_rumble.loop_mode = AudioStreamWAV.LOOP_FORWARD
-		_rumble.loop_end = _rumble.data.size()/2
+		_rumble.loop_end = floori(float(_rumble.data.size())/2.0)
 		_release = RELEASE
 	rumble = _player("DieselExhaust",_rumble,-19.0)
 	release = _player("TurboRelease",_release,-10.0)

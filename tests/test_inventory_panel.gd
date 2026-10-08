@@ -12,6 +12,7 @@ class Adapter extends RefCounted:
 	var dropped:=0
 	func economy(): return wallet
 	func trunk_access() -> bool: return near
+	func travel_bag_available() -> bool: return false
 	func can_edit(container: String) -> bool: return container!="trunk" or near
 	func close() -> void: ui.hide()
 	func drop_bag() -> bool:

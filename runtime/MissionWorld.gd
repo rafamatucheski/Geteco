@@ -1,4 +1,6 @@
 extends Node3D
+## Successful live operations only; restoring/cancelling cargo is silent.
+signal tow_event(kind: String)
 const UNIT := 1.0/16.0
 const CENTER := Vector3(7700,0,1700)*UNIT
 const RADIUS := 321.0*UNIT
@@ -139,14 +141,12 @@ func target_position() -> Vector3:
 func nearest_action() -> Dictionary:
 	var local_position: Vector3 = session.world.player.position
 	if session.state.campaign.active_id == "cobra_finale":
-		if session.state.campaign.step == 6 and session.state.place_id.is_empty() and local_position.distance_to(targets.cobra_leader_house)<2.2:
+		if session.state.campaign.step == 6 and not session._uses_walkup_access("cobra_leader_house") and session.state.place_id.is_empty() and local_position.distance_to(targets.cobra_leader_house)<2.2:
 			return {"id":"enter","place":"cobra_leader_house","access":"cobra_leader_house","target":"leader_house","label":"Entrar"}
 		if session.state.campaign.step == 7 and session.state.place_id == "cobra_leader_house" and local_position.distance_to(target_position())<1.6:
 			return {"id":"mission","target":"transfer_document","label":"Examinar lista"}
 	if race_phone_available() and local_position.distance_to(race_phone_position()) <= preload("res://activities/RacePhone.gd").RANGE:
 		return {"id":"mission","target":"race_start","label":"Atender telefone"}
-	var berth := Vector3(1930,0,1220)*UNIT if session.state.region_id == "harbor" else preload("res://world/places/PlaceCatalog.gd")._at(Vector2(7500,-1760),"mountain")
-	if local_position.distance_to(berth) < 3: return {"id":"mission","target":"travel","label":"Viajar para "+("a serra" if session.state.region_id == "harbor" else "o porto")}
 	if session.state.region_id != "harbor": return {}
 	if is_instance_valid(truck) and not truck.has_meta("tow_pending") and truck.health <= 0 and local_position.distance_to(truck.position) < 5:
 		return {"id":"mission","target":"tow_recover","label":"Recuperar guincho"}
@@ -196,9 +196,7 @@ func perform(id: String) -> bool:
 		session._button("Desligar",session.close_menu)
 		return true
 	if id == "travel":
-		if session.controller.travel("mountain" if session.state.region_id == "harbor" else "harbor"):
-			return true
-		return false
+		return session.regional_coach != null and session.regional_coach.try_interact()
 	if id == "tow_toggle": return _tow_toggle()
 	if session.state.campaign.is_suspended(): return false
 	var step: Dictionary = session.state.campaign.current_step()
@@ -571,6 +569,7 @@ func _tow_toggle() -> bool:
 		unloaded_at_bay = cargo.position.distance_to(targets.neco_bay)<8
 		if unloaded_at_bay and session.state.campaign.target_id()=="neco_bay": _event("story_vehicle_unloaded","neco_bay")
 	session.save_game()
+	tow_event.emit("loaded" if loaded else "unloaded")
 	return true
 func tow_snapshot() -> Dictionary:
 	return {"token":_tow_identity(tow_job),"cargo_id":cargo.archetype if is_instance_valid(cargo) else "","loaded":loaded,"unloaded_at_bay":unloaded_at_bay,"alive":is_instance_valid(cargo) and cargo.health>0,"service_position":targets.neco}
@@ -584,6 +583,7 @@ func finish_tow_job() -> bool:
 	cargo = null
 	tow_job.clear()
 	unloaded_at_bay = false
+	tow_event.emit("delivered")
 	return true
 
 func cancel_tow_job() -> bool:

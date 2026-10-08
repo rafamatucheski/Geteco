@@ -9,6 +9,7 @@ var _revision := -1
 var _roads: Dictionary
 var _junctions: Dictionary
 var _buildings: Dictionary
+var street_reservations: Array[Rect2] = []
 
 
 func matches_geometry(geometry: RefCounted) -> bool:
@@ -17,6 +18,7 @@ func matches_geometry(geometry: RefCounted) -> bool:
 
 func configure(geometry: RefCounted, buildings: Array) -> void:
 	_geometry = geometry
+	street_reservations = preload("res://world/city_look/CityTransitReservations.gd").build()
 	_revision = -1 if geometry == null else int(geometry.get("context_revision"))
 	var roads: Array = []
 	var road_bounds: Array[Rect2] = []
@@ -36,7 +38,12 @@ func configure(geometry: RefCounted, buildings: Array) -> void:
 	var building_bounds: Array[Rect2] = []
 	for building in buildings:
 		var center := Vector2(building.position.x, building.position.z)
-		var footprint := Rect2(center - building.size * 0.5, building.size)
+		# Edited facades rotate their real footprint. Street dressing must use
+		# that same envelope, or alley bins can be generated inside the rooms.
+		var yaw := float(building.get("editor_rotation",0.0))
+		var size: Vector2 = building.size
+		var rotated_size := Vector2(absf(cos(yaw))*size.x+absf(sin(yaw))*size.y,absf(sin(yaw))*size.x+absf(cos(yaw))*size.y)
+		var footprint := Rect2(center - rotated_size * 0.5, rotated_size)
 		wrappers.append({"rect": footprint, "data": building})
 		building_bounds.append(footprint.grow(4.0))
 	_roads = _bucket(roads, road_bounds)

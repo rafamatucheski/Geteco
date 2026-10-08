@@ -172,6 +172,20 @@ const OUTFITS = {
 		"shirt_style": "hawaiian",
 		"trim_color": Color("f9ca24")
 	},
+	"dante_lume": {
+		"id":"dante_lume", "name":"JAQUETA LUME", "district":"Parque Lume", "price":0,
+		"description":"", "jacket_color":Color("306875"), "pants_color":Color("202d36"),
+		"skin_color":Color(.87,.66,.51), "hair_color":Color("121217"),
+		"headwear_type":"hair_only", "headwear_color":Color("121217"), "accessory_type":"",
+		"shoes_color":Color("ddcfb2"), "shirt_style":"jacket", "trim_color":Color("d5ac58")
+	},
+	"dante_midnight": {
+		"id":"dante_midnight", "name":"CASACO MEIA-NOITE", "district":"Parque Lume", "price":0,
+		"description":"", "jacket_color":Color("352842"), "pants_color":Color("20212c"),
+		"skin_color":Color(.87,.66,.51), "hair_color":Color("121217"),
+		"headwear_type":"hair_only", "headwear_color":Color("121217"), "accessory_type":"",
+		"shoes_color":Color("18191e"), "shirt_style":"jacket", "trim_color":Color("a13f59")
+	},
 	"dante_badboy": {
 		"id": "dante_badboy",
 		"name": "REGATA FITNESS & BONÉ REVERSO",

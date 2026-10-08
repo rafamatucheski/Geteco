@@ -2,6 +2,7 @@ extends RefCounted
 const Definitions := preload("res://activities/ActivityDefinitions.gd")
 const Rules := preload("res://systems/economy/ResidenceRules.gd")
 const Fleet := preload("res://runtime/FleetCatalog.gd")
+const CATS := preload("res://runtime/cats/CatAdoption.gd")
 var session
 var data: Dictionary = Rules.default_state()
 var deployed: CharacterBody3D
@@ -13,6 +14,36 @@ const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const STORAGE := preload("res://runtime/ResidenceStorage.gd")
 var _definitions: Dictionary = {}
 var _storing := false
+
+func _init() -> void:
+	data.cats = CATS.default_state()
+
+func cats_unlocked() -> bool:
+	return Definitions.HOMES.PROPERTIES.has(str(data.active_home))
+
+func _cat_state() -> Dictionary:
+	if not data.has("cats"): data.cats = CATS.default_state()
+	return data.cats
+
+func adopted_cats() -> Array[String]:
+	var result: Array[String] = []
+	for id in _cat_state().adopted: result.append(str(id))
+	return result
+
+func cat_count() -> int:
+	return _cat_state().adopted.size()
+
+func cat_furniture() -> Dictionary:
+	return _cat_state().furniture.duplicate()
+
+func adopt_cat(id: String) -> bool:
+	return CATS.adopt(_cat_state(), id, cats_unlocked())
+
+func buy_cat_furniture(id: String) -> bool:
+	if session == null or not cats_unlocked(): return false
+	if session.state.region_id != "harbor" or session.state.place_id != data.active_home: return false
+	if session.world.gameplay.health <= 0 or session.world.driving.occupied: return false
+	return CATS.purchase(_cat_state(), id, true, session.state.economy)
 
 func _definition(id: String) -> Dictionary:
 	if not _definitions.has(id): _definitions[id] = PLACES.get_definition(id)
@@ -148,6 +179,7 @@ func _clear(id: String, point: Vector3, yaw: float = 0.0) -> bool:
 	return true
 
 func snapshot() -> Dictionary:
+	_cat_state()
 	for slot in ["car","motorcycle"]:
 		var car := _deployed(slot)
 		var record := _record(slot)
@@ -162,6 +194,7 @@ func restore_snapshot(saved: Dictionary) -> bool:
 	data = saved.duplicate(true)
 	if not data.has("stored_motorcycle"): data.stored_motorcycle = {}
 	if not data.has("chest"): data.chest = {}
+	data.cats = CATS.normalize_validated(saved.get("cats", CATS.default_state()))
 	# V1/V2 originally had one unrestricted slot, which could contain a bike.
 	if not data.stored_vehicle.is_empty() and vehicle_slot(data.stored_vehicle.archetype_id) == "motorcycle" and data.stored_motorcycle.is_empty():
 		data.stored_motorcycle = data.stored_vehicle
@@ -175,6 +208,7 @@ static func validate_snapshot(saved: Dictionary) -> bool:
 	if typeof(saved.get("schema_version")) not in [TYPE_INT,TYPE_FLOAT] or float(saved.schema_version) != 1.0: return false
 	if typeof(saved.get("purchases")) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(saved.purchases)) or float(saved.purchases) < 0 or float(saved.purchases) != floorf(float(saved.purchases)): return false
 	if not STORAGE.validate_chest(saved.get("chest",{})): return false
+	if not CATS.validate(saved.get("cats", CATS.default_state()), not saved.active_home.is_empty()): return false
 	if not _validate_vehicle(saved.get("stored_vehicle"),saved.active_home): return false
 	if not _validate_vehicle(saved.get("stored_motorcycle",{}),saved.active_home): return false
 	var bike: Dictionary = saved.get("stored_motorcycle",{})

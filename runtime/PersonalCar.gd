@@ -4,6 +4,7 @@ extends Node
 const ID := "personal_monaliza"
 const FEES := 50
 const BACKPACK_CLAIM := "monaliza_backpack"
+const TRAVEL_BAG_CLAIM := "monaliza_travel_bag"
 const WEAPONS := preload("res://gameplay/WeaponCatalog.gd")
 const TRUNK_VIEW := preload("res://runtime/TrunkView.gd")
 const POLICE_TRUNK := preload("res://runtime/PoliceTrunk.gd")
@@ -52,7 +53,7 @@ func nearest_action() -> Dictionary:
 	# The authored service point owns that interaction while Dante is inside;
 	# otherwise the trunk swallowed the repair/recovery menu entirely.
 	if _near_service(): return {"id":"personal_car","target":"service","label":"Cuidar da Monaliza"}
-	if _near_trunk(): return {"id":"personal_car","target":"trunk","label":"Abrir porta-malas"}
+	if _near_trunk(): return {"id":"personal_car","target":"trunk","label":"Abrir porta-malas · retirar mala" if travel_bag_available() else "Abrir porta-malas"}
 	return {}
 
 func perform(target: String) -> bool:
@@ -85,6 +86,39 @@ func discover_backpack() -> bool:
 	# Existing saves keep their bag and contents; discovery waits for free hands.
 	if not economy.grid_equip_bag("backpack"): return false
 	economy.grid_claim(BACKPACK_CLAIM)
+	return true
+
+func travel_bag_available() -> bool:
+	if not _available() or not session.state.economy.grid_enabled(): return false
+	# Actual victory, never an active attempt or a skipped legacy mission.
+	return "cobra_race" in session.state.campaign._data.completed and TRAVEL_BAG_CLAIM not in session.state.economy._data.grid_inventory.claimed
+
+func claim_travel_bag() -> bool:
+	var field = session.field_inventory
+	if not travel_bag_available() or field == null or not field.trunk_access(): return false
+	var economy = session.state.economy
+	var candidate: Dictionary = economy.grid_snapshot()
+	if candidate.bag == "handbag":
+		field._feedback("Solte a mala atual antes de retirar o presente do Maciota.")
+		return false
+	if candidate.bag == "backpack":
+		var point: Vector3 = field.bag_drop_point()
+		if not point.is_finite():
+			field._feedback("Libere espaço no chão ao seu lado para deixar a mochila.")
+			return false
+		candidate.serial += 1
+		# Contents retain their cells in the larger bag. Only the empty backpack
+		# is left on free ground; no inventory item is removed or recreated.
+		candidate.ground.append({"uid":candidate.serial,"bag":"backpack","region":session.state.region_id,"place":session.state.place_id,"position":[point.x,point.y,point.z],"entries":[]})
+	candidate.bag = "handbag"
+	candidate.claimed.append(TRAVEL_BAG_CLAIM)
+	if not preload("res://systems/inventory/GridInventory.gd").validate(candidate):
+		field._feedback("Não foi possível guardar a troca. Recolha uma bagagem do chão e tente novamente.")
+		return false
+	# Publish bag, drop and receipt together, after all physical/capacity checks.
+	economy._data.grid_inventory = candidate
+	if session.state.equipped_weapon in preload("res://systems/inventory/GridInventory.gd").LONG:
+		session.state.equip_weapon("fists")
 	return true
 
 func _open_trunk() -> void:

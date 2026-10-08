@@ -3,6 +3,16 @@ extends RefCounted
 const CARS := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
 const STREET := preload("res://gameplay/desert_cars/StreetPowertrainCatalog.gd")
 const PARTS := {
+	"paint_rosso":{"label":"Vermelho", "slot":"paint", "cost":1200, "wins":0, "effect":"Pintura da carroceria", "body_color":"b62930"},
+	"paint_ocean":{"label":"Azul petróleo", "slot":"paint", "cost":1200, "wins":0, "effect":"Pintura da carroceria", "body_color":"285968"},
+	"paint_pearl":{"label":"Branco pérola", "slot":"paint", "cost":1200, "wins":0, "effect":"Pintura da carroceria", "body_color":"e4e1d6"},
+	"paint_graphite":{"label":"Grafite", "slot":"paint", "cost":1200, "wins":0, "effect":"Pintura da carroceria", "body_color":"30383c"},
+	"finish_gloss":{"label":"Brilhante", "slot":"finish", "cost":850, "wins":0, "effect":"Verniz brilhante na carroceria", "body_roughness":.23, "body_metallic":.42},
+	"finish_satin":{"label":"Acetinado", "slot":"finish", "cost":850, "wins":0, "effect":"Reflexos suaves na carroceria", "body_roughness":.58, "body_metallic":.20},
+	"finish_matte":{"label":"Fosco", "slot":"finish", "cost":850, "wins":0, "effect":"Acabamento fosco na carroceria", "body_roughness":.88, "body_metallic":.05},
+	"wheels_silver":{"label":"Prata", "slot":"wheels", "cost":700, "wins":0, "effect":"Acabamento dos aros; mantém o modelo da roda", "wheel_color":"bfc7c8"},
+	"wheels_bronze":{"label":"Bronze", "slot":"wheels", "cost":700, "wins":0, "effect":"Acabamento dos aros; mantém o modelo da roda", "wheel_color":"a58450"},
+	"wheels_graphite":{"label":"Grafite", "slot":"wheels", "cost":700, "wins":0, "effect":"Acabamento dos aros; mantém o modelo da roda", "wheel_color":"384148"},
 	"ecu_1":{"label":"ECU: mapa de rua", "slot":"ecu", "cost":1400, "wins":1, "effect":"Torque +4%; giro máximo +250 rpm", "torque":1.04, "redline_add":250.0, "cap":.02},
 	"ecu_2":{"label":"ECU: mapa esportivo", "slot":"ecu", "cost":3300, "wins":3, "effect":"Torque +8%; giro máximo +500 rpm; baixa −3%", "torque":1.08, "redline_add":500.0, "low":.97, "cap":.04},
 	"ecu_3":{"label":"ECU: mapa de competição", "slot":"ecu", "cost":6900, "wins":6, "effect":"Torque +13%; giro máximo +800 rpm; baixa −7%", "torque":1.13, "redline_add":800.0, "low":.93, "cap":.06},
@@ -31,8 +41,8 @@ const PARTS := {
 }
 
 ## Ordem e nome dos espaços na oficina; peças de potência somam no teto de rua até este limite.
-const SLOTS := ["ecu","engine","turbo","nitro","gearbox","suspension","tires","weight","exhaust","neon"]
-const SLOT_LABELS := {"ecu":"ECU","engine":"Motor","turbo":"Turbo","nitro":"Nitro","gearbox":"Câmbio","suspension":"Suspensão","tires":"Pneus","weight":"Peso","exhaust":"Escape","neon":"Neon"}
+const SLOTS := ["ecu","engine","turbo","nitro","gearbox","suspension","tires","weight","exhaust","paint","finish","wheels","neon"]
+const SLOT_LABELS := {"ecu":"ECU","engine":"Motor","turbo":"Turbo","nitro":"Nitro","gearbox":"Câmbio","suspension":"Suspensão","tires":"Pneus","weight":"Peso","exhaust":"Escape","paint":"Pintura","finish":"Acabamento","wheels":"Aros","neon":"Neon"}
 const MAX_STREET_CAP_GAIN := .20
 
 static func clean_parts(parts: Dictionary) -> Dictionary:

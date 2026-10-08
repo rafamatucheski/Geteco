@@ -56,8 +56,8 @@ func reconcile() -> void:
 		_unmount()
 	if is_instance_valid(workers):
 		var nearby := false
-		for position: Vector3 in LAYOUT.work_positions():
-			if point.distance_to(position) <= ANIMATION_DISTANCE:
+		for work_position: Vector3 in LAYOUT.work_positions():
+			if point.distance_to(work_position) <= ANIMATION_DISTANCE:
 				nearby = true
 				break
 		workers.set_active(nearby and state.place_id.is_empty())

@@ -4724,6 +4724,24 @@
         "volume": "+0%"
       },
       "status": "generated"
+    },
+    {
+      "key": "fc224d5f27169c2a817249b0742eb47e895619139dcfd2af8ead03f37dfc1240",
+      "persona": "maciota",
+      "text": "Mandou bem na corrida, Dante. Separei uma mala reforçada pra tua busca pelo Vicente. Está no porta-malas da Monaliza; pega quando precisar levar mais coisa.",
+      "en": "Good race, Dante. I set aside a sturdy travel bag for your search for Vicente. It is in the Monaliza's trunk. Pick it up when you need to carry more supplies.",
+      "section": "cobra-dialogue.json:cobra_race_clue",
+      "aliases": [],
+      "path": "res://audio/mission_voices/en/fc224d5f27169c2a817249b0742eb47e895619139dcfd2af8ead03f37dfc1240.wav",
+      "seconds": 11.83,
+      "status": "generated",
+      "voice_profile": {
+        "voice": "en-US-ChristopherNeural",
+        "rate": "-3%",
+        "pitch": "-8Hz",
+        "volume": "+0%"
+      },
+      "signature": "5156c58c00e9ac53ad2f5e2f16ce7571be7b134958a7626ed87d0d1faf6ce464"
     }
   ]
 }

@@ -21,12 +21,12 @@ const SITES := [
 
 static func ids() -> Array[String]:
 	var list: Array[String] = []
-	for site in SITES: list.append(site.id)
+	for site_data in SITES: list.append(site_data.id)
 	return list
 
 static func is_underground(id: String) -> bool:
-	for site in SITES:
-		if site.id == id: return true
+	for site_data in SITES:
+		if site_data.id == id: return true
 	return false
 
 static func site(id: String) -> Dictionary:

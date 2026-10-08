@@ -94,7 +94,7 @@ func bank_departed() -> void:
 		# bonus until the next damage/death event changes the gameplay HUD.
 		if "activities" in session and session.activities!=null: session.activities.refresh_achievements()
 		preload("res://gameplay/RewardAudio.gd").play(self,"cash")
-		session.show_message("Saque guardado: + R$ %d.000"%(amount/1000))
+		session.show_message("Saque guardado: + R$ %d.000"%floori(float(amount)/1000.0))
 		_session_save()
 	else: session.show_message("Carteira cheia. Saque preservado: R$ %d"%amount)
 
@@ -107,7 +107,7 @@ func _refresh_haul() -> void:
 	if data.opening_remaining>0: objective="Abrindo cofre…"
 	if data.vault_open: objective="Recolha o dinheiro e saia vivo"
 	if data.bank_cash0 and data.bank_cash1 and data.bank_cash2: objective="Saia do banco"
-	haul_label.text="SAQUE  R$ %s / 15.000\n%s"%["%d.000"%(int(data.bank_pending)/1000) if data.bank_pending>0 else "0",objective]
+		haul_label.text="SAQUE  R$ %s / 15.000\n%s"%["%d.000"%floori(float(int(data.bank_pending))/1000.0) if data.bank_pending>0 else "0",objective]
 
 func bank_unavailable() -> bool:
 	return data.bank_alarm or not can_enter_bank() or float(data.clerks[0])<=0

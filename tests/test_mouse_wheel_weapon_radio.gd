@@ -65,7 +65,7 @@ func _run() -> void:
 	check(world.gameplay.equipped() == "fists", "wheel down returns to the previous weapon (got %s)" % world.gameplay.equipped())
 	check(is_equal_approx(world.camera.target_size, size_before), "wheel never zooms the camera")
 
-	# Dirigindo: a estação do carro liga ao entrar, a roda sintoniza e a arma não muda.
+	# Dirigindo: a estação inicial varia, a roda sintoniza e a arma não muda.
 	var car: CharacterBody3D = world.driving.car
 	var entered := false
 	for side in [-1, 1]:
@@ -83,7 +83,10 @@ func _run() -> void:
 			if not world.driving.is_body_transition_active(): break
 		await process_frame
 		var audio = world.production.world_audio
-		check(audio.radio_index == 0 and audio.radio.playing, "entering a car turns on its station (PORTO FM)")
+		check(audio.radio_index >= -1 and audio.radio_index < audio.STATIONS.size(), "entering a car chooses a station or off")
+		check(car.get_meta(&"radio_index", -99) == audio.radio_index, "entering stores the vehicle's initial choice")
+		check(audio.radio.playing == (audio.radio_index >= 0), "initial playback matches the chosen station or off")
+		audio._set_station(0)
 		var weapon_before: String = world.gameplay.equipped()
 		await _wheel(MOUSE_BUTTON_WHEEL_UP)
 		check(audio.radio_index == 1 and audio.radio.playing, "wheel up tunes the next station (got %d)" % audio.radio_index)

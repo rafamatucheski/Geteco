@@ -110,7 +110,7 @@ func refresh_context() -> void:
 	if session == null or session.state == null: return
 	var in_house: bool = session.state.region_id == "harbor" and session.state.place_id == "cemetery_keeper"
 	var near_yard := false
-	if session.state.region_id == "harbor" and session.state.place_id.is_empty():
+	if session.state.region_id == "harbor" and session.urban_operations.world_is_continuous():
 		var focus: Vector3 = session.world.driving.car.global_position if session.world.driving.occupied else session.world.player.global_position
 		near_yard = focus.distance_to(CENTER) <= 72.0
 	var next_active: bool = in_house or near_yard

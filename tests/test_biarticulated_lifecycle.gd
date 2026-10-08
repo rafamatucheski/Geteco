@@ -22,6 +22,12 @@ func run() -> void:
 	if failures: quit(1); return
 	world.player.teleport(service.stops[0].inside)
 	service.refresh_presence()
+	# The source remains on screen during the first frame of a transition.
+	# Visibility must not override the region/interior lifetime boundary.
+	world.camera.set_process(false)
+	world.camera.global_position=service.fleet[0].global_position+Vector3(0,25,25)
+	world.camera.look_at(service.fleet[0].global_position)
+	check(service.fleet[0].active and world.production._on_screen(service.fleet[0].global_position,25),"Fixture keeps active source bus on screen")
 	var identities:=[]
 	for bus in service.fleet: identities.append(bus.get_instance_id())
 	world.production.state.region_id="mountain"
@@ -34,6 +40,12 @@ func run() -> void:
 	for frame in 30: await physics_frame
 	check(service.fleet[0].active,"Returning restores physically admitted nearby bus")
 	check(service.fleet.all(func(bus): return bus.get_instance_id() in identities) and service.people.size()==18,"Returning conserves fleet and passenger identities")
+	world.production.state.place_id="garage"
+	presentation.on_region_changed()
+	check(service.fleet.all(func(bus): return not bus.active),"Entering an interior suspends buses even with source camera visible")
+	world.production.state.place_id=""
+	presentation.on_region_changed()
+	check(service.fleet[0].active,"Leaving the interior reuses the nearby bus")
 	print("BIARTICULATED_LIFECYCLE ",checks," checks ",failures," failures")
 	world.free()
 	await process_frame

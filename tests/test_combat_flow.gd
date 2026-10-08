@@ -223,7 +223,10 @@ func _run() -> void:
 	check(shots_taken == 3, "civil com vida cheia cai em três acertos próximos de pistola", "tiros=%d" % shots_taken)
 	check(monotonic, "vida só diminui")
 	await frames(80)
-	check(npc.collision_layer == 0 and absf(npc.visual.rotation.x - PI / 2.0) < 0.05, "morte: corpo caído e sem colisão")
+	# A queda acompanha o impacto (frente, costas ou lado). O eixo vertical do
+	# corpo deve terminar horizontal; exigir apenas +90° em X reprova as outras.
+	var corpse_upright := absf(npc.visual.global_basis.y.normalized().dot(Vector3.UP))
+	check(npc.collision_layer == 0 and npc.collision_mask == 0 and corpse_upright < 0.05, "morte: corpo caído e sem colisão", "upright=%.3f rotation=%s" % [corpse_upright, npc.visual.rotation])
 	check(gameplay.stars >= 1 and gameplay.crime_points > 0, "crime escalou para procurado", "crime=%d estrelas=%d" % [gameplay.crime_points, gameplay.stars])
 	var incidents: Dictionary = gameplay.emergency.incidents
 	var roles: Array = []

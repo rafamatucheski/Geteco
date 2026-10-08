@@ -16,6 +16,7 @@ var solids: Array[StaticBody3D] = []
 var office_door: Node3D
 var dock_doors: Array[Node3D] = []
 var interior_lights: Array[OmniLight3D] = []
+var rooftop_obstacle_bounds: Array[AABB] = []
 var _materials: Dictionary = {}
 var _batches: Dictionary = {}
 var _roof: Node3D
@@ -286,6 +287,12 @@ func _box(id: String, at: Vector3, size: Vector3, material_key: String, solid :=
 	var mesh := BoxMesh.new()
 	mesh.size = size
 	var local_transform := Transform3D(Basis.from_euler(angles), at)
+	# The service roof needs each authored object, not the AABB of a material
+	# batch joining distant vents into one invisible wall.
+	if group==_roof:
+		var bounds: AABB = local_transform*mesh.get_aabb()
+		if bounds.end.y>11.45 and size.x<10 and size.z<10:
+			rooftop_obstacle_bounds.append(bounds)
 	var key := "%s:%s" % [group.get_instance_id(), material_key]
 	if not _batches.has(key):
 		var surface := SurfaceTool.new()

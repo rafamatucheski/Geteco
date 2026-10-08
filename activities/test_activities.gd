@@ -71,8 +71,15 @@ func _tow_persistence() -> void:
 	root.add_child(world)
 	var controller := TowControllerFixture.new()
 	controller.world = world
+	var campaign := preload("res://systems/campaign/CampaignRuntime.gd").new()
+	var campaign_data: Dictionary = campaign.snapshot()
+	campaign_data.completed = ["primeiro_giro"]
+	campaign_data.claimed_rewards = ["primeiro_giro"]
+	for flag in preload("res://data/campaign/HarborMissions.gd").MISSIONS.primeiro_giro.sets_flags:
+		campaign_data.flags[flag] = true
+	_check(campaign.restore_snapshot(campaign_data) and campaign.begin("cobra_contact"),"Prepare real campaign ownership for narrative tow")
 	runtime = MissionWorld.new()
-	runtime.session = {"world":world,"controller":controller,"state":{"region_id":"harbor"},"ready_for_play":false}
+	runtime.session = {"world":world,"controller":controller,"state":{"region_id":"harbor","campaign":campaign},"ready_for_play":false}
 	world.add_child(runtime)
 	_check(runtime.restore_snapshot(JSON.parse_string(JSON.stringify(data))),"Restore actual native tow bodies from JSON")
 	_check(controller.vehicles.size()==2,"Restore creates exactly one truck and one cargo")
@@ -83,6 +90,7 @@ func _tow_persistence() -> void:
 	_check(MissionWorld.validate_ownership(roundtrip,"cobra_contact",{}),"Runtime snapshot remains valid after native restoration")
 	_check(runtime.restore_snapshot(roundtrip) and controller.vehicles.size()==2,"Identical restoration is idempotent")
 	_check(not runtime.begin_tow_job(different),"Side contract cannot steal live narrative cargo")
+	_check(runtime.snapshot() == roundtrip and controller.vehicles.size() == 2,"Rejected side contract preserves narrative cargo and native bodies")
 	world.free()
 
 func _countdown(run) -> void:
@@ -157,7 +165,12 @@ func _restore() -> void:
 	_check(not home.restore_snapshot(invalid),"Unknown home rejected")
 
 func _sources() -> void:
-	_check(Definitions.races("harbor").is_empty(),"Legacy routes not falsely placed in Harbor")
+	var harbor_races: Dictionary = Definitions.races("harbor")
+	var harbor_ids: Array = harbor_races.keys()
+	harbor_ids.sort()
+	_check(harbor_ids == ["harbor_docks","harbor_foundry"],"Both authored production Harbor races are available")
+	for id in Definitions.races("legacy"):
+		_check(not harbor_races.has(id),"Legacy route is not falsely placed in Harbor: "+str(id))
 	_check(Definitions.races("legacy").size() == 5,"All five original legacy races retained")
 	_check(Definitions.drifts("harbor").size() == 2,"Both production Harbor drift yards")
 	_check(Definitions.drifts("legacy").size() == 3,"Three legacy drift zones retained separately")

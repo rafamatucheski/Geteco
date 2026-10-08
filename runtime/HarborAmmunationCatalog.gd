@@ -21,6 +21,7 @@ var lockpick_button: Button
 var customize_button: Button
 var workbench_button: Button
 var workbench: PanelContainer
+var saber_panel: PanelContainer
 var category_buttons: Array[Button] = []
 var selection := 0
 var stock := ["pistol", "magnum", "shotgun", "sawed_off", "smg", "ak47", "m4a1", "hunting_rifle", "knife", "knuckles", "bat", "axe", "grenade", "rpg", "flamethrower", "armor"]
@@ -190,6 +191,7 @@ func _build_catalog() -> void:
 	preview.render_target_update_mode = SubViewport.UPDATE_DISABLED
 
 func open_catalog() -> void:
+	if session.state.economy.is_weapon_unlocked("katana") and "katana" not in stock: stock.insert(stock.find("axe")+1,"katana")
 	active = true
 	show()
 	preview.render_target_update_mode = SubViewport.UPDATE_ALWAYS
@@ -198,12 +200,19 @@ func open_catalog() -> void:
 
 func dismiss() -> void:
 	active = false
+	if is_instance_valid(saber_panel): saber_panel.queue_free()
+	panel.show()
 	if is_instance_valid(workbench): workbench.close(false)
 	if is_instance_valid(preview): preview.render_target_update_mode = SubViewport.UPDATE_DISABLED
 	hide()
 
 func handle_input(event: InputEvent) -> bool:
 	if not active: return false
+	if is_instance_valid(saber_panel):
+		if event.is_action_pressed("ui_cancel") or event.is_action_pressed("pause_game"):
+			saber_panel.closed.emit()
+			saber_panel.queue_free()
+		return true
 	if is_instance_valid(workbench) and workbench.visible:
 		if event.is_action_pressed("ui_cancel") or event.is_action_pressed("pause_game"):
 			workbench.close()
@@ -225,7 +234,10 @@ func change_selection(step: int) -> void:
 	for child in gun.get_children(): child.free()
 	var model := Node3D.new()
 	gun.add_child(model)
-	ART.item(model, stock[selection])
+	if stock[selection] == "katana":
+		var honor: Dictionary = preload("res://runtime/TakeshiHonor.gd").data(session.state.world_state)
+		model.add_child(preload("res://gameplay/KatanaModel.gd").create(honor.saber_unlocked,Color.html(honor.saber_color)))
+	else: ART.item(model, stock[selection])
 	if stock[selection] in CUSTOM.CUSTOMIZABLE:
 		CUSTOM.fit(model, stock[selection], session.world.gameplay.customization, model.get_meta("weapon_muzzle", Vector3.ZERO))
 	var bounds := _bounds(model, Transform3D.IDENTITY)
@@ -292,11 +304,12 @@ func refresh(notice := "") -> void:
 	var compatible := id in CUSTOM.COMPATIBLE
 	var customization: Dictionary = session.world.gameplay.customization
 	customize_button.visible = compatible
-	workbench_button.visible = id in CUSTOM.CUSTOMIZABLE
+	workbench_button.visible = id in CUSTOM.CUSTOMIZABLE or id == "katana"
+	workbench_button.text = "SABRE DE LUZ · COR" if id == "katana" else "PERSONALIZAR ARMA"
 	workbench_button.disabled = not owned
 	customize_button.disabled = not owned or (not CUSTOM.owns(customization, id, "flashlight") and session.state.economy.balance < CUSTOM.PRICE)
 	customize_button.text = "REMOVER LANTERNA" if CUSTOM.installed(customization, id) else ("INSTALAR LANTERNA" if CUSTOM.owns(customization, id, "flashlight") else "INSTALAR LANTERNA • $%d" % CUSTOM.PRICE)
-	var category := 4 if armor else (3 if id in ["grenade", "rpg"] else (2 if id in ["knife", "knuckles", "bat", "axe"] else (0 if id in ["pistol", "magnum"] else 1)))
+	var category := 4 if armor else (3 if id in ["grenade", "rpg"] else (2 if id in ["knife", "knuckles", "bat", "axe", "katana"] else (0 if id in ["pistol", "magnum"] else 1)))
 	# Aba ativa por estado pressionado, não por modulate: o modulate cinza
 	# escurecia texto e fundo das abas inativas até ficarem ilegíveis.
 	for i in category_buttons.size(): category_buttons[i].set_pressed_no_signal(i == category)
@@ -369,6 +382,15 @@ func open_workbench() -> void:
 	if not active or workbench_button.disabled or not workbench_button.visible: return
 	panel.hide()
 	preview.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	if stock[selection] == "katana":
+		saber_panel = preload("res://runtime/TakeshiSaberPanel.gd").new()
+		saber_panel.configure(session)
+		add_child(saber_panel)
+		saber_panel.closed.connect(func():
+			panel.show()
+			preview.render_target_update_mode = SubViewport.UPDATE_ALWAYS if active else SubViewport.UPDATE_DISABLED
+			if active: change_selection(0))
+		return
 	workbench.open(stock[selection])
 
 func _reason(reason: String) -> String:

@@ -32,6 +32,8 @@ var north_pass_completed := false
 var focus := Vector3.ZERO
 var current_cell := Vector2i(100000,100000)
 var retention_radius := 2
+var _residency_dirty := false
+var _lamp_cleanup_after_frame := -1
 var chunks: Dictionary = {}
 var records: Dictionary = {}
 var pending: Array[Vector2i] = []
@@ -122,6 +124,7 @@ func prepare_data() -> void:
 	for definition in VILLAGE_HOMES.definitions():
 		entries.append({"id":definition.id,"place_id":definition.id,"position":definition.entry_position,"return_position":definition.return_position,"label":definition.original_name})
 	_record(LAYOUT.TRUCK_STOP,{"kind":"truck_stop","position":LAYOUT.TRUCK_STOP})
+	_record(preload("res://world/desert/DesertCoachStop.gd").POSITION,{"kind":"coach_stop","position":preload("res://world/desert/DesertCoachStop.gd").POSITION})
 	_record(ABANDONED.POSITION,{"kind":"abandoned_site","position":ABANDONED.POSITION})
 	for i in 4:
 		var point := LAYOUT.TRUCK_STOP+Vector3(-26-float(i)*6.4,0,3)
@@ -153,6 +156,7 @@ func set_focus(point: Vector3) -> void:
 	var cell := _cell(point)
 	if cell==current_cell: return
 	current_cell=cell
+	_residency_dirty=true
 	pending.clear()
 	for x in range(-1,2):
 		for z in range(-1,2):
@@ -164,7 +168,7 @@ func set_focus(point: Vector3) -> void:
 	_trim_chunks()
 
 func set_vehicle_support(vehicles: Array) -> void:
-	vehicle_support_cells.clear()
+	var next_cells: Dictionary={}
 	for vehicle in vehicles:
 		if not vehicle is Dictionary or not vehicle.get("position") is Vector3: continue
 		var radius: float=maxf(float(vehicle.get("radius",2.0)),2.0)
@@ -172,18 +176,28 @@ func set_vehicle_support(vehicles: Array) -> void:
 		for x in range(floori((point.x-radius)/CELL),floori((point.x+radius)/CELL)+1):
 			for z in range(floori((point.z-radius)/CELL),floori((point.z+radius)/CELL)+1):
 				var key := Vector2i(x,z)
-				vehicle_support_cells[key]=true
-				_ensure_chunk_surfaces(key)
+				next_cells[key]=true
+	if next_cells != vehicle_support_cells:
+		vehicle_support_cells=next_cells
+		_residency_dirty=true
+		for key in vehicle_support_cells:
+			_ensure_chunk_surfaces(key)
 	_trim_chunks()
 
 func set_retention_radius(value: int) -> void:
-	retention_radius=clampi(value,1,2)
+	var next_radius := clampi(value,1,2)
+	if next_radius != retention_radius:
+		retention_radius=next_radius
+		_residency_dirty=true
 	_trim_chunks()
 
 func prepare_collision_at(point: Vector3) -> bool:
 	if not LAYOUT.contains(point): return false
-	_ensure_chunk_surfaces(_cell(point))
-	return chunks.has(_cell(point))
+	var key := _cell(point)
+	var had_chunk := chunks.has(key)
+	_ensure_chunk_surfaces(key)
+	if not had_chunk and chunks.has(key): _residency_dirty=true
+	return chunks.has(key)
 
 func _ensure_chunk_surfaces(key: Vector2i) -> void:
 	if chunks.has(key): return
@@ -198,6 +212,9 @@ func _ensure_chunk_surfaces(key: Vector2i) -> void:
 	build_jobs.append({"key":key,"rect":rect,"index":0,"dressed":false})
 
 func _process(_delta: float) -> void:
+	if _lamp_cleanup_after_frame >= 0 and Engine.get_process_frames() >= _lamp_cleanup_after_frame:
+		_lamps=_lamps.filter(func(lamp): return is_instance_valid(lamp) and not lamp.is_queued_for_deletion())
+		_lamp_cleanup_after_frame=-1
 	var began := Time.get_ticks_usec()
 	if not pending.is_empty(): _ensure_chunk_surfaces(pending.pop_front())
 	while not build_jobs.is_empty() and Time.get_ticks_usec()-began<BUILD_BUDGET_USEC:
@@ -250,8 +267,11 @@ func release_chunks() -> void:
 	_lamps.clear()
 	vehicle_support_cells.clear()
 	current_cell=Vector2i(100000,100000)
+	_residency_dirty=false
+	_lamp_cleanup_after_frame=-1
 func _trim_chunks() -> void:
-	if current_cell.x==100000: return
+	if current_cell.x==100000 or not _residency_dirty: return
+	_residency_dirty=false
 	for key in chunks.keys():
 		if vehicle_support_cells.has(key): continue
 		if absi(key.x-current_cell.x)>retention_radius or absi(key.y-current_cell.y)>retention_radius:
@@ -259,7 +279,7 @@ func _trim_chunks() -> void:
 			chunks.erase(key)
 			for i in range(build_jobs.size()-1,-1,-1):
 				if build_jobs[i].key==key: build_jobs.remove_at(i)
-	_lamps=_lamps.filter(func(lamp): return is_instance_valid(lamp) and not lamp.is_queued_for_deletion())
+			_lamp_cleanup_after_frame=Engine.get_process_frames()+1
 
 func set_chairlift_operating(_value: bool) -> void: pass
 func set_night_lights(level: float) -> void:
@@ -361,11 +381,12 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 			chunk.add_child(abandoned_site)
 		"utility_pole", "utility_span", "utility_service": UTILITY.build_record(chunk,record)
 		"building": chunk.add_child(ART.building(record.data))
-		"truck_stop":
 		"desert_underground": UNDERGROUND.build_record(chunk,record)
+		"truck_stop":
 			var stop := ART.truck_stop(false)
 			stop.position=record.position
 			chunk.add_child(stop)
+		"coach_stop": chunk.add_child(preload("res://world/desert/DesertCoachStop.gd").build())
 		"bitrem":
 			var truck := ART.bitrem([Color("a75339"),Color("718787"),Color("d2b676"),Color("76634e")][int(record.index)])
 			truck.position=record.position
@@ -434,6 +455,7 @@ func _ground_height(point: Vector2) -> float:
 	return _ramp_height(point)+TERRAIN_MESH.surface_height(point)
 
 func _decoration_clear(point: Vector2, radius: float) -> bool:
+	if Rect2(-189,-891,8,6).grow(radius+.4).has_point(point): return false
 	if not preload("res://world/desert/north_pass/DesertNorthPassLayout.gd").reservation_clear(point,radius): return false
 	if not MOON_VILLAGE.reservation_clear(point,radius): return false
 	if not MINING_LAYOUT.reservation_clear(point,radius): return false

@@ -12,6 +12,7 @@ const AIR_BRAKE_SOUND := preload("res://audio/vehicle_fx/air_brake.wav")
 const TURBO_SHIFT_SOUNDS := [preload("res://audio/vehicle_fx/turbo_shift_0.wav"), preload("res://audio/vehicle_fx/turbo_shift_1.wav"), preload("res://audio/vehicle_fx/turbo_shift_2.wav")]
 const SPORT_BLOWOFF_SOUNDS := [preload("res://audio/vehicle_fx/sport_blowoff_0.wav"), preload("res://audio/vehicle_fx/sport_blowoff_1.wav"), preload("res://audio/vehicle_fx/sport_blowoff_2.wav")]
 const NEARBY_VEHICLE_AUDIO := preload("res://audio/vehicle_ambience/NearbyVehicleAudio.gd")
+const FOOTSTEP_CADENCE := preload("res://audio/FootstepCadence.gd")
 const BED_OFFSETS := {"city":-10.0,"water":-6.0,"port":-15.0,"birds":-9.0,"crickets":-10.0,"workshop":-20.0}
 var world
 var layers: Array[AudioStreamPlayer] = []
@@ -60,7 +61,7 @@ var radio_car: CharacterBody3D
 var radio_focus := 1.0
 var radio_notice: Label
 var radio_notice_time := 0.0
-var radio_region := ""
+
 func _exit_tree() -> void:
 	if is_instance_valid(vehicle_ambience) and vehicle_ambience.has_method("shutdown"):
 		vehicle_ambience.shutdown()
@@ -207,13 +208,10 @@ func _play_station(from: float) -> void:
 	radio.stream = stream
 	if stream != null: radio.play(clampf(from,0.0,maxf(0.0,stream.get_length()-.5)))
 
-## A primeira estação é regional; qualquer escolha manual, inclusive desligado, tem prioridade.
+## Na primeira entrada, sorteia uma estação ou desligado e guarda a escolha no veículo.
 ## Retoma do ponto onde parou e guarda a posição ao sair. Cada carro conserva sua sintonização.
 func _update_radio(delta: float) -> void:
 	var car: CharacterBody3D = world.driving.car if world.driving.occupied and is_instance_valid(world.driving.car) else null
-	var region := str(world.session.state.region_id) if world.session != null else ""
-	var region_changed := region != radio_region
-	radio_region = region
 	if car != radio_car:
 		if is_instance_valid(radio_car) and radio.playing:
 			radio_car.set_meta(&"radio_position",radio.get_playback_position())
@@ -222,18 +220,12 @@ func _update_radio(delta: float) -> void:
 			radio.stop()
 			radio_notice_time = 0.0
 		else:
-			var desert_default := region == "desert" and not car.has_meta(&"radio_index")
-			radio_index = int(car.get_meta(&"radio_index",COUNTRY_STATION if desert_default else 0))
+			if not car.has_meta(&"radio_index"):
+				car.set_meta(&"radio_index",rng.randi_range(-1,STATIONS.size()-1))
+			radio_index = int(car.get_meta(&"radio_index"))
 			if radio_index < -1 or radio_index >= STATIONS.size(): radio_index = -1
-			if desert_default:
-				car.set_meta(&"radio_index",radio_index)
-				_show_station()
 			_play_station(float(car.get_meta(&"radio_position",0.0)))
 	if car != null:
-		# A travessia também sintoniza country sem exigir sair e entrar novamente no carro.
-		# Meta só existe após escolha explícita ou adoção da estação regional do deserto.
-		if region_changed and region == "desert" and not car.has_meta(&"radio_index"):
-			_set_station(COUNTRY_STATION)
 		var dialogue: bool = world.session != null and world.session.get("dialogue_open") == true
 		radio_focus = move_toward(radio_focus,.2 if dialogue else 1.0,delta*3.0)
 		radio.volume_db = RADIO_VOLUME_DB+linear_to_db(maxf(radio_focus,.001))
@@ -281,11 +273,10 @@ func _process(delta: float) -> void:
 	if not moving and distance < 2 and world.player.is_on_floor():
 		# Passada real: uma pessoa correndo não dá o dobro de passos por segundo que andando,
 		# dá passos mais LONGOS. Distância fixa (0.8 m) por passo ignorava isso: em sprint
-		# (6.5 m/s) virava uma metralhadora de ~8 passos/s. Aqui a passada cresce com a
-		# velocidade (0.62 m parado/lento até ~1.85 m em sprint), prendendo a cadência a uma
-		# faixa humana de ~3 a 3.5 passos/s em qualquer velocidade.
+		# (6.5 m/s) virava uma metralhadora de ~8 passos/s. A passada cresce com a
+		# velocidade (0.78 m lento até 2.5 m em sprint), mantendo a cadência em ~1.9–2.6/s.
 		var speed := distance / maxf(delta, .0001)
-		var stride := clampf(speed / 3.2, .62, 1.85)
+		var stride := FOOTSTEP_CADENCE.stride(speed)
 		step_distance += distance
 		if step_distance > stride:
 			step_distance = 0

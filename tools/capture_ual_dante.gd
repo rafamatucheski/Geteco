@@ -1,6 +1,6 @@
 extends SceneTree
 ## Captura o Dante tocando clipes retargetados da UAL, para conferir a deformação.
-const CLIPS := {"Sitting_Idle": 0.5, "Death01": 1.0, "Swim_Fwd": 0.4, "Pistol_Aim_Neutral": 0.2, "Punch_Jab": 0.2, "Sprint": 0.3, "Walk": 0.3}
+const CLIPS := {"Pistol_Idle": 0.3, "Pistol_Aim_Up": 0.3, "Pistol_Aim_Down": 0.3, "Pistol_Shoot": 0.1, "Pistol_Reload": 0.6, "Sword_Idle": 0.3, "Sword_Attack": 0.4, "Punch_Cross": 0.2}
 func _init() -> void:
 	var dante: Node3D = (load("res://assets/dante.glb") as PackedScene).instantiate()
 	root.add_child(dante)

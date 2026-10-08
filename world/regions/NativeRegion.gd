@@ -64,6 +64,8 @@ const BUILD_BUDGET_USEC := 1000.0
 var current_cell := Vector2i(100000,100000)
 var retention_radius := 2
 var vehicle_support_cells: Dictionary = {}
+var _residency_dirty := false
+var _chairlift_cleanup_pending := false
 var prepared := false
 var elapsed := 0.0
 var materials := {}
@@ -174,6 +176,8 @@ func release_chunks() -> void:
 	chunks.clear()
 	vehicle_support_cells.clear()
 	current_cell = Vector2i(100000,100000)
+	_residency_dirty = false
+	_chairlift_cleanup_pending = false
 	chairlifts.clear()
 	STALL_WORK.finish("region.release_chunks", stall_began, {"region": region_id, "chunks": released_chunks, "retiring": _retiring.size()})
 
@@ -198,6 +202,8 @@ func _notification(what: int) -> void:
 
 func _cell(point: Vector3) -> Vector2i: return Vector2i(floori(point.x/CELL),floori(point.z/CELL))
 func _record(point: Vector3, item: Dictionary) -> void:
+	if region_id == "harbor" and item.get("kind","") == "tree" and preload("res://runtime/FishingLocation.gd").reserved(Vector2(point.x,point.z),2.0): return
+	if region_id == "harbor" and item.get("kind","") == "tree" and preload("res://world/places/amusement_park/AmusementParkLayout.gd").reserved(Vector2(point.x,point.z),3.5): return
 	var key := _cell(point)
 	if not records.has(key): records[key] = []
 	records[key].append(item)
@@ -210,6 +216,7 @@ func _prepare() -> void:
 			var metric := PackedVector2Array()
 			for point in polygon: metric.append(point*SCALE)
 			extra_land.append(metric)
+		extra_land.append_array(preload("res://world/places/fishing/FishingRuralLayout.gd").extra_surfaces())
 		for record in SOUTH_PORT.records(): _record(record.position,record)
 		var south_ship_center: Vector2 = SOUTH_PORT_LAYOUT.SHIP.get_center()*SCALE
 		_record(Vector3(south_ship_center.x,0,south_ship_center.y),{"kind":"south_port_ship_detail"})
@@ -225,6 +232,9 @@ func _prepare() -> void:
 			var points := PackedVector3Array()
 			for point in row.points: points.append(CATALOG._at(Vector2(point[0],point[1]),region_id))
 			_add_road(row.id,points,float(row.width)*SCALE)
+		if preload("res://runtime/FishingLocation.gd").enabled():
+			var fishing_access := preload("res://world/places/fishing/FishingRuralLayout.gd")
+			_add_road(fishing_access.ROAD_ID,fishing_access.road_points(),preload("res://runtime/FishingLocation.gd").ROAD_WIDTH,"earth")
 		for building in source_data.harbor_buildings:
 			var point := CATALOG._at(Vector2(building.position[0],building.position[1]),region_id)
 			var size := Vector2(building.size[0],building.size[1])*SCALE
@@ -233,6 +243,16 @@ func _prepare() -> void:
 			entry["size"] = size
 			buildings.append(entry)
 			_record(point,{"kind":"building","data":entry})
+		if not Engine.get_meta("curitiba_cellar_baseline",false):
+			var cellar := preload("res://world/places/curitiba_cellar/CuritibaCellarPlace.gd").definition_data()
+			var cellar_building := {"id":"CuritibaCellar","position":cellar.exterior_position,"size":cellar.size,"height":4.1,"name":"Curitiba Cellar","kind":"shop"}
+			buildings.append(cellar_building)
+			_record(cellar.exterior_position,{"kind":"building","data":cellar_building})
+		if not Engine.get_meta("arcade_baseline",false):
+			var arcade := preload("res://world/places/arcade/ArcadePlace.gd").definition_data()
+			var arcade_building := {"id":"Fagulha","position":arcade.exterior_position,"size":arcade.size,"height":3.9,"name":"Fagulha","kind":"shop"}
+			buildings.append(arcade_building)
+			_record(arcade.exterior_position,{"kind":"building","data":arcade_building})
 		_record(CATALOG._at(Vector2(-750,550),region_id),{"kind":"salvage","position":CATALOG._at(Vector2(-750,550),region_id)})
 		_record(CATALOG._at(Vector2(-750,550),region_id),{"kind":"harbor_dressing","zone_id":"salvage","position":CATALOG._at(Vector2(-750,550),region_id)})
 		_record(CATALOG._at(Vector2(7700,1700),region_id),{"kind":"harbor_dressing","zone_id":"cobra","position":CATALOG._at(Vector2(7700,1700),region_id)})
@@ -376,6 +396,12 @@ func _record_path(path: Dictionary) -> void:
 
 func _add_road(id: String,points: PackedVector3Array,width: float,surface: String = "asphalt") -> void:
 	roads.append({"id":id,"points":points,"width":width,"surface":surface})
+	# A player-accessible dead end with parking, never an ambient bus/truck route.
+	# Kept here so the world-editor reconstruction preserves the same policy.
+	if id==preload("res://world/places/fishing/FishingRuralLayout.gd").ROAD_ID:
+		roads[-1]["traffic"] = false
+		roads[-1]["crossings"] = false
+		roads[-1]["sidewalk_width"] = 0.0
 	var edges: Array[Dictionary] = []
 	if region_id == "mountain" and surface == "asphalt":
 		for point_index in points.size():
@@ -407,12 +433,15 @@ func _add_road(id: String,points: PackedVector3Array,width: float,surface: Strin
 				record["left_b"] = edges[i].left.lerp(edges[i+1].left,to_weight)
 				record["right_b"] = edges[i].right.lerp(edges[i+1].right,to_weight)
 			_record((a+b)*.5,record)
-func set_focus(point: Vector3) -> void:
+func set_focus(point: Vector3, complete_focus_chunk := false) -> void:
 	focus = point
 	if not prepared: return
 	var cell := _cell(point)
-	if cell == current_cell: return
+	if cell == current_cell:
+		if complete_focus_chunk: _ensure_chunk(cell)
+		return
 	current_cell = cell
+	_residency_dirty = true
 	pending.clear()
 	# The production streaming budget requests the occupied cell and its eight
 	# neighbours. retention_radius remains a wider grace band while moving.
@@ -421,9 +450,11 @@ func set_focus(point: Vector3) -> void:
 			var key := cell+Vector2i(x,z)
 			if not chunks.has(key): pending.append(key)
 	pending.sort_custom(func(a: Vector2i,b: Vector2i): return Vector2(a-cell).length_squared()<Vector2(b-cell).length_squared())
-	# The occupied cell gets collision before admission; neighbouring cells spread across frames.
+	# The occupied cell gets collision before admission; records and dressing remain
+	# queued so crossing a cell boundary cannot synchronously build the whole chunk.
 	pending.erase(cell)
-	_ensure_chunk(cell)
+	if complete_focus_chunk: _ensure_chunk(cell)
+	else: _ensure_chunk_surfaces(cell)
 	_trim_chunks(cell)
 
 func prepare_collision_at(point: Vector3) -> bool:
@@ -432,11 +463,16 @@ func prepare_collision_at(point: Vector3) -> bool:
 	# physics instead of letting them drive over a road whose streamed floor is
 	# still absent.
 	var key := _cell(point)
+	var had_chunk := chunks.has(key)
 	_ensure_chunk_surfaces(key)
+	if not had_chunk and chunks.has(key): _residency_dirty = true
 	return chunks.has(key)
 
 func set_retention_radius(value: int) -> void:
-	retention_radius = clampi(value,1,2)
+	var next_radius := clampi(value,1,2)
+	if next_radius != retention_radius:
+		retention_radius = next_radius
+		_residency_dirty = true
 	if current_cell.x < 100000: _trim_chunks(current_cell)
 
 func set_vehicle_support(vehicles_to_support: Array) -> void:
@@ -447,14 +483,17 @@ func set_vehicle_support(vehicles_to_support: Array) -> void:
 		for x in range(floori((point.x-radius)/CELL),floori((point.x+radius)/CELL)+1):
 			for z in range(floori((point.z-radius)/CELL),floori((point.z+radius)/CELL)+1):
 				next_cells[Vector2i(x,z)] = true
-	if next_cells == vehicle_support_cells: return
-	vehicle_support_cells = next_cells
-	for key in vehicle_support_cells:
-		pending.erase(key)
-		_ensure_chunk_surfaces(key)
+	if next_cells != vehicle_support_cells:
+		vehicle_support_cells = next_cells
+		_residency_dirty = true
+		for key in vehicle_support_cells:
+			pending.erase(key)
+			_ensure_chunk_surfaces(key)
 	if current_cell.x < 100000: _trim_chunks(current_cell)
 
 func _trim_chunks(cell: Vector2i) -> void:
+	if not _residency_dirty: return
+	_residency_dirty = false
 	for key in chunks.keys():
 		if vehicle_support_cells.has(key): continue
 		if absi(key.x-cell.x)>retention_radius or absi(key.y-cell.y)>retention_radius:
@@ -464,7 +503,7 @@ func _trim_chunks(cell: Vector2i) -> void:
 			chunks.erase(key)
 			for index in range(build_jobs.size()-1,-1,-1):
 				if build_jobs[index].key == key: build_jobs.remove_at(index)
-	chairlifts = chairlifts.filter(func(lift): return is_instance_valid(lift) and not lift.is_queued_for_deletion())
+			_chairlift_cleanup_pending = true
 
 func _suspend_chunk_vehicles(key: Vector2i) -> void:
 	# Suspend before removing support; ProductionWorld resumes after its ground check.
@@ -589,10 +628,13 @@ func _retire_chunk(chunk: Node3D) -> void:
 	STALL_WORK.finish("retire.hide_and_enqueue", stall_began, {"region": region_id})
 
 func _drain_retired() -> void:
-	if _retiring.is_empty(): return
+	if _retiring.is_empty():
+		_cleanup_retired_chairlifts_if_idle()
+		return
 	var stall_began := STALL_WORK.begin()
 	var queued_before := _retiring.size()
 	_drain_retired_slice()
+	_cleanup_retired_chairlifts_if_idle()
 	STALL_WORK.finish("retire.drain", stall_began, {"region": region_id, "budget_ms": RETIRE_BUDGET_USEC / 1000.0, "queued_before": queued_before, "queued_after": _retiring.size()})
 
 func _drain_retired_slice() -> void:
@@ -626,6 +668,11 @@ func _drain_retired_slice() -> void:
 			if Time.get_ticks_usec()-began >= RETIRE_BUDGET_USEC: return
 		chunk.queue_free()
 		_retiring.pop_front()
+
+func _cleanup_retired_chairlifts_if_idle() -> void:
+	if _retiring.is_empty() and _chairlift_cleanup_pending:
+		chairlifts = chairlifts.filter(func(lift): return is_instance_valid(lift) and not lift.is_queued_for_deletion())
+		_chairlift_cleanup_pending = false
 func _material(color: Color) -> StandardMaterial3D:
 	if materials.has(color): return materials[color]
 	var material := StandardMaterial3D.new()
@@ -881,6 +928,7 @@ func _ensure_chunk_surfaces(key: Vector2i) -> void:
 					var job: Dictionary = build_jobs[index]
 					build_jobs.remove_at(index)
 					build_jobs.push_front(job)
+				if int(build_jobs[0].stage) == 0: _run_build_job(build_jobs[0],0.0)
 				return
 		return
 	_build_chunk(key,false)
@@ -926,7 +974,9 @@ func _build_surfaces(chunk: Node3D, rect: Rect2, key: Vector2i) -> void:
 		coastal_protection.build_chunk(chunk,rect)
 		var clip := PackedVector2Array([rect.position,Vector2(rect.end.x,rect.position.y),rect.end,Vector2(rect.position.x,rect.end.y)])
 		for polygon in extra_land:
-			for piece in Geometry2D.intersect_polygons(polygon,clip): _authored_surface(chunk,piece)
+			var woodland: bool = polygon==preload("res://world/places/fishing/FishingRuralLayout.gd").outline()
+			for piece in Geometry2D.intersect_polygons(polygon,clip): _authored_surface(chunk,piece,woodland)
+		preload("res://world/places/fishing/FishingWoodland.gd").build_chunk(chunk,rect)
 		var port_land := Rect2(SOUTH_PORT_LAYOUT.LAND.position*SCALE,SOUTH_PORT_LAYOUT.LAND.size*SCALE)
 		var port_surface := rect.intersection(port_land)
 		if port_surface.has_area():
@@ -949,7 +999,11 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 			var cemetery := CEMETERY.new()
 			cemetery.position = record.position
 			chunk.add_child(cemetery)
-		"south_port_model": SOUTH_PORT.mount(chunk,record)
+		"south_port_model":
+			var port_art: Node3D = SOUTH_PORT.mount(chunk,record)
+			if str(record.id).begins_with("PortBuilding"):
+				port_art.add_to_group("exterior_reveal_building")
+				preload("res://world/places/harbor_buildings/HarborBuildingExteriorAccess.gd").install(port_art,str(record.id))
 		"south_port_ship_detail":
 			var ship_detail := PORT_SHIP_DRESSING.new()
 			chunk.add_child(ship_detail)
@@ -985,6 +1039,7 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 			terrace.configure(record.venue_id,record.table_index,record.fabric)
 			terrace.position = record.position
 			chunk.add_child(terrace)
+			terrace.add_to_group("harbor_restaurant_terrace")
 		"ship": _build_ship(chunk)
 		"lake":
 			var lake = preload("res://world/regions/NativeLake.gd").new()
@@ -1095,7 +1150,7 @@ func _dressing_reserved(point: Vector2, radius: float) -> bool:
 				if point.distance_to(tree_point) < radius+1.2: return true
 	return false
 
-func _authored_surface(chunk: Node3D, polygon: PackedVector2Array) -> void:
+func _authored_surface(chunk: Node3D, polygon: PackedVector2Array, woodland := false) -> void:
 	var indices := Geometry2D.triangulate_polygon(polygon)
 	if indices.is_empty(): return
 	var vertices := PackedVector3Array()
@@ -1107,22 +1162,39 @@ func _authored_surface(chunk: Node3D, polygon: PackedVector2Array) -> void:
 		var b := vertices[indices[i+1]]
 		var c := vertices[indices[i+2]]
 		surface.set_normal(Vector3.UP)
+		surface.set_uv(Vector2(a.x,a.z))
 		surface.add_vertex(a)
 		if (b-a).cross(c-a).y > 0:
-			surface.add_vertex(c); surface.add_vertex(b)
+			surface.set_uv(Vector2(c.x,c.z)); surface.add_vertex(c)
+			surface.set_uv(Vector2(b.x,b.z)); surface.add_vertex(b)
 		else:
-			surface.add_vertex(b); surface.add_vertex(c)
+			surface.set_uv(Vector2(b.x,b.z)); surface.add_vertex(b)
+			surface.set_uv(Vector2(c.x,c.z)); surface.add_vertex(c)
 	var mesh := MeshInstance3D.new()
-	mesh.name = "OriginalPortSurface"
+	mesh.name = "SerenoForestFloor" if woodland else "OriginalPortSurface"
 	mesh.mesh = surface.commit()
-	mesh.material_override = _material(Color("737b69"))
+	mesh.material_override = preload("res://world/places/fishing/FishingGround.gd").material() if woodland else _material(Color("737b69"))
+	if woodland: mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	chunk.add_child(mesh)
 	mesh.create_trimesh_collision()
 	for body in mesh.get_children():
 		if body is StaticBody3D: body.collision_layer = 1; body.collision_mask = 0
 func _building(chunk: Node3D, data: Dictionary) -> void:
+	if data.id == "Fagulha":
+		var arcade := preload("res://world/places/arcade/ArcadeFacade.gd").new()
+		arcade.add_to_group("exterior_reveal_building")
+		arcade.position = data.position
+		chunk.add_child(arcade)
+		return
+	if data.id == "CuritibaCellar":
+		var cellar := preload("res://world/places/curitiba_cellar/CuritibaCellarFacade.gd").new()
+		cellar.add_to_group("exterior_reveal_building")
+		cellar.position = data.position
+		chunk.add_child(cellar)
+		return
 	if data.id == "NorthFrontage1":
 		var market := preload("res://world/places/supermarket/SupermarketFacade.gd").new()
+		market.add_to_group("exterior_reveal_building")
 		market.position = CATALOG.get_definition("harbor_supermarket").exterior_position
 		chunk.add_child(market)
 		return
@@ -1142,6 +1214,8 @@ func _building(chunk: Node3D, data: Dictionary) -> void:
 		facade.position = definition.exterior_position
 	var art := URBAN_FACTORY.populate_chunk(chunk,facade)
 	if art != null:
+		art.add_to_group("exterior_reveal_building")
+		preload("res://world/places/harbor_buildings/HarborBuildingExteriorAccess.gd").install(art,str(data.id))
 		art.set_meta("source_id",data.get("source",""))
 		art.set_meta("place_id",facade.get("place_id",""))
 		if facade.get("place_id", "") in ["harbor_ammunation", "harbor_police", "harbor_bank", "harbor_clothing", "harbor_fuel", "harbor_hospital", "harbor_fire_station"]:
@@ -1155,16 +1229,19 @@ func _building(chunk: Node3D, data: Dictionary) -> void:
 func _mountain_place(chunk: Node3D, data: Dictionary) -> void:
 	if str(data.id).begins_with("mountain_cabin") or data.id == "lumberjack_shelter":
 		var art = _held_load("res://assets/regions/source/world/mountain_pass/art/winter_props/LumberjackCabin3D.gd").new()
+		art.add_to_group("exterior_reveal_building")
 		art.position = data.exterior_position
 		chunk.add_child(art)
 		WALKUP_DOOR.install(art, data)
 	elif data.id == "mountain_bunker":
 		var art = preload("res://world/places/BunkerExteriorNative.gd").new()
+		art.add_to_group("exterior_reveal_building")
 		art.position = data.exterior_position
 		chunk.add_child(art)
 		WALKUP_DOOR.install(art, data)
 	elif data.id == "ski_lodge":
 		var art = _held_load("res://assets/regions/source/world/mountain_pass/SummitSkiLodge3D.gd").new()
+		art.add_to_group("exterior_reveal_building")
 		art.position = data.exterior_position
 		chunk.add_child(art)
 		WALKUP_DOOR.install(art, data)
@@ -1190,7 +1267,9 @@ func _original_facade(chunk: Node3D,data: Dictionary) -> void:
 	if data.region == "harbor":
 		# Catalog-only residences/cemetery are not duplicated in harbor_buildings.
 		var branch_art := URBAN_FACTORY.populate_chunk(chunk,data)
-		if branch_art != null: WALKUP_DOOR.install(branch_art, data)
+		if branch_art != null:
+			branch_art.add_to_group("exterior_reveal_building")
+			WALKUP_DOOR.install(branch_art, data)
 		return
 	var path := ""
 	match str(data.id):
@@ -1203,6 +1282,7 @@ func _original_facade(chunk: Node3D,data: Dictionary) -> void:
 		"mountain_mystery_cave": path = "world/mountain_pass/MountainWaterfallCave3D.gd"
 	if path.is_empty(): return
 	var art = _held_load("res://assets/regions/source/"+path).new()
+	art.add_to_group("exterior_reveal_building")
 	if data.service == "residence": art.variant_index = data.variant
 	art.position = data.exterior_position
 	chunk.add_child(art)

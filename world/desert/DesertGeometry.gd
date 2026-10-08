@@ -70,14 +70,14 @@ static func cylinder(parent: Node3D, id: String, at: Vector3, radius: float, hei
 
 static func sign_name(parent: Node3D, text: String, at: Vector3, size := 50) -> void:
 	if text.is_empty(): return
-	var sign := Label3D.new()
-	sign.text=text
-	sign.position=at
-	sign.font_size=size
-	sign.pixel_size=.018
-	sign.modulate=Color("eee2c6")
-	sign.outline_size=0
-	parent.add_child(sign)
+	var name_label := Label3D.new()
+	name_label.text=text
+	name_label.position=at
+	name_label.font_size=size
+	name_label.pixel_size=.018
+	name_label.modulate=Color("eee2c6")
+	name_label.outline_size=0
+	parent.add_child(name_label)
 
 static func room_box(parent: Node3D, id: String, at: Vector3, size: Vector3, color: Color, solid := true) -> MeshInstance3D:
 	var node := box(parent,id,at,size,color)

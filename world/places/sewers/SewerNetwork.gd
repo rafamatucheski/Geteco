@@ -24,9 +24,9 @@ const SITES := [
 ]
 
 static func extra_ids() -> Array[String]:
-	var ids: Array[String] = []
-	for site in SITES: ids.append(site.id)
-	return ids
+	var site_ids: Array[String] = []
+	for site_data in SITES: site_ids.append(site_data.id)
+	return site_ids
 
 static func ids() -> Array[String]:
 	var all: Array[String] = [ORIGINAL_ID]
@@ -37,8 +37,8 @@ static func is_manhole(id: String) -> bool:
 	return id == ORIGINAL_ID or is_extra(id) or preload("res://world/desert/underground/DesertUnderground.gd").is_underground(id)
 
 static func is_extra(id: String) -> bool:
-	for site in SITES:
-		if site.id == id: return true
+	for site_data in SITES:
+		if site_data.id == id: return true
 	return false
 
 static func site(id: String) -> Dictionary:

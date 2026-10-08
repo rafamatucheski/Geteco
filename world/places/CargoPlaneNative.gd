@@ -11,12 +11,14 @@ var _treasure_paint: StandardMaterial3D
 var _treasure_brass: StandardMaterial3D
 var _treasure_box_mesh_resource: BoxMesh
 var _presentation_jobs: Array[Callable] = []
+var _sightline: RefCounted
+var _treasure_solid: StaticBody3D
 func _ready() -> void:
 	model = preload("res://assets/regions/source/world/mountain_pass/art/review_0908/CrashedCargoPlane3D.gd").new()
 	add_child(model)
-	model.set_cutaway(true)
+	model.set_cutaway(false)
 	_open_cargo_aisle()
-	for part in _roof_parts: part.hide()
+	_sightline = preload("res://world/places/CargoPlaneSightline.gd").new(self)
 	_build_solids()
 	_floor_box(Vector3(0,.105,-1.25),Vector3(2.7,.21,15.5))
 	var ramp := _floor_box(Vector3(0,.06,8),Vector3(2.4,.12,3.2))
@@ -40,6 +42,7 @@ func _ready() -> void:
 	weapon.rotation.z = PI*.5
 	weapon_art.add_child(weapon)
 	weapon_holder.configure(weapon_art,"smg")
+	weapon_holder.set_proximity_audio(true)
 	preload("res://assets/regions/source/scripts/player/ArsenalWeapon3D.gd").build(weapon,"smg")
 	var treasure_holder := PICKUP.new()
 	treasure_holder.name = "TreasurePickup"
@@ -48,6 +51,7 @@ func _ready() -> void:
 	treasure_model.position = Vector3.ZERO
 	model.remove_child(treasure_model)
 	treasure_holder.configure(treasure_model,"cash")
+	treasure_holder.set_proximity_audio(true)
 	treasure_holder.spin_speed = 0.0
 	treasure_holder.bob_height = 0.0
 	treasure_holder.lift = 0.0
@@ -59,9 +63,28 @@ func _ready() -> void:
 		point["visual"] = entry[2]
 		reward_points.append(point)
 	add_to_group("native_world_rewards")
+	_restore_rewards_before_admission()
+func _restore_rewards_before_admission() -> void:
+	# A sessão ainda está montando a admissão: reconciliar os recibos aqui
+	# evita restaurar Dante sobre o sólido de um baú já recolhido.
+	var owner_node: Node=get_parent()
+	while owner_node!=null:
+		if &"production" in owner_node:
+			var production: Variant=owner_node.get("production")
+			if production!=null and &"state" in production:
+				var receipts: Array=production.state.world_state.get("rewards",[])
+				for point in reward_points: set_reward_available(not receipts.has(point.id),point.id)
+				return
+		owner_node=owner_node.get_parent()
+func _process(_delta: float) -> void:
+	_sightline.update(get_viewport().get_camera_3d())
+func _exit_tree() -> void:
+	if _sightline!=null: _sightline.release()
 func set_reward_available(available: bool,id: String = "",animate := false) -> void:
 	for point in reward_points:
-		if id.is_empty() or point.id == id: point.visual.set_available(available,animate)
+		if id.is_empty() or point.id == id:
+			point.visual.set_available(available,animate)
+			if point.kind=="cash": _treasure_solid.collision_layer=1 if available else 0
 func _floor_box(center: Vector3,size: Vector3) -> StaticBody3D:
 	var body := StaticBody3D.new()
 	body.position = center
@@ -74,9 +97,11 @@ func _floor_box(center: Vector3,size: Vector3) -> StaticBody3D:
 	body.add_child(collision)
 	add_child(body)
 	return body
-func add_solid(rect: Rect2,id: String) -> void:
+func add_solid(rect: Rect2,id: String) -> StaticBody3D:
 	var body := _floor_box(Vector3(rect.get_center().x,1.3,rect.get_center().y),Vector3(rect.size.x,2.6,rect.size.y))
 	body.name = id
+	body.set_meta("plane_solid_id",id)
+	return body
 func _open_cargo_aisle() -> void:
 	var materials: Dictionary = model._materials
 	for part in model.find_children("*", "MeshInstance3D", true, false):
@@ -106,11 +131,13 @@ func _build_solids() -> void:
 	for side in [-1.0,1.0]:
 		add_solid(Rect2(side*1.55-0.12,-13.3,0.24,19.9),"FuselageWall")
 	add_solid(Rect2(-1.55,-13.6,3.1,0.3),"CockpitNose")
+	add_solid(Rect2(-1.55,-14.12,3.1,.52),"CockpitNoseShoulder")
+	add_solid(Rect2(-1.1,-16.7,2.2,3.1),"CockpitRadome")
 	add_solid(Rect2(-14.1,-4.9,12.6,2.8),"LeftWing")
 	add_solid(Rect2(1.65,-4.9,12.3,2.8),"RightWing")
 	add_solid(Rect2(-1.27,-4.0,0.65,1.6),"SecuredForwardCargo")
 	add_solid(Rect2(-1.27,1.9,0.65,1.5),"SecuredRampCargo")
-	add_solid(Rect2(0.18,-7.65,0.75,0.60),"TreasureCrate")
+	_treasure_solid=add_solid(Rect2(0.18,-7.65,0.75,0.60),"TreasureCrate")
 	for side in [-1.0,1.0]:
 		add_solid(Rect2(side*0.62-0.26,-11.85,0.52,0.8),"PilotSeat")
 	add_solid(Rect2(-1.1,-12.9,2.2,0.6),"CockpitInstruments")

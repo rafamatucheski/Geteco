@@ -188,7 +188,10 @@ func _stall_refresh_presence() -> void:
 			bus._apply_poses(poses,false)
 			if bus.admits(poses,false): bus.set_active(true)
 		elif not near and bus.active:
-			if not bus.player_aboard and not controller._on_screen(point,25): bus.set_active(false)
+			# The previous camera can still see Harbor for the first frames of a
+			# region/interior transition. Visibility only protects distance culling;
+			# it cannot retain physical bodies after their region is suspended.
+			if not enabled or (not bus.player_aboard and not controller._on_screen(point,25)): bus.set_active(false)
 	for person in people:
 		var near: bool = enabled and person.bus==null and waiting_point(person).distance_to(focus)<75 and controller.urban_transit.instances.has(stops[person.stop].definition.id)
 		if near and not is_instance_valid(person.actor):

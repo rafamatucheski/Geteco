@@ -244,6 +244,7 @@ func _workshop() -> bool:
 	else: session._button("Estacione seu carro no pátio para preparar",session.close_menu)
 	for id in CARS.IDS:
 		var spec: Dictionary = CARS.spec(id)
+		if spec.get("race_only",false): continue
 		session._button("%s · R$ %d"%[spec.label,spec.price],_buy_car.bind(id))
 	session._button("Fechar",session.close_menu)
 	return true
@@ -298,6 +299,7 @@ func _preset(id: String, save_current: bool) -> void:
 	session.close_menu()
 	session.save_game()
 func _buy_car(id: String) -> void:
+	if CARS.spec(id).get("race_only",false): return
 	var saved := GARAGE.data(session.state.world_state)
 	if saved.purchased.has(id): session.show_message("Você já comprou este carro."); return
 	var spec: Dictionary = CARS.spec(id)

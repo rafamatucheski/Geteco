@@ -5,19 +5,23 @@ const PROGRESS := preload("res://activities/desert_drag/DesertDragProgress.gd")
 const HUD := preload("res://activities/desert_drag/DesertDragHUD.gd")
 const POWERTRAIN := preload("res://gameplay/desert_cars/DesertDrivetrain.gd")
 const CARS := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
+const STREET := preload("res://gameplay/desert_cars/StreetPowertrainCatalog.gd")
 const AUDIO := preload("res://audio/desert_cars/DesertCarAudio.gd")
 const DRIVER := preload("res://activities/desert_drag/DesertDragDriver.gd")
 const SIGNALS := preload("res://activities/desert_drag/DesertDragSignals.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
-# One authored half-mile strip for every round. Mechanical timing tests place
-# stock cars at ~20–25 s and the fastest full build above 15 s at 800 m.
+const HONOR := preload("res://runtime/TakeshiHonor.gd")
+const TAKESHI := {"name":"Takeshi","car":"supra_a80","distance":800.0,"reaction":.26,"mistake":0.0}
+# One authored 800 m strip for every round. Each car keeps its real powertrain;
+# rival builds cover progressively faster times along the same course.
 # Difficulty comes from the rival/preparation, never a synthetic speed cap.
 const RIVALS := {
-	"digo":{"name":"Digo","car":"digo_gol_1993","distance":800.0,"reaction":.32,"mistake":.14,"parts":{}},
-	"livia":{"name":"Lívia","car":"desert_faisca_rally","distance":800.0,"reaction":.24,"mistake":.10,"parts":{}},
-	"raul":{"name":"Raul","car":"desert_coyote_drag","distance":800.0,"reaction":.20,"mistake":.08,"parts":{}},
-	"jessica":{"name":"Jessica","car":"jessica_jetta_gli","distance":800.0,"reaction":.14,"mistake":.025,"parts":{}},
-	"nadir":{"name":"Nadir","car":"desert_mirage_gt","distance":800.0,"reaction":.18,"mistake":.06,"parts":{}},
+	"digo":{"name":"Digo","car":"digo_gol_1993","distance":800.0,"reaction":.22,"mistake":.06,"parts":{}},
+	"livia":{"name":"Lívia","car":"desert_faisca_rally","distance":800.0,"reaction":.18,"mistake":.045,"parts":{}},
+	"raul":{"name":"Raul","car":"desert_coyote_drag","distance":800.0,"reaction":.15,"mistake":.03,"parts":{}},
+	"jessica":{"name":"Jessica","car":"jessica_jetta_gli","distance":800.0,"reaction":.13,"mistake":.018,"parts":{}},
+	"nadir":{"name":"Nadir","car":"desert_mirage_gt","distance":800.0,"reaction":.11,"mistake":.01,"parts":{}},
+	"rauhz":{"name":"Rauhz","car":"rauhz_focus_mk1","distance":800.0,"reaction":.085,"mistake":.005,"parts":{}},
 }
 signal race_completed(result: Dictionary)
 var session
@@ -46,13 +50,15 @@ var _rival_wait := 0.0
 var _rival_shift_delay := 0.0
 var _rival_target := 0.0
 var _runoff := 0.0
-var _hud_clock := 0.0
+var _entry_pose := Transform3D.IDENTITY
 var _feedback := ""
 var _feedback_time := 0.0
 var _old_camera_lock := false
 var _throttle_override := -1.0
 var _nitro_override := false
 var board_controller: Node
+var takeshi_controller: Node
+var takeshi_meet: Node3D
 
 func configure(owner_session, strip_start: Vector3 = Vector3.INF, forward: Vector3 = Vector3.RIGHT) -> void:
 	session = owner_session
@@ -61,10 +67,17 @@ func configure(owner_session, strip_start: Vector3 = Vector3.INF, forward: Vecto
 	direction = Vector3(forward.x,0,forward.z).normalized()
 	process_physics_priority = -5
 	set_physics_process(false)
+	set_process(false)
 	set_process_input(false)
 	board_controller = preload("res://activities/desert_drag/DesertDragBoardController.gd").new()
 	add_child(board_controller)
 	board_controller.configure(self)
+	takeshi_controller = preload("res://activities/desert_drag/TakeshiDragController.gd").new()
+	add_child(takeshi_controller)
+	takeshi_controller.configure(self)
+	takeshi_meet = preload("res://runtime/desert/drag_meet/DragMeetTakeshi.gd").new()
+	add_child(takeshi_meet)
+	takeshi_meet.configure(session,self)
 	if not PROGRESS.validate_snapshot(snapshot()):
 		session.controller.save_invalid = true
 		session.show_message("Progresso do drag inválido; save preservado.")
@@ -80,7 +93,7 @@ func save_block_reason() -> String:
 	return "Encerre a arrancada para salvar." if active else ""
 
 func objective() -> String:
-	if active and is_instance_valid(player_car): return "Drag · %s · %d m"%[RIVALS[rival_id].name,ceili(maxf(0,distance-_offset(player_car.global_position)))]
+	if active and is_instance_valid(player_car): return "Drag · %s · %d m"%[rival_config(rival_id).name,ceili(maxf(0,distance-_offset(player_car.global_position)))]
 	return "Arrancadas do deserto · Vá à concentração"
 
 func target_position() -> Vector3:
@@ -90,6 +103,9 @@ func nearest_action() -> Dictionary:
 	if not is_instance_valid(session): return {}
 	if active: return {"id":"desert_drag","target":"cancel","label":"Abandonar arrancada"}
 	if not session.ready_for_play or session.controller.save_invalid or session.state.region_id != "desert" or not session.state.place_id.is_empty(): return {}
+	if is_instance_valid(takeshi_meet):
+		var special: Dictionary = takeshi_meet.nearest_action()
+		if not special.is_empty(): return special
 	var point: Vector3 = session.world.player.global_position
 	if session.world.driving.occupied and is_instance_valid(session.world.driving.car): point = session.world.driving.car.global_position
 	if point.distance_to(staging_point)>15 and point.distance_to(start_point)>12: return {}
@@ -113,6 +129,9 @@ func start_block_reason() -> String:
 	return ""
 
 func perform(target: String) -> bool:
+	if target == "takeshi":
+		if nearest_action().get("target","") != "takeshi": return false
+		return takeshi_controller.open()
 	if target == "board":
 		if nearest_action().get("target","") != "board": return false
 		return board_controller.open_board()
@@ -124,16 +143,37 @@ func perform(target: String) -> bool:
 	if not reason.is_empty():
 		session.show_message(reason)
 		return false
-	return _start()
+	return start_rival(PROGRESS.current_rival(session.state.world_state))
 
 func grid(index: int) -> Transform3D:
 	var right := direction.cross(Vector3.UP).normalized()
 	return Transform3D(Basis.looking_at(direction,Vector3.UP),start_point+right*(2.0 if index==0 else -2.0))
 
-func _start() -> bool:
+func start_rival(identity: String) -> bool:
+	if not can_race(identity): return false
+	var reason := start_block_reason()
+	if not reason.is_empty():
+		session.show_message(reason)
+		return false
+	if identity=="takeshi":
+		session.show_dialogue([{"speaker":"Takeshi","message":takeshi_controller.INTRO}],func():
+			if start_block_reason().is_empty(): _start("takeshi"))
+		return true
+	return _start(identity)
+
+func can_race(identity: String) -> bool:
+	return HONOR.can_race(session.state.world_state) if identity=="takeshi" else PROGRESS.can_race(session.state.world_state,identity)
+
+static func rival_config(identity: String) -> Dictionary:
+	return TAKESHI if identity=="takeshi" else RIVALS.get(identity,{})
+
+func _start(identity: String = "") -> bool:
+	if active: return false
+	if identity.is_empty(): identity = PROGRESS.current_rival(session.state.world_state)
+	if not can_race(identity): return false
 	player_car = session.world.driving.car
-	rival_id = PROGRESS.current_rival(session.state.world_state)
-	var config: Dictionary = RIVALS[rival_id]
+	rival_id = identity
+	var config: Dictionary = rival_config(rival_id)
 	distance = float(config.distance)
 	var player_pose := grid(0)
 	var opponent_pose := grid(1)
@@ -158,13 +198,14 @@ func _start() -> bool:
 	previous_listener = get_viewport().get_audio_listener_3d()
 	_old_camera_lock = session.world.camera.locked
 	session.world.camera.locked = true
+	_entry_pose = player_car.global_transform
 	player_car.place(player_pose.origin,player_pose.basis.get_euler().y)
 	session.world.player.input_locked = true
 	racers.clear()
 	for i in 2:
 		var car = player_car if i==0 else opponent
 		var drive := POWERTRAIN.new()
-		drive.configure(CARS.profile_for_vehicle(car),CARS.parts_for_vehicle(car) if i==0 else _rival_parts())
+		drive.configure(powertrain_profile_for_vehicle(car),CARS.parts_for_vehicle(car) if i==0 else _rival_parts())
 		drive.reset()
 		car.input_locked = true
 		car.set_physics_process(false)
@@ -191,13 +232,14 @@ func _start() -> bool:
 	_runoff = 0
 	last_result = {}
 	_rng.randomize()
-	_rival_wait = float(config.reaction)+_rng.randf_range(-.035,.06)
+	_rival_wait = float(config.reaction)+(0.0 if rival_id=="takeshi" else _rng.randf_range(-.035,.06))
 	_rival_target = racers[1].drive.ideal_shift_rpm
 	_rival_shift_delay = -1
 	_feedback = "Acelere para preparar o giro"
 	_feedback_time = 3.0
 	race_camera = Camera3D.new()
 	race_camera.name = "DesertDragSideCamera"
+	race_camera.set_meta("drag_precipitation",true)
 	race_camera.fov = 57
 	race_camera.far = 2200
 	race_camera.near = .2
@@ -215,6 +257,10 @@ func _start() -> bool:
 	layer.layer = 35
 	add_child(layer)
 	hud = HUD.new()
+	hud.set_style(preload("res://activities/desert_drag/DragInstrumentStyles.gd").selection(session.state.world_state))
+	hud.race_distance = distance
+	hud.show_start_lights = true
+	hud.racing = false
 	# Fill the instruments before entering the tree: the first rendered staging
 	# frame must already show the real opponent, distance and launch RPM band.
 	hud.update_state(racers[0].drive,distance,0.0,0.0,str(ceili(countdown)),str(config.name))
@@ -224,16 +270,34 @@ func _start() -> bool:
 	add_child(signals)
 	signals.configure(start_point,direction,distance)
 	set_physics_process(true)
+	set_process(true)
 	set_process_input(true)
 	_refresh_session_hud()
 	return true
 
+static func powertrain_profile_for_vehicle(vehicle: Node) -> String:
+	# Street cars already have their own engine/gearing. Generic body-class
+	# fallback must never turn a V12 or an authored sports car into a stock hatch.
+	if is_instance_valid(vehicle):
+		var identity := str(vehicle.get("archetype"))
+		if STREET.has(identity): return identity
+	return CARS.profile_for_vehicle(vehicle)
+
 func _rival_parts() -> Dictionary:
 	# Same purchasable catalogue and rules as Dante; no catch-up velocity.
-	match rival_id:
-		"raul": return {"engine":"street_cam","tires":"drag_tires"}
-		"jessica": return {"engine":"race_cam","turbo":"turbo_large","nitro":"nitro_race","tires":"drag_tires","weight":"lightweight"}
-		"nadir": return {"engine":"race_cam","turbo":"turbo_small","nitro":"nitro_street","tires":"drag_tires"}
+	return rival_parts(rival_id)
+
+static func rival_parts(identity: String) -> Dictionary:
+	# Fixed authored builds, all available in the player's tuning catalogue.
+	# Replaying a rival never scales their engine to Dante's car or position.
+	match identity:
+		"digo": return {"engine":"street_cam","turbo":"turbo_mid","tires":"drag_tires","exhaust":"race_exhaust"}
+		"livia": return {"ecu":"ecu_1","engine":"race_cam","turbo":"turbo_small","tires":"drag_tires","weight":"lightweight","nitro":"nitro_street"}
+		"raul": return {"engine":"race_cam","turbo":"turbo_mid","tires":"drag_tires","weight":"lightweight","nitro":"nitro_street","suspension":"drag_suspension"}
+		"jessica": return {"ecu":"ecu_2","engine":"race_cam","turbo":"turbo_large","nitro":"nitro_race","tires":"drag_tires","weight":"lightweight","suspension":"drag_suspension","exhaust":"race_exhaust"}
+		"nadir": return {"ecu":"ecu_1","engine":"race_cam","turbo":"turbo_mid","nitro":"nitro_street","tires":"drag_tires","weight":"lightweight","suspension":"drag_suspension"}
+		"rauhz": return {"ecu":"ecu_2","engine":"race_cam","turbo":"turbo_large","nitro":"nitro_race","tires":"drag_tires","weight":"lightweight","suspension":"drag_suspension","exhaust":"race_exhaust"}
+		"takeshi": return preload("res://data/TakeshiRewardSpec.gd").PARTS.duplicate()
 	return {}
 
 func _input(event: InputEvent) -> void:
@@ -281,7 +345,7 @@ func _physics_process(delta: float) -> void:
 		signals.set_countdown(countdown)
 		if countdown <= 0:
 			phase = "racing"
-			_feedback = "LARGOU · "+str(racers[0].drive.launch())
+			_feedback = str(racers[0].drive.launch())
 			_feedback_time = 1.3
 			other.launch()
 	elif phase == "racing":
@@ -318,19 +382,26 @@ func _physics_process(delta: float) -> void:
 			return
 	_feedback_time = maxf(0,_feedback_time-delta)
 	_update_camera(delta)
-	_hud_clock -= delta
-	if _hud_clock<=0:
-		_hud_clock = .05
-		var title := str(ceili(countdown)) if phase=="staging" else ("FREANDO" if phase=="braking" else "")
-		hud.feedback = _feedback if _feedback_time>0 else ""
-		hud.update_state(racers[0].drive,distance-_offset(player_car.global_position),elapsed,_offset(player_car.global_position)-_offset(racers[1].car.global_position),title,str(RIVALS[rival_id].name))
+
+func _process(_delta: float) -> void:
+	if not active or not is_instance_valid(hud) or racers.size()!=2: return
+	layer.visible = not session.modal
+	if session.modal: return
+	var title := str(ceili(countdown)) if phase=="staging" else ("FREANDO" if phase=="braking" else "")
+	hud.feedback = _feedback if _feedback_time>0 else ""
+	hud.show_start_lights = phase=="staging"
+	hud.racing = phase=="racing"
+	hud.update_state(racers[0].drive,distance-_offset(player_car.global_position),elapsed,_offset(player_car.global_position)-_offset(racers[1].car.global_position),title,str(rival_config(rival_id).name))
+
+func set_pause_overlay(paused: bool) -> void:
+	if is_instance_valid(layer): layer.visible = active and not paused and not session.modal
 
 func _rival_control(delta: float) -> void:
 	var drive = racers[1].drive
 	if drive.rpm < _rival_target or elapsed < _rival_wait: return
 	if _rival_shift_delay < 0:
 		_rival_shift_delay = _rng.randf_range(.015,.07)
-		if _rng.randf() < float(RIVALS[rival_id].mistake): _rival_shift_delay += _rng.randf_range(.14,.32)
+		if _rng.randf() < float(rival_config(rival_id).mistake): _rival_shift_delay += _rng.randf_range(.14,.32)
 	_rival_shift_delay -= delta
 	if _rival_shift_delay <= 0:
 		drive.shift_up()
@@ -424,15 +495,19 @@ func _interruption() -> String:
 	return ""
 
 func _finish() -> void:
+	if not active or phase != "braking" or racers.size()!=2: return
 	var player_time: float = racers[0].finish
 	var other_time: float = racers[1].finish
-	var result := PROGRESS.record_finish(session.state.world_state,rival_id,player_time<other_time,player_time)
+	var result := HONOR.record_finish(session.state.world_state,player_time<other_time,player_time) if rival_id=="takeshi" else PROGRESS.record_finish(session.state.world_state,rival_id,player_time<other_time,player_time)
+	if result.is_empty():
+		_cleanup()
+		return
 	result["rival_seconds"] = other_time if is_finite(other_time) else -1.0
+	result["best_seconds"] = float(HONOR.data(session.state.world_state).best_seconds) if rival_id=="takeshi" else float(snapshot().best.get(rival_id,player_time))
 	last_result = result
 	_cleanup()
 	if not result.get("finished",false): return
 	race_completed.emit(result)
-	session.show_message("%s · %.3f s · %s"%["Vitória" if result.won else "Derrota",player_time,RIVALS[rival_id].name])
 	session.save_game()
 
 func cancel_attempt(reason: String = "cancelled") -> void:
@@ -445,6 +520,7 @@ func cancel_attempt(reason: String = "cancelled") -> void:
 func _cleanup() -> void:
 	active = false
 	phase = ""
+	set_process(false)
 	set_physics_process(false)
 	set_process_input(false)
 	if is_instance_valid(race_listener):
@@ -501,6 +577,35 @@ func _cleanup() -> void:
 	_throttle_override = -1
 	_nitro_override = false
 	_refresh_session_hud()
+
+func return_to_entry() -> bool:
+	# Keep the result modal/input lock until support and the destination are safe.
+	if active or not is_instance_valid(player_car) or not session.world.driving.occupied or session.world.driving.car!=player_car: return false
+	if player_car.health<=0 or session.world.gameplay.health<=0 or session.rescue_pending or session.arrest_pending: return false
+	if session.state.region_id!="desert" or not session.state.place_id.is_empty(): return false
+	var region: Node3D = session.world.production.regions.get("desert")
+	if not is_instance_valid(region): return false
+	# Replay can restart on the next frame, before ordinary streaming revisits
+	# the neighbouring grid cell. Admit both lanes before the physics query.
+	if not region.prepare_collision_at(grid(0).origin) or not region.prepare_collision_at(grid(1).origin): return false
+	var destinations: Array[Transform3D] = []
+	# A cancelled attempt can leave the car on the launch grid. "Entrada" means
+	# the meet parking, even after a chain of cancellations and rematches.
+	if _entry_pose.origin.distance_to(staging_point)<=15.0: destinations.append(_entry_pose)
+	for offset in [-6.0,-10.0,-2.0]:
+		destinations.append(Transform3D(_entry_pose.basis,staging_point+Vector3(0,.1,offset)))
+	for pose in destinations:
+		if not region.prepare_collision_at(pose.origin): continue
+		await get_tree().physics_frame
+		if not is_instance_valid(player_car) or not session.modal or session.world.driving.car!=player_car: return false
+		if not session.world.production.vehicle_position_clear(player_car,pose.origin,pose.basis.get_euler().y): continue
+		player_car.place(pose.origin,pose.basis.get_euler().y)
+		session.world.player.global_position = pose.origin
+		session.world.player.reset_physics_interpolation()
+		region.set_focus(pose.origin)
+		session.world.camera.initialized = false
+		return true
+	return false
 
 func _refresh_session_hud() -> void:
 	# Contextual HUD normally polls at80ms. Ownership changes need one immediate

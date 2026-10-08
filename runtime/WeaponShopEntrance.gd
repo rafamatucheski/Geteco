@@ -5,7 +5,7 @@ const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const IDS := ["harbor_supermarket", "harbor_ammunation", "mountain_gunshop", "harbor_police", "harbor_bank", "maciota", "port_boss_garage", "harbor_clothing", "harbor_fuel", "harbor_hospital", "harbor_fire_station",
 	"mountain_cabin", "mountain_cabin_encosta", "mountain_cabin_forest", "mountain_cabin_village_1", "mountain_cabin_village_2", "mountain_cabin_village_3", "mountain_cabin_village_4",
 	"lumberjack_shelter", "lumberjack_shelter_2", "lumberjack_shelter_3", "mountain_outfitters", "mountain_boutique", "mountain_village_outfitters",
-	"westgate_garden", "quayside_house", "canal_north", "cemetery_keeper", "mountain_bunker", "ski_lodge"]
+	"westgate_garden", "quayside_house", "canal_north", "cemetery_keeper", "mountain_bunker", "ski_lodge", "cobra_leader_house"]
 const CAMERA_SECONDS := 0.55
 const POLICE_DOOR_Z := 250.0 / 32.0 + 0.35
 const BANK_DOOR_Z := 180.0 / 32.0 - 0.72
@@ -85,6 +85,7 @@ func update(delta: float) -> void:
 	# A locked home's physical door already blocks the body. Do not latch a
 	# failed crossing here: buying at the threshold must immediately allow entry.
 	if session.activities != null and not session.activities.can_enter_home(id): return
+	if id == "cobra_leader_house" and not _leader_accessible(): return
 	# Proximity opens the door; only an intentional inward crossing transfers.
 	if absf(local.dot(across)) > width or player.velocity.dot(inward) < .7: return
 	var outer := -.1 if id == "harbor_police" else -1.15 if id in ["harbor_ammunation", "mountain_gunshop"] else -.8
@@ -98,6 +99,9 @@ func _blocked() -> bool:
 	return session.modal or session.is_transition_blocked() or session.world.player.input_locked or session.world.gameplay.health <= 0 or session.world.driving.occupied or session.world.driving.is_body_transition_active()
 
 func _entry_available(id: String) -> bool:
+	if id == "cobra_leader_house" and not _leader_accessible():
+		session.show_message("Takeshi ainda não liberou o acesso à casa.")
+		return false
 	if session.activities != null and not session.activities.can_enter_home(id):
 		session.show_message("Esta casa ainda não é sua.")
 		return false
@@ -108,6 +112,9 @@ func _entry_available(id: String) -> bool:
 		session.show_message("O banco está fechado para investigação.")
 		return false
 	return true
+
+func _leader_accessible() -> bool:
+	return session.state.campaign.has_progress("cobra_finale") or (session.state.campaign.active_id == "cobra_finale" and session.state.campaign.step >= 6)
 
 func _entry_interrupted() -> bool:
 	return session.modal or session.is_transition_blocked() or session.transition_generation != _entry_generation or session.world.gameplay.health <= 0 or session.world.driving.occupied or session.world.driving.is_body_transition_active()
@@ -128,6 +135,7 @@ func _update_facade(id: String, near: bool, delta: float) -> void:
 	# Ownership gates the physical hinge as well as admission into the room.
 	var owned: bool = session.activities == null or session.activities.can_enter_home(id)
 	if id == "harbor_bank" and not session.robberies.can_enter_bank(): owned = false
+	if id == "cobra_leader_house" and not _leader_accessible(): owned = false
 	var next := move_toward(_door_amount, 1.0 if owned and (near or _entering) else 0.0, delta / .28)
 	if not is_equal_approx(next, _door_amount):
 		_door_amount = next
@@ -211,6 +219,7 @@ func _half_width(id: String) -> float:
 		"harbor_hospital": return 1.1
 		"harbor_fire_station": return 1.4
 		"harbor_bank", "harbor_clothing", "harbor_fuel": return .48
+		"cobra_leader_house": return .23
 	return .62
 
 func _close_size(id: String) -> float:
@@ -228,6 +237,7 @@ func _door_position(id: String, definition: Dictionary) -> Vector3:
 	return _original_door_position(id,definition)
 
 func _original_door_position(id: String, definition: Dictionary) -> Vector3:
+	if id == "cobra_leader_house": return definition.walkup_door_position
 	if id == "harbor_supermarket": return definition.exterior_position + Vector3(0,0,5.5)
 	var family := PLACES.walkup_family(id)
 	if not family.is_empty(): return definition.exterior_position + Vector3(0, 0, PLACES.walkup_door_z(family))

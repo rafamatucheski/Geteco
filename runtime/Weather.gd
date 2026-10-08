@@ -17,6 +17,8 @@ var hail: GPUParticles3D
 var snow: GPUParticles3D
 var mountain_weather: Dictionary = {}
 var atmosphere = preload("res://runtime/atmosphere/RegionalAtmosphere3D.gd").new()
+var drag_sky = preload("res://runtime/atmosphere/DragStripSky.gd").new()
+var drag_rain = preload("res://runtime/atmosphere/DragRaceRain.gd").new()
 var atmosphere_step := .2
 var weather_audio: Node
 var storm: Node
@@ -155,9 +157,11 @@ func _process(delta: float) -> void:
 	precipitation.global_position = REGIONAL_ATMOSPHERE.focus_position(controller)+Vector3.UP*10
 	hail.global_position = precipitation.global_position
 	snow.global_position = precipitation.global_position
+	drag_rain.apply(precipitation,get_viewport().get_camera_3d(),delta,weather_state==2)
+	drag_sky.update_lightning(storm.envelope(storm.flash_age) if weather_state==2 and not _covered else 0.0,storm.flashes)
 	clock += delta
 	var focus: Vector3 = REGIONAL_ATMOSPHERE.focus_position(controller)
-	var covered: bool = not controller.state.place_id.is_empty() or atmosphere.SHELTER.sheltered(focus) or controller.world.player.get_meta("mountain_shelter",false) or controller.world.player.get_meta("port_container_shelter",false)
+	var covered: bool = _inside_shelter() or atmosphere.SHELTER.sheltered(focus) or controller.world.player.get_meta("mountain_shelter",false) or controller.world.player.get_meta("port_container_shelter",false)
 	if clock >= .2 or covered!=_covered:
 		atmosphere_step = clock
 		clock = 0
@@ -175,9 +179,19 @@ func moon_illumination() -> float:
 	var phase := fposmod((float(moon_day())+time_of_day)/MOON_CYCLE_DAYS,1.0)
 	return (1.0-cos(phase*TAU))*.5
 
+func _embedded_building() -> bool:
+	if controller.session == null: return false
+	if controller.session.get("service_roofs") != null and controller.session.service_roofs.is_active(): return true
+	return controller.session.get("building_entrance") != null and controller.session.building_entrance.in_building()
+
+func _inside_shelter() -> bool:
+	if controller.session != null and controller.session.get("service_roofs") != null and controller.session.service_roofs.is_active(): return false
+	if _embedded_building(): return not controller.session.building_entrance.on_rooftop()
+	return not controller.state.place_id.is_empty()
+
 func _update() -> void:
 	var daylight := clampf(sin((time_of_day-.25)*TAU)*1.5+.25,0,1)
-	var inside: bool = not controller.state.place_id.is_empty()
+	var inside: bool = not controller.state.place_id.is_empty() and not _embedded_building()
 	var mountain: bool = controller.state.region_id == "mountain"
 	mountain_weather = {}
 	if controller.session != null and controller.session.cold != null:
@@ -216,6 +230,10 @@ func _update() -> void:
 		env.fog_light_color = env.fog_light_color.lerp(storm_sky,storm_weight*.8)
 		env.fog_sky_affect = lerpf(env.fog_sky_affect,.92,storm_weight)
 		controller.sun.light_energy *= lerpf(1.0,.72,storm_weight)
+	drag_sky.apply(controller.environment.environment,focus,time_of_day,clouds,moon_illumination(),inside)
+	if drag_sky.installed:
+		# Preserve depth fog on terrain while keeping the cloud deck visible.
+		controller.environment.environment.fog_sky_affect = minf(controller.environment.environment.fog_sky_affect,.38)
 	if controller.world.production != null:
 		var night_lights := 1.0-smoothstep(.25,.70,REGIONAL_ATMOSPHERE.daylight_at(time_of_day))
 		if is_instance_valid(controller.world.production.connection):
@@ -224,7 +242,7 @@ func _update() -> void:
 		if is_instance_valid(mountain_region): mountain_region.set_night_lights(night_lights)
 		var desert_region = controller.world.production.regions.get("desert")
 		if is_instance_valid(desert_region): desert_region.set_night_lights(night_lights)
-	var covered: bool = inside or atmosphere.SHELTER.sheltered(focus) or controller.world.player.get_meta("mountain_shelter",false) or controller.world.player.get_meta("port_container_shelter",false)
+	var covered: bool = _inside_shelter() or atmosphere.SHELTER.sheltered(focus) or controller.world.player.get_meta("mountain_shelter",false) or controller.world.player.get_meta("port_container_shelter",false)
 	_covered = covered
 	# Stopping emission leaves living particles visible for up to 2.2 seconds.
 	# Hide those particles in the same frame as entering a covered place.

@@ -4,8 +4,17 @@ var solids: Array[Rect2] = [Rect2(-6,-4.5,12,.25),Rect2(-6,-4.5,.25,9),Rect2(5.7
 
 static func definition_data() -> Dictionary:
 	var exterior := Vector3(8352.5,0,1975.0)/16.0
+	var exterior_depth := 170.0/16.0
+	var yaw := 0.0
+	var edit: Dictionary = preload("res://world/editing/WorldServiceBuildings.gd").changes().get("building/CourtyardHouse",{})
+	if not edit.is_empty():
+		exterior = Vector3(float(edit.position[0]),0,float(edit.position[1]))
+		exterior_depth = float(edit.size[1])
+		yaw = deg_to_rad(float(edit.rotation))
+	var outward := Vector3.BACK.rotated(Vector3.UP,yaw)
+	var doorway := exterior + outward*(exterior_depth*.5-1.8+.04)
 	var reward := {"id":"cobra_leader_house_cash_01","kind":"cash","amount":1200,"local_position":Vector3(-2.5,0,-3.3)}
-	return {"id":"cobra_leader_house","name":"Takeshi","original_name":"Takeshi","region":"harbor","model":"res://world/places/cobra_house/CobraLeaderHouse.gd","variant":0,"size":Vector2(12,9),"service":"story_records","exterior_position":exterior,"entry_position":exterior+Vector3(0,0,6.8),"return_position":exterior+Vector3(0,0,7.6),"spawn":Vector3(0,.08,3.5),"exit":Vector3(0,.08,4),"camera_target":Vector3(0,.55,-.15),"camera_offset":Vector3(0,18,15),"camera_size":14.0,"npc_model":"","npc_point":Vector3.ZERO,"hidden_access":true,"reward":reward,"rewards":[reward]}
+	return {"id":"cobra_leader_house","name":"Takeshi","original_name":"Takeshi","region":"harbor","model":"res://world/places/cobra_house/CobraLeaderHouse.gd","variant":0,"size":Vector2(12,9),"service":"story_records","exterior_position":exterior,"editor_rotation":yaw,"walkup_door_position":doorway,"entry_position":doorway+outward*3.1,"return_position":doorway+outward*3.5,"spawn":Vector3(0,.08,3.5),"exit":Vector3(0,.08,4),"camera_target":Vector3(0,.55,-.15),"camera_offset":Vector3(0,18,15),"camera_size":14.0,"npc_model":"","npc_point":Vector3.ZERO,"hidden_access":true,"reward":reward,"rewards":[reward]}
 
 func _ready() -> void:
 	_box("Floor",Vector3(0,-.03,0),Vector3(12,.1,9),Color("635144"))

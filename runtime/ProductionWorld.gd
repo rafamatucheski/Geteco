@@ -131,7 +131,7 @@ func build() -> void:
 	if world.has_meta("menu_preview"): await get_tree().process_frame
 	region = _mount_region(state.region_id)
 	var startup_position := _startup_position()
-	region.set_focus(startup_position)
+	region.set_focus(startup_position,true)
 	world.street = region
 	_refresh_route_consumers()
 	if world.has_meta("menu_preview"): await get_tree().process_frame
@@ -543,6 +543,7 @@ func _audio() -> Node:
 	return audio
 
 func _physical_focus() -> Vector3:
+	if session != null and is_instance_valid(session.regional_coach) and session.regional_coach.riding and is_instance_valid(session.regional_coach.train): return session.regional_coach.train.global_position
 	if session != null and is_instance_valid(session.jessica) and session.jessica.riding and is_instance_valid(session.jessica.car): return session.jessica.car.global_position
 	if session != null and is_instance_valid(session.arrival) and session.arrival.riding and is_instance_valid(session.arrival.car): return session.arrival.car.global_position
 	if is_instance_valid(world.driving) and world.driving.occupied and is_instance_valid(world.driving.car):
@@ -667,9 +668,9 @@ func _persistent_vehicle_support() -> Dictionary:
 		if not is_instance_valid(car) or car.is_queued_for_deletion() or not car.visible: continue
 		# A body suspended by streaming still owns its floor request. Excluding
 		# it here would evict the chunk before the ground check can resume it.
-		if not car.is_physics_processing() and not car.has_meta("awaiting_ground") and not car.has_meta("desert_drag_physics"): continue
+		if not car.is_physics_processing() and not car.has_meta("awaiting_ground") and not car.has_meta("desert_drag_physics") and not car.get_meta("armored_transport",false): continue
 		if _is_ambient_traffic(car) and car != world.driving.car and not car.get_meta("gang_hostile",false): continue
-		var persistent: bool = car == world.driving.car or car.vehicle_id in ["neco_tow_truck","story_tow_vehicle"] or car.get_meta("residence_vehicle",false) or car.get_meta("garage_reward",false) or car.get_meta("port_work_vehicle",false) or car.get_meta("secret_discovery_vehicle",false) or car.get_meta("race_owned",false) or car.has_meta("desert_drag_physics")
+		var persistent: bool = car == world.driving.car or car.vehicle_id in ["neco_tow_truck","story_tow_vehicle"] or car.get_meta("residence_vehicle",false) or car.get_meta("garage_reward",false) or car.get_meta("port_work_vehicle",false) or car.get_meta("secret_discovery_vehicle",false) or car.get_meta("race_owned",false) or car.has_meta("desert_drag_physics") or car.get_meta("armored_transport",false)
 		if not persistent:
 			if car.traffic: continue
 			if car.global_position.distance_to(world.player.global_position) > 145:
@@ -683,7 +684,7 @@ func _persistent_vehicle_support() -> Dictionary:
 		var id: String = WORLD_CONNECTION.logical_region(car.global_position)
 		var radius: float = Vector2(car.half_width,car.half_length).length()+0.5
 		support[id].append({"position":car.global_position,"radius":radius})
-		if car.get_meta("port_work_vehicle",false) or car.get_meta("race_owned",false):
+		if car.get_meta("port_work_vehicle",false) or car.get_meta("race_owned",false) or car.get_meta("armored_transport",false):
 			# PortLogistics admits this same point before moving. Keep its chunk
 			# until the request moves on; the hull radius alone does not cover it.
 			support[id].append({"position":car.global_position-car.global_basis.z*(car.half_length+3),"radius":0.0})
@@ -912,14 +913,15 @@ func _process(delta: float) -> void:
 	# Admission routines own focus while awaiting collision synchronization.
 	# Following the old player position here would unload their destination.
 	if session == null or not session.ready_for_play or session.has_position_transition(): return
-	if state.place_id.is_empty():
+	var street_live: bool = state.place_id.is_empty() or (session.building_entrance != null and session.building_entrance.in_building()) or (session.service_roofs != null and session.service_roofs.is_active())
+	if street_live:
 		var focus := _physical_focus()
 		_update_physical_residency(focus)
 		_update_logical_region(focus)
-	if state.place_id.is_empty(): _service_population_job()
+	if street_live: _service_population_job()
 	else: _population_jobs.clear()
 	population_clock += delta
-	if population_clock < .25 or not state.place_id.is_empty(): return
+	if population_clock < .25 or not street_live: return
 	population_clock = 0
 	_update_density()
 	_update_mobile_region_metadata()
@@ -966,7 +968,7 @@ func _process(delta: float) -> void:
 			if vehicle_position_clear(car,car.position,car.rotation.y):
 				car.remove_meta("awaiting_ground")
 				car.set_physics_process(true)
-		elif not car.traffic and car != world.driving.car and car.vehicle_id not in ["story_tow_vehicle","neco_tow_truck"] and not car.get_meta("residence_vehicle",false) and not car.get_meta("garage_reward",false) and not car.get_meta("port_work_vehicle",false) and not car.get_meta("secret_discovery_vehicle",false) and not car.get_meta("race_owned",false) and car.position.distance_to(world.player.position) > 145:
+		elif not car.traffic and car != world.driving.car and car.vehicle_id not in ["story_tow_vehicle","neco_tow_truck"] and not car.get_meta("residence_vehicle",false) and not car.get_meta("garage_reward",false) and not car.get_meta("port_work_vehicle",false) and not car.get_meta("secret_discovery_vehicle",false) and not car.get_meta("race_owned",false) and not car.get_meta("armored_transport",false) and car.position.distance_to(world.player.position) > 145:
 			vehicles.remove_at(index)
 			# Owners of a parked snapshot can distinguish streaming cleanup from
 			# an explicit removal without keeping a distant physical body alive.
@@ -1381,7 +1383,8 @@ func _travel_checked(region_id: String,destination_override := Vector3.INF) -> v
 	var was_resident := regions.has(region_id) and is_instance_valid(regions[region_id])
 	var next_region: Node3D = _mount_region(region_id,destination_override)
 	var destination: Vector3 = (destination_override if destination_override.is_finite() else next_region.spawn_position)+Vector3.UP*.12
-	next_region.set_focus(destination)
+	# Fast travel pauses normal streaming; finish the destination cell under the transition.
+	next_region.set_focus(destination,true)
 	# Keep the source region intact until the destination has synchronized collision.
 	for i in 3: await get_tree().physics_frame
 	if not session.position_clear(destination):
@@ -1392,6 +1395,7 @@ func _travel_checked(region_id: String,destination_override := Vector3.INF) -> v
 		get_tree().paused = was_paused
 		session.show_message("Destino ocupado ou sem solo. Viagem não realizada.")
 		return
+	if session.armored_transport != null: session.armored_transport.suspend_for_travel()
 	session.passenger_transport.cancel_for_transition()
 	session.activities.cancel_attempt()
 	session.mountain_progression.cancel_attempt()

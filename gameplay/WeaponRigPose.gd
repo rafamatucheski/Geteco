@@ -13,24 +13,25 @@ extends RefCounted
 ## ombro, o machado alto demais e o taco num arco diferente do machado.
 
 const DATA = preload("res://gameplay/WeaponPoseData.gd")
+const SAWED = preload("res://gameplay/SawedOffPresentation.gd")
 const MOVES = preload("res://gameplay/MeleeMoveset.gd")
 ## Escala do Dante V2 / escala do Dante V1 sobre o mesmo GLB (Actor.gd: 1,03;
 ## V1 MeshyDanteRig.SCALE: 0,82). Também vale para o modelo da arma: na V1 a arma
 ## não era escalada junto com o corpo, então relativamente ao Dante ela era esse
 ## tanto maior do que o modelo cru na V2.
 const V1_TO_V2 := 1.03 / 0.82
-const HANDGUNS := ["pistol", "magnum"]
+const HANDGUNS := ["pistol", "magnum", "sawed_off"]
 const LONG_GUNS := ["smg", "shotgun", "ak47", "m4a1", "hunting_rifle"]
 const FIREARMS := ["pistol", "magnum", "smg", "shotgun", "sawed_off", "ak47", "m4a1", "hunting_rifle", "rpg", "flamethrower"]
 ## V1 `_cross_grip`: o cabo atravessa a palma em vez de ficar na vertical.
 const CROSS_GRIP := ["axe", "knife", "bat"]
-const CROSS_GRIP_LEFT := ["smg", "shotgun", "sawed_off", "ak47", "m4a1", "hunting_rifle"]
+const CROSS_GRIP_LEFT := ["smg", "shotgun", "ak47", "m4a1", "hunting_rifle"]
 ## Ombro de referência do `MeshyMeleePose` (espaço V1) para o balanço do cabo ao andar.
 const MELEE_SHOULDER := Vector3(0.23, 1.18, -0.015)
 const GRENADE_RELEASE := 0.20
 const GRENADE_RECOVERY := 0.70
 ## Instante de contato nas trajetórias abaixo; Gameplay usa o mesmo relógio.
-const MELEE_CONTACT := {"fists": 0.14, "knuckles": 0.16, "knife": 0.18, "bat": 0.36, "axe": 0.38}
+const MELEE_CONTACT := {"fists": 0.14, "knuckles": 0.16, "knife": 0.18, "bat": 0.36, "axe": 0.38, "katana": 0.26}
 ## Repouso dos ossos no espaço do esqueleto do `dante.glb` (medido no GLB; o
 ## modelo é girado 180° dentro do Actor). Com eles o ombro sai da mesma conta
 ## que a V1 fazia em `sync_shoulders`: clavícula protraída 0,20 rad e tronco
@@ -43,7 +44,7 @@ const KNUCKLE_DURATION := 0.32
 ## Hit-stop (congelamento curto do golpe no impacto) por arma, em segundos. É o
 ## que dá peso ao contato nos jogos de ação: o braço "trava" no alvo por 3–5
 ## quadros antes do follow-through. Golpe pesado (fim da sequência) segura mais.
-const HIT_STOP := {"fists": 0.045, "knuckles": 0.055, "knife": 0.04, "bat": 0.075, "axe": 0.085}
+const HIT_STOP := {"fists": 0.045, "knuckles": 0.055, "knife": 0.04, "bat": 0.075, "axe": 0.085, "katana": 0.055}
 const HEAVY_HIT_STOP := 0.035
 ## Velocidade angular máxima das articulações do braço (rad/s) durante o golpe.
 ## O padrão do Actor (18) é o da prontidão; um direto real passa de 25 no cotovelo.
@@ -374,8 +375,6 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 		hand = Vector3(0.14, 0.99, -0.28)
 		pitch = 0.18 if sprinting else -0.08
 		carry_yaw = 0.30
-	if id == "sawed_off":
-		hand = Vector3(0.08, 1.02 if engaged else 0.98, -0.29)
 	_carry_yaw = lerpf(_carry_yaw, carry_yaw, 1.0 - exp(-14.0 * delta))
 	hand.y -= (1.0 - equip_blend) * 0.16
 	pitch -= (1.0 - equip_blend) * 0.45
@@ -516,10 +515,7 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 				hand.y = carry_height
 			hand.z -= 0.080
 			left_target.z -= 0.080
-			if id == "sawed_off" and not reloading:
-				hand = Vector3(0.055, 1.04 if engaged else 0.95, -0.36) + body_offset
-				left_target = hand + gun_basis * support
-			elif id == "flamethrower" and not reloading:
+			if id == "flamethrower" and not reloading:
 				hand = Vector3(0.09, 0.96 if engaged else 0.90, -0.28) + body_offset
 				left_target = hand + gun_basis * support
 			elif id == "rpg" and not reloading:
@@ -700,7 +696,7 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 		"forearm_twist_share": FOREARM_SHARE if id in ["axe", "bat"] else 0.0,
 		"grip_solver": id in ["axe", "bat"],
 		"pump": pump_stroke,
-		"slide": clampf(recoil / maxf(float(p[2]), 0.001), 0.0, 1.0),
+		"slide": _rack(reload_progress, 0.66, 0.81) if id == "pistol" and reloading else clampf(recoil / maxf(float(p[2]), 0.001), 0.0, 1.0),
 	}
 
 ## Palma esquerda com a mala: braço quase reto ao lado da coxa, com pouquíssimo vaivém
@@ -924,6 +920,7 @@ func _knuckle_pose(variant: int, age: float, engaged: bool, swing: float, sprint
 ## V1 `PlayerCombatPose.reload_targets`: uma linha de tempo normalizada pelo
 ## áudio — ergue, manipula e volta à prontidão antes da gravação terminar.
 func reload_targets(id: String, progress: float) -> Dictionary:
+	if id == "sawed_off": return SAWED.reload_targets(progress, DATA.GRIPS.sawed_off)
 	var t := clampf(progress, 0.0, 1.0)
 	var weight := smoothstep(0.0, 0.10, t) * (1.0 - smoothstep(0.88, 1.0, t))
 	var hand := Vector3(0.14, 0.91, -0.18)
@@ -971,7 +968,7 @@ func reload_targets(id: String, progress: float) -> Dictionary:
 			# instante em que `Gameplay._update_weapon_parts` recolhe o tambor.
 			var flick := _pulse(t, 0.80, 0.08)
 			accents = {"roll": 0.30 * flick, "pitch": 0.06 * flick, "kick": Vector3(0.012, 0.01, 0) * flick, "left": Vector3.ZERO}
-		"shotgun", "sawed_off", "hunting_rifle":
+		"shotgun", "hunting_rifle":
 			hand = Vector3(0.10, 0.87, -0.15)
 			tilt = Vector3(0.05, -0.12, -0.62)
 			insert = Vector3(-0.035, 0.84, -0.20)

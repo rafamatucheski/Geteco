@@ -16,15 +16,15 @@ static func fuel() -> MeshInstance3D:
 		var ends := SurfaceTool.new()
 		ends.begin(Mesh.PRIMITIVE_TRIANGLES)
 		for i in 3:
-			var log := CylinderMesh.new()
-			log.top_radius = .078
-			log.bottom_radius = .105
-			log.height = .94
-			log.radial_segments = 9
-			log.cap_top = false
-			log.cap_bottom = false
+			var firewood := CylinderMesh.new()
+			firewood.top_radius = .078
+			firewood.bottom_radius = .105
+			firewood.height = .94
+			firewood.radial_segments = 9
+			firewood.cap_top = false
+			firewood.cap_bottom = false
 			var pose := Transform3D(Basis.from_euler(Vector3(PI / 2, i * 1.05 + .2, .08 * (i - 1))), Vector3(0, .105 + i * .045, 0))
-			bark.append_from(log, 0, pose)
+			bark.append_from(firewood, 0, pose)
 			for side in [-1.0, 1.0]:
 				var cap := CylinderMesh.new()
 				cap.top_radius = .078 if side > 0 else .105

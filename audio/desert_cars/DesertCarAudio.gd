@@ -1,7 +1,8 @@
 extends Node3D
 ## Bounded two-band mixer. Uses the SAME gearbox object as motion and HUD.
-## Five roster families use different authored recordings, not one pitch-shifted WAV.
+## Legacy banks contain offline combustion synthesis, not field recordings.
 const BANKS := preload("res://audio/EngineBankCache.gd")
+const PROFILE := preload("res://audio/VehicleEngineProfile.gd")
 const CATALOG := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
 var drivetrain: RefCounted
 var vehicle: Node3D
@@ -10,7 +11,6 @@ var _layers: Array[AudioStreamPlayer3D] = []
 var _indices := [-1,-1]
 var _shift: AudioStreamPlayer3D
 var _tire: AudioStreamPlayer3D
-var _nitro: AudioStreamPlayer3D
 var _last_shift := 0
 var _range_clock := 0.0
 var _in_range := true
@@ -20,6 +20,8 @@ var _family := ""
 var _external_observing := false
 var _last_observed_speed := 0.0
 var _foreground := false
+var _recorded_idle: AudioStreamPlayer3D
+var _recorded_path := ""
 
 func bind(car: Node3D, state: RefCounted) -> void:
 	vehicle = car
@@ -38,9 +40,10 @@ func _ready() -> void:
 	_shift = _player("ShiftBlowoff",-16.0)
 	_shift.stream = load("res://audio/vehicle_fx/sport_blowoff_1.wav")
 	_tire = _player("Wheelspin",-80.0)
+	# The driver's close race listener must not amplify rubber above the motor.
+	_tire.max_db = -24.0
+	_tire.unit_size = 4.0
 	_tire.stream = _loop("res://audio/acoustic/skid_muscle.wav" if str(drivetrain.spec.engine_family)=="muscle" else "res://audio/acoustic/skid_street.wav")
-	_nitro = _player("Nitro",-80.0)
-	_nitro.stream = _loop("res://audio/vehicle_fx/air_brake.wav")
 
 func _apply_profile() -> void:
 	var family := str(drivetrain.spec.engine_family)
@@ -49,8 +52,24 @@ func _apply_profile() -> void:
 		_bank = BANKS.bank(family)
 		_indices = [-1,-1]
 	var bus: StringName = &"SFX" if AudioServer.get_bus_index("SFX")>=0 else &"Master"
-	if float(drivetrain.spec.get("exhaust",0.0)) > .5: bus = _exhaust_bus()
 	for player in _layers: player.bus = bus
+	_sync_recorded_idle()
+
+func _sync_recorded_idle() -> void:
+	var id := str(drivetrain.car_id)
+	var path := ""
+	if id == "desert_bison": path = "res://audio/desert_cars/bison_idle.wav"
+	elif id in ["desert_coyote","desert_coyote_drag"]: path = "res://audio/desert_cars/coyote_idle.wav"
+	if path == _recorded_path: return
+	_recorded_path = path
+	if is_instance_valid(_recorded_idle):
+		_recorded_idle.free()
+		_recorded_idle = null
+	if path.is_empty(): return
+	_recorded_idle = _player("RecordedIdle",-80.0)
+	_recorded_idle.stream = _loop(path)
+	# Reapply foreground settings when tuning rebinds an occupied vehicle.
+	_foreground = false
 
 func _process(delta: float) -> void:
 	if not is_instance_valid(vehicle) or drivetrain == null: queue_free(); return
@@ -59,11 +78,16 @@ func _process(delta: float) -> void:
 	var foreground := bool(vehicle.get("controlled")) and not bool(vehicle.get("traffic")) and not bool(vehicle.get("external_input"))
 	if foreground != _foreground:
 		_foreground = foreground
-		for player in _layers + [_shift, _tire, _nitro]:
+		for player in _layers + [_shift, _tire]:
 			player.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED if foreground else AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
 			player.max_distance = 0.0 if foreground else 85.0
 			player.panning_strength = 0.0 if foreground else 1.0
 			player.attenuation_filter_db = 0.0 if foreground else -24.0
+		if is_instance_valid(_recorded_idle):
+			_recorded_idle.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED if foreground else AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
+			_recorded_idle.max_distance = 0.0 if foreground else 85.0
+			_recorded_idle.panning_strength = 0.0 if foreground else 1.0
+			_recorded_idle.attenuation_filter_db = 0.0 if foreground else -24.0
 		_range_clock = 0.0
 	_range_clock -= delta
 	_blowoff_cooldown = maxf(0.0,_blowoff_cooldown-delta)
@@ -81,40 +105,62 @@ func _process(delta: float) -> void:
 	if not active:
 		for player in _layers: player.stop()
 		_tire.stop()
-		_nitro.stop()
+		_shift.stop()
+		if is_instance_valid(_recorded_idle): _recorded_idle.stop()
 		_external_observing = false
 		return
 	_synchronize_external(delta)
-	var ratio := clampf((float(drivetrain.rpm)-750.0)/maxf(1000.0,float(drivetrain.redline)-750.0),0.0,1.0)
-	var band := ratio*6.0
-	var low := mini(5,int(floor(band)))
-	var fraction := band-float(low)
+	# Each nominal value is complete four-stroke cycles per second: RPM / 120.
+	# Align both bands to that SAME rate, otherwise the crossfade plays two
+	# incompatible notes and produces beating/chirps as the engine accelerates.
+	var nominal: Array = PROFILE.NOMINAL.get(_family, PROFILE.NOMINAL.street)
+	var cycles := maxf(1.0,float(drivetrain.rpm)/120.0)
+	var low := 0
+	while low < 5 and cycles > float(nominal[low+1]): low += 1
+	var fraction := clampf(log(cycles/float(nominal[low]))/log(float(nominal[low+1])/float(nominal[low])),0.0,1.0)
 	var power := float(drivetrain.throttle)
 	var cut := -8.0 if float(drivetrain.shift_remaining) > 0.0 else 0.0
 	if drivetrain.limiter: cut -= 4.0
 	var exhaust := float(drivetrain.spec.get("exhaust",0.0))
+	# Injection increases engine load. It is not an external air-brake purge.
+	var nitro_load := 1.5 if drivetrain.nitro_active else 0.0
+	# Real idle recordings supply low-speed character for these two families.
+	# Do not stretch an idle recording across the entire rev range: fade it out
+	# before 2000 RPM, leaving the RPM-aligned load banks in charge.
+	var idle_weight := 0.0
+	if is_instance_valid(_recorded_idle):
+		idle_weight = (1.0-smoothstep(1050.0,2000.0,float(drivetrain.rpm)))*(1.0-power*.4)
+		_recorded_idle.pitch_scale = clampf(float(drivetrain.rpm)/(750.0 if _family == "diesel" else 900.0),.85,1.6)
+		_loop_level(_recorded_idle,idle_weight,-14.0,delta)
+	var synthesized_gain := linear_to_db(1.0-idle_weight*.82)
 	for i in 2:
 		var index := low+i
-		var player := _layers[i]
+		# Adjacent bands alternate players. Keep the shared band playing through
+		# every boundary instead of restarting both samples at audible volume.
+		var slot := index % 2
+		var player := _layers[slot]
 		if index >= _bank.size(): continue
-		if _indices[i] != index:
+		if _indices[slot] != index:
+			player.volume_db = -80.0
 			player.stream = _bank[index]
-			_indices[i] = index
+			_indices[slot] = index
 			player.play()
 		elif not player.playing: player.play()
 		var weight := sqrt(maxf(.00001,1.0-fraction if i == 0 else fraction))
-		player.volume_db = lerpf(player.volume_db,-19.0+linear_to_db(weight)+power*4.0+cut+exhaust*2.0,1.0-exp(-delta*25.0))
-		# Small pitch interpolation inside each recording band; family/timbre comes
-		# from the source bank. Gear changes drop RPM before this code runs.
-		player.pitch_scale = clampf((.30+ratio)/(.30+float(index)/6.0),.75,1.32)
+		player.volume_db = lerpf(player.volume_db,-19.0+linear_to_db(weight)+power*4.0+cut+exhaust*2.0+nitro_load+synthesized_gain,1.0-exp(-delta*25.0))
+		player.pitch_scale = clampf(cycles/float(nominal[index]),.35,3.0)
 	if int(drivetrain.shift_serial) != _last_shift:
 		_last_shift = int(drivetrain.shift_serial)
 		_play_shift()
 	elif _last_throttle > .65 and power < .25 and float(drivetrain.turbo_pressure) > .5:
 		_play_shift()
 	_last_throttle = power
-	_loop_level(_tire,float(drivetrain.wheelspin),-18.0,delta)
-	_loop_level(_nitro,1.0 if drivetrain.nitro_active else 0.0,-24.0,delta)
+	_loop_level(_tire,float(drivetrain.wheelspin),-28.0,delta)
+
+func has_wheelspin_voice() -> bool:
+	# Only claim the longitudinal tire sound while it is actually being mixed.
+	# Braking/cornering remain owned by VehicleTireEffects.
+	return is_instance_valid(_tire) and _tire.playing and drivetrain != null and float(drivetrain.wheelspin) > .02
 
 func _synchronize_external(delta: float) -> void:
 	# These native drivers bypass DesertHandling. Never overwrite the player's
@@ -142,10 +188,12 @@ func _synchronize_external(delta: float) -> void:
 
 func _play_shift() -> void:
 	if _blowoff_cooldown > 0.0: return
+	# Aspirated engines have no pressurized intake to vent. A stock diesel also
+	# does not close a gasoline throttle plate on shifts. The RPM/load dip is
+	# already supplied by the authoritative transmission.
+	if float(drivetrain.spec.boost_gain) <= .01 or _family == "diesel" or float(drivetrain.turbo_pressure) < .25: return
 	_blowoff_cooldown = .22
-	var turbo := float(drivetrain.spec.boost_gain) > .01
-	_shift.stream = load("res://audio/vehicle_fx/sport_blowoff_1.wav" if turbo else "res://audio/vehicle_fx/turbo_shift_0.wav")
-	_shift.volume_db = -17.0 if turbo else -25.0
+	_shift.volume_db = -23.0
 	_shift.play()
 
 func _loop_level(player: AudioStreamPlayer3D, amount: float, level: float, delta: float) -> void:
@@ -173,17 +221,3 @@ func _loop(path: String) -> AudioStreamWAV:
 	stream.loop_begin = 0
 	stream.loop_end = maxi(1,roundi(stream.get_length()*stream.mix_rate)-8)
 	return stream
-
-static func _exhaust_bus() -> StringName:
-	const BUS := &"DesertRaceExhaust"
-	if AudioServer.get_bus_index(BUS) >= 0: return BUS
-	AudioServer.add_bus()
-	var index := AudioServer.bus_count-1
-	AudioServer.set_bus_name(index,BUS)
-	AudioServer.set_bus_send(index,&"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master")
-	var saturation := AudioEffectDistortion.new()
-	saturation.mode = AudioEffectDistortion.MODE_OVERDRIVE
-	saturation.drive = .24
-	saturation.post_gain = -2.0
-	AudioServer.add_bus_effect(index,saturation)
-	return BUS

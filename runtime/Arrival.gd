@@ -27,7 +27,6 @@ var maciota: CharacterBody3D
 var bus: CharacterBody3D
 var route: Curve3D
 var riding := false
-var _wait := 0.0
 var _caption := -1
 var _caption_wait := 4.0
 var _generation := 0
@@ -316,14 +315,24 @@ func _board() -> void:
 		return
 	_set_phase("tour_boarding", "", car.door_point(1))
 	_lock(true)
+	var generation := _generation
+	var boarding_car := car
+	var boarding_driver := maciota
 	var player: CharacterBody3D = session.world.player
-	if not await _walk(player, car.door_point(1)) or not await _walk(maciota, car.door_point(-1)):
+	var passenger_ready := await _walk(player, boarding_car.door_point(1))
+	if not _boarding_current(generation,boarding_car,boarding_driver): return
+	var driver_ready := false
+	if passenger_ready:
+		driver_ready = await _walk(boarding_driver, boarding_car.door_point(-1))
+		if not _boarding_current(generation,boarding_car,boarding_driver): return
+	if not passenger_ready or not driver_ready:
 		_lock(false)
 		_set_phase("tour_board", "[E] Aproxime-se da porta do passageiro para entrar.", car.door_point(1))
 		return
 	car.model.door(0, true)
 	car.model.door(1, true)
 	await get_tree().create_timer(.55).timeout
+	if not _boarding_current(generation,boarding_car,boarding_driver): return
 	_player_layer = player.collision_layer
 	_player_mask = player.collision_mask
 	player.collision_layer = 0
@@ -347,6 +356,16 @@ func _board() -> void:
 	_note_car_mode("board")
 	_milestone("harbor_city_tour_started")
 	_set_phase("city_tour", "Conheça a cidade com Maciota.", session.world.maciota_place.entry_position)
+
+func _boarding_current(generation: int, expected_car, expected_driver) -> bool:
+	# A cancelled walk also resumes its caller. The old caller must not unlock
+	# a newer encounter, retry its dialogue or board its replacement actors.
+	if generation != _generation or not active or not is_inside_tree() or is_queued_for_deletion(): return false
+	if car != expected_car or maciota != expected_driver or phase != "tour_boarding": return false
+	if not is_instance_valid(car) or car.is_queued_for_deletion() or car.health<=0 or not is_instance_valid(maciota) or maciota.is_queued_for_deletion():
+		_request_ride_recovery("boarding_vehicle_unavailable")
+		return false
+	return true
 
 func _walk(actor: CharacterBody3D, destination: Vector3, direct := false) -> bool:
 	var generation := _generation

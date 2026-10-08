@@ -60,7 +60,7 @@ func sample_work(time: float, delta: float) -> void:
 			tool.position = Vector3(0,1.12,.39)
 			tool.rotation = Vector3(-.24,.025*sin(work_clock*.7),0)
 			var writing := fposmod(work_clock,4.2) < 2.9
-			pencil.position = Vector3(.06+.035*sin(work_clock*4.3),.025+(.018 if not writing else 0),.02+.025*sin(work_clock*2.1))
+			pencil.position = Vector3(.06+.035*sin(work_clock*4.3),.025+(.018 if not writing else 0.0),.02+.025*sin(work_clock*2.1))
 		3:
 			tool.position = Vector3(0,1.065,.6)
 			tool.rotation = Vector3(0,.34*sin(work_clock*1.9),0)

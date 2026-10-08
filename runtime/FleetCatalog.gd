@@ -27,6 +27,7 @@ static func all() -> Dictionary:
 			_data["army_tank"] = tank
 	return _data
 static func spec(id: String) -> Dictionary:
+	if id == "armored_truck": return preload("res://gameplay/armored/ArmoredTruckModel.gd").spec()
 	if id in preload("res://gameplay/mining/MiningFleet.gd").IDS: return preload("res://gameplay/mining/MiningFleet.gd").spec(id)
 	if id in preload("res://gameplay/desert_cars/DesertCarCatalog.gd").IDS: return preload("res://gameplay/desert_cars/DesertCarCatalog.gd").spec(id)
 	if id == "jessica_jetta_gli": return preload("res://gameplay/jessica/JessicaCarSpec.gd").spec()
@@ -34,6 +35,7 @@ static func spec(id: String) -> Dictionary:
 	if id == "digo_gol_1993": return preload("res://gameplay/digo/DigoCarSpec.gd").spec()
 	return all().get(id,preload("res://runtime/GarageRewardFleet.gd").spec(id))
 static func create(id: String) -> Node3D:
+	if id == "armored_truck": return preload("res://gameplay/armored/ArmoredTruckModel.gd").create()
 	if id in preload("res://gameplay/mining/MiningFleet.gd").IDS: return preload("res://gameplay/mining/MiningFleet.gd").create_model(id)
 	if id in preload("res://gameplay/desert_cars/DesertCarCatalog.gd").IDS: return preload("res://gameplay/desert_cars/DesertCarCatalog.gd").create_model(id)
 	var definition := spec(id)

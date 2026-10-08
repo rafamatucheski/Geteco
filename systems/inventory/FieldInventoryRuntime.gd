@@ -33,6 +33,16 @@ func economy(): return session.state.economy
 func trunk_access() -> bool:
 	return session.personal_car!=null and session.personal_car._available() and session.personal_car._near_trunk() and not session.world.driving.occupied and session.world.gameplay.health>0 and not session.is_transition_blocked()
 
+func travel_bag_available() -> bool:
+	return session.personal_car != null and session.personal_car.travel_bag_available()
+
+func claim_travel_bag() -> bool:
+	if session.personal_car == null or not session.personal_car.claim_travel_bag(): return false
+	_refresh_world()
+	_changed(true,"Mala do Maciota recolhida. Seus itens foram preservados.","")
+	if is_instance_valid(carried): carried.set_open(ui.visible)
+	return true
+
 func can_edit(container: String) -> bool:
 	if session.world.gameplay.health<=0 or session.is_transition_blocked(): return false
 	return container in ["pockets","storage"] or (container=="trunk" and trunk_access())
@@ -173,14 +183,18 @@ func _ground_point(point: Vector3, bag_space := false) -> Vector3:
 		if not space.intersect_shape(query,1).is_empty(): return Vector3.INF
 	return floor_point
 
-func drop_bag() -> bool:
-	if session.world.driving.occupied or session.is_transition_blocked() or session.world.gameplay.health<=0: return false
+func bag_drop_point() -> Vector3:
 	var player: Node3D = session.world.player
 	var forward: Vector3 = -player.visual.global_basis.z
 	var point:=Vector3.INF
 	for direction in [forward,forward.rotated(Vector3.UP,PI*.5),forward.rotated(Vector3.UP,-PI*.5)]:
 		point=_ground_point(player.global_position+direction*1.15,true)
 		if point.is_finite(): break
+	return point
+
+func drop_bag() -> bool:
+	if session.world.driving.occupied or session.is_transition_blocked() or session.world.gameplay.health<=0: return false
+	var point := bag_drop_point()
 	if not point.is_finite(): _feedback("Não há espaço no chão para a bagagem."); return false
 	var uid: int = economy().grid_drop_bag(session.state.region_id,session.state.place_id,point)
 	if uid<0: return false

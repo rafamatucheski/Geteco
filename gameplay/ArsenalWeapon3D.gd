@@ -36,6 +36,7 @@ static func build_cached(root: Node3D, id: String) -> Vector3:
 	return entry.tip
 
 static func build(root: Node3D, id: String) -> Vector3:
+	if id == "katana": return preload("res://gameplay/KatanaModel.gd").build(root)
 	var mat_chrome := StandardMaterial3D.new()
 	mat_chrome.albedo_color = Color(0.56, 0.60, 0.65)
 	mat_chrome.metallic = 0.92
@@ -144,49 +145,7 @@ static func build(root: Node3D, id: String) -> Vector3:
 			flash_pos = Vector3(0.0, 0.03, -0.42)
 
 		"sawed_off":
-			# Cano Duplo Curto Serrado (Side-by-side)
-			var barrel_l = MeshInstance3D.new()
-			var cyl_bl = CylinderMesh.new()
-			cyl_bl.top_radius = 0.018
-			cyl_bl.bottom_radius = 0.018
-			cyl_bl.height = 0.22
-			barrel_l.mesh = cyl_bl
-			barrel_l.material_override = mat_chrome
-			barrel_l.rotation_degrees = Vector3(90, 0, 0)
-			barrel_l.position = Vector3(-0.018, 0.02, -0.10)
-			root.add_child(barrel_l)
-
-			var barrel_r = MeshInstance3D.new()
-			var cyl_br = CylinderMesh.new()
-			cyl_br.top_radius = 0.018
-			cyl_br.bottom_radius = 0.018
-			cyl_br.height = 0.22
-			barrel_r.mesh = cyl_br
-			barrel_r.material_override = mat_chrome
-			barrel_r.rotation_degrees = Vector3(90, 0, 0)
-			barrel_r.position = Vector3(0.018, 0.02, -0.10)
-			root.add_child(barrel_r)
-
-			# Receptor Basculante
-			var receiver_so = MeshInstance3D.new()
-			var box_rso = BoxMesh.new()
-			box_rso.size = Vector3(0.062, 0.065, 0.12)
-			receiver_so.mesh = box_rso
-			receiver_so.material_override = mat_gunmetal
-			receiver_so.position = Vector3(0.0, 0.01, 0.01)
-			root.add_child(receiver_so)
-
-			# Cabo Pistola Serrado de Madeira
-			var grip_so = MeshInstance3D.new()
-			var box_gso = BoxMesh.new()
-			box_gso.size = Vector3(0.038, 0.10, 0.06)
-			grip_so.mesh = box_gso
-			grip_so.material_override = mat_wood
-			grip_so.position = Vector3(0.0, -0.05, 0.05)
-			grip_so.rotation_degrees = Vector3(-20, 0, 0)
-			root.add_child(grip_so)
-
-			flash_pos = Vector3(0.0, 0.02, -0.23)
+			flash_pos = preload("res://gameplay/SawedOffPresentation.gd").build(root)
 
 		"magnum":
 			# RevÃƒÂ³lver Magnum .44 com cano longo de 8", nervura superior e tambor

@@ -104,7 +104,9 @@ func _slice(budget_usec: float) -> void:
 			if float(near.lateral)<course.HALF_WIDTH+1.2: continue
 			var height: float = yard_height(p) if Rect2(-242,-43,36,67).has_point(p) else course.surface_height(p)
 			var scale_value := _rng.randf_range(.65,1.4)
-			_pending.append(Transform3D(Basis(Vector3.UP,_rng.randf()*TAU).scaled(Vector3.ONE*scale_value),Vector3(p.x-x,height-.025,p.y-z)))
+			var yaw := _rng.randf()*TAU
+			if preload("res://runtime/FishingLocation.gd").reserved(p,.6): continue
+			_pending.append(Transform3D(Basis(Vector3.UP,yaw).scaled(Vector3.ONE*scale_value),Vector3(p.x-x,height-.025,p.y-z)))
 			if _attempt % 20 == 0 and Time.get_ticks_usec()-began >= budget_usec: return
 		if not _pending.is_empty():
 			var mm := MultiMesh.new(); mm.transform_format = MultiMesh.TRANSFORM_3D

@@ -53,7 +53,7 @@ func _exit_tree() -> void:
 
 func refresh_context() -> void:
 	if session == null or session.state == null: return
-	var should_activate: bool = session.state.region_id == "harbor" and session.state.place_id.is_empty()
+	var should_activate: bool = session.state.region_id == "harbor" and session.urban_operations.world_is_continuous()
 	if should_activate:
 		var focus: Vector3 = session.world.driving.car.global_position if session.world.driving.occupied else session.world.player.global_position
 		should_activate = focus.distance_to((BERTHS[0] + BERTHS[1]) * .5) <= ACTIVE_DISTANCE

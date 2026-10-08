@@ -117,7 +117,7 @@ static func _context(region: Node3D, rect: Rect2) -> Dictionary:
 		index.configure(geometry, region.get("buildings"))
 		region.set_meta(CONTEXT_META, index)
 	var selected: Dictionary = index.query(rect.grow(16.0))
-	return {"region": region, "rect": rect, "roads": selected.roads, "junctions": selected.junctions, "buildings": selected.buildings, "geometry": geometry, "lamps": []}
+	return {"region": region, "rect": rect, "roads": selected.roads, "junctions": selected.junctions, "buildings": selected.buildings, "geometry": geometry, "lamps": [],"transit_reservations":index.street_reservations}
 
 static func _in_chunk(context: Dictionary, point: Vector2) -> bool:
 	return (context.rect as Rect2).has_point(point)
@@ -136,6 +136,8 @@ static func _road_clearance(context: Dictionary, point: Vector2) -> float:
 
 
 static func _inside_building(context: Dictionary, point: Vector2, margin := 0.3) -> bool:
+	if context.region.region_id == "harbor" and preload("res://runtime/FishingLocation.gd").reserved(point,margin): return true
+	if context.region.region_id == "harbor" and preload("res://world/places/amusement_park/AmusementParkLayout.gd").reserved(point,margin): return true
 	if preload("res://world/roadside_parking/RoadsideParkingLayout.gd").is_reserved(point, context.region.get_meta(&"roadside_parking_sites", []), margin): return true
 	# Rampas e pórticos do Túnel do canal: nada de poste/banco na boca ou sobre a vala.
 	if CANAL_TUNNEL.reserves(point, margin): return true
@@ -681,12 +683,20 @@ static func _building_surroundings(context: Dictionary, batches: Dictionary) -> 
 			var z := center.y + (_roll(key + "z") - 0.6) * footprint.size.y * 0.6
 			var point := Vector2(center.x + side * (footprint.size.x * 0.5 + 1.05), z)
 			if _inside_building(context, point, 0.9) or _road_clearance(context, point) < SIDEWALK + 0.4: continue
+			if _refuse_overlaps_transit(context,point): continue
 			if point.distance_to(SEWER_ACCESS) < SEWER_CLEARANCE: continue
 			_add(batches, "dumpster", Vector3(point.x, 0.012, point.y), Vector2(-side, 0), 1.0)
 			var bags := point + Vector2(0, 1.5)
-			if _roll(key + "bags") < 0.6 and bags.distance_to(SEWER_ACCESS) >= SEWER_CLEARANCE and not _inside_building(context, bags, 0.4):
+			if _roll(key + "bags") < 0.6 and bags.distance_to(SEWER_ACCESS) >= SEWER_CLEARANCE and not _inside_building(context, bags, 0.4) and not _refuse_overlaps_transit(context,bags):
 				_add(batches, "trash_bags", Vector3(bags.x, 0.012, bags.y), Vector2(-side, 0.3))
 			_push(batches, "decal:grime", Transform3D(Basis.IDENTITY.scaled(Vector3(3.2, 1, 3.6)), Vector3(point.x, DECAL_Y + 0.001, point.y + 0.4)))
+
+
+static func _refuse_overlaps_transit(context: Dictionary, point: Vector2) -> bool:
+	# Includes the full refuse prop, not only its pivot; the tube stays intact.
+	for rect: Rect2 in context.get("transit_reservations",[]):
+		if rect.grow(1.1).has_point(point): return true
+	return false
 
 
 static func _push(batches: Dictionary, kind: String, transform: Transform3D) -> void:
@@ -858,6 +868,7 @@ static func _rooftops(chunk: Node3D, _roof_context: Dictionary, batches: Diction
 			if branch_size.x < 2.8 or branch_size.y < 2.8: continue
 			var xform := building.global_transform
 			var branch_occupied := _roof_obstacles(building, branch_roof_y)
+			branch_occupied.append_array(preload("res://world/places/harbor_buildings/HarborRoofCirculation.gd").occupied(building))
 			# Delegacia antes dos adereços genéricos: heliponto e torre pedem espaço.
 			if key == "Police" and slab_index == 0: POLICE.decorate(chunk, building, branch_roof_y, branch_roof_center, branch_size, branch_occupied, batches)
 			# Acabamento da laje: textura de verdade (manta, brita, placas, zinco...)
@@ -874,7 +885,7 @@ static func _rooftops(chunk: Node3D, _roof_context: Dictionary, batches: Diction
 			# Laje é o que mais aparece nesta câmera: mais ocupação que o comum.
 			var wanted := clampi(int(branch_size.x * branch_size.y / 18.0), 2, 10)
 			var placed := 0
-			for attempt in wanted * 4:
+			for attempt in wanted * 12:
 				if placed >= wanted: break
 				var akey := unit_key + "|roof|" + str(attempt)
 				var kind := _pick(ROOF_PROPS, _roll(akey) * 1.0)

@@ -22,6 +22,7 @@ var paint_color := Color("d5a544"):
 		_paint_requested = true
 		if _paint != null: _paint.apply(paint_color)
 		if is_instance_valid(door_presentation): door_presentation.apply_paint(paint_color)
+		_refresh_tuning_appearance()
 var _paint_requested := false
 var _paint: RefCounted
 var archetype := ""
@@ -30,6 +31,7 @@ var vehicle_id := "":
 		vehicle_id = value
 		if is_instance_valid(visual) and _paint != null:
 			preload("res://runtime/VehicleUsage.gd").apply(visual, archetype, value, _paint.materials)
+			_refresh_tuning_appearance()
 			preload("res://gameplay/icecream/IceCreamVan.gd").attach(self)
 		if is_instance_valid(visual) and visual.has_node("TaxiLivery"):
 			visual.get_node("TaxiLivery").registration(value)
@@ -1051,6 +1053,13 @@ func door_layout(side: int) -> Dictionary:
 func animate_driver_door(side: int, opened: bool, duration := .28) -> void:
 	_ensure_door_presentation()
 	if is_instance_valid(door_presentation): door_presentation.set_open(side, opened, duration)
+
+func _refresh_tuning_appearance() -> void:
+	# Restore paths may assign factory paint/identity after installing saved parts.
+	# Reapply the local finish without rebuilding meshes, charging or touching state.
+	if has_meta("tuning_appearance"):
+		get_meta("tuning_appearance").apply(get_meta("desert_parts",{}),paint_color)
+		if is_instance_valid(damage_look): damage_look.refresh_paint_finish()
 
 func _ensure_door_presentation() -> void:
 	if boarding_class() in ["open", "bus"]: return

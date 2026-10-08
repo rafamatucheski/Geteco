@@ -14,6 +14,8 @@ var passenger := false
 var motocross := false
 var motorcycle := false
 var skating := false
+var fishing := false
+var hallucinating := false
 var extra := false
 var _context := ""
 var _layout_extra := false
@@ -47,21 +49,25 @@ func _refresh() -> void:
 	var riding: bool = (session.passenger_transport != null and session.passenger_transport.riding) or (session.arrival != null and session.arrival.riding)
 	var on_bike: bool = session.motocross != null and session.motocross.mounted
 	var on_skate: bool = session.skate != null and session.skate.mounted
-	var active: bool = session.ready_for_play and not session.modal and not paused and (not world.player.input_locked or riding or on_bike or on_skate)
+	var fishing_controller: Variant = session.get("fishing")
+	var on_fishing: bool = is_instance_valid(fishing_controller) and fishing_controller.controls_locked()
+	var active: bool = session.ready_for_play and not session.modal and not paused and (not world.player.input_locked or riding or on_bike or on_skate or on_fishing)
 	var in_car: bool = world.driving.occupied or on_bike
 	var on_motorcycle: bool = on_bike or (world.driving.occupied and is_instance_valid(world.driving.car) and world.driving.car.archetype.begins_with("bike_"))
 	var lockpick: bool = session.port_container_loot != null and is_instance_valid(session.port_container_loot.minigame) and session.port_container_loot.minigame.active
 	var bank_lock: bool = session.robberies != null and is_instance_valid(session.robberies.lockpick) and session.robberies.lockpick.active
 	bank_lock = bank_lock or (session.police_motor_pool != null and is_instance_valid(session.police_motor_pool.lockpick) and session.police_motor_pool.lockpick.active)
 	active = active and not lockpick and not bank_lock
-	var can_fight: bool = session.state.weapons_allowed()
+	var illusion: Variant = session.get("upside_world")
+	hallucinating = is_instance_valid(illusion) and illusion.exploring()
+	var can_fight: bool = session.state.weapons_allowed() and not hallucinating
 	var safe := Rect2(Vector2.ZERO, size)
 	if OS.has_feature("android"):
 		var physical := DisplayServer.get_display_safe_area()
 		if physical.size.x > 0 and physical.size.y > 0:
 			var inverse := get_viewport().get_screen_transform().affine_inverse()
 			safe = safe.intersection(Rect2(inverse * Vector2(physical.position), inverse.basis_xform(Vector2(physical.size))))
-	var context := str([active, in_car, riding, on_bike, on_motorcycle, on_skate, can_fight, paused, session.modal, session.dialogue_open, lockpick, bank_lock, safe])
+	var context := str([active, in_car, riding, on_bike, on_motorcycle, on_skate, on_fishing, can_fight, paused, session.modal, session.dialogue_open, lockpick, bank_lock, safe])
 	if context == _context and extra == _layout_extra: return
 	# Expanding options must not release a finger still steering or accelerating.
 	if context != _context: release_all()
@@ -76,6 +82,7 @@ func _refresh() -> void:
 	motocross = on_bike
 	motorcycle = on_motorcycle
 	skating = on_skate
+	fishing = on_fishing
 	_safe = safe
 	# Fold cover/portrait and near-square inner displays need larger thumb targets.
 	compact = safe.size.x < safe.size.y * 1.4
@@ -103,6 +110,17 @@ func _refresh() -> void:
 		queue_redraw()
 		return
 	_button("pause_game", "Pausa", top + Vector2(-180, 0) * unit, Vector2(100, 52))
+	if hallucinating:
+		queue_redraw()
+		return
+	if fishing:
+		# Keep the right side clear for the tension/ranking HUD. Fishing consumes
+		# the same held/released interact action used by keyboard and controller.
+		var fishing_bottom := safe.position + Vector2(safe.size.x * .42, safe.size.y - 60 * unit)
+		_button("interact", "Pescar", fishing_bottom - Vector2(86, 0) * unit, Vector2(146, 82))
+		_button("exit_vehicle", "Sair", fishing_bottom + Vector2(76, 0) * unit, Vector2(120, 82))
+		queue_redraw()
+		return
 	if skating:
 		var skate_bottom := safe.end - Vector2(160, 70) * unit
 		_button("skate_ollie", "Ollie", skate_bottom + Vector2(0, -145) * unit, Vector2(112, 68))
@@ -166,7 +184,7 @@ func _input(event: InputEvent) -> void:
 		var action := ""
 		for key in buttons:
 			if buttons[key].rect.has_point(point): action = key; break
-		if action.is_empty() and playable and not passenger:
+		if action.is_empty() and playable and not passenger and not fishing:
 			if point.distance_to(move_center) < radius * 1.3: action = "move_stick"
 			elif not driving and not skating and point.distance_to(aim_center) < radius * 1.3 and world.session.state.weapons_allowed(): action = "aim_stick"
 		if action.is_empty(): return
@@ -254,10 +272,10 @@ func _draw() -> void:
 		draw_style_box(_style(held), rect)
 		var text_size := font.get_string_size(item.label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
 		draw_string(font, rect.get_center() + Vector2(-text_size.x * .5, font_size * .35), item.label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color.WHITE)
-	if playable and not passenger:
+	if playable and not passenger and not fishing:
 		_stick(move_center, controls.touch_move, "Direção" if driving else "Correr" if controls.touch_sprint else "Andar", font, font_size)
 		if not driving: draw_arc(move_center, radius * .85, 0, TAU, 48, Color(1,.6,.25,.7), unit, true)
-		if not driving and not skating and world.session.state.weapons_allowed(): _stick(aim_center, controls.touch_aim, "Mirar", font, font_size)
+		if not driving and not skating and world.session.state.weapons_allowed(): _stick(aim_center, controls.touch_aim, "Olhar" if hallucinating else "Mirar", font, font_size)
 
 func _style(held: bool) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()

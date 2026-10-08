@@ -2,7 +2,7 @@ extends CanvasLayer
 ## Escuridão dos esgotos de rua: a câmera é fixa e o `NativePlace` remove as luzes de ambiente da sala, então o
 ## escuro vem de uma camada 2D entre o 3D e a interface. Ela escurece e tinge a cena, escurece mais nas bordas e abre
 ## poças de luz sobre as luzes reais da sala (lâmpadas que piscam, barris de fogo) e um halo curto em volta do Dante.
-## Só desenha enquanto o modelo da sala está na árvore.
+## Na sessão, só desenha quando Dante já ocupa a sala, nunca durante sua preparação.
 const MAX_LIGHTS := 12
 var tint := Color(0.012, 0.02, 0.02)
 var base_alpha := 0.62
@@ -46,6 +46,7 @@ void fragment() {
 
 func _init() -> void:
 	layer = -1
+	hide()
 	var shader := Shader.new()
 	shader.code = SHADER
 	_material.shader = shader
@@ -67,7 +68,8 @@ func configure(room: Node3D, mood: Dictionary) -> void:
 
 func _process(_delta: float) -> void:
 	var camera := get_viewport().get_camera_3d()
-	if camera == null or not is_instance_valid(model) or not model.is_inside_tree():
+	visible = camera != null and _room_is_current()
+	if not visible:
 		_material.set_shader_parameter("light_count", 0)
 		return
 	var size := get_viewport().get_visible_rect().size
@@ -95,6 +97,15 @@ func _process(_delta: float) -> void:
 	_material.set_shader_parameter("lights", packed_positions)
 	_material.set_shader_parameter("light_colors", packed_colors)
 	_material.set_shader_parameter("light_count", positions.size())
+
+func _room_is_current() -> bool:
+	if not is_instance_valid(model) or not model.is_inside_tree() or not model.is_visible_in_tree(): return false
+	var room := model.get_parent()
+	var world := room.get_parent() if room != null else null
+	var session: Variant = world.get("session") if world != null else null
+	# Standalone room previews have no gameplay session.
+	if session == null: return true
+	return session.room == room and session.state.place_id == str(room.definition.id)
 
 func _pixels_per_meter(camera: Camera3D, at: Vector3) -> float:
 	var a := camera.unproject_position(at)

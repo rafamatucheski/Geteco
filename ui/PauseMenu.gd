@@ -53,13 +53,14 @@ func pause_game() -> void:
 	visible = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	%RootControl.show()
+	_set_drag_overlay(true)
 	get_tree().paused = true
 	var has_session: bool = world.session != null and world.session.has_method("save_game")
 	%BtnSaveGame.disabled = not has_session
 	%BtnLoadGame.disabled = not has_session
 	if has_session:
 		var session = world.session
-		var in_transit: bool = session.controller.travel_busy or session.vehicle_transition_busy or session.respawn_busy or (session.passenger_transport != null and session.passenger_transport.riding)
+		var in_transit: bool = session.controller.travel_busy or session.vehicle_transition_busy or session.respawn_busy or (session.passenger_transport != null and session.passenger_transport.riding) or (session.get("railway") != null and session.railway.busy())
 		var save_reason: String = session.save_block_reason()
 		%BtnSaveGame.disabled = not save_reason.is_empty()
 		%BtnLoadGame.disabled = in_transit or world.driving.occupied
@@ -76,7 +77,13 @@ func resume_game() -> void:
 	_close_collection()
 	visible = false
 	get_tree().paused = false
+	_set_drag_overlay(false)
 	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
+
+func _set_drag_overlay(paused: bool) -> void:
+	if world.session==null: return
+	var desert = world.session.get("desert")
+	if desert!=null and is_instance_valid(desert.drag): desert.drag.set_pause_overlay(paused)
 
 func open_settings() -> void:
 	%RootControl.hide()

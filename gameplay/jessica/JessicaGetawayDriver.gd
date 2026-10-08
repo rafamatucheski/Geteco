@@ -973,11 +973,13 @@ func debug_snapshot() -> Dictionary:
 			obstacle.blocked = blocker.get("blocked")
 			var next: Variant = blocker.get("blocker")
 			obstacle.blocker = str(next.get_path()) if next is Node and next.is_inside_tree() else str(next)
-	return {"gap":gap if is_finite(gap) else null,"leader_speed":leader_speed,"holding":holding,
+	var gap_value: Variant = gap
+	if not is_finite(gap): gap_value = null
+	return {"gap":gap_value,"leader_speed":leader_speed,"holding":holding,
 		"waiting_for_traffic":waiting_for_traffic,
 		"traffic_wait_expired":traffic_wait_expired,"traffic_wait_seconds":_traffic_wait_seconds,
 		"traffic_wait_limit":_traffic_wait_limit,"traffic_wait_phase_changes":_traffic_wait_phase_changes,
-		"traffic_green_seconds":float(Time.get_ticks_msec()-_traffic_green_started)/1000.0 if _traffic_green_started > 0 else 0,
+		"traffic_green_seconds":float(Time.get_ticks_msec()-_traffic_green_started)/1000.0 if _traffic_green_started > 0 else 0.0,
 		"traffic_wait_context":_traffic_wait_context.duplicate(true),
 		"admission_failure":_admission_failure.duplicate(true),
 		"vehicle_controls":_debug_vehicle_controls(),"blocker_chain":_debug_blocker_chain(),

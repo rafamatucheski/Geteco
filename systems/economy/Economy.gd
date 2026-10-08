@@ -17,7 +17,7 @@ const SUPPLIES := {"lockpick":{"price":75}, "apple":{"price":8}, "water":{"price
 const PERSONAL_SLOTS := {
 	"curta":["pistol","magnum","smg"],
 	"longa":["shotgun","sawed_off","ak47","m4a1","hunting_rifle","rpg","flamethrower"],
-	"corpo":["knife","axe","knuckles","bat"], "granada":["grenade"]}
+	"corpo":["knife","axe","knuckles","bat","katana"], "granada":["grenade"]}
 var _data := {"version": 1, "balance": 0, "weapons": {"fists": {"magazine": -1, "reserve": -1}},
 	"equipped_weapon": "fists", "outfits": ["dante_classic"], "outfit": "dante_classic",
 	"inventory": {}, "discoveries": [], "collectibles": [], "achievements": [], "transactions": {}}

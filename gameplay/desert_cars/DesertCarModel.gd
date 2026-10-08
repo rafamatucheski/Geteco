@@ -6,7 +6,6 @@ static func create(s: Dictionary) -> Node3D:
 	root.name = "DesertCar"
 	if s.is_empty(): return root
 	var w := float(s["size"][0])
-	var h := float(s["size"][1])
 	var l := float(s["size"][2])
 	var body := str(s.body)
 	var style := str(s.get("style","street"))
@@ -22,8 +21,6 @@ static func create(s: Dictionary) -> Node3D:
 	var accent := _material(Color(str(s.get("livery_color","6f7f84"))),.36,.35,"body_accent")
 	var front := l*float(s.cabin_front)
 	var back := l*float(s.cabin_back)
-	var roof_front := l*float(s.roof_front)
-	var roof_back := l*float(s.roof_back)
 	var door_back := l*float(s.door_back)
 	# Narrower hood/boot shoulders and a faceted nose stop the shell looking like
 	# a single box. The sides stay planar where the real door cutter needs them.
@@ -106,8 +103,16 @@ static func _body(root: Node3D,s: Dictionary,paint: Material) -> void:
 	for i in range(3,profile.size()):
 		var a: Vector2 = profile[i]
 		var b: Vector2 = profile[(i+1)%profile.size()]
-		var outward := Vector3(0,-(b.x-a.x),b.y-a.y).normalized()
+		# The lower contour runs rear -> front. Its outward normal is the
+		# opposite of the old winding, which culled both end panels from outside.
+		var outward := Vector3(0,b.x-a.x,-(b.y-a.y)).normalized()
 		_quad(st,Vector3(-w*.48,a.y,a.x),Vector3(w*.48,a.y,a.x),Vector3(w*.48,b.y,b.x),Vector3(-w*.48,b.y,b.x),outward)
+	# The inset deck is 45 mm above the side contour. Close its end bevel,
+	# otherwise the engine bay / boot can be seen through a full-width slit.
+	for end in [-1,1]:
+		if body=="pickup" and end>0: continue # Open bed has its authored tailgate.
+		var edge: Vector2 = top[0] if end<0 else top[-1]
+		_quad(st,Vector3(-w*.48,edge.y,edge.x),Vector3(w*.48,edge.y,edge.x),Vector3(w*.425,edge.y+.045,edge.x),Vector3(-w*.425,edge.y+.045,edge.x),Vector3(0,0,end))
 	for side in [-1.0,1.0]:
 		for i in range(top.size()-1):
 			var a: Vector2 = top[i]
@@ -132,6 +137,7 @@ static func _body(root: Node3D,s: Dictionary,paint: Material) -> void:
 	_mesh(root,"BodyShell",st,paint)
 
 static func _fascia(root: Node3D,s: Dictionary,paint: Material,metal: Material,dark: Material) -> void:
+	var first_part := root.get_child_count()
 	var w := float(s["size"][0])
 	var l := float(s["size"][2])
 	var shoulder := float(s.shoulder)
@@ -186,6 +192,38 @@ static func _fascia(root: Node3D,s: Dictionary,paint: Material,metal: Material,d
 				_box(root,"Headlamp",Vector3(w*.245,.105,.060),Vector3(side*w*.31,shoulder-.125,-l*.480),lamp)
 				_box(root,"TailLamp",Vector3(w*.27,.108,.039),Vector3(side*w*.32,shoulder-.135,l*.484),red).set_meta("coupe_damage_material_key","tail")
 				_box(root,"SedanBrakeDuct",Vector3(.17,.13,.045),Vector3(side*w*.37,radius+.10,-l*.478),dark)
+	# The nose and tail are sloped. Fractions of total length placed lenses
+	# behind the skin on some models and suspended beyond it on others.
+	# Mount the actual outward face onto that panel, including its tilt.
+	for index in range(first_part,root.get_child_count()):
+		var part := root.get_child(index) as MeshInstance3D
+		var label := str(part.get_meta("authored_label",part.name))
+		var proud := .006
+		if label=="HeadlampRim": proud=.008
+		elif part.material_override.resource_name in ["headlight","tail"]: proud=.014
+		elif label in ["TruckGrilleFrame","SedanGrilleFrame"]: proud=.004
+		elif "Grille" in label and ("Bar" in label or "Louvre" in label): proud=.013
+		elif label=="Bumper": proud=.030
+		elif label=="Plate": proud=.038
+		_fit_fascia_part(part,s,signf(part.position.z),proud)
+
+static func _fit_fascia_part(part: MeshInstance3D,s: Dictionary,end: float,proud: float) -> void:
+	var shoulder := float(s.shoulder)
+	var length := float(s["size"][2])
+	var bottom := float(s.wheel_radius)*.72
+	var top := shoulder*(.90 if s.body=="pickup" else .85) if end<0 else shoulder*.96
+	var low_z := end*length*.485
+	var high_z := end*length*(.495 if end<0 else .49)
+	var slope := (high_z-low_z)/(top-bottom)
+	var tilt := Basis(Vector3.RIGHT,atan(slope))
+	var extent := (Transform3D(part.basis,Vector3.ZERO)*part.mesh.get_aabb()).size*.5
+	# Round optical glass and its larger rim share one mounting centre.
+	if part.mesh is CylinderMesh and part.material_override.resource_name=="headlight": extent.y=.107
+	var x := clampf(part.position.x,-float(s["size"][0])*.48+extent.x+.012,float(s["size"][0])*.48-extent.x-.012)
+	var y := clampf(part.position.y,bottom+extent.y+.012,top-extent.y-.012)
+	var face := Vector3(x,y,low_z+(y-bottom)*slope+end*proud)
+	part.position=face-tilt*Vector3(0,0,end*extent.z)
+	part.basis=tilt*part.basis
 
 static func _body_details(root: Node3D,s: Dictionary,paint: Material,metal: Material,dark: Material,accent: Material) -> void:
 	var w := float(s["size"][0])
@@ -248,8 +286,7 @@ static func _body_details(root: Node3D,s: Dictionary,paint: Material,metal: Mate
 			for side in [-1.0,1.0]:
 				_box(root,"SideExhaust",Vector3(.065,.07,.39),Vector3(side*w*.49,radius*.76,l*.185),metal)
 	for side in [-1.0,1.0] if body=="coupe" else [1.0]:
-		var tip := _cylinder(root,"ExhaustTip",.055,.19,Vector3(side*w*.30,radius*.79,l*.48),metal)
-		tip.rotation=Vector3(PI*.5,0,0)
+		preload("res://gameplay/desert_cars/DesertCarWheelShape.gd").exhaust(root,Vector3(side*w*.30,radius*.79,l*.48),metal)
 
 static func _arch(root: Node3D,s: Dictionary,axle: float,side: float,mat: Material) -> void:
 	var w := float(s["size"][0])
@@ -267,7 +304,7 @@ static func _arch(root: Node3D,s: Dictionary,axle: float,side: float,mat: Materi
 		_quad(st,origin+Vector3(0,sin(a)*inner,cos(a)*inner),origin+Vector3(0,sin(b)*inner,cos(b)*inner),origin+Vector3(0,sin(b)*outer,cos(b)*outer),origin+Vector3(0,sin(a)*outer,cos(a)*outer),Vector3(side,0,0))
 	_mesh(root,"ArchLip",st,mat)
 
-static func _wheel(root: Node3D,s: Dictionary,axle: float,side: float,rubber: Material,alloy: Material,dark: Material,metal: Material) -> void:
+static func _wheel(root: Node3D,s: Dictionary,axle: float,side: float,rubber: Material,alloy: Material,_dark: Material,metal: Material) -> void:
 	var w := float(s["size"][0])
 	var l := float(s["size"][2])
 	var radius := float(s.wheel_radius)
@@ -276,19 +313,22 @@ static func _wheel(root: Node3D,s: Dictionary,axle: float,side: float,rubber: Ma
 	var width := .31 if style=="drag" and axle>0 else (.27 if s.body=="pickup" else .24)
 	var rim_ratio := .72 if style=="gt" else (.56 if s.body=="pickup" else .64)
 	var start_count := root.get_child_count()
-	_tyre(root,radius,width,center,rubber)
-	_cylinder(root,"RimBarrel",radius*rim_ratio,width+.008,center,alloy)
-	var outer_x := side*(width*.5+.011)
-	_cylinder(root,"WheelDish",radius*rim_ratio*.84,.013,center+Vector3(outer_x,0,0),dark)
+	_tyre(root,radius,width,center,rubber,rim_ratio)
+	preload("res://gameplay/desert_cars/DesertCarWheelShape.gd").rim(root,radius*rim_ratio,width+.008,center,alloy)
+	var outer_x := side*(width*.5+.004)
 	var spoke_count := 8 if style=="rally" else (6 if s.body=="pickup" else 5)
 	for spoke in spoke_count:
 		var a := float(spoke)*TAU/float(spoke_count)
-		var p := center+Vector3(outer_x+side*.009,sin(a)*radius*.32,cos(a)*radius*.32)
-		var blade := _box(root,"WheelSpoke",Vector3(.023,radius*(.10 if style=="rally" else .14),radius*.50),p,alloy)
+		# Both ends overlap their supports, including the wider GT rim.
+		var spoke_inner := radius*.10
+		var spoke_outer := radius*rim_ratio*.98
+		var spoke_center := (spoke_inner+spoke_outer)*.5
+		var p := center+Vector3(outer_x+side*.004,sin(a)*spoke_center,cos(a)*spoke_center)
+		var blade := _box(root,"WheelSpoke",Vector3(.023,radius*(.10 if style=="rally" else .14),spoke_outer-spoke_inner),p,alloy)
 		blade.rotation.x=-a
 		var bolt := center+Vector3(outer_x+side*.025,sin(a)*radius*.14,cos(a)*radius*.14)
 		_box(root,"WheelBolt",Vector3(.012,.026,.026),bolt,metal)
-	_cylinder(root,"WheelHub",radius*.16,.027,center+Vector3(outer_x+side*.015,0,0),alloy)
+	preload("res://gameplay/desert_cars/DesertCarWheelShape.gd").hub(root,radius*.16,side,center+Vector3(outer_x+side*.015,0,0),alloy)
 	if s.body=="pickup" or style=="rally":
 		for tread in 20:
 			var a := TAU*float(tread)/20.0
@@ -296,10 +336,12 @@ static func _wheel(root: Node3D,s: Dictionary,axle: float,side: float,rubber: Ma
 			block.rotation.x=a
 	for i in range(start_count,root.get_child_count()): root.get_child(i).set_meta("wheel_center",center)
 
-static func _tyre(root: Node3D,radius: float,width: float,center: Vector3,mat: Material) -> void:
+static func _tyre(root: Node3D,radius: float,width: float,center: Vector3,mat: Material,rim_ratio := .64) -> void:
 	# Rounded shoulders and inset sidewalls read as rubber, rather than a black
 	# disc pasted onto the fender. Twenty-four segments keep its runtime bounded.
-	var section := [Vector2(-width*.5,radius*.68),Vector2(-width*.5,radius*.89),Vector2(-width*.36,radius),Vector2(width*.36,radius),Vector2(width*.5,radius*.89),Vector2(width*.5,radius*.68)]
+	# The bead follows each rim: a fixed .68R left visible gaps on .56R/.64R wheels.
+	var bead := radius*rim_ratio*.97
+	var section := [Vector2(-width*.5,bead),Vector2(-width*.5,radius*.89),Vector2(-width*.36,radius),Vector2(width*.36,radius),Vector2(width*.5,radius*.89),Vector2(width*.5,bead)]
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for i in 24:
@@ -323,6 +365,7 @@ static func _material(color: Color,roughness: float,metallic: float,semantic := 
 static func _box(root: Node3D,label: String,size: Vector3,at: Vector3,mat: Material) -> MeshInstance3D:
 	var node := MeshInstance3D.new()
 	node.name=label
+	node.set_meta("authored_label",label) # Consumed before material batching.
 	var mesh := BoxMesh.new()
 	mesh.size=size
 	node.mesh=mesh
@@ -334,6 +377,7 @@ static func _box(root: Node3D,label: String,size: Vector3,at: Vector3,mat: Mater
 static func _cylinder(root: Node3D,label: String,radius: float,width: float,at: Vector3,mat: Material) -> MeshInstance3D:
 	var node := MeshInstance3D.new()
 	node.name=label
+	node.set_meta("authored_label",label)
 	var mesh := CylinderMesh.new()
 	mesh.top_radius=radius
 	mesh.bottom_radius=radius
@@ -414,7 +458,12 @@ static func _batch(root: Node3D) -> void:
 			var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
 			var uvs: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV] if arrays[Mesh.ARRAY_TEX_UV]!=null else PackedVector2Array()
 			var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX]!=null else PackedInt32Array()
-			for index in indices if not indices.is_empty() else range(positions.size()):
+			var vertex_indices: Array[int] = []
+			if indices.is_empty():
+				for vertex_index in positions.size(): vertex_indices.append(vertex_index)
+			else:
+				for vertex_index in indices: vertex_indices.append(vertex_index)
+			for index in vertex_indices:
 				tool.set_normal((part.basis*normals[index]).normalized())
 				tool.set_uv(uvs[index] if index<uvs.size() else Vector2.ZERO)
 				tool.add_vertex(part.transform*positions[index])

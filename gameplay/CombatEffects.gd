@@ -1,4 +1,6 @@
 extends Node3D
+const SURFACE := preload("res://gameplay/WeaponSurface.gd")
+signal casing_contact(point: Vector3, material: String, speed: float, shotgun: bool)
 ## Efeitos visuais 3D de combate, com orçamento fixo. Filho de `Gameplay`.
 ##
 ## Fonte V1: `guns/combat/WeaponEffects.gd` (efeitos 2D desenhados com `_draw`). As cores, os tempos, as
@@ -6,8 +8,7 @@ extends Node3D
 ## divididas por 16 (px → m); o desenho é 3D novo, porque `Node2D`/`_draw` não se reaproveita.
 ##
 ## Limites (nada é criado durante o jogo):
-##   - impactos e sangue: UM emissor `CPUParticles3D` de disparo único por material, criado uma vez.
-##     Um impacto novo do mesmo material reinicia o emissor (o anterior, se ainda vivo, é cortado).
+##   - impactos e sangue: BURST_POOL emissores por família, reutilizados em rodízio.
 ##   - cápsulas: MAX_SHELLS nós reaproveitados em anel; simulação própria só enquanto há cápsula ativa.
 ##   - manchas no chão: MAX_STAINS quadros reaproveitados em anel, somem sozinhos.
 ##   - explosão: um emissor de fagulhas, um de fumaça e uma luz, reaproveitados.
@@ -25,13 +26,13 @@ const FLAME_PACKET_LIFE := 0.38
 const BURST_POOL := 4
 const MAX_SCORCHES := 6
 const SCORCH_LIFETIME := 30.0
-const SHELL_LIFETIME := 1.6
-const STAIN_LIFETIME := 20.0
-## V1 ejeção: lateral 58–83 px/s, subida 72 px/s, gravidade 360 px/s², altura inicial 7 px (tudo ÷ 16).
-const SHELL_SIDE_SPEED := 3.6
-const SHELL_SIDE_SPREAD := 1.6
-const SHELL_LIFT := 4.5
-const SHELL_GRAVITY := 22.5
+const SHELL_LIFETIME := 4.0
+const STAIN_LIFETIME := 10.0
+## Short side throw under normal gravity; no rigid bodies or persistent physics nodes.
+const SHELL_SIDE_SPEED := 1.5
+const SHELL_SIDE_SPREAD := 0.6
+const SHELL_LIFT := 1.8
+const SHELL_GRAVITY := 9.8
 const SHELL_START_HEIGHT := 0.44
 ## V1 `_ImpactBurst`: cor por superfície.
 const IMPACT_COLORS := {
@@ -60,6 +61,12 @@ var _blast_light_time := 0.0
 var _shells: Array[MeshInstance3D] = []
 var _shell_state: Array[Dictionary] = []
 var _next_shell := 0
+var _shell_mesh: CylinderMesh
+var _shotgun_shell_mesh: CylinderMesh
+var _retained_shells: Dictionary = {}
+var _pending_ejections: Array[Dictionary] = []
+var _reload_ejection_id := ""
+var _reload_ejected := false
 var _stains: Array[MeshInstance3D] = []
 var _stain_materials: Array[StandardMaterial3D] = []
 var _stain_age: Array[float] = []
@@ -79,6 +86,7 @@ var _next_flame := 0
 var _flame_tongues: Array[MeshInstance3D] = []
 var _flame_tongue_state: Array[Dictionary] = []
 var _spark_mesh: BoxMesh
+var _chip_mesh: BoxMesh
 var _smoke_mesh: QuadMesh
 
 
@@ -92,6 +100,12 @@ func _ready() -> void:
 	_spark_mesh = BoxMesh.new()
 	_spark_mesh.size = Vector3(0.012, 0.075, 0.012)
 	_spark_mesh.material = streak
+	var chip_material := StandardMaterial3D.new()
+	chip_material.vertex_color_use_as_albedo = true
+	chip_material.roughness = 0.95
+	_chip_mesh = BoxMesh.new()
+	_chip_mesh.size = Vector3(0.025, 0.018, 0.022)
+	_chip_mesh.material = chip_material
 	# Fumaça em quadro de borda macia voltado à câmera. As esferas de 6 lados
 	# anteriores apareciam como bolas facetadas, principalmente no sangue.
 	var soft := Gradient.new()
@@ -192,16 +206,30 @@ func _ready() -> void:
 	_blast_light.shadow_enabled = false
 	_blast_light.visible = false
 	add_child(_blast_light)
-	var shell_mesh := BoxMesh.new()
-	shell_mesh.size = Vector3(0.012, 0.012, 0.04)
+	_shell_mesh = CylinderMesh.new()
+	_shell_mesh.top_radius = 0.005
+	_shell_mesh.bottom_radius = 0.005
+	_shell_mesh.height = 0.025
+	_shell_mesh.radial_segments = 6
+	_shell_mesh.rings = 1
 	var brass := StandardMaterial3D.new()
 	brass.albedo_color = Color(0.73, 0.44, 0.10)
 	brass.metallic = 0.8
 	brass.roughness = 0.4
-	shell_mesh.material = brass
+	_shell_mesh.material = brass
+	_shotgun_shell_mesh = CylinderMesh.new()
+	_shotgun_shell_mesh.top_radius = 0.010
+	_shotgun_shell_mesh.bottom_radius = 0.010
+	_shotgun_shell_mesh.height = 0.055
+	_shotgun_shell_mesh.radial_segments = 6
+	_shotgun_shell_mesh.rings = 1
+	var polymer := StandardMaterial3D.new()
+	polymer.albedo_color = Color("993d2c")
+	polymer.roughness = 0.68
+	_shotgun_shell_mesh.material = polymer
 	for index in MAX_SHELLS:
 		var casing := MeshInstance3D.new()
-		casing.mesh = shell_mesh
+		casing.mesh = _shell_mesh
 		casing.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		casing.top_level = true
 		casing.visible = false
@@ -409,14 +437,27 @@ static func _make_scorch_texture() -> ImageTexture:
 
 ## Faísca/poeira do material atingido. `normal` aponta para fora da superfície.
 func impact(point: Vector3, normal: Vector3, material: String, damage: float) -> void:
-	var key := material if _impact.has(material) else "world"
+	var key := material if _impact.has(material) else "concrete"
 	var emitter := _take("impact_" + key, _impact[key])
-	emitter.initial_velocity_max = 3.4 * clampf(0.7 + damage / 55.0, 0.7, 1.8)
+	var soft := material in SURFACE.SOFT
+	emitter.mesh = _spark_mesh if material == "metal" else _chip_mesh
+	emitter.particle_flag_align_y = material == "metal"
+	emitter.color = _contact_color(material)
+	emitter.initial_velocity_max = (1.3 if soft else 3.4) * clampf(0.7 + damage / 55.0, 0.7, 1.8)
+	emitter.initial_velocity_min = 0.4 if soft else 1.5
 	_fire(emitter, point, normal)
-	if material == "concrete" or material == "world" or material == "wood":
+	if material not in ["metal", "glass", "flesh"]:
 		var dust := _take("dust", _impact_dust)
-		dust.color = Color(0.58, 0.40, 0.22, 0.35) if material == "wood" else Color(0.72, 0.70, 0.64, 0.35)
+		var color := _contact_color(material)
+		dust.color = Color(color.r, color.g, color.b, 0.35)
 		_fire(dust, point, normal)
+
+static func _contact_color(material: String) -> Color:
+	match material:
+		"dirt", "grass": return Color(0.40, 0.30, 0.18)
+		"sand": return Color(0.71, 0.58, 0.38)
+		"snow": return Color(0.91, 0.95, 1.0)
+	return IMPACT_COLORS.get(material, IMPACT_COLORS.concrete)
 
 ## Gotas e névoa aerossolizada (V1 `_BloodBurst`): saem na direção do tiro, com mais força para mais dano.
 func blood(point: Vector3, direction: Vector3, damage: float) -> void:
@@ -470,20 +511,70 @@ func _free_stain(radius: float) -> int:
 		if best >= 0: return best
 	return 0
 
-## Cápsula ejetada (V1 `_ShellCasing`): sai pelo lado direito da arma, sobe, quica até duas vezes e some.
-func shell(origin: Vector3, aim: Vector3, floor_y: float) -> void:
+## Empty cases leave the action, not the muzzle. Revolvers and break actions
+## retain theirs until the opening part of the reload; pumps eject on cycling.
+func weapon_shot(id: String, origin: Vector3, aim: Vector3, magazine_after: int) -> void:
+	if id in ["magnum", "sawed_off"]:
+		var capacity := 6 if id == "magnum" else 2
+		_retained_shells[id] = mini(capacity, int(_retained_shells.get(id, capacity - magazine_after - 1)) + 1)
+		return
+	if id in ["shotgun", "hunting_rifle"]:
+		_pending_ejections.append({"id": id, "remaining": 0.27 if id == "shotgun" else 0.35})
+		return
+	if id in ["pistol", "smg", "ak47", "m4a1"]: shell(origin, aim, 0.0)
+
+func update_weapon_feedback(controller: Node3D, delta: float) -> void:
+	var id: String = controller.equipped()
+	var allowed: bool = controller.attack_allowed()
+	for index in range(_pending_ejections.size() - 1, -1, -1):
+		var pending: Dictionary = _pending_ejections[index]
+		if not allowed or id != pending.id:
+			_pending_ejections.remove_at(index)
+			continue
+		pending.remaining = float(pending.remaining) - delta
+		if float(pending.remaining) > 0.0: continue
+		shell(controller.gun.to_global(Vector3(0.025, 0.05, -0.025)), -controller.gun.global_basis.z.normalized(), 0.0, id == "shotgun")
+		_pending_ejections.remove_at(index)
+	if not allowed or controller.reload_timer <= 0.0 or id not in ["magnum", "sawed_off"]:
+		_reload_ejection_id = ""
+		return
+	if _reload_ejection_id != id:
+		_reload_ejection_id = id
+		_reload_ejected = false
+	if _reload_ejected: return
+	var progress := 1.0 - float(controller.reload_timer) / maxf(float(controller._reload_total), 0.001)
+	var eject_at: float = preload("res://gameplay/SawedOffPresentation.gd").EJECT_AT if id == "sawed_off" else 0.22
+	if progress < eject_at: return
+	var capacity := 2 if id == "sawed_off" else 6
+	var ammo: Dictionary = controller.state.get_ammo(id)
+	var spent := clampi(int(_retained_shells.get(id, capacity - int(ammo.get("magazine", capacity)))), 0, capacity)
+	_retained_shells[id] = 0
+	_reload_ejected = true
+	for index in spent:
+		var origin: Vector3 = controller.gun.to_global(Vector3(-0.04, 0.03, 0.0))
+		if id == "sawed_off":
+			var chamber := controller.gun.find_child("ChamberLeft" if index == 0 else "ChamberRight", true, false) as Node3D
+			if chamber != null: origin = chamber.global_position
+		shell(origin, -controller.gun.global_basis.z.normalized(), 0.0, id == "sawed_off", true)
+
+## Fixed pool; actual swept collision against floors and walls, never a plane
+## at the shooter's height. The third argument remains for existing callers.
+func shell(origin: Vector3, aim: Vector3, _floor_y: float, shotgun := false, dropped := false) -> void:
 	var side := aim.cross(Vector3.UP).normalized()
+	if side.length_squared() < 0.1: side = Vector3.RIGHT
 	var seed_value := randf() * 2.0 - 1.0
 	var index := _next_shell
 	_next_shell = (_next_shell + 1) % MAX_SHELLS
 	var node := _shells[index]
-	node.global_position = origin + side * 0.25
-	node.rotation = Vector3(0.0, randf() * TAU, 0.0)
+	node.mesh = _shotgun_shell_mesh if shotgun else _shell_mesh
+	node.global_position = origin + side * 0.025
+	node.rotation = Vector3(randf() * TAU, randf() * TAU, 0.0)
 	node.visible = true
+	var velocity := side * (SHELL_SIDE_SPEED + absf(seed_value) * SHELL_SIDE_SPREAD) + aim * (0.5 * seed_value) + Vector3.UP * SHELL_LIFT
+	if dropped: velocity = -aim * 0.65 + side * seed_value * 0.3 - Vector3.UP * 0.3
 	_shell_state[index] = {
-		"life": SHELL_LIFETIME, "floor": floor_y + 0.012, "bounces": 0,
-		"velocity": side * (SHELL_SIDE_SPEED + absf(seed_value) * SHELL_SIDE_SPREAD) + aim * (1.1 * seed_value) + Vector3.UP * SHELL_LIFT,
-		"spin": randf_range(-16.0, 16.0)}
+		"life": SHELL_LIFETIME, "bounces": 0, "resting": false, "shotgun": shotgun,
+		"velocity": velocity, "spin": randf_range(-16.0, 16.0)}
 	set_physics_process(true)
 
 ## Cauda compacta que viaja à velocidade autorada da arma. O dano continua
@@ -495,7 +586,7 @@ func tracer(origin: Vector3, destination: Vector3, speed: float, color: Color, d
 	_next_tracer = (_next_tracer + 1) % MAX_TRACERS
 	var node := _tracers[index]
 	var direction := origin.direction_to(destination)
-	var duration := clampf(distance / maxf(speed, 1.0), 0.045, 0.48)
+	var duration := clampf(distance / maxf(speed, 1.0), 0.045, 0.70)
 	var material := node.mesh.material as StandardMaterial3D
 	material.albedo_color = Color.WHITE.lerp(color, 0.55)
 	material.emission = color
@@ -660,6 +751,9 @@ func prewarm(point: Vector3) -> void:
 	get_tree().create_timer(0.35).timeout.connect(clear)
 
 func clear() -> void:
+	_pending_ejections.clear()
+	_retained_shells.clear()
+	_reload_ejection_id = ""
 	for index in MAX_SHELLS:
 		_shells[index].visible = false
 		_shell_state[index] = {"life": 0.0}
@@ -765,20 +859,33 @@ func _physics_process(delta: float) -> void:
 		if float(state.life) <= 0.0:
 			node.visible = false
 			continue
+		if bool(state.get("resting", false)): continue
 		var velocity: Vector3 = state.velocity
 		velocity.y -= SHELL_GRAVITY * delta
-		node.global_position += velocity * delta
-		if node.global_position.y <= float(state.floor):
-			node.global_position.y = float(state.floor)
-			if velocity.y < -1.5 and int(state.bounces) < 2:
-				velocity.y = -velocity.y * 0.35
-				velocity.x *= 0.52
-				velocity.z *= 0.52
-				state.bounces = int(state.bounces) + 1
-			else:
-				velocity = Vector3(velocity.x, 0.0, velocity.z).move_toward(Vector3.ZERO, 10.0 * delta)
+		var destination := node.global_position + velocity * delta
+		var query := PhysicsRayQueryParameters3D.create(node.global_position, destination, 5)
+		if carry_source is CollisionObject3D: query.exclude = [carry_source.get_rid()]
+		var contact := get_world_3d().direct_space_state.intersect_ray(query)
+		if contact.is_empty():
+			node.global_position = destination
+		else:
+			var normal: Vector3 = contact.normal
+			var material := SURFACE.resolve(contact.collider, contact.position, normal)
+			var speed := maxf(0.0, -velocity.dot(normal))
+			node.global_position = contact.position + normal * (0.010 if state.shotgun else 0.006)
+			if speed > 0.65 and int(state.bounces) < 3:
+				casing_contact.emit(contact.position, material, speed, bool(state.shotgun))
+			state.bounces = int(state.bounces) + 1
+			velocity = velocity.bounce(normal) * SURFACE.restitution(material)
+			if normal.y > 0.45 and (material in SURFACE.SOFT or velocity.length() < 0.8 or int(state.bounces) >= 3):
+				velocity = Vector3.ZERO
+				state.resting = true
+				# Cylinder axis lies along the hit surface, including sloped ground.
+				var tangent := normal.cross(Vector3.FORWARD).normalized()
+				if tangent.length_squared() < 0.1: tangent = normal.cross(Vector3.RIGHT).normalized()
+				node.global_basis = Basis(tangent, normal.cross(tangent).normalized(), normal).orthonormalized()
 		state.velocity = velocity
-		node.rotate_y(float(state.spin) * delta)
+		if not bool(state.get("resting", false)): node.rotate_x(float(state.spin) * delta)
 	for index in MAX_STAINS:
 		if _stain_age[index] < 0.0: continue
 		active = true

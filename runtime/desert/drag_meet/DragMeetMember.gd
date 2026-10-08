@@ -26,7 +26,7 @@ func _ready() -> void:
 	visual.appearance_variant = 9780+slot
 	visual.wardrobe_overrides = {"female":slot==3,"height":1.0,"build":2 if slot<2 else slot%2,
 		"skin":[Color("b97d5d"),Color("815339"),Color("d5ab87")][slot%3],
-		"hair_color":Color("26201f"),"hat":1 if slot==4 else 0,"beard":slot%3,"glasses":slot<2}
+		"hair":4 if slot==3 else slot%3,"hair_color":Color("26201f"),"hat":1 if slot==4 else 0,"beard":0 if slot==3 else slot%3,"glasses":slot<2}
 	OUTFIT.dress(visual)
 	add_child(visual)
 	OUTFIT.insignia(visual)

@@ -20,27 +20,27 @@ func _init(parent: Node3D, label: String, at := Vector3.ZERO) -> void:
 	body.set_meta("vehicle_surface","hard")
 	root.add_child(body)
 
-func box(label: String, at: Vector3, size: Vector3, finish: String, solid := false, rotation := Vector3.ZERO) -> void:
-	_add("box",finish,Transform3D(Basis.from_euler(rotation)*Basis.from_scale(size),at))
+func box(label: String, at: Vector3, size: Vector3, material_key: String, solid := false, rotation := Vector3.ZERO) -> void:
+	_add("box",material_key,Transform3D(Basis.from_euler(rotation)*Basis.from_scale(size),at))
 	if solid:
 		var shape := BoxShape3D.new()
 		shape.size=size
 		_collision(label,at,rotation,shape)
 
-func cylinder(label: String, at: Vector3, radius: float, height: float, finish: String, solid := false, rotation := Vector3.ZERO) -> void:
-	_add("cylinder",finish,Transform3D(Basis.from_euler(rotation)*Basis.from_scale(Vector3(radius,height,radius)),at))
+func cylinder(label: String, at: Vector3, radius: float, height: float, material_key: String, solid := false, rotation := Vector3.ZERO) -> void:
+	_add("cylinder",material_key,Transform3D(Basis.from_euler(rotation)*Basis.from_scale(Vector3(radius,height,radius)),at))
 	if solid:
 		var shape := CylinderShape3D.new()
 		shape.radius=radius
 		shape.height=height
 		_collision(label,at,rotation,shape)
 
-func beam(label: String, start: Vector3, end: Vector3, width: float, finish: String, solid := false) -> void:
+func beam(label: String, start: Vector3, end: Vector3, width: float, material_key: String, solid := false) -> void:
 	var delta := end-start
-	box(label,(start+end)*.5,Vector3(width,delta.length(),width),finish,solid,Basis(Quaternion(Vector3.UP,delta.normalized())).get_euler())
+	box(label,(start+end)*.5,Vector3(width,delta.length(),width),material_key,solid,Basis(Quaternion(Vector3.UP,delta.normalized())).get_euler())
 
-func rock(label: String, at: Vector3, size: Vector3, finish := "ore", solid := true, yaw := 0.0) -> void:
-	_add("rock",finish,Transform3D(Basis(Vector3.UP,yaw)*Basis.from_scale(size),at))
+func rock(label: String, at: Vector3, size: Vector3, material_key := "ore", solid := true, yaw := 0.0) -> void:
+	_add("rock",material_key,Transform3D(Basis(Vector3.UP,yaw)*Basis.from_scale(size),at))
 	if solid:
 		var shape := ConvexPolygonShape3D.new()
 		var vertices: PackedVector3Array=mesh("rock").surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
@@ -58,9 +58,9 @@ func _collision(label: String, at: Vector3, rotation: Vector3, shape: Shape3D) -
 	node.set_meta("mining_solid",label)
 	body.add_child(node)
 
-func _add(kind: String, finish: String, transform: Transform3D) -> void:
-	var key := kind+":"+finish
-	if not groups.has(key): groups[key]={"kind":kind,"finish":finish,"transforms":[]}
+func _add(kind: String, material_key: String, transform: Transform3D) -> void:
+	var key := kind+":"+material_key
+	if not groups.has(key): groups[key]={"kind":kind,"finish":material_key,"transforms":[]}
 	groups[key].transforms.append(transform)
 	piece_count+=1
 
@@ -77,6 +77,7 @@ func finish() -> Node3D:
 		visual.multimesh=batch
 		if Engine.get_meta("geteco_live_preview_build",false): visual.set_meta("preview_instance_transforms",group.transforms)
 		visual.material_override=material(group.finish)
+		if group.kind == "rock": visual.material_override = mineral_material(group.finish)
 		root.add_child(visual)
 	if body.get_child_count()==0: body.free()
 	root.set_meta("mining_static_pieces",piece_count)
@@ -100,20 +101,48 @@ static func material(id: String) -> StandardMaterial3D:
 	_materials[id]=result
 	return result
 
+static func mineral_material(id: String) -> ShaderMaterial:
+	var key := "mineral_"+id
+	if _materials.has(key): return _materials[key] as ShaderMaterial
+	var result := ShaderMaterial.new()
+	result.shader = preload("res://world/mining/mineral_surface.gdshader")
+	result.set_shader_parameter("base_color", material(id).albedo_color)
+	result.set_shader_parameter("world_origin", Vector3(-180,0,-1760))
+	_materials[key] = result
+	return result
+
 static func mesh(kind: String) -> Mesh:
 	if _meshes.has(kind): return _meshes[kind]
 	var result: Mesh
 	if kind=="rock":
 		var builder := SurfaceTool.new()
 		builder.begin(Mesh.PRIMITIVE_TRIANGLES)
-		for ring in 4:
-			for index in 9:
-				var a := _rock_vertex(ring,index)
-				var b := _rock_vertex(ring,index+1)
-				var c := _rock_vertex(ring+1,index+1)
-				var d := _rock_vertex(ring+1,index)
-				for vertex in [a,b,c,a,c,d]: builder.add_vertex(vertex)
-		builder.generate_normals()
+		# Fractured pentagonal block, not a surface of revolution. Broad broken
+		# planes, a slanted crown and asymmetric corners replace the old pebbles.
+		# Every vertex remains within the previous collision/placement envelope.
+		var vertices := PackedVector3Array([
+			Vector3(-.38,-.5,-.33), Vector3(.31,-.46,-.43), Vector3(.5,-.42,-.08),
+			Vector3(.27,-.48,.43), Vector3(-.47,-.41,.31),
+			Vector3(-.27,.25,-.32), Vector3(.16,.5,-.31), Vector3(.41,.33,-.03),
+			Vector3(.18,.41,.32), Vector3(-.4,.24,.16)])
+		var indices: Array[int] = [0,2,1,0,3,2,0,4,3,5,6,7,5,7,8,5,8,9]
+		for index in 5:
+			var next := (index + 1) % 5
+			indices.append_array([index,next,next+5,index,next+5,index+5])
+		for index in range(0, indices.size(), 3):
+			var a := vertices[indices[index]]
+			var b := vertices[indices[index+1]]
+			var c := vertices[indices[index+2]]
+			var normal := (b-a).cross(c-a).normalized()
+			# Godot uses clockwise fronts; orient every face out of the block.
+			if normal.dot((a+b+c)/3.0) > 0:
+				var swap := b
+				b = c
+				c = swap
+				normal = -normal
+			for vertex in [a,b,c]:
+				builder.set_normal(-normal)
+				builder.add_vertex(vertex)
 		result=builder.commit()
 	elif kind=="cylinder":
 		var geometry := CylinderMesh.new()
@@ -128,10 +157,3 @@ static func mesh(kind: String) -> Mesh:
 		result=geometry
 	_meshes[kind]=result
 	return result
-
-static func _rock_vertex(ring: int, index: int) -> Vector3:
-	var angle := float(posmod(index,9))*TAU/9.0
-	var radius: float=[.09,.83,1.0,.69,.06][ring]
-	var height: float=[-.52,-.34,.02,.34,.54][ring]
-	var variation := 1.0+sin(angle*3.0+float(ring)*1.9)*.13
-	return Vector3(cos(angle)*radius*.5*variation,height,sin(angle)*radius*.5*variation)

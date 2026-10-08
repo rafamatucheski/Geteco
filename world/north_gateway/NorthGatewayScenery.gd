@@ -192,19 +192,19 @@ func _beam(id: String, a: Vector3, b: Vector3, width: float, height: float, soli
 	var direction := b - a
 	if direction.length_squared() < 0.000001: return
 	var planar := Vector2(direction.x, direction.z).length()
-	var basis := Basis(Vector3.UP, atan2(direction.x, direction.z)) * Basis(Vector3.RIGHT, -atan2(direction.y, planar))
-	_box(id, (a + b) * 0.5, Vector3(width, height, direction.length() + 0.018), basis, solid)
+	var orientation := Basis(Vector3.UP, atan2(direction.x, direction.z)) * Basis(Vector3.RIGHT, -atan2(direction.y, planar))
+	_box(id, (a + b) * 0.5, Vector3(width, height, direction.length() + 0.018), orientation, solid)
 
-func _box(id: String, center: Vector3, size: Vector3, basis: Basis = Basis.IDENTITY, solid: bool = false) -> void:
+func _box(id: String, center: Vector3, size: Vector3, orientation: Basis = Basis.IDENTITY, solid: bool = false) -> void:
 	if not id.is_empty():
 		if not _batches.has(id): _batches[id] = []
-		_batches[id].append(Transform3D(basis.scaled_local(size), center))
+		_batches[id].append(Transform3D(orientation.scaled_local(size), center))
 	if solid:
 		var shape := BoxShape3D.new()
 		shape.size = size
 		var collider := CollisionShape3D.new()
 		collider.shape = shape
-		collider.transform = Transform3D(basis, center)
+		collider.transform = Transform3D(orientation, center)
 		_body.add_child(collider)
 
 func _quad(id: String, a: Vector3, b: Vector3, c: Vector3, d: Vector3, normal: Vector3, solid: bool) -> void:

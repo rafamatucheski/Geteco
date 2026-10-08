@@ -21,6 +21,8 @@ var master_volume := .8
 var music_volume := .8
 var sfx_volume := 1.0
 var ambient_volume := 1.0
+## Ganho da mixagem antes do slider: 100% precisa dar presença a motores e efeitos.
+const SFX_GAIN_DB := 10.0
 ## Silencia tudo quando a janela perde o foco (alt-tab).
 var mute_unfocused := false
 
@@ -105,6 +107,21 @@ func _setup_audio_buses() -> void:
 			var new_idx := AudioServer.get_bus_count() - 1
 			AudioServer.set_bus_name(new_idx, bus_name)
 			AudioServer.set_bus_send(new_idx, "Master")
+	_setup_audio_limiter("SFX", "SFXPresence", SFX_GAIN_DB, -3.0)
+	_setup_audio_limiter("Master", "OutputProtection", 0.0, -1.0)
+
+func _setup_audio_limiter(bus_name: String, effect_name: String, gain_db: float, ceiling_db: float) -> void:
+	var idx := AudioServer.get_bus_index(bus_name)
+	# _enter_tree e _ready chamam o setup; não empilhar o ganho a cada chamada.
+	for effect_index in AudioServer.get_bus_effect_count(idx):
+		var existing := AudioServer.get_bus_effect(idx, effect_index)
+		if existing is AudioEffectHardLimiter and existing.resource_name == effect_name:
+			return
+	var limiter := AudioEffectHardLimiter.new()
+	limiter.resource_name = effect_name
+	limiter.pre_gain_db = gain_db
+	limiter.ceiling_db = ceiling_db
+	AudioServer.add_bus_effect(idx, limiter)
 
 func apply_settings() -> void:
 	_apply_bus_volume("Master", master_volume)

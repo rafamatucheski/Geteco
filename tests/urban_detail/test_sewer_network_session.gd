@@ -7,6 +7,15 @@ const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const SEWERS := preload("res://world/places/sewers/SewerNetwork.gd")
 var world
 var failures: Array[String] = []
+var premature_darkness := false
+var prepared_darkness_observed := false
+
+func observe_entry_darkness() -> void:
+	for node in world.find_children("*", "CanvasLayer", true, false):
+		if node.get_script() != preload("res://world/places/sewers/SewerDarkness.gd"): continue
+		if world.session.state.place_id.is_empty():
+			prepared_darkness_observed = true
+			if node.visible: premature_darkness = true
 
 func _initialize() -> void:
 	run.call_deferred()
@@ -47,10 +56,21 @@ func run() -> void:
 		var action: Dictionary = session.nearest()
 		check(action.get("id", "") == "enter" and action.get("place", "") == id, id + ": E leva ao bueiro certo")
 		var started := Time.get_ticks_msec()
+		premature_darkness = false
+		prepared_darkness_observed = false
+		process_frame.connect(observe_entry_darkness)
 		var entered: bool = await session.enter_place(id, false, id)
+		process_frame.disconnect(observe_entry_darkness)
+		check(prepared_darkness_observed and not premature_darkness, id + ": rua permanece sem escurecimento durante preparação e descida")
 		check(entered and state.place_id == id, id + ": entra pela escada e chega na sala (%d ms)" % (Time.get_ticks_msec() - started))
 		if not entered: continue
 		var room: Node3D = session.room
+		await process_frame
+		await process_frame
+		var darkness_visible := false
+		for node in room.find_children("*", "CanvasLayer", true, false):
+			if node.get_script() == preload("res://world/places/sewers/SewerDarkness.gd") and node.visible: darkness_visible = true
+		check(darkness_visible, id + ": escuridão ativa após chegar ao subterrâneo")
 		check(room != null and room.definition.id == id, id + ": sala ativa é a certa")
 		check(is_zero_approx(hatch.open_amount), id + ": tampa fecha depois da descida")
 		check(world.player.is_physics_processing(), id + ": física do Dante volta depois da descida")

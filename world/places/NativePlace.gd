@@ -212,13 +212,13 @@ func _classify_bank() -> void:
 		part.piece(model,Vector3(.15,.4,.18),Vector3(side*1.3,.2,4.92),Color("5e696d"))
 		_box_solid("BankExitJamb",AABB(Vector3(side*1.3-.075,0,4.83),Vector3(.15,.4,.18)))
 	part.piece(model,Vector3(2.4,.025,.8),Vector3(0,.02,4.5),Color("33433e"))
-	var sign := Label3D.new()
-	sign.text="SAÍDA"
-	sign.font_size=48
-	sign.pixel_size=.006
-	sign.position=Vector3(0,.04,4.5)
-	sign.rotation.x=-PI*.5
-	model.add_child(sign)
+	var exit_label := Label3D.new()
+	exit_label.text="SAÍDA"
+	exit_label.font_size=48
+	exit_label.pixel_size=.006
+	exit_label.position=Vector3(0,.04,4.5)
+	exit_label.rotation.x=-PI*.5
+	model.add_child(exit_label)
 
 func update_bank_visibility(point: Vector3,delta: float) -> void:
 	if definition.id!="harbor_bank": return

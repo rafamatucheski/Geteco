@@ -38,6 +38,7 @@ static func attach(car: CharacterBody3D, parts: Dictionary = {}) -> bool:
 	car.max_health = float(car.get_meta("desert_base_max_health"))*durability_ratio
 	car.health = car.max_health*condition
 	_apply_neon(car,s)
+	preload("res://gameplay/desert_cars/TuningAppearance.gd").apply_vehicle(car,clean)
 	if own_profile: return true
 	var previous := car.get_node_or_null("DesertCarAudio")
 	if previous != null:

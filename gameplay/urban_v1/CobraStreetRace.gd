@@ -86,8 +86,8 @@ func tick(delta: float) -> Dictionary:
 			continue
 		entry.pilot.tick(delta,hold or entry.dnf)
 		if entry.dnf or is_finite(entry.finish): continue
-		var point: Vector3=vehicle.global_position
-		var state: Dictionary=PROGRESS.tick(entry.run,delta,Vector2(point.x,point.z),vehicle.vehicle_id,vehicle.health>0,entry.elapsed,entry.outside)
+		var racer_point: Vector3=vehicle.global_position
+		var state: Dictionary=PROGRESS.tick(entry.run,delta,Vector2(racer_point.x,racer_point.z),vehicle.vehicle_id,vehicle.health>0,entry.elapsed,entry.outside)
 		entry.elapsed=state.elapsed
 		entry.outside=state.outside
 		if not state.failure.is_empty(): entry.dnf=true
@@ -113,7 +113,7 @@ func tick(delta: float) -> Dictionary:
 	if ui_clock<=0:
 		ui_clock=.1
 		var remaining:=maxi(0,ceili(COURSE.TIME_LIMIT-float(result.get("elapsed",0))))
-		status.text=("LARGADA · %d"%ceili(float(player.run.get("countdown",0)))) if hold else "%d/6  ·  CHECKPOINT %d/4  ·  %02d:%02d"%[place,mini(int(player.run.get("checkpoint",0))+1,4),remaining/60,remaining%60]
+		status.text=("LARGADA · %d"%ceili(float(player.run.get("countdown",0)))) if hold else "%d/6  ·  CHECKPOINT %d/4  ·  %02d:%02d"%[place,mini(int(player.run.get("checkpoint",0))+1,4),floori(float(remaining)/60.0),remaining%60]
 		var lines:=PackedStringArray()
 		for index in ordered.size():
 			var entry: Dictionary=ordered[index]

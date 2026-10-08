@@ -14,6 +14,7 @@ var _secret := false
 var _wall_rocks: Array[Transform3D] = []
 var raid_loot_available := true
 var _raid_loot: Node3D
+var _ambience: Node3D
 
 func _ready() -> void:
 	name = "CoalGallery"
@@ -25,6 +26,12 @@ func _ready() -> void:
 	_build_lamps()
 	_build_scatter()
 	_build_clandestine_gallery()
+	preload("res://world/mining/coal/CoalMineWear.gd").build(self)
+	_ambience = preload("res://audio/mining/MiningAmbience.gd").new()
+	_ambience.cavern = true
+	_ambience.position = Vector3(-11.8, .25, -3.5)
+	_ambience.set_active(false)
+	add_child(_ambience)
 	reveal_secret(false, false)
 
 func _mat(key: String, color: Color, metallic := 0.0, emission := 0.0) -> StandardMaterial3D:
@@ -123,30 +130,8 @@ func _append_wall_rocks(center: Vector3, size: Vector3, cutaway: bool) -> void:
 			_wall_rocks.append(Transform3D(Basis.IDENTITY.scaled(extent), point))
 
 func _rough_rock_mesh() -> ArrayMesh:
-	var sphere := SphereMesh.new()
-	sphere.radius = .5
-	sphere.height = 1
-	sphere.radial_segments = 7
-	sphere.rings = 3
-	var arrays := sphere.get_mesh_arrays()
-	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
-	var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
-	for index in vertices.size():
-		var point := vertices[index]
-		# Only contract vertices: the mesh is guaranteed inside the unit AABB.
-		vertices[index] *= .88 + .12 * absf(sin(point.x * 29.7 + point.y * 17.3 + point.z * 41.5))
-	var surface := SurfaceTool.new()
-	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
-	for index in range(0, indices.size(), 3):
-		var a := vertices[indices[index]]
-		var b := vertices[indices[index + 1]]
-		var c := vertices[indices[index + 2]]
-		var normal := (b - a).cross(c - a).normalized()
-		if normal.dot(a + b + c) < 0: normal = -normal
-		for point in [a, b, c]:
-			surface.set_normal(normal)
-			surface.add_vertex(point)
-	return surface.commit()
+	# Angular strata fit the same unit AABB and the existing full wall bodies.
+	return preload("res://world/mining/MiningBatch.gd").mesh("rock") as ArrayMesh
 
 func _build_rock_faces() -> void:
 	var batch := MultiMesh.new()
@@ -158,8 +143,10 @@ func _build_rock_faces() -> void:
 		batch.set_instance_transform(index, _wall_rocks[index])
 		var soot := .82 + float(index % 7) * .03
 		batch.set_instance_color(index, Color(soot, soot, soot, 1))
-	var material := _mat("raw_strata", Color("414340"))
-	material.vertex_color_use_as_albedo = true
+	var material := ShaderMaterial.new()
+	material.shader = preload("res://world/mining/mineral_surface.gdshader")
+	material.set_shader_parameter("base_color", Color("54564f"))
+	material.set_shader_parameter("world_origin", global_position)
 	var node := MultiMeshInstance3D.new()
 	node.name = "RawRockFaces"
 	node.multimesh = batch
@@ -167,7 +154,11 @@ func _build_rock_faces() -> void:
 	add_child(node)
 
 func _build_floor_and_walls() -> void:
-	var floor_material := _mat("floor", Color("292b29"))
+	var floor_material := ShaderMaterial.new()
+	floor_material.shader = preload("res://world/mining/mineral_surface.gdshader")
+	floor_material.set_shader_parameter("base_color", Color("504d43"))
+	floor_material.set_shader_parameter("world_origin", global_position)
+	floor_material.set_shader_parameter("floor_mode", true)
 	for item in [
 		["GalleryFloor", Vector3(-5, -.14, -4.5), Vector3(18, .28, 15)],
 		["AccessFloor", Vector3(9, -.14, 3), Vector3(5.2, .28, 19)],
@@ -371,11 +362,7 @@ func _build_lamps() -> void:
 func _build_scatter() -> void:
 	var random := RandomNumberGenerator.new()
 	random.seed = 671093
-	var shape := SphereMesh.new()
-	shape.radius = .5
-	shape.height = 1
-	shape.radial_segments = 7
-	shape.rings = 3
+	var shape := _rough_rock_mesh()
 	var transforms: Array[Transform3D] = []
 	# Low fragments remain below foot clearance. Large heaps have explicit bodies.
 	for index in 110:
@@ -401,7 +388,13 @@ func _build_scatter() -> void:
 	# Faceted exposed seams protrude from the flat rock face and need coverage too.
 	_solid("WestCoalVein", Vector3(-13.06, 1.65, -4.65), Vector3(.88, 3.3, 12.8))
 	for point in [Vector3(-11.2, .45, -9.95), Vector3(.85, .55, -.3), Vector3(-3.15, .35, -10.45)]:
-		_sphere(self, "CoalHeap", point, Vector3(1.6, 1.15, 1.45), _mat("coal", Color("101517"), .23))
+		var heap := MeshInstance3D.new()
+		heap.name = "CoalHeap"
+		heap.mesh = _rough_rock_mesh()
+		heap.position = point
+		heap.scale = Vector3(1.6, 1.15, 1.45)
+		heap.material_override = _mat("coal", Color("101517"), .23)
+		add_child(heap)
 		_solid("CoalHeap", Vector3(point.x, .6, point.z), Vector3(1.6, 1.2, 1.45))
 
 func _build_clandestine_gallery() -> void:
@@ -455,7 +448,7 @@ func _build_clandestine_gallery() -> void:
 	var note := _mat("banknote", Color("95a46e"))
 	var band := _mat("cash_band", Color("e6dab3"))
 	for index in 7:
-		var position_value := Vector3((index % 4) * .22 - .34, .24 + (index / 4) * .10, .14)
+		var position_value := Vector3((index % 4) * .22 - .34, .24 + floori(float(index) / 4.0) * .10, .14)
 		_box(_raid_loot, "CashBundle", position_value, Vector3(.19, .085, .32), note)
 		_box(_raid_loot, "BundleBand", position_value + Vector3(0, .044, 0), Vector3(.045, .006, .323), band)
 	# Empty canisters and a rolled tarp stay at the rear east wall, away from
@@ -499,6 +492,7 @@ func reveal_secret(animate: bool, revealed := true) -> void:
 func set_active(value: bool) -> void:
 	visible = value
 	process_mode = Node.PROCESS_MODE_INHERIT if value else Node.PROCESS_MODE_DISABLED
+	if is_instance_valid(_ambience): _ambience.set_active(value)
 	if not value and is_instance_valid(_reveal_tween):
 		_reveal_tween.kill()
 		reveal_secret(false, _secret)

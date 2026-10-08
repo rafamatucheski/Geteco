@@ -51,6 +51,9 @@ func _ready() -> void:
 	root_control.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); root_control.theme=STYLE.create_theme(); add_child(root_control)
 	root_margin=root_control
 	player_status=preload("res://ui/hud/PlayerStatusHUD.gd").new(); root_control.add_child(player_status)
+	player_status.rage_requested.connect(func():
+		if is_instance_valid(world) and world.gameplay != null: world.gameplay.request_rage()
+	)
 	health_bar=player_status.health_bar; armor_bar=player_status.armor_bar
 	_upper_right=VBoxContainer.new(); _upper_right.add_theme_constant_override("separation",8); root_control.add_child(_upper_right)
 	money=preload("res://ui/hud/MoneyHUD.gd").new(); _upper_right.add_child(money); money_label=money.amount
@@ -87,7 +90,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if not _bound: _try_bind()
 	if not _bound: return
-	_status_clock+=delta
+	_status_clock+=delta / maxf(Engine.time_scale, 0.001)
 	# Text/state projection is bounded. No UI tree rebuild or styling every frame.
 	if _status_clock>=.08:
 		var elapsed := _status_clock; _status_clock=0
@@ -150,6 +153,7 @@ func _sync_status(delta: float) -> void:
 	money.update_balance(int(state.economy.balance),state.economy.cheat_infinite_money)
 	var thermal: Dictionary=_session.cold.status() if _session.cold!=null else {}
 	player_status.update_status(float(gameplay.health),float(gameplay.armor),thermal,delta)
+	if is_instance_valid(gameplay.rage): player_status.update_rage(gameplay.rage.status(), _controls.prompt("rage"))
 	weapon.update_weapon(state,root_control.visible)
 	var stars := clampi(int(gameplay.stars),0,6)
 	var phase := String(gameplay.police_case.phase()) if gameplay.get("police_case")!=null else "clear"

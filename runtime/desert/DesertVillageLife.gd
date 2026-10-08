@@ -69,12 +69,12 @@ func _placement(room: Node3D,spec: Dictionary) -> Dictionary:
 	if activity=="sleep":
 		point=spec.get("sleep_point",Vector3.ZERO)
 		yaw=float(spec.get("sleep_yaw",0.0))
-		var global_point := room.to_global(point)
-		var ray := PhysicsRayQueryParameters3D.create(global_point+Vector3.UP*.25,global_point-Vector3.UP*.25,1)
-		var hit := room.get_world_3d().direct_space_state.intersect_ray(ray)
-		if hit.is_empty() or absf(float(hit.position.y)-global_point.y)>.08 or float(hit.normal.y)<.9:
+		var sleep_global_point := room.to_global(point)
+		var sleep_ray := PhysicsRayQueryParameters3D.create(sleep_global_point+Vector3.UP*.25,sleep_global_point-Vector3.UP*.25,1)
+		var sleep_hit := room.get_world_3d().direct_space_state.intersect_ray(sleep_ray)
+		if sleep_hit.is_empty() or absf(float(sleep_hit.position.y)-sleep_global_point.y)>.08 or float(sleep_hit.normal.y)<.9:
 			admission_failure="sleep_support_missing"; return {}
-		var bed: Vector3=room.to_local(hit.position)
+		var bed: Vector3=room.to_local(sleep_hit.position)
 		var basis := Basis(Vector3.UP,yaw)
 		for row in [[Vector3(0,.17,.13),Vector3(.58,.28,1.35)],
 			[Vector3(0,.30,-.67),Vector3(.30,.26,.35)]]:

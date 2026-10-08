@@ -111,6 +111,13 @@ func refresh() -> void:
 		set_physics_process(false)
 		_stop_fire()
 
+func refresh_paint_finish() -> void:
+	if wrecked: return
+	# Rebuild the same wear overlay after a cosmetic material change. A paint job
+	# neither heals the vehicle nor clears its dents/scratches.
+	_stage = -1
+	refresh()
+
 func _begin_burn() -> void:
 	burning = true
 	# Capture uma única vez: a vida pode já estar muito abaixo do limiar após
@@ -145,6 +152,8 @@ func _stall_apply_wear(wear: float) -> void:
 			_paint_base[material] = {"roughness": material.roughness, "metallic": material.metallic,
 				"clearcoat": material.clearcoat_enabled, "dents": material.albedo_texture == null and material.normal_texture == null}
 		var base: Dictionary = _paint_base[material]
+		if vehicle.has_meta("tuning_appearance"):
+			base = vehicle.get_meta("tuning_appearance").damage_base(material,base)
 		material.roughness = lerpf(base.roughness, maxf(base.roughness, .68), wear)
 		material.metallic = lerpf(base.metallic, base.metallic * .55, wear)
 		material.clearcoat_enabled = base.clearcoat and wear < .4

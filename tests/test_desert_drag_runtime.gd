@@ -6,9 +6,10 @@ var checks := 0
 var failures: Array[String] = []
 var temporal: Node
 var _weather_was_processing := true
+var capture_output := ""
 
 func _initialize() -> void:
-	create_timer(300 if "--temporal" in OS.get_cmdline_user_args() else 180).timeout.connect(func():
+	create_timer(300 if "--temporal" in OS.get_cmdline_user_args() or "--replay" in OS.get_cmdline_user_args() else 180).timeout.connect(func():
 		if is_instance_valid(temporal):
 			temporal.failure="Runtime watchdog elapsed"
 			temporal.stop()
@@ -37,6 +38,13 @@ func run() -> void:
 		push_error("--temporal requires actual rendered Main; headless cannot record lighting")
 		quit(2)
 		return
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--capture-out="):
+			capture_output=argument.trim_prefix("--capture-out=")
+	if not capture_output.is_empty():
+		check(DisplayServer.get_name()!="headless","UI screenshots require rendered runtime")
+		check(DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(capture_output))==OK,"UI capture directory available")
+		if not failures.is_empty(): finish(); return
 	world = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival",true)
 	root.add_child(world)
@@ -70,6 +78,7 @@ func run() -> void:
 	await frames(120)
 	# Approach parking is clear of the authored meet residents and staging grid.
 	var style_car := "desert_mirage_gt" if "--style-car" in OS.get_cmdline_user_args() else "desert_mirage"
+	if "--street-profile" in OS.get_cmdline_user_args(): style_car="porto_rosso"
 	var car = world.production.spawn_vehicle(style_car,race.staging_point+Vector3(0,.1,-6),-PI*.5)
 	check(is_instance_valid(car),"production desert car spawned")
 	if not is_instance_valid(car): finish(); return
@@ -99,6 +108,7 @@ func run() -> void:
 	check(race.hud.rival=="Digo" and is_equal_approx(race.hud.remaining,800.0) and race.hud.headline=="3","HUD contains real rival distance and countdown before first render")
 	await check_normal_ui(false,"race hides ordinary HUD and both objective indicators")
 	check(race.racers.size()==2,"exactly Dante and one physical rival")
+	check(race.racers[0].drive.car_id==style_car,"actual race drivetrain preserves the selected car profile")
 	check(is_equal_approx(race.distance,800.0),"800 m category supports both stock and fully prepared 15–30 second builds")
 	check(race.racers[1].car.archetype=="digo_gol_1993","first rival really drives Digo's Gol")
 	check(race.racers.all(func(e): return e.car.collision_layer!=0 and e.car.collision_mask!=0),"both bodies retain collision")
@@ -138,7 +148,17 @@ func run() -> void:
 		if not await begin_temporal(race): finish(); return
 	if "--drive" in OS.get_cmdline_user_args() or "--temporal" in OS.get_cmdline_user_args():
 		check(race.perform("start"),"physical completion attempt starts")
-		await drive_race(race,car)
+		var result_action := "rematch" if "--replay" in OS.get_cmdline_user_args() else ("entry" if "--return-entry" in OS.get_cmdline_user_args() else "stay")
+		await drive_race(race,car,result_action)
+		if "--replay" in OS.get_cmdline_user_args() and race.active:
+			check(race.rival_id=="digo","result rematch retains original opponent after ladder advances")
+			await drive_race(race,car,"entry")
+			check(race.perform("board"),"return-to-entry permits board reopening")
+			race.board_controller.board.select_rival("digo")
+			await capture_ui("rivals-rematch")
+			race.board_controller.board.race_button.pressed.emit()
+			check(race.active and race.rival_id=="digo","board can replay beaten rival without replaying the ladder")
+			await drive_race(race,car,"stay")
 	if is_instance_valid(temporal):
 		temporal.segment = "night_cleanup"
 		await temporal_hold(6.0,.9,.9)
@@ -226,8 +246,11 @@ func temporal_hold(seconds: float, from_time: float, to_time: float) -> void:
 	world.session.weather.time_of_day = to_time
 	world.session.weather._update()
 
-func drive_race(race,car) -> void:
+func drive_race(race,car,result_action: String = "stay") -> void:
 	if not race.active: return
+	var finishes_before: int=race.snapshot().finishes
+	var rival_before: String=race.rival_id
+	if finishes_before==0: await capture_ui("staging")
 	var previous_power: Variant = race.racers[0].previous_power
 	var previous_listener: AudioListener3D = race.previous_listener
 	var deadline := Time.get_ticks_msec()+80000
@@ -257,12 +280,18 @@ func drive_race(race,car) -> void:
 			if drive.rpm>=drive.ideal_shift_rpm and race.phase=="racing": press_key(KEY_SPACE)
 			if race.elapsed>2 and not paused:
 				paused = true
+				if finishes_before==0: await capture_ui("racing")
 				var before: float = race.elapsed
 				var pose: Vector3 = car.global_position
-				session_menu(race.session,"Pausa em movimento")
-				await frames(15)
-				check(is_equal_approx(race.elapsed,before) and car.global_position.distance_to(pose)<.01,"modal freezes both motion and race clock")
-				race.session.close_menu()
+				press_key(KEY_ESCAPE)
+				for frame in 15: await process_frame
+				check(paused and world.pause_panel.visible and not race.layer.visible,"actual pause hides drag instruments under readable pause controls")
+				check(is_equal_approx(race.elapsed,before) and car.global_position.distance_to(pose)<.01,"pause freezes both motion and race clock")
+				var resume: Button=world.pause_panel.get_node("%BtnResume")
+				check(resume.is_visible_in_tree() and root.get_visible_rect().encloses(resume.get_global_rect()),"pause resume button stays visible within viewport")
+				if finishes_before==0: await capture_ui("paused")
+				press_key(KEY_ESCAPE)
+				check(not world.pause_panel.visible and race.layer.visible,"resume restores race instruments")
 		await physics_frame
 	check(not race.active and race.last_result.get("finished",false),"physical distance crossing produces completed race")
 	check(camera_bounded,"actual moving camera stays within27m lateral setback")
@@ -272,14 +301,32 @@ func drive_race(race,car) -> void:
 	print("DESERT_DRAG_RESULT ",JSON.stringify(race.last_result))
 	if race.last_result.get("finished",false):
 		check(race.last_result.seconds>=15 and race.last_result.seconds<=30,"entry-class physical race lasts 15–30 seconds")
-		check(race.snapshot().finishes==1 and "digo" in race.snapshot().completed_rivals,"actual finish persisted exactly once")
-	# A first victory now has an authored results board. Its modal legitimately
-	# owns input until dismissed, then the original driving contract resumes.
+		check(race.snapshot().finishes==finishes_before+1 and rival_before in race.snapshot().completed_rivals,"actual finish persisted exactly once")
+	# Every physical finish stays open, including defeats and repeat victories.
 	await frames(3)
-	if race.last_result.get("first_win",false):
-		check(race.session.modal and is_instance_valid(race.board_controller.layer) and race.board_controller.layer.visible,"first victory opens its results board")
-		race.session.close_menu()
-		await frames(3)
+	var flow=race.board_controller
+	check(race.session.modal and is_instance_valid(flow.results_layer) and flow.results_layer.visible,"every finish opens persistent result actions")
+	var finished_pose: Vector3=car.global_position
+	var finished_count: int=race.snapshot().finishes
+	race._finish()
+	check(race.snapshot().finishes==finished_count,"duplicate finish callback cannot record a second race")
+	await frames(60)
+	check(flow.results_layer.visible and car.global_position.distance_to(finished_pose)<.1,"result waits for a decision without rolling away")
+	check(flow.results.buttons.size()==3,"result offers rematch return-to-entry and stay")
+	await capture_ui("result-%d"%finished_count)
+	flow.results.get_node(result_action).pressed.emit()
+	for i in 120:
+		await physics_frame
+		if result_action=="rematch" and race.active: break
+		if result_action!="rematch" and not race.session.modal: break
+	if result_action=="rematch":
+		check(race.active and race.rival_id==rival_before and not race.session.modal,"rematch button starts same rival with fresh race state")
+		return
+	check(not race.session.modal and not flow.results_layer.visible,"result action restores free driving")
+	if result_action=="entry":
+		check(car.global_position.distance_to(race.staging_point)<16,"return-to-entry places car on supported staging ground")
+	else:
+		check(car.global_position.distance_to(finished_pose)<.2,"stay keeps the driver at the physical finish")
 	check(car.is_physics_processing() and not car.input_locked and powertrain(car)==previous_power,"finish restores car ownership and normal drivetrain")
 	check(root.get_audio_listener_3d()==previous_listener,"finish restores previous audio listener")
 	check(not car.has_meta("desert_drag_physics") and not Input.is_physical_key_pressed(KEY_SPACE) and not Input.is_physical_key_pressed(KEY_Q),"finish clears race ownership and injected physical keys are released")
@@ -287,6 +334,12 @@ func drive_race(race,car) -> void:
 
 func session_menu(session,title: String) -> void:
 	session._menu(title)
+
+func capture_ui(label: String) -> void:
+	if capture_output.is_empty(): return
+	await RenderingServer.frame_post_draw
+	var path := capture_output.path_join(label+".png")
+	check(root.get_texture().get_image().save_png(path)==OK,"captured "+label)
 
 func press_key(code: int) -> void:
 	# Exercise Main's actual input routing, including handled-event ownership.

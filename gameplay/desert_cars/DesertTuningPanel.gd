@@ -39,29 +39,31 @@ var _money := 0
 var _slot := ""
 var _pending := ""
 var _base: Dictionary = {}
+var _stats_panel: Control
+var _view_controls: HBoxContainer
+var _rotation_button: Button
 ## Quem prepara o carro: o Digo no deserto, o mecânico na Maciota.
 var mechanic_name := "Digo"
 
 func _ready() -> void:
 	layer = 36
 	_dim = ColorRect.new()
-	_dim.color = Color(.02,.03,.04,.62)
+	_dim.color = Color("101719")
 	_dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_dim.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(_dim)
 	# Carro à direita, lista à esquerda e desempenho embaixo, como nas oficinas de GTA.
 	_showroom = SHOWROOM.new()
 	_showroom.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_showroom.offset_left = 500.0
-	_showroom.offset_bottom = -214.0
+	_showroom.offset_left = 432.0
 	add_child(_showroom)
 	_root = PanelContainer.new()
 	_root.set_anchors_and_offsets_preset(Control.PRESET_LEFT_WIDE)
-	_root.offset_left = 24.0
-	_root.offset_right = 494.0
-	_root.offset_top = 24.0
-	_root.offset_bottom = -24.0
-	_root.add_theme_stylebox_override("panel",_box(Color("14181c"),GOLD,2,10,18))
+	_root.offset_left = 20.0
+	_root.offset_right = 432.0
+	_root.offset_top = 20.0
+	_root.offset_bottom = -20.0
+	_root.add_theme_stylebox_override("panel",_box(Color("151e21"),Color("45514e"),1,8,16))
 	add_child(_root)
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation",10)
@@ -74,13 +76,20 @@ func _ready() -> void:
 	_message.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_message.add_theme_color_override("font_color",GOLD)
 	column.add_child(_message)
-	var stats := _build_stats()
-	stats.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-	stats.offset_left = 518.0
-	stats.offset_right = -24.0
-	stats.offset_top = -198.0
-	stats.offset_bottom = -24.0
-	add_child(stats)
+	_stats_panel = _build_stats()
+	_stats_panel.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	_stats_panel.offset_left = 452.0
+	_stats_panel.offset_right = -20.0
+	_stats_panel.offset_top = -164.0
+	_stats_panel.offset_bottom = -20.0
+	add_child(_stats_panel)
+	_view_controls = _build_view_controls()
+	_view_controls.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
+	_view_controls.offset_left = -355.0
+	_view_controls.offset_right = -20.0
+	_view_controls.offset_top = 20.0
+	_view_controls.offset_bottom = 56.0
+	add_child(_view_controls)
 	visibility_changed.connect(func(): if not visible: _showroom.hide_showroom())
 	hide()
 
@@ -103,7 +112,7 @@ func _build_header() -> Control:
 	header.add_theme_constant_override("separation",12)
 	box.add_child(header)
 	_badge = PanelContainer.new()
-	_badge.custom_minimum_size = Vector2(54,54)
+	_badge.custom_minimum_size = Vector2(42,48)
 	_badge_letter = Label.new()
 	_badge_letter.add_theme_font_size_override("font_size",32)
 	_badge_letter.add_theme_color_override("font_color",Color("101215"))
@@ -114,7 +123,7 @@ func _build_header() -> Control:
 	var names := VBoxContainer.new()
 	names.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_title = Label.new()
-	_title.add_theme_font_size_override("font_size",22)
+	_title.add_theme_font_size_override("font_size",21)
 	_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	names.add_child(_title)
 	_subtitle = Label.new()
@@ -122,7 +131,8 @@ func _build_header() -> Control:
 	names.add_child(_subtitle)
 	header.add_child(names)
 	var close := Button.new()
-	close.text = "Voltar [Esc]"
+	close.text = "Esc"
+	close.tooltip_text = "Voltar à oficina"
 	close.pressed.connect(close_panel)
 	header.add_child(close)
 	_wallet = Label.new()
@@ -135,7 +145,7 @@ func _build_stats() -> Control:
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel",_box(Color("14181cee"),Color("2c343c"),1,10,16))
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation",26)
+	row.add_theme_constant_override("separation",18)
 	panel.add_child(row)
 	var bars := VBoxContainer.new()
 	bars.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -164,11 +174,32 @@ func _build_stats() -> Control:
 		bars.add_child(line)
 		_bars.append({"key":str(stat[0]),"value":value,"under":under,"over":over})
 	_numbers = Label.new()
-	_numbers.custom_minimum_size = Vector2(210,0)
+	_numbers.custom_minimum_size = Vector2(168,0)
 	_numbers.add_theme_color_override("font_color",MUTED)
 	_numbers.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	row.add_child(_numbers)
 	return panel
+
+func _build_view_controls() -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation",6)
+	for entry in [["−",-.1],["+",.1]]:
+		var button := Button.new()
+		button.text = entry[0]
+		button.custom_minimum_size = Vector2(36,36)
+		button.pressed.connect(_showroom.zoom_by.bind(float(entry[1])))
+		row.add_child(button)
+	_rotation_button = Button.new()
+	_rotation_button.text = "Girar"
+	_rotation_button.toggle_mode = true
+	_rotation_button.button_pressed = true
+	_rotation_button.toggled.connect(_showroom.set_auto_rotate)
+	row.add_child(_rotation_button)
+	var reset := Button.new()
+	reset.text = "Recentrar"
+	reset.pressed.connect(func(): _showroom.reset_view(); _rotation_button.set_pressed_no_signal(true))
+	row.add_child(reset)
+	return row
 
 func _bar(background: Color) -> ProgressBar:
 	var bar := ProgressBar.new()
@@ -208,7 +239,7 @@ func show_vehicle(car_id: String, parts: Dictionary, owned: Array, wins: int, mo
 	_pending = ""
 	_base = PERF.measure(_car_id,_parts)
 	var label := str(FLEET.spec(car_id).get("label",car_id))
-	_title.text = "%s · %s" % [mechanic_name,label]
+	_title.text = label
 	_wallet.text = "R$ %s   ·   %d de %d vitórias" % [_money_text(_money),_wins,RACE_WINS.maximum()]
 	_message.text = ""
 	_rebuild_tabs()
@@ -217,6 +248,7 @@ func show_vehicle(car_id: String, parts: Dictionary, owned: Array, wins: int, mo
 	show()
 	var shown_model := str(appearance.get("archetype",car_id))
 	_showroom.show_car(shown_model,appearance.get("paint",FLEET.default_paint(shown_model,Color.WHITE)),_parts)
+	_rotation_button.set_pressed_no_signal(_showroom._auto_rotate)
 	_focus_first()
 
 func set_message(message: String) -> void:
@@ -281,7 +313,7 @@ func button_for_part(id: String) -> Button:
 	if not TUNING.PARTS.has(id): return null
 	if str(TUNING.PARTS[id].slot) != _slot: _select_slot(str(TUNING.PARTS[id].slot))
 	for card in _cards.get_children():
-		if str(card.get_meta("part_id","")) == id: return card.get_child(0).get_child(1).get_child(1) as Button
+		if str(card.get_meta("part_id","")) == id: return card.get_meta("action_button") as Button
 	return null
 
 func _card(id: String) -> Control:
@@ -293,21 +325,24 @@ func _card(id: String) -> Control:
 	panel.set_meta("part_id",id)
 	var border := GOOD if installed else (Color("2c343c") if not locked else Color("22282e"))
 	panel.add_theme_stylebox_override("panel",_box(Color("1b2026") if not locked else Color("171b20"),border,2 if installed else 1,8,14))
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation",14)
+	var row := VBoxContainer.new()
+	row.add_theme_constant_override("separation",8)
 	panel.add_child(row)
 	var info := VBoxContainer.new()
 	info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var name_label := Label.new()
 	name_label.text = str(part.label)+("   ✓ INSTALADA" if installed else "")
+	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	name_label.add_theme_font_size_override("font_size",17)
 	name_label.add_theme_color_override("font_color",GOOD if installed else (MUTED if locked else Color.WHITE))
-	if part.has("neon"):
+	if part.has("neon") or part.has("body_color") or part.has("wheel_color"):
 		var title_row := HBoxContainer.new()
 		title_row.add_theme_constant_override("separation",10)
 		var swatch := PanelContainer.new()
 		swatch.custom_minimum_size = Vector2(20,20)
-		swatch.add_theme_stylebox_override("panel",_box(Color(str(part.neon)),Color(1,1,1,.35),1,10,0))
+		swatch.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		swatch.add_theme_stylebox_override("panel",_box(Color(str(part.get("neon",part.get("body_color",part.get("wheel_color","ffffff"))))),Color(1,1,1,.35),1,10,0))
 		title_row.add_child(swatch)
 		title_row.add_child(name_label)
 		info.add_child(title_row)
@@ -315,21 +350,23 @@ func _card(id: String) -> Control:
 		info.add_child(name_label)
 	var effect := Label.new()
 	effect.text = str(part.effect)
+	effect.visible = not (part.has("body_color") or part.has("body_roughness") or part.has("wheel_color"))
 	effect.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	effect.add_theme_color_override("font_color",MUTED)
 	info.add_child(effect)
 	row.add_child(info)
-	var side := VBoxContainer.new()
-	side.custom_minimum_size = Vector2(150,0)
+	var side := HBoxContainer.new()
+	side.add_theme_constant_override("separation",10)
 	var price := Label.new()
-	price.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	price.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	if locked: price.text = "Vença %d provas (você: %d)" % [int(part.wins),_wins]
 	elif id in _owned: price.text = "Já é sua"
 	else: price.text = "R$ %s" % _money_text(cost)
 	price.add_theme_color_override("font_color",MUTED if locked or id in _owned else GOLD)
 	side.add_child(price)
 	var button := Button.new()
-	button.custom_minimum_size = Vector2(0,34)
+	button.custom_minimum_size = Vector2(112,34)
+	panel.set_meta("action_button",button)
 	if installed:
 		button.text = "Remover"
 		button.pressed.connect(func(): remove_requested.emit(_slot))
@@ -352,6 +389,7 @@ func _card(id: String) -> Control:
 	panel.mouse_entered.connect(_preview.bind(preview))
 	button.mouse_entered.connect(_preview.bind(preview))
 	button.focus_entered.connect(_preview.bind(preview))
+	button.focus_exited.connect(_preview.bind({}))
 	panel.mouse_exited.connect(_preview.bind({}))
 	return panel
 
@@ -390,8 +428,8 @@ func _preview(change: Dictionary) -> void:
 	var letter := str(shown["class"])
 	_badge_letter.text = letter
 	_badge.add_theme_stylebox_override("panel",_box(CLASS_COLORS[letter],Color(0,0,0,0),0,10,4))
-	_subtitle.text = "Classe %s · %d pontos%s" % [letter,roundi(float(shown.score)),"" if not changed else "  (prévia)"]
-	_numbers.text = "0–100 km/h: %s\n400 m: %s\nVelocidade de rua: %d km/h" % [_seconds(shown.zero_to_100),_seconds(shown.quarter),roundi(float(shown.top_kmh))]
+	_subtitle.text = "%s · %s / %d%s" % [mechanic_name,letter,roundi(float(shown.score)),"" if not changed else " · prévia"]
+	_numbers.text = "0–100 km/h: %s\n400 m: %s\nFinal: %d km/h" % [_seconds(shown.zero_to_100),_seconds(shown.quarter),roundi(float(shown.top_kmh))]
 
 func _seconds(value: Variant) -> String:
 	return "—" if float(value) == INF else "%.2f s" % float(value)
@@ -399,13 +437,16 @@ func _seconds(value: Variant) -> String:
 ## Os cartões são refeitos a cada mudança; o foco só vale se o botão ainda estiver na tela.
 func _focus_later(button: Button) -> void:
 	if button == null: return
+	# A weak reference survives replacing cards before the deferred callback.
+	var reference: WeakRef = weakref(button)
 	var grab := func():
-		if is_instance_valid(button) and button.is_inside_tree() and button.is_visible_in_tree(): button.grab_focus()
+		var target: Button = reference.get_ref()
+		if target != null and target.is_inside_tree() and target.is_visible_in_tree(): target.grab_focus()
 	grab.call_deferred()
 
 func _focus_first() -> void:
 	for card in _cards.get_children():
-		var button := card.get_child(0).get_child(1).get_child(1) as Button
+		var button := card.get_meta("action_button") as Button
 		if button != null and not button.disabled:
 			_focus_later(button)
 			return
