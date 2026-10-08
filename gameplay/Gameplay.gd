@@ -528,6 +528,9 @@ func _stall_physics_tick(delta: float) -> void:
 func _update_visual() -> void:
 	if gun == null: return
 	var id := equipped()
+	_update_back_katana(id)
+	# Durante o guardar, a katana continua na mão até o clipe terminar (ela vai para as costas).
+	if _sheath_kind == "holster" and _sheath_clip != "": id = visual_id
 	var blade_style := {}
 	if id == "katana":
 		blade_style = katana_style()
@@ -551,7 +554,7 @@ func _update_visual() -> void:
 			_mount_flashlight()
 		if player.has_method("set_combat_weapon_mount"):
 			player.set_combat_weapon_mount(gun, POSE.GRIPS.get(id, Vector3.ZERO))
-	gun.visible = attack_allowed() and id != "" and id != "fists" and bool(_pose_frame.get("visible", true))
+	gun.visible = attack_allowed() and id != "" and id != "fists" and bool(_pose_frame.get("visible", true)) and not _sheath_drawing()
 	# A arma e as palmas usam o mesmo alvo em espaço do Actor. Isso preserva a
 	# orientação do cabo dentro da mão; não há mais um prop plano girado só em Y.
 	if gun.visible and not _pose_frame.is_empty() and is_instance_valid(player.visual):
@@ -983,8 +986,8 @@ func _update_back_katana(id: String) -> void:
 		elif _sheath_last_id == "katana": _start_sheath("holster")
 	_sheath_last_id = id
 	if back_katana == null or not is_instance_valid(player): return
-	var carried := state != null and state.owns_weapon("katana") and not bool(player.get("dead"))
-	var drawing := _sheath_drawing()
+	var carried: bool = state != null and bool(state.owns_weapon("katana")) and not bool(player.get("dead"))
+	var drawing: bool = _sheath_drawing()
 	back_katana.visible = carried and ((id != "katana" and _sheath_clip == "") or drawing)
 
 func _sheath_drawing() -> bool:
