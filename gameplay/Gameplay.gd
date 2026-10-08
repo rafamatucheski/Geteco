@@ -200,6 +200,8 @@ var _sheath_kind := ""
 var _sheath_length := 0.0
 var _sheath_age := 0.0
 var _sheath_last_id := ""
+var _katana_stance_clock := 0.0
+var _katana_stance_active := false
 var visual_id := "@unbuilt"
 var contact_age := 10.0
 var _occupancy: Dictionary = {}
@@ -525,6 +527,7 @@ func _stall_physics_tick(delta: float) -> void:
 	_update_shoves(delta)
 	_update_combat_clip(player_delta)
 	_update_sheath(player_delta)
+	_update_katana_stance(player_delta)
 	_update_swing(player_delta)
 	_update_recoil(player_delta)
 	_update_muzzle_and_flame(delta)
@@ -564,7 +567,7 @@ func _update_visual() -> void:
 	gun.visible = attack_allowed() and id != "" and id != "fists" and bool(_pose_frame.get("visible", true)) and _sheath_clip == ""
 	# A arma e as palmas usam o mesmo alvo em espaço do Actor. Isso preserva a
 	# orientação do cabo dentro da mão; não há mais um prop plano girado só em Y.
-	if gun.visible and not _pose_frame.is_empty() and is_instance_valid(player.visual):
+	if gun.visible and not _pose_frame.is_empty() and is_instance_valid(player.visual) and not _pose_frame.has("hand_grip"):
 		if player.has_method("combat_weapon_transform"):
 			gun.global_transform = player.combat_weapon_transform(POSE.GRIPS.get(id, Vector3.ZERO))
 		else:
@@ -659,7 +662,11 @@ func _update_weapon_pose(delta: float) -> void:
 		_shotgun_pump_sound_serial = _attack_serial
 		_play_stream(AUDIO.shotgun_pump(), player.global_position, -8.0 + _rng.randf_range(-1.0, 1.0), _rng.randf_range(0.97, 1.03), 12.0)
 	if id == "katana":
-		_pose_frame = preload("res://gameplay/KatanaMoveset.gd").pose(_katana_combo,_rig_pose.action_age,sprinting,float(player.phase))
+		if _clip_name.begins_with("mixsword/gs_") or _katana_stance_active:
+			# Golpe ou guarda do Mixamo: o clipe move os braços; a katana vai nas duas mãos.
+			_pose_frame = {"visible": true, "armed": true, "native_sword": true, "hand_grip": HAND_KATANA_GUARD, "melee_action": _clip_name != ""}
+		else:
+			_pose_frame = preload("res://gameplay/KatanaMoveset.gd").pose(_katana_combo,_rig_pose.action_age,sprinting,float(player.phase))
 	if player.has_method("set_combat_weapon_pose"):
 		player.set_combat_weapon_pose(id, _pose_frame)
 
@@ -1010,6 +1017,13 @@ func _sheath_drawing() -> bool:
 ## em duas mãos, que é a pose de combate da katana. Tocado a 0,6× porque o clipe tem só 0,73 s.
 const SHEATH_RATE := 0.6
 const SHEATH_HANDOFF := 0.1
+## Golpes da greatsword do Mixamo na katana: [clipe, início, pico da ponta, fim], em segundos do clipe.
+## Pico = instante de maior velocidade da ponta da lâmina, medido no Dante (Downward 24 m/s em 0,64 s;
+## Power 18,5 m/s em 0,70 s; Low 27,6 m/s em 0,84 s). O dano entra nesse instante.
+const KATANA_ATTACKS := [["mixsword/gs_downward", 0.20, 0.64, 1.10], ["mixsword/gs_power", 0.25, 0.70, 1.30], ["mixsword/gs_low", 0.40, 0.84, 1.35]]
+const KATANA_ATTACK_RATE := 1.25
+## Guarda de duas mãos parado com a katana na mão (andando, segue a pose procedural, sem pés deslizando).
+const KATANA_STANCE := "mixsword/gs_idle"
 ## Medidas no esqueleto do Dante com o clipe da greatsword (cabo = origem da katana, ponta em -Z):
 ## nas costas (osso Spine02), o cabo fica onde a mão direita termina o guardar, atrás do ombro direito,
 ## e a lâmina desce até atrás do quadril esquerdo. Na mão (osso RightHand), a pegada do último quadro
@@ -1050,6 +1064,17 @@ func _update_sheath(delta: float) -> void:
 			var progress := clampf(player.combat_clip_time / player.animation.get_animation(_sheath_clip).length, 0.0, 1.0)
 			hand_katana.transform = HAND_KATANA_GUARD.interpolate_with(HAND_KATANA_SHEATHED, progress)
 
+func _update_katana_stance(delta: float) -> void:
+	if not is_instance_valid(player) or not "animation" in player or player.animation == null: return
+	var want: bool = equipped() == "katana" and _clip_name == "" and _sheath_clip == "" and not bool(player.get("dead")) 		and attack_allowed() and Vector2(player.velocity.x, player.velocity.z).length() < 0.12 and player.animation.has_animation(KATANA_STANCE)
+	if want:
+		_katana_stance_clock = fposmod(_katana_stance_clock + delta, player.animation.get_animation(KATANA_STANCE).length)
+		player.combat_clip = KATANA_STANCE
+		player.combat_clip_time = _katana_stance_clock
+	elif _katana_stance_active and player.combat_clip == KATANA_STANCE:
+		player.combat_clip = ""
+	_katana_stance_active = want
+
 func _end_sheath() -> void:
 	_sheath_clip = ""
 	_sheath_kind = ""
@@ -1069,6 +1094,12 @@ func _play_katana_clip() -> void:
 	_clip_rate = 1.7
 	_clip_age = 0.0
 	_clip_weapon = "katana"
+	var attack: Array = KATANA_ATTACKS[_katana_combo % KATANA_ATTACKS.size()]
+	if "animation" in player and player.animation != null and player.animation.has_animation(attack[0]):
+		_clip_name = attack[0]
+		_clip_start = float(attack[1])
+		_clip_end = float(attack[3])
+		_clip_rate = KATANA_ATTACK_RATE
 	_aim_hold = 0.8
 	if not _pending_swing.is_empty(): _pending_swing.time = _katana_contact_time() - 0.05
 
@@ -1086,6 +1117,8 @@ func request_rage() -> bool:
 	return true
 
 func _katana_contact_time() -> float:
+	var attack: Array = KATANA_ATTACKS[maxi(_katana_combo, 0) % KATANA_ATTACKS.size()]
+	if _clip_name == attack[0]: return (float(attack[2]) - float(attack[1])) / KATANA_ATTACK_RATE
 	return preload("res://gameplay/KatanaMoveset.gd").CONTACT[maxi(_katana_combo,0)]
 
 ## Coice de arma de fogo com o `recoil` e a velocidade de retorno de `WeaponPoseData.PROFILES`.

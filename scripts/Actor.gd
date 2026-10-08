@@ -665,11 +665,29 @@ func clear_combat_weapon_pose() -> void:
 	combat_weapon_id = ""
 	combat_weapon_pose = {}
 
+## Espada de duas mãos dos clipes do Mixamo: presa à mão direita pela pegada `grip` (medida na guarda) e,
+## quando as duas mãos estão no cabo, alinhada à linha entre elas (os clipes giram a espada entre as mãos).
+func _two_hand_sword_transform(grip: Transform3D) -> Transform3D:
+	var right_bone: int = _combat_bones.get("RightHand", -1)
+	var left_bone: int = _combat_bones.get("LeftHand", -1)
+	if right_bone < 0: return combat_weapon_transform(combat_weapon_grip)
+	var right := (skeleton.global_transform * skeleton.get_bone_global_pose(right_bone)).orthonormalized()
+	var result := right * grip
+	if left_bone >= 0:
+		var left := skeleton.global_transform * skeleton.get_bone_global_pose(left_bone)
+		var axis := right.origin - left.origin
+		var weight := clampf((0.30 - axis.length()) / 0.10, 0.0, 1.0)
+		if weight > 0.0 and axis.length_squared() > 0.0001:
+			var aligned := Basis.looking_at(axis.normalized(), result.basis.y)
+			result.basis = result.basis.slerp(aligned, weight)
+	return result
+
 func _apply_combat_weapon_pose() -> void:
 	if combat_weapon_pose.get("native_sword", false) and skeleton != null:
 		# Preserve the imported sword move, including its elbow and wrist arcs.
 		_set_combat_grips(true, false, true, false, false, true)
-		if is_instance_valid(combat_weapon_mount): combat_weapon_mount.global_transform = combat_weapon_transform(combat_weapon_grip)
+		if is_instance_valid(combat_weapon_mount):
+			combat_weapon_mount.global_transform = _two_hand_sword_transform(combat_weapon_pose.hand_grip) if combat_weapon_pose.has("hand_grip") else combat_weapon_transform(combat_weapon_grip)
 		return
 	_elbow_previous = _elbow_solved.duplicate()
 	var support_hand_before: Quaternion = _presented_arm_rotations.get(_combat_bones.get("LeftHand", -1), Quaternion.IDENTITY)

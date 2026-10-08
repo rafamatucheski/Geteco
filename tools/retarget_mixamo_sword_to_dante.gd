@@ -9,6 +9,11 @@ const SOURCES := {
 	"sheathe_katana": "res://assets/dante/mixamo/Sheathing Sword.fbx",
 	"withdraw_katana": "res://assets/dante/mixamo/Withdrawing Sword.fbx",
 	"sheathe_greatsword": "res://assets/dante/mixamo/Sheath A Great Sword 1.fbx",
+	"gs_downward": "res://assets/dante/mixamo/Great Sword Downward Slash.fbx",
+	"gs_power": "res://assets/dante/mixamo/Great Sword Power Slash.fbx",
+	"gs_low": "res://assets/dante/mixamo/Great Sword Low Slash.fbx",
+	"gs_combo": "res://assets/dante/mixamo/Great Sword Combo Slash.fbx",
+	"gs_idle": "res://assets/dante/mixamo/Great Sword Idle.fbx",
 }
 const FPS := 30.0
 # Ossos do Dante -> ossos do Mixamo (o importador troca ':' por '_').
