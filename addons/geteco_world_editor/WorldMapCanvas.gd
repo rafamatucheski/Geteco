@@ -14,6 +14,9 @@ var terrain: Array = []
 var land_polygons: Array = []
 var context_parts: Array = []
 var context_mesh: ArrayMesh
+# Triângulos de cada parte de contexto, em coordenadas do mundo; calculados uma vez por carga.
+var context_triangles := {}
+var mesh_key := []
 var context_cells := {}
 var visible_part_ids: Array = []
 var cached_cells := Rect2i(-999999,-999999,0,0)
@@ -119,31 +122,23 @@ func _draw() -> void:
 		var points := PackedVector2Array()
 		for p in poly: points.append(screen(DATA.point(p)))
 		if points.size() >= 3: draw_colored_polygon(points,Color("43524b"))
-	var previous_cells := cached_cells
+	# A peça arrastada sai da malha estática e é desenhada à parte (_draw_piece_preview).
+	# Assim o arraste não cai num caminho que triangula cada parte a cada quadro.
+	var excluded := selected_id if dragging and drag_row.get("type", "")=="piece" else ""
 	var visible_ids := _visible_parts()
-	if context_mesh==null or previous_cells!=cached_cells: _rebuild_context_mesh(visible_ids)
-	if context_mesh!=null and not (dragging and drag_row.get("type", "")=="piece"):
+	var key := [cached_cells,excluded]
+	if key != mesh_key:
+		_rebuild_context_mesh(visible_ids,excluded)
+		mesh_key = key
+	if context_mesh!=null:
 		draw_mesh(context_mesh,null,Transform2D(Vector2(zoom,0),Vector2(0,zoom),screen(Vector2.ZERO)))
-	_draw_context_fallback()
 	_draw_foreground()
 
-func _draw_context_fallback() -> void:
-	if context_mesh!=null and not (dragging and drag_row.get("type", "")=="piece"): return
-	for part_id in _visible_parts():
-		if dragging and drag_row.get("type", "") == "piece" and context_owners[part_id] == selected_id: continue
-		var part: Array = context_parts[part_id]
-		if part[2]*zoom < .5 and part[3]*zoom < .5: continue
-		var rect := Rect2(screen(Vector2(part[0],part[1])),Vector2(part[2],part[3])*zoom)
-		if not rect.intersects(Rect2(Vector2.ZERO,size)): continue
-		if part.size() > 6:
-			var polygon := PackedVector2Array()
-			for p in part[6]: polygon.append(screen(DATA.point(p)))
-			if polygon.size()>4: draw_colored_polygon(polygon,Color(part[5]))
-			else: draw_primitive(polygon,PackedColorArray([Color(part[5])]),PackedVector2Array())
-		else: draw_rect(rect,Color(part[5]))
-
 func _draw_foreground() -> void:
-	var ground_ids := objects.keys()
+	# Só os pisos precisam de ordem; ordenar o mapa inteiro a cada quadro custava caro.
+	var ground_ids: Array = []
+	for id in objects:
+		if objects[id].type == "ground": ground_ids.append(id)
 	ground_ids.sort_custom(func(a,b):
 		var ap := str(a).begins_with("paving/")
 		var bp := str(b).begins_with("paving/")
@@ -152,7 +147,7 @@ func _draw_foreground() -> void:
 		return a < b)
 	for id in ground_ids:
 		var row: Dictionary = objects[id]
-		if row.type != "ground" or not allowed(row): continue
+		if not allowed(row): continue
 		var polygon := corners(row)
 		for i in polygon.size(): polygon[i] = screen(polygon[i])
 		if not Geometry2D.triangulate_polygon(polygon).is_empty(): draw_colored_polygon(polygon,Color(row.color) if row.get("paving",false) else preload("res://world/editing/WorldGroundFactory.gd").color(row.surface))
@@ -574,6 +569,8 @@ func rebuild_context() -> void:
 		context_parts.append(entry.part)
 		context_owners.append(entry.owner)
 	context_cells.clear()
+	context_triangles.clear()
+	mesh_key = []
 	cached_cells = Rect2i(-999999,-999999,0,0)
 	for index in context_parts.size():
 		var part: Array = context_parts[index]
@@ -585,20 +582,18 @@ func rebuild_context() -> void:
 
 	context_mesh=null
 
-func _rebuild_context_mesh(ids: Array) -> void:
-	# Cache visible static triangles in height order; pan within a cell reuses them.
+func _rebuild_context_mesh(ids: Array, excluded := "") -> void:
+	# Visible static triangles in height order; pan within a cell reuses the per-part cache.
 	var vertices := PackedVector2Array()
 	var colors := PackedColorArray()
 	for id in ids:
+		if excluded != "" and context_owners[id] == excluded: continue
 		var part: Array = context_parts[id]
-		var polygon := PackedVector2Array()
-		if part.size()>6:
-			for point in part[6]: polygon.append(DATA.point(point))
-		else:
-			polygon=PackedVector2Array([Vector2(part[0],part[1]),Vector2(part[0]+part[2],part[1]),Vector2(part[0]+part[2],part[1]+part[3]),Vector2(part[0],part[1]+part[3])])
-		for index in Geometry2D.triangulate_polygon(polygon):
-			vertices.append(polygon[index])
-			colors.append(Color(part[5]))
+		var triangles := _part_triangles(id)
+		var color := Color(part[5])
+		for vertex in triangles:
+			vertices.append(vertex)
+			colors.append(color)
 	context_mesh=null
 	if not vertices.is_empty():
 		var arrays := []
@@ -607,6 +602,24 @@ func _rebuild_context_mesh(ids: Array) -> void:
 		arrays[Mesh.ARRAY_COLOR]=colors
 		context_mesh=ArrayMesh.new()
 		context_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays,[],{},Mesh.ARRAY_FLAG_USE_2D_VERTICES)
+
+func _part_triangles(id: int) -> PackedVector2Array:
+	if context_triangles.has(id): return context_triangles[id]
+	var part: Array = context_parts[id]
+	var polygon := PackedVector2Array()
+	if part.size()>6:
+		for point in part[6]: polygon.append(DATA.point(point))
+	else:
+		polygon=PackedVector2Array([Vector2(part[0],part[1]),Vector2(part[0]+part[2],part[1]),Vector2(part[0]+part[2],part[1]+part[3]),Vector2(part[0],part[1]+part[3])])
+	var triangles := PackedVector2Array()
+	# Contorno de área zero (linhas colineares) não tem triângulos. Descartá-lo antes evita
+	# o erro "triangulation failed" do Godot, que antes saía a cada reconstrução da malha.
+	var area := 0.0
+	for i in polygon.size(): area += polygon[i].cross(polygon[(i+1)%polygon.size()])
+	if polygon.size() >= 3 and absf(area) > 1e-6:
+		for index in Geometry2D.triangulate_polygon(polygon): triangles.append(polygon[index])
+	context_triangles[id] = triangles
+	return triangles
 
 func _visible_parts() -> Array:
 	var start := world(Vector2.ZERO)/64
