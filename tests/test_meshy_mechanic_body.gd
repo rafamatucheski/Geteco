@@ -1,5 +1,5 @@
 extends SceneTree
-## Contrato do corpo único do mecânico (MeshyRigBody): sem corpo duplicado, esqueleto leve, altura, pés
+## Contrato do corpo único do mecânico (MeshyBodyRig): sem corpo duplicado, esqueleto leve, altura, pés
 ## no chão ao andar, mãos no alvo, sentar, juntas que a queda e as mortes do Mixamo procuram, e as
 ## medidas padrão do CivilianModel intactas para os demais NPCs. Não mede desempenho.
 const MECHANIC := preload("res://assets/maciota/MechanicModel.gd")

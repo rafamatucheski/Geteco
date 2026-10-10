@@ -39,7 +39,10 @@ func _scan(label: String) -> Dictionary:
 		visible_bodies.append(body)
 		var model := _model_of(body)
 		models[model.get_instance_id()] = models.get(model.get_instance_id(), 0) + 1
-	var result := {"label": label, "bodies": bodies.size(), "visible_bodies": visible_bodies.size()}
+	var meshy := 0
+	for body in visible_bodies:
+		if body.get("skeleton") != null: meshy += 1
+	var result := {"label": label, "bodies": bodies.size(), "visible_bodies": visible_bodies.size(), "visible_meshy_bodies": meshy}
 	# A) mais de um corpo visível dentro do mesmo modelo.
 	var double: Array = []
 	for id in models:
@@ -91,7 +94,7 @@ func _scan(label: String) -> Dictionary:
 			if visible_bodies[i].global_position.distance_to(visible_bodies[j].global_position) < 0.25 and _model_of(visible_bodies[i]) != _model_of(visible_bodies[j]):
 				overlaps.append({"a": str(_model_of(visible_bodies[i]).get_path()), "b": str(_model_of(visible_bodies[j]).get_path()), "position": str(visible_bodies[i].global_position)})
 	result.overlapping_actors = overlaps
-	print("DUP ", label, " corpos=", bodies.size(), " visíveis=", visible_bodies.size(), " duplo_no_modelo=", double.size(), " malha_antiga_visível=", old_visible.size(), " sobrepostos=", overlaps.size(), " escondidas=", hidden_old)
+	print("DUP ", label, " corpos=", bodies.size(), " visíveis=", visible_bodies.size(), " meshy=", meshy, " duplo_no_modelo=", double.size(), " malha_antiga_visível=", old_visible.size(), " sobrepostos=", overlaps.size(), " escondidas=", hidden_old)
 	return result
 
 func _run() -> void:
@@ -120,6 +123,8 @@ func _run() -> void:
 		world.player.teleport(where)
 		await create_timer(14.0).timeout
 		report.points.append(_scan(point[0]))
+		await RenderingServer.frame_post_draw
+		root.get_texture().get_image().save_png(ProjectSettings.globalize_path("%s/%s.png" % [output_dir, point[0]]))
 	# Garagem do Maciota: o mecânico e os residentes de interior.
 	if await world.session.enter_place("maciota", false):
 		await _frames(30)

@@ -15,6 +15,7 @@ const MIXAMO_DEATH_LIBRARY := "res://assets/dante/mixamo/dante_mixamo_death.res"
 const MIXAMO_SWORD_LIBRARY := "res://assets/dante/mixamo/dante_mixamo_sword.res"
 const LADDER_CLIPS := ["Fast_Ladder_Climb", "ladder/Ladder_Descend"]
 const CIVILIAN := preload("res://assets/CivilianModel.gd")
+const BODY_CATALOG := preload("res://assets/civilians/CivilianBodyCatalog.gd")
 const OUTFIT_APPEARANCE := preload("res://assets/outfits/MeshyDanteAppearance.gd")
 const PROTECTION := preload("res://gameplay/DamageProtection.gd")
 const STEERING := preload("res://gameplay/crowd/PedestrianSteering.gd")
@@ -179,6 +180,9 @@ func _ready() -> void:
 		if get_meta("region_id", "") == "mountain":
 			model.wardrobe_overrides = {"top":3, "bottom":0, "shoe":1, "hat":2, "bag":0}
 		model.rotation.y = PI
+		# Corpo importado do Meshy para o pedestre genérico; sem entrada compatível (ou com guarda-roupa fixo, como
+		# na montanha) continua o corpo procedural do kit.
+		BODY_CATALOG.apply(model, identity)
 		visual.add_child(model)
 	last_position = global_position
 

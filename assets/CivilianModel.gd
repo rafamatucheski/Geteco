@@ -13,6 +13,7 @@ extends "res://assets/CivilianBase.gd"
 ## próprio deslocamento global, então funciona igual sob `Actor`, rotinas V1 ou
 ## qualquer pai que o mova.
 const KIT := preload("res://assets/civilians/CivilianMeshKit.gd")
+const MESHY_RIG := preload("res://assets/civilians/MeshyBodyRig.gd")
 
 var appearance_locked := false
 var motorcycle_helmet_color := Color.TRANSPARENT
@@ -34,6 +35,16 @@ var sit_amount := 0.0
 var seat_height := 0.45
 ## Alternativa a escrever `hand_targets`: chamado a cada pose, devolve [alvo0, alvo1].
 var hand_provider: Callable
+
+## Caminho de um GLB do Meshy (esqueleto `mixamorig_*`). Vazio = corpo procedural do kit. Com caminho, as
+## juntas abaixo viram nós sem malha e o esqueleto importado é o único corpo visível (ver `MeshyBodyRig`).
+## Definir antes de entrar na árvore.
+var body_source := ""
+## {"hue": -0.5..0.5, "brightness": 0.5..1.5}: variação de cor só das roupas do corpo importado.
+var body_tint := {}
+var skeleton: Skeleton3D
+var mesh_node: MeshInstance3D
+var _meshy: RefCounted
 
 var pelvis: MeshInstance3D
 var spine: MeshInstance3D
@@ -146,8 +157,12 @@ func _ready() -> void:
 		@warning_ignore("integer_division")
 		pants_color = [Color("33465c"),Color("292a30"),Color("67594a"),Color("48554a"),Color("827c6c"),Color("394052")][posmod(identity / 3, 6)]
 	_choose_wardrobe(identity)
-	_build_rig()
-	_apply_colors()
+	if body_source != "":
+		_meshy = MESHY_RIG.new()
+		_meshy.build(self, body_source, body_tint)
+	else:
+		_build_rig()
+		_apply_colors()
 	_stagger = posmod(identity * 7, 8)
 	_seed = float(posmod(identity * 131, 997)) * 0.37
 	_look_timer = fposmod(_seed, 3.0)
@@ -159,6 +174,7 @@ func _ready() -> void:
 			break
 		node = node.get_parent()
 	_pose(0.0)
+	if _meshy != null: _meshy.sync()
 
 # --- Aparência ----------------------------------------------------------------
 

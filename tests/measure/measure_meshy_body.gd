@@ -155,7 +155,7 @@ func _make(kind: String) -> Node3D:
 ## new_noshadow = malha sem projetar sombra.
 func _after_enter(model: Node3D, kind: String) -> void:
 	if model.get("body") == null: return
-	if kind == "new_nosync" and model.body.get("_driver") != null: model.body._driver.set_process(false)
+	if kind == "new_nosync" and model.body.get("_meshy") != null: model.body._meshy.driver.set_process(false)
 	elif kind == "new_hidden": model.body.mesh_node.visible = false
 	elif kind == "new_noshadow": model.body.mesh_node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 

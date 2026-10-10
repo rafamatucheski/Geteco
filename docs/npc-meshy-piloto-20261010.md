@@ -8,7 +8,7 @@ mesma IK procedural do `CivilianModel`. As famílias restantes **não** foram mi
 
 | Peça | Arquivo |
 |---|---|
-| Corpo único (extends `CivilianModel`) | `assets/civilians/MeshyRigBody.gd` |
+| Corpo único (auxiliar do `CivilianModel`) | `assets/civilians/MeshyBodyRig.gd` (usado por `CivilianModel.body_source`) |
 | Mecânico, sem geometria antiga e sem o `_process` que girava os pivôs | `assets/maciota/MechanicModel.gd` |
 | GLB do jogo: 4.092 triângulos, 24 ossos, textura 1024 (594 KB) | `assets/civilians/meshy/mechanic/mechanic.glb` |
 | GLBs completos (78 ossos, clipes Walking/Running do Meshy), ignorados pelo Godot | `assets/civilians/meshy/mechanic/source/` |
@@ -18,7 +18,7 @@ mesma IK procedural do `CivilianModel`. As famílias restantes **não** foram mi
 
 ## Como funciona (e por que não há corpo escondido)
 
-`MeshyRigBody` mantém a árvore de juntas do `CivilianModel` (`Pelvis`, `Spine`, `Head`, `left_upper_leg`,
+`MeshyBodyRig` mantém a árvore de juntas do `CivilianModel` (`Pelvis`, `Spine`, `Head`, `left_upper_leg`,
 `LeftForearm` …) **sem malha**: elas só carregam a pose calculada pela IK. Um nó `PoseDriver` copia, a cada
 quadro em que alguma junta mudou, a rotação delas para os ossos do GLB. Por isso continuam valendo, sem
 reescrever nada: locomoção por distância percorrida, pé plantado, `hand_targets`/`hand_provider` (arma, maca),
