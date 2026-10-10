@@ -21,6 +21,10 @@ const ENTRIES := [
 ]
 static var _available: Array[Dictionary] = []
 static var _scanned := false
+## Interruptor para comparar desempenho e para desligar o catálogo sem mexer em arquivos:
+## `GETECO_NO_MESHY_BODIES=1` deixa todos os pedestres no corpo procedural do kit; testes também podem
+## atribuir `enabled` em tempo de execução.
+static var enabled := OS.get_environment("GETECO_NO_MESHY_BODIES").is_empty()
 
 static func available() -> Array[Dictionary]:
 	if not _scanned:
@@ -32,7 +36,7 @@ static func available() -> Array[Dictionary]:
 ## Escolhe o corpo de `identity` e o grava em `model` (que ainda não entrou na árvore). Devolve false, e
 ## deixa o corpo procedural, quando o modelo tem guarda-roupa fixo (montanha, uniformes) ou não há entrada.
 static func apply(model: Node3D, identity: int) -> bool:
-	if not model.wardrobe_overrides.is_empty(): return false
+	if not enabled or not model.wardrobe_overrides.is_empty(): return false
 	var entries := available()
 	if entries.is_empty(): return false
 	var wardrobe: Dictionary = CIVILIAN._appearance_wardrobe(identity, model.coat_color, model.pants_color, Color.TRANSPARENT, {})

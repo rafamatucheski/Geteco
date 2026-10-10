@@ -2,7 +2,7 @@
 
 Segunda etapa depois do piloto do mecânico ([npc-meshy-piloto-20261010.md](npc-meshy-piloto-20261010.md)):
 os pedestres da rua, criados em `scripts/Actor.gd`, passam a usar um catálogo de 8 corpos importados do Meshy.
-Desempenho **não** foi medido nesta etapa (ver "Pendências").
+O desempenho foi medido logo em seguida (seção "Desempenho").
 
 ## Arquitetura
 
@@ -62,9 +62,48 @@ lote de pedestres; segundo lote feminino 80 (4 malhas) + 40 (4 texturas). Remesh
 - Jogo real (`tests/diagnostics/duplicate_bodies_probe.gd`): 22 a 24 corpos do Meshy visíveis por ponto amostrado, sem
   corpo duplicado, sem malha antiga visível e sem atores sobrepostos. Capturas em `evidence/npc-meshy/closeup/`.
 
+## Desempenho
+
+RTX 4060 Laptop, Vulkan Mobile, 1280×720, VSync e limite de FPS desligados só nos processos de medição, 5–10 s de
+aquecimento separado de 30 s de amostra; meta provisória de 60 FPS / 16,67 ms e tolerância de 5% em p95/p99. A
+comparação usa o interruptor `CivilianBodyCatalog.enabled` / `GETECO_NO_MESHY_BODIES=1` (nenhum arquivo foi trocado).
+Durante a medição não havia outro Godot em uso nem a aba do Meshy animando (a primeira rodada do jogo real começou
+com a aba ainda animando; ela é a mais fraca e fica registrada).
+
+**Palco com 80 pedestres andando** (`tests/measure/measure_pedestrian_crowd.gd`, 8 rodadas alternadas nas duas
+ordens, uma do corpo antigo descartada como ruído, com p99 de 14,9 ms, restando 7):
+
+| | p50 | p95 | p99 | draw calls |
+|---|---|---|---|---|
+| procedural | ~4,17 ms | ~4,75 | ~5,25 | 2.086 |
+| Meshy | ~4,37 ms | ~4,97 | ~5,42 | 166 |
+| diferença | +4,8% | +4,6% | +3% | −92% |
+
+É o pior caso (todos os 80 à vista, parados na câmera): cerca de 2,5 µs a mais por pedestre, no CPU, ainda a
+~230 FPS. Fica em +4,6–4,8%, abaixo do limite de 5% mas sem folga.
+
+**Jogo real, Main.tscn** (`tests/measure/measure_pedestrian_game.gd`, 6 processos alternados new/old/old/new/new/old,
+3 pontos, câmera do gameplay parada; 12 a 23 pedestres do Meshy entre ~50 corpos visíveis). Mediana de 3 processos:
+
+| ponto | p50 antigo → novo | p95 | p99 | draw calls |
+|---|---|---|---|---|
+| rua 166/111 | 8,16 → 5,55 ms | 16,3 → 10,9 | 32,3 → 15,9 | 730 → 609 |
+| início | 7,46 → 7,08 ms | 12,30 → 12,28 | 17,2 → 16,9 | 657 → 569 |
+| Vértice | 4,84 → 4,88 ms | 11,89 → 11,89 | 14,8 → 14,9 | 298 → 304 |
+
+Leitura honesta: **não há regressão detectável** no jogo real; a melhora aparente da rua (−32%) vem de dois
+processos do corpo antigo terem pegado picos (p50 9,2 e 8,2 ms) e **não deve ser atribuída ao corpo novo**. O ruído
+entre processos do mesmo corpo é de até 2×, com picos acima de 33 ms em ambas as condições (antigo: 41, 26 e 57
+quadros; novo: 37 e 45). Máximos de 90 a 800 ms em um processo antigo e um novo são travadas de primeira visita/streaming,
+que existem nas duas condições.
+
+**Estado: aprovado só para o que foi medido** — pedestres parados na câmera, 3 pontos de Harbor/Vértice, 1280×720
+nesta GPU, de dia. **Não medido:** corrida de carro em velocidade, caos com polícia, noite, chuva, pontes/túnel,
+população maior que ~50 corpos, outras GPUs. Otimização possível se o palco com 80 incomodar: trocar o nó
+`PoseDriver` de cada pedestre por um único coordenador (80 chamadas `_process` por quadro é o custo que sobra).
+
 ## Pendências
 
-- **Desempenho dos pedestres: não medido.** É a próxima etapa pedida.
 - Skate: `SkatePose` (arquivo com trabalho de outra sessão) usa `KIT.THIGH/ANKLE_HEIGHT` e `PELVIS_Y` fixos nas poses
   de skatista NPC; com o corpo do Meshy os pés ficam cerca de 6 cm mais fundos/altos no shape. Trocar por
   `model.thigh_len`, `model.ankle_height`, `model.pelvis_y` (já existem) quando aquela sessão terminar.
