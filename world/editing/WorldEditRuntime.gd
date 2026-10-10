@@ -19,10 +19,10 @@ static func apply(region: Node) -> void:
 		if not error.is_empty() or (not base.has(id) and not str(id).begins_with("new/")):
 			push_error("Editor de mundo: alteração inválida ou origem ausente: " + str(id))
 			continue
-		if base.has(id) and (base[id].get("locked", false) or row.type != base[id].type):
-			push_error("Editor de mundo: objeto protegido: " + str(id))
+		if base.has(id) and row.type != base[id].type:
+			push_error("Editor de mundo: tipo do objeto alterado: " + str(id))
 			continue
-		if base.get(id,{}).get("service_building",false) and (row.get("deleted",false) or not row.get("service_building",false) or row.get("model","") != base[id].model):
+		if base.get(id,{}).get("service_building",false) and not row.get("deleted",false) and (not row.get("service_building",false) or row.get("model","") != base[id].model):
 			push_error("Editor de mundo: preserve a identidade do prédio com serviço: "+str(id))
 			continue
 		if row.type == "building" and not row.get("deleted", false) and row.get("model", "office") not in DATA.BUILDING_TYPES and not base.has(id):
@@ -113,7 +113,8 @@ static func build_light(region: Node, chunk: Node3D, record: Dictionary) -> void
 	lamp.set_meta("editor_id", row.id)
 	lamp.position = record.position
 	lamp.rotation.y = deg_to_rad(float(row.get("rotation", 0.0)))
-	if region.terrain != null: lamp.position.y = region.terrain.surface_height_at(Vector2(lamp.position.x, lamp.position.z))
+	var terrain: Variant = region.get("terrain")
+	if terrain != null: lamp.position.y = terrain.surface_height_at(Vector2(lamp.position.x, lamp.position.z))
 	chunk.add_child(lamp)
 	# Same cached mast, lateral arm and housing as the normal street lamps.
 	# Keep editor-owned light names: the city night pass must not add another source.

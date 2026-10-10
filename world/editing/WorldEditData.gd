@@ -6,6 +6,7 @@ const TYPES := ["tree", "building", "road", "light", "prop", "piece", "ground", 
 const PROP_TYPES := ["pallet", "pallet_stack", "crate", "barrel", "dumpster", "trash_bags", "bin", "barrier", "footbridge", "desert_cactus", "desert_rock"]
 const BUILDING_TYPES := ["office", "brownstone", "warehouse", "corner_shop", "cobra_house", "l_shaped_block"] + preload("res://world/urban_detail/UrbanSkylineCatalog.gd").TYPES + preload("res://world/urban_detail/UrbanLowriseCatalog.gd").TYPES
 const BUILDING_LABELS := ["Comercial","Residencial","Galpão","Loja","Casa dos Cobra","Prédio em L"] + preload("res://world/urban_detail/UrbanSkylineCatalog.gd").LABELS + preload("res://world/urban_detail/UrbanLowriseCatalog.gd").LABELS
+# Nada é travado desde 10/10/2026; a lista segue só para avisar na interface (aviso, não bloqueio).
 const LOCKED_BUILDINGS := ["Garage", "NorthFrontage0", "NorthFrontage2", "NorthFrontage3", "NorthFrontage4", "Police", "Clinic", "NorthFireStation", "CanalHomesWest", "NorthgateAuto"]
 
 static func empty_document() -> Dictionary:
@@ -36,9 +37,7 @@ static func validate_entity(row: Variant) -> String:
 	if not row.get("deleted", false) is bool: return "Exclusão inválida."
 	if row.type == "piece":
 		if not str(row.id).begins_with("piece/") or not row.get("source_record", "") is String or str(row.get("source_record", "")).is_empty(): return "Peça sem origem."
-	if row.get("deleted",false) and row.get("service_building",false): return "Prédios com serviço podem ser editados, mas não excluídos."
 	if row.type == "manhole":
-		if row.get("deleted",false): return "Bueiros podem ser movidos e girados, mas não excluídos."
 		if not row.get("place_id","") is String or not preload("res://world/editing/WorldManholes.gd").is_editable(str(row.place_id)): return "Bueiro desconhecido."
 		if str(row.id) != "manhole/"+str(row.place_id): return "Identidade do bueiro alterada."
 	if row.get("deleted", false): return ""
@@ -48,21 +47,18 @@ static func validate_entity(row: Variant) -> String:
 		if not vector(row.get("size"),2) or not number(row.get("height")): return "Dimensões inválidas."
 		if row.get("model") != base.get("model"): return "Preserve a identidade do estabelecimento."
 		for i in 2:
-			# The precinct's shallow frontage keeps its full-width entrance.
-			# Only its depth can shrink, down to the physically checked 10 m layout.
-			var minimum: float = 10.0 if row.id == "building/Police" and i == 1 else float(base.size[i])
-			if base.size[i] <= 0 or row.size[i] < minimum or row.size[i] > base.size[i]*3: return "Dimensão do prédio especial fora do limite seguro para o acesso."
-		if row.height < base.height or row.height > base.height*3: return "Altura do prédio especial: de 1 a 3 vezes a original."
+			if base.size[i] <= 0 or row.size[i] <= .5 or row.size[i] > 1000: return "Dimensão do prédio especial inválida."
+		if row.height <= .5 or row.height > 1000: return "Altura do prédio especial inválida."
 	if row.has("paving") and not row.paving is bool: return "Origem do piso inválida."
 	if row.get("paving",false):
 		if row.type != "ground" or not str(row.id).begins_with("paving/"): return "Piso existente sem origem."
 		if row.get("rotation",0) != 0 or row.has("outline"): return "Pisos existentes são retangulares: ajuste posição e tamanho."
 		if row.get("surface","") not in ["concrete","pavers"]: return "Acabamento de calçada inválido."
 	if row.has("stretch"):
-		if row.type != "piece" or not vector(row.stretch,2) or row.stretch[0] < .1 or row.stretch[1] < .1 or row.stretch[0] > 4 or row.stretch[1] > 4: return "Escala da peça: 0,1 a 4 por eixo."
+		if row.type != "piece" or not vector(row.stretch,2) or row.stretch[0] < .02 or row.stretch[1] < .02 or row.stretch[0] > 30 or row.stretch[1] > 30: return "Escala da peça: 0,02 a 30 por eixo."
 	if row.has("clone_of") and (row.type != "piece" or not row.clone_of is String or not str(row.clone_of).begins_with("piece/") or not str(row.id).begins_with("piece/clone/")): return "Cópia de peça inválida."
-	if row.has("height_stretch") and (row.type != "piece" or not number(row.height_stretch) or row.height_stretch < .1 or row.height_stretch > 4): return "Altura da peça: 0,1 a 4 vezes."
-	if row.has("lift") and (row.type != "piece" or not number(row.lift) or absf(row.lift) > 300): return "Elevação da peça: até 300 m."
+	if row.has("height_stretch") and (row.type != "piece" or not number(row.height_stretch) or row.height_stretch < .02 or row.height_stretch > 30): return "Altura da peça: 0,02 a 30 vezes."
+	if row.has("lift") and (row.type != "piece" or not number(row.lift) or absf(row.lift) > 3000): return "Elevação da peça: até 3000 m."
 	if row.has("outline"):
 		if row.type not in ["piece","ground"]: return "Este objeto não tem contorno editável."
 		if row.type == "piece" and not preload("res://world/editing/WorldEditPieces.gd").is_shape_editable(str(row.id)): return "Esta peça não permite mudar o contorno."
@@ -71,8 +67,8 @@ static func validate_entity(row: Variant) -> String:
 	if row.type == "road":
 		if not row.get("points") is Array or row.points.size() < 2 or row.points.size() > 2048: return "Rua precisa de 2 a 2048 pontos."
 		if not row.get("pathway",false) is bool: return "Tipo de caminho inválido."
-		var minimum := .5 if row.get("pathway",false) else 2.0
-		if not number(row.get("width")) or row.width < minimum or row.width > 30.0: return "Largura de via inválida."
+		var minimum := .5
+		if not number(row.get("width")) or row.width < minimum or row.width > 120.0: return "Largura de via inválida."
 		if row.has("lanes_per_direction"):
 			if not number(row.lanes_per_direction) or (float(row.lanes_per_direction) != 1.0 and float(row.lanes_per_direction) != 2.0): return "Use uma ou duas faixas por sentido."
 			if int(row.lanes_per_direction)==2 and (row.get("pathway",false) or row.width < 12): return "Quatro faixas exigem ao menos 12 m de pista."
@@ -98,35 +94,35 @@ static func validate_entity(row: Variant) -> String:
 		if not number(row.get("rotation")): return "Rotação inválida."
 		if row.type == "ground":
 			if row.get("surface", "") not in ["grass","earth","sand","gravel","concrete","asphalt","pavers"]: return "Piso inválido."
-			var minimum := .25 if row.get("paving",false) else 1.0
-			var maximum := 512.0 if row.get("paving",false) else 64.0
+			var minimum := .25
+			var maximum := 2000.0
 			if not vector(row.get("size"),2) or row.size[0] < minimum or row.size[1] < minimum or row.size[0] > maximum or row.size[1] > maximum: return "Dimensões do piso fora do limite."
 		elif row.type == "prop":
 			if row.get("model", "") not in PROP_TYPES: return "Modelo de objeto inválido."
 			if not vector(row.get("size"),2) or row.size[0] <= 0 or row.size[1] <= 0: return "Dimensões de objeto inválidas."
-			if not number(row.get("scale")) or row.scale < .25 or row.scale > 3: return "Escala do objeto: 0,25 a 3."
-			if row.model == "footbridge" and (row.size[0] < 1.8 or row.size[0] > 6 or row.size[1] < 29 or row.size[1] > 60): return "Passarela: largura 1,8 a 6 m, comprimento 29 a 60 m."
+			if not number(row.get("scale")) or row.scale < .05 or row.scale > 30: return "Escala do objeto: 0,05 a 30."
+			if row.model == "footbridge" and (row.size[0] < .8 or row.size[0] > 30 or row.size[1] < 14 or row.size[1] > 300): return "Passarela: largura 0,8 a 30 m, comprimento 14 a 300 m."
 		elif row.type == "tree":
-			if not number(row.get("scale")) or row.get("scale", 1.0) < .25 or row.get("scale", 1.0) > 3.0: return "Escala da árvore: 0,25 a 3."
+			if not number(row.get("scale")) or row.get("scale", 1.0) < .05 or row.get("scale", 1.0) > 30.0: return "Escala da árvore: 0,05 a 30."
 			if not number(row.get("variant")) or row.get("variant", 0) < 0 or row.get("variant", 0) > 7: return "Variante da árvore inválida."
 			if not row.get("snow") is bool: return "Neve inválida."
 		elif row.type == "building":
 			if not row.get("model") is String or row.model.is_empty(): return "Modelo de prédio ausente."
-			if not vector(row.get("size"), 2) or row.size[0] < 3 or row.size[1] < 3 or row.size[0] > 40 or row.size[1] > 40: return "Dimensões do prédio: 3 a 40 m."
-			if not number(row.get("height")) or row.get("height", 7.5) < 2 or row.get("height", 7.5) > 40: return "Altura do prédio: 2 a 40 m."
+			if not vector(row.get("size"), 2) or row.size[0] < 1 or row.size[1] < 1 or row.size[0] > 1000 or row.size[1] > 1000: return "Dimensões do prédio: 1 a 1000 m."
+			if not number(row.get("height")) or row.get("height", 7.5) < 1 or row.get("height", 7.5) > 1000: return "Altura do prédio: 1 a 1000 m."
 		elif row.type == "light":
 			for field in ["energy", "range", "height"]:
 				if not number(row.get(field)): return "Valor de luz inválido."
-			if row.energy < 0 or row.energy > 8 or row.range < 1 or row.range > 30 or row.height < 1 or row.height > 12: return "Luz: energia 0–8, alcance 1–30 m e altura 1–12 m."
+			if row.energy < 0 or row.energy > 100 or row.range < .5 or row.range > 500 or row.height < .5 or row.height > 200: return "Luz: energia 0–100, alcance 0,5–500 m e altura 0,5–200 m."
 		if row.type in ["building","light"] and not row.has("color"): return "Cor ausente."
 		if row.has("color") and (not row.color is String or not Color.html_is_valid(row.color)): return "Cor inválida."
 	return ""
 
 static func validate_outline(value: Variant) -> String:
-	if not value is Array or value.size() < 3 or value.size() > 32: return "Contorno precisa de 3 a 32 pontos."
+	if not value is Array or value.size() < 3 or value.size() > 256: return "Contorno precisa de 3 a 256 pontos."
 	var polygon := PackedVector2Array()
 	for item in value:
-		if not vector(item,2) or absf(float(item[0])) > 128 or absf(float(item[1])) > 128: return "Ponto fora do limite do contorno."
+		if not vector(item,2) or absf(float(item[0])) > 2000 or absf(float(item[1])) > 2000: return "Ponto fora do limite do contorno."
 		polygon.append(point(item))
 	var area := 0.0
 	for i in polygon.size():

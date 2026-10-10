@@ -44,6 +44,26 @@ static func ground_of(region: Node) -> Callable:
 	if terrain != null: return Callable(terrain, "surface_height_at")
 	return Callable()
 
+## Peça de chunk movida para outra célula continua filha do chunk de origem. Para ela não sumir
+## quando o jogador está só no destino, o destino "puxa" a origem: {célula destino: [origens]}.
+## `cell_size` é o lado da célula da região (64 em Harbor/montanha, 96 no deserto).
+static func pull_map(region_id: String, changes: Dictionary, cell_size: float) -> Dictionary:
+	var result := {}
+	for id in changes:
+		var row: Dictionary = changes[id]
+		if row.get("deleted", false) or not row.get("position") is Array: continue
+		var origin_id := str(row.get("clone_of", id))
+		var bits := origin_id.split("/")
+		if bits.size() < 5 or bits[0] != "piece" or bits[1] not in ["unit", "pl"] or bits[2] != region_id: continue
+		var cell_bits := bits[3].split("_")
+		if cell_bits.size() != 2 or not cell_bits[0].is_valid_int() or not cell_bits[1].is_valid_int(): continue
+		var origin := Vector2i(int(cell_bits[0]), int(cell_bits[1]))
+		var target := Vector2i(floori(float(row.position[0]) / cell_size), floori(float(row.position[1]) / cell_size))
+		if target == origin: continue
+		if not result.has(target): result[target] = []
+		if origin not in result[target]: result[target].append(origin)
+	return result
+
 # ---------------------------------------------------------------- registros
 
 static func record_eligible(record: Dictionary) -> bool:

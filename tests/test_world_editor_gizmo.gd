@@ -107,7 +107,7 @@ func run() -> void:
 	check(ui.canvas.objects[piece.id].parts != piece.parts,"Piece geometry updates after rotation")
 	ui._select("building/Garage")
 	at = ui.canvas.screen(DATA.point(ui.canvas.objects["building/Garage"].position))
-	check(ui.canvas.gizmo_hit(at+Vector2(40,0)).is_empty(),"Protected locations do not expose transform handles")
+	check(not ui.canvas.gizmo_hit(at+Vector2(40,0)).is_empty(),"Former protected locations expose transform handles too")
 	ui._select(id)
 	at = ui.canvas.screen(DATA.point(ui.canvas.objects[id].position))
 	ui.canvas.grid = 0

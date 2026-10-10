@@ -269,6 +269,10 @@ func _load_catalog() -> void:
 			if row.get("type","") == "piece" and row.get("locked",false):
 				row.locked = false
 				row.warn = true
+		for row in catalog[area].get("objects",{}).values():
+			if row.get("locked",false):
+				row.locked = false
+				row.warn = true
 	asset_items = LIBRARY.build(catalog)
 	for area in catalog:
 		for row in catalog[area].get("context",{}).values():
@@ -439,12 +443,18 @@ func _select(id: String) -> void:
 	label.text = preload("res://world/editing/WorldGroundFactory.gd").LABELS[preload("res://world/editing/WorldGroundFactory.gd").SURFACES.find(row.surface)] if row.type == "ground" and not row.get("paving",false) else str(row.get("label",row.id))
 	label.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
 	properties.add_child(label)
-	if row.get("locked",false):
+	if row.type == "context":
 		var lock := Label.new()
-		lock.text = "Conjunto do cenário.\nGeometria visível; edição protegida." if row.type == "context" else ("Equipamento ligado à operação do local.\nPosição protegida." if row.type == "piece" else "Local com serviço/interior.\nPosição protegida.")
+		lock.text = "Fundo do mapa (silhueta do catálogo).\nAbra a visão 3D: cada peça deste lugar é selecionável e editável lá."
+		lock.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		properties.add_child(lock)
 		_button(properties,"Ver este local em 3D",_preview)
 		return
+	if row.get("warn",false) and row.type != "piece":
+		var warning := Label.new()
+		warning.text = "Local com serviço/interior: o visual se move, mas a porta, o gatilho e o interior ficam onde estavam."
+		warning.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		properties.add_child(warning)
 	var transform_hint := Label.new()
 	transform_hint.text = "Arraste as setas X/Z para mover." if row.get("paving",false) or not canvas.rotation_enabled else "Arraste as setas X/Z para mover.\nAnel Y: girar · Shift: passos de 15°."
 	transform_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -455,7 +465,7 @@ func _select(id: String) -> void:
 		if not row.get("paving",false): _number("Rotação (°)",float(row.get("rotation",0)),-360,360,func(value): _set_value("rotation",value))
 	match str(row.type):
 		"tree":
-			_number("Escala",float(row.scale),.25,3,func(value): _set_value("scale",value),.05)
+			_number("Escala",float(row.scale),.05,30,func(value): _set_value("scale",value),.05)
 			_number("Variante",float(row.variant),0,7,func(value): _set_value("variant",int(value)),1)
 			var snow := CheckButton.new()
 			snow.text = "Neve"
@@ -466,10 +476,10 @@ func _select(id: String) -> void:
 		"piece":
 			var stretch := DATA.point(row.get("stretch",[1,1]))
 			var extent := _outline_extent(row)
-			_number("Largura (m)",extent.x*stretch.x,extent.x*.1,extent.x*4,func(value): _resize_piece(0,value))
-			_number("Profundidade (m)",extent.y*stretch.y,extent.y*.1,extent.y*4,func(value): _resize_piece(1,value))
-			_number("Altura (×)",float(row.get("height_stretch",1.0)),.1,4,func(value): _set_value("height_stretch",value),.05)
-			_number("Elevação (m)",float(row.get("lift",0.0)),-50,200,func(value): _set_value("lift",value),.1)
+			_number("Largura (m)",extent.x*stretch.x,extent.x*.02,extent.x*30,func(value): _resize_piece(0,value))
+			_number("Profundidade (m)",extent.y*stretch.y,extent.y*.02,extent.y*30,func(value): _resize_piece(1,value))
+			_number("Altura (×)",float(row.get("height_stretch",1.0)),.02,30,func(value): _set_value("height_stretch",value),.05)
+			_number("Elevação (m)",float(row.get("lift",0.0)),-500,3000,func(value): _set_value("lift",value),.1)
 			if row.get("warn",false):
 				var warning := Label.new()
 				warning.text = "Equipamento ligado à operação: o visual se move, mas a mecânica e o gatilho originais ficam onde estavam."
@@ -492,19 +502,19 @@ func _select(id: String) -> void:
 				var span := Label.new()
 				span.text = "Vão livre: %.1f m" % preload("res://world/urban_detail/UrbanFootbridge3D.gd").span_for(float(row.size[1]))
 				properties.add_child(span)
-			else: _number("Escala",float(row.scale),.25,3,func(value): _set_value("scale",value),.05)
+			else: _number("Escala",float(row.scale),.05,30,func(value): _set_value("scale",value),.05)
 			_color(row)
 		"building":
 			var base: Dictionary = row.get("service_base",{})
-			_number("Largura (m)",float(row.size[0]),base.get("size",[3,3])[0],minf(40,base.get("size",[40,40])[0]*3),func(value): _set_array("size",0,value))
-			_number("Profundidade (m)",float(row.size[1]),base.get("size",[3,3])[1],minf(40,base.get("size",[40,40])[1]*3),func(value): _set_array("size",1,value))
-			_number("Altura (m)",float(row.height),base.get("height",2),minf(40,base.get("height",40)*3),func(value): _set_value("height",value))
+			_number("Largura (m)",float(row.size[0]),1,1000,func(value): _set_array("size",0,value))
+			_number("Profundidade (m)",float(row.size[1]),1,1000,func(value): _set_array("size",1,value))
+			_number("Altura (m)",float(row.height),1,1000,func(value): _set_value("height",value))
 			if not row.get("service_building",false): _choice("Modelo",DATA.BUILDING_TYPES,DATA.BUILDING_LABELS,str(row.model),func(value): _set_value("model",value))
 			_color(row)
 		"light":
-			_number("Altura (m)",float(row.height),1,12,func(value): _set_value("height",value))
-			_number("Alcance (m)",float(row.range),1,30,func(value): _set_value("range",value))
-			_number("Energia (0 apaga)",float(row.energy),0,8,func(value): _set_value("energy",value),.05)
+			_number("Altura (m)",float(row.height),.5,200,func(value): _set_value("height",value))
+			_number("Alcance (m)",float(row.range),.5,500,func(value): _set_value("range",value))
+			_number("Energia (0 apaga)",float(row.energy),0,100,func(value): _set_value("energy",value),.05)
 			_color(row)
 			var note := Label.new()
 			note.text = "Luz constante, sem sombras."
@@ -514,7 +524,7 @@ func _select(id: String) -> void:
 			extend.disabled = canvas.selected_point not in [0,row.points.size()-1]
 			var turn := _button(properties,"Criar retorno",_create_road_return)
 			turn.disabled = extend.disabled or row.get("pathway",false) or float(row.width) < 5 or not canvas.road_connection(DATA.point(row.points[maxi(canvas.selected_point,0)]),row,.01,canvas.selected_point).is_empty()
-			_number("Largura (m)",float(row.width),.5 if row.get("pathway",false) else 2,30,func(value): _set_value("width",value))
+			_number("Largura (m)",float(row.width),.5,120,func(value): _set_value("width",value))
 			if region == "harbor" and not row.get("pathway",false):
 				_number("Calçada (m)",float(row.get("sidewalk_width",2.625)),0,10,func(value): _set_value("sidewalk_width",value))
 				_number("Faixas por sentido",float(row.get("lanes_per_direction",1)),1,2,func(value): _set_value("lanes_per_direction",int(value)),1)
@@ -631,10 +641,8 @@ func _commit(row: Dictionary) -> void:
 		_refresh()
 		return
 	var error := DATA.validate_entity(row)
-	if region == "desert" and row.type in ["road","light"]: error = "Vias e iluminação do deserto ainda têm traçado e configuração protegidos."
 	if error.is_empty(): error = _placement_error(row)
 	var original: Dictionary = catalog.get(region,{}).get("objects",{}).get(row.id,catalog.get(region,{}).get("context",{}).get(row.id,{}))
-	if original.get("locked",false): error = "Este local tem acesso protegido."
 	if not free_placement and not row.get("deleted",false) and row.type not in ["road","piece"] and not row.get("paving",false):
 		var own_accesses := _service_accesses(canvas.objects.get(row.id,row))
 		var new_accesses := _service_accesses(row)
@@ -681,9 +689,7 @@ func redo() -> void:
 func _delete() -> void:
 	if not canvas.objects.has(canvas.selected_id): return
 	var row: Dictionary = canvas.objects[canvas.selected_id].duplicate(true)
-	if row.get("locked",false) or row.get("service_building",false) or row.type == "manhole":
-		status.text = "Este objeto está ligado a um serviço ou acesso protegido."
-		return
+	if row.type == "context": return
 	row.deleted = true
 	_commit(row)
 func _duplicate() -> void:
@@ -1120,7 +1126,7 @@ func _arm_asset(index: int) -> void:
 func _copy() -> bool:
 	if not canvas.objects.has(canvas.selected_id): return false
 	var row: Dictionary = canvas.objects[canvas.selected_id]
-	if row.get("locked",false) or row.get("paving",false) or row.get("service_building",false) or row.type in ["piece","context","manhole"]:
+	if row.get("paving",false) or row.get("service_building",false) or row.type in ["piece","context","manhole"]:
 		status.text = "Esta peça mantém sua identidade no mundo. Arraste para mover."
 		return false
 	if row.type == "building" and row.model not in DATA.BUILDING_TYPES:

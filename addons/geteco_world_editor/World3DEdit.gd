@@ -159,20 +159,20 @@ func update_drag(at: Vector2, snap := false) -> void:
 		next.rotation = float(original.get("rotation",0))+delta.x*.5
 		if snap: next.rotation = snappedf(next.rotation,15)
 	else:
-		var factor := clampf(exp((delta.x-delta.y)*.006),.1,4)
+		var factor := clampf(exp((delta.x-delta.y)*.006),.05,20)
 		if next.type == "piece":
 			var stretch: Array = original.get("stretch",[1.0,1.0])
-			next.stretch = [clampf(stretch[0]*factor,.1,4),clampf(stretch[1]*factor,.1,4)]
-			next.height_stretch = clampf(float(original.get("height_stretch",1.0))*factor,.1,4)
+			next.stretch = [clampf(stretch[0]*factor,.02,30),clampf(stretch[1]*factor,.02,30)]
+			next.height_stretch = clampf(float(original.get("height_stretch",1.0))*factor,.02,30)
 			if next.has("outline"):
 				for p in next.outline: p[0] *= next.stretch[0]/stretch[0]; p[1] *= next.stretch[1]/stretch[1]
-		elif next.has("scale"): next.scale = clampf(float(original.scale)*factor,.25,3)
+		elif next.has("scale"): next.scale = clampf(float(original.scale)*factor,.05,30)
 		elif next.has("size"):
 			for i in 2: next.size[i] = float(original.size[i])*factor
 			if next.has("height"): next.height = float(original.height)*factor
 			if next.has("outline"):
 				for p in next.outline: p[0] *= factor; p[1] *= factor
-		elif next.type == "light": next.height = clampf(float(original.height)*factor,1,12)
+		elif next.type == "light": next.height = clampf(float(original.height)*factor,.5,200)
 	if not DATA.validate_entity(next).is_empty(): return
 	candidate = next
 	apply_visual()

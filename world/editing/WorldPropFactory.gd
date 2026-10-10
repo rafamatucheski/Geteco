@@ -1,7 +1,7 @@
 @tool
 extends RefCounted
 ## Small shared meshes, static collision, no processing or lights.
-const SIZES := {"pallet":Vector2(1.2,1),"pallet_stack":Vector2(1.2,1),"crate":Vector2(1,1),"barrel":Vector2(.65,.65),"dumpster":Vector2(1.8,1),"trash_bags":Vector2(1.1,.85),"bin":Vector2(.6,.6),"barrier":Vector2(2,.5),"footbridge":Vector2(2.6,34.6)}
+const SIZES := {"pallet":Vector2(1.2,1),"pallet_stack":Vector2(1.2,1),"crate":Vector2(1,1),"barrel":Vector2(.65,.65),"dumpster":Vector2(1.8,1),"trash_bags":Vector2(1.1,.85),"bin":Vector2(.6,.6),"barrier":Vector2(2,.5),"footbridge":Vector2(2.6,34.6),"desert_cactus":Vector2(1.5,1.5),"desert_rock":Vector2(1.8,1.6)}
 static var materials: Dictionary = {}
 static func material(color: Color) -> StandardMaterial3D:
 	var key := color.to_html()

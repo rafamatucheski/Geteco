@@ -425,11 +425,11 @@ func _update_drag(at: Vector2,snap_rotation: bool) -> void:
 		var ratio := maxf(.05,offset.dot(start)/maxf(.0001,start.length_squared()))
 		if row.type == "piece":
 			var factor := DATA.point(drag_row.get("stretch",[1.0,1.0]))*ratio
-			row.stretch = [clampf(factor.x,.1,4.0),clampf(factor.y,.1,4.0)]
-		elif row.type == "prop": row.scale = clampf(float(drag_row.get("scale",1))*ratio,.25,3.0)
+			row.stretch = [clampf(factor.x,.02,30.0),clampf(factor.y,.02,30.0)]
+		elif row.type == "prop": row.scale = clampf(float(drag_row.get("scale",1))*ratio,.05,30.0)
 		else:
-			var minimum := .25 if row.get("paving",false) else (1.0 if row.type == "ground" else 3.0)
-			var maximum := 512.0 if row.get("paving",false) else (64.0 if row.type == "ground" else 40.0)
+			var minimum := .25 if row.type == "ground" else 1.0
+			var maximum := 2000.0 if row.type == "ground" else 1000.0
 			var extent := DATA.point(drag_row.size)*ratio
 			row.size = [clampf(extent.x,minimum,maximum),clampf(extent.y,minimum,maximum)]
 			if row.has("outline"):

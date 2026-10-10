@@ -44,12 +44,21 @@ static func changes(region_id: String) -> Dictionary:
 		_disk_document = parsed if parsed is Dictionary else {}
 	return _disk_document.get("regions", {}).get(region_id, {})
 
+## Excluir um bueiro leva a estrutura externa para fora do mundo (nenhum chunk a constrói): o
+## acesso some e a sala de baixo fica sem entrada, que é o efeito de excluir.
+const GONE := Vector2(40000.0, 40000.0)
+
+static func is_deleted(id: String) -> bool:
+	var row: Variant = changes(region_of(id)).get("manhole/" + id, {})
+	return row is Dictionary and row.get("deleted", false)
+
 static func row_for(id: String) -> Dictionary:
 	var row: Variant = changes(region_of(id)).get("manhole/" + id, {})
 	return row if row is Dictionary and not row.get("deleted", false) else {}
 
 ## Posição atual (editada ou original), em metros.
 static func position_of(id: String) -> Vector2:
+	if is_deleted(id): return base_position(id) + GONE
 	var row := row_for(id)
 	if row.has("position"): return Vector2(float(row.position[0]), float(row.position[1]))
 	return base_position(id)
@@ -71,6 +80,10 @@ static func catalog(region_id: String) -> Dictionary:
 static func update_definition(definition: Dictionary) -> void:
 	var id := str(definition.get("id", ""))
 	if not is_editable(id): return
+	if is_deleted(id):
+		for key in ["exterior_position", "entry_position", "return_position"]:
+			if definition.has(key): definition[key] += Vector3(GONE.x, 0, GONE.y)
+		return
 	var row := row_for(id)
 	if row.is_empty() or not row.has("position"): return
 	var base: Vector3 = definition.exterior_position

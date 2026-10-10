@@ -179,6 +179,61 @@ func fragile() -> void:
 	chunk.free()
 	FRAGILE.cells.clear()
 
+## Peça de chunk movida bem longe (várias células) continua existindo quando só o destino está carregado.
+func far_move() -> void:
+	var focus := Vector3(354.5, 0, -740)
+	var region := await build("desert", focus, DATA.empty_document(), true)
+	var chosen := {}
+	for row in UNITS.manifest(region):
+		if "saguaro" in str(row.label).to_lower(): chosen = row; break
+	region.free()
+	await process_frame
+	check(not chosen.is_empty(), "far: achou cacto")
+	if chosen.is_empty(): return
+	var target := [float(chosen.position[0]), float(chosen.position[1]) - 400.0]
+	var document := DATA.empty_document()
+	document.regions.desert[chosen.id] = authored(chosen, {"position": target})
+	# Só o destino é foco: a origem (4 células ao norte) precisa ser puxada sozinha.
+	region = await build("desert", Vector3(target[0], 0, target[1]), document, false)
+	var moved := group_of(region, chosen.id)
+	check(moved != null and absf(moved.global_position.z - target[1]) < .1, "far: peça movida 400 m existe com só o destino carregado")
+	region.free()
+	await process_frame
+
+## Estrada e luz do deserto, antes protegidas.
+func desert_roads_and_lights() -> void:
+	var document := DATA.empty_document()
+	document.regions.desert["road/desert_bank_approach"] = {"id": "road/desert_bank_approach", "type": "road", "points": [[-210.0, -880.0], [-210.0, -930.0]], "width": 12.0, "surface": "asphalt"}
+	document.regions.desert["road/desert_main_street"] = {"id": "road/desert_main_street", "type": "road", "points": [[0, 0], [10, 0]], "width": 5.0, "deleted": true}
+	document.regions.desert["new/light_test"] = {"id": "new/light_test", "type": "light", "position": [-200.0, -890.0], "rotation": 0.0, "height": 6.0, "energy": 2.0, "range": 20.0, "color": "ffe0ab"}
+	check(DATA.validate_document(document).is_empty(), "desert: documento com via e luz é válido (%s)" % DATA.validate_document(document))
+	var region := await build("desert", Vector3(-210, 0, -890), document, false)
+	var bank: Dictionary = {}
+	var main_exists := false
+	for road in region.roads:
+		if road.id == "desert_bank_approach": bank = road
+		if road.id == "desert_main_street": main_exists = true
+	check(not bank.is_empty() and absf(float(bank.width) - 12.0) < .01 and absf(bank.points[-1].z - (-930.0)) < .01, "desert: via editada (largura e ponta)")
+	check(not main_exists, "desert: via excluída some de `roads`")
+	var lamp: Node = null
+	for node in region.find_children("EditorLamp", "Node3D", true, false): lamp = node
+	check(lamp != null, "desert: luz nova do deserto foi construída")
+	region.free()
+	await process_frame
+
+## Prédios de serviço e bueiros agora podem ser excluídos; o prédio trancado também move.
+func deletions() -> void:
+	var service := {"id": "building/Police", "type": "building", "deleted": true}
+	check(DATA.validate_entity(service).is_empty(), "validação: excluir prédio com serviço é aceito")
+	check(DATA.validate_entity({"id": "manhole/x", "type": "manhole", "place_id": "x", "deleted": true}) != "Bueiros podem ser movidos e girados, mas não excluídos.", "validação: bueiro excluído não é mais recusado por regra de exclusão")
+	var big := DATA.new_entity("building", Vector2.ZERO)
+	big.size = [300.0, 200.0]
+	big.height = 400.0
+	check(DATA.validate_entity(big).is_empty(), "validação: prédio de 300×200×400 m é aceito")
+	var tiny := DATA.new_entity("prop", Vector2.ZERO)
+	tiny.scale = 12.0
+	check(DATA.validate_entity(tiny).is_empty(), "validação: objeto 12× maior é aceito")
+
 ## Lugar da sessão: o nó do lugar faz o papel de chunk.
 func session() -> void:
 	var node: Node3D = load("res://gameplay/urban_v1/VerticeCompany.gd").new()
@@ -222,6 +277,9 @@ func run() -> void:
 		await placements()
 		await fragile()
 		await session()
+		await far_move()
+		await desert_roads_and_lights()
+		await deletions()
 	print("RESULT checks=", checks, " failures=", failures)
 	quit(1 if failures > 0 else 0)
 

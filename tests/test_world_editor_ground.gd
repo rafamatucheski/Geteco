@@ -43,7 +43,9 @@ func run() -> void:
 	doc.regions.harbor[crossing.id] = crossing
 	var invalid := crossing.duplicate(true)
 	invalid.size = [65.0,5.0]
-	check(not DATA.validate_entity(invalid).is_empty(),"Oversized ground rejected")
+	check(DATA.validate_entity(invalid).is_empty(),"Ground over 64 m accepted (limit now 2000 m)")
+	invalid.size = [2500.0,5.0]
+	check(not DATA.validate_entity(invalid).is_empty(),"Absurd ground size still rejected as invalid data")
 	invalid.size = [0.0,5.0]
 	check(not DATA.validate_entity(invalid).is_empty(),"Empty ground rejected")
 	invalid.size = [8.0,8.0]

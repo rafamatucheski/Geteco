@@ -45,7 +45,8 @@ func run() -> void:
 	ui.redo()
 	check(ui.document.regions.harbor.has("building/Police"),"Redo restores police dimensions")
 	ui._delete()
-	check(not ui.document.regions.harbor["building/Police"].get("deleted",false),"Delete cannot remove service identity")
+	check(ui.document.regions.harbor["building/Police"].get("deleted",false),"Service building can be deleted (no restrictions)")
+	ui.undo()
 	# A proteção de acessos é opcional desde 10/10/2026: ligada só com "Colocação livre" desmarcada.
 	ui.free_placement = false
 	var unsafe: Dictionary = ui.canvas.objects["building/Police"].duplicate(true)

@@ -30,3 +30,12 @@ Verificação mínima do `CLAUDE.md`: `test_bridge_approach_terrain.gd` PASS; `t
 - **Colisão e gameplay das peças movidas.** Foi checado que a posição final do grupo (malhas e corpos estáticos) mudou; não foi dirigido/andado contra cada tipo de peça movida, nem verificado que gatilhos de missão continuam coerentes depois de mover o visual (a interface avisa nos equipamentos conhecidos).
 - **Troca de chunk de peças automáticas** (além do vizinho): é limite documentado, não testado.
 - O botão foi exercitado pela chamada `_play_here()` do editor real; não houve clique manual em janela.
+
+## Segunda parte: correções e restrições removidas
+
+- `test_world_editor.gd` (árvore da montanha): o foco agora só garante o chão e os registros do chunk saem fatiados; o teste passou a completar o chunk da árvore. 46/46.
+- `test_world_editor_props.gd`: `WorldPropFactory.SIZES` ganhou `desert_cactus` e `desert_rock`. 93/93.
+- `test_regions.gd`: `HarborBuildingPlace` embrulha o cômodo em `floor_room`; o teste lê `model`/`solid_bodies` de lá. `REGIONS PASS failures=0`.
+- Restrições removidas (ver world-editor.md): travas de prédio, exclusão de serviço e bueiro, limites numéricos, vias e luzes do deserto, peça movida a qualquer distância.
+- `tests/test_world_units.gd`: 62 verificações, 0 falhas (inclui peça 400 m longe com só o destino carregado, via/luz do deserto, validações novas). Bateria `test_world_editor*` (28 arquivos) sem falha depois de atualizar 4 testes que afirmavam limites antigos (garagem, escala 4, piso de 65 m, handles de local protegido) e 2 sobre exclusão (bueiro, prédio de serviço).
+- Não medido: gameplay com via do deserto editada (tráfego/rotas), prédio de serviço excluído em partida real, desempenho.

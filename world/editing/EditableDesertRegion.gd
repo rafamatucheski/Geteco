@@ -6,6 +6,8 @@ const UNITS := preload("res://world/editing/WorldUnits.gd")
 var edit_changes: Dictionary = {}
 ## Peças que alguém copiou: precisam virar grupo mesmo sem edição própria.
 var clone_sources: Dictionary = {}
+## Destino -> origens (ver WorldUnits.pull_map).
+var _pull: Dictionary = {}
 
 func _ready() -> void:
 	if not Engine.get_meta("geteco_live_preview_build",false):
@@ -38,6 +40,8 @@ func prepare_data() -> void:
 	var document: Dictionary = Engine.get_meta("geteco_world_edit_document",loaded.document)
 	edit_changes = document.get("regions",{}).get("desert",{})
 	if edit_changes.is_empty(): return
+	_apply_road_edits()
+	_pull = UNITS.pull_map("desert",edit_changes,CELL)
 	for id in edit_changes:
 		if str(edit_changes[id].get("clone_of","")) != "" and not edit_changes[id].get("deleted",false): clone_sources[str(edit_changes[id].clone_of)] = true
 	# Move the owning record too: edits must survive unloading the original cell.
@@ -68,7 +72,7 @@ func prepare_data() -> void:
 	for id in edit_changes:
 		var row: Dictionary = edit_changes[id]
 		if not str(id).begins_with("new/") or row.get("deleted",false): continue
-		if row.type not in ["prop","tree","building","ground"]: continue
+		if row.type not in ["prop","tree","building","ground","light"]: continue
 		if row.type == "building":
 			var size := EDIT_DATA.point(row.size)
 			var angle := deg_to_rad(float(row.rotation))
@@ -118,6 +122,11 @@ func _build_added(chunk: Node3D,row: Dictionary) -> void:
 		"ground":
 			var ground := preload("res://world/editing/WorldGroundFactory.gd")
 			node = ground.create(row,ground.bounds(row),_ground_height)
+		"light":
+			preload("res://world/editing/WorldEditRuntime.gd").build_light(self,chunk,{"data":row,"position":EDIT_DATA.xyz(row.position)})
+			var lamp := chunk.get_child(chunk.get_child_count()-1) as Node3D
+			lamp.position.y = _ground_height(EDIT_DATA.point(row.position))
+			return
 	if node == null: return
 	node.set_meta("editor_id",row.id)
 	chunk.add_child(node)
@@ -127,6 +136,20 @@ func _build_added(chunk: Node3D,row: Dictionary) -> void:
 		node.rotation.y = deg_to_rad(float(row.rotation))
 
 ## Chunk pronto: pedras, cactos, relevo e ruínas (não são registros) viram peças editáveis.
+func _trim_chunks() -> void:
+	if _pull.is_empty():
+		super._trim_chunks()
+		return
+	var borrowed: Array[Vector2i] = []
+	for target in _pull:
+		if not chunks.has(target): continue
+		for origin in _pull[target]:
+			if not vehicle_support_cells.has(origin):
+				vehicle_support_cells[origin] = true
+				borrowed.append(origin)
+	super._trim_chunks()
+	for origin in borrowed: vehicle_support_cells.erase(origin)
+
 func _run_build_job(job: Dictionary, budget: float) -> void:
 	if edit_changes.is_empty() and not UNITS.preview_active():
 		super._run_build_job(job,budget)
@@ -135,4 +158,35 @@ func _run_build_job(job: Dictionary, budget: float) -> void:
 	super._run_build_job(job,budget)
 	if is_instance_valid(chunk) and not build_jobs.has(job) and not job.get("units_done",false):
 		job.units_done = true
+		for origin in _pull.get(job.key,[]):
+			if not chunks.has(origin) and origin not in pending: pending.append(origin)
 		UNITS.finalize_chunk(self,chunk,job.key,edit_changes,_ground_height)
+
+## Vias do deserto: mexe nos traçados antes de qualquer consumidor (geometria, tráfego, mapa) ler
+## `roads`. Vias novas entram como asfalto ou terra com tráfego.
+func _apply_road_edits() -> void:
+	var touched := false
+	for id in edit_changes:
+		var row: Dictionary = edit_changes[id]
+		if row.get("type","") != "road": continue
+		var road_id := str(id).trim_prefix("road/")
+		var index := -1
+		for i in roads.size():
+			if str(roads[i].id) == road_id: index = i
+		if row.get("deleted",false):
+			if index >= 0: roads.remove_at(index)
+			touched = true
+			continue
+		var points := PackedVector3Array()
+		for point in row.points:
+			var planar := Vector2(float(point[0]),float(point[1]))
+			points.append(Vector3(planar.x,LAYOUT.surface_height(planar),planar.y))
+		var surface := "dirt" if str(row.get("surface","asphalt")) == "earth" else "asphalt"
+		if index >= 0:
+			roads[index].points = points
+			roads[index].width = float(row.width)
+			roads[index].surface = surface
+		else:
+			roads.append({"id":road_id,"points":points,"width":float(row.width),"traffic":true,"region":"desert","surface":surface,"one_way":false})
+		touched = true
+	if touched: road_geometry.configure(roads)

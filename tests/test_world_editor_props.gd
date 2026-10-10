@@ -63,7 +63,9 @@ func run() -> void:
 	invalid.scale = 0
 	check(not DATA.validate_entity(invalid).is_empty(), "Zero scale rejected")
 	invalid.scale = 4
-	check(not DATA.validate_entity(invalid).is_empty(), "Scale outside supported range rejected")
+	check(DATA.validate_entity(invalid).is_empty(), "Scale 4 accepted (limit is now 0.05 to 30)")
+	invalid.scale = 40
+	check(not DATA.validate_entity(invalid).is_empty(), "Absurd scale still rejected as invalid data")
 	var path := "res://evidence/world-editor-20260925/props_persistence_"+str(OS.get_process_id())+".json"
 	check(DATA.save_document(doc,"",path).is_empty(), "All props save to dedicated test document")
 	var loaded := DATA.read_document(path)

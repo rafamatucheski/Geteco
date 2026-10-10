@@ -21,8 +21,10 @@ func run() -> void:
 		root.add_child(room)
 		await physics_frame
 		await physics_frame
-		verify(room.model != null,definition.id+": model")
-		verify(room.solid_bodies.size()>4,definition.id+": physics")
+		# Prédios de Harbor com andares embrulham o cômodo (floor_room): modelo e colisão moram nele.
+		var inner: Variant = room.get("floor_room") if room.get("floor_room") != null else room
+		verify(inner.model != null,definition.id+": model")
+		verify(inner.solid_bodies.size()>4,definition.id+": physics")
 		for point in [room.spawn_position,room.exit_position]:
 			probe.global_position = point+Vector3(0,.08,0)
 			verify(probe.move_and_collide(Vector3(0,.001,0),true)==null,definition.id+": blocked approach "+str(point))
@@ -73,7 +75,7 @@ func run() -> void:
 			room.set_vault_open(0)
 		room.set_active(false)
 		verify(not room.visible and room.process_mode == Node.PROCESS_MODE_DISABLED,definition.id+": inactive")
-		print("PLACE_CHECK ",definition.id," solids=",room.solid_bodies.size())
+		print("PLACE_CHECK ",definition.id," solids=",inner.solid_bodies.size())
 		room.free()
 		await physics_frame
 	for model_path in ["res://world/places/ServiceResidentModel.gd","res://world/places/NecoModel.gd","res://assets/regions/source/world/harbor/events/BankClerkModel.gd"]:

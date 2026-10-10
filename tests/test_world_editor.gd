@@ -112,6 +112,8 @@ func run() -> void:
 	var mountain := REGION.build_region("mountain",DATA.xyz(mountain_tree.position))
 	root.add_child(mountain)
 	mountain.set_process(false)
+	# O foco só garante o chão; os registros do chunk saem fatiados, então completa o chunk da árvore.
+	mountain._ensure_chunk(mountain._cell(DATA.xyz(mountain_tree.position)))
 	var mountain_node := find_editor_node(mountain,mountain_tree.id)
 	check(mountain_node != null and is_equal_approx(mountain_node.scale.x,1.5),"Mountain forest edit reaches rendered object")
 	check(mountain_node != null and is_equal_approx(mountain_node.position.y,mountain.terrain.surface_height_at(DATA.point(mountain_tree.position))),"Moved mountain tree rests on terrain")
@@ -161,7 +163,9 @@ func run() -> void:
 	var existing: Dictionary = editor.canvas.objects["building/Garage"].duplicate(true)
 	existing.position = [0,0]
 	editor._commit(existing)
-	check(not editor.document.regions.harbor.has("building/Garage"),"UI cannot modify garage")
+	# Sem restrições desde 10/10/2026: a garagem também se move (o aviso fica na interface).
+	check(editor.document.regions.harbor.has("building/Garage"),"UI can move the garage")
+	editor.undo()
 	# Centro real da garagem no catálogo: o Maciota mudou de lote e o teste não deve fixar coordenadas.
 	var blocked := DATA.new_entity("tree",DATA.point(editor.canvas.objects["building/Garage"].position))
 	# Proteção opcional desde 10/10/2026: só vale com "Colocação livre" desmarcada.

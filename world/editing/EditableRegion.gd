@@ -5,6 +5,8 @@ const EDIT_DATA := preload("res://world/editing/WorldEditData.gd")
 const PIECES := preload("res://world/editing/WorldEditPieces.gd")
 const UNITS := preload("res://world/editing/WorldUnits.gd")
 var _piece_changes: Dictionary = {}
+## Destino -> origens: peça de chunk movida para outra célula precisa do chunk de origem vivo.
+var _pull: Dictionary = {}
 
 static func build_region(id: String, first_focus: Vector3 = Vector3.INF) -> Node3D:
 	if id == "desert":
@@ -36,7 +38,9 @@ func _prepare() -> void:
 	for key in doc.regions[region_id]:
 		var row: Dictionary = doc.regions[region_id][key]
 		if row.get("type", "") == "piece": _piece_changes[key] = row
-	if not _piece_changes.is_empty(): PIECES.prepare(self,_piece_changes)
+	if not _piece_changes.is_empty():
+		PIECES.prepare(self,_piece_changes)
+		_pull = UNITS.pull_map(str(region_id),_piece_changes,CELL)
 	if region_id == "harbor":
 		harbor_road_geometry.configure(roads)
 		coastal_protection.configure(source_data, extra_land, harbor_road_geometry._layers[0].polygons)
@@ -124,8 +128,25 @@ func _building(chunk: Node3D, data: Dictionary) -> void:
 
 ## Chunk pronto: o que ele construiu fora de registros (pedras, vegetação, mobiliário) vira
 ## peça editável. Sem edições nem prévia isto sai na primeira linha.
+func _trim_chunks(cell: Vector2i) -> void:
+	if _pull.is_empty():
+		super._trim_chunks(cell)
+		return
+	var borrowed: Array[Vector2i] = []
+	for target in _pull:
+		if not chunks.has(target): continue
+		for origin in _pull[target]:
+			if not vehicle_support_cells.has(origin):
+				vehicle_support_cells[origin] = true
+				borrowed.append(origin)
+	super._trim_chunks(cell)
+	for origin in borrowed: vehicle_support_cells.erase(origin)
+
 func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
 	var finished: bool = super._run_build_job(job,budget_usec)
+	if finished and int(job.stage) >= 4 and _pull.has(job.key):
+		for origin in _pull[job.key]:
+			if not chunks.has(origin) and origin not in pending: pending.append(origin)
 	if finished and int(job.stage) >= 4 and not job.get("units_done",false) and is_instance_valid(job.chunk):
 		job.units_done = true
 		UNITS.finalize_chunk(self,job.chunk,job.key,_piece_changes,UNITS.ground_of(self))

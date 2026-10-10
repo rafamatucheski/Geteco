@@ -19,15 +19,21 @@ Abre o jogo de verdade (processo separado) na região do objeto selecionado — 
 
 Argumentos do jogo (úteis em testes): `--edits=<json>` (documento no lugar de `world/editing/world_edits.json`) e `--play-at=<harbor|mountain|desert>,<x>,<z>`.
 
-### Limites conhecidos
+### Restrições removidas (10/10/2026, segunda parte)
 
-- Peça automática (`piece/unit`, `piece/pl`) fica no chunk onde nasceu: movida para além do vizinho, some quando o chunk de origem é descarregado. Registros de Harbor/montanha (`piece/<região>/<tipo>/...`) e os do deserto são clonados no chunk de destino. Cópias nascem no chunk da peça-mãe.
-- A identidade de uma peça automática vem da posição em que o gerador a construiu (decímetros). Se o código do gerador mudar o objeto de lugar, a edição fica sem alvo (é ignorada, não quebra). A prévia roda sem renderizador, por isso nenhuma identidade depende de transformações de MultiMesh (`WorldUnits` documenta o motivo).
-- Lotes de MultiMesh que não são mobiliário (capim, vegetação, janelas, decalques, marcações) continuam lotes: não são peças. O mesmo vale para o relevo procedural, as vias e luzes do deserto, o teleférico (animado) e os lagos.
-- Prédios de serviço e bueiros continuam sem exclusão (movem, giram e redimensionam). A garagem e a oficina do Maciota continuam protegidas (o catálogo as marca como acesso protegido; esta entrega não mexeu nisso).
-- A cópia de peça é cenário puro: scripts, grupos e sinais não são duplicados (um terraço copiado não vira um segundo terraço funcional).
-- A prévia 3D só tem as peças da área ao redor do foco; mover a câmera para longe pede nova prévia.
-- Os fundos do mapa 2D (silhuetas do catálogo gravado) não acompanham as edições; a visão 3D e o jogo sim.
+- Nenhum objeto fica travado: garagem, oficina, prédios de serviço, equipamentos, vias e luzes do deserto. O cadeado virou aviso (porta, gatilho e interior ficam onde estavam).
+- **Excluir** vale para tudo, inclusive prédio de serviço e bueiro (a estrutura do bueiro sai do mundo e a sala de baixo fica sem entrada).
+- Limites de tamanho/escala/altura/largura/alcance foram abertos (ex.: prédio até 1000 m, escala 0,05–30, piso até 2000 m, 256 pontos de contorno); o que sobra é só validação de dado absurdo.
+- **Vias e luzes do deserto** são editáveis (traçado, largura, superfície, exclusão, vias e luzes novas).
+- **Peça de chunk movida para qualquer distância** continua viva: o chunk de destino puxa o de origem.
+
+### Limites que restam
+
+- Lotes de MultiMesh que não são mobiliário (capim, vegetação, janelas, decalques, marcações), o relevo procedural, o teleférico (animado) e os lagos não são peças.
+- Mover um objeto para **outra região** exige adicioná-lo na região de destino.
+- A identidade de uma peça automática vem da posição em que o gerador a construiu (decímetros). Se o código do gerador mudar o objeto de lugar, a edição fica sem alvo (é ignorada, não quebra). A prévia roda sem renderizador, por isso nenhuma identidade depende de transformações de MultiMesh.
+- A cópia de peça é cenário puro: scripts, grupos e sinais não são duplicados (um terraço copiado não vira um segundo terraço funcional; poste copiado não é quebrável).
+- A prévia 3D só tem as peças da área ao redor do foco. Os fundos do mapa 2D (silhuetas do catálogo gravado) não acompanham as edições; a visão 3D e o jogo sim.
 
 Validação desta entrega: [editar-tudo-20261010.md](reviews/editar-tudo-20261010.md).
 

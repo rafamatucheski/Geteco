@@ -51,12 +51,14 @@ func run() -> void:
 			check(is_equal_approx(float(edited.position[0]), base.x + 6.0) and float(edited.rotation) == 90.0, "Posição e rotação editadas: " + id)
 			check(DATA.validate_entity(edited).is_empty(), "Linha editada valida: " + id)
 			moved[id] = edited.duplicate(true)
-			# Excluir e copiar são recusados.
+			# Desde 10/10/2026 excluir é permitido (a estrutura sai do mundo); copiar segue sem sentido.
 			ui._delete()
-			check(not ui.document.regions[area][key].get("deleted", false), "Não pode excluir: " + id)
-			var deleted_row := edited.duplicate(true)
-			deleted_row.deleted = true
-			check(not DATA.validate_entity(deleted_row).is_empty(), "Documento com bueiro excluído é inválido: " + id)
+			check(ui.document.regions[area][key].get("deleted", false), "Pode excluir: " + id)
+			Engine.set_meta("geteco_world_edit_document", ui.document)
+			check(preload("res://world/editing/WorldManholes.gd").position_of(id).x > 10000.0, "Exclusão tira a estrutura do mundo (posição fora do mapa): " + id)
+			Engine.remove_meta("geteco_world_edit_document")
+			ui.undo()
+			check(not ui.document.regions[area][key].get("deleted", false), "Desfazer a exclusão: " + id)
 			check(not ui._copy(), "Não pode copiar: " + id)
 			var forged := edited.duplicate(true)
 			forged.place_id = "harbor_bank"
