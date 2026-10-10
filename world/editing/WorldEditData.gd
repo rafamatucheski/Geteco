@@ -60,6 +60,9 @@ static func validate_entity(row: Variant) -> String:
 		if row.get("surface","") not in ["concrete","pavers"]: return "Acabamento de calçada inválido."
 	if row.has("stretch"):
 		if row.type != "piece" or not vector(row.stretch,2) or row.stretch[0] < .1 or row.stretch[1] < .1 or row.stretch[0] > 4 or row.stretch[1] > 4: return "Escala da peça: 0,1 a 4 por eixo."
+	if row.has("clone_of") and (row.type != "piece" or not row.clone_of is String or not str(row.clone_of).begins_with("piece/") or not str(row.id).begins_with("piece/clone/")): return "Cópia de peça inválida."
+	if row.has("height_stretch") and (row.type != "piece" or not number(row.height_stretch) or row.height_stretch < .1 or row.height_stretch > 4): return "Altura da peça: 0,1 a 4 vezes."
+	if row.has("lift") and (row.type != "piece" or not number(row.lift) or absf(row.lift) > 300): return "Elevação da peça: até 300 m."
 	if row.has("outline"):
 		if row.type not in ["piece","ground"]: return "Este objeto não tem contorno editável."
 		if row.type == "piece" and not preload("res://world/editing/WorldEditPieces.gd").is_shape_editable(str(row.id)): return "Esta peça não permite mudar o contorno."

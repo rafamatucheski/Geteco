@@ -54,7 +54,8 @@ func run() -> void:
 	var home_data: Dictionary = region.LAYOUT.buildings().filter(func(b): return b.id=="desert_home_00")[0]
 	var home_record := {"kind":"building","data":home_data}
 	check(REGION.editable_record(home_record),"Decorative desert house is editable")
-	check(not REGION.editable_record({"kind":"building","data":{"kind":"bank"}}),"Service building remains protected")
+	# Desde 10/10/2026 todo registro do deserto é editável (o visual se move; porta e gatilho ficam).
+	check(REGION.editable_record({"kind":"building","data":{"kind":"bank"}}),"Service building is editable too")
 	region._build_record(holder,home_record)
 	var home_id := "piece/"+REGION.piece_key(home_record)
 	var home_group: Node3D

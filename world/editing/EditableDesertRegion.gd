@@ -2,7 +2,10 @@ extends "res://world/desert/DesertRegion.gd"
 ## Same production scenery and streaming, with constructor-time editor overrides.
 const EDIT_DATA := preload("res://world/editing/WorldEditData.gd")
 const PIECES := preload("res://world/editing/WorldEditPieces.gd")
+const UNITS := preload("res://world/editing/WorldUnits.gd")
 var edit_changes: Dictionary = {}
+## Peças que alguém copiou: precisam virar grupo mesmo sem edição própria.
+var clone_sources: Dictionary = {}
 
 func _ready() -> void:
 	if not Engine.get_meta("geteco_live_preview_build",false):
@@ -22,10 +25,10 @@ static func build_region(_id := "desert", first_focus := Vector3.INF) -> Node3D:
 static func piece_key(record: Dictionary) -> String:
 	return "desert/"+str(record.kind)+"/"+PIECES.record_key(record)
 
-static func editable_record(record: Dictionary) -> bool:
-	# Doorways, mission targets, race gates and connected utility lines keep their anchors.
-	if record.kind == "building": return record.data.get("kind","") == "home"
-	return record.kind in ["water_tower", "rest_bench", "bitrem"]
+static func editable_record(_record: Dictionary) -> bool:
+	# Antes só casas, caixa d'água, banco e caminhão eram livres; poste, fio, luz e o resto
+	# seguiam protegidos. Agora tudo se move: o visual vai, âncoras de missão ficam onde estão.
+	return true
 
 func prepare_data() -> void:
 	if data_prepared: return
@@ -35,6 +38,8 @@ func prepare_data() -> void:
 	var document: Dictionary = Engine.get_meta("geteco_world_edit_document",loaded.document)
 	edit_changes = document.get("regions",{}).get("desert",{})
 	if edit_changes.is_empty(): return
+	for id in edit_changes:
+		if str(edit_changes[id].get("clone_of","")) != "" and not edit_changes[id].get("deleted",false): clone_sources[str(edit_changes[id].clone_of)] = true
 	# Move the owning record too: edits must survive unloading the original cell.
 	var moved: Array[Dictionary] = []
 	for cell in records:
@@ -80,7 +85,7 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 		return
 	var key := piece_key(record)
 	var preview := bool(Engine.get_meta("geteco_live_preview_build",false))
-	if not preview and not edit_changes.has("piece/"+key):
+	if not preview and not edit_changes.has("piece/"+key) and not clone_sources.has("piece/"+key):
 		super._build_record(chunk,record)
 		return
 	var before := chunk.get_child_count()
@@ -94,7 +99,8 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 		group.global_position = record.data.position
 		for i in group.get_child_count(): group.get_child(i).global_transform = transforms[i]
 	var source_ground := _ground_height(Vector2(group.global_position.x,group.global_position.z))
-	PIECES.apply(group,edit_changes)
+	PIECES.spawn_clones(group,edit_changes,_ground_height)
+	PIECES.apply_one(group,edit_changes)
 	if is_instance_valid(group) and editable_record(record) and edit_changes.has("piece/"+key):
 		group.global_position.y += _ground_height(Vector2(group.global_position.x,group.global_position.z))-source_ground
 
@@ -119,3 +125,14 @@ func _build_added(chunk: Node3D,row: Dictionary) -> void:
 		node.position = EDIT_DATA.xyz(row.position)
 		node.position.y = _ground_height(EDIT_DATA.point(row.position))
 		node.rotation.y = deg_to_rad(float(row.rotation))
+
+## Chunk pronto: pedras, cactos, relevo e ruínas (não são registros) viram peças editáveis.
+func _run_build_job(job: Dictionary, budget: float) -> void:
+	if edit_changes.is_empty() and not UNITS.preview_active():
+		super._run_build_job(job,budget)
+		return
+	var chunk: Variant = chunks.get(job.key)
+	super._run_build_job(job,budget)
+	if is_instance_valid(chunk) and not build_jobs.has(job) and not job.get("units_done",false):
+		job.units_done = true
+		UNITS.finalize_chunk(self,chunk,job.key,edit_changes,_ground_height)

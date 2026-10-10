@@ -149,6 +149,11 @@ static func _batch(root: Node3D, label: String, mesh: Mesh, transforms: Array[Tr
 	instance.multimesh = multi
 	instance.material_override = _material(color)
 	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if shadows else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# Pedras e seixos (poucos por chunk) são editáveis um a um no editor de mundo: ele os separa em
+	# malhas. O renderizador dummy da prévia devolve identidade ao ler as instâncias, daí o registro.
+	if label != "Grass":
+		instance.set_meta("world_unit_explode",true)
+		instance.set_meta("preview_instance_transforms",transforms)
 	root.add_child(instance)
 
 static func _solid(root: Node3D, transform: Transform3D) -> void:

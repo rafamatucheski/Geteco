@@ -59,7 +59,8 @@ func run() -> void:
 	var press := find_piece(yard, "neco/press")
 	var press_transform := press.global_transform
 	PIECES.apply(yard, {"piece/neco/press":{"type":"piece", "position":[99,99], "rotation":45, "stretch":[.1,4]}})
-	check(press.global_transform.is_equal_approx(press_transform), "Operational machinery remains protected from resize")
+	# Desde 10/10/2026 o maquinário também é editável: a prensa vai para a posição e rotação pedidas.
+	check(not press.global_transform.is_equal_approx(press_transform) and press.global_position.is_equal_approx(Vector3(99, press_transform.origin.y, 99)), "Operational machinery follows move/rotate/resize like any piece")
 	yard.free()
 	var dressing := DRESSING.new()
 	dressing.configure("cobra")

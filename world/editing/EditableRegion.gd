@@ -3,6 +3,7 @@ extends "res://world/regions/NativeRegion.gd"
 const EDITS := preload("res://world/editing/WorldEditRuntime.gd")
 const EDIT_DATA := preload("res://world/editing/WorldEditData.gd")
 const PIECES := preload("res://world/editing/WorldEditPieces.gd")
+const UNITS := preload("res://world/editing/WorldUnits.gd")
 var _piece_changes: Dictionary = {}
 
 static func build_region(id: String, first_focus: Vector3 = Vector3.INF) -> Node3D:
@@ -95,10 +96,18 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 		if not preview_id.is_empty():
 			for node in chunk.get_children().slice(first_child):
 				if not node.has_meta("editor_id"): node.set_meta("editor_id",preview_id)
+	# Tudo que um registro constrói vira uma peça editável (ver WorldUnits). Só agrupa na prévia
+	# ou quando o documento mexe nesse registro: sem edição o jogo não paga nada.
+	if chunk.get_child_count() > first_child and (UNITS.preview_active() or record.has("editor_piece_ids")):
+		if UNITS.record_eligible(record): UNITS.group_record(self,chunk,record,first_child)
+		else:
+			for node in chunk.get_children().slice(first_child): node.set_meta("world_unit_skip",true)
 	if record.has("editor_piece_ids"):
+		var ground := UNITS.ground_of(self)
 		for node in chunk.get_children().slice(first_child):
-			PIECES.apply(node,_piece_changes)
-			PIECES.filter_record(node,record)
+			PIECES.apply(node,_piece_changes,ground)
+			# A própria peça do registro pode ter sido excluída (apply a libera).
+			if is_instance_valid(node): PIECES.filter_record(node,record)
 
 func _building(chunk: Node3D, data: Dictionary) -> void:
 	var before := chunk.get_child_count()
@@ -112,3 +121,12 @@ func _building(chunk: Node3D, data: Dictionary) -> void:
 			# baked collision shapes, instead of rebuilding a generic replacement.
 			art.rotation.y = 0
 			preload("res://world/editing/WorldServiceBuildings.gd").apply_art(art,data.editor_service)
+
+## Chunk pronto: o que ele construiu fora de registros (pedras, vegetação, mobiliário) vira
+## peça editável. Sem edições nem prévia isto sai na primeira linha.
+func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
+	var finished: bool = super._run_build_job(job,budget_usec)
+	if finished and int(job.stage) >= 4 and not job.get("units_done",false) and is_instance_valid(job.chunk):
+		job.units_done = true
+		UNITS.finalize_chunk(self,job.chunk,job.key,_piece_changes,UNITS.ground_of(self))
+	return finished

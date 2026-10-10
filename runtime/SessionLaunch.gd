@@ -5,6 +5,14 @@ const SLOT_IDS := ["slot_01", "slot_02", "slot_03", "slot_04", "slot_05"]
 var selected_path: String = STORE.PATH
 var direct_start_consumed := false
 
+func _ready() -> void:
+	# O editor de mundo abre o jogo com o documento ainda não salvo ("Jogar aqui").
+	for argument in OS.get_cmdline_user_args():
+		if not argument.begins_with("--edits="): continue
+		var loaded: Dictionary = preload("res://world/editing/WorldEditData.gd").read_document(argument.trim_prefix("--edits="))
+		if str(loaded.error).is_empty(): Engine.set_meta("geteco_world_edit_document",loaded.document)
+		else: push_error("Editor de mundo: "+str(loaded.error))
+
 func slot_path(id: String) -> String:
 	if id == "progress": return STORE.PATH
 	if id not in SLOT_IDS: return ""

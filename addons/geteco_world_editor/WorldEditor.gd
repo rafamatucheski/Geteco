@@ -139,6 +139,8 @@ func _ready() -> void:
 	undo_button = _button(actions_bar,"Desfazer",undo)
 	redo_button = _button(actions_bar,"Refazer",redo)
 	_button(actions_bar,"Prévia 3D",_preview)
+	var play_here := _button(actions_bar,"▶ Jogar aqui",_play_here)
+	play_here.tooltip_text = "Abre o jogo com Dante no objeto selecionado (ou no centro da visão), com as alterações ainda não salvas. Nada é gravado."
 	live_toggle = _button(actions_bar,"2D + 3D",_toggle_live_preview)
 	live_toggle.toggle_mode = true
 	live_toggle.tooltip_text = "Editar o mapa com a visão 3D ao lado"
@@ -260,6 +262,13 @@ func _load_catalog() -> void:
 	# Bueiros e entradas subterrâneas moram no código, não no catálogo gravado: entram a cada carga.
 	for area in ["harbor","desert"]:
 		if catalog.has(area): catalog[area].objects.merge(preload("res://world/editing/WorldManholes.gd").catalog(area),true)
+	# Nada é protegido: peças que antes eram só visíveis (poste, fio, luz, equipamento) também
+	# se movem. `warn` apenas avisa que há mecânica/gatilho que o visual não leva junto.
+	for area in catalog:
+		for row in catalog[area].get("context",{}).values():
+			if row.get("type","") == "piece" and row.get("locked",false):
+				row.locked = false
+				row.warn = true
 	asset_items = LIBRARY.build(catalog)
 	for area in catalog:
 		for row in catalog[area].get("context",{}).values():
@@ -292,38 +301,19 @@ func _refresh() -> void:
 				row["shape_editable"] = not row.get("locked",false) and PIECES.is_shape_editable(str(id))
 				if row.shape_editable: row["default_outline"] = _base_outline(base_row)
 			if row.type == "piece" and document.regions.get(area,{}).has(id):
-				var change: Dictionary = document.regions[area][id]
-				if change.get("deleted",false): continue
-				var angle := -deg_to_rad(float(change.get("rotation",0)))
-				var stretch := DATA.point(change.get("stretch",[1,1]))
-				for part in row.get("parts",[]):
-					var bounds := Rect2()
-					for i in part[6].size():
-						var point := DATA.point(part[6][i])
-						point = DATA.point(change.position)+((point-DATA.point(base_row.position))*stretch).rotated(angle)
-						part[6][i] = [point.x,point.y]
-						bounds = Rect2(point,Vector2.ZERO) if i == 0 else bounds.expand(point)
-					part[0] = bounds.position.x
-					part[1] = bounds.position.y
-					part[2] = bounds.size.x
-					part[3] = bounds.size.y
-				row.merge(change,true)
-				if row.has("outline"):
-					var color := str(base_row.parts[-1][5]) if not base_row.get("parts",[]).is_empty() else "897053"
-					var height := float(base_row.parts[-1][4]) if not base_row.get("parts",[]).is_empty() else .08
-					var polygon := PackedVector2Array()
-					for item in row.outline: polygon.append(DATA.point(row.position)+(DATA.point(item)*stretch).rotated(angle))
-					row.parts = []
-					var indices := Geometry2D.triangulate_polygon(polygon)
-					for i in range(0,indices.size(),3):
-						var bounds := Rect2(polygon[indices[i]],Vector2.ZERO)
-						var triangle: Array = []
-						for j in 3:
-							var point := polygon[indices[i+j]]
-							bounds = bounds.expand(point)
-							triangle.append([point.x,point.y])
-						row.parts.append([bounds.position.x,bounds.position.y,bounds.size.x,bounds.size.y,height,color,triangle])
+				if not _overlay_piece(row,base_row,document.regions[area][id]): continue
 			rows[id] = row
+		# Cópias: nascem da linha-base da origem e levam a própria edição por cima.
+		for id in document.regions.get(area,{}):
+			var change: Dictionary = document.regions[area][id]
+			if change.get("type","") != "piece" or str(change.get("clone_of","")) == "" or change.get("deleted",false): continue
+			var source: Dictionary = catalog.get(area,{}).get("context",{}).get(str(change.clone_of),{})
+			if source.is_empty(): continue
+			var copy: Dictionary = source.duplicate(true)
+			copy["id"] = id
+			copy["label"] = str(source.get("label",id))+" (cópia)"
+			copy["locked"] = false
+			if _overlay_piece(copy,source,change): rows[id] = copy
 		for row in rows.values(): row["editor_region"] = area
 		canvas.objects.merge(rows)
 	_update_locations()
@@ -343,6 +333,41 @@ func _refresh() -> void:
 	save_state.text = "Alterações não salvas" if document != saved_document else "Mundo salvo"
 	_sync_service_entries()
 	_select(canvas.selected_id)
+
+## Aplica a edição do documento a uma linha de peça do mapa (move, gira e estica o desenho
+## base). Devolve false se a peça foi excluída.
+func _overlay_piece(row: Dictionary,base_row: Dictionary,change: Dictionary) -> bool:
+	if change.get("deleted",false): return false
+	var angle := -deg_to_rad(float(change.get("rotation",0)))
+	var stretch := DATA.point(change.get("stretch",[1,1]))
+	for part in row.get("parts",[]):
+		var bounds := Rect2()
+		for i in part[6].size():
+			var point := DATA.point(part[6][i])
+			point = DATA.point(change.position)+((point-DATA.point(base_row.position))*stretch).rotated(angle)
+			part[6][i] = [point.x,point.y]
+			bounds = Rect2(point,Vector2.ZERO) if i == 0 else bounds.expand(point)
+		part[0] = bounds.position.x
+		part[1] = bounds.position.y
+		part[2] = bounds.size.x
+		part[3] = bounds.size.y
+	row.merge(change,true)
+	if row.has("outline"):
+		var color := str(base_row.parts[-1][5]) if not base_row.get("parts",[]).is_empty() else "897053"
+		var height := float(base_row.parts[-1][4]) if not base_row.get("parts",[]).is_empty() else .08
+		var polygon := PackedVector2Array()
+		for item in row.outline: polygon.append(DATA.point(row.position)+(DATA.point(item)*stretch).rotated(angle))
+		row.parts = []
+		var indices := Geometry2D.triangulate_polygon(polygon)
+		for i in range(0,indices.size(),3):
+			var bounds := Rect2(polygon[indices[i]],Vector2.ZERO)
+			var triangle: Array = []
+			for j in 3:
+				var point := polygon[indices[i+j]]
+				bounds = bounds.expand(point)
+				triangle.append([point.x,point.y])
+			row.parts.append([bounds.position.x,bounds.position.y,bounds.size.x,bounds.size.y,height,color,triangle])
+	return true
 
 func _sync_service_entries() -> void:
 	_set_background()
@@ -404,7 +429,7 @@ func _select(id: String) -> void:
 	if not canvas.objects.has(id):
 		var hint := Label.new()
 		hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		hint.text = "Selecione um objeto no mapa.\n\nVerde: árvores\nBlocos: prédios\nAmarelo: luzes\nCruz rosa: acesso protegido"
+		hint.text = "Selecione um objeto no mapa ou na visão 3D: tudo se move, gira, estica, eleva, duplica e exclui (poste, fio, pedra, mobiliário...).\n\nPeças automáticas aparecem depois que a visão 3D carregar a área.\n\nVerde: árvores\nBlocos: prédios\nAmarelo: luzes\nCruz rosa: acesso\n\n▶ Jogar aqui abre o jogo com Dante perto da seleção."
 		properties.add_child(hint)
 		return
 	var row: Dictionary = canvas.objects[id]
@@ -443,6 +468,13 @@ func _select(id: String) -> void:
 			var extent := _outline_extent(row)
 			_number("Largura (m)",extent.x*stretch.x,extent.x*.1,extent.x*4,func(value): _resize_piece(0,value))
 			_number("Profundidade (m)",extent.y*stretch.y,extent.y*.1,extent.y*4,func(value): _resize_piece(1,value))
+			_number("Altura (×)",float(row.get("height_stretch",1.0)),.1,4,func(value): _set_value("height_stretch",value),.05)
+			_number("Elevação (m)",float(row.get("lift",0.0)),-50,200,func(value): _set_value("lift",value),.1)
+			if row.get("warn",false):
+				var warning := Label.new()
+				warning.text = "Equipamento ligado à operação: o visual se move, mas a mecânica e o gatilho originais ficam onde estavam."
+				warning.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+				properties.add_child(warning)
 			if row.get("shape_editable",false): _shape_controls(row)
 		"ground":
 			var paving: bool = row.get("paving",false)
@@ -499,6 +531,7 @@ func _select(id: String) -> void:
 			remove.disabled = canvas.selected_point < 0 or row.points.size() <= 2
 	var actions := HBoxContainer.new()
 	properties.add_child(actions)
+	if row.type == "piece" and not str(row.get("source_record","")).is_empty(): _button(actions,"Duplicar",_duplicate)
 	if row.type != "piece":
 		if not row.get("paving",false) and not row.get("service_building",false) and row.type != "manhole":
 			_button(actions,"Copiar",_copy)
@@ -586,9 +619,12 @@ func _commit(row: Dictionary) -> void:
 	if row.get("type", "") == "piece":
 		# Persist transforms only; base triangles stay in the editor catalog.
 		var authored := {"id":row.id,"type":"piece","position":row.position,"rotation":row.get("rotation",0),"source_record":row.get("source_record","")}
+		if row.has("clone_of"): authored.clone_of = row.clone_of
 		if row.get("deleted",false): authored.deleted = true
 		for key in ["stretch","outline"]:
 			if row.has(key): authored[key] = row[key].duplicate(true)
+		for key in ["height_stretch","lift"]:
+			if row.has(key) and not is_equal_approx(float(row[key]),1.0 if key == "height_stretch" else 0.0): authored[key] = float(row[key])
 		row = authored
 	if not load_error.is_empty():
 		status.text = load_error
@@ -599,7 +635,7 @@ func _commit(row: Dictionary) -> void:
 	if error.is_empty(): error = _placement_error(row)
 	var original: Dictionary = catalog.get(region,{}).get("objects",{}).get(row.id,catalog.get(region,{}).get("context",{}).get(row.id,{}))
 	if original.get("locked",false): error = "Este local tem acesso protegido."
-	if not row.get("deleted",false) and row.type not in ["road","piece"] and not row.get("paving",false):
+	if not free_placement and not row.get("deleted",false) and row.type not in ["road","piece"] and not row.get("paving",false):
 		var own_accesses := _service_accesses(canvas.objects.get(row.id,row))
 		var new_accesses := _service_accesses(row)
 		for entry in canvas.entries:
@@ -651,6 +687,9 @@ func _delete() -> void:
 	row.deleted = true
 	_commit(row)
 func _duplicate() -> void:
+	if canvas.objects.has(canvas.selected_id) and canvas.objects[canvas.selected_id].type == "piece":
+		_duplicate_piece()
+		return
 	if not _copy(): return
 	var row: Dictionary = canvas.objects[canvas.selected_id].duplicate(true)
 	row.id = DATA.new_entity(row.type,Vector2.ZERO).id
@@ -662,6 +701,19 @@ func _duplicate() -> void:
 		for p in row.points: p[1] += 12
 	else: row.position[0] += float(row.size[0])+2 if row.type == "building" else 3
 	_commit(row)
+## Cópia de uma peça do cenário (pedra, poste, mobiliário...): nasce da forma original da
+## peça-mãe, 3 m ao lado, e tem edição própria. É aplicada pelo jogo junto com a peça-mãe.
+func _duplicate_piece() -> void:
+	var row: Dictionary = canvas.objects[canvas.selected_id]
+	if str(row.get("source_record","")).is_empty():
+		status.text = "Esta peça não pode ser copiada."
+		return
+	var clone := {"id":"piece/clone/%d_%d" % [Time.get_ticks_usec(),randi()],"type":"piece","clone_of":str(row.get("clone_of",row.id)),
+		"source_record":str(row.source_record),"position":[float(row.position[0])+3.0,float(row.position[1])+3.0],"rotation":float(row.get("rotation",0.0))}
+	for key in ["stretch","height_stretch","lift"]:
+		if row.has(key): clone[key] = row[key]
+	_commit(clone)
+
 func _restore_original() -> void:
 	_restore_id(canvas.selected_id)
 func _restore_id(id: String) -> void:
@@ -758,6 +810,8 @@ func _placement_error(row: Dictionary) -> String:
 	if row.get("deleted",false): return ""
 	if row.type == "piece": return "Mantenha a peça na sua região de origem." if _region_at(DATA.point(row.position)) != region else ""
 	if row.type != "road" and _region_at(DATA.point(row.position)) != region: return "Para mover entre regiões, adicione o objeto na região de destino."
+	# Colocação livre (padrão): nenhuma sobreposição é recusada, nem sobre prédios com serviço.
+	if free_placement: return ""
 	if row.type == "ground":
 		if row.get("paving",false): return ""
 		for other in canvas.objects.values():
@@ -861,6 +915,7 @@ func _toggle_live_preview() -> void:
 		live_preview.enable_editing(self)
 		view_mode.select(2)
 		live_preview.focus_requested.connect(_sync_live_preview)
+		live_preview.units_ready.connect(_merge_units)
 		live_preview.view_moved.connect(func(at: Vector2):
 			canvas.center = at
 			canvas.queue_redraw()
@@ -879,7 +934,7 @@ func _set_view_mode(index: int) -> void:
 	_apply_layout()
 
 func _sync_live_preview() -> void:
-	if junction_editor.dragging: return
+	if junction_editor.dragging or _merging_units: return
 	if not is_instance_valid(live_preview) or canvas.dragging: return
 	if live_preview.edit_control != null:
 		live_preview.edit_control.queue_redraw()
@@ -906,6 +961,57 @@ func _preview() -> void:
 	var area := _region_at(focus)
 	var pid := OS.create_process(OS.get_executable_path(),PackedStringArray(["--path",ProjectSettings.globalize_path("res://"),"--script","res://addons/geteco_world_editor/preview_world.gd","--","--no-save","--edits="+preview_path,"--region="+area,"--x="+str(focus.x),"--z="+str(focus.y),"--size="+str(width)]))
 	status.text = "Prévia 3D aberta. Setas movem a câmera; Esc fecha. O progresso do jogo não é salvo." if pid > 0 else "Não foi possível abrir a prévia 3D."
+var _merging_units := false
+var play_pid := -1
+
+## Peças automáticas (pedra, poste, fio...) chegam do auxiliar da prévia 3D, já construídas.
+## Entram no catálogo da região e passam a ser selecionáveis no mapa e na visão 3D.
+func _merge_units(area: String,rows: Array) -> void:
+	if not catalog.has(area) or rows.is_empty(): return
+	var context: Dictionary = catalog[area].context
+	var changed := false
+	for row in rows:
+		var id := str(row.id)
+		var known: Dictionary = context.get(id,{})
+		if not known.is_empty() and not known.get("auto",false): continue
+		if known.is_empty() or known.get("position") != row.position or known.get("size") != row.size: changed = true
+		context[id] = row
+	if not changed: return
+	_merging_units = true
+	_refresh()
+	_merging_units = false
+
+## Abre o jogo de verdade, com as alterações ainda não salvas, e põe Dante no ponto escolhido.
+func _play_here() -> void:
+	if not load_error.is_empty():
+		status.text = load_error
+		return
+	var error := DATA.validate_document(document)
+	if not error.is_empty():
+		status.text = error
+		return
+	var at := canvas.center
+	var where := "centro do mapa"
+	if is_instance_valid(live_preview) and live_preview.is_visible_in_tree():
+		at = Vector2(live_preview.focus.x,live_preview.focus.z)
+		where = "centro da visão 3D"
+	if canvas.objects.has(canvas.selected_id):
+		var row: Dictionary = canvas.objects[canvas.selected_id]
+		at = canvas.pivot(row)
+		if row.has("size"): at.y += DATA.point(row.size).y*.5+3.0
+		where = "perto de "+str(row.get("label",row.id))
+	var path := "res://.godot/world_play_edits_%d.json" % OS.get_process_id()
+	var file := FileAccess.open(path,FileAccess.WRITE)
+	if file == null:
+		status.text = "Não foi possível preparar o jogo."
+		return
+	file.store_string(JSON.stringify(document))
+	file.close()
+	var area := _region_at(at)
+	var pid := OS.create_process(OS.get_executable_path(),PackedStringArray(["--path",ProjectSettings.globalize_path("res://"),"--","--no-save","--skip-arrival","--no-prewarm","--edits="+path,"--play-at=%s,%.2f,%.2f" % [area,at.x,at.y]]))
+	play_pid = pid
+	status.text = ("Jogo aberto com Dante em %s (%s, %.0f / %.0f). Alterações não salvas incluídas; nada é gravado." % [where,area,at.x,at.y]) if pid > 0 else "Não foi possível abrir o jogo."
+
 func _region_at(at: Vector2) -> String:
 	if preload("res://world/desert/DesertLayout.gd").BOUNDS.has_point(at): return "desert"
 	return "mountain" if at.x >= 456.25 and at.y < -125 else "harbor"

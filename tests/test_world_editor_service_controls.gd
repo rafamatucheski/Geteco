@@ -46,12 +46,18 @@ func run() -> void:
 	check(ui.document.regions.harbor.has("building/Police"),"Redo restores police dimensions")
 	ui._delete()
 	check(not ui.document.regions.harbor["building/Police"].get("deleted",false),"Delete cannot remove service identity")
+	# A proteção de acessos é opcional desde 10/10/2026: ligada só com "Colocação livre" desmarcada.
+	ui.free_placement = false
 	var unsafe: Dictionary = ui.canvas.objects["building/Police"].duplicate(true)
 	unsafe.position[0] += 2
 	unsafe.rotation = 25.0
 	unsafe.size = [unsafe.size[0]*1.2,unsafe.size[1]*1.2]
 	ui._commit(unsafe)
 	check(ui.document.regions.harbor["building/Police"].rotation == 0,"Service edit cannot cover another place's access")
+	ui.free_placement = true
+	ui._commit(unsafe)
+	check(ui.document.regions.harbor["building/Police"].rotation == 25.0,"Free placement lets a service edit cover another access")
+	ui.undo()
 	Engine.set_meta("geteco_world_edit_document",doc)
 	for id in SERVICES.PLACES:
 		var original: Dictionary = originals[id]

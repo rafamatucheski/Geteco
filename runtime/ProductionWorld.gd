@@ -90,6 +90,14 @@ func build() -> void:
 		loaded_save = result.get("ok",false)
 	# The menu may read a journey, but must never persist preview-time changes.
 	if world.has_meta("menu_preview"): no_save = true
+	# "Jogar aqui" do editor de mundo: Dante nasce no ponto pedido, sem gravar nada.
+	play_at_request = _play_at_argument()
+	if not play_at_request.is_empty():
+		no_save = true
+		# Direto nos campos: set_location consulta world.player, que ainda não existe.
+		state.region_id = str(play_at_request.region)
+		state.place_id = ""
+		state.world_state["pedestrian"] = {"region":play_at_request.region,"position":[play_at_request.point.x,0.0,play_at_request.point.z]}
 	state.world = world
 	# O menu já abriu a tela de carregamento na raiz; o mundo a adota. Início direto
 	# (testes, --no-save pelo menu) cria a sua.
@@ -256,9 +264,11 @@ func build() -> void:
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	await preload("res://gameplay/VehicleInteriorMaterialPrewarm.gd").run(world, curtain)
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+	_install_world_edits()
 	ready_for_play = true
 	curtain.set_stage(.93, "Levando você ao ponto salvo…")
 	await session.restore_location()
+	if not play_at_request.is_empty(): await _place_at_request()
 	set_population(requested_population)
 	world_audio = _audio()
 	world.add_child(world_audio)
@@ -516,7 +526,64 @@ func _exit_tree() -> void:
 		if is_instance_valid(cached): cached.free()
 	_region_cache.clear()
 
+## Lugares montados pela sessão (Vértice, Torque...) só recebem as edições do editor de mundo
+## por observação da árvore; sem linhas desses lugares no documento nada é instalado.
+func _install_world_edits() -> void:
+	var document: Dictionary = Engine.get_meta("geteco_world_edit_document",{})
+	if document.is_empty(): document = preload("res://world/editing/WorldEditData.gd").read_document().document
+	if not document.is_empty(): preload("res://world/editing/WorldSessionEdits.gd").install(get_tree(),world,document)
+
+## `--play-at=região,x,z` (só com --no-save). Devolve {} se ausente ou inválido.
+var play_at_request: Dictionary = {}
+static func _play_at_argument() -> Dictionary:
+	for argument in OS.get_cmdline_user_args():
+		if not argument.begins_with("--play-at="): continue
+		var parts := argument.trim_prefix("--play-at=").split(",")
+		if parts.size() != 3 or parts[0] not in ["harbor","mountain","desert"] or not parts[1].is_valid_float() or not parts[2].is_valid_float(): return {}
+		return {"region":parts[0],"point":Vector3(parts[1].to_float(),0.0,parts[2].to_float())}
+	return {}
+
+## A altura só existe depois que a região está montada: grava no ponto de retomada do pedestre.
+func _resolve_play_at() -> void:
+	var point: Vector3 = play_at_request.point
+	var ground := 0.0
+	if region.get("terrain") != null: ground = region.terrain.surface_height_at(Vector2(point.x,point.z))
+	elif state.region_id == "desert": ground = region._ground_height(Vector2(point.x,point.z))
+	state.world_state["pedestrian"] = {"region":play_at_request.region,"position":[point.x,ground+.08,point.z]}
+
+## O ponto escolhido no editor pode cair dentro de uma peça (ou de um prédio): procura o chão livre
+## mais próximo, em anéis de até 8 m. Em cada coluna escolhe, entre as superfícies que um raio
+## atravessa, a mais próxima do chão da região (não o telhado de cima).
+func _place_at_request() -> void:
+	var wanted: Vector3 = play_at_request.point
+	region.set_focus(wanted)
+	if session.cold != null: session.cold.prepare_collision_at(wanted)
+	for i in 4: await get_tree().physics_frame
+	var space: PhysicsDirectSpaceState3D = world.get_world_3d().direct_space_state
+	for ring in [0.0,1.5,3.0,4.5,6.0,8.0]:
+		for step in (1 if ring == 0.0 else 8):
+			var offset: Vector3 = Vector3(cos(TAU*step/8.0),0,sin(TAU*step/8.0))*ring
+			var column: Vector3 = wanted+offset
+			var nominal := 0.0
+			if region.get("terrain") != null: nominal = region.terrain.surface_height_at(Vector2(column.x,column.z))
+			elif state.region_id == "desert": nominal = region._ground_height(Vector2(column.x,column.z))
+			var best := Vector3.INF
+			var excluded: Array[RID] = []
+			for layer in 8:
+				var query := PhysicsRayQueryParameters3D.create(Vector3(column.x,400,column.z),Vector3(column.x,-100,column.z),1)
+				query.exclude = excluded
+				var hit: Dictionary = space.intersect_ray(query)
+				if hit.is_empty(): break
+				excluded.append(hit.rid)
+				if not best.is_finite() or absf(hit.position.y-nominal) < absf(best.y-nominal): best = hit.position
+			if not best.is_finite(): continue
+			var point: Vector3 = best+Vector3.UP*.08
+			if session.position_clear(point):
+				world.player.teleport(point)
+				return
+
 func _startup_position() -> Vector3:
+	if not play_at_request.is_empty(): _resolve_play_at()
 	# Mount and frame the saved destination from the first rendered frame.  The
 	# previous Maciota-first staging exposed unloaded pale terrain/building chunks
 	# for several seconds before restore_location teleported Dante to the save.

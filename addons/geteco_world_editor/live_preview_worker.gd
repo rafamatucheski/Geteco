@@ -74,6 +74,17 @@ func build(request: Dictionary) -> void:
 		region.add_child(garage)
 	# Duplicate built geometry, then strip behaviour before it can enter the editor.
 	preload("res://addons/geteco_world_editor/WorldSessionContext.gd").build_preview(region,area,focus)
+	# Lugares da sessão (Vértice, Torque, descida...) também viram peças, como no jogo.
+	var session_edits := preload("res://world/editing/WorldSessionEdits.gd")
+	var area_edits: Dictionary = request.document.get("regions",{}).get(area,{})
+	for place_node in region.get_children():
+		if not place_node is Node3D: continue
+		var place: Array = session_edits.place_of(place_node)
+		if not place.is_empty() and place[0] == area: preload("res://world/editing/WorldUnits.gd").finalize_session(place_node,area,str(place[1]),area_edits,Callable())
+	# Mobiliário urbano em lote: uma malha por instância para a visão 3D poder selecionar.
+	preload("res://world/editing/WorldPlacements.gd").explode_preview(region)
+	# Peças automáticas (pedra, poste, fio...): o editor as lista a partir daqui, sem catálogo.
+	var units: Array = preload("res://world/editing/WorldUnits.gd").manifest(region)
 	var snapshot: Node3D = region.duplicate(0)
 	snapshot.name = "WorldPreviewGeometry"
 	clean(snapshot,snapshot)
@@ -86,7 +97,7 @@ func build(request: Dictionary) -> void:
 	region.free()
 	await process_frame
 	if packed_error != OK: respond({"revision":last_revision,"error":"Não foi possível preparar a visão 3D."}); return
-	respond({"revision":last_revision,"path":path,"height":focus.y,"build_ms":Time.get_ticks_msec()-started,"error":""})
+	respond({"revision":last_revision,"path":path,"height":focus.y,"build_ms":Time.get_ticks_msec()-started,"error":"","units":units,"area":area})
 
 func clean(node: Node, owner_root: Node) -> void:
 	if node.has_meta("world_edit_piece_id"):

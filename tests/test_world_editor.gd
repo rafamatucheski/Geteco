@@ -164,8 +164,11 @@ func run() -> void:
 	check(not editor.document.regions.harbor.has("building/Garage"),"UI cannot modify garage")
 	# Centro real da garagem no catálogo: o Maciota mudou de lote e o teste não deve fixar coordenadas.
 	var blocked := DATA.new_entity("tree",DATA.point(editor.canvas.objects["building/Garage"].position))
+	# Proteção opcional desde 10/10/2026: só vale com "Colocação livre" desmarcada.
+	editor.free_placement = false
 	editor._commit(blocked)
 	check(not editor.document.regions.harbor.has(blocked.id),"Placement inside garage footprint blocked")
+	editor.free_placement = true
 	editor._select(tree_row.id)
 	var origin := editor.canvas.screen(DATA.point(tree_row.position))
 	var down := InputEventMouseButton.new()

@@ -3,6 +3,7 @@ extends VBoxContainer
 const DATA := preload("res://world/editing/WorldEditData.gd")
 signal focus_requested
 signal view_moved(at: Vector2)
+signal units_ready(area: String, rows: Array)
 var viewport: SubViewport
 var camera: Camera3D
 var scene_root: Node3D
@@ -175,6 +176,8 @@ func _poll() -> void:
 				geometry = packed.instantiate()
 				_restore_instance_transforms(geometry)
 				scene_root.add_child(geometry)
+				# As linhas das peças precisam estar no mapa antes de indexar a geometria.
+				units_ready.emit(str(loading_response.get("area",desired.area)),loading_response.get("units",[]))
 				if edit_control != null: edit_control.rebuild()
 				applied_revision = revision
 				focus = Vector3(desired.focus[0],float(loading_response.height),desired.focus[1])

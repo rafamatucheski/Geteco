@@ -46,22 +46,33 @@ func index_nodes(node: Node, inherited: String) -> void:
 		meshes.append({"node":node,"id":id,"bounds":node.mesh.get_aabb()})
 	for child in node.get_children(): index_nodes(child,id)
 
+var triangles := {}
+
+## Triângulos de uma malha (guardados por recurso): a caixa sozinha deixa o terreno do deserto
+## e os fios na diagonal capturarem cliques que não tocam a peça.
+func _triangle_mesh(mesh: Mesh) -> TriangleMesh:
+	if not triangles.has(mesh): triangles[mesh] = mesh.generate_triangle_mesh()
+	return triangles[mesh]
+
+## Primeira peça selecionável que o raio realmente toca, da mais próxima para a mais distante.
 func pick(at: Vector2) -> String:
 	var ray: Vector3 = preview.camera.project_ray_origin(at)
 	var end: Vector3 = ray+preview.camera.project_ray_normal(at)*2000
-	var nearest := INF
-	var found := ""
+	var hits: Array[Dictionary] = []
 	for item in meshes:
 		var node: Node3D = item.node
-		if not is_instance_valid(node) or not node.is_visible_in_tree(): continue
+		if not is_instance_valid(node) or not node.is_visible_in_tree() or not editor.canvas.objects.has(item.id): continue
 		var inverse := node.global_transform.affine_inverse()
 		var hit: Variant = (item.bounds as AABB).intersects_segment(inverse*ray,inverse*end)
 		if hit == null: continue
-		var distance: float = ray.distance_squared_to(node.global_transform*(hit as Vector3))
-		if distance < nearest:
-			nearest = distance
-			found = item.id if editor.canvas.objects.has(item.id) else ""
-	return found
+		hits.append({"distance":ray.distance_squared_to(node.global_transform*(hit as Vector3)),"item":item})
+	hits.sort_custom(func(a,b): return a.distance < b.distance)
+	for hit in hits:
+		var node: Node3D = hit.item.node
+		var inverse := node.global_transform.affine_inverse()
+		var triangle_mesh := _triangle_mesh((node as MeshInstance3D).mesh)
+		if triangle_mesh == null or not triangle_mesh.intersect_ray(inverse*ray,inverse*end-inverse*ray).is_empty(): return hit.item.id
+	return ""
 
 func plane_point(at: Vector2, height: float) -> Variant:
 	return Plane(Vector3.UP,height).intersects_ray(preview.camera.project_ray_origin(at),preview.camera.project_ray_normal(at))
@@ -152,6 +163,7 @@ func update_drag(at: Vector2, snap := false) -> void:
 		if next.type == "piece":
 			var stretch: Array = original.get("stretch",[1.0,1.0])
 			next.stretch = [clampf(stretch[0]*factor,.1,4),clampf(stretch[1]*factor,.1,4)]
+			next.height_stretch = clampf(float(original.get("height_stretch",1.0))*factor,.1,4)
 			if next.has("outline"):
 				for p in next.outline: p[0] *= next.stretch[0]/stretch[0]; p[1] *= next.stretch[1]/stretch[1]
 		elif next.has("scale"): next.scale = clampf(float(original.scale)*factor,.25,3)
@@ -172,7 +184,7 @@ func apply_visual() -> void:
 	if mode == 2:
 		if original.type == "piece":
 			var base: Array = original.get("stretch",[1,1])
-			ratio = Vector3(candidate.stretch[0]/base[0],1,candidate.stretch[1]/base[1])
+			ratio = Vector3(candidate.stretch[0]/base[0],float(candidate.get("height_stretch",1.0))/float(original.get("height_stretch",1.0)),candidate.stretch[1]/base[1])
 		elif original.has("scale"): ratio = Vector3.ONE*float(candidate.scale)/float(original.scale)
 		elif original.has("size"):
 			ratio = Vector3(candidate.size[0]/original.size[0],float(candidate.get("height",1))/float(original.get("height",1)),candidate.size[1]/original.size[1])
@@ -209,7 +221,7 @@ func finish() -> void:
 		if editor.document.regions.get(editor.region,{}).has(row.id):
 			var accepted: Dictionary = editor.document.regions[editor.region][row.id]
 			var matches := true
-			var fields := ["position","rotation","stretch","outline"] if row.type == "piece" else ["position","rotation","size","height","scale","outline"]
+			var fields := ["position","rotation","stretch","height_stretch","outline"] if row.type == "piece" else ["position","rotation","size","height","scale","outline"]
 			for key in fields:
 				if accepted.get(key) != row.get(key): matches = false
 			if matches:

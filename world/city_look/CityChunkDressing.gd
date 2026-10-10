@@ -27,6 +27,7 @@ const FRAGILE := preload("res://gameplay/street_physics/FragileProps3D.gd")
 const WORLD_CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
 const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
 const JUNCTIONS := preload("res://gameplay/traffic_junctions/TrafficJunctions.gd")
+const PLACEMENTS := preload("res://world/editing/WorldPlacements.gd")
 const FRAGILE_KINDS := ["signal_pole", "stop_sign", "hydrant", "trash_can", "news_box", "mailbox", "phone_booth"]
 
 # Fração de janelas acesas à noite. Residência acende menos que vitrine.
@@ -176,6 +177,8 @@ static func _add(batches: Dictionary, kind: String, point: Vector3, forward: Vec
 
 
 static func _flush(chunk: Node3D, batches: Dictionary) -> void:
+	# Editor de mundo: cada posição do mobiliário é uma peça editável (sem custo se não há edição).
+	PLACEMENTS.edit_batches(chunk.get_parent(), chunk, batches)
 	var built := {}
 	for kind in batches:
 		var transforms: Array = batches[kind]
@@ -335,6 +338,8 @@ static func _sidewalk_lamps(chunk: Node3D, context: Dictionary) -> void:
 				var yaw := atan2(-outward.x, -outward.y)
 				transforms.append(Transform3D(Basis(Vector3.UP, yaw), Vector3(point.x, 0.012, point.y)))
 			travelled += length
+	if transforms.is_empty(): return
+	transforms = PLACEMENTS.edit_lamps(context.region, chunk, transforms)
 	if transforms.is_empty(): return
 	var to_local := chunk.global_transform.affine_inverse()
 	var poles := _lamp_multimesh("pole", transforms.size())

@@ -1,5 +1,36 @@
 # Editor do mundo Geteco
 
+## Editar tudo e "Jogar aqui" — 10/10/2026
+
+**Nada no cenário é só de enfeite.** Tudo que o mundo constrói passa a ser uma *peça* com identidade estável: **mover** (setas X/Z no mapa, arraste na visão 3D), **girar**, mudar largura/profundidade/**altura**, **elevar** (campo Elevação), **duplicar**, excluir e restaurar o original. As peças seguem o relevo da montanha e do deserto ao serem movidas. O editor não recusa mais sobreposições nem cobrir acessos: **Colocação livre** (em Opções, ligada por padrão) desliga as recusas de sobreposição e de acesso; desmarcada, elas voltam.
+
+Onde cada coisa entra:
+
+- **Deserto:** postes, fios e ramais de energia, luminárias, arrancada, Santa Lua, caminhões e todos os prédios decorativos/de serviço ficaram destravados; pedras, cactos, flora e as ruínas/minas montadas por chunk viram peças automáticas (`piece/unit/...`).
+- **Harbor e montanha:** cada registro de região (terraços, contêineres, porto, fachadas originais, vila, serraria, zoológico, cemitério, avião...) é uma peça (`piece/<região>/<tipo>/...`); o que o chunk monta fora de registros também (`piece/unit/...`). Pedras e seixos da montanha são editados um a um, cada pedra com a própria colisão.
+- **Mobiliário urbano do Harbor** (semáforo, placa de pare, hidrante, lixeira, banca, caixa de correio, orelhão, banco, caçamba, sacos de lixo, jardineira e **poste de calçada**): cada posição é uma peça (`piece/pl/...`). A edição troca a posição *antes* do lote de MultiMesh nascer; colisão, derrubada pelo carro e mancha de luz seguem a nova posição.
+- **Lugares montados pela sessão** (Vértice, Posto do Tonico, Torque, portão norte, descida, saída do forte, conexão): o jogo observa a árvore e transforma o que eles constroem em peças 3, 90 e 400 quadros depois de aparecerem (`piece/unit/<região>/s_<lugar>/...`).
+- **Equipamentos de operação** (prensa, botão e guindaste do Neko, partes do deserto) deixaram de ser protegidos. A interface avisa: o visual se move, mas a mecânica/gatilho que o gameplay guardou no ponto original não.
+- As **peças automáticas aparecem depois que a visão 3D carregou a área** (o auxiliar da prévia as constrói e as entrega ao mapa). Selecione na visão 3D; no 2D elas aparecem como caixas sobre o mapa depois da primeira prévia daquela região, sob o filtro **Peças**.
+
+### Botão "▶ Jogar aqui"
+
+Abre o jogo de verdade (processo separado) na região do objeto selecionado — ou do centro da visão 3D/mapa se nada estiver selecionado —, com **Dante a poucos metros**, com as alterações **ainda não salvas** aplicadas e **sem gravar nada** (`--no-save`, sem a abertura, sem aquecimento de regiões). Se o ponto cair dentro de uma peça ou prédio, o jogo procura chão livre num raio de 8 m (escolhe a superfície mais próxima do chão da região, não o telhado). Funciona em Harbor, montanha e deserto. O documento temporário fica em `.godot/world_play_edits_<pid>.json`.
+
+Argumentos do jogo (úteis em testes): `--edits=<json>` (documento no lugar de `world/editing/world_edits.json`) e `--play-at=<harbor|mountain|desert>,<x>,<z>`.
+
+### Limites conhecidos
+
+- Peça automática (`piece/unit`, `piece/pl`) fica no chunk onde nasceu: movida para além do vizinho, some quando o chunk de origem é descarregado. Registros de Harbor/montanha (`piece/<região>/<tipo>/...`) e os do deserto são clonados no chunk de destino. Cópias nascem no chunk da peça-mãe.
+- A identidade de uma peça automática vem da posição em que o gerador a construiu (decímetros). Se o código do gerador mudar o objeto de lugar, a edição fica sem alvo (é ignorada, não quebra). A prévia roda sem renderizador, por isso nenhuma identidade depende de transformações de MultiMesh (`WorldUnits` documenta o motivo).
+- Lotes de MultiMesh que não são mobiliário (capim, vegetação, janelas, decalques, marcações) continuam lotes: não são peças. O mesmo vale para o relevo procedural, as vias e luzes do deserto, o teleférico (animado) e os lagos.
+- Prédios de serviço e bueiros continuam sem exclusão (movem, giram e redimensionam). A garagem e a oficina do Maciota continuam protegidas (o catálogo as marca como acesso protegido; esta entrega não mexeu nisso).
+- A cópia de peça é cenário puro: scripts, grupos e sinais não são duplicados (um terraço copiado não vira um segundo terraço funcional).
+- A prévia 3D só tem as peças da área ao redor do foco; mover a câmera para longe pede nova prévia.
+- Os fundos do mapa 2D (silhuetas do catálogo gravado) não acompanham as edições; a visão 3D e o jogo sim.
+
+Validação desta entrega: [editar-tudo-20261010.md](reviews/editar-tudo-20261010.md).
+
 ## Harbor, montanha e deserto — 06/10/2026
 
 O seletor de regiões e as visões 2D, 3D e lado a lado agora incluem **Deserto**. A base foi regenerada dos construtores atuais: fachadas, Santa Lua, Horizonte, encontro da arrancada, mineração, ruínas, ferrovia, relevo e vegetação. **Atualizar base** também regenera o deserto. O mapa 2D usa silhuetas simplificadas por setor para o cenário extenso; a prévia 3D usa os modelos reais.

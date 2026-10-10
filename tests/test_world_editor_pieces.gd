@@ -45,7 +45,8 @@ func run() -> void:
 	check(office.global_position.is_equal_approx(target),"Office moves to saved world position")
 	check((office.global_transform.affine_inverse()*mesh.global_transform).is_equal_approx(mesh_relative),"Mesh follows edited pivot")
 	check((office.global_transform.affine_inverse()*body.global_transform).is_equal_approx(body_relative),"Collider follows edited pivot")
-	check(yard.press.global_position.is_equal_approx(press_point) and yard.button_point().is_equal_approx(button_point),"Operational press/button ignore unsupported edits")
+	# Desde 10/10/2026 nada é protegido: a prensa acompanha a edição (o botão é outra peça e fica).
+	check(not yard.press.global_position.is_equal_approx(press_point) and yard.button_point().is_equal_approx(button_point),"Operational press follows its own edit; the button, a separate piece, stays")
 	var after := office.global_transform
 	PIECES.apply(yard,changes)
 	check(office.global_transform.is_equal_approx(after),"Applying saved rotation twice does not accumulate rotation")
@@ -81,11 +82,11 @@ func run() -> void:
 	destination.free()
 	var guarded := spawn_yard()
 	PIECES.filter_record(guarded,{"editor_piece_exclude":["piece/neco/press"]})
-	check(find_piece(guarded,"neco/press") != null,"Hand-edited document cannot remove operational machinery at source")
+	check(find_piece(guarded,"neco/press") == null,"Operational machinery can be moved out of its source chunk")
 	guarded.free()
 	guarded = spawn_yard()
 	PIECES.filter_record(guarded,{"editor_piece_only":["piece/neco/press"]})
-	check(find_piece(guarded,"neco/press") == null,"Hand-edited document cannot clone operational machinery")
+	check(find_piece(guarded,"neco/press") != null,"Operational machinery can be cloned into its destination chunk")
 	guarded.free()
 	fake.free()
 	check_multiple_destinations()
