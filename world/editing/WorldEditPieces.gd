@@ -1,6 +1,7 @@
 extends RefCounted
 ## Stable editor groups keep visual geometry and collision under the same transform.
 const SHAPE := preload("res://world/editing/WorldPieceShape.gd")
+const FRAGILE := preload("res://gameplay/street_physics/FragileProps3D.gd")
 
 static func is_shape_editable(id: String) -> bool:
 	return SHAPE.is_shape_editable(id)
@@ -83,6 +84,22 @@ static func apply_one(node: Node3D, changes: Dictionary, ground := Callable()) -
 		transform.origin.y += float(ground.call(Vector2(transform.origin.x,transform.origin.z)))-float(ground.call(Vector2(origin.origin.x,origin.origin.z)))
 	transform.basis = Basis(Vector3.UP,deg_to_rad(float(row.get("rotation",0.0))))*origin.basis
 	SHAPE.apply(node,row,origin,transform)
+	if not FRAGILE.cells.is_empty(): _relocate_fragile(node)
+
+## Mobília quebrável (poste, banco, pedra...) se registra no ponto onde nasceu. Movida pelo
+## editor, precisa do ponto novo: senão o carro bateria num lugar vazio e atravessaria o objeto.
+static func _relocate_fragile(group: Node3D) -> void:
+	for key in FRAGILE.cells.keys():
+		var list: Array = FRAGILE.cells[key]
+		for index in range(list.size()-1,-1,-1):
+			var item: Dictionary = list[index]
+			if not item.has("root"): continue
+			var root: Variant = item.root.get_ref()
+			if not is_instance_valid(root) or not (root == group or group.is_ancestor_of(root)): continue
+			list.remove_at(index)
+			item.point = (root as Node3D).global_position
+			FRAGILE._register(item)
+		if list.is_empty() and FRAGILE.cells.get(key,[]) == list: FRAGILE.cells.erase(key)
 
 ## Cópias (`piece/clone/...`): duplicam a peça de origem ANTES de ela ser editada, para que a
 ## cópia parta da forma original, e depois recebem a edição própria. Nascem ao lado da origem,

@@ -159,6 +159,26 @@ func placements() -> void:
 	fake.free()
 	chunk.free()
 
+## Mobília quebrável registrada no ponto original acompanha a peça movida.
+func fragile() -> void:
+	var FRAGILE := preload("res://gameplay/street_physics/FragileProps3D.gd")
+	var chunk := Node3D.new()
+	root.add_child(chunk)
+	var lamp := Node3D.new()
+	lamp.position = Vector3(10, 0, 10)
+	chunk.add_child(lamp)
+	var mesh := MeshInstance3D.new()
+	mesh.mesh = BoxMesh.new()
+	lamp.add_child(mesh)
+	FRAGILE.register_node("trash_can", lamp, chunk)
+	var group := PIECES.group(chunk, [lamp], "test/fragile", "Teste")
+	var row := {"id": "piece/test/fragile", "type": "piece", "position": [30.0, 10.0], "rotation": 0.0, "source_record": "x"}
+	PIECES.apply_one(group, {row.id: row}, Callable())
+	check(FRAGILE.query(Vector3(30, 0, 10), 1.0).size() == 1, "fragile: o registro acompanha a peça movida (ponto novo)")
+	check(FRAGILE.query(Vector3(10, 0, 10), 1.0).is_empty(), "fragile: nada fica registrado no ponto velho")
+	chunk.free()
+	FRAGILE.cells.clear()
+
 ## Lugar da sessão: o nó do lugar faz o papel de chunk.
 func session() -> void:
 	var node: Node3D = load("res://gameplay/urban_v1/VerticeCompany.gd").new()
@@ -191,6 +211,7 @@ func run() -> void:
 		await explore()
 	elif "--only-session" in OS.get_cmdline_user_args():
 		await session()
+		await fragile()
 	else:
 		await cycle("desert", Vector3(354.5, 0, -740), "Saguaro")
 		await cycle("desert", Vector3(354.5, 0, -740), "Utility Pole")
@@ -199,6 +220,7 @@ func run() -> void:
 		await clone_cycle("desert", Vector3(354.5, 0, -740), "Saguaro")
 		await clone_cycle("harbor", Vector3(45, 0, 110), "Harbor Restaurant")
 		await placements()
+		await fragile()
 		await session()
 	print("RESULT checks=", checks, " failures=", failures)
 	quit(1 if failures > 0 else 0)
