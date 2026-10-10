@@ -120,6 +120,14 @@ const BALL := 0.135
 ## escorrega um pouco para a frente no apoio; em 1 o quadril precisaria descer
 ## ~9 cm no contato do calcanhar para a perna alcançar (medido com o IK abaixo).
 const REACH_SHARE := 0.92
+## Comprimentos do corpo. Os padrões são os do `CivilianMeshKit`; um corpo importado (`MeshyRigBody`)
+## troca por suas próprias medidas para a IK alcançar o chão e as mãos sem esticar nem flutuar.
+var thigh_len := KIT.THIGH
+var shin_len := KIT.SHIN
+var ankle_height := KIT.ANKLE_HEIGHT
+var upper_arm_len := KIT.UPPER_ARM
+var forearm_len := KIT.FOREARM
+var pelvis_y := PELVIS_Y
 
 const SKINS := [Color("f1c7a5"), Color("e0ac86"), Color("c89272"), Color("b97d5d"), Color("9f684e"), Color("7e4e38"), Color("5e3a2a"), Color("d8a07a")]
 const HAIRS := [Color("1b1714"), Color("2b211b"), Color("47311f"), Color("6b4931"), Color("8a6a43"), Color("b8955e"), Color("8f8b86"), Color("7a3a22")]
@@ -229,7 +237,7 @@ func _build_rig() -> void:
 	# to the three generic civilian builds. Generated meshes remain cached.
 	profile.merge(w.get("body_profile", {}), true)
 	scale = Vector3.ONE * float(w.height)
-	pelvis = _joint(self, "Pelvis", Vector3(0, PELVIS_Y, 0), KIT.pelvis_mesh(profile, w.top, w.bottom, w.bag))
+	pelvis = _joint(self, "Pelvis", Vector3(0, pelvis_y, 0), KIT.pelvis_mesh(profile, w.top, w.bottom, w.bag))
 	spine = _joint(pelvis, "Spine", SPINE_OFFSET, KIT.chest_mesh(profile, w.top, w.backpack, -w.bag))
 	head_node = _joint(spine, "Head", NECK, KIT.head_mesh(w.female, w.hair, w.beard, w.hat, w.glasses))
 	_head_scale = w.get("head_scale", Vector3.ONE)
@@ -245,10 +253,10 @@ func _build_rig() -> void:
 		# procura para articular a queda. O antebraço fica com outro nome de
 		# propósito: a pose de queda dele dobra o cotovelo para trás neste rig.
 		var thigh := _joint(pelvis, prefix + "upper_leg", _hip_offsets[i], KIT.thigh_mesh(profile, w.bottom, w.top))
-		var shin := _joint(thigh, prefix + "lower_leg", Vector3(0, -KIT.THIGH, 0), KIT.shin_mesh(profile, w.bottom, w.top, w.shoe))
-		var foot := _joint(shin, title + "Foot", Vector3(0, -KIT.SHIN, 0), KIT.foot_mesh(w.shoe))
+		var shin := _joint(thigh, prefix + "lower_leg", Vector3(0, -thigh_len, 0), KIT.shin_mesh(profile, w.bottom, w.top, w.shoe))
+		var foot := _joint(shin, title + "Foot", Vector3(0, -shin_len, 0), KIT.foot_mesh(w.shoe))
 		var arm := _joint(spine, prefix + "upper_arm", _shoulders[i], KIT.upper_arm_mesh(profile, w.top))
-		var fore := _joint(arm, title + "Forearm", Vector3(0, -KIT.UPPER_ARM, 0), KIT.forearm_mesh(profile, w.top, side))
+		var fore := _joint(arm, title + "Forearm", Vector3(0, -upper_arm_len, 0), KIT.forearm_mesh(profile, w.top, side))
 		thighs.append(thigh)
 		shins.append(shin)
 		feet.append(foot)
@@ -365,7 +373,7 @@ func _pose(dt: float) -> void:
 	for i in 2:
 		var side := -1.0 if i == 0 else 1.0
 		var f := _foot(fposmod(_phase + 0.5 * i, 1.0), duty, reach, behind, lift, strike, push, rw * mw)
-		ankles.append((Vector3(side * lerpf(0.098, 0.078, rw * mw), f.y, f.x) + _idle_stance[i] * idle).lerp(Vector3(side * 0.13, KIT.ANKLE_HEIGHT, 0.4), _sit()))
+		ankles.append((Vector3(side * lerpf(0.098, 0.078, rw * mw), f.y, f.x) + _idle_stance[i] * idle).lerp(Vector3(side * 0.13, ankle_height, 0.4), _sit()))
 		pitches.append(f.z)
 
 	# Pelve: sobe no meio do apoio andando, desce no apoio correndo; gira com a
@@ -382,10 +390,10 @@ func _pose(dt: float) -> void:
 	var tilt := lerpf(0.02, 0.09, rw) * mw
 	var pelvis_basis := Basis.from_euler(Vector3(tilt + _hit.x * 0.3, yaw, roll + _hit.y * 0.3))
 	# Joelho cede um pouco com o impacto.
-	var pelvis_position := Vector3(shift, PELVIS_Y - (0.008 + 0.015 * rw) * mw + bob - _hit.length() * 0.06, 0.0)
+	var pelvis_position := Vector3(shift, pelvis_y - (0.008 + 0.015 * rw) * mw + bob - _hit.length() * 0.06, 0.0)
 	# Só a perna de apoio limita a altura da pelve: a do balanço está no ar e
 	# pode encolher. Incluí-la agachava o corredor no começo do balanço.
-	var leg_reach := (KIT.THIGH + KIT.SHIN) * 0.998
+	var leg_reach := (thigh_len + shin_len) * 0.998
 	var drop := 0.0
 	for i in 2:
 		if fposmod(_phase + 0.5 * i, 1.0) >= duty and mw > 0.5: continue
@@ -452,7 +460,7 @@ func _pose(dt: float) -> void:
 			arm_basis = arm_basis.slerp(carried[0], _carry_w)
 			fore_basis = fore_basis.slerp(carried[1], _carry_w)
 		upper_arms[i].transform = Transform3D(arm_basis, _shoulders[i])
-		forearms[i].transform = Transform3D(fore_basis, Vector3(0, -KIT.UPPER_ARM, 0))
+		forearms[i].transform = Transform3D(fore_basis, Vector3(0, -upper_arm_len, 0))
 
 func _sit() -> float:
 	return smoothstep(0.0, 1.0, clampf(sit_amount, 0.0, 1.0))
@@ -473,9 +481,9 @@ func _foot(t: float, duty: float, reach: float, behind: float, lift: float, stri
 ## calcanhar logo após tocar e na planta antes de sair, nunca deslizando.
 func _stance(s: float, reach: float, behind: float, strike: float, push: float) -> Vector3:
 	var ground := reach * (1.0 - 2.0 * s) - behind
-	if s < 0.14: return _rock(ground + HEEL, Vector2(-HEEL, KIT.ANKLE_HEIGHT), strike * (1.0 - s / 0.14))
-	if s > 0.6: return _rock(ground + BALL, Vector2(-BALL, KIT.ANKLE_HEIGHT), push * smoothstep(0.6, 1.0, s))
-	return Vector3(ground, KIT.ANKLE_HEIGHT, 0.0)
+	if s < 0.14: return _rock(ground + HEEL, Vector2(-HEEL, ankle_height), strike * (1.0 - s / 0.14))
+	if s > 0.6: return _rock(ground + BALL, Vector2(-BALL, ankle_height), push * smoothstep(0.6, 1.0, s))
+	return Vector3(ground, ankle_height, 0.0)
 
 ## Tornozelo girando `angle` (bico para cima > 0) em torno de um pivô no chão.
 static func _rock(pivot_z: float, arm: Vector2, angle: float) -> Vector3:
@@ -486,15 +494,15 @@ static func _rock(pivot_z: float, arm: Vector2, angle: float) -> Vector3:
 func _place_leg(i: int, pelvis_basis: Basis, pelvis_position: Vector3, ankle: Vector3, pitch: float) -> void:
 	var side := -1.0 if i == 0 else 1.0
 	var hip: Vector3 = pelvis_position + pelvis_basis * _hip_offsets[i]
-	var solved := _two_bone(hip, ankle, KIT.THIGH, KIT.SHIN, Vector3(side * 0.12, 0.0, 1.0))
+	var solved := _two_bone(hip, ankle, thigh_len, shin_len, Vector3(side * 0.12, 0.0, 1.0))
 	var knee: Vector3 = solved[0]
 	var bend: Vector3 = solved[1]
 	var thigh_basis := _bone_basis(hip, knee, bend)
-	var shin_basis := _bone_basis(knee, knee + (ankle - knee).normalized() * KIT.SHIN, bend)
+	var shin_basis := _bone_basis(knee, knee + (ankle - knee).normalized() * shin_len, bend)
 	thighs[i].transform = Transform3D(pelvis_basis.transposed() * thigh_basis, _hip_offsets[i])
-	shins[i].transform = Transform3D(thigh_basis.transposed() * shin_basis, Vector3(0, -KIT.THIGH, 0))
+	shins[i].transform = Transform3D(thigh_basis.transposed() * shin_basis, Vector3(0, -thigh_len, 0))
 	var foot_basis := Basis(Vector3.UP, side * 0.09) * Basis(Vector3.RIGHT, -pitch)
-	feet[i].transform = Transform3D(shin_basis.transposed() * foot_basis, Vector3(0, -KIT.SHIN, 0))
+	feet[i].transform = Transform3D(shin_basis.transposed() * foot_basis, Vector3(0, -shin_len, 0))
 
 ## Braços segurando a caixa do estivador (`V1RoutineActor`, caixa a 1,0 m de
 ## altura e 0,34 m à frente): IK até as laterais da caixa, cotovelos para baixo
@@ -506,7 +514,7 @@ func _carry_arm(i: int, spine_model: Transform3D) -> Array:
 ## Braço até `target` (espaço do modelo), cotovelo puxado para `pole`.
 func _reach_arm(i: int, spine_model: Transform3D, target: Vector3, pole: Vector3) -> Array:
 	var shoulder := spine_model * _shoulders[i]
-	var solved := _two_bone(shoulder, target, KIT.UPPER_ARM, KIT.FOREARM + 0.06, pole)
+	var solved := _two_bone(shoulder, target, upper_arm_len, forearm_len + 0.06, pole)
 	var elbow: Vector3 = solved[0]
 	var upper := _bone_basis(shoulder, elbow, Vector3(0, 0, 1))
 	var fore := _bone_basis(elbow, target, Vector3(0, 1, 0))
