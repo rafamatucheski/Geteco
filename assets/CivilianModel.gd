@@ -140,6 +140,10 @@ var shin_len := KIT.SHIN
 var ankle_height := KIT.ANKLE_HEIGHT
 var upper_arm_len := KIT.UPPER_ARM
 var forearm_len := KIT.FOREARM
+## Os rigs importados podem ter braços assimétricos; a média deslocava o punho mesmo com alvo alcançável.
+var arm_lengths: Array[Vector2] = []
+## Cache dos limites locais: o tamanho do esqueleto não muda entre quadros.
+var arm_reach_limits := Vector2.ZERO
 var pelvis_y := PELVIS_Y
 
 const SKINS := [Color("f1c7a5"), Color("e0ac86"), Color("c89272"), Color("b97d5d"), Color("9f684e"), Color("7e4e38"), Color("5e3a2a"), Color("d8a07a")]
@@ -479,7 +483,7 @@ func _pose(dt: float) -> void:
 			arm_basis = arm_basis.slerp(carried[0], _carry_w)
 			fore_basis = fore_basis.slerp(carried[1], _carry_w)
 		upper_arms[i].transform = Transform3D(arm_basis, _shoulders[i])
-		forearms[i].transform = Transform3D(fore_basis, Vector3(0, -upper_arm_len, 0))
+		forearms[i].transform = Transform3D(fore_basis, Vector3(0, -_arm_measure(i).x, 0))
 
 func _sit() -> float:
 	return smoothstep(0.0, 1.0, clampf(sit_amount, 0.0, 1.0))
@@ -533,11 +537,17 @@ func _carry_arm(i: int, spine_model: Transform3D) -> Array:
 ## Braço até `target` (espaço do modelo), cotovelo puxado para `pole`.
 func _reach_arm(i: int, spine_model: Transform3D, target: Vector3, pole: Vector3) -> Array:
 	var shoulder := spine_model * _shoulders[i]
-	var solved := _two_bone(shoulder, target, upper_arm_len, forearm_len + 0.06, pole)
+	var lengths := _arm_measure(i)
+	var solved := _two_bone(shoulder, target, lengths.x, lengths.y, pole)
 	var elbow: Vector3 = solved[0]
 	var upper := _bone_basis(shoulder, elbow, Vector3(0, 0, 1))
 	var fore := _bone_basis(elbow, target, Vector3(0, 1, 0))
 	return [spine_model.basis.orthonormalized().transposed() * upper, upper.transposed() * fore]
+
+func _arm_measure(i: int) -> Vector2:
+	# Os 6 cm do kit representam a palma rígida. No Meshy, o alvo/teste usa a origem do osso Hand (punho).
+	if arm_lengths.size() == 2 and MESHY_RIG.correct_hand_reach: return arm_lengths[i]
+	return Vector2(upper_arm_len, forearm_len + 0.06)
 
 ## IK de duas barras. Devolve [articulação do meio, direção da dobra].
 static func _two_bone(root: Vector3, target: Vector3, a: float, b: float, pole: Vector3) -> Array:

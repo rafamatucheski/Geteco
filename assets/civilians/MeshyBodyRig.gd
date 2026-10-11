@@ -12,6 +12,8 @@ const TARGET_HEIGHT := 1.76
 const BONE_PREFIX := "mixamorig_"
 ## Giro da mão em torno do antebraço (palma para a coxa). Variável só para experimentos de captura.
 static var hand_roll := deg_to_rad(-70.0)
+## Interruptor de diagnóstico A/B na mesma sessão, sem trocar arquivos nem esconder a arma.
+static var correct_hand_reach := true
 const SHADER := preload("res://assets/civilians/civilian_meshy.gdshader")
 const ACCESSORIES := preload("res://assets/civilians/MeshyAccessories.gd")
 ## Topo do cabelo do kit acima da origem da cabeça: a peça é alinhada pelo topo do crânio do corpo importado.
@@ -47,7 +49,9 @@ var _e_parent := PackedInt32Array()
 var _e_jb := PackedInt32Array()
 var _e_neutral: Array[Basis] = []
 var _e_rest: Array[Basis] = []
+var _e_position: Array[Vector3] = []
 var _globals: Array[Basis] = []
+var _global_origins: Array[Vector3] = []
 var _joint_bases: Array[Basis] = []
 var _tracked: Array[Node3D] = []
 var _cache: Array[Transform3D] = []
@@ -111,11 +115,16 @@ func build(model: Node3D, source_path: String, tint := {}) -> void:
 		shin_total += knee.distance_to(ankle)
 		upper_total += _model_position(_bone(mix_name + "Arm")).distance_to(_model_position(_bone(mix_name + "ForeArm")))
 		fore_total += _model_position(_bone(mix_name + "ForeArm")).distance_to(_model_position(_bone(mix_name + "Hand")))
+		model.arm_lengths.append(Vector2(
+			_model_position(_bone(mix_name + "Arm")).distance_to(_model_position(_bone(mix_name + "ForeArm"))),
+			_model_position(_bone(mix_name + "ForeArm")).distance_to(_model_position(_bone(mix_name + "Hand")))))
 	model.pelvis_y = pelvis_y
 	model.thigh_len = thigh_total * 0.5
 	model.shin_len = shin_total * 0.5
 	model.upper_arm_len = upper_total * 0.5
 	model.forearm_len = fore_total * 0.5
+	model.arm_reach_limits = Vector2(model.arm_lengths[0].x + model.arm_lengths[0].y,
+		model.arm_lengths[1].x + model.arm_lengths[1].y) - Vector2.ONE * 0.002
 	model.ankle_height = (_model_position(_bone("RightFoot")).y + _model_position(_bone("LeftFoot")).y) * 0.5
 	_hips_offset = _model_position(hips) - Vector3(0, pelvis_y, 0)
 
@@ -138,7 +147,7 @@ func build(model: Node3D, source_path: String, tint := {}) -> void:
 		var shin: Node3D = model._joint(thigh, prefix + "lower_leg", Vector3(0, -model.thigh_len, 0), null)
 		var foot: Node3D = model._joint(shin, title + "Foot", Vector3(0, -model.shin_len, 0), null)
 		var arm: Node3D = model._joint(_spine, prefix + "upper_arm", model._shoulders[i], null)
-		var fore: Node3D = model._joint(arm, title + "Forearm", Vector3(0, -model.upper_arm_len, 0), null)
+		var fore: Node3D = model._joint(arm, title + "Forearm", Vector3(0, -model.arm_lengths[i].x, 0), null)
 		model.thighs.append(thigh)
 		model.shins.append(shin)
 		model.feet.append(foot)
@@ -216,9 +225,11 @@ func _entry(bone: int, jb: int, child := -1, toward := -1, roll := 0.0) -> void:
 	_e_jb.append(jb)
 	_e_neutral.append(_neutral(bone, child, toward, roll) if jb >= 0 else Basis.IDENTITY)
 	_e_rest.append(skeleton.get_bone_rest(bone).basis.orthonormalized())
+	_e_position.append(skeleton.get_bone_rest(bone).origin)
 
 func _build_chain(side_names: Array) -> void:
 	_globals.resize(skeleton.get_bone_count())
+	_global_origins.resize(skeleton.get_bone_count())
 	_entry(_bone("Hips"), JB_PELVIS)
 	_entry(_bone("Spine"), JB_SPINE)
 	_entry(_bone("Spine1"), JB_SPINE + 1)
@@ -277,13 +288,30 @@ func sync() -> void:
 		var bone := _e_bone[k]
 		var parent := _e_parent[k]
 		var parent_global: Basis = _globals[parent] if parent >= 0 else Basis.IDENTITY
+		var parent_origin: Vector3 = _global_origins[parent] if parent >= 0 else Vector3.ZERO
 		var jb := _e_jb[k]
 		if jb < 0:
 			_globals[bone] = parent_global * _e_rest[k]
+			_global_origins[bone] = parent_origin + parent_global * _e_position[k]
 			continue
 		var desired: Basis = _joint_bases[jb] * _e_neutral[k]
 		_globals[bone] = desired
 		# Bases ortonormais: a inversa é a transposta.
 		skeleton.set_bone_pose_rotation(bone, (parent_global.transposed() * desired).get_rotation_quaternion())
+		var bone_position := _e_position[k]
+		if jb == JB_LIMBS + 3 or jb == JB_LIMBS + 8:
+			# A coluna do GLB distribui a inclinação por três ossos. A junta da IK tem um só pivô;
+			# alinhar as origens elimina o deslocamento comum dos dois punhos durante a corrida.
+			if correct_hand_reach:
+				var side := 0 if jb == JB_LIMBS + 3 else 1
+				var arm_origin := (t_spine * _arms[side].transform).origin
+				var target_origin := (arm_origin - glb_root.position) / _scale
+				# Consultar duas vezes o esqueleto sujo forçava reavaliação; usa a mesma cadeia já calculada.
+				bone_position = parent_global.transposed() * (target_origin - parent_origin)
+			else:
+				bone_position = _e_position[k]
+			skeleton.set_bone_pose_position(bone, bone_position)
 		if parent < 0:
-			skeleton.set_bone_pose_position(bone, (t_pelvis.origin + t_pelvis.basis * _hips_offset - glb_root.position) / _scale)
+			bone_position = (t_pelvis.origin + t_pelvis.basis * _hips_offset - glb_root.position) / _scale
+			skeleton.set_bone_pose_position(bone, bone_position)
+		_global_origins[bone] = parent_origin + parent_global * bone_position

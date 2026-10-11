@@ -378,14 +378,18 @@ func _body_weapon_targets() -> Array:
 	grip.z -= recoil * .12
 	var support_offset: Vector3 = desired_basis * (POSE_DATA.SUPPORT_GRIPS[weapon_id] - POSE_DATA.GRIPS[weapon_id])
 	var supports := not pistol or _body_aim_weight > .35
+	# O limite do kit (594 mm) excedia em até 186 mm o braço tático importado: a arma ficava fora do alcance.
+	var reach_limits: Vector2 = body.arm_reach_limits if preload("res://assets/civilians/MeshyBodyRig.gd").correct_hand_reach else Vector2.ZERO
+	var right_reach: float = reach_limits.x if reach_limits.x > 0.0 else .594
+	var left_reach: float = reach_limits.y if reach_limits.y > 0.0 else .594
 	if supports:
 		# Both hands and the single weapon share one rigid frame. Fit that frame
 		# to both anatomical reach spheres instead of solving two unrelated arms.
 		for iteration in 8:
-			grip = right_shoulder + (grip - right_shoulder).limit_length(.594)
-			grip = left_shoulder - support_offset + (grip + support_offset - left_shoulder).limit_length(.594)
+			grip = right_shoulder + (grip - right_shoulder).limit_length(right_reach)
+			grip = left_shoulder - support_offset + (grip + support_offset - left_shoulder).limit_length(left_reach)
 	else:
-		grip = right_shoulder + (grip - right_shoulder).limit_length(.594)
+		grip = right_shoulder + (grip - right_shoulder).limit_length(right_reach)
 	var left_target: Variant = null
 	if supports: left_target = grip + support_offset
 	if _body_reloading:
@@ -398,7 +402,7 @@ func _body_weapon_targets() -> Array:
 		var rack := smoothstep(.60, .69, progress) * (1.0 - smoothstep(.79, .90, progress))
 		service = service.lerp(grip + desired_basis * Vector3(.03, .10, -.055), rack)
 		left_target = (grip + support_offset).lerp(service, weight)
-		left_target = left_shoulder + ((left_target as Vector3) - left_shoulder).limit_length(.594)
+		left_target = left_shoulder + ((left_target as Vector3) - left_shoulder).limit_length(left_reach)
 	var world_basis := body.global_basis * desired_basis
 	var world_grip := body.to_global(grip)
 	weapon.global_transform = Transform3D(world_basis, world_grip - world_basis * POSE_DATA.GRIPS[weapon_id])
