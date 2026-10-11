@@ -25,24 +25,30 @@ func _run() -> void:
 		CATALOG.override[tier] = SOURCE
 	for tier in 5:
 		await _check_tier(tier)
-	# Sem override e sem entradas no catálogo: continua o corpo procedural do kit.
 	CATALOG.override.clear()
+	# Catálogo real: cada escalão, nos dois sexos e em vários policiais; o corpo vem do arquivo de `ENTRIES`.
+	for tier in 5:
+		for index in [0, 1, 2, 3, 4, 5, 7, 8]:
+			await _check_catalog_officer(tier, index)
+	# Com o catálogo desligado (interruptor de medição/rollback): continua o corpo procedural do kit.
+	CATALOG.override.clear()
+	CATALOG.enabled = false
 	var plain := MODEL.new()
 	plain.tier = 0
 	root.add_child(plain)
 	plain.equip("pistol")
 	for i in 6: await process_frame
-	_check(plain.body != null and plain.body.get("skeleton") == null, "sem corpo no catálogo o policial segue procedural")
+	_check(plain.body != null and plain.body.get("skeleton") == null, "com o catálogo desligado o policial segue procedural")
 	print("POLICIA_MESHY failures=", failures)
 	quit(0 if failures.is_empty() else 1)
 
-func _check_tier(tier: int) -> void:
-	var tag := "escalão %d" % tier
+func _check_tier(tier: int, index := -1, catalog := false) -> void:
+	var tag := "escalão %d" % tier if not catalog else "escalão %d/policial %d" % [tier, index]
 	var holder := Node3D.new()
 	root.add_child(holder)
 	var police := MODEL.new()
 	police.tier = tier
-	police.appearance_index = tier * 2
+	police.appearance_index = tier * 2 if index < 0 else index
 	holder.add_child(police)
 	police.equip(WEAPONS[tier])
 	for i in 8: await process_frame
@@ -62,7 +68,9 @@ func _check_tier(tier: int) -> void:
 	_check(skinned == 1, "%s: um único corpo visível (%d)" % [tag, skinned])
 	_check(others == 0, "%s: nenhuma malha antiga ainda visível (%d)" % [tag, others])
 	var equipment := body.find_children("Equip_*", "MeshInstance3D", true, false)
-	_check(equipment.size() == (9 if tier >= 2 else 0), "%s: equipamento tático anexado (%d)" % [tag, equipment.size()])
+	# Corpo do catálogo real com equipamento na própria malha (SWAT/FBI/Exército): nada procedural por cima.
+	var baked: bool = police._body_equipment_baked
+	_check(equipment.size() == (0 if baked else (9 if tier >= 2 else 0)), "%s: equipamento %s (%d)" % [tag, "já na malha" if baked else "tático anexado", equipment.size()])
 	_check((police.rappel_harness != null) == (tier >= 2), "%s: ponto de rapel só onde há equipamento" % tag)
 	_check(not DEATH.joints_of(body).is_empty(), "%s: juntas das mortes do Mixamo" % tag)
 	var skeleton: Skeleton3D = body.skeleton
@@ -81,3 +89,19 @@ func _check_tier(tier: int) -> void:
 	var hand := _bone_world(skeleton, "RightHand")
 	_check(hand.is_finite() and hand.distance_to(police.global_position) < 2.5, "%s: mão estável durante a recarga" % tag)
 	holder.queue_free()
+
+## Policial com corpo escolhido pelo catálogo real: se há entrada para o escalão/sexo, o corpo é importado e passa
+## nas mesmas verificações; sem entrada (tático feminino), segue o corpo procedural do kit.
+func _check_catalog_officer(tier: int, index: int) -> void:
+	var probe := MODEL.new()
+	probe.tier = tier
+	probe.appearance_index = index
+	root.add_child(probe)
+	for i in 4: await process_frame
+	var imported: bool = is_instance_valid(probe.body) and probe.body.get("skeleton") != null
+	var female: bool = bool(probe.get_meta("police_appearance", {}).get("woman", false))
+	probe.queue_free()
+	if not imported:
+		_check(female and (tier == 2 or tier == 4), "escalão %d/policial %d: sem corpo no catálogo só para tático feminino" % [tier, index])
+		return
+	await _check_tier(tier, index, true)

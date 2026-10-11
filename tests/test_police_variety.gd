@@ -13,6 +13,9 @@ func check(ok: bool, label: String) -> void:
 	if not ok: failures.append(label)
 
 func run() -> void:
+	# Mede a geometria do corpo procedural do kit (malha da cabeça, perfil de peso); o corpo importado do Meshy
+	# é coberto por test_police_meshy_body.gd.
+	preload("res://gameplay/PoliceBodyCatalog.gd").enabled = false
 	var host := Node3D.new()
 	root.add_child(host)
 	var models: Array = []

@@ -335,6 +335,9 @@ func _ready() -> void:
 	_install_body.call_deferred()
 
 var body: Node3D
+## Corpo importado cuja malha já traz capacete, colete e joelheiras: o equipamento procedural não é anexado
+## (ficaria duplicado por cima do mesmo desenho).
+var _body_equipment_baked := false
 
 func _install_body() -> void:
 	if is_instance_valid(body) or not is_inside_tree(): return
@@ -344,6 +347,7 @@ func _install_body() -> void:
 	# Corpo importado do Meshy quando há entrada para este escalão/biotipo; senão o corpo procedural do kit.
 	var imported := POLICE_BODIES.pick(tier, look, appearance_index)
 	if not imported.is_empty(): look.merge({"body_source": imported.path, "body_tint": imported.tint}, true)
+	_body_equipment_baked = bool(imported.get("baked_equipment", false))
 	body = preload("res://assets/civilians/RigBodySwap.gd").install(self, look, keep)
 	if tier >= UnitTier.SWAT: _install_tactical_equipment()
 	body.hand_provider = _body_weapon_targets
@@ -418,7 +422,7 @@ func _install_tactical_equipment() -> void:
 		_merge_equipment(joint, part)
 		for key in palette: joint.set_instance_shader_parameter(key, palette[key])
 	if imported:
-		_attach_equipment(palette)
+		if not _body_equipment_baked: _attach_equipment(palette)
 	else:
 		for i in 2:
 			_merge_equipment(body.forearms[i], "glove")
