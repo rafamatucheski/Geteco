@@ -371,13 +371,40 @@ func _body_weapon_targets() -> Array:
 	var pitch := lerpf(-.95 if pistol else -.43, 0.0, _body_aim_weight) + recoil
 	var yaw := PI + lerpf(.0 if pistol else -.22, 0.0, _body_aim_weight)
 	var desired_basis := Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, pitch)
+	var palm_pose: bool = body.palm_grip_enabled and preload("res://assets/civilians/MeshyBodyRig.gd").palm_grips
+	# As mãos autoradas fecham sobre a arma na escala usada pelo Dante.
+	# O tamanho antigo do kit fazia o guarda-mato atravessar a palma copiada.
+	var weapon_scale: float = preload("res://gameplay/WeaponRigPose.gd").V1_TO_V2 if palm_pose else 1.0
+	var right_offset := Vector3.ZERO
+	var left_offset := Vector3.ZERO
+	var reload_fetch := 0.0
+	if _body_reloading:
+		reload_fetch = smoothstep(.08, .23, _body_reload_progress) * (1.0 - smoothstep(.32, .50, _body_reload_progress))
+	if palm_pose:
+		# Mesma orientação autorada do Dante; armas longas cruzam a pega de apoio.
+		body.hand_frames[0] = desired_basis * body.weapon_hand_frames[0]
+		body.hand_frames[1] = desired_basis * (Basis(Vector3.RIGHT, PI * .5) if not pistol else Basis.IDENTITY) * body.weapon_hand_frames[1]
+		# Ao buscar o carregador no cinto, os dedos descem; conservar a pega sob o
+		# guarda-mão dobrava o pulso para trás, mesmo com a palma no alvo correto.
+		if reload_fetch > 0.0:
+			body.hand_frames[1] = (body.hand_frames[1] as Basis).slerp(Basis(Vector3.FORWARD, Vector3.DOWN, Vector3.LEFT), reload_fetch)
+		right_offset = body.hand_frames[0] * body.palm_offsets[0]
+		left_offset = body.hand_frames[1] * body.palm_offsets[1]
+	elif body.hand_frames[0] != null:
+		body.hand_frames = [null, null]
 	if not pistol:
-		var stock_offset: Vector3 = desired_basis * (POSE_DATA.STOCK_ENDS[weapon_id] - POSE_DATA.GRIPS[weapon_id])
-		aim_grip = right_shoulder - stock_offset + Vector3(.015, -.035, .02)
+		var stock_offset: Vector3 = desired_basis * (POSE_DATA.STOCK_ENDS[weapon_id] - POSE_DATA.GRIPS[weapon_id]) * weapon_scale
+		# O osso fica dentro do paletó; a soleira maior apoia na frente dele.
+		aim_grip = right_shoulder - stock_offset + Vector3(.015, -.035, .12 if palm_pose else .02)
+		if palm_pose:
+			aim_grip.x = lerpf(right_shoulder.x, left_shoulder.x, .35)
+			# A coronha acompanha o tronco inclinado também durante a corrida.
+			ready_grip = aim_grip
 	var grip := ready_grip.lerp(aim_grip, _body_aim_weight)
 	grip.z -= recoil * .12
-	var support_offset: Vector3 = desired_basis * (POSE_DATA.SUPPORT_GRIPS[weapon_id] - POSE_DATA.GRIPS[weapon_id])
+	var support_offset: Vector3 = desired_basis * (POSE_DATA.SUPPORT_GRIPS[weapon_id] - POSE_DATA.GRIPS[weapon_id]) * weapon_scale
 	var supports := not pistol or _body_aim_weight > .35
+	body.hand_grip_weights = Vector2.ONE
 	# O limite do kit (594 mm) excedia em até 186 mm o braço tático importado: a arma ficava fora do alcance.
 	var reach_limits: Vector2 = body.arm_reach_limits if preload("res://assets/civilians/MeshyBodyRig.gd").correct_hand_reach else Vector2.ZERO
 	var right_reach: float = reach_limits.x if reach_limits.x > 0.0 else .594
@@ -386,30 +413,32 @@ func _body_weapon_targets() -> Array:
 		# Both hands and the single weapon share one rigid frame. Fit that frame
 		# to both anatomical reach spheres instead of solving two unrelated arms.
 		for iteration in 8:
-			grip = right_shoulder + (grip - right_shoulder).limit_length(right_reach)
-			grip = left_shoulder - support_offset + (grip + support_offset - left_shoulder).limit_length(left_reach)
+			grip = right_shoulder + right_offset + (grip - right_offset - right_shoulder).limit_length(right_reach)
+			grip = left_shoulder + left_offset - support_offset + (grip + support_offset - left_offset - left_shoulder).limit_length(left_reach)
 	else:
-		grip = right_shoulder + (grip - right_shoulder).limit_length(right_reach)
+		grip = right_shoulder + right_offset + (grip - right_offset - right_shoulder).limit_length(right_reach)
 	var left_target: Variant = null
 	if supports: left_target = grip + support_offset
 	if _body_reloading:
 		var progress := _body_reload_progress
 		var weight := smoothstep(0.0, .10, progress) * (1.0 - smoothstep(.88, 1.0, progress))
 		var belt := Vector3(.19, .98, .13)
-		var magazine := grip + desired_basis * Vector3(.035, -.06, -.025)
-		var fetch := smoothstep(.08, .23, progress) * (1.0 - smoothstep(.32, .50, progress))
+		var magazine := grip + desired_basis * Vector3(.035, -.06, -.025) * weapon_scale
+		var fetch := reload_fetch
+		body.hand_grip_weights.y = 1.0 - fetch * .75
 		var service := magazine.lerp(belt, fetch)
 		var rack := smoothstep(.60, .69, progress) * (1.0 - smoothstep(.79, .90, progress))
-		service = service.lerp(grip + desired_basis * Vector3(.03, .10, -.055), rack)
+		service = service.lerp(grip + desired_basis * Vector3(.065 if palm_pose else .03, .10, -.055) * weapon_scale, rack)
 		left_target = (grip + support_offset).lerp(service, weight)
-		left_target = left_shoulder + ((left_target as Vector3) - left_shoulder).limit_length(left_reach)
+		left_target = left_shoulder + left_offset + ((left_target as Vector3) - left_offset - left_shoulder).limit_length(left_reach)
 	var world_basis := body.global_basis * desired_basis
 	var world_grip := body.to_global(grip)
-	weapon.global_transform = Transform3D(world_basis, world_grip - world_basis * POSE_DATA.GRIPS[weapon_id])
+	var weapon_basis := world_basis.scaled_local(Vector3.ONE * weapon_scale)
+	weapon.global_transform = Transform3D(weapon_basis, world_grip - weapon_basis * POSE_DATA.GRIPS[weapon_id])
 	var left_contact: Variant = null
 	if left_target is Vector3: left_contact = body.to_global(left_target)
 	_weapon_hand_contacts = [world_grip, left_contact]
-	return _weapon_hand_contacts.duplicate()
+	return [body.to_global(grip - right_offset), body.to_global(left_target - left_offset) if left_target is Vector3 else null]
 
 func weapon_hand_contacts() -> Array:
 	return _weapon_hand_contacts.duplicate()

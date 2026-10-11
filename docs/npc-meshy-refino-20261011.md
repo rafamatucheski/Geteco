@@ -1,5 +1,7 @@
 # Refino dos corpos Meshy — 11/10/2026
 
+> Revisão posterior: o usuário reprovou as mãos nas capturas desta entrega. O alinhamento do **punho** medido abaixo não comprovava a pega visual. A curva incremental deixou triângulos esticados entre vértices tratados de forma diferente. As pastas `final-smg`/`final-m4` abaixo são evidência histórica do defeito, não referência aprovada. A correção posterior e sua comparação com o Dante estão em [revisão das mãos](npc-meshy-maos-dante-20261011.md).
+
 Entrega parcial das prioridades 1 e 2. Corrigidos pesos do terno masculino, alcance por braço e alinhamento dos membros. Nenhuma família nova foi migrada; nenhum crédito Meshy foi gasto e nenhum arquivo foi baixado.
 
 ## Mudanças de produção

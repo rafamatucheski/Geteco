@@ -75,7 +75,7 @@ func _run() -> void:
 	Engine.max_fps = 0
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	for kind in kinds:
-		CATALOG.enabled = (kind == "new")
+		_configure_kind(kind)
 		var holder := Node3D.new()
 		stage.add_child(holder)
 		officers.clear()
@@ -99,6 +99,9 @@ func _run() -> void:
 	var out := FileAccess.open(ProjectSettings.globalize_path("%s/ab-police-%d.json" % [output_dir, count]), FileAccess.WRITE)
 	out.store_string(JSON.stringify({"environment": info, "rounds": rounds}, "\t"))
 	quit(0)
+
+func _configure_kind(kind: String) -> void:
+	CATALOG.enabled = (kind == "new")
 
 func _sample(round_name: String, kind: String) -> void:
 	await create_timer(WARMUP).timeout

@@ -14,6 +14,7 @@ const BONE_PREFIX := "mixamorig_"
 static var hand_roll := deg_to_rad(-70.0)
 ## Interruptor de diagnóstico A/B na mesma sessão, sem trocar arquivos nem esconder a arma.
 static var correct_hand_reach := true
+static var palm_grips := true
 const SHADER := preload("res://assets/civilians/civilian_meshy.gdshader")
 const ACCESSORIES := preload("res://assets/civilians/MeshyAccessories.gd")
 ## Topo do cabelo do kit acima da origem da cabeça: a peça é alinhada pelo topo do crânio do corpo importado.
@@ -24,7 +25,7 @@ const JB_SPINE := 1 # 3 frações do tronco: 1/3, 2/3, 1
 const JB_NECK := 4
 const JB_HEAD := 5
 const JB_LIMBS := 6 # por lado, 5 entradas: coxa, canela, pé, braço, antebraço
-## Um material por GLB, compartilhado por toda a multidão (cor/matiz variam por instância).
+## Materiais por superfície do GLB, compartilhados pela multidão (cor/matiz variam por instância).
 static var _materials: Dictionary = {}
 
 var skeleton: Skeleton3D
@@ -47,6 +48,7 @@ var _hips_offset := Vector3.ZERO
 var _e_bone := PackedInt32Array()
 var _e_parent := PackedInt32Array()
 var _e_jb := PackedInt32Array()
+var _e_hand := PackedInt32Array()
 var _e_neutral: Array[Basis] = []
 var _e_rest: Array[Basis] = []
 var _e_position: Array[Vector3] = []
@@ -55,13 +57,20 @@ var _global_origins: Array[Vector3] = []
 var _joint_bases: Array[Basis] = []
 var _tracked: Array[Node3D] = []
 var _cache: Array[Transform3D] = []
+var _hand_frames: Array = [null, null]
+var _hand_sources: Array[Basis] = []
+var _hand_bones := PackedInt32Array()
+var _hand_profile: Array = []
+var _has_palms := false
+var _grip_shapes := PackedInt32Array()
+var _grip_values := Vector2.ZERO
 
 ## Nó separado: o pai pára de chamar `_process` quando o ator morre e a queda escreve nas juntas depois disso.
 class PoseDriver extends Node:
 	var rig: RefCounted
 	var model: Node3D
-	func _process(_delta: float) -> void:
-		if is_instance_valid(model) and model.is_visible_in_tree(): rig.sync()
+	func _process(delta: float) -> void:
+		if is_instance_valid(model) and model.is_visible_in_tree(): rig.sync(delta)
 
 # --- Construção ---------------------------------------------------------------
 
@@ -84,6 +93,13 @@ func build(model: Node3D, source_path: String, tint := {}) -> void:
 	glb_root = packed.instantiate() as Node3D
 	skeleton = glb_root.find_children("*", "Skeleton3D", true, false)[0] as Skeleton3D
 	mesh_node = glb_root.find_children("*", "MeshInstance3D", true, false)[0] as MeshInstance3D
+	_hand_profile = mesh_node.get_meta("extras", {}).get("npc_hand_profile", [])
+	_has_palms = _hand_profile.size() == 2
+	model.palm_grip_enabled = _has_palms
+	for side in ["Right", "Left"]:
+		_grip_shapes.append(mesh_node.find_blend_shape_by_name("Grip" + side))
+	for side in 2:
+		if _grip_shapes[side] >= 0: _grip_values[side] = mesh_node.get_blend_shape_value(_grip_shapes[side])
 	# Os clipes do Meshy não são usados em jogo: a pose vem das juntas.
 	for player in glb_root.find_children("*", "AnimationPlayer", true, false):
 		player.get_parent().remove_child(player)
@@ -196,15 +212,18 @@ func attach_accessories(list: Array) -> Array[Node3D]:
 		pieces.append(piece)
 	return pieces
 
-## Material compartilhado por GLB; a textura vem do material original do arquivo.
+## Materiais compartilhados por GLB/superfície; as texturas vêm do arquivo original.
 func _apply_material(source_path: String, tint: Dictionary) -> void:
-	if not _materials.has(source_path):
-		var original := mesh_node.get_active_material(0) as StandardMaterial3D
-		var material := ShaderMaterial.new()
-		material.shader = SHADER
-		if original != null and original.albedo_texture != null: material.set_shader_parameter("albedo_texture", original.albedo_texture)
-		_materials[source_path] = material
-	mesh_node.material_override = _materials[source_path]
+	# A mão reaproveitada conserva sua textura na mesma malha/esqueleto do corpo.
+	for surface in mesh_node.mesh.get_surface_count():
+		var key := "%s:%d" % [source_path, surface]
+		if not _materials.has(key):
+			var original := mesh_node.get_active_material(surface) as StandardMaterial3D
+			var material := ShaderMaterial.new()
+			material.shader = SHADER
+			if original != null and original.albedo_texture != null: material.set_shader_parameter("albedo_texture", original.albedo_texture)
+			_materials[key] = material
+		mesh_node.set_surface_override_material(surface, _materials[key])
 	if tint.has("hue"): mesh_node.set_instance_shader_parameter("hue_shift", float(tint.hue))
 	if tint.has("brightness"): mesh_node.set_instance_shader_parameter("brightness", float(tint.brightness))
 	if tint.has("tone"): mesh_node.set_instance_shader_parameter("tone", tint.tone)
@@ -223,6 +242,7 @@ func _entry(bone: int, jb: int, child := -1, toward := -1, roll := 0.0) -> void:
 	_e_bone.append(bone)
 	_e_parent.append(skeleton.get_bone_parent(bone))
 	_e_jb.append(jb)
+	_e_hand.append(-1)
 	_e_neutral.append(_neutral(bone, child, toward, roll) if jb >= 0 else Basis.IDENTITY)
 	_e_rest.append(skeleton.get_bone_rest(bone).basis.orthonormalized())
 	_e_position.append(skeleton.get_bone_rest(bone).origin)
@@ -245,6 +265,24 @@ func _build_chain(side_names: Array) -> void:
 		_entry(_bone(mix + "ForeArm"), base + 4, _bone(mix + "Hand"))
 		# A pose A do Meshy deixa a palma para a frente; relaxada, ela olha para a coxa.
 		_entry(_bone(mix + "Hand"), base + 4, _bone(mix + "Hand"), _bone(mix + "ForeArm"), hand_roll * (-1.0 if i == 0 else 1.0))
+		_e_hand[-1] = i
+		var fingers := (_rest_origin(_bone(mix + "Hand")) - _rest_origin(_bone(mix + "ForeArm"))).normalized()
+		var normal := (Vector3.BACK - fingers * fingers.dot(Vector3.BACK)).normalized()
+		if _model.palm_grip_enabled:
+			var profile: Dictionary = _hand_profile[i]
+			fingers = Vector3(profile.fingers[0], profile.fingers[1], profile.fingers[2]).normalized()
+			normal = Vector3(profile.normal[0], profile.normal[1], profile.normal[2]).normalized()
+			normal = (normal - fingers * fingers.dot(normal)).normalized()
+			_model.palm_offsets[i] = Vector3(profile.palm_offset[0], profile.palm_offset[1], profile.palm_offset[2])
+			if profile.has("weapon_frame"):
+				var axes: Array = profile.weapon_frame
+				_model.weapon_hand_frames[i] = Basis(Vector3(axes[0][0], axes[0][1], axes[0][2]), Vector3(axes[1][0], axes[1][1], axes[1][2]), Vector3(axes[2][0], axes[2][1], axes[2][2]))
+		var anatomical := Basis(fingers.cross(normal), fingers, normal)
+		_hand_sources.append(anatomical.transposed() * skeleton.get_bone_global_rest(_bone(mix + "Hand")).basis.orthonormalized())
+		_hand_bones.append(_bone(mix + "Hand"))
+		if _model.palm_grip_enabled:
+			var relaxed_normal := Vector3.RIGHT if i == 0 else Vector3.LEFT
+			_e_neutral[-1] = Basis(Vector3.DOWN.cross(relaxed_normal), Vector3.DOWN, relaxed_normal) * _hand_sources.back()
 		_entry(_bone(mix + "UpLeg"), base, _bone(mix + "Leg"))
 		_entry(_bone(mix + "Leg"), base + 1, _bone(mix + "Foot"))
 		var foot := _bone(mix + "Foot")
@@ -254,9 +292,29 @@ func _build_chain(side_names: Array) -> void:
 
 # --- Pose -----------------------------------------------------------------------
 
-func sync() -> void:
+func palm_position(side: int) -> Vector3:
+	if not _model.palm_grip_enabled or not palm_grips:
+		return skeleton.to_global(skeleton.get_bone_global_pose(_hand_bones[side]).origin)
+	var offset: Vector3 = _hand_sources[side].transposed() * _model.palm_offsets[side] / _scale
+	return skeleton.to_global(skeleton.get_bone_global_pose(_hand_bones[side]) * offset)
+
+func sync(delta := 1.0 / 60.0) -> void:
 	if skeleton == null: return
 	var changed := false
+	if _has_palms:
+		var alive: bool = not is_instance_valid(_model._owner_actor) or _model._owner_actor.get("dead") != true
+		for i in 2:
+			var frame: Variant = _model.hand_frames[i] if alive and palm_grips and _model.hand_targets[i] is Vector3 else null
+			if frame != _hand_frames[i]:
+				_hand_frames[i] = frame
+				changed = true
+			if _grip_shapes[i] >= 0:
+				var weight: float = _model.hand_grip_weights[i] if frame is Basis else (.18 if alive else 0.0)
+				# Este driver é o único escritor: não consultar o servidor por quadro
+				# quando a mão já chegou à forma solicitada.
+				if not is_equal_approx(_grip_values[i], weight):
+					_grip_values[i] = move_toward(_grip_values[i], weight, delta * 14.0)
+					mesh_node.set_blend_shape_value(_grip_shapes[i], _grip_values[i])
 	for k in _tracked.size():
 		var transform_now := _tracked[k].transform
 		if transform_now != _cache[k]:
@@ -295,6 +353,10 @@ func sync() -> void:
 			_global_origins[bone] = parent_origin + parent_global * _e_position[k]
 			continue
 		var desired: Basis = _joint_bases[jb] * _e_neutral[k]
+		# A arma pede uma palma orientada; o punho não deve herdar a rotação do cotovelo.
+		if _has_palms and _e_hand[k] >= 0:
+			var side := _e_hand[k]
+			if _hand_frames[side] is Basis: desired = _hand_frames[side] * _hand_sources[side]
 		_globals[bone] = desired
 		# Bases ortonormais: a inversa é a transposta.
 		skeleton.set_bone_pose_rotation(bone, (parent_global.transposed() * desired).get_rotation_quaternion())

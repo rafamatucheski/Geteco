@@ -2,7 +2,7 @@
 
 Atualização da sessão principal: o reparo incremental foi integrado ao terno masculino. A orientação dirigida de punho experimental foi rejeitada e removida; foi mantido o roll existente do antebraço. Os 56 casos de contato de SMG/M4 passaram, incluindo corrida estabilizada. Resultado e limites em [npc-meshy-refino-20261011.md](npc-meshy-refino-20261011.md); abaixo permanece o registro da investigação offline.
 
-**Candidato offline, pendente de captura/seleção pela sessão principal.** Originais e runtime não foram alterados nesta investigação. Nenhum motor foi iniciado.
+**A curva incremental foi reprovada visualmente pelo usuário e substituída por candidatos com mãos reais do Dante.** A validação dos pesos abaixo era correta, mas não comprovava integridade da malha nem qualidade da pegada. Este diagnóstico offline não iniciou motor nem alterou produção; a sessão principal controla a integração e as capturas.
 
 ## Causa encontrada
 
@@ -61,3 +61,42 @@ Pendente: captura renderizada com SMG/M4, frente/lado/costas, mira, recuo, recar
 O ajuste da sessão principal usa `get_bone_global_pose(parent).origin` em espaço local do Skeleton e calcula o alvo removendo `glb_root.position` e dividindo por `_scale`. Esses espaços são compatíveis nos GLBs atuais, que têm malha/root em transformação identidade e escala uniforme aplicada externamente. Esse raciocínio não estabelece suporte para imports arbitrários com transforms adicionais ou escala não uniforme.
 
 Há duas consultas do pai do braço por sincronização. Como o driver já escreve rotações na mesma cadeia, essas leituras podem exigir atualização interna do esqueleto; o custo não foi medido. Uma alternativa a avaliar é manter origens globais no cache junto das bases em ordem pai → filho, calculando `parent_origin + parent_basis * local_origin`, sem consultar Skeleton no meio das escritas. Essa é uma sugestão, não uma otimização implementada ou comprovada.
+
+## Reprovação da geometria e referência Dante
+
+A comparação das arestas demonstrou a falha da curva incremental: 225 vértices novos foram dobrados com uma extensão/dobradiça diferente da dos 22/26 antigos elegíveis. Em 520 arestas afetadas, p95 de razão comprimento novo/antigo = 5,002 e máximo = 12,927. A aresta 3806 → 3815 passou de 8,06 para 104,15 mm. Fotos `refinement-20261011/final-m4/` mostraram o resultado como leques/triângulos, reprovados pelo usuário.
+
+A recuperação matemática da curva antiga e uma segunda experiência de morph contínuo preservaram a base, mas também foram reprovadas em mira. A mistura de pesos e a orientação independente do punho tornam insuficiente validar apenas o morph em repouso. Essas ferramentas descartadas foram preservadas em `evidence/npc-meshy/hands-review-20261011/offline-probes/`, sem inclusão no pipeline final.
+
+O Dante usa `assets/dante.glb`, `scripts/Actor.gd` e formas autoradas `GripRight`/`GripLeft`, com ponto de palma `Hand * (0, 0.065, 0)` e escala 1,03. `DanteHandShapes.gd` trata o polegar das formas de punho fechado. O caminho escolhido para comparação agora transplanta as mãos reais e as formas de grip, em vez de deformar artificialmente os dedos do NPC.
+
+## Ferramenta final de transplante
+
+`tools/meshy_graft_dante_hands.py` é independente das ferramentas descartadas. Lê o corpo original revisado e o Dante local, remove fisicamente as faces distais antigas, copia a geometria/UVs e deltas autorados de `GripRight`/`GripLeft` por uma transformação de similaridade, e mantém os dedos rígidos no osso `Hand` correspondente. Usa duas superfícies na mesma malha/esqueleto: corpo e mãos. A textura das mãos é embutida e seu tom é ajustado offline à pele do NPC, preservando detalhes sem novo multiplicador de shader em runtime.
+
+O CLI recusa saída existente, saída igual ao corpo/Dante, entrada já transplantada, mais de uma superfície ou morphs existentes no corpo. `--report` também precisa ser novo e diferente de corpo/Dante/GLB de saída. A recusa de `--report` igual ao original foi verificada com hash do GLB antes/depois, sem escrever saída.
+
+```powershell
+python tools/meshy_graft_dante_hands.py evidence/npc-meshy/hands-review-20261011/suit_m_before.glb evidence/npc-meshy/hands-review-20261011/suit_m_candidate.glb --donor assets/dante.glb --report evidence/npc-meshy/hands-review-20261011/suit_m_candidate.json
+```
+
+O candidato histórico deste trecho é `suit_m_dante_hands_v5.glb`, posteriormente reprovado por winding/borda. **A versão instalada é V11, com revisão final e escopo descritos em `npc-meshy-graft-tool-20261011.md` e `npc-meshy-maos-dante-20261011.md`.** Os números abaixo registram a experiência v5, não a entrega. Sua retirada de faces foi estritamente local a cada `Hand`: distância até 220 mm, distância axial acima de −40 mm e radial menor que 160 mm, na altura normalizada de 1,76 m. O cuff distal original também saiu; o resto do corpo não recebeu corte por cor ou altura. Foram preservadas exatamente todas as 3.471 faces fora desses envelopes. Os 675 triângulos antigos distais foram removidos fisicamente.
+
+O cuff novo é tubular, com 18 segmentos: trecho de paletó de 54 mm, faixa branca de camisa de 11 mm e tampa anular. Os UVs são constantes por faixa e não atravessam ilhas diferentes da textura. Seus 216 triângulos ficam em `ForeArm`, evitando que a orientação do punho puxe a camisa. A ponte de pele regular, de 48 mm, fica dentro da manga e em `Hand`; não extruda as bordas irregulares do recorte por textura. Os deltas autorados do Dante permanecem intactos nos vértices transplantados.
+
+| Medida do candidato v5 | Valor |
+|---|---:|
+| Triângulos originais do corpo mantidos | 3.471 |
+| Triângulos novos do cuff | 216 |
+| Triângulos das mãos/ponte | 6.553 |
+| Triângulos totais | 10.240 |
+| Vértices corpo / mãos | 3.480 / 4.935 |
+| Superfícies / ossos | 2 / 24 |
+| Ponto de palma anatômico por lado | aproximadamente (0; 0,06695; 0) m |
+| Multiplicador RGB aplicado offline à textura das mãos | (0,8095; 0,6891; 0,8014) |
+
+Perfil `npc_hand_profile` fica em `extras` do nó da malha, na ordem Right/Left, com `fingers`, `normal` em espaço de repouso do Skeleton e `palm_offset` em metros no quadro anatômico X=Y×Z, Y=dedos, Z=palma. O runtime da sessão principal lê os extras importados e aplica grip somente a corpos com esse perfil. O ponto de contato usa o mesmo ponto autorado do Dante convertido para a escala alvo.
+
+Verificação offline do v5: todas as faces fora dos envelopes permanecem com ordem/índices correspondentes; posições/normais/UVs dos vértices originais mantidos são exatos. Não restou peso `Hand` na superfície corporal; os dedos/ponte têm peso exato 1,0 no `Hand` respectivo. Índices e tamanhos de acessores de morph nas duas superfícies são válidos, e os morphs da superfície corporal são zeros. Evidência em `suit_m_dante_hands_v5_validation.json`.
+
+**Pendências históricas do candidato v5 (superado):** a sessão principal precisava aprovar visualmente repouso, mira/tiro, corrida, recarga, mãos livres e o encaixe punho/manga. O aumento de 4.146 para 10.240 triângulos e a segunda superfície exigem A/B renderizado incluindo a troca de GLB; métricas de rig somente não comprovam esse custo. As versões iniciais de transplante foram reprovadas por fragmentos/cuff e, numa experiência de máscara global por cor, buracos no corpo. O v5 preserva o corpo fora dos envelopes, mas esse resultado offline não certifica acabamento no jogo.

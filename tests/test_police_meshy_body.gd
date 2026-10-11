@@ -77,10 +77,10 @@ func _check_tier(tier: int, index := -1, catalog := false) -> void:
 	# Mira: as duas mãos nos pontos de contato da arma.
 	for i in 40: police.update_pose(1.0 / 60.0, true, false, 0.0, 0.0); await process_frame
 	var contacts: Array = police.weapon_hand_contacts()
-	var right_error := _bone_world(skeleton, "RightHand").distance_to(contacts[0]) if contacts[0] is Vector3 else 99.0
+	var right_error: float = body._meshy.palm_position(0).distance_to(contacts[0]) if contacts[0] is Vector3 else 99.0
 	_check(right_error < 0.03, "%s: mão do lado -X no cabo ao mirar (%.1f mm)" % [tag, right_error * 1000.0])
 	if contacts[1] is Vector3:
-		var left_error := _bone_world(skeleton, "LeftHand").distance_to(contacts[1])
+		var left_error: float = body._meshy.palm_position(1).distance_to(contacts[1])
 		_check(left_error < 0.03, "%s: mão de apoio na arma ao mirar (%.1f mm)" % [tag, left_error * 1000.0])
 	# Recarga em andamento: sem erro e mãos continuam finitas.
 	for step in 30:

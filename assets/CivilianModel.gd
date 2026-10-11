@@ -27,6 +27,12 @@ var wardrobe: Dictionary = {}
 ## segura arma ou maca (polícia, socorristas) escreve aqui a cada quadro e o
 ## braço vai até lá por IK, por cima da passada.
 var hand_targets: Array = [null, null]
+## Orientação anatômica no espaço do corpo (Y = dedos, Z = palma); null mantém o balanço livre.
+var hand_frames: Array = [null, null]
+var weapon_hand_frames: Array[Basis] = [Basis.IDENTITY, Basis.IDENTITY]
+var palm_offsets: Array[Vector3] = [Vector3(0, .06, .018), Vector3(0, .06, .018)]
+var palm_grip_enabled := false
+var hand_grip_weights := Vector2.ONE
 ## false = pose todo quadro. NPC com arma precisa: a arma se move todo quadro.
 var lod_enabled := true
 ## Sentado (0..1) num assento a `seat_height` metros do chão, como o
