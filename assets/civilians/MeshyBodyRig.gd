@@ -15,6 +15,8 @@ static var hand_roll := deg_to_rad(-70.0)
 ## Interruptor de diagnóstico A/B na mesma sessão, sem trocar arquivos nem esconder a arma.
 static var correct_hand_reach := true
 static var palm_grips := true
+## Interruptor A/B para o mesmo esqueleto e pose, sem reduzir frequência ou geometria.
+static var optimize_pose_chain := true
 const SHADER := preload("res://assets/civilians/civilian_meshy.gdshader")
 const ACCESSORIES := preload("res://assets/civilians/MeshyAccessories.gd")
 ## Topo do cabelo do kit acima da origem da cabeça: a peça é alinhada pelo topo do crânio do corpo importado.
@@ -49,6 +51,7 @@ var _e_bone := PackedInt32Array()
 var _e_parent := PackedInt32Array()
 var _e_jb := PackedInt32Array()
 var _e_hand := PackedInt32Array()
+var _e_need_origin := PackedByteArray()
 var _e_neutral: Array[Basis] = []
 var _e_rest: Array[Basis] = []
 var _e_position: Array[Vector3] = []
@@ -289,6 +292,15 @@ func _build_chain(side_names: Array) -> void:
 		var foot_parent := skeleton.get_bone_parent(foot)
 		if foot_parent != _bone(mix + "Leg"): _entry(foot_parent, -1)
 		_entry(foot, base + 2)
+	# Só os ancestrais dos ombros alimentam posições que serão escritas no
+	# esqueleto. As demais origens eram propagadas sem nenhum consumidor.
+	var origin_bones := {}
+	for mix in side_names:
+		var ancestor := skeleton.get_bone_parent(_bone(mix + "Arm"))
+		while ancestor >= 0:
+			origin_bones[ancestor] = true
+			ancestor = skeleton.get_bone_parent(ancestor)
+	for bone in _e_bone: _e_need_origin.append(1 if origin_bones.has(bone) else 0)
 
 # --- Pose -----------------------------------------------------------------------
 
@@ -321,10 +333,17 @@ func sync(delta := 1.0 / 60.0) -> void:
 			_cache[k] = transform_now
 			changed = true
 	if not changed: return
-	var t_pelvis := _pelvis.transform
-	var t_spine := t_pelvis * _spine.transform
-	var spine_q := _spine.transform.basis.get_rotation_quaternion()
-	var head_q := _head.transform.basis.orthonormalized().get_rotation_quaternion()
+	var optimized := optimize_pose_chain and _has_palms
+	# A varredura acima acabou de ler todas essas transformações, sem yield nem
+	# mutação intermediária. Reaproveitar o snapshot evita getters repetidos.
+	var t_pelvis := _cache[0] if optimized else _pelvis.transform
+	var spine_local := _cache[1] if optimized else _spine.transform
+	var head_local := _cache[2] if optimized else _head.transform
+	var t_spine := t_pelvis * spine_local
+	var spine_q := spine_local.basis.get_rotation_quaternion()
+	var head_q := head_local.basis.orthonormalized().get_rotation_quaternion()
+	var arm_origin_0 := Vector3.ZERO
+	var arm_origin_1 := Vector3.ZERO
 	_joint_bases[JB_PELVIS] = t_pelvis.basis
 	for f in 3:
 		_joint_bases[JB_SPINE + f] = t_pelvis.basis * Basis(Quaternion.IDENTITY.slerp(spine_q, (f + 1) / 3.0))
@@ -332,25 +351,30 @@ func sync(delta := 1.0 / 60.0) -> void:
 	_joint_bases[JB_HEAD] = t_spine.basis * Basis(head_q)
 	for i in 2:
 		var base := JB_LIMBS + i * 5
-		var t_thigh := t_pelvis * _thighs[i].transform
-		var t_shin := t_thigh * _shins[i].transform
-		var t_foot := t_shin * _feet[i].transform
-		var t_arm := t_spine * _arms[i].transform
-		var t_fore := t_arm * _forearms[i].transform
+		var t_thigh := t_pelvis * (_cache[3 + i] if optimized else _thighs[i].transform)
+		var t_shin := t_thigh * (_cache[5 + i] if optimized else _shins[i].transform)
+		var t_foot := t_shin * (_cache[7 + i] if optimized else _feet[i].transform)
+		var t_arm := t_spine * (_cache[9 + i] if optimized else _arms[i].transform)
+		var t_fore := t_arm * (_cache[11 + i] if optimized else _forearms[i].transform)
+		if i == 0: arm_origin_0 = t_arm.origin
+		else: arm_origin_1 = t_arm.origin
 		_joint_bases[base] = t_thigh.basis
 		_joint_bases[base + 1] = t_shin.basis
 		_joint_bases[base + 2] = t_foot.basis
 		_joint_bases[base + 3] = t_arm.basis
 		_joint_bases[base + 4] = t_fore.basis
+	var glb_position := glb_root.position
 	for k in _e_bone.size():
 		var bone := _e_bone[k]
 		var parent := _e_parent[k]
 		var parent_global: Basis = _globals[parent] if parent >= 0 else Basis.IDENTITY
-		var parent_origin: Vector3 = _global_origins[parent] if parent >= 0 else Vector3.ZERO
 		var jb := _e_jb[k]
+		var need_origin := not optimized or _e_need_origin[k] != 0
+		var is_arm := jb == JB_LIMBS + 3 or jb == JB_LIMBS + 8
+		var parent_origin: Vector3 = _global_origins[parent] if parent >= 0 and (need_origin or is_arm) else Vector3.ZERO
 		if jb < 0:
 			_globals[bone] = parent_global * _e_rest[k]
-			_global_origins[bone] = parent_origin + parent_global * _e_position[k]
+			if need_origin: _global_origins[bone] = parent_origin + parent_global * _e_position[k]
 			continue
 		var desired: Basis = _joint_bases[jb] * _e_neutral[k]
 		# A arma pede uma palma orientada; o punho não deve herdar a rotação do cotovelo.
@@ -361,19 +385,19 @@ func sync(delta := 1.0 / 60.0) -> void:
 		# Bases ortonormais: a inversa é a transposta.
 		skeleton.set_bone_pose_rotation(bone, (parent_global.transposed() * desired).get_rotation_quaternion())
 		var bone_position := _e_position[k]
-		if jb == JB_LIMBS + 3 or jb == JB_LIMBS + 8:
+		if is_arm:
 			# A coluna do GLB distribui a inclinação por três ossos. A junta da IK tem um só pivô;
 			# alinhar as origens elimina o deslocamento comum dos dois punhos durante a corrida.
 			if correct_hand_reach:
 				var side := 0 if jb == JB_LIMBS + 3 else 1
-				var arm_origin := (t_spine * _arms[side].transform).origin
-				var target_origin := (arm_origin - glb_root.position) / _scale
+				var arm_origin: Vector3 = (arm_origin_0 if side == 0 else arm_origin_1) if optimized else (t_spine * _arms[side].transform).origin
+				var target_origin := (arm_origin - glb_position) / _scale
 				# Consultar duas vezes o esqueleto sujo forçava reavaliação; usa a mesma cadeia já calculada.
 				bone_position = parent_global.transposed() * (target_origin - parent_origin)
 			else:
 				bone_position = _e_position[k]
 			skeleton.set_bone_pose_position(bone, bone_position)
 		if parent < 0:
-			bone_position = (t_pelvis.origin + t_pelvis.basis * _hips_offset - glb_root.position) / _scale
+			bone_position = (t_pelvis.origin + t_pelvis.basis * _hips_offset - glb_position) / _scale
 			skeleton.set_bone_pose_position(bone, bone_position)
-		_global_origins[bone] = parent_origin + parent_global * bone_position
+		if need_origin: _global_origins[bone] = parent_origin + parent_global * bone_position

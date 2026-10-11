@@ -1,5 +1,7 @@
 # Revisão das mãos do policial de terno — 11/10/2026
 
+Continuação: [otimização e comparação de desempenho sem mudar as mãos](npc-meshy-desempenho-maos-20261011.md). As medições abaixo preservam o registro da regressão original; a continuação documenta os ganhos parciais, as fotos idênticas e a confirmação de performance ainda pendente.
+
 O usuário reprovou as mãos nas capturas da entrega anterior. O erro do **osso do punho** abaixo de 3 cm não demonstrava uma empunhadura correta: a superfície tinha dedos esticados e triângulos abertos. As fotos `refinement-20261011/final-m4` e `final-smg` documentam essa falha, não aprovação visual.
 
 ## Escopo e referência

@@ -112,6 +112,17 @@ func _run() -> void:
 				await process_frame
 				await RenderingServer.frame_post_draw
 				root.get_texture().get_image().save_png(ProjectSettings.globalize_path("%s/%s-%s-%s-%s.png" % [output_dir, label, weapon_id, state, view[0]]))
+				if police and "--compare-targets" in OS.get_cmdline_user_args():
+					# A mesma pose congelada e os mesmos ossos, alternando só o solver.
+					for optimized in [false, true]:
+						MODEL.optimize_weapon_targets = optimized
+						preload("res://assets/civilians/MeshyBodyRig.gd").optimize_pose_chain = optimized
+						police.body._meshy._cache[0] = Transform3D.IDENTITY
+						police.body._pose(0.0)
+						police.body._meshy.sync(0.0)
+						await process_frame
+						await RenderingServer.frame_post_draw
+						root.get_texture().get_image().save_png(ProjectSettings.globalize_path("%s/%s-%s-%s-%s-%s.png" % [output_dir, label, weapon_id, state, view[0], "after" if optimized else "before"]))
 		subject.queue_free()
 		if actor: gun.queue_free()
 		await process_frame

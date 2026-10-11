@@ -60,9 +60,12 @@ func _police_counts() -> Dictionary:
 		if camera != null and camera.is_position_in_frustum(body.to_global(Vector3(0, 1.0, 0))): in_view += 1
 	return {"total": world.gameplay.police.size(), "imported": imported, "in_view": in_view}
 
+func _measurement_output() -> String:
+	return "res://evidence/npc-meshy/hands-review-20261011/perf-game-palms"
+
 func _run() -> void:
 	if DisplayServer.get_name() == "headless": _finish(2); return
-	output_dir = "res://evidence/npc-meshy/hands-review-20261011/perf-game-palms"
+	output_dir = _measurement_output()
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="): output_dir = arg.substr(6)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(output_dir))
@@ -122,6 +125,10 @@ func _run() -> void:
 		print("MESHY_PALMS_FIXTURE ", JSON.stringify(_police_counts()), " (sem medição de FPS)")
 		_finish(0)
 		return
+	await _measure_variants()
+	_finish(0)
+
+func _measure_variants() -> void:
 	for index in 6:
 		var refined := index in [1, 2, 5]
 		await _set_variant(refined)
@@ -163,4 +170,3 @@ func _run() -> void:
 		"gpu": RenderingServer.get_video_adapter_name(), "renderer": RenderingServer.get_current_rendering_method(),
 		"resolution": [1280, 720], "warmup_s": 5, "window_s": 30, "vsync": false, "max_fps": 0, "fixture": "two_native_agents", "scope": "old_asset_and_pose_vs_dante_hands"}, "rounds": results}, "\t"))
 	RIG.palm_grips = true
-	_finish(0)

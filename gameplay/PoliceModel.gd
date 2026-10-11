@@ -36,6 +36,10 @@ var _weapon_hand_contacts: Array = [null, null]
 static var _equipment_meshes: Dictionary = {}
 const BODY_KIT = preload("res://assets/civilians/CivilianMeshKit.gd")
 const POLICE_BODIES := preload("res://gameplay/PoliceBodyCatalog.gd")
+## A/B conserva mãos e pose; desliga somente atalhos matematicamente equivalentes do cálculo da arma.
+static var optimize_weapon_targets := true
+const CROSS_HAND_BASIS := Basis(Vector3.RIGHT, PI * .5)
+const FETCH_HAND_BASIS := Basis(Vector3.FORWARD, Vector3.DOWN, Vector3.LEFT)
 static var _equipment_attachments: Dictionary = {}
 
 func equip(id: String) -> void:
@@ -364,9 +368,10 @@ func _body_weapon_targets() -> Array:
 	var ready_grip := Vector3(-.20, .93, .12) if pistol else Vector3(-.15, 1.16, .26)
 	# A fixed x=-.20 put the resting hand inside the larger uniform. Keep
 	# the grip outside the actual torso while retaining the anatomical reach.
-	var body_profile: Dictionary = body.wardrobe.get("body_profile", {})
-	if pistol and not body_profile.is_empty():
-		ready_grip.x = -maxf(.20, float(body_profile.waist.x) + .085)
+	if pistol or not optimize_weapon_targets:
+		var body_profile: Dictionary = body.wardrobe.get("body_profile", {})
+		if pistol and not body_profile.is_empty():
+			ready_grip.x = -maxf(.20, float(body_profile.waist.x) + .085)
 	var aim_grip := Vector3(-.075, 1.34, .40)
 	var pitch := lerpf(-.95 if pistol else -.43, 0.0, _body_aim_weight) + recoil
 	var yaw := PI + lerpf(.0 if pistol else -.22, 0.0, _body_aim_weight)
@@ -381,15 +386,16 @@ func _body_weapon_targets() -> Array:
 	if _body_reloading:
 		reload_fetch = smoothstep(.08, .23, _body_reload_progress) * (1.0 - smoothstep(.32, .50, _body_reload_progress))
 	if palm_pose:
+		var frames: Array = body.hand_frames
 		# Mesma orientação autorada do Dante; armas longas cruzam a pega de apoio.
-		body.hand_frames[0] = desired_basis * body.weapon_hand_frames[0]
-		body.hand_frames[1] = desired_basis * (Basis(Vector3.RIGHT, PI * .5) if not pistol else Basis.IDENTITY) * body.weapon_hand_frames[1]
+		frames[0] = desired_basis * body.weapon_hand_frames[0]
+		frames[1] = desired_basis * ((CROSS_HAND_BASIS if optimize_weapon_targets else Basis(Vector3.RIGHT, PI * .5)) if not pistol else Basis.IDENTITY) * body.weapon_hand_frames[1]
 		# Ao buscar o carregador no cinto, os dedos descem; conservar a pega sob o
 		# guarda-mão dobrava o pulso para trás, mesmo com a palma no alvo correto.
 		if reload_fetch > 0.0:
-			body.hand_frames[1] = (body.hand_frames[1] as Basis).slerp(Basis(Vector3.FORWARD, Vector3.DOWN, Vector3.LEFT), reload_fetch)
-		right_offset = body.hand_frames[0] * body.palm_offsets[0]
-		left_offset = body.hand_frames[1] * body.palm_offsets[1]
+			frames[1] = (frames[1] as Basis).slerp(FETCH_HAND_BASIS if optimize_weapon_targets else Basis(Vector3.FORWARD, Vector3.DOWN, Vector3.LEFT), reload_fetch)
+		right_offset = frames[0] * body.palm_offsets[0]
+		left_offset = frames[1] * body.palm_offsets[1]
 	elif body.hand_frames[0] != null:
 		body.hand_frames = [null, null]
 	if not pistol:
@@ -412,9 +418,21 @@ func _body_weapon_targets() -> Array:
 	if supports:
 		# Both hands and the single weapon share one rigid frame. Fit that frame
 		# to both anatomical reach spheres instead of solving two unrelated arms.
-		for iteration in 8:
-			grip = right_shoulder + right_offset + (grip - right_offset - right_shoulder).limit_length(right_reach)
-			grip = left_shoulder + left_offset - support_offset + (grip + support_offset - left_offset - left_shoulder).limit_length(left_reach)
+		if optimize_weapon_targets:
+			# Mantém a ordem das operações internas para preservar o arredondamento.
+			var right_center := right_shoulder + right_offset
+			var left_center := left_shoulder + left_offset - support_offset
+			for iteration in 8:
+				var previous_grip := grip
+				grip = right_center + (grip - right_offset - right_shoulder).limit_length(right_reach)
+				grip = left_center + (grip + support_offset - left_offset - left_shoulder).limit_length(left_reach)
+				# Igualdade exata: repetir a mesma função num ponto fixo não muda o resultado.
+				# Não relaxa alcance/tolerância e mantém as oito iterações quando ainda há movimento.
+				if grip == previous_grip: break
+		else:
+			for iteration in 8:
+				grip = right_shoulder + right_offset + (grip - right_offset - right_shoulder).limit_length(right_reach)
+				grip = left_shoulder + left_offset - support_offset + (grip + support_offset - left_offset - left_shoulder).limit_length(left_reach)
 	else:
 		grip = right_shoulder + right_offset + (grip - right_offset - right_shoulder).limit_length(right_reach)
 	var left_target: Variant = null
@@ -431,13 +449,17 @@ func _body_weapon_targets() -> Array:
 		service = service.lerp(grip + desired_basis * Vector3(.065 if palm_pose else .03, .10, -.055) * weapon_scale, rack)
 		left_target = (grip + support_offset).lerp(service, weight)
 		left_target = left_shoulder + left_offset + ((left_target as Vector3) - left_offset - left_shoulder).limit_length(left_reach)
-	var world_basis := body.global_basis * desired_basis
-	var world_grip := body.to_global(grip)
+	# O corpo não muda de transformação durante esta função: uma consulta substitui cinco chamadas nativas.
+	var body_world := body.global_transform if optimize_weapon_targets else Transform3D.IDENTITY
+	var world_basis := (body_world.basis if optimize_weapon_targets else body.global_basis) * desired_basis
+	var world_grip := body_world * grip if optimize_weapon_targets else body.to_global(grip)
 	var weapon_basis := world_basis.scaled_local(Vector3.ONE * weapon_scale)
 	weapon.global_transform = Transform3D(weapon_basis, world_grip - weapon_basis * POSE_DATA.GRIPS[weapon_id])
 	var left_contact: Variant = null
-	if left_target is Vector3: left_contact = body.to_global(left_target)
+	if left_target is Vector3: left_contact = body_world * left_target if optimize_weapon_targets else body.to_global(left_target)
 	_weapon_hand_contacts = [world_grip, left_contact]
+	if optimize_weapon_targets:
+		return [body_world * (grip - right_offset), body_world * (left_target - left_offset) if left_target is Vector3 else null]
 	return [body.to_global(grip - right_offset), body.to_global(left_target - left_offset) if left_target is Vector3 else null]
 
 func weapon_hand_contacts() -> Array:

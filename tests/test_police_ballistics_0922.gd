@@ -3,6 +3,8 @@ class State extends RefCounted:
 	var allowed := true
 	var place_id := ""
 	func weapons_allowed() -> bool: return allowed
+	# O alvo desta fixture não carrega katana; Gameplay consulta isso ao montar o visual.
+	func owns_weapon(_id: String) -> bool: return false
 class Target extends CharacterBody3D:
 	var health := 100.0
 	var hits := 0
@@ -148,4 +150,7 @@ func run() -> void:
 	check(officer.dead and not officer.visual.muzzle_flash_3d.visible, "death cannot leave a frozen muzzle flash")
 	print("POLICE_BALLISTICS checks=", checks, " failures=", failures)
 	world.free()
+	# O mixer libera playbacks de disparos/paradas em outra thread; dois frames
+	# headless podem terminar antes de um único ciclo de áudio.
+	await create_timer(.1).timeout
 	quit(0 if failures.is_empty() else 1)
