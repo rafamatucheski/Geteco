@@ -10,7 +10,8 @@ extends RefCounted
 ## mapeamento é feito pelo lado geométrico, não pelo nome.
 const TARGET_HEIGHT := 1.76
 const BONE_PREFIX := "mixamorig_"
-const HAND_ROLL := deg_to_rad(70.0)
+## Giro da mão em torno do antebraço (palma para a coxa). Variável só para experimentos de captura.
+static var hand_roll := deg_to_rad(-70.0)
 const SHADER := preload("res://assets/civilians/civilian_meshy.gdshader")
 const ACCESSORIES := preload("res://assets/civilians/MeshyAccessories.gd")
 ## Topo do cabelo do kit acima da origem da cabeça: a peça é alinhada pelo topo do crânio do corpo importado.
@@ -232,7 +233,7 @@ func _build_chain(side_names: Array) -> void:
 		_entry(_bone(mix + "Arm"), base + 3, _bone(mix + "ForeArm"))
 		_entry(_bone(mix + "ForeArm"), base + 4, _bone(mix + "Hand"))
 		# A pose A do Meshy deixa a palma para a frente; relaxada, ela olha para a coxa.
-		_entry(_bone(mix + "Hand"), base + 4, _bone(mix + "Hand"), _bone(mix + "ForeArm"), HAND_ROLL * (-1.0 if i == 0 else 1.0))
+		_entry(_bone(mix + "Hand"), base + 4, _bone(mix + "Hand"), _bone(mix + "ForeArm"), hand_roll * (-1.0 if i == 0 else 1.0))
 		_entry(_bone(mix + "UpLeg"), base, _bone(mix + "Leg"))
 		_entry(_bone(mix + "Leg"), base + 1, _bone(mix + "Foot"))
 		var foot := _bone(mix + "Foot")
