@@ -1,9 +1,10 @@
 extends RefCounted
 static var _data: Dictionary = {}
 ## Carro do Meshy no lugar do hatch de caixas (`metro_hatch`), piloto de veículos (docs/npc-meshy-carro-20261011.md).
-## `GETECO_NO_MESHY_CARS=1` ou `meshy_cars = false` devolve o carro antigo, para comparar e como rollback.
+## DESLIGADO por padrão: o piloto saiu pior que o carro de caixas (duas traseiras, frente ruim, luz assada). `GETECO_MESHY_CARS=1`
+## ou `meshy_cars = true` liga o modelo novo só para experimento.
 const MESHY_CITYCAR := "res://assets/fleet/meshy/citycar.scn"
-static var meshy_cars := OS.get_environment("GETECO_NO_MESHY_CARS").is_empty()
+static var meshy_cars := not OS.get_environment("GETECO_MESHY_CARS").is_empty()
 static var _last_paint_index: Dictionary = {}
 # Civilian models whose exported catalog only contains the showroom color.
 const SPAWN_PALETTES := {
