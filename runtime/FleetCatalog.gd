@@ -1,5 +1,9 @@
 extends RefCounted
 static var _data: Dictionary = {}
+## Carro do Meshy no lugar do hatch de caixas (`metro_hatch`), piloto de veículos (docs/npc-meshy-carro-20261011.md).
+## `GETECO_NO_MESHY_CARS=1` ou `meshy_cars = false` devolve o carro antigo, para comparar e como rollback.
+const MESHY_CITYCAR := "res://assets/fleet/meshy/citycar.scn"
+static var meshy_cars := OS.get_environment("GETECO_NO_MESHY_CARS").is_empty()
 static var _last_paint_index: Dictionary = {}
 # Civilian models whose exported catalog only contains the showroom color.
 const SPAWN_PALETTES := {
@@ -25,6 +29,9 @@ static func all() -> Dictionary:
 			var tank: Dictionary = _data.police_cruiser.duplicate(true)
 			tank.merge({"id":"army_tank", "label":"Blindado do Exército", "colors":["64704eff"], "bounds_size":[3.18,2.85,5.3], "bounds_center":[0,1.425,0], "durability":3000, "damage_resistance":0.4, "mass":30.0, "max_speed":208.0, "acceleration":650.0, "braking":1100.0, "turn_speed":1.1, "drivetrain":"4x4", "engine_family":"tank", "roof_prop":"none"}, true)
 			_data["army_tank"] = tank
+			# O modelo do Meshy tem 3,04 m x 1,95 m: a colisão acompanha o desenho novo.
+			if meshy_cars and _data.has("metro_hatch") and ResourceLoader.exists(MESHY_CITYCAR):
+				_data["metro_hatch"].merge({"bounds_size": [1.95, 1.61, 3.04], "bounds_center": [0.0, 0.805, 0.0], "mesh_count": 5}, true)
 	return _data
 static func spec(id: String) -> Dictionary:
 	if id == "armored_truck": return preload("res://gameplay/armored/ArmoredTruckModel.gd").spec()
@@ -42,6 +49,7 @@ static func create(id: String) -> Node3D:
 	if definition.is_empty(): return null
 	if id == "army_tank": return preload("res://gameplay/police_response/ground/PoliceGroundModels.gd").tank()
 	if id == "nordic_estate": return preload("res://assets/fleet/nordic_estate_detail.scn").instantiate() as Node3D
+	if id == "metro_hatch" and meshy_cars and ResourceLoader.exists(MESHY_CITYCAR): return (load(MESHY_CITYCAR) as PackedScene).instantiate() as Node3D
 	var packed := load(definition.scene) as PackedScene
 	if packed == null: return null
 	var model := packed.instantiate() as Node3D
