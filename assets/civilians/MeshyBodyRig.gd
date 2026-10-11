@@ -68,7 +68,7 @@ func _rest_origin(bone: int) -> Vector3:
 func _model_position(bone: int) -> Vector3:
 	return glb_root.position + _rest_origin(bone) * _scale
 
-## `tint`: {"hue": -0.5..0.5, "brightness": 0.5..1.5} aplicados só às roupas coloridas.
+## `tint`: {"hue": -0.5..0.5, "brightness": 0.5..1.5} nas roupas coloridas e `tone` (Color) como multiplicador das roupas.
 func build(model: Node3D, source_path: String, tint := {}) -> void:
 	_model = model
 	var packed := load(source_path) as PackedScene
@@ -169,6 +169,7 @@ func _apply_material(source_path: String, tint: Dictionary) -> void:
 	mesh_node.material_override = _materials[source_path]
 	if tint.has("hue"): mesh_node.set_instance_shader_parameter("hue_shift", float(tint.hue))
 	if tint.has("brightness"): mesh_node.set_instance_shader_parameter("brightness", float(tint.brightness))
+	if tint.has("tone"): mesh_node.set_instance_shader_parameter("tone", tint.tone)
 
 ## Base de repouso girada para a pose neutra das juntas: braços e pernas pendurados em -Y.
 ## `toward` dá a direção do osso quando ela vem de outro par de ossos (a mão segue o antebraço);

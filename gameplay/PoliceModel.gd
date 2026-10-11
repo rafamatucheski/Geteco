@@ -35,6 +35,8 @@ var _body_reload_progress := 0.0
 var _weapon_hand_contacts: Array = [null, null]
 static var _equipment_meshes: Dictionary = {}
 const BODY_KIT = preload("res://assets/civilians/CivilianMeshKit.gd")
+const POLICE_BODIES := preload("res://gameplay/PoliceBodyCatalog.gd")
+static var _equipment_attachments: Dictionary = {}
 
 func equip(id: String) -> void:
 	weapon_id = id
@@ -338,7 +340,11 @@ func _install_body() -> void:
 	if is_instance_valid(body) or not is_inside_tree(): return
 	var keep: Array = [muzzle_flash_3d]
 	if is_instance_valid(weapon): keep.append(weapon)
-	body = preload("res://assets/civilians/RigBodySwap.gd").install(self, _body_look(), keep)
+	var look := _body_look()
+	# Corpo importado do Meshy quando há entrada para este escalão/biotipo; senão o corpo procedural do kit.
+	var imported := POLICE_BODIES.pick(tier, look, appearance_index)
+	if not imported.is_empty(): look.merge({"body_source": imported.path, "body_tint": imported.tint}, true)
+	body = preload("res://assets/civilians/RigBodySwap.gd").install(self, look, keep)
 	if tier >= UnitTier.SWAT: _install_tactical_equipment()
 	body.hand_provider = _body_weapon_targets
 	if is_instance_valid(weapon):
@@ -405,14 +411,19 @@ func weapon_hand_contacts() -> Array:
 func _install_tactical_equipment() -> void:
 	if not is_instance_valid(body) or is_instance_valid(rappel_equipment): return
 	var palette := {"top_color": _uniform_base_color, "accent_color": Color("343b40") if tier != UnitTier.ARMY else Color("4b5134")}
+	var imported: bool = body.get("skeleton") != null
 	for joint in [body.spine, body.pelvis, body.head_node]:
+		if imported: break
 		var part := "chest" if joint == body.spine else ("belt" if joint == body.pelvis else "helmet")
 		_merge_equipment(joint, part)
 		for key in palette: joint.set_instance_shader_parameter(key, palette[key])
-	for i in 2:
-		_merge_equipment(body.forearms[i], "glove")
-		_merge_equipment(body.thighs[i], "thigh")
-		_merge_equipment(body.shins[i], "knee")
+	if imported:
+		_attach_equipment(palette)
+	else:
+		for i in 2:
+			_merge_equipment(body.forearms[i], "glove")
+			_merge_equipment(body.thighs[i], "thigh")
+			_merge_equipment(body.shins[i], "knee")
 	rappel_equipment = Node3D.new()
 	rappel_equipment.name = "RappelHarness"
 	body.pelvis.add_child(rappel_equipment)
@@ -423,6 +434,31 @@ func _install_tactical_equipment() -> void:
 	# The same geometry is already part of the rig at all times; this marker
 	# names the real attachment for rope simulation and tests.
 	rappel_harness.set_meta("load_bearing_attachment", true)
+
+## Corpo importado: as juntas não têm malha para mesclar, então cada peça vira uma malha filha da junta (que
+## segue a mesma pose dos ossos). Os mesmos construtores do kit, em cache por escalão e peça.
+func _attach_equipment(palette: Dictionary) -> void:
+	var parts := [[body.spine, "chest"], [body.pelvis, "belt"], [body.head_node, "helmet"]]
+	for i in 2:
+		parts.append([body.forearms[i], "glove"])
+		parts.append([body.thighs[i], "thigh"])
+		parts.append([body.shins[i], "knee"])
+	for entry in parts:
+		var part: String = entry[1]
+		var key := "%d|%s" % [tier, part]
+		if not _equipment_attachments.has(key):
+			var b = BODY_KIT._builder()
+			_build_equipment(b, part)
+			_equipment_attachments[key] = b.commit()
+		var piece := MeshInstance3D.new()
+		piece.name = "Equip_" + part
+		piece.mesh = _equipment_attachments[key]
+		piece.material_override = BODY_KIT.material()
+		for slot in palette: piece.set_instance_shader_parameter(slot, palette[slot])
+		piece.set_instance_shader_parameter("shoe_color", Color("121214"))
+		piece.set_instance_shader_parameter("inner_color", Color("d9d6cc"))
+		piece.set_instance_shader_parameter("bottom_color", _uniform_base_color.darkened(0.25))
+		(entry[0] as Node3D).add_child(piece)
 
 func _merge_equipment(joint: MeshInstance3D, part: String) -> void:
 	var key := "%d|%s|%d" % [tier, part, joint.mesh.get_rid().get_id()]

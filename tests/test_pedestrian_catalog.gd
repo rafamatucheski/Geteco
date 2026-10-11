@@ -69,12 +69,17 @@ func _check_body(entry: Dictionary) -> void:
 	_check(min_ground < 0.07, "%s: andando, sempre há um pé no chão (%.3f)" % [tag, min_ground])
 	_check(farthest < 2.0, "%s: nenhum osso a mais de 2 m do corpo (%.2f)" % [tag, farthest])
 	# Mãos num alvo.
-	var target_left: Vector3 = model.to_global(Vector3(-0.2, 1.15, 0.42))
-	var target_right: Vector3 = model.to_global(Vector3(0.2, 1.15, 0.42))
+	# Alvo alcançável pelo braço DESTE corpo: 80% do alcance a partir do ombro, para frente e um pouco para baixo.
+	# (Um ponto fixo a ~0,5 m do ombro passa do alcance dos braços mais curtos e mede o comprimento do braço.)
+	var reach: float = (model.upper_arm_len + model.forearm_len) * 0.8
+	var direction := Vector3(0.12, -0.35, 0.93).normalized()
+	var shoulder_origin: Vector3 = model.pelvis.position + model.SPINE_OFFSET
+	var target_left: Vector3 = model.to_global(shoulder_origin + model._shoulders[0] + Vector3(-direction.x, direction.y, direction.z) * reach)
+	var target_right: Vector3 = model.to_global(shoulder_origin + model._shoulders[1] + direction * reach)
 	model.hand_provider = func() -> Array: return [target_left, target_right]
 	for i in 20: await process_frame
 	var error := maxf(_bone_world(skeleton, "RightHand").distance_to(target_left), _bone_world(skeleton, "LeftHand").distance_to(target_right))
-	_check(error < 0.14, "%s: mãos chegam ao alvo (%.3f m)" % [tag, error])
+	_check(error < 0.08, "%s: mãos chegam ao alvo alcançável (%.3f m)" % [tag, error])
 	model.hand_provider = Callable()
 	model.hand_targets = [null, null]
 	var before := _bone_world(skeleton, "Hips").y

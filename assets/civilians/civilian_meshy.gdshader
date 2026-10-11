@@ -7,6 +7,8 @@ uniform sampler2D albedo_texture : source_color, filter_linear_mipmap, repeat_di
 uniform float roughness_value : hint_range(0.0, 1.0) = 0.85;
 instance uniform float hue_shift : hint_range(-0.5, 0.5) = 0.0;
 instance uniform float brightness : hint_range(0.5, 1.5) = 1.0;
+// Multiplicador de tom das roupas (tudo menos pele): um corpo cinza vira preto ou verde-oliva; branco = sem efeito.
+instance uniform vec4 tone : source_color = vec4(1.0);
 // `BurningActor.char_body` escreve fuligem aqui (alfa 1) em todos os corpos civis.
 instance uniform vec4 skin_color : source_color = vec4(0.0);
 
@@ -33,6 +35,7 @@ void fragment() {
 	float cloth = smoothstep(0.16, 0.30, hsv.y) * (1.0 - skin);
 	hsv.x = fract(hsv.x + hue_shift * cloth);
 	vec3 color = hsv2rgb(hsv) * mix(1.0, brightness, cloth);
+	color *= mix(tone.rgb, vec3(1.0), skin);
 	color = mix(color, skin_color.rgb, step(0.5, skin_color.a));
 	ALBEDO = color;
 	ROUGHNESS = roughness_value;

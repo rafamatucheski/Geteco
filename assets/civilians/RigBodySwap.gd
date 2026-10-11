@@ -12,6 +12,8 @@ extends RefCounted
 ## `keep` = nós cuja geometria deve continuar visível (arma, maca, clarão).
 const BODY := preload("res://assets/CivilianModel.gd")
 
+## `look.body_source` (caminho de GLB do Meshy) troca o corpo procedural do kit pelo corpo importado
+## (`CivilianModel.body_source`); `look.body_tint`/`look.height` ajustam cor das roupas e altura.
 static func install(model: Node3D, look: Dictionary, keep: Array = [], faces_positive_z := false) -> Node3D:
 	_hide_old(model, keep)
 	var holder := Node3D.new()
@@ -27,8 +29,13 @@ static func install(model: Node3D, look: Dictionary, keep: Array = [], faces_pos
 	body.appearance_variant = int(look.variant) if look.has("variant") else randi_range(0, 9999)
 	body.coat_color = look.get("top_color", Color("3f6872"))
 	body.pants_color = look.get("bottom_color", Color("293849"))
+	if look.has("body_source"):
+		body.body_source = String(look.body_source)
+		body.body_tint = look.get("body_tint", {})
+		# O corpo importado não aplica `height` sozinho como o do kit faz em `_build_rig`.
+		body.scale = Vector3.ONE * float(look.get("height", 1.0))
 	var overrides: Dictionary = look.duplicate()
-	for key in ["variant", "top_color", "bottom_color"]: overrides.erase(key)
+	for key in ["variant", "top_color", "bottom_color", "body_source", "body_tint"]: overrides.erase(key)
 	body.wardrobe_overrides = overrides
 	body.lod_enabled = bool(look.get("lod", true))
 	holder.add_child(body)
