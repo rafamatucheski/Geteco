@@ -12,6 +12,9 @@ const TARGET_HEIGHT := 1.76
 const BONE_PREFIX := "mixamorig_"
 const HAND_ROLL := deg_to_rad(70.0)
 const SHADER := preload("res://assets/civilians/civilian_meshy.gdshader")
+const ACCESSORIES := preload("res://assets/civilians/MeshyAccessories.gd")
+## Topo do cabelo do kit acima da origem da cabeça: a peça é alinhada pelo topo do crânio do corpo importado.
+const KIT_CROWN := 0.30
 # Índices em `_joint_bases`.
 const JB_PELVIS := 0
 const JB_SPINE := 1 # 3 frações do tronco: 1/3, 2/3, 1
@@ -157,6 +160,31 @@ func build(model: Node3D, source_path: String, tint := {}) -> void:
 	driver.model = model
 	driver.process_priority = 1000
 	model.add_child(driver)
+
+## Prende peças de cabeça ({"kind", "color", "band"}, ver `MeshyAccessories`) ao osso `Head`. A origem do desenho
+## do kit fica sob o crânio, com o topo do cabelo do kit (`KIT_CROWN`) no topo da malha do corpo; o
+## `BoneAttachment3D` herda a escala do GLB, então a transformação filha a desfaz.
+func attach_accessories(list: Array) -> Array[Node3D]:
+	var pieces: Array[Node3D] = []
+	if list.is_empty() or skeleton == null: return pieces
+	var head := _bone("Head")
+	if head < 0: return pieces
+	var top := glb_root.position.y + mesh_node.get_aabb().end.y * _scale
+	var head_model := _model_position(head)
+	var origin_model := Vector3(head_model.x, top - KIT_CROWN, head_model.z + 0.012)
+	var origin_skeleton := (origin_model - glb_root.position) / _scale
+	var attachment := BoneAttachment3D.new()
+	attachment.name = "HeadAccessories"
+	attachment.bone_name = skeleton.get_bone_name(head)
+	skeleton.add_child(attachment)
+	var rest := skeleton.get_bone_global_rest(head)
+	var local := rest.affine_inverse() * Transform3D(Basis.from_scale(Vector3.ONE / _scale), origin_skeleton)
+	for descriptor in list:
+		var piece := ACCESSORIES.make_piece(descriptor)
+		piece.transform = local
+		attachment.add_child(piece)
+		pieces.append(piece)
+	return pieces
 
 ## Material compartilhado por GLB; a textura vem do material original do arquivo.
 func _apply_material(source_path: String, tint: Dictionary) -> void:

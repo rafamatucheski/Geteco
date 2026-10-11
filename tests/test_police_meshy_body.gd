@@ -63,7 +63,7 @@ func _check_tier(tier: int, index := -1, catalog := false) -> void:
 		if police.weapon != null and police.weapon.is_ancestor_of(mesh_node): continue
 		if mesh_node == police.muzzle_flash_3d: continue
 		if mesh_node.skeleton != NodePath(): skinned += 1
-		elif mesh_node.name.begins_with("Equip_"): continue
+		elif mesh_node.name.begins_with("Equip_") or mesh_node.name.begins_with("Acc_"): continue
 		else: others += 1
 	_check(skinned == 1, "%s: um único corpo visível (%d)" % [tag, skinned])
 	_check(others == 0, "%s: nenhuma malha antiga ainda visível (%d)" % [tag, others])

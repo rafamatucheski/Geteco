@@ -42,6 +42,8 @@ var hand_provider: Callable
 var body_source := ""
 ## {"hue": -0.5..0.5, "brightness": 0.5..1.5}: variação de cor só das roupas do corpo importado.
 var body_tint := {}
+## Peças de cabeça do corpo importado: [{"kind": "cap"|"beanie"|"cowboy"|"straw"|"fedora"|"sunglasses", "color": Color, "band": Color}].
+var body_accessories: Array = []
 var skeleton: Skeleton3D
 var mesh_node: MeshInstance3D
 var _meshy: RefCounted
@@ -160,6 +162,7 @@ func _ready() -> void:
 	if body_source != "":
 		_meshy = MESHY_RIG.new()
 		_meshy.build(self, body_source, body_tint)
+		_meshy.attach_accessories(body_accessories)
 	else:
 		_build_rig()
 		_apply_colors()

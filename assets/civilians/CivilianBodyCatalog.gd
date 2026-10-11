@@ -19,6 +19,10 @@ const ENTRIES := [
 	{"id": "f_slim_a", "file": "f_slim_a.glb", "female": true, "build": 0},
 	{"id": "f_slim_b", "file": "f_slim_b.glb", "female": true, "build": 0},
 ]
+## Peças de cabeça sorteadas por identidade (chapéus/bonés/óculos escuros), presas ao crânio pelo `MeshyBodyRig`.
+## Cada passo do sorteio usa o mesmo gerador da identidade, então a pessoa mantém o visual entre sessões.
+const HAT_COLORS := [Color("2f3b52"), Color("6b2f2a"), Color("3d4a38"), Color("d8d2c2"), Color("1f2124"), Color("8a6a3d"), Color("b9b2a0")]
+const HATS := [["cap", 0.55], ["beanie", 0.18], ["fedora", 0.10], ["straw", 0.17]]
 static var _available: Array[Dictionary] = []
 static var _scanned := false
 ## Interruptor para comparar desempenho e para desligar o catálogo sem mexer em arquivos:
@@ -57,4 +61,24 @@ static func apply(model: Node3D, identity: int) -> bool:
 	var entry: Dictionary = best[rng.randi() % best.size()]
 	model.body_source = FOLDER + String(entry.file)
 	model.body_tint = {"hue": rng.randf_range(-0.5, 0.5), "brightness": rng.randf_range(0.88, 1.12)}
+	model.body_accessories = roll_accessories(rng, 0.20, 0.14, HATS)
 	return true
+
+## Sorteia chapéu (chance `hat_chance`, tipo por pesos de `hats`) e óculos escuros (`glasses_chance`).
+static func roll_accessories(rng: RandomNumberGenerator, hat_chance: float, glasses_chance: float, hats: Array) -> Array:
+	var list: Array = []
+	var hat_roll := rng.randf()
+	var kind_roll := rng.randf()
+	var color: Color = HAT_COLORS[rng.randi() % HAT_COLORS.size()]
+	var glasses_roll := rng.randf()
+	if hat_roll < hat_chance:
+		var total := 0.0
+		for entry in hats: total += float(entry[1])
+		var pick := kind_roll * total
+		for entry in hats:
+			pick -= float(entry[1])
+			if pick <= 0.0:
+				list.append({"kind": entry[0], "color": color, "band": color.darkened(0.55)})
+				break
+	if glasses_roll < glasses_chance: list.append({"kind": "sunglasses"})
+	return list

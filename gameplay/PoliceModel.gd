@@ -346,7 +346,7 @@ func _install_body() -> void:
 	var look := _body_look()
 	# Corpo importado do Meshy quando há entrada para este escalão/biotipo; senão o corpo procedural do kit.
 	var imported := POLICE_BODIES.pick(tier, look, appearance_index)
-	if not imported.is_empty(): look.merge({"body_source": imported.path, "body_tint": imported.tint}, true)
+	if not imported.is_empty(): look.merge({"body_source": imported.path, "body_tint": imported.tint, "body_accessories": imported.get("accessories", [])}, true)
 	_body_equipment_baked = bool(imported.get("baked_equipment", false))
 	body = preload("res://assets/civilians/RigBodySwap.gd").install(self, look, keep)
 	if tier >= UnitTier.SWAT: _install_tactical_equipment()

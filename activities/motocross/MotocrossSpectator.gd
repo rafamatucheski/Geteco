@@ -5,6 +5,7 @@ extends CharacterBody3D
 const MODEL := preload("res://assets/CivilianModel.gd")
 const FALL := preload("res://gameplay/CharacterFallPresentation3D.gd")
 const PROTECTION := preload("res://gameplay/DamageProtection.gd")
+const COUNTRY := preload("res://assets/civilians/CountryBodyCatalog.gd")
 signal threatened(actor: CharacterBody3D)
 signal died(actor: CharacterBody3D)
 
@@ -93,6 +94,8 @@ func _ready() -> void:
 		"top": 2, "bottom": 0, "shoe": 1, "hat": 0, "backpack": false,
 		"bag": 0, "glasses": false, "inner": Color("e9e7dc"),
 		"accent": jersey.lightened(.3), "shoe_color": Color("252a2d")}
+	# Corpo do Meshy do pessoal country (camisa xadrez, jeans, chapéu); sem arquivos, fica o corpo do kit.
+	COUNTRY.apply(model, identity)
 	model.rotation.y = PI
 	model.sit_amount = 1.0 if seated else 0.0
 	model.seat_height = seat_height

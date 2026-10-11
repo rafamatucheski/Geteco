@@ -32,10 +32,11 @@ static func install(model: Node3D, look: Dictionary, keep: Array = [], faces_pos
 	if look.has("body_source"):
 		body.body_source = String(look.body_source)
 		body.body_tint = look.get("body_tint", {})
+		body.body_accessories = look.get("body_accessories", [])
 		# O corpo importado não aplica `height` sozinho como o do kit faz em `_build_rig`.
 		body.scale = Vector3.ONE * float(look.get("height", 1.0))
 	var overrides: Dictionary = look.duplicate()
-	for key in ["variant", "top_color", "bottom_color", "body_source", "body_tint"]: overrides.erase(key)
+	for key in ["variant", "top_color", "bottom_color", "body_source", "body_tint", "body_accessories"]: overrides.erase(key)
 	body.wardrobe_overrides = overrides
 	body.lod_enabled = bool(look.get("lod", true))
 	holder.add_child(body)
