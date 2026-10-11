@@ -26,7 +26,7 @@ Um cache de morphs estáveis não mostrou ganho convincente; uma experiência co
 
 ## Medições finais
 
-**Estado da confirmação:** o ganho não está aprovado de forma consistente. A amostra de recuperação abaixo ficou dentro da margem, mas a confirmação com janela monitorada e três condições voltou a ultrapassá-la sob concorrência de CPU. Não selecionar apenas a primeira passagem como conclusão.
+**Estado da confirmação:** o A/B intercalado final confirmou ganho modesto contra as mesmas mãos V11 sem otimização: +2,1%/+2,3% de FPS médio e -3,3%/-1,9% no p95, em duas janelas. O p99 variou -0,9%/+0,5%. Isso aprova a melhoria local medida, **não comprova recuperação integral contra o corpo antigo**. As comparações por blocos longos permaneceram variáveis; seus resultados são preservados abaixo.
 
 ### Recuperação contra o corpo anterior
 
@@ -77,6 +77,31 @@ A coleta `constant-stage` ficou presa ao esperar o próximo desenho com a janela
 São medianas dos três resultados por condição, não percentis de um conjunto agregado. Nesta confirmação, p95/p99 do otimizado ficaram **+8,0%/+10,5% contra o controle V11** e **+5,2%/+1,7% contra o corpo anterior**. O FPS médio mediano melhorou 0,9% contra V11, mas isso não aprova os percentis. Máximo de 411,680 ms no primeiro controle antigo, com um quadro >33,3/66,7 ms; as outras oito rodadas não ultrapassaram 33,3 ms. Todos os dados foram mantidos.
 
 Durante essa coleta, uma amostra de processos mediu, em dois segundos, 2,27 s de CPU no Godot e 1,16+1,06 s em dois processos `claude`, além de 0,30 s em outro. Isso documenta concorrência e variação, **não prova que todo aumento veio dela**. Foi solicitada pausa dessas outras sessões antes de uma confirmação isolada. As mãos estão preservadas, mas a recuperação de desempenho ainda requer confirmação consistente.
+
+### Após a pausa solicitada e correção do método
+
+O usuário informou que pausaria as outras sessões. O build .NET passou novamente sem avisos/erros e não havia outro Godot. Ainda havia consumo dos processos Claude no início: 0,969/0,578/0,281/0,219 s de CPU em uma janela de dois segundos. Não se considerou a máquina totalmente isolada.
+
+`paused-sessions-final/ab-police-24.json` repetiu uma única vez as nove rodadas para verificar a hipótese de interferência. Medianas: anterior 375,10 FPS / p95 3,410 / p99 4,702 ms; V11 sem atalhos 293,86 / 4,486 / 6,586; V11 otimizada 315,56 / 5,240 / 8,714. A divergência entre ganho médio e piora dos percentis continuou. Essa coleta não foi aprovada nem apagada.
+
+Para reduzir a confusão entre variante e carga do computador em momentos diferentes, `measure_meshy_hand_interleaved.gd` alterna quatro combinações **quadro a quadro no mesmo grupo de 24 atores**, na mesma instância do motor: nenhum atalho, somente arma, somente cadeia, ambos. A sequência balanceada distribui as combinações pelo mesmo intervalo; cada tempo decorrido é atribuído à combinação aplicada no intervalo anterior. Foram definidos dois grupos de amostras, cinco segundos de aquecimento e pelo menos 30 segundos acumulados por combinação em cada grupo. A janela minimizada interrompe a execução. Não há mudança de malha, resolução, iluminação ou frequência produtiva. A coleta inteira levou cerca de quatro minutos em uma abertura do Godot.
+
+Dados: `interleaved-stage/ab-police-24.json`, oito arquivos de amostras brutas e duas capturas. Todos mantiveram 514 draw calls.
+
+| Janela | Combinação | FPS médio | p50 ms | p95 ms | p99 ms | Máximo ms | >33,3 / >66,7 ms |
+|---|---|---:|---:|---:|---:|---:|---:|
+| 0 | original | 292,10 | 3,088 | 5,654 | 7,923 | 68,648 | 2 / 1 |
+| 0 | somente arma | 294,68 | 3,047 | 5,612 | 8,009 | 39,468 | 1 / 0 |
+| 0 | somente cadeia | 294,38 | 3,046 | 5,565 | 7,946 | 64,379 | 2 / 0 |
+| 0 | ambas | 298,17 | 3,012 | 5,466 | 7,848 | 53,523 | 3 / 0 |
+| 1 | original | 331,44 | 2,796 | 4,346 | 6,614 | 11,495 | 0 / 0 |
+| 1 | somente arma | 335,38 | 2,757 | 4,290 | 6,554 | 17,084 | 0 / 0 |
+| 1 | somente cadeia | 335,41 | 2,761 | 4,280 | 6,634 | 11,950 | 0 / 0 |
+| 1 | ambas | 339,02 | 2,723 | 4,262 | 6,650 | 18,693 | 0 / 0 |
+
+As duas otimizações contribuíram e juntas apresentaram o melhor FPS médio/p50/p95 nas duas janelas. O p99 ficou dentro da margem de 5% em ambas. Houve picos em todas as combinações na primeira janela: esta medição não comprova eliminação de stutter. A conclusão é **ganho pequeno e consistente sobre o runtime V11**, com conservação visual já comprovada. A comparação integrada da Main anterior continua limitada a uma janela válida; não há aprovação global da cidade ou prova de recuperação integral do custo da geometria nova.
+
+Os testes funcionais e as 36 comparações de imagem não foram repetidos: nenhum código produtivo mudou nesta confirmação. Somente o método de medição foi acrescentado. Reiniciar o motor é reservado a isolamento necessário; as combinações de desempenho compatíveis são medidas juntas.
 
 ## Capturas e testes funcionais
 
