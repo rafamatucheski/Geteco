@@ -19,6 +19,11 @@ static func material(key: String, color: Color) -> StandardMaterial3D:
 		m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		m.cull_mode = BaseMaterial3D.CULL_DISABLED
 		m.roughness = .19
+	# Cor lisa lia como plano chapado: relevo e rugosidade em espaço de mundo, mesmo tom.
+	if color.a >= 1.0 and not m.emission_enabled and key != "glass":
+		preload("res://assets/urban_detail/UrbanSurfaces.gd").detail(m, "metal" if m.metallic > 0.1 else "plaster", 2.0, .7)
+		m.albedo_color = Color(minf(color.r * m.albedo_color.r, 1.0), minf(color.g * m.albedo_color.g, 1.0), minf(color.b * m.albedo_color.b, 1.0))
+		m.roughness = 1.0
 	materials[key] = m
 	return m
 

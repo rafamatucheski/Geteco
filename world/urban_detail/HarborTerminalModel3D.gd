@@ -263,6 +263,11 @@ func _mat(color: Color, glow := false) -> StandardMaterial3D:
 	result.emission_enabled = glow
 	result.emission = color
 	result.emission_energy_multiplier = 0.45
+	if not glow and color.a >= 1.0:
+		# Cor lisa lia como plano chapado: relevo e rugosidade em espaço de mundo.
+		preload("res://assets/urban_detail/UrbanSurfaces.gd").detail(result, "plaster", 2.0, .7)
+		result.albedo_color = Color(minf(color.r * result.albedo_color.r, 1.0), minf(color.g * result.albedo_color.g, 1.0), minf(color.b * result.albedo_color.b, 1.0))
+		result.roughness = 1.0
 	return result
 
 func _label(value: String, pos: Vector3, font_size: int, mat_name: String) -> Label3D:

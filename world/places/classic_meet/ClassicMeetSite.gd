@@ -94,7 +94,7 @@ func _material(key: String, color: Color, texture := "") -> StandardMaterial3D:
 	material.albedo_color = color
 	material.roughness = .9
 	if not texture.is_empty():
-		material.albedo_texture = GROUND.texture(texture)
+		GROUND.bind(material, texture)
 		material.uv1_triplanar = true
 		material.uv1_world_triplanar = true
 		material.uv1_scale = Vector3.ONE*.4

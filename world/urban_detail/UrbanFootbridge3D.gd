@@ -136,6 +136,11 @@ func _mat(color: Color, roughness := 0.85) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
 	material.albedo_color = color
 	material.roughness = roughness
+	# Cor lisa lia como plano chapado: relevo e rugosidade em espaço de mundo, mesmo tom.
+	if color.a >= 1.0 and not material.emission_enabled:
+		preload("res://assets/urban_detail/UrbanSurfaces.gd").detail(material, "metal" if material.metallic > 0.1 else "plaster", 2.0, .7)
+		material.albedo_color = Color(minf(color.r * material.albedo_color.r, 1.0), minf(color.g * material.albedo_color.g, 1.0), minf(color.b * material.albedo_color.b, 1.0))
+		material.roughness = 1.0
 	return material
 
 func _box(center: Vector3, size: Vector3, material: Material) -> void:

@@ -23,6 +23,9 @@ static func concrete() -> StandardMaterial3D:
 	_concrete.uv1_triplanar = true
 	_concrete.uv1_world_triplanar = true
 	_concrete.uv1_scale = Vector3.ONE / 8.0
+	# Só albedo lia como chão chapado: relevo derivado do próprio tile (juntas e trilhas).
+	_concrete.normal_enabled = true
+	_concrete.normal_texture = preload("res://assets/urban_detail/UrbanSurfaces.gd").normal_from_albedo(image, 5.0)
 	_concrete.roughness = .94
 	_concrete.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	return _concrete

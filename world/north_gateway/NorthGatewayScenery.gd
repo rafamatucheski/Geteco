@@ -264,5 +264,10 @@ func _material(id: String) -> StandardMaterial3D:
 		result.albedo_color = Color(colors.get(id, "848b8c"))
 		result.roughness = 0.88
 		if id in ["steel", "dark_steel", "rust"]: result.metallic = 0.35
+	# Cor lisa lia como plano chapado: relevo e rugosidade em espaço de mundo, mesmo tom.
+	if result.albedo_color.a >= 1.0 and not result.emission_enabled:
+		preload("res://assets/urban_detail/UrbanSurfaces.gd").detail(result, "metal" if result.metallic > 0.1 else "plaster", 2.0, .7)
+		result.albedo_color = Color(minf(result.albedo_color.r * result.albedo_color.r, 1.0), minf(result.albedo_color.g * result.albedo_color.g, 1.0), minf(result.albedo_color.b * result.albedo_color.b, 1.0))
+		result.roughness = 1.0
 	_materials[id] = result
 	return result

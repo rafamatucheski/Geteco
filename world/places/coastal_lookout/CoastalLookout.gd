@@ -105,7 +105,7 @@ func _material(id: String, color: Color, texture := "", scale_value := .4) -> vo
 	material.roughness = .91
 	material.metallic_specular = .18
 	if not texture.is_empty():
-		material.albedo_texture = GROUND.texture(texture)
+		GROUND.bind(material, texture)
 		material.uv1_triplanar = true
 		material.uv1_world_triplanar = true
 		material.uv1_scale = Vector3.ONE * scale_value

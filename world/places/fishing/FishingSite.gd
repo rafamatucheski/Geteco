@@ -154,7 +154,7 @@ func _build_materials() -> void:
 		material.albedo_color = Color(row[1])
 		material.roughness = .91
 		if not str(row[2]).is_empty() and str(row[2]) != "wood":
-			material.albedo_texture = GROUND.texture(row[2])
+			GROUND.bind(material, row[2])
 			material.uv1_triplanar = true
 			material.uv1_world_triplanar = true
 			material.uv1_scale = Vector3.ONE * .55

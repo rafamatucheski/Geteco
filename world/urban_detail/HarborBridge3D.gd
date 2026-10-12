@@ -127,5 +127,10 @@ func _material(hex:String)->StandardMaterial3D:
 	material.albedo_color=Color(hex)
 	material.roughness=.72
 	material.metallic=.18 if hex in ["5e7479","c6d3cc","3d4b4f","b7c8c6"] else 0.0
+	# Cor lisa lia como plano chapado: relevo e rugosidade em espaço de mundo, mesmo tom.
+	if Color(hex).a >= 1.0 and not material.emission_enabled:
+		preload("res://assets/urban_detail/UrbanSurfaces.gd").detail(material, "metal" if material.metallic > 0.1 else "plaster", 2.0, .7)
+		material.albedo_color = Color(minf(Color(hex).r * material.albedo_color.r, 1.0), minf(Color(hex).g * material.albedo_color.g, 1.0), minf(Color(hex).b * material.albedo_color.b, 1.0))
+		material.roughness = 1.0
 	materials[hex]=material
 	return material

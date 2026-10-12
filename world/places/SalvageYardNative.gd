@@ -72,7 +72,7 @@ func _mat(hex: String, metal := 0.0) -> StandardMaterial3D:
 	result.roughness = 0.88
 	# Shared mipmapped tiles, projected in model space, preserve all solid geometry.
 	var kind := "gravel" if hex=="706a56" else ("concrete" if hex=="888c7f" else "metal")
-	result.albedo_texture = preload("res://assets/regions/source/world/harbor/UrbanGround.gd").texture(kind)
+	preload("res://assets/regions/source/world/harbor/UrbanGround.gd").bind(result, kind)
 	result.uv1_triplanar = true
 	result.uv1_scale = Vector3.ONE*(.6 if kind=="gravel" else .35)
 	_materials[hex] = result

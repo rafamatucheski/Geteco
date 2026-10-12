@@ -290,6 +290,11 @@ func _material(color: Color,glow := false) -> StandardMaterial3D:
 	material.emission_enabled = glow
 	material.emission = color
 	material.emission_energy_multiplier = 0.32
+	# Cor lisa lia como plano chapado: relevo e rugosidade em espaço de mundo, mesmo tom.
+	if color.a >= 1.0 and not material.emission_enabled and not glow:
+		preload("res://assets/urban_detail/UrbanSurfaces.gd").detail(material, "metal" if material.metallic > 0.1 else "plaster", 2.0, .7)
+		material.albedo_color = Color(minf(color.r * material.albedo_color.r, 1.0), minf(color.g * material.albedo_color.g, 1.0), minf(color.b * material.albedo_color.b, 1.0))
+		material.roughness = 1.0
 	return material
 
 func _text(value: String,point: Vector2,height: float,font_size: int,material: String,size: Vector2) -> Label3D:

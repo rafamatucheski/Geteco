@@ -20,6 +20,9 @@ func _ready() -> void:
 	var stone := StandardMaterial3D.new()
 	stone.albedo_color = STONE
 	stone.roughness = 0.8
+	preload("res://assets/urban_detail/UrbanSurfaces.gd").detail(stone, "granite", 2.0, .8)
+	stone.albedo_color = Color(minf(STONE.r * stone.albedo_color.r, 1.0), minf(STONE.g * stone.albedo_color.g, 1.0), minf(STONE.b * stone.albedo_color.b, 1.0))
+	stone.roughness = 1.0
 	# Borda da bacia: a água fica abaixo dela, não pintada no topo como na V1 2D.
 	var rim := MeshInstance3D.new()
 	rim.name = "FountainRim"

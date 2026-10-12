@@ -39,6 +39,13 @@ func mat(color: String, metal := 0.0) -> StandardMaterial3D:
 	if color in ["886e50", "a79777"]:
 		material.albedo_texture = preload("res://world/places/ShopInteriorMaterials.gd").texture("wood")
 		material.uv1_triplanar = true
+	else:
+		# Rampas, travessas e peças pintadas eram cor lisa: relevo e rugosidade em
+		# espaço de mundo, mesmo tom.
+		var tint := material.albedo_color
+		preload("res://assets/urban_detail/UrbanSurfaces.gd").detail(material, "metal" if metal > 0.1 else "plaster", 2.0, .7)
+		material.albedo_color = Color(minf(tint.r * material.albedo_color.r, 1.0), minf(tint.g * material.albedo_color.g, 1.0), minf(tint.b * material.albedo_color.b, 1.0))
+		material.roughness = 1.0
 	materials[color] = material
 	return material
 

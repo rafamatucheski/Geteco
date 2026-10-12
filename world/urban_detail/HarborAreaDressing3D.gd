@@ -481,7 +481,7 @@ func _surface_material(kind: String,color: Color)->StandardMaterial3D:
 	if not _materials.has(key):
 		var material:=StandardMaterial3D.new()
 		material.albedo_color=color
-		material.albedo_texture=GROUND.texture(kind)
+		GROUND.bind(material,kind)
 		material.texture_filter=BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 		# Projeção no mundo: a caixa tem dezenas de metros e o UV da BoxMesh esticava
 		# um único ladrilho sobre ela inteira (lia como cor lisa).

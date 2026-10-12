@@ -57,6 +57,11 @@ func _box(label: String, point: Vector3, size_value: Vector3, color: Color) -> v
 	var material := StandardMaterial3D.new()
 	material.albedo_color = color
 	material.roughness = .82
+	# Caixas de cor lisa liam como plano chapado: relevo por tipo de peça, mesmo tom.
+	var kind := "wood" if label == "Floor" else ("fabric" if label in ["Rug", "Sofa", "SofaBack", "Cushion"] else "plaster")
+	preload("res://assets/urban_detail/UrbanSurfaces.gd").detail(material, kind, 1.5, .7)
+	material.albedo_color = Color(minf(color.r * material.albedo_color.r, 1.0), minf(color.g * material.albedo_color.g, 1.0), minf(color.b * material.albedo_color.b, 1.0))
+	material.roughness = 1.0
 	node.material_override = material
 	add_child(node)
 	node.position = point

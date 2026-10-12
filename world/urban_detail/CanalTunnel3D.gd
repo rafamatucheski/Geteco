@@ -832,6 +832,15 @@ static func material(id: String) -> Material:
 					mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 					mat.roughness = 1.0
 					mat.metallic_specular = 0.0
+			# Concreto e aço do túnel eram cor lisa: relevo por tipo, mesmo tom.
+			var tunnel_kinds := {"walkway": "concrete", "concrete": "concrete", "concrete_dark": "concrete", "cap": "concrete",
+				"parapet": "concrete", "roof_top": "concrete", "ceiling": "concrete", "steel": "metal", "canopy_steel": "metal",
+				"lamp_pole": "metal", "rail": "metal"}
+			if tunnel_kinds.has(id):
+				var tint := mat.albedo_color
+				preload("res://assets/urban_detail/UrbanSurfaces.gd").detail(mat, tunnel_kinds[id], 2.0, .8)
+				mat.albedo_color = Color(minf(tint.r * mat.albedo_color.r, 1.0), minf(tint.g * mat.albedo_color.g, 1.0), minf(tint.b * mat.albedo_color.b, 1.0))
+				mat.roughness = 1.0
 			result = mat
 	_materials[id] = result
 	return result

@@ -251,7 +251,11 @@ func _material(kind: String, color: Color) -> StandardMaterial3D:
 		return slabs
 	var material := StandardMaterial3D.new()
 	material.albedo_color=color
-	material.albedo_texture=GROUND.texture(kind)
+	GROUND.bind(material,kind)
+	# Triplanar em mundo: o mesh não tem tangentes e normal map precisa delas no UV plano.
+	material.uv1_triplanar=true
+	material.uv1_world_triplanar=true
+	material.uv1_scale=Vector3.ONE/16.0
 	material.texture_filter=BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	material.roughness=.92
 	material.cull_mode=BaseMaterial3D.CULL_DISABLED

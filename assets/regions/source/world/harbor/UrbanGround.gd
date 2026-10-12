@@ -2,6 +2,18 @@
 extends RefCounted
 ## Shared, mipmapped surface tiles. No per-frame generation or extra physics.
 static var _tiles: Dictionary = {}
+static var _normals: Dictionary = {}
+static var _rough: Dictionary = {}
+
+## Albedo + relevo + rugosidade da mesma superfície. Só albedo lia como plano
+## chapado de cima; a normal vem da luminância do próprio tile (juntas entram).
+static func bind(material: StandardMaterial3D, kind: String, bump := 2.0) -> void:
+	material.albedo_texture = texture(kind)
+	material.normal_enabled = true
+	material.normal_texture = _normals[kind]
+	material.normal_scale = bump
+	material.roughness_texture = _rough[kind]
+	material.roughness = 1.0
 
 static func texture(kind: String) -> Texture2D:
 	if _tiles.has(kind): return _tiles[kind]
@@ -44,6 +56,25 @@ static func texture(kind: String) -> Texture2D:
 			elif kind=="grass":
 				value+=grain*.20
 			img.set_pixel(x,y,Color(clampf(value+warm,0,1),clampf(value,0,1),clampf(value-warm,0,1)))
+	var height := PackedFloat32Array()
+	height.resize(256*256)
+	var rough := Image.create(256,256,false,Image.FORMAT_L8)
+	for y in 256:
+		for x in 256:
+			var l := img.get_pixel(x,y).get_luminance()
+			height[y*256+x] = l
+			rough.set_pixel(x,y,Color(clampf(1.0-(l-.8)*1.5,.7,1.0),0,0))
+	var normal := Image.create(256,256,true,Image.FORMAT_RGB8)
+	for y in 256:
+		for x in 256:
+			var gx := height[y*256+(x+1)%256]-height[y*256+(x+255)%256]
+			var gy := height[((y+1)%256)*256+x]-height[((y+255)%256)*256+x]
+			var n := Vector3(-gx*6.0,gy*6.0,1.0).normalized()
+			normal.set_pixel(x,y,Color(n.x*.5+.5,n.y*.5+.5,n.z*.5+.5))
+	normal.generate_mipmaps()
+	rough.generate_mipmaps()
+	_normals[kind]=ImageTexture.create_from_image(normal)
+	_rough[kind]=ImageTexture.create_from_image(rough)
 	img.generate_mipmaps()
 	var tile := ImageTexture.create_from_image(img)
 	_tiles[kind]=tile

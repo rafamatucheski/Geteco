@@ -19,6 +19,13 @@ static func get_mat(id_name: String, color: Color, metallic: float = 0.1, roughn
 		m.emission = color if emission_col == Color.BLACK else emission_col
 		m.emission_energy_multiplier = emission_energy
 	
+	# Cor lisa lia como plano chapado (paletes, caixas, ferro): relevo e rugosidade
+	# em espaço de mundo, mantendo o tom e o brilho autorados.
+	if color.a >= 1.0 and not m.emission_enabled:
+		var kind := "wood" if id_name.contains("wood") else ("metal" if (metallic > 0.1 or id_name.contains("steel") or id_name.contains("iron") or id_name.contains("brass")) else ("fabric" if id_name.contains("rubber") or id_name.contains("plastic") or id_name.contains("rope") else "plaster"))
+		preload("res://assets/urban_detail/UrbanSurfaces.gd").detail(m, kind, 1.2 if kind == "wood" else 2.0, .8)
+		m.albedo_color = Color(minf(color.r * m.albedo_color.r, 1.0), minf(color.g * m.albedo_color.g, 1.0), minf(color.b * m.albedo_color.b, 1.0))
+		m.roughness = clampf(roughness + .15, 0.0, 1.0)
 	_cache[id_name] = m
 	return m
 
