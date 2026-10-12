@@ -7,7 +7,7 @@ const MAX_GRASS := 144
 const MAX_PEBBLES := 36
 const MAX_ROCKS := 8
 static var _grass: ArrayMesh
-static var _rock: SphereMesh
+const NATIVE_ROCK := preload("res://world/regions/NativeRock.gd")
 static var _materials: Dictionary = {}
 
 static func build_chunk(rect: Rect2, region_id: String, height_at: Callable, is_reserved: Callable) -> Node3D:
@@ -68,7 +68,8 @@ static func step(job: Dictionary, budget_usec: float) -> bool:
 			if is_finite(y) and _gentle(point, y, height_at, radius, 0.25):
 				var height := radius * rng.randf_range(0.55, 1.0)
 				var basis := Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(radius, height, radius * 0.8))
-				var transform := Transform3D(basis, Vector3(point.x, y + height * 0.65, point.y))
+				# A malha tem base plana a -0,55 da altura: enterra só um pouco para assentar no chão.
+				var transform := Transform3D(basis, Vector3(point.x, y + height * 0.42, point.y))
 				if solid:
 					if _snow(point): job.snow_large.append(transform)
 					else: job.large.append(transform)
@@ -80,10 +81,10 @@ static func step(job: Dictionary, budget_usec: float) -> bool:
 	if int(job.phase) == 1: job.phase = 2
 	if int(job.phase) == 2:
 		_batch(root, "Grass", _grass_mesh(), job.grass, Color("586643"), false)
-		_batch(root, "Pebbles", _rock_mesh(), job.stones, Color("726e5b"), false)
-		_batch(root, "SnowPebbles", _rock_mesh(), job.snow_stones, Color("bbc9cc"), false)
-		_batch(root, "Rocks", _rock_mesh(), job.large, Color("646b62"), true)
-		_batch(root, "SnowRocks", _rock_mesh(), job.snow_large, Color("b8c6cb"), true)
+		_batch_rocks(root, "Pebbles", job.stones, Color("8a8470"), false, 0)
+		_batch_rocks(root, "SnowPebbles", job.snow_stones, Color("d4dde0"), false, 0)
+		_batch_rocks(root, "Rocks", job.large, Color("7d8479"), true, 1)
+		_batch_rocks(root, "SnowRocks", job.snow_large, Color("d2dce0"), true, 1)
 		root.set_meta("grass_count", job.grass.size())
 		root.set_meta("pebble_count", job.stones.size() + job.snow_stones.size())
 		root.set_meta("solid_rock_count", job.large.size() + job.snow_large.size())
@@ -108,6 +109,7 @@ static func _material(color: Color) -> StandardMaterial3D:
 		var material := StandardMaterial3D.new()
 		material.albedo_color = color
 		material.roughness = 1.0
+		material.vertex_color_use_as_albedo = true
 		material.cull_mode = BaseMaterial3D.CULL_DISABLED
 		_materials[color] = material
 	return _materials[color]
@@ -128,14 +130,17 @@ static func _grass_mesh() -> ArrayMesh:
 	_grass = surface.commit()
 	return _grass
 
-static func _rock_mesh() -> SphereMesh:
-	if _rock == null:
-		_rock = SphereMesh.new()
-		_rock.radius = 1.0
-		_rock.height = 2.0
-		_rock.radial_segments = 7
-		_rock.rings = 3
-	return _rock
+## Divide as pedras em variantes de malha (pela posição, igual à colisão). A primeira mantém o nome
+## original do lote para o editor de mundo; as outras ganham sufixo.
+static func _batch_rocks(root: Node3D, label: String, transforms: Array[Transform3D], color: Color, shadows: bool, detail: int) -> void:
+	var count := NATIVE_ROCK.variant_count()
+	var groups: Array = []
+	for i in count:
+		var group: Array[Transform3D] = []
+		groups.append(group)
+	for transform in transforms: groups[NATIVE_ROCK.variant_for(transform.origin)].append(transform)
+	for i in count:
+		_batch(root, label if i == 0 else "%s_%d" % [label, i + 1], NATIVE_ROCK.mesh(i, detail), groups[i], color, shadows)
 
 static func _batch(root: Node3D, label: String, mesh: Mesh, transforms: Array[Transform3D], color: Color, shadows: bool) -> void:
 	if transforms.is_empty(): return
@@ -163,7 +168,7 @@ static func _solid(root: Node3D, transform: Transform3D) -> void:
 	body.collision_layer = 1
 	body.collision_mask = 0
 	var points := PackedVector3Array()
-	for vertex in _rock_mesh().get_faces(): points.append(transform.basis * vertex)
+	for vertex in NATIVE_ROCK.hull(NATIVE_ROCK.variant_for(transform.origin)): points.append(transform.basis * vertex)
 	var shape := ConvexPolygonShape3D.new()
 	shape.points = points
 	var collision := CollisionShape3D.new()
