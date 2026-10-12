@@ -30,8 +30,10 @@ vec3 hsv2rgb(vec3 c) {
 void fragment() {
 	vec3 base = texture(albedo_texture, UV).rgb;
 	vec3 hsv = rgb2hsv(base);
-	// Pele ocupa o laranja/rosado de saturação média; abaixo disso é neutro (cabelo, sapato, jeans claro).
-	float skin = smoothstep(0.0, 0.015, hsv.x + 0.03) * (1.0 - smoothstep(0.10, 0.14, hsv.x)) * smoothstep(0.12, 0.2, hsv.y) * (1.0 - smoothstep(0.65, 0.8, hsv.y));
+	// Pele ocupa o laranja/rosado (matiz até ~0,07: o cáqui e o bege de roupa, de 0,10 em diante, NÃO contam como pele e
+	// recebem o tone) com saturação a partir de ~0,1 (pele clara não pode escapar do tone e sair alaranjada); abaixo
+	// disso é neutro (cabelo, sapato, jeans claro).
+	float skin = smoothstep(0.0, 0.015, hsv.x + 0.03) * (1.0 - smoothstep(0.062, 0.074, hsv.x)) * smoothstep(0.05, 0.12, hsv.y) * (1.0 - smoothstep(0.65, 0.8, hsv.y));
 	float cloth = smoothstep(0.16, 0.30, hsv.y) * (1.0 - skin);
 	hsv.x = fract(hsv.x + hue_shift * cloth);
 	vec3 color = hsv2rgb(hsv) * mix(1.0, brightness, cloth);
