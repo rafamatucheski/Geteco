@@ -33,26 +33,25 @@ static func build(root: Node3D, id: String) -> void:
 			_box(root,"GripGroove",Vector3(0,0,z),Vector3(0.030,0.032,0.004),dark)
 	elif id == "knuckles":
 		var gold_brass := _mat(Color("d4ac0d"), 0.82, 0.28)
-		_box(root, "PalmBar", Vector3(0, -0.015, 0.02), Vector3(0.082, 0.018, 0.014), gold_brass)
-		for x in [-0.038,0.038]:
-			_box(root,"PalmSupport",Vector3(x,-0.008,0),Vector3(0.012,0.018,0.055),gold_brass)
+		# Os dedos entram pelos anéis na vertical; a face de golpe aponta para -Z.
 		for i in range(4):
 			var x_off := -0.033 + i * 0.022
 			var ring := MeshInstance3D.new()
+			ring.name = "FingerRing_%d" % i
 			var mesh := TorusMesh.new()
-			mesh.inner_radius = 0.007
-			mesh.outer_radius = 0.012
-			mesh.rings = 12
-			mesh.ring_segments = 6
+			mesh.inner_radius = 0.0085
+			mesh.outer_radius = 0.0135
+			mesh.rings = 16
+			mesh.ring_segments = 8
 			ring.mesh = mesh
-			ring.position = Vector3(x_off,0.005,-0.025)
-			ring.rotation.x = PI/2
+			ring.position = Vector3(x_off, 0, -0.012)
 			ring.material_override = gold_brass
 			root.add_child(ring)
-		_box(root, "StrikingRidge", Vector3(0, 0.008, -0.038), Vector3(0.084, 0.016, 0.012), gold_brass)
-		for i in range(4):
-			var x_off := -0.033 + i * 0.022
-			_box(root, "KnucklePyramid_%d" % i, Vector3(x_off, 0.008, -0.045), Vector3(0.012, 0.012, 0.010), steel)
+			_box(root, "KnucklePyramid_%d" % i, Vector3(x_off, 0, -0.030), Vector3(0.013, 0.013, 0.012), steel)
+		_box(root, "StrikingRidge", Vector3(0, 0, -0.0225), Vector3(0.094, 0.011, 0.012), gold_brass)
+		_cylinder(root, "PalmBar", Vector3(0, 0, 0.034), 0.0085, 0.100, gold_brass, Vector3(0, 0, 90))
+		for x in [-0.047, 0.047]:
+			_box(root, "PalmSupport", Vector3(x, 0, 0.011), Vector3(0.011, 0.015, 0.050), gold_brass)
 	elif id in ["bat", "taco", "baseball"]:
 		var bat_trail := preload("res://gameplay/AxeSwingTrail.gd").new()
 		bat_trail.name = "AxeSwingTrail"
@@ -60,10 +59,10 @@ static func build(root: Node3D, id: String) -> void:
 		bat_trail.outer = Vector3(0, 0, -0.49)
 		bat_trail.opacity = 0.12
 		root.add_child(bat_trail)
-		_cylinder(root, "BatBarrel", Vector3(0, 0, -0.28), 0.032, 0.42, wood, Vector3(90, 0, 0))
-		_cylinder(root, "BatTaper", Vector3(0, 0, -0.04), 0.022, 0.16, wood, Vector3(90, 0, 0))
-		_cylinder(root, "BatGrip", Vector3(0, 0, 0.08), 0.018, 0.16, rubber, Vector3(90, 0, 0))
-		_cylinder(root, "BatPommel", Vector3(0, 0, 0.17), 0.025, 0.022, wood, Vector3(90, 0, 0))
+		# Perfil torneado: o corpo afina de forma contínua até o cabo, como um taco de verdade.
+		_lathe(root, "BatBarrel", PackedVector2Array([Vector2(-0.490,0.0),Vector2(-0.484,0.019),Vector2(-0.468,0.029),Vector2(-0.430,0.0340),Vector2(-0.340,0.0355),Vector2(-0.250,0.0330),Vector2(-0.160,0.0260),Vector2(-0.080,0.0200),Vector2(-0.010,0.0172),Vector2(0.150,0.0172)]), wood)
+		_cylinder(root, "BatGrip", Vector3(0, 0, 0.075), 0.0185, 0.15, rubber, Vector3(90, 0, 0))
+		_lathe(root, "BatPommel", PackedVector2Array([Vector2(0.150,0.0185),Vector2(0.160,0.0235),Vector2(0.178,0.0262),Vector2(0.194,0.0215),Vector2(0.199,0.0)]), wood)
 	elif id == "hunting_rifle":
 		_profile(root,"WalnutStock",PackedVector2Array([Vector2(0.18,-0.085),Vector2(0.175,0.042),Vector2(0.13,0.037),Vector2(0.085,0.045),Vector2(-0.25,0.018),Vector2(-0.25,-0.017),Vector2(-0.065,-0.025),Vector2(-0.012,-0.035),Vector2(0.035,-0.07),Vector2(0.065,-0.052),Vector2(0.10,-0.014),Vector2(0.14,-0.052)]),0.046,wood)
 		_box(root,"ButtPad",Vector3(0,-0.02,0.182),Vector3(0.050,0.135,0.015),rubber)
@@ -142,6 +141,27 @@ static func _cylinder(root: Node3D, label: String, p: Vector3, radius: float, le
 	part.mesh = mesh
 	part.position = p
 	part.rotation_degrees = angles
+	part.material_override = mat
+	root.add_child(part)
+
+## Sólido de revolução em torno do eixo Z; o perfil é (z, raio), da ponta (-Z) para trás.
+static func _lathe(root: Node3D, label: String, profile: PackedVector2Array, mat: Material, segments := 20) -> void:
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	surface.set_smooth_group(0)
+	for i in profile.size() - 1:
+		for j in segments:
+			var a0 := TAU * j / segments
+			var a1 := TAU * (j + 1) / segments
+			var p00 := Vector3(cos(a0) * profile[i].y, sin(a0) * profile[i].y, profile[i].x)
+			var p01 := Vector3(cos(a1) * profile[i].y, sin(a1) * profile[i].y, profile[i].x)
+			var p10 := Vector3(cos(a0) * profile[i+1].y, sin(a0) * profile[i+1].y, profile[i+1].x)
+			var p11 := Vector3(cos(a1) * profile[i+1].y, sin(a1) * profile[i+1].y, profile[i+1].x)
+			for v in [p00, p11, p10, p00, p01, p11]: surface.add_vertex(v)
+	surface.generate_normals()
+	var part := MeshInstance3D.new()
+	part.name = label
+	part.mesh = surface.commit()
 	part.material_override = mat
 	root.add_child(part)
 

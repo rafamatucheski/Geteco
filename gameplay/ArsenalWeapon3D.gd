@@ -151,23 +151,19 @@ static func build(root: Node3D, id: String) -> Vector3:
 			# RevÃƒÂ³lver Magnum .44 com cano longo de 8", nervura superior e tambor
 			# Cano de ~4" (13 cm no modelo, ~16 cm no Dante). O de 22 cm, somado à escala
 			# V1->V2 do rig, deixava o revólver com comprimento de arma longa vista de cima.
-			var barrel_mg = MeshInstance3D.new()
-			var box_bmg = BoxMesh.new()
-			box_bmg.size = Vector3(0.032, 0.045, 0.13)
-			barrel_mg.mesh = box_bmg
-			barrel_mg.material_override = mat_chrome
-			barrel_mg.position = Vector3(0.0, 0.03, -0.085)
-			root.add_child(barrel_mg)
+			var geo := preload("res://gameplay/WeaponPresentation3D.gd")
+			# Cano redondo com nervura, luva do extrator por baixo e armação atrás do tambor,
+			# em vez do bloco único que lia como pistola de caixa.
+			geo._cylinder(root, "Barrel", Vector3(0.0, 0.030, -0.105), 0.0145, 0.13, mat_chrome, Vector3(90, 0, 0))
+			geo._box(root, "BarrelRib", Vector3(0.0, 0.0475, -0.105), Vector3(0.010, 0.006, 0.13), mat_chrome)
+			geo._cylinder(root, "EjectorShroud", Vector3(0.0, 0.008, -0.095), 0.0105, 0.09, mat_gunmetal, Vector3(90, 0, 0))
+			geo._box(root, "FrontSight", Vector3(0.0, 0.058, -0.162), Vector3(0.008, 0.016, 0.014), mat_brass)
+			geo._box(root, "TopStrap", Vector3(0.0, 0.0445, 0.002), Vector3(0.026, 0.013, 0.100), mat_gunmetal)
+			geo._box(root, "FrameFront", Vector3(0.0, 0.018, -0.056), Vector3(0.030, 0.050, 0.028), mat_gunmetal)
+			geo._box(root, "FrameRear", Vector3(0.0, 0.014, 0.052), Vector3(0.032, 0.060, 0.044), mat_gunmetal)
+			geo._box(root, "RearSight", Vector3(0.0, 0.054, 0.034), Vector3(0.014, 0.008, 0.012), mat_gunmetal)
 
-			var front_sight_mg = MeshInstance3D.new()
-			var box_fsm = BoxMesh.new()
-			box_fsm.size = Vector3(0.012, 0.018, 0.018)
-			front_sight_mg.mesh = box_fsm
-			front_sight_mg.material_override = mat_brass
-			front_sight_mg.position = Vector3(0.0, 0.06, -0.14)
-			root.add_child(front_sight_mg)
-
-			# Tambor GiratÃƒÂ³rio
+			# Tambor Giratório (nó animado na recarga: mantém nome e eixo)
 			var cylinder_mg = MeshInstance3D.new()
 			cylinder_mg.name = "ReloadCylinder"
 			var cyl_mg = CylinderMesh.new()
@@ -180,15 +176,8 @@ static func build(root: Node3D, id: String) -> Vector3:
 			cylinder_mg.position = Vector3(0.0, 0.01, 0.0)
 			root.add_child(cylinder_mg)
 
-			# Cabo de Madeira Nobre
-			var grip_mg = MeshInstance3D.new()
-			var box_gmg = BoxMesh.new()
-			box_gmg.size = Vector3(0.034, 0.10, 0.055)
-			grip_mg.mesh = box_gmg
-			grip_mg.material_override = mat_wood
-			grip_mg.position = Vector3(0.0, -0.05, 0.03)
-			grip_mg.rotation_degrees = Vector3(-18, 0, 0)
-			root.add_child(grip_mg)
+			# Cabo de madeira com perfil inclinado para trás (substitui a caixa inclinada)
+			geo._profile(root, "Grip", PackedVector2Array([Vector2(0.050,0.022),Vector2(-0.023,0.0),Vector2(0.005,-0.115),Vector2(0.073,-0.108),Vector2(0.067,-0.045),Vector2(0.059,-0.010)]), 0.032, mat_wood)
 
 			flash_pos = Vector3(0.0, 0.03, -0.165)
 
@@ -464,16 +453,10 @@ static func build(root: Node3D, id: String) -> Vector3:
 			root.add_child(comp)
 
 			# 3. Carregador Curvo Banana de 30 Tiros
-			var mag = MeshInstance3D.new()
-			var box_m = BoxMesh.new()
-			box_m.size = Vector3(0.028, 0.16, 0.05)
-			mag.mesh = box_m
-			mag.material_override = mat_polymer
-			mag.position = Vector3(0.0, -0.10, -0.07)
-			mag.rotation_degrees = Vector3(18, 0, 0)
-			root.add_child(mag)
+			var geo_smg := preload("res://gameplay/WeaponPresentation3D.gd")
+			geo_smg._profile(root, "Magazine", PackedVector2Array([Vector2(-0.045,-0.030),Vector2(-0.095,-0.030),Vector2(-0.108,-0.090),Vector2(-0.128,-0.190),Vector2(-0.075,-0.195),Vector2(-0.058,-0.100)]), 0.028, mat_polymer)
 
-			# 4. Empunhadura e Coronha TÃƒÂ¡tica RebatÃƒÂ­vel Dobrada
+			# 4. Empunhadura e coronha de arame rebatível
 			var grip = MeshInstance3D.new()
 			var box_gp = BoxMesh.new()
 			box_gp.size = Vector3(0.034, 0.09, 0.05)
@@ -483,13 +466,10 @@ static func build(root: Node3D, id: String) -> Vector3:
 			grip.rotation_degrees = Vector3(-12, 0, 0)
 			root.add_child(grip)
 
-			var wire_stock = MeshInstance3D.new()
-			var box_ws = BoxMesh.new()
-			box_ws.size = Vector3(0.038, 0.03, 0.14)
-			wire_stock.mesh = box_ws
-			wire_stock.material_override = mat_chrome
-			wire_stock.position = Vector3(0.0, 0.03, 0.12)
-			root.add_child(wire_stock)
+			for side in [-1.0, 1.0]:
+				geo_smg._cylinder(root, "WireStockRod", Vector3(side * 0.017, 0.03, 0.125), 0.0042, 0.13, mat_chrome, Vector3(90, 0, 0))
+			geo_smg._box(root, "WireStockBrace", Vector3(0.0, 0.03, 0.188), Vector3(0.040, 0.012, 0.008), mat_chrome)
+			geo_smg._box(root, "WireStockStrut", Vector3(0.0, 0.0, 0.189), Vector3(0.006, 0.060, 0.006), mat_chrome)
 
 			flash_pos = Vector3(0.0, 0.01, -0.36)
 
