@@ -178,9 +178,18 @@ func _warehouse(w: float,d: float,variant: int) -> void:
 	for side in [-1,1]:
 		var roof := box(Vector3(0,h+rise*.5,side*d*.25),Vector3(w+.55,.16,roof_depth+.25),"485e69" if variant == 0 else "626b65",true)
 		roof.rotation.x = side*slope
+		# Nervuras de costura em pé: sem elas a água do telhado lia como uma placa lisa
+		# (vídeo de 12/10/2026). Mesma inclinação do plano, 9 cm acima dele.
+		for rx in range(-int(w*.5)+1,int(w*.5),2):
+			var seam := box(Vector3(rx,h+rise*.5+.09,side*d*.25),Vector3(.07,.07,roof_depth+.2),"6f8892" if variant == 0 else "818b85")
+			seam.rotation.x = side*slope
 		for x in range(-int(w*.5),int(w*.5)+1):
 			beam(Vector3(x,h+rise,0),Vector3(x,h,side*(d*.5+.14)),.09,"a0ada8")
 	box(Vector3(0,h+rise+.05,0),Vector3(w+.55,.12,.18),"c0c7b8",true)
+	# Chapa ondulada das empenas: frisos horizontais a cada 45 cm.
+	for fy in range(1,int((h-1.4)/.45)):
+		for side in [-1,1]:
+			box(Vector3(0,1.55+fy*.45,side*(d*.5+.012)),Vector3(w-.5,.05,.025),"7f8d88")
 	var count := 5 if w > 20 else 2
 	for i in count:
 		var x := -w*.39+float(i)*w*.78/maxf(count-1,1)
