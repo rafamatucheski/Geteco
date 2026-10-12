@@ -38,6 +38,24 @@ static func material(key: String, kind: String, color: Color, roughness := 0.85,
 	return mat
 
 
+## Aplica relevo + rugosidade + textura a um material que já existe (MultiMesh com cor por
+## instância): o albedo neutro multiplica a cor do vértice, então compensa a luminância média.
+static func detail(mat: StandardMaterial3D, kind: String, tile := 2.0, bump := 1.0) -> StandardMaterial3D:
+	var maps := _maps_for(kind)
+	var gain := 1.0 / maxf(float(maps["mean"]), 0.2)
+	mat.albedo_texture = maps["albedo"]
+	mat.albedo_color = Color(gain, gain, gain)
+	mat.normal_enabled = true
+	mat.normal_texture = maps["normal"]
+	mat.normal_scale = bump
+	mat.roughness_texture = maps["rough"]
+	mat.uv1_triplanar = true
+	mat.uv1_world_triplanar = true
+	mat.uv1_scale = Vector3.ONE / tile
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+	return mat
+
+
 ## Normal map a partir de uma altura (com repetição nas bordas, para não marcar emenda).
 static func normal_from_height(height: PackedFloat32Array, size: int, strength: float) -> ImageTexture:
 	var image := Image.create(size, size, true, Image.FORMAT_RGB8)
