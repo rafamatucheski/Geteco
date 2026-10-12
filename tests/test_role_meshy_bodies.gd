@@ -42,7 +42,6 @@ func _run() -> void:
 	for tag in MODELS:
 		for variant in 2:
 			# Guarda do carro-forte é PoliceModel tático (SWAT): não há corpo tático feminino (pendência conhecida).
-			if tag == "guarda do carro-forte" and variant == 1: continue
 			await _check_model(tag, variant)
 	CATALOG.enabled = false
 	var plain := (load(MODELS["funerário"]) as GDScript).new() as Node3D

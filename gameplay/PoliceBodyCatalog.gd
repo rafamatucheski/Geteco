@@ -20,6 +20,8 @@ const ENTRIES := [
 	{"id": "swat_gray", "file": "tactical_gray.glb", "tiers": [2], "female": false, "build": 1, "skin": 0.62, "baked_equipment": true, "tint": {"tone": Color(0.5, 0.52, 0.56)}},
 	{"id": "swat_black", "file": "tactical_black.glb", "tiers": [2], "female": false, "build": 1, "skin": 0.25, "baked_equipment": true},
 	{"id": "army_gray", "file": "tactical_gray.glb", "tiers": [4], "female": false, "build": 1, "skin": 0.62, "baked_equipment": true, "tint": {"tone": Color(0.62, 0.72, 0.45)}},
+	{"id": "swat_f", "file": "tactical_f.glb", "tiers": [2], "female": true, "build": 1, "skin": 0.45, "baked_equipment": true, "tint": {"tone": Color(0.5, 0.52, 0.56)}},
+	{"id": "army_f", "file": "tactical_f.glb", "tiers": [4], "female": true, "build": 1, "skin": 0.45, "baked_equipment": true, "tint": {"tone": Color(0.62, 0.72, 0.45)}},
 	{"id": "army_black", "file": "tactical_black.glb", "tiers": [4], "female": false, "build": 1, "skin": 0.25, "baked_equipment": true, "tint": {"tone": Color(0.9, 1.0, 0.62)}},
 ]
 ## Testes podem forçar um corpo por escalão: {tier: "res://….glb"}.

@@ -23,6 +23,7 @@ const ROLES := {
 	"firefighter": [
 		{"file": POLICE + "tactical_gray.glb", "female": false, "tint": {"tone": Color(1.9, 1.5, 0.3)}, "baked_equipment": true},
 		{"file": POLICE + "tactical_black.glb", "female": false, "tint": {"tone": Color(1.8, 1.45, 0.3)}, "baked_equipment": true},
+		{"file": POLICE + "tactical_f.glb", "female": true, "tint": {"tone": Color(1.9, 1.5, 0.3)}, "baked_equipment": true},
 	],
 	# Neco: senhor robusto de boné verde-petróleo; o avental e a chave inglesa do modelo antigo não foram portados.
 	"neco": [
