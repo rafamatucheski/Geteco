@@ -66,10 +66,8 @@ static func apply(root: Node3D, id: String, muzzle: Vector3) -> void:
 		for z in [-0.37,-0.35,-0.33]:
 			GEO._cylinder(root,"ShroudBand",Vector3(0,0.02,z),0.035,0.006,steel,Vector3(90,0,0))
 	elif id == "grenade":
-		GEO._box(root,"SafetyLever",Vector3(0.033,0.024,-0.10),Vector3(0.013,0.070,0.017),steel)
-		GEO._box(root,"LeverBridge",Vector3(0.017,0.062,-0.10),Vector3(0.046,0.011,0.019),steel)
-		for y in [-0.024,0.0,0.024]:
-			GEO._cylinder(root,"BodyBand",Vector3(0,y,-0.10),0.044 if y == 0 else 0.038,0.007,dark,Vector3.ZERO)
+		GEO._box(root,"SafetyLever",Vector3(0.049,0.024,-0.10),Vector3(0.013,0.070,0.017),steel)
+		GEO._box(root,"LeverBridge",Vector3(0.026,0.062,-0.10),Vector3(0.046,0.011,0.019),steel)
 		var ring := MeshInstance3D.new()
 		ring.name = "SafetyRing"
 		var torus := TorusMesh.new()

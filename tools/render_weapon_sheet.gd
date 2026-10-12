@@ -4,7 +4,7 @@ extends SceneTree
 ##   Godot --path . --script res://tools/render_weapon_sheet.gd -- [--out=evidence/weapons/sheet.png] [--ids=a,b]
 const ARSENAL := preload("res://gameplay/ArsenalWeapon3D.gd")
 const ALL_IDS := ["pistol", "magnum", "smg", "shotgun", "sawed_off", "ak47", "m4a1", "hunting_rifle", "rpg", "flamethrower", "grenade", "knife", "axe", "bat", "knuckles"]
-const CELL := Vector2i(560, 300)
+var CELL := Vector2i(560, 300)
 const COLS := 3
 
 func _initialize() -> void: _run.call_deferred()
@@ -14,6 +14,7 @@ func _run() -> void:
 	var ids: Array = ALL_IDS
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="): out = arg.trim_prefix("--out=")
+		if arg.begins_with("--cell="): CELL = Vector2i(int(arg.trim_prefix("--cell=").split("x")[0]), int(arg.trim_prefix("--cell=").split("x")[1]))
 		if arg.begins_with("--ids="): ids = arg.trim_prefix("--ids=").split(",")
 	await _render_cells(ids, out)
 	quit(0)

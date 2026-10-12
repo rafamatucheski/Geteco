@@ -12,15 +12,17 @@ static func build(root: Node3D, id: String) -> void:
 		var trail := preload("res://gameplay/AxeSwingTrail.gd").new()
 		trail.name = "AxeSwingTrail"
 		root.add_child(trail)
-		_cylinder(root,"AshHandle",Vector3(0,0,-0.17),0.018,0.65,wood,Vector3(90,0,0))
+		# Cabo de freixo torneado: fino no meio e alargando num talão no fim, como um cabo de verdade.
+		_lathe(root,"AshHandle",PackedVector2Array([Vector2(-0.495,0.0155),Vector2(-0.30,0.0150),Vector2(-0.10,0.0158),Vector2(0.03,0.0172),Vector2(0.10,0.0200),Vector2(0.145,0.0245),Vector2(0.162,0.0225),Vector2(0.165,0.0)]),wood)
 		_cylinder(root,"GripWrap",Vector3(0,0,0.065),0.020,0.10,rubber,Vector3(90,0,0))
-		_cylinder(root,"HandleHeel",Vector3(0,0,0.15),0.023,0.018,wood,Vector3(90,0,0))
+		# A cabeça fica deitada aqui (gume para +X); o rig a gira 90° na pegada (WeaponRigPose).
 		var head := Node3D.new()
 		head.name = "ForgedHead"
 		head.rotation.z = -PI * 0.5
 		root.add_child(head)
-		_profile(head,"SteelHead",PackedVector2Array([Vector2(-0.49,-0.055),Vector2(-0.40,-0.055),Vector2(-0.405,0.045),Vector2(-0.365,0.155),Vector2(-0.37,0.18),Vector2(-0.51,0.19),Vector2(-0.525,0.16),Vector2(-0.49,0.045)]),0.045,dark)
-		_profile(head,"CuttingEdge",PackedVector2Array([Vector2(-0.525,0.16),Vector2(-0.51,0.19),Vector2(-0.37,0.18),Vector2(-0.365,0.155),Vector2(-0.39,0.14),Vector2(-0.50,0.15)]),0.012,steel)
+		# Cunha de verdade: a espessura cai de forma contínua do olho até o gume (linhas: reach, z_tras, z_frente, meia-espessura).
+		_loft(head,"ForgedBlade",[[-0.058,-0.492,-0.398,0.025],[0.062,-0.492,-0.398,0.025],[0.078,-0.497,-0.393,0.019],[0.118,-0.516,-0.384,0.0085],[0.150,-0.523,-0.372,0.0035],[0.170,-0.522,-0.367,0.0022],[0.184,-0.508,-0.378,0.0016],[0.192,-0.478,-0.402,0.0008]],dark)
+		_loft(head,"CuttingEdge",[[0.158,-0.524,-0.369,0.0030],[0.170,-0.523,-0.368,0.0026],[0.184,-0.509,-0.379,0.0020],[0.192,-0.478,-0.402,0.0011]],_mat(Color("aeb8bf"),0.9,0.22))
 	elif id == "knife":
 		_profile(root, "Grip", PackedVector2Array([Vector2(0.045,-0.017),Vector2(0.085,-0.012),Vector2(0.085,0.012),Vector2(-0.015,0.017),Vector2(-0.035,0.012),Vector2(-0.035,-0.012)]), 0.028, rubber)
 		_box(root,"Guard",Vector3(0,0,-0.04),Vector3(0.054,0.025,0.012),brass)
@@ -143,6 +145,59 @@ static func _cylinder(root: Node3D, label: String, p: Vector3, radius: float, le
 	part.rotation_degrees = angles
 	part.material_override = mat
 	root.add_child(part)
+
+## Sólido por fatias ao longo de Y: cada linha é [y, z_min, z_max, meia_largura_em_x]. Serve para
+## cunhas (cabeça de machado) onde a espessura varia com a distância, sem degraus.
+static func _loft(root: Node3D, label: String, rows: Array, mat: Material) -> void:
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var rings: Array = []
+	for row in rows:
+		rings.append([Vector3(-row[3], row[0], row[1]), Vector3(row[3], row[0], row[1]), Vector3(row[3], row[0], row[2]), Vector3(-row[3], row[0], row[2])])
+	for i in rings.size() - 1:
+		for e in 4:
+			var q := [rings[i][e], rings[i][(e + 1) % 4], rings[i + 1][(e + 1) % 4], rings[i + 1][e]]
+			for k in [0, 2, 1, 0, 3, 2]: surface.add_vertex(q[k])
+	for end in [0, rings.size() - 1]:
+		var r: Array = rings[end]
+		for k in ([0, 1, 2, 0, 2, 3] if end == 0 else [0, 2, 1, 0, 3, 2]): surface.add_vertex(r[k])
+	surface.generate_normals()
+	var part := MeshInstance3D.new()
+	part.name = label
+	part.mesh = surface.commit()
+	part.material_override = mat
+	root.add_child(part)
+
+## Corpo de granada "abacaxi": esfera de `lat` x `lon` gomos, cada um uma pirâmide baixa de faces
+## planas (centro em `radius`, juntas a 94 %). Eixo vertical em Y.
+static func _pineapple(root: Node3D, label: String, center: Vector3, radius: float, mat: Material, lat := 6, lon := 10) -> void:
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	surface.set_smooth_group(-1)
+	for i in lat:
+		for j in lon:
+			var corners: Array[Vector3] = []
+			# Ordem a, d, c, b = face voltada para fora (mesmo giro do `_lathe`).
+			for k in [[i, j], [i + 1, j], [i + 1, j + 1], [i, j + 1]]:
+				corners.append(_sphere_point(k[0] / float(lat), k[1] / float(lon), radius * 0.94))
+			var mid := _sphere_point((i + 0.5) / lat, (j + 0.5) / lon, radius)
+			for k in 4:
+				var p: Vector3 = corners[k]
+				var q: Vector3 = corners[(k + 1) % 4]
+				if p.distance_squared_to(q) < 1e-8: continue
+				for v in [p, q, mid]: surface.add_vertex(v)
+	surface.generate_normals()
+	var part := MeshInstance3D.new()
+	part.name = label
+	part.mesh = surface.commit()
+	part.material_override = mat
+	part.position = center
+	root.add_child(part)
+
+static func _sphere_point(u: float, v: float, r: float) -> Vector3:
+	var theta := PI * u
+	var phi := TAU * v
+	return Vector3(sin(theta) * cos(phi) * r, cos(theta) * r, sin(theta) * sin(phi) * r)
 
 ## Sólido de revolução em torno do eixo Z; o perfil é (z, raio), da ponta (-Z) para trás.
 static func _lathe(root: Node3D, label: String, profile: PackedVector2Array, mat: Material, segments := 20) -> void:

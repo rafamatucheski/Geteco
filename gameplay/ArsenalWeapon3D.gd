@@ -390,14 +390,7 @@ static func build(root: Node3D, id: String) -> Vector3:
 
 		"grenade":
 			# Granada de MÃƒÂ£o de FragmentaÃƒÂ§ÃƒÂ£o Tipo Abacaxi
-			var grenade_body = MeshInstance3D.new()
-			var sph_gn = SphereMesh.new()
-			sph_gn.radius = 0.045
-			sph_gn.height = 0.09
-			grenade_body.mesh = sph_gn
-			grenade_body.material_override = _make_mat(Color(0.25, 0.35, 0.18), 0.4)
-			grenade_body.position = Vector3(0.0, 0.0, -0.10)
-			root.add_child(grenade_body)
+			preload("res://gameplay/WeaponPresentation3D.gd")._pineapple(root, "GrenadeBody", Vector3(0.0, 0.0, -0.10), 0.047, _make_mat(Color(0.25, 0.35, 0.18), 0.4))
 
 			var pin = MeshInstance3D.new()
 			var cyl_pn = CylinderMesh.new()
