@@ -16,6 +16,7 @@ const SOUTH_PORT_LAYOUT := preload("res://world/regions/OriginalSouthPortLayout.
 const PORT_SHIP_DRESSING := preload("res://world/regions/PortShipDressing3D.gd")
 const PORT_SHIP_PAINT := preload("res://world/regions/PortShipMaterials3D.gd")
 const NORTHSTAR_HOIST := preload("res://world/regions/NorthstarCargoHoist3D.gd")
+const PORT_CONTAINER_BATCH := preload("res://world/regions/PortContainerBatch.gd")
 const CEMETERY := preload("res://world/regions/OriginalCemetery3D.gd")
 const HARBOR_DRESSING := preload("res://world/urban_detail/HarborAreaDressing3D.gd")
 const RESTAURANT_TERRACE := preload("res://world/urban_detail/HarborRestaurantTerrace3D.gd")
@@ -1386,11 +1387,17 @@ func _build_ship(chunk: Node3D) -> void:
 	for cargo in source_data.ship_cargo:
 		var center := Vector3(cargo.position[0]*SCALE,1.1,cargo.position[1]*SCALE)
 		var size := Vector3(cargo.size[0]*SCALE,2.2,cargo.size[1]*SCALE)
-		var cargo_color: Color = [Color("a95e4e"),Color("426b78"),Color("bca26d")][absi(roundi(center.x*7.0+center.z*11.0))%3]
-		_box(chunk,"NorthstarCargo",center,size,cargo_color,true)
-		for rib_index in 4:
-			var rib_z := center.z-size.z*.36+size.z*.24*rib_index
-			_box(chunk,"NorthstarCargoRib",Vector3(center.x,2.215,rib_z),Vector3(size.x*.94,.03,.045),cargo_color.darkened(.22))
+		var cargo_seed := absi(roundi(center.x*7.0+center.z*11.0))
+		# A caixa lisa continua como colisão do bloco, mas o visual agora são dois
+		# contêineres lado a lado, com cor, desgaste e porta voltada alternadamente.
+		var cargo_block := _box(chunk,"NorthstarCargo",center,size,Color.WHITE,true)
+		cargo_block.mesh = null
+		var container_width := (size.x-.16)*.5
+		for column in 2:
+			var theme := (cargo_seed+column*2)%5
+			var visual := PORT_CONTAINER_BATCH.create(theme,Vector3(container_width,size.y,size.z-.1),(cargo_seed+column)%2 == 1)
+			visual.position = Vector3(center.x+(column-.5)*(container_width+.08),center.y-size.y*.5,center.z)
+			chunk.add_child(visual)
 	var cabin := Rect2(3440*SCALE,1795*SCALE,260*SCALE,232*SCALE)
 	_box(chunk,"NorthstarAftCabin",Vector3(cabin.get_center().x,1.55,cabin.get_center().y),Vector3(cabin.size.x,3.1,cabin.size.y),Color("bec3b8"),true)
 	_box(chunk,"NorthstarWheelhouse",Vector3(cabin.get_center().x,3.55,cabin.get_center().y-.8),Vector3(cabin.size.x*.78,1.25,cabin.size.y*.58),Color("d2d4c8"),true)

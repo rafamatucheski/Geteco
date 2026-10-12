@@ -22,20 +22,79 @@ static func get_mat(id_name: String, color: Color, metallic: float = 0.1, roughn
 	_cache[id_name] = m
 	return m
 
+# Textura de tinta de contêiner, em tons de cinza multiplicados pela cor do tema.
+# Antes os contêineres eram cor chapada: vistos de cima na câmera do jogo liam como
+# blocos de plástico (vídeo de 12/10/2026). Aqui há tinta desbotada em manchas,
+# escorridos de ferrugem vindos de cima, arranhões e lascas que mostram aço cru.
+# Imagem contínua (seamless) gerada uma vez e compartilhada por todos os temas.
+static var _paint_texture: ImageTexture
+
+static func _container_paint_texture() -> ImageTexture:
+	if _paint_texture != null: return _paint_texture
+	const SIZE := 128
+	var blotch := FastNoiseLite.new()
+	blotch.seed = 4417
+	blotch.frequency = 0.024
+	blotch.fractal_octaves = 3
+	var grain := FastNoiseLite.new()
+	grain.seed = 9281
+	grain.frequency = 0.32
+	var streak := FastNoiseLite.new()
+	streak.seed = 1307
+	# Esticado em y: o ruído vira fios que escorrem de cima para baixo.
+	streak.frequency = 0.09
+	var blotch_image := blotch.get_seamless_image(SIZE, SIZE)
+	var grain_image := grain.get_seamless_image(SIZE, SIZE)
+	var streak_image := streak.get_seamless_image(SIZE, SIZE)
+	var image := Image.create(SIZE, SIZE, false, Image.FORMAT_RGB8)
+	for y in SIZE:
+		for x in SIZE:
+			var b := blotch_image.get_pixel(x, y).r
+			var g := grain_image.get_pixel(x, y).r
+			# Amostra do fio com y comprimido: colunas longas e finas.
+			var s := streak_image.get_pixel((x * 3) % SIZE, int(y * 0.1667) % SIZE).r
+			var value := lerpf(0.78, 1.04, b) * lerpf(0.93, 1.05, g)
+			var color := Color(value, value, value)
+			# Escorrido de ferrugem: tinge de marrom onde o fio é forte.
+			var rust := smoothstep(0.62, 0.86, s) * smoothstep(0.35, 0.7, b)
+			color = color.lerp(Color(0.62, 0.40, 0.30) * value, rust * 0.72)
+			# Lascas de tinta: aço cru escuro e áspero, manchas pequenas e raras.
+			var chip := smoothstep(0.80, 0.90, g * 0.7 + b * 0.45)
+			color = color.lerp(Color(0.34, 0.27, 0.23), chip * 0.8)
+			image.set_pixel(x, y, color)
+	image.generate_mipmaps()
+	_paint_texture = ImageTexture.create_from_image(image)
+	return _paint_texture
+
+static func container_paint(id_name: String, color: Color, metallic: float, roughness: float) -> StandardMaterial3D:
+	if _cache.has(id_name): return _cache[id_name]
+	var m := get_mat(id_name, color, metallic, roughness)
+	m.albedo_texture = _container_paint_texture()
+	m.uv1_triplanar = true
+	m.uv1_scale = Vector3(0.28, 0.28, 0.28)
+	return m
+
 static func container_blue() -> StandardMaterial3D:
-	return get_mat("port_container_blue", Color("#1b4965"), 0.40, 0.55)
+	return container_paint("port_container_blue", Color("#2d6c93"), 0.40, 0.55)
 
 static func container_rust() -> StandardMaterial3D:
-	return get_mat("port_container_rust", Color("#8b3a2b"), 0.35, 0.65)
+	return container_paint("port_container_rust", Color("#a24632"), 0.35, 0.65)
 
 static func container_teal() -> StandardMaterial3D:
-	return get_mat("port_container_teal", Color("#2a6f7b"), 0.40, 0.55)
+	return container_paint("port_container_teal", Color("#2f8392"), 0.40, 0.55)
 
 static func container_amber() -> StandardMaterial3D:
-	return get_mat("port_container_amber", Color("#b87d28"), 0.35, 0.60)
+	return container_paint("port_container_amber", Color("#cc9230"), 0.35, 0.60)
 
 static func container_white() -> StandardMaterial3D:
-	return get_mat("port_container_white", Color("#d5d8dc"), 0.25, 0.50)
+	return container_paint("port_container_white", Color("#e0e3e6"), 0.25, 0.50)
+
+# Faixa de marca e placas de identificação: tinta lisa, sem o desgaste do casco.
+static func container_marking() -> StandardMaterial3D:
+	return get_mat("port_container_marking", Color("#ece6d4"), 0.05, 0.75)
+
+static func container_stencil() -> StandardMaterial3D:
+	return get_mat("port_container_stencil", Color("#1d2326"), 0.05, 0.80)
 
 static func container_interior() -> StandardMaterial3D:
 	return get_mat("port_container_interior", Color("#423a31"), 0.05, 0.85)

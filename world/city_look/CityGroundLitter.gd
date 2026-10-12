@@ -94,7 +94,9 @@ static func begin(chunk: Node3D, context: Dictionary, furniture: Dictionary, exc
 			var rng := _rng("%s/%.3f/%.3f"%[kind,point.x,point.y])
 			var angle := rng.randf()*TAU
 			var anchor := point+Vector2(cos(angle),sin(angle))*(1.7 if kind=="dumpster" else 1.0)
-			_cluster(job,anchor,rng,2,true)
+			# Vídeo de 12/10/2026: papel branco e folhas junto da lixeira liam como
+			# estilhaços; papel mais escuro (o sol estourava o branco) e menos peças.
+			_cluster(job,anchor,rng,1,true)
 	job.work_usec = Time.get_ticks_usec()-began
 	job.max_step_usec = job.work_usec
 	return job
@@ -160,7 +162,7 @@ static func _cluster(job: Dictionary, anchor: Vector2, rng: RandomNumberGenerato
 		var point := anchor+Vector2(rng.randf_range(-.55,.55),rng.randf_range(-.45,.45))
 		var scale := rng.randf_range(.8,1.15)
 		var yaw := rng.randf()*TAU
-		var tint: Color = [Color("c5bea9"),Color("bdb9a8"),Color("cfbf9e")][rng.randi_range(0,2)]
+		var tint: Color = [Color("a8a18c"),Color("a09c8b"),Color("b0a283")][rng.randi_range(0,2)]
 		job.candidates.append({"kind":"Papers","transform":Transform3D(Basis(Vector3.UP,yaw).scaled(Vector3.ONE*scale),Vector3(point.x,job.y+.001,point.y)),"radius":.21*scale,"color":tint})
 
 

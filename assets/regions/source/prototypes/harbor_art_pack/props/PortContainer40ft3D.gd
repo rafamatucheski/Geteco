@@ -34,6 +34,7 @@ func get_obstacle_bounds() -> Array[AABB]:
 func _update_theme_material() -> void:
 	var mat := _get_theme_material()
 	_main_material.albedo_color = mat.albedo_color
+	_main_material.albedo_texture = mat.albedo_texture
 	_main_material.roughness = mat.roughness
 	_main_material.metallic = mat.metallic
 
@@ -51,12 +52,11 @@ func _build_model() -> void:
 	_obstacle_bounds.append(AABB(Vector3(-WIDTH * 0.5, 0.0, -LENGTH * 0.5), Vector3(WIDTH, HEIGHT, LENGTH)))
 
 	var base_theme := _get_theme_material()
-	_main_material = StandardMaterial3D.new()
-	_main_material.albedo_color = base_theme.albedo_color
-	_main_material.roughness = base_theme.roughness
-	_main_material.metallic = base_theme.metallic
+	# Cópia do material do tema com a textura de tinta desgastada (era só cor chapada).
+	_main_material = base_theme.duplicate()
 
-	var mat_frame := PortArtMaterials.get_mat("container_frame_dark_40", base_theme.albedo_color.darkened(0.28), 0.5, 0.55)
+	# Uma chave por tema: com chave única todos herdavam a cor de quem montou primeiro.
+	var mat_frame := PortArtMaterials.container_paint("container_frame_dark_40_%d" % color_theme, base_theme.albedo_color.darkened(0.28), 0.5, 0.55)
 	var mat_hardware := PortArtMaterials.steel_galvanized()
 	var mat_seal := PortArtMaterials.rubber_black()
 
@@ -112,6 +112,31 @@ func _build_model() -> void:
 		# old strips let subpixel slits of light crawl across the roof.
 		var rib := _box(Vector3(0.0, HEIGHT - 0.02, tz), Vector3(WIDTH - 0.30, 0.06, 0.40), _main_material)
 		rib.set_meta("container_roof_rib",true)
+
+	# 7. Marcações: faixa da armadora, placa de identificação e dígitos estampados.
+	# Placas ficam coladas à parede (nervuras têm 4 cm) e usam materiais lisos próprios,
+	# senão a faixa branca herdava a ferrugem do casco.
+	var mat_mark := PortArtMaterials.container_marking()
+	var mat_stencil := PortArtMaterials.container_stencil()
+	for side in [-1.0, 1.0]:
+		var wall_x: float = side * (half_w + 0.045)
+		# Faixa horizontal de marca logo abaixo do teto.
+		_box(Vector3(wall_x, HEIGHT - 0.52, -half_l * 0.18), Vector3(0.012, 0.34, LENGTH * 0.42), mat_mark)
+		# Nome da armadora: blocos escuros de largura variada sobre a faixa.
+		for i in 9:
+			var w := 0.30 + 0.22 * float((i * 7) % 4)
+			_box(Vector3(wall_x + side * 0.008, HEIGHT - 0.52, -half_l * 0.18 + (float(i) - 4.0) * 0.50), Vector3(0.012, 0.20, w * 0.62), mat_stencil)
+		# Placa de identificação perto da porta, com a série de dígitos.
+		_box(Vector3(wall_x, 0.78, half_l - 1.55), Vector3(0.012, 0.42, 1.30), mat_mark)
+		for i in 7:
+			_box(Vector3(wall_x + side * 0.008, 0.78, half_l - 2.05 + float(i) * 0.165), Vector3(0.012, 0.26, 0.085), mat_stencil)
+		# Faixa de amarração da base, mais escura: sujeira acumulada junto do chão.
+		_box(Vector3(wall_x, 0.28, 0.0), Vector3(0.012, 0.36, LENGTH - 0.6), mat_frame)
+	# Faixa e código também na porta e no fundo.
+	_box(Vector3(0.0, HEIGHT - 0.55, half_l + 0.015), Vector3(WIDTH * 0.62, 0.22, 0.012), mat_mark)
+	for i in 6:
+		_box(Vector3(-0.50 + float(i) * 0.20, HEIGHT - 0.55, half_l + 0.024), Vector3(0.10, 0.14, 0.010), mat_stencil)
+	_box(Vector3(0.0, HEIGHT - 0.55, -half_l - 0.015), Vector3(WIDTH * 0.62, 0.22, 0.012), mat_mark)
 
 func _box(pos: Vector3, size: Vector3, mat: Material) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()

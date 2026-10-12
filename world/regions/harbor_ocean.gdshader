@@ -72,13 +72,16 @@ void fragment() {
 	// mar é uma cor chapada; com isso aparecem faixas claras que andam com a onda.
 	float facing = clamp(-slope.y * 5.0 + length(slope) * 1.5, 0.0, 1.0);
 	float streak = smoothstep(0.25, 0.9, facing) * mix(0.6, 1.0, noise(p * 0.75 + TIME * 0.1, 192.0));
-	ALBEDO = mix(water, sky_color * 0.6, streak * 0.35);
+	ALBEDO = mix(water, sky_color * 0.6, streak * 0.24);
 	vec3 wave_normal = normalize(vec3(-slope.x, 1.0, -slope.y));
 	NORMAL = normalize((VIEW_MATRIX * vec4(wave_normal, 0.0)).xyz);
 	// Rugosidade baixa demais refletia o céu claro inteiro e estourava em branco
 	// (captura de 2026-09-24); o brilho fino vem do light() abaixo.
-	ROUGHNESS = 0.5;
-	SPECULAR = 0.03;
+	// Vídeo de 12/10/2026: com rugosidade 0,5 o reflexo ambiental do céu desenhava
+	// manchas brancas enormes e borradas sobre os canais. O reflexo de céu é falso
+	// (streak acima) e o brilho de sol vem do light(), então o ambiental é zerado.
+	ROUGHNESS = 1.0;
+	SPECULAR = 0.0;
 }
 
 void light() {
@@ -91,8 +94,10 @@ void light() {
 	DIFFUSE_LIGHT += LIGHT_COLOR * lambert * shade * 0.9 / 3.14159265;
 	// Brilho de sol em pontos: lóbulo estreito nas facetas que acertam o ângulo.
 	vec3 half_vector = normalize(LIGHT + VIEW);
-	float glint = pow(max(dot(NORMAL, half_vector), 0.0), 600.0);
+	// Expoente alto: a ondulação longa (9 m) acertava o ângulo numa faixa larga e o
+	// brilho virava manchas brancas de vários metros (vídeo de 12/10/2026).
+	float glint = pow(max(dot(NORMAL, half_vector), 0.0), 2600.0);
 	// Área lisa da ondulação longa acendia um clarão branco inteiro; o teto
 	// deixa só pontos de brilho.
-	SPECULAR_LIGHT += LIGHT_COLOR * min(glint, 0.35) * 0.6 * ATTENUATION;
+	SPECULAR_LIGHT += LIGHT_COLOR * min(glint, 0.5) * 0.22 * ATTENUATION;
 }
