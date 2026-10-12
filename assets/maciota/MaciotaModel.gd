@@ -24,7 +24,7 @@ func _ready() -> void:
 	# Corpo articulado dos pedestres: terno roxo, camisa de onça, fedora, óculos
 	# escuros e sapato roxo; a bengala continua, com a mão direita no castão.
 	body = preload("res://assets/civilians/RigBodySwap.gd").install(self, {
-		"variant": 8300, "female": false, "top": 2, "bottom": 0, "shoe": 2, "hat": 7, "glasses": true,
+		"role": "maciota", "variant": 8300, "female": false, "top": 2, "bottom": 0, "shoe": 2, "hat": 7, "glasses": true,
 		"backpack": false, "bag": 0, "beard": 3, "hair": 0, "build": 1, "height": 1.0,
 		"top_color": Color("6c3483"), "bottom_color": Color("5b2c6f"), "inner": Color("f5cd79"),
 		"accent": Color("4a235a"), "skin": Color("a87858"), "hair_color": Color("17202a"), "shoe_color": Color("4a235a")}, [cane_mesh], true)

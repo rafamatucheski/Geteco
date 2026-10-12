@@ -8,7 +8,7 @@ extends RefCounted
 ## `MeshyBodyRig.attach_accessories` posiciona essa origem para o crânio de cada corpo.
 const KIT := preload("res://assets/civilians/CivilianMeshKit.gd")
 ## Cor de cada tipo quando o chamador não escolhe uma; `lens` é fixo no kit.
-const KINDS := ["cap", "beanie", "cowboy", "straw", "fedora", "sunglasses"]
+const KINDS := ["cap", "beanie", "cowboy", "straw", "fedora", "sunglasses", "clown"]
 
 static func mesh(kind: String) -> ArrayMesh:
 	return KIT.cached("acc|" + kind, func() -> ArrayMesh:
@@ -35,6 +35,11 @@ static func mesh(kind: String) -> ArrayMesh:
 				b.loft([[.31, .09, .105, KIT.SLOT_ACCENT, -.01, 2.2], [.285, .108, .122, KIT.SLOT_ACCENT, -.01, 2.2], [.215, .114, .127, KIT.SLOT_ACCENT, -.01]], KIT.SLOT_ACCENT, Transform3D.IDENTITY, 14, true, false)
 				b.loft([[.245, .1155, .1285, KIT.SLOT_INNER, -.01], [.222, .1165, .1295, KIT.SLOT_INNER, -.01]], KIT.SLOT_INNER, Transform3D.IDENTITY, 14, false, false)
 				b.ellipsoid(Vector3(0, .207, -.004), Vector3(.26, .01, .27), KIT.SLOT_ACCENT, Basis(Vector3.RIGHT, -.04), 16, 3, .9)
+			"clown": # peruca de palhaço (laterais e topete na cor `color`) e nariz vermelho (cor `band`)
+				for side in [-1.0, 1.0]:
+					b.ellipsoid(Vector3(side * .125, .2, -.02), Vector3(.075, .085, .085), KIT.SLOT_ACCENT, Basis.IDENTITY, 10, 6)
+					b.ellipsoid(Vector3(side * .06, .275, .0), Vector3(.075, .06, .08), KIT.SLOT_ACCENT, Basis.IDENTITY, 8, 5)
+				b.ellipsoid(Vector3(0, .15, .125), Vector3(.034, .034, .034), KIT.SLOT_INNER, Basis.IDENTITY, 8, 5)
 			"sunglasses": # lentes escuras e hastes (geometria do `glasses` do kit, um pouco maiores)
 				for side in [-1.0, 1.0]:
 					b.ellipsoid(Vector3(side * .039, .172, .121), Vector3(.03, .02, .007), KIT.SLOT_LENS, Basis.IDENTITY, 8, 4)

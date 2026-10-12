@@ -20,6 +20,8 @@ func _ready() -> void:
 	sit_amount = 1.0
 	seat_height = .45
 	hand_provider = _typing_hands
+	# Corpo do Meshy (pedestre feminino de blusa sálvia, sentada); sem catálogo, segue o corpo do kit.
+	preload("res://assets/civilians/RoleBodyCatalog.gd").apply(self, "luisa", 0, true, true)
 	super._ready()
 	_chair()
 	_workstation_position = global_position

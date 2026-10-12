@@ -19,6 +19,9 @@ const MODELS := {
 	"morador da montanha": "res://assets/regions/source/world/mountain_pass/WinterResidentModel.gd",
 	"atendente da loja da montanha": "res://world/places/MountainShopResidentModel.gd",
 	"morador da vila dos caminhoneiros": "res://gameplay/urban_v1/TruckersVillageResidentModel.gd",
+	"Maciota": "res://assets/maciota/MaciotaModel.gd",
+	"Luisa": "res://world/places/curitiba_cellar/LuisaModel.gd",
+	"palhaço": "res://world/places/amusement_park/ParkClownModel.gd",
 	"guarda do carro-forte": "res://gameplay/armored/ArmoredGuardModel.gd",
 }
 var failures: Array[String] = []

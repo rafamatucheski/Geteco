@@ -73,6 +73,22 @@ const ROLES := {
 		{"file": PEDESTRIANS + "f_slim_a.glb", "female": true},
 		{"file": PEDESTRIANS + "f_slim_b.glb", "female": true},
 	],
+	# Maciota: o terno cinza vira roxo (tone), com fedora escuro de fita dourada e óculos escuros; a bengala segue na mão.
+	"maciota": [
+		{"file": POLICE + "suit_m.glb", "female": false, "tint": {"tone": Color(1.3, 0.55, 1.5)}, "accessories": [
+			{"kind": "fedora", "color": Color("4a235a"), "band": Color("f5cd79")}, {"kind": "sunglasses"}]},
+	],
+	# Luisa (contas da adega): mulher de blusa verde-sálvia, sentada.
+	"luisa": [
+		{"file": PEDESTRIANS + "f_medium_b.glb", "female": true, "tint": {"tone": Color(0.78, 1.0, 0.74)}},
+	],
+	# Palhaços do parque: pedestres de roupa tingida por `hue`/`tone` do look e peruca + nariz (acessório `clown`).
+	"clown": [
+		{"file": PEDESTRIANS + "m_medium_a.glb", "female": false},
+		{"file": PEDESTRIANS + "f_medium_a.glb", "female": true},
+		{"file": PEDESTRIANS + "m_medium_b.glb", "female": false},
+		{"file": PEDESTRIANS + "f_slim_a.glb", "female": true},
+	],
 	"pedestrian": [
 		{"file": PEDESTRIANS + "m_medium_a.glb", "female": false},
 		{"file": PEDESTRIANS + "m_medium_b.glb", "female": false},
