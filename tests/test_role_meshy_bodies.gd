@@ -15,6 +15,8 @@ const MODELS := {
 	"operador do porto": "res://gameplay/routines_v1/DockWorkerModel.gd",
 	"segurança do banco": "res://runtime/BankGuardModel.gd",
 	"morador do esgoto": "res://world/places/sewers/SewerHomelessModel.gd",
+	"Cobra": "res://gameplay/CobraModel.gd",
+	"morador da montanha": "res://assets/regions/source/world/mountain_pass/WinterResidentModel.gd",
 	"guarda do carro-forte": "res://gameplay/armored/ArmoredGuardModel.gd",
 }
 var failures: Array[String] = []

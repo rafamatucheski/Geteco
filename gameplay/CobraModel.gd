@@ -7,7 +7,7 @@ var cobra_uniform := true
 func _ready() -> void:
 	model_root = self
 	body = preload("res://assets/civilians/RigBodySwap.gd").install(self, {
-		"variant": 730 + tier, "female": false, "build": [0, 1, 2][tier],
+		"role": "cobra", "role_index": tier, "variant": 730 + tier, "female": false, "build": [0, 1, 2][tier],
 		"height": [1.0, 1.02, 1.04][tier], "top": 0, "bottom": 0, "shoe": 1,
 		"hair": [1, 2, 0][tier], "beard": [0, 1, 2][tier], "hat": 0,
 		"glasses": false, "backpack": false, "bag": 0,

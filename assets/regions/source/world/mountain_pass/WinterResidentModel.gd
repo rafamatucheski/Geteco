@@ -46,6 +46,8 @@ func _install_body() -> void:
 	var keep: Array = [mug, axe, breath]
 	if is_instance_valid(chop_pose): keep.append(chop_pose.tool)
 	body = preload("res://assets/civilians/RigBodySwap.gd").install(self, {
+		"role": "winter", "body_tone": coat_color.lerp(Color.WHITE, 0.3) * 1.25,
+		"body_accessories": [{"kind": "beanie", "color": Color("2a2c33") if appearance_variant % 2 == 0 else Color("7a2f2a"), "band": Color("15161a")}],
 		"variant": 9000 + appearance_variant * 7 + role.length(), "female": appearance_female,
 		"top": 2, "bottom": 0, "shoe": 1, "hat": 2, "backpack": false, "bag": 0,
 		"top_color": coat_color, "bottom_color": Color("344353"), "inner": Color("d9d2c3"),

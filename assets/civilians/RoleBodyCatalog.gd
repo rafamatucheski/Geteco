@@ -55,6 +55,23 @@ const ROLES := {
 		{"file": PEDESTRIANS + "f_slim_b.glb", "female": true, "tint": {"tone": Color(0.62, 0.55, 0.45), "brightness": 0.82}, "accessories": [{"kind": "beanie", "color": Color("3a3c3e"), "band": Color("1c1d1e")}]},
 		{"file": PEDESTRIANS + "f_slim_b.glb", "female": true, "tint": {"tone": Color(0.62, 0.55, 0.45), "brightness": 0.82}},
 	],
+	# Cobras: gangue de farda verde-escura; o biotipo segue o escalão (`role_index` = 0 magro, 1 médio, 2 robusto).
+	"cobra": [
+		{"file": PEDESTRIANS + "m_medium_a.glb", "female": false, "tint": {"tone": Color(0.36, 0.44, 0.38), "brightness": 0.9}},
+		{"file": PEDESTRIANS + "m_medium_b.glb", "female": false, "tint": {"tone": Color(0.36, 0.44, 0.38), "brightness": 0.9}},
+		{"file": PEDESTRIANS + "m_heavy_a.glb", "female": false, "tint": {"tone": Color(0.36, 0.44, 0.38), "brightness": 0.9}},
+	],
+	# Moradores da montanha: pedestres comuns; a cor do casaco vem do look (`body_tone`) e o gorro de `body_accessories`.
+	"winter": [
+		{"file": PEDESTRIANS + "m_medium_a.glb", "female": false},
+		{"file": PEDESTRIANS + "m_medium_b.glb", "female": false},
+		{"file": PEDESTRIANS + "m_heavy_a.glb", "female": false},
+		{"file": PEDESTRIANS + "m_heavy_b.glb", "female": false},
+		{"file": PEDESTRIANS + "f_medium_a.glb", "female": true},
+		{"file": PEDESTRIANS + "f_medium_b.glb", "female": true},
+		{"file": PEDESTRIANS + "f_slim_a.glb", "female": true},
+		{"file": PEDESTRIANS + "f_slim_b.glb", "female": true},
+	],
 	"pedestrian": [
 		{"file": PEDESTRIANS + "m_medium_a.glb", "female": false},
 		{"file": PEDESTRIANS + "m_medium_b.glb", "female": false},
@@ -68,13 +85,13 @@ static var enabled := OS.get_environment("GETECO_NO_MESHY_BODIES").is_empty()
 
 ## {"path", "tint", "baked_equipment"} para `role`/`variant`, ou {} quando não há corpo (papel desconhecido, arquivo ausente
 ## ou catálogo desligado). `female` do look filtra pelo sexo quando há opção.
-static func pick(role: String, variant: int, female := false, use_sex := false) -> Dictionary:
+static func pick(role: String, variant: int, female := false, use_sex := false, index := -1) -> Dictionary:
 	if not enabled or not ROLES.has(role): return {}
 	var options: Array = []
 	for entry in ROLES[role]:
 		if ResourceLoader.exists(entry.file) and (not use_sex or bool(entry.female) == female): options.append(entry)
 	if options.is_empty(): return {}
-	var entry: Dictionary = options[posmod(variant * 2654435761 + 40503, options.size())]
+	var entry: Dictionary = options[posmod(variant * 2654435761 + 40503, options.size()) if index < 0 else posmod(index, options.size())]
 	return {"path": entry.file, "tint": entry.get("tint", {}), "baked_equipment": bool(entry.get("baked_equipment", false)), "accessories": entry.get("accessories", [])}
 
 ## Para modelos que herdam `CivilianModel` e se montam sozinhos (ex.: operador do porto): grava corpo e acessórios do papel

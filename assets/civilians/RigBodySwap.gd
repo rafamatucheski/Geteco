@@ -38,14 +38,18 @@ static func install(model: Node3D, look: Dictionary, keep: Array = [], faces_pos
 		body.scale = Vector3.ONE * float(look.get("height", 1.0))
 	elif look.has("role"):
 		# NPC de função (bombeiro, funerário...): corpo do Meshy reaproveitado com outra cor de roupa.
-		var picked: Dictionary = ROLE_BODIES.pick(String(look.role), int(look.get("variant", 0)), bool(look.get("female", false)), look.has("female"))
+		var picked: Dictionary = ROLE_BODIES.pick(String(look.role), int(look.get("variant", 0)), bool(look.get("female", false)), look.has("female"), int(look.get("role_index", -1)))
 		if not picked.is_empty():
 			body.body_source = String(picked.path)
 			body.body_tint = picked.tint
-			body.body_accessories = picked.get("accessories", [])
+			# Cor de roupa e acessórios que o próprio look define (casaco da montanha, gorro) vencem os do catálogo.
+			if look.has("body_tone"):
+				body.body_tint = picked.tint.duplicate()
+				body.body_tint["tone"] = look.body_tone
+			body.body_accessories = look.get("body_accessories", picked.get("accessories", []))
 			body.scale = Vector3.ONE * float(look.get("height", 1.0))
 	var overrides: Dictionary = look.duplicate()
-	for key in ["variant", "top_color", "bottom_color", "body_source", "body_tint", "body_accessories", "role"]: overrides.erase(key)
+	for key in ["variant", "top_color", "bottom_color", "body_source", "body_tint", "body_accessories", "role", "role_index", "body_tone"]: overrides.erase(key)
 	body.wardrobe_overrides = overrides
 	body.lod_enabled = bool(look.get("lod", true))
 	holder.add_child(body)
