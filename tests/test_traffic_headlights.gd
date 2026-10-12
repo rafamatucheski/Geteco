@@ -89,6 +89,14 @@ func run() -> void:
 	check(beams == EQUIPMENT.npc_beam_budget, "Só %d fachos reais de NPC (%d acesos)" % [EQUIPMENT.npc_beam_budget, beams])
 	check(nearest_lit, "Os fachos ficam com os carros mais próximos do jogador")
 	check(not cars.union_sedan.equipment.lamps[0].lamp.visible, "NPC usa o facho central, não o par do jogador")
+	var sedan_equipment = cars.union_sedan.equipment
+	sedan_equipment.receive_impact(Vector3(-1, 0, -cars.union_sedan.half_length), 4.0)
+	for item in sedan_equipment.lens_materials:
+		check(item.material.emission_enabled == (item.side >= 0), "Impacto apaga somente a lente do lado atingido")
+		check(is_equal_approx(item.material.emission_energy_multiplier, 0.0 if item.side < 0 else 1.35), "Energia acompanha o dano de cada lado")
+	sedan_equipment.broken_left = false
+	sedan_equipment._refresh()
+	check(lens_on(cars.union_sedan), "Restauração do farol atualiza a lente mesmo sem troca de horário")
 	world.player.position = Vector3(66, 0, 0)
 	await process_frame
 	await process_frame

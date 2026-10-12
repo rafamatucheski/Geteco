@@ -8,6 +8,9 @@ signal cancelled(reason: String, point: Vector3)
 
 const INTERIOR := preload("res://gameplay/VehicleInterior.gd")
 const BREAK_IN := preload("res://gameplay/VehicleBreakIn.gd")
+var carjacking: RefCounted
+var _extracting := false
+var _extraction_progress := 0.0
 var break_in: RefCounted
 var _breaking := false
 var _break_progress := 0.0
@@ -73,7 +76,8 @@ const CLOSE_SECONDS := .28
 ## Do osso da cabeça ao topo do cabelo (medido no Dante: o osso fica na base do crânio).
 const HEAD_TOP := .26
 
-func begin_entry(owner_world: Node, car: CharacterBody3D, pedestrian: CharacterBody3D, entry_side: int, locked := false) -> void:
+func begin_entry(owner_world: Node, car: CharacterBody3D, pedestrian: CharacterBody3D, entry_side: int, locked := false, displaced_driver: RefCounted = null) -> void:
+	carjacking = displaced_driver
 	world = owner_world
 	vehicle = car
 	actor = pedestrian
@@ -100,7 +104,7 @@ func begin_entry(owner_world: Node, car: CharacterBody3D, pedestrian: CharacterB
 		duration += _break_seconds + _retreat_seconds
 	active = true
 	phase = "approach"
-	if _layout.is_empty() or not _inside_swing(_start): _open_door()
+	if _layout.is_empty(): _open_door()
 	_motion = create_tween().set_trans(Tween.TRANS_LINEAR if not _layout.is_empty() else Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	if break_in != null:
 		_motion.tween_property(self, "progress", _approach, _approach_seconds)
@@ -110,6 +114,15 @@ func begin_entry(owner_world: Node, car: CharacterBody3D, pedestrian: CharacterB
 		_motion.tween_property(self, "progress", _approach, _retreat_seconds).from(0.0)
 		_motion.tween_callback(_finish_break_retreat)
 		_motion.tween_property(self, "progress", 1.0, body_seconds - _approach_seconds)
+	elif carjacking != null:
+		var approach := _approach if not _layout.is_empty() else .22
+		var walk_seconds := _approach_seconds if not _layout.is_empty() else (duration - CLOSE_SECONDS) * approach
+		_motion.tween_property(self, "progress", approach, walk_seconds)
+		_motion.tween_callback(_begin_extraction)
+		_motion.tween_property(self, "_extraction_progress", 1.0, 1.15)
+		_motion.tween_callback(_finish_extraction)
+		_motion.tween_property(self, "progress", 1.0, maxf(.2, body_seconds - walk_seconds))
+		duration += 1.15
 	else:
 		_motion.tween_property(self, "progress", 1.0, duration-CLOSE_SECONDS if not _layout.is_empty() else duration-.28)
 	_motion.tween_callback(_begin_close_entry)
@@ -151,15 +164,27 @@ func begin_exit(owner_world: Node, car: CharacterBody3D, pedestrian: CharacterBo
 
 func reverse_entry_to_exit() -> bool:
 	if not active or exiting: return false
+	if carjacking != null and not carjacking.released:
+		abort("theft_cancelled")
+		return true
 	if break_in != null and (_breaking or _break_retreat or not break_in.committed):
 		abort("break_in_cancelled")
 		return true
 	exiting = true
 	if is_instance_valid(_motion): _motion.kill()
 	var seconds := maxf(.45, (duration - _break_seconds - .28) * progress)
-	vehicle.animate_driver_door(side, true, .20)
+	if _door_started: vehicle.animate_driver_door(side, true, .20)
 	_motion = create_tween().set_trans(Tween.TRANS_LINEAR if not _layout.is_empty() else Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	_motion.tween_property(self, "progress", 0.0, seconds)
+	if not _layout.is_empty() and _door_started:
+		# Close the leaf at the waiting point before retracing the short approach,
+		# which was planned with the door closed.
+		if progress > _approach:
+			_motion.tween_property(self, "progress", _approach, seconds * (progress - _approach) / progress)
+		_motion.tween_callback(func(): vehicle.animate_driver_door(side, false, .28))
+		_motion.tween_interval(.32)
+		_motion.tween_property(self, "progress", 0.0, maxf(.3, _walk_seconds))
+	else:
+		_motion.tween_property(self, "progress", 0.0, seconds)
 	_motion.tween_callback(_begin_close_exit)
 	_motion.tween_interval(.35)
 	_motion.tween_callback(_finish_exit)
@@ -170,6 +195,7 @@ func abort(reason: String) -> void:
 	_finishing = true
 	if is_instance_valid(_motion): _motion.kill()
 	active = false
+	if carjacking != null: carjacking.release()
 	if break_in != null: break_in.dispose()
 	if is_instance_valid(vehicle): vehicle.animate_driver_door(side, false, .18)
 	_restore_actor(_landing if _landing.is_finite() else _start)
@@ -197,7 +223,22 @@ func _configure_kind() -> void:
 		"tall": duration = 2.0
 		_: duration = 1.75 + (.30 if side > 0 else 0.0)
 
+func _begin_extraction() -> void:
+	_extracting = true
+	phase = "punch" if carjacking.motorcycle else "pull_driver"
+	_open_door()
+
+func _finish_extraction() -> void:
+	carjacking.apply(actor, 1.0)
+	carjacking.release()
+	_extracting = false
+
 func _apply() -> void:
+	if carjacking != null and not carjacking.released:
+		if _extracting:
+			carjacking.apply(actor, _extraction_progress)
+			return
+		carjacking.follow_seat()
 	if _breaking:
 		_apply_break_in()
 		return
@@ -457,7 +498,11 @@ func _prepare_door_path(outside: Vector3, entering: bool) -> void:
 	_grip_side = "Right" if side < 0 else "Left"
 	var ground := vehicle.global_position.y + .04
 	var outside_local: Vector3 = vehicle.to_local(outside)
+	# Approach a closed door before opening it. Planning against the open leaf
+	# sent nearby pedestrians around the entire hull to reach the waiting point.
+	_planning_closed = entering
 	var route: Array[Vector2] = _plan(Vector2(outside_local.x, outside_local.z), Vector2(_layout.stand.x, _layout.stand.z))
+	_planning_closed = false
 	_path.append(outside)
 	for index in range(1, route.size()):
 		var point: Vector3 = vehicle.to_global(Vector3(route[index].x, 0.0, route[index].y))
@@ -468,7 +513,7 @@ func _prepare_door_path(outside: Vector3, entering: bool) -> void:
 	_walk_seconds = clampf(_path_length / 2.3, .3, 3.2)
 	# Quem aperta o F colado na porta dá um passo para trás e só então a porta abre; o corpo
 	# espera a folha terminar de abrir antes de se aproximar do vão.
-	var wait := .32 if entering and _inside_swing(outside) else 0.0
+	var wait := .32 if entering else 0.0
 	_approach_seconds = _walk_seconds + wait
 	var body: float = BODY_SECONDS.get(_kind, 1.5)
 	duration = _approach_seconds + body + CLOSE_SECONDS
@@ -618,7 +663,7 @@ func _apply_door(t: float) -> void:
 		phase = "approach"
 		var k := clampf(t / maxf(_approach, .001) * _approach_seconds / maxf(_walk_seconds, .001), 0.0, 1.0)
 		actor.global_position = _path_at(k)
-		if not _door_started and not _inside_swing(actor.global_position): _open_door()
+		if not exiting and k >= 1.0: _open_door()
 		var cycles := maxf(_path_length / 1.35, .5)
 		if k >= 1.0 and not exiting: _pose_idle()
 		else: _pose_cycle("Walking", (1.0 - k if exiting else k) * cycles)
@@ -782,6 +827,7 @@ func _restore_actor(point: Vector3) -> void:
 	actor.show()
 
 func _exit_tree() -> void:
+	if carjacking != null: carjacking.release()
 	if break_in != null: break_in.dispose()
 	if active and not _finishing:
 		if is_instance_valid(_motion): _motion.kill()

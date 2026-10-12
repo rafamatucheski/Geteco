@@ -1,7 +1,7 @@
 extends CanvasLayer
-## Escuridão dos esgotos de rua: a câmera é fixa e o `NativePlace` remove as luzes de ambiente da sala, então o
-## escuro vem de uma camada 2D entre o 3D e a interface. Ela escurece e tinge a cena, escurece mais nas bordas e abre
-## poças de luz sobre as luzes reais da sala (lâmpadas que piscam, barris de fogo) e um halo curto em volta do Dante.
+## Low camera-local ambient light and no outdoor sun while this room is occupied.
+## The overlay retains the sewer tint/vignette but preserves actual lit surfaces.
+## Weapon shadows and the original exterior environment are restored on exit.
 ## Na sessão, só desenha quando Dante já ocupa a sala, nunca durante sua preparação.
 const MAX_LIGHTS := 12
 var tint := Color(0.012, 0.02, 0.02)
@@ -12,9 +12,17 @@ var halo_strength := 0.55
 var model: Node3D
 var _material := ShaderMaterial.new()
 var _rect := ColorRect.new()
+var _camera: Camera3D
+var _previous_environment: Environment
+var _environment: Environment
+var _sun: DirectionalLight3D
+var _sun_mask := 0
+var _flashlight: SpotLight3D
+var _previous_shadows := false
 
 const SHADER := """
 shader_type canvas_item;
+uniform sampler2D scene : hint_screen_texture, repeat_disable, filter_nearest;
 uniform vec4 tint : source_color = vec4(0.012, 0.02, 0.02, 1.0);
 uniform float base_alpha = 0.62;
 uniform float edge_alpha = 0.9;
@@ -38,14 +46,21 @@ void fragment() {
 		glow += light_colors[i].rgb * f;
 	}
 	lit = clamp(lit, 0.0, 1.0);
+	// Preserve actual illuminated surfaces, including the spotlight's shadows.
+	// The room's ambient light is low, so unlit surfaces remain dark.
+	vec3 surface = textureLod(scene, uv, 0.0).rgb;
+	float luminance = dot(surface, vec3(0.2126, 0.7152, 0.0722));
+	float real_light = smoothstep(0.08, 0.28, luminance);
 	vec3 warm = glow / max(lit, 0.001);
 	vec3 color = mix(tint.rgb, warm * 0.32, lit * 0.55);
-	COLOR = vec4(color, clamp(dark * (1.0 - lit * 0.94), 0.0, 1.0));
+	COLOR = vec4(color, clamp(dark * (1.0 - lit * 0.94) * (1.0 - real_light), 0.0, 1.0));
 }
 """
 
 func _init() -> void:
 	layer = -1
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	process_priority = 50
 	hide()
 	var shader := Shader.new()
 	shader.code = SHADER
@@ -70,8 +85,10 @@ func _process(_delta: float) -> void:
 	var camera := get_viewport().get_camera_3d()
 	visible = camera != null and _room_is_current()
 	if not visible:
+		_restore_lighting()
 		_material.set_shader_parameter("light_count", 0)
 		return
+	_apply_lighting(camera)
 	var size := get_viewport().get_visible_rect().size
 	_material.set_shader_parameter("aspect", size.x / maxf(size.y, 1.0))
 	var positions: Array[Vector4] = []
@@ -111,3 +128,45 @@ func _pixels_per_meter(camera: Camera3D, at: Vector3) -> float:
 	var a := camera.unproject_position(at)
 	var b := camera.unproject_position(at + camera.global_basis.x)
 	return a.distance_to(b)
+
+func _apply_lighting(camera: Camera3D) -> void:
+	if _camera != camera:
+		_restore_lighting()
+		_camera = camera
+		_previous_environment = camera.environment
+		var source := camera.environment if camera.environment != null else camera.get_world_3d().environment
+		_environment = source.duplicate(true) if source != null else Environment.new()
+		_environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+		_environment.ambient_light_color = Color("7f95a0")
+		_environment.ambient_light_energy = 0.025
+		_environment.reflected_light_source = Environment.REFLECTION_SOURCE_DISABLED
+		_environment.fog_enabled = false
+		_environment.background_mode = Environment.BG_COLOR
+		_environment.background_color = tint
+		camera.environment = _environment
+	var room := model.get_parent()
+	var world := room.get_parent() if room != null else null
+	if world == null: return
+	var production: Variant = world.get("production")
+	if production != null and is_instance_valid(production.sun) and _sun == null:
+		_sun = production.sun
+		_sun_mask = _sun.light_cull_mask
+		_sun.light_cull_mask = 0
+	var gameplay: Variant = world.get("gameplay")
+	if gameplay != null and is_instance_valid(gameplay.flashlight) and _flashlight == null:
+		_flashlight = gameplay.flashlight
+		_previous_shadows = _flashlight.shadow_enabled
+		_flashlight.shadow_enabled = true
+
+func _restore_lighting() -> void:
+	if is_instance_valid(_camera) and _camera.environment == _environment:
+		_camera.environment = _previous_environment
+	if is_instance_valid(_sun): _sun.light_cull_mask = _sun_mask
+	if is_instance_valid(_flashlight): _flashlight.shadow_enabled = _previous_shadows
+	_camera = null
+	_environment = null
+	_sun = null
+	_flashlight = null
+
+func _exit_tree() -> void:
+	_restore_lighting()

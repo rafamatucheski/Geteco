@@ -36,7 +36,13 @@ func _finish() -> void:
 		material.metallic = .22
 		if color == "344c54": mesh.material_override = PAINT.material("hull")
 		elif color in ["c1a051","d8b765","d3ae53","e0b54d","b48d45"]: mesh.material_override = PAINT.material("crane")
-		else: mesh.material_override = material
+		else:
+			# Chapa lisa lia como plano chapado: relevo e rugosidade de metal, mesmo tom.
+			var tint := material.albedo_color
+			preload("res://assets/urban_detail/UrbanSurfaces.gd").detail(material, "metal", 2.0, .8)
+			material.albedo_color = Color(minf(tint.r * material.albedo_color.r, 1.0), minf(tint.g * material.albedo_color.g, 1.0), minf(tint.b * material.albedo_color.b, 1.0))
+			material.roughness = 1.0
+			mesh.material_override = material
 		add_child(mesh)
 	_batches.clear()
 

@@ -27,6 +27,8 @@ var retreat_time := 0.0
 ## em movimento, então sem isto dois agentes no mesmo corredor se empurravam até o replano, que dava a mesma rota.
 var _steering := preload("res://gameplay/crowd/PedestrianSteering.gd").new()
 var alerted := false
+var magazine := 0
+var reload_timer := 0.0
 
 func configure(p_gameplay: Node3D, p_tier: int = 0) -> void:
 	gameplay = p_gameplay
@@ -50,15 +52,20 @@ func _ready() -> void:
 	shape.shape = capsule
 	shape.position.y = 0.86
 	add_child(shape)
-	visual = MODEL.new()
-	visual.tier = tier
-	add_child(visual)
+	if not is_instance_valid(visual):
+		visual = MODEL.new()
+		visual.tier = tier
+		add_child(visual)
+	magazine = int(CATALOG.get_weapon(weapon_id).magazine_size)
 	last_known = global_position
 
 func _physics_process(delta: float) -> void:
 	if dead or not engaged or gameplay == null: return
 	if gameplay.player.input_locked or gameplay.health <= 0: return
 	cooldown = maxf(0, cooldown - delta)
+	if reload_timer > 0.0:
+		reload_timer = maxf(0.0, reload_timer - delta)
+		if reload_timer <= 0.0: magazine = int(CATALOG.get_weapon(weapon_id).magazine_size)
 	sensor -= delta
 	repath -= delta
 	if sensor <= 0:
@@ -81,9 +88,11 @@ func _physics_process(delta: float) -> void:
 			if gameplay._clear_at(candidate):
 				retreat = candidate
 				break
-	if sees_target and distance < float(CATALOG.get_weapon(weapon_id).max_range) / 16.0 and cooldown <= 0:
-		_shoot(target)
 	if direction.length_squared() > 0.01: visual.rotation.y = atan2(-direction.x, -direction.z)
+	var reload_seconds := preload("res://gameplay/CombatAudio.gd").reload_seconds(weapon_id)
+	visual.update_pose(delta, sees_target, reload_timer > 0.0, 1.0 - reload_timer / maxf(reload_seconds, 0.01), gait)
+	if sees_target and distance < float(CATALOG.get_weapon(weapon_id).max_range) / 16.0 and cooldown <= 0 and reload_timer <= 0:
+		_shoot(target)
 	var destination := last_known
 	if retreat_time > 0:
 		retreat_time -= delta
@@ -106,22 +115,16 @@ func _physics_process(delta: float) -> void:
 	velocity.y = -1.0 if is_on_floor() else velocity.y - 20 * delta
 	move_and_slide()
 	gait += Vector2(velocity.x, velocity.z).length() * delta * 3.4
-	visual.update_pose(delta, sees_target, false, 0.0, gait)
 
 func _shoot(target: Node3D) -> void:
-	visual.attack()
 	var data: Dictionary = CATALOG.get_weapon(weapon_id)
-	var origin := global_position + Vector3.UP * 1.1
-	var direction := (target.global_position + Vector3.UP - origin).normalized()
-	for pellet in int(data.pellets):
-		var spread: Vector3 = direction.rotated(Vector3.UP, randf_range(-float(data.spread), float(data.spread)))
-		var ray := PhysicsRayQueryParameters3D.create(origin, origin + spread * float(data.max_range) / 16.0, 7, [get_rid()])
-		var hit := get_world_3d().direct_space_state.intersect_ray(ray)
-		var end: Vector3 = hit.get("position", ray.to)
-		gameplay._trace(origin, end, 0.065, 0.014)
-		if not hit.is_empty(): gameplay._damage(hit.collider, float(data.damage), self)
-	gameplay._sound(weapon_id, origin)
-	gameplay.npc_gunfire.emit(origin, direction, self)
+	if reload_timer > 0.0: return
+	if magazine <= 0:
+		reload_timer = preload("res://gameplay/CombatAudio.gd").reload_seconds(weapon_id)
+		gameplay.police_reload(self, weapon_id)
+		return
+	if not preload("res://gameplay/CobraGunfire.gd").fire(gameplay, self, visual, target, weapon_id): return
+	magazine -= 1
 	if weapon_id == "smg":
 		burst = (burst + 1) % 3
 		cooldown = float(data.fire_interval) if burst != 0 else 1.35

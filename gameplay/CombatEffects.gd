@@ -600,9 +600,9 @@ func tracer(origin: Vector3, destination: Vector3, speed: float, color: Color, d
 
 ## Police rounds own their swept flight in Gameplay, including impact timing.
 ## A token prevents a reused visual slot from being moved by an older round.
-func police_tracer(origin: Vector3, direction: Vector3, speed := 55.0) -> Dictionary:
+func police_tracer(origin: Vector3, direction: Vector3, speed := 55.0, color := Color(1.0, 0.9, 0.2), damage := 6.0) -> Dictionary:
 	var index := _next_tracer
-	tracer(origin, origin + direction, 55.0, Color(1.0, 0.9, 0.2), 6.0)
+	tracer(origin, origin + direction, speed, color, damage)
 	var token := {"index": index, "state": _tracer_state[index]}
 	_tracer_state[index]["manual"] = true
 	# V1 ordinary tracer is a compact tail behind the collision front.

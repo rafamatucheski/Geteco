@@ -83,7 +83,7 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 		tree.rotation.y = float(record.editor_rotation)
 		tree.set_meta("editor_id", record.editor_id)
 		chunk.add_child(tree)
-		_box(tree,"TrunkSolid",Vector3(0,1.4,0),Vector3(.4,2.8,.4),Color("00000000"),true).visible = false
+		_tree_collision(tree,chunk)
 	else:
 		var before := chunk.get_child_count()
 		super._build_record(chunk, record)

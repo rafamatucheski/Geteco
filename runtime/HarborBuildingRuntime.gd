@@ -2,7 +2,8 @@ extends Node
 ## Prepares one nearby building in the street's actual world, then admits a
 ## walking player across its threshold without a door action or scene jump.
 const CATALOG := preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd")
-const PLACES := preload("res://world/places/PlaceCatalog.gd")
+const PLACE := preload("res://world/places/harbor_buildings/HarborBuildingPlace.gd")
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 var session
 var staged: Node3D
 var facade: Node3D
@@ -42,13 +43,18 @@ func _find_facade(id: String) -> Node3D:
 	return null
 
 func prepare_room(id: String, new_entry: bool) -> Node3D:
+	if new_entry and not preload("res://runtime/ShopSafety.gd").admission_allowed(id, session.world.gameplay.stars): return null
 	if is_instance_valid(staged) and not staged.is_queued_for_deletion() and staged.definition.id == id: return staged
 	if preparing: return null
 	preparing = true
 	var generation: int = session.transition_generation
 	var region: String = session.state.region_id
 	_release_staged()
-	var definition: Dictionary = PLACES.get_definition(id)
+	var lookup_started := STALL_WORK.begin()
+	# This controller only handles the indexed Harbor building catalog.
+	var definition: Dictionary = CATALOG.find(id)
+	if lookup_started != 0:
+		STALL_WORK.finish("building.prepare.lookup", lookup_started, {"place":id})
 	if definition.is_empty():
 		preparing = false
 		return null
@@ -61,6 +67,7 @@ func prepare_room(id: String, new_entry: bool) -> Node3D:
 	if not is_instance_valid(facade):
 		preparing = false
 		return null
+	if new_entry and not preload("res://runtime/ShopSafety.gd").admission_allowed(id, session.world.gameplay.stars): return _abort_preparation()
 	facade.set_open_amount(1.0)
 	for frame in 4:
 		await get_tree().physics_frame
@@ -68,11 +75,19 @@ func prepare_room(id: String, new_entry: bool) -> Node3D:
 	if not facade.access_ready:
 		preparing = false
 		return null
-	staged = PLACES.create_place(id)
+	var instantiate_started := STALL_WORK.begin()
+	staged = PLACE.new()
+	staged.definition = definition
 	staged.prepare_session(session, new_entry)
 	staged.position = definition.exterior_position
 	staged.rotation.y = float(definition.get("exterior_rotation", 0.0))
+	if instantiate_started != 0:
+		STALL_WORK.finish("building.prepare.instantiate", instantiate_started, {"place":id})
+	var add_started := STALL_WORK.begin()
+	# add_child includes the complete synchronous room/model _ready chain.
 	session.world.add_child(staged)
+	if add_started != 0:
+		STALL_WORK.finish("building.prepare.add_child", add_started, {"place":id})
 	staged.floor_changed.connect(_floor_changed)
 	await get_tree().physics_frame
 	await get_tree().physics_frame
@@ -113,6 +128,7 @@ func update(delta: float) -> void:
 	cooldown = maxf(0.0, cooldown - delta)
 	if in_building():
 		if on_rooftop():
+			session.world.player.air_movement.roof = session.room.floor_room
 			var roof_local: Vector3 = session.room.to_local(session.world.player.global_position)
 			var half: Vector2 = session.room.definition.size * .5
 			if (absf(roof_local.x) > half.x + .35 or absf(roof_local.z) > half.y + .35) and roof_local.y < session.room.floor_height(session.room.floor_index) + .1:
@@ -130,6 +146,9 @@ func update(delta: float) -> void:
 		if not preparing and is_instance_valid(staged): _release_staged()
 		return
 	if preparing or crossing or _blocked(): return
+	if is_instance_valid(staged) and not preload("res://runtime/ShopSafety.gd").admission_allowed(staged.definition.id, session.world.gameplay.stars):
+		_release_staged()
+		return
 	if not is_instance_valid(staged) and is_instance_valid(facade): _release_staged()
 	search_clock += delta
 	if search_clock >= .15:
@@ -219,39 +238,7 @@ func _clear_approach() -> void:
 		if session.world.camera.has_meta("harbor_building_approach"): session.world.camera.remove_meta("harbor_building_approach")
 
 func nearest_action() -> Dictionary:
-	if not on_rooftop() or _blocked() or crossing: return {}
-	var roof = session.room.floor_room
-	if not roof.has_method("jump_access"): return {}
-	var access: Dictionary = roof.jump_access()
-	if session.world.player.global_position.distance_to(roof.to_global(access.point)) > 1.05: return {}
-	return {"id":"building_rooftop_jump","provider":self,"label":"Saltar da cobertura"}
-
-func jump_from_roof() -> bool:
-	if nearest_action().is_empty(): return false
-	var token: int = session._begin_transition("building_rooftop_jump")
-	if token < 0: return false
-	var actor = session.world.player
-	var roof = session.room.floor_room
-	var access: Dictionary = roof.jump_access()
-	var automatic: bool = actor.controlled_automatically
-	var previous_direction: Vector3 = actor.automatic_direction
-	var previous_speed: float = actor.speed
-	crossing = true
-	roof.set_jump_gate(true)
-	actor.controlled_automatically = true
-	actor.automatic_direction = roof.global_basis * access.outward
-	actor.speed = 5.0
-	var end := Time.get_ticks_msec() + 2200
-	while not falling and Time.get_ticks_msec() < end and session._owns_transition(token) and session.world.gameplay.health > 0:
-		await get_tree().physics_frame
-	if session._owns_transition(token):
-		actor.controlled_automatically = automatic
-		actor.automatic_direction = previous_direction
-		actor.speed = previous_speed
-	if not falling and is_instance_valid(roof): roof.set_jump_gate(false)
-	crossing = false
-	session._finish_transition(token)
-	return falling
+	return {}
 
 func _begin_fall() -> void:
 	if is_instance_valid(sightline): sightline.clear()
@@ -285,5 +272,4 @@ func _update_fall() -> void:
 	facade = null
 	cooldown = 1.0
 	if not interrupted:
-		if drop > 3.0: session.world.gameplay.damage_environment((drop-3.0)*11.0)
 		if session.world.gameplay.health > 0: session.save_game()

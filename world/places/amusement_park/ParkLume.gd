@@ -5,6 +5,17 @@ const GEOMETRY := preload("res://world/places/amusement_park/ParkGeometry.gd")
 var complete := false
 var curve := LAYOUT.coaster_curve()
 var carriage: Node3D
+var station_gate: Node3D
+var gate_body: StaticBody3D
+var restraint: Node3D
+var carriage_door: Node3D
+
+func set_boarding_open(amount: float) -> void:
+	amount = clampf(amount,0,1)
+	station_gate.rotation.y = amount*PI*.5
+	gate_body.collision_layer = 1 if amount < .98 else 0
+	carriage_door.rotation.y = amount*PI*.5
+	restraint.rotation.x = -amount*1.35
 
 func _ready() -> void: build()
 
@@ -153,7 +164,29 @@ func _track() -> void:
 	# The public station opens east. Its visible rail keeps walkers off the track;
 	# boarding is the explicit seated attraction interaction at the deck centre.
 	_fence(Vector3(-11,0,10.3),Vector3(-5,0,10.3),1.15)
-	_fence(Vector3(-11,0,10.3),Vector3(-11,0,19.1),1.15)
+	_fence(Vector3(-11,0,10.3),Vector3(-11,0,13.2),1.15)
+	_fence(Vector3(-11,0,15.5),Vector3(-11,0,19.1),1.15)
+	var gate := GEOMETRY.new()
+	gate.name = "BoardingGate"
+	gate.position = Vector3(-11,0,13.2)
+	add_child(gate)
+	station_gate = gate
+	gate.box("GateLeaf",Vector3(0,.7,1.15),Vector3(.10,.10,2.3),"d1ab59",false,"metal")
+	gate.box("GateTop",Vector3(0,1.15,1.15),Vector3(.10,.10,2.3),"d1ab59",false,"metal")
+	for z in [0,.46,.92,1.38,1.84,2.3]:
+		gate.box("GatePicket",Vector3(0,.63,z),Vector3(.06,1.05,.06),"385b59",false,"metal")
+	gate.flush()
+	gate_body = StaticBody3D.new()
+	gate_body.collision_mask = 0
+	gate.add_child(gate_body)
+	var gate_shape := CollisionShape3D.new()
+	var gate_box := BoxShape3D.new()
+	gate_box.size = Vector3(.18,1.25,2.3)
+	gate_shape.shape = gate_box
+	gate_shape.position = Vector3(0,.625,1.15)
+	gate_body.add_child(gate_shape)
+	# A short, solid step bridges the deck and the stationary car's doorway.
+	box("BoardingStep",Vector3(-11.15,.22,14.35),Vector3(.65,.44,1.6),"745e49",true,"wood")
 	_fence(Vector3(-11,0,19.1),Vector3(-5,0,19.1),1.15)
 	for x in [-10.4,-6.5]:
 		for z in [10.8,18.6]: box("StationPost",Vector3(x,1.65,z),Vector3(.14,3.3,.14),"38625f",true,"metal")
@@ -234,9 +267,27 @@ func _carriage() -> void:
 	model.box("CarFloor",Vector3(0,.19,0),Vector3(1.6,.30,2.3),"963f4d",false,"metal")
 	model.box("CarNose",Vector3(0,.46,-1.05),Vector3(1.6,.70,.28),"963f4d",false,"metal")
 	for side in [-1,1]:
-		model.box("CarSide",Vector3(side*.76,.58,.05),Vector3(.16,.62,2.0),"963f4d",false,"metal")
+		if side == -1:
+			model.box("CarSide",Vector3(side*.76,.58,.05),Vector3(.16,.62,2.0),"963f4d",false,"metal")
+		else:
+			model.box("CarSideFront",Vector3(.76,.58,-.73),Vector3(.16,.62,.55),"963f4d",false,"metal")
+			model.box("CarSideRear",Vector3(.76,.58,.88),Vector3(.16,.62,.34),"963f4d",false,"metal")
 		for z in [-.7,.7]: model.cylinder(Vector3(side*.73,-.04,z),.19,.16,"272d35","metal",Basis(Vector3.FORWARD,PI*.5))
 	model.box("Seat",Vector3(0,.42,.35),Vector3(1.35,.16,.68),"263c45")
 	model.box("SeatBack",Vector3(0,.79,.69),Vector3(1.35,.66,.16),"263c45")
-	model.beam(Vector3(-.65,.85,-.22),Vector3(.65,.85,-.22),.07,.07,"d4af63","metal")
+	var door := GEOMETRY.new()
+	door.name = "CarriageDoor"
+	door.position = Vector3(.76,.27,-.45)
+	model.add_child(door)
+	carriage_door = door
+	door.box("DoorLeaf",Vector3(0,.31,.575),Vector3(.16,.62,1.15),"963f4d",false,"metal")
+	door.flush()
+	var bar := GEOMETRY.new()
+	bar.name = "SafetyBar"
+	bar.position = Vector3(0,.85,.60)
+	model.add_child(bar)
+	restraint = bar
+	bar.beam(Vector3(-.65,0,-.82),Vector3(.65,0,-.82),.07,.07,"d4af63","metal")
+	for side in [-1,1]: bar.beam(Vector3(side*.65,0,0),Vector3(side*.65,0,-.82),.07,.07,"d4af63","metal")
+	bar.flush()
 	model.flush()

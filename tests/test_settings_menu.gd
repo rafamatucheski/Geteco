@@ -90,7 +90,8 @@ func run() -> void:
 	menu._begin_remap("move_up", 1, binding_button(menu, "move_up", "1"))
 	menu._input(key(KEY_E))
 	check(codes("move_up") == [KEY_W, KEY_E] and codes("interact").is_empty(), "tecla repetida sai da outra ação")
-	check(menu._status.text.contains("saiu de"), "aviso diz de onde a tecla saiu")
+	var conflict_notice := String(TranslationServer.translate("%s saiu de \"%s\".")) % [controls.event_label(key(KEY_E)), controls.label("interact")]
+	check(menu._status.text == conflict_notice, "aviso localizado identifica tecla e ação de origem")
 	var mouse := InputEventMouseButton.new()
 	mouse.button_index = MOUSE_BUTTON_MIDDLE
 	mouse.pressed = true

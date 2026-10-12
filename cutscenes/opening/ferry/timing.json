@@ -25,7 +25,8 @@
       "en": "Is this your first time here?",
       "start": 12.0,
       "end": 13.838,
-      "memory": false
+      "memory": false,
+      "end_en": 13.739
     },
     {
       "id": "brother",
@@ -34,7 +35,8 @@
       "en": "Yeah. I'm here to see my brother.",
       "start": 16.0,
       "end": 18.506,
-      "memory": false
+      "memory": false,
+      "end_en": 17.928
     },
     {
       "id": "long_time",
@@ -43,7 +45,8 @@
       "en": "Been a while since you saw each other?",
       "start": 21.0,
       "end": 22.669,
-      "memory": false
+      "memory": false,
+      "end_en": 22.931
     },
     {
       "id": "too_long",
@@ -52,7 +55,8 @@
       "en": "Too long.",
       "start": 25.0,
       "end": 26.04,
-      "memory": false
+      "memory": false,
+      "end_en": 25.809
     },
     {
       "id": "release",
@@ -61,7 +65,8 @@
       "en": "Dante? Listen. Vicente got out of prison.",
       "start": 31.0,
       "end": 36.348,
-      "memory": true
+      "memory": true,
+      "end_en": 35.809
     },
     {
       "id": "surprise",
@@ -70,7 +75,8 @@
       "en": "My brother? What do you mean, got out?",
       "start": 37.0,
       "end": 39.858,
-      "memory": true
+      "memory": true,
+      "end_en": 38.96
     },
     {
       "id": "clue",
@@ -79,7 +85,8 @@
       "en": "He was seen in Harbor. But he's stopped answering his phone.",
       "start": 42.0,
       "end": 47.547,
-      "memory": true
+      "memory": true,
+      "end_en": 46.256
     },
     {
       "id": "identity",
@@ -88,7 +95,8 @@
       "en": "Wait... Who is this?",
       "start": 49.0,
       "end": 51.227,
-      "memory": true
+      "memory": true,
+      "end_en": 50.683
     },
     {
       "id": "docking",
@@ -97,7 +105,8 @@
       "en": "Look. They're getting ready for us to get off.",
       "start": 57.0,
       "end": 60.009,
-      "memory": false
+      "memory": false,
+      "end_en": 60.043
     },
     {
       "id": "thanks",
@@ -106,7 +115,8 @@
       "en": "Thanks for the company.",
       "start": 62.0,
       "end": 63.44,
-      "memory": false
+      "memory": false,
+      "end_en": 63.033
     },
     {
       "id": "luck",
@@ -115,7 +125,8 @@
       "en": "Good luck with your brother.",
       "start": 65.0,
       "end": 66.76,
-      "memory": false
+      "memory": false,
+      "end_en": 66.394
     }
   ]
 }

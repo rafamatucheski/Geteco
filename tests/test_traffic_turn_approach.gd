@@ -35,6 +35,8 @@ func run():
 				var wait=car._junction_gate(route.get_baked_length(),bool(route.get_meta("traffic_open",false)))
 				print("TURN_APPROACH state=",north_state," wait=",wait," item=",item)
 				check(wait==(north_state=="red"),"Turning car obeys its arrival arm: "+north_state)
+				if wait and item.has("stop_offset"):
+					check(is_equal_approx(car.junction_gap,1.0),"Authored stop offset keeps the one metre front clearance")
 			car.free()
 	region.free()
 	print("TRAFFIC_TURN_APPROACH checks=",checks," failures=",failures)

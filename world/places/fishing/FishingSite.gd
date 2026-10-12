@@ -213,9 +213,13 @@ func _build_pond() -> void:
 func _build_entrance() -> void:
 	var paving := PackedVector2Array([Vector2(-18, 22),Vector2(-15,19),Vector2(-4,19),Vector2(4,20),Vector2(16,20),Vector2(20,23),Vector2(19,31),Vector2(4,32),Vector2(4,32.5),Vector2(-4,32.5),Vector2(-4,32),Vector2(-18,31)])
 	if FINISH.previous_finish(): _polygon("gravel", paving, .04)
+	# The portal faces the final road approach, rather than the parking grid.
+	var road_outward: Vector2 = (LOCATION.ROAD_POINTS[-2] - LOCATION.ROAD_POINTS[-1]).normalized()
+	var portal_basis := Basis(Vector3.UP, atan2(road_outward.x, road_outward.y))
+	var portal_center := Vector3(0, 0, 30)
 	for x in [-5.0, 5.0]:
-		_box("darkwood", Vector3(x,1.95,30), Vector3(.28,3.9,.28), true)
-	_box("darkwood", Vector3(0,3.55,30), Vector3(10.4,.7,.22))
+		_box("darkwood", portal_center + portal_basis * Vector3(x,1.95,0), Vector3(.28,3.9,.28), true, portal_basis)
+	_box("darkwood", portal_center + Vector3(0,3.55,0), Vector3(10.4,.7,.22), false, portal_basis)
 	var entrance_label := Label3D.new()
 	entrance_label.name = "LagoSerenoName"
 	entrance_label.text = "Lago Sereno"
@@ -223,7 +227,7 @@ func _build_entrance() -> void:
 	entrance_label.pixel_size = .009
 	entrance_label.modulate = Color("eee8cd")
 	entrance_label.outline_size = 0
-	entrance_label.position = Vector3(0,3.56,30.125)
+	entrance_label.transform = Transform3D(portal_basis, portal_center + portal_basis * Vector3(0,3.56,.125))
 	add_child(entrance_label)
 	# Three vehicle bays and a wide pedestrian approach.
 	var marking_height := .058 if FINISH.previous_finish() else .009

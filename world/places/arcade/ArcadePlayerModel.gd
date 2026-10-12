@@ -30,6 +30,10 @@ func _playing_hands() -> Array:
 	if is_instance_valid(_owner_actor) and (_owner_actor.get("dead") == true or _owner_actor.get_meta("workplace_threatened", false)):
 		return [null, null]
 	if global_position.distance_to(_machine_position) > .12: return [null, null]
-	# Continuous small motions read as joystick steering and button tapping.
-	return [to_global(Vector3(-.19+sin(clock*2.3)*.016,1.03,.56)),
-		to_global(Vector3(.17,1.01+maxf(0.0,sin(clock*7.2))*.014,.55))]
+	# Keep a bend at the elbows rather than stretching to unreachable controls.
+	# Alternate taps with a brief hand rest so the residents visibly play.
+	var phase := clock + player_variant * 1.7
+	var tapping := maxf(0.0,sin(phase*5.4))
+	var resting := smoothstep(.65,.95,sin(phase*.7))
+	return [to_global(Vector3(-.19+sin(phase*2.3)*.045,1.06,.36)),
+		to_global(Vector3(.17,lerpf(1.04+tapping*.045,.88,resting),lerpf(.35,.19,resting)))]

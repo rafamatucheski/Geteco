@@ -25,7 +25,9 @@ uniform vec4 shallow : source_color = vec4(0.1, 0.22, 0.17, 1.0);
 uniform vec4 foam : source_color = vec4(0.36, 0.44, 0.38, 1.0);
 uniform vec2 size_m = vec2(2.7, 11.7);
 uniform float flow = 0.55;
-uniform float landing = 1.6;
+// Metros ao longo do canal onde a água cai de um cano (espuma); negativo = sem queda.
+uniform float landing = -100.0;
+varying vec2 lp;
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float noise(vec2 p) {
 	vec2 i = floor(p);
@@ -33,24 +35,54 @@ float noise(vec2 p) {
 	f = f * f * (3.0 - 2.0 * f);
 	return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + vec2(1, 1)), f.x), f.y);
 }
+// Cada oitava gira o reticulado: sem isso a normal mostra a grade do ruído como facetas retangulares.
+const mat2 turn = mat2(vec2(0.8, 0.6), vec2(-0.6, 0.8));
+float fbm(vec2 p) { return noise(p) * 0.55 + noise(turn * p * 2.07 + 5.3) * 0.3 + noise(turn * turn * p * 4.1 + 11.7) * 0.15; }
+void vertex() {
+	// Coordenada do canal pela posição LOCAL (o UV do BoxMesh é uma cruz, não 0..1).
+	lp = VERTEX.xz / size_m + 0.5;
+}
 void fragment() {
-	vec2 m = UV * size_m;
-	vec2 a = m * vec2(1.7, 0.8) + vec2(0.0, -TIME * flow * 1.2);
-	vec2 b = m * vec2(2.3, 1.2) + vec2(0.7, -TIME * flow * 1.9);
-	float n = noise(a) * 0.6 + noise(b) * 0.4;
-	float streak = smoothstep(0.72, 0.95, noise(m * vec2(4.0, 0.5) + vec2(0.0, -TIME * flow * 2.6)));
-	float edge = 1.0 - smoothstep(0.0, 0.24, min(UV.x, 1.0 - UV.x) * size_m.x);
-	float head = (1.0 - smoothstep(0.0, 1.3, abs(UV.y * size_m.y - landing))) * (0.6 + 0.4 * noise(m * 4.0 + vec2(0.0, -TIME * 3.0)));
-	vec3 col = mix(deep.rgb, shallow.rgb, n);
-	col = mix(col, foam.rgb, clamp(edge * 0.35 * (0.5 + n) + streak * 0.2 + head * 0.6, 0.0, 1.0));
+	bool along_x = size_m.x > size_m.y;
+	vec2 m = lp * size_m;
+	if (along_x) m = vec2(m.y, m.x);
+	float width = min(size_m.x, size_m.y);
+	float across = along_x ? lp.y : lp.x;
+	float bank = min(across, 1.0 - across) * width;
+	float t = TIME * flow;
+	// Correnteza: duas camadas em velocidades diferentes, mais rápida no meio do canal.
+	float mid = 1.0 - abs(across * 2.0 - 1.0);
+	vec2 a = m * vec2(1.7, 0.8) + vec2(0.0, -t * (0.9 + mid * 0.5));
+	vec2 b = m * vec2(2.9, 1.5) + vec2(3.1, -t * 1.9);
+	float n = fbm(a) * 0.6 + fbm(b) * 0.4;
+	float streak = smoothstep(0.78, 0.98, fbm(m * vec2(2.2, 0.9) + vec2(0.0, -t * 2.2))) * mid;
+	float edge = 1.0 - smoothstep(0.0, 0.3, bank);
+	float lap = edge * (0.55 + 0.45 * sin(m.y * 5.0 - TIME * 1.4 + noise(m * 3.0) * 5.0));
+	float head = (1.0 - smoothstep(0.0, 1.3, abs(m.y - landing))) * (0.6 + 0.4 * noise(m * 4.0 + vec2(0.0, -TIME * 3.0)));
+	// Fundo: escuro no meio (fundo), mais claro e verde junto às margens (raso).
+	float depth = smoothstep(0.0, 0.9, bank);
+	vec3 col = mix(deep.rgb, shallow.rgb, n * (1.0 - depth * 0.45) + (1.0 - depth) * 0.25);
+	// Película de óleo/gordura: manchas iridescentes que derivam devagar.
+	float film = noise(m * 0.75 + vec2(0.0, -t * 0.25) + 9.0);
+	vec3 irid = 0.5 + 0.5 * cos(6.2832 * (film * 1.6 + vec3(0.0, 0.33, 0.67)));
+	col = mix(col, col * (0.4 + irid * 1.9), smoothstep(0.58, 0.82, film) * 0.4);
+	// Lixo e espuma suja flutuando na correnteza.
+	float scum = smoothstep(0.68, 0.82, fbm(m * vec2(2.4, 1.6) + vec2(0.0, -t * 0.7) + 21.0));
+	col = mix(col, vec3(0.1, 0.1, 0.06), scum * 0.7);
+	col = mix(col, foam.rgb, clamp(lap * 0.45 + streak * 0.07 + head * 0.6, 0.0, 1.0));
 	ALBEDO = col;
-	// Leve brilho próprio: sem ele a água some no escuro da galeria.
-	EMISSION = col * 0.45;
-	ROUGHNESS = 0.06 + n * 0.12;
-	SPECULAR = 0.85;
-	float dx = noise(a + vec2(0.07, 0.0)) - noise(a);
-	float dz = noise(a + vec2(0.0, 0.07)) - noise(a);
-	NORMAL_MAP = normalize(vec3(0.5 + dx * 3.5, 0.5 + dz * 3.5, 1.0));
+	// Brilho próprio baixo: sem ele a água some no escuro da galeria.
+	float fres = pow(1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0), 3.0);
+	float glint = smoothstep(0.93, 1.0, fbm(m * 9.0 + vec2(TIME * 0.7, -TIME * 1.1))) * (1.0 - scum);
+	EMISSION = col * 0.38 + vec3(0.04, 0.09, 0.08) * fres + vec3(0.7, 0.85, 0.75) * glint * 0.3;
+	ROUGHNESS = mix(0.05 + n * 0.1, 0.85, scum);
+	SPECULAR = 0.9;
+	// Ondulação: gradiente das duas camadas, para a lanterna estourar em reflexos.
+	float e = 0.06;
+	float dx = (fbm(a + vec2(e, 0.0)) - fbm(a)) * 0.6 + (fbm(b + vec2(e, 0.0)) - fbm(b)) * 0.4;
+	float dz = (fbm(a + vec2(0.0, e)) - fbm(a)) * 0.6 + (fbm(b + vec2(0.0, e)) - fbm(b)) * 0.4;
+	NORMAL_MAP = normalize(vec3(0.5 + dx * 2.6, 0.5 + dz * 2.6, 1.0));
+	NORMAL_MAP_DEPTH = 1.0;
 }
 """
 
@@ -173,6 +205,7 @@ func _build_water() -> void:
 	material.shader = Shader.new()
 	material.shader.code = WATER_SHADER
 	material.set_shader_parameter("size_m", Vector2(CHANNEL_WIDTH, CHANNEL_LENGTH))
+	material.set_shader_parameter("landing", 1.6)
 	_add(mesh, Vector3(CHANNEL_CENTER_X, WATER_Y, 0), material, "FlowingWater")
 
 func _build_outfall() -> void:

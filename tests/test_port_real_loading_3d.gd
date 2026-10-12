@@ -16,8 +16,10 @@ func run() -> void:
 	world = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival",true)
 	root.add_child(world)
-	for _frame in 500:
-		await physics_frame
+	# Startup prewarms and streams asynchronously at render cadence. Use the
+	# same readiness budget as the integrated port capture/measurement runners.
+	for _frame in 2400:
+		await process_frame
 		if world.session != null and world.session.ready_for_play: break
 	if world.session == null or not world.session.ready_for_play:
 		check(false,"Main V2 starts")
@@ -25,7 +27,8 @@ func run() -> void:
 		return
 	var session = world.session
 	check(world.production.no_save,"Loading observation does not touch personal save")
-	session.weather.time_of_day = .4
+	session.weather.time_of_day = .94 if "--night" in OS.get_cmdline_user_args() else .4
+	session.weather.set_process(false)
 	# A portaria precisa continuar rodando: sem ela a cancela fica fechada e os caminhões
 	# de carga travam nela para sempre. A visita autorizada evita o alarme de invasão.
 	session.urban_operations.security.authorized_visit = true

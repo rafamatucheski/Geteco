@@ -92,11 +92,13 @@ func _check_selection() -> void:
 	var seen := {}
 	var deterministic := true
 	var sexes_ok := true
+	var authored_hues := true
 	for identity in range(0, 400):
 		var a := CIVILIAN.new() as Node3D
 		a.appearance_locked = true
 		a.appearance_variant = identity
 		CATALOG.apply(a, identity)
+		if not is_zero_approx(float(a.body_tint.hue)): authored_hues = false
 		var b := CIVILIAN.new() as Node3D
 		b.appearance_locked = true
 		b.appearance_variant = identity
@@ -111,6 +113,7 @@ func _check_selection() -> void:
 		a.free()
 		b.free()
 	_check(deterministic, "a escolha é determinística pela identidade")
+	_check(authored_hues, "texturas sem máscara preservam o matiz autorado da pele em 400 identidades")
 	_check(seen.size() == CATALOG.available().size(), "400 identidades usam todos os %d corpos (%d)" % [CATALOG.available().size(), seen.size()])
 	_check(sexes_ok, "o corpo sempre combina com o sexo sorteado pelo kit")
 	var locked := CIVILIAN.new() as Node3D

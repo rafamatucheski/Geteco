@@ -44,7 +44,7 @@ class Result:
 	func apply() -> void:
 		for swap in swaps:
 			var part: MeshInstance3D = swap[0]
-			if is_instance_valid(part) and part.mesh == swap[1]: part.mesh = swap[2]
+			if is_instance_valid(part) and (part.mesh == swap[1] or (swap.size()>3 and part.get_meta("body_dents_rest_mesh",null)==swap[3])): part.mesh = swap[2]
 		for part in moved_parts:
 			if is_instance_valid(part): part.visible = false
 		swaps = []
@@ -58,6 +58,8 @@ class Job:
 	var transforms: Array[Transform3D] = []
 	var index := 0
 	var finished := false
+	var work: Dictionary = {}
+	var triangles_processed := 0
 
 static func _parts(visual: Node3D) -> Array[MeshInstance3D]:
 	var parts: Array[MeshInstance3D] = []
@@ -90,14 +92,21 @@ static func begin(visual: Node3D, spec: Dictionary, forced_skin := -1.0) -> Job:
 	job.result.skin = forced_skin if forced_skin >= 0.0 else _measure_skin(job.parts, job.transforms, spec)
 	return job
 
-## Avança o recorte até esgotar o orçamento (µs); devolve true quando terminou. A granularidade
-## é uma peça: a maior (o casco) custa poucos ms.
+## Budget checks run between setup, <=16-triangle batches and upload stages.
+## Native surface upload remains indivisible; this is a soft time budget.
+const TRIANGLES_PER_BATCH := 16
 static func step(job: Job, budget_usec: int) -> bool:
+	if job.finished: return true
 	var deadline := Time.get_ticks_usec() + budget_usec
 	while job.index < job.parts.size():
-		var part := job.parts[job.index]
-		if is_instance_valid(part) and part.mesh != null: _cut_part(part, job.transforms[job.index], job.spec, job.result)
-		job.index += 1
+		if job.work.is_empty():
+			var part := job.parts[job.index]
+			if is_instance_valid(part) and part.mesh != null:
+				job.work = _begin_part(part, job.transforms[job.index], job.spec, job.result)
+			if job.work.is_empty(): job.index += 1
+		elif _advance_part(job.work, job):
+			job.work = {}
+			job.index += 1
 		if job.index < job.parts.size() and Time.get_ticks_usec() >= deadline: return false
 	job.finished = true
 	return true
@@ -159,131 +168,261 @@ static func _measure_skin(parts: Array[MeshInstance3D], transforms: Array[Transf
 	return float(best) / 100.0 if best > 0 else 0.0
 
 static func _cut_part(part: MeshInstance3D, xf: Transform3D, spec: Dictionary, result: Result) -> void:
-	var box: AABB = xf * part.mesh.get_aabb()
-	var in_z: bool = box.end.z >= spec.zf and box.position.z <= spec.zr
-	var in_y: bool = box.end.y >= spec.sill and box.position.y <= spec.top
-	if not (in_z and in_y): return
+	var work := _begin_part(part, xf, spec, result)
+	while not work.is_empty():
+		if _advance_part(work): return
+
+static func _begin_part(part: MeshInstance3D, xf: Transform3D, spec: Dictionary, destination: Result) -> Dictionary:
+	var mesh: Mesh = part.get_meta("body_dents_rest_mesh",part.mesh)
+	var box: AABB = xf * mesh.get_aabb()
+	if box.end.z < spec.zf or box.position.z > spec.zr or box.end.y < spec.sill or box.position.y > spec.top: return {}
 	var reaches_left := box.position.x < -.25
 	var reaches_right := box.end.x > .25
-	if not reaches_left and not reaches_right: return
-	var inverse := xf.affine_inverse()
-	# Peça pequena inteira dentro do vão (retrovisor, friso, maçaneta): vai inteira para a folha.
+	if not reaches_left and not reaches_right: return {}
+	var collect_side := 0
 	for side in [-1, 1]:
 		if (side < 0 and not reaches_left) or (side > 0 and not reaches_right): continue
 		var inside: bool = box.position.z >= spec.zf - .02 and box.end.z <= spec.zr + .02 and box.position.y >= spec.sill - .02 and box.end.y <= spec.top + .02
 		var on_side: bool = box.position.x > .2 if side > 0 else box.end.x < -.2
 		if inside and on_side and box.size.x < .6:
-			for surface in part.mesh.get_surface_count():
-				var arrays := part.mesh.surface_get_arrays(surface)
-				_collect_all(part, surface, arrays, xf, side, result)
-			result.moved_parts.append(part)
-			return
-	var mesh := part.mesh
-	var changed := false
-	var rebuilt: Array = []
-	for surface in mesh.get_surface_count():
-		var arrays := mesh.surface_get_arrays(surface)
-		var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
-		var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
-		var has_index := not indices.is_empty()
-		var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL] if arrays[Mesh.ARRAY_NORMAL] != null else PackedVector3Array()
-		var uvs: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV] if arrays[Mesh.ARRAY_TEX_UV] != null else PackedVector2Array()
-		var colors: PackedColorArray = arrays[Mesh.ARRAY_COLOR] if arrays[Mesh.ARRAY_COLOR] != null else PackedColorArray()
-		var count := indices.size() if has_index else vertices.size()
-		var material: Material = part.get_active_material(surface)
-		var kept := PackedInt32Array()
-		var extra_vertices := PackedVector3Array()
-		var extra_normals := PackedVector3Array()
-		var extra_uvs := PackedVector2Array()
-		var extra_colors := PackedColorArray()
-		var surface_changed := false
-		for i in range(0, count, 3):
-			var ia: int = indices[i] if has_index else i
-			var ib: int = indices[i + 1] if has_index else i + 1
-			var ic: int = indices[i + 2] if has_index else i + 2
-			var pa: Vector3 = xf * vertices[ia]
-			var pb: Vector3 = xf * vertices[ib]
-			var pc: Vector3 = xf * vertices[ic]
-			var center := (pa + pb + pc) / 3.0
-			var normal := (pb - pa).cross(pc - pa).normalized()
-			var side := -1 if center.x < 0.0 else 1
-			# Qualquer sentido de enrolamento: o vidro de face dupla e as paredes internas do casco
-			# oco também pertencem ao vão; a folha leva a face com o enrolamento que ela tinha.
-			var candidate: bool = absf(normal.x) >= SIDE_FACING and absf(center.x) > .25
-			if candidate:
-				var low := minf(pa.z, minf(pb.z, pc.z))
-				var high := maxf(pa.z, maxf(pb.z, pc.z))
-				var bottom := minf(pa.y, minf(pb.y, pc.y))
-				var top := maxf(pa.y, maxf(pb.y, pc.y))
-				candidate = high > spec.zf and low < spec.zr and top > spec.sill and bottom < spec.top
-			if not candidate:
-				kept.append_array(PackedInt32Array([ia, ib, ic]))
-				continue
-			var polygon: Array = [
-				[pa, _n(normals, ia, normal, xf), _uv(uvs, ia), _c(colors, ia)],
-				[pb, _n(normals, ib, normal, xf), _uv(uvs, ib), _c(colors, ib)],
-				[pc, _n(normals, ic, normal, xf), _uv(uvs, ic), _c(colors, ic)]]
-			var pieces := _clip_box(polygon, spec)
-			var inside: Array = pieces[0]
-			var remainder: Array = pieces[1]
-			if inside.is_empty():
-				kept.append_array(PackedInt32Array([ia, ib, ic]))
-				continue
-			surface_changed = true
-			changed = true
-			result.triangles += 1
-			_add_leaf(result, side, material, part, surface, inside, false)
-			# Cartão interno só das faces bem voltadas para fora (lataria), não de quinas.
-			if normal.x * side >= .85 or (normal.x * side >= SIDE_FACING and _is_glass(part, surface, material)):
-				_add_leaf(result, side, material, part, surface, inside, true)
-			for fragment in remainder:
-				var base := vertices.size() + extra_vertices.size()
-				for vertex in fragment:
-					extra_vertices.append(inverse * (vertex[0] as Vector3))
-					extra_normals.append(((inverse.basis * (vertex[1] as Vector3))).normalized())
-					extra_uvs.append(vertex[2])
-					extra_colors.append(vertex[3])
-				# Triângulo em leque; fragmentos já são convexos e saem com o mesmo sentido.
-				for k in range(1, fragment.size() - 1):
-					kept.append_array(PackedInt32Array([base, base + k, base + k + 1]))
-		if not surface_changed:
-			rebuilt.append(null)
+			collect_side = side
+			break
+	var active_materials: Array[Material] = []
+	for surface in mesh.get_surface_count(): active_materials.append(part.get_active_material(surface))
+	return {"part": part, "mesh": mesh, "expected_mesh":part.mesh, "xf": xf, "inverse": xf.affine_inverse(), "spec": spec, "result": Result.new(), "destination": destination, "collect_side": collect_side, "materials": active_materials, "stage": "surface", "surface": 0, "triangle": 0, "changed": false, "rebuilt": [], "replacement": null, "upload_surface": 0}
+
+static func _advance_part(work: Dictionary, job: Job = null) -> bool:
+	# A freed source has no presentation to replace. Keep partial contribution
+	# private until commit so its half-built leaf cannot survive that source.
+	if not is_instance_valid(work.part): return true
+	var mesh: Mesh = work.mesh
+	if work.stage == "surface":
+		if int(work.surface) >= mesh.get_surface_count():
+			work.stage = "part"
+		else:
+			_begin_surface(work)
+			work.stage = "triangles"
+	elif work.stage == "triangles":
+		var processed := _triangle_batch(work)
+		if job != null: job.triangles_processed += processed
+		if int(work.triangle) >= int(work.count): work.stage = "surface_finish"
+	elif work.stage == "surface_finish":
+		if int(work.collect_side) == 0: _finish_surface(work)
+		work.surface = int(work.surface) + 1
+		work.stage = "surface"
+	elif work.stage == "part":
+		if int(work.collect_side) != 0:
+			work.result.moved_parts.append(work.part)
+			_merge_part(work)
+			return true
+		if not bool(work.changed):
+			_merge_part(work)
+			return true
+		work.result.cut_parts += 1
+		work.replacement = ArrayMesh.new()
+		work.stage = "upload"
+	elif work.stage == "upload":
+		var surface := int(work.upload_surface)
+		var arrays: Array = work.rebuilt[surface] if work.rebuilt[surface] != null else mesh.surface_get_arrays(surface)
+		work.replacement.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+		work.replacement.surface_set_material(surface, mesh.surface_get_material(surface))
+		work.upload_surface = surface + 1
+		if int(work.upload_surface) >= mesh.get_surface_count():
+			work.result.swaps.append([work.part, work.expected_mesh, work.replacement,mesh])
+			_merge_part(work)
+			return true
+	return false
+
+static func _begin_surface(work: Dictionary) -> void:
+	var mesh: Mesh = work.mesh
+	var arrays := mesh.surface_get_arrays(int(work.surface))
+	work.vertices = arrays[Mesh.ARRAY_VERTEX]
+	work.indices = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
+	work.normals = arrays[Mesh.ARRAY_NORMAL] if arrays[Mesh.ARRAY_NORMAL] != null else PackedVector3Array()
+	work.uvs = arrays[Mesh.ARRAY_TEX_UV] if arrays[Mesh.ARRAY_TEX_UV] != null else PackedVector2Array()
+	work.colors = arrays[Mesh.ARRAY_COLOR] if arrays[Mesh.ARRAY_COLOR] != null else PackedColorArray()
+	work.has_index = not (work.indices as PackedInt32Array).is_empty()
+	work.count = (work.indices as PackedInt32Array).size() if work.has_index else (work.vertices as PackedVector3Array).size()
+	work.material = work.materials[int(work.surface)]
+	work.kept = PackedInt32Array()
+	work.extra_vertices = PackedVector3Array()
+	work.extra_normals = PackedVector3Array()
+	work.extra_uvs = PackedVector2Array()
+	work.extra_colors = PackedColorArray()
+	work.surface_changed = false
+	work.triangle = 0
+
+static func _triangle_batch(work: Dictionary) -> int:
+	var part: MeshInstance3D = work.part
+	var xf: Transform3D = work.xf
+	var inverse: Transform3D = work.inverse
+	var spec: Dictionary = work.spec
+	var result: Result = work.result
+	var surface := int(work.surface)
+	var vertices: PackedVector3Array = work.vertices
+	var indices: PackedInt32Array = work.indices
+	var has_index: bool = work.has_index
+	var normals: PackedVector3Array = work.normals
+	var uvs: PackedVector2Array = work.uvs
+	var colors: PackedColorArray = work.colors
+	var material: Material = work.material
+	var first := int(work.triangle)
+	var last := mini(int(work.count), first + TRIANGLES_PER_BATCH * 3)
+	if int(work.collect_side) != 0:
+		for i in range(first, last, 3):
+			var polygon: Array = []
+			for k in 3:
+				var index: int = indices[i + k] if has_index else i + k
+				polygon.append([xf * vertices[index], _n(normals, index, Vector3.UP, xf), _uv(uvs, index), _c(colors, index)])
+			_add_leaf(result, int(work.collect_side), material, part, surface, polygon, false)
+		work.triangle = last
+		return int((last - first) / 3.0)
+	# Transfer accumulated packed buffers into locals before appending. Leaving
+	# a second owner in the state would detach the full prefix on every batch.
+	var kept: PackedInt32Array = work.kept
+	var extra_vertices: PackedVector3Array = work.extra_vertices
+	var extra_normals: PackedVector3Array = work.extra_normals
+	var extra_uvs: PackedVector2Array = work.extra_uvs
+	var extra_colors: PackedColorArray = work.extra_colors
+	work.kept = PackedInt32Array()
+	work.extra_vertices = PackedVector3Array()
+	work.extra_normals = PackedVector3Array()
+	work.extra_uvs = PackedVector2Array()
+	work.extra_colors = PackedColorArray()
+	var surface_changed: bool = work.surface_changed
+	var changed: bool = work.changed
+	for i in range(first, last, 3):
+		var ia: int = indices[i] if has_index else i
+		var ib: int = indices[i + 1] if has_index else i + 1
+		var ic: int = indices[i + 2] if has_index else i + 2
+		var pa: Vector3 = xf * vertices[ia]
+		var pb: Vector3 = xf * vertices[ib]
+		var pc: Vector3 = xf * vertices[ic]
+		var center := (pa + pb + pc) / 3.0
+		var normal := (pb - pa).cross(pc - pa).normalized()
+		var side := -1 if center.x < 0.0 else 1
+		# Qualquer sentido de enrolamento: o vidro de face dupla e as paredes internas do casco
+		# oco também pertencem ao vão; a folha leva a face com o enrolamento que ela tinha.
+		var candidate: bool = absf(normal.x) >= SIDE_FACING and absf(center.x) > .25
+		if candidate:
+			var low := minf(pa.z, minf(pb.z, pc.z))
+			var high := maxf(pa.z, maxf(pb.z, pc.z))
+			var bottom := minf(pa.y, minf(pb.y, pc.y))
+			var top := maxf(pa.y, maxf(pb.y, pc.y))
+			candidate = high > spec.zf and low < spec.zr and top > spec.sill and bottom < spec.top
+		if not candidate:
+			kept.append_array(PackedInt32Array([ia, ib, ic]))
 			continue
-		var out: Array = []
-		out.resize(Mesh.ARRAY_MAX)
-		var new_vertices := vertices.duplicate()
-		new_vertices.append_array(extra_vertices)
-		out[Mesh.ARRAY_VERTEX] = new_vertices
-		var new_normals := normals.duplicate()
-		if new_normals.size() != vertices.size():
-			new_normals = PackedVector3Array()
-			new_normals.resize(vertices.size())
-		new_normals.append_array(extra_normals)
-		out[Mesh.ARRAY_NORMAL] = new_normals
-		var new_uvs := uvs.duplicate()
-		if new_uvs.size() != vertices.size():
-			new_uvs = PackedVector2Array()
-			new_uvs.resize(vertices.size())
-		new_uvs.append_array(extra_uvs)
-		out[Mesh.ARRAY_TEX_UV] = new_uvs
-		if not colors.is_empty():
-			var new_colors := colors.duplicate()
-			new_colors.append_array(extra_colors)
-			out[Mesh.ARRAY_COLOR] = new_colors
-		if kept.is_empty():
-			# Superfície esvaziada: um triângulo degenerado mantém o índice (materiais e chaves
-			# por superfície são posicionais).
-			kept = PackedInt32Array([0, 0, 0])
-		out[Mesh.ARRAY_INDEX] = kept
-		rebuilt.append(out)
-	if not changed: return
-	result.cut_parts += 1
-	var replacement := ArrayMesh.new()
-	for surface in mesh.get_surface_count():
-		var arrays: Array = rebuilt[surface] if rebuilt[surface] != null else mesh.surface_get_arrays(surface)
-		replacement.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-		replacement.surface_set_material(surface, mesh.surface_get_material(surface))
-	result.swaps.append([part, mesh, replacement])
+		var polygon: Array = [
+			[pa, _n(normals, ia, normal, xf), _uv(uvs, ia), _c(colors, ia)],
+			[pb, _n(normals, ib, normal, xf), _uv(uvs, ib), _c(colors, ib)],
+			[pc, _n(normals, ic, normal, xf), _uv(uvs, ic), _c(colors, ic)]]
+		var pieces := _clip_box(polygon, spec)
+		var inside: Array = pieces[0]
+		var remainder: Array = pieces[1]
+		if inside.is_empty():
+			kept.append_array(PackedInt32Array([ia, ib, ic]))
+			continue
+		surface_changed = true
+		changed = true
+		result.triangles += 1
+		_add_leaf(result, side, material, part, surface, inside, false)
+		# Cartão interno só das faces bem voltadas para fora (lataria), não de quinas.
+		if normal.x * side >= .85 or (normal.x * side >= SIDE_FACING and _is_glass(part, surface, material)):
+			_add_leaf(result, side, material, part, surface, inside, true)
+		for fragment in remainder:
+			var base := vertices.size() + extra_vertices.size()
+			for vertex in fragment:
+				extra_vertices.append(inverse * (vertex[0] as Vector3))
+				extra_normals.append(((inverse.basis * (vertex[1] as Vector3))).normalized())
+				extra_uvs.append(vertex[2])
+				extra_colors.append(vertex[3])
+			# Triângulo em leque; fragmentos já são convexos e saem com o mesmo sentido.
+			for k in range(1, fragment.size() - 1):
+				kept.append_array(PackedInt32Array([base, base + k, base + k + 1]))
+
+	work.kept = kept
+	work.extra_vertices = extra_vertices
+	work.extra_normals = extra_normals
+	work.extra_uvs = extra_uvs
+	work.extra_colors = extra_colors
+	work.surface_changed = surface_changed
+	work.changed = changed
+	work.triangle = last
+	return int((last - first) / 3.0)
+
+static func _finish_surface(work: Dictionary) -> void:
+	var rebuilt: Array = work.rebuilt
+	var surface_changed: bool = work.surface_changed
+	var vertices: PackedVector3Array = work.vertices
+	var normals: PackedVector3Array = work.normals
+	var uvs: PackedVector2Array = work.uvs
+	var colors: PackedColorArray = work.colors
+	var kept: PackedInt32Array = work.kept
+	var extra_vertices: PackedVector3Array = work.extra_vertices
+	var extra_normals: PackedVector3Array = work.extra_normals
+	var extra_uvs: PackedVector2Array = work.extra_uvs
+	var extra_colors: PackedColorArray = work.extra_colors
+	if not surface_changed:
+		rebuilt.append(null)
+		return
+	var out: Array = []
+	out.resize(Mesh.ARRAY_MAX)
+	var new_vertices := vertices.duplicate()
+	new_vertices.append_array(extra_vertices)
+	out[Mesh.ARRAY_VERTEX] = new_vertices
+	var new_normals := normals.duplicate()
+	if new_normals.size() != vertices.size():
+		new_normals = PackedVector3Array()
+		new_normals.resize(vertices.size())
+	new_normals.append_array(extra_normals)
+	out[Mesh.ARRAY_NORMAL] = new_normals
+	var new_uvs := uvs.duplicate()
+	if new_uvs.size() != vertices.size():
+		new_uvs = PackedVector2Array()
+		new_uvs.resize(vertices.size())
+	new_uvs.append_array(extra_uvs)
+	out[Mesh.ARRAY_TEX_UV] = new_uvs
+	if not colors.is_empty():
+		var new_colors := colors.duplicate()
+		new_colors.append_array(extra_colors)
+		out[Mesh.ARRAY_COLOR] = new_colors
+	if kept.is_empty():
+		# Superfície esvaziada: um triângulo degenerado mantém o índice (materiais e chaves
+		# por superfície são posicionais).
+		kept = PackedInt32Array([0, 0, 0])
+	out[Mesh.ARRAY_INDEX] = kept
+	rebuilt.append(out)
+
+static func _merge_part(work: Dictionary) -> void:
+	var source: Result = work.result
+	var destination: Result = work.destination
+	destination.cut_parts += source.cut_parts
+	destination.triangles += source.triangles
+	destination.moved_parts.append_array(source.moved_parts)
+	destination.swaps.append_array(source.swaps)
+	for side in [-1, 1]:
+		for kind in ["leaf", "inner"]:
+			var source_bucket: Dictionary = source.get(kind)[side]
+			var destination_bucket: Dictionary = destination.get(kind)[side]
+			for material in source_bucket:
+				var added: Dictionary = source_bucket[material]
+				if not destination_bucket.has(material):
+					destination_bucket[material] = added
+					continue
+				var group: Dictionary = destination_bucket[material]
+				var positions: PackedVector3Array = group.pos
+				var normals: PackedVector3Array = group.nrm
+				var uvs: PackedVector2Array = group.uv
+				var colors: PackedColorArray = group.col
+				positions.append_array(added.pos)
+				normals.append_array(added.nrm)
+				uvs.append_array(added.uv)
+				colors.append_array(added.col)
+				group.pos = positions
+				group.nrm = normals
+				group.uv = uvs
+				group.col = colors
 
 static func _collect_all(part: MeshInstance3D, surface: int, arrays: Array, xf: Transform3D, side: int, result: Result) -> void:
 	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]

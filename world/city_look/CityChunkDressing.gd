@@ -28,7 +28,7 @@ const WORLD_CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
 const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
 const JUNCTIONS := preload("res://gameplay/traffic_junctions/TrafficJunctions.gd")
 const PLACEMENTS := preload("res://world/editing/WorldPlacements.gd")
-const FRAGILE_KINDS := ["signal_pole", "stop_sign", "hydrant", "trash_can", "news_box", "mailbox", "phone_booth"]
+const FRAGILE_KINDS := ["signal_pole", "stop_sign", "hydrant", "trash_can", "news_box", "mailbox", "phone_booth", "bench_seat", "dumpster", "trash_bags", "planter"]
 
 # Fração de janelas acesas à noite. Residência acende menos que vitrine.
 const WINDOW_LIT_RATIO := 0.60
@@ -238,7 +238,6 @@ static func _flush(chunk: Node3D, batches: Dictionary) -> void:
 			for index in mini(lenses.size(), multimesh.instance_count):
 				JUNCTIONS.register_lens(multimesh, index, lenses[index][0], lenses[index][1])
 			chunk.remove_meta("signal_lenses")
-	_register_fragile(chunk, batches, built)
 	# Planters keep their batched mesh; one static compound body per chunk
 	# provides the exact stone footprint, removed with the streamed chunk.
 	if batches.has("planter"):
@@ -254,6 +253,7 @@ static func _flush(chunk: Node3D, batches: Dictionary) -> void:
 			collision.transform = chunk.global_transform.affine_inverse() * placement * Transform3D(Basis.IDENTITY, Vector3(0, .25, 0))
 			body.add_child(collision)
 		chunk.add_child(body)
+	_register_fragile(chunk, batches, built)
 
 
 ## Mobília e semáforo viram quebráveis (StreetPhysics). A lente do semáforo é
@@ -262,13 +262,20 @@ static func _register_fragile(chunk: Node3D, _batches: Dictionary, built: Dictio
 	for kind in FRAGILE_KINDS:
 		if not built.has(kind): continue
 		var multimesh: MultiMesh = built[kind]
+		var visual: MultiMeshInstance3D
+		for child in chunk.get_children():
+			if child is MultiMeshInstance3D and child.multimesh == multimesh:
+				visual = child
+				break
 		for index in multimesh.instance_count:
 			var extra := []
 			if kind == "signal_pole" and built.has("signal_amber") and index < built.signal_amber.instance_count:
 				var pole := multimesh.get_instance_transform(index)
 				var lens: Transform3D = built.signal_amber.get_instance_transform(index)
 				extra.append({"multimesh": built.signal_amber, "index": index, "offset": pole.affine_inverse() * lens})
-			FRAGILE.register_instance(kind, multimesh, index, chunk, extra)
+			var colliders: Array = []
+			if kind == "planter": colliders.append(chunk.get_node("CityPlanterSolids").get_child(index))
+			FRAGILE.register_instance(kind, multimesh, index, chunk, extra, colliders, visual)
 
 
 # ---------------------------------------------------------------------------
@@ -329,7 +336,9 @@ static func _sidewalk_lamps(chunk: Node3D, context: Dictionary) -> void:
 				var point := a + tangent * s + outward * (width * 0.5 + 0.45)
 				s += LAMP_SPACING
 				if not _in_chunk(context, point): continue
-				if _near_junction(context, point, 2.0) or _near_lamp(context, point, LAMP_CLEARANCE): continue
+				# Margem cobre o poste do semáforo (setback ≈ 0.68·largura + 2,3 m, com o
+				# braço de 3,3 m): com 2 m o poste de luz nascia colado no semáforo.
+				if _near_junction(context, point, 7.0) or _near_lamp(context, point, LAMP_CLEARANCE): continue
 				if _road_clearance(context, point) < 0.2 or _inside_building(context, point, 0.5): continue
 				if WORLD_CONNECTION.reserves_approach_for_driving(point): continue
 				if _workshop_driving(point): continue
@@ -372,6 +381,7 @@ static func _sidewalk_lamps(chunk: Node3D, context: Dictionary) -> void:
 		# register_instance não recebe a mancha; o registro direto é o mesmo
 		# formato, com "pool" como register_node usa para apagar a luz.
 		FRAGILE._register({"kind": "lamp", "multimesh": poles, "index": index,
+			"visual": weakref(pole_instance),
 			"extra": [{"multimesh": heads, "index": index, "offset": Transform3D.IDENTITY}],
 			"pool": {"multimesh": pool_instance.multimesh, "index": index},
 			"chunk": weakref(chunk), "base": base, "point": transforms[index].origin, "state": "standing"})

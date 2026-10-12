@@ -15,6 +15,17 @@ var elapsed: float = 0.0
 var attack_kind: int = 0
 var enemy_windup: float = 0.0
 var enemy_blocking: bool = false
+var sound_events: Array[String] = []
+var combo := 0
+var _combo_time := 0.0
+var _enemy_stun := 0.0
+var _player_stun := 0.0
+var _hitstop := 0.0
+var _enemy_kind := 1
+var _queued_attack := 0
+var _queue_time := 0.0
+var _impact_point := Vector2.ZERO
+var _impact_time := 0.0
 var _jump_velocity: float = 0.0
 var _attack_timer: float = 0.0
 var _attack_cooldown: float = 0.0
@@ -54,19 +65,45 @@ func reset(seed_value: int = 1) -> void:
 	_enemy_attack_pose = 0.0
 	_player_flash = 0.0
 	_enemy_flash = 0.0
+	sound_events.clear()
+	combo = 0
+	_combo_time = 0.0
+	_enemy_stun = 0.0
+	_player_stun = 0.0
+	_hitstop = 0.0
+	_enemy_kind = 1
+	_queued_attack = 0
+	_queue_time = 0.0
+	_impact_time = 0.0
 
 func step(delta: float, controls: Dictionary) -> void:
 	if finished:
 		return
 	var dt := clampf(delta, 0.0, 0.1)
+	if _hitstop > 0.0:
+		_hitstop = maxf(0.0,_hitstop-dt)
+		return
 	elapsed += dt
+	_combo_time = maxf(0.0,_combo_time-dt)
+	if _combo_time <= 0.0: combo = 0
+	_enemy_stun = maxf(0.0,_enemy_stun-dt)
+	_player_stun = maxf(0.0,_player_stun-dt)
+	_impact_time = maxf(0.0,_impact_time-dt)
+	_queue_time = maxf(0.0,_queue_time-dt)
+	if _queue_time <= 0.0: _queued_attack = 0
+	if bool(controls.get("action_alt_pressed",false)):
+		_queued_attack = 2
+		_queue_time = .22
+	elif bool(controls.get("action_pressed",false)):
+		_queued_attack = 1
+		_queue_time = .22
 	_attack_cooldown = maxf(0.0, _attack_cooldown - dt)
 	_player_flash = maxf(0.0, _player_flash - dt)
 	_enemy_flash = maxf(0.0, _enemy_flash - dt)
 	_enemy_attack_pose = maxf(0.0, _enemy_attack_pose - dt)
 	blocking = bool(controls.get("down", false)) and player_height <= 0.0 and _attack_timer <= 0.0
 	var direction := float(bool(controls.get("right", false))) - float(bool(controls.get("left", false)))
-	player_x = clampf(player_x + direction * dt * (65.0 if blocking else 190.0), 62.0, 738.0)
+	player_x = clampf(player_x + direction * dt * (0.0 if _player_stun > 0.0 else 65.0 if blocking else 190.0), 62.0, 738.0)
 	if bool(controls.get("up_pressed", false)) and player_height <= 0.0 and not blocking:
 		_jump_velocity = 620.0
 	if player_height > 0.0 or _jump_velocity > 0.0:
@@ -74,11 +111,9 @@ func step(delta: float, controls: Dictionary) -> void:
 		player_height = maxf(0.0, player_height + _jump_velocity * dt)
 		if player_height <= 0.0:
 			_jump_velocity = 0.0
-	if _attack_cooldown <= 0.0 and not blocking:
-		if bool(controls.get("action_alt_pressed", false)):
-			_begin_attack(2)
-		elif bool(controls.get("action_pressed", false)):
-			_begin_attack(1)
+	if _attack_cooldown <= 0.0 and not blocking and _player_stun <= 0.0 and _queued_attack != 0:
+		_begin_attack(_queued_attack)
+		_queued_attack = 0
 	if _attack_timer > 0.0:
 		_attack_timer = maxf(0.0, _attack_timer - dt)
 		if not _attack_connected and _attack_timer <= (0.25 if attack_kind == 2 else 0.16):
@@ -102,8 +137,9 @@ func step(delta: float, controls: Dictionary) -> void:
 
 func _begin_attack(kind: int) -> void:
 	attack_kind = kind
+	sound_events.append("swing")
 	_attack_timer = 0.38 if kind == 2 else 0.25
-	_attack_cooldown = 0.62 if kind == 2 else 0.34
+	_attack_cooldown = 0.46 if kind == 2 else 0.28
 	_attack_connected = false
 
 func _player_hit() -> void:
@@ -113,6 +149,18 @@ func _player_hit() -> void:
 	var damage := 17 if attack_kind == 2 else 10
 	if enemy_blocking:
 		damage = 3
+		sound_events.append("guard")
+	else:
+		combo += 1
+		_combo_time = 1.0
+		damage += mini(6,combo-1)*2
+		_enemy_stun = .2 if attack_kind == 2 else .12
+		enemy_windup = 0.0
+		_enemy_cooldown = maxf(_enemy_cooldown,.35)
+		sound_events.append("hit")
+	_hitstop = .055
+	_impact_time = .18
+	_impact_point = Vector2(enemy_x,285-player_height*.4)
 	enemy_health = maxi(0, enemy_health - damage)
 	score += damage * 12
 	_enemy_flash = 0.16
@@ -120,22 +168,33 @@ func _player_hit() -> void:
 
 func _step_enemy(dt: float) -> void:
 	_enemy_cooldown = maxf(0.0, _enemy_cooldown - dt)
+	if _enemy_stun > 0.0:
+		enemy_blocking = false
+		return
 	var gap := absf(enemy_x - player_x)
 	enemy_blocking = enemy_windup <= 0.0 and _enemy_cooldown > 0.35 and sin(elapsed * 2.4) > 0.53
 	if enemy_windup > 0.0:
 		enemy_windup = maxf(0.0, enemy_windup - dt)
 		if enemy_windup <= 0.0:
 			_enemy_attack_pose = 0.22
+			sound_events.append("swing")
 			_enemy_cooldown = _rng.randf_range(0.72, 1.18)
-			if gap < 126.0 and player_height < 36.0:
-				player_health = maxi(0, player_health - (2 if blocking else 14))
+			if gap < (145.0 if _enemy_kind == 2 else 113.0) and player_height < (45.0 if _enemy_kind == 2 else 70.0):
+				player_health = maxi(0, player_health - (2 if blocking else 17 if _enemy_kind == 2 else 11))
+				sound_events.append("guard" if blocking else "hit")
+				_player_stun = .05 if blocking else .2
+				_hitstop = .045
+				_impact_time = .18
+				_impact_point = Vector2(player_x,285-player_height)
+				combo = 0
 				_player_flash = 0.16
 				player_x = clampf(player_x + signf(player_x - enemy_x) * (5.0 if blocking else 20.0), 62.0, 738.0)
 	elif gap > 89.0:
 		enemy_x += signf(player_x - enemy_x) * (52.0 if enemy_blocking else 105.0) * dt
 	elif _enemy_cooldown <= 0.0:
 		enemy_blocking = false
-		enemy_windup = 0.42
+		_enemy_kind = 2 if _rng.randf() > .55 else 1
+		enemy_windup = .5 if _enemy_kind == 2 else .32
 	enemy_x = clampf(enemy_x, 62.0, 738.0)
 
 func render(canvas: Control, area: Rect2) -> void:
@@ -160,7 +219,14 @@ func render(canvas: Control, area: Rect2) -> void:
 	for y in [364, 401, 452]:
 		canvas.draw_line(Vector2(0, y), Vector2(800, y), Color("494151"), 2.0)
 	_draw_fighter(canvas, Vector2(player_x, 377 - player_height), signf(enemy_x - player_x), Color("65c9dc"), blocking, attack_kind, _player_flash, false)
-	_draw_fighter(canvas, Vector2(enemy_x, 377), signf(player_x - enemy_x), Color("e88883"), enemy_blocking, 1 if _enemy_attack_pose > 0 else 0, _enemy_flash, enemy_windup > 0)
+	_draw_fighter(canvas, Vector2(enemy_x, 377), signf(player_x - enemy_x), Color("e88883"), enemy_blocking, _enemy_kind if _enemy_attack_pose > 0 else 0, _enemy_flash, enemy_windup > 0)
+	if _impact_time > 0.0:
+		for ray in range(8):
+			var normal := Vector2.from_angle(ray*TAU/8.0)
+			var radius := (1.0-_impact_time/.18)*38.0
+			canvas.draw_line(_impact_point+normal*radius*.35,_impact_point+normal*radius,Color("ffdf78"),3.0,true)
+	if combo > 1:
+		_text(canvas,Vector2(310,115),"%d ACERTOS" % combo,24,Color("ffdf78"))
 	_draw_health(canvas, Rect2(31, 37, 292, 22), player_health, Color("67d4d0"))
 	_draw_health(canvas, Rect2(477, 37, 292, 22), enemy_health, Color("eb888b"))
 	_text(canvas, Vector2(31, 29), "VOCÊ", 18, Color("c8e4ea"))
@@ -184,10 +250,19 @@ func _draw_fighter(canvas: Control, point: Vector2, facing: float, color: Color,
 	canvas.draw_circle(Vector2(point.x, 378), 33, Color(0, 0, 0, 0.22))
 	var hip := point + Vector2(0, -52)
 	var chest := point + Vector2(0, -98)
+	var bounce := sin(elapsed*9.0+point.x*.01)*2.5
+	hip.y += bounce
+	chest.y += bounce
+	var extension := 1.0
+	if attack != 0:
+		var is_player := absf(point.x-player_x) < .1
+		var timer := _attack_timer if is_player else _enemy_attack_pose
+		var duration := (.38 if attack == 2 else .25) if is_player else .22
+		extension = sin(clampf(1.0-timer/duration,0.0,1.0)*PI)
 	var rear_foot := point + Vector2(-facing * 24, 0)
 	var front_foot := point + Vector2(facing * 27, 0)
 	if attack == 2:
-		front_foot = point + Vector2(facing * 91, -63)
+		front_foot = point + Vector2(facing * lerpf(27,112,extension),-63*extension)
 	canvas.draw_line(hip, rear_foot, ink, 18.0, true)
 	canvas.draw_line(hip, front_foot, ink, 18.0, true)
 	canvas.draw_line(rear_foot - Vector2(5, 0), rear_foot + Vector2(12, 0), Color("9db5c6"), 10.0)
@@ -203,13 +278,16 @@ func _draw_fighter(canvas: Control, point: Vector2, facing: float, color: Color,
 	elif windup:
 		hand = chest + Vector2(-facing * 29, -16)
 	elif attack == 1:
-		hand = chest + Vector2(facing * 88, -5)
+		hand = chest + Vector2(facing * lerpf(30,100,extension), -7)
 	canvas.draw_line(chest + Vector2(-facing * 11, 4), chest + Vector2(-facing * 27, 28), color.darkened(0.18), 13.0, true)
 	canvas.draw_circle(chest + Vector2(-facing * 27, 28), 8, skin)
-	canvas.draw_line(chest + Vector2(facing * 7, 0), hand, color.lightened(0.1), 14.0, true)
+	var shoulder := chest + Vector2(facing * 7,0)
+	var elbow := shoulder.lerp(hand,.5)+Vector2(-facing*8,14*(1.0-extension) if attack == 1 else 14)
+	canvas.draw_line(shoulder,elbow,color.lightened(.1),14.0,true)
+	canvas.draw_line(elbow,hand,color.lightened(.1),12.0,true)
 	canvas.draw_circle(hand, 9, skin)
 	if guard:
 		canvas.draw_arc(chest + Vector2(facing * 17, -20), 31.0, -PI / 2 if facing > 0 else PI / 2, PI / 2 if facing > 0 else PI * 1.5, 16, Color("91d9e8"), 2.0, true)
 
 func _text(canvas: Control, point: Vector2, text: String, size: int, color: Color) -> void:
-	canvas.draw_string(ThemeDB.fallback_font, point, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, color)
+	canvas.draw_string(ThemeDB.fallback_font, point, String(TranslationServer.translate(text)), HORIZONTAL_ALIGNMENT_LEFT, -1, size, color)

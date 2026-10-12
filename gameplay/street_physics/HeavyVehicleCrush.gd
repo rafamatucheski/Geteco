@@ -43,6 +43,11 @@ static func is_large_target(target: CharacterBody3D) -> bool:
 
 static func eligible(vehicle: CharacterBody3D, target: CharacterBody3D, speed: float) -> bool:
 	if target == null or target == vehicle or PROTECTION.is_protected(target): return false
+	# Caminhões e ônibus usam impulso e dano limitado da colisão normal.
+	# Massa/velocidade não autorizam achatamento e destruição instantânea;
+	# o atropelamento de carrocerias por veículos grandes fica só no tanque.
+	if str(vehicle.get("archetype")) != "army_tank" and is_large_target(vehicle): return false
+	if str(vehicle.get("archetype")) == "armored_truck": return false
 	if not target.is_in_group("drivable") or target.get("horizontal_velocity") == null: return false
 	var collider = target.get("shape")
 	if not collider is CollisionShape3D or collider.disabled: return false
@@ -71,6 +76,7 @@ static func eligible(vehicle: CharacterBody3D, target: CharacterBody3D, speed: f
 static func prepare(vehicle: CharacterBody3D, planar: Vector3, delta: float) -> CharacterBody3D:
 	var speed := planar.length()
 	if speed < 2.5 or (mass(vehicle) < HEAVY_MASS and speed < 22.0): return null
+	if str(vehicle.get("archetype")) != "army_tank" and is_large_target(vehicle): return null
 	var contact := KinematicCollision3D.new()
 	var motion := planar * delta + planar.normalized() * 0.22
 	if not vehicle.test_move(vehicle.global_transform, motion, contact): return null

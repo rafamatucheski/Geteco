@@ -11,6 +11,7 @@ var fridge_hinge: Node3D
 var mirror_mesh: MeshInstance3D
 var backpack_prop: Node3D
 var bench_light: SpotLight3D
+var roof_access_point := Vector3.ZERO
 
 func _ready() -> void:
 	var wood: String = ["947354","857566","615749"][variant_index]
@@ -42,6 +43,9 @@ func _ready() -> void:
 	var wardrobe: Vector2 = [Vector2(-5.95,-3.25),Vector2(5.9,-3),Vector2(5.95,-3.25)][variant_index]
 	var armory: Vector2 = [Vector2(-2.7,-4.2),Vector2(.2,-4.2),Vector2(1.1,-4.2)][variant_index]
 	var lounge: Vector2 = [Vector2(-3.5,1.2),Vector2(-3.8,1.7),Vector2(-3.7,.4)][variant_index]
+	# A wall-backed roof ladder occupies the gap between the authored furniture.
+	roof_access_point = Vector3([1.95,2.9,3.0][variant_index],0,-4.05)
+	station_points["roof"] = Vector2(roof_access_point.x,roof_access_point.z)
 	_kitchen(kitchen,fabric)
 	_bedroom(bedroom,fabric)
 	_wardrobe(wardrobe,wood)
@@ -303,15 +307,18 @@ func _backpack() -> void:
 	presentation_points["backpack"] = Vector3(6.35,.3,4.4)
 
 func _lounge(p: Vector2,color: String,wood: String) -> void:
+	# The previous 60 cm gap exactly matched Dante's capsule diameter and
+	# wedged it between sofa and table. Keep one metre of walkable floor.
+	var table := p+Vector2(0,2.05)
 	box("LoungeRug",Vector3(4.5,.02,4.8),Vector3(p.x,.035,p.y+.6),"b1a789")
 	box("SofaBase",Vector3(3.0,.4,1.05),Vector3(p.x,.37,p.y),color)
 	box("SofaBack",Vector3(3.05,.75,.22),Vector3(p.x,.78,p.y-.46),color)
 	for x in [-1.45,1.45]: box("SofaArm",Vector3(.21,.56,1.12),Vector3(p.x+x,.62,p.y),color)
 	for x in [-.92,0,.92]: box("SeatCushion",Vector3(.85,.18,.76),Vector3(p.x+x,.65,p.y+.06),color)
-	box("CoffeeTable",Vector3(1.8,.12,.9),Vector3(p.x,.46,p.y+1.65),wood)
+	box("CoffeeTable",Vector3(1.8,.12,.9),Vector3(table.x,.46,table.y),wood)
 	for x in [-.72,.72]:
-		for z in [-.3,.3]: box("TableLeg",Vector3(.06,.43,.06),Vector3(p.x+x,.22,p.y+1.65+z),"424c47")
-	box("Book",Vector3(.44,.05,.32),Vector3(p.x+.3,.56,p.y+1.65),"486577")
-	cylinder("CoffeeMug",.075,.14,Vector3(p.x-.32,.59,p.y+1.67),"e3d8be")
+		for z in [-.3,.3]: box("TableLeg",Vector3(.06,.43,.06),Vector3(table.x+x,.22,table.y+z),"424c47")
+	box("Book",Vector3(.44,.05,.32),Vector3(table.x+.3,.56,table.y),"486577")
+	cylinder("CoffeeMug",.075,.14,Vector3(table.x-.32,.59,table.y+.02),"e3d8be")
 	solid_rects["Sofa"] = Rect2(p-Vector2(1.6,.6),Vector2(3.2,1.2))
-	solid_rects["CoffeeTable"] = Rect2(p+Vector2(-.9,1.2),Vector2(1.8,.9))
+	solid_rects["CoffeeTable"] = Rect2(table-Vector2(.9,.45),Vector2(1.8,.9))

@@ -80,13 +80,14 @@ func _connect(from: int, to: int, segment: Dictionary) -> void:
 		if edge.to == to: return
 	edges[from].append({"from":from,"to":to,"width":segment.width,"id":segment.id,"one_way":segment.one_way,"lanes":segment.get("lanes",1)})
 
-func route_near(point: Vector3, lane_index := 0) -> Curve3D:
+func route_near(point: Vector3, lane_index := 0, heading := Vector3.ZERO) -> Curve3D:
 	if vertices.is_empty(): return null
 	var selected: Dictionary = {}
 	var distance := INF
 	for from in edges:
 		for edge in edges[from]:
 			var direction := (vertices[edge.to] - vertices[from]).normalized()
+			if heading.length_squared() > .01 and direction.dot(heading.normalized()) < .5: continue
 			var offset := _lane_offset(direction, edge, lane_index)
 			var closest := Geometry3D.get_closest_point_to_segment(point, vertices[from] + offset, vertices[edge.to] + offset)
 			var separation := closest.distance_squared_to(point)

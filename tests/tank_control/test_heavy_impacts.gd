@@ -6,10 +6,14 @@ const FLIGHT := preload("res://gameplay/street_physics/BodyFlight3D.gd")
 
 class Street extends "res://gameplay/street_physics/StreetPhysics.gd":
 	var shakes := 0
+	var prop_sounds := 0
 	func _ready() -> void:
 		set_physics_process(false)
 	func _shake_if_player(_vehicle: Node, _strength: float) -> void:
 		shakes += 1
+	func play_prop_hit(point: Vector3, family: String, speed: float) -> void:
+		prop_sounds += 1
+		super.play_prop_hit(point, family, speed)
 
 class Car extends "res://scripts/Vehicle.gd":
 	var dimensions := Vector3(2.0, 1.4, 4.0)
@@ -104,6 +108,7 @@ func run() -> void:
 	solid(Vector3(80, 0.2, 100), Vector3(0, -0.1, -20))
 	await physics_frame
 	await test_people_and_props()
+	test_prop_impact_threshold()
 	await test_drive_over(30.0, Vector3(3.18, 2.85, 5.3), 12.0, "tanque")
 	await test_drive_over(3.0, Vector3(3.44, 2.37, 7.125), 10.0, "caminhão limpa-neves")
 	await test_drive_over(1.4, Vector3(2.1, 1.4, 4.8), 25.0, "carro rápido")
@@ -157,6 +162,27 @@ func test_people_and_props() -> void:
 	check(FLIGHT.launch(protected, Vector3.FORWARD * 12, true, street, vehicle) == null, "lançamento direto também respeita proteção")
 	street._people_cache.clear()
 	protected_parent.free()
+	vehicle.free()
+
+func test_prop_impact_threshold() -> void:
+	var vehicle := car(1.0)
+	for scenario in [
+		{"label":"below", "velocity":Vector3.FORWARD * (FRAGILE.WOBBLE_SPEED - .0001), "impact":false},
+		{"label":"at", "velocity":Vector3.FORWARD * FRAGILE.WOBBLE_SPEED, "impact":true},
+		{"label":"above", "velocity":Vector3.FORWARD * (FRAGILE.WOBBLE_SPEED + .0001), "impact":true},
+		{"label":"perpendicular", "velocity":Vector3.RIGHT * (FRAGILE.WOBBLE_SPEED + .0001), "impact":false},
+	]:
+		var prop := Node3D.new()
+		world.add_child(prop)
+		prop.position = Vector3(0, 0, -1)
+		FRAGILE.register_node("lamp", prop, world)
+		var item: Dictionary = FRAGILE.query(prop.position, 1.0)[0]
+		street.prop_sounds = 0
+		street._hit_props(vehicle, scenario.velocity, Vector3.ZERO)
+		check(street.prop_sounds == (1 if scenario.impact else 0), "prop threshold %s: sound follows closing speed" % scenario.label)
+		check(item.has("base_global") == scenario.impact and item.state == "standing", "prop threshold %s: wobble starts only at closing threshold" % scenario.label)
+		prop.free()
+		FRAGILE.cells.clear()
 	vehicle.free()
 
 func test_drive_over(weight: float, size: Vector3, speed: float, label: String, target_size := Vector3(1.9, 1.4, 4.0), target_mass := 0.85) -> void:

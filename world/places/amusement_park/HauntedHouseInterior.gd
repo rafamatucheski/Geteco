@@ -4,6 +4,8 @@ var variant := 0
 var puppet: Node3D
 var _scare_amount := 0.0
 var _visited := false
+var annex: Node3D
+var _clock := 0.0
 
 func _ready() -> void:
 	name = "UmbraInterior"
@@ -11,13 +13,17 @@ func _ready() -> void:
 	_displays()
 	_lights()
 	flush()
+	annex = preload("res://world/places/amusement_park/UmbraAnnex.gd").new()
+	add_child(annex)
 	set_process(false)
 	set_physics_process(false)
 
 func _shell() -> void:
 	box("FloorBoards",Vector3(0,-.025,0),Vector3(18,.05,15),"55434a",false,"wood")
 	for i in 30: box("FloorJoin",Vector3(0,.004,-7.25+i*.5),Vector3(17.7,.007,.015),"322e39")
-	box("RearWall",Vector3(0,1.65,-7.36),Vector3(18,3.3,.28),"3f3747",true,"wood")
+	for side in [-1,1]:
+		box("RearWall%d"%side,Vector3(side*5.2,1.65,-7.36),Vector3(7.6,3.3,.28),"3f3747",true,"wood")
+	box("RearLintel",Vector3(0,3.05,-7.36),Vector3(2.8,.5,.28),"80705c",false,"wood")
 	for side in [-1,1]:
 		box("SideWall%d"%side,Vector3(side*8.86,1.65,0),Vector3(.28,3.3,15),"453c4d",true,"wood")
 		box("FrontWall%d"%side,Vector3(side*5.12,1.65,7.36),Vector3(7.75,3.3,.28),"3e3546",true,"wood")
@@ -64,21 +70,14 @@ func _displays() -> void:
 	box("CoffinLid",Vector3(-1.55,1.10,-.9),Vector3(1.37,.10,2.53),"78614a")
 	for z in [-1.7,-.2]: box("CoffinClasp",Vector3(-.845,.87,z),Vector3(.10,.16,.24),"ad8e56",false,"metal")
 	box("PuppetBase",Vector3(1.50,.61,-1.8),Vector3(1.4,.9,1.5),"49493f",true,"wood")
-	puppet = Node3D.new()
+	puppet = preload("res://world/places/amusement_park/UmbraCreature.gd").new()
 	puppet.name = "MechanicalGhost"
 	puppet.position = Vector3(1.5,1.10,-1.8)
 	add_child(puppet)
-	var model := preload("res://world/places/amusement_park/ParkGeometry.gd").new()
-	puppet.add_child(model)
-	model.ball(Vector3(0,.49,0),Vector3(.63,1.04,.46),"c7ccb7","cloth")
-	model.ball(Vector3(0,1.03,0),Vector3(.43,.47,.38),"d8d6bc")
+	puppet.scale = Vector3.ONE*.74
 	for side in [-1,1]:
-		model.ball(Vector3(side*.095,1.07,.18),Vector3(.074,.11,.04),"292c35")
-		model.beam(Vector3(side*.27,.78,0),Vector3(side*.65,.52,.09),.17,.18,"c7ccb7","cloth")
-	model.ball(Vector3(0,.94,.187),Vector3(.095,.11,.035),"292c35")
-	model.flush()
-	box("RearCurtain",Vector3(0,1.5,-7.13),Vector3(4.3,2.9,.11),"603341",false,"cloth")
-	for x in [-1.8,-1.2,-.6,0,.6,1.2,1.8]: box("CurtainFold",Vector3(x,1.5,-7.03),Vector3(.14,2.9,.10),"79424e",false,"cloth")
+		box("RearCurtain",Vector3(side*1.85,1.5,-7.13),Vector3(.8,2.9,.11),"603341",false,"cloth")
+		for i in 4: box("CurtainFold",Vector3(side*(1.52+i*.2),1.5,-7.03),Vector3(.10,2.9,.10),"79424e",false,"cloth")
 	# Hanging cobweb threads remain high enough for a standing actor to pass.
 	for side in [-1,1]:
 		var corner := Vector3(side*8.6,3.1,-7.1)
@@ -88,15 +87,16 @@ func _displays() -> void:
 
 func _lights() -> void:
 	# Steady motivated sconces; no strobe or exposure changes during frights.
-	lantern(Vector3(-6.9,2.55,3.5),"ddbb8a",9.5,1.8)
-	lantern(Vector3(6.9,2.55,-3.5),"b8bbda",10.0,2.0)
-	lantern(Vector3(0,2.8,-6.85),"d6b28c",8.0,1.45)
+	lantern(Vector3(-6.9,2.55,3.5),"ddbb8a",6.5,.75)
+	lantern(Vector3(6.9,2.55,-3.5),"b8bbda",6.5,.85)
+	lantern(Vector3(0,2.8,-6.85),"d6b28c",5.5,.65)
 
 func update_visitor(local_point: Vector3, delta: float) -> void:
 	if not is_instance_valid(puppet): return
+	_clock += maxf(delta,0)
+	annex.update_visitor(local_point,delta)
 	var near := local_point.distance_to(Vector3(0,0,4.4)) < 4.0
 	var target := 1.0 if near else 0.0
 	_scare_amount = move_toward(_scare_amount,target,maxf(delta,0)*1.4)
-	puppet.position.y = 1.10+sin(_scare_amount*PI*.5)*.62
-	puppet.rotation.y = sin(_scare_amount*PI)*.18
+	puppet.animate(_clock,_scare_amount,local_point)
 	_visited = _visited or near

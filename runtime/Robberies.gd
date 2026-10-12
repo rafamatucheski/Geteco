@@ -94,9 +94,9 @@ func bank_departed() -> void:
 		# bonus until the next damage/death event changes the gameplay HUD.
 		if "activities" in session and session.activities!=null: session.activities.refresh_achievements()
 		preload("res://gameplay/RewardAudio.gd").play(self,"cash")
-		session.show_message("Saque guardado: + R$ %d.000"%floori(float(amount)/1000.0))
+		session.show_message(String(TranslationServer.translate("Saque guardado: + R$ %d.000"))%floori(float(amount)/1000.0))
 		_session_save()
-	else: session.show_message("Carteira cheia. Saque preservado: R$ %d"%amount)
+	else: session.show_message(String(TranslationServer.translate("Carteira cheia. Saque preservado: R$ %d"))%amount)
 
 func _refresh_haul() -> void:
 	if not is_instance_valid(haul_label): return
@@ -107,7 +107,7 @@ func _refresh_haul() -> void:
 	if data.opening_remaining>0: objective="Abrindo cofre…"
 	if data.vault_open: objective="Recolha o dinheiro e saia vivo"
 	if data.bank_cash0 and data.bank_cash1 and data.bank_cash2: objective="Saia do banco"
-		haul_label.text="SAQUE  R$ %s / 15.000\n%s"%["%d.000"%floori(float(int(data.bank_pending))/1000.0) if data.bank_pending>0 else "0",objective]
+	haul_label.text=String(TranslationServer.translate("SAQUE  R$ %s / 15.000\n%s"))%["%d.000"%floori(float(int(data.bank_pending))/1000.0) if data.bank_pending>0 else "0",objective]
 
 func bank_unavailable() -> bool:
 	return data.bank_alarm or not can_enter_bank() or float(data.clerks[0])<=0
@@ -248,7 +248,7 @@ func nearest_action() -> Dictionary:
 	var label := ""
 	if data.keycard_taken and not data.vault_open and local.distance_to(VAULT)<1.7 and local.z > -3.2:
 		id="bank_vault"; target=VAULT; label="Segurar para abrir cofre"
-		if _hold_id==id: label="Abrindo cofre · %d%%"%int(clampf(_hold_time/.6,0,1)*100)
+		if _hold_id==id: label=String(TranslationServer.translate("Abrindo cofre · %d%%"))%int(clampf(_hold_time/.6,0,1)*100)
 	if id.is_empty(): return {}
 	return {"id":"robbery","target":id,"label":label,"position":_room.to_global(target)}
 
@@ -321,13 +321,18 @@ func _tick_cashier(delta: float, aiming: bool) -> void:
 	_start_alarm(false)
 	_intimidation+=delta
 	if not _fuel_notice:
-		session.show_message("Não vou abrir o caixa! Estou chamando a polícia!" if data.fuel_resists else "Calma! Vou abrir o caixa...")
+		_cashier_speech(clerk, "Não vou abrir o caixa! Estou chamando a polícia!" if data.fuel_resists else "Calma! Vou abrir o caixa...")
 		_fuel_notice=true
 	if not data.fuel_resists and _intimidation>=3:
 		if session.state.economy.grant_reward("fuel_register",180):
 			data.fuel_register=true
-			session.show_message("Leva e vai embora!")
+			_cashier_speech(clerk, "Leva e vai embora!")
 			_session_save()
+
+func _cashier_speech(clerk: Node3D, canonical: String) -> void:
+	var binding := preload("res://audio/VoiceActorBinding.gd").resolve(clerk, "fuel_cashier", "fuel_robbery")
+	var spoken := preload("res://audio/ActorDialogueVoice.gd").speak(clerk, canonical, binding)
+	session.show_speech("", str(spoken.get("message", canonical)), maxf(3.0, float(spoken.get("duration", 0.0))), false, str(binding.get("persona", "")), canonical, str(binding.get("character_id", "")), str(binding.get("section", "")))
 
 func _refresh_card() -> void:
 	if not is_instance_valid(_room): return

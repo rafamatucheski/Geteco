@@ -9,8 +9,8 @@ func build() -> void:
 	# This restricted garage has no facade sign; its catalog name remains usable in menus.
 	proper_name = ""
 	height = 3.2
-	var wall := UrbanMaterials.material_for_color(Color("777c72"), 0.86)
-	var trim := UrbanMaterials.material_for_color(Color("94958a"), 0.82)
+	var wall := UrbanMaterials.textured_wall(Color("777c72"), 0.86)
+	var trim := UrbanMaterials.textured_wall(Color("94958a"), 0.82)
 	var roof := UrbanMaterials.material_for_color(Color("45565c"), 0.88)
 	var shutter := UrbanMaterials.material_for_color(Color("3a484a"), 0.72)
 	var stripe := UrbanMaterials.material_for_color(Color("cfb850"), 0.76)

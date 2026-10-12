@@ -33,7 +33,7 @@ func physics_tick(active: bool, incoming_velocity: Vector3) -> void:
 		var normal: Vector3 = contact.get_normal()
 		var relative := incoming_velocity - contact.get_collider_velocity()
 		var audio_closing := maxf(0,-relative.dot(normal))
-		var closing_speed := maxf(0,-incoming_velocity.dot(normal))
+		var closing_speed := audio_closing
 		var collider := contact.get_collider()
 		# Audio has its own lighter threshold and pair budget; visual bursts stay unchanged.
 		CRASH_AUDIO.play_contact(vehicle, collider, contact.get_position(), audio_closing)
@@ -56,14 +56,15 @@ func present_impact(point: Vector3, normal: Vector3, intensity: float, collider_
 	var process := emitter.process_material as ParticleProcessMaterial
 	process.direction = (normal+Vector3.UP*.25).normalized()
 	process.spread = lerpf(42,62,strength)
-	process.initial_velocity_min = lerpf(35.0/16.0,50.0/16.0,strength)
-	process.initial_velocity_max = lerpf(75.0/16.0,100.0/16.0,strength)
+	process.initial_velocity_min = lerpf(35.0/16.0,6.0,strength)
+	process.initial_velocity_max = lerpf(75.0/16.0,12.0,strength)
 	process.gravity = Vector3(0,-5.5,0)
 	process.scale_min = .55
 	process.scale_max = 1.0
 	process.color = Color(.85,.87,.89,1).lerp(Color(1,.78,.25,1),strength)
 	emitter.global_position = point+normal*.035
 	emitter.amount_ratio = lerpf(.30,1.0,strength)
+	emitter.lifetime = lerpf(.26,.48,strength)
 	emitter.restart()
 	burst_count += 1
 	return true

@@ -8,6 +8,7 @@ class State extends RefCounted:
 	var place_id := ""
 	var equipped_weapon := "pistol"
 	func weapons_allowed() -> bool: return allowed
+	func owns_weapon(_id: String) -> bool: return false
 class World extends Node3D:
 	var player: CharacterBody3D
 	var gameplay: Node
@@ -145,6 +146,20 @@ func run() -> void:
 	guard.receive_damage(1000, world.player)
 	check(guard.health == 0 and not guard.weapon.visible, "corpse damage cannot resurrect crew or leave a visible weapon flash")
 	await frames(2)
+	for slot in 10:
+		var crew := GUARD.new()
+		crew.convoy = convoy
+		crew.slot = slot
+		crew.position = Vector3(float(slot)*2.0,0,6)
+		crew.configure_security(SCHEDULE.security(SCHEDULE.MAX_SECURITY))
+		convoy.add_child(crew)
+		crew.set_physics_process(false)
+		await frames(2)
+		var chest := crew.global_position+Vector3.UP
+		var hit := world.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(chest+Vector3.FORWARD*3,chest+Vector3.BACK,7))
+		check(hit.get("collider") == crew,"visible crew slot %d has a hittable body" % slot)
+		if hit.get("collider") == crew: world.gameplay._damage_bullet(hit.collider,200,world.player)
+		check(crew.dead and crew.health == 0,"normal bullet damage can kill crew slot %d, including escorts" % slot)
 	print("ARMORED_GUARD_RESULT checks=", checks, " failures=", failures.size())
 	world.free()
 	quit(0 if failures.is_empty() else 1)

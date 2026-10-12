@@ -5,7 +5,7 @@ extends "res://tests/measure/measure_desert.gd"
 const SCHEDULE := preload("res://gameplay/armored/ArmoredSchedule.gd")
 const RANDOM_SEED := 7102026
 const OBSERVER := Vector3(37.625,.12,18.875)
-const CAMERA_FOCUS := Vector3(68.0,0.0,25.0)
+const CAMERA_FOCUS := Vector3(42.0,0.0,12.0)
 var baseline := false
 var timeline: Array[Dictionary] = []
 var warmup: Dictionary = {}
@@ -48,6 +48,8 @@ func run() -> void:
 			fingerprint[path] = FileAccess.get_sha256(path)
 	for path in ["res://tests/measure/measure_armored_transport.gd","res://runtime/FleetCatalog.gd","res://data/catalogs/VehicleDoorSpecs.gd"]:
 		fingerprint[path] = FileAccess.get_sha256(path)
+	for path in ["res://evidence/auditoria-viaria/2026-10-08-banco-transporte/ArmoredTransportBefore.gd","res://evidence/auditoria-viaria/2026-10-08-banco-transporte/ArmoredGuardBefore.gd"]:
+		if FileAccess.file_exists(path): fingerprint[path] = FileAccess.get_sha256(path)
 	var snapshot := FIXTURE.full_snapshot(OBSERVER,true)
 	snapshot.campaign.aftermath = {"call_complete":true}
 	snapshot.region_id = "harbor"
@@ -88,7 +90,7 @@ func run() -> void:
 	# Real scene, streaming, traffic, guards, physics and combat remain enabled.
 	world.camera.set_process(false)
 	world.camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-	world.camera.size = 42.0
+	world.camera.size = 65.0
 	world.camera.global_position = CAMERA_FOCUS+Vector3(0,35,35)
 	world.camera.look_at(CAMERA_FOCUS)
 	world.camera.current = true
@@ -98,6 +100,15 @@ func run() -> void:
 	await create_timer(10).timeout
 	var convoy = world.session.armored_transport
 	if not convoy.fleet.is_empty(): _fail("dormant checkpoint unexpectedly spawned fleet"); return
+	if "--before-parking" in args:
+		# Archived, unedited transport/guard source in the identical current Main.
+		# The dormant fixture has no fleet or crew to relocate during replacement.
+		convoy.queue_free()
+		await physics_frame
+		convoy = load("res://evidence/auditoria-viaria/2026-10-08-banco-transporte/ArmoredTransportBefore.gd").new()
+		convoy.configure(world.session)
+		world.session.armored_transport = convoy
+		world.add_child(convoy)
 	seed(RANDOM_SEED)
 	samples.clear(); cpu.clear(); physics.clear()
 	previous = Time.get_ticks_usec()
@@ -159,6 +170,8 @@ func _write_report(valid: bool) -> void:
 	if output.is_empty(): return
 	var report := {"valid":valid,"failures":failures,"baseline":baseline,"seed":RANDOM_SEED,"checkpoint":checkpoint_path,"checkpoint_sha256":FileAccess.get_sha256(checkpoint_path) if FileAccess.file_exists(checkpoint_path) else "MISSING","source_sha256_start":fingerprint,"source_sha256_end":source_fingerprint(fingerprint),"warmup":warmup,"scenarios":reports,"engine":Engine.get_version_info().string,"gpu":RenderingServer.get_video_adapter_name(),"cpu":OS.get_processor_name(),"renderer":RenderingServer.get_current_rendering_method(),"resolution":str(root.size),"viewport":str(root.get_visible_rect().size),"vsync":DisplayServer.window_get_vsync_mode(),"max_fps":Engine.max_fps,"msaa":root.msaa_3d,"user_args":OS.get_cmdline_user_args(),"notes":"Sequential same-code content comparison: dormant service versus live tier-0 bank loading/boarding. NOT original-source before/after baseline. Real Main/.NET, fixed bank observer camera, 10s world warmup then 10s event warmup and 30s steady wall-clock samples. Source/checkpoint hashes and actual population counts must match or be reviewed across runs. Default uncapped/VSync off; --normal-limit preserves project/user limits for both runs. Goal60FPS/16.67ms, >5% p95/p99 increase requires finite confirmation. CPU monitor values are coarse engine process/physics timing; frame intervals do not isolate GPU cost. Does not certify night lighting, chase, explosions, desert or road performance."}
 	if is_instance_valid(world):
+		report["service_variant"] = "archived-street-service" if "--before-parking" in OS.get_cmdline_user_args() else "current-apron-service"
+		if not baseline: report["notes"] = "Active service before/after: --before-parking loads archived original transport and guard source into the dormant Main fixture; otherwise uses current apron service. Same isolated .NET Main, seed, fixed camera, population configuration and 10s+10s warmup / 30s steady sample. 60 FPS / 16.67 ms provisional target; >5% p95/p99 regression requires confirmation. This measures loading only, not driving, combat, night lighting or other regions. Check external GPU processes separately."
 		report["requested_population"] = world.production.requested_population
 		report["camera"] = {"transform":str(world.camera.global_transform),"size":world.camera.size,"projection":world.camera.projection}
 	FileAccess.open(output.path_join("report.json"),FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))

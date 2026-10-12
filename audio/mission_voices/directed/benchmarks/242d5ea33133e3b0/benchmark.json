@@ -1,0 +1,59 @@
+{
+  "version": 1,
+  "settings": {
+    "model": "Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+    "model_revision": "5ecdb67327fd37bb2e042aab12ff7391903235d3",
+    "device": "cuda",
+    "dtype": "bfloat16",
+    "quantization": "nf4",
+    "quantization_skip_modules": [
+      "code_predictor",
+      "speaker_encoder",
+      "codec_head",
+      "text_projection",
+      "lm_head"
+    ],
+    "attention": "sdpa",
+    "threads": 2,
+    "audio_decode_batch_size": 1
+  },
+  "conditioning": "experimental_text",
+  "reference_mode": "icl",
+  "anchor_path": "D:\\geteco\\game\\audio\\mission_voices\\directed\\pt_BR\\2f74ccc16ed52b718b42204c49235f59574f5f599fab5aca4763f109dce41430_7d8ae2517fa89f66.wav",
+  "anchor_sha256": "ba42566d7cf6dba0c675560d04cb72c2cb0b17cffc5ad72385b2c4762de20a02",
+  "package_versions": {
+    "torch": "2.11.0+cu128",
+    "transformers": "4.57.3",
+    "qwen-tts": "0.1.1",
+    "bitsandbytes": "0.50.2",
+    "soundfile": "0.14.0"
+  },
+  "takes": [
+    {
+      "path": "res://audio/mission_voices/directed/benchmarks/242d5ea33133e3b0/pt_BR.wav",
+      "audio_sha256": "2bbd623e667d7827a30a2c02647c0b2132a82a7f7aaebd50e2fffb7b08c3f227",
+      "duration_seconds": 5.132458333333333,
+      "sample_rate": 24000,
+      "channels": 1,
+      "format": "PCM_16",
+      "peak": 0.62109375,
+      "technical_validation": {
+        "passed": true,
+        "checks": [
+          "finite_audio",
+          "non_silent",
+          "mono_pcm16_24khz",
+          "peak_below_full_scale"
+        ]
+      },
+      "artistic_review": "pending",
+      "language": "pt_BR",
+      "spoken_text": "Cinto, Dante. Respira. O volante agora é meu.",
+      "render_seconds": 27.704,
+      "cuda_peak_mb": 2125.8,
+      "peak_private_mb": 5201.9,
+      "real_time_factor": 5.39780319697351
+    }
+  ],
+  "complete": true
+}

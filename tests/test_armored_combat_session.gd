@@ -210,6 +210,7 @@ func run() -> void:
 		await physics_frame
 	if not check(fired and _player_shots > 0, "normal Gameplay.fire_at emits real player gunfire beside the convoy"): _trace("fire-blocked"); finish(1); return
 	await physics_frame
+	check(target.health < float(convoy.profile.guard_health), "real player bullet damages the visible transport guard")
 	if not check(convoy.data.hostile and convoy.security_level == 1 and convoy.data.security_level == 0, "actual gunfire alarms the convoy and escalates only future trips"): finish(1); return
 	var wallet_before: int = session.state.economy.balance
 	var economy_before: Dictionary = session.state.economy.snapshot()

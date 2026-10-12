@@ -269,7 +269,7 @@ static func effect_summary(part: String) -> String:
 	match str(info.get("special", "")):
 		"extended": bits.append("+capacidade")
 		"slug": bits.append("projétil único")
-	if info.get("set", {}).has("magazine_size"): bits.append("%d tiros" % int(info.set.magazine_size))
+	if info.get("set", {}).has("magazine_size"): bits.append(String(TranslationServer.translate("%d tiros")) % int(info.set.magazine_size))
 	if mul.has("damage"): bits.append(_signed(float(mul.damage) - 1.0) + " dano")
 	if mul.has("fire_interval"): bits.append(_signed(1.0 / float(mul.fire_interval) - 1.0) + " cadência")
 	for key in ["max_range", "melee_range"]:
@@ -279,7 +279,7 @@ static func effect_summary(part: String) -> String:
 	if mul.has("recoil_multiplier"): bits.append(_signed(float(mul.recoil_multiplier) - 1.0) + " recuo")
 	if mul.has("reload_multiplier"): bits.append(_signed(float(mul.reload_multiplier) - 1.0) + " tempo de recarga")
 	if mul.has("magazine_size"): bits.append(_signed(float(mul.magazine_size) - 1.0) + " capacidade")
-	if info.get("add", {}).has("pellets"): bits.append("+%d chumbos" % int(info.add.pellets))
+	if info.get("add", {}).has("pellets"): bits.append(String(TranslationServer.translate("+%d chumbos")) % int(info.add.pellets))
 	if part == "suppressor": bits.append("silencioso")
 	if bits.is_empty(): return "visual" if info.slot == "finish" else ""
 	return ", ".join(bits.slice(0, 3))

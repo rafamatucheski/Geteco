@@ -35,13 +35,18 @@ func game_seconds() -> float:
 	_clock_phase = phase
 	return _game_clock
 
+func _operations_open() -> bool:
+	# The arrival continues the ferry's rainy night. Quay handling runs around
+	# the clock; _shift_open still governs daytime freight offers to the player.
+	return session.weather != null
+
 func _physics_process(delta: float) -> void:
 	if session == null or not session.ready_for_play or not is_instance_valid(session.world.player): return
 	scan_clock -= delta
 	if scan_clock <= 0:
 		scan_clock = .25
 		refresh_context()
-		_work_shift_open = _shift_open()
+		_work_shift_open = _operations_open()
 		_tick_replacements()
 		if active: _ensure_work_vehicles()
 		elif session.state.region_id == "harbor" and session.urban_operations.world_is_continuous() and _work_shift_open:
@@ -65,6 +70,15 @@ func _physics_process(delta: float) -> void:
 		var state: Dictionary = work_trucks[index]
 		var vehicle = state.truck
 		if is_instance_valid(vehicle) and vehicle.health <= 0 and state.respawn_at < 0: _work_truck_destroyed(index)
+		if is_instance_valid(freight) and freight.active_bay == index and state.phase == "loading":
+			if freight.parked_for_loading(vehicle,index):
+				_tick_crane(index,delta)
+			else:
+				# Moving out of the marked bay restarts the lift; cargo must never
+				# chase a moving bed or attach remotely.
+				cranes[index].clock = 0.0
+				_sync_crane(index)
+			continue
 		if state.phase in ["destroyed","freight","freight_pending","interrupted"]: continue
 		if not _work_shift_open and state.phase not in ["departed","delivering","returning","return_wait"]:
 			# Parked off-screen trucks relinquish streamed support overnight.
@@ -125,6 +139,7 @@ func _spawn_work_truck(index: int) -> void:
 
 func _finish_truck_load(index: int) -> void:
 	super._finish_truck_load(index)
+	if is_instance_valid(freight) and freight.active_bay == index: work_trucks[index].phase = "freight"
 	cranes[index].visual.show()
 	var truck = work_trucks[index].truck
 	if not is_instance_valid(truck): return
@@ -199,7 +214,7 @@ func _tick_truck(index: int, delta: float) -> void:
 				cranes[index].visual.reparent(self,true)
 				cranes[index].visual.reset_physics_interpolation()
 		"delivering":
-			if not depot.business_open(): return
+			# Automated dock handling continues after the company's public hours.
 			if absf(truck.speed) > .25: return
 			var fraction := 1-float(state.remaining)/12.0
 			# Keep the complete drop zone free; never lower a container onto an actor.

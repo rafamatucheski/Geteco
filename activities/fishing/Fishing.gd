@@ -130,10 +130,10 @@ func open_menu() -> bool:
 	session._button("Pesca livre · R$ 10", _choose.bind(-1))
 	for index in RULES.TIERS.size():
 		var spec: Dictionary = RULES.TIERS[index]
-		session._button("%s · %d s · prêmio R$ %d" % [spec.name, spec.seconds, spec.prize], _choose.bind(index))
+		session._button(String(TranslationServer.translate("%s · %d s · prêmio R$ %d")) % [spec.name, spec.seconds, spec.prize], _choose.bind(index))
 	var saved := snapshot()
 	var record := Label.new()
-	record.text = "Recorde: %s · %d peixes · %d/%d espécies" % [RULES.kg(int(saved.best)), saved.catches, saved.species.size(), RULES.SPECIES.size()]
+	record.text = String(TranslationServer.translate("Recorde: %s · %d peixes · %d/%d espécies")) % [RULES.kg(int(saved.best)), saved.catches, saved.species.size(), RULES.SPECIES.size()]
 	session.column.add_child(record)
 	session._button("Voltar", session.close_menu)
 	return true
@@ -383,7 +383,7 @@ func _finish_tournament() -> void:
 	last_result = {"finished":true, "won":won, "paid":paid, "best":best, "ranking":RULES.ranking(best, rivals), "tier":tier}
 	_release()
 	var message := "Campeonato encerrado · Maior peixe: " + RULES.kg(best)
-	if won: message = "Você venceu! %s · Prêmio R$ %d%s" % [RULES.kg(best), RULES.TIERS[tier].prize, " aguardando espaço na carteira" if paid == 0 else ""]
+	if won: message = String(TranslationServer.translate("Você venceu! %s · Prêmio R$ %d%s")) % [RULES.kg(best), RULES.TIERS[tier].prize, " aguardando espaço na carteira" if paid == 0 else ""]
 	else:
 		var leader: Dictionary = last_result.ranking[0]
 		message += " · %s: %s" % [leader.name, RULES.kg(int(leader.grams))]
@@ -397,7 +397,7 @@ func cancel_attempt(reason := "cancelled") -> void:
 	last_result = {"finished":false, "reason":reason, "best":best, "catches":caught}
 	_release()
 	if is_instance_valid(session) and reason == "cancelled":
-		session.show_message("Pescaria encerrada · %d peixes · Maior: %s" % [caught, RULES.kg(best)])
+		session.show_message(String(TranslationServer.translate("Pescaria encerrada · %d peixes · Maior: %s")) % [caught, RULES.kg(best)])
 		session.save_game()
 	elif is_instance_valid(session) and reason == "rivals":
 		session.show_message("Campeonato interrompido: faltam participantes na lagoa.")
@@ -432,7 +432,7 @@ func _update_hud() -> void:
 	elif phase == "bite": hint = use_key + " agora: fisgar"
 	elif phase == "reeling": hint = use_key + " recolher · solte para aliviar"
 	var saved: Dictionary = session.state.world_state[STATE.KEY]
-	_hud.update_state({"title":RULES.TIERS[tier].name if tier >= 0 else "Pesca livre", "clock":"Vá até a margem · R$ 10 pagos" if phase == "walking" else ("%d s · prêmio R$ %d" % [ceili(remaining), RULES.TIERS[tier].prize] if tier >= 0 else "Sem limite de tempo"), "phase":phase, "detail":_message, "fight_hint":_fight_hint, "charge":_charge, "tension":fight.tension, "progress":fight.progress, "best":best, "catches":caught, "species":saved.species.size(), "tournament":tier >= 0, "ranking":RULES.ranking(best, rivals), "hint":hint, "cancel":("Volte ao balcão para encerrar" if phase == "walking" else controls.hint("exit_vehicle") + " sair") + " · " + controls.hint("pause_game") + " pausa"})
+	_hud.update_state({"title":RULES.TIERS[tier].name if tier >= 0 else "Pesca livre", "clock":"Vá até a margem · R$ 10 pagos" if phase == "walking" else (String(TranslationServer.translate("%d s · prêmio R$ %d")) % [ceili(remaining), RULES.TIERS[tier].prize] if tier >= 0 else "Sem limite de tempo"), "phase":phase, "detail":_message, "fight_hint":_fight_hint, "charge":_charge, "tension":fight.tension, "progress":fight.progress, "best":best, "catches":caught, "species":saved.species.size(), "tournament":tier >= 0, "ranking":RULES.ranking(best, rivals), "hint":hint, "cancel":("Volte ao balcão para encerrar" if phase == "walking" else controls.hint("exit_vehicle") + " sair") + " · " + controls.hint("pause_game") + " pausa"})
 
 func _exit_tree() -> void:
 	if active and is_instance_valid(session): STATE.finish(session.state.world_state, serial, false)

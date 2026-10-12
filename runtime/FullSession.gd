@@ -1,4 +1,5 @@
 extends Node
+const SESSION_OPS := preload("res://runtime/SessionOperations.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const WEAPONS := preload("res://gameplay/WeaponCatalog.gd")
 const SEWER_DESCENT := preload("res://gameplay/SewerHatchDescent.gd")
@@ -66,6 +67,8 @@ var desert
 var maciota_workshop
 var mining
 var dialogue_voice: AudioStreamPlayer
+var _dialogue_source: Dictionary = {}
+var _speech_source: Dictionary = {}
 var speech_voice: AudioStreamPlayer
 var dialogue_card: DIALOGUE_CARD
 var speech_caption: DIALOGUE_CAPTION
@@ -94,9 +97,12 @@ var transition_kind := ""
 var rescue_camera_heading := 0.0
 var rescue_camera_size := 28.0
 var death_presentation: CanvasLayer
+var _recovery_time_scale := 1.0
+var _recovery_slow_motion := false
 var bank_death_loss := 0
 var sewer_hatch: Node3D
 var sewer_entry_origin := Vector3.ZERO
+var prompt_input_action := "interact"
 var weapon_shop_entrance: Node
 var special_place_entrance: Node
 var building_entrance: Node
@@ -501,8 +507,10 @@ func _ready() -> void:
 		coastal_lookout.configure(world)
 		add_child(coastal_lookout)
 	if not Engine.get_meta("amusement_park_baseline",false):
+		var diagnostic_amusement_park := SESSION_OPS.begin(self, "amusement_park", "create_and_configure")
 		amusement_park = preload("res://runtime/amusement_park/AmusementParkRuntime.gd").new()
 		amusement_park.configure(self)
+		SESSION_OPS.finish(diagnostic_amusement_park)
 		add_child(amusement_park)
 	anchor = Node3D.new()
 	world.add_child(anchor)
@@ -545,83 +553,125 @@ func _ready() -> void:
 	world.gameplay.message.connect(show_message)
 	world.gameplay.player_died.connect(_on_death)
 	world.gameplay.player_arrested.connect(_on_arrest)
-	world.gameplay.police_warning_issued.connect(func(): show_message("POLÍCIA: Pare e fique imóvel para se render!"))
+	world.gameplay.police_warning_issued.connect(_police_voice_warning)
 	mission_world = preload("res://runtime/MissionWorld.gd").new()
 	mission_world.session = self
 	world.add_child(mission_world)
+	var diagnostic_activities := SESSION_OPS.begin(self, "activities", "create_and_configure")
 	activities = preload("res://activities/Activities.gd").new()
 	world.add_child(activities)
 	activities.configure(self)
+	SESSION_OPS.finish(diagnostic_activities)
+	var diagnostic_motocross := SESSION_OPS.begin(self, "motocross", "create_and_configure")
 	motocross = preload("res://activities/motocross/Motocross.gd").new()
 	world.add_child(motocross)
 	motocross.configure(self)
+	SESSION_OPS.finish(diagnostic_motocross)
+	var diagnostic_skate := SESSION_OPS.begin(self, "skate", "create_and_configure")
 	skate = preload("res://activities/skate/Skate.gd").new()
 	world.add_child(skate)
 	skate.configure(self)
+	SESSION_OPS.finish(diagnostic_skate)
+	var diagnostic_residence_services := SESSION_OPS.begin(self, "residence_services", "create_and_configure")
 	residence_services = preload("res://runtime/ResidenceServices.gd").new()
 	world.add_child(residence_services)
 	residence_services.configure(self)
+	SESSION_OPS.finish(diagnostic_residence_services)
 	if not Engine.get_meta("cats_baseline",false):
+		var diagnostic_cats := SESSION_OPS.begin(self, "cats", "create_and_configure")
 		cats = preload("res://runtime/cats/CatRuntime.gd").new()
 		world.add_child(cats)
 		cats.configure(self)
+		SESSION_OPS.finish(diagnostic_cats)
+	var diagnostic_mountain_progression := SESSION_OPS.begin(self, "mountain_progression", "create_and_configure")
 	mountain_progression = preload("res://activities/MountainProgression.gd").new()
 	world.add_child(mountain_progression)
 	mountain_progression.configure(self)
+	SESSION_OPS.finish(diagnostic_mountain_progression)
 	world.player.ski_controller = mountain_progression
+	var diagnostic_mountain_activities := SESSION_OPS.begin(self, "mountain_activities", "create_and_configure")
 	mountain_activities = preload("res://runtime/MountainActivities.gd").new()
 	world.add_child(mountain_activities)
 	mountain_activities.configure(self)
+	SESSION_OPS.finish(diagnostic_mountain_activities)
+	var diagnostic_services := SESSION_OPS.begin(self, "services", "create_and_configure")
 	services = preload("res://runtime/Services.gd").new()
 	world.add_child(services)
 	services.configure(self)
+	SESSION_OPS.finish(diagnostic_services)
 	if state.world_state.has("services") and not services.restore_snapshot(state.world_state.services): controller.save_invalid = true
+	var diagnostic_storefronts := SESSION_OPS.begin(self, "storefronts", "create_and_configure")
 	storefronts = preload("res://runtime/HarborStorefronts.gd").new()
 	world.hud.add_child(storefronts)
 	storefronts.configure(self)
+	SESSION_OPS.finish(diagnostic_storefronts)
 	if not Engine.get_meta("curitiba_cellar_baseline",false):
+		var diagnostic_wine := SESSION_OPS.begin(self, "wine", "create_and_configure")
 		wine = preload("res://gameplay/wine/WineRuntime.gd").new()
 		world.add_child(wine)
 		wine.configure(self)
+		SESSION_OPS.finish(diagnostic_wine)
 	if not Engine.get_meta("upside_world_baseline",false):
+		var diagnostic_upside_world := SESSION_OPS.begin(self, "upside_world", "create_and_configure")
 		upside_world = preload("res://runtime/upside_world/UpsideWorldRuntime.gd").new()
 		upside_world.configure(self)
+		SESSION_OPS.finish(diagnostic_upside_world)
 		add_child(upside_world)
 	if not Engine.get_meta("arcade_baseline",false):
+		var diagnostic_arcade := SESSION_OPS.begin(self, "arcade", "create_and_configure")
 		arcade = preload("res://activities/arcade/ArcadeRuntime.gd").new()
 		world.add_child(arcade)
 		arcade.configure(self)
+		SESSION_OPS.finish(diagnostic_arcade)
+	var diagnostic_robberies := SESSION_OPS.begin(self, "robberies", "create_and_configure")
 	robberies = preload("res://runtime/Robberies.gd").new()
 	if state.world_state.has("robberies") and not robberies.restore_snapshot(state.world_state.robberies): controller.save_invalid = true
 	world.add_child(robberies)
 	robberies.configure(self)
+	SESSION_OPS.finish(diagnostic_robberies)
+	var diagnostic_arrival := SESSION_OPS.begin(self, "arrival", "create_and_configure")
 	arrival = preload("res://runtime/Arrival.gd").new()
 	arrival.configure(self)
+	SESSION_OPS.finish(diagnostic_arrival)
 	if state.world_state.has("arrival") and not arrival.restore_state(state.world_state.arrival): controller.save_invalid = true
 	world.add_child(arrival)
 	arrival.changed.connect(save_game)
+	var diagnostic_garage_rewards := SESSION_OPS.begin(self, "garage_rewards", "create_and_configure")
 	garage_rewards = preload("res://runtime/GarageRewards.gd").new()
 	if state.world_state.has("garage_rewards") and not garage_rewards.restore_snapshot(state.world_state.garage_rewards): controller.save_invalid = true
 	world.add_child(garage_rewards)
 	garage_rewards.configure(self)
+	SESSION_OPS.finish(diagnostic_garage_rewards)
+	var diagnostic_police_motor_pool := SESSION_OPS.begin(self, "police_motor_pool", "create_and_configure")
 	police_motor_pool = preload("res://runtime/PoliceMotorPool.gd").new()
 	world.add_child(police_motor_pool)
 	police_motor_pool.configure(self)
+	SESSION_OPS.finish(diagnostic_police_motor_pool)
+	var diagnostic_personal_car := SESSION_OPS.begin(self, "personal_car", "create_and_configure")
 	personal_car = preload("res://runtime/PersonalCar.gd").new()
 	world.add_child(personal_car)
 	personal_car.configure(self)
+	SESSION_OPS.finish(diagnostic_personal_car)
+	var diagnostic_jessica := SESSION_OPS.begin(self, "jessica", "create_and_configure")
 	jessica = preload("res://runtime/JessicaRuntime.gd").new()
 	world.add_child(jessica)
 	jessica.configure(self)
+	SESSION_OPS.finish(diagnostic_jessica)
+	var diagnostic_desert := SESSION_OPS.begin(self, "desert", "create_and_configure")
 	desert = preload("res://runtime/desert/DesertRuntime.gd").new()
 	world.add_child(desert)
 	desert.configure(self)
+	SESSION_OPS.finish(diagnostic_desert)
+	var diagnostic_maciota_workshop := SESSION_OPS.begin(self, "maciota_workshop", "create_and_configure")
 	maciota_workshop = preload("res://runtime/MaciotaWorkshop.gd").new()
 	world.add_child(maciota_workshop)
 	maciota_workshop.configure(self)
+	SESSION_OPS.finish(diagnostic_maciota_workshop)
+	var diagnostic_mining := SESSION_OPS.begin(self, "mining", "create_and_configure")
 	mining = preload("res://runtime/MiningRuntime.gd").new()
 	world.add_child(mining)
 	mining.configure(self)
+	SESSION_OPS.finish(diagnostic_mining)
 	dialogue_voice = AudioStreamPlayer.new()
 	dialogue_voice.process_mode = Node.PROCESS_MODE_PAUSABLE
 	dialogue_voice.bus = &"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master"
@@ -630,48 +680,70 @@ func _ready() -> void:
 	speech_voice.process_mode = Node.PROCESS_MODE_PAUSABLE
 	speech_voice.bus = dialogue_voice.bus
 	add_child(speech_voice)
+	var voice_settings := get_node_or_null("/root/V2Settings")
+	if voice_settings != null:
+		voice_settings.voice_language_changed.connect(func(_value): _refresh_voice_presentation(true))
+		voice_settings.text_language_changed.connect(func(_value): _refresh_voice_presentation(false))
+	var diagnostic_passenger_transport := SESSION_OPS.begin(self, "passenger_transport", "create_and_configure")
 	passenger_transport = preload("res://runtime/PassengerTransport.gd").new()
 	passenger_transport.configure(self)
+	SESSION_OPS.finish(diagnostic_passenger_transport)
 	world.add_child(passenger_transport)
+	var diagnostic_urban_operations := SESSION_OPS.begin(self, "urban_operations", "create_and_configure")
 	urban_operations = preload("res://gameplay/urban_v1/UrbanOperations.gd").new()
 	urban_operations.configure(self)
+	SESSION_OPS.finish(diagnostic_urban_operations)
 	world.add_child(urban_operations)
 	if state.world_state.has("urban_operations") and not urban_operations.restore_snapshot(state.world_state.urban_operations): controller.save_invalid = true
+	var diagnostic_port_container_loot := SESSION_OPS.begin(self, "port_container_loot", "create_and_configure")
 	port_container_loot = preload("res://gameplay/urban_v1/PortContainerLoot.gd").new()
 	port_container_loot.configure(self)
+	SESSION_OPS.finish(diagnostic_port_container_loot)
 	world.add_child(port_container_loot)
+	var diagnostic_armored_transport := SESSION_OPS.begin(self, "armored_transport", "create_and_configure")
 	armored_transport = preload("res://gameplay/armored/ArmoredTransport.gd").new()
 	armored_transport.configure(self)
+	SESSION_OPS.finish(diagnostic_armored_transport)
 	world.add_child(armored_transport)
+	var diagnostic_field_inventory := SESSION_OPS.begin(self, "field_inventory", "create_and_configure")
 	field_inventory = preload("res://systems/inventory/FieldInventoryRuntime.gd").new()
 	world.add_child(field_inventory)
 	field_inventory.configure(self)
+	SESSION_OPS.finish(diagnostic_field_inventory)
 	if not Engine.get_meta("fishing_baseline",false):
+		var diagnostic_fishing := SESSION_OPS.begin(self, "fishing", "create_and_configure")
 		fishing = preload("res://activities/fishing/Fishing.gd").new()
 		world.add_child(fishing)
 		fishing.configure(self)
+		SESSION_OPS.finish(diagnostic_fishing)
 		fishing_runtime = preload("res://runtime/FishingRuntime.gd").new()
 		fishing_runtime.session = self
 		add_child(fishing_runtime)
 	if not world.get_meta("skip_cold",false):
+		var diagnostic_cold := SESSION_OPS.begin(self, "cold", "create_and_configure")
 		cold = preload("res://runtime/ColdSurvival.gd").new()
 		cold.configure(self)
+		SESSION_OPS.finish(diagnostic_cold)
 		if state.world_state.has("cold") and not cold.restore(state.world_state.cold): controller.save_invalid = true
 		world.add_child(cold)
 	if "--railway-baseline" not in OS.get_cmdline_user_args():
 		railway_world = preload("res://world/railway/RailwayWorld.gd").new()
 		railway_world.configure(controller)
 		world.add_child(railway_world)
+		var diagnostic_railway := SESSION_OPS.begin(self, "railway", "create_and_configure")
 		railway = preload("res://runtime/railway/RailwayTransit.gd").new()
 		railway.name = "RailwayTransit"
 		railway.configure(self)
+		SESSION_OPS.finish(diagnostic_railway)
 		world.add_child(railway)
 		var railway_ui := preload("res://ui/railway/RailwayUI.gd").new()
 		world.add_child(railway_ui)
 		railway_ui.configure(railway)
+	var diagnostic_regional_coach := SESSION_OPS.begin(self, "regional_coach", "create_and_configure")
 	regional_coach = preload("res://runtime/regional/RegionalCoachTransit.gd").new()
 	regional_coach.name = "RegionalCoachTransit"
 	regional_coach.configure(self)
+	SESSION_OPS.finish(diagnostic_regional_coach)
 	world.add_child(regional_coach)
 	var coach_ui := preload("res://ui/railway/RailwayUI.gd").new()
 	world.add_child(coach_ui)
@@ -691,27 +763,44 @@ func show_message(text: String) -> void:
 	if not is_instance_valid(notice): return
 	var spoken := preload("res://audio/AuthoredSpeech.gd").notice(text)
 	if not spoken.is_empty():
-		show_speech(spoken.speaker, spoken.message, 5.0, true, spoken.persona, spoken.voice_text)
+		show_speech(spoken.speaker, spoken.message, 5.0, true, spoken.persona, spoken.voice_text, str(spoken.get("character_id", "")), str(spoken.get("section", "")))
 		return
 	clear_speech()
 	_reward_notice_id = ""
 	notice.text = text
 	notice_time = 5.0
 
-func show_speech(speaker: String, message: String, duration := 5.0, play_voice := true, persona := "", voice_text := "") -> void:
+func _police_voice_warning() -> void:
+	var actor: Node3D = world.gameplay.last_warning_actor.get_ref() if world.gameplay.last_warning_actor != null else null
+	var binding := preload("res://audio/VoiceActorBinding.gd").resolve(actor, "polícia", "spoken_notice:runtime/FullSession.gd")
+	var source := "POLÍCIA: Pare e fique imóvel para se render!".trim_prefix("POLÍCIA: ")
+	if binding.is_empty():
+		show_speech("POLÍCIA", tr(source), 5.0, false)
+		return
+	var shown := preload("res://audio/ActorDialogueVoice.gd").speak(actor, source, binding)
+	show_speech("POLÍCIA", str(shown.message), maxf(5.0, float(shown.duration) + .6), false,
+		str(binding.persona), source, str(binding.character_id), str(binding.get("section", "")))
+
+func show_speech(speaker: String, message: String, duration := 5.0, play_voice := true, persona := "", voice_text := "", character_id := "", section := "") -> void:
 	if not is_instance_valid(notice): return
 	clear_speech()
 	if not is_instance_valid(speech_caption):
 		speech_caption = DIALOGUE_CAPTION.new()
 		world.hud.add_child(speech_caption)
 	_reward_notice_id = ""
+	var actor := persona if not persona.is_empty() else speaker.to_lower().split(" · ")[0]
+	var shown: Dictionary = {}
+	if play_voice or not voice_text.is_empty():
+		_speech_source = {"speaker":speaker, "message":message, "persona":actor, "source":voice_text if not voice_text.is_empty() else message,
+			"character_id":character_id, "section":section, "play_voice":play_voice}
+		shown = VOICE.presentation(str(_speech_source.source), actor, "", "", character_id, section)
+		message = str(shown.message)
 	notice.text = speaker + ": " + message
 	notice_time = duration
 	speech_active = true
 	speech_caption.set_line(speaker, message)
 	if play_voice and is_instance_valid(speech_voice):
-		var actor := persona if not persona.is_empty() else speaker.to_lower().split(" · ")[0]
-		speech_voice.stream = VOICE.recorded_line(voice_text if not voice_text.is_empty() else message, actor)
+		speech_voice.stream = shown.get("stream") as AudioStream
 		speech_voice.volume_db = VOICE.playback_volume(speech_voice.stream, -8.0 if actor in ["maciota", "caller"] else 0.0)
 		if speech_voice.stream != null:
 			notice_time = maxf(notice_time, speech_voice.stream.get_length()+.6)
@@ -722,6 +811,24 @@ func clear_speech() -> void:
 	if is_instance_valid(speech_caption): speech_caption.hide()
 	if speech_active: notice_time = 0.0
 	speech_active = false
+	_speech_source.clear()
+
+func _refresh_voice_presentation(restart_audio: bool) -> void:
+	if dialogue_open and not _dialogue_source.is_empty():
+		_present_current_dialogue(restart_audio)
+	if speech_active and not _speech_source.is_empty():
+		var source := _speech_source
+		var shown := VOICE.presentation(str(source.source), str(source.persona), "", "", str(source.character_id), str(source.section))
+		notice.text = str(source.speaker) + ": " + str(shown.message)
+		speech_caption.set_line(str(source.speaker), str(shown.message))
+		if restart_audio: notice_time = maxf(notice_time, float(shown.duration) + .6)
+		if restart_audio and source.play_voice and speech_voice.playing:
+			speech_voice.stop()
+			speech_voice.stream = shown.stream
+			speech_voice.volume_db = VOICE.playback_volume(speech_voice.stream, -8.0 if source.persona in ["maciota", "caller"] else 0.0)
+			if speech_voice.stream != null:
+				notice_time = maxf(notice_time, speech_voice.stream.get_length() + .6)
+				speech_voice.play()
 
 func position_clear(point: Vector3) -> bool:
 	var query := PhysicsShapeQueryParameters3D.new()
@@ -858,6 +965,10 @@ func _restore_saved_driver_on_foot(saved: Dictionary) -> bool:
 
 func enter_place(id: String, autosave := true, requested_access_id := "") -> bool:
 	if is_transition_blocked() or world.driving.occupied or not state.place_id.is_empty() or is_instance_valid(room) or world.player.input_locked: return false
+	if world.player.get_meta("player_air_busy",false): return false
+	if not preload("res://runtime/ShopSafety.gd").admission_allowed(id, world.gameplay.stars):
+		show_message("Perca a polícia antes de entrar.")
+		return false
 	var definition := PLACES.get_definition(id)
 	if id == "maciota":
 		if state.region_id != "harbor": return false
@@ -920,7 +1031,7 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 	controller.region.set_focus(candidate_return)
 	for i in 2:
 		await get_tree().physics_frame
-		if not _owns_transition(token) or state.region_id != origin_region or not state.place_id.is_empty() or room != origin_room or world.driving.occupied or world.gameplay.health <= 0 or not is_instance_valid(candidate_room):
+		if not _owns_transition(token) or state.region_id != origin_region or not state.place_id.is_empty() or room != origin_room or world.driving.occupied or world.gameplay.health <= 0 or not is_instance_valid(candidate_room) or not preload("res://runtime/ShopSafety.gd").admission_allowed(id, world.gameplay.stars):
 			_discard_place_candidate(candidate_room,owns_candidate)
 			controller.region.set_focus(world.player.global_position)
 			if SEWER_NETWORK.is_manhole(id) and sewer_entry_origin.is_finite():
@@ -942,7 +1053,8 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 		show_message("Entrada bloqueada.")
 		return false
 	# Bueiro: Dante anda até a borda, a tampa desliza e ele desce a escada antes do véu cobrir a troca.
-	if SEWER_NETWORK.is_manhole(id) and is_instance_valid(sewer_hatch):
+	# Loading a saved interior admits Dante directly; it is not a street approach.
+	if ready_for_play and SEWER_NETWORK.is_manhole(id) and is_instance_valid(sewer_hatch):
 		var descent: Node = SEWER_DESCENT.new()
 		descent.setup(world.player, sewer_hatch, func() -> bool: return _owns_transition(token) and world.gameplay.health > 0)
 		if descent.can_run():
@@ -969,7 +1081,7 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 		world.camera.focus_on_transition(door_focus, maxf(8.0, world.camera.size * 0.78), world.camera.STORE_FOCUS_OFFSET, 0.42)
 		await get_tree().create_timer(0.12).timeout
 		await door_transition.fade_to(1.0, 0.30)
-		if not _owns_transition(token) or state.region_id != origin_region or not state.place_id.is_empty() or room != origin_room or world.driving.occupied or world.gameplay.health <= 0 or not is_instance_valid(candidate_room):
+		if not _owns_transition(token) or state.region_id != origin_region or not state.place_id.is_empty() or room != origin_room or world.driving.occupied or world.gameplay.health <= 0 or not is_instance_valid(candidate_room) or not preload("res://runtime/ShopSafety.gd").admission_allowed(id, world.gameplay.stars):
 			_discard_place_candidate(candidate_room,owns_candidate)
 			controller.region.set_focus(world.player.global_position)
 			world.camera.clear_store_focus()
@@ -1243,6 +1355,7 @@ func sync_dispatch_location() -> void:
 		world.dispatch.player_position_override = return_point if not state.place_id.is_empty() else Vector3.INF
 
 func _install_service_npc() -> void:
+	if preload("res://runtime/ShopSafety.gd").peaceful(state.place_id): room.set_meta("invulnerable", true)
 	# Vance is authored into the room's 3D art, rather than the NPC catalog.
 	static_service_actor = room.find_child("VanceMilitaryGunsmith", true, false) as Node3D
 	if is_instance_valid(static_service_actor): _install_workplace_reaction(static_service_actor, static_service_actor)
@@ -1253,12 +1366,16 @@ func _install_service_npc() -> void:
 			if not position_clear(point):
 				push_error("Interior NPC position blocked: "+str(definition.id))
 				continue
+			if state.place_id in preload("res://world/places/sewers/SewerNetwork.gd").ids():
+				var resident: CharacterBody3D = preload("res://world/places/sewers/SewerHostility.gd").install(self, definition, point)
+				room_npcs.append(resident)
+				continue
 			var actor = preload("res://scripts/Actor.gd").new()
 			actor.controlled_automatically = true
 			actor.position = point
 			actor.set_meta("interior_npc_id",definition.id)
 			# Story and service residents must survive every combat damage path.
-			if state.place_id == "harbor_police": actor.set_meta("invulnerable",true)
+			if state.place_id == "harbor_police" or preload("res://runtime/ShopSafety.gd").peaceful(state.place_id): actor.set_meta("invulnerable",true)
 			world.add_child(actor)
 			var original: Node = actor.visual.get_child(0)
 			actor.visual.remove_child(original)
@@ -1274,6 +1391,7 @@ func _install_service_npc() -> void:
 	if model_resource == null: return
 	room_npc = preload("res://scripts/Actor.gd").new()
 	room_npc.controlled_automatically = true
+	if preload("res://runtime/ShopSafety.gd").peaceful(state.place_id): room_npc.set_meta("invulnerable",true)
 	room_npc.position = room.to_global(room.definition.get("npc_point",Vector3(0,0,-2)))
 	world.add_child(room_npc)
 	var old_model: Node = room_npc.visual.get_child(0)
@@ -1399,6 +1517,8 @@ func nearest() -> Dictionary:
 	var garage_action: Dictionary = garage_rewards.nearest_action()
 	if not garage_action.is_empty(): return garage_action
 	if world.driving.occupied:
+		var driver_freight: Dictionary = urban_operations.freight.nearest_action() if urban_operations != null and is_instance_valid(urban_operations.freight) else {}
+		if not driver_freight.is_empty(): return driver_freight
 		var vehicle_action: Dictionary = mission_world.nearest_vehicle_action()
 		return vehicle_action if not vehicle_action.is_empty() else activities.nearest_action()
 	var point: Vector3 = world.player.position
@@ -1452,15 +1572,19 @@ func nearest() -> Dictionary:
 	if not mission_action.is_empty(): return mission_action
 	return passenger_transport.nearest_action()
 
+func interaction_input_action(action: Dictionary) -> String:
+	if action.get("id", "") == "enter" and SEWER_NETWORK.is_manhole(str(action.get("place", ""))): return "vehicle_interact"
+	if action.get("id", "") == "exit" and SEWER_NETWORK.is_manhole(state.place_id): return "vehicle_interact"
+	return "interact"
+
 func interact() -> bool:
 	if modal or not ready_for_play: return false
+	if world.player.get_meta("player_air_busy",false): return false
 	var action := nearest()
 	if action.get("id", "") == "building_social": return building_social.open(action.target)
 	if action.get("id","") == "building_stairs": return await action.provider.use_stairs()
 	if action.get("id","") == "building_lockpick": return await action.provider.perform(action)
-	if action.get("id","") == "building_rooftop_jump": return await building_entrance.jump_from_roof()
 	if action.get("id","") == "service_roof_stairs": return await service_roofs.use_stairs()
-	if action.get("id","") == "service_roof_jump": return await service_roofs.jump_from_roof()
 	if mining != null and action.get("id","") == "mining": return mining.perform(action)
 	if desert != null and action.get("id","") in ["desert","desert_story","desert_drag"]: return desert.perform(action)
 	if mountain_activities != null and mountain_activities.handles(action): return mountain_activities.perform(action)
@@ -1543,7 +1667,11 @@ func _intro_interact(id: String) -> bool:
 	return true
 
 func _input(event: InputEvent) -> void:
+	if world.player != null and world.player.get_meta("developer_free_flight",false): return
 	get_node("/root/GameInput").observe_event(event)
+	# The opening owns input while the world is paused. Leave clicks and Esc
+	# available to its skip button/dialog and _unhandled_input handler.
+	if arrival != null and arrival.phase == "opening" and is_instance_valid(arrival.presentation): return
 	if upside_world != null and upside_world.busy():
 		if upside_world.handle_input(event): get_viewport().set_input_as_handled()
 		return
@@ -1631,7 +1759,7 @@ func _input(event: InputEvent) -> void:
 		return
 	if get_tree().paused: return
 	# Mounted activities consume gameplay events, but their camera stays usable.
-	if not event is InputEventJoypadMotion and (event.is_action_pressed("camera_left") or event.is_action_pressed("camera_right")):
+	if (event is InputEventMouseMotion and world.camera.mouse_orbit_active()) or (not event is InputEventJoypadMotion and (event.is_action_pressed("camera_left") or event.is_action_pressed("camera_right") or event.is_action_pressed("camera_drag"))):
 		world.camera._unhandled_input(event)
 		if get_viewport().is_input_handled(): return
 	if skate != null and skate.controls_locked():
@@ -1656,7 +1784,12 @@ func _input(event: InputEvent) -> void:
 		if world.driving.car.equipment.handle_input(event,true):
 			get_viewport().set_input_as_handled()
 			return
-	var wants_interact := event.is_action_pressed("interact")
+	var wants_interact := false
+	if event.is_action_pressed("jump") and not event.is_echo() and not world.driving.occupied:
+		if world.player.air_movement != null and world.player.air_movement.request_jump(): get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed("interact") or event.is_action_pressed("vehicle_interact"):
+		wants_interact = event.is_action_pressed(interaction_input_action(nearest()))
 	# Handle before GUI focus consumes V/R3, after modal/vehicle guards.
 	if event.is_action_pressed("rage") and not event.is_echo() and not world.driving.occupied:
 		if world.gameplay.request_rage(): get_viewport().set_input_as_handled()
@@ -1683,14 +1816,17 @@ func _input(event: InputEvent) -> void:
 	elif event.is_action_pressed("world_map"): show_map()
 	elif event.is_action_pressed("unarmed"): state.equip_weapon("fists")
 	elif event.is_action_pressed("weapon_next") and not world.driving.occupied: world.gameplay.cycle_weapon(1)
-	elif event.is_action_pressed("weapon_flashlight"): _toggle_weapon_flashlight()
+	elif event.is_action_pressed("weapon_flashlight") and not event.is_echo():
+		_toggle_weapon_flashlight()
+		get_viewport().set_input_as_handled()
 	elif event is InputEventKey and event.pressed and not event.echo:
 		if event.physical_keycode == KEY_F5: save_game(true)
 		elif event.physical_keycode == KEY_F9: load_game()
 
-## V1 `WeaponFlashlight._unhandled_input`: sem lanterna instalada na arma em mãos,
-## a tecla explica onde comprá-la em vez de falhar em silêncio.
+## Purchased belt equipment takes priority; legacy weapon lamps remain available.
 func _toggle_weapon_flashlight() -> void:
+	if world.driving.occupied: return
+	if world.gameplay.belt_flashlight.toggle(): return
 	if world.gameplay.toggle_flashlight(): return
 	var id: String = world.gameplay.equipped()
 	if not state.can_attack() or id in ["", "fists"]: return
@@ -1698,6 +1834,7 @@ func _toggle_weapon_flashlight() -> void:
 		show_message("Instale uma lanterna nesta arma na Ammu-Nation.")
 
 func _process(delta: float) -> void:
+	if world.player != null and world.player.get_meta("developer_free_flight",false): return
 	if not get_tree().paused: notice_time = maxf(0.0,notice_time-delta)
 	if speech_active:
 		if notice_time <= 0.0: clear_speech()
@@ -1710,7 +1847,7 @@ func _process(delta: float) -> void:
 		building_entrance.update(delta)
 	if is_instance_valid(world.driving.car) and is_instance_valid(world.driving.car.equipment): world.driving.car.equipment.set_input_enabled(not modal)
 	if not modal and not world.driving.occupied and not get_tree().paused and (building_social == null or not building_social.blocks_gameplay_input()):
-		var aim: Vector3 = world.gameplay.aim_from_screen(get_viewport().get_mouse_position())
+		var aim: Vector3 = world.gameplay.aim_from_screen(world.camera.aim_screen_position())
 		var controls = get_node("/root/GameInput")
 		if controls.using_gamepad or controls.get_meta("touch_controls_active", false) or not controls.touch_aim.is_zero_approx():
 			aim = controls.aim_target_3d(world.player,world.camera,delta)
@@ -1738,8 +1875,8 @@ func _process(delta: float) -> void:
 		# The contextual HUD owns cold status once it is active.  The legacy label
 		# otherwise reappears between its sync ticks and overlaps the new panel.
 		thermal_status.visible = thermal.visible and not modal and not is_instance_valid(world.hud)
-		thermal_status.text = "Calor corporal %d%% · %s"%[roundi(thermal.temperature),thermal.text]
-	stats.text = "R$ %d   Vida %d   Colete %d\n%s   %s   %s" % [state.economy.balance,roundi(world.gameplay.health),roundi(world.gameplay.armor),str(WEAPONS.WEAPONS.get(state.equipped_weapon,{}).get("label",state.equipped_weapon)),"—" if int(ammo.magazine)<0 else "%d / %d"%[ammo.magazine,ammo.reserve],"★".repeat(world.gameplay.stars)]
+		thermal_status.text = String(TranslationServer.translate("Calor corporal %d%% · %s"))%[roundi(thermal.temperature),thermal.text]
+	stats.text = String(TranslationServer.translate("R$ %d   Vida %d   Colete %d\n%s   %s   %s")) % [state.economy.balance,roundi(world.gameplay.health),roundi(world.gameplay.armor),str(WEAPONS.WEAPONS.get(state.equipped_weapon,{}).get("label",state.equipped_weapon)),"—" if int(ammo.magazine)<0 else "%d / %d"%[ammo.magazine,ammo.reserve],"★".repeat(world.gameplay.stars)]
 	objective.text = state.campaign.objective() if state.campaign.active_id != "" else (state.intro.objective() if state.intro.stage != "complete" else "J  Missões · M  Mapa")
 	if arrival.active: objective.text = arrival.objective_text
 	var freight: Dictionary = urban_operations.freight_status() if urban_operations != null else {}
@@ -1756,10 +1893,13 @@ func _process(delta: float) -> void:
 		if not pack_objective.is_empty(): objective.text = pack_objective
 	var action := nearest()
 	if fishing != null and fishing.active: objective.text = fishing.objective()
+	prompt_input_action = interaction_input_action(action)
 	var silent_exit: bool = action.get("id","") == "exit" and state.place_id in ["vertice_undercroft","remote_coal_mine"]
 	prompt.text = "" if modal or action.is_empty() or action.get("silent",false) or silent_exit else "E  "+str(action.label)
-	if not modal and action.get("id","") in ["port_container","railway","regional_coach","fishing","building_social"]:
-		prompt.text = get_node("/root/GameInput").hint("interact")+"  "+str(action.label)
+	if not modal and (prompt_input_action == "vehicle_interact" or action.get("id","") in ["port_container","railway","regional_coach","fishing","building_social"]):
+		var caption: String = str(action.get("label", "")).strip_edges()
+		if prompt_input_action == "vehicle_interact" and caption.is_empty(): caption = "Descer" if action.get("id", "") == "enter" else "Subir"
+		prompt.text = get_node("/root/GameInput").hint(prompt_input_action)+"  "+caption
 
 func _update_world_indicator() -> void:
 	if upside_world != null and upside_world.busy():
@@ -1868,6 +2008,7 @@ func _focus_menu_button(reference: WeakRef) -> void:
 		button.grab_focus()
 func close_menu() -> void:
 	if dialogue_voice != null: dialogue_voice.stop()
+	_dialogue_source.clear()
 	if is_instance_valid(dialogue_card): dialogue_card.hide()
 	clear_speech()
 	_service_menu_open = false
@@ -1877,7 +2018,7 @@ func close_menu() -> void:
 	modal = false
 	dialogue_open = false
 	panel.hide()
-	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
+	Input.mouse_mode = Input.MOUSE_MODE_CONFINED_HIDDEN
 	world.player.input_locked = world.gameplay.health <= 0 or is_transition_blocked() or (desert != null and desert.busy()) or (passenger_transport != null and passenger_transport.riding) or (motocross != null and motocross.mounted) or (skate != null and skate.controls_locked())
 	if fishing != null and fishing.controls_locked(): world.player.input_locked = true
 	if amusement_park != null and amusement_park.active: world.player.input_locked = true
@@ -1892,6 +2033,7 @@ func interrupt_dialogue() -> void:
 	lines.clear()
 	dialogue_done = Callable()
 	dialogue_open = false
+	_dialogue_source.clear()
 	if is_instance_valid(dialogue_voice): dialogue_voice.stop()
 	if is_instance_valid(dialogue_card): dialogue_card.hide()
 	clear_speech()
@@ -1907,12 +2049,20 @@ func _advance_dialogue() -> void:
 	_menu(str(line.get("speaker","")))
 	_service_menu_open = continuing_service
 	dialogue_open = true
+	_dialogue_source = line.duplicate(true)
+	_present_current_dialogue(true)
+
+func _present_current_dialogue(restart_audio: bool) -> void:
+	var line := _dialogue_source.duplicate(true)
+	var speaker := str(line.get("voice_persona", str(line.get("speaker", "")).to_lower().split(" · ")[0]))
+	var shown := VOICE.presentation(str(line.get("voice_text", line.get("message", ""))), speaker, "", "", str(line.get("character_id", "")), str(line.get("voice_section", "")))
+	line["message"] = str(shown.message)
 	if dialogue_voice != null and not (arrival != null and arrival.active):
-		var speaker := str(line.get("speaker","")).to_lower().split(" · ")[0]
-		# Match Maciota's phone/arrival level when the conversation enters the workshop.
-		dialogue_voice.stream = VOICE.recorded_line(str(line.get("voice_text",line.get("message",""))),speaker)
-		dialogue_voice.volume_db = VOICE.playback_volume(dialogue_voice.stream, -8.0 if speaker in ["maciota", "caller"] else 0.0)
-		if dialogue_voice.stream != null: dialogue_voice.play()
+		if restart_audio:
+			dialogue_voice.stop()
+			dialogue_voice.stream = shown.stream
+			dialogue_voice.volume_db = VOICE.playback_volume(dialogue_voice.stream, -8.0 if speaker in ["maciota", "caller"] else 0.0)
+			if dialogue_voice.stream != null: dialogue_voice.play()
 	_present_dialogue_line(line)
 
 func _present_dialogue_line(line: Dictionary) -> void:
@@ -1959,7 +2109,7 @@ func show_inventory() -> void:
 	if field_inventory != null:
 		field_inventory.open()
 		return
-	_menu("Inventário · R$ %d"%state.economy.balance)
+	_menu(String(TranslationServer.translate("Inventário · R$ %d"))%state.economy.balance)
 	for id in WEAPONS.ORDER:
 		if state.owns_weapon(id):
 			var stored: bool = not state.economy.can_carry_weapon(id)
@@ -2158,6 +2308,8 @@ func _refresh_reward_feedback() -> void:
 			notice.text = ""
 			notice.hide()
 func save_block_reason() -> String:
+	if world.player.get_meta("player_air_busy", false): return "Aguarde terminar o salto ou a queda para salvar."
+	if world.get_meta("developer_mode_active",false): return "Desligue o modo desenvolvedor para salvar."
 	if upside_world != null and upside_world.busy(): return "Aguarde a visão passar."
 	if arcade != null and arcade.active: return "Saia do fliperama para salvar."
 	if amusement_park != null and amusement_park.active: return "Termine o passeio para salvar."
@@ -2271,7 +2423,7 @@ func save_game(manual := false) -> bool:
 	var result: Error = controller.store.save(state)
 	if _checkpoint_retry != null: _checkpoint_retry.stop()
 	if result != OK:
-		last_save_error = "Não foi possível salvar (%d)." % result
+		last_save_error = String(TranslationServer.translate("Não foi possível salvar (%d).")) % result
 		_save_indicator().reject(last_save_error)
 		return false
 	last_save_error = ""
@@ -2297,7 +2449,7 @@ func load_game() -> void:
 	if is_instance_valid(world.traffic_yield): world.traffic_yield.release_all("load")
 	if is_instance_valid(world.dispatch): world.dispatch.dismiss_all("load")
 	var result := get_tree().reload_current_scene()
-	if result != OK: show_message("Não foi possível carregar o jogo (%d)." % result)
+	if result != OK: show_message(String(TranslationServer.translate("Não foi possível carregar o jogo (%d).")) % result)
 func return_to_main_menu() -> void:
 	if upside_world != null and upside_world.busy() and upside_world._released:
 		show_message("Aguarde a conclusão da transição.")
@@ -2340,7 +2492,7 @@ func _show_v1_death_presentation() -> void:
 	var label := Label.new()
 	label.name = "WastedLabel"
 	label.text = "SE FODEU"
-	if bank_death_loss>0: label.text+="\n− R$ %d · Saque perdido"%bank_death_loss
+	if bank_death_loss>0: label.text+=String(TranslationServer.translate("\n− R$ %d · Saque perdido"))%bank_death_loss
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -2357,15 +2509,11 @@ func _show_v1_death_presentation() -> void:
 	audio.play()
 	label.pivot_offset = get_viewport().get_visible_rect().size*.5
 	label.scale = Vector2(1.35,1.35)
-	var intro := create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	var intro := create_tween().set_ignore_time_scale(true).set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	intro.tween_property(tint,"color:a",.66,.35)
 	intro.tween_property(label,"modulate:a",1.0,.35)
 	intro.tween_property(label,"scale",Vector2.ONE,.35)
-	var presentation := death_presentation
-	await get_tree().create_timer(2.2).timeout
-	if is_instance_valid(presentation):
-		if death_presentation == presentation: death_presentation = null
-		presentation.queue_free()
+	await _hold_recovery_presentation(death_presentation)
 
 func _show_v1_arrest_presentation() -> void:
 	if is_instance_valid(death_presentation): death_presentation.queue_free()
@@ -2390,11 +2538,56 @@ func _show_v1_arrest_presentation() -> void:
 	label.add_theme_constant_override("shadow_offset_y",3)
 	death_presentation.add_child(label)
 	get_tree().root.add_child(death_presentation)
+	label.modulate.a = 0.0
+	var intro := create_tween().set_ignore_time_scale(true)
+	intro.tween_property(label, "modulate:a", 1.0, 0.35)
+	await _hold_recovery_presentation(death_presentation)
+
+func _hold_recovery_presentation(presentation: CanvasLayer) -> void:
+	if not _recovery_slow_motion:
+		_recovery_time_scale = Engine.time_scale
+		_recovery_slow_motion = true
+	Engine.time_scale = _recovery_time_scale * 0.2
+	# Wall-clock timing keeps the message readable despite the slowed world.
+	await get_tree().create_timer(2.4, false, false, true).timeout
+	if not is_instance_valid(presentation) or presentation != death_presentation: return
+	var blackout := ColorRect.new()
+	blackout.name = "RecoveryBlackout"
+	blackout.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	blackout.color = Color(0, 0, 0, 0)
+	blackout.mouse_filter = Control.MOUSE_FILTER_STOP
+	presentation.add_child(blackout)
+	var fade := create_tween().set_ignore_time_scale(true)
+	fade.tween_property(blackout, "color:a", 1.0, 0.8)
+	await fade.finished
+	if presentation != death_presentation: return
+	_restore_recovery_time_scale()
+
+func _restore_recovery_time_scale() -> void:
+	if not _recovery_slow_motion: return
+	Engine.time_scale = _recovery_time_scale
+	_recovery_slow_motion = false
+
+func _finish_recovery_presentation() -> void:
+	_restore_recovery_time_scale()
 	var presentation := death_presentation
-	await get_tree().create_timer(2.2).timeout
-	if is_instance_valid(presentation):
-		if death_presentation == presentation: death_presentation = null
+	if not is_instance_valid(presentation): return
+	# Remove the message behind the opaque cover, then reveal the settled camera.
+	for child in presentation.get_children():
+		if child is Control and child.name != "RecoveryBlackout": child.hide()
+	await get_tree().create_timer(0.3, false, false, true).timeout
+	if not is_instance_valid(presentation) or presentation != death_presentation: return
+	var fade := create_tween().set_ignore_time_scale(true)
+	fade.tween_property(presentation.get_node("RecoveryBlackout"), "color:a", 0.0, 1.0)
+	await fade.finished
+	if is_instance_valid(presentation) and presentation == death_presentation:
+		death_presentation = null
 		presentation.queue_free()
+
+func _exit_tree() -> void:
+	_restore_recovery_time_scale()
+	if is_instance_valid(death_presentation): death_presentation.queue_free()
+
 
 func _on_arrest() -> void:
 	if arrest_pending or rescue_pending: return
@@ -2491,6 +2684,9 @@ func _respawn() -> void:
 	if not position_clear(destination):
 		respawn_busy = false
 		_finish_transition(token)
+		_restore_recovery_time_scale()
+		if is_instance_valid(death_presentation): death_presentation.queue_free()
+		death_presentation = null
 		_menu("Local de custódia ocupado. Aguarde e tente novamente." if arrest_pending else "Local de resgate ocupado. Aguarde e tente novamente.")
 		_button("Tentar novamente",_respawn)
 		return
@@ -2531,12 +2727,15 @@ func _respawn() -> void:
 	world.camera.initialized = false
 	world.camera._process(1)
 	_refresh_routine_context()
+	world.player.input_locked = true
+	await _finish_recovery_presentation()
+	if not _owns_transition(token): return
 	rescue_pending = false
 	arrest_pending = false
 	respawn_busy = false
 	_finish_transition(token)
 	close_menu()
 	if bank_death_loss>0:
-		show_message("Assalto fracassado: − R$ %d"%bank_death_loss)
+		show_message(String(TranslationServer.translate("Assalto fracassado: − R$ %d"))%bank_death_loss)
 		bank_death_loss=0
 	save_game()

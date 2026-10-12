@@ -85,6 +85,7 @@ func run() -> void:
 	overview.queue_free()
 	if not baseline and not night and world.session.get("amusement_park") != null:
 		var park = world.session.amusement_park
+		world.session.state.economy.grant_reward("park_measure_tickets",20)
 		world.player.teleport(park.site.boarding_position()+Vector3.UP*.04)
 		await create_timer(.3).timeout
 		if not park.start_ride(): push_error("Could not start coaster"); quit(6); return

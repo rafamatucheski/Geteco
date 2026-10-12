@@ -26,9 +26,12 @@ var start_button: Button
 var pause_button: Button
 var touch_row: HBoxContainer
 var accent := Color.WHITE
+var cabinet_audio: Node
 
 func _ready() -> void:
 	layer = 86
+	cabinet_audio = preload("res://activities/arcade/ArcadeAudio.gd").new()
+	add_child(cabinet_audio)
 	root_control = Control.new()
 	root_control.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(root_control)
@@ -127,6 +130,7 @@ func open_game(id: String, high_score: int) -> void:
 
 func dismiss() -> void:
 	hide()
+	if is_instance_valid(cabinet_audio): cabinet_audio.stop()
 	playing = false
 	touch.clear()
 	set_process(false)
@@ -137,6 +141,7 @@ func start_game() -> void:
 	adapter.record_score()
 	game.reset(randi())
 	playing = true
+	cabinet_audio.start(game_id)
 	suspended = false
 	armed = false
 	previous.clear()
@@ -145,6 +150,7 @@ func start_game() -> void:
 func toggle_pause() -> void:
 	if not playing or game.finished: return
 	suspended = not suspended
+	cabinet_audio.pause_audio(suspended)
 	armed = false
 	_refresh()
 
@@ -176,8 +182,14 @@ func _process(delta: float) -> void:
 		for key in ["left","right","up","down","action","action_alt"]:
 			controls[key+"_pressed"] = controls[key] and not previous.get(key,false)
 		game.step(minf(delta,.05),controls)
+		for sound in game.sound_events: cabinet_audio.play(sound)
+		game.sound_events.clear()
+		if game_id == "racer": cabinet_audio.update_engine(game.speed,game.boosting)
 		previous = controls
-		if game.finished: adapter.record_score()
+		if game.finished:
+			adapter.record_score()
+			cabinet_audio.stop()
+			cabinet_audio.play("finish")
 	_refresh()
 
 func _refresh() -> void:
@@ -191,7 +203,7 @@ func _refresh() -> void:
 	var left: String = controls.hint("move_left") if controls != null else "A"
 	var right: String = controls.hint("move_right") if controls != null else "D"
 	var alternate: String = controls.hint("handbrake") if controls != null else "Espaço"
-	instruction_label.text = game.instructions()+"\n%s / %s ou direcional · Ação: %s / Enter · Alternativa: %s · Esc / Voltar: sair" % [left,right,action,alternate]
+	instruction_label.text = game.instructions()+String(TranslationServer.translate("\n%s / %s ou direcional · Ação: %s / Enter · Alternativa: %s · Esc / Voltar: sair")) % [left,right,action,alternate]
 	board.queue_redraw()
 
 func _draw_board() -> void:
@@ -212,9 +224,11 @@ func _draw_board() -> void:
 		board.draw_rect(Rect2(Vector2.ZERO,board.size),Color(.01,.015,.04,.78))
 		var font := ThemeDB.fallback_font
 		var headline: String = "PAUSADO" if suspended else game.status if playing and game.finished else game.title().to_upper()
+		headline = tr(headline)
 		var size := 30
 		var width := font.get_string_size(headline,HORIZONTAL_ALIGNMENT_LEFT,-1,size).x
 		board.draw_string(font,Vector2((board.size.x-width)*.5,board.size.y*.48),headline,HORIZONTAL_ALIGNMENT_LEFT,-1,size,accent)
 		var hint := "Continuar · P" if suspended else "Jogar novamente · Enter" if playing else "Jogar · Enter"
+		hint = tr(hint)
 		width = font.get_string_size(hint,HORIZONTAL_ALIGNMENT_LEFT,-1,18).x
 		board.draw_string(font,Vector2((board.size.x-width)*.5,board.size.y*.48+36),hint,HORIZONTAL_ALIGNMENT_LEFT,-1,18,Color("e0e5f2"))

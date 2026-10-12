@@ -55,7 +55,7 @@ func perform(action: Dictionary) -> bool:
 		var clue:=""
 		for site in _sites:
 			if str(site.id)==id: clue=str(site.get("clue","")); break
-		if clue.is_empty(): session.show_message("Encontrou R$ %d."%int(result.get("amount",0)))
+		if clue.is_empty(): session.show_message(String(TranslationServer.translate("Encontrou R$ %d."))%int(result.get("amount",0)))
 		else: session.show_dialogue([{"speaker":"Dante","message":clue+"  (+R$ %d)"%int(result.get("amount",0))}])
 		session.save_game()
 		_tick=.4

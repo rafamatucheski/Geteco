@@ -1,7 +1,7 @@
 extends RefCounted
 ## Prepara sob a cortina as variantes de material de veículo que só surgem em
 ## jogo: sujeira de uso (VehicleUsage), desgaste/amassado e carcaça queimada
-## (VehicleDamage) e vidro translúcido da cabine (VehicleInterior). Cada
+## (VehicleDamage). Os vidros da cabine mantêm os materiais originais. Cada
 ## combinação nova de flags do StandardMaterial3D gera uma versão
 ## SceneForwardMobileShaderRD; com cache frio ela compilava no primeiro desenho:
 ## draws de 47–68 ms (rec2/rec3 e first-draw-*, 05/10/2026; chaves 502cb30b e
@@ -14,12 +14,10 @@ const PAINT = preload("res://runtime/VehiclePaint.gd")
 const USAGE = preload("res://runtime/VehicleUsage.gd")
 const DAMAGE = preload("res://gameplay/vehicle_effects/VehicleDamage.gd")
 const GUARDS = preload("res://gameplay/emergency/EffectsPrewarm.gd")
-const INTERIOR = preload("res://gameplay/VehicleInterior.gd")
 const DRAW_FRAMES := 3
 const MAX_WAIT_FRAMES := 24
 const SPACING := .7
 static var _bases: Dictionary = {}         # assinatura -> pintura base (cópia)
-static var _glass: Dictionary = {}         # assinatura -> vidro translúcido (cache do VehicleInterior)
 static var _retained: Array[StandardMaterial3D] = []
 static var _drawn := false
 static var last_summary: Dictionary = {}
@@ -38,34 +36,19 @@ static func collect(model: Node3D, archetype: String) -> void:
 	for material in paint.materials:
 		var signature := shader_signature(material)
 		if not _bases.has(signature): _bases[signature] = material
-	if not INTERIOR.enabled: return
-	# Mesma seleção de VehicleInterior._open_glass; see_through guarda a cópia em cache.
-	for part: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
-		if part.mesh == null or part.has_meta("wheel_center") or part.name in ["Interior", "RoofCut", "WarmUp"]: continue
-		var sources: Array = []
-		if part.material_override != null: sources.append([0, part.material_override])
-		else:
-			for surface in part.mesh.get_surface_count(): sources.append([surface, part.get_active_material(surface)])
-		for source in sources:
-			if source[1] is StandardMaterial3D and INTERIOR._is_glass(part, source[0], source[1]):
-				var glass: StandardMaterial3D = INTERIOR.see_through(source[1])
-				var signature := shader_signature(glass)
-				if not _glass.has(signature): _glass[signature] = glass
 
 static func run(host: Node3D, curtain: CanvasLayer) -> void:
-	if _drawn or not enabled() or DisplayServer.get_name() == "headless" or (_bases.is_empty() and _glass.is_empty()): return
+	if _drawn or not enabled() or DisplayServer.get_name() == "headless" or _bases.is_empty(): return
 	if not GUARDS._covered_loading(host, curtain): return
 	var camera := host.get("camera") as Camera3D
 	if not GUARDS._current_camera(host, camera): return
 	var began := Time.get_ticks_usec()
 	var base_count := _bases.size()
-	var glass_count := _glass.size()
 	var known := {}
 	for signature in _bases: known[signature] = true
 	var variants: Array[StandardMaterial3D] = []
 	var candidates: Array = []
 	for base: StandardMaterial3D in _bases.values(): candidates.append_array(_variants(base))
-	candidates.append_array(_glass.values())
 	candidates.append_array(DAMAGE.wreck_materials().values())
 	for material: StandardMaterial3D in candidates:
 		var signature := shader_signature(material)
@@ -105,8 +88,7 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 		_retained.append_array(variants)
 		_drawn = true
 		_bases.clear()
-		_glass.clear()
-	last_summary = {"bases":base_count, "glass":glass_count, "variants":variants.size(), "completed":completed,
+	last_summary = {"bases":base_count, "glass":0, "variants":variants.size(), "completed":completed,
 		"draws":draws[0], "usec":Time.get_ticks_usec()-began}
 	print("Variantes de material de veículo preparadas: ", JSON.stringify(last_summary))
 

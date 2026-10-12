@@ -55,6 +55,7 @@ func run():
 					knee = model.shins[index].global_position
 					hip = model.thighs[index].global_position
 				check(foot.distance_to(board.visual.to_global(expected)) < .012, label + " ankle reaches contact")
+				check(board.visual.to_local(foot).x > .02 if index == 0 else board.visual.to_local(foot).x < -.02, label + " foot stays on its anatomical side without crossing legs")
 				var local_knee = board.visual.to_local(knee)
 				check(local_knee.z < maxf(board.visual.to_local(hip).z, board.visual.to_local(foot).z) + .025, label + " knee bends toward forward-facing toes")
 				check(knee.distance_to(hip) > .3 and foot.distance_to(knee) > .3, label + " authored leg lengths")

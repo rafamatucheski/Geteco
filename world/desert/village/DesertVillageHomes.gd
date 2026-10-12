@@ -38,6 +38,7 @@ static func home_data(id: String) -> Dictionary:
 		{"id":id+"_sandwich", "kind":"item", "item":"sandwich", "amount":1, "local_position":data.loot[2]},
 	]
 	return {"id":id, "original_name":"Casa de "+str(data.resident_name), "region":"desert", "model":MODEL, "source_id":MODEL,
+		"exterior_rotation":side*PI*.5, "walkup_door_position":exterior+Vector3(side*4.24,.08,0),
 		"variant":index, "size":size, "service":"village_home", "integration_status":"native_geometry",
 		"exterior_position":exterior, "entry_position":exterior+Vector3(side*5.05,.08,0), "return_position":exterior+Vector3(side*6.15,.08,0),
 		"spawn":Vector3(0,.04,size.y*.5-1.4), "exit":Vector3(0,.04,size.y*.5-.65), "camera_target":Vector3(0,.65,-.1), "camera_size":maxf(size.x*1.04,size.y*1.32),

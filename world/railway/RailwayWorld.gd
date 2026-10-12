@@ -146,6 +146,7 @@ func _prepare_descriptors() -> void:
 		_add_descriptor(point,point+Vector3(0,0,18*direction),false,"terminal")
 
 func _add_descriptor(a: Vector3,b: Vector3,pillar: bool,id: String) -> void:
+	var center: Vector3 = (a + b) * 0.5
 	var key := Vector2i(floori(center.x/CELL),floori(center.z/CELL))
 	if not _descriptors.has(key): _descriptors[key] = []
 	_descriptors[key].append({"a":a,"b":b,"pillar":pillar,"id":id})
@@ -236,6 +237,9 @@ func _new_group(label: String) -> Node3D:
 
 func _build_chunk(key: Vector2i) -> void:
 	var group := _new_group("RailChunk_%d_%d" % [key.x,key.y])
+	# Reuse the camera's local glass window for rails, deck and supports.
+	# The shared shader reveals only geometry between the target and camera.
+	group.add_to_group("exterior_reveal_building")
 	chunks[key] = group
 	for segment in _descriptors.get(key,[]):
 		var a: Vector3 = segment.a
@@ -425,7 +429,6 @@ func _build_tunnel(tunnel: Dictionary) -> void:
 	var right := direction.cross(Vector3.UP).normalized()
 	var frame := _basis(direction)
 	var length := a.distance_to(b)
-	var center := (a+b)*.5
 	var finish := "sandstone" if tunnel.region=="desert" else "rock"
 	for side in [-1.0,1.0]:
 		_beam(a+right*3.25*side+Vector3.UP*2.4,b+right*3.25*side+Vector3.UP*2.4,.60,5.9,"tunnel",true)
@@ -534,7 +537,17 @@ func _material(id: String) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
 	material.albedo_color = Color(colors.get(id,"868c84"))
 	material.roughness = .88
-	if id in ["concrete","ballast","sleeper","platform","wood","tunnel","rock","sandstone"]:
+	# Pilares, trilho e lastro liam como plano chapado (textura de grão fraca ou
+	# nenhuma): relevo + rugosidade em espaço de mundo, mantendo o tom da paleta.
+	var detail_kinds := {"concrete":"concrete","ballast":"gravel","sleeper":"wood","tunnel":"concrete",
+		"rock":"granite","sandstone":"plaster","rail":"metal","steel":"metal","fence":"metal",
+		"gate":"wood","teal":"metal","copper":"metal","pine":"wood"}
+	if detail_kinds.has(id):
+		var tint := material.albedo_color
+		preload("res://assets/urban_detail/UrbanSurfaces.gd").detail(material, detail_kinds[id], 1.2 if id in ["rail","steel","fence","ballast","sleeper"] else 2.0, .9)
+		material.albedo_color = Color(minf(tint.r * material.albedo_color.r, 1.0), minf(tint.g * material.albedo_color.g, 1.0), minf(tint.b * material.albedo_color.b, 1.0))
+		material.roughness = 1.0
+	elif id in ["platform","wood"]:
 		var kind := "wood" if id=="wood" else "stone" if id=="platform" else "rail_grain"
 		material.albedo_texture = preload("res://world/places/ShopInteriorMaterials.gd").texture(kind)
 		material.uv1_triplanar = true

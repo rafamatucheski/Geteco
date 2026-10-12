@@ -205,6 +205,7 @@ func _bench(point: Vector2, width: float) -> void:
 	seat.position = floor_from_local(point-LAYOUT.ORIGIN)
 	add_child(seat)
 	preload("res://world/urban_detail/BenchFinish.gd").add_collision(seat, "VillageBench")
+	preload("res://gameplay/street_physics/FragileProps3D.gd").register_node("bench_seat",seat,self)
 	_solid(Rect2(point-Vector2(width*PPM*0.5,5),Vector2(width*PPM,10)),"VillageBench")
 	_record_volume(solids.size()-1,mesh_start)
 	solids[-1]["seats"] = [point+Vector2(-8,0),point+Vector2(8,0)]

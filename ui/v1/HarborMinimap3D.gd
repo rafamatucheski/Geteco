@@ -148,6 +148,9 @@ func refresh() -> void:
 		var forward := -actor.global_basis.z
 		heading = Vector2(forward.x, forward.z).angle()
 	objective_target = Vector2.ZERO
+	var transit: Variant = world.production.get("urban_transit")
+	var work_target := Vector3.INF
+	if transit!=null and is_instance_valid(transit.urban_service) and is_instance_valid(transit.urban_service.driver_work): work_target=transit.urban_service.driver_work.target_position()
 	var mission_world: Variant = world.session.get("mission_world")
 	var has_mission := str(world.session.state.intro.stage) != "complete" or not str(world.session.state.campaign.active_id).is_empty()
 	if has_mission and mission_world != null and mission_world.has_method("target_position"):
@@ -160,6 +163,7 @@ func refresh() -> void:
 	if is_instance_valid(fishing) and fishing.active and not fishing.controls_locked():
 		var fishing_target: Vector3 = fishing.target_position()
 		if fishing_target.is_finite(): objective_target = Vector2(fishing_target.x,fishing_target.z)
+	if work_target.is_finite(): objective_target=Vector2(work_target.x,work_target.z)
 	_sync_navigation(actor)
 	if not was_visible or _redraw_required or center.distance_squared_to(_drawn_center) > 0.0025 or absf(angle_difference(heading, _drawn_heading)) > 0.01 or absf(map_scale - _drawn_scale) > .002 or not objective_target.is_equal_approx(_drawn_objective):
 		_drawn_center = center

@@ -23,7 +23,7 @@ func build() -> void:
 
 func _build_north_pier_bank() -> void:
 	height = 4.8
-	var stone := UrbanMaterials.material_for_color(Color("c7c6b5"), 0.86)
+	var stone := UrbanMaterials.textured_wall(Color("c7c6b5"), 0.86)
 	var light_stone := UrbanMaterials.material_for_color(Color("e0dfce"), 0.82)
 	var shadow_stone := UrbanMaterials.material_for_color(Color("92978b"), 0.88)
 	var bronze := UrbanMaterials.metal_brass()
@@ -77,7 +77,7 @@ func _build_north_pier_bank() -> void:
 
 func _build_union_clothing() -> void:
 	height = 6.8
-	var masonry := UrbanMaterials.material_for_color(Color("59665f"), 0.88)
+	var masonry := UrbanMaterials.textured_wall(Color("59665f"), 0.88)
 	var trim := UrbanMaterials.material_for_color(Color("bca275"), 0.74)
 	var glass := UrbanMaterials.glass_display()
 	var dark := UrbanMaterials.material_for_color(Color("172a2b"), 0.78)

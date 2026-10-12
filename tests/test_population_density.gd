@@ -24,6 +24,25 @@ func _initialize() -> void:
 	check(world._population_cap() == 40 and world._traffic_cap() == WORLD.TRAFFIC_TARGET,"escala 1 mantém os tetos de projeto")
 	world.density_scale = WORLD.DENSITY_MIN
 	check(world._population_cap() == 16 and world._traffic_cap() == 16,"piso de 40% reduz para 16 de 40")
+	var market := WORLD.area_density_target("harbor",Vector3(107,0,23))
+	var neighborhood := WORLD.area_density_target("harbor",Vector3(320,0,-22))
+	check(market.x > market.y,"mercado preserva mais pedestres que trânsito")
+	check(neighborhood.x > market.x and neighborhood.y > market.y,"bairro comporta mais população que o trecho carregado do mercado")
+	check(WORLD.area_density_target("harbor",Vector3(145,0,200)).x < neighborhood.x,"orla industrial tem menos pedestres que o bairro")
+	var border_a := WORLD.area_density_target("harbor",Vector3(165,0,50))
+	var border_b := WORLD.area_density_target("harbor",Vector3(165.01,0,50))
+	check(border_a.distance_to(border_b) < .001,"perfil espacial é contínuo na borda do mercado")
+	world.area_density_scale = market
+	check(world._population_cap() == 16 and world._traffic_cap() == 16,"emergência e área não multiplicam a redução")
+	world.density_scale = 1.0
+	check(world._population_cap() == 36 and world._traffic_cap() == 28,"mercado mantém 36 pedestres e 28 carros civis sem emergência")
+	world.area_density_scale = WORLD.area_density_target("mountain",Vector3.ZERO)
+	check(world._population_cap() == 24 and world._traffic_cap() == 28,"montanha respeita os tetos inteiros sem arredondamento float32")
+	world.area_density_scale = WORLD.area_density_target("desert",Vector3.ZERO)
+	check(world._population_cap() == 28 and world._traffic_cap() == 32,"deserto respeita os tetos inteiros sem arredondamento float32")
+	check(WORLD.area_density_target("other",Vector3(107,0,23)) == Vector2.ONE,"outras regiões não herdam o perfil geográfico do porto")
+	world.requested_population = 0
+	check(world._population_cap() == 0,"perfil não cria população quando explicitamente desativada")
 	world.free()
 	print("POPULATION_DENSITY failures=",failures.size())
 	quit(0 if failures.is_empty() else 1)

@@ -3,6 +3,9 @@ extends PanelContainer
 
 signal closed
 
+const SHOP_FOCUS := preload("res://ui/ShopFocus.gd")
+const MENU_AUDIO := preload("res://ui/MenuAudio.gd")
+
 const CUSTOM := preload("res://gameplay/WeaponCustomization.gd")
 const WEAPONS := preload("res://gameplay/WeaponCatalog.gd")
 const ART := preload("res://assets/regions/source/guns/ammunation/AmmunationArt.gd")
@@ -47,7 +50,11 @@ static func style_button(button: Button) -> void:
 	disabled.border_color = Color("3d4d4b")
 	button.add_theme_stylebox_override("normal", base)
 	button.add_theme_stylebox_override("hover", hover)
-	button.add_theme_stylebox_override("focus", hover)
+	var focus := hover.duplicate() as StyleBoxFlat
+	focus.border_color = Color("ffd878")
+	focus.set_border_width_all(3)
+	button.add_theme_stylebox_override("focus", focus)
+	MENU_AUDIO.hook_button(button, button)
 	button.add_theme_stylebox_override("pressed", pressed)
 	button.add_theme_stylebox_override("hover_pressed", pressed)
 	button.add_theme_stylebox_override("disabled", disabled)
@@ -156,7 +163,7 @@ func _ready() -> void:
 	style_button(apply_button)
 	actions.add_child(apply_button)
 	var back := Button.new()
-	back.text = "VOLTAR [ESC]"
+	back.text = "VOLTAR"
 	back.pressed.connect(close)
 	style_button(back)
 	actions.add_child(back)
@@ -203,6 +210,7 @@ func select_slot(value: String) -> void:
 			var effect := CUSTOM.effect_summary(part)
 			_option(part, str(CUSTOM.PARTS[part].label) + tag + ("\n" + effect if not effect.is_empty() else ""))
 	select_candidate(CUSTOM.selected(session.world.gameplay.customization, weapon_id, slot))
+	SHOP_FOCUS.rebuild.call_deferred(self)
 
 func _option(id: String, words: String) -> void:
 	var button := Button.new()
@@ -228,7 +236,7 @@ func select_candidate(part: String) -> void:
 	preview_state[weapon_id] = entry
 	_rebuild_model()
 	var price := 0 if part == "none" or CUSTOM.owns(session.world.gameplay.customization, weapon_id, part) else int(CUSTOM.PARTS[part].price)
-	wallet.text = "SALDO: $%d" % session.state.economy.balance
+	wallet.text = String(TranslationServer.translate("SALDO: $%d")) % session.state.economy.balance
 	detail.text = compare_stats(weapon_id, session.world.gameplay.customization, preview_state)
 	if part != "none" and CUSTOM.PARTS[part].has("note"): detail.text += "\n" + str(CUSTOM.PARTS[part].note)
 	var current: String = CUSTOM.selected(session.world.gameplay.customization, weapon_id, slot)
@@ -239,9 +247,10 @@ func select_candidate(part: String) -> void:
 	if same: apply_button.text = "JÁ INSTALADO"
 	elif part == "none": apply_button.text = "REMOVER " + str(CUSTOM.PARTS[current].label).to_upper()
 	elif owned: apply_button.text = "INSTALAR (JÁ ADQUIRIDO)"
-	elif short: apply_button.text = "SALDO INSUFICIENTE • $%d" % price
-	else: apply_button.text = "COMPRAR E INSTALAR • $%d" % price
+	elif short: apply_button.text = String(TranslationServer.translate("SALDO INSUFICIENTE • $%d")) % price
+	else: apply_button.text = String(TranslationServer.translate("COMPRAR E INSTALAR • $%d")) % price
 	apply_button.disabled = same or short
+	SHOP_FOCUS.rebuild.call_deferred(self)
 
 ## "Dano 16 → 21 ▲" para cada número do combate: atual x prévia.
 static func compare_stats(id: String, current: Dictionary, preview: Dictionary) -> String:
@@ -263,12 +272,12 @@ func part_name(id: String) -> String:
 
 ## Separa o que está instalado agora do que está só em prévia.
 func candidate_status(part: String, current: String, owned: bool, price: int, short: bool) -> String:
-	var line := "Prévia: %s" % part_name(part)
+	var line := String(TranslationServer.translate("Prévia: %s")) % part_name(part)
 	if part == current: return line + " — instalado agora"
-	line += " • Instalado agora: %s" % part_name(current)
+	line += String(TranslationServer.translate(" • Instalado agora: %s")) % part_name(current)
 	if owned: return line + " • sem custo"
-	if short: return line + " • faltam $%d" % (price - int(session.state.economy.balance))
-	return line + " • custo $%d" % price
+	if short: return line + String(TranslationServer.translate(" • faltam $%d")) % (price - int(session.state.economy.balance))
+	return line + String(TranslationServer.translate(" • custo $%d")) % price
 
 func _rebuild_model() -> void:
 	for child in model.get_children(): child.free()
@@ -313,7 +322,9 @@ func close(p_emit_signal := true) -> void:
 	hide()
 	if viewport: viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 	set_process(false)
-	if p_emit_signal: closed.emit()
+	if p_emit_signal:
+		MENU_AUDIO.play_click(self)
+		closed.emit()
 
 func _process(delta: float) -> void:
 	if is_instance_valid(model): model.rotation.y += delta * .22

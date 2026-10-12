@@ -16,7 +16,7 @@ const DRAG_OPPONENTS := {
 	"jessica":Vector3(-915,0,-1260),"nadir":Vector3(-967,0,-1244),
 }
 const DRAG_MEET_BOUNDS := Rect2(-1040, -1312, 150, 100)
-const DRAG_STRIP_BOUNDS := Rect2(-940, -1337, 1048, 34)
+const DRAG_STRIP_BOUNDS := Rect2(-955, -1358, 1070, 55)
 const BANK := Vector3(-210, 0, -920)
 const WORKSHOP := Vector3(-140, 0, -955)
 const TRUCK_STOP := Vector3(285, 0, -750)
@@ -48,7 +48,12 @@ static func roads() -> Array[Dictionary]:
 		_road("desert_truck_stop_entry", _rounded([Vector2(342.5,-750),Vector2(320,-750),Vector2(306,-758),Vector2(290,-758)],6), 12.0),
 		_road("desert_drag_access", _rounded([Vector2(-1200,-1264),Vector2(-1120,-1264),Vector2(-1090,-1280),Vector2(-960,-1280),Vector2(-928,-1280),Vector2(-928,-1320)],12), 8.0, false),
 		_road("desert_drag_strip", [Vector2(-936,-1320),Vector2(-928,-1320),Vector2(-900,-1320),Vector2(-100,-1320),Vector2(90,-1320)], 10.0, false),
+		_road("desert_drag_return", drag_return_points(), 6.0, false),
 	]
+
+static func drag_return_points() -> Array:
+	# Dedicated service loop outside spectators/barriers; no opposing races.
+	return _rounded([Vector2(90,-1320),Vector2(105,-1320),Vector2(105,-1350),Vector2(-946,-1350),Vector2(-946,-1320),Vector2(-928,-1320)],10.0)
 
 static func _rounded(positions: Array, radius: float) -> Array:
 	# Sample actual circular centre-lines. Render, collision, traffic and clearance

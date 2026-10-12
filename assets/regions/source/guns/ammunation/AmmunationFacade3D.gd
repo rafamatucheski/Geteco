@@ -10,7 +10,8 @@ func set_open_amount(value: float) -> void:
 
 func _ready() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-	ART.box(self,Vector3(8.4,2.8,4.4),Vector3(0,1.4,0),ART.INK)
+	var shell := ART.box(self,Vector3(8.4,2.8,4.4),Vector3(0,1.4,0),ART.INK)
+	shell.material_override = preload("res://assets/urban_detail/UrbanMaterials.gd").textured_wall(ART.INK)
 	ART.box(self,Vector3(8.65,.22,4.65),Vector3(0,2.9,0),Color("515957"))
 	for side in [-1,1]: ART.box(self,Vector3(.14,.25,4.7),Vector3(side*4.3,3.06,0),ART.INK)
 	ART.box(self,Vector3(8.6,.25,.14),Vector3(0,3.06,-2.28),ART.INK)
@@ -22,7 +23,8 @@ func _ready() -> void:
 	ART.text(rooftop,"AMMU\nNATION",Vector3(.55,0,0),.014)
 	ART.box(self,Vector3(1.0,.45,.8),Vector3(3,3.18,-1.25),Color("77827b"))
 	for i in 6: ART.box(self,Vector3(.8,.015,.03),Vector3(3,3.415,-1.53+i*.10),ART.INK)
-	ART.box(self,Vector3(8.5,.87,.16),Vector3(0,2.30,2.24),ART.RED)
+	var fascia := ART.box(self,Vector3(8.5,.87,.16),Vector3(0,2.30,2.24),ART.RED)
+	fascia.material_override = preload("res://assets/urban_detail/ExteriorFinish.gd").material("paint", ART.RED)
 	ART.text(self,"AMMU-NATION",Vector3(0,2.40,2.34),.012)
 	for side in [-1,1]:
 		ART.target(self,Vector3(side*3.7,2.38,2.35),.24)
@@ -38,8 +40,10 @@ func _ready() -> void:
 		ART.box(panel,Vector3(.035,1.85,.10),Vector3(-side*.43,.94,0),Color("949c8c"))
 		ART.box(panel,Vector3(.035,.4,.1),Vector3(-side*.33,.94,.08),ART.CREAM)
 		panels.append(panel)
-	ART.box(self,Vector3(8.7,.10,1.05),Vector3(0,1.9,2.62),ART.RED)
-	ART.box(self,Vector3(8.7,.15,1.35),Vector3(0,-.01,2.65),Color("818778"))
+	var canopy := ART.box(self,Vector3(8.7,.10,1.05),Vector3(0,1.9,2.62),ART.RED)
+	canopy.material_override = preload("res://assets/urban_detail/ExteriorFinish.gd").material("paint", ART.RED)
+	var apron := ART.box(self,Vector3(8.7,.15,1.35),Vector3(0,-.01,2.65),Color("818778"))
+	apron.material_override = preload("res://world/urban_detail/PromenadePaving.gd").material(Color("818778"), true)
 	ART.box(self,Vector3(1.8,.025,.7),Vector3(0,.08,2.75),ART.INK)
 	for side in [-1,1]:
 		ART.box(self,Vector3(.15,.68,.15),Vector3(side*3.8,.34,2.9),Color("c8aa54"))

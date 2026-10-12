@@ -22,10 +22,16 @@ var _last_observed_speed := 0.0
 var _foreground := false
 var _recorded_idle: AudioStreamPlayer3D
 var _recorded_path := ""
+var _audible_rpm := 0.0
+var _audible_load := 0.0
+var _audible_cut := 0.0
 
 func bind(car: Node3D, state: RefCounted) -> void:
 	vehicle = car
 	drivetrain = state
+	_audible_rpm = float(state.rpm) if state != null else 0.0
+	_audible_load = 0.0
+	_audible_cut = 0.0
 	_last_shift = int(state.shift_serial) if state != null else 0
 	_last_throttle = float(state.throttle) if state != null else 0.0
 	_blowoff_cooldown = .2
@@ -108,19 +114,29 @@ func _process(delta: float) -> void:
 		_shift.stop()
 		if is_instance_valid(_recorded_idle): _recorded_idle.stop()
 		_external_observing = false
+		_audible_rpm = float(drivetrain.rpm)
+		_audible_load = 0.0
+		_audible_cut = 0.0
 		return
 	_synchronize_external(delta)
+	# Gear engagement and the reverse adapter can jump physical RPM in one
+	# tick. Give the audible rotor inertia without changing torque or the HUD.
+	var target_rpm := float(drivetrain.rpm)
+	var response := 10.0 if target_rpm > _audible_rpm else 6.0
+	_audible_rpm = lerpf(_audible_rpm, target_rpm, 1.0-exp(-maxf(delta,0.0)*response))
+	_audible_load = lerpf(_audible_load,float(drivetrain.throttle),1.0-exp(-maxf(delta,0.0)*7.0))
 	# Each nominal value is complete four-stroke cycles per second: RPM / 120.
 	# Align both bands to that SAME rate, otherwise the crossfade plays two
 	# incompatible notes and produces beating/chirps as the engine accelerates.
 	var nominal: Array = PROFILE.NOMINAL.get(_family, PROFILE.NOMINAL.street)
-	var cycles := maxf(1.0,float(drivetrain.rpm)/120.0)
+	var cycles := maxf(1.0,_audible_rpm/120.0)
 	var low := 0
 	while low < 5 and cycles > float(nominal[low+1]): low += 1
 	var fraction := clampf(log(cycles/float(nominal[low]))/log(float(nominal[low+1])/float(nominal[low])),0.0,1.0)
-	var power := float(drivetrain.throttle)
+	var power := _audible_load
 	var cut := -8.0 if float(drivetrain.shift_remaining) > 0.0 else 0.0
 	if drivetrain.limiter: cut -= 4.0
+	_audible_cut = lerpf(_audible_cut,cut,1.0-exp(-maxf(delta,0.0)*18.0))
 	var exhaust := float(drivetrain.spec.get("exhaust",0.0))
 	# Injection increases engine load. It is not an external air-brake purge.
 	var nitro_load := 1.5 if drivetrain.nitro_active else 0.0
@@ -129,8 +145,8 @@ func _process(delta: float) -> void:
 	# before 2000 RPM, leaving the RPM-aligned load banks in charge.
 	var idle_weight := 0.0
 	if is_instance_valid(_recorded_idle):
-		idle_weight = (1.0-smoothstep(1050.0,2000.0,float(drivetrain.rpm)))*(1.0-power*.4)
-		_recorded_idle.pitch_scale = clampf(float(drivetrain.rpm)/(750.0 if _family == "diesel" else 900.0),.85,1.6)
+		idle_weight = (1.0-smoothstep(1050.0,2000.0,_audible_rpm))*(1.0-power*.4)
+		_recorded_idle.pitch_scale = clampf(_audible_rpm/(750.0 if _family == "diesel" else 900.0),.85,1.6)
 		_loop_level(_recorded_idle,idle_weight,-14.0,delta)
 	var synthesized_gain := linear_to_db(1.0-idle_weight*.82)
 	for i in 2:
@@ -147,14 +163,14 @@ func _process(delta: float) -> void:
 			player.play()
 		elif not player.playing: player.play()
 		var weight := sqrt(maxf(.00001,1.0-fraction if i == 0 else fraction))
-		player.volume_db = lerpf(player.volume_db,-19.0+linear_to_db(weight)+power*4.0+cut+exhaust*2.0+nitro_load+synthesized_gain,1.0-exp(-delta*25.0))
+		player.volume_db = lerpf(player.volume_db,-19.0+linear_to_db(weight)+power*4.0+_audible_cut+exhaust*2.0+nitro_load+synthesized_gain,1.0-exp(-delta*25.0))
 		player.pitch_scale = clampf(cycles/float(nominal[index]),.35,3.0)
 	if int(drivetrain.shift_serial) != _last_shift:
 		_last_shift = int(drivetrain.shift_serial)
 		_play_shift()
-	elif _last_throttle > .65 and power < .25 and float(drivetrain.turbo_pressure) > .5:
+	elif _last_throttle > .65 and float(drivetrain.throttle) < .25 and float(drivetrain.turbo_pressure) > .5:
 		_play_shift()
-	_last_throttle = power
+	_last_throttle = float(drivetrain.throttle)
 	_loop_level(_tire,float(drivetrain.wheelspin),-28.0,delta)
 
 func has_wheelspin_voice() -> bool:

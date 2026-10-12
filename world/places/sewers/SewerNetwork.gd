@@ -33,6 +33,18 @@ static func ids() -> Array[String]:
 	all.append_array(extra_ids())
 	return all
 
+static func original_residents() -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	for row in [
+		["sewer_original_raul", "Raul", Vector3(-3.6, 0, 2.8), "fists", 41],
+		["sewer_original_cida", "Cida", Vector3(-.8, 0, 2.8), "bottle", 27],
+		["sewer_original_beto", "Beto", Vector3(4.7, 0, 2.8), "pistol", 62],
+	]:
+		result.append({"id": row[0], "name": row[1], "place_id": ORIGINAL_ID,
+			"model": PLACES_ROOT + "SewerHomelessModel.gd", "local_position": row[2], "weapon": row[3],
+			"appearance": {"appearance_variant": row[4], "is_female": row[0] == "sewer_original_cida", "coat_color": Color("514839"), "pants_color": Color("343a32")}})
+	return result
+
 static func is_manhole(id: String) -> bool:
 	return id == ORIGINAL_ID or is_extra(id) or preload("res://world/desert/underground/DesertUnderground.gd").is_underground(id)
 

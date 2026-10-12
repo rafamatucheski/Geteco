@@ -4,8 +4,17 @@ extends Node
 ## `applied` quem depende do mundo (brilho vai no WorldEnvironment do ProductionWorld).
 signal applied
 signal voice_language_changed(language: String)
+signal text_language_changed(language: String)
 
 const VOICE_LANGUAGES := ["pt_BR", "en"]
+const TEXT_LANGUAGES := ["pt_BR", "en"]
+var text_language := "pt_BR":
+	set(value):
+		var language := "en" if value.to_lower().replace("-", "_").get_slice("_", 0) == "en" else "pt_BR"
+		if text_language == language: return
+		text_language = language
+		TranslationServer.set_locale(language)
+		text_language_changed.emit(language)
 ## Dublagem é independente do idioma dos textos e preserva o português de saves antigos.
 var voice_language := "pt_BR":
 	set(value):
@@ -71,7 +80,9 @@ func _enter_tree() -> void:
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_setup_audio_buses()
+	preload("res://runtime/Localization.gd").install()
 	load_settings()
+	TranslationServer.set_locale(text_language)
 	apply_settings()
 
 func load_settings(path := "user://settings.cfg") -> Error:
@@ -84,6 +95,7 @@ func load_settings(path := "user://settings.cfg") -> Error:
 		ambient_volume = clampf(float(config.get_value("audio","ambient_volume",1.0)),0,1)
 		mute_unfocused = bool(config.get_value("audio","mute_unfocused",false))
 		voice_language = str(config.get_value("audio","voice_language","pt_BR"))
+		text_language = str(config.get_value("interface","text_language","pt_BR"))
 		# Arquivo antigo só tinha "fullscreen".
 		var legacy_mode := 1 if bool(config.get_value("display","fullscreen",false)) else 0
 		window_mode = clampi(int(config.get_value("display","window_mode",legacy_mode)),0,2)
@@ -97,6 +109,10 @@ func load_settings(path := "user://settings.cfg") -> Error:
 		show_fps = bool(config.get_value("display","show_fps",false))
 		camera_view = clampi(int(config.get_value("display","camera_view",0)), 0, 1)
 	return result
+
+func _exit_tree() -> void:
+	# Scripted translations must leave the server before script runtime teardown.
+	if name == "V2Settings": preload("res://runtime/Localization.gd").uninstall()
 
 ## Cria "Music", "SFX" e "Ambient" se ainda não existirem (idempotente: chamado tanto no
 ## `_enter_tree` do autoload, antes de qualquer outro nó tocar som, quanto no `_ready`).
@@ -212,7 +228,7 @@ func _process(_delta: float) -> void:
 	_fps_clock += _delta
 	if _fps_clock < 1.0: return
 	var fps := Engine.get_frames_per_second()
-	_fps_label.text = "%d FPS · pico %.1f ms" % [fps, _fps_peak]
+	_fps_label.text = tr("%d FPS · pico %.1f ms") % [fps, _fps_peak]
 	_fps_clock = 0.0
 	_fps_peak = 0.0
 
@@ -226,6 +242,7 @@ func save_settings(path := "user://settings.cfg") -> Error:
 	config.set_value("audio","ambient_volume",ambient_volume)
 	config.set_value("audio","mute_unfocused",mute_unfocused)
 	config.set_value("audio","voice_language",voice_language)
+	config.set_value("interface","text_language",text_language)
 	config.set_value("display","window_mode",window_mode)
 	config.set_value("display","fullscreen",fullscreen)
 	config.set_value("display","resolution",resolution)

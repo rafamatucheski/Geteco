@@ -20,7 +20,7 @@ const CONTROLLER_LAYOUT := preload("res://ui/ControllerLayout.gd")
 ## Ações remapeáveis por grupo; `inventory` e `pause_game` aparecem fixas em Geral.
 const CONTROL_GROUPS := [
 	["A PÉ", ["move_up", "move_down", "move_left", "move_right", "sprint", "interact"]],
-	["CÂMERA 3D", ["camera_left", "camera_right"]],
+	["CÂMERA 3D", ["camera_left", "camera_right", "camera_drag"]],
 	["VEÍCULO / ESPORTES", ["accelerate", "brake", "vehicle_interact", "exit_vehicle", "handbrake", "motorcycle_wheelie", "horn", "headlights", "siren_toggle", "radio_next", "radio_previous", "radio_toggle", "trunk", "tank_fire"]],
 	["SKATE", ["skate_ollie", "skate_flip", "skate_shove"]],
 	["COMBATE", ["fire", "aim", "reload", "weapon_next", "weapon_previous", "unarmed", "weapon_flashlight", "surrender"]],
@@ -145,6 +145,12 @@ func _layout() -> void:
 	height = minf(height, size.y - 32.0)
 	_panel.size = Vector2(width, height)
 	_panel.position = (size - _panel.size) * 0.5
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED and is_node_ready():
+		# Dynamic action names and controller hints are assembled by GameInput.
+		# Refresh only when the locale changes, including while the menu is open.
+		_refresh_controls.call_deferred()
 
 # --- Construção ----------------------------------------------------------------------
 
@@ -317,13 +323,17 @@ func _set_slider(box: HBoxContainer, value: float, format: Callable) -> void:
 	(box.get_meta("value_label") as Label).text = format.call(value)
 
 func _percent(value: float) -> String:
-	return "%d%%" % roundi(value * 100.0)
+	return tr("%d%%") % roundi(value * 100.0)
 
 func _settings() -> Node:
 	return get_node("/root/V2Settings")
 
 func _build_video(page: VBoxContainer) -> void:
 	var s := _settings()
+	_section(page, "IDIOMA")
+	_widgets.text_language = _options(["Português (Brasil)", "English"], func(index):
+		s.text_language = s.TEXT_LANGUAGES[index])
+	_row(page, "Idioma dos textos", "", _widgets.text_language)
 	_section(page, "TELA")
 	_widgets.window_mode = _options(["Janela", "Tela cheia", "Tela cheia exclusiva"], func(index):
 		s.window_mode = index
@@ -331,7 +341,7 @@ func _build_video(page: VBoxContainer) -> void:
 		s.apply_settings())
 	_row(page, "Modo de tela", "Exclusiva pode dar mais FPS; a comum troca de janela mais rápido.", _widgets.window_mode)
 	var resolutions := []
-	for value in s.RESOLUTIONS: resolutions.append("%d × %d" % [value.x, value.y])
+	for value in s.RESOLUTIONS: resolutions.append(tr("%d × %d") % [value.x, value.y])
 	_widgets.resolution = _options(resolutions, func(index):
 		s.resolution = index
 		s.apply_settings())
@@ -341,7 +351,7 @@ func _build_video(page: VBoxContainer) -> void:
 		s.apply_settings())
 	_row(page, "VSync", "Evita rasgos na imagem; pode somar um pouco de atraso.", _widgets.vsync)
 	var limits := []
-	for value in s.FPS_LIMITS: limits.append("Sem limite" if value == 0 else "%d FPS" % value)
+	for value in s.FPS_LIMITS: limits.append("Sem limite" if value == 0 else tr("%d FPS") % value)
 	_widgets.fps_limit = _options(limits, func(index):
 		s.fps_limit = index
 		s.apply_settings())
@@ -402,7 +412,7 @@ func _build_controls(page: VBoxContainer) -> void:
 	_controller_status = _label("",15,MUTED,BODY_FONT)
 	page.add_child(_controller_status)
 	var contexts := []
-	for title in CONTROLLER_LAYOUT.CONTEXT_NAMES: contexts.append("Mapa do controle · " + title)
+	for title in CONTROLLER_LAYOUT.CONTEXT_NAMES: contexts.append(tr("Mapa do controle · %s") % tr(title))
 	_context_choice = _options(contexts,func(index):
 		_pad_diagram.set("context",index)
 		_pad_diagram.queue_redraw())
@@ -491,14 +501,14 @@ func _refresh_controls() -> void:
 			pad_cell.add_child(pad)
 			var clear := Button.new()
 			clear.text = "−"
-			clear.tooltip_text = "Limpar botão de "+controls.label(action)
+			clear.tooltip_text = tr("Limpar botão de %s") % tr(controls.label(action))
 			clear.custom_minimum_size = Vector2(34,34)
 			clear.disabled = action == "pause_game"
 			clear.set_meta("binding_key",action+":pad_clear")
 			_style_field(clear)
 			clear.pressed.connect(func():
 				controls.clear_gamepad(action)
-				_status.text = "Botão removido de \"%s\". Salve para manter." % controls.label(action))
+				_status.text = tr("Botão removido de \"%s\". Salve para manter.") % controls.label(action))
 			pad_cell.add_child(clear)
 			row.add_child(pad_cell)
 			_controls_list.add_child(row)
@@ -518,10 +528,12 @@ func _restore_binding_focus(focus_key: String) -> void:
 
 func _refresh_controller_diagram() -> void:
 	if not is_instance_valid(_pad_diagram): return
+	for index in CONTROLLER_LAYOUT.CONTEXT_NAMES.size():
+		_context_choice.set_item_text(index, tr("Mapa do controle · %s") % tr(CONTROLLER_LAYOUT.CONTEXT_NAMES[index]))
 	var controls := get_node("/root/GameInput")
 	_layout_choice.select(controls.controller_layout)
 	var device: String = controls.controller_name()
-	_controller_status.text = "Conectado: "+device if not device.is_empty() else "Nenhum controle conectado · você pode consultar o layout."
+	_controller_status.text = tr("Conectado: %s") % device if not device.is_empty() else "Nenhum controle conectado · você pode consultar o layout."
 	_pad_diagram.queue_redraw()
 
 func _pad_hint(action: String) -> String:
@@ -538,6 +550,7 @@ func open() -> void:
 func _load_widgets() -> void:
 	var s := _settings()
 	_widgets.window_mode.select(s.window_mode)
+	_widgets.text_language.select(s.TEXT_LANGUAGES.find(s.text_language))
 	_widgets.resolution.select(s.resolution)
 	_widgets.resolution.disabled = s.window_mode != 0
 	_widgets.vsync.set_pressed_no_signal(s.vsync)
@@ -579,8 +592,8 @@ func _begin_remap(action: String, slot: int, button: Button, gamepad := false) -
 	button.text = "Pressione…"
 	button.add_theme_color_override("font_color", ACCENT)
 	get_node("/root/GameInput").remapping = true
-	_status.text = "Pressione a nova tecla ou botão do mouse para \"%s\". Delete limpa, Esc cancela." % get_node("/root/GameInput").label(action)
-	if gamepad: _status.text = "Pressione o novo botão ou gatilho para \"%s\". Options ou Esc cancela; Delete limpa." % get_node("/root/GameInput").label(action)
+	_status.text = tr("Pressione a nova tecla ou botão do mouse para \"%s\". Delete limpa, Esc cancela.") % get_node("/root/GameInput").label(action)
+	if gamepad: _status.text = tr("Pressione o novo botão ou gatilho para \"%s\". Options ou Esc cancela; Delete limpa.") % get_node("/root/GameInput").label(action)
 
 func _cancel_remap() -> void:
 	if remap_action.is_empty(): return
@@ -615,7 +628,7 @@ func _input(event: InputEvent) -> void:
 		if remap_gamepad: controls.clear_gamepad(action)
 		else: controls.clear_slot(action, slot)
 		_refresh_controls()
-		_status.text = "Tecla removida de \"%s\"." % controls.label(action)
+		_status.text = tr("Tecla removida de \"%s\".") % controls.label(action)
 		return
 	if remap_gamepad and not (event is InputEventJoypadButton or event is InputEventJoypadMotion): return
 	if not remap_gamepad and not (event is InputEventKey or event is InputEventMouseButton): return
@@ -626,7 +639,7 @@ func _input(event: InputEvent) -> void:
 	remap_action = ""
 	controls.remapping = false
 	_refresh_controls()
-	_status.text = str(result.message) if not str(result.message).is_empty() else "\"%s\" agora usa %s." % [controls.label(action), controls.event_label(event)]
+	_status.text = str(result.message) if not str(result.message).is_empty() else tr("\"%s\" agora usa %s.") % [controls.label(action), controls.event_label(event)]
 
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_visible_in_tree() or event.is_echo(): return
@@ -645,6 +658,7 @@ func _restore_tab_defaults() -> void:
 	var s := _settings()
 	match _tab:
 		0:
+			s.text_language = "pt_BR"
 			s.window_mode = 0
 			s.resolution = 0
 			s.vsync = true
@@ -673,7 +687,7 @@ func _save() -> void:
 	_cancel_remap()
 	var result: Error = _settings().save_settings()
 	if result != OK:
-		_status.text = "Não foi possível salvar (%d)." % result
+		_status.text = tr("Não foi possível salvar (%d).") % result
 		return
 	snapshot = _capture_snapshot()
 	close()
@@ -684,7 +698,7 @@ func close() -> void:
 	hide()
 	closed.emit()
 
-const SNAPSHOT_KEYS := ["master_volume", "music_volume", "sfx_volume", "ambient_volume", "mute_unfocused", "voice_language", "window_mode", "resolution", "vsync", "msaa", "render_scale", "fps_limit", "shadow_quality", "brightness", "show_fps", "camera_view"]
+const SNAPSHOT_KEYS := ["master_volume", "music_volume", "sfx_volume", "ambient_volume", "mute_unfocused", "voice_language", "text_language", "window_mode", "resolution", "vsync", "msaa", "render_scale", "fps_limit", "shadow_quality", "brightness", "show_fps", "camera_view"]
 
 func _capture_snapshot() -> Dictionary:
 	var s := _settings()

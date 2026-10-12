@@ -34,7 +34,7 @@ func _ready() -> void:
 		bar.add_child(button)
 	var exit_button := Button.new()
 	var controls = get_node_or_null("/root/GameInput")
-	exit_button.text = "%s · Sair" % controls.prompt("interact") if controls != null else "Sair"
+	exit_button.text = String(TranslationServer.translate("%s · Sair")) % controls.prompt("interact") if controls != null else "Sair"
 	exit_button.custom_minimum_size = Vector2(140, 44)
 	exit_button.focus_mode = Control.FOCUS_NONE
 	exit_button.pressed.connect(controller.leave)

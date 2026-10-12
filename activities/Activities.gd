@@ -59,7 +59,7 @@ func _physics_process(delta: float) -> void:
 		elif motorsport.cancelled: session.show_message("Tentativa cancelada. Sem cobrança.")
 		_gate.visible = motorsport.mode != ""
 		if _gate.visible: _gate.position = motorsport.target_position()+Vector3.UP*.05
-		_status.text = ("Largada em %d"%ceili(motorsport.countdown)) if motorsport.countdown > 0 else ("%.1f s · Portão %d/%d"%[motorsport.elapsed,motorsport.gate+1,motorsport.points.size()] if mode == "race" else "Drift · %d pts · %.0f s"%[int(motorsport.score),maxf(0,25-motorsport.elapsed)])
+		_status.text = (String(TranslationServer.translate("Largada em %d")) %ceili(motorsport.countdown)) if motorsport.countdown > 0 else (String(TranslationServer.translate("%.1f s · Portão %d/%d")) %[motorsport.elapsed,motorsport.gate+1,motorsport.points.size()] if mode == "race" else "Drift · %d pts · %.0f s"%[int(motorsport.score),maxf(0,25-motorsport.elapsed)])
 	else: _status.text = ""
 	_tick_tow(delta)
 	_clock += delta
@@ -106,7 +106,7 @@ func nearest_action() -> Dictionary:
 	else:
 		if session.state.region_id == "harbor":
 			for id in Definitions.HOMES.PROPERTIES:
-				if not residence.can_enter(id): options.append(_action("home_buy:"+id,"Comprar casa · R$ %d"%int(residence.quote(id).get("due",0)),residence.entry(id),4.5))
+				if not residence.can_enter(id): options.append(_action("home_buy:"+id,String(TranslationServer.translate("Comprar casa · R$ %d")) %int(residence.quote(id).get("due",0)),residence.entry(id),4.5))
 			if residence.data.active_home != "":
 				for slot in ["car","motorcycle"]:
 					if residence._record(slot).get("status", "") == "stored":
@@ -132,13 +132,7 @@ func perform(target: Variant) -> bool:
 	if id.begins_with("drift:"):
 		return _start_motorsport(id)
 	if id.begins_with("home_buy:"):
-		var home := id.trim_prefix("home_buy:")
-		var quote := residence.quote(home)
-		session._menu("Comprar casa · R$ %d"%int(quote.get("due",0)))
-		session._button("Confirmar compra",func():
-			session.close_menu()
-			if residence.buy(home): _commit(); session.show_message("Casa adquirida.")
-			else: session.show_message("Compra indisponível ou saldo insuficiente."))
+		_open_home_purchase(id.trim_prefix("home_buy:"))
 		return true
 	if id == "home_store":
 		_store_home_vehicle()
@@ -151,6 +145,40 @@ func perform(target: Variant) -> bool:
 	if id == "tow_accept": return _accept_tow()
 	if id == "tow_deliver": return _deliver_tow()
 	return false
+
+func _open_home_purchase(home: String) -> void:
+	var quote := residence.quote(home)
+	session._menu("Comprar casa")
+	var scroll: ScrollContainer = session.column.get_parent()
+	var previous_minimum := scroll.custom_minimum_size
+	var previous_horizontal := scroll.horizontal_scroll_mode
+	scroll.custom_minimum_size = Vector2.ZERO
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var extent := Vector2(340,250 if int(quote.get("refund",0)) > 0 else 220)
+	session.panel.set_meta("modal_preferred_size",extent)
+	session.panel.custom_minimum_size = extent
+	session.panel.size = extent
+	session.column.get_child(0).add_theme_font_size_override("font_size",20)
+	var restore_layout := func():
+		scroll.custom_minimum_size = previous_minimum
+		scroll.horizontal_scroll_mode = previous_horizontal
+	session.menu_closed = restore_layout
+	# Replacing the modal removes its title before building the next menu.
+	# Restore that menu's scroll constraints even when close_menu is bypassed.
+	session.column.get_child(0).tree_exiting.connect(restore_layout,CONNECT_ONE_SHOT)
+	if int(quote.get("refund",0)) > 0:
+		var credit := Label.new()
+		credit.text = String(TranslationServer.translate("Troca da casa atual · R$ %d")) %int(quote.refund)
+		credit.add_theme_font_size_override("font_size",14)
+		session.column.add_child(credit)
+	session._button(String(TranslationServer.translate("Comprar · R$ %d")) %int(quote.get("due",0)),func():
+		session.close_menu()
+		if residence.buy(home):
+			REWARD_AUDIO.play(self,"achievement")
+			_commit()
+			session.show_message("Casa adquirida.")
+		else: session.show_message("Compra indisponível ou saldo insuficiente."))
+	session._button("Cancelar",session.close_menu)
 
 func _phone_position(id: String) -> Vector3:
 	var spec: Dictionary = Definitions.races(session.state.region_id)[id]
@@ -236,7 +264,7 @@ func _finish_motorsport(mode: String) -> void:
 	session.state.economy.grant_reward("activity:%d:%s"%[int(_data.attempt),motorsport.id],reward)
 	_achievements()
 	_commit()
-	session.show_message("Atividade concluída · +R$ %d"%reward)
+	session.show_message(String(TranslationServer.translate("Atividade concluída · +R$ %d")) %reward)
 
 func _rebuild() -> void:
 	for visual in _visuals:
@@ -381,7 +409,7 @@ func _deliver_tow() -> bool:
 	_data.tow_delivered_today += 1
 	_data.tow_contract = {}
 	_commit()
-	session.show_message("Reboque entregue · +R$ %d"%int(job.reward))
+	session.show_message(String(TranslationServer.translate("Reboque entregue · +R$ %d")) %int(job.reward))
 	return true
 
 func _tick_tow(delta: float) -> void:

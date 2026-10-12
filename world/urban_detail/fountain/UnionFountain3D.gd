@@ -72,9 +72,9 @@ func _water(label: String, y: float, radius: float, impact: float, strength: flo
 	item.name = label
 	var mesh := PlaneMesh.new()
 	mesh.size = Vector2.ONE * radius * 2.0
-	# Subdividido para as ondas do vertex shader aparecerem no contorno do reflexo.
-	mesh.subdivide_width = 40
-	mesh.subdivide_depth = 40
+	# A malha mantém o deslocamento das ondas; o detalhe das normais é por fragmento.
+	mesh.subdivide_width = 20
+	mesh.subdivide_depth = 20
 	item.mesh = mesh
 	item.position.y = y
 	item.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

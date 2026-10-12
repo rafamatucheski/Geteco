@@ -22,7 +22,7 @@ func run() -> void:
 	row.merge({"model": "footbridge", "color": "3f6e8c", "size": [2.6, 34.6]}, true)
 	check(DATA.validate_entity(row) == "", "Passarela padrão é válida no documento: " + DATA.validate_entity(row))
 	var bad := row.duplicate(true)
-	bad.size = [2.6, 20.0]
+	bad.size = [2.6, 13.0]
 	check(DATA.validate_entity(bad) != "", "Comprimento curto demais é recusado")
 	var bridge: Node3D = PROPS.create(row)
 	world.add_child(bridge)
@@ -44,11 +44,13 @@ func run() -> void:
 	var pillar := ray(space, Vector3(1.05, 1.0, -20), Vector3(1.05, 1.0, 20))
 	check(not pillar.is_empty() and absf(pillar.position.z) > 6.5, "Pilar fora da calçada (z=%.2f)" % (pillar.position.z if not pillar.is_empty() else 0.0))
 	# Escada: altura do piso cresce do chão ao tabuleiro.
+	var landing_z: float = half_deck - bridge.width * 0.5
+	var top_x: float = bridge.width * 0.5
 	var last := -1.0
 	var monotonic := true
 	for i in 9:
-		var z: float = half_deck + BRIDGE.run_length() * (1.0 - i / 8.0)
-		var hit := ray(space, Vector3(0, 8, z), Vector3(0, -1, z))
+		var x: float = top_x + BRIDGE.run_length() * (1.0 - i / 8.0)
+		var hit := ray(space, Vector3(x, 8, landing_z), Vector3(x, -1, landing_z))
 		var y: float = hit.position.y if not hit.is_empty() else -1.0
 		if y < last - 0.01: monotonic = false
 		last = y
@@ -65,18 +67,26 @@ func run() -> void:
 	capsule.position.y = 0.9
 	walker.add_child(capsule)
 	world.add_child(walker)
-	walker.global_position = Vector3(0, 0.05, half_deck + BRIDGE.run_length() + 2.0)
+	var route := preload("res://gameplay/crowd/FootbridgeCrossers.gd").route_for(bridge)
+	walker.global_position = route[0] + Vector3.UP * 0.05
+	var waypoint := 1
 	var peak := 0.0
-	for frame in 900:
-		walker.velocity = Vector3(0, walker.velocity.y - 20.0 / 60.0, -3.5)
+	for frame in 1800:
+		var target: Vector3 = route[waypoint]
+		var direction := Vector3(target.x - walker.position.x, 0, target.z - walker.position.z)
+		if direction.length() < 0.15:
+			waypoint += 1
+			if waypoint == 8: break
+			direction = Vector3(route[waypoint].x - walker.position.x, 0, route[waypoint].z - walker.position.z)
+		direction = direction.normalized() * 3.5
+		walker.velocity = Vector3(direction.x, walker.velocity.y - 20.0 / 60.0, direction.z)
 		if walker.is_on_floor(): walker.velocity.y = -1.0
 		walker.move_and_slide()
 		await physics_frame
 		peak = maxf(peak, walker.global_position.y)
-		if walker.global_position.z < -(half_deck + BRIDGE.run_length() + 1.0): break
-	print("FOOTBRIDGE travessia z=%.1f pico=%.2f" % [walker.global_position.z, peak])
+	print("FOOTBRIDGE travessia posição=%s pico=%.2f waypoint=%d" % [walker.global_position, peak, waypoint])
 	check(peak > BRIDGE.DECK_HEIGHT - 0.1, "Personagem sobe até o tabuleiro")
-	check(walker.global_position.z < -(half_deck + BRIDGE.run_length()), "Personagem atravessa e desce do outro lado")
+	check(waypoint == 8, "Personagem faz as curvas, atravessa e desce do outro lado")
 	check(walker.global_position.y < 0.5, "Termina no chão")
 	# Guarda-corpo: andando de lado no tabuleiro, não cai.
 	walker.global_position = Vector3(0, BRIDGE.DECK_HEIGHT + 0.05, 0)

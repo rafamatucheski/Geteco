@@ -14,6 +14,8 @@ const JSON_PATHS := [
 	"res://data/campaign/campaign_v1.json",
 	"res://data/campaign/first-favors-dialogue.json",
 	"res://data/campaign/cobra-dialogue.json",
+	"res://data/campaign/mountain-story-dialogue.json",
+	"res://data/dialogue/english-voice-translations.json",
 	"res://audio/mission_voices/recordings.json",
 	"res://audio/mission_voices/maciota_baritone/recordings.json",
 	"res://audio/mission_voices/en/recordings.json",
@@ -149,6 +151,8 @@ func _build_source_manifest() -> void:
 		_sort_manifest()
 		return
 	for path in JSON_PATHS:
+		_add_path("runtime_json", path)
+	for path in _collect_files("res://data/localization", ["json"]):
 		_add_path("runtime_json", path)
 	for path in DYNAMIC_MODEL_PATHS:
 		_add_path("region_and_interior_models", path)
@@ -309,12 +313,16 @@ func _validate_voice_catalogs() -> void:
 				_check(path in _category_paths("mission_voice_recordings"), "[voice] gravação fora do manifesto: %s" % path)
 	var catalog: Variant = _read_json(ENGLISH_VOICE_CATALOG, "English voice catalog")
 	var english: Variant = _read_json(VOICE_MANIFESTS[2], "English voice manifest")
+	var portuguese: Variant = _read_json(VOICE_MANIFESTS[0], "Portuguese voice manifest")
+	var maciota: Variant = _read_json(VOICE_MANIFESTS[1], "Maciota Portuguese voice manifest")
 	_check(catalog is Dictionary and catalog.get("lines") is Array, "[voice en] catálogo sem lista de falas")
 	if not catalog is Dictionary or not catalog.get("lines") is Array or not english is Dictionary: return
 	_check(not catalog.lines.is_empty(), "[voice en] catálogo de falas vazio")
 	for entry in catalog.lines:
 		var key := (str(entry.get("persona", "")).to_lower() + "|" + str(entry.get("text", ""))).sha256_text()
 		_check(english.has(key), "[voice en] fala sem gravação: %s" % key)
+		var pt_bank: Variant = maciota if str(entry.get("persona", "")).to_lower() in ["maciota", "caller"] else portuguese
+		_check(pt_bank is Dictionary and pt_bank.has(key), "[voice pt] fala sem gravação: %s" % key)
 		_check(not str(entry.get("en", "")).is_empty(), "[voice en] fala sem tradução: %s" % key)
 		var aliases: Array = entry.get("aliases", []).duplicate()
 		aliases.append(str(entry.get("en", "")))

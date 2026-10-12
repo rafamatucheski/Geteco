@@ -78,7 +78,7 @@ func _ready() -> void:
 	_fish_tail_mesh.name = "CaudalFin"
 	_fish_detail_material = _material(Color("596253"))
 	_fish_detail_material.cull_mode = BaseMaterial3D.CULL_DISABLED
-	_fish_details = _mesh(_fish_detail_mesh("plain"), _fish_detail_material, _fish)
+	_fish_details = _mesh(_fish_detail_mesh("plain", Vector3(.90, .66, 2.15)), _fish_detail_material, _fish)
 	_fish_details.name = "FishMarkings"
 	var gill_material := _material(Color("596253"))
 	for side in [-1.0, 1.0]:
@@ -245,10 +245,10 @@ func _fish_detail_mesh(pattern: String, body_scale: Vector3) -> ArrayMesh:
 		"stripes", "striped", "bars":
 			for side in [-1.0, 1.0]:
 				for z in [-.13, -.025, .08, .17]:
-					var x0 := side * _fish_surface_x(body_scale, -.047, z - .013)
-					var x1 := side * _fish_surface_x(body_scale, .047, z - .013)
-					var x2 := side * _fish_surface_x(body_scale, .047, z + .013)
-					var x3 := side * _fish_surface_x(body_scale, -.047, z + .013)
+					var x0: float = side * _fish_surface_x(body_scale, -.047, z - .013)
+					var x1: float = side * _fish_surface_x(body_scale, .047, z - .013)
+					var x2: float = side * _fish_surface_x(body_scale, .047, z + .013)
+					var x3: float = side * _fish_surface_x(body_scale, -.047, z + .013)
 					_push_quad(vertices, normals, indices,
 						Vector3(x0, -.047, z - .013), Vector3(x1, .047, z - .013),
 						Vector3(x2, .047, z + .013), Vector3(x3, -.047, z + .013))

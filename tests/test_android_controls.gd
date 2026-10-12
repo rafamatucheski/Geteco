@@ -69,6 +69,18 @@ func run() -> void:
 	check(controls.touch_move.is_zero_approx() and controls.touch_aim.is_zero_approx() and not Input.is_action_pressed("fire") and not Input.is_action_pressed("aim"), "soltar dedos libera todos os estados")
 	check(controls.aim_direction.y < -.9, "última direção da mira é preservada")
 	check(not controls.touch_sprint, "soltar analógico encerra corrida")
+	check(touch.buttons.has("jump"), "pulo novo disponível no toque")
+	await button("jump", 80, true)
+	for _i in 4: await physics_frame
+	check(world.player.air_movement.phase != "ground", "botão Pular inicia salto real")
+	await button("jump", 80, false)
+	for _i in 180:
+		await physics_frame
+		if world.player.air_movement.phase == "ground": break
+	check(not Input.is_action_pressed("jump") and world.player.air_movement.phase == "ground", "soltar Pular e pousar devolve controle")
+	await button("more", 81, true)
+	check(touch.buttons.has("rage") and touch.buttons.has("bus_driver_shift"), "opções expõem RAGE e trabalho de motorista")
+	await button("more", 81, true)
 	await button("inventory", 4, true)
 	touch._refresh()
 	check(world.session.modal and not touch.playable and Input.emulate_mouse_from_touch, "mochila abre e devolve toque aos menus")
@@ -168,6 +180,10 @@ func run() -> void:
 	world.session.state.set_location("harbor", "maciota")
 	touch._refresh()
 	check(not touch.buttons.has("fire") and not touch.buttons.has("weapon_next"), "garagem não oferece ataque nem troca de arma")
+	touch.extra = true
+	touch._refresh()
+	check(not touch.buttons.has("rage"), "garagem também bloqueia RAGE pelo toque")
+	touch.extra = false
 	world.session.state.set_location("harbor", old_place)
 	touch._refresh()
 	var joystick_bounds := Rect2(touch.move_center - Vector2.ONE * touch.radius, Vector2.ONE * touch.radius * 2)
@@ -181,6 +197,7 @@ func run() -> void:
 		for item in touch.buttons.values(): inside = inside and Rect2(Vector2.ZERO, extent).encloses(item.rect)
 		check(inside, "botões dentro da tela " + str(extent))
 		check(not touch.buttons.fire.rect.intersects(Rect2(touch.aim_center - Vector2.ONE * touch.radius, Vector2.ONE * touch.radius * 2)), "ataque não cobre mira " + str(extent))
+		check(not touch.buttons.jump.rect.intersects(touch.buttons.fire.rect) and not touch.buttons.jump.rect.intersects(Rect2(touch.move_center - Vector2.ONE*touch.radius, Vector2.ONE*touch.radius*2)), "pulo não cobre ataque nem movimento " + str(extent))
 		await finger(41, touch.move_center + Vector2(touch.radius, 0), true)
 		touch.size = extent + Vector2(0, 10)
 		touch._refresh()

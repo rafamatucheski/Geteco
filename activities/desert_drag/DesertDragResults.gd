@@ -72,13 +72,13 @@ func set_message(value: String) -> void:
 	queue_redraw()
 
 func _label(at: Vector2, value: String, height: int, color := TEXT, strong := true) -> void:
-	draw_string(FONT if strong else REGULAR,at,value,HORIZONTAL_ALIGNMENT_LEFT,-1,height,color)
+	draw_string(FONT if strong else REGULAR,at,tr(value),HORIZONTAL_ALIGNMENT_LEFT,-1,height,color)
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO,size),INK)
 	draw_rect(Rect2(0,0,size.x,4),ACCENT)
 	draw_rect(Rect2(0,0,size.x,size.y),Color("35424d"),false,1)
-	_label(Vector2(32,40),"ARRANCADA   /   800 M",16,MUTED)
+	_label(Vector2(32,40),"BATERIA LIVRE   /   #27   /   800 M" if result.get("casual",false) else "ARRANCADA   /   800 M",16,MUTED)
 	_label(Vector2(32,109),"VITÓRIA" if result.get("won",false) else "DERROTA",60)
 	var player_time := float(result.get("seconds",0.0))
 	var opponent_time := float(result.get("rival_seconds",-1.0))
@@ -93,11 +93,14 @@ func _draw() -> void:
 	_label(Vector2(235,254),"s",22,MUTED)
 	if opponent_time>0: _label(Vector2(597,254),"s",22,MUTED)
 	draw_line(Vector2(364,190),Vector2(364,268),Color("35424d"),1)
-	_label(Vector2(32,307),"SEU RECORDE   %.3f s"%float(result.get("best_seconds",player_time)),19,MUTED)
+	_label(Vector2(32,307),"SEM PONTOS NO RANKING" if result.get("casual",false) else String(TranslationServer.translate("SEU RECORDE   %.3f s")) %float(result.get("best_seconds",player_time)),19,MUTED)
 	if result.get("first_win",false):
 		_label(Vector2(394,307),"RIVAL SUPERADO",19,ACCENT)
-	elif result.get("won",false):
+	elif result.get("won",false) and not result.get("casual",false):
 		_label(Vector2(394,307),"REVANCHE VENCIDA",19,ACCENT)
 	if not str(result.get("instrument_unlock","")).is_empty():
 		_label(Vector2(32,340),"NOVO PAINEL DISPONÍVEL: "+str(result.instrument_unlock).to_upper(),16,ACCENT)
 	_label(Vector2(32,457),message if not message.is_empty() else "Esc / B  Ficar aqui",16,MUTED,false)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED: queue_redraw()

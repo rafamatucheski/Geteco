@@ -29,7 +29,8 @@ func run() -> void:
 			var center: Vector3 = geo.bounds(part).get_center()
 			check(not (absf(center.x) < .01 and absf(center.z) < .05 and center.y < .55 and not part.has_meta("wheel_center") and GEOMETRY.color_of(part).to_html(false) in ["41454d", "253043"]), id + ": membro do piloto largado na origem")
 			if part.has_meta("fleet_fixup"): added += 1
-		check(added >= 20, id + ": piloto sem braços/pernas (%d peças)" % added)
+		# As motos redesenhadas juntam as peças do piloto por material (sem a marca fleet_fixup por peça); só o modelo antigo é contado.
+		if not preload("res://runtime/RedesignedFleet.gd").contains(id): check(added >= 20, id + ": piloto sem braços/pernas (%d peças)" % added)
 		model.free()
 	var bike = load("res://scripts/Vehicle.gd").new()
 	bike.archetype = "bike_urban"

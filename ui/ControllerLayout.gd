@@ -54,7 +54,7 @@ func _draw() -> void:
 
 func _profile() -> Dictionary:
 	var profile := {
-		"left": ["sprint", "interact", "vehicle_interact", "inventory", "journal", "world_map"],
+		"left": ["jump", "sprint", "interact", "vehicle_interact", "inventory", "journal", "world_map"],
 		"right": ["aim", "fire", "reload", "unarmed", "weapon_flashlight", "surrender"],
 		"move": "Analógico esquerdo · mover",
 		"look": "Analógico direito ↔ · câmera; ao mirar / atacar · mira",
@@ -99,7 +99,7 @@ func _profile() -> Dictionary:
 func _legend(controls: Node, entry: Variant, point: Vector2, width: float) -> void:
 	var action: String = entry[0] if entry is Array else entry
 	var binding: String = controls.gamepad_hint(action)
-	var caption: String = entry[1] if entry is Array else controls.label(action)
+	var caption: String = tr(entry[1] if entry is Array else controls.label(action))
 	var line := binding+"  ·  "+caption
 	while FONT.get_string_size(line,HORIZONTAL_ALIGNMENT_LEFT,-1,17).x > width and caption.length() > 3:
 		caption = caption.left(caption.length()-1)
@@ -108,6 +108,7 @@ func _legend(controls: Node, entry: Variant, point: Vector2, width: float) -> vo
 	draw_line(point+Vector2(0,8),point+Vector2(width,8),Color(ACCENT,.16),1)
 
 func _center(text: String, point: Vector2, color: Color, font_size: int) -> void:
+	text = tr(text)
 	var width := FONT.get_string_size(text,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size).x
 	draw_string(FONT,point-Vector2(width*.5,0),text,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size,color)
 

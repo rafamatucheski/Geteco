@@ -61,6 +61,7 @@ static func _image(surface: int) -> Image:
 			var n := noise.get_noise_2d(x, y) * 0.5 + 0.5
 			var grain := rng.randf()
 			image.set_pixel(x, y, _texel(surface, x, y, n, grain, size))
+	image.generate_mipmaps()
 	return image
 
 
@@ -105,6 +106,9 @@ static func _texel(surface: int, x: int, y: int, n: float, grain: float, _size: 
 			return base.lerp(Color("8a5a3a"), smoothstep(0.6, 0.9, n) * 0.55)
 		WHITE:
 			var base := Color("d8d6cf").lerp(Color("bdbab0"), grain * 0.15)
+			# Sealed one-metre membrane strips, readable beyond the fine grain.
+			if y % 64 < 2: base = base.darkened(.16)
+			elif y % 64 < 4: base = base.lightened(.025)
 			# Escorrimento e poça seca (cinza) nas manchas baixas.
 			return base.lerp(Color("8d8a80"), smoothstep(0.55, 0.85, 1.0 - n) * 0.6)
 	return Color.MAGENTA

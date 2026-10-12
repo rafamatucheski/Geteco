@@ -1,6 +1,8 @@
 extends CanvasLayer
 ## Opaque static loading cover; only real progress and the final fade animate.
 const NODE_NAME := "LoadingCurtain"
+const SESSION_OPS := preload("res://runtime/SessionOperations.gd")
+var _diagnostic_stage := 0
 const DISPLAY_FONT: FontFile = preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
 const BODY_FONT: FontFile = preload("res://assets/fonts/barlow/BarlowSemiCondensed-Regular.ttf")
 const BACKGROUND := Color("101216")
@@ -82,6 +84,9 @@ func set_variant(index: int) -> void:
 	variant = clampi(index, 0, 2)
 
 func set_stage(value: float, message: String) -> void:
+	if message != stage_message or _diagnostic_stage == 0:
+		SESSION_OPS.finish(_diagnostic_stage, "advanced")
+		_diagnostic_stage = SESSION_OPS.begin(self, "loading", message, {"progress":value})
 	_target = maxf(_target, clampf(value, 0.0, 1.0))
 	stage_message = message
 	if not stage_only and _shown < _target: set_process(true)
@@ -108,3 +113,6 @@ func lift(settle_frames := 8) -> void:
 		tween.tween_property(_root, "modulate:a", 0.0, .45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 		await tween.finished
 	queue_free()
+
+func _exit_tree() -> void:
+	SESSION_OPS.finish(_diagnostic_stage, "removed")

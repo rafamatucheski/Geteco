@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "settings": {
+    "model": "Qwen3-TTS-12Hz-0.6B-Base",
+    "model_revision": "5d83992436eae1d760afd27aff78a71d676296fc",
+    "device": "cuda",
+    "dtype": "bfloat16",
+    "quantization": "none",
+    "quantization_skip_modules": [],
+    "attention": "sdpa",
+    "threads": 2,
+    "audio_decode_batch_size": 1
+  },
+  "conditioning": "experimental_text",
+  "reference_mode": "speaker_embedding",
+  "anchor_path": "D:\\geteco\\game\\audio\\mission_voices\\directed\\pt_BR\\2f74ccc16ed52b718b42204c49235f59574f5f599fab5aca4763f109dce41430_7d8ae2517fa89f66.wav",
+  "anchor_sha256": "ba42566d7cf6dba0c675560d04cb72c2cb0b17cffc5ad72385b2c4762de20a02",
+  "package_versions": {
+    "torch": "2.11.0+cu128",
+    "transformers": "4.57.3",
+    "qwen-tts": "0.1.1",
+    "bitsandbytes": "0.50.2",
+    "soundfile": "0.14.0"
+  },
+  "takes": [
+    {
+      "path": "res://audio/mission_voices/directed/benchmarks/9f62591a0017a773/en.wav",
+      "audio_sha256": "aee957780681ea5b92fc536583830850982756b4375e9a876149521a038741c0",
+      "duration_seconds": 4.521125,
+      "sample_rate": 24000,
+      "channels": 1,
+      "format": "PCM_16",
+      "peak": 0.33984375,
+      "technical_validation": {
+        "passed": true,
+        "checks": [
+          "finite_audio",
+          "non_silent",
+          "mono_pcm16_24khz",
+          "peak_below_full_scale"
+        ]
+      },
+      "artistic_review": "pending",
+      "language": "en",
+      "spoken_text": "Seat belt, Dante. Breathe. I've got the wheel now.",
+      "render_seconds": 11.469,
+      "cuda_peak_mb": 2212.9,
+      "peak_private_mb": 5349.3,
+      "real_time_factor": 2.5367579971799055
+    }
+  ],
+  "complete": true
+}

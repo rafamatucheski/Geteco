@@ -102,6 +102,7 @@ class Session extends Node:
 		world.player.input_locked = world.gameplay.health <= 0 or blocked or rescue_pending or arrest_pending
 		Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
 	func show_message(value: String) -> void: last_message = value
+	func show_speech(_speaker: String, value: String, _duration := 5.0, _play_voice := true, _persona := "", _canonical := "", _character_id := "", _section := "") -> void: last_message = value
 
 var checks := 0
 var failures: Array[String] = []

@@ -16,6 +16,9 @@ var rank: int = 7
 var rivals: Array[Dictionary] = []
 var collisions: int = 0
 var boosting: bool = false
+var sound_events: Array[String] = []
+var near_misses := 0
+var _boost_was_active := false
 var _impact_timer: float = 0.0
 var _rng := RandomNumberGenerator.new()
 
@@ -38,10 +41,13 @@ func reset(seed_value: int = 1) -> void:
 	rank = 7
 	collisions = 0
 	boosting = false
+	sound_events.clear()
+	near_misses = 0
+	_boost_was_active = false
 	_impact_timer = 0.0
 	rivals.clear()
 	for i in range(6):
-		rivals.append({"distance": 120.0 + i * 125.0, "lane": [-0.62, 0.0, 0.62][i % 3], "speed": 172.0 + i * 4.5, "phase": _rng.randf_range(0.0, TAU)})
+		rivals.append({"distance": 120.0 + i * 125.0, "lane": [-0.62, 0.0, 0.62][i % 3], "speed": 172.0 + i * 4.5, "phase": _rng.randf_range(0.0, TAU), "passed":false})
 
 func step(delta: float, controls: Dictionary) -> void:
 	if finished:
@@ -52,9 +58,13 @@ func step(delta: float, controls: Dictionary) -> void:
 	var accelerating := bool(controls.get("up", false)) or bool(controls.get("action", false))
 	var braking := bool(controls.get("down", false))
 	boosting = bool(controls.get("action_alt", false)) and nitro > 0.0 and accelerating and not braking
+	if boosting and not _boost_was_active: sound_events.append("nitro")
+	_boost_was_active = boosting
 	var top_speed := 315.0 if boosting else 248.0
 	if boosting:
 		nitro = maxf(0.0, nitro - dt)
+	elif absf(lane) <= 1.0 and speed > 130.0:
+		nitro = minf(5.0,nitro + dt*.14)
 	if braking:
 		speed = move_toward(speed, 0.0, 190.0 * dt)
 	elif accelerating:
@@ -69,24 +79,37 @@ func step(delta: float, controls: Dictionary) -> void:
 		speed = move_toward(speed, 92.0, 210.0 * dt)
 	distance += speed * dt
 	for rival in rivals:
+		var old_gap := float(rival["distance"]) - distance + speed * dt
+		var target_lane := sin(elapsed*.65+float(rival["phase"]))*.64
+		# Opponents change line smoothly; close encounters remain readable.
+		if absf(float(rival["distance"])-distance) > 110.0:
+			rival["lane"] = move_toward(float(rival["lane"]),target_lane,dt*.22)
 		rival["distance"] = minf(RACE_LENGTH + 40.0, float(rival["distance"]) + float(rival["speed"]) * dt)
+		var new_gap := float(rival["distance"]) - distance
+		if old_gap > 0.0 and new_gap <= 0.0 and not bool(rival["passed"]):
+			rival["passed"] = true
+			if absf(float(rival["lane"])-lane) >= .24 and absf(float(rival["lane"])-lane) < .5:
+				near_misses += 1
+				nitro = minf(5.0,nitro+.7)
+				sound_events.append("line")
 		if _impact_timer <= 0.0 and absf(float(rival["distance"]) - distance) < 32.0:
 			if absf(float(rival["lane"]) - lane) < 0.24:
 				speed *= 0.38
 				_impact_timer = 1.1
 				collisions += 1
+				sound_events.append("hit")
 				lane = clampf(lane + (0.25 if lane >= float(rival["lane"]) else -0.25), -1.4, 1.4)
 	rank = 1
 	for rival in rivals:
 		if float(rival["distance"]) > distance:
 			rank += 1
-	score = int(distance / 5.0) + (7 - rank) * 200
+	score = int(distance / 5.0) + (7 - rank) * 200 + near_misses * 150
 	status = "%d / 7  •  %d%%" % [rank, mini(100, int(distance / RACE_LENGTH * 100.0))]
 	if distance >= RACE_LENGTH:
 		distance = RACE_LENGTH
 		finished = true
 		score += int(maxf(0.0, TIME_LIMIT - elapsed) * 50.0) + (1200 if rank == 1 else 0)
-		status = "CHEGADA  •  %dº LUGAR" % rank
+		status = String(TranslationServer.translate("CHEGADA  •  %dº LUGAR")) % rank
 	elif elapsed >= TIME_LIMIT:
 		finished = true
 		status = "TEMPO ESGOTADO"
@@ -163,4 +186,4 @@ func _draw_car(canvas: Control, point: Vector2, scale: float, color: Color, flam
 			canvas.draw_colored_polygon(PackedVector2Array([point + Vector2(side * 12 - 4, 0) * scale, point + Vector2(side * 12 + 4, 0) * scale, point + Vector2(side * 12, 17 + sin(elapsed * 40) * 5) * scale]), Color("acf9fa"))
 
 func _text(canvas: Control, point: Vector2, text: String, size: int, color: Color) -> void:
-	canvas.draw_string(ThemeDB.fallback_font, point, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, color)
+	canvas.draw_string(ThemeDB.fallback_font, point, String(TranslationServer.translate(text)), HORIZONTAL_ALIGNMENT_LEFT, -1, size, color)

@@ -1,15 +1,14 @@
-extends StaticBody3D
-## Protected entourage on authored, floor-checked anchors. No damage/death API,
-## no navigation or per-frame physics; the articulated rig owns idle/gesture LOD.
+extends "res://runtime/desert/drag_meet/TrackParticipant.gd"
+## Damageable entourage on authored, floor-checked anchors. No per-frame physics;
+## the articulated rig owns idle/gesture LOD and the visit owns recovery.
 const MODEL := preload("res://assets/CivilianModel.gd")
 const OUTFIT := preload("res://runtime/desert/drag_meet/DragMeetWardrobe.gd")
 var slot := 0
-var visual: Node3D
 
 func _ready() -> void:
+	super._ready()
 	name = "VicenteCrew%d" % slot
 	set_meta("gameplay_role","vicente_crew")
-	set_meta("invulnerable",true)
 	set_meta("reaction_exempt",true)
 	add_to_group("desert_drag_crew")
 	collision_layer = 2
@@ -32,6 +31,7 @@ func _ready() -> void:
 	OUTFIT.insignia(visual)
 
 func converse(target: Vector3, speaking: bool, animate: bool) -> void:
+	if dead: return
 	var direction := target-global_position
 	if direction.length_squared()>.01: visual.rotation.y = atan2(direction.x,direction.z)
 	visual.activity = "talk" if speaking else ""

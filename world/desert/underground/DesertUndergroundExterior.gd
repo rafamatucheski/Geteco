@@ -120,7 +120,13 @@ func _build_culvert() -> void:
 	var concrete := "#a69d88"
 	var dark := "#3a342b"
 	# Talude de terra batida atrás da boca e cabeceira de concreto com a abertura de 2,6 x 2,1 m.
-	_box(self, Vector3(0, 1.5, -2.2), Vector3(14.0, 3.0, 3.6), "#8c7653", true)
+	# Recessed throat: the old solid embankment filled the doorway itself.
+	_box(self, Vector3(0, 1.5, -4.4), Vector3(14.0, 3.0, 2.0), "#8c7653", true)
+	for side in [-1.0, 1.0]:
+		_box(self, Vector3(side*2.5, 1.5, -2.0), Vector3(2.4, 3.0, 2.8), "#8c7653", true)
+		_box(self, Vector3(side*1.42, 1.2, -1.8), Vector3(.24, 2.4, 3.0), concrete, true)
+	_box(self, Vector3(0, 2.5, -1.8), Vector3(2.6, .3, 3.0), concrete, true)
+	_box(self, Vector3(0, .025, -1.6), Vector3(2.6, .05, 3.6), "#71644f")
 	_box(self, Vector3(-2.4, 1.4, -0.4), Vector3(2.2, 2.8, 0.7), concrete, true)
 	_box(self, Vector3(2.4, 1.4, -0.4), Vector3(2.2, 2.8, 0.7), concrete, true)
 	_box(self, Vector3(0, 2.45, -0.4), Vector3(2.8, 0.7, 0.7), concrete, true)
@@ -128,8 +134,15 @@ func _build_culvert() -> void:
 	for side in [-1.0, 1.0]:
 		var wing := _box(self, Vector3(side * 4.4, 0.9, 0.9), Vector3(0.6, 1.8, 3.4), concrete, true)
 		wing.rotation.y = side * -0.5
+		# Mesh and collider must share the authored wing rotation.
+		get_child(get_child_count()-1).rotation.y = wing.rotation.y
 	# Marca d'água das enchentes na cabeceira, rachaduras e lama seca na frente.
-	_box(self, Vector3(0, 1.2, -0.03), Vector3(5.8, 0.12, 0.02), "#6e5a3c")
+	for side in [-1.0, 1.0]:
+		_box(self, Vector3(side*2.35, 1.2, -.03), Vector3(2.05, .12, .02), "#6e5a3c")
+		for seam in 4:
+			_box(self, Vector3(side*2.35, .45+seam*.55, -.035), Vector3(2.05, .022, .025), "#837964")
+		for bolt_y in [.35, 1.8]:
+			_cyl(self, Vector3(side*1.4, bolt_y, .07), .06, .06, "#413b32", false, true).rotation.x = PI*.5
 	_box(self, Vector3(0, 0.02, 3.0), Vector3(9.0, 0.02, 7.0), "#9a8460")
 	for index in 9:
 		var crack := _box(self, Vector3(-3.6 + index * 0.9, 0.04, 1.2 + (index % 3) * 1.2), Vector3(0.9, 0.01, 0.05), "#5e4c33")
@@ -141,6 +154,19 @@ func _build_culvert() -> void:
 	for bar in 7: _box(_leaf_a, Vector3(0.2 + bar * 0.38, 1.05, 0.0), Vector3(0.06, 2.1, 0.06), "#6a3d22", false, true)
 	_box(_leaf_a, Vector3(1.3, 0.1, 0.0), Vector3(2.6, 0.08, 0.08), "#6a3d22", false, true)
 	_box(_leaf_a, Vector3(1.3, 2.0, 0.0), Vector3(2.6, 0.08, 0.08), "#6a3d22", false, true)
+	_box(_leaf_a, Vector3(1.3, .85, 0), Vector3(2.6, .07, .09), "#493c30", false, true)
+	_box(_leaf_a, Vector3(2.25, 1.1, .08), Vector3(.12, .3, .12), "#322e28", false, true)
+	var gate_body := StaticBody3D.new()
+	gate_body.name = "CulvertGate"
+	gate_body.collision_layer = 1
+	gate_body.collision_mask = 0
+	var gate_shape := CollisionShape3D.new()
+	var gate_box := BoxShape3D.new()
+	gate_box.size = Vector3(2.6, 2.1, .1)
+	gate_shape.shape = gate_box
+	gate_shape.position = Vector3(1.3, 1.05, 0)
+	gate_body.add_child(gate_shape)
+	_leaf_a.add_child(gate_body)
 	# Placa de perigo e pedras soltas.
 	_box(self, Vector3(5.6, 1.1, 2.4), Vector3(0.1, 2.2, 0.1), "#4a3a28")
 	_box(self, Vector3(5.6, 2.0, 2.4), Vector3(1.2, 0.8, 0.06), "#c9a12a")

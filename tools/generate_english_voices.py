@@ -80,6 +80,20 @@ EXTRAS = {
 }
 PROFILES.update({name: profile(*settings) for name, settings in EXTRAS.items()})
 PROFILES['caller'] = PROFILES['maciota'].copy()
+for name, actor in {
+    'beto':'en-US-GuyNeural', 'beto cascavel':'en-US-SteffanNeural',
+    'cida':'en-US-JennyNeural', 'dona marlene':'en-US-MichelleNeural',
+    'dona nena':'en-GB-SoniaNeural', 'dona zefa':'en-US-JennyNeural',
+    'ermitão jacó':'en-US-RogerNeural', 'hóspede sete':'en-US-EricNeural',
+    'o maluco':'en-IE-ConnorNeural', 'padre nicanor':'en-US-BrianNeural',
+    'rauhz':'en-US-GuyNeural', 'seu abel':'en-US-RogerNeural',
+    'seu tião':'en-US-SteffanNeural', 'tita':'en-US-AvaNeural',
+    'tonho':'en-CA-LiamNeural', 'velho ozias':'en-US-BrianNeural',
+    'zeca':'en-GB-ThomasNeural',
+    'joana':'en-US-EmmaNeural', 'operário':'en-US-GuyNeural', 'nelson':'en-US-BrianNeural',
+    'passenger':'en-US-RogerNeural',
+}.items():
+    PROFILES[name] = profile(actor)
 
 
 def signature(row):
@@ -143,7 +157,7 @@ async def produce(concurrency, endpoint):
                 signal *= min(.14 / max(rms, .0001), .85 / float(np.max(np.abs(signal))))
                 sf.write(wav_path, signal, rate, subtype='PCM_16')
             result = dict(row)
-            result.update(path='res://audio/mission_voices/en/' + wav_path.name, seconds=sf.info(wav_path).duration,
+            result.update(path='res://' + wav_path.relative_to(ROOT).as_posix(), seconds=sf.info(wav_path).duration,
                 signature=signature(row), voice_profile=settings, status='generated')
             return result
 

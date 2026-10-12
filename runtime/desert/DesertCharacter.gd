@@ -14,14 +14,17 @@ const LOOKS := {
 }
 var identity_id := "vicente"
 var visual: Node3D
+var health := 100.0
+var dead := false
 func _ready() -> void:
 	var look: Dictionary = LOOKS[identity_id]
 	name = look.name
 	set_meta("gameplay_role","desert_contact")
 	set_meta("reaction_exempt",true)
 	if identity_id=="vicente":
-		set_meta("invulnerable",true)
 		add_to_group("desert_drag_crew")
+	add_to_group("v2_damageable")
+	add_to_group("police_witness")
 	collision_layer = 2
 	collision_mask = 7
 	floor_snap_length = .3
@@ -52,4 +55,8 @@ func _physics_process(delta: float) -> void:
 	velocity = Vector3(0, maxf(-20.0,velocity.y-18.0*delta),0)
 	move_and_slide()
 func set_talking(value: bool) -> void:
+	if dead: return
 	if is_instance_valid(visual): visual.activity = "talk" if value else ""
+
+func receive_damage(amount: float, source: Node = null) -> void:
+	preload("res://runtime/desert/drag_meet/TrackParticipantDamage.gd").receive(self,visual,amount,source)

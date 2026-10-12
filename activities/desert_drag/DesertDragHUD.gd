@@ -127,7 +127,7 @@ func _draw_timer(canvas: Vector2) -> void:
 	_panel(Rect2(at, Vector2(224, 100)))
 	_text(at + Vector2(16, 24), "TEMPO", 13, MUTED)
 	_text(at + Vector2(16, 62), "%05.2f" % seconds, 38, PAPER)
-	_text(at + Vector2(16, 87), "%d m RESTANTES" % ceili(maxf(0.0, remaining)), 15, MUTED)
+	_text(at + Vector2(16, 87), String(TranslationServer.translate("%d m RESTANTES")) % ceili(maxf(0.0, remaining)), 15, MUTED)
 
 func _draw_instruments(canvas: Vector2) -> void:
 	if style_id != "bar":
@@ -380,4 +380,4 @@ func _panel(rect: Rect2) -> void:
 	draw_rect(rect, Color("414850"), false, 1.0)
 
 func _text(at: Vector2, value: String, font_size: int, color: Color, width := -1.0, alignment := HORIZONTAL_ALIGNMENT_LEFT) -> void:
-	draw_string(FACE if font_size >= 17 else BODY, at, value, alignment, width, font_size, color)
+	draw_string(FACE if font_size >= 17 else BODY, at, tr(value), alignment, width, font_size, color)

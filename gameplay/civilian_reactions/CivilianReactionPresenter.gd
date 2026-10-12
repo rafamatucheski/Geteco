@@ -2,7 +2,8 @@ extends Node
 ## Apresentação da reação civil: grito (áudio do V1) e balão de fala (textos do V1). Não decide nem move.
 ## Limites: no máximo MAX_VOICES gritos simultâneos e um balão por civil, com vida curta; tudo é liberado com o civil.
 const MAX_VOICES := 3
-const SCREAM_COOLDOWN := 4.0
+const SCREAM_COOLDOWN := 40.0
+const SCREAM_CHANCE := 0.1
 const BUBBLE_LIFE := 2.5
 const STREAMS := [
 	"res://assets/gameplay/audio/panic_0.wav",
@@ -32,9 +33,18 @@ func _ready() -> void:
 		voices.append(voice)
 
 func scream(actor: Node3D) -> bool:
-	if streams.is_empty() or not is_instance_valid(actor): return false
+	if not is_instance_valid(actor): return false
 	var id := actor.get_instance_id()
 	if clock - float(last_scream.get(id, -99.0)) < SCREAM_COOLDOWN: return false
+	# Count silent reactions too, so repeated danger cannot reroll every frame.
+	last_scream[id] = clock
+	if randf() >= SCREAM_CHANCE: return false
+	if preload("res://audio/DirectedVoiceBank.gd").enabled():
+		last_scream[id] = clock
+		# This phrase choice varies the response, never the speaker's identity.
+		bubble(actor, random_phrase())
+		return true
+	if streams.is_empty(): return false
 	for voice in voices:
 		if voice.playing: continue
 		last_scream[id] = clock
@@ -65,8 +75,10 @@ func bubble(actor: Node3D, text: String) -> void:
 		actor.add_child(label)
 		entry = {"label": label, "life": 0.0}
 		bubbles[id] = entry
-	entry.label.text = text
-	entry.life = BUBBLE_LIFE
+	var binding := preload("res://audio/VoiceActorBinding.gd").resolve(actor, "civilian_reaction")
+	var spoken := preload("res://audio/ActorDialogueVoice.gd").speak(actor, text, binding, entry.label)
+	entry.label.text = str(spoken.get("message", text))
+	entry.life = maxf(BUBBLE_LIFE, float(spoken.get("duration", 0.0)))
 
 func random_phrase() -> String: return PHRASES_PANIC[randi() % PHRASES_PANIC.size()]
 
@@ -111,6 +123,8 @@ func hide_prop(actor: Node3D) -> void:
 		model.hand_targets[0] = null
 
 func clear_actor(actor_id: int) -> void:
+	var owner_actor := instance_from_id(actor_id) as Node3D
+	if is_instance_valid(owner_actor): preload("res://audio/ActorDialogueVoice.gd").stop(owner_actor)
 	var entry: Dictionary = bubbles.get(actor_id, {})
 	if not entry.is_empty() and is_instance_valid(entry.label): entry.label.queue_free()
 	bubbles.erase(actor_id)
@@ -131,6 +145,8 @@ func _process(delta: float) -> void:
 	for id in bubbles.keys():
 		var entry: Dictionary = bubbles[id]
 		entry.life -= delta
+		if entry.life <= 0.0 and is_instance_valid(entry.label):
+			entry.life = preload("res://audio/ActorDialogueVoice.gd").remaining_for(entry.label)
 		if entry.life <= 0.0 or not is_instance_valid(entry.label):
 			if is_instance_valid(entry.label): entry.label.queue_free()
 			bubbles.erase(id)

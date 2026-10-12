@@ -1,0 +1,469 @@
+{
+  "version": 1,
+  "references": [
+    {
+      "character_id": "digo",
+      "voice_gender": "male",
+      "direction": "Speak native Brazilian Portuguese, never European Portuguese. An adult man's voice. Voice identity and usual manner: One adult male character with a consistent individual voice. Bright male middle voice, smiling attack, quick pulses then clear technical beats. Mechanical passion rather than constant shouting. Act to one scene partner. Clear intelligible speech, meaningful pauses and natural emotional turns. No announcer cadence, forced extreme pitch or caricature. Speak native Brazilian Portuguese with colloquial connected phrasing and Brazilian vowels. Do not invent regional accents from occupation, poverty or surname. Reference scene performance: One adult male character with a consistent individual voice. Bright male middle voice, smiling attack, quick pulses then clear technical beats. Mechanical passion rather than constant shouting. Act to one scene partner. Clear intelligible speech, meaningful pauses and natural emotional turns. No announcer cadence, forced extreme pitch or caricature. Speak native Brazilian Portuguese with colloquial connected phrasing and Brazilian vowels. Do not invent regional accents from occupation, poverty or surname. Reference performance: Friendly competitive challenge; give win or lose its full reassuring weight. Make this a lived exchange with a present scene partner: clear operative words, responsive timing and natural breath. Establish identity with an active intention; do not flatten it into an announcer read. Keep the voice healthy and usable for later emotional shifts. Read only the supplied words with native Brazilian pronunciation. Dry close microphone; no music or sound effects.",
+      "text": "Primeiro você corre comigo. Termina a prova, ganhando ou perdendo, e a gente acerta teu carro.",
+      "language": "pt_BR",
+      "backend": {
+        "model": "Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+        "model_revision": "5ecdb67327fd37bb2e042aab12ff7391903235d3",
+        "device": "cuda",
+        "dtype": "bfloat16",
+        "quantization": "nf4",
+        "quantization_skip_modules": [
+          "code_predictor",
+          "speaker_encoder",
+          "codec_head",
+          "text_projection",
+          "lm_head"
+        ],
+        "attention": "sdpa",
+        "threads": 2,
+        "audio_decode_batch_size": 1
+      },
+      "seed": 447175065,
+      "version": 1,
+      "signature": "5bd7b55327837ca2c69a0dc60294ddfb1403ff2998b42218d6e0fecc7c051ee3",
+      "batch_id": "c1825ddc4a2af7befdb63928da15d689cf365e0c21b89871068cc8753d415b4a",
+      "batch_seed": 1099062748,
+      "batch_position": 2,
+      "batch_size": 4,
+      "path": "res://audio/mission_voices/directed/anchors/digo_5bd7b55327837ca2.wav",
+      "audio_sha256": "2b19d9cc90e8950bfbec08a7ed5e99922b0328712edf6a51e584b6916c0e90b2",
+      "duration_seconds": 8.24,
+      "sample_rate": 24000,
+      "channels": 1,
+      "format": "PCM_16",
+      "peak": 0.76171875,
+      "technical_validation": {
+        "passed": true,
+        "checks": [
+          "finite_audio",
+          "non_silent",
+          "mono_pcm16_24khz",
+          "peak_below_full_scale"
+        ]
+      },
+      "artistic_review": "pending",
+      "batch_render_seconds": 64.907,
+      "source": "fictional_voice_design",
+      "gender_validation": "authored_unverified",
+      "package_versions": {
+        "torch": "2.11.0+cu128",
+        "transformers": "4.57.3",
+        "qwen-tts": "0.1.1",
+        "bitsandbytes": "0.50.2",
+        "soundfile": "0.14.0"
+      }
+    },
+    {
+      "character_id": "funcionario_female",
+      "voice_gender": "female",
+      "direction": "Speak native Brazilian Portuguese, never European Portuguese. An adult woman's voice. Voice identity and usual manner: One consistent adult female character. Adult female desk worker, clear forward placement, measured practical phrasing; ends the conversation neatly because the next task is waiting. Speak native Brazilian Portuguese, naturally connected words and distinct intention. Respect the existing character role. No imitation of a celebrity, stereotyped accent, theatrical growl or announcer cadence. Reference scene performance: One consistent adult female character. Adult female desk worker, clear forward placement, measured practical phrasing; ends the conversation neatly because the next task is waiting. Speak native Brazilian Portuguese, naturally connected words and distinct intention. Respect the existing character role. No imitation of a celebrity, stereotyped accent, theatrical growl or announcer cadence. Reference performance: Approachable employee's service voice; friendly final check without weakening the rule. Perform with the established female staff member identity; keep authority grounded in the immediate task. Make this a lived exchange with a present scene partner: clear operative words, responsive timing and natural breath. Establish identity with an active intention; do not flatten it into an announcer read. Keep the voice healthy and usable for later emotional shifts. Read only the supplied words with native Brazilian pronunciation. Dry close microphone; no music or sound effects.",
+      "text": "A gente atende das oito da manhã às seis da tarde. Só deixa livre a passagem dos caminhões, tá?",
+      "language": "pt_BR",
+      "backend": {
+        "model": "Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+        "model_revision": "5ecdb67327fd37bb2e042aab12ff7391903235d3",
+        "device": "cuda",
+        "dtype": "bfloat16",
+        "quantization": "nf4",
+        "quantization_skip_modules": [
+          "code_predictor",
+          "speaker_encoder",
+          "codec_head",
+          "text_projection",
+          "lm_head"
+        ],
+        "attention": "sdpa",
+        "threads": 2,
+        "audio_decode_batch_size": 1
+      },
+      "seed": 1664416708,
+      "version": 1,
+      "signature": "8227ceaf0aa3861a1555e033f70ee9fd0a9b1d2e0280f933be02daf1a274ac93",
+      "batch_id": "77d8fe50a4ac522f401a29769d8acdb9fb8a742dc47a13c63c2ceec252d80e5e",
+      "batch_seed": 2010709584,
+      "batch_position": 1,
+      "batch_size": 4,
+      "path": "res://audio/mission_voices/directed/anchors/funcionario_female_8227ceaf0aa3861a.wav",
+      "audio_sha256": "cfdc891f65f5fd228025ee9e57cd5c4307dbf8bb08b258626199d74f616bd6d9",
+      "duration_seconds": 8.602875,
+      "sample_rate": 24000,
+      "channels": 1,
+      "format": "PCM_16",
+      "peak": 0.80078125,
+      "technical_validation": {
+        "passed": true,
+        "checks": [
+          "finite_audio",
+          "non_silent",
+          "mono_pcm16_24khz",
+          "peak_below_full_scale"
+        ]
+      },
+      "artistic_review": "pending",
+      "batch_render_seconds": 22.5,
+      "source": "fictional_voice_design",
+      "gender_validation": "authored_unverified",
+      "package_versions": {
+        "torch": "2.11.0+cu128",
+        "transformers": "4.57.3",
+        "qwen-tts": "0.1.1",
+        "bitsandbytes": "0.50.2",
+        "soundfile": "0.14.0"
+      }
+    },
+    {
+      "character_id": "elias_mountain",
+      "voice_gender": "male",
+      "direction": "Speak native Brazilian Portuguese, never European Portuguese. An adult man's voice. Voice identity and usual manner: One adult male character with a consistent individual voice. Male rough middle voice, short forward outdoor phrases, steady pace, concrete weather and work emphasis. Act to one scene partner. Clear intelligible speech, meaningful pauses and natural emotional turns. No announcer cadence, forced extreme pitch or caricature. Speak native Brazilian Portuguese with colloquial connected phrasing and Brazilian vowels. Do not invent regional accents from occupation, poverty or surname. Reference scene performance: One adult male character with a consistent individual voice. Male rough middle voice, short forward outdoor phrases, steady pace, concrete weather and work emphasis. Act to one scene partner. Clear intelligible speech, meaningful pauses and natural emotional turns. No announcer cadence, forced extreme pitch or caricature. Speak native Brazilian Portuguese with colloquial connected phrasing and Brazilian vowels. Do not invent regional accents from occupation, poverty or surname. Reference performance: A woodsman's practical recollection, attentive to weather and traffic. Experienced logger's plain emphasis on dry; no sales patter. Make this a lived exchange with a present scene partner: clear operative words, responsive timing and natural breath. Establish identity with an active intention; do not flatten it into an announcer read. Keep the voice healthy and usable for later emotional shifts. Read only the supplied words with native Brazilian pronunciation. Dry close microphone; no music or sound effects.",
+      "text": "Os Lobos passaram de comboio antes de fechar o tempo. Lenha seca, aqui? Vale ouro. Não deixa molhar.",
+      "language": "pt_BR",
+      "backend": {
+        "model": "Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+        "model_revision": "5ecdb67327fd37bb2e042aab12ff7391903235d3",
+        "device": "cuda",
+        "dtype": "bfloat16",
+        "quantization": "nf4",
+        "quantization_skip_modules": [
+          "code_predictor",
+          "speaker_encoder",
+          "codec_head",
+          "text_projection",
+          "lm_head"
+        ],
+        "attention": "sdpa",
+        "threads": 2,
+        "audio_decode_batch_size": 1
+      },
+      "seed": 2013393174,
+      "version": 1,
+      "signature": "c1e3dfcc3f5a695f8a4010e87896e3e7d7d2687df4d3c510794a31dd319dba41",
+      "batch_id": "52ad8eae59d992fb145dca6f5ffe20872d8b8602e90bd4499958bd11b543e087",
+      "batch_seed": 1387105966,
+      "batch_position": 2,
+      "batch_size": 4,
+      "path": "res://audio/mission_voices/directed/anchors/elias_mountain_c1e3dfcc3f5a695f.wav",
+      "audio_sha256": "82236b95a0b9ea7bfdbf1859ff0dd7bd4bc0064101bd6dbd8d7ce74e40f8569e",
+      "duration_seconds": 10.32,
+      "sample_rate": 24000,
+      "channels": 1,
+      "format": "PCM_16",
+      "peak": 0.494140625,
+      "technical_validation": {
+        "passed": true,
+        "checks": [
+          "finite_audio",
+          "non_silent",
+          "mono_pcm16_24khz",
+          "peak_below_full_scale"
+        ]
+      },
+      "artistic_review": "pending",
+      "batch_render_seconds": 52.344,
+      "source": "fictional_voice_design",
+      "gender_validation": "authored_unverified",
+      "package_versions": {
+        "torch": "2.11.0+cu128",
+        "transformers": "4.57.3",
+        "qwen-tts": "0.1.1",
+        "bitsandbytes": "0.50.2",
+        "soundfile": "0.14.0"
+      }
+    },
+    {
+      "character_id": "helena_bank",
+      "voice_gender": "female",
+      "direction": "Speak native Brazilian Portuguese, never European Portuguese. An adult woman's voice. Voice identity and usual manner: One adult female character with a consistent individual voice. Composed female low-mid voice, precise consonants, quiet pace, short confidential volume drop. Discreet warmth. Act to one scene partner. Clear intelligible speech, meaningful pauses and natural emotional turns. No announcer cadence, forced extreme pitch or caricature. Speak native Brazilian Portuguese with colloquial connected phrasing and Brazilian vowels. Do not invent regional accents from occupation, poverty or surname. Reference scene performance: One adult female character with a consistent individual voice. Composed female low-mid voice, precise consonants, quiet pace, short confidential volume drop. Discreet warmth. Act to one scene partner. Clear intelligible speech, meaningful pauses and natural emotional turns. No announcer cadence, forced extreme pitch or caricature. Speak native Brazilian Portuguese with colloquial connected phrasing and Brazilian vowels. Do not invent regional accents from occupation, poverty or surname. Reference performance: Recognize the visitor, then emphasize the document's practical importance discreetly. Make this a lived exchange with a present scene partner: clear operative words, responsive timing and natural breath. Establish identity with an active intention; do not flatten it into an announcer read. Keep the voice healthy and usable for later emotional shifts. Read only the supplied words with native Brazilian pronunciation. Dry close microphone; no music or sound effects.",
+      "text": "Dante? O Maciota avisou que você vinha. Toma, o comprovante. Guarda bem: sem ele, o porto não libera a peça.",
+      "language": "pt_BR",
+      "backend": {
+        "model": "Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+        "model_revision": "5ecdb67327fd37bb2e042aab12ff7391903235d3",
+        "device": "cuda",
+        "dtype": "bfloat16",
+        "quantization": "nf4",
+        "quantization_skip_modules": [
+          "code_predictor",
+          "speaker_encoder",
+          "codec_head",
+          "text_projection",
+          "lm_head"
+        ],
+        "attention": "sdpa",
+        "threads": 2,
+        "audio_decode_batch_size": 1
+      },
+      "seed": 238979520,
+      "version": 1,
+      "signature": "721a4bd2e4aa64986b308337989128b0b83e752042fb6b2b701ba1ce234dc777",
+      "batch_id": "2f8ed16fd95d165099138b68e629b4cc6b9d96fc226ad785205a122c1f494b21",
+      "batch_seed": 797888879,
+      "batch_position": 0,
+      "batch_size": 4,
+      "path": "res://audio/mission_voices/directed/anchors/helena_bank_721a4bd2e4aa6498.wav",
+      "audio_sha256": "b7c1ee6e50e6d26567dcdb067898c4bfa09e98cfa4035cd063dd9174483fb9f2",
+      "duration_seconds": 17.51725,
+      "sample_rate": 24000,
+      "channels": 1,
+      "format": "PCM_16",
+      "peak": 0.53125,
+      "technical_validation": {
+        "passed": true,
+        "checks": [
+          "finite_audio",
+          "non_silent",
+          "mono_pcm16_24khz",
+          "peak_below_full_scale"
+        ]
+      },
+      "artistic_review": "pending",
+      "batch_render_seconds": 133.297,
+      "source": "fictional_voice_design",
+      "gender_validation": "authored_unverified",
+      "package_versions": {
+        "torch": "2.11.0+cu128",
+        "transformers": "4.57.3",
+        "qwen-tts": "0.1.1",
+        "bitsandbytes": "0.50.2",
+        "soundfile": "0.14.0"
+      }
+    },
+    {
+      "character_id": "passenger",
+      "voice_gender": "male",
+      "direction": "Speak native Brazilian Portuguese, never European Portuguese. An adult man's voice. Voice identity and usual manner: One adult male character with a consistent individual voice. Older male mellow mid-low voice, airy edges without frailty, patient questions, comfortable silences. Ease back when touching a wound. Act to one scene partner. Clear intelligible speech, meaningful pauses and natural emotional turns. No announcer cadence, forced extreme pitch or caricature. Speak native Brazilian Portuguese with colloquial connected phrasing and Brazilian vowels. Do not invent regional accents from occupation, poverty or surname. Reference scene performance: One adult male character with a consistent individual voice. Older male mellow mid-low voice, airy edges without frailty, patient questions, comfortable silences. Ease back when touching a wound. Act to one scene partner. Clear intelligible speech, meaningful pauses and natural emotional turns. No announcer cadence, forced extreme pitch or caricature. Speak native Brazilian Portuguese with colloquial connected phrasing and Brazilian vowels. Do not invent regional accents from occupation, poverty or surname. Reference performance: Light practical observation from beside him, without announcing a scene transition. Gentle follow-up, allowing him to choose how much to say. Make this a lived exchange with a present scene partner: clear operative words, responsive timing and natural breath. Establish identity with an active intention; do not flatten it into an announcer read. Keep the voice healthy and usable for later emotional shifts. Read only the supplied words with native Brazilian pronunciation. Dry close microphone; no music or sound effects.",
+      "text": "Olha lá. Já tão preparando o desembarque. Vocês não se veem faz tempo? Deve ter muita conversa esperando.",
+      "language": "pt_BR",
+      "backend": {
+        "model": "Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+        "model_revision": "5ecdb67327fd37bb2e042aab12ff7391903235d3",
+        "device": "cuda",
+        "dtype": "bfloat16",
+        "quantization": "nf4",
+        "quantization_skip_modules": [
+          "code_predictor",
+          "speaker_encoder",
+          "codec_head",
+          "text_projection",
+          "lm_head"
+        ],
+        "attention": "sdpa",
+        "threads": 2,
+        "audio_decode_batch_size": 1
+      },
+      "seed": 1963354799,
+      "version": 1,
+      "signature": "ae35f7e1f208ef600831f6f3ccf4e707529c48e23de1ab502136c255595f269c",
+      "batch_id": "8932242a1c033c5627f357a3702f78a6ba36377632da97e4341ad80db8414761",
+      "batch_seed": 154281002,
+      "batch_position": 1,
+      "batch_size": 4,
+      "path": "res://audio/mission_voices/directed/anchors/passenger_ae35f7e1f208ef60.wav",
+      "audio_sha256": "ed34a50e5c0c86c42473c2344542e31d0e515f21bffbfd98f554b84353692b9b",
+      "duration_seconds": 12.88,
+      "sample_rate": 24000,
+      "channels": 1,
+      "format": "PCM_16",
+      "peak": 0.62109375,
+      "technical_validation": {
+        "passed": true,
+        "checks": [
+          "finite_audio",
+          "non_silent",
+          "mono_pcm16_24khz",
+          "peak_below_full_scale"
+        ]
+      },
+      "artistic_review": "pending",
+      "batch_render_seconds": 73.781,
+      "source": "fictional_voice_design",
+      "gender_validation": "authored_unverified",
+      "package_versions": {
+        "torch": "2.11.0+cu128",
+        "transformers": "4.57.3",
+        "qwen-tts": "0.1.1",
+        "bitsandbytes": "0.50.2",
+        "soundfile": "0.14.0"
+      }
+    },
+    {
+      "character_id": "bruno",
+      "voice_gender": "male",
+      "direction": "Speak native Brazilian Portuguese, never European Portuguese. An adult man's voice. Voice identity and usual manner: One adult male character with a consistent individual voice. Bright male middle voice, brisk clipped rhythm, good-humored impatience, strong location words. Act to one scene partner. Clear intelligible speech, meaningful pauses and natural emotional turns. No announcer cadence, forced extreme pitch or caricature. Speak native Brazilian Portuguese with colloquial connected phrasing and Brazilian vowels. Do not invent regional accents from occupation, poverty or surname. Reference scene performance: One adult male character with a consistent individual voice. Bright male middle voice, brisk clipped rhythm, good-humored impatience, strong location words. Act to one scene partner. Clear intelligible speech, meaningful pauses and natural emotional turns. No announcer cadence, forced extreme pitch or caricature. Speak native Brazilian Portuguese with colloquial connected phrasing and Brazilian vowels. Do not invent regional accents from occupation, poverty or surname. Reference performance: A truck driver's brisk road advice; urgency stays proportionate. Make this a lived exchange with a present scene partner: clear operative words, responsive timing and natural breath. Establish identity with an active intention; do not flatten it into an announcer read. Keep the voice healthy and usable for later emotional shifts. Read only the supplied words with native Brazilian pronunciation. Dry close microphone; no music or sound effects.",
+      "text": "Esquenta no abrigo antes de seguir. Quando a nevasca vem, vem de repente. Se cuida nessa subida.",
+      "language": "pt_BR",
+      "backend": {
+        "model": "Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+        "model_revision": "5ecdb67327fd37bb2e042aab12ff7391903235d3",
+        "device": "cuda",
+        "dtype": "bfloat16",
+        "quantization": "nf4",
+        "quantization_skip_modules": [
+          "code_predictor",
+          "speaker_encoder",
+          "codec_head",
+          "text_projection",
+          "lm_head"
+        ],
+        "attention": "sdpa",
+        "threads": 2,
+        "audio_decode_batch_size": 1
+      },
+      "seed": 918108318,
+      "version": 1,
+      "signature": "4ea4762dde0966eb0315d6ed9633a67670c7162c0503712c7e4462f021948dba",
+      "batch_id": "87edbb4655bd9ecaa3a0a174085570348ed8846f41fe50c1a347bf3dbd394121",
+      "batch_seed": 133020486,
+      "batch_position": 2,
+      "batch_size": 4,
+      "path": "res://audio/mission_voices/directed/anchors/bruno_4ea4762dde0966eb.wav",
+      "audio_sha256": "39d0f66478dd806e840d6b0ce8031ec7d13322876d21ffb9e6ca6b7ab843fe5f",
+      "duration_seconds": 7.36,
+      "sample_rate": 24000,
+      "channels": 1,
+      "format": "PCM_16",
+      "peak": 0.66015625,
+      "technical_validation": {
+        "passed": true,
+        "checks": [
+          "finite_audio",
+          "non_silent",
+          "mono_pcm16_24khz",
+          "peak_below_full_scale"
+        ]
+      },
+      "artistic_review": "pending",
+      "batch_render_seconds": 30.547,
+      "source": "fictional_voice_design",
+      "gender_validation": "authored_unverified",
+      "package_versions": {
+        "torch": "2.11.0+cu128",
+        "transformers": "4.57.3",
+        "qwen-tts": "0.1.1",
+        "bitsandbytes": "0.50.2",
+        "soundfile": "0.14.0"
+      }
+    },
+    {
+      "character_id": "dona_marlene",
+      "voice_gender": "female",
+      "direction": "Speak native Brazilian Portuguese, never European Portuguese. An adult woman's voice. Voice identity and usual manner: One adult female character with a consistent individual voice. Dry female alto, clearly voiced hush, watchful pauses, sharp practical warnings; knows tide and boards. Act to one scene partner. Clear intelligible speech, meaningful pauses and natural emotional turns. No announcer cadence, forced extreme pitch or caricature. Speak native Brazilian Portuguese with colloquial connected phrasing and Brazilian vowels. Do not invent regional accents from occupation, poverty or surname. Reference scene performance: One adult female character with a consistent individual voice. Dry female alto, clearly voiced hush, watchful pauses, sharp practical warnings; knows tide and boards. Act to one scene partner. Clear intelligible speech, meaningful pauses and natural emotional turns. No announcer cadence, forced extreme pitch or caricature. Speak native Brazilian Portuguese with colloquial connected phrasing and Brazilian vowels. Do not invent regional accents from occupation, poverty or surname. Reference performance: Point out the location plainly; uncertainty and remembered unease color the end. Make this a lived exchange with a present scene partner: clear operative words, responsive timing and natural breath. Establish identity with an active intention; do not flatten it into an announcer read. Keep the voice healthy and usable for later emotional shifts. Read only the supplied words with native Brazilian pronunciation. Dry close microphone; no music or sound effects.",
+      "text": "Largaram uma mochila atrás dos barris, do outro lado. Eu não mexo. Já vi gente mexer nas coisas daqui e voltar... diferente.",
+      "language": "pt_BR",
+      "backend": {
+        "model": "Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+        "model_revision": "5ecdb67327fd37bb2e042aab12ff7391903235d3",
+        "device": "cuda",
+        "dtype": "bfloat16",
+        "quantization": "nf4",
+        "quantization_skip_modules": [
+          "code_predictor",
+          "speaker_encoder",
+          "codec_head",
+          "text_projection",
+          "lm_head"
+        ],
+        "attention": "sdpa",
+        "threads": 2,
+        "audio_decode_batch_size": 1
+      },
+      "seed": 1533686710,
+      "version": 1,
+      "signature": "fba6c75713ede640e4dbd6848d38dfdf91205756812d8e3711bbd09ef1ee5523",
+      "batch_id": "0573158cc665cf6b76ba38d1b1fadd53ff068e8c7ad434a6efaec181348ced04",
+      "batch_seed": 91428236,
+      "batch_position": 0,
+      "batch_size": 4,
+      "path": "res://audio/mission_voices/directed/anchors/dona_marlene_fba6c75713ede640.wav",
+      "audio_sha256": "721f1ebdc8bea7c19e1e82609daf0921d23478b3657f5219b8d72cb244ebf931",
+      "duration_seconds": 14.69525,
+      "sample_rate": 24000,
+      "channels": 1,
+      "format": "PCM_16",
+      "peak": 0.59375,
+      "technical_validation": {
+        "passed": true,
+        "checks": [
+          "finite_audio",
+          "non_silent",
+          "mono_pcm16_24khz",
+          "peak_below_full_scale"
+        ]
+      },
+      "artistic_review": "pending",
+      "batch_render_seconds": 39.187,
+      "source": "fictional_voice_design",
+      "gender_validation": "authored_unverified",
+      "package_versions": {
+        "torch": "2.11.0+cu128",
+        "transformers": "4.57.3",
+        "qwen-tts": "0.1.1",
+        "bitsandbytes": "0.50.2",
+        "soundfile": "0.14.0"
+      }
+    },
+    {
+      "character_id": "moradora",
+      "voice_gender": "female",
+      "direction": "Speak native Brazilian Portuguese, never European Portuguese. An adult woman's voice. Voice identity and usual manner: One adult female character with a consistent individual voice. Female middle register, shallow urgent inhale, compressed requests, small release of breath after rescue. Intelligible fear and stunned relief. Act to one scene partner. Clear intelligible speech, meaningful pauses and natural emotional turns. No announcer cadence, forced extreme pitch or caricature. Speak native Brazilian Portuguese with colloquial connected phrasing and Brazilian vowels. Do not invent regional accents from occupation, poverty or surname. Reference scene performance: One adult female character with a consistent individual voice. Female middle register, shallow urgent inhale, compressed requests, small release of breath after rescue. Intelligible fear and stunned relief. Act to one scene partner. Clear intelligible speech, meaningful pauses and natural emotional turns. No announcer cadence, forced extreme pitch or caricature. Speak native Brazilian Portuguese with colloquial connected phrasing and Brazilian vowels. Do not invent regional accents from occupation, poverty or surname. Reference performance: Let disbelief settle before sharing the location in a lowered, grateful voice. Make this a lived exchange with a present scene partner: clear operative words, responsive timing and natural breath. Establish identity with an active intention; do not flatten it into an announcer read. Keep the voice healthy and usable for later emotional shifts. Read only the supplied words with native Brazilian pronunciation. Dry close microphone; no music or sound effects.",
+      "text": "Você ficou... Os outros vão embora. Os registros deles ficam lá no fundo da quadra.",
+      "language": "pt_BR",
+      "backend": {
+        "model": "Qwen3-TTS-12Hz-1.7B-VoiceDesign",
+        "model_revision": "5ecdb67327fd37bb2e042aab12ff7391903235d3",
+        "device": "cuda",
+        "dtype": "bfloat16",
+        "quantization": "nf4",
+        "quantization_skip_modules": [
+          "code_predictor",
+          "speaker_encoder",
+          "codec_head",
+          "text_projection",
+          "lm_head"
+        ],
+        "attention": "sdpa",
+        "threads": 2,
+        "audio_decode_batch_size": 1
+      },
+      "seed": 1884680404,
+      "version": 1,
+      "signature": "c43cf95e3ddc4da71a2865906ae65406a03e3e1fede97237388ab9a7b13cd605",
+      "batch_id": "fb29bd95634f6ca800d8e7a609acb2e1460cc2b99f1c4e765d7d50415ac7bceb",
+      "batch_seed": 2066333077,
+      "batch_position": 1,
+      "batch_size": 4,
+      "path": "res://audio/mission_voices/directed/anchors/moradora_c43cf95e3ddc4da7.wav",
+      "audio_sha256": "708e8c6b60b1c5c1552b38cc8a22407d422a2d2850769098a1bb56cce9538b7f",
+      "duration_seconds": 8.666041666666667,
+      "sample_rate": 24000,
+      "channels": 1,
+      "format": "PCM_16",
+      "peak": 0.58203125,
+      "technical_validation": {
+        "passed": true,
+        "checks": [
+          "finite_audio",
+          "non_silent",
+          "mono_pcm16_24khz",
+          "peak_below_full_scale"
+        ]
+      },
+      "artistic_review": "pending",
+      "batch_render_seconds": 35.156,
+      "source": "fictional_voice_design",
+      "gender_validation": "authored_unverified",
+      "package_versions": {
+        "torch": "2.11.0+cu128",
+        "transformers": "4.57.3",
+        "qwen-tts": "0.1.1",
+        "bitsandbytes": "0.50.2",
+        "soundfile": "0.14.0"
+      }
+    }
+  ]
+}

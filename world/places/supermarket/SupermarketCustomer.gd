@@ -20,6 +20,8 @@ func _ready() -> void:
 	# Portable basket and products are parented to the body's visual, never to world.
 	var basket := preload("res://world/places/supermarket/MarketGeometry.gd").new()
 	visual.add_child(basket)
+	# Actor rotates the civilian model by PI: its front is visual -Z.
+	basket.rotation.y = PI
 	for side in [-1,1]:
 		basket.box("BasketSide",Vector3(side*.25,.93,.38),Vector3(.035,.22,.34),"bf9040")
 		basket.box("BasketEnd",Vector3(0,.93,.38+side*.17),Vector3(.50,.22,.025),"bf9040")
@@ -28,6 +30,12 @@ func _ready() -> void:
 	goods = basket.box("Groceries",Vector3(0,.99,.38),Vector3(.24,.24,.18),"b3553c")
 	goods.hide()
 	if shopping_model.get("activity") != null: shopping_model.activity = "carry"
+	shopping_model.hand_provider = func() -> Array:
+		if dead: return [null, null]
+		var targets: Array = [basket.to_global(Vector3(-.22,1.1,.38)),basket.to_global(Vector3(.22,1.1,.38))]
+		if stage == "browse" and route_index >= route_points.size() and wait_time > 0 and not market.threatened():
+			targets[1] = market.to_global(position+Vector3(.65,1.1,0))
+		return targets
 	wait_time = 1.5+customer_index
 	_set_route([Vector3(position.x,0,-1.5+customer_index*.6)])
 
@@ -59,8 +67,6 @@ func _physics_process(delta: float) -> void:
 		else: automatic_direction = direction.normalized()
 	else:
 		wait_time -= delta
-		if stage == "browse" and wait_time > 0 and shopping_model.get("hand_targets") != null:
-			shopping_model.hand_targets[1] = global_position+Vector3(.65,1.1,0)
 		if wait_time <= 0: _advance()
 	super._physics_process(delta)
 

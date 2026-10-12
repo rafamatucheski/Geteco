@@ -48,3 +48,7 @@ evidence/auditoria-viaria/20260929-correcoes/perf-projects/
 # Evita incluir milhares de relatórios brutos e snapshots em commits do jogo.
 # Relatórios já versionados continuam sendo acompanhados normalmente.
 /evidence/
+
+# Experimentos, capturas e copias locais; fontes e assets ativos ficam versionados.
+/output/
+/tmp/

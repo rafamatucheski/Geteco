@@ -249,5 +249,12 @@ func _material(id: String) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = Color(palette[id])
 	mat.roughness = 0.88
+	# Muros do cais eram cor lisa (leitura chapada de cima): relevo e variação em
+	# espaço de mundo, mantendo o tom da paleta.
+	var tint := mat.albedo_color
+	var kind := "metal" if id in ["steel", "dark_steel"] else ("granite" if id.begins_with("stone") or id == "masonry" else "concrete")
+	preload("res://assets/urban_detail/UrbanSurfaces.gd").detail(mat, kind, 2.0, .8)
+	mat.albedo_color = Color(minf(tint.r * mat.albedo_color.r, 1.0), minf(tint.g * mat.albedo_color.g, 1.0), minf(tint.b * mat.albedo_color.b, 1.0))
+	mat.roughness = 1.0
 	materials[id] = mat
 	return mat

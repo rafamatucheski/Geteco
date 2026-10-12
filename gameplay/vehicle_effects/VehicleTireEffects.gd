@@ -26,7 +26,7 @@ static func prewarm_skid_audio() -> void:
 		_skid_streams[kind] = stream
 const MAX_MARK_SEGMENTS := 320
 const MARK_LIFETIME_MSEC := 10000
-# Sulco em chão macio fica mais tempo que a borracha do asfalto: é o rastro que o
+# Sulco em chÃ£o macio fica mais tempo que a borracha do asfalto: Ã© o rastro que o
 # carro deixa na grama/terra mesmo andando reto, sem derrapar.
 const RUT_LIFETIME_MSEC := 30000
 const SOFT_KINDS := ["grass","dirt","snow"]
@@ -43,9 +43,12 @@ var geometry := ArrayMesh.new()
 var skid_audio: AudioStreamPlayer3D
 var road_mixer: Node
 var _probe_clock := 0.0
-var _redraw_clock := 0.0
-var _expire_clock := 0.0
+var _mark_timer: Timer
 var _idle := false
+var _burnout := 0.0
+var _burnout_smoke: Array[bool] = [false, false]
+static var _burnout_fade: GradientTexture1D
+static var _burnout_growth: CurveTexture
 
 func configure(car: CharacterBody3D) -> void:
 	vehicle = car
@@ -54,52 +57,61 @@ func _ready() -> void:
 	set_process(false)
 	set_physics_process(false)
 
+func _process(_delta: float) -> void:
+	# Exiting/streaming can put a stationary car to sleep before its next tire
+	# tick. This guard runs only during a held burnout, never for parked traffic.
+	if not is_instance_valid(vehicle) or not vehicle.is_physics_processing() or not vehicle.is_visible_in_tree() or vehicle.burnout_strength() <= 0.0:
+		_stop_emitters()
+
 func _exit_tree() -> void:
 	_stop_emitters()
 	if is_instance_valid(skid_audio): skid_audio.stop()
 	geometry.clear_surfaces()
 
 func physics_tick(delta: float, active: bool) -> void:
-	# Validade das marcas é de segundos: varrer a lista todo passo de física custava
-	# ~0,2 ms/passo em 25 carros (medido 2026-09-29, caos), quase sempre com lista vazia.
-	_expire_clock -= delta
-	if _expire_clock <= 0.0:
-		_expire_clock = .25
-		_expire_marks()
-	_redraw_clock -= delta
 	if not active:
-		# Parar emissores e zerar contatos uma vez ao ficar inativo, não a cada passo.
+		# Parar emissores e zerar contatos uma vez ao ficar inativo, nÃ£o a cada passo.
 		if not _idle:
 			_stop_emitters()
 			last_contacts = [{},{}]
 			_idle = true
-		if _redraw_clock <= 0: _redraw_marks()
 		return
 	_idle = false
+	# Contact probes are budgeted at 20 Hz, but the end of a drag wheel lock
+	# must release its audio on the same physics step as restored rolling grip.
+	if vehicle.has_meta("drag_service_brake_slip") and float(vehicle.get_meta("drag_service_brake_slip")) <= .15 and is_instance_valid(skid_audio) and skid_audio.playing:
+		var wet := last_contacts.any(func(contact): return not contact.is_empty() and bool(contact.get("wet",false)))
+		var lateral := absf(vehicle.horizontal_velocity.dot(vehicle.global_basis.x))
+		if lateral <= (3.125 if wet else 5.625) and vehicle.burnout_strength() <= 0.0: skid_audio.stop()
 	_probe_clock -= delta
 	if _probe_clock > 0:
-		if _redraw_clock <= 0: _redraw_marks()
 		return
 	_probe_clock = PROBE_INTERVAL
 	var contacts := _rear_contacts()
 	var motion := Vector3(vehicle.horizontal_velocity.x,0,vehicle.horizontal_velocity.z)
 	var road_speed := motion.length()
 	var lateral_speed := absf(motion.dot(vehicle.global_basis.x))
+	_burnout = vehicle.burnout_strength()
+	set_process(_burnout > 0.0)
+	var tire_speed := maxf(road_speed, _burnout*14.0)
 	var any_wet := false
 	for contact in contacts:
 		if not contact.is_empty() and bool(contact.wet): any_wet = true
 	var skid_threshold := 3.125 if any_wet else 5.625
-	var sliding: bool = lateral_speed > skid_threshold or (vehicle.controlled and vehicle.brake_input and road_speed > 3.75)
+	var braking_slip: bool = vehicle.controlled and vehicle.brake_input and road_speed > 3.75
+	if vehicle.has_meta("drag_service_brake_slip"):
+		braking_slip = float(vehicle.get_meta("drag_service_brake_slip"))>.15 and road_speed>8.0
+	var sliding: bool = _burnout > 0.0 or lateral_speed > skid_threshold or braking_slip
 	var hard_contact := false
 	for contact in contacts:
 		if not contact.is_empty() and contact.kind == "hard": hard_contact = true
-	_update_skid_audio(sliding and hard_contact and road_speed > 2.5, road_speed, lateral_speed)
+	_update_skid_audio(sliding and hard_contact and tire_speed > 2.5, tire_speed, maxf(lateral_speed, _burnout*8.0))
 	if vehicle.controlled and ENGINE_PROFILE.family(str(vehicle.archetype)) != "tank":
 		if not is_instance_valid(road_mixer):
 			road_mixer = ROAD_AUDIO.new()
 			road_mixer.vehicle = vehicle
 			add_child(road_mixer)
-		road_mixer.update_contacts(contacts, road_speed, sliding, PROBE_INTERVAL)
+		road_mixer.update_contacts(contacts, tire_speed, sliding, PROBE_INTERVAL)
 	elif is_instance_valid(road_mixer):
 		road_mixer.stop()
 	for side in 2:
@@ -112,20 +124,19 @@ func physics_tick(delta: float, active: bool) -> void:
 			continue
 		var kind: String = contact.kind
 		var mode := ""
-		# Lago de verdade (não só pista molhada): respingo grosso e gotas em arco.
-		if kind == "water" and road_speed > 1.5: mode = "lake"
-		elif bool(contact.wet) and road_speed > 3.0: mode = "water"
-		elif kind in SOFT_KINDS and road_speed > 2.5: mode = kind
+		# Lago de verdade (nÃ£o sÃ³ pista molhada): respingo grosso e gotas em arco.
+		if kind == "water" and tire_speed > 1.5: mode = "lake"
+		elif bool(contact.wet) and tire_speed > 3.0: mode = "water"
+		elif kind in SOFT_KINDS and tire_speed > 2.5: mode = kind
 		elif sliding and kind == "hard": mode = "smoke"
 		var splash_in: bool = mode == "lake" and last_modes[side] != "lake" and road_speed > 4.0
 		last_modes[side] = mode
 		if mode.is_empty(): _set_emitting(side,false)
-		else: _emit_surface(side,contact,mode,road_speed,lateral_speed)
-		_update_droplets(side,contact,mode == "lake",splash_in,road_speed)
+		else: _emit_surface(side,contact,mode,tire_speed,lateral_speed)
+		_update_droplets(side,contact,mode == "lake",splash_in,tire_speed)
 		if sliding and road_speed > 2.5: _append_mark(side,contact,kind,false)
 		elif kind in SOFT_KINDS and road_speed > .8: _append_mark(side,contact,kind,true)
 		else: last_contacts[side] = contact
-	if _redraw_clock <= 0: _redraw_marks()
 
 func _rear_contacts() -> Array[Dictionary]:
 	var began := STALL_WORK.begin()
@@ -162,7 +173,8 @@ func _stall_emit_surface(side: int, contact: Dictionary, mode: String, road_spee
 	_ensure_emitters()
 	var emitter := emitters[side]
 	var process := emitter.process_material as ParticleProcessMaterial
-	# 0 = moto/carro leve, 1 = caminhão/ônibus: veículo pesado arranca mais chão.
+	_set_burnout_smoke(side, mode == "smoke" and _burnout > 0.0)
+	# 0 = moto/carro leve, 1 = caminhÃ£o/Ã´nibus: veÃ­culo pesado arranca mais chÃ£o.
 	var heft := _heft()
 	var normal: Vector3 = contact.normal
 	var wake := -Vector3(vehicle.horizontal_velocity.x,0,vehicle.horizontal_velocity.z).normalized()
@@ -172,7 +184,7 @@ func _stall_emit_surface(side: int, contact: Dictionary, mode: String, road_spee
 	process.initial_velocity_min = .9 if mode == "water" else .45
 	process.initial_velocity_max = 2.7 if mode == "water" else 1.65
 	if mode == "lake":
-		# Lago: névoa de respingo maior e mais rápida que a pista molhada; as gotas vão no emissor à parte.
+		# Lago: nÃ©voa de respingo maior e mais rÃ¡pida que a pista molhada; as gotas vÃ£o no emissor Ã  parte.
 		process.gravity = Vector3(0,-4.0,0)
 		process.initial_velocity_min = 1.4
 		process.initial_velocity_max = 3.8
@@ -192,7 +204,7 @@ func _stall_emit_surface(side: int, contact: Dictionary, mode: String, road_spee
 		process.scale_max = 1.25+heft*.9
 		process.color = Color(.38,.30,.22,.48+heft*.2)
 	elif mode == "grass":
-		# Tufos arrancados sobem e caem (gravidade), não pairam como poeira.
+		# Tufos arrancados sobem e caem (gravidade), nÃ£o pairam como poeira.
 		process.initial_velocity_min = 1.0+heft
 		process.initial_velocity_max = 2.6+heft*1.8
 		process.scale_min = .22+heft*.15
@@ -207,15 +219,48 @@ func _stall_emit_surface(side: int, contact: Dictionary, mode: String, road_spee
 		process.angle_max = 360.0
 		process.angular_velocity_min = -2.2
 		process.angular_velocity_max = 2.2
+		if _burnout_smoke[side]:
+			process.direction = (normal*.65 + vehicle.global_basis.z*.35 + vehicle.global_basis.x*(-.55 if side == 0 else .55)).normalized()
+			process.spread = 42.0
+			process.gravity = Vector3(0,.5,0)
+			process.initial_velocity_min = .6
+			process.initial_velocity_max = 1.5
+			process.scale_min = .7
+			process.scale_max = 1.4
+			process.color = Color(.88,.90,.93,.68)
 	emitter.global_position = _emission_point(contact,mode == "lake")+normal*.035
 	var soft_boost := heft*.35 if mode in SOFT_KINDS else 0.0
 	emitter.amount_ratio = clampf(.22+road_speed/18.0+lateral_speed/20.0+soft_boost,.22,1.0)
 	emitter.emitting = true
 
+func _set_burnout_smoke(side: int, enabled: bool) -> void:
+	if _burnout_smoke[side] == enabled: return
+	_burnout_smoke[side] = enabled
+	var emitter := emitters[side]
+	var process := emitter.process_material as ParticleProcessMaterial
+	if enabled and _burnout_fade == null:
+		var gradient := Gradient.new()
+		gradient.offsets = PackedFloat32Array([0.0,.12,.55,1.0])
+		gradient.colors = PackedColorArray([Color(1,1,1,0),Color.WHITE,Color(1,1,1,.65),Color(1,1,1,0)])
+		_burnout_fade = GradientTexture1D.new()
+		_burnout_fade.gradient = gradient
+		var curve := Curve.new()
+		curve.add_point(Vector2(0,.25))
+		curve.add_point(Vector2(.4,.65))
+		curve.add_point(Vector2(1,1))
+		_burnout_growth = CurveTexture.new()
+		_burnout_growth.curve = curve
+	emitter.amount = 36 if enabled else 18
+	emitter.lifetime = 1.5 if enabled else .48
+	emitter.draw_pass_1 = RESOURCES.quad(Vector2(.9,.9) if enabled else Vector2(.26,.26))
+	process.color_ramp = _burnout_fade if enabled else null
+	process.scale_curve = _burnout_growth if enabled else null
+
 func _set_emitting(side: int, value: bool) -> void:
 	if side < emitters.size(): emitters[side].emitting = value
 
 func _stop_emitters() -> void:
+	set_process(false)
 	for emitter in emitters: emitter.emitting = false
 	for emitter in droplets: emitter.emitting = false
 	if is_instance_valid(skid_audio) and skid_audio.playing: skid_audio.stop()
@@ -266,11 +311,29 @@ func _append_mark(side: int, contact: Dictionary, kind: String, rut := false) ->
 	var length: float = previous.point.distance_to(contact.point)
 	if length < .035 or length > 2.2: return
 	var heft := _heft()
-	# Pneu de caminhão é mais largo e afunda mais: sulco mais largo e mais escuro.
+	# Pneu de caminhÃ£o Ã© mais largo e afunda mais: sulco mais largo e mais escuro.
 	var width := lerpf(.10,.22,heft) if rut else .075
 	marks.append({"a":previous.point,"b":contact.point,"na":previous.normal,"nb":contact.normal,"kind":kind,
 		"born":Time.get_ticks_msec(),"life":RUT_LIFETIME_MSEC if rut else MARK_LIFETIME_MSEC,"w":width,"depth":lerpf(.75,1.35,heft) if rut else 1.0})
 	while marks.size() > MAX_MARK_SEGMENTS: marks.pop_front()
+	_start_mark_timer()
+
+func _start_mark_timer() -> void:
+	# Tire traces keep aging when the vehicle physics sleeps after parking.
+	# Allocate only for cars that leave marks; stop ticking once they expire.
+	if not is_instance_valid(_mark_timer):
+		_mark_timer = Timer.new()
+		_mark_timer.name = "TireMarkLifetime"
+		_mark_timer.process_mode = Node.PROCESS_MODE_PAUSABLE
+		_mark_timer.wait_time = REDRAW_INTERVAL
+		add_child(_mark_timer)
+		_mark_timer.timeout.connect(_tick_mark_lifetime)
+	if _mark_timer.is_stopped(): _mark_timer.start()
+
+func _tick_mark_lifetime() -> void:
+	_expire_marks()
+	_redraw_marks()
+	if marks.is_empty(): _mark_timer.stop()
 
 func _ensure_mark_mesh() -> void:
 	if is_instance_valid(mark_mesh): return
@@ -300,8 +363,23 @@ func _redraw_marks() -> void:
 	_stall_redraw_marks()
 	STALL_WORK.finish_slow("vehicle_tires.redraw_marks",began,5000,vehicle)
 
+func _cache_mark_corners(mark: Dictionary) -> void:
+	# A deposited segment never moves. Only its color fades on later redraws;
+	# keep the sampled geometry instead of normalizing it again for up to 30 s.
+	var a: Vector3 = mark.a
+	var b: Vector3 = mark.b
+	var na: Vector3 = mark.na
+	var nb: Vector3 = mark.nb
+	var tangent := (b-a).normalized()
+	var half_width: float = mark.w
+	var sa := tangent.cross(na).normalized()*half_width
+	var sb := tangent.cross(nb).normalized()*half_width
+	mark["corner_a_left"] = a-sa+na*.012
+	mark["corner_b_left"] = b-sa+nb*.012
+	mark["corner_b_right"] = b+sb+nb*.012
+	mark["corner_a_right"] = a+sa+na*.012
+
 func _stall_redraw_marks() -> void:
-	_redraw_clock = REDRAW_INTERVAL
 	if marks.is_empty():
 		if is_instance_valid(mark_mesh): mark_mesh.visible = false
 		return
@@ -319,26 +397,21 @@ func _stall_redraw_marks() -> void:
 	var cursor := 0
 	var now := Time.get_ticks_msec()
 	for mark in marks:
-		var a: Vector3 = mark.a
-		var b: Vector3 = mark.b
+		if not mark.has("corner_a_left"): _cache_mark_corners(mark)
 		var na: Vector3 = mark.na
 		var nb: Vector3 = mark.nb
-		var tangent := (b-a).normalized()
-		var half_width: float = mark.w
-		var sa := tangent.cross(na).normalized()*half_width
-		var sb := tangent.cross(nb).normalized()*half_width
 		var age := float(now-int(mark.born))/float(mark.life)
 		var depth: float = mark.depth
 		var tint := Color(.035,.035,.03,(1.0-age)*(.48 if mark.kind=="hard" else .30))
 		if mark.kind == "snow": tint = Color(.38,.43,.44,(1.0-age)*.38)
 		elif mark.kind == "dirt": tint = Color(.15,.10,.07,minf(1.0,(1.0-age)*.36*depth))
 		elif mark.kind == "grass": tint = Color(.13,.15,.06,minf(1.0,(1.0-age)*.42*depth))
-		vertices[cursor] = a-sa+na*.012
-		vertices[cursor+1] = b-sa+nb*.012
-		vertices[cursor+2] = b+sb+nb*.012
+		vertices[cursor] = mark.corner_a_left
+		vertices[cursor+1] = mark.corner_b_left
+		vertices[cursor+2] = mark.corner_b_right
 		vertices[cursor+3] = vertices[cursor]
 		vertices[cursor+4] = vertices[cursor+2]
-		vertices[cursor+5] = a+sa+na*.012
+		vertices[cursor+5] = mark.corner_a_right
 		normals[cursor] = na
 		normals[cursor+1] = nb
 		normals[cursor+2] = nb
@@ -359,14 +432,15 @@ func _stall_redraw_marks() -> void:
 func clear_all() -> void:
 	_stop_emitters()
 	marks.clear()
+	if is_instance_valid(_mark_timer): _mark_timer.stop()
 	last_contacts = [{},{}]
 	last_modes = ["",""]
 	geometry.clear_surfaces()
 	if is_instance_valid(mark_mesh): mark_mesh.visible = false
 
-## Gotas do lago: arco curto com gravidade cheia, por roda. Criadas só na primeira vez que o
-## veículo toca um lago, então quem nunca molha a roda não paga emissor nenhum. Ao entrar na
-## água com velocidade, a roda solta uma rajada única (splash_in).
+## Gotas do lago: arco curto com gravidade cheia, por roda. Criadas sÃ³ na primeira vez que o
+## veÃ­culo toca um lago, entÃ£o quem nunca molha a roda nÃ£o paga emissor nenhum. Ao entrar na
+## Ã¡gua com velocidade, a roda solta uma rajada Ãºnica (splash_in).
 var droplets: Array[GPUParticles3D] = []
 
 func _update_droplets(side: int, contact: Dictionary, active: bool, splash_in: bool, road_speed: float) -> void:
@@ -401,7 +475,7 @@ func _update_droplets(side: int, contact: Dictionary, active: bool, splash_in: b
 		emitter.amount_ratio = 1.0
 		emitter.restart()
 
-## Em lago o respingo sai do espelho d'água; o ponto de contato fica no fundo da bacia, sob a água.
+## Em lago o respingo sai do espelho d'Ã¡gua; o ponto de contato fica no fundo da bacia, sob a Ã¡gua.
 func _emission_point(contact: Dictionary, lake: bool) -> Vector3:
 	var point: Vector3 = contact.point
 	if lake and contact.has("water_y") and not is_nan(float(contact.water_y)): point.y = maxf(point.y,float(contact.water_y)+.18)

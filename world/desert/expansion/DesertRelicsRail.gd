@@ -1,7 +1,11 @@
 extends RefCounted
 const BATCH := preload("res://world/desert/expansion/DesertRelicsBatch.gd")
 const BALLAST := preload("res://world/desert/expansion/DesertRelicsBallast.gd")
+const SMUGGLER := preload("res://world/desert/canyon/DesertSmugglerLayout.gd")
 const START_X := -1370.0
+# The western abandoned branch now ends at the gorge's eastern rock rim.
+# Keep the original curve phase for every retained metre of track.
+const GORGE_TERMINUS := -1200.0
 const END_X := -430.0
 const STEP := 4.0
 const GAUGE := 1.435
@@ -10,16 +14,26 @@ static func center(x: float) -> Vector2:
 	return Vector2(x, -550.0 + sin((x-START_X)/(END_X-START_X)*TAU)*5.0)
 
 static func reservation_clear(point: Vector2, radius: float = 0.0) -> bool:
-	if point.x < START_X-8.0-radius or point.x > END_X+8.0+radius: return true
+	var start_x := GORGE_TERMINUS if SMUGGLER.enabled() else START_X
+	if point.x < start_x-8.0-radius or point.x > END_X+8.0+radius: return true
 	return absf(point.y-center(clampf(point.x,START_X,END_X)).y) > 6.0+maxf(radius,0.0)
 
 static func build_chunk(parent: Node3D, rect: Rect2, world_seed: int, height: Callable) -> int:
 	if not rect.intersects(Rect2(START_X-9.0,-572.0,END_X-START_X+18.0,44.0)): return 0
-	var ballast_count := BALLAST.build_chunk(parent,rect,height,center,START_X,END_X)
-	var start := maxi(0, floori((rect.position.x-START_X)/STEP)-1)
+	var start_x := GORGE_TERMINUS if SMUGGLER.enabled() else START_X
+	var ballast_count := BALLAST.build_chunk(parent,rect,height,center,start_x,END_X)
+	var start := maxi(ceili((start_x-START_X)/STEP), floori((rect.position.x-START_X)/STEP)-1)
 	var end := mini(ceili((END_X-START_X)/STEP), ceili((rect.end.x-START_X)/STEP)+1)
 	var batch = BATCH.new(parent,"AbandonedRailway",Vector3.ZERO)
 	var count := 0
+	var terminus := center(GORGE_TERMINUS+2.0)
+	if SMUGGLER.enabled() and rect.has_point(terminus):
+		var stop_height := float(height.call(terminus))
+		batch.box("GorgeRailBuffer",Vector3(terminus.x,stop_height+.72,terminus.y),Vector3(.32,.32,2.8),"rust",false)
+		batch.rail_collision("GorgeRailBuffer",Vector3(terminus.x,stop_height+.72,terminus.y),Vector3(.32,.32,2.8),Vector3.ZERO)
+		for side in [-1.0,1.0]:
+			batch.box("GorgeBufferFoot",Vector3(terminus.x,stop_height+.37,terminus.y+side*.9),Vector3(.3,.74,.3),"rust",false)
+			batch.rail_collision("GorgeBufferFoot",Vector3(terminus.x,stop_height+.37,terminus.y+side*.9),Vector3(.3,.74,.3),Vector3.ZERO)
 	for i in range(start,end):
 		var x := START_X+(float(i)+.5)*STEP
 		var point := center(x)

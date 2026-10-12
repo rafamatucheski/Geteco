@@ -96,7 +96,7 @@ func run() -> void:
 	for i in 90: await physics_frame
 	check(weather.surface_effects.impact_count>0,"Hail produces impacts on real mountain collision")
 	check(weather.surface_effects.shards.multimesh.instance_count==120,"Shard pool remains bounded")
-	check(weather.surface_effects.mist.emitting,"Mountain haze has local motion")
+	check(not weather.surface_effects.mist.emitting and not weather.surface_effects.mist.visible,"Mountain has no ground clouds")
 	await capture("hail")
 	world.player.teleport(Vector3(600,.08,-285))
 	weather._update()

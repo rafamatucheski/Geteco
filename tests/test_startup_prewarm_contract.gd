@@ -7,7 +7,7 @@ class RegionProbe:
 	var built_records: Array[String] = []
 	func prepare_data() -> void:
 		data_prepared = true
-	func set_focus(point: Vector3) -> void:
+	func set_focus(point: Vector3, _complete_focus_chunk := false) -> void:
 		focus_requests.append(point)
 	func _build_surfaces(_chunk: Node3D, _rect: Rect2, _key: Vector2i) -> void:
 		pass

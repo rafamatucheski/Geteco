@@ -39,7 +39,7 @@ static func departure(day: int, time: float) -> Dictionary:
 	return {"id": "%d:%d" % [day, slot], "origin": BANKS[origin], "destination": BANKS[1-origin]}
 
 static func initial(event: Dictionary, security_level := 0) -> Dictionary:
-	return {"version": 1, "id": event.id, "origin": event.origin, "destination": event.destination,
+	return {"version": 1, "service_layout":1, "id": event.id, "origin": event.origin, "destination": event.destination,
 		"phase": "loading", "elapsed": 0.0, "hostile": false, "reported": false,
 		"report_remaining": -1.0, "pending": 0, "taken": [false, false],
 		"opened": [false, false], "vehicles": [], "guards": [], "virtual_poses": true,
@@ -71,6 +71,8 @@ static func restore(value: Variant) -> Dictionary:
 	if value.get("origin","") not in BANKS or value.get("destination","") not in BANKS or value.origin == value.destination: return {}
 	var row := initial(value)
 	row.merge(value,true)
+	row.service_layout = value.get("service_layout",0)
+	if not _integer(row.service_layout,0,1): return {}
 	# Older records with physical poses retain their exact saved placement.
 	# Simulated poses explicitly opt into terrain-supported first admission.
 	if not value.has("virtual_poses"):
@@ -101,6 +103,7 @@ static func restore(value: Variant) -> Dictionary:
 	if not row.vehicles is Array or row.vehicles.size() not in [0,4]: return {}
 	for vehicle in row.vehicles:
 		if not vehicle is Dictionary or not _point(vehicle.get("point")): return {}
+		if not preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd").valid_records(vehicle.get("body_dents",[])): return {}
 		if not _number(vehicle.get("yaw"),-100000,100000) or not _number(vehicle.get("health"),0,10000): return {}
 	if not row.guards is Array or row.guards.size() > 10: return {}
 	for guard in row.guards:

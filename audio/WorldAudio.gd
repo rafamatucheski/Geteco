@@ -156,7 +156,7 @@ func _make_bed(id: String, stream: AudioStream) -> void:
 ## V1 `VehicleRadioReceiver`: dirigindo, roda do mouse e R/LB/RB sintonizam. A pé a roda é da
 ## troca de arma (`Gameplay`), que `can_attack` já barra dentro do carro.
 func _unhandled_input(event: InputEvent) -> void:
-	if not event.is_pressed() or event.is_echo() or not world.driving.occupied: return
+	if not event.is_pressed() or event.is_echo() or not _driver_audio_ready(): return
 	var direction := 0
 	if event.is_action_pressed("radio_toggle"):
 		if get_tree().paused or not _radio_tunable(): return
@@ -176,7 +176,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	_cycle_radio(direction)
 	get_viewport().set_input_as_handled()
 
+func _driver_audio_ready() -> bool:
+	# Occupied reserves the car at the start of boarding; control begins at the seat.
+	return world.driving.occupied and is_instance_valid(world.driving.car) and world.driving.car.controlled
+
 func _radio_tunable() -> bool:
+	if not _driver_audio_ready(): return false
 	var session = world.session
 	if session != null:
 		if session.get("dialogue_open") == true or session.get("modal") == true: return false
@@ -211,7 +216,7 @@ func _play_station(from: float) -> void:
 ## Na primeira entrada, sorteia uma estação ou desligado e guarda a escolha no veículo.
 ## Retoma do ponto onde parou e guarda a posição ao sair. Cada carro conserva sua sintonização.
 func _update_radio(delta: float) -> void:
-	var car: CharacterBody3D = world.driving.car if world.driving.occupied and is_instance_valid(world.driving.car) else null
+	var car: CharacterBody3D = world.driving.car if _driver_audio_ready() else null
 	if car != radio_car:
 		if is_instance_valid(radio_car) and radio.playing:
 			radio_car.set_meta(&"radio_position",radio.get_playback_position())
@@ -288,7 +293,9 @@ func _process(delta: float) -> void:
 			# exatamente igual) em vez do mesmo dB fixo toda vez.
 			footsteps.volume_db = FOOTSTEP_VOLUME_DB + rng.randf_range(-1.5,1.5)
 			footsteps.play()
-	if not moving or not is_instance_valid(world.driving.car) or world.driving.car.health <= 0 or world.driving.car.engine_disabled or world.driving.car.has_meta("desert_powertrain"):
+	# Street cars also have desert_powertrain mechanics but retain this mixer.
+	# Yield only when the vehicle actually owns a dedicated audio node.
+	if not _driver_audio_ready() or world.driving.car.health <= 0 or world.driving.car.engine_disabled or world.driving.car.has_node("DesertCarAudio"):
 		engine_car = null
 		engine_archetype = ""
 		for layer in layers: if layer.playing: layer.stop()
@@ -309,7 +316,7 @@ func _process(delta: float) -> void:
 	engine_shift_cooldown = maxf(0.0, engine_shift_cooldown - delta)
 	engine_fx_cooldown = maxf(0.0, engine_fx_cooldown - delta)
 	var previous_gear := engine_gear
-	if ratio < 0.006:
+	if ratio < 0.006 or float(current_car.speed) < -0.4:
 		engine_gear = 1
 		engine_shift_cooldown = 0.0
 	elif engine_shift_cooldown <= 0.0:
@@ -328,7 +335,7 @@ func _process(delta: float) -> void:
 		target = ENGINE_PROFILE.loaded_rpm(target, idle, engine_load, ratio)
 	elif ratio < 0.03:
 		target = maxf(target, idle + engine_load * (1.0 - idle) * 0.62)
-	engine_rpm = lerpf(engine_rpm, target, 1.0 - exp(-delta * (18.0 if ratio > 0.03 else 8.0)))
+	engine_rpm = lerpf(engine_rpm, target, 1.0 - exp(-delta * (10.0 if target > engine_rpm else 6.0)))
 	var spec: Dictionary = FLEET.spec(engine_archetype)
 	_update_vehicle_foley(current_car, spec, ratio, throttle, previous_gear)
 	var tint := pow(maxf(float(spec.get("engine_pitch", 1.0)), 0.3), 0.35)

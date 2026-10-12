@@ -3,7 +3,9 @@ extends Node3D
 const PREFIX := "street_icecream_"
 const GROUP := &"icecream_vans"
 const KIT := preload("res://world/city_look/CityPropKit.gd")
+const SURFACES := preload("res://runtime/VehicleSurfaceRoles.gd")
 static var _livery: ArrayMesh
+static var _roof_liveries: Dictionary = {}
 static var _clown: ArrayMesh
 static var _song: AudioStreamWAV
 static var enabled := true # Process-local A/B measurement only; never saved.
@@ -36,9 +38,10 @@ static func prewarm() -> void:
 
 func _ready() -> void:
 	add_to_group(GROUP)
+	var roof_height := _roof_height()
 	var art := MeshInstance3D.new()
 	art.name = "SorveteLivery"
-	art.mesh = livery_mesh()
+	art.mesh = _livery_for_roof(roof_height)
 	add_child(art)
 	crew = Node3D.new()
 	crew.name = "Clowns"
@@ -48,15 +51,18 @@ func _ready() -> void:
 		clown.mesh = clown_mesh()
 		clown.position = Vector3(side*.43,.68,-.83)
 		crew.add_child(clown)
-	var cabin := car.visual.get_node_or_null("SculptedCabin") as MeshInstance3D
-	if cabin != null:
-		for surface in cabin.mesh.get_surface_count():
-			var original := cabin.get_active_material(surface) as StandardMaterial3D
-			if original != null and original.resource_name == "glass":
+	# The authored courier batches glass and paint in Body. Override only glass
+	# surfaces; a node-wide override would also make its bodywork transparent.
+	for part: MeshInstance3D in car.visual.find_children("*","MeshInstance3D",true,false):
+		if part.mesh == null or part.has_meta("wheel_center"): continue
+		for surface in part.mesh.get_surface_count():
+			if SURFACES.key(part,surface) != "glass": continue
+			var original := part.get_active_material(surface) as StandardMaterial3D
+			if original != null:
 				var glass := original.duplicate() as StandardMaterial3D
 				glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 				glass.albedo_color = Color(.68,.84,.9,.23)
-				cabin.set_surface_override_material(surface,glass)
+				part.set_surface_override_material(surface,glass)
 	song = AudioStreamPlayer3D.new()
 	song.name = "IceCreamJingle"
 	song.stream = song_stream()
@@ -73,9 +79,41 @@ func _ready() -> void:
 	var shape := BoxShape3D.new()
 	shape.size = Vector3(.7,.92,.7)
 	roof.shape = shape
-	roof.position = Vector3(0,2.60,.5)
+	roof.position = Vector3(0,roof_height+.50,.5)
 	car.add_child(roof)
 	_update_ambience()
+
+func _roof_height() -> float:
+	# A courier's highest painted vertices are its roof. Read once on attachment,
+	# before adding the ornament; wheels, windows and trim cannot move the mount.
+	var height := 0.0
+	for part: MeshInstance3D in car.visual.find_children("*","MeshInstance3D",true,false):
+		if part.mesh == null or part.has_meta("wheel_center"): continue
+		for surface in part.mesh.get_surface_count():
+			if SURFACES.key(part,surface) != "paint": continue
+			var vertices: PackedVector3Array = part.mesh.surface_get_arrays(surface)[Mesh.ARRAY_VERTEX]
+			for vertex in vertices:
+				height = maxf(height,car.to_local(part.to_global(vertex)).y)
+	return height if height > 1.2 else 2.10
+
+static func _livery_for_roof(height: float) -> ArrayMesh:
+	var key := roundi(height*1000.0)
+	if _roof_liveries.has(key): return _roof_liveries[key]
+	var original := livery_mesh()
+	var arrays := original.surface_get_arrays(0)
+	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX].duplicate()
+	var offset := height-2.10
+	for i in vertices.size():
+		# Only the central roof ornament occupies this region. Side serving
+		# windows, canopy, stripes and the separate clown meshes stay in place.
+		if absf(vertices[i].x)<.5 and vertices[i].y>1.97:
+			vertices[i].y += offset
+	arrays[Mesh.ARRAY_VERTEX]=vertices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
+	mesh.surface_set_material(0,original.surface_get_material(0))
+	_roof_liveries[key]=mesh
+	return mesh
 
 func _process(delta: float) -> void:
 	clock -= delta

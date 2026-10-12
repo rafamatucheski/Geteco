@@ -27,8 +27,8 @@ foreach ($test in $tests) {
     $saveRoot = Join-Path ([IO.Path]::GetTempPath()) ('geteco-suite-' + [guid]::NewGuid().ToString('N'))
     New-Item -ItemType Directory -Path $saveRoot | Out-Null
     $godotArgs = @('--path', ('"' + $root + '"'), '--script', "res://$relative", '--', '--no-save', '--skip-arrival', ('"--isolated-save-root=' + $saveRoot + '"'))
-    if ($test.BaseName -eq 'test_android_controls') { $godotArgs += '--touch-controls' }
-    $rendered = $test.BaseName -in @('test_mountain_shop_occlusion','test_destroyed_cleanup','test_harbor_gameplay_acceptance','test_urban_asset_library','test_vertice_depth','test_vertice_site_depth','test_vertice_undercroft_geometry','test_vertice_packing_depth','test_police_frontage_geometry')
+    if ($test.BaseName -in @('test_android_controls','test_android_bus_driver')) { $godotArgs += '--touch-controls' }
+    $rendered = $test.BaseName -in @('test_android_controls','test_android_bus_driver','test_mountain_downhill_runtime','test_mountain_jeep_integration','test_mountain_shop_occlusion','test_destroyed_cleanup','test_harbor_gameplay_acceptance','test_urban_asset_library','test_vertice_depth','test_vertice_site_depth','test_vertice_undercroft_geometry','test_vertice_packing_depth','test_police_frontage_geometry')
     $effectiveArgs = if ($rendered) { @($godotArgs + '--population=8') } else { @('--headless') + $godotArgs }
     $process = $null
     $problems = @()

@@ -109,6 +109,11 @@ func _material(color: Color, roughness: float, metallic: float, glow := false) -
 	result.albedo_color = color
 	result.roughness = roughness
 	result.metallic = metallic
+	if not glow:
+		# Cor lisa lia como plano chapado: relevo e rugosidade de metal, mesmo tom.
+		preload("res://assets/urban_detail/UrbanSurfaces.gd").detail(result, "metal", 1.5, .7)
+		result.albedo_color = Color(minf(color.r * result.albedo_color.r, 1.0), minf(color.g * result.albedo_color.g, 1.0), minf(color.b * result.albedo_color.b, 1.0), color.a)
+		result.roughness = roughness
 	if glow:
 		result.emission_enabled = true
 		result.emission = color

@@ -129,7 +129,7 @@ func perform(id: String) -> bool:
 	cats.erase(id)
 	collect_audio.play()
 	session.activities._commit()
-	session.show_message("%d/10 gatos adotados"%session.activities.residence.cat_count())
+	session.show_message(String(TranslationServer.translate("%d/10 gatos adotados"))%session.activities.residence.cat_count())
 	_context = ""
 	return true
 

@@ -29,6 +29,9 @@ func boot() -> void:
 	root.add_child(world)
 	current_scene = world
 	while world.session==null or not world.session.ready_for_play or not world.production.startup_streaming_settled: await physics_frame
+	# The runner owns this isolated store, even when launched with --no-save.
+	if not check(world.production.store.path==save_path,"roof persistence owns isolated fixture only"): finish(3); return
+	world.production.no_save = false
 	world.player.controlled_automatically = true
 	world.player.automatic_direction = Vector3.ZERO
 	world.player.speed = 5.0
@@ -204,7 +207,7 @@ func visit(target: Dictionary) -> bool:
 	var corridor: Vector3 = Vector3(jump.x,.04,runtime.roof.stair_point().z)
 	if not check(await walk(runtime.roof.to_global(corridor)),str(target.id)+" solid roof crossing toward jump bay"): return false
 	if not check(await walk(runtime.roof.to_global(jump+Vector3.UP*.04)),str(target.id)+" walk to guarded jump bay"): return false
-	check(runtime.nearest_action().get("id","")=="service_roof_jump",str(target.id)+" jump action discoverable")
+	check(runtime.nearest_action().get("id","")!="service_roof_jump",str(target.id)+" roof has no jump action")
 	if not check(await walk(runtime.roof.to_global(corridor)),str(target.id)+" return through roof corridor"): return false
 	await photo(str(target.id)+"-roof")
 	var wrote: bool = world.session.save_game()
@@ -262,10 +265,20 @@ func recovery_scenarios(target: Dictionary) -> void:
 		world.player.controlled_automatically = false
 		world.player.automatic_direction = Vector3.ZERO
 		create_timer(.06).timeout.connect(func(): world.gameplay.damage_environment(10000))
-		var completed: bool = await runtime.jump_from_roof() if phase=="jump" else await runtime.use_stairs()
+		var completed: bool = await walk_off_roof(runtime) if phase=="jump" else await runtime.use_stairs()
 		check(not completed,phase+" aborts when real lethal damage interrupts it")
 		if not await recover_after_roof_death(phase): return
 	await normal_jump(target)
+
+func walk_off_roof(runtime) -> bool:
+	world.player.controlled_automatically = true
+	world.player.automatic_direction = runtime.roof.global_basis * runtime.roof.jump_outward
+	world.player.speed = 3.5
+	var deadline := Time.get_ticks_msec()+5000
+	while not runtime.falling and world.gameplay.health>0 and Time.get_ticks_msec()<deadline: await physics_frame
+	world.player.controlled_automatically = false
+	world.player.automatic_direction = Vector3.ZERO
+	return runtime.falling and world.gameplay.health>0
 
 func normal_jump(target: Dictionary) -> void:
 	# The same entry also proves the uninterrupted physical jump and fall,
@@ -282,7 +295,7 @@ func normal_jump(target: Dictionary) -> void:
 	world.player.controlled_automatically = false
 	world.player.automatic_direction = Vector3.ZERO
 	var before: float = world.gameplay.health
-	check(await runtime.jump_from_roof(),"normal physical jump crosses parapet to falling state")
+	check(await walk_off_roof(runtime),"moving outward crosses solid parapet to falling state without button")
 	var deadline := Time.get_ticks_msec()+10000
 	while runtime.is_active() and Time.get_ticks_msec()<deadline: await physics_frame
 	print("SERVICE_ROOF_LANDING owner=",target.id," peak=",runtime.fall_peak," position=",world.player.global_position," drop=",runtime.fall_peak-world.player.global_position.y," health_before=",before," health_after=",world.gameplay.health)

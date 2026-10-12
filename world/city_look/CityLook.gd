@@ -192,6 +192,7 @@ func _refresh_silhouette() -> void:
 		material.set_shader_parameter("box_min", box.position)
 		material.set_shader_parameter("box_max", box.end)
 		material.set_shader_parameter("minimum_occluder_height", -1000.0 if is_instance_valid(vehicle) else 1.2)
+		material.set_shader_parameter("readable_actor", target == player and not is_instance_valid(vehicle))
 	for previous in _silhouette_targets:
 		if is_instance_valid(previous) and previous not in targets:
 			var material = _silhouettes.get(previous)

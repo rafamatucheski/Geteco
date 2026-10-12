@@ -188,7 +188,7 @@ func present_practice(bike, laps: int, lap_clock: float, timing: bool, record: f
 	position_label.text = "%d"%laps
 	lap_label.text = clock(session_best) if session_best > 0.0 else "--:--"
 	time_label.text = clock(lap_clock) if timing else "--:--.--"
-	gap_label.text = ("RECORDE DA PISTA %s"%clock(record) if record > 0.0 else "SEM RECORDE NA PISTA")+("" if timing else " · CRUZE A LARGADA")
+	gap_label.text = (String(TranslationServer.translate("RECORDE DA PISTA %s")) %clock(record) if record > 0.0 else "SEM RECORDE NA PISTA")+("" if timing else " · CRUZE A LARGADA")
 	speed_label.text = "%02d"%int(absf(bike.speed)*3.6)
 	integrity.value = bike.health
 	state_label.text = "RECUPERANDO" if bike.crash_state!="riding" else (air_cue(bike) if bike._air_time>.12 else ("FREANDO" if bike._brake else ""))

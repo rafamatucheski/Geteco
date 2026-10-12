@@ -4,22 +4,20 @@ extends RefCounted
 ## Até aqui quem dirigia sumia (`world.player.hide()`) e os vidros dos modelos eram opacos:
 ## o carro andava "vazio" e a empilhadeira nem tinha piloto. Este módulo dá ao veículo que o
 ## jogador conduz (a) um interior de uma malha só (volante, painel, bancos, console, pedais,
-## retrovisor, forro, cintos), (b) vidros translúcidos nesse veículo e (c) a pose de
+## retrovisor, forro, cintos) e a pose de
 ## motorista sentado com as mãos no volante.
 ##
 ## Custo: uma `MeshInstance3D` por veículo conduzido, malha em cache por arquétipo, sem
 ## colisão, sem nó por peça e sem script por quadro. O corpo do motorista acompanha o
 ## veículo com uma atribuição de transform por tique de física (`follow`).
 ##
-## Só o veículo que o jogador entra recebe interior e vidro translúcido: o trânsito segue
+## Só o veículo que o jogador entra recebe interior; os vidros conservam os materiais originais.
+## O trânsito segue
 ## com os modelos achatados, de vidro opaco, como antes.
 const ROLES := preload("res://runtime/VehicleSurfaceRoles.gd")
 
 ## Altura do quadril (junta da coxa) do Dante de pé sobre a sola. Medido no esqueleto.
 const STANDING_HIP := 0.77
-## Opacidade do vidro do veículo conduzido. Abaixo de ~0,3 o vidro deixa de parecer vidro;
-## acima de ~0,5 o piloto some atrás do para-brisa na câmera a 45°.
-const GLASS_ALPHA := 0.36
 ## Opacidade do teto do veículo conduzido (textura constante, ver `_roof_alpha_texture`).
 const ROOF_ALPHA := 0.30
 
@@ -92,7 +90,6 @@ const OVERRIDES := {
 
 static var _specs: Dictionary = {}
 static var _meshes: Dictionary = {}
-static var _glass: Dictionary = {}
 static var _material: StandardMaterial3D
 
 # --- API ----------------------------------------------------------------------------------
@@ -272,34 +269,6 @@ static func _fit(theta: float, hip: float, hip_min: float, floor_y: float, ceili
 			h -= .02
 	return Vector2(hip_min, .82)
 
-# --- Vidro --------------------------------------------------------------------------------
-
-## Versão translúcida (em cache) de um material de vidro. Continua sendo "glass" para o
-## dano do veículo, que troca vidro por vidro estourado pela mesma detecção.
-static func see_through(material: StandardMaterial3D) -> StandardMaterial3D:
-	if _glass.has(material): return _glass[material]
-	var copy := material.duplicate() as StandardMaterial3D
-	copy.resource_name = "glass"
-	copy.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	var color := copy.albedo_color
-	color.a = GLASS_ALPHA
-	copy.albedo_color = color
-	_glass[material] = copy
-	return copy
-
-static func _open_glass(vehicle: Node3D) -> void:
-	for part in vehicle.visual.find_children("*", "MeshInstance3D", true, false):
-		var mesh: Mesh = part.mesh
-		if mesh == null or part.has_meta("wheel_center") or part.name == "Interior" or part.name == "RoofCut" or part.name == "WarmUp": continue
-		if part.material_override != null:
-			if part.material_override is StandardMaterial3D and _is_glass(part, 0, part.material_override):
-				part.material_override = see_through(part.material_override)
-			continue
-		for surface in mesh.get_surface_count():
-			var material: Material = part.get_active_material(surface)
-			if material is StandardMaterial3D and _is_glass(part, surface, material):
-				part.set_surface_override_material(surface, see_through(material))
-
 # --- Montagem no veículo ------------------------------------------------------------------
 
 ## Última montagem por etapa (ms), só para medição.
@@ -307,16 +276,14 @@ static var profile: Dictionary = {}
 static var _warmed: Dictionary = {}
 static var _warming: Dictionary = {} # Family -> owner instance_id; no persistent Node references.
 
-## Abre apenas os vidros para mostrar o motorista. O teto conserva a malha e a pintura
-## opacas do modelo, inclusive após entrar, repintar ou mudar a câmera. Idempotente.
+## Registra a apresentação da cabine sem alterar vidro, teto ou pintura do modelo.
+## A aparência original permanece ao entrar e mudar a câmera. Idempotente.
 static func open_view(vehicle: Node3D) -> void:
 	var s := spec(vehicle)
 	if s.is_empty() or vehicle.get("visual") == null or vehicle.has_meta("interior_view"): return
 	var began := Time.get_ticks_usec()
 	vehicle.set_meta("interior_view", {"parts": [], "roofs": [], "alpha_materials": [], "slabs": []})
-	_open_glass(vehicle)
-	var after_glass := Time.get_ticks_usec()
-	profile = {"vidro_ms": (after_glass - began) / 1000.0, "teto_ms": 0.0}
+	profile = {"vista_ms": (Time.get_ticks_usec() - began) / 1000.0}
 	# Carcaça: o dano troca materiais por papel e não conhece o teto recortado; `Driving` chama
 	# `close_view` ao receber `destroyed` (antes do `wreck`), que devolve o casco inteiro.
 
@@ -340,7 +307,7 @@ static func attach(vehicle: Node3D) -> void:
 		if str(vehicle.get("archetype")) == "port_forklift": _hide_forklift_console(visual)
 	open_view(vehicle)
 
-## Prepara quadro a quadro a medida, malha e variantes de vidro de cada arquétipo.
+## Prepara quadro a quadro a medida, malha e materiais originais de vidro de cada arquétipo.
 ## Instâncias temporárias fora da vista preparam recursos de superfície; não garantem
 ## o pipeline de desenho da primeira exibição. Família só fica concluída após terminar.
 static func prewarm(vehicle: Node3D) -> void:
@@ -371,11 +338,11 @@ static func prewarm(vehicle: Node3D) -> void:
 		var mesh: Mesh = part.mesh
 		if mesh == null or part.has_meta("wheel_center") or part.name in ["Interior", "RoofCut", "WarmUp"]: continue
 		if part.material_override is StandardMaterial3D and _is_glass(part, 0, part.material_override):
-			warm.append([mesh, see_through(part.material_override)])
+			warm.append([mesh, part.material_override])
 			continue
 		for surface in mesh.get_surface_count():
 			var material: Material = part.get_active_material(surface)
-			if material is StandardMaterial3D and _is_glass(part, surface, material): warm.append([mesh, see_through(material)])
+			if material is StandardMaterial3D and _is_glass(part, surface, material): warm.append([mesh, material])
 	var completed := await _warm_materials(vehicle, warm)
 	_finish_warming(id, request_id, completed)
 
@@ -436,31 +403,7 @@ static func set_low_camera_roof(vehicle: Node3D, solid: bool) -> void:
 	var view: Dictionary = vehicle.get_meta("interior_view", {})
 	if view.is_empty() or bool(view.get("low_camera_roof", false)) == solid: return
 	view["low_camera_roof"] = solid
-	# A cobertura do cupê também tem vidro; o alfa da vista superior abria buracos
-	# e deixava interior/motorista sobrepostos na visão traseira.
-	if solid:
-		var glazing: Array = []
-		for part in vehicle.visual.find_children("*", "MeshInstance3D", true, false):
-			if part.mesh == null or part.name in ["Interior", "RoofCut", "WarmUp"]: continue
-			for surface in (1 if part.material_override != null else part.mesh.get_surface_count()):
-				var original: Material = part.get_active_material(surface)
-				if not original is StandardMaterial3D or not _is_glass(part, surface, original): continue
-				var opaque := original.duplicate() as StandardMaterial3D
-				opaque.transparency = BaseMaterial3D.TRANSPARENCY_DISABLED
-				var color := opaque.albedo_color
-				color.a = 1.0
-				opaque.albedo_color = color
-				var slot: int = -1 if part.material_override != null else surface
-				glazing.append([part, slot, part.material_override if slot == -1 else part.get_surface_override_material(slot)])
-				if slot == -1: part.material_override = opaque
-				else: part.set_surface_override_material(slot, opaque)
-		view["low_camera_glazing"] = glazing
-	else:
-		for entry in view.get("low_camera_glazing", []):
-			if not is_instance_valid(entry[0]): continue
-			if entry[1] == -1: entry[0].material_override = entry[2]
-			else: entry[0].set_surface_override_material(entry[1], entry[2])
-		view.erase("low_camera_glazing")
+	# A câmera não substitui os materiais de vidro do modelo.
 	var materials: Array = view.alpha_materials.duplicate()
 	for roof in view.roofs:
 		if is_instance_valid(roof) and roof.material_override not in materials:

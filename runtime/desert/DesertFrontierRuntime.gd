@@ -63,7 +63,7 @@ func perform(action: Dictionary) -> bool:
 	# save admission still decides whether to write now or queue the checkpoint.
 	session.save_game()
 	if bool(result.get("reward_changed",false)):
-		session.show_message("R$ %d recolhidos."%int(result.get("amount",0)))
+		session.show_message(String(TranslationServer.translate("R$ %d recolhidos."))%int(result.get("amount",0)))
 	var clue := str(result.get("clue",""))
 	if not clue.is_empty(): session.show_dialogue([{"speaker":"Anotação","message":clue}])
 	return true

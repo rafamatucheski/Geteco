@@ -1,5 +1,5 @@
 extends Node3D
-## Bounded local hail impacts and moving mist; no new lights or screen copies.
+## Bounded local hail impacts. Ground mist is disabled in every region.
 const SHARD_COUNT := 120
 const SHARD_LIFETIME := 0.28 # Original V1 IceStormManager lifetime.
 var mist: GPUParticles3D
@@ -14,6 +14,8 @@ var _focus := Vector3.ZERO
 var _rng := RandomNumberGenerator.new()
 var impact_count := 0
 var _covered := false
+var _desert := 0.0
+var _shards_alive := false
 
 func _ready() -> void:
 	_rng.randomize()
@@ -38,72 +40,36 @@ func _ready() -> void:
 	_velocities.resize(SHARD_COUNT)
 	_clear_shards()
 	mist = GPUParticles3D.new()
-	mist.amount = 16
-	mist.lifetime = 8.0
-	mist.preprocess = 0.0
-	mist.visibility_aabb = AABB(Vector3(-28,-6,-28),Vector3(56,18,56))
-	mist.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	var quad := QuadMesh.new()
-	quad.size = Vector2(9,3)
-	var fog_material := StandardMaterial3D.new()
-	fog_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	fog_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	fog_material.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
-	fog_material.albedo_texture = _mist_texture()
-	quad.material = fog_material
-	mist.draw_pass_1 = quad
-	var particles := ParticleProcessMaterial.new()
-	particles.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
-	particles.emission_box_extents = Vector3(18,1.0,18)
-	particles.direction = Vector3(1,0,.25).normalized()
-	particles.spread = 12
-	particles.gravity = Vector3.ZERO
-	particles.initial_velocity_min = .3
-	particles.initial_velocity_max = .7
-	var gradient := Gradient.new()
-	gradient.set_color(0,Color(1,1,1,0))
-	gradient.set_color(1,Color(1,1,1,0))
-	gradient.add_point(.25,Color.WHITE)
-	gradient.add_point(.7,Color.WHITE)
-	var ramp := GradientTexture1D.new()
-	ramp.gradient = gradient
-	particles.color_ramp = ramp
-	mist.process_material = particles
 	mist.emitting = false
+	mist.visible = false
+	mist.speed_scale = 0.0
 	add_child(mist)
 	set_process(false)
 	set_physics_process(false)
 
-func _mist_texture() -> Texture2D:
-	var noise := FastNoiseLite.new()
-	noise.seed = 913
-	noise.frequency = .09
-	var image := Image.create(64,64,false,Image.FORMAT_RGBA8)
-	for y in 64:
-		for x in 64:
-			var p := (Vector2(x,y)-Vector2(31.5,31.5))/31.5
-			var edge := pow(maxf(0,1.0-p.length_squared()),2.0)
-			image.set_pixel(x,y,Color(1,1,1,edge*(.55+.45*noise.get_noise_2d(x,y))))
-	return ImageTexture.create_from_image(image)
-
-func set_conditions(focus: Vector3, hail_strength: float, haze: float, tint: Color, covered: bool) -> void:
+func set_conditions(focus: Vector3, hail_strength: float, _haze: float, _tint: Color, covered: bool, desert := 0.0, _wind_strength := 0.0) -> void:
 	# Teleports cannot leave a trail at the previous region or inside a room.
 	if (covered and not _covered) or focus.distance_squared_to(_focus)>1600.0:
 		_clear_shards()
-		mist.restart()
 	_covered = covered
+	_desert = desert
 	_focus = focus
 	_hail_strength = 0.0 if covered else clampf(hail_strength,0,1)
 	set_physics_process(_hail_strength>.001)
-	mist.position = focus + Vector3.UP*1.8
-	mist.visible = not covered and haze>.001
-	mist.emitting = mist.visible
-	mist.amount_ratio = clampf(haze*5.0,.15,1.0)
-	mist.draw_pass_1.material.albedo_color = Color(tint.r,tint.g,tint.b,clampf(haze*.6,0,.12))
+	follow_focus(focus)
+	# Distant fog belongs to RegionalAtmosphere3D; rain/snow have separate emitters.
+	mist.visible = false
+	mist.emitting = false
 	shards.visible = not covered
+	set_process(_shards_alive)
+
+func follow_focus(focus: Vector3) -> void:
+	# Called at render cadence: the old 5Hz relocation left dust behind cars.
+	mist.position = focus+Vector3.UP*lerpf(1.8,1.1,_desert)
 
 func _clear_shards() -> void:
 	set_process(false)
+	_shards_alive = false
 	for i in SHARD_COUNT:
 		_ages[i] = SHARD_LIFETIME
 		shards.multimesh.set_instance_transform(i,Transform3D(Basis.IDENTITY.scaled(Vector3.ZERO),Vector3.ZERO))
@@ -122,6 +88,7 @@ func _physics_process(delta: float) -> void:
 		# Reject roofs above the local ground; impacts remain on actual solids.
 		if hit.position.y>_focus.y+1.0: continue
 		impact_count += 1
+		_shards_alive = true
 		set_process(true)
 		for k in 3:
 			_origins[_cursor] = hit.position+hit.normal*.04
@@ -130,6 +97,7 @@ func _physics_process(delta: float) -> void:
 			_cursor = (_cursor+1)%SHARD_COUNT
 
 func _process(delta: float) -> void:
+	if not _shards_alive: return
 	var alive := false
 	for i in SHARD_COUNT:
 		if _ages[i]>=SHARD_LIFETIME: continue
@@ -140,4 +108,5 @@ func _process(delta: float) -> void:
 		var point := _origins[i]+_velocities[i]*t+Vector3.DOWN*5*t*t
 		var local_basis := Basis(Vector3(1,0,1).normalized(),t*12+i).scaled(Vector3.ONE*local_scale)
 		shards.multimesh.set_instance_transform(i,Transform3D(local_basis,point))
+	_shards_alive = alive
 	if not alive: set_process(false)

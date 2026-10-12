@@ -2,6 +2,7 @@ extends Node
 ## Harbor arrival: a call at home, Maciota at the passenger street exit, then
 ## a physical ride to his industrial workshop. V1 checkpoints migrate in place.
 const DIALOGUE := preload("res://runtime/ArrivalDialogue.gd")
+const VOICE := preload("res://audio/ExpressiveVoice.gd")
 const STORY := preload("res://systems/campaign/HarborStory.gd")
 const VERSION := 2
 const PARK := Vector3(210, 0, 151)
@@ -35,6 +36,8 @@ var _player_layer := 2
 var _player_mask := 7
 var _previous_place := ""
 var voice: AudioStreamPlayer
+var _voice_source := ""
+var _voice_persona := ""
 var _dialogue_lines: Array = []
 var _dialogue_index := 0
 var _dialogue_done := Callable()
@@ -57,9 +60,15 @@ func configure(owner_session) -> void:
 	voice.volume_db = -8
 	if AudioServer.get_bus_index("SFX") >= 0: voice.bus = "SFX"
 	add_child(voice)
+	var settings: Node = session.get_node_or_null("/root/V2Settings")
+	if settings != null:
+		settings.voice_language_changed.connect(func(_value): _refresh_language(true))
+		settings.text_language_changed.connect(func(_value): _refresh_language(false))
 
 func _dialogue(source: Array, done: Callable) -> void:
-	_dialogue_lines = DIALOGUE.lines(source)
+	_dialogue_lines.clear()
+	for row in source:
+		_dialogue_lines.append({"speaker":row[0], "message":row[1], "voice_text":row[1], "voice_persona":"dante" if row[0] == "DANTE" else "maciota"})
 	_dialogue_index = 0
 	_dialogue_done = done
 	_next_line()
@@ -70,6 +79,7 @@ func dialogue_in_progress() -> bool:
 func cancel_dialogue() -> void:
 	if not dialogue_in_progress(): return
 	voice.stop()
+	_voice_source = ""
 	_dialogue_lines.clear()
 	_dialogue_index = 0
 	_dialogue_done = Callable()
@@ -85,10 +95,24 @@ func _next_line() -> void:
 	var line: Dictionary = _dialogue_lines[_dialogue_index]
 	# A missing take stays captioned. Never synthesize non-verbal tones and
 	# present them as the newly written dialogue's dub.
-	voice.stream = preload("res://audio/ExpressiveVoice.gd").recorded_line(line.message, "dante" if line.speaker == "DANTE" else "maciota")
+	_voice_source = str(line.voice_text)
+	_voice_persona = str(line.voice_persona)
+	voice.stream = VOICE.recorded_line(_voice_source, _voice_persona)
+	voice.volume_db = VOICE.playback_volume(voice.stream, -8.0)
 	if voice.stream != null: voice.play()
 	_dialogue_index += 1
 	session.show_dialogue([line], _next_line)
+
+func _refresh_language(restart_audio: bool) -> void:
+	if not active or _voice_source.is_empty(): return
+	if restart_audio and voice.playing:
+		voice.stop()
+		voice.stream = VOICE.recorded_line(_voice_source, _voice_persona)
+		voice.volume_db = VOICE.playback_volume(voice.stream, -8.0)
+		if voice.stream != null: voice.play()
+	if riding and _caption >= 0 and _caption < DIALOGUE.TOUR.size() and session.speech_active:
+		_caption_wait = maxf(_caption_wait, voice.stream.get_length() + 3.0 if voice.stream != null else 0.0)
+		session.show_speech("MACIOTA", _voice_source, _caption_wait, false, "maciota", _voice_source, "maciota", "arrival:TOUR")
 
 func start_or_resume(loaded: bool = false) -> void:
 	if session.state.region_id != "harbor": return
@@ -351,6 +375,7 @@ func _board() -> void:
 	_narration_hold_started = -1
 	_narration_hold_budget = 0.0
 	car.route = route
+	if car.has_method("configure_journey"): car.configure_journey(route,session.world.production.traffic_routes)
 	car.traffic = true
 	car.controlled = true
 	_note_car_mode("board")
@@ -449,13 +474,17 @@ func _physics_process(delta: float) -> void:
 			_note_car_mode("street_crash_finished")
 	_caption_wait -= delta
 	var caption_distance := route.get_baked_length() * float(TOUR_CUE_FRACTIONS[clampi(_caption+1,0,3)])
-	if _caption < 3 and _caption_wait <= 0 and not voice.playing and car.route_distance >= caption_distance:
+	var progress: float = car.tour_progress() if car.has_method("tour_progress") else car.route_distance
+	if _caption < 3 and _caption_wait <= 0 and not voice.playing and progress >= caption_distance:
 		_caption += 1
 		_caption_wait = 10
-		voice.stream = preload("res://audio/ExpressiveVoice.gd").recorded_line(str(DIALOGUE.lines(DIALOGUE.TOUR)[_caption].message), "maciota")
+		_voice_source = str(DIALOGUE.TOUR[_caption][1])
+		_voice_persona = "maciota"
+		voice.stream = VOICE.recorded_line(_voice_source, _voice_persona)
+		voice.volume_db = VOICE.playback_volume(voice.stream, -8.0)
 		if voice.stream != null: voice.play()
 		_caption_wait = maxf(7, voice.stream.get_length() if voice.stream != null else 0.0) + 3
-		session.show_speech("MACIOTA", str(DIALOGUE.lines(DIALOGUE.TOUR)[_caption].message), _caption_wait, false)
+		session.show_speech("MACIOTA", _voice_source, _caption_wait, false, "maciota", _voice_source, "maciota", "arrival:TOUR")
 	if voice.playing and voice.stream != null:
 		# Audio owns its playback clock. Keep the matching caption visible even
 		# when frame/physics timing temporarily advances faster than the mixer.
@@ -473,7 +502,9 @@ func _physics_process(delta: float) -> void:
 			_finish_tour()
 
 func _at_tour_end() -> bool:
-	return riding and is_instance_valid(car) and route != null and car.route_distance >= route.get_baked_length()-1.2 and absf(car.speed)<.4
+	if not riding or not is_instance_valid(car) or route == null: return false
+	var progress: float = car.tour_progress() if car.has_method("tour_progress") else car.route_distance
+	return progress >= route.get_baked_length()-1.2 and car.global_position.distance_to(route.get_point_position(route.point_count-1))<2.0 and absf(car.speed)<.4 and (not car.has_method("recovering_path") or not car.recovering_path())
 
 func _narration_pending() -> bool:
 	return _caption < DIALOGUE.TOUR.size()-1 or voice.playing or _caption_wait > 0

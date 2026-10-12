@@ -5,12 +5,19 @@ extends SceneTree
 const ACTOR := preload("res://scripts/Actor.gd")
 const GAMEPLAY := preload("res://gameplay/Gameplay.gd")
 
+class SheathGameplay extends "res://gameplay/Gameplay.gd":
+	# This fixture drives the real sheath methods manually. Only their socket
+	# setup is needed; unrelated police, audio and effects need a full world.
+	func _ready() -> void:
+		_build_socket()
+
 class State extends RefCounted:
 	var owned := true
+	var allowed := true
 	var equipped_weapon := "fists"
 	func owns_weapon(id: String) -> bool: return owned and id == "katana"
-	func weapons_allowed() -> bool: return true
-	func can_attack() -> bool: return true
+	func weapons_allowed() -> bool: return allowed
+	func can_attack() -> bool: return allowed
 
 var failures: Array[String] = []
 var checks := 0
@@ -35,46 +42,71 @@ func run() -> void:
 	var actor := ACTOR.new(); actor.is_player = true; actor.controlled_automatically = true
 	stage.add_child(actor)
 	await frames(3)
-	var gp := GAMEPLAY.new()
-	gp.set_physics_process(false)
-	gp.set_process(false)
-	stage.add_child(gp)
+	var gp := SheathGameplay.new()
+	gp.process_mode = Node.PROCESS_MODE_DISABLED
+	gp.world = stage
 	gp.player = actor
 	gp.state = State.new()
 	gp.enabled = true
 	gp.health = 100.0
-	gp._build_socket()
+	stage.add_child(gp)
 	check(gp.back_katana != null and gp.hand_katana != null, "katana das costas (coluna) e da mão (sacar/guardar) criadas")
 	check(actor.animation.has_animation("mixsword/sheathe_greatsword"), "clipe da greatsword carregado")
 	gp._update_back_katana("fists")
 	check(gp.back_katana.visible and not gp.hand_katana.visible, "sem katana na mão, ela fica nas costas")
 	gp._update_back_katana("katana")
 	check(gp._sheath_clip == "mixsword/sheathe_greatsword" and gp._sheath_kind == "draw", "equipar a katana toca o clipe da greatsword para sacar")
+	check(gp._sheath_length <= 0.30, "sacar termina em até 0,30 s, sem espera longa")
 	gp._update_back_katana("katana")
 	check(gp.back_katana.visible and not gp.hand_katana.visible, "no primeiro instante do saque a espada ainda está nas costas (a mão ainda está chegando)")
-	gp._update_sheath(0.5)
+	gp._update_sheath(gp.SHEATH_HANDOFF)
+	check(actor.combat_weapon_pose.get("native_sword", false), "clipe de saque controla os braços sem sobreposição procedural")
+	check(hand_rotation(gp.hand_katana.transform.basis), "pegada nas costas mantém rotação ortonormal")
 	gp._update_back_katana("katana")
 	check(gp.hand_katana.visible and not gp.back_katana.visible, "durante o saque a espada está na mão, não nas costas")
 	var clip_length: float = actor.animation.get_animation("mixsword/sheathe_greatsword").length
-	check(actor.combat_clip == "mixsword/sheathe_greatsword" and absf(actor.combat_clip_time - (clip_length - 0.5 * gp.SHEATH_RATE)) < 0.02, "sacar toca a greatsword ao contrário: termina na guarda de duas mãos")
-	await run_clip(gp, 1.6)
+	check(absf(actor.combat_clip_time - clip_length) < 0.001, "saque só sai das costas depois de a mão alcançar o cabo")
+	gp._update_sheath((gp._sheath_length - gp.SHEATH_HANDOFF) * 0.5)
+	check(actor.combat_clip == "mixsword/sheathe_greatsword" and absf(actor.combat_clip_time - clip_length * 0.5) < 0.001, "sacar percorre a greatsword ao contrário até a guarda")
+	check(hand_rotation(gp.hand_katana.transform.basis), "pegada intermediária gira sem deformação")
+	await run_clip(gp, 0.15)
 	check(gp._sheath_clip == "" and actor.combat_clip == "", "saque termina e devolve a locomoção")
 	gp._update_back_katana("katana")
 	check(not gp.back_katana.visible and not gp.hand_katana.visible, "katana sacada: sai das costas e a pose de combate assume")
 	gp._update_back_katana("fists")
 	check(gp._sheath_clip == "mixsword/sheathe_greatsword" and gp._sheath_kind == "holster", "trocar de arma toca o guardar")
-	gp._update_sheath(0.5)
-	check(absf(actor.combat_clip_time - 0.5 * gp.SHEATH_RATE) < 0.02, "guardar toca para frente, até a espada nas costas")
+	check(gp._sheath_length <= 0.30, "guardar termina em até 0,30 s, sem espera longa")
+	gp._update_sheath(gp._sheath_length * 0.5)
+	check(absf(actor.combat_clip_time - clip_length * 0.5) < 0.001, "guardar toca para frente, até a espada nas costas")
+	check(actor.combat_weapon_pose.get("native_sword", false), "guardar preserva os braços nativos ao trocar para outra arma")
 	gp._update_back_katana("fists")
 	check(gp.hand_katana.visible and not gp.back_katana.visible, "durante o guardar a espada continua na mão")
-	await run_clip(gp, 1.8)
+	await run_clip(gp, 0.15)
 	gp._update_back_katana("fists")
 	check(gp.back_katana.visible and not gp.hand_katana.visible, "depois de guardar, a katana volta às costas")
+	gp._update_back_katana("katana")
+	gp._update_sheath(0.03)
+	gp._update_back_katana("fists")
+	await run_clip(gp, 0.30)
+	gp._update_back_katana("fists")
+	check(gp._sheath_clip == "" and gp.back_katana.visible and not gp.hand_katana.visible, "troca rápida repetida termina com uma única espada nas costas")
+	gp._update_back_katana("katana")
+	gp.state.allowed = false
+	gp._update_sheath(0.01)
+	gp._update_back_katana("fists")
+	gp._update_sheath(0.01)
+	gp._update_back_katana("fists")
+	check(gp._sheath_clip == "" and not gp.hand_katana.visible and gp.state.owned, "área sem armas cancela troca e preserva inventário")
 	gp.state.owned = false
 	gp._update_back_katana("fists")
 	check(not gp.back_katana.visible and not gp.hand_katana.visible, "sem a katana no inventário, nada aparece")
+	stage.queue_free()
+	await process_frame
 	print("BACK_KATANA_SHEATH checks=", checks, " failures=", failures)
 	quit(0 if failures.is_empty() else 1)
+
+func hand_rotation(basis: Basis) -> bool:
+	return basis.is_finite() and absf(basis.determinant() - 1.0) < 0.00001 and basis.transposed().is_equal_approx(basis.inverse())
 
 ## Posições medidas no esqueleto do Dante com o clipe tocando de fato.
 func geometry() -> void:

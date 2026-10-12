@@ -26,7 +26,21 @@ func run() -> void:
 	state.equip_weapon("pistol")
 	controls.aim_direction = Vector2.LEFT
 	for step in 10: controls._update_gamepad_aim(Vector2.RIGHT, 1.0 / 60.0)
-	check(controls.aim_direction.distance_to(Vector2.RIGHT) < 0.01, "Full stick reverses aim within 167 ms")
+	check(absf(Vector2.LEFT.angle_to(controls.aim_direction)) < deg_to_rad(60), "Full stick avoids an abrupt reversal in 167 ms")
+	for step in 26: controls._update_gamepad_aim(Vector2.RIGHT, 1.0 / 60.0)
+	check(controls.aim_direction.distance_to(Vector2.RIGHT) < 0.01, "Full stick can still reverse aim within 600 ms")
+	controls.aim_direction = Vector2.RIGHT
+	for step in 60: controls._update_gamepad_aim(Vector2(0, -0.25), 1.0 / 60.0)
+	check(absf(Vector2.RIGHT.angle_to(controls.aim_direction)) < deg_to_rad(12), "Light stick tilt allows precise corrections")
+	controls.aim_direction = Vector2.RIGHT
+	for step in 30: controls._update_gamepad_aim(Vector2(0, -0.5), 1.0 / 30.0)
+	var at_30fps: Vector2 = controls.aim_direction
+	controls.aim_direction = Vector2.RIGHT
+	for step in 120: controls._update_gamepad_aim(Vector2(0, -0.5), 1.0 / 120.0)
+	check(controls.aim_direction.distance_to(at_30fps) < 0.001, "Controller response is independent of frame rate")
+	controls.aim_direction = Vector2.RIGHT
+	controls._update_gamepad_aim(Vector2(1, -0.1), 1.0)
+	check(controls.aim_direction.distance_to(Vector2(1, -0.1).normalized()) < 0.001, "Aim stops at the requested direction without overshoot")
 	var direction: Vector2 = controls.aim_direction
 	check(not controls._update_gamepad_aim(Vector2(0.1, 0), 1.0 / 60.0) and controls.aim_direction == direction, "Deadzone preserves direction")
 	controls.touch_aim = Vector2.RIGHT

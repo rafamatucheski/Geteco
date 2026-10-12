@@ -47,8 +47,6 @@ func refresh() -> void:
 	if adapter.session.get("wine") != null:
 		_button(header,"Vinhos",func(): adapter.close(); adapter.session.wine.open_bag())
 	var travel_bag: bool = adapter.travel_bag_available()
-	var trunk:=_button(header,"Monaliza · mala" if travel_bag else "Monaliza",func(): trunk_visible=not trunk_visible; refresh())
-	trunk.name="ToggleTrunk"; trunk.tooltip_text="Armas e munição • acesso pelo porta-malas"; trunk.modulate=GOLD if trunk_visible else Color.WHITE
 	_button(header,"×",adapter.close).tooltip_text="Fechar"
 	body=_row(outer,16)
 	var left:=_column(body,8); left.custom_minimum_size.x=296
@@ -162,12 +160,16 @@ func _details() -> void:
 func _update_hints() -> void:
 	if not is_instance_valid(device_hint): return
 	var controls := get_node("/root/GameInput")
-	device_hint.text=("%s  selecionar   ·   %s  fechar"%[controls.prompt("ui_accept"),controls.prompt("ui_cancel")]) if controls.using_gamepad else "%s  fechar   ·   Arrastar  mover   ·   Clique direito  usar"%controls.prompt("inventory")
-	if controls.get_meta("touch_controls_active",false): device_hint.text="Toque para selecionar · Arraste para mover"
+	device_hint.text=(String(TranslationServer.translate("%s  selecionar   ·   %s  fechar"))%[controls.prompt("ui_accept"),controls.prompt("ui_cancel")]) if controls.using_gamepad else String(TranslationServer.translate("%s  fechar   ·   Arrastar  mover   ·   Clique direito  usar"))%controls.prompt("inventory")
+	if controls.get_meta("touch_controls_active",false): device_hint.text=tr("Toque para selecionar · Arraste para mover")
 	if is_instance_valid(drop_button):
 		var kind: String=adapter.economy().grid_snapshot().bag
-		drop_button.text=("Soltar mochila" if kind=="backpack" else "Soltar mala")+("" if controls.using_gamepad else "     G")
-		if controls.get_meta("touch_controls_active",false): drop_button.text="Soltar mochila" if kind=="backpack" else "Soltar mala"
+		drop_button.text=tr("Soltar mochila" if kind=="backpack" else "Soltar mala")+("" if controls.using_gamepad else "     G")
+		if controls.get_meta("touch_controls_active",false): drop_button.text=tr("Soltar mochila" if kind=="backpack" else "Soltar mala")
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED and is_node_ready():
+		_update_hints.call_deferred()
 
 func _wardrobe(parent: Control) -> void:
 	_label(parent,"ROUPAS",11).modulate=STYLE.MUTED

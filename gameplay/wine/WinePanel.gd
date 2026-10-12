@@ -6,6 +6,10 @@ var shop := true
 var country := "Grécia"
 var selected := "zacharias_nemea"
 var feedback := ""
+
+func set_voice_message(message: String) -> void:
+	feedback = message
+	if is_inside_tree() and visible: refresh()
 var card: PanelContainer
 var status: Label
 var drink_button: Button
@@ -82,10 +86,10 @@ func refresh() -> void:
 		var grape:=_label(identity,wine.grape,14)
 		grape.custom_minimum_size.x=222
 		grape.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
-		_label(details,"Guardado: %d taças"%adapter.model.count(selected),18)
-		_label(details,"Por taça: +%d vida · +%d álcool"%[wine.heal,int(wine.alcohol)],15)
+		_label(details,String(TranslationServer.translate("Guardado: %d taças"))%adapter.model.count(selected),18)
+		_label(details,String(TranslationServer.translate("Por taça: +%d vida · +%d álcool"))%[wine.heal,int(wine.alcohol)],15)
 		if shop:
-			buy_button=_button(details,"Comprar garrafa · R$ %d"%wine.price,func(): adapter.buy(selected))
+			buy_button=_button(details,String(TranslationServer.translate("Comprar garrafa · R$ %d"))%wine.price,func(): adapter.buy(selected))
 			buy_button.tooltip_text="Guarda 3 taças. Não consome automaticamente."
 			_label(details,"3 taças por garrafa · valores do jogo",12).modulate=STYLE.MUTED
 		drink_button=_button(details,"Beber uma taça",func(): adapter.drink(selected))
@@ -109,11 +113,11 @@ func refresh() -> void:
 func update_status() -> void:
 	if not is_instance_valid(status): return
 	var cooldown: float=adapter.model.data.cooldown
-	status.text="Vida %d / 100    ·    %s %d / 100    ·    %d / 36 taças"%[roundi(adapter.session.world.gameplay.health),adapter.model.stage(),roundi(adapter.model.data.alcohol),adapter.model.total_servings()]
+	status.text=String(TranslationServer.translate("Vida %d / 100    ·    %s %d / 100    ·    %d / 36 taças"))%[roundi(adapter.session.world.gameplay.health),adapter.model.stage(),roundi(adapter.model.data.alcohol),adapter.model.total_servings()]
 	if is_instance_valid(drink_button):
 		var reason: String=adapter.model.drink_reason(selected,float(adapter.session.world.gameplay.health))
 		drink_button.disabled=not reason.is_empty()
-		drink_button.text="Aguarde %.1f s"%cooldown if reason=="cooldown" else "Espere recuperar o equilíbrio" if reason=="alcohol_limit" else "Beber uma taça"
+		drink_button.text=String(TranslationServer.translate("Aguarde %.1f s"))%cooldown if reason=="cooldown" else "Espere recuperar o equilíbrio" if reason=="alcohol_limit" else "Beber uma taça"
 		drink_button.tooltip_text=adapter.reason_text(reason) if not reason.is_empty() else "Consumir uma taça guardada. Aumenta o efeito do álcool."
 	if is_instance_valid(buy_button):
 		buy_button.disabled=adapter.session.state.economy.balance<int(CATALOG.spec(selected).price) or adapter.model.total_servings()+CATALOG.SERVINGS>adapter.MODEL.MAX_SERVINGS

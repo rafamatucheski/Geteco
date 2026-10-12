@@ -70,6 +70,8 @@ func run() -> void:
 	check(is_instance_valid(desert) and is_instance_valid(desert.drag),"production coordinator installs real drag")
 	if not failures.is_empty(): finish(); return
 	var race = desert.drag
+	# Ranked race isolation; physical queue admission is covered separately.
+	race.open_meet.enabled = false
 	check(world.production.travel("desert",race.staging_point),"desert region travel admitted")
 	for i in 900:
 		await physics_frame
@@ -118,7 +120,7 @@ func run() -> void:
 	check(race.racers.all(func(e): return e.car.equipment.lamps.any(func(mount): return mount.lamp.is_visible_in_tree() and mount.lamp.light_energy>0)),"both racers have an actual enabled headlight source")
 	var near_camera: Dictionary = race.camera_frame(race.grid(0).origin,race.grid(1).origin)
 	var far_camera: Dictionary = race.camera_frame(race.grid(0).origin,race.grid(1).origin-race.direction*150)
-	check(is_equal_approx(float(near_camera.setback),18.0) and is_equal_approx(float(far_camera.setback),27.0),"side camera preserves close start and caps legitimate far-gap setback at27m")
+	check(is_equal_approx(float(near_camera.setback),16.5) and is_equal_approx(float(far_camera.setback),25.5),"side camera brings start closer and bounds far-gap framing")
 	var view := root.get_visible_rect().grow(-40)
 	check(race.racers.all(func(e): return view.has_point(race.race_camera.unproject_position(e.car.global_position+Vector3.UP*.7))),"both physical cars fit the close starting camera")
 	check(session.blocks_driving_change() and not race.save_block_reason().is_empty(),"race owns boarding and save gates")

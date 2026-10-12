@@ -241,6 +241,8 @@ func _event(event: String, target: String, extras := {}) -> bool:
 	# between acceptance and release, so progress and ownership are saved together.
 	if event == "neco_repair_received": finish_tow_job()
 	var completed_id: String = str(result.get("completed",""))
+	if completed_id == "primeiro_giro" and session.personal_car != null:
+		session.personal_car.refresh()
 	if completed_id == "cobra_finale":
 		_clear_encounter()
 		preload("res://systems/campaign/HarborStory.gd").record_brother_route(session.state.world_state,true)
@@ -326,7 +328,7 @@ func _tick_race(delta: float) -> void:
 		return
 	if result.countdown_changed:
 		var countdown: float=session.state.campaign.race_status().get("countdown",0)
-		session.show_message("JÁ!" if countdown==0 else "Fique parado · %d"%ceili(countdown))
+		session.show_message("JÁ!" if countdown==0 else String(TranslationServer.translate("Fique parado · %d"))%ceili(countdown))
 		session.save_game()
 	if int(result.crossed)>=0:
 		var checkpoint: int=int(result.crossed)
@@ -362,6 +364,10 @@ func _spawn_near_actors() -> void:
 			var actor = preload("res://scripts/Actor.gd").new()
 			actor.controlled_automatically = true
 			actor.identity = 7 if id == "ferrugem" else 3
+			actor.set_meta("authored_female", id == "ashbend_resident")
+			actor.set_meta("voice_actor_id", id)
+			var voice_persona: String = "moradora" if id == "ashbend_resident" else id
+			preload("res://audio/VoiceActorBinding.gd").bind(actor, voice_persona, voice_persona, "female" if id == "ashbend_resident" else "male", "missions")
 			actor.position = targets[id]+Vector3.UP*.05
 			session.world.add_child(actor)
 			if id == "neco":

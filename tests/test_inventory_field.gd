@@ -31,7 +31,7 @@ func run() -> void:
 	check(field!=null and economy.grid_enabled(),"spatial inventory installed in Main")
 	check(economy.grid_snapshot().bag=="" and GRID.dimensions(economy.grid_snapshot(),"pockets")==Vector2i(2,1),"new game starts with two pockets only")
 	check(field.sources.all(func(row): return row.item not in ["backpack","handbag"]),"no free bags scattered around shops")
-	check(not session.personal_car.discover_backpack(),"backpack unavailable before earning Monaliza")
+	check(not session.personal_car.award_first_backpack(),"backpack unavailable before earning Monaliza")
 	var campaign_data: Dictionary = session.state.campaign.snapshot()
 	var first_mission: Dictionary = preload("res://data/campaign/HarborMissions.gd").MISSIONS.primeiro_giro
 	campaign_data.completed.append("primeiro_giro")
@@ -48,11 +48,11 @@ func run() -> void:
 	session.garage_rewards.cars.personal_monaliza=personal
 	session.garage_rewards.data.vehicles.personal_monaliza=session.garage_rewards._initial_record("monaliza",personal.position,personal.rotation.y,"")
 	world.player.teleport(personal.global_position+Vector3(12,.05,0)); await frames()
-	check(not session.personal_car.discover_backpack(),"remote backpack discovery rejected")
+	check(session.personal_car.award_first_backpack(),"Maciota awards backpack after first mission without trunk access")
 	world.player.teleport(session.personal_car._rear()+Vector3(0,.05,.8)); await frames()
-	check(session.personal_car.perform("trunk"),"opening real Monaliza trunk discovers backpack")
-	check(economy.grid_snapshot().bag=="backpack","Monaliza equips the first backpack")
-	check(not session.personal_car.discover_backpack(),"Monaliza discovery is one-time")
+	check(session.personal_car.perform("trunk"),"opening real Monaliza trunk retains awarded backpack")
+	check(economy.grid_snapshot().bag=="backpack","first mission equips the backpack")
+	check(not session.personal_car.award_first_backpack(),"mission award is one-time")
 	var discovery_save=preload("res://runtime/GameState.gd").new()
 	check(discovery_save.restore_snapshot(JSON.parse_string(JSON.stringify(session.state.snapshot()))) and "monaliza_backpack" in discovery_save.economy.grid_snapshot().claimed,"discovery receipt survives save/load")
 	field.close()
@@ -102,7 +102,7 @@ func run() -> void:
 	check(not field.ui.visible and not session.modal and not world.player.input_locked,"close restores gameplay")
 	var content: Array=economy.grid_snapshot().storage
 	check(field.drop_bag(),"drop finds collision-free ground")
-	check(not session.personal_car.discover_backpack(),"dropping backpack cannot duplicate discovery")
+	check(not session.personal_car.award_first_backpack(),"dropping backpack cannot duplicate discovery")
 	await frames()
 	var drop: Dictionary=economy.grid_snapshot().ground.back()
 	check(drop.entries==content and economy.grid_snapshot().storage.is_empty(),"drop preserves spatial contents")

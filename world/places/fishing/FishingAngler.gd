@@ -230,10 +230,10 @@ func _hands() -> Array:
 func _update_gear() -> void:
 	# Stagger short, quiet actions across the five fishers. The same phase drives
 	# the rod, float and gaze; it adds no per-frame node scans or particles.
-	var phase := fposmod(_time + float(identity % 5) * 3.2, 18.0)
-	_idle_reel = _pulse(phase, 2.1, 2.45, 3.55, 4.05)
-	_idle_glance = _pulse(phase, 7.0, 7.4, 8.15, 8.75)
-	_idle_lift = _pulse(phase, 12.3, 12.7, 13.3, 13.85)
+	var idle_phase := fposmod(_time + float(identity % 5) * 3.2, 18.0)
+	_idle_reel = _pulse(idle_phase, 2.1, 2.45, 3.55, 4.05)
+	_idle_glance = _pulse(idle_phase, 7.0, 7.4, 8.15, 8.75)
+	_idle_lift = _pulse(idle_phase, 12.3, 12.7, 13.3, 13.85)
 	var lifted := clampf((4.0-_catch_timer)*1.4,0,1) if _catch_timer>0 else 0.0
 	var catch_age := 4.0 - _catch_timer if _catch_timer > 0.0 else 4.0
 	var catch_snap := (1.0 - smoothstep(0.0, .42, catch_age)) if _catch_timer > 0.0 else 0.0
@@ -257,8 +257,8 @@ func _update_gear() -> void:
 	_line.global_basis = Basis(Quaternion(Vector3.UP,difference.normalized()))
 	_line.scale = Vector3(1,difference.length(),1)
 
-func _pulse(phase: float, start: float, attack_end: float, release_start: float, end: float) -> float:
-	return smoothstep(start, attack_end, phase) * (1.0 - smoothstep(release_start, end, phase))
+func _pulse(idle_phase: float, start: float, attack_end: float, release_start: float, end: float) -> float:
+	return smoothstep(start, attack_end, idle_phase) * (1.0 - smoothstep(release_start, end, idle_phase))
 
 func _weapon_fired(_id: String,origin: Vector3) -> void:
 	if global_position.distance_squared_to(origin)<40*40: _alert()

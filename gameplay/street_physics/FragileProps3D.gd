@@ -26,6 +26,14 @@ const KINDS := {
 	"news_box": {"family": "light", "radius": 0.45, "drag": 0.05, "damage": 1.0, "sound": "metal"},
 	"mailbox": {"family": "light", "radius": 0.3, "drag": 0.06, "damage": 1.0, "sound": "metal"},
 	"phone_booth": {"family": "post", "radius": 0.5, "drag": 0.22, "damage": 6.0, "sound": "glass"},
+	"bench_seat": {"family": "light", "radius": 1.4, "drag": 0.12, "damage": 3.0, "sound": "wood"},
+	"dumpster": {"family": "light", "radius": 1.2, "drag": 0.16, "damage": 4.0, "sound": "metal"},
+	"trash_bags": {"family": "light", "radius": 0.6, "drag": 0.01, "damage": 0.0, "sound": "wood"},
+	"planter": {"family": "light", "radius": 0.78, "drag": 0.18, "damage": 5.0, "sound": "stone"},
+	"barrel": {"family": "light", "radius": 0.37, "drag": 0.04, "damage": 1.0, "sound": "metal"},
+	"pallet": {"family": "light", "radius": 1.2, "drag": 0.05, "damage": 1.0, "sound": "wood"},
+	"desert_rock": {"family": "light", "radius": 1.1, "drag": 0.20, "damage": 7.0, "sound": "stone"},
+	"desert_tree": {"family": "light", "radius": 0.4, "drag": 0.10, "damage": 3.0, "sound": "wood"},
 }
 
 static var cells := {}
@@ -33,15 +41,28 @@ static var cells := {}
 
 ## Poste com nó próprio (HarborProp3D lamp, StreetLight_*). `pool` é a mancha de
 ## luz do CityLook (MultiMesh + índice) para apagar junto.
-static func register_node(kind: String, root: Node3D, chunk: Node3D, pool: Dictionary = {}) -> void:
-	_register({"kind": kind, "root": weakref(root), "chunk": weakref(chunk), "point": root.global_position, "pool": pool, "state": "standing"})
+static func register_node(kind: String, root: Node3D, chunk: Node3D, pool: Dictionary = {}, colliders: Array = [], contact_radius := -1.0) -> void:
+	if root.has_meta("street_fragile_registered"): return
+	root.set_meta("street_fragile_registered",true)
+	var radius: float = KINDS.get(kind,KINDS.trash_can).radius
+	if contact_radius > 0.0: radius = contact_radius
+	if kind == "bench_seat":
+		var meshes: Array = root.find_children("*","MeshInstance3D",true,false)
+		if root is MeshInstance3D: meshes.append(root)
+		for mesh in meshes:
+			if not mesh.has_meta("bench_envelope"): continue
+			var size: Vector3 = mesh.get_meta("bench_envelope")
+			radius = maxf(radius,Vector2(size.x*mesh.global_basis.x.length(),size.z*mesh.global_basis.z.length()).length()*.5)
+	_register({"kind": kind, "root": weakref(root), "chunk": weakref(chunk), "point": root.global_position, "radius":radius, "pool": pool, "colliders": colliders.map(func(shape): return weakref(shape)), "state": "standing"})
 
 
 ## Mobília em MultiMesh (CityLook): anima a instância.
-static func register_instance(kind: String, multimesh: MultiMesh, index: int, chunk: Node3D, extra: Array = []) -> void:
+static func register_instance(kind: String, multimesh: MultiMesh, index: int, chunk: Node3D, extra: Array = [], colliders: Array = [], visual: MultiMeshInstance3D = null) -> void:
 	var xform := multimesh.get_instance_transform(index)
 	var point := chunk.global_transform * xform.origin
-	_register({"kind": kind, "multimesh": multimesh, "index": index, "extra": extra, "chunk": weakref(chunk), "base": xform, "point": point, "state": "standing"})
+	var item := {"kind": kind, "multimesh": multimesh, "index": index, "extra": extra, "colliders": colliders.map(func(shape): return weakref(shape)), "chunk": weakref(chunk), "base": xform, "point": point, "state": "standing"}
+	if visual != null: item.visual = weakref(visual)
+	_register(item)
 
 
 static func _register(item: Dictionary) -> void:
@@ -70,6 +91,25 @@ static func query(point: Vector3, radius: float) -> Array:
 				if not is_instance_valid(chunk) or chunk.is_queued_for_deletion():
 					list.remove_at(index)
 					continue
+				# The chunk can outlive an editor-deleted prop or remain in the
+				# tree while retirement hides it. Neither is a visible obstacle.
+				if item.has("root"):
+					var source = item.root.get_ref()
+					if not is_instance_valid(source) or source.is_queued_for_deletion():
+						list.remove_at(index)
+						continue
+					if not source.is_inside_tree() or not source.is_visible_in_tree(): continue
+				if item.has("visual"):
+					var visual = item.visual.get_ref()
+					if not is_instance_valid(visual) or visual.is_queued_for_deletion():
+						list.remove_at(index)
+						continue
+					if not visual.is_inside_tree() or not visual.is_visible_in_tree(): continue
+					if visual.multimesh != item.multimesh or item.index >= visual.multimesh.instance_count:
+						list.remove_at(index)
+						continue
+					if visual.multimesh.visible_instance_count >= 0 and item.index >= visual.multimesh.visible_instance_count: continue
+				if not chunk.is_inside_tree() or not chunk.is_visible_in_tree(): continue
 				if item.state == "standing": result.append(item)
 			if list.is_empty(): cells.erase(key)
 	return result
@@ -90,11 +130,18 @@ static func hit(item: Dictionary, speed: float, direction: Vector3, director: No
 	if speed < FALL_SPEED and family == "post":
 		_wobble(item, flat, director)
 		return false
+	if item.kind == "lamp": preload("res://gameplay/street_physics/LampRecovery3D.gd").capture(item)
 	item.state = "down"
 	match family:
-		"post": _topple(item, flat, director)
+		"post":
+			if speed >= 16.0:
+				_kill_light(item)
+				_tumble(item, flat, speed, director)
+				if item.kind == "phone_booth": director.spawn_glass(item.point + Vector3.UP, flat)
+			else: _topple(item, flat, director)
 		"hydrant": _burst_hydrant(item, flat, speed, director)
 		_: _tumble(item, flat, speed, director)
+	if item.kind == "lamp": preload("res://gameplay/street_physics/LampRecovery3D.gd").schedule(item, director)
 	return true
 
 
@@ -154,6 +201,7 @@ static func _tumble(item: Dictionary, flat: Vector3, speed: float, director: Nod
 	var mesh: Mesh = null
 	var node_copy: Node3D = null
 	if item.has("multimesh"):
+		_disable_collision(item)
 		mesh = item.multimesh.mesh
 		# Escala zero some com a instância original; a cópia física assume.
 		var hidden := Transform3D(Basis.IDENTITY.scaled(Vector3.ZERO), base.origin)
@@ -167,6 +215,7 @@ static func _tumble(item: Dictionary, flat: Vector3, speed: float, director: Nod
 		var root = item.root.get_ref()
 		if is_instance_valid(root):
 			node_copy = root.duplicate(0)
+			node_copy.set_script(null)
 			for body in node_copy.find_children("*", "CollisionObject3D", true, false): body.free()
 			root.visible = false
 	# Carro pesa ~100x o objeto: sai a ~(1+e) vezes a velocidade do carro no
@@ -179,6 +228,24 @@ static func _tumble(item: Dictionary, flat: Vector3, speed: float, director: Nod
 	if item.kind == "trash_can":
 		_break_trash_can(base, launch, spin, director)
 		return
+	if (speed >= FALL_SPEED and item.kind in ["bench_seat","planter","pallet"]) or (speed >= 10.0 and item.kind in ["desert_rock", "desert_tree", "lamp", "signal_pole", "stop_sign", "phone_booth"]):
+		var source := node_copy
+		if source != null: source.transform = Transform3D(base.basis, Vector3.ZERO)
+		if source == null:
+			source = MeshInstance3D.new()
+			source.mesh = mesh
+		source.transform = Transform3D(base.basis, Vector3.ZERO)
+		var shards := preload("res://gameplay/street_physics/PropFracture3D.gd").split(source, 1 if item.kind == "desert_tree" or spec(item).family == "post" else 0)
+		if not shards.is_empty():
+			for index in shards.size():
+				var fragment := _debris_body(director, base.origin, float(MASSES.get(item.kind, 15.0)) / shards.size())
+				fragment.add_child(shards[index])
+				_add_box_shape(fragment, shards[index].get_aabb())
+				fragment.linear_velocity = launch + side * (float(index) - 1.0) * minf(speed * .1, 3.0)
+				fragment.angular_velocity = spin * (0.6 + float(index) * .3)
+			source.free()
+			return
+		if node_copy == null: source.free()
 	var piece := _debris_body(director, base.origin, MASSES.get(item.kind, 15.0))
 	if mesh != null:
 		var visual := MeshInstance3D.new()
@@ -189,7 +256,10 @@ static func _tumble(item: Dictionary, flat: Vector3, speed: float, director: Nod
 	elif node_copy != null:
 		piece.add_child(node_copy)
 		node_copy.transform = Transform3D(base.basis, Vector3.ZERO)
-		_add_box_shape(piece, _local_aabb(node_copy))
+		if node_copy is MeshInstance3D:
+			_add_box_shape(piece, node_copy.transform * node_copy.get_aabb())
+		else:
+			_add_box_shape(piece, _local_aabb(node_copy))
 	piece.linear_velocity = launch
 	piece.angular_velocity = spin
 	if item.kind == "news_box": director.spawn_glass(base.origin, flat)
@@ -241,7 +311,7 @@ const DEBRIS_LAYER := 8
 const MAX_DEBRIS := 18
 const DEBRIS_LIFETIME := 10.0
 ## kg; o carro leva ~1200 kg.
-const MASSES := {"trash_can": 11.0, "news_box": 28.0, "mailbox": 45.0, "hydrant": 60.0}
+const MASSES := {"trash_can": 11.0, "news_box": 28.0, "mailbox": 45.0, "hydrant": 60.0, "bench_seat": 55.0, "dumpster": 100.0, "trash_bags": 5.0, "planter": 90.0, "desert_rock": 180.0, "desert_tree": 35.0, "lamp": 90.0, "signal_pole": 120.0, "stop_sign": 18.0, "phone_booth": 200.0}
 static var _debris: Array = []
 
 
@@ -343,6 +413,9 @@ static func _burst_hydrant(item: Dictionary, flat: Vector3, speed: float, direct
 
 
 static func _disable_collision(item: Dictionary) -> void:
+	for reference in item.get("colliders",[]):
+		var shape = reference.get_ref()
+		if is_instance_valid(shape): shape.disabled = true
 	if item.has("multimesh"): return
 	var root = item.root.get_ref()
 	if not is_instance_valid(root): return
@@ -359,12 +432,26 @@ static func _kill_light(item: Dictionary) -> void:
 	if item.has("multimesh"): return
 	var root = item.root.get_ref()
 	if not is_instance_valid(root): return
+	for light in root.find_children("*", "Light3D", true, false):
+		light.set_meta("street_destroyed", true)
+		light.light_energy = 0.0
+		light.visible = false
 	for mesh in root.find_children("*", "MeshInstance3D", true, false):
 		if mesh.material_override == preload("res://world/city_look/CityLookMaterials.gd").lamp_head():
 			mesh.material_override = preload("res://world/city_look/CityLookMaterials.gd").flat(Color("5a5f61"), 0.6)
 
 
 static func _fade_post(item: Dictionary) -> void:
+	# Preserve the original lamp and its registration for delayed recovery.
+	if item.kind == "lamp":
+		if item.has("multimesh"):
+			var hidden := Transform3D(Basis.IDENTITY.scaled(Vector3.ZERO), Vector3.ZERO)
+			item.multimesh.set_instance_transform(item.index, hidden)
+			for part in item.extra: part.multimesh.set_instance_transform(part.index, hidden)
+		else:
+			var source = item.root.get_ref()
+			if is_instance_valid(source): source.visible = false
+		return
 	if not item.has("multimesh"):
 		var root = item.root.get_ref()
 		if is_instance_valid(root): preload("res://gameplay/DestroyedFade3D.gd").fade(root)

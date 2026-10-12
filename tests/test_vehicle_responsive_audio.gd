@@ -21,6 +21,8 @@ class WaterFixture extends Node3D:
 class Foreground extends "res://audio/WorldAudio.gd":
 	func _ready() -> void:
 		set_process(false)
+		radio = AudioStreamPlayer.new()
+		add_child(radio)
 		for index in 7:
 			var voice := AudioStreamPlayer.new()
 			add_child(voice)
@@ -33,6 +35,7 @@ class Foreground extends "res://audio/WorldAudio.gd":
 		add_child(water_steps)
 	func _update_ambience(_delta: float) -> void: pass
 	func _update_radio(_delta: float) -> void: pass
+	func update_real_radio(delta: float) -> void: super._update_radio(delta)
 
 func _initialize() -> void:
 	call_deferred("run")
@@ -84,6 +87,8 @@ func run() -> void:
 	world.add_child(car)
 	car.place(Vector3(0, .04, 0), 0)
 	car.set_physics_process(false)
+	# Upgraded street mechanics still use the original foreground/nearby audio.
+	check(car.has_meta("desert_powertrain") and not car.has_node("DesertCarAudio"), "coupe retains its original audio with the upgraded drivetrain")
 	car.controlled = true
 	car.speed = 8
 	car.horizontal_velocity = Vector3(0, 0, -8)
@@ -95,8 +100,19 @@ func run() -> void:
 	var foreground := Foreground.new()
 	foreground.world = world
 	world.add_child(foreground)
+	car.set_meta("radio_index", 0)
+	car.controlled = false
+	foreground._process(.05)
+	foreground.update_real_radio(.05)
+	check(foreground.layers.all(func(voice): return not voice.playing), "boarding reservation does not start the engine")
+	check(not foreground.radio.playing and foreground.radio_car == null, "boarding reservation does not start the radio")
+	check(not foreground._radio_tunable(), "radio controls are unavailable during boarding")
+	car.controlled = true
+	foreground.update_real_radio(.05)
+	check(foreground.radio.playing and foreground.radio_car == car, "radio starts after boarding completes")
 	car.throttle_input = 1
 	for tick in 30: foreground._process(.05)
+	check(foreground.layers.any(func(voice): return voice.playing and voice.stream != null), "coupe engine is audible with its real drivetrain metadata")
 	var accelerating_rpm: float = foreground.engine_rpm
 	check(foreground.engine_load > .95, "real foreground mixer responds to held throttle")
 	car.throttle_input = 0
@@ -106,12 +122,46 @@ func run() -> void:
 	car.brake_input = true
 	for tick in 10: foreground._process(.05)
 	check(foreground.engine_load < .01, "real foreground mixer does not rev while braking")
+	car.speed = -12
+	car.throttle_input = -1
+	car.brake_input = false
+	for tick in 30: foreground._process(.05)
+	check(foreground.engine_gear == 1, "reverse never shifts through forward gears")
+	car.speed = 8
 	car.brake_input = false
 	car.throttle_input = 0
 	car.engine_disabled = true
 	foreground._process(.05)
 	check(foreground.layers.all(func(voice): return not voice.playing), "disabled engine stops every foreground band")
 	car.engine_disabled = false
+	var nearby := preload("res://audio/vehicle_ambience/NearbyVehicleAudio.gd").new()
+	nearby._world = world
+	car.set_physics_process(true)
+	car.controlled = false
+	car.traffic = true
+	world.driving.occupied = false
+	check(nearby._eligible(car), "upgraded street car retains nearby engine audio")
+	car.set_physics_process(false)
+	car.controlled = true
+	car.traffic = false
+	world.driving.occupied = true
+	var desert_car := VEHICLE.new()
+	desert_car.archetype = "desert_faisca"
+	world.add_child(desert_car)
+	desert_car.controlled = true
+	desert_car.set_physics_process(false)
+	world.driving.car = desert_car
+	foreground._process(.05)
+	check(desert_car.has_node("DesertCarAudio") and foreground.layers.all(func(voice): return not voice.playing), "dedicated desert mixer is not doubled by foreground audio")
+	desert_car.controlled = false
+	desert_car.traffic = true
+	desert_car.set_physics_process(true)
+	world.driving.occupied = false
+	check(not nearby._eligible(desert_car), "dedicated desert mixer is not doubled by nearby audio")
+	nearby.free()
+	desert_car.free()
+	world.driving.car = car
+	world.driving.occupied = true
 	var tires = car.effects.tire_effects
 	await physics_frame
 	await physics_frame
@@ -122,6 +172,7 @@ func run() -> void:
 		var expected: String = "wet" if kind == "water" else kind
 		check(is_instance_valid(mixer) and mixer.voices[expected].playing, "real wheel rays activate " + expected)
 		check(mixer.voices[expected].volume_linear > .02, "audible rolling gain for " + expected)
+		if expected == "dirt": check(mixer.voices[expected].volume_db <= -29.5, "sand/dirt stays beneath the engine instead of masking it")
 		for other in mixer.voices:
 			if other != expected: check(not mixer.voices[other].playing, "old surface fades out: " + other)
 		car.brake_input = true

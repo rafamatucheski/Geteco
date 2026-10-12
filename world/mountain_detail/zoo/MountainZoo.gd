@@ -40,9 +40,7 @@ func _ready() -> void:
 	GEO.solid(self,"EntranceBeam",Vector3(0,3.4,20),Vector3(4.6,.7,.30))
 	var name_label:=Label3D.new(); name_label.text="Serra Viva"; name_label.font_size=72; name_label.pixel_size=.008
 	name_label.position=Vector3(0,3.41,20.17); name_label.modulate=Color("f0deb0"); name_label.outline_size=0; add_child(name_label)
-	# Small open service booth; visitors stay outside the counter.
-	for row in [[Vector3(-3.2,.48,22.5),Vector3(2.1,.96,1.8)],[Vector3(-4.2,1.7,21.3),Vector3(.16,2.5,.16)],[Vector3(-2.2,1.7,21.3),Vector3(.16,2.5,.16)],[Vector3(-3.2,2.85,22),Vector3(2.7,.22,3.0)]]:
-		g.part("box",row[0],row[1],"806044"); GEO.solid(self,"TicketBooth",row[0],row[1])
+	preload("res://world/mountain_detail/zoo/ZooTicketBooth.gd").build(self)
 	for at in [Vector3(-21.8,0,1.2),Vector3(21.8,0,1.2)]: _bench(g,at)
 	# Low planting and boulders soften the perimeter without concealing the visitor route.
 	for i in outer.size():

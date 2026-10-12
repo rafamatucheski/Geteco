@@ -1,6 +1,6 @@
 extends RefCounted
-## Exterior line-of-sight window. Collision queries select nearby visual scopes;
-## the shader clips only pixels in front of the target, including batched rails.
+## Opt-in diagnostic exterior window. Normal play keeps authored walls opaque
+## and uses CityLook's actor/vehicle silhouette without this material effect.
 const SHADER := preload("res://scripts/camera/ExteriorReveal.gdshader")
 const BUILDING_GROUP := &"exterior_reveal_building"
 const SCAN_INTERVAL := 0.10
@@ -19,11 +19,18 @@ var _lead := Vector3.ZERO
 var _radius := 4.0
 var _origin := Vector3.ZERO
 var _to_camera := Vector3.ZERO
-var enabled := true
+var enabled := false:
+	set(value):
+		if enabled == value: return
+		enabled = value
+		if not enabled: release()
 var last_query_hits := 0
+var _parameter_writes := 0
+var _instance_writes := 0
 
 func update(camera: Camera3D, target: Node3D, vehicle: bool, velocity: Vector3, delta: float, allowed: bool) -> void:
-	if not enabled or not allowed or not is_instance_valid(target) or not target.is_inside_tree():
+	if not enabled: return
+	if not allowed or not is_instance_valid(target) or not target.is_inside_tree():
 		release()
 		return
 	var dt := clampf(delta, 0.0, 0.1)
@@ -44,27 +51,39 @@ func update(camera: Camera3D, target: Node3D, vehicle: bool, velocity: Vector3, 
 		_next_scan = _clock + SCAN_INTERVAL
 		_scan(camera,target)
 	for entry in _materials.values():
-		var material: ShaderMaterial = entry.material
-		material.set_shader_parameter("reveal_origin",_origin)
-		material.set_shader_parameter("reveal_ahead",_lead)
-		material.set_shader_parameter("reveal_to_camera",_to_camera)
-		material.set_shader_parameter("reveal_radius",_radius)
+		_set_parameter_if_changed(entry,&"reveal_origin",_origin)
+		_set_parameter_if_changed(entry,&"reveal_ahead",_lead)
+		_set_parameter_if_changed(entry,&"reveal_to_camera",_to_camera)
+		_set_parameter_if_changed(entry,&"reveal_radius",_radius)
 	for id in _states.keys():
 		var state: Dictionary = _states[id]
 		if not is_instance_valid(state.node): _restore(id); continue
 		var wanted := _clock-float(state.seen) <= RELEASE_DELAY
-		state.amount = move_toward(float(state.amount),1.0 if wanted else 0.0,dt/(0.18 if wanted else 0.32))
-		state.node.set_instance_shader_parameter("exterior_reveal_amount",state.amount)
+		var next_amount := move_toward(float(state.amount),1.0 if wanted else 0.0,dt/(0.18 if wanted else 0.32))
+		if next_amount != float(state.amount):
+			state.amount = next_amount
+			state.node.set_instance_shader_parameter("exterior_reveal_amount",state.amount)
+			_instance_writes += 1
 		if not wanted and state.amount <= 0.0: _restore(id)
+
+func _set_parameter_if_changed(entry: Dictionary, parameter: StringName, value: Variant) -> void:
+	# Each replacement owns its cache: newly streamed geometry receives all
+	# uniforms even when the camera is still. Exact comparison preserves motion
+	# and authored animation without re-uploading settled values every frame.
+	var sent: Dictionary = entry.sent
+	if sent.has(parameter) and sent[parameter] == value: return
+	entry.material.set_shader_parameter(parameter,value)
+	sent[parameter] = value
+	_parameter_writes += 1
 
 func _scan(camera: Camera3D, target: Node3D) -> void:
 	for entry in _materials.values():
 		if entry.source is ShaderMaterial:
 			for uniform in entry.uniforms:
-				entry.material.set_shader_parameter(uniform.name,entry.source.get_shader_parameter(uniform.name))
+				_set_parameter_if_changed(entry,uniform.name,entry.source.get_shader_parameter(uniform.name))
 		else:
-			entry.material.set_shader_parameter("base_color",entry.source.albedo_color)
-			entry.material.set_shader_parameter("emission_color",entry.source.emission*entry.source.emission_energy_multiplier if entry.source.emission_enabled else Color.BLACK)
+			_set_parameter_if_changed(entry,&"base_color",entry.source.albedo_color)
+			_set_parameter_if_changed(entry,&"emission_color",entry.source.emission*entry.source.emission_energy_multiplier if entry.source.emission_enabled else Color.BLACK)
 	var direction := _to_camera.normalized()
 	var center := _origin + _lead*.5 + _to_camera*.5
 	var reach := _radius + _lead.length()*.5 + 0.8
@@ -80,8 +99,9 @@ func _scan(camera: Camera3D, target: Node3D) -> void:
 	for hit in hits:
 		var body: Node = hit.collider
 		var scope := _visual_scope(body,camera.get_parent())
-		if scope == null or not _is_building_scope(scope) or visited.has(scope.get_instance_id()): continue
+		if scope == null or visited.has(scope.get_instance_id()): continue
 		visited[scope.get_instance_id()] = true
+		if not _is_building_scope(scope): continue
 		for node in _items(scope):
 			if not is_instance_valid(node) or not node.is_visible_in_tree() or node.is_queued_for_deletion(): continue
 			if node == target or target.is_ancestor_of(node): continue
@@ -176,7 +196,7 @@ func _replace(node: GeometryInstance3D, surface: int, source: Material, saved: A
 		material.set_shader_parameter("emission_texture",source.emission_texture)
 		material.set_shader_parameter("unshaded_source",source.shading_mode == BaseMaterial3D.SHADING_MODE_UNSHADED)
 		material.set_meta("exterior_reveal_source",source)
-		_materials[id] = {"material":material,"users":0,"source":source}
+		_materials[id] = {"material":material,"users":0,"source":source,"sent":{}}
 	var replacement: ShaderMaterial = _materials[id].material
 	var original: Material = node.material_override if surface < 0 else node.get_surface_override_material(surface)
 	saved.append({"surface":surface,"original":original,"replacement":replacement,"source":source})
@@ -227,7 +247,7 @@ func _replace_shader(node: GeometryInstance3D, surface: int, source: ShaderMater
 		var material: ShaderMaterial = source.duplicate()
 		material.shader = _shaders[shader_key]
 		material.set_meta("exterior_reveal_source",source)
-		_materials[id] = {"material":material,"users":0,"source":source,"uniforms":source.shader.get_shader_uniform_list()}
+		_materials[id] = {"material":material,"users":0,"source":source,"uniforms":source.shader.get_shader_uniform_list(),"sent":{}}
 	var replacement: ShaderMaterial = _materials[id].material
 	var original: Material = node.material_override if surface < 0 else node.get_surface_override_material(surface)
 	saved.append({"surface":surface,"original":original,"replacement":replacement,"source":source})
@@ -263,4 +283,4 @@ func release() -> void:
 	_last_position = Vector3.INF
 
 func debug_snapshot() -> Dictionary:
-	return {"geometry":_states.size(),"materials":_materials.size(),"scopes":_scopes.size(),"hits":last_query_hits,"radius":_radius,"lead":_lead}
+	return {"enabled":enabled,"geometry":_states.size(),"materials":_materials.size(),"scopes":_scopes.size(),"hits":last_query_hits,"radius":_radius,"lead":_lead,"parameter_writes":_parameter_writes,"instance_writes":_instance_writes}

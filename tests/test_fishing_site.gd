@@ -40,6 +40,9 @@ func run() -> void:
 	actor.position = site.entrance_position()
 	scene.add_child(actor)
 	for frame in 8: await physics_frame
+	var entrance_label: Label3D = site.get_node("LagoSerenoName")
+	var approach: Vector2 = (SITE.LOCATION.ROAD_POINTS[-2] - SITE.LOCATION.ROAD_POINTS[-1]).normalized()
+	check(entrance_label.basis.z.dot(Vector3(approach.x,0,approach.y)) > .999,"entrance portal faces the incoming road")
 	check(site.anglers.size()==5,"five native anglers present")
 	check(site.fishing_spots().size()>=3,"multiple free player stations")
 	check(site.LOT.end.x < -430,"venue stays west of the existing company village and motocross grounds")

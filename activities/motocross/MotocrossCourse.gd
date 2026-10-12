@@ -554,6 +554,7 @@ func _dress_quarry() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 280926
 	var body := StaticBody3D.new()
+	body.name = "QuarryRockSolids"
 	body.collision_layer = 1
 	body.collision_mask = 0
 	for i in 80:
@@ -566,16 +567,23 @@ func _dress_quarry() -> void:
 			continue
 		var radius := rng.randf_range(.65,2.1)
 		var p := Vector3(point.x,_height(point)+radius*.3,point.y)
-		transforms.append(Transform3D(Basis(Vector3.UP,rng.randf()*TAU).scaled(Vector3(radius,radius*.65,radius*.8)),p))
+		var placement := Transform3D(Basis(Vector3.UP,rng.randf()*TAU).scaled(Vector3(radius,radius*.65,radius*.8)),p)
+		transforms.append(placement)
 		var collision := CollisionShape3D.new()
-		var shape := SphereShape3D.new()
-		shape.radius = radius*.85
+		# A sphere extended beyond the flattened rock, causing impacts in air.
+		# Bake the exact visible mesh into an unscaled convex physical hull.
+		var shape := ConvexPolygonShape3D.new()
+		var vertices := PackedVector3Array()
+		for vertex in stone.get_faces(): vertices.append(placement.basis * vertex)
+		shape.points = vertices
 		collision.shape = shape
 		collision.position = p
 		body.add_child(collision)
 	rocks.instance_count = transforms.size()
 	for i in transforms.size(): rocks.set_instance_transform(i,transforms[i])
 	var visual := MultiMeshInstance3D.new()
+	visual.name = "QuarryRocks"
+	visual.set_meta("preview_instance_transforms",transforms)
 	visual.multimesh = rocks
 	visual.material_override = _material(Color("746e61"))
 	add_child(visual)

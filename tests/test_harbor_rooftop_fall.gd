@@ -31,16 +31,22 @@ func run() -> void:
 	check(await walk(roof.to_global(Vector3(landing.x,.04,access.point.z))),"walk along roof side")
 	check(await walk(roof.to_global(access.point+Vector3.UP*.04)),"walk across roof to gate")
 	await photo("roof-gate-before-jump")
-	check(world.session.nearest().get("id","")=="building_rooftop_jump","explicit jump action at physical gate")
+	check(world.session.nearest().get("id","")!="building_rooftop_jump","roof has no jump interaction prompt")
 	var health: float = world.gameplay.health
 	var roof_height: float = world.player.global_position.y
-	if not check(await world.session.interact(),"jump action crosses physical gate"):
+	world.player.automatic_direction = roof.global_basis * access.outward
+	world.player.speed = 3.5
+	deadline = Time.get_ticks_msec()+5000
+	while not runtime.falling and Time.get_ticks_msec()<deadline: await physics_frame
+	world.player.automatic_direction = Vector3.ZERO
+	if not check(runtime.falling,"walking into edge physically crosses solid parapet"):
 		finish(); return
 	check(runtime.falling and world.session.state.place_id.is_empty(),"fall belongs to exterior world")
 	check(not world.session.save_block_reason().is_empty(),"airborne save blocked")
 	await photo("falling-over-street")
 	deadline = Time.get_ticks_msec()+8000
 	while runtime.falling and Time.get_ticks_msec()<deadline: await physics_frame
+	while world.player.air_movement.phase in ["land", "recover"] and Time.get_ticks_msec()<deadline: await physics_frame
 	check(not runtime.falling,"landed in street or recovery owns actor")
 	check(world.player.global_position.y < roof_height-2.0,"real fall height")
 	check(world.gameplay.health < health,"fall applies environmental damage")

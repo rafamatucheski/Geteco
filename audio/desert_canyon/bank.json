@@ -1,0 +1,61 @@
+{
+  "original_procedural": true,
+  "sample_rate": 22050,
+  "generator": "tools/audio/generate_canyon_ambience.py",
+  "streams": [
+    {
+      "file": "gorge_wind.wav",
+      "seconds": 12.0,
+      "channels": 2,
+      "peak": 0.58,
+      "rms": 0.12212360519488652,
+      "loop_seam_delta": 0.006270433617420135,
+      "loop": true
+    },
+    {
+      "file": "bridge_stress_0.wav",
+      "seconds": 2.4,
+      "channels": 1,
+      "peak": 0.5970940150458646,
+      "rms": 0.09988894188280902,
+      "loop_seam_delta": 0.0,
+      "loop": false
+    },
+    {
+      "file": "bridge_stress_1.wav",
+      "seconds": 2.4,
+      "channels": 1,
+      "peak": 0.598689019741698,
+      "rms": 0.089494470982333,
+      "loop_seam_delta": 0.0,
+      "loop": false
+    },
+    {
+      "file": "vulture_croak_0.wav",
+      "seconds": 2.6,
+      "channels": 1,
+      "peak": 0.6,
+      "rms": 0.05694447071697756,
+      "loop_seam_delta": 0.0,
+      "loop": false
+    },
+    {
+      "file": "vulture_croak_1.wav",
+      "seconds": 2.6,
+      "channels": 1,
+      "peak": 0.6,
+      "rms": 0.06390481032208684,
+      "loop_seam_delta": 0.0,
+      "loop": false
+    },
+    {
+      "file": "hideout_canvas.wav",
+      "seconds": 8.0,
+      "channels": 1,
+      "peak": 0.42,
+      "rms": 0.029829767889733634,
+      "loop_seam_delta": 8.816442112349166e-05,
+      "loop": true
+    }
+  ]
+}

@@ -35,6 +35,7 @@ var _previous_speed := 0.0
 var _decelerating := false
 var _brake_hold := 0.0
 var _tail_state := -1
+var _lens_state := -1
 ## Facho único de NPC, centrado entre os faróis (metade das luzes por carro).
 var npc_beam: SpotLight3D
 var profile: Dictionary = {}
@@ -77,6 +78,11 @@ func _ready() -> void:
 		if part.mesh == null or part.has_meta("wheel_center"): continue
 		for surface in (1 if part.material_override != null else part.mesh.get_surface_count()):
 			_bind_lens(part, surface, materials, mounts, bar_mounts)
+	# Authored positions take precedence over centers of merged lens meshes.
+	if car.visual.has_meta("headlight_mounts"):
+		mounts.clear()
+		for mount: Vector3 in car.visual.get_meta("headlight_mounts"):
+			mounts.append(car.to_local(car.visual.to_global(mount)))
 	# Some original procedural meshes have no material tags: derive mount from hull.
 	if mounts.is_empty():
 		mounts.assign([Vector3(-car.half_width * .7, .8, -car.half_length), Vector3(car.half_width * .7, .8, -car.half_length)])
@@ -219,7 +225,7 @@ func _bind_lens(part: MeshInstance3D, surface: int, materials: Dictionary, mount
 			if original.albedo_color.is_equal_approx(left): key = "bar_left"
 			if original.albedo_color.is_equal_approx(right): key = "bar_right"
 	if key in ["bar_left", "bar_right"] and car.archetype not in ["police_cruiser", "police_suv", "police_transport", "bike_police", "medic_box", "rescue_pumper"]: return
-	if key not in ["bar_left","bar_right","rear_lens","brake_light","brake"] and not "headlight" in key and not "tail" in key:
+	if key not in ["bar_left","bar_right"] and not SURFACES.is_headlight_lens(key) and not SURFACES.is_tail_lens(key):
 		if key != "" or not original.emission_enabled: return
 	# Flattened ArrayMeshes keep vertices away from their node origin.
 	var local: Vector3 = car.to_local(part.to_global(SURFACES.center(part, surface)))
@@ -310,8 +316,8 @@ static func _cone_texture() -> ImageTexture:
 ## frente é farol, vermelho atrás é lanterna. A posição exclui o luminoso do
 ## táxi e o giroflex, que ficam no teto, perto do centro.
 func _lens_role(key: String, material: StandardMaterial3D, local: Vector3) -> String:
-	if "headlight" in key: return "headlight" if local.z < 0 else ""
-	if "tail" in key or key in ["rear_lens", "brake_light", "brake"]: return "tail" if local.z > 0 else ""
+	if SURFACES.is_headlight_lens(key): return "headlight" if local.z < 0 else ""
+	if SURFACES.is_tail_lens(key): return "tail" if local.z > 0 else ""
 	if key != "" or not material.emission_enabled: return ""
 	var color := material.albedo_color
 	if local.z < -car.half_length * .35 and color.s < .35 and color.v > .8: return "headlight"
@@ -444,10 +450,15 @@ func _refresh() -> void:
 		item.lamp.visible = driver_lit and not broken
 	if is_instance_valid(npc_beam): npc_beam.visible = auto_lit and not driver_lit and _npc_beam_allowed() and not (broken_left and broken_right)
 	if is_instance_valid(ground_pool): ground_pool.visible = lit and car.health > 0 and not (broken_left and broken_right)
-	for item in lens_materials:
-		var broken: bool = (item.side < 0 and broken_left) or (item.side > 0 and broken_right)
-		item.material.emission_enabled = lit and not broken
-		item.material.emission_energy_multiplier = 1.35 if (lit and not broken) else 0.0
+	# Lenses change only with power/damage. Avoid resending the same material
+	# parameters for every parked/traffic car on every rendered frame.
+	var lens_state := int(lit) | (int(broken_left) << 1) | (int(broken_right) << 2)
+	if lens_state != _lens_state:
+		_lens_state = lens_state
+		for item in lens_materials:
+			var broken: bool = (item.side < 0 and broken_left) or (item.side > 0 and broken_right)
+			item.material.emission_enabled = lit and not broken
+			item.material.emission_energy_multiplier = 1.35 if (lit and not broken) else 0.0
 	var markers_lit := 1 if lit and car.health > 0 else 0
 	if markers_lit != _markers_lit:
 		_markers_lit = markers_lit
@@ -468,15 +479,15 @@ func _refresh() -> void:
 		if sounding and not siren_audio.playing:
 			siren_audio.stream = AUDIO.siren_stream()
 			siren_audio.play()
-		elif not sounding: siren_audio.stop()
-	if not occupied and is_instance_valid(horn_audio): horn_audio.stop()
+		elif not sounding and siren_audio.playing: siren_audio.stop()
+	if not occupied and is_instance_valid(horn_audio) and horn_audio.playing: horn_audio.stop()
 	# O alarme vale com o carro vazio: é justamente o estado de quem falhou o lockpick.
 	var alarming: bool = alarm_remaining > 0 and car.health > 0
 	if is_instance_valid(alarm_audio):
 		if alarming and not alarm_audio.playing:
 			alarm_audio.stream = AUDIO.alarm_stream()
 			alarm_audio.play()
-		elif not alarming: alarm_audio.stop()
+		elif not alarming and alarm_audio.playing: alarm_audio.stop()
 	var flashing: bool = (sounding or alarming) and not beacons.is_empty()
 	# Whole clock buckets; preserve integer precision and cadence.
 	@warning_ignore("integer_division")

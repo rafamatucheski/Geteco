@@ -1,22 +1,37 @@
 extends Node3D
 ## Offline set extension and practical lighting, never instantiated by gameplay.
 const OCEAN := preload("res://world/regions/HarborOcean.gd")
+const CIVILIAN := preload("res://assets/CivilianModel.gd")
 var ferry: Node3D
 var rain: GPUParticles3D
 var background_models: Array = []
 var frozen_bodies: Array = []
+var activity := preload("res://cutscenes/opening/ferry/FerryHarborActivity.gd").new()
 
 func configure(world, boat: Node3D) -> void:
 	ferry = boat
 	# Suspend both bodies and their route/spawn managers for this offline set.
 	# Pausing only the bodies leaves transit managers driving detached physics RIDs.
 	world.process_mode = Node.PROCESS_MODE_DISABLED
-	# Background extras have cinematic marks instead of endless gameplay circuits.
+	# Explicit ALWAYS/PAUSABLE modes override a disabled ancestor. Freeze those
+	# owners too, or the session keeps changing shifts and freeing our cast.
+	var director := get_parent()
+	for node in world.find_children("*", "Node", true, false):
+		if node == director or director.is_ancestor_of(node): continue
+		node.process_mode = Node.PROCESS_MODE_DISABLED
+	# The take supplies its own ferry passengers. Gameplay disembarkers would
+	# otherwise remain suspended over the water when this ferry leaves its berth.
+	for actor in world.session.urban_operations.passenger_terminal.passengers:
+		if is_instance_valid(actor): actor.hide()
+	activity.configure(world)
+	# Only undirected extras hold a mark. Dock workers and machinery have an
+	# authored work cycle, without waking the gameplay spawn/traffic managers.
 	for body in world.find_children("*","CharacterBody3D",true,false):
-		if body == world.player: continue
+		if body == world.player or body.is_queued_for_deletion(): continue
+		if activity.owns(body): continue
 		frozen_bodies.append({"node":body,"position":body.global_position})
 		for model in body.find_children("*","Node3D",true,false):
-			if model.get_script() == preload("res://assets/CivilianModel.gd"):
+			if model is CIVILIAN:
 				model.activity = "idle"
 				background_models.append(model)
 	world.production.region.set_process(false)
@@ -27,6 +42,10 @@ func configure(world, boat: Node3D) -> void:
 	weather.rain_intensity = .25
 	weather.atmosphere_step = 30.0
 	weather._update()
+	# Resolve the existing quay fixtures once at the authored night hour, before
+	# holding their assignments for the take (no camera-dependent light popping).
+	for lighting in world.find_children("CityLocalLighting", "Node3D", true, false):
+		lighting.refresh()
 	weather.set_process(false)
 	weather.precipitation.emitting = false
 	weather.precipitation.hide()
@@ -168,6 +187,7 @@ func _rain() -> void:
 
 func sample(t: float, delta: float) -> void:
 	rain.global_position = ferry.global_position+Vector3.UP*10
+	activity.sample(t,delta)
 	for i in background_models.size():
 		var model = background_models[i]
 		if not is_instance_valid(model): continue

@@ -15,8 +15,11 @@ var draws: Array[float] = []
 var warm: Array[float] = []
 var states: Array[Dictionary] = []
 var seconds := 30.0
+var setup_seconds := 90.0
+var focus_wait_seconds := 30.0
 var shots := 0
 var focused := 0
+var minimized_frames := 0
 var last_shot := 0
 var initialized_at := 0
 var settling_seconds := 0.0
@@ -28,6 +31,7 @@ var startup_orphan_seen: Dictionary = {}
 var startup_orphan_rows: Array[Dictionary] = []
 var startup_orphan_dropped := 0
 var startup_orphan_usec := 0
+var native_presentation := preload("res://tests/measure/NativePresentationGate.gd").new()
 
 func census_startup_orphans(phase: String) -> void:
 	if not startup_orphan_enabled: return
@@ -195,7 +199,7 @@ func state() -> Dictionary:
 func settle_load() -> bool:
 	var began := Time.get_ticks_usec()
 	var next_probe := began
-	while Time.get_ticks_usec()-began < 90000000:
+	while Time.get_ticks_usec()-began < int(setup_seconds*1000000.0):
 		await process_frame
 		var now := Time.get_ticks_usec()
 		if now < next_probe: continue
@@ -224,10 +228,12 @@ func run() -> void:
 		elif arg.begins_with("--out="): output = arg.trim_prefix("--out=")
 		elif arg.begins_with("--scenario="): scenario = arg.trim_prefix("--scenario=")
 		elif arg.begins_with("--seconds="): seconds = maxf(30,float(arg.trim_prefix("--seconds=")))
+		elif arg.begins_with("--setup-seconds="): setup_seconds = clampf(float(arg.trim_prefix("--setup-seconds=")),90.0,180.0)
+		elif arg.begins_with("--native-focus-wait-seconds="): focus_wait_seconds = clampf(float(arg.trim_prefix("--native-focus-wait-seconds=")),30.0,180.0)
 		elif arg == "--profile": profile = true
 	if output.is_empty() or DisplayServer.get_name() == "headless" or "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
 	if not ClassDB.class_exists(&"CSharpScript") or not OS.get_environment("HARBOR_NO_CSHARP").is_empty(): push_error("Requires compiled .NET path"); quit(3); return
-	create_timer(240.0).timeout.connect(func(): push_error("PERFORMANCE_PLAN_TIMEOUT"); quit(4))
+	create_timer(maxf(240.0,setup_seconds+seconds+75.0+focus_wait_seconds-30.0)).timeout.connect(func(): push_error("PERFORMANCE_PLAN_TIMEOUT"); quit(4))
 	initialized_at = Time.get_ticks_usec()
 	census_startup_orphans("before_main")
 	world = load("res://Main.tscn").instantiate()
@@ -275,7 +281,7 @@ func run() -> void:
 	if not await settle_load():
 		DirAccess.make_dir_recursive_absolute(output)
 		FileAccess.open(output.path_join(label+".json"),FileAccess.WRITE).store_string(JSON.stringify({"label":label,"scenario":scenario,"invalid":"settling_timeout","settling_seconds":settling_seconds,"settling_states":settling_states,"last_state":state(),"summary":{}},"\t"))
-		push_error("PERFORMANCE_PLAN_SETTLING_TIMEOUT: population/traffic caps and streaming did not settle within 90 seconds")
+		push_error("PERFORMANCE_PLAN_SETTLING_TIMEOUT: population/traffic caps and streaming did not settle within %.0f seconds" % setup_seconds)
 		quit(6)
 		return
 	# Reset the clock at the scenario boundary: different fill durations must not
@@ -291,6 +297,12 @@ func run() -> void:
 	RenderingServer.viewport_set_measure_render_time(root.get_viewport_rid(),true)
 	if profile:
 		if not EngineDebugger.is_active() or not EngineDebugger.has_profiler("servers"): push_error("Profiler receiver missing"); quit(5); return
+	if not await native_presentation.wait_until_presented(self):
+		DirAccess.make_dir_recursive_absolute(output)
+		FileAccess.open(output.path_join(label+".json"),FileAccess.WRITE).store_string(JSON.stringify({"label":label,"invalid":native_presentation.failure,"native_presentation":native_presentation.snapshot(),"summary":{},"last_state":state()},"\t"))
+		push_error("PERFORMANCE_PLAN_NATIVE_PRESENTATION: "+native_presentation.failure)
+		quit(8)
+		return
 	if warmup_identity_enabled: start_identity_diagnostic()
 	var started := Time.get_ticks_usec()
 	var previous := started
@@ -302,6 +314,10 @@ func run() -> void:
 		await process_frame
 		var now := Time.get_ticks_usec()
 		var ms := (now-previous)/1000.0
+		var presentation_failure: String = native_presentation.poll(now)
+		if not presentation_failure.is_empty():
+			invalid = presentation_failure
+			break
 		if warmup_identity_enabled:
 			var phase := "warmup" if now-started < 10000000 else ("boundary" if sample_started == 0 else "measurement")
 			# Close before apply_load; this frame's shots belong to the next interval.
@@ -331,13 +347,19 @@ func run() -> void:
 		process_cpu.append(Performance.get_monitor(Performance.TIME_PROCESS)*1000.0)
 		draws.append(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
 		if DisplayServer.window_is_focused(): focused += 1
+		if DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_MINIMIZED: minimized_frames += 1
 		if now-sample_started >= seconds*1000000: break
+	var presentation_failure: String = native_presentation.finish(Time.get_ticks_usec())
+	if not presentation_failure.is_empty(): invalid = presentation_failure
 	if profile_started: EngineDebugger.profiler_enable("servers",false)
 	if warmup_identity_enabled and identity_intervals.is_empty():
 		invalid = "warmup_identity_no_intervals"
 		push_error("WarmUp identity diagnostic requested but no intervals were captured")
 	if focused != frames.size(): invalid = "measurement_lost_focus"
+	if minimized_frames > 0: invalid = "measurement_minimized"
 	var report := {"label":label,"scenario":scenario,"invalid":invalid,"summary":stats(frames),"warmup":stats(warm),"frames_ms":frames,"warmup_ms":warm,"gpu_ms":metric_stats(gpu,"ms"),"render_cpu_ms":metric_stats(render_cpu,"ms"),"physics_monitor_ms":metric_stats(physics,"ms"),"process_monitor_ms":metric_stats(process_cpu,"ms"),"draw_calls":metric_stats(draws,"draw_calls"),"states":states,"shots":shots,"focused_frames":focused,"startup_seconds":(started-initialized_at)/1000000.0-settling_seconds,"settling_seconds":settling_seconds,"settling_states":settling_states,"settled_state":settled_state,"configuration":{"engine":Engine.get_version_info().string,"cpu":OS.get_processor_name(),"gpu":RenderingServer.get_video_adapter_name(),"renderer":RenderingServer.get_current_rendering_method(),"resolution":str(root.size),"msaa":root.msaa_3d,"render_scale":root.scaling_3d_scale,"max_fps":Engine.max_fps,"vsync":DisplayServer.window_get_vsync_mode(),"physics_hz":Engine.physics_ticks_per_second,"max_physics_steps":Engine.max_physics_steps_per_frame,"profile":profile,"low_processor_usage_mode":OS.low_processor_usage_mode,"no_save":world.production.no_save,"global_seed":21092026},"scope":"Rendered Main production scene; stationary teleport fixture; live NPCs/traffic. Start requires population/ambient-traffic caps plus idle streaming and retirement; later fluctuations remain normal gameplay and are recorded. Chaos uses godmode, arsenal and direct fire API after settling. CPU/GPU render timings are root viewport only. TIME_PROCESS and TIME_PHYSICS_PROCESS are last-second maxima repeated by frame sampling, not mean CPU per frame/physics step. Global seed does not make asynchronous gameplay deterministic. No manual callback adoption."}
+	report["minimized_frames"] = minimized_frames
+	report["native_presentation"] = native_presentation.snapshot()
 	report["clock"] = {"initialized_usec":initialized_at,"scenario_start_usec":started,
 		"measurement_start_usec":sample_started,"measurement_end_usec":previous}
 	report["warmup_identity"] = {"enabled":warmup_identity_enabled}

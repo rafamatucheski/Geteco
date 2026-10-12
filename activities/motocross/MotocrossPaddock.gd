@@ -170,19 +170,39 @@ func _build_tent() -> void:
 
 func _build_parked_bikes() -> void:
 	for index in 3:
-		var bike := BIKE.new()
-		bike.name = "RentalMotocross%d" % index
-		preload("res://activities/motocross/MotocrossModels.gd").apply(bike,index)
-		bike.position = Vector3(-214, 0.13, -36.0 + float(index) * 4.0)
-		bike.rotation.y = PI / 2.0
-		bike.race_enabled = false
-		add_child(bike)
-		bike.set_physics_process(false)
-		bike.rider.hide()
-		bike.visual.rotation.z = -0.12
+		var bike := _parked_bike(index)
 		parked_bikes.append(bike)
 		_bar(bike.position + Vector3(0, 0.12, 0.22), bike.position + Vector3(0, 0.04, 0.45), 0.025, _material(Color("3a3d39")))
 	_flush(self)
+
+func _parked_bike(index: int) -> CharacterBody3D:
+	var bike := BIKE.new()
+	bike.name = "RentalMotocross%d" % index
+	preload("res://activities/motocross/MotocrossModels.gd").apply(bike,index)
+	bike.position = Vector3(-214, 0.13, -36.0 + float(index) * 4.0)
+	bike.rotation.y = PI / 2.0
+	bike.race_enabled = false
+	bike.set_meta("motocross_parked",true)
+	add_child(bike)
+	bike.set_physics_process(false)
+	bike.rider.hide()
+	bike.visual.rotation.z = -0.12
+	return bike
+
+func replenish_parked_bikes() -> void:
+	for index in parked_bikes.size():
+		var old := parked_bikes[index]
+		if is_instance_valid(old) and old.get_parent()==self: continue
+		var point := to_global(Vector3(-214,.13,-36.0+float(index)*4.0))
+		var shape := SphereShape3D.new()
+		shape.radius = .8
+		var query := PhysicsShapeQueryParameters3D.new()
+		query.shape = shape
+		query.transform.origin = point+Vector3.UP*.85
+		query.collision_mask = 6
+		if not get_world_3d().direct_space_state.intersect_shape(query,1).is_empty(): continue
+		parked_bikes[index] = _parked_bike(index)
+		return # One replacement per controller check, never a construction burst.
 
 func _person(at: Vector3, yaw: float, color: Color, seated: bool) -> Node3D:
 	var actor := preload("res://activities/motocross/MotocrossSpectator.gd").new()

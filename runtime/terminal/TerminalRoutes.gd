@@ -13,11 +13,11 @@ static func apron(kind: String, bay: int) -> Curve3D:
 	c.bake_interval = .08
 	match kind:
 		"reversing":
-			c.add_point(point(x,-88)); c.add_point(point(x,-10))
-			arc(c,Vector2(x-30,-10),30,0,PI/2)
+			c.add_point(point(x,-88)); c.add_point(point(x,-20))
+			arc(c,Vector2(x-30,-20),30,0,PI/2)
 		"departing":
-			c.add_point(point(x-30,20)); c.add_point(point(205,20))
-			arc(c,Vector2(205,65),45,-PI/2,0)
+			c.add_point(point(x-30,10)); c.add_point(point(205,10))
+			arc(c,Vector2(205,55),45,-PI/2,0)
 			# Native traffic drives east on the southern lane (V1 used the
 			# opposite offset). Cross the street before turning into that lane.
 			c.add_point(point(250,177)); arc(c,Vector2(293,177),43,PI,PI/2)

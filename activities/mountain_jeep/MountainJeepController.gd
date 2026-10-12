@@ -39,8 +39,8 @@ func save_block_reason() -> String:
 func objective() -> String:
 	if not run.active:
 		return "Trilha dos Pinheiros · leve um jipe 4x4 à largada."
-	if run.countdown>0.0: return "Mantenha o jipe parado · %d" % ceili(run.countdown)
-	return "Trilha dos Pinheiros · checkpoint %d/%d · %.1f s" % [run.gate+1,run.gates.size(),maxf(0.0,COURSE.TIME_LIMIT-run.elapsed)]
+	if run.countdown>0.0: return String(TranslationServer.translate("Mantenha o jipe parado · %d")) % ceili(run.countdown)
+	return String(TranslationServer.translate("Trilha dos Pinheiros · checkpoint %d/%d · %.1f s")) % [run.gate+1,run.gates.size(),maxf(0.0,COURSE.TIME_LIMIT-run.elapsed)]
 
 func target_position() -> Vector3:
 	return run.target_position() if run.active else COURSE.start()
@@ -64,7 +64,7 @@ func nearest_action() -> Dictionary:
 	if point.distance_to(COURSE.start())>4.0: return {}
 	if not driving.occupied:
 		return {"id":"mountain_jeep","target":"prepare","label":"Retirar jipe da trilha","position":COURSE.start()}
-	return {"id":"mountain_jeep","target":"start","label":"Trilha dos Pinheiros · %d s" % int(COURSE.TIME_LIMIT),"position":COURSE.start()}
+	return {"id":"mountain_jeep","target":"start","label":String(TranslationServer.translate("Trilha dos Pinheiros · %d s")) % int(COURSE.TIME_LIMIT),"position":COURSE.start()}
 
 func perform(target: Variant) -> bool:
 	var action := str(target.get("target","")) if target is Dictionary else str(target)
@@ -115,7 +115,7 @@ func _physics_process(delta: float) -> void:
 				else:
 					session.state.world_state.mountain_jeep=snapshot()
 					var suffix := " · R$ %d" % result.paid if result.paid>0 else " · novo recorde" if result.record else ""
-					session.show_message("Trilha concluída · %.2f s%s" % [result.time,suffix])
+					session.show_message(String(TranslationServer.translate("Trilha concluída · %.2f s%s")) % [result.time,suffix])
 					session.save_game(true)
 				driver=null
 				_status.text=""
@@ -177,6 +177,7 @@ func _ensure_loan() -> void:
 		car.queue_free()
 		return
 	if saved.has("health"): car.restore_health(float(saved.health))
+	car.restore_body_dents(saved.get("body_dents",[]))
 	if int(saved.get("punctured_tires",0))>0:
 		preload("res://gameplay/police_response/ground/TirePuncture.gd").puncture(car,int(saved.punctured_tires))
 	if float(saved.get("heavy_crush_ratio",1.0))<1.0:

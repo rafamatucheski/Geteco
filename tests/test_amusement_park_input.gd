@@ -12,6 +12,9 @@ class ParkInput extends "res://runtime/amusement_park/AmusementParkRuntime.gd":
 	func _ready() -> void: set_process(false)
 	func _process(_delta: float) -> void: pass
 	func _exit_tree() -> void: pass
+	# This fixture checks input delivery only; the real animated return is
+	# exercised in test_coaster_session with Main and the actual station.
+	func request_exit() -> void: leave()
 	func leave() -> void:
 		if active:
 			active = false
@@ -204,7 +207,7 @@ func run() -> void:
 	park.active = true
 	park._make_hint()
 	await process_frame
-	check(park._ride_hint.has_node("RideExitHint") and not park._ride_hint.has_node("RideExitButton") and controls.prompt("pause_game") in park._ride_hint.get_node("RideExitHint").text, "desktop hint uses configured cancellation binding and no unreachable button")
+	check(park._ride_hint.has_node("RideExitHint") and not park._ride_hint.has_node("RideExitButton") and controls.prompt("interact") in park._ride_hint.get_node("RideExitHint").text, "desktop hint uses configured return binding and no unreachable button")
 	park.leave()
 	controls.set_meta("touch_controls_active",true)
 	park.active = true

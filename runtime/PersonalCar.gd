@@ -18,6 +18,7 @@ func configure(owner_session) -> void:
 func refresh() -> void:
 	if session == null or not session.ready_for_play or session.controller.save_invalid: return
 	if not session.state.campaign.snapshot().completed.has("primeiro_giro"): return
+	award_first_backpack()
 	var garage = session.garage_rewards
 	if garage == null or garage.data.vehicles.has(ID): return
 	# Keep the pre-existing player_coupe and its save. This is the earned personal car.
@@ -65,13 +66,10 @@ func perform(target: String) -> bool:
 			return true
 	_menu_health = session.world.gameplay.health
 	if target=="trunk":
-		var found_backpack := discover_backpack()
 		if session.state.economy.claim_monaliza_starter():
 			# Go through GameState: the garage still refuses drawing any weapon.
 			if session.state.equipped_weapon=="fists": session.state.equip_weapon("pistol")
 			session.save_game()
-		elif found_backpack: session.save_game()
-		if found_backpack: session.show_message("Mochila recolhida na Monaliza.")
 		if session.state.economy.personal_loadout().is_empty():
 			session.show_message("Libere espaço na reserva da pistola para recolher a maleta.")
 			return true
@@ -79,13 +77,20 @@ func perform(target: String) -> bool:
 	else: _open_service()
 	return true
 
-func discover_backpack() -> bool:
-	if not _available() or not _near_trunk() or session.world.driving.occupied or session.world.gameplay.health <= 0 or session.is_transition_blocked(): return false
+func award_first_backpack() -> bool:
+	if session == null or not session.ready_for_play or session.controller.save_invalid: return false
+	if not session.state.campaign.snapshot().completed.has("primeiro_giro"): return false
 	var economy = session.state.economy
 	if not economy.grid_enabled() or BACKPACK_CLAIM in economy._data.grid_inventory.claimed: return false
-	# Existing saves keep their bag and contents; discovery waits for free hands.
-	if not economy.grid_equip_bag("backpack"): return false
-	economy.grid_claim(BACKPACK_CLAIM)
+	# Retain the old receipt so saved/dropped backpacks cannot earn a duplicate.
+	# Existing bag owners keep their bag and all contents during migration.
+	var candidate: Dictionary = economy.grid_snapshot()
+	if candidate.bag.is_empty() and not candidate.ground.any(func(row): return row.bag == "backpack"):
+		candidate.bag = "backpack"
+	candidate.claimed.append(BACKPACK_CLAIM)
+	if not preload("res://systems/inventory/GridInventory.gd").validate(candidate): return false
+	economy._data.grid_inventory = candidate
+	if session.field_inventory != null: session.field_inventory._update_carried()
 	return true
 
 func travel_bag_available() -> bool:

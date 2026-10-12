@@ -11,6 +11,7 @@ const DRIVER := preload("res://activities/desert_drag/DesertDragDriver.gd")
 const SIGNALS := preload("res://activities/desert_drag/DesertDragSignals.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const HONOR := preload("res://runtime/TakeshiHonor.gd")
+const OPEN_ROSTER := preload("res://activities/desert_drag/DragOpenRoster.gd")
 const TAKESHI := {"name":"Takeshi","car":"supra_a80","distance":800.0,"reaction":.26,"mistake":0.0}
 # One authored 800 m strip for every round. Each car keeps its real powertrain;
 # rival builds cover progressively faster times along the same course.
@@ -59,6 +60,7 @@ var _nitro_override := false
 var board_controller: Node
 var takeshi_controller: Node
 var takeshi_meet: Node3D
+var open_meet: Node3D
 
 func configure(owner_session, strip_start: Vector3 = Vector3.INF, forward: Vector3 = Vector3.RIGHT) -> void:
 	session = owner_session
@@ -78,6 +80,9 @@ func configure(owner_session, strip_start: Vector3 = Vector3.INF, forward: Vecto
 	takeshi_meet = preload("res://runtime/desert/drag_meet/DragMeetTakeshi.gd").new()
 	add_child(takeshi_meet)
 	takeshi_meet.configure(session,self)
+	open_meet = preload("res://activities/desert_drag/DragOpenMeet.gd").new()
+	add_child(open_meet)
+	open_meet.configure(self)
 	if not PROGRESS.validate_snapshot(snapshot()):
 		session.controller.save_invalid = true
 		session.show_message("Progresso do drag inválido; save preservado.")
@@ -90,6 +95,7 @@ func is_night() -> bool:
 	return time >= 20.0/24.0 or time < 5.0/24.0
 
 func save_block_reason() -> String:
+	if is_instance_valid(open_meet) and not open_meet.pending.is_empty(): return "Saia da fila da arrancada para salvar."
 	return "Encerre a arrancada para salvar." if active else ""
 
 func objective() -> String:
@@ -155,6 +161,11 @@ func start_rival(identity: String) -> bool:
 	if not reason.is_empty():
 		session.show_message(reason)
 		return false
+	if is_instance_valid(open_meet) and not open_meet.dispatching:
+		if not open_meet.pending.is_empty():
+			session.show_message("Você já está inscrito. Consulte sua posição no quadro.")
+			return false
+		if open_meet.track_busy(): return open_meet.request(identity,false)
 	if identity=="takeshi":
 		session.show_dialogue([{"speaker":"Takeshi","message":takeshi_controller.INTRO}],func():
 			if start_block_reason().is_empty(): _start("takeshi"))
@@ -162,9 +173,11 @@ func start_rival(identity: String) -> bool:
 	return _start(identity)
 
 func can_race(identity: String) -> bool:
+	if OPEN_ROSTER.CARS.has(identity): return true
 	return HONOR.can_race(session.state.world_state) if identity=="takeshi" else PROGRESS.can_race(session.state.world_state,identity)
 
 static func rival_config(identity: String) -> Dictionary:
+	if OPEN_ROSTER.CARS.has(identity): return OPEN_ROSTER.CARS[identity]
 	return TAKESHI if identity=="takeshi" else RIVALS.get(identity,{})
 
 func _start(identity: String = "") -> bool:
@@ -181,7 +194,9 @@ func _start(identity: String = "") -> bool:
 	if not production.vehicle_position_clear(player_car,player_pose.origin,player_pose.basis.get_euler().y):
 		session.show_message("Libere as faixas antes de alinhar.")
 		return false
-	var opponent = production.spawn_vehicle(str(config.car),opponent_pose.origin,opponent_pose.basis.get_euler().y)
+	var opponent = open_meet.take_opponent(identity) if is_instance_valid(open_meet) else null
+	if is_instance_valid(opponent): opponent.place(opponent_pose.origin,opponent_pose.basis.get_euler().y)
+	else: opponent = production.spawn_vehicle(str(config.car),opponent_pose.origin,opponent_pose.basis.get_euler().y)
 	if not is_instance_valid(opponent):
 		session.show_message("Aguarde a pista ficar livre.")
 		return false
@@ -192,7 +207,11 @@ func _start(identity: String = "") -> bool:
 		opponent.queue_free()
 		session.show_message("Aguarde a pista carregar e tente novamente.")
 		return false
-	DRIVER.attach(opponent,rival_id)
+	if not opponent.has_node("DragRivalDriver"): DRIVER.attach(opponent,rival_id)
+	OPEN_ROSTER.attach_number(player_car,27)
+	if is_instance_valid(open_meet): open_meet.registered_car = player_car
+	if OPEN_ROSTER.CARS.has(rival_id):
+		OPEN_ROSTER.attach_number(opponent,int(config.number))
 	_saved = {"physics":player_car.is_physics_processing(),"locked":player_car.input_locked,"controlled":player_car.controlled,"external":player_car.external_input,"player_locked":session.world.player.input_locked}
 	previous_camera = get_viewport().get_camera_3d()
 	previous_listener = get_viewport().get_audio_listener_3d()
@@ -207,6 +226,7 @@ func _start(identity: String = "") -> bool:
 		var drive := POWERTRAIN.new()
 		drive.configure(powertrain_profile_for_vehicle(car),CARS.parts_for_vehicle(car) if i==0 else _rival_parts())
 		drive.reset()
+		drive.launch_blend_seconds = .35
 		car.input_locked = true
 		car.set_physics_process(false)
 		car.set_meta("desert_drag_physics",true)
@@ -358,7 +378,10 @@ func _physics_process(delta: float) -> void:
 			var throttle_value: float = throttle if i==0 else (1.0 if elapsed>=_rival_wait else 0.0)
 			var nitro_value: bool = _nitro() if i==0 else (drive.gear>=3 and elapsed>6.0)
 			var crossed := is_finite(float(entry.finish))
-			drive.step(delta,0.0 if crossed else throttle_value,not crossed and nitro_value,1.0 if crossed else _brake() if i==0 else 0.0)
+			if crossed:
+				_step_runoff(entry,delta)
+			else:
+				drive.step(delta,throttle_value,nitro_value,_brake() if i==0 else 0.0)
 			var before := _offset(entry.car.global_position)
 			_move_car(entry,delta)
 			var after := _offset(entry.car.global_position)
@@ -375,9 +398,9 @@ func _physics_process(delta: float) -> void:
 	elif phase == "braking":
 		_runoff += delta
 		for entry in racers:
-			entry.drive.step(delta,0,false,1)
+			_step_runoff(entry,delta)
 			_move_car(entry,delta)
-		if _runoff>8 or racers.all(func(e): return e.drive.speed_mps<.6):
+		if racers.all(func(e): return e.drive.speed_mps<.15):
 			_finish()
 			return
 	_feedback_time = maxf(0,_feedback_time-delta)
@@ -408,15 +431,26 @@ func _rival_control(delta: float) -> void:
 		_rival_target = drive.ideal_shift_rpm+_rng.randf_range(-120,110)
 		_rival_shift_delay = -1
 
+func _step_runoff(entry: Dictionary, delta: float) -> void:
+	var drive = entry.drive
+	var speed: float = drive.speed_mps
+	var room := maxf(1.0,distance+175.0-_offset(entry.car.global_position))
+	# Reserve distance for the pressure ramp and the gentle final release.
+	# Fast builds need more braking force, not an instantaneous speed cap.
+	var required := speed*speed/(2.0*maxf(1.0,room-speed*.25-8.0))
+	var target := maxf(8.0,required)
+	if speed<4.0: target = minf(target,maxf(1.2,speed*2.5))
+	var deceleration := move_toward(float(entry.get("runoff_deceleration",0.0)),target,delta*60.0)
+	entry.runoff_deceleration = deceleration
+	# Normal progressive service braking is rolling grip, not a locked wheel.
+	var grip: float = 9.81*float(drive.spec.traction)*drive.surface_grip
+	entry.car.set_meta("drag_service_brake_slip",clampf((deceleration-grip)/maxf(1.0,grip),0.0,1.0))
+	drive.step(delta,0.0,false,0.0)
+	drive.speed_mps = minf(drive.speed_mps,maxf(0.0,speed-deceleration*delta))
+
 func _move_car(entry: Dictionary, delta: float) -> void:
 	var car = entry.car
 	var drive = entry.drive
-	var offset := _offset(car.global_position)
-	# A bounded deceleration zone prevents an already finished vehicle leaving
-	# the authored strip. This is braking force, never a position teleport.
-	if is_finite(float(entry.finish)):
-		var room := maxf(0,distance+175-offset)
-		drive.speed_mps = minf(drive.speed_mps,sqrt(2.0*15.0*room))
 	var before: Vector3 = car.global_position
 	var incoming_velocity: Vector3 = direction*drive.speed_mps
 	# At 200+ km/h, never outrun the next streamed collision cell. The shared
@@ -442,6 +476,10 @@ func _move_car(entry: Dictionary, delta: float) -> void:
 	car.distance_travelled += moved.length()
 	entry.travel += moved.dot(direction)
 	if is_instance_valid(car.effects): car.effects.physics_tick(delta,incoming_velocity)
+	if not entry.has("launch_body"):
+		entry.launch_body = preload("res://activities/desert_drag/DragLaunchBody.gd").new()
+		entry.launch_body.bind(car)
+	entry.launch_body.step(delta,drive)
 
 func _update_camera(_delta: float) -> void:
 	if not is_instance_valid(race_camera) or racers.size()!=2: return
@@ -462,8 +500,8 @@ func camera_frame(a: Vector3, b: Vector3) -> Dictionary:
 	# Midpoint framing while close; bounded look-back keeps Dante readable when a
 	# legitimate lead grows. No car pose, drivetrain, result or rival pace is changed.
 	var center := a+direction*clampf(signed_gap*.5,-10.0,10.0)+side*((b-a).dot(side)*.5)+Vector3.UP*.75
-	var setback := clampf(18.0+maxf(0,absf(signed_gap)-12.0)*.28,18.0,27.0)
-	return {"target":center,"position":center+side*setback-direction*4.0+Vector3.UP*3.2,"setback":setback}
+	var setback := clampf(16.5+maxf(0,absf(signed_gap)-12.0)*.28,16.5,25.5)
+	return {"target":center,"position":center+side*setback-direction*4.0+Vector3.UP*4.4,"setback":setback}
 
 func _offset(point: Vector3) -> float:
 	return (point-start_point).dot(direction)
@@ -498,7 +536,12 @@ func _finish() -> void:
 	if not active or phase != "braking" or racers.size()!=2: return
 	var player_time: float = racers[0].finish
 	var other_time: float = racers[1].finish
-	var result := HONOR.record_finish(session.state.world_state,player_time<other_time,player_time) if rival_id=="takeshi" else PROGRESS.record_finish(session.state.world_state,rival_id,player_time<other_time,player_time)
+	var casual := OPEN_ROSTER.CARS.has(rival_id)
+	var result: Dictionary
+	if casual:
+		result = {"finished":true,"casual":true,"first_win":false,"rival_id":rival_id,"won":player_time<other_time,"seconds":player_time,"number":27}
+	else:
+		result = HONOR.record_finish(session.state.world_state,player_time<other_time,player_time) if rival_id=="takeshi" else PROGRESS.record_finish(session.state.world_state,rival_id,player_time<other_time,player_time)
 	if result.is_empty():
 		_cleanup()
 		return
@@ -508,7 +551,7 @@ func _finish() -> void:
 	_cleanup()
 	if not result.get("finished",false): return
 	race_completed.emit(result)
-	session.save_game()
+	if not casual: session.save_game()
 
 func cancel_attempt(reason: String = "cancelled") -> void:
 	if not active: return
@@ -537,6 +580,8 @@ func _cleanup() -> void:
 		if not is_instance_valid(entry.car): continue
 		var car = entry.car
 		car.remove_meta("desert_drag_physics")
+		if entry.has("launch_body"): entry.launch_body.reset()
+		car.remove_meta("drag_service_brake_slip")
 		if entry.previous_power != null: car.set_meta("desert_powertrain",entry.previous_power)
 		else: car.remove_meta("desert_powertrain")
 		car.velocity = Vector3.ZERO
@@ -553,7 +598,9 @@ func _cleanup() -> void:
 				car.external_input = bool(_saved.get("external",false))
 		else:
 			# A concurrent takeover must not delete the car beneath its occupant.
-			if is_instance_valid(session) and session.world.driving.occupied and session.world.driving.car==car:
+			if is_instance_valid(open_meet) and car.get_meta("open_drag_owned",false) and open_meet.reclaim_opponent(car):
+				pass
+			elif is_instance_valid(session) and session.world.driving.occupied and session.world.driving.car==car:
 				car.remove_meta("race_owned")
 				car.remove_meta("desert_drag_rival")
 				car.set_physics_process(true)

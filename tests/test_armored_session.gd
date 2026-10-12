@@ -75,6 +75,8 @@ func run() -> void:
 		if not convoy.data.is_empty() and convoy.fleet.size() == 4:
 			if initial_positions.is_empty():
 				for car in convoy.fleet: initial_positions.append(car.global_position)
+				if origin == "harbor_bank":
+					check(convoy.fleet.all(func(car): return car.global_position.z+car.half_length < 17.0),"all four service hulls leave the avenue and frontage clear")
 				var longest_trip := 0.0
 				for index in 2:
 					var trip: Vector3 = convoy.fleet[index].door_point()-(bank+Vector3(float(index)-.5,.08,1.0))
@@ -101,6 +103,7 @@ func run() -> void:
 	check(convoy.data.get("guards",[]).all(func(guard): return float(guard.health) == float(expected.guard_health)),"legal loading preserves every guard's health")
 	check(not convoy.data.is_empty() and not convoy.data.hostile and world.gameplay.stars == 0,"observing legal service does not trigger police")
 	check(SCHEDULE.valid_saved(session.state.world_state.get(SCHEDULE.KEY,{})),"live service snapshot obeys persistent contract")
+	check(convoy.fleet.all(func(car): return car.health == car.max_health),"legal parking and loading cause no vehicle damage")
 	if not initial_positions.is_empty() and convoy.fleet.size() == 4:
 		var moved := 0
 		# A legal red signal held the rear pair for >15s in the production trace.

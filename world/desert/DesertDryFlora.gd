@@ -31,8 +31,7 @@ static func build_chunk(parent: Node3D,rect: Rect2,world_seed: int,height_callab
 				if not rect.has_point(p) or not _clear(p,radius): continue
 				var at := Vector3(p.x,float(height_callable.call(p))-.08,p.y)
 				var basis := Basis(Vector3.UP,yaw).scaled(Vector3.ONE*scale)
-				if kind<2: _cactus(data,body,at,basis,rng.randf_range(1.4,2.1))
-				elif kind==2: _snag(data,body,at,basis)
+				if kind<3: _breakable_plant(parent,at,basis,kind,rng.randf_range(1.4,2.1))
 				else: _shrub(data,at,basis,rng)
 				count+=1
 	if count==0:
@@ -44,7 +43,7 @@ static func build_chunk(parent: Node3D,rect: Rect2,world_seed: int,height_callab
 	arrays[Mesh.ARRAY_NORMAL]=data.normals
 	arrays[Mesh.ARRAY_COLOR]=data.colors
 	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
+	if not data.vertices.is_empty(): mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
 	var node := MeshInstance3D.new()
 	node.name="DesertDryFloraBatch"
 	node.mesh=mesh
@@ -56,6 +55,29 @@ static func build_chunk(parent: Node3D,rect: Rect2,world_seed: int,height_callab
 
 static func _clear(p: Vector2,radius: float) -> bool:
 	return FIELD.BOUNDS.grow(-radius).has_point(p) and not FIELD.passage_clear(p,radius) and LAYOUT.road_clear(p,radius+2.0) and FIELD.normal_at(p).y>.68
+
+static func _breakable_plant(parent: Node3D, at: Vector3, basis: Basis, kind: int, height: float) -> void:
+	var data := {"vertices":PackedVector3Array(),"normals":PackedVector3Array(),"colors":PackedColorArray()}
+	var body := StaticBody3D.new()
+	body.collision_layer=1
+	body.collision_mask=0
+	if kind<2: _cactus(data,body,Vector3.ZERO,basis,height)
+	else: _snag(data,body,Vector3.ZERO,basis)
+	var arrays: Array=[]
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX]=data.vertices
+	arrays[Mesh.ARRAY_NORMAL]=data.normals
+	arrays[Mesh.ARRAY_COLOR]=data.colors
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
+	var plant := MeshInstance3D.new()
+	plant.name="DesertBreakableFlora"
+	plant.mesh=mesh
+	plant.material_override=FORMS.material()
+	plant.position=at
+	plant.add_child(body)
+	parent.add_child(plant)
+	preload("res://gameplay/street_physics/FragileProps3D.gd").register_node("desert_tree",plant,parent)
 
 static func _cactus(data: Dictionary,body: StaticBody3D,at: Vector3,basis: Basis,height: float) -> void:
 	var green := Color("586345")

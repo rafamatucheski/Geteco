@@ -39,5 +39,12 @@
   "873a8bd50b524f3b14f0c9c9ecc17d5bb9604f18e4c436e2d15fad6f32108b6b": "res://audio/mission_voices/maciota_baritone/873a8bd50b524f3b14f0c9c9ecc17d5bb9604f18e4c436e2d15fad6f32108b6b.wav",
   "baa145dd4ce25037355a2943885db68b3c9632b9feb9e855cbd3c1a2ce5fb473": "res://audio/mission_voices/maciota_baritone/baa145dd4ce25037355a2943885db68b3c9632b9feb9e855cbd3c1a2ce5fb473.wav",
   "fd13ef4a4de05b0a2744d6a80ab483a47327d2e9b07efcfed13a43b8afabc66e": "res://audio/mission_voices/maciota_baritone/fd13ef4a4de05b0a2744d6a80ab483a47327d2e9b07efcfed13a43b8afabc66e.wav",
-  "fc224d5f27169c2a817249b0742eb47e895619139dcfd2af8ead03f37dfc1240": "res://audio/mission_voices/maciota_baritone/fc224d5f27169c2a817249b0742eb47e895619139dcfd2af8ead03f37dfc1240.wav"
+  "fc224d5f27169c2a817249b0742eb47e895619139dcfd2af8ead03f37dfc1240": "res://audio/mission_voices/maciota_baritone/fc224d5f27169c2a817249b0742eb47e895619139dcfd2af8ead03f37dfc1240.wav",
+  "a27f11ad766dc89b6800262ae9b3350ab83372b79b81d2b8d2c2659f9ef426f4": "res://audio/mission_voices/pt_complete/a27f11ad766dc89b6800262ae9b3350ab83372b79b81d2b8d2c2659f9ef426f4.wav",
+  "dfe88285779613a7dc6a0ad8ebb566760d495e962bb3f00a9e5899aa9a2a4c54": "res://audio/mission_voices/pt_complete/dfe88285779613a7dc6a0ad8ebb566760d495e962bb3f00a9e5899aa9a2a4c54.wav",
+  "80fadd6d39643f72be8ab652317c5e64987b89d9f3de3c85397543f2a7317e2b": "res://audio/mission_voices/pt_complete/80fadd6d39643f72be8ab652317c5e64987b89d9f3de3c85397543f2a7317e2b.wav",
+  "787661d9f52357e91c4f51d2fd2a2e3e0b26807fad966dc142f5e0153dd9d50f": "res://audio/mission_voices/pt_complete/787661d9f52357e91c4f51d2fd2a2e3e0b26807fad966dc142f5e0153dd9d50f.wav",
+  "8fcaa1d92c675765b015502ab81a6f2f7201e89e8bf39679292b3ae1b3f12ab7": "res://audio/mission_voices/pt_complete/8fcaa1d92c675765b015502ab81a6f2f7201e89e8bf39679292b3ae1b3f12ab7.wav",
+  "fb68f975ffb4fccdef8e1001cbc96d8df9a73d430336423fb9ea9fc5bfff8b14": "res://audio/mission_voices/pt_complete/ferry_fb68f975ffb4fccdef8e1001cbc96d8df9a73d430336423fb9ea9fc5bfff8b14.wav",
+  "8c3ab2e54145118298b8c29f064c64e90e7b681188655dbef327f46ef318ca97": "res://audio/mission_voices/pt_complete/ferry_8c3ab2e54145118298b8c29f064c64e90e7b681188655dbef327f46ef318ca97.wav"
 }

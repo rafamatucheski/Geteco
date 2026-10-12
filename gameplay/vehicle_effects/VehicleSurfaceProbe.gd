@@ -54,6 +54,8 @@ static func _weather_wet(vehicle: Node) -> bool:
 	if not is_instance_valid(session): return false
 	var weather: Variant = session.get("weather")
 	if not is_instance_valid(weather): return false
+	if weather.has_method("rain_strength_at") and vehicle is Node3D:
+		return weather.rain_strength_at(vehicle.global_position)>.001
 	var controller: Variant = weather.get("controller")
 	if is_instance_valid(controller) and controller.get("state") != null and str(controller.state.region_id) == "mountain": return false
 	return int(weather.get("weather_state")) in [1,2]

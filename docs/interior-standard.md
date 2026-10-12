@@ -34,10 +34,10 @@ Na V2, construir sala, atores e colisões em 3D nativo, com câmera ortográfica
 
 ## Entrada e saída
 
-- Para interiores migrados para dentro da própria fachada, seguir o fluxo contínuo aprovado na Ammu-Nation: abrir a porta por proximidade, atravessar caminhando, ocultar o teto e ajustar a câmera ao cruzar o limiar. Nesses acessos, não mostrar o retângulo laranja nem pedir E para entrar ou sair. Manter a ação de interação somente nos objetos e personagens que a usam.
-- Para acessos que ainda transferem para outra sala, usar o retângulo laranja compacto com cantos arredondados junto à porta utilizável, mantendo o formato já implementado (26×14, raio 4), sem letra E ou símbolo de controle. Usar `ui/DoorAccessMarker.gd`; aproximar-se não troca o marcador por uma tecla. A ação de interação e seu remapeamento permanecem funcionais.
+- Orientação atualizada pelo usuário em 10/10/2026: portas de entrada a pé abrem somente ao chegar bem junto e caminhar contra a folha, como um empurrão. Aproximar-se, ficar parado ou passar ao lado não abre. Preservar a animação física da porta, atravessar caminhando, ocultar o teto e ajustar a câmera ao cruzar o limiar; não exigir E nesses acessos. Manter as restrições de propriedade e campanha.
+- Remover o retângulo laranja do chão em todas as entradas e saídas. `ui/DoorAccessMarker.gd` mantém apenas o callback usado pela seta de objetivo, sem desenho. Acessos que ainda usam transferência por interação preservam sua ação e remapeamento.
 - Não concatenar “APERTE E PARA ENTRAR”, nome do prédio ou descrição da saída. Evitar prompts duplicados. Objetivos e diálogos não são prompts de porta.
-- Acessos a pé que ainda transferem para outra sala usam a ação de interação. Abrir a porta por proximidade não transfere o jogador por si só nesses acessos. Passagens automáticas ou dirigidas existentes são exceções funcionais; não mudar silenciosamente em ajuste apenas visual.
+- Acessos a pé que ainda transferem para outra sala usam a ação de interação. Abrir a porta não transfere o jogador por si só nesses acessos. Passagens dirigidas existentes são exceções funcionais.
 - Fechado, preço e requisito podem ter texto funcional curto. Não indicar ação disponível quando bloqueada. Compra permanece distinta da entrada.
 - Reutilizar fluxo de transição, cooldown, origem e save. Retornar ao acesso usado, inclusive quando várias fachadas compartilham a sala.
 

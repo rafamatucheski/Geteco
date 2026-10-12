@@ -11,7 +11,7 @@ func build() -> void:
 	var front_z := half_d
 	
 	var is_artisan := building_kind == "artisan_workshop"
-	var wall_mat := UrbanMaterials.material_for_color(base_color,0.90 if is_artisan else 0.88)
+	var wall_mat := UrbanMaterials.textured_wall(base_color,0.90 if is_artisan else 0.88)
 	var trim_mat := UrbanMaterials.trim_stone()
 	
 	# Main structural body

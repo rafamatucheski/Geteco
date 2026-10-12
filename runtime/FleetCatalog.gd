@@ -1,10 +1,10 @@
 extends RefCounted
+const REDESIGNED := preload("res://runtime/RedesignedFleet.gd")
 static var _data: Dictionary = {}
 ## Carro do Meshy no lugar do hatch de caixas (`metro_hatch`), piloto de veículos (docs/npc-meshy-carro-20261011.md).
-## DESLIGADO por padrão: o piloto saiu pior que o carro de caixas (duas traseiras, frente ruim, luz assada). `GETECO_MESHY_CARS=1`
-## ou `meshy_cars = true` liga o modelo novo só para experimento.
+## `GETECO_NO_MESHY_CARS=1` ou `meshy_cars = false` devolve o carro antigo, para comparar e como rollback.
 const MESHY_CITYCAR := "res://assets/fleet/meshy/citycar.scn"
-static var meshy_cars := not OS.get_environment("GETECO_MESHY_CARS").is_empty()
+static var meshy_cars := OS.get_environment("GETECO_NO_MESHY_CARS").is_empty()
 static var _last_paint_index: Dictionary = {}
 # Civilian models whose exported catalog only contains the showroom color.
 const SPAWN_PALETTES := {
@@ -31,10 +31,20 @@ static func all() -> Dictionary:
 			tank.merge({"id":"army_tank", "label":"Blindado do Exército", "colors":["64704eff"], "bounds_size":[3.18,2.85,5.3], "bounds_center":[0,1.425,0], "durability":3000, "damage_resistance":0.4, "mass":30.0, "max_speed":208.0, "acceleration":650.0, "braking":1100.0, "turn_speed":1.1, "drivetrain":"4x4", "engine_family":"tank", "roof_prop":"none"}, true)
 			_data["army_tank"] = tank
 			# O modelo do Meshy tem 3,04 m x 1,95 m: a colisão acompanha o desenho novo.
-			if meshy_cars and _data.has("metro_hatch") and ResourceLoader.exists(MESHY_CITYCAR):
+			if meshy_cars and not REDESIGNED.contains("metro_hatch") and _data.has("metro_hatch") and ResourceLoader.exists(MESHY_CITYCAR):
 				_data["metro_hatch"].merge({"bounds_size": [1.95, 1.61, 3.04], "bounds_center": [0.0, 0.805, 0.0], "mesh_count": 5}, true)
+			# The authored fleet replaces presentation only. The requested Metro
+			# replacement uses its catalog body dimensions instead of the Meshy pilot.
+			for id: String in _data:
+				if REDESIGNED.contains(id):
+					_data[id].scene=REDESIGNED.scene_path(id)
+					_data[id].mesh_count=REDESIGNED.MESH_COUNTS[id]
 	return _data
 static func spec(id: String) -> Dictionary:
+	if id == "biarticulated_510":
+		var bus: Dictionary = all().route_city.duplicate(true)
+		bus.merge({"id":id,"label":"Biarticulado 510","durability":700,"engine_family":"bus","bounds_size":[2.56,3.1,7.8],"bounds_center":[0,1.65,0],"colors":["b92732ff"]},true)
+		return bus
 	if id == "armored_truck": return preload("res://gameplay/armored/ArmoredTruckModel.gd").spec()
 	if id in preload("res://gameplay/mining/MiningFleet.gd").IDS: return preload("res://gameplay/mining/MiningFleet.gd").spec(id)
 	if id in preload("res://gameplay/desert_cars/DesertCarCatalog.gd").IDS: return preload("res://gameplay/desert_cars/DesertCarCatalog.gd").spec(id)
@@ -43,6 +53,12 @@ static func spec(id: String) -> Dictionary:
 	if id == "digo_gol_1993": return preload("res://gameplay/digo/DigoCarSpec.gd").spec()
 	return all().get(id,preload("res://runtime/GarageRewardFleet.gd").spec(id))
 static func create(id: String) -> Node3D:
+	if REDESIGNED.contains(id): return REDESIGNED.create(id)
+	if id == "biarticulated_510":
+		var bus := Node3D.new()
+		preload("res://runtime/transit/BiarticulatedModel.gd").build(bus,7.8,0)
+		bus.set_meta("vehicle_interior_spec",{"kind":"bus","sx":-.51,"sz":-2.85,"floor":.42,"roof":2.82,"belt":1.6,"wz0":-3.9,"wz1":-3.9,"rear":-2.2,"rear_top":-2.2,"hw":1.17})
+		return bus
 	if id == "armored_truck": return preload("res://gameplay/armored/ArmoredTruckModel.gd").create()
 	if id in preload("res://gameplay/mining/MiningFleet.gd").IDS: return preload("res://gameplay/mining/MiningFleet.gd").create_model(id)
 	if id in preload("res://gameplay/desert_cars/DesertCarCatalog.gd").IDS: return preload("res://gameplay/desert_cars/DesertCarCatalog.gd").create_model(id)

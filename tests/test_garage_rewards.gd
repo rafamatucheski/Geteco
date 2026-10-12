@@ -14,6 +14,8 @@ class Campaign extends RefCounted:
 	func cobra_status(): return {"defeated":defeated}
 class Car extends CharacterBody3D:
 	var visual: Node3D
+	var body_dents: Node
+	func restore_body_dents(_records: Array): pass
 	var archetype := ""
 	var vehicle_id := ""
 	var health := 100.0

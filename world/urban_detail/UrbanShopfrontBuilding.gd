@@ -10,7 +10,7 @@ func build() -> void:
 	var half_d := building_size.y * 0.5
 	var front_z := half_d
 	
-	var wall_mat := UrbanMaterials.material_for_color(base_color, 0.84)
+	var wall_mat := UrbanMaterials.textured_wall(base_color, 0.84)
 	var trim_mat := UrbanMaterials.trim_stone()
 	
 	# Recessed entrance alcove dimensions

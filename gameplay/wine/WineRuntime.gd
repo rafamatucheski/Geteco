@@ -101,13 +101,21 @@ func drink(id: String) -> bool:
 	sip.session=session
 	sip.tint=CATALOG.spec(id).color
 	session.world.add_child(sip)
-	session.show_message("%s · +%d vida · %s"%[CATALOG.spec(id).name,roundi(float(result.heal)),model.stage()])
+	session.show_message(String(TranslationServer.translate("%s · +%d vida · %s"))%[CATALOG.spec(id).name,roundi(float(result.heal)),model.stage()])
 	return true
 
 func claim_gift() -> bool:
 	if not _near("nelson") or not model.claim_gift(): return false
 	session.save_game()
-	_feedback("Nelson: Uma Malagousia para conhecer a casa. Ficou guardada com seus vinhos.")
+	var canonical := "Uma Malagousia para conhecer a casa. Ficou guardada com seus vinhos."
+	var actor: Node3D
+	for resident in session.room_npcs:
+		if is_instance_valid(resident) and resident.get_meta("interior_npc_id", "") == "cellar_nelson": actor = resident; break
+	if is_instance_valid(actor):
+		preload("res://audio/VoiceActorBinding.gd").bind(actor, "nelson", "nelson", "male", "wine_gift")
+	var binding := preload("res://audio/VoiceActorBinding.gd").resolve(actor, "", "wine_gift")
+	var spoken := preload("res://audio/ActorDialogueVoice.gd").speak(actor, canonical, binding, ui)
+	_feedback(str(spoken.get("message", canonical)))
 	ui.refresh()
 	return true
 

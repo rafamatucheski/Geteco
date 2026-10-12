@@ -53,15 +53,20 @@ func run() -> void:
 	scene.add_child(aim)
 	await settle()
 	for height in [0.25, 1.0, 1.45]:
-		var point := aim.aim_from_screen(camera.unproject_position(first.position + Vector3.UP * height))
-		check(planar(point).distance_to(planar(first.position)) < 0.02, "Cursor at NPC height %s selects that NPC" % height)
-		var origin := aim._muzzle_world_position()
-		var direction := point - origin
-		direction.y = 0.0
-		var shot := scene.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(origin, origin + direction.normalized() * 8.0, 7, [player.get_rid()]))
-		check(shot.get("collider") == first, "Horizontal firing path hits selected NPC at height %s" % height)
+		var screen := camera.unproject_position(first.position + Vector3.UP * height)
+		var point := aim.aim_from_screen(screen)
+		var manual: Vector3 = Plane(Vector3.UP, player.position.y + 1.0).intersects_ray(camera.project_ray_origin(screen), camera.project_ray_normal(screen))
+		check(point.distance_to(manual) < 0.001, "Cursor at NPC height %s remains fully manual" % height)
+		if height != 1.0:
+			check(planar(point).distance_to(planar(first.position)) > 0.1, "No correction toward NPC centre at height %s" % height)
+	var origin := aim._muzzle_world_position()
+	var manual_target := aim.aim_from_screen(camera.unproject_position(first.position + Vector3.UP))
+	var direction := manual_target - origin
+	direction.y = 0.0
+	var shot := scene.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(origin, origin + direction.normalized() * 8.0, 7, [player.get_rid()]))
+	check(shot.get("collider") == first, "Accurately placed manual aim still hits NPC")
 	var switched := aim.aim_from_screen(camera.unproject_position(second.position + Vector3.UP * 1.45))
-	check(planar(switched).distance_to(planar(second.position)) < 0.02, "Mouse switches NPC immediately")
+	check(planar(switched).distance_to(planar(second.position)) > 0.1, "Moving to another NPC does not snap to it")
 	var empty := Vector3(0, 1, -4)
 	check(aim.aim_from_screen(camera.unproject_position(empty)).distance_to(empty) < 0.02, "Empty space keeps free aiming")
 	var reticle := preload("res://ui/AimReticle.gd").new()
@@ -76,17 +81,18 @@ func run() -> void:
 	check(not reticle.visible, "Pause hides marker")
 	paused = false
 	var overlap_screen := camera.unproject_position(first.position + Vector3.UP * 1.45)
+	var unchanged := aim.aim_from_screen(overlap_screen)
 	var front := body(first.position - camera.project_ray_normal(overlap_screen) * 0.8)
 	await settle()
-	check(planar(aim.aim_from_screen(overlap_screen)).distance_to(planar(front.position)) < 0.02, "Overlapping NPCs select the front visible body")
+	check(aim.aim_from_screen(overlap_screen).distance_to(unchanged) < 0.001, "Overlapping NPC cannot attract aim")
 	front.queue_free()
 	await settle()
 	first.health = 0.0
 	var dead_screen := camera.unproject_position(first.position + Vector3.UP * 1.45)
-	check(planar(aim.aim_from_screen(dead_screen)).distance_to(planar(first.position)) > 0.1, "Dead NPC is not selected")
+	check(aim.aim_from_screen(dead_screen).distance_to(unchanged) < 0.001, "NPC death cannot move aim")
 	first.health = 100.0
 	first.set_meta("invulnerable", true)
-	check(planar(aim.aim_from_screen(dead_screen)).distance_to(planar(first.position)) > 0.1, "Protected NPC is not selected")
+	check(aim.aim_from_screen(dead_screen).distance_to(unchanged) < 0.001, "NPC protection cannot move aim")
 	first.remove_meta("invulnerable")
 	var wall := StaticBody3D.new()
 	wall.collision_layer = 1
@@ -98,13 +104,18 @@ func run() -> void:
 	scene.add_child(wall)
 	wall.position = first.position + Vector3.UP * 1.45 + (camera.position - first.position).normalized() * 3.0
 	await settle()
-	check(planar(aim.aim_from_screen(dead_screen)).distance_to(planar(first.position)) > 0.1, "Screen ray cannot select NPC through solid")
+	check(aim.aim_from_screen(dead_screen).distance_to(unchanged) < 0.001, "Obstruction never redirects manual aim")
 	wall.queue_free()
 	await settle()
-	check(planar(aim.aim_from_screen(dead_screen)).distance_to(planar(first.position)) < 0.02, "Selection recovers when obstruction leaves")
+	check(aim.aim_from_screen(dead_screen).distance_to(unchanged) < 0.001, "Removing obstruction leaves aim unchanged")
 	first.queue_free()
 	await settle()
 	check(aim.aim_from_screen(dead_screen).is_finite(), "Deleted NPC leaves no stale target")
+	camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+	camera.position = Vector3(0, 2, 6)
+	camera.look_at(Vector3(0, 2, 0))
+	var horizon := aim.aim_from_screen(root.get_visible_rect().get_center())
+	check(horizon.is_finite() and horizon.z < player.position.z - 5.0 and absf(horizon.x - player.position.x) < 0.01, "Horizontal camera ray keeps manual direction instead of freezing old aim")
 	aim.camera = null
 	check(aim.aim_from_screen(Vector2.ZERO) == aim.aim_point, "Missing camera updates authoritative fallback instead of stale aim")
 	reticle._process(0.0)

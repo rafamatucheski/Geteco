@@ -91,9 +91,6 @@ func _check_rooftops(parent: Node3D, definitions: Array[Dictionary]) -> void:
 		check(roof.is_floor_clear(roof.jump_point,.32),"Jump approach is clear "+str(definition.id))
 		check(roof.reward_points.size()==1,"Roof cache has a reachable location "+str(definition.id))
 		for reward in roof.reward_points: check(roof.is_floor_clear(roof.to_local(reward.position),.32),"Roof cache clear "+str(definition.id))
-		roof.set_jump_gate(true)
-		check(roof._jump_gate.collision_layer==0,"Explicit jump opens physical gate "+str(definition.id))
-		roof.set_jump_gate(false)
-		check(roof._jump_gate.collision_layer==1,"Gate closes after action "+str(definition.id))
+		check(roof._jump_gate.collision_layer==1,"Roof rail remains solid for physical traversal "+str(definition.id))
 		roof.queue_free()
 		await process_frame

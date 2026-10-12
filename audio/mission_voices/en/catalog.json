@@ -298,10 +298,10 @@
       "aliases": []
     },
     {
-      "key": "2631ef779596823490432399258671b28379c752966be732b6fd0b30725eb71d",
+      "key": "a27f11ad766dc89b6800262ae9b3350ab83372b79b81d2b8d2c2659f9ef426f4",
       "persona": "maciota",
-      "text": "Peça e comprovante. Tudo certo. Aqui estão os 150. Você cumpriu o combinado.",
-      "en": "Part and receipt. All good. Here's your 150. You kept your word.",
+      "text": "Peça e comprovante. Tudo certo. Aqui estão os 150 e uma mochila pra tua viagem. Coloca nas costas. Você cumpriu o combinado.",
+      "en": "Part and receipt. All good. Here's your 150 and a backpack for your journey. Put it on your back. You kept your word.",
       "section": "first-favors-dialogue.json:finish_dialogue",
       "aliases": []
     },
@@ -391,6 +391,14 @@
       "text": "Ferrugem confirmou: teu irmão perguntou por um motorista da turma das corridas. A prova é tua chance de se aproximar deles. Já pode aceitar no quadro.",
       "en": "Ferrugem confirmed your brother asked for a driver from the racing crew. The trial is your chance to get close to them. It is ready on the board.",
       "section": "cobra-dialogue.json:cobra_contact_clue",
+      "aliases": []
+    },
+    {
+      "key": "fc224d5f27169c2a817249b0742eb47e895619139dcfd2af8ead03f37dfc1240",
+      "persona": "maciota",
+      "text": "Mandou bem na corrida, Dante. Separei uma mala reforçada pra tua busca pelo Vicente. Está no porta-malas da Monaliza; pega quando precisar levar mais coisa.",
+      "en": "Good race, Dante. I set aside a sturdy travel bag for your search for Vicente. It is in the Monaliza's trunk. Pick it up when you need to carry more supplies.",
+      "section": "cobra-dialogue.json:cobra_race_clue",
       "aliases": []
     },
     {
@@ -722,6 +730,398 @@
       "aliases": []
     },
     {
+      "key": "5ff7c2828a346aed46fb557885139678bbb4a53d42a58ba53045385c88ec1a7b",
+      "persona": "passenger",
+      "text": "É a sua primeira vez por aqui?",
+      "en": "Is this your first time here?",
+      "section": "opening_ferry",
+      "aliases": []
+    },
+    {
+      "key": "90a76e8c6b2e7f6f988e60168234661971f1c974f7d9a5a2da47e0576e8ae30e",
+      "persona": "dante",
+      "text": "É. Vim encontrar meu irmão.",
+      "en": "Yeah. I'm here to see my brother.",
+      "section": "opening_ferry",
+      "aliases": []
+    },
+    {
+      "key": "ab25343fff48a5c51ade30364c7a1467f86578ec226b4d1eaa586568ae0be241",
+      "persona": "passenger",
+      "text": "Faz tempo que vocês não se veem?",
+      "en": "Been a while since you saw each other?",
+      "section": "opening_ferry",
+      "aliases": []
+    },
+    {
+      "key": "1883dfe404c6ba4a9b6931f613c84feb09f561200bcb9f8020bbc5ec1b790e7a",
+      "persona": "dante",
+      "text": "Tempo demais.",
+      "en": "Too long.",
+      "section": "opening_ferry",
+      "aliases": []
+    },
+    {
+      "key": "fb68f975ffb4fccdef8e1001cbc96d8df9a73d430336423fb9ea9fc5bfff8b14",
+      "persona": "caller",
+      "text": "Dante? Escuta. O Vicente saiu da prisão.",
+      "en": "Dante? Listen. Vicente got out of prison.",
+      "section": "opening_ferry",
+      "aliases": []
+    },
+    {
+      "key": "d605fcd49d643ef22f9c39a1f70385b636ee052b7e67c126c4420462fd9477a3",
+      "persona": "dante",
+      "text": "Meu irmão? Como assim, saiu?",
+      "en": "My brother? What do you mean, got out?",
+      "section": "opening_ferry",
+      "aliases": []
+    },
+    {
+      "key": "8c3ab2e54145118298b8c29f064c64e90e7b681188655dbef327f46ef318ca97",
+      "persona": "caller",
+      "text": "Viram ele em Harbor. Mas ele não atende mais o telefone.",
+      "en": "He was seen in Harbor. But he's stopped answering his phone.",
+      "section": "opening_ferry",
+      "aliases": []
+    },
+    {
+      "key": "74d673753b3d3ea5f39c6377b7c4b5c9054b0c97f5fd9bf75ed524cc7f460d42",
+      "persona": "dante",
+      "text": "Peraí... Quem tá falando?",
+      "en": "Wait... Who is this?",
+      "section": "opening_ferry",
+      "aliases": []
+    },
+    {
+      "key": "a05934955877da53746783d4763924b9b18bdbd82e9dc5948054140c198bb560",
+      "persona": "passenger",
+      "text": "Olha lá. Já tão preparando o desembarque.",
+      "en": "Look. They're getting ready for us to get off.",
+      "section": "opening_ferry",
+      "aliases": []
+    },
+    {
+      "key": "8b67d6fc73bcabafaa6129d9b84af1e34983c321599dbfcc2cce87c93a0e4ecc",
+      "persona": "dante",
+      "text": "Valeu pela conversa.",
+      "en": "Thanks for the company.",
+      "section": "opening_ferry",
+      "aliases": []
+    },
+    {
+      "key": "3ebaa20883eb60b0c16d57c09663056dcc9f6a3e2bed2c0786dae995ea9dbfb5",
+      "persona": "passenger",
+      "text": "Boa sorte com seu irmão.",
+      "en": "Good luck with your brother.",
+      "section": "opening_ferry",
+      "aliases": []
+    },
+    {
+      "key": "c97a74009fb593e523ce098de26ff5d14e76e9496cdb174cc4c89f77cfee7cd7",
+      "persona": "joana",
+      "text": "A bomba parou, e as peças da cooperativa ficaram num vagão perdido. Raul, no encontro da arrancada, está procurando alguém para descobrir o que houve com essa carga.",
+      "en": "The pump stopped, and the cooperative's parts ended up in a lost freight car. Raul, at the drag meet, is looking for someone to find out what happened to that shipment.",
+      "section": "runtime/desert/community/DesertCommunityRuntime.gd",
+      "aliases": []
+    },
+    {
+      "key": "d5eb472ba773b74b801cf3180c3fa8315647a8178568d62995caa1c10f06ba90",
+      "persona": "joana",
+      "text": "Raul contou que você identificou nosso lote. Sou Joana, da cooperativa de Santa Lua. A retirada pesada já está encaminhada; falta o conjunto pequeno de acoplamento que ficou na caixa aberta. Traga do vagão, instale na bomba e abra a válvula. Reservamos mil e oitocentos pelo serviço.",
+      "en": "Raul told me you identified our shipment. I'm Joana, from the Santa Lua cooperative. The heavy haul is already arranged; we still need the small coupling assembly left in the open crate. Bring it from the freight car, install it in the pump and open the valve. We've set aside eighteen hundred for the job.",
+      "section": "runtime/desert/community/DesertCommunityRuntime.gd",
+      "aliases": []
+    },
+    {
+      "key": "fa828343e5174ae4687cffad099fc7e2d9dfc753bb5f85d9e34b6bfa036c6fc1",
+      "persona": "dante",
+      "text": "Acoplamento, juntas e regulador. O conjunto está completo. Vou levar para a bomba de Santa Lua.",
+      "en": "Coupling, gaskets and regulator. The assembly is complete. I'll take it to the Santa Lua pump.",
+      "section": "runtime/desert/community/DesertCommunityRuntime.gd",
+      "aliases": []
+    },
+    {
+      "key": "458bfb705cf169d3ed93ad1fbc031e3fb643fb702675ecd7be86152bc8e85a8d",
+      "persona": "dante",
+      "text": "Conjunto instalado e conexões apertadas. Falta abrir a válvula ao lado da bomba.",
+      "en": "Assembly installed, connections tightened. Now to open the valve beside the pump.",
+      "section": "runtime/desert/community/DesertCommunityRuntime.gd",
+      "aliases": []
+    },
+    {
+      "key": "bf8628b7c405cedfe048a03cbc4c10eb32e8934a547b0877d1a2801dc153c97a",
+      "persona": "dante",
+      "text": "A água voltou aos canteiros. Vou avisar a Joana pelo rádio.",
+      "en": "Water's flowing to the garden beds again. I'll let Joana know over the radio.",
+      "section": "runtime/desert/community/DesertCommunityRuntime.gd",
+      "aliases": []
+    },
+    {
+      "key": "32817b1a7f5e5f4c92e8a9ae8ece12a1cf510024d62146f0c45f6a5d2a1c7055",
+      "persona": "joana",
+      "text": "Já estou vendo a pressão subir! Agora a cooperativa pode cuidar dos canteiros outra vez. Os mil e oitocentos são seus, Dante. Obrigada por não deixar nossa carga esquecida lá.",
+      "en": "I can already see the pressure rising! Now the cooperative can tend the garden beds again. The eighteen hundred is yours, Dante. Thanks for not leaving our shipment forgotten out there.",
+      "section": "runtime/desert/community/DesertCommunityRuntime.gd",
+      "aliases": []
+    },
+    {
+      "key": "2d76b3e467ba2dbf4544855e8b3e584efcbaa333bf4e7a7072aed318eff62187",
+      "persona": "bia",
+      "text": "Raul está no encontro da arrancada esperando estas juntas e correias. Leva para ele? Traga o recibo e te pago mil e duzentos.",
+      "en": "Raul's at the drag meet waiting for these gaskets and belts. Can you take them to him? Bring back the receipt and I'll pay you twelve hundred.",
+      "section": "runtime/desert/DesertContracts.gd",
+      "aliases": []
+    },
+    {
+      "key": "facc90cc9fccf6d0a9066b753216f8c45322ce93718ea1bece228ee66a655ea0",
+      "persona": "raul",
+      "text": "Era o que faltava para tirar o caminhão do pátio. Aqui está o recibo. Diz à Bia que chegou tudo certo.",
+      "en": "Just what we needed to get the truck out of the yard. Here's the receipt. Tell Bia everything arrived safely.",
+      "section": "runtime/desert/DesertContracts.gd",
+      "aliases": []
+    },
+    {
+      "key": "1d5ff9ac67f04c80874b279eb3c6ef9fcd14716425e7802f85ae92e24a247a0f",
+      "persona": "bia",
+      "text": "Recibo conferido. Seus mil e duzentos, como combinado. Valeu, Dante.",
+      "en": "Receipt checked. Your twelve hundred, as promised. Thanks, Dante.",
+      "section": "runtime/desert/DesertContracts.gd",
+      "aliases": []
+    },
+    {
+      "key": "4f8b9a3e661f2cc2016b1ff11dd080894e5b90b0c71b825dcf8f6b7862250f2b",
+      "persona": "raul",
+      "text": "Sumiu uma carga antes de a ferrovia fechar. Confira o livro de despachos na estação e os lacres do vagão que ficou no deserto. Pago dois mil e duzentos se conseguir identificar de quem era.",
+      "en": "A shipment disappeared before the railway closed. Check the dispatch book at the station and the seals on the freight car left in the desert. I'll pay twenty-two hundred if you identify who it belonged to.",
+      "section": "runtime/desert/DesertContracts.gd",
+      "aliases": []
+    },
+    {
+      "key": "f83cf6864b3491dcf0c0b373cba1cafbd280ea7d9eab9fd2b08806f31392a212",
+      "persona": "dante",
+      "text": "O registro tem uma emenda: lote 47, peças de irrigação. Vou comparar com os lacres do vagão.",
+      "en": "The record has an amendment: lot 47, irrigation parts. I'll compare it with the freight car's seals.",
+      "section": "runtime/desert/DesertContracts.gd",
+      "aliases": []
+    },
+    {
+      "key": "6ea22303a4d9e4b3dd366b8b6cd592fc1787d380ed02e38dc31abe845d0eaa77",
+      "persona": "dante",
+      "text": "Lote 47. O lacre foi cortado, mas as peças ficaram aqui. Raul vai saber a quem devolver. Não é a carga do Vicente.",
+      "en": "Lot 47. The seal was cut, but the parts are still here. Raul will know who to return them to. It's not Vicente's shipment.",
+      "section": "runtime/desert/DesertContracts.gd",
+      "aliases": []
+    },
+    {
+      "key": "c31b1a60b15a07514d6910077a59fd03678bbacb6cac3773fc434988e55860e1",
+      "persona": "raul",
+      "text": "Esse lote era da cooperativa. Vou organizar a retirada. Você resolveu uma dívida antiga; aqui estão os dois mil e duzentos.",
+      "en": "That lot belonged to the cooperative. I'll arrange the pickup. You've settled an old debt; here's the twenty-two hundred.",
+      "section": "runtime/desert/DesertContracts.gd",
+      "aliases": []
+    },
+    {
+      "key": "000593c67b295660d0906c758482748510a64efcd860358574f780330ecc5eec",
+      "persona": "digo",
+      "text": "Fala, Dante. Tô acertando esse motor. Trouxe algum carro pra gente preparar?",
+      "en": "Hey, Dante. I'm tuning this engine. Brought us a car to work on?",
+      "section": "runtime/desert/DesertRuntime.gd",
+      "aliases": []
+    },
+    {
+      "key": "0dc7b016844354b0caa95d5e89a69b09c2225dde0e180846dde2981da6f62669",
+      "persona": "digo",
+      "text": "Vamos correr primeiro. Complete a prova comigo, ganhando ou perdendo, e a gente prepara seu carro.",
+      "en": "Let's race first. Finish a race with me, win or lose, and we'll get your car set up.",
+      "section": "runtime/desert/DesertRuntime.gd",
+      "aliases": []
+    },
+    {
+      "key": "c397c37ff75df125bdbb13ae59e9a480fd2480926626037fcbd0217213a4926c",
+      "persona": "operário",
+      "text": "Preciso liberar as três pedras marcadas de amarelo. Use a pá da máquina e deixe cada uma dentro da baia branca. Solte a carga e recue: só conto pedra apoiada no chão. Depois volte aqui pelos mil e oitocentos.",
+      "en": "I need those three yellow-marked rocks moved. Use the loader bucket and put each one inside the white bay. Release the load and back away: I only count rocks resting on the ground. Then come back here for your eighteen hundred.",
+      "section": "gameplay/mining/jobs/MiningYardJob.gd",
+      "aliases": []
+    },
+    {
+      "key": "17d1f1ec85e7ffb8c1f3dd765f55a61d4ab6c94701df5229688d35c21095fde6",
+      "persona": "anselmo",
+      "text": "Samuel não está lá. A carta, junto ao muro sudeste... não mostre a ninguém.",
+      "en": "Samuel isn't there. The letter, by the southeast wall... don't show it to anyone.",
+      "section": "gameplay/urban_v1/CemeteryOperations.gd",
+      "aliases": []
+    },
+    {
+      "key": "dfe88285779613a7dc6a0ad8ebb566760d495e962bb3f00a9e5899aa9a2a4c54",
+      "persona": "maciota",
+      "text": "Você ficou quando seria mais fácil ir embora. Vicente deixou uma pasta comigo antes de sumir. Pediu que eu guardasse até você estar pronto.",
+      "en": "You stayed when walking away would've been easier. Vicente left a folder with me before he disappeared. He asked me to hold onto it until you were ready.",
+      "section": "gameplay/urban_v1/TruckersVillageSecretPassage.gd",
+      "aliases": []
+    },
+    {
+      "key": "db85b880860599484e3466f9662ab1ce49fc775b8c3e24d67dc5c63974c27553",
+      "persona": "dante",
+      "text": "Por que só agora?",
+      "en": "Why only now?",
+      "section": "gameplay/urban_v1/TruckersVillageSecretPassage.gd",
+      "aliases": []
+    },
+    {
+      "key": "80fadd6d39643f72be8ab652317c5e64987b89d9f3de3c85397543f2a7317e2b",
+      "persona": "maciota",
+      "text": "Porque essa pista leva à Vila e tem coisa ali que alguém quis esconder. Daqui pra frente, a escolha é tua.",
+      "en": "Because this lead goes to the village, and someone wanted to keep what happened there hidden. From here on, the choice is yours.",
+      "section": "gameplay/urban_v1/TruckersVillageSecretPassage.gd",
+      "aliases": []
+    },
+    {
+      "key": "84bf3c6fe052e3b2a05e93f32893ab8c29766d4e941ec73fb37df2ed50f00f37",
+      "persona": "nelson",
+      "text": "Sabe, Dante, na Grécia antiga o simpósio era uma reunião de conversa, música e vinho. As taças também contavam histórias: muitas traziam Dioniso pintado.",
+      "en": "You know, Dante, in ancient Greece a symposium was a gathering for conversation, music and wine. The cups told stories too: many had Dionysus painted on them.",
+      "section": "gameplay/wine/WineRuntime.gd",
+      "aliases": []
+    },
+    {
+      "key": "355b78047be4ae60c41e754cf321b1bb580e5922907d80adda0abaa98e21bce9",
+      "persona": "dante",
+      "text": "Então a conversa já fazia parte da garrafa.",
+      "en": "So conversation was already part of the bottle.",
+      "section": "gameplay/wine/WineRuntime.gd",
+      "aliases": []
+    },
+    {
+      "key": "02a740b5a651eb3ebf538da15cd5b8a508e0be1cffcd1a651024af721849b07d",
+      "persona": "nelson",
+      "text": "Exatamente. Uma boa história merece tempo. Pode sentar, que eu ainda tenho muitas.",
+      "en": "Exactly. A good story deserves time. Take a seat; I've still got plenty.",
+      "section": "gameplay/wine/WineRuntime.gd",
+      "aliases": []
+    },
+    {
+      "key": "f426c3435d4675a6bb1fc5133e3590e34d070b9031546a89d243093a386d0ee6",
+      "persona": "nelson",
+      "text": "Aquele vaso de boca larga lembra uma cratera grega. Ela servia para misturar vinho e água antes de servir. Até os utensílios mostram como cada época vivia.",
+      "en": "That wide-mouthed vessel looks like a Greek krater. It was used to mix wine and water before serving. Even utensils show how people lived in each era.",
+      "section": "gameplay/wine/WineRuntime.gd",
+      "aliases": []
+    },
+    {
+      "key": "25f767e7d9e3ce4372b8c82253bd1d14fafe8475c0ead34851d5c5be218d3a73",
+      "persona": "dante",
+      "text": "Parece que você enxerga uma cidade inteira dentro de um vaso.",
+      "en": "It's like you can see an entire city inside a vase.",
+      "section": "gameplay/wine/WineRuntime.gd",
+      "aliases": []
+    },
+    {
+      "key": "0f323be8c8e844e89a4cef31a73c39940a86d91cc371323c8776514ef49cd437",
+      "persona": "nelson",
+      "text": "É isso que me prende à história. Um objeto pequeno guarda um mundo enorme.",
+      "en": "That's what draws me to history. A small object holds an enormous world.",
+      "section": "gameplay/wine/WineRuntime.gd",
+      "aliases": []
+    },
+    {
+      "key": "f4f1af93a807b842a2fe52681f0b666b4c7e34ed382ce27f9d7cbdf90c56d792",
+      "persona": "nelson",
+      "text": "Dioniso era o deus do vinho entre os gregos. Ele aparece em muitas cerâmicas antigas, junto de videiras e de seus acompanhantes.",
+      "en": "Dionysus was the Greek god of wine. He appears on many ancient ceramics, alongside grapevines and his companions.",
+      "section": "gameplay/wine/WineRuntime.gd",
+      "aliases": []
+    },
+    {
+      "key": "5acd2943b019f551654e4b559688bfec563276acdfaef25d5ec56b6b8c11bb3e",
+      "persona": "dante",
+      "text": "Vou começar a reparar nos desenhos, então.",
+      "en": "I'll start paying attention to the pictures, then.",
+      "section": "gameplay/wine/WineRuntime.gd",
+      "aliases": []
+    },
+    {
+      "key": "40eb0fcb7617e6e4ab0de2882ae27fb9028df8505fe8c65d8d3d6129e266e17c",
+      "persona": "nelson",
+      "text": "Repare mesmo. E depois compare a Grécia com Brasil, Portugal e Chile. Cada garrafa aqui é um começo de conversa.",
+      "en": "Please do. Then compare Greece with Brazil, Portugal and Chile. Every bottle here starts a conversation.",
+      "section": "gameplay/wine/WineRuntime.gd",
+      "aliases": []
+    },
+    {
+      "key": "354d3ed36f88b7f7f57423cb211830daf4df9d43edf0a472c9db28ed08bc4f94",
+      "persona": "luísa",
+      "text": "Oi, Dante. Estou fechando o financeiro e conferindo as entradas da loja. O Nelson já te levou até a Grécia hoje?",
+      "en": "Hi, Dante. I'm closing the books and checking the shop's receipts. Has Nelson taken you to Greece today yet?",
+      "section": "gameplay/wine/WineRuntime.gd",
+      "aliases": []
+    },
+    {
+      "key": "9884ae6ae1ae9c2dcdd020b64e242327347f3af9071ec50f8238376f54cd1913",
+      "persona": "dante",
+      "text": "Ainda estou na primeira história.",
+      "en": "I'm still on the first story.",
+      "section": "gameplay/wine/WineRuntime.gd",
+      "aliases": []
+    },
+    {
+      "key": "531705ae20ed2bd57f3b60d23f3cc903e937cf3c4a467ab87add80e739ade94d",
+      "persona": "luísa",
+      "text": "Então reserve um tempinho. Se escolher uma garrafa, a compra fica guardada nos seus vinhos. Você decide quando abrir.",
+      "en": "Then set aside some time. If you pick a bottle, your purchase stays in your wine collection. You decide when to open it.",
+      "section": "gameplay/wine/WineRuntime.gd",
+      "aliases": []
+    },
+    {
+      "key": "9e3ea46b8469624d5d5d240088e838e83df742fb1917dc5ea2ebe17e3e119da5",
+      "persona": "takeshi",
+      "text": "Um carro bonito não vence uma arrancada, Dante. Motor, sangue-frio e a troca certa. Mostre que sabe usar os três.",
+      "en": "A good-looking car doesn't win a drag race, Dante. Engine, nerves and the right shift. Show me you can use all three.",
+      "section": "takeshi_honor",
+      "aliases": []
+    },
+    {
+      "key": "74acab4d93adc7b5cf87c9a01e7ba00a3b56c47ac9d0556360f7900fadd2e671",
+      "persona": "takeshi",
+      "text": "Pela honra, eu te subestimei. Você pode escolher o meu carro ou o tesouro da minha família.",
+      "en": "On my honor, I underestimated you. You may choose my car or my family's treasure.",
+      "section": "takeshi_honor",
+      "aliases": []
+    },
+    {
+      "key": "5bcfe00f16140eda08268f75999343f6cf3d16a2e180299dbae957330288d5c9",
+      "persona": "takeshi",
+      "text": "Você ganhou. A palavra de Takeshi continua valendo.",
+      "en": "You won. Takeshi still keeps his word.",
+      "section": "takeshi_honor",
+      "aliases": []
+    },
+    {
+      "key": "8561ec44b81631ef1add6152ea024f706a6f2def9b678e9ee8eb6c0079c6ac0c",
+      "persona": "takeshi",
+      "text": "Quase não basta, Dante. Acerte o carro e aprenda a ouvir o motor. Eu continuo aqui.",
+      "en": "Almost isn't enough, Dante. Tune your car and learn to listen to the engine. I'll be here.",
+      "section": "takeshi_honor",
+      "aliases": []
+    },
+    {
+      "key": "f736c428fdcb1ee9830a96c744d25382216ec1dadfc9baa73a831edf2b510379",
+      "persona": "takeshi",
+      "text": "Ele é seu. Cuide desse Supra como eu cuidei. Minha katana estará à venda na Ammu-Nation, se um dia a quiser.",
+      "en": "It's yours. Look after that Supra as I did. My katana will be for sale at Ammu-Nation if you ever want it.",
+      "section": "takeshi_honor",
+      "aliases": []
+    },
+    {
+      "key": "5b181f5a93006e9cb6f2835fbdffd93fdbe0eedab94b3ee6746715f6fe5da2bb",
+      "persona": "takeshi",
+      "text": "Esta lâmina atravessou gerações da minha família. Agora a responsabilidade é sua, Dante.",
+      "en": "This blade has passed through generations of my family. Now the responsibility is yours, Dante.",
+      "section": "takeshi_honor",
+      "aliases": []
+    },
+    {
       "key": "973ba405f3dc5aca2f2a7b04a3613e1c4a531a2b5e2fe14ca0b4c6e400d89afe",
       "persona": "dante",
       "text": "Essa cobra nas caixas... É a mesma marca dos carregamentos do porto. O avião era dos Cobras.",
@@ -783,6 +1183,414 @@
       "text": "Agora eu tenho um rumo. O deserto.",
       "en": "Now I have a direction. The desert.",
       "section": "mountain_story:vicente_note",
+      "aliases": []
+    },
+    {
+      "key": "cfb13b416d51dc48b41792c29c0652e62d40db7c93f5ea3f201686e1f9820a8e",
+      "persona": "raul",
+      "text": "Baixa a mão. Eu não te conheço.",
+      "en": "Lower your hand. I don't know you.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "d144859402426458bddcaaf573d6429235ed296813eebd90e671a5ddb72a2ee4",
+      "persona": "raul",
+      "text": "A Cida mora aqui comigo. Não encosta nela.",
+      "en": "Cida lives here with me. Don't touch her.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "d03760d77cc35dbec5c4b4aca7f2a9e641d977ff9f36b155be285a37313460fa",
+      "persona": "raul",
+      "text": "Quer passar? Passa quieto.",
+      "en": "Want to get through? Keep it quiet.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "a0f159168a801dab0e029c9259fde373c44d1123fcb8aa78ab0bd27a6abf3f40",
+      "persona": "cida",
+      "text": "Pode falar daí.",
+      "en": "You can talk from there.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "eca694909fa9d61cd7745f5fa63649ddc88396757e7f90490b399413c936fd87",
+      "persona": "cida",
+      "text": "O Raul me ajudou quando eu cheguei. Aqui a gente não deixa ninguém sozinho.",
+      "en": "Raul helped me when I got here. We don't leave anyone on their own down here.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "6424f2ed4d41a412fffd2f29644127facab6d9b7ec291252e635203aa63c0c3d",
+      "persona": "cida",
+      "text": "Não arruma confusão com o Beto.",
+      "en": "Don't start trouble with Beto.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "42e0af3d914c3bd662761f892c9144879d251b8b48af321c63c65a5c1b104bda",
+      "persona": "beto",
+      "text": "Tá procurando alguém?",
+      "en": "Looking for someone?",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "4887c8303812fc68948f65f65e95abbcad61bbad0c9f06cc97c3d7b1de051c94",
+      "persona": "beto",
+      "text": "Tem gente minha dos dois lados do canal.",
+      "en": "I've got people on both sides of the canal.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "09484c740214e5f439c36a17dea6e1877cf5224292651f3bd800d84479a875b2",
+      "persona": "beto",
+      "text": "Se bater num deles, vai ter que passar por mim.",
+      "en": "Hit one of them and you'll have to go through me.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "a57a5d78294c608c1b399f268275c18260bff13440a79cb9788c0d505e207c6f",
+      "persona": "dona zefa",
+      "text": "Entra, entra, que o sol aqui dentro é de graça. Pouca gente conhece a galeria; quem conhece passa batido.",
+      "en": "Come in, come in. The sunshine's free in here. Few people know this tunnel; those who do keep walking.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "4b1d72e63b5a9c6439adefd2bc9672bd9a02e4e1277fbaaf117fffd1ab156547",
+      "persona": "dona zefa",
+      "text": "Meus tapetes seguram o frio da noite. A caixa de latão é minha, mas pode olhar, não tem nada que preste.",
+      "en": "My rugs keep out the night chill. That brass box is mine, but take a look. There's nothing worth keeping.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "24d1cb652f253b3cf4abbb74a58994e7b181b029c864b9c4109e1f472deed1ce",
+      "persona": "dona zefa",
+      "text": "O Beto Cascavel mora no fim da galeria. Ele diz que a ponta leste é só entulho. Mentira dele: a duna se mexe.",
+      "en": "Beto Cascavel lives at the end of the tunnel. He says the eastern end is just rubble. He's lying: the dune moves.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "0076f272fc72238ff68129ce6d82c2cbf344ef5fb7355d83b28d44a5fe384050",
+      "persona": "beto cascavel",
+      "text": "Devagar aí. Se escutar chocalho, não é o vento.",
+      "en": "Easy there. If you hear a rattle, it isn't the wind.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "5359f5d37d3915b36326afcb98cd48138396b40b31ac48d86ea7af67723757ae",
+      "persona": "beto cascavel",
+      "text": "Cada gaiola é uma cascavel. Vendo o veneno pra gente de fora, ninguém pergunta pra quê.",
+      "en": "Every cage holds a rattlesnake. I sell the venom to outsiders. Nobody asks what for.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "4611c86e556ef97b4c5868edcb7219a144879306f186a2fd775bed84350b1b7c",
+      "persona": "beto cascavel",
+      "text": "Dizem que contrabandistas de sal esconderam dinheiro num tubo atrás da duna, na ponta leste. Eu nunca fui. Meu rifle ficou lá faz anos.",
+      "en": "They say salt smugglers hid money in a pipe behind the dune, at the eastern end. I've never been. My rifle's been there for years.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "f95de61daee85cd7271b714443dadfee88570caa9be47842f4ab8ab50242f39b",
+      "persona": "ermitão jacó",
+      "text": "Quem desce pelo poço de Santa Lua desce para ouvir o silêncio. Não fale alto.",
+      "en": "Anyone coming down the Santa Lua well comes to hear the silence. Keep your voice down.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "761b6cdaf5cba37445bd25b6e7bd9647f6010b5b1221444cdda042dd86894b82",
+      "persona": "ermitão jacó",
+      "text": "Cada vela é um pedido. Cada boneco de barro, uma promessa que alguém não cumpriu.",
+      "en": "Every candle is a wish. Every clay figure, a promise somebody broke.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "3da8e28ca6f7a1ab216f8f2f979f2c1211050f4e8e4811b3ff02157bfef78c4c",
+      "persona": "ermitão jacó",
+      "text": "Os fundadores guardaram o que tinham atrás da pedra da lua, no leste. Ela gira, se você souber onde empurrar.",
+      "en": "The founders hid what they had behind the moonstone to the east. It turns, if you know where to push.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "6b367fe624e75eb1d932d2b4d8a94e03f28d2708c03909599b5fafaa9ba22b3c",
+      "persona": "seu tião",
+      "text": "Cachaça de cacto, melhor do deserto. Só não conta pro dono do motel que eu falei.",
+      "en": "Cactus liquor, best in the desert. Just don't tell the motel owner I said so.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "13eb30ec5e3ddeb959c006bb8f3fca7d05cc9bef9dbf6bb9d89b4993e89fc07e",
+      "persona": "seu tião",
+      "text": "O dono acha que o porão é dele. É meu. Ele só empresta a escada.",
+      "en": "The owner thinks the basement is his. It's mine. He just lends me the stairs.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "e044f985e78244f666a33dcf5ef1134ff518ec8cb1068e75656fa98a1287f7ee",
+      "persona": "seu tião",
+      "text": "Tem uma estante no sudeste que gira. Já escondi gente atrás dela e já escondi cofre também.",
+      "en": "There's a bookcase in the southeast that turns. I've hidden people behind it, and safes too.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "fbc0b27cbf3fa57979e621ff040e806eabc71973fe035359726d30c7874c2138",
+      "persona": "hóspede sete",
+      "text": "Shhh. Eu não existo, tá? O quarto sete do motel nunca foi alugado.",
+      "en": "Shhh. I don't exist, all right? Room seven at the motel was never rented.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "e19eeb857e5ff575df91f95de8ca989c838d073395f7d6695ca6471b06fc563a",
+      "persona": "hóspede sete",
+      "text": "O dono me deixa aqui até a poeira baixar. Faz três semanas.",
+      "en": "The owner lets me stay here until things blow over. It's been three weeks.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "bb627a1dc777b5b44c26518f591992640ed1e1562563a3e28b84fb9320ba1ae4",
+      "persona": "hóspede sete",
+      "text": "O cofre atrás de mim é dele. Não encosta, ou ele vai saber.",
+      "en": "The safe behind me is his. Don't touch it, or he'll know.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "32f43e424589dfe193fccea2bac5bcce47320180a35dbbc1add9f93c6bbdbd6a",
+      "persona": "velho ozias",
+      "text": "Trinta anos nessa galeria. Entrei pra pegar minha lanterna e nunca mais saí.",
+      "en": "Thirty years in this tunnel. I came in for my flashlight and never left.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "829240b9c27dde5d684116f1f5ed7a415bcbd8b826ca26f531cfcf6e0159501c",
+      "persona": "velho ozias",
+      "text": "Os cristais azuis acendem sozinhos quando alguém chega. Dizem que é a mina avisando.",
+      "en": "The blue crystals light up on their own when someone comes close. They say it's the mine giving a warning.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "56684a689b666e73acb5de9454ff8639a75606f0d26810762d333dc60c4ccb86",
+      "persona": "velho ozias",
+      "text": "A veia de ouro ficou do outro lado do desabamento, a leste. Passa uma pessoa só pela fresta. Eu estou gordo demais pra isso.",
+      "en": "The gold vein is beyond the cave-in, to the east. Only one person can squeeze through the gap. I'm too fat for that.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "4109400e8b9209789f1750a94a32976229e5789dcc953ebd5f1c3dd2b660e338",
+      "persona": "seu abel",
+      "text": "Ei, filho. Aqui embaixo o barril esquenta e ninguém pede documento.",
+      "en": "Hey, son. Down here the barrel keeps us warm and nobody asks for ID.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "1f54961dc24c5689d29ce90638803dd3bd13ba636b5039a089158da3af2fba3f",
+      "persona": "seu abel",
+      "text": "Moro neste canto desde que fecharam a oficina do cais. O que eu tinha de valor ficou debaixo do colchão.",
+      "en": "I've lived in this corner since they closed the dockside workshop. Everything I owned of value is under the mattress.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "a57e4a9db67f0631f0c3121b39e1bd8419be5721c65115d1dd63add72b4ef905",
+      "persona": "seu abel",
+      "text": "Se for pegar, pega só um pouco. É tudo o que me sobrou.",
+      "en": "If you're taking some, just take a little. It's all I've got left.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "da551cbdcf477d3c3b211c0a989b29a30fa46afd5ab74da6e6c10a995f23ee6e",
+      "persona": "dona marlene",
+      "text": "Sshh, não assusta o peixe. A maré sobe e eles entram pela comporta.",
+      "en": "Shhh, don't scare the fish. The tide rises and they come through the floodgate.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "d0b535afd68183a8ba130ab2026d9712d4b2cc3fdb60e8d74e5046c709626c57",
+      "persona": "dona marlene",
+      "text": "Passa pela passarela com cuidado, as tábuas estão podres de novo.",
+      "en": "Careful on the walkway. The boards are rotten again.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "5c3946a17368e4430b2aad02c2181027ce1459dfcd799d4b8df3967a018287c4",
+      "persona": "dona marlene",
+      "text": "Do outro lado deixaram uma mochila atrás dos barris. Eu não mexo. Quem mexe aqui embaixo não volta o mesmo.",
+      "en": "Someone left a backpack behind the barrels on the other side. I leave it alone. People who touch things down here don't come back the same.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "d7bf475e307160a02b584441f9c3c776af5954930a372270dbac6e66de3c7662",
+      "persona": "zeca",
+      "text": "Trabalhei vinte anos nesses galpões. Hoje durmo debaixo deles. A vida é engraçada.",
+      "en": "I worked in those warehouses for twenty years. Now I sleep underneath them. Life's funny.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "8fb9b42da3bf1f3220529505f2ccd73a19f26ce16a4dd0f25f22ee4163327081",
+      "persona": "zeca",
+      "text": "O escritório de manutenção ainda tem armário trancado, mas a chave sumiu e a porta não.",
+      "en": "The maintenance office still has a locked cabinet. The key disappeared, but the door didn't.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "9927e1cf8cbc90859b90b5cb9275bc560e88aaa37437f962f0d2fefd6d00b3b6",
+      "persona": "zeca",
+      "text": "Já viu o canto sudeste? Os caras do armazém penduravam canos ali pra esconder uma passagem. Eu nunca disse nada.",
+      "en": "Seen the southeast corner? The warehouse guys hung pipes there to hide a passage. I never said a word.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "2f3287ce1c1bdcce9cbe40c27e82baf7c210bcc14c3cd4c7b79879e424efaece",
+      "persona": "o maluco",
+      "text": "Shhh. Você ouve? É o cano falando. Ele fala de noite.",
+      "en": "Shhh. Hear that? It's the pipe talking. It talks at night.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "37532a839cf8fd8814592cf9f9e4b118f204f3a0bfb9ab2214710828b02286f2",
+      "persona": "o maluco",
+      "text": "Meu machado ficou cravado no entulho. Se o cano ficar bravo, você usa.",
+      "en": "My axe is stuck in the rubble. If the pipe gets angry, use it.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "c283e79f4db80cfd39738b6ada64c5cb8b2cede36078cebe2b30fb36c2135be8",
+      "persona": "o maluco",
+      "text": "Tem dinheiro no caixote. Não é meu. Nada aqui é meu.",
+      "en": "There's money in the crate. It's not mine. Nothing here is mine.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "bc36caa1978e534bfdde471ea0df7b16ef64b0cda49471b1b0746a4688bf98d0",
+      "persona": "padre nicanor",
+      "text": "Bem-vindo à minha paróquia, filho. O teto é baixo, mas a fé aqui embaixo é grande.",
+      "en": "Welcome to my parish, son. The ceiling is low, but the faith down here is strong.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "60259ed60063c3effd21fdaf66d5d2acce10b20c91cc6f96e800838f18e553f2",
+      "persona": "padre nicanor",
+      "text": "Dizem que a passarela do lago leva a uma ilha. Eu nunca atravessei: a água escura me conhece pelo nome.",
+      "en": "They say the lake walkway leads to an island. I've never crossed it: the dark water knows my name.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "e5169e3fc202a12e699db9447ca26b25e1899141307b2b7f64e615743ceb7272",
+      "persona": "padre nicanor",
+      "text": "E no canto sudeste há uma parede com uma lona. Que Deus perdoe quem esconde coisas atrás de lonas.",
+      "en": "And in the southeast corner there's a wall covered by a tarp. May God forgive those who hide things behind tarps.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "d3466df8efa6b682c7bbf9c642171f64e83664a6e61fd4d4ab17daefd1410c51",
+      "persona": "tita",
+      "text": "Fogueira é meu lar. Se você tem frio, chega mais perto.",
+      "en": "The campfire is my home. If you're cold, come closer.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "d6af7b42eebe7f68c5767471db670781f35b7298687d78e894acfbe2c1ed362c",
+      "persona": "tita",
+      "text": "Já vi homem entrar atrás daquela lona e voltar com a mão cheia. Outros não voltaram.",
+      "en": "I've seen men go behind that tarp and come back with their hands full. Others never came back.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "9916df0bbf9cebe5c96a802a1497e0d073d868f157736015574370e9eda3ad4a",
+      "persona": "tita",
+      "text": "O lago brilha à noite. Não beba e não nade.",
+      "en": "The lake glows at night. Don't drink from it, and don't swim.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "86446a1d5d96c6f213f941d6ed356b14f5ac5ad5fd38caeb1b66e36f5fd0ac30",
+      "persona": "tonho",
+      "text": "Tá vendo a lona no canto nordeste? Aquilo não é só lona.",
+      "en": "See the tarp in the northeast corner? It's more than just a tarp.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "59acdb76643cf72016563c158aa353bb5ad07c2bdc7192bbec32f98fc4336e6c",
+      "persona": "tonho",
+      "text": "Os contrabandistas deixam o cofre aberto e a guarda pra quem tiver coragem de passar pelos canos.",
+      "en": "The smugglers leave the safe open, guarded for anyone brave enough to get through the pipes.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "cc4c9abcd43f03fe24accf4023300e9ecd9d552a5bddfa464c6524ffbbdccc5d",
+      "persona": "tonho",
+      "text": "Eu fico por aqui, quente, longe da polícia. Eles me deixam em paz se eu não olhar muito.",
+      "en": "I stay here, warm and away from the police. They leave me alone if I don't look too closely.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "497fdf88c3b3616776b810a169ad4f839c0c83058acac265d03035159ef96a6a",
+      "persona": "dona nena",
+      "text": "Aqui é a minha cozinha. Pega um café, vai.",
+      "en": "This is my kitchen. Have a coffee, go on.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "217e4c93b33334d946b7743aa31070a678cc1f2d3c3de220981f864eda1fc238",
+      "persona": "dona nena",
+      "text": "As caixas do sul são deles. Armas, tudo envolvido em pano. Eu só varro a calçada do canal.",
+      "en": "The crates to the south are theirs. Guns, all wrapped in cloth. I just sweep the canal walkway.",
+      "section": "services",
+      "aliases": []
+    },
+    {
+      "key": "b5e5f19d4eeb99ef7e7868c1fd73a295db7bf7ee619348ddfccc732f6b583995",
+      "persona": "dona nena",
+      "text": "Se pegar o dinheiro do cofre grande, leva as granadas também. Já vi homem morrer por esquecer uma.",
+      "en": "If you take the money from the big safe, take the grenades too. I've seen a man die for forgetting one.",
+      "section": "services",
       "aliases": []
     },
     {
@@ -994,10 +1802,18 @@
       "aliases": []
     },
     {
-      "key": "66083c8eb39ddb9e4b0e5af956273f09041dac4eac26abee67313897fc7e4ab7",
+      "key": "eb1f9542cf54987291246433f76d597084cc476298a91dc764031052b0a6256d",
       "persona": "vicente",
-      "text": "Indícios não devolvem nada. Quer ficar? Conheça as pistas. E pare de prometer.",
-      "en": "Signs don't give me anything back. You want to stay? Learn the tracks. And stop making promises.",
+      "text": "Indícios não devolvem nada. Essa turma está comigo. Aqui, ninguém resolve nada na bala.",
+      "en": "Clues don't bring anything back. This crew is with me. Nobody settles things with bullets here.",
+      "section": "desert_campaign",
+      "aliases": []
+    },
+    {
+      "key": "cb9d3199fe0bed64f7f24829c683fa3583df4107b7d07213a20cfc67aef0fcbd",
+      "persona": "vicente",
+      "text": "Quer ficar? Conheça as pistas. E pare de prometer.",
+      "en": "Want to stay? Learn the tracks. And stop making promises.",
       "section": "desert_campaign",
       "aliases": []
     },
@@ -1090,18 +1906,18 @@
       "aliases": []
     },
     {
-      "key": "9f41c6b5cecdc1a30e796009f4674226bd8f2e0a52b935dc1b97f827bf9461a9",
+      "key": "bd71281d12de0f2241068606688952696fb46deb0fb58f426821cdd319597ef1",
       "persona": "lívia",
-      "text": "Depois das oito, a reta é nossa. Chegue com o carro inteiro e respeite a largada.",
-      "en": "After eight, that straight belongs to us. Bring your car in one piece, and don't jump the start.",
+      "text": "Tem largada de manhã, de tarde e de noite. Chegue com o carro inteiro e respeite a pista.",
+      "en": "We race morning, afternoon and night. Bring your car in one piece and respect the track.",
       "section": "desert_campaign",
       "aliases": []
     },
     {
-      "key": "51aa314ca2c6b5ce83ae7bb6d81487dab89e717171716f4e8990e13d15f5fbaf",
+      "key": "5f31e6629273419b1a7a9caa9af6603a33e032e42153aa8da477eee7576635af",
       "persona": "lívia",
-      "text": "Cuida das apostas e dos contatos. Primeiro, mostre que sabe trocar uma marcha.",
-      "en": "He handles the bets and the contacts. First, show me you know how to shift.",
+      "text": "Ali com a turma dele. Cuida das apostas e dos contatos. Primeiro, mostre que sabe trocar uma marcha.",
+      "en": "Over there with his crew. He handles the bets and the contacts. First, show us you can shift gears.",
       "section": "desert_campaign",
       "aliases": []
     },
@@ -1114,10 +1930,42 @@
       "aliases": []
     },
     {
-      "key": "5b7b622dc9b3c67802238faa3bf1cbe24aafdc64e345d7516d10d829aded0b5b",
+      "key": "83d56e4bdee45889ed63db865e9f8be2fa197b886547f67fc40b4ebc340d4694",
       "persona": "raul",
-      "text": "Esse papel no caixote veio junto de uma carga estranha. Confere os números.",
-      "en": "That paper on the crate came with a strange shipment. Check the numbers.",
+      "text": "Deixei um manifesto no caixote do posto Miragem. Veio junto de uma carga estranha. Confere os números.",
+      "en": "I left a manifest on the crate at Miragem station. It came with a strange shipment. Check the numbers.",
+      "section": "desert_campaign",
+      "aliases": []
+    },
+    {
+      "key": "fc4b288c33b763e84f95a3c290e83e73b00436b6f82a14a12e0b923260c169f8",
+      "persona": "jessica",
+      "text": "Agora você conhece essa reta. E aquela conversa com seu irmão ainda está te esperando.",
+      "en": "Now you know this straightaway. And that conversation with your brother is still waiting.",
+      "section": "desert_campaign",
+      "aliases": []
+    },
+    {
+      "key": "2c3dc39e21e25cd79ac5beae492f676a18b47f7b1f13b7c55591c88da4a5b515",
+      "persona": "jessica",
+      "text": "Olha quem saiu de Harbor. Meu carro está pronto, Dante.",
+      "en": "Look who made it out of Harbor. My car's ready, Dante.",
+      "section": "desert_campaign",
+      "aliases": []
+    },
+    {
+      "key": "0425b64a6f067aea49af6605c5d8333efcb9c7d1a35365135ffb510b33a99d2e",
+      "persona": "dante",
+      "text": "Você também corre por aqui?",
+      "en": "You race out here too?",
+      "section": "desert_campaign",
+      "aliases": []
+    },
+    {
+      "key": "80ba07b84d35e00fbdfd73d98e3675425653f6206f61f38397ee1424872a3d01",
+      "persona": "jessica",
+      "text": "Com essa turma desde antes de você chegar. Sobe na tabela e a gente se encontra na largada.",
+      "en": "Been with this crew since before you arrived. Climb the rankings and I'll see you at the starting line.",
       "section": "desert_campaign",
       "aliases": []
     },
@@ -1126,6 +1974,30 @@
       "persona": "nadir",
       "text": "Na minha prova, uma troca ruim custa a corrida inteira. Prepare o carro com o Digo.",
       "en": "In my race, one bad shift can cost you everything. Get Digo to tune your car.",
+      "section": "desert_campaign",
+      "aliases": []
+    },
+    {
+      "key": "0a1724cb43e67a702a9c3ec6864521b5da968703cc1a037d4eeab7651bae8844",
+      "persona": "rauhz",
+      "text": "Passou pelo Nadir? Então falta nós dois. Meu Focus já está pronto.",
+      "en": "Beat Nadir? Then it's down to us two. My Focus is ready.",
+      "section": "desert_campaign",
+      "aliases": []
+    },
+    {
+      "key": "2860ad9eecdbb6e2fa73e7f403a58ade7727896a6b43323173b0dc0713ff314b",
+      "persona": "dante",
+      "text": "O preto?",
+      "en": "The black one?",
+      "section": "desert_campaign",
+      "aliases": []
+    },
+    {
+      "key": "d1077c6d07ddb2835c277a133040e7c1c1752d8960fa954a33b0caa7cf34e3de",
+      "persona": "rauhz",
+      "text": "MK1, 2002. Na última largada, cada troca conta.",
+      "en": "MK1, 2002. In the final race, every shift counts.",
       "section": "desert_campaign",
       "aliases": []
     },
@@ -1167,46 +2039,6 @@
       "text": "Então termina essa conversa com seu irmão.",
       "en": "Then finish that conversation with your brother.",
       "section": "desert_campaign",
-      "aliases": []
-    },
-    {
-      "key": "17d1f1ec85e7ffb8c1f3dd765f55a61d4ab6c94701df5229688d35c21095fde6",
-      "persona": "anselmo",
-      "text": "Samuel não está lá. A carta, junto ao muro sudeste... não mostre a ninguém.",
-      "en": "Samuel isn't there. The letter, by the southeast wall... don't show it to anyone.",
-      "section": "gameplay/urban_v1/CemeteryOperations.gd",
-      "aliases": []
-    },
-    {
-      "key": "dfe88285779613a7dc6a0ad8ebb566760d495e962bb3f00a9e5899aa9a2a4c54",
-      "persona": "maciota",
-      "text": "Você ficou quando seria mais fácil ir embora. Vicente deixou uma pasta comigo antes de sumir. Pediu que eu guardasse até você estar pronto.",
-      "en": "You stayed when walking away would've been easier. Vicente left a folder with me before he disappeared. He asked me to hold onto it until you were ready.",
-      "section": "gameplay/urban_v1/TruckersVillageSecretPassage.gd",
-      "aliases": []
-    },
-    {
-      "key": "db85b880860599484e3466f9662ab1ce49fc775b8c3e24d67dc5c63974c27553",
-      "persona": "dante",
-      "text": "Por que só agora?",
-      "en": "Why only now?",
-      "section": "gameplay/urban_v1/TruckersVillageSecretPassage.gd",
-      "aliases": []
-    },
-    {
-      "key": "80fadd6d39643f72be8ab652317c5e64987b89d9f3de3c85397543f2a7317e2b",
-      "persona": "maciota",
-      "text": "Porque essa pista leva à Vila e tem coisa ali que alguém quis esconder. Daqui pra frente, a escolha é tua.",
-      "en": "Because this lead goes to the village, and someone wanted to keep what happened there hidden. From here on, the choice is yours.",
-      "section": "gameplay/urban_v1/TruckersVillageSecretPassage.gd",
-      "aliases": []
-    },
-    {
-      "key": "0dc7b016844354b0caa95d5e89a69b09c2225dde0e180846dde2981da6f62669",
-      "persona": "digo",
-      "text": "Vamos correr primeiro. Complete a prova comigo, ganhando ou perdendo, e a gente prepara seu carro.",
-      "en": "Let's race first. Finish a race with me, win or lose, and we'll get your car set up.",
-      "section": "runtime/desert/DesertRuntime.gd",
       "aliases": []
     },
     {
@@ -1728,13 +2560,13 @@
       ]
     },
     {
-      "key": "1ae0c24ea98523c5f95e9b1c157add4c94ac4dbe5493f8aa483ebb5d4ed82052",
+      "key": "8fcaa1d92c675765b015502ab81a6f2f7201e89e8bf39679292b3ae1b3f12ab7",
       "persona": "maciota",
-      "text": "deixei um quarto no Horizonte. Vicente está por lá.",
-      "en": "I've left a room for you at Horizonte. Vicente's around there.",
+      "text": "deixei um quarto no Horizonte. Vicente está com a turma dele no encontro da arrancada.",
+      "en": "I booked you a room at Horizonte. Vicente is with his crew at the drag meet.",
       "section": "spoken_notice:runtime/desert/DesertCampaign.gd",
       "aliases": [
-        "Maciota: deixei um quarto no Horizonte. Vicente está por lá."
+        "Maciota: deixei um quarto no Horizonte. Vicente está com a turma dele no encontro da arrancada."
       ]
     },
     {
@@ -1992,14 +2824,6 @@
       "aliases": [
         "A areia entrou pela cabine da caminhonete. Uma maleta ainda está presa ao lado da carroceria.  (+R$ 700)"
       ]
-    },
-    {
-      "key": "fc224d5f27169c2a817249b0742eb47e895619139dcfd2af8ead03f37dfc1240",
-      "persona": "maciota",
-      "text": "Mandou bem na corrida, Dante. Separei uma mala reforçada pra tua busca pelo Vicente. Está no porta-malas da Monaliza; pega quando precisar levar mais coisa.",
-      "en": "Good race, Dante. I set aside a sturdy travel bag for your search for Vicente. It is in the Monaliza's trunk. Pick it up when you need to carry more supplies.",
-      "section": "cobra-dialogue.json:cobra_race_clue",
-      "aliases": []
     }
   ]
 }

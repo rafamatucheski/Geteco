@@ -44,6 +44,8 @@ Os intermediários de vídeo e a prévia ficam em
 `D:/geteco/artifacts/opening-ferry-night-20261003/`. `encode_movie.py --art` aceita
 outra pasta de captura. Os PCM misturados são regeneráveis.
 As tomadas usadas e suas direções permanecem junto dos scripts.
+`--movie-output CAMINHO.ogv` permite revisar a codificação antes de substituir
+o `arrival.ogv` utilizado pelo jogo.
 
 ## Integração
 
@@ -62,10 +64,28 @@ gestos dos rigs existentes. A revisão noturna usa chuva, luz prática no convé
 e água contínua fora do raio de streaming. `FerryPhonePose` mantém o celular
 preso ao osso da mão, com pose de antebraço e punho própria para segurá-lo.
 `FerryPassenger` usa a malha e o rig de produção com identidade e roupa próprias.
-Os figurantes da gravação têm posições dirigidas; as rotas do gameplay permanecem.
+`FerryHarborActivity` dirige o trabalho dos estivadores nas rotas existentes,
+um carregador entre as caixas do terminal, os três guindastes, os pescadores
+e o balanço dos barcos atracados. O relógio é o mesmo do filme. Os barcos de
+pesca são separados do lote estático apenas na captura, para casco, bancos e
+motor acompanharem o movimento juntos. Esses controladores não rodam no jogo.
+O trabalhador do corredor da passarela usa somente o trecho plano na tomada,
+sem atravessar a borda elevada da plataforma. O carregador junto ao guindaste
+fica no cais residente, sem depender do piso de um navio sujeito a streaming.
+`capture_ferry_opening.gd` com `--check-work-routes` verifica piso e sólidos;
+`--verify-work-routes` faz essa verificação antes de gravar o filme. Ambos
+exigem a cena renderizada; o renderer
+dummy headless não fornece os transforms dos MultiMeshes usados nesta captura.
+
+A captura desativa também os modos explícitos dos serviços filhos: suspender
+só a raiz não impede um serviço `ALWAYS` de alterar o turno ou remover atores.
+As luzes locais são resolvidas no horário noturno antes de manter suas posições.
+Os passageiros gerados pelo gameplay ficam ocultos durante a tomada, que tem
+elenco próprio a bordo; isso evita figurantes suspensos sobre a água.
 
 Novos jogos começam com a mesma noite chuvosa no desembarque. Carregar uma
 jornada preserva o horário e o clima salvos. A geometria física do terminal
 não é alterada pela direção de captura. O gravador verifica continuidade dos
-ossos, deslocamento do aparelho e permanência dos figurantes nos 2.190 frames;
-as métricas ficam em `render.json`. Isso complementa a revisão visual dos planos.
+ossos, deslocamento do aparelho, permanência dos figurantes estacionários e
+movimento efetivo dos trabalhadores e guindastes nos 2.190 frames; as métricas
+ficam em `render.json`. Isso complementa a revisão visual dos planos.

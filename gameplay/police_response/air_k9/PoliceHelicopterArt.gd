@@ -124,7 +124,29 @@ static func _build_uncached(parent: Node3D) -> Dictionary:
 		_bake_static(door)
 		doors.append(door)
 	_bake_static(parent)
+	_apply_finish(parent, {})
 	return {"rotor": rotor, "tail_rotor": tail_rotor, "doors": doors}
+
+## Aircraft-only finishes: never mutate AirK9Models' shared materials.
+## One replacement per source material preserves batching and template reuse.
+static func _apply_finish(parent: Node3D, finishes: Dictionary) -> void:
+	for child in parent.get_children():
+		if child is MeshInstance3D:
+			var source := child.material_override as StandardMaterial3D
+			if source == null: continue
+			if not finishes.has(source):
+				var finish := source.duplicate() as StandardMaterial3D
+				if source.vertex_color_use_as_albedo or source.albedo_color == NAVY or source.albedo_color == WHITE:
+					finish.roughness = 0.5
+				elif source.albedo_color == STEEL:
+					finish.roughness = 0.48
+					finish.metallic = 0.55
+				elif source.albedo_color == BLACK:
+					finish.roughness = 0.85
+				finishes[source] = finish
+			child.material_override = finishes[source]
+		elif child is Node3D:
+			_apply_finish(child, finishes)
 
 static func _ring(section: Vector4, angle: float, side: float = 1.0, inflate: float = 0.0) -> Vector3:
 	return Vector3(cos(angle) * (section.z + inflate) * side, section.y + sin(angle) * (section.w + inflate), section.x)
@@ -213,6 +235,8 @@ static func _tube(parent: Node3D, label: String, a: Vector3, b: Vector3, radius:
 	mesh.bottom_radius = radius
 	mesh.height = a.distance_to(b)
 	mesh.radial_segments = 8
+	# Straight tubes need no intermediate axial rings; keep the round silhouette.
+	mesh.rings = 0
 	var node := ART.part(parent, label, mesh, (a + b) * 0.5, color)
 	node.quaternion = Quaternion(Vector3.UP, (b - a).normalized())
 	return node

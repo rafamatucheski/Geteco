@@ -2,11 +2,11 @@ extends "res://world/places/sewers/SewerVariantBase.gd"
 ## Cano Entupido: o menor de todos, um trecho de tubulação desabado e quase totalmente escuro, com lama até o tornozelo,
 ## ossos e um único morador que já não bate bem. Sem luz além de uma lâmpada vermelha quase morta.
 const REWARDS := [
-	{"id": "sewer_pipe_cash", "kind": "cash", "amount": 250, "local_position": Vector3(0.4, 0, 2.1)},
+	{"id": "sewer_pipe_cash", "kind": "cash", "amount": 250, "local_position": Vector3(0.4, 0, 1.3)},
 	{"id": "sewer_pipe_axe", "kind": "weapon", "item": "axe", "amount": 1, "local_position": Vector3(3.4, 0, -0.6)},
 ]
 const RESIDENTS := [
-	{"id": "sewer_pipe_maluco", "name": "O Maluco", "local_position": Vector3(0.8, 0, -1.2),
+	{"id": "sewer_pipe_maluco", "name": "O Maluco", "local_position": Vector3(0.8, 0, -0.6),
 		"appearance": {"coat_color": Color("33382f"), "pants_color": Color("231f1b"), "appearance_variant": 9}},
 ]
 
@@ -33,11 +33,11 @@ func _build() -> void:
 	service_lamp(Vector3(-2.0, 2.4, -3.3), "#ff3a22", 0.9, 4.0, true)
 	# Restos: ossos, lixo, colchão encharcado, caixote com o dinheiro e o machado cravado no entulho.
 	skeleton(Vector3(2.4, 0, 0.9), 0.3)
-	box(Vector3(1.4, 0.1, -1.6), Vector3(1.6, 0.2, 0.8), "#2c2a22")
+	box(Vector3(1.4, 0.1, -1.6), Vector3(1.6, 0.2, 0.8), "#2c2a22", false, "Mattress")
 	heap(Vector3(-1.6, 0, 0.4), 0.7, 11, true)
 	heap(Vector3(3.8, 0, 0.2), 0.45, 7)
 	heap(Vector3(-4.3, 0, 0.8), 0.45, 6)
-	box(Vector3(0.4, 0.2, 2.2), Vector3(0.6, 0.4, 0.5), "#33281a")
+	box(Vector3(0.4, 0.2, 2.2), Vector3(0.6, 0.4, 0.5), "#33281a", false, "StashCrate")
 	box(Vector3(3.4, 0.35, -0.6), Vector3(0.12, 0.7, 0.12), "#3a2a1a")
 	scatter_grime(Rect2(-4.6, -2.8, 8.4, 5.2), 12, 8, 0)
 	graffiti(Vector3(-1.4, 1.2, -3.45), Vector2(1.1, 0.5), "#5a1e18")

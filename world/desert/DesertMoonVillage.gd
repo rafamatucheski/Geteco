@@ -74,6 +74,7 @@ static func build_record(parent: Node3D, data: Dictionary) -> Array[OmniLight3D]
 	parent.add_child(village)
 	var groups: Dictionary={}
 	for part in _parts(data):
+		if data.kind == "home" and part.id in ["ClosedDoor", "DoorPanel", "DoorHandle"]: continue
 		var key: String=part.shape+":"+part.finish
 		if not groups.has(key): groups[key]={"shape":part.shape,"finish":part.finish,"transforms":[]}
 		groups[key].transforms.append(Transform3D(Basis.from_euler(part.rotation)*Basis.from_scale(part.size),part.position))
@@ -89,6 +90,10 @@ static func build_record(parent: Node3D, data: Dictionary) -> Array[OmniLight3D]
 		if Engine.get_meta("geteco_live_preview_build",false): instance.set_meta("preview_instance_transforms",group.transforms)
 		instance.material_override=MATERIALS.material(group.finish)
 		village.add_child(instance)
+	if data.kind == "home":
+		var door := preload("res://world/desert/village/DesertVillageDoor.gd").new()
+		door.set_meta("place_id", data.id)
+		village.add_child(door)
 	if data.kind=="store": G.sign_name(village,"Santa Lua",Vector3(0,3.57,4.27),44)
 	var lights: Array[OmniLight3D]=[]
 	if data.get("lamp",false):
@@ -142,10 +147,17 @@ static func _house(parts: Array[Dictionary],data: Dictionary) -> void:
 	var size: Vector3=data.size
 	var h := size.y
 	var style: String=data.get("style","store")
-	# Exterior shells remain solid; the authored porch access transfers to the
-	# corresponding NativePlace, with no empty box trapping a restored actor.
-	_box(parts,"HouseShell",Vector3(0,h*.5,0),size,data.finish,true)
-	_box(parts,"StoneFooting",Vector3(0,.19,0),Vector3(size.x+.28,.38,size.z+.28),"stone",true)
+	# Keep the shell solid except for a shallow, supported doorway recess.
+	# The shared push controller admits the actor into the corresponding room.
+	if data.kind == "home":
+		_box(parts,"HouseRear",Vector3(0,h*.5,-.75),Vector3(size.x,h,6.5),data.finish,true)
+		for side in [-1.0,1.0]:
+			var width := (size.x-1.5)*.5
+			_box(parts,"HouseSide",Vector3(side*(.75+width*.5),h*.5,3.25),Vector3(width,h,1.5),data.finish,true)
+		_box(parts,"DoorLintel",Vector3(0,(h+2.5)*.5,3.25),Vector3(1.5,h-2.5,1.5),data.finish,true)
+	else:
+		_box(parts,"HouseShell",Vector3(0,h*.5,0),size,data.finish,true)
+		_box(parts,"StoneFooting",Vector3(0,.19,0),Vector3(size.x+.28,.38,size.z+.28),"stone",true)
 	for side in [-1.0,1.0]:
 		_box(parts,"CornerQuoin",Vector3(side*(size.x*.5-.17),h*.5,4.05),Vector3(.36,h,.2),"wood" if style in ["ranch","shed"] else "stone")
 		var window_width: float=1.35 if style=="adobe" else (2.65 if style=="ranch" else 1.8)
@@ -161,7 +173,9 @@ static func _house(parts: Array[Dictionary],data: Dictionary) -> void:
 		_box(parts,"PorchSideRail",Vector3(side*(size.x*.5-.4),.77,5.56),Vector3(.12,.16,2.25),"wood",true)
 		for rung in 5:
 			_box(parts,"PorchBaluster",Vector3(side*(size.x*.5-.4),.48,4.67+float(rung)*.42),Vector3(.075,.78,.075),"wood",true)
-	_box(parts,"DoorTrim",Vector3(0,1.24,4.11),Vector3(1.5,2.48,.19),"wood")
+	for side in [-1.0,1.0]:
+		_box(parts,"DoorTrim",Vector3(side*.70,1.24,4.11),Vector3(.10,2.48,.19),"wood")
+	_box(parts,"DoorTrimTop",Vector3(0,2.48,4.11),Vector3(1.5,.10,.19),"wood")
 	_box(parts,"ClosedDoor",Vector3(0,1.19,4.24),Vector3(1.16,2.26,.08),"wood" if style in ["adobe","ranch"] else "rust")
 	_box(parts,"DoorPanel",Vector3(0,.78,4.29),Vector3(.86,.78,.025),"wood")
 	_box(parts,"DoorHandle",Vector3(.39,1.13,4.31),Vector3(.065,.16,.07),"steel")

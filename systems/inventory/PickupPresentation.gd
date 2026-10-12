@@ -2,6 +2,7 @@ extends Node3D
 ## V1 WeaponPickup: spin 1.6 rad/s, bob 3.2 rad/s, pulsing halo,
 ## and a quarter-second absorption. Only art moves; the ground anchor stays put.
 const REWARD_AUDIO := preload("res://gameplay/RewardAudio.gd")
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const PROXIMITY_RADIUS := 9.0
 const PROXIMITY_POLL_SECONDS := .2
 const PROXIMITY_CUE_SECONDS := 4.0
@@ -87,12 +88,16 @@ func configure(model: Node3D, item: String) -> void:
 	_stop_proximity_audio()
 	if not visibility_changed.is_connected(_on_visibility_changed):
 		visibility_changed.connect(_on_visibility_changed)
+	var material_started := STALL_WORK.begin()
 	material = StandardMaterial3D.new()
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
 	material.albedo_color = Color(.3,.85,1,.3) if item == "water" else Color(.95,.75,.25,.3)
 	if item in ["apple","sandwich"]: material.albedo_color = Color(.3,.9,.45,.3)
+	if material_started != 0:
+		STALL_WORK.finish("pickup.configure.material", material_started, {"item":item})
+	var torus_started := STALL_WORK.begin()
 	ring = MeshInstance3D.new()
 	ring.name = "PickupHalo"
 	var mesh := TorusMesh.new()
@@ -100,12 +105,29 @@ func configure(model: Node3D, item: String) -> void:
 	mesh.outer_radius = .35
 	mesh.rings = 24
 	mesh.ring_segments = 6
+	if torus_started != 0:
+		STALL_WORK.finish("pickup.configure.torus_create", torus_started, {"item":item})
+	var bind_started := STALL_WORK.begin()
+	var bind_step_started := STALL_WORK.begin()
 	ring.mesh = mesh
+	if bind_step_started != 0:
+		STALL_WORK.finish("pickup.bind.mesh", bind_step_started, {"item":item})
+	bind_step_started = STALL_WORK.begin()
 	ring.material_override = material
+	if bind_step_started != 0:
+		STALL_WORK.finish("pickup.bind.material", bind_step_started, {"item":item})
+	bind_step_started = STALL_WORK.begin()
 	ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	ring.position.y = .015
 	ring.scale.y = .08
+	if bind_step_started != 0:
+		STALL_WORK.finish("pickup.bind.properties", bind_step_started, {"item":item})
+	bind_step_started = STALL_WORK.begin()
 	add_child(ring)
+	if bind_step_started != 0:
+		STALL_WORK.finish("pickup.bind.add_child", bind_step_started, {"item":item})
+	if bind_started != 0:
+		STALL_WORK.finish("pickup.configure.torus_bind", bind_started, {"item":item})
 
 func _process(delta: float) -> void:
 	_update_proximity_audio(delta)

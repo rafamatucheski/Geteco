@@ -5,8 +5,8 @@ extends SceneTree
 ## Mede: (1) o jogador fica visível ao terminar a entrada; (2) o corpo cabe na cabine (cabeça
 ## sob o teto nos fechados, quadril e cabeça dentro do casco); (3) as palmas tocam o aro do
 ## volante; (4) o corpo acompanha o veículo em movimento e inclinado; (5) ao sair não sobra
-## visual deslocado, agachado, escalado, girado nem mãos fechadas; (6) o interior e o vidro
-## translúcido existem só no veículo conduzido e a malha é a mesma entre instâncias.
+## visual deslocado, agachado, escalado, girado nem mãos fechadas; (6) o interior existe
+## só no veículo conduzido e a malha é compartilhada; vidro e carroceria permanecem iguais.
 ## NÃO mede: aparência (ver tests/capture/capture_seated_driver.gd), animação de porta,
 ## nem custo de quadro.
 const ACTOR := preload("res://scripts/Actor.gd")
@@ -35,6 +35,13 @@ func check(ok: bool, label: String) -> void:
 		failures.append(label)
 		print("SEATED FAIL ", label)
 
+func selected_ids() -> Array:
+	var ids: Array = FLEET.all().keys()
+	if "--desert-only" in OS.get_cmdline_user_args(): ids = preload("res://gameplay/desert_cars/DesertCarCatalog.gd").ids()
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--ids="): ids = Array(arg.trim_prefix("--ids=").split(","))
+	return ids
+
 func run() -> void:
 	var fixture := Fixture.new()
 	root.add_child(fixture)
@@ -46,9 +53,7 @@ func run() -> void:
 	fixture.player.set_physics_process(false)
 	var driving := DRIVING.new()
 	driving.world = fixture
-	var ids: Array = FLEET.all().keys()
-	var desert_only := "--desert-only" in OS.get_cmdline_user_args()
-	if desert_only: ids = preload("res://gameplay/desert_cars/DesertCarCatalog.gd").ids()
+	var ids: Array = selected_ids()
 	ids.sort()
 	var seated_count := 0
 	var shared_mesh := {}
@@ -74,6 +79,7 @@ func run() -> void:
 		driving.car = car
 		driving.occupied = true
 		var body_before := _body_snapshot(car)
+		var glass_before := _glass_snapshot(car)
 		INTERIOR.attach(car)
 		driving._complete_entry()
 		INTERIOR.follow(fixture.player, car, 1.0) # termina a mistura (sem árvore, o delta do Driving é 0)
@@ -102,13 +108,14 @@ func run() -> void:
 		triangle_max = maxi(triangle_max, triangles)
 		check(mesh.get_surface_count() <= 2 and triangles > 100 and triangles < 6000, label + " interior é uma malha só (opaca + forro translúcido) com detalhe e orçamento (%d triângulos)" % triangles)
 		check(car.visual.find_children("*", "MeshInstance3D", true, false).filter(func(m): return m.name == "Interior").size() == 1, label + " um único nó de interior")
-		_check_glass(car, label)
 		_check_roof(car, body_before, label)
+		_check_glass_unchanged(glass_before, label + " após entrar, câmera e pintura")
 		# Sair: o corpo volta ao mundo sem resíduo.
 		var before_hips: Vector3 = fixture.player.skeleton.get_bone_pose_position(fixture.player.hips)
 		driving.occupied = false
 		driving._complete_exit(car.global_position + car.global_basis.x * -2.4)
 		check(fixture.player.visible and not fixture.player.seated, label + " saída devolve o corpo")
+		_check_glass_unchanged(glass_before, label + " após sair")
 		check(fixture.player.global_basis.is_equal_approx(Basis.IDENTITY), label + " saída endireita o corpo")
 		check(fixture.player.visual.position.is_zero_approx() and fixture.player.visual.rotation.is_zero_approx(), label + " saída não deixa o visual deslocado ou girado")
 		check(fixture.player.visual.scale.is_equal_approx(Vector3.ONE), label + " saída não deixa o visual escalado")
@@ -128,7 +135,8 @@ func run() -> void:
 	await process_frame
 	check(not traffic.visual.has_node("Interior"), "trânsito sem interior")
 	check(_translucent_glass_count(traffic) == 0, "trânsito com vidro opaco")
-	check(seated_count == ids.size() if desert_only else seated_count >= 40, "cobre a frota selecionada conduzível (%d)" % seated_count)
+	var expected_seated := ids.filter(func(id): return not str(id).begins_with("bike_") and id != "army_tank").size()
+	check(expected_seated > 0 and seated_count == expected_seated, "cobre a frota selecionada conduzível (%d)" % seated_count)
 	print("SEATED_DRIVER checks=", checks, " vehicles=", seated_count, " triangulos_interior=", triangle_min, "..", triangle_max, " failures=", failures.size())
 	if failures.is_empty():
 		print("PASS test_seated_driver")
@@ -183,7 +191,7 @@ func _translucent_glass_count(car) -> int:
 			if override is StandardMaterial3D and override.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED: count += 1
 	return count
 
-## Entrar preserva a geometria e a opacidade da carroceria; só o vidro pode mudar.
+## Entrar e mudar câmera preservam geometria e materiais da carroceria e dos vidros.
 func _body_snapshot(car) -> Array:
 	var state: Array = []
 	for part in car.visual.find_children("*", "MeshInstance3D", true, false):
@@ -191,7 +199,7 @@ func _body_snapshot(car) -> Array:
 		var materials: Array = []
 		for surface in part.mesh.get_surface_count():
 			var material: Material = part.get_active_material(surface)
-			if material is StandardMaterial3D and not INTERIOR._is_glass(part, surface, material):
+			if material is StandardMaterial3D:
 				materials.append([surface, material, material.transparency, material.albedo_texture, material.albedo_color.a])
 		state.append([part, part.mesh, materials])
 	return state
@@ -204,13 +212,14 @@ func _check_body_unchanged(car, before: Array, label: String) -> void:
 		for saved in entry[2]:
 			var material: StandardMaterial3D = part.get_active_material(saved[0])
 			unchanged = unchanged and material == saved[1] and material.transparency == saved[2] and material.albedo_texture == saved[3] and is_equal_approx(material.albedo_color.a, saved[4])
-	check(unchanged, label + " carroceria conserva malha, material e opacidade")
+	check(unchanged, label + " carroceria e vidros conservam malha, material e opacidade")
 
 func _check_roof(car, before: Array, label: String) -> void:
 	var view: Dictionary = car.get_meta("interior_view", {})
 	check(not view.is_empty(), label + " vista dos vidros registrada")
 	_check_body_unchanged(car, before, label + " ao entrar")
 	INTERIOR.set_low_camera_roof(car, true)
+	_check_body_unchanged(car, before, label + " na câmera baixa")
 	INTERIOR.set_low_camera_roof(car, false)
 	_check_body_unchanged(car, before, label + " ao mudar câmera")
 	if car._paint != null:
@@ -228,7 +237,19 @@ func _check_roof(car, before: Array, label: String) -> void:
 	INTERIOR.attach(car)
 	_check_body_unchanged(car, before, label + " ao reentrar")
 
-func _check_glass(car, label: String) -> void:
-	# Toda cabine fechada com vidro medido tem que ter vidro translúcido; buggy e empilhadeira não têm.
-	var spec: Dictionary = INTERIOR.spec(car)
-	if not bool(spec.open_top): check(_translucent_glass_count(car) > 0, label + " vidro translúcido no veículo conduzido")
+func _glass_snapshot(car) -> Array:
+	var entries: Array = []
+	for part in car.visual.find_children("*", "MeshInstance3D", true, false):
+		if part.mesh == null or part.name in ["Interior", "WarmUp"]: continue
+		for surface in part.mesh.get_surface_count():
+			var material := part.get_active_material(surface) as StandardMaterial3D
+			if material != null and INTERIOR._is_glass(part, surface, material):
+				entries.append([part, surface, material, material.albedo_color, material.transparency])
+	return entries
+
+func _check_glass_unchanged(entries: Array, label: String) -> void:
+	var unchanged := true
+	for entry in entries:
+		var material: StandardMaterial3D = entry[0].get_active_material(entry[1])
+		unchanged = unchanged and material == entry[2] and material.albedo_color == entry[3] and material.transparency == entry[4]
+	check(unchanged, label + " vidros mantêm material, cor e transparência originais")

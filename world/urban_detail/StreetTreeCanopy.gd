@@ -18,6 +18,7 @@ static func mesh(variant: int) -> ArrayMesh:
 				t.set_color(Color("d1d8b1").lerp(Color.WHITE,shade).darkened((1-shade)*.10))
 				t.add_vertex(vertex)
 	t.generate_normals()
+	t.index()
 	var result := t.commit()
 	cache[variant]=result
 	return result

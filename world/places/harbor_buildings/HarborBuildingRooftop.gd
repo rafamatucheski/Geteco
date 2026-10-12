@@ -37,7 +37,7 @@ func _ready() -> void:
 	_guard("EastGuard",Vector3(half_w-.12,.52,0),Vector3(.24,1.04,depth-.24))
 	_guard("SouthGuardWest",Vector3((-half_w+gap_left)*.5,.52,half_d-.12),Vector3(gap_left+half_w,1.04,.24))
 	_guard("SouthGuardEast",Vector3((gap_right+half_w)*.5,.52,half_d-.12),Vector3(half_w-gap_right,1.04,.24))
-	# A real hinged rail closes the jump bay until the player's explicit action.
+	# The rail remains solid: the player physically vaults it by moving outward.
 	_jump_gate_art = Node3D.new()
 	_jump_gate_art.name = "RoofJumpGate"
 	_jump_gate_art.position = Vector3(gap_left,0,half_d-.12)
@@ -67,10 +67,6 @@ func _ready() -> void:
 	_install_reward()
 	set_process(false)
 	set_physics_process(false)
-
-func set_jump_gate(open: bool) -> void:
-	if is_instance_valid(_jump_gate): _jump_gate.collision_layer = 0 if open else 1
-	if is_instance_valid(_jump_gate_art): _jump_gate_art.rotation.y = -PI*.5 if open else 0.0
 
 func jump_access() -> Dictionary:
 	return {"point":jump_point,"outward":jump_outward}

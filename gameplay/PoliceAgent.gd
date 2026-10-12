@@ -15,6 +15,7 @@ const BURST_PAUSE := Vector2(1.7, 2.5)
 var controller: Node3D
 var health := 50.0
 var tier := 0
+var motorcycle_officer := false
 var visual: Node3D
 var cooldown := 0.0
 var sensor := 0.0
@@ -77,6 +78,7 @@ func _ready() -> void:
 	add_child(shape)
 	visual = MODEL.new()
 	visual.tier = tier
+	visual.motorcycle_officer = motorcycle_officer
 	add_child(visual)
 	var safe_tier := clampi(tier, 0, TIER_WEAPONS.size() - 1)
 	health = TIER_HEALTH[safe_tier]
@@ -169,13 +171,13 @@ func _stall_physics_tick(delta: float) -> void:
 		var aim := last_known - global_position
 		aim.y = 0
 		if aim.length_squared() > 0.01:
-			visual.rotation.y = atan2(-aim.x, -aim.z)
+			visual.rotation.y = atan2(-aim.x, -aim.z) - global_rotation.y
 		visible_aim_time += delta
 		if hostile and distance <= ATTACK_RANGE and visible_aim_time >= AIM_SECONDS and cooldown <= 0 and controller.health > 0:
 			_try_fire()
 	else:
 		visible_aim_time = 0.0
-		if direction.length_squared() > 0.1: visual.rotation.y = atan2(-direction.x, -direction.z)
+		if direction.length_squared() > 0.1: visual.rotation.y = atan2(-direction.x, -direction.z) - global_rotation.y
 	var move := direction.normalized() * _tactic_speed
 	# Tactical units may move laterally or retreat at close range; a global
 	# seven-metre hold would erase flanking and containment behavior.
@@ -289,7 +291,7 @@ func approach_exterior_access(point: Vector3, delta: float) -> void:
 	direction.y = 0.0
 	var move := direction.normalized() * 3.3
 	if Vector2(global_position.x - point.x, global_position.z - point.z).length() <= 1.25 or direction.length() < .15: move = Vector3.ZERO
-	if move.length_squared() > .01: visual.rotation.y = atan2(-move.x, -move.z)
+	if move.length_squared() > .01: visual.rotation.y = atan2(-move.x, -move.z) - global_rotation.y
 	_track_progress(destination, move, delta)
 	_move(move, delta)
 
@@ -302,7 +304,7 @@ func _update_arrest(p_visible: bool, distance: float, hostile: bool, delta: floa
 		return
 	if not arrest_warning_given:
 		arrest_warning_given = true
-		if controller.has_method("police_arrest_warning"): controller.police_arrest_warning()
+		if controller.has_method("police_arrest_warning"): controller.police_arrest_warning(self)
 	arrest_warning_elapsed += delta
 	var target := _pursuit_target()
 	var target_speed := Vector2(target.velocity.x,target.velocity.z).length() if target is CharacterBody3D else INF

@@ -204,4 +204,5 @@ func sample(t: float, delta: float) -> void:
 	camera.look_at(ferry.to_global(focus),Vector3.UP)
 	if index == 0:
 		camera.global_position = ferry.global_position + Vector3(15,11,17).lerp(Vector3(12,9,15),u)
-		camera.look_at(ferry.global_position + Vector3(-2,.9,-1),Vector3.UP)
+		# Keep the working gantries inside the letterboxed establishing shot.
+		camera.look_at(ferry.global_position + Vector3(-2,2.8,-1),Vector3.UP)

@@ -71,10 +71,17 @@ var _saved_physics := false
 var _suspended_bodies: Dictionary = {}
 var _departure_clock := 0.0
 var _stranded := 0.0
+var _departure_stall := 0.0
+var _departure_anchor := Vector3.INF
+var _departure_origin := Vector3.INF
+var _departure_best := 0.0
+var _escape_retry := 0.0
+var _retirement := 0.0
 # Espera por parada concluída (ultrapassagem pendente impede estacionar)
 var _park_wait := 0.0
 var _park_notified := false
 var _park_stalled := false
+var stop_planner := preload("res://gameplay/dispatch/DispatchStopPlanner.gd").new()
 ## Segundos acumulados em recuperação física de ultrapassagem durante ESTE atendimento
 ## (a vida da unidade). Não zera com troca de rota, de estado intermediário, de
 ## episódio, nem por voltar ao eixo; pausa fora de recuperação e com a unidade suspensa.
@@ -170,6 +177,7 @@ func finish(reason: String) -> void:
 ## A viatura passa a ser do jogador: não some nem volta à base.
 func surrender_vehicle(exits: Array[Dictionary]) -> void:
 	if finished: return
+	if is_instance_valid(vehicle): vehicle.fade_traffic_retirement(0)
 	if is_instance_valid(driver):
 		driver.discard_overtaking("stolen")
 		_detach_driver()
@@ -464,15 +472,17 @@ func _stall_police_enroute(delta: float) -> void:
 	else: target_still = RULES.TARGET_STOPPED_SECONDS
 	var flat := Vector2(vehicle.global_position.x - anchor.x, vehicle.global_position.z - anchor.z).length()
 	var may_stop := (not in_car) or target_still >= RULES.TARGET_STOPPED_SECONDS
-	if may_stop and flat <= stop_distance:
-		driver.hold(true)
-		if driver.settled():
+	if stop_planner.curve != null or (may_stop and flat <= stop_distance+10.0):
+		driver.hold(driver.pending_recovery())
+		if stop_planner.tick(self,anchor,delta):
 			_park_reset()
+			vehicle.set_meta("dispatch_needs_room",false)
 			_set_state("parked")
 		else: _park_pending(delta)
 		driver.tick(delta)
 		return
 	_park_reset()
+	stop_planner.reset()
 	driver.hold(false)
 	var forward: Vector3 = -target.global_basis.z if (target != null and in_car) else (anchor - vehicle.global_position)
 	_goal = RULES.formation_goal(role, anchor, velocity, forward, stop_distance) if in_car else anchor
@@ -631,6 +641,7 @@ func _deploy_police_crew() -> bool:
 		officers.append(officer)
 		crew_remaining -= 1
 		deployed = true
+	_sync_motorcycle_rider()
 	TRACE.end("crew.deploy_police", traced, {"free_slots": free_slots})
 	return deployed
 
@@ -746,12 +757,12 @@ func _service_enroute(delta: float) -> void:
 		_end_assignment_for_recovery(stall_cause)
 		return
 	var flat := Vector2(vehicle.global_position.x - actor.global_position.x, vehicle.global_position.z - actor.global_position.z).length()
-	var arrival := RULES.arrival_radius(service)
 	var at_end: bool = driver.at_route_end()
-	if flat <= arrival or (at_end and flat <= RULES.FOOT_RANGE):
-		driver.hold(true)
-		if driver.settled():
+	if stop_planner.curve != null or flat <= RULES.FOOT_RANGE+20.0:
+		driver.hold(driver.pending_recovery())
+		if stop_planner.tick(self,actor.global_position,delta):
 			_park_reset()
+			vehicle.set_meta("dispatch_needs_room",false)
 			_set_state("parked")
 		else: _park_pending(delta)
 	elif at_end:
@@ -866,6 +877,8 @@ func on_crew_released(released: CharacterBody3D) -> void:
 # --- Partida -----------------------------------------------------------------
 
 func _begin_departure() -> void:
+	stop_planner.reset()
+	if is_instance_valid(vehicle): vehicle.set_meta("dispatch_needs_room",true)
 	if is_police() and crew_remaining <= 0 and officers.is_empty():
 		_police_crew_depleted()
 		return
@@ -898,7 +911,9 @@ func _plan_departure() -> void:
 	var result: Dictionary = controller.router.plan_departure(vehicle.global_position, player_position, RULES.RECYCLE_DISTANCE + 25.0, heading)
 	TRACE.end("router.plan_departure", traced)
 	if result.ok:
-		driver.set_route(result.curve)
+		var departure: Curve3D = stop_planner.departure_curve(vehicle,result.curve)
+		driver.set_route(departure)
+		if departure==null: controller.emit_dispatch_event("departure_merge_blocked",{"unit":self})
 		_stranded = 0.0
 	else:
 		driver.set_route(null)
@@ -909,6 +924,35 @@ func _tick_departing(delta: float) -> void:
 	_departure_clock += delta
 	driver.hold(driver.route == null)
 	driver.tick(delta)
+	if _departure_origin==Vector3.INF: _departure_origin=vehicle.global_position
+	var departure_progress := vehicle.global_position.distance_to(_departure_origin)
+	if departure_progress>_departure_best+3:
+		_departure_best=departure_progress
+		_departure_anchor=vehicle.global_position
+		_departure_stall=0
+		_retirement=0
+		vehicle.fade_traffic_retirement(0)
+	elif absf(vehicle.speed)<.6: _departure_stall+=delta
+	_escape_retry-=delta
+	if _departure_stall>6 and _escape_retry<=0 and driver.route!=null and not driver.pending_recovery():
+		_escape_retry=2
+		var escape: Curve3D=preload("res://gameplay/TrafficEscapePlanner.gd").plan(vehicle,driver.route)
+		if escape!=null:
+			driver.discard_overtaking("departure_escape")
+			driver.set_route(escape)
+			vehicle.set_meta("dispatch_escape_active",true)
+			controller.emit_dispatch_event("departure_escape",{"unit":self})
+	if vehicle.get_meta("dispatch_escape_active",false) and driver.route!=null and driver.offset>=float(driver.route.get_meta("traffic_escape_until",0)):
+		vehicle.remove_meta("dispatch_escape_active")
+	# A departing, unoccupied response may be retired visibly as a last resort,
+	# as requested: its solid hull stays until the end of the short fade.
+	if _departure_stall>=28 or _departure_clock>=45:
+		_retirement+=delta
+		driver.hold(true)
+		vehicle.fade_traffic_retirement(minf(1,_retirement))
+		if _retirement>=1:
+			finish("departure_escape_removed")
+			return
 	var unseen: bool = controller.is_unseen(vehicle.global_position)
 	var distance: float = controller.distance_to_player(vehicle.global_position)
 	if unseen and distance > RULES.RECYCLE_DISTANCE:
@@ -994,8 +1038,8 @@ func on_gave_up(_reason: String) -> void:
 	# cap stays below ordinary off-screen spawn distance.
 	var reach := RULES.SPAWN_MAX if is_police() else RULES.FOOT_RANGE
 	if flat <= reach:
-		driver.hold(true)
-		_set_state("parked")
+		# Route failure does not authorise unloading in a live traffic lane.
+		stop_planner.tick(self,anchor,.8)
 		return
 	controller.emit_dispatch_event("route_blocked", {"unit": self})
 	_begin_departure()

@@ -35,6 +35,11 @@ var _suspension: Dictionary = {}
 var _impact_hull: CapsuleShape3D
 var _ground_contact: Dictionary = {}
 
+static func actor_visual(body: Object) -> Node3D:
+	var presentation := preload("res://gameplay/CharacterFallPresentation3D.gd")
+	var visual := presentation._property_node(body, "visual")
+	return visual if visual != null else presentation._property_node(body, "model")
+
 func suspend_for_dispatch(state: Dictionary) -> void:
 	if _restored or not _suspension.is_empty(): return
 	_suspension = state
@@ -164,7 +169,7 @@ func _ready() -> void:
 	actor.set_meta("street_flying", true)
 	actor.set_meta("street_down", true)
 	actor.set_meta("street_pose_owned", true)
-	var visual: Node3D = actor.get("visual")
+	var visual := actor_visual(actor)
 	if is_instance_valid(visual):
 		_visual_base = visual.transform
 		_pose.capture(visual)
@@ -218,7 +223,7 @@ func _fly(delta: float) -> void:
 	if _grounded and vertical == 0 and velocity.length() < .3 and _age > .35: _land()
 
 func _present(recovery := 0.0) -> void:
-	var visual: Node3D = actor.get("visual")
+	var visual := actor_visual(actor)
 	if not is_instance_valid(visual): return
 	var fall := smoothstep(0.0,.38,_age)
 	var target := Basis(Vector3.UP,_yaw)*Basis(Vector3.RIGHT,PI*.5)*Basis(Vector3.UP,.06)
@@ -250,7 +255,8 @@ func _wait_for_help(delta: float) -> void:
 		return
 	if _getting_up: return
 	down_time += delta
-	if float(actor.get("health")) >= 60.0 or down_time >= SELF_RECOVERY_SECONDS: _get_up()
+	var health: Variant = actor.get("health")
+	if (health != null and float(health) >= 60.0) or down_time >= (SELF_RECOVERY_SECONDS if health != null else 8.0): _get_up()
 
 func _get_up() -> void:
 	_getting_up = true
@@ -258,7 +264,7 @@ func _get_up() -> void:
 	_recovery_tween.tween_method(func(t: float): _present(smoothstep(0,1,t)),0.0,1.0,GET_UP_SECONDS)
 	_recovery_tween.tween_callback(func():
 		if not is_instance_valid(actor) or actor.get("dead") == true: return
-		actor.health = maxf(float(actor.get("health")),35.0)
+		if actor.get("health") != null: actor.set("health", maxf(float(actor.get("health")),35.0))
 		_restore()
 		queue_free())
 
@@ -294,7 +300,7 @@ func _restore() -> void:
 		actor.set_physics_process(_saved_physics)
 	if dead: return
 	actor.velocity = Vector3.ZERO
-	var visual: Node3D = actor.get("visual")
+	var visual := actor_visual(actor)
 	if is_instance_valid(visual): visual.transform = _visual_base
 	_pose.restore()
 

@@ -42,6 +42,7 @@ static func populate(room: Node3D, definition: Dictionary, floor_index: int) -> 
 
 func notice_intrusion(origin: Vector3, owner_session) -> void:
 	var witnesses := 0
+	var speaker: Node3D
 	for resident in residents:
 		if not is_instance_valid(resident) or resident.dead or not resident.is_visible_in_tree(): continue
 		if resident.global_position.distance_to(origin) > 12.0: continue
@@ -51,8 +52,12 @@ func notice_intrusion(origin: Vector3, owner_session) -> void:
 		var reaction := resident.get_node_or_null("WorkplaceThreatReaction")
 		if reaction == null: continue
 		reaction._notice(origin, 12.0)
+		if speaker == null: speaker = resident
 		witnesses += 1
 	if witnesses == 0: return
-	owner_session.show_message("Larga essa porta. Você não devia estar aqui." if illicit else "Ei! Vou chamar a polícia!")
+	var canonical := "Larga essa porta. Você não devia estar aqui." if illicit else "Ei! Vou chamar a polícia!"
+	var binding := preload("res://audio/VoiceActorBinding.gd").resolve(speaker, "building_warning")
+	var spoken := preload("res://audio/ActorDialogueVoice.gd").speak(speaker, canonical, binding)
+	owner_session.show_speech(str(speaker.social_snapshot().get("name", "")), str(spoken.get("message", canonical)), maxf(3.0, float(spoken.get("duration", 0.0))), false, str(binding.get("persona", "")), canonical, str(binding.get("character_id", "")), str(binding.get("section", "")))
 	# The visible break-in starts testimony; police only learn it after the call.
 	if not illicit and is_instance_valid(gameplay): gameplay.report_observed_crime(12, origin, "burglary")

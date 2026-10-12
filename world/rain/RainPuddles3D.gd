@@ -77,6 +77,7 @@ func _weather_raining() -> bool:
 	if int(weather.weather_state) not in [1, 2]: return false
 	# A neve de Mountain não enche poça; a costura segue o mesmo peso regional da chuva.
 	var focus: Vector3 = weather.atmosphere.focus_position(controller)
+	if weather.has_method("rain_strength_at"): return weather.rain_strength_at(focus)>.001
 	return float(weather.atmosphere.weights_at(focus).mountain) < 0.999
 
 func _process(delta: float) -> void:

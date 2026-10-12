@@ -39,6 +39,9 @@ func run() -> void:
 	check(world.dispatch.router._native!=null,"C# route backend active")
 	var session=world.session
 	var race=session.desert.drag
+	# Keep this ranked-board suite independent of the visitor heat schedule.
+	race.open_meet.enabled = false
+	for i in 3: await physics_frame
 	world.gameplay.god_mode=true
 	check(not get_nodes_in_group("desert_drag_boards").is_empty(),"physical board streams with the meet")
 	var board_at := preload("res://activities/desert_drag/DesertDragBoardProp.gd").position()

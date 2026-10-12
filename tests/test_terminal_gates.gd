@@ -17,7 +17,7 @@ func run() -> void:
 	route.add_point(coach.position); route.add_point(Vector3(0,.1,8))
 	coach.set_path(route)
 	coach.gate_stop = gate.stop_distance(coach,route)
-	check(coach.gate_stop>3 and coach.gate_stop<5,"Stop protects full coach nose with margin")
+	check(coach.gate_stop>2 and coach.gate_stop<4,"Stop protects full coach nose with margin")
 	await physics_frame
 	check(coach.test_move(coach.global_transform,Vector3(0,0,8)),"Closed arm physically blocks coach")
 	coach.progress = coach.gate_stop

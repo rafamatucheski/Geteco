@@ -50,6 +50,7 @@ func configure(owner_vehicle: CharacterBody3D, deferred := false) -> void:
 			coupe_ready = true
 			angle = 1.05
 			_layout(float(spec.get("x", .90)))
+			if is_instance_valid(vehicle.body_dents): vehicle.body_dents.geometry_changed()
 			return
 		coupe_doors.queue_free()
 	_job = BUILDER.begin(vehicle.visual, spec, float(spec.get("x", -1.0)))  # x da tabela evita a varredura de medição
@@ -81,6 +82,7 @@ func _finish() -> void:
 	for side in [-1, 1]: _build_side(side, result, skin)
 	_static_details(skin)
 	_layout(skin)
+	if is_instance_valid(vehicle.body_dents): vehicle.body_dents.geometry_changed()
 
 ## Deriva tudo o que o embarque precisa (ponto de espera, portão, ponto de agarrar) e
 ## converte para coordenadas do veículo, que é onde Vehicle e Boarding trabalham.

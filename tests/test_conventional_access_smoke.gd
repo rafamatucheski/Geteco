@@ -63,17 +63,17 @@ func _smoke_access(id: String) -> bool:
 	check(is_zero_approx(facade.open_amount) and world.player.test_move(sweep, Vector3(0, 0, -1.1)), id + " closed leaf blocks walking body")
 	world.player.teleport(door + Vector3(0, .08, 2))
 	await frames(24)
-	var collision := KinematicCollision3D.new()
-	var obstructed: bool = world.player.test_move(sweep, Vector3(0, 0, -1.1), collision)
-	if obstructed: print("ACCESS_BLOCKER ", id, " ", collision.get_collider().get_path(), " ", collision.get_position())
-	check(facade.open_amount > .99 and not obstructed, id + " proximity opens physical passage")
+	check(facade.open_amount < .01 and world.player.test_move(sweep, Vector3(0, 0, -1.1)), id + " stationary approach preserves closed physical door")
 	check(session.nearest().get("id", "") != "enter" and session.state.place_id.is_empty(), id + " no E or standing transfer")
-	Input.action_press("move_up")
+	# This smoke checks physical doors. Movement follows their world-space
+	# inward direction, independently of the saved camera view or orbit.
+	world.player.controlled_automatically = true
+	world.player.automatic_direction = access._inward(id)
 	var entered := await wait_until(func(): return session.state.place_id == canonical, 180)
-	Input.action_release("move_up")
+	world.player.automatic_direction = Vector3.ZERO
 	check(entered, id + " walking enters canonical room")
 	if not entered:
-		print("ACCESS_STOP ", world.player.global_position, " door=", door, " notice=", session.notice.text)
+		print("ACCESS_STOP ", world.player.global_position, " door=", door, " notice=", session.notice.text," home=",session.activities.residence.data.active_home," allowed=",session.activities.can_enter_home(id)," camera=",world.camera.heading," locked=",world.player.input_locked," controls=",root.get_node("GameInput").movement()," auto=",world.player.controlled_automatically," stars=",world.gameplay.stars)
 		return false
 	await wait_until(func(): return not access._entering)
 	check(session.access_id == id and world.camera.locked and not world.player.input_locked, id + " origin and interior control preserved")
@@ -81,9 +81,9 @@ func _smoke_access(id: String) -> bool:
 	_print_return_blockers(id, desired)
 	world.player.teleport(session.room.exit_position + Vector3(0, .08, -.9))
 	await frames(3)
-	Input.action_press("move_down")
+	world.player.automatic_direction = Vector3.BACK
 	var exited := await wait_until(func(): return session.state.place_id.is_empty(), 180)
-	Input.action_release("move_down")
+	world.player.automatic_direction = Vector3.ZERO
 	check(exited, id + " walking exits without E")
 	if not exited: return false
 	var zoom: bool = world.camera._store_focus_active
@@ -98,6 +98,11 @@ func _smoke_access(id: String) -> bool:
 	for offset in [Vector3.ZERO, outward * .75, outward * 1.5, side * .8 + outward * .75, -side * .8 + outward * .75]:
 		matches = matches or returned.distance_to(desired + offset) < .1
 	print("ACCESS_RETURN ", id, " desired=", desired, " actual=", world.player.global_position, " zoom=", zoom)
+	if "--capture-return" in OS.get_cmdline_user_args() and DisplayServer.get_name() != "headless":
+		var output := "res://evidence/android-033/access"
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(output))
+		await RenderingServer.frame_post_draw
+		root.get_texture().get_image().save_png(output.path_join(id+"-return.png"))
 	check(zoom and matches and not world.player.input_locked and session.position_clear(world.player.global_position + Vector3.UP * .04), id + " zoom and safe original return")
 	await frames(12)
 	check(session.state.place_id.is_empty(), id + " no return loop")

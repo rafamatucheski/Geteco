@@ -21,6 +21,13 @@ static func material(tint: Color, world_projection := false) -> StandardMaterial
 				var grain := noise.get_noise_3dv(periodic * 34.0)
 				var aggregate := maxf(0.0, -grain - .18)
 				var tone := .88 + wear * .085 + grain * .055 - aggregate * .06
+				# Four-metre tile: one-metre slabs with 3 cm recessed joints.
+				# Keep the grid aligned to the existing road/world UVs at chunk seams.
+				var cell_x := floori(x / 64.0)
+				var cell_y := floori(y / 64.0)
+				tone += sin(cell_x * 13.7 + cell_y * 9.1) * .035
+				if x % 64 < 2 or y % 64 < 2: tone -= .18
+				elif x % 64 < 4 or y % 64 < 4: tone += .025
 				image.set_pixel(x,y,Color(tone * 1.008,tone,tone * .986))
 		image.generate_mipmaps()
 		tile = ImageTexture.create_from_image(image)

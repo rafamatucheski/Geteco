@@ -9,6 +9,9 @@ render_mode unshaded, depth_test_disabled, depth_draw_never, cull_back, shadows_
 // Neutro e só na borda: a versão amarela chapada acendia o teto inteiro de
 // ônibus e carro como um bloco de luz atrás do prédio.
 uniform vec4 tint : source_color = vec4(0.82, 0.86, 0.92, 0.55);
+// Walking player only: dark fill reads on pale roofs, light rim on dark walls.
+// Other users of this shader retain their existing neutral edge treatment.
+uniform bool readable_actor = false;
 uniform sampler2D depth_tex : hint_depth_texture, filter_nearest;
 // Folga em unidades de depth não linear (câmera ortográfica: depth é linear
 // no intervalo near..far, 180 m). 0.004 ~= 0.7 m, evita que braço na frente
@@ -42,6 +45,12 @@ void fragment() {
 		discard;
 	}
 	float rim = 1.0 - clamp(dot(NORMAL, VIEW), 0.0, 1.0);
-	ALBEDO = tint.rgb;
-	ALPHA = tint.a * (0.08 + 0.92 * pow(rim, 2.5));
+	if (readable_actor) {
+		float edge = smoothstep(0.78, 0.96, rim);
+		ALBEDO = mix(vec3(0.06, 0.08, 0.11), tint.rgb, edge);
+		ALPHA = mix(0.92, 0.95, edge);
+	} else {
+		ALBEDO = tint.rgb;
+		ALPHA = tint.a * (0.08 + 0.92 * pow(rim, 2.5));
+	}
 }

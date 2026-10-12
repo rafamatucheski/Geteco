@@ -29,10 +29,20 @@ func _available(on_foot := true) -> bool:
 
 func nearest_action() -> Dictionary:
 	if not _available() or session.world.player.global_position.distance_to(CONTACT)>2.6: return {}
+	if _contact_actor() == null: return {}
 	if STATE.data(session.state.world_state).status=="complete": return {}
 	var ray:=PhysicsRayQueryParameters3D.create(session.world.player.global_position+Vector3.UP,CONTACT+Vector3.UP,1)
 	if not session.world.get_world_3d().direct_space_state.intersect_ray(ray).is_empty(): return {}
 	return {"id":"desert","target":"yard_job","label":"Conversar sobre o serviço da cava"}
+
+func _contact_actor() -> Node3D:
+	# One authored station, retained across streaming by its station ID. Never
+	# substitute a distant worker when the actual speaker is dead or unloaded.
+	for actor in get_tree().get_nodes_in_group("mining_job_contacts"):
+		if not is_instance_valid(actor) or actor.get("dead") == true or not actor.is_visible_in_tree(): continue
+		if actor.global_position.distance_to(CONTACT) > 4.0: continue
+		return actor as Node3D
+	return null
 
 func perform(action: Dictionary) -> bool:
 	if action.is_empty() or action!=nearest_action(): return false
@@ -53,7 +63,9 @@ func _begin() -> void:
 	preload("res://runtime/desert/community/DesertCommunityState.gd").track(session.state.world_state,false)
 	preload("res://runtime/desert/DesertContractState.gd").track(session.state.world_state,"")
 	session.save_game()
-	session.show_dialogue([{"speaker":"Operário","message":"Preciso liberar as três pedras marcadas de amarelo. Use a pá da máquina e deixe cada uma dentro da baia branca. Solte a carga e recue: só conto pedra apoiada no chão. Depois volte aqui pelos mil e oitocentos."}])
+	var actor := _contact_actor()
+	var binding := preload("res://audio/VoiceActorBinding.gd").resolve(actor, "operário", "gameplay/mining/jobs/MiningYardJob.gd")
+	session.show_dialogue([{"speaker":"Operário","message":"Preciso liberar as três pedras marcadas de amarelo. Use a pá da máquina e deixe cada uma dentro da baia branca. Solte a carga e recue: só conto pedra apoiada no chão. Depois volte aqui pelos mil e oitocentos.", "voice_persona":binding.get("persona", ""), "character_id":binding.get("character_id", ""), "voice_section":binding.get("section", ""), "voice_actor":weakref(actor)}])
 
 func _pause() -> void:
 	session.close_menu()
@@ -88,7 +100,7 @@ func objective() -> String:
 	var state:=STATE.data(session.state.world_state)
 	if state.status!="active": return ""
 	if state.delivered.size()==STATE.COUNT: return "Limpeza da cava: volte ao operário para receber R$ 1.800."
-	return "Limpeza da cava: use a pá e solte as pedras na baia branca (%d/3)." % state.delivered.size()
+	return String(TranslationServer.translate("Limpeza da cava: use a pá e solte as pedras na baia branca (%d/3).")) % state.delivered.size()
 
 func target_position() -> Vector3:
 	return CONTACT if STATE.data(session.state.world_state).delivered.size()==STATE.COUNT else DESTINATION
@@ -125,7 +137,7 @@ func _process(delta: float) -> void:
 		if _settled[index]<1.5: continue
 		if STATE.deliver(session.state.world_state,index,rock.global_position,rock.rotation):
 			_accept(rock)
-			session.show_message("Pedra depositada · %d/3" % STATE.data(session.state.world_state).delivered.size())
+			session.show_message(String(TranslationServer.translate("Pedra depositada · %d/3")) % STATE.data(session.state.world_state).delivered.size())
 
 static func deposit_ready(rock: RigidBody3D) -> bool:
 	if rock.freeze or rock.has_meta("mining_carried_by") or rock.linear_velocity.length_squared()>.0225 or rock.angular_velocity.length_squared()>.04: return false

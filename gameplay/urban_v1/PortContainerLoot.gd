@@ -43,7 +43,7 @@ func nearest_action() -> Dictionary:
 	var point: Vector3 = session.world.player.global_position
 	for container in get_tree().get_nodes_in_group("lootable_port_containers"):
 		if not container.opened and point.distance_to(container.door_point()) < 1.6:
-			return {"id":"port_container","target":container.cargo_id,"label":"Arrombar · Lockpicks: %d" % picks() if picks() > 0 else "Precisa de lockpick · Lockpicks: 0"}
+			return {"id":"port_container","target":container.cargo_id,"label":String(TranslationServer.translate("Arrombar · Lockpicks: %d")) % picks() if picks() > 0 else "Precisa de lockpick · Lockpicks: 0"}
 		if container.contains(point) and not container.looted and point.distance_to(container.loot_point()) < 1.6:
 			return {"id":"port_container","target":container.cargo_id,"label":"Vasculhar"}
 	return {}
@@ -137,10 +137,10 @@ func _resolve_lock(result: String) -> void:
 		row.opened = true
 		records[container.cargo_id] = row
 		container.apply_state(records[container.cargo_id],true)
-		session.show_message("Contêiner arrombado · Lockpicks: %d" % picks())
+		session.show_message(String(TranslationServer.translate("Contêiner arrombado · Lockpicks: %d")) % picks())
 	elif result == "broken":
 		session.state.economy.consume_item("lockpick")
-		session.show_message("Lockpick quebrou · Restam %d" % picks())
+		session.show_message(String(TranslationServer.translate("Lockpick quebrou · Restam %d")) % picks())
 	_persist()
 	if release_controls: session.world.player.input_locked = true
 
@@ -180,7 +180,7 @@ func collect(container: Node3D) -> bool:
 		if not wallet.grant_reward(receipt,0):
 			wallet.restore_snapshot(before)
 			return false
-		message = "+%d munições" % reward.amount if owned else "Arma recolhida: "+str(wallet.Weapons.WEAPONS[reward.weapon].label)
+		message = String(TranslationServer.translate("+%d munições")) % reward.amount if owned else "Arma recolhida: "+str(wallet.Weapons.WEAPONS[reward.weapon].label)
 		cue = "weapon"
 		session.world.gameplay.changed.emit()
 	elif reward.kind == "ammo":
@@ -191,7 +191,7 @@ func collect(container: Node3D) -> bool:
 		if not wallet.grant_reward(receipt,0):
 			wallet.restore_snapshot(before)
 			return false
-		message = "+%d munições de pistola" % reward.amount
+		message = String(TranslationServer.translate("+%d munições de pistola")) % reward.amount
 		cue = "weapon"
 	else:
 		if not wallet.grant_reward(receipt,0): return false

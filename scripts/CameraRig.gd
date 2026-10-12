@@ -1,7 +1,11 @@
 extends Camera3D
 
 const SCOPE_SIZE_MULTIPLIER := 0.5
+const SMUGGLER_CANYON := preload("res://world/desert/canyon/DesertSmugglerLayout.gd")
 const FOLLOW_RATE := 4.2
+const AIM_FOLLOW_RATE := 12.0
+const ORBIT_FOLLOW_RATE := 16.0
+const MOUSE_ORBIT_RADIANS_PER_PIXEL := 0.004
 const GAMEPAD_ORBIT_SPEED := deg_to_rad(110.0)
 const HEIGHT_FOLLOW_RATE := 10.0
 const V1_VIEWPORT_HEIGHT := 720.0
@@ -15,26 +19,23 @@ const V1_CAMERA_SPEED := 600.0 / V1_PIXELS_PER_METRE
 const V1_WALK_LEAD := 18.0 / V1_PIXELS_PER_METRE
 const V1_DRIVE_LEAD := 52.0 / V1_PIXELS_PER_METRE
 const V1_SCOPE_LEAD := 250.0 / V1_PIXELS_PER_METRE
-# Inclinação de 45° (antes ~52°, Vector3(0,28,22)). Com a câmera quase de
-# cima, a laje dos prédios ocupava ~60% da tela e a fachada virava uma faixa
-# fina; a 45° a relação fachada/telhado sobe ~28% (cot 0,79 -> 1,0), leitura
-# de "cidade de jogo" à la GTA Chinatown Wars. A distância ao foco (~35.8 m)
-# foi mantida para não mudar atenuação de áudio nem o near/far.
-const EXTERIOR_OFFSET := Vector3(0,25.3,25.3)
+# Inclinação de ~35° para mostrar um pouco mais à frente e menos de cima.
+# Mantém a distância ao foco (~35,8 m).
+const EXTERIOR_OFFSET := Vector3(0,20.52,29.30)
 const PREVIEW_OFFSET := Vector3(0, 21.8, 28.4)
 const PREVIEW_HEADING := PI / 4.0
 const STORE_FOCUS_OFFSET := Vector3(0,12.0,25.3)
 # Camera3D.size measures the vertical camera plane. The productive V1 zoom
 # measured visible ground, so compensate for the exterior pitch instead of
 # copying Camera2D numbers into metres. Equals sin(pitch) of EXTERIOR_OFFSET.
-const EXTERIOR_GROUND_PROJECTION := 0.7071068
+const EXTERIOR_GROUND_PROJECTION := 20.52 / 35.77387874
 # A escala aparente de quem está de pé é proporcional a cot(inclinação)/size.
 # As medições V1 abaixo foram calibradas com a câmera antiga (cot = 22/28);
-# baixar a câmera faria o Dante crescer ~27% na tela. Abrir todo o
+# baixar a câmera faria o Dante crescer na tela. Abrir todo o
 # enquadramento (andar E dirigir) na mesma proporção preserva o tamanho do
-# personagem da V1 e a relação andar/dirigir; o chão visível fica ~27% maior.
+# personagem da V1 e a relação andar/dirigir.
 const V1_CALIBRATION_PITCH_COT := 22.0 / 28.0
-const PITCH_APPARENT_COMPENSATION := (25.3 / 25.3) / V1_CALIBRATION_PITCH_COT
+const PITCH_APPARENT_COMPENSATION := (29.30 / 20.52) / V1_CALIBRATION_PITCH_COT
 # Equivalent 1280x720 captures measured the productive V1 Dante alpha rig at
 # 34.312 px and the native 1.80 m V2 actor at 46.886 px with ground-only
 # conversion. Walking framing compensates that presentation difference while
@@ -43,11 +44,16 @@ const V1_WALK_APPARENT_SCALE := 46.8863525390625 / 34.3123196752596
 # Pedido de jogo (2026-09-22): a câmera parecia longe demais. Aproxima 25% o
 # enquadramento inteiro (andar, dirigir e mira) sem mexer na calibração V1
 # acima, para que a relação andar/dirigir continue a mesma.
-const FRAMING_ZOOM_SCALE := 0.75
+# Pedido de jogo (2026-10-12): aproximar mais 13% sobre o enquadramento atual.
+const FRAMING_ZOOM_SCALE := 0.75 * 0.87
 const WALK_SIZE_CLOSE := V1_VIEWPORT_HEIGHT / (V1_WALK_ZOOM_CLOSE * V1_PIXELS_PER_METRE) * EXTERIOR_GROUND_PROJECTION * PITCH_APPARENT_COMPENSATION * V1_WALK_APPARENT_SCALE * FRAMING_ZOOM_SCALE
 const TARGET_TELEPORT_DISTANCE := 8.0
 var target: Node3D
 var heading := 0.0
+var _view_heading := 0.0
+var _mouse_orbit := false
+var _mouse_orbit_screen := Vector2.ZERO
+var _mouse_orbit_previous_mode := Input.MOUSE_MODE_HIDDEN
 var target_size := WALK_SIZE_CLOSE
 var focus := Vector3.ZERO
 var initialized := false
@@ -148,6 +154,8 @@ func _exterior_view_offset() -> Vector3:
 	return exterior.lerp(Vector3(0,35,.15),_container_blend)
 
 func _process(delta: float) -> void:
+	if _mouse_orbit and (_camera_input_blocked() or not Input.is_action_pressed("camera_drag")):
+		_end_mouse_orbit()
 	# Dante moves in real time during his katana ability. Follow/orbit must share
 	# that clock; the rest of the world and cameras following vehicles stay scaled.
 	if not locked and is_instance_valid(target) and target.has_meta("katana_rage_speed"):
@@ -167,8 +175,9 @@ func _process(delta: float) -> void:
 		var combat := _gameplay()
 		# Production sights follow the shot; do not overlay a second cross at screen centre.
 		scope_reticle.visible = scoped and not (combat != null and combat.has_method("aim_feedback_active"))
+	if get_tree().paused: return
 	if _store_focus_active:
-		_exterior_reveal.release()
+		if _exterior_reveal.enabled: _exterior_reveal.release()
 		_tunnel_safety.restore_environment()
 		_store_focus_elapsed = minf(_store_focus_duration, _store_focus_elapsed + maxf(delta, 0.0))
 		var t := _store_focus_elapsed / _store_focus_duration
@@ -184,7 +193,7 @@ func _process(delta: float) -> void:
 		look_at(focus)
 		return
 	if not is_instance_valid(target):
-		_exterior_reveal.release()
+		if _exterior_reveal.enabled: _exterior_reveal.release()
 		_tunnel_safety.restore_environment()
 		return
 	delta = maxf(delta,0.0) if is_finite(delta) else 0.0
@@ -195,6 +204,7 @@ func _process(delta: float) -> void:
 	var teleported := actual.distance_to(interpolated) > TARGET_TELEPORT_DISTANCE
 	var base := actual if teleported or locked else interpolated
 	var snap := not initialized or teleported or locked != _was_locked
+	_view_heading = heading if snap or _mouse_orbit else lerp_angle(_view_heading, heading, 1.0 - exp(-ORBIT_FOLLOW_RATE * delta))
 	# Small paving steps must not kick the entire street vertically. Keep
 	# horizontal tracking immediate and preserve snaps/locked interior framing.
 	if not snap and not target_changed and not locked and target is CharacterBody3D and not _is_vehicle_target():
@@ -210,7 +220,8 @@ func _process(delta: float) -> void:
 	if snap:
 		_smoothed_lead = desired_lead if not locked else Vector3.ZERO
 	else:
-		_smoothed_lead = _smoothed_lead.lerp(desired_lead,1.0-exp(-FOLLOW_RATE*delta))
+		var aiming_camera := scoped or _manual_aim_active()
+		_smoothed_lead = _smoothed_lead.lerp(desired_lead,1.0-exp(-(AIM_FOLLOW_RATE if aiming_camera else FOLLOW_RATE)*delta))
 	# Physics interpolation already smooths the actor itself. Only lead is
 	# damped, matching V1 and avoiding a second full-target trail.
 	focus = base+_smoothed_lead
@@ -218,6 +229,10 @@ func _process(delta: float) -> void:
 		focus = focus.lerp(_container_focus,_container_blend)
 	initialized = true
 	var base_size := _base_size()
+	# Local bridge reveal exposes the rock rim and deep slot on both sides.
+	# Preserve explicit review/user framing, interior locks and normal scope ratio.
+	if not locked and _external_size_target_id==0:
+		base_size=lerpf(base_size,maxf(base_size,SMUGGLER_CANYON.CAMERA_SIZE),SMUGGLER_CANYON.camera_weight(actual))
 	var desired_size := base_size*SCOPE_SIZE_MULTIPLIER if scoped else base_size
 	if not locked: desired_size *= float(get_meta("port_container_zoom",1.0))
 	var tunnel_depth := 0.0
@@ -228,8 +243,8 @@ func _process(delta: float) -> void:
 	if snap or locked:
 		size = desired_size
 	else:
-		size = lerpf(size,desired_size,1.0-exp(-FOLLOW_RATE*delta))
-	var exterior_offset := _exterior_view_offset().rotated(Vector3.UP, heading)
+		size = lerpf(size,desired_size,1.0-exp(-(AIM_FOLLOW_RATE if scoped else FOLLOW_RATE)*delta))
+	var exterior_offset := _exterior_view_offset().rotated(Vector3.UP, _view_heading)
 	var falling: bool = target is CharacterBody3D and target.velocity.y < -1.0 and not target.is_on_floor()
 	exterior_offset = _desert_terrain_camera.offset_for(focus,exterior_offset,delta,snap,not locked and _tunnel_blend<.001,Vector2(size*get_viewport().get_visible_rect().size.aspect(),size),near,actual,3.4 if _is_vehicle_target() else .8,_flat_velocity(),falling)
 	global_position = focus + exterior_offset
@@ -238,8 +253,10 @@ func _process(delta: float) -> void:
 	# look_at resets this basis each frame; the small roll never accumulates.
 	var alcohol_roll := float(get_meta("alcohol_intensity",0.0)) * float(get_meta("alcohol_sway",0.0)) * .016
 	if not is_zero_approx(alcohol_roll): rotate_object_local(Vector3.FORWARD,alcohol_roll)
-	# Restore this effect before authored tunnel/interior visibility takes over.
-	_exterior_reveal.update(self,target,_is_vehicle_target(),_flat_velocity(),delta,not locked and _tunnel_blend < .001 and _tunnel_chase_blend < .001 and projection == Camera3D.PROJECTION_ORTHOGONAL and not get_tree().paused)
+	# Exterior transparency is diagnostic-only; normal play keeps the silhouette.
+	# Authored tunnel/interior visibility still owns its independent cutaway.
+	if _exterior_reveal.enabled:
+		_exterior_reveal.update(self,target,_is_vehicle_target(),_flat_velocity(),delta,not locked and _tunnel_blend < .001 and _tunnel_chase_blend < .001 and projection == Camera3D.PROJECTION_ORTHOGONAL and not get_tree().paused)
 	_update_cutaway()
 	_was_locked = locked
 
@@ -413,6 +430,10 @@ func _vehicle_size() -> float:
 	return maxf(WALK_SIZE_CLOSE,size_for_v1_zoom(zoom))
 
 func _desired_lead(base: Vector3,scoped: bool) -> Vector3:
+	if not _is_vehicle_target() and (scoped or _manual_aim_active()):
+		var controls := get_node_or_null("/root/GameInput")
+		if controls != null and not controls.using_gamepad and not controls.get_meta("touch_controls_active", false) and controls.touch_aim.is_zero_approx():
+			return mouse_aim_lead(base, scoped, aim_screen_position())
 	if scoped:
 		var gameplay := _gameplay()
 		if gameplay != null:
@@ -431,6 +452,46 @@ func _desired_lead(base: Vector3,scoped: bool) -> Vector3:
 	var limit := V1_DRIVE_LEAD if _is_vehicle_target() else V1_WALK_LEAD
 	var multiplier := 1.35 if _is_vehicle_target() and _target_bool(&"is_boosting") else 1.0
 	return velocity.normalized()*minf(limit*multiplier,velocity.length()*.1*multiplier)
+
+func _manual_aim_active() -> bool:
+	var combat := _gameplay()
+	return combat != null and combat.has_method("aim_feedback_active") and combat.aim_feedback_active()
+
+## Subtracting the centre ray cancels translation. Following aim_point itself
+## gave the scope unit feedback gain: a stationary cursor drove it away.
+func mouse_aim_lead(base: Vector3, scoped: bool, screen: Vector2) -> Vector3:
+	var rect := get_viewport().get_visible_rect()
+	var cursor := screen.clamp(rect.position, rect.end)
+	var plane := Plane(Vector3.UP, base.y + 1.0)
+	var centre: Variant = plane.intersects_ray(project_ray_origin(rect.get_center()), project_ray_normal(rect.get_center()))
+	var point: Variant = plane.intersects_ray(project_ray_origin(cursor), project_ray_normal(cursor))
+	if not centre is Vector3 or not point is Vector3: return Vector3.ZERO
+	var lead: Vector3 = point - centre
+	lead.y = 0.0
+	return (lead * (0.75 if scoped else 0.3)).limit_length(V1_SCOPE_LEAD if scoped else 3.5)
+
+func aim_screen_position() -> Vector2:
+	return _mouse_orbit_screen if _mouse_orbit else get_viewport().get_mouse_position()
+
+func mouse_orbit_active() -> bool:
+	return _mouse_orbit
+
+func _end_mouse_orbit(restore_pointer := true) -> void:
+	if not _mouse_orbit: return
+	_mouse_orbit = false
+	# A menu or another camera may already own the cursor. Never override it.
+	if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		Input.mouse_mode = _mouse_orbit_previous_mode
+		if restore_pointer: get_viewport().warp_mouse(_mouse_orbit_screen)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		_end_mouse_orbit(false)
+
+func _input(event: InputEvent) -> void:
+	# Release must work even when GUI controls consume the corresponding event.
+	if _mouse_orbit and event.is_action_released("camera_drag"):
+		_end_mouse_orbit()
 
 func _flat_velocity() -> Vector3:
 	if target is CharacterBody3D:
@@ -457,7 +518,7 @@ func _gameplay() -> Node:
 	return gameplay if gameplay is Node and is_instance_valid(gameplay) else null
 
 func _scope_active() -> bool:
-	if locked: return false
+	if _camera_input_blocked(): return false
 	var gameplay := _gameplay()
 	return gameplay != null and is_instance_valid(gameplay) and gameplay.has_method("scope_active") and gameplay.scope_active()
 
@@ -487,6 +548,7 @@ func _ensure_scope_reticle() -> void:
 	scope_reticle.hide()
 
 func _exit_tree() -> void:
+	_end_mouse_orbit(false)
 	_exterior_reveal.release()
 	_tunnel_safety.restore_environment()
 	if is_instance_valid(_chase_roof_vehicle): VEHICLE_INTERIOR.set_low_camera_roof(_chase_roof_vehicle, false)
@@ -527,8 +589,20 @@ func _update_gamepad_rotation(delta: float) -> void:
 	heading -= turn * GAMEPAD_ORBIT_SPEED * delta
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventJoypadMotion or not event.is_pressed() or event.is_echo(): return
 	if _camera_input_blocked(): return
+	if event.is_action_pressed("camera_drag") and not event.is_echo():
+		if not _mouse_orbit:
+			_mouse_orbit_screen = get_viewport().get_mouse_position()
+			_mouse_orbit_previous_mode = Input.mouse_mode
+			_mouse_orbit = true
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		get_viewport().set_input_as_handled()
+		return
+	if event is InputEventMouseMotion and _mouse_orbit:
+		heading -= event.screen_relative.x * MOUSE_ORBIT_RADIANS_PER_PIXEL
+		get_viewport().set_input_as_handled()
+		return
+	if event is InputEventJoypadMotion or not event.is_pressed() or event.is_echo(): return
 	# A V1 (DynamicCamera) não tinha zoom manual: o enquadramento vem só da
 	# velocidade, nitro e luneta. A roda do mouse é da troca de arma a pé e da
 	# sintonia de rádio no carro, então a câmera não a consome.

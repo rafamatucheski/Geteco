@@ -14,6 +14,14 @@ var _course: WeakRef
 var _clock := CHECK_INTERVAL
 var _next_rider := 0
 var _steer_clock := STEER_INTERVAL
+var retired := 0
+
+func release(bike: CharacterBody3D) -> void:
+	for row in rows:
+		if row.bike == bike:
+			rows.erase(row)
+			retired += 1
+			return
 
 func configure(controller: Node) -> void:
 	clear()
@@ -27,7 +35,7 @@ func update(delta: float) -> void:
 		clear()
 		return
 	var session: Variant = controller.session
-	if session == null or not session.ready_for_play or controller.active or controller.mounted:
+	if session == null or not session.ready_for_play or controller.active or (controller.mounted and (not is_instance_valid(controller.player_bike) or not controller.player_bike.get_meta("motocross_stolen",false))):
 		clear()
 		return
 	if session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.is_transition_blocked():
@@ -65,7 +73,7 @@ func update(delta: float) -> void:
 		for row in rows: _recover_if_needed(controller, row, elapsed)
 		# Spread procedural-model setup over three checks instead of constructing
 		# all three riders in a single first-visit frame.
-		if rows.size() < MAX_RIDERS and distance <= ENTER_DISTANCE:
+		if rows.size()+retired < MAX_RIDERS and distance <= ENTER_DISTANCE:
 			_spawn_one(controller, world)
 	_steer_clock += delta
 	if _steer_clock < STEER_INTERVAL: return
@@ -92,6 +100,7 @@ func clear() -> void:
 	rows.clear()
 	_course = null
 	_next_rider = 0
+	retired = 0
 
 func _find_course(controller: Node, world: Node3D) -> Node3D:
 	var previous: Node3D = _course.get_ref() if _course != null else null

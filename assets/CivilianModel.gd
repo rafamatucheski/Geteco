@@ -200,6 +200,9 @@ static func _appearance_wardrobe(identity: int, coat: Color, pants: Color, helme
 	var rng := RandomNumberGenerator.new()
 	rng.seed = identity * 7919 + 104729
 	var female := rng.randf() < 0.5
+	# Consume the same identity roll, then honor the authored gender before hair,
+	# beard and clothing are chosen. The final override alone was too late.
+	if overrides.has("female"): female = bool(overrides.female)
 	var w := {}
 	w.female = female
 	w.build = _pick(rng, [0, 1, 2], [0.3, 0.5, 0.2])

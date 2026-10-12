@@ -84,6 +84,9 @@ func dispatch_contract() -> void:
 	check(bike.vehicle._motorcycle_rider_parts.all(func(p): return not p.visible),"seated rider disappears after dismount")
 	if not bike.officers.is_empty():
 		var officer: CharacterBody3D = bike.officers[0]
+		await process_frame
+		check(officer.motorcycle_officer and officer.visual.body.wardrobe.hat == 3, "motor officer keeps full helmet after dismount")
+		check(officer.visual.body.scale.is_equal_approx(Vector3.ONE), "motor officer keeps adult body scale")
 		check(controller.take_agent_for_interior(officer) and bike.officers.is_empty() and bike.crew_remaining == 0,"interior transfer cannot regenerate a motorcycle officer")
 		officer.queue_free()
 	game.clear_wanted(true)
@@ -132,6 +135,7 @@ func roadblock_and_tires() -> void:
 	car.position = roadblock.to_global(Vector3(0,.1,7))
 	check(roadblock.sample_target(car,true) and TIRES.snapshot(car) == 4,"physical target crossing punctures all four tires")
 	check(car.handling.max_speed < original_speed*.5 and car.handling.drift_factor > original_grip,"puncture reduces maximum speed and real tire grip")
+	check(car.get_node_or_null("TirePunctureSound") != null, "new puncture emits positional tire sound")
 	check(not TIRES.puncture(car,4),"repeated contact never compounds identical damage")
 	TIRES.repair_vehicle(car)
 	await process_frame

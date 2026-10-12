@@ -24,7 +24,7 @@ func open() -> bool:
 	_label("Toyota Supra A80 · 800 m",24)
 	_label("Prepare o carro para competir no limite. Largada, trocas e nitro decidem esta prova.",20)
 	var saved := HONOR.data(session.state.world_state)
-	if float(saved.best_seconds)>0: _label("Seu recorde: %.3f s"%float(saved.best_seconds),20)
+	if float(saved.best_seconds)>0: _label(String(TranslationServer.translate("Seu recorde: %.3f s")) %float(saved.best_seconds),20)
 	session._button("Revanche" if saved.won else "Desafiar Takeshi",_request_race)
 	session._button("Voltar",session.close_menu)
 	return true

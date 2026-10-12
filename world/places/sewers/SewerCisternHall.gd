@@ -5,7 +5,7 @@ extends "res://world/places/sewers/SewerVariantBase.gd"
 ## no canto sudeste escondido atrás de uma lona e de canos (abertura em x = 14,5, z = 10,2..11,2).
 const REWARDS := [
 	{"id": "sewer_cistern_island", "kind": "cash", "amount": 2200, "local_position": Vector3(3.0, 0, -0.9)},
-	{"id": "sewer_cistern_vault_cash", "kind": "cash", "amount": 7500, "local_position": Vector3(19.0, 0, 9.6)},
+	{"id": "sewer_cistern_vault_cash", "kind": "cash", "amount": 7500, "local_position": Vector3(19.0, 0, 10.6)},
 	{"id": "sewer_cistern_vault_shotgun", "kind": "weapon", "item": "sawed_off", "amount": 1, "ammo": 24, "local_position": Vector3(19.4, 0, 7.6)},
 	{"id": "sewer_cistern_chapel", "kind": "cash", "amount": 600, "local_position": Vector3(-19.8, 0, 6.6)},
 ]
@@ -35,7 +35,7 @@ func _build() -> void:
 		var board := box(Vector3(3.0, 0.03 - (plank % 4) * 0.01, 3.4 - plank * 0.3), Vector3(1.1, 0.05, 0.26), "#3f301f")
 		board.rotation.y = _rng.randf_range(-0.04, 0.04)
 	box(Vector3(3.0, 0.04, -1.0), Vector3(2.6, 0.06, 2.6), "#33281a")
-	box(Vector3(3.0, 0.2, -1.6), Vector3(1.0, 0.4, 0.6), "#241a10")
+	box(Vector3(3.0, 0.2, -1.6), Vector3(1.0, 0.4, 0.6), "#241a10", false, "IslandChest")
 	for point in [Vector2(-5.0, 0.6), Vector2(8.0, -1.4), Vector2(11.0, 1.8), Vector2(-1.0, -2.0), Vector2(6.0, 2.4)]:
 		var glow := box(Vector3(point.x, -0.05, point.y), Vector3(1.4, 0.02, 0.8), "#2f8a52", false, "", 1.0)
 		glow.rotation.y = _rng.randf() * TAU
@@ -62,14 +62,14 @@ func _build() -> void:
 		bench.rotation.y = _rng.randf_range(-0.12, 0.12)
 	# Acampamento da Tita (nordeste do lago) com fogueira num barril.
 	fire_barrel(Vector3(10.4, 0, -9.4))
-	box(Vector3(12.8, 0.12, -9.8), Vector3(2.0, 0.24, 1.0), "#403d30")
+	box(Vector3(12.8, 0.12, -9.8), Vector3(2.0, 0.24, 1.0), "#403d30", false, "Mattress")
 	box(Vector3(12.8, 0.26, -9.8), Vector3(1.5, 0.06, 0.9), "#4d2626")
 	# Cofre secreto sudeste: paredes de tijolo, abertura escondida, tesouro e a serrada.
 	for wall in [Rect2(14.5, 6.0, 0.4, 4.2), Rect2(14.5, 11.2, 0.4, 1.8), Rect2(14.5, 5.8, 7.5, 0.3)]:
 		box(Vector3(wall.get_center().x, 0.8, wall.get_center().y), Vector3(wall.size.x, 1.6, wall.size.y), "#262b25", false, "VaultWall")
 	box(Vector3(14.2, 1.0, 10.7), Vector3(0.05, 1.9, 1.5), "#101a22")
 	for index in 6: pipe(Vector3(14.0, 0.1, 10.0 + index * 0.25), Vector3(14.0, 2.1, 10.0 + index * 0.25), 0.05, "#3a4a41")
-	box(Vector3(19.0, 0.2, 9.6), Vector3(1.6, 0.4, 0.8), "#1d150e")
+	box(Vector3(19.0, 0.2, 9.6), Vector3(1.6, 0.4, 0.8), "#1d150e", false, "StashChest")
 	for index in 3: box(Vector3(21.2, 0.25 + index * 0.45, 12.0), Vector3(1.2, 0.4, 0.8), "#33302a", false, "VaultCrate")
 	lamp(Vector3(19.0, 1.5, 8.6), "#ffb95a", 0.8, 4.0)
 	# Sujeira pesada, ossos e tonéis tóxicos brilhando em verde.

@@ -1,17 +1,28 @@
 extends Node3D
+const SURFACES := preload("res://assets/urban_detail/UrbanSurfaces.gd")
 var stage: Node3D
 var palette: Dictionary = {}
+var lights: Array[OmniLight3D] = []
 func _ready() -> void:
 	stage = self
 	_build()
+	add_child(preload("res://audio/sewers/SewerAmbience.gd").new())
+	var darkness := preload("res://world/places/sewers/SewerDarkness.gd").new()
+	add_child(darkness)
+	darkness.configure(self, {})
+	# Complete walls cast shadows even where the gameplay camera sees a cutaway.
+	for rect in [Rect2(-130,-118,460,18), Rect2(-130,134,460,18), Rect2(-130,-118,18,270), Rect2(312,-118,18,270)]:
+		var blocker := _box(rect, 2.8, 0.0, "#252f30")
+		var shadow_mesh := ArrayMesh.new()
+		shadow_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, blocker.mesh.surface_get_arrays(0))
+		blocker.mesh = shadow_mesh
+		blocker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
 
 func _mat(color: String, metal := false) -> StandardMaterial3D:
 	if not palette.has(color):
-		var material := StandardMaterial3D.new()
-		material.albedo_color = Color(color)
-		material.roughness = 0.68 if metal else 0.93
-		material.metallic = 0.45 if metal else 0.0
-		palette[color] = material
+		# Concreto úmido ou metal escovado com relevo: a lanterna rasante passa a desenhar a superfície.
+		palette[color] = SURFACES.material("sewer_%s_%s" % [color, metal], "metal" if metal else "concrete", Color(color),
+			0.68 if metal else 0.9, 0.45 if metal else 0.0, 1.0 if metal else 2.0, 1.3)
 	return palette[color]
 
 func _point(p: Vector2, height: float) -> Vector3:
@@ -51,9 +62,9 @@ func _build() -> void:
 	# Recessed water and masonry sides; dry stone overhangs the channel.
 	_box(Rect2(112, -100, 54, 234), 0.03, -0.20, "#123a3c", true)
 	for x in [105, 166]: _box(Rect2(x, -100, 7, 234), 0.15, -0.04, "#747d68")
-	# Two courses on the back wall; lower front/side caps preserve visibility.
+	# Full rear masonry gives depth; low front/side caps preserve visibility.
 	for y in [-118, 134]:
-		var courses := 2 if y < 0 else 1
+		var courses := 7 if y < 0 else 1
 		for course in courses:
 			for x in range(-130, 330, 23):
 				_box(Rect2(x, y, 22, 18), 0.32, course * 0.33, "#626b59" if course == 0 else "#717663")
@@ -102,7 +113,8 @@ func _build() -> void:
 		can.radial_segments = 12
 		_mesh(can, Vector2(x, -40), 0.93, "#788970", true)
 	for p in [Vector2(222, 112), Vector2(260, 116)]:
-		_box(Rect2(p - Vector2(12, 9), Vector2(24, 18)), 0.37, 0, "#756347")
+		var crate := _box(Rect2(p - Vector2(12, 9), Vector2(24, 18)), 0.37, 0, "#756347")
+		crate.set_meta("interior_solid_id", "FloorCrate%d" % int(p.x))
 		for x in [-10, 9]: _box(Rect2(p + Vector2(x, -9), Vector2(2, 18)), 0.035, 0.37, "#b19461")
 		var cross := _box(Rect2(p - Vector2(10, 1), Vector2(20, 2)), 0.03, 0.37, "#a58a5e")
 		cross.rotation.y = -0.5
@@ -165,5 +177,10 @@ func _build() -> void:
 		lamp.omni_range = 4.8
 		lamp.shadow_enabled = false
 		stage.add_child(lamp)
+		lights.append(lamp)
 	# Água corrente, gotas, luz com mau contato, ratos e o esconderijo da V1.
 	add_child(preload("res://world/places/SewerAtmosphere3D.gd").new())
+	# O original já tem ratos na atmosfera; aqui entram só as baratas.
+	var critters := preload("res://world/places/sewers/SewerCritters.gd").new()
+	add_child(critters)
+	critters.configure(Vector2(11, 6), [], 0, 14)

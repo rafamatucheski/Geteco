@@ -201,7 +201,10 @@ func _clear_ground(p: Vector2,radius: float) -> bool:
 
 func _unoccupied(p: Vector2,y: float,whole_territory: bool) -> bool:
 	if not is_inside_tree() or get_world_3d()==null: return false
-	_query.shape=_territory_shape if whole_territory else _step_shape
+	if whole_territory:
+		_query.shape=_territory_shape
+	else:
+		_query.shape=_step_shape
 	_query.transform=Transform3D(Basis.IDENTITY,Vector3(p.x,y+(.55 if whole_territory else .27),p.y))
 	return get_world_3d().direct_space_state.intersect_shape(_query,1).is_empty()
 

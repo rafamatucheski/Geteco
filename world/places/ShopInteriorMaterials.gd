@@ -1,5 +1,6 @@
 extends RefCounted
 ## Small shared mipmapped tiles; generated once, no per-frame material work.
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 static var _textures: Dictionary = {}
 static var _materials: Dictionary = {}
 
@@ -17,6 +18,7 @@ static func material(kind: String, color: Color) -> StandardMaterial3D:
 
 static func texture(kind: String) -> Texture2D:
 	if _textures.has(kind): return _textures[kind]
+	var pixels_started := STALL_WORK.begin()
 	var image := Image.create(64, 64, false, Image.FORMAT_RGBA8)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 61722
@@ -33,7 +35,12 @@ static func texture(kind: String) -> Texture2D:
 				if y % 16 < 1 or (x + (16 if row % 2 else 0)) % 32 < 1: value -= .20
 				value += sin(floorf((x + row * 16) / 32.0) * 6.4 + row * 3.5) * .045
 			image.set_pixel(x, y, Color(value, value, value))
+	if pixels_started != 0:
+		STALL_WORK.finish("shop.texture.pixels", pixels_started, {"kind":kind})
+	var upload_started := STALL_WORK.begin()
 	image.generate_mipmaps()
 	var result := ImageTexture.create_from_image(image)
 	_textures[kind] = result
+	if upload_started != 0:
+		STALL_WORK.finish("shop.texture.mipmaps_upload", upload_started, {"kind":kind})
 	return result

@@ -52,6 +52,7 @@ func run() -> void:
 			break
 	check(contact, "carros colidem e ambos recebem dano")
 	if contact:
+		check(not striking.body_dents.dents.is_empty() and not struck.body_dents.dents.is_empty(),"colisão física deforma ambos os carros")
 		check(striking.horizontal_velocity.z <= 0 and struck.horizontal_velocity.z < 0,
 			"batida traseira transfere movimento para frente sem ricochete")
 		print("CRASH_HEALTH striking=", striking.health, " struck=", struck.health)
@@ -83,6 +84,7 @@ func run() -> void:
 			break
 	check(wall_hit, "impacto contra parede causa dano")
 	if wall_hit:
+		check(not striking.body_dents.dents.is_empty(),"colisão física contra parede deforma lataria")
 		print("WALL_HEALTH striking=", striking.health)
 		check(striking.health > striking.max_health * 0.5 and not striking.damage_look.burning,
 			"batida a 12 m/s contra parede não provoca explosão rápida")

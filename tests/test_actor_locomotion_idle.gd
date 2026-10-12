@@ -61,7 +61,19 @@ func _run() -> void:
 	actor.is_player = true
 	actor.controlled_automatically = true
 	stage.add_child(actor)
-	await frames(3)
+	# The physical spawn can enter PlayerAirMovement's landing presentation.
+	# Observe idle only after that finite transition, without bypassing it.
+	var grounded := false
+	for _frame in 60:
+		await physics_frame
+		if actor.is_on_floor() and actor.air_movement != null and actor.air_movement.phase == "ground":
+			grounded = true
+			break
+	check(grounded, "fixture conclui aterrissagem antes de observar repouso", "floor=%s air=%s" % [actor.is_on_floor(), actor.air_movement.phase if actor.air_movement != null else "missing"])
+	if not grounded:
+		print("ACTOR_LOCOMOTION_IDLE checks=%d failures=%s" % [checks, failures])
+		quit(1)
+		return
 	check(actor._idle_pose.size() == actor.skeleton.get_bone_count(), "repouso simétrico é cacheado para todo o esqueleto")
 	check(actor.animation.current_animation == "Walking" and actor._locomotion_weight == 0.0, "inicia em repouso sem usar a T-pose", "anim=%s weight=%.3f" % [actor.animation.current_animation, actor._locomotion_weight])
 	var right_arm: int = actor.skeleton.find_bone("RightArm")

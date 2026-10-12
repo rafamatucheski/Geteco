@@ -165,7 +165,7 @@ func _inspect_v1_save(path: String) -> void:
 		STYLE.trap_focus(%LoadPanel)
 		return
 	if pending_import.get("ready_for_publication",false) != true:
-		%LabelLoadStatus.text = "Importação bloqueada com segurança: %d incompatibilidade(s), %d decisão(ões) e %d campo(s) sem conversão. O original foi preservado." % [pending_import.incompatibilities.size(),pending_import.decisions_required.size(),pending_import.unconverted_fields.size()]
+		%LabelLoadStatus.text = String(TranslationServer.translate("Importação bloqueada com segurança: %d incompatibilidade(s), %d decisão(ões) e %d campo(s) sem conversão. O original foi preservado.")) % [pending_import.incompatibilities.size(),pending_import.decisions_required.size(),pending_import.unconverted_fields.size()]
 		STYLE.trap_focus(%LoadPanel)
 		return
 	%LabelLoadStatus.text = "Conversão validada. Escolha um slot vazio para criar uma cópia V2; o save V1 continuará intacto."
@@ -194,7 +194,7 @@ func _publish_v1_import(slot_id: String) -> void:
 		pending_import = {}
 	else:
 		%Title.text = "IMPORTAÇÃO NÃO REALIZADA"
-		%LabelLoadStatus.text = "O slot deixou de estar vazio ou a publicação falhou (%d). Nenhum save existente foi sobrescrito." % error
+		%LabelLoadStatus.text = String(TranslationServer.translate("O slot deixou de estar vazio ou a publicação falhou (%d). Nenhum save existente foi sobrescrito.")) % error
 	STYLE.trap_focus(%LoadPanel)
 
 func _open_settings() -> void:
@@ -215,7 +215,7 @@ func _start_direct() -> void:
 	starting = false
 	shade.hide()
 	_main_enabled(true)
-	sub_title.text = "NÃO FOI POSSÍVEL ABRIR O JOGO (%d)" % error
+	sub_title.text = String(TranslationServer.translate("NÃO FOI POSSÍVEL ABRIR O JOGO (%d)")) % error
 	STYLE.trap_focus(self,false)
 	(btn_continue if btn_continue.visible else btn_new_game).grab_focus()
 
@@ -286,4 +286,4 @@ func _start(id: String, new_game: bool) -> void:
 		if sky != null: sky.cancel_continue()
 		starting = false
 		_show_slots(new_game)
-		%LabelLoadStatus.text = "Não foi possível abrir o jogo (%d)." % error
+		%LabelLoadStatus.text = String(TranslationServer.translate("Não foi possível abrir o jogo (%d).")) % error

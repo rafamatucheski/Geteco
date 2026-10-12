@@ -155,7 +155,8 @@ func _discover_vehicles() -> Array:
 
 
 func _eligible(vehicle: CharacterBody3D) -> bool:
-	if vehicle.has_meta("desert_powertrain"): return false
+	# Upgraded street drivetrains still use the original engine banks here.
+	if vehicle.has_node("DesertCarAudio"): return false
 	if vehicle.is_queued_for_deletion() or not vehicle.is_inside_tree():
 		return false
 	if not vehicle.can_process() or not vehicle.is_physics_processing() or not vehicle.is_visible_in_tree():

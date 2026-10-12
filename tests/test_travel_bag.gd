@@ -39,9 +39,11 @@ func run() -> void:
 	var economy = session.state.economy
 	check(not personal.travel_bag_available(),"novo jogo não recebe mala")
 	check(FIXTURE.complete_through(session,"primeiro_giro"),"primeira missão concluída na fixture")
+	session.personal_car.refresh()
+	check(economy.grid_snapshot().bag == "backpack","Maciota entrega mochila ao concluir a primeira missão")
 	var car = FIXTURE.park_monaliza(world)
 	world.player.teleport(personal._rear()+Vector3(0,.05,.8)); await frames(30)
-	check(personal.perform("trunk"),"interação física abre porta-malas e entrega mochila")
+	check(personal.perform("trunk"),"interação física abre porta-malas sem alterar mochila")
 	check(economy.grid_snapshot().bag == "backpack","mochila vem antes da mala")
 	check(button() == null and not field.claim_travel_bag(),"recompensa bloqueada antes da corrida")
 	field.close()

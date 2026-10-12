@@ -766,6 +766,11 @@ static func material(id: String) -> Material:
 	if _materials.has(id): return _materials[id]
 	var result: Material
 	match id:
+		"asphalt":
+			# Mesmo acabamento da rua; _quad_flat usa os mesmos UVs mundiais / 4.
+			# A textura continua alinhada ao atravessar a boca e os chunks da rampa.
+			var road := preload("res://world/urban_detail/HarborRoadGeometry3D.gd").new()
+			result = road._material(road.ROAD_COLOR)
 		"water_depth":
 			var water_shader := ShaderMaterial.new()
 			water_shader.shader = WATER_DEPTH_SHADER
@@ -782,7 +787,6 @@ static func material(id: String) -> Material:
 		_:
 			var mat := StandardMaterial3D.new()
 			match id:
-				"asphalt": mat.albedo_color = Color("2c2e30"); mat.roughness = 0.9
 				"walkway": mat.albedo_color = Color("8d8b82")
 				"kerb": mat.albedo_color = Color("c9b63c")
 				"paint_white": mat.albedo_color = Color("e8e6dc"); mat.roughness = 0.6

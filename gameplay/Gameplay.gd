@@ -8,6 +8,8 @@ signal player_died
 signal player_wounded(lethal: bool)
 signal player_arrested
 signal police_warning_issued
+## Preserve the no-argument signal used by conversation cancellation.
+var last_warning_actor: WeakRef
 signal crime_reported(points: int)
 signal weapon_fired(weapon_id: String, origin: Vector3)
 ## Disparo de arma de fogo por NPC (polícia, Cobras, seguranças, civil armado). Os civis ouvem tiro de qualquer um,
@@ -214,6 +216,7 @@ var _dead_notified := false
 var _audio_pool: Array[AudioStreamPlayer3D] = []
 var _ui_audio: AudioStreamPlayer
 var customization: Dictionary = {}
+var belt_flashlight
 var flashlight_enabled := false
 var flashlight: SpotLight3D
 var laser: MeshInstance3D
@@ -323,6 +326,9 @@ func _exit_tree() -> void:
 		voice.stream = null
 
 func _ready() -> void:
+	belt_flashlight = preload("res://gameplay/BeltFlashlight.gd").new()
+	belt_flashlight.gameplay = self
+	add_child(belt_flashlight)
 	rage = RAGE.new()
 	rage.name = "KatanaRage"
 	rage.gameplay = self
@@ -1014,9 +1020,10 @@ func _sheath_drawing() -> bool:
 
 ## A katana usa o clipe da greatsword do Mixamo ("Sheath A Great Sword 1"): ele parte da guarda de duas
 ## mãos e termina com a espada nas costas. Guardar toca para frente; sacar toca ao contrário e termina
-## em duas mãos, que é a pose de combate da katana. Tocado a 0,6× porque o clipe tem só 0,73 s.
-const SHEATH_RATE := 0.6
-const SHEATH_HANDOFF := 0.1
+## em duas mãos, que é a pose de combate da katana. A troca leva menos de 0,3 s, como uma arma curta.
+const SHEATH_DRAW_DURATION := 0.28
+const SHEATH_HOLSTER_DURATION := 0.24
+const SHEATH_HANDOFF := 0.08
 ## Golpes da greatsword do Mixamo na katana: [clipe, início, pico da ponta, fim], em segundos do clipe.
 ## Pico = instante de maior velocidade da ponta da lâmina, medido no Dante (Downward 24 m/s em 0,64 s;
 ## Power 18,5 m/s em 0,70 s; Low 27,6 m/s em 0,84 s). O dano entra nesse instante.
@@ -1040,7 +1047,7 @@ func _start_sheath(kind: String) -> void:
 		if not player.animation.has_animation(clip): return
 	_sheath_kind = kind
 	_sheath_clip = clip
-	_sheath_length = player.animation.get_animation(clip).length / SHEATH_RATE
+	_sheath_length = SHEATH_DRAW_DURATION if kind == "draw" else SHEATH_HOLSTER_DURATION
 	_sheath_age = 0.0
 
 func _update_sheath(delta: float) -> void:
@@ -1053,16 +1060,22 @@ func _update_sheath(delta: float) -> void:
 		_end_sheath()
 		return
 	if "combat_clip" in player:
-		var clip_time := _sheath_age * SHEATH_RATE
+		var clip_length: float = player.animation.get_animation(_sheath_clip).length
+		var progress := clampf(_sheath_age / _sheath_length, 0.0, 1.0)
 		# Só o clipe da greatsword vai ao contrário ao sacar; os de reserva já têm o sentido certo.
 		if _sheath_kind == "draw" and _sheath_clip.ends_with("sheathe_greatsword"):
-			clip_time = player.animation.get_animation(_sheath_clip).length - clip_time
+			# Primeiro alcança o cabo nas costas durante a mistura do Actor; depois puxa a lâmina.
+			progress = 1.0 - clampf((_sheath_age - SHEATH_HANDOFF) / (_sheath_length - SHEATH_HANDOFF), 0.0, 1.0)
 		player.combat_clip = _sheath_clip
-		player.combat_clip_time = maxf(clip_time, 0.0)
+		player.combat_clip_time = clip_length * progress
+		# O IK da arma seguinte não pode sobrescrever os braços do clipe de sacar/guardar.
+		# Mantém também as pernas de locomoção quando o jogador troca de arma andando.
+		_pose_frame = {"visible": false, "armed": true, "native_sword": true, "hand_grip": HAND_KATANA_GUARD}
+		if player.has_method("set_combat_weapon_pose"): player.set_combat_weapon_pose("katana", _pose_frame)
 		# A pegada gira junto com o clipe: guarda (lâmina à frente) no início, posição das costas no fim.
 		if hand_katana != null and _sheath_clip.ends_with("sheathe_greatsword"):
-			var progress := clampf(player.combat_clip_time / player.animation.get_animation(_sheath_clip).length, 0.0, 1.0)
-			hand_katana.transform = HAND_KATANA_GUARD.interpolate_with(HAND_KATANA_SHEATHED, progress)
+			# As medidas autoradas têm quatro casas decimais: normalize antes do slerp.
+			hand_katana.transform = HAND_KATANA_GUARD.orthonormalized().interpolate_with(HAND_KATANA_SHEATHED.orthonormalized(), progress)
 
 func _update_katana_stance(delta: float) -> void:
 	if not is_instance_valid(player) or not "animation" in player or player.animation == null: return
@@ -1111,7 +1124,7 @@ func request_rage() -> bool:
 	if equipped() != "katana":
 		message.emit("Equipe a katana para ativar o RAGE.")
 	elif rage.charge < RAGE.CAPACITY:
-		message.emit("RAGE: %d%%. Receba dano de combate para carregar." % floori(rage.charge))
+		message.emit(String(TranslationServer.translate("RAGE: %d%%. Receba dano de combate para carregar.")) % floori(rage.charge))
 	else:
 		message.emit("RAGE indisponível nesta situação.")
 	return true
@@ -1136,6 +1149,26 @@ func _pain_voice(victim: Node3D, amount: float) -> void:
 	var id := victim.get_instance_id()
 	if float(_pain_next.get(id, -1.0)) > _combat_clock: return
 	if _rng.randf() >= (PAIN_CHANCE_HEAVY if amount >= 25.0 else PAIN_CHANCE_LIGHT): return
+	if preload("res://audio/DirectedVoiceBank.gd").enabled():
+		var binding := preload("res://audio/VoiceActorBinding.gd").pain(victim)
+		if binding.is_empty(): return
+		_pain_next[id] = _combat_clock + PAIN_COOLDOWN
+		var label := victim.get_node_or_null("PainVoiceCaption") as Label3D
+		if label == null:
+			label = Label3D.new()
+			label.name = "PainVoiceCaption"
+			label.position.y = 2.1
+			label.font_size = 32
+			label.pixel_size = .005
+			label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+			victim.add_child(label)
+		var spoken := preload("res://audio/ActorDialogueVoice.gd").speak(victim, "Ai!", binding, label)
+		label.text = str(spoken.get("message", "Ai!"))
+		label.show()
+		var generation := int(label.get_meta("voice_generation", 0)) + 1
+		label.set_meta("voice_generation", generation)
+		get_tree().create_timer(maxf(.7, float(spoken.get("duration", 0.0))), false).timeout.connect(_finish_pain_caption.bind(weakref(label), generation))
+		return
 	for voice in _pain_pool:
 		if voice.playing: continue
 		var stream := AUDIO.take("hurt", _rng)
@@ -1147,6 +1180,14 @@ func _pain_voice(victim: Node3D, amount: float) -> void:
 		voice.pitch_scale = 1.0 if victim == player else 0.97
 		voice.play()
 		return
+
+func _finish_pain_caption(reference: WeakRef, generation: int) -> void:
+	var label := reference.get_ref() as Label3D
+	if not is_instance_valid(label) or int(label.get_meta("voice_generation", 0)) != generation: return
+	var remaining := preload("res://audio/ActorDialogueVoice.gd").remaining_for(label)
+	if remaining > 0:
+		get_tree().create_timer(remaining, false).timeout.connect(_finish_pain_caption.bind(reference, generation))
+	else: label.hide()
 
 func _update_swing(delta: float) -> void:
 	if _swing_age < 0.0: return
@@ -1196,23 +1237,19 @@ func aim_from_screen(screen: Vector2) -> Vector3:
 		return aim_point
 	var origin := camera.project_ray_origin(screen)
 	var direction := camera.project_ray_normal(screen)
-	# The cursor points at a visible body, not necessarily at the player's
-	# chest-height plane. Resolve only the first visible collider; never retain
-	# a lock, scan all NPCs, or attract the cursor to a neighbouring character.
-	if equipped() not in NON_AIM_WEAPONS and attack_allowed():
-		var query := PhysicsRayQueryParameters3D.create(origin, origin + direction * camera.far, 7, [player.get_rid()])
-		var visible_hit := get_world_3d().direct_space_state.intersect_ray(query)
-		var actor: Variant = visible_hit.get("collider")
-		if actor is CharacterBody3D and actor.has_method("receive_damage") and not PROTECTION.is_protected(actor):
-			var target_health: Variant = actor.get("health")
-			if actor.get("dead") != true and (target_health == null or float(target_health) > 0.0):
-				# Shots are horizontal. Aim through the body's centre regardless
-				# of whether the mouse points at its head, torso or feet.
-				aim_point = Vector3(actor.global_position.x, player.global_position.y + 1.0, actor.global_position.z)
-				return aim_point
+	# Fully manual aiming: characters and obstacles never redirect the cursor.
+	# Collision is resolved by the actual shot and its obstruction feedback.
 	var plane := Plane(Vector3.UP, player.global_position.y + 1.0)
 	var hit: Variant = plane.intersects_ray(origin, direction)
-	if hit is Vector3: aim_point = hit
+	if hit is Vector3:
+		aim_point = hit
+	else:
+		# A level/upward tunnel view may never meet the horizontal firing plane.
+		# Keep the cursor's direction, not the previous frame's stale target.
+		var flat := Vector3(direction.x, 0.0, direction.z)
+		if flat.length_squared() > 0.0001:
+			var reach := maxf(10.0, float(weapon_data(equipped()).get("max_range", 420.0)) / 16.0)
+			aim_point = player.global_position + Vector3.UP + flat.normalized() * reach
 	return aim_point
 
 func aim_feedback_active() -> bool:
@@ -1349,8 +1386,8 @@ func _stall_fire_at(target: Vector3) -> bool:
 							_ignite_actor(hit.collider as Node3D, player)
 						_damage(hit.collider, amount, player, true)
 						if hit.collider is Node and String(hit.collider.get_meta("gameplay_role", "")) == "vehicle":
-							var damage_look: Node = hit.collider.get("damage_look")
-							if damage_look.has_method("ignite"): damage_look.ignite(player)
+							var damage_look: Variant = hit.collider.get("damage_look")
+							if is_instance_valid(damage_look) and damage_look.has_method("ignite"): damage_look.ignite(player)
 				else:
 					_damage_bullet(hit.collider, amount, player)
 					_impact_sound(hit.collider, end, float(amount), hit.normal)
@@ -2006,10 +2043,11 @@ func arrest_player() -> bool:
 	player_arrested.emit()
 	return true
 
-func police_arrest_warning() -> void:
+func police_arrest_warning(actor: Node3D = null) -> void:
 	var now := Time.get_ticks_msec()
 	if now-_last_arrest_warning_msec < 2500: return
 	_last_arrest_warning_msec = now
+	last_warning_actor = weakref(actor) if is_instance_valid(actor) else null
 	police_warning_issued.emit()
 
 func _apply_player_damage(amount: float, use_armor: bool, from := Vector3.INF) -> void:
@@ -2304,7 +2342,7 @@ func _update_swing_sound() -> void:
 	var data: Dictionary = _pending_swing.data
 	_pending_swing = {}
 	var stream: AudioStream = AUDIO.knife_sample(-1) if id == "knife" else AUDIO.melee_whoosh(String(MELEE_SOUND_KIND.get(id, "punch")))
-	if id == "katana": stream = KATANA_AUDIO.stream("swing") if katana_style().saber else AUDIO.melee_whoosh("axe")
+	if id == "katana": stream = KATANA_AUDIO.stream("swing") if katana_style().saber else KATANA_AUDIO.swing(_rng.randi_range(0, 2))
 	# V1 `Player._melee_attack`: o volume do catálogo. Tom por golpe do combo (pesado
 	# mais grave e mais forte) e um pouco de acaso, para a sequência não soar repetida.
 	var heavy := _rig_pose.heavy_attack()
@@ -2320,10 +2358,10 @@ func _combo_pitch() -> float:
 ## machado), mais grave e forte no golpe pesado. A faca mantém os contatos da V1.
 func _melee_hit_sound(id: String, actor: Node3D, point: Vector3, amount: float) -> void:
 	if id == "katana":
-		# Lâmina de aço em carne: o corte úmido por baixo e o raspar do aço por cima, mais baixo.
+		# Contato gravado + rasgo, só ao atingir carne; o ar sozinho não toca impacto.
 		if not katana_style().saber and _impact_material(actor) == "flesh":
-			_play_stream(KATANA_AUDIO.cut(_rng.randi_range(0, 2)), point, -3.0, _rng.randf_range(0.94, 1.06))
-			_play_stream(AUDIO.knife_sample(_rng.randi_range(0, 2)), point, -14.0, 0.75)
+			var heavy := _rig_pose.heavy_attack()
+			_play_stream(KATANA_AUDIO.cut(_rng.randi_range(0, 2)), point, -3.0 + (2.0 if heavy else 0.0), _combo_pitch() * _rng.randf_range(0.97, 1.03))
 			return
 		_play_stream(KATANA_AUDIO.stream("swing") if katana_style().saber else AUDIO.knife_sample(_rng.randi_range(0, 2)), point, -7.0, 0.7)
 		return
@@ -2674,11 +2712,13 @@ func clear_loot() -> void:
 
 func snapshot() -> Dictionary:
 	var result := {"health": health, "armor": armor, "crime_points": crime_points, "hidden_time": hidden_time, "customization": customization.duplicate(true)}
+	result["belt_flashlight"] = belt_flashlight.snapshot() if is_instance_valid(belt_flashlight) else {"owned": false, "enabled": false}
 	result["rage_charge"] = rage.charge if is_instance_valid(rage) else 0.0
 	if police_case != null: result["police_case"] = police_case.snapshot()
 	return result
 
 static func validate_snapshot(data: Dictionary) -> bool:
+	if data.has("belt_flashlight") and not preload("res://gameplay/BeltFlashlight.gd").valid(data.belt_flashlight): return false
 	if data.has("rage_charge"):
 		var value: Variant = data.rage_charge
 		if not (value is float or value is int) or not is_finite(float(value)) or float(value) < 0.0 or float(value) > RAGE.CAPACITY: return false
@@ -2695,6 +2735,7 @@ static func validate_snapshot(data: Dictionary) -> bool:
 
 func restore_state(data: Dictionary) -> bool:
 	if not validate_snapshot(data): return false
+	if is_instance_valid(belt_flashlight): belt_flashlight.restore(data.get("belt_flashlight", {}))
 	if is_instance_valid(rage): rage.restore(float(data.get("rage_charge", 0.0)))
 	_clear_chain_explosions()
 	var restored_customization: Dictionary = CUSTOM.normalize(data.get("customization", {}))

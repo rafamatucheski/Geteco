@@ -1,5 +1,5 @@
 extends Node3D
-## Own visit budget: six protected crew and 28 ordinary guests. Ambient traffic
+## Own visit budget: six crew and 28 ordinary guests. Ambient traffic
 ## cannot consume their slots. One admission per tick; every body leaves with its owner.
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const MEMBER := preload("res://runtime/desert/drag_meet/DragMeetMember.gd")
@@ -30,6 +30,7 @@ func configure(owner_session) -> void:
 	gameplay.weapon_fired.connect(_weapon_fired)
 	gameplay.npc_gunfire.connect(_npc_gunfire)
 	gameplay.explosion_occurred.connect(_explosion)
+	gameplay.player_died.connect(_clear)
 
 func _process(delta: float) -> void:
 	_elapsed += delta
@@ -39,7 +40,7 @@ func _process(delta: float) -> void:
 	reconcile()
 
 func reconcile() -> void:
-	if session==null or not session.ready_for_play:
+	if session==null or not session.ready_for_play or session.world.gameplay.health<=0:
 		_clear(); return
 	var point: Vector3 = session.world.player.global_position
 	var outdoors: bool = session.state.region_id=="desert" and session.state.place_id.is_empty()
@@ -66,7 +67,7 @@ func reconcile() -> void:
 			continue
 		if members.has(slot):
 			members.erase(slot)
-			if slot>=CREW_OFFSETS.size(): retired[slot]=true
+			retired[slot]=true
 		if admitted or retired.has(slot): continue
 		var anchor := _point(slot)
 		if point.distance_to(anchor)>ADMIT_RADIUS: continue
@@ -102,6 +103,9 @@ func _floor_anchor(point: Vector3) -> Dictionary:
 	return {"position":hit.position+Vector3.UP*.025}
 
 func _update_actor(slot: int,actor: Node3D,listener: Vector3,suppressed: bool) -> void:
+	if actor.dead:
+		retired[slot] = true
+		return
 	var near := listener.distance_squared_to(actor.global_position)<70.0*70.0
 	var speaking := int(floor(_elapsed/3.8))%2==slot%2 and not suppressed
 	var target: Vector3
@@ -109,12 +113,6 @@ func _update_actor(slot: int,actor: Node3D,listener: Vector3,suppressed: bool) -
 	else: target=_point(slot+1 if slot%2==0 else slot-1)
 	if slot<CREW_OFFSETS.size():
 		actor.converse(target,speaking and slot>=2,near)
-		return
-	if actor.dead:
-		retired[slot] = true
-		if Time.get_ticks_msec()-int(actor.get_meta("drag_meet_dead_since",Time.get_ticks_msec()))>12000 and not actor.get_meta("drag_meet_fading",false):
-			actor.set_meta("drag_meet_fading",true)
-			preload("res://gameplay/DestroyedFade3D.gd").fade(actor)
 		return
 	actor.social_paused = session.modal or session.is_transition_blocked()
 	actor.person.set_process(near)
@@ -165,6 +163,7 @@ func _clear() -> void:
 
 func _exit_tree() -> void:
 	if is_instance_valid(gameplay):
+		if gameplay.player_died.is_connected(_clear): gameplay.player_died.disconnect(_clear)
 		if gameplay.weapon_fired.is_connected(_weapon_fired): gameplay.weapon_fired.disconnect(_weapon_fired)
 		if gameplay.npc_gunfire.is_connected(_npc_gunfire): gameplay.npc_gunfire.disconnect(_npc_gunfire)
 		if gameplay.explosion_occurred.is_connected(_explosion): gameplay.explosion_occurred.disconnect(_explosion)

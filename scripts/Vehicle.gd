@@ -9,7 +9,7 @@ const DOOR_SPECS := preload("res://data/catalogs/VehicleDoorSpecs.gd")
 const WHEELIE := preload("res://gameplay/MotorcycleWheelie.gd")
 const DESERT_GROUND := preload("res://gameplay/desert_cars/DesertVehicleGround.gd")
 const MAX_SPEED := 15.0
-const REVERSE_SPEED := 4.5
+const REVERSE_SPEED := preload("res://gameplay/v1_handling/V1Handling.gd").REVERSE_SPEED_MPS
 const WHEELBASE := 2.5
 const WALL_DAMAGE_PER_SPEED := 0.65
 const WALL_DAMAGE_MAX_RATIO := 0.12
@@ -42,6 +42,7 @@ var vehicle_id := "":
 var health := 180.0
 var horizontal_velocity := Vector3.ZERO
 var damage_look: Node
+var body_dents: Node
 var equipment: Node
 var effects: Node
 var equipment_state: Dictionary = {}
@@ -87,8 +88,13 @@ var wheels: Array[Node3D] = []
 ## Peças presas ao eixo que esterçam sem rolar (garfo e para-lama de moto).
 var steer_pivots: Dictionary = {}
 var wheel_spin := 0.0
+var _burnout_wheel_spin := 0.0
 var tail_material: StandardMaterial3D
 var route: Curve3D
+var _projection_route: Curve3D
+var _projection_position := Vector3.ZERO
+var _projection_offset := 0.0
+var _projection_valid := false
 var route_distance := 0.0
 var route_laps := 0
 var blocked := false
@@ -118,6 +124,8 @@ var bypass_blend := 0.0
 var bypass_start := 0.0
 var bypass_retry := 0.0
 var bypass_lane_shift := NAN
+var traffic_escape: RefCounted
+var _traffic_retirement_meshes: Array[Dictionary] = []
 var _merging_back := false
 var _exit_blocked := false
 var _sense_tick := false
@@ -237,6 +245,10 @@ func _ready() -> void:
 	damage_look.name = "DamageLook"
 	damage_look.configure(self)
 	add_child(damage_look)
+	body_dents = preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd").new()
+	body_dents.name = "BodyDents"
+	body_dents.configure(self)
+	add_child(body_dents)
 	_trace_ready("damage_look",traced)
 	if archetype == "army_tank":
 		tank_cannon = preload("res://gameplay/police_response/ground/TankCannon.gd").new()
@@ -278,8 +290,13 @@ func _is_resting() -> bool:
 ## suspenso pelo streaming: passo normal.
 const LOD_NEAR := 60.0
 const LOD_FAR := 110.0
+const LOD_OFFSCREEN_NEAR := 45.0
+const LOD_VIEW_MARGIN := 12.0
 static var _lod_camera: Camera3D
 static var _lod_camera_frame := -1
+static var _lod_player: Node3D
+static var _lod_frustum: Array[Plane] = []
+static var _lod_frustum_frame := -1
 var _lod_skipped := -1
 var _lod_pending := 0.0
 
@@ -288,9 +305,20 @@ func _lod_stride() -> int:
 	if _lod_camera_frame != frame:
 		_lod_camera_frame = frame
 		_lod_camera = get_viewport().get_camera_3d()
+		_lod_player = get_parent().get("player") as Node3D
 	if not is_instance_valid(_lod_camera): return 1
 	var distance_squared := _lod_camera.global_position.distance_squared_to(global_position)
 	if distance_squared > LOD_FAR*LOD_FAR: return 4
+	# Only off-screen ambient cars enter the existing 4-step simulation earlier.
+	# Keep a generous border for the car, lights and approaching camera; visible
+	# traffic retains its original cadence. Physics sweeps/support remain active.
+	if distance_squared > LOD_OFFSCREEN_NEAR*LOD_OFFSCREEN_NEAR and is_instance_valid(_lod_player) and _lod_player.global_position.distance_squared_to(global_position) > LOD_OFFSCREEN_NEAR*LOD_OFFSCREEN_NEAR:
+		if _lod_frustum_frame != frame:
+			_lod_frustum_frame = frame
+			_lod_frustum = _lod_camera.get_frustum()
+		var radius := half_length + LOD_VIEW_MARGIN
+		for plane in _lod_frustum:
+			if plane.distance_to(global_position) > radius: return 4
 	return 2 if distance_squared > LOD_NEAR*LOD_NEAR else 1
 
 ## 0 = pular este passo; senão, quantos passos do motor o passo executado representa.
@@ -301,9 +329,12 @@ func _lod_gate(delta: float) -> float:
 		return 1.0
 	var stride := _lod_stride()
 	if stride == 1:
+		# Catch up elapsed traffic time when returning to the near simulation.
+		# Control, impacts and airborne state above deliberately discard it instead.
+		var steps := (_lod_pending + delta)/maxf(delta,0.0001)
 		_lod_skipped = -1
 		_lod_pending = 0.0
-		return 1.0
+		return steps
 	if _lod_skipped < 0: _lod_skipped = get_instance_id() % stride
 	_lod_pending += delta
 	_lod_skipped += 1
@@ -367,6 +398,8 @@ func _physics_process(delta: float) -> void:
 	STALL_WORK.finish_slow("vehicle.physics", began, 10000, self)
 
 func _stall_physics_tick(delta: float) -> void:
+	if controlled and not external_input and not _traffic_retirement_meshes.is_empty(): fade_traffic_retirement(0)
+	if traffic_escape!=null and (controlled or not traffic): traffic_escape.tick(self,delta)
 	# Also clean during backoff, player control and resting; no geometry work when empty.
 	if not _clearing_junctions.is_empty(): _clear_departed_junctions()
 	var stage := STALL_WORK.begin()
@@ -459,7 +492,7 @@ func _stall_physics_tick(delta: float) -> void:
 			var local_pt := Vector3(0, 0, -half_length)
 			for i in get_slide_collision_count():
 				var coll := get_slide_collision(i)
-				if not (coll.get_collider() is CharacterBody3D):
+				if not (coll.get_collider() is CharacterBody3D) and absf(coll.get_normal().y)<.5:
 					local_pt = to_local(coll.get_position())
 					break
 			receive_impact(minf((impact_speed-absf(speed))*WALL_DAMAGE_PER_SPEED, max_health*WALL_DAMAGE_MAX_RATIO), local_pt)
@@ -470,8 +503,10 @@ func _stall_physics_tick(delta: float) -> void:
 	if manual_wheelie != null: _tick_motorcycle_wheelie(delta)
 	stage = STALL_WORK.begin()
 	wheel_spin += motion.dot(forward)/0.355
+	_burnout_wheel_spin = fposmod(_burnout_wheel_spin + burnout_strength()*32.0*delta, TAU)
 	for pivot in wheels:
-		pivot.rotation = Vector3(wheel_spin,steering if pivot.get_meta("front") else 0.0,0)
+		var front: bool = pivot.get_meta("front", false)
+		pivot.rotation = Vector3(wheel_spin + (0.0 if front else _burnout_wheel_spin),steering if front else 0.0,0)
 	for pivot in steer_pivots.values():
 		pivot.rotation.y = steering if pivot.get_meta("front") else 0.0
 	if tail_material and not is_instance_valid(equipment):
@@ -557,15 +592,27 @@ func motorcycle_handholds() -> Dictionary:
 			holds["lean_min"] = 0.2
 	return holds
 
+## A held burnout is distinct from a moving skid or a normal launch.
+func burnout_strength() -> float:
+	if not controlled or external_input or input_locked or engine_disabled or health <= 0 or archetype == "army_tank": return 0.0
+	if not brake_input or throttle_input <= .2 or not is_on_floor() or horizontal_velocity.length_squared() > .75*.75: return 0.0
+	return clampf(throttle_input, 0.0, 1.0)
+
 func _drive_player(delta: float) -> void:
 	_handling_frame = false
 	if handling != null and controlled and not external_input and not input_locked and not engine_disabled and health > 0:
-		var axis: Vector2 = get_node("/root/GameInput").vehicle_input()
+		var game_input := get_node("/root/GameInput")
+		var axis: Vector2 = game_input.vehicle_input()
 		if manual_wheelie != null: axis.x *= manual_wheelie.steering_scale()
 		var handbrake := Input.is_action_pressed("handbrake")
-		handling.step(self, delta, axis.y, axis.x, handbrake, _wetness())
+		var burnout: float = game_input.vehicle_burnout_throttle() if archetype != "army_tank" else 0.0
+		if burnout > 0.0:
+			axis.y = burnout
+			handbrake = true
 		throttle_input = axis.y
 		steer_input = -axis.x
+		brake_input = handbrake
+		handling.step(self, delta, axis.y, axis.x, handbrake, _wetness())
 		brake_input = handling.service_brake(self, axis.y, handbrake)
 		steering = move_toward(steering, steer_input * 0.48, delta * 2.0)
 		_handling_frame = true
@@ -694,8 +741,11 @@ func _junction_gate(length: float, open: bool) -> bool:
 		if _held_junction == junction.key:
 			if ahead <= 0.0: continue
 			return false
-		var gap := ahead-half_length-JUNCTIONS.stop_line(junction.key)
-		if junction.has("stop_offset"): gap = _route_ahead(float(junction.stop_offset),length,open)-half_length
+		var gap: float
+		if junction.has("stop_offset"):
+			gap = _route_ahead(float(junction.stop_offset),length,open)-half_length
+		else:
+			gap = ahead-half_length-JUNCTIONS.stop_line(junction.key)
 		# Use the arrival arm resolved with its stop line. The curve tangent
 		# near the centre can already face the cross street during a turn.
 		var heading: Vector3 = junction.get("heading",Vector3.ZERO)
@@ -706,7 +756,7 @@ func _junction_gate(length: float, open: bool) -> bool:
 		# Não bloquear o cruzamento: com a saída ocupada por carro parado, quem entra
 		# fica no miolo e trava o eixo cruzado; era o nó que começava os engarrafamentos.
 		if gap > -1.5 and _sense_tick: _exit_blocked = _exit_occupied(offset,length,open)
-		if gap > -1.5 and _exit_blocked and _exit_wait < EXIT_WAIT_LIMIT:
+		if gap > -1.5 and _exit_blocked:
 			_exit_wait += 1.0/Engine.physics_ticks_per_second
 			junction_gap = gap
 			return true
@@ -723,11 +773,33 @@ func _junction_gate(length: float, open: bool) -> bool:
 func _exit_tree() -> void:
 	_release_junction()
 
+func _invalidate_route_projection() -> void:
+	_projection_valid = false
+
+## Stopped cars reuse only the geometric projection. Decisions and sensors still
+## run each tick; any exact position change or edited curve requires a fresh scan.
+func _traffic_route_offset(point: Vector3) -> float:
+	if route != _projection_route:
+		if _projection_route != null:
+			_projection_route.changed.disconnect(_invalidate_route_projection)
+		_projection_route = route
+		_projection_route.changed.connect(_invalidate_route_projection)
+		_projection_valid = false
+	if not _projection_valid or point != _projection_position:
+		_projection_offset = route.get_closest_offset(point)
+		_projection_position = point
+		_projection_valid = true
+	return _projection_offset
+
 func _drive_traffic(delta: float) -> void:
 	if route == null: return
+	if traffic_escape==null: traffic_escape=preload("res://gameplay/TrafficEscape.gd").new()
+	traffic_escape.tick(self,delta)
+	if is_queued_for_deletion() or traffic_escape.retiring: return
 	if backoff_time > 0.0:
 		backoff_time -= delta
-		speed = move_toward(speed,-1.5,8.0*delta)
+		var rear_gap := .8 if traffic_escape!=null and not traffic_escape.active and traffic_escape.wait>0 else 3.0
+		speed = move_toward(speed,-1.5 if traffic_rear_clear(rear_gap) else 0.0,8.0*delta)
 		return
 	sensor_clock -= delta
 	_sense_tick = sensor_clock <= 0
@@ -747,7 +819,7 @@ func _drive_traffic(delta: float) -> void:
 		_stuck_anchor = route_distance
 	elif stall_time > 0.0 or unjam_time > 0.0 or bypass_side != 0.0: stuck_time += delta
 	if bypass_side != 0.0 and _sense_tick: _update_bypass()
-	if blocked_time > TRAFFIC_JAM_SECONDS:
+	if blocked_time > TRAFFIC_JAM_SECONDS and not traffic_escape.active:
 		var partner := _traffic_jam_partner()
 		if partner != null:
 			blocked_time = 0.0
@@ -768,15 +840,18 @@ func _drive_traffic(delta: float) -> void:
 			set_meta("unjam_partner",blocker)
 	# Progress uses actual position, so a collision cannot advance the car's route.
 	var previous_distance := route_distance
-	route_distance = route.get_closest_offset(global_position)
+	route_distance = _traffic_route_offset(global_position)
 	var length := route.get_baked_length()
 	var open: bool = route.get_meta("traffic_open",false)
 	if not open and previous_distance > length-5 and route_distance < 5: route_laps += 1
 	junction_wait = _junction_gate(length,open)
+	# Panic may disregard the signal; still update physical junction retention.
+	if traffic_escape.active: junction_wait=false
 	var near_point := route.sample_baked(minf(route_distance+2,length) if open else fposmod(route_distance+2,length),true)
 	var far_point := route.sample_baked(minf(route_distance+5,length) if open else fposmod(route_distance+5,length),true)
 	var bend := absf((near_point-global_position).normalized().signed_angle_to((far_point-near_point).normalized(),Vector3.UP))
 	var desired_speed := lerpf(5.5,2.2,clampf(bend/1.0,0,1))
+	if traffic_escape.active: desired_speed=lerpf(9.0,4.5,clampf(bend,0,1))
 	if unjam_time > 0.0: desired_speed = minf(desired_speed,2.5)
 	if bypass_side != 0.0: desired_speed = minf(desired_speed,BYPASS_SPEED)
 	if open: desired_speed = minf(desired_speed,maxf(0,(length-route_distance-1)*1.5))
@@ -796,10 +871,10 @@ func _drive_traffic(delta: float) -> void:
 	var direction := target-global_position
 	direction.y = 0
 	var desired := atan2(-direction.x,-direction.z)
-	var next_yaw := rotate_toward(rotation.y,desired,delta*1.7)
+	var next_yaw := rotate_toward(rotation.y,desired,delta*(2.7 if traffic_escape.active else 1.7))
 	steering = clampf(angle_difference(rotation.y,desired),-0.48,0.48)
 	# Carro parado não esterça no lugar (e poupa a consulta de colisão por passo).
-	if absf(speed) > 0.2 and can_rotate(next_yaw): rotation.y = next_yaw
+	if absf(speed) > 0.2 and next_yaw != rotation.y and can_rotate(next_yaw): rotation.y = next_yaw
 
 ## Desvio de obstáculo parado (viatura na faixa, carcaça, fila que não anda): antes o
 ## trânsito só esperava, e um carro parado virava engarrafamento sem fim (2026-09-25).
@@ -811,10 +886,19 @@ const BYPASS_SPEED := 4.0
 const BYPASS_MAX_DISTANCE := 45.0
 const BYPASS_PROBES := [0.0, 5.0, 10.0, 16.0, 22.0]
 const MERGE_PROBES := [0.0, 4.0, 8.0]
-## Saída do cruzamento ocupada: espera isso no máximo. Carro estacionado perto da
-## saída não pode fechar a aproximação para sempre.
-const EXIT_WAIT_LIMIT := 8.0
+## Waiting time is diagnostic; expiry never authorises entering a blocked exit.
 var _exit_wait := 0.0
+
+func traffic_rear_clear(distance := 3.0) -> bool:
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = rotation_shape
+	query.collision_mask = 7
+	query.exclude = [get_rid()]
+	query.transform = Transform3D(global_basis,global_position+Vector3.UP*shape.position.y)
+	query.motion = global_basis.z*distance
+	var space := get_world_3d().direct_space_state
+	if not space.intersect_shape(query,1).is_empty(): return false
+	return space.cast_motion(query)[0]>=1.0
 
 func _is_vehicle(target) -> bool:
 	return is_instance_valid(target) and target is Node and (target as Node).has_method("driver_seat_anchor")
@@ -947,6 +1031,7 @@ func _exit_occupied(offset: float, length: float, open: bool) -> bool:
 	return false
 
 func obstacle_ahead() -> bool:
+	if traffic_escape!=null and traffic_escape.active: return traffic_escape.obstacle_ahead(self)
 	var length := 2.2+speed*speed/20.0
 	sensor_shape.size.z = length
 	var query := PhysicsShapeQueryParameters3D.new()
@@ -960,9 +1045,22 @@ func obstacle_ahead() -> bool:
 	blocker = null
 	for hit in get_world_3d().direct_space_state.intersect_shape(query,4):
 		if is_instance_valid(hit.collider) and hit.collider.has_meta("vehicle_ramp_structure"): continue
+		if traffic_escape!=null and traffic_escape.active and hit.collider is CharacterBody3D and not _is_vehicle(hit.collider) and not PROTECTION.is_protected(hit.collider): continue
 		blocker = hit.collider
 		break
 	return blocker != null
+
+func fade_traffic_retirement(alpha: float) -> void:
+	if alpha<=0:
+		for record in _traffic_retirement_meshes:
+			if is_instance_valid(record.node): record.node.transparency=record.original
+		_traffic_retirement_meshes.clear()
+		return
+	if _traffic_retirement_meshes.is_empty() and is_instance_valid(visual):
+		for mesh in visual.find_children("*","MeshInstance3D",true,false):
+			_traffic_retirement_meshes.append({"node":mesh,"original":mesh.transparency})
+	for record in _traffic_retirement_meshes:
+		if is_instance_valid(record.node): record.node.transparency=maxf(record.original,alpha)
 
 func place(point: Vector3, yaw: float) -> void:
 	reset_motorcycle_wheelie()
@@ -1063,12 +1161,14 @@ func _refresh_tuning_appearance() -> void:
 
 func _ensure_door_presentation() -> void:
 	if boarding_class() in ["open", "bus"]: return
+	var began := STALL_WORK.begin()
 	if not is_instance_valid(door_presentation):
 		door_presentation = preload("res://gameplay/VehicleDoorPresentation.gd").new()
 		visual.add_child(door_presentation)
 		door_presentation.configure(self)
 	else:
 		door_presentation.finish_now()
+	STALL_WORK.finish_slow("vehicle.doors.prepare", began, 1000, self)
 
 ## Termina agora a porta que estiver sendo preparada. Deve rodar ANTES de qualquer módulo
 ## trocar as malhas do casco (interior, teto translúcido): o recorte parte das originais.
@@ -1097,9 +1197,14 @@ func ensure_equipment(world: Node) -> Node:
 	return equipment
 
 func receive_impact(amount: float, local_point: Vector3, source: Node = null) -> void:
+	if not is_finite(amount) or amount <= 0 or not local_point.is_finite() or health <= 0 or PROTECTION.is_protected(self): return
+	if is_instance_valid(body_dents): body_dents.impact(amount * damage_resistance, local_point)
 	if is_instance_valid(equipment) and equipment.has_method('receive_impact'):
 		equipment.receive_impact(local_point, amount)
 	receive_damage(amount, source)
+
+func restore_body_dents(records: Array) -> void:
+	if is_instance_valid(body_dents): body_dents.restore_records(records)
 
 func receive_damage(amount: float, _source: Node = null) -> void:
 	if not is_finite(amount) or amount <= 0 or health <= 0 or PROTECTION.is_protected(self): return
@@ -1158,4 +1263,5 @@ func repair() -> void:
 		if has_meta(marker): remove_meta(marker)
 	preload("res://gameplay/police_response/ground/TirePuncture.gd").repair_vehicle(self)
 	health = max_health
+	if is_instance_valid(body_dents): body_dents.clear()
 	if is_instance_valid(damage_look): damage_look.restore()

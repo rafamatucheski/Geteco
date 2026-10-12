@@ -6,11 +6,13 @@ extends Node3D
 # enough. Keep regular spacing between the four bays.
 const SLOTS := [Vector3(147,.16,73),Vector3(156,.16,73),Vector3(164,.16,73),Vector3(172,.16,73)]
 const CENTER := Vector3(161,0,72)
+const FLEET := preload("res://runtime/FleetCatalog.gd")
 var service
 var cars: Dictionary = {}
 var drivers: Dictionary = {}
 var elapsed := 0.0
 var dressing: Node3D
+var _admission_query: PhysicsShapeQueryParameters3D
 
 func configure(owner_service) -> void: service = owner_service
 
@@ -36,6 +38,9 @@ func _process(delta: float) -> void:
 		if existing: continue
 		# Used bays stay empty during this visit, avoiding replacement in front of the player.
 		if service.used_bays.has(index): continue
+		# Reject an occupied bay before constructing the complete car/model. The
+		# normal spawn still checks support and final clearance; retry stays .5 s.
+		if _slot_occupied(SLOTS[index]): continue
 		var vehicle = session.controller.spawn_vehicle("taxi_yellow",SLOTS[index],PI/2)
 		if vehicle == null: continue
 		vehicle.vehicle_id = id
@@ -52,6 +57,29 @@ func _process(delta: float) -> void:
 		driver.died.connect(func(_actor): _close_slot(index))
 		drivers[index] = driver
 		break # One car/actor construction per streaming tick.
+
+func _slot_occupied(point: Vector3) -> bool:
+	if not is_inside_tree(): return false
+	if _admission_query == null:
+		var dimensions: Variant = FLEET.spec("taxi_yellow").get("bounds_size")
+		# Unknown bounds leave the authoritative spawn path in charge.
+		if not dimensions is Array or dimensions.size() != 3: return false
+		for value in dimensions:
+			if not (value is float or value is int) or not is_finite(float(value)) or float(value) <= 0: return false
+		var hull := BoxShape3D.new()
+		# Vehicle._ready uses these clamps; taxi_yellow has variant_scale ONE.
+		hull.size = Vector3(maxf(.65,float(dimensions[0])),clampf(float(dimensions[1]),1.1,3.6),float(dimensions[2]))
+		_admission_query = PhysicsShapeQueryParameters3D.new()
+		_admission_query.shape = hull
+		_admission_query.collision_mask = 7
+		_admission_query.collide_with_areas = false
+		_admission_query.collide_with_bodies = true
+	var cached_hull := _admission_query.shape as BoxShape3D
+	_admission_query.transform = Transform3D(Basis(Vector3.UP,PI/2),point+Vector3.UP*cached_hull.size.y*.5)
+	for hit in get_world_3d().direct_space_state.intersect_shape(_admission_query,4):
+		if is_instance_valid(hit.collider) and hit.collider.has_meta("vehicle_ramp_structure"): continue
+		return true
+	return false
 
 func _close_slot(index: int) -> void:
 	var vehicle = cars.get(index)

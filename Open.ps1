@@ -1,4 +1,4 @@
-param([switch]$Editor, [switch]$PrepareOnly, [string]$GodotPath = $env:GODOT_EXE)
+param([switch]$Editor, [switch]$PrepareOnly, [string]$GodotPath = $env:GODOT_EXE, [switch]$PauseUsageMonitor)
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'tools\Godot.ps1')
 $GodotPath = Resolve-ProjectGodot $GodotPath
@@ -21,4 +21,12 @@ $arguments = @('--path',('"'+$PSScriptRoot+'"'))
 if ($Editor) { $arguments += '--editor' }
 $launchPath = $GodotPath -replace '_console\.exe$', '.exe'
 if (-not (Test-Path -LiteralPath $launchPath)) { $launchPath = $GodotPath }
+if ($PauseUsageMonitor -and -not $Editor) {
+    . (Join-Path $PSScriptRoot 'tools\UsageMonitorPause.ps1')
+    Invoke-WithUsageMonitorPaused {
+        $gameProcess = Start-Process -FilePath $launchPath -ArgumentList $arguments -WindowStyle Normal -PassThru
+        try { $gameProcess.WaitForExit() } finally { $gameProcess.Dispose() }
+    }
+    return
+}
 Start-Process -FilePath $launchPath -ArgumentList $arguments -WindowStyle Normal

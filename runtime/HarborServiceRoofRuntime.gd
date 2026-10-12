@@ -38,6 +38,7 @@ func update(delta: float) -> void:
 			clear(true)
 			return
 		var point: Vector3 = roof.to_local(session.world.player.global_position)
+		session.world.player.air_movement.roof = roof
 		if absf(point.x)>definition.size.x*.5+.12 or absf(point.z)>definition.size.y*.5+.12: _begin_fall()
 		return
 	if busy: return
@@ -55,11 +56,12 @@ func _update_ground_access() -> void:
 		return
 	var wanted := CATALOG.find(str(session.state.place_id))
 	var room_owner: Node3D = session.room
+	var building_owner: Node3D = room_owner
 	var origin := Vector3.INF
 	var frame := Basis.IDENTITY
 	if not wanted.is_empty() and is_instance_valid(room_owner):
 		origin = room_owner.interior_spawn if wanted.id=="maciota" else room_owner.spawn_position
-		frame = owner.global_basis.orthonormalized()
+		frame = room_owner.global_basis.orthonormalized()
 	else:
 		if not session.state.place_id.is_empty():
 			_release_access()
@@ -69,11 +71,22 @@ func _update_ground_access() -> void:
 			_release_access()
 			return
 		wanted = physical.definition
-		owner = physical.owner
+		building_owner = physical.owner
 		origin = physical.point
 		frame = physical.frame
-	if is_instance_valid(access_visual) and access_definition.get("id","")==wanted.id and access_owner==owner: return
+	if is_instance_valid(access_visual) and access_definition.get("id","")==wanted.id and access_owner==building_owner: return
 	_release_access()
+	if wanted.id in ["westgate_garden","quayside_house","canal_north"]:
+		var model: Node3D = room_owner.model
+		var point: Vector3 = model.to_global(model.roof_access_point)+Vector3.UP*.04
+		var ladder_frame := frame*Basis(Vector3.UP,PI)
+		if session.position_clear(point) and _sweep_clear(origin+Vector3.UP*.04,point) and _ladder_fits(point,ladder_frame):
+			access_definition = wanted
+			access_owner = building_owner
+			access_point = point
+			access_frame = ladder_frame
+			_make_ladder()
+		return
 	var offsets: Array = [Vector3(2,0,-.5),Vector3(-2,0,-.5),Vector3(2.8,0,-1.4),Vector3(-2.8,0,-1.4),Vector3(1.4,0,-2.1),Vector3(-1.4,0,-2.1)] if wanted.owner=="service" else [Vector3.ZERO,Vector3(.65,0,0),Vector3(-.65,0,0)]
 	for offset: Vector3 in offsets:
 		var point := origin+frame*offset
@@ -85,7 +98,7 @@ func _update_ground_access() -> void:
 		var ladder_frame := frame*Basis(Vector3.UP,atan2(normal.x,normal.z))
 		if not _ladder_fits(point,ladder_frame): continue
 		access_definition = wanted
-		access_owner = owner
+		access_owner = building_owner
 		access_point = point
 		access_frame = ladder_frame
 		_make_ladder()
@@ -177,7 +190,6 @@ func nearest_action() -> Dictionary:
 	var player_position: Vector3 = session.world.player.global_position
 	if is_active():
 		if falling: return {}
-		if player_position.distance_to(roof.to_global(roof.jump_point))<1.05: return {"id":"service_roof_jump","provider":self,"label":"Saltar da cobertura"}
 		if player_position.distance_to(roof.to_global(roof.stair_point()))<1.55: return {"id":"service_roof_stairs","provider":self,"label":"Descer da cobertura"}
 		return {}
 	if is_instance_valid(access_visual) and player_position.distance_to(access_point)<1.55:
@@ -391,45 +403,6 @@ func restore_saved() -> bool:
 	var coordinates: Array = saved["return"]
 	return await _ascend(target,Vector3(coordinates[0],coordinates[1],coordinates[2]),false)
 
-func jump_from_roof() -> bool:
-	if nearest_action().get("id","")!="service_roof_jump": return false
-	var token: int = session._begin_transition("service_roof_jump")
-	if token<0: return false
-	_transition_epoch += 1
-	var epoch := _transition_epoch
-	var actor = session.world.player
-	var automatic: bool = actor.controlled_automatically
-	var direction: Vector3 = actor.automatic_direction
-	var speed: float = actor.speed
-	var jump_roof: Node3D = roof
-	var launch_direction: Vector3 = jump_roof.global_basis*jump_roof.jump_outward
-	var clear_ledge: Vector3 = jump_roof.to_global(Vector3(jump_roof.jump_point.x,0,float(definition.size.y)*.5))+launch_direction*.90
-	jump_roof.set_jump_gate(true)
-	busy = true
-	actor.controlled_automatically = true
-	actor.automatic_direction = launch_direction
-	actor.speed = 5.0
-	# A physical hop clears the original low parapet, which remains solid.
-	# The first slide lifts off; Actor then integrates its normal gravity.
-	actor.velocity = actor.automatic_direction*actor.speed+Vector3.UP*6.5
-	actor.move_and_slide()
-	var deadline := Time.get_ticks_msec()+2200
-	# Keep the launch until the entire capsule has cleared the original
-	# cornice. Releasing at the footprint edge drops the actor back onto it.
-	while (not falling or (actor.global_position-clear_ledge).dot(launch_direction)<0.0) and Time.get_ticks_msec()<deadline and session._owns_transition(token) and epoch==_transition_epoch and session.world.gameplay.health>0: await get_tree().physics_frame
-	var completed: bool = falling and (actor.global_position-clear_ledge).dot(launch_direction)>=0.0 and epoch==_transition_epoch and session.world.gameplay.health>0
-	if session._owns_transition(token):
-		# Death may clear our roof before the coroutine resumes. The owned
-		# token still must release movement and finish so rescue can start.
-		# A newer transition owns its own actor state and is never overwritten.
-		actor.controlled_automatically = automatic
-		actor.automatic_direction = direction
-		actor.speed = speed
-		session._finish_transition(token)
-	if not completed and is_instance_valid(jump_roof): jump_roof.set_jump_gate(false)
-	if epoch==_transition_epoch: busy = false
-	return completed
-
 func _begin_fall() -> void:
 	if falling: return
 	falling = true
@@ -457,7 +430,6 @@ func _tick_fall() -> void:
 	if not actor.is_on_floor() or fall_peak-actor.global_position.y<.2: return
 	var drop: float = fall_peak-actor.global_position.y
 	clear(true)
-	if drop>3.0: session.world.gameplay.damage_environment((drop-3.0)*11.0)
 	if session.world.gameplay.health>0: session.save_game()
 
 func clear(interrupted := true) -> void:

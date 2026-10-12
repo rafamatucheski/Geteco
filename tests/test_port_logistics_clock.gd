@@ -9,6 +9,11 @@ func run() -> void:
 	cargo.session = {"weather":{"time_of_day":.9},"activities":{"_data":{"day":4,"day_clock":50.0}}}
 	for i in 3: cargo.work_trucks.append({"respawn_at":-1.0,"deliveries":0,"phase":"approach"})
 	var start := cargo.game_seconds()
+	check(cargo._operations_open(),"Quay handling operates during the opening night")
+	check(not cargo._shift_open(),"Night handling preserves the daytime player freight shift")
+	cargo.session.weather.time_of_day = .4
+	check(cargo._operations_open() and cargo._shift_open(),"Quay handling and player freight operate during the day")
+	cargo.session.weather.time_of_day = .9
 	cargo.session.weather.time_of_day = .1
 	check(is_equal_approx(cargo.game_seconds()-start,120),"Midnight wraps forward by the two tenths of a visible day")
 	var before := cargo.game_seconds()

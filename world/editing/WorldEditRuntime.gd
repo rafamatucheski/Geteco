@@ -165,3 +165,4 @@ static func build_light(region: Node, chunk: Node3D, record: Dictionary) -> void
 	light.omni_attenuation = 1.6
 	light.shadow_enabled = false
 	lamp.add_child(light)
+	preload("res://gameplay/street_physics/FragileProps3D.gd").register_node("lamp", lamp, chunk)

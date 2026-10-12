@@ -6,7 +6,7 @@ extends RefCounted
 const ROOT := "res://world/desert/underground/"
 const SITES := [
 	{"id": "desert_under_culvert", "name": "Galeria da Rodovia", "exterior": Vector3(-640, 0, -1527), "kind": "culvert",
-		"size": Vector2(40, 10), "model": "DesertCulvertGallery", "spawn": Vector3(-17.0, 0, 2.6),
+		"size": Vector2(40, 10), "model": "DesertCulvertGallery", "spawn": Vector3(-17.0, 0, 0),
 		"descent": {"style": "walk", "length": 3.4, "drop": 0.0, "approach": 2.2, "doors": true}},
 	{"id": "desert_under_well", "name": "Poço de Santa Lua", "exterior": Vector3(-470, 0, -800), "kind": "well",
 		"size": Vector2(20, 20), "model": "DesertMoonWell", "spawn": Vector3(-6.2, 0, -5.8),
@@ -58,6 +58,10 @@ static func definitions() -> Array[Dictionary]:
 			"camera_size": maxf(size.x * 0.82, size.y * 1.25), "size": size, "variant": 0, "service": "desert_underground",
 			"reward": rewards[0].duplicate(true) if not rewards.is_empty() else {}, "rewards": rewards, "npcs": residents, "resident_talk": true,
 			"npc_model": "", "npc_point": Vector3.ZERO, "integration_status": "native_geometry_pending_validation"})
+		if entry.id == "desert_under_culvert":
+			result[-1].exit = Vector3(-19.0, 0, 0)
+			result[-1].camera_size = 13.5
+			result[-1].camera_target = Vector3(-12.0, .7, 0)
 		load("res://world/editing/WorldManholes.gd").update_definition(result[-1])
 	return result
 

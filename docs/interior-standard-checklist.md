@@ -1,6 +1,87 @@
 # Migração de interiores — checklist
 
+## Retorno de Último Abrigo — APK 0.3.3 — 12/10/2026
+
+Correção localizada em **1 acesso exterior existente**, sem novo lugar ou
+interior. O retorno fica 1,5 m mais adiante no mesmo caminho, fora do aquecedor.
+Entrada e saída físicas, controle, câmera, cápsula livre e ausência de loop
+passaram no lote de 66 verificações de oito acessos representativos.
+Registro: `docs/android-033-validation.md` e relatório da suíte iniciado em
+UTC 16:55:11 em `evidence/test-suite/`. Não certifica novamente a decoração,
+oclusão completa, iluminação ou performance; contagens de migração inalteradas.
+Fotos comparativas específicas deste acesso permanecem pendentes.
+
+## Lanterna nos esgotos — 12/10/2026
+
+Escopo: **7 lugares físicos / 7 interiores existentes; 0 novos; 0 aprovações completas**. Iluminação compartilhada, sem migração de arquitetura, câmera ou acessos. Não somar novamente ao inventário. Detalhes em [lanterna-esgotos-20261012.md](reviews/lanterna-esgotos-20261012.md).
+
+- [x] Ambiente escuro independente do sol; superfícies iluminadas preservadas pela camada de escuridão; sombras reais da lanterna e bloqueadores das paredes rebaixadas.
+- [x] Contrato de ativação, saída e descarregamento: 12 verificações. Física de jogador/NPC, spawn, sólidos e coleta nos sete esgotos: 312 verificações.
+- [x] Oclusão de jogador/NPC: 105 verificações aprovadas na fixture de profundidade corrigida pela sessão concorrente. Arma real, entrada/saída e iluminação restaurada no original e no Mercado; gravações de 30 s por lugar, com limites de cadência descritos no relatório.
+- [x] Renderização de objetos expostos e bloqueados por parede em `harbor_sewer` e `sewer_market`: 6 verificações de pixels; ganho de iluminação atrás da parede igual a zero nos dois cenários.
+- [ ] Aprovação global dos sete interiores: cobertura visual e temporal dos demais lugares, regressão de performance antes/depois e fotos anteriores à implementação pendentes.
+
+
+## Galeria da Rodovia — acesso, câmera e contenção de granadas — 11/10/2026
+
+Escopo deste lote: **1 lugar físico / 1 interior existente; 0 novos; 0 aprovações completas; 1 em andamento / 1 restante para aprovação**. Não somar novamente ao inventário histórico. Reforma restrita a `desert_under_culvert`; carregamento das definições no controlador compartilhado corrige a consulta de retorno dos quatro subterrâneos do deserto.
+
+- [x] Câmera ortográfica de 32,8 para 13,5, acompanhando Dante horizontalmente com limites. Spawn central livre e saída oeste distinta do spawn permitem voltar imediatamente.
+- [x] Grade física articulada abre ao caminhar contra a folha; estar parado não abre. Entrada, percurso, saída, reentrada e saída imediata pela Main renderizada/.NET passaram sem botão de interação e com controle restaurado. [Log](../output/culvert-access-validated.log). A apresentação de descida continua da porta já aberta, sem voltar à aproximação nem repetir a abertura.
+- [x] Paredes físicas de 3,4 m e laje de teto a 3,2 m preservam a contenção mesmo onde a câmera recorta a malha. Cinco granadas produtivas arremessadas contra os quatro lados e teto permaneceram dentro e detonaram. Cápsula varrida, corredor, saída e posições autoradas das três recompensas aprovados. [Log](../output/culvert-enclosure-final.log).
+- [x] Catálogo, moradores, recompensas e alcançabilidade dos quatro subterrâneos: **75 verificações, zero falhas**. [Log](../output/culvert-catalog-final.log).
+- [x] Profundidade e colisão dirigidas de jogador/NPC na bancada: **16 verificações, zero falhas**, frente/atrás/lado com controle positivo de visibilidade. [Log](../output/culvert-depth-final.log), [máscaras](../output/culvert-review-20261011/depth/). Fixture de render separada; não certifica todos os móveis, combate ou cenários de recuperação.
+- [x] Revisão visual: piso de concreto, areia baixa, detalhes do tapete, grade, carcaça, gaiolas e portal externo. Luz de entrada pelas grades estabilizada, preservando fogo intencional. [Antes, imagem enviada pelo usuário](../output/culvert-review-20261011/00-user-before.png), [interior depois](../output/culvert-review-20261011/03-interior-4.png), [acesso externo depois](../output/culvert-review-20261011/01-exterior.png), [retorno](../output/culvert-review-20261011/04-return.png). Não há baseline externo anterior à edição.
+- [ ] Performance antes/depois e evidência temporal contínua de iluminação: **não aprovadas**. Sessão do usuário permaneceu aberta; nenhum benchmark concorrente foi usado. Contador de FPS nas fotos não substitui medição. Meta provisória 60 FPS/16,67 ms, comparação p95/p99 com investigação de variação acima de 5%, ainda pendente.
+- [ ] Cobertura integral de móveis/oclusão, persistência, combate integrado com moradores, morte/resgate e restauração de save: não certificada neste lote. Build `Harbor.csproj` passou; validação realizada em Godot 4.7.2 .NET, Vulkan Mobile, RTX 4060 Laptop. Saves de teste isolados e `--no-save`.
+
+## Salto, quedas e lojas protegidas — 10/10/2026
+
+**0 lugares novos / 0 interiores novos / política em 26 lugares existentes e 31 pavimentos internos autorados / 0 concluídos integralmente neste lote.** Mantidas as contagens gerais; não somar novamente esses ambientes. A apresentação/arquitetura das lojas não foi reformada. [Implementação, fotos reais, cobertura e pendências](reviews/salto-quedas-e-lojas-20261010.md).
+
+- [x] Lojas: bloqueio de armas, inventário preservado e admissão sem polícia verificados nos 26 IDs por contrato; NPCs usam proteção de dano comum e herdada da sala.
+- [x] Curitiba Cellar na Main: Luísa/Nelson protegidos, entrada durante perseguição recusada, save isolado realmente gravado, restauração fria e saída — 15 checks. Fotos reais vinculadas no relatório; não houve foto anterior à implantação da política.
+- [x] Salto: 23 checks físicos de cápsula, teto, mureta, mãos apoiadas, queda baixa, dano único/colete, recuperação, queda fatal e respawn; teclado real na Main — 8 checks.
+- [x] Coberturas: ação de salto por E removida. Cobertura baixa — 13 checks; serviço Fuel — 48 checks na Main renderizada, incluindo circulação, câmera, persistência e queda até o piso real. Queda alta e pose de impacto verificadas com a falha histórica da fixture de teclado preservada e corrigida em rodada separada.
+- [ ] Demais lugares/coberturas: circulação física, oclusão e apresentação temporal completas não certificadas por esta amostra. A cobertura lógica dos 26 IDs não aprova automaticamente seus interiores.
+- [ ] Performance: comparação exclusiva e com carga equivalente pendente. Amostras renderizadas antes/depois de 30 s registradas, mas há sessões concorrentes e diferença de população/tráfego; não aprovar FPS por essas médias.
+- [ ] Garagem: driver restore / vehicle transfer excederam o prazo de inicialização. Maciota e mecânico mantêm a proteção permanente; a seleção de recompensas passou, sem certificar as duas transições pendentes.
+
+## Portas por empurrão e remoção do marcador — 10/10/2026
+
+**0 lugares novos / 0 interiores novos.** Alteração do controlador compartilhado das entradas a pé e remoção global do desenho do retângulo laranja. Não altera a contagem de interiores nem certifica o inventário completo. A orientação de abrir por proximidade foi substituída pelo pedido do usuário: caminhar contra a porta bem de perto, com animação de empurrar, sem exigir E.
+
+- [x] Compilação `Harbor.csproj` no ambiente Godot 4.7.2 .NET: sem erros ou avisos.
+- [x] Fachadas de serviços: 32 verificações físicas aprovadas em `tests/test_service_facade_physics.gd`.
+- [x] Porta física + Dante: 10/10 finais em `tests/test_door_push_physics.gd`; parada próxima/encostada, cápsula bloqueada, abertura animada, alcance da mão esquerda, passagem varrida, manutenção aberta com corpo no vão, fechamento ao afastar, bloqueio modal, altura e troca de fachada sem herdar abertura. Fixture dirigida, sem aprovação de FPS ou substituição da cena Main. [Log](../output/door-push-20261010/physics-final.log).
+- [x] Fluxo dirigido na Main renderizada/.NET: **56/56**, loja de roupas, delegacia, supermercado e Ammu-Nation. Aproximação/parada não abrem; gesto e alcance da mão esquerda, porta animada, admissão, controle, saída e fechamento aprovados nesses quatro acessos. Ajustes: esperar a folha abrir antes da transição, usar intenção de movimento mesmo com velocidade removida pela colisão, alinhar o limite das lojas de armas ao plano físico da porta. [Log final](../output/door-push-20261010/validated-final.log). Execução com `--no-save --skip-arrival --no-prewarm --capture`; ainda registrou erro de compilação externo em `runtime/desert/drag_meet/TrackParticipantDamage.gd`, portanto não aprova inicialização integral ou sistemas do deserto. Tentativas anteriores tiveram erros concorrentes em CobraModel/ZooAnimal.
+- [ ] Fotos de abordagem/empurrão capturadas e inspecionadas em `output/door-push-20261010/`; retângulo ausente e gesto presente. Sem baseline visual anterior à alteração; marquise da Ammu-Nation limita a leitura da porta na captura. Não contar como migração visual concluída nem prova de oclusão integral.
+- [ ] Performance comparativa: não medida; outras sessões Godot renderizadas e testes concorrentes impedem baseline comparável. Nenhuma redução de qualidade, iluminação ou resolução.
+- [ ] Cobertura de todas as entradas, casas bloqueadas, interiores, NPCs e oclusão: não auditada integralmente neste lote. Geometria e salas existentes preservadas; não estender a cobertura amostral ao jogo inteiro.
+
+## Harbor — interferência entre fachada e interior preparado — 09/10/2026
+
+**0 lugares novos / 0 interiores novos / correção no shell compartilhado dos prédios já inventariados; não somar novamente nem considerar o inventário inteiro certificado.** Recuo externo de 2 cm preservando faces internas, altura, abertura de porta e collider do piso. [Investigação e evidências](reviews/harbor-performance-20261009.md).
+
+- [x] Reprodução do defeito no MarketHall com círculo transparente desligado: 340 frames contínuos / 30 s, parado e andando, alternância clara/escura nas faixas inferiores das fachadas.
+- [x] Contrato geométrico: 92 verificações, quatro footprints/entradas/andares; baseline falhou na separação externa e versão corrigida passou, preservando planos internos e piso de colisão.
+- [x] Comparação temporal final no MarketHall: 348 quadros / 30 s, sem lacunas, alternância clara/escura não reproduzida após correção. [Antes/depois](../evidence/harbor-regression-20261009/market-facade-flicker-before-after.png). Captura perturba a cadência e não certifica FPS.
+- [x] Validação dirigida no MarketHall e Torque: 528 verificações renderizadas de física/profundidade (Dante e NPCs), mais 69 na cena Main de entrada, circulação, cobertura, save isolado, restauração e saída. Demais edifícios não exercitados nesta rodada.
+- [ ] Performance estável: não aprovada. Gravações por frame não são benchmark; rodada limpa anterior ainda apresentou picos.
+
+## Harbor — Umbra ampliada — 08/10/2026
+
+**1 lugar existente / 1 interior distinto reformado / 0 interiores novos / 0 concluídos integralmente / 1 em validação / 0 restantes para implementar neste lote.** [Implementação, fotos e limites](reviews/umbra-expansion-20261008.md).
+
+- [x] Planta 18 × 35 m, galeria superior, duas escadas físicas, banquete, cripta, biblioteca, berço, relógio e cinco novas estações de susto; fantasma antigo articulado. Primeira pessoa, ambiente bem escuro e lanterna acompanhando o olhar.
+- [x] Física final **63/63**, jogador e NPC; Main/.NET **68/68**, percurso, alturas, pausa, saída/reentrada e oclusão separada com controles positivos. Fotos reais antes/depois vinculadas no relatório.
+- [x] Entrada original, saída pelo indicador compacto, dois segredos e ausência de dano das atrações preservados. Sem passes de render por criatura.
+- [x] Gravações: entrada com 625 frames; salão, galeria e cripta com **1.723 frames / 89,930 s**, sem lacunas. A tentativa extra passou após correção de parser alheio; fotos e pares dirigidos inspecionados.
+- [ ] Desempenho isolado e estabilidade temporal integral: concorrência impediu baseline comparável e houve edições em fontes compartilhadas durante as capturas. Falta revisão integral das sequências, cobertura dedicada da aranha/guardião do relógio e escuta do áudio. Não contar como certificado nem usar FPS das fotos como benchmark.
+
 ## Harbor — Fagulha — 07/10/2026
+
+Atualização de 12/10/2026: ajustadas a pose de acomodação no piso após sair, as mãos dos moradores e a jogabilidade de corrida, pinball e luta. Os quatro jogos receberam trilhas próprias e efeitos acionados pelas ações. Por pedido do usuário, esta atualização não executou testes nem capturas/benchmark; entrada/saída, poses, áudio, colisão/oclusão e desempenho da revisão permanecem pendentes de validação no jogo. Não altera as contagens de lugares nem certifica novamente os checks históricos abaixo.
 
 **1 lugar físico novo / 1 interior distinto / 0 concluídos / 1 em validação / 0 restantes para implementar neste lote.** Loja entre Boa Praça e Ammu-Nation, sem substituir interiores existentes. [Implementação e evidências](reviews/fagulha-arcade-20261007.md).
 
@@ -250,6 +331,8 @@ Progresso e limites em `docs/story-harbor-act1-20261005.md`; manter os itens pen
 - [ ] Foto do exterior anterior e cobertura ampliada de combate/resgate/save durante conflito não disponíveis.
 
 [Implementação, evidências e limites](reviews/supermarket-20261003.md).
+
+Revisão localizada de 09/10/2026: cesta alinhada à frente dos clientes, mãos vinculadas às alças e alcance da prateleira no referencial da sala; referência do dono da cobertura corrigida para não usar `Node.owner`. Os 93 checks funcionais, o teste `test_supermarket_hand_targets.gd`, os 20 checks renderizados de Main e os 24 de oclusão com jogador/NPC passaram. A cobertura do supermercado passou 32 checks renderizados, incluindo subida, save temporário isolado, restauração a frio e descida (`evidence/harbor-service-roofs-34296-6702843/`); tentativa anterior com `--no-save` falhou na persistência por argumento inadequado e foi corrigida na invocação. Fotos atuais em `evidence/supermarket-20261002/arms-fix-20261009/` (comparação visual anterior: imagem fornecida no chat). Nenhum lugar ou interior adicionado; contagens e certificação integral permanecem iguais. Comparação de frame time antes/depois pendente por instâncias concorrentes do Godot; este ajuste não aprova performance.
 
 ## Banco North Pier: assalto, cofre e consequências — 02/10/2026
 
@@ -1142,6 +1225,18 @@ integrais**. [Escopo e evidências](residence-living.md).
 - [x] Diagnóstico final renderizado de Westgate: 30 s por vista aquecida (geral, guarda-roupa, bancada), p95 de 1,924/3,407/1,228 ms e nenhum frame acima de 33,3 ms. Dados em `evidence/residence-immersive/profile.json`; isso não fecha a pendência comparativa acima.
 - [x] Correção posterior das armas no painel: berços encaixados, folga traseira de 4 mm, painel livre das cortinas e luminária livre das armas. 60 verificações sem falha nas três casas, fotos `rack-after-*-normal/front/bench.png` e sequência real `rack.mp4`. Comparativo local de 30 s: p95 1,571 → 1,292 ms; sem regressão observada nesse ajuste. Não altera contagens nem certifica a reforma completa.
 
+## Casas: circulação e compra — 09/10/2026
+
+Correção de **3 casas existentes / 3 interiores**, sem novos lugares ou acessos.
+Permanecem **32 acessos / 30 interiores distintos**, **zero novas certificações
+integrais**. [Detalhes e evidências](residence-living.md).
+
+- [x] Vão entre sofá e mesa ampliado de 60 cm para 1 m, com malha e colisão alinhadas; escada da cobertura ancorada em uma faixa livre junto à parede do fundo de cada planta.
+- [x] Compra em cartão compacto, cancelamento, crédito da troca e som existente de conquista no sucesso; restauração do layout ao fechar ou substituir o menu.
+- [x] Validação dirigida de compra, circulação jogador/NPC, escada e saída caminhando nas três casas: **114/114**, `tests/test_residence_circulation.gd`, log `evidence/residence-circulation-verified.log`. Ajuste final de âncoras de Westgate/Canal: **72/72**, log `evidence/residence-circulation-wall-access.log`.
+- [x] Fotos reais finais e oclusão no corredor alterado: jogador/NPC atrás do sofá, no vão e à frente da mesa. Em `evidence/residence-circulation-20261009/`, usar `verified-purchase*.png`, `verified-quayside_house*.png` e `wall-access-*.png` para Westgate/Canal. Baseline `before-quayside_house.png`. Sem certificação de todos os móveis/ângulos.
+- [ ] Certificação de desempenho antes/depois: baseline de 30 s teve outro benchmark Godot concorrente; p95 8,804 → 10,122 ms (+15%), p99 14,261 → 11,855 ms; comparação inconclusiva, sem aprovação de regressão. Dados brutos `before.json`/`after.json`.
+
 ## Porsche: acabamento da cabine — 04/10/2026
 
 Ajuste local de **1 arquétipo de veículo existente**, sem novos lugares/acessos ou interiores de estabelecimentos. Permanecem **32 acessos / 30 interiores distintos**, **zero novas certificações integrais**. As duas barras do acabamento agora cabem sob o teto curvo, sem parecer um rack após o roubo. [Escopo, fotos reais e medições](reviews/coupe-roof-20261004.md).
@@ -1325,3 +1420,109 @@ Escopo: **2 exteriores existentes / 0 interiores alterados / 0 novas certificaç
 - [x] Registro temporal do lago **1.439 frames / 78,4 s**, sem lacunas ou arquivos corrompidos, fontes estáveis; 80 amostras e 66 frames consecutivos das emendas inspecionados sem defeito observado nesses recortes. Parque: duas travessias registradas continuamente, 43 e 45 frames em aproximadamente 3 s cada. Capturas não medem FPS normal.
 - [ ] Comparação isolada de desempenho: a tentativa A/B com acabamento anterior selecionado na construção foi interrompida ao surgir outro Godot antes da primeira janela estável. Somente nossa fixture foi encerrada. Sem par válido de 30 s, desempenho permanece pendente; runner e auditoria estão no relatório.
 - [ ] Revisão temporal integral e condições adicionais: inspeção dirigida diurna/seca, sem reprodução humana integral de todo registro, chuva/noite ou Android. Não certifica iluminação, desempenho ou todos os terrenos do jogo.
+
+## Parque Lume — montanha-russa, 08/10/2026
+
+Escopo: **1 atração exterior existente / 0 interiores alterados / 0 lugares novos / 0 certificações integrais novas**. Implementação local concluída; certificação de desempenho permanece em andamento. Não alterar as contagens da Umbra, reformada por outra sessão.
+
+- [x] Circuito simples de **129,72 m**, altura **0,38–16,31 m**, sem os retornos internos sobrepostos. A revisão auxiliar identificou cruzamento antigo com apenas **0,841 m** de separação vertical. Centro e ambos os trilhos, tangentes de fechamento, curvas e envelope dentro da cerca verificados em amostras de 25 cm. **10/10** no teste dedicado, incluindo cápsulas de Dante e NPC contra portinhola fechada, aberta e novamente fechada: [log](../evidence/coaster-track.log).
+- [x] Entrada de **$5 por passeio**, recusa com saldo insuficiente, proteção contra interação duplicada e saldo preservado no snapshot. Dante aproxima-se, passa pela portinhola, entra e senta; porta e barra fecham antes da partida. Desembarque reverte a sequência na estação, com câmera própria e restituição de controles, visibilidade e colisões. Pedir saída durante a volta mantém o carro no trilho até a estação. Pausa e transições de recuperação preservam a liberação imediata preexistente.
+- [x] Fotos reais: [trajeto anterior](../evidence/coaster-before-33120-6495977/station.png), [circuito novo](../evidence/coaster-after-36456-5735264/station.png), [entrada](../evidence/coaster-session-36788-7413130/entry-03.png), [saída](../evidence/coaster-session-36788-7413130/exit-02.png). Sequências de seis capturas por transição verificam aproximação, passagem e oclusão pelo carrinho; não constituem auditoria visual de todo o parque.
+- [x] Controles desktop, gamepad e touch em fixture: **19/19**; [log](../evidence/coaster-input.log). Compilação `dotnet build Harbor.csproj --no-restore` sem erros/avisos, Godot **4.7.2 .NET**, Main com roteamento C# e save de fixture isolado. Os testes gerais antigos foram ajustados para o ingresso, a espera do desembarque e a malha atual de piso; não contar esses runners gerais como executados integralmente nesta revisão.
+- [x] Sessão Main renderizada: **32/32**, incluindo embarque/desembarque real, bloqueio temporário da plataforma e retomada sem sobreposição, segunda cobrança, cancelamento durante aproximação, pausa, morte durante entrada e resgate. [Resultado](../evidence/coaster-session-36788-7413130/result.json), [log](../evidence/coaster-session-complete.log). Uma execução anterior foi interrompida por entrada de pausa externa; a fixture final bloqueia somente input de desktop não solicitado e invoca as ações do jogo explicitamente.
+- [ ] Comparativo de desempenho isolado: duas janelas de **30 s** por versão, mesma câmera de estação, passeio real com repetições, Mobile/Vulkan, RTX 4060 Laptop, **1920×1080**, VSync ativo, limite **144 FPS**. Estação: p95 **9,101 → 10,699 ms**, p99 **12,532 → 14,868 ms**; passeio: média **123,46 → 134,41 FPS**, p95 **12,470 → 11,230 ms**, p99 **16,823 → 14,067 ms**, máximo **595,174 → 193,860 ms**. São dados diagnósticos: houve concorrência de processos, alteração de fontes durante a execução final (`source_stable=false`) e população distinta. Não atribuir melhora/regressão ao coaster nem aprovar FPS. [Antes](../evidence/coaster-before-33120-6495977/report.json), [depois](../evidence/coaster-after-36456-5735264/report.json), [processos concorrentes](../evidence/coaster-after-processes-during.json). Repetir A/B em janela isolada; amostras brutas, primeira visita e aquecimento estão separados nos relatórios.
+
+## Casas compráveis — indicador e cobertura externa — 10/10/2026
+
+Escopo: os três lugares existentes (`westgate_garden`, `quayside_house`, `canal_north`), com três interiores existentes, sem novos lugares ou reforma das salas. Esta revisão não altera a contagem global de interiores concluídos.
+
+- [x] Cifrão verde pequeno em 3D, flutuante e giratório, junto ao acesso de compra; sem collider, fonte de luz ou SubViewport. Preserva a confirmação existente. Indicador oculto na propriedade ativa, inclusive após restauração, e reativado quando a casa volta à venda. O alias de fachada `CanalHomesWest` usa o mapeamento existente para `canal_north`.
+- [x] Cobertura externa da garagem com nervuras metálicas e acabamento lateral/traseiro. Removida a ocultação provocada por pessoas/carros na área; preservadas posições dos postes, vagas e entradas. Fotos reais [antes](../output/residence-sale-20261010/before-quayside_house.png), [depois](../output/residence-sale-20261010/after-quayside_house.png), [garagem ocupada](../output/residence-sale-20261010/after-quayside_house-garage-occupied.png) e [terceira casa](../output/residence-sale-20261010/after-canal-fixed-canal_north.png).
+- [x] Main renderizada com Godot 4.7.2 .NET, `Harbor.csproj` compilado sem avisos/erros, saves isolados: 27 checks pertinentes nas três casas. Giro, compra real no acesso, ocultação, retorno à venda, restauração e cobertura com Dante dentro. [Primeiras duas casas](../output/residence-sale-after.log), [terceira casa após corrigir alias](../output/residence-sale-canal-fixed.log). A primeira execução falhou ao localizar o indicador de `canal_north`; o teste dirigido seguinte aprovou essa casa.
+- [x] Ciclo de vida: 13 checks, zero falhas; pré-carregamento que remove a fachada no mesmo frame, identidade das três propriedades, ausência de colisão no indicador e liberação no descarregamento. [Log](../output/residence-sale-lifecycle.log). A chamada adiada pertence à fachada para ser cancelada quando ela já foi removida; esse teste confirma a correção do erro visto no pré-carregamento da execução anterior.
+- [ ] Performance aprovada: comparação diagnóstica com janelas renderizadas de 30 s, Main, Mobile/Vulkan, RTX 4060 Laptop, 1280×720, limite efetivo de 144 FPS. Westgate: média 104,78 → 55,29 FPS e p95 22,468 → 36,291 ms; Quayside: 28,70 → 24,33 FPS e p95 67,703 → 118,547 ms; Canal: 77,18 → 55,33 FPS e p95 32,155 → 58,390 ms. Houve vários processos simultâneos e mudanças concorrentes, além de erros preexistentes no sistema de skate. A piora observada não aprova performance nem permite atribuir a causa ao indicador/cobertura. Requer comparação isolada, sem encerrar sessões alheias. [Amostras anteriores](../output/residence-sale-20261010/before.json), [posteriores](../output/residence-sale-20261010/after.json), [Canal corrigida](../output/residence-sale-20261010/after-canal-fixed.json), [processos concorrentes](../output/residence-sale-20261010/concurrent-processes.json).
+- [ ] Auditoria física e de profundidade completa dos interiores: fora do escopo desta alteração exterior; não reclassificar as salas como aprovadas nesta revisão. O indicador não participa de colisão e as novas partes da cobertura ficam acima da passagem, como conferido na construção/finalização da fachada.
+
+## Boeiros de Harbor — reação coletiva ao combate, 10/10/2026
+
+Escopo: **7 lugares existentes / 7 interiores com comportamento de moradores alterado / 0 lugares novos / 0 novas certificações integrais**. Geometria, câmera, iluminação e acessos mantêm sua configuração. O boeiro original recebeu três moradores; os seis demais mantêm sua população autorada. Não alterar as contagens de ambientes concluídos por esta implementação.
+
+- [x] Primeiro golpe de punhos: dano e aviso funcional `PARE!`; segundo golpe: defesa, armas próprias e alerta entre aliados próximos. Ataque armado provoca defesa imediata. Equipamentos: punho, faca, garra improvisada, garrafa quebrada e pistola. Ataques têm preparação, alcance, cadência, teste de visibilidade e bloqueio por sólidos.
+- [x] Física e comportamento das sete salas: **90/90** checks com corpos e salas reais, controlador reduzido somente para dano ao jogador; o alerta encadeado final no boeiro original acrescenta **18/18**. Inclui spawn, movimento varrido, ausência de penetração da cápsula real, dano inválido, aviso, retaliação, armas, bloqueio durante transição, paredes e morte. [Sete salas](../output/sewer-hostility-unit-approved.log), [alerta entre aliados](../output/sewer-hostility-relay-approved.log). Uma consulta retangular anterior produziu falso positivo no canto do barril do armazém; a verificação final consulta a cápsula física e exclui apenas o piso.
+- [x] Sessão integrada inicial, headless: socos pela física do `Gameplay`, aviso, ajuda de aliada, dano real, diálogo bloqueado durante briga, saída/liberação dos três atores e reentrada sem estado residual. [Log](../output/sewer-hostility-integration.log). Esta primeira execução precede o refinamento do alerta até o morador armado; conferir a execução renderizada final abaixo para esse refinamento.
+- [x] Regressão de acesso/conversa: seis tampas, descida, moradores, diálogos, saída, retorno à tampa e controles. O runner geral teve **123 PASS / 6 FAIL**: falharam coleta/posse de soqueira, machado e AK-47, pois acumula armas de todos os boeiros no inventário limitado. O mesmo resultado foi reproduzido sem mundo, NPC ou combate, usando `Economy.grant_world_reward`; as três recompensas passam individualmente em inventário novo. Não contar o runner geral inteiro como aprovado. [Sessão](../output/sewer-network-regression.log), [diagnóstico de capacidade](../output/sewer-reward-capacity-probe.log).
+- [x] Conferência final renderizada do alerta completo e regressão de garagem: **24/24**, Godot 4.7.2 .NET, Main, Mobile/Vulkan, RTX 4060 Laptop. Socos reais provocam aviso e defesa dos três moradores, inclusive Beto com pistola; saída/reentrada limpa os atores. Garagem guarda arma, bloqueia saque e ataques, mantém Maciota/mecânico protegidos sem rotina de dano e libera a arma na saída. [Runner](../tests/test_sewer_hostility.gd), [log final](../output/sewer-hostility-gameplay-approved.log). A execução anterior revelou que a aliada corria antes de retransmitir o alerta; a propagação agora acontece antes da perseguição. [Tentativa anterior](../output/sewer-hostility-rendered-final.log).
+- [x] Capturas reais do boeiro original: [moradores](../output/sewer-hostility/residents-idle.png), [aviso](../output/sewer-hostility/first-punch-warning.png), [briga](../output/sewer-hostility/fight-03.png). Conferidos escala humana, aviso legível e aproximação/golpes da aliada. São estados da implementação atual, não um comparativo visual com a versão antiga.
+- [ ] Oclusão dirigida atrás/ao lado de todos os móveis e revisão visual das seis outras salas: não executadas. A física não certifica profundidade/renderização. Nenhuma reforma global de interiores foi realizada.
+- [ ] Comparativo de frame time antes/depois: não medido. Havia outros testes e benchmarks Godot continuamente ativos durante a implementação; não executar benchmark simultâneo nem encerrar sessões alheias. Sem baseline comparável, não aprovar FPS nem atribuir regressão. [Processos durante a validação](../output/sewer-hostility-processes.json), [processos no encerramento](../output/sewer-hostility-final-processes.json), [medidor preparado](../tests/measure/measure_sewer_hostility.gd). A captura e o contador de FPS não substituem janelas isoladas de 30 s.
+
+
+## Indicador de lockpick dos containers do porto — 10/10/2026
+
+Ajuste restrito ao acesso dos 18 containers já arrombáveis; nenhum lugar ou interior novo, sem alteração de câmera, circulação, iluminação ou sólidos.
+
+- [x] Bolinha laranja de 18 cm de diâmetro junto à fechadura, sem texto, luz, sombra, colisão ou atualização por frame. Só aparece com a porta trancada; restauração e reposição usam o estado existente.
+- [x] Godot 4.7.2 .NET; build de Harbor.csproj sem avisos/erros. Teste existente de cache/colisão: 18 checks, zero falhas. Verificação dirigida: porta fechada/aberta, fade do teto, reposição e ausência de collider; aprovada. A primeira fixture chamou fade antes de liberar meshes descartados pelo otimizador; corrigida a espera da fixture, execução final sem erros.
+- [ ] Visual na cena Main e performance comparativa: pendentes. Outros testes/benchmark simultâneos impediram medição isolada. Tentativa renderizada de Main bloqueada por erro de inferência em scripts/Driving.gd:132 (had_driver), modificado por outra sessão; arquivo preservado. Não certifica FPS, oclusão integral ou os interiores. Log: [after-render.log](../tmp/port-marker-20261010/after-render.log).
+- [x] Modelo real renderizado em fixture isolada: bolinha pequena e visível junto à fechadura, com profundidade normal. [Antes](../tmp/port-marker-20261010/before-isolated.png), [depois](../tmp/port-marker-20261010/after-isolated.png). Esta captura não substitui Main nem benchmark.
+
+## Boeiros de Harbor — escada, tampa e tecla F, 10/10/2026
+
+Escopo: **7 acessos exteriores existentes / 0 lugares novos / 0 interiores reformados / 0 novas certificações integrais**. As contagens de interiores aprovados permanecem inalteradas.
+
+- [x] Entrada chega ao ponto autorado da escada, faz a pega por 0,35 s sem baixar e só depois inicia a descida. Aproximação usa movimento varrido; uma barreira aborta a entrada. Escada na parede do poço, seção superior retrátil e mãos alinhadas aos trilhos nativos. O disco opaco que escondia os degraus na altura da rua foi removido; a escuridão permanece no fundo. Subida usa a mesma posição autorada e respeita giro do acesso.
+- [x] Colisão da tampa fechada e paredes do poço termina no piso. A seção superior da escada fica invisível e sem colisão quando recolhida. **21/21**: veículo de produção cruza as sete tampas em ambos os sentidos, sem dano/queda, em fixture de física real com piso recortado. [Runner](../tests/test_manhole_closed_cover.gd), [log](../output/manhole-closed-cover.log).
+- [x] Animação e contato: **17/17**, ator e escada reais, acesso sem giro e girado 90°, aproximação/pega antes de baixar, clipes de descida/subida, alinhamento, cancelamento e restituição da física. Distância máxima horizontal palma/trilho: aproximadamente **2,13 cm** no cenário medido. [Runner](../tests/test_manhole_ladder_access.gd), [log](../output/manhole-ladder-final.log). Capturas atuais: [tampa fechada](../output/manhole-access/closed.png), [pega](../output/manhole-access/grip.png), [descida](../output/manhole-access/descent.png). Não houve captura anterior à implementação com câmera equivalente.
+- [x] Main renderizada: passagem local sobre tampas do boeiro original, cais e armazém, em ambos os sentidos, sem dano ou contato lateral; entrada com F, E sem efeito, indicador usando a ação remapeável de roubar veículo, descida, subida e liberação dos controles. [Log](../output/manhole-session-final.log), [indicador F](../output/manhole-session/F-prompt.png). O gamepad acompanha a ação de roubar; conversas e demais interações continuam na ação própria.
+- [x] Input e restauração da localização subterrânea: **12/12** na execução renderizada final. Indicador apresenta **F Descer**, sem duplicar a tecla; a tampa permanece legível acima da textura da rua e seu suporte físico segue no piso. A admissão inicial do save pula a caminhada exterior; restaurar a partir das coordenadas internas não inicia uma travessia pela cidade. Física, controles e saída funcionam após `restore_location`. Isto valida a admissão, não um novo ciclo completo de gravação em disco. [Log final](../output/manhole-input-delivery.log), [admissão anterior](../output/manhole-input-restore.log).
+- [ ] Circulação completa junto aos outros acessos: os runners amplos encontraram meio-fio/rampa, árvore e barreira costeira nas rotas; a cisterna apresentou perda de acesso/piso na sequência integrada, sem causa isolada. O runner antigo ainda colocou Dante na rota reversa do carro e continuou após colisões. Não contar esses percursos como aprovados nem remover seus obstáculos para aprovar a tampa. [Primeiro runner](../output/manhole-car-passage-final.log), [rotas locais amplas](../output/manhole-session-access-final.log). As três rotas Main escolhidas isolam o defeito da tampa; as outras quatro tampas têm cobertura física isolada.
+- [ ] Comparativo de performance antes/depois: não medido, pois havia benchmarks e alterações concorrentes. Sem baseline isolado, não aprovar FPS. [Processos](../output/manhole-validation-processes.json), [benchmarks concorrentes](../output/manhole-performance-concurrent.json). Capturas e contador de FPS não substituem amostras equivalentes de 30 s.
+
+Validação com Godot **4.7.2 .NET**, Main com serviço nativo C# (`route_jit_prewarm native=true`), Mobile/Vulkan e RTX 4060 Laptop. `dotnet build Harbor.csproj --no-restore -v quiet`: sem erros/avisos. Tentativas integradas encontraram erros transitórios em `Driving.gd` e `ProductionWorld.gd`, alterados por outras sessões; esses arquivos foram preservados e a execução avançou após suas correções.
+
+## Biarticulado 510 — acesso ao volante — 10/10/2026
+
+Nenhum estabelecimento ou sala de mapa acrescentado a este lote. Perfil de cabine dianteira do biarticulado: 1 tipo, 2 instâncias na linha; 1 instância exercitada em Main. O acesso é uma interação de veículo por F, com motorista sentado e câmera externa de direção, reutilizando VehicleInterior. Não contar como migração concluída de interiores.
+
+- [x] Roubo/entrada, direção, saída, colisão restaurada e reentrada: 20/20 em Main renderizada; física articulada e snapshot temporário: 20/20; regressão do roubo compartilhado: 66/66. Fontes: tests/test_biarticulated_theft_session.gd, tests/test_biarticulated_theft.gd e tests/test_vehicle_carjacking.gd.
+- [x] Desembarque de passageiros exige piso e cápsula livre; não materializa sobre terreno sem apoio. Portão permanece aberto durante a retirada. A posição roubada é admitida pelos três corpos ao reativar a cidade.
+- [ ] Oclusão da cabine completa e validação temporal noturna: não certificadas. Fotos reais de antes, sentado, dirigido e saída em evidence/biarticulated/theft-20261010/; não substituem a inspeção de todos os ângulos.
+- [ ] Performance comparativa: inconclusiva por jogos/benchmarks concorrentes e variação de frame time. Métricas e limites em docs/biarticulated-transit.md.
+- [ ] Garagens, demais plataformas, outras regiões e save/load completo da campanha: fora da cobertura deste lote. O teste de FleetState grava/lê um JSON temporário separado dos saves pessoais.
+
+## Cabines do lote de carros redesenhados — 11/10/2026
+
+Escopo: correções em **2 perfis de cabine** (ambulância e conversível), sem novos
+lugares ou salas e sem alterar os totais de interiores de mapa aprovados.
+O diagnóstico percorreu 59 modelos; não é certificação visual de todas as cabines.
+
+- [x] Identificadas inferências incorretas do banco por vidros agrupados da ambulância e acabamento refletivo do conversível. Evidência anterior e correção local ficam no [relatório da frota](reviews/fleet-redesign-validation-20261011.md).
+- [x] Correção local por metadados de cabine: 80 verificações com Actor real nos dois modelos; contratos dos recursos atualizados e capturas `attempt-04` em Main. O destino do motorista voltou à cabine/intervalo da porta, sem deslocamento para o baú. [Evidências e limites](reviews/fleet-redesign-validation-20261011.md). O para-brisa encobre a pose sentada do conversível nesta câmera; isto não certifica todos os contatos visuais do cockpit.
+- [ ] Oclusão por todos os ângulos, passageiros/NPCs e restauração de save de todos os perfis: fora da cobertura desta revisão. Não contar como migração integral concluída.
+
+## Acessos das casas de Santa Lua — 11/10/2026
+
+Escopo: 4 lugares físicos / 4 interiores existentes; nenhum interior novo. Correção funcional dos 4 acessos; não altera a contagem de migrações integralmente aprovadas.
+
+- [x] Porta física animada pelo controlador compartilhado de empurrão; retirada da exigência de interação para entrada e saída dessas casas. Recesso da fachada acomoda a folha aberta.
+- [x] Saída caminhando antes da borda do piso e retorno externo apoiado nas quatro casas: `tests/test_desert_home_walkup.gd`, 27 verificações aprovadas em Main renderizado, Godot 4.7.2 .NET com roteamento C# e save temporário isolado.
+- [x] Contratos físicos existentes: `tests/test_desert_village_homes.gd`, 376 verificações aprovadas. Build de Harbor.csproj sem erros.
+- [x] Capturas reais de porta fechada, interior e retorno: [evidências](../evidence/desert-home-walkup-23060-10455186/homes-report.json). Inspeção visual do interior e retorno da casa 1; capturas das demais disponíveis no mesmo diretório.
+- [ ] Fotos anteriores à edição, sequência visual da animação, reentrada/save-load específico do novo acesso e oclusão em todos os ângulos não cobertos nesta correção.
+- [ ] Performance antes/depois pendente: outras instâncias Godot estavam abertas; contador de FPS das capturas não constitui benchmark. Quatro interiores permanecem sem certificação integral deste checklist.
+
+## Esgotos — volume, colisão e ambiência — 12/10/2026
+
+Escopo: **7 lugares físicos / 7 interiores distintos existentes** (`harbor_sewer`, mercado, cais, armazém, cano, cisterna e porto). Nenhum interior novo; **0 novas certificações completas, 7 em andamento, 7 restantes para aprovação integral deste lote**. A contagem global de ambientes certificados permanece inalterada.
+
+- [x] Canal das seis variantes: recorte real da laje e dos ladrilhos, fundo rebaixado e água animada visível, preservando passarelas e rotas. Alvenaria com relevo em MultiMesh; parede posterior do original com volume maior. Sem novas fontes de luz nesta reforma.
+- [x] Colisões dos colchões, baús, caixotes girados, entulho, tubulações grossas baixas, corrimão do cais e passarela baixa do porto. As transformações finais das malhas alimentam os corpos do adaptador; removidos os bloqueios retangulares duplicados. Recompensas preservam seus IDs e valores, agora ao lado dos recipientes; morador do cano reposicionado fora do colchão.
+- [x] Catálogo, spawns e caminhos até recompensas: **112/112**. [Log](../output/sewer-refresh-network-complete.log). Física com Dante e morador reais, movimentos varridos contra sólidos, cobertura das malhas classificadas e reativação do áudio: **338/338**. [Log](../output/sewer-refresh-physics-complete.log), [runner](../tests/test_sewer_refresh.gd).
+- [x] Sessão Main renderizada: **90/90**, sete salas mais uma reentrada no armazém, descida/subida reais, NPCs, corpo inteiro nos pontos de coleta, retorno e controles. Som não toca durante a preparação na rua e para ao sair. [Log](../output/sewer-refresh-session-final.log), [runner](../tests/test_sewer_refresh_session.gd). A execução inicial encontrou coleta do Tonho encostada no colchão; corrigida. A aproximação inicial diagonal da fixture falhava no mercado/cano; a execução final parte do lado próprio da escada, sem contornar colisões do percurso.
+- [x] Profundidade separada da física: **105/105**, Dante e morador na frente, atrás e ao lado de um móvel acessível por sala, com controles positivos. [Log](../output/sewer-refresh-depth-complete.log), [resultados](../output/sewer-refresh/depth/results.json). A máscara diagnóstica desativa somente a camada CanvasLayer de escuridão na fixture; não certifica iluminação. Corrigidos os problemas da fixture: animação entre capturas, seleção de paredes/posições externas e contraste da máscara com o overlay.
+- [x] Fotos reais antes/depois das sete salas: `output/sewer-refresh/before-<id>.png`, `after-<id>.png`; câmera da sessão: `gameplay-<id>.png`. Exemplos: [armazém antes](../output/sewer-refresh/before-sewer_warehouse.png), [depois](../output/sewer-refresh/after-sewer_warehouse.png), [gameplay atual](../output/sewer-refresh/gameplay-sewer_warehouse.png), [original antes](../output/sewer-refresh/before-harbor_sewer.png), [original depois](../output/sewer-refresh/after-harbor_sewer.png). Os previews são instrumentos visuais, não benchmarks.
+- [x] Ambiência própria nas sete salas: correnteza fechada, goteiras irregulares e reflexões, stream estéreo determinístico de 16 s, sem clipping, no bus Ambient. Um player por sala ativa, sem dependência de sons costeiros. [Fonte](../audio/sewers/SewerAmbience.gd), [gerador](../tools/audio/build_sewer_ambience.py).
+- [x] `dotnet build Harbor.csproj --no-restore`: zero erros/avisos; Godot **4.7.2 .NET**, Mobile/Vulkan, RTX 4060 Laptop. Main registra caminho nativo C# ativo, sem aprovação silenciosa por fallback GDScript.
+- [ ] Audição e aprovação subjetiva da mixagem, oclusão de todos os objetos, restauração de save e interrupções de morte/resgate não certificadas neste lote. As verificações de coletas testam espaço corporal; não reexecutam aquisição de todas as armas em inventário cheio.
+- [ ] Performance comparável e estabilidade temporal da iluminação: pendentes. Baseline integrado do armazém: **30,008 s**, **110,57 FPS**, p50 **8,388 ms**, p95 **15,662 ms**, p99 **24,622 ms**, máximo **32,739 ms**, zero frames >33,3 ms. [Amostras](../output/sewer-refresh/before-warehouse.json). Outra sessão alterou `SewerDarkness.gd` e a iluminação do `SewerModel.gd` durante o lote; essas edições foram preservadas. Houve também benchmarks/testes concorrentes entre as validações. Não atribuir uma comparação ao custo isolado desta reforma nem aprovar FPS global.
+- [x] Janela atual do armazém, após encerrar benchmarks concorrentes: **30,001 s / 4.320 frames**, **143,99 FPS**, p50 **6,957 ms**, p95 **8,716 ms**, p99 **9,018 ms**, máximo **21,681 ms**, zero frames >33,3 ms. [Amostras](../output/sewer-refresh/after-warehouse.json). Mesmos 1920×1080, Mobile/Vulkan, VSync 1 e limite 144 FPS; fontes monitoradas estáveis durante a medição, sem outro gameplay/benchmark no inventário inicial/final (editor e worker de preview headless presentes). A população externa mudou de 3 para 4, e a iluminação entre versões também mudou por outra sessão: o comparativo causal continua inconclusivo. Esta janela cumpre o alvo provisório de 60 FPS no armazém ocupado/parado; não certifica os outros seis esgotos, combate ou primeira visita.

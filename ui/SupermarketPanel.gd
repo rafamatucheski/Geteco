@@ -160,7 +160,7 @@ func _card(id: String) -> void:
 	var label := STYLE.label(str(spec.label),16)
 	label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	text.add_child(label)
-	var benefit := STYLE.label("100 proteção" if id=="armor" else "+%d vida"%spec.heal,12,STYLE.ARMOR if id=="armor" else GREEN)
+	var benefit := STYLE.label("100 proteção" if id=="armor" else String(TranslationServer.translate("+%d vida"))%spec.heal,12,STYLE.ARMOR if id=="armor" else GREEN)
 	text.add_child(benefit)
 	var row := HBoxContainer.new()
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -204,13 +204,13 @@ func _reason(id: String) -> String:
 
 func refresh() -> void:
 	wallet.text = "R$ "+STYLE.amount(session.state.economy.balance)
-	condition.text = "Vida  %d / 100     ·     Proteção  %d / 100"%[session.world.gameplay.health,session.world.gameplay.armor]
+	condition.text = String(TranslationServer.translate("Vida  %d / 100     ·     Proteção  %d / 100"))%[session.world.gameplay.health,session.world.gameplay.armor]
 	for id in cards:
 		var row: Dictionary = cards[id]
 		var reason := _reason(id)
 		# Keep blocked cards focusable so keyboard/controller users can hear/read why.
 		row.content.modulate.a = 1.0 if reason.is_empty() else .48
-		row.count.text = "Equipado" if id=="armor" and session.world.gameplay.armor>=100 else "%d un."%int(session.state.economy.inventory.get(id,0)) if id!="armor" else ""
+		row.count.text = "Equipado" if id=="armor" and session.world.gameplay.armor>=100 else String(TranslationServer.translate("%d un."))%int(session.state.economy.inventory.get(id,0)) if id!="armor" else ""
 		row.button.tooltip_text = reason if not reason.is_empty() else "Comprar "+str(GRID.spec(id).label if id!="armor" else "colete")
 
 func _describe(id: String) -> void:

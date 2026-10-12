@@ -240,7 +240,7 @@ func show_vehicle(car_id: String, parts: Dictionary, owned: Array, wins: int, mo
 	_base = PERF.measure(_car_id,_parts)
 	var label := str(FLEET.spec(car_id).get("label",car_id))
 	_title.text = label
-	_wallet.text = "R$ %s   ·   %d de %d vitórias" % [_money_text(_money),_wins,RACE_WINS.maximum()]
+	_wallet.text = String(TranslationServer.translate("R$ %s   ·   %d de %d vitórias")) % [_money_text(_money),_wins,RACE_WINS.maximum()]
 	_message.text = ""
 	_rebuild_tabs()
 	_rebuild_cards()
@@ -359,7 +359,7 @@ func _card(id: String) -> Control:
 	side.add_theme_constant_override("separation",10)
 	var price := Label.new()
 	price.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	if locked: price.text = "Vença %d provas (você: %d)" % [int(part.wins),_wins]
+	if locked: price.text = String(TranslationServer.translate("Vença %d provas (você: %d)")) % [int(part.wins),_wins]
 	elif id in _owned: price.text = "Já é sua"
 	else: price.text = "R$ %s" % _money_text(cost)
 	price.add_theme_color_override("font_color",MUTED if locked or id in _owned else GOLD)
@@ -374,13 +374,13 @@ func _card(id: String) -> Control:
 		button.text = "Bloqueada"
 		button.disabled = true
 	elif cost > _money:
-		button.text = "Falta R$ %s" % _money_text(cost-_money)
+		button.text = String(TranslationServer.translate("Falta R$ %s")) % _money_text(cost-_money)
 		button.disabled = true
 	elif cost == 0:
 		button.text = "Instalar"
 		button.pressed.connect(func(): purchase_requested.emit(id))
 	else:
-		button.text = "Comprar" if _pending != id else "Confirmar R$ %s" % _money_text(cost)
+		button.text = "Comprar" if _pending != id else String(TranslationServer.translate("Confirmar R$ %s")) % _money_text(cost)
 		button.pressed.connect(_buy_pressed.bind(id))
 	side.add_child(button)
 	row.add_child(side)

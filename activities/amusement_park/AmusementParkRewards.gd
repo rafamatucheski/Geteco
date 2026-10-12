@@ -64,7 +64,7 @@ func collect_nearby() -> int:
 		count += 1
 		item.free()
 		pickups.erase(id)
-		session.show_message("Encontrado: %s · disponível no guarda-roupa." % STATE.ENTRIES[id].label)
+		session.show_message(String(TranslationServer.translate("Encontrado: %s · disponível no guarda-roupa.")) % STATE.ENTRIES[id].label)
 	if count > 0:
 		AUDIO.play(self, "collectible")
 		_save()
@@ -81,7 +81,7 @@ func open_wardrobe() -> void:
 
 func _show_wardrobe() -> void:
 	var saved := STATE.data(session.state.world_state)
-	session._menu("GUARDA-ROUPA LUME · %d/6" % saved.found.size())
+	session._menu(String(TranslationServer.translate("GUARDA-ROUPA LUME · %d/6")) % saved.found.size())
 	for id in saved.found:
 		var entry: Dictionary = STATE.ENTRIES[id]
 		var selected: bool = session.state.economy.outfit == entry.get("outfit", "") if entry.slot == "outfit" else saved[entry.slot] == id

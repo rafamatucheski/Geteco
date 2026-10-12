@@ -219,7 +219,12 @@ func _bench(point: Vector2) -> void:
 	var seat := preload("res://world/urban_detail/BenchFinish.gd").create(1.9, .48, .59, 1.115)
 	seat.position = floor_from_local(point)
 	add_child(seat)
-	_add_rect_solid(Rect2(point - Vector2(18, 5), Vector2(36, 10)), 0.86, "WaitingBench")
+	preload("res://world/urban_detail/BenchFinish.gd").add_collision(seat,"WaitingBench")
+	# Keep the terminal's original blocker dimensions, owned by this bench.
+	var collider: CollisionShape3D = seat.get_node("WaitingBench").get_child(0)
+	(collider.shape as BoxShape3D).size = Vector3(36.0/PPM,.86,10.0/(PPM*FLOOR_Y))
+	collider.position.y = .43
+	preload("res://gameplay/street_physics/FragileProps3D.gd").register_node("bench_seat",seat,self)
 
 func _add_rect_solid(rect: Rect2, solid_h: float, label: String) -> void:
 	var center := floor_from_local(rect.get_center())

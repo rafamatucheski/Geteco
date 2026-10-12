@@ -47,7 +47,9 @@ var deaths: Dictionary = {}
 var quiet_left := 0.0
 var bodies: Array[Node] = []
 
-func _alive(actor: Node) -> bool:
+## Emergency collection can free these world-owned actors before our next tick.
+## Variant lets the validity guard run; a Node argument rejects freed instances.
+func _alive(actor: Variant) -> bool:
 	return is_instance_valid(actor) and not actor.dead and not actor.is_queued_for_deletion()
 
 func _aisle_route(actor: Node3D, target: Vector3, lane_offset := 0.0) -> PackedVector3Array:
@@ -286,6 +288,10 @@ func _tick_storyteller(delta: float) -> void:
 		storyteller_wait = 0
 	elif not nearby and storyteller_told and is_instance_valid(storyteller.speech):
 		storyteller.speech.hide()
+	if is_instance_valid(storyteller_voice) and storyteller_voice.playing and storyteller_voice.stream != null:
+		var remaining := maxf(0.0, storyteller_voice.stream.get_length() - storyteller_voice.get_playback_position()) + .35
+		storyteller.speech_left = maxf(storyteller.speech_left, remaining)
+		_story_hold = maxf(_story_hold, storyteller_wait + remaining + .5)
 	if storyteller_wait > _story_hold:
 		storyteller_stop = (storyteller_stop+1)%STORY_STOPS.size()
 		_story_route()
@@ -426,7 +432,7 @@ func _complete_trip() -> void:
 	trip_clock = 0
 	_try_start_trip()
 
-func _release_guest(actor: Node) -> void:
+func _release_guest(actor: Variant) -> void:
 	if not is_instance_valid(actor): return
 	if actor.dead and active:
 		bodies.append(actor)
@@ -492,7 +498,7 @@ func _deactivate() -> void:
 	for body in bodies: _free_actor(body)
 	bodies.clear()
 
-func _free_actor(actor: Node) -> void:
+func _free_actor(actor: Variant) -> void:
 	if is_instance_valid(actor): actor.queue_free()
 
 func snapshot() -> Dictionary:

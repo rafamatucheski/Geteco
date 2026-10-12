@@ -4,7 +4,7 @@ extends RefCounted
 ## Escolhe, pela identidade do pedestre, uma entrada compatível com o sexo e a corpulência que o próprio
 ## `CivilianModel` sortearia (`_appearance_wardrobe`), então a mesma identidade tem sempre o mesmo corpo.
 ## Cada GLB tem 4,1 mil triângulos, 24 ossos e uma textura 1024 (`tools/meshy_slim_glb.py`). A variedade
-## extra vem de `civilian_meshy.gdshader`: matiz e brilho só das roupas coloridas, por instância.
+## extra vem dos acessórios e de uma pequena variação de brilho por instância.
 ## Entradas cujo arquivo não existe são ignoradas; sem nenhuma entrada o pedestre segue procedural.
 const CIVILIAN := preload("res://assets/CivilianModel.gd")
 const FOLDER := "res://assets/civilians/meshy/pedestrians/"
@@ -40,10 +40,12 @@ static func available() -> Array[Dictionary]:
 ## Escolhe o corpo de `identity` e o grava em `model` (que ainda não entrou na árvore). Devolve false, e
 ## deixa o corpo procedural, quando o modelo tem guarda-roupa fixo (montanha, uniformes) ou não há entrada.
 static func apply(model: Node3D, identity: int) -> bool:
-	if not enabled or not model.wardrobe_overrides.is_empty(): return false
+	if not enabled: return false
+	for key in model.wardrobe_overrides:
+		if key != "female": return false
 	var entries := available()
 	if entries.is_empty(): return false
-	var wardrobe: Dictionary = CIVILIAN._appearance_wardrobe(identity, model.coat_color, model.pants_color, Color.TRANSPARENT, {})
+	var wardrobe: Dictionary = CIVILIAN._appearance_wardrobe(identity, model.coat_color, model.pants_color, Color.TRANSPARENT, model.wardrobe_overrides)
 	var best: Array[Dictionary] = []
 	var best_distance := 99
 	for entry in entries:
@@ -54,13 +56,17 @@ static func apply(model: Node3D, identity: int) -> bool:
 			best = [entry]
 		elif distance == best_distance:
 			best.append(entry)
-	if best.is_empty(): best = entries # só existem corpos do outro sexo: melhor um corpo novo do que nenhum
+	if best.is_empty(): return false # Keep the matching procedural body, never an opposite-gender mesh.
 	# Gerador local: não consome o RNG global do jogo e mantém a identidade estável entre sessões.
 	var rng := RandomNumberGenerator.new()
 	rng.seed = identity * 2654435761 + 40503
 	var entry: Dictionary = best[rng.randi() % best.size()]
 	model.body_source = FOLDER + String(entry.file)
-	model.body_tint = {"hue": rng.randf_range(-0.5, 0.5), "brightness": rng.randf_range(0.88, 1.12)}
+	# Estas texturas não têm máscara de roupa: a heurística de matiz também
+	# recoloria a pele (sobretudo tons escuros) de verde/rosa. Preserve o matiz
+	# autorado e o passo do RNG para não trocar acessórios de identidades existentes.
+	rng.randf()
+	model.body_tint = {"hue": 0.0, "brightness": rng.randf_range(0.88, 1.12)}
 	model.body_accessories = roll_accessories(rng, 0.20, 0.14, HATS)
 	return true
 

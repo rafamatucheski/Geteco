@@ -3,6 +3,9 @@ extends Node3D
 ## separately; every inhabited storey shares the main world and native depth.
 const MATERIALS = preload("res://world/places/ShopInteriorMaterials.gd")
 const DRESSING = preload("res://world/places/harbor_buildings/HarborBuildingDressing.gd")
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+# Keep shell outer faces behind the resident facade, without moving inner faces.
+const EXTERIOR_CLEARANCE := .02
 var definition: Dictionary = {}
 var variant := 0
 var floor_index := 0
@@ -20,9 +23,18 @@ func _ready() -> void:
 	width = definition.get("size", Vector2(width, depth)).x
 	depth = definition.get("size", Vector2(width, depth)).y
 	floor_index = int(definition.get("building_floor_index", 0))
+	var stage_started := STALL_WORK.begin()
 	_shell()
+	if stage_started != 0:
+		STALL_WORK.finish("building.interior.shell", stage_started, {"place":definition.id})
+	stage_started = STALL_WORK.begin()
 	_stairs()
+	if stage_started != 0:
+		STALL_WORK.finish("building.interior.stairs", stage_started, {"place":definition.id})
+	stage_started = STALL_WORK.begin()
 	content = DRESSING.populate(self, definition, floor_index)
+	if stage_started != 0:
+		STALL_WORK.finish("building.interior.dressing", stage_started, {"place":definition.id})
 	set_process(false)
 	set_physics_process(false)
 
@@ -45,18 +57,18 @@ func _shell() -> void:
 	var palettes := ["b7b4a6", "c3b59b", "b4b8af", "b8aca0", "a8b1b3"]
 	var plaster: String = palettes[seed_value % palettes.size()]
 	var residential: bool = str(definition.get("archetype", "")) in ["residential", "apartments", "residence", "brownstone"]
-	box(Vector3(0,-.045,0),Vector3(width,.05,depth),"8b6646" if residential else "7e817b","","wood" if residential else "stone")
-	box(Vector3(0,1.35,-depth*.5+.12),Vector3(width,2.7,.24),plaster,"BackWall","stone")
+	box(Vector3(0,-.045,0),Vector3(width-EXTERIOR_CLEARANCE*2,.05,depth-EXTERIOR_CLEARANCE*2),"8b6646" if residential else "7e817b","","wood" if residential else "stone")
+	box(Vector3(0,1.35,-depth*.5+.12+EXTERIOR_CLEARANCE*.5),Vector3(width-EXTERIOR_CLEARANCE*2,2.7,.24-EXTERIOR_CLEARANCE),plaster,"BackWall","stone")
 	for side in [-1,1]:
 		# Low camera-facing edges preserve true depth and unbroken collision.
-		box(Vector3(side*(width*.5-.12),.55,0),Vector3(.24,1.1,depth),plaster,"SideWall%d"%side,"stone")
+		box(Vector3(side*(width*.5-.12-EXTERIOR_CLEARANCE*.5),.55,0),Vector3(.24-EXTERIOR_CLEARANCE,1.1,depth-EXTERIOR_CLEARANCE*2),plaster,"SideWall%d"%side,"stone")
 		box(Vector3(side*(width*.5-.26),.09,0),Vector3(.06,.18,depth-.4),"534c40")
 		var span: float = width*.5
 		var center_x: float = float(side)*width*.25
 		if floor_index == 0:
 			span = width*.5+float(side)*(-entry_x)-1.2
 			center_x = (float(side)*width*.5+entry_x+float(side)*1.2)*.5
-		box(Vector3(center_x,.52,depth*.5-.12),Vector3(span,1.04,.24),plaster,"FrontWall%d"%side,"stone")
+		box(Vector3(center_x-float(side)*EXTERIOR_CLEARANCE*.5,.52,depth*.5-.12-EXTERIOR_CLEARANCE*.5),Vector3(span-EXTERIOR_CLEARANCE,1.04,.24-EXTERIOR_CLEARANCE),plaster,"FrontWall%d"%side,"stone")
 		var window_x: float = float(side)*width*.27
 		var window_width := minf(1.8,width*.24)
 		box(Vector3(window_x,1.85,-depth*.5+.25),Vector3(window_width,1.1,.06),"364b50","","metal")

@@ -193,6 +193,7 @@ static func create_streetlight(pole_height: float = 5.4, arm_length: float = 1.3
 	var pedestal := MeshInstance3D.new()
 	pedestal.name = "Pedestal"
 	var ped_mesh := CylinderMesh.new()
+	ped_mesh.radial_segments = 16
 	ped_mesh.top_radius = 0.16
 	ped_mesh.bottom_radius = 0.22
 	ped_mesh.height = 0.55
@@ -205,6 +206,7 @@ static func create_streetlight(pole_height: float = 5.4, arm_length: float = 1.3
 	var pole := MeshInstance3D.new()
 	pole.name = "Pole"
 	var pole_mesh := CylinderMesh.new()
+	pole_mesh.radial_segments = 12
 	pole_mesh.top_radius = 0.08
 	pole_mesh.bottom_radius = 0.13
 	pole_mesh.height = pole_height - 0.55
@@ -230,6 +232,8 @@ static func create_streetlight(pole_height: float = 5.4, arm_length: float = 1.3
 				var globe := MeshInstance3D.new()
 				globe.name = "Globe_%s" % ("Left" if side < 0 else "Right")
 				var sp := SphereMesh.new()
+				sp.radial_segments = 12
+				sp.rings = 6
 				sp.radius = 0.18
 				sp.height = 0.36
 				globe.mesh = sp
@@ -242,6 +246,7 @@ static func create_streetlight(pole_height: float = 5.4, arm_length: float = 1.3
 			var bracket := MeshInstance3D.new()
 			bracket.name = "Bracket"
 			var b_mesh := CylinderMesh.new()
+			b_mesh.radial_segments = 12
 			b_mesh.top_radius = 0.05
 			b_mesh.bottom_radius = 0.05
 			b_mesh.height = 0.95
@@ -254,6 +259,7 @@ static func create_streetlight(pole_height: float = 5.4, arm_length: float = 1.3
 			var shade := MeshInstance3D.new()
 			shade.name = "ConeShade"
 			var c_mesh := CylinderMesh.new()
+			c_mesh.radial_segments = 16
 			c_mesh.top_radius = 0.08
 			c_mesh.bottom_radius = 0.28
 			c_mesh.height = 0.22
@@ -265,6 +271,8 @@ static func create_streetlight(pole_height: float = 5.4, arm_length: float = 1.3
 			var bulb := MeshInstance3D.new()
 			bulb.name = "Bulb"
 			var b_sp := SphereMesh.new()
+			b_sp.radial_segments = 12
+			b_sp.rings = 6
 			b_sp.radius = 0.10
 			b_sp.height = 0.20
 			bulb.mesh = b_sp
@@ -339,6 +347,7 @@ static func create_bollard(style: String = "civic", height: float = 0.88, radius
 	var shaft := MeshInstance3D.new()
 	shaft.name = "Shaft"
 	var cyl := CylinderMesh.new()
+	cyl.radial_segments = 12
 	cyl.top_radius = radius
 	cyl.bottom_radius = radius * 1.08
 	cyl.height = height
@@ -351,6 +360,8 @@ static func create_bollard(style: String = "civic", height: float = 0.88, radius
 	var dome := MeshInstance3D.new()
 	dome.name = "Cap"
 	var sp := SphereMesh.new()
+	sp.radial_segments = 12
+	sp.rings = 6
 	sp.radius = radius * 1.02
 	sp.height = radius * 1.02
 	dome.mesh = sp
@@ -363,6 +374,7 @@ static func create_bollard(style: String = "civic", height: float = 0.88, radius
 		var band := MeshInstance3D.new()
 		band.name = "ReflectiveBand"
 		var band_cyl := CylinderMesh.new()
+		band_cyl.radial_segments = 12
 		band_cyl.top_radius = radius * 1.03
 		band_cyl.bottom_radius = radius * 1.03
 		band_cyl.height = 0.10
@@ -375,6 +387,7 @@ static func create_bollard(style: String = "civic", height: float = 0.88, radius
 	var flange := MeshInstance3D.new()
 	flange.name = "BaseFlange"
 	var fl_cyl := CylinderMesh.new()
+	fl_cyl.radial_segments = 16
 	fl_cyl.top_radius = radius * 1.35
 	fl_cyl.bottom_radius = radius * 1.45
 	fl_cyl.height = 0.06
@@ -484,6 +497,7 @@ static func create_trash_bin() -> Node3D:
 	var post := MeshInstance3D.new()
 	post.name = "SupportPost"
 	var p_mesh := CylinderMesh.new()
+	p_mesh.radial_segments = 12
 	p_mesh.top_radius = 0.04
 	p_mesh.bottom_radius = 0.05
 	p_mesh.height = 0.85
@@ -496,6 +510,7 @@ static func create_trash_bin() -> Node3D:
 	var bin := MeshInstance3D.new()
 	bin.name = "BinBody"
 	var b_mesh := CylinderMesh.new()
+	b_mesh.radial_segments = 16
 	b_mesh.top_radius = 0.22
 	b_mesh.bottom_radius = 0.19
 	b_mesh.height = 0.60
@@ -508,6 +523,8 @@ static func create_trash_bin() -> Node3D:
 	var hood := MeshInstance3D.new()
 	hood.name = "RainHood"
 	var h_mesh := SphereMesh.new()
+	h_mesh.radial_segments = 16
+	h_mesh.rings = 8
 	h_mesh.radius = 0.23
 	h_mesh.height = 0.16
 	hood.mesh = h_mesh
@@ -550,6 +567,7 @@ static func create_bike_rack(loops: int = 3, loop_spacing: float = 0.90) -> Node
 		for leg_x in [-0.28, 0.28]:
 			var leg := MeshInstance3D.new()
 			var l_mesh := CylinderMesh.new()
+			l_mesh.radial_segments = 12
 			l_mesh.top_radius = 0.035
 			l_mesh.bottom_radius = 0.035
 			l_mesh.height = 0.80
@@ -597,6 +615,7 @@ static func create_fire_hydrant() -> Node3D:
 	var lower := MeshInstance3D.new()
 	lower.name = "LowerBarrel"
 	var l_cyl := CylinderMesh.new()
+	l_cyl.radial_segments = 16
 	l_cyl.top_radius = 0.13
 	l_cyl.bottom_radius = 0.15
 	l_cyl.height = 0.45
@@ -609,6 +628,8 @@ static func create_fire_hydrant() -> Node3D:
 	var bonnet := MeshInstance3D.new()
 	bonnet.name = "UpperBonnet"
 	var b_sph := SphereMesh.new()
+	b_sph.radial_segments = 12
+	b_sph.rings = 6
 	b_sph.radius = 0.14
 	b_sph.height = 0.20
 	bonnet.mesh = b_sph
@@ -620,6 +641,7 @@ static func create_fire_hydrant() -> Node3D:
 	var nut := MeshInstance3D.new()
 	nut.name = "OperatingNut"
 	var n_cyl := CylinderMesh.new()
+	n_cyl.radial_segments = 12
 	n_cyl.top_radius = 0.04
 	n_cyl.bottom_radius = 0.04
 	n_cyl.height = 0.08
@@ -633,6 +655,7 @@ static func create_fire_hydrant() -> Node3D:
 		var nozzle := MeshInstance3D.new()
 		nozzle.name = "HoseOutlet_%s" % ("Left" if side < 0 else "Right")
 		var noz_cyl := CylinderMesh.new()
+		noz_cyl.radial_segments = 12
 		noz_cyl.top_radius = 0.055
 		noz_cyl.bottom_radius = 0.055
 		noz_cyl.height = 0.14
@@ -725,6 +748,8 @@ static func create_planter_box(size: Vector3 = Vector3(1.8, 0.45, 0.90)) -> Node
 		var shrub := MeshInstance3D.new()
 		shrub.name = "Shrub_%s" % ("Left" if side < 0 else "Right")
 		var sh_mesh := SphereMesh.new()
+		sh_mesh.radial_segments = 16
+		sh_mesh.rings = 8
 		sh_mesh.radius = (size.z * 0.42)
 		sh_mesh.height = (size.z * 0.65)
 		shrub.mesh = sh_mesh

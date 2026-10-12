@@ -1,4 +1,6 @@
 extends Node3D
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+const SESSION_OPS := preload("res://runtime/SessionOperations.gd")
 const PICKUP := preload("res://systems/inventory/PickupPresentation.gd")
 ## Native room adapter; geometry remains authored in original metre coordinates.
 var definition: Dictionary
@@ -26,12 +28,24 @@ var camera_size: float:
 	get: return definition.camera_size
 var active := true
 func _ready() -> void:
+	var ready_token := SESSION_OPS.begin(self, "place", "native_ready", {"place":str(definition.id), "model":str(definition.model)})
+	var ready_started := STALL_WORK.begin()
 	name = definition.id
-	var resource = load(definition.model)
-	model = resource.instantiate() if resource is PackedScene else resource.new()
+	var stage_started := STALL_WORK.begin()
+	var resource = SESSION_OPS.load_resource(str(definition.model), self, ready_token)
+	if stage_started != 0:
+		STALL_WORK.finish("native.ready.model_load", stage_started, {"place":definition.id})
+	stage_started = STALL_WORK.begin()
+	model = SESSION_OPS.instantiate(resource, self, ready_token)
 	for property in model.get_property_list():
 		if property.name in ["variant","variant_index"]: model.set(property.name,definition.variant)
-	add_child(model)
+	if stage_started != 0:
+		STALL_WORK.finish("native.ready.model_setup", stage_started, {"place":definition.id})
+	stage_started = STALL_WORK.begin()
+	SESSION_OPS.attach(self, model, self, ready_token)
+	if stage_started != 0:
+		STALL_WORK.finish("native.ready.model_add_child", stage_started, {"place":definition.id})
+	stage_started = STALL_WORK.begin()
 	# Per-room worlds/suns from old projected render must never light other regions.
 	for child in model.find_children("*","",true,false):
 		if child is WorldEnvironment or child is DirectionalLight3D:
@@ -69,6 +83,9 @@ func _ready() -> void:
 	_special_solids()
 	if definition.id == "port_boss_garage":
 		_box_solid("OriginalAccessRampFloor",AABB(Vector3(-3,-.14,7.65),Vector3(6,.12,3.3)),false)
+	if stage_started != 0:
+		STALL_WORK.finish("native.ready.solids", stage_started, {"place":definition.id})
+	stage_started = STALL_WORK.begin()
 	# Front cutaway uses the same original silhouette; physical bounds stay full.
 	for mesh in model.find_children("*","MeshInstance3D",true,false):
 		var bounds: AABB = (global_transform.affine_inverse()*mesh.global_transform)*mesh.get_aabb()
@@ -110,7 +127,15 @@ func _ready() -> void:
 		# Spawn-relative placement left it in the middle of the shop instead.
 		interaction_points["service"] = to_global(Vector3(1.7 if definition.id == "mountain_gunshop" else 0.0, 0, -.9))
 	for npc in definition.get("npcs",[]): interaction_points[npc.id] = to_global(npc.local_position)
+	if stage_started != 0:
+		STALL_WORK.finish("native.ready.adapt", stage_started, {"place":definition.id})
+	stage_started = STALL_WORK.begin()
 	_install_reward()
+	if stage_started != 0:
+		STALL_WORK.finish("native.ready.rewards", stage_started, {"place":definition.id})
+	if ready_started != 0:
+		STALL_WORK.finish("native.ready.total", ready_started, {"place":definition.id})
+	SESSION_OPS.finish(ready_token)
 func _rect_solid(id: String, rect: Rect2) -> void:
 	_box_solid(id,AABB(Vector3(rect.position.x,0,rect.position.y),Vector3(rect.size.x,2,rect.size.y)))
 func _box_solid(id: String,bounds: AABB,obstacle := true) -> void:
@@ -153,6 +178,7 @@ func _install_reward() -> void:
 		# `PickupPresentation.lift` (.09) já eleva `art`, então a peça desce esse tanto.
 		var art: Node3D = Node3D.new() if pickup_presentation else visual
 		var lift := .09 if pickup_presentation else 0.0
+		var reward_art_started := STALL_WORK.begin()
 		var authored_art: Node3D = model.call("create_reward_art",item) if model.has_method("create_reward_art") else null
 		if is_instance_valid(authored_art):
 			authored_art.position.y -= lift
@@ -173,7 +199,13 @@ func _install_reward() -> void:
 			surface.albedo_color = Color("b79655")
 			mesh.material_override = surface
 			art.add_child(mesh)
-		if pickup_presentation: visual.call("configure",art,str(item.get("item",item.kind)))
+		if reward_art_started != 0:
+			STALL_WORK.finish("native.reward.art", reward_art_started, {"place":definition.id, "reward":item.id})
+		if pickup_presentation:
+			var configure_started := STALL_WORK.begin()
+			visual.call("configure",art,str(item.get("item",item.kind)))
+			if configure_started != 0:
+				STALL_WORK.finish("native.reward.configure", configure_started, {"place":definition.id, "reward":item.id})
 		var data: Dictionary = item.duplicate(true)
 		data["reward"] = item.duplicate(true)
 		data["position"] = to_global(local)

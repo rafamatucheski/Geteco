@@ -30,6 +30,7 @@ var _lod_delta := 0.0
 var outfit_id := "dante_classic"
 var outfit_material: ShaderMaterial
 var is_player := false
+var air_movement: RefCounted
 var identity := 0
 var camera: Camera3D
 var visual: Node3D
@@ -147,6 +148,8 @@ func _ready() -> void:
 		var model := DANTE.instantiate() as Node3D
 		model.scale = Vector3.ONE * 1.03
 		model.rotation.y = PI
+		if has_meta("authored_female"):
+			model.wardrobe_overrides["female"] = bool(get_meta("authored_female"))
 		visual.add_child(model)
 		animation = model.find_child("AnimationPlayer", true, false) as AnimationPlayer
 		if animation and not animation.has_animation_library("ual") and ResourceLoader.exists(UAL_LIBRARY):
@@ -171,6 +174,8 @@ func _ready() -> void:
 			animation.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 			_build_idle_pose()
 		set_outfit(outfit_id)
+		air_movement = preload("res://gameplay/PlayerAirMovement.gd").new()
+		air_movement.configure(self)
 	else:
 		var model := CIVILIAN.new()
 		model.appearance_locked = true
@@ -233,7 +238,9 @@ func _stall_physics_tick(delta: float) -> void:
 		direction = offset.normalized()
 	if not is_player and direction.length_squared() > 0.01:
 		if _steering == null: _steering = STEERING.new()
+		var steering_began := STALL_WORK.begin() if STALL_WORK.aggregate_enabled or STALL_WORK.session_enabled else 0
 		direction = _steering.steer(self, direction, delta)
+		if steering_began != 0: STALL_WORK.finish_slow("actor.steering",steering_began,10000,self)
 		# Travou de verdade na rota própria: desiste deste ponto e segue para o próximo (volta pela calçada).
 		if _steering.stuck and not controlled_automatically and route.size() > 1:
 			waypoint = (waypoint + 1) % route.size()
@@ -261,16 +268,27 @@ func _stall_physics_tick(delta: float) -> void:
 		var alignment := direction.normalized().dot(forward)
 		var combat_speed := lerpf(2.3, 2.4 if alignment < 0.0 else 3.2, absf(alignment))
 		target_speed = minf(target_speed, combat_speed)
+	if is_player: target_speed *= float(get_meta("developer_speed_multiplier", 1.0))
 	velocity.x = direction.x * target_speed * lod_scale
 	velocity.z = direction.z * target_speed * lod_scale
-	velocity.y = -1.0 if is_on_floor() else velocity.y - 20.0 * delta
-	STEP.try_step(self, Vector3(velocity.x, 0, velocity.z) * (delta / lod_scale))
+	# Floor snapping maintains support on flat ground and descents. Pushing an
+	# already grounded capsule down repeats floor collisions on every walk tick.
+	if air_movement != null:
+		air_movement.before_move(delta, direction)
+	else:
+		velocity.y = 0.0 if is_on_floor() else velocity.y - 20.0 * delta
+	var step_began := STALL_WORK.begin() if STALL_WORK.aggregate_enabled or STALL_WORK.session_enabled else 0
+	if air_movement == null or air_movement.phase == "ground": STEP.try_step(self, Vector3(velocity.x, 0, velocity.z) * (delta / lod_scale))
+	if step_began != 0: STALL_WORK.finish_slow("actor.step",step_began,10000,self)
 	var move_began := STALL_WORK.begin()
 	# move_and_slide reads engine delta internally. Compensate only the player's
 	# swept velocity, then restore physical units for camera, footsteps and combat.
 	velocity *= rage_speed
 	move_and_slide()
 	velocity /= rage_speed
+	if air_movement != null:
+		air_movement.after_move()
+		if dead: return
 	STALL_WORK.finish_slow("actor.move_and_slide", move_began, 10000, self)
 	if lod_scale != 1.0:
 		velocity.x /= lod_scale
@@ -280,6 +298,7 @@ func _stall_physics_tick(delta: float) -> void:
 	travelled += displacement.length()
 	var actual_speed := displacement.length() / maxf(delta, 0.001)
 	last_position = global_position
+	var pose_began := STALL_WORK.begin() if STALL_WORK.aggregate_enabled or STALL_WORK.session_enabled else 0
 	if direction.length_squared() > 0.01 and (not is_player or is_nan(combat_facing)):
 		visual.rotation.y = lerp_angle(visual.rotation.y, atan2(-direction.x, -direction.z), 1.0 - exp(-14.0 * delta))
 	# Mirando/atacando, o corpo segue o rumo do disparo, não o do movimento.
@@ -299,7 +318,9 @@ func _stall_physics_tick(delta: float) -> void:
 			_last_clip = combat_clip
 			_last_clip_time = combat_clip_time
 		_combat_weight = move_toward(_combat_weight, 1.0 if combat_wanted else 0.0, delta / COMBAT_BLEND)
-		if _combat_weight <= 0.0:
+		if air_movement != null and air_movement.pose():
+			_combat_weight = 0.0
+		elif _combat_weight <= 0.0:
 			_pose_locomotion(direction, target_speed, displacement, actual_speed, delta)
 		elif _combat_weight >= 1.0:
 			_pose_clip(_last_clip, _last_clip_time)
@@ -321,9 +342,10 @@ func _stall_physics_tick(delta: float) -> void:
 			_hit_age += delta
 			visual.rotation.x = 0.0
 			_apply_hit_lean(delta)
-			_apply_combat_weapon_pose()
+			if air_movement == null or air_movement.phase == "ground": _apply_combat_weapon_pose()
 	else:
 		if visual.get_child(0).get("walking") != null: visual.get_child(0).walking = actual_speed > 0.1
+	if pose_began != 0: STALL_WORK.finish_slow("actor.pose",pose_began,10000,self)
 
 ## Caminhada/corrida comuns (fase travada na distância) ou, se couber, a
 ## locomoção armada. A entrada/saída usa o deslocamento REAL: soltar o comando,
@@ -403,14 +425,24 @@ func _build_idle_pose() -> void:
 	if hips >= 0:
 		var hip_position := skeleton.get_bone_pose_position(hips)
 		hip_position.x = hip_rest.x
+		hip_position.y = hip_rest.y
 		hip_position.z = hip_rest.z
 		skeleton.set_bone_pose_position(hips, hip_position)
-	var upright := skeleton.get_bone_pose_position(hips)
-	upright.y += 0.012
-	skeleton.set_bone_pose_position(hips, upright)
 	for side in ["Left", "Right"]:
 		var foot: int = _combat_bones[side + "Foot"]
-		var point := visual.to_local(skeleton.to_global(skeleton.get_bone_global_pose(foot).origin))
+		var foot_rest := skeleton.get_bone_global_rest(foot)
+		# Walking's blended feet still point down: its toe can touch the floor
+		# while the heel floats ~10 cm. Build a flat planted foot once, before
+		# caching idle and turn targets, without changing the moving clips.
+		# The heel also follows the shin's skin weights. This small pitch keeps
+		# its sole level after the wider idle stance bends the knees.
+		_set_combat_bone_rotation(foot, Basis(Vector3.RIGHT, deg_to_rad(-1.0)) * foot_rest.basis)
+		var toe: int = _combat_bones[side + "ToeBase"]
+		skeleton.set_bone_pose(toe, skeleton.get_bone_rest(toe))
+		var point := visual.to_local(skeleton.to_global(foot_rest.origin))
+		# The capsule bottom is .01 above Actor's origin; compensate the last
+		# 3 mm of sole lift from the shin weights, with both toe and heel clear.
+		point.y += 0.007
 		point.x = -0.12 if side == "Left" else 0.12
 		point.z = -0.025 if side == "Left" else 0.025
 		_solve_leg(side, visual.to_global(point))
@@ -676,7 +708,9 @@ func _two_hand_sword_transform(grip: Transform3D) -> Transform3D:
 	var left_bone: int = _combat_bones.get("LeftHand", -1)
 	if right_bone < 0: return combat_weapon_transform(combat_weapon_grip)
 	var right := (skeleton.global_transform * skeleton.get_bone_global_pose(right_bone)).orthonormalized()
-	var result := right * grip
+	# Authored grips are rounded; normalize after composition so slerp receives
+	# a proper rotation even when the hand itself was already orthonormalized.
+	var result := (right * grip).orthonormalized()
 	if left_bone >= 0:
 		var left := skeleton.global_transform * skeleton.get_bone_global_pose(left_bone)
 		var axis := right.origin - left.origin
@@ -1247,6 +1281,7 @@ func combat_rig_info() -> Dictionary:
 func teleport(point: Vector3) -> void:
 	release_seated()
 	global_position = point
+	if air_movement != null: air_movement.reset()
 	last_position = point
 	velocity = Vector3.ZERO
 	_feet_initialized = false
@@ -1308,6 +1343,15 @@ func _fall_over(impact := Vector3.ZERO) -> void:
 ## `push` é a direção em que o golpe empurra o corpo (do atacante para o jogador). Sem direção,
 ## o sorteio antigo continua valendo.
 var last_death_clip := ""
+
+func present_fall_death() -> void:
+	if _reaction_tween != null: _reaction_tween.kill()
+	clear_combat_weapon_pose()
+	if animation != null and animation.has_animation("mixamo/death_forward"):
+		last_death_clip = "mixamo/death_forward"
+		_pose_clip(last_death_clip, animation.get_animation(last_death_clip).length)
+	visual.rotation.x = 0.0
+	visual.rotation.z = 0.0
 
 func on_player_death(variant := -1, push := Vector3.ZERO) -> void:
 	if dead: return
@@ -1394,6 +1438,7 @@ func _apply_hit_lean(delta: float) -> void:
 
 func respawn_player() -> void:
 	if not is_player: return
+	if air_movement != null: air_movement.reset()
 	dead = false
 	health = 100.0
 	if _reaction_tween != null: _reaction_tween.kill()

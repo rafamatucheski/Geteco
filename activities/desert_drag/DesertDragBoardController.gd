@@ -13,6 +13,7 @@ var results_layer: CanvasLayer
 var results: Control
 var result_busy := false
 var instrument_shop: Control
+var open_board_panel: Control
 
 func configure(owner_race: Node3D) -> void:
 	race=owner_race
@@ -33,6 +34,7 @@ func open_board() -> bool:
 	layer.show()
 	board.show()
 	if is_instance_valid(instrument_shop): instrument_shop.hide()
+	if is_instance_valid(open_board_panel): open_board_panel.hide()
 	board.show_progress(race.snapshot(),pending_strike)
 	pending_strike=""
 	_layout()
@@ -53,6 +55,7 @@ func _build() -> void:
 	board.race_requested.connect(_request_race)
 	board.instruments_requested.connect(_open_instruments)
 	board.takeshi_requested.connect(_open_takeshi)
+	board.open_meet_requested.connect(_open_meet)
 	get_viewport().size_changed.connect(_layout)
 	layer.hide()
 
@@ -65,10 +68,50 @@ func _layout() -> void:
 	if is_instance_valid(instrument_shop):
 		instrument_shop.scale=board.scale
 		instrument_shop.position=board.position
+	if is_instance_valid(open_board_panel):
+		open_board_panel.scale=board.scale
+		open_board_panel.position=board.position
 
 func dismiss() -> void:
 	if is_instance_valid(layer): layer.hide()
 	if is_instance_valid(instrument_shop): instrument_shop.hide()
+	if is_instance_valid(open_board_panel): open_board_panel.hide()
+
+func _open_meet() -> void:
+	if not session.modal or race.active or not layer.visible: return
+	if not is_instance_valid(open_board_panel):
+		open_board_panel = preload("res://activities/desert_drag/DragOpenBoard.gd").new()
+		layer.add_child(open_board_panel)
+		open_board_panel.action_requested.connect(_open_meet_action)
+		race.open_meet.changed.connect(_refresh_open_meet)
+	board.hide()
+	open_board_panel.show()
+	_refresh_open_meet()
+	_layout()
+	open_board_panel.now_button.grab_focus()
+
+func _refresh_open_meet() -> void:
+	if is_instance_valid(open_board_panel): open_board_panel.show_ticket(race.open_meet.ticket())
+
+func _open_meet_action(action: String) -> void:
+	if not session.modal or not is_instance_valid(open_board_panel) or not open_board_panel.is_visible_in_tree(): return
+	if action=="back":
+		open_board_panel.hide()
+		board.show()
+		board.open_meet_button.grab_focus()
+		return
+	if action=="cancel":
+		race.open_meet.cancel_ticket()
+		return
+	if action not in ["now","queue"]: return
+	session.close_menu()
+	var reason: String = race.start_block_reason()
+	if not reason.is_empty():
+		if open_board(): board.set_message(reason)
+		return
+	var identity: String = race.OPEN_ROSTER.IDS[race.open_meet.visitor_serial%race.OPEN_ROSTER.IDS.size()]
+	if not race.open_meet.request(identity,action=="queue"):
+		if open_board(): board.set_message("Você já tem uma inscrição. Consulte Baterias livres.")
 
 func _open_instruments() -> void:
 	if not session.modal or not is_instance_valid(layer) or not layer.visible or race.active: return

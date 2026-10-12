@@ -29,6 +29,8 @@ func _init() -> void:
 	set_meta("model_identity", "Gol quadrado 1993")
 	set_meta("rim_inches", 15)
 	set_meta("body_doors", 2)
+	# Batched lenses also contain fog/reverse lights; their combined center is not a headlamp.
+	set_meta("headlight_mounts", [Vector3(-.576, .794, -1.856), Vector3(.576, .794, -1.856)])
 
 func _build() -> void:
 	for row in [["paint", "bcc2c4", .68, .26], ["rubber", "15181a", .0, .93], ["trim", "414447", .1, .65], ["glass", "243d45", .35, .13], ["alloy", "c8cccd", .85, .20], ["headlight", "dce3d2", .25, .18], ["amber", "d88123", .15, .25], ["tail", "a52d27", .15, .25], ["plate", "101213", .15, .5], ["speaker", "25292b", .15, .7]]:

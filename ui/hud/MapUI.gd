@@ -193,7 +193,7 @@ func _update_hints() -> void:
 	_close.text=controls.prompt("world_map")+"  Fechar"
 	_hints.text="Arrastar  Mover    ·    Roda  Zoom    ·    Clique  Selecionar    ·    Duplo clique  Marcar"
 	if size.x<1000: _hints.text="Arrastar  Mover   ·   Roda  Zoom   ·   Clique  Selecionar"
-	if controls.using_gamepad: _hints.text="%s  Mover    ·    %s / %s  Zoom    ·    %s  Selecionar    ·    %s  Marcar"%[controls.prompt("move_up"),controls.prompt("weapon_previous"),controls.prompt("weapon_next"),controls.prompt("ui_accept"),controls.prompt("interact")]
+	if controls.using_gamepad: _hints.text=String(TranslationServer.translate("%s  Mover    ·    %s / %s  Zoom    ·    %s  Selecionar    ·    %s  Marcar"))%[controls.prompt("move_up"),controls.prompt("weapon_previous"),controls.prompt("weapon_next"),controls.prompt("ui_accept"),controls.prompt("interact")]
 	if controls.get_meta("touch_controls_active",false): _hints.text="Arraste  Mover    ·    + / −  Zoom    ·    Toque  Selecionar"
 
 func focus_region(id: String) -> void:
@@ -384,6 +384,7 @@ func draw_map(target: Control) -> void:
 	_draw_scale(target)
 
 func _draw_label(target: Control, point: Vector2, text: String) -> void:
+	text = tr(text)
 	var width := minf(230,STYLE.STRONG.get_string_size(text,HORIZONTAL_ALIGNMENT_LEFT,-1,15).x+20)
 	var at := Vector2(clampf(point.x+20,8,_area.size.x-width-8),clampf(point.y-16,8,_area.size.y-36))
 	target.draw_style_box(STYLE.compact(false,3),Rect2(at,Vector2(width,32)))
@@ -392,7 +393,7 @@ func _draw_label(target: Control, point: Vector2, text: String) -> void:
 func _draw_inset(target: Control, region: String, title: String, rect: Rect2) -> void:
 	if not atlas.region_bounds.has(region): return
 	target.draw_rect(rect,Color("152b36")); target.draw_rect(rect,Color("627b85"),false,1)
-	target.draw_string(STYLE.STRONG,rect.position+Vector2(10,20),title,HORIZONTAL_ALIGNMENT_LEFT,-1,13,STYLE.TEXT)
+	target.draw_string(STYLE.STRONG,rect.position+Vector2(10,20),tr(title),HORIZONTAL_ALIGNMENT_LEFT,-1,13,STYLE.TEXT)
 	var extent: Rect2=atlas.region_bounds[region]
 	var factor := minf((rect.size.x-20)/extent.size.x,(rect.size.y-40)/extent.size.y)
 	var origin := rect.position+Vector2(rect.size.x*.5,28+(rect.size.y-28)*.5)-extent.get_center()*factor

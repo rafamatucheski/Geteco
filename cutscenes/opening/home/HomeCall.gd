@@ -39,6 +39,8 @@ var _rang := false
 var _textures: Array[Texture2D] = []
 var _shots: Array = SHOTS.duplicate(true)
 var _recorded_lines: Array[AudioStream] = []
+var _messages: Array[String] = []
+var _caption_index := -2
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -83,6 +85,10 @@ func _ready() -> void:
 	add_child(black)
 	_apply_shot(0.0)
 	create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS).tween_property(black,"color:a",0.0,.4)
+	var settings := get_node_or_null("/root/V2Settings")
+	if settings != null:
+		settings.voice_language_changed.connect(_voice_language_changed)
+		settings.text_language_changed.connect(_text_language_changed)
 
 func _audio(label: String, bus_name: String, volume: float) -> AudioStreamPlayer:
 	var player := AudioStreamPlayer.new()
@@ -106,16 +112,21 @@ func _process(delta: float) -> void:
 			_line = index
 			voice.stop()
 			voice.stream = _recorded_lines[index]
+			voice.volume_db = VOICE.playback_volume(voice.stream, -8.0)
 			if voice.stream != null: voice.play()
 	if elapsed >= duration: _finish(false)
 
 func _configure_recorded_timing() -> void:
 	_recorded_lines.clear()
+	_messages.clear()
+	_caption_index = -2
 	var shift := 0.0
 	for index in DIALOGUE.HOME_CALL.size():
 		var line: Array = DIALOGUE.HOME_CALL[index]
 		var spoken: String = line[1]
-		var stream := VOICE.recorded_line(spoken,"dante" if line[0] == "DANTE" else "caller")
+		var shown := VOICE.presentation(spoken,"dante" if line[0] == "DANTE" else "caller", "", "", "", "arrival:HOME_CALL")
+		var stream := shown.stream as AudioStream
+		_messages.append(str(shown.message))
 		_recorded_lines.append(stream)
 		var start: float = float(LINE_TIMES[index][0])+shift
 		var span: float = float(LINE_TIMES[index][1])-float(LINE_TIMES[index][0])
@@ -130,6 +141,31 @@ func _configure_recorded_timing() -> void:
 	_shots[5][0] = 27.0+shift
 	_shots[6][0] = 31.0+shift
 
+func _voice_language_changed(_value: String) -> void:
+	if _finishing: return
+	var current := -1
+	for index in line_times.size():
+		if elapsed >= float(line_times[index][0]) and elapsed < float(line_times[index][1]): current = index
+	var after_lines := elapsed >= float(line_times.back()[1])
+	var tail := elapsed - float(line_times.back()[1])
+	voice.stop()
+	_configure_recorded_timing()
+	if current >= 0:
+		# Restart the current sentence in the new language, preserving future shots.
+		elapsed = float(line_times[current][0])
+		_line = -1
+	elif after_lines: elapsed = float(line_times.back()[1]) + tail
+	_show_caption(elapsed)
+
+func _text_language_changed(_value: String) -> void:
+	language = "en" if TranslationServer.get_locale().begins_with("en") else "pt"
+	_messages.clear()
+	for line in DIALOGUE.HOME_CALL:
+		var shown := VOICE.presentation(str(line[1]), "dante" if line[0] == "DANTE" else "caller", "", "", "", "arrival:HOME_CALL")
+		_messages.append(str(shown.message))
+	_caption_index = -2
+	_show_caption(elapsed)
+
 func _apply_shot(time: float) -> void:
 	var chosen := 0
 	for index in _shots.size():
@@ -139,14 +175,19 @@ func _apply_shot(time: float) -> void:
 	image.texture = _textures[chosen]
 
 func _show_caption(time: float) -> void:
+	var chosen := -1
 	for index in line_times.size():
 		if time >= float(line_times[index][0]) and time < float(line_times[index][1]):
-			var line: Array = DIALOGUE.HOME_CALL[index]
-			var speaker := str(line[0])
-			if speaker == "VOZ AO TELEFONE" and language == "en": speaker = "VOICE ON THE PHONE"
-			subtitle.set_line(speaker, str(line[2] if language == "en" else line[1]))
-			return
-	subtitle.set_line("", "")
+			chosen = index
+			break
+	if chosen == _caption_index: return
+	_caption_index = chosen
+	if chosen < 0:
+		subtitle.set_line("", "")
+		return
+	var speaker := str(DIALOGUE.HOME_CALL[chosen][0])
+	if speaker == "VOZ AO TELEFONE" and language == "en": speaker = "VOICE ON THE PHONE"
+	subtitle.set_line(speaker, _messages[chosen])
 
 func pause_playback() -> void:
 	if _finishing: return

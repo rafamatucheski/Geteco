@@ -22,9 +22,9 @@ static func definition_data() -> Dictionary:
 		"npc_model":"","npc_point":Vector3.ZERO,"integration_status":"native",
 		"npcs":[
 			{"id":"fagulha_lia","name":"Lia","model":"res://world/places/arcade/ArcadePlayerModel.gd",
-				"appearance":{"player_variant":0},"local_position":Vector3(3.95,0,.35)},
+				"appearance":{"player_variant":0},"local_position":Vector3(4.22,0,.35)},
 			{"id":"fagulha_ivo","name":"Ivo","model":"res://world/places/arcade/ArcadePlayerModel.gd",
-				"appearance":{"player_variant":1},"local_position":Vector3(3.95,0,2.9)},
+				"appearance":{"player_variant":1},"local_position":Vector3(4.22,0,2.9)},
 		],
 	}
 

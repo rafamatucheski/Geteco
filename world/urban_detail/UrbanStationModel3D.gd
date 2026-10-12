@@ -74,6 +74,9 @@ func _setup_materials() -> void:
 		if entry[0] == "steel":
 			material.metallic = 0.55
 		materials[entry[0]] = material
+	materials["concrete"] = preload("res://world/urban_detail/PromenadePaving.gd").material(Color("a7a897"), true)
+	materials["edge"] = preload("res://assets/urban_detail/ExteriorFinish.gd").material("paint", Color("dad8bf"))
+	materials["red"] = preload("res://assets/urban_detail/ExteriorFinish.gd").material("paint", Color("b82f39"))
 	
 	var glass := StandardMaterial3D.new()
 	glass.albedo_color = Color(0.42, 0.66, 0.70, 0.22)

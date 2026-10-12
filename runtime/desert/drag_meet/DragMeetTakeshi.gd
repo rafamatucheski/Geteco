@@ -8,13 +8,19 @@ const CAR_POINT := Vector3(-1019,0,-1275)
 var session
 var race: Node3D
 var actor: StaticBody3D
-var parked: StaticBody3D
+var parked: CharacterBody3D
 var clock := 0.0
+var retired := false
 
 func configure(owner_session, owner_race: Node3D) -> void:
 	session = owner_session
 	race = owner_race
 	name = "TakeshiAtDragMeet"
+	session.world.gameplay.player_died.connect(_reset_visit)
+
+func _reset_visit() -> void:
+	_clear()
+	retired = false
 
 func _process(delta: float) -> void:
 	clock += delta
@@ -23,18 +29,21 @@ func _process(delta: float) -> void:
 	reconcile()
 
 func reconcile() -> void:
-	var outdoors: bool = session.ready_for_play and session.state.region_id=="desert" and session.state.place_id.is_empty()
+	var outdoors: bool = session.ready_for_play and session.state.region_id=="desert" and session.state.place_id.is_empty() and session.world.gameplay.health>0
 	var nearby: bool = outdoors and session.world.player.global_position.distance_to(POINT)<(110.0 if is_instance_valid(actor) else 85.0)
 	if not nearby or race.active:
 		_clear()
+		if not nearby: retired = false
 		return
+	if is_instance_valid(actor) and actor.dead: retired = true
+	if retired: return
 	if not is_instance_valid(actor):
 		if not session.controller.region.is_streaming_idle(): return
 		session.controller.region.prepare_collision_at(POINT)
 		if not session.position_clear(POINT+Vector3.UP*.1): return
 		var hit := get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(POINT+Vector3.UP*.35,POINT-Vector3.UP*.4,1))
 		if hit.is_empty() or float(hit.normal.y)<.95: return
-		actor = StaticBody3D.new()
+		actor = preload("res://runtime/desert/drag_meet/TrackParticipant.gd").new()
 		actor.name = "Takeshi"
 		actor.position = hit.position+Vector3.UP*.025
 		actor.collision_layer = 2
@@ -42,7 +51,6 @@ func reconcile() -> void:
 		actor.set_meta("character_identity","takeshi")
 		actor.set_meta("character_name","Takeshi")
 		actor.set_meta("reaction_exempt",true)
-		actor.set_meta("invulnerable",true)
 		var shape := CollisionShape3D.new()
 		var capsule := CapsuleShape3D.new()
 		capsule.radius = .3
@@ -57,6 +65,7 @@ func reconcile() -> void:
 		person.pants_color = Color("202522")
 		person.wardrobe_overrides = {"female":false,"build":2,"height":1.04,"top":0,"bottom":0,"shoe":1,"hair":0,"beard":2,"hat":0,"glasses":false,"bag":0,"backpack":false,"skin":Color("80553e"),"hair_color":Color("171917"),"top_color":Color("23302a"),"bottom_color":Color("202522"),"inner":Color("222923"),"accent":Color("82916c")}
 		person.rotation.y = -PI*.5
+		actor.visual = person
 		actor.add_child(person)
 		add_child(actor)
 		preload("res://gameplay/urban_v1/CobraAppearance.gd").dress(person)
@@ -78,7 +87,10 @@ func _spawn_display() -> void:
 	if not get_world_3d().direct_space_state.intersect_shape(query,1).is_empty(): return
 	var floor_hit := get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(CAR_POINT+Vector3.UP*.35,CAR_POINT-Vector3.UP*.4,1))
 	if floor_hit.is_empty() or float(floor_hit.normal.y)<.95: return
-	parked = StaticBody3D.new()
+	parked = preload("res://runtime/desert/drag_meet/StealableMeetCar.gd").new()
+	parked.archetype = "supra_a80"
+	parked.half_width = .92
+	parked.half_length = 2.26
 	parked.name = "TakeshiSupraDisplay"
 	parked.collision_layer = 1
 	parked.collision_mask = 0
@@ -88,11 +100,11 @@ func _spawn_display() -> void:
 	bounds.shape = shape
 	bounds.position.y = .75
 	parked.add_child(bounds)
-	parked.add_child(CARS.create_model("supra_a80"))
+	parked.add_child(preload("res://runtime/FleetCatalog.gd").create("supra_a80"))
 	add_child(parked)
 
 func nearest_action() -> Dictionary:
-	if not is_instance_valid(actor) or race.active or session.world.driving.occupied or session.modal: return {}
+	if not is_instance_valid(actor) or actor.dead or race.active or session.world.driving.occupied or session.modal: return {}
 	if session.world.player.global_position.distance_to(actor.global_position)>2.5: return {}
 	return {"id":"desert_drag","target":"takeshi","label":"Falar com Takeshi"}
 

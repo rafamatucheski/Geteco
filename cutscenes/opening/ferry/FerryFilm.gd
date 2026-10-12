@@ -1,10 +1,12 @@
 extends Control
-## Prerendered native 3D film. Portuguese performance is embedded in the movie;
-## subtitles follow its media clock, ambience/music retain the user's separate buses.
+## Prerendered native 3D film. Voice preference selects the embedded Portuguese
+## performance or synchronized English stem independently of subtitle language.
 signal finished(destination_beat: StringName)
 signal skipped(destination_beat: StringName)
 const DESTINATION := &"passenger_terminal_arrival"
 const BASE := "res://cutscenes/opening/ferry/"
+const VOICE := preload("res://audio/ExpressiveVoice.gd")
+const DIRECTED_TRACK := preload("res://cutscenes/opening/ferry/FerryVoiceTrack.gd")
 var video: VideoStreamPlayer
 var stems: Array[AudioStreamPlayer] = []
 var subtitle: Label
@@ -14,18 +16,22 @@ var black: ColorRect
 var lines: Array = []
 var duration := 73.0
 var language := "pt"
+var voice_language := "pt_BR"
 var _paused := false
 var _finishing := false
 var _completed := false
 var _started := false
 var _start_generation := 0
 var _sync_clock := 0.0
+var voice_track: DIRECTED_TRACK
+var _legacy_english: AudioStreamPlayer
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	language = "en" if TranslationServer.get_locale().begins_with("en") else "pt"
+	voice_language = VOICE.selected_language()
 	var background := ColorRect.new()
 	background.color = Color.BLACK
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -36,6 +42,7 @@ func _ready() -> void:
 	video.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	video.bus = &"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master"
 	video.stream = load(BASE+"arrival.ogv") as VideoStream
+	if voice_language == "en": video.volume_db = -80.0
 	video.finished.connect(func(): _finish(false))
 	add_child(video)
 	var timing: Variant = JSON.parse_string(FileAccess.get_file_as_string(BASE+"timing.json"))
@@ -49,6 +56,13 @@ func _ready() -> void:
 		player.bus = entry[1] if AudioServer.get_bus_index(entry[1]) >= 0 else "Master"
 		add_child(player)
 		stems.append(player)
+	_legacy_english = AudioStreamPlayer.new()
+	_legacy_english.name = "EnglishDialogue"
+	_legacy_english.bus = &"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master"
+	add_child(_legacy_english)
+	voice_track = DIRECTED_TRACK.new()
+	add_child(voice_track)
+	_configure_voice_track()
 	subtitle = Label.new()
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	subtitle.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -77,6 +91,34 @@ func _ready() -> void:
 	resized.connect(_layout)
 	_layout()
 	_start_after_draw.call_deferred(_start_generation)
+	var settings := get_node_or_null("/root/V2Settings")
+	if settings != null:
+		settings.voice_language_changed.connect(_voice_language_changed)
+		settings.text_language_changed.connect(func(_value):
+			language = "en" if TranslationServer.get_locale().begins_with("en") else "pt"
+			if not _finishing: _show_caption(video.stream_position))
+
+func _configure_voice_track() -> void:
+	var directed := voice_track.configure(lines, voice_language)
+	# Theora contains only dialogue/disconnect beeps. Ambience and score remain
+	# independent stems, so muting it does not remove the sea, engine or music.
+	video.volume_db = -80.0 if directed or voice_language == "en" else 0.0
+	_legacy_english.stop()
+	stems.erase(_legacy_english)
+	_legacy_english.stream = null
+	if not directed and voice_language == "en":
+		_legacy_english.stream = load(BASE + "voice_en.ogg") as AudioStream
+		stems.append(_legacy_english)
+		if _started: _legacy_english.play(video.stream_position)
+	voice_track.pause_playback(_paused)
+	_legacy_english.stream_paused = _paused
+
+func _voice_language_changed(value: String) -> void:
+	if _finishing: return
+	voice_language = value
+	_configure_voice_track()
+	if _started and not _paused: voice_track.update_clock(video.stream_position)
+	_show_caption(video.stream_position)
 
 func _layout() -> void:
 	if video == null: return
@@ -116,6 +158,7 @@ func _process(delta: float) -> void:
 		_finish(false)
 		return
 	_show_caption(time)
+	voice_track.update_clock(time)
 	_sync_clock += delta
 	if _sync_clock >= 1.0:
 		_sync_clock = 0.0
@@ -126,12 +169,16 @@ func _process(delta: float) -> void:
 
 func _show_caption(time: float) -> void:
 	subtitle.text = ""
-	for line in lines:
-		if time >= float(line.start) and time < float(line.end)+.18:
+	for index in lines.size():
+		var line: Dictionary = lines[index]
+		var spoken_end := float(line.get("end_en", line.end)) if voice_language == "en" else float(line.end)
+		if voice_track.directed: spoken_end = float(voice_track.takes[index].end)
+		if time >= float(line.start) and time < spoken_end+.18:
 			var speaker := "Dante" if line.speaker == "dante" else ("Passenger" if language == "en" else "Passageiro")
 			if line.speaker == "caller": speaker = "Voice on the phone" if language == "en" else "Voz ao telefone"
 			if line.get("memory",false): speaker += " · memory" if language == "en" else " · lembrança"
-			subtitle.text = speaker+"\n"+str(line.en if language == "en" else line.text)
+			var text := voice_track.caption(index, language) if voice_track.directed else str(line.en if language == "en" else line.text)
+			subtitle.text = speaker+"\n"+text
 			break
 
 func pause_playback() -> void:
@@ -139,12 +186,14 @@ func pause_playback() -> void:
 	_paused = true
 	video.paused = true
 	for stem in stems: stem.stream_paused = true
+	voice_track.pause_playback(true)
 
 func resume_playback() -> void:
 	if _finishing: return
 	_paused = false
 	video.paused = false
 	for stem in stems: stem.stream_paused = false
+	voice_track.pause_playback(false)
 
 func request_skip() -> void:
 	if _finishing or skip_dialog.visible: return
@@ -164,8 +213,9 @@ func _finish(was_skipped: bool) -> void:
 	var tween := create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS).set_parallel(true)
 	var fade_time := .25 if was_skipped else .35
 	tween.tween_property(black,"color:a",1.0,fade_time)
-	tween.tween_property(video,"volume_db",-60.0,fade_time)
+	tween.tween_property(video,"volume_db",minf(video.volume_db,-60.0),fade_time)
 	for stem in stems: tween.tween_property(stem,"volume_db",-60.0,fade_time)
+	voice_track.fade(tween, fade_time)
 	tween.chain().tween_callback(_complete.bind(was_skipped))
 
 func _complete(was_skipped: bool) -> void:
@@ -173,6 +223,7 @@ func _complete(was_skipped: bool) -> void:
 	_completed = true
 	video.stop()
 	for stem in stems: stem.stop()
+	voice_track.stop()
 	if was_skipped: skipped.emit(DESTINATION)
 	else: finished.emit(DESTINATION)
 
@@ -189,3 +240,4 @@ func _exit_tree() -> void:
 	for stem in stems:
 		stem.stop()
 		stem.stream = null
+	if is_instance_valid(voice_track): voice_track.stop()

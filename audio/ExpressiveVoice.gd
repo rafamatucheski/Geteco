@@ -2,6 +2,7 @@ extends RefCounted
 ## Recorded dialogue follows the audio preference, independently of subtitle locale.
 ## Legacy ambient speech keeps one finite buffer per line and a bounded cache.
 const RATE := 22050
+const DIRECTED := preload("res://audio/DirectedVoiceBank.gd")
 static var cache: Dictionary = {}
 static var recordings: Dictionary = {}
 static var maciota_recordings: Dictionary = {}
@@ -25,11 +26,13 @@ static func recording_key(text: String, persona: String) -> String:
 	return (persona.to_lower() + "|" + text).sha256_text()
 
 static func playback_volume(stream: AudioStream, portuguese_volume := 0.0) -> float:
+	if stream != null and stream.get_meta("directed_voice", false):
+		return float(stream.get_meta("directed_gain_db", 0.0))
 	# English takes are normalized as one cast. Keep the same dialogue level in
 	# cutscenes, conversations and ambient captions; retain the existing PT mix.
 	return -8.0 if stream != null and stream.get_meta("voice_language", "") == "en" else portuguese_volume
 
-static func _recording(text: String, persona: String, language: String) -> AudioStream:
+static func _legacy_recording(text: String, persona: String, language: String) -> AudioStream:
 	if not _recordings_loaded:
 		_recordings_loaded = true
 		var manifest := "res://audio/mission_voices/recordings.json"
@@ -71,9 +74,40 @@ static func _recording(text: String, persona: String, language: String) -> Audio
 		stream.set_meta("voice_language", language)
 	return stream
 
+static func presentation(text: String, persona: String, voice_language := "", text_language := "", character_id := "", section := "") -> Dictionary:
+	var audio_language := _language(voice_language)
+	var caption_language := DIRECTED.language(TranslationServer.get_locale() if text_language.is_empty() else text_language)
+	var row := DIRECTED.canonical(text, persona)
+	var actor := DIRECTED.profile(row)
+	var result := {"message":DIRECTED.legacy_message(row, caption_language, text), "stream":null, "duration":0.0,
+		"directed":false, "source_key":str(row.get("key", recording_key(text, persona))),
+		"character_id":str(actor.get("character_id", "")), "voice_text":text, "language":audio_language}
+	# An explicitly bound body never borrows a different contextual identity.
+	if not character_id.is_empty() and (actor.is_empty() or character_id != str(actor.get("character_id", ""))):
+		result["identity_mismatch"] = true
+		return result
+	var take := DIRECTED.resolve(row, audio_language, character_id, section)
+	var stream := DIRECTED.stream(take)
+	if stream != null:
+		result["directed"] = true
+		result["message"] = str(row.get("spoken_en" if caption_language == "en" else "spoken_pt", text))
+		result["voice_text"] = str(take.spoken_text)
+	else:
+		# Legacy role recordings have no proof of body/casting compatibility. A
+		# verified body with unresolved casting stays captioned until its take exists.
+		var blocked_cast: bool = not character_id.is_empty() and (not actor.get("casting_blockers", []).is_empty() or actor.get("allow_legacy_voice_fallback", true) == false)
+		if not DIRECTED.enabled() or not blocked_cast:
+			stream = _legacy_recording(str(row.get("source", text)), persona, audio_language)
+	result["stream"] = stream
+	if stream != null: result["duration"] = stream.get_length()
+	return result
+
+static func _recording(text: String, persona: String, language: String, character_id := "", section := "") -> AudioStream:
+	return presentation(text, persona, language, "", character_id, section).stream as AudioStream
+
 static func line(text: String, persona := "dante", duration := 0.0, language := "") -> AudioStream:
 	var resolved_language := _language(language)
-	var key := "%s|%s|%s|%s" % [resolved_language, persona.to_lower(), duration, text]
+	var key := "%s|%s|%s|%s|%s" % [DIRECTED.enabled(), resolved_language, persona.to_lower(), duration, text]
 	if cache.has(key):
 		return cache[key]
 	var recorded := _recording(text, persona, resolved_language)
@@ -128,11 +162,11 @@ static func line(text: String, persona := "dante", duration := 0.0, language := 
 	cache[key] = stream
 	return stream
 
-static func recorded_line(text: String, persona := "dante", language := "") -> AudioStream:
+static func recorded_line(text: String, persona := "dante", language := "", character_id := "", section := "") -> AudioStream:
 	# Authored dialogue is silent until the exact recording exists. Non-verbal
 	# fallback is still available to its original ambient speech consumers.
 	var resolved_language := _language(language)
-	var stream := _recording(text, persona, resolved_language)
+	var stream := _recording(text, persona, resolved_language, character_id, section)
 	if stream == null: _report_missing(text, persona, resolved_language)
 	return stream
 

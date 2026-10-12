@@ -82,12 +82,12 @@ func current_step() -> Dictionary:
 func objective() -> String:
 	if is_suspended(): return "Missão interrompida. Libere espaço atrás do guincho para encerrar a tentativa."
 	if race_stage_active() and not _data.get("race_run",{}).is_empty():
-		if _data.race_run.countdown>0: return "Fique parado · %d"%ceili(float(_data.race_run.countdown))
+		if _data.race_run.countdown>0: return String(TranslationServer.translate("Fique parado · %d"))%ceili(float(_data.race_run.countdown))
 		if _data.race_run.get("course_version",0)==2:
-			if _data.race_outside>0: return "Volte à rota · %d s"%ceili(20.0-float(_data.race_outside))
-			return "Checkpoint azul %d/4 · Chegue em primeiro às docas."%mini(int(_data.race_run.checkpoint)+1,4)
-		if _data.race_outside>0: return "Volte à pista pelo mesmo lugar · %d s"%ceili(4.0-float(_data.race_outside))
-		return "Portão %d/4 · Restam %d s · Siga a faixa externa."%[mini(int(_data.race_run.checkpoint)+1,4),ceili(100.0-float(_data.race_elapsed))]
+			if _data.race_outside>0: return String(TranslationServer.translate("Volte à rota · %d s"))%ceili(20.0-float(_data.race_outside))
+			return String(TranslationServer.translate("Checkpoint azul %d/4 · Chegue em primeiro às docas."))%mini(int(_data.race_run.checkpoint)+1,4)
+		if _data.race_outside>0: return String(TranslationServer.translate("Volte à pista pelo mesmo lugar · %d s"))%ceili(4.0-float(_data.race_outside))
+		return String(TranslationServer.translate("Portão %d/4 · Restam %d s · Siga a faixa externa."))%[mini(int(_data.race_run.checkpoint)+1,4),ceili(100.0-float(_data.race_elapsed))]
 	return str(current_step().get("objective", "Consulte o quadro da garagem."))
 
 func target_id() -> String:

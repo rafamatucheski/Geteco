@@ -2,7 +2,10 @@ extends Node3D
 ## One inhabited storey at its true facade elevation. Floor transfer owns the
 ## session token; ground-floor admission remains a continuous walking passage.
 signal floor_changed(index: int, rooftop: bool)
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const NATIVE = preload("res://world/places/NativePlace.gd")
+# Retain the shared model script before any street-side first admission.
+const INTERIOR = preload("res://world/places/harbor_buildings/HarborBuildingInterior.gd")
 const CONTENT = preload("res://world/places/harbor_buildings/HarborBuildingContent.gd")
 const OCCUPANTS = preload("res://world/places/harbor_buildings/HarborBuildingOccupants.gd")
 const SECRETS = preload("res://world/places/harbor_buildings/HarborBuildingSecrets.gd")
@@ -46,14 +49,26 @@ func _landing(index: int) -> Vector3:
 	return Vector3(-definition.size.x*.5+2.80,floor_height(index),1.45)
 
 func _ready() -> void:
+	var ready_started := STALL_WORK.begin()
 	name = definition.id
+	var stage_started := STALL_WORK.begin()
 	floor_room = _make_floor(floor_index)
+	if stage_started != 0:
+		STALL_WORK.finish("building.ready.floor_setup", stage_started, {"place":definition.id})
+	stage_started = STALL_WORK.begin()
 	add_child(floor_room)
+	if stage_started != 0:
+		STALL_WORK.finish("building.ready.floor_add_child", stage_started, {"place":definition.id})
 	_mark_walkable_floor(floor_room)
+	stage_started = STALL_WORK.begin()
 	secrets = SECRETS.populate(floor_room,definition,floor_index,session)
+	if stage_started != 0:
+		STALL_WORK.finish("building.ready.secrets", stage_started, {"place":definition.id})
 	_sync_floor_contract()
 	set_process(false)
 	set_physics_process(false)
+	if ready_started != 0:
+		STALL_WORK.finish("building.ready.total", ready_started, {"place":definition.id})
 
 func _make_floor(index: int) -> Node3D:
 	var next: Node3D = ROOFTOP.new() if index == int(definition.floor_count) else NATIVE.new()
@@ -117,13 +132,13 @@ func use_stairs() -> bool:
 	if nearest_action().get("id","") != "building_stairs": return false
 	if floor_index == 0: return await change_floor(1)
 	if is_rooftop(): return await change_floor(floor_index-1)
-	session._menu("Escada · %dº andar"%floor_index)
+	session._menu(String(TranslationServer.translate("Escada · %dº andar"))%floor_index)
 	var upper := floor_index+1
 	var lower := floor_index-1
-	session._button("Subir à cobertura" if upper == int(definition.floor_count) else "Subir ao %dº andar"%upper,func():
+	session._button("Subir à cobertura" if upper == int(definition.floor_count) else String(TranslationServer.translate("Subir ao %dº andar"))%upper,func():
 		session.close_menu()
 		change_floor(upper))
-	session._button("Descer ao térreo" if lower == 0 else "Descer ao %dº andar"%lower,func():
+	session._button("Descer ao térreo" if lower == 0 else String(TranslationServer.translate("Descer ao %dº andar"))%lower,func():
 		session.close_menu()
 		change_floor(lower))
 	session._button("Voltar",session.close_menu)

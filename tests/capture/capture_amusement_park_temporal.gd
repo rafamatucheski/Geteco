@@ -113,7 +113,9 @@ func capture_coaster_descent() -> void:
 		distance += .5
 	world.player.teleport(park.site.boarding_position())
 	await physics_frame
+	world.session.state.economy.grant_reward("park_capture_ticket",5)
 	if not check(park.start_ride(),"production ride admitted for descent framing"): return
+	while park.ride_phase == "boarding": await physics_frame
 	park.ride_distance = peak_distance+5.0
 	park.pitch = -.5
 	park._tick_ride(0.0)

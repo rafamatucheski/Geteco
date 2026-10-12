@@ -49,7 +49,7 @@ func _build() -> void:
 	# Margem norte: acampamento da Marlene com lona rasgada, fogareiro, rádio e vara de pesca.
 	box(Vector3(-2.0, 2.0, -3.4), Vector3(3.2, 0.06, 2.0), "#2f4852").rotation.z = 0.06
 	for post in [Vector2(-3.5, -4.3), Vector2(-0.5, -4.3), Vector2(-3.5, -2.5), Vector2(-0.5, -2.5)]:
-		cyl(Vector3(post.x, 1.0, post.y), 0.04, 2.0, "#42361f")
+		cyl(Vector3(post.x, 1.0, post.y), 0.04, 2.0, "#42361f", false, "AwningPost")
 	box(Vector3(-1.6, 0.18, -3.0), Vector3(0.6, 0.36, 0.5), "#4a3a24", false, "Stool")
 	box(Vector3(-2.4, 0.18, -3.8), Vector3(0.34, 0.2, 0.2), "#1c2125", true)
 	cyl(Vector3(-0.6, 0.12, -3.6), 0.2, 0.24, "#262a2e", true, "Stove")
@@ -63,8 +63,9 @@ func _build() -> void:
 	barrel(Vector3(7.7, 0, 2.5), "#33403a")
 	crate(Vector3(5.2, 0, 4.4), Vector3(0.9, 0.7, 0.9), "#4a3c26", 0.4)
 	crate(Vector3(-5.0, 0, 2.6), Vector3(0.9, 0.62, 0.9), "#433620", 0.2)
-	for x in range(-8, 3, 2): cyl(Vector3(float(x), 0.45, 1.75), 0.03, 0.9, "#5a4430", true)
-	pipe(Vector3(-8.0, 0.88, 1.75), Vector3(2.0, 0.88, 1.75), 0.02, "#5a4430")
+	for x in range(-8, 3, 2): cyl(Vector3(float(x), 0.45, 1.75), 0.03, 0.9, "#5a4430", true, "RailingPost")
+	var railing := pipe(Vector3(-8.0, 0.88, 1.75), Vector3(2.0, 0.88, 1.75), 0.02, "#5a4430")
+	railing.set_meta("interior_solid_id", "QuayRailing")
 	heap(Vector3(-2.0, 0, 3.4), 0.9, 12, true)
 	heap(Vector3(2.4, 0, 4.4), 0.6, 8)
 	heap(Vector3(-7.8, 0, -1.6), 0.5, 7)

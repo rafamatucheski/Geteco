@@ -1413,7 +1413,7 @@
 			"label": "Infernus GT Turbo",
 			"mass": 0.85,
 			"max_speed": 620.0,
-			"mesh_count": 38,
+			"mesh_count": 11,
 			"model_class": "res://prototypes/living_cast/CoupeDamageModel.gd",
 			"roof_prop": "spoiler",
 			"scene": "res://assets/fleet/sport_coupe.scn",

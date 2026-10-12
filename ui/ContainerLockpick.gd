@@ -106,12 +106,12 @@ func finish(result: String) -> void:
 	resolved.emit(result)
 
 func _refresh() -> void:
-	status.text = "ARROMBAR  ·  LOCKPICKS: %d" % pick_count
+	status.text = String(TranslationServer.translate("ARROMBAR  ·  LOCKPICKS: %d")) % pick_count
 	var controls := get_node_or_null("/root/GameInput")
 	var left: String = controls.hint("move_left") if controls != null else "A"
 	var right: String = controls.hint("move_right") if controls != null else "D"
 	var action: String = controls.hint("interact") if controls != null else "E"
-	instructions.text = "Mouse ou %s / %s — ajustar gazua\nSegure %s ou clique — girar · ESC / Voltar — sair" % [left,right,action]
+	instructions.text = String(TranslationServer.translate("Mouse ou %s / %s — ajustar gazua\nSegure %s ou clique — girar · ESC / Voltar — sair")) % [left,right,action]
 	if controls != null and controls.get_meta("touch_controls_active", false):
 		instructions.text = "‹ / › — ajustar gazua\nSegure Girar · Voltar — sair"
 	view.queue_redraw()

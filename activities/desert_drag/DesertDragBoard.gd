@@ -4,6 +4,7 @@ signal closed
 signal race_requested(identity: String)
 signal instruments_requested
 signal takeshi_requested
+signal open_meet_requested
 const PROGRESS := preload("res://activities/desert_drag/DesertDragProgress.gd")
 const NAMES := ["Digo", "Lívia", "Raul", "Jessica", "Nadir", "Rauhz"]
 const ATLAS_IDS := ["digo", "livia", "raul", "jessica", "nadir"]
@@ -26,6 +27,7 @@ var race_button: Button
 var instruments_button: Button
 var takeshi_button: Button
 var message := ""
+var open_meet_button: Button
 
 func _ready() -> void:
 	font = _font("Regular")
@@ -87,6 +89,14 @@ func _ready() -> void:
 	takeshi_button.add_theme_font_size_override("font_size",15)
 	takeshi_button.pressed.connect(func(): takeshi_requested.emit())
 	add_child(takeshi_button)
+	open_meet_button = Button.new()
+	open_meet_button.text = "BATERIAS LIVRES"
+	open_meet_button.position = Vector2(30,592)
+	open_meet_button.size = Vector2(220,28)
+	_button_style(open_meet_button,false)
+	open_meet_button.add_theme_font_size_override("font_size",15)
+	open_meet_button.pressed.connect(func(): open_meet_requested.emit())
+	add_child(open_meet_button)
 	race_button = Button.new()
 	race_button.position = Vector2(551, 511)
 	race_button.size = Vector2(317, 54)
@@ -128,10 +138,14 @@ func select_rival(id: String) -> void:
 
 func set_message(text: String) -> void:
 	message = text
+	open_meet_button.visible = message.is_empty()
+	takeshi_button.visible = message.is_empty()
 	queue_redraw()
 
 func _update_button() -> void:
 	if race_button == null: return
+	open_meet_button.visible = message.is_empty()
+	takeshi_button.visible = message.is_empty()
 	race_button.disabled = selected != current and selected not in wins
 	race_button.text = "REVANCHE  →" if selected in wins else ("CORRER  →" if selected == current else "VENÇA " + NAMES[PROGRESS.RIVALS.find(current)].to_upper())
 
@@ -157,7 +171,7 @@ func _button_style(button: Button, primary: bool) -> void:
 	button.add_theme_stylebox_override("focus", _style(Color.TRANSPARENT, CYAN))
 
 func _label(at: Vector2, text: String, point_size: int, color := INK, strong := false, width := -1.0) -> void:
-	draw_string(bold if strong else font, at, text, HORIZONTAL_ALIGNMENT_LEFT, width, point_size, color)
+	draw_string(bold if strong else font, at, tr(text), HORIZONTAL_ALIGNMENT_LEFT, width, point_size, color)
 
 func _portrait(id: String, destination: Rect2, tint := Color.WHITE) -> void:
 	var photo: Texture2D = photos[id]
@@ -212,6 +226,8 @@ func _draw() -> void:
 	if not message.is_empty():
 		draw_multiline_string(font, Vector2(32, 605), message, HORIZONTAL_ALIGNMENT_LEFT, 835, 17, 2, AMBER)
 	else:
-		_label(Vector2(32, 610), "↑ ↓  SELECIONAR", 15, MUTED)
-		_label(Vector2(214, 610), "TAB  AÇÕES  /  ENTER  ATIVAR", 15, MUTED)
+		_label(Vector2(270, 610), "TAB / ENTER  SELECIONAR", 15, MUTED)
 		_label(Vector2(739, 610), "ESC  VOLTAR", 15, MUTED)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED: queue_redraw()

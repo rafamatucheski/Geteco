@@ -38,13 +38,15 @@ func equip_weapon(id: String) -> bool:
 	if economy.grid_handbag() and id in preload("res://systems/inventory/GridInventory.gd").LONG: return false
 	if id != "fists" and is_instance_valid(world) and is_instance_valid(world.player.ski_controller) and world.player.ski_controller.skiing: return false
 	return economy.equip_weapon(id)
-func weapons_allowed() -> bool: return place_id != "maciota" and place_id != "harbor_garage"
+func weapons_allowed() -> bool:
+	return place_id not in ["maciota", "harbor_garage"] and not preload("res://runtime/ShopSafety.gd").peaceful(place_id)
 func can_attack() -> bool:
 	if not weapons_allowed(): return false
 	if economy.grid_handbag() and equipped_weapon in preload("res://systems/inventory/GridInventory.gd").LONG: return false
 	if is_instance_valid(world):
 		if is_instance_valid(world.player.ski_controller) and world.player.ski_controller.skiing: return false
 		if world.player.input_locked or world.driving.occupied: return false
+		if world.player.get_meta("player_air_busy", false): return false
 		if world.gameplay and world.gameplay.health <= 0: return false
 	return true
 func set_location(region: String, place: String = "") -> void:

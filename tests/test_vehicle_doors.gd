@@ -12,6 +12,7 @@ const ACTOR := preload("res://scripts/Actor.gd")
 const BOARDING := preload("res://gameplay/VehicleBoardingPresentation.gd")
 const SPECS := preload("res://data/catalogs/VehicleDoorSpecs.gd")
 const FLEET := preload("res://runtime/FleetCatalog.gd")
+const BUILDER := preload("res://gameplay/VehicleDoorBuilder.gd")
 
 ## Raio do corpo (cápsula do Dante) e folga aceitável junto da folha e do casco.
 const BODY_RADIUS := .27
@@ -66,17 +67,42 @@ func test_incremental_build() -> void:
 		var quick := spawn(id, 0.0)
 		await process_frame
 		var visible_before := count_visible_parts(slow)
+		var source_counts := door_source_counts(slow)
+		# The generous bound scales with actual source work and permits setup,
+		# surface assembly and part finalization in addition to triangle batches.
+		var max_calls: int = source_counts.triangles * 2 + source_counts.surfaces * 8 + source_counts.parts * 8 + 8
 		var steps := 0
-		while not slow.warm_doors(400):
+		# Zero budget forces the builder to yield at its next progress boundary;
+		# even one large mesh must not be cut entirely in the first call.
+		while not slow.warm_doors(0):
 			steps += 1
 			check(count_visible_parts(slow) == visible_before, id + ": o carro mudou no meio do preparo da porta")
-			if steps > 400: break
-		check(steps > 0, id + ": o preparo em pedaços terminou de uma vez (orçamento não é respeitado)")
+			check(not slow.door_presentation.ready_for_boarding, id + ": trabalho pendente não pode anunciar porta pronta")
+			if steps >= max_calls: break
+		check(source_counts.parts > 0 and steps > 0, id + ": preparo deve dividir o trabalho inclusive quando o casco é uma peça única")
+		check(steps < max_calls, id + ": preparo incremental deve completar em quantidade finita de estágios derivada da fonte")
+		check(is_instance_valid(slow.door_presentation) and slow.door_presentation.ready_for_boarding, id + ": preparo incremental deve terminar pronto para embarque")
+		report.append("INCREMENTAL_DOOR %s parts=%d surfaces=%d triangles=%d intermediate_steps=%d calls=%d max_calls=%d budget_usec=0" % [id,source_counts.parts,source_counts.surfaces,source_counts.triangles,steps,steps+1,max_calls])
 		quick.finish_doors()
 		check(skin_vertices(slow) == skin_vertices(quick) and skin_vertices(slow) > 0, id + ": folha incremental difere da folha de uma vez (%d × %d)" % [skin_vertices(slow), skin_vertices(quick)])
 		slow.queue_free()
 		quick.queue_free()
 		await process_frame
+
+func door_source_counts(car: CharacterBody3D) -> Dictionary:
+	var parts := BUILDER._parts(car.visual)
+	var surfaces := 0
+	var triangles := 0
+	for part in parts:
+		for surface in part.mesh.get_surface_count():
+			surfaces += 1
+			var arrays := part.mesh.surface_get_arrays(surface)
+			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+			var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
+			var count := indices.size() if not indices.is_empty() else vertices.size()
+			@warning_ignore("integer_division")
+			triangles += count / 3
+	return {"parts":parts.size(),"surfaces":surfaces,"triangles":triangles}
 
 func count_visible_parts(car: CharacterBody3D) -> int:
 	var count := 0

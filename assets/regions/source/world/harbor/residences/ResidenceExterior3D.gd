@@ -2,6 +2,9 @@ extends "res://assets/regions/source/world/harbor/cemetery/CemeteryPropBuilder.g
 
 var variant_index := 0
 func _ready() -> void:
+	# Install after facade finalization so the purchase cue receives no building
+	# collider or signage rewriting. Chunk ownership handles streaming cleanup.
+	_install_sale_marker.call_deferred()
 	var parking := preload("res://world/places/ResidenceParking.gd").new()
 	parking.name = "ResidentialGarage"
 	parking.position = preload("res://world/places/ResidenceParking.gd").placement(variant_index)
@@ -49,6 +52,9 @@ func _ready() -> void:
 	for x in [-.95,.95]:
 		box("PorchLampBack",Vector3(.19,.3,.13),Vector3(x,1.95,3.29),"39443e")
 		box("PorchLampGlass",Vector3(.14,.21,.14),Vector3(x,1.95,3.4),"ecd7a2")
+
+func _install_sale_marker() -> void:
+	preload("res://world/places/ResidenceSaleMarker.gd").install(self)
 
 func _window(x: float,y: float,z: float,timber: String) -> void:
 	box("WindowFrame",Vector3(1.55,1.35,.16),Vector3(x,y,z),"e0dbcb")

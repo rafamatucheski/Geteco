@@ -208,13 +208,13 @@ func _refresh_controls() -> void:
 		return
 	var controls := get_node_or_null("/root/GameInput")
 	var key: String = controls.hint("interact") if controls != null else "E"
-	_throw_button.text = "Lançar · %s" % key
+	_throw_button.text = String(TranslationServer.translate("Lançar · %s")) % key
 
 
 func _refresh() -> void:
 	var shown_attempt := attempts if cooldown > 0.0 else mini(attempts + 1, THROWS)
 	_attempt_label.text = "%d / %d" % [shown_attempt, THROWS]
-	_score_label.text = "Acertos: %d" % hits
+	_score_label.text = String(TranslationServer.translate("Acertos: %d")) % hits
 	_throw_button.disabled = not active or _awaiting_release or cooldown > 0.0
 	if not _throw_button.disabled and not _cancel_button.has_focus():
 		_throw_button.grab_focus()

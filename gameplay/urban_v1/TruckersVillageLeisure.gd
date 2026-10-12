@@ -37,7 +37,7 @@ func nearest_action() -> Dictionary:
 	if playing or session.modal or not _context_ok() or session.world.player.input_locked: return {}
 	var at: Vector3 = session.world.player.global_position
 	if at.distance_to(ART.PLAY_POINT) <= REACH:
-		return {"id":"urban_v1","target":PREFIX+"play","label":"Jogar ferraduras · recorde %d/3"%best_score}
+		return {"id":"urban_v1","target":PREFIX+"play","label":String(TranslationServer.translate("Jogar ferraduras · recorde %d/3"))%best_score}
 	if best_score == 3 and not cache_opened and at.distance_to(ART.CACHE_POINT) <= REACH:
 		return {"id":"urban_v1","target":PREFIX+"cache","label":"Abrir caixa sob o catavento"}
 	return {}
@@ -103,7 +103,7 @@ func _finish_game(hits: int) -> void:
 	var awarded := false
 	if hits >= 2 and not _paid(PRIZE_ID):
 		awarded = session.state.economy.grant_reward(PRIZE_ID,200)
-	var result := "%d/3 acertos"%hits
+	var result := String(TranslationServer.translate("%d/3 acertos"))%hits
 	if awarded: result += " · R$ 200"
 	if hits == 3: result += ". A marca na ferradura aponta para a caixa sob o catavento."
 	elif hits < 2: result += ". Acerte pelo menos duas para ganhar o prêmio."

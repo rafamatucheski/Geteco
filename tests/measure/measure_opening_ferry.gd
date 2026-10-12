@@ -71,18 +71,23 @@ func finish() -> void:
 	var handoff_previous := Time.get_ticks_usec()
 	var handoff_max_ms := 0.0
 	var handoff_slow: Array = []
+	var closing_samples: Array[float] = []
 	while Time.get_ticks_msec() < deadline:
 		await process_frame
 		var tick := Time.get_ticks_usec()
 		var handoff_ms := float(tick-handoff_previous)/1000.0
 		handoff_previous = tick
+		if is_instance_valid(arrival.presentation) and arrival.presentation.film.video.stream_position >= 42.0:
+			closing_samples.append(handoff_ms)
 		handoff_max_ms = maxf(handoff_max_ms,handoff_ms)
 		if handoff_ms > 33.3:
 			handoff_slow.append({"ms":handoff_ms,"phase":arrival.phase,"paused":paused,"disabled_3d":root.disable_3d})
-		if arrival.phase == "police_visit": break
+		if arrival.phase == "terminal_meeting": break
 	report.handoff_max_ms = handoff_max_ms
 	report.handoff_slow_frames = handoff_slow
-	report.disembarked = arrival.phase == "police_visit"
+	if not closing_samples.is_empty(): report.closing_summary = stats(closing_samples)
+	report.closing_frame_intervals_ms = closing_samples
+	report.disembarked = arrival.phase == "terminal_meeting" and arrival.flags.get("harbor_arrival_seen",false)
 	report.controls_restored = not world.player.input_locked and world.player.visible and not paused
 	report.rendering_restored = not root.disable_3d
 	report.quay_time = world.session.weather.time_of_day

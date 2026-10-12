@@ -11,6 +11,8 @@ extends Node
 ## docs/civilian-reactions-v1.md.
 const DANGER := preload("res://gameplay/civilian_reactions/CivilianDanger.gd")
 const PRESENTER := preload("res://gameplay/civilian_reactions/CivilianReactionPresenter.gd")
+const VEHICLE_DANGER := preload("res://gameplay/civilian_reactions/PedestrianVehicleDanger.gd")
+const PROTECTION := preload("res://gameplay/DamageProtection.gd")
 const RESPONSE_LIMIT := 22.0
 const MELEE_REACH := 1.7
 
@@ -34,7 +36,7 @@ const REPLAN_INTERVAL := 1.5
 const NPC_SHOT_INTERVAL := 0.4
 const STUCK_CHECK := 1.0
 const STUCK_DISTANCE := 0.5
-const MAX_REACTORS := 24
+const MAX_REACTORS := 64
 ## Limites provisórios do trabalho de busca, compartilhados por frame desenhado
 ## (passos físicos de catch-up não ganham outro orçamento). Cada passo é um raio.
 const ESCAPE_RAYS_PER_FRAME := 24
@@ -56,7 +58,8 @@ var escape_queue: Array[int] = []
 var escape_budget_frame := -1
 var escape_rays_used := 0
 var escape_usec_used := 0
-var stats := {"alerts": 0, "released": 0, "stuck_replans": 0, "dropped": 0, "escape_rays": 0, "escape_searches": 0}
+var evade_capsule: CapsuleShape3D
+var stats := {"alerts": 0, "released": 0, "stuck_replans": 0, "dropped": 0, "escape_rays": 0, "escape_searches": 0, "vehicle_evades": 0}
 
 func configure(p_world: Node3D, p_gameplay: Node) -> void:
 	world = p_world
@@ -124,7 +127,7 @@ func report_gunfire(origin: Vector3, end: Vector3, shooter: Variant = null, radi
 		var flat: Vector3 = person.global_position - origin
 		flat.y = 0.0
 		if flat.length() > radius: continue
-		_alert(person, origin, end, live_shooter)
+		_alert(person, origin, end, live_shooter, true)
 
 func report_explosion(origin: Vector3, radius: float = EXPLOSION_RADIUS, source: Variant = null) -> void:
 	var live_source: Variant = source if is_instance_valid(source) else null
@@ -190,6 +193,62 @@ func _poll_horns() -> void:
 	for id in horn_playing.keys():
 		if not live.has(id): horn_playing.erase(id)
 
+## Sem depender de buzina, motorista ou rota. Escolhe a ameaça mais urgente;
+## sair de lado evita correr à frente do próprio carro que vem atropelando.
+func _poll_vehicle_danger() -> void:
+	var vehicles := get_tree().get_nodes_in_group("drivable")
+	var path_checks := 0
+	for person in _people():
+		if not _reactive(person, true): continue
+		var state: Dictionary = reactors.get(person.get_instance_id(), {})
+		if not state.is_empty() and float(state.evade_until) > clock: continue
+		var urgent: Dictionary = {}
+		var approaching: CharacterBody3D
+		for vehicle in vehicles:
+			if not is_instance_valid(vehicle) or not vehicle is CharacterBody3D: continue
+			if vehicle.global_position.distance_squared_to(person.global_position) > 1600: continue
+			var threat: Dictionary = VEHICLE_DANGER.assess(vehicle, person.global_position, person.velocity)
+			if not threat.is_empty() and (urgent.is_empty() or threat.impact_time < urgent.impact_time):
+				urgent = threat
+				approaching = vehicle
+		if urgent.is_empty(): continue
+		_alert(person, approaching.global_position, approaching.global_position + urgent.forward * 25, approaching, true)
+		state = reactors.get(person.get_instance_id(), {})
+		if state.is_empty(): continue
+		var shoulder: Vector3 = urgent.side if urgent.lateral >= 0 else -urgent.side
+		for direction in [shoulder, -shoulder, (shoulder - urgent.forward * 0.5).normalized(), (-shoulder - urgent.forward * 0.5).normalized()]:
+			# Até 16 varreduras de casco/piso por percepção, mesmo numa multidão.
+			if path_checks >= 16: break
+			path_checks += 1
+			var distance: float = (urgent.clearance - urgent.lateral * signf(direction.dot(urgent.side))) / absf(direction.dot(urgent.side))
+			var target: Vector3 = person.global_position + direction * maxf(2.0, distance)
+			if not _evade_path_clear(person, target): continue
+			_cancel_escape(person.get_instance_id(), state)
+			state.target = target
+			state.evade_until = clock + clampf(person.global_position.distance_to(target) / PANIC_SPEED + 0.25, 0.5, 1.5)
+			state.replan = 0.0
+			_move(person, target, PANIC_SPEED)
+			stats.vehicle_evades += 1
+			break
+
+func _evade_path_clear(person: CharacterBody3D, target: Vector3) -> bool:
+	var space := person.get_world_3d().direct_space_state
+	if evade_capsule == null:
+		evade_capsule = CapsuleShape3D.new()
+		evade_capsule.radius = 0.35
+		evade_capsule.height = 1.5
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = evade_capsule
+	query.collision_mask = 1 | 4
+	query.exclude = [person.get_rid()]
+	query.transform = Transform3D(Basis.IDENTITY, person.global_position + Vector3.UP * 1.0)
+	query.motion = target - person.global_position
+	var travel := space.cast_motion(query)
+	if travel[0] < 0.99: return false
+	var floor_query := PhysicsRayQueryParameters3D.create(target + Vector3.UP * 1.0, target + Vector3.DOWN * 1.0, 1, [person.get_rid()])
+	var floor_hit := space.intersect_ray(floor_query)
+	return not floor_hit.is_empty() and floor_hit.normal.y > 0.6 and absf(floor_hit.position.y - person.global_position.y) < 0.6
+
 # ── Elegibilidade ────────────────────────────────────────────────────────────
 
 func _people() -> Array:
@@ -203,14 +262,22 @@ func _reactive(person: Variant, allow_ours := false) -> bool:
 	# runtime tentar convertê-lo para Node.
 	if not is_instance_valid(person) or not person is CharacterBody3D: return false
 	if person.get("dead") == true or person.get("is_player") == true: return false
+	if PROTECTION.is_protected(person) or person.has_meta("street_down") or person.get("input_locked") == true: return false
 	if person.get_meta("gameplay_role", "") != "civilian" or person.is_in_group("v1_routine_actor"): return false
 	if person.get_meta("interior_actor", false) or person.get_meta("reaction_exempt", false): return false
+	if person.has_method("_stall_physics_tick") and not person.is_physics_processing() and _movement_owner(person)==null: return false
 	# Moradores da vila e outros atores de rotina têm dono de movimento próprio.
 	# O diretor só pode assumir atores que implementam todos os ganchos de Actor.
 	if not person.get("controlled_automatically") is bool or not person.get("automatic_direction") is Vector3: return false
 	if typeof(person.get("speed")) not in [TYPE_INT, TYPE_FLOAT]: return false
 	if person.get("controlled_automatically") == true and not (allow_ours and reactors.has(person.get_instance_id())): return false
 	return true
+
+func _movement_owner(person: Node) -> Node:
+	if not person.has_meta("civilian_movement_owner"): return null
+	var reference: Variant=person.get_meta("civilian_movement_owner")
+	var owner: Variant=reference.get_ref() if reference is WeakRef else null
+	return owner as Node if is_instance_valid(owner) and owner.has_method("release_for_civilian_danger") else null
 
 # ── Decisão ──────────────────────────────────────────────────────────────────
 
@@ -231,11 +298,11 @@ func _response(person: CharacterBody3D, source: Variant) -> String:
 	if temperament >= 11 and distance <= HEARING_RADIUS: return "call"
 	return "panic"
 
-func _alert(person: CharacterBody3D, origin: Vector3, end: Vector3, source: Variant) -> void:
+func _alert(person: CharacterBody3D, origin: Vector3, end: Vector3, source: Variant, force_panic := false) -> void:
 	var id := person.get_instance_id()
 	var state: Dictionary = reactors.get(id, {})
 	if state.is_empty():
-		var response := _response(person, source)
+		var response := "panic" if force_panic else _response(person, source)
 		state = _begin(person, response)
 		if state.is_empty(): return
 		match response:
@@ -249,6 +316,10 @@ func _alert(person: CharacterBody3D, origin: Vector3, end: Vector3, source: Vari
 			_:
 				presenter.scream(person) # sem balão: o grito e a corrida já dizem o que houve
 	var was_panicking: bool = state.phase == "panic"
+	if force_panic and not was_panicking:
+		presenter.hide_prop(person)
+		state.phase = "panic"
+		presenter.scream(person)
 	if state.phase == "horn": state.phase = "panic"; presenter.scream(person)
 	elif state.phase == "recover": state.phase = "panic"
 	if is_instance_valid(source) and source is Node3D: state.source = weakref(source)
@@ -266,10 +337,12 @@ func _begin(person: CharacterBody3D, phase: String) -> Dictionary:
 	if reactors.size() >= MAX_REACTORS and not reactors.has(person.get_instance_id()): return {}
 	var id := person.get_instance_id()
 	if reactors.has(id): return reactors[id]
+	var owner:=_movement_owner(person)
+	if owner!=null and not owner.release_for_civilian_danger(person): return {}
 	var state := {"ref": weakref(person), "danger": DANGER.new(), "phase": phase, "timer": HORN_STEP_TIME if phase == "horn" else randf_range(PANIC_TIME.x, PANIC_TIME.y),
 		"replan": 0.0, "target": Vector3.ZERO, "saved_speed": person.get("speed"), "last_position": person.global_position,
 		"stuck_clock": 0.0, "blocked": [] as Array[Vector3], "source": null,
-		"action_time": 0.0, "attack_clock": 0.0, "reported": false, "escape_search": {}}
+		"action_time": 0.0, "attack_clock": 0.0, "reported": false, "escape_search": {}, "evade_until": 0.0}
 	reactors[id] = state
 	person.set("controlled_automatically", true)
 	person.set_meta(REACTION_LOD_META, phase == "panic" or phase == "recover")
@@ -286,6 +359,7 @@ func _physics_process(delta: float) -> void:
 		poll_clock = 0.0
 		_poll_damage()
 		_poll_horns()
+		_poll_vehicle_danger()
 		if npc_heard.size() > 32:
 			for key in npc_heard.keys():
 				if clock - float(npc_heard[key]) > NPC_SHOT_INTERVAL: npc_heard.erase(key)
@@ -296,6 +370,9 @@ func _physics_process(delta: float) -> void:
 		if not is_instance_valid(person) or person.get("dead") == true or not _world_owns(person):
 			_release(id, false) # alvo removido/morto: nada a restaurar, só soltar o estado
 			stats.dropped += 1
+			continue
+		if person.has_meta("street_down") or PROTECTION.is_protected(person):
+			_release(id, false)
 			continue
 		if person.get("controlled_automatically") != true:
 			_release(id, false) # outro sistema assumiu ou soltou: não brigar pelo controle
@@ -392,6 +469,9 @@ func _line_of_sight(person: CharacterBody3D, target: Node3D) -> bool:
 func _world_owns(person: Node) -> bool: return world != null and world.people.has(person) and person.is_inside_tree()
 
 func _steer_panic(person: CharacterBody3D, state: Dictionary, delta: float) -> void:
+	if float(state.evade_until) > clock and person.global_position.distance_to(state.target) > 0.5:
+		_move(person, state.target, PANIC_SPEED)
+		return
 	state.replan -= delta
 	state.stuck_clock += delta
 	if state.stuck_clock >= STUCK_CHECK:

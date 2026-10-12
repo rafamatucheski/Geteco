@@ -53,7 +53,7 @@ func _gondola(index: int,x: float) -> void:
 			for bay in 12:
 				var z := -3.02+bay*.415
 				for depth in 2:
-					product((index+level)%4,Vector3(x+side*(.20+depth*.21),y+.032,z),PALETTE[(index*2+bay/3 as int)%PALETTE.size()])
+					product((index+level)%4,Vector3(x+side*(.20+depth*.21),y+.032,z),PALETTE[(index*2+int(bay/3.0))%PALETTE.size()])
 				piece("box",Vector3(x+side*.565,y-.015,z),Vector3(.012,.035,.10),"f4e9c5")
 
 func _produce() -> void:

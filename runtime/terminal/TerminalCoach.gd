@@ -5,6 +5,9 @@ const TRANSIT_WORK := preload("res://runtime/StallWorkTrace.gd")
 static var _body_batches: Array[Dictionary] = []
 ## Conserved coach body: swept native collision for both forward and reverse travel.
 const ROUTES := preload("res://runtime/terminal/TerminalRoutes.gd")
+const MODEL_SCALE := Vector3(.94, .80, .67)
+const DOOR_Z := -5.05 * .67
+const BOARDING_POINT := Vector3(1.85, .12, DOOR_Z)
 var platform := 0
 var model: Node3D
 var path: Curve3D
@@ -33,17 +36,17 @@ func _stall_ready() -> void:
 	var collision_began := TRANSIT_WORK.begin()
 	health = 300
 	max_health = 300
-	half_width = .9
-	half_length = 2.57
-	body_height = 1.9
+	half_width = 1.25
+	half_length = 4.0
+	body_height = 2.94
 	collision_layer = 4
 	collision_mask = 7
 	floor_snap_length = .4
 	shape = CollisionShape3D.new()
 	var hull := BoxShape3D.new()
-	hull.size = Vector3(1.8,1.9,5.14)
+	hull.size = Vector3(2.5,2.94,8.0)
 	shape.shape = hull
-	shape.position.y = .95
+	shape.position.y = 1.47
 	add_child(shape)
 	var inset := BoxShape3D.new()
 	inset.size = hull.size-Vector3.ONE*.06
@@ -51,7 +54,7 @@ func _stall_ready() -> void:
 	clearance_query.collision_mask = 7
 	clearance_query.exclude = [get_rid()]
 	rotation_shape.size = hull.size-Vector3(0,.15,0)
-	sensor_shape.size = Vector3(1.87,1.2,1)
+	sensor_shape.size = Vector3(2.57,1.8,1)
 	if collision_began != 0: TRANSIT_WORK.finish("terminal.coach.collision",collision_began,{"platform":platform})
 	var construct_began := TRANSIT_WORK.begin()
 	model = preload("res://runtime/terminal/CoachModel.gd").new()
@@ -59,7 +62,8 @@ func _stall_ready() -> void:
 	model.livery = [Color("247d88"),Color("a44937"),Color("426493"),Color("ae813e")][platform]
 	model.operator_name = ["COSTA SUL","VIAÇÃO SERRA","EXPRESSO AZUL","LITORAL"][platform]
 	model.fleet_number = str(2407+platform*131)
-	model.scale = Vector3(.5625,.5,.43212447)
+	# Full passenger-coach proportions, within the existing bay and canopy.
+	model.scale = MODEL_SCALE
 	# Legacy model nose is +Z; native traffic faces -Z.
 	model.rotation.y = PI
 	if construct_began != 0: TRANSIT_WORK.finish("terminal.coach.model_construct",construct_began,{"platform":platform})
@@ -72,9 +76,9 @@ func _stall_ready() -> void:
 	for side in [-1.0,1.0]:
 		var leaf := MeshInstance3D.new()
 		var mesh := BoxMesh.new()
-		mesh.size = Vector3(.03,1.02,.24)
+		mesh.size = Vector3(.04,1.72,.38)
 		leaf.mesh = mesh
-		leaf.position = Vector3(.79,.76,-2.18+side*.12)
+		leaf.position = Vector3(1.27,1.21,DOOR_Z+side*.19)
 		var material := StandardMaterial3D.new()
 		material.albedo_color = Color("537482")
 		leaf.material_override = material
@@ -111,7 +115,7 @@ func set_path(value: Curve3D, backwards := false) -> void:
 
 func set_doors(amount: float) -> void:
 	doors = amount
-	for i in door_leaves.size(): door_leaves[i].position.z = -2.18+(-1 if i==0 else 1)*(.12+amount*.23)
+	for i in door_leaves.size(): door_leaves[i].position.z = DOOR_Z+(-1 if i==0 else 1)*(.19+amount*.36)
 
 func receive_damage(amount: float, _source: Node = null) -> void:
 	health = maxf(0,health-amount)
@@ -130,7 +134,7 @@ func drive(delta: float, clearance := INF) -> void:
 		progress = route_distance
 		var distance := branch_before.distance_to(global_position)
 		travelled += distance
-		for wheel in coach_wheels: wheel.rotate_object_local(Vector3.UP,distance/.29)
+		for wheel in coach_wheels: wheel.rotate_object_local(Vector3.UP,distance/.464)
 		blocked_by = str(blocker.get_path()) if is_instance_valid(blocker) and blocker is Node else ""
 		return
 	var remaining := path.get_baked_length()-progress
@@ -166,7 +170,7 @@ func drive(delta: float, clearance := INF) -> void:
 	move_and_slide()
 	var displacement := Vector2(global_position.x-before.x,global_position.z-before.z).length()
 	travelled += displacement
-	for wheel in coach_wheels: wheel.rotate_object_local(Vector3.UP,displacement/.29*(-1 if reverse else 1))
+	for wheel in coach_wheels: wheel.rotate_object_local(Vector3.UP,displacement/.464*(-1 if reverse else 1))
 	if Vector2(global_position.x-target.x,global_position.z-target.z).length() < .05: progress = next
 	else: speed = 0; blocked = true
 

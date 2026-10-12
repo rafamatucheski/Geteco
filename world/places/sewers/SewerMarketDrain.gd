@@ -3,8 +3,8 @@ extends "res://world/places/sewers/SewerVariantBase.gd"
 ## dele junto a um barril de fogo. Quase sem luz: só o fogo e uma lâmpada morrendo. Pequeno e quase sem segredo:
 ## as economias dele debaixo do colchão e uma faca esquecida entre os barris.
 const REWARDS := [
-	{"id": "sewer_market_savings", "kind": "cash", "amount": 180, "local_position": Vector3(6.4, 0, -3.2)},
-	{"id": "sewer_market_knife", "kind": "weapon", "item": "knife", "amount": 1, "local_position": Vector3(-3.0, 0, 2.2)},
+	{"id": "sewer_market_savings", "kind": "cash", "amount": 180, "local_position": Vector3(6.4, 0, -2.15)},
+	{"id": "sewer_market_knife", "kind": "weapon", "item": "knife", "amount": 1, "local_position": Vector3(-2.0, 0, 2.2)},
 ]
 const RESIDENTS := [
 	{"id": "sewer_market_abel", "name": "Seu Abel", "local_position": Vector3(3.6, 0, -0.4),
@@ -29,7 +29,7 @@ func _build() -> void:
 	# Só duas luzes: a lâmpada morrendo (vermelha, falha muito) e o fogo do Abel.
 	service_lamp(Vector3(-4.2, 2.6, -4.8), "#ff6a3a", 1.1, 4.5, true)
 	# Canto do Abel: colchão podre, cobertor, papelão, carrinho de mercado e roupa de varal.
-	box(Vector3(6.4, 0.14, -3.2), Vector3(2.0, 0.28, 1.0), "#403d30")
+	box(Vector3(6.4, 0.14, -3.2), Vector3(2.0, 0.28, 1.0), "#403d30", false, "Mattress")
 	box(Vector3(6.6, 0.3, -3.2), Vector3(1.4, 0.06, 0.95), "#4d2626")
 	box(Vector3(5.5, 0.3, -3.2), Vector3(0.38, 0.1, 0.55), "#6d6858")
 	fire_barrel(Vector3(4.8, 0, -1.4))
@@ -37,7 +37,7 @@ func _build() -> void:
 	for index in 3: box(Vector3(5.2 + index * 0.55, 0.9 + (index % 2) * 0.1, -4.55), Vector3(0.38, 0.7, 0.03), ["#4a5a66", "#6a5a2a", "#4a3445"][index])
 	pipe(Vector3(4.8, 1.35, -4.55), Vector3(7.0, 1.3, -4.55), 0.012, "#8a8a8a")
 	for index in 3: box(Vector3(2.6 + index * 0.9, 0.18, -2.4 + (index % 2) * 0.6), Vector3(0.8, 0.36, 0.6), ["#5a4e38", "#4d4330", "#675a42"][index], false, "Cardboard")
-	box(Vector3(-3.0, 0.3, 2.2), Vector3(0.9, 0.6, 0.9), "#3a3023", false, "")
+	box(Vector3(-3.0, 0.3, 2.2), Vector3(0.9, 0.6, 0.9), "#3a3023", false, "StashCrate")
 	barrel(Vector3(-5.2, 0, 1.4), "#33403a")
 	barrel(Vector3(-4.6, 0, 1.9), "#4a3b28")
 	for index in 7: cyl(Vector3(0.0 + index * 0.37, 0.09, -1.0 + (index % 3) * 0.3), 0.04, 0.18, ["#3a5a3e", "#6a5020", "#41596a"][index % 3])

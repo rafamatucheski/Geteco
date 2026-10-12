@@ -58,12 +58,17 @@ func _initialize() -> void:
 	check(event.data.phase == "finished" and event.data.delivered == [true,true],"unharmed off-screen delivery still completes normally")
 	event.free()
 	event = fixture("driving")
-	for offset in [24.0,12.0,36.0,0.0]: event.drivers.append({"offset":offset})
+	for offset in [24.0,12.0,36.0,0.0]: event.drivers.append({"offset":offset,"route":null})
 	check([event._formation_follower(0),event._formation_follower(1),event._formation_follower(2),event._formation_follower(3)] == [1,3,0,-1],"normal formation follows its nearest rear neighbour")
 	for index in 4: event.drivers[index].offset = [20.0,70.0,40.0,100.0][index]
 	check([event._formation_follower(0),event._formation_follower(1),event._formation_follower(2),event._formation_follower(3)] == [-1,2,0,1],"escort and truck that bypassed the leader still wait for the actual convoy behind")
 	for driver in event.drivers: driver.offset = 20.0
 	check([event._formation_follower(0),event._formation_follower(1),event._formation_follower(2),event._formation_follower(3)] == [-1,0,1,2],"parallel bypass positions have deterministic ordering without circular holds")
+	for index in 4:
+		var connector := Curve3D.new()
+		connector.set_meta("formation_origin",[4.0,-8.0,16.0,-20.0][index])
+		event.drivers[index].route = connector
+	check([event._formation_follower(0),event._formation_follower(1),event._formation_follower(2),event._formation_follower(3)] == [1,3,0,-1],"different bay connector lengths compare progress on the same road")
 	event.free()
 	print("ARMORED_VIRTUAL_RESULT ",JSON.stringify({"checks":checks,"failures":failures}))
 	quit(0 if failures.is_empty() else 1)

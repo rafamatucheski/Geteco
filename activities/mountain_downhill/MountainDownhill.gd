@@ -42,8 +42,8 @@ func save_block_reason() -> String:
 
 func objective() -> String:
 	if active and racers.size() == 7:
-		if countdown > 0: return "Descida da Meia Noite · largada em %d"%ceili(countdown)
-		return "Descida da Meia Noite · checkpoint %d/%d · %d/7"%[mini(int(racers[6].run.checkpoint)+1,course.gate_offsets.size()),course.gate_offsets.size(),standings().find(racers[6])+1]
+		if countdown > 0: return String(TranslationServer.translate("Descida da Meia Noite · largada em %d")) %ceili(countdown)
+		return String(TranslationServer.translate("Descida da Meia Noite · checkpoint %d/%d · %d/7")) %[mini(int(racers[6].run.checkpoint)+1,course.gate_offsets.size()),course.gate_offsets.size(),standings().find(racers[6])+1]
 	return "Descida da Meia Noite · leve um carro esportivo à largada entre 20h e 5h"
 
 func target_position() -> Vector3:
@@ -245,7 +245,7 @@ func _finish(place: int, seconds: float) -> void:
 	var paid := recorded and PROGRESS.claim_reward(session.state.world_state,session.state.economy)
 	last_result = {"place":place,"seconds":seconds,"paid":paid,"finished":true}
 	_cleanup()
-	session.show_message("Descida concluída · %d/7 · %.2f s%s"%[place,seconds," · R$ 2400" if paid else ""])
+	session.show_message(String(TranslationServer.translate("Descida concluída · %d/7 · %.2f s%s")) %[place,seconds," · R$ 2400" if paid else ""])
 	session.save_game()
 
 func cancel_attempt(reason: String = "cancelled") -> void:
@@ -323,7 +323,7 @@ func _update_hud() -> void:
 	if not is_instance_valid(status) or racers.size()!=7: return
 	var place := standings().find(racers[6])+1
 	var seconds := int(racers[6].run.elapsed)
-	status.text = "LARGADA · %d"%ceili(countdown) if countdown>0 else "CHECKPOINT %d/%d · %d/7 · %02d:%02d"%[mini(int(racers[6].run.checkpoint)+1,course.gate_offsets.size()),course.gate_offsets.size(),place,floori(float(seconds)/60.0),seconds%60]
+	status.text = String(TranslationServer.translate("LARGADA · %d")) %ceili(countdown) if countdown>0 else "CHECKPOINT %d/%d · %d/7 · %02d:%02d"%[mini(int(racers[6].run.checkpoint)+1,course.gate_offsets.size()),course.gate_offsets.size(),place,floori(float(seconds)/60.0),seconds%60]
 	var lines := PackedStringArray()
 	var ordered := standings()
 	for i in ordered.size():

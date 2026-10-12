@@ -23,4 +23,4 @@ func _process(delta: float) -> void:
 		if session.state.economy.grant_reward(id,CASH[i]):
 			REWARD_AUDIO.play(self,"cash")
 			stash.call("set_available",false,true)
-			session.show_message("Encontrou R$ %d."%CASH[i])
+			session.show_message(String(TranslationServer.translate("Encontrou R$ %d."))%CASH[i])

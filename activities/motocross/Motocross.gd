@@ -15,6 +15,7 @@ const DIGO_PARKING := Vector3(-237,.13,-43.5)
 const DIGO_AMAROK_PARKING := Vector3(-237,.13,-47.0)
 ## Rival start-gate odds by difficulty: [holeshot, bog, wheelie].
 const RIVAL_LAUNCH := [[.18,.28,.06],[.26,.2,.06],[.34,.14,.05],[.42,.08,.04]]
+var stealing := false
 var selected_model := 0
 var start_shot := preload("res://activities/motocross/MotocrossStart.gd").new()
 var ambient
@@ -30,6 +31,7 @@ var racers: Array = []
 var player_bike: CharacterBody3D
 var owned_bike: CharacterBody3D
 var rental_bike: CharacterBody3D
+var stolen_bikes: Array[CharacterBody3D] = []
 var countdown := 0.0
 var elapsed := 0.0
 var difficulty := 0
@@ -170,17 +172,130 @@ func nearest_action() -> Dictionary:
 	if mounted: return {"id":"motocross","target":"dismount","label":"Descer da moto"}
 	if session.state.region_id != "harbor" or not session.state.place_id.is_empty() or session.world.driving.occupied: return {}
 	var p: Vector3 = session.world.player.position
+	var stealable := _nearby_stealable_bike(p)
+	if is_instance_valid(stealable):
+		return {"id":"motocross","target":"steal","label":"Pilotar moto" if stealable.get_meta("motocross_stolen",false) else "Roubar moto"}
 	if is_instance_valid(owned_bike) and p.distance_to(owned_bike.position) < 2.8:
 		return {"id":"motocross","target":"ride","label":"Pilotar sua motocross"}
 	if p.distance_to(COURSE.ENTRY) < 5.5:
 		return {"id":"motocross","target":"enter","label":"Conversar com Digo"}
 	return {}
 
+func _nearby_stealable_bike(point: Vector3) -> CharacterBody3D:
+	var best: CharacterBody3D
+	var gap := 2.8
+	for bike in get_tree().get_nodes_in_group("motocross_bikes"):
+		if not bike.get_meta("motocross_ambient",false) and not bike.get_meta("motocross_parked",false) and not bike.get_meta("motocross_stolen",false): continue
+		if bike.is_queued_for_deletion() or not bike.is_visible_in_tree() or bike.collision_layer == 0: continue
+		var distance: float = point.distance_to(bike.global_position)
+		if distance >= gap: continue
+		var ray := PhysicsRayQueryParameters3D.create(point+Vector3.UP*.8,bike.global_position+Vector3.UP*.8,7,[session.world.player.get_rid(),bike.get_rid()])
+		if not session.world.get_world_3d().direct_space_state.intersect_ray(ray).is_empty(): continue
+		best = bike
+		gap = distance
+	return best
+
+func steal_bike(bike: CharacterBody3D) -> bool:
+	if stealing or mounted or active or session.modal or session.is_transition_blocked() or session.world.gameplay.health <= 0: return false
+	if _nearby_stealable_bike(session.world.player.position) != bike: return false
+	if bike.rider.visible and not bike.get_meta("motocross_stolen",false):
+		var destination := preload("res://gameplay/VehicleCarjacking.gd").landing_point(session.world,bike,-1)
+		if not destination.is_finite(): return false
+		stealing = true
+		_extract_pilot(bike,destination)
+		return true
+	return _claim_bike(bike)
+
+func _extract_pilot(bike: CharacterBody3D, destination: Vector3) -> void:
+	var world = session.world
+	var player = world.player
+	var old_layer: int = player.collision_layer
+	var old_mask: int = player.collision_mask
+	var player_start: Vector3 = player.global_position
+	var visual_start: Transform3D = player.visual.transform
+	player.input_locked = true
+	player.set_physics_process(false)
+	player.collision_layer = 0
+	player.collision_mask = 0
+	if ambient != null: ambient.release(bike)
+	if bike.get_parent() != world: bike.reparent(world,true)
+	if not stolen_bikes.has(bike): stolen_bikes.append(bike)
+	bike.race_enabled = false
+	bike.speed = 0
+	bike.velocity = Vector3.ZERO
+	bike.set_physics_process(false)
+	# Reparent the actual NPC presentation; build Dante's rider only after removal.
+	var victim := preload("res://activities/motocross/MotocrossDisplacedPilot.gd").new()
+	world.add_child(victim)
+	victim.global_transform = bike.rider.global_transform
+	victim.visual = bike._rider_visual
+	victim.visual.reparent(victim,true)
+	victim.bike = weakref(bike)
+	victim.direction = (destination - bike.global_position).normalized()
+	victim.direction.y = 0
+	bike.rider.hide()
+	var extraction := preload("res://gameplay/VehicleCarjacking.gd").new()
+	extraction.prepare(world,bike,victim,-1,destination,true)
+	var cleanup := func():
+		extraction.release()
+		if not is_instance_valid(player) or not player.is_inside_tree(): return
+		player.visual.transform = visual_start
+		player.collision_layer = old_layer
+		player.collision_mask = old_mask
+		player.set_physics_process(is_instance_valid(world.get("gameplay")) and world.gameplay.health > 0)
+		player.input_locked = true
+		if is_instance_valid(bike): bike.set_physics_process(true)
+	tree_exiting.connect(cleanup, CONNECT_ONE_SHOT)
+	var elapsed := 0.0
+	while elapsed < 1.45:
+		await get_tree().process_frame
+		if get_tree().paused: continue
+		if not is_instance_valid(bike) or bike.is_queued_for_deletion() or not is_instance_valid(victim) or world.gameplay.health <= 0 or session.is_transition_blocked() or session.modal: break
+		elapsed += get_process_delta_time()
+		if elapsed < .3:
+			player.global_position = player_start.lerp(bike.global_position - bike.global_basis.x * 1.05,smoothstep(0.0,.3,elapsed))
+		else: extraction.apply(player,clampf((elapsed-.3)/1.15,0.0,1.0))
+	if tree_exiting.is_connected(cleanup): tree_exiting.disconnect(cleanup)
+	extraction.release()
+	player.visual.transform = visual_start
+	player.collision_layer = old_layer
+	player.collision_mask = old_mask
+	player.set_physics_process(world.gameplay.health > 0)
+	player.input_locked = world.gameplay.health <= 0 or session.is_transition_blocked()
+	stealing = false
+	if not is_instance_valid(bike) or bike.is_queued_for_deletion(): return
+	bike.rider.queue_free()
+	bike._build_rider()
+	bike.rider.hide()
+	bike.set_physics_process(true)
+	if elapsed >= 1.45 and world.gameplay.health > 0 and not session.is_transition_blocked():
+		_claim_bike(bike)
+	else:
+		bike.set_meta("motocross_parked",true)
+		world.gameplay.report_observed_crime(15,bike.global_position,"theft",bike)
+
+func _claim_bike(bike: CharacterBody3D) -> bool:
+	var first_theft := not bool(bike.get_meta("motocross_stolen",false))
+	if ambient != null: ambient.release(bike)
+	if bike.get_parent() != session.world: bike.reparent(session.world,true)
+	bike.set_meta("motocross_stolen",true)
+	bike.remove_meta("motocross_ambient")
+	bike.remove_meta("motocross_parked")
+	if not stolen_bikes.has(bike): stolen_bikes.append(bike)
+	bike.reset_to(bike.global_transform)
+	bike.is_player = true
+	bike.rider_name = "Dante"
+	bike.set_physics_process(true)
+	_mount(bike)
+	if first_theft: session.world.gameplay.report_observed_crime(15,bike.global_position,"theft",bike)
+	return true
+
 func perform(target: String) -> bool:
 	if nearest_action().get("target","") != target: return false
 	match target:
+		"steal": return steal_bike(_nearby_stealable_bike(session.world.player.position))
 		"quit":
-			session._menu("Desistir perde a inscrição de R$ %d"%int(PROGRESS.LEVELS[difficulty].fee))
+			session._menu(String(TranslationServer.translate("Desistir perde a inscrição de R$ %d")) %int(PROGRESS.LEVELS[difficulty].fee))
 			session._button("Continuar corrida",session.close_menu)
 			session._button("Desistir",func(): session.close_menu(); finish(false,"quit"))
 		"dismount": dismount()
@@ -217,7 +332,7 @@ func _digo_story() -> void:
 
 func _race_menu() -> void:
 	var best := float(progress.data.get("best_lap",0.0))
-	session._menu("Digo · Corridas"+(" · recorde %s"%HUD.clock(best) if best > 0.0 else ""))
+	session._menu("Digo · Corridas"+(String(TranslationServer.translate(" · recorde %s")) %HUD.clock(best) if best > 0.0 else ""))
 	for i in PROGRESS.LEVELS.size():
 		var spec: Dictionary = PROGRESS.LEVELS[i]
 		session._button("%s · entrada R$ %d · vitória R$ %d"%[spec.name,spec.fee,int(spec.fee)+int(spec.bonus)],func():
@@ -243,7 +358,7 @@ func start_lesson() -> bool:
 	return true
 
 func _bike_menu(level: int) -> void:
-	session._menu("Escolha a moto · %s"%("Treino" if level < 0 else PROGRESS.LEVELS[level].name))
+	session._menu(String(TranslationServer.translate("Escolha a moto · %s")) %("Treino" if level < 0 else PROGRESS.LEVELS[level].name))
 	for index in MODELS.MODELS.size():
 		session._button(("✓ " if selected_model==index else "")+MODELS.caption(index),func():
 			selected_model = index
@@ -373,7 +488,7 @@ func _tag(bike: CharacterBody3D) -> void:
 
 func _mount(bike: CharacterBody3D) -> void:
 	if not is_instance_valid(bike): return
-	if ambient != null: ambient.clear()
+	if ambient != null and not bike.get_meta("motocross_stolen",false): ambient.clear()
 	player_bike = bike
 	mounted = true
 	var world = session.world
@@ -444,12 +559,18 @@ func _physics_process(delta: float) -> void:
 	if _digo_clock >= 1.0:
 		_digo_clock = 0.0
 		_update_digo_car()
+		if session.world.gameplay.health<=0 or session.world.player.position.distance_to(COURSE.ENTRY)>180:
+			for venue in get_tree().get_nodes_in_group("motocross_paddock"):
+				venue.replenish_parked_bikes()
 	if ambient != null: ambient.update(delta)
 	_update_surface(delta)
 	if not mounted:
 		_clock += delta
 		if _clock > 1:
 			_clock = 0
+			for bike in stolen_bikes:
+				if is_instance_valid(bike) and (session.world.gameplay.health <= 0 or session.state.region_id != "harbor" or bike.position.distance_to(session.world.player.position)>220): bike.queue_free()
+			stolen_bikes = stolen_bikes.filter(func(bike): return is_instance_valid(bike) and not bike.is_queued_for_deletion())
 			if progress.data.owned and not is_instance_valid(owned_bike) and session.state.region_id == "harbor" and session.world.player.position.distance_to(COURSE.ENTRY) < 140: _park_owned()
 			_idle_board()
 		return
@@ -464,7 +585,7 @@ func _physics_process(delta: float) -> void:
 	if start_shot.active:
 		session.world.player.position = player_bike.position
 		if not session.modal: start_shot.update(delta)
-		_status.text = "Preparando largada · %s"%MODELS.MODELS[player_bike.profile_id].name
+		_status.text = String(TranslationServer.translate("Preparando largada · %s")) %MODELS.MODELS[player_bike.profile_id].name
 		return
 	# Pause/menu freezes every racer, including recovery, so opening a menu is fair.
 	for row in racers:
@@ -606,9 +727,9 @@ func _race_lap(lap: float, completed: int) -> void:
 	var laps := int(PROGRESS.LEVELS[difficulty].laps)
 	var best := float(progress.data.get("best_lap",0.0))
 	var record := lap >= PROGRESS.MIN_LAP and (best <= 0.0 or lap < best)
-	var detail := "Volta %d · %s%s"%[completed,HUD.clock(lap)," · RECORDE DA PISTA" if record else ""]
+	var detail := String(TranslationServer.translate("Volta %d · %s%s")) %[completed,HUD.clock(lap)," · RECORDE DA PISTA" if record else ""]
 	if completed == laps-1: _status.callout("ÚLTIMA VOLTA",detail,Color("ffc34f"),4)
-	else: _status.callout("VOLTA %d/%d"%[completed+1,laps],detail,Color("ffc34f") if record else Color("f0f3f4"),4)
+	else: _status.callout(String(TranslationServer.translate("VOLTA %d/%d")) %[completed+1,laps],detail,Color("ffc34f") if record else Color("f0f3f4"),4)
 
 func _practice_lap(delta: float) -> void:
 	if practice.is_empty() or not is_instance_valid(player_bike): return
@@ -652,7 +773,7 @@ func _announce_place(placement: int, delta: float) -> void:
 		if (placement < _announced_place and gap < 0.0 and -gap < nearest_gap) or (placement > _announced_place and gap > 0.0 and gap < nearest_gap):
 			nearest_gap = absf(gap)
 			other = racers[i].bike.rider_name
-	if placement < _announced_place: _status.callout("%dº LUGAR"%placement,"Você passou %s"%other if not other.is_empty() else "",Color("8ee29f"),2)
+	if placement < _announced_place: _status.callout("%dº LUGAR"%placement,String(TranslationServer.translate("Você passou %s")) %other if not other.is_empty() else "",Color("8ee29f"),2)
 	else: _status.callout("%dº LUGAR"%placement,"%s passou você"%other if not other.is_empty() else "",Color("f08a5d"),2)
 	_announced_place = placement
 	_place_hold = 0.0
@@ -668,12 +789,12 @@ func _gap_text() -> String:
 		elif gap <= 0.0 and (behind.is_empty() or gap > _race_distance(behind)-mine): behind = racers[i]
 	if not ahead.is_empty():
 		var count := int(me.passed)
-		if count <= 0 or ahead.times.size() < count: return "À FRENTE · %s"%ahead.bike.rider_name
-		return "À FRENTE · %s +%s s"%[ahead.bike.rider_name,("%.1f"%(float(me.times[count-1])-float(ahead.times[count-1]))).replace(".",",")]
+		if count <= 0 or ahead.times.size() < count: return String(TranslationServer.translate("À FRENTE · %s")) %ahead.bike.rider_name
+		return String(TranslationServer.translate("À FRENTE · %s +%s s")) %[ahead.bike.rider_name,("%.1f"%(float(me.times[count-1])-float(ahead.times[count-1]))).replace(".",",")]
 	if not behind.is_empty():
 		var count := int(behind.passed)
 		if count <= 0 or me.times.size() < count: return "LIDERANDO"
-		return "LIDERANDO · %s s sobre %s"%[("%.1f"%(float(behind.times[count-1])-float(me.times[count-1]))).replace(".",","),behind.bike.rider_name]
+		return String(TranslationServer.translate("LIDERANDO · %s s sobre %s")) %[("%.1f"%(float(behind.times[count-1])-float(me.times[count-1]))).replace(".",","),behind.bike.rider_name]
 	return ""
 
 func _update_info(delta: float) -> void:
@@ -695,7 +816,7 @@ func _update_info(delta: float) -> void:
 			# Completed laps/lap deficit count whole gate groups.
 			@warning_ignore("integer_division")
 			var lap := mini(laps,int(order[0].passed)/track.gates.size()+1)
-			course.set_board("VOLTA %d/%d"%[lap,laps],"1º %s · 2º %s"%[order[0].bike.rider_name,order[1].bike.rider_name] if order.size() > 1 else "")
+			course.set_board(String(TranslationServer.translate("VOLTA %d/%d")) %[lap,laps],String(TranslationServer.translate("1º %s · 2º %s")) %[order[0].bike.rider_name,order[1].bike.rider_name] if order.size() > 1 else "")
 	elif course != null and mounted and not practice.is_empty():
 		course.set_board("TREINO",HUD.clock(float(practice.clock)) if float(practice.lap_start) >= 0.0 else "PISTA LIVRE")
 
@@ -703,7 +824,7 @@ func _idle_board() -> void:
 	var course := _course()
 	if course == null: return
 	var best := float(progress.data.get("best_lap",0.0))
-	course.set_board("VÉRTICE MX","RECORDE %s"%HUD.clock(best) if best > 0.0 else "PISTA ABERTA")
+	course.set_board("VÉRTICE MX",String(TranslationServer.translate("RECORDE %s")) %HUD.clock(best) if best > 0.0 else "PISTA ABERTA")
 
 func _race_distance(row: Dictionary) -> float:
 	# The race loop caches each rider's route distance once per tick.
@@ -776,8 +897,8 @@ func finish(won: bool, reason := "") -> void:
 	if progress.data.owned: _park_owned()
 	session.save_game()
 	_idle_board()
-	session.show_message(("Vitória! +R$ %d (inscrição + R$ %d de lucro)."%[prize,PROGRESS.LEVELS[difficulty].bonus]) if won else ("%dº lugar · inscrição de R$ %d perdida."%[placement,PROGRESS.LEVELS[difficulty].fee] if reason == "finished" else "Derrota · inscrição de R$ %d perdida."%PROGRESS.LEVELS[difficulty].fee))
-	if not was_owned and progress.data.owned: session.show_message("Vitória! +R$ %d. A motocross é sua: retire-a na entrada."%prize)
+	session.show_message((String(TranslationServer.translate("Vitória! +R$ %d (inscrição + R$ %d de lucro).")) %[prize,PROGRESS.LEVELS[difficulty].bonus]) if won else (String(TranslationServer.translate("%dº lugar · inscrição de R$ %d perdida.")) %[placement,PROGRESS.LEVELS[difficulty].fee] if reason == "finished" else String(TranslationServer.translate("Derrota · inscrição de R$ %d perdida.")) %PROGRESS.LEVELS[difficulty].fee))
+	if not was_owned and progress.data.owned: session.show_message(String(TranslationServer.translate("Vitória! +R$ %d. A motocross é sua: retire-a na entrada.")) %prize)
 
 ## Builds the results card from the live timing and returns the player's place.
 func _classify(won: bool, reason: String) -> int:
@@ -798,7 +919,7 @@ func _classify(won: bool, reason: String) -> int:
 			var laps_down := (int(leader.passed)-count)/track.gates.size()
 			# Gap at the last timing gate both riders crossed, as on a timing loop.
 			var gap := float(row.times[count-1])-float(leader.times[count-1])
-			detail = "+%d volta%s"%[laps_down,"s" if laps_down > 1 else ""] if laps_down > 0 else "+%s s"%("%.1f"%gap).replace(".",",")
+			detail = String(TranslationServer.translate("+%d volta%s")) %[laps_down,"s" if laps_down > 1 else ""] if laps_down > 0 else "+%s s"%("%.1f"%gap).replace(".",",")
 		else: detail = "—"
 		if row == racers[0]: placement = index+1
 		rows.append({"place":index+1,"name":row.bike.rider_name,"detail":detail,"player":row == racers[0]})
@@ -806,10 +927,10 @@ func _classify(won: bool, reason: String) -> int:
 	var me: Dictionary = racers[0]
 	var best := float(progress.data.get("best_lap",0.0))
 	var footer := "%s · %d volta%s"%[str(PROGRESS.LEVELS[difficulty].name),int(PROGRESS.LEVELS[difficulty].laps),"s" if int(PROGRESS.LEVELS[difficulty].laps) > 1 else ""]
-	if float(me.best) > 0.0: footer += " · sua melhor volta %s"%HUD.clock(float(me.best))
-	if best > 0.0: footer += " · recorde %s"%HUD.clock(best)
+	if float(me.best) > 0.0: footer += String(TranslationServer.translate(" · sua melhor volta %s")) %HUD.clock(float(me.best))
+	if best > 0.0: footer += String(TranslationServer.translate(" · recorde %s")) %HUD.clock(best)
 	if launch_result == "holeshot": footer += " · holeshot"
-	footer += " · pousos perfeitos: %d"%int(me.bike.perfect_landings)
+	footer += String(TranslationServer.translate(" · pousos perfeitos: %d")) %int(me.bike.perfect_landings)
 	_status.show_results(title,rows,footer)
 	return placement
 
@@ -827,6 +948,8 @@ func _park_owned(recall := false) -> void:
 	owned_bike.rider.hide()
 
 func _exit_tree() -> void:
+	for bike in stolen_bikes:
+		if is_instance_valid(bike): bike.queue_free()
 	start_shot.stop()
 	if ambient != null: ambient.clear()
 	track.free()

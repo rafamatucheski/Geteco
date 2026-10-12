@@ -2,6 +2,8 @@ extends Node
 ## One live conversation at a time. It never pauses threats or moves either body.
 const PANEL := preload("res://ui/BuildingSocialPanel.gd")
 const PROTECTION := preload("res://gameplay/DamageProtection.gd")
+const VOICE_BINDING := preload("res://audio/VoiceActorBinding.gd")
+const ACTOR_VOICE := preload("res://audio/ActorDialogueVoice.gd")
 const TALK_DISTANCE := 2.4
 const KEEP_DISTANCE := 2.8
 const MAX_HEIGHT := 1.15
@@ -82,6 +84,8 @@ func open(resident: Node3D) -> bool:
 		panel.close_requested.connect(close)
 	var snapshot: Dictionary = resident.social_snapshot()
 	panel.present(snapshot, resident.social_options(), str(snapshot.get("line", "Pode falar.")))
+	var spoken := ACTOR_VOICE.speak(resident, str(snapshot.get("line", "Pode falar.")), VOICE_BINDING.resolve(resident, "building_social"), panel.reply_label)
+	panel.reply_label.text = str(spoken.get("message", "Pode falar."))
 	_position_panel()
 	panel.focus_first.call_deferred()
 	_listen(session.world.gameplay, "player_wounded", _wounded)
@@ -95,17 +99,27 @@ func open(resident: Node3D) -> bool:
 
 func choose(action_id: String) -> void:
 	if not _still_owned() or not _accessible(target, KEEP_DISTANCE): close(); return
+	var speaker := target
 	var result: Dictionary = target.social_interact(action_id, session.world.player)
 	# Intimidation can emit threat_started synchronously and relinquish the UI.
 	if not active:
-		if not str(result.get("line", "")).is_empty(): session.show_message(str(result.line))
+		_present_reply(speaker, str(result.get("line", "")), false)
 		return
 	if bool(result.get("close", false)) or not bool(target.social_snapshot().get("can_interact", false)):
 		var line := str(result.get("line", ""))
 		close()
-		if not line.is_empty(): session.show_message(line)
+		_present_reply(speaker, line, false)
 		return
-	panel.present(target.social_snapshot(), target.social_options(), str(result.get("line", "")))
+	panel.present(target.social_snapshot(), target.social_options())
+	_present_reply(speaker, str(result.get("line", "")), true)
+
+func _present_reply(speaker: Node3D, line: String, in_panel: bool) -> void:
+	if line.is_empty() or not is_instance_valid(speaker): return
+	var surface: Node = panel.reply_label if in_panel else null
+	var binding := VOICE_BINDING.resolve(speaker, "building_social")
+	var spoken := ACTOR_VOICE.speak(speaker, line, binding, surface)
+	if in_panel: panel.reply_label.text = str(spoken.get("message", line))
+	else: session.show_speech(str(speaker.social_snapshot().get("name", "")), str(spoken.get("message", line)), maxf(3.0, float(spoken.get("duration", 0.0))), false, str(binding.get("persona", "")), line, str(binding.get("character_id", "")), str(binding.get("section", "")))
 
 func handle_input(event: InputEvent) -> bool:
 	if not active: return _release_guard and not event.is_action("pause_game") and not event.is_action("ui_cancel")
@@ -165,7 +179,9 @@ func close() -> void:
 func _dismiss() -> void:
 	if not active: return
 	active = false
-	if is_instance_valid(target): target.end_social()
+	if is_instance_valid(target):
+		ACTOR_VOICE.stop(target)
+		target.end_social()
 	target = null
 	_room = null
 	if is_instance_valid(panel): panel.hide()

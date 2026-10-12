@@ -7,7 +7,7 @@ const REWARDS := [
 	{"id": "sewer_port_rack_ak47", "kind": "weapon", "item": "ak47", "amount": 1, "ammo": 60, "local_position": Vector3(-9.5, 0, 6.2)},
 	{"id": "sewer_port_ledger", "kind": "cash", "amount": 900, "local_position": Vector3(-7.7, 0, 6.2)},
 	{"id": "sewer_port_safe", "kind": "cash", "amount": 3500, "local_position": Vector3(11.2, 0, 4.5)},
-	{"id": "sewer_port_tonho_stash", "kind": "cash", "amount": 300, "local_position": Vector3(-14.4, 0, 3.4)},
+	{"id": "sewer_port_tonho_stash", "kind": "cash", "amount": 300, "local_position": Vector3(-14.4, 0, 2.8)},
 	{"id": "sewer_port_vault_cash", "kind": "cash", "amount": 5200, "local_position": Vector3(14.3, 0, -7.2)},
 	{"id": "sewer_port_vault_grenades", "kind": "weapon", "item": "grenade", "amount": 1, "ammo": 5, "local_position": Vector3(14.4, 0, -5.4)},
 ]
@@ -43,10 +43,10 @@ func _build() -> void:
 		cyl(Vector3(x, 2.05, -5.6), 2.15, 0.1, "#4a5a52", true)
 		for ring in 3: cyl(Vector3(x, 0.4 + ring * 0.7, -5.6), 2.13, 0.06, "#1d2926", true)
 		stain(Vector3(x, 0, -3.1), 1.4, "#0d1210")
-	box(Vector3(0, 1.6, -9.0), Vector3(half.x * 2.0 - 4.0, 0.08, 1.2), "#2f3a35", true)
+	box(Vector3(0, 1.6, -9.0), Vector3(half.x * 2.0 - 4.0, 0.08, 1.2), "#2f3a35", true, "LowWalkway")
 	for x in range(-12, 13, 4):
-		cyl(Vector3(float(x), 0.8, -9.4), 0.06, 1.6, "#1d2926", true)
-		cyl(Vector3(float(x), 0.8, -8.6), 0.06, 1.6, "#1d2926", true)
+		cyl(Vector3(float(x), 0.8, -9.4), 0.06, 1.6, "#1d2926", true, "WalkwayPost")
+		cyl(Vector3(float(x), 0.8, -8.6), 0.06, 1.6, "#1d2926", true, "WalkwayPost")
 	pipe(Vector3(-15.0, 2.7, -9.85), Vector3(15.0, 2.7, -9.85), 0.3, "#34453d")
 	pipe(Vector3(-15.0, 2.0, -9.85), Vector3(2.0, 2.0, -9.85), 0.18, "#3d4d44")
 	for x in [-11.0, -6.0, 0.0, 6.0, 12.0]: drips(Vector3(x, 2.8, -9.6))
@@ -70,7 +70,7 @@ func _build() -> void:
 	box(Vector3(9.4, 0.4, 8.2), Vector3(2.4, 0.8, 1.0), "#3a3128", false, "Pallet")
 	for index in 4: barrel(Vector3(5.0 + index * 0.55, 0, 7.4 + (index % 2) * 0.5), ["#33403a", "#4a3b28"][index % 2])
 	# Acampamento do Tonho (oeste) e da Dona Nena (centro-sul).
-	box(Vector3(-13.6, 0.12, 4.0), Vector3(2.0, 0.24, 1.0), "#403d30")
+	box(Vector3(-13.6, 0.12, 4.0), Vector3(2.0, 0.24, 1.0), "#403d30", false, "Mattress")
 	box(Vector3(-13.6, 0.26, 4.0), Vector3(1.5, 0.06, 0.9), "#26384a")
 	fire_barrel(Vector3(-11.4, 0, 3.2))
 	box(Vector3(-13.9, 1.2, 1.3), Vector3(0.04, 1.0, 2.4), "#6a5a2a")

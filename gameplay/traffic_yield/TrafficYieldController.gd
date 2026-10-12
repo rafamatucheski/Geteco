@@ -49,6 +49,14 @@ func release_all(reason: String) -> void:
 	agents.clear()
 	_emit("released_all", {"reason": reason})
 
+func release_vehicle(vehicle: CharacterBody3D, reason: String) -> void:
+	var id:=vehicle.get_instance_id()
+	if not agents.has(id): return
+	agents[id].release()
+	agents.erase(id)
+	_cooldown[id]=_clock+RULES.COOLDOWN
+	_emit("finished",{"vehicle":vehicle,"reason":reason})
+
 func _exit_tree() -> void:
 	release_all("exit")
 
@@ -94,15 +102,21 @@ func _ambient() -> Array:
 func _hazards() -> Array:
 	var result: Array = []
 	for vehicle in _candidates():
-		if not is_siren_vehicle(vehicle): continue
+		var needs_room: bool = vehicle.get_meta("dispatch_needs_room",false)
+		if not is_siren_vehicle(vehicle) and not needs_room: continue
 		var forward: Vector3 = -vehicle.global_basis.z
 		if vehicle.speed < 0.0: forward = -forward
-		result.append({"vehicle": vehicle, "position": vehicle.global_position, "forward": forward, "speed": absf(vehicle.speed)})
+		# Dispatch intent remains meaningful while stopped. Keep the player's
+		# parked siren semantics unchanged and reserve rear clearance on recovery.
+		var speed: float = absf(vehicle.speed)
+		if vehicle.get_meta("dispatch_unit",false): speed = maxf(speed,RULES.MIN_EMERGENCY_SPEED)
+		result.append({"vehicle": vehicle, "position": vehicle.global_position, "forward": forward, "speed":speed,"rear":needs_room})
 	return result
 
 ## Só carros do tráfego ambiente, em rota, inteiros e em jogo.
 func _yieldable(vehicle: Variant) -> bool:
 	if not is_instance_valid(vehicle) or not vehicle.traffic or vehicle.controlled or vehicle.route == null: return false
+	if vehicle.traffic_escape!=null and (vehicle.traffic_escape.active or vehicle.traffic_escape.retiring): return false
 	# Convoys use traffic physics but retain ownership of their private route.
 	if vehicle.get_meta("armored_transport", false): return false
 	if vehicle.health <= 0.0 or not vehicle.visible or not vehicle.is_physics_processing(): return false
@@ -138,7 +152,14 @@ func _physics_process(delta: float) -> void:
 		if agents.has(id) or _clock < float(_cooldown.get(id, 0.0)): continue
 		for hazard in hazards:
 			if hazard.vehicle == vehicle: continue
-			if not RULES.threatens(hazard.position, hazard.forward, hazard.speed, vehicle.global_position, -vehicle.global_basis.z, vehicle.half_width): continue
+			var threatened: bool = RULES.threatens(hazard.position,hazard.forward,hazard.speed,vehicle.global_position,-vehicle.global_basis.z,vehicle.half_width)
+			var relative: Vector2 = RULES.relative(hazard.position,hazard.forward,vehicle.global_position)
+			if hazard.rear and relative.x > -18 and relative.x < 0 and relative.y < RULES.CORRIDOR: threatened = true
+			if not threatened: continue
+			if hazard.rear and relative.x < 0 and vehicle.speed<.6 and vehicle.traffic_rear_clear(3.0):
+				# First create longitudinal room, then pull aside on a validated curve.
+				if not model.in_junction(vehicle.global_position):
+					vehicle.backoff_time = maxf(vehicle.backoff_time,1.6)
 			var agent := AGENT.new()
 			if agent.begin(vehicle, model):
 				agents[id] = agent

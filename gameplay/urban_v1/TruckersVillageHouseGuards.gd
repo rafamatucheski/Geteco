@@ -72,7 +72,10 @@ func house_entered(index: int, point: Vector3) -> bool:
 	for actor in pairs.get(index,[]):
 		if not actor.dead and actor.health>0 and actor.global_position.distance_to(point)<=8:
 			if quest.commerce.data.hostility<=0:
-				manager.session.show_message("Sai da minha casa! Vou chamar o pessoal!")
+				var canonical := "Sai da minha casa! Vou chamar o pessoal!"
+				var binding := preload("res://audio/VoiceActorBinding.gd").resolve(actor, "village_home_intrusion")
+				var spoken := preload("res://audio/ActorDialogueVoice.gd").speak(actor, canonical, binding)
+				manager.session.show_speech("", str(spoken.get("message", canonical)), maxf(3.0, float(spoken.get("duration", 0.0))), false, str(binding.get("persona", "")), canonical, str(binding.get("character_id", "")), str(binding.get("section", "")))
 			quest.trigger_conflict(manager.session.world.player)
 			for neighbour in manager.residents:
 				if is_instance_valid(neighbour) and not neighbour.dead:

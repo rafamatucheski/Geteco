@@ -309,9 +309,9 @@ func _preview_custom_part(part: String) -> void:
 		if after[i][0] not in ["Dano","Alcance","Capacidade","Recarga","Golpes/s"]: continue
 		stats.append("%s  %s"%[after[i][0],after[i][2]] if is_equal_approx(before[i][1],after[i][1]) else "%s  %s → %s"%[after[i][0],before[i][2],after[i][2]])
 	_custom_stats.text = "\n".join(stats)
-	_custom_apply.text = "✓ Instalado" if current == part else "Remover" if part == "none" else "Instalar" if owned else "Comprar e instalar · R$ %d"%price
+	_custom_apply.text = "✓ Instalado" if current == part else "Remover" if part == "none" else "Instalar" if owned else String(TranslationServer.translate("Comprar e instalar · R$ %d"))%price
 	_custom_apply.disabled = current == part or session.state.economy.balance < price
-	if session.state.economy.balance < price: _custom_apply.text = "Faltam R$ %d"%(price-session.state.economy.balance)
+	if session.state.economy.balance < price: _custom_apply.text = String(TranslationServer.translate("Faltam R$ %d"))%(price-session.state.economy.balance)
 	_wire_custom_focus()
 
 func _wire_custom_focus() -> void:
@@ -353,7 +353,7 @@ func _rest_menu() -> void:
 	if not _menu_available(): return
 	_station_menu("Descansar")
 	for minutes in [15,60,240,480]:
-		session._button("15 minutos" if minutes == 15 else "%d hora%s"%[minutes/60,"" if minutes == 60 else "s"],_rest_for.bind(minutes))
+		session._button("15 minutos" if minutes == 15 else String(TranslationServer.translate("%d hora%s"))%[minutes/60,"" if minutes == 60 else "s"],_rest_for.bind(minutes))
 	session._button("Até amanhecer",_rest.bind(.36))
 	session._button("Até anoitecer",_rest.bind(.84))
 	session._button("Fechar",session.close_menu)
@@ -455,7 +455,7 @@ func _cat_shop() -> void:
 	_station_menu("Caminhas e brinquedos")
 	var residence = session.activities.residence
 	var status := Label.new()
-	status.text = "%d/10 gatos adotados · R$ %d" % [residence.cat_count(), session.state.economy.balance]
+	status.text = String(TranslationServer.translate("%d/10 gatos adotados · R$ %d")) % [residence.cat_count(), session.state.economy.balance]
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	session.column.add_child(status)
 	var furniture: Dictionary = residence.cat_furniture()
@@ -493,7 +493,7 @@ func _chest() -> void:
 		session._button("Guardar · "+str(items[id].get("label",id)),_transfer.bind(str(id),true))
 	for id in chest:
 		var label: String = str(items.get(id,{}).get("label",id))
-		session._button("Retirar · %s ×%d"%[label,int(chest[id])],_transfer.bind(str(id),false))
+		session._button(String(TranslationServer.translate("Retirar · %s ×%d"))%[label,int(chest[id])],_transfer.bind(str(id),false))
 	session._button("Fechar",session.close_menu)
 	_focus()
 

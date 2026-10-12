@@ -1,6 +1,6 @@
 extends RefCounted
-## Static, chunk-owned paddock. Exhibition cars have no driving controller,
-## audio source, per-frame callback or lamps of their own.
+## Chunk-owned paddock. Parked cars admit a full driving controller on theft or
+## damage; untouched displays have no audio, lamps or per-frame work.
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const G := preload("res://world/desert/DesertGeometry.gd")
 const CARS := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
@@ -191,18 +191,17 @@ static func _ground_material() -> ShaderMaterial:
 
 static func build_record(parent: Node3D, record: Dictionary) -> void:
 	var node := Node3D.new()
+	if str(record.type) == "strip_spectator":
+		node.free()
+		node = preload("res://runtime/desert/drag_meet/TrackSpectatorSlot.gd").new()
+		node.specification = record.data
 	node.name="DragMeet_"+str(record.type)
 	node.position=record.position
 	node.set_meta("drag_meet_prop",str(record.type))
 	parent.add_child(node)
 	match str(record.type):
 		"car", "strip_car": _parked_car(node,record.data)
-		"strip_spectator":
-			var spectator := preload("res://runtime/desert/drag_meet/DragStripSpectator.gd").new()
-			spectator.identity=int(record.data.identity)
-			spectator.specification=record.data
-			spectator.set_meta("region_id","desert")
-			node.add_child(spectator)
+		"strip_spectator": pass # The persistent slot owns admission and recovery.
 		"tent": _tent(node,record.data)
 		"tables": _tables(node)
 		"tires": _tires(node)
@@ -219,13 +218,18 @@ static func _parked_car(node: Node3D, data: Dictionary) -> void:
 	node.rotation.y=float(data.yaw)
 	node.set_meta("drag_strip_car_id" if str(data.id).begins_with("strip_") else "drag_meet_car_id",str(data.id))
 	node.set_meta("desert_car_id",str(data.model))
-	var model := FLEET.create(str(data.model))
-	if model!=null:
-		node.add_child(model)
-		if data.has("paint"): _paint_model(model,data.paint)
 	var spec := FLEET.spec(str(data.model))
 	var dimensions: Array=spec["bounds_size"]
-	var body := StaticBody3D.new()
+	var body := preload("res://runtime/desert/drag_meet/StealableMeetCar.gd").new()
+	body.archetype = str(data.model)
+	body.health = float(spec.get("durability",100.0))
+	body.half_width = float(dimensions[0])*.5
+	body.half_length = float(dimensions[2])*.5
+	body.paint = data.get("paint",Color.html(spec.colors[0]) if spec.has("colors") else Color.WHITE)
+	var model := FLEET.create(str(data.model))
+	if model!=null:
+		body.add_child(model)
+		if data.has("paint"): _paint_model(model,data.paint)
 	body.name="ParkedCarBody"
 	body.collision_layer=1
 	body.collision_mask=0

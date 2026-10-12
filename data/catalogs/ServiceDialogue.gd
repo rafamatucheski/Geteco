@@ -2,6 +2,9 @@ extends RefCounted
 # Verbatim production dialogue: HarborHospitalInterior3D, HarborPoliceInterior,
 # HarborFireStationInterior; terminal text from the corresponding interior.
 const PEOPLE := {
+	"sewer_original_raul":{"speaker":"Raul","messages":["Baixa a mão. Eu não te conheço.","A Cida mora aqui comigo. Não encosta nela.","Quer passar? Passa quieto."]},
+	"sewer_original_cida":{"speaker":"Cida","messages":["Pode falar daí.","O Raul me ajudou quando eu cheguei. Aqui a gente não deixa ninguém sozinho.","Não arruma confusão com o Beto."]},
+	"sewer_original_beto":{"speaker":"Beto","messages":["Tá procurando alguém?", "Tem gente minha dos dois lados do canal.","Se bater num deles, vai ter que passar por mim."]},
 	# Moradores de rua dos esgotos de Harbor (`world/places/sewers`).
 	"desert_under_culvert_zefa":{"speaker":"Dona Zefa","messages":["Entra, entra, que o sol aqui dentro é de graça. Pouca gente conhece a galeria; quem conhece passa batido.","Meus tapetes seguram o frio da noite. A caixa de latão é minha, mas pode olhar, não tem nada que preste.","O Beto Cascavel mora no fim da galeria. Ele diz que a ponta leste é só entulho. Mentira dele: a duna se mexe."]},
 	"desert_under_culvert_beto":{"speaker":"Beto Cascavel","messages":["Devagar aí. Se escutar chocalho, não é o vento.","Cada gaiola é uma cascavel. Vendo o veneno pra gente de fora, ninguém pergunta pra quê.","Dizem que contrabandistas de sal esconderam dinheiro num tubo atrás da duna, na ponta leste. Eu nunca fui. Meu rifle ficou lá faz anos."]},

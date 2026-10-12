@@ -13,8 +13,16 @@ var previous_phone := Vector3.ZERO
 var max_bone_step := 0.0
 var max_phone_step := 0.0
 var max_background_drift := 0.0
+var activity_motion: Dictionary = {}
+var review_frames := [90,120,1710,1770,2100,2130]
 func _initialize() -> void: run.call_deferred()
 func run() -> void:
+	if "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
+	if DisplayServer.get_name()=="headless":
+		push_error("Ferry authoring requires real MultiMesh instance data and the rendered set")
+		quit(2)
+		return
+	create_timer(600).timeout.connect(func(): push_error("Ferry capture timed out"); quit(2))
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--output="): output = arg.trim_prefix("--output=")
 	root.get_node("V2Launch").selected_path = "user://opening-authoring-isolated.json"
@@ -32,6 +40,14 @@ func run() -> void:
 	world.add_child(director)
 	director.configure(world)
 	DirAccess.make_dir_recursive_absolute(output)
+	print("FERRY_ACTIVITY workers=",director.night_set.activity.workers.size()," fishers=",director.night_set.activity.fishers.size()," cranes=",director.night_set.activity.cargo.cranes.size())
+	if "--check-work-routes" in OS.get_cmdline_user_args() or "--verify-work-routes" in OS.get_cmdline_user_args():
+		var routes_clear := await _check_work_routes()
+		if not routes_clear or "--check-work-routes" in OS.get_cmdline_user_args():
+			world.queue_free()
+			await process_frame
+			quit(0 if routes_clear else 1)
+			return
 	if "--phone-poses" in OS.get_cmdline_user_args():
 		var variants := [[-1.5,-.8],[0,.8],[1.5,.8],[3,.8]]
 		for i in variants.size():
@@ -87,15 +103,76 @@ func _process(delta: float) -> bool:
 	elapsed = float(movie_frames)/30.0
 	director.sample(elapsed,delta)
 	_validate_motion()
+	_measure_activity()
+	if movie_frames in review_frames: _capture_activity.call_deferred(movie_frames)
 	movie_frames += 1
 	if movie_frames >= roundi(director.length*30.0):
 		recording = false
 		var file := FileAccess.open(output+"/render.json",FileAccess.WRITE)
-		file.store_string(JSON.stringify({"start_frame":start_frame,"end_frame":frames,"duration":director.length,"fps":30,"size":str(root.size),"max_bone_step_degrees":rad_to_deg(max_bone_step),"max_phone_step_m":max_phone_step,"max_background_drift_m":max_background_drift,"directed_background_bodies":director.night_set.frozen_bodies.size()},"\t"))
+		file.store_string(JSON.stringify({"start_frame":start_frame,"end_frame":frames,"duration":director.length,"fps":30,"size":str(root.size),"max_bone_step_degrees":rad_to_deg(max_bone_step),"max_phone_step_m":max_phone_step,"max_background_drift_m":max_background_drift,"stationary_background_bodies":director.night_set.frozen_bodies.size(),"activity_motion":activity_motion},"\t"))
 		file.close()
+		var activity = director.night_set.activity
+		assert(not activity.workers.is_empty(),"Capture must contain working dock operators")
+		assert(activity.fishers.size()==2,"Both fishing posts must be directed")
+		for record in activity.workers:
+			assert(activity_motion[str(record.actor.get_path())].distance_m>5.0,"Dock worker remained frozen")
+		for i in activity.cargo.cranes.size():
+			assert(activity_motion["crane_%d"%i].distance_m>10.0,"Cargo handling remained frozen")
 		print("FERRY_MOVIE_FINISHED ",frames-start_frame," frames")
 		finish.call_deferred()
 	return false
+
+func _capture_activity(frame: int) -> void:
+	await RenderingServer.frame_post_draw
+	root.get_texture().get_image().save_png(output+"/activity-%04d.png"%frame)
+
+func _track_motion(key: String, point: Vector3) -> void:
+	if not activity_motion.has(key): activity_motion[key] = {"previous":point,"distance_m":0.0,"max_step_m":0.0}
+	var record: Dictionary = activity_motion[key]
+	var step: float = point.distance_to(record.previous)
+	record.distance_m += step
+	record.max_step_m = maxf(record.max_step_m,step)
+	record.previous = point
+
+func _measure_activity() -> void:
+	var activity = director.night_set.activity
+	for record in activity.workers: _track_motion(str(record.actor.get_path()),record.actor.global_position)
+	for i in activity.cargo.cranes.size(): _track_motion("crane_%d"%i,activity.cargo.cranes[i].visual.global_position)
+	for i in activity.fishers.size(): _track_motion("fishing_rod_%d"%i,activity.fishers[i].rod.to_global(Vector3(0,1.1,2)))
+
+func _check_work_routes() -> bool:
+	# Keep the real authored solids available to queries while their scripts and
+	# gameplay managers are suspended. Test support separately from obstruction.
+	var modes: Dictionary = {}
+	for body in world.find_children("*","StaticBody3D",true,false):
+		modes[body] = body.disable_mode
+		body.disable_mode = CollisionObject3D.DISABLE_MODE_KEEP_ACTIVE
+	await physics_frame
+	await physics_frame
+	var space: PhysicsDirectSpaceState3D = world.get_world_3d().direct_space_state
+	var shape := CapsuleShape3D.new()
+	shape.radius = .25
+	shape.height = 1.6
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = shape
+	query.collision_mask = 1
+	var failures: Dictionary = {}
+	var checks := 0
+	for frame in range(0,2190,3):
+		director.sample(float(frame)/30.0,.1)
+		for record in director.night_set.activity.workers:
+			var point: Vector3 = record.actor.global_position
+			query.transform = Transform3D(Basis.IDENTITY,point+Vector3.UP*.87)
+			var hits := space.intersect_shape(query,1)
+			var ground := space.intersect_ray(PhysicsRayQueryParameters3D.create(point+Vector3.UP*.2,point-Vector3.UP*.25,1))
+			checks += 2
+			if (not hits.is_empty() or ground.is_empty()) and not failures.has(record.actor.name):
+				failures[record.actor.name] = {"time":float(frame)/30.0,"position":point,"unsupported":ground.is_empty(),"solid":str(hits[0].collider.get_path()) if not hits.is_empty() else ""}
+	FileAccess.open(output+"/work-routes.json",FileAccess.WRITE).store_string(JSON.stringify({"checks":checks,"failures":failures},"\t"))
+	print("FERRY_WORK_ROUTES checks=",checks," failures=",JSON.stringify(failures))
+	for body in modes: body.disable_mode = modes[body]
+	await physics_frame
+	return failures.is_empty()
 
 func _validate_motion() -> void:
 	# Detect the reported flips and circling across all 2,190 authored frames.

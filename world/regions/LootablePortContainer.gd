@@ -22,6 +22,7 @@ var mats: Dictionary = {}
 var lock_sound: AudioStreamPlayer3D
 var layout_cycle := -1
 var cargo_props: Node3D
+var lockpick_marker: MeshInstance3D
 
 # Each entry contains immutable geometry/resources, never a live container or
 # interaction state. Bodies, hinges and fade materials remain instance-owned.
@@ -120,9 +121,28 @@ func build(point: Vector3, size: Vector2) -> void:
 					part.material_override = MATERIALS.material(part.material_override.albedo_color)
 		OPTIMIZER.optimize_hierarchy(roof)
 		_static_parts[cache_key+"/roof"] = _capture_static_children(roof)
+	_build_lockpick_marker()
 	# A chunk can stream in after session restoration. Restore before physics runs.
 	for service in get_tree().get_nodes_in_group("port_container_service"):
 		service.bind_container(self)
+
+func _build_lockpick_marker() -> void:
+	lockpick_marker = MeshInstance3D.new()
+	lockpick_marker.name = "LockpickMarker"
+	var sphere := SphereMesh.new()
+	sphere.radius = .09
+	sphere.height = .18
+	sphere.radial_segments = 12
+	sphere.rings = 6
+	lockpick_marker.mesh = sphere
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.albedo_color = Color("ff8a24")
+	lockpick_marker.material_override = material
+	lockpick_marker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	lockpick_marker.position = Vector3(dimensions.x*.5+.38,1.25,0)
+	add_child(lockpick_marker)
+	lockpick_marker.visible = not opened
 
 
 func _capture_static_children(parent: Node3D) -> Array:
@@ -226,6 +246,7 @@ func apply_state(row: Dictionary, animate := false) -> void:
 	var cycle := int(row.get("cycle",0))
 	if layout_cycle != cycle: _arrange_cargo(cycle)
 	var open_now: bool = row.get("opened",false)
+	lockpick_marker.visible = not open_now
 	looted = row.get("looted",false)
 	lid.rotation.x = -.7 if looted else 0.0
 	if opened == open_now: return
@@ -293,6 +314,8 @@ func blocks_view(point: Vector3, direction: Vector3) -> bool:
 	return bounds.intersects_segment(point,point+direction*70) != null
 
 func _fade(node: Node, transparency: float) -> void:
+	# Interaction marker owns its visibility; shell fades must not revive it.
+	if node == lockpick_marker: return
 	if node is MeshInstance3D:
 		# GeometryInstance3D.transparency is ignored by Mobile. Fade a private
 		# material, then return to opaque rendering outside; cached palettes stay intact.

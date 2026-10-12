@@ -77,7 +77,7 @@ func status() -> Dictionary:
 	if key == "hypothermia": text = "Hipotermia: perdendo vida"
 	if key in ["grace", "exposed", "hypothermia"]:
 		text += "\nAqueça-se no abrigo, fogo ou veículo."
-		text += "\nRoupa: %d%% de proteção ao frio" % roundi(float(context.get("protection", 0.0)) * 100.0)
+		text += String(TranslationServer.translate("\nRoupa: %d%% de proteção ao frio")) % roundi(float(context.get("protection", 0.0)) * 100.0)
 	return {"visible":visible,"key":key,"text":text,"temperature":model.temperature,"maximum":100,"exposure":model.exposure,"heat_id":context.get("heat_id","")}
 
 func recover_after_rescue() -> void:

@@ -1,10 +1,10 @@
 # Harbor no Android
 
-Alvo inicial: Galaxy Z Fold7. APK ARM64 .NET, pacote `com.geteco.harbor`, versão 0.3.2.
+Alvo inicial: Galaxy Z Fold7. APK ARM64 .NET, pacote `com.geteco.harbor`, versão 0.3.3.
 
 ## Instalar
 
-1. Copie `builds/android/harbor-0.3.2-debug.apk` para o celular e instale sobre a versão anterior.
+1. Copie `builds/android/harbor-0.3.3-debug.apk` para o celular e instale sobre a versão anterior.
 2. Abra o arquivo no aplicativo Meus Arquivos e permita a instalação por esse
    aplicativo quando o Android solicitar.
 3. Ative a rotação automática do Android e abra Harbor. Retrato, paisagem e suas
@@ -21,6 +21,10 @@ desinstalar. Não é uma publicação na Play Store.
 - Tela estreita ou quase quadrada usa controles maiores e opções em três colunas.
 - Analógico direito: mirar. Atacar dispara ou executa o ataque equipado.
 - Ação: interagir; Entrar/Sair: veículo. Recarregar e Arma fazem as ações indicadas.
+- Pular fica disponível a pé. `•••` também oferece RAGE e Dirigir ônibus;
+  dirigindo o biarticulado, oferece Portas ônibus.
+- No porto, pare o caminhão na vaga do guindaste e use Ação para carregar.
+  Aguarde parado, leve ao depósito, desembarque e use Ação para receber R$ 300.
 - Dirigindo: Acelerar, Frear/Ré e Freio mão, com direção simultânea.
 - Dirigindo, Rádio ‹/› muda a estação; Liga/desliga desliga diretamente e retoma a última estação.
 - Pausa, Mapa e Inventário ficam no alto. `•••` abre comandos secundários, incluindo

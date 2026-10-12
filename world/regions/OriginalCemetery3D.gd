@@ -57,9 +57,11 @@ func _ready() -> void:
 		seat.position = point
 		seat.rotation.y = PI
 		add_child(seat)
+		var first_shape := solids.get_child_count()
 		_solid(point+Vector3.UP*.47,Vector3(60*SCALE,.14,12*SCALE))
 		_solid(point+Vector3(0,.84,.32),Vector3(60*SCALE,.6,.12))
 		for side in [-1,1]: _solid(point+Vector3(side*1.25,.22,0),Vector3(.14,.44,.6))
+		preload("res://gameplay/street_physics/FragileProps3D.gd").register_node("bench_seat",seat,self,{},solids.get_children().slice(first_shape))
 	for point in [Vector2(-35,-340),Vector2(35,-340),Vector2(-40,50),Vector2(40,280)]:
 		var base := Vector3(point.x*SCALE,0,point.y*SCALE)
 		_box(base+Vector3.UP*1.3,Vector3(.10,2.6,.10),"444d49",true)

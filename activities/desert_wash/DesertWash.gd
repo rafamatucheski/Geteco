@@ -55,7 +55,7 @@ func nearest_action() -> Dictionary:
 	if p.distance_to(COURSE.gate(0))>7.0: return {}
 	var saved:=STATE.data(session.state.world_state)
 	var label:="Prova do leito seco · 45 s · R$ 1.800"
-	if STATE.valid(saved) and saved.finishes>0: label="Prova do leito seco · Recorde %.2f s · Meta 45 s"%float(saved.best)
+	if STATE.valid(saved) and saved.finishes>0: label=String(TranslationServer.translate("Prova do leito seco · Recorde %.2f s · Meta 45 s")) %float(saved.best)
 	return {"id":"desert_wash","target":"start","label":label}
 
 func start_block_reason() -> String:
@@ -146,7 +146,7 @@ func _physics_process(delta: float) -> void:
 
 func _update_hud() -> void:
 	if not is_instance_valid(_label): return
-	_label.text="Leito seco · %d"%maxi(1,ceili(countdown)) if phase=="countdown" else "Leito seco · %.1f s / 45 s · %d/%d"%[elapsed,next_gate,COURSE.GATES-1]
+	_label.text=String(TranslationServer.translate("Leito seco · %d")) %maxi(1,ceili(countdown)) if phase=="countdown" else String(TranslationServer.translate("Leito seco · %.1f s / 45 s · %d/%d")) %[elapsed,next_gate,COURSE.GATES-1]
 	_label.text+="\n"+get_node("/root/GameInput").hint("interact")+" · Abandonar prova"
 
 func _finish() -> void:
@@ -155,7 +155,7 @@ func _finish() -> void:
 	last_result={"finished":true,"seconds":elapsed,"won":elapsed<=COURSE.PRIZE_TIME,"paid":paid}
 	_release()
 	var best: float=STATE.data(session.state.world_state).best
-	session.show_message("Leito seco: %.2f s · Recorde: %.2f s%s"%[elapsed,best," · R$ 1.800" if paid else ""])
+	session.show_message(String(TranslationServer.translate("Leito seco: %.2f s · Recorde: %.2f s%s")) %[elapsed,best," · R$ 1.800" if paid else ""])
 	session.save_game()
 	race_completed.emit(last_result)
 

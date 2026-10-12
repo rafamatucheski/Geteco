@@ -90,7 +90,7 @@ static func tuned_spec(car_id: String, parts: Dictionary = {}) -> Dictionary:
 static func purchase_check(parts: Dictionary, owned: Array, part_id: String, wins: int, money: int) -> Dictionary:
 	if not PARTS.has(part_id): return {"ok":false,"reason":"Peça inexistente"}
 	var p: Dictionary = PARTS[part_id]
-	if wins < int(p.wins): return {"ok":false,"reason":"Vença %d provas diferentes" % int(p.wins)}
+	if wins < int(p.wins): return {"ok":false,"reason":String(TranslationServer.translate("Vença %d provas diferentes")) % int(p.wins)}
 	var cost := 0 if part_id in owned else int(p.cost)
 	if money < cost: return {"ok":false,"reason":"Saldo insuficiente"}
 	var next := clean_parts(parts)

@@ -85,8 +85,8 @@ func _test_car(id: String) -> void:
 	if inside != null:
 		_check_envelope(car, inside, spec, id)
 	_check_opaque_paint(car, id + ": after boarding")
-	_check_glazing(car, true, id + ": normal camera")
-	var transparent_glass := _glazing(car.visual)
+	_check_glazing(car, false, id + ": normal camera")
+	var original_glass := glass_before
 	_check_mirrors(mirrors, id + ": boarding")
 	_check_roof(car, spec, roof_before, id + ": boarding")
 	INTERIOR.set_low_camera_roof(car, true)
@@ -95,8 +95,8 @@ func _test_car(id: String) -> void:
 	_check_mirrors(mirrors, id + ": low camera")
 	_check_roof(car, spec, roof_before, id + ": low camera")
 	INTERIOR.set_low_camera_roof(car, false)
-	_check_glazing(car, true, id + ": restored normal camera")
-	_check_glass_restored(transparent_glass, id)
+	_check_glazing(car, false, id + ": restored normal camera")
+	_check_glass_restored(original_glass, id)
 	car.paint_color = Color("aa4c32")
 	_check_opaque_paint(car, id + ": repainted after boarding")
 	_check_roof(car, spec, roof_before, id + ": repainted after boarding")
@@ -105,7 +105,7 @@ func _test_car(id: String) -> void:
 			paint.albedo_color.is_equal_approx(car.paint_color),
 			id + ": repaint reaches actual body and door materials"
 		)
-	_check_glazing(car, true, id + ": repaint preserves glazing")
+	_check_glazing(car, false, id + ": repaint preserves glazing")
 	_check_mirrors(mirrors, id + ": repaint")
 	_check(
 		_same_snapshot(sibling_state),
@@ -120,7 +120,7 @@ func _test_car(id: String) -> void:
 	_check_opaque_paint(car, id + ": close view from low camera")
 	_check_roof(car, spec, roof_before, id + ": close view from low camera")
 	INTERIOR.attach(car)
-	_check_glazing(car, true, id + ": reboard after close view")
+	_check_glazing(car, false, id + ": reboard after close view")
 	_check_opaque_paint(car, id + ": reboard after close view")
 	_check(_same_snapshot(sibling_state), id + ": reboarding preserves shared traffic resources")
 	car.free()
@@ -198,7 +198,7 @@ func _check_glass_restored(entries: Array, id: String) -> void:
 	for entry: Dictionary in entries:
 		var part: MeshInstance3D = entry.part
 		restored = restored and part.get_active_material(entry.surface) == entry.material
-	_check(restored, id + ": returning from low camera restores the original glass variants")
+	_check(restored, id + ": returning from low camera preserves the original glass materials")
 
 
 func _mirror_surfaces(car: CharacterBody3D, spec: Dictionary) -> Array:

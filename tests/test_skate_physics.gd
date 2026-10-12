@@ -50,8 +50,10 @@ func run() -> void:
 	check(board.speed > 2 and board.position.z < -2, "remadas aceleram e deslocam com colisão")
 	board.pushing = true
 	board.push_phase = .42
+	board.push_contact = false
+	board._update_push_support()
 	var targets := POSE.feet(board)
-	check(is_equal_approx(targets[0].y, .10) and is_zero_approx(targets[1].y) and targets[1].x > .2, "um pé permanece no shape e outro empurra o chão")
+	check(is_equal_approx(targets[0].y, .10) and absf(board.visual.to_global(targets[1]).y) < .002 and targets[1].x < -.2, "um pé permanece no shape e outro empurra o chão físico pelo seu lado")
 	board.drive(0, 0, true)
 	await frames(90)
 	check(board.speed < .2, "freio para o skate")

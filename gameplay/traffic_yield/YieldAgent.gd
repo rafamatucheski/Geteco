@@ -162,6 +162,11 @@ func tick(delta: float, hazards: Array) -> void:
 		var e_speed: float = hazard.speed
 		if RULES.threatens(e_position, e_forward, e_speed, vehicle.global_position, -vehicle.global_basis.z, vehicle.half_width): threat = true
 		if RULES.close_behind(e_position, e_forward, e_speed, vehicle.global_position, vehicle.half_width): behind = true
+		if hazard.get("rear",false):
+			var relative := RULES.relative(e_position,e_forward,vehicle.global_position)
+			if relative.x>-18 and relative.x<0 and relative.y<RULES.CORRIDOR:
+				threat = true
+				behind = true
 	match mode:
 		"pulling": _tick_pulling(delta)
 		"slow": _tick_slow(delta)
@@ -193,8 +198,24 @@ func _tick_pulling(delta: float) -> void:
 		mode = "held"
 		_mark("held")
 
-func _tick_slow(_delta: float) -> void:
+func _tick_slow(delta: float) -> void:
 	_cap_speed(RULES.SLOW_ONLY_SPEED)
+	# A car that initially lacked space may have just backed away or gained a
+	# free shoulder. Retry the physical manoeuvre instead of remaining slow forever.
+	_retry -= delta
+	if _retry>0 or vehicle.backoff_time>0: return
+	_retry = 1.0
+	var origin := original.get_closest_offset(vehicle.global_position)
+	for length in RULES.PULL_LENGTHS:
+		var curve := _pull_curve(origin,length)
+		if curve==null: continue
+		vehicle.route=curve
+		vehicle.route_distance=0
+		_last_progress=0
+		_stalled=0
+		mode="pulling"
+		_mark(mode)
+		return
 
 func _start_resume(delta: float) -> void:
 	# A varredura da volta custa até 7 consultas físicas: 4 vezes por segundo, não por quadro.

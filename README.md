@@ -21,6 +21,7 @@ Este repositório é o jogo principal. Ele nasceu como a "V2", uma migração da
 |---|---|
 | Caminhar | WASD ou setas, em relação à câmera |
 | Correr | Shift |
+| Pular a pé | Espaço; A no Xbox / X no PlayStation |
 | Trocar arma (a pé) / sintonizar rádio (dirigindo) | Roda do mouse |
 | Girar a câmera exterior | Z / C |
 | Entrar, sair, conversar, coletar e avançar diálogo | E |

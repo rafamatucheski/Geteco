@@ -109,6 +109,7 @@ func _npc_points() -> Dictionary:
 	if not definition is Dictionary: return result
 	for npc in definition.get("npcs",[]):
 		if not Dialogue.PEOPLE.has(npc.get("id","")): continue
+		if definition.id in preload("res://world/places/sewers/SewerNetwork.gd").ids() and session._service_threatened(str(npc.id)): continue
 		var point: Variant = npc.get("local_position")
 		if session.room.interaction_points.has(npc.id): point=session.room.to_local(session.room.interaction_points[npc.id])
 		if point is Vector3: result[npc.id]=point
@@ -116,7 +117,7 @@ func _npc_points() -> Dictionary:
 
 func _is_room_resident(id: String) -> bool:
 	var definition: Variant = session.room.get("definition")
-	if not definition is Dictionary or not bool(definition.get("resident_talk",String(definition.get("id","")).begins_with("sewer_"))): return false
+	if not definition is Dictionary or not bool(definition.get("resident_talk",String(definition.get("id","")).begins_with("sewer_") or definition.get("id", "") == "harbor_sewer")): return false
 	for npc in definition.get("npcs",[]):
 		if npc.get("id","") == id: return true
 	return false
@@ -133,7 +134,7 @@ func perform(service: String) -> bool:
 	if is_instance_valid(session.room) and _is_room_resident(service):
 		var resident_points := _npc_points()
 		if not resident_points.has(service) or not _near(resident_points[service],1.7): return false
-		session.show_dialogue(Dialogue.lines(service))
+		session.show_dialogue(_bound_lines(service))
 		return true
 	var place: String = session.state.place_id
 	var expected := "harbor_hospital" if service.begins_with("hospital") else ("harbor_fire_station" if service.begins_with("fire") else "harbor_police")
@@ -146,8 +147,30 @@ func perform(service: String) -> bool:
 			if not _near(npcs[service],1.7): return false
 		elif not npcs.is_empty(): return false
 		elif not is_instance_valid(session.room) or session.world.player.global_position.distance_to(session.room.interaction_points.service)>1.7: return false
-	session.show_dialogue(Dialogue.lines(service))
+	session.show_dialogue(_bound_lines(service))
 	return true
+
+func _bound_lines(service: String) -> Array:
+	var lines: Array = Dialogue.lines(service)
+	var actor: Node3D
+	for resident in session.room_npcs:
+		if is_instance_valid(resident) and str(resident.get_meta("interior_npc_id", "")) == service: actor = resident; break
+	# Documents/terminals deliberately have no speaking body.
+	if not is_instance_valid(actor): return lines
+	var binding_script = preload("res://audio/VoiceActorBinding.gd")
+	var bank = preload("res://audio/DirectedVoiceBank.gd")
+	for line in lines:
+		var persona := str(line.get("speaker", "")).split("·")[0].strip_edges().to_lower()
+		var profile: Dictionary = bank.profile(bank.canonical(str(line.get("message", "")), persona))
+		if profile.is_empty(): continue
+		binding_script.bind(actor, str(profile.character_id), persona, str(profile.get("gender", "")), "services")
+		var binding: Dictionary = binding_script.resolve(actor, "", "services")
+		line["voice_actor"] = weakref(actor)
+		line["voice_persona"] = persona
+		line["voice_section"] = "services"
+		# A mismatch remains explicit so the audio API refuses a borrowed voice.
+		line["character_id"] = str(binding.get("character_id", "unmatched_body"))
+	return lines
 
 func _auto_eligible(car) -> bool:
 	if not is_instance_valid(car) or not session.state.place_id.is_empty() or session.state.region_id != "harbor": return false

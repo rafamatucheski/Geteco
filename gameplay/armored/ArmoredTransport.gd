@@ -5,6 +5,7 @@ const SCHEDULE := preload("res://gameplay/armored/ArmoredSchedule.gd")
 const TRUCK := preload("res://gameplay/armored/ArmoredTruck.gd")
 const GUARD := preload("res://gameplay/armored/ArmoredGuard.gd")
 const DRIVER := preload("res://gameplay/armored/ArmoredTrafficDriver.gd")
+const APRON := preload("res://gameplay/armored/ArmoredBankApron.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
 const FORMATION := [24.0, 12.0, 36.0, 0.0]
@@ -42,6 +43,7 @@ func configure(value) -> void:
 	last_event = str(saved.get("last_event", ""))
 	security_level = clampi(int(saved.get("security_level",0)),0,6)
 	data = SCHEDULE.restore(saved.get("event",{}))
+	APRON.migrate_loading(data)
 	if not data.is_empty():
 		profile = SCHEDULE.security(int(data.security_level))
 		_reported_point = _point(data.get("reported_point",[0,0,0]))
@@ -113,8 +115,9 @@ func _process(delta: float) -> void:
 	_persist()
 
 func _prepare_route() -> bool:
-	if routes.has(data.origin):
-		road = routes[data.origin]
+	var route_key: String = data.origin+str(data.get("service_layout",0))
+	if routes.has(route_key):
+		road = routes[route_key]
 		return true
 	var snapshot: Dictionary = session.controller._route_cache.get("harbor,desert",{})
 	if snapshot.is_empty():
@@ -161,8 +164,10 @@ func _prepare_route() -> bool:
 					destination = point
 	# Starting on the nearest lane can point away from the destination and
 	# make Dijkstra insert a 180-degree return immediately across a frontage.
-	# Both bank services depart eastbound on an existing through street.
+	# Cobre departs eastbound; the new North Pier bays join southbound Westgate.
 	var edge: Dictionary = router.nearest_edge(origin,false,Vector3.RIGHT)
+	if data.origin == "harbor_bank" and int(data.get("service_layout",0)) == 1:
+		edge = router.nearest_edge(APRON.MERGE,false,Vector3.BACK)
 	if data.origin == "desert_bank":
 		# Cobre has a 27 m dead-end spur: a 36 m four-car convoy cannot turn
 		# around there. Stage eastbound on its existing main-street frontage.
@@ -212,14 +217,22 @@ func _prepare_route() -> bool:
 		lane_sections.append({"a":graph.vertices[segment.from],"b":graph.vertices[segment.to],"lanes":segment.get("lanes",1),"width":segment.width})
 	road.set_meta("lane_sections",lane_sections)
 	road.set_meta("lane_index",0)
-	routes[data.origin] = road
+	routes[route_key] = road
 	return true
 
 func _virtual_offset(index: int) -> float:
 	return clampf(float(data.route_offset)+FORMATION[index],0.0,road.get_baked_length()-(36.0-FORMATION[index]))
 
 func _virtual_point(index: int) -> Vector3:
+	if _loading_apron(): return APRON.SLOTS[index]
+	if _unloading_apron(): return APRON.arrival_slot(index)
 	return road.sample_baked(_virtual_offset(index),true)+Vector3.UP*.08
+
+func _loading_apron() -> bool:
+	return data.get("origin","") == "harbor_bank" and data.get("phase","") in ["loading","boarding"]
+
+func _unloading_apron() -> bool:
+	return data.get("destination","") == "harbor_bank" and data.get("phase","") == "unloading"
 
 func _route_heading(offset: float) -> Vector3:
 	return road.sample_baked(minf(offset+1.0,road.get_baked_length()),true)-road.sample_baked(maxf(0.0,offset-1.0),true)
@@ -271,6 +284,7 @@ func _advance_virtual(step: float) -> void:
 			data.phase = "unloading"
 			data.cargo_cycles = [0,0]
 			data.elapsed = 0.0
+			APRON.migrate_loading(data)
 
 func _ground_at(point: Vector3) -> bool:
 	var region: Node3D = session.controller.regions.get(CONNECTION.logical_region(point))
@@ -281,7 +295,7 @@ func _admit() -> void:
 	# bodies, try a short downstream staging shift on the SAME authored route.
 	# Saved physical fleets retain their poses; nothing already visible is moved.
 	var initial_offset := float(data.route_offset)
-	if data.vehicles.is_empty() and initial_offset < 25.0:
+	if data.vehicles.is_empty() and initial_offset < 25.0 and not _loading_apron():
 		var found := false
 		for shift in [0.0,6.0,12.0,18.0,24.0]:
 			data.route_offset = initial_offset+shift
@@ -304,6 +318,8 @@ func _admit() -> void:
 		var point := _virtual_point(index)
 		var tangent := _route_heading(_virtual_offset(index))
 		var yaw := atan2(-tangent.x,-tangent.z)
+		if _loading_apron(): yaw = PI
+		if _unloading_apron(): yaw = 0.0
 		if data.vehicles.size() == 4:
 			point = _point(data.vehicles[index].point)
 			yaw = float(data.vehicles[index].yaw)
@@ -357,6 +373,7 @@ func _admit() -> void:
 		car.set_physics_process(true)
 		car.show()
 		car.restore_health(car.health)
+		if data.vehicles.size()==4: car.restore_body_dents(data.vehicles[index].get("body_dents",[]))
 		if index < 2: car.set_vault(_vault_accessible(index),data.taken[index] or data.delivered[index])
 	_update_crew()
 
@@ -434,9 +451,17 @@ func _spawn_space_clear(point: Vector3, yaw: float, armored: bool) -> bool:
 func _individual_route(index: int) -> Curve3D:
 	var result := Curve3D.new()
 	result.bake_interval = .5
+	var start := 0.0
+	if data.origin == "harbor_bank" and APRON.contains(fleet[index].global_position):
+		for point in APRON.departure(index): result.add_point(point)
+		start = road.get_closest_offset(APRON.MERGE)+2.0
+		result.set_meta("formation_origin",start-result.get_baked_length())
 	var finish: float = road.get_baked_length()-(36.0-float(FORMATION[index]))
-	for offset in range(0,int(finish),2): result.add_point(road.sample_baked(float(offset),true))
+	if data.destination == "harbor_bank" and int(data.get("service_layout",0)) == 1: finish = road.get_baked_length()
+	for offset in range(int(start),int(finish),2): result.add_point(road.sample_baked(float(offset),true))
 	result.add_point(road.sample_baked(finish,true))
+	if data.destination == "harbor_bank" and int(data.get("service_layout",0)) == 1:
+		for point in APRON.arrival(index): result.add_point(point)
 	result.set_meta("traffic_open",true)
 	result.set_meta("traffic_endpoint",result.get_point_position(result.point_count-1))
 	result.set_meta("lane_sections",road.get_meta("lane_sections",[]))
@@ -446,6 +471,7 @@ func _individual_route(index: int) -> Curve3D:
 func _physics_process(delta: float) -> void:
 	if session == null or data.is_empty(): return
 	var operational := crew_operational()
+	var leaving_apron: bool = data.origin == "harbor_bank" and fleet.any(func(car): return is_instance_valid(car) and car.global_position.x < 35.0 and car.global_position.z < 42.0)
 	for index in drivers.size():
 		var driver = drivers[index]
 		var car: CharacterBody3D = driver.vehicle
@@ -460,10 +486,16 @@ func _physics_process(delta: float) -> void:
 		car.set_physics_process(ground_ready)
 		if not ground_ready: continue
 		driver.holding = not operational or data.phase != "driving" or data.hostile
+		if not driver.holding and data.origin == "harbor_bank" and APRON.contains(car.global_position):
+			var order := APRON.DEPARTURE_ORDER.find(index)
+			if order > 0:
+				var preceding = fleet[APRON.DEPARTURE_ORDER[order-1]]
+				driver.holding = preceding.global_position.z < 42.0
 		var successor := _formation_follower(index)
 		var waiting_for_crew := false
-		if not driver.holding and successor >= 0 and successor < drivers.size():
-			var gap: float = driver.offset-drivers[successor].offset
+		var parking_arrival: bool = data.destination == "harbor_bank" and int(data.get("service_layout",0)) == 1 and driver.remaining < 100.0
+		if not driver.holding and not leaving_apron and not parking_arrival and successor >= 0 and successor < drivers.size():
+			var gap: float = _formation_progress(index)-_formation_progress(successor)
 			waiting_for_crew = gap > 26.0 and not _occupies_crossing(car) and not driver.pending_recovery()
 			if waiting_for_crew: driver.holding = true
 		car.set_meta("armored_formation_wait",waiting_for_crew)
@@ -475,14 +507,20 @@ func _formation_follower(index: int) -> int:
 	# A lawful bypass can change the order. Keep the nearest real neighbour behind
 	# together with the convoy, including an escort that has passed the lead car.
 	var follower := -1
-	var progress: float = drivers[index].offset
+	var progress: float = _formation_progress(index)
 	for candidate in drivers.size():
 		if candidate == index: continue
-		var at: float = drivers[candidate].offset
+		var at: float = _formation_progress(candidate)
 		if at > progress or (is_equal_approx(at,progress) and candidate > index): continue
-		if follower < 0 or at > float(drivers[follower].offset) or (is_equal_approx(at,float(drivers[follower].offset)) and candidate > follower):
+		if follower < 0 or at > _formation_progress(follower) or (is_equal_approx(at,_formation_progress(follower)) and candidate > follower):
 			follower = candidate
 	return follower
+
+func _formation_progress(index: int) -> float:
+	# Bay connectors have different lengths. Compare positions on the common
+	# road, never unrelated offsets on four independent driveway curves.
+	var route: Curve3D = drivers[index].route
+	return float(drivers[index].offset)+(float(route.get_meta("formation_origin",0.0)) if route != null else 0.0)
 
 func _occupies_crossing(car: CharacterBody3D) -> bool:
 	if car._held_junction != null and JUNCTIONS.occupies(car._held_junction,car.get_instance_id()): return true
@@ -516,8 +554,13 @@ func _seat(index: int) -> int:
 func _crew_point(index: int) -> Vector3:
 	var car = fleet[_seat(index)]
 	if index < 2:
+		if APRON.contains(car.global_position): return Vector3(32.25,car.global_position.y+.08,car.global_position.z-.5)
 		return car.to_global(Vector3((-1 if index == 0 else 1)*(car.half_width+1.05),.08,.5))
 	var local_rank := floori(float(index-2)/2.0)
+	if APRON.contains(car.global_position):
+		# The west side borders the neighbouring house. Keep every escort in
+		# the open aisle instead of retrying an impossible spawn inside its wall.
+		return Vector3(car.global_position.x+car.half_width+1.05,car.global_position.y+.08,car.global_position.z+[-.7,1.2,-2.2,2.7][local_rank])
 	var side := -1.0 if local_rank%2 == 0 else 1.0
 	var longitudinal := .7 if local_rank < 2 else -1.2
 	return car.to_global(Vector3(side*(car.half_width+1.05),.08,longitudinal))
@@ -703,7 +746,7 @@ func perform(index: int) -> bool:
 		data.pending += SCHEDULE.CASH_PER_TRUCK
 		fleet[index].set_vault(true,true)
 		provoke(session.world.player)
-		session.show_message("R$ %d na bolsa. Despiste a polícia e escape da escolta." % data.pending)
+		session.show_message(String(TranslationServer.translate("R$ %d na bolsa. Despiste a polícia e escape da escolta.")) % data.pending)
 		_persist()
 		return true
 	var picks := int(session.state.economy.inventory.get("lockpick",0))
@@ -728,7 +771,7 @@ func _resolve_lock(result: String) -> void:
 		data.lock_progress[index] += 1
 		data.opened[index] = data.opened[index] or int(data.lock_progress[index]) >= int(profile.lock_stages)
 		fleet[index].set_vault(_vault_accessible(index),data.taken[index] or data.delivered[index])
-		if not data.opened[index]: session.show_message("Trava reforçada: %d/%d." % [data.lock_progress[index],profile.lock_stages])
+		if not data.opened[index]: session.show_message(String(TranslationServer.translate("Trava reforçada: %d/%d.")) % [data.lock_progress[index],profile.lock_stages])
 	elif result == "broken":
 		session.state.economy.consume_item("lockpick")
 		session.show_message("Lockpick quebrou.")
@@ -758,7 +801,7 @@ func _secure_cash() -> void:
 	for index in 2:
 		if data.taken[index] and not data.secured[index]: data.pending += SCHEDULE.CASH_PER_TRUCK
 	escape_seconds = 0.0
-	if awarded > 0: session.show_message("Saque garantido: R$ %d" % awarded)
+	if awarded > 0: session.show_message(String(TranslationServer.translate("Saque garantido: R$ %d")) % awarded)
 	_persist()
 
 func _failed() -> void:
@@ -799,6 +842,7 @@ func _persist() -> void:
 			if not is_instance_valid(car) or car.is_queued_for_deletion(): return
 			var point: Vector3 = car.global_position
 			records.append({"point":[point.x,point.y,point.z],"yaw":car.rotation.y,"health":car.health})
+			records[-1]["body_dents"]=car.body_dents.snapshot() if is_instance_valid(car.body_dents) else []
 		data.vehicles = records
 		data.virtual_poses = false
 	if not guards.is_empty():

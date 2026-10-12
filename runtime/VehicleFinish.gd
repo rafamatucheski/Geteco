@@ -141,7 +141,7 @@ static func _seat_lenses(id: String, model: Node3D) -> void:
 			if material == null: continue
 			var box: AABB = part.transform*part.get_aabb()
 			var center := box.get_center()
-			var tail := "tail" in key or key == "brake_light" or (key.is_empty() and material.emission_enabled and material.albedo_color.r > .55 and material.albedo_color.g < .35)
+			var tail := ROLES.is_tail_lens(key) or (key.is_empty() and material.emission_enabled and material.albedo_color.r > .55 and material.albedo_color.g < .35)
 			if not tail or center.z <= 0 or box.size.z > .15: continue
 			var hit_z := -INF
 			for vertices in paint_faces:

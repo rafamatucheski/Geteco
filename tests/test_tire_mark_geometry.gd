@@ -83,6 +83,7 @@ func run() -> void:
 	tire._redraw_marks()
 	var older: Array = tire.geometry.surface_get_arrays(0)
 	check(older[Mesh.ARRAY_VERTEX] == vertices, "fading does not move existing geometry")
+	check(older[Mesh.ARRAY_NORMAL] == normals, "redrawing cached corners preserves the sampled surface normals")
 	check((older[Mesh.ARRAY_COLOR] as PackedColorArray)[0].a < colors[0].a-.05, "age fades the mark without a new contact")
 	check(tire.geometry.get_surface_count() == 1, "redraw replaces the surface without accumulating it")
 	tire.marks[0].born = Time.get_ticks_msec()-int(tire.marks[0].life)-1

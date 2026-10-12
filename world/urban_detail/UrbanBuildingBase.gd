@@ -220,9 +220,21 @@ func add_cornice(parent: Node3D, y: float, projection: float = 0.35, h: float = 
 		var dentil_d := 0.16
 		var count := int((building_size.x - 0.4) / 0.45)
 		var step := (building_size.x - 0.6) / float(maxi(count - 1, 1))
+		# The static blocks share one material and one facade visibility scope.
+		var dentil_box := BoxMesh.new()
+		dentil_box.size = Vector3(dentil_w, dentil_h, dentil_d)
+		var dentil_surface := SurfaceTool.new()
+		dentil_surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 		for i in count:
 			var dx := -building_size.x * 0.5 + 0.3 + float(i) * step
-			add_mesh_box(parent, "Dentil_%d" % i, Vector3(dx, y - h * 0.3, front_z + 0.04), Vector3(dentil_w, dentil_h, dentil_d), dentil_mat)
+			var center := Vector3(dx, y - h * 0.3, front_z + 0.04)
+			dentil_surface.append_from(dentil_box, 0, Transform3D(Basis.IDENTITY, center))
+		dentil_surface.index()
+		var dentil_mesh := MeshInstance3D.new()
+		dentil_mesh.name = "CorniceDentils"
+		dentil_mesh.mesh = dentil_surface.commit()
+		dentil_mesh.material_override = dentil_mat
+		parent.add_child(dentil_mesh)
 
 func add_water_tower(parent: Node3D, at: Vector3) -> Node3D:
 	var tower := Node3D.new()

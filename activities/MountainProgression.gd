@@ -248,12 +248,12 @@ func _physics_process(delta: float) -> void:
 		var speed_text := "%d km/h" % roundi(glide.length()*3.6)
 		if race.mode != "":
 			var best := float(data.best.get(race.id, 0))
-			status.text = "Largada em %d" % ceili(race.countdown) if race.countdown > 0 else "%s · %.1f s · %d/%d · %s" % [COURSES[race.id].name,race.elapsed,race.gate+1,race.points.size(),speed_text]
-			if best > 0: status.text += "\nRecorde: %.2f s" % best
+			status.text = String(TranslationServer.translate("Largada em %d")) % ceili(race.countdown) if race.countdown > 0 else "%s · %.1f s · %d/%d · %s" % [COURSES[race.id].name,race.elapsed,race.gate+1,race.points.size(),speed_text]
+			if best > 0: status.text += String(TranslationServer.translate("\nRecorde: %.2f s")) % best
 		else:
 			status.text = "Ski · "+speed_text
 		var controls := get_node("/root/GameInput")
-		status.text += "\n%s frear · %s impulso" % [controls.hint("brake" if controls.using_gamepad else "handbrake"),controls.hint("accelerate" if controls.using_gamepad else "sprint")]
+		status.text += String(TranslationServer.translate("\n%s frear · %s impulso")) % [controls.hint("brake" if controls.using_gamepad else "handbrake"),controls.hint("accelerate" if controls.using_gamepad else "sprint")]
 	_shadow_clock+=delta
 	if _shadow_clock>=.5:
 		_shadow_clock=0

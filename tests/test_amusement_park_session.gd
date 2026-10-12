@@ -62,17 +62,20 @@ func run() -> void:
 	var camera: Camera3D = world.camera
 	var layer: int = world.player.collision_layer
 	var mask: int = world.player.collision_mask
+	world.session.state.economy.grant_reward("park_session_tickets",25)
 	check(await world.session.interact() and park.active,"mapped session interaction starts coaster")
 	if not park.active: finish(); return
 	check(root.get_camera_3d() == park.view and park.view.projection == Camera3D.PROJECTION_PERSPECTIVE,"ride uses actual perspective camera")
 	check(world.session.blocks_driving_change() and not world.session.save_block_reason().is_empty(),"ride blocks driving and saves in midair")
-	await create_timer(3).timeout
+	await create_timer(6).timeout
 	check(park.ride_distance > 5 and world.player.global_position.distance_to(LAYOUT.BOARDING)>2,"carriage and rider travel together")
 	await capture("coaster")
 	var cancel := InputEventAction.new()
 	cancel.action = "interact"
 	cancel.pressed = true
 	world.session._input(cancel)
+	check(park.active and park.return_requested,"interaction requests a safe return to the station")
+	while park.active: await physics_frame
 	check(not park.active and not world.player.input_locked,"interaction cancels ride and restores control")
 	check(world.player.collision_layer == layer and world.player.collision_mask == mask and world.player.is_physics_processing(),"cancellation restores physics and collision")
 	check(root.get_camera_3d() == camera and world.player.visual.visible,"cancellation restores camera and visible Dante")

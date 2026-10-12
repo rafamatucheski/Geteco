@@ -1,6 +1,7 @@
 extends "res://runtime/RobberyActor.gd"
 ## Finite convoy crew. The transport owns crime attribution, radio and persistence.
 const MODEL := preload("res://gameplay/armored/ArmoredGuardModel.gd")
+const APRON := preload("res://gameplay/armored/ArmoredBankApron.gd")
 var convoy
 var slot := 0
 var tier := 1
@@ -118,7 +119,9 @@ func _service_navigation_target() -> Vector3:
 			var beside_hull: bool = absf(local.x) >= float(service_vehicle.half_width)+.5 and absf(local.x) <= float(service_vehicle.half_width)+1.7 and local.z >= -float(service_vehicle.half_length)-.5
 			near_vehicle = global_position.distance_to(service_vehicle.global_position) < 8.0 and (local.z >= rear.z-.2 or beside_hull)
 		var rear_side: Vector3 = service_vehicle.to_global(Vector3(local.x,.08,rear.z))
-		if not reached_target(.45):
+		if APRON.contains(service_vehicle.global_position):
+			_service_waypoints = APRON.carrier_path(service_vehicle,global_position,patrol_target,corner,target_bank,target_door)
+		elif not reached_target(.45):
 			if target_bank:
 				if near_vehicle and local.z < rear.z-.2: _service_waypoints.append_array([rear_side,door])
 				_service_waypoints.append(corner)

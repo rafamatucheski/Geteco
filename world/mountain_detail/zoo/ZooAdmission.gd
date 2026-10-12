@@ -18,6 +18,13 @@ var _initialized:=false
 var _last_inside:=false
 var _ticket: Dictionary={}
 var _state_owner
+# Actor routes death, injury and vehicle assault through its immediate owner.
+var gameplay:
+	get:
+		if not is_instance_valid(zoo) or not is_instance_valid(zoo.session): return null
+		return zoo.session.world.gameplay
+func _cashier_available() -> bool:
+	return is_instance_valid(cashier) and not cashier.is_queued_for_deletion() and not cashier.dead
 func _ready() -> void:
 	gate=GEO.solid(self,"TicketBarrier",Vector3(0,1.2,20),Vector3(3.9,2.4,.20))
 	gate_visual=Node3D.new(); gate_visual.position=Vector3(0,0,20); add_child(gate_visual)
@@ -36,10 +43,11 @@ func state() -> Dictionary:
 func nearest_action() -> Dictionary:
 	var session=zoo.session
 	if session==null or not session.ready_for_play or session.modal or not session.state.place_id.is_empty() or session.world.driving.occupied or session.world.gameplay.health<=0: return {}
+	if not _cashier_available(): return {}
 	var local: Vector3=zoo.to_local(session.world.player.global_position)
 	if local.z<20 or Vector2(local.x+2.3,local.z-23.5).length()>2.8: return {}
 	if state().active: return {}
-	return {"id":"zoo_ticket","label":"Pagar ingresso · $%d"%PRICE,"provider":self}
+	return {"id":"zoo_ticket","label":String(TranslationServer.translate("Pagar ingresso · $%d"))%PRICE,"provider":self}
 func purchase() -> bool:
 	if nearest_action().is_empty(): return false
 	var session=zoo.session
@@ -47,11 +55,11 @@ func purchase() -> bool:
 	var serial:=int(ticket.serial)+1
 	var receipt:="mountain_zoo_%d"%serial
 	if not session.state.spend(PRICE,receipt):
-		session.show_message("Ingresso: $%d. Saldo insuficiente."%PRICE); return false
+		session.show_message(String(TranslationServer.translate("Ingresso: $%d. Saldo insuficiente."))%PRICE); return false
 	ticket.serial=serial; ticket.receipt=receipt; ticket.active=true; ticket.inside=false
 	session.state.world_state.mountain_zoo=ticket
 	_allow_player(true)
-	session.show_message("Ingresso pago · $%d"%PRICE)
+	session.show_message(String(TranslationServer.translate("Ingresso pago · $%d"))%PRICE)
 	return true
 func _allow_player(allowed: bool) -> void:
 	if not is_instance_valid(zoo.session) or not is_instance_valid(zoo.session.world.player): return
@@ -86,19 +94,24 @@ func _physics_process(delta: float) -> void:
 	var gate_open:=_player_granted and absf(p.z-20)<3 and absf(p.x)<2
 	var waiting: Array[Dictionary]=[]
 	for visitor in visitors:
-		if visitor.phase in ["queue","pay"]: waiting.append(visitor)
+		if _visitor_present(visitor) and not visitor.actor.dead and visitor.phase in ["queue","pay"]: waiting.append(visitor)
 	for visitor in visitors:
+		if not _visitor_present(visitor): continue
 		_update_visitor(visitor,waiting,delta)
 		var at: Vector3=zoo.to_local(visitor.actor.global_position)
 		if visitor.paid and absf(at.z-20)<2.8 and absf(at.x)<2: gate_open=true
 	gate_visual.position.y=move_toward(gate_visual.position.y,2.5 if gate_open else 0.0,delta*3)
 func _initialize_staff() -> void:
+	# A missing/dead cashier stays absent until the residency cycle ends.
+	if _initialized: return
 	_initialized=true
 	cashier=ACTOR.new(); cashier.name="ZooCashier"; cashier.identity=624
 	cashier.controlled_automatically=true
 	# The booth's visible base is a closed cabinet, so clerk stands beside it on the ground.
 	cashier.position=Vector3(-3.2,.06,21.1); add_child(cashier)
-	cashier.set_physics_process(false)
+	cashier.visual.rotation.y=PI
+	# Keep Actor physics: gravity settles the clerk and combat owns injury/death.
+	cashier.automatic_direction=Vector3.ZERO
 func _spawn_visitor(index: int) -> void:
 	var actor:=ACTOR.new(); actor.name="ZooVisitor%d"%index; actor.identity=650+index
 	actor.controlled_automatically=true; actor.speed=1.6; actor.position=Vector3(.8,.06,24+index*1.3)
@@ -114,9 +127,19 @@ func _walk(visitor: Dictionary, target: Vector3) -> bool:
 	var direction: Vector3=zoo.to_global(target)-actor.global_position; direction.y=0
 	actor.automatic_direction=direction.normalized() if direction.length()>.18 else Vector3.ZERO
 	return direction.length()<=.18
+func _visitor_present(v: Dictionary) -> bool:
+	# Preserve the visit slot until unloading; removal must not resurrect a victim.
+	if is_instance_valid(v.actor) and not v.actor.is_queued_for_deletion(): return true
+	v.actor=null; v.note=null; v.paid=false; v.phase="done"
+	return false
 func _update_visitor(v: Dictionary, waiting: Array[Dictionary], delta: float) -> void:
+	if not _visitor_present(v): return
 	if v.actor.dead:
 		v.note.hide(); v.phase="done"; return
+	if v.phase in ["queue","pay"] and not _cashier_available():
+		v.actor.automatic_direction=Vector3.ZERO
+		v.note.hide(); v.phase="queue"; v.wait=0.0
+		return
 	match v.phase:
 		"queue":
 			var slot:=waiting.find(v)

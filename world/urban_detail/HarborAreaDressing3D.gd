@@ -364,12 +364,15 @@ func _lamp(point: Vector2) -> void:
 	_box("CobraLampHead",Vector3(point.x,2.87,point.y),Vector3(.42,.18,.42),Color("d3b487"))
 
 func _barrel(point: Vector2) -> void:
+	var first_mesh := get_child_count()
+	var first_shape := _solid_root.get_child_count()
 	var drum := _cylinder("CobraBarrel",.35,.78,Vector3(point.x,.39,point.y),Color("6d4a37"),true)
 	if zone_id=="cobra": drum.material_override = COBRA_FINISH.surface("metal",Color("574337"))
 	for y in [.12,.38,.65]: _cylinder("BarrelBand",.365,.045,Vector3(point.x,y,point.y),Color("333b39"))
 	if zone_id=="cobra":
 		_cylinder("BarrelLid",.33,.022,Vector3(point.x,.797,point.y),Color("30342c"))
 		_cylinder("BarrelBung",.045,.025,Vector3(point.x+.16,.82,point.y),Color("171d19"))
+	_register_breakable_parts("barrel",point,first_mesh,first_shape)
 
 func _tire_barricade(point: Vector2) -> void:
 	for index in 3:
@@ -377,6 +380,8 @@ func _tire_barricade(point: Vector2) -> void:
 		tire.rotation_degrees.z = 90
 
 func _bench(point: Vector2) -> void:
+	var first_mesh := get_child_count()
+	var first_shape := _solid_root.get_child_count()
 	var seat := _box("CobraBenchSeat",Vector3(point.x,.48,point.y),Vector3(2.25,.16,.55),Color("67573c"),true)
 	var back := _box("CobraBenchBack",Vector3(point.x,.82,point.y-.22),Vector3(2.25,.62,.12),Color("393c2c"),true)
 	if zone_id=="cobra":
@@ -386,6 +391,17 @@ func _bench(point: Vector2) -> void:
 			_box("BenchIronLeg",Vector3(point.x+x,.225,point.y),Vector3(.16,.4,.46),Color("282e29"),true)
 			_box("BenchFoot",Vector3(point.x+x,.044,point.y),Vector3(.3,.028,.62),Color("34372d"))
 			_box("BenchArm",Vector3(point.x+x,.68,point.y),Vector3(.09,.07,.55),Color("282e29"))
+	_register_breakable_parts("bench_seat",point,first_mesh,first_shape)
+
+func _register_breakable_parts(kind: String, point: Vector2, first_mesh: int, first_shape: int) -> void:
+	var bench := Node3D.new()
+	bench.name = "Breakable_"+kind
+	bench.position = Vector3(point.x,0,point.y)
+	var pieces: Array = get_children().slice(first_mesh)
+	var colliders: Array = _solid_root.get_children().slice(first_shape)
+	add_child(bench)
+	for piece in pieces: piece.reparent(bench,true)
+	preload("res://gameplay/street_physics/FragileProps3D.gd").register_node(kind,bench,self,{},colliders)
 
 func _beam(label: String, a: Vector2, b: Vector2, width: float, height: float, color: Color, solid := false, center_y := .02) -> MeshInstance3D:
 	var delta := b-a

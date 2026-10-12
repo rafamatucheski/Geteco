@@ -1,0 +1,206 @@
+{
+  "version": 1,
+  "settings": {
+    "model": "Qwen3-TTS-12Hz-0.6B-Base",
+    "model_revision": "5d83992436eae1d760afd27aff78a71d676296fc",
+    "device": "cuda",
+    "dtype": "bfloat16",
+    "quantization": "none",
+    "quantization_skip_modules": [],
+    "attention": "sdpa",
+    "threads": 2,
+    "audio_decode_batch_size": 1
+  },
+  "conditioning": "experimental_text",
+  "reference_mode": "per_language",
+  "batch_size": 8,
+  "batch_seconds": 14.625,
+  "cuda_peak_mb": 2759.3,
+  "package_versions": {
+    "torch": "2.11.0+cu128",
+    "transformers": "4.57.3",
+    "qwen-tts": "0.1.1",
+    "bitsandbytes": "0.50.2",
+    "soundfile": "0.14.0"
+  },
+  "takes": [
+    {
+      "path": "res://audio/mission_voices/directed/benchmarks/baff80bd910aca04/0_jessica_pt_BR.wav",
+      "audio_sha256": "3298ca4979a3cfc0df02dfa870a901146fb2c3d270e7393efd0c0fc996d728a1",
+      "duration_seconds": 4.817333333333333,
+      "sample_rate": 24000,
+      "channels": 1,
+      "format": "PCM_16",
+      "peak": 0.6953125,
+      "technical_validation": {
+        "passed": true,
+        "checks": [
+          "finite_audio",
+          "non_silent",
+          "mono_pcm16_24khz",
+          "peak_below_full_scale"
+        ]
+      },
+      "artistic_review": "pending",
+      "language": "pt_BR",
+      "spoken_text": "Cinto, Dante. Respira. O volante agora é meu.",
+      "character_id": "jessica"
+    },
+    {
+      "path": "res://audio/mission_voices/directed/benchmarks/baff80bd910aca04/1_jessica_en.wav",
+      "audio_sha256": "80da5614352d05292c7a47d9fe8232f4484c6e013b4ff55cfc7e988e64850141",
+      "duration_seconds": 4.442958333333333,
+      "sample_rate": 24000,
+      "channels": 1,
+      "format": "PCM_16",
+      "peak": 0.2080078125,
+      "technical_validation": {
+        "passed": true,
+        "checks": [
+          "finite_audio",
+          "non_silent",
+          "mono_pcm16_24khz",
+          "peak_below_full_scale"
+        ]
+      },
+      "artistic_review": "pending",
+      "language": "en",
+      "spoken_text": "Seat belt, Dante. Breathe. I've got the wheel now.",
+      "character_id": "jessica"
+    },
+    {
+      "path": "res://audio/mission_voices/directed/benchmarks/baff80bd910aca04/2_cida_pt_BR.wav",
+      "audio_sha256": "d505b45051af149221f42994af72886ebd207625b6cb7eaf207593d92bf2a15a",
+      "duration_seconds": 3.0363333333333333,
+      "sample_rate": 24000,
+      "channels": 1,
+      "format": "PCM_16",
+      "peak": 0.302734375,
+      "technical_validation": {
+        "passed": true,
+        "checks": [
+          "finite_audio",
+          "non_silent",
+          "mono_pcm16_24khz",
+          "peak_below_full_scale"
+        ]
+      },
+      "artistic_review": "pending",
+      "language": "pt_BR",
+      "spoken_text": "Pode falar daí. Eu tô ouvindo.",
+      "character_id": "cida"
+    },
+    {
+      "path": "res://audio/mission_voices/directed/benchmarks/baff80bd910aca04/3_cida_en.wav",
+      "audio_sha256": "c5bf5cbd3a8c238fa9f2653bb39e02153ce9aaa4d0c62d2ba1ca778b19839166",
+      "duration_seconds": 2.96,
+      "sample_rate": 24000,
+      "channels": 1,
+      "format": "PCM_16",
+      "peak": 0.5546875,
+      "technical_validation": {
+        "passed": true,
+        "checks": [
+          "finite_audio",
+          "non_silent",
+          "mono_pcm16_24khz",
+          "peak_below_full_scale"
+        ]
+      },
+      "artistic_review": "pending",
+      "language": "en",
+      "spoken_text": "You can stay there. I can hear you.",
+      "character_id": "cida"
+    },
+    {
+      "path": "res://audio/mission_voices/directed/benchmarks/baff80bd910aca04/4_jessica_pt_BR.wav",
+      "audio_sha256": "b3462a3d7aaeb111a3e1daf5e2eb8f6b59ee6b15584c83ea01501a47c6bef48e",
+      "duration_seconds": 4.201458333333333,
+      "sample_rate": 24000,
+      "channels": 1,
+      "format": "PCM_16",
+      "peak": 0.57421875,
+      "technical_validation": {
+        "passed": true,
+        "checks": [
+          "finite_audio",
+          "non_silent",
+          "mono_pcm16_24khz",
+          "peak_below_full_scale"
+        ]
+      },
+      "artistic_review": "pending",
+      "language": "pt_BR",
+      "spoken_text": "Cinto, Dante. Respira. O volante agora é meu.",
+      "character_id": "jessica"
+    },
+    {
+      "path": "res://audio/mission_voices/directed/benchmarks/baff80bd910aca04/5_jessica_en.wav",
+      "audio_sha256": "b428d31e4ad04d500fc8ceed8933567bf508519e6ebf370e6f2ace89223fb77e",
+      "duration_seconds": 4.435416666666667,
+      "sample_rate": 24000,
+      "channels": 1,
+      "format": "PCM_16",
+      "peak": 0.44140625,
+      "technical_validation": {
+        "passed": true,
+        "checks": [
+          "finite_audio",
+          "non_silent",
+          "mono_pcm16_24khz",
+          "peak_below_full_scale"
+        ]
+      },
+      "artistic_review": "pending",
+      "language": "en",
+      "spoken_text": "Seat belt, Dante. Breathe. I've got the wheel now.",
+      "character_id": "jessica"
+    },
+    {
+      "path": "res://audio/mission_voices/directed/benchmarks/baff80bd910aca04/6_cida_pt_BR.wav",
+      "audio_sha256": "bd4cca8da2a2f9657efb3ca2f035163f49559c28487e2a21f5cefa2856c411f5",
+      "duration_seconds": 2.421125,
+      "sample_rate": 24000,
+      "channels": 1,
+      "format": "PCM_16",
+      "peak": 0.34375,
+      "technical_validation": {
+        "passed": true,
+        "checks": [
+          "finite_audio",
+          "non_silent",
+          "mono_pcm16_24khz",
+          "peak_below_full_scale"
+        ]
+      },
+      "artistic_review": "pending",
+      "language": "pt_BR",
+      "spoken_text": "Pode falar daí. Eu tô ouvindo.",
+      "character_id": "cida"
+    },
+    {
+      "path": "res://audio/mission_voices/directed/benchmarks/baff80bd910aca04/7_cida_en.wav",
+      "audio_sha256": "9352312703dce439c1e3d205d33049ccb2a01af777a2a703fd25a7a2ec9616e8",
+      "duration_seconds": 2.762958333333333,
+      "sample_rate": 24000,
+      "channels": 1,
+      "format": "PCM_16",
+      "peak": 0.328125,
+      "technical_validation": {
+        "passed": true,
+        "checks": [
+          "finite_audio",
+          "non_silent",
+          "mono_pcm16_24khz",
+          "peak_below_full_scale"
+        ]
+      },
+      "artistic_review": "pending",
+      "language": "en",
+      "spoken_text": "You can stay there. I can hear you.",
+      "character_id": "cida"
+    }
+  ],
+  "complete": true,
+  "effective_real_time_factor": 0.5029647695389632
+}

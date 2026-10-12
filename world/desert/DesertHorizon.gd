@@ -12,13 +12,16 @@ static func build() -> Node3D:
 	var rect := L.BOUNDS
 	# The visual horizon must have the same excavation cut as streamed ground.
 	# A single datum-height quad would occlude the entire physically valid mine.
-	for remainder in MINING.ground_remainders(rect): _basin(root,"DistantBasin",remainder,-.045)
+	for remainder in MINING.ground_remainders(rect):
+		for untouched in preload("res://world/desert/canyon/DesertSmugglerLayout.gd").ground_remainders(remainder):
+			_basin(root,"DistantBasin",untouched,-.045)
 	if MINING_LAYOUT.enabled():
 		# Keep a distant backdrop below the lowest floor while nearby authored
 		# benches and road geometry remain owned by their existing stream chunks.
 		_basin(root,"DistantQuarryFloor",rect.intersection(MINING.OWNED_GROUND),-MINING_LAYOUT.PIT_DEPTH-.045)
 	root.add_child(preload("res://world/desert/DesertHorizonRelief.gd").build())
 	root.add_child(preload("res://world/desert/DesertTerrainMesh.gd").build_visuals())
+	root.add_child(preload("res://world/desert/canyon/DesertSmugglerScenery.gd").build_visuals())
 	return root
 
 static func _basin(root: Node3D,label: String,rect: Rect2,height: float) -> void:

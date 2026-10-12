@@ -1,11 +1,11 @@
 extends Node3D
 ## Item largado no chão (dinheiro, arma com munição ou colete), coletado só de passar por
 ## cima. Port de `legacy/city_demo/scenes/pickups/WeaponPickup.gd` e
-## `BodyArmorPickup.gd` da V1: halo colorido por arma, ícone flutuando e girando,
+## `BodyArmorPickup.gd` da V1: modelo flutuando e girando,
 ## coleta imediata sem aviso na tela e sumiço suave depois de 35 s.
 ## A V1 desenhava uma silhueta 2D; aqui o ícone é o próprio modelo 3D da arma
 ## (`ArsenalWeapon3D`) ampliado para ser legível da câmera ortográfica alta,
-## com um brilho aditivo que pisca.
+## sem halo ou brilho adicional nas armas.
 
 const ARSENAL = preload("res://gameplay/ArsenalWeapon3D.gd")
 const CASH_NOTE = preload("res://assets/gameplay/cash_note.svg")
@@ -30,6 +30,7 @@ var _age := 0.0
 var _icon_scale := 2.4
 var _phase := 0.0
 var _icon: Node3D
+var _icon_meshes: Array[Node] = []
 var _halo: MeshInstance3D
 var _halo_material: StandardMaterial3D
 var _glow_material: StandardMaterial3D
@@ -44,6 +45,38 @@ func setup(p_kind: String, p_weapon: String = "", p_amount: int = 0) -> void:
 
 func _ready() -> void:
 	_phase = randf() * TAU
+	if kind != "weapon": _build_ground_effects()
+	_icon = Node3D.new()
+	_icon.name = "Icon"
+	_icon.position.y = ICON_HEIGHT
+	add_child(_icon)
+	var model := Node3D.new()
+	_icon.add_child(model)
+	if kind == "cash": _build_cash(model)
+	elif kind == "armor": _build_vest(model)
+	else:
+		ARSENAL.build_cached(model, weapon_id)
+		# Deitada de lado e centrada no giro, como a silhueta da V1.
+		model.rotation = Vector3(0, 0, PI * 0.5)
+		model.position = -_model_center(model).rotated(Vector3.BACK, PI * 0.5)
+	var extent := _model_size(model)
+	var icon_length := 0.65 if kind == "cash" else ICON_LENGTH
+	_icon_scale = clampf(icon_length / maxf(maxf(extent.x, extent.y), maxf(extent.z, 0.05)), 0.8 if kind == "cash" else 1.4, 4.0)
+	_icon.scale = Vector3.ONE * _icon_scale
+	if kind != "weapon":
+		var tint := halo_color()
+		_glow_material = StandardMaterial3D.new()
+		_glow_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		_glow_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		_glow_material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		_glow_material.albedo_color = Color(tint.r, tint.g, tint.b, 0.0)
+	_icon_meshes = _icon.find_children("*", "GeometryInstance3D", true, false)
+	for mesh in _icon_meshes:
+		if _glow_material != null:
+			(mesh as GeometryInstance3D).material_overlay = _glow_material
+		(mesh as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+func _build_ground_effects() -> void:
 	var tint := halo_color()
 	var disc_material := StandardMaterial3D.new()
 	_disc_material = disc_material
@@ -81,33 +114,8 @@ func _ready() -> void:
 	disc.material_override = disc_material
 	disc.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(disc)
-	_icon = Node3D.new()
-	_icon.name = "Icon"
-	_icon.position.y = ICON_HEIGHT
-	add_child(_icon)
-	var model := Node3D.new()
-	_icon.add_child(model)
-	if kind == "cash": _build_cash(model)
-	elif kind == "armor": _build_vest(model)
-	else:
-		ARSENAL.build_cached(model, weapon_id)
-		# Deitada de lado e centrada no giro, como a silhueta da V1.
-		model.rotation = Vector3(0, 0, PI * 0.5)
-		model.position = -_model_center(model).rotated(Vector3.BACK, PI * 0.5)
-	var extent := _model_size(model)
-	var icon_length := 0.65 if kind == "cash" else ICON_LENGTH
-	_icon_scale = clampf(icon_length / maxf(maxf(extent.x, extent.y), maxf(extent.z, 0.05)), 0.8 if kind == "cash" else 1.4, 4.0)
-	_icon.scale = Vector3.ONE * _icon_scale
-	_glow_material = StandardMaterial3D.new()
-	_glow_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_glow_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	_glow_material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	_glow_material.albedo_color = Color(tint.r, tint.g, tint.b, 0.0)
-	for mesh in _icon.find_children("*", "GeometryInstance3D", true, false):
-		(mesh as GeometryInstance3D).material_overlay = _glow_material
-		(mesh as GeometryInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
-## Anda e pisca. Não há física: a coleta é por distância, feita por Gameplay.
+## Anima o modelo e expira. Não há física: a coleta é por distância, feita por Gameplay.
 func advance(delta: float) -> bool:
 	if consumed: return false
 	_age += delta
@@ -117,6 +125,12 @@ func advance(delta: float) -> bool:
 	# Piscar: o brilho aditivo sobe e desce; no fim da vida pisca mais rápido
 	# e some, avisando que o item vai desaparecer.
 	var fading := clampf((_age - LIFETIME) / FADE_TIME, 0.0, 1.0)
+	if kind == "weapon":
+		# Expira suavemente, sem piscar nem tingir o modelo da arma.
+		if fading > 0.0:
+			for mesh in _icon_meshes:
+				(mesh as GeometryInstance3D).transparency = fading
+		return _age < LIFETIME + FADE_TIME
 	var rate := lerpf(5.0, 14.0, fading)
 	var pulse := 0.5 + 0.5 * sin(_age * rate + _phase)
 	var alive := 1.0 - fading
@@ -139,9 +153,9 @@ func collect() -> void:
 	var tween := create_tween().set_parallel(true)
 	tween.tween_property(_icon, "scale", Vector3.ONE * _icon_scale * 0.2, 0.25)
 	tween.tween_property(_icon, "position:y", ICON_HEIGHT + 0.5, 0.25)
-	tween.tween_property(_halo_material, "albedo_color:a", 0.0, 0.25)
-	tween.tween_property(_glow_material, "albedo_color:a", 0.0, 0.25)
-	tween.tween_property(_disc_material, "albedo_color:a", 0.0, 0.25)
+	if _halo_material != null: tween.tween_property(_halo_material, "albedo_color:a", 0.0, 0.25)
+	if _glow_material != null: tween.tween_property(_glow_material, "albedo_color:a", 0.0, 0.25)
+	if _disc_material != null: tween.tween_property(_disc_material, "albedo_color:a", 0.0, 0.25)
 	for mesh in _icon.find_children("*", "GeometryInstance3D", true, false):
 		tween.tween_property(mesh, "transparency", 1.0, 0.25)
 	tween.chain().tween_callback(queue_free)

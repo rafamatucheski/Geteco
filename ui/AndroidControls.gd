@@ -149,14 +149,19 @@ func _refresh() -> void:
 			_button("radio_toggle", "Liga/desliga", top + Vector2(0, 72) * unit, Vector2(112, 58))
 			_button("radio_next", "Rádio ›", top + Vector2(120, 72) * unit, Vector2(112, 58))
 	else:
+		_button("jump", "Pular", aim_center - (Vector2(0, 300) if compact else Vector2(300, 0)) * unit, Vector2(110, 60))
 		if can_fight:
 			_button("fire", "Atacar", aim_center - (Vector2(0, 210) if compact else Vector2(160, 0)) * unit, Vector2(116, 82))
 			_button("reload", "Recarregar", aim_center - Vector2(152, 112) * unit, Vector2(130, 60))
 			_button("weapon_next", "Arma", aim_center - Vector2(0, 132) * unit, Vector2(110, 60))
 	if extra:
 		var actions: Array = [["journal", "Diário"], ["camera_left", "Girar ‹"], ["camera_right", "Girar ›"], ["trunk", "Bagagem"]]
-		if driving: actions.append_array([["horn", "Buzina"], ["headlights", "Faróis"], ["siren_toggle", "Sirene"], ["tank_fire", "Canhão"]])
-		else: actions.append_array([["unarmed", "Guardar"], ["weapon_flashlight", "Lanterna"], ["surrender", "Render-se"]])
+		if driving:
+			actions.append_array([["horn", "Buzina"], ["headlights", "Faróis"], ["siren_toggle", "Sirene"], ["tank_fire", "Canhão"]])
+			if is_instance_valid(world.driving.car) and world.driving.car.get_meta("biarticulated", false): actions.append(["bus_doors", "Portas ônibus"])
+		else:
+			actions.append_array([["unarmed", "Guardar"], ["weapon_flashlight", "Lanterna"], ["surrender", "Render-se"], ["bus_driver_shift", "Dirigir ônibus"]])
+			if can_fight: actions.append(["rage", "RAGE"])
 		for i in actions.size():
 			# Whole-number grouping/index; preserve integer truncation and precision.
 			var columns := 3 if compact else 5
@@ -270,8 +275,9 @@ func _draw() -> void:
 		var rect: Rect2 = item.rect
 		var held: bool = action in fingers.values()
 		draw_style_box(_style(held), rect)
-		var text_size := font.get_string_size(item.label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
-		draw_string(font, rect.get_center() + Vector2(-text_size.x * .5, font_size * .35), item.label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color.WHITE)
+		var caption := tr(str(item.label))
+		var text_size := font.get_string_size(caption, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
+		draw_string(font, rect.get_center() + Vector2(-text_size.x * .5, font_size * .35), caption, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color.WHITE)
 	if playable and not passenger and not fishing:
 		_stick(move_center, controls.touch_move, "Direção" if driving else "Correr" if controls.touch_sprint else "Andar", font, font_size)
 		if not driving: draw_arc(move_center, radius * .85, 0, TAU, 48, Color(1,.6,.25,.7), unit, true)
@@ -286,6 +292,7 @@ func _style(held: bool) -> StyleBoxFlat:
 	return style
 
 func _stick(center: Vector2, vector: Vector2, label: String, font: Font, font_size: int) -> void:
+	label = tr(label)
 	draw_circle(center, radius, Color(.03,.05,.07,.5))
 	draw_arc(center, radius, 0, TAU, 48, Color(1,1,1,.45), 2 * unit, true)
 	draw_circle(center + vector * radius * .65, 27 * unit, Color(1,1,1,.45))

@@ -1,0 +1,2256 @@
+{
+  "version": 1,
+  "policy": {
+    "version": "directed_linear_lufs_v1",
+    "target_lufs": -20.0,
+    "max_true_peak_db": -1.5,
+    "minimum_gain_db": -12.0,
+    "maximum_gain_db": 12.0,
+    "short_utterance_peak_db": -6.0,
+    "processing": "playback_linear_gain_only_no_compression_no_waveform_edit"
+  },
+  "policy_sha256": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897",
+  "takes": [
+    {
+      "cache_key": "0901ff54ad1b3c7dfa1921750f794c6c408502df60c8dbd1e8a263bf3b329be0",
+      "path": "res://audio/mission_voices/directed/en/a0f159168a801dab0e029c9259fde373c44d1123fcb8aa78ab0bd27a6abf3f40_026463e960368caf.wav",
+      "audio_sha256": "10fa8bc5ecfb0e05aa49c4dcfa83e384cd452914527351fcd1e4d7c11fa104cf",
+      "input_lufs": -22.9,
+      "input_true_peak_db": -7.49,
+      "playback_gain_db": 2.9,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "4300a75004485c146f780c38b4e7d4301fd08b8e1e3407bd0b9088e669a0eb8a",
+      "path": "res://audio/mission_voices/directed/pt_BR/ab0a259e00ee361f64249691a04ce98dae4e13db9e06b06dcd2a4a1968a3114b_02c5caff165e4147.wav",
+      "audio_sha256": "82707bad4ce0e9746cf7ad102696af6c5bdb82ccee9d96699e4eb6e3a1ed4346",
+      "input_lufs": -22.15,
+      "input_true_peak_db": -4.03,
+      "playback_gain_db": 2.15,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "8d8bf5104b56cdb6b6b1ca631a4e44dffc12937db6bcf580ea4d9f342f679e3a",
+      "path": "res://audio/mission_voices/directed/pt_BR/7c21151f4e5e7adf36ca3bafc1655039bfeec0cf3691c813ff0417106ce1643d_034ff24151151ddb.wav",
+      "audio_sha256": "5dc3aa4419ba8f74f376088e0c182711cd9607da62d98898e4b36cb9e6ebb7ad",
+      "input_lufs": -22.53,
+      "input_true_peak_db": -5.69,
+      "playback_gain_db": 2.53,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "be9e8a52f9975298d0bb5f4e6684785d78330f65830c9a1aaf13fd46b9b2d521",
+      "path": "res://audio/mission_voices/directed/pt_BR/a0f159168a801dab0e029c9259fde373c44d1123fcb8aa78ab0bd27a6abf3f40_052fad7fd51c8b8a.wav",
+      "audio_sha256": "7538e59b5a9f7af60b962bf99338dad006a76768ca3cb40eb03ffa0055e6e6b6",
+      "input_lufs": -24.53,
+      "input_true_peak_db": -8.6,
+      "playback_gain_db": 4.53,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "4567e9d4e6c677ea6a1f1e087653a1f2d3793fb339e9f12ad8fb5662e8815e5b",
+      "path": "res://audio/mission_voices/directed/en/30a9f315a928b54e760e5022a0460486e33ca74ae3acb1a786a7cc47a3e34c74_0531c2b9f6482525.wav",
+      "audio_sha256": "f71f6cf56e8bd9ab7fc79219a3f018dbad30dd7889efbf79fc92c3df77729ecc",
+      "input_lufs": -22.37,
+      "input_true_peak_db": -6.59,
+      "playback_gain_db": 2.37,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "3da917e060b74279dfa61fec984bf75732dd8f5c161f059ab306cbe369c39731",
+      "path": "res://audio/mission_voices/directed/pt_BR/6fa6532413ae146716460900aeb5dd4fa9937e5c1643718c91cb7e6eea8c7556_07aa7ba82b1c2383.wav",
+      "audio_sha256": "ff744bc4a976403f9f2cfa979766a797c87a813adbba64f9b0f3610ac0069a96",
+      "input_lufs": -26.11,
+      "input_true_peak_db": -11.54,
+      "playback_gain_db": 6.11,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "b658ecaf4a93fc74a9ecd0281dc596aacd7aa0b2f8f9a509e75c621852eb4f7a",
+      "path": "res://audio/mission_voices/directed/en/06895e649e84fd62023a44c52fedddc243a8617d0e0ea21073840deb5134901f_092038af9f808e69.wav",
+      "audio_sha256": "0ec5f8451348dfe4e6848cb7a7be369a4316a2ea9a8bffed9bfd92fcf5a60f15",
+      "input_lufs": -29.37,
+      "input_true_peak_db": -11.88,
+      "playback_gain_db": 9.37,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "35a55495ad4504b9fff05dd4771e3ea53a81b6f2330437e2a6fc215a3ec7355e",
+      "path": "res://audio/mission_voices/directed/pt_BR/f3e3656b59366af775b5a56984cc4c97fff6da0f784026f9a62d3d44818c98b5_0a779d823d0e6429.wav",
+      "audio_sha256": "8d3533b46fe98fe33c120006db4427d978b641e3c64ee6217833b7404c156ba3",
+      "input_lufs": -23.4,
+      "input_true_peak_db": -5.88,
+      "playback_gain_db": 3.4,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "850965a278205d295670be8c9098e03a94a8b2a09662757ae42de299f4800490",
+      "path": "res://audio/mission_voices/directed/en/9c3e0186d91293ba261c6fef194eacc2b52e472fa7f7767e4cc767c1079ca260_0c72b173b751d0fc.wav",
+      "audio_sha256": "5942d0f4875565d3578fbde65f27fbd5bc70f3078acef8ccbcd6467ba4cb21fd",
+      "input_lufs": -22.87,
+      "input_true_peak_db": -7.72,
+      "playback_gain_db": 2.87,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "28dccd1e2dbf6a2b99b609ef8faee2529842ddd775b09b91e642ab8a415182e1",
+      "path": "res://audio/mission_voices/directed/pt_BR/a3b4d29eb2648b840f3c5aa1a4199535567c1cf7097fc118751ddf657d8185a2_0de38d385fe11105.wav",
+      "audio_sha256": "e02fa895a85e9cafd6c0dab4874b98628c3301aa0bd15813a88065707e3078ce",
+      "input_lufs": -22.57,
+      "input_true_peak_db": -5.74,
+      "playback_gain_db": 2.57,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "e343f9cc61e8b026eb1ec4e080e74ebbeb896ffe9c60642fd8d02001207f981c",
+      "path": "res://audio/mission_voices/directed/en/b03592c8f65d23d92090f491d9470032c24caf2e87b6d45123432dff6fdded97_0e27aeb1597bdb2c.wav",
+      "audio_sha256": "4368b6052adc92c8d48dc0034ba05435b8fce43b4591c6f48ea99a743ebec7be",
+      "input_lufs": -21.73,
+      "input_true_peak_db": -6.73,
+      "playback_gain_db": 1.73,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "88a7004207383dc693d200fb8abc22067d4e2219fe3fc6de511273441f9839ab",
+      "path": "res://audio/mission_voices/directed/pt_BR/b8f577aa10a18aac9012cf55af992d13eb611889a4871531a2a268bcdd9dffe7_0e66406c3b4e3c55.wav",
+      "audio_sha256": "b95a38a328d5a39e97e1d3e8fcaf447d8dd7c5afc65bfe05b84ebb5f9f34be1a",
+      "input_lufs": -21.63,
+      "input_true_peak_db": -7.91,
+      "playback_gain_db": 1.63,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "73f4fb7366c988c65f624aa473fab65dc42e3ce435ee3c6b7ebc138e3e7680a3",
+      "path": "res://audio/mission_voices/directed/en/9ec3ac1db61c4271c868d1aad71a0e40a7de8139641c556a11e50608128cac9d_0e953448051c6964.wav",
+      "audio_sha256": "3e3d0a86f0003ab6ccca3f35a98193d6b3753d8080bb6d889ac0205a8e000f9c",
+      "input_lufs": -26.33,
+      "input_true_peak_db": -9.71,
+      "playback_gain_db": 6.33,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "7b85f5838aab598c3c0ccfbd3de985cab79a8137772f38d671034dd2c2962603",
+      "path": "res://audio/mission_voices/directed/pt_BR/1883dfe404c6ba4a9b6931f613c84feb09f561200bcb9f8020bbc5ec1b790e7a_0f4ec0dba1c6494d.wav",
+      "audio_sha256": "8604a66edd6aeb82e2802e678e5adf9c998e6ffeb036369b8c992f8832bd02d8",
+      "input_lufs": -21.97,
+      "input_true_peak_db": -7.21,
+      "playback_gain_db": 1.97,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "06de12109d2d9f8c68992acfd82e0a616c4fbf3e3d4b10e1893b114f1fb5babb",
+      "path": "res://audio/mission_voices/directed/pt_BR/2260063c695c4dfc820d60c297528925652ced9f38e6b74f5e67a87e29d6f578_1002c7b3ec4d9451.wav",
+      "audio_sha256": "fd16c3f393d7cac0c48e2b2b66df57f1b0d5e07b213c37e1f3230b88e1132e1a",
+      "input_lufs": -23.95,
+      "input_true_peak_db": -8.73,
+      "playback_gain_db": 3.95,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "841b9cb1a445e5b336995fe739a1cf1887fc669c2448bc02ebed3e9bf371557f",
+      "path": "res://audio/mission_voices/directed/pt_BR/fe92766ebc4dbb3d70d68fa506d2053d435a6e975abede3736fee7f2a6d79503_11bb11ffe74cce77.wav",
+      "audio_sha256": "785c90a99bd01b9abbd780c8b9d7956295296e714cead6a0f1c767fd68db7519",
+      "input_lufs": -25.83,
+      "input_true_peak_db": -7.36,
+      "playback_gain_db": 5.83,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "96ad1dd838d0db8da32c7fd755e1a7b8d2ac91399873f6d69427591487fd4349",
+      "path": "res://audio/mission_voices/directed/en/097f95303230fe217925e7a1276cb42fb653a6555a5d4d1885ff649bd31adc21_12ecd0d274e540bb.wav",
+      "audio_sha256": "6efe8eac5193a93158a9afa9e9e8281b39708a98fb81c3409073ae6a02a46051",
+      "input_lufs": -26.18,
+      "input_true_peak_db": -9.19,
+      "playback_gain_db": 6.18,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "552710c3969534b4171c9f74e6eb47377459a791466ad3653b3b15f8d48f877b",
+      "path": "res://audio/mission_voices/directed/pt_BR/5fdeb50744430f630af2a9e6222f316bc7a3a4b595da28e02a8c8f3fd47a3995_145bb2d3258b0da4.wav",
+      "audio_sha256": "8eb04c6b39ba34e64eeee19e5d54ec21030d7a34ffbf63a32dc57779bfa906ee",
+      "input_lufs": -23.11,
+      "input_true_peak_db": -3.33,
+      "playback_gain_db": 1.83,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "a51d742e6b9458d734c302f4702779ca178f3a0adb5715d930faf36741ce66f4",
+      "path": "res://audio/mission_voices/directed/pt_BR/f9ea2cb3a0d51add2ca946734b15cb583a16cb16525c9fce21a037eb3c43f58d_1729b42e4cf58b06.wav",
+      "audio_sha256": "618b556cfbe44c5602a2d000f4265605b464ba6b5f4a79e6d2495a4512bca1d2",
+      "input_lufs": -24.26,
+      "input_true_peak_db": -8.14,
+      "playback_gain_db": 4.26,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "588b4cb099befa51fa5e46e5987ba71533c7c0b0c6b72083a782ac652a78aaf3",
+      "path": "res://audio/mission_voices/directed/pt_BR/9e660a90d7dbbf51c0007c70aee5a8854a0f915bb75bf8d4bc2463055a05166d_17712463ca6bbf51.wav",
+      "audio_sha256": "734560f7e77771d57a28b69e028552c78c3b4b8d88c42074d1a2d6c96a3fc244",
+      "input_lufs": -22.12,
+      "input_true_peak_db": -9.66,
+      "playback_gain_db": 2.12,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "e4b28b1bfa98960c797c3c33daddc6ee9d249b0b5fa7ef35a2389df110d05c6e",
+      "path": "res://audio/mission_voices/directed/pt_BR/56de131e8f75d9bb211969ef088617e2d001bf73bb6b709d8af94f08a9720126_177d91e96f6da254.wav",
+      "audio_sha256": "31bb530bce8a140763437a3c25559988e0b98e2fa703cb9333d29c4cd7723ac8",
+      "input_lufs": -20.05,
+      "input_true_peak_db": -4.74,
+      "playback_gain_db": 0.05,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "baa953bac55943a7cef7457e30e308a090901bee64325570503b891762b9bc0c",
+      "path": "res://audio/mission_voices/directed/en/1883dfe404c6ba4a9b6931f613c84feb09f561200bcb9f8020bbc5ec1b790e7a_180be660bd6741f3.wav",
+      "audio_sha256": "877dcac69a4c793b7de73a8798bf91aea277f20f154e4d50abd66e8a367e8f63",
+      "input_lufs": -19.25,
+      "input_true_peak_db": -6.95,
+      "playback_gain_db": -0.75,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "baca29797e94884e5a81104aa9492a5373aa4a6967fafb9d066365f5233e6811",
+      "path": "res://audio/mission_voices/directed/en/6b23a7d26acd01511bf23764815c8fc2282f812a5cc6a6af179fe5c6e393d267_198f7b18234608a4.wav",
+      "audio_sha256": "2901eb17cadb00e4b951edec54ccc43a8d5339b880797dea4f0c6188540e7106",
+      "input_lufs": -30.69,
+      "input_true_peak_db": -12.9,
+      "playback_gain_db": 10.69,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "9b9d08cc994dfadba8e0fce281c03358e587e42aabf2a17d5db380c61f345b67",
+      "path": "res://audio/mission_voices/directed/pt_BR/c4cf6ca890264ffa555f1898bee5c99df8740e6b16cbb273b3064e91e211aa94_19e5bf958ec6d6d2.wav",
+      "audio_sha256": "7ba39feba6bbf2c74515f5fd790af53431ed604fa38f82e92e5dc2613bd1717d",
+      "input_lufs": -20.28,
+      "input_true_peak_db": -4.14,
+      "playback_gain_db": 0.28,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "2ac41dda3e2695acbcaffe0638068a44a7a3663c57d24fa3eac7fc6550270a2f",
+      "path": "res://audio/mission_voices/directed/pt_BR/9f7d918f9fd54f326b54f47e0c570df14da0128cfac8f978a7a8a78660a6c751_1b11dfa4d728e81c.wav",
+      "audio_sha256": "4c4d6a1deb1a80d5d217a310126f877f497a5627b25edba1df6461f443669ba9",
+      "input_lufs": -21.42,
+      "input_true_peak_db": -5.73,
+      "playback_gain_db": 1.42,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "5f1df9e95c82391ea9b168839ad5af05b239d7cb4b568b034f2ae875ae0897c9",
+      "path": "res://audio/mission_voices/directed/pt_BR/672a6755c67f50ee1f7f05ea3f18df6ae8db5b48ebd0d172c7ac24ce51bfc7d4_1c6bc66306082bfa.wav",
+      "audio_sha256": "7cdca77c2769cfa31f0f43b996873476d3ce77261ec8add1d3e27325708fcf19",
+      "input_lufs": -26.92,
+      "input_true_peak_db": -7.01,
+      "playback_gain_db": 5.51,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "a27f483023377ac5bb588f4a06db2fd2a20eb38bccc71c9b9b45963a0604c930",
+      "path": "res://audio/mission_voices/directed/pt_BR/94c7ef45f093bc4c1c8920ec5676985d0b52968f49cd6d88ed3d4ec7620d42be_1db279a12490aaaa.wav",
+      "audio_sha256": "cb894f54dc311390ecb24784438b365688325c456094bc335b84ff1d26bacaa2",
+      "input_lufs": -27.11,
+      "input_true_peak_db": -11.18,
+      "playback_gain_db": 7.11,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "551f6519896b5d749826b603e72401c9d0468f8cdbc7008c101afdb33587e2cc",
+      "path": "res://audio/mission_voices/directed/pt_BR/9cc51183eea1826add5f7a8a0eb38e822a397f1311ec0befdc9786c56d64d680_1e4466967fe54891.wav",
+      "audio_sha256": "f0767166cd5360b1ecb7b6cf831d992ceb705f099ff051b7f0424b13596d8d18",
+      "input_lufs": -19.34,
+      "input_true_peak_db": -2.3,
+      "playback_gain_db": -0.66,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "14c3cf0184f51b921de5ef72923601e2a6043c89ffb32893d60f4e637305db85",
+      "path": "res://audio/mission_voices/directed/en/64af20c53685f5dc510ae594746e01641ecf36fdd7000251df6934af4be89d25_1ec09e3e38af2470.wav",
+      "audio_sha256": "129c8d1b69ed4bd03cef4a638513a510dd0457326648f842505502f3c9d2fd24",
+      "input_lufs": -19.99,
+      "input_true_peak_db": -5.59,
+      "playback_gain_db": -0.01,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "b0b770b23e6f5764bafd5db0a8f5ef1f165852da64f3c2713d238a80a7644a38",
+      "path": "res://audio/mission_voices/directed/pt_BR/4fec2126ee49adb9f1bc218958bf19aeff2871e844435fae2ae9078cc9b180f5_1f051206880dc795.wav",
+      "audio_sha256": "810d6168368afbeb032d0d52c12b42bad60a854e538a43a9c68c98b9825853bf",
+      "input_lufs": -24.02,
+      "input_true_peak_db": -5.24,
+      "playback_gain_db": 3.74,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "ebfde943f5dfb70fa9ceff06b1fd91affcf05afd2c2cc9278e915f57f7408df4",
+      "path": "res://audio/mission_voices/directed/en/7283345ac3ee9f43d4c6214a71ac6a53afd2722ff7d18d2b5454fe74703bda69_221439f551af23ab.wav",
+      "audio_sha256": "f7342fcf5cf8a6c734efcf3856a6b2edb7ebbd15c55db212fdc879abf8e22502",
+      "input_lufs": -27.33,
+      "input_true_peak_db": -14.81,
+      "playback_gain_db": 7.33,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "f24b6922b7ed4a6f168eb590f75c7523f6678561dbdb9bc95a0ef33b60aa6b62",
+      "path": "res://audio/mission_voices/directed/pt_BR/cf1f19e8ec1bf9edcf915985b622b00283b4d6a7e5bbe7a5463df84a298ffba4_222656c083e4d405.wav",
+      "audio_sha256": "33d56d46a5841cb744a0ee5d0a2f960b6667e3b5be061625e0dd5c49ce18343a",
+      "input_lufs": -23.5,
+      "input_true_peak_db": -9.63,
+      "playback_gain_db": 3.5,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "dea7ec75e870c695d3273f1947cd0061d358ce6d5ec82225860fc98a0d75d44c",
+      "path": "res://audio/mission_voices/directed/en/37583aade740dfc0f7db937063d611c875e7fa9213ae142367b54f3114647dd9_2235a1607490ee1a.wav",
+      "audio_sha256": "581d77803231e3d6ddf0434c882ae15f7ecc988a31eb75685ffceb4878e519a2",
+      "input_lufs": -22.91,
+      "input_true_peak_db": -3.64,
+      "playback_gain_db": 2.14,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "9032a1c0ab642250f77bbd91be2e52626e2ab52662ae5d098e00d6bd4f6757a7",
+      "path": "res://audio/mission_voices/directed/en/5aa5904c791ae1b5595919dc8d86465e73fe3119fc668f7b1247d0c39cef495b_23a1d746c888229d.wav",
+      "audio_sha256": "0f3a618f11d967f9a71a2fb82368ee0b9007c270096895539ae2c649ba9c3bec",
+      "input_lufs": -17.56,
+      "input_true_peak_db": -6.25,
+      "playback_gain_db": -2.44,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "685b77bcdaac64e5ee95e028271867620e1071a7a9ee6233cd38c20eb3c002e6",
+      "path": "res://audio/mission_voices/directed/pt_BR/37225c6d7089b71a2433cf521cea7652c90d24ce52d6d3ff091a416c9577777b_243618c6e119fd68.wav",
+      "audio_sha256": "d0da7ee5ec23cb5ee4aaf323b22697ae567a688dd8386dc3cd3fc5c24f6116b1",
+      "input_lufs": -20.66,
+      "input_true_peak_db": -5.55,
+      "playback_gain_db": 0.66,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "4be496fb71472cce0a7dd8c9833f5a7fab1c2644d07f6ef6852be9d1766ea6f5",
+      "path": "res://audio/mission_voices/directed/en/37225c6d7089b71a2433cf521cea7652c90d24ce52d6d3ff091a416c9577777b_24b559fad2235b66.wav",
+      "audio_sha256": "0faa2b7f7b8765585c64e360445e698d37f24602cc12994560a7d2aac3be98a5",
+      "input_lufs": -23.11,
+      "input_true_peak_db": -9.49,
+      "playback_gain_db": 3.11,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "95ec752ef2dd17569f4bb6df02d7008a9e9da5c7ef33d92c6448e0857aa3b494",
+      "path": "res://audio/mission_voices/directed/pt_BR/90a76e8c6b2e7f6f988e60168234661971f1c974f7d9a5a2da47e0576e8ae30e_26d2afcd4a4c1daf.wav",
+      "audio_sha256": "63ff432a45be0e6dd96988ed37bef5560d1f42b72c1157bf0c9112e2cc903ebd",
+      "input_lufs": -21.2,
+      "input_true_peak_db": -5.89,
+      "playback_gain_db": 1.2,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "ceeecd0b0018ffa8bbb60b7f2cd61ab49abaf1192185d6e00cf7e8ca859d0661",
+      "path": "res://audio/mission_voices/directed/en/66bcf17d27150eb0df3393815e39c462d035ca7776794d8c54600f9090b75b7b_2830b98121ffedec.wav",
+      "audio_sha256": "1ae7836432197a753a37ead30700a624de8c7f389a65e6d74a68a5d30e50b2b4",
+      "input_lufs": -24.15,
+      "input_true_peak_db": -6.82,
+      "playback_gain_db": 4.15,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "270e2fd7fdb70775c43284f1fb441554f08950bf9e677ae1d54c77326b6157fb",
+      "path": "res://audio/mission_voices/directed/en/b51fc4035dd2f6b6fa9287e2115db1f1dc46870bf1200e97580a94f5fff539bd_2aba4547e1292e58.wav",
+      "audio_sha256": "0ff93928142f4845408dd5e635c5b1422350bdc5b9200f44d5cc2158ec8d6075",
+      "input_lufs": -22.99,
+      "input_true_peak_db": -4.4,
+      "playback_gain_db": 2.9,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "ba046f44ab964a0b1992963c6a0507d5195fe517e8b14d3df4716531ce2ed6d6",
+      "path": "res://audio/mission_voices/directed/pt_BR/259cb79c5c02243b06fb9d99aec46e65b9bec9eb2dc4ebe0a57a704854b6b3b8_2b0e2ce96f83dd82.wav",
+      "audio_sha256": "91d0a1400803512690ac6b2b44ab42a6f311d61135ec9f2d02817b76047fe660",
+      "input_lufs": -21.8,
+      "input_true_peak_db": -6.98,
+      "playback_gain_db": 1.8,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "fc5dea877c712c5e88d6a1a01fa6ebefab049c04f26a3a075229c1590f16e4f5",
+      "path": "res://audio/mission_voices/directed/en/1280ed33cebe3a850d6cbbc01f81b66971a068a2e01855423151d9b849f286cd_2fc68d66bf6a947b.wav",
+      "audio_sha256": "c4b385c2b1be35b5150e63f4b92720c4ea22794d0a51e7b4f90852fa0ea70fbc",
+      "input_lufs": -25.07,
+      "input_true_peak_db": -7.73,
+      "playback_gain_db": 5.07,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "34dee6a63bb676010ed8a1a2ba94601f34e283f6e77378af9606b896e1b205c8",
+      "path": "res://audio/mission_voices/directed/en/20a44b9771e27941d403dea6d5e8b25e1ce447d3129cde5458734ce997fba7cd_31c70d8e566dba55.wav",
+      "audio_sha256": "23a7d349a9ddabe6f903067d3cab39258e7c2b69a53cfe68dc0fcc427739a2fd",
+      "input_lufs": -24.23,
+      "input_true_peak_db": -12.67,
+      "playback_gain_db": 4.23,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "cb73ea65de10cc299769a6ad5ef270de504648e201229e9a7e55ecb8ed16b412",
+      "path": "res://audio/mission_voices/directed/en/baa145dd4ce25037355a2943885db68b3c9632b9feb9e855cbd3c1a2ce5fb473_33cedb72cf9f10d2.wav",
+      "audio_sha256": "948c7a81e37d760d129713d0aa196e9da0ed2fea8d754f71b501e19f6a08b1a4",
+      "input_lufs": -27.07,
+      "input_true_peak_db": -10.93,
+      "playback_gain_db": 7.07,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "b5fe4de91b7fc19da12ec2a365b24ed2f241b11c7383f9c0c722af8c6cd5e732",
+      "path": "res://audio/mission_voices/directed/pt_BR/7882dfa2d847caf9423c2987dfaca80d074570391bae5872206f9e0ae87da886_34c10ddb637e4528.wav",
+      "audio_sha256": "e6f08f2b52691948d878af61b3e5aaaee16358f81a5f521cf67b6e2dd4b18e9c",
+      "input_lufs": -23.17,
+      "input_true_peak_db": -4.86,
+      "playback_gain_db": 3.17,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "4529b057c2009d9e26d2fbf21bc94088c4b79725570baed59392d83d230b6f8a",
+      "path": "res://audio/mission_voices/directed/pt_BR/ab25343fff48a5c51ade30364c7a1467f86578ec226b4d1eaa586568ae0be241_34dd15fe89781847.wav",
+      "audio_sha256": "8b320bdf4ac55fb244dc5fe4bd1c2cb0c5017b2a4a73509b97930706a877cbc1",
+      "input_lufs": -21.02,
+      "input_true_peak_db": -4.39,
+      "playback_gain_db": 1.02,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "fd32b57f94d1576e30d77d771f541c040b93031b1e55a57401cb02860f37ca21",
+      "path": "res://audio/mission_voices/directed/en/b27f5e1c3723492c6a856025499d6d0524105c4f16d99ffdf4f8aac475411336_3595daea4fce939b.wav",
+      "audio_sha256": "3907b2d5a3cd7be38182a360165484ab37c85c7498f4433b2cd4e4ee42f4a694",
+      "input_lufs": -24.56,
+      "input_true_peak_db": -10.36,
+      "playback_gain_db": 4.56,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "4859531bdc0dd6bcdf0454b7d464c0766a10c19978f009d130661d2ee0d67208",
+      "path": "res://audio/mission_voices/directed/pt_BR/2ef88c0abc43c612a0414426c16b0540752d8c6bb5ed7b1720d182bddd4110f2_36091a9755bd7a68.wav",
+      "audio_sha256": "fd730b902a8a277fe54be77ce9a51727aa43afd3ce78881834ac22b987cccc14",
+      "input_lufs": -19.61,
+      "input_true_peak_db": -4.68,
+      "playback_gain_db": -0.39,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "77ae5422d1b5a665e074853bb58d77a6090be2b61ca35b1d5e9445c8d8abd9d0",
+      "path": "res://audio/mission_voices/directed/pt_BR/64af20c53685f5dc510ae594746e01641ecf36fdd7000251df6934af4be89d25_366be21618fee484.wav",
+      "audio_sha256": "6ffa36cff06988997fdb514429aefa83626c71a2061abaf4c3e2144a5bc4a17b",
+      "input_lufs": -24.89,
+      "input_true_peak_db": -9.23,
+      "playback_gain_db": 4.89,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "4c5758f4fe3ad538cc01392a3d9dce03a23b42be705ceeca026fefda4fe475f1",
+      "path": "res://audio/mission_voices/directed/en/3cd7a11cd8d6b36c44f869f6bcafabd8c37eec4ecc346942e853951ffe9650af_387ef22f32f0ba43.wav",
+      "audio_sha256": "2ee1f9496f1a0610c51ac8b1adfa0703e8fc4c929852d5d70aeea32146fe3fc4",
+      "input_lufs": -23.36,
+      "input_true_peak_db": -9.59,
+      "playback_gain_db": 3.36,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "9445cb729f162cf871edfd600c3f50bec656258ced5133d1bddc6c529911c52a",
+      "path": "res://audio/mission_voices/directed/pt_BR/ea581b5c49c2c432a4001daa168cd43920857ed3547225b7f815712b673c32f1_39929a1bda4ff1c4.wav",
+      "audio_sha256": "29ab6046217d5eac1afa79ea4be3cdc4256e84a678c53da654140146109e8cb5",
+      "input_lufs": -27.74,
+      "input_true_peak_db": -9.07,
+      "playback_gain_db": 7.57,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "9ab7fbbee1828025ec63541bbfc73918b07f50302ca696c1d2ef93ea27eb9fd1",
+      "path": "res://audio/mission_voices/directed/en/bac960a3fdd2866a887b4d27b730d833b490ec12ce0b1ca81d496af566cffe2e_3d65d9a4e56b3291.wav",
+      "audio_sha256": "b2d4177a40f3246f4b8d22630bfaae57e189a702b922962e9d1a681eeaad31e1",
+      "input_lufs": -23.2,
+      "input_true_peak_db": -10.06,
+      "playback_gain_db": 3.2,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "210fe86140d42a93491844c98c81e9df322e00862cbf86f96a915e04252e2dc6",
+      "path": "res://audio/mission_voices/directed/pt_BR/7618a510dddaba0f29d4e950710a222dee7dd570a04fd37c6b431c3bd5c8b5a9_3e1c489454b6bb81.wav",
+      "audio_sha256": "620cdad8eeb4a2d550697088acb2045f12ddb4e963f34b6545cb3a80c961190d",
+      "input_lufs": -20.51,
+      "input_true_peak_db": -2.48,
+      "playback_gain_db": 0.51,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "82c5a221dbd8783aa236b1c639e7dfe79d53dc6479d719cc6539b5a0379c5bcc",
+      "path": "res://audio/mission_voices/directed/en/355b78047be4ae60c41e754cf321b1bb580e5922907d80adda0abaa98e21bce9_408b2e937b98f7ab.wav",
+      "audio_sha256": "32cf2d9f8fba28c2e4883c619905d532cdd051b033c30579fcba6f9993e4c146",
+      "input_lufs": -25.51,
+      "input_true_peak_db": -11.86,
+      "playback_gain_db": 5.51,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "722f574a9c93cacf2f91e067c7c38ad0d3fdba1ae989c642a5d302ddc749b72c",
+      "path": "res://audio/mission_voices/directed/en/7c21151f4e5e7adf36ca3bafc1655039bfeec0cf3691c813ff0417106ce1643d_40eb1dd3e8115186.wav",
+      "audio_sha256": "fffb45360c3ae90d27c65cfcef86da4b5bbad895850cceacd2bacf72451d136f",
+      "input_lufs": -26.06,
+      "input_true_peak_db": -12.53,
+      "playback_gain_db": 6.06,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "9655d30add45d006c08718db61be5dfca7fad6027bb6e6e5cb498898770125b9",
+      "path": "res://audio/mission_voices/directed/en/ea581b5c49c2c432a4001daa168cd43920857ed3547225b7f815712b673c32f1_41731cc7c8d3f2fb.wav",
+      "audio_sha256": "731acddd4b4f419b2d3054611307d5be345da12925d6dbba7c5981de43f03ae5",
+      "input_lufs": -20.6,
+      "input_true_peak_db": -6.08,
+      "playback_gain_db": 0.6,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "1f9c8c91c779a191ab4b91f5d3da340c1f8cb5fff784b5c99ccf5133a7a165cb",
+      "path": "res://audio/mission_voices/directed/en/6424f2ed4d41a412fffd2f29644127facab6d9b7ec291252e635203aa63c0c3d_41743208edef95c9.wav",
+      "audio_sha256": "0c7c57982d0a47d6e736e6bd4c7aa4961a63b256755a68a61d4cac3bb14b5643",
+      "input_lufs": -30.45,
+      "input_true_peak_db": -13.3,
+      "playback_gain_db": 10.45,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "13349041bef8428310151260a92c29621f5a63efb7dca34c5df703b081a906d2",
+      "path": "res://audio/mission_voices/directed/en/0168ba7bb6d5f7e7eb1e0e1f761888173c2a0d55149d207742124a609fc56fea_42d2a6afadb1f400.wav",
+      "audio_sha256": "95fe412cce52cb573935c982d804a6d9c1c61030ed4913468b7201c00ba20e92",
+      "input_lufs": -24.73,
+      "input_true_peak_db": -9.31,
+      "playback_gain_db": 4.73,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "ac6c6990730e80b95bcdc4118ba04a929ffda86c998b9ee025990893a91557ea",
+      "path": "res://audio/mission_voices/directed/en/f199b24f9f8f031cb6bcac9e7d6d862bbde85c952d28f80e56a34cc9ea9d527a_4449a0730058608e.wav",
+      "audio_sha256": "a1cd8e3d3a64672b8ad9a5e5ad74ab10a30728ad8f16df8ef960cb2eebab76f4",
+      "input_lufs": -27.55,
+      "input_true_peak_db": -10.82,
+      "playback_gain_db": 7.55,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "91be9cb84d46025d05c08aca90c40a77e0580d74667da582d7308c373b0d82b1",
+      "path": "res://audio/mission_voices/directed/en/d0a50245033772076aafd9f517e4f6a048c4b15b44d8292d668eb62a5cd3f966_45a752b554c564ce.wav",
+      "audio_sha256": "c0d3006cb56fe44dd839889256ddf55ebf10ebd11c062ea7d3191df762e264af",
+      "input_lufs": -24.24,
+      "input_true_peak_db": -8.96,
+      "playback_gain_db": 4.24,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "d8eeb18546d8affa5e981677bfbf2fc0c8af3561c972001fe50e73243814998a",
+      "path": "res://audio/mission_voices/directed/pt_BR/f0a810e8cc3fa72dca8256a54e0fe72513e53d0f81deacefd7423da648ae61e6_46b3adbb62be92b6.wav",
+      "audio_sha256": "1122f6cfc9d03ad4556b0ac90e46329e9587cf7c0880a99ce12d179309055b18",
+      "input_lufs": -24.43,
+      "input_true_peak_db": -7.78,
+      "playback_gain_db": 4.43,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "2f3ef9b4da51157bcb02d18b884eb2f17973eca7aaee01bd475611fea6e0a207",
+      "path": "res://audio/mission_voices/directed/pt_BR/e24f39b16c4cbace018bd31a56533d5cb71a9785852ca7909437260ab309f189_479525ba6942b620.wav",
+      "audio_sha256": "14787357e9d0971b21b29a1f2682aaa418b54270b925779f1c5b255b7b6d7ca6",
+      "input_lufs": -26.19,
+      "input_true_peak_db": -10.43,
+      "playback_gain_db": 6.19,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "68821e9674d9728e704862144ee6e4f1f686a788fffefdb14b6cadaa57ea4701",
+      "path": "res://audio/mission_voices/directed/pt_BR/7b9cac2233072c1cf3be85718e77dfa12166351fcfb0311a0bd7315bfa585a12_484a8d50db90a18d.wav",
+      "audio_sha256": "0e511c922dfc7f6c9d45c32c8d3f2e9244484d79d22eb282d259f5d9b32df3a7",
+      "input_lufs": -20.14,
+      "input_true_peak_db": -6.99,
+      "playback_gain_db": 0.14,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "564273e5db33ab0c1df93b4d790c6046670af67919a9d3b1bb921da0a9530d2e",
+      "path": "res://audio/mission_voices/directed/pt_BR/8b801c2935c051405871918bc7a5c42834b65933981a6a37ccfdd0648d5b4273_4a0f01dde21c424a.wav",
+      "audio_sha256": "506850261380a2ee55c09c8002e0ba9feca2e7bfdb60c89a35bed447312ade73",
+      "input_lufs": -25.48,
+      "input_true_peak_db": -9.42,
+      "playback_gain_db": 5.48,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "ccd111989a37ce3e1546ede69b1be9c1e3d066e06b8cd5c5577e17fee05665a5",
+      "path": "res://audio/mission_voices/directed/en/7b9cac2233072c1cf3be85718e77dfa12166351fcfb0311a0bd7315bfa585a12_4c15f2e126987460.wav",
+      "audio_sha256": "0d56a478bf23c567305589fe3e037fd0972f2383340b85069af4b1a0a6783588",
+      "input_lufs": -31.3,
+      "input_true_peak_db": -18.04,
+      "playback_gain_db": 11.3,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "7169f2495d5d30d4a087bd369abcc2b0151f263c4c99733a2b6e2f93701f908e",
+      "path": "res://audio/mission_voices/directed/en/56de131e8f75d9bb211969ef088617e2d001bf73bb6b709d8af94f08a9720126_4cf240b1d8ec5dc9.wav",
+      "audio_sha256": "d75516e56a68b92388a64cadd522d8174d9540a6292035763cff2ecf2746b5c3",
+      "input_lufs": -28.74,
+      "input_true_peak_db": -11.77,
+      "playback_gain_db": 8.74,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "c523a92bed4e8512ccaa8416a195a0e54c2a4df523b76d9d4a3ace205189e436",
+      "path": "res://audio/mission_voices/directed/en/26515f5261cb5e36017d7dce9907ff52c321a73a0b3c67671278ab871106e201_4d373a4240cc9003.wav",
+      "audio_sha256": "af3d4397de3ea9ac7049dc36e4fee67ace559a36dbb85ff3fcf6bbf2afdca068",
+      "input_lufs": -22.94,
+      "input_true_peak_db": -8.73,
+      "playback_gain_db": 2.94,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "bf30a0bbd1fb202dc128803bcf81fa11c786a37b28fdaeb4e72764b467e8662a",
+      "path": "res://audio/mission_voices/directed/en/7d230b804395cde3fbf629bc5a7afdf564edb6cddc6cf1df4d7adbb80b0c0a41_4d771c5435684298.wav",
+      "audio_sha256": "1aeb2bbc1f7b1586a10afb1fe17bee3907a8a080eff4577f3490661c91363382",
+      "input_lufs": -23.71,
+      "input_true_peak_db": -8.97,
+      "playback_gain_db": 3.71,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "eeb62a3991f5702aa78d9076f75133d37f30627eb501505f334a2dbaa04c1133",
+      "path": "res://audio/mission_voices/directed/pt_BR/7283345ac3ee9f43d4c6214a71ac6a53afd2722ff7d18d2b5454fe74703bda69_4ec5a62bfa8de0b0.wav",
+      "audio_sha256": "87e550c0d7f719b3306869810b1e63ce4c0ba69f3c399fa76fb229a319e00c97",
+      "input_lufs": -24.99,
+      "input_true_peak_db": -9.1,
+      "playback_gain_db": 4.99,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "8fecd95b788085184c5dc5848bbd2c84c7689630429fc6ec772d0a7512995143",
+      "path": "res://audio/mission_voices/directed/en/5867edd5fce8669aa10a47373679c649ddcf4fc6f8e8ef92b4bb534d196587bf_4f0e5f8e4c86e15c.wav",
+      "audio_sha256": "2de5a38bffaaaa495a31cd5eca2cc3a3943558564049ef7677d29b4b7af11ec4",
+      "input_lufs": -18.41,
+      "input_true_peak_db": -6.68,
+      "playback_gain_db": -1.59,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "4c9ee96a288cbfc752192d085569787ba3becc28b6d4c219cc81e7f9c98d6a85",
+      "path": "res://audio/mission_voices/directed/en/94c7ef45f093bc4c1c8920ec5676985d0b52968f49cd6d88ed3d4ec7620d42be_4f49ce50fb7dd0ac.wav",
+      "audio_sha256": "5d46929d61ca350ce772fbd8977c55bb488271b00b58ffa8fe51d11ef3ba893e",
+      "input_lufs": -37.02,
+      "input_true_peak_db": -13.64,
+      "playback_gain_db": 12.0,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "9de95e8c06e7dc663ec8426d1ea8cd4345009b921e913dabcbe1a3833bd54f2b",
+      "path": "res://audio/mission_voices/directed/pt_BR/ae255b77e1c758b682c9182d30cbc073336c9fb6f85346b4ef4b8db90a8f4ecb_4f638b18b6b52704.wav",
+      "audio_sha256": "faed9bc809899da7205bb984758a3bac35faf7b98cb977485f127239f03e9b97",
+      "input_lufs": -23.27,
+      "input_true_peak_db": -4.57,
+      "playback_gain_db": 3.07,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "3ab49b07aeb7a9e059817b3ab5f81e5405b9c96d5814db81b4a5b601e357efe8",
+      "path": "res://audio/mission_voices/directed/en/db85b880860599484e3466f9662ab1ce49fc775b8c3e24d67dc5c63974c27553_4facae46177beabb.wav",
+      "audio_sha256": "e21edac466bf349eeb5232cc1328e0199197c9a68b406f62f955bbddebb22464",
+      "input_lufs": -25.12,
+      "input_true_peak_db": -11.39,
+      "playback_gain_db": 5.12,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "6399c3398bb9961ddc694899eb21fc98ddeb61b339a89430da67bcf6ce338e26",
+      "path": "res://audio/mission_voices/directed/en/23a1a0d7b66365a5f252e63a07dc07b52d55a29d606d2ff4e0c06700eb3afab8_51b79192b50a4dd1.wav",
+      "audio_sha256": "1bce74d9dbc3697e32e3dc6ef6059f22ab12965301052cbb26c7ab97c48b2567",
+      "input_lufs": -27.61,
+      "input_true_peak_db": -12.25,
+      "playback_gain_db": 7.61,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "54f3b13a3b34afe2a072e6e485308cdd4a52c9a36b9c1dc0d6f3ba9f77fc95ba",
+      "path": "res://audio/mission_voices/directed/pt_BR/c22c953e576302766cee53cd825a3e05805de24e3773ece1fb2f25701443aa94_51eab0bf10abe27b.wav",
+      "audio_sha256": "b27c107756613e6ccfd671e9e730d5fb59a2fc6833dfe643a42c32b51ea93841",
+      "input_lufs": -21.22,
+      "input_true_peak_db": -6.96,
+      "playback_gain_db": 1.22,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "c25ed969850a967e127a40866249e13cbbe2918b7107dac26f0550e143844faf",
+      "path": "res://audio/mission_voices/directed/pt_BR/d605fcd49d643ef22f9c39a1f70385b636ee052b7e67c126c4420462fd9477a3_529e76b7c70b43a2.wav",
+      "audio_sha256": "40c01114f9f2de3ad1c106287ee392dcea3928b0e8b1198f79f33788db762f39",
+      "input_lufs": -22.04,
+      "input_true_peak_db": -5.36,
+      "playback_gain_db": 2.04,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "4008d08eae6d797f8dde5b646c27f9f94f6959eebe35cf65245c85c22068c05f",
+      "path": "res://audio/mission_voices/directed/en/75e2d2b4472646dc30bdf95150627eb21b0c1efa14eaae9fd65d293e895ee3ae_53339709375060db.wav",
+      "audio_sha256": "66cdddb3b266536806dd7fbe4affdc0be4160013d8d084ef6e54e70611ab34ba",
+      "input_lufs": -25.0,
+      "input_true_peak_db": -6.93,
+      "playback_gain_db": 5.0,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "350ad6384dc13e3a20da2b13a942d74dad722201f739ed0c91adb70f18c33657",
+      "path": "res://audio/mission_voices/directed/en/095971f5271bee72734a8563761cfb242bdfc36603a22eb663052345801ecd24_54d6fa1cc44b6476.wav",
+      "audio_sha256": "665f2f9d2d61816dfa4cf7782bc286eb5320651ac1b5ce14eae1a315750880fc",
+      "input_lufs": -23.03,
+      "input_true_peak_db": -7.68,
+      "playback_gain_db": 3.03,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "bd3ce6d6c2b05dee9f62fb5b54819d6cef02c24611eb3ce501abe29c1903b32d",
+      "path": "res://audio/mission_voices/directed/en/1b2bd92bbb32b45fedd773e93e5f8e5ef2ab2cbac83661792f420bc5d4f3028f_55571d657e2c43c3.wav",
+      "audio_sha256": "b6a979b76a4d28572eba5d016521915bbd0d7fb99c5a7422307e184ee839535d",
+      "input_lufs": -22.51,
+      "input_true_peak_db": -7.84,
+      "playback_gain_db": 2.51,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "e593930335fb62b01c218b3642eed582a2126545271908be2a1782771541cabb",
+      "path": "res://audio/mission_voices/directed/en/5885574171f8429e23b4138c2fcc5e8f3efa6012aa0bd93695c5d778d0e59b17_56ae47203e930a0c.wav",
+      "audio_sha256": "712671384d16e365ea6e991d4cd38c269527c44ce670460695b6b6c89a429214",
+      "input_lufs": -23.92,
+      "input_true_peak_db": -8.81,
+      "playback_gain_db": 3.92,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "63cde517d96e66a5c49c90f4951f7839721203e538a58836b92423283fd5e9c8",
+      "path": "res://audio/mission_voices/directed/pt_BR/bc36caa1978e534bfdde471ea0df7b16ef64b0cda49471b1b0746a4688bf98d0_56df40cba0d19f20.wav",
+      "audio_sha256": "5732ffb8485980217822d6953280d1e42e1abd33118508f343d0445008b4d250",
+      "input_lufs": -28.73,
+      "input_true_peak_db": -10.05,
+      "playback_gain_db": 8.55,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "7dce49c0b7dded76a4281d8e229666060e5741f75ba89c186901deb2a0a6de42",
+      "path": "res://audio/mission_voices/directed/pt_BR/1280ed33cebe3a850d6cbbc01f81b66971a068a2e01855423151d9b849f286cd_578393072ef045f8.wav",
+      "audio_sha256": "d5d964957077ec01c96511f65070826b9af1934eae3193e94cf9ed06e1621796",
+      "input_lufs": -19.11,
+      "input_true_peak_db": -6.37,
+      "playback_gain_db": -0.89,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "0fb793ae53543a9384cc2ddc9b80214824c0370755451c94e901f3ec5ce7e6f3",
+      "path": "res://audio/mission_voices/directed/pt_BR/4d36050d223f1d8cd509896b0df68ddd6b91ab2c999a8979d3d568eca0e544a9_5a81779456fcaafd.wav",
+      "audio_sha256": "3bd20dca3a126421cafd53bc1fe6f86f7b674719e44f77ed0aee2b3380b1573d",
+      "input_lufs": -23.18,
+      "input_true_peak_db": -6.29,
+      "playback_gain_db": 3.18,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "317701a9e80b2d95aafe5b6e1d3c9b7e4901a95a78f8e015e87d13fe6180d1f4",
+      "path": "res://audio/mission_voices/directed/en/cf1f19e8ec1bf9edcf915985b622b00283b4d6a7e5bbe7a5463df84a298ffba4_5ab6264161ace1c9.wav",
+      "audio_sha256": "b7c3167fac3aea14bfe7e92a4ba7e2503c0ee2ad0fe72f41788a343808163f5b",
+      "input_lufs": -21.09,
+      "input_true_peak_db": -6.21,
+      "playback_gain_db": 1.09,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "9dd67ee476436913f0b48538fa8f8067cbe134cb2a7a8e6dfad7efacb81eac88",
+      "path": "res://audio/mission_voices/directed/en/7cebcc1e90150aad3dc817d4925e28059d3a56e3963000d549a0d762755d91fb_5b8e02734530885d.wav",
+      "audio_sha256": "9ebd7ccdd1551cd0212e21d66c4607fd6960d1c32eb83052657d9e61284905ff",
+      "input_lufs": -22.48,
+      "input_true_peak_db": -8.32,
+      "playback_gain_db": 2.48,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "9fbfed9545580988bb69ab2b92bd00aa5860bf9b1b17fdfdd61ff49d3c8d59e4",
+      "path": "res://audio/mission_voices/directed/pt_BR/5ce5bfb95b8a763156fb53531076ede07392f83ac8631436ba3683419fe39a07_5c83ac9efdb89db0.wav",
+      "audio_sha256": "ad8ad6bdb3d0cd64f13e3931f6a08314a7bdfceb17ae1780e0cc32719aa6ec8b",
+      "input_lufs": -21.54,
+      "input_true_peak_db": -7.86,
+      "playback_gain_db": 1.54,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "f7c6e4cc4f7c2c0ee6f21280c5597f429fe29790ad6014be6a471ae43b09b154",
+      "path": "res://audio/mission_voices/directed/en/667224b47a05df3860edebae09b9bd3ce3e2a4a69c2b727c93277d9cb43df62a_5d3035348eed325c.wav",
+      "audio_sha256": "6a3eac913ab099afed76c09f8137646ac269f9bff6a9ad65afdedc0d6a5f1604",
+      "input_lufs": -30.61,
+      "input_true_peak_db": -19.58,
+      "playback_gain_db": 10.61,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "0f4f07b74b31e6fe5c6d807f7e4c6bd7871466213658cd91a90b70ae81b86a6a",
+      "path": "res://audio/mission_voices/directed/en/6652e9f19e401c6eb89a2b2b0fa642a5553eeebb16a46415e7c427c3cb55c188_5db95117b82d7e13.wav",
+      "audio_sha256": "071a5e59eea323ef52800bd6496931d3198584ba3d47e037ffe135577b6b288a",
+      "input_lufs": -22.87,
+      "input_true_peak_db": -4.99,
+      "playback_gain_db": 2.87,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "b8188288f6c828758319cbcef4f9a17d5f0443ea96c18213f3c5735f7411bb86",
+      "path": "res://audio/mission_voices/directed/pt_BR/66bcf17d27150eb0df3393815e39c462d035ca7776794d8c54600f9090b75b7b_5e6148bdcae69f07.wav",
+      "audio_sha256": "745653d1f60676793c8d14580bb8be6d1293ff879584fac46aed4bd14646392b",
+      "input_lufs": -23.63,
+      "input_true_peak_db": -7.34,
+      "playback_gain_db": 3.63,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "de65b9830cacd95f7d1db7bb4f8252b353c158797da85cf7f07da619aa668733",
+      "path": "res://audio/mission_voices/directed/en/415567cbcbfe9ed6b90ba9467f1586dcc538860f9c38e5e28abea90674fb0816_5f86147973822534.wav",
+      "audio_sha256": "353b3cd23072bda66990cfc1dae250648c25ddc2dbe7de1f85afe899db8dcbaa",
+      "input_lufs": -20.81,
+      "input_true_peak_db": -7.38,
+      "playback_gain_db": 0.81,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "18bd884b7a893d8f338d00a14c271ec56c07ddb7599e76c3bba54daebbd6d38f",
+      "path": "res://audio/mission_voices/directed/pt_BR/baa145dd4ce25037355a2943885db68b3c9632b9feb9e855cbd3c1a2ce5fb473_6012b14ee7f0c781.wav",
+      "audio_sha256": "fa67470ac95b728c890e3849f7999abb700fbfe841f8cd612287023db8cbbae3",
+      "input_lufs": -23.79,
+      "input_true_peak_db": -3.88,
+      "playback_gain_db": 2.38,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "a489d7c86d22d356ae02992a422d13a7815679411c5b6fd91141ec8781e4ca03",
+      "path": "res://audio/mission_voices/directed/pt_BR/80a833fa7c4bf1c457d0ce1d3fbaf3e0fe21b6b6f926b242223d70ce494307ac_60176a312432abd6.wav",
+      "audio_sha256": "1735daf0264e6c38986f93aa79e82a92f08d432b183517414d02e5f302b9f6d1",
+      "input_lufs": -24.39,
+      "input_true_peak_db": -12.26,
+      "playback_gain_db": 4.39,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "03930170f8485135e94d8faf91eec0c72474ba03a59015859dee35966b042418",
+      "path": "res://audio/mission_voices/directed/pt_BR/5aa5904c791ae1b5595919dc8d86465e73fe3119fc668f7b1247d0c39cef495b_6106f2eb1f663196.wav",
+      "audio_sha256": "1113d36ea7272b3fd8bf2372941b346d5912208a9f1721b6d78ce2421de0b8be",
+      "input_lufs": -22.72,
+      "input_true_peak_db": -9.81,
+      "playback_gain_db": 2.72,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "d03b6725072c48e6b3d1f09e8d13afd40e325fc10fa88f7f7d7619be94c075ee",
+      "path": "res://audio/mission_voices/directed/pt_BR/42dfde9c645bfaa0d854f49d4208ba82c3da92d04d3e2adfaaf49f24f2fa1f69_620862f492fde388.wav",
+      "audio_sha256": "eed873d49538b2618204adf04b9057370fd794808448471b90445104d29115e5",
+      "input_lufs": -18.21,
+      "input_true_peak_db": -4.32,
+      "playback_gain_db": -1.79,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "54b514a042ffa171f07cae3ce5c1ee0a3773cc9d3aec9548cf7dc8b0b5dbe678",
+      "path": "res://audio/mission_voices/directed/en/eca694909fa9d61cd7745f5fa63649ddc88396757e7f90490b399413c936fd87_6249a71b5e5b0094.wav",
+      "audio_sha256": "c90b5af9fb3e46fb2524425c552916cc966d06dcf3523f567071df46e8d259ae",
+      "input_lufs": -28.97,
+      "input_true_peak_db": -13.12,
+      "playback_gain_db": 8.97,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "840a4f6b45b241cff918c35f783ef1b7996fee2d0073e622d8c426ce0f5e75e3",
+      "path": "res://audio/mission_voices/directed/pt_BR/68ef39af1e4c24c1343799e14e3d54a8cd21f39345f65428a81670ab6e5e9f39_627d61472741cd34.wav",
+      "audio_sha256": "6d0ec805cce48b9334a1095fb59c715e9fba74ae3d3ae44c958230331343190c",
+      "input_lufs": -31.55,
+      "input_true_peak_db": -8.12,
+      "playback_gain_db": 6.62,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "3b19833f6a3e2fcabae30c50a9415e052408c743f546433ac72fce7f911ff47f",
+      "path": "res://audio/mission_voices/directed/pt_BR/406b337fea9efc7d75d379c4c33fb85dbababc6ff48578d982ea052e6157f024_62ac4c49c06b36a9.wav",
+      "audio_sha256": "8e0a501e9f68763b355617dbff1feadeb06ec63b8b6321664d0604f46658ba60",
+      "input_lufs": -26.44,
+      "input_true_peak_db": -10.12,
+      "playback_gain_db": 6.44,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "85ca50c3ba02726bc99eafef2d01eb5e8d95148b46653ba97cc04093038e0bcc",
+      "path": "res://audio/mission_voices/directed/pt_BR/8b67d6fc73bcabafaa6129d9b84af1e34983c321599dbfcc2cce87c93a0e4ecc_6580049b01d8e3e5.wav",
+      "audio_sha256": "b2da806ce704596c32d38ef58dbf3ea1a67f308ff4cc198c05180081bf8e0671",
+      "input_lufs": -20.58,
+      "input_true_peak_db": -4.68,
+      "playback_gain_db": 0.58,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "52a78ac64d8b002c21bfbf28839579dc33dfc0d203785ca3277b00d08ac574ed",
+      "path": "res://audio/mission_voices/directed/pt_BR/faad4cfae55b5f5d800a8b6732b327f870a60b5c10912248c2c81b47a7072289_663e85ac39689ca4.wav",
+      "audio_sha256": "c9c2f227ac843493111648d4a45e6f3e4e98ad30e6b549bbe5c5ee06c1ee1e57",
+      "input_lufs": -22.78,
+      "input_true_peak_db": -3.79,
+      "playback_gain_db": 2.29,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "ebe3991df634e36b00029e90a6f4c61ae3fe8c1aea38eba47dec95190a904b00",
+      "path": "res://audio/mission_voices/directed/pt_BR/c252b07c99df07634a76d7f0af0b0f4235c7de2015665a41fcb344e05af4b794_680b5bee060c97f4.wav",
+      "audio_sha256": "1d91fbbabc3fd9765a3fdaa78c14443b6ffc157526408542d76afd2f2920404a",
+      "input_lufs": -21.32,
+      "input_true_peak_db": -7.2,
+      "playback_gain_db": 1.32,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "0022dae5b227f94aef0655f70a426f3c4cd5f651abc1d9e454a6acacec25039f",
+      "path": "res://audio/mission_voices/directed/pt_BR/5867edd5fce8669aa10a47373679c649ddcf4fc6f8e8ef92b4bb534d196587bf_682c392fa24b4fff.wav",
+      "audio_sha256": "79ae4756f90fe6ce99851524814b212472f46336972ecf4dc2f03b7e981fc18e",
+      "input_lufs": -22.12,
+      "input_true_peak_db": -8.22,
+      "playback_gain_db": 2.12,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "e9c6b5f9dbc68236703882764988040ba9095e3ba1ed98c01d6bc893bad5c6d7",
+      "path": "res://audio/mission_voices/directed/pt_BR/b03592c8f65d23d92090f491d9470032c24caf2e87b6d45123432dff6fdded97_68d9ed02e3fdd6f1.wav",
+      "audio_sha256": "707d0873d257a502136913f37a03d9fa2a4b4cc97689e832eccccbc727f3928c",
+      "input_lufs": -13.68,
+      "input_true_peak_db": -1.87,
+      "playback_gain_db": -6.32,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "5606e02fdcbe5a1d9d7625eeec3edddb7c0a2961c7899268ca5849ba16a540e6",
+      "path": "res://audio/mission_voices/directed/en/f445cdc3d6e03d67a97d245a432c22537fd3abe1e998786b78bcb3cc2eaed0df_69a65f6d68c23f27.wav",
+      "audio_sha256": "a6cb89feb62c2faa6aba5bcec79f1a9c087e09709d96b3a55bfe90486369a8e7",
+      "input_lufs": -25.49,
+      "input_true_peak_db": -9.73,
+      "playback_gain_db": 5.49,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "95cf952ad60cb054d2cfb84964c2aa4d7015d90e7afb32567f3175df251e3c29",
+      "path": "res://audio/mission_voices/directed/pt_BR/fb68f975ffb4fccdef8e1001cbc96d8df9a73d430336423fb9ea9fc5bfff8b14_6a1bab0c2ab6e71e.wav",
+      "audio_sha256": "86058edd2134c01e56ed4d7b5386a9c24d793c18fa72586c246d498df6e661bf",
+      "input_lufs": -23.41,
+      "input_true_peak_db": -4.39,
+      "playback_gain_db": 2.89,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "d56beda4d82526213de9ca6fff036e38fbac36778aedb6a828917038fb85f758",
+      "path": "res://audio/mission_voices/directed/en/42dfde9c645bfaa0d854f49d4208ba82c3da92d04d3e2adfaaf49f24f2fa1f69_6ac41217360d98cc.wav",
+      "audio_sha256": "33a92710b851c4bf0c01d6eb61af9ea1f055c915f5cc93726dcf373973bfe891",
+      "input_lufs": -37.35,
+      "input_true_peak_db": -21.93,
+      "playback_gain_db": 12.0,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "402bb15806b46b35546545d809bb3c7c020faa19c2d47a5970c367a460a0333b",
+      "path": "res://audio/mission_voices/directed/en/2c3dc39e21e25cd79ac5beae492f676a18b47f7b1f13b7c55591c88da4a5b515_6c4c5e868c7419d1.wav",
+      "audio_sha256": "be592797352226717c448ad03f61b76a89161eeb38e61c4c0b920037cdee2f85",
+      "input_lufs": -22.23,
+      "input_true_peak_db": -7.29,
+      "playback_gain_db": 2.23,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "cec22f097a0c87f19d51d08d53148259fbbe3d344539343ff3a6296197333dc7",
+      "path": "res://audio/mission_voices/directed/en/9d89a290c5b298ecad60a78b5b2a31d23c00a8037dabf9398f0a59a9db2a25ea_6c95620f7814e1f6.wav",
+      "audio_sha256": "51e67a1654e41b853f4890506554aa31ee6010b7d945c281a1523541cff586ae",
+      "input_lufs": -26.83,
+      "input_true_peak_db": -10.38,
+      "playback_gain_db": 6.83,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "6488acc9c8bd8d1df73a0d92f4757cea1950d70fe4fd9f811454a0570ffba888",
+      "path": "res://audio/mission_voices/directed/pt_BR/37583aade740dfc0f7db937063d611c875e7fa9213ae142367b54f3114647dd9_6d79fa7aa827df61.wav",
+      "audio_sha256": "a76dbad2f2735ce88eb4678e87ae9ecb87c3b6531dee6dadbca00a828f112fb1",
+      "input_lufs": -22.22,
+      "input_true_peak_db": -3.25,
+      "playback_gain_db": 1.75,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "ceda1111df5639ef7bab9b94234b89a479a4a2e1db950f73721897e10138d04f",
+      "path": "res://audio/mission_voices/directed/pt_BR/28281b308076e73c2bb5090f559394e02abad0ee9d9369b922ff5571886fbdf9_6ea896bc2b7238c1.wav",
+      "audio_sha256": "1703d4087151b4abf96660ae43efac0011e3ac1c63356b2020623783c5ddc5ca",
+      "input_lufs": -25.82,
+      "input_true_peak_db": -4.57,
+      "playback_gain_db": 3.07,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "7ab3b66e2d5d4dda404808a62c9e7c868d5dc492922f7ca3491994648da9d149",
+      "path": "res://audio/mission_voices/directed/pt_BR/62579c983682faf7909d0af5b7a5a072faa1d9d650b29ae1cf9867647fec080f_6efd12bcdd8a66d7.wav",
+      "audio_sha256": "0db49c77fabbfefb1489089208c8d162f4bd771be24e37ea03bf46d5e02c8bc1",
+      "input_lufs": -21.87,
+      "input_true_peak_db": -3.78,
+      "playback_gain_db": 1.87,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "76819c9b732de9e43e74e3ddf489a1d8b97474a2dd482fde55ad11920094067b",
+      "path": "res://audio/mission_voices/directed/pt_BR/a05934955877da53746783d4763924b9b18bdbd82e9dc5948054140c198bb560_7354d9ef92f52a03.wav",
+      "audio_sha256": "e334401f31129dc9d1647962f0f13ec423e78a52c013a3e286c07141e778bd35",
+      "input_lufs": -21.39,
+      "input_true_peak_db": -5.69,
+      "playback_gain_db": 1.39,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "d28f60caa16888987b55e12a33597c754b63a30f43d4460a8ed3481ba79f30a2",
+      "path": "res://audio/mission_voices/directed/en/67b2f5ed44d1026462dd4426e02e998160818de1ae0a7b4fe258e0ff8df1d355_7466d7ba38ecd5d2.wav",
+      "audio_sha256": "13f156e78827bb040a39082de2be834f7e28b4d73a79d341caf373ebcf417720",
+      "input_lufs": -21.16,
+      "input_true_peak_db": -6.24,
+      "playback_gain_db": 1.16,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "8c03313888fa157dd76575e611f4342f34b932e9b3c41a2162e466865c767935",
+      "path": "res://audio/mission_voices/directed/en/2860ad9eecdbb6e2fa73e7f403a58ade7727896a6b43323173b0dc0713ff314b_75b0600cf37e477a.wav",
+      "audio_sha256": "91d863a10a00dbe869a8484373a6d63e9a5e4feb01b8108889956844ac3c9a6e",
+      "input_lufs": -32.64,
+      "input_true_peak_db": -16.39,
+      "playback_gain_db": 12.0,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "e78fb2993a70cb7584f7ecb0bbeb0ec648a41f3b030d7cbfa25cf9d06bc17e75",
+      "path": "res://audio/mission_voices/directed/pt_BR/d0a50245033772076aafd9f517e4f6a048c4b15b44d8292d668eb62a5cd3f966_768461a6739f5512.wav",
+      "audio_sha256": "fb040f40b498079949cc9ef05d063097e2767c943b59b39d210791dab3ee40bf",
+      "input_lufs": -22.16,
+      "input_true_peak_db": -7.54,
+      "playback_gain_db": 2.16,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "8dc9225b0252f3410274f0bb5218f0edc85ab90127a0a74b27224f6e0c99799d",
+      "path": "res://audio/mission_voices/directed/en/2260063c695c4dfc820d60c297528925652ced9f38e6b74f5e67a87e29d6f578_7743f225a75b788f.wav",
+      "audio_sha256": "56bfbdbff9be6860fe431f2a32e84378bba4a0a69067f230bbbb37ef046c0046",
+      "input_lufs": -23.37,
+      "input_true_peak_db": -7.86,
+      "playback_gain_db": 3.37,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "4efad638a39a308ed8883367b43bba7443b8abb9b4f66e9e9047b788c5abd08c",
+      "path": "res://audio/mission_voices/directed/pt_BR/2f74ccc16ed52b718b42204c49235f59574f5f599fab5aca4763f109dce41430_79853ea9e6ec8062.wav",
+      "audio_sha256": "03d1f004eeab10197d571d826ae0a0f8cf19899a95014c45f545a7f3d4eaed6d",
+      "input_lufs": -21.76,
+      "input_true_peak_db": -6.5,
+      "playback_gain_db": 1.76,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "9443d2892b0f35263e584a7340b6eb3a28051ca92da1461f5a8ca738957150e6",
+      "path": "res://audio/mission_voices/directed/pt_BR/d03cb95347ea2a7bc30df661f183b9d23cff4e6091f21ea3cc58f7a4b9a76f8e_7b48b439ac414912.wav",
+      "audio_sha256": "25d4b670269ac5736c9f6e81bb34c0a7cb1b4a37a38792ef05805bea628cb886",
+      "input_lufs": -22.12,
+      "input_true_peak_db": -8.25,
+      "playback_gain_db": 2.12,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "4ce88c5eafa17edba71061cd91daf6c10bde938e8cc55bd8e7a3b45700fbfb57",
+      "path": "res://audio/mission_voices/directed/pt_BR/da2c48c0484a1405d01ab468ad3297b9072a038f7b3ad68abeb949199600b7fb_7c2c7e650daa695d.wav",
+      "audio_sha256": "f1d3e55b4f81f92df23cbd62d9b7bf3fc30490c5be641fa126cdc1d121d53c2e",
+      "input_lufs": -17.94,
+      "input_true_peak_db": -4.63,
+      "playback_gain_db": -2.06,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "bda3aec05feeddf5f293bf243a26121b904c544169cead4f8be07ce504cb7187",
+      "path": "res://audio/mission_voices/directed/en/d605fcd49d643ef22f9c39a1f70385b636ee052b7e67c126c4420462fd9477a3_7ca03d7d8ea10b08.wav",
+      "audio_sha256": "44e9e2f2c750f9f678eca5944052a1625dc7df0eec66df65512275a67d05261c",
+      "input_lufs": -25.12,
+      "input_true_peak_db": -10.77,
+      "playback_gain_db": 5.12,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "20e0aa1364f7556b0eb4b9a0f2177c684a92a8a6ef25c6c4584f5f494affa237",
+      "path": "res://audio/mission_voices/directed/pt_BR/74d673753b3d3ea5f39c6377b7c4b5c9054b0c97f5fd9bf75ed524cc7f460d42_7cbab1ee8032b9a1.wav",
+      "audio_sha256": "e3c93fc1a2fa7c493c4c44d6da40f14e4baf65cf60275d7a5bd68013e9e26e03",
+      "input_lufs": -21.89,
+      "input_true_peak_db": -5.36,
+      "playback_gain_db": 1.89,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "bcb6b4a08ca6dcabb58bf4f634668df23fc097e42c4ff928010cfd70cd8e76c6",
+      "path": "res://audio/mission_voices/directed/pt_BR/db85b880860599484e3466f9662ab1ce49fc775b8c3e24d67dc5c63974c27553_7d61a5ec02cf602e.wav",
+      "audio_sha256": "c9a8ca5b8624caeac2da0e3d423f6538e77f2f5b2a6f2fc80cd9d6780aa7f604",
+      "input_lufs": -21.16,
+      "input_true_peak_db": -6.42,
+      "playback_gain_db": 1.16,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "9de8553bd6162acb6ab813e7b2dd7e637fee0a03f2aa1219720da28a24eb4a44",
+      "path": "res://audio/mission_voices/directed/pt_BR/b51fc4035dd2f6b6fa9287e2115db1f1dc46870bf1200e97580a94f5fff539bd_7f968110404dbc16.wav",
+      "audio_sha256": "7b62f28ce30bdc0e47e9e7b32efbfd4fe5f2342c9a72b9f5e2830e9a21ab40b6",
+      "input_lufs": -21.74,
+      "input_true_peak_db": -3.06,
+      "playback_gain_db": 1.56,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "23fd2cc8082c0a5f8e823f7427efe8b8cdd9e4d9c48fbaf5a64e187e8855a1aa",
+      "path": "res://audio/mission_voices/directed/pt_BR/097f95303230fe217925e7a1276cb42fb653a6555a5d4d1885ff649bd31adc21_827e79c6843502aa.wav",
+      "audio_sha256": "e966c2a40a6fde55d8657430dbec51016e3c4536b73671f9849f5aa4710cec96",
+      "input_lufs": -25.85,
+      "input_true_peak_db": -5.44,
+      "playback_gain_db": 3.94,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "b3cfc822cf0a063de1f3b15b6d8e26829cd68fbd1756e27d2ad34530d2ae2b93",
+      "path": "res://audio/mission_voices/directed/pt_BR/774a392c6f2083642b91c79d994ad702de08c6654ff1b0737df94ec075371d9d_83632dafa5a8e942.wav",
+      "audio_sha256": "fcb61d6896e74ef15a2c677b35108d13b8ac3cfaf31075fac5391e8d6827ca90",
+      "input_lufs": -21.62,
+      "input_true_peak_db": -6.65,
+      "playback_gain_db": 1.62,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "88fb7fa8cd554b75a40a6bb071fc395aa9c9dc87ee9583c54255c6f3a7480b67",
+      "path": "res://audio/mission_voices/directed/en/304e9d45ae19b11b0ad596332619dff768491d1ba18eb3f4ea72a7a8c1a3b540_85eed15b80cbce87.wav",
+      "audio_sha256": "452616021ab99a80f9612b2683c1832bb56f2d186b893a90b215b9f3b4614ece",
+      "input_lufs": -24.28,
+      "input_true_peak_db": -9.44,
+      "playback_gain_db": 4.28,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "5778ea80e128cc584ce29f5df79c961583d1aad357902cc953fa2f806ec7ccbd",
+      "path": "res://audio/mission_voices/directed/en/d03cb95347ea2a7bc30df661f183b9d23cff4e6091f21ea3cc58f7a4b9a76f8e_865ac6787ce2faa2.wav",
+      "audio_sha256": "e040c8f8d7868cf016b09774b229c5dff06b1f9d8e5ddda2ddbd9816d4fb1896",
+      "input_lufs": -21.24,
+      "input_true_peak_db": -7.81,
+      "playback_gain_db": 1.24,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "d8e7f978113de6911ee2c50b575d3bbed52a80d604b867d99553eafdb9f8f56f",
+      "path": "res://audio/mission_voices/directed/en/9d1946f3bc79110418ad77293b0ddd05c9150dbffce4487e4f1dffc0b4c8a0dc_86732d04d3414760.wav",
+      "audio_sha256": "4e8ef159d8c17f228d15f98fcc423324a8b092011a5f0a2d51ac050631d991df",
+      "input_lufs": -22.46,
+      "input_true_peak_db": -6.35,
+      "playback_gain_db": 2.46,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "d4e2a35432195f0c12205349e0ac534b554d8a9158d84f2f5a2a27a92994e47a",
+      "path": "res://audio/mission_voices/directed/pt_BR/5ff7c2828a346aed46fb557885139678bbb4a53d42a58ba53045385c88ec1a7b_87beac0b10275f80.wav",
+      "audio_sha256": "06ed9af7fa48b93e0cd4f501b37aad60c9b98133ea0e2b192f97f9d73a2932c1",
+      "input_lufs": -22.42,
+      "input_true_peak_db": -6.35,
+      "playback_gain_db": 2.42,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "a038c5f3a66657582edbcc77a4020cc3ce9faa286bc225ad71d302a567356478",
+      "path": "res://audio/mission_voices/directed/pt_BR/9884ae6ae1ae9c2dcdd020b64e242327347f3af9071ec50f8238376f54cd1913_88475e4ef02ec3ff.wav",
+      "audio_sha256": "a17664a81b8ca0001c3d32eae20bf119097b93a35998a643c61b17cb4cc6a029",
+      "input_lufs": -22.13,
+      "input_true_peak_db": -9.2,
+      "playback_gain_db": 2.13,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "d1a4cdd13da3c106800f6f42783587668cf6ca5288ca5f53bad27697fdccb4c0",
+      "path": "res://audio/mission_voices/directed/pt_BR/f748e3042901393d4b1bdc60fb017d35b3d679a4025b3540ac6f79580a6e6570_8adf9a2b3861816a.wav",
+      "audio_sha256": "0d5e6e7cae169fc42e833adcc4ef7f669d9dc407afded8e2163e1f8f0901166f",
+      "input_lufs": -22.19,
+      "input_true_peak_db": -8.3,
+      "playback_gain_db": 2.19,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "4ea999c878b137c706ec4a117d9456459efc7dff238aa4d400229274892a5bd3",
+      "path": "res://audio/mission_voices/directed/en/0391ffaecc0ea63697020ca22baa9f8ee56158346008f46ee9de1a58d6419954_8c5e61a6ad44b38a.wav",
+      "audio_sha256": "b2de114d22e0ab222a4d193b45c9c4f55c3fcf5b0ba3bb0bcc4fa9994c61495f",
+      "input_lufs": -24.5,
+      "input_true_peak_db": -9.26,
+      "playback_gain_db": 4.5,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "1659ee4826e54a227caae10e60a9d27f2ae0e696901aee0d8787fcadfde5cd5f",
+      "path": "res://audio/mission_voices/directed/pt_BR/02bd00c4ee75b7a86c42f9c327764c9156ea2f614861b0cfdca49735a32dab0c_8cc5a85588bcc90b.wav",
+      "audio_sha256": "d6ec7eaa292bbe356fb5e0cae228c4beeb7a6585eee26fa471f4fb9886211d9c",
+      "input_lufs": -21.62,
+      "input_true_peak_db": -9.52,
+      "playback_gain_db": 1.62,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "fbebbecc05a244357b0b3df7861e43ea95c4cf0e0dea7b1d8518bbb0d450dec4",
+      "path": "res://audio/mission_voices/directed/en/c22c953e576302766cee53cd825a3e05805de24e3773ece1fb2f25701443aa94_8d04fd32a4770093.wav",
+      "audio_sha256": "eaad86d6df5161c69c49d73f676ca063a61f97890cbdc945c9a2ecfd2c924582",
+      "input_lufs": -23.0,
+      "input_true_peak_db": -9.68,
+      "playback_gain_db": 3.0,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "70ce438f85e49a41fb5b7a1bf2b9279abcb9ac54e3bc1501b6a68fdddb21fbcc",
+      "path": "res://audio/mission_voices/directed/pt_BR/9d89a290c5b298ecad60a78b5b2a31d23c00a8037dabf9398f0a59a9db2a25ea_8d5b7e5b139a9ff0.wav",
+      "audio_sha256": "0c49bb9173d003194f9f1cfaf4eead8cd4de73b015e2109d84fa899b7afc068e",
+      "input_lufs": -25.13,
+      "input_true_peak_db": -3.93,
+      "playback_gain_db": 2.43,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "a97fcb43126fd5f4cc302dff1679a1aa2f06d93e5c3995e00dbe162d0036f733",
+      "path": "res://audio/mission_voices/directed/en/149bde08b988e0f62953f00c45ab16d9da70210308a8f5dc755dcea156000ae6_8d6ec53d6348a5f1.wav",
+      "audio_sha256": "f86321fc753eba2621979617998565a60ce517ad62fb06e93471f4724996cad0",
+      "input_lufs": -29.57,
+      "input_true_peak_db": -13.49,
+      "playback_gain_db": 9.57,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "6d7372947469f629a0196dfef3cc773f9cc7f7f1647b0503161dc2c3b82d616d",
+      "path": "res://audio/mission_voices/directed/en/f97d23bce5e06dd026b9fe647a891ccc2c2dabe7579070fd99584ca495b28e31_8d8f4147f72c5e83.wav",
+      "audio_sha256": "972268f7e39548168957f4d361b32e8897feeef1463f752db90f2a582dc603d0",
+      "input_lufs": -24.34,
+      "input_true_peak_db": -10.1,
+      "playback_gain_db": 4.34,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "4331c99af426daefa0d2df9a18f0857874da4b20473ecba7c10fcc66a623836f",
+      "path": "res://audio/mission_voices/directed/pt_BR/ca7a495e4998a985677b70dea6b4ec44213e8d327eac68367195b725d2e9e3d6_8f13f2da62f0db4a.wav",
+      "audio_sha256": "35b05bdf468295b11f55e3c671537b11f5758b1eb9625dfe4d86ec8aa51ae0df",
+      "input_lufs": -38.63,
+      "input_true_peak_db": -24.84,
+      "playback_gain_db": 12.0,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "224a7346dc59b22dee61338c47379e364f5e572e7d73d70619265f09006ab853",
+      "path": "res://audio/mission_voices/directed/en/49664743d786d506de146206f0335e1a1e9c24335781744d244092f8b143c342_91a96ff04e2b3da1.wav",
+      "audio_sha256": "a1e357d5a2c4071f7d827a99377e0a1978cae3376e7e36dc56aa0498b23e45f0",
+      "input_lufs": -22.4,
+      "input_true_peak_db": -5.94,
+      "playback_gain_db": 2.4,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "43f5665751b5ecf6bdfe455e28c59491ccae9dcc8ff2bbac5e00637331e70bd2",
+      "path": "res://audio/mission_voices/directed/en/0af3ca8b3e2db960caed8a431db0a823614faaf17fe1a221846637f7f7cce585_92cf3cfa85c3ad32.wav",
+      "audio_sha256": "786832e5423b47f74da0bbcee2a835497274286338798dcfa5dce729639fc777",
+      "input_lufs": -23.72,
+      "input_true_peak_db": -7.09,
+      "playback_gain_db": 3.72,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "288bb6802c62a5b9353a20f9e7629d42e92ed65df71f06651d4c9ad3d2074811",
+      "path": "res://audio/mission_voices/directed/en/5fdeb50744430f630af2a9e6222f316bc7a3a4b595da28e02a8c8f3fd47a3995_961cf7e5a6712706.wav",
+      "audio_sha256": "8bf7a1f4b366f9dbd990fdb156290eee54e0fd108ed607fd7b17b00301d948dd",
+      "input_lufs": -25.62,
+      "input_true_peak_db": -9.17,
+      "playback_gain_db": 5.62,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "2e7fb82adc06cfd52f8e7012911bacb736755125a771869ed0e32dfd54234e88",
+      "path": "res://audio/mission_voices/directed/en/4986a75ef3076afea91ed31f42895338b1f70ce25ab41372d01125d594bff28f_96355d73ea924b55.wav",
+      "audio_sha256": "0fac83b1bf35799223a7c7299af6ed2ddc46fb330bfffadbc490ecc35116caa3",
+      "input_lufs": -24.35,
+      "input_true_peak_db": -9.98,
+      "playback_gain_db": 4.35,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "d2b04b5dd198dcc64a0e02d8a20ddf61379bb0c84d845d7773746e98e2c6585d",
+      "path": "res://audio/mission_voices/directed/pt_BR/2860ad9eecdbb6e2fa73e7f403a58ade7727896a6b43323173b0dc0713ff314b_965f35aeb1bbff39.wav",
+      "audio_sha256": "be9d61647d30eb9a9cecf781294ce556e38345ff2d2f11e2016b6bac0b82bdee",
+      "input_lufs": -23.47,
+      "input_true_peak_db": -6.16,
+      "playback_gain_db": 3.47,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "3f96fdf1ee761c29336ab64ec19f24078f3b9fd96695a4b1da5e0fff747935df",
+      "path": "res://audio/mission_voices/directed/pt_BR/667224b47a05df3860edebae09b9bd3ce3e2a4a69c2b727c93277d9cb43df62a_981db13fdb0de0f2.wav",
+      "audio_sha256": "3e4dec321634f3f453c704497445b797e510f3ed9839596d89236e4d4157cefc",
+      "input_lufs": -26.96,
+      "input_true_peak_db": -12.9,
+      "playback_gain_db": 6.96,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "53251ebceac68ff65f85c4a95bb426e8e95b5d6ac8ece4aba1175693b706d396",
+      "path": "res://audio/mission_voices/directed/pt_BR/23a1a0d7b66365a5f252e63a07dc07b52d55a29d606d2ff4e0c06700eb3afab8_98be7cab316d7c1a.wav",
+      "audio_sha256": "438c545521c095ff6378f985e12c5ae9767539794e88bb42bf889933bc0040dd",
+      "input_lufs": -21.22,
+      "input_true_peak_db": -7.06,
+      "playback_gain_db": 1.22,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "c13762174fc226665f09eb9b4f6834fee4c402c9ac739715313e6e15c48e9beb",
+      "path": "res://audio/mission_voices/directed/pt_BR/d722a7d17b5ed8e12df0849f0bc1ec1a2ebe5a6641fb8afebc3ca07cb283f400_98d69fc7fb79f82a.wav",
+      "audio_sha256": "9dc043d55f0c1b53c4e39bbb13a79c61f193e26d8155f42d77b259bb536e4925",
+      "input_lufs": -23.75,
+      "input_true_peak_db": -7.36,
+      "playback_gain_db": 3.75,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "f07ed99554c09058518551b863e10187340cbfcd5c460b4ebbcdb1fff2943ded",
+      "path": "res://audio/mission_voices/directed/en/259cb79c5c02243b06fb9d99aec46e65b9bec9eb2dc4ebe0a57a704854b6b3b8_99582c99526e1706.wav",
+      "audio_sha256": "955818b4f6234a8edc6395d9c2b506b6af5f9409362140272ea2d1161c40fe35",
+      "input_lufs": -19.67,
+      "input_true_peak_db": -3.5,
+      "playback_gain_db": -0.33,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "99ece994534d09537de489c976729b46e88f02fb5c287d8351df58e5918bfb17",
+      "path": "res://audio/mission_voices/directed/pt_BR/25c4f74456a32d4e3083264822f382b6c7971318dc4725450299949754faf24a_99685bd0068a584d.wav",
+      "audio_sha256": "c62a54f33ff5a838c3a5a88895d578131ace1c26a30e7f22e918bfbbaca066da",
+      "input_lufs": -24.11,
+      "input_true_peak_db": -8.84,
+      "playback_gain_db": 4.11,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "58ff3fb6cf453904706854ab4af1c691f607fd438382363ef5af7a1eae1f9c23",
+      "path": "res://audio/mission_voices/directed/pt_BR/b27f5e1c3723492c6a856025499d6d0524105c4f16d99ffdf4f8aac475411336_99a8b68bd82eb2ba.wav",
+      "audio_sha256": "0278e0620dc9a5c3f2b8162b25e9b26a0423d9a862fa3dfefbee24888f8d9d6e",
+      "input_lufs": -20.82,
+      "input_true_peak_db": -7.25,
+      "playback_gain_db": 0.82,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "8f9140fcaa01ef2369c92f3d2690c33737a26be4142192ee5c6f25646e5beaae",
+      "path": "res://audio/mission_voices/directed/en/e24f39b16c4cbace018bd31a56533d5cb71a9785852ca7909437260ab309f189_9b4ec6e362b55443.wav",
+      "audio_sha256": "0a61313b201193a87c6c2413de5b30d9e12d42b5275161bc07e8c760d95dd438",
+      "input_lufs": -32.07,
+      "input_true_peak_db": -15.3,
+      "playback_gain_db": 12.0,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "a19a69ca4bffc704e817243998fc4c9f7dded74d303d9c3bb77e2a065003475d",
+      "path": "res://audio/mission_voices/directed/pt_BR/f638e7789690228b2ae03e875b71440cdb5afbc824162bce38b24ec5aa186bc0_9e06e11845cdc3ea.wav",
+      "audio_sha256": "081c4514f807bffcbcb097f5a20fc78279c2c70a0a73fd241fd1fee68020018f",
+      "input_lufs": -20.29,
+      "input_true_peak_db": -5.36,
+      "playback_gain_db": 0.29,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "bb28472165150bc0e929ae701f659769026e080e19cb7acc513c457d900ee0f6",
+      "path": "res://audio/mission_voices/directed/en/a05934955877da53746783d4763924b9b18bdbd82e9dc5948054140c198bb560_a121e432f8cecf04.wav",
+      "audio_sha256": "68ec5bf272ec840208c00ba34b92979d888428c2c1e56d90c8362439007c02a5",
+      "input_lufs": -25.51,
+      "input_true_peak_db": -9.82,
+      "playback_gain_db": 5.51,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "2fc47c2a374fb7ef613278985fc5b6dc5a89b0b2415c4a4d131f5c6d55ab421a",
+      "path": "res://audio/mission_voices/directed/pt_BR/c2553635ff28d68d7291fc15141bf0f9977d282b7b9326f503f092fe10eb2f94_a15803074ca601d3.wav",
+      "audio_sha256": "ad3f5f3db7c9b56e04c3fe2885eed3661cf77d3219ad5832100f7e7cc53fc8ee",
+      "input_lufs": -25.0,
+      "input_true_peak_db": -5.68,
+      "playback_gain_db": 4.18,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "93ee3f72b9264379fc78607397970fef2a5a2261c321da1d36f39cf6dbaceec3",
+      "path": "res://audio/mission_voices/directed/pt_BR/0168ba7bb6d5f7e7eb1e0e1f761888173c2a0d55149d207742124a609fc56fea_a1e5838e3f15932c.wav",
+      "audio_sha256": "03f4ce415f90868cb2d897ba1d99d697f5f6cf2dd98693f99f513f6440ae6a98",
+      "input_lufs": -22.67,
+      "input_true_peak_db": -7.69,
+      "playback_gain_db": 2.67,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "55affbf0848881e99e8fe9614505b9170d9b070428dc4f5340a75903bf8a03a8",
+      "path": "res://audio/mission_voices/directed/pt_BR/f97d23bce5e06dd026b9fe647a891ccc2c2dabe7579070fd99584ca495b28e31_a259b4cdc815dd96.wav",
+      "audio_sha256": "2435c2a73cfb8c1c7bbfa7ecc614bc13abb1b585ff4e9d1a5bbf20be185284bc",
+      "input_lufs": -23.47,
+      "input_true_peak_db": -9.21,
+      "playback_gain_db": 3.47,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "44095f901ce281f4d09208a4fa344027fbc665f6f99360ce1716a59a0d4e19a0",
+      "path": "res://audio/mission_voices/directed/en/bc36caa1978e534bfdde471ea0df7b16ef64b0cda49471b1b0746a4688bf98d0_a2b329b5c1b32603.wav",
+      "audio_sha256": "6aba04e8e2c3296f701611737ad6e4ab126bd4a565beef07a14ea7df22f254d2",
+      "input_lufs": -24.18,
+      "input_true_peak_db": -9.43,
+      "playback_gain_db": 4.18,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "007c807bc9b4b3f52134dd89c50c224148c8750f27a1a6e91373b327e0158ab9",
+      "path": "res://audio/mission_voices/directed/pt_BR/b06fb97e1ac3bb7f2fc7ddbbb77e423b20e77da08b7f22ec081519d377ba765d_a304ee159df2bc41.wav",
+      "audio_sha256": "fdaf739b8109542cec36e24da9aa447d9b4a06e77fd748c988327aedff61805c",
+      "input_lufs": -26.22,
+      "input_true_peak_db": -8.32,
+      "playback_gain_db": 6.22,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "d838357164423062875884180df24cc4ba80a1e045720ef2e9fd92d20cfa8122",
+      "path": "res://audio/mission_voices/directed/en/6fa6532413ae146716460900aeb5dd4fa9937e5c1643718c91cb7e6eea8c7556_a448bd8524f96222.wav",
+      "audio_sha256": "b8d438f8e687331ce4da16df8125b3cb21590de43fc4614ab127ba6385f000f1",
+      "input_lufs": -25.1,
+      "input_true_peak_db": -9.32,
+      "playback_gain_db": 5.1,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "c5b1e2260fc772e2163a4b1001694dab9d538aff325ababf4b7aaf96ab9693da",
+      "path": "res://audio/mission_voices/directed/en/f638e7789690228b2ae03e875b71440cdb5afbc824162bce38b24ec5aa186bc0_a4a04eefb296635a.wav",
+      "audio_sha256": "f87ab49778e3bdc8568166aafc6a7a17090ee8f094520a22129ed4881cd0ae13",
+      "input_lufs": -22.73,
+      "input_true_peak_db": -8.37,
+      "playback_gain_db": 2.73,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "aff88c71d7eced29fab03a80f30359d2c58ff44a2c9ace6f7b824e8abc40b8cf",
+      "path": "res://audio/mission_voices/directed/pt_BR/0425b64a6f067aea49af6605c5d8333efcb9c7d1a35365135ffb510b33a99d2e_a538f7f08938e106.wav",
+      "audio_sha256": "cf76e34f5ada0f94e87dfd72f9ae46df2bf919cec88a6494f3a7cc74793f3ccd",
+      "input_lufs": -23.73,
+      "input_true_peak_db": -7.29,
+      "playback_gain_db": 3.73,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "e7511252a98de8a5ee077a496c48aaf00fd08cfff0364260f8bc9785f9f6548f",
+      "path": "res://audio/mission_voices/directed/pt_BR/f199b24f9f8f031cb6bcac9e7d6d862bbde85c952d28f80e56a34cc9ea9d527a_a664cf42703945b3.wav",
+      "audio_sha256": "2bfce7af814e7d87c7f7debf0d24e6bf9b0254a2848444966c7109c3d4f536de",
+      "input_lufs": -20.32,
+      "input_true_peak_db": -6.83,
+      "playback_gain_db": 0.32,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "b535e0f5b8a639bc5b3c3bca3cb9b3ca8808fe0b9f704399d750e8e45d7f1c08",
+      "path": "res://audio/mission_voices/directed/pt_BR/3ebaa20883eb60b0c16d57c09663056dcc9f6a3e2bed2c0786dae995ea9dbfb5_a783daadca595fa3.wav",
+      "audio_sha256": "88b43919bc301da989548af184f402d753c9c249b3eeac79b385ee0ad29f3f4d",
+      "input_lufs": -22.3,
+      "input_true_peak_db": -5.24,
+      "playback_gain_db": 2.3,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "d614a4a305951ab73174b3354bd8e013abbc44612669171ce3115c0ffb04695d",
+      "path": "res://audio/mission_voices/directed/pt_BR/e221dd6eeb5f807e953cb3450b3cbf1a42124bc8144e42c56395f99653156d96_a94a565df7f41a99.wav",
+      "audio_sha256": "9ceee2c977085c273f848c0e627ff4dc2f1b9832df1d715bc022842b42b14053",
+      "input_lufs": -26.42,
+      "input_true_peak_db": -7.27,
+      "playback_gain_db": 5.77,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "1218de5e2d938304823a85f778aa82657f4a893159a9a074c6a462e7e5d9c034",
+      "path": "res://audio/mission_voices/directed/en/b8f577aa10a18aac9012cf55af992d13eb611889a4871531a2a268bcdd9dffe7_a9825deb7939590b.wav",
+      "audio_sha256": "e6cf1973cbf99c3defbc4e79926cf0c027bd10549b6091d0796b616ad98417ea",
+      "input_lufs": -21.65,
+      "input_true_peak_db": -9.35,
+      "playback_gain_db": 1.65,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "eb062ab7aa2ba4ba08d69f7033161d2217dede4609ef8203bd8d11947e38d99e",
+      "path": "res://audio/mission_voices/directed/en/ca7a495e4998a985677b70dea6b4ec44213e8d327eac68367195b725d2e9e3d6_a9d593fd9e4e9d40.wav",
+      "audio_sha256": "77e73c93e659313ec8c2e8eae926c949698e488396188882a7510c200bf062c8",
+      "input_lufs": -27.32,
+      "input_true_peak_db": -12.64,
+      "playback_gain_db": 7.32,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "cdd4b5ad424d84cf483edf1c9be7b26b3c55aed807c76f9c6bd90877bec5bbea",
+      "path": "res://audio/mission_voices/directed/pt_BR/8c3ab2e54145118298b8c29f064c64e90e7b681188655dbef327f46ef318ca97_acd27240725edfa7.wav",
+      "audio_sha256": "5d2fbb062ce9a8f3729d8079473f67a1237909d26839bf0fc0feef3cb64248a3",
+      "input_lufs": -23.4,
+      "input_true_peak_db": -5.3,
+      "playback_gain_db": 3.4,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "50cc326793a5932a7a702a5e7d861269497fae51614b60fa209a403abdcea084",
+      "path": "res://audio/mission_voices/directed/en/50e6557b18707b7e8151ef7c257a29b6ebbfea57c5e8be82b5b9d1fa3e57f5b0_aded2c8ff1d1aeb2.wav",
+      "audio_sha256": "c57dc46c58b32cd7e8d23515999d0269bace6453cea40ee8fdef5f6fc90a437f",
+      "input_lufs": -19.76,
+      "input_true_peak_db": -2.71,
+      "playback_gain_db": -0.24,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "648ab0937aa6fd2d7731d8be612aa799cd6940bfe9d455ecc35601a105b91612",
+      "path": "res://audio/mission_voices/directed/en/90a76e8c6b2e7f6f988e60168234661971f1c974f7d9a5a2da47e0576e8ae30e_af58082684b28cd2.wav",
+      "audio_sha256": "672ef11a2836dbb6ad8702199d91e7feaab8a72389153bad0baae9d2c43d8465",
+      "input_lufs": -20.63,
+      "input_true_peak_db": -6.37,
+      "playback_gain_db": 0.63,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "ab6a415e09775dea7a2ba334b37023b92670623b61923ad52754942aea0e2d26",
+      "path": "res://audio/mission_voices/directed/pt_BR/ef56baa56d8ef2b0b71e052f6c99dfdadf5b24e7eef598365385ee86ad1604f7_b5514000247f5344.wav",
+      "audio_sha256": "8f15e5fb87306710483f420b87edeb006f73cccb8eea2da146c4d6db04f7c95b",
+      "input_lufs": -24.04,
+      "input_true_peak_db": -3.37,
+      "playback_gain_db": 1.87,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "23c8e9af868734ae4cd8da9440013b138dc2ead1135b7cd38aeb6f50355612b6",
+      "path": "res://audio/mission_voices/directed/pt_BR/26515f5261cb5e36017d7dce9907ff52c321a73a0b3c67671278ab871106e201_b702584c28eff678.wav",
+      "audio_sha256": "2a96350097a439b8e371b96dc72558fe19813c25e7622a706d193e43a679c4a0",
+      "input_lufs": -27.0,
+      "input_true_peak_db": -9.89,
+      "playback_gain_db": 7.0,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "a4a3929785b4ea55d24b4c272df31e24af72fc46c24cd8c8410325d963916343",
+      "path": "res://audio/mission_voices/directed/pt_BR/6424f2ed4d41a412fffd2f29644127facab6d9b7ec291252e635203aa63c0c3d_b77679dafd9e1120.wav",
+      "audio_sha256": "b60210ae9c56c51b3053b3ff7d80426d16b7e170ccaf2c459a9cab7cae011e22",
+      "input_lufs": -23.61,
+      "input_true_peak_db": -9.82,
+      "playback_gain_db": 3.61,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "cf35477dee84253852aadc35b4ab2e34636779cbc103c45b09bd250c242f207c",
+      "path": "res://audio/mission_voices/directed/en/8b67d6fc73bcabafaa6129d9b84af1e34983c321599dbfcc2cce87c93a0e4ecc_b932544457b617a4.wav",
+      "audio_sha256": "c6cfb6c3e33b95d48594f5e6af5d26a80cb7f3cc4ad5cc0af1f16a6bc7c5bd42",
+      "input_lufs": -29.96,
+      "input_true_peak_db": -13.14,
+      "playback_gain_db": 9.96,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "e3fc3e5d15ff0ee1b10ebd045e4b31a72547358a4a071d8725b5be73d37d5747",
+      "path": "res://audio/mission_voices/directed/pt_BR/47b530567059cd9e526d7679ac984b1ec64d35d1cb0e88f10f48b273cbcb0ad3_ba8d760073d5e261.wav",
+      "audio_sha256": "065ee22820461f84ff79b38cfe3093776ae1e753c98c235e92412a7065500145",
+      "input_lufs": -25.68,
+      "input_true_peak_db": -2.49,
+      "playback_gain_db": 0.99,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "f21ce46437c064983ae01f6f8a6e1dc66ca9801584b5dccc2364f63171fd2076",
+      "path": "res://audio/mission_voices/directed/en/f5c88fe727a0c7c725142222039190840cb6e67682cd83d186e730ced8da94b6_bab001fd97bf79fc.wav",
+      "audio_sha256": "c7297659b69a3f6e12827a4248e5b7d23f96db4dd3d857c3c7ded2a4294122a0",
+      "input_lufs": -22.96,
+      "input_true_peak_db": -5.68,
+      "playback_gain_db": 2.96,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "aa7fb5302312c5c45f3333d454ebf3fefc01bfd15ffb888fff27078d9c06aa43",
+      "path": "res://audio/mission_voices/directed/en/0660d8a97f18782dd1436ce6b8d7cd06c09363df98fb0b48e49638f4ed9f0bc6_bc0d1e5cce23e1a3.wav",
+      "audio_sha256": "1954f1528b3c1bcaa848e86c6dad2221ff23b71baf5d06f1c8f60b07e12c6599",
+      "input_lufs": -25.37,
+      "input_true_peak_db": -8.8,
+      "playback_gain_db": 5.37,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "68f87370e0197152c6379a243605a680db2af1639948dd04f5536efb657704c9",
+      "path": "res://audio/mission_voices/directed/en/d722a7d17b5ed8e12df0849f0bc1ec1a2ebe5a6641fb8afebc3ca07cb283f400_bc223b0ecda0308c.wav",
+      "audio_sha256": "ee4a3852da5a1a58c41c55b964a6d015b6f99c2d247bc6f33ee60722aa3aba16",
+      "input_lufs": -26.77,
+      "input_true_peak_db": -9.53,
+      "playback_gain_db": 6.77,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "71e409d9e4d5cc7bd29a09cd1117a957620864106bf382ea5fcae54fd4b2aed4",
+      "path": "res://audio/mission_voices/directed/en/406b337fea9efc7d75d379c4c33fb85dbababc6ff48578d982ea052e6157f024_bd70eb9349fa8e27.wav",
+      "audio_sha256": "45bbdcb800b795b00d7f001ec17118b5d392e9479c04a4a691171e8f22cca213",
+      "input_lufs": -19.14,
+      "input_true_peak_db": -4.96,
+      "playback_gain_db": -0.86,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "0c1f1748c36741569b7d09572ea18583510aaac96a81f90267030113531ce326",
+      "path": "res://audio/mission_voices/directed/en/25f767e7d9e3ce4372b8c82253bd1d14fafe8475c0ead34851d5c5be218d3a73_be4b55122a672228.wav",
+      "audio_sha256": "97966c6e56ee331af7bac8ab72f44c15cbdfcdac84f664334a5c149a02d7d7f6",
+      "input_lufs": -24.57,
+      "input_true_peak_db": -10.17,
+      "playback_gain_db": 4.57,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "c19f828c4bbbcc3dcf03777a2038829ef138d9a53b73d7123d7180ba1d88383f",
+      "path": "res://audio/mission_voices/directed/pt_BR/1d79ce0c752bbe48722f672da2ef2550d236aaa77dfbcd1c90f16161b1161f4f_c074ac164f3a1913.wav",
+      "audio_sha256": "046d63f2bd90d08d25bc299c3e68f36e66d0068cfa495eb96c7c9b27d8544675",
+      "input_lufs": -20.21,
+      "input_true_peak_db": -4.53,
+      "playback_gain_db": 0.21,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "4cd456a01b374ec46ee3f6da4a6b78fd5e9e2cb28276836dc33f181b6631b188",
+      "path": "res://audio/mission_voices/directed/en/a537fc1a6300ee94afd5a67fe14a8c9e433273b70104d94e2f5da4ff43be3e80_c2f705828815bf16.wav",
+      "audio_sha256": "a7b4e4413eca7667af70e4800a8d5725a4acfa5a70f47b6a5d348277908f6866",
+      "input_lufs": -20.55,
+      "input_true_peak_db": -6.56,
+      "playback_gain_db": 0.55,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "a961909faf98a22218f9bc10661a3caaf072bddeac88dd2fa54f75b17be19116",
+      "path": "res://audio/mission_voices/directed/en/1e331e6ae00c82883786ec887f50b835b2422a2f361c5b5ddf4286597f060c15_c8b897096e714699.wav",
+      "audio_sha256": "9804e0fa5b6eecd061d5120cf597f262be9e1ac47b9ef15b4c27300e13a4e319",
+      "input_lufs": -28.47,
+      "input_true_peak_db": -12.14,
+      "playback_gain_db": 8.47,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "8ed10465d2fa8e1c6efa48494e067f16200842770186334d7c5bc45c881b4379",
+      "path": "res://audio/mission_voices/directed/en/458bfb705cf169d3ed93ad1fbc031e3fb643fb702675ecd7be86152bc8e85a8d_cb5723768d257b60.wav",
+      "audio_sha256": "48175095bbe6090f9c71ab71c62192d4410b0872fe03b59f8ca33827d3beded9",
+      "input_lufs": -19.8,
+      "input_true_peak_db": -3.9,
+      "playback_gain_db": -0.2,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "f0eb806b9a3768bf205238dc909885f184f84d81f4de03aa58299c437678621d",
+      "path": "res://audio/mission_voices/directed/pt_BR/30a9f315a928b54e760e5022a0460486e33ca74ae3acb1a786a7cc47a3e34c74_cd00a36ff3f45341.wav",
+      "audio_sha256": "be9fc1e0b497d3adff13a9f42fb1ee853a15b9544c52d7cbb98060e7b6cae9ca",
+      "input_lufs": -20.13,
+      "input_true_peak_db": -6.53,
+      "playback_gain_db": 0.13,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "8ed66ea07be2fd8de96dfd8474818ec88fafb971d3b3037f1068bccbc0e332e7",
+      "path": "res://audio/mission_voices/directed/en/1b9590f7a4590e7f476aec65f457d3c4970c84fe5519b01e0b0417f4df5e6378_cf320b0196103908.wav",
+      "audio_sha256": "3e258dd34a5ab7b8c0706c68dfa3d764e609e5a1fb4f199e7bafeb06fa1232e8",
+      "input_lufs": -28.42,
+      "input_true_peak_db": -6.64,
+      "playback_gain_db": 5.14,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "138fdf517b2b37a85a882b7e5e5a0ecce3892b1d4bf7df3ed4bba6c2f6b8e2c0",
+      "path": "res://audio/mission_voices/directed/en/9884ae6ae1ae9c2dcdd020b64e242327347f3af9071ec50f8238376f54cd1913_cf63df977c4143dc.wav",
+      "audio_sha256": "9cf26071d114b4c22f5189ee71494cb3c6025fdcf0fb8994a93dacc9689369c4",
+      "input_lufs": -25.33,
+      "input_true_peak_db": -9.78,
+      "playback_gain_db": 5.33,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "ded78ce7aae8fc5f27c4bf189a7f7742b96398b08391d532b5e17bf0fa544c1b",
+      "path": "res://audio/mission_voices/directed/en/80a833fa7c4bf1c457d0ce1d3fbaf3e0fe21b6b6f926b242223d70ce494307ac_d06bd12b0ce4945d.wav",
+      "audio_sha256": "ef359a3a1e86507c689a9fc3ec92a7986d4d08425401be4c40f9c88bb646c810",
+      "input_lufs": -21.62,
+      "input_true_peak_db": -9.87,
+      "playback_gain_db": 1.62,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "6bcb7e8bc6effb65856318eba69f0ba73096116a24a796713e949ef4de1f7805",
+      "path": "res://audio/mission_voices/directed/pt_BR/6b23a7d26acd01511bf23764815c8fc2282f812a5cc6a6af179fe5c6e393d267_d15600e63a7bd8dd.wav",
+      "audio_sha256": "ad684a45058d3d55835a3aa59b0923b73ca4384720ae4b91386feabbc484c05e",
+      "input_lufs": -29.42,
+      "input_true_peak_db": -12.21,
+      "playback_gain_db": 9.42,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "9e805af4f6feaaed0d80cc108d6ae18411e7a4b351fd12a3c04684c3afede0d3",
+      "path": "res://audio/mission_voices/directed/en/672a6755c67f50ee1f7f05ea3f18df6ae8db5b48ebd0d172c7ac24ce51bfc7d4_d2347b4ee746210a.wav",
+      "audio_sha256": "1f2ae181b002f1d8eebe5fec91b190875f7395d9344bb8c39979ba83fbbd95f8",
+      "input_lufs": -27.83,
+      "input_true_peak_db": -12.58,
+      "playback_gain_db": 7.83,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "24ee6fc2e9698f1d937157e96a24f92a5d72876b7eeeb4fc065604bbca4f6d69",
+      "path": "res://audio/mission_voices/directed/pt_BR/fd13ef4a4de05b0a2744d6a80ab483a47327d2e9b07efcfed13a43b8afabc66e_d581bc311a081fab.wav",
+      "audio_sha256": "d8a2a05807171bc1aec7901bbb344f7fa4ef5eb6a42947ebe8a497b2609ff797",
+      "input_lufs": -24.27,
+      "input_true_peak_db": -5.08,
+      "playback_gain_db": 3.58,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "5c9c68a412c35661a613e7ce79bd1e55164fac06f84b8fb17be33602b87ffb64",
+      "path": "res://audio/mission_voices/directed/en/ab25343fff48a5c51ade30364c7a1467f86578ec226b4d1eaa586568ae0be241_d5e9200836ac85d6.wav",
+      "audio_sha256": "c635cec2b39fcdc7a5226c398b241952c6d195dc764cdbd1b03d28b4523bf70f",
+      "input_lufs": -21.53,
+      "input_true_peak_db": -7.35,
+      "playback_gain_db": 1.53,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "ec9548f5a5c800150552a169fb82eb041453daa53e81b0977d4a5f85793e1912",
+      "path": "res://audio/mission_voices/directed/en/ef56baa56d8ef2b0b71e052f6c99dfdadf5b24e7eef598365385ee86ad1604f7_d77589d0128b4ae3.wav",
+      "audio_sha256": "2d8758a851b4de1d365c520b93cbd73b507a3736bf37912d76822def1354a3da",
+      "input_lufs": -24.33,
+      "input_true_peak_db": -6.39,
+      "playback_gain_db": 4.33,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "8a0a944387c98241b288fa701d6d0827e0939b1e5c059c5e1bb90d45bd015930",
+      "path": "res://audio/mission_voices/directed/en/5ff7c2828a346aed46fb557885139678bbb4a53d42a58ba53045385c88ec1a7b_d873a0ef24f080a3.wav",
+      "audio_sha256": "884fae71c49de4db04cfca943718e0626b34333f47b965a57e9906b6471c0c5b",
+      "input_lufs": -26.27,
+      "input_true_peak_db": -12.08,
+      "playback_gain_db": 6.27,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "481403882fcf164aaf940a40a1ff4a25bc3bbe5a1d51e8d51c7474305d37c276",
+      "path": "res://audio/mission_voices/directed/pt_BR/94f9353d15b3bf7e1df37de20d027ec0f1df843d0ed0dcacc72dc09704805b96_d87a72aa4307aba8.wav",
+      "audio_sha256": "2367ef600bc444576f6d7253e00cf96996d18662a4a9af16be87ef712c1cd3f3",
+      "input_lufs": -19.15,
+      "input_true_peak_db": -3.45,
+      "playback_gain_db": -0.85,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "211926ff321b310435fe09dd63d042b6f94263d4ca97dae26bc4291a9225b211",
+      "path": "res://audio/mission_voices/directed/en/c1fa7889a777271f94ee12aa927ca8318c0c3440c87e46e256e592a475dac828_db7c9696e831959a.wav",
+      "audio_sha256": "02170876b0c53de8c5a7a882af83d71dc67ec2cb6e69765b0a33dbf4f8022369",
+      "input_lufs": -23.53,
+      "input_true_peak_db": -9.27,
+      "playback_gain_db": 3.53,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "fb7efe3d566bf9ca48d69a7e337c945a4589288de1d7b0006046a449de1195cb",
+      "path": "res://audio/mission_voices/directed/en/664bd12cc572c21c09be33db0ec508749b8826f720ae3ae65fafa930af4e4db5_dc3c82309f627531.wav",
+      "audio_sha256": "e53b10ebd4d21e59e8d668405b8b8f1442b5b27ac9f7286255f4c3d727720d25",
+      "input_lufs": -24.76,
+      "input_true_peak_db": -9.5,
+      "playback_gain_db": 4.76,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "87ebca433071819a261f3dcddf0ce70a333fa7eb86582dedbfb74b67d3f7ef0d",
+      "path": "res://audio/mission_voices/directed/en/9c97e17763e9bb1ffb41c1fa8cfc0ff22a161754a8dcb6f2993432515e9a65c3_dc47dff2d3992dfd.wav",
+      "audio_sha256": "67c5a4b9c7c80701268714bbbdb0f9665d7515220fca2fdcf3dda4ceef24569c",
+      "input_lufs": -25.63,
+      "input_true_peak_db": -9.65,
+      "playback_gain_db": 5.63,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "669788adc9fbd8d80b770c184f8efa126a883d299a56c48aa35c6ef2725b18d3",
+      "path": "res://audio/mission_voices/directed/en/8c3ab2e54145118298b8c29f064c64e90e7b681188655dbef327f46ef318ca97_dc7b5ed32ac12379.wav",
+      "audio_sha256": "269eefae43412a3bb0ef1269bf93952633b25fcb7dff41339d2b2cd7b59b89ac",
+      "input_lufs": -24.65,
+      "input_true_peak_db": -7.31,
+      "playback_gain_db": 4.65,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "77cd828d072ce4416376db5313deab52f1afeac94ba1439f68fe442c20fbca74",
+      "path": "res://audio/mission_voices/directed/pt_BR/3c151605f2d021b08917e2f5a58cd39990f7fe90d9d9b0dd86cfeffa9c1b33a3_de2f4c2c04bb990f.wav",
+      "audio_sha256": "240cb0d463420f9b870f39535152e89b78283ef902431bf11d7b8f00e5905eca",
+      "input_lufs": -21.94,
+      "input_true_peak_db": -6.84,
+      "playback_gain_db": 1.94,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "309cbf673164ea958b11e1d3e6cbed4039c8949cb445ab4d40df2b93169567b5",
+      "path": "res://audio/mission_voices/directed/en/f748e3042901393d4b1bdc60fb017d35b3d679a4025b3540ac6f79580a6e6570_e1132ad2c864f99c.wav",
+      "audio_sha256": "295e5898a1be7ec7ca09c9183d4de1373ca62ace17776621e332ace628147040",
+      "input_lufs": -21.69,
+      "input_true_peak_db": -7.39,
+      "playback_gain_db": 1.69,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "eb6caa7de54e0481816807dddd72844ce2ee67d6cb97c569db32e51e2ed6b535",
+      "path": "res://audio/mission_voices/directed/pt_BR/a04f7fc26b89114dc38218711d1ec1626a2cbe3a2ac70af468634986cd6b597d_e3684132ac3c20ad.wav",
+      "audio_sha256": "d2e168b435bf82506fe25903fb1d4e661f210ed1e5a1dee9b0a0f89ead5baf77",
+      "input_lufs": -25.92,
+      "input_true_peak_db": -9.28,
+      "playback_gain_db": 5.92,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "ec79fa60a4106052861278eb2bccd0ed4cdad9c10ada5201727175333441fa90",
+      "path": "res://audio/mission_voices/directed/pt_BR/1718627b367a5b1b64d62931a9c5faa00b5da290fdee28ff66aa8d582351724e_e3d539f4e03e2323.wav",
+      "audio_sha256": "fdb292eb9d810c7f7562a9f86658b293b2e617a4e02f4db2db89a1dfb6df2957",
+      "input_lufs": -25.64,
+      "input_true_peak_db": -5.89,
+      "playback_gain_db": 4.39,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "accd480556fb53513ac865f9dd56f47b429d3f676d725a28f21368c083c29d85",
+      "path": "res://audio/mission_voices/directed/en/1d79ce0c752bbe48722f672da2ef2550d236aaa77dfbcd1c90f16161b1161f4f_e481246922bfee97.wav",
+      "audio_sha256": "fc8f60414ebc6664fefbd873ea02e232ec6f06d8fc1c7dc9cf6b40723e10637f",
+      "input_lufs": -21.16,
+      "input_true_peak_db": -6.85,
+      "playback_gain_db": 1.16,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "37339edde0d6bd98adae40fa9f708f0b8d7b73fa0368794a71b17fc9d481d16a",
+      "path": "res://audio/mission_voices/directed/en/8fcaa1d92c675765b015502ab81a6f2f7201e89e8bf39679292b3ae1b3f12ab7_e5930e2e96cb23bd.wav",
+      "audio_sha256": "5c38e0890d487f5c1c30dc0c19e66255b593f1b5fcbb3014e841cdfb032cd403",
+      "input_lufs": -25.73,
+      "input_true_peak_db": -8.08,
+      "playback_gain_db": 5.73,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "93ff4290da9f38d6ff6af7adfcf1902d67e7da80b9fff0122ce4a0e2c061d420",
+      "path": "res://audio/mission_voices/directed/en/571cded95e13ab3e4fcc1ae9375048f4031dca3e9d3d243d8ce795b097ce4419_e8343140cf3d89ef.wav",
+      "audio_sha256": "7a5db96ab4e1711017e035c364e3742ab20c5b058d8d003dc12b314f41bdd0a2",
+      "input_lufs": -23.29,
+      "input_true_peak_db": -7.48,
+      "playback_gain_db": 3.29,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "103df880828b3a51b46ece2bfda63af9e5a642c31153d914a04cb5fd92af97f1",
+      "path": "res://audio/mission_voices/directed/pt_BR/998e22bcad8a0b52ec4f14428e686cf9cd93fcd6e31c19802c5a794c3e9ed207_e8ca4c44fec025a1.wav",
+      "audio_sha256": "bf2ee7dbe7b00a578bf3cd0484e39021d8697111acf1ef19007cde6eac99ed43",
+      "input_lufs": -23.25,
+      "input_true_peak_db": -6.66,
+      "playback_gain_db": 3.25,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "b3265435499fee63c32ddc70f81b7a25225de6da2ac5aecf1eadb29f24832294",
+      "path": "res://audio/mission_voices/directed/en/f3e3656b59366af775b5a56984cc4c97fff6da0f784026f9a62d3d44818c98b5_e95f0bd4e21da2b2.wav",
+      "audio_sha256": "a8e8e9f0c5d67126adf2cf49554fd2bea0e4d9f8775aedfc0a7b3f398290ab00",
+      "input_lufs": -25.71,
+      "input_true_peak_db": -8.49,
+      "playback_gain_db": 5.71,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "bf1f72920576b4dd99c176663a9a619d8b5874e0fcbbe8f63c3206402ff94fe7",
+      "path": "res://audio/mission_voices/directed/en/5ce5bfb95b8a763156fb53531076ede07392f83ac8631436ba3683419fe39a07_eabf5cfcd405375c.wav",
+      "audio_sha256": "33c27a138d2667b833396374d1ab74c4a2909ecf24e41da49ebcb4ff527ae942",
+      "input_lufs": -17.36,
+      "input_true_peak_db": -3.58,
+      "playback_gain_db": -2.64,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "f4fde50731c01e8c65f5b3c8608cc18657e2bb1dfefb309bd5cfd6f7153610d7",
+      "path": "res://audio/mission_voices/directed/pt_BR/bac960a3fdd2866a887b4d27b730d833b490ec12ce0b1ca81d496af566cffe2e_eb48f90880a1d580.wav",
+      "audio_sha256": "d6036ec4a5d1130758124bea14c3d8919dfc88e11fad4a003594d4c40748afe4",
+      "input_lufs": -26.06,
+      "input_true_peak_db": -6.95,
+      "playback_gain_db": 5.45,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "3272f867dd47ba362ebaa5ab3fa93d6ea34c67e0dbf583f6a6241e72fbff443f",
+      "path": "res://audio/mission_voices/directed/en/74d673753b3d3ea5f39c6377b7c4b5c9054b0c97f5fd9bf75ed524cc7f460d42_ecc0c713779a14b4.wav",
+      "audio_sha256": "728034a1927e872a56cb3efa7d0801c9f1e9fa5ebfd395a87ff614153b2b3815",
+      "input_lufs": -27.87,
+      "input_true_peak_db": -11.64,
+      "playback_gain_db": 7.87,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "a4fdb9ffe96ff7552bd7077a1773767537133d8e0cb84566beb1dc70a8acce3f",
+      "path": "res://audio/mission_voices/directed/en/94f9353d15b3bf7e1df37de20d027ec0f1df843d0ed0dcacc72dc09704805b96_f104666da9266138.wav",
+      "audio_sha256": "665113eae7b52e30b2d1b9540cd643e3aa3b1869f78a24ee2a70e33897064460",
+      "input_lufs": -22.58,
+      "input_true_peak_db": -7.26,
+      "playback_gain_db": 2.58,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "25854ebea0e7fb3ca7545f4152906cb3c49e115d40dbe219e85c3fa87f050d9f",
+      "path": "res://audio/mission_voices/directed/pt_BR/f445cdc3d6e03d67a97d245a432c22537fd3abe1e998786b78bcb3cc2eaed0df_f10e738b794d33e7.wav",
+      "audio_sha256": "6747423329ba23f7c5d218228efffae6a024611c818c3d09b781ed5b7153432a",
+      "input_lufs": -34.61,
+      "input_true_peak_db": -19.07,
+      "playback_gain_db": 12.0,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "e4722e506fb2169c242b969562c05d5cc7d874e0ca66d89c87416b9ed0ab28c2",
+      "path": "res://audio/mission_voices/directed/en/25c4f74456a32d4e3083264822f382b6c7971318dc4725450299949754faf24a_f3c3b8eba2a32ea1.wav",
+      "audio_sha256": "3c6b980013214c6687bbfda8f3e2db77db9ffe9185ecc022e694865413de5564",
+      "input_lufs": -18.38,
+      "input_true_peak_db": -6.55,
+      "playback_gain_db": -1.62,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "ef4a8e7007e62d38c2c36df357243210e25a6f6259242e164665c722ff91a5ea",
+      "path": "res://audio/mission_voices/directed/pt_BR/9c97e17763e9bb1ffb41c1fa8cfc0ff22a161754a8dcb6f2993432515e9a65c3_f5cdcc59fbb35f31.wav",
+      "audio_sha256": "5403d20a94cb2f5c54b08ccfe28d3f1c5e36cd1e35c2ca577554ee1deaef3dcd",
+      "input_lufs": -22.51,
+      "input_true_peak_db": -5.18,
+      "playback_gain_db": 2.51,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "47a57923811710d30cfa00571ace6321ff0e14670414f7cfaa3aa9f5703700a2",
+      "path": "res://audio/mission_voices/directed/pt_BR/7cebcc1e90150aad3dc817d4925e28059d3a56e3963000d549a0d762755d91fb_f60148897c2c5c52.wav",
+      "audio_sha256": "f984b1a0b37517c5b0c675f4400724401ee33438ea3505ffc37a6954a1a4a513",
+      "input_lufs": -21.44,
+      "input_true_peak_db": -8.95,
+      "playback_gain_db": 1.44,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "eac6e5735c8533fdfc5be62701fecaa6808ef4d4a56e9a5264088d423d6424bf",
+      "path": "res://audio/mission_voices/directed/en/2f74ccc16ed52b718b42204c49235f59574f5f599fab5aca4763f109dce41430_f6074e9163404dcc.wav",
+      "audio_sha256": "da74a12113ac831e164fb995ab9e2172dd8ffda627f2a24873d530311db79b98",
+      "input_lufs": -27.46,
+      "input_true_peak_db": -10.62,
+      "playback_gain_db": 7.46,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "ca515e025b37ec5ea27b3962f3706453b8047447ece308ba77974298d779499a",
+      "path": "res://audio/mission_voices/directed/en/9e660a90d7dbbf51c0007c70aee5a8854a0f915bb75bf8d4bc2463055a05166d_f60e30072258ed88.wav",
+      "audio_sha256": "d3602d68ba16b98acfe9481d355fbe9171d27ba4a06a43594dcd04a959d2ddc1",
+      "input_lufs": -22.15,
+      "input_true_peak_db": -10.31,
+      "playback_gain_db": 2.15,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "275343c81ad69932d6de10d0c3d82b6c5a42899f70a01934639c973c41d72063",
+      "path": "res://audio/mission_voices/directed/en/333889ab6c01cd1b520ac9f8adf1aa48db086f295a63d28ca869cd95c8d13b05_f6937e104f821eab.wav",
+      "audio_sha256": "910a0b80086275edffcc60740277e8267ce52447f7dd15af8364fe9c12829f9a",
+      "input_lufs": -28.69,
+      "input_true_peak_db": -10.55,
+      "playback_gain_db": 8.69,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "230ba6beb3dfe97393ff5ccd4313289827cf398b0808dea976256aad6d4d00f0",
+      "path": "res://audio/mission_voices/directed/pt_BR/9c3e0186d91293ba261c6fef194eacc2b52e472fa7f7767e4cc767c1079ca260_f71cfcb0907bcd21.wav",
+      "audio_sha256": "39e728cf454d6203e657c92f54307258ece7764f916cee19e7e640d0a1de154f",
+      "input_lufs": -21.92,
+      "input_true_peak_db": -4.53,
+      "playback_gain_db": 1.92,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "8972f1622bfac79d4720a4fba9324ed302b29bf1cbf5650f1d384010a9cedf7b",
+      "path": "res://audio/mission_voices/directed/en/0425b64a6f067aea49af6605c5d8333efcb9c7d1a35365135ffb510b33a99d2e_f728fa6aa8994022.wav",
+      "audio_sha256": "23e25cef558b908528356f1b4254565c4711ebfc98d5305e44c9678786dd25db",
+      "input_lufs": -21.59,
+      "input_true_peak_db": -10.19,
+      "playback_gain_db": 1.59,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "4994c63288f236db0fa0f2513bca1662bee851190fcbcb67a9399920fa38b5d4",
+      "path": "res://audio/mission_voices/directed/en/3ebaa20883eb60b0c16d57c09663056dcc9f6a3e2bed2c0786dae995ea9dbfb5_f9301dd779f39690.wav",
+      "audio_sha256": "ef80c17d89a429a62e04ae2ab83758d5ceb594afdbd52783cca0ed0824a0201b",
+      "input_lufs": -23.06,
+      "input_true_peak_db": -7.94,
+      "playback_gain_db": 3.06,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "165e011aead3b8a428c1100f58a40e179bbab5dc5629fb91a14928918c68290c",
+      "path": "res://audio/mission_voices/directed/en/fb68f975ffb4fccdef8e1001cbc96d8df9a73d430336423fb9ea9fc5bfff8b14_f9d9da756afd4fe4.wav",
+      "audio_sha256": "d8187601065823eb390e1e6373da0b94871b2ee337efc980378fc45f7d9ac0c1",
+      "input_lufs": -25.15,
+      "input_true_peak_db": -4.6,
+      "playback_gain_db": 3.1,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "cfa9793cf34e5f2e2d90d8082551f6581f331e0a2a55cb4624a88b2464c879bf",
+      "path": "res://audio/mission_voices/directed/pt_BR/9ec3ac1db61c4271c868d1aad71a0e40a7de8139641c556a11e50608128cac9d_fab4ae30dfa28964.wav",
+      "audio_sha256": "b8099b8c784c7f6fbbb8812d4e79052730ac7e3c90aff80f3857c2b206e8bb07",
+      "input_lufs": -17.28,
+      "input_true_peak_db": -4.85,
+      "playback_gain_db": -2.72,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "ef1ba544171c783c45bf0c0be0b0689ce4231c793e0fe287a70251ce0cb119ee",
+      "path": "res://audio/mission_voices/directed/en/fd13ef4a4de05b0a2744d6a80ab483a47327d2e9b07efcfed13a43b8afabc66e_facbca0a8b311cfe.wav",
+      "audio_sha256": "2f7787947c16a419a744defa60f844f8cb39bbf62ff233b7e1a77887ca76c07a",
+      "input_lufs": -21.87,
+      "input_true_peak_db": -7.75,
+      "playback_gain_db": 1.87,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "cc8e9601d2a9a91401fc51bb4199c68d03ac8df837999e991a0be0dcd472dd10",
+      "path": "res://audio/mission_voices/directed/pt_BR/a537fc1a6300ee94afd5a67fe14a8c9e433273b70104d94e2f5da4ff43be3e80_fccf32ae98f57e4a.wav",
+      "audio_sha256": "a398c57bcefc8d9b2aa3bbda5a4aa7a00a7b6c1f0f549cf9eed54317109540a0",
+      "input_lufs": -38.02,
+      "input_true_peak_db": -19.3,
+      "playback_gain_db": 12.0,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "ef7d4d40ca68dffcc34d744588faac1cb11ed8e12d34dbc6869057f343daea85",
+      "path": "res://audio/mission_voices/directed/en/68ef39af1e4c24c1343799e14e3d54a8cd21f39345f65428a81670ab6e5e9f39_fd3566455e83cce5.wav",
+      "audio_sha256": "2921c4d3c4b246b71060a70e8e4e92e79a2f92fc8da77b1486f9ae80202a9207",
+      "input_lufs": -38.08,
+      "input_true_peak_db": -23.77,
+      "playback_gain_db": 12.0,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    },
+    {
+      "cache_key": "21dcb5e6b0384f6fd9990054687ff55080648ba61ca316945a37f6fd9a1b3335",
+      "path": "res://audio/mission_voices/directed/pt_BR/20a44b9771e27941d403dea6d5e8b25e1ce447d3129cde5458734ce997fba7cd_ff8767e0b517fa3c.wav",
+      "audio_sha256": "e89e15febb21b5c0b342a3a26f69cfbd4531ee82eee4460bdcfdcf23daae3db6",
+      "input_lufs": -19.64,
+      "input_true_peak_db": -8.65,
+      "playback_gain_db": -0.36,
+      "mix_method": "integrated_loudness",
+      "mix_policy": "84adef34093f24391eac90f579564ffe5764e0f42062ea6b97daed498ba70897"
+    }
+  ],
+  "elapsed_seconds": 2.766
+}

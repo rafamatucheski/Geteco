@@ -1,4 +1,5 @@
 extends Node
+const SESSION_OPS := preload("res://runtime/SessionOperations.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const REGION := preload("res://world/editing/EditableRegion.gd")
 const WORLD_CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
@@ -9,6 +10,8 @@ const DESERT_SOCIAL_ACTOR := preload("res://runtime/desert/DesertSocialActor.gd"
 var _desert_social_slots: Array[Dictionary] = DESERT_POPULATION.slots()
 const FOOTBRIDGE_CROSSERS := preload("res://gameplay/crowd/FootbridgeCrossers.gd")
 var footbridge_crossers := FOOTBRIDGE_CROSSERS.new()
+var population_layout := preload("res://gameplay/crowd/AmbientPopulationLayout.gd").new()
+var ambient_journeys := preload("res://gameplay/AmbientJourney.gd").new()
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const PORT_POLICY := preload("res://gameplay/urban_v1/HarborPortPolicy.gd")
 const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
@@ -27,6 +30,8 @@ const DENSITY_STARS := 4
 const DENSITY_STARS_SCALE := 0.6
 const DENSITY_TRIM_MIN_DISTANCE := 30.0
 var density_scale := 1.0
+# Independent authored street demand; emergency and area ceilings do not compound.
+var area_density_scale := Vector2.ONE
 # Como em GTA: gente e trânsito ambiente nascem e somem num anel em volta do jogador,
 # sempre fora do quadro da câmera, para nada aparecer ou desaparecer na tela.
 const POPULATION_SPAWN_MIN := 45.0
@@ -72,6 +77,8 @@ var chairlift_schedule_initialized := false
 var chairlift_operating := false
 ## Regiões preparadas fora da árvore: reentrar não repete a preparação (~340 ms em Mountain).
 var _region_cache: Dictionary = {}
+var background_preparation: Node
+var background_loading_status: Dictionary = {}
 ## Cenas dos modelos de trânsito mantidas vivas. FleetCatalog.create faz load() a cada
 ## nascimento; quando o último carro de um modelo saía de cena, o recurso era liberado
 ## e o próximo nascimento relia o arquivo: 1,7 s num quadro (medido 2026-09-23).
@@ -79,7 +86,8 @@ var _fleet_scenes: Array[Resource] = []
 var _fleet_extra: Array[Resource] = []
 
 func build() -> void:
-	var startup_traced := Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
+	var diagnostic_build := SESSION_OPS.begin(self, "world", "startup")
+	var startup_traced := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
 	no_save = "--no-save" in OS.get_cmdline_user_args()
 	var launch = get_node_or_null("/root/V2Launch")
 	if launch != null: store.path = launch.selected_path
@@ -107,7 +115,7 @@ func build() -> void:
 		curtain = CURTAIN.new()
 		curtain.stage_only = world.has_meta("menu_preview")
 		curtain.variant = CURTAIN.variant_for(state.region_id)
-		world.add_child(curtain)
+		SESSION_OPS.attach(world, curtain, self, diagnostic_build)
 	curtain.set_stage(.12, "Montando " + ("a serra" if state.region_id == "mountain" else "o deserto" if state.region_id == "desert" else "o porto") + "…")
 	if world.has_meta("menu_preview"):
 		await _hold_fleet_scenes_incremental()
@@ -119,7 +127,7 @@ func build() -> void:
 	environment.environment.ambient_light_color = Color("c0d0e2")
 	environment.environment.ambient_light_energy = .65
 	environment.environment.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-	world.add_child(environment)
+	SESSION_OPS.attach(world, environment, self, diagnostic_build)
 	# Brilho escolhido pelo jogador (Configurações > Vídeo), aplicado agora e a cada mudança.
 	var player_settings := get_node_or_null("/root/V2Settings")
 	if player_settings != null:
@@ -131,13 +139,16 @@ func build() -> void:
 	sun.light_energy = 1.6
 	sun.shadow_enabled = true
 	sun.directional_shadow_max_distance = 110
-	world.add_child(sun)
-	world.maciota_place = preload("res://world/maciota/MaciotaPlace.gd").new()
+	SESSION_OPS.attach(world, sun, self, diagnostic_build)
+	world.maciota_place = SESSION_OPS.instantiate(preload("res://world/maciota/MaciotaPlace.gd"), self)
 	world.maciota_place.exterior_origin = preload("res://world/maciota/MaciotaPlace.gd").INDUSTRIAL_ORIGIN
 	world.maciota_place.interior_origin = Vector3(0,0,-2000)
-	world.add_child(world.maciota_place)
+	SESSION_OPS.attach(world, world.maciota_place, self, diagnostic_build)
 	if world.has_meta("menu_preview"): await get_tree().process_frame
-	region = _mount_region(state.region_id)
+	# Select the saved/player-requested cell before _ready builds any geometry.
+	# Previously we built the region's default spawn first, then threw it away.
+	var first_focus := Vector3.INF if _eager_preparation_for_benchmark() else _startup_focus_hint()
+	region = _mount_region(state.region_id,first_focus)
 	var startup_position := _startup_position()
 	region.set_focus(startup_position,true)
 	world.street = region
@@ -149,54 +160,54 @@ func build() -> void:
 	if world.has_meta("menu_preview"): world.player.controlled_automatically = true
 	world.player.position = startup_position
 	region.set_focus(world.player.position)
-	world.add_child(world.player)
+	SESSION_OPS.attach(world, world.player, self, diagnostic_build)
 	_update_physical_residency(world.player.position)
-	world.camera = preload("res://scripts/CameraRig.gd").new()
+	world.camera = SESSION_OPS.instantiate(preload("res://scripts/CameraRig.gd"), self)
 	world.camera.target = world.player
-	world.add_child(world.camera)
+	SESSION_OPS.attach(world, world.camera, self, diagnostic_build)
 	world.player.camera = world.camera
 	world._build_hud()
-	world.driving = preload("res://scripts/Driving.gd").new()
+	world.driving = SESSION_OPS.instantiate(preload("res://scripts/Driving.gd"), self)
 	world.driving.world = world
-	world.add_child(world.driving)
+	SESSION_OPS.attach(world, world.driving, self, diagnostic_build)
 	world.driving.car.vehicle_id = "player_coupe"
 	world.driving.car.set_meta("region_id",state.region_id)
 	vehicles.append(world.driving.car)
 	world.traffic = Node3D.new()
-	world.add_child(world.traffic)
-	world.gameplay = preload("res://gameplay/Gameplay.gd").new()
+	SESSION_OPS.attach(world, world.traffic, self, diagnostic_build)
+	world.gameplay = SESSION_OPS.instantiate(preload("res://gameplay/Gameplay.gd"), self)
 	world.gameplay.configure(world,world.player,world.camera,state)
-	world.add_child(world.gameplay)
-	civilian_reactions = preload("res://gameplay/civilian_reactions/CivilianReactionDirector.gd").new()
+	SESSION_OPS.attach(world, world.gameplay, self, diagnostic_build)
+	civilian_reactions = SESSION_OPS.instantiate(preload("res://gameplay/civilian_reactions/CivilianReactionDirector.gd"), self)
 	civilian_reactions.name = "CivilianReactionDirector"
 	civilian_reactions.configure(world,world.gameplay)
-	world.add_child(civilian_reactions)
+	SESSION_OPS.attach(world, civilian_reactions, self, diagnostic_build)
 	if not world.get_meta("skip_dispatch",false) and not "--no-dispatch" in OS.get_cmdline_user_args():
-		world.dispatch = preload("res://gameplay/dispatch/DispatchController.gd").new()
+		world.dispatch = SESSION_OPS.instantiate(preload("res://gameplay/dispatch/DispatchController.gd"), self)
 		world.dispatch.configure(world,world.gameplay,traffic_routes)
-		world.add_child(world.dispatch)
+		SESSION_OPS.attach(world, world.dispatch, self, diagnostic_build)
 		world.dispatch.set_enabled(true)
 		world.dispatch.set_physics_process(false)
 	if not world.get_meta("skip_traffic_yield",false) and not "--no-traffic-yield" in OS.get_cmdline_user_args():
-		world.traffic_yield = preload("res://gameplay/traffic_yield/TrafficYieldController.gd").new()
+		world.traffic_yield = SESSION_OPS.instantiate(preload("res://gameplay/traffic_yield/TrafficYieldController.gd"), self)
 		world.traffic_yield.configure(world,traffic_routes)
-		world.add_child(world.traffic_yield)
+		SESSION_OPS.attach(world, world.traffic_yield, self, diagnostic_build)
 		world.traffic_yield.set_physics_process(false)
-	world.session = preload("res://runtime/FullSession.gd").new()
+	world.session = SESSION_OPS.instantiate(preload("res://runtime/FullSession.gd"), self)
 	world.session.world = world
 	world.session.controller = self
-	world.add_child(world.session)
+	SESSION_OPS.attach(world, world.session, self, diagnostic_build)
 	session = world.session
 	if "--parking-baseline" not in OS.get_cmdline_user_args():
-		roadside_parking = preload("res://runtime/RoadsideParking.gd").new()
+		roadside_parking = SESSION_OPS.instantiate(preload("res://runtime/RoadsideParking.gd"), self)
 		roadside_parking.configure(world,self)
-		world.add_child(roadside_parking)
-	var v1_routines = preload("res://gameplay/routines_v1/RoutineDirector.gd").new()
+		SESSION_OPS.attach(world, roadside_parking, self, diagnostic_build)
+	var v1_routines = SESSION_OPS.instantiate(preload("res://gameplay/routines_v1/RoutineDirector.gd"), self)
 	v1_routines.configure(world,session,self)
-	world.add_child(v1_routines)
-	urban_transit = preload("res://runtime/UrbanTransitPresentation.gd").new()
+	SESSION_OPS.attach(world, v1_routines, self, diagnostic_build)
+	urban_transit = SESSION_OPS.instantiate(preload("res://runtime/UrbanTransitPresentation.gd"), self)
 	urban_transit.configure(self)
-	world.add_child(urban_transit)
+	SESSION_OPS.attach(world, urban_transit, self, diagnostic_build)
 	var saved_vehicle := starting_vehicle()
 	if not saved_vehicle.is_empty() and saved_vehicle.get("was_driven",false) and saved_vehicle.region == state.region_id and state.place_id.is_empty():
 		region.set_focus(Vector3(saved_vehicle.position[0],saved_vehicle.position[1],saved_vehicle.position[2]))
@@ -237,28 +248,28 @@ func build() -> void:
 	# frame window where the player already saw and could move through the
 	# world under that raw default look, reading as an icy, washed-out scene
 	# until Weather caught up.
-	var weather = preload("res://runtime/Weather.gd").new()
+	var weather = SESSION_OPS.instantiate(preload("res://runtime/Weather.gd"), self)
 	weather.controller = self
-	world.add_child(weather)
+	SESSION_OPS.attach(world, weather, self, diagnostic_build)
 	session.weather = weather
-	var city_look = preload("res://world/city_look/CityLook.gd").new()
+	var city_look = SESSION_OPS.instantiate(preload("res://world/city_look/CityLook.gd"), self)
 	city_look.controller = self
-	world.add_child(city_look)
-	var street_physics = preload("res://gameplay/street_physics/StreetPhysics.gd").new()
+	SESSION_OPS.attach(world, city_look, self, diagnostic_build)
+	var street_physics = SESSION_OPS.instantiate(preload("res://gameplay/street_physics/StreetPhysics.gd"), self)
 	street_physics.controller = self
-	world.add_child(street_physics)
-	var rain_puddles = preload("res://world/rain/RainPuddles3D.gd").new()
+	SESSION_OPS.attach(world, street_physics, self, diagnostic_build)
+	var rain_puddles = SESSION_OPS.instantiate(preload("res://world/rain/RainPuddles3D.gd"), self)
 	rain_puddles.controller = self
-	world.add_child(rain_puddles)
-	var wildlife = preload("res://gameplay/wildlife/MountainWildlife.gd").new()
+	SESSION_OPS.attach(world, rain_puddles, self, diagnostic_build)
+	var wildlife = SESSION_OPS.instantiate(preload("res://gameplay/wildlife/MountainWildlife.gd"), self)
 	wildlife.controller = self
-	world.add_child(wildlife)
-	var roadside = preload("res://world/mountain_detail/MountainRoadside3D.gd").new()
+	SESSION_OPS.attach(world, wildlife, self, diagnostic_build)
+	var roadside = SESSION_OPS.instantiate(preload("res://world/mountain_detail/MountainRoadside3D.gd"), self)
 	roadside.controller = self
-	world.add_child(roadside)
-	var grass = preload("res://world/mountain_detail/MountainGrass3D.gd").new()
+	SESSION_OPS.attach(world, roadside, self, diagnostic_build)
+	var grass = SESSION_OPS.instantiate(preload("res://world/mountain_detail/MountainGrass3D.gd"), self)
 	grass.controller = self
-	world.add_child(grass)
+	SESSION_OPS.attach(world, grass, self, diagnostic_build)
 	# Warm after CityLook enables the final Mobile framebuffer (including glow).
 	await preload("res://gameplay/emergency/ReactionVisualPrewarm.gd").run(world, curtain)
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
@@ -271,7 +282,7 @@ func build() -> void:
 	if not play_at_request.is_empty(): await _place_at_request()
 	set_population(requested_population)
 	world_audio = _audio()
-	world.add_child(world_audio)
+	SESSION_OPS.attach(world, world_audio, self, diagnostic_build)
 	_update_chairlift_schedule()
 	curtain.set_stage(.97, "Finalizando…")
 	# GarageRewards admits a saved driver asynchronously from restore_location.
@@ -308,6 +319,7 @@ func build() -> void:
 	world.player.automatic_direction = restored_player_direction
 	if is_instance_valid(restored_car): restored_car.input_locked = restored_car_lock
 	_trace_cost("startup:prepared",startup_traced)
+	SESSION_OPS.finish(diagnostic_build)
 	if world.has_meta("menu_preview"):
 		await world.get_meta("menu_preview").hold_world(world)
 		if world.is_queued_for_deletion(): return
@@ -316,13 +328,13 @@ func build() -> void:
 		session.sync_dispatch_location()
 		world.dispatch.set_physics_process(true)
 	if is_instance_valid(world.traffic_yield): world.traffic_yield.set_physics_process(true)
+	if is_instance_valid(background_preparation): background_preparation.set_process(true)
 
-## Sob a cortina de carregamento: prepara a outra região e aquece os caches de
-## texturas/malhas das duas (medido 2026-09-23: 2,5 s Harbor + 1,2 s Mountain),
-## para a primeira passagem por cada lugar não travar a direção.
+## Prepare resident gameplay and route data under the curtain. Distant native
+## worlds no longer build disposable geometry; resource I/O is queued after play.
 func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	var incremental: bool = world.has_meta("menu_preview")
-	var phase_traced := Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
+	var phase_traced := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
 	if curtain != null:
 		curtain.set_stage(.36, "Carregando veículos…")
 		await get_tree().process_frame
@@ -334,10 +346,10 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	if curtain != null:
 		curtain.set_stage(.40, "Compilando shaders do tráfego…")
 		await get_tree().process_frame
-	phase_traced = Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
+	phase_traced = Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
 	await _prewarm_fleet_shaders(incremental, curtain)
 	_trace_cost("startup:fleet_shaders",phase_traced)
-	phase_traced = Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
+	phase_traced = Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
 	# The existing carbonized textures cost ~4.5 ms on first use. Build their
 	# shared cache under the loading curtain, without creating fires or wrecks.
 	preload("res://gameplay/vehicle_effects/VehicleDamage.gd")._char(false)
@@ -369,11 +381,18 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	if curtain != null:
 		curtain.set_stage(.46, "Preparando texturas e prédios…")
 		await get_tree().process_frame
-	phase_traced = Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
-	if is_instance_valid(region):
+	phase_traced = Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
+	if is_instance_valid(region) and (state.region_id == "desert" or _eager_preparation_for_benchmark()):
 		if incremental: await region.prewarm_incremental()
 		else: region.prewarm()
+	elif is_instance_valid(region):
+		await preload("res://runtime/RetainedRegionPreparation.gd").run(region)
 	_trace_cost("startup:resident_prewarm",phase_traced)
+	background_preparation = preload("res://runtime/BackgroundRegionPreparation.gd").new()
+	background_preparation.controller = self
+	add_child(background_preparation)
+	background_preparation.set_process(false)
+	if not _eager_preparation_for_benchmark(): background_preparation.enqueue(state.region_id)
 	for id in ["harbor","mountain","desert"]:
 		if regions.has(id): continue
 		if curtain != null:
@@ -383,17 +402,24 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 		if detached == null: continue
 		# Aquecer dados/conteudo sem montar uma vizinhanca do spawn que sera descartada.
 		detached.initial_prewarm_only = true
-		phase_traced = Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
+		phase_traced = Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
 		world.add_child(detached)
 		_trace_cost("startup:distant_prepare:"+id,phase_traced)
-		phase_traced = Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
-		if incremental: await detached.prewarm_incremental()
-		else: detached.prewarm()
+		phase_traced = Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
+		# Desert's prewarm prepares shared terrain/material data only. Native
+		# worlds used to build/discard all cells here. Those procedural builders
+		# remain in proximity streaming, never in the background resource queue.
+		if id == "desert" or _eager_preparation_for_benchmark():
+			if incremental: await detached.prewarm_incremental()
+			else: detached.prewarm()
+		else:
+			await preload("res://runtime/RetainedRegionPreparation.gd").run(detached)
 		_trace_cost("startup:distant_prewarm:"+id,phase_traced)
 		detached.initial_prewarm_only = false
 		detached.release_chunks()
 		world.remove_child(detached)
 		_region_cache[id] = detached
+		if not _eager_preparation_for_benchmark(): background_preparation.enqueue(id)
 	# Grafos de rota das três combinações residentes, sob a cortina.
 	if curtain != null:
 		curtain.set_stage(.76, "Traçando rotas do trânsito…")
@@ -401,7 +427,7 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	var live := regions.duplicate()
 	var all := live.duplicate()
 	for id in _region_cache: all[id] = _region_cache[id]
-	phase_traced = Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
+	phase_traced = Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
 	for combo in [["harbor"],["mountain"],["desert"],["harbor","mountain"],["harbor","desert"],["harbor","mountain","desert"]]:
 		regions = {}
 		for id in combo:
@@ -410,11 +436,15 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 		if incremental: await get_tree().process_frame
 	regions = live
 	_configure_routes()
+	population_layout.configure(ambient_roads_cache)
 	_trace_cost("startup:route_graphs",phase_traced)
 	print("Pré-aquecimento das regiões: ", Time.get_ticks_msec()-began, " ms")
 
 func _apply_player_settings() -> void:
 	if is_instance_valid(environment): get_node("/root/V2Settings").apply_environment(environment.environment)
+
+func _eager_preparation_for_benchmark() -> bool:
+	return OS.is_debug_build() and world.get_meta("background_loading_baseline",false)
 
 func _hold_fleet_scenes() -> void:
 	if not _fleet_scenes.is_empty(): return
@@ -431,7 +461,7 @@ func _hold_fleet_scenes() -> void:
 func _prewarm_dispatch_models() -> void:
 	var fleet := preload("res://runtime/FleetCatalog.gd")
 	var rules := preload("res://gameplay/dispatch/DispatchRules.gd")
-	var traced := Time.get_ticks_usec() if is_instance_valid(world) and world.get_meta("benchmark_trace",false) else 0
+	var traced := Time.get_ticks_usec() if is_instance_valid(world) and (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
 	for id in rules.ARCHETYPES.values():
 		var model_traced := Time.get_ticks_usec() if traced else 0
 		var model: Node3D = fleet.create(str(id))
@@ -582,6 +612,21 @@ func _place_at_request() -> void:
 				world.player.teleport(point)
 				return
 
+func _startup_focus_hint() -> Vector3:
+	if not play_at_request.is_empty(): return play_at_request.point
+	if not state.place_id.is_empty(): return Vector3.INF
+	var vehicle := starting_vehicle()
+	if not vehicle.is_empty() and vehicle.get("was_driven",false) and vehicle.get("region","") == state.region_id:
+		var position: Array = vehicle.get("position",[])
+		if position.size() == 3: return Vector3(float(position[0]),float(position[1]),float(position[2]))
+	var pedestrian: Dictionary = state.world_state.get("pedestrian",{})
+	var coordinates: Array = pedestrian.get("position",[])
+	if pedestrian.get("region","") == state.region_id and coordinates.size() == 3:
+		var point := Vector3(float(coordinates[0]),float(coordinates[1]),float(coordinates[2]))
+		if state.region_id == "desert": return preload("res://world/desert/north_pass/DesertNorthPassLayout.gd").restore_point(point,state.world_state)
+		return point
+	return Vector3.INF
+
 func _startup_position() -> Vector3:
 	if not play_at_request.is_empty(): _resolve_play_at()
 	# Mount and frame the saved destination from the first rendered frame.  The
@@ -621,8 +666,10 @@ func _physical_focus() -> Vector3:
 
 func _mount_region(id: String, requested_focus: Vector3 = Vector3.INF) -> Node3D:
 	if regions.has(id) and is_instance_valid(regions[id]): return regions[id]
-	var traced := Time.get_ticks_usec() if is_instance_valid(world) and world.get_meta("benchmark_trace",false) else 0
+	var traced := Time.get_ticks_usec() if is_instance_valid(world) and (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
+	var mount_token := SESSION_OPS.begin(self, "streaming", "mount_region", {"region":id, "cached":_region_cache.has(id)})
 	var mounted_region := _mount_region_now(id,requested_focus)
+	SESSION_OPS.finish(mount_token, "mounted" if mounted_region != null else "missing")
 	_trace_cost("mount_region:"+id,traced)
 	return mounted_region
 
@@ -631,6 +678,7 @@ func _build_region(id: String, first_focus := Vector3.INF) -> Node3D:
 	return REGION.build_region(id,first_focus)
 
 func _mount_region_now(id: String, requested_focus: Vector3) -> Node3D:
+	if is_instance_valid(background_preparation): background_preparation.take(id)
 	var first_focus := requested_focus if requested_focus.is_finite() else (_physical_focus() if is_instance_valid(world.player) else Vector3.INF)
 	var mounted: Node3D = null
 	if _region_cache.has(id) and is_instance_valid(_region_cache[id]):
@@ -711,8 +759,9 @@ func _configure_routes() -> void:
 
 func _refresh_route_consumers() -> void:
 	if traffic_routes == null: return
-	var traced := Time.get_ticks_usec() if is_instance_valid(world) and world.get_meta("benchmark_trace",false) else 0
+	var traced := Time.get_ticks_usec() if is_instance_valid(world) and (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
 	_configure_routes()
+	population_layout.configure(ambient_roads_cache)
 	var layouts: Array = []
 	if regions.has("harbor") and regions.harbor.harbor_road_geometry != null:
 		layouts = regions.harbor.harbor_road_geometry.crossing_layout
@@ -725,12 +774,14 @@ func _persistent_vehicle_support() -> Dictionary:
 	var support := {"harbor":[],"mountain":[],"desert":[]}
 	if is_instance_valid(urban_transit) and is_instance_valid(urban_transit.urban_service):
 		for bus in urban_transit.urban_service.fleet:
-			if not bus.active: continue
+			if not is_instance_valid(bus) or not bus.active: continue
+			var bus_region: String = bus.get_meta("region_id","harbor")
+			if not support.has(bus_region): continue
 			for index in bus.sections.size():
-				support.harbor.append({"position":bus.sections[index].global_position,"radius":bus.LENGTHS[index]*.5+1.0})
+				support[bus_region].append({"position":bus.sections[index].global_position,"radius":bus.LENGTHS[index]*.5+1.0})
 			# Retain the admitted look-ahead cell as well as the current hull.
 			# Otherwise streaming can evict it before the next physics step.
-			support.harbor.append({"position":bus.global_position-bus.global_basis.z*8,"radius":2.0})
+			support[bus_region].append({"position":bus.global_position-bus.global_basis.z*8,"radius":2.0})
 	for car in vehicles:
 		if not is_instance_valid(car) or car.is_queued_for_deletion() or not car.visible: continue
 		# A body suspended by streaming still owns its floor request. Excluding
@@ -809,7 +860,7 @@ func _update_physical_residency(point: Vector3) -> void:
 		_mount_region("mountain",seam_anchor)
 	if seam_preload or north_preload:
 		if not is_instance_valid(connection):
-			var traced := Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
+			var traced := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
 			connection = WORLD_CONNECTION.new()
 			world.add_child(connection)
 			_trace_cost("world_connection",traced)
@@ -892,6 +943,7 @@ func _restore_player_vehicle() -> void:
 	if saved.is_empty(): return
 	var car: CharacterBody3D = world.driving.car
 	var point := Vector3(saved.position[0],saved.position[1],saved.position[2])
+	if car.has_method("restore_fleet_extras"): car.restore_fleet_extras(saved)
 	car.equipment_state = saved.get("equipment",{}).duplicate(true)
 	if saved.has("paint"): car.paint_color = Color.html(saved.paint)
 	if saved.has("vehicle_id"): car.vehicle_id = str(saved.vehicle_id)
@@ -928,6 +980,7 @@ func _restore_player_vehicle() -> void:
 			car.set_meta("awaiting_ground",true)
 			car.set_physics_process(false)
 	car.restore_health(float(saved.health))
+	car.restore_body_dents(saved.get("body_dents",[]))
 	if int(saved.get("punctured_tires",0)) > 0:
 		preload("res://gameplay/police_response/ground/TirePuncture.gd").puncture(car,int(saved.punctured_tires))
 
@@ -1006,7 +1059,8 @@ func _process(delta: float) -> void:
 	# per later frame, preserving population targets and all vehicle equipment.
 	_trim_density()
 	if _population_jobs.is_empty(): _population_jobs.assign(["citizen","traffic","equipment","equipment"])
-	footbridge_crossers.update(world, world.player.position, state.region_id)
+	footbridge_crossers.update(world, world.player.position, state.region_id, _population_cap())
+	ambient_journeys.update(self)
 	for index in range(vehicles.size()-1,-1,-1):
 		var car = vehicles[index]
 		if not is_instance_valid(car): vehicles.remove_at(index)
@@ -1050,23 +1104,46 @@ static func density_target(dispatch_units: int, stars: int) -> float:
 	if stars >= DENSITY_STARS: target = minf(target,DENSITY_STARS_SCALE)
 	return target
 
+## Public market/terminal streets favour foot traffic; industrial and rural areas
+## carry fewer pedestrians. Coordinates follow the authored harbor street layout
+## (market/terminal x60..165,z0..100; industrial waterfront south of z156).
+## Twenty-metre shoulders avoid a hard population boundary between streets.
+static func area_density_target(region_id: String, point: Vector3) -> Vector2:
+	if region_id == "mountain": return Vector2(.6,.7)
+	if region_id == "desert": return Vector2(.7,.8)
+	if region_id != "harbor": return Vector2.ONE
+	var target := Vector2(1.0,.9)
+	var market_edge := maxf(maxf(60.0-point.x,point.x-165.0),maxf(-point.z,point.z-100.0))
+	var market_weight := 1.0-smoothstep(0.0,20.0,market_edge)
+	target = target.lerp(Vector2(.9,.7),market_weight)
+	return target.lerp(Vector2(.7,.8),smoothstep(156.0,176.0,point.z))
+
 func _update_density() -> void:
 	var units := 0
 	if is_instance_valid(world.dispatch): units = world.dispatch.units.size()
 	var stars := 0
 	if is_instance_valid(world.gameplay): stars = int(world.gameplay.stars)
 	var target := density_target(units,stars)
+	var area_target := area_density_target(state.region_id,world.player.global_position)
 	# Interruptor para comparar com/sem a densidade dinâmica em medições.
-	if "--no-density" in OS.get_cmdline_user_args(): target = 1.0
+	if "--no-density" in OS.get_cmdline_user_args():
+		target = 1.0
+		area_target = Vector2.ONE
 	# Chamado a cada 0,25 s: 1,0 -> 0,4 em ~1,5 s; volta em ~7,5 s (sem pisca-pisca com
 	# viaturas entrando e saindo).
 	density_scale = move_toward(density_scale,target,.1 if target < density_scale else .02)
+	# Area changes settle gradually too; removal still requires distance and being
+	# outside the camera, so existing visible traffic never vanishes at a border.
+	area_density_scale.x = move_toward(area_density_scale.x,area_target.x,.02)
+	area_density_scale.y = move_toward(area_density_scale.y,area_target.y,.02)
 
 func _population_cap() -> int:
-	return ceili(float(requested_population)*density_scale)
+	return ceili(float(requested_population)*minf(density_scale,area_density_scale.x)-.00001)
 
 func _traffic_cap() -> int:
-	return ceili(float(TRAFFIC_TARGET)*density_scale)
+	# Vector2 components are float32; ignore their sub-entity rounding error at
+	# authored integer ceilings (for example 40 * .8 must remain 32, not 33).
+	return ceili(float(TRAFFIC_TARGET)*minf(density_scale,area_density_scale.y)-.00001)
 
 ## Tira no máximo um pedestre e um carro civil por chamada, o mais longe do jogador e fora
 ## do quadro, enquanto houver mais que o teto atual.
@@ -1104,7 +1181,7 @@ func _trim_density() -> void:
 func _service_population_job() -> void:
 	if _population_jobs.is_empty(): return
 	var job: String = _population_jobs.pop_front()
-	var began := Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
+	var began := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
 	match job:
 		"citizen":
 			if world.people.size() < _population_cap(): _spawn_citizen()
@@ -1120,6 +1197,15 @@ func _service_population_job() -> void:
 
 func vehicle_position_clear(car: CharacterBody3D, point: Vector3, yaw: float) -> bool:
 	var space: PhysicsDirectSpaceState3D = world.get_world_3d().direct_space_state
+	if car.has_method("placement_poses"):
+		var poses: Array[Transform3D] = car.placement_poses(point,yaw)
+		for index in poses.size():
+			if session!=null and session.cold!=null and not session.cold.prepare_collision_at(poses[index].origin): return false
+			for x in [-1.0,1.0]:
+				for z in [-float(car.LENGTHS[index])*.4,float(car.LENGTHS[index])*.4]:
+					var support: Vector3 = poses[index]*Vector3(x,0,z)
+					if space.intersect_ray(PhysicsRayQueryParameters3D.create(support+Vector3.UP*.6,support-Vector3.UP*.5,1)).is_empty(): return false
+		return car.admits(poses,false)
 	var basis := Basis(Vector3.UP,yaw)
 	# Distant saved cars wait for their terrain before requesting streamed props.
 	for x in [-car.half_width*.8,car.half_width*.8]:
@@ -1145,13 +1231,20 @@ func vehicle_position_clear(car: CharacterBody3D, point: Vector3, yaw: float) ->
 func spawn_vehicle(id: String, point: Vector3, yaw: float = 0.0, crush_ratio: float = 1.0) -> CharacterBody3D:
 	if preload("res://runtime/FleetCatalog.gd").spec(id).is_empty(): return null
 	var car = VEHICLE.new()
+	if id=="biarticulated_510":
+		car.free()
+		car=preload("res://runtime/transit/BiarticulatedBus.gd").new()
+		car.stolen=true
 	car.archetype = id
 	car.vehicle_id = "vehicle_"+str(Time.get_ticks_usec())
 	car.position = point
 	car.set_meta("region_id",state.region_id)
 	car.rotation.y = yaw
-	var traced := Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
+	var traced := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
 	world.add_child(car)
+	if id=="biarticulated_510":
+		car.place(point,yaw)
+		if is_instance_valid(urban_transit) and is_instance_valid(urban_transit.urban_service) and not urban_transit.urban_service.fleet.has(car): urban_transit.urban_service.fleet.append(car)
 	_trace_cost("spawn_vehicle_add_child:"+id,traced)
 	if is_finite(crush_ratio) and crush_ratio >= .18 and crush_ratio <= .55:
 		preload("res://gameplay/street_physics/HeavyVehicleCrush.gd").apply_saved(car,crush_ratio)
@@ -1184,7 +1277,8 @@ func _is_ambient_traffic(car: Variant) -> bool:
 func _repath_ambient_traffic() -> void:
 	for car in vehicles:
 		if not _is_ambient_traffic(car) or not car.traffic or car.health <= 0.0: continue
-		var route: Curve3D = ambient_traffic_routes.route_near(car.global_position,int(car.route.get_meta("lane_index",0)) if car.route!=null else 0)
+		if car.has_meta("ambient_next_route"): car.remove_meta("ambient_next_route")
+		var route: Curve3D = ambient_traffic_routes.route_near(car.global_position,int(car.route.get_meta("lane_index",0)) if car.route!=null else 0,-car.global_basis.z)
 		if route == null or route.get_baked_length() < 12.0 or not PORT_POLICY.route_is_ambient_safe(route):
 			car.queue_free()
 			continue
@@ -1229,9 +1323,9 @@ func _wreck_expired(car: Node) -> bool:
 	return Time.get_ticks_msec()-int(car.get_meta("wrecked_msec")) > WRECK_LINGER_MSEC
 
 ## Anel de entrada/saída: longe o bastante e fora do quadro.
-func _spawn_point_allowed(point: Vector3, radius: float) -> bool:
+func _spawn_point_allowed(point: Vector3, radius: float, minimum := POPULATION_SPAWN_MIN) -> bool:
 	var distance := Vector2(point.x-world.player.global_position.x,point.z-world.player.global_position.z).length()
-	return distance >= POPULATION_SPAWN_MIN and distance <= POPULATION_SPAWN_MAX and not _on_screen(point,radius)
+	return distance >= minimum and distance <= POPULATION_SPAWN_MAX and not _on_screen(point,radius)
 
 func road_yaw(point: Vector3) -> float:
 	var best := INF
@@ -1248,7 +1342,7 @@ func road_yaw(point: Vector3) -> float:
 	return yaw
 
 func _spawn_citizen() -> void:
-	var began := Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
+	var began := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
 	_create_citizen()
 	_trace_cost("population_spawn",began)
 
@@ -1278,6 +1372,8 @@ func _prewarm_route_jit() -> void:
 
 func _trace_cost(label: String, began: int) -> void:
 	if began == 0: return
+	SESSION_OPS.completed(self, "world", label, began, {"region":state.region_id})
+	if not world.get_meta("benchmark_trace",false): return
 	var elapsed := Time.get_ticks_usec()-began
 	if elapsed < 2000: return
 	var costs: Array = world.get_meta("perf_costs",[])
@@ -1288,30 +1384,56 @@ func _create_citizen() -> void:
 	if state.region_id == "desert":
 		_create_desert_citizen()
 		return
-	var segment := _near_segment()
+	var segment := population_layout.select(self)
 	if segment.is_empty(): return
-	var along: Vector3 = (segment.b-segment.a).normalized()
-	var point: Vector3 = segment.a.lerp(segment.b,randf_range(.1,.9))
-	var offset: Vector3 = along.cross(Vector3.UP)*(segment.width*.5+.85)*(1 if randf()>.5 else -1)
-	point += offset
-	if not _spawn_point_allowed(point,1.0): return
-	# Vias de mão única lado a lado (ponte, acessos) põem a "calçada" de uma dentro
-	# da pista da outra: pedestre nunca nasce nem caminha sobre pista autorada.
-	for end in [point,point-along*8,point+along*8]:
-		if _on_carriageway(end): return
-		# Calçada da exchange_lane e bocas do Túnel do canal: a vala está aberta ali.
-		if CANAL_TUNNEL.reserves(Vector2(end.x,end.z),0.5): return
-	var pedestrian_route := PackedVector3Array([point-along*8,point+along*8])
-	if PORT_POLICY.contains_private_area(point) or PORT_POLICY.segment_enters_private_area(pedestrian_route[0],pedestrian_route[1]): return
-	if not session.position_clear(point+Vector3.UP*.06): return
+	var along: Vector3 = segment.a.direction_to(segment.b)
+	var point: Vector3 = segment.point
+	var margin := minf(20.0,segment.a.distance_to(segment.b)*.4)
+	var center: Vector3 = Geometry3D.get_closest_point_to_segment(point,segment.a,segment.b)
+	var offset: Vector3 = point-center
+	var start: Vector3 = center-along*minf(margin,center.distance_to(segment.a)*.8)+offset
+	var finish: Vector3 = center+along*minf(margin,center.distance_to(segment.b)*.8)+offset
+	# Sidewalks sit above the road centreline; admit on their actual floor,
+	# rather than rejecting a clear sidewalk as a capsule inside the paving.
+	var grounded: Array[Vector3] = []
+	for candidate in [point,start,finish]:
+		var ground: Dictionary = world.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(candidate+Vector3.UP*1.0,candidate-Vector3.UP*1.0,1))
+		if ground.is_empty() or absf(ground.position.y-candidate.y)>.4: return
+		grounded.append(Vector3(candidate.x,ground.position.y+.08,candidate.z))
+	point = grounded[0]
+	start = grounded[1]
+	finish = grounded[2]
+	var pedestrian_route := _clip_citizen_route(point,start,finish)
+	if pedestrian_route.is_empty(): return
 	var actor = ACTOR.new()
 	actor.identity = randi_range(0,10000)
 	actor.position = point+Vector3.UP*.08
 	actor.speed = randf_range(1.15,1.75)
 	actor.route = pedestrian_route
+	actor.set_meta("ambient_road_id",str(segment.road.id))
 	actor.set_meta("region_id",state.region_id)
 	world.add_child(actor)
 	world.people.append(actor)
+
+## Keep the original walk where it is clear. At a junction or an obstruction,
+## use the supported part around the spawn instead of rejecting that whole
+## sidewalk. The same <=2 m admission samples and full lane capsule still apply.
+func _clip_citizen_route(point: Vector3, start: Vector3, finish: Vector3) -> PackedVector3Array:
+	if _on_carriageway(point) or CANAL_TUNNEL.reserves(Vector2(point.x,point.z),.5) or PORT_POLICY.contains_private_area(point): return PackedVector3Array()
+	if not session.position_clear(point+Vector3.UP*.06): return PackedVector3Array()
+	var route := PackedVector3Array()
+	for target in [start,finish]:
+		var last := point
+		var steps := maxi(1,ceili(point.distance_to(target)/2.0))
+		for i in range(1,steps+1):
+			var candidate := point.lerp(target,float(i)/steps)
+			if _on_carriageway(candidate) or CANAL_TUNNEL.reserves(Vector2(candidate.x,candidate.z),.5) or PORT_POLICY.contains_private_area(candidate): break
+			if not session.position_clear(candidate+Vector3.UP*.08): break
+			last = candidate
+		route.append(last)
+	if route[0].distance_to(route[1]) < 4.0: return PackedVector3Array()
+	if PORT_POLICY.segment_enters_private_area(route[0],route[1]): return PackedVector3Array()
+	return route if _pedestrian_route_sweep_clear(route) else PackedVector3Array()
 
 func _create_desert_citizen() -> void:
 	var occupied := {}
@@ -1350,6 +1472,11 @@ func desert_social_route_clear(route: PackedVector3Array) -> bool:
 	for i in range(steps+1):
 		var point := a.lerp(b,float(i)/steps)
 		if _on_carriageway(point) or not session.position_clear(point+Vector3.UP*.08): return false
+	return _pedestrian_route_sweep_clear(route)
+
+func _pedestrian_route_sweep_clear(route: PackedVector3Array) -> bool:
+	var a := route[0]
+	var b := route[-1]
 	var query := PhysicsShapeQueryParameters3D.new()
 	var capsule := CapsuleShape3D.new()
 	# Include Actor's small walking-lane offset in the swept clearance.
@@ -1364,70 +1491,39 @@ func desert_social_route_clear(route: PackedVector3Array) -> bool:
 	return result[0] >= 1.0
 
 func _spawn_vehicle() -> void:
-	var began := Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
+	var began := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
 	_create_traffic_vehicle()
 	_trace_cost("traffic_spawn",began)
 
 func _create_traffic_vehicle() -> void:
-	var roads := ambient_roads_cache
-	if roads.is_empty(): return
-	var start := randi_range(0,roads.size()-1)
-	# Orçamento por tentativa: cada route_near monta uma rota inteira. Com o anel fora
-	# da câmera recusando muitos pontos, a busca chegou a 1,6 s num quadro (2026-09-23).
-	# Sem lugar agora, tenta de novo no próximo ciclo (0,25 s).
-	var began := Time.get_ticks_usec()
-	var route_attempts := 0
-	for road_offset in roads.size():
-		if Time.get_ticks_usec()-began > 3000: return
-		var road: Dictionary = roads[(start+road_offset)%roads.size()]
-		# A rua do túnel só existe no grafo: a altura linear entre pontos não é a do
-		# piso, e o carro nascia no ar esperando chão. Carros entram pelas bocas.
-		if str(road.get("surface","")) == "tunnel": continue
-		var points: PackedVector3Array = road.get("points",PackedVector3Array())
-		for segment_index in range(points.size()-1):
-			var a: Vector3 = points[segment_index]
-			var b: Vector3 = points[segment_index+1]
-			if a.distance_to(b) < 16: continue
-			var direction := (b-a).normalized()
-			var lane_index := randi_range(0,int(road.get("lanes_per_direction",1))-1)
-			var lane := ambient_traffic_routes._lane_offset(direction,{"width":road.get("width",7.5),"one_way":str(road.id).contains("inbound") or str(road.id).contains("outbound"),"lanes":road.get("lanes_per_direction",1)},lane_index)
-			var parameter := DESERT_POPULATION.nearby_parameter(a,b,world.player.global_position,POPULATION_SPAWN_MAX) if state.region_id == "desert" else randf_range(.25,.75)
-			var point := a.lerp(b,parameter)+lane
-			if not _spawn_point_allowed(point,3.0): continue
-			var occupied := false
-			for existing in vehicles:
-				if is_instance_valid(existing) and existing.traffic and existing.global_position.distance_to(point) < 16:
-					occupied = true
-					break
-			if occupied: continue
-			if route_attempts >= 2: return
-			route_attempts += 1
-			var traced := Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
-			var route: Curve3D = ambient_traffic_routes.route_near(point,lane_index)
-			var safe := route != null and route.get_baked_length() >= 12 and PORT_POLICY.route_is_ambient_safe(route)
-			_trace_cost("traffic_spawn_route",traced)
-			if not safe: continue
-			var offset := route.get_closest_offset(point)
-			point = route.sample_baked(offset,true)
-			var ahead := route.sample_baked(minf(offset+.5,route.get_baked_length()),true)-route.sample_baked(maxf(offset-.5,0),true)
-			var id: String = TRAFFIC_MOTORCYCLE_TYPES.pick_random() if randi_range(0,9) == 0 else TRAFFIC_CAR_TYPES.pick_random()
-			if state.region_id == "desert": id = ["desert_faisca","desert_coyote","desert_siroco","desert_bison","desert_mirage","courier_van"].pick_random()
-			var cobra := preload("res://gameplay/urban_v1/CobraPatrol.gd").select_car(session,point)
-			if cobra: id = "cobra_v8"
-			traced = Time.get_ticks_usec() if world.get_meta("benchmark_trace",false) else 0
-			var car = spawn_vehicle(id,point+Vector3.UP*.12,atan2(-ahead.x,-ahead.z))
-			_trace_cost("traffic_spawn_vehicle:"+id,traced)
-			if car == null: continue
-			car.vehicle_id = "street_"+str(Time.get_ticks_usec())
-			if id == "courier_van" and preload("res://gameplay/icecream/IceCreamVan.gd").choose(vehicles):
-				car.paint_color = Color("fff0dd")
-				car.vehicle_id = preload("res://gameplay/icecream/IceCreamVan.gd").PREFIX+str(Time.get_ticks_usec())
-			car.route = route
-			car.route_distance = offset
-			car.set_meta("ambient_traffic", true)
-			car.traffic = true
-			if cobra: preload("res://gameplay/urban_v1/CobraPatrol.gd").attach(session,car)
-			return
+	# Shared spatial admission favours quiet stretches and both legal directions.
+	for attempt in 2:
+		var slot: Dictionary = population_layout.select(self,true)
+		if slot.is_empty(): return
+		var point: Vector3 = slot.point
+		var route: Curve3D = ambient_traffic_routes.route_near(point,int(slot.lane_index),slot.direction)
+		if route == null or route.get_baked_length()<12 or not PORT_POLICY.route_is_ambient_safe(route): continue
+		var offset := route.get_closest_offset(point)
+		if route.get_meta("traffic_open",false) and route.get_baked_length()-offset<14: continue
+		point = route.sample_baked(offset,true)
+		if not _spawn_point_allowed(point,3.0): continue
+		var ahead := route.sample_baked(minf(offset+.5,route.get_baked_length()),true)-route.sample_baked(maxf(offset-.5,0),true)
+		var id: String = TRAFFIC_MOTORCYCLE_TYPES.pick_random() if randi_range(0,9)==0 else TRAFFIC_CAR_TYPES.pick_random()
+		if state.region_id=="desert": id=["desert_faisca","desert_coyote","desert_siroco","desert_bison","desert_mirage","courier_van"].pick_random()
+		var cobra := preload("res://gameplay/urban_v1/CobraPatrol.gd").select_car(session,point)
+		if cobra: id="cobra_v8"
+		var car = spawn_vehicle(id,point+Vector3.UP*.12,atan2(-ahead.x,-ahead.z))
+		if car==null: continue
+		car.vehicle_id="street_"+str(Time.get_ticks_usec())
+		if id=="courier_van" and preload("res://gameplay/icecream/IceCreamVan.gd").choose(vehicles):
+			car.paint_color=Color("fff0dd")
+			car.vehicle_id=preload("res://gameplay/icecream/IceCreamVan.gd").PREFIX+str(Time.get_ticks_usec())
+		car.route=route
+		car.route_distance=offset
+		car.set_meta("ambient_traffic",true)
+		car.traffic=true
+		if cobra: preload("res://gameplay/urban_v1/CobraPatrol.gd").attach(session,car)
+		return
 
 ## `destination_override` leva a um ponto exato (ex.: saída do forte no esqui) em vez
 ## do ponto de partida padrão da região.

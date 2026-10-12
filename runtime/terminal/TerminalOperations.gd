@@ -125,7 +125,17 @@ func _stall_build() -> void:
 static func wait_point(bay: int, seat: int) -> Vector3:
 	return ROUTES.point(-141+100*bay+66,[-142,-112,-72,-40][seat])
 
+func _passenger_present(passenger: Dictionary) -> bool:
+	# Emergency services may remove a corpse while its conserved seat remains.
+	var actor = passenger.actor
+	if is_instance_valid(actor) and not actor.is_queued_for_deletion(): return true
+	passenger.actor = null
+	passenger.inside = false
+	passenger.phase = "done"
+	return false
+
 func set_inside(passenger: Dictionary, value: bool) -> void:
+	if not _passenger_present(passenger): return
 	passenger.inside = value
 	var actor = passenger.actor
 	actor.visible = not value
@@ -176,6 +186,7 @@ func _stall_physics_process(delta: float) -> void:
 	for coach in fleet: tick_coach(coach,delta)
 
 func suspend(passenger: Dictionary) -> void:
+	if not _passenger_present(passenger): return
 	passenger.actor.process_mode = Node.PROCESS_MODE_DISABLED
 	passenger.actor.collision_layer = 0
 	passenger.actor.collision_mask = 0
@@ -192,6 +203,7 @@ func route(coach: Node3D, phase: String) -> void:
 func tick_coach(coach: Node3D, delta: float) -> void:
 	if coach.health <= 0: return
 	for passenger in coach.passengers:
+		if not _passenger_present(passenger): continue
 		var actor = passenger.actor
 		if not passenger.inside and passenger.phase in ["waiting","done"] and actor.is_on_floor() and not actor.dead:
 			actor.set_physics_process(false)
@@ -203,7 +215,8 @@ func tick_coach(coach: Node3D, delta: float) -> void:
 			coach.timer -= delta
 			if coach.timer <= 0:
 				coach.state = "exchange"
-				for p in coach.passengers: p.phase = "alight" if p.inside else "board"
+				for p in coach.passengers:
+					if _passenger_present(p): p.phase = "alight" if p.inside else "board"
 		"exchange":
 			coach.set_doors(move_toward(coach.doors,1,delta))
 			if coach.doors >= .99 and exchange(coach): coach.state = "closing"; coach.timer = 1.2
@@ -241,21 +254,39 @@ func clear_person(point: Vector3, actor: CharacterBody3D) -> bool:
 func exchange(coach: Node3D) -> bool:
 	# One person uses the door at a time; alighters walk away before boarding starts.
 	for p in coach.passengers:
+		if not _passenger_present(p): continue
 		var actor = p.actor
 		if actor.dead: p.phase = "done"; continue
-		var door: Vector3 = coach.global_position+Vector3(1.4,.12,-2.18)
+		var door: Vector3 = coach.to_global(COACH.BOARDING_POINT)
 		if p.phase=="alight":
 			if not clear_person(door,actor): return false
 			actor.teleport(door)
 			set_inside(p,false)
-			p.phase = "walk_away"
+			p.phase = "walk_clear"
 			coach.alighted += 1
+		if p.phase == "walk_clear":
+			var aisle := wait_point(coach.platform,p.seat)
+			aisle.x = coach.global_position.x + 3.35
+			aisle.z = door.z
+			if walk(actor,aisle): p.phase = "walk_away"
+			return false
 		if p.phase=="walk_away":
 			if walk(actor,wait_point(coach.platform,p.seat)): p.phase = "done"
 			return false
 	for p in coach.passengers:
-		if p.phase != "board": continue
-		var door: Vector3 = coach.global_position+Vector3(1.4,.12,-2.18)
+		if p.phase not in ["board","board_aisle","board_door"]: continue
+		var door: Vector3 = coach.to_global(COACH.BOARDING_POINT)
+		if p.phase == "board":
+			var lateral: Vector3 = p.actor.global_position
+			lateral.x = coach.global_position.x + 3.35
+			if walk(p.actor,lateral): p.phase = "board_aisle"
+			return false
+		if p.phase == "board_aisle":
+			var aisle := wait_point(coach.platform,p.seat)
+			aisle.x = coach.global_position.x + 3.35
+			aisle.z = door.z
+			if walk(p.actor,aisle): p.phase = "board_door"
+			return false
 		if walk(p.actor,door):
 			set_inside(p,true); p.phase = "done"; coach.boarded += 1
 		return false

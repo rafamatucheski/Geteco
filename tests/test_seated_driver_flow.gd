@@ -7,6 +7,8 @@ extends SceneTree
 ## Complementa tests/test_seated_driver.gd (que cobre a frota inteira sem a apresentação).
 ## NÃO mede aparência (tests/capture/capture_seated_driving.gd) nem custo de quadro.
 const INTERIOR := preload("res://gameplay/VehicleInterior.gd")
+const BOARDING := preload("res://gameplay/VehicleBoardingPresentation.gd")
+const BAILOUT := preload("res://gameplay/VehicleBailout.gd")
 ## Salto de quadril tolerado por quadro nos quadros seguintes à entrada e nos primeiros da saída:
 ## a própria animação anda até ~0,2 m por quadro; um estalo de pose seria de 0,3 m ou mais.
 const MAX_HANDOFF_JUMP := 0.22
@@ -82,14 +84,37 @@ func run() -> void:
 		else:
 			check(false, id + " estado de sentado existe")
 		car.throttle_input = 0
-		car.brake_input = true
 		car.external_input = false
+		if "--trace-prior-stop" in OS.get_cmdline_user_args():
+			# Reproduce only the previous stopping setup. Player handling overwrites
+			# brake_input, so this is coasting rather than a real brake command.
+			car.brake_input = true
+			for i in 300:
+				await physics_frame
+				if absf(car.speed) < .3: break
+			print("SEATED_FLOW_PRIOR_STOP ", JSON.stringify({"id": id, "speed": car.speed, "horizontal_speed": car.horizontal_velocity.length(), "would_bailout": car.horizontal_velocity.length() > BAILOUT.MIN_SPEED}))
+		# Drive the actual input path, then verify the velocity used by leave().
+		# Assigning speed=0 alone leaves horizontal momentum and can trigger a bail-out.
+		Input.action_press("handbrake")
+		var stopped_frames := 0
 		for i in 300:
 			await physics_frame
-			if absf(car.speed) < .3: break
-		car.speed = 0
+			stopped_frames = stopped_frames + 1 if car.horizontal_velocity.length() < .1 and absf(car.speed) < .1 else 0
+			if stopped_frames >= 3: break
+		check(stopped_frames >= 3, id + " freio real estabilizou velocidade horizontal antes da saída")
+		if stopped_frames < 3:
+			Input.action_release("handbrake")
+			print("SEATED_FLOW_STOP_FAILED ", id, " horizontal=", car.horizontal_velocity.length())
+			quit(1)
+			return
 		var seated_pelvis: Vector3 = INTERIOR.pelvis_world(world.player)
+		var exit_velocity: Vector3 = car.horizontal_velocity
 		check(driving.leave(), id + " saída aceita")
+		Input.action_release("handbrake")
+		var transition_script := "none"
+		if is_instance_valid(driving.transition): transition_script = driving.transition.get_script().resource_path
+		print("SEATED_FLOW_EXIT ", JSON.stringify({"id": id, "horizontal_speed": exit_velocity.length(), "transition": transition_script}))
+		check(driving.transition is BOARDING, id + " saída parada usa apresentação de embarque, sem salto em movimento")
 		var exit_first := -1.0
 		var exit_jump := 0.0
 		var last_exit := seated_pelvis

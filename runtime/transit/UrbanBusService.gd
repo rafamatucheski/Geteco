@@ -25,6 +25,7 @@ var _person_query := PhysicsShapeQueryParameters3D.new()
 var person_blocker := ""
 var measured_usec := 0
 var measured_ticks := 0
+var driver_work: Node
 
 func configure(value) -> void:
 	controller = value
@@ -88,6 +89,8 @@ func _stall_build() -> void:
 		var bus_began := TRANSIT_WORK.begin()
 		var bus := BUS.new()
 		bus.name = "Biarticulado510_%d" % index
+		bus.set_meta("vehicle_theft_handler",Callable(self,"claim_bus"))
+		bus.set_meta("vehicle_exit_handler",Callable(self,"prepare_driver_exit"))
 		var ready_began := TRANSIT_WORK.begin()
 		add_child(bus)
 		if ready_began != 0: TRANSIT_WORK.finish("urban.bus.add_child_ready",ready_began,{"index":index,"name":str(bus.name)})
@@ -104,7 +107,63 @@ func _stall_build() -> void:
 		fleet.append(bus)
 		if pose_began != 0: TRANSIT_WORK.finish("urban.bus.route_pose",pose_began,{"index":index})
 		if bus_began != 0: TRANSIT_WORK.finish("urban.bus.construct_ready_pose",bus_began,{"index":index})
+	var saved_car = controller.world.driving.car
+	if is_instance_valid(saved_car) and saved_car.get_meta("biarticulated",false) and (saved_car.stolen or saved_car.driver_shift) and not fleet.has(saved_car): fleet.append(saved_car)
+	driver_work=preload("res://runtime/transit/BusDriverShift.gd").new()
+	for bus in fleet: bus.set_meta("vehicle_exit_handler",Callable(self,"prepare_driver_exit"))
+	driver_work.configure(self); add_child(driver_work)
 	refresh_presence()
+
+func claim_bus(bus) -> bool:
+	if bus.get_meta("duty_entry",false): return true
+	if bus.stolen: return true
+	if not bus.active or bus.health<=0 or bus.player_aboard: return false
+	var at_station: bool = bus.service_state in ["exchange","closing"]
+	bus.stolen=true
+	bus.driver_shift=false; bus.work_state.clear()
+	bus.service_state="stolen"
+	bus._release_tokens()
+	if at_station:
+		bus.set_meta("theft_at_station",true)
+		gate(bus.service_stop,true)
+	for person in people:
+		if person.stop==bus.service_stop and person.phase in ["boarding","to_door"]:
+			person.phase="waiting"
+			if is_instance_valid(person.actor): person.actor.automatic_direction=Vector3.ZERO
+	return true
+
+func prepare_driver_exit(bus) -> void:
+	if absf(bus.speed)>.5: return
+	for index in stops.size():
+		var expected: Array[Transform3D]=path_poses.at(float(stops[index].offset))
+		var aligned := true
+		for part in 3:
+			var gap: Vector3=bus.sections[part].global_position-expected[part].origin; gap.y=0
+			if gap.length()>1.75 or absf(angle_difference(bus.sections[part].rotation.y,expected[part].basis.get_euler().y))>deg_to_rad(12): aligned=false; break
+		if aligned:
+			gate(index,true); bus.set_meta("exit_station",index); return
+
+func evacuate_one(bus) -> void:
+	if bus.passengers.is_empty() or absf(bus.speed)>.5: return
+	var person: Dictionary = bus.passengers[0]
+	if is_instance_valid(person.actor) and person.actor.dead:
+		person.bus=null; person.phase="unavailable"; bus.passengers.erase(person); hide_person(person); return
+	for door in 3:
+		for offset in [0.0,1.0,2.0]:
+			var point: Vector3 = bus.door_point(door)+bus.sections[door].global_basis.x*float(offset)
+			var floor_hit := get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(point+Vector3.UP,point-Vector3.UP*2,1))
+			if floor_hit.is_empty() or floor_hit.normal.y<.65: continue
+			point.y=floor_hit.position.y+.04
+			if not clear_person(point,person.actor): continue
+			if not is_instance_valid(person.actor): create_actor(person,point)
+			person.actor.teleport(point)
+			person.actor.show(); person.actor.collision_layer=2; person.actor.collision_mask=7
+			person.actor.process_mode=Node.PROCESS_MODE_INHERIT
+			person.actor.automatic_direction=bus.sections[door].global_basis.x
+			person.bus=null; person.phase="fleeing"; person.age=6.0
+			bus.passengers.erase(person)
+			alighted+=1
+			return
 
 func service_open() -> bool:
 	var hour: float = controller.session.weather.time_of_day*24.0
@@ -131,6 +190,12 @@ func _stall_physics_process(delta: float) -> void:
 	for person in people:
 		if is_instance_valid(person.actor) and person.actor.dead and person.phase!="aboard":
 			person.phase="unavailable"
+			continue
+		if person.phase=="fleeing":
+			person.age-=delta
+			if person.age<=0 and is_instance_valid(person.actor):
+				person.actor.automatic_direction=Vector3.ZERO
+				if person.actor.is_on_floor(): person.actor.set_physics_process(false)
 			continue
 		if person.phase=="leaving" and is_instance_valid(person.actor) and person.actor.visible:
 			var step: int = person.get("walk_step",0)
@@ -178,6 +243,20 @@ func _stall_refresh_presence() -> void:
 	var enabled: bool = controller.state.region_id=="harbor" and controller.state.place_id.is_empty()
 	var focus: Vector3 = controller.world.player.global_position
 	for bus in fleet:
+		if not is_instance_valid(bus): continue
+		if bus.stolen or bus.driver_shift:
+			var resident: bool = controller.state.place_id.is_empty() and bus.get_meta("region_id","harbor")==controller.state.region_id and not bus.has_meta("awaiting_ground")
+			resident = resident and (bus.controlled or controller.world.driving.car==bus or bus.global_position.distance_to(focus)<(110 if bus.active else 85) or controller._on_screen(bus.global_position,25))
+			bus.set_meta("physical_required",resident)
+			if resident and not bus.active:
+				var actual: Array[Transform3D]=[]
+				for section in bus.sections:
+					actual.append(section.global_transform)
+					if controller.session.cold!=null and not controller.session.cold.prepare_collision_at(section.global_position): resident=false
+				if resident: resident=bus.admits(actual,false)
+			bus.set_active(resident)
+			for light in bus.headlights: light.visible=bus.active and (controller.session.weather.time_of_day<.24 or controller.session.weather.time_of_day>.76)
+			continue
 		var point: Vector3 = path_poses.front(bus.route_distance).origin
 		var near: bool = enabled and (bus.player_aboard or point.distance_to(focus)<(110 if bus.active else 85) or controller._on_screen(point,25))
 		bus.set_meta("physical_required",near)
@@ -193,6 +272,15 @@ func _stall_refresh_presence() -> void:
 			# it cannot retain physical bodies after their region is suspended.
 			if not enabled or (not bus.player_aboard and not controller._on_screen(point,25)): bus.set_active(false)
 	for person in people:
+		if person.phase=="fleeing":
+			if is_instance_valid(person.actor):
+				var visible: bool=enabled and (person.actor.global_position.distance_to(focus)<75 or controller._on_screen(person.actor.global_position,2))
+				if not visible:
+					hide_person(person); person.phase="resting"; person.age=12
+				else:
+					person.actor.visible=true; person.actor.collision_layer=2
+					person.actor.process_mode=Node.PROCESS_MODE_INHERIT
+			continue
 		var near: bool = enabled and person.bus==null and waiting_point(person).distance_to(focus)<75 and controller.urban_transit.instances.has(stops[person.stop].definition.id)
 		if near and not is_instance_valid(person.actor):
 			var point := waiting_point(person)
@@ -210,6 +298,17 @@ func _stall_refresh_presence() -> void:
 			person.actor.process_mode=Node.PROCESS_MODE_INHERIT if near else Node.PROCESS_MODE_DISABLED
 
 func tick_bus(bus, delta: float) -> void:
+	if not is_instance_valid(bus): return
+	if bus.has_meta("exit_station") and not controller.world.driving.is_body_transition_active():
+		gate(int(bus.get_meta("exit_station")),false); bus.remove_meta("exit_station")
+	if bus.driver_shift:
+		if is_instance_valid(driver_work): driver_work.tick(bus,delta)
+		return
+	if bus.stolen:
+		if bus.active: evacuate_one(bus)
+		if bus.get_meta("theft_at_station",false) and bus.controlled and bus.passengers.is_empty():
+			gate(bus.service_stop,false); bus.remove_meta("theft_at_station")
+		return
 	if bus.health<=0:
 		bus.speed=0
 		bus.set_doors(1)
@@ -336,6 +435,7 @@ func doorway_occupied(bus) -> bool:
 func boardable_bus():
 	if not service_open(): return null
 	for bus in fleet:
+		if not is_instance_valid(bus) or bus.stolen or bus.driver_shift: continue
 		if not bus.active or bus.health<=0 or bus.service_state!="exchange" or bus.door_amount<.99: continue
 		if bus.passengers.size()>=CAPACITY: continue
 		var player: Vector3=controller.world.player.global_position

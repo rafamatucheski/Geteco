@@ -1,7 +1,7 @@
 extends Node
 ## Patrulha limitada ao orçamento do trânsito existente; nenhum spawn por agressão.
 const DRIVER := preload("res://gameplay/dispatch/DispatchDriver.gd")
-const GUARD := preload("res://gameplay/urban_v1/CobraLocalGuard.gd")
+const GUARD := preload("res://gameplay/urban_v1/CobraPatrolGuard.gd")
 var session
 var car: CharacterBody3D
 var pilot: RefCounted
@@ -15,6 +15,8 @@ var plan_clock := 0.0
 var shot_clock := 1.2
 var shots := 0
 var destination := Vector3.INF
+var car_magazine := 12
+var car_reload := 0.0
 
 static func select_car(owner_session, point: Vector3) -> bool:
 	if owner_session.state.region_id != "harbor" or owner_session.state.campaign.cobra_status().defeated: return false
@@ -42,6 +44,7 @@ func _ready() -> void:
 		var model := preload("res://gameplay/CobraModel.gd").new()
 		model.tier = index
 		model.seated = true
+		model.seat_armed = true
 		model.position = Vector3(cabin.sx, cabin.floor, cabin.sz)
 		if index==1: model.position.x = -model.position.x
 		car.add_child(model)
@@ -88,7 +91,9 @@ func vehicle_stolen(side: int) -> void:
 func _physics_process(delta: float) -> void:
 	if not session.ready_for_play: return
 	for model in passengers:
+		if model.get_parent() != car: continue
 		model.process_mode = Node.PROCESS_MODE_INHERIT if model.is_visible_in_tree() else Node.PROCESS_MODE_DISABLED
+		model.rest_in_seat(delta)
 	var gameplay = session.world.gameplay
 	if not hostile and car.global_position.distance_to(session.world.player.global_position)>120 and not session.world.production._on_screen(car.global_position,3):
 		if stolen: queue_free()
@@ -151,25 +156,30 @@ func _physics_process(delta: float) -> void:
 		_deploy(1)
 		return
 	shot_clock -= delta
+	if car_reload > 0.0:
+		car_reload = maxf(0.0, car_reload - delta)
+		if car_reload <= 0.0: car_magazine = 12
 	if separation<27 and shot_clock<=0 and not gameplay.player.input_locked:
 		_fire(target)
 
 func _fire(target: Node3D) -> void:
 	shot_clock = 1.1
-	var side := 1.0 if car.to_local(target.global_position).x>=0 else -1.0
-	var origin := car.to_global(Vector3(side*(car.half_width+.08),1.05,0))
-	var endpoint := target.global_position+Vector3.UP*.85
-	var ray := PhysicsRayQueryParameters3D.create(origin,endpoint,7,[car.get_rid()])
-	var hit := car.get_world_3d().direct_space_state.intersect_ray(ray)
-	if hit.is_empty() or hit.collider!=target: return
+	if deployed or car_reload > 0.0: return
+	if car_magazine <= 0:
+		car_reload = preload("res://gameplay/CombatAudio.gd").reload_seconds("pistol")
+		session.world.gameplay.police_reload(car, "pistol")
+		return
+	var target_side := signf(car.to_local(target.global_position).x)
+	var driver_side := signf(passengers[0].position.x)
+	var index := 0 if target_side == driver_side else 1
+	var model: Node3D = passengers[index]
+	model.aim_from_seat(target.global_position, 1.0)
 	var gameplay = session.world.gameplay
-	gameplay._trace(origin,hit.position,.065,.014)
-	gameplay._damage(hit.collider,12.0,car)
-	gameplay._sound("pistol",origin)
-	gameplay.npc_gunfire.emit(origin,origin.direction_to(endpoint),car)
-	shots += 1
+	if preload("res://gameplay/CobraGunfire.gd").fire(gameplay, car, model, target, "pistol", 12.0, model.global_position + Vector3.UP * .7):
+		shots += 1
+		car_magazine -= 1
 
-func _deploy(thief_side: int) -> void:
+func _deploy(_thief_side: int) -> void:
 	if car.health<=0: return
 	if not stolen:
 		car.set_external_driver(false)
@@ -179,19 +189,20 @@ func _deploy(thief_side: int) -> void:
 	while crew.size()<2:
 		var index := crew.size()
 		var point := Vector3.INF
-		for side in [-1,1]:
-			for offset in [1.25,2.5,-2.0]:
-				var candidate: Vector3 = car.driver_door_anchor(side)+car.global_basis.z*offset
-				candidate += car.global_basis.x*float(side)*(.65 if side==thief_side else .4)
-				candidate.y = car.global_position.y+.1
-				var occupied := false
-				for actor in crew:
-					if is_instance_valid(actor) and actor.global_position.distance_to(candidate)<1: occupied=true
-				if not occupied and session.position_clear(candidate): point=candidate; break
-			if point.is_finite(): break
+		# Each occupant uses its seat's door; never move it across the cabin.
+		var side := int(signf(car.to_local(passengers[index].global_position).x))
+		for clearance in [.2, .4, .65]:
+			var seat_local: Vector3 = car.to_local(passengers[index].global_position)
+			var candidate := car.to_global(Vector3(float(side) * (car.half_width + .54 + clearance), .1, seat_local.z))
+			candidate.y = car.global_position.y+.1
+			var occupied := false
+			for actor in crew:
+				if is_instance_valid(actor) and actor.global_position.distance_to(candidate)<1: occupied=true
+			if not occupied and session.position_clear(candidate): point=candidate; break
 		if not point.is_finite(): return
 		var actor := GUARD.new()
 		actor.configure(session.world.gameplay,index)
+		actor.visual = passengers[index]
 		actor.territory = self
 		actor.position = point
 		session.world.add_child(actor)
@@ -200,7 +211,7 @@ func _deploy(thief_side: int) -> void:
 		actor.alerted = true
 		actor.set_engaged(hostile)
 		crew.append(actor)
-		passengers[index].hide()
+		actor.begin_exit(car, passengers[index], point, side)
 
 func _stand_down() -> void:
 	hostile = false

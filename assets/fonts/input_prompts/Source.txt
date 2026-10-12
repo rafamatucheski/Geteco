@@ -1,0 +1,19 @@
+Kenney Input Prompts 1.5A (CC0)
+https://kenney.nl/assets/input-prompts
+Downloaded 2026-10-08 from:
+https://kenney.nl/media/pages/assets/input-prompts/8de120163f-1783763952/kenney_input-prompts_1.5.zip
+
+KenneyPlayStation.ttf is a four-glyph subset of the pack's PlayStation font.
+It uses the original outlined circular button artwork, remapped to the four
+Unicode characters already returned by GameInput (cross, circle, square,
+triangle). The size/baseline is normalized for the game's Barlow fonts.
+No alphabet, numbers, whitespace or keyboard/Xbox characters are replaced.
+
+Rebuild from the extracted original pack:
+  python -m pip install fonttools
+  python tools/build_playstation_prompt_font.py PATH_TO_UNPACKED_PACK
+
+The three Barlow .import files explicitly include this font as a fallback.
+Keep those import settings in source control so clean imports and exported
+builds use the bundled icons instead of platform-dependent system symbols.
+See License.txt for the original pack license.

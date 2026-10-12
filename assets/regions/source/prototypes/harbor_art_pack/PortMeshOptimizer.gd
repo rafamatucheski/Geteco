@@ -90,7 +90,7 @@ static func _commit_hard_edges(surface: SurfaceTool) -> ArrayMesh:
 		var b := indices[i + 1]
 		var c := indices[i + 2]
 		var normal := (vertices[b] - vertices[a]).cross(vertices[c] - vertices[a]).normalized()
-	if normal.dot(source_normals[a] + source_normals[b] + source_normals[c]) < 0: normal = -normal
+		if normal.dot(source_normals[a] + source_normals[b] + source_normals[c]) < 0: normal = -normal
 		for index in [a, b, c]: normals[index] += normal
 	for i in normals.size(): normals[i] = normals[i].normalized()
 	arrays[Mesh.ARRAY_NORMAL] = normals

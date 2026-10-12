@@ -17,6 +17,7 @@ const LOCATIONS := {
 const MANIFEST := Vector3(266,.05,-758)
 var session
 var actors: Dictionary = {}
+var retired: Dictionary = {}
 var _clock := 0.0
 var _elapsed := 0.0
 var _talking_to := ""
@@ -24,18 +25,29 @@ var _manifest_visual: Node3D
 func configure(owner_session) -> void:
 	session = owner_session
 	name = "DesertCampaign"
+	session.world.gameplay.player_died.connect(_reset_visit)
+
+func _reset_visit() -> void:
+	for actor in actors.values():
+		if is_instance_valid(actor):
+			actor.hide()
+			actor.collision_layer = 0
+			actor.queue_free()
+	actors.clear()
+	retired.clear()
 func _process(delta: float) -> void:
 	_elapsed += delta
 	_clock += delta
 	if _clock < .35 or session == null or not session.ready_for_play: return
 	_clock = 0.0
-	var active: bool = session.state.region_id == "desert" and session.state.place_id.is_empty()
+	var active: bool = session.state.region_id == "desert" and session.state.place_id.is_empty() and session.world.gameplay.health>0
 	if active and not STATE.data(session.state.world_state).arrived:
 		STATE.mark(session.state.world_state,"arrived")
 		session.show_message("Maciota: deixei um quarto no Horizonte. Vicente está com a turma dele no encontro da arrancada.")
 		session.save_game()
 	for id in LOCATIONS:
 		var nearby: bool = active and session.world.player.global_position.distance_to(LOCATIONS[id]) < 85.0
+		if not nearby: retired.erase(id)
 		if is_instance_valid(session.desert.drag) and session.desert.drag.active and session.desert.drag.rival_id==id: nearby=false
 		if actors.has(id) and is_instance_valid(actors[id]):
 			if not nearby:
@@ -43,6 +55,9 @@ func _process(delta: float) -> void:
 				actors.erase(id)
 			else:
 				var actor: Node3D = actors[id]
+				if actor.dead:
+					retired[id] = true
+					continue
 				var talking: bool = session.modal and _talking_to==id
 				actor.set_talking(talking or (not session.modal and fposmod(_elapsed+float(LOCATIONS.keys().find(id))*2.2,12.0)<3.5))
 				if talking:
@@ -52,7 +67,7 @@ func _process(delta: float) -> void:
 				elif ROSTER.TEAM_POINTS.has(id):
 					var offset: Vector3 = ROSTER.TEAM_POINTS[id][0]-actor.global_position
 					actor.visual.rotation.y = atan2(offset.x,offset.z)
-		elif nearby and session.position_clear(LOCATIONS[id]+Vector3.UP*.08):
+		elif nearby and not retired.has(id) and session.position_clear(LOCATIONS[id]+Vector3.UP*.08):
 			var actor := CONTACT.new()
 			actor.identity_id = id
 			actor.position = LOCATIONS[id]
@@ -102,7 +117,7 @@ func nearest_action() -> Dictionary:
 	if data.met_vicente and not data.cargo_found and point.distance_to(MANIFEST)<1.6:
 		return {"id":"desert_story","target":"manifest","label":"Conferir manifesto de carga"}
 	for id in actors:
-		if is_instance_valid(actors[id]) and point.distance_to(actors[id].global_position)<1.7:
+		if is_instance_valid(actors[id]) and not actors[id].dead and point.distance_to(actors[id].global_position)<1.7:
 			return {"id":"desert_story","target":id,"label":"Conversar com "+str(CONTACT.LOOKS[id].name)}
 	return {}
 func perform(target: String, offer_jobs := true) -> bool:

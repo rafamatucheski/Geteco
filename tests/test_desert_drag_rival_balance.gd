@@ -49,6 +49,7 @@ func check(ok: bool,label: String) -> void:
 func run_car(model: String,parts: Dictionary,reaction: float,shift_ratio: float=.91,launch_pedal: float=.52) -> float:
 	var drive := DRIVE.new()
 	drive.configure(model,parts)
+	drive.launch_blend_seconds = .35
 	drive.stage(1.0,launch_pedal)
 	drive.launch()
 	var time := 0.0

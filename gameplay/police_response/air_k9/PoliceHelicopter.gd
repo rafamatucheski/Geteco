@@ -343,6 +343,8 @@ func _build_ropes() -> void:
 	cylinder.bottom_radius = 0.028
 	cylinder.height = 1.0
 	cylinder.radial_segments = 5
+	# Each rope retains ten articulated segments; only redundant rings are removed.
+	cylinder.rings = 0
 	cylinder.material = MODELS.material(Color("b7a477"))
 	var multi := MultiMesh.new()
 	multi.transform_format = MultiMesh.TRANSFORM_3D

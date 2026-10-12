@@ -51,6 +51,8 @@ func run() -> void:
 	for coach in ops.fleet:
 		trips += coach.trips; boarded += coach.boarded; alighted += coach.alighted
 		print("TERMINAL_COACH ",coach.platform," ",coach.state," at=",coach.position," progress=",coach.progress," blocked=",coach.blocked," by=",coach.blocked_by," trips=",coach.trips)
+		if "--diagnostic" in OS.get_cmdline_user_args():
+			for p in coach.passengers: print("TERMINAL_PASSENGER seat=",p.seat," phase=",p.phase," at=",p.actor.position," inside=",p.inside)
 		for p in coach.passengers: check(p.actor.get_instance_id() in identities,"Passenger identity conserved")
 	check(boarded>=2 and alighted>=2,"Physical passenger exchange")
 	check(trips>=1,"Coach reverses, departs, travels and returns to platform")

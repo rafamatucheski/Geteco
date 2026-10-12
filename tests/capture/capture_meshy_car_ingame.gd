@@ -13,7 +13,7 @@ func _shot(name: String) -> void:
 
 func run() -> void:
 	if "--old" in OS.get_cmdline_user_args():
-		preload("res://runtime/FleetCatalog.gd").meshy_cars = false
+		preload("res://runtime/FleetCatalog.gd").meshy_cars = true
 		out_dir += "-antigo"
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out_dir))
 	var world = load("res://Main.tscn").instantiate()

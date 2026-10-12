@@ -44,7 +44,7 @@ func board() -> bool:
 	_chair_part(Vector3(0,1.1,-.25),Vector3(1.4,.06,.06),Color("d99834"))
 	_chair_part(Vector3(0,2.4,.44),Vector3(.05,2.2,.05),Color("4a5660"))
 	_chair_part(Vector3(0,3.5,.22),Vector3(.22,.16,.5),Color("4a5660"))
-	session.show_message("Subindo ao cume · %s adiantar viagem" % get_node("/root/GameInput").hint("interact"))
+	session.show_message(String(TranslationServer.translate("Subindo ao cume · %s adiantar viagem")) % get_node("/root/GameInput").hint("interact"))
 	return true
 func _chair_part(point: Vector3, size: Vector3, color: Color) -> void:
 	var mesh := MeshInstance3D.new()

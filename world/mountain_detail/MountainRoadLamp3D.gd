@@ -29,6 +29,7 @@ func _ready() -> void:
 	light.set_meta("night_energy",1.15)
 	light.add_to_group("mountain_night_light")
 	add_child(light)
+	preload("res://gameplay/street_physics/FragileProps3D.gd").register_node("lamp",self,get_parent())
 
 func _box(label: String,at: Vector3,size: Vector3,color: Color) -> MeshInstance3D:
 	var mesh := MeshInstance3D.new()

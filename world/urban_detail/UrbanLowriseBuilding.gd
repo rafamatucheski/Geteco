@@ -127,7 +127,7 @@ func _roof(origin: Vector3, width: float, depth: float, rise: float, shed: bool)
 	mesh.name = "ShedRoof" if shed else "GableRoof"
 	mesh.mesh = surface.commit()
 	mesh.position = origin
-	mesh.material_override = UrbanMaterials.roof_tin_rusty() if shed else UrbanMaterials.material_for_color(Color("735044"))
+	mesh.material_override = UrbanMaterials.roof_tin_rusty() if shed else preload("res://assets/urban_detail/ExteriorFinish.gd").material("tile", Color("735044"))
 	visuals_root.add_child(mesh)
 	var body := StaticBody3D.new()
 	body.collision_layer = 1

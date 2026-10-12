@@ -69,7 +69,7 @@ func open_maciota_service() -> bool:
 	var car = session.personal_car._car()
 	var state_text := "Fora da garagem"
 	if is_instance_valid(car):
-		state_text = "Condição  %d%%" % roundi(100.0 * car.health / maxf(car.max_health, 1.0))
+		state_text = String(TranslationServer.translate("Condição  %d%%")) % roundi(100.0 * car.health / maxf(car.max_health, 1.0))
 	content.add_child(_label(state_text, 18, STYLE.TEXT))
 	content.add_child(_label("A oficina cuida somente da Monaliza conquistada.", 14, STYLE.MUTED))
 	var actions := HBoxContainer.new()
@@ -266,10 +266,10 @@ func _refresh_outfit_detail(detail: VBoxContainer) -> void:
 	var spec: Dictionary = OUTFITS.OUTFITS[selected_outfit]
 	detail.add_child(_label(_outfit_name(selected_outfit), 19, STYLE.TEXT))
 	var protection := roundi(_cold_protection(selected_outfit) * 100.0)
-	detail.add_child(_label("%d%% menos perda de calor" % protection if protection > 0 else "Sem proteção contra o frio", 14, STYLE.MUTED))
+	detail.add_child(_label(String(TranslationServer.translate("%d%% menos perda de calor")) % protection if protection > 0 else "Sem proteção contra o frio", 14, STYLE.MUTED))
 	var owned: bool = session.state.economy.owns_outfit(selected_outfit)
 	var equipped: bool = session.state.economy.outfit == selected_outfit
-	var action := _button("Equipado" if equipped else ("Vestir" if owned else "Comprar e vestir · R$ %d" % int(spec.price)), _wear_outfit)
+	var action := _button("Equipado" if equipped else ("Vestir" if owned else String(TranslationServer.translate("Comprar e vestir · R$ %d")) % int(spec.price)), _wear_outfit)
 	action.disabled = equipped
 	detail.add_child(action)
 
@@ -286,7 +286,7 @@ func _wear_outfit() -> void:
 		var result: Dictionary = economy.purchase("outfit", selected_outfit, session._transaction())
 		if not result.ok:
 			if result.reason == "insufficient_funds":
-				_set_status("Faltam R$ %d." % maxi(0, int(OUTFITS.OUTFITS[selected_outfit].price) - economy.balance))
+				_set_status(String(TranslationServer.translate("Faltam R$ %d.")) % maxi(0, int(OUTFITS.OUTFITS[selected_outfit].price) - economy.balance))
 			else: _set_status(_reason(result.reason))
 			return
 	if not preload("res://runtime/OutfitDisguise.gd").equip(session, selected_outfit, true): _set_status("Roupa indisponível."); return
@@ -313,7 +313,7 @@ func _rebuild_current() -> void:
 	_finish_open()
 
 func _refresh_wallet() -> void:
-	if is_instance_valid(wallet_label): wallet_label.text = "Saldo  R$ %d" % session.state.economy.balance
+	if is_instance_valid(wallet_label): wallet_label.text = String(TranslationServer.translate("Saldo  R$ %d")) % session.state.economy.balance
 
 func _set_status(message: String) -> void:
 	if is_instance_valid(status_label): status_label.text = message

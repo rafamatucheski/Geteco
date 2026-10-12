@@ -12,6 +12,7 @@ var interaction_row: PanelContainer
 var objective_card: PanelContainer
 var feedback_card: PanelContainer
 var minimap: Control
+var vehicle_name: Label
 var backpack: Button
 var backpack_hint: Label
 var stars_label: RichTextLabel
@@ -78,6 +79,7 @@ func _ready() -> void:
 	backpack.pressed.connect(func(): if _bound: _session.show_inventory())
 	backpack_hint=STYLE.label("",12,STYLE.MUTED); backpack_hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; bag_column.add_child(backpack_hint)
 	minimap=preload("res://ui/v1/HarborMinimap3D.gd").new(); minimap.world=world; root_control.add_child(minimap)
+	vehicle_name=preload("res://ui/hud/VehicleNameHUD.gd").new(); minimap.add_child(vehicle_name)
 	interaction_row=preload("res://ui/hud/InteractionPrompt.gd").new(); root_control.add_child(interaction_row)
 	interaction_key=interaction_row.key; interaction_label=interaction_row.caption
 	_notifications=VBoxContainer.new(); _notifications.add_theme_constant_override("separation",8); root_control.add_child(_notifications)
@@ -124,6 +126,7 @@ func _sync_channels() -> void:
 	# The drag presents its own instruments and controls while it owns driving.
 	var drag_active: bool = _session.desert != null and is_instance_valid(_session.desert.drag) and _session.desert.drag.active
 	root_control.visible=active and not drag_active
+	vehicle_name.sync(_driving)
 	var text := str(_session.objective.text).strip_edges()
 	if text in ["J  Missões · M  Mapa","J Missions · M Map"]: text=""
 	if text!=_last_objective:
@@ -136,7 +139,7 @@ func _sync_channels() -> void:
 		_last_notice=feedback
 		if not feedback.is_empty(): feedback_card.present(feedback)
 	var action_text := str(_session.prompt.text).strip_edges()
-	var action := "interact"
+	var action: String = _session.prompt_input_action
 	if action_text.is_empty() and float(_driving.status_time)<=0:
 		action_text=str(_driving.prompt.text).strip_edges()
 		action="exit_vehicle" if bool(_driving.occupied) else "vehicle_interact"

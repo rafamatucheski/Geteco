@@ -6,7 +6,7 @@ extends "res://world/places/sewers/SewerVariantBase.gd"
 const REWARDS := [
 	{"id": "sewer_warehouse_locker", "kind": "weapon", "item": "magnum", "amount": 1, "ammo": 18, "local_position": Vector3(10.2, 0, -4.7)},
 	{"id": "sewer_warehouse_cash", "kind": "cash", "amount": 650, "local_position": Vector3(-8.6, 0, 4.9)},
-	{"id": "sewer_warehouse_stash", "kind": "cash", "amount": 1800, "local_position": Vector3(10.5, 0, 5.7)},
+	{"id": "sewer_warehouse_stash", "kind": "cash", "amount": 1800, "local_position": Vector3(10.5, 0, 4.8)},
 	{"id": "sewer_warehouse_knuckles", "kind": "weapon", "item": "knuckles", "amount": 1, "local_position": Vector3(10.7, 0, 4.1)},
 ]
 const RESIDENTS := [
@@ -69,7 +69,7 @@ func _build() -> void:
 	for index in 4:
 		barrel(Vector3(3.5 + index * 0.5, 0, 5.6 - (index % 2) * 0.4), ["#33403a", "#4a3b28", "#33403a", "#3a2f20"][index])
 		stain(Vector3(3.5 + index * 0.5, 0, 6.0 - (index % 2) * 0.4), 0.45, "#0c0a08")
-	box(Vector3(-7.4, 0.12, 4.6), Vector3(1.8, 0.24, 0.9), "#403d30")
+	box(Vector3(-7.4, 0.12, 4.6), Vector3(1.8, 0.24, 0.9), "#403d30", false, "Mattress")
 	box(Vector3(-7.4, 0.26, 4.6), Vector3(1.4, 0.06, 0.8), "#26384a")
 	fire_barrel(Vector3(-5.6, 0, 5.4))
 	crate(Vector3(-8.6, 0, 2.6), Vector3(0.8, 0.6, 0.8), "#433620", 0.4)
@@ -81,7 +81,7 @@ func _build() -> void:
 		pipe(Vector3(8.0, 0.1, 4.95 + index * 0.2), Vector3(8.0, 2.0 + (index % 2) * 0.2, 4.95 + index * 0.2), 0.05 + (index % 3) * 0.015, "#4d3b30")
 	box(Vector3(8.0, 1.0, 5.6), Vector3(0.04, 1.8, 1.5), "#1d241f")
 	crate(Vector3(10.7, 0, 3.0), Vector3(0.9, 0.7, 0.9), "#3a2f20", 0.2)
-	box(Vector3(10.5, 0.2, 5.7), Vector3(1.2, 0.4, 0.7), "#2d2419")
+	box(Vector3(10.5, 0.2, 5.7), Vector3(1.2, 0.4, 0.7), "#2d2419", false, "StashChest")
 	lamp(Vector3(10.0, 1.4, 5.0), "#ffb95a", 0.8, 3.2)
 	# Sujeira: lixo empilhado, manchas escuras, musgo e ossos.
 	heap(Vector3(-10.5, 0, 0.8), 0.9, 12, true)

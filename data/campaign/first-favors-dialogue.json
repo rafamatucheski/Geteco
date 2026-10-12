@@ -76,8 +76,8 @@
   "finish_dialogue": [
     {
       "speaker": "MACIOTA",
-      "pt": "Peça e comprovante. Tudo certo. Aqui estão os 150. Você cumpriu o combinado.",
-      "en": "Part and receipt. All good. Here's your 150. You kept your word.",
+      "pt": "Peça e comprovante. Tudo certo. Aqui estão os 150 e uma mochila pra tua viagem. Coloca nas costas. Você cumpriu o combinado.",
+      "en": "Part and receipt. All good. Here's your 150 and a backpack for your journey. Put it on your back. You kept your word.",
       "source": "world/harbor/campaign/HarborFirstFavors.gd",
       "line": 86
     },

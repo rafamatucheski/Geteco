@@ -120,6 +120,7 @@ func _rock()->void:
 func _bench()->void:
 	add_child(preload("res://world/urban_detail/StreetBench.gd").create(4.06,1.18))
 	_solid(Vector3(0,.56,0),Vector3(4.06,1.12,1.28))
+	preload("res://gameplay/street_physics/FragileProps3D.gd").register_node("bench_seat",self,get_parent())
 
 func _lamp()->void:
 	_cylinder("StreetLampPost",.09,3.2,Vector3(0,1.6,0),Color("3f4745"),true)

@@ -1,6 +1,22 @@
 extends RefCounted
 ## Shared geometry for equipped weapons and the trunk arsenal.
 const POSE = preload("res://gameplay/WeaponPoseData.gd")
+const SURFACES := preload("res://assets/urban_detail/UrbanSurfaces.gd")
+
+## Materiais de arma com textura (veio da madeira, metal escovado) em vez de cor chapada.
+## O UV triplanar fica no espaço do OBJETO: o de mundo, usado na cidade, faria a textura
+## "nadar" quando a arma se move na mão. `tile` em metros do modelo (armas têm ~0.1-0.8 m).
+static var _textured_cache: Dictionary = {}
+
+static func _textured(kind: String, color: Color, roughness: float, metallic: float, tile: float) -> StandardMaterial3D:
+	var key := "arsenal_%s_%s_%.2f_%.2f" % [kind, color.to_html(false), roughness, metallic]
+	if _textured_cache.has(key):
+		return _textured_cache[key]
+	var mat := SURFACES.material(key, kind, color, roughness, metallic, tile, 0.6).duplicate() as StandardMaterial3D
+	mat.uv1_world_triplanar = false
+	mat.uv1_scale = Vector3.ONE / tile
+	_textured_cache[key] = mat
+	return mat
 
 static func _make_mat(col: Color, roughness: float) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
@@ -37,23 +53,14 @@ static func build_cached(root: Node3D, id: String) -> Vector3:
 
 static func build(root: Node3D, id: String) -> Vector3:
 	if id == "katana": return preload("res://gameplay/KatanaModel.gd").build(root)
-	var mat_chrome := StandardMaterial3D.new()
-	mat_chrome.albedo_color = Color(0.56, 0.60, 0.65)
-	mat_chrome.metallic = 0.92
-	mat_chrome.roughness = 0.30
-
-	var mat_gunmetal := StandardMaterial3D.new()
-	mat_gunmetal.albedo_color = Color(0.18, 0.20, 0.24)
-	mat_gunmetal.metallic = 0.85
-	mat_gunmetal.roughness = 0.35
+	var mat_chrome := _textured("metal", Color(0.56, 0.60, 0.65), 0.30, 0.92, 0.18)
+	var mat_gunmetal := _textured("metal", Color(0.18, 0.20, 0.24), 0.35, 0.85, 0.18)
 
 	var mat_polymer := StandardMaterial3D.new()
 	mat_polymer.albedo_color = Color(0.08, 0.08, 0.10)
 	mat_polymer.roughness = 0.70
 
-	var mat_wood := StandardMaterial3D.new()
-	mat_wood.albedo_color = Color(0.36, 0.19, 0.10)
-	mat_wood.roughness = 0.55
+	var mat_wood := _textured("wood", Color(0.36, 0.19, 0.10), 0.55, 0.0, 0.30)
 
 	var mat_brass := StandardMaterial3D.new()
 	mat_brass.albedo_color = Color(0.92, 0.78, 0.22)

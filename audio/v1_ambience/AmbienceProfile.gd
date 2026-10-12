@@ -20,7 +20,7 @@ static func targets(region: String, place: String, point: Vector3, dark: bool, c
 	var result := {"city":0.0,"water":0.0,"port":0.0,"birds":0.0,"crickets":0.0,"workshop":0.0}
 	if not place.is_empty():
 		if place in ["maciota","port_boss_garage","desert_digo"]: result.workshop = 1.0
-		elif place == "harbor_sewer": result.water = .62
+		# Sewer rooms own their enclosed flow/drips; coastal water belongs outdoors.
 		return result
 	if region == "desert":
 		var town := 1.0-smoothstep(90.0,200.0,Vector2(point.x+220,point.z+930).length())

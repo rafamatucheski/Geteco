@@ -172,7 +172,7 @@ func continue_game() -> bool:
 	transferred = true
 	get_tree().current_scene = world
 	get_tree().paused = false
-	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
+	Input.mouse_mode = Input.MOUSE_MODE_CONFINED_HIDDEN
 	released.emit()
 	menu.queue_free()
 	return true

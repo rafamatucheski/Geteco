@@ -10,7 +10,7 @@ func _ready() -> void:
 	layer = LAYER
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	var label := Label.new()
-	label.text = "Alpha build · work in progress · v%s%s" % [
+	label.text = String(TranslationServer.translate("Alpha build · work in progress · v%s%s")) % [
 		str(ProjectSettings.get_setting("application/config/version", "0.0.0")),
 		_commit_suffix(),
 	]

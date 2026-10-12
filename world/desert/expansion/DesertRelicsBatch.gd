@@ -68,9 +68,9 @@ func beam(label: String, start: Vector3, end: Vector3, width: float, material_fi
 	var frame := Basis(Quaternion(Vector3.UP, delta.normalized()))
 	box(label, (start + end) * .5, Vector3(width, delta.length(), width), material_finish, solid, frame.get_euler())
 
-func _add(shape: String, finish: String, transform: Transform3D) -> void:
-	var key := shape + ":" + finish
-	if not groups.has(key): groups[key] = {"shape":shape, "finish":finish, "transforms":[]}
+func _add(shape: String, material_finish: String, transform: Transform3D) -> void:
+	var key := shape + ":" + material_finish
+	if not groups.has(key): groups[key] = {"shape":shape, "finish":material_finish, "transforms":[]}
 	groups[key].transforms.append(transform)
 	pieces += 1
 

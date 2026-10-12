@@ -88,7 +88,7 @@ func _physics_process(delta: float) -> void:
 	direction.y = 0.0
 	direction = direction.normalized()
 	if direction.length_squared() > 0.01: direction = _steering.steer(self, direction, delta)
-	if direction.length_squared() > 0.01: visual.rotation.y = atan2(-direction.x, -direction.z)
+	if direction.length_squared() > 0.01: visual.rotation.y = atan2(-direction.x, -direction.z) - global_rotation.y
 	velocity.x = direction.x * 3.6
 	velocity.z = direction.z * 3.6
 	velocity.y = -1.0 if is_on_floor() else velocity.y - 20.0 * delta
@@ -105,7 +105,7 @@ func _disembark(delta: float) -> void:
 	offset.y = 0.0
 	if _door_close_elapsed < 0.0 and offset.length() > 0.12:
 		var direction := offset.normalized()
-		visual.rotation.y = lerp_angle(visual.rotation.y, atan2(-direction.x, -direction.z), minf(1.0, 14.0 * delta))
+		visual.rotation.y = lerp_angle(visual.rotation.y, atan2(-direction.x, -direction.z) - global_rotation.y, minf(1.0, 14.0 * delta))
 		velocity.x = direction.x * DISEMBARK_SPEED
 		velocity.z = direction.z * DISEMBARK_SPEED
 		velocity.y = -1.0 if is_on_floor() else velocity.y - 20.0 * delta

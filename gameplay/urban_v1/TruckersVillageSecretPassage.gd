@@ -421,7 +421,7 @@ func _open_vault_keypad() -> void:
 		return
 	var missing := 4-_vault_digits_found()
 	if missing > 0:
-		_show_message("Faltam %d dígitos do código. Procure no quartel: %s"%[missing,_vault_hint()])
+		_show_message(String(TranslationServer.translate("Faltam %d dígitos do código. Procure no quartel: %s"))%[missing,_vault_hint()])
 		return
 	_keypad_vault = true
 	_show_keypad()

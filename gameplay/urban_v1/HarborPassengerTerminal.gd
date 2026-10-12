@@ -60,6 +60,7 @@ func _ready() -> void:
 	bridge.remove_from_group("footbridges") # This route owns its passengers.
 	ferry = ART.new()
 	ferry.name = "PassengerFerry"
+	ferry.anchor_textures()
 	add_child(ferry)
 	ferry.boat(true)
 	ferry.position = BERTH

@@ -11,6 +11,7 @@ const ROUTER := preload("res://gameplay/dispatch/DispatchRoadRouter.gd")
 const FLEET_STATE := preload("res://runtime/FleetState.gd")
 const INTERIOR := preload("res://gameplay/VehicleInterior.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
+const SERVICE_BUILDINGS := preload("res://world/editing/WorldServiceBuildings.gd")
 const GETAWAY_VIA := Vector3(84.75,0,70)
 const GETAWAY_MARKET := Vector3(175,0,79.833333)
 var session
@@ -28,6 +29,8 @@ var _saved_vehicle: Dictionary = {}
 var _pending_progress: Dictionary = {}
 var _saved_player: Dictionary = {}
 var _dialogue: Dictionary = {}
+var _bank_definition_cache: Dictionary = {}
+var _bank_source_row: Dictionary = {}
 var _poll := 0.0
 var _notice := 0.0
 var _before := Vector3.ZERO
@@ -99,7 +102,7 @@ func objective() -> String:
 	return ""
 
 func target_position() -> Vector3:
-	if _campaign_active() and _progress().bank_phase == "accepted": return PLACES.get_definition("harbor_bank").entry_position
+	if _campaign_active() and _progress().bank_phase == "accepted": return _bank_definition().entry_position
 	if riding: return _safe_point()
 	if _campaign_active() and _progress().bank_phase == "escaped" and is_instance_valid(car): return passenger_point()
 	if is_instance_valid(actor): return actor.global_position
@@ -107,7 +110,18 @@ func target_position() -> Vector3:
 	return _bank_parking()
 
 func _bank_parking() -> Vector3:
-	return PLACES.get_definition("harbor_bank").exterior_position+Vector3(0,.12,18.4)
+	return _bank_definition().exterior_position+Vector3(0,.12,18.4)
+
+func _bank_definition() -> Dictionary:
+	# Contact streaming polls at 4 Hz even before Jessica is unlocked. Building
+	# the entire place catalogue there repeated unrelated map work every poll.
+	# Compare a copied bank row so live editor changes (including in-place edits)
+	# and disk reloads still move the encounter and accepted mission target.
+	var source_row := SERVICE_BUILDINGS.row_for("harbor_bank")
+	if _bank_definition_cache.is_empty() or source_row != _bank_source_row:
+		_bank_definition_cache = PLACES.get_definition("harbor_bank")
+		_bank_source_row = source_row.duplicate(true)
+	return _bank_definition_cache
 
 func _safe_point() -> Vector3:
 	if safe_destination.is_finite(): return safe_destination
@@ -274,6 +288,7 @@ func _ensure_car() -> void:
 		car = session.controller.spawn_vehicle(CAR_SPEC.ID,point,float(_saved_vehicle.yaw))
 		if car == null: return
 		car.health = float(_saved_vehicle.health)
+		car.restore_body_dents(_saved_vehicle.get("body_dents",[]))
 		car.paint_color = Color.html(_saved_vehicle.get("paint","f1f0eaff"))
 		car.equipment_state = _saved_vehicle.get("equipment",{}).duplicate(true)
 	else:

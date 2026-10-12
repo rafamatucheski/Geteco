@@ -18,6 +18,7 @@ var extras: Node
 var drag: Node3D
 var story: Node3D
 var frontier: Node3D
+var canyon: Node3D
 var discoveries: Node3D
 var contracts: Node3D
 var village_life: Node
@@ -25,6 +26,7 @@ var meet_life: Node3D
 var digo_routine: Node3D
 var tuning_panel: CanvasLayer
 var tuning_car: CharacterBody3D
+var entrance_toll: Node
 var _room: Node3D
 var _resident: Node3D
 var _workshop_site := "town"
@@ -33,6 +35,9 @@ var _tick := 0.0
 func configure(owner_session) -> void:
 	session = owner_session
 	name = "DesertRuntime"
+	entrance_toll=preload("res://runtime/desert/entrance/DesertToll.gd").new()
+	add_child(entrance_toll)
+	entrance_toll.configure(session)
 	drag = DRAG.new()
 	add_child(drag)
 	drag.configure(session)
@@ -49,6 +54,9 @@ func configure(owner_session) -> void:
 	frontier=FRONTIER.new()
 	add_child(frontier)
 	frontier.configure(session)
+	canyon=preload("res://runtime/desert/canyon/CanyonEncounter.gd").new()
+	add_child(canyon)
+	canyon.configure(session)
 	discoveries=preload("res://runtime/desert/expansion/DesertDiscoveries.gd").new()
 	add_child(discoveries)
 	discoveries.configure(session)
@@ -74,16 +82,20 @@ func configure(owner_session) -> void:
 func busy() -> bool: return (is_instance_valid(drag) and drag.active) or (is_instance_valid(extras) and extras.busy())
 func controls_locked() -> bool: return (is_instance_valid(drag) and drag.active) or (is_instance_valid(extras) and extras.controls_locked())
 func save_block_reason() -> String:
+	if is_instance_valid(entrance_toll) and not entrance_toll.save_block_reason().is_empty(): return entrance_toll.save_block_reason()
 	if is_instance_valid(extras):
 		var extra_reason: String=extras.save_block_reason()
 		if not extra_reason.is_empty(): return extra_reason
 	var reason: String = drag.save_block_reason() if is_instance_valid(drag) else ""
 	if not reason.is_empty(): return reason
+	if is_instance_valid(canyon) and not canyon.save_block_reason().is_empty(): return canyon.save_block_reason()
 	return frontier.save_block_reason() if is_instance_valid(frontier) else ""
 func cancel_attempt() -> void:
+	if is_instance_valid(entrance_toll): entrance_toll.cancel_attempt()
 	if is_instance_valid(extras): extras.cancel_attempt()
 	if is_instance_valid(drag): drag.cancel_attempt()
 	if is_instance_valid(frontier): frontier.cancel_attempt()
+	if is_instance_valid(canyon): canyon.cancel_attempt()
 	if is_instance_valid(tuning_panel): tuning_panel.close_panel()
 func _process(delta: float) -> void:
 	if session != null and session.ready_for_play:
@@ -133,6 +145,7 @@ func _reconcile_owned_cars() -> void:
 		var tuning: Dictionary = GARAGE.vehicle(session.state.world_state,id,car.archetype)
 		ADAPTER.attach(car,tuning.parts)
 		car.restore_health(float(record.health))
+		car.restore_body_dents(record.get("body_dents",[]))
 		if int(record.get("punctured_tires",0))>0: preload("res://gameplay/police_response/ground/TirePuncture.gd").puncture(car,int(record.punctured_tires))
 		_track_owned(car)
 func _track_owned(car: CharacterBody3D) -> void:
@@ -162,11 +175,17 @@ func _reconcile_resident() -> void:
 	_resident.position = local
 	room.add_child(_resident)
 func nearest_action() -> Dictionary:
+	if is_instance_valid(entrance_toll):
+		var toll_action: Dictionary=entrance_toll.nearest_action()
+		if not toll_action.is_empty(): return toll_action
 	if is_instance_valid(drag) and drag.active: return drag.nearest_action()
 	if is_instance_valid(extras):
 		var extra_action: Dictionary=extras.nearest_action()
 		if not extra_action.is_empty(): return extra_action
 	if session.state.region_id!="desert": return {}
+	if is_instance_valid(canyon):
+		var canyon_action: Dictionary=canyon.nearest_action()
+		if not canyon_action.is_empty(): return canyon_action
 	var digo_action: Dictionary = digo_routine.nearest_action()
 	if not digo_action.is_empty(): return digo_action
 	var contract_action: Dictionary=contracts.nearest_action()
@@ -184,6 +203,8 @@ func nearest_action() -> Dictionary:
 		return {"id":"desert","target":"rest","label":"Descansar até as 20h"}
 	return drag.nearest_action()
 func perform(action: Dictionary) -> bool:
+	if action.get("id","")=="desert" and action.get("target","")=="entrance_toll": return entrance_toll.perform()
+	if str(action.get("target","")).begins_with("canyon_cache:"): return canyon.perform(action)
 	if is_instance_valid(extras) and extras.handles(action): return extras.perform(action)
 	if str(action.get("target","")).begins_with("contract:"): return contracts.perform(action)
 	if str(action.get("target","")).begins_with("secret:"): return frontier.perform(action)
@@ -251,7 +272,7 @@ func _workshop() -> bool:
 func _claim_rewards() -> void:
 	var paid := PROGRESS.claim_rewards(session.state.world_state,session.state.economy)
 	session.close_menu()
-	session.show_message("Prêmios recebidos: R$ %d"%paid if paid>0 else "Libere espaço na carteira para receber os prêmios.")
+	session.show_message(String(TranslationServer.translate("Prêmios recebidos: R$ %d"))%paid if paid>0 else "Libere espaço na carteira para receber os prêmios.")
 	if paid>0: session.save_game()
 func _open_tuning() -> void:
 	if not is_instance_valid(tuning_car): session.close_menu(); return
@@ -332,6 +353,7 @@ func target_position() -> Vector3:
 	if is_instance_valid(extras) and not extras.objective().is_empty(): return extras.target_position()
 	return contracts.target_position() if not contracts.objective().is_empty() else story.target_position()
 static func validate_world(value: Dictionary, economy: Dictionary) -> bool:
+	if not preload("res://runtime/desert/canyon/CanyonState.gd").validate_wallet(value,economy): return false
 	if value.has("desert_secrets") and not preload("res://runtime/desert/DesertSecretState.gd").valid(value.desert_secrets): return false
 	if value.has("desert_bandits") and not preload("res://runtime/desert/DesertBanditEncounter.gd").valid_state(value.desert_bandits): return false
 	if value.has("desert_story") and not STORY_STATE.valid(value.desert_story): return false

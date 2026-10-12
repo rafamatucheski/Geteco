@@ -63,6 +63,8 @@ func run() -> void:
 	check(world.dispatch.router._native!=null,"C# route backend active")
 	var session = world.session
 	var race = session.desert.drag
+	race.open_meet.enabled = false
+	for i in 3: await physics_frame
 	world.gameplay.god_mode = true
 	for i in 180:
 		await physics_frame

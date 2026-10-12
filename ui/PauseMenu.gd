@@ -6,11 +6,21 @@ var world: Node
 var settings: Control
 var collection_button: Button
 var exit_confirmation: ConfirmationDialog
+var developer_panel: CanvasLayer
 
 func _ready() -> void:
 	visible = false
 	for panel in [%SlotsModal, %AchievementsModal, %CollectiblesModal]: panel.hide()
 	%BtnResume.set_meta("primary_action", true)
+	developer_panel = preload("res://ui/DeveloperPanel.gd").new()
+	developer_panel.world = world
+	developer_panel.pause_menu = self
+	add_child(developer_panel)
+	var developer_button := Button.new()
+	developer_button.text = "Desenvolvedor · F10"
+	%BtnSettings.get_parent().add_child(developer_button)
+	%BtnSettings.get_parent().move_child(developer_button, %BtnSettings.get_index()+1)
+	developer_button.pressed.connect(developer_panel.open_panel)
 	STYLE.apply(%RootControl)
 	%BtnResume.pressed.connect(resume_game)
 	%BtnSaveGame.pressed.connect(func():
@@ -43,6 +53,9 @@ func _ready() -> void:
 	settings.closed.connect(func(): %RootControl.show(); %BtnSettings.grab_focus())
 
 func toggle() -> void:
+	if developer_panel.visible:
+		developer_panel.close_panel(false)
+		return
 	if visible:
 		if settings.visible: settings.close()
 		elif %AchievementsModal.visible or %CollectiblesModal.visible: _close_collection()
@@ -78,7 +91,7 @@ func resume_game() -> void:
 	visible = false
 	get_tree().paused = false
 	_set_drag_overlay(false)
-	Input.mouse_mode = Input.MOUSE_MODE_HIDDEN
+	Input.mouse_mode = Input.MOUSE_MODE_CONFINED_HIDDEN
 
 func _set_drag_overlay(paused: bool) -> void:
 	if world.session==null: return

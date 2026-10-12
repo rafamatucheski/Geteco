@@ -1,6 +1,8 @@
 extends Node
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const BOARDING_PRESENTATION := preload("res://gameplay/VehicleBoardingPresentation.gd")
+const CARJACKING := preload("res://gameplay/VehicleCarjacking.gd")
+var _carjacking: RefCounted
 const BAILOUT := preload("res://gameplay/VehicleBailout.gd")
 const INTERIOR := preload("res://gameplay/VehicleInterior.gd")
 const BREAK_IN := preload("res://gameplay/VehicleBreakIn.gd")
@@ -28,6 +30,10 @@ func _ready() -> void:
 	# veículos (prioridade 0), senão lê a posição do tique anterior e atrasa ~25 cm a 15 m/s.
 	process_physics_priority = 20
 	car = VEHICLE.new()
+	if is_instance_valid(world.production) and world.production.starting_vehicle().get("archetype","") == "biarticulated_510":
+		car.free()
+		car = preload("res://runtime/transit/BiarticulatedBus.gd").new()
+		car.stolen = true
 	if is_instance_valid(world.production): car.archetype = str(world.production.starting_vehicle().get("archetype","sport_coupe"))
 	car.name = "PlayerCoupe"
 	car.position = Vector3(-4.25,0.04,9)
@@ -63,9 +69,10 @@ func _player_alive() -> bool:
 
 func _entry_option(allow_transition := false) -> Dictionary:
 	if is_body_transition_active() or (not allow_transition and _external_transition_blocked()): return {}
-	if occupied or world.player.input_locked: return {}
+	if occupied or world.player.input_locked or world.player.get_meta("player_air_busy",false): return {}
 	var best := {}
 	var candidates: Array = [car] if "--sandbox" in OS.get_cmdline_user_args() else get_tree().get_nodes_in_group("drivable")
+	if not "--sandbox" in OS.get_cmdline_user_args(): candidates.append_array(get_tree().get_nodes_in_group("stealable_meet_cars"))
 	for candidate in candidates:
 		if not is_instance_valid(candidate) or not candidate is CharacterBody3D: continue
 		if not candidate.is_visible_in_tree() or candidate.collision_layer == 0 or candidate.has_meta("awaiting_ground"): continue
@@ -110,7 +117,10 @@ func interact(allow_transition := false) -> bool:
 	if world.player.input_locked: return false
 	if occupied: return leave()
 	var option := _entry_option(allow_transition)
-	if option.is_empty(): return false
+	if option.is_empty():
+		if is_instance_valid(world.session) and is_instance_valid(world.session.motocross) and world.session.motocross.nearest_action().get("target","") == "steal":
+			return world.session.motocross.perform("steal")
+		return false
 	# Viatura trancada do pátio da delegacia: a porta só abre pelo lockpick do dono.
 	var lock_handler: Callable = option.car.get_meta("lockpick_handler", Callable())
 	if lock_handler.is_valid(): return bool(lock_handler.call(option.car))
@@ -120,11 +130,25 @@ func interact(allow_transition := false) -> bool:
 	return _begin_entry(option.car,int(option.side))
 
 func _begin_entry(candidate: CharacterBody3D, side: int) -> bool:
-	_locked_entry = BREAK_IN.required(candidate)
+	if candidate.has_method("materialize_vehicle"):
+		candidate = candidate.materialize_vehicle()
+		if not is_instance_valid(candidate): return false
+	var had_driver: bool = candidate.traffic or candidate.get_meta("crash_was_traffic", false) or candidate.get_meta("dispatch_unit", false) or candidate.has_meta("gang_theft_handler")
+	var gang_handler: Callable = candidate.get_meta("gang_theft_handler",Callable())
+	if gang_handler.is_valid() and bool(gang_handler.get_object().get("deployed")): had_driver = false
+	var driver_landing := Vector3.INF
+	if had_driver:
+		side = CARJACKING.driver_side(candidate)
+		driver_landing = CARJACKING.landing_point(world, candidate, side)
+		if not driver_landing.is_finite(): return false
+	_locked_entry = not had_driver and BREAK_IN.required(candidate)
+	var theft_handler: Callable = candidate.get_meta("vehicle_theft_handler",Callable())
+	if theft_handler.is_valid() and not bool(theft_handler.call(candidate)): return false
 	var parked := bool(candidate.get_meta("ambient_parked", false))
 	var parking_handler: Callable = candidate.get_meta("parking_theft_handler", Callable())
 	if parking_handler.is_valid(): parking_handler.call(candidate)
 	var dispatch_car := bool(candidate.get_meta("dispatch_unit",false))
+	var police_before: Array = world.gameplay.police.duplicate() if dispatch_car and is_instance_valid(world.get("gameplay")) else []
 	if dispatch_car:
 		if not is_instance_valid(world.get("dispatch")) or not world.dispatch.vehicle_stolen(candidate,side): return false
 	if candidate.archetype == "taxi_yellow":
@@ -150,7 +174,17 @@ func _begin_entry(candidate: CharacterBody3D, side: int) -> bool:
 		# It is now a persistent player vehicle, including after dismounting.
 		car.remove_meta("ambient_traffic")
 		if world.get("gameplay") != null: world.gameplay.report_observed_crime(15,car.global_position,"theft",car)
-		_eject_civilian_driver(car,side)
+	if had_driver:
+		var victim: CharacterBody3D
+		if dispatch_car:
+			for officer in world.gameplay.police:
+				if not police_before.has(officer): victim = officer; break
+		else:
+			victim = _eject_civilian_driver(car,side)
+		if is_instance_valid(victim):
+			_carjacking = CARJACKING.new()
+			_carjacking.prepare(world,car,victim,side,driver_landing,car.archetype.begins_with("bike_"))
+	if not had_driver and gang_handler.is_valid(): gang_handler.call(side)
 	car.controlled = false
 	car.external_input = false
 	car.input_locked = true
@@ -196,6 +230,7 @@ func _grab_moving(side: int) -> void:
 		car.speed = lerpf(start_speed, 0.0, clampf(elapsed / JACK_STOP_SECONDS, 0.0, 1.0))
 		var door: Vector3 = car.driver_door_anchor(side)
 		world.player.global_position = door
+		if _carjacking != null: _carjacking.follow_seat()
 	car.speed = 0.0
 	_jacking = false
 	_start_boarding(side)
@@ -207,46 +242,30 @@ func _start_boarding(side: int) -> void:
 	transition.entered.connect(_complete_entry)
 	transition.exited.connect(_complete_exit)
 	transition.cancelled.connect(_transition_cancelled)
-	transition.begin_entry(world,car,world.player,side,_locked_entry)
+	transition.begin_entry(world,car,world.player,side,_locked_entry,_carjacking)
+	_carjacking = null
 	# Interior já na abertura da porta (a porta acabou de ser criada, então o recorte da lataria já
 	# aconteceu e não pega os triângulos do interior): dá para ver o banco antes de sentar.
 	if transition.break_in == null and car.has_method("shows_seated_driver") and car.shows_seated_driver(): INTERIOR.attach(car)
 
-## Carro de trânsito tem motorista. Antes o roubo só tirava o carro da faixa e ninguém
-## saía dele. O motorista desce pela porta dele assim que o ladrão abre a do lado de
-## lá (ou é empurrado para trás, se o ladrão veio pela mesma porta) e foge em pânico.
-func _eject_civilian_driver(candidate: CharacterBody3D, thief_side: int) -> void:
+
+## Keep the real gang driver; civilians are materialized in their seat, never
+## teleported onto the street by a timer. Boarding owns their forced extraction.
+func _eject_civilian_driver(candidate: CharacterBody3D, thief_side: int) -> CharacterBody3D:
 	var gang_driver: Callable = candidate.get_meta("gang_theft_handler",Callable())
 	if gang_driver.is_valid():
+		var owner = gang_driver.get_object()
 		gang_driver.call(thief_side)
-		return
-	if not is_instance_valid(world.get("production")) or world.get("people") == null: return
-	# O banco do motorista é o esquerdo; no ônibus ele sai pela porta de serviço.
-	var driver_side := 1 if candidate.has_method("boarding_class") and candidate.boarding_class() == "bus" else -1
-	var point: Vector3 = candidate.driver_door_anchor(driver_side)
-	if driver_side == thief_side:
-		point = candidate.to_global(candidate.to_local(point)+Vector3(float(driver_side)*.35,0,1.25))
-	point.y = candidate.global_position.y+.08
+		var crew: Array = owner.get("crew") if is_instance_valid(owner) else []
+		return crew[0] if not crew.is_empty() else null
 	var civilian = preload("res://scripts/Actor.gd").new()
 	civilian.identity = randi_range(0,10000)
 	civilian.speed = randf_range(1.2,1.6)
-	civilian.position = point
-	civilian.route = PackedVector3Array([point,point+(point-candidate.global_position).normalized()*8.0])
+	civilian.position = candidate.driver_seat_anchor()
 	civilian.set_meta("region_id",candidate.get_meta("region_id",""))
-	civilian.hide()
 	world.add_child(civilian)
-	civilian.add_collision_exception_with(candidate)
-	world.people.append(civilian)
-	# Aparece quando a porta dele abre, não antes do ladrão chegar ao carro.
-	get_tree().create_timer(.35).timeout.connect(func():
-		if not is_instance_valid(civilian): return
-		civilian.show()
-		if is_instance_valid(candidate) and candidate.has_method("animate_driver_door") and driver_side != thief_side:
-			candidate.animate_driver_door(driver_side,true,.22)
-			get_tree().create_timer(.9).timeout.connect(func():
-				if is_instance_valid(candidate): candidate.animate_driver_door(driver_side,false,.3))
-		var reactions = world.production.get("civilian_reactions")
-		if is_instance_valid(reactions) and reactions.has_method("report_assault"): reactions.report_assault(civilian,world.player))
+	if world.get("people") != null: world.people.append(civilian)
+	return civilian
 
 func _complete_entry() -> void:
 	transition = null
@@ -290,6 +309,10 @@ func exit_position(moving := false) -> Vector3:
 			var offset: float = candidate.z
 			var point := car.to_global(candidate)
 			point.y = car.position.y+.04
+			if car.has_method("boarding_class") and car.boarding_class()=="bus":
+				var bus_floor: Dictionary = world.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(point+Vector3.UP*1.2,point-Vector3.UP*1.2,1))
+				if bus_floor.is_empty(): continue
+				point.y=bus_floor.position.y+.04
 			# An upright vehicle rests on its highest supporting corner. Its origin
 			# is not the ground height beside the door on a canyon slope.
 			if terrain_height.is_valid(): point.y = float(terrain_height.call(Vector2(point.x,point.z)))+.04
@@ -325,6 +348,15 @@ func leave() -> bool:
 		_message("Aguarde o serviço terminar")
 		return false
 	var momentum: Vector3 = car.horizontal_velocity
+	var exit_handler: Callable=car.get_meta("vehicle_exit_handler",Callable())
+	if exit_handler.is_valid() and not car.get_meta("exit_gate_ready",false):
+		exit_handler.call(car)
+		if car.has_meta("exit_station"):
+			# Station gate collision is deferred; admit the body after the physics sync.
+			_jacking=true; _jack_generation+=1
+			car.stop_boarding_motion(); car.input_locked=true
+			_station_exit_ready(car,_jack_generation)
+			return true
 	var moving := momentum.length() > BAILOUT.MIN_SPEED
 	var point := exit_position(moving)
 	if not point.is_finite():
@@ -353,6 +385,16 @@ func leave() -> bool:
 		world.camera.target = world.player
 		world.camera.initialized = false
 	return true
+
+func _station_exit_ready(candidate: CharacterBody3D, generation: int) -> void:
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	if generation!=_jack_generation or not _jacking or not occupied or car!=candidate: return
+	_jacking=false
+	if not is_instance_valid(candidate) or candidate.health<=0 or not _player_alive(): _force_detach("exit_failed"); return
+	candidate.input_locked=false; candidate.set_meta("exit_gate_ready",true)
+	leave()
+	if is_instance_valid(candidate): candidate.remove_meta("exit_gate_ready")
 
 func _begin_bailout(point: Vector3, momentum: Vector3) -> bool:
 	# O salto captura a linha de base do visual: o corpo sai do banco antes, sem deslocamento.
@@ -408,6 +450,9 @@ func _transition_cancelled(_reason: String, point: Vector3) -> void:
 	_restore_player_on_foot(point)
 
 func cancel_transition(reason := "cancelled") -> void:
+	if _carjacking != null:
+		_carjacking.release()
+		_carjacking = null
 	_jacking = false
 	_jack_generation += 1
 	if is_instance_valid(transition):
@@ -416,6 +461,9 @@ func cancel_transition(reason := "cancelled") -> void:
 	if occupied: _force_detach(reason)
 
 func _force_detach(_reason: String) -> void:
+	if _carjacking != null:
+		_carjacking.release()
+		_carjacking = null
 	_jacking = false
 	_jack_generation += 1
 	var point := _last_vehicle_position

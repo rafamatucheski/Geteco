@@ -1,10 +1,11 @@
 extends Node3D
-## Splits the prepared sport coupe body at the authored door seams. This runs
-## only on the vehicle being entered; traffic keeps its shared prepared meshes.
+## Reuses authored coupe door leaves, or splits legacy bodies at their seams.
+## Only the vehicle being entered is prepared; traffic keeps shared meshes.
 
 var hinges: Dictionary = {}
 
 func configure(vehicle: CharacterBody3D) -> bool:
+	if _configure_authored(vehicle): return true
 	var shell: MeshInstance3D
 	var glass: MeshInstance3D
 	for child in vehicle.visual.get_children():
@@ -18,7 +19,8 @@ func configure(vehicle: CharacterBody3D) -> bool:
 		elif key == "glass" and triangles == 68: glass = part
 	if shell == null or glass == null: return false
 
-	var source := shell.mesh.surface_get_arrays(0)
+	var source_mesh: Mesh=shell.get_meta("body_dents_rest_mesh",shell.mesh)
+	var source := source_mesh.surface_get_arrays(0)
 	var vertices: PackedVector3Array = source[Mesh.ARRAY_VERTEX]
 	var indices: PackedInt32Array = source[Mesh.ARRAY_INDEX]
 	if indices.is_empty(): return false
@@ -125,6 +127,33 @@ func configure(vehicle: CharacterBody3D) -> bool:
 		handle.material_override = trim
 		handle.position = Vector3(s*.92, .71, .52) - hinge.position
 		hinge.add_child(handle)
+	return true
+
+## Prepared leaves keep the exact shared mesh, UVs and per-vehicle paint materials.
+## Their source transforms are in model space; reparenting preserves the closed pose.
+func _configure_authored(vehicle: CharacterBody3D) -> bool:
+	var leaves: Dictionary = {}
+	for child in vehicle.visual.get_children():
+		if not child is MeshInstance3D or child.mesh == null: continue
+		if not child.has_meta("coupe_gt_door_side"): continue
+		var side := int(child.get_meta("coupe_gt_door_side"))
+		if side not in [-1, 1] or leaves.has(side): return false
+		leaves[side] = child
+	if leaves.size() != 2: return false
+	for side in [-1, 1]:
+		var hinge := Node3D.new()
+		hinge.name = "DriverDoorL" if side < 0 else "DriverDoorR"
+		hinge.position = Vector3(float(side) * .87, 0.0, -.72475)
+		add_child(hinge)
+		hinges[side] = hinge
+		var leaf: MeshInstance3D = leaves[side]
+		var roles: Array[String] = []
+		for surface in leaf.mesh.get_surface_count():
+			roles.append(preload("res://runtime/VehicleSurfaceRoles.gd").key(leaf, surface))
+		# Break-in presentation queries door-specific keys for the glass contact.
+		leaf.set_meta("door_surface_material_keys", roles)
+		leaf.reparent(hinge, true)
+		leaf.name = "Skin"
 	return true
 
 func _compact_mesh(source: Array, selection: PackedInt32Array, inward: bool) -> ArrayMesh:

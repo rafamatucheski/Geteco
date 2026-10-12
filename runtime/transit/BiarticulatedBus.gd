@@ -19,6 +19,10 @@ var stop_offset := 0.0
 var passengers: Array = []
 var player_aboard := false
 var active := false
+var stolen := false
+var driver_shift := false
+var work_state: Dictionary = {}
+var _saved_articulation: Array = [0.0,0.0]
 var blocked_by := ""
 var total_travelled := 0.0
 var lap := 0
@@ -35,8 +39,11 @@ func _ready() -> void:
 	if stall_began != 0: TRANSIT_WORK.finish("urban.bus.ready", stall_began, {"name":str(name),"sections":sections.size()})
 
 func _stall_ready() -> void:
-	archetype = "route_city" # Shared bus engine sound family; geometry belongs to this class.
-	vehicle_id = "biarticulated_510"
+	archetype = "biarticulated_510"
+	if vehicle_id.is_empty(): vehicle_id = "biarticulated_510_%d" % get_instance_id()
+	set_meta("biarticulated",true)
+	if not has_meta("region_id"): set_meta("region_id","harbor")
+	add_to_group("drivable")
 	set_meta("gameplay_role","vehicle")
 	set_meta("transit_service",true)
 	add_to_group("public_transport_vehicle")
@@ -70,15 +77,16 @@ func _stall_ready() -> void:
 		for other in sections:
 			if body != other: body.add_collision_exception_with(other)
 	visual = presentations[0].model
+	visual.set_meta("vehicle_interior_spec",{"kind":"bus","sx":-.51,"sz":-2.85,"floor":.42,"roof":2.82,"belt":1.6,"wz0":-3.9,"wz1":-3.9,"rear":-2.2,"rear_top":-2.2,"hw":1.17})
 	_query.collision_mask = 7
 	_query.exclude = exclude_bodies
 	for index in 2:
 		var joint := Node3D.new()
 		joint.name = "Bellows%d" % index
 		add_child(joint); joint.top_level = true
-		for rib in 9: MODEL.box(joint,Vector3(0,1.72,(rib-4)*.1),Vector3(2.39,2.58,.045),"rubber" if rib%2 else "metal")
+		for rib in 9: MODEL.box(joint,Vector3(0,0,0),Vector3(2.39,2.58,.045),"rubber" if rib%2 else "metal")
 		bellows.append(joint)
-	set_active(false)
+	set_active(stolen)
 	for side in [-1,1]:
 		var beam := SpotLight3D.new()
 		beam.position=Vector3(side*.87,1.05,-half_length-.1)
@@ -89,7 +97,7 @@ func _stall_ready() -> void:
 
 func set_active(value: bool) -> void:
 	active = value
-	traffic = value and health>0
+	traffic = value and health>0 and not stolen and not driver_shift
 	visible = value
 	for body in sections: body.collision_layer = 4 if value else 0
 	if not value: speed = 0; _release_tokens()
@@ -160,11 +168,92 @@ func _apply_poses(poses: Array[Transform3D], swept := true) -> void:
 	for index in 2:
 		var a: Vector3 = sections[index].global_position+sections[index].global_basis.z*LENGTHS[index]*.5
 		var b: Vector3 = sections[index+1].global_position-sections[index+1].global_basis.z*LENGTHS[index+1]*.5
-		bellows[index].global_position = (a+b)*.5
-		bellows[index].global_basis = sections[index].global_basis.slerp(sections[index+1].global_basis,.5)
-		bellows[index].scale.z = maxf(.45,a.distance_to(b))/.85
+		# Fole em leque: cada nervura gira um pouco mais que a anterior, do fim de uma
+		# seção ao início da outra. Um bloco reto só no meio deixava uma cunha aberta no
+		# lado externo da curva e atravessava as quinas por dentro (vídeo de 12/10/2026).
+		var from_basis := sections[index].global_basis
+		var to_basis := sections[index+1].global_basis
+		var ribs := bellows[index].get_child_count()
+		for rib in ribs:
+			var fraction := float(rib)/float(ribs-1)
+			var rib_node := bellows[index].get_child(rib) as Node3D
+			rib_node.global_transform = Transform3D(from_basis.slerp(to_basis,fraction),a.lerp(b,fraction)+Vector3.UP*1.72)
 
-func _physics_process(_delta: float) -> void: pass # One service controller owns scheduling.
+func _physics_process(delta: float) -> void:
+	if not (stolen or driver_shift) or not active: return # Service owns only the scheduled fleet.
+	if health<=0 or input_locked or engine_disabled or not (controlled or external_input):
+		speed = 0; horizontal_velocity = Vector3.ZERO; return
+	if not external_input:
+		var axis: Vector2 = get_node("/root/GameInput").vehicle_input()
+		throttle_input = axis.y; steer_input = -axis.x
+		brake_input = Input.is_action_pressed("handbrake")
+	if door_amount>0:
+		if driver_shift: speed=0; horizontal_velocity=Vector3.ZERO; return
+		set_doors(move_toward(door_amount,0,delta*2))
+		if door_amount>0: speed=0; return
+	if brake_input: speed=move_toward(speed,0,5.5*delta)
+	elif absf(throttle_input)>.01: speed=clampf(speed+throttle_input*2.0*delta,-3.5,13.0)
+	else: speed=move_toward(speed,0,1.0*delta)
+	steering = move_toward(steering,steer_input*.38,delta*.75)
+	var step := speed*delta
+	if absf(step)<.0001: return
+	var front := global_transform
+	front.basis = Basis(Vector3.UP,rotation.y+speed/4.75*tan(steering)*delta)
+	front.origin -= front.basis.z*step
+	var poses := manual_poses(front)
+	for index in range(1,3):
+		if absf(angle_difference(poses[index-1].basis.get_euler().y,poses[index].basis.get_euler().y))>deg_to_rad(55): speed=0; return
+	var space := get_world_3d().direct_space_state
+	for index in 3:
+		var point := poses[index].origin
+		var floor_hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(point+Vector3.UP*.8,point-Vector3.UP*1.5,1,exclude_bodies))
+		if floor_hit.is_empty(): speed=0; return
+		poses[index].origin.y = floor_hit.position.y+.04
+	if not admits(poses): speed=0; blocked=true; return
+	blocked=false
+	_apply_poses(poses)
+	horizontal_velocity=-global_basis.z*speed
+	distance_travelled+=absf(step)
+	for entry in presentations:
+		for wheel in entry.wheels: wheel.rotate_object_local(Vector3.UP,step/.48)
+
+func manual_poses(front: Transform3D) -> Array[Transform3D]:
+	var poses: Array[Transform3D] = [front]
+	for index in range(1,3):
+		var previous_pose := poses[-1]
+		var hitch: Vector3 = previous_pose.origin+previous_pose.basis.z*(LENGTHS[index-1]*.5+JOINT_GAP*.5)
+		var direction: Vector3 = hitch-sections[index].global_position
+		var basis := Basis(Vector3.UP,atan2(-direction.x,-direction.z))
+		poses.append(Transform3D(basis,hitch+basis.z*(LENGTHS[index]*.5+JOINT_GAP*.5)))
+	return poses
+
+func boarding_class() -> String: return "bus"
+func _cab_z() -> float: return float(presentations[0].door_z) if not presentations.is_empty() else -2.7
+func animate_driver_door(_side: int, opened: bool, _duration := .28) -> void: set_doors(1.0 if opened else 0.0)
+
+func place(point: Vector3, yaw: float) -> void:
+	_apply_poses(placement_poses(point,yaw),false)
+	stop_boarding_motion()
+	for body in sections: body.reset_physics_interpolation()
+
+func placement_poses(point: Vector3, yaw: float) -> Array[Transform3D]:
+	var poses: Array[Transform3D] = [Transform3D(Basis(Vector3.UP,yaw),point)]
+	for index in range(1,3):
+		var previous_pose := poses[-1]
+		var basis := Basis(Vector3.UP,yaw+float(_saved_articulation[index-1]))
+		var hitch: Vector3 = previous_pose.origin+previous_pose.basis.z*(LENGTHS[index-1]*.5+JOINT_GAP*.5)
+		poses.append(Transform3D(basis,hitch+basis.z*(LENGTHS[index]*.5+JOINT_GAP*.5)))
+	return poses
+
+func fleet_snapshot_extras() -> Dictionary:
+	var result := {"articulation":[angle_difference(rotation.y,sections[1].rotation.y),angle_difference(rotation.y,sections[2].rotation.y)]}
+	if driver_shift and not work_state.is_empty(): result["bus_work"]=work_state.duplicate(true)
+	return result
+
+func restore_fleet_extras(saved: Dictionary) -> void:
+	_saved_articulation = saved.get("articulation",[0.0,0.0]).duplicate()
+	work_state=saved.get("bus_work",{}).duplicate(true)
+	if not work_state.is_empty(): driver_shift=true; stolen=false
 
 func drive(delta: float) -> void:
 	if not active or route == null or health<=0 or door_amount>0: speed=0; return
@@ -229,10 +318,14 @@ func set_doors(value: float) -> void:
 		for index in 2: entry.doors[index].position.z = entry.door_z+(-1 if index==0 else 1)*(.32+door_amount*.58)
 
 func is_servicing_stop() -> bool:
-	return active and service_state in ["exchange","closing"]
+	return active and not stolen and not driver_shift and service_state in ["exchange","closing"]
 
 func receive_damage(amount: float, _source: Node = null) -> void:
+	if amount<=0 or health<=0: return
 	health = maxf(0,health-amount)
-	if health<=0: speed=0; traffic=false
+	damaged.emit(amount)
+	if health<=0:
+		speed=0; traffic=false; controlled=false
+		destroyed.emit()
 
 func _exit_tree() -> void: _release_tokens()

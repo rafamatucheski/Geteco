@@ -43,6 +43,7 @@ var _last_near := 0.0
 var _cached_pitch := 0.0
 var _cached_distance := 0.0
 var _query_bounds := BOUNDS
+var _boundary_camera := preload("res://world/desert/entrance/DesertBoundaryCamera.gd").new()
 
 func offset_for(focus: Vector3,nominal: Vector3,delta: float,snap: bool,enabled: bool,view_size := Vector2(36,20),near_clip := .1,target_position := Vector3.INF,target_radius := 3.4,target_velocity := Vector3.ZERO,falling := false) -> Vector3:
 	var nominal_length := nominal.length()
@@ -69,7 +70,8 @@ func offset_for(focus: Vector3,nominal: Vector3,delta: float,snap: bool,enabled:
 		else:
 			_pitch=lerpf(_pitch,base_pitch,1.0-exp(-5.0*maxf(delta,0)))
 			_distance=lerpf(_distance,nominal_length,1.0-exp(-5.0*maxf(delta,0)))
-		return direction*cos(_pitch)*_distance+Vector3.UP*sin(_pitch)*_distance
+		var restored_offset:=direction*cos(_pitch)*_distance+Vector3.UP*sin(_pitch)*_distance
+		return _boundary_camera.offset_for(focus,restored_offset,view_size,near_clip,delta,snap)
 	var target := focus if target_position==Vector3.INF else target_position
 	_elapsed+=maxf(delta,0)
 	var fresh := not _active or snap or focus.distance_to(_last_focus)>8.0

@@ -21,6 +21,9 @@ func run() -> void:
 		return
 	var session = world.session
 	var arrival = session.arrival
+	var security = session.urban_operations.security
+	var arrival_crimes: Array = []
+	world.gameplay.crime_reported.connect(func(points: int): arrival_crimes.append({"points":points,"phase":arrival.phase,"position":world.player.global_position}))
 	arrival.phase = "new"
 	arrival.flags.clear()
 	arrival.opening_completed = false
@@ -36,6 +39,10 @@ func run() -> void:
 	check(arrival.flags.get("harbor_arrival_seen", false), "arrival flag after completed physical exit")
 	check(world.player.visible and not world.player.input_locked, "visible controllable player after arrival")
 	check(session.weather.time_of_day > .9 and session.weather.weather_state == 1, "physical disembark preserves the film's night and rain")
+	check(arrival_crimes.is_empty() and not security.alerted and world.gameplay.stars == 0, "scripted spawn and disembark never report trespassing: %s" % str(arrival_crimes))
+	if "--capture-arrival" in OS.get_cmdline_user_args() and DisplayServer.get_name() != "headless":
+		await RenderingServer.frame_post_draw
+		root.get_texture().get_image().save_png("res://evidence/arrival-port-fix-20261010.png")
 	# A resumed checkpoint must not reset the saved clock/weather to the prologue.
 	var arrival_time: float = session.weather.time_of_day
 	session.weather.time_of_day = .42

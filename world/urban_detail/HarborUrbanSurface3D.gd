@@ -8,7 +8,8 @@ class_name HarborUrbanSurface3D
 
 const SCALE := 1.0 / 16.0
 const GROUND := preload("res://assets/regions/source/world/harbor/UrbanGround.gd")
-const CATALOG := preload("res://world/places/PlaceCatalog.gd")
+const PAVING := preload("res://world/urban_detail/PromenadePaving.gd")
+const CATALOG :=preload("res://world/places/PlaceCatalog.gd")
 
 var _surfaces: Array[Dictionary] = []
 var _visible_surfaces: Array[Dictionary] = []
@@ -239,6 +240,15 @@ func _add_group(parent: Node3D, group: Dictionary) -> void:
 func _material(kind: String, color: Color) -> StandardMaterial3D:
 	var key := "%s|%s" % [kind,color.to_html()]
 	if _materials.has(key): return _materials[key]
+	if kind == "stone" or kind == "concrete":
+		# O preenchimento dos lotes usava a textura V1 com 1 tile a cada 16 m: de
+		# longe virava um plano chapado, ao lado da calçada em lajes. Agora usa as
+		# lajes com juntas da calçada, em escala de 2 m para diferenciar do passeio.
+		var slabs := PAVING.material(color, true).duplicate() as StandardMaterial3D
+		slabs.uv1_scale = Vector3.ONE * .125
+		slabs.cull_mode = BaseMaterial3D.CULL_DISABLED
+		_materials[key] = slabs
+		return slabs
 	var material := StandardMaterial3D.new()
 	material.albedo_color=color
 	material.albedo_texture=GROUND.texture(kind)

@@ -33,7 +33,20 @@ static func build_chunk(parent: Node3D,rect: Rect2,world_seed: int,height_callab
 			0: _barrel(data,pose)
 			1: _prickly(data,pose)
 			2: _agave(data,pose)
-			3: _tree(data,body,pose)
+			3:
+				var tree_data := G.buffer()
+				var tree_body := StaticBody3D.new()
+				tree_body.collision_layer=1
+				tree_body.collision_mask=0
+				_tree(tree_data,tree_body,Transform3D(pose.basis,Vector3.ZERO))
+				var tree := MeshInstance3D.new()
+				tree.name="DesertBreakableTree"
+				tree.mesh=G.mesh(tree_data)
+				tree.material_override=G.material()
+				tree.position=at
+				tree.add_child(tree_body)
+				parent.add_child(tree)
+				preload("res://gameplay/street_physics/FragileProps3D.gd").register_node("desert_tree",tree,parent)
 			_: _creosote(data,pose)
 		var label: String=["barrel_cactus","prickly_pear","agave","dead_tree","creosote"][int(item.kind)]
 		species[label]=int(species.get(label,0))+1

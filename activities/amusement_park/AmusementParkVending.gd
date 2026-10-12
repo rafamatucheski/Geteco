@@ -62,7 +62,7 @@ func open(machine: String) -> bool:
 		var amount := remaining(machine,item)
 		var token := offer_token(machine,item)
 		var label: String = GRID.spec(item).label
-		var text := "%s · R$ %d · %d disponíveis" % [label,ECONOMY.SUPPLIES[item].price,amount] if amount > 0 else label+" · Esgotado"
+		var text := String(TranslationServer.translate("%s · R$ %d · %d disponíveis")) % [label,ECONOMY.SUPPLIES[item].price,amount] if amount > 0 else label+" · Esgotado"
 		session._button(text,func(): buy(machine,item,token))
 	session._button("Fechar",session.close_menu)
 	return true

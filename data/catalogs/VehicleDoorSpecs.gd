@@ -35,7 +35,9 @@ const DOORS := {
 	"surf_woody_wagon": {"class": "tall", "zf": -.78, "zr": .30, "sill": .38, "belt": .86, "top": 1.50, "x": 0.96},
 	# Cupês de duas portas: a porta vai até o começo da coluna traseira.
 	"vertice_midengine": {"zf": -.70, "zr": .75, "sill": .35, "belt": .78, "top": 1.20, "x": 1.09},
-	"cobra_v8": {"zf": -.55, "zr": .85, "sill": .33, "belt": .86, "top": 1.28, "x": 0.95},
+	# O vidro lateral vai de z=-.62 até y=1.32; recortá-lo abaixo disso
+	# deixa uma faixa solta no teto quando a patrulha abre as portas após a batida.
+	"cobra_v8": {"zf": -.62, "zr": .85, "sill": .33, "belt": .86, "top": 1.32, "x": 0.95},
 	"muscle_classic": {"alias": "cobra_v8"},
 	"cobra_boss_ironback": {"alias": "cobra_v8"},
 	"monaliza": {"zf": -.62, "zr": .85, "sill": .34, "belt": .80, "top": 1.25, "x": 0.98},

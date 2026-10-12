@@ -34,6 +34,7 @@ var _roads: Array[Dictionary] = []
 var _junctions: Array[Dictionary] = []
 var _layers: Array[Dictionary] = []
 var _materials: Dictionary = {}
+var _road_end_blend := preload("res://world/urban_detail/RuralRoadEndBlend.gd").new()
 var _crosswalk_white: Array[PackedVector2Array] = []
 var _crosswalk_tactile: Array[PackedVector2Array] = []
 var _crosswalk_stop: Array[PackedVector2Array] = []
@@ -80,6 +81,7 @@ func configure(source_roads: Array[Dictionary], surfaces := true) -> void:
 			"custom_crossing_depth": source.has("crossing_depth"),
 			"crossing_entries": source.get("crossing_entries",{}),
 		})
+	_road_end_blend.configure(_roads)
 	_discover_junctions()
 	if not surfaces:
 		_prepare_crosswalks()
@@ -503,23 +505,34 @@ func _add_mark(parent: Node3D, from: Vector2, to: Vector2, index: int, same_dire
 
 
 func _add_surface(parent: Node3D, label: String, polygons: Array[PackedVector2Array], y: float, material: Material) -> void:
+	if material is StandardMaterial3D and (label.ends_with(ROAD_COLOR.to_html(false)) or label.ends_with(ROAD_EDGE_COLOR.to_html(false)) or label.ends_with(SIDEWALK_COLOR.to_html(false)) or label.ends_with(CURB_COLOR.to_html(false))):
+		for polygon in polygons:
+			if _road_end_blend.affects(_polygon_bounds(polygon)):
+				material=_road_end_blend.material(material)
+				break
 	var vertices := PackedVector3Array()
 	# O asfalto precisa de normais para receber luz solar e sombras dos prédios.
 	var normals := PackedVector3Array()
 	var uvs := PackedVector2Array()
+	var mesh_indices := PackedInt32Array()
 	for polygon in polygons:
 		var indices := Geometry2D.triangulate_polygon(polygon)
-		for index in indices:
-			var point := polygon[index]
+		if indices.is_empty():
+			continue
+		var vertex_offset := vertices.size()
+		for point in polygon:
 			vertices.append(Vector3(point.x, y, point.y))
 			normals.append(Vector3.UP)
 			uvs.append(point / 4.0)
+		for index in indices:
+			mesh_indices.append(vertex_offset + index)
 	if vertices.is_empty(): return
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = vertices
 	arrays[Mesh.ARRAY_NORMAL] = normals
 	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	arrays[Mesh.ARRAY_INDEX] = mesh_indices
 	var mesh := ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 	mesh.surface_set_material(0, material)
@@ -540,7 +553,9 @@ func _add_surface(parent: Node3D, label: String, polygons: Array[PackedVector2Ar
 		# e a viatura roubada no pátio da delegacia (ou qualquer carro vindo de
 		# terreno fora da rua) parava seca ao encostar na pista.
 		var flat := PackedVector3Array()
-		for vertex in vertices: flat.append(Vector3(vertex.x, 0.0, vertex.z))
+		for index in mesh_indices:
+			var vertex := vertices[index]
+			flat.append(Vector3(vertex.x, 0.0, vertex.z))
 		var shape := CollisionShape3D.new()
 		var trimesh := ConcavePolygonShape3D.new()
 		trimesh.set_faces(flat)

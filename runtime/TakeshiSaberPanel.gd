@@ -57,7 +57,7 @@ func refresh(message := "") -> void:
 	var owned: bool = HONOR.data(session.state.world_state).saber_unlocked
 	apply_button.text = "APLICAR COR" if owned else "TRANSFORMAR · $150000"
 	apply_button.disabled = not session.state.economy.snapshot().weapons.has("katana") or (not owned and session.state.economy.balance < HONOR.SABER_PRICE)
-	feedback.text = (message+"\n" if not message.is_empty() else "")+"Saldo: $%d"%session.state.economy.balance
+	feedback.text = (message+"\n" if not message.is_empty() else "")+String(TranslationServer.translate("Saldo: $%d"))%session.state.economy.balance
 
 func _apply() -> void:
 	var result := HONOR.buy_saber(session.state,picker.color)

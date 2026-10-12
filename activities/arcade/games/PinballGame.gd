@@ -15,6 +15,16 @@ var velocity := Vector2.ZERO
 var waiting: bool = true
 var left_flipper: bool = false
 var right_flipper: bool = false
+var sound_events: Array[String] = []
+var multiplier := 1
+var _lit := [false,false,false]
+var _save_time := 0.0
+var _nudge_cooldown := 0.0
+var _left_raise := 0.0
+var _right_raise := 0.0
+var _left_kick := 0.0
+var _right_kick := 0.0
+var _trail: Array[Vector2] = []
 var _glow := PackedFloat32Array([0.0, 0.0, 0.0])
 var _rng := RandomNumberGenerator.new()
 
@@ -22,7 +32,7 @@ func title() -> String:
 	return "Bola de Aço"
 
 func instructions() -> String:
-	return "← → pás  •  Ação: lançar bola  •  3 bolas"
+	return "← → pás  •  Ação: lançar  •  Alternativa: sacudir  •  Acenda os 3 alvos para multiplicar"
 
 func reset(seed_value: int = 1) -> void:
 	_rng.seed = seed_value
@@ -31,6 +41,14 @@ func reset(seed_value: int = 1) -> void:
 	finished = false
 	left_flipper = false
 	right_flipper = false
+	sound_events.clear()
+	multiplier = 1
+	_lit = [false,false,false]
+	_left_raise = 0.0
+	_right_raise = 0.0
+	_left_kick = 0.0
+	_right_kick = 0.0
+	_nudge_cooldown = 0.0
 	_glow.fill(0.0)
 	_prepare_ball()
 
@@ -38,24 +56,47 @@ func _prepare_ball() -> void:
 	ball = Vector2(553, 395)
 	velocity = Vector2.ZERO
 	waiting = true
+	_save_time = 5.0
+	_trail.clear()
 	status = "LANCE A BOLA"
 
 func step(delta: float, controls: Dictionary) -> void:
 	if finished:
 		return
 	var dt := clampf(delta, 0.0, 0.1)
+	var old_left := left_flipper
+	var old_right := right_flipper
 	left_flipper = bool(controls.get("left", false))
 	right_flipper = bool(controls.get("right", false))
+	if left_flipper and not old_left:
+		_left_kick = .12
+		sound_events.append("flipper")
+	if right_flipper and not old_right:
+		_right_kick = .12
+		sound_events.append("flipper")
+	_left_kick = maxf(0.0,_left_kick-dt)
+	_right_kick = maxf(0.0,_right_kick-dt)
+	_left_raise = move_toward(_left_raise,1.0 if left_flipper else 0.0,dt*16.0)
+	_right_raise = move_toward(_right_raise,1.0 if right_flipper else 0.0,dt*16.0)
+	_nudge_cooldown = maxf(0.0,_nudge_cooldown-dt)
 	for i in range(_glow.size()):
 		_glow[i] = maxf(0.0, _glow[i] - dt)
 	if waiting:
 		if bool(controls.get("action_pressed", false)) or bool(controls.get("up_pressed", false)):
 			waiting = false
+			sound_events.append("launch")
 			# A real right-side launch lane clears the lower guide. The upper
 			# chamfer then rebounds the ball left into the bumper field.
 			velocity = Vector2(_rng.randf_range(-8.0, 8.0), -620.0)
-			status = "BOLA %d / 3" % (4 - lives)
+			status = String(TranslationServer.translate("BOLA %d / 3")) % (4 - lives)
 		return
+	_save_time = maxf(0.0,_save_time-dt)
+	if bool(controls.get("action_alt_pressed",false)) and _nudge_cooldown <= 0.0:
+		velocity += Vector2(_rng.randf_range(-70.0,70.0),-130.0)
+		_nudge_cooldown = 1.5
+		sound_events.append("flipper")
+	_trail.push_front(ball)
+	if _trail.size() > 8: _trail.pop_back()
 	var count := maxi(1, ceili(dt / (1.0 / 240.0)))
 	for substep in range(count):
 		_simulate(dt / float(count))
@@ -88,12 +129,35 @@ func _simulate(dt: float) -> void:
 			if velocity.dot(normal) < 0.0:
 				velocity = velocity.bounce(normal) * 1.04 + normal * 115.0
 				if _glow[i] <= 0.0:
-					score += 100
+					score += 100 * multiplier
+					_lit[i] = true
+					sound_events.append("bumper")
+					if not _lit.has(false):
+						score += 500 * multiplier
+						multiplier = mini(5,multiplier+1)
+						_lit = [false,false,false]
+						sound_events.append("line")
 					_glow[i] = 0.2
-	_bounce_segment(Vector2(309, 410), Vector2(388, 377 if left_flipper else 434), left_flipper)
-	_bounce_segment(Vector2(491, 410), Vector2(412, 377 if right_flipper else 434), right_flipper)
+	_bounce_segment(Vector2(309, 410), Vector2(388, lerpf(434,377,_left_raise)), _left_kick > 0.0)
+	_bounce_segment(Vector2(491, 410), Vector2(412, lerpf(434,377,_right_raise)), _right_kick > 0.0)
+	# Side slingshots kick a descending ball back toward the lit targets.
+	for center in [Vector2(280,351),Vector2(516,351)]:
+		var offset: Vector2 = ball-center
+		if offset.length_squared() < 24.0*24.0 and velocity.dot(offset) < 0.0:
+			var normal := offset.normalized()
+			ball = center+normal*24.0
+			velocity = velocity.bounce(normal)+Vector2((400.0-center.x)*1.5,-200.0)
+			score += 25*multiplier
+			sound_events.append("bumper")
 	if ball.y > 478.0:
+		if _save_time > 0.0:
+			ball = Vector2(553,395)
+			velocity = Vector2(0,-620)
+			_trail.clear()
+			sound_events.append("launch")
+			return
 		lives -= 1
+		sound_events.append("drain")
 		if lives <= 0:
 			finished = true
 			status = "FIM DE JOGO"
@@ -142,13 +206,18 @@ func render(canvas: Control, area: Rect2) -> void:
 	for spring in range(4):
 		var y := 443.0 + spring * 5.0
 		canvas.draw_line(Vector2(548, y), Vector2(559, y + 3), Color("719aa4"), 1.5, true)
-	var left_end := Vector2(388, 377 if left_flipper else 434)
-	var right_end := Vector2(412, 377 if right_flipper else 434)
+	for center in [Vector2(280,351),Vector2(516,351)]:
+		canvas.draw_circle(center,17.0,Color("f45f86"))
+		canvas.draw_circle(center,10.0,Color("ffda6c"))
+	var left_end := Vector2(388, lerpf(434,377,_left_raise))
+	var right_end := Vector2(412, lerpf(434,377,_right_raise))
 	canvas.draw_line(Vector2(309, 410), left_end, Color("fcca68"), 13.0, true)
 	canvas.draw_line(Vector2(491, 410), right_end, Color("fcca68"), 13.0, true)
 	canvas.draw_circle(Vector2(309, 410), 8.0, Color("e87752"))
 	canvas.draw_circle(Vector2(491, 410), 8.0, Color("e87752"))
 	if not finished:
+		for i in range(_trail.size()):
+			canvas.draw_circle(_trail[i],maxf(2,6-i*.5),Color(.5,.85,1.0,(1.0-float(i)/8.0)*.22))
 		canvas.draw_circle(ball + Vector2(2, 4), 8.0, Color(0, 0, 0, 0.45))
 		canvas.draw_circle(ball, BALL_RADIUS, Color("b9dfed"))
 		canvas.draw_circle(ball + Vector2(-2, -2), 3.0, Color.WHITE)
@@ -159,9 +228,14 @@ func render(canvas: Control, area: Rect2) -> void:
 		canvas.draw_circle(Vector2(40 + i * 28, 202), 7.0, Color("c9e9f2"))
 	_text(canvas, Vector2(610, 83), "←     →", 28, Color("f8d575"))
 	_text(canvas, Vector2(610, 115), "PÁS", 17, Color("7a98b2"))
+	_text(canvas,Vector2(610,175),"MULTI ×%d" % multiplier,20,Color("f8d575"))
+	for i in range(3):
+		canvas.draw_circle(Vector2(630+i*28,205),8,Color("ffda6c") if _lit[i] else Color("263052"))
+	if _save_time > 0.0 and not waiting:
+		_text(canvas,Vector2(305,465),"BOLA PROTEGIDA",16,Color("45decd"))
 	if waiting:
 		_text(canvas, Vector2(310, 328), "AÇÃO: LANÇAR", 21, Color("f8d575"))
 	canvas.draw_set_transform(Vector2.ZERO)
 
 func _text(canvas: Control, point: Vector2, text: String, size: int, color: Color) -> void:
-	canvas.draw_string(ThemeDB.fallback_font, point, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, color)
+	canvas.draw_string(ThemeDB.fallback_font, point, String(TranslationServer.translate(text)), HORIZONTAL_ALIGNMENT_LEFT, -1, size, color)

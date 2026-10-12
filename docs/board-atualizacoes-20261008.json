@@ -205,6 +205,33 @@
         "runtime/atmosphere/DragRaceRain.gd"
       ],
       "next": "Reconciliar testes e escuta por cenário; benchmarks/iluminação temporal não aprovados pela presença de fontes."
+    },
+    {
+      "id": "bug-veiculos-cor-ao-bater-20261012",
+      "title": "Alguns carros mudam de cor depois de uma colisão",
+      "status": "issue",
+      "area": "veículos",
+      "description": "Relato para investigação futura: ao bater em alguns carros, eles mudam de cor. Ainda não foi identificado quais modelos ou a causa.",
+      "sources": [],
+      "next": "Reproduzir com os veículos afetados, identificar modelos e determinar em que momento a cor muda."
+    },
+    {
+      "id": "bug-colisores-invisiveis-deserto-20261012",
+      "title": "Colisões invisíveis no chão do deserto",
+      "status": "issue",
+      "area": "mundo",
+      "description": "Relato para investigação futura: há pontos no solo do deserto em que o jogador/carro colide com uma parede invisível. A localização exata e o objeto causador ainda precisam ser identificados.",
+      "sources": [],
+      "next": "Localizar os pontos de colisão no deserto e cruzar a geometria física com o terreno visível."
+    },
+    {
+      "id": "bug-pedreira-mineradora-nao-entra-20261012",
+      "title": "Pedreira mineradora não está entrando",
+      "status": "issue",
+      "area": "mundo",
+      "description": "Relato para investigação futura: a pedreira mineradora não está entrando. Ainda é preciso confirmar em que contexto ou etapa ela deveria aparecer.",
+      "sources": [],
+      "next": "Reproduzir o problema e verificar carregamento, acesso e condições de entrada da pedreira mineradora."
     }
   ],
   "updates": {

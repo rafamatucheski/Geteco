@@ -14,11 +14,19 @@ func run() -> void:
 		item.advance(.2)
 		check(item._icon.rotation.y > 0 and item.can_collect(Vector3.ZERO),kind+" rotates and remains collectable")
 		check(not item.can_collect(Vector3(0,4,0)),kind+" cannot be collected from another floor")
+		if kind == "weapon":
+			check(item.get_child_count() == 1 and item._glow_material == null, "weapon shows only its model")
+			for mesh in item._icon.find_children("*", "GeometryInstance3D", true, false):
+				check(mesh.material_overlay == null, "weapon has no colored overlay")
+			item.advance(LOOT.LIFETIME + LOOT.FADE_TIME * .5 - .2)
+			check(item._icon.visible, "weapon stays visible during expiry without blinking")
+			item.advance(LOOT.FADE_TIME)
+			check(not item.advance(0.0), "weapon still expires")
 		item.collect()
 		item.collect()
 		check(not item.can_collect(Vector3.ZERO),kind+" becomes unavailable immediately")
 		await create_timer(.15).timeout
-		check(item._disc_material.albedo_color.a < item.halo_color().a*.45,kind+" ground glow fades with absorption")
+		if kind != "weapon": check(item._disc_material.albedo_color.a < item.halo_color().a*.45,kind+" ground glow fades with absorption")
 		await create_timer(.2).timeout
 		check(not is_instance_valid(item),kind+" absorption frees item")
 	for i in 3:

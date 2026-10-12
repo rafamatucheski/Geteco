@@ -2,6 +2,8 @@ extends Node
 ## Walk into the ship hold or cave; the sewer uses explicit interaction.
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const SEWERS := preload("res://world/places/sewers/SewerNetwork.gd")
+const UNDER := preload("res://world/desert/underground/DesertUnderground.gd")
+const CULVERT := "desert_under_culvert"
 const IDS := ["harbor_sewer", "sewer_market", "sewer_quay", "sewer_warehouse", "sewer_pipe", "sewer_cistern", "sewer_port", "santa_mare_hold", "mountain_mystery_cave"]
 const ZOOM_SECONDS := .55
 var session: Node
@@ -12,12 +14,14 @@ var current_place := ""
 var exit_armed := false
 var hatch: Node3D
 var hatch_id := ""
+var culvert_hold := 0.0
 
 func handles_place(id: String) -> bool:
 	return id in IDS or preload("res://world/desert/underground/DesertUnderground.gd").is_underground(id)
 
 func _ready() -> void:
 	for id in IDS: definitions[id] = PLACES.get_definition(id)
+	for id in UNDER.ids(): definitions[id] = PLACES.get_definition(id)
 
 func _blocked() -> bool:
 	return busy or session.modal or session.is_transition_blocked() or session.world.player.input_locked or session.world.gameplay.health <= 0 or session.world.driving.occupied or session.world.driving.is_body_transition_active()
@@ -35,6 +39,10 @@ func update(delta: float) -> void:
 		exit_armed = false
 	if handles_place(place):
 		if not is_instance_valid(session.room) or _blocked(): return
+		if place == CULVERT:
+			var local: Vector3 = session.room.to_local(session.world.player.global_position)
+			var focus: Vector3 = session.room.to_global(Vector3(clampf(local.x, -12.0, 12.0), .7, 0))
+			session.anchor.position = session.anchor.position.lerp(focus, 1.0-exp(-delta*7.0))
 		var branch_offset: Vector3 = session.room.exit_position-session.world.player.global_position
 		branch_offset.y = 0
 		if branch_offset.length() > 1.3: exit_armed = true
@@ -42,6 +50,9 @@ func update(delta: float) -> void:
 			_leave(place)
 		return
 	if not place.is_empty(): return
+	if session.state.region_id == "desert":
+		_update_culvert(delta)
+		return
 	var point: Vector3 = session.world.player.global_position
 	var id := ""
 	var distance := INF
@@ -61,6 +72,38 @@ func update(delta: float) -> void:
 		return
 	blocked_id = id
 	_enter(id)
+
+func _update_culvert(delta: float) -> void:
+	var player: CharacterBody3D = session.world.player
+	var definition: Dictionary = definitions[CULVERT]
+	if player.global_position.distance_squared_to(definition.entry_position) > 144.0:
+		if hatch_id == CULVERT and is_instance_valid(hatch) and not busy: hatch.set_open_amount(0.0)
+		blocked_id = ""
+		return
+	if hatch_id != CULVERT or not is_instance_valid(hatch):
+		hatch = session._find_sewer_hatch(CULVERT)
+		hatch_id = CULVERT
+	if not is_instance_valid(hatch) or _blocked(): return
+	var local: Vector3 = hatch.to_local(player.global_position)
+	if local.z > 1.5: blocked_id = ""
+	var intent: Vector3 = session.weapon_shop_entrance._movement_intent(player)
+	var inward: Vector3 = -hatch.global_basis.z
+	var pushing := absf(local.x) < .95 and local.z >= -.1 and local.z <= .75 and intent.dot(inward) > .3
+	if pushing:
+		if culvert_hold <= 0.0 and hatch.open_amount < .1:
+			var gesture = session.weapon_shop_entrance
+			gesture._push_age = 0.0
+			gesture._push_inward = inward
+			gesture.set_physics_process(true)
+		culvert_hold = .7
+	else: culvert_hold = maxf(0.0, culvert_hold-delta)
+	if hatch.open_amount > .1 and absf(local.x) < 1.0 and absf(local.z-.1) < .65:
+		culvert_hold = maxf(culvert_hold, .2)
+	hatch.set_open_amount(move_toward(hatch.open_amount, 1.0 if culvert_hold > 0.0 else 0.0, delta/.35))
+	if blocked_id == CULVERT or hatch.open_amount < .85: return
+	if absf(local.x) < .9 and local.z < .05 and local.z > -.65 and intent.dot(inward) > .3:
+		blocked_id = CULVERT
+		_enter(CULVERT)
 
 func _update_hatch(id: String, opened: bool, delta: float) -> void:
 	if hatch_id != id:

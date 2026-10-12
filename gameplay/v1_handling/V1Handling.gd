@@ -17,6 +17,7 @@ extends RefCounted
 ## (`external_input`) continuam no controle simples da V2, calibrado para a IA.
 const PX := 16.0
 const FRICTION := 600.0
+const REVERSE_SPEED_MPS := 20.0 / 3.6
 
 var max_speed := 600.0
 var acceleration := 1200.0
@@ -96,6 +97,12 @@ func step(car: CharacterBody3D, delta: float, throttle: float, turn: float, hand
 	else:
 		velocity = velocity.move_toward(Vector2.ZERO, FRICTION * pow(clampf(mass, 0.5, 8.0), -0.65) * delta)
 	if launch_holding: velocity = Vector2.ZERO
+	# Reverse is a maneuvering gear, independent of engine power and tuning.
+	if throttle < 0.0:
+		var reverse_limit := minf(REVERSE_SPEED_MPS * PX, max_speed * 0.8)
+		var reverse_speed := velocity.dot(forward)
+		if reverse_speed < -reverse_limit:
+			velocity += forward * (-reverse_limit - reverse_speed)
 
 	car.horizontal_velocity = Vector3(velocity.x, 0.0, velocity.y) / PX
 	car.speed = velocity.dot(forward) / PX
@@ -162,7 +169,7 @@ func _update_drivetrain(longitudinal: float, throttle: float, steering: float, w
 func _update_launch(delta: float, speed: float, throttle: float, brake: bool) -> void:
 	launch_strength = clampf((max_speed - 380.0) / 320.0, 0.0, 1.0)
 	var was_holding := launch_holding
-	launch_holding = brake and throttle > 0.5 and speed < 12.0
+	launch_holding = brake and throttle > 0.2 and speed < 12.0
 	if launch_holding:
 		launch_charge = minf(1.0, launch_charge + delta / 1.25)
 		launch_release = 0.0

@@ -2,6 +2,7 @@ extends Node3D
 ## Geometry extracted from V1 PoliceOfficer without its private viewport.
 enum UnitTier { REGULAR, DETECTIVE, SWAT, FBI, ARMY }
 var tier := 0
+var motorcycle_officer := false
 var model_root: Node3D
 var torso_node: Node3D
 var head_node: Node3D
@@ -349,7 +350,7 @@ func _install_body() -> void:
 	if is_instance_valid(weapon): keep.append(weapon)
 	var look := _body_look()
 	# Corpo importado do Meshy quando há entrada para este escalão/biotipo; senão o corpo procedural do kit.
-	var imported := POLICE_BODIES.pick(tier, look, appearance_index)
+	var imported: Dictionary = {} if motorcycle_officer else POLICE_BODIES.pick(tier, look, appearance_index)
 	# Uniformes de outras funções (segurança do banco) recolorem as roupas do corpo escolhido sem trocar de arquivo.
 	if not imported.is_empty() and look.has("body_tone"):
 		imported = imported.duplicate(true)
@@ -654,6 +655,8 @@ func _body_look() -> Dictionary:
 			look.merge({"top": 8, "hat": 0, "glasses": true, "accent": Color("15161a"), "bottom_color": Color("15161a"), "inner": Color("e8d23a")}, true)
 		UnitTier.ARMY:
 			look.merge({"top": 8, "hat": 6, "shoe": 1, "accent": Color("39452c"), "bottom_color": Color("3a4630"), "shoe_color": Color("2e261d")}, true)
+	if motorcycle_officer:
+		look.merge({"hat": 3, "accent": Color("dce2df"), "height": 1.0, "female": false}, true)
 	return look
 
 

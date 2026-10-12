@@ -43,8 +43,8 @@ static func deck_half_width(point: Vector3) -> float:
 	if z >= -297.0: return 8.5
 	if z > -303.0: return lerpf(8.5, 5.0, (-297.0 - z) / 6.0)
 	if z > -343.0: return 5.0
-	if z > -352.0: return lerpf(5.0, 13.0, (-343.0 - z) / 9.0)
-	return 13.0
+	# The former dead-end turnaround is now a through road into the desert.
+	return lerpf(5.0,6.2,clampf((-343.0-z)/30.5,0.0,1.0))
 
 static func bounds() -> Rect2:
 	return BOUNDS

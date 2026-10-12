@@ -96,13 +96,8 @@ func _build_decks(gap_only: bool) -> void:
 			_guard(al - sa * 0.22, bl - sb * 0.22)
 			_guard(ar + sa * 0.22, br + sb * 0.22)
 		_paint(a, b, sa, sb, ra, rb, i)
-	if not gap_only:
-		# Future region is not built. The finished bridge has a permanent guarded
-		# turnaround instead of a fall or an invented transition to an empty map.
-		var last := points[-1]
-		# The connected desert owns the northern shore. Keep the road opening clear.
-		_guard(last + Vector3.LEFT * 12.78, last + Vector3.LEFT * 5.4)
-		_guard(last + Vector3.RIGHT * 5.4, last + Vector3.RIGHT * 12.78)
+	# Side rails terminate at the continuous northern shore; no transverse
+	# turnaround rail is needed on this through road.
 
 func _side(points: PackedVector3Array, index: int) -> Vector3:
 	var direction := points[mini(index + 1, points.size() - 1)] - points[maxi(0, index - 1)]
@@ -110,7 +105,7 @@ func _side(points: PackedVector3Array, index: int) -> Vector3:
 
 func _road_half_width(point: Vector3) -> float:
 	if point.z > -343.0: return Layout.ROAD_HALF_WIDTH
-	return lerpf(Layout.ROAD_HALF_WIDTH, 11.8, clampf((-343.0 - point.z) / 9.0, 0.0, 1.0))
+	return lerpf(Layout.ROAD_HALF_WIDTH, 5.0, clampf((-343.0 - point.z) / 30.5, 0.0, 1.0))
 
 func _guard(a: Vector3, b: Vector3) -> void:
 	_beam("concrete", a + Vector3.UP * 0.30, b + Vector3.UP * 0.30, 0.34, 0.60, true)
@@ -126,7 +121,7 @@ func _paint(a: Vector3, b: Vector3, sa: Vector3, sb: Vector3, ra: float, rb: flo
 		var pa: Vector3 = a + sa * (ra - 0.14) * sign_value + lift
 		var pb: Vector3 = b + sb * (rb - 0.14) * sign_value + lift
 		_beam("white", pa, pb, 0.10, 0.006)
-	if a.z < -343.0 or index % 3 == 0: return
+	if index % 3 == 0: return
 	for offset in [-0.12, 0.12]:
 		_beam("yellow", a + sa * offset + lift, b + sb * offset + lift, 0.09, 0.006)
 

@@ -53,7 +53,9 @@ def samples(image, uvs):
     return pixels[y, x]
 
 
-def graft(source, donor, destination, palm_sign=-1):
+def graft(source, donor, destination, palm_sign=-1, wrist_style='suit'):
+    if wrist_style not in ('suit', 'skin', 'sleeve'):
+        raise ValueError('wrist_style deve ser suit, skin ou sleeve.')
     source, donor, destination = map(Path, (source, donor, destination))
     if destination.exists() or destination.resolve() in (source.resolve(), donor.resolve()):
         raise ValueError('O destino deve ser novo e preservar as entradas.')
@@ -320,12 +322,28 @@ def graft(source, donor, destination, palm_sign=-1):
         saturated = npc_colors.max(axis=1)-npc_colors.min(axis=1)
         cloth_candidates = np.flatnonzero(local & (luminance < 0.45) & (saturated < 0.10))
         white_candidates = np.flatnonzero(local & (luminance > 0.65) & (saturated < 0.12))
-        if not len(cloth_candidates):
-            raise ValueError('Não foi encontrada uma amostra local do paletó para reconstruir o cuff.')
-        if not len(white_candidates):
-            white_candidates = np.flatnonzero((luminance > 0.75) & (saturated < 0.10))
-        dark_uv = npc_uv[cloth_candidates[np.argmin(np.linalg.norm(offset[cloth_candidates], axis=1))]]
-        white_uv = npc_uv[white_candidates[np.argmin(np.linalg.norm(offset[white_candidates], axis=1))]]
+        if wrist_style == 'suit':
+            if not len(cloth_candidates):
+                raise ValueError('Não foi encontrada uma amostra local do paletó para reconstruir o cuff.')
+            if not len(white_candidates):
+                white_candidates = np.flatnonzero((luminance > 0.75) & (saturated < 0.10))
+            dark_uv = npc_uv[cloth_candidates[np.argmin(np.linalg.norm(offset[cloth_candidates], axis=1))]]
+            white_uv = npc_uv[white_candidates[np.argmin(np.linalg.norm(offset[white_candidates], axis=1))]]
+        else:
+            # Sample sleeve fabric proximal to the cut, not a pale seam or
+            # misclassified skin vertex immediately beside the old hand.
+            candidates = np.flatnonzero(local & (npc_skin if wrist_style == 'skin'
+                                                  else ((axial < -0.050) & (axial > -0.120)
+                                                        & (w[:, fore] + w[:, hand] > 0.5))))
+            if not len(candidates):
+                raise ValueError('Não foi encontrada amostra local para o acabamento do punho.')
+            if wrist_style == 'sleeve':
+                fabric_color = np.median(npc_colors[candidates], axis=0)
+                nearest = candidates[np.argmin(np.linalg.norm(npc_colors[candidates]-fabric_color, axis=1))]
+            else:
+                nearest = candidates[np.argmin(np.linalg.norm(offset[candidates], axis=1))]
+            dark_uv = white_uv = npc_uv[nearest]
+        cuff_x, cuff_z = (.028, .021) if wrist_style == 'skin' else (.038, .031)
         # O início do paletó segue a borda REAL do recorte, incluindo seu centro
         # lateral. A borda e o cuff usam ForeArm para coincidirem também posados.
         seen_cut_edges = set()
@@ -338,8 +356,8 @@ def graft(source, donor, destination, palm_sign=-1):
             ends = []
             for point in (pa, pb):
                 co = frame.T@(point-origin)*scale
-                theta = np.arctan2(co[2]/0.031, co[0]/0.038)
-                ends.append(origin+(finger*(-0.014)+lateral*np.cos(theta)*0.038+normal*np.sin(theta)*0.031)/scale)
+                theta = np.arctan2(co[2]/cuff_z, co[0]/cuff_x)
+                ends.append(origin+(finger*(-0.014)+lateral*np.cos(theta)*cuff_x+normal*np.sin(theta)*cuff_z)/scale)
             quad = [pa, pb, ends[1], ends[0]]
             radial_outward = np.mean(quad, axis=0)-origin
             radial_outward -= finger*radial_outward.dot(finger)
@@ -362,7 +380,7 @@ def graft(source, donor, destination, palm_sign=-1):
                 for segment in range(ring_count):
                     theta = 2*np.pi*segment/ring_count
                     radial_direction = lateral*np.cos(theta) + normal*np.sin(theta)
-                    cuff_points.append((origin+(finger*length+lateral*np.cos(theta)*0.038+normal*np.sin(theta)*0.031)/scale).tolist())
+                    cuff_points.append((origin+(finger*length+lateral*np.cos(theta)*cuff_x+normal*np.sin(theta)*cuff_z)/scale).tolist())
                     cuff_normals.append(radial_direction.tolist())
                     cuff_uvs.append(uv.tolist())
                     cuff_joints.append((fore, 0, 0, 0))
@@ -371,7 +389,7 @@ def graft(source, donor, destination, palm_sign=-1):
                 b = cuff_start+(segment+1)%ring_count
                 cuff_triangles.extend([[a, a+ring_count, b], [b, a+ring_count, b+ring_count]])
         cap_start = len(cuff_points)
-        for radius_x, radius_z in [(0.038, 0.031), (0.028, 0.021)]:
+        for radius_x, radius_z in [(cuff_x, cuff_z), (0.028, 0.021)]:
             for segment in range(ring_count):
                 theta = 2*np.pi*segment/ring_count
                 cuff_points.append((origin+(finger*(-0.003)+lateral*np.cos(theta)*radius_x+normal*np.sin(theta)*radius_z)/scale).tolist())
@@ -509,6 +527,7 @@ def graft(source, donor, destination, palm_sign=-1):
     report['body_output_source_faces'] = body_output_source_faces
     report['removed_source_triangle_indices'] = np.flatnonzero(remove_faces).tolist()
     report['hand_texture_color_multiplier_srgb'] = tint.tolist()
+    report['wrist_style'] = wrist_style
     report['body_has_hand_influence'] = bool(body_weights[:, [names.index('RightHand'), names.index('LeftHand')]].max() > 0)
     report['removed_faces_outside_hand_envelope'] = int((remove_faces & ~hand_envelope[source_tris].any(axis=1)).sum())
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -522,11 +541,12 @@ if __name__ == '__main__':
     parser.add_argument('destination', type=Path)
     parser.add_argument('--donor', type=Path, default=Path('assets/dante.glb'))
     parser.add_argument('--palm-sign', type=int, choices=(-1, 1), default=-1)
+    parser.add_argument('--wrist-style', choices=('suit', 'skin', 'sleeve'), default='suit')
     parser.add_argument('--report', type=Path)
     args = parser.parse_args()
     if args.report and (args.report.resolve() in (args.source.resolve(), args.donor.resolve(), args.destination.resolve()) or args.report.exists()):
         parser.error('--report deve ser novo e diferente dos arquivos GLB de entrada/saída.')
-    result = graft(args.source, args.donor, args.destination, args.palm_sign)
+    result = graft(args.source, args.donor, args.destination, args.palm_sign, args.wrist_style)
     output = json.dumps(result, ensure_ascii=False, indent=2)
     if args.report:
         args.report.parent.mkdir(parents=True, exist_ok=True)

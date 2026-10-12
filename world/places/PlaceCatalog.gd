@@ -36,10 +36,10 @@ static func definitions() -> Array[Dictionary]:
 		["harbor_fire_station","Northgate Fire","harbor",Vector2(5880,-1370),"world/harbor/interiors/FireStationArt3D.gd",Vector2(28,20.8),8.0,9.3,"fire_station"],
 		["harbor_clothing","Union","harbor",Vector2(1890,140),"world/harbor/interiors/ClothingInteriorArt3D.gd",Vector2(13,9),3.0,4.0,"clothing"],
 		["harbor_fuel","Fuel","harbor",Vector2(2460,140),"world/harbor/interiors/FuelStoreArt3D.gd",Vector2(14,10),3.6,4.5,"fuel"],
-		["mountain_cabin","ChalÃ© dos Pinhais","mountain",Vector2(7480,760),"world/mountain_pass/MountainCabin3D.gd",Vector2(14,9.5),3.0,4.15,"shelter"],
-		["mountain_cabin_encosta","ChalÃ© da Encosta","mountain",Vector2(8350,730),"world/mountain_pass/MountainCabinVariants3D.gd",Vector2(14,9.5),3.0,4.15,"shelter"],
+		["mountain_cabin","Chalé dos Pinhais","mountain",Vector2(7480,760),"world/mountain_pass/MountainCabin3D.gd",Vector2(14,9.5),3.0,4.15,"shelter"],
+		["mountain_cabin_encosta","Chalé da Encosta","mountain",Vector2(8350,730),"world/mountain_pass/MountainCabinVariants3D.gd",Vector2(14,9.5),3.0,4.15,"shelter"],
 		["mountain_cabin_forest","Posto Florestal","mountain",Vector2(6050,780),"world/mountain_pass/MountainCabinVariants3D.gd",Vector2(14,9.5),3.0,4.15,"shelter"],
-		["mountain_bunker","EstaÃ§Ã£o Zero","mountain",Vector2(6500,-2890),"world/mountain_pass/MountainBunker3D.gd",Vector2(18,12),4.3,5.2,"bunker"],
+		["mountain_bunker","Estação Zero","mountain",Vector2(6500,-2890),"world/mountain_pass/MountainBunker3D.gd",Vector2(18,12),4.3,5.2,"bunker"],
 		["lumberjack_shelter","Abrigo dos Lenhadores","mountain",Vector2(7940,850),"world/mountain_pass/LumberjackBunkhouse3D.gd",Vector2(10,9.6),3.0,4.15,"shelter"],
 		["ski_lodge","Summit","mountain",Vector2(7140,-2760),"world/mountain_pass/SummitSkiLodgeInterior3D.gd",Vector2(16,10),4.0,4.8,"ski_rental"],
 		["mountain_mystery_cave","Caverna da Queda","mountain",Vector2(6200,-320),"world/mountain_pass/MountainMysteryCaveInterior3D.gd",Vector2(16,12),4.0,5.0,"expedition"],
@@ -64,7 +64,7 @@ static func definitions() -> Array[Dictionary]:
 	])
 	rows.append_array(SEWERS.rows())
 	for i in 4:
-		rows.append(["mountain_cabin_village_%d"%(i+1),"ChalÃ© %02d"%(i+1),"mountain",[Vector2(7405,-1480),Vector2(7545,-1480),Vector2(7725,-1440),Vector2(7870,-1440)][i],"world/mountain_pass/MountainCabinVariants3D.gd",Vector2(14,9.5),3.0,4.15,"shelter"])
+		rows.append(["mountain_cabin_village_%d"%(i+1),String(TranslationServer.translate("Chalé %02d"))%(i+1),"mountain",[Vector2(7405,-1480),Vector2(7545,-1480),Vector2(7725,-1440),Vector2(7870,-1440)][i],"world/mountain_pass/MountainCabinVariants3D.gd",Vector2(14,9.5),3.0,4.15,"shelter"])
 	var result: Array[Dictionary] = []
 	for row in rows:
 		var id: String = row[0]
@@ -93,6 +93,9 @@ static func definitions() -> Array[Dictionary]:
 		if not walkup.is_empty(): approach = exterior + Vector3(0, 0, walkup_door_z(walkup) + 1.5)
 		# PortBossGarage.leave() restores the actor at EXTERIOR exactly.
 		return_point = exterior if id == "port_boss_garage" else approach + Vector3(0,0,1)
+		# The heater outside Ultimo Abrigo occupies the old return footprint.
+		# Return farther along the same approach, with full capsule clearance.
+		if id == "mountain_outfitters": return_point += Vector3(0,0,1.5)
 		if id == "harbor_police": return_point = approach
 		var reward: Dictionary = {}
 		if id.begins_with("mountain_cabin") and variant > 0: reward = {"id":id+"_cash_01","kind":"cash","amount":[0,5000,850,450,1200,650,1800][variant]}
@@ -137,6 +140,7 @@ static func definitions() -> Array[Dictionary]:
 		if definition.id == "harbor_sewer":
 			definition.spawn = Vector3(-5,0,-.85)
 			definition.exit = Vector3(-5,0,-.85)
+			definition.npcs = preload("res://world/places/sewers/SewerNetwork.gd").original_residents()
 		if SEWERS.is_extra(definition.id): SEWERS.decorate(definition)
 		if definition.id == "santa_mare_hold":
 			definition.camera_size = 14.5
@@ -168,6 +172,10 @@ static func get_definition(id: String) -> Dictionary:
 static func create_place(id: String) -> Node3D:
 	var definition := get_definition(id)
 	if definition.is_empty(): return null
+	if id == "desert_under_culvert":
+		var culvert = preload("res://world/desert/underground/DesertCulvertPlace.gd").new()
+		culvert.definition = definition
+		return culvert
 	if id == "harbor_arcade":
 		var arcade = preload("res://world/places/arcade/ArcadePlace.gd").new()
 		arcade.definition = definition

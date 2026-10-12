@@ -56,8 +56,7 @@ func run() -> void:
 		car.add_child(crew)
 		crew.fit_seat(car,cabin,index==0)
 		var body = crew.body
-		var bounds: AABB = car.global_transform.affine_inverse()*body.head_node.global_transform*body.head_node.mesh.get_aabb()
-		check(bounds.end.y<float(cabin.roof)-.02,"Seated head fits below painted roof: %d"%index)
+		check(crew._seated_head_top(car)<float(cabin.roof)-.02,"Seated head fits below painted roof: %d"%index)
 		check(car.to_local(body.pelvis.global_position).y>float(cabin.cush),"Seated hip stays above seat cushion: %d"%index)
 		for side in 2:
 			var hand: Vector3 = body.forearms[side].to_global(Vector3(0,-body.KIT.FOREARM-.06,0))

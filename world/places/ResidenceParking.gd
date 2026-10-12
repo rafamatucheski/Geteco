@@ -2,8 +2,6 @@ extends "res://assets/regions/source/world/harbor/cemetery/CemeteryPropBuilder.g
 ## Shared metric anchors for visible bays and the persistent vehicle slots.
 const CAR := Vector3(6.5,0,0)
 const MOTO := Vector3(9.0,0,0)
-var _roof: MeshInstance3D
-var _occupants: Dictionary = {}
 
 static func placement(variant: int) -> Vector3:
 	# Westgate's tree and Quayside's street occupy the right side of the house.
@@ -23,31 +21,15 @@ func _ready() -> void:
 		for z in [-3.55,3.6]:
 			var post := box("GaragePost",Vector3(.14,2.85,.14),Vector3(x,1.425,z),"59645f")
 			post.set_meta("interior_solid_id","GaragePost")
-	_roof = box("GarageCanopy",Vector3(5.95,.14,7.65),Vector3(7.8,2.92,.05),"5b6765")
+	box("GarageCanopy",Vector3(5.95,.14,7.65),Vector3(7.8,2.92,.05),"5b6765")
+	# Standing-seam metal roofing: real raised seams and finished perimeter.
+	# Keep it opaque and present; the city's actor silhouette handles occlusion.
+	for seam in 12:
+		box("CanopySeam",Vector3(.045,.055,7.65),Vector3(5.05+seam*.5,3.015,.05),"74817c")
+	for x in [4.83,10.77]:
+		box("CanopyEdge",Vector3(.09,.16,7.75),Vector3(x,2.98,.05),"c7c8bb")
+	box("CanopyRearTrim",Vector3(5.95,.16,.1),Vector3(7.8,2.98,-3.8),"c7c8bb")
 	for x in [5.0,10.6]: box("GarageBeam",Vector3(.16,.2,7.5),Vector3(x,2.8,.05),"414b46")
 	box("GarageFascia",Vector3(5.95,.24,.12),Vector3(7.8,2.89,3.88),"c7c8bb")
 	# Bike-sized wheel guide makes the narrow bay legible without decorative text.
 	box("MotorcycleGuide",Vector3(.16,.04,1.4),Vector3(9,.035,-.35),"47524e")
-	# Presence-driven cutaway keeps parked vehicles and people visible. No frame loop.
-	var area := Area3D.new()
-	area.name = "GarageOccupancy"
-	area.collision_layer = 0
-	area.collision_mask = 6
-	area.monitorable = false
-	var shape := CollisionShape3D.new()
-	var volume := BoxShape3D.new()
-	volume.size = Vector3(5.9,3.0,9.0)
-	shape.shape = volume
-	shape.position = Vector3(7.8,1.4,.15)
-	area.add_child(shape)
-	area.body_entered.connect(_body_entered)
-	area.body_exited.connect(_body_exited)
-	add_child(area)
-
-func _body_entered(body: Node3D) -> void:
-	_occupants[body.get_instance_id()] = true
-	_roof.hide()
-
-func _body_exited(body: Node3D) -> void:
-	_occupants.erase(body.get_instance_id())
-	_roof.visible = _occupants.is_empty()

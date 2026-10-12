@@ -190,7 +190,7 @@ func _draw_evidence(left: Rect2, right: Rect2) -> void:
 		return
 	_draw_evidence_art(art, selected_id)
 	var evidence_count: int = int(snapshot.get("keypad_clues", []).size()) + int(snapshot.get("audio_logs", []).size()) + int(snapshot.get("lab_clues", []).size())
-	_caption(left, _text("%d REGISTROS" % evidence_count, "%d RECORDS" % evidence_count), false)
+	_caption(left, _text(String(TranslationServer.translate("%d REGISTROS")) % evidence_count, String(TranslationServer.translate("%d RECORDS")) % evidence_count), false)
 
 
 func _draw_evidence_art(rect: Rect2, id: String) -> void:
@@ -362,7 +362,7 @@ func _heading(rect: Rect2, text: String) -> void:
 func _caption(rect: Rect2, text: String, right_aligned: bool) -> void:
 	var local_position := rect.end - Vector2(22, 16)
 	if not right_aligned: local_position.x = rect.position.x + 22
-	draw_string(ThemeDB.fallback_font, local_position, text, HORIZONTAL_ALIGNMENT_RIGHT if right_aligned else HORIZONTAL_ALIGNMENT_LEFT, -1, 13, MUTED)
+	draw_string(ThemeDB.fallback_font, local_position, tr(text), HORIZONTAL_ALIGNMENT_RIGHT if right_aligned else HORIZONTAL_ALIGNMENT_LEFT, -1, 13, MUTED)
 
 
 func _draw_footer(folder: Rect2) -> void:
@@ -380,12 +380,12 @@ func _box(rect: Rect2, color: Color, border: Color, radius: int) -> void:
 
 
 func _text_at(p_position: Vector2, text: String, font_size: int, color: Color) -> void:
-	draw_string(ThemeDB.fallback_font, p_position, text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
+	draw_string(ThemeDB.fallback_font, p_position, tr(text), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, color)
 
 
 func _text_center(rect: Rect2, text: String, font_size: int, color: Color) -> void:
 	var y := rect.get_center().y + float(font_size) * 0.35
-	draw_string(ThemeDB.fallback_font, Vector2(rect.position.x, y), text, HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, font_size, color)
+	draw_string(ThemeDB.fallback_font, Vector2(rect.position.x, y), tr(text), HORIZONTAL_ALIGNMENT_CENTER, rect.size.x, font_size, color)
 
 
 func _text(pt: String, en: String) -> String:

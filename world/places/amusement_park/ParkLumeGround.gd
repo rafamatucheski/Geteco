@@ -98,9 +98,8 @@ static func build(park: Node3D) -> void:
 	for trim in trims:
 		for clipped in Geometry2D.intersect_polygons(trim,outline):
 			_finish_parts(streams,"mineral",clipped,walks)
-	_polygon(streams,"walk",approach)
 	var faces := _faces(outline)
-	faces.append_array(_faces(approach))
+	_approach(streams,faces)
 	# Trace the combined park/access contour, including both re-entrant gate corners.
 	# The last two metres of the access already meet the city sidewalk.
 	var edge := PackedVector2Array([Vector2(-40,-36),Vector2(22,-36),Vector2(40,-10),
@@ -125,6 +124,24 @@ static func build(park: Node3D) -> void:
 	body.add_child(collision)
 	park.add_child(body)
 	park.set_meta("integrated_ground",true)
+
+static func _approach(streams: Dictionary,faces: PackedVector3Array) -> void:
+	# The vehicle hull rests at street level: even the former 2.5 cm exposed
+	# triangle edge stopped its front bumper. Ease the last 2 m down to zero,
+	# using the same vertices for visible paving and physical support.
+	var stations := PackedFloat32Array([40,49,49.25,49.5,49.75,50,50.25,50.5,50.75,51])
+	for index in range(stations.size()-1):
+		var x0 := stations[index]
+		var x1 := stations[index+1]
+		var y0 := TOP*(1.0-smoothstep(49.0,51.0,x0))
+		var y1 := TOP*(1.0-smoothstep(49.0,51.0,x1))
+		var a := Vector3(x0,y0,13.1)
+		var b := Vector3(x1,y1,13.1)
+		var c := Vector3(x1,y1,18.9)
+		var d := Vector3(x0,y0,18.9)
+		for triangle in [PackedVector3Array([a,b,c]),PackedVector3Array([a,c,d])]:
+			_triangle(_stream(streams,"walk"),triangle)
+			faces.append_array(triangle)
 
 static func _wear(point: Vector2) -> float:
 	return clampf(.55+sin(point.x*.17+point.y*.19)*.23+sin(point.y*.51)*.17,.15,.95)

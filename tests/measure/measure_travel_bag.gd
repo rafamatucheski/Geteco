@@ -29,7 +29,8 @@ func run() -> void:
 	session.weather.set_process(false)
 	session.weather.time_of_day = .4; session.weather.weather_state = 0; session.weather._update()
 	for i in 30: await physics_frame
-	if not session.personal_car.discover_backpack(): quit(5); return
+	session.personal_car.refresh()
+	if session.state.economy.grid_snapshot().bag != "backpack": quit(5); return
 	for scenario in ["closed", "trunk"]:
 		if scenario == "trunk": session.field_inventory.open(true)
 		var warm: Array[float] = []

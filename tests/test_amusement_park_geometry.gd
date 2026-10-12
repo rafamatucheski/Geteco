@@ -24,7 +24,7 @@ func run() -> void:
 	var initial := park.get_child_count()
 	park.build()
 	check(park.get_child_count()==initial,"park build is idempotent")
-	var floor_mesh := park.get_node("ParkBatch_ad9976_stone") as MeshInstance3D
+	var floor_mesh := park.get_node("ParkGround_paving") as MeshInstance3D
 	var floor_faces := floor_mesh.mesh.get_faces()
 	var facing_up := not floor_faces.is_empty()
 	for index in range(0,floor_faces.size(),3):
@@ -38,7 +38,9 @@ func run() -> void:
 	room.position = Vector3(0,0,-3000)
 	stage.add_child(room)
 	for i in 4: await physics_frame
-	check(park.coaster_length()>150.0,"coaster has a full recreation circuit")
+	# The unsafe overlapping inner returns were removed; the simple circuit is
+	# about 130 m. Crossing/curvature regressions live in test_coaster_geometry.
+	check(park.coaster_length()>120.0,"coaster has a full recreation circuit")
 	check(park.sample_coaster(0).origin.distance_to(park.sample_coaster(park.coaster_length()).origin)<.001,"coaster returns exactly to station")
 	var high := 0.0
 	var low := INF

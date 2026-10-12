@@ -3,6 +3,7 @@ extends Node
 const REGIONAL_ATMOSPHERE := preload("res://runtime/atmosphere/RegionalAtmosphere3D.gd")
 const DESERT_MOON := preload("res://runtime/atmosphere/DesertMoonlight.gd")
 const PARTICLE_TEXTURES := preload("res://runtime/atmosphere/WeatherParticleTextures.gd")
+const COVERAGE := preload("res://runtime/atmosphere/PrecipitationCoverage.gd")
 # Productive V1 HarborGame and MountainPass both override the manager to 24 min.
 const DAY_LENGTH_SECONDS := 1440.0
 var controller
@@ -60,6 +61,8 @@ func _exit_tree() -> void:
 	if is_instance_valid(surface_effects): surface_effects.queue_free()
 	PARTICLE_TEXTURES.release_cache()
 func _ready() -> void:
+	# Follow after the gameplay camera has applied its lead, zoom and orbit.
+	process_priority = 100
 	_weather_rng.randomize()
 	time_of_day = float(controller.state.world_state.get("time",.32))
 	weather_state = int(controller.state.world_state.get("weather",0))
@@ -67,6 +70,7 @@ func _ready() -> void:
 	precipitation = GPUParticles3D.new()
 	precipitation.amount = 600
 	precipitation.lifetime = 1.6
+	COVERAGE.configure(precipitation)
 	precipitation.visibility_aabb = AABB(Vector3(-18,-20,-18),Vector3(36,40,36))
 	var quad := QuadMesh.new()
 	quad.size = Vector2(.07,.45)
@@ -154,18 +158,19 @@ func _process(delta: float) -> void:
 			# Occasional heavy storms join the natural cycle; keep drizzle distinct.
 			weather_state = 0 if roll<.42 else 3 if roll<.70 else 1 if roll<.92 else 2
 			if weather_state==1: rain_intensity = _weather_rng.randf_range(.14,.30)
-	precipitation.global_position = REGIONAL_ATMOSPHERE.focus_position(controller)+Vector3.UP*10
-	hail.global_position = precipitation.global_position
-	snow.global_position = precipitation.global_position
+	var focus: Vector3 = REGIONAL_ATMOSPHERE.focus_position(controller)
+	COVERAGE.follow(precipitation,get_viewport().get_camera_3d(),focus)
+	hail.global_position = focus+Vector3.UP*10
+	snow.global_position = hail.global_position
 	drag_rain.apply(precipitation,get_viewport().get_camera_3d(),delta,weather_state==2)
 	drag_sky.update_lightning(storm.envelope(storm.flash_age) if weather_state==2 and not _covered else 0.0,storm.flashes)
 	clock += delta
-	var focus: Vector3 = REGIONAL_ATMOSPHERE.focus_position(controller)
 	var covered: bool = _inside_shelter() or atmosphere.SHELTER.sheltered(focus) or controller.world.player.get_meta("mountain_shelter",false) or controller.world.player.get_meta("port_container_shelter",false)
 	if clock >= .2 or covered!=_covered:
 		atmosphere_step = clock
 		clock = 0
 		_update()
+	surface_effects.follow_focus(focus)
 	controller.state.world_state.time = time_of_day
 	controller.state.world_state.weather = weather_state
 	controller.state.world_state.rain_intensity = rain_intensity
@@ -199,7 +204,10 @@ func _update() -> void:
 	var front: float = float(mountain_weather.get("front",0.0))
 	var focus: Vector3 = REGIONAL_ATMOSPHERE.focus_position(controller)
 	var regional_weight: float = REGIONAL_ATMOSPHERE.weights_at(focus).mountain
-	var clouds: float = lerpf(_harbor_overcast(),front,regional_weight)
+	var desert: float = REGIONAL_ATMOSPHERE.desert_weight(focus)
+	var rain_exposure := (1.0-regional_weight)*(1.0-desert)
+	var local_clouds := _harbor_overcast()*(1.0-desert)
+	var clouds: float = lerpf(local_clouds,front,regional_weight)
 	if inside: clouds = front if mountain else _harbor_overcast()
 	# Preserve existing indoor base light; outdoor exposure follows the V1 clock.
 	if not inside:
@@ -217,13 +225,13 @@ func _update() -> void:
 	var clear_sky := HARBOR_SKY_NIGHT.lerp(HARBOR_SKY_FULL_MOON,moon).lerp(HARBOR_SKY_DAY,daylight)
 	# Isolated interiors are cutaway rooms, not floating platforms in the sky.
 	controller.environment.environment.background_color = Color("10151a") if inside else clear_sky.lerp(HARBOR_SKY_OVERCAST,clouds*.78)
-	atmosphere.apply(controller,time_of_day,_harbor_overcast(),front,inside,atmosphere_step)
+	atmosphere.apply(controller,time_of_day,local_clouds,front,inside,atmosphere_step)
 	if not inside:
 		DESERT_MOON.apply(controller.sun,controller.environment.environment,daylight,clouds,moon,REGIONAL_ATMOSPHERE.desert_weight(focus))
 	# A storm closes the distant sky without hiding nearby streets or actors.
 	# Reuse the existing depth fog and lighting, fading out toward Mountain.
 	if not inside and weather_state == 2:
-		var storm_weight := 1.0-regional_weight
+		var storm_weight := rain_exposure
 		var env: Environment = controller.environment.environment
 		var storm_sky := Color("111923").lerp(Color("424e5b"),daylight)
 		env.background_color = env.background_color.lerp(storm_sky,storm_weight)
@@ -246,15 +254,15 @@ func _update() -> void:
 	_covered = covered
 	# Stopping emission leaves living particles visible for up to 2.2 seconds.
 	# Hide those particles in the same frame as entering a covered place.
-	precipitation.visible = not covered
+	precipitation.visible = not covered and rain_exposure>.001
 	hail.visible = not covered and regional_weight > .001
 	snow.visible = not covered and regional_weight > .001
 	var storm_state: int = int(mountain_weather.get("state",0))
-	var rain_strength := (1.0 if weather_state==2 else rain_intensity if weather_state==1 else 0.0)*(1.0-regional_weight)
+	var rain_strength := rain_strength_at(focus)
 	precipitation.amount_ratio = rain_strength
 	precipitation.speed_scale = lerpf(.65,1.0,rain_strength)
 	precipitation.draw_pass_1.material.albedo_color.a = lerpf(.38,.65,rain_strength)
-	precipitation.emitting = not covered and weather_state in [1,2] and regional_weight<.999
+	precipitation.emitting = not covered and rain_strength>.001
 	snow.emitting = not covered and storm_state>0 and regional_weight>.001
 	snow.amount_ratio = regional_weight*(150.0 if storm_state==1 else 260.0 if storm_state==3 else 400.0)/400.0
 	snow.speed_scale = lerpf(.45,1.15,front)
@@ -264,12 +272,18 @@ func _update() -> void:
 	weather_audio.set_conditions(rain_strength,covered)
 	weather_audio.set_interior_silence(inside)
 	weather_audio.set_dialogue_focus(controller.session!=null and controller.session.get("dialogue_open")==true)
-	storm.sync(1.0-regional_weight,covered)
+	storm.sync(rain_exposure,covered)
 	var palette: Dictionary = atmosphere.current
-	surface_effects.set_conditions(focus,hail.amount_ratio if hail.emitting else 0.0,float(palette.get("haze",0)),palette.get("fog_color",Color.WHITE),covered)
+	surface_effects.set_conditions(focus,hail.amount_ratio if hail.emitting else 0.0,float(palette.get("haze",0)),palette.get("fog_color",Color.WHITE),covered,desert,_harbor_overcast())
 	wind_audio.volume_db = lerpf(-30,-17,float(mountain_weather.get("intensity",0.0)))-(14.0 if covered else 0.0)+linear_to_db(maxf(.001,regional_weight))
 	if regional_weight>.001 and not wind_audio.playing: wind_audio.play()
 	elif regional_weight<=.001: wind_audio.stop()
+
+## Regional precipitation also drives wheel spray and puddles. The saved Harbor
+## weather remains intact while the desert presents dry wind instead.
+func rain_strength_at(point: Vector3) -> float:
+	var strength := 1.0 if weather_state==2 else rain_intensity if weather_state==1 else 0.0
+	return strength*(1.0-REGIONAL_ATMOSPHERE.weights_at(point).mountain)*(1.0-REGIONAL_ATMOSPHERE.desert_weight(point))
 
 func _harbor_overcast() -> float:
 	match weather_state:

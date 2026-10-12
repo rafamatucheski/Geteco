@@ -170,7 +170,7 @@ func _button_style(button: Button, primary: bool) -> void:
 	button.add_theme_stylebox_override("focus", _box(Color.TRANSPARENT, CYAN))
 
 func _text(at: Vector2, text: String, points: int, color := PAPER, strong := false, width := -1.0, alignment := HORIZONTAL_ALIGNMENT_LEFT) -> void:
-	draw_string(FACE if strong else BODY, at, text, alignment, width, points, color)
+	draw_string(FACE if strong else BODY, at, tr(text), alignment, width, points, color)
 
 func _draw() -> void:
 	if _definitions.is_empty(): return
@@ -214,3 +214,6 @@ func _draw() -> void:
 		_text(Vector2(32, 612), "↑ ↓  SELECIONAR", 15, MUTED)
 		_text(Vector2(227, 612), "→  AÇÃO  /  ENTER  CONFIRMAR", 15, MUTED)
 		_text(Vector2(725, 612), "ESC / B  VOLTAR", 15, MUTED)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSLATION_CHANGED: queue_redraw()

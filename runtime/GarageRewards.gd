@@ -162,6 +162,7 @@ func _sync() -> void:
 			if not session.controller.vehicles.has(car): session.controller.vehicles.append(car)
 
 func _restore_damage(car: CharacterBody3D, record: Dictionary) -> void:
+	car.restore_body_dents(record.get("body_dents",[]))
 	car.health=float(record.health)
 	var ratio := float(record.get("heavy_crush_ratio",1.0))
 	if ratio >= 1.0: return
@@ -209,6 +210,7 @@ func _capture_all() -> void:
 		var point: Vector3=car.global_position-origin
 		data.vehicles[id]={"archetype":car.archetype,"region_id":car.get_meta("region_id","harbor"),"place_id":place,"position":[point.x,point.y,point.z],"yaw":car.rotation.y,"health":maxf(0,car.health),"paint":car.paint_color.to_html(true),"was_driven":session.world.driving.occupied and session.world.driving.car==car}
 		data.vehicles[id]["heavy_crush_ratio"]=float(car.get_meta("heavy_crush_ratio",1.0))
+		data.vehicles[id]["body_dents"]=car.body_dents.snapshot() if is_instance_valid(car.body_dents) else []
 
 func nearest_action() -> Dictionary:
 	if session==null or _transition: return {}
@@ -236,7 +238,7 @@ func nearest_action() -> Dictionary:
 	if yard != null and session.world.player.global_position.distance_to(yard.button_point()) < BUTTON_REACH:
 		var car = _car_on_bay(yard)
 		var label := "Acionar prensa"
-		if car != null and _scrappable(car): label = "Acionar prensa · R$ %d" % scrap_value(car)
+		if car != null and _scrappable(car): label = String(TranslationServer.translate("Acionar prensa · R$ %d")) % scrap_value(car)
 		return _action("neco_press",label,yard.button_point())
 	return {}
 
@@ -416,7 +418,7 @@ func _finish_scrap(completed: bool) -> void:
 	# Remoção deliberada: se era o último carro dirigido, Driving/ProductionWorld
 	# soltam a referência e o snapshot do veículo do jogador.
 	car.queue_free()
-	session.show_message("Neco pagou R$ %d pela sucata." % reward)
+	session.show_message(String(TranslationServer.translate("Neco pagou R$ %d pela sucata.")) % reward)
 	session.save_game()
 
 func _commit_porto_delivery() -> bool:
@@ -511,6 +513,7 @@ static func validate_snapshot(saved: Dictionary) -> bool:
 		for key in ["yaw","health"]:
 			if typeof(record.get(key)) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(record[key])): return false
 		if record.health<0 or record.health>float(_spec(record.archetype).get("durability",100)): return false
+		if not preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd").valid_records(record.get("body_dents",[])): return false
 		if record.has("heavy_crush_ratio"):
 			var ratio: Variant=record.heavy_crush_ratio
 			if typeof(ratio) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(ratio)): return false

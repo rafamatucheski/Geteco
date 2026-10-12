@@ -18,6 +18,41 @@ var previous_vehicle: Dictionary = {}
 var _previous_ref: WeakRef
 var _return_pending := false
 var _clock := 0.0
+var _restore_loaded := true
+
+func parked_for_loading(vehicle, index: int) -> bool:
+	return is_instance_valid(vehicle) and vehicle.health > 0 and not vehicle.is_queued_for_deletion() \
+		and vehicle.is_on_floor() and not vehicle.has_meta("awaiting_ground") and absf(vehicle.speed) <= .2 \
+		and vehicle.global_position.distance_to(cargo.work_trucks[index].stop) <= 1.5
+
+func _driver_action() -> Dictionary:
+	if active_bay >= 0 or not cargo._shift_open(): return {}
+	if session.state.intro.stage != "complete" or not session.state.campaign.active_id.is_empty(): return {}
+	var vehicle = session.world.driving.car
+	for index in cargo.work_trucks.size():
+		var entry: Dictionary = cargo.work_trucks[index]
+		if not bay_available(index) or entry.truck != vehicle or not parked_for_loading(vehicle,index): continue
+		if vehicle.vehicle_id != _vehicle_id(index) or vehicle.has_meta("mission_vehicle") or vehicle.has_meta("dispatch_unit"): continue
+		return {"id":"urban_v1","target":"south_port_freight_load_"+str(index),"label":"Assumir frete · R$ 300" if entry.loaded else "Carregar contêiner · R$ 300","position":vehicle.global_position}
+	return {}
+
+func _claim_driver_load(index: int) -> bool:
+	# Boarding may already have selected the port truck. Never save it as the
+	# previous personal vehicle, nor clear the crime caused by its theft.
+	previous_vehicle = session.controller.starting_vehicle().duplicate(true)
+	if previous_vehicle.get("vehicle_id","").begins_with("south_port_cargo_truck_"): previous_vehicle.clear()
+	_previous_ref = null
+	active_bay = index
+	var entry: Dictionary = cargo.work_trucks[index]
+	var vehicle = entry.truck
+	vehicle.set_meta("port_freight_claim",index)
+	vehicle.traffic = false
+	entry.phase = "freight" if entry.loaded else "loading"
+	if not entry.loaded:
+		cargo.cranes[index].clock = 0.0
+		cargo._sync_crane(index)
+	session.show_message("Leve a carga ao depósito." if entry.loaded else "Aguarde o guindaste com o caminhão parado na vaga.")
+	return true
 
 func configure(owner_session, operations, checkpoint) -> void:
 	session = owner_session
@@ -48,7 +83,8 @@ func _reachable(vehicle: CharacterBody3D) -> bool:
 	return option.get("car") == vehicle and vehicle.is_on_floor()
 
 func nearest_action() -> Dictionary:
-	if not _available() or session.world.driving.occupied: return {}
+	if not _available(): return {}
+	if session.world.driving.occupied: return _driver_action()
 	if active_bay >= 0:
 		if not pending_truck.is_empty(): return {}
 		var vehicle = cargo.work_trucks[active_bay].truck
@@ -70,6 +106,7 @@ func perform(target: String) -> bool:
 	var action := nearest_action()
 	if action.is_empty() or action.target != target: return false
 	if target == "south_port_freight_deliver": return _deliver()
+	if target.begins_with("south_port_freight_load_"): return _claim_driver_load(target.trim_prefix("south_port_freight_load_").to_int())
 	if not target.begins_with(PREFIX): return false
 	if not session.save_game(true): return false
 	session.controller.capture_player_vehicle()
@@ -100,6 +137,8 @@ func freight_status() -> Dictionary:
 	var depot := depot_position(active_bay)
 	if not is_instance_valid(vehicle): return {"active":true, "objective":"Retome o frete no cais.", "target":depot}
 	var driving: bool = session.world.driving.occupied and session.world.driving.car == vehicle
+	if not cargo.work_trucks[active_bay].loaded:
+		return {"active":true,"objective":"Aguarde o guindaste" if parked_for_loading(vehicle,active_bay) else "Estacione o caminhão na vaga do guindaste","target":cargo.work_trucks[active_bay].stop}
 	var at_depot: bool = vehicle.global_position.distance_to(depot) <= 6.0
 	var objective := "Leve a carga ao depósito · R$ 300" if driving else "Entre no caminhão do frete"
 	if at_depot: objective = "Estacione e desembarque para entregar" if driving else "Entregue a carga junto ao caminhão · R$ 300"
@@ -261,13 +300,14 @@ func snapshot() -> Dictionary:
 			truck = FLEET.capture(vehicle, "harbor")
 		else:
 			_truck_removed(active_bay)
-	return {"version":1, "jobs":jobs.duplicate(), "active_bay":active_bay, "truck":truck, "previous_vehicle":previous_vehicle.duplicate(true)}
+	return {"version":1, "jobs":jobs.duplicate(), "active_bay":active_bay, "truck":truck, "previous_vehicle":previous_vehicle.duplicate(true), "cargo_loaded":active_bay >= 0 and bool(cargo.work_trucks[active_bay].loaded)}
 
 func restore_snapshot(data: Dictionary) -> bool:
 	if not validate_snapshot(data): return false
 	jobs = data.jobs.duplicate()
 	active_bay = int(data.active_bay)
 	pending_truck = data.truck.duplicate(true)
+	_restore_loaded = bool(data.get("cargo_loaded",true))
 	previous_vehicle = data.get("previous_vehicle", {}).duplicate(true)
 	if _previous_ref != null:
 		var previous = _previous_ref.get_ref()
@@ -311,13 +351,20 @@ func _restore_truck() -> void:
 	if restored_new:
 		vehicle.paint_color = Color(str(pending_truck.get("paint", "31577a")))
 		vehicle.health = float(pending_truck.health)
+		vehicle.restore_body_dents(pending_truck.get("body_dents",[]))
 		vehicle.equipment_state = pending_truck.get("equipment", {}).duplicate(true)
 		if not pending_truck.get("equipment", {}).is_empty() and is_instance_valid(vehicle.equipment): vehicle.equipment.restore_state(pending_truck.equipment)
 	var entry: Dictionary = cargo.work_trucks[active_bay]
 	entry.truck = vehicle
 	cargo._watch_work_truck(active_bay, vehicle)
-	cargo._finish_truck_load(active_bay)
-	entry.phase = "freight"
+	if _restore_loaded:
+		cargo._finish_truck_load(active_bay)
+		entry.phase = "freight"
+	else:
+		if entry.loaded: cargo._reset_truck_load(active_bay)
+		entry.phase = "loading"
+		cargo.cranes[active_bay].clock = 0.0
+		cargo._sync_crane(active_bay)
 	pending_truck.clear()
 
 func _paid(index: int) -> bool:
@@ -331,6 +378,7 @@ static func _receipt_id(index: int) -> String:
 	return "south_port_freight_delivery_%d" % index
 
 static func validate_snapshot(data: Dictionary) -> bool:
+	if data.has("cargo_loaded") and not data.cargo_loaded is bool: return false
 	if data.get("version") != 1 or not data.get("jobs") is Array or data.jobs.size() != 3: return false
 	for value in data.jobs:
 		if typeof(value) not in [TYPE_INT, TYPE_FLOAT] or not is_finite(float(value)) or float(value) != floorf(float(value)): return false

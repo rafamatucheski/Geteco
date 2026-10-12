@@ -35,6 +35,7 @@ var holding := false
 var offset := 0.0
 var remaining := INF
 var blocked_ahead := false
+var blocker: Object
 var reversing := false
 var failed_recoveries := 0
 var stalled := 0.0
@@ -191,7 +192,7 @@ func _stall_tick(delta: float) -> void:
 	var path_offset := offset
 	var path_length := length
 	var speed_limit := INF
-	if overtake != null:
+	if overtake != null and not vehicle.get_meta("dispatch_escape_active",false):
 		var overtaking := TRACE.begin()
 		overtake.tick(delta)
 		TRACE.end("overtake.tick", overtaking)
@@ -307,6 +308,9 @@ func _recover(alpha: float) -> void:
 		if vehicle.archetype == "rescue_pumper" and overtake != null and overtake.is_waiting() and overtake.last_reason == "no_room_to_swerve":
 			_reverse_clock = 3.0
 		_reverse_steer = -signf(alpha) * 0.8 if absf(alpha) > 0.05 else 0.0
+	else:
+		# Ask the traffic coordinator for a rear corridor; never reverse into a car.
+		vehicle.set_meta("dispatch_needs_room",true)
 
 func _reverse(delta: float) -> void:
 	_reverse_clock -= delta
@@ -325,7 +329,9 @@ func _obstacle_ahead() -> bool:
 	query.transform = Transform3D(vehicle.global_basis, vehicle.global_position - vehicle.global_basis.z * (vehicle.half_length + length * 0.5) + Vector3.UP * 0.8)
 	query.collision_mask = 7
 	query.exclude = _excluded()
-	return not vehicle.get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty()
+	var hits: Array = vehicle.get_world_3d().direct_space_state.intersect_shape(query,1)
+	blocker = hits[0].collider if not hits.is_empty() else null
+	return blocker!=null
 
 func _rear_clear() -> bool:
 	var query := PhysicsShapeQueryParameters3D.new()

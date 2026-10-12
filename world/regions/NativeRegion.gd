@@ -535,7 +535,7 @@ func set_night_lights(level: float) -> void:
 		if is_instance_valid(chunk): _apply_night_lights(chunk)
 func _apply_night_lights(chunk: Node3D) -> void:
 	for light in chunk.find_children("*","OmniLight3D",true,false):
-		if light.is_in_group("mountain_night_light"):
+		if light.is_in_group("mountain_night_light") and not light.get_meta("street_destroyed",false):
 			light.light_energy = float(light.get_meta("night_energy",1.0))*mountain_night_level
 func _process(_delta: float) -> void:
 	var drain_began := Time.get_ticks_usec()
@@ -634,9 +634,12 @@ func _drain_retired() -> void:
 		return
 	var stall_began := STALL_WORK.begin()
 	var queued_before := _retiring.size()
+	var nodes_before := Performance.get_monitor(Performance.OBJECT_NODE_COUNT) if STALL_WORK.session_enabled else 0.0
 	_drain_retired_slice()
 	_cleanup_retired_chairlifts_if_idle()
-	STALL_WORK.finish("retire.drain", stall_began, {"region": region_id, "budget_ms": RETIRE_BUDGET_USEC / 1000.0, "queued_before": queued_before, "queued_after": _retiring.size()})
+	STALL_WORK.finish("retire.drain", stall_began, {"region": region_id, "budget_ms": RETIRE_BUDGET_USEC / 1000.0, "queued_before": queued_before, "queued_after": _retiring.size(), "stack_after":_retire_stack.size(),
+		"nodes_removed_during_slice":nodes_before - Performance.get_monitor(Performance.OBJECT_NODE_COUNT) if STALL_WORK.session_enabled else 0.0,
+		"destruction_scope":"synchronous_slice; queued_chunk_deletion_runs_later"})
 
 func _drain_retired_slice() -> void:
 	var began := Time.get_ticks_usec()
@@ -681,6 +684,16 @@ func _material(color: Color) -> StandardMaterial3D:
 	material.roughness = .86
 	materials[color] = material
 	return material
+func _tree_collision(tree: Node3D, chunk: Node3D) -> void:
+	var trunk := _box(tree,"TrunkSolid",Vector3(0,1.4,0),Vector3(.4,2.8,.4),Color("00000000"),true)
+	trunk.visible = false
+	if region_id == "mountain":
+		# Keep only the physical trunk: its hidden proxy must not become a visible shard.
+		trunk.get_child(0).reparent(tree)
+		trunk.free()
+		var radius := .4 * maxf(tree.global_basis.x.length(),tree.global_basis.z.length())
+		preload("res://gameplay/street_physics/FragileProps3D.gd").register_node("desert_tree",tree,chunk,{},[],radius)
+
 func _box(parent: Node3D,label: String,point: Vector3,size: Vector3,color: Color,solid := false) -> MeshInstance3D:
 	var mesh := MeshInstance3D.new()
 	mesh.name = label
@@ -982,7 +995,10 @@ func _build_surfaces(chunk: Node3D, rect: Rect2, key: Vector2i) -> void:
 		var port_surface := rect.intersection(port_land)
 		if port_surface.has_area():
 			# Visual finish only: OriginalSouthPort/land already own physical support.
-			var apron := _box(chunk,"SouthPortConcrete",Vector3(port_surface.get_center().x,.007,port_surface.get_center().y),Vector3(port_surface.size.x,.014,port_surface.size.y),Color("4f5552"))
+			# Keep the apron below every road finish. Its former .014 top was
+			# exactly coplanar with CURB_COLOR, causing flickering along the roads.
+			var apron := _box(chunk,"SouthPortConcrete",Vector3(port_surface.get_center().x,.002,port_surface.get_center().y),Vector3(port_surface.size.x,.004,port_surface.size.y),Color("4f5552"))
+			apron.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			apron.material_override = preload("res://world/regions/PortYardMaterials3D.gd").concrete()
 	else:
 		# These authored cells are the water spans of HarborMountainConnector and
@@ -993,6 +1009,7 @@ func _build_surfaces(chunk: Node3D, rect: Rect2, key: Vector2i) -> void:
 		if _mountain_owns_terrain(key):
 			var shore_edges := preload("res://world/regions/MountainBridgeShore.gd").frontiers(key,MOUNTAIN_BRIDGE_VOID_CELLS,_mountain_owns_terrain)
 			terrain.build_chunk(chunk,rect,shore_edges)
+			preload("res://world/regions/ScenarioBoundary3D.gd").build_mountain(chunk,rect,terrain.surface_height_at)
 
 func _build_record(chunk: Node3D, record: Dictionary) -> void:
 	match record.kind:
@@ -1057,7 +1074,7 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 			tree.position = record.position
 			if terrain != null: tree.position.y = terrain.surface_height_at(Vector2(tree.position.x,tree.position.z))
 			chunk.add_child(tree)
-			_box(tree,"TrunkSolid",Vector3(0,1.4,0),Vector3(.4,2.8,.4),Color("00000000"),true).visible=false
+			_tree_collision(tree,chunk)
 		"mountain_jeep_scenery": MOUNTAIN_JEEP_SCENERY.build(chunk,record)
 		"cave_approach":
 			var cover := preload("res://world/mountain_detail/MountainCaveApproach.gd").new()

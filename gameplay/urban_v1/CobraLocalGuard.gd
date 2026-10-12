@@ -18,7 +18,7 @@ func _physics_process(delta: float) -> void:
 		super._physics_process(delta)
 		return
 	# Mantém contato físico com o chão também quando está de guarda.
-	velocity = Vector3(0, -1 if is_on_floor() else velocity.y - 20.0 * delta, 0)
+	velocity = Vector3(0, -1.0 if is_on_floor() else velocity.y - 20.0 * delta, 0)
 	move_and_slide()
 	visual.update_pose(delta, false, false, 0.0, 0.0)
 

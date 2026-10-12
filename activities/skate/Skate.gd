@@ -237,7 +237,7 @@ func _physics_process(delta: float) -> void:
 			player_board.drive(throttle, steer, ahead > .1 and behind > .1)
 		session.world.player.position = player_board.position
 		POSE.apply(session.world.player, player_board)
-		hud.text = "%d km/h · %d pts · recorde %d\nW remar · S frear/ré · Espaço ollie · Q flip · R shove-it · E descer" % [roundi(absf(player_board.speed) * 3.6), score, best]
+		hud.text = String(TranslationServer.translate("%d km/h · %d pts · recorde %d\nW remar · S frear/ré · Espaço ollie · Q flip · R shove-it · E descer")) % [roundi(absf(player_board.speed) * 3.6), score, best]
 	_clock += delta
 	if _clock >= 1:
 		_clock = 0
@@ -297,6 +297,7 @@ func _update_population() -> void:
 			board.queue_free()
 
 func _attach_ambient(actor, board, park: bool) -> void:
+	actor.set_meta("civilian_movement_owner",weakref(self))
 	actor.set_physics_process(false)
 	actor.visual.get_child(0).set_process(false)
 	board.add_collision_exception_with(actor)
@@ -315,9 +316,28 @@ func _attach_ambient(actor, board, park: bool) -> void:
 	var waypoint: int = int(actor.waypoint) % route.size()
 	if park: waypoint = 1
 	if park and actor.identity % 2 == 1: waypoint = 13
-	board._push_clock = fposmod(actor.identity * .173, .72)
-	ambient.append({"actor": actor, "board": board, "route": route, "waypoint": waypoint, "health": actor.health, "park": park, "stalled": 0.0, "pace": 2.2 if park else 2.7 + (actor.identity % 4) * .45})
+	ambient.append({"actor": actor, "board": board, "route": route, "waypoint": waypoint, "health": actor.health, "park": park, "stalled": 0.0, "push_requested": true, "pace": 2.2 if park else 2.7 + (actor.identity % 4) * .45})
 	board.rotation.y = atan2(-(route[waypoint] - actor.position).x, -(route[waypoint] - actor.position).z)
+
+## Entrega explícita ao diretor da rua: não há dois donos tentando mover o
+## mesmo civil. Largar o skate não aplica dano nem teleporta o personagem.
+func release_for_civilian_danger(actor: CharacterBody3D) -> bool:
+	for row in ambient.duplicate():
+		if row.actor!=actor: continue
+		if actor.dead or actor.input_locked or not is_instance_valid(row.board): return false
+		var board = row.board
+		ambient.erase(row)
+		board.rider=null
+		board.riding=false
+		board.former_rider=weakref(actor)
+		board.drive(0,0,true)
+		POSE.restore(actor)
+		actor.velocity=board.velocity
+		actor.waypoint=int(row.waypoint)%maxi(1,actor.route.size())
+		actor.remove_meta("civilian_movement_owner")
+		actor.set_physics_process(true)
+		return true
+	return false
 
 func _park_route() -> PackedVector3Array:
 	var result := PackedVector3Array()
@@ -343,8 +363,21 @@ func _update_ambient(delta: float) -> void:
 		toward.y = 0
 		if toward.length() < (.65 if row.park else 1.5): row.waypoint = (int(row.waypoint) + 1) % row.route.size()
 		var angle := angle_difference(row.board.rotation.y, atan2(-toward.x, -toward.z))
-		var pace: float = row.pace
-		row.board.drive(1 if row.board.speed < pace else 0, clampf(angle * 2, -1, 1), (absf(angle) > .65 and row.board.speed > 1.5) or row.board.speed > pace + .7)
+		# Keep the turn latched until aligned; do not alternate acceleration
+		# and braking around the same speed and cancel each new foot stroke.
+		var turning: bool = row.get("turning", false)
+		if absf(angle) > .65: turning = true
+		elif absf(angle) < .30: turning = false
+		row.turning = turning
+		var pace: float = 1.4 if turning else row.pace
+		# Coast between strokes instead of toggling throttle at one exact speed.
+		if row.board.speed >= pace: row.push_requested = false
+		elif row.board.speed < pace - .65: row.push_requested = true
+		var braking: bool = row.get("braking", false)
+		if row.board.speed > pace + .7: braking = true
+		elif row.board.speed <= pace: braking = false
+		row.braking = braking
+		row.board.drive(1 if row.push_requested and not braking else 0, clampf(angle * 2, -1, 1), braking)
 		row.stalled = float(row.stalled) + delta if row.board.speed < .4 else 0.0
 		if row.stalled > 4: row.board.bail(0); continue
 		row.actor.position = row.board.position
@@ -357,6 +390,7 @@ func _ambient_bail(actor, board, damage: float) -> void:
 		board.rider = null
 		if is_instance_valid(actor): board.former_rider = weakref(actor)
 		if is_instance_valid(actor):
+			actor.remove_meta("civilian_movement_owner")
 			if not actor.dead:
 				POSE.restore(actor)
 				if damage > 0: actor.receive_damage(damage, board)
@@ -416,6 +450,7 @@ func _update_escaping(delta: float) -> void:
 
 func _retire_ambient(row: Dictionary) -> void:
 	if is_instance_valid(row.actor):
+		row.actor.remove_meta("civilian_movement_owner")
 		if row.park: row.actor.queue_free()
 		elif not row.actor.dead:
 			POSE.restore(row.actor)

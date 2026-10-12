@@ -15,7 +15,7 @@ func _draw() -> void:
 	var font := ThemeDB.fallback_font
 	var scale_factor := minf(size.x / 1280.0, size.y / 720.0)
 	var title := "HARBOR" if city else "RCM"
-	var subtitle := "Uma nova cidade. Um assunto inacabado." if city else "S T U D I O S"
+	var subtitle := tr("Uma nova cidade. Um assunto inacabado.") if city else "S T U D I O S"
 	var title_size := maxi(20, int((54 if city else 108) * scale_factor))
 	var small := maxi(12, int(20 * scale_factor))
 	var center := size * 0.5

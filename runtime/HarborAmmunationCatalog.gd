@@ -17,6 +17,7 @@ var caption: Label
 var feedback: Label
 var buy: Button
 var ammo_button: Button
+var belt_flashlight_button: Button
 var lockpick_button: Button
 var customize_button: Button
 var workbench_button: Button
@@ -26,6 +27,9 @@ var category_buttons: Array[Button] = []
 var selection := 0
 var stock := ["pistol", "magnum", "shotgun", "sawed_off", "smg", "ak47", "m4a1", "hunting_rifle", "knife", "knuckles", "bat", "axe", "grenade", "rpg", "flamethrower", "armor"]
 var active := false
+const SHOP_FOCUS := preload("res://ui/ShopFocus.gd")
+const MENU_AUDIO := preload("res://ui/MenuAudio.gd")
+var control_hint: Label
 
 func configure(owner_session) -> void:
 	session = owner_session
@@ -87,11 +91,11 @@ func _build_catalog() -> void:
 	stage.add_theme_stylebox_override("panel", stage_style())
 	box.add_child(stage)
 	var container := SubViewportContainer.new()
-	container.custom_minimum_size = Vector2(720, 216)
+	container.custom_minimum_size = Vector2(720, 140)
 	container.stretch = true
 	stage.add_child(container)
 	preview = SubViewport.new()
-	preview.size = Vector2i(720, 216)
+	preview.size = Vector2i(720, 140)
 	preview.own_world_3d = true
 	preview.transparent_bg = true
 	preview.msaa_3d = Viewport.MSAA_4X
@@ -121,7 +125,7 @@ func _build_catalog() -> void:
 	box.add_child(feedback)
 	var row := HBoxContainer.new()
 	box.add_child(row)
-	for words in ["◀ ANTERIOR", "COMPRAR", "PRÓXIMA ▶", "FECHAR [ESC]"]:
+	for words in ["◀ ANTERIOR", "COMPRAR", "PRÓXIMA ▶", "FECHAR"]:
 		var button := Button.new()
 		button.text = words
 		button.custom_minimum_size.y = 38
@@ -145,6 +149,11 @@ func _build_catalog() -> void:
 	lockpick_button.pressed.connect(purchase_lockpick)
 	style_button(lockpick_button)
 	box.add_child(lockpick_button)
+	belt_flashlight_button = Button.new()
+	belt_flashlight_button.custom_minimum_size.y = 34
+	belt_flashlight_button.pressed.connect(purchase_belt_flashlight)
+	style_button(belt_flashlight_button)
+	box.add_child(belt_flashlight_button)
 	var customization_row := HBoxContainer.new()
 	customization_row.add_theme_constant_override("separation", 10)
 	box.add_child(customization_row)
@@ -179,6 +188,12 @@ func _build_catalog() -> void:
 	customize_button.pressed.connect(customize_flashlight)
 	style_button(customize_button)
 	customization_row.add_child(customize_button)
+	control_hint = Label.new()
+	control_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	control_hint.add_theme_font_size_override("font_size", 14)
+	control_hint.add_theme_color_override("font_color", ART.CREAM)
+	box.add_child(control_hint)
+	MENU_AUDIO.hook_buttons(panel, self)
 	workbench = WORKBENCH.new()
 	workbench.configure(session)
 	add_child(workbench)
@@ -196,7 +211,8 @@ func open_catalog() -> void:
 	show()
 	preview.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	change_selection(0)
-	category_buttons[0].grab_focus()
+	SHOP_FOCUS.rebuild(panel)
+	MENU_AUDIO.play_click(self)
 
 func dismiss() -> void:
 	active = false
@@ -219,13 +235,16 @@ func handle_input(event: InputEvent) -> bool:
 			return true
 		return false
 	if event.is_action_pressed("ui_cancel") or event.is_action_pressed("pause_game"):
+		MENU_AUDIO.play_click(self)
 		close_requested.emit()
 		return true
-	if event.is_action_pressed("ui_left"):
+	if event.is_action_pressed("weapon_previous"):
 		change_selection(-1)
+		MENU_AUDIO.play_hover(self)
 		return true
-	if event.is_action_pressed("ui_right"):
+	if event.is_action_pressed("weapon_next"):
 		change_selection(1)
+		MENU_AUDIO.play_hover(self)
 		return true
 	return false
 
@@ -276,7 +295,7 @@ func price_status(item: Dictionary, owned: bool, armor: bool) -> String:
 func refresh(notice := "") -> void:
 	var count := int(session.state.economy.inventory.get("lockpick",0))
 	var lockpick_price := int(session.state.economy.SUPPLIES.lockpick.price)
-	lockpick_button.text = "COMPRAR LOCKPICK · R$ %d · INVENTÁRIO: %d" % [lockpick_price,count]
+	lockpick_button.text = String(TranslationServer.translate("COMPRAR LOCKPICK · R$ %d · INVENTÁRIO: %d")) % [lockpick_price,count]
 	lockpick_button.disabled = count >= 999 or session.state.economy.balance < lockpick_price
 	var id: String = stock[selection]
 	var item := data()
@@ -289,18 +308,21 @@ func refresh(notice := "") -> void:
 	buy.disabled = owned or not unlocked or short
 	if owned: buy.text = "PROTEÇÃO COMPLETA" if armor else "JÁ POSSUI"
 	elif not unlocked: buy.text = "BLOQUEADA"
-	elif short: buy.text = "SALDO INSUFICIENTE • $%d" % price
-	else: buy.text = "COMPRAR • $%d" % price
-	var info := "Proteção: %d / 100 • Reposição de até 100 pontos" % session.world.gameplay.armor if armor else "Dano: %d • Capacidade: %d" % [item.get("damage", 0), maxi(0, item.get("magazine_size", 0))]
+	elif short: buy.text = String(TranslationServer.translate("SALDO INSUFICIENTE • $%d")) % price
+	else: buy.text = String(TranslationServer.translate("COMPRAR • $%d")) % price
+	var info := String(TranslationServer.translate("Proteção: %d / 100 • Reposição de até 100 pontos")) % session.world.gameplay.armor if armor else String(TranslationServer.translate("Dano: %d • Capacidade: %d")) % [item.get("damage", 0), maxi(0, item.get("magazine_size", 0))]
 	var hint: String = item.get("discovery_hint", "") if not unlocked else "Bem-vindo. Escolha uma categoria; eu te mostro o equipamento."
-	if unlocked and not owned and short: hint = "Faltam $%d para esta compra." % (price - session.state.economy.balance)
-	feedback.text = "Saldo: $%d  •  %s\nVance: %s" % [session.state.economy.balance, info, hint]
-	if not notice.is_empty(): feedback.text = notice + "\nSaldo: $%d" % session.state.economy.balance
+	if unlocked and not owned and short: hint = String(TranslationServer.translate("Faltam $%d para esta compra.")) % (price - session.state.economy.balance)
+	feedback.text = String(TranslationServer.translate("Saldo: $%d  •  %s\nVance: %s")) % [session.state.economy.balance, info, hint]
+	if not notice.is_empty(): feedback.text = notice + String(TranslationServer.translate("\nSaldo: $%d")) % session.state.economy.balance
 	var rounds := maxi(0, int(item.get("magazine_size", 0))) * 2
 	var ammo_cost := ammo_price(rounds)
 	ammo_button.visible = rounds > 0 and not armor
-	ammo_button.text = "REPOR +%d %s • $%d" % [rounds, "GRANADAS" if id == "grenade" else "MUNIÇÕES", ammo_cost]
+	ammo_button.text = String(TranslationServer.translate("REPOR +%d %s • $%d")) % [rounds, "GRANADAS" if id == "grenade" else "MUNIÇÕES", ammo_cost]
 	ammo_button.disabled = not owned or session.state.economy.balance < ammo_cost
+	var belt = session.world.gameplay.belt_flashlight
+	belt_flashlight_button.text = "LANTERNA DE CINTO · JÁ POSSUI" if belt.owned else "LANTERNA DE CINTO · $300"
+	belt_flashlight_button.disabled = belt.owned or session.state.economy.balance < 300
 	var compatible := id in CUSTOM.COMPATIBLE
 	var customization: Dictionary = session.world.gameplay.customization
 	customize_button.visible = compatible
@@ -308,11 +330,15 @@ func refresh(notice := "") -> void:
 	workbench_button.text = "SABRE DE LUZ · COR" if id == "katana" else "PERSONALIZAR ARMA"
 	workbench_button.disabled = not owned
 	customize_button.disabled = not owned or (not CUSTOM.owns(customization, id, "flashlight") and session.state.economy.balance < CUSTOM.PRICE)
-	customize_button.text = "REMOVER LANTERNA" if CUSTOM.installed(customization, id) else ("INSTALAR LANTERNA" if CUSTOM.owns(customization, id, "flashlight") else "INSTALAR LANTERNA • $%d" % CUSTOM.PRICE)
+	customize_button.text = "REMOVER LANTERNA" if CUSTOM.installed(customization, id) else ("INSTALAR LANTERNA" if CUSTOM.owns(customization, id, "flashlight") else String(TranslationServer.translate("INSTALAR LANTERNA • $%d")) % CUSTOM.PRICE)
 	var category := 4 if armor else (3 if id in ["grenade", "rpg"] else (2 if id in ["knife", "knuckles", "bat", "axe", "katana"] else (0 if id in ["pistol", "magnum"] else 1)))
 	# Aba ativa por estado pressionado, não por modulate: o modulate cinza
 	# escurecia texto e fundo das abas inativas até ficarem ilegíveis.
 	for i in category_buttons.size(): category_buttons[i].set_pressed_no_signal(i == category)
+	var controls = get_node_or_null("/root/GameInput")
+	if controls != null:
+		control_hint.text = "%s / %s  Item    ·    ↑ ↓ ← →  Navegar    ·    %s  Confirmar    ·    %s  Voltar" % [controls.prompt("weapon_previous"), controls.prompt("weapon_next"), controls.prompt("ui_accept"), controls.prompt("ui_cancel")]
+	if active and panel.visible: SHOP_FOCUS.rebuild.call_deferred(panel)
 
 func style_button(button: Button) -> void:
 	WORKBENCH.style_button(button)
@@ -398,3 +424,10 @@ func _reason(reason: String) -> String:
 
 func _process(delta: float) -> void:
 	if active and is_instance_valid(gun) and not (is_instance_valid(workbench) and workbench.visible): gun.rotation.y += delta * .22
+
+func purchase_belt_flashlight() -> void:
+	if not active: return
+	if session.world.gameplay.belt_flashlight.purchase():
+		session.save_game()
+		refresh("LANTERNA EQUIPADA · G / ↑ DO CONTROLE: LIGAR OU DESLIGAR")
+	else: refresh("COMPRA INDISPONÍVEL")

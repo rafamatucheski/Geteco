@@ -29,15 +29,45 @@ func run() -> void:
 	var art := Node3D.new()
 	art.add_child(MeshInstance3D.new())
 	holder.configure(art,"cash")
+	var other := PICKUP.new()
+	root.add_child(other)
+	other.configure(Node3D.new(),"water")
+	holder.set_process(false)
+	other.set_process(false)
+	check(holder.material != other.material and holder.ring != other.ring,"material e nó animado continuam individuais")
+	var original_mesh := TorusMesh.new()
+	original_mesh.inner_radius = .29
+	original_mesh.outer_radius = .35
+	original_mesh.rings = 24
+	original_mesh.ring_segments = 6
+	check(holder.ring.mesh.surface_get_arrays(0) == original_mesh.surface_get_arrays(0),"geometria completa do halo preserva o original")
+	var other_color: Color = other.material.albedo_color
+	var other_transform: Transform3D = other.ring.transform
+	holder._process(.2)
+	check(other.material.albedo_color == other_color and other.ring.transform == other_transform,"animar uma recompensa não altera a vizinha")
+	check(is_equal_approx(art.rotation.y,.2*holder.spin_speed) and is_equal_approx(art.position.y,holder.lift+sin(.2*3.2+holder.phase)*holder.bob_height),"giro e flutuação mantêm a animação original")
+	var holder_scale: Vector3 = holder.ring.scale
+	other.halo_scale = 2.3
+	other._process(.6)
+	check(is_equal_approx(other.ring.scale.x,(1.0+sin(.6*2.5+other.phase)*.12)*2.3) and holder.ring.scale == holder_scale,"halo ampliado mantém escala independente")
+	other_color = other.material.albedo_color
+	other_transform = other.ring.transform
 	holder.set_available(false,true)
 	check(holder.consumed and holder.visible,"coleta animada começa absorvendo")
 	holder.set_available(false)
 	check(holder.visible,"reconciliação não corta a absorção")
 	await create_timer(.35).timeout
 	check(not holder.visible,"some no fim da absorção")
+	check(other.visible and not other.consumed and other.material.albedo_color == other_color and other.ring.transform == other_transform,"absorção não modifica outra recompensa")
 	holder.set_available(false)
 	check(not holder.visible,"segue escondido")
 	holder.set_available(true)
 	check(holder.visible and not holder.consumed and art.scale == Vector3.ONE,"volta restaurado")
+	check(holder.material != other.material and holder.ring != other.ring,"restauração mantém material e nó animado independentes")
+	holder.set_available(false,true)
+	await create_timer(.35).timeout
+	check(not holder.visible and holder.consumed and other.visible,"recoleta completa sem afetar a vizinha")
+	holder.set_available(true)
+	check(holder.visible and not holder.consumed and art.scale == Vector3.ONE,"nova restauração após recoleta")
 	print("REWARD_FEEDBACK_RESULT failures=",failures)
 	quit(1 if failures else 0)

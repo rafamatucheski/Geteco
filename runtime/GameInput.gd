@@ -25,10 +25,13 @@ const GAMEPAD_BINDINGS_VERSION := 2
 var _camera_motion := Vector2.ZERO
 var _aim_stick := Vector2.ZERO
 const AIM_STICK_DEADZONE := 0.20
-const AIM_TURN_SPEED_MIN := 3.0
-const AIM_TURN_SPEED_MAX := 20.0
-const AIM_RESPONSE_CURVE := 1.25
+## Radians/second: gentle corrections near center, deliberate turns at full tilt.
+const AIM_TURN_SPEED_MIN := 0.15
+const AIM_TURN_SPEED_MAX := 5.5
+const AIM_RESPONSE_CURVE := 2.0
 const KEYS := {
+	"camera_drag": [],
+	"jump": [KEY_SPACE],
 	"rage": [KEY_V],
 	"skate_ollie": [KEY_SPACE], "skate_flip": [KEY_Q], "skate_shove": [KEY_R],
 	"tank_fire": [],
@@ -39,6 +42,7 @@ const KEYS := {
 	"sprint": [KEY_SHIFT], "interact": [KEY_E], "vehicle_interact": [KEY_F], "exit_vehicle": [KEY_F,KEY_ENTER],
 	"motorcycle_wheelie": [KEY_SHIFT],
 	"handbrake": [KEY_SPACE], "horn": [KEY_H], "headlights": [KEY_L],
+	"bus_driver_shift": [KEY_B], "bus_doors": [KEY_O],
 	"radio_next": [KEY_R], "radio_previous": [], "radio_toggle": [], "reload": [KEY_R], "journal": [KEY_J], "trunk": [KEY_T],
 	"weapon_next": [KEY_Q], "weapon_previous": [], "unarmed": [KEY_X],
 	"fire": [], "aim": [], "accelerate": [], "brake": [], "pause_game": [KEY_ESCAPE], "world_map": [KEY_M],
@@ -56,6 +60,8 @@ const KEYS := {
 
 }
 const LABELS := {
+	"camera_drag": ["Girar câmera (segurar)", "Rotate camera (hold)"],
+	"jump": ["Pular", "Jump"],
 	"rage": ["Ativar RAGE", "Activate RAGE"],
 	"skate_ollie": ["Skate: ollie", "Skate: ollie"],
 	"skate_flip": ["Skate: kickflip", "Skate: kickflip"],
@@ -65,7 +71,7 @@ const LABELS := {
 	"camera_right": ["Girar câmera à direita", "Rotate camera right"],
 	"tank_fire": ["Disparar canhão do tanque", "Fire tank cannon"],
 	"surrender": ["Render-se / Cancelar rendição", "Surrender / Cancel surrender"],
-	"weapon_flashlight": ["Lanterna da arma", "Weapon flashlight"],
+	"weapon_flashlight": ["Lanterna", "Flashlight"],
 	"move_up": ["Avançar / Acelerar","Move forward / Accelerate"],
 	"move_down": ["Recuar / Ré","Move backward / Reverse"],
 	"move_left": ["Esquerda","Left"], "move_right": ["Direita","Right"],
@@ -74,6 +80,7 @@ const LABELS := {
 	"exit_vehicle": ["Sair do veículo","Exit vehicle"], "handbrake": ["Freio de mão","Handbrake"],
 	"motorcycle_wheelie": ["Empinar moto (segurar)","Motorcycle wheelie (hold)"],
 	"horn": ["Buzina","Horn"], "headlights": ["Faróis","Headlights"],
+	"bus_driver_shift": ["Assumir linha de ônibus","Drive bus route"], "bus_doors": ["Portas do ônibus","Bus doors"],
 	"reload": ["Recarregar","Reload"], "radio_next": ["Próxima rádio","Next radio"],
 	"radio_previous": ["Rádio anterior","Previous radio"], "radio_toggle": ["Ligar/desligar rádio","Toggle radio"], "journal": ["Diário","Journal"],
 	"trunk": ["Porta-malas","Trunk"], "weapon_next": ["Próxima arma","Next weapon"],
@@ -84,6 +91,7 @@ const LABELS := {
 	"siren_toggle": ["Sirene", "Siren"],
 }
 const PAD := {
+	"jump": JOY_BUTTON_A,
 	"rage": JOY_BUTTON_RIGHT_STICK,
 	"skate_ollie": JOY_BUTTON_A, "skate_flip": JOY_BUTTON_RIGHT_SHOULDER, "skate_shove": JOY_BUTTON_LEFT_SHOULDER,
 	"inventory": JOY_BUTTON_DPAD_LEFT,
@@ -101,6 +109,7 @@ const PAD := {
 	"unarmed": JOY_BUTTON_DPAD_DOWN, "reload": JOY_BUTTON_X,
 	"weapon_flashlight": JOY_BUTTON_DPAD_UP, "world_map": JOY_BUTTON_TOUCHPAD,
 	"surrender": JOY_BUTTON_B, "radio_toggle": JOY_BUTTON_DPAD_RIGHT,
+	"bus_driver_shift": JOY_BUTTON_DPAD_RIGHT, "bus_doors": JOY_BUTTON_X,
 }
 const UI_PAD := {
 	"ui_accept": JOY_BUTTON_A, "ui_cancel": JOY_BUTTON_B,
@@ -110,12 +119,16 @@ const UI_PAD := {
 ## Only pairs whose consumers are mutually exclusive may intentionally share a binding.
 ## Keep this list narrow: `interact` and `vehicle_interact` can both be live on foot.
 const CONTEXTUAL_BINDING_PAIRS := [
+	["jump", "handbrake"],
+	["jump", "skate_ollie"],
 	["rage", "horn"],
 	["rage", "siren_toggle"],
 	["sprint", "motorcycle_wheelie"],
 	["fire", "tank_fire"],
 	["vehicle_interact", "exit_vehicle"],
 	["reload", "radio_next"],
+	["bus_driver_shift", "radio_toggle"],
+	["bus_doors", "interact"], ["bus_doors", "reload"],
 	["weapon_next", "radio_next"],
 	["weapon_previous", "radio_previous"],
 	["fire", "accelerate"],
@@ -174,7 +187,7 @@ func reset_bindings() -> void:
 			var e := InputEventKey.new()
 			e.physical_keycode = code
 			InputMap.action_add_event(action,e)
-	for pair in [["fire",MOUSE_BUTTON_LEFT],["tank_fire",MOUSE_BUTTON_LEFT],["aim",MOUSE_BUTTON_RIGHT],["weapon_next",MOUSE_BUTTON_WHEEL_UP],["weapon_previous",MOUSE_BUTTON_WHEEL_DOWN]]:
+	for pair in [["fire",MOUSE_BUTTON_LEFT],["tank_fire",MOUSE_BUTTON_LEFT],["aim",MOUSE_BUTTON_RIGHT],["camera_drag",MOUSE_BUTTON_MIDDLE],["weapon_next",MOUSE_BUTTON_WHEEL_UP],["weapon_previous",MOUSE_BUTTON_WHEEL_DOWN]]:
 		var e := InputEventMouseButton.new()
 		e.button_index = pair[1]
 		InputMap.action_add_event(pair[0],e)
@@ -359,7 +372,7 @@ func rebind_gamepad(action: String, event: InputEvent) -> Dictionary:
 	sprint_toggled = false
 	_sprint_pad_down = false
 	bindings_changed.emit()
-	return {"ok": true, "message": "Botão removido de: %s." % ", ".join(removed) if not removed.is_empty() else ""}
+	return {"ok": true, "message": String(TranslationServer.translate("Botão removido de: %s.")) % ", ".join(removed) if not removed.is_empty() else ""}
 
 func clear_gamepad(action: String) -> void:
 	if not KEYS.has(action) or action == "pause_game": return
@@ -480,6 +493,16 @@ func vehicle_input() -> Vector2:
 	if not using_gamepad: return Vector2(move.x,clampf(-move.y+Input.get_action_strength("accelerate")-Input.get_action_strength("brake"),-1.0,1.0))
 	return Vector2(Input.get_axis("move_left","move_right"),Input.get_action_strength("accelerate")-Input.get_action_strength("brake"))
 
+## Read the pedals separately: opposite actions cancel in vehicle_input().
+func vehicle_burnout_throttle() -> float:
+	var accelerator := Input.get_action_strength("accelerate")
+	var brake := Input.get_action_strength("brake")
+	if not using_gamepad:
+		accelerator = maxf(accelerator, maxf(Input.get_action_strength("move_up"), -touch_move.y))
+		brake = maxf(brake, maxf(Input.get_action_strength("move_down"), touch_move.y))
+	if Input.is_action_pressed("handbrake"): brake = 1.0
+	return accelerator if accelerator > .2 and brake > .2 else 0.0
+
 func sprinting() -> bool:
 	if not touch_move.is_zero_approx(): return touch_sprint
 	return sprint_toggled if using_gamepad else Input.is_action_pressed("sprint")
@@ -543,12 +566,18 @@ func _update_gamepad_aim(stick: Vector2,delta: float) -> bool:
 func _input(event: InputEvent) -> void:
 	observe_event(event)
 
+func _mouse_gesture_active() -> bool:
+	for action in ["aim", "fire", "camera_drag"]:
+		for binding in InputMap.action_get_events(action):
+			if binding is InputEventMouseButton and Input.is_mouse_button_pressed(binding.button_index): return true
+	return false
+
 ## Input sinks call this before consuming an event: Godot dispatches descendants
 ## before the autoload, including mounted activities and modal UI.
 func observe_event(event: InputEvent) -> void:
 	var old := using_gamepad
 	var old_joypad := active_joypad
-	if (event is InputEventJoypadButton and event.pressed) or (event is InputEventJoypadMotion and absf(event.axis_value)>0.3):
+	if ((event is InputEventJoypadButton and event.pressed) or (event is InputEventJoypadMotion and absf(event.axis_value)>0.3)) and not _mouse_gesture_active():
 		using_gamepad = true
 		active_joypad = event.device
 	elif (event is InputEventKey and event.pressed) or (event is InputEventMouseButton and event.pressed) or (event is InputEventMouseMotion and event.relative.length()>2):

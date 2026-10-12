@@ -113,7 +113,7 @@ func tick(delta: float) -> Dictionary:
 	if ui_clock<=0:
 		ui_clock=.1
 		var remaining:=maxi(0,ceili(COURSE.TIME_LIMIT-float(result.get("elapsed",0))))
-		status.text=("LARGADA · %d"%ceili(float(player.run.get("countdown",0)))) if hold else "%d/6  ·  CHECKPOINT %d/4  ·  %02d:%02d"%[place,mini(int(player.run.get("checkpoint",0))+1,4),floori(float(remaining)/60.0),remaining%60]
+		status.text=(String(TranslationServer.translate("LARGADA · %d"))%ceili(float(player.run.get("countdown",0)))) if hold else "%d/6  ·  CHECKPOINT %d/4  ·  %02d:%02d"%[place,mini(int(player.run.get("checkpoint",0))+1,4),floori(float(remaining)/60.0),remaining%60]
 		var lines:=PackedStringArray()
 		for index in ordered.size():
 			var entry: Dictionary=ordered[index]

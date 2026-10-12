@@ -79,7 +79,13 @@ func run() -> void:
 		check(car.health == car.max_health and not car.damage_look.wrecked, label + ": reparo zera o dano")
 		check(paint.roughness == gloss and not paint.detail_enabled, label + ": reparo devolve a pintura")
 		check(car.visual.position == Vector3.ZERO, label + ": reparo endireita a lataria")
-		var restored := car.visual.find_children("*", "MeshInstance3D", true, false).any(func(part): return part.get_active_material(0) == paint or part.material_override == paint)
+		# Baked fleet meshes contain multiple semantic surfaces; paint need not be
+		# surface zero. Every paint material must reconnect after a repair.
+		var restored: bool = car._paint.materials.all(func(original):
+			return car.visual.find_children("*", "MeshInstance3D", true, false).any(func(part):
+				for surface in part.mesh.get_surface_count():
+					if part.get_active_material(surface)==original: return true
+				return false))
 		check(restored, label + ": pintura original volta às peças")
 		for marking in markings: check(marking.visible, "reparo restaura inscrição")
 		if archetype == "police_transport":

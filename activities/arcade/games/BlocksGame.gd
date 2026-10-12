@@ -22,6 +22,7 @@ var next_piece: int = 0
 var rotation: int = 0
 var origin := Vector2i(3, -1)
 var lines: int = 0
+var sound_events: Array[String] = []
 var _bag: Array[int] = []
 var _rng := RandomNumberGenerator.new()
 var _fall_timer: float = 0.0
@@ -38,6 +39,7 @@ func reset(seed_value: int = 1) -> void:
 	_rng.seed = seed_value
 	score = 0
 	lines = 0
+	sound_events.clear()
 	finished = false
 	board.clear()
 	_bag.clear()
@@ -67,7 +69,7 @@ func _spawn() -> void:
 	origin = Vector2i(3, -1)
 	rotation = 0
 	_fall_timer = 0.0
-	status = "NÍVEL %d  •  %d LINHAS" % [1 + floori(float(lines) / 10.0), lines]
+	status = String(TranslationServer.translate("NÍVEL %d  •  %d LINHAS")) % [1 + floori(float(lines) / 10.0), lines]
 	if not _fits(origin, rotation):
 		finished = true
 		status = "FIM DE JOGO"
@@ -95,6 +97,7 @@ func _move(horizontal: int) -> void:
 	var target := origin + Vector2i(horizontal, 0)
 	if _fits(target, rotation):
 		origin = target
+		sound_events.append("move")
 
 func _rotate() -> void:
 	for offset in [0, -1, 1, -2, 2]:
@@ -102,6 +105,7 @@ func _rotate() -> void:
 		if _fits(target, rotation + 1):
 			origin = target
 			rotation = posmod(rotation + 1, 4)
+			sound_events.append("move")
 			return
 
 func _drop_one(award: bool) -> void:
@@ -131,9 +135,12 @@ func _lock() -> void:
 		row.resize(WIDTH)
 		board.push_front(row)
 	if removed > 0:
+		sound_events.append("line")
 		var rewards := [0, 100, 300, 500, 800]
 		score += int(rewards[removed]) * (1 + floori(float(lines) / 10.0))
 		lines += removed
+	else:
+		sound_events.append("lock")
 	_spawn()
 
 func step(delta: float, controls: Dictionary) -> void:
@@ -199,7 +206,7 @@ func render(canvas: Control, area: Rect2) -> void:
 	canvas.draw_rect(Rect2(546, 105, 162, 113), Color("142039"))
 	for cell in cells(next_piece, 0):
 		_draw_cell(canvas, Vector2(574 + cell.x * 22, 133 + cell.y * 22), COLORS[next_piece])
-	_text(canvas, Vector2(551, 290), "NÍVEL %02d" % (1 + floori(float(lines) / 10.0)), 24, Color("dbecff"))
+	_text(canvas, Vector2(551, 290), String(TranslationServer.translate("NÍVEL %02d")) % (1 + floori(float(lines) / 10.0)), 24, Color("dbecff"))
 	canvas.draw_set_transform(Vector2.ZERO)
 
 func _draw_cell(canvas: Control, position: Vector2, color: Color) -> void:
@@ -208,4 +215,4 @@ func _draw_cell(canvas: Control, position: Vector2, color: Color) -> void:
 	canvas.draw_line(position + Vector2(3, 3), position + Vector2(18, 3), color.lightened(0.4), 2.0)
 
 func _text(canvas: Control, point: Vector2, text: String, size: int, color: Color) -> void:
-	canvas.draw_string(ThemeDB.fallback_font, point, text, HORIZONTAL_ALIGNMENT_LEFT, -1, size, color)
+	canvas.draw_string(ThemeDB.fallback_font, point, String(TranslationServer.translate(text)), HORIZONTAL_ALIGNMENT_LEFT, -1, size, color)

@@ -21,6 +21,8 @@ var shift_serial := 0
 var limiter := false
 var launched := false
 var surface_grip := 1.0
+var launch_blend_seconds := 0.0
+var _launch_blend_elapsed := 0.0
 var _launch_remaining := 0.0
 var _launch_factor := 1.0
 var _idle := 900.0
@@ -52,6 +54,7 @@ func reset() -> void:
 	launched = false
 	_launch_remaining = 0.0
 	_launch_factor = 1.0
+	_launch_blend_elapsed = 0.0
 
 func stage(delta: float, pedal: float) -> void:
 	if launched: return
@@ -111,8 +114,15 @@ func _integrate(dt: float, pedal: float, use_nitro: bool, brake: float) -> void:
 	throttle = clampf(pedal,0.0,1.0)
 	shift_remaining = maxf(0.0,shift_remaining-dt)
 	_launch_remaining = maxf(0.0,_launch_remaining-dt)
+	_launch_blend_elapsed += dt
 	var clutch_rpm := lerpf(_idle,redline*.45,throttle)*(1.0-smoothstep(0.0,9.0,speed_mps))
-	rpm = clampf(maxf(_coupled_rpm(),clutch_rpm),_idle,redline*1.025)
+	var target_rpm := clampf(maxf(_coupled_rpm(),clutch_rpm),_idle,redline*1.025)
+	# Race starts carry the staged revs into clutch engagement instead of
+	# replacing them on the first physics tick. Ordinary driving keeps its adapter.
+	if launch_blend_seconds > 0.0 and _launch_blend_elapsed < launch_blend_seconds*2.0:
+		rpm = move_toward(rpm,target_rpm,redline*dt*1.4)
+	else:
+		rpm = target_rpm
 	limiter = _coupled_rpm() >= redline
 	var rpm_ratio := clampf(rpm/redline,0.0,1.05)
 	var target_boost := throttle*smoothstep(.24,.67,rpm_ratio)
@@ -129,6 +139,8 @@ func _integrate(dt: float, pedal: float, use_nitro: bool, brake: float) -> void:
 	if _launch_remaining > 0.0: grip_force *= lerpf(1.0,_launch_factor,_launch_remaining/1.5)
 	wheelspin = move_toward(wheelspin,clampf((force-grip_force)/maxf(force,1.0),0.0,1.0),dt*3.0)
 	force = minf(force,grip_force)
+	if launch_blend_seconds > 0.0:
+		force *= lerpf(.04,1.0,smoothstep(0.0,launch_blend_seconds,_launch_blend_elapsed))
 	var resistance := .5*1.20*float(spec.drag_area)*speed_mps*speed_mps+mass_kg*9.81*.015
 	var before := speed_mps
 	speed_mps = maxf(0.0,speed_mps+(force-resistance)/mass_kg*dt-clampf(brake,0.0,1.0)*10.5*dt)

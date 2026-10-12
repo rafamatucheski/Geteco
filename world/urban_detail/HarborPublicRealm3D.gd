@@ -115,7 +115,9 @@ func _build_foundry_courtyard() -> void:
 	_box("AnchorCafePlanterEast", Vector3(-9.75, 0.24, 18.56), Vector3(3.38, 0.48, 0.38), "497552")
 
 func _service_box(label: String, center: Vector3, size: Vector3, hex: String) -> void:
-	_box(label, center, size, hex)
+	var prop := _box(label, center, size, hex)
+	if "Dumpster" in label or "Pallet" in label:
+		preload("res://gameplay/street_physics/FragileProps3D.gd").register_node("dumpster" if "Dumpster" in label else "pallet",prop,self)
 
 func _build_promenade(east: bool) -> void:
 	var span_center_x := -1.25 if not east else -2.5
@@ -168,6 +170,7 @@ func _bench(point: Vector3, angle: float) -> void:
 	collider.position = Vector3(0,.56,0)
 	body.add_child(collider)
 	root.add_child(body)
+	preload("res://gameplay/street_physics/FragileProps3D.gd").register_node("bench_seat",root,self)
 
 func _build_compass() -> void:
 	_disc("MuseumCompassOuter", Vector3(0, 0.07, 0), 2.875, 0.14, "8c9589")

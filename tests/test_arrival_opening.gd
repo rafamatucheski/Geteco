@@ -1,5 +1,5 @@
 extends SceneTree
-## Current Harbor opening: the call happens at home and never reveals the prison plot.
+## Production ferry movie is the opening actually selected by the game.
 const PRESENTATION := preload("res://runtime/OpeningPresentation.gd")
 var failures: Array[String] = []
 var completions: Array[bool] = []
@@ -23,30 +23,31 @@ func run() -> void:
 	var previous_3d := root.disable_3d
 	var layer := present()
 	var film = layer.film
-	check(paused and root.disable_3d, "home opening owns pause and suspends hidden city rendering")
-	film._show_caption(float(film.line_times[1][0])+.1)
-	check("Seu irmão está em Harbor" in film.subtitle.text, "home call says Vicente is alive and in Harbor")
-	film._show_caption(float(film.line_times[3][0])+.1)
-	check("na chegada" in film.subtitle.text, "caller promises to meet Dante on arrival")
+	check(paused and root.disable_3d, "ferry opening owns pause and suspends hidden city rendering")
+	check(film.video.stream != null and film.video.stream.resource_path.ends_with("/ferry/arrival.ogv"), "opening selects the produced boat movie")
+	film._show_caption(16.1)
+	check("Vim encontrar meu irmão" in film.subtitle.text, "Dante explains the boat journey")
+	film._show_caption(31.1)
+	check("Vicente" in film.subtitle.text and "lembrança" in film.subtitle.text, "phone call appears as a memory aboard the ferry")
 	film._show_caption(3.0)
-	check(film.subtitle.text.is_empty(), "quiet home scene has no decorative captions")
+	check(film.subtitle.text.is_empty(), "quiet ferry scene has no decorative captions")
 	await create_timer(.1).timeout
 	film.request_skip()
-	var frozen: float = film.elapsed
+	var frozen: float = film.video.stream_position
 	await create_timer(.1).timeout
-	check(film.skip_dialog.visible and is_equal_approx(film.elapsed,frozen), "skip confirmation pauses the home timeline")
+	check(film.skip_dialog.visible and is_equal_approx(film.video.stream_position,frozen), "skip confirmation pauses the ferry movie")
 	film.skip_dialog.hide()
 	film.skip_dialog.canceled.emit()
 	await create_timer(.1).timeout
-	check(film.elapsed > frozen, "cancel resumes the same timeline")
+	check(not film.video.paused and film.stems.all(func(stem): return not stem.stream_paused), "cancel resumes video and both audio stems")
 	film.skip()
 	film.skip()
 	await create_timer(.5).timeout
 	check(completions == [true] and not paused and root.disable_3d == previous_3d, "skip completes exactly once and restores the world")
 	TranslationServer.set_locale("en")
 	layer = present()
-	layer.film._show_caption(float(layer.film.line_times[1][0])+.1)
-	check("Your brother is in Harbor" in layer.film.subtitle.text, "home call has English subtitles")
+	layer.film._show_caption(16.1)
+	check("I'm here to see my brother" in layer.film.subtitle.text, "ferry movie has English subtitles")
 	layer.free()
 	check(not paused and root.disable_3d == previous_3d and completions == [true], "disposal releases pause without completing arrival")
 	paused = true

@@ -63,13 +63,13 @@ func _draw() -> void:
 			_text(at + Vector2(218, y), RULES.kg(int(row.grams)), 15, Color("f4c968") if row.player else Color("c6d5ce"))
 			y += 18
 	else:
-		_text(at + Vector2(18, y), "%d peixes nesta pescaria" % int(state.catches), 18, Color("c6d5ce"))
-		_text(at + Vector2(18, y + 27), "%d / %d espécies descobertas" % [int(state.species), RULES.SPECIES.size()], 17, Color("c6d5ce"))
+		_text(at + Vector2(18, y), String(TranslationServer.translate("%d peixes nesta pescaria")) % int(state.catches), 18, Color("c6d5ce"))
+		_text(at + Vector2(18, y + 27), String(TranslationServer.translate("%d / %d espécies descobertas")) % [int(state.species), RULES.SPECIES.size()], 17, Color("c6d5ce"))
 	_text(at + Vector2(18, 339), str(state.hint), 14, Color("d5e3d8"))
 	_text(at + Vector2(18, 358), str(state.cancel), 14, Color("a3b7ad"))
 
 func _text(at: Vector2, value: String, font_size: int, color: Color) -> void:
-	draw_string(_font, at, value, HORIZONTAL_ALIGNMENT_LEFT, 310, font_size, color)
+	draw_string(_font, at, tr(value), HORIZONTAL_ALIGNMENT_LEFT, 310, font_size, color)
 
 func _bar(at: Vector2, value: float, color: Color, label: String) -> void:
 	_text(at, label, 11, Color("afc2b9"))

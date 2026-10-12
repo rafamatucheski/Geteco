@@ -308,6 +308,10 @@ func run() -> void:
 	if capture_probe_on:
 		if not _audit_callback_order(): push_error(boundary_error); quit(6); return
 	RenderingServer.viewport_set_measure_render_time(root.get_viewport_rid(),true)
+	# Optional one-time foreground request after long loading, before the route.
+	# Never refocus inside gameplay; subsequent focus losses invalidate the run.
+	if "--focus-after-load" in OS.get_cmdline_user_args():
+		DisplayServer.window_move_to_foreground()
 	capture_start = Time.get_ticks_usec()
 	capture_phase = "first_pass"
 	capture_event("start",{"pid":OS.get_process_id(),"unix_seconds":Time.get_unix_time_from_system(),

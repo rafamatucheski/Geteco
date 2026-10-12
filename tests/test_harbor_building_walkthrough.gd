@@ -22,11 +22,30 @@ func check(ok: bool, label: String) -> bool:
 	return ok
 
 func boot() -> void:
+	var boot_deadline := Time.get_ticks_msec() + 180000
 	world = load("res://Main.tscn").instantiate()
 	world.set_meta("menu_save_path", save_path)
 	root.add_child(world)
 	current_scene = world
-	while world.session == null or not world.session.ready_for_play or not world.production.startup_streaming_settled: await physics_frame
+	var stable_frames := 0
+	while true:
+		if Time.get_ticks_msec() >= boot_deadline:
+			check(false, "Main boot reaches ready session and settled streaming within 180 seconds")
+			finish(3)
+			# quit() is deferred; never return into a derived runner's assertions.
+			while true: await process_frame
+		if world.session != null and world.session.ready_for_play and world.production.ready_for_play:
+			if world.production.startup_streaming_settled: break
+			# The startup flag is a one-shot result with a 240-frame budget.
+			# Runtime streaming can finish later without updating that flag.
+			var idle := true
+			for resident in world.production.regions.values():
+				if is_instance_valid(resident) and not resident.is_streaming_idle(): idle = false
+			stable_frames = stable_frames + 1 if idle else 0
+			if stable_frames >= 8: break
+		else:
+			stable_frames = 0
+		await process_frame
 	world.player.controlled_automatically = true
 	world.player.automatic_direction = Vector3.ZERO
 	world.camera.set_process_unhandled_input(false)

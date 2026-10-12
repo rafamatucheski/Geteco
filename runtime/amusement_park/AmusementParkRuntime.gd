@@ -5,6 +5,8 @@ const SITE = preload("res://world/places/amusement_park/ParkLume.gd")
 const REWARDS = preload("res://activities/amusement_park/AmusementParkRewards.gd")
 const LIFE = preload("res://activities/amusement_park/AmusementParkLife.gd")
 const VENDING = preload("res://activities/amusement_park/AmusementParkVending.gd")
+const BOARDING = preload("res://runtime/amusement_park/CoasterBoarding.gd")
+const RIDE_PRICE := 5
 var session
 var world
 var site: Node3D
@@ -26,6 +28,9 @@ var _ride_touch_fingers: Dictionary = {}
 var _prepared: Node3D
 var _exit_pending := false
 var _exit_retry := 0.0
+var ride_phase := "idle"
+var boarding_time := 0.0
+var return_requested := false
 
 func configure(owner_session) -> void:
 	session = owner_session
@@ -83,12 +88,12 @@ func _update_residency() -> void:
 			site = null
 
 func nearest_action() -> Dictionary:
-	if active: return {"id":"amusement_park","target":"leave","label":"Encerrar passeio"}
+	if active: return {"id":"amusement_park","target":"leave","label":"Voltar à estação"}
 	if not _eligible(): return {}
 	var point: Vector3 = world.player.global_position
 	if is_instance_valid(site) and session.state.place_id.is_empty():
 		if point.distance_to(site.boarding_position()) < 1.8:
-			return {"id":"amusement_park","target":"ride","label":"Andar na montanha-russa"}
+			return {"id":"amusement_park","target":"ride","label":"Andar na montanha-russa — $5"}
 		if point.distance_to(LAYOUT.ORIGIN+Vector3(29,.08,20)) < 2.0:
 			return {"id":"amusement_park","target":"wardrobe","label":"Trocar roupa e acessórios"}
 		var purchase: Dictionary = vending.nearest_action()
@@ -111,7 +116,7 @@ func perform(target: String) -> bool:
 		"ride": return start_ride()
 		"leave":
 			if not active: return false
-			leave()
+			request_exit()
 			return true
 		"wardrobe":
 			if nearest_action().get("target","") != "wardrobe": return false
@@ -125,6 +130,14 @@ func start_ride() -> bool:
 	if world.gameplay.stars > 0:
 		session.show_message("Perca a polícia antes de embarcar.")
 		return false
+	if not _platform_clear(world.player.global_position):
+		session.show_message("Aguarde liberar a plataforma de embarque.")
+		return false
+	if not session.state.economy.spend(RIDE_PRICE,"coaster:"+session._transaction()):
+		session.show_message("Entrada: $5. Dinheiro insuficiente.")
+		return false
+	# Persist the debit at a grounded checkpoint, before saves become ride-locked.
+	session.save_game()
 	_saved = {"point":world.player.global_position,"locked":world.player.input_locked,
 		"physics":world.player.is_physics_processing(),"layer":world.player.collision_layer,
 		"mask":world.player.collision_mask,"visible":world.player.visual.visible,
@@ -132,9 +145,12 @@ func start_ride() -> bool:
 		"generation":session.transition_generation,"region":session.state.region_id,
 		"heading":world.player.visual.rotation.y,"hud_visible":world.hud.visible}
 	active = true
+	ride_phase = "boarding"
+	boarding_time = 0.0
+	return_requested = false
 	_exit_pending = false
 	ride_distance = 0.0
-	ride_speed = 4.0
+	ride_speed = 0.0
 	yaw = 0.0
 	pitch = 0.0
 	world.player.input_locked = true
@@ -142,7 +158,6 @@ func start_ride() -> bool:
 	world.player.set_physics_process(false)
 	world.player.collision_layer = 0
 	world.player.collision_mask = 0
-	world.player.visual.hide()
 	world.hud.hide()
 	view = _new_camera("CoasterCamera",78.0)
 	view.environment = _perspective_environment(false)
@@ -156,15 +171,32 @@ func _tick_ride(delta: float) -> void:
 		_exit_retry -= delta
 		if _exit_retry <= 0.0: leave()
 		return
+	if ride_phase == "waiting":
+		_exit_retry -= delta
+		if _exit_retry <= 0.0:
+			_exit_retry = .25
+			if _platform_clear(_saved.point): _begin_disembark()
+		return
+	if ride_phase == "boarding" or ride_phase == "disembarking":
+		var exiting := ride_phase == "disembarking"
+		if not _platform_clear(_saved.point): return
+		boarding_time = clampf(boarding_time+(-delta if exiting else delta),0,BOARDING.SECONDS)
+		BOARDING.present(self,boarding_time,exiting,delta)
+		if exiting and boarding_time <= 0.0:
+			leave()
+		elif not exiting and boarding_time >= BOARDING.SECONDS:
+			ride_phase = "riding"
+			world.player.visual.hide()
+		return
 	var pose: Transform3D = site.sample_coaster(ride_distance)
 	var slope := (-pose.basis.z).y
 	var target := clampf(11.0-slope*24.0,3.6,20.0)
 	var remaining: float = site.coaster_length()-ride_distance
-	if remaining < 18.0: target = minf(target,4.0+remaining*.25)
+	if remaining < 18.0: target = minf(target,maxf(.65,sqrt(2.0*1.5*remaining)))
 	ride_speed = move_toward(ride_speed,target,delta*3.0)
 	ride_distance += delta*ride_speed
 	if ride_distance >= site.coaster_length():
-		leave()
+		_begin_disembark()
 		return
 	site.set_coaster_progress(ride_distance)
 	pose = site.sample_coaster(ride_distance)
@@ -172,6 +204,45 @@ func _tick_ride(delta: float) -> void:
 	view.global_transform = pose.translated_local(Vector3(0,1.15,-.35))
 	view.basis = view.basis*Basis(Vector3.UP,yaw)*Basis(Vector3.RIGHT,pitch)
 	_gamepad_look(delta)
+
+func request_exit() -> void:
+	if not active or return_requested: return
+	return_requested = true
+	if ride_phase == "boarding":
+		ride_phase = "disembarking"
+	elif ride_phase == "riding":
+		session.show_message("Retornando à estação.")
+
+func _begin_disembark() -> void:
+	_saved["ride_eye"] = view.global_transform
+	ride_distance = 0.0
+	ride_speed = 0.0
+	site.set_coaster_progress(0)
+	if not _platform_clear(_saved.point):
+		ride_phase = "waiting"
+		_exit_retry = .25
+		session.show_message("Aguarde liberar a plataforma de desembarque.")
+		return
+	ride_phase = "disembarking"
+	boarding_time = BOARDING.SECONDS
+
+func _platform_clear(start: Vector3) -> bool:
+	var dock: Transform3D = site.sample_coaster(0)
+	var stand := Vector3(dock.origin.x+1.8,start.y,dock.origin.z+.35)
+	# Check the entire public walk, not just the final spawn. The opened gate
+	# is excluded; its swept volume is reserved while the rider is locked.
+	var query := PhysicsShapeQueryParameters3D.new()
+	var shape := CapsuleShape3D.new()
+	shape.radius = .32
+	shape.height = 1.7
+	query.shape = shape
+	query.collision_mask = 7
+	query.exclude = [world.player.get_rid(),site.gate_body.get_rid()]
+	var space = world.get_world_3d().direct_space_state
+	for i in 9:
+		query.transform = Transform3D(Basis.IDENTITY,start.lerp(stand,i/8.0)+Vector3.UP*.9)
+		if not space.intersect_shape(query,1).is_empty(): return false
+	return session.position_clear(start)
 
 func _ride_interrupted() -> bool:
 	return not is_instance_valid(site) or world.gameplay.health <= 0 or session.rescue_pending or session.arrest_pending or session.transition_generation != int(_saved.get("generation",-1)) or session.state.region_id != str(_saved.get("region","")) or not session.state.place_id.is_empty()
@@ -200,7 +271,9 @@ func leave() -> void:
 			view.global_transform = dock.translated_local(Vector3(0,1.15,-.35))
 			return
 	active = false
+	ride_phase = "idle"
 	_exit_pending = false
+	player.release_seated()
 	if owns:
 		player.teleport(destination)
 		player.visual.rotation.y = float(_saved.heading)
@@ -212,7 +285,9 @@ func leave() -> void:
 	if owns and world.gameplay.health > 0 and not session.rescue_pending and not session.arrest_pending:
 		player.input_locked = bool(_saved.locked)
 	player.velocity = Vector3.ZERO
-	if is_instance_valid(site): site.set_coaster_progress(0.0)
+	if is_instance_valid(site):
+		site.set_coaster_progress(0.0)
+		site.set_boarding_open(0)
 	_restore_view(_saved)
 	if is_instance_valid(_ride_hint): _ride_hint.queue_free()
 	_ride_hint = null
@@ -236,8 +311,9 @@ func _perspective_environment(indoor: bool) -> Environment:
 		environment.background_mode = Environment.BG_COLOR
 		environment.background_color = Color("10141e")
 		environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-		environment.ambient_light_color = Color("8f9aae")
-		environment.ambient_light_energy = .42
+		environment.ambient_light_color = Color("65758b")
+		environment.ambient_light_energy = .055
+		environment.reflected_light_source = Environment.REFLECTION_SOURCE_DISABLED
 		environment.fog_enabled = false
 	else:
 		var sky := Sky.new()
@@ -266,6 +342,16 @@ func _sync_house_view() -> void:
 		pitch = 0.0
 		view = _new_camera("HauntedHouseCamera",72.0)
 		view.environment = _perspective_environment(true)
+		var torch := SpotLight3D.new()
+		torch.name = "UmbraVisitorLight"
+		torch.position = Vector3(.16,-.22,-.06)
+		torch.light_color = Color("cabfaa")
+		torch.light_energy = 1.35
+		torch.spot_range = 10.0
+		torch.spot_angle = 29.0
+		torch.spot_attenuation = 1.3
+		torch.shadow_enabled = true
+		view.add_child(torch)
 		world.player.camera = view
 		world.player.visual.hide()
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -277,7 +363,7 @@ func _tick_house_view(delta: float) -> void:
 	view.global_position = world.player.global_position+Vector3.UP*1.65
 	view.rotation = Vector3(pitch,yaw,0)
 	if not session.modal and not get_tree().paused: _gamepad_look(delta)
-	if session.room.model.has_method("update_visitor"):
+	if not session.modal and session.room.model.has_method("update_visitor"):
 		session.room.model.update_visitor(session.room.to_local(world.player.global_position),delta)
 	# Menus and pause keep their cursor; restore capture on return to exploration.
 	if session.modal or get_tree().paused: Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -329,7 +415,7 @@ func handle_input(event: InputEvent) -> bool:
 	if event is InputEventMouse and event.device == InputEvent.DEVICE_ID_EMULATION: return false
 	if event.is_echo(): return active
 	if active and (event.is_action_pressed("interact") or event.is_action_pressed("exit_vehicle") or event.is_action_pressed("ui_cancel")):
-		leave()
+		request_exit()
 		return true
 	if event is InputEventMouseMotion:
 		look_delta(event.relative*.002)
@@ -356,16 +442,16 @@ func _make_hint() -> void:
 		if is_instance_valid(touch): touch._refresh()
 		var button := Button.new()
 		button.name = "RideExitButton"
-		button.text = "Encerrar passeio"
+		button.text = "Voltar à estação"
 		button.position = Vector2(525,630)
 		button.custom_minimum_size = Vector2(230,48)
-		button.pressed.connect(leave)
+		button.pressed.connect(request_exit)
 		_ride_hint.add_child(button)
 	else:
 		var label := Label.new()
 		label.name = "RideExitHint"
-		var keys := "Esc" if controls == null else "%s / %s" % [controls.prompt("interact"),controls.prompt("pause_game")]
-		label.text = keys + " — encerrar passeio"
+		var keys: String = "E" if controls == null else controls.prompt("interact")
+		label.text = keys + " — voltar à estação"
 		label.position = Vector2(380,630)
 		label.custom_minimum_size = Vector2(520,48)
 		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER

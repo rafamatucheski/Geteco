@@ -268,7 +268,7 @@ func select_destination(station_id: String) -> void:
 		_status.text = str(selected.get("locked_reason", "Estação indisponível"))
 	else:
 		var seconds := ceili(float(selected.get("duration_seconds", 0.0)))
-		_status.text = "Viagem · %s" % _duration(seconds) if seconds > 0 else ""
+		_status.text = String(TranslationServer.translate("Viagem · %s")) % _duration(seconds) if seconds > 0 else ""
 	_status.add_theme_color_override("font_color", STYLE.MUTED if available else STYLE.MONEY)
 	_wire_station_focus()
 

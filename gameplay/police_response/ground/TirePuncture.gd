@@ -1,5 +1,6 @@
 extends Node
 ## Vehicle condition without a frame loop: the existing handling consumes it.
+static var _pop_stream: AudioStreamWAV
 const NODE_NAME := "PoliceTirePuncture"
 var vehicle: CharacterBody3D
 var count := 0
@@ -25,6 +26,7 @@ func apply(tires: int) -> bool:
 			for key in ["max_speed", "acceleration", "braking", "turn_speed", "drift_factor"]:
 				original[key] = vehicle.handling.get(key)
 		for wheel in vehicle.wheels: wheel_scales.append(wheel.scale)
+	_play_puncture()
 	count = next
 	var ratio := float(count) / 4.0
 	vehicle.max_forward_speed = float(original.speed) * lerpf(1.0, .32, ratio)
@@ -58,3 +60,30 @@ func restore() -> void:
 			vehicle.wheels[index].scale = wheel_scales[index]
 		vehicle.remove_meta("punctured_tires")
 	queue_free()
+
+func _play_puncture() -> void:
+	if _pop_stream == null:
+		var rate := 22050
+		var samples := PackedByteArray()
+		samples.resize(int(rate * .42) * 2)
+		var rng := RandomNumberGenerator.new()
+		rng.seed = 7319
+		for index in samples.size() / 2:
+			var t := float(index) / rate
+			var pop := sin(TAU * 105.0 * t) * exp(-t * 65.0)
+			var hiss := rng.randf_range(-1.0, 1.0) * exp(-t * 12.0)
+			samples.encode_s16(index * 2, int(clampf(pop * .55 + hiss * .65, -1.0, 1.0) * 32767))
+		_pop_stream = AudioStreamWAV.new()
+		_pop_stream.format = AudioStreamWAV.FORMAT_16_BITS
+		_pop_stream.mix_rate = rate
+		_pop_stream.data = samples
+	var sound := AudioStreamPlayer3D.new()
+	sound.name = "TirePunctureSound"
+	sound.stream = _pop_stream
+	sound.bus = "SFX" if AudioServer.get_bus_index("SFX") >= 0 else "Master"
+	sound.volume_db = -3.0
+	sound.max_distance = 45.0
+	sound.unit_size = 8.0
+	vehicle.add_child(sound)
+	sound.finished.connect(sound.queue_free)
+	sound.play()

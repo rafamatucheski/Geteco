@@ -1,6 +1,6 @@
 """Inventory actual character speech in the current game without starting Godot.
 
-UI notices, documents/terminals and the retired ferry film are intentionally silent.
+UI notices and documents/terminals are intentionally silent.
 The English recording keys remain tied to the exact Portuguese authored line.
 """
 from pathlib import Path
@@ -22,7 +22,8 @@ def read(path):
 def literal_constant(path, name):
     source = read(path)
     start = re.search(r'(?:const|var) ' + name + r'\s*:?=\s*', source).end()
-    value, _ = json.JSONDecoder().raw_decode(re.sub(r',(\s*[\]}])', r'\1', source[start:]))
+    literal = re.sub(r'(?m)^\s*#.*$', '', source[start:])
+    value, _ = json.JSONDecoder().raw_decode(re.sub(r',(\s*[\]}])', r'\1', literal))
     return value
 
 
@@ -42,6 +43,21 @@ def inventory():
 
     for row in authored():
         add(row['persona'], row['text'], row['en'], row['section'])
+    for row in json.loads(read('cutscenes/opening/ferry/timing.json'))['lines']:
+        add(row['speaker'], row['text'], row['en'], 'opening_ferry')
+    # Discover literal spoken exchanges across current gameplay, including new
+    # side quests. Do not require every new feature to update a hardcoded list.
+    for folder in ['runtime', 'gameplay', 'activities', 'world']:
+        for path in sorted((ROOT / folder).rglob('*.gd')):
+            source = path.read_text(encoding='utf-8-sig')
+            for match in re.finditer(r'"speaker"\s*:\s*(' + STRING + r')\s*,\s*"message"\s*:\s*(' + STRING + r')', source):
+                speaker, pt = [json.loads(x) for x in match.groups()]
+                add(speaker, pt, section=path.relative_to(ROOT).as_posix())
+    source = read('activities/desert_drag/TakeshiDragController.gd')
+    for name in ['INTRO', 'VICTORY']:
+        add('takeshi', literal_constant('activities/desert_drag/TakeshiDragController.gd', name), section='takeshi_honor')
+    for match in re.finditer(r'var words := (' + STRING + r') if[^\n]+ else (' + STRING + r')', source):
+        for raw in match.groups(): add('takeshi', json.loads(raw), section='takeshi_honor')
     for section, lines in json.loads(read('data/campaign/mountain-story-dialogue.json')).items():
         for line in lines:
             add(line['speaker'], line['pt'], line['en'], 'mountain_story:' + section)

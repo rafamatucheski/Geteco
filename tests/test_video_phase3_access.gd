@@ -87,7 +87,7 @@ func _fire_smoke() -> void:
 	check(is_zero_approx(facade.open_amount) and world.player.test_move(sweep, Vector3(0, 0, -1)), "fire closed shutter blocks whole body")
 	world.player.teleport(door + Vector3(0, .08, 2))
 	await frames(24)
-	check(facade.open_amount > .99 and not world.player.test_move(sweep, Vector3(0, 0, -1)), "fire proximity opens physical passage")
+	check(facade.open_amount < .01 and world.player.test_move(sweep, Vector3(0, 0, -1)), "fire stationary approach preserves closed shutter")
 	check(session.nearest().get("id", "") != "enter" and session.state.place_id.is_empty(), "fire approach has no E and does not transfer while standing")
 	check(await _walk_in(id), "fire walking admits player")
 	if session.state.place_id != id: return
@@ -147,9 +147,9 @@ func _check_access(id: String) -> void:
 	if "--closed-only" in OS.get_cmdline_user_args(): return
 	world.player.teleport(start)
 	await frames(24)
-	check(facade.open_amount > .99, id + " proximity opens real leaf")
-	check(session.position_clear(door + Vector3.UP * .08), id + " open portal admits full actor")
-	check(not world.player.test_move(sweep, Vector3(0, 0, -1)), id + " open vestibule admits swept walking body")
+	check(facade.open_amount < .01, id + " stationary approach preserves closed leaf")
+	check(not session.position_clear(door + Vector3.UP * .08), id + " stationary approach preserves solid portal")
+	check(world.player.test_move(sweep, Vector3(0, 0, -1)), id + " stationary approach still blocks swept walking body")
 	check(session.nearest().get("id", "") != "enter", id + " entry has no E action")
 	check(session.state.place_id.is_empty(), id + " proximity alone never transfers")
 	await capture(id + "-approach")

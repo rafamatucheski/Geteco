@@ -24,3 +24,8 @@ func _ready() -> void:
 	if door != null:
 		door.mesh.size.y = 2.7
 		door.position.y = 1.35
+
+func _box_solid(id: String, bounds: AABB, obstacle := true) -> void:
+	# The extension grows north; the original entrance/save coordinates stay put.
+	if id == "Floor": bounds = AABB(Vector3(-9,-.22,-27.5),Vector3(18,.2,35))
+	super._box_solid(id,bounds,obstacle)

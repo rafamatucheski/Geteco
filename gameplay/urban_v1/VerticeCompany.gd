@@ -94,7 +94,8 @@ func _build_yard() -> void:
 	box("BoothRear",Vector3(14,1.4,70),Vector3(6,2.8,.2),"c2bda9",true)
 	box("BoothSide",Vector3(17,1.4,73),Vector3(.2,2.8,6),"c2bda9",true)
 	box("BoothFront",Vector3(14,1.4,76),Vector3(6,2.8,.2),"55686a",true)
-	box("BoothRoof",Vector3(14,2.9,73),Vector3(6.6,.22,6.6),"34464b")
+	var booth_roof:=box("BoothRoof",Vector3(14,2.9,73),Vector3(6.6,.22,6.6),"34464b")
+	preload("res://gameplay/urban_v1/VerticeBoothRoof.gd").build(booth_roof)
 	box("BoothDesk",Vector3(15.8,.55,73),Vector3(1.2,1.1,2.4),"79664b",true)
 	for x in [-40,-34,-28]:
 		box("ParkingLine",Vector3(x,.04,66),Vector3(.1,.025,9),"c6c2a4")
@@ -479,7 +480,7 @@ func _physics_process(delta: float) -> void:
 			if receipt.ok:
 				secret.visual.hide()
 				session.save_game()
-				session.show_message("Encontrou R$ %d."%secret.amount)
+				session.show_message(String(TranslationServer.translate("Encontrou R$ %d."))%secret.amount)
 
 func dock_occupied(index: int) -> bool:
 	var query := PhysicsShapeQueryParameters3D.new()
@@ -523,11 +524,16 @@ func perform(target: String) -> bool:
 		return true
 	if target != "vertice_staff" or nearest_action().is_empty(): return false
 	var speaker := "GUARDA"
+	var actor: Node3D
 	for entry in staff:
 		if not entry.actor.dead and session.world.player.global_position.distance_to(entry.actor.global_position)<2:
 			speaker = "GUARDA" if entry.guard else ("FUNCIONÁRIO" if entry.office else "OPERADOR")
+			actor = entry.actor
 			break
-	session.show_message(speaker+": O expediente é das 8h às 18h. Mantenha a passagem dos caminhões livre." if business_open() else speaker+": Estamos fechados. Abrimos às 8h.")
+	var canonical := "O expediente é das 8h às 18h. Mantenha a passagem dos caminhões livre." if business_open() else "Estamos fechados. Abrimos às 8h."
+	var binding := preload("res://audio/VoiceActorBinding.gd").resolve(actor, speaker.to_lower(), "vertice")
+	var spoken := preload("res://audio/ActorDialogueVoice.gd").speak(actor, canonical, binding)
+	session.show_speech(speaker, str(spoken.get("message", canonical)), maxf(3.0, float(spoken.get("duration", 0.0))), false, str(binding.get("persona", "")), canonical, str(binding.get("character_id", "")), str(binding.get("section", "")))
 	return true
 
 func unload_pose(index: int,cargo: Node3D,from: Vector3,fraction: float) -> void:

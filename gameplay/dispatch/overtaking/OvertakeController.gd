@@ -384,7 +384,10 @@ func _siren_on() -> bool:
 
 func _wait(reason: String) -> void:
 	if state != "waiting": wait_age = 0.0
-	if _fire_response(): speed_limit = 0.0
+	# Failure to fit a complete overtake is not an obstacle at the bumper.
+	# Approach slowly under the driver's live collision sensor instead of
+	# freezing tens of metres away from a short response route/junction.
+	if _fire_response(): speed_limit = 0.0 if _driver.blocked_ahead or reason=="no_room_to_swerve" else 2.0
 	_set_state("waiting", reason)
 
 # --- Durante o desvio -------------------------------------------------------------

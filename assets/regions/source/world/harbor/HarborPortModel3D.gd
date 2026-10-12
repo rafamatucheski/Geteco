@@ -2,6 +2,8 @@ extends Node3D
 ## Real geometry for the port's cached orthographic model views.
 const CONTAINER := preload("res://assets/regions/source/prototypes/harbor_art_pack/props/PortContainer40ft3D.gd")
 const PORT_SHIP_PAINT := preload("res://world/regions/PortShipMaterials3D.gd")
+const SURFACES := preload("res://assets/urban_detail/UrbanSurfaces.gd")
+const WOOD_COLORS := ["987448", "66503a", "d0ae72"]
 var materials: Dictionary = {}
 var mesh_stats: Dictionary = {}
 var height := 1.0
@@ -108,6 +110,13 @@ func material(color: String, metal: bool = false) -> StandardMaterial3D:
 		mat.albedo_color = Color(color)
 		mat.roughness = .62 if metal else .88
 		mat.metallic = .35 if metal else 0.0
+		# Cor lisa sem textura lia como plano chapado (base do guindaste, caixas, muros):
+		# relevo, rugosidade e variação em espaço de mundo, mantendo o tom autorado.
+		var kind := "metal" if metal else ("wood" if color in WOOD_COLORS else "plaster")
+		var tint := mat.albedo_color
+		SURFACES.detail(mat, kind, 1.5 if kind == "wood" else 2.0, .7)
+		mat.albedo_color = Color(minf(tint.r * mat.albedo_color.r, 1.0), minf(tint.g * mat.albedo_color.g, 1.0), minf(tint.b * mat.albedo_color.b, 1.0))
+		mat.roughness = 1.0
 		materials[key] = mat
 	return materials[key]
 

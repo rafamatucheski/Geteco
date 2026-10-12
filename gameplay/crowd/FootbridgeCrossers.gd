@@ -15,11 +15,14 @@ var _crossers: Dictionary = {} # instance_id da passarela -> Array de atores
 
 static func route_for(bridge: Node3D) -> PackedVector3Array:
 	var half_deck: float = BRIDGE.span_for(bridge.length) * 0.5 + BRIDGE.LANDING
-	var foot: float = half_deck + BRIDGE.run_length()
+	var landing_z: float = half_deck - bridge.width * 0.5
+	var top_x: float = bridge.width * 0.5
+	var foot_x: float = top_x + BRIDGE.run_length()
 	var local := [
-		Vector3(0, 0, foot + APPROACH), Vector3(0, 0, foot + 0.4),
-		Vector3(0, BRIDGE.DECK_HEIGHT, half_deck - 0.4), Vector3(0, BRIDGE.DECK_HEIGHT, -half_deck + 0.4),
-		Vector3(0, 0, -foot - 0.4), Vector3(0, 0, -foot - APPROACH)]
+		Vector3(foot_x + APPROACH, 0, landing_z), Vector3(foot_x + 0.4, 0, landing_z),
+		Vector3(top_x, BRIDGE.DECK_HEIGHT, landing_z), Vector3(0, BRIDGE.DECK_HEIGHT, landing_z),
+		Vector3(0, BRIDGE.DECK_HEIGHT, -landing_z), Vector3(top_x, BRIDGE.DECK_HEIGHT, -landing_z),
+		Vector3(foot_x + 0.4, 0, -landing_z), Vector3(foot_x + APPROACH, 0, -landing_z)]
 	# Circuito em palíndromo: o último ponto volta pelo mesmo caminho, nunca
 	# cortando a rua em linha reta do fim para o começo.
 	var loop := local.duplicate()
@@ -28,7 +31,7 @@ static func route_for(bridge: Node3D) -> PackedVector3Array:
 	for point in loop: result.append(bridge.global_transform * point)
 	return result
 
-func update(world: Node, focus: Vector3, region_id: String) -> void:
+func update(world: Node, focus: Vector3, region_id: String, population_cap := 40) -> void:
 	var seen := {}
 	for bridge in _bridges(world):
 		if bridge.global_position.distance_to(focus) > ACTIVE_RADIUS: continue
@@ -37,7 +40,7 @@ func update(world: Node, focus: Vector3, region_id: String) -> void:
 		var crew: Array = _crossers.get(key, [])
 		crew = crew.filter(func(actor): return is_instance_valid(actor) and not actor.dead and actor.route.size() > 2)
 		var route := route_for(bridge)
-		while crew.size() < PER_BRIDGE:
+		while crew.size() < PER_BRIDGE and world.people.size() < population_cap:
 			crew.append(_spawn(world, route, crew.size(), region_id))
 		_crossers[key] = crew
 	# Passarela descarregada ou longe: libera seus civis.

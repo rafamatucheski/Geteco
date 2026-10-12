@@ -1,5 +1,49 @@
 # Casas compráveis — 28/09/2026
 
+## Circulação, escada e compra — 09/10/2026
+
+Revisão das três casas existentes a partir da gravação de Quayside: o vão entre
+sofá e mesa tinha 60 cm, exatamente o diâmetro da cápsula de Dante. A mesa e seu
+volume físico foram afastados 40 cm, deixando um metro livre. Não há teleporte
+de recuperação nem permissão para atravessar ou subir nos móveis.
+
+A escada da cobertura usa um ponto autorado junto à parede do fundo em cada
+planta, com teste de volume e caminho livre. O ponto integra as reservas de
+circulação dos móveis de gatos. Compra usa cartão de 340 × 220 px (250 px com
+crédito da troca), preço, confirmação e cancelar. O som existente de conquista
+toca somente após uma compra confirmada com sucesso. Fechar ou substituir o
+cartão restaura as dimensões dos demais menus.
+
+Validação dirigida: `tests/test_residence_circulation.gd`, Main real, Godot
+4.7.2 .NET e `Harbor.csproj` compilado. Evidências em
+`evidence/residence-circulation-20261009/`: **114 verificações, zero falhas**,
+em `evidence/residence-circulation-verified.log`. Inclui compra real pela UI,
+preço e rejeição de repetição, disparo do áudio, cancelamento visível sem scroll,
+restauração ao substituir menu, varredura e movimento real de jogador/NPC no vão,
+corpo apoiado no piso, subida/descida pela escada, caminhada até a porta e saída
+com controle liberado. O primeiro runner revelou duas premissas incorretas da
+fixture: conquistas financeiras acrescentam R$ 250 ao saldo e a câmera exterior
+mantém o controle bloqueado brevemente após a transição. Ambas foram corrigidas
+na fixture, sem alterar essas regras do jogo.
+
+Fotos finais: `verified-purchase.png`, `verified-purchase-trade.png` e
+`verified-quayside_house*.png`. O ajuste final de posição junto às cortinas de
+Westgate/Canal passou **72 verificações, zero falhas**, em
+`evidence/residence-circulation-wall-access.log`; fotos `wall-access-*.png`.
+As imagens de jogador/NPC atrás do sofá, no corredor e à frente da mesa foram
+inspecionadas separadamente dos testes físicos. Essa revisão não certifica todos
+os móveis e ângulos das casas. O cue usa a amostra existente de conquista; foi
+verificado o acionamento, sem nova certificação da qualidade audível.
+
+Quayside, Mobile/RTX 4060 Laptop, 1280×720, limite 144 FPS, VSync ligado, 30 s:
+antes → depois: FPS 143,70 → 140,76; p50 6,940 → 6,958 ms; p95 8,804 → 10,122 ms;
+p99 14,261 → 11,855 ms; máximo 23,603 → 39,305 ms; frames acima de 33,3 ms 0 → 1,
+acima de 66,7 ms 0 → 0. Amostras brutas em `before.json`/`after.json`.
+**Desempenho inconclusivo:** outro benchmark Godot estava ativo no baseline,
+e p95 aumentou cerca de 15%; não há comparação equivalente que aprove regressão.
+Não houve repetição do benchmark para tentar obter aprovação. Não há nova
+certificação integral nem mudança nas contagens de lugares/interiores.
+
 ## Interações presenciais — 02/10/2026
 
 Atualização das três casas existentes: Westgate Garden, Quayside e Canal North.

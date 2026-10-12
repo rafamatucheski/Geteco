@@ -130,7 +130,11 @@ func _create(index: int) -> Dictionary:
 	node.set_meta("desert_wildlife",true)
 	add_child(node)
 	var body := _instances(node,"Body",_sphere_mesh(),18 if snake else 6)
-	var part_mesh: Mesh = _sphere_mesh() if snake else _limb_mesh()
+	var part_mesh: Mesh
+	if snake:
+		part_mesh = _sphere_mesh()
+	else:
+		part_mesh = _limb_mesh()
 	var parts := _instances(node,"Head" if snake else "LegsTailClaws",part_mesh,3 if snake else 25)
 	var result := {"node":node,"snake":snake,"body":body,"parts":parts,"active":false,"anchor":Vector2.ZERO,"phase":float(index)*1.79,"travel":0.0,"animation_time":0.0,"height_previous":0.0,"height_target":0.0,"height_current":0.0}
 	if snake: _animate_snake(result,0)

@@ -106,6 +106,7 @@ func _build() -> void:
 		worker.collision_mask=7
 		worker.set_meta("gameplay_role","ambient_worker")
 		worker.set_meta("mining_worker",station.id)
+		if station.id == "sample_breaker": worker.add_to_group("mining_job_contacts")
 		var collider := CollisionShape3D.new()
 		collider.shape=capsule
 		collider.position.y=.86

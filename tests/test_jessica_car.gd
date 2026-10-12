@@ -12,6 +12,7 @@ var failures: Array[String] = []
 func _initialize() -> void: run.call_deferred()
 
 func run() -> void:
+	check_bank_anchors()
 	check(FLEET.spec(SPEC.ID).get("turbo_audio",false),"cold catalogue enables existing turbo audio")
 	var car := VEHICLE.new()
 	car.archetype = SPEC.ID
@@ -79,6 +80,35 @@ func run() -> void:
 	await process_frame
 	print("JESSICA_CAR_RESULT checks=%d failures=%d" % [checks,failures.size()])
 	quit(0 if failures.is_empty() else 1)
+
+func check_bank_anchors() -> void:
+	var had_document := Engine.has_meta("geteco_world_edit_document")
+	var saved_document: Variant = Engine.get_meta("geteco_world_edit_document") if had_document else null
+	var document := {"regions":{"harbor":{}}}
+	Engine.set_meta("geteco_world_edit_document", document)
+	var places := preload("res://world/places/PlaceCatalog.gd")
+	var original: Dictionary = places.get_definition("harbor_bank")
+	var runtime := RUNTIME.new()
+	var parking: Vector3 = original.exterior_position + Vector3(0,.12,18.4)
+	check(runtime._bank_parking().is_equal_approx(parking), "Jessica parking follows the authored bank position")
+	check(runtime._bank_parking().is_equal_approx(parking), "repeated contact queries preserve the bank anchor")
+	var origin: Vector3 = original.exterior_position
+	var row := {"position":[origin.x+20.0,origin.z-10.0],"rotation":90.0,"size":[14.0,10.0],"height":5.0,
+		"service_base":{"position":[origin.x,origin.z],"size":[14.0,10.0],"height":5.0}}
+	document.regions.harbor["building/NorthFrontage0"] = row
+	var edited: Dictionary = places.get_definition("harbor_bank")
+	check(runtime._bank_parking().is_equal_approx(edited.exterior_position+Vector3(0,.12,18.4)), "live bank edit updates Jessica parking")
+	runtime.session = {"state":{"campaign":{"active_id":"jessica_bank"},"world_state":{"jessica":{"bank_phase":"accepted"}}}}
+	check(runtime.target_position().is_equal_approx(edited.entry_position), "accepted mission targets the edited bank entrance")
+	row.position[0] += 7.0
+	edited = places.get_definition("harbor_bank")
+	check(runtime.target_position().is_equal_approx(edited.entry_position), "in-place editor mutation invalidates the bank anchor")
+	document.regions.harbor.clear()
+	check(runtime._bank_parking().is_equal_approx(parking), "removing bank override restores authored parking")
+	runtime.session = null
+	runtime.free()
+	if had_document: Engine.set_meta("geteco_world_edit_document",saved_document)
+	else: Engine.remove_meta("geteco_world_edit_document")
 
 func check(ok: bool, label: String) -> void:
 	checks += 1

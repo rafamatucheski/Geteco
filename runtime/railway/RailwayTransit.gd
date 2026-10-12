@@ -331,7 +331,7 @@ func _physics_process(delta: float) -> void:
 func _process(_delta: float) -> void:
 	if session == null or not session.ready_for_play: return
 	if riding:
-		if Input.mouse_mode == Input.MOUSE_MODE_HIDDEN: Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		if Input.mouse_mode in [Input.MOUSE_MODE_HIDDEN, Input.MOUSE_MODE_CONFINED_HIDDEN]: Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		if not _boarding: _update_camera(true)
 		return
 

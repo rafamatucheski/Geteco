@@ -19,8 +19,8 @@ const PROTECTION := preload("res://gameplay/DamageProtection.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const DEBRIS_GROUND := preload("res://gameplay/street_physics/DebrisGroundProjection.gd")
 
-# V1 VehiclePersonImpact: MIN_SPEED 60 px/s, letal a partir de 200 px/s.
-const PERSON_MIN_SPEED := 60.0 / 16.0
+# Even a bumper-start acceleration displaces people; lethal speed stays at 200 px/s.
+const PERSON_MIN_SPEED := 0.05
 const LETHAL_SPEED := 200.0 / 16.0
 # Batida entre carros: velocidade de aproximação mínima para empurrar/rodar.
 const CRASH_MIN_CLOSING := 3.0
@@ -101,31 +101,51 @@ static func vehicle_repaired(vehicle: CharacterBody3D) -> void:
 func _pre_move(vehicle: CharacterBody3D, delta: float) -> void:
 	var planar := Vector3(vehicle.velocity.x, 0, vehicle.velocity.z)
 	var speed := planar.length()
-	if speed < 0.4: return
+	if speed < PERSON_MIN_SPEED: return
 	var motion := planar * delta
+	var stage := STALL_WORK.begin()
 	_hit_people(vehicle, planar, motion)
+	STALL_WORK.finish_slow("street.pre.people", stage, 5000, vehicle)
+	stage = STALL_WORK.begin()
 	_hit_props(vehicle, planar, motion)
+	STALL_WORK.finish_slow("street.pre.props", stage, 5000, vehicle)
+	stage = STALL_WORK.begin()
 	var crushed := CRUSH.prepare(vehicle, planar, delta)
+	STALL_WORK.finish_slow("street.pre.crush", stage, 5000, vehicle)
 	if is_instance_valid(crushed):
+		stage = STALL_WORK.begin()
 		CONTACT_AUDIO.play_contact(vehicle, crushed, crushed.global_position, speed, "heavy")
+		STALL_WORK.finish_slow("street.pre.crush_audio", stage, 5000, vehicle)
 
 
 ## Varre a forma real do carro (V1 prepare_motion): pessoa atingida acima do
 ## limiar sai voando e o carro não para nela; pessoa já caída não vira parede.
 func _hit_people(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> void:
 	var player = controller.world.get("player") if controller != null else null
-	# test_move é um shape cast; só vale a pena com alguém perto do carro.
-	var reach := motion.length() + float(vehicle.get("half_length") if vehicle.get("half_length") != null else 2.3) + 1.5
+	# Traffic uses the proximity cache; the player's car also reaches uncached NPCs.
+	var half_length: Variant = vehicle.get("half_length")
+	var reach := motion.length() + float(half_length if half_length != null else 2.3) + 1.5
+	var reach_squared := reach * reach
+	var origin := vehicle.global_position
 	var anyone := false
 	for person in _people_cache:
-		if is_instance_valid(person) and person != player and person.global_position.distance_squared_to(vehicle.global_position) < reach * reach:
+		if is_instance_valid(person) and person != player and person.global_position.distance_squared_to(origin) < reach_squared:
 			anyone = true
 			break
-	if not anyone: return
+	# The controlled car must also reach authored/nested NPCs absent from the cache.
+	if not anyone and vehicle.get("controlled") != true: return
 	for attempt in 4:
 		var contact := KinematicCollision3D.new()
-		if not vehicle.test_move(vehicle.global_transform, motion, contact): return
-		var person := contact.get_collider() as CharacterBody3D
+		var cast_began := STALL_WORK.begin()
+		var touched := vehicle.test_move(vehicle.global_transform, motion, contact, vehicle.safe_margin, true, 8)
+		STALL_WORK.finish_slow("street.pre.people.cast", cast_began, 5000, vehicle)
+		if not touched: return
+		var person: CharacterBody3D
+		for index in contact.get_collision_count():
+			# Ignore support contacts; a floor must not hide a pedestrian at the bumper.
+			if absf(contact.get_normal(index).y) > 0.55: continue
+			person = contact.get_collider(index) as CharacterBody3D
+			break
 		if not _is_person(person) or person == player or PROTECTION.is_protected(person): return
 		if person.get("dead") == true or person.has_meta("street_down"):
 			_except(vehicle, person)
@@ -133,10 +153,16 @@ func _hit_people(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> 
 		var toward := person.global_position - vehicle.global_position
 		toward.y = 0
 		var closing := planar.dot(toward.normalized()) if toward.length_squared() > 0.0001 else planar.length()
-		var minimum := 1.8 if _vehicle_mass(vehicle) >= CRUSH.HEAVY_MASS else PERSON_MIN_SPEED
-		if closing < minimum: return
+		if closing < PERSON_MIN_SPEED: return
 		_except(vehicle, person)
-		var lethal := planar.length() >= LETHAL_SPEED
+		if person.is_in_group("skate_boards"):
+			# The mounted capsule represents the rider, not a solid road barrier.
+			# Bail before moving the car; the loose board keeps only floor collision.
+			person.receive_damage(maxf(1.0, closing * 4.0), vehicle)
+			person.rotation.y = atan2(-planar.x, -planar.z)
+			person.speed = minf(closing * 0.35, 8.0)
+			continue
+		var lethal := planar.length() >= LETHAL_SPEED and person.has_method("receive_damage")
 		FLIGHT.launch(person, planar, lethal, self, vehicle)
 		var response := CRUSH.light_impact_response(vehicle, planar.length())
 		_scale_vehicle_speed(vehicle, 1.0 - 0.12 * response)
@@ -152,18 +178,53 @@ func _hit_people(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> 
 
 
 func _hit_props(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> void:
-	var next := vehicle.global_transform.translated(motion)
+	# Closing speed cannot exceed planar speed. Below the existing impact limit,
+	# FragileProps.hit has no effect; skip collecting candidates for creeping cars.
+	if planar.length() < FRAGILE.WOBBLE_SPEED: return
+	var start := vehicle.global_transform
+	var inverse := start.affine_inverse()
+	var local_motion := inverse.basis * motion
 	var half_width := float(vehicle.get("half_width")) if vehicle.get("half_width") != null else 1.0
 	var half_length := float(vehicle.get("half_length")) if vehicle.get("half_length") != null else 2.3
-	for item in FRAGILE.query(next.origin, half_length + 1.5):
-		var local := next.affine_inverse() * (item.point as Vector3)
-		var radius: float = FRAGILE.spec(item).radius
-		if absf(local.x) > half_width + radius or absf(local.z) > half_length + radius: continue
+	var query_began := STALL_WORK.begin()
+	var candidates := FRAGILE.query(start.origin + motion * 0.5, motion.length() * 0.5 + half_length + 2.0)
+	STALL_WORK.finish_slow("street.pre.props.query", query_began, 5000, vehicle)
+	if candidates.is_empty(): return
+	# The spatial index returns whole 8 m cells. Only query native movement
+	# when a decoration can intersect the sweep; keep the wall-clipped check
+	# below authoritative, including its existing safe-margin extension.
+	var possible_contact := false
+	var full_motion := inverse.basis * (motion + motion.normalized() * vehicle.safe_margin)
+	for item in candidates:
+		var local := inverse * (item.point as Vector3)
+		if absf(local.y) > 2.0: continue
+		var radius: float = float(item.get("radius",FRAGILE.spec(item).radius))
+		if swept_prop_contact(local, full_motion, half_width + radius, half_length + radius):
+			possible_contact = true
+			break
+	if not possible_contact: return
+	# A wall or campaign barrier blocks the sweep before decorations behind it.
+	var obstruction := KinematicCollision3D.new()
+	var cast_began := STALL_WORK.begin()
+	var obstructed := vehicle.test_move(start, motion, obstruction)
+	STALL_WORK.finish_slow("street.pre.props.cast", cast_began, 5000, vehicle)
+	if obstructed:
+		if absf(obstruction.get_normal().y) < 0.55:
+			local_motion = inverse.basis * (obstruction.get_travel() + motion.normalized() * vehicle.safe_margin)
+	for item in candidates:
+		var local := inverse * (item.point as Vector3)
+		var radius: float = float(item.get("radius",FRAGILE.spec(item).radius))
+		if not swept_prop_contact(local, local_motion, half_width + radius, half_length + radius): continue
+		# Decorations on another level must not break beneath a bridge.
+		if absf(local.y) > 2.0: continue
 		var toward: Vector3 = item.point - vehicle.global_position
 		toward.y = 0
 		var closing := planar.dot(toward.normalized()) if toward.length_squared() > 0.0001 else planar.length()
 		if closing <= 0.0: continue
-		if FRAGILE.hit(item, closing, planar, self):
+		var hit_began := STALL_WORK.begin()
+		var yielded := FRAGILE.hit(item, closing, planar, self)
+		STALL_WORK.finish_slow("street.pre.props.hit", hit_began, 5000, vehicle)
+		if yielded:
 			var spec: Dictionary = FRAGILE.spec(item)
 			var response := CRUSH.light_impact_response(vehicle, planar.length())
 			_scale_vehicle_speed(vehicle, 1.0 - float(spec.drag) * response)
@@ -173,6 +234,23 @@ func _hit_props(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> v
 			if is_instance_valid(effects) and is_instance_valid(effects.get("impact_effects")):
 				effects.impact_effects.present_impact(item.point + Vector3.UP * 0.6, -toward.normalized(), closing, hash(item.point))
 			if spec.family == "post" and response > 0.01: _shake_if_player(vehicle, 0.12 * response)
+
+
+static func swept_prop_contact(point: Vector3, motion: Vector3, width: float, length: float) -> bool:
+	# Segment against the prop-expanded car footprint, including the starting pose.
+	var enter := 0.0
+	var leave := 1.0
+	for axis in [0, 2]:
+		var extent := width if axis == 0 else length
+		if absf(motion[axis]) < 0.000001:
+			if absf(point[axis]) > extent: return false
+			continue
+		var a: float = (point[axis] - extent) / motion[axis]
+		var b: float = (point[axis] + extent) / motion[axis]
+		enter = maxf(enter, minf(a, b))
+		leave = minf(leave, maxf(a, b))
+		if enter > leave: return false
+	return true
 
 
 func _scale_vehicle_speed(vehicle: CharacterBody3D, factor: float) -> void:
@@ -189,7 +267,9 @@ func _except(vehicle: CharacterBody3D, body: PhysicsBody3D) -> void:
 
 
 static func _is_person(body: Object) -> bool:
-	return body is CharacterBody3D and body.has_method("receive_damage") and body.get("health") != null and body.get("dead") != null and not body.is_in_group("drivable") and body.get("horizontal_velocity") == null
+	if not body is CharacterBody3D or body.is_in_group("drivable") or body.get("horizontal_velocity") != null: return false
+	if body.is_in_group("skate_boards"): return body.get("riding") == true
+	return (body.has_method("receive_damage") and body.get("health") != null and body.get("dead") != null) or ((body.collision_layer & 2) != 0 and FLIGHT.actor_visual(body) != null)
 
 
 # ---------------------------------------------------------------------------
@@ -199,6 +279,15 @@ func _post_move(vehicle: CharacterBody3D, incoming: Vector3, delta: float) -> vo
 	var stage := STALL_WORK.begin()
 	for index in vehicle.get_slide_collision_count():
 		var collision := vehicle.get_slide_collision(index)
+		var collider := collision.get_collider()
+		if collider is StaticBody3D and absf(collision.get_normal().y) < 0.55:
+			var closing := maxf(0.0, -incoming.dot(collision.get_normal()))
+			var key := "solid|%d|%d" % [vehicle.get_instance_id(), collider.get_instance_id()]
+			var now := Time.get_ticks_msec()
+			if closing >= 6.0 and now - int(_crash_pairs.get(key, -100000)) >= 650:
+				_crash_pairs[key] = now
+				_shake_if_player(vehicle, clampf(closing / 65.0, 0.08, 0.55))
+				if closing >= 12.0: spawn_glass(collision.get_position(), -collision.get_normal())
 		var other := collision.get_collider() as CharacterBody3D
 		if other == null or other == vehicle or other.get("horizontal_velocity") == null: continue
 		if CRUSH.is_riding(vehicle, other) or CRUSH.is_riding(other, vehicle): continue
@@ -239,10 +328,14 @@ func _stall_crash(vehicle: CharacterBody3D, other: CharacterBody3D, normal: Vect
 	if PROTECTION.is_protected(other): return
 	# Apply damage here, behind the pair cooldown, instead of every contact frame.
 	var stage := STALL_WORK.begin()
-	vehicle.receive_damage(minf(closing * CRASH_DAMAGE_PER_SPEED, float(vehicle.get("max_health")) * CRASH_DAMAGE_MAX_RATIO), other)
+	var self_damage:=minf(closing * CRASH_DAMAGE_PER_SPEED, float(vehicle.get("max_health")) * CRASH_DAMAGE_MAX_RATIO)
+	if vehicle.has_method("receive_impact"): vehicle.receive_impact(self_damage,vehicle.to_local(point),other)
+	else: vehicle.receive_damage(self_damage,other)
 	STALL_WORK.finish_slow("street.crash.damage_self",stage,5000,vehicle)
 	stage = STALL_WORK.begin()
-	other.receive_damage(minf(closing * CRASH_DAMAGE_PER_SPEED, float(other.get("max_health")) * CRASH_DAMAGE_MAX_RATIO), vehicle)
+	var other_damage:=minf(closing * CRASH_DAMAGE_PER_SPEED, float(other.get("max_health")) * CRASH_DAMAGE_MAX_RATIO)
+	if other.has_method("receive_impact"): other.receive_impact(other_damage,other.to_local(point),vehicle)
+	else: other.receive_damage(other_damage,vehicle)
 	STALL_WORK.finish_slow("street.crash.damage_other",stage,5000,other)
 	stage = STALL_WORK.begin()
 	var into := -normal
@@ -327,6 +420,8 @@ func _update_slide(vehicle: CharacterBody3D, delta: float) -> void:
 
 func on_body_landed(actor: CharacterBody3D, lethal: bool, source: Node, impact_speed: float, heading: Vector3) -> void:
 	if PROTECTION.is_protected(actor): return
+	# Authored contacts without a combat contract still fall and recover physically.
+	if not actor.has_method("receive_damage"): return
 	actor.set_meta("street_vehicle_hit", true)
 	var health: float = float(actor.get("health"))
 	if lethal:
@@ -334,7 +429,8 @@ func on_body_landed(actor: CharacterBody3D, lethal: bool, source: Node, impact_s
 		# receive_damage deixa layer 0 e dispara a queda da V2.
 	else:
 		# Sobrevive caído com pouca vida (V1 deixava 1 de vida esperando a ambulância).
-		actor.receive_damage(maxf(1.0, health - clampf(22.0 - impact_speed, 6.0, 18.0)), source)
+		var damage := maxf(1.0, impact_speed * 3.0) if impact_speed < 3.75 else maxf(1.0, health - clampf(22.0 - impact_speed, 6.0, 18.0))
+		actor.receive_damage(damage, source)
 		if actor.get("dead") != true:
 			var visual: Node3D = actor.get("visual")
 			if is_instance_valid(visual): preload("res://gameplay/CharacterFallPresentation3D.gd").apply_fall(actor, visual, heading)
@@ -395,6 +491,9 @@ func _physics_process(delta: float) -> void:
 	_watch_clock += delta
 	if _watch_clock < WATCH_INTERVAL: return
 	_watch_clock = 0.0
+	var now := Time.get_ticks_msec()
+	for key in _crash_pairs.keys():
+		if now - int(_crash_pairs[key]) > 2500: _crash_pairs.erase(key)
 	_watch_people()
 
 
@@ -436,6 +535,7 @@ func _watch_people() -> void:
 	var seen := {}
 	_people_cache = _collect_people()
 	for person in _people_cache:
+		if person.get("health") == null or person.get("dead") == null: continue
 		var id: int = person.get_instance_id()
 		seen[id] = true
 		var health := float(person.get("health"))

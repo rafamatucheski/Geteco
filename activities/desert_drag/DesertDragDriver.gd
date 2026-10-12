@@ -29,7 +29,7 @@ static func attach(car: CharacterBody3D, identity: String) -> Node3D:
 	else:
 		model = preload("res://gameplay/jessica/JessicaModel.gd").new() if identity=="jessica" else preload("res://assets/CivilianModel.gd").new()
 		if identity != "jessica":
-			var look: Dictionary = PEOPLE.LOOKS[identity]
+			var look: Dictionary = PEOPLE.LOOKS.get(identity,{"variant":12000+absi(identity.hash())%500,"coat":"64727b","pants":"30383e","skin":"bd8d6c","hair":"302721","height":1.0,"build":1,"female":identity in ["open_celia","open_mara"],"hat":0,"beard":0,"glasses":false})
 			model.appearance_locked = true
 			model.appearance_variant = int(look.variant)
 			model.coat_color = Color(look.coat)

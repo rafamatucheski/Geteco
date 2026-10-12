@@ -91,7 +91,7 @@ func finish(success: bool) -> void:
 	if success: unlocked.emit()
 	else: cancelled.emit()
 func _refresh() -> void:
-	info.text="%s — TRAVAS %d/%d • ERROS %d/%d"%[lock_title,pins,required_pins,mistakes,allowed_mistakes]
+	info.text=String(TranslationServer.translate("%s — TRAVAS %d/%d • ERROS %d/%d"))%[lock_title,pins,required_pins,mistakes,allowed_mistakes]
 func _draw_dial() -> void:
 	var center := dial.size*.5
 	dial.draw_circle(center,91,Color("333f42"))

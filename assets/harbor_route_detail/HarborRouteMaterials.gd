@@ -20,6 +20,11 @@ static func get_mat(key: String, color: Color = Color.WHITE, roughness: float = 
 		mat.emission_enabled = true
 		mat.emission = emissive
 		mat.emission_energy_multiplier = 1.6
+	elif color.a >= 1.0:
+		# Cor lisa lia como plano chapado: relevo e rugosidade em espaço de mundo, mesmo tom.
+		SURFACES.detail(mat, "metal" if metallic > 0.1 else "plaster", 2.0, .7)
+		mat.albedo_color = Color(minf(color.r * mat.albedo_color.r, 1.0), minf(color.g * mat.albedo_color.g, 1.0), minf(color.b * mat.albedo_color.b, 1.0))
+		mat.roughness = 1.0
 	_cache[key] = mat
 	return mat
 
@@ -70,11 +75,11 @@ static func trash_bin_metal() -> StandardMaterial3D:
 
 ## Institutional Harbor Police blue for bollard accent bands and precinct lamp posts (#234c58)
 static func police_navy() -> StandardMaterial3D:
-	return get_mat("police_navy", Color("#234c58"), 0.55, 0.35)
+	return SURFACES.material("route_police_navy", "metal", Color("#234c58"), 0.55, 0.35, 1.0, 1.0)
 
 ## Municipal emergency hydrant red (#a82b2b)
 static func hydrant_red() -> StandardMaterial3D:
-	return get_mat("hydrant_red", Color("#a82b2b"), 0.50, 0.40)
+	return SURFACES.material("route_hydrant_red", "metal", Color("#a82b2b"), 0.50, 0.40, 0.8, 1.0)
 
 ## Polished brass fittings on hydrants (#c89b3c)
 static func hydrant_brass() -> StandardMaterial3D:
@@ -82,7 +87,7 @@ static func hydrant_brass() -> StandardMaterial3D:
 
 ## Industrial workshop hazard yellow for apron safety posts (#e5b535)
 static func hazard_yellow() -> StandardMaterial3D:
-	return get_mat("hazard_yellow", Color("#e5b535"), 0.45, 0.20)
+	return SURFACES.material("route_hazard_yellow", "metal", Color("#e5b535"), 0.45, 0.20, 1.0, 1.0)
 
 ## Weathered asphalt/grease patch for garage driveway transition (#383634)
 static func workshop_apron() -> StandardMaterial3D:

@@ -31,6 +31,7 @@ const SPAWN_CANDIDATES_CHECKED_SERVICE := 8
 ## Candidatos planejados por quadro na busca de ponto de partida da emergência.
 const SERVICE_SEARCH_BUDGET := 2
 const MAX_WRECKS := 4
+const DOOR_WARM_BUDGET_USEC := 1000
 
 var world: Node3D
 var gameplay: Node3D
@@ -61,6 +62,8 @@ var _service_clock := 0.0
 var _scan_clock := 0.0
 var _wreck_clock := 0.0
 var _clock := 0.0
+var _door_warm_frame := -1
+var _door_warm_cursor := 0
 var _prepared_ground_cells: Dictionary = {}
 var roadblocks: RefCounted
 var investigation_unit: RefCounted
@@ -137,6 +140,7 @@ func _physics_process(delta: float) -> void:
 	var traced := TRACE.begin()
 	_clock += delta
 	router.advance(delta)
+	_warm_approaching_doors()
 	for unit in units.duplicate():
 		var unit_began := TRACE.begin()
 		var unit_label := "unit.tick:%s:%s" % [unit.service, unit.state] if unit_began != 0 else ""
@@ -165,6 +169,30 @@ func _physics_process(delta: float) -> void:
 		TRACE.end("wrecks.tidy", step)
 	TRACE.end("controller.tick", traced)
 	TRACE.flush(self)
+
+## One approaching crew per rendered frame, shared across all dispatch units.
+## The builder advances by whole mesh parts; measure the actual span rather
+## than treating its requested budget as a hard deadline. Deployment retains
+## the existing immediate fallback if the preparation has not finished.
+func _warm_approaching_doors() -> void:
+	var frame := Engine.get_process_frames()
+	if _door_warm_frame == frame: return
+	_door_warm_frame = frame
+	if units.is_empty(): return
+	for attempt in units.size():
+		var unit: RefCounted = units[_door_warm_cursor % units.size()]
+		_door_warm_cursor += 1
+		if unit.finished or unit.wrecked or unit.suspended or unit.crew_remaining <= 0 or unit.state not in ["enroute", "parked"]: continue
+		var candidate: Variant = unit.vehicle
+		if not is_instance_valid(candidate) or not candidate is CharacterBody3D: continue
+		var car := candidate as CharacterBody3D
+		if car.is_queued_for_deletion() or not car.is_inside_tree() or car.health <= 0: continue
+		if car.get_meta("dispatch_doors_warmed", false): continue
+		var began := STALL_WORK.begin()
+		var ready: bool = car.warm_doors(DOOR_WARM_BUDGET_USEC)
+		STALL_WORK.finish_slow("dispatch.doors.prewarm", began, 1000, car)
+		if ready: car.set_meta("dispatch_doors_warmed", true)
+		return
 
 func _prepare_unit_ground(unit: RefCounted) -> void:
 	var traced := STALL_WORK.begin()
@@ -393,7 +421,12 @@ func _archetype_size(archetype: String) -> Vector3:
 ## A equipe policial alterna os lados: o primeiro desce pela porta do motorista (-1), o
 ## segundo pela do carona (+1). Antes o lado +1 era sempre testado primeiro e, havendo
 ## espaço, a dupla inteira descia pelo mesmo lado, um atrás do outro.
-func exit_point(car: CharacterBody3D, taken: Array[Vector3], right_only: bool) -> Dictionary:
+func exit_point_at(car: CharacterBody3D, point: Vector3, yaw: float) -> Dictionary:
+	var taken: Array[Vector3] = []
+	return exit_point(car,taken,true,Transform3D(Basis(Vector3.UP,yaw),point))
+
+func exit_point(car: CharacterBody3D, taken: Array[Vector3], right_only: bool, at := Transform3D.IDENTITY) -> Dictionary:
+	var pose: Transform3D = car.global_transform if at==Transform3D.IDENTITY else at
 	var space: PhysicsDirectSpaceState3D = world.get_world_3d().direct_space_state
 	var sides: Array[float] = [1.0]
 	var longitudinal: Array[float] = [0.0, 0.3, -0.3]
@@ -409,7 +442,7 @@ func exit_point(car: CharacterBody3D, taken: Array[Vector3], right_only: bool) -
 	capsule.height = 1.72
 	for side in sides:
 		for shift in longitudinal:
-			var point: Vector3 = car.to_global(Vector3(side * reach, 0.0, shift))
+			var point: Vector3 = pose * Vector3(side * reach, 0.0, shift)
 			var ground := PhysicsRayQueryParameters3D.create(point + Vector3.UP * 0.8, point - Vector3.UP * 0.8, 1)
 			var ground_hit := space.intersect_ray(ground)
 			if ground_hit.is_empty(): continue
@@ -427,7 +460,7 @@ func exit_point(car: CharacterBody3D, taken: Array[Vector3], right_only: bool) -
 				blocked = true
 				break
 			if blocked: continue
-			var sight := PhysicsRayQueryParameters3D.create(car.global_position + Vector3.UP * 0.9, point + Vector3.UP * 0.9, 1)
+			var sight := PhysicsRayQueryParameters3D.create(pose.origin + Vector3.UP * 0.9, point + Vector3.UP * 0.9, 1, excluded)
 			if not space.intersect_ray(sight).is_empty(): continue
 			var crowded := false
 			for other in taken:
@@ -506,6 +539,7 @@ func spawn_officer(unit: RefCounted, point: Vector3, side: float) -> CharacterBo
 	officer.controller = gameplay
 	officer.dispatch_controller = self
 	officer.tier = RULES.officer_tier_for(unit.level, unit.variant)
+	officer.motorcycle_officer = unit.variant == "motorcycle"
 	officer.last_known = gameplay.last_known
 	officer.vehicle = unit.vehicle
 	officer.door_side = side

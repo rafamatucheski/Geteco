@@ -19,6 +19,7 @@ var width := 2.6
 var length := 34.6
 var accent := Color("3f6e8c")
 var _batches: Dictionary = {}
+var _stair_transform := Transform3D.IDENTITY
 var _body: StaticBody3D
 
 static func run_length() -> float:
@@ -39,9 +40,9 @@ func build() -> void:
 	_body.collision_layer = 1
 	_body.collision_mask = 0
 	add_child(_body)
-	var concrete := _mat(Color("a7a397"))
-	var paving := _mat(Color("5c5f5c"))
-	var steel := _mat(Color("7d8488"), 0.45)
+	var concrete := _surface("concrete", Color("a7a397"))
+	var paving := _surface("paving", Color("5c5f5c"))
+	var steel := _surface("metal", Color("7d8488"), 0.45, 0.6)
 	var paint := _mat(accent, 0.6)
 	var mesh_screen := _mat(Color(0.18, 0.2, 0.21, 0.55))
 	mesh_screen.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -62,7 +63,11 @@ func build() -> void:
 		for i in bays + 1:
 			var z := -half_deck + i * bay
 			_box(Vector3(x + side * 0.04, DECK_HEIGHT - GIRDER_DEPTH * 0.5, z), Vector3(0.08, GIRDER_DEPTH, 0.08), steel)
-		_railing(Vector3(side * (width * 0.5 - 0.05), DECK_HEIGHT, -half_deck), Vector3(side * (width * 0.5 - 0.05), DECK_HEIGHT, half_deck), steel, paint, mesh_screen)
+		var rail_end := half_deck - width if side > 0.0 else half_deck
+		_railing(Vector3(side * (width * 0.5 - 0.05), DECK_HEIGHT, -rail_end), Vector3(side * (width * 0.5 - 0.05), DECK_HEIGHT, rail_end), steel, paint, mesh_screen)
+	# Patamares fechados na ponta, com abertura lateral para virar à direita.
+	for end in [-1.0, 1.0]:
+		_railing(Vector3(-width * 0.5, DECK_HEIGHT, end * half_deck), Vector3(width * 0.5, DECK_HEIGHT, end * half_deck), steel, paint, mesh_screen)
 
 	# Pilares na borda do vão, fora da calçada, com travessa sob o tabuleiro.
 	for end in [-1.0, 1.0]:
@@ -78,6 +83,11 @@ func build() -> void:
 	for end in [-1.0, 1.0]:
 		var top_z: float = end * half_deck
 		var bottom_z: float = end * (half_deck + run_length())
+		# Curva de 90 graus no patamar: o lance acompanha a calçada,
+		# em vez de continuar atravessando a próxima rua.
+		var turn := Basis(Vector3.UP, end * PI * 0.5)
+		var entrance := Vector3(width * 0.5, 0, end * (half_deck - width * 0.5))
+		_stair_transform = Transform3D(turn, entrance - turn * Vector3(0, 0, top_z))
 		for i in STEPS:
 			var top := DECK_HEIGHT - (i + 1) * rise
 			var z: float = top_z + end * (i + 0.5) * TREAD
@@ -98,6 +108,7 @@ func build() -> void:
 			var x: float = side * (width * 0.5 - 0.05)
 			_box_basis(Transform3D(soffit.scaled_local(Vector3(0.2, 0.5, slope_length)), mid + Vector3(side * (width * 0.5 + 0.02), 0, 0) - soffit.y * 0.15), paint)
 			_railing(Vector3(x, DECK_HEIGHT, top_z), Vector3(x, rise, bottom_z), steel, paint, mesh_screen)
+	_stair_transform = Transform3D.IDENTITY
 	_flush()
 
 ## Guarda-corpo entre dois pontos do piso: postes, corrimão, travessa e tela.
@@ -117,6 +128,10 @@ func _railing(from: Vector3, to: Vector3, steel: Material, paint: Material, scre
 	# Parede invisível do guarda-corpo: ninguém cai nem atravessa a tela.
 	_solid_basis(Transform3D(local_basis, middle + Vector3(0, RAIL_HEIGHT * 0.5 + 0.05, 0)), Vector3(0.12, RAIL_HEIGHT + 0.1, run.length()))
 
+## Concreto e aço da passarela com textura procedural compartilhada (antes eram cor chapada).
+func _surface(kind: String, color: Color, roughness := 0.85, metallic := 0.0) -> StandardMaterial3D:
+	return UrbanSurfaces.material("footbridge_%s_%s" % [kind, color.to_html(false)], kind, color, roughness, metallic, 2.0)
+
 func _mat(color: Color, roughness := 0.85) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
 	material.albedo_color = color
@@ -129,7 +144,7 @@ func _box(center: Vector3, size: Vector3, material: Material) -> void:
 func _box_basis(transform_value: Transform3D, material: Material) -> void:
 	var key := material.get_instance_id()
 	if not _batches.has(key): _batches[key] = {"material": material, "transforms": []}
-	_batches[key].transforms.append(transform_value)
+	_batches[key].transforms.append(_stair_transform * transform_value)
 
 func _solid(center: Vector3, size: Vector3) -> void:
 	_solid_basis(Transform3D(Basis.IDENTITY, center), size)
@@ -139,7 +154,7 @@ func _solid_basis(transform_value: Transform3D, size: Vector3) -> void:
 	shape.size = size
 	var collider := CollisionShape3D.new()
 	collider.shape = shape
-	collider.transform = transform_value
+	collider.transform = _stair_transform * transform_value
 	_body.add_child(collider)
 
 func _flush() -> void:

@@ -46,6 +46,17 @@ func _run() -> void:
 	world.add_child(look)
 	look.set_process(false)
 	check(body.material_overlay is ShaderMaterial, "walking outdoors receives occlusion aid")
+	check(body.material_overlay.get_shader_parameter("readable_actor") == true, "walking player uses contrasting silhouette on opaque roofs")
+	var camera := preload("res://scripts/CameraRig.gd").new()
+	world.add_child(camera)
+	camera.set_process(false)
+	var wall := box(world, Vector3(12, 8, 1), Vector3(3, 4, 8))
+	var wall_material := StandardMaterial3D.new()
+	wall.material_override = wall_material
+	wall.add_to_group(preload("res://scripts/camera/ExteriorReveal.gd").BUILDING_GROUP)
+	camera._exterior_reveal.update(camera,world.player,false,Vector3.ZERO,.1,true)
+	check(not camera._exterior_reveal.enabled and wall.material_override == wall_material, "normal camera preserves opaque exterior walls")
+	check(body.material_overlay is ShaderMaterial and body.material_overlay.shader == LOOK.SILHOUETTE_SHADER, "opaque exterior walls retain the authored occluded silhouette")
 	check(is_equal_approx(body.material_overlay.get_shader_parameter("minimum_occluder_height"), 1.2), "walking keeps low street furniture in front of the feet")
 	check(chassis.material_overlay == null, "unoccupied motorcycle has no player aid")
 	check(accessory.material_overlay == unrelated, "unrelated overlay preserved on install")
@@ -56,12 +67,14 @@ func _run() -> void:
 	state.place_id = ""
 	look._refresh_silhouette()
 	check(body.material_overlay is ShaderMaterial, "exterior return restores occlusion aid")
+	check(body.material_overlay.get_shader_parameter("readable_actor") == true, "exterior return restores walking contrast")
 	# Boarding first owns the vehicle while the seated player is still hidden.
 	# Its final show must refresh the bounds before the next periodic scan.
 	world.player.hide()
 	world.driving.occupied = true
 	look._follow_silhouettes()
 	check(body.material_overlay is ShaderMaterial and chassis.material_overlay is ShaderMaterial, "mounting refreshes both targets before next 4Hz scan")
+	check(body.material_overlay.get_shader_parameter("readable_actor") == false and chassis.material_overlay.get_shader_parameter("readable_actor") == false, "mounted player and vehicle retain their original silhouette style")
 	check(chassis.material_overlay.get_shader_parameter("minimum_occluder_height") == -1000.0, "vehicle guide keeps its original occlusion bounds")
 	var hidden_box_max: Vector3 = chassis.material_overlay.get_shader_parameter("box_max")
 	check(hidden_box_max.y < 1.2, "hidden pilot is absent from motorcycle-only bounds")
@@ -96,6 +109,7 @@ func _run() -> void:
 	world.driving.occupied = false
 	look._follow_silhouettes()
 	check(body.material_overlay is ShaderMaterial and chassis.material_overlay == null, "dismount restores only walking target")
+	check(body.material_overlay.get_shader_parameter("readable_actor") == true, "dismount restores walking contrast")
 	check(accessory.material_overlay == unrelated, "unrelated overlay survives every transition")
 	var surface_camera := Camera3D.new()
 	world.add_child(surface_camera)
@@ -112,6 +126,7 @@ func _run() -> void:
 	surface_camera.make_current()
 	look._follow_silhouettes()
 	check(body.material_overlay is ShaderMaterial, "return to surface camera restores street xray")
+	check(body.material_overlay.get_shader_parameter("readable_actor") == true, "surface camera restores walking contrast")
 	check(surface_camera.environment == null, "surface retains live weather environment")
 	world.queue_free()
 	await process_frame

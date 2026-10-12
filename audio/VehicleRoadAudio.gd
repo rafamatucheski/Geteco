@@ -42,7 +42,9 @@ func update_contacts(contacts: Array[Dictionary], speed: float, sliding: bool, d
 	var moving := smoothstep(.3, 8.0, absf(speed))
 	for kind in voices:
 		var voice: AudioStreamPlayer = voices[kind]
-		var level := -26.0 if kind == "hard" else -20.0
+		# Sand shares the dirt contact bank. Keep its broad scrape beneath the
+		# engine, including at full rolling speed; other surfaces keep their mix.
+		var level := -30.0 if kind == "dirt" else (-26.0 if kind == "hard" else -20.0)
 		var target := float(weights[kind]) * moving * db_to_linear(level + (3.0 if sliding else 0.0))
 		voice.volume_linear = lerpf(voice.volume_linear, target, 1.0 - exp(-delta * 14.0))
 		voice.pitch_scale = clampf(.72 + absf(speed) * .035, .72, 1.6)
