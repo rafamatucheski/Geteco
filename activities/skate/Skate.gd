@@ -329,6 +329,10 @@ func release_for_civilian_danger(actor: CharacterBody3D) -> bool:
 		ambient.erase(row)
 		board.rider=null
 		board.riding=false
+		# The rider capsule must retire with its owner, as on normal dismount
+		# and bail. A loose deck rests on scenery without blocking vehicles.
+		board.collision_layer=0
+		board.collision_mask=1
 		board.former_rider=weakref(actor)
 		board.drive(0,0,true)
 		POSE.restore(actor)

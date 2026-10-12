@@ -36,6 +36,13 @@ func run() -> void:
 	board.position=actor.position
 	skate._attach_ambient(actor,board,false)
 	check(not actor.is_physics_processing() and board.rider==actor,"skate possui o movimento antes do perigo")
+	var truck:=preload("res://scripts/Vehicle.gd").new()
+	truck.archetype="cargo_flatbed_truck"
+	scene.add_child(truck)
+	truck.place(Vector3(5,.05,12),0)
+	truck.set_physics_process(false)
+	for _i in 3: await physics_frame
+	check(truck.test_move(truck.global_transform,Vector3(0,0,-10)),"caminhão real encontra o skatista antes da fuga")
 	var director:=DIRECTOR.new()
 	scene.add_child(director)
 	director.configure(scene,null)
@@ -46,6 +53,13 @@ func run() -> void:
 	check(not actor.has_meta("civilian_movement_owner") and actor.health==100,"transferência limpa não causa dano")
 	for frame in 90: await physics_frame
 	check(actor.position.distance_to(start)>3,"corrida física desloca o antigo skatista")
+	check(board.collision_layer==0 and board.collision_mask==1,"skate abandonado conserva somente colisão com o piso")
+	check(not truck.test_move(truck.global_transform,Vector3(0,0,-10)),"casco real do caminhão não bate no skate abandonado")
+	for _i in 90:
+		truck.velocity=Vector3(0,-.5,-6)
+		truck.move_and_slide()
+		await physics_frame
+	check(truck.position.z<board.position.z-1 and truck.position.y>-.1,"caminhão atravessa fisicamente o ponto do skate mantendo apoio")
 	director.reset_population()
 	check(not actor.controlled_automatically and is_equal_approx(actor.speed,1.6),"retomada devolve velocidade e controle")
 	scene.free()
