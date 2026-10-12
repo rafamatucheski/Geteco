@@ -32,6 +32,15 @@ const TRAY_CENTER := Vector3(0, 0.648, 1.80)
 # clear the whole car -- a large lift reads as a platform floating in the
 # air disconnected from the car, which is worse than the bug it fixed.
 const LIFT_HEIGHT := 0.2
+# Geometria do compartimento (espaço do modelo, mesmo das posições dos slots).
+const FLOOR_Y := 0.648
+const WALL_X := 0.76
+const FOAM_THICKNESS := 0.032
+const FOAM_CENTER_X := -0.03
+const FOAM_WIDTH := 1.18
+# As armas assentam em cima da espuma; DROP_HEIGHT é a altura de onde descem.
+const SEAT_LIFT := 0.03
+const DROP_HEIGHT := 0.14
 
 var car: Node3D
 var pivot: Node3D
@@ -39,6 +48,9 @@ var weapons: Node3D
 var dressing: Node3D
 var slot_models: Dictionary = {}
 var slot_pads: Dictionary = {}
+var slot_straps: Dictionary = {}
+var slot_leds: Dictionary = {}
+var led_mats: Array[StandardMaterial3D] = []
 var cutouts: Dictionary = {}
 var displayed: Dictionary = {}
 var courtesy_light: OmniLight3D
@@ -80,10 +92,14 @@ func _replace_weapon(slot: String, id: String) -> void:
 	var holder := Node3D.new()
 	holder.name = "Trunk_" + slot
 	weapons.add_child(holder)
-	holder.position = SLOT_POSITIONS[slot]
+	var rest: Vector3 = SLOT_POSITIONS[slot] + Vector3(0, SEAT_LIFT, 0)
+	holder.position = rest
 	holder.rotation_degrees = Vector3(0, -90, 90)
 	if slot != "longa": holder.scale = Vector3.ONE * 1.25
 	if not id.is_empty():
+		# A arma desce até a espuma em vez de aparecer já encaixada.
+		holder.position.y += DROP_HEIGHT
+		holder.create_tween().tween_property(holder, "position:y", rest.y, 0.30).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		WEAPON.build(holder, id)
 		for part in holder.find_children("*", "MeshInstance3D", true, false):
 			if part.mesh == null: continue
@@ -103,6 +119,8 @@ func _process(delta: float) -> void:
 	weapons.position.y = lerpf(0.0, LIFT_HEIGHT, eased)
 	if is_instance_valid(courtesy_light): courtesy_light.light_energy = 0.85 * eased
 	if is_instance_valid(accent_light): accent_light.light_energy = 1.6 * eased
+	for led in led_mats: led.emission_energy_multiplier = 1.6 * eased
+	for led in slot_leds.values(): led.emission_energy_multiplier = 2.2 * eased
 
 func close() -> void:
 	set_process(false)
@@ -120,6 +138,9 @@ func close() -> void:
 	accent_light = null
 	slot_models.clear()
 	slot_pads.clear()
+	slot_straps.clear()
+	slot_leds.clear()
+	led_mats.clear()
 	cutouts.clear()
 	displayed.clear()
 	car = null
@@ -171,41 +192,98 @@ func _box(parent: Node3D, pos: Vector3, size: Vector3, material: Material) -> Me
 	parent.add_child(part)
 	return part
 
+## Material com teste de profundidade normal: o interior do compartimento
+## precisa que as paredes escondam o que está atrás delas, senão tudo volta a
+## parecer chapado. A bandeja já sobe LIFT_HEIGHT acima da lataria ao abrir, então
+## não precisa mais do no_depth_test que as armas ainda usam.
+func _solid_mat(color: Color, rough := 0.85, metal := 0.0) -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.albedo_color = color
+	material.roughness = rough
+	material.metallic = metal
+	return material
+
+func _textured_mat(color: Color, noise_type: int, frequency: float, rough := 0.97) -> StandardMaterial3D:
+	var material := _solid_mat(color, rough)
+	var grain := NoiseTexture2D.new()
+	grain.width = 128
+	grain.height = 128
+	var noise := FastNoiseLite.new()
+	noise.noise_type = noise_type
+	noise.frequency = frequency
+	grain.noise = noise
+	material.albedo_texture = grain
+	return material
+
+func _led_mat(color: Color) -> StandardMaterial3D:
+	var material := _solid_mat(color.darkened(0.6), 0.4)
+	material.emission_enabled = true
+	material.emission = color
+	material.emission_energy_multiplier = 0.0
+	return material
+
+func _torus(parent: Node3D, pos: Vector3, inner: float, outer: float, material: Material, flat := true) -> MeshInstance3D:
+	var part := MeshInstance3D.new()
+	var mesh := TorusMesh.new()
+	mesh.inner_radius = inner
+	mesh.outer_radius = outer
+	mesh.rings = 20
+	mesh.ring_segments = 8
+	part.mesh = mesh
+	part.material_override = material
+	part.position = pos
+	if not flat: part.rotation_degrees.x = 90
+	parent.add_child(part)
+	return part
+
 func _build_dressing() -> void:
 	dressing = Node3D.new()
 	dressing.name = "TrunkDressing"
 	weapons.add_child(dressing)
-	var trim := _detail_mat(Color("161e23"))
-	var steel := _detail_mat(Color("879094"), 0.32, 0.7)
-	var thread := _detail_mat(Color("8a8065"))
-	var felt := _felt_mat()
+	var trim := _solid_mat(Color("161e23"))
+	var steel := _solid_mat(Color("879094"), 0.32, 0.7)
+	var thread := _solid_mat(Color("8a8065"))
+	var carpet := _textured_mat(Color("232b2a"), FastNoiseLite.TYPE_SIMPLEX_SMOOTH, 0.6)
+	var shade := _solid_mat(Color("070a0b"), 1.0)
+	var foam := _textured_mat(Color("1b2123"), FastNoiseLite.TYPE_CELLULAR, 1.6, 1.0)
+	led_mats.clear()
 
-	# Felt-lined tray floor under the whole loadout, with a stitched perimeter.
-	_box(dressing, TRAY_CENTER + Vector3(0, -0.006, 0), Vector3(1.5, 0.01, 0.72), felt)
-	for x in [-0.72, 0.72]:
-		_box(dressing, Vector3(x, 0.648, 1.80), Vector3(0.025, 0.018, 0.73), trim)
+	# Piso forrado e abaixo dele uma sombra escura: dá a sensação de cavidade
+	# em vez de uma tábua apoiada em cima da lataria.
+	_box(dressing, TRAY_CENTER + Vector3(0, -0.012, 0), Vector3(1.5, 0.012, 0.74), shade)
+	_box(dressing, TRAY_CENTER + Vector3(0, -0.004, 0), Vector3(1.48, 0.008, 0.72), carpet)
+
+	# Paredes do compartimento: laterais, fundo (lado da cabine) e uma borda
+	# baixa na traseira, cada uma com friso metálico no topo.
+	for x in [-WALL_X, WALL_X]:
+		_box(dressing, Vector3(x, FLOOR_Y + 0.07, 1.80), Vector3(0.05, 0.14, 0.76), carpet)
+		_box(dressing, Vector3(x, FLOOR_Y + 0.145, 1.80), Vector3(0.062, 0.012, 0.78), steel)
 		for i in 23:
-			_box(dressing, Vector3(x, 0.66, 1.46 + i * 0.030), Vector3(0.010, 0.003, 0.013), thread)
-	for z in [1.44, 2.15]:
-		_box(dressing, Vector3(0, 0.648, z), Vector3(1.45, 0.018, 0.025), trim)
+			_box(dressing, Vector3(x - signf(x) * 0.026, FLOOR_Y + 0.11, 1.46 + i * 0.030), Vector3(0.003, 0.010, 0.013), thread)
+	_box(dressing, Vector3(0, FLOOR_Y + 0.10, 1.425), Vector3(1.55, 0.20, 0.05), carpet)
+	_box(dressing, Vector3(0, FLOOR_Y + 0.205, 1.425), Vector3(1.57, 0.012, 0.062), steel)
+	_box(dressing, Vector3(0, FLOOR_Y + 0.025, 2.185), Vector3(1.55, 0.05, 0.04), carpet)
+	_box(dressing, Vector3(0, FLOOR_Y + 0.052, 2.185), Vector3(1.57, 0.008, 0.052), steel)
 
-	# Individual felt pads under each slot, so an empty slot still reads as
-	# "a place for a gun" instead of bare tray.
+	# Faixa de LED sob o friso: ilumina a espuma e acende junto com a tampa.
+	var strip := _led_mat(Color("ffd9a0"))
+	led_mats.append(strip)
+	for x in [-WALL_X + 0.03, WALL_X - 0.03]:
+		_box(dressing, Vector3(x, FLOOR_Y + 0.135, 1.80), Vector3(0.012, 0.008, 0.70), strip)
+	_box(dressing, Vector3(0, FLOOR_Y + 0.193, 1.45), Vector3(1.46, 0.008, 0.012), strip)
+
+	# Espuma de alta densidade com a altura do conjunto: é nela que as armas
+	# se encaixam. O kit de emergência fica na faixa livre à direita.
+	_box(dressing, Vector3(FOAM_CENTER_X, FLOOR_Y + FOAM_THICKNESS * 0.5, 1.80), Vector3(FOAM_WIDTH, FOAM_THICKNESS, 0.64), foam)
+	_box(dressing, Vector3(FOAM_CENTER_X, FLOOR_Y + 0.004, 1.80), Vector3(FOAM_WIDTH + 0.03, 0.008, 0.67), trim)
+
+	# Argolas de amarração nos cantos da espuma.
+	for corner in [Vector2(-0.69, 1.50), Vector2(-0.69, 2.10), Vector2(0.65, 1.50)]:
+		_box(dressing, Vector3(corner.x, FLOOR_Y + 0.006, corner.y), Vector3(0.05, 0.012, 0.05), steel)
+		_torus(dressing, Vector3(corner.x, FLOOR_Y + 0.02, corner.y), 0.011, 0.021, steel)
+
 	for slot in SLOT_POSITIONS:
-		var slot_pos: Vector3 = SLOT_POSITIONS[slot]
-		var pad := _box(dressing, Vector3(slot_pos.x, 0.649, slot_pos.z), Vector3(0.30, 0.006, 0.30), _felt_mat())
-		slot_pads[slot] = pad
-		var label := Label3D.new()
-		label.text = SLOT_LABELS[slot]
-		label.font_size = 22
-		label.pixel_size = 0.0011
-		label.modulate = Color(0.72, 0.70, 0.60, 0.85)
-		label.outline_size = 0
-		label.no_depth_test = true
-		label.render_priority = 5
-		label.rotation_degrees.x = -90
-		label.position = Vector3(slot_pos.x, 0.654, slot_pos.z + 0.16)
-		dressing.add_child(label)
+		_build_slot(slot, trim, steel, foam)
 
 	# Roadside emergency kit riding beside the loadout, exactly like V1's.
 	_build_warning_triangle(trim, steel)
@@ -233,13 +311,101 @@ func _build_dressing() -> void:
 	accent_light.shadow_enabled = false
 	dressing.add_child(accent_light)
 
+## Fixação de cada tipo de arma: berço com tira para a longa, fita elástica para
+## a curta, bainha com alças para a arma branca e copo de borracha para a
+## granada. As peças que só fazem sentido com a arma presente ficam em
+## `slot_straps` e aparecem/somem em `_rebuild_cutout`.
+func _build_slot(slot: String, trim: Material, steel: Material, foam: Material) -> void:
+	var slot_pos: Vector3 = SLOT_POSITIONS[slot]
+	var top := FLOOR_Y + FOAM_THICKNESS
+	var rubber := _solid_mat(Color("0d1112"), 0.9)
+	var nylon := _solid_mat(Color("c9601c"), 0.8)
+	var straps: Array[Node3D] = []
+
+	# Poço escuro no formato da área do slot; a silhueta da arma é desenhada
+	# por cima dele em _rebuild_cutout.
+	var pad := _box(dressing, Vector3(slot_pos.x, top + 0.001, slot_pos.z), Vector3(0.34, 0.003, 0.30), _solid_mat(Color("0a0e0f"), 1.0))
+	slot_pads[slot] = pad
+
+	# Moldura em baixo-relevo: quatro frisos finos marcam o lugar mesmo vazio.
+	var frame_color := _solid_mat(Color("3c4745"), 0.9)
+	for z in [-0.15, 0.15]:
+		_box(dressing, Vector3(slot_pos.x, top + 0.003, slot_pos.z + z), Vector3(0.36, 0.004, 0.008), frame_color)
+	for x in [-0.18, 0.18]:
+		_box(dressing, Vector3(slot_pos.x + x, top + 0.003, slot_pos.z), Vector3(0.008, 0.004, 0.30), frame_color)
+
+	match slot:
+		"longa":
+			# Dois berços de borracha em U sobre pinos de aço, com tira de
+			# nylon e fivela cruzando a arma.
+			for dx in [-0.22, 0.22]:
+				var base := slot_pos + Vector3(dx, 0, 0)
+				_box(dressing, Vector3(base.x, top + 0.012, base.z), Vector3(0.05, 0.024, 0.15), rubber)
+				for dz in [-0.07, 0.07]:
+					_box(dressing, Vector3(base.x, top + 0.04, base.z + dz), Vector3(0.05, 0.05, 0.022), rubber)
+				_box(dressing, Vector3(base.x, top + 0.026, base.z), Vector3(0.012, 0.006, 0.17), steel)
+			var strap := Node3D.new()
+			strap.position = Vector3(slot_pos.x + 0.10, top + 0.075, slot_pos.z)
+			dressing.add_child(strap)
+			_box(strap, Vector3.ZERO, Vector3(0.036, 0.008, 0.20), nylon)
+			_box(strap, Vector3(0, 0.006, 0.07), Vector3(0.05, 0.012, 0.03), steel)
+			straps.append(strap)
+		"curta":
+			# Pistola presa por fita elástica e dois ganchos de aço.
+			for dz in [-0.12, 0.12]:
+				_box(dressing, Vector3(slot_pos.x, top + 0.02, slot_pos.z + dz), Vector3(0.05, 0.04, 0.02), steel)
+			var band := Node3D.new()
+			band.position = Vector3(slot_pos.x + 0.04, top + 0.052, slot_pos.z)
+			dressing.add_child(band)
+			_box(band, Vector3.ZERO, Vector3(0.018, 0.006, 0.26), nylon)
+			straps.append(band)
+		"corpo":
+			# Bainha de couro: duas alças com botão de pressão.
+			var leather := _solid_mat(Color("3a2616"), 0.8)
+			for dx in [-0.10, 0.10]:
+				_box(dressing, Vector3(slot_pos.x + dx, top + 0.02, slot_pos.z - 0.10), Vector3(0.03, 0.04, 0.03), leather)
+			var loops := Node3D.new()
+			loops.position = Vector3(slot_pos.x, top + 0.05, slot_pos.z)
+			dressing.add_child(loops)
+			for dx in [-0.10, 0.10]:
+				_box(loops, Vector3(dx, 0, 0), Vector3(0.026, 0.008, 0.26), leather)
+				_box(loops, Vector3(dx, 0.006, 0.0), Vector3(0.014, 0.008, 0.014), steel)
+			straps.append(loops)
+		"granada":
+			# Copo de borracha com anel de aço e tira de segurança.
+			_torus(dressing, Vector3(slot_pos.x, top + 0.02, slot_pos.z), 0.060, 0.082, rubber)
+			_torus(dressing, Vector3(slot_pos.x, top + 0.042, slot_pos.z), 0.062, 0.070, steel)
+			var tie := Node3D.new()
+			tie.position = Vector3(slot_pos.x, top + 0.085, slot_pos.z)
+			dressing.add_child(tie)
+			_box(tie, Vector3.ZERO, Vector3(0.20, 0.006, 0.018), nylon)
+			straps.append(tie)
+	slot_straps[slot] = straps
+	for strap in straps: strap.visible = false
+
+	# Plaquinha do slot, na frente da espuma (lado do para-choque).
+	var label := Label3D.new()
+	label.text = SLOT_LABELS[slot]
+	label.font_size = 22
+	label.pixel_size = 0.0011
+	label.modulate = Color(0.78, 0.76, 0.66, 0.9)
+	label.outline_size = 0
+	label.rotation_degrees.x = -90
+	label.position = Vector3(slot_pos.x + 0.02, top + 0.005, slot_pos.z + 0.215)
+	dressing.add_child(label)
+
+	# LED de status: âmbar quando vazio, verde quando há arma guardada.
+	var led := _led_mat(Color("ffa63a"))
+	slot_leds[slot] = led
+	_box(dressing, Vector3(slot_pos.x - 0.13, top + 0.004, slot_pos.z + 0.215), Vector3(0.022, 0.008, 0.022), led)
+
 func _build_warning_triangle(trim: Material, steel: Material) -> void:
 	var triangle := Node3D.new()
 	triangle.name = "EmergencyWarningTriangle"
 	dressing.add_child(triangle)
-	triangle.position = Vector3(0.66, 0.655, 2.02)
-	var red := _detail_mat(Color("d93620"), 0.25, 0.3)
-	var reflective := _detail_mat(Color("ff7645"), 0.18, 0.5)
+	triangle.position = Vector3(0.65, FLOOR_Y + 0.012, 2.02)
+	var red := _solid_mat(Color("d93620"), 0.25, 0.3)
+	var reflective := _solid_mat(Color("ff7645"), 0.18, 0.5)
 	var points := [Vector3(-0.09, 0, 0.06), Vector3(0.09, 0, 0.06), Vector3(0, 0, -0.085)]
 	for i in 3:
 		var edge := Node3D.new()
@@ -252,7 +418,7 @@ func _build_warning_triangle(trim: Material, steel: Material) -> void:
 		_box(edge, Vector3(0, -0.005, 0), Vector3(0.008, 0.003, a.distance_to(b)), reflective)
 	for x in [-0.06, 0.06]:
 		_box(triangle, Vector3(x, -0.01, 0.06), Vector3(0.015, 0.014, 0.03), trim)
-	_box(dressing, triangle.position + Vector3(0, -0.006, 0), Vector3(0.24, 0.01, 0.2), steel)
+	_box(dressing, triangle.position + Vector3(0, -0.006, 0), Vector3(0.18, 0.01, 0.2), steel)
 
 func _rebuild_cutout(slot: String, weapon: Node3D, filled: bool) -> void:
 	if cutouts.has(slot) and is_instance_valid(cutouts[slot]):
@@ -260,9 +426,15 @@ func _rebuild_cutout(slot: String, weapon: Node3D, filled: bool) -> void:
 	if not is_instance_valid(dressing): return
 	var pad: MeshInstance3D = slot_pads.get(slot)
 	if not is_instance_valid(pad): return
-	# A filled slot recesses a silhouette of the actual weapon into the felt;
+	# A filled slot recesses a silhouette of the actual weapon into the foam;
 	# an empty slot keeps a plain outline so the tray still reads as organised.
-	pad.material_override.albedo_color = Color("232c2a") if filled else Color("2c3634")
+	var led: StandardMaterial3D = slot_leds.get(slot)
+	if led != null:
+		var status := Color("46e07a") if filled else Color("ffa63a")
+		led.albedo_color = status.darkened(0.6)
+		led.emission = status
+	for strap in slot_straps.get(slot, []):
+		strap.visible = filled
 	if not filled:
 		cutouts.erase(slot)
 		return
@@ -270,9 +442,9 @@ func _rebuild_cutout(slot: String, weapon: Node3D, filled: bool) -> void:
 	inset.name = "Cutout_" + slot
 	weapons.add_child(inset)
 	inset.position = weapon.position
-	inset.position.y = 0.652
+	inset.position.y = FLOOR_Y + FOAM_THICKNESS + 0.003
 	inset.scale = Vector3(1.10, 0.025, 1.10)
-	var shadow := _detail_mat(Color("0c1113"))
+	var shadow := _solid_mat(Color("030506"), 1.0)
 	for part in weapon.find_children("*", "MeshInstance3D", true, false):
 		var silhouette := MeshInstance3D.new()
 		silhouette.mesh = part.mesh
