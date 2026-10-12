@@ -143,7 +143,7 @@ var body: Node3D
 func _install_body() -> void:
 	if is_instance_valid(body) or not is_inside_tree(): return
 	var keep: Array = [get("stretcher_mesh")]
-	body = preload("res://assets/civilians/RigBodySwap.gd").install(self, {"variant": 6100 + get_instance_id() % 97, "top": 7, "bottom": 3, "shoe": 1, "hat": 5, "backpack": false, "bag": 0, "glasses": false, "beard": 0, "top_color": Color(0.80, 0.64, 0.14), "bottom_color": Color(0.74, 0.59, 0.13), "inner": Color("e6eac9"), "accent": Color(0.82, 0.14, 0.12), "shoe_color": Color("141416")}, keep)
+	body = preload("res://assets/civilians/RigBodySwap.gd").install(self, {"role": "firefighter", "variant": 6100 + get_instance_id() % 97, "top": 7, "bottom": 3, "shoe": 1, "hat": 5, "backpack": false, "bag": 0, "glasses": false, "beard": 0, "top_color": Color(0.80, 0.64, 0.14), "bottom_color": Color(0.74, 0.59, 0.13), "inner": Color("e6eac9"), "accent": Color(0.82, 0.14, 0.12), "shoe_color": Color("141416")}, keep)
 	body.hand_provider = preload("res://assets/civilians/RigBodySwap.gd").stretcher_hands(self)
 
 func _make_mat(col: Color, roughness: float) -> StandardMaterial3D:

@@ -11,6 +11,7 @@ extends RefCounted
 ## Chamar no fim do `_ready` do modelo, depois de ele ter fixado a própria escala.
 ## `keep` = nós cuja geometria deve continuar visível (arma, maca, clarão).
 const BODY := preload("res://assets/CivilianModel.gd")
+const ROLE_BODIES := preload("res://assets/civilians/RoleBodyCatalog.gd")
 
 ## `look.body_source` (caminho de GLB do Meshy) troca o corpo procedural do kit pelo corpo importado
 ## (`CivilianModel.body_source`); `look.body_tint`/`look.height` ajustam cor das roupas e altura.
@@ -35,8 +36,15 @@ static func install(model: Node3D, look: Dictionary, keep: Array = [], faces_pos
 		body.body_accessories = look.get("body_accessories", [])
 		# O corpo importado não aplica `height` sozinho como o do kit faz em `_build_rig`.
 		body.scale = Vector3.ONE * float(look.get("height", 1.0))
+	elif look.has("role"):
+		# NPC de função (bombeiro, funerário...): corpo do Meshy reaproveitado com outra cor de roupa.
+		var picked: Dictionary = ROLE_BODIES.pick(String(look.role), int(look.get("variant", 0)), bool(look.get("female", false)), look.has("female"))
+		if not picked.is_empty():
+			body.body_source = String(picked.path)
+			body.body_tint = picked.tint
+			body.scale = Vector3.ONE * float(look.get("height", 1.0))
 	var overrides: Dictionary = look.duplicate()
-	for key in ["variant", "top_color", "bottom_color", "body_source", "body_tint", "body_accessories"]: overrides.erase(key)
+	for key in ["variant", "top_color", "bottom_color", "body_source", "body_tint", "body_accessories", "role"]: overrides.erase(key)
 	body.wardrobe_overrides = overrides
 	body.lod_enabled = bool(look.get("lod", true))
 	holder.add_child(body)

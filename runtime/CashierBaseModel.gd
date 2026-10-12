@@ -67,7 +67,7 @@ func _install_body() -> void:
 	body = preload("res://assets/civilians/RigBodySwap.gd").install(self, _body_look(), [], true)
 
 func _body_look() -> Dictionary:
-	return {"variant": appearance_variant, "top": 5, "bottom": 0, "shoe": 0, "hat": 0, "backpack": false, "bag": 0,
+	return {"role": "pedestrian", "variant": appearance_variant, "top": 5, "bottom": 0, "shoe": 0, "hat": 0, "backpack": false, "bag": 0,
 		"top_color": coat_color, "bottom_color": pants_color}
 
 func _process(delta: float) -> void:

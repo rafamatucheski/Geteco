@@ -120,7 +120,7 @@ var body: Node3D
 func _install_body() -> void:
 	if is_instance_valid(body) or not is_inside_tree(): return
 	var keep: Array = [get("stretcher_mesh")]
-	body = preload("res://assets/civilians/RigBodySwap.gd").install(self, {"variant": 6300 + get_instance_id() % 97, "top": 2, "bottom": 0, "shoe": 2, "hat": 0, "backpack": false, "bag": 0, "top_color": Color(0.14, 0.15, 0.18), "bottom_color": Color(0.13, 0.14, 0.16), "inner": Color(0.92, 0.94, 0.96), "shoe_color": Color("101012")}, keep)
+	body = preload("res://assets/civilians/RigBodySwap.gd").install(self, {"role": "mortician", "variant": 6300 + get_instance_id() % 97, "top": 2, "bottom": 0, "shoe": 2, "hat": 0, "backpack": false, "bag": 0, "top_color": Color(0.14, 0.15, 0.18), "bottom_color": Color(0.13, 0.14, 0.16), "inner": Color(0.92, 0.94, 0.96), "shoe_color": Color("101012")}, keep)
 	body.hand_provider = preload("res://assets/civilians/RigBodySwap.gd").stretcher_hands(self)
 
 func _build_stretcher() -> void:

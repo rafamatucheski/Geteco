@@ -67,7 +67,7 @@ func _ready() -> void:
 func _install_body() -> void:
 	if is_instance_valid(body) or not is_inside_tree(): return
 	body = preload("res://assets/civilians/RigBodySwap.gd").install(self, {
-		"variant": 8100 + (1 if appearance_female else 0), "female": appearance_female, "top": 2, "bottom": 0, "shoe": 2,
+		"role": "bank_clerk", "variant": 8100 + (1 if appearance_female else 0), "female": appearance_female, "top": 2, "bottom": 0, "shoe": 2,
 		"hat": 0, "backpack": false, "bag": 0, "glasses": false, "beard": 0, "hair": 5 if appearance_female else 0,
 		"top_color": Color("345a60") if appearance_female else Color("344254"), "bottom_color": Color("2a3238"),
 		"inner": Color("e4dfd0"), "skin": Color("c38e70") if appearance_female else Color("b88c70"),
