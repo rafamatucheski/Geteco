@@ -27,8 +27,14 @@ static func available() -> Array[Dictionary]:
 
 ## Grava corpo, variação de cor e acessórios de `identity` em `model` (ainda fora da árvore). false = sem corpo
 ## importado disponível: o chamador mantém o corpo procedural.
-static func apply(model: Node3D, identity: int) -> bool:
+static func apply(model: Node3D, identity: int, sex := -1, keep_accessories := true) -> bool:
 	var entries := available()
+	# `sex` 0 = masculino, 1 = feminino (qualquer outro valor = sem filtro).
+	if sex >= 0:
+		var filtered: Array[Dictionary] = []
+		for entry in entries:
+			if bool(entry.female) == (sex == 1): filtered.append(entry)
+		if not filtered.is_empty(): entries = filtered
 	if not enabled or entries.is_empty(): return false
 	var rng := RandomNumberGenerator.new()
 	rng.seed = identity * 2654435761 + 91013
@@ -48,5 +54,6 @@ static func apply(model: Node3D, identity: int) -> bool:
 				accessories.append({"kind": hat[0], "color": color, "band": color.darkened(0.5)})
 				break
 	if rng.randf() < 0.22: accessories.append({"kind": "sunglasses"})
-	model.body_accessories = accessories
+	# Quem já desenha o próprio chapéu (moradores da vila) não ganha um segundo por cima.
+	model.body_accessories = accessories if keep_accessories else []
 	return true

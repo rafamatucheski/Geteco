@@ -18,8 +18,11 @@ func _ready() -> void:
 	coat_color = [Color("874c3b"),Color("637655"),Color("546976"),Color("a18a63")][resident_variant%4]
 	pants_color = Color("344853")
 	wardrobe_overrides = {"female":resident_variant==1,"top":1,"bottom":0,"shoe":1,"shoe_color":Color("513b29"),"hat":0,"backpack":false,"bag":0,"glasses":false,"height":1.0}
+	# Corpo country do Meshy (mesmo sexo); o chapéu de vaqueiro continua sendo o do `_country_clothes`.
+	var meshy_country := preload("res://assets/civilians/CountryBodyCatalog.gd").apply(self, 770 + resident_variant * 13, 1 if resident_variant == 1 else 0, false)
 	super._ready()
 	_country_clothes()
+	if meshy_country and has_node("CowboyHat"): get_node("CowboyHat").translate(Vector3(0, -0.07, 0))
 	_build_weapon()
 	hand_provider = _gun_hands
 
