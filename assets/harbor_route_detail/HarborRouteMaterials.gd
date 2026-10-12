@@ -5,6 +5,8 @@ class_name HarborRouteMaterials
 ## Adheres to Geteco V2 performance standards: cached StandardMaterial3D instances,
 ## no per-frame material churn, correct roughness, metallicity, and authentic Harbor urban colors.
 
+const SURFACES := preload("res://assets/urban_detail/UrbanSurfaces.gd")
+
 static var _cache: Dictionary = {}
 
 static func get_mat(key: String, color: Color = Color.WHITE, roughness: float = 0.82, metallic: float = 0.0, emissive: Color = Color.BLACK) -> StandardMaterial3D:
@@ -25,15 +27,15 @@ static func get_mat(key: String, color: Color = Color.WHITE, roughness: float = 
 
 ## Light textured concrete slab for sidewalks and promenades (matching Harbor urban tone #989c92)
 static func sidewalk_concrete() -> StandardMaterial3D:
-	return get_mat("sidewalk_concrete", Color("#989c92"), 0.88, 0.05)
+	return SURFACES.material("route_sidewalk_concrete", "paving", Color("#989c92"), 0.88, 0.0, 2.0, 1.0)
 
 ## Darker washed concrete paving for promenade borders and pedestrian crossings
 static func sidewalk_accent() -> StandardMaterial3D:
-	return get_mat("sidewalk_accent", Color("#7f8379"), 0.86, 0.08)
+	return SURFACES.material("route_sidewalk_accent", "paving", Color("#7f8379"), 0.86, 0.0, 2.0, 1.2)
 
 ## Heavy granite/concrete curb stones (matching #aaad98)
 static func curb_granite() -> StandardMaterial3D:
-	return get_mat("curb_granite", Color("#aaad98"), 0.80, 0.12)
+	return SURFACES.material("route_curb_granite", "granite", Color("#aaad98"), 0.80, 0.0, 2.0, 1.0)
 
 ## Safety yellow curb paint for official loading zones and bay boundaries
 static func curb_yellow_marking() -> StandardMaterial3D:
@@ -41,17 +43,17 @@ static func curb_yellow_marking() -> StandardMaterial3D:
 
 ## White reflective thermoplastic pavement marking for pedestrian crossings
 static func pavement_white() -> StandardMaterial3D:
-	return get_mat("pavement_white", Color("#e6e4dc"), 0.70, 0.05)
+	return SURFACES.material("route_pavement_white", "concrete", Color("#e6e4dc"), 0.72, 0.0, 2.0, 0.6)
 
 # --- Metals & Street Furniture ---
 
 ## Cast iron for antique bollards, heavy lamppost bases, and tree grates (#2e3436)
 static func cast_iron_dark() -> StandardMaterial3D:
-	return get_mat("cast_iron_dark", Color("#2a3032"), 0.72, 0.65)
+	return SURFACES.material("route_cast_iron", "metal", Color("#2a3032"), 0.72, 0.65, 1.0, 1.0)
 
 ## Galvanized steel for modern streetlights, bike racks, and sign posts (#6e7c80)
 static func steel_galvanized() -> StandardMaterial3D:
-	return get_mat("steel_galvanized", Color("#6e7c80"), 0.40, 0.75)
+	return SURFACES.material("route_galvanized", "metal", Color("#6e7c80"), 0.45, 0.75, 1.0, 1.0)
 
 ## Treated hardwood slats for transit benches (#8b5e3c)
 static func bench_wood() -> StandardMaterial3D:
@@ -62,7 +64,7 @@ static func bench_wood() -> StandardMaterial3D:
 
 ## High-durability waste hopper / litter bin dark grey (#3c4447)
 static func trash_bin_metal() -> StandardMaterial3D:
-	return get_mat("trash_bin_metal", Color("#3c4447"), 0.60, 0.40)
+	return SURFACES.material("route_trash_bin", "metal", Color("#3c4447"), 0.60, 0.4, 1.0, 1.0)
 
 # --- Specialized Accents (Police, Workshop, Utilities) ---
 
@@ -84,11 +86,11 @@ static func hazard_yellow() -> StandardMaterial3D:
 
 ## Weathered asphalt/grease patch for garage driveway transition (#383634)
 static func workshop_apron() -> StandardMaterial3D:
-	return get_mat("workshop_apron", Color("#484643"), 0.92, 0.15)
+	return SURFACES.material("route_apron", "concrete", Color("#484643"), 0.92, 0.0, 2.0, 1.2)
 
 ## Cast iron storm sewer drainage grate (#242829)
 static func drain_grate() -> StandardMaterial3D:
-	return get_mat("drain_grate", Color("#242829"), 0.80, 0.70)
+	return SURFACES.material("route_drain_grate", "metal", Color("#242829"), 0.80, 0.7, 0.5, 1.4)
 
 # --- Lighting & Landscaping ---
 
@@ -110,8 +112,8 @@ static func lamp_glass() -> StandardMaterial3D:
 
 ## Chiseled granite planter box wall
 static func planter_stone() -> StandardMaterial3D:
-	return get_mat("planter_stone", Color("#6e736b"), 0.90, 0.05)
+	return SURFACES.material("route_planter", "granite", Color("#6e736b"), 0.90, 0.0, 1.0, 1.0)
 
 ## Maritime coastal shrub foliage (#3d5945)
 static func shrub_foliage() -> StandardMaterial3D:
-	return get_mat("shrub_foliage", Color("#3d5945"), 0.85, 0.0)
+	return SURFACES.material("route_shrub", "foliage", Color("#3d5945"), 0.85, 0.0, 0.6, 1.0)

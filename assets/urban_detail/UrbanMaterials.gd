@@ -4,6 +4,8 @@ class_name UrbanMaterials
 ## Centralized shared material palette for urban buildings and architectural props.
 ## Prioritizes batching, shared VRAM resources, and optimal shadow/transparency settings.
 
+const SURFACES := preload("res://assets/urban_detail/UrbanSurfaces.gd")
+
 static var _cache: Dictionary = {}
 
 static func get_mat(key: String, color: Color = Color.WHITE, roughness: float = 0.82, metallic: float = 0.0) -> StandardMaterial3D:
@@ -44,7 +46,13 @@ static func textured_wall(color: Color, roughness: float = 0.86, grain: float = 
 	var style := _wall_style(color)
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = Color.WHITE
-	mat.albedo_texture = ImageTexture.create_from_image(_wall_image(color, style, hash(hex)))
+	var wall_image := _wall_image(color, style, hash(hex))
+	mat.albedo_texture = ImageTexture.create_from_image(wall_image)
+	# Relevo derivado do próprio albedo: junta de tijolo/placa entra para dentro e a
+	# luz rasante da manhã/tarde passa a desenhar a fachada em vez de pintá-la.
+	mat.normal_enabled = true
+	mat.normal_texture = SURFACES.normal_from_albedo(wall_image, 7.0 if style == "brick" else 4.0, style == "brick")
+	mat.normal_scale = 1.0
 	mat.roughness = roughness
 	mat.uv1_triplanar = true
 	mat.uv1_world_triplanar = true
@@ -132,63 +140,63 @@ static func _wall_grain_ramp(color: Color, grain: float) -> Gradient:
 
 # --- Wall Materials ---
 static func brick_red() -> StandardMaterial3D:
-	return get_mat("brick_red", Color("7a463b"), 0.88)
+	return SURFACES.material("brick_red", "brick", Color("7a463b"), 0.88, 0.0, 2.0, 1.0)
 
 static func brick_brown() -> StandardMaterial3D:
-	return get_mat("brick_brown", Color("685447"), 0.86)
+	return SURFACES.material("brick_brown", "brick", Color("685447"), 0.86, 0.0, 2.0, 1.0)
 
 static func brick_dark() -> StandardMaterial3D:
-	return get_mat("brick_dark", Color("4d342d"), 0.88)
+	return SURFACES.material("brick_dark", "brick", Color("4d342d"), 0.88, 0.0, 2.0, 1.0)
 
 static func brick_weathered() -> StandardMaterial3D:
-	return get_mat("brick_weathered", Color("5d4840"), 0.90)
+	return SURFACES.material("brick_weathered", "brick", Color("5d4840"), 0.90, 0.0, 2.0, 1.0)
 
 static func wall_concrete() -> StandardMaterial3D:
-	return get_mat("wall_concrete", Color("8f9588"), 0.85)
+	return SURFACES.material("wall_concrete", "concrete", Color("8f9588"), 0.85, 0.0, 2.0, 1.0)
 
 static func wall_plaster() -> StandardMaterial3D:
-	return get_mat("wall_plaster", Color("a8a798"), 0.86)
+	return SURFACES.material("wall_plaster", "plaster", Color("a8a798"), 0.86, 0.0, 3.0, 0.8)
 
 static func wall_cream() -> StandardMaterial3D:
-	return get_mat("wall_cream", Color("d4c9a9"), 0.82)
+	return SURFACES.material("wall_cream", "plaster", Color("d4c9a9"), 0.82, 0.0, 3.0, 0.8)
 
 static func wall_olive() -> StandardMaterial3D:
-	return get_mat("wall_olive", Color("6e7865"), 0.84)
+	return SURFACES.material("wall_olive", "plaster", Color("6e7865"), 0.84, 0.0, 3.0, 0.8)
 
 static func wall_slate() -> StandardMaterial3D:
-	return get_mat("wall_slate", Color("4f5a60"), 0.80)
+	return SURFACES.material("wall_slate", "concrete", Color("4f5a60"), 0.80, 0.0, 2.0, 1.0)
 
 # --- Architectural Trim & Stone ---
 static func trim_stone() -> StandardMaterial3D:
-	return get_mat("trim_stone", Color("c8bda8"), 0.78)
+	return SURFACES.material("trim_stone", "granite", Color("c8bda8"), 0.78, 0.0, 2.0, 1.0)
 
 static func trim_dark() -> StandardMaterial3D:
-	return get_mat("trim_dark", Color("282c2e"), 0.75)
+	return SURFACES.material("trim_dark", "concrete", Color("282c2e"), 0.75, 0.0, 2.0, 1.0)
 
 static func trim_cream() -> StandardMaterial3D:
-	return get_mat("trim_cream", Color("e5dcc7"), 0.80)
+	return SURFACES.material("trim_cream", "plaster", Color("e5dcc7"), 0.80, 0.0, 3.0, 0.8)
 
 static func sidewalk_stone() -> StandardMaterial3D:
-	return get_mat("sidewalk_stone", Color("9da092"), 0.90)
+	return SURFACES.material("sidewalk_stone", "paving", Color("9da092"), 0.90, 0.0, 2.0, 1.0)
 
 static func stoop_stone() -> StandardMaterial3D:
-	return get_mat("stoop_stone", Color("aba496"), 0.84)
+	return SURFACES.material("stoop_stone", "paving", Color("aba496"), 0.84, 0.0, 2.0, 1.0)
 
 # --- Roofing Materials ---
 static func roof_tar() -> StandardMaterial3D:
-	return get_mat("roof_tar", Color("343a3d"), 0.92)
+	return SURFACES.material("roof_tar", "tar", Color("343a3d"), 0.92, 0.0, 2.0, 1.0)
 
 static func roof_gravel() -> StandardMaterial3D:
-	return get_mat("roof_gravel", Color("4b5052"), 0.94)
+	return SURFACES.material("roof_gravel", "gravel", Color("4b5052"), 0.94, 0.0, 1.0, 1.0)
 
 static func roof_tin() -> StandardMaterial3D:
-	return get_mat("roof_tin", Color("5e6967"), 0.55, 0.40)
+	return SURFACES.material("roof_tin", "corrugated", Color("5e6967"), 0.55, 0.40, 1.28, 1.0)
 
 static func roof_tin_rusty() -> StandardMaterial3D:
-	return get_mat("roof_tin_rusty", Color("63594f"), 0.78, 0.20)
+	return SURFACES.material("roof_tin_rusty", "corrugated", Color("63594f"), 0.78, 0.20, 1.28, 1.2)
 
 static func roof_shingle() -> StandardMaterial3D:
-	return get_mat("roof_shingle", Color("4a423e"), 0.88)
+	return SURFACES.material("roof_shingle", "shingle", Color("4a423e"), 0.88, 0.0, 1.5, 1.0)
 
 # --- Glass & Fenestration ---
 static func glass_window() -> StandardMaterial3D:
@@ -234,51 +242,51 @@ static func glass_window_lit(warm: bool = true) -> StandardMaterial3D:
 
 # --- Doors & Wood ---
 static func wood_door_green() -> StandardMaterial3D:
-	return get_mat("door_green", Color("2d4a3b"), 0.75)
+	return SURFACES.material("door_green", "wood", Color("2d4a3b"), 0.75, 0.0, 1.0, 1.0)
 
 static func wood_door_burgundy() -> StandardMaterial3D:
-	return get_mat("door_burgundy", Color("542628"), 0.75)
+	return SURFACES.material("door_burgundy", "wood", Color("542628"), 0.75, 0.0, 1.0, 1.0)
 
 static func wood_door_navy() -> StandardMaterial3D:
-	return get_mat("door_navy", Color("26364d"), 0.75)
+	return SURFACES.material("door_navy", "wood", Color("26364d"), 0.75, 0.0, 1.0, 1.0)
 
 static func wood_door_brown() -> StandardMaterial3D:
-	return get_mat("door_brown", Color("422e22"), 0.80)
+	return SURFACES.material("door_brown", "wood", Color("422e22"), 0.80, 0.0, 1.0, 1.0)
 
 static func wood_tank() -> StandardMaterial3D:
-	return get_mat("wood_tank", Color("5c493b"), 0.86)
+	return SURFACES.material("wood_tank", "wood", Color("5c493b"), 0.86, 0.0, 1.0, 1.0)
 
 static func wood_porch() -> StandardMaterial3D:
-	return get_mat("wood_porch", Color("6e5947"), 0.85)
+	return SURFACES.material("wood_porch", "wood", Color("6e5947"), 0.85, 0.0, 1.0, 1.0)
 
 # --- Metals ---
 static func metal_iron() -> StandardMaterial3D:
-	return get_mat("metal_iron", Color("202324"), 0.65, 0.60)
+	return SURFACES.material("metal_iron", "metal", Color("202324"), 0.65, 0.60, 1.0, 1.0)
 
 static func metal_dark() -> StandardMaterial3D:
-	return get_mat("metal_dark", Color("1b1e20"), 0.65, 0.65)
+	return SURFACES.material("metal_dark", "metal", Color("1b1e20"), 0.65, 0.65, 1.0, 1.0)
 
 static func metal_steel() -> StandardMaterial3D:
-	return get_mat("metal_steel", Color("72797a"), 0.45, 0.75)
+	return SURFACES.material("metal_steel", "metal", Color("72797a"), 0.45, 0.75, 1.0, 1.0)
 
 static func metal_brass() -> StandardMaterial3D:
-	return get_mat("metal_brass", Color("cfa648"), 0.35, 0.80)
+	return SURFACES.material("metal_brass", "metal", Color("cfa648"), 0.35, 0.80, 1.0, 1.0)
 
 static func metal_corrugated() -> StandardMaterial3D:
-	return get_mat("metal_corrugated", Color("667070"), 0.50, 0.55)
+	return SURFACES.material("metal_corrugated", "corrugated", Color("667070"), 0.50, 0.55, 1.28, 0.8)
 
 # --- Awnings & Commercial Accents ---
 static func awning_teal() -> StandardMaterial3D:
-	return get_mat("awning_teal", Color("3b6b69"), 0.80)
+	return SURFACES.material("awning_teal", "fabric", Color("3b6b69"), 0.80, 0.0, 0.5, 1.0)
 
 static func awning_terracotta() -> StandardMaterial3D:
-	return get_mat("awning_terracotta", Color("9c563e"), 0.80)
+	return SURFACES.material("awning_terracotta", "fabric", Color("9c563e"), 0.80, 0.0, 0.5, 1.0)
 
 static func awning_gold() -> StandardMaterial3D:
-	return get_mat("awning_gold", Color("cfa244"), 0.78)
+	return SURFACES.material("awning_gold", "fabric", Color("cfa244"), 0.78, 0.0, 0.5, 1.0)
 
 static func awning_cream() -> StandardMaterial3D:
-	return get_mat("awning_cream", Color("ece4d0"), 0.85)
+	return SURFACES.material("awning_cream", "fabric", Color("ece4d0"), 0.85, 0.0, 0.5, 1.0)
 
 static func hazard_stripe_yellow() -> StandardMaterial3D:
 	return get_mat("hazard_yellow", Color("d4a035"), 0.70)
