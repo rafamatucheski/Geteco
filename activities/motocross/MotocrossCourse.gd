@@ -248,10 +248,24 @@ func _mesh(surface: SurfaceTool, title: String, solid: bool) -> MeshInstance3D:
 		body.collision_layer = 1
 		body.collision_mask = 0
 		var shape := CollisionShape3D.new()
-		shape.shape = mesh.create_trimesh_shape()
+		shape.shape = _rim_flush_collider(mesh) if title == "QuarryHills" else mesh.create_trimesh_shape()
 		body.add_child(shape)
 		add_child(body)
 	return visual
+
+## O relevo sobe 2 mm do chão para não brigar com ele na tela (z-fighting), e esse degrau
+## na borda do terreno travava a picape de lado como uma parede invisível (a caixa do
+## carro assenta a ~0,3 mm do piso; medido dirigindo em 12/10/2026). O desenho fica como
+## está; só o colisor encosta os vértices da borda no chão (rampa de 2 mm em ~2 m).
+func _rim_flush_collider(mesh: ArrayMesh) -> ConcavePolygonShape3D:
+	var faces := mesh.get_faces()
+	for i in faces.size():
+		var v := faces[i]
+		var edge := minf(minf(v.x-BOUNDS.position.x,BOUNDS.end.x-v.x),minf(v.z-BOUNDS.position.y,BOUNDS.end.y-v.z))
+		if edge < .01 and v.y < .01: faces[i] = Vector3(v.x,0.0,v.z)
+	var shape := ConcavePolygonShape3D.new()
+	shape.set_faces(faces)
+	return shape
 
 func _height(p: Vector2, route: Dictionary = {}) -> float:
 	if route.is_empty(): route = nearest(Vector3(p.x,0,p.y))

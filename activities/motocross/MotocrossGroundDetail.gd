@@ -36,12 +36,26 @@ func yard_height(p: Vector2) -> float:
 	return maxf(course.surface_height(p),.128*smoothstep(-2,0,edge))+.002
 
 func _yard() -> void:
-	var surface := SurfaceTool.new(); surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var columns: Array[float] = []
 	for x in range(-242,-205): columns.append(float(x))
 	columns.append(RENTAL_DECK.position.x)
 	columns.append(RENTAL_DECK.end.x)
 	columns.sort()
+	var mesh := _yard_mesh(columns,.002)
+	var display := MeshInstance3D.new(); display.name = "ConnectedEarthYard"
+	display.mesh = mesh; display.material_override = ground_material()
+	display.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(display)
+	# O desenho sobe 2 mm para não brigar com o chão da pista (z-fighting), mas o
+	# colisor sai rente ao terreno: com os 2 mm, a borda do pátio virava uma parede
+	# invisível de verdade para a picape (a caixa do carro assenta a ~0,3 mm do chão e
+	# o degrau a travava de lado; medido dirigindo a 202 m do Digo em 12/10/2026).
+	var body := StaticBody3D.new(); body.name = "ConnectedYardFloor"
+	var shape := CollisionShape3D.new(); shape.shape = _yard_mesh(columns,.0).create_trimesh_shape()
+	body.add_child(shape); add_child(body)
+
+func _yard_mesh(columns: Array[float], lift: float) -> ArrayMesh:
+	var surface := SurfaceTool.new(); surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for z in range(-43,24):
 		for column in columns.size()-1:
 			var x := columns[column]
@@ -50,16 +64,9 @@ func _yard() -> void:
 			if RENTAL_DECK.has_point(Vector2(x+width*.5,z+.5)): continue
 			for offset in [Vector2.ZERO,Vector2.RIGHT,Vector2.DOWN,Vector2.RIGHT,Vector2.ONE,Vector2.DOWN]:
 				var p: Vector2 = Vector2(x,z)+Vector2(offset.x*width,offset.y)
-				surface.add_vertex(Vector3(p.x,yard_height(p),p.y))
+				surface.add_vertex(Vector3(p.x,yard_height(p)-.002+lift,p.y))
 	surface.generate_normals()
-	var mesh := surface.commit()
-	var display := MeshInstance3D.new(); display.name = "ConnectedEarthYard"
-	display.mesh = mesh; display.material_override = ground_material()
-	display.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(display)
-	var body := StaticBody3D.new(); body.name = "ConnectedYardFloor"
-	var shape := CollisionShape3D.new(); shape.shape = mesh.create_trimesh_shape()
-	body.add_child(shape); add_child(body)
+	return surface.commit()
 
 var _rng := RandomNumberGenerator.new()
 var _cells: Array[Vector2i] = []
