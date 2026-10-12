@@ -20,6 +20,8 @@ const MODELS := {
 	"atendente da loja da montanha": "res://world/places/MountainShopResidentModel.gd",
 	"morador da vila dos caminhoneiros": "res://gameplay/urban_v1/TruckersVillageResidentModel.gd",
 	"Maciota": "res://assets/maciota/MaciotaModel.gd",
+	"Nelson": "res://world/places/curitiba_cellar/NelsonModel.gd",
+	"jogador do fliperama": "res://world/places/arcade/ArcadePlayerModel.gd",
 	"Luisa": "res://world/places/curitiba_cellar/LuisaModel.gd",
 	"palhaço": "res://world/places/amusement_park/ParkClownModel.gd",
 	"guarda do carro-forte": "res://gameplay/armored/ArmoredGuardModel.gd",

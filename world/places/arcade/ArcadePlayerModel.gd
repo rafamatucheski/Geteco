@@ -18,6 +18,8 @@ func _ready() -> void:
 		"beard":0,"hat":0,"backpack":false,"bag":0,"glasses":false,
 		"inner":Color("dfd5bd"),"accent":Color("d9bd78")}
 	hand_provider = _playing_hands
+	# Corpo do Meshy de pedestre comum (mulher no 0, homem no 1); sem catálogo, segue o corpo do kit.
+	preload("res://assets/civilians/RoleBodyCatalog.gd").apply(self, "pedestrian", player_variant, player_variant == 0, true)
 	super._ready()
 	_machine_position = global_position
 	_at_machine = true

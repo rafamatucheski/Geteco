@@ -12,6 +12,8 @@ func _ready() -> void:
 		"hair":7,"hair_color":Color("e0dfd5"),"skin":Color("d4a585"),"beard":0,"hat":0,
 		"glasses":true,"backpack":false,"bag":0,"inner":Color("e8ddc5"),"accent":Color("a99161")}
 	activity = "talk"
+	# Corpo do Meshy do idoso de suéter vinho; sem arquivo, segue o corpo do kit.
+	preload("res://assets/civilians/RoleBodyCatalog.gd").apply(self, "nelson", 0)
 	super._ready()
 	set_meta("character_age_group","60_plus")
 	set_meta("hair_style","bald_crown_white_sides")

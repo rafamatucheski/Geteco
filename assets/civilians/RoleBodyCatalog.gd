@@ -7,6 +7,7 @@ extends RefCounted
 ## `tone` pode passar de 1 (cor HDR) para clarear roupa cinza, por exemplo o amarelo do bombeiro.
 const POLICE := "res://assets/civilians/meshy/police/"
 const PEDESTRIANS := "res://assets/civilians/meshy/pedestrians/"
+const ELDER := "res://assets/civilians/meshy/elder/"
 const ROLES := {
 	"mortician": [
 		{"file": POLICE + "suit_m.glb", "female": false, "tint": {"tone": Color(0.30, 0.30, 0.34)}},
@@ -88,6 +89,13 @@ const ROLES := {
 		{"file": PEDESTRIANS + "f_medium_a.glb", "female": true},
 		{"file": PEDESTRIANS + "m_medium_b.glb", "female": false},
 		{"file": PEDESTRIANS + "f_slim_a.glb", "female": true},
+	],
+	# Nelson (60+, suéter vinho, careca de têmporas brancas, óculos) e idosos magros em geral.
+	"nelson": [
+		{"file": ELDER + "elder_m.glb", "female": false},
+	],
+	"elder": [
+		{"file": ELDER + "elder_m.glb", "female": false},
 	],
 	"pedestrian": [
 		{"file": PEDESTRIANS + "m_medium_a.glb", "female": false},
