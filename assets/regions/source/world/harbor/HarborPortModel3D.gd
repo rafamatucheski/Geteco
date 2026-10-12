@@ -295,4 +295,13 @@ func _floodlight() -> void:
 	box(Vector3(0,8.4,0),Vector3(2.9,.16,.2),"73818a",true)
 	for side in [-1,1]:
 		box(Vector3(side*1.0,8.4,0),Vector3(1.05,.65,.38),"303c45",true)
-		box(Vector3(side*1.0,8.3,.21),Vector3(.9,.46,.04),"e5eff4")
+		# A lente era uma placa branca única (lia como plano chapado). Agora fica
+		# recuada num aro de metal, com viseira, refletor e ripas de grade à frente.
+		box(Vector3(side*1.0,8.3,.2),Vector3(.8,.38,.04),"e5eff4")
+		box(Vector3(side*1.0,8.55,.26),Vector3(1.0,.06,.2),"303c45",true)
+		box(Vector3(side*1.0,8.05,.23),Vector3(1.0,.05,.14),"303c45",true)
+		for edge in [-1,1]: box(Vector3(side*1.0+edge*.47,8.3,.24),Vector3(.06,.5,.12),"303c45",true)
+		for slat in 3: box(Vector3(side*1.0,8.17+slat*.12,.25),Vector3(.84,.025,.04),"73818a",true)
+		box(Vector3(side*1.0,8.3,.1),Vector3(.9,.5,.06),"4a5560",true)
+		# Garfo de fixação entre a viga e a luminária.
+		box(Vector3(side*1.0,8.15,-.05),Vector3(.12,.3,.16),"73818a",true)
