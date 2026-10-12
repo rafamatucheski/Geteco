@@ -13,7 +13,7 @@ func _ready() -> void:
 func _body_look() -> Dictionary:
 	var look := super._body_look()
 	look.merge({"top": 6, "hat": 4, "shoe": 1, "top_color": Color("635544"), "bottom_color": Color("3a332b"),
-		"accent": Color("2b2620"), "skin": _skin_color()}, true)
+		"accent": Color("2b2620"), "skin": _skin_color(), "body_tone": Color(1.6, 1.2, 0.6)}, true)
 	return look
 
 func _clear_parts(parent: Node3D) -> void:

@@ -350,6 +350,10 @@ func _install_body() -> void:
 	var look := _body_look()
 	# Corpo importado do Meshy quando há entrada para este escalão/biotipo; senão o corpo procedural do kit.
 	var imported := POLICE_BODIES.pick(tier, look, appearance_index)
+	# Uniformes de outras funções (segurança do banco) recolorem as roupas do corpo escolhido sem trocar de arquivo.
+	if not imported.is_empty() and look.has("body_tone"):
+		imported = imported.duplicate(true)
+		imported.tint["tone"] = look.body_tone
 	if not imported.is_empty(): look.merge({"body_source": imported.path, "body_tint": imported.tint, "body_accessories": imported.get("accessories", [])}, true)
 	_body_equipment_baked = bool(imported.get("baked_equipment", false))
 	body = preload("res://assets/civilians/RigBodySwap.gd").install(self, look, keep)

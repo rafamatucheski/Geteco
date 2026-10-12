@@ -35,6 +35,6 @@ func _tailor_neco() -> void:
 ## Neco: boné, bigode grisalho e camisa de trabalho.
 func _body_look() -> Dictionary:
 	var look := super._body_look()
-	look.merge({"variant": 7777, "female": false, "top": 1, "hat": 1, "beard": 1, "hair": 0,
+	look.merge({"role": "neco", "variant": 7777, "female": false, "top": 1, "hat": 1, "beard": 1, "hair": 0,
 		"hair_color": Color("a6a292"), "shoe": 1, "build": 2, "shoe_color": Color("332d27")}, true)
 	return look

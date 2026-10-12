@@ -11,6 +11,11 @@ const MODELS := {
 	"bancário": "res://assets/regions/source/world/harbor/events/BankClerkModel.gd",
 	"caixa": "res://runtime/CashierBaseModel.gd",
 	"residente de serviço": "res://world/places/ServiceResidentModel.gd",
+	"Neco": "res://world/places/NecoModel.gd",
+	"operador do porto": "res://gameplay/routines_v1/DockWorkerModel.gd",
+	"segurança do banco": "res://runtime/BankGuardModel.gd",
+	"morador do esgoto": "res://world/places/sewers/SewerHomelessModel.gd",
+	"guarda do carro-forte": "res://gameplay/armored/ArmoredGuardModel.gd",
 }
 var failures: Array[String] = []
 
@@ -32,6 +37,8 @@ func _visible_old_meshes(model: Node, body: Node) -> int:
 func _run() -> void:
 	for tag in MODELS:
 		for variant in 2:
+			# Guarda do carro-forte é PoliceModel tático (SWAT): não há corpo tático feminino (pendência conhecida).
+			if tag == "guarda do carro-forte" and variant == 1: continue
 			await _check_model(tag, variant)
 	CATALOG.enabled = false
 	var plain := (load(MODELS["funerário"]) as GDScript).new() as Node3D
@@ -49,6 +56,8 @@ func _check_model(tag: String, index: int) -> void:
 	root.add_child(model)
 	for i in 10: await process_frame
 	var body: Node3D = model.get("body")
+	# Modelos que herdam CivilianModel (operador do porto) são o próprio corpo.
+	if body == null and model.get("skeleton") != null: body = model
 	var label := "%s #%d" % [tag, index]
 	if not _check(is_instance_valid(body) and body.get("skeleton") != null, "%s: corpo do Meshy instalado" % label):
 		model.queue_free()

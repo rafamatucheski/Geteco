@@ -42,6 +42,7 @@ static func install(model: Node3D, look: Dictionary, keep: Array = [], faces_pos
 		if not picked.is_empty():
 			body.body_source = String(picked.path)
 			body.body_tint = picked.tint
+			body.body_accessories = picked.get("accessories", [])
 			body.scale = Vector3.ONE * float(look.get("height", 1.0))
 	var overrides: Dictionary = look.duplicate()
 	for key in ["variant", "top_color", "bottom_color", "body_source", "body_tint", "body_accessories", "role"]: overrides.erase(key)

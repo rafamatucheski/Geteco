@@ -2,7 +2,8 @@ extends SceneTree
 ## Seis NPCs de função com corpo do Meshy lado a lado (bombeiro, paramédico, funerário, bancário, caixa, residente).
 ## Uso: "$GODOT" --path . --script res://tools/capture_role_bodies.gd -- --out=res://evidence/npc-meshy/roles
 const MODELS := ["res://gameplay/emergency/FirefighterModel.gd", "res://gameplay/emergency/ParamedicModel.gd", "res://gameplay/emergency/MorticianModel.gd",
-	"res://assets/regions/source/world/harbor/events/BankClerkModel.gd", "res://runtime/CashierBaseModel.gd", "res://world/places/ServiceResidentModel.gd"]
+	"res://assets/regions/source/world/harbor/events/BankClerkModel.gd", "res://runtime/CashierBaseModel.gd", "res://world/places/ServiceResidentModel.gd",
+	"res://world/places/NecoModel.gd", "res://gameplay/routines_v1/DockWorkerModel.gd", "res://runtime/BankGuardModel.gd", "res://world/places/sewers/SewerHomelessModel.gd"]
 func _initialize() -> void: run.call_deferred()
 func run() -> void:
 	var out := "res://evidence/npc-meshy/roles"
@@ -25,10 +26,10 @@ func run() -> void:
 	stage.add_child(sun)
 	for k in MODELS.size():
 		var model := (load(MODELS[k]) as GDScript).new() as Node3D
-		model.position = Vector3((k - 2.5) * 1.1, 0, 0)
+		model.position = Vector3((k - 4.5) * 1.1, 0, 0)
 		stage.add_child(model)
 	var camera := Camera3D.new()
-	camera.fov = 18.0
+	camera.fov = 36.0
 	stage.add_child(camera)
 	camera.current = true
 	for i in 20: await process_frame

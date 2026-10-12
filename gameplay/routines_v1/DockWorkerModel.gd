@@ -10,6 +10,8 @@ func _ready() -> void:
 	coat_color = Color("344958")
 	pants_color = Color("283848")
 	# Manga longa, calça e bota de trabalho; nada de boné/mochila sob o EPI.
+	# Corpo do Meshy (pedestres masculinos) sob o EPI; sem catálogo, segue o corpo do kit.
+	preload("res://assets/civilians/RoleBodyCatalog.gd").apply(self, "dock_worker", worker_index)
 	wardrobe_overrides = {"top": 1, "bottom": 0, "shoe": 1, "hat": 0, "backpack": false, "bag": 0, "glasses": false}
 	super._ready()
 	_build_original_ppe()
@@ -19,6 +21,8 @@ func _build_original_ppe() -> void:
 	# (capacete na cabeça, colete no tronco), então elas acompanham a passada.
 	var helmet := anchor(head_node)
 	helmet.name = "SafetyHelmet"
+	# O crânio do corpo do Meshy é mais baixo que o do kit: o capacete desce para assentar na cabeça.
+	if body_source != "": helmet.translate(Vector3(0, -0.075, 0))
 	var yellow := Color("f4cc40") if worker_index % 3 != 2 else Color("f1e9ca")
 	part(helmet,Vector3(0,1.745,-.01),Vector3(.30,.05,.31),yellow)
 	part(helmet,Vector3(0,1.79,-.012),Vector3(.25,.17,.27),yellow)

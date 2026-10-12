@@ -24,6 +24,37 @@ const ROLES := {
 		{"file": POLICE + "tactical_gray.glb", "female": false, "tint": {"tone": Color(1.9, 1.5, 0.3)}, "baked_equipment": true},
 		{"file": POLICE + "tactical_black.glb", "female": false, "tint": {"tone": Color(1.8, 1.45, 0.3)}, "baked_equipment": true},
 	],
+	# Neco: senhor robusto de boné verde-petróleo; o avental e a chave inglesa do modelo antigo não foram portados.
+	"neco": [
+		{"file": PEDESTRIANS + "m_heavy_a.glb", "female": false, "accessories": [{"kind": "cap", "color": Color("384e49"), "band": Color("1d2a27")}]},
+	],
+	# Operadores do porto: o capacete e o colete refletivo continuam sendo as peças do `DockWorkerModel` presas às juntas.
+	"dock_worker": [
+		{"file": PEDESTRIANS + "m_medium_a.glb", "female": false},
+		{"file": PEDESTRIANS + "m_medium_b.glb", "female": false},
+		{"file": PEDESTRIANS + "m_heavy_a.glb", "female": false},
+		{"file": PEDESTRIANS + "m_heavy_b.glb", "female": false},
+	],
+	# Moradores de rua e do esgoto: só corpos de pedestre comum (nunca terno), com roupa suja e desbotada (tone escuro,
+	# brilho baixo) e gorro ou boné escuro na maioria.
+	"homeless": [
+		{"file": PEDESTRIANS + "m_medium_a.glb", "female": false, "tint": {"tone": Color(0.62, 0.55, 0.45), "brightness": 0.82}, "accessories": [{"kind": "beanie", "color": Color("3a3c3e"), "band": Color("1c1d1e")}]},
+		{"file": PEDESTRIANS + "m_medium_a.glb", "female": false, "tint": {"tone": Color(0.62, 0.55, 0.45), "brightness": 0.82}, "accessories": [{"kind": "cap", "color": Color("4a4136"), "band": Color("1c1d1e")}]},
+		{"file": PEDESTRIANS + "m_medium_b.glb", "female": false, "tint": {"tone": Color(0.62, 0.55, 0.45), "brightness": 0.82}, "accessories": [{"kind": "beanie", "color": Color("3a3c3e"), "band": Color("1c1d1e")}]},
+		{"file": PEDESTRIANS + "m_medium_b.glb", "female": false, "tint": {"tone": Color(0.62, 0.55, 0.45), "brightness": 0.82}, "accessories": [{"kind": "cap", "color": Color("4a4136"), "band": Color("1c1d1e")}]},
+		{"file": PEDESTRIANS + "m_heavy_a.glb", "female": false, "tint": {"tone": Color(0.62, 0.55, 0.45), "brightness": 0.82}, "accessories": [{"kind": "beanie", "color": Color("3a3c3e"), "band": Color("1c1d1e")}]},
+		{"file": PEDESTRIANS + "m_heavy_a.glb", "female": false, "tint": {"tone": Color(0.62, 0.55, 0.45), "brightness": 0.82}, "accessories": [{"kind": "cap", "color": Color("4a4136"), "band": Color("1c1d1e")}]},
+		{"file": PEDESTRIANS + "m_heavy_b.glb", "female": false, "tint": {"tone": Color(0.62, 0.55, 0.45), "brightness": 0.82}, "accessories": [{"kind": "beanie", "color": Color("3a3c3e"), "band": Color("1c1d1e")}]},
+		{"file": PEDESTRIANS + "m_heavy_b.glb", "female": false, "tint": {"tone": Color(0.62, 0.55, 0.45), "brightness": 0.82}, "accessories": [{"kind": "cap", "color": Color("4a4136"), "band": Color("1c1d1e")}]},
+		{"file": PEDESTRIANS + "f_medium_a.glb", "female": true, "tint": {"tone": Color(0.62, 0.55, 0.45), "brightness": 0.82}, "accessories": [{"kind": "beanie", "color": Color("3a3c3e"), "band": Color("1c1d1e")}]},
+		{"file": PEDESTRIANS + "f_medium_a.glb", "female": true, "tint": {"tone": Color(0.62, 0.55, 0.45), "brightness": 0.82}},
+		{"file": PEDESTRIANS + "f_medium_b.glb", "female": true, "tint": {"tone": Color(0.62, 0.55, 0.45), "brightness": 0.82}, "accessories": [{"kind": "beanie", "color": Color("3a3c3e"), "band": Color("1c1d1e")}]},
+		{"file": PEDESTRIANS + "f_medium_b.glb", "female": true, "tint": {"tone": Color(0.62, 0.55, 0.45), "brightness": 0.82}},
+		{"file": PEDESTRIANS + "f_slim_a.glb", "female": true, "tint": {"tone": Color(0.62, 0.55, 0.45), "brightness": 0.82}, "accessories": [{"kind": "beanie", "color": Color("3a3c3e"), "band": Color("1c1d1e")}]},
+		{"file": PEDESTRIANS + "f_slim_a.glb", "female": true, "tint": {"tone": Color(0.62, 0.55, 0.45), "brightness": 0.82}},
+		{"file": PEDESTRIANS + "f_slim_b.glb", "female": true, "tint": {"tone": Color(0.62, 0.55, 0.45), "brightness": 0.82}, "accessories": [{"kind": "beanie", "color": Color("3a3c3e"), "band": Color("1c1d1e")}]},
+		{"file": PEDESTRIANS + "f_slim_b.glb", "female": true, "tint": {"tone": Color(0.62, 0.55, 0.45), "brightness": 0.82}},
+	],
 	"pedestrian": [
 		{"file": PEDESTRIANS + "m_medium_a.glb", "female": false},
 		{"file": PEDESTRIANS + "m_medium_b.glb", "female": false},
@@ -44,4 +75,14 @@ static func pick(role: String, variant: int, female := false, use_sex := false) 
 		if ResourceLoader.exists(entry.file) and (not use_sex or bool(entry.female) == female): options.append(entry)
 	if options.is_empty(): return {}
 	var entry: Dictionary = options[posmod(variant * 2654435761 + 40503, options.size())]
-	return {"path": entry.file, "tint": entry.get("tint", {}), "baked_equipment": bool(entry.get("baked_equipment", false))}
+	return {"path": entry.file, "tint": entry.get("tint", {}), "baked_equipment": bool(entry.get("baked_equipment", false)), "accessories": entry.get("accessories", [])}
+
+## Para modelos que herdam `CivilianModel` e se montam sozinhos (ex.: operador do porto): grava corpo e acessórios do papel
+## antes de `super._ready()`. Devolve false (corpo do kit) sem catálogo ou arquivo.
+static func apply(model: Node3D, role: String, variant: int, female := false, use_sex := false) -> bool:
+	var picked := pick(role, variant, female, use_sex)
+	if picked.is_empty(): return false
+	model.body_source = String(picked.path)
+	model.body_tint = picked.tint
+	model.body_accessories = picked.accessories
+	return true
