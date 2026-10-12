@@ -26,6 +26,12 @@ func flush(parent: Node3D) -> void:
 			mat.albedo_color=Color.WHITE if bits[1]=="vertex" else Color(bits[1]); mat.roughness=.92
 			mat.vertex_color_use_as_albedo=bits[1]=="vertex"
 			mat.vertex_color_is_srgb=true
+			# Cor lisa lia como plano chapado: relevo em espaço de mundo; a textura
+			# multiplica a cor da instância/vértice, então o tom autorado se mantém.
+			var tint:=mat.albedo_color
+			preload("res://assets/urban_detail/UrbanSurfaces.gd").detail(mat,"plaster",2.0,.7)
+			mat.albedo_color=Color(minf(tint.r*mat.albedo_color.r,1.0),minf(tint.g*mat.albedo_color.g,1.0),minf(tint.b*mat.albedo_color.b,1.0))
+			mat.roughness=1.0
 			materials[bits[1]]=mat
 			if bits[1] in ["d8b56a","e4dfcf"]:
 				var coat:=ShaderMaterial.new()

@@ -682,6 +682,11 @@ func _material(color: Color) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
 	material.albedo_color = color
 	material.roughness = .86
+	# Cor lisa lia como plano chapado: relevo e rugosidade em espaço de mundo, mesmo tom.
+	if color.a >= 1.0:
+		preload("res://assets/urban_detail/UrbanSurfaces.gd").detail(material, "plaster", 2.0, .7)
+		material.albedo_color = Color(minf(color.r * material.albedo_color.r, 1.0), minf(color.g * material.albedo_color.g, 1.0), minf(color.b * material.albedo_color.b, 1.0))
+		material.roughness = 1.0
 	materials[color] = material
 	return material
 func _tree_collision(tree: Node3D, chunk: Node3D) -> void:
