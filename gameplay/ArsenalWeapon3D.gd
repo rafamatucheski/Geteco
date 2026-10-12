@@ -171,7 +171,13 @@ static func build(root: Node3D, id: String) -> Vector3:
 			cyl_mg.bottom_radius = 0.028
 			cyl_mg.height = 0.08
 			cylinder_mg.mesh = cyl_mg
-			cylinder_mg.material_override = mat_gunmetal
+			# Aço claro e pouco metálico: com metal alto o tambor refletia o ambiente escuro e
+			# sumia contra a armação de gunmetal na vista lateral.
+			var mat_drum := StandardMaterial3D.new()
+			mat_drum.albedo_color = Color(0.64, 0.67, 0.72)
+			mat_drum.metallic = 0.55
+			mat_drum.roughness = 0.38
+			cylinder_mg.material_override = mat_drum
 			cylinder_mg.rotation_degrees = Vector3(90, 0, 0)
 			cylinder_mg.position = Vector3(0.0, 0.01, 0.0)
 			root.add_child(cylinder_mg)
