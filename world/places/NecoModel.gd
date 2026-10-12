@@ -6,6 +6,7 @@ func _ready() -> void:
 	has_hat = true
 	super._ready()
 	_tailor_neco()
+	_tailor_meshy_body.call_deferred()
 
 func _tailor_neco() -> void:
 	var detail:=preload("res://assets/regions/source/characters/pedestrians/CitizenDetails.gd")
@@ -38,3 +39,23 @@ func _body_look() -> Dictionary:
 	look.merge({"role": "neco", "variant": 7777, "female": false, "top": 1, "hat": 1, "beard": 1, "hair": 0,
 		"hair_color": Color("a6a292"), "shoe": 1, "build": 2, "shoe_color": Color("332d27")}, true)
 	return look
+
+## Avental de couro, tiras, bolso e fivela de latão, mais a chave inglesa, presos às juntas do corpo do Meshy (o
+## `_tailor_neco` acima só enfeita o corpo antigo, que fica escondido). Medidas na junta da coluna, que nasce na cintura.
+func _tailor_meshy_body() -> void:
+	if not is_instance_valid(body) or body.get("skeleton") == null or body.has_meta("neco_gear"): return
+	body.set_meta("neco_gear", true)
+	var detail := preload("res://assets/regions/source/characters/pedestrians/CitizenDetails.gd")
+	var spine: Node3D = body.spine
+	detail.piece(spine, Vector3(.34, .44, .06), Vector3(0, .02, .22), Color("34534c"))
+	for side in [-1, 1]:
+		detail.piece(spine, Vector3(.035, .26, .04), Vector3(side * .11, .24, .20), Color("bda478"))
+	detail.piece(spine, Vector3(.19, .12, .035), Vector3(0, -.04, .255), Color("647367"))
+	detail.piece(spine, Vector3(.05, .045, .04), Vector3(.13, -.16, .24), Color("ddb96c"))
+	var hand: Node3D = body.forearms[0]
+	var tool := Node3D.new()
+	tool.name = "Spanner"
+	hand.add_child(tool)
+	tool.position = Vector3(0, -body.forearm_len, .06)
+	detail.piece(tool, Vector3(.035, .035, .29), Vector3(0, 0, .1), Color("b9c5bd"))
+	for side in [-1, 1]: detail.piece(tool, Vector3(.035, .035, .08), Vector3(side * .045, 0, .25), Color("d0d8cd"))

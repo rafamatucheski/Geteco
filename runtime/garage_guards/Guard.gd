@@ -35,10 +35,9 @@ func _ready() -> void:
 	add_child(visual)
 	visual.scale*=Vector3(.84,1,.90)
 	visual.mat_uniform.albedo_color=Color("454b42")
-	weapon=Node3D.new()
-	visual.right_lower_arm.add_child(weapon)
-	weapon.position=Vector3(0,-.18,0)
-	preload("res://gameplay/ArsenalWeapon3D.gd").build(weapon,"pistol")
+	# Arma e mãos pelo próprio PoliceModel (IK do corpo novo); a arma presa ao antebraço antigo ficava parada no ar.
+	visual.equip("pistol")
+	weapon=visual.weapon
 	if health<=0: _fall()
 func receive_damage(amount: float, source: Node=null) -> void:
 	if dead or not is_finite(amount) or amount<=0: return
@@ -59,7 +58,10 @@ func _physics_process(delta: float) -> void:
 	if reload_remaining>0:
 		reload_remaining=maxf(0,reload_remaining-delta)
 		if reload_remaining==0: clip=12
-	if not manager.alerted(): velocity=Vector3.ZERO; return
+	if not manager.alerted():
+		velocity=Vector3.ZERO
+		visual.update_pose(delta,false,false,0.0,0.0)
+		return
 	response_aggression=12.0
 	var target: Node3D=manager.target()
 	if not is_instance_valid(target): return
@@ -69,9 +71,7 @@ func _physics_process(delta: float) -> void:
 	var visible_target := distance<=430.0/16.0 and can_see(target)
 	aim_time=aim_time+delta if visible_target else 0.0
 	visual.rotation.y=lerp_angle(visual.rotation.y,atan2(-direction.x,-direction.z),minf(1,14*delta))
-	visual.right_upper_arm.rotation.x=-1.25
-	visual.left_upper_arm.rotation.x=-1.1
-	visual.left_lower_arm.rotation.z=-.65
+	visual.update_pose(delta,true,reload_remaining>0.0,1.0-reload_remaining/RELOAD_SECONDS,0.0)
 	var desired := Vector3.ZERO
 	if not visible_target or distance>180.0/16.0:
 		repath-=delta
@@ -87,9 +87,7 @@ func _physics_process(delta: float) -> void:
 	velocity.y=0.0 if is_on_floor() else velocity.y-20*delta
 	move_and_slide()
 	gait+=delta*velocity.length()*2.5
-	var swing := sin(gait)*.45 if desired.length_squared()>.01 else 0.0
-	visual.left_upper_leg.rotation.x=swing
-	visual.right_upper_leg.rotation.x=-swing
+	# As pernas andam sozinhas pelo deslocamento do corpo articulado; o balanço manual do rig antigo não aparece mais.
 	if visible_target and distance<=360.0/16.0 and aim_time>=.65 and cooldown<=0 and burst_pause<=0 and reload_remaining<=0: shoot(target)
 func can_see(target: Node3D) -> bool:
 	var hit := get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(global_position+Vector3.UP*1.25,target.global_position+Vector3.UP,7,[get_rid()]))
