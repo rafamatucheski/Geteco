@@ -4,6 +4,7 @@ extends Node3D
 ## chegada rodoviária (+Z) e à saída para as pistas na outra face (-Z).
 const FINISH := preload("res://world/places/FacadeFinish.gd")
 const SURFACE := preload("res://world/places/ShopInteriorMaterials.gd")
+const SURFACE_FINISH := preload("res://assets/regions/source/world/mountain_pass/MountainSurfaceFinish.gd")
 const ROOF_RIDGE := 5.85
 const ROOF_RUN := 7.35
 const ROOF_ANGLE := 18.0
@@ -26,6 +27,7 @@ func _mat(id: String, color: Color, roughness := 0.82, metallic := 0.0, emission
 		material.emission_enabled = true
 		material.emission = color
 		material.emission_energy_multiplier = emission
+	SURFACE_FINISH.apply(material, id)
 	materials[id] = material
 	return material
 
@@ -76,12 +78,8 @@ func _build_lodge() -> void:
 	glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	var warm := _mat("warm", Color("ffd08a"), 0.35, 0.0, 0.65)
 	var red := _mat("red", Color("a84b3e"), 0.75)
-	# Keep finish local to this facade: other props inherit the primitive builder.
-	for id in ["stone", "wood", "timber", "roof"]:
-		var material: StandardMaterial3D = materials[id]
-		material.albedo_texture = SURFACE.texture("stone" if id == "stone" else ("wood" if id in ["wood", "timber"] else "plaster"))
-		material.uv1_triplanar = true
-		material.uv1_scale = Vector3.ONE * (1.4 if id in ["wood", "timber"] else 1.0)
+	# Acabamento por papel (tábua, telha, pedra, tecido) em vez do reboco único de antes.
+	SURFACE_FINISH.apply(red, "red", "fabric")
 
 	_box("Foundation", Vector3(0, 0.12, 0), Vector3(14.4, 0.24, 9.0), stone)
 	_box("MainHall", Vector3(0, 1.75, 0), Vector3(13.6, 3.25, 8.1), wood)

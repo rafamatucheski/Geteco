@@ -1,4 +1,5 @@
 extends Node3D
+const SURFACE_FINISH := preload("res://assets/regions/source/world/mountain_pass/MountainSurfaceFinish.gd")
 
 ## Fachada da Loja de Armas de Montanha (Mountain Gun Shop 3D):
 ## Modelo arquitetural exterior de inverno em escala métrica humana (1:1).
@@ -36,7 +37,8 @@ func _ready() -> void:
 func set_main_color(new_color: Color) -> void:
 	main_color = new_color
 	if _materials.has("wall_wood"):
-		_materials["wall_wood"].albedo_color = main_color
+		var gain: float = _materials["wall_wood"].get_meta("tone_gain", 1.0)
+		_materials["wall_wood"].albedo_color = Color(minf(main_color.r * gain, 1.0), minf(main_color.g * gain, 1.0), minf(main_color.b * gain, 1.0))
 
 func _mat(id: String, color: Color, roughness: float = 0.8, metallic: float = 0.0, glow: float = 0.0) -> StandardMaterial3D:
 	if _materials.has(id):
@@ -50,6 +52,7 @@ func _mat(id: String, color: Color, roughness: float = 0.8, metallic: float = 0.
 		m.emission_enabled = true
 		m.emission = color
 		m.emission_energy_multiplier = glow
+	SURFACE_FINISH.apply(m, id)
 	_materials[id] = m
 	return m
 

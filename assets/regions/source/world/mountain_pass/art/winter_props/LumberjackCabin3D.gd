@@ -2,6 +2,7 @@ extends Node3D
 
 const FINISH := preload("res://world/places/FacadeFinish.gd")
 const SURFACES := preload("res://world/places/ShopInteriorMaterials.gd")
+const SURFACE_FINISH := preload("res://assets/regions/source/world/mountain_pass/MountainSurfaceFinish.gd")
 
 ## Abrigo / Microchalé de Lenhador (Lumberjack Work Shelter 3D):
 ## Refúgio rústico e oficina de corte de madeira em escala métrica humana (1:1).
@@ -32,7 +33,8 @@ func _ready() -> void:
 func set_main_color(new_color: Color) -> void:
 	main_color = new_color
 	if _materials.has("wood_main"):
-		_materials["wood_main"].albedo_color = main_color
+		var gain: float = _materials["wood_main"].get_meta("tone_gain", 1.0)
+		_materials["wood_main"].albedo_color = Color(minf(main_color.r * gain, 1.0), minf(main_color.g * gain, 1.0), minf(main_color.b * gain, 1.0))
 
 func _mat(id: String, color: Color, roughness: float = 0.8, metallic: float = 0.0) -> StandardMaterial3D:
 	if _materials.has(id):
@@ -42,13 +44,7 @@ func _mat(id: String, color: Color, roughness: float = 0.8, metallic: float = 0.
 	m.roughness = roughness
 	m.metallic = metallic
 	m.shading_mode = StandardMaterial3D.SHADING_MODE_PER_PIXEL
-	if id.begins_with("wood") or id in ["door_leaf", "handle_wood", "bark", "cut_end"]:
-		m.albedo_texture = SURFACES.texture("wood")
-		m.uv1_triplanar = true
-		m.uv1_scale = Vector3.ONE * 1.4
-	elif id in ["stone", "stone_moss"]:
-		m.albedo_texture = SURFACES.texture("stone")
-		m.uv1_triplanar = true
+	SURFACE_FINISH.apply(m, id)
 	_materials[id] = m
 	return m
 

@@ -18,6 +18,10 @@ func _ready() -> void:
 	var iron := _mat("iron",Color("26333c"),.7,.2)
 	var snow := GROUND.material_3d("snow")
 	var glass := _mat("glass",Color("657e83"),.25,.25)
+	# Mapas por papel (tábua, pedra, chapa) no lugar do ladrilho único de 64 px.
+	SURFACE_FINISH.apply(timber, "timber", "wood")
+	SURFACE_FINISH.apply(trim, "trim", "wood")
+	SURFACE_FINISH.apply(stone, "stone", "granite")
 	_box("Foundation",Vector3(0,.12,0),Vector3(6.7,.24,4.0),stone)
 	_box("BackWall",Vector3(0,1.6,-1.8),Vector3(6.5,3.0,.24),timber).set_meta("interior_solid_id",&"ShopBack")
 	for side in [-1,1]:

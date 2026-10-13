@@ -4,13 +4,14 @@ const LAYOUT := preload("res://world/mountain_detail/OriginalVillageLayout.gd")
 const PPM := 18.0
 const FLOOR_Y := 0.76822128
 const GROUND := preload("res://assets/regions/source/world/mountain_pass/MountainGroundMaterials.gd")
+const FINISH := preload("res://assets/regions/source/world/mountain_pass/MountainSurfaceFinish.gd")
 const SHADOW_FINISH := preload("res://world/mountain_detail/MountainShadowFinish.gd")
 var materials: Dictionary = {}
 var solids: Array[Dictionary] = []
 
 func _ready() -> void:
 	for pair in [["snow", "9cabb3"], ["snow_edge", "879ea8"], ["stone", "617078"], ["paving", "7c8c91"], ["wood", "725440"], ["trim", "3d3933"], ["roof", "354b55"], ["glass", "537982"], ["white", "e2dfc7"], ["gold", "c8a159"], ["red", "934d43"], ["green", "4e7470"]]:
-		materials[pair[0]] = _material(Color(pair[1]))
+		materials[pair[0]] = _material(Color(pair[1]), false, pair[0])
 	for pair in [["snow","snow"],["snow_edge","packed"],["stone","stone"],["paving","packed"]]:
 		materials[pair[0]] = GROUND.material_3d(pair[1])
 	materials["warm"] = _material(Color("edba65"), true)
@@ -118,7 +119,7 @@ func _shop() -> void:
 
 func _chalet(center: Vector2, index: int) -> void:
 	var wood_key := "chalet%d" % index
-	materials[wood_key] = _material([Color("775a43"),Color("684645"),Color("465e69"),Color("626747")][index])
+	materials[wood_key] = _material([Color("775a43"),Color("684645"),Color("465e69"),Color("626747")][index], false, "wood")
 	_slab(Rect2(center-Vector2(58,35),Vector2(116,78)),0.11,0.22,"stone")
 	var mesh_start := get_child_count()
 	_slab(Rect2(center-Vector2(52,31),Vector2(104,62)),1.30,2.60,wood_key)
@@ -283,18 +284,17 @@ func _polygon(points: PackedVector2Array,height: float,material: String) -> void
 	instance.material_override = mat
 	add_child(instance)
 
-func _material(color: Color,glow := false) -> StandardMaterial3D:
+func _material(color: Color,glow := false,key := "") -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
 	material.albedo_color = color
 	material.roughness = 0.83
 	material.emission_enabled = glow
 	material.emission = color
 	material.emission_energy_multiplier = 0.32
-	# Cor lisa lia como plano chapado: relevo e rugosidade em espaço de mundo, mesmo tom.
-	if color.a >= 1.0 and not material.emission_enabled and not glow:
-		preload("res://assets/urban_detail/UrbanSurfaces.gd").detail(material, "metal" if material.metallic > 0.1 else "plaster", 2.0, .7)
-		material.albedo_color = Color(minf(color.r * material.albedo_color.r, 1.0), minf(color.g * material.albedo_color.g, 1.0), minf(color.b * material.albedo_color.b, 1.0))
-		material.roughness = 1.0
+	# Cor lisa lia como plano chapado: cada peça ganha o mapa do seu papel (tábua, telha,
+	# metal, tecido), em espaço de mundo e com o mesmo tom.
+	var kind: String = {"white": "plaster", "red": "fabric", "green": "fabric"}.get(key, "")
+	FINISH.apply(material, key, kind)
 	return material
 
 func _text(value: String,point: Vector2,height: float,font_size: int,material: String,size: Vector2) -> Label3D:

@@ -132,6 +132,9 @@ func _build_lamps() -> void:
 	iron.albedo_color = Color("22262a")
 	iron.roughness = 0.6
 	iron.metallic = 0.4
+	var finish := preload("res://assets/regions/source/world/mountain_pass/MountainSurfaceFinish.gd")
+	finish.apply(wood, "wood")
+	finish.apply(iron, "iron")
 	_glass_material = StandardMaterial3D.new()
 	_glass_material.albedo_color = Color("f3d7a1")
 	_glass_material.emission_enabled = true

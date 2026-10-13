@@ -124,6 +124,7 @@ static func _bump_for(kind: String) -> float:
 		"corrugated": return 4.0
 		"gravel": return 6.0
 		"metal", "fabric": return 1.6
+		"snow": return 2.0
 		_: return 3.0
 
 
@@ -253,6 +254,12 @@ static func _pixel(kind: String, x: int, y: int, n: Vector3, seed_value: int, co
 			var v := 0.86 + weave * 0.1 + (n.z - 0.5) * 0.06 - (stain - 0.5) * 0.08
 			if y % 128 < 2: v -= 0.12
 			return [Color(v, v, v), weave]
+		"snow":
+			# Dunas suaves de vento, fundo azulado nas depressões e brilho esparso de cristal.
+			var drift: float = medium.get_pixel((x + int(n.x * 22.0)) % SIZE, (y + int(n.y * 22.0)) % SIZE).r
+			var v := 0.86 + (drift - 0.5) * 0.2 + (stain - 0.5) * 0.12 + (n.z - 0.5) * 0.05
+			if _hash01(x, y, 70) > 0.985: v = minf(v + 0.14, 1.0)
+			return [Color(v * 0.97, v * 0.99, v), 0.45 + drift * 0.5 + n.z * 0.05]
 		"foliage":
 			var leaf: float = medium.get_pixel((x * 2) % SIZE, (y * 2) % SIZE).r
 			var v := 0.5 + leaf * 0.38 + (n.z - 0.5) * 0.22
