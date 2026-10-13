@@ -124,9 +124,10 @@ func run() -> void:
 		return
 	await settle(world, 3.0)
 	check(camera._tunnel_blend == 0.0, "Fora do túnel a mistura é zero")
-	# A inclinação de rua depende da opção de câmera (45° padrão, 37,5° na visão alternativa).
+	# A inclinação de rua depende da opção de câmera; dirigindo é a câmera de direção (58°),
+	# ainda bem abaixo dos ~70° do túnel.
 	var street_pitch := pitch_degrees(camera)
-	check(street_pitch < 50.0, "Fora do túnel a inclinação é a de rua (%.1f)" % street_pitch)
+	check(street_pitch < 62.0, "Fora do túnel a inclinação é a de rua (%.1f)" % street_pitch)
 	check(camera._cutaway.faded_count() == 0, "Fora do túnel nada é apagado")
 	var size_outside := camera.size
 

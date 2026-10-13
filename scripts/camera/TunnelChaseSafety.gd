@@ -85,7 +85,8 @@ func _clear_at(space: PhysicsDirectSpaceState3D, point: Vector3) -> bool:
 
 ## Call only with the mountain contribution, after the final camera transform.
 ## Passing zero (including locked/interior views) restores its original environment.
-func update_environment(camera: Camera3D, mountain_blend: float, delta: float, target_position: Vector3) -> void:
+## `fog_end` > 0 fixa o fim da neblina (túnel do canal, cujo alcance da câmera é encurtado).
+func update_environment(camera: Camera3D, mountain_blend: float, delta: float, target_position: Vector3, fog_end := -1.0) -> void:
 	if not is_instance_valid(camera) or mountain_blend <= .001 or not camera.is_inside_tree():
 		restore_environment()
 		return
@@ -111,6 +112,7 @@ func update_environment(camera: Camera3D, mountain_blend: float, delta: float, t
 	var strength := smoothstep(.05, .65, clampf(mountain_blend, 0.0, 1.0))
 	var reach := Vector2(camera.global_position.x-target_position.x, camera.global_position.z-target_position.z).length()
 	var depth_end := clampf(STREAM_CELL_SIZE-reach-4.0, 12.0, MAX_FOG_DEPTH)
+	if fog_end > 0.0: depth_end = fog_end
 	_local_environment.fog_enabled = source.fog_enabled or strength > .001
 	_local_environment.fog_mode = Environment.FOG_MODE_DEPTH
 	_local_environment.fog_density = lerpf(source.fog_density if source.fog_enabled else 0.0, 1.0, strength)

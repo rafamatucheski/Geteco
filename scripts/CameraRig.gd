@@ -19,23 +19,32 @@ const V1_CAMERA_SPEED := 600.0 / V1_PIXELS_PER_METRE
 const V1_WALK_LEAD := 18.0 / V1_PIXELS_PER_METRE
 const V1_DRIVE_LEAD := 52.0 / V1_PIXELS_PER_METRE
 const V1_SCOPE_LEAD := 250.0 / V1_PIXELS_PER_METRE
-# Inclinação de ~35° para mostrar um pouco mais à frente e menos de cima.
-# Mantém a distância ao foco (~35,8 m).
-const EXTERIOR_OFFSET := Vector3(0,20.52,29.30)
-const PREVIEW_OFFSET := Vector3(0, 21.8, 28.4)
+# Inclinação de 45°: equilibra a leitura da rua com o volume das fachadas.
+# Mantém a distância ao foco (~35,8 m) e a escala aparente calibrada abaixo.
+const EXTERIOR_OFFSET := Vector3(0,25.30,25.30)
+# Pedido de jogo (2026-10-12): visão "3D por trás do boneco, na diagonal". 36° de inclinação
+# na mesma distância ao foco (~35,8 m): mostra mais da rua à frente e as fachadas.
+const PREVIEW_OFFSET := Vector3(0, 21.0, 29.0)
+const PREVIEW_DRIVE_OFFSET := Vector3(0, 24.0, 26.5)
+# Pedido de jogo (2026-10-12): dentro do carro a câmera sobe e inclina mais para baixo para
+# mostrar mais da cidade. 58° de inclinação na mesma distância ao foco (~35,8 m, então áudio e
+# near/far seguem iguais) e enquadramento 12% mais aberto, só com veículo.
+const DRIVE_OFFSET := Vector3(0, 30.4, 19.0)
+const DRIVE_VIEW_SIZE_SCALE := 1.12
+const DRIVE_VIEW_BLEND_SECONDS := 0.6
 const PREVIEW_HEADING := PI / 4.0
 const STORE_FOCUS_OFFSET := Vector3(0,12.0,25.3)
 # Camera3D.size measures the vertical camera plane. The productive V1 zoom
 # measured visible ground, so compensate for the exterior pitch instead of
 # copying Camera2D numbers into metres. Equals sin(pitch) of EXTERIOR_OFFSET.
-const EXTERIOR_GROUND_PROJECTION := 20.52 / 35.77387874
+const EXTERIOR_GROUND_PROJECTION := 0.7071067811865476 # sin(45°)
 # A escala aparente de quem está de pé é proporcional a cot(inclinação)/size.
 # As medições V1 abaixo foram calibradas com a câmera antiga (cot = 22/28);
-# baixar a câmera faria o Dante crescer na tela. Abrir todo o
+# mudar a inclinação alteraria o tamanho de Dante na tela. Compensar todo o
 # enquadramento (andar E dirigir) na mesma proporção preserva o tamanho do
 # personagem da V1 e a relação andar/dirigir.
 const V1_CALIBRATION_PITCH_COT := 22.0 / 28.0
-const PITCH_APPARENT_COMPENSATION := (29.30 / 20.52) / V1_CALIBRATION_PITCH_COT
+const PITCH_APPARENT_COMPENSATION := (EXTERIOR_OFFSET.z / EXTERIOR_OFFSET.y) / V1_CALIBRATION_PITCH_COT
 # Equivalent 1280x720 captures measured the productive V1 Dante alpha rig at
 # 34.312 px and the native 1.80 m V2 actor at 46.886 px with ground-only
 # conversion. Walking framing compensates that presentation difference while
@@ -85,6 +94,7 @@ var _preview_blend := 0.0
 var _container_blend := 0.0
 var _container_focus := Vector3.ZERO
 var _building_approach_blend := 0.0
+var _drive_view_blend := 0.0
 var _cargo_plane_blend := 0.0
 # Túnel do canal: 0 fora, 1 no fundo (cresce com a profundidade do alvo na rampa).
 # Perspectiva traseira no túnel, dirigindo ou a pé; visão normal na rua.
@@ -97,6 +107,12 @@ var _tunnel_safety := preload("res://scripts/camera/TunnelChaseSafety.gd").new()
 const TUNNEL_CHASE_FOV := 70.0
 const TUNNEL_CHASE_HEIGHT := 2.4
 const TUNNEL_CHASE_DISTANCE := 6.0
+const EXTERIOR_FAR := 180.0
+# Túnel do canal (release de 2026-10-13): a câmera em perspectiva desenhava a cidade inteira acima do
+# teto até 180 m e os draw calls saltavam de ~500 para 2000-4300 (27-60 fps por ~5 s). Dentro do tubo
+# o alcance cai para 75 m e uma neblina, como no túnel da serra, esconde o corte.
+const CANAL_TUNNEL_FAR := 75.0
+const CANAL_TUNNEL_FOG_END := 65.0
 const VEHICLE_INTERIOR := preload("res://gameplay/VehicleInterior.gd")
 var _chase_roof_vehicle: Node3D
 const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
@@ -119,10 +135,11 @@ var _exterior_reveal := preload("res://scripts/camera/ExteriorReveal.gd").new()
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_cutaway.min_fades_per_frame = 3
 	projection = Camera3D.PROJECTION_ORTHOGONAL
 	size = target_size
 	near = 0.1
-	far = 180.0
+	far = EXTERIOR_FAR
 	current = true
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	var settings := get_node_or_null("/root/V2Settings")
@@ -142,6 +159,10 @@ func _exterior_view_offset() -> Vector3:
 	# Never change authored interior offsets, target, zoom, or heading.
 	if locked: return offset
 	var exterior := offset.lerp(PREVIEW_OFFSET.rotated(Vector3.UP, PREVIEW_HEADING), _preview_blend)
+	# Câmera de direção: aplicada antes das visões especiais (prédio, túnel, carga, contêiner),
+	# que continuam mandando no enquadramento quando ativas.
+	var drive_offset := DRIVE_OFFSET.lerp(PREVIEW_DRIVE_OFFSET.rotated(Vector3.UP, PREVIEW_HEADING), _preview_blend)
+	exterior = exterior.lerp(drive_offset, smoothstep(0.0, 1.0, _drive_view_blend))
 	# Two narrow building entrances sit behind neighboring rooflines. Raise
 	# only the approaching walking view, retaining the player's orbit heading.
 	var approach_direction := Vector2(exterior.x,exterior.z).normalized()*5.0
@@ -163,6 +184,7 @@ func _process(delta: float) -> void:
 	if not get_tree().paused:
 		_building_approach_blend = move_toward(_building_approach_blend,1.0 if has_meta("harbor_building_approach") and not locked else 0.0,maxf(0,delta)/.45)
 		_cargo_plane_blend = move_toward(_cargo_plane_blend,1.0 if has_meta("cargo_plane_view") and not locked else 0.0,maxf(0,delta)/.45)
+		_drive_view_blend = move_toward(_drive_view_blend,1.0 if _is_vehicle_target() and not locked else 0.0,maxf(0,delta)/DRIVE_VIEW_BLEND_SECONDS)
 	var container_view := has_meta("port_container_focus") and not locked
 	if container_view: _container_focus = get_meta("port_container_focus")
 	if not get_tree().paused:
@@ -293,6 +315,7 @@ func _update_tunnel_chase(actual: Vector3, delta: float, snap: bool) -> void:
 	_tunnel_chase_distance = distance if snap or blend <= 0.001 else lerpf(_tunnel_chase_distance, distance, 1.0 - exp(-4.2 * delta))
 	if blend <= 0.001:
 		projection = Camera3D.PROJECTION_ORTHOGONAL
+		far = EXTERIOR_FAR
 		_tunnel_safety.restore_environment()
 		return
 	var rear := Vector3.BACK.rotated(Vector3.UP, _tunnel_chase_heading)
@@ -320,7 +343,14 @@ func _update_tunnel_chase(actual: Vector3, delta: float, snap: bool) -> void:
 	global_position = _tunnel_safety.solve(self, target, eye, candidate)
 	var boom_fraction := clampf((global_position-base).dot(rear)/maxf(_tunnel_chase_distance,.1),0.0,1.0)
 	look_at(focus.lerp(eye - rear * (3.0 if vehicle else 1.4) * boom_fraction, blend))
-	_tunnel_safety.update_environment(self, _tunnel_chase_blend if _mountain_chase_active else 0.0, delta, actual)
+	if _mountain_chase_active:
+		far = EXTERIOR_FAR
+		_tunnel_safety.update_environment(self, _tunnel_chase_blend, delta, actual)
+	else:
+		# Só o túnel do canal: `_tunnel_blend` sobe com a profundidade do alvo na vala dele.
+		var canal := minf(_tunnel_chase_blend, _tunnel_blend)
+		far = lerpf(EXTERIOR_FAR, CANAL_TUNNEL_FAR, smoothstep(.5, 1.0, canal))
+		_tunnel_safety.update_environment(self, canal, delta, actual, CANAL_TUNNEL_FOG_END)
 
 ## Apaga a cidade entre a câmera e o tubo enquanto o alvo está fundo no túnel.
 func _update_cutaway() -> void:
@@ -332,7 +362,8 @@ func _update_cutaway() -> void:
 	# Meia largura visível + folga: quem entra na janela já está apagado antes de aparecer.
 	var half_width := size * aspect * 0.5 + 16.0
 	var chunks: Array = []
-	if strength > 0.0:
+	# Já na rampa (antes de o corte começar) os chunks entram só para aquecer o cache de caixas.
+	if strength > 0.0 or _tunnel_blend > 0.0:
 		var world := get_parent()
 		var production: Variant = world.get("production") if world != null else null
 		var regions: Variant = production.get("regions") if production is Node else null
@@ -342,6 +373,7 @@ func _update_cutaway() -> void:
 			var reach := Rect2(focus.x - half_width, CANAL_TUNNEL.outer_north() - 4.0, half_width * 2.0, CANAL_TUNNEL.outer_south() - CANAL_TUNNEL.outer_north() + 40.0)
 			for key in harbor.chunks:
 				if Rect2(Vector2(key) * harbor.CELL, Vector2.ONE * harbor.CELL).intersects(reach): chunks.append(harbor.chunks[key])
+	if strength <= 0.0 and not chunks.is_empty(): _cutaway.prewarm(chunks)
 	_cutaway.update(chunks, focus, global_position - focus, half_width, smoothstep(0.0, 1.0, strength), get_process_delta_time())
 
 func focus_on_store(point: Vector3, final_size: float, duration: float) -> void:
@@ -427,7 +459,7 @@ func _vehicle_size() -> float:
 	# The V1 vehicle camera opens from the pedestrian view. The native actor
 	# needs an apparent-scale adaptation, so a stationary handoff may retain the
 	# current frame but must never tighten it.
-	return maxf(WALK_SIZE_CLOSE,size_for_v1_zoom(zoom))
+	return maxf(WALK_SIZE_CLOSE,size_for_v1_zoom(zoom)) * DRIVE_VIEW_SIZE_SCALE
 
 func _desired_lead(base: Vector3,scoped: bool) -> Vector3:
 	if not _is_vehicle_target() and (scoped or _manual_aim_active()):
