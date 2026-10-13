@@ -27,6 +27,13 @@ const UNSIGNALIZED_SOURCE_POINTS := [
 	Vector2(3750,3600),Vector2(3750,4770),Vector2(5750,4770),
 	Vector2(7400,1700),Vector2(7700,1400),Vector2(7700,2000),Vector2(8000,1700),
 ]
+const DASH_WIDTH := 3.0 * SOURCE_SCALE
+const DASH_Y := 0.038
+
+## Tracinhos da faixa num MultiMeshInstance3D por cor e por trecho (medido em 2026-10-13: ~64
+## MeshInstance3D "Dash" num trecho de 128x64 m do oeste, cada um com draw call própria).
+## `GETECO_DASH_BATCH=0` volta a um MeshInstance3D por tracinho.
+static var dash_batch_enabled := OS.get_environment("GETECO_DASH_BATCH") != "0"
 
 # Revisão do catálogo usado pelo índice de acabamento dos chunks.
 var context_revision := 0
@@ -465,6 +472,15 @@ func _build_markings(parent: Node3D, rect: Rect2) -> void:
 		var travelled := 0.0
 		for index in range(points.size() - 1):
 			var a := points[index]
+	# Cor (html) -> Array[Transform3D]; só usado com o lote ligado.
+	var batches := {}
+	# CanalTunnel3D.carve_chunk recorta a pintura sobre as rampas abertas, mas só em MeshInstance3D:
+	# tracinho que encosta numa rampa continua peça solta para ser recortado. `load` (não preload):
+	# o túnel já pré-carrega este script.
+	var tunnel_cuts: Array[Rect2] = []
+	if dash_batch_enabled:
+		for cut in load("res://world/urban_detail/CanalTunnel3D.gd").open_cuts():
+			if (cut as Rect2).intersects(rect.grow(1.0)): tunnel_cuts.append(cut)
 			var b := points[index + 1]
 			var segment_length := a.distance_to(b)
 			if segment_length < MIN_SEGMENT: continue
@@ -482,15 +498,18 @@ func _build_markings(parent: Node3D, rect: Rect2) -> void:
 					# Half-open chunk ownership: padding duplicated coplanar paint
 					# in adjacent chunks while streaming across their border.
 					if rect.has_point(midpoint) and not _marking_hits_junction(midpoint) and not _marking_hits_junction(from) and not _marking_hits_junction(to):
-						_add_mark(mark_parent, from, to, count)
+						if dash_batch_enabled and not _mark_touches(tunnel_cuts, from, to): _queue_mark(batches, from, to)
+						else: _add_mark(mark_parent, from, to, count)
 						count += 1
 						if int(road.get("lanes_per_direction",1)) == 2:
 							for side in [-1,1]:
 								var offset: Vector2 = Vector2(-direction.y,direction.x)*float(road.width)*.25*side
-								_add_mark(mark_parent,from+offset,to+offset,count,true)
+								if dash_batch_enabled and not _mark_touches(tunnel_cuts,from+offset,to+offset): _queue_mark(batches,from+offset,to+offset,true)
+								else: _add_mark(mark_parent,from+offset,to+offset,count,true)
 								count += 1
 				walked += maxf(step, 0.03)
 			travelled += segment_length
+	for color_key in batches: _add_mark_batch(mark_parent, Color(color_key), batches[color_key])
 	if count > 0: parent.add_child(mark_parent)
 	else: mark_parent.free()
 
@@ -512,15 +531,80 @@ func _add_mark(parent: Node3D, from: Vector2, to: Vector2, index: int, same_dire
 	var mesh_instance := MeshInstance3D.new()
 	mesh_instance.name = "Dash_%04d" % index
 	var paint := PlaneMesh.new()
-	paint.size = Vector2(3.0 * SOURCE_SCALE, delta.length())
+	paint.size = Vector2(DASH_WIDTH, delta.length())
 	mesh_instance.mesh = paint
 	# Road paint receives shadows, but has no raised sides to cast a crawling
 	# subpixel shadow onto itself/asphalt as the camera moves.
 	mesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	mesh_instance.material_override = _material(CROSSWALK_COLOR if same_direction else LANE_COLOR)
-	mesh_instance.position = Vector3((from.x + to.x) * 0.5, 0.038, (from.y + to.y) * 0.5)
+	mesh_instance.position = Vector3((from.x + to.x) * 0.5, DASH_Y, (from.y + to.y) * 0.5)
 	mesh_instance.rotation.y = atan2(delta.x, delta.y)
 	parent.add_child(mesh_instance)
+
+
+## Caixa do tracinho (com folga da largura) contra os recortes; mesma ideia de CanalTunnel3D._touches.
+func _mark_touches(cuts: Array[Rect2], from: Vector2, to: Vector2) -> bool:
+	if cuts.is_empty(): return false
+	var bounds := Rect2(from, Vector2.ZERO).expand(to).grow(DASH_WIDTH)
+	for cut in cuts:
+		if bounds.intersects(cut): return true
+	return false
+
+
+## Mesma posição, rumo e comprimento de `_add_mark`: plano de 1 m esticado em Z pelo comprimento.
+## A escala só no eixo do comprimento mantém a normal para cima (luz igual à peça solta).
+func _queue_mark(batches: Dictionary, from: Vector2, to: Vector2, same_direction := false) -> void:
+	var delta := to - from
+	var key := (CROSSWALK_COLOR if same_direction else LANE_COLOR).to_html(false)
+	if not batches.has(key): batches[key] = []
+	var basis := Basis(Vector3.UP, atan2(delta.x, delta.y)) * Basis.from_scale(Vector3(1.0, 1.0, delta.length()))
+	batches[key].append(Transform3D(basis, Vector3((from.x + to.x) * 0.5, DASH_Y, (from.y + to.y) * 0.5)))
+
+
+func _add_mark_batch(parent: Node3D, color: Color, transforms: Array) -> void:
+	var paint := PlaneMesh.new()
+	paint.size = Vector2(DASH_WIDTH, 1.0)
+	var multimesh := MultiMesh.new()
+	multimesh.transform_format = MultiMesh.TRANSFORM_3D
+	multimesh.mesh = paint
+	multimesh.instance_count = transforms.size()
+	for index in transforms.size(): multimesh.set_instance_transform(index, transforms[index])
+	var instance := MultiMeshInstance3D.new()
+	instance.name = "DashBatch_%s" % color.to_html(false)
+	instance.multimesh = multimesh
+	# Mesma regra da peça solta: tinta recebe sombra, mas não projeta.
+	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	instance.material_override = _material(color)
+	parent.add_child(instance)
+
+
+## Transformações globais e cor de todos os tracinhos sob `root`, nos dois modos (soltos ou em lote).
+## Para testes e contagens: [{"transform": Transform3D, "color": String, "cast_shadow": int}].
+static func dash_marks(root: Node) -> Array[Dictionary]:
+	var marks: Array[Dictionary] = []
+	for mark in root.find_children("Dash_*", "MeshInstance3D", true, false):
+		var mesh: Mesh = (mark as MeshInstance3D).mesh
+		var xform: Transform3D = mark.global_transform if mark.is_inside_tree() else _local_to(root, mark)
+		# Recortado pelo túnel vira ArrayMesh: o comprimento passa a ser o que sobrou da caixa.
+		var length := (mesh as PlaneMesh).size.y if mesh is PlaneMesh else (mesh.get_aabb().size.z if mesh != null else 0.0)
+		xform.basis = xform.basis * Basis.from_scale(Vector3(1.0, 1.0, length))
+		marks.append({"transform": xform, "color": mark.material_override.albedo_color.to_html(false), "cast_shadow": mark.cast_shadow})
+	for batch in root.find_children("DashBatch_*", "MultiMeshInstance3D", true, false):
+		var multimesh: MultiMesh = batch.multimesh
+		var base: Transform3D = batch.global_transform if batch.is_inside_tree() else _local_to(root, batch)
+		for index in multimesh.instance_count:
+			marks.append({"transform": base * multimesh.get_instance_transform(index), "color": batch.material_override.albedo_color.to_html(false), "cast_shadow": batch.cast_shadow})
+	return marks
+
+
+static func _local_to(root: Node, node: Node3D) -> Transform3D:
+	var xform := node.transform
+	var walk := node.get_parent()
+	while walk != null and walk != root:
+		if walk is Node3D: xform = (walk as Node3D).transform * xform
+		walk = walk.get_parent()
+	if root is Node3D: xform = (root as Node3D).transform * xform
+	return xform
 
 
 func _add_surface(parent: Node3D, label: String, polygons: Array[PackedVector2Array], y: float, material: Material) -> void:

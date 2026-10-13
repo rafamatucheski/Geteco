@@ -12,12 +12,14 @@ func _initialize() -> void:
 	var seen := {}
 	var failures: Array[String] = []
 	for parent in [left,right]:
-		for mark in parent.find_children("Dash_*","MeshInstance3D",true,false):
-			var key := str(mark.position)
+		# Tracinhos soltos (GETECO_DASH_BATCH=0) ou em lote por cor: a leitura cobre os dois.
+		for mark in HarborRoadGeometry3D.dash_marks(parent):
+			var origin: Vector3 = (mark.transform as Transform3D).origin
+			var key := str(origin)
 			if seen.has(key): failures.append("Duplicate coplanar lane paint at "+key)
 			seen[key] = true
-			if mark.cast_shadow != GeometryInstance3D.SHADOW_CASTING_SETTING_OFF: failures.append("Paint casts a raised shadow")
-			if mark.position.y <= .026: failures.append("Paint intersects asphalt")
+			if int(mark.cast_shadow) != GeometryInstance3D.SHADOW_CASTING_SETTING_OFF: failures.append("Paint casts a raised shadow")
+			if origin.y <= .026: failures.append("Paint intersects asphalt")
 	if seen.size() != 3: failures.append("Missing/extra dashes across chunk boundary")
 	var paving := Node3D.new()
 	geometry.build_chunk(paving,Rect2(-10,-5,20,10))
