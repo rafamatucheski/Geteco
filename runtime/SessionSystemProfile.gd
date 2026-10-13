@@ -40,6 +40,16 @@ var _inventory = preload("res://runtime/SessionSceneInventory.gd").new()
 var _inventory_at := 0
 var _inventory_snapshot: Dictionary = {}
 var _last_location := ""
+# Janela de 1 s: tempos de quadro e GPU/CPU de render para separar "dirigindo" de "parado"
+# e "limitado por GPU" de "limitado por CPU" sem depender só dos spans instrumentados.
+var _window_frame_ms := PackedFloat32Array()
+var _window_render_cpu := 0.0
+var _window_render_gpu := 0.0
+var _window_render_samples := 0
+var _orphan_at := 0
+var _orphan_last := -1
+const ORPHAN_INTERVAL_USEC := 15000000
+const ORPHAN_SAMPLE_LIMIT := 600
 class PhysicsBeginProbe:
 	extends Node
 	var recorder: Node
@@ -236,6 +246,11 @@ func _process(_delta: float) -> void:
 		row.total_ms += float(sample.total_ms)
 		row.max_ms = maxf(float(row.max_ms), float(sample.max_ms))
 	var frame_ms := float(now - _previous) / 1000.0
+	_window_frame_ms.append(frame_ms)
+	if _render_timing:
+		_window_render_cpu += _render_cpu_ms
+		_window_render_gpu += _render_gpu_ms
+		_window_render_samples += 1
 	_capture_history(now, frame_ms, work)
 	# Detailed work must survive even when the containing frame is below 33.3ms.
 	if not work.slow_spans.is_empty():
@@ -269,7 +284,74 @@ func _process(_delta: float) -> void:
 func _send(record: Dictionary) -> void:
 	get_parent().call("RecordProfile", JSON.stringify(record))
 
+## Resumo de 1 s com percentis exatos, tempo de render CPU/GPU e carga da cena. É o registro para
+## comparar rodadas (editor × release, dirigindo × parado) sem reconstruir tudo dos quadros.
+func _perf_window(now: int) -> void:
+	if _window_frame_ms.is_empty(): return
+	var sorted := _window_frame_ms.duplicate()
+	sorted.sort()
+	var count := sorted.size()
+	var total := 0.0
+	for value in sorted: total += value
+	var driving: Variant = _context.get("driving", false)
+	var record := {"type":"perf_window", "start_usec":_window_start, "end_usec":now,
+		"frames":count, "fps":float(count) * 1000.0 / maxf(total, 0.001),
+		"p50_ms":sorted[count / 2], "p95_ms":sorted[mini(count - 1, int(count * 0.95))],
+		"p99_ms":sorted[mini(count - 1, int(count * 0.99))], "max_ms":sorted[count - 1],
+		"driving":driving, "region":_context.get("region", ""), "place":_context.get("place", ""),
+		"density_scale":_context.get("density_scale", 1.0), "paused":get_tree().paused,
+		"focused":DisplayServer.window_is_focused(),
+		"draw_calls":Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME),
+		"primitives":Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME),
+		"objects_drawn":Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME),
+		"nodes":Performance.get_monitor(Performance.OBJECT_NODE_COUNT),
+		"orphan_nodes":Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT),
+		"physics_3d_active":Performance.get_monitor(Performance.PHYSICS_3D_ACTIVE_OBJECTS),
+		"time_process_ms":Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0,
+		"time_physics_ms":Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0,
+		"scope":"exact_percentiles_of_frame_intervals_in_window; render_ms_are_window_means_of_async_samples"}
+	if _render_timing and _window_render_samples > 0:
+		record["render_cpu_ms"] = _window_render_cpu / _window_render_samples
+		record["render_gpu_ms"] = _window_render_gpu / _window_render_samples
+	_send(record)
+	_window_frame_ms = PackedFloat32Array()
+	_window_render_cpu = 0.0
+	_window_render_gpu = 0.0
+	_window_render_samples = 0
+
+## Nós órfãos (criados e nunca postos na árvore nem liberados) ficam contados mas anônimos no
+## monitor; agrupar por classe/script/nome aponta o criador. Amostra limitada e rara.
+func _orphan_report(now: int) -> void:
+	if now - _orphan_at < ORPHAN_INTERVAL_USEC: return
+	_orphan_at = now
+	var total := int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT))
+	if total < 100 or absi(total - _orphan_last) < 50: return
+	_orphan_last = total
+	var ids := Node.get_orphan_node_ids()
+	var groups := {}
+	var sampled := 0
+	for id in ids:
+		if sampled >= ORPHAN_SAMPLE_LIMIT: break
+		var node := instance_from_id(id) as Node
+		if node == null: continue
+		sampled += 1
+		var script: Variant = node.get_script()
+		var script_path: String = script.resource_path if script != null else ""
+		var base := node.name.rstrip("0123456789@")
+		var key := "%s|%s|%s" % [node.get_class(), script_path, base]
+		if not groups.has(key):
+			groups[key] = {"class":node.get_class(), "script":script_path, "name":base, "count":0, "children":0}
+		groups[key].count += 1
+		groups[key].children += node.get_child_count()
+	var rows := groups.values()
+	rows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.count > b.count)
+	_send({"type":"orphan_nodes", "engine_usec":now, "total":total, "listed_ids":ids.size(),
+		"sampled":sampled, "groups":rows.slice(0, 20),
+		"scope":"first_sampled_ids_only; group_by_class_script_name_without_trailing_digits"})
+
 func _flush(now: int) -> void:
+	_perf_window(now)
+	_orphan_report(now)
 	if _frames == 0 and _totals.is_empty(): return
 	_send({"type":"system_metrics", "start_usec":_window_start, "end_usec":now,
 		"frames":_frames, "systems":_totals, "dropped":_dropped, "timing":"inclusive_do_not_sum"})

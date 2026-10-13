@@ -87,7 +87,11 @@ public partial class SessionDiagnostics : Node
                 resolution = GetTree().Root.Size.ToString(), vsync = DisplayServer.WindowGetVsyncMode().ToString(),
                 debugger = EngineDebugger.IsActive(), schema = 5,
                 debug_build = OS.IsDebugBuild(),
-                clock_sync = new { engine_usec = Time.GetTicksUsec(), stopwatch_ticks = Stopwatch.GetTimestamp(), stopwatch_frequency = Stopwatch.Frequency },
+                // Separa editor, export de debug e export release: os números só se comparam entre o mesmo tipo.
+                build_kind = OS.HasFeature("editor") ? "editor" : OS.HasFeature("release") ? "export_release" : "export_debug",
+                executable = OS.GetExecutablePath(),
+                launch_args = OS.GetCmdlineArgs(),
+                window_mode = DisplayServer.WindowGetMode().ToString(),                clock_sync = new { engine_usec = Time.GetTicksUsec(), stopwatch_ticks = Stopwatch.GetTimestamp(), stopwatch_frequency = Stopwatch.Frequency },
                 frame_history_seconds = 2, frame_history_capacity = 360,
                 slow_operation_ms = 2, pending_operation_ms = 5000, max_active_operations = 128,
                 coverage = "explicit_instrumentation_not_all_scripts",

@@ -51,7 +51,7 @@ internal sealed class SessionLogSummary
             JsonElement world = default, state = default;
             if (index < ids.Length && contexts.TryGetValue(ids[index], out var cached)) world = cached.GetProperty("context");
             if (index < runtimeIds.Length) states.TryGetValue(runtimeIds[index], out state);
-            string key = $"scene={Field(state,"scene")};region={Field(world,"region")};place={Field(world,"place")};ready={Field(world,"world_ready")};focused={Field(state,"focused")};paused={Field(state,"paused")};resolution={Field(state,"resolution")};max_fps={Field(state,"max_fps")}";
+            string key = $"scene={Field(state,"scene")};region={Field(world,"region")};place={Field(world,"place")};driving={Field(world,"driving")};ready={Field(world,"world_ready")};focused={Field(state,"focused")};paused={Field(state,"paused")};resolution={Field(state,"resolution")};max_fps={Field(state,"max_fps")}";
             if (!scenarios.TryGetValue(key, out var stats)) {
                 if (scenarios.Count >= 64) { omitted++; index++; continue; }
                 stats = new Stats(); scenarios[key] = stats;
