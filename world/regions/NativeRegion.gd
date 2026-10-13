@@ -913,7 +913,10 @@ func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
 						var record_began := Time.get_ticks_usec()
 						var record_stall := STALL_WORK.begin()
 						_build_record_cached(chunk,record)
-						STALL_WORK.finish_slow("stream.%s.record.%s"%[region_id,record.get("kind","?")],record_stall,2000)
+						# Com detalhes: o log mostra QUAL registro pesou (os de 200-600 ms do release de 13/10).
+						STALL_WORK.finish("stream.%s.record.%s"%[region_id,record.get("kind","?")],record_stall,
+							{"id":str(record.get("id",record.get("name",""))),"model_kind":str(record.get("model_kind","")),
+							"zone_id":str(record.get("zone_id","")),"at":str(record.get("position",""))})
 						var record_ms := float(Time.get_ticks_usec()-record_began)/1000.0
 						if record_ms >= 8.0:
 							var slow: Array = Engine.get_meta("slow_stream_records",[])

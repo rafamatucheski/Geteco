@@ -85,7 +85,15 @@ func _drain_pending(deadline: int) -> void:
 		if done >= min_fades_per_frame and Time.get_ticks_usec() >= deadline: break
 		var node: Variant = _pending[id]
 		_pending.erase(id)
-		if is_instance_valid(node) and not _states.has(id): _fade(node)
+		if is_instance_valid(node) and not _states.has(id):
+			var node_began := STALL_WORK.begin()
+			_fade(node)
+			# Com classe, malhas e superfícies: cada troca custou 8-18 ms no release e não sabemos por quê.
+			if node_began != 0 and Time.get_ticks_usec() - node_began >= 2000:
+				var detail := {"class": node.get_class(), "name": String(node.name)}
+				if node is MeshInstance3D and node.mesh != null: detail["surfaces"] = node.mesh.get_surface_count()
+				if node is MultiMeshInstance3D and node.multimesh != null: detail["instances"] = node.multimesh.instance_count
+				STALL_WORK.finish("tunnel.cutaway.fade_node", node_began, detail)
 		done += 1
 	STALL_WORK.finish_slow("tunnel.cutaway.fade_batch", began, 1500)
 
