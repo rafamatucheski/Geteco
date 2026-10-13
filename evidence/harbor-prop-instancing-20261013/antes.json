@@ -1,0 +1,246 @@
+{
+	"engine": "4.7.2-stable (official)",
+	"label": "antes",
+	"prop_instancing_enabled": false,
+	"scope": "GeometryInstance3D com is_visible_in_tree nos chunks oeste x64-192 z64-128 e leste x320-448 z64-128; pertencimento pelo chunk, sem frustum ou oclusão. Sombras contam cast_shadow diferente de OFF. Não mede FPS ou draw calls da GPU.",
+	"sections": {
+		"leste": {
+			"collision_shapes": 56,
+			"lights": 0,
+			"mesh_nodes": 564,
+			"multimesh_instances": 215,
+			"multimesh_nodes": 59,
+			"other_geometry": 4,
+			"shadow_geometry": 477,
+			"sources": {
+				"HarborManholeExterior3D": {
+					"mesh_nodes": 36,
+					"multimesh_instances": 0,
+					"multimesh_nodes": 0,
+					"other_geometry": 0,
+					"shadow_geometry": 36,
+					"visible_geometry": 36
+				},
+				"HarborManholeSteam3D": {
+					"mesh_nodes": 0,
+					"multimesh_instances": 0,
+					"multimesh_nodes": 0,
+					"other_geometry": 1,
+					"shadow_geometry": 0,
+					"visible_geometry": 1
+				},
+				"HarborProp3D": {
+					"mesh_nodes": 42,
+					"multimesh_instances": 0,
+					"multimesh_nodes": 0,
+					"other_geometry": 0,
+					"shadow_geometry": 42,
+					"visible_geometry": 42
+				},
+				"HarborRestaurantTerrace3D": {
+					"mesh_nodes": 104,
+					"multimesh_instances": 0,
+					"multimesh_nodes": 0,
+					"other_geometry": 0,
+					"shadow_geometry": 104,
+					"visible_geometry": 104
+				},
+				"Outros": {
+					"mesh_nodes": 85,
+					"multimesh_instances": 215,
+					"multimesh_nodes": 59,
+					"other_geometry": 3,
+					"shadow_geometry": 30,
+					"visible_geometry": 147
+				},
+				"UrbanBrownstoneBuilding": {
+					"mesh_nodes": 58,
+					"multimesh_instances": 0,
+					"multimesh_nodes": 0,
+					"other_geometry": 0,
+					"shadow_geometry": 54,
+					"visible_geometry": 58
+				},
+				"UrbanCobraHouse": {
+					"mesh_nodes": 41,
+					"multimesh_instances": 0,
+					"multimesh_nodes": 0,
+					"other_geometry": 0,
+					"shadow_geometry": 35,
+					"visible_geometry": 41
+				},
+				"UrbanCommercialBuilding": {
+					"mesh_nodes": 48,
+					"multimesh_instances": 0,
+					"multimesh_nodes": 0,
+					"other_geometry": 0,
+					"shadow_geometry": 39,
+					"visible_geometry": 48
+				},
+				"UrbanIndustrialBuilding": {
+					"mesh_nodes": 40,
+					"multimesh_instances": 0,
+					"multimesh_nodes": 0,
+					"other_geometry": 0,
+					"shadow_geometry": 35,
+					"visible_geometry": 40
+				},
+				"UrbanShopfrontBuilding": {
+					"mesh_nodes": 110,
+					"multimesh_instances": 0,
+					"multimesh_nodes": 0,
+					"other_geometry": 0,
+					"shadow_geometry": 102,
+					"visible_geometry": 110
+				}
+			},
+			"visible_geometry": 627
+		},
+		"oeste": {
+			"collision_shapes": 138,
+			"lights": 0,
+			"mesh_nodes": 1007,
+			"multimesh_instances": 294,
+			"multimesh_nodes": 62,
+			"other_geometry": 11,
+			"shadow_geometry": 852,
+			"sources": {
+				"HarborHospitalModel3D": {
+					"mesh_nodes": 118,
+					"multimesh_instances": 0,
+					"multimesh_nodes": 0,
+					"other_geometry": 1,
+					"shadow_geometry": 118,
+					"visible_geometry": 119
+				},
+				"HarborManholeExterior3D": {
+					"mesh_nodes": 72,
+					"multimesh_instances": 0,
+					"multimesh_nodes": 0,
+					"other_geometry": 0,
+					"shadow_geometry": 72,
+					"visible_geometry": 72
+				},
+				"HarborManholeSteam3D": {
+					"mesh_nodes": 0,
+					"multimesh_instances": 0,
+					"multimesh_nodes": 0,
+					"other_geometry": 2,
+					"shadow_geometry": 0,
+					"visible_geometry": 2
+				},
+				"HarborProp3D": {
+					"mesh_nodes": 92,
+					"multimesh_instances": 0,
+					"multimesh_nodes": 0,
+					"other_geometry": 0,
+					"shadow_geometry": 92,
+					"visible_geometry": 92
+				},
+				"HarborPublicRealm3D": {
+					"mesh_nodes": 18,
+					"multimesh_instances": 0,
+					"multimesh_nodes": 0,
+					"other_geometry": 0,
+					"shadow_geometry": 18,
+					"visible_geometry": 18
+				},
+				"Outros": {
+					"mesh_nodes": 285,
+					"multimesh_instances": 294,
+					"multimesh_nodes": 62,
+					"other_geometry": 6,
+					"shadow_geometry": 201,
+					"visible_geometry": 353
+				},
+				"ResidenceExterior3D": {
+					"mesh_nodes": 52,
+					"multimesh_instances": 0,
+					"multimesh_nodes": 0,
+					"other_geometry": 0,
+					"shadow_geometry": 52,
+					"visible_geometry": 52
+				},
+				"ResidenceParking": {
+					"mesh_nodes": 29,
+					"multimesh_instances": 0,
+					"multimesh_nodes": 0,
+					"other_geometry": 0,
+					"shadow_geometry": 29,
+					"visible_geometry": 29
+				},
+				"SkatePark": {
+					"mesh_nodes": 15,
+					"multimesh_instances": 0,
+					"multimesh_nodes": 0,
+					"other_geometry": 0,
+					"shadow_geometry": 15,
+					"visible_geometry": 15
+				},
+				"UnionFountain3D": {
+					"mesh_nodes": 7,
+					"multimesh_instances": 0,
+					"multimesh_nodes": 0,
+					"other_geometry": 2,
+					"shadow_geometry": 6,
+					"visible_geometry": 9
+				},
+				"UnionPiano": {
+					"mesh_nodes": 22,
+					"multimesh_instances": 0,
+					"multimesh_nodes": 0,
+					"other_geometry": 0,
+					"shadow_geometry": 0,
+					"visible_geometry": 22
+				},
+				"UrbanCommercialBuilding": {
+					"mesh_nodes": 143,
+					"multimesh_instances": 0,
+					"multimesh_nodes": 0,
+					"other_geometry": 0,
+					"shadow_geometry": 114,
+					"visible_geometry": 143
+				},
+				"UrbanIndustrialBuilding": {
+					"mesh_nodes": 105,
+					"multimesh_instances": 0,
+					"multimesh_nodes": 0,
+					"other_geometry": 0,
+					"shadow_geometry": 93,
+					"visible_geometry": 105
+				},
+				"UrbanServiceBuilding": {
+					"mesh_nodes": 45,
+					"multimesh_instances": 0,
+					"multimesh_nodes": 0,
+					"other_geometry": 0,
+					"shadow_geometry": 38,
+					"visible_geometry": 45
+				},
+				"WalkupFacadeDoor": {
+					"mesh_nodes": 4,
+					"multimesh_instances": 0,
+					"multimesh_nodes": 0,
+					"other_geometry": 0,
+					"shadow_geometry": 4,
+					"visible_geometry": 4
+				}
+			},
+			"visible_geometry": 1080
+		}
+	},
+	"source_sha256": {
+		"world/city_look/CityChunkDressing.gd": "f34fabac6ecdeef68a02e6f840b03e892d621aac036de741774b9f4c851fe8e0",
+		"world/editing/world_edits.json": "353c18c7803af7e2f68b6b0db9f5c46b03f7f1a595b4388a2a05d26b20385fa4",
+		"world/harbor_route_detail/HarborRouteProps.gd": "a0942564d904ed4ad75129110901d83d9247db00271a41bebbe7f1961a01eecd",
+		"world/regions/NativeRegion.gd": "a5521d74b0298a15b1fb7ab2f598aa197f1a50e9338db94c9ac1342745402160",
+		"world/urban_detail/GroundCut.gd": "3965873dd44acee2c09e86891c7d08bf22053a1c9fae0312bfca1833795b43f5",
+		"world/urban_detail/HarborBuildingBatch.gd": "18d42e55067a8c627483560a770415f21f9857f1bd45e72631dac17706935e91",
+		"world/urban_detail/HarborManholeExterior3D.gd": "6e86d871601103dd0145385a225f16f140d02f4286b48059dd365d465001c54c",
+		"world/urban_detail/HarborProp3D.gd": "b766a20d5ed2844f74dab5140c19a3cafeaf18c343eab8d02f0620edb94d447d",
+		"world/urban_detail/HarborPropInstancing.gd": "26f6772a1220f3875548cd9d73106c664250a3db2c0b294542f7fea42132e16e",
+		"world/urban_detail/HarborRoadGeometry3D.gd": "93d8c90e14b9e09a83f13529e66b111132593ea0dd722b01e52e4679695bf474",
+		"world/urban_detail/HarborUrbanSurface3D.gd": "db51f4b9a905d1c57a8f462968bcd463d2562637ddd73ffb8debc038fbb86391",
+		"world/urban_detail/UrbanBuildingFactory.gd": "05f56e721ff4331fb439a6b74afab72299ac079d0f645064946a138188832a6a"
+	}
+}

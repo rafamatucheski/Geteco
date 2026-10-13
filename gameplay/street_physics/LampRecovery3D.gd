@@ -12,6 +12,8 @@ static func capture(item: Dictionary) -> void:
 	else:
 		var source = item.root.get_ref()
 		if not is_instance_valid(source): return
+		# A captura e a fratura precisam das peças deste poste, não do lote do chunk.
+		if source.has_method("restore_individual_meshes"): source.restore_individual_meshes()
 		saved.transform = source.global_transform
 		var pending: Array[Node] = [source]
 		while not pending.is_empty():

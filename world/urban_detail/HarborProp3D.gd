@@ -7,6 +7,10 @@ class_name HarborProp3D
 var definition: Dictionary
 var material_cache:={}
 var solids: StaticBody3D
+const INSTANCING := preload("res://world/urban_detail/HarborPropInstancing.gd")
+var _lamp_parts: Array[Dictionary] = []
+var _lamp_originals: Array[MeshInstance3D] = []
+var _lamp_initial_transform := Transform3D.IDENTITY
 
 static func records()->Array[Dictionary]:
 	var result:Array[Dictionary]=[]
@@ -125,6 +129,39 @@ func _lamp()->void:
 	_cylinder("StreetLampPost",.09,3.2,Vector3(0,1.6,0),Color("3f4745"),true)
 	_box("StreetLampArm",Vector3(.32,3.08,0),Vector3(.65,.08,.08),Color("3f4745"))
 	_box("StreetLampHead",Vector3(.62,2.98,0),Vector3(.48,.18,.38),Color("d3b487"))
+	# A cena isolada conserva seus materiais; o chunk recebe o acabamento noturno.
+	if not INSTANCING.enabled or not String(get_parent().name).begins_with("Chunk_"): return
+	for label in ["StreetLampPost", "StreetLampArm", "StreetLampHead"]:
+		var item := get_node(NodePath(label)) as MeshInstance3D
+		var material: Material = item.material_override
+		if label == "StreetLampHead": material = preload("res://world/city_look/CityLookMaterials.gd").lamp_head()
+		_lamp_parts.append(INSTANCING.append_lamp_part(get_parent(), item, material))
+		_lamp_originals.append(item)
+		if label != "StreetLampPost": item.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		# O marcador conserva a descoberta de luz, a colisão e a recuperação existentes.
+		item.visible = false
+	_lamp_initial_transform = global_transform
+	set_notify_transform(true)
+
+func _notification(what: int) -> void:
+	if _lamp_parts.is_empty(): return
+	if what == NOTIFICATION_TRANSFORM_CHANGED and is_inside_tree():
+		if not global_transform.is_equal_approx(_lamp_initial_transform): restore_individual_meshes()
+	elif what == NOTIFICATION_VISIBILITY_CHANGED:
+		for part in _lamp_parts: INSTANCING.set_lamp_part_visible(part, is_visible_in_tree())
+	elif what == NOTIFICATION_EXIT_TREE:
+		# Reparentar não pode deixar a geometria presa ao chunk anterior.
+		restore_individual_meshes()
+
+## Impactos e edição passam a usar as peças individuais antes de clonar ou animar.
+func restore_individual_meshes() -> void:
+	if _lamp_parts.is_empty(): return
+	set_notify_transform(false)
+	for part in _lamp_parts: INSTANCING.set_lamp_part_visible(part, false)
+	_lamp_parts.clear()
+	for item in _lamp_originals:
+		if is_instance_valid(item): item.visible = true
+	_lamp_originals.clear()
 
 func _box(label:String,point:Vector3,size:Vector3,color:Color,solid:=false)->MeshInstance3D:
 	var item:=MeshInstance3D.new()

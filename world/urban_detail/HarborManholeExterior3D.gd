@@ -129,6 +129,10 @@ func build() -> void:
 	steam = preload("res://world/urban_detail/HarborManholeSteam3D.gd").new()
 	add_child(steam)
 	set_open_amount(open_amount)
+	var instancing := preload("res://world/urban_detail/HarborPropInstancing.gd")
+	instancing.batch_children(visuals_root)
+	instancing.batch_children(ladder_handles)
+	instancing.batch_children(cover)
 
 func _add_disc(label: String, radius: float, disc_height: float, y: float, material: Material) -> MeshInstance3D:
 	return _add_disc_to(visuals_root, label, radius, disc_height, y, material)

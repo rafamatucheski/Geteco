@@ -1,0 +1,666 @@
+{
+  "date": "2026-10-13",
+  "engine": "Godot 4.7.2 .NET, Vulkan Mobile, NVIDIA GeForce RTX 4060 Laptop GPU",
+  "build": {
+    "command": "dotnet build Harbor.csproj",
+    "exit_code": 0,
+    "warnings": 0,
+    "errors": 0
+  },
+  "command": "Godot_v4.7.2-stable_mono_win64_console.exe --path . --script res://tests/<nome>.gd -- --no-save",
+  "environment": "Usuário autorizou executar testes e contagem com outras instâncias Godot abertas; nenhum processo alheio foi encerrado.",
+  "measurement": "antes.json e depois.json: chunks montados fora da sessão, sem frustum/oclusão; GeometryInstance3D com is_visible_in_tree e cast_shadow diferente de OFF. Não são draw calls da GPU.",
+  "preserved_counts": {
+    "west_collision_shapes": 138,
+    "east_collision_shapes": 56,
+    "west_expanded_mesh_instances": 1301,
+    "east_expanded_mesh_instances": 779,
+    "note": "Mesmos totais antes/depois; instâncias expandidas somam MeshInstance3D e instâncias internas dos MultiMeshes."
+  },
+  "changes": [
+    "Três MultiMeshes por chunk para as partes dos postes; originais ocultos preservam descoberta das luzes e contratos de dano/reparo.",
+    "Escadas e detalhes repetidos do bueiro agrupados por material e dono, preservando os pivôs móveis e colisões.",
+    "Seis IronBar viram um MultiMesh por grade; bacia permanece individual.",
+    "Sombras desligadas nos detalhes; haste do poste e paredes do poço mantêm sombra.",
+    "GETECO_PROP_INSTANCING=0 restaura o caminho original e suas sombras.",
+    "Poses dos postes ficam em cópia CPU; novos recursos são preenchidos antes da substituição para preservar crescimento e ocultação dos slots."
+  ],
+  "files": [
+    "world/urban_detail/HarborProp3D.gd",
+    "world/urban_detail/HarborPropInstancing.gd",
+    "world/urban_detail/HarborManholeExterior3D.gd",
+    "world/harbor_route_detail/HarborRouteProps.gd",
+    "gameplay/street_physics/LampRecovery3D.gd",
+    "tests/urban_detail/test_harbor_prop_instancing.gd",
+    "tests/measure/measure_harbor_prop_instances.gd",
+    "tests/test_vehicle_park_manhole_passage.gd",
+    "evidence/harbor-prop-instancing-20261013/antes.json",
+    "evidence/harbor-prop-instancing-20261013/depois.json",
+    "evidence/harbor-prop-instancing-20261013/validacao.json"
+  ],
+  "test_harness_fix": "test_vehicle_park_manhole_passage.gd: declaração explícita Array impede que a inferência Array[String] rejeite a lista literal do caminho padrão. Nenhuma asserção removida ou afrouxada. A primeira execução foi encerrada após travar nesse erro de script (código -1).",
+  "limitations": [
+    "FPS no jogo real não foi medido, por instrução do usuário.",
+    "Draw calls reais da GPU e estabilidade visual temporal não foram medidos.",
+    "Poste movimentado, atingido ou reparentado permanece individual até recarregar o chunk.",
+    "Os testes amplos com falha reproduzida no modo desligado permanecem pendentes no projeto; não foram corrigidos arquivos fora do escopo."
+  ],
+  "passed": 18,
+  "failed": 4,
+  "completed_with_script_errors": 1,
+  "tests": [
+    {
+      "script": "res://tests/cold/test_admission.gd",
+      "final_exit_code": 0,
+      "final_script_errors": false,
+      "failure_reproduced_disabled": false,
+      "attempts": [
+        {
+          "mode": "depois",
+          "exit_code": 0,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "COLD_ADMISSION checks=11 failures=[]"
+          ],
+          "engine_errors": []
+        }
+      ]
+    },
+    {
+      "script": "res://tests/tank_control/test_heavy_impacts.gd",
+      "final_exit_code": 1,
+      "final_script_errors": false,
+      "failure_reproduced_disabled": true,
+      "attempts": [
+        {
+          "mode": "depois",
+          "exit_code": 1,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "HEAVY_IMPACTS checks=80 failures=22"
+          ],
+          "engine_errors": [
+            "ERROR: tanque: casco/colisor esmagados",
+            "ERROR: tanque: esmagamento destrói o carro uma única vez",
+            "ERROR: tanque: recontato não repete destruição/explosão",
+            "ERROR: tanque: passa por cima fisicamente",
+            "ERROR: tanque: mantém avanço sem autodestruição",
+            "ERROR: caminhão limpa-neves: casco/colisor esmagados",
+            "ERROR: caminhão limpa-neves: esmagamento destrói o carro uma única vez",
+            "ERROR: caminhão limpa-neves: recontato não repete destruição/explosão",
+            "ERROR: caminhão limpa-neves: passa por cima fisicamente",
+            "ERROR: caminhão limpa-neves: mantém avanço sem autodestruição",
+            "ERROR: tanque contra SUV alto: casco/colisor esmagados",
+            "ERROR: tanque contra SUV alto: esmagamento destrói o carro uma única vez",
+            "ERROR: tanque contra SUV alto: recontato não repete destruição/explosão",
+            "ERROR: tanque contra SUV alto: passa por cima fisicamente",
+            "ERROR: tanque contra SUV alto: mantém avanço sem autodestruição",
+            "ERROR: save achatado legado destrói na passagem e mantém recontato quieto: 0",
+            "ERROR: save achatado legado destrói na passagem e mantém recontato quieto: 1",
+            "ERROR: police_suv: veículo comum cede ao tanque",
+            "ERROR: summit_suv: veículo comum cede ao tanque",
+            "ERROR: polar_van: veículo comum cede ao tanque",
+            "ERROR: atlas_crew_pickup: veículo comum cede ao tanque",
+            "ERROR: carro comum largo não fica imune por relação de área"
+          ]
+        },
+        {
+          "mode": "antes",
+          "exit_code": 1,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "HEAVY_IMPACTS checks=80 failures=22"
+          ],
+          "engine_errors": [
+            "ERROR: tanque: casco/colisor esmagados",
+            "ERROR: tanque: esmagamento destrói o carro uma única vez",
+            "ERROR: tanque: recontato não repete destruição/explosão",
+            "ERROR: tanque: passa por cima fisicamente",
+            "ERROR: tanque: mantém avanço sem autodestruição",
+            "ERROR: caminhão limpa-neves: casco/colisor esmagados",
+            "ERROR: caminhão limpa-neves: esmagamento destrói o carro uma única vez",
+            "ERROR: caminhão limpa-neves: recontato não repete destruição/explosão",
+            "ERROR: caminhão limpa-neves: passa por cima fisicamente",
+            "ERROR: caminhão limpa-neves: mantém avanço sem autodestruição",
+            "ERROR: tanque contra SUV alto: casco/colisor esmagados",
+            "ERROR: tanque contra SUV alto: esmagamento destrói o carro uma única vez",
+            "ERROR: tanque contra SUV alto: recontato não repete destruição/explosão",
+            "ERROR: tanque contra SUV alto: passa por cima fisicamente",
+            "ERROR: tanque contra SUV alto: mantém avanço sem autodestruição",
+            "ERROR: save achatado legado destrói na passagem e mantém recontato quieto: 0",
+            "ERROR: save achatado legado destrói na passagem e mantém recontato quieto: 1",
+            "ERROR: police_suv: veículo comum cede ao tanque",
+            "ERROR: summit_suv: veículo comum cede ao tanque",
+            "ERROR: polar_van: veículo comum cede ao tanque",
+            "ERROR: atlas_crew_pickup: veículo comum cede ao tanque",
+            "ERROR: carro comum largo não fica imune por relação de área"
+          ]
+        }
+      ]
+    },
+    {
+      "script": "res://tests/test_bridge_approach_terrain.gd",
+      "final_exit_code": 0,
+      "final_script_errors": false,
+      "failure_reproduced_disabled": false,
+      "attempts": [
+        {
+          "mode": "depois",
+          "exit_code": 0,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "BRIDGE_APPROACH_TERRAIN PASS failures=0"
+          ],
+          "engine_errors": []
+        }
+      ]
+    },
+    {
+      "script": "res://tests/test_city_local_lighting.gd",
+      "final_exit_code": 0,
+      "final_script_errors": false,
+      "failure_reproduced_disabled": false,
+      "attempts": [
+        {
+          "mode": "final",
+          "exit_code": 0,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "CITY_LOCAL_LIGHTING checks=29 failures=[]"
+          ],
+          "engine_errors": []
+        }
+      ]
+    },
+    {
+      "script": "res://tests/test_contact_audio.gd",
+      "final_exit_code": 0,
+      "final_script_errors": false,
+      "failure_reproduced_disabled": false,
+      "attempts": [
+        {
+          "mode": "depois",
+          "exit_code": 0,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "CONTACT_AUDIO checks=27 failures=0"
+          ],
+          "engine_errors": []
+        }
+      ]
+    },
+    {
+      "script": "res://tests/test_manhole_closed_cover.gd",
+      "final_exit_code": 0,
+      "final_script_errors": false,
+      "failure_reproduced_disabled": false,
+      "attempts": [
+        {
+          "mode": "depois",
+          "exit_code": 0,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "MANHOLE_CLOSED_COVER failures=[]"
+          ],
+          "engine_errors": []
+        }
+      ]
+    },
+    {
+      "script": "res://tests/test_manhole_ladder_access.gd",
+      "final_exit_code": 0,
+      "final_script_errors": false,
+      "failure_reproduced_disabled": false,
+      "attempts": [
+        {
+          "mode": "depois",
+          "exit_code": 0,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "MANHOLE_LADDER_ACCESS failures=[]"
+          ],
+          "engine_errors": []
+        }
+      ]
+    },
+    {
+      "script": "res://tests/test_manhole_moved_session.gd",
+      "final_exit_code": 0,
+      "final_script_errors": false,
+      "failure_reproduced_disabled": false,
+      "attempts": [
+        {
+          "mode": "depois",
+          "exit_code": 0,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "MANHOLE_MOVED_SESSION failures=[]"
+          ],
+          "engine_errors": []
+        }
+      ]
+    },
+    {
+      "script": "res://tests/test_manhole_session_access.gd",
+      "final_exit_code": 0,
+      "final_script_errors": true,
+      "failure_reproduced_disabled": true,
+      "attempts": [
+        {
+          "mode": "depois",
+          "exit_code": 0,
+          "timeout": false,
+          "script_errors": true,
+          "summary": [
+            "MANHOLE_SESSION_ACCESS failures=[]"
+          ],
+          "engine_errors": [
+            "SCRIPT ERROR: Trying to assign invalid previously freed instance."
+          ]
+        },
+        {
+          "mode": "antes",
+          "exit_code": 0,
+          "timeout": false,
+          "script_errors": true,
+          "summary": [
+            "MANHOLE_SESSION_ACCESS failures=[]"
+          ],
+          "engine_errors": [
+            "SCRIPT ERROR: Trying to assign invalid previously freed instance."
+          ]
+        }
+      ]
+    },
+    {
+      "script": "res://tests/test_native_driving.gd",
+      "final_exit_code": 0,
+      "final_script_errors": false,
+      "failure_reproduced_disabled": false,
+      "attempts": [
+        {
+          "mode": "depois",
+          "exit_code": 0,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [],
+          "engine_errors": []
+        }
+      ]
+    },
+    {
+      "script": "res://tests/test_regions.gd",
+      "final_exit_code": 0,
+      "final_script_errors": false,
+      "failure_reproduced_disabled": false,
+      "attempts": [
+        {
+          "mode": "depois",
+          "exit_code": 0,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "REGIONS PASS failures=0"
+          ],
+          "engine_errors": []
+        }
+      ]
+    },
+    {
+      "script": "res://tests/test_street_prop_query_budget.gd",
+      "final_exit_code": 0,
+      "final_script_errors": false,
+      "failure_reproduced_disabled": false,
+      "attempts": [
+        {
+          "mode": "depois",
+          "exit_code": 0,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "STREET_PROP_QUERY_BUDGET checks=17 failures=0"
+          ],
+          "engine_errors": []
+        }
+      ]
+    },
+    {
+      "script": "res://tests/test_vehicle_breakable_furniture.gd",
+      "final_exit_code": 0,
+      "final_script_errors": false,
+      "failure_reproduced_disabled": false,
+      "attempts": [
+        {
+          "mode": "depois",
+          "exit_code": 0,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "VEHICLE_BREAKABLE_FURNITURE checks=65 failures=[]"
+          ],
+          "engine_errors": []
+        }
+      ]
+    },
+    {
+      "script": "res://tests/test_vehicle_contact_release.gd",
+      "final_exit_code": 0,
+      "final_script_errors": false,
+      "failure_reproduced_disabled": false,
+      "attempts": [
+        {
+          "mode": "depois",
+          "exit_code": 0,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "VEHICLE_CONTACT_RELEASE checks=36 failures=[]"
+          ],
+          "engine_errors": []
+        }
+      ]
+    },
+    {
+      "script": "res://tests/test_vehicle_park_manhole_passage.gd",
+      "final_exit_code": 1,
+      "final_script_errors": false,
+      "failure_reproduced_disabled": true,
+      "attempts": [
+        {
+          "mode": "depois",
+          "exit_code": -1,
+          "timeout": false,
+          "script_errors": true,
+          "summary": [],
+          "engine_errors": [
+            "SCRIPT ERROR: Trying to assign an array of type \"Array\" to a variable of type \"Array[String]\"."
+          ]
+        },
+        {
+          "mode": "corrigido",
+          "exit_code": 1,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "DRIVE_PASSAGE_RESULT res://evidence/vehicle-park-manhole-126648-14269821 failures=[\"harbor_sewer_forward\", \"harbor_sewer_back\", \"sewer_market_forward\", \"sewer_market_back\"]"
+          ],
+          "engine_errors": []
+        },
+        {
+          "mode": "antes",
+          "exit_code": 1,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "DRIVE_PASSAGE_RESULT res://evidence/vehicle-park-manhole-122508-11580789 failures=[\"harbor_sewer_forward\", \"harbor_sewer_back\", \"sewer_market_forward\", \"sewer_market_back\"]"
+          ],
+          "engine_errors": []
+        }
+      ]
+    },
+    {
+      "script": "res://tests/test_world_editor_manholes.gd",
+      "final_exit_code": 0,
+      "final_script_errors": false,
+      "failure_reproduced_disabled": false,
+      "attempts": [
+        {
+          "mode": "depois",
+          "exit_code": 0,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "WORLD_EDITOR_MANHOLES 189 checks 0 failures"
+          ],
+          "engine_errors": []
+        }
+      ]
+    },
+    {
+      "script": "res://tests/test_world_editor_street_lamps.gd",
+      "final_exit_code": 0,
+      "final_script_errors": false,
+      "failure_reproduced_disabled": false,
+      "attempts": [
+        {
+          "mode": "depois",
+          "exit_code": 0,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "WORLD_EDITOR_STREET_LAMPS checks=324 failures=0"
+          ],
+          "engine_errors": []
+        }
+      ]
+    },
+    {
+      "script": "res://tests/test_world_units.gd",
+      "final_exit_code": 0,
+      "final_script_errors": false,
+      "failure_reproduced_disabled": false,
+      "attempts": [
+        {
+          "mode": "depois",
+          "exit_code": 0,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "RESULT checks=62 failures=0"
+          ],
+          "engine_errors": []
+        }
+      ]
+    },
+    {
+      "script": "res://tests/urban_detail/test_harbor_access_exteriors.gd",
+      "final_exit_code": 0,
+      "final_script_errors": false,
+      "failure_reproduced_disabled": false,
+      "attempts": [
+        {
+          "mode": "depois",
+          "exit_code": 0,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "HARBOR_ACCESS_EXTERIORS_PASS checks=11 failures=0"
+          ],
+          "engine_errors": []
+        }
+      ]
+    },
+    {
+      "script": "res://tests/urban_detail/test_harbor_prop_3d_fidelity.gd",
+      "final_exit_code": 1,
+      "final_script_errors": false,
+      "failure_reproduced_disabled": true,
+      "attempts": [
+        {
+          "mode": "depois",
+          "exit_code": 1,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "HARBOR_PROP_3D_FIDELITY checked=166 failures=1"
+          ],
+          "engine_errors": [
+            "ERROR: FAIL: lamp loads at (5080.0, 1060.0)"
+          ]
+        },
+        {
+          "mode": "antes",
+          "exit_code": 1,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "HARBOR_PROP_3D_FIDELITY checked=166 failures=1"
+          ],
+          "engine_errors": [
+            "ERROR: FAIL: lamp loads at (5080.0, 1060.0)"
+          ]
+        },
+        {
+          "mode": "final",
+          "exit_code": 1,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "HARBOR_PROP_3D_FIDELITY checked=166 failures=1"
+          ],
+          "engine_errors": [
+            "ERROR: FAIL: lamp loads at (5080.0, 1060.0)"
+          ]
+        }
+      ]
+    },
+    {
+      "script": "res://tests/urban_detail/test_harbor_prop_instancing.gd",
+      "final_exit_code": 0,
+      "final_script_errors": false,
+      "failure_reproduced_disabled": false,
+      "attempts": [
+        {
+          "mode": "depois",
+          "exit_code": 1,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "INSTANCIAMENTO_HARBOR falhas=4"
+          ],
+          "engine_errors": [
+            "ERROR: FALHA: Postes preservam formas, materiais, posições, rotações e escalas.",
+            "ERROR: FALHA: Desagrupar um poste preserva a geometria do chunk.",
+            "ERROR: FALHA: Recuperação restaura aparência e transform sem duplicar instâncias.",
+            "ERROR: FALHA: Saída e reentrada do poste preservam sua geometria."
+          ]
+        },
+        {
+          "mode": "validado",
+          "exit_code": 1,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "INSTANCIAMENTO_HARBOR falhas=3"
+          ],
+          "engine_errors": [
+            "ERROR: FALHA: Desagrupar um poste preserva a geometria do chunk.",
+            "ERROR: FALHA: Recuperação restaura aparência e transform sem duplicar instâncias.",
+            "ERROR: FALHA: Saída e reentrada do poste preservam sua geometria."
+          ]
+        },
+        {
+          "mode": "final",
+          "exit_code": 0,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "INSTANCIAMENTO_HARBOR falhas=0"
+          ],
+          "engine_errors": []
+        },
+        {
+          "mode": "visibilidade",
+          "exit_code": 0,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "INSTANCIAMENTO_HARBOR falhas=0"
+          ],
+          "engine_errors": []
+        }
+      ]
+    },
+    {
+      "script": "res://tests/urban_detail/test_harbor_streamed_inventory.gd",
+      "final_exit_code": 1,
+      "final_script_errors": false,
+      "failure_reproduced_disabled": true,
+      "attempts": [
+        {
+          "mode": "depois",
+          "exit_code": 1,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "HARBOR_STREAMED_INVENTORY checked=62 failures=7"
+          ],
+          "engine_errors": [
+            "ERROR: FAIL: NorthFrontage1 loads at its source lot",
+            "ERROR: FAIL: NorthFrontage1 does not disappear at its visible chunk edge",
+            "ERROR: FAIL: CuritibaCellar loads at its source lot",
+            "ERROR: FAIL: CuritibaCellar does not disappear at its visible chunk edge",
+            "ERROR: FAIL: Fagulha loads at its source lot",
+            "ERROR: FAIL: Fagulha does not disappear at its visible chunk edge",
+            "ERROR: FAIL: all 60 NativeRegion buildings cross their visible chunk edge"
+          ]
+        },
+        {
+          "mode": "antes",
+          "exit_code": 1,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "HARBOR_STREAMED_INVENTORY checked=62 failures=7"
+          ],
+          "engine_errors": [
+            "ERROR: FAIL: NorthFrontage1 loads at its source lot",
+            "ERROR: FAIL: NorthFrontage1 does not disappear at its visible chunk edge",
+            "ERROR: FAIL: CuritibaCellar loads at its source lot",
+            "ERROR: FAIL: CuritibaCellar does not disappear at its visible chunk edge",
+            "ERROR: FAIL: Fagulha loads at its source lot",
+            "ERROR: FAIL: Fagulha does not disappear at its visible chunk edge",
+            "ERROR: FAIL: all 60 NativeRegion buildings cross their visible chunk edge"
+          ]
+        },
+        {
+          "mode": "final",
+          "exit_code": 1,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "HARBOR_STREAMED_INVENTORY checked=62 failures=7"
+          ],
+          "engine_errors": [
+            "ERROR: FAIL: NorthFrontage1 loads at its source lot",
+            "ERROR: FAIL: NorthFrontage1 does not disappear at its visible chunk edge",
+            "ERROR: FAIL: CuritibaCellar loads at its source lot",
+            "ERROR: FAIL: CuritibaCellar does not disappear at its visible chunk edge",
+            "ERROR: FAIL: Fagulha loads at its source lot",
+            "ERROR: FAIL: Fagulha does not disappear at its visible chunk edge",
+            "ERROR: FAIL: all 60 NativeRegion buildings cross their visible chunk edge"
+          ]
+        }
+      ]
+    },
+    {
+      "script": "res://tests/urban_detail/test_sewer_session.gd",
+      "final_exit_code": 0,
+      "final_script_errors": false,
+      "failure_reproduced_disabled": false,
+      "attempts": [
+        {
+          "mode": "depois",
+          "exit_code": 0,
+          "timeout": false,
+          "script_errors": false,
+          "summary": [
+            "SEWER_SESSION failures=0"
+          ],
+          "engine_errors": [
+            "ERROR: Condition \"!is_inside_tree()\" is true. Returning: Transform3D()"
+          ]
+        }
+      ]
+    }
+  ]
+}

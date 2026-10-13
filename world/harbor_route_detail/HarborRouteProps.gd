@@ -712,6 +712,7 @@ static func create_drain_grate(size: Vector2 = Vector2(0.85, 0.45)) -> Node3D:
 		bar.material_override = grate_mat
 		bar.position = Vector3(bar_start + (i * bar_step), 0.015, 0.0)
 		root.add_child(bar)
+	preload("res://world/urban_detail/HarborPropInstancing.gd").batch_children(root)
 	
 	return root
 

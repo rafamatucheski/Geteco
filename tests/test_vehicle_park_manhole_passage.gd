@@ -88,7 +88,7 @@ func run() -> void:
 		if not hit.is_empty(): print("ENTRY_FLOOR ",x," ",hit.position," ",hit.collider.get_path())
 	await drive("park_entry",PARK.ORIGIN+Vector3(55,0,16),PARK.ORIGIN+Vector3(32,0,16))
 	await drive("park_exit",PARK.ORIGIN+Vector3(32,0,16),PARK.ORIGIN+Vector3(55,0,16))
-	var ids := SEWERS.ids() if "--all-manholes" in OS.get_cmdline_user_args() else ["harbor_sewer","sewer_market"]
+	var ids: Array = SEWERS.ids() if "--all-manholes" in OS.get_cmdline_user_args() else ["harbor_sewer","sewer_market"]
 	for id: String in ids:
 		var at: Vector3 = PLACES.get_definition(id).exterior_position
 		await drive(id+"_forward",at+Vector3(0,0,5),at-Vector3(0,0,5))
