@@ -20,6 +20,15 @@ const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
 # 40 pedestres mantiveram 59,8 FPS no mesmo cenário.
 const MAX_POPULATION := 40
 const TRAFFIC_TARGET := 40
+static var population_vc_enabled := OS.get_environment("GETECO_POP_VC") != "0"
+static var sun_shadow_near_enabled := OS.get_environment("GETECO_SUN_SHADOW_NEAR") != "0"
+const VC_MAX_POPULATION := 25
+const VC_TRAFFIC_TARGET := 16
+const VC_PEDESTRIAN_VISIBLE_DISTANCE := 55.0
+const VC_PEDESTRIAN_HIDDEN_DISTANCE := 30.0
+var _pedestrian_review_cursor := 0
+var _pedestrian_review_credit := 0.0
+var _p1_count_started := false
 # Densidade dinâmica, como no GTA: com emergência em cena o teto de pedestres e de trânsito
 # civil cai para sobrar orçamento de física à polícia (45 carros ≈ 4–5 ms e 41 pessoas ≈ 2 ms
 # por passo no caos, medido 2026-09-29). Cai rápido, volta devagar; quem passa do teto some
@@ -138,7 +147,7 @@ func build() -> void:
 	sun.light_color = Color("fffdf5")
 	sun.light_energy = 1.6
 	sun.shadow_enabled = true
-	sun.directional_shadow_max_distance = 110
+	sun.directional_shadow_max_distance = 55 if sun_shadow_near_enabled else 110
 	SESSION_OPS.attach(world, sun, self, diagnostic_build)
 	world.maciota_place = SESSION_OPS.instantiate(preload("res://world/maciota/MaciotaPlace.gd"), self)
 	world.maciota_place.exterior_origin = preload("res://world/maciota/MaciotaPlace.gd").INDUSTRIAL_ORIGIN
@@ -1079,7 +1088,7 @@ func nearest_road(point: Vector3) -> Vector3:
 	return closest
 
 func set_population(count: int) -> void:
-	requested_population = clampi(count,0,MAX_POPULATION)
+	requested_population = clampi(count,0,VC_MAX_POPULATION if population_vc_enabled else MAX_POPULATION)
 	if not ready_for_play: return
 	while world.people.size() > requested_population:
 		var actor = world.people.pop_back()
@@ -1093,6 +1102,9 @@ func _process(delta: float) -> void:
 	# Admission routines own focus while awaiting collision synchronization.
 	# Following the old player position here would unload their destination.
 	if session == null or not session.ready_for_play or session.has_position_transition(): return
+	if not _p1_count_started and "--p1-count" in OS.get_cmdline_user_args():
+		_p1_count_started = true
+		_count_p1_population()
 	var street_live: bool = state.place_id.is_empty() or (session.building_entrance != null and session.building_entrance.in_building()) or (session.service_roofs != null and session.service_roofs.is_active())
 	if street_live:
 		var focus := _physical_focus()
@@ -1100,12 +1112,13 @@ func _process(delta: float) -> void:
 		_update_logical_region(focus)
 	if street_live: _service_population_job()
 	else: _population_jobs.clear()
+	if street_live and population_vc_enabled: _review_pedestrians(delta)
 	population_clock += delta
 	if population_clock < .25 or not street_live: return
 	population_clock = 0
 	_update_density()
 	_update_mobile_region_metadata()
-	for index in range(world.people.size()-1,-1,-1):
+	for index in range(world.people.size()-1,-1,-1) if not population_vc_enabled else []:
 		var actor = world.people[index]
 		if not is_instance_valid(actor): world.people.remove_at(index)
 		elif PORT_POLICY.contains_private_area(actor.global_position):
@@ -1158,6 +1171,81 @@ func _process(delta: float) -> void:
 	_rescue_fallen_vehicles()
 	world.population = world.people.size()
 
+## Mantém quatro revisões por segundo distribuídas, com no máximo um oitavo por quadro.
+## O cursor permanece no sucessor quando uma remoção desloca os índices.
+func _review_pedestrians(delta: float) -> void:
+	_pedestrian_review_credit = minf(_pedestrian_review_credit + delta * world.people.size() * 4.0,world.people.size())
+	var budget := mini(int(_pedestrian_review_credit),maxi(1,ceili(float(world.people.size()) / 8.0)))
+	_pedestrian_review_credit -= budget
+	for step in budget:
+		if world.people.is_empty():
+			_pedestrian_review_cursor = 0
+			break
+		_pedestrian_review_cursor %= world.people.size()
+		var actor = world.people[_pedestrian_review_cursor]
+		var retire := not is_instance_valid(actor)
+		if not retire:
+			var distance: float = actor.global_position.distance_to(world.player.global_position)
+			retire = PORT_POLICY.contains_private_area(actor.global_position)
+			# Rotinas autoradas e travessias preservam a permanência e a recuperação antigas.
+			if actor.has_meta("desert_routine") or actor.has_meta("desert_social_slot") or actor.get_meta("footbridge_crosser",false):
+				retire = retire or (distance > POPULATION_DESPAWN and not _on_screen(actor.global_position,1.0))
+			elif not retire and distance > VC_PEDESTRIAN_HIDDEN_DISTANCE:
+				retire = distance > VC_PEDESTRIAN_VISIBLE_DISTANCE or not _on_screen(actor.global_position,1.0)
+		if retire:
+			world.people.remove_at(_pedestrian_review_cursor)
+			if is_instance_valid(actor): actor.queue_free()
+		else:
+			_pedestrian_review_cursor += 1
+
+## Diagnóstico explícito da P1: conta a cena real após 30 s, sem amostrar FPS/tempo de quadro.
+## Fica no arquivo dono da tarefa para não criar um runner em arquivos de outra sessão.
+func _count_p1_population() -> void:
+	if not no_save:
+		push_error("P1: contagem exige --no-save para preservar o save do usuário.")
+		get_tree().quit(1)
+		return
+	# Headless nasce com viewport 64x64; a câmera precisa do enquadramento de gameplay.
+	get_tree().root.size = Vector2i(1280,720)
+	await get_tree().create_timer(30.0).timeout
+	var people := 0
+	var authored_people := 0
+	var farthest_visible := 0.0
+	var farthest_hidden := 0.0
+	var farthest_common_visible := 0.0
+	var farthest_common_hidden := 0.0
+	var farthest_traffic := 0.0
+	var parked := 0
+	var persistent := 0
+	for actor in world.people:
+		if not is_instance_valid(actor) or actor.is_queued_for_deletion(): continue
+		people += 1
+		var distance: float = actor.global_position.distance_to(world.player.global_position)
+		var authored: bool = actor.has_meta("desert_routine") or actor.has_meta("desert_social_slot") or actor.get_meta("footbridge_crosser",false)
+		if authored: authored_people += 1
+		if _on_screen(actor.global_position,1.0):
+			farthest_visible = maxf(farthest_visible,distance)
+			if not authored: farthest_common_visible = maxf(farthest_common_visible,distance)
+		else:
+			farthest_hidden = maxf(farthest_hidden,distance)
+			if not authored: farthest_common_hidden = maxf(farthest_common_hidden,distance)
+	for car in vehicles:
+		if not is_instance_valid(car) or car.is_queued_for_deletion(): continue
+		if _is_persistent_vehicle(car): persistent += 1
+		elif not car.traffic: parked += 1
+		elif _is_ambient_traffic(car) and car.health > 0.0:
+			farthest_traffic = maxf(farthest_traffic,car.global_position.distance_to(world.player.global_position))
+	var report := {"population_vc":population_vc_enabled,"sun_shadow_near":sun_shadow_near_enabled,
+		"region":state.region_id,"focus":str(world.player.global_position),"pedestrians":people,
+		"pedestrian_cap":_population_cap(),"ambient_traffic":_ambient_traffic_count(),"traffic_cap":_traffic_cap(),
+		"farthest_visible_m":farthest_visible,"farthest_hidden_m":farthest_hidden,"farthest_traffic_m":farthest_traffic,
+		"authored_pedestrians":authored_people,"common_farthest_visible_m":farthest_common_visible,
+		"common_farthest_hidden_m":farthest_common_hidden,"viewport":str(get_viewport().get_visible_rect().size),
+		"parked":parked,"persistent":persistent,"sun_shadow_distance_m":sun.directional_shadow_max_distance,
+		"native_dispatch_router":is_instance_valid(world.dispatch) and world.dispatch.router._native != null}
+	print("P1_CONTAGEM ",JSON.stringify(report))
+	get_tree().quit(0 if not population_vc_enabled or (people <= VC_MAX_POPULATION and _ambient_traffic_count() <= VC_TRAFFIC_TARGET) else 1)
+
 ## Alvo da densidade: cada unidade de despacho em cena tira `DENSITY_PER_UNIT`, e de
 ## `DENSITY_STARS` estrelas para cima o teto não passa de `DENSITY_STARS_SCALE`.
 static func density_target(dispatch_units: int, stars: int) -> float:
@@ -1199,12 +1287,13 @@ func _update_density() -> void:
 	area_density_scale.y = move_toward(area_density_scale.y,area_target.y,.02)
 
 func _population_cap() -> int:
-	return ceili(float(requested_population)*minf(density_scale,area_density_scale.x)-.00001)
+	var target := mini(requested_population,VC_MAX_POPULATION) if population_vc_enabled else requested_population
+	return ceili(float(target)*minf(density_scale,area_density_scale.x)-.00001)
 
 func _traffic_cap() -> int:
 	# Vector2 components are float32; ignore their sub-entity rounding error at
 	# authored integer ceilings (for example 40 * .8 must remain 32, not 33).
-	return ceili(float(TRAFFIC_TARGET)*minf(density_scale,area_density_scale.y)-.00001)
+	return ceili(float(VC_TRAFFIC_TARGET if population_vc_enabled else TRAFFIC_TARGET)*minf(density_scale,area_density_scale.y)-.00001)
 
 ## Tira no máximo um pedestre e um carro civil por chamada, o mais longe do jogador e fora
 ## do quadro, enquanto houver mais que o teto atual.
@@ -1333,7 +1422,10 @@ func _ambient_traffic_count() -> int:
 	return count
 
 func _is_ambient_traffic(car: Variant) -> bool:
-	return is_instance_valid(car) and car is Node and car.get_meta("ambient_traffic", false) == true
+	if not is_instance_valid(car) or not car is Node or car.get_meta("ambient_traffic",false) != true: return false
+	# O carro tomado pelo jogador e os persistentes não entram no orçamento civil.
+	if population_vc_enabled and (car.is_queued_for_deletion() or _is_persistent_vehicle(car)): return false
+	return true
 
 func _repath_ambient_traffic() -> void:
 	for car in vehicles:
@@ -1386,7 +1478,9 @@ func _wreck_expired(car: Node) -> bool:
 ## Anel de entrada/saída: longe o bastante e fora do quadro.
 func _spawn_point_allowed(point: Vector3, radius: float, minimum := POPULATION_SPAWN_MIN) -> bool:
 	var distance := Vector2(point.x-world.player.global_position.x,point.z-world.player.global_position.z).length()
-	return distance >= minimum and distance <= POPULATION_SPAWN_MAX and not _on_screen(point,radius)
+	# Pedestres comuns usam raio 1; carros mantêm o anel original de admissão.
+	var maximum := VC_PEDESTRIAN_HIDDEN_DISTANCE if population_vc_enabled and radius <= 1.0 else POPULATION_SPAWN_MAX
+	return distance >= minimum and distance <= maximum and not _on_screen(point,radius)
 
 func road_yaw(point: Vector3) -> float:
 	var best := INF

@@ -1,4 +1,5 @@
 extends Node3D
+static var sun_shadow_near_enabled := OS.get_environment("GETECO_SUN_SHADOW_NEAR") != "0"
 
 const ACTOR := preload("res://scripts/Actor.gd")
 const STREET := preload("res://scripts/Street.gd")
@@ -55,7 +56,7 @@ func _ready() -> void:
 	sun.light_color = Color("ffe2b8")
 	sun.light_energy = 1.6
 	sun.shadow_enabled = true
-	sun.directional_shadow_max_distance = 90
+	sun.directional_shadow_max_distance = 55 if sun_shadow_near_enabled else 90
 	add_child(sun)
 	street = STREET.new()
 	street.name = "Street"
