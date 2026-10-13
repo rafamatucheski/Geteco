@@ -23,6 +23,7 @@ const RESTAURANT_TERRACE := preload("res://world/urban_detail/HarborRestaurantTe
 const HARBOR_ROAD_GEOMETRY := preload("res://world/urban_detail/HarborRoadGeometry3D.gd")
 const HARBOR_URBAN_SURFACE := preload("res://world/urban_detail/HarborUrbanSurface3D.gd")
 const CITY_DRESSING := preload("res://world/city_look/CityChunkDressing.gd")
+const TUNNEL_CUTAWAY := preload("res://world/urban_detail/TunnelCutaway.gd")
 const TERRAIN := preload("res://world/regions/MountainTerrain3D.gd")
 const ROUTE_GEOMETRY := preload("res://world/mountain_detail/MountainRouteGeometry.gd")
 const ROUTE_LAYOUT := preload("res://world/mountain_detail/MountainRouteLayout.gd")
@@ -134,6 +135,7 @@ func prewarm_incremental() -> void:
 		var chunk: Node3D = chunks[key]
 		while build_jobs.any(func(job): return job.key == key):
 			await get_tree().process_frame
+		if region_id == "harbor": TUNNEL_CUTAWAY.prime(chunk, self, Rect2(key.x*CELL,key.y*CELL,CELL,CELL))
 		_hold_file_resources(chunk)
 		_suspend_chunk_mechanisms(chunk)
 		_detach_cached_records(chunk)
@@ -572,6 +574,13 @@ func _process(_delta: float) -> void:
 ## guardado ao liberar o chunk e reaproveitado na próxima visita; o pré-aquecimento monta cada um
 ## uma vez. Só entra em cache quem ainda não tem pai (não está em uso em outro chunk).
 const CACHED_RECORDS := ["mountain_village","mountain_zoo","sawmill_yard","harbor_public_realm","lake","ship"]
+## A carga do Santa Mare custava 590 ms num quadro ao chegar perto (release, 2026-10-13). Montada uma vez
+## no pré-aquecimento e reaproveitada como os registros acima.
+const CACHED_PORT_MODELS := ["ship_cargo"]
+
+func _is_cached_record(record: Dictionary) -> bool:
+	if str(record.kind) in CACHED_RECORDS: return true
+	return str(record.kind) == "south_port_model" and str(record.get("model_kind","")) in CACHED_PORT_MODELS
 var _record_cache: Dictionary = {}
 
 func _record_cache_key(record: Dictionary) -> String:
@@ -582,7 +591,7 @@ func _record_cache_key(record: Dictionary) -> String:
 	return key
 
 func _build_record_cached(chunk: Node3D, record: Dictionary) -> void:
-	if str(record.kind) not in CACHED_RECORDS:
+	if not _is_cached_record(record):
 		_build_record(chunk,record)
 		return
 	var key := _record_cache_key(record)
@@ -905,23 +914,21 @@ func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
 			2:
 				if int(job.index) < chunk_records.size():
 					var record: Dictionary = chunk_records[int(job.index)]
-					# This batch regenerates fourteen containers and normals every time
-					# (~1.7 s); none of its geometry survives discarded warm-up cells.
-					# Shared paints are warmed by the other port records. Live streaming
-					# always builds the full cargo and its original collision.
-					if not (job.get("warming", false) and record.kind == "south_port_model" and record.model_kind == "ship_cargo"):
-						var record_began := Time.get_ticks_usec()
-						var record_stall := STALL_WORK.begin()
-						_build_record_cached(chunk,record)
-						# Com detalhes: o log mostra QUAL registro pesou (os de 200-600 ms do release de 13/10).
-						STALL_WORK.finish("stream.%s.record.%s"%[region_id,record.get("kind","?")],record_stall,
-							{"id":str(record.get("id",record.data.get("id",record.data.get("name",record.get("name",""))) if record.get("data") is Dictionary else record.get("name",""))),"model_kind":str(record.get("model_kind","")),
-							"zone_id":str(record.get("zone_id","")),"at":str(record.get("position",""))})
-						var record_ms := float(Time.get_ticks_usec()-record_began)/1000.0
-						if record_ms >= 8.0:
-							var slow: Array = Engine.get_meta("slow_stream_records",[])
-							if slow.size() < 64: slow.append("%s/%s %.0f ms"%[record.get("kind","?"),record.get("model_kind",record.get("zone_id","")),record_ms])
-							Engine.set_meta("slow_stream_records",slow)
+					# A carga do navio (~1,7 s em debug, 590 ms no release) agora é montada uma vez
+					# aqui, atrás da tela de carregamento, e fica no cache de registros: a geometria
+					# sobrevive ao chunk de aquecimento descartado e a visita real só a reaproveita.
+					var record_began := Time.get_ticks_usec()
+					var record_stall := STALL_WORK.begin()
+					_build_record_cached(chunk,record)
+					# Com detalhes: o log mostra QUAL registro pesou (os de 200-600 ms do release de 13/10).
+					STALL_WORK.finish("stream.%s.record.%s"%[region_id,record.get("kind","?")],record_stall,
+						{"id":str(record.get("id",record.data.get("id",record.data.get("name",record.get("name",""))) if record.get("data") is Dictionary else record.get("name",""))),"model_kind":str(record.get("model_kind","")),
+						"zone_id":str(record.get("zone_id","")),"at":str(record.get("position",""))})
+					var record_ms := float(Time.get_ticks_usec()-record_began)/1000.0
+					if record_ms >= 8.0:
+						var slow: Array = Engine.get_meta("slow_stream_records",[])
+						if slow.size() < 64: slow.append("%s/%s %.0f ms"%[record.get("kind","?"),record.get("model_kind",record.get("zone_id","")),record_ms])
+						Engine.set_meta("slow_stream_records",slow)
 					job.index = int(job.index)+1
 				else: job.stage = 3
 			3:

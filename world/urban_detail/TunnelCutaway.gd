@@ -242,6 +242,59 @@ func _fade(node: GeometryInstance3D) -> bool:
 	return true
 
 ## Cópia com alfa do material (uma por material de origem). Só StandardMaterial3D.
+## Cópia com alfa idêntica à usada no corte: o shader é compartilhado por código, então ela serve
+## tanto no corte quanto no pré-aquecimento.
+static func make_alpha_copy(source: StandardMaterial3D) -> StandardMaterial3D:
+	var copy: StandardMaterial3D = source.duplicate()
+	copy.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	copy.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+	return copy
+
+## Materiais que `_fade` trocaria neste nó (mesma escolha de `_fade`).
+static func _fadeable_materials(node: Node) -> Array:
+	var found: Array = []
+	if node is MeshInstance3D:
+		var mesh_node := node as MeshInstance3D
+		if mesh_node.mesh == null: return found
+		if mesh_node.material_override != null: found.append(mesh_node.material_override)
+		else:
+			for surface in mesh_node.mesh.get_surface_count(): found.append(mesh_node.get_active_material(surface))
+	elif node is MultiMeshInstance3D:
+		var multi := node as MultiMeshInstance3D
+		var source: Material = multi.material_override
+		if source == null and multi.multimesh != null and multi.multimesh.mesh != null and multi.multimesh.mesh.get_surface_count() == 1:
+			source = multi.multimesh.mesh.surface_get_material(0)
+		found.append(source)
+	return found
+
+static var _primed: Dictionary = {}
+static var _primer: MeshInstance3D
+
+## Pré-aquece as variantes de shader do corte: a primeira atribuição de um material com alfa custa
+## ~25 ms (variante nova) e só os chunks do corredor do túnel interessam. Chamado atrás da tela
+## de carregamento, uma vez por chunk aquecido; as cópias ficam vivas para o shader não morrer.
+static func prime(chunk: Node3D, holder: Node, cell_rect: Rect2) -> void:
+	var began := STALL_WORK.begin()
+	var reach := Rect2(TUNNEL.W_PORTAL - 70.0, TUNNEL.outer_north() - 70.0, TUNNEL.E_PORTAL - TUNNEL.W_PORTAL + 140.0, TUNNEL.outer_south() - TUNNEL.outer_north() + 140.0)
+	if not reach.intersects(cell_rect): return
+	if not is_instance_valid(_primer):
+		_primer = MeshInstance3D.new()
+		_primer.name = "TunnelCutawayPrimer"
+		_primer.mesh = BoxMesh.new()
+		_primer.position = Vector3(0, -2000.0, 0)
+		holder.add_child(_primer)
+	var primed := 0
+	for found in chunk.find_children("*", "GeometryInstance3D", true, false):
+		for source in _fadeable_materials(found):
+			if not source is StandardMaterial3D: continue
+			var key: int = source.get_instance_id()
+			if _primed.has(key) and _primed[key].source.get_ref() == source: continue
+			var copy := make_alpha_copy(source)
+			_primer.material_override = copy
+			_primed[key] = {"copy": copy, "source": weakref(source)}
+			primed += 1
+	STALL_WORK.finish("tunnel.cutaway.prime", began, {"chunk": String(chunk.name), "materials": primed})
+
 func _copy_of(source: Material) -> StandardMaterial3D:
 	if not source is StandardMaterial3D: return null
 	var key := source.get_instance_id()
@@ -256,9 +309,7 @@ func _copy_of(source: Material) -> StandardMaterial3D:
 			reused.albedo_color = tint
 			return reused
 		_copies.erase(key)
-	var copy: StandardMaterial3D = source.duplicate()
-	copy.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	copy.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+	var copy := make_alpha_copy(source)
 	var entry := {"copy": copy, "alpha": copy.albedo_color.a, "source": weakref(source), "used": true}
 	var color := copy.albedo_color
 	color.a = float(entry.alpha) * _alpha
