@@ -663,10 +663,11 @@ func _commit(row: Dictionary) -> void:
 		_refresh()
 		return
 	if document.regions.get(region,{}).get(row.id,{}) == row: return
+	var previous_row: Dictionary = canvas.objects.get(row.id,{}).duplicate(true)
 	_checkpoint()
 	if not document.regions.has(region): document.regions[region] = {}
 	document.regions[region][row.id] = row.duplicate(true)
-	if row.get("deleted",false) and is_instance_valid(live_preview): live_preview.hide_deleted(str(row.id))
+	if is_instance_valid(live_preview): live_preview.after_commit(previous_row,row)
 	canvas.selected_id = row.id
 	_refresh()
 	_write_draft()
@@ -680,12 +681,14 @@ func undo() -> void:
 	if history.is_empty(): return
 	future.append(document.duplicate(true))
 	document = history.pop_back()
+	if is_instance_valid(live_preview): live_preview.refresh()
 	_refresh()
 	_write_draft()
 func redo() -> void:
 	if future.is_empty(): return
 	history.append(document.duplicate(true))
 	document = future.pop_back()
+	if is_instance_valid(live_preview): live_preview.refresh()
 	_refresh()
 	_write_draft()
 func _delete() -> void:
@@ -727,6 +730,7 @@ func _restore_original() -> void:
 func _restore_id(id: String) -> void:
 	_checkpoint()
 	document.regions[region].erase(id)
+	if is_instance_valid(live_preview): live_preview.refresh()
 	_refresh()
 	_write_draft()
 func _add_road_point() -> void:

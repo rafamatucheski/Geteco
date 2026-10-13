@@ -52,10 +52,12 @@ func run() -> void:
 		if str(id).begins_with("piece/unit/"): any_piece = str(id); break
 	ui._select(any_piece)
 	var row: Dictionary = ui.canvas.objects[any_piece].duplicate(true)
+	var before_x: float = (edit.groups[any_piece][0] as Node3D).global_position.x
 	row.position[0] += 3.0
 	ui._commit(row)
 	await process_frame
-	check(panel.revision == revision and panel.stale, "editar em alcance grande não reconstrói o mapa: marca desatualizado")
+	check(panel.revision == revision, "editar não reconstrói o mapa")
+	check(absf((edit.groups[any_piece][0] as Node3D).global_position.x - before_x - 3.0) < .2, "a alteração aparece na cena na hora (+3 m)")
 	# Via pela visão 3D.
 	var road := {}
 	for id in ui.canvas.objects:

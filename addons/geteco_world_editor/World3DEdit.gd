@@ -42,6 +42,7 @@ func set_mode(value: int) -> void:
 	queue_redraw()
 
 func index_nodes(node: Node, inherited: String) -> void:
+	if node is Node3D and not node.visible: return
 	var id := str(node.get_meta("editor_id",inherited))
 	if node.has_meta("editor_id") and editor.canvas.objects.has(id):
 		if not groups.has(id): groups[id] = []
@@ -150,6 +151,7 @@ func finish_road() -> void:
 		synchronizing = true
 		editor._commit(row)
 		synchronizing = false
+		preview.stale = true
 
 func plane_point(at: Vector2, height: float) -> Variant:
 	return Plane(Vector3.UP,height).intersects_ray(preview.camera.project_ray_origin(at),preview.camera.project_ray_normal(at))
@@ -273,12 +275,35 @@ func update_drag(at: Vector2, snap := false) -> void:
 	preview._render_once()
 	queue_redraw()
 
+## Aplica na cena já construída uma alteração vinda de outro lugar (campos numéricos, mapa 2D).
+## Só vale para o que é transformação; devolve false se algo além disso mudou (cor, modelo...).
+func apply_row_change(previous: Dictionary, row: Dictionary) -> bool:
+	var id := str(row.id)
+	if not groups.has(id) or dragging: return false
+	var ignore := ["position","rotation","size","stretch","height_stretch","lift","scale","height","outline","editor_region","parts","selection_height"]
+	for key in row:
+		if key not in ignore and previous.get(key) != row[key]: return false
+	original = previous.duplicate(true)
+	candidate = row.duplicate(true)
+	transforms.clear()
+	for node in groups[id]:
+		if is_instance_valid(node): transforms[node] = node.global_transform
+	var saved_mode := mode
+	mode = 2
+	apply_visual()
+	mode = saved_mode
+	transforms.clear()
+	preview._render_once()
+	queue_redraw()
+	return true
+
 func apply_visual() -> void:
 	var ratio := Vector3.ONE
 	if mode == 2:
 		if original.type == "piece":
 			var base: Array = original.get("stretch",[1,1])
-			ratio = Vector3(candidate.stretch[0]/base[0],float(candidate.get("height_stretch",1.0))/float(original.get("height_stretch",1.0)),candidate.stretch[1]/base[1])
+			var next_stretch: Array = candidate.get("stretch",[1.0,1.0])
+			ratio = Vector3(float(next_stretch[0])/float(base[0]),float(candidate.get("height_stretch",1.0))/float(original.get("height_stretch",1.0)),float(next_stretch[1])/float(base[1]))
 		elif original.has("scale"): ratio = Vector3.ONE*float(candidate.scale)/float(original.scale)
 		elif original.has("size"):
 			ratio = Vector3(candidate.size[0]/original.size[0],float(candidate.get("height",1))/float(original.get("height",1)),candidate.size[1]/original.size[1])

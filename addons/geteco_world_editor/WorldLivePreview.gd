@@ -145,19 +145,20 @@ func _ready() -> void:
 func request(document: Dictionary, at: Vector2, area: String) -> void:
 	var next := {"document":document,"focus":[at.x,at.y],"area":area,"radius":REACH_RADIUS[reach],"refresh":refresh_count}
 	if next == desired: return
-	# Alcance grande: o mapa já está na tela. Editar não reconstrói tudo (levaria minutos): a câmera
-	# acompanha a seleção e a prévia fica marcada como desatualizada até "Atualizar".
-	if REACH_RADIUS[reach] != 0 and is_instance_valid(geometry) and applied_revision == revision and area == built_area and REACH_RADIUS[reach] == built_radius and refresh_count == built_refresh and (REACH_RADIUS[reach] < 0 or at.distance_to(built_center) < REACH_RADIUS[reach]*40.0):
-		stale = document != built_document
+	# Editar nunca reconstrói a prévia: mover, girar, esticar e excluir já foram aplicados na cena que
+	# está na tela (ver after_commit). Só se reconstrói ao trocar de região/alcance, ao sair da área
+	# carregada ou ao pedir (Atualizar, peça nova, desfazer/refazer). A câmera apenas acompanha.
+	var limit: float = 48.0 if REACH_RADIUS[reach] == 0 else REACH_RADIUS[reach]*40.0
+	if is_instance_valid(geometry) and applied_revision == revision and area == built_area and REACH_RADIUS[reach] == built_radius and refresh_count == built_refresh and (REACH_RADIUS[reach] < 0 or at.distance_to(built_center) < limit):
 		desired = next.duplicate(true)
 		submitted = next.duplicate(true)
 		focus = Vector3(at.x,focus.y,at.y)
-		message.text = "Prévia desatualizada: clique em Atualizar para ver exclusões, cópias e peças novas." if stale else "Atualizada · Direito: girar · Meio: mover · Roda: zoom"
+		message.text = "Há alterações que só aparecem depois de Atualizar (vias, cores, modelos)." if stale else "Atualizada · Direito: girar · Meio: mover · Roda: zoom"
 		_pose()
 		return
 	# Harbor is flat; focus nearby objects immediately within the loaded cells.
 	# Mountain changes also request the terrain height from the builder.
-	if is_instance_valid(geometry) and applied_revision == revision and area == "harbor" and area == built_area and at.distance_to(built_center) < 48 and document == submitted.get("document",{}):
+	if is_instance_valid(geometry) and applied_revision == revision and area == "harbor" and area == built_area and REACH_RADIUS[reach] == built_radius and refresh_count == built_refresh and at.distance_to(built_center) < 48 and document == submitted.get("document",{}):
 		desired = next.duplicate(true)
 		submitted = next.duplicate(true)
 		focus = Vector3(at.x,0,at.y)
@@ -258,9 +259,25 @@ func _poll() -> void:
 		loading_path = ""
 		message.text = "Não foi possível carregar a visão 3D."
 
-## Em alcance grande a prévia não reconstrói: o que foi excluído some na hora.
+## Chamado a cada alteração aceita do documento. Aplica o efeito na cena que já está na tela; só pede
+## reconstrução quando não há como (peça nova, mudança de modelo/cor). Vias ficam marcadas como
+## desatualizadas (o desenho delas já aparece como contorno na visão 3D).
+func after_commit(previous: Dictionary, row: Dictionary) -> void:
+	if edit_control == null or edit_control.synchronizing: return
+	if row.get("deleted",false):
+		hide_deleted(str(row.id))
+		return
+	if str(row.get("type","")) == "road":
+		stale = true
+		return
+	if previous.is_empty() or not edit_control.apply_row_change(previous,row): refresh()
+
+## Reconstrói a prévia com o documento atual.
+func refresh() -> void:
+	refresh_count += 1
+
 func hide_deleted(id: String) -> void:
-	if REACH_RADIUS[reach] == 0 or edit_control == null or not edit_control.groups.has(id): return
+	if edit_control == null or not edit_control.groups.has(id): return
 	for node in edit_control.groups[id]:
 		if is_instance_valid(node): node.visible = false
 	edit_control.rebuild()

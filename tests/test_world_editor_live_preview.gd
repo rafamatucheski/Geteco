@@ -10,8 +10,14 @@ func check(ok: bool,label: String) -> void:
 	if not ok: failures += 1; push_error(label)
 func settled(previous: int) -> bool:
 	var deadline := Time.get_ticks_msec()+90000
+	var idle_frames := 0
 	while Time.get_ticks_msec() < deadline:
 		await process_frame
+		# Desde 13/10/2026 editar não reconstrói a prévia (a cena na tela recebe a alteração na hora):
+		# sem reconstrução a caminho e tudo entregue, "assentou" sem exigir uma revisão nova.
+		var panel = ui.live_preview
+		idle_frames = idle_frames+1 if previous > 0 and panel.applied_revision == panel.revision and panel.submitted == panel.desired and is_instance_valid(panel.geometry) else 0
+		if idle_frames > 20: return true
 		if ui.live_preview.worker_pid > 0 and not OS.is_process_running(ui.live_preview.worker_pid): break
 		if ui.live_preview.applied_revision > previous and ui.live_preview.applied_revision == ui.live_preview.revision and ui.live_preview.submitted == ui.live_preview.desired: return true
 	push_error("Preview timeout: "+ui.live_preview.message.text+" log="+ui.live_preview.folder+"/worker.log")
