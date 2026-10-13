@@ -915,7 +915,7 @@ func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
 						_build_record_cached(chunk,record)
 						# Com detalhes: o log mostra QUAL registro pesou (os de 200-600 ms do release de 13/10).
 						STALL_WORK.finish("stream.%s.record.%s"%[region_id,record.get("kind","?")],record_stall,
-							{"id":str(record.get("id",record.get("name",""))),"model_kind":str(record.get("model_kind","")),
+							{"id":str(record.get("id",record.data.get("id",record.data.get("name",record.get("name",""))) if record.get("data") is Dictionary else record.get("name",""))),"model_kind":str(record.get("model_kind","")),
 							"zone_id":str(record.get("zone_id","")),"at":str(record.get("position",""))})
 						var record_ms := float(Time.get_ticks_usec()-record_began)/1000.0
 						if record_ms >= 8.0:

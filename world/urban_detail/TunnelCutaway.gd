@@ -24,6 +24,7 @@ const FRAME_BUDGET_USEC := 2000
 var min_fades_per_frame := 16
 
 const MIN_ALPHA := 0.14
+const MAX_KEPT_COPIES := 192
 const RESCAN_SECONDS := 0.4
 const CACHE_SECONDS := 3.0
 ## Abaixo disto o topo do nó é "chão": só entra sobre o trecho coberto.
@@ -33,7 +34,11 @@ const SWEEP_STEPS := 8
 ## Peças do próprio túnel que podem sumir: a laje e o teto dos trechos cobertos.
 const TUNNEL_COVER := ["CanalTunnelBatch_roof_top", "CanalTunnelBatch_ceiling"]
 
-var _copies: Dictionary = {} # id do material de origem -> {"copy": StandardMaterial3D, "alpha": float}
+## id do material de origem -> {"copy", "alpha", "source" (WeakRef), "used"}. As cópias sobrevivem ao
+## `release()`: a primeira atribuição de um material com alfa custa ~25 ms (variante de shader nova,
+## medido em 2026-10-13) e o shader é liberado junto com a última cópia, então descartá-las fazia
+## toda passagem pelo túnel pagar de novo (fade_node de ~20 ms cada no release).
+var _copies: Dictionary = {}
 var _states: Dictionary = {} # id do nó -> estado original
 var _cache: Dictionary = {} # id do chunk -> {"count": int, "time": float, "items": Array}
 var _clock := 0.0
@@ -62,6 +67,7 @@ func update(chunks: Array, focus: Vector3, to_camera: Vector3, half_width: float
 		STALL_WORK.finish_slow("tunnel.cutaway.rescan", scan_began, 1500)
 	_drain_pending(deadline)
 	for entry in _copies.values():
+		if not entry.used: continue
 		var copy: StandardMaterial3D = entry.copy
 		var color := copy.albedo_color
 		color.a = float(entry.alpha) * _alpha
@@ -104,7 +110,11 @@ func release() -> void:
 	for id in _states.keys():
 		_restore(id)
 	_states.clear()
-	_copies.clear()
+	for key in _copies.keys():
+		var entry: Dictionary = _copies[key]
+		entry.used = false
+		# Origem já destruída (chunk liberado): a cópia não será reaproveitada. Limite evita crescer sem fim.
+		if _copies.size() > MAX_KEPT_COPIES and entry.source.get_ref() == null: _copies.erase(key)
 	_last_scan = -100.0
 	_alpha = 1.0
 
@@ -235,11 +245,21 @@ func _fade(node: GeometryInstance3D) -> bool:
 func _copy_of(source: Material) -> StandardMaterial3D:
 	if not source is StandardMaterial3D: return null
 	var key := source.get_instance_id()
-	if _copies.has(key): return _copies[key].copy
+	if _copies.has(key):
+		var known: Dictionary = _copies[key]
+		# O id pode ser reaproveitado depois que o material de origem morre: só vale a mesma instância.
+		if known.source.get_ref() == source:
+			known.used = true
+			var reused: StandardMaterial3D = known.copy
+			var tint := reused.albedo_color
+			tint.a = float(known.alpha) * _alpha
+			reused.albedo_color = tint
+			return reused
+		_copies.erase(key)
 	var copy: StandardMaterial3D = source.duplicate()
 	copy.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	copy.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
-	var entry := {"copy": copy, "alpha": copy.albedo_color.a}
+	var entry := {"copy": copy, "alpha": copy.albedo_color.a, "source": weakref(source), "used": true}
 	var color := copy.albedo_color
 	color.a = float(entry.alpha) * _alpha
 	copy.albedo_color = color
