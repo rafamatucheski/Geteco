@@ -1,0 +1,264 @@
+{
+  "Engine": "Godot 4.7.2 .NET",
+  "CSharpBuild": "dotnet build Harbor.csproj --no-restore: exit 0",
+  "FPSMeasured": false,
+  "FrameTimeMeasured": false,
+  "ConcurrentFunctionalTests": true,
+  "ExistingTests": [
+    {
+      "Test": "test_regions",
+      "Mode": "enabled",
+      "Code": 0,
+      "Status": "passed",
+      "Problems": [],
+      "InitialLog": "on-test_regions.log"
+    },
+    {
+      "Test": "test_native_driving",
+      "Mode": "enabled",
+      "Code": 0,
+      "Status": "passed",
+      "Problems": [],
+      "InitialLog": "on-test_native_driving.log"
+    },
+    {
+      "Test": "cold/test_admission",
+      "Mode": "enabled",
+      "Code": 0,
+      "Status": "passed",
+      "Problems": [],
+      "InitialLog": "on-cold-test_admission.log"
+    },
+    {
+      "Test": "test_road_network_connectivity",
+      "Mode": "enabled",
+      "Code": 0,
+      "Status": "passed",
+      "Problems": [],
+      "InitialLog": "on-test_road_network_connectivity.log"
+    },
+    {
+      "Test": "test_canal_tunnel_traffic",
+      "Mode": "enabled",
+      "Code": 0,
+      "Status": "passed",
+      "Problems": [],
+      "InitialLog": "on-test_canal_tunnel_traffic.log"
+    },
+    {
+      "Test": "test_edited_traffic_drive",
+      "Mode": "enabled",
+      "Code": 1,
+      "Status": "inconclusive",
+      "Problems": [
+        "ERROR: Physical car passes repaired intersection: medical_garden_lane\r"
+      ],
+      "InitialLog": "on-test_edited_traffic_drive.log",
+      "Attempts": [
+        {
+          "Mode": "enabled",
+          "Failure": "Physical car passes repaired intersection: medical_garden_lane",
+          "Code": 1,
+          "Log": "on-test_edited_traffic_drive.log"
+        },
+        {
+          "Mode": "disabled",
+          "Log": "edited-disabled.log",
+          "Code": 0
+        },
+        {
+          "Mode": "enabled",
+          "Failure": "Physical car passes repaired intersection: medical_garden_lane",
+          "Code": 1,
+          "Log": "edited-enabled-retry.log"
+        },
+        {
+          "Mode": "disabled",
+          "Failure": "Car spawns on edited lane: medical_garden_lane",
+          "Code": 1,
+          "Log": "edited-disabled-phase.log"
+        }
+      ],
+      "FocusedDiagnostic": {
+        "Mode": "enabled",
+        "Log": "inspect-medical.log",
+        "Code": 0,
+        "Data": "inspect-enabled.json",
+        "Scope": "Somente conversão medical_garden_lane; carro e ocupante relevante em física; espera de sinal/reserva se libera. Não substitui teste completo."
+      }
+    },
+    {
+      "Test": "test_four_lane_traffic",
+      "Mode": "enabled",
+      "Code": 0,
+      "Status": "passed",
+      "Problems": [],
+      "InitialLog": "on-test_four_lane_traffic.log"
+    },
+    {
+      "Test": "test_traffic_distance_budget",
+      "Mode": "enabled",
+      "Code": 0,
+      "Status": "passed",
+      "Problems": [],
+      "InitialLog": "on-test_traffic_distance_budget.log"
+    },
+    {
+      "Test": "test_traffic_rotation_query_budget",
+      "Mode": "enabled",
+      "Code": 0,
+      "Status": "passed",
+      "Problems": [],
+      "InitialLog": "on-test_traffic_rotation_query_budget.log"
+    },
+    {
+      "Test": "test_traffic_signals",
+      "Mode": "enabled",
+      "Code": 0,
+      "Status": "passed",
+      "Problems": [],
+      "InitialLog": "on-test_traffic_signals.log"
+    },
+    {
+      "Test": "test_traffic_signal_visual_sync",
+      "Mode": "enabled",
+      "Code": 0,
+      "Status": "passed-rendered",
+      "Problems": [],
+      "InitialLog": "on-test_traffic_signal_visual_sync.log",
+      "RenderedLog": "signal-rendered.log",
+      "InitialStatus": "headless-inapplicable-code-2",
+      "Checks": 18
+    },
+    {
+      "Test": "test_traffic_turn_approach",
+      "Mode": "enabled",
+      "Code": 0,
+      "Status": "passed",
+      "Problems": [],
+      "InitialLog": "on-test_traffic_turn_approach.log"
+    },
+    {
+      "Test": "test_traffic_unstick",
+      "Mode": "enabled",
+      "Code": 0,
+      "Status": "passed",
+      "Problems": [],
+      "InitialLog": "on-test_traffic_unstick.log"
+    },
+    {
+      "Test": "test_traffic_escape",
+      "Mode": "enabled",
+      "Code": 1,
+      "Status": "same-failure-disabled",
+      "Problems": [
+        "FAIL whole queue escapes or retires without waiting for police\r"
+      ],
+      "InitialLog": "on-test_traffic_escape.log",
+      "DisabledCode": 1,
+      "DisabledLog": "escape-disabled.log"
+    },
+    {
+      "Test": "test_traffic_episode_deadline",
+      "Mode": "enabled",
+      "Code": 0,
+      "Status": "passed",
+      "Problems": [],
+      "InitialLog": "on-test_traffic_episode_deadline.log"
+    },
+    {
+      "Test": "test_traffic_junction_autonomous",
+      "Mode": "enabled",
+      "Code": 0,
+      "Status": "passed",
+      "Problems": [],
+      "InitialLog": "on-test_traffic_junction_autonomous.log"
+    },
+    {
+      "Test": "test_traffic_junction_overlap",
+      "Mode": "enabled",
+      "Code": 0,
+      "Status": "passed",
+      "Problems": [],
+      "InitialLog": "on-test_traffic_junction_overlap.log"
+    },
+    {
+      "Test": "test_traffic_junction_ttl",
+      "Mode": "enabled",
+      "Code": 0,
+      "Status": "passed",
+      "Problems": [],
+      "InitialLog": "on-test_traffic_junction_ttl.log"
+    },
+    {
+      "Test": "test_traffic_junction_turn_queue",
+      "Mode": "enabled",
+      "Code": 0,
+      "Status": "passed",
+      "Problems": [],
+      "InitialLog": "on-test_traffic_junction_turn_queue.log"
+    },
+    {
+      "Test": "test_traffic_junction_completed_turn",
+      "Mode": "enabled",
+      "Code": 0,
+      "Status": "passed",
+      "Problems": [],
+      "InitialLog": "on-test_traffic_junction_completed_turn.log"
+    },
+    {
+      "Test": "test_armored_guard_traffic_crossing",
+      "Mode": "enabled",
+      "Code": 0,
+      "Status": "passed",
+      "Problems": [],
+      "InitialLog": "on-test_armored_guard_traffic_crossing.log"
+    },
+    {
+      "Test": "dispatch/test_fire_traffic",
+      "Mode": "enabled",
+      "Code": 0,
+      "Status": "passed",
+      "Problems": [],
+      "InitialLog": "on-dispatch-test_fire_traffic.log"
+    },
+    {
+      "Test": "test_traffic_headlights",
+      "Mode": "enabled",
+      "Code": 1,
+      "Status": "same-failure-disabled",
+      "Problems": [
+        "FAIL Só 2 fachos reais de NPC (0 acesos)\r",
+        "FAIL Os fachos ficam com os carros mais próximos do jogador\r",
+        "FAIL Orçamento segue o jogador\r"
+      ],
+      "InitialLog": "on-test_traffic_headlights.log",
+      "DisabledCode": 1,
+      "DisabledLog": "headlights-disabled.log"
+    }
+  ],
+  "RailsTest": {
+    "Disabled": {
+      "Code": 0,
+      "RailSteps": 0,
+      "Log": "rails-disabled-final.log",
+      "MaxLateralError": 0.0,
+      "MaxStepDisplacementMeters": 0.3667,
+      "Checks": 10
+    },
+    "Enabled": {
+      "Code": 0,
+      "RailSteps": 1800,
+      "Log": "rails-enabled-final.log",
+      "MaxLateralError": 0.0,
+      "MaxStepDisplacementMeters": 0.0913,
+      "Checks": 61
+    }
+  },
+  "Counts": {
+    "Enabled": "count-enabled.json",
+    "Disabled": "count-disabled.json",
+    "Window": "30 segundos após admissão no oeste, coordenadas 64,82"
+  },
+  "Scope": "P2; apresentação renderizada do tráfego e desempenho não aprovados; sincronização de lentes foi testada com renderizador real."
+}

@@ -1,0 +1,753 @@
+{
+	"enabled": true,
+	"failures": [],
+	"samples": [
+		{
+			"blocked": false,
+			"blocker": "",
+			"exit_blocked": false,
+			"exit_bodies": [],
+			"floor": false,
+			"gap": 4.51914167404175,
+			"held": "<null>",
+			"junction_wait": true,
+			"own_rails": false,
+			"owners": [],
+			"phase": 60.121,
+			"position": "(122.3345, 0.119383, 123.669)",
+			"progress": 41.3305473327637,
+			"road": "medical_garden_lane",
+			"speed": 0.0138888888888889,
+			"target": 61.3305206298828,
+			"wall": false
+		},
+		{
+			"blocked": false,
+			"blocker": "",
+			"exit_blocked": false,
+			"exit_bodies": [],
+			"floor": true,
+			"gap": 3.74763441085815,
+			"held": "<null>",
+			"junction_wait": true,
+			"own_rails": false,
+			"owners": [],
+			"phase": 61.092,
+			"position": "(123.1168, 0.000941, 123.6758)",
+			"progress": 42.1020545959473,
+			"road": "medical_garden_lane",
+			"speed": 2.22222222222222,
+			"target": 61.3305206298828,
+			"wall": false
+		},
+		{
+			"blocked": false,
+			"blocker": "",
+			"exit_blocked": false,
+			"exit_bodies": [],
+			"floor": true,
+			"gap": 1e99999,
+			"held": "(272, 0, 245)",
+			"junction_wait": false,
+			"own_rails": false,
+			"owners": [
+				{
+					"id": 4091073851144,
+					"key": "(272, 0, 245)",
+					"occupies": false,
+					"position": "(125.4176, 0.000941, 123.6957)",
+					"rails": false
+				}
+			],
+			"phase": 62.205,
+			"position": "(125.4176, 0.000941, 123.6957)",
+			"progress": 44.3963470458984,
+			"road": "medical_garden_lane",
+			"speed": 3.03662002105412,
+			"target": 61.3305206298828,
+			"wall": false
+		},
+		{
+			"blocked": false,
+			"blocker": "",
+			"exit_blocked": false,
+			"exit_bodies": [],
+			"floor": true,
+			"gap": 1e99999,
+			"held": "(272, 0, 245)",
+			"junction_wait": false,
+			"own_rails": false,
+			"owners": [
+				{
+					"id": 4091073851144,
+					"key": "(272, 0, 245)",
+					"occupies": true,
+					"position": "(128.3423, 0.000941, 123.7212)",
+					"rails": false
+				}
+			],
+			"phase": 63.195,
+			"position": "(128.3423, 0.000941, 123.7212)",
+			"progress": 47.3124504089355,
+			"road": "medical_garden_lane",
+			"speed": 4.9671755766097,
+			"target": 61.3305206298828,
+			"wall": false
+		},
+		{
+			"blocked": false,
+			"blocker": "",
+			"exit_blocked": false,
+			"exit_bodies": [],
+			"floor": true,
+			"gap": 1e99999,
+			"held": "(272, 0, 245)",
+			"junction_wait": false,
+			"own_rails": false,
+			"owners": [
+				{
+					"id": 4091073851144,
+					"key": "(272, 0, 245)",
+					"occupies": true,
+					"position": "(131.3386, 0.000941, 123.7472)",
+					"rails": false
+				}
+			],
+			"phase": 64.214,
+			"position": "(131.3386, 0.000941, 123.7472)",
+			"progress": 50.3202972412109,
+			"road": "medical_garden_lane",
+			"speed": 2.2,
+			"target": 61.3305206298828,
+			"wall": false
+		},
+		{
+			"blocked": false,
+			"blocker": "",
+			"exit_blocked": false,
+			"exit_bodies": [],
+			"floor": true,
+			"gap": 1e99999,
+			"held": "(272, 0, 245)",
+			"junction_wait": false,
+			"own_rails": false,
+			"owners": [
+				{
+					"id": 4091073851144,
+					"key": "(272, 0, 245)",
+					"occupies": true,
+					"position": "(133.0697, 0.000941, 123.8801)",
+					"rails": false
+				}
+			],
+			"phase": 65.204,
+			"position": "(133.0697, 0.000941, 123.8801)",
+			"progress": 52.0556030273438,
+			"road": "medical_garden_lane",
+			"speed": 2.20183634757996,
+			"target": 61.3305206298828,
+			"wall": false
+		},
+		{
+			"blocked": false,
+			"blocker": "",
+			"exit_blocked": false,
+			"exit_bodies": [],
+			"floor": true,
+			"gap": -0.789160938262942,
+			"held": "(272, 0, 245)",
+			"junction_wait": true,
+			"own_rails": false,
+			"owners": [
+				{
+					"id": 4408817548805,
+					"key": "(162, 0, 244)",
+					"occupies": true,
+					"position": "(79.00642, 0.000941, 118.6904)",
+					"rails": false
+				},
+				{
+					"id": 4091073851144,
+					"key": "(272, 0, 245)",
+					"occupies": true,
+					"position": "(134.1696, 0.000941, 125.2747)",
+					"rails": false
+				}
+			],
+			"phase": 66.177,
+			"position": "(134.1696, 0.000941, 125.2747)",
+			"progress": 54.5329742431641,
+			"road": "medical_garden_lane",
+			"speed": 0.179614125357733,
+			"target": 61.3305206298828,
+			"wall": false
+		},
+		{
+			"blocked": false,
+			"blocker": "",
+			"exit_blocked": false,
+			"exit_bodies": [],
+			"floor": true,
+			"gap": -0.887091846466067,
+			"held": "(272, 0, 245)",
+			"junction_wait": true,
+			"own_rails": false,
+			"owners": [
+				{
+					"id": 4408817548805,
+					"key": "(162, 0, 244)",
+					"occupies": true,
+					"position": "(79.29769, 0.000941, 119.9187)",
+					"rails": false
+				},
+				{
+					"id": 4091073851144,
+					"key": "(272, 0, 245)",
+					"occupies": true,
+					"position": "(134.1854, 0.000941, 125.3679)",
+					"rails": false
+				},
+				{
+					"id": 3956839343056,
+					"key": "(272, 0, 275)",
+					"occupies": false,
+					"position": "(151.114, 0.000941, 135.75)",
+					"rails": false
+				}
+			],
+			"phase": 67.217,
+			"position": "(134.1854, 0.000941, 125.3679)",
+			"progress": 54.6309051513672,
+			"road": "medical_garden_lane",
+			"speed": 0.0,
+			"target": 61.3305206298828,
+			"wall": false
+		},
+		{
+			"blocked": false,
+			"blocker": "",
+			"exit_blocked": false,
+			"exit_bodies": [],
+			"floor": true,
+			"gap": -0.887091846466067,
+			"held": "(272, 0, 245)",
+			"junction_wait": true,
+			"own_rails": false,
+			"owners": [
+				{
+					"id": 4408817548805,
+					"key": "(162, 0, 244)",
+					"occupies": true,
+					"position": "(80.68049, 0.000941, 121.9458)",
+					"rails": false
+				},
+				{
+					"id": 4091073851144,
+					"key": "(272, 0, 245)",
+					"occupies": true,
+					"position": "(134.1854, 0.000941, 125.3679)",
+					"rails": false
+				},
+				{
+					"id": 3956839343056,
+					"key": "(272, 0, 275)",
+					"occupies": false,
+					"position": "(148.1694, 0.000941, 135.75)",
+					"rails": false
+				}
+			],
+			"phase": 68.241,
+			"position": "(134.1854, 0.000941, 125.3679)",
+			"progress": 54.6309051513672,
+			"road": "medical_garden_lane",
+			"speed": 0.0,
+			"target": 61.3305206298828,
+			"wall": false
+		},
+		{
+			"blocked": false,
+			"blocker": "",
+			"exit_blocked": false,
+			"exit_bodies": [],
+			"floor": true,
+			"gap": -0.887091846466067,
+			"held": "(272, 0, 245)",
+			"junction_wait": true,
+			"own_rails": false,
+			"owners": [
+				{
+					"id": 4408817548805,
+					"key": "(162, 0, 244)",
+					"occupies": true,
+					"position": "(82.87539, 0.02, 122.9127)",
+					"rails": true
+				},
+				{
+					"id": 4091073851144,
+					"key": "(272, 0, 245)",
+					"occupies": true,
+					"position": "(134.1854, 0.000941, 125.3679)",
+					"rails": false
+				},
+				{
+					"id": 3956839343056,
+					"key": "(272, 0, 275)",
+					"occupies": true,
+					"position": "(144.9754, 0.000941, 135.75)",
+					"rails": false
+				}
+			],
+			"phase": 69.18,
+			"position": "(134.1854, 0.000941, 125.3679)",
+			"progress": 54.6309051513672,
+			"road": "medical_garden_lane",
+			"speed": 0.0,
+			"target": 61.3305206298828,
+			"wall": false
+		},
+		{
+			"blocked": false,
+			"blocker": "",
+			"exit_blocked": false,
+			"exit_bodies": [],
+			"floor": true,
+			"gap": -0.887091846466067,
+			"held": "(272, 0, 245)",
+			"junction_wait": true,
+			"own_rails": false,
+			"owners": [
+				{
+					"id": 4408817548805,
+					"key": "(162, 0, 244)",
+					"occupies": true,
+					"position": "(85.51492, 0.02, 123.0822)",
+					"rails": true
+				},
+				{
+					"id": 4091073851144,
+					"key": "(272, 0, 245)",
+					"occupies": true,
+					"position": "(134.1854, 0.000941, 125.3679)",
+					"rails": false
+				},
+				{
+					"id": 3956839343056,
+					"key": "(272, 0, 275)",
+					"occupies": true,
+					"position": "(142.1483, 0.000941, 135.75)",
+					"rails": false
+				}
+			],
+			"phase": 70.268,
+			"position": "(134.1854, 0.000941, 125.3679)",
+			"progress": 54.6309051513672,
+			"road": "medical_garden_lane",
+			"speed": 0.0,
+			"target": 61.3305206298828,
+			"wall": false
+		},
+		{
+			"blocked": false,
+			"blocker": "",
+			"exit_blocked": false,
+			"exit_bodies": [],
+			"floor": true,
+			"gap": -0.887091846466067,
+			"held": "(272, 0, 245)",
+			"junction_wait": true,
+			"own_rails": false,
+			"owners": [
+				{
+					"id": 4408817548805,
+					"key": "(162, 0, 244)",
+					"occupies": true,
+					"position": "(88.01712, 0.000859, 123.169)",
+					"rails": false
+				},
+				{
+					"id": 4091073851144,
+					"key": "(272, 0, 245)",
+					"occupies": true,
+					"position": "(134.1854, 0.000941, 125.3679)",
+					"rails": false
+				},
+				{
+					"id": 3956839343056,
+					"key": "(272, 0, 275)",
+					"occupies": true,
+					"position": "(140.6082, 0.000941, 135.7477)",
+					"rails": false
+				}
+			],
+			"phase": 71.256,
+			"position": "(134.1854, 0.000941, 125.3679)",
+			"progress": 54.6309051513672,
+			"road": "medical_garden_lane",
+			"speed": 0.0,
+			"target": 61.3305206298828,
+			"wall": false
+		},
+		{
+			"blocked": false,
+			"blocker": "",
+			"exit_blocked": false,
+			"exit_bodies": [],
+			"floor": true,
+			"gap": -0.887091846466067,
+			"held": "(272, 0, 245)",
+			"junction_wait": true,
+			"own_rails": false,
+			"owners": [
+				{
+					"id": 4091073851144,
+					"key": "(272, 0, 245)",
+					"occupies": true,
+					"position": "(134.1854, 0.000941, 125.3679)",
+					"rails": false
+				},
+				{
+					"id": 3956839343056,
+					"key": "(272, 0, 275)",
+					"occupies": true,
+					"position": "(139.5132, 0.000941, 135.6109)",
+					"rails": false
+				}
+			],
+			"phase": 72.213,
+			"position": "(134.1854, 0.000941, 125.3679)",
+			"progress": 54.6309051513672,
+			"road": "medical_garden_lane",
+			"speed": 0.0,
+			"target": 61.3305206298828,
+			"wall": false
+		},
+		{
+			"blocked": false,
+			"blocker": "",
+			"exit_blocked": false,
+			"exit_bodies": [],
+			"floor": true,
+			"gap": -0.887091846466067,
+			"held": "(272, 0, 245)",
+			"junction_wait": true,
+			"own_rails": false,
+			"owners": [
+				{
+					"id": 4091073851144,
+					"key": "(272, 0, 245)",
+					"occupies": true,
+					"position": "(134.1854, 0.000941, 125.3679)",
+					"rails": false
+				},
+				{
+					"id": 3956839343056,
+					"key": "(272, 0, 275)",
+					"occupies": true,
+					"position": "(138.6275, 0.000941, 135.0638)",
+					"rails": false
+				}
+			],
+			"phase": 73.258,
+			"position": "(134.1854, 0.000941, 125.3679)",
+			"progress": 54.6309051513672,
+			"road": "medical_garden_lane",
+			"speed": 0.0,
+			"target": 61.3305206298828,
+			"wall": false
+		},
+		{
+			"blocked": false,
+			"blocker": "",
+			"exit_blocked": false,
+			"exit_bodies": [],
+			"floor": true,
+			"gap": -0.887091846466067,
+			"held": "(272, 0, 245)",
+			"junction_wait": true,
+			"own_rails": false,
+			"owners": [
+				{
+					"id": 4091073851144,
+					"key": "(272, 0, 245)",
+					"occupies": true,
+					"position": "(134.1854, 0.000941, 125.3679)",
+					"rails": false
+				},
+				{
+					"id": 3956839343056,
+					"key": "(272, 0, 275)",
+					"occupies": true,
+					"position": "(138.1303, 0.000941, 133.6582)",
+					"rails": false
+				}
+			],
+			"phase": 74.305,
+			"position": "(134.1854, 0.000941, 125.3679)",
+			"progress": 54.6309051513672,
+			"road": "medical_garden_lane",
+			"speed": 0.0,
+			"target": 61.3305206298828,
+			"wall": false
+		},
+		{
+			"blocked": false,
+			"blocker": "",
+			"exit_blocked": false,
+			"exit_bodies": [],
+			"floor": true,
+			"gap": -0.887091846466067,
+			"held": "(272, 0, 245)",
+			"junction_wait": true,
+			"own_rails": false,
+			"owners": [
+				{
+					"id": 4091073851144,
+					"key": "(272, 0, 245)",
+					"occupies": true,
+					"position": "(134.1854, 0.000941, 125.3679)",
+					"rails": false
+				},
+				{
+					"id": 3956839343056,
+					"key": "(272, 0, 275)",
+					"occupies": true,
+					"position": "(138.0226, 0.000941, 132.5713)",
+					"rails": false
+				}
+			],
+			"phase": 75.295,
+			"position": "(134.1854, 0.000941, 125.3679)",
+			"progress": 54.6309051513672,
+			"road": "medical_garden_lane",
+			"speed": 0.0,
+			"target": 61.3305206298828,
+			"wall": false
+		},
+		{
+			"blocked": false,
+			"blocker": "",
+			"exit_blocked": false,
+			"exit_bodies": [],
+			"floor": true,
+			"gap": 1e99999,
+			"held": "(272, 0, 275)",
+			"junction_wait": false,
+			"own_rails": false,
+			"owners": [
+				{
+					"id": 4091073851144,
+					"key": "(272, 0, 245)",
+					"occupies": true,
+					"position": "(134.1868, 0.000941, 125.3877)",
+					"rails": false
+				},
+				{
+					"id": 3956839343056,
+					"key": "(272, 0, 275)",
+					"occupies": true,
+					"position": "(138.0075, 0.000941, 132.3335)",
+					"rails": false
+				},
+				{
+					"id": 4091073851144,
+					"key": "(272, 0, 275)",
+					"occupies": false,
+					"position": "(134.1868, 0.000941, 125.3877)",
+					"rails": false
+				}
+			],
+			"phase": 76.31,
+			"position": "(134.1868, 0.000941, 125.3877)",
+			"progress": 54.6492156982422,
+			"road": "medical_garden_lane",
+			"speed": 0.486111111111111,
+			"target": 61.3305206298828,
+			"wall": false
+		},
+		{
+			"blocked": false,
+			"blocker": "",
+			"exit_blocked": false,
+			"exit_bodies": [],
+			"floor": true,
+			"gap": 1e99999,
+			"held": "(272, 0, 275)",
+			"junction_wait": false,
+			"own_rails": false,
+			"owners": [
+				{
+					"id": 4091073851144,
+					"key": "(272, 0, 245)",
+					"occupies": true,
+					"position": "(134.2183, 0.000941, 125.8745)",
+					"rails": false
+				},
+				{
+					"id": 3956839343056,
+					"key": "(272, 0, 275)",
+					"occupies": true,
+					"position": "(138.0075, 0.000941, 132.3332)",
+					"rails": false
+				},
+				{
+					"id": 4091073851144,
+					"key": "(272, 0, 275)",
+					"occupies": false,
+					"position": "(134.2183, 0.000941, 125.8745)",
+					"rails": false
+				}
+			],
+			"phase": 77.302,
+			"position": "(134.2183, 0.000941, 125.8745)",
+			"progress": 55.1281242370605,
+			"road": "medical_garden_lane",
+			"speed": 1.83333333333333,
+			"target": 61.3305206298828,
+			"wall": false
+		},
+		{
+			"blocked": false,
+			"blocker": "",
+			"exit_blocked": false,
+			"exit_bodies": [],
+			"floor": true,
+			"gap": 1e99999,
+			"held": "(272, 0, 275)",
+			"junction_wait": false,
+			"own_rails": false,
+			"owners": [
+				{
+					"id": 4091073851144,
+					"key": "(272, 0, 245)",
+					"occupies": true,
+					"position": "(134.2792, 0.000941, 127.1971)",
+					"rails": false
+				},
+				{
+					"id": 3956839343056,
+					"key": "(272, 0, 245)",
+					"occupies": false,
+					"position": "(138.0074, 0.000941, 132.3316)",
+					"rails": false
+				},
+				{
+					"id": 3956839343056,
+					"key": "(272, 0, 275)",
+					"occupies": true,
+					"position": "(138.0074, 0.000941, 132.3316)",
+					"rails": false
+				},
+				{
+					"id": 4091073851144,
+					"key": "(272, 0, 275)",
+					"occupies": false,
+					"position": "(134.2792, 0.000941, 127.1971)",
+					"rails": false
+				}
+			],
+			"phase": 78.306,
+			"position": "(134.2792, 0.000941, 127.1971)",
+			"progress": 56.4413681030273,
+			"road": "medical_garden_lane",
+			"speed": 3.27777777777777,
+			"target": 61.3305206298828,
+			"wall": false
+		},
+		{
+			"blocked": false,
+			"blocker": "",
+			"exit_blocked": false,
+			"exit_bodies": [],
+			"floor": true,
+			"gap": 1e99999,
+			"held": "(272, 0, 275)",
+			"junction_wait": false,
+			"own_rails": false,
+			"owners": [
+				{
+					"id": 4091073851144,
+					"key": "(272, 0, 245)",
+					"occupies": true,
+					"position": "(134.319, 0.000941, 129.0397)",
+					"rails": false
+				},
+				{
+					"id": 3956839343056,
+					"key": "(272, 0, 245)",
+					"occupies": true,
+					"position": "(137.9932, 0.000941, 132.0335)",
+					"rails": false
+				},
+				{
+					"id": 3956839343056,
+					"key": "(272, 0, 275)",
+					"occupies": true,
+					"position": "(137.9932, 0.000941, 132.0335)",
+					"rails": false
+				},
+				{
+					"id": 4091073851144,
+					"key": "(272, 0, 275)",
+					"occupies": true,
+					"position": "(134.319, 0.000941, 129.0397)",
+					"rails": false
+				}
+			],
+			"phase": 79.283,
+			"position": "(134.319, 0.000941, 129.0397)",
+			"progress": 58.275936126709,
+			"road": "medical_garden_lane",
+			"speed": 4.54166666666667,
+			"target": 61.3305206298828,
+			"wall": false
+		},
+		{
+			"blocked": false,
+			"blocker": "",
+			"exit_blocked": false,
+			"exit_bodies": [],
+			"floor": true,
+			"gap": 1e99999,
+			"held": "(272, 0, 275)",
+			"junction_wait": false,
+			"own_rails": false,
+			"owners": [
+				{
+					"id": 4091073851144,
+					"key": "(272, 0, 245)",
+					"occupies": true,
+					"position": "(134.3251, 0.000941, 131.2735)",
+					"rails": false
+				},
+				{
+					"id": 3956839343056,
+					"key": "(272, 0, 245)",
+					"occupies": true,
+					"position": "(137.9615, 0.000941, 131.2175)",
+					"rails": false
+				},
+				{
+					"id": 3956839343056,
+					"key": "(272, 0, 275)",
+					"occupies": true,
+					"position": "(137.9615, 0.000941, 131.2175)",
+					"rails": false
+				},
+				{
+					"id": 4091073851144,
+					"key": "(272, 0, 275)",
+					"occupies": true,
+					"position": "(134.3251, 0.000941, 131.2735)",
+					"rails": false
+				}
+			],
+			"phase": 80.24,
+			"position": "(134.3251, 0.000941, 131.2735)",
+			"progress": 60.5034599304199,
+			"road": "medical_garden_lane",
+			"speed": 5.43448630608618,
+			"target": 61.3305206298828,
+			"wall": false
+		}
+	]
+}

@@ -8,6 +8,9 @@ const JUNCTIONS := preload("res://gameplay/traffic_junctions/TrafficJunctions.gd
 const DOOR_SPECS := preload("res://data/catalogs/VehicleDoorSpecs.gd")
 const WHEELIE := preload("res://gameplay/MotorcycleWheelie.gd")
 const DESERT_GROUND := preload("res://gameplay/desert_cars/DesertVehicleGround.gd")
+const TRAFFIC_RAILS := preload("res://gameplay/traffic/TrafficRails.gd")
+var traffic_rails: RefCounted
+var _traffic_rail_drive := false
 const MAX_SPEED := 15.0
 const REVERSE_SPEED := preload("res://gameplay/v1_handling/V1Handling.gd").REVERSE_SPEED_MPS
 const WHEELBASE := 2.5
@@ -409,9 +412,23 @@ func _stall_physics_tick(delta: float) -> void:
 	stage = STALL_WORK.begin()
 	var resting := _is_resting()
 	STALL_WORK.finish_slow("vehicle.resting", stage, 5000, self)
-	if resting: return
+	if resting:
+		if traffic_rails != null and traffic_rails.active: traffic_rails.wake(self)
+		return
+	# Acordar antes do LOD permite responder a contato sem esperar quatro passos.
+	var rail_drive := false
+	var rail_wake := false
+	if TRAFFIC_RAILS.enabled or traffic_rails != null:
+		if traffic_rails == null and traffic and get_meta("ambient_traffic",false):
+			traffic_rails = TRAFFIC_RAILS.new()
+		if traffic_rails != null:
+			rail_drive = traffic_rails.prepare(self,delta)
+			rail_wake = traffic_rails.force_physics
 	stage = STALL_WORK.begin()
-	var lod := _lod_gate(delta)
+	var lod := 1.0 if rail_drive or rail_wake else _lod_gate(delta)
+	if rail_drive or rail_wake:
+		_lod_pending = 0.0
+		_lod_skipped = -1
 	STALL_WORK.finish_slow("vehicle.lod", stage, 5000, self)
 	if lod == 0.0: return
 	delta *= lod
@@ -421,10 +438,20 @@ func _stall_physics_tick(delta: float) -> void:
 		speed = move_toward(speed,0,20*delta)
 	stage = STALL_WORK.begin()
 	if traffic:
+		_traffic_rail_drive = rail_drive
 		_drive_traffic(delta)
+		_traffic_rail_drive = false
 	else:
 		_drive_player(delta)
 	STALL_WORK.finish_slow("vehicle.drive", stage, 5000, self)
+	if rail_drive:
+		var rail_previous := global_position
+		if traffic_rails.advance(self,delta):
+			var rail_motion := global_position-rail_previous
+			rail_motion.y = 0.0
+			distance_travelled += rail_motion.length()
+			_tick_motion_presentation(delta,rail_motion,horizontal_velocity,-global_basis.z)
+			return
 	# Trânsito parado em fila "dorme": sem move_and_slide nem consulta de giro. Em
 	# engarrafamento, carros encostados custavam 60–98 ms por quadro somados (2026-09-23).
 	if traffic and health > 0 and absf(speed) < 0.05 and horizontal_velocity.length_squared() < 0.0025 and is_on_floor():
@@ -501,7 +528,10 @@ func _stall_physics_tick(delta: float) -> void:
 	STREET.vehicle_post_move(self,incoming_velocity,delta)
 	STALL_WORK.finish_slow("vehicle.street_post", stage, 5000, self)
 	if manual_wheelie != null: _tick_motorcycle_wheelie(delta)
-	stage = STALL_WORK.begin()
+	_tick_motion_presentation(delta,motion,incoming_velocity,forward)
+
+func _tick_motion_presentation(delta: float, motion: Vector3, incoming_velocity: Vector3, forward: Vector3) -> void:
+	var stage := STALL_WORK.begin()
 	wheel_spin += motion.dot(forward)/0.355
 	_burnout_wheel_spin = fposmod(_burnout_wheel_spin + burnout_strength()*32.0*delta, TAU)
 	for pivot in wheels:
@@ -852,7 +882,7 @@ func _drive_traffic(delta: float) -> void:
 			set_meta("unjam_partner",blocker)
 	# Progress uses actual position, so a collision cannot advance the car's route.
 	var previous_distance := route_distance
-	route_distance = _traffic_route_offset(global_position)
+	if not _traffic_rail_drive: route_distance = _traffic_route_offset(global_position)
 	var length := route.get_baked_length()
 	var open: bool = route.get_meta("traffic_open",false)
 	if not open and previous_distance > length-5 and route_distance < 5: route_laps += 1
@@ -886,7 +916,7 @@ func _drive_traffic(delta: float) -> void:
 	var next_yaw := rotate_toward(rotation.y,desired,delta*(2.7 if traffic_escape.active else 1.7))
 	steering = clampf(angle_difference(rotation.y,desired),-0.48,0.48)
 	# Carro parado não esterça no lugar (e poupa a consulta de colisão por passo).
-	if absf(speed) > 0.2 and next_yaw != rotation.y and can_rotate(next_yaw): rotation.y = next_yaw
+	if not _traffic_rail_drive and absf(speed) > 0.2 and next_yaw != rotation.y and can_rotate(next_yaw): rotation.y = next_yaw
 
 ## Desvio de obstáculo parado (viatura na faixa, carcaça, fila que não anda): antes o
 ## trânsito só esperava, e um carro parado virava engarrafamento sem fim (2026-09-25).
@@ -1220,6 +1250,7 @@ func restore_body_dents(records: Array) -> void:
 
 func receive_damage(amount: float, _source: Node = null) -> void:
 	if not is_finite(amount) or amount <= 0 or health <= 0 or PROTECTION.is_protected(self): return
+	if TRAFFIC_RAILS.enabled and traffic_rails != null: traffic_rails.wake(self,2.0)
 	var response: Callable = get_meta("gang_damage_handler",Callable())
 	if response.is_valid(): response.call(_source)
 	amount *= damage_resistance
