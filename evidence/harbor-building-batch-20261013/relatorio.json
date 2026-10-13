@@ -1,0 +1,177 @@
+{
+  "objetivo": "Reduzir instâncias e superfícies dos prédios estáticos do Harbor sem alterar portas, colisões ou acabamento.",
+  "data": "2026-10-13",
+  "ambiente": {
+    "motor": "Godot 4.7.2 .NET mono",
+    "renderer": "Vulkan Forward Mobile",
+    "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "build": "dotnet build Harbor.csproj --nologo: 0 erros, 0 avisos",
+    "workspace": "D:/geteco/game, com alterações concorrentes preservadas",
+    "concorrencia": "O usuário autorizou explicitamente testes e contagens em paralelo às instâncias existentes. Não foi feita medição de performance."
+  },
+  "arquivos_codigo": [
+    "world/urban_detail/HarborBuildingBatch.gd",
+    "world/urban_detail/UrbanBuildingFactory.gd",
+    "tests/measure/measure_harbor_building_batch.gd",
+    "tests/urban_detail/test_harbor_building_batch.gd"
+  ],
+  "implementacao": [
+    "Reutiliza PortMeshOptimizer.optimize_hierarchy em cópias temporárias de malhas elegíveis.",
+    "Finalizador transitório aguarda vegetation_ready_frame, depois de CityChunkDressing e corte do túnel. Reconhece NativeRegion e suas subclasses, inclusive EditableRegion.",
+    "Agrupa apenas no mesmo pai, por material, célula espacial de 8x4x8 m, eixo fino, layers, sombra, GI e extra_cull_margin.",
+    "Preserva volumes grandes, lajes, BoxMesh usados no acabamento, colisões, scripts, grupos, metadados, emissão, transparência, elementos noturnos e portas animadas.",
+    "Fachadas cujo BuildingAccess já foi preparado são preservadas para não invalidar referências do adaptador.",
+    "Desliga sombras de detalhes pequenos, incluindo molduras, letreiros, grades e ar-condicionado; mantém sombras dos volumes grandes.",
+    "GETECO_BUILDING_BATCH=0 desliga toda a intervenção, incluindo alterações de sombra. Não troca arquivos por versões do Git."
+  ],
+  "materiais": {
+    "conclusao": "Os seis tipos já reutilizam materiais iguais; não foi acrescentado cache redundante nem feita mutação dos materiais compartilhados.",
+    "caches_existentes": [
+      "HarborHospitalModel3D.material: cor e configuração de vidro",
+      "CemeteryPropBuilder.material, herdado por ResidenceExterior3D e ResidenceParking: cor e metal",
+      "UrbanMaterials.get_mat, material_for_color e textured_wall"
+    ]
+  },
+  "comparacao": {
+    "metodo": "Mesmos arquivos, processos separados, GETECO_BUILDING_BATCH=0/1; quatro chunks completos montados fora da sessão e liberados após leitura. As 18 fontes com SHA-256 em antes.json e depois.json são idênticas.",
+    "escopo": "Visibilidade na árvore, sem frustum/oclusão. Não são draw calls capturados na GPU. Os números da medição rápida do usuário não são diretamente equivalentes.",
+    "oeste": {
+      "retangulo_m": "x64-192, z64-128",
+      "predios_alvo": {
+        "geometry_instances": [
+          493,
+          330
+        ],
+        "malhas": [
+          492,
+          329
+        ],
+        "superficies": [
+          492,
+          329
+        ],
+        "sombras": [
+          444,
+          172
+        ]
+      },
+      "chunk_completo": {
+        "geometry_instances": [
+          961,
+          798
+        ],
+        "malhas": [
+          872,
+          709
+        ],
+        "superficies": [
+          950,
+          787
+        ],
+        "sombras": [
+          705,
+          433
+        ]
+      },
+      "reducao_malhas_percentual": 33.13,
+      "reducao_sombras_percentual": 61.26
+    },
+    "leste": {
+      "retangulo_m": "x320-448, z64-128",
+      "predios_alvo": {
+        "geometry_instances": [
+          88,
+          66
+        ],
+        "malhas": [
+          88,
+          66
+        ],
+        "superficies": [
+          88,
+          66
+        ],
+        "sombras": [
+          74,
+          31
+        ]
+      },
+      "chunk_completo": {
+        "geometry_instances": [
+          603,
+          581
+        ],
+        "malhas": [
+          534,
+          512
+        ],
+        "superficies": [
+          600,
+          578
+        ],
+        "sombras": [
+          443,
+          400
+        ]
+      },
+      "reducao_malhas_percentual": 25.0,
+      "reducao_sombras_percentual": 58.11
+    },
+    "isolamento": "Os demais donos têm as mesmas contagens no par final. A comparação preliminar foi substituída porque outras sessões alteraram postes/bueiros no intervalo; nenhuma dessas reduções é atribuída a este trabalho."
+  },
+  "contrato_novo": {
+    "arquivo": "tests/urban_detail/test_harbor_building_batch.gd",
+    "comando": "Godot_console.exe --path . --script res://tests/urban_detail/test_harbor_building_batch.gd -- --no-save",
+    "exit_code": 0,
+    "checks": 5585,
+    "failures": 0,
+    "erro_maximo_vertices_m": 3.145679875E-05,
+    "cobertura": "Geometria e material dos vértices indexados; caixas de telhado; colisões, grupos e scripts; portas móveis do hospital, residência, delegacia e quartel; desligamento; ordem de acabamento; idempotência; restauração pelo corte do túnel; recarga fatiada e integração EditableRegion; descarte do finalizador.",
+    "diagnostico_teste": "A primeira versão comparava strings arredondadas a milímetro e detectou diferenças em meios milímetros. A comparação passou a parear vértices reais por distância absoluta <=0,1 mm, sem mudar produção; erro observado <=0,0315 mm, compatível com a ordem das operações float32. O chunk 6,1 não tem prédios alvo: exige não aumento, e os três chunks com alvos exigem redução."
+  },
+  "testes_existentes": "Resultados e assinaturas de erro em testes.json. Todas as execuções usam --script e -- --no-save, com o motor .NET e C# compilado.",
+  "falhas_independentes_confirmadas": [
+    {
+      "teste": "urban_detail/test_harbor_fidelity_contract.gd",
+      "mensagem": "Gap collision supports the exposed convergence before the lower deck",
+      "linha": 34,
+      "retorno_ligado": 1,
+      "retorno_desligado": 1,
+      "conclusao": "A mesma falha de colisão da conexão com a ponte ocorre antes de montar a região/prédios; independente da fusão. Não foi alterada por estar fora do escopo."
+    },
+    {
+      "teste": "test_harbor_building_preparation_lookup.gd",
+      "mensagem": "Invalid access to property or key 'stars' on a base object of type 'Dictionary'; Actual runtime returns prepared room",
+      "origem": "runtime/HarborBuildingRuntime.gd:46, chamado pela fixture em tests/test_harbor_building_preparation_lookup.gd:61",
+      "retorno_ligado": 1,
+      "retorno_desligado": 1,
+      "conclusao": "Mesma falha com a fusão ligada e desligada; teste de preparação usa fixture de sessão sem stars e não monta chunks da fusão. Não foi alterado por estar fora do escopo."
+    },
+    {
+      "teste": "test_services.gd",
+      "mensagem": "Fixture sem room_npcs e id; acesso fora dos limites a session.spoken[0] em tests/test_services.gd:97.",
+      "retorno_ligado": -1,
+      "retorno_desligado": -1,
+      "conclusao": "Os cinco erros de script e stack traces foram idênticos nos dois modos. O erro abortou _run antes de quit(); somente os processos desses dois testes foram interrompidos após inspeção, preservando as instâncias preexistentes. Não foi alterado por estar fora do escopo."
+    }
+  ],
+  "pendencias": [
+    "FPS e frame time no jogo real não foram medidos, conforme instrução expressa do usuário.",
+    "Não foram medidos draw calls reais da GPU nem latência de montagem. SurfaceTool executa sincronicamente na finalização do chunk; eventual pico de streaming permanece sem avaliação temporal.",
+    "Não houve inspeção visual temporal das fachadas em jogo com movimento, noite e clima; testes de contratos não certificam ausência de flickering ou popping.",
+    "Nenhum export ou push foi executado."
+  ],
+  "resumo_testes": {
+    "distintos": 20,
+    "aprovados": 17,
+    "falhas_reproduzidas_sem_fusao": 3,
+    "interiores": {
+      "predios": 59,
+      "andares": 178,
+      "checks": 14551,
+      "failures": 0
+    },
+    "entrada_no_veiculo": "PASS, Main.tscn real",
+    "admissao_frio": "PASS, 11 checks"
+  }
+}

@@ -1,0 +1,322 @@
+[
+  {
+    "test": "test_regions.gd",
+    "building_batch": "1",
+    "exit_code": 0,
+    "script_errors": [],
+    "errors": [],
+    "summary": [
+      "REGIONS PASS failures=0\r"
+    ],
+    "stdout": "D:\\geteco\\game\\tmp\\test_regions-batch-1.stdout.log",
+    "stderr": "D:\\geteco\\game\\tmp\\test_regions-batch-1.stderr.log"
+  },
+  {
+    "test": "urban_detail/test_urban_building_factory.gd",
+    "building_batch": "1",
+    "exit_code": 0,
+    "script_errors": [],
+    "errors": [],
+    "summary": [
+      "Testing UrbanTransitStation3D and rotated boarding approaches...\r",
+      "--- TEST RESULTS: PASS (Failures: 0) ---\r"
+    ],
+    "stdout": "D:\\geteco\\game\\tmp\\urban_detail-test_urban_building_factory-batch-1.stdout.log",
+    "stderr": "D:\\geteco\\game\\tmp\\urban_detail-test_urban_building_factory-batch-1.stderr.log"
+  },
+  {
+    "test": "urban_detail/test_harbor_building_source_fidelity.gd",
+    "building_batch": "1",
+    "exit_code": 0,
+    "script_errors": [],
+    "errors": [],
+    "summary": [
+      "PASS: CornerBungalow preserves more than one authored finish\r",
+      "PASS: all 60 non-Maciota inventory buildings are composed native 3D models\r",
+      "HARBOR_BUILDING_SOURCE_FIDELITY covered=60 failures=0\r"
+    ],
+    "stdout": "D:\\geteco\\game\\tmp\\urban_detail-test_harbor_building_source_fidelity-batch-1.stdout.log",
+    "stderr": "D:\\geteco\\game\\tmp\\urban_detail-test_harbor_building_source_fidelity-batch-1.stderr.log"
+  },
+  {
+    "test": "urban_detail/test_harbor_access_exteriors.gd",
+    "building_batch": "1",
+    "exit_code": 0,
+    "script_errors": [],
+    "errors": [],
+    "summary": [
+      "HARBOR_ACCESS_EXTERIORS_PASS checks=11 failures=0\r"
+    ],
+    "stdout": "D:\\geteco\\game\\tmp\\urban_detail-test_harbor_access_exteriors-batch-1.stdout.log",
+    "stderr": "D:\\geteco\\game\\tmp\\urban_detail-test_harbor_access_exteriors-batch-1.stderr.log"
+  },
+  {
+    "test": "urban_detail/test_harbor_fidelity_contract.gd",
+    "building_batch": "1",
+    "exit_code": 1,
+    "script_errors": [],
+    "errors": [
+      "ERROR: FAIL: Gap collision supports the exposed convergence before the lower deck\r"
+    ],
+    "summary": [
+      "HARBOR_FIDELITY_CONTRACT_FAIL failures=1\r"
+    ],
+    "stdout": "D:\\geteco\\game\\tmp\\urban_detail-test_harbor_fidelity_contract-batch-1.stdout.log",
+    "stderr": "D:\\geteco\\game\\tmp\\urban_detail-test_harbor_fidelity_contract-batch-1.stderr.log"
+  },
+  {
+    "test": "urban_detail/test_harbor_fidelity_contract.gd",
+    "building_batch": "0",
+    "exit_code": 1,
+    "script_errors": [],
+    "errors": [
+      "ERROR: FAIL: Gap collision supports the exposed convergence before the lower deck\r"
+    ],
+    "summary": [
+      "HARBOR_FIDELITY_CONTRACT_FAIL failures=1\r"
+    ],
+    "stdout": "D:\\geteco\\game\\tmp\\urban_detail-test_harbor_fidelity_contract-batch-0.stdout.log",
+    "stderr": "D:\\geteco\\game\\tmp\\urban_detail-test_harbor_fidelity_contract-batch-0.stderr.log"
+  },
+  {
+    "test": "test_tunnel_cutaway.gd",
+    "building_batch": "1",
+    "exit_code": 0,
+    "script_errors": [],
+    "errors": [],
+    "summary": [],
+    "stdout": "D:\\geteco\\game\\tmp\\test_tunnel_cutaway-batch-1.stdout.log",
+    "stderr": "D:\\geteco\\game\\tmp\\test_tunnel_cutaway-batch-1.stderr.log"
+  },
+  {
+    "test": "test_exterior_reveal.gd",
+    "building_batch": "1",
+    "exit_code": 0,
+    "script_errors": [],
+    "errors": [],
+    "summary": [
+      "EXTERIOR_REVEAL PASS copied roof restores authored material\r",
+      "EXTERIOR_REVEAL PASS triplanar material restored\r",
+      "EXTERIOR_REVEAL_RESULT checks=33 failures=0\r"
+    ],
+    "stdout": "D:\\geteco\\game\\tmp\\test_exterior_reveal-batch-1.stdout.log",
+    "stderr": "D:\\geteco\\game\\tmp\\test_exterior_reveal-batch-1.stderr.log"
+  },
+  {
+    "test": "test_window_lighting.gd",
+    "building_batch": "1",
+    "exit_code": 0,
+    "script_errors": [],
+    "errors": [],
+    "summary": [
+      "WINDOW_LIGHTING_CONTRACT checks=96 failures=[]\r"
+    ],
+    "stdout": "D:\\geteco\\game\\tmp\\test_window_lighting-batch-1.stdout.log",
+    "stderr": "D:\\geteco\\game\\tmp\\test_window_lighting-batch-1.stderr.log"
+  },
+  {
+    "test": "test_harbor_building_access.gd",
+    "building_batch": "1",
+    "exit_code": 0,
+    "script_errors": [],
+    "errors": [],
+    "summary": [
+      "{\"checks\":696,\"failures\":[],\"places\":59,\"test\":\"harbor_building_access\"}\r"
+    ],
+    "stdout": "D:\\geteco\\game\\tmp\\test_harbor_building_access-batch-1.stdout.log",
+    "stderr": "D:\\geteco\\game\\tmp\\test_harbor_building_access-batch-1.stderr.log"
+  },
+  {
+    "test": "test_harbor_building_interiors.gd",
+    "building_batch": "1",
+    "exit_code": 0,
+    "script_errors": [],
+    "errors": [],
+    "summary": [
+      "VERTICE_DEPTH PASS malformed floor save rejected { \"harbor_customs_house\": 0.5 }\r",
+      "VERTICE_DEPTH PASS malformed floor save rejected { \"unknown\": 0 }\r",
+      "HARBOR_BUILDING_CONTRACT res://evidence/harbor-building-contract-41184-15530545 buildings=59 floors=178 checks=14551 failures=[]\r"
+    ],
+    "stdout": "D:\\geteco\\game\\tmp\\test_harbor_building_interiors-batch-1.stdout.log",
+    "stderr": "D:\\geteco\\game\\tmp\\test_harbor_building_interiors-batch-1.stderr.log"
+  },
+  {
+    "test": "test_harbor_building_sightline.gd",
+    "building_batch": "1",
+    "exit_code": 0,
+    "script_errors": [],
+    "errors": [],
+    "summary": [
+      "BUILDING_SIGHTLINE PASS owner deletion restores surviving railway batches\r",
+      "BUILDING_SIGHTLINE PASS owner deletion restores the original tree crowns\r",
+      "BUILDING_SIGHTLINE_RESULT {\"checks\":25,\"failures\":[]}\r"
+    ],
+    "stdout": "D:\\geteco\\game\\tmp\\test_harbor_building_sightline-batch-1.stdout.log",
+    "stderr": "D:\\geteco\\game\\tmp\\test_harbor_building_sightline-batch-1.stderr.log"
+  },
+  {
+    "test": "test_harbor_building_preparation_lookup.gd",
+    "building_batch": "1",
+    "exit_code": 1,
+    "script_errors": [
+      "SCRIPT ERROR: Invalid access to property or key 'stars' on a base object of type 'Dictionary'.\r"
+    ],
+    "errors": [
+      "SCRIPT ERROR: Invalid access to property or key 'stars' on a base object of type 'Dictionary'.\r"
+    ],
+    "summary": [
+      "{\"checks\":60,\"failures\":[\"Actual runtime returns prepared room\"],\"test\":\"harbor_building_preparation_lookup\"}\r"
+    ],
+    "stdout": "D:\\geteco\\game\\tmp\\test_harbor_building_preparation_lookup-batch-1.stdout.log",
+    "stderr": "D:\\geteco\\game\\tmp\\test_harbor_building_preparation_lookup-batch-1.stderr.log"
+  },
+  {
+    "test": "test_harbor_building_preparation_lookup.gd",
+    "building_batch": "0",
+    "exit_code": 1,
+    "script_errors": [
+      "SCRIPT ERROR: Invalid access to property or key 'stars' on a base object of type 'Dictionary'.\r"
+    ],
+    "errors": [
+      "SCRIPT ERROR: Invalid access to property or key 'stars' on a base object of type 'Dictionary'.\r"
+    ],
+    "summary": [
+      "{\"checks\":60,\"failures\":[\"Actual runtime returns prepared room\"],\"test\":\"harbor_building_preparation_lookup\"}\r"
+    ],
+    "stdout": "D:\\geteco\\game\\tmp\\test_harbor_building_preparation_lookup-batch-0.stdout.log",
+    "stderr": "D:\\geteco\\game\\tmp\\test_harbor_building_preparation_lookup-batch-0.stderr.log"
+  },
+  {
+    "test": "test_harbor_building_secrets.gd",
+    "building_batch": "1",
+    "exit_code": 0,
+    "script_errors": [],
+    "errors": [],
+    "summary": [
+      "BUILDING_SECRETS PASS reactivated room can use the same unconsumed lock\r",
+      "BUILDING_SECRETS PASS unloading owned minigame releases UI and control\r",
+      "{\"checks\":34,\"failures\":[],\"test\":\"harbor_building_secrets\"}\r"
+    ],
+    "stdout": "D:\\geteco\\game\\tmp\\test_harbor_building_secrets-batch-1.stdout.log",
+    "stderr": "D:\\geteco\\game\\tmp\\test_harbor_building_secrets-batch-1.stderr.log"
+  },
+  {
+    "test": "test_harbor_service_roof_access_owner.gd",
+    "building_batch": "1",
+    "exit_code": 0,
+    "script_errors": [],
+    "errors": [],
+    "summary": [
+      "ROOF_ACCESS_OWNER PASS missing room does not create access\r",
+      "ROOF_ACCESS_OWNER PASS garage uses its interior spawn with current room owner\r",
+      "ROOF_ACCESS_OWNER checks=15 failures=0\r"
+    ],
+    "stdout": "D:\\geteco\\game\\tmp\\test_harbor_service_roof_access_owner-batch-1.stdout.log",
+    "stderr": "D:\\geteco\\game\\tmp\\test_harbor_service_roof_access_owner-batch-1.stderr.log"
+  },
+  {
+    "test": "test_maciota_frontage_layout.gd",
+    "building_batch": "1",
+    "exit_code": 0,
+    "script_errors": [],
+    "errors": [],
+    "summary": [
+      "PASS Maciota frontage layout: 23 checks\r"
+    ],
+    "stdout": "D:\\geteco\\game\\tmp\\test_maciota_frontage_layout-batch-1.stdout.log",
+    "stderr": "D:\\geteco\\game\\tmp\\test_maciota_frontage_layout-batch-1.stderr.log"
+  },
+  {
+    "test": "test_services.gd",
+    "building_batch": "1",
+    "exit_code": -1,
+    "script_errors": [
+      "SCRIPT ERROR: Invalid access to property or key 'room_npcs' on a base object of type 'RefCounted (Session)'.\r",
+      "SCRIPT ERROR: Invalid access to property or key 'id' on a base object of type 'Dictionary'.\r",
+      "SCRIPT ERROR: Invalid access to property or key 'room_npcs' on a base object of type 'RefCounted (Session)'.\r",
+      "SCRIPT ERROR: Invalid access to property or key 'id' on a base object of type 'Dictionary'.\r",
+      "SCRIPT ERROR: Out of bounds get index '0' (on base: 'Array')\r"
+    ],
+    "errors": [
+      "SCRIPT ERROR: Invalid access to property or key 'room_npcs' on a base object of type 'RefCounted (Session)'.\r",
+      "SCRIPT ERROR: Invalid access to property or key 'id' on a base object of type 'Dictionary'.\r",
+      "SCRIPT ERROR: Invalid access to property or key 'room_npcs' on a base object of type 'RefCounted (Session)'.\r",
+      "SCRIPT ERROR: Invalid access to property or key 'id' on a base object of type 'Dictionary'.\r",
+      "SCRIPT ERROR: Out of bounds get index '0' (on base: 'Array')\r"
+    ],
+    "summary": [],
+    "stdout": "D:\\geteco\\game\\tmp\\test_services-batch-1.stdout.log",
+    "stderr": "D:\\geteco\\game\\tmp\\test_services-batch-1.stderr.log"
+  },
+  {
+    "test": "test_services.gd",
+    "building_batch": "0",
+    "exit_code": -1,
+    "script_errors": [
+      "SCRIPT ERROR: Invalid access to property or key 'room_npcs' on a base object of type 'RefCounted (Session)'.\r",
+      "SCRIPT ERROR: Invalid access to property or key 'id' on a base object of type 'Dictionary'.\r",
+      "SCRIPT ERROR: Invalid access to property or key 'room_npcs' on a base object of type 'RefCounted (Session)'.\r",
+      "SCRIPT ERROR: Invalid access to property or key 'id' on a base object of type 'Dictionary'.\r",
+      "SCRIPT ERROR: Out of bounds get index '0' (on base: 'Array')\r"
+    ],
+    "errors": [
+      "SCRIPT ERROR: Invalid access to property or key 'room_npcs' on a base object of type 'RefCounted (Session)'.\r",
+      "SCRIPT ERROR: Invalid access to property or key 'id' on a base object of type 'Dictionary'.\r",
+      "SCRIPT ERROR: Invalid access to property or key 'room_npcs' on a base object of type 'RefCounted (Session)'.\r",
+      "SCRIPT ERROR: Invalid access to property or key 'id' on a base object of type 'Dictionary'.\r",
+      "SCRIPT ERROR: Out of bounds get index '0' (on base: 'Array')\r"
+    ],
+    "summary": [],
+    "stdout": "D:\\geteco\\game\\tmp\\test_services-batch-0.stdout.log",
+    "stderr": "D:\\geteco\\game\\tmp\\test_services-batch-0.stderr.log"
+  },
+  {
+    "test": "test_bridge_approach_terrain.gd",
+    "building_batch": "1",
+    "exit_code": 0,
+    "script_errors": [],
+    "errors": [],
+    "summary": [
+      "BRIDGE_APPROACH_TERRAIN PASS failures=0\r"
+    ],
+    "stdout": "D:\\geteco\\game\\tmp\\test_bridge_approach_terrain-batch-1.stdout.log",
+    "stderr": "D:\\geteco\\game\\tmp\\test_bridge_approach_terrain-batch-1.stderr.log"
+  },
+  {
+    "test": "test_native_driving.gd",
+    "building_batch": "1",
+    "exit_code": 0,
+    "script_errors": [],
+    "errors": [],
+    "summary": [
+      "NATIVE_DRIVING_ENTRY PASS\r"
+    ],
+    "stdout": "D:\\geteco\\game\\tmp\\test_native_driving-batch-1.stdout.log",
+    "stderr": "D:\\geteco\\game\\tmp\\test_native_driving-batch-1.stderr.log"
+  },
+  {
+    "test": "cold/test_admission.gd",
+    "building_batch": "1",
+    "exit_code": 0,
+    "script_errors": [],
+    "errors": [],
+    "summary": [
+      "COLD_ADMISSION checks=11 failures=[]\r"
+    ],
+    "stdout": "D:\\geteco\\game\\tmp\\cold-test_admission-batch-1.stdout.log",
+    "stderr": "D:\\geteco\\game\\tmp\\cold-test_admission-batch-1.stderr.log"
+  },
+  {
+    "test": "urban_detail/test_harbor_building_batch.gd",
+    "building_batch": "1",
+    "exit_code": 0,
+    "script_errors": [],
+    "errors": [],
+    "summary": [
+      "CONTRATO_FUSAO_PREDIOS verificações=5585 falhas=0"
+    ],
+    "stdout": "D:/geteco/game/tmp/test-harbor-building-batch-final.log",
+    "stderr": "D:/geteco/game/tmp/test-harbor-building-batch-final.log",
+    "notes": "O contrato alterna internamente enabled=false/true para comparar a mesma árvore."
+  }
+]

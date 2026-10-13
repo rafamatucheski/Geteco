@@ -16,6 +16,7 @@ const SEWER_NETWORK := preload("res://world/places/sewers/SewerNetwork.gd")
 const V1_PROFILE := preload("res://world/urban_detail/HarborV1BuildingProfile.gd")
 const SKYLINE_BUILDING := preload("res://world/urban_detail/UrbanSkylineBuilding.gd")
 const LOWRISE_BUILDING := preload("res://world/urban_detail/UrbanLowriseBuilding.gd")
+const BUILDING_BATCH := preload("res://world/urban_detail/HarborBuildingBatch.gd")
 const V1_HEIGHT_OVERRIDES := {
 	# HarborEastDistrict assigns these two silhouettes after instantiation.
 	# Keep their different skyline heights when converting 2D source pixels to metres.
@@ -208,6 +209,7 @@ static func finalize_building(building: Node3D, data: Dictionary = {}) -> void:
 	
 	# 3. Clean facade signage (proper name only)
 	_apply_proper_name_to_labels(building, data)
+	BUILDING_BATCH.schedule(building)
 
 # --- Helpers for Reused 3D Models ---
 
