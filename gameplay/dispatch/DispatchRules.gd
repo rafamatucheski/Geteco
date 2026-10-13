@@ -121,6 +121,21 @@ static func archetype_for(service: String) -> String:
 static func stop_radius(serial: int) -> float:
 	return STOP_BASE + float(posmod(serial, 3)) * STOP_STEP
 
+## Preparo antecipado da porta da viatura (DispatchController._warm_approaching_doors, P9).
+## A parada só começa a stop_radius + 10 m com o alvo a pé ou parado há TARGET_STOPPED_SECONDS;
+## esta folga extra dá ~3 s (aproximação, 1,5 s de alvo parado, plano de parada, 0,6 s
+## estacionada) para as ~25-45 chamadas de um veículo antes de a equipe descer.
+const DOOR_WARM_LEAD := 40.0
+## Alvo num carro mais lento que isto pode parar logo: começa a preparar a porta.
+const DOOR_WARM_TARGET_SPEED := 4.0
+
+## A viatura em rota pode parar e desembarcar em breve? Com o alvo fugindo de carro ela só
+## persegue (não desce ninguém), então recortar a porta seria trabalho que quase sempre se perde.
+static func door_warm_near(flat: float, stop_distance: float, in_car: bool, target_speed: float, stop_planned: bool) -> bool:
+	if stop_planned: return true
+	if flat > stop_distance + DOOR_WARM_LEAD: return false
+	return not in_car or target_speed < DOOR_WARM_TARGET_SPEED
+
 static func arrival_radius(service: String) -> float:
 	match service:
 		"police": return STOP_BASE

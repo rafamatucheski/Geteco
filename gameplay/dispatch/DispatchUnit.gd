@@ -52,6 +52,8 @@ var _failed_plans := 0
 var _recall_age := 0.0
 var _tank_weapon: RefCounted
 var _moto_rider_visible := false
+## Calculado a cada tick em rota (DispatchRules.door_warm_near); lido por door_warm_wanted.
+var _door_warm_near := false
 
 # Serviço médico / bombeiros / legista
 var incident_id := 0
@@ -99,6 +101,16 @@ func is_police() -> bool:
 
 func label() -> String:
 	return "%s#%d" % [service, serial if is_police() else incident_id]
+
+## Vale a pena preparar a porta desta viatura agora (P9, só com DispatchController.fast)?
+## Só a polícia usa a porta: DispatchOfficer anima a porta ao descer e ao voltar. Ambulância,
+## bombeiro e rabecão descem o Responder sem animar porta e não são dirigíveis pelo jogador;
+## o recorte deles (~25-45 chamadas de 1-9 ms por veículo) era trabalho perdido.
+## O roubo da viatura não depende disto: Driving prepara a porta do carro ao alcance.
+func door_warm_wanted() -> bool:
+	if not is_police(): return false
+	if state != "enroute": return true
+	return _door_warm_near
 
 # --- Ciclo de vida ----------------------------------------------------------
 
@@ -472,6 +484,7 @@ func _stall_police_enroute(delta: float) -> void:
 	else: target_still = RULES.TARGET_STOPPED_SECONDS
 	var flat := Vector2(vehicle.global_position.x - anchor.x, vehicle.global_position.z - anchor.z).length()
 	var may_stop := (not in_car) or target_still >= RULES.TARGET_STOPPED_SECONDS
+	_door_warm_near = RULES.door_warm_near(flat, stop_distance, in_car, velocity.length(), stop_planner.curve != null)
 	if stop_planner.curve != null or (may_stop and flat <= stop_distance+10.0):
 		driver.hold(driver.pending_recovery())
 		if stop_planner.tick(self,anchor,delta):

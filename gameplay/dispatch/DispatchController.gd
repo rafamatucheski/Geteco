@@ -32,6 +32,12 @@ const SPAWN_CANDIDATES_CHECKED_SERVICE := 8
 const SERVICE_SEARCH_BUDGET := 2
 const MAX_WRECKS := 4
 const DOOR_WARM_BUDGET_USEC := 1000
+## P9 (13/10): o preparo da porta (`warm_doors`) era ~95% de `controller.tick` nos quadros
+## lentos da perseguição (19 de 19 quadros com tick >= 20 ms no editor) e cada veículo custa
+## ~25-45 chamadas sempre acima do orçamento de 1 ms (logs de 12-13/10 e
+## tests/measure/probe_dispatch_door_warm.gd). Ligado, só prepara a porta de quem vai descer
+## por ela (ver DispatchUnit.door_warm_wanted). GETECO_DISPATCH_FAST=0 volta ao de antes.
+static var fast := OS.get_environment("GETECO_DISPATCH_FAST") != "0"
 
 var world: Node3D
 var gameplay: Node3D
@@ -183,6 +189,8 @@ func _warm_approaching_doors() -> void:
 		var unit: RefCounted = units[_door_warm_cursor % units.size()]
 		_door_warm_cursor += 1
 		if unit.finished or unit.wrecked or unit.suspended or unit.crew_remaining <= 0 or unit.state not in ["enroute", "parked"]: continue
+		# Sem o método (dublês de teste), mantém a regra de antes.
+		if fast and unit.has_method("door_warm_wanted") and not unit.door_warm_wanted(): continue
 		var candidate: Variant = unit.vehicle
 		if not is_instance_valid(candidate) or not candidate is CharacterBody3D: continue
 		var car := candidate as CharacterBody3D
