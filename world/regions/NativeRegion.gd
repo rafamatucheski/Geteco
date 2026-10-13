@@ -435,6 +435,11 @@ func _add_road(id: String,points: PackedVector3Array,width: float,surface: Strin
 				record["right_b"] = edges[i].right.lerp(edges[i+1].right,to_weight)
 			_record((a+b)*.5,record)
 func set_focus(point: Vector3, complete_focus_chunk := false) -> void:
+	var focus_began := STALL_WORK.begin()
+	_set_focus(point,complete_focus_chunk)
+	STALL_WORK.finish_slow("stream.%s.set_focus"%region_id,focus_began,2000)
+
+func _set_focus(point: Vector3, complete_focus_chunk: bool) -> void:
 	focus = point
 	if not prepared: return
 	var cell := _cell(point)
@@ -465,7 +470,9 @@ func prepare_collision_at(point: Vector3) -> bool:
 	# still absent.
 	var key := _cell(point)
 	var had_chunk := chunks.has(key)
+	var collision_began := STALL_WORK.begin()
 	_ensure_chunk_surfaces(key)
+	STALL_WORK.finish_slow("stream.%s.prepare_collision"%region_id,collision_began,2000)
 	if not had_chunk and chunks.has(key): _residency_dirty = true
 	return chunks.has(key)
 
@@ -883,7 +890,9 @@ func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
 	while true:
 		match int(job.stage):
 			0:
+				var stage_began := STALL_WORK.begin()
 				_build_surfaces(chunk,rect,key)
+				STALL_WORK.finish_slow("stream.%s.surfaces"%region_id,stage_began,2000)
 				job.stage = 1
 			1:
 				# Vegetação/pedras do terreno: passo próprio, o terreno sozinho já custa 40–95 ms.
@@ -902,7 +911,9 @@ func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
 					# always builds the full cargo and its original collision.
 					if not (job.get("warming", false) and record.kind == "south_port_model" and record.model_kind == "ship_cargo"):
 						var record_began := Time.get_ticks_usec()
+						var record_stall := STALL_WORK.begin()
 						_build_record_cached(chunk,record)
+						STALL_WORK.finish_slow("stream.%s.record.%s"%[region_id,record.get("kind","?")],record_stall,2000)
 						var record_ms := float(Time.get_ticks_usec()-record_began)/1000.0
 						if record_ms >= 8.0:
 							var slow: Array = Engine.get_meta("slow_stream_records",[])
@@ -915,12 +926,17 @@ func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
 				# Só acrescenta/troca material depois que a fonte V1 já montou o chunk.
 				if region_id == "harbor":
 					if not job.has("dressing"): job.dressing = {"step": 0, "region": self, "chunk": chunk, "rect": rect}
-					if not CITY_DRESSING.build_chunk_step(job.dressing):
+					var dressing_began := STALL_WORK.begin()
+					var dressing_more: bool = CITY_DRESSING.build_chunk_step(job.dressing)
+					STALL_WORK.finish_slow("stream.harbor.dressing_step",dressing_began,2000)
+					if not dressing_more:
 						# O continue tambem precisa devolver o controle ao esgotar o orcamento.
 						if Time.get_ticks_usec()-began >= budget_usec: return false
 						continue
 					# Depois de todo o acabamento de chão: abre as rampas do Túnel do canal.
+					var carve_began := STALL_WORK.begin()
 					CANAL_TUNNEL.carve_chunk(chunk,rect)
+					STALL_WORK.finish_slow("stream.harbor.carve_tunnel",carve_began,2000)
 				elif region_id == "mountain":
 					_build_road_surfaces(chunk,rect)
 					_apply_night_lights(chunk)

@@ -20,7 +20,8 @@ const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 ## resto continua no seguinte; o cache de caixas é aquecido antes de o corte começar.
 const FRAME_BUDGET_USEC := 2000
 ## Mínimo por quadro mesmo estourando o orçamento: a primeira troca paga custo de partida a frio.
-const MIN_FADES_PER_FRAME := 16
+## Em jogo a câmera baixa isto: cada troca custou ~6 ms no release (fade_batch de 95 ms com 16).
+var min_fades_per_frame := 16
 
 const MIN_ALPHA := 0.14
 const RESCAN_SECONDS := 0.4
@@ -81,7 +82,7 @@ func _drain_pending(deadline: int) -> void:
 	var began := STALL_WORK.begin()
 	var done := 0
 	for id in _pending.keys():
-		if done >= MIN_FADES_PER_FRAME and Time.get_ticks_usec() >= deadline: break
+		if done >= min_fades_per_frame and Time.get_ticks_usec() >= deadline: break
 		var node: Variant = _pending[id]
 		_pending.erase(id)
 		if is_instance_valid(node) and not _states.has(id): _fade(node)
