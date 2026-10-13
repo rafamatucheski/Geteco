@@ -14,6 +14,13 @@ extends RefCounted
 ## sombra da laje escureceria justamente o tubo que o corte quer mostrar.
 
 const TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+## Entrar no túnel travava 400–950 ms (log 2026-10-12, x 163–315): varrer todos os chunks e trocar
+## centenas de materiais num único quadro. O trabalho agora cabe num orçamento por quadro e o
+## resto continua no seguinte; o cache de caixas é aquecido antes de o corte começar.
+const FRAME_BUDGET_USEC := 2000
+## Mínimo por quadro mesmo estourando o orçamento: a primeira troca paga custo de partida a frio.
+const MIN_FADES_PER_FRAME := 16
 
 const MIN_ALPHA := 0.14
 const RESCAN_SECONDS := 0.4
@@ -31,6 +38,10 @@ var _cache: Dictionary = {} # id do chunk -> {"count": int, "time": float, "item
 var _clock := 0.0
 var _last_scan := -100.0
 var _alpha := 1.0
+## Nós escolhidos pela varredura, ainda esperando a troca de material (id -> nó).
+var _pending: Dictionary = {}
+var _scan_incomplete := false
+var _missing_items := false
 
 ## `chunks`: nós de chunk da região. `to_camera`: direção do foco para a câmera.
 ## `strength`: 0 fora do túnel, 1 no fundo.
@@ -41,17 +52,46 @@ func update(chunks: Array, focus: Vector3, to_camera: Vector3, half_width: float
 		if not _states.is_empty(): release()
 		return
 	_alpha = lerpf(1.0, MIN_ALPHA, strength)
-	if _clock - _last_scan >= RESCAN_SECONDS:
+	var began := STALL_WORK.begin()
+	var deadline := Time.get_ticks_usec() + FRAME_BUDGET_USEC
+	if _scan_incomplete or _clock - _last_scan >= RESCAN_SECONDS:
 		_last_scan = _clock
-		_rescan(chunks, focus, to_camera, half_width)
+		var scan_began := STALL_WORK.begin()
+		_rescan(chunks, focus, to_camera, half_width, deadline)
+		STALL_WORK.finish_slow("tunnel.cutaway.rescan", scan_began, 1500)
+	_drain_pending(deadline)
 	for entry in _copies.values():
 		var copy: StandardMaterial3D = entry.copy
 		var color := copy.albedo_color
 		color.a = float(entry.alpha) * _alpha
 		copy.albedo_color = color
 
+## Esquenta o cache de caixas dos chunks sob a janela do túnel antes de o corte começar.
+func prewarm(chunks: Array) -> void:
+	var began := STALL_WORK.begin()
+	var deadline := Time.get_ticks_usec() + FRAME_BUDGET_USEC
+	for chunk in chunks:
+		if Time.get_ticks_usec() >= deadline: break
+		if is_instance_valid(chunk): _items(chunk, deadline)
+	STALL_WORK.finish_slow("tunnel.cutaway.prewarm", began, 1500)
+
+## Aplica as trocas de material pendentes dentro do orçamento do quadro.
+func _drain_pending(deadline: int) -> void:
+	if _pending.is_empty(): return
+	var began := STALL_WORK.begin()
+	var done := 0
+	for id in _pending.keys():
+		if done >= MIN_FADES_PER_FRAME and Time.get_ticks_usec() >= deadline: break
+		var node: Variant = _pending[id]
+		_pending.erase(id)
+		if is_instance_valid(node) and not _states.has(id): _fade(node)
+		done += 1
+	STALL_WORK.finish_slow("tunnel.cutaway.fade_batch", began, 1500)
+
 ## Devolve todos os nós ao estado original.
 func release() -> void:
+	_pending.clear()
+	_scan_incomplete = false
 	for id in _states.keys():
 		_restore(id)
 	_states.clear()
@@ -62,7 +102,7 @@ func release() -> void:
 func faded_count() -> int:
 	return _states.size()
 
-func _rescan(chunks: Array, focus: Vector3, to_camera: Vector3, half_width: float) -> void:
+func _rescan(chunks: Array, focus: Vector3, to_camera: Vector3, half_width: float, deadline: int) -> void:
 	var direction := to_camera.normalized() if to_camera.length_squared() > 0.0001 else Vector3(0, 0.94, 0.34)
 	if direction.y < 0.2: direction = Vector3(direction.x, 0.2, direction.z).normalized()
 	var base := AABB(Vector3(focus.x - half_width, -8.0, TUNNEL.outer_north() - 0.5), Vector3(half_width * 2.0, 8.0, TUNNEL.outer_south() - TUNNEL.outer_north() + 1.0))
@@ -76,9 +116,10 @@ func _rescan(chunks: Array, focus: Vector3, to_camera: Vector3, half_width: floa
 	var closed := Rect2(TUNNEL.W_PORTAL, TUNNEL.outer_north(), TUNNEL.E_PORTAL - TUNNEL.W_PORTAL, TUNNEL.outer_south() - TUNNEL.outer_north()).grow(-0.05)
 	var window := Rect2(base.position.x, base.position.z, base.size.x, base.size.z)
 	var wanted := {}
+	_missing_items = false
 	for chunk in chunks:
 		if not is_instance_valid(chunk): continue
-		for item in _items(chunk):
+		for item in _items(chunk, deadline):
 			if not is_instance_valid(item.node): continue
 			var node: GeometryInstance3D = item.node
 			if not node.is_visible_in_tree(): continue
@@ -95,12 +136,18 @@ func _rescan(chunks: Array, focus: Vector3, to_camera: Vector3, half_width: floa
 						picked = true
 						break
 			if picked: wanted[node.get_instance_id()] = node
-	for id in _states.keys():
-		if not wanted.has(id):
-			_restore(id)
-			_states.erase(id)
+	# Chunk ainda sem cache e sem orçamento: o resultado é parcial, então nada é devolvido
+	# agora (restauraria nós de chunks não varridos) e a varredura repete no próximo quadro.
+	_scan_incomplete = _missing_items
+	if not _missing_items:
+		for id in _states.keys():
+			if not wanted.has(id):
+				_restore(id)
+				_states.erase(id)
+		for id in _pending.keys():
+			if not wanted.has(id): _pending.erase(id)
 	for id in wanted:
-		if not _states.has(id): _fade(wanted[id])
+		if not _states.has(id): _pending[id] = wanted[id]
 
 func _over_cover(box: AABB, closed: Rect2, window: Rect2) -> bool:
 	var footprint := Rect2(box.position.x, box.position.z, box.size.x, box.size.z)
@@ -108,12 +155,18 @@ func _over_cover(box: AABB, closed: Rect2, window: Rect2) -> bool:
 
 ## Nós visuais do chunk com a caixa no mundo, recalculados quando o chunk ganha filhos
 ## (o chunk é montado em fatias) ou a cada `CACHE_SECONDS`.
-func _items(chunk: Node3D) -> Array:
+func _items(chunk: Node3D, deadline: int = 0) -> Array:
 	var id := chunk.get_instance_id()
 	var count := chunk.get_child_count()
 	var cached: Variant = _cache.get(id)
 	if cached is Dictionary and int(cached.count) == count and _clock - float(cached.time) < CACHE_SECONDS:
 		return cached.items
+	# Sem orçamento: reaproveita a lista velha (caixas de geometria estática); sem lista, pula.
+	if deadline > 0 and Time.get_ticks_usec() >= deadline:
+		if cached is Dictionary: return cached.items
+		_missing_items = true
+		return []
+	var began := STALL_WORK.begin()
 	var items: Array = []
 	for found in chunk.find_children("*", "GeometryInstance3D", true, false):
 		var node := found as GeometryInstance3D
@@ -121,6 +174,7 @@ func _items(chunk: Node3D) -> Array:
 		var parent := node.get_parent()
 		items.append({"node": node, "box": node.global_transform * node.get_aabb(), "name": String(node.name), "tunnel": parent != null and parent.is_in_group("canal_tunnel")})
 	_cache[id] = {"count": count, "time": _clock, "items": items}
+	STALL_WORK.finish_slow("tunnel.cutaway.items", began, 1500)
 	return items
 
 func _fade(node: GeometryInstance3D) -> bool:
