@@ -608,14 +608,22 @@ const CACHED_RECORDS := ["mountain_village","mountain_zoo","sawmill_yard","harbo
 ## A carga do Santa Mare custava 590 ms num quadro ao chegar perto (release, 2026-10-13). Montada uma vez
 ## no pré-aquecimento e reaproveitada como os registros acima.
 const CACHED_PORT_MODELS := ["ship_cargo"]
+## Prédios que custaram 200-280 ms num quadro no release de 13/10 (log com id do registro).
+const CACHED_BUILDING_IDS := ["NorthFireStation","BridgeCourtWest"]
 
 func _is_cached_record(record: Dictionary) -> bool:
 	if str(record.kind) in CACHED_RECORDS: return true
+	if str(record.kind) == "building" and record.get("data") is Dictionary:
+		return str(record.data.get("id","")) in CACHED_BUILDING_IDS
 	return str(record.kind) == "south_port_model" and str(record.get("model_kind","")) in CACHED_PORT_MODELS
 var _record_cache: Dictionary = {}
 
 func _record_cache_key(record: Dictionary) -> String:
 	var key := "%s|%s|%s"%[region_id,str(record.kind),str(record.get("position",Vector3.ZERO))]
+	# Prédios guardam id e posição em `data`: sem isto todos caíam na chave (0, 0, 0) e um reaproveitaria
+	# os nós de outro.
+	if record.get("data") is Dictionary:
+		key += "|%s|%s"%[str(record.data.get("id","")),str(record.data.get("position",""))]
 	var pieces: Array = [record.get("editor_piece_only", []), record.get("editor_piece_exclude", []), record.get("editor_piece_ids", [])]
 	if pieces.any(func(ids): return not ids.is_empty()):
 		key += "|pieces=" + JSON.stringify(pieces).sha256_text()
