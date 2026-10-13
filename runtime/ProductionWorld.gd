@@ -389,6 +389,14 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 		else: region.prewarm()
 	elif is_instance_valid(region):
 		await preload("res://runtime/RetainedRegionPreparation.gd").run(region)
+	# Vizinhas já montadas (começar na serra monta o porto junto) não passam pelo laço das distantes
+	# abaixo: sem isto o porto nunca era preparado e a carga do navio, os prédios e o túnel pesavam
+	# ao vivo (release de 2026-10-13, começo na serra).
+	for neighbour_id in regions.keys():
+		var neighbour: Variant = regions[neighbour_id]
+		if neighbour == region or not is_instance_valid(neighbour) or neighbour_id == "desert" or _eager_preparation_for_benchmark(): continue
+		await preload("res://runtime/RetainedRegionPreparation.gd").run(neighbour)
+		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	_trace_cost("startup:resident_prewarm",phase_traced)
 	background_preparation = preload("res://runtime/BackgroundRegionPreparation.gd").new()
 	background_preparation.controller = self
