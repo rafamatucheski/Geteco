@@ -191,6 +191,14 @@ func _ready() -> void:
 		visual.add_child(model)
 	last_position = global_position
 
+## A apresentação consulta o dono do controle sem alterar o LOD da física existente.
+func pedestrian_pose_requires_full_update() -> bool:
+	return is_player or dead or input_locked or controlled_automatically \
+		or not is_nan(combat_facing) or combat_clip != "" or not combat_weapon_pose.is_empty() \
+		or (_reaction_tween != null and _reaction_tween.is_running()) \
+		or has_meta("workplace_threatened") or has_meta("street_pose_owned") \
+		or has_meta("street_down") or has_meta("street_flying")
+
 func _physics_process(delta: float) -> void:
 	var began := STALL_WORK.begin()
 	_stall_physics_tick(delta)

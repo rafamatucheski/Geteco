@@ -17,6 +17,9 @@ static var correct_hand_reach := true
 static var palm_grips := true
 ## Interruptor A/B para o mesmo esqueleto e pose, sem reduzir frequência ou geometria.
 static var optimize_pose_chain := true
+## Contagem optativa para a integração; não coleta FPS nem tempo de quadro.
+static var count_sync_calls := false
+static var sync_calls := 0
 const SHADER := preload("res://assets/civilians/civilian_meshy.gdshader")
 const ACCESSORIES := preload("res://assets/civilians/MeshyAccessories.gd")
 ## Topo do cabelo do kit acima da origem da cabeça: a peça é alinhada pelo topo do crânio do corpo importado.
@@ -67,13 +70,29 @@ var _hand_profile: Array = []
 var _has_palms := false
 var _grip_shapes := PackedInt32Array()
 var _grip_values := Vector2.ZERO
+var _physical_simulators: Array[PhysicalBoneSimulator3D] = []
 
 ## Nó separado: o pai pára de chamar `_process` quando o ator morre e a queda escreve nas juntas depois disso.
 class PoseDriver extends Node:
 	var rig: RefCounted
 	var model: Node3D
+	var pending := 0.0
 	func _process(delta: float) -> void:
-		if is_instance_valid(model) and model.is_visible_in_tree(): rig.sync(delta)
+		if not is_instance_valid(model) or not model.is_visible_in_tree():
+			pending = 0.0
+			return
+		if not model.pose_lod_enabled:
+			pending = 0.0
+			rig.sync(delta)
+			return
+		# Uma simulação óssea explícita é dona do esqueleto; a pose procedural não a sobrescreve.
+		if rig.update_physical_simulators():
+			pending = 0.0
+			return
+		pending = minf(pending + delta, 0.25)
+		if not model.should_sync_pose(): return
+		rig.sync(pending)
+		pending = 0.0
 
 # --- Construção ---------------------------------------------------------------
 
@@ -117,6 +136,9 @@ func build(model: Node3D, source_path: String, tint := {}) -> void:
 	var hip_mid := (_rest_origin(_bone("RightUpLeg")) + _rest_origin(_bone("LeftUpLeg"))) * 0.5
 	glb_root.position = Vector3(-hip_mid.x * _scale, 0.0, -hip_mid.z * _scale)
 	model.add_child(glb_root)
+	for simulator in glb_root.find_children("*", "PhysicalBoneSimulator3D", true, false):
+		_physical_simulators.append(simulator as PhysicalBoneSimulator3D)
+	if model.pose_lod_enabled: update_physical_simulators()
 	model.skeleton = skeleton
 	model.mesh_node = mesh_node
 
@@ -310,7 +332,17 @@ func palm_position(side: int) -> Vector3:
 	var offset: Vector3 = _hand_sources[side].transposed() * _model.palm_offsets[side] / _scale
 	return skeleton.to_global(skeleton.get_bone_global_pose(_hand_bones[side]) * offset)
 
+## O importador instala um modificador ativo mesmo sem ossos físicos. Só uma simulação real precisa dele.
+func update_physical_simulators() -> bool:
+	var simulating := false
+	for simulator in _physical_simulators:
+		var running := simulator.is_simulating_physics()
+		if simulator.active != running: simulator.active = running
+		simulating = simulating or running
+	return simulating
+
 func sync(delta := 1.0 / 60.0) -> void:
+	if count_sync_calls: sync_calls += 1
 	if skeleton == null: return
 	var changed := false
 	if _has_palms:

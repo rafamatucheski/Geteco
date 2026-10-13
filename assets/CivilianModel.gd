@@ -14,6 +14,10 @@ extends "res://assets/CivilianBase.gd"
 ## qualquer pai que o mova.
 const KIT := preload("res://assets/civilians/CivilianMeshKit.gd")
 const MESHY_RIG := preload("res://assets/civilians/MeshyBodyRig.gd")
+## Desligado restaura a cadência anterior, inclusive o sync independente da pose.
+static var pose_lod_enabled := OS.get_environment("GETECO_PED_POSE_LOD") != "0"
+const POSE_LOD_DISTANCE := 30.0
+const POSE_LOD_STRIDE := 3
 
 var appearance_locked := false
 var motorcycle_helmet_color := Color.TRANSPARENT
@@ -86,6 +90,9 @@ var _look_timer := 0.0
 var _talk_w := 0.0
 var _carry_w := 0.0
 var _owner_actor: Node
+var _pose_lod_frame := -1
+var _pose_lod_due := true
+var _pose_lod_interval := 1
 # Reação ao tiro: mola amortecida no tronco (x = inclinação frente/trás,
 # y = lateral). Impactos de rajada somam na velocidade em vez de reiniciar;
 # o giro rígido do corpo inteiro pelos pés, reiniciado a cada acerto, fazia o
@@ -346,6 +353,11 @@ func _process(delta: float) -> void:
 	_step_hit(delta)
 	_pending += delta
 	_frame += 1
+	if pose_lod_enabled:
+		if not should_sync_pose(): return
+		_pose(_pending)
+		_pending = 0.0
+		return
 	# Durante a reação a pose é todo quadro: pular quadros no LOD serrilhava a mola.
 	var reacting := _hit != Vector2.ZERO
 	var interval := _update_interval() if lod_enabled and not reacting else 1
@@ -367,8 +379,55 @@ func _measure(delta: float) -> void:
 	else: _travel += distance
 	_speed = lerpf(_speed, distance / maxf(delta, 0.0001), 1.0 - exp(-8.0 * delta))
 
-## Pedestre fora da tela ou pequeno na tela atualiza a pose menos vezes; a fase
-## continua acumulando distância, então ele retoma no passo certo.
+## Pose procedural e esqueleto importado usam a mesma decisão no mesmo quadro.
+## A distância percorrida continua sendo acumulada fora da tela: voltar não desacelera a passada.
+func should_sync_pose() -> bool:
+	if not pose_lod_enabled: return true
+	var frame := Engine.get_process_frames()
+	if _pose_lod_frame == frame: return _pose_lod_due
+	_pose_lod_frame = frame
+	var interval := _pose_update_interval()
+	# Ao reaparecer ou sair do LOD, atualiza imediatamente a pose que estava oculta.
+	_pose_lod_due = interval == 1 or (interval > 0 and (_pose_lod_interval == 0 \
+		or (frame + _stagger) % interval == 0))
+	_pose_lod_interval = interval
+	return _pose_lod_due
+
+func _pose_requires_full_update() -> bool:
+	if not lod_enabled or activity == "talk" or hand_provider.is_valid(): return true
+	if hand_targets[0] is Vector3 or hand_targets[1] is Vector3: return true
+	if _hit != Vector2.ZERO or _hit_target != Vector2.ZERO or _hit_velocity != Vector2.ZERO: return true
+	if not is_instance_valid(_owner_actor): return false
+	if _owner_actor.has_method("pedestrian_pose_requires_full_update"):
+		return _owner_actor.pedestrian_pose_requires_full_update()
+	# Corpos de rotina/polícia podem ter outros donos; a queda escreve nas juntas com _process parado.
+	return _owner_actor.get("is_player") == true or _owner_actor.get("dead") == true \
+		or _owner_actor.get("controlled_automatically") == true \
+		or _owner_actor.has_meta("workplace_threatened") or _owner_actor.has_meta("street_pose_owned") \
+		or _owner_actor.has_meta("street_down") or _owner_actor.has_meta("street_flying")
+
+func _pose_update_interval() -> int:
+	if _pose_requires_full_update() or not is_inside_tree(): return 1
+	var view_camera := get_viewport().get_camera_3d()
+	if view_camera == null: return 1
+	if not _pose_in_view(view_camera): return 0
+	var focus := view_camera.global_position
+	# A câmera de jogo fica a ~36 m do chão: medir dela colocaria até o vizinho de Dante em LOD.
+	if &"target" in view_camera and is_instance_valid(view_camera.get("target")):
+		var target := view_camera.get("target") as Node3D
+		if target != null: focus = target.global_position
+	return 1 if focus.distance_squared_to(global_position) <= POSE_LOD_DISTANCE * POSE_LOD_DISTANCE else POSE_LOD_STRIDE
+
+func _pose_in_view(view_camera: Camera3D) -> bool:
+	var center := global_position + Vector3.UP
+	if view_camera.is_position_in_frustum(center): return true
+	# O centro pode sair antes da cabeça/pés na borda. Só congela quando o corpo inteiro saiu.
+	if view_camera.is_position_in_frustum(global_position + Vector3.UP * 0.1): return true
+	if view_camera.is_position_in_frustum(global_position + Vector3.UP * 1.9): return true
+	var side := view_camera.global_basis.x * 0.4
+	return view_camera.is_position_in_frustum(center - side) or view_camera.is_position_in_frustum(center + side)
+
+## Cadência anterior, preservada integralmente quando GETECO_PED_POSE_LOD=0.
 func _update_interval() -> int:
 	if not is_inside_tree(): return 1
 	var camera := get_viewport().get_camera_3d()
