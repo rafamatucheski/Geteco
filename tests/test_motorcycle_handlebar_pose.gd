@@ -16,6 +16,10 @@ func grips_from_model(bike) -> Dictionary:
 	var grips := {}
 	for part in bike.visual.find_children("*", "MeshInstance3D", true, false):
 		if part.get_meta("wheel_spins", true) != false: continue
+		# A moto agrupada (RedesignedFleet) guarda a cor em vértices; a manopla vem marcada pelo bake.
+		if part.has_meta("motorcycle_grip"):
+			grips[str(part.get_meta("motorcycle_grip"))] = part
+			continue
 		var material: Material = part.material_override if part.material_override else part.mesh.surface_get_material(0)
 		if not material is StandardMaterial3D or material.albedo_color.to_html(false) != "161b20": continue
 		var at: Vector3 = bike.to_local(part.to_global(part.mesh.get_aabb().get_center()))

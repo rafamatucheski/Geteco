@@ -71,6 +71,10 @@ var _seat_from_pose: Array = []
 var _seat_from_pelvis := Vector3.INF
 var _seat_from_scale := Vector3.ONE
 var _seat_blend := 1.0
+## Moto: o corpo termina a entrada (e começa a saída) já na pose de guidão que o Driving mantém
+## montado. Antes ele sumia no fim do passo, ~30 cm abaixo e de mãos soltas, e reaparecia
+## montado: o salto lia como teletransporte (relato de 13/10).
+var _motorcycle := false
 const BODY_SECONDS := {"car": 1.45, "tall": 1.7, "truck": 2.1}
 const CLOSE_SECONDS := .28
 ## Do osso da cabeça ao topo do cabelo (medido no Dante: o osso fica na base do crânio).
@@ -153,7 +157,7 @@ func begin_exit(owner_world: Node, car: CharacterBody3D, pedestrian: CharacterBo
 	active = true
 	phase = "open"
 	actor.global_position = _seat
-	if not _seated_driver: actor.hide()
+	if not _seated_driver and not _motorcycle: actor.hide()
 	_open_door()
 	_motion = create_tween().set_trans(Tween.TRANS_LINEAR if not _layout.is_empty() else Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	_motion.tween_property(self, "progress", 0.0, duration - CLOSE_SECONDS if not _layout.is_empty() else duration)
@@ -215,6 +219,7 @@ func _process(delta: float) -> void:
 ## pequeno parecia escalar a porta, e no ônibus/caminhão entrava pelo meio da carroceria.
 func _configure_kind() -> void:
 	_kind = str(vehicle.boarding_class()) if vehicle.has_method("boarding_class") else "car"
+	_motorcycle = str(vehicle.get("archetype")).begins_with("bike_") and vehicle.has_method("motorcycle_handholds")
 	_step = float(vehicle.boarding_step_height()) if vehicle.has_method("boarding_step_height") else 0.0
 	match _kind:
 		"open": duration = 1.05
@@ -327,7 +332,8 @@ func _apply_body() -> void:
 	if not is_instance_valid(actor) or not is_instance_valid(vehicle): return
 	if phase == "close":
 		# Sentado ele continua no banco enquanto a porta fecha (VehicleInterior assenta o corpo).
-		if not _seated_driver: actor.hide()
+		if _motorcycle: _hold_mounted()
+		elif not _seated_driver: actor.hide()
 		return
 	if phase == "close_outside":
 		actor.global_position = _landing
@@ -476,9 +482,36 @@ func _apply_open(t: float) -> float:
 	actor.global_position = _door.lerp(_seat, k)
 	_pose_idle()
 	_yaw = lerp_angle(yaws[0], yaws[1], smoothstep(.22, .5, t))
-	_drop = -.3 * smoothstep(.5, .85, t)
+	# A moto não abaixa o visual: o banco dela (driver_seat_anchor) já põe o quadril na sela.
+	_drop = 0.0 if _motorcycle else -.3 * smoothstep(.5, .85, t)
+	if _motorcycle:
+		# A pose montada lê manoplas no espaço do visual; aplica antes o giro/altura deste quadro.
+		actor.visual.position = _visual_position + Vector3.UP * _drop
+		actor.visual.rotation.y = _yaw
 	actor.pose_vehicle(smoothstep(.50, .85, t), sin(smoothstep(.22, .65, t) * PI), side, smoothstep(.22, .36, t))
+	if _motorcycle:
+		_blend_mounted(smoothstep(.68, .92, t))
+		return 2.0
 	return .92
+
+## Mistura a pose do passo com a pose de guidão (a mesma de Driving._update_mounted_player).
+func _blend_mounted(weight: float) -> void:
+	if weight <= 0.0: return
+	var holds: Dictionary = vehicle.motorcycle_handholds()
+	if not (holds.has("Left") and holds.has("Right")): return
+	var stepping: Array = actor._capture_pose()
+	actor.pose_vehicle(1.0, 0.0, -1, 1.0, holds)
+	if weight >= 1.0: return
+	actor._apply_blend(stepping, actor._capture_pose(), weight)
+	actor._set_combat_grips(weight > .5, weight > .5)
+
+## Enquanto a apresentação fecha, o corpo já fica como o Driving o deixará montado.
+func _hold_mounted() -> void:
+	actor.global_position = vehicle.driver_seat_anchor()
+	actor.visual.position = _visual_position
+	actor.visual.global_basis = vehicle.visual.global_basis.orthonormalized()
+	actor.pose_vehicle(1.0, 0.0, -1, 1.0, vehicle.motorcycle_handholds())
+	actor.show()
 
 # --- Embarque por porta -------------------------------------------------------------
 # A folha aberta ocupa um arco em volta da dobradiça. O corpo espera fora dele (atrás do
@@ -749,12 +782,16 @@ func _pose_idle() -> void:
 func _begin_close_entry() -> void:
 	if not active or exiting: return
 	phase = "close"
-	if not _seated_driver: actor.hide()
+	if _motorcycle: _hold_mounted()
+	elif not _seated_driver: actor.hide()
 	vehicle.animate_driver_door(side, false, .28)
 
 func _begin_close_exit() -> void:
 	if not active: return
 	phase = "close_outside"
+	# Na moto o Driving alinha o visual ao rumo da moto antes da saída; restaurar esse giro aqui
+	# virava o corpo 90° num quadro, de frente para a lateral da moto para o rumo dela.
+	if _motorcycle: _visual_yaw = actor.visual.rotation.y
 	_restore_actor(_landing)
 	if _inside_swing(_landing, .30):
 		# Pouso alternativo (o ponto de espera estava bloqueado) dentro do arco: a porta espera

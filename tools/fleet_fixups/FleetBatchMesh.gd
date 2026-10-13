@@ -91,12 +91,14 @@ static func bake(source: Node3D, budget_ratio: float=.25, archetype: String="") 
 		if part.mesh==null: continue
 		if not part.visible and not part.has_meta("batch_keep") and part.name not in ["VaultDoorLeft","VaultDoorRight","VaultCargo"]: continue
 		var group := "Body"
-		if part.has_meta("wheel_center"):
+		# Grupo explícito vence o conjunto da roda: as manoplas da moto ficam no pivô de
+		# direção (o wheel_center é copiado abaixo), mas precisam continuar achadas por metadado.
+		if part.has_meta("batch_group"):
+			group=str(part.get_meta("batch_group"))
+		elif part.has_meta("wheel_center"):
 			group="Wheel_"+str(part.get_meta("wheel_center"))+"_"+str(part.get_meta("wheel_spins",true))
 		elif part.has_meta("batch_keep") or part.name in ["VaultDoorLeft","VaultDoorRight","VaultCargo"]:
 			group=str(part.name)
-		elif part.has_meta("batch_group"):
-			group=str(part.get_meta("batch_group"))
 		elif not door.is_empty():
 			# DoorBuilder transfers these complete objects to the leaf. Batching
 			# them into the hull would leave their top/bottom faces on the body.
@@ -112,6 +114,8 @@ static func bake(source: Node3D, budget_ratio: float=.25, archetype: String="") 
 			data.meta["wheel_spins"]=part.get_meta("wheel_spins",true)
 		if group==str(part.name):
 			for meta in part.get_meta_list(): data.meta[meta]=part.get_meta(meta)
+		var extra: Dictionary=part.get_meta("batch_group_meta",{})
+		for meta in extra: data.meta[meta]=extra[meta]
 		var ratio: float=float(part.get_meta("batch_ratio",budget_ratio))
 		var cache_key := str(part.mesh.get_instance_id())+":"+str(ratio)
 		if not mesh_cache.has(cache_key): mesh_cache[cache_key]=reduced_mesh(part.mesh,ratio)

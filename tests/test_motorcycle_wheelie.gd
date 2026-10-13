@@ -46,6 +46,10 @@ func run() -> void:
 	world.player.is_player = true
 	world.add_child(world.player)
 	world.player.set_physics_process(false)
+	# Montado, o Driving zera as camadas de colisão do piloto. Sem isso o corpo largado onde a moto
+	# anterior empinou (~45 m à frente) parava a moto seguinte a 27 m/s no meio da reta.
+	world.player.collision_layer = 0
+	world.player.collision_mask = 0
 	var driving := DRIVING.new()
 	driving.world = world
 	for id in ["bike_urban","bike_sport","bike_cruiser"]:

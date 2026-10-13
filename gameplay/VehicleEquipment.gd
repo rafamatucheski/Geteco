@@ -250,8 +250,13 @@ func _bind_lens(part: MeshInstance3D, surface: int, materials: Dictionary, mount
 
 func _projector(mount: Vector3, energy: float, angle: float) -> SpotLight3D:
 	var light := SpotLight3D.new()
-	light.position = mount + Vector3(0, 0, -.06)
-	light.rotation.x = deg_to_rad(-4)
+	# Na moto a carroceria apresentada empina (Vehicle._tick_motorcycle_wheelie) e tomba com
+	# amassados; filho do CharacterBody3D, o projetor ficava parado no ar à frente da lente
+	# (13/10: "farol voando"). Pendurado no visual ele acompanha a lente. Carros seguem no corpo.
+	# `mount` sai da lente já na pose atual do visual, então a conversão usa o transform atual.
+	var on_visual: bool = car.archetype.begins_with("bike_") and is_instance_valid(car.visual) and car.visual.get_parent() == car
+	var placement := Transform3D(Basis(Vector3.RIGHT, deg_to_rad(-4)), mount + Vector3(0, 0, -.06))
+	light.transform = car.visual.transform.affine_inverse() * placement if on_visual else placement
 	light.light_color = profile.color
 	light.light_energy = energy
 	light.spot_range = float(profile.range)
@@ -261,7 +266,7 @@ func _projector(mount: Vector3, energy: float, angle: float) -> SpotLight3D:
 	light.distance_fade_begin = 35.0
 	light.distance_fade_length = 15.0
 	light.hide()
-	car.add_child(light)
+	(car.visual if on_visual else car).add_child(light)
 	return light
 
 func _ground_pool(front: Vector3) -> MeshInstance3D:

@@ -547,11 +547,23 @@ func _tick_motorcycle_wheelie(delta: float) -> void:
 
 func _bind_motorcycle_rider() -> void:
 	if not archetype.begins_with("bike_"): return
+	_motorcycle_seat = visual.get_meta("motorcycle_seat", _motorcycle_seat)
 	# Prepared V1 bikes bake the pilot into sibling meshes. Separate only the
 	# authored pilot palette/accessories once, before paint and wheel reparenting.
 	for child in visual.get_children():
 		if not child is MeshInstance3D: continue
 		var part := child as MeshInstance3D
+		# A moto agrupada (RedesignedFleet) guarda o piloto numa malha própria marcada pelo bake:
+		# as cores viram cor de vértice e a paleta original não aparece mais no material.
+		if part.get_meta("motorcycle_rider", false):
+			_motorcycle_rider_parts.append(part)
+			part.visible = traffic
+			continue
+		# Idem para as manoplas: uma malha por lado, com o lado em metadado; o wheel_center
+		# que elas trazem as leva ao pivô de direção logo abaixo, em _ready.
+		if part.has_meta("motorcycle_grip"):
+			_motorcycle_grips[str(part.get_meta("motorcycle_grip"))] = part
+			continue
 		var material: Material = part.material_override if part.material_override else part.mesh.surface_get_material(0)
 		if not material is StandardMaterial3D: continue
 		var color: String = material.albedo_color.to_html(false)
