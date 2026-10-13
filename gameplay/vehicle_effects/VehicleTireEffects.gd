@@ -1,6 +1,7 @@
 extends Node
 ## Two bounded rear-wheel emitters and one bounded, surface-aligned mark mesh.
 
+const SKID_BUDGET := preload("res://gameplay/vehicle_effects/SkidmarkBudget.gd")
 const RESOURCES := preload("res://gameplay/vehicle_effects/VehicleEffectResources.gd")
 const SURFACE := preload("res://gameplay/vehicle_effects/VehicleSurfaceProbe.gd")
 const ENGINE_PROFILE := preload("res://audio/VehicleEngineProfile.gd")
@@ -64,6 +65,7 @@ func _process(_delta: float) -> void:
 		_stop_emitters()
 
 func _exit_tree() -> void:
+	if SKID_BUDGET.enabled: SKID_BUDGET.release(self)
 	_stop_emitters()
 	if is_instance_valid(skid_audio): skid_audio.stop()
 	geometry.clear_surfaces()
@@ -315,6 +317,9 @@ func _append_mark(side: int, contact: Dictionary, kind: String, rut := false) ->
 	var width := lerpf(.10,.22,heft) if rut else .075
 	marks.append({"a":previous.point,"b":contact.point,"na":previous.normal,"nb":contact.normal,"kind":kind,
 		"born":Time.get_ticks_msec(),"life":RUT_LIFETIME_MSEC if rut else MARK_LIFETIME_MSEC,"w":width,"depth":lerpf(.75,1.35,heft) if rut else 1.0})
+	if SKID_BUDGET.enabled:
+		SKID_BUDGET.append(self, marks.back(), mark_material())
+		return
 	while marks.size() > MAX_MARK_SEGMENTS: marks.pop_front()
 	_start_mark_timer()
 
@@ -363,11 +368,17 @@ func _ensure_mark_mesh() -> void:
 	mark_mesh.global_transform = Transform3D.IDENTITY
 
 func _expire_marks() -> void:
+	if SKID_BUDGET.enabled:
+		SKID_BUDGET.expire()
+		return
 	if marks.is_empty(): return
 	var now := Time.get_ticks_msec()
 	marks = marks.filter(func(mark: Dictionary): return now-int(mark.born)<int(mark.life))
 
 func _redraw_marks() -> void:
+	if SKID_BUDGET.enabled:
+		SKID_BUDGET.redraw()
+		return
 	var began := STALL_WORK.begin()
 	_stall_redraw_marks()
 	STALL_WORK.finish_slow("vehicle_tires.redraw_marks",began,5000,vehicle)
@@ -439,6 +450,7 @@ func _stall_redraw_marks() -> void:
 	STALL_WORK.finish_slow("vehicle_tires.surface_end",upload_began,5000,vehicle)
 
 func clear_all() -> void:
+	if SKID_BUDGET.enabled: SKID_BUDGET.release(self)
 	_stop_emitters()
 	marks.clear()
 	if is_instance_valid(_mark_timer): _mark_timer.stop()
