@@ -798,7 +798,7 @@ func _persistent_vehicle_support() -> Dictionary:
 		# it here would evict the chunk before the ground check can resume it.
 		if not car.is_physics_processing() and not car.has_meta("awaiting_ground") and not car.has_meta("desert_drag_physics") and not car.get_meta("armored_transport",false): continue
 		if _is_ambient_traffic(car) and car != world.driving.car and not car.get_meta("gang_hostile",false): continue
-		var persistent: bool = car == world.driving.car or car.vehicle_id in ["neco_tow_truck","story_tow_vehicle"] or car.get_meta("residence_vehicle",false) or car.get_meta("garage_reward",false) or car.get_meta("port_work_vehicle",false) or car.get_meta("secret_discovery_vehicle",false) or car.get_meta("race_owned",false) or car.has_meta("desert_drag_physics") or car.get_meta("armored_transport",false)
+		var persistent: bool = _is_persistent_vehicle(car)
 		if not persistent:
 			if car.traffic: continue
 			if car.global_position.distance_to(world.player.global_position) > 145:
@@ -817,6 +817,32 @@ func _persistent_vehicle_support() -> Dictionary:
 			# until the request moves on; the hull radius alone does not cover it.
 			support[id].append({"position":car.global_position-car.global_basis.z*(car.half_length+3),"radius":0.0})
 	return support
+
+func _is_persistent_vehicle(car: Node) -> bool:
+	return car == world.driving.car or car.vehicle_id in ["neco_tow_truck","story_tow_vehicle"] or car.get_meta("residence_vehicle",false) or car.get_meta("garage_reward",false) or car.get_meta("port_work_vehicle",false) or car.get_meta("secret_discovery_vehicle",false) or car.get_meta("race_owned",false) or car.has_meta("desert_drag_physics") or car.get_meta("armored_transport",false)
+
+## Rede de segurança para veículos que importam ao jogador. No release de 2026-10-13 a moto salva,
+## restaurada a 200 m na serra, acordou quando o chão apareceu e caiu sem fim (até y≈-1300) quando o
+## chunk saiu da memória; o caminho exato dependia do save e não foi reproduzido. Qualquer persistente
+## que despencar bem abaixo do mundo volta ao último ponto apoiado e espera o chão de novo.
+const FALL_RESCUE_DEPTH := 30.0
+const FALL_RESCUE_BELOW_Y := -60.0
+
+func _rescue_fallen_vehicles() -> void:
+	for car in vehicles:
+		if not is_instance_valid(car) or car.is_queued_for_deletion() or not _is_persistent_vehicle(car): continue
+		# Ponto de espera também conta como apoiado: é onde o veículo deveria ficar.
+		if car.has_meta("awaiting_ground") or (car.is_physics_processing() and car.is_on_floor()):
+			car.set_meta("last_supported_position", car.global_position)
+			continue
+		if not car.is_physics_processing() or not car.has_meta("last_supported_position"): continue
+		var anchor: Vector3 = car.get_meta("last_supported_position")
+		if car.global_position.y > FALL_RESCUE_BELOW_Y or car.global_position.y > anchor.y - FALL_RESCUE_DEPTH: continue
+		if world.driving.occupied and car == world.driving.car: continue
+		car.place(anchor, car.rotation.y)
+		car.set_meta("awaiting_ground", true)
+		car.set_physics_process(false)
+		push_warning("Veículo %s caiu abaixo do mundo; devolvido a %s até o chão carregar." % [car.vehicle_id, anchor])
 
 func _active_dispatch_support() -> Dictionary:
 	var support := {"harbor":[],"mountain":[],"desert":[]}
@@ -892,11 +918,24 @@ func _update_physical_residency(point: Vector3) -> void:
 			elif seam_preload: region_focus = seam_anchor
 		mounted.set_focus(region_focus)
 
+## Folga da divisa porto/serra. Sem ela, parado na ponte em cima da linha (x≈456), o jogador trocou de
+## região 7 vezes em 11 s mexendo menos de 1 m (release de 2026-10-13), e cada troca refaz rotas,
+## tráfego, clima e áudio.
+const LOGICAL_REGION_HYSTERESIS := 4.0
+
 func _update_logical_region(point: Vector3) -> void:
 	if not state.place_id.is_empty(): return
 	var next_region := WORLD_CONNECTION.logical_region(point)
 	if next_region == state.region_id or not regions.has(next_region): return
+	if _inside_logical_hysteresis(point, next_region): return
 	_commit_logical_region(next_region)
+
+## Entre porto e serra a troca só vale quando o ponto continua do outro lado mesmo recuado pela folga.
+func _inside_logical_hysteresis(point: Vector3, next_region: String) -> bool:
+	var pair := [state.region_id, next_region]
+	if not ("harbor" in pair and "mountain" in pair): return false
+	var back := Vector3(-LOGICAL_REGION_HYSTERESIS, 0.0, LOGICAL_REGION_HYSTERESIS) if next_region == "mountain" else Vector3(LOGICAL_REGION_HYSTERESIS, 0.0, -LOGICAL_REGION_HYSTERESIS)
+	return WORLD_CONNECTION.logical_region(point + back) != next_region
 
 func _commit_logical_region(next_region: String) -> void:
 	if next_region == state.region_id or not regions.has(next_region): return
@@ -1105,6 +1144,7 @@ func _process(delta: float) -> void:
 			# an explicit removal without keeping a distant physical body alive.
 			car.set_meta("distance_despawn", true)
 			car.queue_free()
+	_rescue_fallen_vehicles()
 	world.population = world.people.size()
 
 ## Alvo da densidade: cada unidade de despacho em cena tira `DENSITY_PER_UNIT`, e de

@@ -28,6 +28,13 @@ var lockpick_marker: MeshInstance3D
 # interaction state. Bodies, hinges and fade materials remain instance-owned.
 static var _static_parts: Dictionary = {}
 
+## Contêineres agora voltam do cache de registros do NativeRegion sem passar por `build()` de novo:
+## religar ao serviço de saque ao reentrar na árvore aplica o estado atual (aberto, saqueado).
+func _notification(what: int) -> void:
+	if what != NOTIFICATION_ENTER_TREE or lockpick_marker == null: return
+	for service in get_tree().get_nodes_in_group("port_container_service"):
+		service.bind_container(self)
+
 func build(point: Vector3, size: Vector2) -> void:
 	position = point
 	dimensions = size

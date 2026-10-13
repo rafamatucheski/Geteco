@@ -608,13 +608,25 @@ const CACHED_RECORDS := ["mountain_village","mountain_zoo","sawmill_yard","harbo
 ## A carga do Santa Mare custava 590 ms num quadro ao chegar perto (release, 2026-10-13). Montada uma vez
 ## no pré-aquecimento e reaproveitada como os registros acima.
 const CACHED_PORT_MODELS := ["ship_cargo"]
-## Prédios que custaram 200-280 ms num quadro no release de 13/10 (log com id do registro).
-const CACHED_BUILDING_IDS := ["NorthFireStation","BridgeCourtWest"]
+## Medido em 8 sessões de release (2026-10-12/13): tudo que montou em 50 ms ou mais num quadro.
+## Tipos inteiros quando são poucos registros; dos 66 prédios e 131 props só os medidos, para não
+## segurar a cidade inteira na memória nem alongar demais o carregamento.
+## harbor_dressing fica de fora: a grama editável da Cobra (EditableCobraDressing) se refaz fora da
+## árvore quando o nó está guardado e encheu o log com milhares de erros, travando o carregamento.
+const CACHED_KINDS_MEASURED := ["container","salvage","mountain_place"]
+const CACHED_BUILDING_IDS := ["NorthFireStation","BridgeCourtWest","PorchHouse","BridgeQuayHouse","BridgeCourtEast",
+	"NorthbankFront0","NorthbankFront1","NorthFrontage2","NorthFrontage3","new_1790432236_682_2325181222"]
+## harbor_prop medido a 381 ms (posição do registro no chão, x/z).
+const CACHED_PROP_POINTS := [Vector2(391.9375,-247.5)]
 
 func _is_cached_record(record: Dictionary) -> bool:
-	if str(record.kind) in CACHED_RECORDS: return true
-	if str(record.kind) == "building" and record.get("data") is Dictionary:
+	var kind := str(record.kind)
+	if kind in CACHED_RECORDS or kind in CACHED_KINDS_MEASURED: return true
+	if kind == "building" and record.get("data") is Dictionary:
 		return str(record.data.get("id","")) in CACHED_BUILDING_IDS
+	if kind == "harbor_prop" and record.get("position") is Vector3:
+		var at := Vector2(record.position.x, record.position.z)
+		return CACHED_PROP_POINTS.any(func(point: Vector2): return point.distance_to(at) < 0.5)
 	return str(record.kind) == "south_port_model" and str(record.get("model_kind","")) in CACHED_PORT_MODELS
 var _record_cache: Dictionary = {}
 
