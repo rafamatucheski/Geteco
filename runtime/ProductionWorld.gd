@@ -357,6 +357,17 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	preload("res://gameplay/vehicle_effects/VehicleDamage.gd")._scratches(0)
 	preload("res://gameplay/vehicle_effects/VehicleDamage.gd")._dents()
 	preload("res://gameplay/vehicle_effects/VehicleTireEffects.gd").prewarm_skid_audio()
+	# Variante de shader das marcas de pneu (alfa, sem luz, cor de vértice): compilada sob a cortina e
+	# mantida viva pelo material estático, em vez de na primeira derrapagem (163-290 ms no release).
+	var mark_primer := MeshInstance3D.new()
+	mark_primer.name = "TireMarkPrimer"
+	mark_primer.mesh = QuadMesh.new()
+	mark_primer.material_override = preload("res://gameplay/vehicle_effects/VehicleTireEffects.gd").mark_material()
+	mark_primer.position = Vector3(0, -500, 0)
+	world.add_child(mark_primer)
+	await get_tree().process_frame
+	if is_instance_valid(mark_primer): mark_primer.queue_free()
+	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	# Explosion takes and immutable fire presentation were built at detonation.
 	# Keep their bounded resources ready, without spawning a live incident.
 	var combat_audio = preload("res://gameplay/CombatAudio.gd")

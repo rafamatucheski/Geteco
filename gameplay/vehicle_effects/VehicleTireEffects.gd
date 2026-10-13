@@ -335,20 +335,29 @@ func _tick_mark_lifetime() -> void:
 	_redraw_marks()
 	if marks.is_empty(): _mark_timer.stop()
 
+## Material único das marcas, vivo a sessão inteira. Cada carro criava o seu na primeira marca e, quando
+## nenhum tinha marcas, o shader morria junto: a próxima derrapagem recompilava a variante (163-290 ms
+## num quadro no release de 2026-10-13, três vezes em 5 min).
+static var _mark_material: StandardMaterial3D
+
+static func mark_material() -> StandardMaterial3D:
+	if _mark_material == null:
+		_mark_material = StandardMaterial3D.new()
+		_mark_material.albedo_color = Color.WHITE
+		_mark_material.roughness = 1.0
+		_mark_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		_mark_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		_mark_material.vertex_color_use_as_albedo = true
+		_mark_material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return _mark_material
+
 func _ensure_mark_mesh() -> void:
 	if is_instance_valid(mark_mesh): return
 	mark_mesh = MeshInstance3D.new()
 	mark_mesh.name = "SurfaceAlignedTireMarks"
 	mark_mesh.mesh = geometry
 	mark_mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	var material := StandardMaterial3D.new()
-	material.albedo_color = Color.WHITE
-	material.roughness = 1.0
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.vertex_color_use_as_albedo = true
-	material.cull_mode = BaseMaterial3D.CULL_DISABLED
-	mark_mesh.material_override = material
+	mark_mesh.material_override = mark_material()
 	vehicle.add_child(mark_mesh)
 	mark_mesh.top_level = true
 	mark_mesh.global_transform = Transform3D.IDENTITY

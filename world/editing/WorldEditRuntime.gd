@@ -164,5 +164,9 @@ static func build_light(region: Node, chunk: Node3D, record: Dictionary) -> void
 	light.light_energy = float(row.energy)
 	light.omni_attenuation = 1.6
 	light.shadow_enabled = false
+	# No porto o CityLocalLighting acende estes postes só à noite (2026-10-13: 33 deles acesos ao meio-dia).
+	light.add_to_group(&"editor_night_light")
+	light.set_meta("base_energy", light.light_energy)
+	light.set_meta("region_id", str(region.get("region_id")) if region.get("region_id") != null else "")
 	lamp.add_child(light)
 	preload("res://gameplay/street_physics/FragileProps3D.gd").register_node("lamp", lamp, chunk)

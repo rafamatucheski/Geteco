@@ -50,6 +50,8 @@ var _orphan_at := 0
 var _orphan_last := -1
 const ORPHAN_INTERVAL_USEC := 15000000
 const ORPHAN_SAMPLE_LIMIT := 600
+var _lights_at := 0
+const LIGHT_REPORT_INTERVAL_USEC := 10000000
 class PhysicsBeginProbe:
 	extends Node
 	var recorder: Node
@@ -349,9 +351,39 @@ func _orphan_report(now: int) -> void:
 		"sampled":sampled, "groups":rows.slice(0, 20),
 		"scope":"first_sampled_ids_only; group_by_class_script_name_without_trailing_digits"})
 
+## Donos das luzes visíveis: em 13/10, ao meio-dia, entraram +14 OmniLight com novos chunks e a GPU foi de
+## ~3 para 10,8 ms. O inventário só contava a classe; agrupar pelo script mais próximo aponta quem acende.
+func _light_report(now: int) -> void:
+	if now - _lights_at < LIGHT_REPORT_INTERVAL_USEC: return
+	_lights_at = now
+	var groups := {}
+	var total := 0
+	for found in get_tree().root.find_children("*", "Light3D", true, false):
+		var light := found as Light3D
+		if light == null or not light.is_visible_in_tree() or light.light_energy <= 0.001: continue
+		# Viewports com mundo próprio (vitrine da oficina) não iluminam o jogo.
+		if light.get_world_3d() != get_tree().root.world_3d: continue
+		total += 1
+		var owner_name := ""
+		var walk: Node = light
+		while walk != null:
+			if walk.get_script() != null and walk != light:
+				owner_name = String(walk.get_script().resource_path).get_file().get_basename()
+				break
+			walk = walk.get_parent()
+		var key := "%s|%s|%s" % [light.get_class(), owner_name, String(light.name).rstrip("0123456789@")]
+		if not groups.has(key): groups[key] = {"class": light.get_class(), "owner": owner_name, "name": String(light.name).rstrip("0123456789@"), "count": 0, "shadows": 0}
+		groups[key].count += 1
+		if light.shadow_enabled: groups[key].shadows += 1
+	var rows := groups.values()
+	rows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.count > b.count)
+	_send({"type":"light_owners", "engine_usec":now, "visible_lit":total, "groups":rows.slice(0, 16),
+		"scope":"Light3D visíveis com energia > 0, agrupados pelo script dono mais próximo"})
+
 func _flush(now: int) -> void:
 	_perf_window(now)
 	_orphan_report(now)
+	_light_report(now)
 	if _frames == 0 and _totals.is_empty(): return
 	_send({"type":"system_metrics", "start_usec":_window_start, "end_usec":now,
 		"frames":_frames, "systems":_totals, "dropped":_dropped, "timing":"inclusive_do_not_sum"})

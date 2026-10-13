@@ -37,11 +37,22 @@ func refresh() -> void:
 	if controller != null and controller.session != null and is_instance_valid(controller.session.weather):
 		if (controller.state.place_id.is_empty() or controller.session.weather._embedded_building()) and controller.state.region_id == "harbor":
 			night = 1.0-smoothstep(.25,.70,ATMOSPHERE.daylight_at(controller.session.weather.time_of_day))
+	_apply_editor_lights(night)
 	if night <= .01:
 		apply_sources([],Vector3.ZERO,0.0)
 		return
 	var focus := ATMOSPHERE.focus_position(controller)
 	apply_sources(nearby_sources(focus),focus,night)
+
+## Postes colocados no editor de mundo têm luz própria (WorldEditRuntime.build_light), que ficava acesa de
+## dia: 33 OmniLight ao meio-dia no release de 2026-10-13. No porto seguem o mesmo fator de noite da cidade;
+## nas outras regiões continuam como eram.
+func _apply_editor_lights(night: float) -> void:
+	for node in get_tree().get_nodes_in_group(&"editor_night_light"):
+		var light := node as OmniLight3D
+		if light == null or str(light.get_meta("region_id", "")) != "harbor": continue
+		light.light_energy = float(light.get_meta("base_energy", light.light_energy)) * night
+		light.visible = night > .01
 
 func nearby_sources(focus: Vector3) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
