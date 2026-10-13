@@ -300,7 +300,8 @@ func _refresh() -> void:
 		var rows := DATA.effective(base,document.regions.get(area,{}))
 		for id in catalog.get(area,{}).get("context",{}):
 			var base_row: Dictionary = catalog[area].context[id]
-			var row: Dictionary = base_row.duplicate(true)
+			# Cópia profunda só de quem recebe edição do documento (o catálogo tem dezenas de milhares de linhas).
+			var row: Dictionary = base_row.duplicate(document.regions.get(area,{}).has(id) or base_row.get("shape_editable_pending",false))
 			if row.type == "piece":
 				row["shape_editable"] = not row.get("locked",false) and PIECES.is_shape_editable(str(id))
 				if row.shape_editable: row["default_outline"] = _base_outline(base_row)
@@ -665,6 +666,7 @@ func _commit(row: Dictionary) -> void:
 	_checkpoint()
 	if not document.regions.has(region): document.regions[region] = {}
 	document.regions[region][row.id] = row.duplicate(true)
+	if row.get("deleted",false) and is_instance_valid(live_preview): live_preview.hide_deleted(str(row.id))
 	canvas.selected_id = row.id
 	_refresh()
 	_write_draft()

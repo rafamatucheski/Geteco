@@ -36,6 +36,17 @@ var request_started := 0
 var redraw_frames := 0
 var edit_control
 var editor_owner
+## Alcance da prévia: células ao redor do foco (0 = padrão 3×3, -1 = região inteira).
+const REACH_NAMES := ["Perto","Médio","Grande","Mapa inteiro"]
+const REACH_RADIUS := [0,3,6,-1]
+const REACH_VIEW := [55.0,130.0,260.0,700.0]
+var reach := 0
+var reach_menu: OptionButton
+var refresh_count := 0
+var stale := false
+var built_radius := 0
+var built_refresh := 0
+var built_document := {}
 
 func enable_editing(editor) -> void:
 	editor_owner = editor
@@ -62,9 +73,25 @@ func _ready() -> void:
 	button.text = "Focar seleção"
 	button.pressed.connect(func(): focus_requested.emit())
 	bar.add_child(button)
+	reach_menu = OptionButton.new()
+	for label in REACH_NAMES: reach_menu.add_item(label)
+	reach_menu.tooltip_text = "Quanto do mapa a visão 3D carrega. Maiores demoram mais para montar; edições não reconstroem tudo (use Atualizar)."
+	reach_menu.item_selected.connect(func(index):
+		reach = index
+		view_size = REACH_VIEW[index]
+		if editor_owner != null: request(editor_owner.document,Vector2(focus.x,focus.z),built_area if not built_area.is_empty() else editor_owner.region)
+		_pose())
+	bar.add_child(reach_menu)
+	var refresh := Button.new()
+	refresh.text = "Atualizar"
+	refresh.tooltip_text = "Reconstrói a visão 3D com as alterações atuais"
+	refresh.pressed.connect(func():
+		refresh_count += 1
+		if editor_owner != null: request(editor_owner.document,Vector2(focus.x,focus.z),built_area if not built_area.is_empty() else editor_owner.region))
+	bar.add_child(refresh)
 	var reset := Button.new()
 	reset.text = "Recentrar"
-	reset.pressed.connect(func(): yaw = 0; pitch = .88; view_size = 55; _pose())
+	reset.pressed.connect(func(): yaw = 0; pitch = .88; view_size = REACH_VIEW[reach]; _pose())
 	bar.add_child(reset)
 	surface = SubViewportContainer.new()
 	surface.stretch = true
@@ -100,7 +127,7 @@ func _ready() -> void:
 	scene_root.add_child(sun)
 	camera = Camera3D.new()
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-	camera.far = 2000
+	camera.far = 9000
 	scene_root.add_child(camera)
 	camera.make_current()
 	message = Label.new()
@@ -116,8 +143,18 @@ func _ready() -> void:
 	_pose()
 
 func request(document: Dictionary, at: Vector2, area: String) -> void:
-	var next := {"document":document,"focus":[at.x,at.y],"area":area}
+	var next := {"document":document,"focus":[at.x,at.y],"area":area,"radius":REACH_RADIUS[reach],"refresh":refresh_count}
 	if next == desired: return
+	# Alcance grande: o mapa já está na tela. Editar não reconstrói tudo (levaria minutos): a câmera
+	# acompanha a seleção e a prévia fica marcada como desatualizada até "Atualizar".
+	if REACH_RADIUS[reach] != 0 and is_instance_valid(geometry) and applied_revision == revision and area == built_area and REACH_RADIUS[reach] == built_radius and refresh_count == built_refresh and (REACH_RADIUS[reach] < 0 or at.distance_to(built_center) < REACH_RADIUS[reach]*40.0):
+		stale = document != built_document
+		desired = next.duplicate(true)
+		submitted = next.duplicate(true)
+		focus = Vector3(at.x,focus.y,at.y)
+		message.text = "Prévia desatualizada: clique em Atualizar para ver exclusões, cópias e peças novas." if stale else "Atualizada · Direito: girar · Meio: mover · Roda: zoom"
+		_pose()
+		return
 	# Harbor is flat; focus nearby objects immediately within the loaded cells.
 	# Mountain changes also request the terrain height from the builder.
 	if is_instance_valid(geometry) and applied_revision == revision and area == "harbor" and area == built_area and at.distance_to(built_center) < 48 and document == submitted.get("document",{}):
@@ -184,6 +221,10 @@ func _poll() -> void:
 				last_build_ms = int(loading_response.build_ms)
 				built_center = Vector2(focus.x,focus.z)
 				built_area = str(desired.area)
+				built_radius = int(desired.get("radius",0))
+				built_refresh = int(desired.get("refresh",0))
+				built_document = desired.document.duplicate(true)
+				stale = false
 				message.text = "Atualizada · Direito: girar · Meio: mover · Roda: zoom"
 				_pose()
 		elif state == ResourceLoader.THREAD_LOAD_FAILED:
@@ -217,10 +258,18 @@ func _poll() -> void:
 		loading_path = ""
 		message.text = "Não foi possível carregar a visão 3D."
 
+## Em alcance grande a prévia não reconstrói: o que foi excluído some na hora.
+func hide_deleted(id: String) -> void:
+	if REACH_RADIUS[reach] == 0 or edit_control == null or not edit_control.groups.has(id): return
+	for node in edit_control.groups[id]:
+		if is_instance_valid(node): node.visible = false
+	edit_control.rebuild()
+	_render_once()
+
 func _pose() -> void:
 	if camera == null: return
 	camera.size = view_size
-	camera.position = focus+Vector3(sin(yaw)*cos(pitch),sin(pitch),cos(yaw)*cos(pitch))*180
+	camera.position = focus+Vector3(sin(yaw)*cos(pitch),sin(pitch),cos(yaw)*cos(pitch))*maxf(180.0,view_size*1.5)
 	camera.look_at(focus)
 	if edit_control != null: edit_control.queue_redraw()
 	_render_once()
@@ -268,7 +317,7 @@ func _camera_input(event: InputEvent) -> void:
 			if panning and not event.pressed: view_moved.emit(Vector2(focus.x,focus.z))
 			panning = event.pressed
 		elif event.pressed and event.button_index in [MOUSE_BUTTON_WHEEL_UP,MOUSE_BUTTON_WHEEL_DOWN]:
-			view_size = clampf(view_size*(.85 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1/.85),12,100)
+			view_size = clampf(view_size*(.85 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1/.85),12,100 if reach == 0 else 2500)
 			_pose()
 	elif event is InputEventMouseMotion:
 		if orbiting:

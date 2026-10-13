@@ -48,6 +48,8 @@ func build(request: Dictionary) -> void:
 	root.add_child(region)
 	if region.terrain != null: focus.y = region.terrain.surface_height_at(Vector2(focus.x,focus.z))
 	elif area == "desert": focus.y = region._ground_height(Vector2(focus.x,focus.z))
+	var radius := int(request.get("radius",0))
+	if radius != 0 and not await load_radius(region,area,focus,radius): region.free(); return
 	for i in 1800:
 		await process_frame
 		if region.is_streaming_idle(): break
@@ -97,7 +99,45 @@ func build(request: Dictionary) -> void:
 	region.free()
 	await process_frame
 	if packed_error != OK: respond({"revision":last_revision,"error":"Não foi possível preparar a visão 3D."}); return
-	respond({"revision":last_revision,"path":path,"height":focus.y,"build_ms":Time.get_ticks_msec()-started,"error":"","units":units,"area":area})
+	respond({"revision":last_revision,"path":path,"height":focus.y,"build_ms":Time.get_ticks_msec()-started,"error":"","units":units,"area":area,"radius":int(request.get("radius",0))})
+
+## Alcance maior que o padrão: `radius` células ao redor do foco (3×3 é o normal) ou, com -1, a região
+## inteira. Constrói tudo de uma vez e impede o descarregamento; o custo cresce com o número de chunks.
+func load_radius(region: Node3D, area: String, focus: Vector3, radius: int) -> bool:
+	var cell_size := 96.0 if area == "desert" else 64.0
+	var center := Vector2i(floori(focus.x/cell_size),floori(focus.z/cell_size))
+	var low := center-Vector2i.ONE*radius
+	var high := center+Vector2i.ONE*radius
+	if radius < 0:
+		if area == "desert":
+			var bounds: Rect2 = region.LAYOUT.BOUNDS
+			low = Vector2i(floori(bounds.position.x/cell_size),floori(bounds.position.y/cell_size))
+			high = Vector2i(floori(bounds.end.x/cell_size),floori(bounds.end.y/cell_size))
+		else:
+			var first := true
+			for key in region.records:
+				if first: low = key; high = key; first = false
+				else:
+					low = Vector2i(mini(low.x,key.x),mini(low.y,key.y))
+					high = Vector2i(maxi(high.x,key.x),maxi(high.y,key.y))
+			low -= Vector2i.ONE
+			high += Vector2i.ONE
+	region.set("retention_radius",100000)
+	var built := 0
+	for x in range(low.x,high.x+1):
+		for z in range(low.y,high.y+1):
+			var key := Vector2i(x,z)
+			if area == "desert":
+				region._ensure_chunk_surfaces(key)
+				for guard in 4000:
+					if region.build_jobs.is_empty(): break
+					region._run_build_job(region.build_jobs[0],INF)
+			else: region._ensure_chunk(key)
+			built += 1
+			if built%6 == 0:
+				await process_frame
+				if FileAccess.file_exists(folder+"/stop") or not parent_alive(): return false
+	return true
 
 func clean(node: Node, owner_root: Node) -> void:
 	if node.has_meta("world_edit_piece_id"):

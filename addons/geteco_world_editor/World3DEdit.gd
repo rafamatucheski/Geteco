@@ -15,6 +15,10 @@ var candidate := {}
 var transforms := {}
 var axis := ""
 var synchronizing := false
+## Arraste de via na visão 3D: {"original": linha, "index": ponto (-1 = via inteira), "start": Vector3, "candidate": linha}.
+var road_drag := {}
+const ROAD_HANDLE := 11.0
+const ROADISH := ["Harbor Road", "Harbor Lane", "Harbor Stop", "Harbor Crosswalk", "Harbor Tactile", "Road Surface", "Dash"]
 
 func setup(owner_editor, owner_preview) -> void:
 	editor = owner_editor
@@ -74,6 +78,79 @@ func pick(at: Vector2) -> String:
 		if triangle_mesh == null or not triangle_mesh.intersect_ray(inverse*ray,inverse*end-inverse*ray).is_empty(): return hit.item.id
 	return ""
 
+func road_row() -> Dictionary:
+	var row: Dictionary = editor.canvas.objects.get(editor.canvas.selected_id,{})
+	return row if row.get("type","") == "road" else {}
+
+func road_world(point: Variant, row: Dictionary) -> Vector3:
+	return Vector3(float(point[0]),preview.focus.y+.25,float(point[1]))
+
+func road_handle_at(at: Vector2) -> int:
+	var row: Dictionary = road_drag.candidate if not road_drag.is_empty() else road_row()
+	if row.is_empty(): return -1
+	for index in row.points.size():
+		if at.distance_to(preview.camera.unproject_position(road_world(row.points[index],row))) <= ROAD_HANDLE: return index
+	return -1
+
+## A via é um objeto de dados (pontos), não uma malha: acha-se pelo ponto do chão sob o clique.
+func pick_road(at: Vector2) -> String:
+	var point: Variant = plane_point(at,preview.focus.y)
+	if point == null: return ""
+	var best := ""
+	var best_distance := INF
+	for id in editor.canvas.objects:
+		var row: Dictionary = editor.canvas.objects[id]
+		if row.get("type","") != "road" or str(row.get("editor_region","")) != editor.region: continue
+		var reach: float = float(row.width)*.5+float(row.get("sidewalk_width",1.0 if row.get("pathway",false) else 0.0))
+		for index in row.points.size()-1:
+			var closest := Geometry2D.get_closest_point_to_segment(Vector2(point.x,point.z),DATA.point(row.points[index]),DATA.point(row.points[index+1]))
+			var distance := closest.distance_to(Vector2(point.x,point.z))
+			if distance <= reach and distance < best_distance:
+				best_distance = distance
+				best = str(id)
+	return best
+
+func roadish(id: String) -> bool:
+	var label := str(editor.canvas.objects.get(id,{}).get("label",""))
+	for prefix in ROADISH:
+		if label.begins_with(prefix): return true
+	return false
+
+func begin_road(at: Vector2, index: int) -> void:
+	var row := road_row()
+	var point: Variant = plane_point(at,preview.focus.y)
+	if row.is_empty() or point == null: return
+	road_drag = {"original":row.duplicate(true),"candidate":row.duplicate(true),"index":index,"start":point}
+	dragging = false
+	queue_redraw()
+
+func update_road(at: Vector2, snap: bool) -> void:
+	var point: Variant = plane_point(at,preview.focus.y)
+	if point == null: return
+	var next: Dictionary = road_drag.original.duplicate(true)
+	var offset: Vector3 = point-road_drag.start
+	if int(road_drag.index) >= 0:
+		var target := Vector2(float(next.points[road_drag.index][0])+offset.x,float(next.points[road_drag.index][1])+offset.z)
+		if snap: target = target.snapped(Vector2(.5,.5))
+		next.points[road_drag.index] = [target.x,target.y]
+	else:
+		for p in next.points:
+			p[0] = float(p[0])+offset.x
+			p[1] = float(p[1])+offset.z
+	if DATA.validate_entity(next).is_empty(): road_drag.candidate = next
+	queue_redraw()
+
+func finish_road() -> void:
+	if road_drag.is_empty(): return
+	var row: Dictionary = road_drag.candidate
+	var changed: bool = row != road_drag.original
+	road_drag = {}
+	queue_redraw()
+	if changed:
+		synchronizing = true
+		editor._commit(row)
+		synchronizing = false
+
 func plane_point(at: Vector2, height: float) -> Variant:
 	return Plane(Vector3.UP,height).intersects_ray(preview.camera.project_ray_origin(at),preview.camera.project_ray_normal(at))
 
@@ -105,11 +182,28 @@ func input_event(event: InputEvent) -> bool:
 				var point: Variant = plane_point(event.position,preview.focus.y)
 				if point != null: editor._place(editor.canvas.armed,Vector2(point.x,point.z))
 				return true
+			var handle := road_handle_at(event.position)
+			if handle >= 0:
+				begin_road(event.position,handle)
+				return true
 			axis = handle_at(event.position)
 			var id: String = editor.canvas.selected_id if not axis.is_empty() else pick(event.position)
+			if axis.is_empty() and not event.alt_pressed and (id.is_empty() or roadish(id)):
+				var road := pick_road(event.position)
+				if not road.is_empty():
+					# Segundo clique numa via já selecionada arrasta a via inteira; o primeiro só seleciona.
+					var already: bool = road == editor.canvas.selected_id
+					select_id(road)
+					if already: begin_road(event.position,-1)
+					return true
 			select_id(id)
 			begin(event.position)
-		else: finish()
+		else:
+			finish_road()
+			finish()
+		return true
+	if event is InputEventMouseMotion and not road_drag.is_empty():
+		update_road(event.position,event.shift_pressed)
 		return true
 	if event is InputEventMouseMotion and dragging:
 		update_drag(event.position,event.shift_pressed)
@@ -200,6 +294,7 @@ func apply_visual() -> void:
 		if is_instance_valid(node): node.global_transform = change*transforms[node]
 
 func cancel() -> void:
+	road_drag = {}
 	if editor != null: editor.junction_editor.cancel()
 	for node in transforms:
 		if is_instance_valid(node): node.global_transform = transforms[node]
@@ -254,6 +349,14 @@ func _draw() -> void:
 	if editor.junction_editor.enabled:
 		editor.junction_editor.draw_on(self,true)
 		return
+	var road := road_row()
+	if not road.is_empty():
+		var shown: Dictionary = road_drag.candidate if not road_drag.is_empty() else road
+		var line := PackedVector2Array()
+		for p in shown.points: line.append(preview.camera.unproject_position(road_world(p,shown)))
+		if line.size() >= 2: draw_polyline(line,Color(1,.8,.2,.9),3,true)
+		for index in line.size():
+			draw_circle(line[index],7,Color("ffcf65") if index != int(road_drag.get("index",-2)) else Color.WHITE)
 	var id: String = editor.canvas.selected_id
 	var envelope := AABB()
 	var found := false

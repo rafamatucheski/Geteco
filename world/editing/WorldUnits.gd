@@ -10,6 +10,7 @@ extends RefCounted
 ## - chunk: o que o chunk constrói fora de registros (pedras, vegetação, mobiliário) vira
 ##   peças `piece/unit/<região>/<cx>_<cz>/<nome>~<x>_<z>`; a peça fica no chunk de origem.
 const PIECES := preload("res://world/editing/WorldEditPieces.gd")
+const SPLIT := preload("res://world/editing/WorldMeshSplit.gd")
 const DATA := preload("res://world/editing/WorldEditData.gd")
 const PREFIX := "piece/unit/"
 ## Acima disto o nó é um conjunto (prédio, vila): desce para os filhos.
@@ -22,7 +23,7 @@ const MAX_SPAN := 64.0
 const EXPLODE_META := "world_unit_explode"
 const GENERIC_NAMES := ["Node3D", "MeshInstance3D", "StaticBody3D", "Node", "Object", "Mesh Instance3D", "Static Body3D", "Node 3D"]
 ## Registros que já têm editor próprio (objetos do catálogo) ou ligação física com o terreno.
-const SKIP_RECORD_KINDS := ["building", "tree", "mountain_road_lamp", "road", "lake", "environmental_parity", "editor_ground", "editor_prop", "editor_light", "editor_added"]
+const SKIP_RECORD_KINDS := ["building", "tree", "mountain_road_lamp", "road", "editor_ground", "editor_prop", "editor_light", "editor_added"]
 const GROUND_NAMES := ["Land", "Ocean", "Terrain", "Surface", "Ground", "Water", "Sea", "Floor", "OriginalPort", "SouthPortConcrete", "Chunk"]
 
 static func preview_active() -> bool:
@@ -87,6 +88,12 @@ static func group_record(region: Node3D, chunk: Node3D, record: Dictionary, firs
 		if node.has_meta("editor_id") or node.has_meta("world_edit_piece_id") or not PIECES.collect(node).is_empty():
 			_skip(nodes)
 			return
+	# Registro grande demais para ser uma peça só (navio, porto, vila): fica solto no chunk e o
+	# acabamento do chunk o divide em partes (contêiner, guindaste, casco...), cada uma editável.
+	for node in nodes:
+		var probe := {"count": 0, "box": AABB(), "has": false, "dynamic": false, "claimed": false}
+		_measure(node, probe, true)
+		if probe.count > MAX_VISUALS or probe.dynamic or _has_repeats(node) or _has_merged(node): return
 	var key := record_key(record)
 	var stats := {"count": 0, "box": AABB(), "has": false, "dynamic": false, "claimed": false}
 	for node in nodes: _measure(node, stats, true)
@@ -122,6 +129,7 @@ static func _finalize(holder: Node3D, region_id: String, tag: String, changes: D
 			# Cópia de uma peça deste chunk: a origem precisa virar peça mesmo sem edição própria.
 			elif str(changes[id].get("clone_of", "")).begins_with(prefix): wanted[str(changes[id].clone_of)] = true
 		if wanted.is_empty(): return
+	_split_merged(holder)
 	_explode_multimeshes(holder)
 	for unit in collect_units(holder, region_id, tag):
 		if not preview and not wanted.has(unit.id): continue
@@ -131,6 +139,18 @@ static func _finalize(holder: Node3D, region_id: String, tag: String, changes: D
 		group.set_meta("world_edit_source", "unit/%s/%s" % [region_id, tag])
 		PIECES.spawn_clones(group, changes, ground)
 		PIECES.apply_one(group, changes, ground)
+
+## Malhas "Batch_*" mescladas (contêineres do navio, guindastes) viram um nó por objeto.
+static func _split_merged(node: Node) -> void:
+	for child in node.get_children():
+		if child is Node3D and not _claimed(child) and not _dynamic_body(child): _split_merged(child)
+	if node is Node3D and not _claimed(node): SPLIT.split_children(node)
+
+static func _has_merged(node: Node) -> bool:
+	if node is MeshInstance3D and str(node.name).begins_with("Batch_") and node.mesh is ArrayMesh and SPLIT._index_count(node.mesh) / 3 >= SPLIT.MIN_TRIANGLES: return true
+	for child in node.get_children():
+		if _has_merged(child): return true
+	return false
 
 ## Troca cada MultiMesh pequeno por uma MeshInstance3D por instância e leva junto a colisão
 ## que o gerador pôs no mesmo ponto (as pedras da montanha têm um StaticBody3D cada).
@@ -176,14 +196,15 @@ static func collect_units(chunk: Node3D, region_id: String, tag: String) -> Arra
 static func _walk(parent: Node, region_id: String, tag: String, result: Array, seen: Dictionary) -> void:
 	for child in parent.get_children():
 		if not child is Node3D or not child.visible or child.is_queued_for_deletion(): continue
-		if _claimed(child): continue
+		if _claimed(child) or _dynamic_body(child): continue
 		if child is MultiMeshInstance3D: continue # lote: nunca é peça por si só
 		var stats := {"count": 0, "box": AABB(), "has": false, "dynamic": false, "claimed": false}
 		_measure(child, stats, true)
 		if stats.count == 0: continue
 		if not stats.has: continue # só lotes de MultiMesh: sem malha própria não há onde ancorar
 		var box: AABB = stats.box
-		var unit_ok: bool = not stats.dynamic and not stats.claimed and stats.count <= MAX_VISUALS and box.size.x <= MAX_SPAN and box.size.z <= MAX_SPAN and not _ground_like(child, box)
+		# Sem teto de tamanho: casco de navio, pista, terreno e água também são peças.
+		var unit_ok: bool = not stats.dynamic and not stats.claimed and stats.count <= MAX_VISUALS and not _has_repeats(child)
 		if unit_ok:
 			var label := _node_label(child)
 			var base_id := "%s%s/%s/%s~%d_%d" % [PREFIX, region_id, tag, _slug(label), roundi(box.get_center().x * 10.0), roundi(box.get_center().z * 10.0)]
@@ -194,6 +215,35 @@ static func _walk(parent: Node, region_id: String, tag: String, result: Array, s
 			result.append({"node": child, "id": id, "label": label, "box": box})
 		elif stats.count > 1 or stats.claimed or stats.dynamic:
 			_walk(child, region_id, tag, result, seen)
+
+## Três ou mais filhos com o mesmo nome (14 "ShipContainer", fileira de postes, grade de cadeiras)
+## são instâncias de uma coleção, não partes de um objeto: cada uma vira peça.
+static func _has_repeats(node: Node) -> bool:
+	var counts := {}
+	for child in node.get_children():
+		if not child is Node3D or not child.visible or _dynamic_body(child): continue
+		var key := _base_name(str(child.name))
+		# Nome genérico ("@Node3D@755"): a repetição se reconhece pela forma (classe e nº de filhos).
+		var generic := key.is_empty() or key in GENERIC_NAMES
+		if generic: key = "#%s/%d" % [child.get_class(), child.get_child_count()]
+		var probe := {"count": 0, "box": AABB(), "has": false, "dynamic": false, "claimed": false}
+		_measure(child, probe, true)
+		if probe.count == 0: continue
+		counts[key] = int(counts.get(key, 0)) + 1
+		var needed := 3 if not generic else (4 if not child is MeshInstance3D else 12)
+		if counts[key] >= needed: return true
+	return false
+
+## "@ShipContainer@12" e "ShipContainer12" -> "ShipContainer".
+static func _base_name(name: String) -> String:
+	if name.begins_with("@"):
+		var bits := name.split("@", false)
+		name = bits[0] if not bits.is_empty() else ""
+	return name.rstrip("0123456789")
+
+## Corpo vivo (pedestre, animal, veículo, animação): nunca vira peça nem se desmonta em partes.
+static func _dynamic_body(node: Node) -> bool:
+	return node is CharacterBody3D or node is RigidBody3D or node is AnimationPlayer or node is AnimationTree or node is Skeleton3D
 
 static func _claimed(node: Node) -> bool:
 	return node.has_meta("world_edit_piece_id") or node.has_meta("editor_id") or node.has_meta("world_unit_skip")
@@ -241,7 +291,9 @@ static func _descendant_label(node: Node) -> String:
 	return ""
 
 static func _readable(name: String) -> String:
-	if name.begins_with("@"): return ""
+	if name.begins_with("@"):
+		name = _base_name(name)
+		if name.is_empty() or name in GENERIC_NAMES: return ""
 	var words: Array[String] = []
 	var current := ""
 	for index in name.length():

@@ -286,6 +286,7 @@ func run() -> void:
 func explore() -> void:
 	var document := DATA.empty_document()
 	var areas := {"desert": Vector3(354.5, 0, -740), "harbor": Vector3(45, 0, 110), "mountain": Vector3(700, 0, -260)}
+	if "--ship" in OS.get_cmdline_user_args(): areas = {"harbor": Vector3(380, 0, 100)}
 	for only in ["--only-desert", "--only-harbor", "--only-mountain"]:
 		if only in OS.get_cmdline_user_args(): areas = {only.trim_prefix("--only-"): areas[only.trim_prefix("--only-")]}
 	for area in areas:

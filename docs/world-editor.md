@@ -19,6 +19,13 @@ Abre o jogo de verdade (processo separado) na região do objeto selecionado — 
 
 Argumentos do jogo (úteis em testes): `--edits=<json>` (documento no lugar de `world/editing/world_edits.json`) e `--play-at=<harbor|mountain|desert>,<x>,<z>`.
 
+### Mapa inteiro, partes de objetos e vias na 3D (13/10/2026)
+
+- **Alcance da visão 3D:** seletor na barra da visão (Perto · Médio · Grande · **Mapa inteiro**). Mapa inteiro do Harbor montou em ~83 s (≈11 mil malhas, ≈4 200 peças) e rodou a ~84 FPS no editor. Montanha e deserto são maiores e não foram medidos nesse modo. Nos alcances maiores, editar **não reconstrói** o mapa: mudanças de posição/rotação/escala aparecem na hora, exclusões somem na hora, e cópias/peças novas só depois de **Atualizar** (a barra avisa "desatualizada").
+- **Objetos dentro de malhas mescladas:** as malhas "Batch_*" (contêineres do navio, guindastes) são cortadas em componentes ligados e agrupadas por contato: os 14 contêineres do navio são peças individuais, cada um com a própria colisão. Registros grandes (navio, porto, vila) não são mais uma peça só: viram as partes. Coleções repetidas (fileiras de postes, grades) também viram uma peça por item.
+- **Sem limite de tamanho:** casco, terreno, água e pista também são peças (Alt+clique força a peça da malha em vez da via).
+- **Vias na visão 3D:** clique na via a seleciona (o segundo clique arrasta a via inteira); alças nos pontos arrastam o ponto; Delete exclui.
+
 ### Restrições removidas (10/10/2026, segunda parte)
 
 - Nenhum objeto fica travado: garagem, oficina, prédios de serviço, equipamentos, vias e luzes do deserto. O cadeado virou aviso (porta, gatilho e interior ficam onde estavam).
