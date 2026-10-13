@@ -9,6 +9,35 @@ extends RefCounted
 static var _meshes := {}
 static var _material: StandardMaterial3D
 
+# O comparativo da tarefa F usa o mesmo build; "0" restaura os detalhes originais.
+static var detail_range_enabled := OS.get_environment("GETECO_DETAIL_RANGE") != "0"
+const DETAIL_NEAR_DISTANCE := 40.0
+const DETAIL_RANGE_MARGIN := 4.0
+const DETAIL_PROP_KINDS := ["hydrant", "trash_can", "news_box", "mailbox", "trash_bags", "bollard", "bench_seat", "planter", "vent", "dish", "pipe_run", "window_ac", "flower_box", "pigeons", "laundry", "posters", "satellite_row", "roof_chairs"]
+
+
+static func apply_detail_range(instance: GeometryInstance3D) -> void:
+	if not detail_range_enabled: return
+	# O alcance usa o centro do AABB, não a peça mais próxima. Compensar o raio
+	# preserva todos os detalhes até 40 m, inclusive lotes espalhados pelo chunk.
+	var bounds := instance.get_aabb()
+	var world_size := (instance.global_transform * bounds).size if instance.is_inside_tree() else (instance.transform * bounds).size
+	instance.visibility_range_end = DETAIL_NEAR_DISTANCE + DETAIL_RANGE_MARGIN + world_size.length() * 0.5
+	instance.visibility_range_end_margin = DETAIL_RANGE_MARGIN
+	# Mobile não suporta fade de alcance. Histerese evita oscilar no limite;
+	# Forward+ pode suavizar a transição sem começar a ocultar antes de 40 m.
+	var forward_plus := RenderingServer.get_current_rendering_method() == "forward_plus"
+	instance.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF if forward_plus else GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
+	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+
+static func apply_chunk_detail(child: Node) -> void:
+	if not detail_range_enabled or not child is MultiMeshInstance3D: return
+	var kind := String(child.name).trim_prefix("CityLook_")
+	if not kind in DETAIL_PROP_KINDS: return
+	if child.multimesh == null or child.multimesh.mesh == null: return
+	apply_detail_range(child)
+
 
 static func material() -> StandardMaterial3D:
 	if _material == null:

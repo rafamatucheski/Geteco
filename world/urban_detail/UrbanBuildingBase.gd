@@ -2,6 +2,7 @@ extends Node3D
 class_name UrbanBuildingBase
 
 const V1_PROFILE := preload("res://world/urban_detail/HarborV1BuildingProfile.gd")
+const DETAIL_KIT := preload("res://world/city_look/CityPropKit.gd")
 
 ## Base class for native 3D urban buildings.
 ## Builds optimized modular architecture with shared materials, accurate collision,
@@ -179,7 +180,21 @@ func add_mesh_box(parent: Node3D, p_name: String, center: Vector3, size: Vector3
 	if mat != null:
 		mesh_inst.material_override = mat
 	parent.add_child(mesh_inst)
+	if _is_small_exterior_detail(p_name, size, mat): DETAIL_KIT.apply_detail_range(mesh_inst)
 	return mesh_inst
+
+func _is_small_exterior_detail(p_name: String, size: Vector3, mat: Material) -> bool:
+	if not DETAIL_KIT.detail_range_enabled: return false
+	# Lista positiva: não atingir sólidos, coberturas, escadas, portas, letreiros
+	# ou móveis da oficina. Uma laje baixa continua sendo um volume grande.
+	if size[size.max_axis_index()] >= 3.0 or size.x * size.y * size.z >= 1.5: return false
+	var label := p_name.to_lower()
+	for protected in ["door", "handle", "sign", "glass", "light", "lamp", "neon"]:
+		if label.contains(protected): return false
+	if mat is StandardMaterial3D and (mat.emission_enabled or mat.get_meta("city_window", false)): return false
+	for detail in ["windowsill", "windowlintel", "windowframe", "winframe", "upperframe", "uppersill", "upperlintel", "mullion", "louver", "fancowling", "fluepot", "dentil"]:
+		if label.contains(detail): return size.y < 1.5 or size[size.max_axis_index()] < 1.5
+	return false
 
 # --- Architectural Feature Helpers ---
 
@@ -235,6 +250,7 @@ func add_cornice(parent: Node3D, y: float, projection: float = 0.35, h: float = 
 		dentil_mesh.mesh = dentil_surface.commit()
 		dentil_mesh.material_override = dentil_mat
 		parent.add_child(dentil_mesh)
+		DETAIL_KIT.apply_detail_range(dentil_mesh)
 
 func add_water_tower(parent: Node3D, at: Vector3) -> Node3D:
 	var tower := Node3D.new()

@@ -42,6 +42,11 @@ static func _push(batches: Dictionary, kind: String, xform: Transform3D) -> void
 ## Chamado por CityChunkDressing._rooftops para cada prédio com laje plana,
 ## depois dos adereços de telhado (occupied já tem tudo que está na laje).
 static func decorate(chunk: Node3D, building: UrbanBuildingBase, roof_y: float, roof_center: Vector2, roof_size: Vector2, occupied: Array, batches: Dictionary, has_billboard: bool) -> void:
+	var prop_kit := preload("res://world/city_look/CityPropKit.gd")
+	# Os lotes nascem depois deste passo. O sinal vale só para este chunk e
+	# aplica o alcance uma vez, sem varredura por quadro nem alteração do montador.
+	if prop_kit.detail_range_enabled and not chunk.child_entered_tree.is_connected(prop_kit.apply_chunk_detail):
+		chunk.child_entered_tree.connect(prop_kit.apply_chunk_detail)
 	var key := building.building_id
 	var kind := building.building_kind
 	var facade := _read_facade(building)
