@@ -1,0 +1,7 @@
+{
+	"checks": 594,
+	"detail_range_enabled": false,
+	"failures": [],
+	"note": "Montagem headless indicativa, caches aquecidos, concorrência de outras sessões; não mede FPS nem frame time.",
+	"results": []
+}

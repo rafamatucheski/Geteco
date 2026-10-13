@@ -44,6 +44,8 @@ static func finish_chunk(chunk: Node3D) -> void:
 		if child is Node3D and _is_target(child): _optimize_building(child)
 
 static func _is_target(node: Node) -> bool:
+	# O piloto ainda precisa do marco de sombras do chunk, sem fundir outra vez.
+	if node.get_meta("baked_commercial", false): return true
 	return node.get_script() != null and node.get_script().resource_path in TARGET_SCRIPTS
 
 static func _optimize_building(building: Node3D) -> void:
@@ -51,6 +53,10 @@ static func _optimize_building(building: Node3D) -> void:
 	# Uma visita pode preparar a fachada durante o streaming fatiado. Nesse caso
 	# o adaptador já guarda referências individuais e elas precisam continuar vivas.
 	if access != null and "_prepared" in access and access.get("_prepared"): return
+	if building.get_meta("baked_commercial", false):
+		for mesh: MeshInstance3D in building.find_children("*", "MeshInstance3D", true, false):
+			if mesh.get_meta("baked_batch_shadow", false): mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		return
 	var moving: Array[Node] = []
 	# Folhas autoradas e pivôs de serviço não têm script próprio, mas são animados.
 	for property in ["door_leaves", "public_leaves", "police_door_visuals"]:

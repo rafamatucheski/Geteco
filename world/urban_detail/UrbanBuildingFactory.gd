@@ -17,6 +17,8 @@ const V1_PROFILE := preload("res://world/urban_detail/HarborV1BuildingProfile.gd
 const SKYLINE_BUILDING := preload("res://world/urban_detail/UrbanSkylineBuilding.gd")
 const LOWRISE_BUILDING := preload("res://world/urban_detail/UrbanLowriseBuilding.gd")
 const BUILDING_BATCH := preload("res://world/urban_detail/HarborBuildingBatch.gd")
+const BUILDING_BAKE := preload("res://assets/buildings/baked/BuildingBakeCatalog.gd")
+static var baked_enabled := OS.get_environment("GETECO_BAKED_BUILDINGS") != "0"
 const V1_HEIGHT_OVERRIDES := {
 	# HarborEastDistrict assigns these two silhouettes after instantiation.
 	# Keep their different skyline heights when converting 2D source pixels to metres.
@@ -135,7 +137,9 @@ static func build_building(data: Dictionary) -> Node3D:
 				building = UrbanBrownstoneBuilding.new()
 		
 			"office":
-				building = UrbanCommercialBuilding.new()
+				# Um arquivo ausente ou uma variação editada ainda não assada usa o caminho original.
+				if baked_enabled: building = BUILDING_BAKE.create(norm_data)
+				if building == null: building = UrbanCommercialBuilding.new()
 		
 			"corner_shop", "shop", "commercial_laundromat", "warehouse_shop", "bank_branch":
 				building = UrbanShopfrontBuilding.new()

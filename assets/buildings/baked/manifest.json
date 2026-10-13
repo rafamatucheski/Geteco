@@ -1,0 +1,215 @@
+{
+	"source_stamp": "963ba77d86b298600fa60208eb153bffe8884630d406e28628d00983974aede5",
+	"variants": {
+		"09a36d37a9a0aa6da1cb318ef644fa96df0c9cfd7275b0dfc90b71f3b7a08f10": {
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 38
+			},
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 47
+			},
+			"id": "ServiceLodge",
+			"scene": "res://assets/buildings/baked/ServiceLodge_09a36d37a9a0.scn"
+		},
+		"0e83202a618f690d68bd93ff470ce19f5df953ddf1201deb2cfd94ff7229cb37": {
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 61
+			},
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 90
+			},
+			"id": "FreightOffice",
+			"scene": "res://assets/buildings/baked/FreightOffice_0e83202a618f.scn"
+		},
+		"28a1a44311951230143e9e0a6e28c61acb74cc1c24355f775d75429388ceede4": {
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 35
+			},
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 38
+			},
+			"id": "CivicTower",
+			"scene": "res://assets/buildings/baked/CivicTower_28a1a4431195.scn"
+		},
+		"37ce5190069d501a12fdb88cba972bf61f9ce2195637e6bbf99f18a4e0533c61": {
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 45
+			},
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 62
+			},
+			"id": "NorthFrontage5",
+			"scene": "res://assets/buildings/baked/NorthFrontage5_37ce5190069d.scn"
+		},
+		"5646d46690942362f91f9cc8b503a733c613dfc813dca20038ed88bb94a61b65": {
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 43
+			},
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 58
+			},
+			"id": "BridgeCourtEast",
+			"scene": "res://assets/buildings/baked/BridgeCourtEast_5646d4669094.scn"
+		},
+		"5cfb3cb24de9ff00dc2fcda46b89bdf809f07b9d7d0a38ac855fa2e9c2ca93a6": {
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 43
+			},
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 54
+			},
+			"id": "TransitHouse",
+			"scene": "res://assets/buildings/baked/TransitHouse_5cfb3cb24de9.scn"
+		},
+		"6d768e6bf73ea4426d414fe0ccc1a7beee6623e3df85837adb3e7558c3418040": {
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 37
+			},
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 48
+			},
+			"id": "Aquarium",
+			"scene": "res://assets/buildings/baked/Aquarium_6d768e6bf73e.scn"
+		},
+		"9008db595853b7aa1d286b6a401652a8915db883cc76aaead7304e0e88485a71": {
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 53
+			},
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 76
+			},
+			"id": "NorthbankFront3",
+			"scene": "res://assets/buildings/baked/NorthbankFront3_9008db595853.scn"
+		},
+		"a4b6bf68cfb0f0377cff389fbd2d6bfb60bc9584d7702b539b70479c769942cf": {
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 84
+			},
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 147
+			},
+			"id": "MaritimeMuseum",
+			"scene": "res://assets/buildings/baked/MaritimeMuseum_a4b6bf68cfb0.scn"
+		},
+		"bf228c089383711ecbb7a5f368163e3ac33f5c7e87ded50408171aa0889e016c": {
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 57
+			},
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 80
+			},
+			"id": "UnionApartments",
+			"scene": "res://assets/buildings/baked/UnionApartments_bf228c089383.scn"
+		},
+		"c0c6654a2fa8cf48ab79fb0327c921f252af9ff5bc2882e30cc10ddd8d1ef608": {
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 59
+			},
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 88
+			},
+			"id": "FreightOffice",
+			"scene": "res://assets/buildings/baked/FreightOffice_c0c6654a2fa8.scn"
+		},
+		"cdc171c92d9905b48eef57aa30432613173bc40b0f6a324dc88c4dcaccfda6bd": {
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 43
+			},
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 52
+			},
+			"id": "ExchangeTower",
+			"scene": "res://assets/buildings/baked/ExchangeTower_cdc171c92d99.scn"
+		},
+		"ce2a5312643aa67b9cf7634da6c2a0d7c76dc2a9307883b749c8288db581e874": {
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 42
+			},
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 53
+			},
+			"id": "Apartments",
+			"scene": "res://assets/buildings/baked/Apartments_ce2a5312643a.scn"
+		},
+		"d7d205c87f4c902d0179eec049673565ee3e56e6721912725ef2890f4aa3ac80": {
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 34
+			},
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 45
+			},
+			"id": "CommunityHall",
+			"scene": "res://assets/buildings/baked/CommunityHall_d7d205c87f4c.scn"
+		},
+		"ed9d0e901091d255cedede857d489f18acdcc52053ddcdd8cf05cbb5fcb97ee1": {
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 42
+			},
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 49
+			},
+			"id": "NorthbankFront2",
+			"scene": "res://assets/buildings/baked/NorthbankFront2_ed9d0e901091.scn"
+		}
+	}
+}

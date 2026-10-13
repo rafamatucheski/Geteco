@@ -1,0 +1,9 @@
+{
+	"checks": 120,
+	"detail_modes": [
+		false,
+		true
+	],
+	"failures": [],
+	"variants": 15
+}

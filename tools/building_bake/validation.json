@@ -1,0 +1,263 @@
+{
+	"checks": 609,
+	"detail_range_enabled": true,
+	"failures": [],
+	"note": "Montagem headless indicativa, caches aquecidos, concorrência de outras sessões; não mede FPS nem frame time.",
+	"results": [
+		{
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 45
+			},
+			"assembly_median_ms_after": 1.314,
+			"assembly_median_ms_before": 2.845,
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 62
+			},
+			"id": "NorthFrontage5",
+			"iterations": 20,
+			"key": "37ce5190069d501a12fdb88cba972bf61f9ce2195637e6bbf99f18a4e0533c61"
+		},
+		{
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 42
+			},
+			"assembly_median_ms_after": 1.32,
+			"assembly_median_ms_before": 2.563,
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 53
+			},
+			"id": "Apartments",
+			"iterations": 20,
+			"key": "ce2a5312643aa67b9cf7634da6c2a0d7c76dc2a9307883b749c8288db581e874"
+		},
+		{
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 61
+			},
+			"assembly_median_ms_after": 1.886,
+			"assembly_median_ms_before": 4.248,
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 90
+			},
+			"id": "FreightOffice",
+			"iterations": 20,
+			"key": "0e83202a618f690d68bd93ff470ce19f5df953ddf1201deb2cfd94ff7229cb37"
+		},
+		{
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 59
+			},
+			"assembly_median_ms_after": 1.74,
+			"assembly_median_ms_before": 3.542,
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 88
+			},
+			"id": "FreightOffice",
+			"iterations": 20,
+			"key": "c0c6654a2fa8cf48ab79fb0327c921f252af9ff5bc2882e30cc10ddd8d1ef608"
+		},
+		{
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 43
+			},
+			"assembly_median_ms_after": 1.2765,
+			"assembly_median_ms_before": 2.436,
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 52
+			},
+			"id": "ExchangeTower",
+			"iterations": 20,
+			"key": "cdc171c92d9905b48eef57aa30432613173bc40b0f6a324dc88c4dcaccfda6bd"
+		},
+		{
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 35
+			},
+			"assembly_median_ms_after": 1.033,
+			"assembly_median_ms_before": 1.6585,
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 38
+			},
+			"id": "CivicTower",
+			"iterations": 20,
+			"key": "28a1a44311951230143e9e0a6e28c61acb74cc1c24355f775d75429388ceede4"
+		},
+		{
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 84
+			},
+			"assembly_median_ms_after": 2.5735,
+			"assembly_median_ms_before": 6.9885,
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 147
+			},
+			"id": "MaritimeMuseum",
+			"iterations": 20,
+			"key": "a4b6bf68cfb0f0377cff389fbd2d6bfb60bc9584d7702b539b70479c769942cf"
+		},
+		{
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 37
+			},
+			"assembly_median_ms_after": 1.197,
+			"assembly_median_ms_before": 2.224,
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 48
+			},
+			"id": "Aquarium",
+			"iterations": 20,
+			"key": "6d768e6bf73ea4426d414fe0ccc1a7beee6623e3df85837adb3e7558c3418040"
+		},
+		{
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 42
+			},
+			"assembly_median_ms_after": 1.2695,
+			"assembly_median_ms_before": 2.371,
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 49
+			},
+			"id": "NorthbankFront2",
+			"iterations": 20,
+			"key": "ed9d0e901091d255cedede857d489f18acdcc52053ddcdd8cf05cbb5fcb97ee1"
+		},
+		{
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 53
+			},
+			"assembly_median_ms_after": 1.713,
+			"assembly_median_ms_before": 3.643,
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 76
+			},
+			"id": "NorthbankFront3",
+			"iterations": 20,
+			"key": "9008db595853b7aa1d286b6a401652a8915db883cc76aaead7304e0e88485a71"
+		},
+		{
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 43
+			},
+			"assembly_median_ms_after": 1.27,
+			"assembly_median_ms_before": 2.7775,
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 58
+			},
+			"id": "BridgeCourtEast",
+			"iterations": 20,
+			"key": "5646d46690942362f91f9cc8b503a733c613dfc813dca20038ed88bb94a61b65"
+		},
+		{
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 43
+			},
+			"assembly_median_ms_after": 1.2785,
+			"assembly_median_ms_before": 2.501,
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 54
+			},
+			"id": "TransitHouse",
+			"iterations": 20,
+			"key": "5cfb3cb24de9ff00dc2fcda46b89bdf809f07b9d7d0a38ac855fa2e9c2ca93a6"
+		},
+		{
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 38
+			},
+			"assembly_median_ms_after": 1.208,
+			"assembly_median_ms_before": 2.3405,
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 47
+			},
+			"id": "ServiceLodge",
+			"iterations": 20,
+			"key": "09a36d37a9a0aa6da1cb318ef644fa96df0c9cfd7275b0dfc90b71f3b7a08f10"
+		},
+		{
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 57
+			},
+			"assembly_median_ms_after": 1.757,
+			"assembly_median_ms_before": 3.7725,
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 80
+			},
+			"id": "UnionApartments",
+			"iterations": 20,
+			"key": "bf228c089383711ecbb7a5f368163e3ac33f5c7e87ded50408171aa0889e016c"
+		},
+		{
+			"after": {
+				"bodies": 1,
+				"boxes": 2,
+				"meshes": 34
+			},
+			"assembly_median_ms_after": 1.1365,
+			"assembly_median_ms_before": 1.9815,
+			"before": {
+				"bodies": 2,
+				"boxes": 2,
+				"meshes": 45
+			},
+			"id": "CommunityHall",
+			"iterations": 20,
+			"key": "d7d205c87f4c902d0179eec049673565ee3e56e6721912725ef2890f4aa3ac80"
+		}
+	]
+}

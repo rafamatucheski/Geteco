@@ -1,0 +1,82 @@
+{
+	"failures": 1,
+	"results": [
+		{
+			"different_bytes": 0,
+			"id": "NorthFrontage5",
+			"total_bytes": 921600
+		},
+		{
+			"different_bytes": 0,
+			"id": "Apartments",
+			"total_bytes": 921600
+		},
+		{
+			"different_bytes": 0,
+			"id": "FreightOffice",
+			"total_bytes": 921600
+		},
+		{
+			"different_bytes": 0,
+			"id": "FreightOffice_editado",
+			"total_bytes": 921600
+		},
+		{
+			"different_bytes": 0,
+			"id": "ExchangeTower",
+			"total_bytes": 921600
+		},
+		{
+			"different_bytes": 0,
+			"id": "CivicTower",
+			"total_bytes": 921600
+		},
+		{
+			"different_bytes": 1,
+			"id": "MaritimeMuseum",
+			"total_bytes": 921600
+		},
+		{
+			"different_bytes": 0,
+			"id": "Aquarium",
+			"total_bytes": 921600
+		},
+		{
+			"different_bytes": 0,
+			"id": "NorthbankFront2",
+			"total_bytes": 921600
+		},
+		{
+			"different_bytes": 0,
+			"id": "NorthbankFront3",
+			"total_bytes": 921600
+		},
+		{
+			"different_bytes": 0,
+			"id": "BridgeCourtEast",
+			"total_bytes": 921600
+		},
+		{
+			"different_bytes": 0,
+			"id": "TransitHouse",
+			"total_bytes": 921600
+		},
+		{
+			"different_bytes": 0,
+			"id": "ServiceLodge",
+			"total_bytes": 921600
+		},
+		{
+			"different_bytes": 0,
+			"id": "UnionApartments",
+			"total_bytes": 921600
+		},
+		{
+			"different_bytes": 0,
+			"id": "CommunityHall",
+			"total_bytes": 921600
+		}
+	],
+	"scope": "Piloto isolado renderizado no renderer do projeto. Sem FPS e sem aprovação visual da cena integrada.",
+	"sun_shadows": true
+}

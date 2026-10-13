@@ -1,0 +1,86 @@
+[
+  {
+    "script": "tests/test_regions.gd",
+    "baked_enabled": true,
+    "exit_code": 0,
+    "timeout": false,
+    "log": "tools/building_bake/logs/tests_test_regions_ligado.log"
+  },
+  {
+    "script": "tests/test_native_driving.gd",
+    "baked_enabled": true,
+    "exit_code": 0,
+    "timeout": false,
+    "log": "tools/building_bake/logs/tests_test_native_driving_ligado.log"
+  },
+  {
+    "script": "tests/cold/test_admission.gd",
+    "baked_enabled": true,
+    "exit_code": 0,
+    "timeout": false,
+    "log": "tools/building_bake/logs/tests_cold_test_admission_ligado.log"
+  },
+  {
+    "script": "tests/test_bridge_approach_terrain.gd",
+    "baked_enabled": true,
+    "exit_code": 0,
+    "timeout": false,
+    "log": "tools/building_bake/logs/tests_test_bridge_approach_terrain_ligado.log"
+  },
+  {
+    "script": "tests/urban_detail/test_urban_building_factory.gd",
+    "baked_enabled": true,
+    "exit_code": 0,
+    "timeout": false,
+    "log": "tools/building_bake/logs/tests_urban_detail_test_urban_building_factory_ligado.log"
+  },
+  {
+    "script": "tests/urban_detail/test_harbor_building_source_fidelity.gd",
+    "baked_enabled": true,
+    "exit_code": 0,
+    "timeout": false,
+    "log": "tools/building_bake/logs/tests_urban_detail_test_harbor_building_source_fidelity_ligado.log"
+  },
+  {
+    "script": "tests/urban_detail/test_harbor_building_batch.gd",
+    "baked_enabled": true,
+    "exit_code": 0,
+    "timeout": false,
+    "log": "tools/building_bake/logs/tests_urban_detail_test_harbor_building_batch_ligado.log"
+  },
+  {
+    "script": "tests/urban_detail/test_harbor_access_exteriors.gd",
+    "baked_enabled": true,
+    "exit_code": 0,
+    "timeout": false,
+    "log": "tools/building_bake/logs/tests_urban_detail_test_harbor_access_exteriors_ligado.log"
+  },
+  {
+    "script": "tests/test_harbor_building_access.gd",
+    "baked_enabled": true,
+    "exit_code": 0,
+    "timeout": false,
+    "log": "tools/building_bake/logs/tests_test_harbor_building_access_ligado.log"
+  },
+  {
+    "script": "tests/test_tunnel_cutaway.gd",
+    "baked_enabled": true,
+    "exit_code": 0,
+    "timeout": false,
+    "log": "tools/building_bake/logs/tests_test_tunnel_cutaway_ligado.log"
+  },
+  {
+    "script": "tests/urban_detail/test_harbor_building_batch.gd",
+    "baked_enabled": true,
+    "exit_code": 0,
+    "timeout": false,
+    "log": "tools/building_bake/logs/tests_urban_detail_test_harbor_building_batch_ligado.log"
+  },
+  {
+    "script": "tests/test_harbor_building_access.gd",
+    "baked_enabled": true,
+    "exit_code": 0,
+    "timeout": false,
+    "log": "tools/building_bake/logs/tests_test_harbor_building_access_ligado.log"
+  }
+]
