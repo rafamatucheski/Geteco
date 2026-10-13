@@ -12,6 +12,12 @@ static func run(region: Node3D) -> void:
 			temporary.name = "RetainedModelPreparation"
 			region.add_child(temporary)
 			region._build_record_cached(temporary,record)
+			# Um quadro ainda na árvore para quem tem trabalho adiado na montagem (a grama da Cobra custava
+			# 192 ms num call_deferred ao vivo): roda aqui, atrás da cortina, antes de guardar o nó. Só
+			# esse tipo: um quadro por registro somou ~8 s no carregamento do editor.
+			if str(record.kind) == "harbor_dressing":
+				await region.get_tree().process_frame
+				if not is_instance_valid(region) or not region.is_inside_tree() or region.is_queued_for_deletion() or not is_instance_valid(temporary): return
 			region._hold_file_resources(temporary)
 			region._suspend_chunk_mechanisms(temporary)
 			region._detach_cached_records(temporary)

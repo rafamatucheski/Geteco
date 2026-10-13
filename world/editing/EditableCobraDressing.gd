@@ -28,6 +28,11 @@ func _scatter_grass() -> void:
 
 func _refresh_grass() -> void:
 	if not is_instance_valid(_grass_anchor): return
+	# Guardado no cache de registros (fora da árvore) o espalhamento lia global_transform de milhares de
+	# pontos sem árvore: um erro por ponto travou o carregamento em 13/10. Espera voltar à árvore.
+	if not is_inside_tree():
+		if not tree_entered.is_connected(_refresh_grass): tree_entered.connect(_refresh_grass, CONNECT_ONE_SHOT)
+		return
 	var has_land := false
 	for mesh in find_children("*","MeshInstance3D",true,false):
 		if mesh.get_meta("cobra_surface_label","")=="CobraDryMeadow": has_land=true; break

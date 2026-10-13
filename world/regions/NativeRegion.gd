@@ -611,9 +611,9 @@ const CACHED_PORT_MODELS := ["ship_cargo"]
 ## Medido em 8 sessões de release (2026-10-12/13): tudo que montou em 50 ms ou mais num quadro.
 ## Tipos inteiros quando são poucos registros; dos 66 prédios e 131 props só os medidos, para não
 ## segurar a cidade inteira na memória nem alongar demais o carregamento.
-## harbor_dressing fica de fora: a grama editável da Cobra (EditableCobraDressing) se refaz fora da
-## árvore quando o nó está guardado e encheu o log com milhares de erros, travando o carregamento.
-const CACHED_KINDS_MEASURED := ["container","salvage","mountain_place"]
+## harbor_dressing entra porque a grama da Cobra agora é espalhada antes de o nó ser guardado
+## (RetainedRegionPreparation cede um quadro) e espera a árvore se for chamada fora dela.
+const CACHED_KINDS_MEASURED := ["container","salvage","mountain_place","harbor_dressing"]
 const CACHED_BUILDING_IDS := ["NorthFireStation","BridgeCourtWest","PorchHouse","BridgeQuayHouse","BridgeCourtEast",
 	"NorthbankFront0","NorthbankFront1","NorthFrontage2","NorthFrontage3","new_1790432236_682_2325181222"]
 ## harbor_prop medido a 381 ms (posição do registro no chão, x/z).
