@@ -1,6 +1,7 @@
 extends RefCounted
 ## Sparse colonies, with world-cell ownership so streaming never moves a plant.
 const G := preload("res://world/desert/expansion/DesertEcologyGeometry.gd")
+const FLORA := preload("res://assets/urban_detail/FloraSurfaces.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const CANYON := preload("res://world/desert/DesertTerrainRelief.gd")
 const CELL := 54.0
@@ -42,7 +43,7 @@ static func build_chunk(parent: Node3D,rect: Rect2,world_seed: int,height_callab
 				var tree := MeshInstance3D.new()
 				tree.name="DesertBreakableTree"
 				tree.mesh=G.mesh(tree_data)
-				tree.material_override=G.material()
+				tree.material_override=FLORA.bark()
 				tree.position=at
 				tree.add_child(tree_body)
 				parent.add_child(tree)
@@ -58,7 +59,7 @@ static func build_chunk(parent: Node3D,rect: Rect2,world_seed: int,height_callab
 	var node := MeshInstance3D.new()
 	node.name="DesertEcologyFloraBatch"
 	node.mesh=G.mesh(data)
-	node.material_override=G.material()
+	node.material_override=FLORA.cactus()
 	node.set_meta("flora_species",species)
 	node.set_meta("flora_positions",positions)
 	parent.add_child(node)

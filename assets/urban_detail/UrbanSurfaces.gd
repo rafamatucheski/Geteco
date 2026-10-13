@@ -260,6 +260,19 @@ static func _pixel(kind: String, x: int, y: int, n: Vector3, seed_value: int, co
 			var v := 0.86 + (drift - 0.5) * 0.2 + (stain - 0.5) * 0.12 + (n.z - 0.5) * 0.05
 			if _hash01(x, y, 70) > 0.985: v = minf(v + 0.14, 1.0)
 			return [Color(v * 0.97, v * 0.99, v), 0.45 + drift * 0.5 + n.z * 0.05]
+		"bark":
+			# Sulcos verticais irregulares (período de 16 px, ~12 cm) com placas e musgo ralo.
+			var wob: float = medium.get_pixel(x, (y * 3) % SIZE).r
+			var furrow := absf(sin((float(x) + wob * 9.0) * TAU / 16.0))
+			var v := 0.42 + furrow * 0.42 + (stain - 0.5) * 0.18 + (n.z - 0.5) * 0.1
+			if _hash01(x / 5, y / 9, 81) > 0.9: v -= 0.12
+			return [Color(v * 1.03, v, v * 0.93), furrow]
+		"cactus":
+			# Costelas verticais lisas (32 px) e pintas claras de espinho em fileira nas cristas.
+			var rib := absf(sin(float(x) * TAU / 32.0))
+			var v := 0.58 + rib * 0.3 + (stain - 0.5) * 0.1 + (n.z - 0.5) * 0.06
+			if rib > 0.92 and y % 12 == 0: v = minf(v + 0.28, 1.0)
+			return [Color(v * 0.96, v, v * 0.92), rib]
 		"foliage":
 			var leaf: float = medium.get_pixel((x * 2) % SIZE, (y * 2) % SIZE).r
 			var v := 0.5 + leaf * 0.38 + (n.z - 0.5) * 0.22

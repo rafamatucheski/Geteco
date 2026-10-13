@@ -2,7 +2,7 @@ extends RefCounted
 ## One static vertex-colour mesh per populated chunk. No wind shader or frame callbacks.
 const FIELD := preload("res://world/desert/DesertTerrainRelief.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
-const FORMS := preload("res://world/desert/DesertHorizonRelief.gd")
+const FLORA := preload("res://assets/urban_detail/FloraSurfaces.gd")
 const CELL := 26.0
 
 static func build_chunk(parent: Node3D,rect: Rect2,world_seed: int,height_callable: Callable) -> int:
@@ -47,7 +47,7 @@ static func build_chunk(parent: Node3D,rect: Rect2,world_seed: int,height_callab
 	var node := MeshInstance3D.new()
 	node.name="DesertDryFloraBatch"
 	node.mesh=mesh
-	node.material_override=FORMS.material()
+	node.material_override=FLORA.material("cactus",Color.WHITE,1.0,1.0,.9,true)
 	parent.add_child(node)
 	if body.get_child_count()>0: parent.add_child(body)
 	else: body.free()
@@ -73,7 +73,7 @@ static func _breakable_plant(parent: Node3D, at: Vector3, basis: Basis, kind: in
 	var plant := MeshInstance3D.new()
 	plant.name="DesertBreakableFlora"
 	plant.mesh=mesh
-	plant.material_override=FORMS.material()
+	plant.material_override=FLORA.cactus() if kind<2 else FLORA.bark()
 	plant.position=at
 	plant.add_child(body)
 	parent.add_child(plant)

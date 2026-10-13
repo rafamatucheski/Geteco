@@ -93,7 +93,7 @@ func _tree(style:int,scale_factor:float,color:Color)->void:
 	wood.mesh=preload("res://world/urban_detail/StreetTreeWood.gd").mesh()
 	wood.position=Vector3.ZERO
 	wood.scale=Vector3(scale_factor,trunk_h/3.0,scale_factor)
-	wood.material_override=preload("res://world/city_look/CityPropKit.gd").material()
+	wood.material_override=preload("res://assets/urban_detail/FloraSurfaces.gd").bark()
 	var variation := posmod(int(definition.point.x*7+definition.point.y*13),7)
 	wood.rotation.y=float(variation)*.83
 	var crown_centers:=[Vector3(-.58,0,0),Vector3(.48,.20,.12),Vector3(0,.44,-.34),Vector3(.08,-.10,.58)]
@@ -108,8 +108,7 @@ func _tree(style:int,scale_factor:float,color:Color)->void:
 		crown.rotation.y=float(index * 2 + style) * .73
 		crown.rotation.y+=float(variation)*.61
 		crown.position=Vector3(0,trunk_h+.62*scale_factor,0)+(crown_centers[index] as Vector3)*scale_factor
-		crown.material_override=_material(color.lightened(.06*float(index%3)))
-		(crown.material_override as StandardMaterial3D).vertex_color_use_as_albedo=true
+		crown.material_override=preload("res://assets/urban_detail/FloraSurfaces.gd").foliage(color.lightened(.06*float(index%3)))
 		add_child(crown)
 
 func _rock()->void:

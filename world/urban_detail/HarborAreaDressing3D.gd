@@ -288,7 +288,8 @@ func _tree(point: Vector2, scale_factor: float, dry: bool) -> void:
 		_cobra_tree(point,scale_factor,dry)
 		return
 	var trunk_height := 3.0*scale_factor
-	_cylinder("TreeTrunk",.24*scale_factor,trunk_height,Vector3(point.x,trunk_height*.5,point.y),Color("66513a"),true)
+	var trunk := _cylinder("TreeTrunk",.24*scale_factor,trunk_height,Vector3(point.x,trunk_height*.5,point.y),Color("66513a"),true)
+	trunk.material_override = preload("res://assets/urban_detail/FloraSurfaces.gd").material("bark",Color("66513a"),1.4,1.1)
 	var foliage := Color("777b48") if dry else Color("465d3f")
 	for offset in [Vector3(-.65,0,0),Vector3(.52,.18,.12),Vector3(0,.42,-.34),Vector3(.08,-.10,.58)]:
 		var crown := MeshInstance3D.new()
@@ -303,7 +304,7 @@ func _tree(point: Vector2, scale_factor: float, dry: bool) -> void:
 			_sphere_meshes[sphere_key] = sphere
 		crown.mesh = _sphere_meshes[sphere_key]
 		crown.position = Vector3(point.x,trunk_height+.7*scale_factor,point.y)+offset*scale_factor
-		crown.material_override = _material(foliage.lightened(.07*float(get_child_count()%3)))
+		crown.material_override = preload("res://assets/urban_detail/FloraSurfaces.gd").material("foliage",foliage.lightened(.07*float(get_child_count()%3)),1.2,.9)
 		add_child(crown)
 
 func _cobra_tree(point: Vector2, scale_factor: float, dry: bool) -> void:
