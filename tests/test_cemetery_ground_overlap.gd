@@ -24,15 +24,20 @@ func _run() -> void:
 	var outside := Vector2(floor.position.x - 1.0, center.z)
 	for chunk in region.chunks.values():
 		for child in chunk.get_children():
-			if not child is MeshInstance3D or not child.mesh is BoxMesh:
+			# Desde 2026-10-13 o chão base "Land" é uma malha recortada (camada única de chão); a pegada
+			# física continua sendo a caixa de colisão de 0,3 m, filha do nó.
+			if not child is MeshInstance3D or String(child.name) != "Land":
 				continue
-			if not child.material_override is StandardMaterial3D or child.material_override.albedo_color != Color("737b69"):
+			# _material() multiplica a cor pelo relevo (commit c6685136): comparar com o material do chão
+			# base que a própria região entrega, não com a cor crua.
+			if child.material_override != region._material(Color("737b69")):
 				continue
-			if not is_equal_approx(child.position.y, -0.15):
+			var body := child.get_child(0) as StaticBody3D if child.get_child_count() > 0 else null
+			if body == null or not is_equal_approx(body.global_position.y, -0.15):
 				continue
 			land_count += 1
-			var size: Vector3 = child.mesh.get_aabb().size
-			var point: Vector3 = child.global_position
+			var size: Vector3 = ((body.get_child(0) as CollisionShape3D).shape as BoxShape3D).size
+			var point: Vector3 = body.global_position
 			var bounds := Rect2(Vector2(point.x - size.x * 0.5, point.z - size.z * 0.5), Vector2(size.x, size.z))
 			_check(not bounds.intersection(floor).has_area(), "Generic land overlaps the cemetery floor")
 			surrounding_land = surrounding_land or bounds.has_point(outside)

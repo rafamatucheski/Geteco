@@ -9,6 +9,7 @@ class_name HarborUrbanSurface3D
 const SCALE := 1.0 / 16.0
 const GROUND := preload("res://assets/regions/source/world/harbor/UrbanGround.gd")
 const PAVING := preload("res://world/urban_detail/PromenadePaving.gd")
+const GROUND_CUT := preload("res://world/urban_detail/GroundCut.gd")
 const CATALOG :=preload("res://world/places/PlaceCatalog.gd")
 
 var _surfaces: Array[Dictionary] = []
@@ -61,7 +62,9 @@ func _compose_visible_surfaces() -> void:
 			_visible_surfaces.append({"rect":piece,"kind":_surfaces[i].kind,"color":_surfaces[i].color})
 
 
-func build_chunk(parent: Node3D, rect: Rect2) -> void:
+## `cover`: contorno das ruas do chunk (HarborRoadGeometry3D.chunk_cover); o lote não fica por baixo da rua.
+func build_chunk(parent: Node3D, rect: Rect2, cover: Array[PackedVector2Array] = []) -> Array[Rect2]:
+	var exposed: Array[Rect2] = []
 	var grouped: Dictionary = {}
 	for source in _visible_surfaces:
 		var clipped := (source.rect as Rect2).intersection(rect)
@@ -70,8 +73,10 @@ func build_chunk(parent: Node3D, rect: Rect2) -> void:
 		if not grouped.has(key):
 			grouped[key] = {"kind": source.kind, "color": source.color, "rects": []}
 		grouped[key].rects.append(clipped)
+		exposed.append(clipped)
 	for key in grouped:
-		_add_group(parent, grouped[key])
+		_add_group(parent, grouped[key], cover)
+	return exposed
 
 
 func source_access_points() -> PackedVector2Array:
@@ -207,26 +212,11 @@ func _add_access(source_rect: Rect2, kind: String, color: Color) -> void:
 	_access_points.append(source_rect.get_center() * SCALE)
 
 
-func _add_group(parent: Node3D, group: Dictionary) -> void:
-	var vertices := PackedVector3Array()
-	var normals := PackedVector3Array()
-	var uvs := PackedVector2Array()
-	for rect_value in group.rects:
-		var rect := rect_value as Rect2
-		var points := [rect.position,Vector2(rect.end.x,rect.position.y),rect.end,Vector2(rect.position.x,rect.end.y)]
-		for index in [0,2,1,0,3,2]:
-			var point: Vector2 = points[index]
-			vertices.append(Vector3(point.x,0.006,point.y))
-			normals.append(Vector3.UP)
-			uvs.append(point/16.0)
-	if vertices.is_empty(): return
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX]=vertices
-	arrays[Mesh.ARRAY_NORMAL]=normals
-	arrays[Mesh.ARRAY_TEX_UV]=uvs
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
+func _add_group(parent: Node3D, group: Dictionary, cover: Array[PackedVector2Array] = []) -> void:
+	var pieces: Array[PackedVector2Array] = []
+	for rect_value in group.rects: pieces.append(GROUND_CUT.rect_polygon(rect_value as Rect2))
+	var mesh := GROUND_CUT.flat_mesh(GROUND_CUT.subtract(pieces, cover), 0.006, 16.0)
+	if mesh == null: return
 	mesh.surface_set_material(0,_material(String(group.kind),group.color))
 	var instance := MeshInstance3D.new()
 	instance.name="HarborSurface_%s"%String(group.kind)

@@ -1,0 +1,225 @@
+{
+	"area_by_layer_count_m2": {
+		"1": 122607.25,
+		"11": 1.0,
+		"2": 68923.75,
+		"3": 33069.75,
+		"4": 6659.0,
+		"5": 8678.25,
+		"6": 24591.75,
+		"7": 1765.0,
+		"8": 172.5,
+		"9": 7.25
+	},
+	"build_ms": 37233,
+	"cell_m": 0.5,
+	"chunks": 96,
+	"ground_area_m2": 266475.5,
+	"label": "antes",
+	"layers_by_source_m2": {
+		"EarthRoadVerge": {
+			"m2": 483.75,
+			"nodes": 4
+		},
+		"HarborAreaDressing3D/CemeteryNorthGreen": {
+			"m2": 403.0,
+			"nodes": 1
+		},
+		"HarborAreaDressing3D/CobraApproachGround": {
+			"m2": 877.5,
+			"nodes": 1
+		},
+		"HarborAreaDressing3D/CobraCommunalGarden": {
+			"m2": 486.75,
+			"nodes": 1
+		},
+		"HarborAreaDressing3D/CobraDryMeadow": {
+			"m2": 9955.0,
+			"nodes": 1
+		},
+		"HarborAreaDressing3D/MeshInstance3D": {
+			"m2": 2844.25,
+			"nodes": 116
+		},
+		"HarborAreaDressing3D/SalvageMeadow": {
+			"m2": 5565.0,
+			"nodes": 1
+		},
+		"HarborCrosswalk": {
+			"m2": 587.25,
+			"nodes": 30
+		},
+		"HarborEarthRoad": {
+			"m2": 1066.5,
+			"nodes": 4
+		},
+		"HarborPortModel3D/Batch_()_<StandardMaterial3D#-9223370961166789902>": {
+			"m2": 809.75,
+			"nodes": 1
+		},
+		"HarborPortModel3D/Batch_()_<StandardMaterial3D#-9223370961217121551>": {
+			"m2": 840.0,
+			"nodes": 1
+		},
+		"HarborPortModel3D/Batch_()_<StandardMaterial3D#-9223371010475029272>": {
+			"m2": 809.75,
+			"nodes": 1
+		},
+		"HarborPortModel3D/Batch_()_<StandardMaterial3D#-9223371010525360924>": {
+			"m2": 840.0,
+			"nodes": 1
+		},
+		"HarborPortModel3D/MeshInstance3D": {
+			"m2": 2617.5,
+			"nodes": 460
+		},
+		"HarborPublicRealm3D/NorthbankPromenade": {
+			"m2": 1446.5,
+			"nodes": 2
+		},
+		"HarborRoad": {
+			"m2": 32607.25,
+			"nodes": 56
+		},
+		"HarborRoad_151c": {
+			"m2": 33688.5,
+			"nodes": 56
+		},
+		"HarborRoad_70767a": {
+			"m2": 35306.0,
+			"nodes": 56
+		},
+		"HarborRoad_aaa9a": {
+			"m2": 55126.0,
+			"nodes": 58
+		},
+		"HarborSurface_concrete": {
+			"m2": 20353.75,
+			"nodes": 18
+		},
+		"HarborSurface_grass": {
+			"m2": 1294.5,
+			"nodes": 11
+		},
+		"HarborSurface_gravel": {
+			"m2": 4012.75,
+			"nodes": 6
+		},
+		"HarborSurface_stone": {
+			"m2": 39563.25,
+			"nodes": 38
+		},
+		"Land": {
+			"m2": 216733.0,
+			"nodes": 93
+		},
+		"LootablePortContainer/Batch_Cargo_695944fftrue ()_<StandardMaterial3D#-9223370578075833567>": {
+			"m2": 1476.0,
+			"nodes": 18
+		},
+		"MeshInstance3D": {
+			"m2": 49510.75,
+			"nodes": 335
+		},
+		"NorthstarDeck": {
+			"m2": 2009.75,
+			"nodes": 1
+		},
+		"OriginalPortSurface": {
+			"m2": 2526.0,
+			"nodes": 7
+		},
+		"PortContainer40ft3D/MeshInstance3D": {
+			"m2": 446.25,
+			"nodes": 1400
+		},
+		"PortShipDressing3D/SantaMarePaintedDeck": {
+			"m2": 2601.25,
+			"nodes": 1
+		},
+		"SalvageYardNative/MeshInstance3D": {
+			"m2": 736.0,
+			"nodes": 209
+		},
+		"SerenoForestFloor": {
+			"m2": 11346.75,
+			"nodes": 5
+		},
+		"SouthPortConcrete": {
+			"m2": 31762.5,
+			"nodes": 9
+		},
+		"UrbanBrownstoneBuilding/BrownstoneBody": {
+			"m2": 1421.5,
+			"nodes": 8
+		},
+		"UrbanBrownstoneBuilding/TerraceUnitBody": {
+			"m2": 472.0,
+			"nodes": 6
+		},
+		"UrbanCobraHouse/HouseBody": {
+			"m2": 914.0,
+			"nodes": 7
+		},
+		"UrbanCommercialBuilding/CommercialBody": {
+			"m2": 3209.75,
+			"nodes": 14
+		},
+		"UrbanIndustrialBuilding/IndustrialBody": {
+			"m2": 1202.75,
+			"nodes": 5
+		},
+		"UrbanLandmarkFrontage3D/LandmarkRearBody": {
+			"m2": 408.5,
+			"nodes": 3
+		},
+		"UrbanShopfrontBuilding/ShopRearBody": {
+			"m2": 1755.5,
+			"nodes": 11
+		}
+	},
+	"mean_layers": 2.21803880656946,
+	"scope": "triângulos virados para cima entre -0.06 e 0.30 m; uma peça conta uma vez por célula",
+	"top_overlapping_pairs_m2": {
+		"HarborAreaDressing3D/CobraDryMeadow  +  HarborAreaDressing3D/MeshInstance3D": 2534.25,
+		"HarborAreaDressing3D/CobraDryMeadow  +  Land": 7647.25,
+		"HarborAreaDressing3D/SalvageMeadow  +  MeshInstance3D": 5525.25,
+		"HarborPortModel3D/MeshInstance3D  +  Land": 2396.5,
+		"HarborPortModel3D/MeshInstance3D  +  SouthPortConcrete": 2396.5,
+		"HarborRoad  +  HarborRoad_151c": 32607.25,
+		"HarborRoad  +  HarborRoad_70767a": 32607.25,
+		"HarborRoad  +  HarborRoad_aaa9a": 32607.25,
+		"HarborRoad  +  HarborSurface_concrete": 4818.5,
+		"HarborRoad  +  HarborSurface_stone": 12588.25,
+		"HarborRoad  +  Land": 25353.0,
+		"HarborRoad  +  MeshInstance3D": 7527.25,
+		"HarborRoad  +  SouthPortConcrete": 4906.0,
+		"HarborRoad_151c  +  HarborRoad_70767a": 33688.5,
+		"HarborRoad_151c  +  HarborRoad_aaa9a": 33688.5,
+		"HarborRoad_151c  +  HarborSurface_concrete": 4978.5,
+		"HarborRoad_151c  +  HarborSurface_stone": 12947.75,
+		"HarborRoad_151c  +  Land": 26177.0,
+		"HarborRoad_151c  +  MeshInstance3D": 7827.0,
+		"HarborRoad_151c  +  SouthPortConcrete": 5120.75,
+		"HarborRoad_70767a  +  HarborRoad_aaa9a": 35306.0,
+		"HarborRoad_70767a  +  HarborSurface_concrete": 5245.25,
+		"HarborRoad_70767a  +  HarborSurface_stone": 13318.0,
+		"HarborRoad_70767a  +  Land": 27386.0,
+		"HarborRoad_70767a  +  MeshInstance3D": 8261.25,
+		"HarborRoad_70767a  +  SouthPortConcrete": 5261.0,
+		"HarborRoad_aaa9a  +  HarborSurface_concrete": 8069.5,
+		"HarborRoad_aaa9a  +  HarborSurface_gravel": 2921.75,
+		"HarborRoad_aaa9a  +  HarborSurface_stone": 20357.0,
+		"HarborRoad_aaa9a  +  Land": 42416.25,
+		"HarborRoad_aaa9a  +  MeshInstance3D": 13533.75,
+		"HarborRoad_aaa9a  +  SouthPortConcrete": 8385.25,
+		"HarborSurface_concrete  +  Land": 18228.75,
+		"HarborSurface_gravel  +  Land": 2773.75,
+		"HarborSurface_stone  +  Land": 31073.0,
+		"HarborSurface_stone  +  MeshInstance3D": 10365.75,
+		"Land  +  MeshInstance3D": 19296.5,
+		"Land  +  SouthPortConcrete": 31762.5,
+		"Land  +  UrbanCommercialBuilding/CommercialBody": 2805.0,
+		"MeshInstance3D  +  UrbanCommercialBuilding/CommercialBody": 2331.5
+	}
+}

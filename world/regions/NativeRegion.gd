@@ -24,6 +24,7 @@ const HARBOR_ROAD_GEOMETRY := preload("res://world/urban_detail/HarborRoadGeomet
 const HARBOR_URBAN_SURFACE := preload("res://world/urban_detail/HarborUrbanSurface3D.gd")
 const CITY_DRESSING := preload("res://world/city_look/CityChunkDressing.gd")
 const TUNNEL_CUTAWAY := preload("res://world/urban_detail/TunnelCutaway.gd")
+const GROUND_CUT := preload("res://world/urban_detail/GroundCut.gd")
 const TERRAIN := preload("res://world/regions/MountainTerrain3D.gd")
 const ROUTE_GEOMETRY := preload("res://world/mountain_detail/MountainRouteGeometry.gd")
 const ROUTE_LAYOUT := preload("res://world/mountain_detail/MountainRouteLayout.gd")
@@ -766,6 +767,43 @@ func _tree_collision(tree: Node3D, chunk: Node3D) -> void:
 		var radius := .4 * maxf(tree.global_basis.x.length(),tree.global_basis.z.length())
 		preload("res://gameplay/street_physics/FragileProps3D.gd").register_node("desert_tree",tree,chunk,{},[],radius)
 
+## Chão base do porto: colisão em caixa de 0,3 m como antes; o visual é o topo só onde nenhum piso de cima
+## (`cover`) cobre, mais as quatro laterais (a margem com o mar continua igual).
+func _land_piece(chunk: Node3D, piece: Rect2, cover: Array[PackedVector2Array]) -> void:
+	var mesh := GROUND_CUT.flat_mesh(GROUND_CUT.subtract([GROUND_CUT.rect_polygon(piece)],cover),0.0,1.0)
+	if mesh == null: mesh = ArrayMesh.new()
+	var corners := [Vector2(piece.position.x,piece.position.y),Vector2(piece.end.x,piece.position.y),Vector2(piece.end.x,piece.end.y),Vector2(piece.position.x,piece.end.y)]
+	var vertices := PackedVector3Array()
+	var normals := PackedVector3Array()
+	for side in 4:
+		var a: Vector2 = corners[side]
+		var b: Vector2 = corners[(side+1)%4]
+		var edge := b-a
+		var normal := Vector3(edge.y,0,-edge.x).normalized()
+		for point in [Vector3(a.x,0,a.y),Vector3(b.x,0,b.y),Vector3(b.x,-.3,b.y),Vector3(a.x,0,a.y),Vector3(b.x,-.3,b.y),Vector3(a.x,-.3,a.y)]:
+			vertices.append(point)
+			normals.append(normal)
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
+	var land := MeshInstance3D.new()
+	land.name = "Land"
+	land.mesh = mesh
+	land.material_override = _material(Color("737b69"))
+	chunk.add_child(land)
+	var body := StaticBody3D.new()
+	body.collision_layer = 1
+	body.collision_mask = 0
+	body.position = Vector3(piece.get_center().x,-.15,piece.get_center().y)
+	var collider := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(piece.size.x,.3,piece.size.y)
+	collider.shape = shape
+	body.add_child(collider)
+	land.add_child(body)
+
 func _box(parent: Node3D,label: String,point: Vector3,size: Vector3,color: Color,solid := false) -> MeshInstance3D:
 	var mesh := MeshInstance3D.new()
 	mesh.name = label
@@ -1044,10 +1082,18 @@ func _ensure_chunk(key: Vector2i) -> void:
 
 func _build_surfaces(chunk: Node3D, rect: Rect2, key: Vector2i) -> void:
 	if region_id == "harbor":
-		if harbor_urban_surface != null:
-			harbor_urban_surface.build_chunk(chunk,rect)
+		# Uma camada de chão só (2026-10-13): quem está por cima é montado primeiro e quem fica por baixo
+		# perde a área coberta. Ruas > lotes e concreto do porto > chão base (Land).
+		var ground_cover: Array[PackedVector2Array] = []
 		if harbor_road_geometry != null:
 			harbor_road_geometry.build_chunk(chunk,rect)
+			ground_cover.append_array(harbor_road_geometry.chunk_cover)
+		var road_cover := ground_cover.duplicate()
+		if harbor_urban_surface != null:
+			for lot in harbor_urban_surface.build_chunk(chunk,rect,road_cover): ground_cover.append(GROUND_CUT.rect_polygon(lot))
+		var port_land := Rect2(SOUTH_PORT_LAYOUT.LAND.position*SCALE,SOUTH_PORT_LAYOUT.LAND.size*SCALE)
+		var port_surface := rect.intersection(port_land)
+		if port_surface.has_area(): ground_cover.append(GROUND_CUT.rect_polygon(port_surface))
 		var cemetery_half: Vector2 = CEMETERY.LOT_SIZE * SCALE * 0.5
 		var cemetery_floor := Rect2(CEMETERY.SOURCE_CENTER * SCALE - cemetery_half, cemetery_half * 2.0)
 		var sewer_openings: Array[Rect2] = []
@@ -1061,7 +1107,7 @@ func _build_surfaces(chunk: Node3D, rect: Rect2, key: Vector2i) -> void:
 						# Rampas e trechos cobertos do Túnel do canal têm piso e laje próprios.
 						for land_piece in CANAL_TUNNEL.outside_land(cellar_piece):
 							for skate_piece in preload("res://activities/skate/SkateParkLayout.gd").outside(land_piece):
-								_box(chunk,"Land",Vector3(skate_piece.get_center().x,-.15,skate_piece.get_center().y),Vector3(skate_piece.size.x,.3,skate_piece.size.y),Color("737b69"),true)
+								_land_piece(chunk,skate_piece,ground_cover)
 		harbor_ocean.build_chunk(chunk,rect)
 		CANAL_TUNNEL.build_chunk(chunk,rect)
 		var skate_center := preload("res://activities/skate/SkateParkLayout.gd").CENTER
@@ -1073,15 +1119,19 @@ func _build_surfaces(chunk: Node3D, rect: Rect2, key: Vector2i) -> void:
 			var woodland: bool = polygon==preload("res://world/places/fishing/FishingRuralLayout.gd").outline()
 			for piece in Geometry2D.intersect_polygons(polygon,clip): _authored_surface(chunk,piece,woodland)
 		preload("res://world/places/fishing/FishingWoodland.gd").build_chunk(chunk,rect)
-		var port_land := Rect2(SOUTH_PORT_LAYOUT.LAND.position*SCALE,SOUTH_PORT_LAYOUT.LAND.size*SCALE)
-		var port_surface := rect.intersection(port_land)
 		if port_surface.has_area():
 			# Visual finish only: OriginalSouthPort/land already own physical support.
 			# Keep the apron below every road finish. Its former .014 top was
 			# exactly coplanar with CURB_COLOR, causing flickering along the roads.
-			var apron := _box(chunk,"SouthPortConcrete",Vector3(port_surface.get_center().x,.002,port_surface.get_center().y),Vector3(port_surface.size.x,.004,port_surface.size.y),Color("4f5552"))
-			apron.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-			apron.material_override = preload("res://world/regions/PortYardMaterials3D.gd").concrete()
+			# Sem a área das ruas: antes o concreto inteiro ficava por baixo delas.
+			var apron_mesh := GROUND_CUT.flat_mesh(GROUND_CUT.subtract([GROUND_CUT.rect_polygon(port_surface)],road_cover),.004,1.0)
+			if apron_mesh != null:
+				var apron := MeshInstance3D.new()
+				apron.name = "SouthPortConcrete"
+				apron.mesh = apron_mesh
+				apron.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+				apron.material_override = preload("res://world/regions/PortYardMaterials3D.gd").concrete()
+				chunk.add_child(apron)
 	else:
 		# These authored cells are the water spans of HarborMountainConnector and
 		# HarborBridgeCrossing.

@@ -34,6 +34,9 @@ var _roads: Array[Dictionary] = []
 var _junctions: Array[Dictionary] = []
 var _layers: Array[Dictionary] = []
 var _materials: Dictionary = {}
+## Contorno externo das ruas (calçada inteira e estradas de terra) do último chunk montado. Os pisos de
+## baixo (lotes, concreto do porto, chão base) se recortam contra ele para ficar uma camada só.
+var chunk_cover: Array[PackedVector2Array] = []
 var _road_end_blend := preload("res://world/urban_detail/RuralRoadEndBlend.gd").new()
 var _crosswalk_white: Array[PackedVector2Array] = []
 var _crosswalk_tactile: Array[PackedVector2Array] = []
@@ -145,11 +148,12 @@ func build_chunk(parent: Node3D, rect: Rect2) -> void:
 		if clip_bounds.intersects(_earth_verge_bounds[index], true):
 			verge.append(_earth_verge_triangles[index])
 	preload("res://world/urban_detail/RuralRoadVerge.gd").build(parent,verge,clip)
-	_add_clipped_surface(parent,"HarborEarthRoad",_earth_polygons,clip,0.023,preload("res://world/urban_detail/RuralGroundMaterial.gd").material(),_earth_bounds)
+	chunk_cover = _add_clipped_surface(parent,"HarborEarthRoad",_earth_polygons,clip,0.023,preload("res://world/urban_detail/RuralGroundMaterial.gd").material(),_earth_bounds)
 	var opening_clips: Array[PackedVector2Array] = []
 	for opening in CATALOG.sewer_openings():
 		var sewer_opening := Rect2(opening.position * SOURCE_SCALE, opening.size * SOURCE_SCALE)
 		if rect.intersects(sewer_opening): opening_clips.append(_rect_polygon(sewer_opening))
+	var chunk_layers: Array = []
 	for layer in _layers:
 		var clipped: Array[PackedVector2Array] = []
 		for polygon_index in range(layer.polygons.size()):
@@ -168,12 +172,26 @@ func build_chunk(parent: Node3D, rect: Rect2) -> void:
 							remaining = next
 						for outside in remaining:
 							if outside.size() >= 3: clipped.append(outside)
-		_add_surface(parent, "HarborRoad_%s" % layer.name, clipped, float(layer.y), layer.material)
+		chunk_layers.append(clipped)
+	# As quatro faixas (calçada, meio-fio, borda, asfalto) são offsets concêntricos da mesma rua. Cheias,
+	# o centro da rua era pintado 4 vezes (medido em 2026-10-13: ~150 mil m² de chão repetido no porto).
+	# Cada faixa vira um anel sem a área da faixa de dentro; a de dentro (asfalto) e a colisão não mudam.
+	if not chunk_layers.is_empty(): chunk_cover.append_array(chunk_layers[0])
+	for index in range(chunk_layers.size() - 1):
+		chunk_layers[index] = _without_inner(chunk_layers[index], chunk_layers[index + 1])
+	for index in chunk_layers.size():
+		var layer: Dictionary = _layers[index]
+		_add_surface(parent, "HarborRoad_%s" % layer.name, chunk_layers[index], float(layer.y), layer.material)
 	_add_clipped_surface(parent,"HarborCrosswalk",_crosswalk_white,clip,0.038,_material(CROSSWALK_COLOR),_crosswalk_white_bounds)
 	_add_clipped_surface(parent,"HarborTactile",_crosswalk_tactile,clip,0.039,_material(TACTILE_COLOR),_crosswalk_tactile_bounds)
 	_add_clipped_surface(parent,"HarborStopLine",_crosswalk_stop,clip,0.040,_material(STOP_LINE_COLOR),_crosswalk_stop_bounds)
 	_build_markings(parent, rect)
 
+
+## `outer` menos a união de `inner`, já recortados ao chunk (GroundCut cuida do sentido dos polígonos e
+## de recortes que abririam buraco).
+func _without_inner(outer: Array[PackedVector2Array], inner: Array[PackedVector2Array]) -> Array[PackedVector2Array]:
+	return preload("res://world/urban_detail/GroundCut.gd").subtract(outer, inner)
 
 func source_coverage_errors() -> PackedStringArray:
 	var errors := PackedStringArray()
@@ -413,7 +431,7 @@ func _quad(center: Vector2,forward: Vector2,forward_size: float,side_size: float
 	return _counter_clockwise(PackedVector2Array([center-f-s,center+f-s,center+f+s,center-f+s]))
 
 
-func _add_clipped_surface(parent: Node3D,label: String,source: Array[PackedVector2Array],clip: PackedVector2Array,y: float,material: Material,bounds: Array[Rect2] = [])->void:
+func _add_clipped_surface(parent: Node3D,label: String,source: Array[PackedVector2Array],clip: PackedVector2Array,y: float,material: Material,bounds: Array[Rect2] = [])->Array[PackedVector2Array]:
 	var clipped: Array[PackedVector2Array]=[]
 	var clip_bounds := _polygon_bounds(clip).grow(CLIP_BOUNDS_PADDING)
 	var use_bounds := bounds.size() == source.size()
@@ -424,6 +442,7 @@ func _add_clipped_surface(parent: Node3D,label: String,source: Array[PackedVecto
 			var piece:=piece_value as PackedVector2Array
 			if piece.size()>=3: clipped.append(piece)
 	_add_surface(parent,label,clipped,y,material)
+	return clipped
 
 
 func _closest_segment(point: Vector2, points: PackedVector2Array) -> Dictionary:

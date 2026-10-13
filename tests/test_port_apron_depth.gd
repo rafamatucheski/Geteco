@@ -20,7 +20,9 @@ func run() -> void:
 	var apron := chunk.get_node_or_null("SouthPortConcrete") as MeshInstance3D
 	check(apron != null,"Port apron is present in the production surface builder")
 	if apron != null:
-		var top: float = apron.position.y + (apron.mesh as BoxMesh).size.y * .5
+		# O concreto é uma malha plana recortada pelas ruas (camada única de chão, 2026-10-13), não mais
+		# uma caixa: o topo vem dos limites reais da malha.
+		var top: float = (apron.global_transform * apron.get_aabb()).end.y
 		check(top > 0,"Port finish stays above the physical quay")
 		for layer in region.harbor_road_geometry._layers:
 			check(top + .003 <= float(layer.y),"Port finish is separated from road layer " + str(layer.name))
