@@ -1,0 +1,58 @@
+{
+  "scope": "Somente faróis e giroflex de VehicleEquipment; neon e fogo excluídos por instrução do usuário",
+  "engine": "Godot 4.7.2 .NET",
+  "mode": "headless: contagens, sem métricas de desempenho",
+  "production_night_30s": {
+    "off": {
+      "traffic_equipped": 12,
+      "equipment": 17,
+      "sources_instantiated": 51,
+      "sources_active": 2,
+      "traffic_sources_active": 2,
+      "player_sources_active": 0,
+      "decals_active": 0,
+      "sprites_active": 0
+    },
+    "on": {
+      "traffic_equipped": 12,
+      "equipment": 17,
+      "sources_instantiated": 50,
+      "sources_active": 0,
+      "traffic_sources_active": 0,
+      "player_sources_active": 0,
+      "decals_active": 8,
+      "sprites_active": 21
+    }
+  },
+  "authored_night_18_traffic_plus_player": {
+    "off": {
+      "traffic_equipped": 29,
+      "equipment": 37,
+      "sources_instantiated": 111,
+      "sources_active": 4,
+      "traffic_sources_active": 2,
+      "player_sources_active": 2,
+      "decals_active": 0,
+      "sprites_active": 0
+    },
+    "on": {
+      "traffic_equipped": 29,
+      "equipment": 38,
+      "sources_instantiated": 113,
+      "sources_active": 2,
+      "traffic_sources_active": 0,
+      "player_sources_active": 2,
+      "decals_active": 8,
+      "sprites_active": 59
+    }
+  },
+  "functional_saturation": {
+    "traffic_authored": 18,
+    "service_authored": 9,
+    "players": 1,
+    "sources_active": 8,
+    "player_sources_active": 2,
+    "decals_active": 8
+  },
+  "note": "Spawn natural não determinístico, outras tarefas alteram a base simultaneamente. Não atribuir variações de fontes instanciadas à P4. Carga autorada separada da produção."
+}

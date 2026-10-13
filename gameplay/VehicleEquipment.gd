@@ -4,7 +4,8 @@ const AUDIO := preload("res://gameplay/VehicleEquipmentAudio.gd")
 const PROFILES := preload("res://gameplay/VehicleLightProfiles.gd")
 const SURFACES := preload("res://runtime/VehicleSurfaceRoles.gd")
 const ENGINE_PROFILE := preload("res://audio/VehicleEngineProfile.gd")
-## Fachos reais (SpotLight) de NPC ao mesmo tempo, só nos carros mais próximos
+const LIGHT_BUDGET := preload("res://gameplay/lights/LightBudget.gd")
+## Legado, com GETECO_LIGHT_BUDGET=0: fachos reais de NPC só nos mais próximos
 ## do jogador: iluminam pedestres e lataria em volta. O que se vê de cima é a
 ## mancha no chão (`ground_pool`), que custa quase nada. Medido em 22/09/2026
 ## (RTX 4060, mobile, VSync off, não isolado): 5 fachos somaram 0,8–2,3 ms ao p95;
@@ -19,6 +20,7 @@ static var _npc_frame := -1
 static var _npc_allowed: Dictionary = {}
 static var _pool_texture: ImageTexture
 static var _pool_materials: Dictionary = {}
+static var _glow_texture: ImageTexture
 signal changed
 var car: CharacterBody3D
 var world: Node
@@ -28,6 +30,8 @@ var broken_left := false
 var broken_right := false
 var input_enabled := true
 var lamps: Array[Dictionary] = []
+var glows: Array[Dictionary] = []
+var beacon_glows: Array[Dictionary] = []
 var lens_materials: Array[Dictionary] = []
 var tail_materials: Array[StandardMaterial3D] = []
 var _tail_colors: Array[Color] = []
@@ -43,7 +47,7 @@ var profile: Dictionary = {}
 ## `light_pool`) e o cone da V1 (`HeadlightTextureGenerator`). Com a câmera alta,
 ## uma SpotLight comum quase não aparece no asfalto; é esta mancha que mostra o
 ## farol — e o formato, a cor e o brilho dela seguem o perfil do modelo.
-var ground_pool: MeshInstance3D
+var ground_pool: Node3D
 ## Acendimento automático de quem dirige sozinho (trânsito, ônibus, viaturas).
 var auto_lit := false
 var beacons: Array[Dictionary] = []
@@ -98,6 +102,9 @@ func _ready() -> void:
 				count += 1
 		if count == 0: continue
 		lamps.append({"lamp": _projector(center / count, float(profile.energy), float(profile.angle)), "side": side})
+		if LIGHT_BUDGET.enabled:
+			var projector: SpotLight3D = lamps.back().lamp
+			glows.append({"sprite": _glow(projector.get_parent(), projector.position, profile.color, .42), "side": side})
 	var front := Vector3.ZERO
 	for mount in mounts: front += mount
 	npc_beam = _projector(front / mounts.size(), float(profile.energy) * (1.0 if profile.single else 1.6), float(profile.angle) + (0.0 if profile.single else 8.0))
@@ -111,14 +118,29 @@ func _ready() -> void:
 		halo.position = center / bar_mounts.size() + Vector3.UP * .35
 		halo.omni_range = 7.0
 		halo.light_energy = 2.2
+		if LIGHT_BUDGET.enabled: halo.set_meta("budget_energy", 2.2)
 		halo.shadow_enabled = false
 		halo.hide()
 		car.add_child(halo)
+		if LIGHT_BUDGET.enabled:
+			for side in 2:
+				var point := Vector3.ZERO
+				var count := 0
+				for mount in bar_mounts:
+					if (mount.x < 0) == (side == 0):
+						point += mount
+						count += 1
+				if count == 0: continue
+				for beacon in beacons:
+					if beacon.side == side:
+						beacon_glows.append({"sprite": _glow(car, point / count + Vector3.UP * .04, beacon.color, .58), "side": side})
+						break
 	horn_audio = _audio(43.75, -7)
 	siren_audio = _audio(56.25, -10)
 	siren_audio.unit_size = 5
 	alarm_audio = _audio(62.5, 2)
 	alarm_audio.unit_size = 5
+	if LIGHT_BUDGET.enabled: LIGHT_BUDGET.register(self)
 	_refresh()
 
 ## Cinco lanternas na borda dianteira do teto da cabine, como caminhão de verdade.
@@ -259,6 +281,7 @@ func _projector(mount: Vector3, energy: float, angle: float) -> SpotLight3D:
 	light.transform = car.visual.transform.affine_inverse() * placement if on_visual else placement
 	light.light_color = profile.color
 	light.light_energy = energy
+	if LIGHT_BUDGET.enabled: light.set_meta("budget_energy", energy)
 	light.spot_range = float(profile.range)
 	light.spot_angle = angle
 	light.shadow_enabled = false
@@ -269,10 +292,28 @@ func _projector(mount: Vector3, energy: float, angle: float) -> SpotLight3D:
 	(car.visual if on_visual else car).add_child(light)
 	return light
 
-func _ground_pool(front: Vector3) -> MeshInstance3D:
+func _ground_pool(front: Vector3) -> Node3D:
 	var length := float(profile.range) * .42
 	var width := minf(2.0 * tan(deg_to_rad(float(profile.angle))) * length * .55, length * 1.1)
 	if profile.single: width *= .7
+	if LIGHT_BUDGET.enabled:
+		var decal := Decal.new()
+		decal.name = "HeadlightGroundDecal"
+		# Volume raso: uma projeção alta também colore capôs e a parte baixa
+		# dos carros à frente. O decal representa a mancha na pista, não a lataria.
+		decal.size = Vector3(width, .4, length)
+		decal.position = Vector3(front.x * .2, -.03, front.z - length * .5 + .2)
+		decal.texture_albedo = _cone_texture()
+		decal.texture_emission = _cone_texture()
+		decal.albedo_mix = 0.0
+		decal.modulate = profile.color
+		decal.emission_energy = clampf(float(profile.energy) * .42, .3, .9)
+		decal.normal_fade = .8
+		decal.upper_fade = 0.0
+		decal.lower_fade = 0.0
+		decal.hide()
+		car.add_child(decal)
+		return decal
 	var plane := PlaneMesh.new()
 	plane.size = Vector2(width, length)
 	var instance := MeshInstance3D.new()
@@ -285,6 +326,31 @@ func _ground_pool(front: Vector3) -> MeshInstance3D:
 	instance.hide()
 	car.add_child(instance)
 	return instance
+
+func _glow(parent: Node3D, point: Vector3, color: Color, size: float) -> Sprite3D:
+	var sprite := Sprite3D.new()
+	sprite.name = "VehicleLensGlow"
+	sprite.texture = _lens_glow_texture()
+	sprite.pixel_size = size / 64.0
+	sprite.modulate = color
+	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	sprite.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	sprite.position = point
+	sprite.hide()
+	parent.add_child(sprite)
+	return sprite
+
+static func _lens_glow_texture() -> ImageTexture:
+	if _glow_texture != null: return _glow_texture
+	var image := Image.create(64, 64, false, Image.FORMAT_RGBA8)
+	for y in 64:
+		for x in 64:
+			var radius := Vector2(float(x) / 63.0 * 2.0 - 1.0, float(y) / 63.0 * 2.0 - 1.0).length()
+			var alpha := pow(1.0 - smoothstep(0.0, 1.0, radius), 2.0)
+			image.set_pixel(x, y, Color(1.0, 1.0, 1.0, alpha))
+	image.generate_mipmaps()
+	_glow_texture = ImageTexture.create_from_image(image)
+	return _glow_texture
 
 static func _pool_material(family: String, color: Color, energy: float) -> StandardMaterial3D:
 	if _pool_materials.has(family): return _pool_materials[family]
@@ -312,7 +378,8 @@ static func _cone_texture() -> ImageTexture:
 		for x in 64:
 			var across := absf(float(x) / 63.0 * 2.0 - 1.0) / spread
 			var value := reach * (1.0 - smoothstep(.55, 1.0, across)) * lerpf(1.0, .55, along)
-			image.set_pixel(x, y, Color(value, value, value, 1.0))
+			image.set_pixel(x, y, Color(value, value, value, value if LIGHT_BUDGET.enabled else 1.0))
+	if LIGHT_BUDGET.enabled: image.generate_mipmaps()
 	_pool_texture = ImageTexture.create_from_image(image)
 	return _pool_texture
 
@@ -431,9 +498,9 @@ func _process(delta: float) -> void:
 	if alarm_remaining > 0:
 		alarm_remaining = maxf(0, alarm_remaining - delta)
 		if alarm_remaining <= 0: changed.emit()
-	_refresh()
+	_refresh(false)
 
-func _refresh() -> void:
+func _refresh(force_budget: bool = true) -> void:
 	if not is_instance_valid(car): return
 	var occupied: bool = car.controlled and car.health > 0
 	# V1 piscava os faróis junto com o alarme, a cada ~1/6 s.
@@ -442,7 +509,7 @@ func _refresh() -> void:
 	var alarm_blink: bool = alarm_remaining > 0 and car.health > 0 and int(Time.get_ticks_msec() / 167) % 2 == 0
 	var was_auto := auto_lit
 	auto_lit = night_auto_enabled and car.health > 0 and npc_driven() and is_dark()
-	if auto_lit: _npc_beams[get_instance_id()] = true
+	if auto_lit and not LIGHT_BUDGET.enabled: _npc_beams[get_instance_id()] = true
 	# Quem toma um carro aceso à noite continua com o farol ligado.
 	if was_auto and not auto_lit and occupied and not car.external_input: headlights_on = true
 	# Drag owns two physical cars without assigning the rival to player controls.
@@ -450,18 +517,23 @@ func _refresh() -> void:
 	var race_lit: bool = car.has_meta("desert_drag_physics") and car.health>0
 	var driver_lit: bool = (headlights_on and (occupied or race_lit) and (not npc_driven() or race_lit)) or alarm_blink
 	var lit: bool = driver_lit or auto_lit
-	for item in lamps:
-		var broken: bool = (item.side < 0 and broken_left) or (item.side > 0 and broken_right)
-		item.lamp.visible = driver_lit and not broken
-	if is_instance_valid(npc_beam): npc_beam.visible = auto_lit and not driver_lit and _npc_beam_allowed() and not (broken_left and broken_right)
-	if is_instance_valid(ground_pool): ground_pool.visible = lit and car.health > 0 and not (broken_left and broken_right)
+	if LIGHT_BUDGET.enabled:
+		for item in glows:
+			var broken: bool = _side_broken(item.side)
+			item.sprite.visible = lit and car.health > 0 and not broken
+	else:
+		for item in lamps:
+			var broken: bool = (item.side < 0 and broken_left) or (item.side > 0 and broken_right)
+			item.lamp.visible = driver_lit and not broken
+		if is_instance_valid(npc_beam): npc_beam.visible = auto_lit and not driver_lit and _npc_beam_allowed() and not (broken_left and broken_right)
+		if is_instance_valid(ground_pool): ground_pool.visible = lit and car.health > 0 and not (broken_left and broken_right)
 	# Lenses change only with power/damage. Avoid resending the same material
 	# parameters for every parked/traffic car on every rendered frame.
 	var lens_state := int(lit) | (int(broken_left) << 1) | (int(broken_right) << 2)
 	if lens_state != _lens_state:
 		_lens_state = lens_state
 		for item in lens_materials:
-			var broken: bool = (item.side < 0 and broken_left) or (item.side > 0 and broken_right)
+			var broken: bool = _side_broken(item.side) if LIGHT_BUDGET.enabled else ((item.side < 0 and broken_left) or (item.side > 0 and broken_right))
 			item.material.emission_enabled = lit and not broken
 			item.material.emission_energy_multiplier = 1.35 if (lit and not broken) else 0.0
 	var markers_lit := 1 if lit and car.health > 0 else 0
@@ -497,10 +569,12 @@ func _refresh() -> void:
 	# Whole clock buckets; preserve integer precision and cadence.
 	@warning_ignore("integer_division")
 	var phase := int(Time.get_ticks_msec() / 160) % 2 if flashing else -1
+	# O orçamento precisa acompanhar a câmera mesmo quando a sirene conserva a fase.
+	if LIGHT_BUDGET.enabled: LIGHT_BUDGET.refresh(force_budget)
 	if phase == _phase: return
 	_phase = phase
 	if is_instance_valid(halo):
-		halo.visible = phase >= 0
+		if not LIGHT_BUDGET.enabled: halo.visible = phase >= 0
 		for beacon in beacons:
 			if beacon.side == phase: halo.light_color = beacon.color
 	for beacon in beacons:
@@ -509,6 +583,49 @@ func _refresh() -> void:
 		beacon.material.emission = beacon.color
 		beacon.material.emission_enabled = active
 		beacon.material.emission_energy_multiplier = 2.8 if active else 0.0
+	for item in beacon_glows: item.sprite.visible = item.side == phase
+
+func _side_broken(side: int) -> bool:
+	# Um farol central de moto quebra quando qualquer lado da lente é atingido.
+	if profile.get("single", false): return broken_left or broken_right
+	# Lentes fundidas dos carros podem ter centro x=0: ainda representam o par.
+	if side == 0: return broken_left and broken_right
+	return (side < 0 and broken_left) or (side > 0 and broken_right)
+
+## Estado desejado, separado da visibilidade que o orçamento controla. A leitura
+## de todos os donos evita usar o estado atrasado de outro carro no mesmo quadro.
+func _budget_request() -> Dictionary:
+	var camera := get_viewport().get_camera_3d()
+	var point := camera.global_position if is_instance_valid(camera) else Vector3.ZERO
+	if camera == null and is_instance_valid(world):
+		var player = world.get("player")
+		if is_instance_valid(player): point = player.global_position
+	var lights: Array[Light3D] = []
+	var wanted: Array[Dictionary] = []
+	for item in lamps:
+		if is_instance_valid(item.lamp): lights.append(item.lamp)
+	if is_instance_valid(npc_beam): lights.append(npc_beam)
+	if is_instance_valid(halo): lights.append(halo)
+	var player_driven: bool = is_instance_valid(car) and car.controlled and not car.external_input and not car.traffic
+	var result := {"lights": lights, "wanted": wanted, "player": player_driven, "camera": point, "decal": ground_pool as Decal, "pool": false}
+	if not is_instance_valid(car) or not car.is_inside_tree() or car.is_queued_for_deletion() or not car.is_visible_in_tree() or car.health <= 0: return result
+	var occupied: bool = car.controlled
+	var automatic := night_auto_enabled and npc_driven() and is_dark()
+	@warning_ignore("integer_division")
+	var alarm_blink: bool = alarm_remaining > 0 and int(Time.get_ticks_msec() / 167) % 2 == 0
+	var race: bool = car.has_meta("desert_drag_physics")
+	var driver: bool = ((headlights_on or (auto_lit and player_driven)) and (occupied or race) and (not npc_driven() or race)) or alarm_blink
+	result.pool = (automatic or driver) and not (broken_left and broken_right) and not (profile.single and (broken_left or broken_right))
+	# O tráfego mantém projetores latentes para o roubo/save, mas nunca os acende.
+	if car.traffic: return result
+	if driver:
+		for item in lamps:
+			if not _side_broken(item.side): wanted.append({"light": item.lamp, "headlight": true})
+	elif automatic and result.pool:
+		wanted.append({"light": npc_beam, "headlight": true})
+	if is_instance_valid(halo) and ((siren_on and occupied) or alarm_remaining > 0):
+		wanted.append({"light": halo, "headlight": false})
+	return result
 
 func receive_impact(local_point: Vector3, severity: float) -> void:
 	if severity < 3.0: return
@@ -535,6 +652,18 @@ func restore_state(data: Dictionary) -> bool:
 	return true
 
 func _exit_tree() -> void:
+	if LIGHT_BUDGET.enabled:
+		# As fontes são irmãs do equipamento; queue_free só as remove no fim
+		# do quadro. Ocultá-las agora devolve vagas sem sobreposição na reentrada.
+		for item in lamps:
+			if is_instance_valid(item.lamp): item.lamp.hide()
+		for source in [npc_beam, halo, ground_pool]:
+			if is_instance_valid(source): source.hide()
+		for item in glows:
+			if is_instance_valid(item.sprite): item.sprite.hide()
+		for item in beacon_glows:
+			if is_instance_valid(item.sprite): item.sprite.hide()
+		LIGHT_BUDGET.unregister(self)
 	for emitter in [horn_audio, siren_audio, alarm_audio]:
 		if is_instance_valid(emitter):
 			emitter.stop()
@@ -547,6 +676,10 @@ func _exit_tree() -> void:
 		if is_instance_valid(marker): marker.queue_free()
 	if is_instance_valid(npc_beam): npc_beam.queue_free()
 	if is_instance_valid(ground_pool): ground_pool.queue_free()
+	for item in glows:
+		if is_instance_valid(item.sprite): item.sprite.queue_free()
+	for item in beacon_glows:
+		if is_instance_valid(item.sprite): item.sprite.queue_free()
 	_npc_beams.erase(get_instance_id())
 
 ## Caminhão de bombeiro (rescue_pumper.scn):

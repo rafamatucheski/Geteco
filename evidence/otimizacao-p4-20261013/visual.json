@@ -1,0 +1,65 @@
+{
+  "performance_measured": false,
+  "temporal_approval": "pendente: captura esparsa não comprova ausência de defeitos de um quadro",
+  "captures": [
+    {
+      "directory": "evidence/otimizacao-p4-20261013/render-off-143229",
+      "enabled": false,
+      "resolution": "(3440, 1440)",
+      "image_count": 19,
+      "manifest": "manifest.json",
+      "protected_fixture": false
+    },
+    {
+      "directory": "evidence/otimizacao-p4-20261013/render-on-102975",
+      "enabled": true,
+      "resolution": "(1280, 720)",
+      "image_count": 82,
+      "manifest": "manifest.json",
+      "protected_fixture": false
+    },
+    {
+      "directory": "evidence/otimizacao-p4-20261013/render-on-108387",
+      "enabled": true,
+      "resolution": "(1280, 720)",
+      "image_count": 67,
+      "manifest": "manifest.json",
+      "protected_fixture": false
+    },
+    {
+      "directory": "evidence/otimizacao-p4-20261013/render-on-148775",
+      "enabled": true,
+      "resolution": "(3440, 1440)",
+      "image_count": 16,
+      "manifest": "manifest.json",
+      "protected_fixture": false
+    },
+    {
+      "directory": "evidence/otimizacao-p4-20261013/render-on-89910",
+      "enabled": true,
+      "resolution": "(1280, 720)",
+      "image_count": 110,
+      "manifest": "manifest.json",
+      "protected_fixture": true
+    }
+  ],
+  "final_directory": "evidence/otimizacao-p4-20261013/render-on-89910",
+  "final_inspected_images": [
+    "0002_shot_noite_jogador_npcs.png",
+    "0027_noite_parado.png",
+    "0054_noite_camera_movimento.png",
+    "0081_noite_sirene_limites.png",
+    "0109_noite_sirene_limites.png"
+  ],
+  "findings": [
+    "Na captura final protegida o cenário permanece no oeste durante a movimentação da câmera e a sirene. Há luz na pista, brilho de lentes e giroflex.",
+    "A projeção rasa evita alcançar grande parte da carroceria, mas comparação de pintura é limitada pelo RNG e pelas alterações concorrentes da base.",
+    "A tentativa render-on-102975 teve imagens iniciais pretas e a câmera posteriormente fora da carga de veículos; descartada como comprovação do visual da P4.",
+    "Capturas iniciais mostram overlay preexistente; indicadores ignorados. Capturas em janela pequena desligam o overlay apenas no processo, sem salvar preferências."
+  ],
+  "limitations": [
+    "110 imagens na captura final incluem quatro shots; cadência continua insuficiente para aprovação temporal.",
+    "Fixture visual protegida de dano e sem colisão dos veículos autorados; não comprova direção, colisão ou recuperação normal do jogo.",
+    "Rampas, túneis, chuva, outros mapas e disputa com decals de outros sistemas não aprovados."
+  ]
+}

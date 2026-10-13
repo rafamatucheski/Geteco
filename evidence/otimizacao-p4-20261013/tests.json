@@ -1,0 +1,107 @@
+{
+  "build": {
+    "command": "dotnet build Harbor.csproj --no-restore",
+    "exit_code": 0,
+    "warnings": 0,
+    "errors": 0
+  },
+  "budget_on": {
+    "checks": 211,
+    "failures": 0,
+    "exit_code": 0,
+    "attempts": [
+      {
+        "checks": 211,
+        "exit_code": 1,
+        "failure": "Dano de um lado não apagava emissão de todas as lentes do farol único da moto; algumas superfícies têm centro lateral apesar de serem um único farol.",
+        "resolution": "_side_broken considera o perfil single independente do centro lateral da superfície, somente no comportamento ligado."
+      },
+      {
+        "checks": 211,
+        "exit_code": 0,
+        "failures": 0,
+        "after": "Correção de todas as superfícies emissivas da lente única da moto"
+      }
+    ]
+  },
+  "budget_off": {
+    "checks": 20,
+    "failures": 0,
+    "exit_code": 0
+  },
+  "vehicle_equipment": {
+    "on": {
+      "checks": 41,
+      "exit_code": 0
+    },
+    "off": {
+      "checks": 41,
+      "exit_code": 0
+    }
+  },
+  "regions": {
+    "failures": 0,
+    "exit_code": 0
+  },
+  "cold_admission": {
+    "checks": 11,
+    "exit_code": 0
+  },
+  "fleet_lens_roles": {
+    "vehicles": 62,
+    "checks": 856,
+    "failures": 0,
+    "exit_code": 0
+  },
+  "city_local_lighting": {
+    "checks": 29,
+    "exit_code": 0
+  },
+  "traffic_headlights_off": {
+    "checks": 50,
+    "failures": 0,
+    "exit_code": 0
+  },
+  "native_driving": {
+    "initial": {
+      "exit_code": 1,
+      "failure": "Native world did not finish loading before driving validation; 90 s de admissão"
+    },
+    "retry_after_reduced_concurrency": {
+      "exit_code": 0,
+      "entry": "PASS"
+    }
+  },
+  "motorcycle_boarding_continuity": {
+    "on": {
+      "checks": 63,
+      "exit_code": 1,
+      "failures": [
+        "bike_sport side -1 entry hands 0.426 m",
+        "bike_cruiser side 1 exit hands 0.335 m"
+      ],
+      "headlight_follows_bike": {
+        "passed": 3,
+        "models": 3
+      }
+    },
+    "off": {
+      "checks": 63,
+      "exit_code": 1,
+      "failures": [
+        "bike_urban side -1 entry heading 27.5 deg",
+        "bike_cruiser side -1 entry hips 0.286 m",
+        "bike_cruiser side -1 entry heading 41.8 deg",
+        "bike_cruiser side 1 entry hands 0.317 m",
+        "bike_cruiser side 1 exit heading 29.2 deg"
+      ],
+      "headlight_follows_bike": {
+        "passed": 3,
+        "models": 3
+      }
+    },
+    "classification": "Falhas de continuidade de pose nos dois modos, em casos e valores diferentes. Suíte não aprovada; causa/intermitência inconclusiva. Nenhum arquivo de pose foi alterado pela P4."
+  },
+  "fps_measured": false,
+  "frame_time_measured": false
+}
