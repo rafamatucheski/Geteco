@@ -268,6 +268,10 @@ static func _fadeable_materials(node: Node) -> Array:
 	return found
 
 static var _primed: Dictionary = {}
+
+## Área do chão cujos chunks o corte pode apagar (janela do túnel coberto mais a varredura).
+static func corridor_rect() -> Rect2:
+	return Rect2(TUNNEL.W_PORTAL - 70.0, TUNNEL.outer_north() - 70.0, TUNNEL.E_PORTAL - TUNNEL.W_PORTAL + 140.0, TUNNEL.outer_south() - TUNNEL.outer_north() + 140.0)
 static var _primer: MeshInstance3D
 
 ## Pré-aquece as variantes de shader do corte: a primeira atribuição de um material com alfa custa
@@ -275,8 +279,7 @@ static var _primer: MeshInstance3D
 ## de carregamento, uma vez por chunk aquecido; as cópias ficam vivas para o shader não morrer.
 static func prime(chunk: Node3D, holder: Node, cell_rect: Rect2) -> void:
 	var began := STALL_WORK.begin()
-	var reach := Rect2(TUNNEL.W_PORTAL - 70.0, TUNNEL.outer_north() - 70.0, TUNNEL.E_PORTAL - TUNNEL.W_PORTAL + 140.0, TUNNEL.outer_south() - TUNNEL.outer_north() + 140.0)
-	if not reach.intersects(cell_rect): return
+	if not corridor_rect().intersects(cell_rect): return
 	if not is_instance_valid(_primer):
 		_primer = MeshInstance3D.new()
 		_primer.name = "TunnelCutawayPrimer"

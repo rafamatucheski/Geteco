@@ -144,6 +144,37 @@ func prewarm_incremental() -> void:
 		await get_tree().process_frame
 	chairlifts = chairlifts.filter(func(lift): return is_instance_valid(lift))
 
+## Monta e descarta os chunks do corredor do túnel atrás da tela de carregamento para pré-aquecer
+## as variantes de shader do corte translúcido (TunnelCutaway.prime). Mesmo fluxo de
+## prewarm_incremental, mas só para essas células.
+func prime_tunnel_corridor() -> void:
+	var began := STALL_WORK.begin()
+	while not is_streaming_idle():
+		await get_tree().process_frame
+	var reach: Rect2 = TUNNEL_CUTAWAY.corridor_rect()
+	var primed_chunks := 0
+	var keys: Array[Vector2i] = []
+	for x in range(floori(reach.position.x/CELL), ceili(reach.end.x/CELL)):
+		for z in range(floori(reach.position.y/CELL), ceili(reach.end.y/CELL)):
+			keys.append(Vector2i(x,z))
+	for key in keys:
+		var rect := Rect2(key.x*CELL,key.y*CELL,CELL,CELL)
+		if chunks.has(key): continue
+		_build_chunk(key, false, true)
+		var chunk: Node3D = chunks[key]
+		while build_jobs.any(func(job): return job.key == key):
+			await get_tree().process_frame
+			if not is_inside_tree() or is_queued_for_deletion(): return
+		TUNNEL_CUTAWAY.prime(chunk, self, rect)
+		_hold_file_resources(chunk)
+		_suspend_chunk_mechanisms(chunk)
+		_detach_cached_records(chunk)
+		chunks.erase(key)
+		chunk.queue_free()
+		primed_chunks += 1
+		await get_tree().process_frame
+	STALL_WORK.finish("tunnel.cutaway.prime_corridor", began, {"chunks": primed_chunks})
+
 ## Recursos vindos de arquivo (scripts, malhas, materiais, fontes) usados pelo chunk
 ## pré-aquecido. Sem referência viva eles saíam do cache ao descartar o chunk e a
 ## primeira visita real relia do disco. Recursos procedurais (sem caminho) não entram.
