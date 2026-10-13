@@ -1,0 +1,180 @@
+{
+  "scope": "Temporary opt-in CPU wall-inclusive spans; no optimization; applied after original-source cleanliness and git apply --check",
+  "environment": "HARBOR_WEST_CPU_SPANS=1; enable StallWorkTrace aggregate/session sink in runner",
+  "nested_spans": "Do not sum parent and child; routing C# spans include language-boundary/marshaling cost",
+  "files": {
+    "scripts/Vehicle.gd": {
+      "original_sha256": "0b313aeedacf10c45133b24e8d12bca3aa96a75ab64b3c3fc024962582eeef5b",
+      "labels": [
+        "west.vehicle.can_rotate",
+        "west.vehicle.junction_gate",
+        "west.vehicle.route_projection",
+        "west.vehicle.rear_clear",
+        "west.vehicle.obstacle_ahead",
+        "west.vehicle.escape"
+      ],
+      "candidate_sha256_lf": "997c81093454defffa00c5f78a9a80d18756ece42044a71be9cecebb646a2949",
+      "applied_sha256": "d26094265871639f1897e88409a643d3a13f9e0287a308fdce2bcd463a545bdf",
+      "original_normalized_sha256": "df2d254e29d8f734a21e5ed4679caa200fac23f503c0af5a4df7838c0d2a0ccc",
+      "exact_byte_original_recoverable": true
+    },
+    "scripts/CameraRig.gd": {
+      "original_sha256": "9790192a30fa3519408e9955c126a7d56cc2dd792f42d50ecbd287c1e03d131d",
+      "labels": [
+        "west.camera.process",
+        "west.camera.tunnel_chase",
+        "west.camera.cutaway",
+        "west.camera.terrain_offset"
+      ],
+      "candidate_sha256_lf": "a680d774ab015f9d85c9f7a20606b05989e418f5b2785104de6a56b7fe263e20",
+      "applied_sha256": "7b382127fc9511b7ea81a5ca1d22e1626cc59d232944750cb96055adffbf0993",
+      "original_normalized_sha256": "fedc4b61eca1657e8a9bfe10545ec401ebfe83c444da4ad7023165eca3b7aa0a",
+      "exact_byte_original_recoverable": true
+    },
+    "gameplay/NativeTrafficRoutes.gd": {
+      "original_sha256": "b118ac2642516cd8578df2c3cc44e6933094a23bf77a2388825e1da2ff443744",
+      "labels": [
+        "west.traffic.route_near",
+        "west.traffic.route_between",
+        "west.traffic.configure"
+      ],
+      "candidate_sha256_lf": "4ca389ef1b8056c2e460de7c34be7f715f2bdd5d134b82c72502d851dcff6fa2",
+      "applied_sha256": "48e16c4c27ff658bb40a82f2812fe7dc8a31e67a54a842cb74ecf575f6678ada",
+      "original_normalized_sha256": "b118ac2642516cd8578df2c3cc44e6933094a23bf77a2388825e1da2ff443744",
+      "exact_byte_original_recoverable": true
+    },
+    "gameplay/traffic_yield/TrafficYieldController.gd": {
+      "original_sha256": "e882dc89681c3fb5e69f308ba785343a4d7931e28d604160369c43a10f3f7970",
+      "labels": [
+        "west.traffic_yield.physics",
+        "west.traffic_yield.hazards",
+        "west.traffic_yield.agent_tick"
+      ],
+      "candidate_sha256_lf": "4f5722ad11ff09a2f1d58308dacd00bb46f48d8684a58bf2876794f91f574727",
+      "applied_sha256": "eb70f9442be4b36dffaf23dbef8c39ff90d227528160c1e302c95ce84c6e0d3a",
+      "original_normalized_sha256": "e882dc89681c3fb5e69f308ba785343a4d7931e28d604160369c43a10f3f7970",
+      "exact_byte_original_recoverable": true
+    },
+    "gameplay/street_physics/StreetPhysics.gd": {
+      "original_sha256": "36cea1768f3248be03dc369da86428d554091bef1ad88c09d98f9dad7bedf99d",
+      "labels": [
+        "west.street.physics",
+        "west.street.watch_people"
+      ],
+      "candidate_sha256_lf": "86a0d155bde1b53333879f808b70fec99706b747cabe8b5bfcf92319be20fbf3",
+      "applied_sha256": "d113c6ea6c58ae94a6a541e8cea5e82f11008ec45e4b0984261dbc39b55acd4f",
+      "original_normalized_sha256": "f9d96aba978a45fba7f9d6189f97735053d5b150abf66663f5ab7257ed94620f",
+      "exact_byte_original_recoverable": false,
+      "clean_head_normalized_sha256_verified": "f9d96aba978a45fba7f9d6189f97735053d5b150abf66663f5ab7257ed94620f",
+      "eol_limitation": "Original mixed line endings were normalized by git apply with core.autocrlf=true; manual removal retains currently applied line endings, restoring verified original normalized source."
+    },
+    "gameplay/dispatch/DispatchRoadRouter.gd": {
+      "original_sha256": "90685f4ed890829f179ecf7fd62215b9177d8929fbf25c1c3ea819a1ade3c54e",
+      "labels": [
+        "west.router.plan",
+        "west.router.departure",
+        "west.router.spawn_candidates",
+        "west.router.csharp.build",
+        "west.router.csharp.nearest_edge",
+        "west.router.csharp.search",
+        "west.router.csharp.plan",
+        "west.router.csharp.build_path"
+      ],
+      "candidate_sha256_lf": "4b9864783fd6ea65c5dad07257e7bdd487207dbcbc2cf935bdbf908973d6bc54",
+      "applied_sha256": "a9300addbb2f7dfcae4846f3439a0dc037dc81e7b1d7ba4e98b6da92e14990af",
+      "original_normalized_sha256": "7dcf390a7a44d3b9aebd0049ee96061682aa8ce81c3e3009dcd9da526e62e77e",
+      "exact_byte_original_recoverable": false,
+      "clean_head_normalized_sha256_verified": "7dcf390a7a44d3b9aebd0049ee96061682aa8ce81c3e3009dcd9da526e62e77e",
+      "eol_limitation": "Original mixed line endings were normalized by git apply with core.autocrlf=true; manual removal retains currently applied line endings, restoring verified original normalized source."
+    },
+    "audio/WorldAudio.gd": {
+      "original_sha256": "4b1c4ef0c6ae9f40a65897a0460275ba1631bde183f5a77a58c21fec61410a51",
+      "labels": [
+        "west.audio.world_process",
+        "west.audio.ambience",
+        "west.audio.radio"
+      ],
+      "candidate_sha256_lf": "605b856b7e2ced1ce902f76aeef166b0aa00f20d8630b5373692b5f05a536ed7",
+      "applied_sha256": "07502e038a789fe153dbcf5bd48e03e41cdee59112b4fd75e7eec1d11f9d7bdd",
+      "original_normalized_sha256": "3fbe9b159b8f3d56680c783a4f04d40d24ee46386dd254c917f7124b3fbe3ced",
+      "exact_byte_original_recoverable": false,
+      "clean_head_normalized_sha256_verified": "3fbe9b159b8f3d56680c783a4f04d40d24ee46386dd254c917f7124b3fbe3ced",
+      "eol_limitation": "Original mixed line endings were normalized by git apply with core.autocrlf=true; manual removal retains currently applied line endings, restoring verified original normalized source."
+    },
+    "audio/vehicle_ambience/NearbyVehicleAudio.gd": {
+      "original_sha256": "e7dd2b38cae168570c27d017b5867dba42309d8f135637f1db8a33e7917b782c",
+      "labels": [
+        "west.audio.nearby_process",
+        "west.audio.nearby_select"
+      ],
+      "candidate_sha256_lf": "85882ccf7cd958f118aee6b792db20e96ade9892989804501160e327198e3d70",
+      "applied_sha256": "5d56ff00c37774cc2f0488bbee04d7fe36747cd39da1e74c468d6f001974c52a",
+      "original_normalized_sha256": "e7dd2b38cae168570c27d017b5867dba42309d8f135637f1db8a33e7917b782c",
+      "exact_byte_original_recoverable": true
+    },
+    "audio/VehicleRoadAudio.gd": {
+      "original_sha256": "55d556fa2b5d4a06fb2ff7c125488b773d97bf9a18bd2d3021d821f9d69a0a97",
+      "labels": [
+        "west.audio.road_contacts"
+      ],
+      "candidate_sha256_lf": "658cf8a809bd43012e7bf9bd3c062e5b09241a152fcfa8d1c085c765900d712f",
+      "applied_sha256": "a31b11dc8c928a8e3fd5e5f199ceec4c15efb6b878d37fdedeca40fd2348e5c6",
+      "original_normalized_sha256": "55d556fa2b5d4a06fb2ff7c125488b773d97bf9a18bd2d3021d821f9d69a0a97",
+      "exact_byte_original_recoverable": true
+    },
+    "audio/weather/WeatherAudioMixer.gd": {
+      "original_sha256": "4f7f9e50b8432025ebfd03854820c319fc7ecb5632d0ce09e17f6a5a6154cd77",
+      "labels": [
+        "west.audio.weather_process"
+      ],
+      "candidate_sha256_lf": "6c45330e0b6775e3e5e650718b7615d014508bbdb98a8eecbf6c7ba0148199b4",
+      "applied_sha256": "a5fa327ca379bee689777c87306427b6c716086b0564e7589e4ec73f989472dc",
+      "original_normalized_sha256": "4f7f9e50b8432025ebfd03854820c319fc7ecb5632d0ce09e17f6a5a6154cd77",
+      "exact_byte_original_recoverable": true
+    },
+    "runtime/ProductionWorld.gd": {
+      "original_sha256": "fdf983e12f904657de57c82f7dbe23ad83b8548af149bdbd67fd53c9d77bc5e1",
+      "labels": [
+        "west.world.process",
+        "west.world.residency",
+        "west.world.logical_region",
+        "west.world.population_job",
+        "west.world.operation.<existing label>"
+      ],
+      "candidate_sha256_lf": "22f213f1a471543ec6a62fdd72f85e047f58715c22edace10b8942b6f34a07b1",
+      "applied_sha256": "5ddde1015f3b47c94e2be64dc12e275c6b3493a833b5191d40042d6f06f05c91",
+      "original_normalized_sha256": "fcb80ca9aad377a486b23ca7792abe0616c316f6d1da5a03ea67f8fb6e977e9d",
+      "exact_byte_original_recoverable": true
+    },
+    "world/regions/NativeRegion.gd": {
+      "original_sha256": "a5521d74b0298a15b1fb7ab2f598aa197f1a50e9338db94c9ac1342745402160",
+      "labels": [
+        "west.region.process"
+      ],
+      "candidate_sha256_lf": "3fac48c1718fcce5c20cfe8875f133b32cc24f88b866664d2e519faf92a9e053",
+      "applied_sha256": "998bf888a54689cb33ec4631c883e59b68792245392dbc7253e2cecf0397c8b6",
+      "original_normalized_sha256": "a5521d74b0298a15b1fb7ab2f598aa197f1a50e9338db94c9ac1342745402160",
+      "exact_byte_original_recoverable": true
+    },
+    "runtime/RoadsideParking.gd": {
+      "original_sha256": "1cea13746c1348fb268b080497988d1368f3bb1107293d0461a8d9c50a4880f0",
+      "labels": [
+        "west.parking.physics"
+      ],
+      "candidate_sha256_lf": "9102583eaefffe0091f50f66c3ab28e63f2a91c7e4c94afdf2a8fa678b3c2dc7",
+      "applied_sha256": "7368b646982c88b15d801c53dc67585a090635077b119a2c99b14fac719a6110",
+      "original_normalized_sha256": "1cea13746c1348fb268b080497988d1368f3bb1107293d0461a8d9c50a4880f0",
+      "exact_byte_original_recoverable": true
+    },
+    "runtime/SessionSystemProfile.gd": {
+      "original_sha256": "0bc46b4981b6ee7c51e6238a9fe97e45a31e4d138c0c041f6f426a74c9c44491",
+      "labels": [
+        "west.telemetry.profile_process"
+      ],
+      "candidate_sha256_lf": "9416b81124ab059d510013581accd37390a09482a26d916654622ac04dc536ed",
+      "applied_sha256": "571313d580ee90b5ce75cafee41b740bc99c383542af95b0d39b37d66d924f84",
+      "original_normalized_sha256": "6b85c8dd7fd71b645b3f67f36ce66863ff18fc8001e2a664e2b722b1fb386732",
+      "exact_byte_original_recoverable": true
+    }
+  }
+}

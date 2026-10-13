@@ -1,0 +1,417 @@
+{
+  "scope": "Normal native callback schedule in real scene. Root spans below do not call each other; this is not a full engine CPU accounting. Existing actor/vehicle spans may also be called manually by test tools.",
+  "root_names": [
+    "actor.physics",
+    "vehicle.physics",
+    "west.traffic_yield.physics",
+    "west.street.physics",
+    "west.parking.physics",
+    "west.camera.process",
+    "west.world.process",
+    "west.region.process",
+    "west.audio.world_process",
+    "west.audio.nearby_process",
+    "west.audio.weather_process",
+    "west.telemetry.profile_process"
+  ],
+  "root_phase": {
+    "actor.physics": "physics",
+    "vehicle.physics": "physics",
+    "west.traffic_yield.physics": "physics",
+    "west.street.physics": "physics",
+    "west.parking.physics": "physics",
+    "west.camera.process": "process",
+    "west.world.process": "process",
+    "west.region.process": "process",
+    "west.audio.world_process": "process",
+    "west.audio.nearby_process": "process",
+    "west.audio.weather_process": "process",
+    "west.telemetry.profile_process": "process"
+  },
+  "labels": {
+    "west.vehicle.can_rotate": {
+      "file": "scripts/Vehicle.gd",
+      "kind": "nested",
+      "phase": "physics",
+      "timing": "wall_inclusive",
+      "parent": "vehicle.drive",
+      "parent_policy": "source-reviewed fixed parent"
+    },
+    "west.vehicle.junction_gate": {
+      "file": "scripts/Vehicle.gd",
+      "kind": "nested",
+      "phase": "physics",
+      "timing": "wall_inclusive",
+      "parent": "vehicle.drive",
+      "parent_policy": "source-reviewed fixed parent"
+    },
+    "west.vehicle.route_projection": {
+      "file": "scripts/Vehicle.gd",
+      "kind": "nested",
+      "phase": "physics",
+      "timing": "wall_inclusive",
+      "parent": "vehicle.drive",
+      "parent_policy": "source-reviewed fixed parent"
+    },
+    "west.vehicle.rear_clear": {
+      "file": "scripts/Vehicle.gd",
+      "kind": "nested",
+      "phase": "physics",
+      "timing": "wall_inclusive",
+      "parents": [
+        "vehicle.drive",
+        "west.vehicle.escape",
+        "west.traffic_yield.physics"
+      ],
+      "reason": "Vehicle backoff, TrafficEscape, TrafficYieldController.",
+      "parent_policy": "choose actual enclosing interval; never subtract full totals from every possible parent"
+    },
+    "west.vehicle.obstacle_ahead": {
+      "file": "scripts/Vehicle.gd",
+      "kind": "nested",
+      "phase": "physics",
+      "timing": "wall_inclusive",
+      "parents": [
+        "vehicle.drive",
+        "west.traffic_yield.agent_tick"
+      ],
+      "reason": "Vehicle sensor or YieldAgent._start_resume.",
+      "parent_policy": "choose actual enclosing interval; never subtract full totals from every possible parent"
+    },
+    "west.vehicle.escape": {
+      "file": "scripts/Vehicle.gd",
+      "kind": "nested",
+      "phase": "physics",
+      "timing": "wall_inclusive",
+      "parent": "vehicle.drive",
+      "parent_policy": "source-reviewed fixed parent"
+    },
+    "west.camera.process": {
+      "file": "scripts/CameraRig.gd",
+      "kind": "root",
+      "phase": "process",
+      "timing": "wall_inclusive"
+    },
+    "west.camera.tunnel_chase": {
+      "file": "scripts/CameraRig.gd",
+      "kind": "nested",
+      "phase": "process",
+      "timing": "wall_inclusive",
+      "parent": "west.camera.process",
+      "parent_policy": "source-reviewed fixed parent"
+    },
+    "west.camera.cutaway": {
+      "file": "scripts/CameraRig.gd",
+      "kind": "nested",
+      "phase": "process",
+      "timing": "wall_inclusive",
+      "parent": "west.camera.process",
+      "parent_policy": "source-reviewed fixed parent"
+    },
+    "west.camera.terrain_offset": {
+      "file": "scripts/CameraRig.gd",
+      "kind": "nested",
+      "phase": "process",
+      "timing": "wall_inclusive",
+      "parent": "west.camera.process",
+      "parent_policy": "source-reviewed fixed parent"
+    },
+    "west.traffic.route_near": {
+      "file": "gameplay/NativeTrafficRoutes.gd",
+      "kind": "nested",
+      "phase": "caller",
+      "timing": "wall_inclusive",
+      "parents": [
+        "west.world.population_job",
+        "west.world.process",
+        "west.vehicle.escape",
+        "west.parking.physics",
+        "other runtime caller"
+      ],
+      "reason": "Population, AmbientJourney, traffic panic, parking and authored activities.",
+      "parent_policy": "choose actual enclosing interval; never subtract full totals from every possible parent"
+    },
+    "west.traffic.route_between": {
+      "file": "gameplay/NativeTrafficRoutes.gd",
+      "kind": "nested",
+      "phase": "caller",
+      "timing": "wall_inclusive",
+      "parents": [
+        "arrival",
+        "other runtime caller"
+      ],
+      "reason": "Authored admission route; not guaranteed recurring.",
+      "parent_policy": "choose actual enclosing interval; never subtract full totals from every possible parent"
+    },
+    "west.traffic.configure": {
+      "file": "gameplay/NativeTrafficRoutes.gd",
+      "kind": "nested",
+      "phase": "caller",
+      "timing": "wall_inclusive",
+      "parents": [
+        "west.world.residency",
+        "world.mount_region",
+        "startup"
+      ],
+      "reason": "Graph rebuild on admission/residency/travel.",
+      "parent_policy": "choose actual enclosing interval; never subtract full totals from every possible parent"
+    },
+    "west.traffic_yield.physics": {
+      "file": "gameplay/traffic_yield/TrafficYieldController.gd",
+      "kind": "root",
+      "phase": "physics",
+      "timing": "wall_inclusive"
+    },
+    "west.traffic_yield.hazards": {
+      "file": "gameplay/traffic_yield/TrafficYieldController.gd",
+      "kind": "nested",
+      "phase": "physics",
+      "timing": "wall_inclusive",
+      "parent": "west.traffic_yield.physics",
+      "parent_policy": "source-reviewed fixed parent"
+    },
+    "west.traffic_yield.agent_tick": {
+      "file": "gameplay/traffic_yield/TrafficYieldController.gd",
+      "kind": "nested",
+      "phase": "physics",
+      "timing": "wall_inclusive",
+      "parent": "west.traffic_yield.physics",
+      "parent_policy": "source-reviewed fixed parent"
+    },
+    "west.street.physics": {
+      "file": "gameplay/street_physics/StreetPhysics.gd",
+      "kind": "root",
+      "phase": "physics",
+      "timing": "wall_inclusive"
+    },
+    "west.street.watch_people": {
+      "file": "gameplay/street_physics/StreetPhysics.gd",
+      "kind": "nested",
+      "phase": "physics",
+      "timing": "wall_inclusive",
+      "parent": "west.street.physics",
+      "parent_policy": "source-reviewed fixed parent"
+    },
+    "west.router.plan": {
+      "file": "gameplay/dispatch/DispatchRoadRouter.gd",
+      "kind": "nested",
+      "phase": "caller",
+      "timing": "wall_inclusive",
+      "parents": [
+        "dispatch.driver.tick",
+        "dispatch.unit.state",
+        "west.world.process",
+        "arrival",
+        "mission/transport caller"
+      ],
+      "reason": "Dispatcher plus diverse synchronous activity and transport planners.",
+      "parent_policy": "choose actual enclosing interval; never subtract full totals from every possible parent"
+    },
+    "west.router.departure": {
+      "file": "gameplay/dispatch/DispatchRoadRouter.gd",
+      "kind": "nested",
+      "phase": "physics normally",
+      "timing": "wall_inclusive",
+      "parents": [
+        "dispatch.unit.state",
+        "dispatch.unit.recovery",
+        "other DispatchUnit.tick span"
+      ],
+      "reason": "DispatchUnit recycle/route departure.",
+      "parent_policy": "choose actual enclosing interval; never subtract full totals from every possible parent"
+    },
+    "west.router.spawn_candidates": {
+      "file": "gameplay/dispatch/DispatchRoadRouter.gd",
+      "kind": "nested",
+      "phase": "caller",
+      "timing": "wall_inclusive",
+      "parents": [
+        "dispatch callback",
+        "roadblocks callback",
+        "armored activity callback"
+      ],
+      "reason": "DispatchController, PoliceRoadblocks and ArmoredTransport.",
+      "parent_policy": "choose actual enclosing interval; never subtract full totals from every possible parent"
+    },
+    "west.router.csharp.build": {
+      "file": "gameplay/dispatch/DispatchRoadRouter.gd",
+      "kind": "nested",
+      "phase": "caller",
+      "timing": "wall_inclusive",
+      "parents": [
+        "west.router.plan",
+        "west.router.departure",
+        "standalone nearest_edge/_native_graph caller"
+      ],
+      "reason": "Lazy native graph creation.",
+      "parent_policy": "choose actual enclosing interval; never subtract full totals from every possible parent"
+    },
+    "west.router.csharp.nearest_edge": {
+      "file": "gameplay/dispatch/DispatchRoadRouter.gd",
+      "kind": "nested",
+      "phase": "caller",
+      "timing": "wall_inclusive",
+      "parents": [
+        "west.router.plan",
+        "west.router.departure",
+        "standalone nearest_edge caller"
+      ],
+      "reason": "NearestEdge also used without plan wrapper.",
+      "parent_policy": "choose actual enclosing interval; never subtract full totals from every possible parent"
+    },
+    "west.router.csharp.search": {
+      "file": "gameplay/dispatch/DispatchRoadRouter.gd",
+      "kind": "nested",
+      "phase": "caller",
+      "timing": "wall_inclusive",
+      "parents": [
+        "west.router.departure"
+      ],
+      "reason": "Departure Dijkstra; plan uses native.Plan directly.",
+      "parent_policy": "choose actual enclosing interval; never subtract full totals from every possible parent"
+    },
+    "west.router.csharp.plan": {
+      "file": "gameplay/dispatch/DispatchRoadRouter.gd",
+      "kind": "nested",
+      "phase": "caller",
+      "timing": "wall_inclusive",
+      "parents": [
+        "west.router.plan"
+      ],
+      "reason": "Native destination-limited Dijkstra.",
+      "parent_policy": "choose actual enclosing interval; never subtract full totals from every possible parent"
+    },
+    "west.router.csharp.build_path": {
+      "file": "gameplay/dispatch/DispatchRoadRouter.gd",
+      "kind": "nested",
+      "phase": "caller",
+      "timing": "wall_inclusive",
+      "parents": [
+        "west.router.plan",
+        "west.router.departure"
+      ],
+      "reason": "Native curve resampling.",
+      "parent_policy": "choose actual enclosing interval; never subtract full totals from every possible parent"
+    },
+    "west.audio.world_process": {
+      "file": "audio/WorldAudio.gd",
+      "kind": "root",
+      "phase": "process",
+      "timing": "wall_inclusive"
+    },
+    "west.audio.ambience": {
+      "file": "audio/WorldAudio.gd",
+      "kind": "nested",
+      "phase": "process",
+      "timing": "wall_inclusive",
+      "parent": "west.audio.world_process",
+      "parent_policy": "source-reviewed fixed parent"
+    },
+    "west.audio.radio": {
+      "file": "audio/WorldAudio.gd",
+      "kind": "nested",
+      "phase": "process",
+      "timing": "wall_inclusive",
+      "parent": "west.audio.world_process",
+      "parent_policy": "source-reviewed fixed parent"
+    },
+    "west.audio.nearby_process": {
+      "file": "audio/vehicle_ambience/NearbyVehicleAudio.gd",
+      "kind": "root",
+      "phase": "process",
+      "timing": "wall_inclusive"
+    },
+    "west.audio.nearby_select": {
+      "file": "audio/vehicle_ambience/NearbyVehicleAudio.gd",
+      "kind": "nested",
+      "phase": "process",
+      "timing": "wall_inclusive",
+      "parent": "west.audio.nearby_process",
+      "parent_policy": "source-reviewed fixed parent"
+    },
+    "west.audio.road_contacts": {
+      "file": "audio/VehicleRoadAudio.gd",
+      "kind": "nested",
+      "phase": "physics",
+      "timing": "wall_inclusive",
+      "parent": "vehicle.effects",
+      "parent_policy": "source-reviewed fixed parent"
+    },
+    "west.audio.weather_process": {
+      "file": "audio/weather/WeatherAudioMixer.gd",
+      "kind": "root",
+      "phase": "process",
+      "timing": "wall_inclusive"
+    },
+    "west.world.process": {
+      "file": "runtime/ProductionWorld.gd",
+      "kind": "root",
+      "phase": "process",
+      "timing": "wall_inclusive"
+    },
+    "west.world.residency": {
+      "file": "runtime/ProductionWorld.gd",
+      "kind": "nested",
+      "phase": "process",
+      "timing": "wall_inclusive",
+      "parent": "west.world.process",
+      "parent_policy": "source-reviewed fixed parent"
+    },
+    "west.world.logical_region": {
+      "file": "runtime/ProductionWorld.gd",
+      "kind": "nested",
+      "phase": "process",
+      "timing": "wall_inclusive",
+      "parent": "west.world.process",
+      "parent_policy": "source-reviewed fixed parent"
+    },
+    "west.world.population_job": {
+      "file": "runtime/ProductionWorld.gd",
+      "kind": "nested",
+      "phase": "process",
+      "timing": "wall_inclusive",
+      "parent": "west.world.process",
+      "parent_policy": "source-reviewed fixed parent"
+    },
+    "west.world.operation.<existing label>": {
+      "file": "runtime/ProductionWorld.gd",
+      "kind": "nested",
+      "phase": "caller",
+      "timing": "wall_inclusive",
+      "parents": [
+        "west.world.population_job",
+        "west.world.process",
+        "world startup/travel caller"
+      ],
+      "reason": "Existing _trace_cost clock forwarded, some calls outside process.",
+      "parent_policy": "choose actual enclosing interval; never subtract full totals from every possible parent"
+    },
+    "west.region.process": {
+      "file": "world/regions/NativeRegion.gd",
+      "kind": "root",
+      "phase": "process",
+      "timing": "wall_inclusive"
+    },
+    "west.parking.physics": {
+      "file": "runtime/RoadsideParking.gd",
+      "kind": "root",
+      "phase": "physics",
+      "timing": "wall_inclusive"
+    },
+    "west.telemetry.profile_process": {
+      "file": "runtime/SessionSystemProfile.gd",
+      "kind": "root",
+      "phase": "process",
+      "timing": "wall_inclusive"
+    }
+  },
+  "limits": [
+    "Every timing is wall-inclusive; parent and child totals overlap.",
+    "Routing labels cannot be assigned physics/process solely from name.",
+    "C# boundary spans include interpreter-to-managed/native marshaling and actual C# method; absence does not prove zero route work.",
+    "Native Build can happen standalone; nearest_edge has no generic parent wrapper.",
+    "SessionSystemProfile consumes session totals before its own wrapper finishes; its session span appears in following callback, while aggregate timing is immediate.",
+    "Audio mixing thread CPU and render/driver/GPU work are outside these callbacks.",
+    "41 added labels plus dynamic operation labels; session label cap128, aggregate cap512."
+  ]
+}

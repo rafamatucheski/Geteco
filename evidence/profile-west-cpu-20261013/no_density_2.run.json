@@ -1,0 +1,25 @@
+{
+  "label": "no_density_2",
+  "started_utc": "2026-10-13T20:56:03.8697496+00:00",
+  "finished_utc": "2026-10-13T20:58:28.2320785+00:00",
+  "elapsed_seconds": 144.3623289,
+  "exit_code": 0,
+  "arguments": [
+    "--path",
+    "D:\\geteco\\game",
+    "--script",
+    "res://tests/measure/profile_west_cpu.gd",
+    "--log-file",
+    "D:\\geteco\\game\\evidence\\profile-west-cpu-20261013\\no_density_2.engine.log",
+    "--",
+    "--no-save",
+    "--benchmark",
+    "--no-dispatch",
+    "--play-at=harbor,64,82",
+    "--label=no_density_2",
+    "--no-density"
+  ],
+  "HARBOR_WEST_CPU_SPANS": "1",
+  "HARBOR_SESSION_PROFILE": "",
+  "HARBOR_WEST_CPU_TRACE": "1"
+}

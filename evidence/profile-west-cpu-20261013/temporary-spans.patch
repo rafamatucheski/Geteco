@@ -1,0 +1,690 @@
+--- a/scripts/Vehicle.gd
++++ b/scripts/Vehicle.gd
+@@ -1,4 +1,6 @@
+ extends CharacterBody3D
++# Diagnóstico temporário: novos spans só na rodada CPU opt-in.
++var _west_cpu_spans := OS.get_environment("HARBOR_WEST_CPU_SPANS") == "1"
+ const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+ 
+ const VISUAL := preload("res://scripts/VehicleVisual.gd")
+@@ -661,6 +663,13 @@
+ ## carro por passo era custo à toa. O formato é reatribuído porque o esmagamento pesado o troca.
+ var _rotation_query: PhysicsShapeQueryParameters3D
+ func can_rotate(yaw: float) -> bool:
++	if not _west_cpu_spans: return _west_cpu_can_rotate(yaw)
++	var west_began := STALL_WORK.begin()
++	var west_result: bool = _west_cpu_can_rotate(yaw)
++	STALL_WORK.finish_slow("west.vehicle.can_rotate", west_began, 2000, self)
++	return west_result
++
++func _west_cpu_can_rotate(yaw: float) -> bool:
+ 	if _rotation_query == null:
+ 		_rotation_query = PhysicsShapeQueryParameters3D.new()
+ 		_rotation_query.collision_mask = 7
+@@ -734,6 +743,13 @@
+ ## Cruzamento à frente (TrafficJunctions): true = parar na faixa. `junction_gap` fica
+ ## com a distância da frente do carro até a faixa, para frear de forma progressiva.
+ func _junction_gate(length: float, open: bool) -> bool:
++	if not _west_cpu_spans: return _west_cpu_junction_gate(length, open)
++	var west_began := STALL_WORK.begin()
++	var west_result: bool = _west_cpu_junction_gate(length, open)
++	STALL_WORK.finish_slow("west.vehicle.junction_gate", west_began, 2000, self)
++	return west_result
++
++func _west_cpu_junction_gate(length: float, open: bool) -> bool:
+ 	junction_gap = INF
+ 	if route != _junction_route:
+ 		_retain_current_junction()
+@@ -791,6 +807,13 @@
+ ## Stopped cars reuse only the geometric projection. Decisions and sensors still
+ ## run each tick; any exact position change or edited curve requires a fresh scan.
+ func _traffic_route_offset(point: Vector3) -> float:
++	if not _west_cpu_spans: return _west_cpu_traffic_route_offset(point)
++	var west_began := STALL_WORK.begin()
++	var west_result: float = _west_cpu_traffic_route_offset(point)
++	STALL_WORK.finish_slow("west.vehicle.route_projection", west_began, 2000, self)
++	return west_result
++
++func _west_cpu_traffic_route_offset(point: Vector3) -> float:
+ 	if route != _projection_route:
+ 		if _projection_route != null:
+ 			_projection_route.changed.disconnect(_invalidate_route_projection)
+@@ -806,7 +829,9 @@
+ func _drive_traffic(delta: float) -> void:
+ 	if route == null: return
+ 	if traffic_escape==null: traffic_escape=preload("res://gameplay/TrafficEscape.gd").new()
++	var west_escape_began := STALL_WORK.begin() if _west_cpu_spans else 0
+ 	traffic_escape.tick(self,delta)
++	if west_escape_began != 0: STALL_WORK.finish_slow("west.vehicle.escape", west_escape_began, 2000, self)
+ 	if is_queued_for_deletion() or traffic_escape.retiring: return
+ 	if backoff_time > 0.0:
+ 		backoff_time -= delta
+@@ -902,6 +927,13 @@
+ var _exit_wait := 0.0
+ 
+ func traffic_rear_clear(distance := 3.0) -> bool:
++	if not _west_cpu_spans: return _west_cpu_traffic_rear_clear(distance)
++	var west_began := STALL_WORK.begin()
++	var west_result: bool = _west_cpu_traffic_rear_clear(distance)
++	STALL_WORK.finish_slow("west.vehicle.rear_clear", west_began, 2000, self)
++	return west_result
++
++func _west_cpu_traffic_rear_clear(distance := 3.0) -> bool:
+ 	var query := PhysicsShapeQueryParameters3D.new()
+ 	query.shape = rotation_shape
+ 	query.collision_mask = 7
+@@ -1043,6 +1075,13 @@
+ 	return false
+ 
+ func obstacle_ahead() -> bool:
++	if not _west_cpu_spans: return _west_cpu_obstacle_ahead()
++	var west_began := STALL_WORK.begin()
++	var west_result: bool = _west_cpu_obstacle_ahead()
++	STALL_WORK.finish_slow("west.vehicle.obstacle_ahead", west_began, 2000, self)
++	return west_result
++
++func _west_cpu_obstacle_ahead() -> bool:
+ 	if traffic_escape!=null and traffic_escape.active: return traffic_escape.obstacle_ahead(self)
+ 	var length := 2.2+speed*speed/20.0
+ 	sensor_shape.size.z = length
+--- a/scripts/CameraRig.gd
++++ b/scripts/CameraRig.gd
+@@ -1,4 +1,7 @@
+ extends Camera3D
++# Diagnóstico temporário: novos spans só na rodada CPU opt-in.
++var _west_cpu_spans := OS.get_environment("HARBOR_WEST_CPU_SPANS") == "1"
++const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+ 
+ const SCOPE_SIZE_MULTIPLIER := 0.5
+ const SMUGGLER_CANYON := preload("res://world/desert/canyon/DesertSmugglerLayout.gd")
+@@ -175,6 +178,14 @@
+ 	return exterior.lerp(Vector3(0,35,.15),_container_blend)
+ 
+ func _process(delta: float) -> void:
++	if not _west_cpu_spans:
++		_west_cpu_process(delta)
++		return
++	var west_began := STALL_WORK.begin()
++	_west_cpu_process(delta)
++	STALL_WORK.finish_slow("west.camera.process", west_began, 2000, self)
++
++func _west_cpu_process(delta: float) -> void:
+ 	if _mouse_orbit and (_camera_input_blocked() or not Input.is_action_pressed("camera_drag")):
+ 		_end_mouse_orbit()
+ 	# Dante moves in real time during his katana ability. Follow/orbit must share
+@@ -268,7 +279,9 @@
+ 		size = lerpf(size,desired_size,1.0-exp(-(AIM_FOLLOW_RATE if scoped else FOLLOW_RATE)*delta))
+ 	var exterior_offset := _exterior_view_offset().rotated(Vector3.UP, _view_heading)
+ 	var falling: bool = target is CharacterBody3D and target.velocity.y < -1.0 and not target.is_on_floor()
++	var west_began := STALL_WORK.begin() if _west_cpu_spans else 0
+ 	exterior_offset = _desert_terrain_camera.offset_for(focus,exterior_offset,delta,snap,not locked and _tunnel_blend<.001,Vector2(size*get_viewport().get_visible_rect().size.aspect(),size),near,actual,3.4 if _is_vehicle_target() else .8,_flat_velocity(),falling)
++	if west_began != 0: STALL_WORK.finish_slow("west.camera.terrain_offset", west_began, 2000, self)
+ 	global_position = focus + exterior_offset
+ 	look_at(focus)
+ 	_update_tunnel_chase(actual, delta, snap)
+@@ -284,6 +297,14 @@
+ 
+ ## Perspectiva atrás do veículo ou personagem; a rua conserva seu enquadramento.
+ func _update_tunnel_chase(actual: Vector3, delta: float, snap: bool) -> void:
++	if not _west_cpu_spans:
++		_west_cpu_update_tunnel_chase(actual, delta, snap)
++		return
++	var west_began := STALL_WORK.begin()
++	_west_cpu_update_tunnel_chase(actual, delta, snap)
++	STALL_WORK.finish_slow("west.camera.tunnel_chase", west_began, 2000, self)
++
++func _west_cpu_update_tunnel_chase(actual: Vector3, delta: float, snap: bool) -> void:
+ 	var vehicle := _is_vehicle_target() and not locked and _container_blend < 0.001
+ 	var actor_visual: Node3D = target.get("visual") if not _is_vehicle_target() and &"visual" in target else null
+ 	var pedestrian := is_instance_valid(actor_visual) and not locked and _container_blend < 0.001
+@@ -354,6 +375,14 @@
+ 
+ ## Apaga a cidade entre a câmera e o tubo enquanto o alvo está fundo no túnel.
+ func _update_cutaway() -> void:
++	if not _west_cpu_spans:
++		_west_cpu_update_cutaway()
++		return
++	var west_began := STALL_WORK.begin()
++	_west_cpu_update_cutaway()
++	STALL_WORK.finish_slow("west.camera.cutaway", west_began, 2000, self)
++
++func _west_cpu_update_cutaway() -> void:
+ 	var strength := clampf((_tunnel_blend - TUNNEL_CUTAWAY_START) / (1.0 - TUNNEL_CUTAWAY_START), 0.0, 1.0)
+ 	# No interior do tubo a lente já está sob o teto: restaurar sua profundidade.
+ 	strength *= 1.0 - smoothstep(0.65, 1.0, _tunnel_chase_blend)
+--- a/gameplay/NativeTrafficRoutes.gd
++++ b/gameplay/NativeTrafficRoutes.gd
+@@ -1,4 +1,7 @@
+ extends RefCounted
++# Diagnóstico temporário: novos spans só na rodada CPU opt-in.
++var _west_cpu_spans := OS.get_environment("HARBOR_WEST_CPU_SPANS") == "1"
++const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+ const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
+ ## NativeRegion already supplies metres. Junctions are split where the authored
+ ## centre-lines actually meet; no synthetic cross-block shortcuts or U-turns.
+@@ -8,6 +11,14 @@
+ var _vertex_ids: Dictionary = {}
+ 
+ func configure(roads: Array, minimum_width: float = 5.0) -> void:
++	if not _west_cpu_spans:
++		_west_cpu_configure(roads, minimum_width)
++		return
++	var west_began := STALL_WORK.begin()
++	_west_cpu_configure(roads, minimum_width)
++	STALL_WORK.finish_slow("west.traffic.configure", west_began, 2000, null)
++
++func _west_cpu_configure(roads: Array, minimum_width: float = 5.0) -> void:
+ 	segments.clear()
+ 	vertices.clear()
+ 	edges.clear()
+@@ -81,6 +92,13 @@
+ 	edges[from].append({"from":from,"to":to,"width":segment.width,"id":segment.id,"one_way":segment.one_way,"lanes":segment.get("lanes",1)})
+ 
+ func route_near(point: Vector3, lane_index := 0, heading := Vector3.ZERO) -> Curve3D:
++	if not _west_cpu_spans: return _west_cpu_route_near(point, lane_index, heading)
++	var west_began := STALL_WORK.begin()
++	var west_result: Curve3D = _west_cpu_route_near(point, lane_index, heading)
++	STALL_WORK.finish_slow("west.traffic.route_near", west_began, 2000, null)
++	return west_result
++
++func _west_cpu_route_near(point: Vector3, lane_index := 0, heading := Vector3.ZERO) -> Curve3D:
+ 	if vertices.is_empty(): return null
+ 	var selected: Dictionary = {}
+ 	var distance := INF
+@@ -109,6 +127,13 @@
+ 	return curve
+ 
+ func route_between(start: Vector3, finish: Vector3, arrival_direction: Vector3 = Vector3.ZERO) -> Curve3D:
++	if not _west_cpu_spans: return _west_cpu_route_between(start, finish, arrival_direction)
++	var west_began := STALL_WORK.begin()
++	var west_result: Curve3D = _west_cpu_route_between(start, finish, arrival_direction)
++	STALL_WORK.finish_slow("west.traffic.route_between", west_began, 2000, null)
++	return west_result
++
++func _west_cpu_route_between(start: Vector3, finish: Vector3, arrival_direction: Vector3 = Vector3.ZERO) -> Curve3D:
+ 	# Mission journeys use the same directed intersections as ambient traffic.
+ 	if vertices.is_empty(): return null
+ 	var first := 0
+--- a/gameplay/traffic_yield/TrafficYieldController.gd
++++ b/gameplay/traffic_yield/TrafficYieldController.gd
+@@ -1,4 +1,7 @@
+ extends Node
++# Diagnóstico temporário: novos spans só na rodada CPU opt-in.
++var _west_cpu_spans := OS.get_environment("HARBOR_WEST_CPU_SPANS") == "1"
++const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+ ## Trânsito ambiente cedendo passagem a viaturas com sirene. Módulo
+ ## independente: não edita Vehicle, NativeTrafficRoutes, ProductionWorld nem o
+ ## despacho; só lê seus contratos públicos e troca `Vehicle.route` dos carros
+@@ -100,6 +103,13 @@
+ 	return []
+ 
+ func _hazards() -> Array:
++	if not _west_cpu_spans: return _west_cpu_hazards()
++	var west_began := STALL_WORK.begin()
++	var west_result: Array = _west_cpu_hazards()
++	STALL_WORK.finish_slow("west.traffic_yield.hazards", west_began, 2000, self)
++	return west_result
++
++func _west_cpu_hazards() -> Array:
+ 	var result: Array = []
+ 	for vehicle in _candidates():
+ 		var needs_room: bool = vehicle.get_meta("dispatch_needs_room",false)
+@@ -126,12 +136,22 @@
+ # --- Laço --------------------------------------------------------------------
+ 
+ func _physics_process(delta: float) -> void:
++	if not _west_cpu_spans:
++		_west_cpu_physics_process(delta)
++		return
++	var west_began := STALL_WORK.begin()
++	_west_cpu_physics_process(delta)
++	STALL_WORK.finish_slow("west.traffic_yield.physics", west_began, 2000, self)
++
++func _west_cpu_physics_process(delta: float) -> void:
+ 	if not enabled or world == null or not model.has_graph(): return
+ 	_clock += delta
+ 	var hazards := _hazards()
+ 	for id in agents.keys():
+ 		var agent: RefCounted = agents[id]
++		var west_began := STALL_WORK.begin() if _west_cpu_spans else 0
+ 		agent.tick(delta, hazards)
++		if west_began != 0: STALL_WORK.finish_slow("west.traffic_yield.agent_tick", west_began, 2000, self)
+ 		if agent.finished:
+ 			_cooldown[id] = _clock + RULES.COOLDOWN
+ 			agents.erase(id)
+--- a/gameplay/street_physics/StreetPhysics.gd
++++ b/gameplay/street_physics/StreetPhysics.gd
+@@ -1,4 +1,6 @@
+ extends Node3D
++# Diagnóstico temporário: novos spans só na rodada CPU opt-in.
++var _west_cpu_spans := OS.get_environment("HARBOR_WEST_CPU_SPANS") == "1"
+ ## Física de rua da V2: atropelamento, postes e mobília derrubáveis, batida entre
+ ## carros, sangue no chão e rastro. Porte nativo 3D dos sistemas da V1
+ ## (VehiclePersonImpact, StreetLamp/fragile_road_post, GroundBlood, BodyWound,
+@@ -485,6 +487,14 @@
+ # Observação de vida: sangue de tiro, faca, explosão e gotejamento de ferido.
+ 
+ func _physics_process(delta: float) -> void:
++	if not _west_cpu_spans:
++		_west_cpu_physics_process(delta)
++		return
++	var west_began := STALL_WORK.begin()
++	_west_cpu_physics_process(delta)
++	STALL_WORK.finish_slow("west.street.physics", west_began, 2000, self)
++
++func _west_cpu_physics_process(delta: float) -> void:
+ 	_expire_exceptions()
+ 	_update_geysers(delta)
+ 	_update_wounds(delta)
+@@ -532,6 +542,14 @@
+ 
+ 
+ func _watch_people() -> void:
++	if not _west_cpu_spans:
++		_west_cpu_watch_people()
++		return
++	var west_began := STALL_WORK.begin()
++	_west_cpu_watch_people()
++	STALL_WORK.finish_slow("west.street.watch_people", west_began, 2000, self)
++
++func _west_cpu_watch_people() -> void:
+ 	var seen := {}
+ 	_people_cache = _collect_people()
+ 	for person in _people_cache:
+--- a/gameplay/dispatch/DispatchRoadRouter.gd
++++ b/gameplay/dispatch/DispatchRoadRouter.gd
+@@ -1,4 +1,7 @@
+ extends RefCounted
++# Diagnóstico temporário: novos spans só na rodada CPU opt-in.
++var _west_cpu_spans := OS.get_environment("HARBOR_WEST_CPU_SPANS") == "1"
++const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+ ## Planejamento de rotas de despacho sobre o grafo dirigido de NativeTrafficRoutes.
+ ## Não altera o grafo: lê vertices/edges e reaproveita `_curve` para os arcos de
+ ## cruzamento e o deslocamento de faixa. Só devolve rotas por ruas conectadas;
+@@ -150,7 +153,9 @@
+ 			width.append(float(edge.width))
+ 			lanes.append(int(edge.get("lanes", 1)))
+ 			one_way.append(1 if edge.one_way else 0)
++	var west_began := STALL_WORK.begin() if _west_cpu_spans else 0
+ 	_native.Build(PackedVector3Array(routes.vertices), edge_from, edge_to, width, lanes, one_way)
++	if west_began != 0: STALL_WORK.finish_slow("west.router.csharp.build", west_began, 2000, null)
+ 	for key in blocked:
+ 		var parts := String(key).split(">")
+ 		_native.BlockEdge(int(parts[0]), int(parts[1]), float(blocked[key]))
+@@ -190,7 +195,9 @@
+ 	if not has_graph(): return {}
+ 	var native := _native_graph()
+ 	if native != null:
++		var west_began := STALL_WORK.begin() if _west_cpu_spans else 0
+ 		var hit: Dictionary = native.NearestEdge(point, skip_blocked, heading)
++		if west_began != 0: STALL_WORK.finish_slow("west.router.csharp.nearest_edge", west_began, 2000, null)
+ 		if hit.is_empty(): return {}
+ 		return {"edge": _native_edges[int(hit.index)], "closest": hit.closest, "distance": hit.distance}
+ 	var best: Dictionary = {}
+@@ -223,7 +230,9 @@
+ func _search(source: int, cost_limit: float = INF) -> Dictionary:
+ 	var native := _native_graph()
+ 	if native != null:
++		var west_began := STALL_WORK.begin() if _west_cpu_spans else 0
+ 		var found: Dictionary = native.Search(source, cost_limit)
++		if west_began != 0: STALL_WORK.finish_slow("west.router.csharp.search", west_began, 2000, null)
+ 		if not found.is_empty(): return found
+ 	var count: int = routes.vertices.size()
+ 	var distance := PackedFloat64Array()
+@@ -263,6 +272,13 @@
+ ## distância restante, em planta, entre o fim da rota e o objetivo: quem chama
+ ## decide se a equipe ainda alcança o local a pé.
+ func plan(start: Vector3, goal: Vector3, heading: Vector3 = Vector3.ZERO) -> Dictionary:
++	if not _west_cpu_spans: return _west_cpu_plan(start, goal, heading)
++	var west_began := STALL_WORK.begin()
++	var west_result: Dictionary = _west_cpu_plan(start, goal, heading)
++	STALL_WORK.finish_slow("west.router.plan", west_began, 2000, null)
++	return west_result
++
++func _west_cpu_plan(start: Vector3, goal: Vector3, heading: Vector3 = Vector3.ZERO) -> Dictionary:
+ 	if not has_graph(): return _fail("no_graph")
+ 	var first := _start_edge(start, heading)
+ 	var last := nearest_edge(goal, true)
+@@ -280,7 +296,9 @@
+ 		var native := _native_graph()
+ 		if native != null:
+ 			# Para ao assentar o destino: o grafo inteiro não precisa ser percorrido.
++			var west_began := STALL_WORK.begin() if _west_cpu_spans else 0
+ 			var found: Dictionary = native.Plan(e_start.to, e_goal.from)
++			if west_began != 0: STALL_WORK.finish_slow("west.router.csharp.plan", west_began, 2000, null)
+ 			if not found.found: return _fail("no_path")
+ 			chain.assign(found.chain)
+ 		else:
+@@ -295,6 +313,13 @@
+ ## Rota de saída: vai ao vértice alcançável mais próximo que fique a pelo menos
+ ## `min_distance` de `away_from` (fora da vista), sem teleporte nem marcha ré infinita.
+ func plan_departure(start: Vector3, away_from: Vector3, min_distance: float, heading: Vector3 = Vector3.ZERO) -> Dictionary:
++	if not _west_cpu_spans: return _west_cpu_plan_departure(start, away_from, min_distance, heading)
++	var west_began := STALL_WORK.begin()
++	var west_result: Dictionary = _west_cpu_plan_departure(start, away_from, min_distance, heading)
++	STALL_WORK.finish_slow("west.router.departure", west_began, 2000, null)
++	return west_result
++
++func _west_cpu_plan_departure(start: Vector3, away_from: Vector3, min_distance: float, heading: Vector3 = Vector3.ZERO) -> Dictionary:
+ 	if not has_graph(): return _fail("no_graph")
+ 	var first := _start_edge(start, heading)
+ 	if first.is_empty(): return _fail("no_edge")
+@@ -346,7 +371,9 @@
+ 	var curve: Curve3D
+ 	var native := _native_graph()
+ 	if native != null:
++		var west_began := STALL_WORK.begin() if _west_cpu_spans else 0
+ 		curve = native.BuildPath(source, begin, window, end_point, STEP, result_bake)
++		if west_began != 0: STALL_WORK.finish_slow("west.router.csharp.build_path", west_began, 2000, null)
+ 	else:
+ 		var finish := length
+ 		var finish_distance := INF
+@@ -379,6 +406,13 @@
+ ## entre `min_distance` e `max_distance` de `target`. O chamador valida
+ ## visibilidade, colisão e alcance.
+ func spawn_candidates(target: Vector3, min_distance: float, max_distance: float, spacing: float = 8.0) -> Array[Dictionary]:
++	if not _west_cpu_spans: return _west_cpu_spawn_candidates(target, min_distance, max_distance, spacing)
++	var west_began := STALL_WORK.begin()
++	var west_result: Array[Dictionary] = _west_cpu_spawn_candidates(target, min_distance, max_distance, spacing)
++	STALL_WORK.finish_slow("west.router.spawn_candidates", west_began, 2000, null)
++	return west_result
++
++func _west_cpu_spawn_candidates(target: Vector3, min_distance: float, max_distance: float, spacing: float = 8.0) -> Array[Dictionary]:
+ 	var result: Array[Dictionary] = []
+ 	if not has_graph() or spacing <= 0.0 or max_distance < 0.0: return result
+ 	var extent := Vector3(max_distance, 0.0, max_distance)
+--- a/audio/WorldAudio.gd
++++ b/audio/WorldAudio.gd
+@@ -1,4 +1,7 @@
+ extends Node
++# Diagnóstico temporário: novos spans só na rodada CPU opt-in.
++var _west_cpu_spans := OS.get_environment("HARBOR_WEST_CPU_SPANS") == "1"
++const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+ ## Original audio assets, native 3D emitters and bounded player/nearby engine mixers.
+ const V1_AUDIO := preload("res://audio/v1_ambience/V1AudioCatalog.gd")
+ const SURFACES := preload("res://audio/v1_ambience/SurfaceResolver3D.gd")
+@@ -216,6 +219,14 @@
+ ## Na primeira entrada, sorteia uma estação ou desligado e guarda a escolha no veículo.
+ ## Retoma do ponto onde parou e guarda a posição ao sair. Cada carro conserva sua sintonização.
+ func _update_radio(delta: float) -> void:
++	if not _west_cpu_spans:
++		_west_cpu_update_radio(delta)
++		return
++	var west_began := STALL_WORK.begin()
++	_west_cpu_update_radio(delta)
++	STALL_WORK.finish_slow("west.audio.radio", west_began, 2000, self)
++
++func _west_cpu_update_radio(delta: float) -> void:
+ 	var car: CharacterBody3D = world.driving.car if _driver_audio_ready() else null
+ 	if car != radio_car:
+ 		if is_instance_valid(radio_car) and radio.playing:
+@@ -264,6 +275,14 @@
+ 	radio_notice.modulate.a=0
+ 
+ func _process(delta: float) -> void:
++	if not _west_cpu_spans:
++		_west_cpu_process(delta)
++		return
++	var west_began := STALL_WORK.begin()
++	_west_cpu_process(delta)
++	STALL_WORK.finish_slow("west.audio.world_process", west_began, 2000, self)
++
++func _west_cpu_process(delta: float) -> void:
+ 	_update_ambience(delta)
+ 	_update_radio(delta)
+ 	var moving: bool = world.driving.occupied
+@@ -450,6 +469,14 @@
+ 	engine_fx_cooldown = cooldown
+ 
+ func _update_ambience(delta: float) -> void:
++	if not _west_cpu_spans:
++		_west_cpu_update_ambience(delta)
++		return
++	var west_began := STALL_WORK.begin()
++	_west_cpu_update_ambience(delta)
++	STALL_WORK.finish_slow("west.audio.ambience", west_began, 2000, self)
++
++func _west_cpu_update_ambience(delta: float) -> void:
+ 	if world.session == null: return
+ 	ambience_clock += delta
+ 	var focus := .35 if world.session.dialogue_open else (.62 if world.session.modal else 1.0)
+--- a/audio/vehicle_ambience/NearbyVehicleAudio.gd
++++ b/audio/vehicle_ambience/NearbyVehicleAudio.gd
+@@ -1,4 +1,7 @@
+ extends Node3D
++# Diagnóstico temporário: novos spans só na rodada CPU opt-in.
++var _west_cpu_spans := OS.get_environment("HARBOR_WEST_CPU_SPANS") == "1"
++const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+ ## Bounded spatial engine bed for nearby traffic and externally driven vehicles.
+ 
+ const VEHICLE := preload("res://scripts/Vehicle.gd")
+@@ -82,6 +85,14 @@
+ 
+ 
+ func _process(delta: float) -> void:
++	if not _west_cpu_spans:
++		_west_cpu_process(delta)
++		return
++	var west_began := STALL_WORK.begin()
++	_west_cpu_process(delta)
++	STALL_WORK.finish_slow("west.audio.nearby_process", west_began, 2000, self)
++
++func _west_cpu_process(delta: float) -> void:
+ 	if not is_instance_valid(_world) or not is_instance_valid(_listener) or not _listener.is_inside_tree():
+ 		set_enabled(false)
+ 		return
+@@ -94,6 +105,14 @@
+ 
+ 
+ func _select_nearby() -> void:
++	if not _west_cpu_spans:
++		_west_cpu_select_nearby()
++		return
++	var west_began := STALL_WORK.begin()
++	_west_cpu_select_nearby()
++	STALL_WORK.finish_slow("west.audio.nearby_select", west_began, 2000, self)
++
++func _west_cpu_select_nearby() -> void:
+ 	_service_mixer = get_tree().get_first_node_in_group(SERVICE_GROUP)
+ 	var candidates: Array[Dictionary] = []
+ 	var seen: Dictionary = {}
+--- a/audio/VehicleRoadAudio.gd
++++ b/audio/VehicleRoadAudio.gd
+@@ -1,4 +1,7 @@
+ extends Node
++# Diagnóstico temporário: novos spans só na rodada CPU opt-in.
++var _west_cpu_spans := OS.get_environment("HARBOR_WEST_CPU_SPANS") == "1"
++const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+ ## One occupied vehicle only. Reuses tire contact probes; five bounded, cached loops.
+ const SOURCES := {
+ 	"hard": preload("res://audio/vehicle_fx/road.wav"),
+@@ -28,6 +31,14 @@
+ 		voices[kind] = voice
+ 
+ func update_contacts(contacts: Array[Dictionary], speed: float, sliding: bool, delta: float) -> void:
++	if not _west_cpu_spans:
++		_west_cpu_update_contacts(contacts, speed, sliding, delta)
++		return
++	var west_began := STALL_WORK.begin()
++	_west_cpu_update_contacts(contacts, speed, sliding, delta)
++	STALL_WORK.finish_slow("west.audio.road_contacts", west_began, 2000, self)
++
++func _west_cpu_update_contacts(contacts: Array[Dictionary], speed: float, sliding: bool, delta: float) -> void:
+ 	set_process(true)
+ 	var weights := {"hard":0.0, "grass":0.0, "dirt":0.0, "snow":0.0, "wet":0.0}
+ 	for contact in contacts:
+--- a/audio/weather/WeatherAudioMixer.gd
++++ b/audio/weather/WeatherAudioMixer.gd
+@@ -1,4 +1,7 @@
+ extends Node
++# Diagnóstico temporário: novos spans só na rodada CPU opt-in.
++var _west_cpu_spans := OS.get_environment("HARBOR_WEST_CPU_SPANS") == "1"
++const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+ ## Three constant voices, authored offline. No PCM generation or transient Tweens.
+ ## A private bus filters only this weather instance, then sends to the user's Ambient.
+ const LOOPS := [preload("res://audio/weather/rain_bed.wav"), preload("res://audio/weather/rain_drops.wav"), preload("res://audio/weather/rain_sheets.wav")]
+@@ -60,6 +63,14 @@
+ 	dialogue_focused = active
+ 
+ func _process(delta: float) -> void:
++	if not _west_cpu_spans:
++		_west_cpu_process(delta)
++		return
++	var west_began := STALL_WORK.begin()
++	_west_cpu_process(delta)
++	STALL_WORK.finish_slow("west.audio.weather_process", west_began, 2000, self)
++
++func _west_cpu_process(delta: float) -> void:
+ 	focus_gain = move_toward(focus_gain, 0.5 if dialogue_focused else 1.0, delta / (0.2 if dialogue_focused else 0.8))
+ 	# One moving target: a rapid enter/leave or clear/rain cannot leave a stale stop.
+ 	intensity = move_toward(intensity, target_intensity, delta / 3.0)
+--- a/runtime/ProductionWorld.gd
++++ b/runtime/ProductionWorld.gd
+@@ -1,4 +1,6 @@
+ extends Node
++# Diagnóstico temporário: novos spans só na rodada CPU opt-in.
++var _west_cpu_spans := OS.get_environment("HARBOR_WEST_CPU_SPANS") == "1"
+ const SESSION_OPS := preload("res://runtime/SessionOperations.gd")
+ const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+ const REGION := preload("res://world/editing/EditableRegion.gd")
+@@ -879,6 +881,14 @@
+ 	return support
+ 
+ func _update_physical_residency(point: Vector3) -> void:
++	if not _west_cpu_spans:
++		_west_cpu_update_physical_residency(point)
++		return
++	var west_began := STALL_WORK.begin()
++	_west_cpu_update_physical_residency(point)
++	STALL_WORK.finish_slow("west.world.residency", west_began, 2000, self)
++
++func _west_cpu_update_physical_residency(point: Vector3) -> void:
+ 	var physical_region := WORLD_CONNECTION.logical_region(point)
+ 	var support := _persistent_vehicle_support()
+ 	_mount_region(physical_region,point)
+@@ -935,6 +945,14 @@
+ const LOGICAL_REGION_HYSTERESIS := 4.0
+ 
+ func _update_logical_region(point: Vector3) -> void:
++	if not _west_cpu_spans:
++		_west_cpu_update_logical_region(point)
++		return
++	var west_began := STALL_WORK.begin()
++	_west_cpu_update_logical_region(point)
++	STALL_WORK.finish_slow("west.world.logical_region", west_began, 2000, self)
++
++func _west_cpu_update_logical_region(point: Vector3) -> void:
+ 	if not state.place_id.is_empty(): return
+ 	var next_region := WORLD_CONNECTION.logical_region(point)
+ 	if next_region == state.region_id or not regions.has(next_region): return
+@@ -1087,6 +1105,14 @@
+ 	world.population = world.people.size()
+ 
+ func _process(delta: float) -> void:
++	if not _west_cpu_spans:
++		_west_cpu_process(delta)
++		return
++	var west_began := STALL_WORK.begin()
++	_west_cpu_process(delta)
++	STALL_WORK.finish_slow("west.world.process", west_began, 2000, self)
++
++func _west_cpu_process(delta: float) -> void:
+ 	if not ready_for_play: return
+ 	_update_chairlift_schedule()
+ 	if travel_busy: return
+@@ -1240,6 +1266,14 @@
+ 			removed_car.queue_free()
+ 
+ func _service_population_job() -> void:
++	if not _west_cpu_spans:
++		_west_cpu_service_population_job()
++		return
++	var west_began := STALL_WORK.begin()
++	_west_cpu_service_population_job()
++	STALL_WORK.finish_slow("west.world.population_job", west_began, 2000, self)
++
++func _west_cpu_service_population_job() -> void:
+ 	if _population_jobs.is_empty(): return
+ 	var job: String = _population_jobs.pop_front()
+ 	var began := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
+@@ -1433,6 +1467,7 @@
+ 
+ func _trace_cost(label: String, began: int) -> void:
+ 	if began == 0: return
++	if _west_cpu_spans: STALL_WORK.finish_slow("west.world.operation." + label, began, 2000, self)
+ 	SESSION_OPS.completed(self, "world", label, began, {"region":state.region_id})
+ 	if not world.get_meta("benchmark_trace",false): return
+ 	var elapsed := Time.get_ticks_usec()-began
+--- a/world/regions/NativeRegion.gd
++++ b/world/regions/NativeRegion.gd
+@@ -1,4 +1,6 @@
+ extends Node3D
++# Diagnóstico temporário: novos spans só na rodada CPU opt-in.
++var _west_cpu_spans := OS.get_environment("HARBOR_WEST_CPU_SPANS") == "1"
+ const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+ ## Native production geography. Geometry/physics load only near the player.
+ const MOUNTAIN_FACTORY := preload("res://world/mountain_detail/MountainDetailFactory.gd")
+@@ -579,6 +581,14 @@
+ 		if light.is_in_group("mountain_night_light") and not light.get_meta("street_destroyed",false):
+ 			light.light_energy = float(light.get_meta("night_energy",1.0))*mountain_night_level
+ func _process(_delta: float) -> void:
++	if not _west_cpu_spans:
++		_west_cpu_process(_delta)
++		return
++	var west_began := STALL_WORK.begin()
++	_west_cpu_process(_delta)
++	STALL_WORK.finish_slow("west.region.process", west_began, 2000, self)
++
++func _west_cpu_process(_delta: float) -> void:
+ 	var drain_began := Time.get_ticks_usec()
+ 	_drain_retired()
+ 	_note_slow("liberação", drain_began, 100000)
+--- a/runtime/RoadsideParking.gd
++++ b/runtime/RoadsideParking.gd
+@@ -1,4 +1,7 @@
+ extends Node
++# Diagnóstico temporário: novos spans só na rodada CPU opt-in.
++var _west_cpu_spans := OS.get_environment("HARBOR_WEST_CPU_SPANS") == "1"
++const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+ ## Sparse roadside activity: six physical cars, four walkers and one maneuver.
+ ## Decisions run at 1.5 Hz; parked Vehicle bodies use their existing resting path.
+ const LAYOUT := preload("res://world/roadside_parking/RoadsideParkingLayout.gd")
+@@ -54,6 +57,14 @@
+ 	return car._held_junction == null and car._clearing_junctions.is_empty()
+ 
+ func _physics_process(delta: float) -> void:
++	if not _west_cpu_spans:
++		_west_cpu_physics_process(delta)
++		return
++	var west_began := STALL_WORK.begin()
++	_west_cpu_physics_process(delta)
++	STALL_WORK.finish_slow("west.parking.physics", west_began, 2000, self)
++
++func _west_cpu_physics_process(delta: float) -> void:
+ 	if not enabled or not is_instance_valid(world) or controller.session == null: return
+ 	var session = controller.session
+ 	if not session.ready_for_play or session.has_position_transition() or not controller.state.place_id.is_empty(): return
+--- a/runtime/SessionSystemProfile.gd
++++ b/runtime/SessionSystemProfile.gd
+@@ -1,4 +1,6 @@
+ extends Node
++# Diagnóstico temporário: novos spans só na rodada CPU opt-in.
++var _west_cpu_spans := OS.get_environment("HARBOR_WEST_CPU_SPANS") == "1"
+ ## Samples the interval before this early callback, including its physics ticks.
+ ## Inclusive timings overlap. Missing CPU/driver/GPU work is never assigned a cause.
+ const WORK := preload("res://runtime/StallWorkTrace.gd")
+@@ -231,6 +233,14 @@
+ 		RenderingServer.viewport_set_measure_render_time(get_tree().root.get_viewport_rid(), true)
+ 
+ func _process(_delta: float) -> void:
++	if not _west_cpu_spans:
++		_west_cpu_process(_delta)
++		return
++	var west_began := WORK.begin()
++	_west_cpu_process(_delta)
++	WORK.finish_slow("west.telemetry.profile_process", west_began, 2000, self)
++
++func _west_cpu_process(_delta: float) -> void:
+ 	var now := Time.get_ticks_usec()
+ 	var work := WORK.take_session()
+ 	_frames += 1

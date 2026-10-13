@@ -1,0 +1,23 @@
+{
+  "cpu": [
+    {
+      "Name": "13th Gen Intel(R) Core(TM) i7-13650HX",
+      "NumberOfCores": 14,
+      "NumberOfLogicalProcessors": 20
+    }
+  ],
+  "gpu": [
+    {
+      "Name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "DriverVersion": "32.0.16.1047"
+    }
+  ],
+  "os": [
+    {
+      "Caption": "Microsoft Windows 11 Home Single Language",
+      "Version": "10.0.26200",
+      "BuildNumber": "26200"
+    }
+  ],
+  "recorded_utc": "2026-10-13T21:22:36.8741194+00:00"
+}

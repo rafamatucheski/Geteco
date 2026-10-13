@@ -26,6 +26,10 @@ farol e sombra como sprite/decalque; 32 marcas de pneu no mundo todo.
 
 1. Leia `CLAUDE.md` e `AGENTS.md`. Comentários e logs em português; identificadores em inglês.
 2. **Só edite os arquivos da sua tarefa** (coluna "Dono de"). Precisa mexer em outro? Pare e reporte.
+   Também são da tarefa, sem precisar de autorização: os **testes e scripts de medição novos que a própria
+   tarefa cita** (ex.: `tests/test_traffic_rails.gd`, `tests/measure/<algo da tarefa>.gd`), testes existentes
+   da tarefa que precisem só de ajuste de leitura por causa da mudança (sem mudar a intenção), as evidências em
+   `evidence/<pasta da tarefa>/` e o relatório `docs/otimizacao-20261013/<ID>.md`.
 3. **Arquivos bloqueados para todos** (trabalho em andamento de outras pessoas, sem commit):
    clima do usuário — `runtime/Weather.gd`, `runtime/atmosphere/*`, `world/rain/*`,
    `world/city_look/{CityLook,CityLookMaterials,CityChunkDressing,CityLocalLighting,PoliceStationDressing,CoastalPlanarReflections}.gd`,

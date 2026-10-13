@@ -1,0 +1,3573 @@
+{
+  "schema_version": 1,
+  "generated_utc": "2026-10-13T21:24:22.564659+00:00",
+  "scope": "QA independente pós-coleta dos 16 JSONs e logs; sem Godot/build. Integridade numérica não implica ausência de defeitos do jogo nem validade causal de rodada com erro. Foco é flag na borda da amostra, não observação contínua entre callbacks.",
+  "checks": [
+    "frame_timestamp",
+    "phase_timestamp_order",
+    "phase_scalar_reconstruction",
+    "physics_timestamp_sum",
+    "physics_probe_engine_count",
+    "physics_tick_order",
+    "physics_frame_counter",
+    "process_frame_counter",
+    "render_counter_offset",
+    "continuous_intervals",
+    "span_drops",
+    "report_invalid_flags",
+    "report_probe_mismatches",
+    "duration_30s",
+    "clock_boundaries",
+    "fps_agreement",
+    "stats_agreement",
+    "inventories_warmup_only",
+    "route_completion",
+    "session_telemetry_arithmetic",
+    "session_state_agreement",
+    "exit_code",
+    "source_digest_recomputed",
+    "sources_same_between_runs",
+    "common_rendered_hardware_resolution_config",
+    "native_csharp_router_prewarm_log"
+  ],
+  "scalar_tolerance": {
+    "absolute": 1e-07,
+    "stats_relative": 1e-12
+  },
+  "quantile_definition": "sort ascending; p50=floor(n/2), p95=floor(n*.95), p99=floor(n*.99), clamped n-1; matches runner exactly, no interpolation",
+  "phase_reconstruction": "frame_ms = pre_process_gap_ms + physics_callback_ms + process_callback_ms + process_to_deferred_ms + deferred_to_render_pre_ms + render_bracket_ms; physics sum from nonoverlapping tick callback timestamps",
+  "units": "frame/bracket/GPU/CPU ms; telemetry counters usec; physics_steps counts. TIME_PROCESS/TIME_PHYSICS_PROCESS are retained raw latest monitors and excluded from summary averages. GPU/viewport CPU samples asynchronous.",
+  "summary": {
+    "runs": 16,
+    "raw_frames_checked": 50348,
+    "measurement_frames_checked": 29386,
+    "raw_data_integrity_pass_runs": 16,
+    "runtime_error_free_runs": 14,
+    "runtime_error_runs": [
+      "instrumentation0_2",
+      "session_profile0_1"
+    ],
+    "max_phase_sum_error_ms": 5.684341886080802e-14,
+    "all_source_snapshots_identical": true,
+    "source_digest": "31bf304e9ef9838f4994fc9b9bad615c36680c76a2c6f7c1bbaaa8eda6742d1e",
+    "source_files_count": 1058,
+    "all_sources_digest_recomputed": true,
+    "all_exit_codes_zero": true,
+    "fully_focused_measurement_runs": 12,
+    "fully_focused_error_free_measurement_runs": 11,
+    "focus_compromised_measurement_runs": [
+      "no_traffic_yield_1",
+      "no_traffic_yield_2",
+      "session_profile0_1",
+      "session_profile0_2"
+    ],
+    "stats_scalar_checks_total": 1584,
+    "max_report_stat_error": 4.3655745685100555e-11,
+    "all_hardware_renderer_resolution_physics_configs_same": true,
+    "all_native_csharp_router_prewarm_confirmed": true
+  },
+  "current_profiler_benchmark_checks": {
+    "tests/measure/profile_west_cpu.gd": {
+      "sha256": "4d3cbc6d84eab914cd8485b46e26cddb182ee483c767bc868e6e55beb88f5504",
+      "equals_measurement_snapshot": true
+    },
+    "tests/measure/benchmark_west_route.gd": {
+      "sha256": "d4d48da1650f4f14ebc5b0103fcbdf99099c64458e79f9e58a25beed57c97d0c",
+      "equals_measurement_snapshot": true
+    }
+  },
+  "comparability_notes": [
+    "session_profile0_1 has two runtime errors and instrumentation0_2 has one despite exit0 and invalid[]; exclude both from causal comparisons.",
+    "session_profile0_2 is the only error-free repeat of the session-profiler-off control, but only 14.115% of measured frame endpoints were focused. Neither session-profiler-off run supplies an equivalent fully focused 30s observation; do not claim this control causally clean.",
+    "Focus losses: no_traffic_yield_1 about 1.736% measured frame endpoints, no_traffic_yield_2 and session_profile0_1 100% unfocused, session_profile0_2 about 85.885% unfocused. Fractions are included per phase; error-free and focused are distinct criteria.",
+    "Profiler/body and session counters describe measured callback bodies; dispatch, per-source tracing, retained dictionaries and writer/native costs are not fully included. Do not subtract them to invent uninstrumented FPS.",
+    "Native memory growth includes retained raw dictionaries, arrays and spans plus world/cache changes. No no-retention control was run; observed growth is not proof of a product leak.",
+    "Sources were snapshotted before each run and are identical across 16 runs including compiled DLL. This does not prove no transient disk changes occurred between snapshots. Production instrumentation was restored afterward; current production hashes are intentionally different from measurement sources."
+  ],
+  "runs": [
+    {
+      "label": "base_1",
+      "raw_data_integrity_pass": true,
+      "runtime_error_free": true,
+      "execution_quality": "sem_erros_observados",
+      "numerical_failures": {},
+      "first_failure_examples": {},
+      "reported_invalid": [],
+      "report_sha256": "7fb5576e9ff4ba341cd0da58d73e6c3dfabd8e9e27bfb4b050c2c84227cb3788",
+      "engine_log_sha256": "b533ceca009e8210962d1b99ef768484dac372ca47b33e5d8da1b043ac4c113d",
+      "source_digest": "31bf304e9ef9838f4994fc9b9bad615c36680c76a2c6f7c1bbaaa8eda6742d1e",
+      "source_files_count": 1058,
+      "raw_frames": 2353,
+      "measurement_frames": 1043,
+      "measurement_seconds": 57.649443,
+      "fps": 18.092108886464,
+      "frame_ms": {
+        "above_33_3": 558,
+        "above_66_7": 193,
+        "count": 1043,
+        "max": 319.57,
+        "mean": 55.2727162032598,
+        "p50": 34.437,
+        "p95": 169.761,
+        "p99": 230.121,
+        "total": 57649.443
+      },
+      "max_phase_sum_error_ms": 5.684341886080802e-14,
+      "max_report_stat_error": 7.275957614183426e-12,
+      "stats_scalar_checks": 99,
+      "phases": {
+        "warmup": {
+          "frames": 1309,
+          "duration_ms": 23762.77799999996,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "boundary": {
+          "frames": 1,
+          "duration_ms": 28.317,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "measurement": {
+          "frames": 1043,
+          "duration_ms": 57649.44299999996,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        }
+      },
+      "render_process_offsets": {
+        "0": 2353
+      },
+      "physics_steps_histogram_measured": {
+        "1": 195,
+        "2": 466,
+        "3": 157,
+        "4": 49,
+        "5": 13,
+        "6": 8,
+        "7": 7,
+        "8": 148
+      },
+      "engine_error_lines": [],
+      "session_errors": [],
+      "session_warning_count": 0,
+      "session_record_counts": {
+        "session_start": 1,
+        "stdout": 6,
+        "main_thread_unresponsive": 30,
+        "operation_begin": 86,
+        "operation_end": 86,
+        "operation_timing": 1403,
+        "operations_pending": 41,
+        "location_changed": 1,
+        "context_update": 348,
+        "frame_history": 188,
+        "slow_operations": 943,
+        "frame_spike": 730,
+        "perf_window": 98,
+        "orphan_nodes": 3,
+        "light_owners": 10,
+        "system_metrics": 98,
+        "runtime_state_changed": 2,
+        "metrics": 97,
+        "lifecycle_events": 2,
+        "session_end": 1
+      },
+      "session_starts_count": 1,
+      "session_telemetry": {
+        "end_usec": 852096,
+        "measured_usec": 502566,
+        "profile_end_usec": 2687202,
+        "profile_measured_usec": 1680923,
+        "profile_start_usec": 1006279,
+        "scope": "self-reported callback body cost, excludes native dispatch and writer-thread overhead; boundary access only during measurement",
+        "start_usec": 349530
+      },
+      "session_counter_context_first": {
+        "engine_usec": 90971601,
+        "telemetry_profile_total_usec": 1006445,
+        "runtime_telemetry_main_thread_usec": 349550.0
+      },
+      "session_counter_context_last": {
+        "engine_usec": 148467040,
+        "telemetry_profile_total_usec": 2684447,
+        "runtime_telemetry_main_thread_usec": 851994.0
+      },
+      "observer_body_self_cost": {
+        "mean_ms": 0.2655618408437199,
+        "p50_ms": 0.238,
+        "p95_ms": 0.434,
+        "p99_ms": 0.564,
+        "max_ms": 0.711,
+        "total_ms": 276.9809999999999,
+        "wall_fraction": 0.0048045737406344075,
+        "scope": "self-timed callback bodies only, lower bound on observer overhead; no subtraction to infer clean FPS"
+      },
+      "memory_observation": {
+        "scope": "nearest 1s session samples inside measurement, not exact window edges; observation includes raw collection and ordinary world/cache activity",
+        "sample_count": 54,
+        "first": {
+          "engine_usec": 91883219,
+          "native_memory_bytes": 831102718,
+          "working_set_bytes": 3082948608,
+          "private_memory_bytes": 4328345600,
+          "managed_bytes": 15627944,
+          "gc_collections": [
+            7,
+            3,
+            2
+          ],
+          "gc_pause_ms": 14.695,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "last": {
+          "engine_usec": 147643082,
+          "native_memory_bytes": 929824441,
+          "working_set_bytes": 3204104192,
+          "private_memory_bytes": 4472225792,
+          "managed_bytes": 23500648,
+          "gc_collections": [
+            20,
+            4,
+            2
+          ],
+          "gc_pause_ms": 21.25,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "native_delta_mib": 94.14837169647217,
+        "working_set_delta_mib": 115.54296875,
+        "private_delta_mib": 137.21484375,
+        "max_writer_queue": 0,
+        "max_records_dropped": 0
+      },
+      "raw_json_bytes": 18388972,
+      "settings": {
+        "args": [
+          "--no-save",
+          "--benchmark",
+          "--no-dispatch",
+          "--play-at=harbor,64,82",
+          "--label=base_1"
+        ],
+        "disabled_nodes": [],
+        "disabled_scripts": [],
+        "env": {
+          "GETECO_BUILDING_BATCH": "",
+          "GETECO_GROUND_STACK": "",
+          "GETECO_PROP_INSTANCING": "",
+          "HARBOR_SESSION_LOG": "",
+          "HARBOR_SESSION_PROFILE": "",
+          "HARBOR_STALL_AGGREGATE": "",
+          "HARBOR_STALL_LOG": "",
+          "HARBOR_STALL_WORK": "",
+          "HARBOR_WEST_CPU_SPANS": "1",
+          "HARBOR_WEST_CPU_TRACE": ""
+        },
+        "max_fps": 0,
+        "max_physics_steps_per_frame": 8,
+        "physics_ticks_per_second": 60,
+        "resolution": [
+          3440,
+          1440
+        ],
+        "sem_reflexos": false,
+        "sem_sombras": false,
+        "session_profile_present": true,
+        "startup": {
+          "max_fps": 144,
+          "vsync": 1
+        },
+        "trace_enabled": true,
+        "vsync": 0
+      },
+      "inventory_cost_usec": [
+        26998,
+        31398,
+        40685
+      ],
+      "fully_focused_measurement": true,
+      "focus_comparison_quality": "foco_integral",
+      "fully_focused_error_free_measurement": true
+    },
+    {
+      "label": "base_2",
+      "raw_data_integrity_pass": true,
+      "runtime_error_free": true,
+      "execution_quality": "sem_erros_observados",
+      "numerical_failures": {},
+      "first_failure_examples": {},
+      "reported_invalid": [],
+      "report_sha256": "03dc85d74f0e559ac2221ec5bddff24cd594b1fd6aed4a990822fee47b104ccf",
+      "engine_log_sha256": "6bdc0dc231a8497f822d3eb7dc0c5b4e30808e14f790cbf4ea95c5611cad2065",
+      "source_digest": "31bf304e9ef9838f4994fc9b9bad615c36680c76a2c6f7c1bbaaa8eda6742d1e",
+      "source_files_count": 1058,
+      "raw_frames": 2812,
+      "measurement_frames": 1943,
+      "measurement_seconds": 47.405549,
+      "fps": 40.9867629631291,
+      "frame_ms": {
+        "above_33_3": 266,
+        "above_66_7": 38,
+        "count": 1943,
+        "max": 129.438,
+        "mean": 24.3981209469892,
+        "p50": 19.29,
+        "p95": 47.293,
+        "p99": 84.197,
+        "total": 47405.549
+      },
+      "max_phase_sum_error_ms": 2.842170943040401e-14,
+      "max_report_stat_error": 3.637978807091713e-11,
+      "stats_scalar_checks": 99,
+      "phases": {
+        "warmup": {
+          "frames": 868,
+          "duration_ms": 24168.81899999998,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "boundary": {
+          "frames": 1,
+          "duration_ms": 37.25,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "measurement": {
+          "frames": 1943,
+          "duration_ms": 47405.548999999904,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        }
+      },
+      "render_process_offsets": {
+        "0": 2812
+      },
+      "physics_steps_histogram_measured": {
+        "2": 530,
+        "3": 97,
+        "4": 24,
+        "1": 1243,
+        "5": 14,
+        "6": 7,
+        "7": 5,
+        "8": 1,
+        "0": 22
+      },
+      "engine_error_lines": [],
+      "session_errors": [],
+      "session_warning_count": 0,
+      "session_record_counts": {
+        "session_start": 1,
+        "stdout": 6,
+        "main_thread_unresponsive": 29,
+        "operation_begin": 86,
+        "operation_end": 86,
+        "operation_timing": 1423,
+        "operations_pending": 49,
+        "location_changed": 1,
+        "context_update": 351,
+        "frame_history": 182,
+        "slow_operations": 1039,
+        "frame_spike": 612,
+        "perf_window": 99,
+        "orphan_nodes": 4,
+        "light_owners": 10,
+        "system_metrics": 99,
+        "runtime_state_changed": 2,
+        "metrics": 98,
+        "lifecycle_events": 2,
+        "session_end": 1
+      },
+      "session_starts_count": 1,
+      "session_telemetry": {
+        "end_usec": 873980,
+        "measured_usec": 361402,
+        "profile_end_usec": 2724713,
+        "profile_measured_usec": 1133575,
+        "profile_start_usec": 1591138,
+        "scope": "self-reported callback body cost, excludes native dispatch and writer-thread overhead; boundary access only during measurement",
+        "start_usec": 512578
+      },
+      "session_counter_context_first": {
+        "engine_usec": 98569740,
+        "telemetry_profile_total_usec": 1594807,
+        "runtime_telemetry_main_thread_usec": 512616.0
+      },
+      "session_counter_context_last": {
+        "engine_usec": 145809693,
+        "telemetry_profile_total_usec": 2723069,
+        "runtime_telemetry_main_thread_usec": 873912.0
+      },
+      "observer_body_self_cost": {
+        "mean_ms": 0.20764436438497214,
+        "p50_ms": 0.197,
+        "p95_ms": 0.289,
+        "p99_ms": 0.356,
+        "max_ms": 0.468,
+        "total_ms": 403.4530000000009,
+        "wall_fraction": 0.008510670343676469,
+        "scope": "self-timed callback bodies only, lower bound on observer overhead; no subtraction to infer clean FPS"
+      },
+      "memory_observation": {
+        "scope": "nearest 1s session samples inside measurement, not exact window edges; observation includes raw collection and ordinary world/cache activity",
+        "sample_count": 46,
+        "first": {
+          "engine_usec": 99389874,
+          "native_memory_bytes": 817098245,
+          "working_set_bytes": 3020701696,
+          "private_memory_bytes": 4277022720,
+          "managed_bytes": 11607456,
+          "gc_collections": [
+            10,
+            2,
+            1
+          ],
+          "gc_pause_ms": 16.67,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "last": {
+          "engine_usec": 144991303,
+          "native_memory_bytes": 927714791,
+          "working_set_bytes": 3187814400,
+          "private_memory_bytes": 4435058688,
+          "managed_bytes": 17182440,
+          "gc_collections": [
+            18,
+            3,
+            2
+          ],
+          "gc_pause_ms": 22.773,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "native_delta_mib": 105.49215888977051,
+        "working_set_delta_mib": 159.37109375,
+        "private_delta_mib": 150.71484375,
+        "max_writer_queue": 0,
+        "max_records_dropped": 0
+      },
+      "raw_json_bytes": 22080463,
+      "settings": {
+        "args": [
+          "--no-save",
+          "--benchmark",
+          "--no-dispatch",
+          "--play-at=harbor,64,82",
+          "--label=base_2"
+        ],
+        "disabled_nodes": [],
+        "disabled_scripts": [],
+        "env": {
+          "GETECO_BUILDING_BATCH": "",
+          "GETECO_GROUND_STACK": "",
+          "GETECO_PROP_INSTANCING": "",
+          "HARBOR_SESSION_LOG": "",
+          "HARBOR_SESSION_PROFILE": "",
+          "HARBOR_STALL_AGGREGATE": "",
+          "HARBOR_STALL_LOG": "",
+          "HARBOR_STALL_WORK": "",
+          "HARBOR_WEST_CPU_SPANS": "1",
+          "HARBOR_WEST_CPU_TRACE": "1"
+        },
+        "max_fps": 0,
+        "max_physics_steps_per_frame": 8,
+        "physics_ticks_per_second": 60,
+        "resolution": [
+          3440,
+          1440
+        ],
+        "sem_reflexos": false,
+        "sem_sombras": false,
+        "session_profile_present": true,
+        "startup": {
+          "max_fps": 144,
+          "vsync": 1
+        },
+        "trace_enabled": true,
+        "vsync": 0
+      },
+      "inventory_cost_usec": [
+        20989,
+        34818,
+        38678
+      ],
+      "fully_focused_measurement": true,
+      "focus_comparison_quality": "foco_integral",
+      "fully_focused_error_free_measurement": true
+    },
+    {
+      "label": "instrumentation0_1",
+      "raw_data_integrity_pass": true,
+      "runtime_error_free": true,
+      "execution_quality": "sem_erros_observados",
+      "numerical_failures": {},
+      "first_failure_examples": {},
+      "reported_invalid": [],
+      "report_sha256": "26e72963e8d71e060959efd0d905a3534e0501854872b0b46c97d943015cec20",
+      "engine_log_sha256": "f19c7bfe92662a87eed5e0d9d34c0e51359addcfb9f16c1f7da3b388b6f25a9d",
+      "source_digest": "31bf304e9ef9838f4994fc9b9bad615c36680c76a2c6f7c1bbaaa8eda6742d1e",
+      "source_files_count": 1058,
+      "raw_frames": 3139,
+      "measurement_frames": 1706,
+      "measurement_seconds": 47.534263,
+      "fps": 35.8899011435183,
+      "frame_ms": {
+        "above_33_3": 336,
+        "above_66_7": 39,
+        "count": 1706,
+        "max": 183.523,
+        "mean": 27.862991207503,
+        "p50": 24.35,
+        "p95": 53.598,
+        "p99": 82.746,
+        "total": 47534.2630000001
+      },
+      "max_phase_sum_error_ms": 1.4210854715202004e-14,
+      "max_report_stat_error": 2.9103830456733704e-11,
+      "stats_scalar_checks": 99,
+      "phases": {
+        "warmup": {
+          "frames": 1432,
+          "duration_ms": 23687.864000000005,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "boundary": {
+          "frames": 1,
+          "duration_ms": 15.293,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "measurement": {
+          "frames": 1706,
+          "duration_ms": 47534.262999999984,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        }
+      },
+      "render_process_offsets": {
+        "0": 3139
+      },
+      "physics_steps_histogram_measured": {
+        "1": 865,
+        "2": 653,
+        "3": 122,
+        "4": 40,
+        "6": 6,
+        "8": 3,
+        "7": 4,
+        "5": 12,
+        "0": 1
+      },
+      "engine_error_lines": [],
+      "session_errors": [],
+      "session_warning_count": 0,
+      "session_record_counts": {
+        "session_start": 1,
+        "stdout": 6,
+        "main_thread_unresponsive": 27,
+        "operation_begin": 86,
+        "operation_end": 86,
+        "operation_timing": 1503,
+        "operations_pending": 39,
+        "location_changed": 1,
+        "context_update": 332,
+        "frame_history": 175,
+        "slow_operations": 198,
+        "frame_spike": 462,
+        "perf_window": 90,
+        "orphan_nodes": 3,
+        "light_owners": 9,
+        "system_metrics": 90,
+        "runtime_state_changed": 2,
+        "metrics": 89,
+        "lifecycle_events": 2,
+        "session_end": 1
+      },
+      "session_starts_count": 1,
+      "session_telemetry": {
+        "end_usec": 785168,
+        "measured_usec": 406518,
+        "profile_end_usec": 2001564,
+        "profile_measured_usec": 1161048,
+        "profile_start_usec": 840516,
+        "scope": "self-reported callback body cost, excludes native dispatch and writer-thread overhead; boundary access only during measurement",
+        "start_usec": 378650
+      },
+      "session_counter_context_first": {
+        "engine_usec": 87839580,
+        "telemetry_profile_total_usec": 842178,
+        "runtime_telemetry_main_thread_usec": 378893.0
+      },
+      "session_counter_context_last": {
+        "engine_usec": 134926812,
+        "telemetry_profile_total_usec": 1993374,
+        "runtime_telemetry_main_thread_usec": 785018.0
+      },
+      "observer_body_self_cost": {
+        "mean_ms": 0.11372391559202792,
+        "p50_ms": 0.108,
+        "p95_ms": 0.154,
+        "p99_ms": 0.207,
+        "max_ms": 0.337,
+        "total_ms": 194.01299999999964,
+        "wall_fraction": 0.0040815400882517035,
+        "scope": "self-timed callback bodies only, lower bound on observer overhead; no subtraction to infer clean FPS"
+      },
+      "memory_observation": {
+        "scope": "nearest 1s session samples inside measurement, not exact window edges; observation includes raw collection and ordinary world/cache activity",
+        "sample_count": 47,
+        "first": {
+          "engine_usec": 88063904,
+          "native_memory_bytes": 788403005,
+          "working_set_bytes": 3006894080,
+          "private_memory_bytes": 4258304000,
+          "managed_bytes": 13197464,
+          "gc_collections": [
+            7,
+            3,
+            2
+          ],
+          "gc_pause_ms": 14.22,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "last": {
+          "engine_usec": 134898915,
+          "native_memory_bytes": 816293816,
+          "working_set_bytes": 3051524096,
+          "private_memory_bytes": 4301877248,
+          "managed_bytes": 14665744,
+          "gc_collections": [
+            17,
+            5,
+            3
+          ],
+          "gc_pause_ms": 20.578,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "native_delta_mib": 26.598750114440918,
+        "working_set_delta_mib": 42.5625,
+        "private_delta_mib": 41.5546875,
+        "max_writer_queue": 0,
+        "max_records_dropped": 0
+      },
+      "raw_json_bytes": 5898024,
+      "settings": {
+        "args": [
+          "--no-save",
+          "--benchmark",
+          "--no-dispatch",
+          "--play-at=harbor,64,82",
+          "--label=instrumentation0_1"
+        ],
+        "disabled_nodes": [],
+        "disabled_scripts": [],
+        "env": {
+          "GETECO_BUILDING_BATCH": "",
+          "GETECO_GROUND_STACK": "",
+          "GETECO_PROP_INSTANCING": "",
+          "HARBOR_SESSION_LOG": "",
+          "HARBOR_SESSION_PROFILE": "",
+          "HARBOR_STALL_AGGREGATE": "",
+          "HARBOR_STALL_LOG": "",
+          "HARBOR_STALL_WORK": "",
+          "HARBOR_WEST_CPU_SPANS": "0",
+          "HARBOR_WEST_CPU_TRACE": "0"
+        },
+        "max_fps": 0,
+        "max_physics_steps_per_frame": 8,
+        "physics_ticks_per_second": 60,
+        "resolution": [
+          3440,
+          1440
+        ],
+        "sem_reflexos": false,
+        "sem_sombras": false,
+        "session_profile_present": true,
+        "startup": {
+          "max_fps": 144,
+          "vsync": 1
+        },
+        "trace_enabled": false,
+        "vsync": 0
+      },
+      "inventory_cost_usec": [
+        22228,
+        33717,
+        34459
+      ],
+      "fully_focused_measurement": true,
+      "focus_comparison_quality": "foco_integral",
+      "fully_focused_error_free_measurement": true
+    },
+    {
+      "label": "instrumentation0_2",
+      "raw_data_integrity_pass": true,
+      "runtime_error_free": false,
+      "execution_quality": "erro_runtime_excluir_comparacao_causal",
+      "numerical_failures": {},
+      "first_failure_examples": {},
+      "reported_invalid": [],
+      "report_sha256": "9cd5bd80e9b8c9c3bfb043455b65c6bb626833d4024c3f05108fd82788fb0fbb",
+      "engine_log_sha256": "060191370c6a17e4ee37310e448682f5fef7bf64bf9a859ab2637c93055849ac",
+      "source_digest": "31bf304e9ef9838f4994fc9b9bad615c36680c76a2c6f7c1bbaaa8eda6742d1e",
+      "source_files_count": 1058,
+      "raw_frames": 2749,
+      "measurement_frames": 1630,
+      "measurement_seconds": 47.624536,
+      "fps": 34.2260552417771,
+      "frame_ms": {
+        "above_33_3": 373,
+        "above_66_7": 48,
+        "count": 1630,
+        "max": 162.114,
+        "mean": 29.2175067484662,
+        "p50": 25.441,
+        "p95": 58.471,
+        "p99": 94.189,
+        "total": 47624.536
+      },
+      "max_phase_sum_error_ms": 2.842170943040401e-14,
+      "max_report_stat_error": 3.637978807091713e-11,
+      "stats_scalar_checks": 99,
+      "phases": {
+        "warmup": {
+          "frames": 1118,
+          "duration_ms": 23761.451999999994,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "boundary": {
+          "frames": 1,
+          "duration_ms": 28.433,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "measurement": {
+          "frames": 1630,
+          "duration_ms": 47624.53599999995,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        }
+      },
+      "render_process_offsets": {
+        "0": 2749
+      },
+      "physics_steps_histogram_measured": {
+        "2": 599,
+        "1": 788,
+        "3": 160,
+        "7": 5,
+        "6": 5,
+        "4": 52,
+        "0": 1,
+        "5": 15,
+        "8": 5
+      },
+      "engine_error_lines": [
+        {
+          "line": 9,
+          "message": "SCRIPT ERROR: Trying to assign invalid previously freed instance.",
+          "location": "at: _remove_node (res://world/city_look/CoastalPlanarReflections.gd:100)"
+        }
+      ],
+      "session_errors": [
+        {
+          "file": "res://world/city_look/CoastalPlanarReflections.gd",
+          "line": 100,
+          "function": "_remove_node",
+          "code": "Trying to assign invalid previously freed instance.",
+          "error_type": 2,
+          "sequence": 2280,
+          "elapsed_ms": 108116.2439
+        }
+      ],
+      "session_warning_count": 0,
+      "session_record_counts": {
+        "session_start": 1,
+        "stdout": 6,
+        "main_thread_unresponsive": 33,
+        "operation_begin": 86,
+        "operation_end": 86,
+        "operation_timing": 1377,
+        "operations_pending": 50,
+        "location_changed": 1,
+        "context_update": 338,
+        "frame_history": 181,
+        "slow_operations": 234,
+        "frame_spike": 609,
+        "perf_window": 95,
+        "orphan_nodes": 5,
+        "light_owners": 10,
+        "system_metrics": 95,
+        "runtime_state_changed": 2,
+        "metrics": 93,
+        "lifecycle_events": 18,
+        "error": 1,
+        "session_end": 1
+      },
+      "session_starts_count": 1,
+      "session_telemetry": {
+        "end_usec": 809598,
+        "measured_usec": 382135,
+        "profile_end_usec": 2244869,
+        "profile_measured_usec": 1207215,
+        "profile_start_usec": 1037654,
+        "scope": "self-reported callback body cost, excludes native dispatch and writer-thread overhead; boundary access only during measurement",
+        "start_usec": 427463
+      },
+      "session_counter_context_first": {
+        "engine_usec": 97149848,
+        "telemetry_profile_total_usec": 1041550,
+        "runtime_telemetry_main_thread_usec": 427639.0
+      },
+      "session_counter_context_last": {
+        "engine_usec": 144330802,
+        "telemetry_profile_total_usec": 2238562,
+        "runtime_telemetry_main_thread_usec": 809481.0
+      },
+      "observer_body_self_cost": {
+        "mean_ms": 0.10742208588956997,
+        "p50_ms": 0.102,
+        "p95_ms": 0.146,
+        "p99_ms": 0.204,
+        "max_ms": 0.283,
+        "total_ms": 175.09799999999905,
+        "wall_fraction": 0.003676634245843345,
+        "scope": "self-timed callback bodies only, lower bound on observer overhead; no subtraction to infer clean FPS"
+      },
+      "memory_observation": {
+        "scope": "nearest 1s session samples inside measurement, not exact window edges; observation includes raw collection and ordinary world/cache activity",
+        "sample_count": 46,
+        "first": {
+          "engine_usec": 97909084,
+          "native_memory_bytes": 790190599,
+          "working_set_bytes": 3014496256,
+          "private_memory_bytes": 4269748224,
+          "managed_bytes": 19182776,
+          "gc_collections": [
+            7,
+            2,
+            1
+          ],
+          "gc_pause_ms": 13.194,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "last": {
+          "engine_usec": 143796329,
+          "native_memory_bytes": 827473963,
+          "working_set_bytes": 3107332096,
+          "private_memory_bytes": 4344254464,
+          "managed_bytes": 11594808,
+          "gc_collections": [
+            17,
+            4,
+            2
+          ],
+          "gc_pause_ms": 21.096,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "native_delta_mib": 35.55618667602539,
+        "working_set_delta_mib": 88.53515625,
+        "private_delta_mib": 71.0546875,
+        "max_writer_queue": 0,
+        "max_records_dropped": 0
+      },
+      "raw_json_bytes": 5264116,
+      "settings": {
+        "args": [
+          "--no-save",
+          "--benchmark",
+          "--no-dispatch",
+          "--play-at=harbor,64,82",
+          "--label=instrumentation0_2"
+        ],
+        "disabled_nodes": [],
+        "disabled_scripts": [],
+        "env": {
+          "GETECO_BUILDING_BATCH": "",
+          "GETECO_GROUND_STACK": "",
+          "GETECO_PROP_INSTANCING": "",
+          "HARBOR_SESSION_LOG": "",
+          "HARBOR_SESSION_PROFILE": "",
+          "HARBOR_STALL_AGGREGATE": "",
+          "HARBOR_STALL_LOG": "",
+          "HARBOR_STALL_WORK": "",
+          "HARBOR_WEST_CPU_SPANS": "0",
+          "HARBOR_WEST_CPU_TRACE": "0"
+        },
+        "max_fps": 0,
+        "max_physics_steps_per_frame": 8,
+        "physics_ticks_per_second": 60,
+        "resolution": [
+          3440,
+          1440
+        ],
+        "sem_reflexos": false,
+        "sem_sombras": false,
+        "session_profile_present": true,
+        "startup": {
+          "max_fps": 144,
+          "vsync": 1
+        },
+        "trace_enabled": false,
+        "vsync": 0
+      },
+      "inventory_cost_usec": [
+        25446,
+        32293,
+        47505
+      ],
+      "fully_focused_measurement": true,
+      "focus_comparison_quality": "foco_integral",
+      "fully_focused_error_free_measurement": false
+    },
+    {
+      "label": "no_density_1",
+      "raw_data_integrity_pass": true,
+      "runtime_error_free": true,
+      "execution_quality": "sem_erros_observados",
+      "numerical_failures": {},
+      "first_failure_examples": {},
+      "reported_invalid": [],
+      "report_sha256": "4b96f40010137d207bd71f423c2e0abf2db172dca96a695e0dbece08ee88fb20",
+      "engine_log_sha256": "1693f133db10419dccf49c771b07467c5a8f243de6c5f19855046c49f66c224d",
+      "source_digest": "31bf304e9ef9838f4994fc9b9bad615c36680c76a2c6f7c1bbaaa8eda6742d1e",
+      "source_files_count": 1058,
+      "raw_frames": 2852,
+      "measurement_frames": 1572,
+      "measurement_seconds": 47.410984,
+      "fps": 33.1568735211233,
+      "frame_ms": {
+        "above_33_3": 401,
+        "above_66_7": 53,
+        "count": 1572,
+        "max": 152.944,
+        "mean": 30.1596590330789,
+        "p50": 27.388,
+        "p95": 60.223,
+        "p99": 82.83,
+        "total": 47410.984
+      },
+      "max_phase_sum_error_ms": 2.842170943040401e-14,
+      "max_report_stat_error": 1.4551915228366852e-11,
+      "stats_scalar_checks": 99,
+      "phases": {
+        "warmup": {
+          "frames": 1279,
+          "duration_ms": 24022.822,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "boundary": {
+          "frames": 1,
+          "duration_ms": 29.931,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "measurement": {
+          "frames": 1572,
+          "duration_ms": 47410.98399999994,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        }
+      },
+      "render_process_offsets": {
+        "0": 2852
+      },
+      "physics_steps_histogram_measured": {
+        "2": 650,
+        "1": 676,
+        "3": 162,
+        "5": 21,
+        "4": 54,
+        "6": 3,
+        "7": 5,
+        "8": 1
+      },
+      "engine_error_lines": [],
+      "session_errors": [],
+      "session_warning_count": 0,
+      "session_record_counts": {
+        "session_start": 1,
+        "stdout": 6,
+        "main_thread_unresponsive": 29,
+        "operation_begin": 86,
+        "operation_end": 86,
+        "operation_timing": 1557,
+        "operations_pending": 39,
+        "location_changed": 1,
+        "context_update": 326,
+        "frame_history": 175,
+        "slow_operations": 762,
+        "frame_spike": 592,
+        "perf_window": 90,
+        "orphan_nodes": 3,
+        "light_owners": 9,
+        "system_metrics": 90,
+        "runtime_state_changed": 2,
+        "metrics": 89,
+        "lifecycle_events": 2,
+        "session_end": 1
+      },
+      "session_starts_count": 1,
+      "session_telemetry": {
+        "end_usec": 705436,
+        "measured_usec": 340435,
+        "profile_end_usec": 2206247,
+        "profile_measured_usec": 1206285,
+        "profile_start_usec": 999962,
+        "scope": "self-reported callback body cost, excludes native dispatch and writer-thread overhead; boundary access only during measurement",
+        "start_usec": 365001
+      },
+      "session_counter_context_first": {
+        "engine_usec": 93278994,
+        "telemetry_profile_total_usec": 1002060,
+        "runtime_telemetry_main_thread_usec": 365059.0
+      },
+      "session_counter_context_last": {
+        "engine_usec": 140411462,
+        "telemetry_profile_total_usec": 2202706,
+        "runtime_telemetry_main_thread_usec": 705301.0
+      },
+      "observer_body_self_cost": {
+        "mean_ms": 0.20904325699745574,
+        "p50_ms": 0.199,
+        "p95_ms": 0.288,
+        "p99_ms": 0.345,
+        "max_ms": 0.477,
+        "total_ms": 328.61600000000044,
+        "wall_fraction": 0.006931220832708321,
+        "scope": "self-timed callback bodies only, lower bound on observer overhead; no subtraction to infer clean FPS"
+      },
+      "memory_observation": {
+        "scope": "nearest 1s session samples inside measurement, not exact window edges; observation includes raw collection and ordinary world/cache activity",
+        "sample_count": 46,
+        "first": {
+          "engine_usec": 93950033,
+          "native_memory_bytes": 848116707,
+          "working_set_bytes": 3062480896,
+          "private_memory_bytes": 4302274560,
+          "managed_bytes": 7813328,
+          "gc_collections": [
+            7,
+            3,
+            2
+          ],
+          "gc_pause_ms": 15.776,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "last": {
+          "engine_usec": 139830038,
+          "native_memory_bytes": 937820400,
+          "working_set_bytes": 3205857280,
+          "private_memory_bytes": 4448792576,
+          "managed_bytes": 23624360,
+          "gc_collections": [
+            17,
+            3,
+            2
+          ],
+          "gc_pause_ms": 19.638,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "native_delta_mib": 85.54810810089111,
+        "working_set_delta_mib": 136.734375,
+        "private_delta_mib": 139.73046875,
+        "max_writer_queue": 0,
+        "max_records_dropped": 0
+      },
+      "raw_json_bytes": 22265307,
+      "settings": {
+        "args": [
+          "--no-save",
+          "--benchmark",
+          "--no-dispatch",
+          "--play-at=harbor,64,82",
+          "--label=no_density_1",
+          "--no-density"
+        ],
+        "disabled_nodes": [],
+        "disabled_scripts": [],
+        "env": {
+          "GETECO_BUILDING_BATCH": "",
+          "GETECO_GROUND_STACK": "",
+          "GETECO_PROP_INSTANCING": "",
+          "HARBOR_SESSION_LOG": "",
+          "HARBOR_SESSION_PROFILE": "",
+          "HARBOR_STALL_AGGREGATE": "",
+          "HARBOR_STALL_LOG": "",
+          "HARBOR_STALL_WORK": "",
+          "HARBOR_WEST_CPU_SPANS": "1",
+          "HARBOR_WEST_CPU_TRACE": "1"
+        },
+        "max_fps": 0,
+        "max_physics_steps_per_frame": 8,
+        "physics_ticks_per_second": 60,
+        "resolution": [
+          3440,
+          1440
+        ],
+        "sem_reflexos": false,
+        "sem_sombras": false,
+        "session_profile_present": true,
+        "startup": {
+          "max_fps": 144,
+          "vsync": 1
+        },
+        "trace_enabled": true,
+        "vsync": 0
+      },
+      "inventory_cost_usec": [
+        24960,
+        31081,
+        31697
+      ],
+      "fully_focused_measurement": true,
+      "focus_comparison_quality": "foco_integral",
+      "fully_focused_error_free_measurement": true
+    },
+    {
+      "label": "no_density_2",
+      "raw_data_integrity_pass": true,
+      "runtime_error_free": true,
+      "execution_quality": "sem_erros_observados",
+      "numerical_failures": {},
+      "first_failure_examples": {},
+      "reported_invalid": [],
+      "report_sha256": "548876ddf9e7d0228625c6dea7215f91874050f85ce917cda2354ddfa7849e12",
+      "engine_log_sha256": "6e417a997201856cce6777b1040764036589af4eb3361ecaac962496c8f805de",
+      "source_digest": "31bf304e9ef9838f4994fc9b9bad615c36680c76a2c6f7c1bbaaa8eda6742d1e",
+      "source_files_count": 1058,
+      "raw_frames": 2350,
+      "measurement_frames": 1514,
+      "measurement_seconds": 47.820436,
+      "fps": 31.6601044791812,
+      "frame_ms": {
+        "above_33_3": 351,
+        "above_66_7": 102,
+        "count": 1514,
+        "max": 166.257,
+        "mean": 31.5854927344782,
+        "p50": 27.728,
+        "p95": 79.133,
+        "p99": 108.178,
+        "total": 47820.4360000001
+      },
+      "max_phase_sum_error_ms": 2.842170943040401e-14,
+      "max_report_stat_error": 4.3655745685100555e-11,
+      "stats_scalar_checks": 99,
+      "phases": {
+        "warmup": {
+          "frames": 835,
+          "duration_ms": 24523.124999999996,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "boundary": {
+          "frames": 1,
+          "duration_ms": 17.499,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "measurement": {
+          "frames": 1514,
+          "duration_ms": 47820.43600000001,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        }
+      },
+      "render_process_offsets": {
+        "0": 2350
+      },
+      "physics_steps_histogram_measured": {
+        "1": 654,
+        "2": 636,
+        "3": 88,
+        "4": 54,
+        "5": 46,
+        "0": 2,
+        "7": 9,
+        "8": 7,
+        "6": 18
+      },
+      "engine_error_lines": [],
+      "session_errors": [],
+      "session_warning_count": 0,
+      "session_record_counts": {
+        "session_start": 1,
+        "stdout": 6,
+        "main_thread_unresponsive": 33,
+        "operation_begin": 86,
+        "operation_end": 86,
+        "operation_timing": 1500,
+        "operations_pending": 47,
+        "location_changed": 1,
+        "context_update": 326,
+        "frame_history": 172,
+        "slow_operations": 922,
+        "frame_spike": 654,
+        "perf_window": 91,
+        "orphan_nodes": 3,
+        "light_owners": 10,
+        "system_metrics": 91,
+        "runtime_state_changed": 3,
+        "metrics": 90,
+        "lifecycle_events": 3,
+        "session_end": 1
+      },
+      "session_starts_count": 1,
+      "session_telemetry": {
+        "end_usec": 736337,
+        "measured_usec": 348690,
+        "profile_end_usec": 2373312,
+        "profile_measured_usec": 1117967,
+        "profile_start_usec": 1255345,
+        "scope": "self-reported callback body cost, excludes native dispatch and writer-thread overhead; boundary access only during measurement",
+        "start_usec": 387647
+      },
+      "session_counter_context_first": {
+        "engine_usec": 94483582,
+        "telemetry_profile_total_usec": 1257219,
+        "runtime_telemetry_main_thread_usec": 387821.0
+      },
+      "session_counter_context_last": {
+        "engine_usec": 142097950,
+        "telemetry_profile_total_usec": 2371309,
+        "runtime_telemetry_main_thread_usec": 736320.0
+      },
+      "observer_body_self_cost": {
+        "mean_ms": 0.20893989431968238,
+        "p50_ms": 0.195,
+        "p95_ms": 0.293,
+        "p99_ms": 0.348,
+        "max_ms": 0.505,
+        "total_ms": 316.3349999999991,
+        "wall_fraction": 0.006615058884030231,
+        "scope": "self-timed callback bodies only, lower bound on observer overhead; no subtraction to infer clean FPS"
+      },
+      "memory_observation": {
+        "scope": "nearest 1s session samples inside measurement, not exact window edges; observation includes raw collection and ordinary world/cache activity",
+        "sample_count": 47,
+        "first": {
+          "engine_usec": 94729406,
+          "native_memory_bytes": 828448541,
+          "working_set_bytes": 3060719616,
+          "private_memory_bytes": 4305752064,
+          "managed_bytes": 20296416,
+          "gc_collections": [
+            8,
+            2,
+            1
+          ],
+          "gc_pause_ms": 14.788,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "last": {
+          "engine_usec": 141667551,
+          "native_memory_bytes": 917537964,
+          "working_set_bytes": 3172569088,
+          "private_memory_bytes": 4418949120,
+          "managed_bytes": 14988672,
+          "gc_collections": [
+            19,
+            4,
+            2
+          ],
+          "gc_pause_ms": 19.74,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "native_delta_mib": 84.96229457855225,
+        "working_set_delta_mib": 106.66796875,
+        "private_delta_mib": 107.953125,
+        "max_writer_queue": 0,
+        "max_records_dropped": 0
+      },
+      "raw_json_bytes": 18890382,
+      "settings": {
+        "args": [
+          "--no-save",
+          "--benchmark",
+          "--no-dispatch",
+          "--play-at=harbor,64,82",
+          "--label=no_density_2",
+          "--no-density"
+        ],
+        "disabled_nodes": [],
+        "disabled_scripts": [],
+        "env": {
+          "GETECO_BUILDING_BATCH": "",
+          "GETECO_GROUND_STACK": "",
+          "GETECO_PROP_INSTANCING": "",
+          "HARBOR_SESSION_LOG": "",
+          "HARBOR_SESSION_PROFILE": "",
+          "HARBOR_STALL_AGGREGATE": "",
+          "HARBOR_STALL_LOG": "",
+          "HARBOR_STALL_WORK": "",
+          "HARBOR_WEST_CPU_SPANS": "1",
+          "HARBOR_WEST_CPU_TRACE": "1"
+        },
+        "max_fps": 0,
+        "max_physics_steps_per_frame": 8,
+        "physics_ticks_per_second": 60,
+        "resolution": [
+          3440,
+          1440
+        ],
+        "sem_reflexos": false,
+        "sem_sombras": false,
+        "session_profile_present": true,
+        "startup": {
+          "max_fps": 144,
+          "vsync": 1
+        },
+        "trace_enabled": true,
+        "vsync": 0
+      },
+      "inventory_cost_usec": [
+        28289,
+        36065,
+        39536
+      ],
+      "fully_focused_measurement": true,
+      "focus_comparison_quality": "foco_integral",
+      "fully_focused_error_free_measurement": true
+    },
+    {
+      "label": "no_roadside_parking_1",
+      "raw_data_integrity_pass": true,
+      "runtime_error_free": true,
+      "execution_quality": "sem_erros_observados",
+      "numerical_failures": {},
+      "first_failure_examples": {},
+      "reported_invalid": [],
+      "report_sha256": "07c81e2ea0ac49ad53b5736f6de80d571498d5c45568a3d5efd42ee1338e6a75",
+      "engine_log_sha256": "c50cac91d35cd71931b94f735c27f5297c118a3b4b995db1d60a4830e0a2b3f7",
+      "source_digest": "31bf304e9ef9838f4994fc9b9bad615c36680c76a2c6f7c1bbaaa8eda6742d1e",
+      "source_files_count": 1058,
+      "raw_frames": 2619,
+      "measurement_frames": 1168,
+      "measurement_seconds": 58.453871,
+      "fps": 19.9815680299428,
+      "frame_ms": {
+        "above_33_3": 407,
+        "above_66_7": 233,
+        "count": 1168,
+        "max": 247.415,
+        "mean": 50.0461224315069,
+        "p50": 27.597,
+        "p95": 179.73,
+        "p99": 218.517,
+        "total": 58453.871
+      },
+      "max_phase_sum_error_ms": 5.684341886080802e-14,
+      "max_report_stat_error": 4.3655745685100555e-11,
+      "stats_scalar_checks": 99,
+      "phases": {
+        "warmup": {
+          "frames": 1450,
+          "duration_ms": 23733.07299999996,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "boundary": {
+          "frames": 1,
+          "duration_ms": 25.749,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "measurement": {
+          "frames": 1168,
+          "duration_ms": 58453.87100000001,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        }
+      },
+      "render_process_offsets": {
+        "0": 2619
+      },
+      "physics_steps_histogram_measured": {
+        "1": 486,
+        "2": 345,
+        "3": 87,
+        "4": 35,
+        "5": 29,
+        "7": 22,
+        "6": 22,
+        "8": 142
+      },
+      "engine_error_lines": [],
+      "session_errors": [],
+      "session_warning_count": 0,
+      "session_record_counts": {
+        "session_start": 1,
+        "stdout": 6,
+        "main_thread_unresponsive": 25,
+        "operation_begin": 86,
+        "operation_end": 86,
+        "operation_timing": 1367,
+        "operations_pending": 36,
+        "location_changed": 1,
+        "context_update": 342,
+        "frame_history": 186,
+        "slow_operations": 863,
+        "frame_spike": 582,
+        "perf_window": 99,
+        "orphan_nodes": 3,
+        "light_owners": 10,
+        "system_metrics": 99,
+        "runtime_state_changed": 2,
+        "metrics": 98,
+        "lifecycle_events": 3,
+        "session_end": 1
+      },
+      "session_starts_count": 1,
+      "session_telemetry": {
+        "end_usec": 919448,
+        "measured_usec": 580224,
+        "profile_end_usec": 2570281,
+        "profile_measured_usec": 1612653,
+        "profile_start_usec": 957628,
+        "scope": "self-reported callback body cost, excludes native dispatch and writer-thread overhead; boundary access only during measurement",
+        "start_usec": 339224
+      },
+      "session_counter_context_first": {
+        "engine_usec": 83343515,
+        "telemetry_profile_total_usec": 960429,
+        "runtime_telemetry_main_thread_usec": 339424.0
+      },
+      "session_counter_context_last": {
+        "engine_usec": 141275626,
+        "telemetry_profile_total_usec": 2559573,
+        "runtime_telemetry_main_thread_usec": 906587.0
+      },
+      "observer_body_self_cost": {
+        "mean_ms": 0.2664494863013694,
+        "p50_ms": 0.225,
+        "p95_ms": 0.515,
+        "p99_ms": 0.676,
+        "max_ms": 0.818,
+        "total_ms": 311.21299999999945,
+        "wall_fraction": 0.005324078537074122,
+        "scope": "self-timed callback bodies only, lower bound on observer overhead; no subtraction to infer clean FPS"
+      },
+      "memory_observation": {
+        "scope": "nearest 1s session samples inside measurement, not exact window edges; observation includes raw collection and ordinary world/cache activity",
+        "sample_count": 56,
+        "first": {
+          "engine_usec": 83567137,
+          "native_memory_bytes": 838766264,
+          "working_set_bytes": 3065831424,
+          "private_memory_bytes": 4307664896,
+          "managed_bytes": 18280608,
+          "gc_collections": [
+            6,
+            3,
+            2
+          ],
+          "gc_pause_ms": 14.452,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "last": {
+          "engine_usec": 141294764,
+          "native_memory_bytes": 913067297,
+          "working_set_bytes": 3170242560,
+          "private_memory_bytes": 4415279104,
+          "managed_bytes": 17666056,
+          "gc_collections": [
+            18,
+            5,
+            3
+          ],
+          "gc_pause_ms": 21.488,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "native_delta_mib": 70.85898685455322,
+        "working_set_delta_mib": 99.57421875,
+        "private_delta_mib": 102.62890625,
+        "max_writer_queue": 0,
+        "max_records_dropped": 0
+      },
+      "raw_json_bytes": 19871795,
+      "settings": {
+        "args": [
+          "--no-save",
+          "--benchmark",
+          "--no-dispatch",
+          "--play-at=harbor,64,82",
+          "--label=no_roadside_parking_1",
+          "--no-roadside-parking"
+        ],
+        "disabled_nodes": [],
+        "disabled_scripts": [],
+        "env": {
+          "GETECO_BUILDING_BATCH": "",
+          "GETECO_GROUND_STACK": "",
+          "GETECO_PROP_INSTANCING": "",
+          "HARBOR_SESSION_LOG": "",
+          "HARBOR_SESSION_PROFILE": "",
+          "HARBOR_STALL_AGGREGATE": "",
+          "HARBOR_STALL_LOG": "",
+          "HARBOR_STALL_WORK": "",
+          "HARBOR_WEST_CPU_SPANS": "1",
+          "HARBOR_WEST_CPU_TRACE": "1"
+        },
+        "max_fps": 0,
+        "max_physics_steps_per_frame": 8,
+        "physics_ticks_per_second": 60,
+        "resolution": [
+          3440,
+          1440
+        ],
+        "sem_reflexos": false,
+        "sem_sombras": false,
+        "session_profile_present": true,
+        "startup": {
+          "max_fps": 144,
+          "vsync": 1
+        },
+        "trace_enabled": true,
+        "vsync": 0
+      },
+      "inventory_cost_usec": [
+        22504,
+        28837,
+        32884
+      ],
+      "fully_focused_measurement": true,
+      "focus_comparison_quality": "foco_integral",
+      "fully_focused_error_free_measurement": true
+    },
+    {
+      "label": "no_roadside_parking_2",
+      "raw_data_integrity_pass": true,
+      "runtime_error_free": true,
+      "execution_quality": "sem_erros_observados",
+      "numerical_failures": {},
+      "first_failure_examples": {},
+      "reported_invalid": [],
+      "report_sha256": "cb6b936cfb2a1040bf524ebb6dc4950afb75e90eafb70272accb7665b217295c",
+      "engine_log_sha256": "5f0ce3e0ca8540137173459cb2d5282905012ce9fdb0ea738d7365641cd2d1ab",
+      "source_digest": "31bf304e9ef9838f4994fc9b9bad615c36680c76a2c6f7c1bbaaa8eda6742d1e",
+      "source_files_count": 1058,
+      "raw_frames": 2792,
+      "measurement_frames": 1684,
+      "measurement_seconds": 47.993877,
+      "fps": 35.0878092219972,
+      "frame_ms": {
+        "above_33_3": 329,
+        "above_66_7": 63,
+        "count": 1684,
+        "max": 176.83,
+        "mean": 28.49992695962,
+        "p50": 23.673,
+        "p95": 56.591,
+        "p99": 119.84,
+        "total": 47993.877
+      },
+      "max_phase_sum_error_ms": 4.263256414560601e-14,
+      "max_report_stat_error": 2.9103830456733704e-11,
+      "stats_scalar_checks": 99,
+      "phases": {
+        "warmup": {
+          "frames": 1107,
+          "duration_ms": 24256.067000000014,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "boundary": {
+          "frames": 1,
+          "duration_ms": 20.925,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "measurement": {
+          "frames": 1684,
+          "duration_ms": 47993.87699999994,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        }
+      },
+      "render_process_offsets": {
+        "0": 2792
+      },
+      "physics_steps_histogram_measured": {
+        "2": 615,
+        "1": 875,
+        "3": 119,
+        "5": 23,
+        "4": 28,
+        "6": 7,
+        "7": 4,
+        "8": 13
+      },
+      "engine_error_lines": [],
+      "session_errors": [],
+      "session_warning_count": 0,
+      "session_record_counts": {
+        "session_start": 1,
+        "stdout": 6,
+        "main_thread_unresponsive": 30,
+        "operation_begin": 86,
+        "operation_end": 86,
+        "operation_timing": 1420,
+        "operations_pending": 46,
+        "location_changed": 1,
+        "context_update": 339,
+        "frame_history": 177,
+        "slow_operations": 846,
+        "frame_spike": 581,
+        "perf_window": 94,
+        "orphan_nodes": 3,
+        "light_owners": 10,
+        "system_metrics": 94,
+        "runtime_state_changed": 2,
+        "metrics": 93,
+        "lifecycle_events": 3,
+        "session_end": 1
+      },
+      "session_starts_count": 1,
+      "session_telemetry": {
+        "end_usec": 784555,
+        "measured_usec": 400429,
+        "profile_end_usec": 2399231,
+        "profile_measured_usec": 1224518,
+        "profile_start_usec": 1174713,
+        "scope": "self-reported callback body cost, excludes native dispatch and writer-thread overhead; boundary access only during measurement",
+        "start_usec": 384126
+      },
+      "session_counter_context_first": {
+        "engine_usec": 93830887,
+        "telemetry_profile_total_usec": 1176865,
+        "runtime_telemetry_main_thread_usec": 391247.0
+      },
+      "session_counter_context_last": {
+        "engine_usec": 141380950,
+        "telemetry_profile_total_usec": 2392703,
+        "runtime_telemetry_main_thread_usec": 775403.0
+      },
+      "observer_body_self_cost": {
+        "mean_ms": 0.21516864608075995,
+        "p50_ms": 0.203,
+        "p95_ms": 0.296,
+        "p99_ms": 0.378,
+        "max_ms": 0.609,
+        "total_ms": 362.34399999999977,
+        "wall_fraction": 0.007549796404237153,
+        "scope": "self-timed callback bodies only, lower bound on observer overhead; no subtraction to infer clean FPS"
+      },
+      "memory_observation": {
+        "scope": "nearest 1s session samples inside measurement, not exact window edges; observation includes raw collection and ordinary world/cache activity",
+        "sample_count": 48,
+        "first": {
+          "engine_usec": 93801182,
+          "native_memory_bytes": 838719273,
+          "working_set_bytes": 3044306944,
+          "private_memory_bytes": 4310081536,
+          "managed_bytes": 12513272,
+          "gc_collections": [
+            9,
+            3,
+            2
+          ],
+          "gc_pause_ms": 13.473,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "last": {
+          "engine_usec": 141546248,
+          "native_memory_bytes": 928778164,
+          "working_set_bytes": 3176464384,
+          "private_memory_bytes": 4440879104,
+          "managed_bytes": 18377056,
+          "gc_collections": [
+            19,
+            5,
+            3
+          ],
+          "gc_pause_ms": 18.791,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "native_delta_mib": 85.88685131072998,
+        "working_set_delta_mib": 126.03515625,
+        "private_delta_mib": 124.73828125,
+        "max_writer_queue": 0,
+        "max_records_dropped": 0
+      },
+      "raw_json_bytes": 21711401,
+      "settings": {
+        "args": [
+          "--no-save",
+          "--benchmark",
+          "--no-dispatch",
+          "--play-at=harbor,64,82",
+          "--label=no_roadside_parking_2",
+          "--no-roadside-parking"
+        ],
+        "disabled_nodes": [],
+        "disabled_scripts": [],
+        "env": {
+          "GETECO_BUILDING_BATCH": "",
+          "GETECO_GROUND_STACK": "",
+          "GETECO_PROP_INSTANCING": "",
+          "HARBOR_SESSION_LOG": "",
+          "HARBOR_SESSION_PROFILE": "",
+          "HARBOR_STALL_AGGREGATE": "",
+          "HARBOR_STALL_LOG": "",
+          "HARBOR_STALL_WORK": "",
+          "HARBOR_WEST_CPU_SPANS": "1",
+          "HARBOR_WEST_CPU_TRACE": "1"
+        },
+        "max_fps": 0,
+        "max_physics_steps_per_frame": 8,
+        "physics_ticks_per_second": 60,
+        "resolution": [
+          3440,
+          1440
+        ],
+        "sem_reflexos": false,
+        "sem_sombras": false,
+        "session_profile_present": true,
+        "startup": {
+          "max_fps": 144,
+          "vsync": 1
+        },
+        "trace_enabled": true,
+        "vsync": 0
+      },
+      "inventory_cost_usec": [
+        19856,
+        67162,
+        33517
+      ],
+      "fully_focused_measurement": true,
+      "focus_comparison_quality": "foco_integral",
+      "fully_focused_error_free_measurement": true
+    },
+    {
+      "label": "no_traffic_1",
+      "raw_data_integrity_pass": true,
+      "runtime_error_free": true,
+      "execution_quality": "sem_erros_observados",
+      "numerical_failures": {},
+      "first_failure_examples": {},
+      "reported_invalid": [],
+      "report_sha256": "52eded11624024abe34e526c4ea2a15b0b437d10d7d9d321a287538d8df58667",
+      "engine_log_sha256": "b8356ee25cebab491b632f8eebb33c70063b736f59575a75d7d60cdd6cf0339c",
+      "source_digest": "31bf304e9ef9838f4994fc9b9bad615c36680c76a2c6f7c1bbaaa8eda6742d1e",
+      "source_files_count": 1058,
+      "raw_frames": 5475,
+      "measurement_frames": 3477,
+      "measurement_seconds": 47.270032,
+      "fps": 73.5561169072194,
+      "frame_ms": {
+        "above_33_3": 45,
+        "above_66_7": 2,
+        "count": 3477,
+        "max": 83.731,
+        "mean": 13.5950624101237,
+        "p50": 12.243,
+        "p95": 26.772,
+        "p99": 34.949,
+        "total": 47270.032
+      },
+      "max_phase_sum_error_ms": 2.842170943040401e-14,
+      "max_report_stat_error": 1.6370904631912708e-11,
+      "stats_scalar_checks": 99,
+      "phases": {
+        "warmup": {
+          "frames": 1997,
+          "duration_ms": 23654.50400000002,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "boundary": {
+          "frames": 1,
+          "duration_ms": 10.261,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "measurement": {
+          "frames": 3477,
+          "duration_ms": 47270.03199999986,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        }
+      },
+      "render_process_offsets": {
+        "0": 5475
+      },
+      "physics_steps_histogram_measured": {
+        "0": 915,
+        "1": 2306,
+        "2": 243,
+        "3": 9,
+        "4": 3,
+        "5": 1
+      },
+      "engine_error_lines": [],
+      "session_errors": [],
+      "session_warning_count": 0,
+      "session_record_counts": {
+        "session_start": 1,
+        "stdout": 6,
+        "main_thread_unresponsive": 25,
+        "operation_begin": 86,
+        "operation_end": 86,
+        "operation_timing": 1280,
+        "operations_pending": 36,
+        "location_changed": 1,
+        "context_update": 334,
+        "frame_history": 131,
+        "slow_operations": 675,
+        "frame_spike": 163,
+        "perf_window": 90,
+        "orphan_nodes": 3,
+        "light_owners": 10,
+        "system_metrics": 90,
+        "runtime_state_changed": 2,
+        "metrics": 89,
+        "lifecycle_events": 3,
+        "session_end": 1
+      },
+      "session_starts_count": 1,
+      "session_telemetry": {
+        "end_usec": 809328,
+        "measured_usec": 440996,
+        "profile_end_usec": 1940899,
+        "profile_measured_usec": 971281,
+        "profile_start_usec": 969618,
+        "scope": "self-reported callback body cost, excludes native dispatch and writer-thread overhead; boundary access only during measurement",
+        "start_usec": 368332
+      },
+      "session_counter_context_first": {
+        "engine_usec": 81819051,
+        "telemetry_profile_total_usec": 972002,
+        "runtime_telemetry_main_thread_usec": 368775.0
+      },
+      "session_counter_context_last": {
+        "engine_usec": 128753382,
+        "telemetry_profile_total_usec": 1938355,
+        "runtime_telemetry_main_thread_usec": 809161.0
+      },
+      "observer_body_self_cost": {
+        "mean_ms": 0.1788668392292198,
+        "p50_ms": 0.154,
+        "p95_ms": 0.294,
+        "p99_ms": 0.385,
+        "max_ms": 0.801,
+        "total_ms": 621.9199999999972,
+        "wall_fraction": 0.01315675013716934,
+        "scope": "self-timed callback bodies only, lower bound on observer overhead; no subtraction to infer clean FPS"
+      },
+      "memory_observation": {
+        "scope": "nearest 1s session samples inside measurement, not exact window edges; observation includes raw collection and ordinary world/cache activity",
+        "sample_count": 47,
+        "first": {
+          "engine_usec": 81985281,
+          "native_memory_bytes": 823652086,
+          "working_set_bytes": 3027853312,
+          "private_memory_bytes": 4275834880,
+          "managed_bytes": 9854704,
+          "gc_collections": [
+            8,
+            4,
+            3
+          ],
+          "gc_pause_ms": 13.804,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "last": {
+          "engine_usec": 128399283,
+          "native_memory_bytes": 929310205,
+          "working_set_bytes": 3168616448,
+          "private_memory_bytes": 4413870080,
+          "managed_bytes": 18565984,
+          "gc_collections": [
+            14,
+            7,
+            5
+          ],
+          "gc_pause_ms": 18.453,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "native_delta_mib": 100.76343441009521,
+        "working_set_delta_mib": 134.2421875,
+        "private_delta_mib": 131.640625,
+        "max_writer_queue": 0,
+        "max_records_dropped": 0
+      },
+      "raw_json_bytes": 27512244,
+      "settings": {
+        "args": [
+          "--no-save",
+          "--benchmark",
+          "--no-dispatch",
+          "--play-at=harbor,64,82",
+          "--label=no_traffic_1",
+          "--no-traffic"
+        ],
+        "disabled_nodes": [],
+        "disabled_scripts": [],
+        "env": {
+          "GETECO_BUILDING_BATCH": "",
+          "GETECO_GROUND_STACK": "",
+          "GETECO_PROP_INSTANCING": "",
+          "HARBOR_SESSION_LOG": "",
+          "HARBOR_SESSION_PROFILE": "",
+          "HARBOR_STALL_AGGREGATE": "",
+          "HARBOR_STALL_LOG": "",
+          "HARBOR_STALL_WORK": "",
+          "HARBOR_WEST_CPU_SPANS": "1",
+          "HARBOR_WEST_CPU_TRACE": "1"
+        },
+        "max_fps": 0,
+        "max_physics_steps_per_frame": 8,
+        "physics_ticks_per_second": 60,
+        "resolution": [
+          3440,
+          1440
+        ],
+        "sem_reflexos": false,
+        "sem_sombras": false,
+        "session_profile_present": true,
+        "startup": {
+          "max_fps": 144,
+          "vsync": 1
+        },
+        "trace_enabled": true,
+        "vsync": 0
+      },
+      "inventory_cost_usec": [
+        23625,
+        34374,
+        27822
+      ],
+      "fully_focused_measurement": true,
+      "focus_comparison_quality": "foco_integral",
+      "fully_focused_error_free_measurement": true
+    },
+    {
+      "label": "no_traffic_2",
+      "raw_data_integrity_pass": true,
+      "runtime_error_free": true,
+      "execution_quality": "sem_erros_observados",
+      "numerical_failures": {},
+      "first_failure_examples": {},
+      "reported_invalid": [],
+      "report_sha256": "642692f457aae91e14f821f040c9de7b5448b7bedf44c18a19a7d4f5ddfd01f2",
+      "engine_log_sha256": "d9e0dc4f0ce9645a78243ee2c112c066800e92f98d7eadc5d09fce818aa2f566",
+      "source_digest": "31bf304e9ef9838f4994fc9b9bad615c36680c76a2c6f7c1bbaaa8eda6742d1e",
+      "source_files_count": 1058,
+      "raw_frames": 4864,
+      "measurement_frames": 3150,
+      "measurement_seconds": 47.258194,
+      "fps": 66.6551074719444,
+      "frame_ms": {
+        "above_33_3": 40,
+        "above_66_7": 0,
+        "count": 3150,
+        "max": 64.389,
+        "mean": 15.0026012698413,
+        "p50": 14.474,
+        "p95": 23.577,
+        "p99": 35.34,
+        "total": 47258.1939999999
+      },
+      "max_phase_sum_error_ms": 1.4210854715202004e-14,
+      "max_report_stat_error": 4.3655745685100555e-11,
+      "stats_scalar_checks": 99,
+      "phases": {
+        "warmup": {
+          "frames": 1713,
+          "duration_ms": 23763.572999999993,
+          "unfocused_frames": 1662,
+          "unfocused_ms": 22944.56599999999,
+          "paused_frames": 0,
+          "focused_fraction_frames": 0.02977232924693518,
+          "focused_fraction_wall_endpoints": 0.03446480880631886
+        },
+        "boundary": {
+          "frames": 1,
+          "duration_ms": 13.803,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "measurement": {
+          "frames": 3150,
+          "duration_ms": 47258.19399999992,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        }
+      },
+      "render_process_offsets": {
+        "0": 4864
+      },
+      "physics_steps_histogram_measured": {
+        "0": 480,
+        "1": 2523,
+        "2": 131,
+        "3": 14,
+        "4": 2
+      },
+      "engine_error_lines": [],
+      "session_errors": [],
+      "session_warning_count": 0,
+      "session_record_counts": {
+        "session_start": 1,
+        "stdout": 6,
+        "main_thread_unresponsive": 43,
+        "operation_begin": 86,
+        "operation_end": 86,
+        "operation_timing": 1262,
+        "operations_pending": 56,
+        "location_changed": 1,
+        "context_update": 351,
+        "frame_history": 153,
+        "slow_operations": 711,
+        "frame_spike": 188,
+        "perf_window": 95,
+        "orphan_nodes": 4,
+        "light_owners": 10,
+        "system_metrics": 95,
+        "runtime_state_changed": 4,
+        "metrics": 94,
+        "lifecycle_events": 2,
+        "session_end": 1
+      },
+      "session_starts_count": 1,
+      "session_telemetry": {
+        "end_usec": 919436,
+        "measured_usec": 446721,
+        "profile_end_usec": 2205992,
+        "profile_measured_usec": 962461,
+        "profile_start_usec": 1243531,
+        "scope": "self-reported callback body cost, excludes native dispatch and writer-thread overhead; boundary access only during measurement",
+        "start_usec": 472715
+      },
+      "session_counter_context_first": {
+        "engine_usec": 110875153,
+        "telemetry_profile_total_usec": 1244950,
+        "runtime_telemetry_main_thread_usec": 472980.0
+      },
+      "session_counter_context_last": {
+        "engine_usec": 157849280,
+        "telemetry_profile_total_usec": 2203503,
+        "runtime_telemetry_main_thread_usec": 919226.0
+      },
+      "observer_body_self_cost": {
+        "mean_ms": 0.2013876190476193,
+        "p50_ms": 0.192,
+        "p95_ms": 0.29,
+        "p99_ms": 0.355,
+        "max_ms": 0.561,
+        "total_ms": 634.3710000000008,
+        "wall_fraction": 0.013423513391138092,
+        "scope": "self-timed callback bodies only, lower bound on observer overhead; no subtraction to infer clean FPS"
+      },
+      "memory_observation": {
+        "scope": "nearest 1s session samples inside measurement, not exact window edges; observation includes raw collection and ordinary world/cache activity",
+        "sample_count": 47,
+        "first": {
+          "engine_usec": 111060410,
+          "native_memory_bytes": 820298646,
+          "working_set_bytes": 3025772544,
+          "private_memory_bytes": 4271583232,
+          "managed_bytes": 17803392,
+          "gc_collections": [
+            8,
+            4,
+            3
+          ],
+          "gc_pause_ms": 18.377,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "last": {
+          "engine_usec": 157443315,
+          "native_memory_bytes": 918905124,
+          "working_set_bytes": 3159085056,
+          "private_memory_bytes": 4408946688,
+          "managed_bytes": 12686632,
+          "gc_collections": [
+            15,
+            7,
+            5
+          ],
+          "gc_pause_ms": 23.68,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "native_delta_mib": 94.03846549987793,
+        "working_set_delta_mib": 127.13671875,
+        "private_delta_mib": 131.0,
+        "max_writer_queue": 0,
+        "max_records_dropped": 0
+      },
+      "raw_json_bytes": 25426595,
+      "settings": {
+        "args": [
+          "--no-save",
+          "--benchmark",
+          "--no-dispatch",
+          "--play-at=harbor,64,82",
+          "--label=no_traffic_2",
+          "--no-traffic"
+        ],
+        "disabled_nodes": [],
+        "disabled_scripts": [],
+        "env": {
+          "GETECO_BUILDING_BATCH": "",
+          "GETECO_GROUND_STACK": "",
+          "GETECO_PROP_INSTANCING": "",
+          "HARBOR_SESSION_LOG": "",
+          "HARBOR_SESSION_PROFILE": "",
+          "HARBOR_STALL_AGGREGATE": "",
+          "HARBOR_STALL_LOG": "",
+          "HARBOR_STALL_WORK": "",
+          "HARBOR_WEST_CPU_SPANS": "1",
+          "HARBOR_WEST_CPU_TRACE": "1"
+        },
+        "max_fps": 0,
+        "max_physics_steps_per_frame": 8,
+        "physics_ticks_per_second": 60,
+        "resolution": [
+          3440,
+          1440
+        ],
+        "sem_reflexos": false,
+        "sem_sombras": false,
+        "session_profile_present": true,
+        "startup": {
+          "max_fps": 144,
+          "vsync": 1
+        },
+        "trace_enabled": true,
+        "vsync": 0
+      },
+      "inventory_cost_usec": [
+        23383,
+        32190,
+        37868
+      ],
+      "fully_focused_measurement": true,
+      "focus_comparison_quality": "foco_integral",
+      "fully_focused_error_free_measurement": true
+    },
+    {
+      "label": "no_traffic_yield_1",
+      "raw_data_integrity_pass": true,
+      "runtime_error_free": true,
+      "execution_quality": "sem_erros_observados",
+      "numerical_failures": {},
+      "first_failure_examples": {},
+      "reported_invalid": [],
+      "report_sha256": "88aca4cb6e515dfd82b99e29ec4b226e234ecc346f5534435da8ccf73ad22815",
+      "engine_log_sha256": "cab54b286cc39ec375c2983509dcde2ab893c5192c4372b4556f89862437b28d",
+      "source_digest": "31bf304e9ef9838f4994fc9b9bad615c36680c76a2c6f7c1bbaaa8eda6742d1e",
+      "source_files_count": 1058,
+      "raw_frames": 2199,
+      "measurement_frames": 1267,
+      "measurement_seconds": 54.260363,
+      "fps": 23.3503782494046,
+      "frame_ms": {
+        "above_33_3": 379,
+        "above_66_7": 222,
+        "count": 1267,
+        "max": 266.533,
+        "mean": 42.8258587213892,
+        "p50": 25.306,
+        "p95": 146.083,
+        "p99": 196.024,
+        "total": 54260.3630000001
+      },
+      "max_phase_sum_error_ms": 5.684341886080802e-14,
+      "max_report_stat_error": 2.1827872842550278e-11,
+      "stats_scalar_checks": 99,
+      "phases": {
+        "warmup": {
+          "frames": 931,
+          "duration_ms": 25990.734000000008,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "boundary": {
+          "frames": 1,
+          "duration_ms": 144.811,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "measurement": {
+          "frames": 1267,
+          "duration_ms": 54260.363,
+          "unfocused_frames": 22,
+          "unfocused_ms": 3006.2169999999996,
+          "paused_frames": 0,
+          "focused_fraction_frames": 0.9826361483820047,
+          "focused_fraction_wall_endpoints": 0.9445964451067163
+        }
+      },
+      "render_process_offsets": {
+        "0": 2199
+      },
+      "physics_steps_histogram_measured": {
+        "8": 112,
+        "7": 34,
+        "6": 32,
+        "5": 30,
+        "4": 30,
+        "3": 59,
+        "2": 360,
+        "1": 607,
+        "0": 3
+      },
+      "engine_error_lines": [],
+      "session_errors": [],
+      "session_warning_count": 0,
+      "session_record_counts": {
+        "session_start": 1,
+        "stdout": 6,
+        "main_thread_unresponsive": 31,
+        "operation_begin": 84,
+        "operation_end": 84,
+        "operation_timing": 1287,
+        "operations_pending": 41,
+        "location_changed": 1,
+        "context_update": 340,
+        "frame_history": 185,
+        "slow_operations": 952,
+        "frame_spike": 684,
+        "perf_window": 97,
+        "orphan_nodes": 3,
+        "light_owners": 10,
+        "system_metrics": 97,
+        "runtime_state_changed": 4,
+        "metrics": 96,
+        "lifecycle_events": 3,
+        "session_end": 1
+      },
+      "session_starts_count": 1,
+      "session_telemetry": {
+        "end_usec": 873316,
+        "measured_usec": 470064,
+        "profile_end_usec": 2654182,
+        "profile_measured_usec": 1414025,
+        "profile_start_usec": 1240157,
+        "scope": "self-reported callback body cost, excludes native dispatch and writer-thread overhead; boundary access only during measurement",
+        "start_usec": 403252
+      },
+      "session_counter_context_first": {
+        "engine_usec": 93113786,
+        "telemetry_profile_total_usec": 1242425,
+        "runtime_telemetry_main_thread_usec": 403273.0
+      },
+      "session_counter_context_last": {
+        "engine_usec": 147080271,
+        "telemetry_profile_total_usec": 2652119,
+        "runtime_telemetry_main_thread_usec": 873282.0
+      },
+      "observer_body_self_cost": {
+        "mean_ms": 0.2420607734806623,
+        "p50_ms": 0.216,
+        "p95_ms": 0.427,
+        "p99_ms": 0.528,
+        "max_ms": 0.631,
+        "total_ms": 306.6909999999991,
+        "wall_fraction": 0.005652210620116919,
+        "scope": "self-timed callback bodies only, lower bound on observer overhead; no subtraction to infer clean FPS"
+      },
+      "memory_observation": {
+        "scope": "nearest 1s session samples inside measurement, not exact window edges; observation includes raw collection and ordinary world/cache activity",
+        "sample_count": 52,
+        "first": {
+          "engine_usec": 93131224,
+          "native_memory_bytes": 828877586,
+          "working_set_bytes": 3056205824,
+          "private_memory_bytes": 4299485184,
+          "managed_bytes": 18740168,
+          "gc_collections": [
+            8,
+            3,
+            2
+          ],
+          "gc_pause_ms": 15.829,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "last": {
+          "engine_usec": 146502419,
+          "native_memory_bytes": 892885552,
+          "working_set_bytes": 3146092544,
+          "private_memory_bytes": 4387426304,
+          "managed_bytes": 15231832,
+          "gc_collections": [
+            19,
+            4,
+            2
+          ],
+          "gc_pause_ms": 21.696,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "native_delta_mib": 61.04275321960449,
+        "working_set_delta_mib": 85.72265625,
+        "private_delta_mib": 83.8671875,
+        "max_writer_queue": 0,
+        "max_records_dropped": 0
+      },
+      "raw_json_bytes": 16566984,
+      "settings": {
+        "args": [
+          "--no-save",
+          "--benchmark",
+          "--no-dispatch",
+          "--play-at=harbor,64,82",
+          "--label=no_traffic_yield_1",
+          "--no-traffic-yield"
+        ],
+        "disabled_nodes": [],
+        "disabled_scripts": [],
+        "env": {
+          "GETECO_BUILDING_BATCH": "",
+          "GETECO_GROUND_STACK": "",
+          "GETECO_PROP_INSTANCING": "",
+          "HARBOR_SESSION_LOG": "",
+          "HARBOR_SESSION_PROFILE": "",
+          "HARBOR_STALL_AGGREGATE": "",
+          "HARBOR_STALL_LOG": "",
+          "HARBOR_STALL_WORK": "",
+          "HARBOR_WEST_CPU_SPANS": "1",
+          "HARBOR_WEST_CPU_TRACE": "1"
+        },
+        "max_fps": 0,
+        "max_physics_steps_per_frame": 8,
+        "physics_ticks_per_second": 60,
+        "resolution": [
+          3440,
+          1440
+        ],
+        "sem_reflexos": false,
+        "sem_sombras": false,
+        "session_profile_present": true,
+        "startup": {
+          "max_fps": 144,
+          "vsync": 1
+        },
+        "trace_enabled": true,
+        "vsync": 0
+      },
+      "inventory_cost_usec": [
+        19373,
+        38546,
+        44307
+      ],
+      "fully_focused_measurement": false,
+      "focus_comparison_quality": "foco_comprometido_divulgar_e_limitar_comparacao",
+      "fully_focused_error_free_measurement": false
+    },
+    {
+      "label": "no_traffic_yield_2",
+      "raw_data_integrity_pass": true,
+      "runtime_error_free": true,
+      "execution_quality": "sem_erros_observados",
+      "numerical_failures": {},
+      "first_failure_examples": {},
+      "reported_invalid": [],
+      "report_sha256": "9f15bfa2eaad6d391baa0fa4302f7950bac466c55f99ec1dd4eb76b055f6adaf",
+      "engine_log_sha256": "44ac4972088e92e38cc78ef0b8a97ee188a1b12dc048ac39b1cd812085fad7b2",
+      "source_digest": "31bf304e9ef9838f4994fc9b9bad615c36680c76a2c6f7c1bbaaa8eda6742d1e",
+      "source_files_count": 1058,
+      "raw_frames": 1593,
+      "measurement_frames": 787,
+      "measurement_seconds": 52.372139,
+      "fps": 15.0270738416852,
+      "frame_ms": {
+        "above_33_3": 659,
+        "above_66_7": 281,
+        "count": 787,
+        "max": 223.121,
+        "mean": 66.5465552731893,
+        "p50": 53.818,
+        "p95": 144.897,
+        "p99": 197.998,
+        "total": 52372.139
+      },
+      "max_phase_sum_error_ms": 5.684341886080802e-14,
+      "max_report_stat_error": 3.637978807091713e-11,
+      "stats_scalar_checks": 99,
+      "phases": {
+        "warmup": {
+          "frames": 805,
+          "duration_ms": 30966.37200000002,
+          "unfocused_frames": 94,
+          "unfocused_ms": 12431.197999999997,
+          "paused_frames": 0,
+          "focused_fraction_frames": 0.8832298136645963,
+          "focused_fraction_wall_endpoints": 0.5985581391323469
+        },
+        "boundary": {
+          "frames": 1,
+          "duration_ms": 45.132,
+          "unfocused_frames": 1,
+          "unfocused_ms": 45.132,
+          "paused_frames": 0,
+          "focused_fraction_frames": 0.0,
+          "focused_fraction_wall_endpoints": 0.0
+        },
+        "measurement": {
+          "frames": 787,
+          "duration_ms": 52372.13899999998,
+          "unfocused_frames": 787,
+          "unfocused_ms": 52372.13899999998,
+          "paused_frames": 0,
+          "focused_fraction_frames": 0.0,
+          "focused_fraction_wall_endpoints": 0.0
+        }
+      },
+      "render_process_offsets": {
+        "0": 1593
+      },
+      "physics_steps_histogram_measured": {
+        "3": 193,
+        "2": 217,
+        "5": 61,
+        "6": 47,
+        "4": 126,
+        "7": 41,
+        "8": 78,
+        "1": 24
+      },
+      "engine_error_lines": [],
+      "session_errors": [],
+      "session_warning_count": 0,
+      "session_record_counts": {
+        "session_start": 1,
+        "stdout": 6,
+        "main_thread_unresponsive": 30,
+        "operation_begin": 84,
+        "operation_end": 84,
+        "operation_timing": 1237,
+        "operations_pending": 52,
+        "location_changed": 1,
+        "context_update": 366,
+        "frame_history": 202,
+        "slow_operations": 1146,
+        "frame_spike": 944,
+        "perf_window": 106,
+        "orphan_nodes": 4,
+        "light_owners": 11,
+        "system_metrics": 106,
+        "runtime_state_changed": 3,
+        "metrics": 105,
+        "lifecycle_events": 3,
+        "session_end": 1
+      },
+      "session_starts_count": 1,
+      "session_telemetry": {
+        "end_usec": 1014340,
+        "measured_usec": 456672,
+        "profile_end_usec": 3224537,
+        "profile_measured_usec": 1639688,
+        "profile_start_usec": 1584849,
+        "scope": "self-reported callback body cost, excludes native dispatch and writer-thread overhead; boundary access only during measurement",
+        "start_usec": 557668
+      },
+      "session_counter_context_first": {
+        "engine_usec": 103970774,
+        "telemetry_profile_total_usec": 1589389,
+        "runtime_telemetry_main_thread_usec": 557705.0
+      },
+      "session_counter_context_last": {
+        "engine_usec": 155989802,
+        "telemetry_profile_total_usec": 3215578,
+        "runtime_telemetry_main_thread_usec": 1006264.0
+      },
+      "observer_body_self_cost": {
+        "mean_ms": 0.27429987293519703,
+        "p50_ms": 0.256,
+        "p95_ms": 0.405,
+        "p99_ms": 0.511,
+        "max_ms": 0.562,
+        "total_ms": 215.87400000000008,
+        "wall_fraction": 0.004121924445362068,
+        "scope": "self-timed callback bodies only, lower bound on observer overhead; no subtraction to infer clean FPS"
+      },
+      "memory_observation": {
+        "scope": "nearest 1s session samples inside measurement, not exact window edges; observation includes raw collection and ordinary world/cache activity",
+        "sample_count": 50,
+        "first": {
+          "engine_usec": 104814493,
+          "native_memory_bytes": 826183131,
+          "working_set_bytes": 3091017728,
+          "private_memory_bytes": 4339011584,
+          "managed_bytes": 11962112,
+          "gc_collections": [
+            10,
+            3,
+            2
+          ],
+          "gc_pause_ms": 22.93,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "last": {
+          "engine_usec": 156212878,
+          "native_memory_bytes": 871385662,
+          "working_set_bytes": 3158650880,
+          "private_memory_bytes": 4410466304,
+          "managed_bytes": 19464568,
+          "gc_collections": [
+            24,
+            4,
+            2
+          ],
+          "gc_pause_ms": 29.141,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "native_delta_mib": 43.108492851257324,
+        "working_set_delta_mib": 64.5,
+        "private_delta_mib": 68.14453125,
+        "max_writer_queue": 0,
+        "max_records_dropped": 0
+      },
+      "raw_json_bytes": 12483716,
+      "settings": {
+        "args": [
+          "--no-save",
+          "--benchmark",
+          "--no-dispatch",
+          "--play-at=harbor,64,82",
+          "--label=no_traffic_yield_2",
+          "--no-traffic-yield"
+        ],
+        "disabled_nodes": [],
+        "disabled_scripts": [],
+        "env": {
+          "GETECO_BUILDING_BATCH": "",
+          "GETECO_GROUND_STACK": "",
+          "GETECO_PROP_INSTANCING": "",
+          "HARBOR_SESSION_LOG": "",
+          "HARBOR_SESSION_PROFILE": "",
+          "HARBOR_STALL_AGGREGATE": "",
+          "HARBOR_STALL_LOG": "",
+          "HARBOR_STALL_WORK": "",
+          "HARBOR_WEST_CPU_SPANS": "1",
+          "HARBOR_WEST_CPU_TRACE": "1"
+        },
+        "max_fps": 0,
+        "max_physics_steps_per_frame": 8,
+        "physics_ticks_per_second": 60,
+        "resolution": [
+          3440,
+          1440
+        ],
+        "sem_reflexos": false,
+        "sem_sombras": false,
+        "session_profile_present": true,
+        "startup": {
+          "max_fps": 144,
+          "vsync": 1
+        },
+        "trace_enabled": true,
+        "vsync": 0
+      },
+      "inventory_cost_usec": [
+        30065,
+        55980,
+        73028
+      ],
+      "fully_focused_measurement": false,
+      "focus_comparison_quality": "foco_comprometido_divulgar_e_limitar_comparacao",
+      "fully_focused_error_free_measurement": false
+    },
+    {
+      "label": "population0_1",
+      "raw_data_integrity_pass": true,
+      "runtime_error_free": true,
+      "execution_quality": "sem_erros_observados",
+      "numerical_failures": {},
+      "first_failure_examples": {},
+      "reported_invalid": [],
+      "report_sha256": "1111a3ffbb4c755f587621a3135f7b5e226869b0b888e834ed05b9ea4735eaf2",
+      "engine_log_sha256": "b8636d9c67ea496888a623664382960b6f55cf992e7c05ff8decb54fbd8258c6",
+      "source_digest": "31bf304e9ef9838f4994fc9b9bad615c36680c76a2c6f7c1bbaaa8eda6742d1e",
+      "source_files_count": 1058,
+      "raw_frames": 5075,
+      "measurement_frames": 3107,
+      "measurement_seconds": 47.262281,
+      "fps": 65.7395270448331,
+      "frame_ms": {
+        "above_33_3": 23,
+        "above_66_7": 0,
+        "count": 3107,
+        "max": 52.797,
+        "mean": 15.2115484390087,
+        "p50": 14.993,
+        "p95": 24.287,
+        "p99": 31.026,
+        "total": 47262.2809999999
+      },
+      "max_phase_sum_error_ms": 1.4210854715202004e-14,
+      "max_report_stat_error": 4.18367562815547e-11,
+      "stats_scalar_checks": 99,
+      "phases": {
+        "warmup": {
+          "frames": 1967,
+          "duration_ms": 23650.608000000022,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "boundary": {
+          "frames": 1,
+          "duration_ms": 7.207,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "measurement": {
+          "frames": 3107,
+          "duration_ms": 47262.28100000004,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        }
+      },
+      "render_process_offsets": {
+        "0": 5075
+      },
+      "physics_steps_histogram_measured": {
+        "1": 2506,
+        "0": 441,
+        "2": 150,
+        "3": 10
+      },
+      "engine_error_lines": [],
+      "session_errors": [],
+      "session_warning_count": 0,
+      "session_record_counts": {
+        "session_start": 1,
+        "stdout": 6,
+        "main_thread_unresponsive": 29,
+        "operation_begin": 86,
+        "operation_end": 86,
+        "operation_timing": 1386,
+        "operations_pending": 38,
+        "location_changed": 1,
+        "context_update": 333,
+        "frame_history": 137,
+        "slow_operations": 553,
+        "frame_spike": 120,
+        "perf_window": 90,
+        "orphan_nodes": 3,
+        "light_owners": 9,
+        "system_metrics": 90,
+        "runtime_state_changed": 2,
+        "metrics": 89,
+        "lifecycle_events": 2,
+        "session_end": 1
+      },
+      "session_starts_count": 1,
+      "session_telemetry": {
+        "end_usec": 726435,
+        "measured_usec": 386894,
+        "profile_end_usec": 1856759,
+        "profile_measured_usec": 951705,
+        "profile_start_usec": 905054,
+        "scope": "self-reported callback body cost, excludes native dispatch and writer-thread overhead; boundary access only during measurement",
+        "start_usec": 339541
+      },
+      "session_counter_context_first": {
+        "engine_usec": 89535825,
+        "telemetry_profile_total_usec": 906372,
+        "runtime_telemetry_main_thread_usec": 339711.0
+      },
+      "session_counter_context_last": {
+        "engine_usec": 136665422,
+        "telemetry_profile_total_usec": 1855521,
+        "runtime_telemetry_main_thread_usec": 726402.0
+      },
+      "observer_body_self_cost": {
+        "mean_ms": 0.19570357257805063,
+        "p50_ms": 0.194,
+        "p95_ms": 0.273,
+        "p99_ms": 0.328,
+        "max_ms": 0.447,
+        "total_ms": 608.0510000000033,
+        "wall_fraction": 0.012865460302265201,
+        "scope": "self-timed callback bodies only, lower bound on observer overhead; no subtraction to infer clean FPS"
+      },
+      "memory_observation": {
+        "scope": "nearest 1s session samples inside measurement, not exact window edges; observation includes raw collection and ordinary world/cache activity",
+        "sample_count": 47,
+        "first": {
+          "engine_usec": 89938410,
+          "native_memory_bytes": 850390586,
+          "working_set_bytes": 3067703296,
+          "private_memory_bytes": 4310982656,
+          "managed_bytes": 17897640,
+          "gc_collections": [
+            5,
+            3,
+            2
+          ],
+          "gc_pause_ms": 12.611,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "last": {
+          "engine_usec": 136337470,
+          "native_memory_bytes": 991203913,
+          "working_set_bytes": 3267002368,
+          "private_memory_bytes": 4514455552,
+          "managed_bytes": 8531280,
+          "gc_collections": [
+            13,
+            7,
+            5
+          ],
+          "gc_pause_ms": 17.528,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "native_delta_mib": 134.29005336761475,
+        "working_set_delta_mib": 190.06640625,
+        "private_delta_mib": 194.046875,
+        "max_writer_queue": 0,
+        "max_records_dropped": 0
+      },
+      "raw_json_bytes": 35376320,
+      "settings": {
+        "args": [
+          "--no-save",
+          "--benchmark",
+          "--no-dispatch",
+          "--play-at=harbor,64,82",
+          "--label=population0_1",
+          "--population=0"
+        ],
+        "disabled_nodes": [],
+        "disabled_scripts": [],
+        "env": {
+          "GETECO_BUILDING_BATCH": "",
+          "GETECO_GROUND_STACK": "",
+          "GETECO_PROP_INSTANCING": "",
+          "HARBOR_SESSION_LOG": "",
+          "HARBOR_SESSION_PROFILE": "",
+          "HARBOR_STALL_AGGREGATE": "",
+          "HARBOR_STALL_LOG": "",
+          "HARBOR_STALL_WORK": "",
+          "HARBOR_WEST_CPU_SPANS": "1",
+          "HARBOR_WEST_CPU_TRACE": "1"
+        },
+        "max_fps": 0,
+        "max_physics_steps_per_frame": 8,
+        "physics_ticks_per_second": 60,
+        "resolution": [
+          3440,
+          1440
+        ],
+        "sem_reflexos": false,
+        "sem_sombras": false,
+        "session_profile_present": true,
+        "startup": {
+          "max_fps": 144,
+          "vsync": 1
+        },
+        "trace_enabled": true,
+        "vsync": 0
+      },
+      "inventory_cost_usec": [
+        19866,
+        34859,
+        30644
+      ],
+      "fully_focused_measurement": true,
+      "focus_comparison_quality": "foco_integral",
+      "fully_focused_error_free_measurement": true
+    },
+    {
+      "label": "population0_2",
+      "raw_data_integrity_pass": true,
+      "runtime_error_free": true,
+      "execution_quality": "sem_erros_observados",
+      "numerical_failures": {},
+      "first_failure_examples": {},
+      "reported_invalid": [],
+      "report_sha256": "35a965ed0718330722166e2126263e083282cdce271e4fdea5e027949e44b0ec",
+      "engine_log_sha256": "11a11575f1c212b80c279a2def614976eab1d7aa401cd0a9d3176f1bb105e644",
+      "source_digest": "31bf304e9ef9838f4994fc9b9bad615c36680c76a2c6f7c1bbaaa8eda6742d1e",
+      "source_files_count": 1058,
+      "raw_frames": 3856,
+      "measurement_frames": 2428,
+      "measurement_seconds": 47.296382,
+      "fps": 51.3358505942378,
+      "frame_ms": {
+        "above_33_3": 168,
+        "above_66_7": 4,
+        "count": 2428,
+        "max": 121.057,
+        "mean": 19.4795642504119,
+        "p50": 17.006,
+        "p95": 35.836,
+        "p99": 48.984,
+        "total": 47296.382
+      },
+      "max_phase_sum_error_ms": 2.1316282072803006e-14,
+      "max_report_stat_error": 3.637978807091713e-11,
+      "stats_scalar_checks": 99,
+      "phases": {
+        "warmup": {
+          "frames": 1427,
+          "duration_ms": 23688.760000000028,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "boundary": {
+          "frames": 1,
+          "duration_ms": 16.683,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        },
+        "measurement": {
+          "frames": 2428,
+          "duration_ms": 47296.382000000056,
+          "unfocused_frames": 0,
+          "unfocused_ms": 0.0,
+          "paused_frames": 0,
+          "focused_fraction_frames": 1.0,
+          "focused_fraction_wall_endpoints": 1.0
+        }
+      },
+      "render_process_offsets": {
+        "0": 3856
+      },
+      "physics_steps_histogram_measured": {
+        "1": 1758,
+        "2": 441,
+        "3": 46,
+        "0": 170,
+        "4": 10,
+        "7": 2,
+        "6": 1
+      },
+      "engine_error_lines": [],
+      "session_errors": [],
+      "session_warning_count": 0,
+      "session_record_counts": {
+        "session_start": 1,
+        "stdout": 6,
+        "main_thread_unresponsive": 29,
+        "operation_begin": 86,
+        "operation_end": 86,
+        "operation_timing": 1303,
+        "operations_pending": 43,
+        "location_changed": 1,
+        "context_update": 342,
+        "frame_history": 179,
+        "slow_operations": 828,
+        "frame_spike": 330,
+        "perf_window": 92,
+        "orphan_nodes": 5,
+        "light_owners": 10,
+        "system_metrics": 92,
+        "runtime_state_changed": 2,
+        "metrics": 91,
+        "lifecycle_events": 14,
+        "session_end": 1
+      },
+      "session_starts_count": 1,
+      "session_telemetry": {
+        "end_usec": 841119,
+        "measured_usec": 414201,
+        "profile_end_usec": 2398140,
+        "profile_measured_usec": 1240648,
+        "profile_start_usec": 1157492,
+        "scope": "self-reported callback body cost, excludes native dispatch and writer-thread overhead; boundary access only during measurement",
+        "start_usec": 426918
+      },
+      "session_counter_context_first": {
+        "engine_usec": 92209164,
+        "telemetry_profile_total_usec": 1157492,
+        "runtime_telemetry_main_thread_usec": 426918.0
+      },
+      "session_counter_context_last": {
+        "engine_usec": 139488525,
+        "telemetry_profile_total_usec": 2396739,
+        "runtime_telemetry_main_thread_usec": 841104.0
+      },
+      "observer_body_self_cost": {
+        "mean_ms": 0.22012602965403644,
+        "p50_ms": 0.215,
+        "p95_ms": 0.303,
+        "p99_ms": 0.375,
+        "max_ms": 0.479,
+        "total_ms": 534.4660000000005,
+        "wall_fraction": 0.01130035697022237,
+        "scope": "self-timed callback bodies only, lower bound on observer overhead; no subtraction to infer clean FPS"
+      },
+      "memory_observation": {
+        "scope": "nearest 1s session samples inside measurement, not exact window edges; observation includes raw collection and ordinary world/cache activity",
+        "sample_count": 47,
+        "first": {
+          "engine_usec": 92773085,
+          "native_memory_bytes": 835338934,
+          "working_set_bytes": 3032457216,
+          "private_memory_bytes": 4285472768,
+          "managed_bytes": 21463176,
+          "gc_collections": [
+            7,
+            3,
+            2
+          ],
+          "gc_pause_ms": 16.769,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "last": {
+          "engine_usec": 139318223,
+          "native_memory_bytes": 976205822,
+          "working_set_bytes": 3249811456,
+          "private_memory_bytes": 4502040576,
+          "managed_bytes": 18520984,
+          "gc_collections": [
+            16,
+            6,
+            4
+          ],
+          "gc_pause_ms": 22.682,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "native_delta_mib": 134.34113311767578,
+        "working_set_delta_mib": 207.28515625,
+        "private_delta_mib": 206.53515625,
+        "max_writer_queue": 0,
+        "max_records_dropped": 0
+      },
+      "raw_json_bytes": 28545796,
+      "settings": {
+        "args": [
+          "--no-save",
+          "--benchmark",
+          "--no-dispatch",
+          "--play-at=harbor,64,82",
+          "--label=population0_2",
+          "--population=0"
+        ],
+        "disabled_nodes": [],
+        "disabled_scripts": [],
+        "env": {
+          "GETECO_BUILDING_BATCH": "",
+          "GETECO_GROUND_STACK": "",
+          "GETECO_PROP_INSTANCING": "",
+          "HARBOR_SESSION_LOG": "",
+          "HARBOR_SESSION_PROFILE": "",
+          "HARBOR_STALL_AGGREGATE": "",
+          "HARBOR_STALL_LOG": "",
+          "HARBOR_STALL_WORK": "",
+          "HARBOR_WEST_CPU_SPANS": "1",
+          "HARBOR_WEST_CPU_TRACE": "1"
+        },
+        "max_fps": 0,
+        "max_physics_steps_per_frame": 8,
+        "physics_ticks_per_second": 60,
+        "resolution": [
+          3440,
+          1440
+        ],
+        "sem_reflexos": false,
+        "sem_sombras": false,
+        "session_profile_present": true,
+        "startup": {
+          "max_fps": 144,
+          "vsync": 1
+        },
+        "trace_enabled": true,
+        "vsync": 0
+      },
+      "inventory_cost_usec": [
+        20463,
+        32317,
+        38236
+      ],
+      "fully_focused_measurement": true,
+      "focus_comparison_quality": "foco_integral",
+      "fully_focused_error_free_measurement": true
+    },
+    {
+      "label": "session_profile0_1",
+      "raw_data_integrity_pass": true,
+      "runtime_error_free": false,
+      "execution_quality": "erro_runtime_excluir_comparacao_causal",
+      "numerical_failures": {},
+      "first_failure_examples": {},
+      "reported_invalid": [],
+      "report_sha256": "60ea5c5a38928d5d0d9b46c610a096e7bae4d5c4d0609108b181f8705c09999b",
+      "engine_log_sha256": "a3732971c66afa0323044577a044745f4713ba085bbd19da1553b0ebaf9f9a83",
+      "source_digest": "31bf304e9ef9838f4994fc9b9bad615c36680c76a2c6f7c1bbaaa8eda6742d1e",
+      "source_files_count": 1058,
+      "raw_frames": 1910,
+      "measurement_frames": 820,
+      "measurement_seconds": 52.716139,
+      "fps": 15.5550086852909,
+      "frame_ms": {
+        "above_33_3": 609,
+        "above_66_7": 296,
+        "count": 820,
+        "max": 235.306,
+        "mean": 64.2879743902439,
+        "p50": 48.294,
+        "p95": 146.015,
+        "p99": 171.969,
+        "total": 52716.139
+      },
+      "max_phase_sum_error_ms": 5.684341886080802e-14,
+      "max_report_stat_error": 2.9103830456733704e-11,
+      "stats_scalar_checks": 99,
+      "phases": {
+        "warmup": {
+          "frames": 1089,
+          "duration_ms": 24727.941000000017,
+          "unfocused_frames": 1089,
+          "unfocused_ms": 24727.941000000017,
+          "paused_frames": 0,
+          "focused_fraction_frames": 0.0,
+          "focused_fraction_wall_endpoints": 0.0
+        },
+        "boundary": {
+          "frames": 1,
+          "duration_ms": 27.763,
+          "unfocused_frames": 1,
+          "unfocused_ms": 27.763,
+          "paused_frames": 0,
+          "focused_fraction_frames": 0.0,
+          "focused_fraction_wall_endpoints": 0.0
+        },
+        "measurement": {
+          "frames": 820,
+          "duration_ms": 52716.138999999996,
+          "unfocused_frames": 820,
+          "unfocused_ms": 52716.138999999996,
+          "paused_frames": 0,
+          "focused_fraction_frames": 0.0,
+          "focused_fraction_wall_endpoints": 0.0
+        }
+      },
+      "render_process_offsets": {
+        "0": 1910
+      },
+      "physics_steps_histogram_measured": {
+        "1": 66,
+        "2": 263,
+        "3": 154,
+        "4": 82,
+        "5": 67,
+        "6": 50,
+        "7": 41,
+        "8": 97
+      },
+      "engine_error_lines": [
+        {
+          "line": 9,
+          "message": "SCRIPT ERROR: Invalid assignment of property or key 'emission_energy_multiplier' with value of type 'float' on a base object of type 'Nil'.",
+          "location": "at: set_available (res://runtime/TaxiLivery.gd:65)"
+        },
+        {
+          "line": 23,
+          "message": "SCRIPT ERROR: Trying to assign invalid previously freed instance.",
+          "location": "at: _remove_node (res://world/city_look/CoastalPlanarReflections.gd:100)"
+        }
+      ],
+      "session_errors": [
+        {
+          "file": "res://runtime/TaxiLivery.gd",
+          "line": 65,
+          "function": "set_available",
+          "code": "Invalid assignment of property or key 'emission_energy_multiplier' with value of type 'float' on a base object of type 'Nil'.",
+          "error_type": 2,
+          "sequence": 95,
+          "elapsed_ms": 93384.6904
+        },
+        {
+          "file": "res://world/city_look/CoastalPlanarReflections.gd",
+          "line": 100,
+          "function": "_remove_node",
+          "code": "Trying to assign invalid previously freed instance.",
+          "error_type": 2,
+          "sequence": 131,
+          "elapsed_ms": 129443.7661
+        }
+      ],
+      "session_warning_count": 0,
+      "session_record_counts": {
+        "session_start": 1,
+        "stdout": 6,
+        "main_thread_unresponsive": 31,
+        "runtime_state_changed": 3,
+        "metrics": 94,
+        "error": 2,
+        "session_end": 1
+      },
+      "session_starts_count": 1,
+      "session_telemetry": {
+        "end_usec": 883826,
+        "measured_usec": 470541,
+        "profile_end_usec": 0,
+        "profile_measured_usec": 0,
+        "profile_start_usec": 0,
+        "scope": "self-reported callback body cost, excludes native dispatch and writer-thread overhead; boundary access only during measurement",
+        "start_usec": 413285
+      },
+      "session_counter_context_first": null,
+      "session_counter_context_last": null,
+      "observer_body_self_cost": {
+        "mean_ms": 0.30748902439024445,
+        "p50_ms": 0.291,
+        "p95_ms": 0.466,
+        "p99_ms": 0.526,
+        "max_ms": 0.627,
+        "total_ms": 252.14100000000045,
+        "wall_fraction": 0.0047829944450218645,
+        "scope": "self-timed callback bodies only, lower bound on observer overhead; no subtraction to infer clean FPS"
+      },
+      "memory_observation": {
+        "scope": "nearest 1s session samples inside measurement, not exact window edges; observation includes raw collection and ordinary world/cache activity",
+        "sample_count": 51,
+        "first": {
+          "engine_usec": 93455923,
+          "native_memory_bytes": 821080948,
+          "working_set_bytes": 3002617856,
+          "private_memory_bytes": 4259581952,
+          "managed_bytes": 6306808,
+          "gc_collections": [
+            0,
+            0,
+            0
+          ],
+          "gc_pause_ms": 0,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "last": {
+          "engine_usec": 145680057,
+          "native_memory_bytes": 889382490,
+          "working_set_bytes": 3208245248,
+          "private_memory_bytes": 4445749248,
+          "managed_bytes": 3942944,
+          "gc_collections": [
+            1,
+            1,
+            1
+          ],
+          "gc_pause_ms": 5.163,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "native_delta_mib": 65.13742637634277,
+        "working_set_delta_mib": 196.1015625,
+        "private_delta_mib": 177.54296875,
+        "max_writer_queue": 0,
+        "max_records_dropped": 0
+      },
+      "raw_json_bytes": 14101059,
+      "settings": {
+        "args": [
+          "--no-save",
+          "--benchmark",
+          "--no-dispatch",
+          "--play-at=harbor,64,82",
+          "--label=session_profile0_1"
+        ],
+        "disabled_nodes": [],
+        "disabled_scripts": [],
+        "env": {
+          "GETECO_BUILDING_BATCH": "",
+          "GETECO_GROUND_STACK": "",
+          "GETECO_PROP_INSTANCING": "",
+          "HARBOR_SESSION_LOG": "",
+          "HARBOR_SESSION_PROFILE": "0",
+          "HARBOR_STALL_AGGREGATE": "",
+          "HARBOR_STALL_LOG": "",
+          "HARBOR_STALL_WORK": "",
+          "HARBOR_WEST_CPU_SPANS": "1",
+          "HARBOR_WEST_CPU_TRACE": "1"
+        },
+        "max_fps": 0,
+        "max_physics_steps_per_frame": 8,
+        "physics_ticks_per_second": 60,
+        "resolution": [
+          3440,
+          1440
+        ],
+        "sem_reflexos": false,
+        "sem_sombras": false,
+        "session_profile_present": false,
+        "startup": {
+          "max_fps": 144,
+          "vsync": 1
+        },
+        "trace_enabled": true,
+        "vsync": 0
+      },
+      "inventory_cost_usec": [
+        23631,
+        34698,
+        49029
+      ],
+      "fully_focused_measurement": false,
+      "focus_comparison_quality": "foco_comprometido_divulgar_e_limitar_comparacao",
+      "fully_focused_error_free_measurement": false
+    },
+    {
+      "label": "session_profile0_2",
+      "raw_data_integrity_pass": true,
+      "runtime_error_free": true,
+      "execution_quality": "sem_erros_observados",
+      "numerical_failures": {},
+      "first_failure_examples": {},
+      "reported_invalid": [],
+      "report_sha256": "dd6ff2ac30ab1cc51ffbd483bf000558454b09363125afdeb3d96186949e980f",
+      "engine_log_sha256": "54bc200a4c1e3068984a0e5b238f847927e60dd77efa0cfd375238d06e92a69e",
+      "source_digest": "31bf304e9ef9838f4994fc9b9bad615c36680c76a2c6f7c1bbaaa8eda6742d1e",
+      "source_files_count": 1058,
+      "raw_frames": 3710,
+      "measurement_frames": 2090,
+      "measurement_seconds": 47.752067,
+      "fps": 43.7677388918055,
+      "frame_ms": {
+        "above_33_3": 212,
+        "above_66_7": 44,
+        "count": 2090,
+        "max": 192.8,
+        "mean": 22.8478789473684,
+        "p50": 18.011,
+        "p95": 46.279,
+        "p99": 97.049,
+        "total": 47752.067
+      },
+      "max_phase_sum_error_ms": 5.684341886080802e-14,
+      "max_report_stat_error": 2.1827872842550278e-11,
+      "stats_scalar_checks": 99,
+      "phases": {
+        "warmup": {
+          "frames": 1619,
+          "duration_ms": 23684.235000000015,
+          "unfocused_frames": 1619,
+          "unfocused_ms": 23684.235000000015,
+          "paused_frames": 0,
+          "focused_fraction_frames": 0.0,
+          "focused_fraction_wall_endpoints": 0.0
+        },
+        "boundary": {
+          "frames": 1,
+          "duration_ms": 32.112,
+          "unfocused_frames": 1,
+          "unfocused_ms": 32.112,
+          "paused_frames": 0,
+          "focused_fraction_frames": 0.0,
+          "focused_fraction_wall_endpoints": 0.0
+        },
+        "measurement": {
+          "frames": 2090,
+          "duration_ms": 47752.066999999915,
+          "unfocused_frames": 1795,
+          "unfocused_ms": 40778.86499999998,
+          "paused_frames": 0,
+          "focused_fraction_frames": 0.1411483253588517,
+          "focused_fraction_wall_endpoints": 0.14602932266785318
+        }
+      },
+      "render_process_offsets": {
+        "0": 3710
+      },
+      "physics_steps_histogram_measured": {
+        "2": 438,
+        "1": 1471,
+        "3": 67,
+        "5": 13,
+        "6": 8,
+        "8": 8,
+        "7": 6,
+        "4": 23,
+        "0": 56
+      },
+      "engine_error_lines": [],
+      "session_errors": [],
+      "session_warning_count": 0,
+      "session_record_counts": {
+        "session_start": 1,
+        "stdout": 6,
+        "main_thread_unresponsive": 25,
+        "runtime_state_changed": 5,
+        "metrics": 91,
+        "session_end": 1
+      },
+      "session_starts_count": 1,
+      "session_telemetry": {
+        "end_usec": 814962,
+        "measured_usec": 413093,
+        "profile_end_usec": 0,
+        "profile_measured_usec": 0,
+        "profile_start_usec": 0,
+        "scope": "self-reported callback body cost, excludes native dispatch and writer-thread overhead; boundary access only during measurement",
+        "start_usec": 401869
+      },
+      "session_counter_context_first": null,
+      "session_counter_context_last": null,
+      "observer_body_self_cost": {
+        "mean_ms": 0.22555933014354054,
+        "p50_ms": 0.211,
+        "p95_ms": 0.331,
+        "p99_ms": 0.408,
+        "max_ms": 0.667,
+        "total_ms": 471.41899999999976,
+        "wall_fraction": 0.009872221866333044,
+        "scope": "self-timed callback bodies only, lower bound on observer overhead; no subtraction to infer clean FPS"
+      },
+      "memory_observation": {
+        "scope": "nearest 1s session samples inside measurement, not exact window edges; observation includes raw collection and ordinary world/cache activity",
+        "sample_count": 47,
+        "first": {
+          "engine_usec": 83179662,
+          "native_memory_bytes": 856618347,
+          "working_set_bytes": 3034419200,
+          "private_memory_bytes": 4292079616,
+          "managed_bytes": 6705280,
+          "gc_collections": [
+            0,
+            0,
+            0
+          ],
+          "gc_pause_ms": 0,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "last": {
+          "engine_usec": 130082535,
+          "native_memory_bytes": 961499645,
+          "working_set_bytes": 3190534144,
+          "private_memory_bytes": 4451532800,
+          "managed_bytes": 8967904,
+          "gc_collections": [
+            0,
+            0,
+            0
+          ],
+          "gc_pause_ms": 0,
+          "records_dropped": 0,
+          "writer_queue": 0
+        },
+        "native_delta_mib": 100.0226001739502,
+        "working_set_delta_mib": 148.8828125,
+        "private_delta_mib": 152.06640625,
+        "max_writer_queue": 0,
+        "max_records_dropped": 0
+      },
+      "raw_json_bytes": 27148591,
+      "settings": {
+        "args": [
+          "--no-save",
+          "--benchmark",
+          "--no-dispatch",
+          "--play-at=harbor,64,82",
+          "--label=session_profile0_2"
+        ],
+        "disabled_nodes": [],
+        "disabled_scripts": [],
+        "env": {
+          "GETECO_BUILDING_BATCH": "",
+          "GETECO_GROUND_STACK": "",
+          "GETECO_PROP_INSTANCING": "",
+          "HARBOR_SESSION_LOG": "",
+          "HARBOR_SESSION_PROFILE": "0",
+          "HARBOR_STALL_AGGREGATE": "",
+          "HARBOR_STALL_LOG": "",
+          "HARBOR_STALL_WORK": "",
+          "HARBOR_WEST_CPU_SPANS": "1",
+          "HARBOR_WEST_CPU_TRACE": "1"
+        },
+        "max_fps": 0,
+        "max_physics_steps_per_frame": 8,
+        "physics_ticks_per_second": 60,
+        "resolution": [
+          3440,
+          1440
+        ],
+        "sem_reflexos": false,
+        "sem_sombras": false,
+        "session_profile_present": false,
+        "startup": {
+          "max_fps": 144,
+          "vsync": 1
+        },
+        "trace_enabled": true,
+        "vsync": 0
+      },
+      "inventory_cost_usec": [
+        22413,
+        32001,
+        32179
+      ],
+      "fully_focused_measurement": false,
+      "focus_comparison_quality": "foco_comprometido_divulgar_e_limitar_comparacao",
+      "fully_focused_error_free_measurement": false
+    }
+  ],
+  "common_configuration": {
+    "engine": "4.7.2-stable (official)",
+    "hardware": {
+      "cpu": "13th Gen Intel(R) Core(TM) i7-13650HX",
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "renderer": "mobile"
+    },
+    "resolution": [
+      3440,
+      1440
+    ],
+    "physics_ticks_per_second": 60,
+    "max_physics_steps_per_frame": 8,
+    "max_fps": 0,
+    "vsync": 0
+  },
+  "native_router_prewarm_confirmations": {
+    "base_1": true,
+    "base_2": true,
+    "instrumentation0_1": true,
+    "instrumentation0_2": true,
+    "no_density_1": true,
+    "no_density_2": true,
+    "no_roadside_parking_1": true,
+    "no_roadside_parking_2": true,
+    "no_traffic_1": true,
+    "no_traffic_2": true,
+    "no_traffic_yield_1": true,
+    "no_traffic_yield_2": true,
+    "population0_1": true,
+    "population0_2": true,
+    "session_profile0_1": true,
+    "session_profile0_2": true
+  }
+}

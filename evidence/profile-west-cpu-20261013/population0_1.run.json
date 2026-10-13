@@ -1,0 +1,25 @@
+{
+  "label": "population0_1",
+  "started_utc": "2026-10-13T20:41:14.6476436+00:00",
+  "finished_utc": "2026-10-13T20:43:34.7925841+00:00",
+  "elapsed_seconds": 140.1449405,
+  "exit_code": 0,
+  "arguments": [
+    "--path",
+    "D:\\geteco\\game",
+    "--script",
+    "res://tests/measure/profile_west_cpu.gd",
+    "--log-file",
+    "D:\\geteco\\game\\evidence\\profile-west-cpu-20261013\\population0_1.engine.log",
+    "--",
+    "--no-save",
+    "--benchmark",
+    "--no-dispatch",
+    "--play-at=harbor,64,82",
+    "--label=population0_1",
+    "--population=0"
+  ],
+  "HARBOR_WEST_CPU_SPANS": "1",
+  "HARBOR_SESSION_PROFILE": "",
+  "HARBOR_WEST_CPU_TRACE": "1"
+}

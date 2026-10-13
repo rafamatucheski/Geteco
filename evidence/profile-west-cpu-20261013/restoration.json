@@ -1,0 +1,319 @@
+{
+  "timestamp_utc": "2026-10-13T21:21:11.366388+00:00",
+  "command": "python evidence/profile-west-cpu-20261013/remove_temporary_spans.py --allow-current-line-endings --apply",
+  "returncode": 0,
+  "stdout": "{\"mode\": \"applied\", \"files\": 14, \"all_original_normalized_hashes_verified\": true, \"exact_original_byte_hashes\": 11, \"current_line_endings_preserved_for\": [\"gameplay/street_physics/StreetPhysics.gd\", \"gameplay/dispatch/DispatchRoadRouter.gd\", \"audio/WorldAudio.gd\"]}\n",
+  "stderr": "",
+  "before_sha256": {
+    "scripts/Vehicle.gd": "d26094265871639f1897e88409a643d3a13f9e0287a308fdce2bcd463a545bdf",
+    "scripts/CameraRig.gd": "7b382127fc9511b7ea81a5ca1d22e1626cc59d232944750cb96055adffbf0993",
+    "gameplay/NativeTrafficRoutes.gd": "48e16c4c27ff658bb40a82f2812fe7dc8a31e67a54a842cb74ecf575f6678ada",
+    "gameplay/traffic_yield/TrafficYieldController.gd": "eb70f9442be4b36dffaf23dbef8c39ff90d227528160c1e302c95ce84c6e0d3a",
+    "gameplay/street_physics/StreetPhysics.gd": "d113c6ea6c58ae94a6a541e8cea5e82f11008ec45e4b0984261dbc39b55acd4f",
+    "gameplay/dispatch/DispatchRoadRouter.gd": "a9300addbb2f7dfcae4846f3439a0dc037dc81e7b1d7ba4e98b6da92e14990af",
+    "audio/WorldAudio.gd": "07502e038a789fe153dbcf5bd48e03e41cdee59112b4fd75e7eec1d11f9d7bdd",
+    "audio/vehicle_ambience/NearbyVehicleAudio.gd": "5d56ff00c37774cc2f0488bbee04d7fe36747cd39da1e74c468d6f001974c52a",
+    "audio/VehicleRoadAudio.gd": "a31b11dc8c928a8e3fd5e5f199ceec4c15efb6b878d37fdedeca40fd2348e5c6",
+    "audio/weather/WeatherAudioMixer.gd": "a5fa327ca379bee689777c87306427b6c716086b0564e7589e4ec73f989472dc",
+    "runtime/ProductionWorld.gd": "5ddde1015f3b47c94e2be64dc12e275c6b3493a833b5191d40042d6f06f05c91",
+    "world/regions/NativeRegion.gd": "998bf888a54689cb33ec4631c883e59b68792245392dbc7253e2cecf0397c8b6",
+    "runtime/RoadsideParking.gd": "7368b646982c88b15d801c53dc67585a090635077b119a2c99b14fac719a6110",
+    "runtime/SessionSystemProfile.gd": "571313d580ee90b5ce75cafee41b740bc99c383542af95b0d39b37d66d924f84"
+  },
+  "success": true,
+  "tool_result": {
+    "mode": "applied",
+    "files": 14,
+    "all_original_normalized_hashes_verified": true,
+    "exact_original_byte_hashes": 11,
+    "current_line_endings_preserved_for": [
+      "gameplay/street_physics/StreetPhysics.gd",
+      "gameplay/dispatch/DispatchRoadRouter.gd",
+      "audio/WorldAudio.gd"
+    ]
+  },
+  "sources": {
+    "scripts/Vehicle.gd": {
+      "original_sha256": "0b313aeedacf10c45133b24e8d12bca3aa96a75ab64b3c3fc024962582eeef5b",
+      "restored_sha256": "0b313aeedacf10c45133b24e8d12bca3aa96a75ab64b3c3fc024962582eeef5b",
+      "original_normalized_sha256": "df2d254e29d8f734a21e5ed4679caa200fac23f503c0af5a4df7838c0d2a0ccc",
+      "restored_normalized_sha256": "df2d254e29d8f734a21e5ed4679caa200fac23f503c0af5a4df7838c0d2a0ccc",
+      "exact_original_bytes": true,
+      "original_normalized_content_restored": true,
+      "span_marker_absent": true
+    },
+    "scripts/CameraRig.gd": {
+      "original_sha256": "9790192a30fa3519408e9955c126a7d56cc2dd792f42d50ecbd287c1e03d131d",
+      "restored_sha256": "9790192a30fa3519408e9955c126a7d56cc2dd792f42d50ecbd287c1e03d131d",
+      "original_normalized_sha256": "fedc4b61eca1657e8a9bfe10545ec401ebfe83c444da4ad7023165eca3b7aa0a",
+      "restored_normalized_sha256": "fedc4b61eca1657e8a9bfe10545ec401ebfe83c444da4ad7023165eca3b7aa0a",
+      "exact_original_bytes": true,
+      "original_normalized_content_restored": true,
+      "span_marker_absent": true
+    },
+    "gameplay/NativeTrafficRoutes.gd": {
+      "original_sha256": "b118ac2642516cd8578df2c3cc44e6933094a23bf77a2388825e1da2ff443744",
+      "restored_sha256": "b118ac2642516cd8578df2c3cc44e6933094a23bf77a2388825e1da2ff443744",
+      "original_normalized_sha256": "b118ac2642516cd8578df2c3cc44e6933094a23bf77a2388825e1da2ff443744",
+      "restored_normalized_sha256": "b118ac2642516cd8578df2c3cc44e6933094a23bf77a2388825e1da2ff443744",
+      "exact_original_bytes": true,
+      "original_normalized_content_restored": true,
+      "span_marker_absent": true
+    },
+    "gameplay/traffic_yield/TrafficYieldController.gd": {
+      "original_sha256": "e882dc89681c3fb5e69f308ba785343a4d7931e28d604160369c43a10f3f7970",
+      "restored_sha256": "e882dc89681c3fb5e69f308ba785343a4d7931e28d604160369c43a10f3f7970",
+      "original_normalized_sha256": "e882dc89681c3fb5e69f308ba785343a4d7931e28d604160369c43a10f3f7970",
+      "restored_normalized_sha256": "e882dc89681c3fb5e69f308ba785343a4d7931e28d604160369c43a10f3f7970",
+      "exact_original_bytes": true,
+      "original_normalized_content_restored": true,
+      "span_marker_absent": true
+    },
+    "gameplay/street_physics/StreetPhysics.gd": {
+      "original_sha256": "36cea1768f3248be03dc369da86428d554091bef1ad88c09d98f9dad7bedf99d",
+      "restored_sha256": "f9d96aba978a45fba7f9d6189f97735053d5b150abf66663f5ab7257ed94620f",
+      "original_normalized_sha256": "f9d96aba978a45fba7f9d6189f97735053d5b150abf66663f5ab7257ed94620f",
+      "restored_normalized_sha256": "f9d96aba978a45fba7f9d6189f97735053d5b150abf66663f5ab7257ed94620f",
+      "exact_original_bytes": false,
+      "original_normalized_content_restored": true,
+      "span_marker_absent": true,
+      "previous_restored_sha256": "230087dbaf7761c5a20d1bdcd41900d2e859a6b5cdefa1e805efbc0e8674dfdc",
+      "final_eol_equivalent_versioned": true,
+      "eol_only_final_adjustment": true
+    },
+    "gameplay/dispatch/DispatchRoadRouter.gd": {
+      "original_sha256": "90685f4ed890829f179ecf7fd62215b9177d8929fbf25c1c3ea819a1ade3c54e",
+      "restored_sha256": "7dcf390a7a44d3b9aebd0049ee96061682aa8ce81c3e3009dcd9da526e62e77e",
+      "original_normalized_sha256": "7dcf390a7a44d3b9aebd0049ee96061682aa8ce81c3e3009dcd9da526e62e77e",
+      "restored_normalized_sha256": "7dcf390a7a44d3b9aebd0049ee96061682aa8ce81c3e3009dcd9da526e62e77e",
+      "exact_original_bytes": false,
+      "original_normalized_content_restored": true,
+      "span_marker_absent": true,
+      "previous_restored_sha256": "8b1861451b21ef696018fbc4b2ccfcca4a6e4e042da0b62253e3ec625303ca32",
+      "final_eol_equivalent_versioned": true,
+      "eol_only_final_adjustment": true
+    },
+    "audio/WorldAudio.gd": {
+      "original_sha256": "4b1c4ef0c6ae9f40a65897a0460275ba1631bde183f5a77a58c21fec61410a51",
+      "restored_sha256": "3fbe9b159b8f3d56680c783a4f04d40d24ee46386dd254c917f7124b3fbe3ced",
+      "original_normalized_sha256": "3fbe9b159b8f3d56680c783a4f04d40d24ee46386dd254c917f7124b3fbe3ced",
+      "restored_normalized_sha256": "3fbe9b159b8f3d56680c783a4f04d40d24ee46386dd254c917f7124b3fbe3ced",
+      "exact_original_bytes": false,
+      "original_normalized_content_restored": true,
+      "span_marker_absent": true,
+      "previous_restored_sha256": "3ed03ddc1858354ef046ea6651b78cf632bd63561bd670086000e706c76fbdb8",
+      "final_eol_equivalent_versioned": true,
+      "eol_only_final_adjustment": true
+    },
+    "audio/vehicle_ambience/NearbyVehicleAudio.gd": {
+      "original_sha256": "e7dd2b38cae168570c27d017b5867dba42309d8f135637f1db8a33e7917b782c",
+      "restored_sha256": "e7dd2b38cae168570c27d017b5867dba42309d8f135637f1db8a33e7917b782c",
+      "original_normalized_sha256": "e7dd2b38cae168570c27d017b5867dba42309d8f135637f1db8a33e7917b782c",
+      "restored_normalized_sha256": "e7dd2b38cae168570c27d017b5867dba42309d8f135637f1db8a33e7917b782c",
+      "exact_original_bytes": true,
+      "original_normalized_content_restored": true,
+      "span_marker_absent": true
+    },
+    "audio/VehicleRoadAudio.gd": {
+      "original_sha256": "55d556fa2b5d4a06fb2ff7c125488b773d97bf9a18bd2d3021d821f9d69a0a97",
+      "restored_sha256": "55d556fa2b5d4a06fb2ff7c125488b773d97bf9a18bd2d3021d821f9d69a0a97",
+      "original_normalized_sha256": "55d556fa2b5d4a06fb2ff7c125488b773d97bf9a18bd2d3021d821f9d69a0a97",
+      "restored_normalized_sha256": "55d556fa2b5d4a06fb2ff7c125488b773d97bf9a18bd2d3021d821f9d69a0a97",
+      "exact_original_bytes": true,
+      "original_normalized_content_restored": true,
+      "span_marker_absent": true
+    },
+    "audio/weather/WeatherAudioMixer.gd": {
+      "original_sha256": "4f7f9e50b8432025ebfd03854820c319fc7ecb5632d0ce09e17f6a5a6154cd77",
+      "restored_sha256": "4f7f9e50b8432025ebfd03854820c319fc7ecb5632d0ce09e17f6a5a6154cd77",
+      "original_normalized_sha256": "4f7f9e50b8432025ebfd03854820c319fc7ecb5632d0ce09e17f6a5a6154cd77",
+      "restored_normalized_sha256": "4f7f9e50b8432025ebfd03854820c319fc7ecb5632d0ce09e17f6a5a6154cd77",
+      "exact_original_bytes": true,
+      "original_normalized_content_restored": true,
+      "span_marker_absent": true
+    },
+    "runtime/ProductionWorld.gd": {
+      "original_sha256": "fdf983e12f904657de57c82f7dbe23ad83b8548af149bdbd67fd53c9d77bc5e1",
+      "restored_sha256": "fdf983e12f904657de57c82f7dbe23ad83b8548af149bdbd67fd53c9d77bc5e1",
+      "original_normalized_sha256": "fcb80ca9aad377a486b23ca7792abe0616c316f6d1da5a03ea67f8fb6e977e9d",
+      "restored_normalized_sha256": "fcb80ca9aad377a486b23ca7792abe0616c316f6d1da5a03ea67f8fb6e977e9d",
+      "exact_original_bytes": true,
+      "original_normalized_content_restored": true,
+      "span_marker_absent": true
+    },
+    "world/regions/NativeRegion.gd": {
+      "original_sha256": "a5521d74b0298a15b1fb7ab2f598aa197f1a50e9338db94c9ac1342745402160",
+      "restored_sha256": "a5521d74b0298a15b1fb7ab2f598aa197f1a50e9338db94c9ac1342745402160",
+      "original_normalized_sha256": "a5521d74b0298a15b1fb7ab2f598aa197f1a50e9338db94c9ac1342745402160",
+      "restored_normalized_sha256": "a5521d74b0298a15b1fb7ab2f598aa197f1a50e9338db94c9ac1342745402160",
+      "exact_original_bytes": true,
+      "original_normalized_content_restored": true,
+      "span_marker_absent": true
+    },
+    "runtime/RoadsideParking.gd": {
+      "original_sha256": "1cea13746c1348fb268b080497988d1368f3bb1107293d0461a8d9c50a4880f0",
+      "restored_sha256": "1cea13746c1348fb268b080497988d1368f3bb1107293d0461a8d9c50a4880f0",
+      "original_normalized_sha256": "1cea13746c1348fb268b080497988d1368f3bb1107293d0461a8d9c50a4880f0",
+      "restored_normalized_sha256": "1cea13746c1348fb268b080497988d1368f3bb1107293d0461a8d9c50a4880f0",
+      "exact_original_bytes": true,
+      "original_normalized_content_restored": true,
+      "span_marker_absent": true
+    },
+    "runtime/SessionSystemProfile.gd": {
+      "original_sha256": "0bc46b4981b6ee7c51e6238a9fe97e45a31e4d138c0c041f6f426a74c9c44491",
+      "restored_sha256": "0bc46b4981b6ee7c51e6238a9fe97e45a31e4d138c0c041f6f426a74c9c44491",
+      "original_normalized_sha256": "6b85c8dd7fd71b645b3f67f36ce66863ff18fc8001e2a664e2b722b1fb386732",
+      "restored_normalized_sha256": "6b85c8dd7fd71b645b3f67f36ce66863ff18fc8001e2a664e2b722b1fb386732",
+      "exact_original_bytes": true,
+      "original_normalized_content_restored": true,
+      "span_marker_absent": true
+    }
+  },
+  "git_diff_verification": {
+    "command": [
+      "git",
+      "diff",
+      "--ignore-space-at-eol",
+      "--exit-code",
+      "--",
+      "scripts/Vehicle.gd",
+      "scripts/CameraRig.gd",
+      "gameplay/NativeTrafficRoutes.gd",
+      "gameplay/traffic_yield/TrafficYieldController.gd",
+      "gameplay/street_physics/StreetPhysics.gd",
+      "gameplay/dispatch/DispatchRoadRouter.gd",
+      "audio/WorldAudio.gd",
+      "audio/vehicle_ambience/NearbyVehicleAudio.gd",
+      "audio/VehicleRoadAudio.gd",
+      "audio/weather/WeatherAudioMixer.gd",
+      "runtime/ProductionWorld.gd",
+      "world/regions/NativeRegion.gd",
+      "runtime/RoadsideParking.gd",
+      "runtime/SessionSystemProfile.gd"
+    ],
+    "returncode": 0,
+    "stdout": "",
+    "stderr": "",
+    "zero_code_diff_14": true
+  },
+  "eol_finalization": {
+    "timestamp_utc": "2026-10-13T21:26:41.851059+00:00",
+    "source_writes": 3,
+    "method": "Current line bodies preserved byte-for-byte; read-only raw HEAD used only for each line terminator map. No HEAD source write.",
+    "rows": [
+      {
+        "file": "gameplay/street_physics/StreetPhysics.gd",
+        "before_sha256": "230087dbaf7761c5a20d1bdcd41900d2e859a6b5cdefa1e805efbc0e8674dfdc",
+        "after_sha256": "f9d96aba978a45fba7f9d6189f97735053d5b150abf66663f5ab7257ed94620f",
+        "raw_HEAD_sha256": "f9d96aba978a45fba7f9d6189f97735053d5b150abf66663f5ab7257ed94620f",
+        "original_sha256": "36cea1768f3248be03dc369da86428d554091bef1ad88c09d98f9dad7bedf99d",
+        "original_raw_byte_sha_recovered": false,
+        "original_normalized_sha_preserved": true,
+        "changed_only_line_terminators": true,
+        "candidate_constructed_from_current_text": true
+      },
+      {
+        "file": "gameplay/dispatch/DispatchRoadRouter.gd",
+        "before_sha256": "8b1861451b21ef696018fbc4b2ccfcca4a6e4e042da0b62253e3ec625303ca32",
+        "after_sha256": "7dcf390a7a44d3b9aebd0049ee96061682aa8ce81c3e3009dcd9da526e62e77e",
+        "raw_HEAD_sha256": "7dcf390a7a44d3b9aebd0049ee96061682aa8ce81c3e3009dcd9da526e62e77e",
+        "original_sha256": "90685f4ed890829f179ecf7fd62215b9177d8929fbf25c1c3ea819a1ade3c54e",
+        "original_raw_byte_sha_recovered": false,
+        "original_normalized_sha_preserved": true,
+        "changed_only_line_terminators": true,
+        "candidate_constructed_from_current_text": true
+      },
+      {
+        "file": "audio/WorldAudio.gd",
+        "before_sha256": "3ed03ddc1858354ef046ea6651b78cf632bd63561bd670086000e706c76fbdb8",
+        "after_sha256": "3fbe9b159b8f3d56680c783a4f04d40d24ee46386dd254c917f7124b3fbe3ced",
+        "raw_HEAD_sha256": "3fbe9b159b8f3d56680c783a4f04d40d24ee46386dd254c917f7124b3fbe3ced",
+        "original_sha256": "4b1c4ef0c6ae9f40a65897a0460275ba1631bde183f5a77a58c21fec61410a51",
+        "original_raw_byte_sha_recovered": false,
+        "original_normalized_sha_preserved": true,
+        "changed_only_line_terminators": true,
+        "candidate_constructed_from_current_text": true
+      }
+    ],
+    "git_verification": {
+      "status_returncode": 0,
+      "status_stdout": " M audio/WorldAudio.gd\n M gameplay/dispatch/DispatchRoadRouter.gd\n M gameplay/street_physics/StreetPhysics.gd\n",
+      "git_status_literal_clean_14": false,
+      "normal_diff_returncode": 0,
+      "normal_diff_stdout": "",
+      "normal_diff_empty_14": true,
+      "normalized_diff_returncode": 0,
+      "normalized_diff_stdout": "",
+      "normalized_diff_empty_14": true,
+      "three_blob_identities": [
+        {
+          "file": "gameplay/street_physics/StreetPhysics.gd",
+          "worktree_filtered_oid": "eab141e1b53f490cb13ac6652b54b0e58a29ad8a",
+          "index_oid": "eab141e1b53f490cb13ac6652b54b0e58a29ad8a",
+          "HEAD_oid": "eab141e1b53f490cb13ac6652b54b0e58a29ad8a",
+          "equal": true
+        },
+        {
+          "file": "gameplay/dispatch/DispatchRoadRouter.gd",
+          "worktree_filtered_oid": "1ae92581d9e0a3312f0fcffa13caeaaaf426736b",
+          "index_oid": "1ae92581d9e0a3312f0fcffa13caeaaaf426736b",
+          "HEAD_oid": "1ae92581d9e0a3312f0fcffa13caeaaaf426736b",
+          "equal": true
+        },
+        {
+          "file": "audio/WorldAudio.gd",
+          "worktree_filtered_oid": "df0998949ba5ea6ec617d4089f8bbb025f8466a1",
+          "index_oid": "df0998949ba5ea6ec617d4089f8bbb025f8466a1",
+          "HEAD_oid": "df0998949ba5ea6ec617d4089f8bbb025f8466a1",
+          "equal": true
+        }
+      ],
+      "metadata_note": "Three status entries can require index stat refresh despite identical filtered worktree/index/HEAD object IDs. No index metadata mutation performed by this helper."
+    }
+  },
+  "original_bytes_exact_count": 11,
+  "original_normalized_content_restored_count": 14,
+  "git_diff_verification_final": {
+    "status_returncode": 0,
+    "status_stdout": " M audio/WorldAudio.gd\n M gameplay/dispatch/DispatchRoadRouter.gd\n M gameplay/street_physics/StreetPhysics.gd\n",
+    "git_status_literal_clean_14": false,
+    "normal_diff_returncode": 0,
+    "normal_diff_stdout": "",
+    "normal_diff_empty_14": true,
+    "normalized_diff_returncode": 0,
+    "normalized_diff_stdout": "",
+    "normalized_diff_empty_14": true,
+    "three_blob_identities": [
+      {
+        "file": "gameplay/street_physics/StreetPhysics.gd",
+        "worktree_filtered_oid": "eab141e1b53f490cb13ac6652b54b0e58a29ad8a",
+        "index_oid": "eab141e1b53f490cb13ac6652b54b0e58a29ad8a",
+        "HEAD_oid": "eab141e1b53f490cb13ac6652b54b0e58a29ad8a",
+        "equal": true
+      },
+      {
+        "file": "gameplay/dispatch/DispatchRoadRouter.gd",
+        "worktree_filtered_oid": "1ae92581d9e0a3312f0fcffa13caeaaaf426736b",
+        "index_oid": "1ae92581d9e0a3312f0fcffa13caeaaaf426736b",
+        "HEAD_oid": "1ae92581d9e0a3312f0fcffa13caeaaaf426736b",
+        "equal": true
+      },
+      {
+        "file": "audio/WorldAudio.gd",
+        "worktree_filtered_oid": "df0998949ba5ea6ec617d4089f8bbb025f8466a1",
+        "index_oid": "df0998949ba5ea6ec617d4089f8bbb025f8466a1",
+        "HEAD_oid": "df0998949ba5ea6ec617d4089f8bbb025f8466a1",
+        "equal": true
+      }
+    ],
+    "metadata_note": "Three status entries can require index stat refresh despite identical filtered worktree/index/HEAD object IDs. No index metadata mutation performed by this helper."
+  },
+  "final_index_metadata_refresh": {
+    "command": "git update-index --refresh -- audio/WorldAudio.gd gameplay/dispatch/DispatchRoadRouter.gd gameplay/street_physics/StreetPhysics.gd",
+    "exit_code": 1,
+    "other_unrelated_modified_files_need_update": true,
+    "restored_paths_status_after": [],
+    "staged_paths_after": [],
+    "production_content_staged": false
+  }
+}
