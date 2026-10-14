@@ -17,6 +17,8 @@ uniform float lift_pitch = 1.2;
 uniform float panel_pitch = 2.4;
 uniform float slab_pitch = 2.0;
 uniform vec3 algae_tint : source_color = vec3(0.42, 0.50, 0.40);
+// Chuva (0 seco, 1 encharcado), o mesmo valor que molha a cidade (Weather.get_coastal_wetness).
+uniform float rain_wetness : hint_range(0.0, 1.0) = 0.0;
 
 varying vec3 local_pos;
 varying vec3 world_normal;
@@ -96,7 +98,10 @@ void fragment() {
 		v -= clamp(gap, 0.0, 1.0) * 0.55;
 	}
 	vec3 color = tint * clamp(v, 0.35, 1.2);
+	// Concreto molhado escurece e fica liso; o tabuleiro empoça mais que as faces verticais.
+	float rain = rain_wetness * (top_face ? 1.0 : 0.7) * (n.y < -0.7 ? 0.0 : 1.0);
+	color *= 1.0 - rain * 0.32;
 	ALBEDO = mix(color, color * algae_tint, wet * 0.85);
-	ROUGHNESS = mix(0.93 - (fine - 0.5) * 0.08, 0.55, wet);
+	ROUGHNESS = mix(mix(0.93 - (fine - 0.5) * 0.08, 0.55, wet), 0.32, rain);
 	SPECULAR = 0.35;
 }

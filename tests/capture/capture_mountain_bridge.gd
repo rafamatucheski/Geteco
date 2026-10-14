@@ -35,8 +35,11 @@ func run() -> void:
 	var folder := "res://evidence/mountain-bridge-look"
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
 	var weather: Variant = world.session.weather
-	if "weather_state" in weather: weather.weather_state = 0
+	var rain := "--chuva" in OS.get_cmdline_user_args()
+	if "weather_state" in weather: weather.weather_state = 1 if rain else 0
 	if "weather_timer" in weather: weather.weather_timer = 1.0e9
+	if rain and "rain_intensity" in weather: weather.rain_intensity = .25
+	if rain and "coastal_wetness" in weather: weather.coastal_wetness = 1.0
 	var free_camera := Camera3D.new()
 	free_camera.fov = 55.0
 	free_camera.near = .05

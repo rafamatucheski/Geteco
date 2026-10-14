@@ -6,17 +6,25 @@ extends Node
 ##      (porto: --benchmark-route=porto --play-at=harbor,150,82). Grava user://benchmark-west/<label>.json e sai.
 const ROUTE_WEST := [Vector3(64, 0, 82), Vector3(150, 0, 82), Vector3(143, 0, 60), Vector3(84, 0, 60), Vector3(84, 0, 123), Vector3(65, 0, 113)]
 const ROUTE_PORT := [Vector3(150, 0, 82), Vector3(250, 0, 82), Vector3(250, 0, 30), Vector3(180, 0, 30), Vector3(180, 0, 82)]
+## Pontos quentes das outras regiões (censo de 14/10). Serra: --play-at=mountain,650,-290; ponte cidade–serra:
+## --play-at=harbor,440,-285; deserto (encontro de arrancada): --play-at=desert,-690,-880.
+const ROUTES := {
+	"serra": [Vector3(650, 4, -290), Vector3(745, 4, -300), Vector3(745, 4, -425), Vector3(660, 4, -425)],
+	"ponte": [Vector3(440, 0, -285), Vector3(600, 0, -285)],
+	"deserto": [Vector3(-690, 0, -880), Vector3(-600, 0, -880), Vector3(-600, 0, -835), Vector3(-690, 0, -835)],
+}
 const SPEED := 12.0
 const WARMUP_LOOPS := 1
 const MEASURE_LOOPS := 2
 const TOGGLES := ["GETECO_POP_VC", "GETECO_SUN_SHADOW_NEAR", "GETECO_TRAFFIC_RAILS", "GETECO_PED_POSE_LOD", "GETECO_LIGHT_BUDGET",
 	"GETECO_DETAIL_RANGE", "GETECO_BAKED_BUILDINGS", "GETECO_SKID_BUDGET", "GETECO_DASH_BATCH", "GETECO_DISPATCH_FAST",
 	"GETECO_PED_DUMMY", "GETECO_BUILDING_BATCH", "GETECO_PROP_INSTANCING", "GETECO_GROUND_STACK", "GETECO_SHADOW_SHELL",
-	"GETECO_BRIDGE_MERGE", "GETECO_FURNITURE_MERGE", "GETECO_CELL_MERGE"]
+	"GETECO_BRIDGE_MERGE", "GETECO_FURNITURE_MERGE", "GETECO_CELL_MERGE", "GETECO_BRIDGE_LOOK"]
 
 var world: Node
 var route: Array = ROUTE_WEST
 var label := "release"
+var route_name := ""
 
 static func requested() -> bool:
 	for argument in OS.get_cmdline_user_args():
@@ -26,6 +34,10 @@ static func requested() -> bool:
 func _ready() -> void:
 	for argument in OS.get_cmdline_user_args():
 		if argument == "--benchmark-route=porto": route = ROUTE_PORT
+		var named := argument.trim_prefix("--benchmark-route=")
+		if argument.begins_with("--benchmark-route=") and ROUTES.has(named):
+			route = ROUTES[named]
+			route_name = named
 		if argument.begins_with("--label="): label = argument.trim_prefix("--label=")
 	_run.call_deferred()
 
@@ -83,7 +95,7 @@ func _run() -> void:
 	var toggles := {}
 	for name in TOGGLES: toggles[name] = OS.get_environment(name)
 	var report := {"label": label, "build": "editor" if OS.has_feature("editor") else ("export_release" if OS.has_feature("release") else "export_debug"),
-		"route": "porto" if route == ROUTE_PORT else "oeste", "frames": frames.size(), "frame_ms": _stats(frames),
+		"route": route_name if route_name != "" else ("porto" if route == ROUTE_PORT else "oeste"), "frames": frames.size(), "frame_ms": _stats(frames),
 		"gpu_ms_main": _stats(gpu), "draw_calls": _stats(draws), "toggles": toggles,
 		"resolution": str(get_viewport().get_visible_rect().size), "vehicles": world.production.vehicles.size(), "people": world.people.size()}
 	print("BENCH_RELEASE ", JSON.stringify({"label": label, "frame_p50": report.frame_ms.p50, "frame_p95": report.frame_ms.p95, "draws_p50": report.draw_calls.p50}))

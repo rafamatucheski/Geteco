@@ -28,6 +28,7 @@ var _silhouette_player_visible := false
 var _silhouette_inside := false
 var _clock := 0.0
 var _last_night := -1.0
+var _last_bridge_wetness := -1.0
 var _last_wetness := -1.0
 var _pools_visible := false
 var _grade: GradientTexture1D
@@ -96,6 +97,12 @@ func _update(force: bool) -> void:
 	if force or absf(wetness-_last_wetness)>.004:
 		_last_wetness = wetness
 		MATERIALS.set_wetness(wetness)
+	# A ponte cidade–serra molha com o mesmo clima nas duas regiões.
+	if session != null and is_instance_valid(session.get("weather")):
+		var bridge_wetness: float = session.weather.get_coastal_wetness()
+		if force or absf(bridge_wetness - _last_bridge_wetness) > .004:
+			_last_bridge_wetness = bridge_wetness
+			preload("res://world/regions/WorldConnection3D.gd").set_look_wetness(bridge_wetness)
 	if force or absf(night - _last_night) > .004:
 		_last_night = night
 		MATERIALS.set_night(night)

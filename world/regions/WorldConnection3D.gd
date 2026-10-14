@@ -303,19 +303,25 @@ func _build_bridge_lamps(steel: StandardMaterial3D) -> void:
 
 ## Corte dos trechos de malha (ver BridgeLookMesh): conector | primeiro vão | segundo vão.
 const LOOK_SEGMENT_CUT_X := 508.0
-const LOOK_DECK := Color("8a8b84")
-const LOOK_FASCIA := Color("a5a398")
-const LOOK_PIER := Color("8e8e85")
-const LOOK_CAP := Color("7b7d75")
-const LOOK_CURB := Color("b1aea2")
-const LOOK_MARGIN := Color("a9a89e")
-const LOOK_ABUTMENT := Color("a2a196")
+# Tons ~12% mais escuros e puxados para o cinza frio da ponte antiga: ao meio-dia os bege claros estouravam.
+const LOOK_DECK := Color("7d8380")
+const LOOK_FASCIA := Color("929690")
+const LOOK_PIER := Color("818784")
+const LOOK_CAP := Color("71766f")
+const LOOK_CURB := Color("9c9e97")
+const LOOK_MARGIN := Color("959892")
+const LOOK_ABUTMENT := Color("8f938d")
 const LOOK_RAIL := Color("4f7378")
 const LOOK_POLE := Color("3d4a4f")
 const LOOK_HOUSING := Color("2c3134")
 const LOOK_NO_WATER := Vector2(-100.0, 0.0)
 const LOOK_JOINTS := Vector2(-100.0, 1.0)
 const LOOK_SLABS := Vector2(-100.0, 2.0)
+
+## Chuva no concreto da ponte. Chamado pelo CityLook junto com a cidade, sem depender da região: a ponte é
+## vista do porto e da serra.
+static func set_look_wetness(value: float) -> void:
+	if _look_materials.has("concrete"): _look_materials.concrete.set_shader_parameter("rain_wetness", clampf(value, 0.0, 1.0))
 
 static func _look_concrete() -> ShaderMaterial:
 	if _look_materials.has("concrete"): return _look_materials.concrete
