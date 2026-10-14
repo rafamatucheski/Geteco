@@ -9,6 +9,8 @@ const PIER_FOAM := preload("res://world/regions/bridge_pier_foam.gdshader")
 const NORTH_GATEWAY := preload("res://world/north_gateway/NorthGateway.gd")
 const NORTH_GATEWAY_POLICY := preload("res://world/north_gateway/NorthGatewayPolicy.gd")
 const PIER_FOAM_REACH := 1.3
+const LOOK_MESH := preload("res://world/regions/bridge_look/BridgeLookMesh.gd")
+const LOOK_CONCRETE := preload("res://world/regions/bridge_look/bridge_concrete.gdshader")
 const SEAM := Vector3(7300.0, 0.0, -4560.0) * UNIT
 const HARBOR_ABUTMENT_X := 6300.0 * UNIT
 const HARBOR_CONNECTOR_X := 6480.0 * UNIT
@@ -33,6 +35,10 @@ static func tunnel_camera_weight(point: Vector3) -> float:
 
 var _materials: Dictionary = {}
 var bridge_lamps: Array[OmniLight3D] = []
+## Acabamento da ponte (concreto com textura, pilares com forma, fáscia e guarda-corpo).
+## GETECO_BRIDGE_LOOK=0 restaura as caixas lisas de antes; colisão é a mesma nos dois.
+static var look_enabled := OS.get_environment("GETECO_BRIDGE_LOOK") != "0"
+static var _look_materials: Dictionary = {}
 
 static func logical_region(point: Vector3) -> String:
 	if preload("res://world/desert/DesertLayout.gd").contains(point): return "desert"
@@ -62,7 +68,8 @@ static func traffic_connectors() -> Array[Dictionary]:
 
 func _ready() -> void:
 	name = "HarborMountainConnection"
-	_build_bridge()
+	if look_enabled: _build_bridge_look()
+	else: _build_bridge()
 	_build_tunnel()
 	# The northern worksite shares this connection's streaming owner. It never
 	# contributes an edge to the eastern mountain traffic connectors above.
@@ -112,23 +119,52 @@ func _beam_between(label: String, a: Vector3, b: Vector3, width: float, height: 
 	result.rotation.y = atan2(delta.x,delta.z)
 	return result
 
+const PAVEMENT_LOWER := -0.03 # bridge deck and mountain abutment
+const PAVEMENT_UPPER := 0.07
+const PAVEMENT_EDGE_RUN := 0.40
+const PAVEMENT_END_RUN := 0.60
+
+## [low, top, base] of the bevelled pavement; shared by the visual, the convex
+## body and the bridge finish so all three keep the exact same vertices.
+static func _pavement_shape(x0: float, x1: float, inner_z: float, outer_z: float, bottom: float, start_run := PAVEMENT_END_RUN, end_run := PAVEMENT_END_RUN) -> Array[PackedVector3Array]:
+	var side := signf(outer_z-inner_z)
+	var low := PackedVector3Array([
+		Vector3(x0,PAVEMENT_LOWER,inner_z),Vector3(x1,PAVEMENT_LOWER,inner_z),
+		Vector3(x1,PAVEMENT_LOWER,outer_z),Vector3(x0,PAVEMENT_LOWER,outer_z)])
+	var top := PackedVector3Array([
+		Vector3(x0+start_run,PAVEMENT_UPPER,inner_z+side*PAVEMENT_EDGE_RUN),Vector3(x1-end_run,PAVEMENT_UPPER,inner_z+side*PAVEMENT_EDGE_RUN),
+		Vector3(x1-end_run,PAVEMENT_UPPER,outer_z),Vector3(x0+start_run,PAVEMENT_UPPER,outer_z)])
+	var base := PackedVector3Array()
+	for point in low: base.append(Vector3(point.x,bottom,point.z))
+	return [low,top,base]
+
+static func _pavement_body(low: PackedVector3Array, top: PackedVector3Array, base: PackedVector3Array) -> StaticBody3D:
+	var body := StaticBody3D.new()
+	body.collision_layer = 1
+	body.collision_mask = 0
+	var collision := CollisionShape3D.new()
+	var shape := ConvexPolygonShape3D.new()
+	var points := base.duplicate()
+	points.append_array(low)
+	points.append_array(top)
+	shape.points = points
+	collision.shape = shape
+	body.add_child(collision)
+	return body
+
 ## A square vehicle hull catches even a 7 cm vertical paving lip. Keep the
 ## original footprint and level, but bevel its road edge and both ends. One
 ## convex body and the visible faces share the exact same vertices.
 func _pavement(label: String, x0: float, x1: float, inner_z: float, outer_z: float, material: StandardMaterial3D, bottom := -0.10) -> void:
 	var side := signf(outer_z-inner_z)
-	var lower := -0.03 # bridge deck and mountain abutment
-	var upper := 0.07
-	var edge_run := 0.40
-	var end_run := 0.60
-	var low := PackedVector3Array([
-		Vector3(x0,lower,inner_z),Vector3(x1,lower,inner_z),
-		Vector3(x1,lower,outer_z),Vector3(x0,lower,outer_z)])
-	var top := PackedVector3Array([
-		Vector3(x0+end_run,upper,inner_z+side*edge_run),Vector3(x1-end_run,upper,inner_z+side*edge_run),
-		Vector3(x1-end_run,upper,outer_z),Vector3(x0+end_run,upper,outer_z)])
-	var base := PackedVector3Array()
-	for point in low: base.append(Vector3(point.x,bottom,point.z))
+	var lower := PAVEMENT_LOWER
+	var upper := PAVEMENT_UPPER
+	var edge_run := PAVEMENT_EDGE_RUN
+	var end_run := PAVEMENT_END_RUN
+	var shape_points := _pavement_shape(x0,x1,inner_z,outer_z,bottom)
+	var low: PackedVector3Array = shape_points[0]
+	var top: PackedVector3Array = shape_points[1]
+	var base: PackedVector3Array = shape_points[2]
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	_pavement_face(surface,top,Vector3.UP)
@@ -145,18 +181,7 @@ func _pavement(label: String, x0: float, x1: float, inner_z: float, outer_z: flo
 	result.mesh = surface.commit()
 	result.material_override = material
 	add_child(result)
-	var body := StaticBody3D.new()
-	body.collision_layer = 1
-	body.collision_mask = 0
-	var collision := CollisionShape3D.new()
-	var shape := ConvexPolygonShape3D.new()
-	var points := base.duplicate()
-	points.append_array(low)
-	points.append_array(top)
-	shape.points = points
-	collision.shape = shape
-	body.add_child(collision)
-	result.add_child(body)
+	result.add_child(_pavement_body(low,top,base))
 
 func _pavement_face(surface: SurfaceTool, points: PackedVector3Array, normal: Vector3) -> void:
 	for index in range(1,points.size()-1):
@@ -271,6 +296,266 @@ func _build_bridge_lamps(steel: StandardMaterial3D) -> void:
 		lamp.light_energy = 0.0
 		add_child(lamp)
 		bridge_lamps.append(lamp)
+
+# --- Acabamento da ponte (GETECO_BRIDGE_LOOK, padrão ligado) ---
+# Só aparência. Cada corpo sólido abaixo repete a caixa/convexo de _build_bridge com o mesmo
+# transform global; a malha visível é agrupada por material em BridgeLookMesh.
+
+## Corte dos trechos de malha (ver BridgeLookMesh): conector | primeiro vão | segundo vão.
+const LOOK_SEGMENT_CUT_X := 508.0
+const LOOK_DECK := Color("8a8b84")
+const LOOK_FASCIA := Color("a5a398")
+const LOOK_PIER := Color("8e8e85")
+const LOOK_CAP := Color("7b7d75")
+const LOOK_CURB := Color("b1aea2")
+const LOOK_MARGIN := Color("a9a89e")
+const LOOK_ABUTMENT := Color("a2a196")
+const LOOK_RAIL := Color("4f7378")
+const LOOK_POLE := Color("3d4a4f")
+const LOOK_HOUSING := Color("2c3134")
+const LOOK_NO_WATER := Vector2(-100.0, 0.0)
+const LOOK_JOINTS := Vector2(-100.0, 1.0)
+const LOOK_SLABS := Vector2(-100.0, 2.0)
+
+static func _look_concrete() -> ShaderMaterial:
+	if _look_materials.has("concrete"): return _look_materials.concrete
+	var material := ShaderMaterial.new()
+	material.shader = LOOK_CONCRETE
+	var origin := Vector3(500.0,0.0,CENTER_Z)
+	material.set_shader_parameter("origin",origin)
+	# Juntas de dilatação sobre os apoios: costura, os dois pilares e o encontro da serra.
+	material.set_shader_parameter("expansion_joints_x",Vector4(SEAM.x,7800.0*UNIT,8360.0*UNIT,BRIDGE_END_X)-Vector4.ONE*origin.x)
+	_look_materials.concrete = material
+	return material
+
+static func _look_steel() -> StandardMaterial3D:
+	if _look_materials.has("steel"): return _look_materials.steel
+	var material := StandardMaterial3D.new()
+	material.vertex_color_use_as_albedo = true
+	material.vertex_color_is_srgb = true
+	material.roughness = .5
+	material.metallic = .35
+	_look_materials.steel = material
+	return material
+
+func _solid_box(label: String, point: Vector3, size: Vector3, rotation_y := 0.0) -> void:
+	var body := StaticBody3D.new()
+	body.name = label
+	body.collision_layer = 1
+	body.collision_mask = 0
+	body.position = point
+	body.rotation.y = rotation_y
+	var collision := CollisionShape3D.new()
+	var shape := BoxShape3D.new()
+	shape.size = size
+	collision.shape = shape
+	body.add_child(collision)
+	add_child(body)
+
+## Mesmo transform de _beam_between: caixa no meio, comprimento em z local, giro atan2.
+func _solid_beam(label: String, a: Vector3, b: Vector3, width: float, height: float) -> void:
+	var delta := b-a
+	_solid_box(label,(a+b)*.5,Vector3(width,height,delta.length()),atan2(delta.x,delta.z))
+
+func _build_bridge_look() -> void:
+	var asphalt: StandardMaterial3D = preload("res://world/urban_detail/HarborRoadGeometry3D.gd").new()._material(Color("202932"))
+	_build_inner_gap(asphalt)
+	# Colisão idêntica à de _build_bridge (mesmas caixas, rótulos e convexos).
+	_solid_box("HarborConnectorAbutmentBody",Vector3((HARBOR_ABUTMENT_X+HARBOR_CONNECTOR_X)*.5,-.28,CENTER_Z),Vector3(HARBOR_CONNECTOR_X-HARBOR_ABUTMENT_X,.56,23.0))
+	_solid_box("HarborConnectorDeckBody",Vector3((HARBOR_CONNECTOR_X+SEAM.x)*.5,-.38,CENTER_Z),Vector3(SEAM.x-HARBOR_CONNECTOR_X,.76,22.0))
+	var length := BRIDGE_END_X-SEAM.x
+	_solid_box("ContinuousBridgeDeckBody",Vector3((SEAM.x+BRIDGE_END_X)*.5,-.40,CENTER_Z),Vector3(length,.74,BRIDGE_HALF_WIDTH*2.0))
+	_solid_box("MountainAbutmentBody",Vector3((BRIDGE_END_X+TUNNEL_START_X)*.5,-.30,CENTER_Z),Vector3(TUNNEL_START_X-BRIDGE_END_X,.54,18.0))
+	for side in [-1.0,1.0]:
+		_solid_beam("HarborConnectorRailBody",Vector3(HARBOR_CONNECTOR_X,.68,CENTER_Z+side*10.5),Vector3(SEAM.x,.68,CENTER_Z+side*6.5),.20,1.18)
+		_solid_beam("BridgeRailJoinBody",Vector3(SEAM.x,.68,CENTER_Z+side*6.5),Vector3(TRAFFIC_MERGE_X,.68,CENTER_Z+side*BRIDGE_HALF_WIDTH),.20,1.18)
+		_solid_box("BridgeGuardRailBody",Vector3((TRAFFIC_MERGE_X+TUNNEL_START_X)*.5,.68,CENTER_Z+side*BRIDGE_HALF_WIDTH),Vector3(TUNNEL_START_X-TRAFFIC_MERGE_X,1.18,.18))
+		var margin := _pavement_shape(TRAFFIC_MERGE_X,BRIDGE_END_X,CENTER_Z+side*5.0,CENTER_Z+side*BRIDGE_HALF_WIDTH,-.03)
+		var margin_body := _pavement_body(margin[0],margin[1],margin[2])
+		margin_body.name = "BridgeMarginBody"
+		add_child(margin_body)
+	var piers: Array[Array] = []
+	for source_x in [6700.0,7040.0]:
+		for side in [-1.0,1.0]: piers.append([Vector3(float(source_x)*UNIT,0,CENTER_Z+side*11.2),1.75,3.0])
+	for source_x in [7800.0,8360.0]:
+		for side in [-1.0,1.0]: piers.append([Vector3(float(source_x)*UNIT,0,CENTER_Z+side*8.2),1.5,4.0])
+	for pier in piers:
+		_solid_box("BridgePylonBody",pier[0]+Vector3.UP*float(pier[2])*.5,Vector3(pier[1],pier[2],pier[1]))
+	var look := LOOK_MESH.new(PackedFloat32Array([SEAM.x,LOOK_SEGMENT_CUT_X]))
+	# Só o que fica abaixo do asfalto da serra: o teste de costura exige isso deste nó.
+	var deck := LOOK_MESH.new(PackedFloat32Array())
+	deck.forced_segment = 0
+	_look_structure(look,deck,length)
+	for pier in piers: _look_pier(look,pier[0],pier[1],pier[2])
+	_look_rails(look)
+	_look_lamps(look)
+	var concrete := _look_concrete()
+	var settings := {
+		LOOK_MESH.CONCRETE: [concrete,true],
+		LOOK_MESH.STEEL: [_look_steel(),false],
+		LOOK_MESH.GLASS: [_lamp_glass(),false],
+	}
+	look.commit(self,"BridgeLook",settings)
+	var deck_meshes := deck.commit(self,"BridgeLookDeck",settings)
+	deck_meshes[0].name = "ContinuousBridgeDeck"
+
+func _look_structure(look: LOOK_MESH, deck: LOOK_MESH, length: float) -> void:
+	var c := LOOK_MESH.CONCRETE
+	# Encontros e tabuleiro do conector: mesmas caixas de antes, agora com o concreto.
+	look.box(c,Vector3((HARBOR_ABUTMENT_X+HARBOR_CONNECTOR_X)*.5,-.28,CENTER_Z),Vector3(HARBOR_CONNECTOR_X-HARBOR_ABUTMENT_X,.56,23.0),LOOK_ABUTMENT)
+	look.box(c,Vector3((HARBOR_CONNECTOR_X+SEAM.x)*.5,-.38,CENTER_Z),Vector3(SEAM.x-HARBOR_CONNECTOR_X,.76,22.0),LOOK_DECK)
+	look.box(c,Vector3((BRIDGE_END_X+TUNNEL_START_X)*.5,-.30,CENTER_Z),Vector3(TUNNEL_START_X-BRIDGE_END_X,.54,18.0),LOOK_ABUTMENT)
+	deck.box(c,Vector3((SEAM.x+BRIDGE_END_X)*.5,-.40,CENTER_Z),Vector3(length,.74,BRIDGE_HALF_WIDTH*2.0),LOOK_DECK)
+	for side in [-1.0,1.0]:
+		# Vigas longarinas: as duas de borda de antes e duas internas, que só a vista
+		# lateral mostra. Ficam todas sob o tabuleiro.
+		for offset in [BRIDGE_HALF_WIDTH-.6,2.2]:
+			deck.box(c,Vector3((SEAM.x+BRIDGE_END_X)*.5,-1.35,CENTER_Z+side*offset),Vector3(length,1.2,.9),LOOK_CAP)
+		for offset in [10.3,3.6]:
+			look.box(c,Vector3((HARBOR_CONNECTOR_X+SEAM.x)*.5,-1.35,CENTER_Z+side*offset),Vector3(SEAM.x-HARBOR_CONNECTOR_X,1.2,.9),LOOK_CAP)
+		# Fáscia: faixa clara na borda do tabuleiro, rente à calçada, com pingadeira (o
+		# dente embaixo) que corta a água e desenha a linha de sombra vista de longe.
+		var band := PackedVector2Array([Vector2(side*7.2,-.95),Vector2(side*7.42,-.95),Vector2(side*7.42,.07),Vector2(side*7.2,.07)])
+		var drip := PackedVector2Array([Vector2(side*7.32,-1.07),Vector2(side*7.42,-1.07),Vector2(side*7.42,-.95),Vector2(side*7.32,-.95)])
+		for profile in [band,drip]:
+			look.extrude(c,Vector3(SEAM.x,0,CENTER_Z),Vector3(BRIDGE_END_X,0,CENTER_Z),profile,LOOK_FASCIA,LOOK_JOINTS)
+		var connector_band := PackedVector2Array([Vector2(side*11.0,-.95),Vector2(side*11.2,-.95),Vector2(side*11.2,0),Vector2(side*11.0,0)])
+		var connector_drip := PackedVector2Array([Vector2(side*11.1,-1.07),Vector2(side*11.2,-1.07),Vector2(side*11.2,-.95),Vector2(side*11.1,-.95)])
+		for profile in [connector_band,connector_drip]:
+			look.extrude(c,Vector3(HARBOR_CONNECTOR_X,0,CENTER_Z),Vector3(SEAM.x,0,CENTER_Z),profile,LOOK_FASCIA,LOOK_JOINTS)
+		# Calçadas: a mesma forma chanfrada do corpo convexo, cortada no limite do trecho.
+		var inner: float = CENTER_Z+side*5.0
+		var outer: float = CENTER_Z+side*BRIDGE_HALF_WIDTH
+		_look_pavement(look,TRAFFIC_MERGE_X,LOOK_SEGMENT_CUT_X,inner,outer,true,false)
+		_look_pavement(look,LOOK_SEGMENT_CUT_X,BRIDGE_END_X,inner,outer,false,true)
+		look.polygon(c,PackedVector3Array([
+			Vector3(SEAM.x,.07,CENTER_Z+side*4.5),Vector3(TRAFFIC_MERGE_X,.07,CENTER_Z+side*5.0),
+			Vector3(TRAFFIC_MERGE_X,.07,CENTER_Z+side*BRIDGE_HALF_WIDTH),Vector3(SEAM.x,.07,CENTER_Z+side*6.5)]),Vector3.UP,LOOK_MARGIN,LOOK_SLABS)
+	# Travessas sob o tabuleiro ligando cada par de pilares: o vão passa a ter apoio visível.
+	for source_x in [7800.0,8360.0]:
+		deck.box(c,Vector3(source_x*UNIT,-2.25,CENTER_Z),Vector3(1.4,.6,16.4),LOOK_CAP)
+	for source_x in [6700.0,7040.0]:
+		look.box(c,Vector3(source_x*UNIT,-2.25,CENTER_Z),Vector3(1.4,.6,22.4),LOOK_CAP)
+
+## Faces visíveis da calçada; `bevel_start/end` = ponta de verdade (chanfrada), senão corte
+## interno entre trechos, sem face. A face externa fica atrás da fáscia e o fundo no tabuleiro.
+func _look_pavement(look: LOOK_MESH, x0: float, x1: float, inner_z: float, outer_z: float, bevel_start: bool, bevel_end: bool) -> void:
+	var c := LOOK_MESH.CONCRETE
+	var side := signf(outer_z-inner_z)
+	var shape := _pavement_shape(x0,x1,inner_z,outer_z,-.03,PAVEMENT_END_RUN if bevel_start else 0.0,PAVEMENT_END_RUN if bevel_end else 0.0)
+	var low: PackedVector3Array = shape[0]
+	var top: PackedVector3Array = shape[1]
+	var rise := PAVEMENT_UPPER-PAVEMENT_LOWER
+	look.forced_segment = look._segment((x0+x1)*.5)
+	look.polygon(c,top,Vector3.UP,LOOK_MARGIN,LOOK_SLABS)
+	look.polygon(c,PackedVector3Array([low[0],low[1],top[1],top[0]]),Vector3(0,PAVEMENT_EDGE_RUN,-side*rise).normalized(),LOOK_CURB,LOOK_JOINTS)
+	if bevel_start: look.polygon(c,PackedVector3Array([low[0],top[0],top[3],low[3]]),Vector3(-rise,PAVEMENT_END_RUN,0).normalized(),LOOK_MARGIN,LOOK_SLABS)
+	if bevel_end: look.polygon(c,PackedVector3Array([low[1],low[2],top[2],top[1]]),Vector3(rise,PAVEMENT_END_RUN,0).normalized(),LOOK_MARGIN,LOOK_SLABS)
+	look.forced_segment = -1
+
+## Pilar com forma: bloco de fundação largo na linha d'água, fuste chanfrado que afina até o
+## tabuleiro, fuste superior (a caixa de colisão de antes) e capitel com remate.
+func _look_pier(look: LOOK_MESH, top: Vector3, width: float, top_y: float) -> void:
+	var c := LOOK_MESH.CONCRETE
+	var water_y := HARBOR_OCEAN.surface_y(Vector2(top.x,top.z))
+	var water := Vector2(water_y,0.0)
+	var base := width+1.1
+	look.shaft(c,top,water_y-2.5,_oct(base,.28),water_y+.45,_oct(base,.28),LOOK_CAP,water,false,false)
+	look.shaft(c,top,water_y+.45,_oct(base,.28),water_y+.72,_oct(width+.45,.24),LOOK_CAP,water)
+	look.shaft(c,top,water_y+.72,_oct(width+.45,.24),-.03,_oct(width,.2),LOOK_PIER,water,false,false)
+	look.shaft(c,top,-.03,_oct(width,.2),top_y-.5,_oct(width-.14,.2),LOOK_PIER,water,false,false)
+	look.shaft(c,top,top_y-.5,_oct(width-.14,.2),top_y-.42,_oct(width+.2,.16),LOOK_CURB,water,false,false)
+	look.shaft(c,top,top_y-.42,_oct(width+.2,.16),top_y-.22,_oct(width+.2,.16),LOOK_CURB,water,false,false)
+	look.shaft(c,top,top_y-.22,_oct(width+.2,.16),top_y,_oct(width*.42,.16),LOOK_FASCIA,water)
+	_pier_foam(Vector3(top.x,water_y,top.z),base)
+
+static func _oct(size: float, chamfer: float) -> PackedVector2Array:
+	return LOOK_MESH.octagon(Vector2.ONE*size*.5,chamfer)
+
+func _pier_foam(water_point: Vector3, footing: float) -> void:
+	var foam := MeshInstance3D.new()
+	foam.name = "BridgePierFoam"
+	var quad := PlaneMesh.new()
+	quad.size = Vector2.ONE*(footing+PIER_FOAM_REACH*3.2)
+	foam.mesh = quad
+	foam.position = water_point+Vector3.UP*.02
+	foam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var key := "foam_%.2f" % footing
+	if not _look_materials.has(key):
+		var material := ShaderMaterial.new()
+		material.shader = PIER_FOAM
+		material.set_shader_parameter("half_size",Vector2.ONE*footing*.5)
+		material.set_shader_parameter("reach",PIER_FOAM_REACH)
+		_look_materials[key] = material
+	foam.material_override = _look_materials[key]
+	add_child(foam)
+
+## Linhas dos guarda-corpos (mesmas linhas das caixas de colisão), com a meia-espessura
+## da colisão: a face interna da mureta coincide com a face interna do corpo sólido.
+func _rail_lines() -> Array[Array]:
+	var lines: Array[Array] = []
+	for side in [-1.0,1.0]:
+		lines.append([Vector3(HARBOR_CONNECTOR_X,0,CENTER_Z+side*10.5),Vector3(SEAM.x,0,CENTER_Z+side*6.5),.10,side,0.0])
+		lines.append([Vector3(SEAM.x,0,CENTER_Z+side*6.5),Vector3(TRAFFIC_MERGE_X,0,CENTER_Z+side*BRIDGE_HALF_WIDTH),.10,side,PAVEMENT_LOWER])
+		lines.append([Vector3(TRAFFIC_MERGE_X,0,CENTER_Z+side*BRIDGE_HALF_WIDTH),Vector3(TUNNEL_START_X,0,CENTER_Z+side*BRIDGE_HALF_WIDTH),.09,side,PAVEMENT_LOWER])
+	return lines
+
+## Mureta de concreto com topo chanfrado, montantes a cada 2 m, dois tubos intermediários e
+## corrimão sextavado. Tudo dentro do volume da colisão de antes (0,09–1,27 m de altura).
+func _look_rails(look: LOOK_MESH) -> void:
+	for line in _rail_lines():
+		var a: Vector3 = line[0]
+		var b: Vector3 = line[1]
+		var inner: float = line[2]
+		var side: float = line[3]
+		var foot: float = line[4]
+		# Lateral do caminho é +z para +x; a face de dentro (pista) é -side.
+		var s := side
+		var curb := PackedVector2Array([Vector2(-s*inner,foot),Vector2(s*.2,foot),Vector2(s*.2,.45),Vector2(-s*(inner-.06),.45),Vector2(-s*inner,.39)])
+		look.extrude(LOOK_MESH.CONCRETE,a,b,curb,LOOK_CURB,LOOK_JOINTS)
+		var handrail := PackedVector2Array([Vector2(-.075,1.165),Vector2(-.035,1.27),Vector2(.035,1.27),Vector2(.075,1.165),Vector2(.035,1.13),Vector2(-.035,1.13)])
+		look.extrude(LOOK_MESH.STEEL,a,b,handrail,LOOK_RAIL)
+		for height in [.68,.92]:
+			look.extrude(LOOK_MESH.STEEL,a,b,PackedVector2Array([Vector2(-.03,height-.03),Vector2(.03,height-.03),Vector2(.03,height+.03),Vector2(-.03,height+.03)]),LOOK_RAIL)
+		var run := Vector2(b.x-a.x,b.z-a.z)
+		var count := maxi(1,roundi(run.length()/2.0))
+		for index in count+1:
+			var point := a.lerp(b,float(index)/count)
+			look.box(LOOK_MESH.STEEL,Vector3(point.x,.80,point.z),Vector3(.10,.70,.12),LOOK_POLE,-atan2(run.y,run.x))
+
+## Postes nas mesmas posições (a luz e o alcance de antes); só o desenho muda: base na mureta,
+## fuste, braço inclinado, luminária escura com o vidro aceso por baixo.
+func _look_lamps(look: LOOK_MESH) -> void:
+	for index in 7:
+		var x := 460.0+float(index)*19.0
+		var side := -1.0 if index%2==0 else 1.0
+		var rail_width := lerpf(6.5,BRIDGE_HALF_WIDTH,clampf((x-SEAM.x)/(TRAFFIC_MERGE_X-SEAM.x),0.0,1.0))
+		var rail_z := CENTER_Z+side*rail_width
+		look.box(LOOK_MESH.STEEL,Vector3(x,.49,rail_z),Vector3(.30,.08,.30),LOOK_POLE)
+		look.shaft(LOOK_MESH.STEEL,Vector3(x,0,rail_z),.45,LOOK_MESH.octagon(Vector2.ONE*.09,.3),4.22,LOOK_MESH.octagon(Vector2.ONE*.06,.3),LOOK_POLE)
+		look.extrude(LOOK_MESH.STEEL,Vector3(x,0,rail_z),Vector3(x,0,rail_z-side*.70),
+			PackedVector2Array([Vector2(-.04,4.16),Vector2(.04,4.16),Vector2(.04,4.24),Vector2(-.04,4.24)]),LOOK_POLE)
+		# A câmera do jogo vê o poste de cima: a borda acesa do vidro sai da carcaça, senão
+		# a luminária some à noite (a caixa clara de antes era o que marcava o poste).
+		look.box(LOOK_MESH.STEEL,Vector3(x,4.235,rail_z-side*.82),Vector3(.36,.07,.24),LOOK_HOUSING)
+		look.box(LOOK_MESH.GLASS,Vector3(x,4.165,rail_z-side*.82),Vector3(.46,.07,.34),Color.WHITE)
+		var lamp := OmniLight3D.new()
+		lamp.name = "BridgeNightLight"
+		lamp.position = Vector3(x,4.10,rail_z-side*.82)
+		lamp.light_color = Color("ffe4b5")
+		lamp.omni_range = 17.0
+		lamp.omni_attenuation = 1.45
+		lamp.shadow_enabled = false
+		lamp.light_energy = 0.0
+		add_child(lamp)
+		bridge_lamps.append(lamp)
+
+func _lamp_glass() -> StandardMaterial3D:
+	var glass := _material("bridge_lamp_glass",Color("dbc391"))
+	glass.emission_enabled = true
+	glass.emission = Color("d9b776")
+	glass.emission_energy_multiplier = 0.55
+	return glass
 
 static func _approach_centerlines() -> Array[PackedVector2Array]:
 	var outbound := PackedVector2Array()
