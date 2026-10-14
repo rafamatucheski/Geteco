@@ -97,6 +97,12 @@ func tick() -> void:
 	await physics_frame
 	car._stall_physics_tick(1.0/Engine.physics_ticks_per_second)
 
+## O trilho segue a cadência do LOD (até 4 passos longe): avança até o passo que o carro executa de fato.
+func tick_executed() -> void:
+	for attempt in 8:
+		await tick()
+		if car._lod_skipped <= 0: return
+
 func run() -> void:
 	if "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
 	if "--count-west" in OS.get_cmdline_user_args():
@@ -139,9 +145,11 @@ func run() -> void:
 	world.player.position = car.position+Vector3(20,0,0)
 	if RAILS.enabled: car._lod_pending = 3.0/60.0
 	var near_before := car.position
-	await tick()
+	await tick_executed()
 	check(not car.traffic_rails.active,"Aproximar jogador devolve física")
-	check(car.position.distance_to(near_before)<(.3 if RAILS.enabled else .5),"Retorno respeita o passo físico do modo selecionado")
+	# Desde o benchmark F (2026-10-13) o trilho anda na cadência do LOD antigo: o passo de retorno cobre os
+	# pulados, como no modo desligado. Avaliar todo passo custava ~4 ms com 37 carros.
+	check(car.position.distance_to(near_before)<.5,"Retorno respeita o passo físico do LOD")
 	if RAILS.enabled:
 		check(car._lod_pending == 0,"Retorno do trilho limpa tempo acumulado")
 	else:
@@ -234,63 +242,63 @@ func enabled_cases() -> void:
 	await reset_car()
 	world.player.position = Vector3(100,0,50)
 	test_camera.position = Vector3(100,3,50)
-	await tick()
+	await tick_executed()
 	check(not car.traffic_rails.active,"Carro visível a 50 m continua físico")
 	await reset_car()
 	world.player.position = Vector3(50,0,0)
 	test_camera.position = Vector3(50,3,0)
-	await tick()
+	await tick_executed()
 	check(car.traffic_rails.active,"Carro fora da tela a 50 m entra em trilho")
 	await reset_car()
 	world.player.position = Vector3(100,0,80)
 	test_camera.position = Vector3(100,3,80)
-	await tick()
+	await tick_executed()
 	check(car.traffic_rails.active,"Carro visível além de 70 m entra em trilho")
 	test_camera.position = Vector3.ZERO
 	await reset_car()
-	await tick()
+	await tick_executed()
 	check(car.traffic_rails.active,"Carro distante entra em trilho")
 	var neighbor := solid(car.position+Vector3(1.4,.7,0),Vector3(1,1,1),4)
 	var contact_position := car.position
-	await tick()
+	await tick_executed()
 	check(not car.traffic_rails.active and car.traffic_rails.force_physics,"Vizinho que pode esbarrar força física no mesmo passo")
 	check(car.position.x < contact_position.x-.02,"Solver físico resolve o esbarrão lateral real")
 	neighbor.free()
 	await reset_car()
-	await tick()
+	await tick_executed()
 	var incoming := RailCar.new()
 	world.add_child(incoming)
 	incoming.position = car.position+Vector3(12,0,0)
 	incoming.velocity = Vector3.LEFT*120
-	await tick()
+	await tick_executed()
 	check(not car.traffic_rails.active,"Veículo rápido vindo de fora da esfera também acorda o trânsito")
 	incoming.free()
 	await reset_car()
-	await tick()
+	await tick_executed()
 	var swapped_position := car.position
 	var replacement := car.route.duplicate() as Curve3D
 	car.route = replacement
 	car.traffic_rails.prepare(car,1.0/60.0)
 	check(not car.traffic_rails.active and car.position == swapped_position,"Troca de rota acorda sem reposicionar")
 	await reset_car()
-	await tick()
+	await tick_executed()
 	car.position.z -= 5.0
 	var relocated := car.position
 	car.traffic_rails.prepare(car,1.0/60.0)
 	check(not car.traffic_rails.active and car.position == relocated,"Reposicionamento externo não retorna ao ponto antigo do trilho")
 	await reset_car()
-	await tick()
+	await tick_executed()
 	car.controlled = true
 	car.external_input = true
 	car.traffic_rails.prepare(car,1.0/60.0)
 	check(not car.traffic_rails.active,"Condutor externo devolve física imediatamente")
 	await reset_car()
-	await tick()
+	await tick_executed()
 	var damage_position := car.position
 	var damage_velocity := car.horizontal_velocity
 	car.receive_damage(1)
 	check(not car.traffic_rails.active and car.position == damage_position and car.horizontal_velocity == damage_velocity,"Dano acorda imediatamente sem reposicionar ou perder velocidade")
-	await tick()
+	await tick_executed()
 	check(not car.traffic_rails.active,"Reação ao dano impede reentrada imediata")
 	car.engine_disabled = true
 	car.traffic_rails.wake(car)
@@ -299,32 +307,32 @@ func enabled_cases() -> void:
 	for key in ["mission_vehicle","dispatch_unit","race_owned","awaiting_ground","gang_hostile"]:
 		await reset_car()
 		car.set_meta(key,true)
-		await tick()
+		await tick_executed()
 		check(not car.traffic_rails.active,"Exclusão de "+key)
 	await reset_car()
 	car.remove_meta("ambient_traffic")
-	await tick()
+	await tick_executed()
 	check(car.traffic_rails == null,"Trânsito de atividade sem marca ambiente conserva física")
 	await reset_car()
 	car.position.z = -292
-	await tick()
+	await tick_executed()
 	check(not car.traffic_rails.active,"Fim de rota permanece físico para retorno")
 	await reset_car()
-	await tick()
+	await tick_executed()
 	world.gameplay._police_rounds.append({"point":car.position+Vector3(-10,.7,0),"direction":Vector3.RIGHT,"speed":100.0,"range":100.0,"distance":0.0})
-	await tick()
+	await tick_executed()
 	check(not car.traffic_rails.active,"Segmento de bala rápida acorda antes do contato")
 	await reset_car()
-	await tick()
+	await tick_executed()
 	var grenade := PROJECTILE.new()
 	grenade.set_physics_process(false)
 	world.gameplay.add_child(grenade)
 	grenade.position = car.position+Vector3(5,.1,0)
-	await tick()
+	await tick_executed()
 	check(not car.traffic_rails.active,"Granada sem corpo físico também força física")
 	grenade.free()
 	await reset_car()
-	await tick()
+	await tick_executed()
 	var tank := RailCar.new()
 	world.add_child(tank)
 	tank.position = Vector3(300,0,0)
@@ -332,14 +340,14 @@ func enabled_cases() -> void:
 	tank.add_child(cannon)
 	tank.tank_cannon = cannon
 	cannon.shells.append({"point":car.position+Vector3(-10,.7,0),"direction":Vector3.RIGHT,"remaining":100.0})
-	await tick()
+	await tick_executed()
 	check(not car.traffic_rails.active,"Projétil de tanque também acorda antes da explosão")
 	tank.free()
 	await reset_car()
-	await tick()
+	await tick_executed()
 	world.gameplay.aiming = true
 	world.gameplay.aim_point = car.position+Vector3.UP*.7
-	await tick()
+	await tick_executed()
 	check(not car.traffic_rails.active,"Veículo na linha de mira volta à física")
 	await reset_car()
 	var wall := solid(Vector3(100,1,-8),Vector3(8,2,1))
@@ -358,17 +366,17 @@ func enabled_cases() -> void:
 	var curve_error := 0.0
 	var curve_rails := 0
 	for step in 600:
-		await tick()
+		await tick_executed()
 		curve_error = maxf(curve_error,absf(Vector2(car.position.x-200,car.position.z+70).length()-40))
 		if car.traffic_rails.active: curve_rails += 1
 	check(curve_rails >= 590 and curve_error < .1,"Trilho segue curva suave sem cortar a rua")
 	check(car.route_distance > 40,"Carro avança normalmente pela curva fechada")
 	curved_ground.free()
 	await reset_car()
-	await tick()
+	await tick_executed()
 	var support := world.get_children().filter(func(node): return node is StaticBody3D)
 	for body in support: body.free()
-	await tick()
+	await tick_executed()
 	check(not car.traffic_rails.active,"Perda do chão devolve a física sem avançar no vazio")
 
 func count_west() -> void:

@@ -393,6 +393,18 @@ func should_sync_pose() -> bool:
 	_pose_lod_interval = interval
 	return _pose_lod_due
 
+## Estados em que pular quadro aparece ou quebra: jogador, impacto, queda, morte e combate.
+func _pose_strictly_live() -> bool:
+	if _hit != Vector2.ZERO or _hit_target != Vector2.ZERO or _hit_velocity != Vector2.ZERO: return true
+	if not is_instance_valid(_owner_actor): return false
+	if _owner_actor.get("is_player") == true or _owner_actor.get("dead") == true: return true
+	if _owner_actor.has_meta("street_down") or _owner_actor.has_meta("street_flying"): return true
+	if _owner_actor.get("combat_clip") is String and _owner_actor.get("combat_clip") != "": return true
+	var facing = _owner_actor.get("combat_facing")
+	if facing is float and not is_nan(facing): return true
+	var weapon_pose = _owner_actor.get("combat_weapon_pose")
+	return weapon_pose is Dictionary and not weapon_pose.is_empty()
+
 func _pose_requires_full_update() -> bool:
 	if not lod_enabled or activity == "talk" or hand_provider.is_valid(): return true
 	if hand_targets[0] is Vector3 or hand_targets[1] is Vector3: return true
@@ -407,7 +419,15 @@ func _pose_requires_full_update() -> bool:
 		or _owner_actor.has_meta("street_down") or _owner_actor.has_meta("street_flying")
 
 func _pose_update_interval() -> int:
-	if _pose_requires_full_update() or not is_inside_tree(): return 1
+	if not is_inside_tree() or _pose_strictly_live(): return 1
+	# Rotina, conversa, mão dirigida e controle automático voltam à cadência anterior à P3. Forçar todo
+	# quadro neles (38 de 46 corpos no oeste) custou ~2 ms a mais que o caminho antigo no benchmark F de 2026-10-13.
+	if _pose_requires_full_update():
+		var interval := _update_interval() if lod_enabled else 1
+		if interval > 1 and (hand_provider.is_valid() or hand_targets[0] is Vector3 or hand_targets[1] is Vector3):
+			var view := get_viewport().get_camera_3d()
+			if view != null and _pose_in_view(view): return 1
+		return interval
 	var view_camera := get_viewport().get_camera_3d()
 	if view_camera == null: return 1
 	if not _pose_in_view(view_camera): return 0

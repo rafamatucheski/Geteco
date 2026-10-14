@@ -16,6 +16,9 @@ const MEASURE_LOOPS := 2
 var label := "medicao"
 var no_reflections := false
 var no_shadows := false
+var hour := 12.0
+var rain := false
+var max_steps := 0
 var world: Variant
 
 func _initialize() -> void: run.call_deferred()
@@ -25,6 +28,9 @@ func _arguments() -> void:
 		if argument.begins_with("--label="): label = argument.trim_prefix("--label=")
 		if argument == "--sem-reflexos": no_reflections = true
 		if argument == "--sem-sombras": no_shadows = true
+		if argument.begins_with("--hora="): hour = float(argument.trim_prefix("--hora="))
+		if argument == "--chuva": rain = true
+		if argument.begins_with("--max-passos="): max_steps = int(argument.trim_prefix("--max-passos="))
 
 func _route_point(distance: float) -> Dictionary:
 	var lengths: Array[float] = []
@@ -61,10 +67,13 @@ func run() -> void:
 	# Sem v-sync nem limite de fps: com 60 Hz o tempo de quadro fica preso em 16,7 ms e esconde diferenças.
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = 0
-	# Condições fixas: meio-dia, céu limpo, sem troca de clima durante a rodada.
+	if max_steps > 0: Engine.max_physics_steps_per_frame = max_steps
+	# Condições fixas (meio-dia e céu limpo por padrão), sem troca de clima durante a rodada.
 	var weather: Variant = world.session.weather
-	weather.time_of_day = 12.0 / 24.0
-	if "weather_state" in weather: weather.weather_state = 0
+	weather.time_of_day = hour / 24.0
+	if "weather_state" in weather: weather.weather_state = 1 if rain else 0
+	if rain and "rain_intensity" in weather: weather.rain_intensity = .25
+	if rain and "coastal_wetness" in weather: weather.coastal_wetness = 1.0
 	if "weather_timer" in weather: weather.weather_timer = 1.0e9
 	var reflections := _reflection_node()
 	if no_reflections and reflections != null:
@@ -119,9 +128,9 @@ func run() -> void:
 		"label": label, "build": "editor" if OS.has_feature("editor") else ("export_release" if OS.has_feature("release") else "export_debug"),
 		"frames": frames.size(), "frame_ms": _stats(frames), "gpu_ms_total": _stats(gpu), "gpu_ms_main": _stats(gpu_main),
 		"draw_calls": _stats(draws), "primitives": _stats(primitives),
-		"settings": {"sem_reflexos": no_reflections, "sem_sombras": no_shadows, "args": OS.get_cmdline_user_args(),
-			"GETECO_BUILDING_BATCH": OS.get_environment("GETECO_BUILDING_BATCH"), "GETECO_PROP_INSTANCING": OS.get_environment("GETECO_PROP_INSTANCING"),
-			"GETECO_GROUND_STACK": OS.get_environment("GETECO_GROUND_STACK")},
+		"settings": {"sem_reflexos": no_reflections, "sem_sombras": no_shadows, "hora": hour, "chuva": rain, "max_passos_fisica": Engine.max_physics_steps_per_frame,
+			"motor_fisica": str(ProjectSettings.get_setting("physics/3d/physics_engine")),
+			"args": OS.get_cmdline_user_args(), "toggles": _toggles()},
 		"vehicles": world.production.vehicles.size(), "people": world.people.size(),
 		"scope": "circuito fixo no oeste a %.0f m/s, 1 volta de aquecimento e %d medidas; gpu_ms_total soma a tela e as vistas de reflexo" % [SPEED, MEASURE_LOOPS],
 	}
@@ -132,6 +141,14 @@ func run() -> void:
 	file.close()
 	print("BENCH_WEST ", JSON.stringify({"label": label, "frame_p50": report.frame_ms.p50, "frame_p95": report.frame_ms.p95, "gpu_total_p50": report.gpu_ms_total.p50, "gpu_main_p50": report.gpu_ms_main.p50, "draws_p50": report.draw_calls.p50, "frames": frames.size()}))
 	quit(0)
+
+func _toggles() -> Dictionary:
+	var result := {}
+	for name in ["GETECO_POP_VC", "GETECO_SUN_SHADOW_NEAR", "GETECO_TRAFFIC_RAILS", "GETECO_PED_POSE_LOD", "GETECO_LIGHT_BUDGET",
+			"GETECO_DETAIL_RANGE", "GETECO_BAKED_BUILDINGS", "GETECO_SKID_BUDGET", "GETECO_DASH_BATCH", "GETECO_DISPATCH_FAST", "GETECO_PED_DUMMY",
+			"GETECO_BUILDING_BATCH", "GETECO_PROP_INSTANCING", "GETECO_GROUND_STACK"]:
+		result[name] = OS.get_environment(name)
+	return result
 
 func _stats(values: Array[float]) -> Dictionary:
 	if values.is_empty(): return {}

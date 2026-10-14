@@ -25,6 +25,13 @@ const STEP := preload("res://gameplay/crowd/PedestrianStep3D.gd")
 ## delta acumulado. Mantém rota e posição coerentes e corta ~2/3 do custo de move_and_slide + pose de quem não se vê.
 const LOD_DISTANCE := 45.0
 const LOD_STRIDE := 3
+## Pedestre comum fora da tela anda a rota da calçada sem desvio, degrau nem move_and_slide, como o
+## "dummy" do reVC. Ao entrar na tela volta à física no mesmo passo. GETECO_PED_DUMMY=0 desliga.
+static var dummy_enabled := OS.get_environment("GETECO_PED_DUMMY") != "0"
+const DUMMY_VIEW_MARGIN := 3.0
+static var _dummy_frame := -1
+static var _dummy_camera: Camera3D
+static var _dummy_planes: Array[Plane] = []
 var _steering: RefCounted
 var _lod_delta := 0.0
 var outfit_id := "dante_classic"
@@ -199,6 +206,49 @@ func pedestrian_pose_requires_full_update() -> bool:
 		or has_meta("workplace_threatened") or has_meta("street_pose_owned") \
 		or has_meta("street_down") or has_meta("street_flying")
 
+func _can_walk_as_dummy() -> bool:
+	if is_player or route.size() < 2 or air_movement != null or not is_on_floor(): return false
+	if pedestrian_pose_requires_full_update() or has_meta(&"civilian_reaction_lod"): return false
+	var view_camera := get_viewport().get_camera_3d()
+	if view_camera == null: return false
+	if _dummy_frame != Engine.get_physics_frames() or _dummy_camera != view_camera:
+		_dummy_frame = Engine.get_physics_frames()
+		_dummy_camera = view_camera
+		_dummy_planes = view_camera.get_frustum()
+	# Fora da tela só quando o corpo inteiro, com margem, está além de algum plano do quadro.
+	var center := global_position + Vector3.UP
+	for plane in _dummy_planes:
+		if plane.distance_to(center) > DUMMY_VIEW_MARGIN: return true
+	return false
+
+func _walk_as_dummy(delta: float) -> void:
+	var previous := route[(waypoint - 1 + route.size()) % route.size()]
+	var target := STEERING.lane_point(previous, route[waypoint])
+	var offset := target - global_position
+	offset.y = 0
+	if offset.length() < 0.5:
+		waypoint = (waypoint + 1) % route.size()
+		previous = route[(waypoint - 1 + route.size()) % route.size()]
+		target = STEERING.lane_point(previous, route[waypoint])
+		offset = target - global_position
+		offset.y = 0
+	var distance := offset.length()
+	if distance < 0.001: return
+	var direction := offset / distance
+	var next := global_position + direction * minf(speed * delta, distance)
+	# Rampa ou escada da rota: acompanha a altura do trecho para não voltar à física enterrado.
+	var along := Vector3(target.x - previous.x, 0, target.z - previous.z)
+	if absf(target.y - previous.y) > 0.05 and along.length_squared() > 0.01:
+		var t := clampf(Vector3(next.x - previous.x, 0, next.z - previous.z).dot(along) / along.length_squared(), 0.0, 1.0)
+		next.y = lerpf(previous.y, target.y, t)
+	global_position = next
+	velocity = direction * speed
+	var displacement := global_position - last_position
+	displacement.y = 0
+	travelled += displacement.length()
+	last_position = global_position
+	visual.rotation.y = atan2(-direction.x, -direction.z)
+
 func _physics_process(delta: float) -> void:
 	var began := STALL_WORK.begin()
 	_stall_physics_tick(delta)
@@ -220,6 +270,9 @@ func _stall_physics_tick(delta: float) -> void:
 	# Inclui a saída do LOD por outro dono de controle/câmera próxima; não deixa
 	# delta antigo reaparecer quando esse civil voltar a ficar distante.
 	_lod_delta = 0.0
+	if dummy_enabled and _can_walk_as_dummy():
+		_walk_as_dummy(delta)
+		return
 	var direction := Vector3.ZERO
 	var target_speed := speed
 	if controlled_automatically:

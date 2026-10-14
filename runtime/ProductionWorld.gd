@@ -24,8 +24,12 @@ static var population_vc_enabled := OS.get_environment("GETECO_POP_VC") != "0"
 static var sun_shadow_near_enabled := OS.get_environment("GETECO_SUN_SHADOW_NEAR") != "0"
 const VC_MAX_POPULATION := 25
 const VC_TRAFFIC_TARGET := 16
-const VC_PEDESTRIAN_VISIBLE_DISTANCE := 55.0
-const VC_PEDESTRIAN_HIDDEN_DISTANCE := 30.0
+# Os 51/25 m do reVC valem para a câmera baixa em perspectiva dele. A nossa fica a ~30 m de altura e,
+# no ultrawide, quase tudo até 30 m do carro está na tela: com 30 m fora da tela não sobrava anel de
+# admissão e o benchmark F (2026-10-13) terminava com 3 pedestres. Por isso o anel acompanha o quadro.
+const VC_PEDESTRIAN_VISIBLE_DISTANCE := 95.0
+const VC_PEDESTRIAN_HIDDEN_DISTANCE := 60.0
+const VC_PEDESTRIAN_SPAWN_MAX := 55.0
 var _pedestrian_review_cursor := 0
 var _pedestrian_review_credit := 0.0
 var _p1_count_started := false
@@ -1479,7 +1483,7 @@ func _wreck_expired(car: Node) -> bool:
 func _spawn_point_allowed(point: Vector3, radius: float, minimum := POPULATION_SPAWN_MIN) -> bool:
 	var distance := Vector2(point.x-world.player.global_position.x,point.z-world.player.global_position.z).length()
 	# Pedestres comuns usam raio 1; carros mantêm o anel original de admissão.
-	var maximum := VC_PEDESTRIAN_HIDDEN_DISTANCE if population_vc_enabled and radius <= 1.0 else POPULATION_SPAWN_MAX
+	var maximum := VC_PEDESTRIAN_SPAWN_MAX if population_vc_enabled and radius <= 1.0 else POPULATION_SPAWN_MAX
 	return distance >= minimum and distance <= maximum and not _on_screen(point,radius)
 
 func road_yaw(point: Vector3) -> float:

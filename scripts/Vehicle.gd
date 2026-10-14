@@ -415,23 +415,26 @@ func _stall_physics_tick(delta: float) -> void:
 	if resting:
 		if traffic_rails != null and traffic_rails.active: traffic_rails.wake(self)
 		return
-	# Acordar antes do LOD permite responder a contato sem esperar quatro passos.
 	var rail_drive := false
 	var rail_wake := false
-	if TRAFFIC_RAILS.enabled or traffic_rails != null:
-		if traffic_rails == null and traffic and get_meta("ambient_traffic",false):
-			traffic_rails = TRAFFIC_RAILS.new()
-		if traffic_rails != null:
-			rail_drive = traffic_rails.prepare(self,delta)
-			rail_wake = traffic_rails.force_physics
+	if TRAFFIC_RAILS.enabled and traffic_rails == null and traffic and get_meta("ambient_traffic",false):
+		traffic_rails = TRAFFIC_RAILS.new()
 	stage = STALL_WORK.begin()
-	var lod := 1.0 if rail_drive or rail_wake else _lod_gate(delta)
-	if rail_drive or rail_wake:
+	# O trilho segue a mesma cadência do LOD: o passo executado cobre os pulados. Avaliar o trilho
+	# todo passo (motorista, sensores e vizinhos em n²) custou ~4 ms com 37 carros no benchmark F
+	# (2026-10-13), mais que o LOD antigo que ele substituía. Dano e contato acordam com wake().
+	var lod := 1.0
+	if traffic_rails != null and traffic_rails.force_physics_pending():
 		_lod_pending = 0.0
 		_lod_skipped = -1
+	else:
+		lod = _lod_gate(delta)
 	STALL_WORK.finish_slow("vehicle.lod", stage, 5000, self)
 	if lod == 0.0: return
 	delta *= lod
+	if traffic_rails != null:
+		rail_drive = traffic_rails.prepare(self,delta)
+		rail_wake = traffic_rails.force_physics
 	if health <= 0:
 		controlled = false
 		traffic = false

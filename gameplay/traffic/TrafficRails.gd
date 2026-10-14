@@ -25,6 +25,10 @@ static var _hazard_frame := -1
 static var _hazard_world: Node
 static var _hazards: Array[Dictionary] = []
 static var _moving_neighbors: Array[Dictionary] = []
+## Grade de 16 m dos vizinhos, montada uma vez por passo: cada carro só testa as células em volta,
+## como as listas por setor do reVC. O laço sobre todos os carros era n² por passo.
+const NEIGHBOR_CELL := 16.0
+static var _neighbor_grid := {}
 static var _view_frame := -1
 static var _camera: Camera3D
 static var _planes: Array[Plane] = []
@@ -38,6 +42,10 @@ func wake(car: CharacterBody3D, cooldown := 0.5) -> void:
 	car._lod_skipped = -1
 	# Não corrigir posição nem projetar velocidade: o contato recebe o mesmo estado.
 	car._invalidate_route_projection()
+
+## Acordado por dano/contato: o próximo passo é físico e não espera a cadência do LOD.
+func force_physics_pending() -> bool:
+	return _wake_pending
 
 func _eligible(car: CharacterBody3D) -> bool:
 	if not enabled or not car.traffic or car.controlled or car.external_input or car.health <= 0 or car.engine_disabled or car.input_locked: return false
@@ -114,7 +122,8 @@ func _tangent(offset: float, length: float) -> Vector3:
 	return direction.normalized()
 
 func advance(car: CharacterBody3D, delta: float) -> bool:
-	if not active or not _eligible(car) or car.route != _route or _danger(car,delta):
+	# prepare() acabou de testar o perigo neste mesmo passo; repetir dobrava o laço sobre os vizinhos.
+	if not active or not _eligible(car) or car.route != _route:
 		wake(car)
 		return false
 	var length := _route.get_baked_length()
@@ -195,7 +204,7 @@ func _danger(car: CharacterBody3D, delta: float) -> bool:
 	if not car.get_world_3d().direct_space_state.intersect_shape(_neighbors,1).is_empty(): return true
 	_cache_hazards(car,delta)
 	var center: Vector3 = car.global_position+Vector3.UP*car.body_height*.5
-	for neighbor in _moving_neighbors:
+	for neighbor in _nearby_neighbors(center,own_radius):
 		if neighbor.id == car.get_instance_id(): continue
 		var closest := Geometry3D.get_closest_point_to_segment(center,neighbor.a,neighbor.b)
 		var radius: float = own_radius+neighbor.radius
@@ -221,6 +230,7 @@ static func _cache_hazards(car: CharacterBody3D, delta: float) -> void:
 	_hazard_world = world
 	_hazards.clear()
 	_moving_neighbors.clear()
+	_neighbor_grid.clear()
 	var horizon := delta+.1
 	var gameplay: Variant = world.get("gameplay") if world != null else null
 	if is_instance_valid(gameplay):
@@ -237,8 +247,30 @@ static func _cache_hazards(car: CharacterBody3D, delta: float) -> void:
 		if vehicle is CharacterBody3D and vehicle.get("half_length") != null and (vehicle.collision_layer & 6) != 0 and (not is_instance_valid(vehicle.shape) or not vehicle.shape.disabled):
 			var center: Vector3 = vehicle.global_position+Vector3.UP*float(vehicle.body_height)*.5
 			var radius := Vector2(vehicle.half_width,vehicle.half_length).length()
-			_moving_neighbors.append({"id":vehicle.get_instance_id(),"a":center,"b":center+vehicle.velocity*horizon,"radius":radius})
+			var entry := {"id":vehicle.get_instance_id(),"a":center,"b":center+vehicle.velocity*horizon,"radius":radius}
+			_moving_neighbors.append(entry)
+			# O segmento inteiro entra em todas as células que ele cobre, com o raio do casco.
+			var low := Vector2(minf(entry.a.x,entry.b.x)-radius,minf(entry.a.z,entry.b.z)-radius)
+			var high := Vector2(maxf(entry.a.x,entry.b.x)+radius,maxf(entry.a.z,entry.b.z)+radius)
+			for cx in range(floori(low.x/NEIGHBOR_CELL),floori(high.x/NEIGHBOR_CELL)+1):
+				for cz in range(floori(low.y/NEIGHBOR_CELL),floori(high.y/NEIGHBOR_CELL)+1):
+					var key := Vector2i(cx,cz)
+					if not _neighbor_grid.has(key): _neighbor_grid[key] = []
+					_neighbor_grid[key].append(entry)
 		var cannon: Variant = vehicle.get("tank_cannon")
 		if not is_instance_valid(cannon): continue
 		for shell in cannon.shells:
 			_hazards.append({"a":shell.point,"b":shell.point+shell.direction*minf(80.0*horizon,shell.remaining),"radius":5.0})
+
+## Vizinhos cujas células cruzam a esfera do carro; um vizinho em várias células aparece uma vez.
+static func _nearby_neighbors(center: Vector3, own_radius: float) -> Array:
+	var reach := own_radius+8.0
+	var result := []
+	var seen := {}
+	for cx in range(floori((center.x-reach)/NEIGHBOR_CELL),floori((center.x+reach)/NEIGHBOR_CELL)+1):
+		for cz in range(floori((center.z-reach)/NEIGHBOR_CELL),floori((center.z+reach)/NEIGHBOR_CELL)+1):
+			for entry in _neighbor_grid.get(Vector2i(cx,cz),[]):
+				if seen.has(entry.id): continue
+				seen[entry.id] = true
+				result.append(entry)
+	return result
