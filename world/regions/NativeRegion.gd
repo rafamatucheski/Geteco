@@ -1058,6 +1058,7 @@ func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
 					_apply_night_lights(chunk)
 				job.stage = 4
 				chunk.set_meta("vegetation_ready_frame", Engine.get_physics_frames())
+				if region_id == "harbor": preload("res://world/chunk_shadow/ChunkShadowShell.gd").schedule(chunk)
 			_: return true
 		if Time.get_ticks_usec()-began >= budget_usec: return int(job.stage) >= 4
 	return true
