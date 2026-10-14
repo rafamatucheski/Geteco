@@ -43,8 +43,6 @@ func _box(label: String, center: Vector3, size: Vector3, hex: String) -> MeshIns
 	item.mesh = mesh
 	item.position = center
 	item.material_override = _material(hex)
-	if label == "NorthbankPromenade":
-		item.material_override = preload("res://world/urban_detail/PromenadePaving.gd").material(Color("b6b0a0"), true)
 	add_child(item)
 	return item
 
@@ -75,15 +73,7 @@ func _disc(label: String, center: Vector3, radius: float, height: float, hex: St
 	return item
 
 func _build_union_plaza() -> void:
-	# Rect2(1440,1740,620,330), centred around the fountain anchor. Na V1 as ruas
-	# eram pintadas por cima da praça; aqui a laje (topo 0.036) ficava acima do
-	# asfalto (0.026) e transformava a medical_garden_lane (z local 9.375) e a borda
-	# da union_avenue em calçada. A praça termina onde começa a calçada delas.
-	_box("UnionPlazaPaving", Vector3(1.3125, 0.018, -0.90625), Vector3(36.125, 0.036, 10.0625), "aaa9a1")
-	for x in range(-15, 19, 3):
-		_box("UnionPlazaJoint", Vector3(float(x), 0.041, -0.90625), Vector3(0.025, 0.012, 9.7), "8e8d86")
-	for z in range(-5, 4, 3):
-		_box("UnionPlazaJoint", Vector3(1.3125, 0.041, float(z)), Vector3(35.7, 0.012, 0.025), "8e8d86")
+	# HarborUrbanSurface3D owns the entire court and its aligned joints.
 	# V1 radii 60/51/40/13 px converted by 16 px/m.
 	_disc("UnionFountainBasin", Vector3(0, 0.30, 0), 3.75, 0.60, "7b8078", true)
 	_disc("UnionFountainPedestal", Vector3(0, 0.93, 0), 0.81, 0.62, "c4c4ad", true)
@@ -94,23 +84,17 @@ func _build_union_plaza() -> void:
 	add_child(piano)
 
 func _build_foundry_courtyard() -> void:
-	# Anchor is the shared courtyard centre; preserve the V1 stone/garden split.
-	_box("FoundryCourtyardStone", Vector3(-0.94, 0.018, -2.97), Vector3(28.125, 0.036, 6.25), "b5ad9a")
-	_box("FoundryGardenBed", Vector3(-5.94, 0.055, -2.81), Vector3(13.75, 0.11, 4.375), "445d4b")
-	_box("FoundryGardenPath", Vector3(-11.72, 0.075, -2.97), Vector3(0.94, 0.05, 5.31), "c5bcab")
+	# Garden and courtyard share the district's single surface, including edging.
 	_bench(Vector3(-17.5, 0.08, -4.69), 0.0)
 	_bench(Vector3(-9.38, 0.08, -4.69), 0.0)
 	_disc("FoundryBirdbathBase", Vector3(-11.75, 0.28, -3.125), 0.44, 0.50, "8c8577")
 	_disc("FoundryBirdbathWater", Vector3(-11.75, 0.55, -3.125), 0.31, 0.04, "48818a")
-	_box("FoundryPassage", Vector3(-6.69, 0.018, -13.91), Vector3(1.5, 0.036, 14.69), "a8a18e")
-	_box("FoundryServiceYard", Vector3(7.69, 0.018, 3.59), Vector3(25.25, 0.036, 6.56), "5c605f")
 	_service_box("FoundryDumpsterGreen", Vector3(5.75, 0.55, 2.38), Vector3(2.75, 1.1, 1.63), "3d5e4a")
 	_service_box("FoundryDumpsterBlue", Vector3(8.94, 0.55, 2.38), Vector3(2.5, 1.1, 1.63), "385369")
 	_service_box("FoundryHVAC0", Vector3(11.75, 0.42, 2.31), Vector3(1.63, 0.84, 1.38), "8b9390")
 	_service_box("FoundryHVAC1", Vector3(13.75, 0.42, 2.31), Vector3(1.63, 0.84, 1.38), "8b9390")
 	_service_box("FoundryPallets", Vector3(2.44, 0.24, 2.56), Vector3(1.75, 0.48, 1.63), "765139")
 	_box("FoundryDrain", Vector3(-3.44, 0.055, 4.56), Vector3(1.25, 0.05, 1.0), "181a1c")
-	_box("AnchorCafeTerrace", Vector3(-14.0, 0.025, 17.75), Vector3(13.125, 0.05, 1.75), "a97155")
 	_box("AnchorCafePlanterWest", Vector3(-18.5, 0.24, 18.56), Vector3(3.38, 0.48, 0.38), "497552")
 	_box("AnchorCafePlanterEast", Vector3(-9.75, 0.24, 18.56), Vector3(3.38, 0.48, 0.38), "497552")
 
@@ -120,8 +104,7 @@ func _service_box(label: String, center: Vector3, size: Vector3, hex: String) ->
 		preload("res://gameplay/street_physics/FragileProps3D.gd").register_node("dumpster" if "Dumpster" in label else "pallet",prop,self)
 
 func _build_promenade(east: bool) -> void:
-	var span_center_x := -1.25 if not east else -2.5
-	_box("NorthbankPromenade", Vector3(span_center_x, 0.018, 0), Vector3(66.25, 0.036, 10.625), "d0c4a7")
+	# No independent promenade plate: the district pavement reaches the quay.
 	if not east:
 		_planter(Vector3(-39.06, 0.22, 0), Vector2(7.81, 4.06), 0)
 		_planter(Vector3(-5.78, 0.22, 0), Vector2(9.69, 3.88), 1)

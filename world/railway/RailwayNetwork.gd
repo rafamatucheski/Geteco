@@ -12,7 +12,7 @@ static var _edge_cache: Array[Dictionary] = []
 static func stations() -> Array[Dictionary]:
 	if _station_cache.is_empty():
 		_station_cache = [
-			_station("harbor_central", "Harbor Central", Vector3(145,12,67), "harbor", 1.0),
+			_station("harbor_central", "Harbor Central", Vector3(-12,12,52), "harbor", -1.0),
 			_station("harbor_north", "Northgate", Vector3(386,12,-179), "harbor", -1.0),
 			_station("mountain_pines", "Pinhais", Vector3(730,12,-402), "mountain", -1.0),
 			_station("desert_copper", "Cobre", Vector3(-72,12,-925), "desert", -1.0),
@@ -34,6 +34,34 @@ static func get_station(id: String) -> Dictionary:
 	for station in stations():
 		if station.id == id: return station
 	return {}
+
+static func ground_landing_rect(id: String) -> Rect2:
+	var station := get_station(id)
+	if station.is_empty(): return Rect2()
+	var center: Vector2=Vector2(station.position.x,station.position.z)+Vector2(float(station.side)*10.65,11.5)
+	return Rect2(center-Vector2(2.8,2.75),Vector2(5.6,5.5))
+
+## On-foot restore only: old elevated platform/stair saves go to the new
+## supported entrance. Do not apply this to vehicles or arbitrary Harbor roofs.
+static func restore_harbor_pedestrian(point: Vector3) -> Vector3:
+	if point.y<.5: return point
+	var p := Vector2(point.x-145,point.z-67)
+	var floor_y := TRACK_HEIGHT+PLATFORM_HEIGHT
+	var rise := floor_y/3.0
+	if Rect2(2,-17,4.8,34).has_point(p) and absf(point.y-floor_y)<.35:
+		return get_station("harbor_central").entry
+	for deck in [[rise,-5.5],[rise*2,11.5],[floor_y,-5.5]]:
+		if Rect2(7.9,float(deck[1])-1.5,5.5,3).has_point(p) and absf(point.y-float(deck[0]))<.35:
+			return get_station("harbor_central").entry
+	if Rect2(4,-6.85,8,2.7).has_point(p) and absf(point.y-floor_y)<.35:
+		return get_station("harbor_central").entry
+	for index in 3:
+		var x := 12.0 if index!=1 else 9.3
+		if absf(p.x-x)>1.06 or p.y< -4.0 or p.y>10.0: continue
+		var fraction := inverse_lerp(10.0,-4.0,p.y) if index!=1 else inverse_lerp(-4.0,10.0,p.y)
+		if absf(point.y-rise*(index+fraction))<.35:
+			return get_station("harbor_central").entry
+	return point
 
 static func nearest_station(point: Vector3, radius: float = 8.0) -> Dictionary:
 	var result := {}
@@ -71,7 +99,7 @@ static func edges() -> Array[Dictionary]:
 	if not _edge_cache.is_empty(): return _edge_cache.duplicate(true)
 	_edge_cache = [
 		_edge("harbor_viaduct", "harbor_central", "harbor_north", [
-			Vector3(145,12,67), Vector3(145,12,25), Vector3(260,14,25),
+			Vector3(-12,12,52), Vector3(-12,12,20), Vector3(260,14,20),
 			Vector3(260,14,-125), Vector3(386,12,-125), Vector3(386,12,-179)]),
 		_edge("north_east", "harbor_north", "junction_east", [
 			Vector3(386,12,-179), Vector3(386,12,-209), Vector3(403,14,-238), Vector3(420,14,-245)]),

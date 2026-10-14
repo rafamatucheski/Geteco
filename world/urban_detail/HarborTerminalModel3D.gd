@@ -8,6 +8,8 @@ class_name HarborTerminalModel3D
 const PPM := 18.0
 const FLOOR_Y := 0.76822128
 const COACH_CENTERS := [-141.0, -41.0, 59.0, 159.0]
+const GROUND_CUT := preload("res://world/urban_detail/GroundCut.gd")
+var _ground_slabs: Array[MeshInstance3D] = []
 
 var solids: Array[Dictionary] = []
 var materials: Dictionary = {}
@@ -44,6 +46,7 @@ func _ready() -> void:
 	_build_platforms()
 	_build_guardhouse()
 	_build_floodlights()
+	_compose_ground()
 	
 	# Generate native box collision shapes for all authored solids
 	_generate_collisions()
@@ -242,7 +245,60 @@ func _generate_collisions() -> void:
 		collision_body.add_child(col)
 
 func _slab(rect: Rect2, s_height: float, thickness: float, mat_name: String) -> MeshInstance3D:
-	return _box_at(rect.get_center(), s_height, Vector3(rect.size.x / PPM, thickness, rect.size.y / (PPM * FLOOR_Y)), mat_name)
+	var slab := _box_at(rect.get_center(), s_height, Vector3(rect.size.x / PPM, thickness, rect.size.y / (PPM * FLOOR_Y)), mat_name)
+	if mat_name in ["asphalt","concrete"] and s_height < .2: _ground_slabs.append(slab)
+	return slab
+
+## Preserve every terminal anchor and raised platform side; only remove
+## horizontal ground hidden by another slab, including the two asphalt aprons.
+func _compose_ground() -> void:
+	_ground_slabs.sort_custom(func(a,b): return a.position.y+a.mesh.get_aabb().end.y>b.position.y+b.mesh.get_aabb().end.y)
+	var cover: Array[Rect2] = []
+	for slab in _ground_slabs:
+		var bounds := slab.mesh.get_aabb()
+		var rect := Rect2(Vector2(slab.position.x+bounds.position.x,slab.position.z+bounds.position.z),Vector2(bounds.size.x,bounds.size.z))
+		# Every apron is axis aligned. Rectangular subtraction preserves the
+		# original boundary coordinates; polygon boolean quantization otherwise
+		# leaves hairline slivers against the unquantized neighbouring slab.
+		var pieces: Array[Rect2] = [rect]
+		for owner in cover:
+			var next: Array[Rect2] = []
+			for piece in pieces: next.append_array(_outside_rect(piece,owner))
+			pieces = next
+		var local: Array[PackedVector2Array] = []
+		for piece in pieces:
+			var points := PackedVector2Array()
+			for point in GROUND_CUT.rect_polygon(piece): points.append(point-Vector2(slab.position.x,slab.position.z))
+			local.append(points)
+		var mesh := GROUND_CUT.flat_mesh(local,bounds.end.y,1.0)
+		if mesh == null: mesh = ArrayMesh.new()
+		var faces := slab.mesh.get_faces()
+		var sides := PackedVector3Array()
+		var normals := PackedVector3Array()
+		for i in range(0,faces.size(),3):
+			var normal := (faces[i+1]-faces[i]).cross(faces[i+2]-faces[i]).normalized()
+			if absf(normal.y)>.01: continue
+			for j in 3:
+				sides.append(faces[i+j])
+				normals.append(-normal)
+		if not sides.is_empty():
+			var arrays := []
+			arrays.resize(Mesh.ARRAY_MAX)
+			arrays[Mesh.ARRAY_VERTEX] = sides
+			arrays[Mesh.ARRAY_NORMAL] = normals
+			mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
+		slab.mesh = mesh
+		cover.append(rect)
+
+func _outside_rect(rect: Rect2, owner: Rect2) -> Array[Rect2]:
+	var overlap := rect.intersection(owner)
+	if not overlap.has_area(): return [rect]
+	var result: Array[Rect2] = []
+	if overlap.position.y>rect.position.y: result.append(Rect2(rect.position,Vector2(rect.size.x,overlap.position.y-rect.position.y)))
+	if overlap.end.y<rect.end.y: result.append(Rect2(rect.position.x,overlap.end.y,rect.size.x,rect.end.y-overlap.end.y))
+	if overlap.position.x>rect.position.x: result.append(Rect2(rect.position.x,overlap.position.y,overlap.position.x-rect.position.x,overlap.size.y))
+	if overlap.end.x<rect.end.x: result.append(Rect2(overlap.end.x,overlap.position.y,rect.end.x-overlap.end.x,overlap.size.y))
+	return result
 
 func _box_at(point: Vector2, box_y: float, size: Vector3, mat_name: String) -> MeshInstance3D:
 	var instance := MeshInstance3D.new()

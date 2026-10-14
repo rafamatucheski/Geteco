@@ -67,8 +67,14 @@ static func _normal(terrain: RefCounted, edge: Dictionary, along: float, fractio
 static func _material() -> StandardMaterial3D:
 	if _rock == null:
 		_rock = preload("res://world/urban_detail/HarborGrassTufts.gd").ground_material("gravel").duplicate() as StandardMaterial3D
+		# Cascalho do porto lia como feltro cinza nos taludes da ponte: mapa de granito com
+		# relevo, em tile de 3 m, mantendo o tom (o vertex color continua tingindo).
+		var surfaces := preload("res://assets/urban_detail/UrbanSurfaces.gd")
+		surfaces.detail(_rock, "granite", 3.0, 1.4)
+		var tint := Color("b3bfc0")
+		var gain: float = _rock.albedo_color.r
 		_rock.vertex_color_use_as_albedo = true
-		_rock.albedo_color = Color("b3bfc0")
+		_rock.albedo_color = Color(minf(tint.r * gain, 1.0), minf(tint.g * gain, 1.0), minf(tint.b * gain, 1.0))
 		_rock.roughness = 1.0
 		_rock.metallic_specular = .10
 	return _rock

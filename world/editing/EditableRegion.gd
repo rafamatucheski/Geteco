@@ -112,6 +112,11 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 			PIECES.apply(node,_piece_changes,ground)
 			# A própria peça do registro pode ter sido excluída (apply a libera).
 			if is_instance_valid(node): PIECES.filter_record(node,record)
+	if record.kind == "harbor_dressing" and record.get("zone_id","") == "cobra":
+		for node in chunk.get_children().slice(first_child):
+			if is_instance_valid(node) and node.has_method("finalize_ground"):
+				node.set_meta("harbor_ground_fill_reservation",not record.has("editor_piece_only"))
+				node.finalize_ground()
 
 func _building(chunk: Node3D, data: Dictionary) -> void:
 	var before := chunk.get_child_count()

@@ -80,6 +80,8 @@ var mountain_night_level := 0.0
 var harbor_road_geometry: HARBOR_ROAD_GEOMETRY
 var harbor_urban_surface: HARBOR_URBAN_SURFACE
 var harbor_ocean: RefCounted
+var harbor_dressing_ground: Array[PackedVector2Array] = []
+var harbor_facade_ground: Array[PackedVector2Array] = []
 var coastal_protection: RefCounted
 var spawn_position: Vector3:
 	get: return CATALOG._at(Vector2(715,1800) if region_id == "harbor" else Vector2(3260,400),region_id)
@@ -237,6 +239,14 @@ func _notification(what: int) -> void:
 
 func _cell(point: Vector3) -> Vector2i: return Vector2i(floori(point.x/CELL),floori(point.z/CELL))
 func _record(point: Vector3, item: Dictionary) -> void:
+	if region_id == "harbor":
+		var kind: String = item.get("kind","")
+		var skate_layout := preload("res://activities/skate/SkateParkLayout.gd")
+		if kind == "tree" and skate_layout.reserved(Vector2(point.x,point.z),3.5): return
+		if kind == "harbor_prop":
+			var prop_kind: String = item.get("data",{}).get("kind","")
+			var clearance := 3.5 if prop_kind == "tree" else (2.4 if prop_kind == "bench" else 1.2)
+			if skate_layout.reserved(Vector2(point.x,point.z),clearance): return
 	if region_id == "harbor" and item.get("kind","") == "tree" and preload("res://runtime/FishingLocation.gd").reserved(Vector2(point.x,point.z),2.0): return
 	if region_id == "harbor" and item.get("kind","") == "tree" and preload("res://world/places/amusement_park/AmusementParkLayout.gd").reserved(Vector2(point.x,point.z),3.5): return
 	var key := _cell(point)
@@ -368,6 +378,13 @@ func _prepare() -> void:
 		harbor_road_geometry.configure(roads)
 		harbor_urban_surface = HARBOR_URBAN_SURFACE.new()
 		harbor_urban_surface.configure()
+		harbor_facade_ground = preload("res://world/urban_detail/HarborFacadeGround.gd").footprints()
+		harbor_dressing_ground.clear()
+		for cell_records in records.values():
+			for record in cell_records:
+				if record.get("kind","") == "harbor_dressing":
+					var origin: Vector3 = record.position
+					harbor_dressing_ground.append_array(HARBOR_DRESSING.ground_footprints(record.zone_id,Vector2(origin.x,origin.z)))
 		harbor_ocean = preload("res://world/regions/HarborOcean.gd").new()
 		harbor_ocean.configure(source_data.harbor_land,extra_land)
 		coastal_protection = preload("res://world/regions/CoastalProtection.gd").new()
@@ -1088,26 +1105,47 @@ func _build_surfaces(chunk: Node3D, rect: Rect2, key: Vector2i) -> void:
 		if harbor_road_geometry != null:
 			harbor_road_geometry.build_chunk(chunk,rect)
 			ground_cover.append_array(harbor_road_geometry.chunk_cover)
-		var road_cover := ground_cover.duplicate()
+			# The opaque earth-to-grass strip already supplies its own finish.
+			# Reserve only the actual clipped triangles, never their bounding box.
+			var chunk_outline := GROUND_CUT.rect_polygon(rect)
+			for triangle in harbor_road_geometry._earth_verge_triangles:
+				if not GROUND_CUT.bounds(triangle.points).intersects(rect): continue
+				ground_cover.append_array(Geometry2D.intersect_polygons(triangle.points,chunk_outline))
+		for footprint in harbor_facade_ground:
+			if GROUND_CUT.bounds(footprint).intersects(rect): ground_cover.append(footprint)
+		for footprint in harbor_dressing_ground:
+			if GROUND_CUT.bounds(footprint).intersects(rect): ground_cover.append(footprint)
+		# Santa Mare owns the visible deck. Land and authored surfaces keep their
+		# colliders, but must not render a second floor underneath the ship.
+		var santa_deck := PackedVector2Array()
+		for point in SOUTH_PORT_LAYOUT.ship_hull(): santa_deck.append(point*SCALE)
+		if GROUND_CUT.bounds(santa_deck).intersects(rect): ground_cover.append(santa_deck)
+		for footprint in CEMETERY.path_footprints(CEMETERY.SOURCE_CENTER*SCALE):
+			if GROUND_CUT.bounds(footprint).intersects(rect): ground_cover.append(footprint)
 		if harbor_urban_surface != null:
-			for lot in harbor_urban_surface.build_chunk(chunk,rect,road_cover): ground_cover.append(GROUND_CUT.rect_polygon(lot))
+			for lot in harbor_urban_surface.build_chunk(chunk,rect,ground_cover): ground_cover.append(GROUND_CUT.rect_polygon(lot))
 		var port_land := Rect2(SOUTH_PORT_LAYOUT.LAND.position*SCALE,SOUTH_PORT_LAYOUT.LAND.size*SCALE)
 		var port_surface := rect.intersection(port_land)
+		var port_cover := ground_cover.duplicate()
 		if port_surface.has_area(): ground_cover.append(GROUND_CUT.rect_polygon(port_surface))
 		var cemetery_half: Vector2 = CEMETERY.LOT_SIZE * SCALE * 0.5
 		var cemetery_floor := Rect2(CEMETERY.SOURCE_CENTER * SCALE - cemetery_half, cemetery_half * 2.0)
 		var sewer_openings: Array[Rect2] = []
 		for opening in CATALOG.sewer_openings(): sewer_openings.append(Rect2(opening.position * SCALE, opening.size * SCALE))
 		var secret_cellar_opening := Rect2(-413.25,85.35,6.10,3.30)
+		var owned_land: Array[Rect2] = []
 		for land in source_data.harbor_land:
 			var surface := rect.intersection(Rect2(land[0]*SCALE,land[1]*SCALE,land[2]*SCALE,land[3]*SCALE))
-			for piece in _rect_outside(surface, cemetery_floor):
+			var land_holes: Array[Rect2] = owned_land.duplicate()
+			land_holes.append(cemetery_floor)
+			for piece in _rects_outside_all(surface,land_holes):
 				for sewer_piece in _rects_outside_all(piece, sewer_openings):
 					for cellar_piece in _rect_outside(sewer_piece, secret_cellar_opening):
 						# Rampas e trechos cobertos do Túnel do canal têm piso e laje próprios.
 						for land_piece in CANAL_TUNNEL.outside_land(cellar_piece):
 							for skate_piece in preload("res://activities/skate/SkateParkLayout.gd").outside(land_piece):
 								_land_piece(chunk,skate_piece,ground_cover)
+			if surface.has_area(): owned_land.append(surface)
 		harbor_ocean.build_chunk(chunk,rect)
 		CANAL_TUNNEL.build_chunk(chunk,rect)
 		var skate_center := preload("res://activities/skate/SkateParkLayout.gd").CENTER
@@ -1115,16 +1153,20 @@ func _build_surfaces(chunk: Node3D, rect: Rect2, key: Vector2i) -> void:
 			chunk.add_child(preload("res://activities/skate/SkatePark.gd").new())
 		coastal_protection.build_chunk(chunk,rect)
 		var clip := PackedVector2Array([rect.position,Vector2(rect.end.x,rect.position.y),rect.end,Vector2(rect.position.x,rect.end.y)])
+		var extra_support: Array[PackedVector2Array] = []
+		for land_rect in owned_land: extra_support.append(GROUND_CUT.rect_polygon(land_rect))
 		for polygon in extra_land:
 			var woodland: bool = polygon==preload("res://world/places/fishing/FishingRuralLayout.gd").outline()
-			for piece in Geometry2D.intersect_polygons(polygon,clip): _authored_surface(chunk,piece,woodland)
+			var pieces: Array[PackedVector2Array] = Geometry2D.intersect_polygons(polygon,clip)
+			for piece in GROUND_CUT.subtract_exact(pieces,extra_support): _authored_surface(chunk,piece,woodland,ground_cover)
+			extra_support.append(polygon)
 		preload("res://world/places/fishing/FishingWoodland.gd").build_chunk(chunk,rect)
 		if port_surface.has_area():
 			# Visual finish only: OriginalSouthPort/land already own physical support.
 			# Keep the apron below every road finish. Its former .014 top was
 			# exactly coplanar with CURB_COLOR, causing flickering along the roads.
 			# Sem a área das ruas: antes o concreto inteiro ficava por baixo delas.
-			var apron_mesh := GROUND_CUT.flat_mesh(GROUND_CUT.subtract([GROUND_CUT.rect_polygon(port_surface)],road_cover),.004,1.0)
+			var apron_mesh := GROUND_CUT.flat_mesh(GROUND_CUT.subtract([GROUND_CUT.rect_polygon(port_surface)],port_cover),.004,1.0)
 			if apron_mesh != null:
 				var apron := MeshInstance3D.new()
 				apron.name = "SouthPortConcrete"
@@ -1300,7 +1342,7 @@ func _dressing_reserved(point: Vector2, radius: float) -> bool:
 				if point.distance_to(tree_point) < radius+1.2: return true
 	return false
 
-func _authored_surface(chunk: Node3D, polygon: PackedVector2Array, woodland := false) -> void:
+func _authored_surface(chunk: Node3D, polygon: PackedVector2Array, woodland := false, cover: Array[PackedVector2Array] = []) -> void:
 	var indices := Geometry2D.triangulate_polygon(polygon)
 	if indices.is_empty(): return
 	var vertices := PackedVector3Array()
@@ -1329,6 +1371,12 @@ func _authored_surface(chunk: Node3D, polygon: PackedVector2Array, woodland := f
 	mesh.create_trimesh_collision()
 	for body in mesh.get_children():
 		if body is StaticBody3D: body.collision_layer = 1; body.collision_mask = 0
+	# Support remains continuous under road/lot finishes; only exposed ground
+	# is rendered. The collider was built before replacing the visual mesh.
+	if not cover.is_empty():
+		var exposed := GROUND_CUT.flat_mesh(GROUND_CUT.subtract_exact([polygon],cover),0.0,1.0)
+		if exposed == null: mesh.visible = false
+		else: mesh.mesh = exposed
 func _building(chunk: Node3D, data: Dictionary) -> void:
 	if data.id == "Fagulha":
 		var arcade := preload("res://world/places/arcade/ArcadeFacade.gd").new()
@@ -1518,7 +1566,9 @@ func _build_ship(chunk: Node3D) -> void:
 		var wall := _box(chunk,"NorthstarHull",Vector3((a.x+b.x)*.5,-.65,(a.y+b.y)*.5),Vector3(.18,1.3,delta.length()),Color("35464b"),true)
 		wall.rotation.y = atan2(delta.x,delta.y)
 		wall.material_override = PORT_SHIP_PAINT.material("hull")
-	var gangway := Rect2(3130*SCALE,1742*SCALE,288*SCALE,40*SCALE)
+	# End at the straight port hull edge: the deck supplies finish and support
+	# beyond x=3372. The former end at 3418 overlapped the deck.
+	var gangway := Rect2(3130*SCALE,1742*SCALE,(3372-3130)*SCALE,40*SCALE)
 	_box(chunk,"NorthstarGangway",Vector3(gangway.get_center().x,-.03,gangway.get_center().y),Vector3(gangway.size.x,.06,gangway.size.y),Color("7c8073"),true)
 	for side in [1738,1782]:
 		_box(chunk,"GangwayRail",Vector3(3251*SCALE,.45,side*SCALE),Vector3(242*SCALE,.9,.10),Color("a0a49a"),true)

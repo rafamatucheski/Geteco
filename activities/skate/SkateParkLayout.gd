@@ -1,13 +1,20 @@
 extends RefCounted
-## Empty paved lot EAST of the orange neighbour. Leave the perimeter sidewalk free.
-const CENTER := Vector3(67, 0, 94)
-const FOOTPRINT := Rect2(60, 85.5, 14, 17)
+## Recreation court beside the aquarium and promenade cafe in eastern Harbor.
+## All park geometry, riders and surface exclusions share this anchor.
+const CENTER := Vector3(378, 0, 122)
+const FOOTPRINT := Rect2(371, 113.5, 14, 17)
 const RADII := Vector2(4.65, 5.75)
 const DEPTH := 1.65
-const ENTRY := Vector3(70, .12, 101.5)
+const ENTRY := CENTER + Vector3(3, .12, 7.5)
+const APPROACH := Rect2(379.5, 129, 3, 6.5)
 
 ## Explicit A/B hook for the rendered benchmark, never a player setting.
 static func enabled() -> bool: return not Engine.get_meta("skate_benchmark_baseline", false)
+
+## Reserve the whole court and the pedestrian connection to the south sidewalk.
+## Margin belongs to the prop footprint (including its canopy), not its origin.
+static func reserved(point: Vector2, margin := 0.0) -> bool:
+	return enabled() and (FOOTPRINT.grow(margin).has_point(point) or APPROACH.grow(margin).has_point(point))
 
 static func outline_scale(angle: float) -> float:
 	return 1.0 + .09 * cos(angle * 3) + .04 * sin(angle * 2)

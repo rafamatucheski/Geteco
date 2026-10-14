@@ -1,9 +1,15 @@
 extends "res://tests/test_vertice_depth.gd"
 const DEST := "res://evidence/police-frontage-20260928/geometry"
+var destination := DEST
 
 func run() -> void:
 	if DisplayServer.get_name() == "headless": quit(2); return
-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(DEST))
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--output="): destination = argument.trim_prefix("--output=")
+	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(destination)) != OK:
+		push_error("Cannot create police frontage evidence directory: "+destination)
+		quit(2)
+		return
 	viewport = SubViewport.new()
 	viewport.size = Vector2i(640,480)
 	viewport.own_world_3d = true
@@ -47,7 +53,7 @@ func run() -> void:
 		for tick in 5: await physics_frame
 		actor.automatic_direction = Vector3.FORWARD
 		for tick in 65: await physics_frame
-		check(actor.position.z < 128.0 and absf(actor.position.y-.1)<.06, who+" climbs real ramp to sidewalk "+str(actor.position))
+		check(actor.position.z < 128.0 and absf(actor.position.y)<.06, who+" crosses the flush district forecourt without an artificial step "+str(actor.position))
 		actor.automatic_direction = Vector3.BACK
 		for tick in 75: await physics_frame
 		check(actor.position.z > 130.8 and absf(actor.position.y)<.06, who+" returns to road at ground level")
@@ -69,8 +75,12 @@ func run() -> void:
 			{"id":"facade","camera":Vector3(70,3,135),"target":Vector3(70,1,125),"front":Vector3(70,.1,127),"behind":Vector3(70,.1,124)}]:
 			camera.position = item.camera
 			camera.look_at(item.target)
+			# This is a discrete diagnostic pose, not a camera movement. The
+			# actual and control images must use the same current transform even
+			# when three render frames finish before the next physics tick.
+			camera.reset_physics_interpolation()
 			for pose in ["front","behind"]:
-				actor.position = item[pose]
+				actor.teleport(item[pose])
 				zone.show(); shell.show()
 				var actual := await capture()
 				zone.hide(); shell.hide()
@@ -79,10 +89,16 @@ func run() -> void:
 				var ratio := float(mask_count(actual))/maxf(pixels,1)
 				check(pixels>150,who+" "+item.id+" "+pose+" positive depth control")
 				check(ratio>.9 if pose=="front" else ratio<.9,who+" "+item.id+" "+pose+" depth ratio="+str(ratio))
-				actual.save_png(DEST+"/"+who+"-"+item.id+"-"+pose+".png")
+				actual.save_png(destination+"/"+who+"-"+item.id+"-"+pose+".png")
 			zone.show(); shell.show()
 		actor.free()
-	FileAccess.open(DEST+"/results.json",FileAccess.WRITE).store_string(JSON.stringify({"checks":checks,"failures":failures}))
+	var report := FileAccess.open(destination+"/results.json",FileAccess.WRITE)
+	if report == null:
+		push_error("Cannot write police frontage evidence: "+str(FileAccess.get_open_error()))
+		quit(2)
+		return
+	report.store_string(JSON.stringify({"checks":checks,"failures":failures}))
+	report.close()
 	print("POLICE_FRONTAGE_GEOMETRY checks=",checks," failures=",failures)
 	stage.free()
 	viewport.free()

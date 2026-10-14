@@ -44,6 +44,12 @@ var _materials: Dictionary = {}
 ## Contorno externo das ruas (calçada inteira e estradas de terra) do último chunk montado. Os pisos de
 ## baixo (lotes, concreto do porto, chão base) se recortam contra ele para ficar uma camada só.
 var chunk_cover: Array[PackedVector2Array] = []
+var _weather_wetness := 0.0
+var _roughness_texture: Texture2D
+var _coastal_material: ShaderMaterial
+var _coastal_reflection_texture: Texture2D
+var _coastal_reflection_projection := Projection.IDENTITY
+var _coastal_reflection_enabled := false
 var _road_end_blend := preload("res://world/urban_detail/RuralRoadEndBlend.gd").new()
 var _crosswalk_white: Array[PackedVector2Array] = []
 var _crosswalk_tactile: Array[PackedVector2Array] = []
@@ -179,7 +185,13 @@ func build_chunk(parent: Node3D, rect: Rect2) -> void:
 							remaining = next
 						for outside in remaining:
 							if outside.size() >= 3: clipped.append(outside)
-		chunk_layers.append(clipped)
+		# Junction patches and crossing road corridors share positive area.
+		# Dissolve those overlaps inside each layer before cutting its inner ring.
+		# This also prevents duplicate faces within a single MeshInstance.
+		var owned: Array[PackedVector2Array] = []
+		for piece in clipped:
+			owned.append_array(preload("res://world/urban_detail/GroundCut.gd").subtract_exact([piece],owned))
+		chunk_layers.append(owned)
 	# As quatro faixas (calçada, meio-fio, borda, asfalto) são offsets concêntricos da mesma rua. Cheias,
 	# o centro da rua era pintado 4 vezes (medido em 2026-10-13: ~150 mil m² de chão repetido no porto).
 	# Cada faixa vira um anel sem a área da faixa de dentro; a de dentro (asfalto) e a colisão não mudam.
@@ -235,7 +247,7 @@ func _layer(color: Color, extra_width: float, y: float) -> Dictionary:
 		"name": color.to_html(false),
 		"polygons": polygons,
 		"bounds": _polygon_bounds_list(polygons),
-		"material": _material(color),
+		"material": _coastal_asphalt_material() if color == ROAD_COLOR else _material(color),
 		"y": y,
 	}
 
@@ -466,12 +478,6 @@ func _build_markings(parent: Node3D, rect: Rect2) -> void:
 	var mark_parent := Node3D.new()
 	mark_parent.name = "HarborLaneMarkings"
 	var count := 0
-	for road in _roads:
-		if String(road.id).begins_with("mountain_bridge_"): continue
-		var points := road.points as PackedVector2Array
-		var travelled := 0.0
-		for index in range(points.size() - 1):
-			var a := points[index]
 	# Cor (html) -> Array[Transform3D]; só usado com o lote ligado.
 	var batches := {}
 	# CanalTunnel3D.carve_chunk recorta a pintura sobre as rampas abertas, mas só em MeshInstance3D:
@@ -481,6 +487,12 @@ func _build_markings(parent: Node3D, rect: Rect2) -> void:
 	if dash_batch_enabled:
 		for cut in load("res://world/urban_detail/CanalTunnel3D.gd").open_cuts():
 			if (cut as Rect2).intersects(rect.grow(1.0)): tunnel_cuts.append(cut)
+	for road in _roads:
+		if String(road.id).begins_with("mountain_bridge_"): continue
+		var points := road.points as PackedVector2Array
+		var travelled := 0.0
+		for index in range(points.size() - 1):
+			var a := points[index]
 			var b := points[index + 1]
 			var segment_length := a.distance_to(b)
 			if segment_length < MIN_SEGMENT: continue
@@ -608,7 +620,7 @@ static func _local_to(root: Node, node: Node3D) -> Transform3D:
 
 
 func _add_surface(parent: Node3D, label: String, polygons: Array[PackedVector2Array], y: float, material: Material) -> void:
-	if material is StandardMaterial3D and (label.ends_with(ROAD_COLOR.to_html(false)) or label.ends_with(ROAD_EDGE_COLOR.to_html(false)) or label.ends_with(SIDEWALK_COLOR.to_html(false)) or label.ends_with(CURB_COLOR.to_html(false))):
+	if (material is StandardMaterial3D or material == _coastal_material) and (label.ends_with(ROAD_COLOR.to_html(false)) or label.ends_with(ROAD_EDGE_COLOR.to_html(false)) or label.ends_with(SIDEWALK_COLOR.to_html(false)) or label.ends_with(CURB_COLOR.to_html(false))):
 		for polygon in polygons:
 			if _road_end_blend.affects(_polygon_bounds(polygon)):
 				material=_road_end_blend.material(material)
@@ -669,7 +681,7 @@ func _add_surface(parent: Node3D, label: String, polygons: Array[PackedVector2Ar
 
 func _material(color: Color) -> StandardMaterial3D:
 	if color == SIDEWALK_COLOR:
-		return preload("res://world/urban_detail/PromenadePaving.gd").material(color)
+		return preload("res://world/urban_detail/HarborPaving.gd").material()
 	var key := color.to_html()
 	if _materials.has(key): return _materials[key]
 	var material := StandardMaterial3D.new()
@@ -677,7 +689,10 @@ func _material(color: Color) -> StandardMaterial3D:
 	material.roughness = 0.9
 	if color == ROAD_COLOR:
 		material.albedo_texture = _asphalt_texture()
-		material.albedo_color = Color.WHITE
+		material.roughness_texture = _weather_roughness_texture()
+		material.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_RED
+		material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
+		_apply_wetness(material)
 	# A face superior já está voltada para a câmera; renderizar ambos os lados
 	# fazia o material tratar parte do piso como verso e inverter sua iluminação.
 	material.cull_mode = BaseMaterial3D.CULL_BACK
@@ -685,17 +700,93 @@ func _material(color: Color) -> StandardMaterial3D:
 	return material
 
 
+func set_weather_wetness(value: float) -> void:
+	value = clampf(value,0.0,1.0)
+	if absf(value-_weather_wetness)<.002: return
+	_weather_wetness = value
+	var key := ROAD_COLOR.to_html()
+	if _materials.has(key): _apply_wetness(_materials[key])
+	if _coastal_material != null:
+		_coastal_material.set_shader_parameter("wetness",value)
+		_road_end_blend.sync_material(_coastal_material)
+
+func _coastal_asphalt_material() -> ShaderMaterial:
+	if _coastal_material != null: return _coastal_material
+	# Keep _material's StandardMaterial3D contract for bridges/tunnels and
+	# external consumers; the streamed Harbor road shares this planar receiver.
+	var base := _material(ROAD_COLOR)
+	_coastal_material = ShaderMaterial.new()
+	_coastal_material.shader = preload("res://world/urban_detail/coastal_wet_asphalt.gdshader")
+	_coastal_material.set_shader_parameter("base_texture",base.albedo_texture)
+	_coastal_material.set_shader_parameter("roughness_texture",base.roughness_texture)
+	_coastal_material.set_shader_parameter("wetness",_weather_wetness)
+	_apply_coastal_reflection()
+	return _coastal_material
+
+func set_coastal_reflection(texture: Texture2D, projection: Projection, enabled: bool) -> void:
+	_coastal_reflection_texture = texture
+	_coastal_reflection_projection = projection
+	_coastal_reflection_enabled = enabled and texture != null
+	_apply_coastal_reflection()
+
+func _apply_coastal_reflection() -> void:
+	if _coastal_material == null: return
+	_coastal_material.set_shader_parameter("reflection_texture",_coastal_reflection_texture)
+	_coastal_material.set_shader_parameter("reflection_projection",_coastal_reflection_projection)
+	_coastal_material.set_shader_parameter("reflection_enabled",_coastal_reflection_enabled)
+	if _coastal_reflection_texture != null:
+		var size := _coastal_reflection_texture.get_size()
+		_coastal_material.set_shader_parameter("reflection_texel_size",Vector2(1.0/maxf(size.x,1.0),1.0/maxf(size.y,1.0)))
+	_road_end_blend.sync_material(_coastal_material)
+
+func _apply_wetness(material: StandardMaterial3D) -> void:
+	material.albedo_color = Color.WHITE.darkened(_weather_wetness*.32)
+	# Keep rain-darkened aggregate predominant. Large roughness differences
+	# turned filtered sky reflections into bright contour lines across the road.
+	# A narrow, soft response leaves stronger reflections to lights and puddles.
+	# Dry aggregate has no wet film, preserving the approved matte dry look.
+	material.roughness = lerpf(1.0,.56,_weather_wetness)
+	material.metallic_specular = smoothstep(.08,1.0,_weather_wetness)*.22
+	_road_end_blend.sync_material(material)
+
+func _weather_roughness_texture() -> Texture2D:
+	if _roughness_texture != null: return _roughness_texture
+	var image := Image.create(128,128,false,Image.FORMAT_L8)
+	var noise := FastNoiseLite.new()
+	noise.seed = 13102026
+	noise.frequency = 1.0
+	for y in 128:
+		for x in 128:
+			# Periodic coordinates keep the four-metre UV tile continuous at
+			# road and chunk edges. The tiny range avoids drawing a noise pattern
+			# with the sky reflection: wet roughness stays between .532 and .56.
+			var a := TAU*float(x)/128.0
+			var b := TAU*float(y)/128.0
+			var periodic := Vector3((2.0+cos(b))*cos(a),(2.0+cos(b))*sin(a),sin(b))
+			var basin := noise.get_noise_3dv(periodic*.72)
+			var edge := noise.get_noise_3dv(periodic*2.1+Vector3(17,3,11))
+			var value := lerpf(.95,1.0,smoothstep(-.40,.40,basin+edge*.08))
+			image.set_pixel(x,y,Color(value,value,value))
+	image.generate_mipmaps()
+	_roughness_texture = ImageTexture.create_from_image(image)
+	return _roughness_texture
+
 func _asphalt_texture() -> Texture2D:
 	var image := Image.create(128, 128, false, Image.FORMAT_RGB8)
 	var noise := FastNoiseLite.new()
 	noise.seed = 2147
-	noise.frequency = .085
+	noise.frequency = 1.0
 	for y in 128:
 		for x in 128:
-			var grain := noise.get_noise_2d(float(x), float(y))
-			var aggregate := noise.get_noise_2d(float(x) * 2.7 + 29.0, float(y) * 2.7)
-			var wear := clampf(.76 + grain * .13 + aggregate * .065, .56, .94)
-			image.set_pixel(x, y, Color(.17 * wear, .22 * wear, .255 * wear))
+			var a := TAU*float(x)/128.0
+			var b := TAU*float(y)/128.0
+			var periodic := Vector3((2.0+cos(b))*cos(a),(2.0+cos(b))*sin(a),sin(b))
+			var grain := noise.get_noise_3dv(periodic*9.0)
+			var aggregate := noise.get_noise_3dv(periodic*23.0+Vector3(29,0,11))
+			var wear := clampf(.80+grain*.085+aggregate*.045,.65,.94)
+			# Neutral charcoal lets warm sunlight and cool sky supply the hue.
+			image.set_pixel(x,y,Color(.19*wear,.205*wear,.22*wear))
+	image.generate_mipmaps()
 	return ImageTexture.create_from_image(image)
 
 

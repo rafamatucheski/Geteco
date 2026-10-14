@@ -658,6 +658,7 @@ func _startup_focus_hint() -> Vector3:
 	if pedestrian.get("region","") == state.region_id and coordinates.size() == 3:
 		var point := Vector3(float(coordinates[0]),float(coordinates[1]),float(coordinates[2]))
 		if state.region_id == "desert": return preload("res://world/desert/north_pass/DesertNorthPassLayout.gd").restore_point(point,state.world_state)
+		if state.region_id == "harbor": return preload("res://world/railway/RailwayNetwork.gd").restore_harbor_pedestrian(point)
 		return point
 	return Vector3.INF
 
@@ -680,6 +681,7 @@ func _startup_position() -> Vector3:
 		if state.region_id=="desert":
 			var restored:=preload("res://world/desert/north_pass/DesertNorthPassLayout.gd").restore_point(point,state.world_state)
 			if restored!=point: return restored+Vector3.UP*.08
+		if state.region_id == "harbor": return preload("res://world/railway/RailwayNetwork.gd").restore_harbor_pedestrian(point)
 		return point
 	return fallback
 

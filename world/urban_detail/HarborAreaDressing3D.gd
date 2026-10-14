@@ -21,6 +21,9 @@ var _cobra_joint_counts: Dictionary = {}
 func configure(id: String) -> void:
 	zone_id = id
 
+static func ground_footprints(id: String, origin: Vector2) -> Array[PackedVector2Array]:
+	return preload("res://world/urban_detail/HarborDressingGround.gd").footprints(id,origin)
+
 func _ready() -> void:
 	name = zone_id.to_pascal_case()+"Dressing"
 	set_meta("source_id",_source_id())
@@ -33,6 +36,10 @@ func _ready() -> void:
 		"cobra": _build_cobra()
 		"salvage": _build_salvage()
 		"cemetery": _build_cemetery_edge()
+	_finish_ground_build()
+
+func _finish_ground_build() -> void:
+	preload("res://world/urban_detail/HarborDressingGround.gd").compose(self,zone_id)
 
 func _source_id() -> String:
 	match zone_id:
@@ -45,11 +52,14 @@ func _build_salvage() -> void:
 	# SalvageLocation.LAND and the exact V1 perimeter planting, local to (-750,550).
 	# Gramado com textura e tufos 3D: antes era uma caixa de cor lisa (feedback de 25/09).
 	var meadow := _box("SalvageMeadow",Vector3(15*SCALE,.006,10*SCALE),Vector3(1270*SCALE,.012,1120*SCALE),Color("46553e"))
-	meadow.material_override = GRASS.ground_material()
+	meadow.material_override = preload("res://world/urban_detail/HarborPaving.gd").lawn_material(Color("627156"))
 	_box("SalvageNorthWall",Vector3(15*SCALE,.34,-534*SCALE),Vector3(1270*SCALE,.68,12*SCALE),Color("9b9c8c"),true)
 	_box("SalvageWestWall",Vector3(-614*SCALE,.34,10*SCALE),Vector3(12*SCALE,.68,1120*SCALE),Color("9b9c8c"),true)
 	for index in 12:
 		var point: Vector2 = [Vector2(-500,-430),Vector2(-320,-465),Vector2(120,-460),Vector2(430,-465),Vector2(510,-410),Vector2(350,430),Vector2(440,430),Vector2(-565,-240),Vector2(-565,40),Vector2(575,-220),Vector2(575,80),Vector2(575,310)][index]
+		# Keep the two trees, west of Harbor Central's relocated stair landing.
+		if index==5: point=Vector2(170,320)
+		elif index==6: point=Vector2(170,500)
 		_tree(point*SCALE,1.0+float(index%3)*.09,index%3==1)
 	for point in [Vector2(-70,-445),Vector2(285,-430)]: _rock(point*SCALE,1.5)
 	# Acesso de cascalho da V1: abaixo do asfalto (topo em 1 cm; a rua fica em 3 cm), só
@@ -60,6 +70,18 @@ func _build_salvage() -> void:
 		var track := _beam("SalvageTrack",route[index]*SCALE,route[index+1]*SCALE,100*SCALE,.012,Color("8a8269"),false,.004)
 		track.material_override = GRASS.ground_material("gravel")
 		track_rects.append(Rect2(route[index]*SCALE,Vector2.ZERO).expand(route[index+1]*SCALE).grow(50*SCALE+.4))
+	var railway := preload("res://world/railway/RailwayNetwork.gd")
+	var origin := Vector2(global_position.x,global_position.z)
+	var landing: Rect2=railway.ground_landing_rect("harbor_central")
+	var entry: Vector3=railway.get_station("harbor_central").entry
+	var start := Vector2(-43.75,62.5)-origin
+	# Extend the diagonal end cap through the landing edge; composition clips
+	# it back exactly, leaving no triangular meadow wedge at either corner.
+	var end := Vector2(landing.position.x+.2,entry.z)-origin
+	var station_path := _beam("SalvageTrackStation",start,end,2.4,.008,Color("aaa9a1"),false,.016)
+	station_path.material_override=preload("res://world/urban_detail/HarborPaving.gd").material()
+	track_rects.append(Rect2(start,Vector2.ZERO).expand(end).grow(1.5))
+	track_rects.append(Rect2(landing.position-origin,landing.size).grow(.25))
 	var meadow_area := Rect2(Vector2(15-635,10-560)*SCALE,Vector2(1270,1120)*SCALE)
 	# Pátio de cascalho do SalvageYardNative (32 x 23 m, mesma origem) fica sem grama.
 	GRASS.scatter(self,meadow_area,track_rects+[Rect2(-17.5,-13,35,26)],.8,7501)
@@ -77,7 +99,7 @@ func _build_cemetery_edge() -> void:
 		["CemeteryWestGreen",Vector3(-(inner.x+border_x)*.5,.006,0),Vector3(border_x,.012,inner.y)],
 		["CemeteryEastGreen",Vector3((inner.x+border_x)*.5,.006,0),Vector3(border_x,.012,inner.y)]]:
 		var green := _box(strip[0],strip[1],strip[2],Color("445441"))
-		green.material_override = GRASS.ground_material()
+		green.material_override = preload("res://world/urban_detail/HarborPaving.gd").lawn_material(Color("566d58"))
 	# Faixa livre do portão até a rua: o carro funerário para a 90 px do portão.
 	var gate_lane := Rect2(CEMETERY_GATE.x-4.0,-outer.y*.5-1.0,8.0,outer.y*.5+CEMETERY_GATE.y+1.0)
 	GRASS.scatter(self,Rect2(-outer*.5,outer),[Rect2(-inner*.5,inner),gate_lane],.8,7502)
@@ -428,6 +450,7 @@ func _beam(label: String, a: Vector2, b: Vector2, width: float, height: float, c
 func _box(label: String, point: Vector3, size: Vector3, color: Color, solid := false) -> MeshInstance3D:
 	var result := MeshInstance3D.new()
 	result.name = label
+	result.set_meta("harbor_ground_label",label)
 	if zone_id=="cobra": result.set_meta("cobra_surface_label",label)
 	var mesh_key := str(size)
 	if not _box_meshes.has(mesh_key):
@@ -478,6 +501,8 @@ func _material(color: Color) -> StandardMaterial3D:
 
 
 func _surface_material(kind: String,color: Color)->StandardMaterial3D:
+	if kind in ["stone","concrete"]:
+		return preload("res://world/urban_detail/HarborPaving.gd").material(preload("res://world/urban_detail/HarborPaving.gd").EDGE_COLOR if color == Color("606353") else preload("res://world/urban_detail/HarborPaving.gd").COLOR)
 	var key:="surface:%s:%s"%[kind,color.to_html(true)]
 	if not _materials.has(key):
 		var material:=StandardMaterial3D.new()

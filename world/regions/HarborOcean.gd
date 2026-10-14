@@ -21,6 +21,7 @@ static func surface_y(point: Vector2, shore: float = DEPTH_RANGE) -> float:
 	return WATER_Y-BRIDGE_DROP*along*across*smoothstep(8.0,22.0,shore)
 const SHADER := preload("res://world/regions/harbor_ocean.gdshader")
 const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
+const GROUND_CUT := preload("res://world/urban_detail/GroundCut.gd")
 var shores: Array[PackedVector2Array] = []
 var material: ShaderMaterial
 var shore_wash := preload("res://world/regions/HarborShoreWash.gd").new()
@@ -67,6 +68,15 @@ func _shore_distance_from_edges(point: Vector2, edges: PackedVector2Array) -> fl
 	return nearest
 
 func build_chunk(parent: Node3D, rect: Rect2) -> MeshInstance3D:
+	# Exclude actual land geometry, not cell centres: even an island smaller
+	# than STEP must stay dry, without a square gap in the surrounding sea.
+	var dry: Array[PackedVector2Array] = []
+	for polygon in shores:
+		if polygon.size() >= 3 and GROUND_CUT.bounds(polygon).intersects(rect): dry.append(polygon)
+	dry.append(GROUND_CUT.rect_polygon(CANAL_TUNNEL.WATER_CUT))
+	if preload("res://activities/skate/SkateParkLayout.gd").enabled():
+		dry.append(GROUND_CUT.rect_polygon(preload("res://activities/skate/SkateParkLayout.gd").FOOTPRINT))
+	if GROUND_CUT.subtract_exact([GROUND_CUT.rect_polygon(rect)],dry).is_empty(): return null
 	var edges := _nearby_shore_edges(rect)
 	var count := maxi(1,ceili(rect.size.x/STEP))
 	var vertices := PackedVector3Array()
@@ -87,12 +97,25 @@ func build_chunk(parent: Node3D, rect: Rect2) -> MeshInstance3D:
 	for z in count:
 		for x in count:
 			var a := z*(count+1)+x
-			# Túnel do canal: o mar opaco não cobre a vala nem o tubo (tem lâmina própria).
-			if CANAL_TUNNEL.WATER_CUT.has_point(rect.position+rect.size*Vector2((x+.5)/count,(z+.5)/count)): continue
-			# The dry skate bowl is below sea level; no ocean triangles under it.
 			var tile := Rect2(rect.position + rect.size * Vector2(float(x)/count, float(z)/count), rect.size / count)
-			if preload("res://activities/skate/SkateParkLayout.gd").enabled() and tile.intersects(preload("res://activities/skate/SkateParkLayout.gd").FOOTPRINT): continue
-			indices.append_array(PackedInt32Array([a,a+1,a+count+1,a+1,a+count+2,a+count+1]))
+			var tile_cuts: Array[PackedVector2Array] = []
+			for polygon in dry:
+				if GROUND_CUT.bounds(polygon).intersects(tile): tile_cuts.append(polygon)
+			if tile_cuts.is_empty():
+				indices.append_array(PackedInt32Array([a,a+1,a+count+1,a+1,a+count+2,a+count+1]))
+				continue
+			for piece in GROUND_CUT.subtract_exact([GROUND_CUT.rect_polygon(tile)],tile_cuts):
+				var triangles := Geometry2D.triangulate_polygon(piece)
+				if triangles.is_empty(): continue
+				var offset := vertices.size()
+				for point in piece:
+					var shore := _shore_distance_from_edges(point,edges)
+					vertices.append(Vector3(point.x,surface_y(point,shore),point.y))
+					normals.append(Vector3.UP)
+					colors.append(Color(shore/DEPTH_RANGE,0,0,1))
+					uvs.append(point-base)
+				for index in triangles: indices.append(offset+index)
+	if indices.is_empty(): return null
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = vertices

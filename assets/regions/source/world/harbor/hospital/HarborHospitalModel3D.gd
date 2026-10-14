@@ -57,8 +57,12 @@ func _ready() -> void:
 	box(Vector2(80, -67.5), Vector2(100, 95), 0, 4.0, ivory)
 	box(Vector2(67.5, -7), Vector2(75, 26), 0, 4.0, ivory)
 	box(Vector2(67.5, 94.5), Vector2(75, 41), 0, 3.1, ivory)
-	box(Vector2(80, 40), Vector2(100, 68), 0, 0.09, Color("b4babc"))
-	box(Vector2(121, 49), Vector2(34, 136), 0, 0.07, Color("b4babc"))
+	_apron(Vector2(80, 40), Vector2(100, 68), .09)
+	# Partition the lower apron around the 9 cm forecourt above. Preserve the
+	# perimeter/access levels without leaving one opaque slab under another.
+	_apron(Vector2(121, -6.5), Vector2(34, 25), .07)
+	_apron(Vector2(121, 95.5), Vector2(34, 43), .07)
+	_apron(Vector2(134, 40), Vector2(8, 68), .07)
 	for x in range(54, 132, 13):
 		box(Vector2(x, 40), Vector2(0.7, 50), 0.09, 0.008, Color("a5afb0"))
 	# Clean parapets and inset roof surfaces retain a readable silhouette.
@@ -154,6 +158,19 @@ func _ready() -> void:
 	# Side cross marks emergency admission without adding explanatory signage.
 	box(Vector2(108, -7), Vector2(2, 19), 2.7, 0.10, Color("e4ede5"))
 	box(Vector2(108, -7), Vector2(2, 5), 2.3, 0.92, Color("e4ede5"))
+
+func _apron(point: Vector2, size: Vector2, height: float) -> void:
+	var floor_mesh := box(point,size,0,height,Color("b4babc"))
+	floor_mesh.name = "HospitalApron"
+	# Thin floors are excluded by the general facade collider heuristic.
+	# Their own collision keeps feet/tyres on the visible 7/9 cm access level.
+	floor_mesh.create_trimesh_collision()
+	for body in floor_mesh.get_children():
+		if body is StaticBody3D:
+			body.collision_layer = 1
+			body.collision_mask = 0
+			body.set_meta("pedestrian_step",true)
+			body.set_meta("pedestrian_step_top",height*.5)
 
 func set_door_amount(amount: float) -> void:
 	door_amount = amount

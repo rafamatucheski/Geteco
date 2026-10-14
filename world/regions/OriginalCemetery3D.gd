@@ -6,6 +6,8 @@ const SCALE := 1.0 / 16.0
 const LOT_SIZE := Vector2(780, 700)
 const PINE := preload("res://world/regions/NativePine.gd")
 const GRASS := preload("res://world/urban_detail/HarborGrassTufts.gd")
+const CUT := preload("res://world/urban_detail/GroundCut.gd")
+const PATH_RECTS: Array[Rect2] = [Rect2(-14,-350,28,700),Rect2(-25,-490,50,140),Rect2(-247,-178,24,33),Rect2(-235,-157,235,24)]
 ## Gramado e caminhos ganham textura projetada no mundo; antes eram cubos de cor lisa
 ## e o cemitério lia como chão chapado (feedback de 25/09/2026).
 var batches: Dictionary = {}
@@ -14,6 +16,47 @@ var solids: StaticBody3D
 static func world_position() -> Vector3:
 	return Vector3(SOURCE_CENTER.x, 0, SOURCE_CENTER.y) * SCALE
 
+static func path_footprints(origin: Vector2) -> Array[PackedVector2Array]:
+	var result: Array[PackedVector2Array] = []
+	for rect in PATH_RECTS: result.append(CUT.rect_polygon(Rect2(rect.position*SCALE+origin,rect.size*SCALE)))
+	return result
+
+func _build_ground() -> void:
+	var paths := path_footprints(Vector2.ZERO)
+	var cover: Array[PackedVector2Array] = []
+	var region := get_parent()
+	while region != null and not ("harbor_road_geometry" in region): region = region.get_parent()
+	if region != null and region.harbor_road_geometry != null:
+		for polygon in region.harbor_road_geometry._layers[0].polygons:
+			var local := PackedVector2Array()
+			for point in polygon: local.append(point-Vector2(global_position.x,global_position.z))
+			cover.append(local)
+	if region != null and "harbor_facade_ground" in region:
+		var origin := Vector2(global_position.x,global_position.z)
+		var lot_bounds := Rect2(origin-LOT_SIZE*SCALE*.5,LOT_SIZE*SCALE)
+		for polygon in region.harbor_facade_ground:
+			if not CUT.bounds(polygon).intersects(lot_bounds): continue
+			var local := PackedVector2Array()
+			for point in polygon: local.append(point-origin)
+			cover.append(local)
+	for path in paths:
+		_ground("CemeteryPath",CUT.subtract_exact([path],cover),GRASS.ground_material("gravel"))
+		cover.append(path)
+	var lot := Rect2(-LOT_SIZE*SCALE*.5,LOT_SIZE*SCALE)
+	_ground("CemeteryLawn",CUT.subtract_exact([CUT.rect_polygon(lot)],cover),preload("res://world/urban_detail/HarborPaving.gd").lawn_material(Color("566d58")))
+	_solid(Vector3(0,-.025,0),Vector3(lot.size.x,.05,lot.size.y))
+
+func _ground(label: String, polygons: Array[PackedVector2Array], material: Material) -> void:
+	var mesh := CUT.flat_mesh(polygons,0.002,1.0)
+	if mesh == null: return
+	var floor_node := MeshInstance3D.new()
+	floor_node.name = label
+	floor_node.set_meta("harbor_owned_ground",true)
+	floor_node.mesh = mesh
+	floor_node.material_override = material
+	floor_node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(floor_node)
+
 func _ready() -> void:
 	name = "OriginalCemetery"
 	solids = StaticBody3D.new()
@@ -21,11 +64,7 @@ func _ready() -> void:
 	solids.collision_layer = 1
 	solids.collision_mask = 0
 	add_child(solids)
-	_box(Vector3(0, -.025, 0), Vector3(LOT_SIZE.x*SCALE, .05, LOT_SIZE.y*SCALE), "27362f", true)
-	_path(Vector2(0, 0), Vector2(28, 700))
-	_path(Vector2(0, -420), Vector2(50, 140))
-	_path(Vector2(-235, -161.5), Vector2(24, 33))
-	_path(Vector2(-117.5, -145), Vector2(235, 24))
+	_build_ground()
 	# North gate: 52 source pixels, 3.25 m before the two stone posts.
 	for segment in [
 		[Vector2(-390,-350),Vector2(-26,-350)],
@@ -85,9 +124,6 @@ func _grass() -> void:
 		for y in range(-270,291,140): keep_out.append(Rect2(Vector2(x,y)*SCALE-Vector2(.8,.8),Vector2(1.6,1.6)))
 	GRASS.scatter(self,Rect2(-lot*.5+Vector2(.8,.8),lot-Vector2(1.6,1.6)),keep_out,.8,7503,.002)
 
-func _path(point: Vector2, size: Vector2) -> void:
-	_box(Vector3(point.x*SCALE,.014,point.y*SCALE),Vector3(size.x*SCALE,.018,size.y*SCALE),"777366")
-
 func _tomb(point: Vector2, variant: int) -> void:
 	# Original CemeteryGrave3D model units project at 20px; V2 geography is 16px/m.
 	var origin := Vector3(point.x,0,point.y)
@@ -135,7 +171,7 @@ func _flush() -> void:
 		var material := StandardMaterial3D.new()
 		material.albedo_color = Color(color)
 		material.roughness = .92
-		if color == "27362f": material = GRASS.ground_material()
+		if color == "27362f": material = preload("res://world/urban_detail/HarborPaving.gd").lawn_material(Color("566d58"))
 		elif color == "777366": material = GRASS.ground_material("gravel")
 		var cube := BoxMesh.new()
 		cube.size = Vector3.ONE

@@ -63,6 +63,13 @@ func run() -> void:
 	snapshot(base, before_mesh, before_shape)
 	snapshot(edited, after_mesh, after_shape)
 	before_mesh.sort(); before_shape.sort(); after_mesh.sort(); after_shape.sort()
+	if before_mesh != after_mesh:
+		var shown := 0
+		for row in before_mesh:
+			if row not in after_mesh and shown<4: print("COBRA_BASE_ONLY ",row); shown+=1
+		shown=0
+		for row in after_mesh:
+			if row not in before_mesh and shown<4: print("COBRA_EDIT_ONLY ",row); shown+=1
 	check(before_mesh == after_mesh, "Cobra grouping preserves every mesh transform, bounds and color")
 	check(before_shape == after_shape, "Cobra grouping preserves every collision shape and transform")
 	check(ids(edited).size() > 100, "Paths, fences, benches and trees are individually editable")
@@ -100,7 +107,15 @@ func run() -> void:
 	for zone_id in ["rodoviaria","connecting_streets","delegacia","maciota"]:
 		var zone := ROUTE.create_zone(zone_id)
 		EDITABLE.tag_route(zone, zone_id)
-		check(PIECES.collect(zone).size() == zone.get_child_count(), "Every street furnishing piece is tagged: "+zone_id)
+		var furnishing_count := 0
+		for index in zone.get_child_count():
+			var child := zone.get_child(index)
+			if child.get_meta("district_ground_owned",false):
+				check(not child.has_meta("world_edit_piece_id"),"Retired ground cannot be selected: "+zone_id+"/"+str(index))
+			else:
+				furnishing_count += 1
+				check(child.get_meta("world_edit_piece_id","") == "route/%s/%d" % [zone_id,index],"Furniture retains its original slot ID: "+zone_id+"/"+str(index))
+		check(PIECES.collect(zone).size() == furnishing_count, "Every real street furnishing is tagged: "+zone_id)
 		zone.free()
 	edited.free()
 	print("WORLD_EDITOR_COBRA checks=",checks," failures=",failures.size())

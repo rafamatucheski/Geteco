@@ -1,0 +1,43 @@
+{
+  "scope": "Read-only audit of Harbor pedestrian footbridge, two Harbor train stations, railway descriptors in x[-200,650],z[-250,400], and both ship access walkways. No production edits/removals in this turn.",
+  "findings": [
+    {
+      "site": "Pedestrian footbridge at (120,78)",
+      "area_m2": 39.33,
+      "classification": "Opaque paving over structural concrete slab; hidden top face can be consolidated, slab support/sides must remain."
+    },
+    {
+      "site": "Harbor Central and Northgate upper access connections",
+      "major_coplanar_pairs": 4,
+      "area_m2_analytic": 37.26,
+      "classification": "Walkway overlaps platform by 7.56m2 and upper stair landing by11.07m2 at each station; prioritize trimming visible tops without weakening support."
+    },
+    {
+      "site": "Railway corridor",
+      "segments": 242,
+      "exact_duplicate_segments": 0,
+      "hidden_concrete_under_ballast_sum_m2": 2983.17576823215,
+      "classification": "Structural layers, not duplicated complete tracks; sum per segment, not union. Top gap45mm. Junction wedges and small structural overlaps require separate classification."
+    },
+    {
+      "site": "Northstar and Santa Mare walkways",
+      "classification": "Rendered current corrected access and support; prior targeted overlap corrections retained. No new obstruction observed at sampled camera positions."
+    }
+  ],
+  "validation": {
+    "build": "Godot4.7.2 .NET C# build PASS",
+    "footbridge": "test_footbridge.gd PASS: complete ascent/crossing/descent, guardrail containment, clearance beneath,5 drawing batches. Isolated physics fixture, not global traffic approval.",
+    "railway_network": "101 checks PASS: route connectivity, station identity, progression gate separation; does not certify entire physical railway.",
+    "rendered": "Main.tscn5sites×3frames,1280x720, daytime; images under rendered/. Not a temporal flicker or FPS benchmark.",
+    "multimesh": "Readback measured with real renderer; headless returned identity instance transforms and was rejected as invalid for overlap geometry."
+  },
+  "limitations": [
+    "No new runtime changes, therefore no before/after performance gain claimed.",
+    "Small beam/post contacts and stair tread overlaps are retained as raw candidates in geometry.json, not counted as pavement defects.",
+    "No approval of every train support, full train ride, night/rain or all-region rail geometry."
+  ],
+  "evidence": [
+    "geometry.json",
+    "rendered/frames.json"
+  ]
+}

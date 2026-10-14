@@ -31,21 +31,40 @@ func affects(bounds: Rect2) -> bool:
 		if bounds.intersects(Rect2(end.point-Vector2(8,8),Vector2(16,16)),true): return true
 	return false
 
-func material(base: StandardMaterial3D) -> Material:
+func material(base: Material) -> Material:
 	if ends.is_empty(): return base
 	var key:=base.get_instance_id()
 	if materials.has(key): return materials[key]
 	var result:=ShaderMaterial.new()
 	result.shader=preload("res://world/urban_detail/rural_road_end.gdshader")
-	result.set_shader_parameter("base_color",base.albedo_color)
-	result.set_shader_parameter("base_texture",base.albedo_texture)
-	result.set_shader_parameter("textured",base.albedo_texture!=null)
-	result.set_shader_parameter("roughness",base.roughness)
-	result.set_shader_parameter("specular",base.metallic_specular)
+	if base is StandardMaterial3D:
+		result.set_shader_parameter("base_texture",base.albedo_texture)
+		result.set_shader_parameter("textured",base.albedo_texture!=null)
+		result.set_shader_parameter("roughness_texture",base.roughness_texture)
+		result.set_shader_parameter("mapped_roughness",base.roughness_texture!=null)
+	else:
+		result.set_shader_parameter("coastal_asphalt",true)
+		result.set_shader_parameter("textured",true)
+		result.set_shader_parameter("mapped_roughness",true)
 	result.set_shader_parameter("earth_texture",preload("res://world/urban_detail/RuralGroundMaterial.gd").material().get_shader_parameter("earth_texture"))
 	for i in 2:
 		var end: Dictionary=ends[mini(i,ends.size()-1)]
 		result.set_shader_parameter("mouth_%d"%i,Vector4(end.point.x,end.point.y,end.axis.x,end.axis.y))
 		result.set_shader_parameter("width_%d"%i,end.width)
 	materials[key]=result
+	sync_material(base)
 	return result
+
+func sync_material(base: Material) -> void:
+	# The blend is a cached shader copy, so changing the shared asphalt alone
+	# left dry, bright rectangles at rural mouths after rain or save restore.
+	var key := base.get_instance_id()
+	if not materials.has(key): return
+	var result: ShaderMaterial = materials[key]
+	if base is StandardMaterial3D:
+		result.set_shader_parameter("base_color",base.albedo_color)
+		result.set_shader_parameter("roughness",base.roughness)
+		result.set_shader_parameter("specular",base.metallic_specular)
+	elif base is ShaderMaterial:
+		for parameter in ["base_texture","roughness_texture","wetness","reflection_texture","reflection_projection","reflection_enabled","reflection_strength","reflection_texel_size","reflection_flip_y"]:
+			result.set_shader_parameter(parameter,base.get_shader_parameter(parameter))

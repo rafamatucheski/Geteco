@@ -360,7 +360,7 @@ func _build_video(page: VBoxContainer) -> void:
 		s.show_fps = value
 		s.apply_settings())
 	_row(page, "Mostrar FPS", "Contador no canto superior direito.", _widgets.show_fps)
-	_widgets.camera_view = _options(["Original", "Diagonal (experimental)"], func(index):
+	_widgets.camera_view = _options(["Original", "Diagonal (3D)"], func(index):
 		s.camera_view = index
 		s.apply_settings())
 	_row(page, "Câmera", "Enquadramento dos exteriores.", _widgets.camera_view)
@@ -664,7 +664,7 @@ func _restore_tab_defaults() -> void:
 			s.vsync = true
 			s.fps_limit = 1
 			s.show_fps = false
-			s.camera_view = 0
+			s.camera_view = 1
 			s.render_scale = 1.0
 			s.msaa = 1
 			s.shadow_quality = 1

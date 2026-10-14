@@ -73,7 +73,7 @@ func run() -> void:
 	world.add_child(bike)
 	bike.set_physics_process(false)
 	world.production.vehicles.append(bike)
-	check(bike._motorcycle_rider_parts.size() == 29, "all urban rider meshes separated, including helmet accessories")
+	check(bike._motorcycle_rider_parts.size() == 1 and bike._motorcycle_rider_parts[0].get_meta("motorcycle_rider", false), "batched urban rider is separate from the motorcycle chassis")
 	check(bike._motorcycle_rider_parts.all(func(part): return part.visible), "ambient motorcycle has its rider")
 	world.player.teleport(bike.driver_door_anchor(-1))
 	bike.speed = 5.0
@@ -93,6 +93,7 @@ func run() -> void:
 	check(driving._begin_entry(bike, -1), "stopped motorcycle boarding admitted")
 	check(bike.horizontal_velocity == Vector3.ZERO and bike.velocity.x == 0 and bike.velocity.z == 0, "boarding clears residual horizontal drift")
 	check(await wait_transition(), "motorcycle boarding completes")
+	check(bike._motorcycle_rider_parts.all(func(part): return not part.visible), "fixed pilot stays hidden after Dante mounts")
 	check(world.player.visible and world.player.global_position.distance_to(bike.driver_seat_anchor()) < .01, "Dante replaces the old pilot at the motorcycle seat")
 	driving._process(.2)
 	check(driving.prompt.text.contains("moto"), "motorcycle exit uses motorcycle wording")
@@ -128,7 +129,7 @@ func run() -> void:
 		parked.vehicle_id = "video_vehicle_" + id
 		world.add_child(parked)
 		parked.set_physics_process(false)
-		check(parked._motorcycle_rider_parts.size() == 29, "%s separates every baked rider part" % id)
+		check(parked._motorcycle_rider_parts.size() == 1 and parked._motorcycle_rider_parts[0].get_meta("motorcycle_rider", false), "%s keeps its baked rider separate" % id)
 		check(parked._motorcycle_rider_parts.all(func(part): return not part.visible), "%s parked bike has no phantom rider" % id)
 		driving.car = parked
 		driving._watch_car(parked)

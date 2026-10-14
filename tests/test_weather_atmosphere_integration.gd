@@ -63,6 +63,22 @@ func run() -> void:
 	world.player.teleport(origin)
 	weather._update()
 	check(weather.precipitation.emitting and not weather.snow.emitting,"Return restores original rain")
+	# Exercise real sky ownership across a direct region transfer and interior.
+	var original_sky: Sky = weather.coastal_look.previous_sky
+	world.player.teleport(Vector3(-450,.08,-1280))
+	weather._update()
+	check(weather.drag_sky.installed and not weather.coastal_look.installed,"Drag strip takes ownership after coastal release")
+	world.player.teleport(origin)
+	weather._update()
+	check(weather.coastal_look.installed and not weather.drag_sky.installed,"Return transfers sky ownership back to coast")
+	check(weather.coastal_look.previous_sky==original_sky,"Round trip does not snapshot the coastal sky as its own predecessor")
+	weather.coastal_wetness = .63
+	entered = await world.session.enter_place("maciota",false)
+	weather._update()
+	check(entered and env.sky==original_sky,"Garage after drag strip restores the original reflection environment")
+	check(absf(weather.coastal_wetness-.63)<.02,"Garage transition preserves wet street state")
+	check(not world.session.state.weapons_allowed(),"Sky round trip preserves garage weapon restriction")
+	if entered: await world.session.leave_place()
 	print("WEATHER_ATMOSPHERE_INTEGRATION ",checks," checks; errors=",errors)
 	world.queue_free()
 	await process_frame

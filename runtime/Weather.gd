@@ -4,6 +4,8 @@ const REGIONAL_ATMOSPHERE := preload("res://runtime/atmosphere/RegionalAtmospher
 const DESERT_MOON := preload("res://runtime/atmosphere/DesertMoonlight.gd")
 const PARTICLE_TEXTURES := preload("res://runtime/atmosphere/WeatherParticleTextures.gd")
 const COVERAGE := preload("res://runtime/atmosphere/PrecipitationCoverage.gd")
+const COASTAL_LOOK := preload("res://runtime/atmosphere/CoastalWeatherLook.gd")
+const COASTAL_RAIN := preload("res://runtime/atmosphere/CoastalRainPresentation.gd")
 # Productive V1 HarborGame and MountainPass both override the manager to 24 min.
 const DAY_LENGTH_SECONDS := 1440.0
 var controller
@@ -25,6 +27,9 @@ var weather_audio: Node
 var storm: Node
 var surface_effects: Node3D
 var rain_intensity := .22
+var coastal_look := COASTAL_LOOK.new()
+var coastal_wetness := 0.0
+var _visual_clouds := -1.0
 var _covered := false
 var _weather_rng := RandomNumberGenerator.new()
 
@@ -52,6 +57,8 @@ const MOON_AMBIENT_NEW := .26
 const MOON_AMBIENT_FULL := .42
 const HARBOR_SKY_FULL_MOON := Color("1d2c47")
 func _exit_tree() -> void:
+	if controller != null and is_instance_valid(controller.environment):
+		coastal_look.release(controller.environment.environment)
 	for channel in [wind_audio]:
 		if is_instance_valid(channel):
 			channel.stop()
@@ -67,6 +74,7 @@ func _ready() -> void:
 	time_of_day = float(controller.state.world_state.get("time",.32))
 	weather_state = int(controller.state.world_state.get("weather",0))
 	rain_intensity = clampf(float(controller.state.world_state.get("rain_intensity",.22)),.14,.30)
+	coastal_wetness = clampf(float(controller.state.world_state.get("coastal_wetness",1.0 if weather_state in [1,2] else 0.0)),0.0,1.0)
 	precipitation = GPUParticles3D.new()
 	precipitation.amount = 600
 	precipitation.lifetime = 1.6
@@ -128,6 +136,8 @@ func _ready() -> void:
 	snow.process_material = snow_process
 	snow.emitting = false
 	controller.world.add_child(snow)
+	# Configure rain only after snow/hail have their independent meshes.
+	COASTAL_RAIN.configure(precipitation)
 	weather_audio = preload("res://audio/weather/WeatherAudioMixer.gd").new()
 	add_child(weather_audio)
 	rain_audio = weather_audio.layers[0]
@@ -144,6 +154,9 @@ func _ready() -> void:
 	wind_audio.finished.connect(func(): if atmosphere.weights.get("mountain",0.0)>0.001: wind_audio.play())
 	_update()
 func _process(delta: float) -> void:
+	# Harbor moisture continues while visiting shelters/other regions; snow does
+	# not fill the coastal streets and entering a room cannot dry them instantly.
+	coastal_wetness = COASTAL_LOOK.advance_wetness(coastal_wetness,weather_state in [1,2],delta)
 	if "--benchmark" not in OS.get_cmdline_user_args():
 		var next_time := fposmod(time_of_day+delta/DAY_LENGTH_SECONDS,1.0)
 		# Virada da meia-noite conta um dia para a fase da lua (salvo no mundo).
@@ -174,6 +187,7 @@ func _process(delta: float) -> void:
 	controller.state.world_state.time = time_of_day
 	controller.state.world_state.weather = weather_state
 	controller.state.world_state.rain_intensity = rain_intensity
+	controller.state.world_state.coastal_wetness = coastal_wetness
 ## Dia do ciclo lunar. Save antigo sem o campo começa no quarto crescente,
 ## para a primeira noite já ter alguma lua.
 func moon_day() -> int:
@@ -206,7 +220,9 @@ func _update() -> void:
 	var regional_weight: float = REGIONAL_ATMOSPHERE.weights_at(focus).mountain
 	var desert: float = REGIONAL_ATMOSPHERE.desert_weight(focus)
 	var rain_exposure := (1.0-regional_weight)*(1.0-desert)
-	var local_clouds := _harbor_overcast()*(1.0-desert)
+	var target_clouds := _harbor_overcast()
+	_visual_clouds = target_clouds if _visual_clouds < 0.0 else lerpf(_visual_clouds,target_clouds,1.0-exp(-maxf(atmosphere_step,0.0)/4.0))
+	var local_clouds := _visual_clouds*(1.0-desert)
 	var clouds: float = lerpf(local_clouds,front,regional_weight)
 	if inside: clouds = front if mountain else _harbor_overcast()
 	# Preserve existing indoor base light; outdoor exposure follows the V1 clock.
@@ -230,18 +246,28 @@ func _update() -> void:
 		DESERT_MOON.apply(controller.sun,controller.environment.environment,daylight,clouds,moon,REGIONAL_ATMOSPHERE.desert_weight(focus))
 	# A storm closes the distant sky without hiding nearby streets or actors.
 	# Reuse the existing depth fog and lighting, fading out toward Mountain.
-	if not inside and weather_state == 2:
-		var storm_weight := rain_exposure
+	if not inside and _visual_clouds > .72:
+		var storm_weight := rain_exposure*smoothstep(.72,1.0,_visual_clouds)
 		var env: Environment = controller.environment.environment
 		var storm_sky := Color("111923").lerp(Color("424e5b"),daylight)
 		env.background_color = env.background_color.lerp(storm_sky,storm_weight)
 		env.fog_light_color = env.fog_light_color.lerp(storm_sky,storm_weight*.8)
 		env.fog_sky_affect = lerpf(env.fog_sky_affect,.92,storm_weight)
 		controller.sun.light_energy *= lerpf(1.0,.72,storm_weight)
+	# Release before the next sky owner snapshots the environment. Otherwise a
+	# coast -> drag strip -> coast -> interior trip can retain our own sky.
+	if inside or rain_exposure <= .001:
+		coastal_look.release(controller.environment.environment)
 	drag_sky.apply(controller.environment.environment,focus,time_of_day,clouds,moon_illumination(),inside)
 	if drag_sky.installed:
 		# Preserve depth fog on terrain while keeping the cloud deck visible.
 		controller.environment.environment.fog_sky_affect = minf(controller.environment.environment.fog_sky_affect,.38)
+	coastal_look.apply(controller.environment.environment,controller.sun,daylight,local_clouds,coastal_wetness,rain_exposure,inside,time_of_day)
+	# One shared road material per Harbor geometry, independent of chunk count.
+	if controller.world.production != null:
+		var harbor = controller.world.production.regions.get("harbor")
+		if is_instance_valid(harbor) and harbor.harbor_road_geometry != null:
+			harbor.harbor_road_geometry.set_weather_wetness(coastal_wetness)
 	if controller.world.production != null:
 		var night_lights := 1.0-smoothstep(.25,.70,REGIONAL_ATMOSPHERE.daylight_at(time_of_day))
 		if is_instance_valid(controller.world.production.connection):
@@ -261,7 +287,7 @@ func _update() -> void:
 	var rain_strength := rain_strength_at(focus)
 	precipitation.amount_ratio = rain_strength
 	precipitation.speed_scale = lerpf(.65,1.0,rain_strength)
-	precipitation.draw_pass_1.material.albedo_color.a = lerpf(.38,.65,rain_strength)
+	COASTAL_RAIN.apply(precipitation,rain_strength,daylight,get_viewport().get_camera_3d())
 	precipitation.emitting = not covered and rain_strength>.001
 	snow.emitting = not covered and storm_state>0 and regional_weight>.001
 	snow.amount_ratio = regional_weight*(150.0 if storm_state==1 else 260.0 if storm_state==3 else 400.0)/400.0
@@ -291,3 +317,14 @@ func _harbor_overcast() -> float:
 		2: return 1.0 # Heavy storm, natural or explicitly activated.
 		3: return .52
 		_: return 0.0
+
+func get_coastal_wetness() -> float:
+	return coastal_wetness
+
+func get_city_lighting_factor() -> float:
+	var daylight := REGIONAL_ATMOSPHERE.daylight_at(time_of_day)
+	var night := 1.0-smoothstep(.18,.62,daylight)
+	# Cloudy daylight B stays natural; rain C brings warm existing fittings on
+	# gradually, with the same six-source pool and no extra shadow casters.
+	var rain_light := smoothstep(.54,.80,maxf(_visual_clouds,0.0))*.52
+	return maxf(night,rain_light)

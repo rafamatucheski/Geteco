@@ -51,11 +51,25 @@ func build() -> void:
 	var rise := DECK_HEIGHT / float(STEPS + 1)
 
 	# Tabuleiro: laje de concreto, piso escuro e vigas laterais pintadas.
-	_box(Vector3(0, DECK_HEIGHT - DECK_THICKNESS * 0.5, 0), Vector3(width, DECK_THICKNESS, half_deck * 2.0), concrete)
-	_box(Vector3(0, DECK_HEIGHT + 0.01, 0), Vector3(width - 0.3, 0.02, half_deck * 2.0 - 0.1), paving)
+	# Concrete rim and paving share one height; the structural underside remains.
+	var opening := Rect2(-width * .5 + .15,-half_deck + .05,width - .3,half_deck * 2.0 - .1)
+	var slab := MeshInstance3D.new()
+	slab.name = "DeckStructure"
+	slab.mesh = preload("res://world/urban_detail/SlabVisibleFaces.gd").box_with_top_opening(Vector3(width,DECK_THICKNESS,half_deck * 2.0),opening)
+	slab.position.y = DECK_HEIGHT - DECK_THICKNESS * .5
+	slab.material_override = concrete
+	add_child(slab)
+	var finish := MeshInstance3D.new()
+	finish.name = "DeckPaving"
+	var plane := PlaneMesh.new()
+	plane.size = opening.size
+	finish.mesh = plane
+	finish.position.y = DECK_HEIGHT
+	finish.material_override = paving
+	add_child(finish)
 	_solid(Vector3(0, DECK_HEIGHT - DECK_THICKNESS * 0.5, 0), Vector3(width, DECK_THICKNESS, half_deck * 2.0))
 	for side in [-1.0, 1.0]:
-		var x: float = side * (width * 0.5 + 0.1)
+		var x: float = side * (width * 0.5 + 0.11)
 		_box(Vector3(x, DECK_HEIGHT - GIRDER_DEPTH * 0.5, 0), Vector3(0.22, GIRDER_DEPTH, half_deck * 2.0), paint)
 		# Treliça leve na viga: montantes e diagonais alternadas lêem como estrutura metálica.
 		var bays := maxi(2, int(half_deck * 2.0 / 1.6))

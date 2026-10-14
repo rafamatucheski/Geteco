@@ -31,7 +31,15 @@ func run() -> void:
 	var gap_point := (polygon[6]+polygon[19])*.5
 	var seam_ray := PhysicsRayQueryParameters3D.create(Vector3(gap_point.x,2,gap_point.y),Vector3(gap_point.x,-.2,gap_point.y),1)
 	var seam_hit := fixture.get_world_3d().direct_space_state.intersect_ray(seam_ray)
-	check(not seam_hit.is_empty() and seam_hit.collider.name=="HarborConnectorGapBody","Gap collision supports the exposed convergence before the lower deck")
+	check(not seam_hit.is_empty() and absf(seam_hit.position.y)<.001,"Convergence has support at road level")
+	# The structural deck is also at y=0 here; a ray may return either of
+	# those coplanar supports. Isolate the gap to verify its own collider.
+	var other_supports: Array[RID] = []
+	for body in connection.find_children("*","StaticBody3D",true,false):
+		if body.name != "HarborConnectorGapBody": other_supports.append(body.get_rid())
+	seam_ray.exclude = other_supports
+	seam_hit = fixture.get_world_3d().direct_space_state.intersect_ray(seam_ray)
+	check(not seam_hit.is_empty() and seam_hit.collider.name=="HarborConnectorGapBody","Gap collision independently supports the convergence")
 
 	var expected := {
 		"anchor":[Vector2(555,1132),Vector2(685,1132)],

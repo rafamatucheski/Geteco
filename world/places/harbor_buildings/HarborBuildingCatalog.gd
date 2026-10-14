@@ -26,7 +26,7 @@ static func definitions() -> Array[Dictionary]:
 	var source: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://world/regions/OriginalWorldData.json"))
 	for record: Dictionary in source.get("harbor_buildings",[]):
 		var id := str(record.id)
-		if EXISTING.has(id): continue
+		if EXISTING.has(id) or bool(record.get("exterior_only", false)): continue
 		var edit: Dictionary = edits.get("building/"+id,{})
 		if edit.get("deleted",false): continue
 		var row := record.duplicate(true)

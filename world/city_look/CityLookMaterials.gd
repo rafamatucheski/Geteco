@@ -9,6 +9,8 @@ extends RefCounted
 
 static var _cache := {}
 static var night := 0.0
+static var wetness := 0.0
+const LAMP_POOL_SHADER := preload("res://world/city_look/city_lamp_pool.gdshader")
 
 # Cores de referência. Os postes eram sódio puro (1, .62, .26): somado às
 # janelas âmbar, à vitrine âmbar e ao LUT creme, a noite inteira virava um
@@ -34,8 +36,14 @@ static func set_night(value: float) -> void:
 	# desligada pelo CityLook durante o dia para economizar o draw.
 	# A cor está na textura (núcleo branco, borda quente); aqui só a energia.
 	# Era 1,25: em asfalto claro estourava e virava disco sólido.
-	light_pool().albedo_color = Color(1, 1, 1) * (0.85 * night)
+	light_pool().set_shader_parameter("night",night)
+	light_pool().set_shader_parameter("diffuse_energy",Color(.85*night,.85*night,.85*night).srgb_to_linear().r)
 	neon_materials_set(night)
+
+
+static func set_wetness(value: float) -> void:
+	wetness = clampf(value,0.0,1.0)
+	light_pool().set_shader_parameter("wetness",wetness)
 
 
 static func window_lit(index: int) -> StandardMaterial3D:
@@ -78,23 +86,19 @@ static func lamp_head() -> StandardMaterial3D:
 
 
 ## Mancha de luz no chão embaixo do poste: quad aditivo com gradiente radial.
-static func light_pool() -> StandardMaterial3D:
+static func light_pool() -> ShaderMaterial:
 	if _cache.has("light_pool"): return _cache["light_pool"]
-	var material := StandardMaterial3D.new()
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	material.no_depth_test = false
-	material.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
-	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var material := ShaderMaterial.new()
+	material.shader = LAMP_POOL_SHADER
 	# Gradiente colorido em vez de cinza: núcleo quase branco logo abaixo da
 	# lâmpada, anel quente e borda longa que morre suave. Uma cor só em todo o
 	# disco lia como adesivo laranja no chão.
-	material.albedo_texture = radial_texture("pool_v2", [
+	material.set_shader_parameter("radial_texture",radial_texture("pool_v2", [
 		Color(1.0, 0.97, 0.9, 1), Color(0.78, 0.7, 0.56, 1), Color(0.34, 0.27, 0.18, 1),
-		Color(0.1, 0.075, 0.05, 1), Color(0, 0, 0, 1)], [0.0, 0.18, 0.45, 0.72, 1.0])
-	material.albedo_color = Color.BLACK
-	material.disable_receive_shadows = true
+		Color(0.1, 0.075, 0.05, 1), Color(0, 0, 0, 1)], [0.0, 0.18, 0.45, 0.72, 1.0]))
+	material.set_shader_parameter("night",night)
+	material.set_shader_parameter("diffuse_energy",Color(.85*night,.85*night,.85*night).srgb_to_linear().r)
+	material.set_shader_parameter("wetness",wetness)
 	_cache["light_pool"] = material
 	return material
 
@@ -155,6 +159,20 @@ static func window_unlit(index: int) -> StandardMaterial3D:
 		# Persiana: listras horizontais finas.
 		material.albedo_texture = _blinds_texture()
 	_cache[key] = material
+	return material
+
+
+## Exterior glazing with a dark room behind it. Keep an opaque, single-pass
+## surface, but preserve glass roughness so the shared sky supplies reflection.
+## flat() intentionally adds plaster detail and cannot represent this role.
+static func window_glass_dark() -> StandardMaterial3D:
+	if _cache.has("window_glass_dark"): return _cache["window_glass_dark"]
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color(.20,.29,.34)
+	material.roughness = .20
+	material.metallic = .15
+	material.metallic_specular = .7
+	_cache["window_glass_dark"] = material
 	return material
 
 

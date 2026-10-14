@@ -2,11 +2,16 @@ extends RefCounted
 ## Narrow, static shoreline strips. GPU animates the wash; no frame callbacks.
 const WIDTH := 1.7
 const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
+const GROUND_CUT := preload("res://world/urban_detail/GroundCut.gd")
 var strips: Array[Dictionary] = []
+var dry_land: Array[PackedVector2Array] = []
 var material: ShaderMaterial
 
 func configure(polygons: Array[PackedVector2Array]) -> void:
 	strips.clear()
+	dry_land.clear()
+	for polygon in polygons:
+		if polygon.size() >= 3: dry_land.append(polygon)
 	material = ShaderMaterial.new()
 	material.shader = preload("res://world/regions/harbor_shore_wash.gdshader")
 	for polygon in polygons:
@@ -60,9 +65,12 @@ func build_chunk(parent: Node3D, rect: Rect2) -> void:
 	var normals := PackedVector3Array()
 	var uv := PackedVector2Array()
 	var indices := PackedInt32Array()
+	var cuts: Array[PackedVector2Array] = []
+	for polygon in dry_land:
+		if GROUND_CUT.bounds(polygon).intersects(rect): cuts.append(polygon)
 	for strip in strips:
 		if not rect.intersects(strip.bounds): continue
-		for piece in _outside_canal_cut(Geometry2D.intersect_polygons(strip.quad,clip)):
+		for piece in GROUND_CUT.subtract_exact(_outside_canal_cut(Geometry2D.intersect_polygons(strip.quad,clip)),cuts):
 			var base := vertices.size()
 			for point in piece:
 				vertices.append(Vector3(point.x,-0.925,point.y))

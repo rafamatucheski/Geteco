@@ -1,0 +1,162 @@
+{
+  "scope": "Move Harbor Central near Neco, correct footbridge/station/track hidden floor faces, preserve roads and campaign gating.",
+  "station": {
+    "id": "harbor_central",
+    "before": [
+      145,
+      12,
+      67
+    ],
+    "after": [
+      -12,
+      12,
+      52
+    ],
+    "new_entry": [
+      -24,
+      0.12,
+      64
+    ],
+    "moved_m": 157.71493271088823,
+    "stations_in_harbor_before": 2,
+    "stations_in_harbor_after": 2,
+    "stations_moved": 1,
+    "new_stations_added": 0
+  },
+  "counts": {
+    "authored_harbor_roads_before": 40,
+    "authored_harbor_roads_after": 40,
+    "whole_roads_removed": 0,
+    "major_floor_overlap_pairs_before": 5,
+    "major_floor_overlap_pairs_after": 0,
+    "footbridge_paving_overlap_m2_before": 39.33,
+    "footbridge_paving_overlap_m2_after": 0,
+    "two_harbor_station_join_overlaps_m2_before": 37.26,
+    "two_harbor_station_join_overlaps_m2_after": 0,
+    "rail_descriptors_harbor_bbox_before": 242,
+    "rail_descriptors_harbor_bbox_after": 271,
+    "exact_duplicate_rail_descriptors_before": 0,
+    "exact_duplicate_rail_descriptors_after": 0,
+    "note": "Rail descriptor increase reflects the longer approach. Major floor pairs excludes intentional structural member contacts. No whole road was removed."
+  },
+  "geometry": "Structural slab sides/undersides and walkable collision preserved. Only hidden top faces under ballast removed. Platform connectors fill the actual gap; columns stop at underside and final treads meet landings. Five eligible offset pier candidates added on new Foundry approach, constrained by current street/building reservations.",
+  "validation": {
+    "dotnet_build": "PASS 0 warnings / 0 errors",
+    "slab_visible_faces": "PASS",
+    "footbridge_physical_crossing": "PASS up, across and down; guardrails; peak5.69m",
+    "railway_network": "101 checks PASS",
+    "relocation_contract": "20 checks PASS, 1402 coach envelope samples",
+    "real_main_access": "All four stations physically climbed/descended; old elevated save restored to new entrance",
+    "real_main_train_clearance": "488 queries, zero intersections after first curve was corrected; initial failed3 intersections retained in prior evidence",
+    "pillar_reservations": "PASS starting from all three regions, including late region availability",
+    "rendered_geometry": "PASS station coplanar top overlap arrays empty; footbridge paving overlap zero",
+    "night": "681 consecutive captured frames over29.974s, static/rotating camera and actor movement; no brightness discontinuity observed in static platform ROI. Capture workload ~23FPS; not a performance benchmark or full rain/distance-fade audit.",
+    "shutdown_diagnostic": "After night capture, SessionSystemProfile reported get_global_transform on a node leaving tree at shutdown; engine exited0. Not attributed to relocated geometry."
+  },
+  "performance_environment": {
+    "engine": "4.7.2-stable (official)",
+    "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+    "renderer": "mobile",
+    "resolution": "(1280, 720)",
+    "vsync": 1,
+    "max_fps": 144
+  },
+  "performance": {
+    "footbridge": {
+      "before": {
+        "fps": 84.1378887041334,
+        "frames": 2525,
+        "max_ms": 63.503,
+        "over_33_3_ms": 3,
+        "over_66_7_ms": 0,
+        "p50_ms": 12.19,
+        "p95_ms": 16.263,
+        "p99_ms": 21.192,
+        "seconds": 30.010261
+      },
+      "after": {
+        "fps": 78.8613277547776,
+        "frames": 2366,
+        "max_ms": 64.146,
+        "over_33_3_ms": 6,
+        "over_66_7_ms": 0,
+        "p50_ms": 12.83,
+        "p95_ms": 18.126,
+        "p99_ms": 24.799,
+        "seconds": 30.002031
+      },
+      "confirmation": {
+        "fps": 95.734126637023,
+        "frames": 2873,
+        "max_ms": 53.626,
+        "over_33_3_ms": 3,
+        "over_66_7_ms": 0,
+        "p50_ms": 11.069,
+        "p95_ms": 13.639,
+        "p99_ms": 20.508,
+        "seconds": 30.0101969999999
+      },
+      "conclusion": "Variable live scene: after runs 78.86 and 95.73 FPS; no fixed FPS gain or reproducible regression established from these samples."
+    },
+    "neco": {
+      "before": {
+        "fps": 136.84402892006,
+        "frames": 4108,
+        "max_ms": 42.329,
+        "over_33_3_ms": 1,
+        "over_66_7_ms": 0,
+        "p50_ms": 6.062,
+        "p95_ms": 10.897,
+        "p99_ms": 13.907,
+        "seconds": 30.0195779999999
+      },
+      "after": {
+        "fps": 140.552869060021,
+        "frames": 4217,
+        "max_ms": 24.936,
+        "over_33_3_ms": 0,
+        "over_66_7_ms": 0,
+        "p50_ms": 5.947,
+        "p95_ms": 10.766,
+        "p99_ms": 12.677,
+        "seconds": 30.002945
+      },
+      "conclusion": "Stable in this rendered sample; provisional 60 FPS target met."
+    },
+    "northgate": {
+      "before": {
+        "fps": 142.894457334228,
+        "frames": 4289,
+        "max_ms": 39.454,
+        "over_33_3_ms": 1,
+        "over_66_7_ms": 0,
+        "p50_ms": 6.737,
+        "p95_ms": 10.63,
+        "p99_ms": 11.976,
+        "seconds": 30.0151599999999
+      },
+      "after": {
+        "fps": 142.910896322611,
+        "frames": 4288,
+        "max_ms": 36.334,
+        "over_33_3_ms": 2,
+        "over_66_7_ms": 0,
+        "p50_ms": 6.39,
+        "p95_ms": 10.798,
+        "p99_ms": 11.851,
+        "seconds": 30.00471
+      },
+      "conclusion": "Stable in this rendered sample; provisional 60 FPS target met."
+    }
+  },
+  "evidence": [
+    "after/geometry.json",
+    "after/neco.png",
+    "after/footbridge.png",
+    "after/station_platform-02.png",
+    "after/night-sequence/timeline.json",
+    "../railway-clearance-42448-5972123/clearance.json",
+    "../railway-clearance-165868-12964674/clearance.json",
+    "../railway-neco-relocation-20261014/network.json"
+  ]
+}

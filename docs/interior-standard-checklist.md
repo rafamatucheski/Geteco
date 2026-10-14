@@ -1,5 +1,30 @@
 # Migração de interiores — checklist
 
+## Pisos dos acessos de Harbor — 13/10/2026
+
+Escopo: **6 lugares físicos existentes / 0 interiores reformados / 0 lugares novos**:
+Bay Medical, Westgate Garden, Quayside, Canal North, Ammu-Nation e casa do zelador. Inventário de interiores
+inalterado. Retirado o acabamento urbano oculto sob fundações, soleiras e vagas
+externas; cotas dos acessos preservadas. Os dois pavimentos do hospital foram
+particionados e receberam apoio físico próprio, incluindo a subida de pedestres.
+
+- [x] Reserva visual e apoio dos dez pontos de piso e travessia real dos dois
+  níveis do hospital: 24 verificações aprovadas em `evidence/harbor-facade-ground-walk.log`.
+- [x] Censo geométrico frontal sem redução da área coberta: comparação de
+  `evidence/harbor-ground-layers/rebuild-upper-faces.json` com
+  `evidence/harbor-ground-layers/rebuild-upper-reserved.json`.
+- [x] Fotos atuais e sequência de movimento dos acessos do hospital e das três
+  residências: `evidence/harbor-rebuild-20261013/access-final/` (dez quadros por
+  local, posições e apoio físico em `frames.json`). Pisos contínuos e soleiras
+  preservadas na revisão visual. Captura de PNG interrompe o frame e não mede FPS.
+- [x] Medição integrada de Harbor: três cenas comparadas em 1280×720 e sete
+  cenas atuais em 3440×1440, com 30 s estáveis por cena. Amostras, percentis,
+  aquecimento e limites em `evidence/harbor-rebuild-20261013/validation.json`.
+  Esta cobertura não equivale a benchmark individual dos seis interiores.
+- [ ] Comparativo visual anterior dos seis acessos e recertificação completa
+  de entrada/saída e oclusão dos interiores: não cobertos por este ajuste de
+  pavimentação exterior; nenhuma nova certificação integral de interior.
+
 ## Retorno de Último Abrigo — APK 0.3.3 — 12/10/2026
 
 Correção localizada em **1 acesso exterior existente**, sem novo lugar ou

@@ -1,5 +1,7 @@
 shader_type spatial;
-render_mode blend_mix, depth_draw_opaque, cull_back, shadows_disabled;
+render_mode blend_mix, depth_draw_opaque, cull_back, shadows_disabled, specular_disabled;
+
+#include "res://world/urban_detail/coastal_planar_reflection.gdshaderinc"
 
 // Poça de chuva: uma única malha/material compartilhado por todas as poças.
 // `fill` (0..1) é a umidade da cidade; cada poça cresce e seca pela borda,
@@ -10,9 +12,14 @@ uniform float rain : hint_range(0.0, 1.0) = 1.0;
 // pintada num tom de céu (0.16, 0.22, 0.30) com um brilho quebrado por cima.
 // O tom precisa ficar MAIS ESCURO que o asfalto molhado: com um azul claro e borda mole
 // (medição em vídeo, 2026-09-29) a poça lia como uma nuvenzinha de névoa pálida.
-uniform vec3 tint : source_color = vec3(0.10, 0.15, 0.21);
-uniform vec3 sheen : source_color = vec3(0.55, 0.68, 0.80);
+uniform vec3 tint : source_color = vec3(0.075, 0.105, 0.125);
+uniform vec3 sheen : source_color = vec3(0.27, 0.34, 0.38);
 instance uniform float seed = 0.0;
+varying highp vec3 coastal_world_position;
+
+void vertex() {
+	coastal_world_position=(MODEL_MATRIX*vec4(VERTEX,1.0)).xyz;
+}
 
 float hash(vec2 p) {
 	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
@@ -75,16 +82,20 @@ void fragment() {
 	vec3 rip = ripples(UV * RIPPLE_CELLS, TIME);
 	vec2 slope = rip.xy * rain * body * inner;
 	float ring_light = rip.z * rain * body * inner;
-	// Reflexo quebrado em arco, como os draw_arc de Puddle.gd.
-	float arc = exp(-pow((length(p - vec2(-0.25, -0.1)) - 0.45) * 9.0, 2.0)) * step(p.y, 0.05);
-	arc *= 0.5 + 0.5 * noise(p * 6.0 + seed * 5.0);
-	arc *= body;
-	NORMAL_MAP = vec3(0.5 + slope.x * 0.10, 0.5 + slope.y * 0.10, 1.0);
+	// A água recebe o céu e as luzes do ambiente. Não pinte arcos brancos fixos:
+	// vistos de cima eles parecem espuma ou nuvens, mesmo quando a chuva parou.
+	// Ondas discretas perturbam o reflexo, sem espalhar um halo claro pela poça.
+	NORMAL_MAP = vec3(0.5 + slope.x * 0.035, 0.5 + slope.y * 0.035, 1.0);
 	NORMAL_MAP_DEPTH = 1.0;
-	vec3 water = mix(tint, sheen, clamp(arc * 0.40 + ring_light * 0.35, 0.0, 1.0));
-	ALBEDO = mix(tint * 0.45, water, body);
-	ROUGHNESS = mix(0.45, 0.02, body);
+	vec3 water = mix(tint, sheen, clamp(ring_light * 0.16, 0.0, 1.0));
+	vec4 reflected = coastal_planar_sample(coastal_world_position,slope*0.30,0.65);
+	float grazing = pow(1.0-clamp(dot(normalize(NORMAL),normalize(VIEW)),0.0,1.0),3.0);
+	float reflection_amount = reflected.a*body*local_fill*(0.37+grazing*0.20);
+	ALBEDO = mix(tint * 0.45, water, body)*(1.0-reflection_amount);
+	EMISSION = reflected.rgb*reflection_amount;
+	// Rugosidade mínima evita pontos especulares subpixel piscando no movimento.
+	ROUGHNESS = mix(0.48, 0.12 + rain * 0.055, body);
 	METALLIC = 0.0;
-	SPECULAR = mix(0.5, 1.0, body);
+	SPECULAR = mix(0.08, 0.18, body)*(1.0-reflected.a);
 	ALPHA = alpha;
 }

@@ -90,12 +90,16 @@ static func shoulder_weight(point: Vector2, segments: Array) -> float:
 	var width := 1.65+sin(point.x*.37+point.y*.21)*.31+sin(point.x*.11-point.y*.29)*.29
 	return 1.0-smoothstep(.05,width,edge_distance)
 
-static func build_sites_ground(chunk: Node3D, rect: Rect2) -> void:
-	_prepare_resources()
+static func site_polygons() -> Array[PackedVector2Array]:
 	var truck := PackedVector2Array([Vector2(215,-780),Vector2(224,-790),Vector2(314,-788),Vector2(329,-780),Vector2(330,-724),Vector2(320,-712),Vector2(226,-714),Vector2(214,-724)])
 	var workshop := PackedVector2Array([Vector2(-158,-943),Vector2(-153,-947),Vector2(-121,-947),Vector2(-116,-941),Vector2(-117,-900),Vector2(-124,-893),Vector2(-153,-896),Vector2(-158,-903)])
-	_soft_ground(chunk,"TruckApron",truck,rect,.014)
-	_soft_ground(chunk,"DigoApron",workshop,rect,.012)
+	return [truck,workshop]
+
+static func build_sites_ground(chunk: Node3D, rect: Rect2) -> void:
+	_prepare_resources()
+	var polygons := site_polygons()
+	_soft_ground(chunk,"TruckApron",polygons[0],rect,.014)
+	_soft_ground(chunk,"DigoApron",polygons[1],rect,.012)
 
 static func _soft_ground(chunk: Node3D, label: String, polygon: PackedVector2Array, rect: Rect2, offset: float) -> void:
 	var bounds := Rect2(polygon[0],Vector2.ZERO)

@@ -53,9 +53,11 @@ var shadow_quality := 1
 var brightness := 1.0
 var show_fps := false
 ## 0 original, 1 diagonal exterior framing inspired by the compact HUD concept.
-var camera_view := 0
+var camera_view := 1
 
-const RESOLUTIONS := [Vector2i(1280,720), Vector2i(1600,900), Vector2i(1920,1080), Vector2i(2560,1440)]
+const RESOLUTIONS := [Vector2i(1280,720), Vector2i(1600,900), Vector2i(1920,1080), Vector2i(2560,1440),
+	# Novas entradas ficam no fim: o config salva o índice, então reordenar mudaria a escolha de quem já jogou.
+	Vector2i(1920,1200), Vector2i(2560,1080), Vector2i(3440,1440), Vector2i(3840,1600), Vector2i(5120,1440)]
 const FPS_LIMITS := [30, 60, 120, 144, 0]
 const SHADOW_ATLAS := [2048, 4096, 8192]
 ## "Média" é exatamente o padrão do renderer Mobile (atlas 4096, filtro duro): quem não
@@ -107,7 +109,7 @@ func load_settings(path := "user://settings.cfg") -> Error:
 		shadow_quality = clampi(int(config.get_value("display","shadow_quality",1)),0,2)
 		brightness = clampf(float(config.get_value("display","brightness",1.0)),.6,1.6)
 		show_fps = bool(config.get_value("display","show_fps",false))
-		camera_view = clampi(int(config.get_value("display","camera_view",0)), 0, 1)
+		camera_view = clampi(int(config.get_value("display","camera_view",1)), 0, 1)
 	return result
 
 func _exit_tree() -> void:

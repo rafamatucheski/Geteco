@@ -59,17 +59,19 @@ func run() -> void:
 	var clear_energy: float = controller.sun.light_energy
 	var clear_color: Color = controller.sun.light_color
 	var clear_background: Color = controller.environment.environment.background_color
-	check(weather.HARBOR_SUN_DAY.is_equal_approx(Color("fffdf5")) and absf(clear_color.r-clear_color.g)<.04 and clear_color.b>=clear_color.r*.9,"Clear Harbor daylight keeps the authored near-neutral tint after atmospheric grading")
+	check(clear_color.r>clear_color.b and clear_color.b>=clear_color.r*.65,"Authored golden sunlight retains a substantial blue component")
 	check(controller.sun.shadow_enabled,"Productive directional shadows remain enabled")
 	weather.weather_state = 1
 	weather._update()
+	check(controller.sun.light_energy>clear_energy*.9,"Weather change starts gradually instead of cutting the daylight")
+	for i in 200: weather._update()
 	check(controller.sun.light_energy < clear_energy*.8,"Drizzle visibly reduces direct daylight instead of changing particles only")
 	check(controller.sun.light_color.b > controller.sun.light_color.r,"Drizzle moves highlights toward the cool V1 overcast palette")
 	check(not controller.environment.environment.background_color.is_equal_approx(clear_background),"Drizzle changes the environment palette")
 	check(weather.precipitation.emitting,"Drizzle still emits precipitation outdoors")
 	weather.time_of_day = .90
 	weather.weather_state = 0
-	weather._update()
+	for i in 200: weather._update()
 	check(controller.environment.environment.ambient_light_color.b > controller.environment.environment.ambient_light_color.r,"Night keeps blue shadow fill")
 	check(controller.sun.light_energy < clear_energy*.2,"Night remains materially darker than day")
 	for failure in failures: push_error(failure)

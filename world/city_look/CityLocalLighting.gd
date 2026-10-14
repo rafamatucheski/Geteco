@@ -37,6 +37,8 @@ func refresh() -> void:
 	if controller != null and controller.session != null and is_instance_valid(controller.session.weather):
 		if (controller.state.place_id.is_empty() or controller.session.weather._embedded_building()) and controller.state.region_id == "harbor":
 			night = 1.0-smoothstep(.25,.70,ATMOSPHERE.daylight_at(controller.session.weather.time_of_day))
+			if controller.session.weather.has_method("get_city_lighting_factor"):
+				night = controller.session.weather.get_city_lighting_factor()
 	_apply_editor_lights(night)
 	if night <= .01:
 		apply_sources([],Vector3.ZERO,0.0)

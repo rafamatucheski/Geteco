@@ -1,0 +1,282 @@
+{
+  "scope": "Two confirmed port floor overlaps and three authored desert forecourts. One assistant agent used for desert. No whole-road removal or mountain contact-shadow changes.",
+  "sampled_overlaps_m2": [
+    {
+      "site": "Santa Mare deck over base",
+      "before": 2548,
+      "after": 0
+    },
+    {
+      "site": "Northstar gangway/deck",
+      "before": 6,
+      "after": 0
+    },
+    {
+      "site": "Desert paddock/asphalt",
+      "before": 640,
+      "after": 0
+    },
+    {
+      "site": "Desert base under three forecourts",
+      "before": 11184,
+      "after": 0
+    }
+  ],
+  "counting_method": "Same 1m grid before/after. Areas are sampled overlap estimates, not counts of roads or exact unions. Other structural/paint pairs are not classified as defects by this census.",
+  "roads_removed": 0,
+  "port": {
+    "correction": "Reserve Santa Mare deck footprint from underlying visual floors while preserving existing support; trim Northstar gangway to hull edge.",
+    "target_overlap_after_m2": 0.0,
+    "support_checks": [
+      {
+        "point": "(288.0, 0.0, 186.0)",
+        "supported": true
+      },
+      {
+        "point": "(250.0, 0.0, 190.0)",
+        "supported": true
+      },
+      {
+        "point": "(204.0, 0.0, 110.0)",
+        "supported": true
+      },
+      {
+        "point": "(210.74, 0.0, 110.0)",
+        "supported": true
+      },
+      {
+        "point": "(210.76, 0.0, 110.0)",
+        "supported": true
+      }
+    ],
+    "sampled_covered_area_before_m2": 59769,
+    "sampled_covered_area_after_m2": 59769,
+    "rendered_sequence_frames": 270,
+    "crossing": {
+      "crossed": true,
+      "position": "(213.0009, -0.009069, 110.0)",
+      "support": "(213.0009, 0.0, 110.0)",
+      "time_seconds": 2.5
+    }
+  },
+  "desert": {
+    "changed_meshes": 17,
+    "whole_meshes_removed": 0,
+    "hidden_layer_area_removed_m2": 40996.76135696891,
+    "area_note": "Sum of removed layers over all 9 affected chunks, not unique land area or the smaller 4-chunk audit sample.",
+    "chunks": 9,
+    "ownership_failures": [],
+    "physical_support_checks": 27,
+    "road_records_before": 13,
+    "road_records_after": 13
+  },
+  "validation": {
+    "engine": "Godot 4.7.2 .NET / Mobile / RTX 4060 Laptop GPU",
+    "build": "dotnet build Harbor.csproj --no-restore: PASS, 0 warnings/errors",
+    "port_ownership": "PASS; zero target overlaps and 5 supports",
+    "port_ships": "PASS; loading, ship dressing and crane regressions",
+    "desert_ownership": "PASS; 9 chunks, 4m coverage grid without holes/duplicates, 27 supports",
+    "desert_roads_geometry": "PASS",
+    "desert_drag_meet_world": "PASS, 328 checks",
+    "visual": "Before/after screenshots inspected; intended finishes and transitions preserved at sampled sites.",
+    "physical": "All boarding/forecourt crossings reached targets; no missing ray support. Digo character temporal stability remains qualified below."
+  },
+  "performance": {
+    "method": "8s warmup + 30s real frame intervals per scenario, same seed/camera/time/weather/1280x720, normal FPS limit; no simultaneous benchmarks.",
+    "comparisons": [
+      {
+        "site": "northstar",
+        "before": {
+          "fps": 125.392726988577,
+          "frames": 3763,
+          "max_ms": 34.17,
+          "over_33_3_ms": 1,
+          "over_66_7_ms": 0,
+          "p50_ms": 7.251,
+          "p95_ms": 11.471,
+          "p99_ms": 15.625,
+          "seconds": 30.0097150000001
+        },
+        "after": {
+          "fps": 114.986625765947,
+          "frames": 3451,
+          "max_ms": 45.143,
+          "over_33_3_ms": 2,
+          "over_66_7_ms": 0,
+          "p50_ms": 8.883,
+          "p95_ms": 12.122,
+          "p99_ms": 17.527,
+          "seconds": 30.012186
+        },
+        "resolution": "(1280, 720)",
+        "vsync": 1,
+        "max_fps": 144,
+        "confirmation": {
+          "fps": 124.754797178489,
+          "frames": 3744,
+          "max_ms": 39.053,
+          "over_33_3_ms": 1,
+          "over_66_7_ms": 0,
+          "p50_ms": 7.609,
+          "p95_ms": 11.057,
+          "p99_ms": 15.238,
+          "seconds": 30.01087
+        }
+      },
+      {
+        "site": "santa-mare",
+        "before": {
+          "fps": 138.217884967799,
+          "frames": 4148,
+          "max_ms": 20.158,
+          "over_33_3_ms": 0,
+          "over_66_7_ms": 0,
+          "p50_ms": 6.292,
+          "p95_ms": 10.543,
+          "p99_ms": 13.552,
+          "seconds": 30.010588
+        },
+        "after": {
+          "fps": 138.978918454128,
+          "frames": 4171,
+          "max_ms": 36.014,
+          "over_33_3_ms": 1,
+          "over_66_7_ms": 0,
+          "p50_ms": 6.2,
+          "p95_ms": 10.406,
+          "p99_ms": 13.515,
+          "seconds": 30.011746
+        },
+        "resolution": "(1280, 720)",
+        "vsync": 1,
+        "max_fps": 144
+      },
+      {
+        "site": "police-day",
+        "before": {
+          "fps": 106.633791468757,
+          "frames": 3200,
+          "max_ms": 38.174,
+          "over_33_3_ms": 4,
+          "over_66_7_ms": 0,
+          "p50_ms": 9.213,
+          "p95_ms": 15.137,
+          "p99_ms": 19.501,
+          "seconds": 30.009249
+        },
+        "after": {
+          "fps": 117.993864385696,
+          "frames": 3541,
+          "max_ms": 39.021,
+          "over_33_3_ms": 1,
+          "over_66_7_ms": 0,
+          "p50_ms": 8.662,
+          "p95_ms": 11.954,
+          "p99_ms": 13.647,
+          "seconds": 30.0100350000001
+        },
+        "resolution": "(1280, 720)",
+        "vsync": 1,
+        "max_fps": 144
+      },
+      {
+        "site": "paddock",
+        "before": {
+          "fps": 137.93889626137,
+          "frames": 4148,
+          "max_ms": 91.196,
+          "over_33_3_ms": 3,
+          "over_66_7_ms": 1,
+          "p50_ms": 6.33,
+          "p95_ms": 9.831,
+          "p99_ms": 12.112,
+          "seconds": 30.0712860000001
+        },
+        "after": {
+          "fps": 139.961976996249,
+          "frames": 4200,
+          "max_ms": 24.181,
+          "over_33_3_ms": 0,
+          "over_66_7_ms": 0,
+          "p50_ms": 6.341,
+          "p95_ms": 9.772,
+          "p99_ms": 11.056,
+          "seconds": 30.00815
+        },
+        "resolution": "(1280, 720)",
+        "vsync": 1,
+        "max_fps": 144
+      },
+      {
+        "site": "truck-apron",
+        "before": {
+          "fps": 143.919341189972,
+          "frames": 4319,
+          "max_ms": 25.812,
+          "over_33_3_ms": 0,
+          "over_66_7_ms": 0,
+          "p50_ms": 6.957,
+          "p95_ms": 8.848,
+          "p99_ms": 9.598,
+          "seconds": 30.009865
+        },
+        "after": {
+          "fps": 143.980984911259,
+          "frames": 4320,
+          "max_ms": 17.159,
+          "over_33_3_ms": 0,
+          "over_66_7_ms": 0,
+          "p50_ms": 6.954,
+          "p95_ms": 8.753,
+          "p99_ms": 9.17,
+          "seconds": 30.003962
+        },
+        "resolution": "(1280, 720)",
+        "vsync": 1,
+        "max_fps": 144
+      },
+      {
+        "site": "digo-apron",
+        "before": {
+          "fps": 143.452091934126,
+          "frames": 4304,
+          "max_ms": 39.754,
+          "over_33_3_ms": 2,
+          "over_66_7_ms": 0,
+          "p50_ms": 6.952,
+          "p95_ms": 10.157,
+          "p99_ms": 11.163,
+          "seconds": 30.003048
+        },
+        "after": {
+          "fps": 143.825317468973,
+          "frames": 4315,
+          "max_ms": 20.233,
+          "over_33_3_ms": 0,
+          "over_66_7_ms": 0,
+          "p50_ms": 6.955,
+          "p95_ms": 10.205,
+          "p99_ms": 10.82,
+          "seconds": 30.001672
+        },
+        "resolution": "(1280, 720)",
+        "vsync": 1,
+        "max_fps": 144
+      }
+    ],
+    "conclusion": "No confirmed regression in the finite follow-up. Small FPS differences do not prove a material improvement; moving population varies and the desert approaches the 144 FPS limit.",
+    "northstar_variation": "First after run fell from 125.39 to 114.99 FPS. A single planned confirmation gave 124.75 FPS with improved p95/p99 versus baseline. Both after results retained."
+  },
+  "limitations": [
+    "Digo crossing frame 61: actor origin dipped from about -0.009m to -0.084m for one frame and recovered on frame 62; ray support remained y=0. All 376 desert capture samples had support and all three routes completed. Physical shapes/IDs/transforms/layers are identical before and after composition, but cause of this actor oscillation was not isolated. Do not claim universal physical/temporal approval.",
+    "Native self_list errors occurred during desert travel in both before and after, outside timed samples. Baseline also logged SessionSystemProfile teardown errors; these were not repaired by the floor work.",
+    "Coverage is restricted to treated areas and daytime dry conditions; no claim that every overlap across all territories is eliminated."
+  ],
+  "evidence": {
+    "port_geometry": "geometry.json",
+    "port_temporal": "temporal/frames.json",
+    "desert_census": "../desert-floor-fix-20261014/census-after.json",
+    "desert_ownership": "../desert-floor-fix-20261014/ownership.json",
+    "desert_crossings": "../desert-floor-fix-20261014/temporal-crossings/frames.json"
+  }
+}

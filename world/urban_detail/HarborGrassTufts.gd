@@ -17,15 +17,27 @@ static var _grounds: Dictionary = {}
 static func ground_material(kind := "grass") -> StandardMaterial3D:
 	if _grounds.has(kind): return _grounds[kind]
 	var gravel := kind == "gravel"
+	# Antes: um ruído suave de 512 px esticado em 16 m e sem relevo, que lia como feltro
+	# chapado. Agora mais oitavas (folhas/seixos), contraste maior com manchas secas, e uma
+	# normal própria; o tile cai para ~6 m para o grão aparecer da câmera alta.
 	var noise := FastNoiseLite.new()
 	noise.seed = 3107 if not gravel else 5519
 	noise.noise_type = FastNoiseLite.TYPE_CELLULAR if gravel else FastNoiseLite.TYPE_SIMPLEX_SMOOTH
-	noise.frequency = 0.05 if gravel else 0.012
-	noise.fractal_octaves = 3 if gravel else 4
+	noise.frequency = 0.07 if gravel else 0.028
+	noise.fractal_octaves = 5 if gravel else 6
+	noise.fractal_gain = 0.6
+	noise.fractal_lacunarity = 2.2
 	var ramp := Gradient.new()
-	ramp.set_color(0, Color("6f6a5c") if gravel else Color("3f5234"))
-	ramp.set_color(1, Color("b1a88f") if gravel else Color("6e8450"))
-	ramp.add_point(0.55, Color("958d77") if gravel else Color("56693f"))
+	if gravel:
+		ramp.set_color(0, Color("5d5849"))
+		ramp.set_color(1, Color("c0b79c"))
+		ramp.add_point(0.5, Color("918973"))
+	else:
+		ramp.set_color(0, Color("2f4227"))
+		ramp.set_color(1, Color("86a05a"))
+		ramp.add_point(0.35, Color("445c32"))
+		ramp.add_point(0.62, Color("5f7a40"))
+		ramp.add_point(0.88, Color("8e9a56"))
 	var texture := NoiseTexture2D.new()
 	texture.width = 512
 	texture.height = 512
@@ -33,12 +45,28 @@ static func ground_material(kind := "grass") -> StandardMaterial3D:
 	texture.noise = noise
 	texture.color_ramp = ramp
 	texture.generate_mipmaps = true
+	var relief := FastNoiseLite.new()
+	relief.seed = 8841 if not gravel else 6620
+	relief.noise_type = FastNoiseLite.TYPE_CELLULAR if gravel else FastNoiseLite.TYPE_SIMPLEX
+	relief.frequency = 0.09 if gravel else 0.22
+	relief.fractal_octaves = 3
+	var normal := NoiseTexture2D.new()
+	normal.width = 512
+	normal.height = 512
+	normal.seamless = true
+	normal.as_normal_map = true
+	normal.bump_strength = 9.0 if gravel else 5.0
+	normal.noise = relief
+	normal.generate_mipmaps = true
 	var material := StandardMaterial3D.new()
 	material.albedo_texture = texture
+	material.normal_enabled = true
+	material.normal_texture = normal
+	material.normal_scale = 1.0
 	material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	material.uv1_triplanar = true
 	material.uv1_world_triplanar = true
-	material.uv1_scale = Vector3.ONE * (0.12 if gravel else 0.06)
+	material.uv1_scale = Vector3.ONE * (0.2 if gravel else 0.17)
 	material.roughness = 0.95
 	_grounds[kind] = material
 	return material

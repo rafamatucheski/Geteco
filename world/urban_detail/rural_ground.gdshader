@@ -10,7 +10,11 @@ void fragment() {
 	vec3 earth=texture(earth_texture,world_point*.045).rgb;
 	vec3 detail=texture(earth_texture,world_point*.48).rgb;
 	earth=mix(earth,detail,.16);
-	vec3 grass=texture(grass_texture,world_point*.06).rgb;
+	// Três escalas do mesmo tile: manchas largas (sem repetição visível), folhagem e grão fino.
+	vec3 grass_wide=texture(grass_texture,world_point*.035).rgb;
+	vec3 grass_mid=texture(grass_texture,world_point*.21).rgb;
+	float grain=texture(grass_texture,world_point*1.3).g-.4;
+	vec3 grass=mix(grass_wide,grass_mid,.55)+vec3(grain*.22);
 	ALBEDO=mix(grass,earth,smoothstep(0.0,1.0,COLOR.a));
 	ROUGHNESS=.96;
 	SPECULAR=.06;

@@ -1,6 +1,7 @@
 extends Node3D
 ## Original SalvageYard3D geometry extracted; crane/press share native world.
 const EDIT_PIECES := preload("res://world/editing/WorldEditPieces.gd")
+const GROUND_CUT := preload("res://world/urban_detail/GroundCut.gd")
 const PICKUP := Vector3(-1,0,6)
 const PRESS := Vector3(7.2,0,-1.5)
 ## Botão da prensa: poste ao lado da baia, fora da área de admissão da prensa.
@@ -103,8 +104,17 @@ func cylinder(parent: Node3D, at: Vector3, radius: float, height: float, color: 
 
 func _build() -> void:
 	var ground := box(stage,Vector3(0,-.14,0),Vector3(32,.22,23),"706a56")
+	# Gravel and the loading court share one elevation and meet at a cut edge.
+	# Keep the existing editable owners; replace only their ground geometry.
+	var court := Rect2(-6,-5.5,16,17)
+	ground.mesh = GROUND_CUT.flat_mesh(GROUND_CUT.subtract_exact([GROUND_CUT.rect_polygon(Rect2(-16,-11.5,32,23))],[GROUND_CUT.rect_polygon(court)]),.006,1.0)
+	ground.position = Vector3.ZERO
+	ground.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	EDIT_PIECES.group(self,[ground],"neco/gravel","Neko / Piso de cascalho")
 	var pad := box(stage,Vector3(2,-.01,3),Vector3(16,.08,17),"888c7f")
+	pad.mesh = GROUND_CUT.flat_mesh([GROUND_CUT.rect_polygon(court)],.006,1.0)
+	pad.position = Vector3.ZERO
+	pad.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	EDIT_PIECES.group(self,[pad],"neco/concrete","Neko / Piso de concreto")
 	# Wheel tracks, cracks, oil spills and a marked delivery pad.
 	for x in [-2.0,0.0]:

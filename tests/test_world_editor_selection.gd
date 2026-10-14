@@ -98,13 +98,13 @@ func run() -> void:
 	check(DATA.point(canvas.objects[bin.id].position).is_equal_approx(DATA.point(bin.position)+Vector2(2,1)),"Terminal bin drags independently of paving")
 	canvas.objects[bin.id] = bin
 	canvas.selected_id = ""
-	var slab: Dictionary = canvas.objects["piece/route/rodoviaria/0"]
-	check(canvas.pick(canvas.screen(DATA.point(slab.position))) == slab.id,"Raised sidewalk slab can be selected over broad paving")
+	for index in [0,1,2,3,4,6,7]:
+		check(not canvas.objects.has("piece/route/rodoviaria/"+str(index)),"Retired paving is absent from selectable catalog: "+str(index))
 	canvas.objects.merge(catalog.objects.duplicate(true))
-	for id in ["piece/route/rodoviaria/1","piece/route/rodoviaria/6","piece/route/rodoviaria/10","piece/route/rodoviaria/15"]:
+	for id in ["piece/route/rodoviaria/10","piece/route/rodoviaria/15"]:
 		var object: Dictionary = canvas.objects[id]
 		var picked: String = canvas.pick(canvas.screen(DATA.point(object.position)))
-		check(picked == id,"Road does not intercept curb, ramp or lamp: "+id+" got "+picked)
+		check(picked == id,"Road does not intercept lamp with its original ID: "+id+" got "+picked)
 	canvas.free()
 	await process_frame
 	print("WORLD_SELECTION checks=",checks," failures=",failures)

@@ -43,6 +43,14 @@ var _voice_cursor := 0
 ## testes contam por aqui.
 var splash_count := 0
 
+func set_coastal_reflection(texture: Texture2D, projection: Projection, enabled: bool) -> void:
+	if _material == null: return
+	_material.set_shader_parameter("reflection_texture", texture)
+	_material.set_shader_parameter("reflection_projection", projection)
+	_material.set_shader_parameter("reflection_enabled", enabled)
+	if texture != null:
+		_material.set_shader_parameter("reflection_texel_size", Vector2.ONE / texture.get_size())
+
 func _ready() -> void:
 	name = "RainPuddles"
 	_material = ShaderMaterial.new()
@@ -67,6 +75,10 @@ func _ready() -> void:
 		wetness = 1.0
 		raining = true
 		generation = 1
+	var weather = _weather()
+	if weather != null and weather.has_method("get_coastal_wetness"):
+		wetness = weather.get_coastal_wetness()
+		if wetness>0 and generation==0: generation = 1
 
 func _weather():
 	return controller.session.weather if controller != null and controller.session != null else null
@@ -88,7 +100,8 @@ func _process(delta: float) -> void:
 		_release_all()
 		_rejected.clear()
 	raining = now_raining
-	wetness = clampf(wetness + (FILL_RATE if raining else -DRY_RATE) * delta, 0.0, 1.0)
+	var weather = _weather()
+	wetness = weather.get_coastal_wetness() if weather != null and weather.has_method("get_coastal_wetness") else clampf(wetness + (FILL_RATE if raining else -DRY_RATE) * delta, 0.0, 1.0)
 	_material.set_shader_parameter("fill", wetness)
 	_material.set_shader_parameter("rain", 1.0 if raining else 0.0)
 	visible = wetness > 0.0

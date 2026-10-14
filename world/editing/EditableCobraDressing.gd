@@ -5,6 +5,7 @@ const PIECES := preload("res://world/editing/WorldEditPieces.gd")
 var _piece_depth := 0
 var _pieces: Array[Dictionary] = []
 var _grass_anchor: Node3D
+var _ground_finalized := false
 
 func _ready() -> void:
 	super._ready()
@@ -13,6 +14,24 @@ func _ready() -> void:
 		if child.name == "CobraWildGrass": _track_piece("Vegetação", [child], [])
 		if str(child.name).begins_with("CobraPathCorners"): _track_piece(str(child.name),[child],[])
 	_publish_pieces()
+	# Capture editable outlines while the original primitive and its authored
+	# pivot still exist. Runtime applies saved changes before final composition.
+	for piece in PIECES.collect(self):
+		var info := PIECES.shape_info(piece)
+		if not info.is_empty(): piece.set_meta("world_edit_shape_info",info)
+	finalize_ground.call_deferred()
+
+func _finish_ground_build() -> void:
+	pass
+
+func finalize_ground() -> void:
+	if not is_inside_tree() or _ground_finalized: return
+	preload("res://world/urban_detail/HarborDressingGround.gd").compose(self,zone_id)
+	_ground_finalized = true
+
+func refresh_ground_after_edit() -> void:
+	_ground_finalized = false
+	finalize_ground.call_deferred()
 
 func _tree(point: Vector2, scale_factor: float, dry: bool) -> void:
 	var start := _begin_piece()
@@ -33,6 +52,7 @@ func _refresh_grass() -> void:
 	if not is_inside_tree():
 		if not tree_entered.is_connected(_refresh_grass): tree_entered.connect(_refresh_grass, CONNECT_ONE_SHOT)
 		return
+	finalize_ground()
 	var has_land := false
 	for mesh in find_children("*","MeshInstance3D",true,false):
 		if mesh.get_meta("cobra_surface_label","")=="CobraDryMeadow": has_land=true; break
@@ -118,6 +138,9 @@ static func tag_route(zone: Node3D, p_zone_id: String) -> void:
 	for index in zone.get_child_count():
 		var child := zone.get_child(index) as Node3D
 		if child == null: continue
+		# Retired paving keeps its positional slot solely for saved IDs; an
+		# empty anchor is not an editable/selectable street furnishing.
+		if child.get_meta("district_ground_owned",false): continue
 		var label := str(child.name)
 		if label.begins_with("@") and child.get_child_count() > 0: label = str(child.get_child(0).name)
 		PIECES.mark(child, "route/%s/%d" % [p_zone_id, index], label.capitalize())

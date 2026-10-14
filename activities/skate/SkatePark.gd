@@ -96,7 +96,7 @@ func _build_street_section(concrete: Material) -> void:
 	# Small bank with a broad landing, not a freestanding triangular wall.
 	var bank := SurfaceTool.new()
 	bank.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var vertices := [Vector3(63, .025, 85.6), Vector3(65.6, .025, 85.6), Vector3(63, .60, 87), Vector3(65.6, .60, 87), Vector3(63, .025, 88.1), Vector3(65.6, .025, 88.1)]
+	var vertices := [LAYOUT.CENTER + Vector3(-4, .025, -8.4), LAYOUT.CENTER + Vector3(-1.4, .025, -8.4), LAYOUT.CENTER + Vector3(-4, .60, -7), LAYOUT.CENTER + Vector3(-1.4, .60, -7), LAYOUT.CENTER + Vector3(-4, .025, -5.9), LAYOUT.CENTER + Vector3(-1.4, .025, -5.9)]
 	for index in [0, 1, 2, 1, 3, 2, 2, 3, 4, 3, 5, 4, 0, 2, 4, 1, 5, 3]:
 		bank.add_vertex(vertices[index])
 	bank.generate_normals()
@@ -111,25 +111,25 @@ func _build_street_section(concrete: Material) -> void:
 	body.add_child(hull)
 	add_child(body)
 	# Grind ledge and flat rail, both occupy physical space. Tricks remain simple.
-	_box(Vector3(72.6, .27, 99.3), Vector3(.55, .49, 2.2), Color("a6a69c"), true)
-	_box(Vector3(72.6, .53, 99.3), Vector3(.59, .035, 2.24), Color("616966"))
-	_box(Vector3(72.65, .5, 91), Vector3(.065, .065, 2.5), Color("656d70"), true)
-	for z in [90.1, 91.9]:
-		_box(Vector3(72.65, .26, z), Vector3(.065, .48, .065), Color("656d70"), true)
-		_box(Vector3(72.65, .05, z), Vector3(.35, .05, .12), Color("515957"))
+	_box(LAYOUT.CENTER + Vector3(5.6, .27, 5.3), Vector3(.55, .49, 2.2), Color("a6a69c"), true)
+	_box(LAYOUT.CENTER + Vector3(5.6, .53, 5.3), Vector3(.59, .035, 2.24), Color("616966"))
+	_box(LAYOUT.CENTER + Vector3(5.65, .5, -3), Vector3(.065, .065, 2.5), Color("656d70"), true)
+	for z in [-3.9, -2.1]:
+		_box(LAYOUT.CENTER + Vector3(5.65, .26, z), Vector3(.065, .48, .065), Color("656d70"), true)
+		_box(LAYOUT.CENTER + Vector3(5.65, .05, z), Vector3(.35, .05, .12), Color("515957"))
 
 func _build_rest_area() -> void:
 	# Bench on the dry deck, away from the approach and bowl transition.
-	for z in [101.3, 101.5, 101.7]:
-		_box(Vector3(62, .46, z), Vector3(2.3, .07, .16), Color("8b7053"))
-	for x in [61.15, 62.85]:
-		_box(Vector3(x, .24, 101.5), Vector3(.12, .44, .55), Color("555e5b"))
+	for z in [7.3, 7.5, 7.7]:
+		_box(LAYOUT.CENTER + Vector3(-5, .46, z), Vector3(2.3, .07, .16), Color("8b7053"))
+	for x in [-5.85, -4.15]:
+		_box(LAYOUT.CENTER + Vector3(x, .24, 7.5), Vector3(.12, .44, .55), Color("555e5b"))
 	# Reserve the entire bench footprint, rather than allowing passage through the seat.
 	var bench_body := StaticBody3D.new()
 	var shape := CollisionShape3D.new()
 	var hull := BoxShape3D.new()
 	hull.size = Vector3(2.3, .5, .65)
 	shape.shape = hull
-	bench_body.position = Vector3(62, .25, 101.5)
+	bench_body.position = LAYOUT.CENTER + Vector3(-5, .25, 7.5)
 	bench_body.add_child(shape)
 	add_child(bench_body)

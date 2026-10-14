@@ -5,6 +5,9 @@ static var cache: Dictionary = {}
 static func ground(kind := "grass") -> StandardMaterial3D:
 	var key := "ground_"+kind
 	if cache.has(key): return cache[key]
+	if kind == "grass":
+		cache[key] = preload("res://world/urban_detail/HarborPaving.gd").lawn_material(Color("6a7559"))
+		return cache[key]
 	var mat: StandardMaterial3D = preload("res://world/urban_detail/HarborGrassTufts.gd").ground_material(kind).duplicate()
 	mat.albedo_color = Color("899075") if kind=="grass" else Color("78796d")
 	cache[key]=mat

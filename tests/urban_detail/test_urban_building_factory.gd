@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## Automated test suite for UrbanBuildingFactory and native 3D urban architecture.
-## Verifies that all 61 Harbor buildings instantiate properly, generate native physical collision on layer 1,
+## Verifies that all 65 Harbor buildings instantiate properly, generate native physical collision on layer 1,
 ## contain zero SubViewports, preserve entrance/courtyard approaches, support swept vehicle hulls,
 ## enforce proper-name signage, and rotate transit boarding approaches correctly.
 
@@ -24,7 +24,7 @@ func run() -> void:
 	
 	var world_data: Dictionary = JSON.parse_string(json_str)
 	var harbor_buildings: Array = world_data.get("harbor_buildings", [])
-	verify(harbor_buildings.size() == 61, "Found all 61 harbor buildings in registry")
+	verify(harbor_buildings.size() == 65, "Found all 65 harbor buildings in registry")
 	
 	var scale_factor: float = float(world_data.get("unit_scale", 1.0 / 16.0))
 	var factory = preload("res://world/urban_detail/UrbanBuildingFactory.gd")
@@ -151,12 +151,12 @@ func run() -> void:
 		await physics_frame
 	
 	verify(count_null_maciota == 1, "Verified 1 Maciota Garage place returning null")
-	# CemeteryKeeper is catalog-only and therefore not one of these 61 JSON rows.
-	verify(count_reused_models == 3, "Verified 3 reused authored 3D models in the 61-row registry (Hospital, Ammunation, Residence)")
-	verify(count_reconstructed == 57, "Verified 57 native reconstructed 3D buildings")
-	verify(count_null_maciota + count_reused_models + count_reconstructed == 61, "Verified exact total of 61 Harbor building records")
+	# CemeteryKeeper is catalog-only and therefore not one of these 65 JSON rows.
+	verify(count_reused_models == 3, "Verified 3 reused authored 3D models in the 65-row registry (Hospital, Ammunation, Residence)")
+	verify(count_reconstructed == 61, "Verified 61 native reconstructed 3D buildings")
+	verify(count_null_maciota + count_reused_models + count_reconstructed == 65, "Verified exact total of 65 Harbor building records")
 	
-	print("Verified all 61 building records successfully.")
+	print("Verified all 65 building records successfully.")
 	
 	# Test Transit Station Models
 	print("Testing UrbanTransitStation3D and rotated boarding approaches...")

@@ -1,11 +1,7 @@
 {
 	"regions": {
+		"desert": {},
 		"harbor": {
-			"building/FreightDepot": {
-				"deleted": true,
-				"id": "building/FreightDepot",
-				"type": "building"
-			},
 			"building/CanalHomesEast": {
 				"color": "#a6b2a0",
 				"height": 6.77144,
@@ -24,6 +20,24 @@
 				],
 				"type": "building"
 			},
+			"building/CobraWorkshop": {
+				"color": "655343",
+				"height": 3.39696,
+				"height_resolved": true,
+				"id": "building/CobraWorkshop",
+				"locked": false,
+				"model": "cobra_house",
+				"position": [
+					521.362670898438,
+					94.1819534301758
+				],
+				"rotation": 0.0,
+				"size": [
+					13.75,
+					15.9375
+				],
+				"type": "building"
+			},
 			"building/CourtyardHouse": {
 				"color": "775e54",
 				"height": 7.5,
@@ -37,6 +51,47 @@
 				"rotation": 0.0,
 				"size": [
 					12.8125,
+					10.625
+				],
+				"type": "building"
+			},
+			"building/FoundryTerraceWest": {
+				"color": "#a87d60",
+				"height": 7.61906,
+				"height_resolved": true,
+				"id": "building/FoundryTerraceWest",
+				"locked": false,
+				"model": "rowhouse_terrace",
+				"position": [
+					38.7627944946289,
+					39.8934173583984
+				],
+				"rotation": 0.0,
+				"size": [
+					13.125,
+					14.375
+				],
+				"type": "building"
+			},
+			"building/FreightDepot": {
+				"deleted": true,
+				"id": "building/FreightDepot",
+				"type": "building"
+			},
+			"building/FreightOffice": {
+				"color": "#c1b37c",
+				"height": 11.595225,
+				"height_resolved": true,
+				"id": "building/FreightOffice",
+				"locked": false,
+				"model": "office",
+				"position": [
+					153.336135864258,
+					93.9822845458984
+				],
+				"rotation": 0.0,
+				"size": [
+					17.8125,
 					10.625
 				],
 				"type": "building"
@@ -67,8 +122,8 @@
 				"locked": false,
 				"model": "brownstone",
 				"position": [
-					118.125,
-					6.75
+					117.971282958984,
+					1.89160823822021
 				],
 				"rotation": 0.0,
 				"service_base": {
@@ -628,8 +683,8 @@
 				"color": "465d3f",
 				"id": "harbor_prop/tree/12.81250/113.75000",
 				"position": [
-					10.0,
-					126.0
+					10.9296569824219,
+					126.197372436523
 				],
 				"rotation": 0.0,
 				"scale": 0.85,
@@ -830,8 +885,8 @@
 				"id": "new/1790426066_503_97028106",
 				"model": "urban_infill",
 				"position": [
-					7.0,
-					92.0
+					-0.133075714111329,
+					91.979118347168
 				],
 				"rotation": 90.0,
 				"size": [
@@ -846,8 +901,8 @@
 				"id": "new/1790426877_636_2342363314",
 				"model": "urban_infill",
 				"position": [
-					6.0,
-					109.0
+					-2.55508136749268,
+					109.10440826416
 				],
 				"rotation": 0.0,
 				"size": [
@@ -862,10 +917,10 @@
 				"id": "new/1790432139_406_2568146191",
 				"model": "urban_slab",
 				"position": [
-					137.0,
-					-1.0
+					5.0,
+					30.0
 				],
-				"rotation": 0.0,
+				"rotation": 90.0,
 				"size": [
 					16.0,
 					10.0
@@ -1096,11 +1151,126 @@
 				"surface": "concrete",
 				"type": "ground"
 			},
+			"piece/cobra/cobra_approach_ground/0": {
+				"deleted": true,
+				"id": "piece/cobra/cobra_approach_ground/0",
+				"position": [
+					448.758972167969,
+					95.5507202148438
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"type": "piece"
+			},
+			"piece/cobra/cobra_crossing_link/0": {
+				"deleted": true,
+				"id": "piece/cobra/cobra_crossing_link/0",
+				"position": [
+					449.445556640625,
+					111.77271270752
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"type": "piece"
+			},
+			"piece/cobra/cobra_crossing_link/1": {
+				"deleted": true,
+				"id": "piece/cobra/cobra_crossing_link/1",
+				"position": [
+					449.4375,
+					100.637496948242
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"type": "piece"
+			},
 			"piece/cobra/cobra_dry_meadow/0": {
 				"id": "piece/cobra/cobra_dry_meadow/0",
 				"position": [
 					478.0,
 					105.0
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"type": "piece"
+			},
+			"piece/cobra/cobra_entrance_path/0": {
+				"id": "piece/cobra/cobra_entrance_path/0",
+				"position": [
+					443.294769287109,
+					95.8278961181641
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"stretch": [
+					1.0,
+					1.495
+				],
+				"type": "piece"
+			},
+			"piece/cobra/cobra_entrance_path/13": {
+				"deleted": true,
+				"id": "piece/cobra/cobra_entrance_path/13",
+				"position": [
+					445.859375,
+					137.5
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"type": "piece"
+			},
+			"piece/cobra/cobra_entrance_path/14": {
+				"deleted": true,
+				"id": "piece/cobra/cobra_entrance_path/14",
+				"position": [
+					451.25,
+					125.625
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"type": "piece"
+			},
+			"piece/cobra/cobra_footpath/0": {
+				"id": "piece/cobra/cobra_footpath/0",
+				"position": [
+					435.583892822266,
+					102.54963684082
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"stretch": [
+					0.819477382450885,
+					1.0
+				],
+				"type": "piece"
+			},
+			"piece/cobra/cobra_footpath/1": {
+				"deleted": true,
+				"id": "piece/cobra/cobra_footpath/1",
+				"position": [
+					452.1875,
+					102.067367553711
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"type": "piece"
+			},
+			"piece/cobra/cobra_footpath/10": {
+				"id": "piece/cobra/cobra_footpath/10",
+				"position": [
+					509.195129394531,
+					119.702392578125
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"type": "piece"
+			},
+			"piece/cobra/cobra_footpath/11": {
+				"deleted": true,
+				"id": "piece/cobra/cobra_footpath/11",
+				"position": [
+					482.5,
+					72.8125
 				],
 				"rotation": 0.0,
 				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
@@ -1117,13 +1287,60 @@
 				"type": "piece"
 			},
 			"piece/cobra/cobra_footpath/2": {
+				"deleted": true,
 				"id": "piece/cobra/cobra_footpath/2",
 				"position": [
-					454.375,
+					464.701995849609,
 					85.625
 				],
 				"rotation": 0.0,
 				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"type": "piece"
+			},
+			"piece/cobra/cobra_footpath/5": {
+				"id": "piece/cobra/cobra_footpath/5",
+				"position": [
+					509.173278808594,
+					94.5902252197266
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"stretch": [
+					1.0,
+					1.02357267161866
+				],
+				"type": "piece"
+			},
+			"piece/cobra/cobra_footpath/6": {
+				"id": "piece/cobra/cobra_footpath/6",
+				"outline": [
+					[
+						-14.6824951171875,
+						-0.910003662109375
+					],
+					[
+						14.6875,
+						-0.910003662109375
+					],
+					[
+						14.6875,
+						0.910003662109375
+					],
+					[
+						-14.6824951171875,
+						0.910003662109375
+					]
+				],
+				"position": [
+					438.174774169922,
+					109.789916992188
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"stretch": [
+					0.683942909155898,
+					1.0
+				],
 				"type": "piece"
 			},
 			"piece/cobra/cobra_footpath/7": {
@@ -1136,11 +1353,166 @@
 				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
 				"type": "piece"
 			},
+			"piece/cobra/cobra_footpath_edge/0": {
+				"deleted": true,
+				"id": "piece/cobra/cobra_footpath_edge/0",
+				"outline": [
+					[
+						-15.3074951171875,
+						-1.12000274658203
+					],
+					[
+						15.3125,
+						-1.12000274658203
+					],
+					[
+						15.3125,
+						1.12999725341797
+					],
+					[
+						-15.3074951171875,
+						1.12999725341797
+					]
+				],
+				"position": [
+					439.047271728516,
+					101.8974609375
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"stretch": [
+					0.884740842242794,
+					1.0
+				],
+				"type": "piece"
+			},
+			"piece/cobra/cobra_footpath_edge/1": {
+				"deleted": true,
+				"id": "piece/cobra/cobra_footpath_edge/1",
+				"position": [
+					459.716827392578,
+					93.6366271972656
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"type": "piece"
+			},
+			"piece/cobra/cobra_footpath_edge/10": {
+				"deleted": true,
+				"id": "piece/cobra/cobra_footpath_edge/10",
+				"position": [
+					512.458282470703,
+					120.151748657227
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"type": "piece"
+			},
+			"piece/cobra/cobra_footpath_edge/11": {
+				"deleted": true,
+				"id": "piece/cobra/cobra_footpath_edge/11",
+				"position": [
+					482.5,
+					72.8125
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"type": "piece"
+			},
 			"piece/cobra/cobra_footpath_edge/2": {
+				"deleted": true,
 				"id": "piece/cobra/cobra_footpath_edge/2",
 				"position": [
-					454.375,
+					460.476379394531,
 					85.625
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"type": "piece"
+			},
+			"piece/cobra/cobra_footpath_edge/5": {
+				"deleted": true,
+				"id": "piece/cobra/cobra_footpath_edge/5",
+				"position": [
+					509.375,
+					95.3125
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"type": "piece"
+			},
+			"piece/cobra/cobra_footpath_edge/6": {
+				"deleted": true,
+				"id": "piece/cobra/cobra_footpath_edge/6",
+				"position": [
+					435.3125,
+					113.75
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"type": "piece"
+			},
+			"piece/cobra/cobra_garden_path/0": {
+				"deleted": true,
+				"id": "piece/cobra/cobra_garden_path/0",
+				"position": [
+					490.278503417969,
+					103.761848449707
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"type": "piece"
+			},
+			"piece/cobra/cobra_garden_path/1": {
+				"deleted": true,
+				"id": "piece/cobra/cobra_garden_path/1",
+				"position": [
+					480.84375,
+					105.09375
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"type": "piece"
+			},
+			"piece/cobra/cobra_garden_path/2": {
+				"deleted": true,
+				"id": "piece/cobra/cobra_garden_path/2",
+				"position": [
+					485.800720214844,
+					100.04141998291
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"type": "piece"
+			},
+			"piece/cobra/cobra_home_gravel/3": {
+				"deleted": true,
+				"id": "piece/cobra/cobra_home_gravel/3",
+				"position": [
+					521.25,
+					93.3799133300781
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"type": "piece"
+			},
+			"piece/cobra/cobra_path_corners/0": {
+				"deleted": true,
+				"id": "piece/cobra/cobra_path_corners/0",
+				"position": [
+					498.173461914063,
+					100.923767089844
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"type": "piece"
+			},
+			"piece/cobra/cobra_path_corners_edge/0": {
+				"deleted": true,
+				"id": "piece/cobra/cobra_path_corners_edge/0",
+				"position": [
+					484.080108642578,
+					114.358909606934
 				],
 				"rotation": 0.0,
 				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
@@ -1167,11 +1539,82 @@
 					]
 				],
 				"position": [
-					451.25,
-					124.6875
+					451.211242675781,
+					124.084312438965
 				],
 				"rotation": 0.0,
 				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"type": "piece"
+			},
+			"piece/cobra/cobra_workshop_forecourt/0": {
+				"deleted": true,
+				"id": "piece/cobra/cobra_workshop_forecourt/0",
+				"position": [
+					519.371398925781,
+					73.2369918823242
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"type": "piece"
+			},
+			"piece/cobra/cobra_yard_fence/0": {
+				"id": "piece/cobra/cobra_yard_fence/0",
+				"position": [
+					433.680267333984,
+					83.4375
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"type": "piece"
+			},
+			"piece/cobra/jardim/0": {
+				"id": "piece/cobra/jardim/0",
+				"position": [
+					479.980743408203,
+					107.223114013672
+				],
+				"rotation": 0.0,
+				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
+				"type": "piece"
+			},
+			"piece/pl/harbor/0_1/dumpster~-4_895": {
+				"id": "piece/pl/harbor/0_1/dumpster~-4_895",
+				"position": [
+					-0.401810944080353,
+					83.9608993530273
+				],
+				"rotation": 0.0,
+				"source_record": "placement/harbor",
+				"type": "piece"
+			},
+			"piece/pl/harbor/0_1/dumpster~-5_895": {
+				"id": "piece/pl/harbor/0_1/dumpster~-5_895",
+				"position": [
+					-0.465295135974884,
+					87.9021453857421
+				],
+				"rotation": 0.0,
+				"source_record": "placement/harbor",
+				"type": "piece"
+			},
+			"piece/pl/harbor/0_1/trash_bags~-4_910": {
+				"id": "piece/pl/harbor/0_1/trash_bags~-4_910",
+				"position": [
+					-3.45834475755692,
+					84.7341156005859
+				],
+				"rotation": 0.0,
+				"source_record": "placement/harbor",
+				"type": "piece"
+			},
+			"piece/pl/harbor/6_1/planter~4440_1107": {
+				"id": "piece/pl/harbor/6_1/planter~4440_1107",
+				"position": [
+					455.951538085937,
+					130.483833312988
+				],
+				"rotation": 0.0,
+				"source_record": "placement/harbor",
 				"type": "piece"
 			},
 			"piece/route/connecting_streets/0": {
@@ -1185,6 +1628,7 @@
 				"type": "piece"
 			},
 			"piece/route/connecting_streets/4": {
+				"deleted": true,
 				"id": "piece/route/connecting_streets/4",
 				"position": [
 					76.0,
@@ -1195,6 +1639,7 @@
 				"type": "piece"
 			},
 			"piece/route/connecting_streets/5": {
+				"deleted": true,
 				"id": "piece/route/connecting_streets/5",
 				"position": [
 					76.0,
@@ -1342,6 +1787,27 @@
 				],
 				"rotation": 0.0,
 				"source_record": "transit/urban_station_5",
+				"type": "piece"
+			},
+			"piece/unit/harbor/0_1/Objeto~500_1146": {
+				"id": "piece/unit/harbor/0_1/Objeto~500_1146",
+				"position": [
+					50.061107635498,
+					114.502029418945
+				],
+				"rotation": 0.0,
+				"source_record": "unit/harbor/0_1",
+				"type": "piece"
+			},
+			"piece/unit/harbor/2_0/Objeto~1628_559": {
+				"deleted": true,
+				"id": "piece/unit/harbor/2_0/Objeto~1628_559",
+				"position": [
+					162.8125,
+					55.875
+				],
+				"rotation": 0.0,
+				"source_record": "unit/harbor/2_0",
 				"type": "piece"
 			},
 			"road/cobra_approach": {
@@ -1632,7 +2098,7 @@
 				],
 				"surface": "asphalt",
 				"type": "road",
-				"width": 9.0
+				"width": 14.0
 			},
 			"road/memorial_west": {
 				"id": "road/memorial_west",
@@ -2838,8 +3304,8 @@
 				"id": "road/mountain_track_2",
 				"points": [
 					[
-						702.6076508217226,
-						-329.3357904366063
+						702.607650821723,
+						-329.335790436606
 					],
 					[
 						715.625,
@@ -2870,8 +3336,8 @@
 				"id": "road/mountain_track_4",
 				"points": [
 					[
-						696.8420802625932,
-						-465.6655167734998
+						696.842080262593,
+						-465.6655167735
 					],
 					[
 						708.0,

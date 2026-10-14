@@ -35,7 +35,8 @@ func run() -> void:
 		return
 	evidence = FIXTURE.output_dir("railway-clearance")
 	var initial: Vector3 = NETWORK.get_station("harbor_central").entry
-	var snapshot := FIXTURE.full_snapshot(initial, true)
+	var saved_point := Vector3(149.4,12.95,67) if "--legacy-station-save" in OS.get_cmdline_user_args() else initial
+	var snapshot := FIXTURE.full_snapshot(saved_point, true)
 	snapshot.campaign.aftermath = {"call_complete": true}
 	var path := FIXTURE.write_fixture(evidence, "fixture.json", snapshot)
 	check(not path.is_empty(), "isolated completed-campaign fixture is valid")
@@ -51,6 +52,8 @@ func run() -> void:
 	check(world.session != null and world.session.ready_for_play, "actual Main ready")
 	if world.session == null or not world.session.ready_for_play: finish(); return
 	check(world.production.no_save and world.production.store.path == path, "fixture cannot write personal saves")
+	if "--legacy-station-save" in OS.get_cmdline_user_args():
+		check(world.player.global_position.distance_to(initial)<2.0,"legacy elevated station save restored at new station entrance")
 	var railway_world: Node = world.production.get("railway_world")
 	if railway_world == null:
 		for candidate in world.find_children("RailwayWorld", "", true, false): railway_world = candidate; break
@@ -70,6 +73,7 @@ func run() -> void:
 		# These cover both city approaches, both branches and the mountain/desert
 		# chord. Whole journeys retain the actual locomotive pose through junctions.
 		for pair in [["harbor_central", "harbor_north"], ["harbor_central", "mountain_pines"], ["harbor_central", "desert_copper"], ["mountain_pines", "desert_copper"]]:
+			if argument("--route-pair=") == "harbor" and pair != ["harbor_central", "harbor_north"]: continue
 			for reverse in [false, true]:
 				var points := NETWORK.get_route(pair[0], pair[1])
 				if reverse: points.reverse()

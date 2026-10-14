@@ -4,7 +4,10 @@ const FRAGILE := preload("res://gameplay/street_physics/FragileProps3D.gd")
 class Clock extends RefCounted:
 	var time_of_day := .93
 	var embedded := false
+	var rain_light := 0.0
 	func _embedded_building() -> bool: return embedded
+	func get_city_lighting_factor() -> float:
+		return maxf(rain_light,1.0-smoothstep(.18,.62,preload("res://runtime/atmosphere/RegionalAtmosphere3D.gd").daylight_at(time_of_day)))
 class Session extends RefCounted:
 	var weather := Clock.new()
 class World extends Node3D:
@@ -89,6 +92,10 @@ func run() -> void:
 	controller.session.weather.time_of_day = .45
 	lighting.refresh()
 	check(lighting.assignments.is_empty(),"real daylight factor disables fittings")
+	controller.session.weather.rain_light = .4
+	lighting.refresh()
+	check(lighting.assignments.size()==1,"Rain-darkened daylight reuses the existing fitting pool")
+	check(lighting.lights.size()==LIGHTING.CAPACITY,"Rain does not allocate additional local lights")
 	stage.free()
 	print("CITY_LOCAL_LIGHTING checks=",checks," failures=",failures)
 	quit(0 if failures.is_empty() else 1)

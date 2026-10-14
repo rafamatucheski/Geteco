@@ -30,6 +30,9 @@ uniform vec3 box_max = vec3(0.0);
 uniform float minimum_occluder_height = -1000.0;
 
 void fragment() {
+	// Gameplay aid belongs only to the player's view, never reflected light.
+	// CoastalPlanarReflections reserves render bits 16 and 17.
+	if (CAMERA_VISIBLE_LAYERS == (1u << 16u) || CAMERA_VISIBLE_LAYERS == (1u << 17u)) discard;
 	float scene_depth = texture(depth_tex, SCREEN_UV).r;
 	// Godot 4.3+ usa reverse-Z: maior = mais perto da câmera.
 	if (scene_depth <= FRAGCOORD.z + bias) {

@@ -864,6 +864,8 @@ func restore_location() -> void:
 		if pedestrian.get("region","") == state.region_id:
 			var coordinates: Array = pedestrian.position
 			point = Vector3(coordinates[0],coordinates[1],coordinates[2])-Vector3.UP*.08
+			if state.region_id == "harbor":
+				point = preload("res://world/railway/RailwayNetwork.gd").restore_harbor_pedestrian(point+Vector3.UP*.08)-Vector3.UP*.08
 		var saved_roof: Dictionary = state.world_state.get("harbor_service_roof",{})
 		if not saved_roof.is_empty() and str(saved_roof.get("place","")) == "":
 			var roof_return: Array = saved_roof["return"]

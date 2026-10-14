@@ -137,6 +137,7 @@ static func _road_clearance(context: Dictionary, point: Vector2) -> float:
 
 
 static func _inside_building(context: Dictionary, point: Vector2, margin := 0.3) -> bool:
+	if context.region.region_id == "harbor" and preload("res://activities/skate/SkateParkLayout.gd").reserved(point, margin): return true
 	if context.region.region_id == "harbor" and preload("res://runtime/FishingLocation.gd").reserved(point,margin): return true
 	if context.region.region_id == "harbor" and preload("res://world/places/amusement_park/AmusementParkLayout.gd").reserved(point,margin): return true
 	if preload("res://world/roadside_parking/RoadsideParkingLayout.gd").is_reserved(point, context.region.get_meta(&"roadside_parking_sites", []), margin): return true
@@ -166,9 +167,9 @@ static func _roll(key: String) -> float:
 
 
 static func _add(batches: Dictionary, kind: String, point: Vector3, forward: Vector2, scale := 1.0) -> void:
-	# Keep the authored skate transitions and landings clear of generated refuse.
+	# Full furniture footprints must clear the court and its sidewalk connection.
 	var skate_layout := preload("res://activities/skate/SkateParkLayout.gd")
-	if kind in ["dumpster", "trash_bags"] and skate_layout.enabled() and skate_layout.FOOTPRINT.grow(.7).has_point(Vector2(point.x, point.z)): return
+	if kind in ["dumpster", "trash_bags", "hydrant", "trash_can", "news_box", "mailbox", "phone_booth", "bench_seat", "planter"] and skate_layout.reserved(Vector2(point.x, point.z), 1.5 * scale): return
 	# forward: direção (x,z) para onde a frente (+Z local) do adereço aponta.
 	var yaw := atan2(forward.x, forward.y)
 	var basis := Basis(Vector3.UP, yaw).scaled(Vector3.ONE * scale)
@@ -285,6 +286,7 @@ static func _night_pass(chunk: Node3D, context: Dictionary) -> void:
 	var lamp_roots := {}
 	var pools := PackedVector3Array()
 	var pool_sizes := PackedFloat32Array()
+	var pool_heights := PackedFloat32Array()
 	for node in chunk.find_children("*", "MeshInstance3D", true, false):
 		var mesh := node as MeshInstance3D
 		if mesh == null or not mesh.is_inside_tree(): continue
@@ -294,6 +296,7 @@ static func _night_pass(chunk: Node3D, context: Dictionary) -> void:
 			var head := mesh.global_position
 			pools.append(Vector3(head.x, head.y - lamp_height + 0.06, head.z))
 			pool_sizes.append(clampf(lamp_height * 2.3, 6.0, 11.0))
+			pool_heights.append(lamp_height)
 			context.lamps.append(Vector2(head.x, head.z))
 			var root := _lamp_root(mesh)
 			if root != null and not lamp_roots.has(root): lamp_roots[root] = pools.size() - 1
@@ -301,7 +304,7 @@ static func _night_pass(chunk: Node3D, context: Dictionary) -> void:
 		_treat_window(mesh)
 	if not pools.is_empty():
 		for index in pools.size(): pools[index] = chunk.to_local(pools[index])
-		var pool_instance := _light_pools(pools, pool_sizes)
+		var pool_instance := _light_pools(pools, pool_sizes, pool_heights)
 		chunk.add_child(pool_instance)
 		# Poste que o carro derruba apaga a própria mancha de luz.
 		for root in lamp_roots:
@@ -355,6 +358,7 @@ static func _sidewalk_lamps(chunk: Node3D, context: Dictionary) -> void:
 	var heads := _lamp_multimesh("head", transforms.size())
 	var pools := PackedVector3Array()
 	var pool_sizes := PackedFloat32Array()
+	var pool_heights := PackedFloat32Array()
 	for index in transforms.size():
 		var local := to_local * transforms[index]
 		poles.set_instance_transform(index, local)
@@ -362,6 +366,7 @@ static func _sidewalk_lamps(chunk: Node3D, context: Dictionary) -> void:
 		var head := local * Vector3(0, LAMP_HEIGHT, LAMP_ARM)
 		pools.append(Vector3(head.x, local.origin.y + 0.05, head.z))
 		pool_sizes.append(clampf(LAMP_HEIGHT * 2.3, 6.0, 11.0))
+		pool_heights.append(LAMP_HEIGHT)
 	var pole_instance := MultiMeshInstance3D.new()
 	pole_instance.name = "CityLook_sidewalk_lamp"
 	pole_instance.multimesh = poles
@@ -373,7 +378,7 @@ static func _sidewalk_lamps(chunk: Node3D, context: Dictionary) -> void:
 	head_instance.material_override = MATERIALS.lamp_head()
 	head_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	chunk.add_child(head_instance)
-	var pool_instance := _light_pools(pools, pool_sizes)
+	var pool_instance := _light_pools(pools, pool_sizes, pool_heights)
 	pool_instance.name = "CitySidewalkLampPools"
 	chunk.add_child(pool_instance)
 	for index in transforms.size():
@@ -497,7 +502,7 @@ static func _treat_window(mesh: MeshInstance3D) -> void:
 		# escura custa uma passada transparente sem ganho visual). Variantes de
 		# cortina/persiana tiram a cara de fileira idêntica de dia.
 		var variant := int(_position_roll(mesh.global_position + Vector3(7.1, 0, 3.3)) * 10.0)
-		mesh.material_override = MATERIALS.window_unlit(variant) if variant < MATERIALS.UNLIT_VARIANTS else MATERIALS.flat(Color(0.20, 0.29, 0.34), 0.18)
+		mesh.material_override = MATERIALS.window_unlit(variant) if variant < MATERIALS.UNLIT_VARIANTS else MATERIALS.window_glass_dark()
 
 
 ## O arquétipo põe o vidro (2 cm) dentro da caixa do caixilho (8 cm): as faces
@@ -524,19 +529,23 @@ static func _position_roll(point: Vector3) -> float:
 	return _roll("%d,%d,%d" % [roundi(point.x * 4.0), roundi(point.y * 4.0), roundi(point.z * 4.0)])
 
 
-static func _light_pools(points: PackedVector3Array, sizes: PackedFloat32Array) -> MultiMeshInstance3D:
+static func _light_pools(points: PackedVector3Array, sizes: PackedFloat32Array, heights: PackedFloat32Array = PackedFloat32Array()) -> MultiMeshInstance3D:
 	var multimesh := MultiMesh.new()
 	multimesh.transform_format = MultiMesh.TRANSFORM_3D
+	multimesh.use_custom_data = true
 	multimesh.mesh = _flat_quad()
 	multimesh.instance_count = points.size()
 	for index in points.size():
 		var basis := Basis.IDENTITY.scaled(Vector3(sizes[index], 1.0, sizes[index]))
 		multimesh.set_instance_transform(index, Transform3D(basis, points[index]))
+		multimesh.set_instance_custom_data(index,Color(heights[index] if index<heights.size() else sizes[index]/2.3,0,0,0))
 	var instance := MultiMeshInstance3D.new()
 	instance.name = "CityLightPools"
 	instance.multimesh = multimesh
 	instance.material_override = MATERIALS.light_pool()
 	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	# Wet highlights extend the existing horizontal footprint by at most 30%.
+	instance.extra_cull_margin = 2.0
 	instance.visible = MATERIALS.night > 0.01
 	instance.add_to_group(NIGHT_GROUP)
 	return instance

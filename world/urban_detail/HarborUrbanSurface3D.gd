@@ -2,15 +2,16 @@
 extends RefCounted
 class_name HarborUrbanSurface3D
 
-## Source-authored Harbor lot and access paving projected into native 3D.
-## Rectangles, tints and material kinds come from HarborDistrict,
-## HarborEastDistrict and HarborNorthDistrict. No new lots are introduced.
+## Harbor's single exterior pavement, with inset planted beds.
+## Keep source rectangles stable for editor IDs and access reservations;
+## rebuild their visible union with a shared finish rather than painted patches.
 
 const SCALE := 1.0 / 16.0
 const GROUND := preload("res://assets/regions/source/world/harbor/UrbanGround.gd")
-const PAVING := preload("res://world/urban_detail/PromenadePaving.gd")
+const PAVING := preload("res://world/urban_detail/HarborPaving.gd")
 const GROUND_CUT := preload("res://world/urban_detail/GroundCut.gd")
 const CATALOG :=preload("res://world/places/PlaceCatalog.gd")
+const GARDEN_EDGE := 0.18
 
 var _surfaces: Array[Dictionary] = []
 var _visible_surfaces: Array[Dictionary] = []
@@ -59,7 +60,54 @@ func _compose_visible_surfaces() -> void:
 			pieces=next
 			if pieces.is_empty(): break
 		for piece in pieces:
-			_visible_surfaces.append({"rect":piece,"kind":_surfaces[i].kind,"color":_surfaces[i].color})
+			var kind := String(_surfaces[i].kind)
+			if kind == "grass":
+				# The edging belongs to the original garden perimeter, never to
+				# arbitrary pieces introduced by streets, access paths or streaming.
+				var inner := (_surfaces[i].rect as Rect2).grow(-GARDEN_EDGE)
+				var lawn := piece.intersection(inner)
+				if lawn.has_area():
+					_visible_surfaces.append({"rect":lawn,"kind":"grass","color":Color("687c65")})
+				for border in _rect_difference(piece,inner):
+					_visible_surfaces.append({"rect":border,"kind":"edging","color":PAVING.EDGE_COLOR})
+			else:
+				# Retire authored patch tints, while keeping deliberate new editor
+				# recolours functional. Old saved edits with the source tint migrate.
+				var finish: Color = PAVING.COLOR if _surfaces[i].color == _surfaces[i].get("authored_color",_surfaces[i].color) else _surfaces[i].color
+				_visible_surfaces.append({"rect":piece,"kind":"concrete","color":finish})
+	_merge_neighbours()
+
+
+func _rect_difference(rect: Rect2, cut: Rect2) -> Array[Rect2]:
+	var overlap := rect.intersection(cut)
+	if not overlap.has_area(): return [rect]
+	var result: Array[Rect2] = []
+	if overlap.position.y > rect.position.y: result.append(Rect2(rect.position,Vector2(rect.size.x,overlap.position.y-rect.position.y)))
+	if overlap.end.y < rect.end.y: result.append(Rect2(rect.position.x,overlap.end.y,rect.size.x,rect.end.y-overlap.end.y))
+	if overlap.position.x > rect.position.x: result.append(Rect2(rect.position.x,overlap.position.y,overlap.position.x-rect.position.x,overlap.size.y))
+	if overlap.end.x < rect.end.x: result.append(Rect2(overlap.end.x,overlap.position.y,rect.end.x-overlap.end.x,overlap.size.y))
+	return result
+
+
+## Dissolve obsolete access/lot seams before building meshes. Adjacent rectangles
+## are merged only when their union is rectangular, preserving all real openings.
+func _merge_neighbours() -> void:
+	var changed := true
+	while changed:
+		changed = false
+		for i in _visible_surfaces.size():
+			for j in range(i+1,_visible_surfaces.size()):
+				if _visible_surfaces[i].kind != _visible_surfaces[j].kind or _visible_surfaces[i].color != _visible_surfaces[j].color: continue
+				var a: Rect2 = _visible_surfaces[i].rect
+				var b: Rect2 = _visible_surfaces[j].rect
+				var horizontal := is_equal_approx(a.position.y,b.position.y) and is_equal_approx(a.size.y,b.size.y) and (is_equal_approx(a.end.x,b.position.x) or is_equal_approx(b.end.x,a.position.x))
+				var vertical := is_equal_approx(a.position.x,b.position.x) and is_equal_approx(a.size.x,b.size.x) and (is_equal_approx(a.end.y,b.position.y) or is_equal_approx(b.end.y,a.position.y))
+				if not horizontal and not vertical: continue
+				_visible_surfaces[i].rect = a.merge(b)
+				_visible_surfaces.remove_at(j)
+				changed = true
+				break
+			if changed: break
 
 
 ## `cover`: contorno das ruas do chunk (HarborRoadGeometry3D.chunk_cover); o lote não fica por baixo da rua.
@@ -139,6 +187,8 @@ func _add_east() -> void:
 
 func _add_north() -> void:
 	_add(Rect2(4380,-2400,2380,2300), "concrete", Color("999789"))
+	# Historic "gravel" IDs stay in the editor catalog. The built northern
+	# station promenade receives the same mineral pavement during composition.
 	_add(Rect2(5700,-4470,600,2120), "gravel", Color("82887d"))
 	for x in [5708.0,6250.0]: _add(Rect2(x,-4430,42,2030),"gravel",Color("b0ac96"))
 	_add(Rect2(5980,-4050,40,1650), "grass", Color("7d8b74"))
@@ -177,7 +227,7 @@ func _north_accesses() -> Array[Dictionary]:
 
 func _add(source_rect: Rect2, kind: String, color: Color) -> void:
 	for piece in _carved(source_rect):
-		_surfaces.append({"rect":Rect2(piece.position*SCALE,piece.size*SCALE),"kind":kind,"color":color})
+		_surfaces.append({"rect":Rect2(piece.position*SCALE,piece.size*SCALE),"kind":kind,"color":color,"authored_color":color})
 
 
 ## Splits source_rect around any raised-apron hole it overlaps, so the flat
@@ -215,7 +265,7 @@ func _add_access(source_rect: Rect2, kind: String, color: Color) -> void:
 func _add_group(parent: Node3D, group: Dictionary, cover: Array[PackedVector2Array] = []) -> void:
 	var pieces: Array[PackedVector2Array] = []
 	for rect_value in group.rects: pieces.append(GROUND_CUT.rect_polygon(rect_value as Rect2))
-	var mesh := GROUND_CUT.flat_mesh(GROUND_CUT.subtract(pieces, cover), 0.006, 16.0)
+	var mesh := GROUND_CUT.flat_mesh(GROUND_CUT.subtract(pieces, cover), 0.008, 4.0)
 	if mesh == null: return
 	mesh.surface_set_material(0,_material(String(group.kind),group.color))
 	var instance := MeshInstance3D.new()
@@ -230,22 +280,22 @@ func _add_group(parent: Node3D, group: Dictionary, cover: Array[PackedVector2Arr
 func _material(kind: String, color: Color) -> StandardMaterial3D:
 	var key := "%s|%s" % [kind,color.to_html()]
 	if _materials.has(key): return _materials[key]
-	if kind == "stone" or kind == "concrete":
-		# O preenchimento dos lotes usava a textura V1 com 1 tile a cada 16 m: de
-		# longe virava um plano chapado, ao lado da calçada em lajes. Agora usa as
-		# lajes com juntas da calçada, em escala de 2 m para diferenciar do passeio.
-		var slabs := PAVING.material(color, true).duplicate() as StandardMaterial3D
-		slabs.uv1_scale = Vector3.ONE * .125
-		slabs.cull_mode = BaseMaterial3D.CULL_DISABLED
-		_materials[key] = slabs
-		return slabs
+	if kind in ["stone","concrete","edging"]:
+		_materials[key] = PAVING.material(color)
+		return _materials[key]
+	if kind == "grass":
+		_materials[key] = PAVING.lawn_material(color)
+		return _materials[key]
 	var material := StandardMaterial3D.new()
 	material.albedo_color=color
-	GROUND.bind(material,kind)
+	# The source normal map amplifies albedo derivatives sixfold. A scale of
+	# two made Harbor's lawns look like folded fabric in the gameplay camera.
+	GROUND.bind(material,kind,.22 if kind == "grass" else .35)
 	# Triplanar em mundo: o mesh não tem tangentes e normal map precisa delas no UV plano.
 	material.uv1_triplanar=true
 	material.uv1_world_triplanar=true
-	material.uv1_scale=Vector3.ONE/16.0
+	# Grama com tile menor: a 16 m o grão ficava borrado da câmera alta.
+	material.uv1_scale=Vector3.ONE/(3.0 if kind=="grass" else 16.0)
 	material.texture_filter=BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	material.roughness=.92
 	material.cull_mode=BaseMaterial3D.CULL_DISABLED

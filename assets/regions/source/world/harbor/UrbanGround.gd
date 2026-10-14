@@ -54,7 +54,10 @@ static func texture(kind: String) -> Texture2D:
 			elif kind=="gravel":
 				value+=grain*.25
 			elif kind=="grass":
-				value+=grain*.20
+				# Manchas largas + folhagem fina + pontos secos: só o grão suave lia como feltro.
+				var blade := noise.get_noise_3d(cos(a)*160,sin(a)*160,cos(b)*160+sin(b)*80)
+				value+=grain*.30+blade*.22
+				if rng.randf()>.965: value-=.14
 			img.set_pixel(x,y,Color(clampf(value+warm,0,1),clampf(value,0,1),clampf(value-warm,0,1)))
 	var height := PackedFloat32Array()
 	height.resize(256*256)

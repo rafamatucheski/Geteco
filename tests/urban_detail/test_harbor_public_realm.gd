@@ -36,9 +36,18 @@ func run() -> void:
 	await physics_frame
 
 	check(union.find_child("UnionFountainBasin", true, false) != null, "Union Plaza includes its recognizable fountain basin")
-	check(union.find_child("UnionPlazaPaving", true, false) != null, "Union Plaza includes the authored paved court")
-	check(foundry.find_child("FoundryGardenBed", true, false) != null, "Foundry courtyard includes its garden pocket")
-	check(foundry.find_child("FoundryServiceYard", true, false) != null, "Foundry courtyard includes its service yard")
+	check(union.find_child("UnionPlazaPaving", true, false) == null, "Union court uses district paving without a second slab")
+	check(union.find_child("UnionPlazaJoint*", true, false) == null, "Union joints are part of the pavement material, not raised strips")
+	check(foundry.find_child("FoundryGardenBed", true, false) == null, "Foundry garden is owned by the single district surface")
+	check(foundry.find_child("FoundryServiceYard", true, false) == null, "Foundry yard has no slab stacked on district paving")
+	check(foundry.find_child("FoundryDumpsterGreen", true, false) != null, "Foundry service props remain on the rebuilt yard")
+	var surface := preload("res://world/urban_detail/HarborUrbanSurface3D.gd").new()
+	surface.configure()
+	for point in [Vector2(100,115),Vector2(58,58),Vector2(325,150)]:
+		var owners := 0
+		for item in surface._visible_surfaces:
+			if (item.rect as Rect2).has_point(point): owners += 1
+		check(owners == 1,"Public court %s has exactly one district finish" % point)
 	check(promenade_west.find_child("PromenadePlanterCurb", true, false) != null, "West promenade includes authored planters")
 	check(promenade_east.find_child("PromenadePlanterCurb", true, false) != null, "East promenade includes authored planters")
 	check(compass.find_child("MuseumCompassOuter", true, false) != null, "Museum courtyard includes the compass landmark")

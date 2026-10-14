@@ -94,6 +94,8 @@ func restore_snapshot(data: Dictionary) -> bool:
 	if not next_canonical_campaign.restore_snapshot(data.canonical_campaign) or not next_intro.restore_snapshot(data.intro): return false
 	var time_value: Variant = data.world.get("time",.32)
 	if typeof(time_value) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(time_value)) or time_value < 0 or time_value > 1: return false
+	var moisture: Variant = data.world.get("coastal_wetness",0.0)
+	if typeof(moisture) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(moisture)) or moisture < 0 or moisture > 1: return false
 	if not data.world.get("rewards",[]) is Array or not data.world.get("vehicles",[]) is Array: return false
 	if data.world.has("armored_transport") and not preload("res://gameplay/armored/ArmoredSchedule.gd").valid_saved(data.world.armored_transport): return false
 	if data.world.has("mountain_zoo") and not preload("res://world/mountain_detail/zoo/ZooTicketState.gd").valid(data.world.mountain_zoo,data.economy): return false

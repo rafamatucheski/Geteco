@@ -1458,6 +1458,54 @@
       "entrance_north": false
     },
     {
+      "id": "PatrolCourtWest",
+      "position": [640.0, 1504.0],
+      "size": [160.0, 208.0],
+      "kind": "urban_deco",
+      "height_override": 6.4,
+      "variant_seed": 457,
+      "name": "",
+      "color": "#b29d7f",
+      "exterior_only": true,
+      "entrance_north": false
+    },
+    {
+      "id": "PatrolCourtMiddle",
+      "position": [840.0, 1472.0],
+      "size": [136.0, 224.0],
+      "kind": "house_duplex",
+      "height_override": 7.2,
+      "variant_seed": 467,
+      "name": "",
+      "color": "#a17762",
+      "exterior_only": true,
+      "entrance_north": false
+    },
+    {
+      "id": "PatrolCourtNorth",
+      "position": [1040.0, 1440.0],
+      "size": [160.0, 120.0],
+      "kind": "urban_infill",
+      "height_override": 6.6,
+      "variant_seed": 421,
+      "name": "",
+      "color": "#957361",
+      "exterior_only": true,
+      "entrance_north": false
+    },
+    {
+      "id": "PatrolCourtSouth",
+      "position": [1040.0, 1592.0],
+      "size": [160.0, 128.0],
+      "kind": "urban_infill",
+      "height_override": 8.4,
+      "variant_seed": 439,
+      "name": "",
+      "color": "#89918b",
+      "exterior_only": true,
+      "entrance_north": false
+    },
+    {
       "id": "Police",
       "position": [
         1080.0,

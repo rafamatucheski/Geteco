@@ -36,9 +36,29 @@ func _build_deck()->void:
 		for source_x in range(3220,4381,40):
 			var x:=(float(source_x)-SOURCE_CENTER.x)*SCALE
 			_box("RailPost",Vector3(x,.74,z),Vector3(.10,1.42,.10),"3d4b4f")
+	_build_structure_detail()
 	for source_x in [3208.0,3495.0,4055.0,4372.0]:
 		var x:float=(float(source_x)-SOURCE_CENTER.x)*SCALE
 		for z in [-6.35,6.35]: _box("ExpansionJoint",Vector3(x,.10,z),Vector3(.20,.04,.45),"445459")
+
+## Volume que a ponte não tinha: da câmera alta só se via uma laje lisa. Vigas e pilares
+## sob o tabuleiro, meio-fio e corrimão intermediário. Tudo decorativo (sem colisão).
+func _build_structure_detail()->void:
+	var length:=1180.0*SCALE
+	for z in [-4.2,4.2]:
+		_box("UndersideGirder",Vector3(0,-.92,z),Vector3(length,.62,.5),"57625f")
+	for x in range(-34,35,4):
+		_box("CrossGirder",Vector3(float(x),-.86,0),Vector3(.34,.46,12.2),"4d5857")
+	for z in [-6.62,6.62]:
+		_box("DeckCurb",Vector3(0,.1,z),Vector3(length,.22,.55),"b2b5aa")
+	for z in [-7.0,7.0]:
+		_box("RailMidBar",Vector3(0,.98,z),Vector3(length,.08,.14),"3d4b4f")
+		_box("RailKick",Vector3(0,.18,z),Vector3(length,.16,.34),"8d9a96")
+	for source_x in [3350.0,3500.0,3780.0,4060.0,4220.0]:
+		var x:float=(float(source_x)-SOURCE_CENTER.x)*SCALE
+		for z in [-4.2,4.2]:
+			_box("PierColumn",Vector3(x,-5.3,z),Vector3(1.5,8.8,1.5),"8a948d")
+			_box("PierCap",Vector3(x,-1.3,z),Vector3(2.1,.5,2.1),"9aa39b")
 
 func _build_pylons_and_stays()->void:
 	for source_x in [3500.0,4060.0]:
@@ -129,7 +149,7 @@ func _material(hex:String)->StandardMaterial3D:
 	material.metallic=.18 if hex in ["5e7479","c6d3cc","3d4b4f","b7c8c6"] else 0.0
 	# Cor lisa lia como plano chapado: relevo e rugosidade em espaço de mundo, mesmo tom.
 	if Color(hex).a >= 1.0 and not material.emission_enabled:
-		preload("res://assets/urban_detail/UrbanSurfaces.gd").detail(material, "metal" if material.metallic > 0.1 else "plaster", 2.0, .7)
+		preload("res://assets/urban_detail/UrbanSurfaces.gd").detail(material, "metal" if material.metallic > 0.1 else "concrete", 1.5, 1.0)
 		material.albedo_color = Color(minf(Color(hex).r * material.albedo_color.r, 1.0), minf(Color(hex).g * material.albedo_color.g, 1.0), minf(Color(hex).b * material.albedo_color.b, 1.0))
 		material.roughness = 1.0
 	materials[hex]=material

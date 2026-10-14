@@ -31,7 +31,9 @@ static func kind_for(id: String, metallic := 0.0) -> String:
 		return "fabric"
 	if _has(key, ["wood", "timber", "log", "plank", "board", "beam", "bark", "door", "shutter", "pole", "bench", "fence", "trim", "post", "cut_end", "sign", "deck", "wall", "floor", "chalet", "cabin", "table", "desk", "chest", "crate", "mantel", "birch", "pine", "ski", "mud"]):
 		return "wood"
-	return ""
+	# Nome desconhecido (prédio azul, lateral da ponte...) recebe o reboco: o acabamento antigo
+	# cobria toda cor lisa, e deixar o resto sem mapa fez essas peças voltarem a ler como plano chapado.
+	return "plaster"
 
 
 static func _has(key: String, words: Array) -> bool:

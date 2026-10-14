@@ -28,6 +28,7 @@ var _silhouette_player_visible := false
 var _silhouette_inside := false
 var _clock := 0.0
 var _last_night := -1.0
+var _last_wetness := -1.0
 var _pools_visible := false
 var _grade: GradientTexture1D
 var _blink := 0.0
@@ -46,6 +47,9 @@ func _ready() -> void:
 	var local_lighting := preload("res://world/city_look/CityLocalLighting.gd").new()
 	local_lighting.controller = controller
 	add_child(local_lighting)
+	var reflections := preload("res://world/city_look/CoastalPlanarReflections.gd").new()
+	reflections.controller = controller
+	add_child(reflections)
 	_update(true)
 
 
@@ -85,6 +89,13 @@ func _process(delta: float) -> void:
 func _update(force: bool) -> void:
 	if controller == null: return
 	var night := _night_factor()
+	var wetness := 0.0
+	var session = controller.get("session")
+	if controller.state.region_id == "harbor" and session != null and is_instance_valid(session.get("weather")):
+		wetness = session.weather.get_coastal_wetness()
+	if force or absf(wetness-_last_wetness)>.004:
+		_last_wetness = wetness
+		MATERIALS.set_wetness(wetness)
 	if force or absf(night - _last_night) > .004:
 		_last_night = night
 		MATERIALS.set_night(night)
@@ -103,6 +114,8 @@ func _night_factor() -> float:
 	if session == null or not is_instance_valid(session.get("weather")): return 0.0
 	var inside: bool = not String(controller.state.place_id).is_empty() and not session.weather._embedded_building()
 	if inside: return 0.0
+	if controller.state.region_id == "harbor" and session.weather.has_method("get_city_lighting_factor"):
+		return session.weather.get_city_lighting_factor()
 	var daylight: float = ATMOSPHERE.daylight_at(float(session.weather.time_of_day))
 	# Postes acendem no fim da tarde, antes do escuro total, como na rua real.
 	return 1.0 - smoothstep(.18, .62, daylight)
@@ -277,6 +290,9 @@ func _orient_sun() -> void:
 	if not String(controller.state.place_id).is_empty() and (session==null or not is_instance_valid(session.weather) or not session.weather._embedded_building()): return
 	sun.rotation_degrees.y = -135.0
 	if controller.state.region_id == "harbor":
+		# Weather owns the coastal solar angle. Re-clamping it every rendered
+		# frame used to fight Weather's slower updates and alternate shadows.
+		if session != null and is_instance_valid(session.weather) and session.weather.get("coastal_look") != null and session.weather.coastal_look.installed: return
 		sun.rotation_degrees.x = maxf(sun.rotation_degrees.x, -35.0)
 	elif controller.state.region_id == "mountain":
 		sun.rotation_degrees.x = maxf(sun.rotation_degrees.x, -42.0)

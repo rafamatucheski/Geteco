@@ -15,6 +15,7 @@ var _descriptors: Dictionary = {}
 var _pending: Array[Vector2i] = []
 var _materials := {}
 var _unit_box := BoxMesh.new()
+var _track_slab: ArrayMesh
 var _elapsed := 0.0
 var _campaign_completed := false
 var _gate: Node3D
@@ -203,6 +204,9 @@ func _pillar_clear(point: Vector3) -> bool:
 	# The elevated rail may pass over the zoo, but a bridge pier must never
 	# occupy an enclosure or its visitor circulation below it.
 	if preload("res://world/mountain_detail/zoo/MountainZoo.gd").FOOTPRINT.grow(2.0).has_point(planar): return false
+	# As rampas abertas do túnel do canal descem abaixo da rua: um pilar de 1,2 m
+	# plantado no nível da rua ali cai no meio da pista na saída do túnel.
+	if preload("res://world/urban_detail/CanalTunnel3D.gd").reserves(planar,2.0): return false
 	for road in _source_roads:
 		var points: PackedVector3Array = road.points
 		var radius := float(road.width)*.5+2.8
@@ -251,7 +255,7 @@ func _build_chunk(key: Vector2i) -> void:
 		var direction := (b-a).normalized()
 		var right := direction.cross(Vector3.UP).normalized()
 		var center := (a+b)*.5
-		_beam(a-Vector3.UP*.42,b-Vector3.UP*.42,6.8,.7,"concrete",true)
+		_beam(a-Vector3.UP*.42,b-Vector3.UP*.42,6.8,.7,"concrete_track",true)
 		_beam(a-Vector3.UP*.085,b-Vector3.UP*.085,3.4,.12,"ballast")
 		for side in [-1.0,1.0]:
 			_beam(a+right*.72*side+Vector3.UP*.09,b+right*.72*side+Vector3.UP*.09,.09,.12,"rail")
@@ -264,12 +268,19 @@ func _build_chunk(key: Vector2i) -> void:
 		for index in sleepers:
 			var t := (float(index)+.5)/float(sleepers)
 			_box(a.lerp(b,t),Vector3(2.5,.09,.24),"sleeper",_basis(direction))
-		if segment.pillar and _pillar_clear(center):
-			_record_support(center)
+		var support := center
+		var support_clear: bool = segment.pillar and _pillar_clear(support)
+		# The new Foundry approach follows the sidewalk. Carry it from the
+		# setback north of the sidewalk, with a short elevated cantilever.
+		if segment.pillar and not support_clear and segment.id == "harbor_viaduct" and center.x < 145.0 and absf(center.z-20.0)<.01:
+			support = center+Vector3(0,0,-2.5)
+			support_clear = _pillar_clear(support)
+		if support_clear:
+			_record_support(support)
 			var top := center.y-.77
 			var bottom := -4.0 if center.x>200 and center.x<570 and center.z> -374 else -.4
-			_box(Vector3(center.x,(top+bottom)*.5,center.z),Vector3(1.2,top-bottom,1.2),"concrete",Basis.IDENTITY,true)
-			_box(Vector3(center.x,top-.4,center.z),Vector3(3.8,.6,1.5),"concrete",_basis(direction),true)
+			_box(Vector3(support.x,(top+bottom)*.5,support.z),Vector3(1.2,top-bottom,1.2),"concrete",Basis.IDENTITY,true)
+			_box(Vector3(center.x,top-(.3 if support!=center else .4),center.z),Vector3(6.8 if support!=center else 3.8,.6,1.5),"concrete",_basis(direction),true)
 	_flush_batches()
 
 func _beside_platform(point: Vector3, side_x: float) -> bool:
@@ -332,7 +343,8 @@ func _build_station(station: Dictionary) -> Node3D:
 		var foot := Vector3(origin.x+side*5.75,0,origin.z+z)
 		if _pillar_clear(foot):
 			_record_support(foot)
-			_station_box(origin,side,Vector3(5.75,floor_y*.5-.3,z),Vector3(.6,floor_y+.6,.6),"concrete",true)
+			# Columns meet the underside, without a coplanar cap on the walking floor.
+			_station_box(origin,side,Vector3(5.75,floor_y*.5-.52,z),Vector3(.6,floor_y+.16,.6),"concrete",true)
 	_build_access(origin,side,floor_y,accent)
 	_flush_batches()
 	var light := OmniLight3D.new()
@@ -401,16 +413,18 @@ func _build_access(origin: Vector3,side: float,floor_y: float,accent: String) ->
 			var end := float(step+1)/float(count)
 			var midpoint := a.lerp(b,(start+end)*.5)
 			midpoint.y = lerpf(a.y,b.y,end)-.055
-			_box(midpoint,Vector3(2.12,.11,14.0/count+.008),"platform")
+			# The final tread ends at the landing seam instead of sharing its top.
+			_box(midpoint,Vector3(2.12,.11,14.0/count+(0.0 if step==count-1 else .008)),"platform")
 		for rail_side in [-1.0,1.0]:
 			_beam(a+Vector3(rail_side*1.10,.57,0),b+Vector3(rail_side*1.10,.57,0),.08,1.1,"fence",true)
 	# Upper connection at the north end of the staircase, open on both sides.
-	_station_box(origin,side,Vector3(8.0,floor_y-.12,-5.5),Vector3(8.0,.24,2.7),"platform",true)
+	# Join only the gap: the platform and landing already own their top faces.
+	_station_box(origin,side,Vector3(7.35,floor_y-.12,-5.5),Vector3(1.1,.24,2.7),"platform",true)
 	for z in [-6.85,-4.15]:
 		_station_box(origin,side,Vector3(8.8,floor_y+.55,z),Vector3(5.0,1.1,.10),"fence",true)
 	for x in [8.1,13.2]:
 		for z in [-6.6,12.7]:
-			_station_box(origin,side,Vector3(x,floor_y*.5,z),Vector3(.18,floor_y,.18),accent,true)
+			_station_box(origin,side,Vector3(x,floor_y*.5-.12,z),Vector3(.18,floor_y-.24,.18),accent,true)
 	# Functional ticket mast at ground level; proper station name is repeated
 	# where a pedestrian approaches, without decorative descriptive text.
 	_station_box(origin,side,Vector3(8.2,1.7,14.1),Vector3(.16,3.4,.16),accent,true)
@@ -514,12 +528,16 @@ func _flush_batches() -> void:
 		var multi := MultiMesh.new()
 		multi.transform_format = MultiMesh.TRANSFORM_3D
 		multi.mesh = _unit_box
+		if material == "concrete_track":
+			if _track_slab == null:
+				_track_slab = preload("res://world/urban_detail/SlabVisibleFaces.gd").box_with_top_opening(Vector3.ONE,Rect2(-.25,-.5,.5,1.0))
+			multi.mesh = _track_slab
 		multi.instance_count = rows.size()
 		for index in rows.size(): multi.set_instance_transform(index,rows[index])
 		var instance := MultiMeshInstance3D.new()
 		instance.name = material.capitalize()
 		instance.multimesh = multi
-		instance.material_override = _material(material)
+		instance.material_override = _material("concrete" if material == "concrete_track" else material)
 		if material in ["rail","warning","lamp","screen","red_lamp"]:
 			instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		_batch_parent.add_child(instance)

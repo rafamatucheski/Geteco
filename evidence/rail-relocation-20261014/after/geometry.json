@@ -1,0 +1,278 @@
+{
+	"footbridge": [
+		{
+			"a": "FootbridgeBatch:0",
+			"area_m2": 0.00152580824214965,
+			"b": "@MultiMeshInstance3D@24:6",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:0",
+			"area_m2": 0.00256204867037013,
+			"b": "@MultiMeshInstance3D@24:7",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:0",
+			"area_m2": 0.00310737927793525,
+			"b": "@MultiMeshInstance3D@24:8",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:0",
+			"area_m2": 0.00217174529097974,
+			"b": "@MultiMeshInstance3D@24:8",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:0",
+			"area_m2": 0.00319953612051904,
+			"b": "@MultiMeshInstance3D@24:9",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:0",
+			"area_m2": 0.00319953612051904,
+			"b": "@MultiMeshInstance3D@24:9",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:0",
+			"area_m2": 0.0023998047108762,
+			"b": "@MultiMeshInstance3D@24:10",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:0",
+			"area_m2": 0.00239995727315545,
+			"b": "@MultiMeshInstance3D@24:0",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:0",
+			"area_m2": 0.00319953612051904,
+			"b": "@MultiMeshInstance3D@24:1",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:0",
+			"area_m2": 0.00319953612051904,
+			"b": "@MultiMeshInstance3D@24:1",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:0",
+			"area_m2": 0.00319953612051904,
+			"b": "@MultiMeshInstance3D@24:2",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:0",
+			"area_m2": 0.00319953612051904,
+			"b": "@MultiMeshInstance3D@24:2",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:0",
+			"area_m2": 0.00319984136149287,
+			"b": "@MultiMeshInstance3D@24:3",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:0",
+			"area_m2": 0.00319984136149287,
+			"b": "@MultiMeshInstance3D@24:3",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:0",
+			"area_m2": 0.00319984136149287,
+			"b": "@MultiMeshInstance3D@24:4",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:0",
+			"area_m2": 0.00319984136149287,
+			"b": "@MultiMeshInstance3D@24:4",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:0",
+			"area_m2": 0.00318969367071986,
+			"b": "@MultiMeshInstance3D@24:5",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:0",
+			"area_m2": 0.00319984136149287,
+			"b": "@MultiMeshInstance3D@24:5",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:0",
+			"area_m2": 0.00167411612346768,
+			"b": "@MultiMeshInstance3D@24:6",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:0",
+			"area_m2": 0.00296601851005107,
+			"b": "@MultiMeshInstance3D@24:6",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:0",
+			"area_m2": 0.00224214774789289,
+			"b": "@MultiMeshInstance3D@24:7",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:0",
+			"area_m2": 0.0010277908295393,
+			"b": "@MultiMeshInstance3D@24:8",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:2",
+			"area_m2": 0.0010277908295393,
+			"b": "@MultiMeshInstance3D@24:28",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:2",
+			"area_m2": 0.00224214774789289,
+			"b": "@MultiMeshInstance3D@24:29",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:2",
+			"area_m2": 0.00296601874288172,
+			"b": "@MultiMeshInstance3D@24:30",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:2",
+			"area_m2": 0.00167411600705236,
+			"b": "@MultiMeshInstance3D@24:30",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:2",
+			"area_m2": 0.00319984136149287,
+			"b": "@MultiMeshInstance3D@24:31",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:2",
+			"area_m2": 0.00318969384534284,
+			"b": "@MultiMeshInstance3D@24:31",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:2",
+			"area_m2": 0.00319984136149287,
+			"b": "@MultiMeshInstance3D@24:32",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:2",
+			"area_m2": 0.00319984136149287,
+			"b": "@MultiMeshInstance3D@24:32",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:2",
+			"area_m2": 0.00319984136149287,
+			"b": "@MultiMeshInstance3D@24:33",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:2",
+			"area_m2": 0.00319984136149287,
+			"b": "@MultiMeshInstance3D@24:33",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:2",
+			"area_m2": 0.00319953612051904,
+			"b": "@MultiMeshInstance3D@24:34",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:2",
+			"area_m2": 0.00319953612051904,
+			"b": "@MultiMeshInstance3D@24:34",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:2",
+			"area_m2": 0.00319953612051904,
+			"b": "@MultiMeshInstance3D@24:35",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:2",
+			"area_m2": 0.00319953612051904,
+			"b": "@MultiMeshInstance3D@24:35",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:2",
+			"area_m2": 0.0023998047108762,
+			"b": "@MultiMeshInstance3D@24:36",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:2",
+			"area_m2": 0.00239995727315545,
+			"b": "@MultiMeshInstance3D@24:26",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:2",
+			"area_m2": 0.00319953612051904,
+			"b": "@MultiMeshInstance3D@24:27",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:2",
+			"area_m2": 0.00319953612051904,
+			"b": "@MultiMeshInstance3D@24:27",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:2",
+			"area_m2": 0.00217174529097974,
+			"b": "@MultiMeshInstance3D@24:28",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:2",
+			"area_m2": 0.00310737904510461,
+			"b": "@MultiMeshInstance3D@24:28",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:2",
+			"area_m2": 0.00256204849574715,
+			"b": "@MultiMeshInstance3D@24:29",
+			"height_gap_m": 0.0
+		},
+		{
+			"a": "FootbridgeBatch:2",
+			"area_m2": 0.00152580824214965,
+			"b": "@MultiMeshInstance3D@24:30",
+			"height_gap_m": 0.0
+		}
+	],
+	"harbor_central": [],
+	"harbor_north": [],
+	"railway": {
+		"ballast_footprint_m2": 3470.43975536575,
+		"exact_duplicate_segments": [],
+		"note": "Footprint is not overlap: concrete top now has an opening under ballast. Sum per segment, not union. Other junction intersections not tested by exact segment equality.",
+		"scope": "descriptor midpoints in x[-200,650],z[-250,400]",
+		"segments": 271,
+		"total_segment_length_m": 1016.38157510757
+	}
+}

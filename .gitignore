@@ -33,6 +33,8 @@ evidence/test-suite/
 evidence/**/chrome-profile/
 evidence/**/baseline-project/
 builds/
+/artifacts/perf-release/
+/addons/terrain_3d/bin/~*.dll
 *.apk
 *.aab
 *.keystore

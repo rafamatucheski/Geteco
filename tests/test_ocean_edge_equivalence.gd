@@ -61,10 +61,15 @@ func run() -> void:
 			var elapsed := Time.get_ticks_usec()-began
 			await process_frame
 			await RenderingServer.frame_post_draw
+			if surface == null:
+				check(holder.get_child_count()==0,"fully dry chunk creates no water or foam")
+				rows.append({"pass":pass_index,"rect":str(rect),"build_usec":elapsed,"geometry":signature(holder)})
+				holder.free()
+				continue
 			var arrays: Array = surface.mesh.surface_get_arrays(0)
 			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 			var colors: PackedColorArray = arrays[Mesh.ARRAY_COLOR]
-			check(vertices.size()==289,"bounded vertices")
+			check(vertices.size()>=289,"seam grid retained with coastal clipping vertices")
 			check(surface.material_override==ocean.material,"shared configured material")
 			check(surface.find_children("*","CollisionObject3D",true,false).is_empty(),"water does not add collision")
 			for index in vertices.size():

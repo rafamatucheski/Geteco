@@ -73,9 +73,9 @@ func run() -> void:
 	var hit := scene.get_world_3d().direct_space_state.intersect_ray(query)
 	print("SKATE_BOWL_DIAGNOSTIC ", hit)
 	check(not hit.is_empty() and hit.position.y < -1.5, "bowl é fisicamente rebaixado")
-	for obstacle in [{"at": Vector2(64, 87), "height": .60, "name": "bank"}, {"at": Vector2(72.6, 99.3), "height": .515, "name": "ledge"}, {"at": Vector2(72.65, 91), "height": .5325, "name": "corrimão"}, {"at": Vector2(62, 101.5), "height": .50, "name": "banco"}]:
-		query.from = Vector3(obstacle.at.x, 2, obstacle.at.y)
-		query.to = Vector3(obstacle.at.x, -4, obstacle.at.y)
+	for obstacle in [{"at": Vector2(-3, -7), "height": .60, "name": "bank"}, {"at": Vector2(5.6, 5.3), "height": .515, "name": "ledge"}, {"at": Vector2(5.65, -3), "height": .5325, "name": "corrimão"}, {"at": Vector2(-5, 7.5), "height": .50, "name": "banco"}]:
+		query.from = LAYOUT.CENTER + Vector3(obstacle.at.x, 2, obstacle.at.y)
+		query.to = LAYOUT.CENTER + Vector3(obstacle.at.x, -4, obstacle.at.y)
 		hit = scene.get_world_3d().direct_space_state.intersect_ray(query)
 		check(not hit.is_empty() and absf(hit.position.y - obstacle.height) < .01, "%s ocupa espaço físico" % obstacle.name)
 	for i in 12:

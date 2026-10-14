@@ -17,6 +17,7 @@ extends RefCounted
 const KIT := preload("res://world/city_look/CityPropKit.gd")
 const MATERIALS := preload("res://world/city_look/CityLookMaterials.gd")
 const AIRFRAME := preload("res://gameplay/police_response/air_k9/PoliceHelicopterArt.gd")
+const COASTAL_FACADE := preload("res://world/city_look/CoastalFacadeFinish.gd")
 const FONT_PATH := "res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf"
 
 const NAVY := Color("1d2c4a")
@@ -49,6 +50,7 @@ static func decorate(chunk: Node3D, building: UrbanBuildingBase, roof_y: float, 
 		chunk.add_child(_emissive(key, glow[key], building.global_transform))
 	_labels(chunk, building, hw, hz, ex)
 	if pad.x < INF: _park_helicopter(chunk, building, local_roof, pad)
+	COASTAL_FACADE.decorate(building)
 
 
 ## Helicóptero estacionado no heliponto: a mesma fuselagem da resposta aérea, parada,

@@ -29,7 +29,9 @@ static func _find_meshes(node: Node, meshes: Array[MeshInstance3D]) -> void:
 static func _snapshot(node: Node, entries: Array) -> void:
 	if node is Node3D:
 		var entry := {"node":node, "transform":node.global_transform}
-		if node is MeshInstance3D: entry.mesh = node.mesh
+		if node is MeshInstance3D:
+			entry.mesh = node.mesh
+			if node.has_meta("harbor_ground_source_mesh") and (node.mesh == null or (node.has_meta("harbor_ground_composed_mesh") and node.mesh == node.get_meta("harbor_ground_composed_mesh"))): entry.mesh = node.get_meta("harbor_ground_source_mesh")
 		if node is CollisionShape3D: entry.shape = node.shape
 		entries.append(entry)
 	for child in node.get_children(): _snapshot(child, entries)

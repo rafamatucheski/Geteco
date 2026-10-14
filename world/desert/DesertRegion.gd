@@ -324,6 +324,7 @@ func _surface_quad(chunk: Node3D, id: String, rect: Rect2, offset: float, mat: M
 	for p in [rect.position,Vector2(rect.end.x,rect.position.y),rect.end,Vector2(rect.position.x,rect.end.y)]:
 		points.append(Vector3(p.x,_ramp_height(p)+offset,p.y))
 	var surface := G.quad(chunk,id,points,mat,solid)
+	if id=="DesertGround": surface.set_meta("desert_base_ground",true)
 	# Wheel contact drives tire dirt, skid audio and traction. Naming is not a surface contract.
 	var vehicle_surface := "hard" if id=="WeatheredAsphalt" else "dirt"
 	surface.set_meta("vehicle_surface",vehicle_surface)
@@ -350,6 +351,7 @@ func _build_surfaces(chunk: Node3D, rect: Rect2) -> void:
 	preload("res://world/desert/north_pass/DesertNorthPassScenery.gd").build_chunk(chunk,rect,north_pass_completed)
 	if preload("res://runtime/desert/DesertActivitiesPolicy.gd").enabled(): preload("res://world/desert/community/DesertCommunitySite.gd").build_chunk(chunk,rect)
 	DRAG_MEET.build_ground(chunk,rect)
+	preload("res://world/desert/DesertGroundOwnership.gd").compose(chunk,rect,road_geometry)
 	preload("res://activities/desert_drag/DesertDragBoardProp.gd").build_chunk(chunk,rect)
 	_boundary_ridge(chunk,rect)
 	preload("res://world/regions/ScenarioBoundary3D.gd").build_desert(chunk,rect,_ground_height)

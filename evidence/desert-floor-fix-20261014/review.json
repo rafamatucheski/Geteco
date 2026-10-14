@@ -1,0 +1,428 @@
+{
+  "scope": "Three desert forecourts, nine intersecting 96m chunks; visual ownership only; roads, materials, colliders and traffic unchanged",
+  "road_records_before": 13,
+  "road_records_after": 13,
+  "whole_roads_removed": 0,
+  "changed_render_meshes": 17,
+  "entire_meshes_removed": 0,
+  "removed_hidden_layer_area_m2": 40996.76135696891,
+  "area_note": "Sum of removed render layers, not unique land area. Physical support retained.",
+  "same_grid_comparison": {
+    "chunks": 4,
+    "spacing_m": 1,
+    "base_under_three_forecourts_before_m2": 11184,
+    "base_under_three_forecourts_after_m2": 0,
+    "paddock_under_asphalt_before_m2": 640,
+    "paddock_under_asphalt_after_m2": 0,
+    "floor_instance_pairs_before": 14,
+    "floor_instance_pairs_after": 3,
+    "remaining_floor_pairs_outside_scope": [
+      {
+        "a": {
+          "label": "DesertGround",
+          "path": "/root/DesertNativeRegion/Desert_-3_-10/DesertGround",
+          "samples_m2": 9216
+        },
+        "area_m2": 1638,
+        "b": {
+          "label": "GravelShoulder",
+          "path": "/root/DesertNativeRegion/Desert_-3_-10/GravelShoulder",
+          "samples_m2": 1638
+        },
+        "example": "(-215.629, 0.0, -906.387)",
+        "max_gap": 0.00800000037997961,
+        "min_gap": 0.00800000037997961
+      },
+      {
+        "a": {
+          "label": "DesertGround",
+          "path": "/root/DesertNativeRegion/Desert_-3_-10/DesertGround",
+          "samples_m2": 9216
+        },
+        "area_m2": 1022,
+        "b": {
+          "label": "WeatheredAsphalt",
+          "path": "/root/DesertNativeRegion/Desert_-3_-10/WeatheredAsphalt",
+          "samples_m2": 1022
+        },
+        "example": "(-213.629, 0.0, -887.387)",
+        "max_gap": 0.0179999992251396,
+        "min_gap": 0.0179999992251396
+      },
+      {
+        "a": {
+          "label": "GravelShoulder",
+          "path": "/root/DesertNativeRegion/Desert_-3_-10/GravelShoulder",
+          "samples_m2": 1638
+        },
+        "area_m2": 1022,
+        "b": {
+          "label": "WeatheredAsphalt",
+          "path": "/root/DesertNativeRegion/Desert_-3_-10/WeatheredAsphalt",
+          "samples_m2": 1022
+        },
+        "example": "(-213.629, 0.008, -887.387)",
+        "max_gap": 0.00999999884516001,
+        "min_gap": 0.00999999884516001
+      }
+    ],
+    "all_candidate_pairs_before": 64,
+    "all_candidate_pairs_after": 33,
+    "candidate_note": "Candidates include props and intentional structures; not counts of duplicated streets."
+  },
+  "geometry_validation": {
+    "cells": [
+      {
+        "cell": "(2, -9)",
+        "changed_meshes": 1,
+        "duplicate_samples": 0,
+        "missing_samples": 0,
+        "removed_by_surface": {
+          "DesertGround": 1516.77490234375
+        },
+        "removed_hidden_m2": 1516.77490234375,
+        "retired_meshes": 0,
+        "sample_spacing_m": 4,
+        "support_hits": 3,
+        "triangles": 227
+      },
+      {
+        "cell": "(3, -9)",
+        "changed_meshes": 2,
+        "duplicate_samples": 0,
+        "missing_samples": 0,
+        "removed_by_surface": {
+          "DesertGround": 2189.59552001953,
+          "GravelShoulder": 960.0
+        },
+        "removed_hidden_m2": 3149.59552001953,
+        "retired_meshes": 0,
+        "sample_spacing_m": 4,
+        "support_hits": 3,
+        "triangles": 610
+      },
+      {
+        "cell": "(2, -8)",
+        "changed_meshes": 1,
+        "duplicate_samples": 0,
+        "missing_samples": 0,
+        "removed_by_surface": {
+          "DesertGround": 3959.60925292969
+        },
+        "removed_hidden_m2": 3959.60925292969,
+        "retired_meshes": 0,
+        "sample_spacing_m": 4,
+        "support_hits": 3,
+        "triangles": 533
+      },
+      {
+        "cell": "(3, -8)",
+        "changed_meshes": 3,
+        "duplicate_samples": 0,
+        "missing_samples": 0,
+        "removed_by_surface": {
+          "DesertGround": 3792.07635808736,
+          "GravelShoulder": 1780.93606176786,
+          "TruckApron": 498.082023598254
+        },
+        "removed_hidden_m2": 6071.09444345348,
+        "retired_meshes": 0,
+        "sample_spacing_m": 4,
+        "support_hits": 3,
+        "triangles": 904
+      },
+      {
+        "cell": "(-2, -10)",
+        "changed_meshes": 2,
+        "duplicate_samples": 0,
+        "missing_samples": 0,
+        "removed_by_surface": {
+          "DesertGround": 4305.45115186274,
+          "GravelShoulder": 1403.48201423744
+        },
+        "removed_hidden_m2": 5708.93316610018,
+        "retired_meshes": 0,
+        "sample_spacing_m": 4,
+        "support_hits": 3,
+        "triangles": 1236
+      },
+      {
+        "cell": "(-11, -14)",
+        "changed_meshes": 3,
+        "duplicate_samples": 0,
+        "missing_samples": 0,
+        "removed_by_surface": {
+          "DesertGround": 5324.80078125,
+          "DragMeetPaddock": 640.0,
+          "GravelShoulder": 1152.00390625
+        },
+        "removed_hidden_m2": 7116.8046875,
+        "retired_meshes": 0,
+        "sample_spacing_m": 4,
+        "support_hits": 3,
+        "triangles": 79
+      },
+      {
+        "cell": "(-10, -14)",
+        "changed_meshes": 3,
+        "duplicate_samples": 0,
+        "missing_samples": 0,
+        "removed_by_surface": {
+          "DesertGround": 5893.90334225446,
+          "DragMeetPaddock": 475.277202367783,
+          "GravelShoulder": 1704.76884000003
+        },
+        "removed_hidden_m2": 8073.94938462228,
+        "retired_meshes": 0,
+        "sample_spacing_m": 4,
+        "support_hits": 3,
+        "triangles": 690
+      },
+      {
+        "cell": "(-11, -13)",
+        "changed_meshes": 1,
+        "duplicate_samples": 0,
+        "missing_samples": 0,
+        "removed_by_surface": {
+          "DesertGround": 2880.0
+        },
+        "removed_hidden_m2": 2880.0,
+        "retired_meshes": 0,
+        "sample_spacing_m": 4,
+        "support_hits": 3,
+        "triangles": 8
+      },
+      {
+        "cell": "(-10, -13)",
+        "changed_meshes": 1,
+        "duplicate_samples": 0,
+        "missing_samples": 0,
+        "removed_by_surface": {
+          "DesertGround": 2520.0
+        },
+        "removed_hidden_m2": 2520.0,
+        "retired_meshes": 0,
+        "sample_spacing_m": 4,
+        "support_hits": 3,
+        "triangles": 7
+      }
+    ],
+    "collision_fingerprint": "d53744be36991663ad68626be9c366431abb42a2994e0ca2f36cda4a3ab9df51",
+    "collision_fingerprint_unchanged": true,
+    "failures": []
+  },
+  "performance": {
+    "status": "No confirmed regression in these three rendered scenarios; do not infer a causal FPS gain from dynamic populations and 144 FPS cap",
+    "gpu": "RTX 4060 Laptop GPU",
+    "renderer": "mobile",
+    "resolution": [
+      1280,
+      720
+    ],
+    "engine": "Godot 4.7.2 .NET",
+    "seed": 28092026,
+    "vsync": 1,
+    "max_fps": 144,
+    "warmup_seconds": 8,
+    "measurement_seconds_per_site": 30,
+    "sites": [
+      {
+        "site": "paddock",
+        "before": {
+          "fps": 137.93889626137,
+          "frames": 4148,
+          "max_ms": 91.196,
+          "over_33_3_ms": 3,
+          "over_66_7_ms": 1,
+          "p50_ms": 6.33,
+          "p95_ms": 9.831,
+          "p99_ms": 12.112,
+          "seconds": 30.0712860000001
+        },
+        "after": {
+          "fps": 139.961976996249,
+          "frames": 4200,
+          "max_ms": 24.181,
+          "over_33_3_ms": 0,
+          "over_66_7_ms": 0,
+          "p50_ms": 6.341,
+          "p95_ms": 9.772,
+          "p99_ms": 11.056,
+          "seconds": 30.00815
+        },
+        "warmup_before": {
+          "fps": 125.733164966074,
+          "frames": 997,
+          "max_ms": 311.811,
+          "over_33_3_ms": 5,
+          "over_66_7_ms": 4,
+          "p50_ms": 6.85,
+          "p95_ms": 10.144,
+          "p99_ms": 16.569,
+          "seconds": 7.92949100000001
+        },
+        "warmup_after": {
+          "fps": 127.136664788995,
+          "frames": 1017,
+          "max_ms": 344.977,
+          "over_33_3_ms": 6,
+          "over_66_7_ms": 4,
+          "p50_ms": 6.965,
+          "p95_ms": 9.453,
+          "p99_ms": 16.258,
+          "seconds": 7.99926599999999
+        },
+        "p95_change_percent": -0.6001424066727656,
+        "p99_change_percent": -8.718626155878473
+      },
+      {
+        "site": "truck-apron",
+        "before": {
+          "fps": 143.919341189972,
+          "frames": 4319,
+          "max_ms": 25.812,
+          "over_33_3_ms": 0,
+          "over_66_7_ms": 0,
+          "p50_ms": 6.957,
+          "p95_ms": 8.848,
+          "p99_ms": 9.598,
+          "seconds": 30.009865
+        },
+        "after": {
+          "fps": 143.980984911259,
+          "frames": 4320,
+          "max_ms": 17.159,
+          "over_33_3_ms": 0,
+          "over_66_7_ms": 0,
+          "p50_ms": 6.954,
+          "p95_ms": 8.753,
+          "p99_ms": 9.17,
+          "seconds": 30.003962
+        },
+        "warmup_before": {
+          "fps": 116.403795388884,
+          "frames": 931,
+          "max_ms": 360.416,
+          "over_33_3_ms": 7,
+          "over_66_7_ms": 5,
+          "p50_ms": 6.954,
+          "p95_ms": 8.675,
+          "p99_ms": 21.848,
+          "seconds": 7.998021
+        },
+        "warmup_after": {
+          "fps": 119.62891784706,
+          "frames": 957,
+          "max_ms": 302.34,
+          "over_33_3_ms": 7,
+          "over_66_7_ms": 5,
+          "p50_ms": 6.956,
+          "p95_ms": 8.676,
+          "p99_ms": 14.806,
+          "seconds": 7.999738
+        },
+        "p95_change_percent": -1.0736889692586016,
+        "p99_change_percent": -4.4592623463221575
+      },
+      {
+        "site": "digo-apron",
+        "before": {
+          "fps": 143.452091934126,
+          "frames": 4304,
+          "max_ms": 39.754,
+          "over_33_3_ms": 2,
+          "over_66_7_ms": 0,
+          "p50_ms": 6.952,
+          "p95_ms": 10.157,
+          "p99_ms": 11.163,
+          "seconds": 30.003048
+        },
+        "after": {
+          "fps": 143.825317468973,
+          "frames": 4315,
+          "max_ms": 20.233,
+          "over_33_3_ms": 0,
+          "over_66_7_ms": 0,
+          "p50_ms": 6.955,
+          "p95_ms": 10.205,
+          "p99_ms": 10.82,
+          "seconds": 30.001672
+        },
+        "warmup_before": {
+          "fps": 138.632468824258,
+          "frames": 1109,
+          "max_ms": 45.254,
+          "over_33_3_ms": 2,
+          "over_66_7_ms": 0,
+          "p50_ms": 6.955,
+          "p95_ms": 9.269,
+          "p99_ms": 18.388,
+          "seconds": 7.999569
+        },
+        "warmup_after": {
+          "fps": 138.757527595872,
+          "frames": 1110,
+          "max_ms": 40.442,
+          "over_33_3_ms": 4,
+          "over_66_7_ms": 0,
+          "p50_ms": 6.955,
+          "p95_ms": 9.201,
+          "p99_ms": 21.229,
+          "seconds": 7.99956599999999
+        },
+        "p95_change_percent": 0.47258048636409367,
+        "p99_change_percent": -3.0726507211323084
+      }
+    ]
+  },
+  "visual": {
+    "status": "Forecourt appearance and transitions preserved in before/after and crossing images",
+    "images": "before/ and after/; temporal-crossings/*.jpg"
+  },
+  "physical": {
+    "support_rays": 376,
+    "support_hits": 376,
+    "crossings": [
+      {
+        "distance_m": 5.0296630859375,
+        "reached": true,
+        "required_m": 5.0,
+        "site": "paddock"
+      },
+      {
+        "distance_m": 8.02813720703125,
+        "reached": true,
+        "required_m": 8.0,
+        "site": "truck-apron"
+      },
+      {
+        "distance_m": 7.02859497070313,
+        "reached": true,
+        "required_m": 7.0,
+        "site": "digo-apron"
+      }
+    ],
+    "collision_fingerprint_unchanged": true,
+    "status": "Support and all three crossings PASS; character temporal stability pending",
+    "anomalies": [
+      {
+        "frame": 61,
+        "image": "res://evidence/desert-floor-fix-20261014/temporal-crossings/digo-apron-061.jpg",
+        "position": "(-114.7469, -0.083984, -908.0)",
+        "site": "digo-apron",
+        "support": "(-114.7469, 0.0, -908.0)",
+        "time_ms": 73963
+      }
+    ],
+    "anomaly_note": "Digo frame61 player origin drops 0.075m for one frame then recovers. Ground ray remains at y0. Shape identity, faces, transforms, layers and masks are identical before/after visual compose. No controller change or weakened assertion. Cause not isolated; unchanged colliders suggest independence from render clipping but do not prove preexistence without a baseline replay."
+  },
+  "tests": {
+    "desert_roads_geometry": "PASS 30 checks;6276 traffic samples",
+    "desert_drag_meet_world": "PASS 328 checks including streaming reconstruction",
+    "ownership": "PASS nine chunks, 27 support probes, zero missing/duplicate 4m samples",
+    "capture_initial": "47 frames; all support probes passed; movement too short to cross all road edges",
+    "capture_anomaly_pending": true,
+    "capture_crossings": "376 frames; three distance targets reached; one-frame player dip leaves character temporal stability pending"
+  },
+  "known_logs": "Native self_list warnings during travel also observed in baseline. No script parse errors in final execution."
+}

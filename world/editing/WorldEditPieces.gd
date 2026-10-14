@@ -62,6 +62,7 @@ static func collect(root: Node) -> Array[Node3D]:
 ## ser movida, preservando a distância que ela tinha do chão original.
 static func apply(root: Node, changes: Dictionary, ground := Callable()) -> void:
 	for node in collect(root): apply_one(node,changes,ground)
+	if is_instance_valid(root) and root.has_method("refresh_ground_after_edit"): root.refresh_ground_after_edit()
 
 ## O cadeado (`world_edit_locked`) só avisa na interface: o usuário pode mexer em tudo.
 static func apply_one(node: Node3D, changes: Dictionary, ground := Callable()) -> void:
