@@ -19,17 +19,34 @@ func _category(node: Node, chunk: Node) -> String:
 
 func run() -> void:
 	var keys: Array[Vector2i] = []
+	var region_id := "harbor"
+	var all_chunks := false
+	var quiet := false
 	for argument in OS.get_cmdline_user_args():
-		if argument.begins_with("--chunks="):
+		if argument.begins_with("--region="): region_id = argument.trim_prefix("--region=")
+		if argument == "--chunks=all": all_chunks = true
+		if argument == "--resumo": quiet = true
+		if argument.begins_with("--chunks=") and argument != "--chunks=all":
 			for pair in argument.trim_prefix("--chunks=").split(";"):
 				var parts := pair.split(",")
 				keys.append(Vector2i(int(parts[0]), int(parts[1])))
-	var region = REGION.build_region("harbor", Vector3.INF)
+	var region = REGION.build_region(region_id, Vector3.INF) if region_id != "desert" else load("res://world/desert/DesertRegion.gd").build_region("desert", Vector3.INF)
 	region.initial_prewarm_only = true
 	root.add_child(region)
 	while not region.prepared: await process_frame
+	if all_chunks:
+		for key in region.records.keys(): keys.append(key)
+	var summary: Array = []
 	for key in keys:
-		region._build_chunk(key)
+		if region_id == "desert":
+			# O deserto monta pelo foco, em fatias: espera o trecho do foco existir e a fila esvaziar.
+			region.set_focus(Vector3((key.x + .5) * region.CELL, 0, (key.y + .5) * region.CELL), true)
+			for frame in 600:
+				await process_frame
+				if region.chunks.has(key) and region.pending.is_empty() and region.build_jobs.is_empty(): break
+			if not region.chunks.has(key): continue
+		else:
+			region._build_chunk(key)
 		var chunk: Node = region.chunks[key]
 		for frame in 8: await process_frame
 		var categories := {}
@@ -56,7 +73,22 @@ func run() -> void:
 		var ranked := categories.keys()
 		ranked.sort_custom(func(a, b): return categories[a].surfaces > categories[b].surfaces)
 		print("CENSO trecho=%s x=%d z=%d %s" % [key, key.x * 64, key.y * 64, JSON.stringify(totals)])
+		summary.append({"key": key, "surfaces": totals.surfaces, "shadow": totals.shadow_surfaces, "top": ranked.slice(0, 3)})
+		# Trecho medido é liberado: medir a região inteira de uma vez não cabe na memória.
+		if region_id != "desert":
+			region.chunks.erase(key)
+			region._detach_cached_records(chunk)
+			chunk.free()
+		if quiet: continue
 		for category in ranked.slice(0, 18):
 			print("  %5d superfícies  %4d com sombra  %4d nós  %s" % [categories[category].surfaces, categories[category].shadow, categories[category].nodes, category])
+	var total := 0
+	var shadow := 0
+	for item in summary:
+		total += item.surfaces
+		shadow += item.shadow
+	summary.sort_custom(func(a, b): return a.surfaces + a.shadow > b.surfaces + b.shadow)
+	print("CENSO_RESUMO região=%s trechos=%d superfícies=%d sombra=%d" % [region_id, summary.size(), total, shadow])
+	for item in summary.slice(0, 8): print("CENSO_TOPO %s superfícies=%d sombra=%d %s" % [item.key, item.surfaces, item.shadow, item.top])
 	region.free()
 	quit(0)

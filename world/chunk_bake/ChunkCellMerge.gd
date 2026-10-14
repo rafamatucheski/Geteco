@@ -50,6 +50,12 @@ static func finish_chunk(chunk: Node3D) -> Dictionary:
 		if child is MeshInstance3D: candidates.append(child)
 		elif child is Node3D and _scope_allowed(child as Node3D): candidates.append_array(child.get_children())
 	_sum(report, _merge_scope(chunk, candidates))
+	# Prédios só com reveal (cabanas da serra: 220 malhas cada, poços do porto): o reveal escolhe peça a peça
+	# dentro do prédio pela caixa e troca o material pela cor dele, então o lote fica dentro do prédio, em
+	# célula pequena e com o material original, sem cor no vértice.
+	for child in chunk.get_children():
+		if child is Node3D and _reveal_scope_allowed(child as Node3D):
+			_sum(report, _merge_scope(child as Node3D, child.get_children(), true))
 	# Os materiais da família nascem depois do pré-aquecimento do corte do túnel: sem isto, a primeira
 	# entrada no túnel compilava uma cópia com alfa por família (pico de 1,1 s na captura de 14/10).
 	if report.batches > 0 and chunk.get_parent() != null:
@@ -90,6 +96,17 @@ static func _scope_allowed(scope: Node3D) -> bool:
 	if String(scope.name).to_lower().contains("loot"): return false
 	return not _is_dynamic(scope)
 
+const REVEAL_CELL := Vector3(8.0, 4.0, 8.0)
+const REVEAL_ONLY_GROUP := &"exterior_reveal_building"
+## Prédio com reveal mas sem acesso, lugar ou fachada de entrar: nada guarda referência às malhas dele.
+static func _reveal_scope_allowed(scope: Node3D) -> bool:
+	if not scope.is_in_group(REVEAL_ONLY_GROUP) or scope.has_meta(BATCH): return false
+	if scope.get_node_or_null("BuildingAccess") != null or not scope.find_children("BuildingAccess", "", true, false).is_empty(): return false
+	if scope.has_meta("place_id") and not str(scope.get_meta("place_id", "")).is_empty(): return false
+	for group in scope.get_groups():
+		if group != REVEAL_ONLY_GROUP and not String(group).begins_with("_"): return false
+	return not _is_dynamic(scope)
+
 ## Nó que se mexe ou é dono de algo que se mexe: o lote ficaria parado no lugar antigo.
 static func _is_dynamic(node: Node) -> bool:
 	if node is RigidBody3D or node is CharacterBody3D or node is AnimatableBody3D or node is Area3D: return true
@@ -99,16 +116,16 @@ static func _is_dynamic(node: Node) -> bool:
 	# processando (animação, guincho, sinal) mexe em algo e fica de fora.
 	return node.is_processing() or node.is_physics_processing() or node.is_processing_input() or node.is_processing_unhandled_input()
 
-static func _merge_scope(scope: Node3D, candidates: Array) -> Dictionary:
+static func _merge_scope(scope: Node3D, candidates: Array, exact := false) -> Dictionary:
 	var groups := {}
 	var to_scope := scope.global_transform.affine_inverse()
-	_collect(candidates, scope, to_scope, groups)
+	_collect(candidates, scope, to_scope, groups, exact)
 	var report := {"sources": 0, "batches": 0}
 	var holder: Node3D = null
 	for key in groups:
 		# Grupo de um só também vira lote: a fonte só some se todas as superfícies dela tiverem lote.
 		var entries: Array = groups[key]
-		var mesh := _build_batch(entries)
+		var mesh := _build_batch(entries, exact)
 		if mesh == null: continue
 		var first: MeshInstance3D = entries[0].node
 		if holder == null:
@@ -143,16 +160,16 @@ static func _merge_scope(scope: Node3D, candidates: Array) -> Dictionary:
 			report.sources += 1
 	return report
 
-static func _collect(candidates: Array, scope: Node3D, to_scope: Transform3D, groups: Dictionary) -> void:
+static func _collect(candidates: Array, scope: Node3D, to_scope: Transform3D, groups: Dictionary, exact := false) -> void:
 	for child in candidates:
 		if child.has_meta(BATCH) or child.has_meta(MERGED_SOURCE): continue
 		if not child is Node3D or not (child as Node3D).visible: continue
 		if _is_dynamic(child) or _protected(child): continue
 		if child is MeshInstance3D:
-			_add_mesh(child as MeshInstance3D, scope, to_scope, groups)
+			_add_mesh(child as MeshInstance3D, scope, to_scope, groups, exact)
 			continue
 		# Corpos estáticos guardam visuais como filhos; eles não se mexem.
-		if child.get_child_count() > 0 and not child is MeshInstance3D: _collect(child.get_children(), scope, to_scope, groups)
+		if child.get_child_count() > 0 and not child is MeshInstance3D: _collect(child.get_children(), scope, to_scope, groups, exact)
 
 static func _protected(node: Node) -> bool:
 	var label := String(node.name).to_lower()
@@ -164,7 +181,7 @@ static func _protected(node: Node) -> bool:
 		if not String(group).begins_with("_"): return true
 	return false
 
-static func _add_mesh(mesh_node: MeshInstance3D, scope: Node3D, to_scope: Transform3D, groups: Dictionary) -> void:
+static func _add_mesh(mesh_node: MeshInstance3D, scope: Node3D, to_scope: Transform3D, groups: Dictionary, exact := false) -> void:
 	var mesh := mesh_node.mesh
 	if mesh == null or mesh_node.skin != null or mesh_node.transparency != 0.0 or mesh_node.material_overlay != null: return
 	# Filho só de colisão continua valendo com o visual escondido; qualquer visual filho sumiria junto.
@@ -177,7 +194,7 @@ static func _add_mesh(mesh_node: MeshInstance3D, scope: Node3D, to_scope: Transf
 		surfaces.append(material)
 	var bounds: AABB = mesh_node.global_transform * mesh_node.get_aabb()
 	var center := bounds.get_center()
-	var size: Vector3 = CELL_NEAR_TUNNEL if TUNNEL_CUTAWAY.corridor_rect().has_point(Vector2(center.x, center.z)) else CELL_FAR
+	var size: Vector3 = REVEAL_CELL if exact else (CELL_NEAR_TUNNEL if TUNNEL_CUTAWAY.corridor_rect().has_point(Vector2(center.x, center.z)) else CELL_FAR)
 	var cell := Vector3i(floori(center.x / size.x), floori(center.y / size.y), floori(center.z / size.z))
 	# O corte do túnel trata "chão" (topo abaixo de 0,5 m) diferente de volume: não podem ir juntos.
 	var flat := bounds.end.y < TUNNEL_CUTAWAY.FLAT_TOP
@@ -191,7 +208,7 @@ static func _add_mesh(mesh_node: MeshInstance3D, scope: Node3D, to_scope: Transf
 		if surfaces[surface].normal_enabled and mesh.surface_get_arrays(surface)[Mesh.ARRAY_TANGENT] == null: return
 	for surface in surfaces.size():
 		var material: StandardMaterial3D = surfaces[surface]
-		var family := _family(material)
+		var family := ("m%d" % material.get_instance_id()) if exact else _family(material)
 		# A P5 dá a cada detalhe um alcance próprio (40 m + metade da caixa); faixas de 10 m deixam juntar, e o
 		# lote usa o maior alcance do grupo: nada some antes do que sumia.
 		var range_band := ceili(mesh_node.visibility_range_end / 10.0) if mesh_node.visibility_range_end > 0.0 else 0
@@ -219,15 +236,17 @@ static func _family(material: StandardMaterial3D) -> String:
 	_families[id] = {"key": key, "ref": weakref(material)}
 	if not key.is_empty() and not _family_materials.has(key):
 		var shared := material.duplicate() as StandardMaterial3D
+		# Material que já usava cor no vértice mantém o espaço de cor dele: forçar sRGB numa cor linear
+		# escureceu os pinheiros e as árvores da serra (captura de 14/10).
+		if not material.vertex_color_use_as_albedo: shared.vertex_color_is_srgb = true
 		shared.vertex_color_use_as_albedo = true
-		shared.vertex_color_is_srgb = true
 		shared.albedo_color = Color(1, 1, 1, material.albedo_color.a)
 		_family_materials[key] = shared
 	return key
 
 ## Lote com posição, normal, tangente, UV e cor por vértice, no espaço do escopo.
-static func _build_batch(entries: Array) -> ArrayMesh:
-	var family_material: StandardMaterial3D = _family_materials.get(_family(entries[0].material))
+static func _build_batch(entries: Array, exact := false) -> ArrayMesh:
+	var family_material: StandardMaterial3D = entries[0].material if exact else _family_materials.get(_family(entries[0].material))
 	if family_material == null: return null
 	var use_tangent := family_material.normal_enabled
 	var vertices := PackedVector3Array()
@@ -249,6 +268,10 @@ static func _build_batch(entries: Array) -> ArrayMesh:
 		var source_uvs: Variant = arrays[Mesh.ARRAY_TEX_UV]
 		var source_colors: Variant = arrays[Mesh.ARRAY_COLOR]
 		var keep_colors: bool = source.vertex_color_use_as_albedo and source_colors != null
+		# Material original: a cor do vértice só importa se ele já a usava; senão vai branco, sem efeito.
+		if exact: tint = Color.WHITE
+		# Família com cor linear: a cor do material (sRGB) entra convertida, como o shader faria com albedo_color.
+		elif not family_material.vertex_color_is_srgb: tint = tint.srgb_to_linear()
 		var base := vertices.size()
 		for index in source_vertices.size():
 			vertices.append(transform * source_vertices[index])

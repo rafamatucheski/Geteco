@@ -8,6 +8,9 @@ var points := {
 	"ponte": Vector3(224.0, 0.0, 30.0),
 	"cais": Vector3(220.0, 0.0, 82.0),
 	"tunel": Vector3(237.0, 0.0, TUNNEL.CENTER_Z),
+	# Serra (use --play-at=mountain,670,-289): serraria e vila, os trechos com 1.200+ superfícies.
+	"serraria": Vector3(670.0, 4.0, -289.0),
+	"vila": Vector3(734.0, 4.0, -416.0),
 }
 
 func _initialize() -> void: run.call_deferred()
@@ -20,7 +23,7 @@ func run() -> void:
 			var wanted := argument.trim_prefix("--pontos=").split(",")
 			for id in points.keys():
 				if not id in wanted: points.erase(id)
-	points.tunel.y = TUNNEL.floor_y(points.tunel.x)
+	if points.has("tunel"): points.tunel.y = TUNNEL.floor_y(points.tunel.x)
 	var world: Variant = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival", true)
 	root.add_child(world)
