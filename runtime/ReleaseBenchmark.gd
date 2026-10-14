@@ -7,11 +7,11 @@ extends Node
 const ROUTE_WEST := [Vector3(64, 0, 82), Vector3(150, 0, 82), Vector3(143, 0, 60), Vector3(84, 0, 60), Vector3(84, 0, 123), Vector3(65, 0, 113)]
 const ROUTE_PORT := [Vector3(150, 0, 82), Vector3(250, 0, 82), Vector3(250, 0, 30), Vector3(180, 0, 30), Vector3(180, 0, 82)]
 ## Pontos quentes das outras regiões (censo de 14/10). Serra: --play-at=mountain,650,-290; ponte cidade–serra:
-## --play-at=harbor,440,-285; deserto (encontro de arrancada): --play-at=desert,-690,-880.
+## --play-at=harbor,440,-285; deserto (encontro de arrancada, trechos de 96 m): --play-at=desert,-1040,-1320.
 const ROUTES := {
 	"serra": [Vector3(650, 4, -290), Vector3(745, 4, -300), Vector3(745, 4, -425), Vector3(660, 4, -425)],
 	"ponte": [Vector3(440, 0, -285), Vector3(600, 0, -285)],
-	"deserto": [Vector3(-690, 0, -880), Vector3(-600, 0, -880), Vector3(-600, 0, -835), Vector3(-690, 0, -835)],
+	"deserto": [Vector3(-1040, 0, -1320), Vector3(-950, 0, -1320), Vector3(-950, 0, -1260), Vector3(-1040, 0, -1260)],
 }
 const SPEED := 12.0
 const WARMUP_LOOPS := 1

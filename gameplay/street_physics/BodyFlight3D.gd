@@ -15,6 +15,9 @@ var down_time := 0.0
 var bounces := 0
 var source: WeakRef
 var impact_speed := 0.0
+## Tempo mínimo no chão antes de levantar. 0 mantém o atropelamento como era; o arremesso do motorista
+## puxado do carro usa ~1,3 s para a queda ler como queda, não como tropeço.
+var min_down := 0.0
 var _visual_base := Transform3D.IDENTITY
 var _saved_layer := 2
 var _saved_mask := 7
@@ -255,6 +258,7 @@ func _wait_for_help(delta: float) -> void:
 		return
 	if _getting_up: return
 	down_time += delta
+	if down_time < min_down: return
 	var health: Variant = actor.get("health")
 	if (health != null and float(health) >= 60.0) or down_time >= (SELF_RECOVERY_SECONDS if health != null else 8.0): _get_up()
 

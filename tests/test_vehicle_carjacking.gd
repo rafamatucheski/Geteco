@@ -51,8 +51,19 @@ func run() -> void:
 		body._extraction_progress = .55
 		body._apply()
 		check(theft.hit and not theft.released and not actor.seated, id + ": contact and pull happen before Dante occupies the seat")
+		if CARJACKING.throw_enabled:
+			# Arrastada pela porta na altura do banco: a raiz não sobe, então a cabeça não atravessa o teto.
+			check(victim.global_position.y <= car.driver_seat_anchor().y + .02, id + ": dragged out low, without rising inside the cabin")
 		body._finish_extraction()
-		check(theft.released and victim.global_position.distance_to(point) < .01, id + ": lands outside before boarding resumes")
+		if CARJACKING.throw_enabled:
+			check(theft.released and theft.thrown and victim.has_meta("street_flying"), id + ": thrown out and flying after the pull")
+			for frame in 360:
+				await physics_frame
+				if not victim.has_meta("street_down"): break
+			var flat := Vector3(victim.global_position.x - point.x, 0, victim.global_position.z - point.z)
+			check(not victim.has_meta("street_down") and flat.length() < 3.0, id + ": falls near the checked landing and gets up (%.2f m)" % flat.length())
+		else:
+			check(theft.released and victim.global_position.distance_to(point) < .01, id + ": lands outside before boarding resumes")
 		check(victim.collision_layer == 2 and victim.is_physics_processing(), id + ": restores collision and AI")
 		victim.controlled_automatically = true
 		victim.automatic_direction = Vector3.RIGHT

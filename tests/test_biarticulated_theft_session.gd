@@ -72,6 +72,9 @@ func run() -> void:
 	var victim=body.carjacking.victim if is_instance_valid(body) and body.carjacking!=null else null
 	await wait_body()
 	check(bus.controlled and not bus.traffic and world.player.seated,"Dante becomes the seated driver")
+	# Arremessado (2026-10-14): o motorista ainda está no voo/no chão quando o Dante senta; espera levantar.
+	var up_deadline:=Time.get_ticks_msec()+6000
+	while is_instance_valid(victim) and victim.has_meta("street_down") and Time.get_ticks_msec()<up_deadline: await process_frame
 	check(is_instance_valid(victim) and victim.visible and victim.collision_layer==2,"The expelled driver remains a physical pedestrian")
 	check(person.bus==null and bus.passengers.is_empty(),"Passengers leave the stolen service vehicle")
 	check(ops.boardable_bus()!=bus,"The bus no longer sells passenger boarding")

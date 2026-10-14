@@ -2,6 +2,17 @@ extends RefCounted
 ## Finite, boarding-owned choreography. The displaced actor keeps its identity
 ## and resumes its original AI only after reaching a collision-checked landing.
 const ACTOR := preload("res://scripts/Actor.gd")
+const BODY_FLIGHT := preload("res://gameplay/street_physics/BodyFlight3D.gd")
+## Arrastar e arremessar (2026-10-14): antes a vítima deslizava em linha reta do banco para trás do ladrão,
+## levantando ainda dentro do carro (a cabeça atravessava o teto). Agora sai agachada pela porta, o ladrão
+## gira e joga, e o voo/queda/levantar é o do atropelamento, sem dano nem sangue. GETECO_CARJACK_THROW=0 volta.
+static var throw_enabled := OS.get_environment("GETECO_CARJACK_THROW") != "0"
+const DRAG_END := .62
+const THROW_AT := .72
+const THROW_SPEED := 7.5
+const THROW_DOWN_SECONDS := 1.3
+var thrown := false
+var flight: Node
 var world: Node3D
 var vehicle: CharacterBody3D
 var victim: CharacterBody3D
@@ -120,7 +131,7 @@ func apply(thief: CharacterBody3D, progress: float) -> void:
 			thief.pose_vehicle(0.0)
 	else:
 		thief.pose_vehicle(0.0)
-		var reach := smoothstep(0.0, .18, t) * (1.0 - smoothstep(.68, 1.0, t))
+		var reach := smoothstep(0.0, .18, t) * (1.0 - (smoothstep(THROW_AT, .86, t) if throw_enabled else smoothstep(.68, 1.0, t)))
 		for arm in ["Left", "Right"]:
 			var sign_side := -1.0 if arm == "Left" else 1.0
 			var idle := Vector3(sign_side * .23, .9, -.28)
@@ -133,6 +144,9 @@ func apply(thief: CharacterBody3D, progress: float) -> void:
 		if is_instance_valid(_body) and _body.has_method("take_hit"): _body.take_hit(vehicle.global_basis.x * float(side), .65)
 		if motorcycle and is_instance_valid(world.get("gameplay")) and world.gameplay.has_method("_melee_hit_sound"):
 			world.gameplay._melee_hit_sound("fists", victim, grip, 0.0)
+	if throw_enabled:
+		_drag_and_throw(thief, t)
+		return
 	var pull := smoothstep(.26, .78, t)
 	if is_instance_valid(_body): _body.sit_amount = 1.0 - pull
 	var seat_now: Vector3 = vehicle.to_global(_seat_root.origin)
@@ -142,6 +156,49 @@ func apply(thief: CharacterBody3D, progress: float) -> void:
 	victim.visual.rotation.z += float(side) * sin(pull * PI) * (.85 if motorcycle else .45)
 	victim.visual.position.y -= sin(pull * PI) * .32
 	if t >= 1.0: release()
+
+## Banco → porta agachada → giro → voo. A raiz da vítima fica na altura do banco até passar a porta e o corpo
+## continua sentado: assim a cabeça não sai pelo teto nem pela moldura.
+func _drag_and_throw(thief: CharacterBody3D, t: float) -> void:
+	var outward: Vector3 = vehicle.global_basis.x * float(side)
+	var seat_now: Vector3 = vehicle.to_global(_seat_root.origin)
+	var door_out := gate + outward * .35
+	door_out.y = seat_now.y
+	var drag := smoothstep(.26, DRAG_END, t)
+	var swing := smoothstep(DRAG_END, THROW_AT, t)
+	# Sentado até metade da porta, depois meio agachado: nada de ficar em pé ainda dentro do carro.
+	if is_instance_valid(_body): _body.sit_amount = lerpf(1.0, .55, smoothstep(.55, 1.0, drag)) * (1.0 - swing * .6)
+	if victim.get("skeleton") is Skeleton3D and victim.has_method("pose_vehicle"): victim.pose_vehicle(lerpf(1.0, .5, smoothstep(.55, 1.0, drag)) * (1.0 - swing * .6))
+	var along := seat_now.lerp(door_out, drag)
+	# No giro o ladrão puxa a vítima para o lado dele, a caminho do ponto de pouso verificado.
+	var toward_landing := landing if landing.is_finite() else door_out + outward * 1.5
+	toward_landing.y = door_out.y
+	victim.global_position = along.lerp(door_out.lerp(toward_landing, .35), swing)
+	victim.visual.transform = _seat_visual.interpolate_with(_visual_transform, swing * .5)
+	# Tronco inclinado para fora, puxado pela gola; no giro a vítima vira de frente para o ladrão.
+	victim.visual.rotation.z += float(side) * (sin(drag * PI * .5) * .35 + swing * .25)
+	victim.visual.rotation.y += float(side) * swing * 1.1
+	victim.visual.position.y -= sin(drag * PI) * .12
+	if t >= THROW_AT: _throw(thief)
+
+func _throw(thief: CharacterBody3D) -> void:
+	if thrown: return
+	thrown = true
+	var from := victim.global_position
+	var target := landing if landing.is_finite() else from + vehicle.global_basis.x * float(side) * 2.0
+	var direction := target - from
+	direction.y = 0.0
+	if direction.length_squared() < .01: direction = vehicle.global_basis.x * float(side)
+	# Solta na altura do chão do pouso: o voo começa fora do casco e quica no chão de verdade.
+	landing = Vector3(from.x, target.y, from.z)
+	release()
+	if not is_instance_valid(victim) or not victim.is_inside_tree() or victim.get("dead") == true: return
+	flight = BODY_FLIGHT.launch(victim, direction.normalized() * THROW_SPEED, false, null, thief)
+	if is_instance_valid(flight):
+		flight.min_down = THROW_DOWN_SECONDS
+		# O voo tomba a partir da pose de pé em 0,38 s; começar no meio da queda continua a inclinação do
+		# puxão em vez de mostrar a vítima de pé por um instante (captura de 14/10, quadro de 80%).
+		flight._age = .16
 
 func release() -> void:
 	if released: return

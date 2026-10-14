@@ -72,6 +72,9 @@ func run() -> void:
 				await shot(id + "-outside")
 				captured_outside = true
 		check(captured and theft.released and car.controlled,id + ": forceful removal precedes driver control")
+		# Com o arremesso (2026-10-14) a vítima ainda está no voo/no chão quando o Dante senta: espera levantar.
+		var up_deadline := Time.get_ticks_msec() + 6000
+		while is_instance_valid(victim) and victim.has_meta("street_down") and Time.get_ticks_msec() < up_deadline: await process_frame
 		check(is_instance_valid(victim) and victim.collision_layer != 0,id + ": displaced driver is a physical actor")
 		await shot(id + "-seated")
 		check(world.driving.leave(),id + ": exit remains available after theft")
