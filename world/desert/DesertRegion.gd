@@ -256,7 +256,12 @@ func _run_build_job(job: Dictionary, _budget: float) -> void:
 			lamp.light_energy=float(lamp.get_meta("mining_light_energy",1.8))*_night_level
 			_lamps.append(lamp)
 		job.mining_built=true
-	else: build_jobs.erase(job)
+	else:
+		build_jobs.erase(job)
+		# Trecho pronto: a mesma fusão por trecho do porto e da serra (encontro de arrancada com 539
+		# superfícies, 95% com sombra, censo de 14/10). Espera 2 quadros para as edições do editor.
+		chunk.set_meta("vegetation_ready_frame", Engine.get_physics_frames())
+		preload("res://world/chunk_bake/ChunkCellMerge.gd").finish_chunk_later(chunk)
 
 func is_streaming_idle() -> bool: return pending.is_empty() and build_jobs.is_empty()
 func prewarm() -> void:
