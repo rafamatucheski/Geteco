@@ -31,7 +31,7 @@ func run() -> void:
 	for key in keys:
 		region._build_chunk(key)
 		var chunk: Node = region.chunks[key]
-		for frame in 4: await process_frame
+		for frame in 8: await process_frame
 		var categories := {}
 		var totals := {"surfaces": 0, "shadow_surfaces": 0, "instances": 0}
 		for node in chunk.find_children("*", "GeometryInstance3D", true, false):

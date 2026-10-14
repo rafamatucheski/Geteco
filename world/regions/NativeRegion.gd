@@ -691,7 +691,9 @@ func _detach_cached_records(chunk: Node3D) -> void:
 		if not child.has_meta("record_cache_key"): continue
 		var key: String = child.get_meta("record_cache_key")
 		# Grupo superseded segue a liberação normal do chunk, sem virar órfão.
-		if _record_cache.get(key, []).has(child): chunk.remove_child(child)
+		if _record_cache.get(key, []).has(child):
+			preload("res://world/chunk_bake/ChunkCellMerge.gd").restore_sources(child)
+			chunk.remove_child(child)
 
 ## Chunk que sai do raio de retenção: liberar 1000-3000 nós de uma vez custava 40-150 ms
 ## num quadro (medido dirigindo). O chunk é tirado da lista já e seus filhos são liberados

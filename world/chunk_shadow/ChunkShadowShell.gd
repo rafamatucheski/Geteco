@@ -15,7 +15,7 @@ const STATIC_GENERATORS := [
 static var enabled := OS.get_environment("GETECO_SHADOW_SHELL") != "0"
 
 static func schedule(chunk: Node3D) -> void:
-	if not enabled or Engine.get_meta("geteco_live_preview_build", false): return
+	if not (enabled or preload("res://world/chunk_bake/ChunkCellMerge.gd").enabled) or Engine.get_meta("geteco_live_preview_build", false): return
 	# EditableRegion aplica WorldUnits após o retorno de NativeRegion._run_build_job.
 	# O adiamento preserva esse contrato também quando o trecho é montado de uma vez.
 	_finish_deferred.call_deferred(weakref(chunk))
@@ -25,7 +25,9 @@ static func _finish_deferred(reference: WeakRef) -> void:
 	if not is_instance_valid(chunk) or chunk.is_queued_for_deletion() or not chunk.is_inside_tree(): return
 	# Não ativar a fusão antiga em trechos onde nenhum gerador a agendou.
 	if chunk.has_meta(BUILDING_BATCH.PENDING_META): BUILDING_BATCH.finish_chunk(chunk)
-	finish_chunk(chunk)
+	# Fusão geral por célula antes da casca: a casca lê os volumes que sobraram visíveis.
+	await preload("res://world/chunk_bake/ChunkCellMerge.gd").finish_chunk_later(chunk)
+	if is_instance_valid(reference.get_ref()): finish_chunk(chunk)
 
 static func finish_chunk(chunk: Node3D) -> void:
 	if not enabled or chunk.has_meta(FINISHED) or not chunk.has_meta("vegetation_ready_frame"): return

@@ -24,7 +24,7 @@ func target_meshes(chunk: Node3D) -> Array[MeshInstance3D]:
 		var owner_node: Node = node
 		while owner_node != chunk and owner_node.get_script() == null:
 			owner_node = owner_node.get_parent()
-		if owner_node.get_script() != null and owner_node.get_script().resource_path in BATCH.TARGET_SCRIPTS:
+		if owner_node.get_script() != null and owner_node.get_script().resource_path in _targets():
 			result.append(node)
 	return result
 
@@ -80,6 +80,12 @@ func same_geometry(before: Dictionary, after: Dictionary) -> bool:
 	print("ERRO_MAXIMO_GEOMETRIA metros=", maximum_error)
 	return true
 
+## Lojas e prédios baixos/altos entram na fusão junto com GETECO_CELL_MERGE (2026-10-14).
+func _targets() -> Array:
+	var targets: Array = BATCH.TARGET_SCRIPTS.duplicate()
+	if preload("res://world/chunk_bake/ChunkCellMerge.gd").enabled: targets.append_array(BATCH.EXTENDED_TARGET_SCRIPTS)
+	return targets
+
 func protected_snapshot(chunk: Node3D) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	var animated := {}
@@ -97,7 +103,7 @@ func protected_snapshot(chunk: Node3D) -> Array[Dictionary]:
 		var scripted_branch := false
 		var ancestor: Node = node
 		while ancestor != chunk:
-			if ancestor.get_script() != null and not ancestor.get_script().resource_path in BATCH.TARGET_SCRIPTS:
+			if ancestor.get_script() != null and not ancestor.get_script().resource_path in _targets():
 				scripted_branch = true
 				break
 			ancestor = ancestor.get_parent()

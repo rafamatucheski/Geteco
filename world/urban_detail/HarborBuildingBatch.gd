@@ -9,6 +9,14 @@ const TARGET_SCRIPTS := [
 	"res://assets/regions/source/world/harbor/residences/ResidenceExterior3D.gd",
 	"res://world/places/ResidenceParking.gd",
 ]
+## Lojas e prédios baixos/altos do porto (2026-10-14): mesma regra por célula de 8 m, que o corte do túnel e o
+## reveal já aceitam nos tipos acima. Lavanderia e CornerDiner tinham 83 e 61 malhas. Vai com GETECO_CELL_MERGE.
+const EXTENDED_TARGET_SCRIPTS := [
+	"res://world/urban_detail/UrbanShopfrontBuilding.gd",
+	"res://world/urban_detail/UrbanBrownstoneBuilding.gd",
+	"res://world/urban_detail/UrbanLowriseBuilding.gd",
+	"res://world/urban_detail/UrbanSkylineBuilding.gd",
+]
 static var enabled := OS.get_environment("GETECO_BUILDING_BATCH") != "0"
 const PENDING_META := &"harbor_building_batch_pending"
 const FINISHED_META := &"harbor_building_batch_finished"
@@ -46,7 +54,10 @@ static func finish_chunk(chunk: Node3D) -> void:
 static func _is_target(node: Node) -> bool:
 	# O piloto ainda precisa do marco de sombras do chunk, sem fundir outra vez.
 	if node.get_meta("baked_commercial", false): return true
-	return node.get_script() != null and node.get_script().resource_path in TARGET_SCRIPTS
+	if node.get_script() == null: return false
+	var path: String = node.get_script().resource_path
+	if path in TARGET_SCRIPTS: return true
+	return path in EXTENDED_TARGET_SCRIPTS and preload("res://world/chunk_bake/ChunkCellMerge.gd").enabled
 
 static func _optimize_building(building: Node3D) -> void:
 	var access := building.get_node_or_null("BuildingAccess")
