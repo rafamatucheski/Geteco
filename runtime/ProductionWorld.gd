@@ -33,6 +33,8 @@ const VC_PEDESTRIAN_SPAWN_MAX := 55.0
 var _pedestrian_review_cursor := 0
 var _pedestrian_review_credit := 0.0
 var _p1_count_started := false
+const RELEASE_BENCHMARK := preload("res://runtime/ReleaseBenchmark.gd")
+var _release_benchmark_started := false
 # Densidade dinâmica, como no GTA: com emergência em cena o teto de pedestres e de trânsito
 # civil cai para sobrar orçamento de física à polícia (45 carros ≈ 4–5 ms e 41 pessoas ≈ 2 ms
 # por passo no caos, medido 2026-09-29). Cai rápido, volta devagar; quem passa do teto some
@@ -1111,6 +1113,12 @@ func _process(delta: float) -> void:
 	if not _p1_count_started and "--p1-count" in OS.get_cmdline_user_args():
 		_p1_count_started = true
 		_count_p1_population()
+	if not _release_benchmark_started and RELEASE_BENCHMARK.requested():
+		_release_benchmark_started = true
+		var benchmark := RELEASE_BENCHMARK.new()
+		benchmark.name = "ReleaseBenchmark"
+		benchmark.world = world
+		add_child(benchmark)
 	var street_live: bool = state.place_id.is_empty() or (session.building_entrance != null and session.building_entrance.in_building()) or (session.service_roofs != null and session.service_roofs.is_active())
 	if street_live:
 		var focus := _physical_focus()
