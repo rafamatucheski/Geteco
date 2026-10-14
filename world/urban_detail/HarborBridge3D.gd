@@ -7,8 +7,12 @@ class_name HarborBridge3D
 
 const SCALE:=1.0/16.0
 const SOURCE_CENTER:=Vector2(3790,400)
+const TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
+static var merge_enabled := OS.get_environment("GETECO_BRIDGE_MERGE") != "0"
 var materials:={}
 var solid_root: StaticBody3D
+var _merge_chunk: WeakRef
+var _merge_sources: Array[WeakRef] = []
 
 func _ready()->void:
 	name="FoundryBridge3D"
@@ -22,6 +26,101 @@ func _ready()->void:
 	_build_pylons_and_stays()
 	_build_luminaires()
 	_build_abutment()
+	set_process(false)
+	if merge_enabled and not Engine.get_meta("geteco_live_preview_build", false):
+		# Fontes nascem na ordem original. WorldUnits ainda pode agrupá-las/movê-las
+		# até o trecho terminar; referências fracas acompanham essas mesmas peças.
+		for source in find_children("*", "MeshInstance3D", true, false): _merge_sources.append(weakref(source))
+		var chunk := get_parent()
+		if chunk != null and str(chunk.name).begins_with("Chunk_"):
+			_merge_chunk = weakref(chunk)
+			set_process(true)
+
+func _process(_delta: float) -> void:
+	var chunk: Node = _merge_chunk.get_ref() if _merge_chunk != null else null
+	if not is_instance_valid(chunk):
+		set_process(false)
+		return
+	if not chunk.has_meta("vegetation_ready_frame"): return
+	set_process(false)
+	# EditableRegion finaliza as edições depois do retorno da montagem nativa.
+	_finish_static_batch.call_deferred()
+
+func _finish_static_batch() -> void:
+	if not merge_enabled or not is_inside_tree() or is_queued_for_deletion(): return
+	if Engine.get_meta("geteco_live_preview_build", false) or has_meta("bridge_merge_finished"): return
+	set_meta("bridge_merge_finished", true)
+	var groups := {}
+	for reference in _merge_sources:
+		var source := reference.get_ref() as MeshInstance3D
+		if not is_instance_valid(source) or not _merge_eligible(source): continue
+		var key := "%d|%d|%d|%d|%s" % [source.get_active_material(0).get_instance_id(), source.cast_shadow, source.layers, source.gi_mode, source.extra_cull_margin]
+		if not groups.has(key): groups[key] = []
+		groups[key].append(source)
+	var removed := 0
+	var added := 0
+	for entries in groups.values():
+		if entries.size() < 2: continue
+		var bounds: AABB = entries[0].global_transform * entries[0].get_aabb()
+		for source: MeshInstance3D in entries: bounds = bounds.merge(source.global_transform * source.get_aabb())
+		# Duas peças editadas em lados opostos do canal não podem produzir um lote
+		# cuja caixa passe sobre o tubo, mesmo sendo seguras individualmente.
+		if not _outside_tunnel_cut(bounds): continue
+		var surface := SurfaceTool.new()
+		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+		for source: MeshInstance3D in entries:
+			surface.append_from(source.mesh, 0, global_transform.affine_inverse() * source.global_transform)
+		var mesh := surface.commit()
+		if mesh == null or mesh.get_surface_count() != 1: continue
+		var first: MeshInstance3D = entries[0]
+		var batch := MeshInstance3D.new()
+		batch.name = "BridgeStaticBatch_%d" % added
+		batch.mesh = mesh
+		batch.material_override = first.get_active_material(0)
+		batch.cast_shadow = first.cast_shadow
+		batch.layers = first.layers
+		batch.gi_mode = first.gi_mode
+		batch.extra_cull_margin = first.extra_cull_margin
+		batch.set_meta("world_unit_skip", true)
+		add_child(batch)
+		for source: MeshInstance3D in entries: source.visible = false
+		removed += entries.size()
+		added += 1
+	_merge_sources.clear()
+	set_meta("bridge_merge_counts", {"sources_hidden": removed, "batches": added})
+
+func _merge_eligible(source: MeshInstance3D) -> bool:
+	if not source.is_visible_in_tree() or source.is_queued_for_deletion(): return false
+	if not source.mesh is BoxMesh or source.mesh.get_surface_count() != 1: return false
+	if source.get_script() != null or source.get_child_count() > 0 or source.skin != null: return false
+	if source.material_overlay != null or source.transparency != 0.0: return false
+	if source.visibility_range_begin != 0.0 or source.visibility_range_end != 0.0: return false
+	# SurfaceTool não carrega o sinal de escala do nó para o culling do lote.
+	if (global_transform.affine_inverse() * source.global_transform).basis.determinant() <= 0.0: return false
+	var material := source.get_active_material(0) as StandardMaterial3D
+	if material == null or material.emission_enabled or material.next_pass != null: return false
+	if material.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED: return false
+	var chunk: Node = _merge_chunk.get_ref() if _merge_chunk != null else null
+	if not is_instance_valid(chunk): return false
+	var current: Node = source
+	while current != null and current != chunk:
+		if current is CharacterBody3D or current is RigidBody3D or current is AnimatableBody3D: return false
+		if current != self and current.get_script() != null: return false
+		if current.has_meta("street_fragile_registered") or not str(current.get_meta("place_id", "")).is_empty(): return false
+		for group in ["exterior_reveal_building", "v2_walkin_facade", "harbor_building_facade", "canal_tunnel"]:
+			if current.is_in_group(group): return false
+		var label := str(current.name).to_lower()
+		for protected in ["door", "glass", "sign", "neon", "lamp", "light", "beacon", "loot", "fragile"]:
+			if label.contains(protected): return false
+		current = current.get_parent()
+	return current == chunk and _outside_tunnel_cut(source.global_transform * source.get_aabb())
+
+static func _outside_tunnel_cut(bounds: AABB) -> bool:
+	# TunnelCutaway trata topo < 0,5 como piso: nunca entra no sweep da câmera.
+	# Nesse ramo só a interseção com o corredor fechado pode apagar a peça.
+	if bounds.end.y >= 0.5: return false
+	var closed := Rect2(TUNNEL.W_PORTAL, TUNNEL.outer_north(), TUNNEL.E_PORTAL - TUNNEL.W_PORTAL, TUNNEL.outer_south() - TUNNEL.outer_north()).grow(-0.05)
+	return not Rect2(bounds.position.x, bounds.position.z, bounds.size.x, bounds.size.z).intersects(closed)
 
 func _build_deck()->void:
 	# V1 deck 3200..4380 x 298..502, centred on this node.
