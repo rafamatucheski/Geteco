@@ -8,7 +8,11 @@ extends SceneTree
 ## Interruptores do jogo valem como variável de ambiente: GETECO_BUILDING_BATCH=0, GETECO_PROP_INSTANCING=0,
 ## GETECO_GROUND_STACK=1; pessoas e trânsito com --population=0 --no-traffic.
 ## Grava evidence/benchmark-west/<label>.json (só o JSON é versionado).
-const ROUTE := [Vector3(64, 0, 82), Vector3(150, 0, 82), Vector3(143, 0, 60), Vector3(84, 0, 60), Vector3(84, 0, 123), Vector3(65, 0, 113)]
+const ROUTE_WEST := [Vector3(64, 0, 82), Vector3(150, 0, 82), Vector3(143, 0, 60), Vector3(84, 0, 60), Vector3(84, 0, 123), Vector3(65, 0, 113)]
+## Pontos quentes de draw calls (2026-10-14): cais do Northstar (x 192–256, z 64–128) e ponte da fundição
+## (x 192–256, z 0–64), os trechos com 2.100–2.600 draw calls no export. Use com --play-at=harbor,150,82.
+const ROUTE_PORT := [Vector3(150, 0, 82), Vector3(250, 0, 82), Vector3(250, 0, 30), Vector3(180, 0, 30), Vector3(180, 0, 82)]
+var ROUTE: Array = ROUTE_WEST
 const SPEED := 12.0
 const WARMUP_LOOPS := 1
 const MEASURE_LOOPS := 2
@@ -26,6 +30,7 @@ func _initialize() -> void: run.call_deferred()
 func _arguments() -> void:
 	for argument in OS.get_cmdline_user_args():
 		if argument.begins_with("--label="): label = argument.trim_prefix("--label=")
+		if argument == "--rota=porto": ROUTE = ROUTE_PORT
 		if argument == "--sem-reflexos": no_reflections = true
 		if argument == "--sem-sombras": no_shadows = true
 		if argument.begins_with("--hora="): hour = float(argument.trim_prefix("--hora="))
@@ -128,7 +133,7 @@ func run() -> void:
 		"label": label, "build": "editor" if OS.has_feature("editor") else ("export_release" if OS.has_feature("release") else "export_debug"),
 		"frames": frames.size(), "frame_ms": _stats(frames), "gpu_ms_total": _stats(gpu), "gpu_ms_main": _stats(gpu_main),
 		"draw_calls": _stats(draws), "primitives": _stats(primitives),
-		"settings": {"sem_reflexos": no_reflections, "sem_sombras": no_shadows, "hora": hour, "chuva": rain, "max_passos_fisica": Engine.max_physics_steps_per_frame,
+		"settings": {"sem_reflexos": no_reflections, "sem_sombras": no_shadows, "rota": "porto" if ROUTE == ROUTE_PORT else "oeste", "hora": hour, "chuva": rain, "max_passos_fisica": Engine.max_physics_steps_per_frame,
 			"motor_fisica": str(ProjectSettings.get_setting("physics/3d/physics_engine")),
 			"args": OS.get_cmdline_user_args(), "toggles": _toggles()},
 		"vehicles": world.production.vehicles.size(), "people": world.people.size(),
