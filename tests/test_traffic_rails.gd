@@ -272,6 +272,13 @@ func enabled_cases() -> void:
 	incoming.velocity = Vector3.LEFT*120
 	await tick_executed()
 	check(not car.traffic_rails.active,"Veículo rápido vindo de fora da esfera também acorda o trânsito")
+	# Carro arremessado: varrer as células da extensão dele travou o jogo no export de 2026-10-13.
+	incoming.position = car.position+Vector3(400,0,0)
+	incoming.velocity = Vector3(1.0e12,0,1.0e12)
+	var huge_began := Time.get_ticks_msec()
+	await reset_car()
+	await tick_executed()
+	check(Time.get_ticks_msec()-huge_began < 2000,"Vizinho com velocidade absurda não trava o passo")
 	incoming.free()
 	await reset_car()
 	await tick_executed()

@@ -29,6 +29,10 @@ static var _moving_neighbors: Array[Dictionary] = []
 ## como as listas por setor do reVC. O laço sobre todos os carros era n² por passo.
 const NEIGHBOR_CELL := 16.0
 static var _neighbor_grid := {}
+## Vizinho com extensão absurda (carro arremessado, velocidade infinita/NaN) não entra na grade: varrer as
+## células dele não terminava. Fica numa lista testada por todos, como antes da grade.
+const NEIGHBOR_MAX_CELLS := 3
+static var _wide_neighbors: Array = []
 static var _view_frame := -1
 static var _camera: Camera3D
 static var _planes: Array[Plane] = []
@@ -231,6 +235,7 @@ static func _cache_hazards(car: CharacterBody3D, delta: float) -> void:
 	_hazards.clear()
 	_moving_neighbors.clear()
 	_neighbor_grid.clear()
+	_wide_neighbors.clear()
 	var horizon := delta+.1
 	var gameplay: Variant = world.get("gameplay") if world != null else null
 	if is_instance_valid(gameplay):
@@ -252,6 +257,10 @@ static func _cache_hazards(car: CharacterBody3D, delta: float) -> void:
 			# O segmento inteiro entra em todas as células que ele cobre, com o raio do casco.
 			var low := Vector2(minf(entry.a.x,entry.b.x)-radius,minf(entry.a.z,entry.b.z)-radius)
 			var high := Vector2(maxf(entry.a.x,entry.b.x)+radius,maxf(entry.a.z,entry.b.z)+radius)
+			var span := (high-low)/NEIGHBOR_CELL
+			if not (low.is_finite() and high.is_finite()) or span.x > NEIGHBOR_MAX_CELLS or span.y > NEIGHBOR_MAX_CELLS:
+				_wide_neighbors.append(entry)
+				continue
 			for cx in range(floori(low.x/NEIGHBOR_CELL),floori(high.x/NEIGHBOR_CELL)+1):
 				for cz in range(floori(low.y/NEIGHBOR_CELL),floori(high.y/NEIGHBOR_CELL)+1):
 					var key := Vector2i(cx,cz)
@@ -265,8 +274,9 @@ static func _cache_hazards(car: CharacterBody3D, delta: float) -> void:
 ## Vizinhos cujas células cruzam a esfera do carro; um vizinho em várias células aparece uma vez.
 static func _nearby_neighbors(center: Vector3, own_radius: float) -> Array:
 	var reach := own_radius+8.0
-	var result := []
+	var result := _wide_neighbors.duplicate()
 	var seen := {}
+	if not center.is_finite() or reach > NEIGHBOR_CELL*NEIGHBOR_MAX_CELLS: return _moving_neighbors
 	for cx in range(floori((center.x-reach)/NEIGHBOR_CELL),floori((center.x+reach)/NEIGHBOR_CELL)+1):
 		for cz in range(floori((center.z-reach)/NEIGHBOR_CELL),floori((center.z+reach)/NEIGHBOR_CELL)+1):
 			for entry in _neighbor_grid.get(Vector2i(cx,cz),[]):
