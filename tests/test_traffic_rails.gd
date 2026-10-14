@@ -149,7 +149,8 @@ func run() -> void:
 	check(not car.traffic_rails.active,"Aproximar jogador devolve física")
 	# Desde o benchmark F (2026-10-13) o trilho anda na cadência do LOD antigo: o passo de retorno cobre os
 	# pulados, como no modo desligado. Avaliar todo passo custava ~4 ms com 37 carros.
-	check(car.position.distance_to(near_before)<.5,"Retorno respeita o passo físico do LOD")
+	# O passo cobre os 3 passos acumulados acima e até 4 pulados pela cadência (sorteada pelo id da instância).
+	check(car.position.distance_to(near_before) < maxf(.5,absf(car.speed)*7.0/Engine.physics_ticks_per_second+.05),"Retorno respeita o passo físico do LOD")
 	if RAILS.enabled:
 		check(car._lod_pending == 0,"Retorno do trilho limpa tempo acumulado")
 	else:
