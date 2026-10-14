@@ -11,6 +11,8 @@ const INSTANCING := preload("res://world/urban_detail/HarborPropInstancing.gd")
 var _lamp_parts: Array[Dictionary] = []
 var _lamp_originals: Array[MeshInstance3D] = []
 var _lamp_initial_transform := Transform3D.IDENTITY
+var _tree_built := false
+var _tree_initial_transform := Transform3D.IDENTITY
 
 static func records()->Array[Dictionary]:
 	var result:Array[Dictionary]=[]
@@ -75,6 +77,9 @@ static func _tree_record(point:Vector2,style:int,scale_factor:float,color:String
 func configure(data:Dictionary)->void:
 	definition=data
 
+func _enter_tree() -> void:
+	if _tree_built: INSTANCING.schedule_furniture(self, true)
+
 func _ready()->void:
 	name="Harbor%s3D"%String(definition.kind).capitalize()
 	set_meta("source_id",definition.source_id)
@@ -88,6 +93,13 @@ func _ready()->void:
 		"rock": _rock()
 		"bench": _bench()
 		"lamp": _lamp()
+	if String(definition.kind) == "tree":
+		_tree_built = true
+		INSTANCING.schedule_furniture(self, true)
+
+func furniture_tree_ready() -> void:
+	_tree_initial_transform = global_transform
+	set_notify_transform(true)
 
 func _tree(style:int,scale_factor:float,color:Color)->void:
 	var trunk_h:=(3.0 if style!=2 else 3.6)*scale_factor
@@ -144,6 +156,11 @@ func _lamp()->void:
 	set_notify_transform(true)
 
 func _notification(what: int) -> void:
+	if _tree_built and has_meta(INSTANCING.FURNITURE_STATE):
+		if what == NOTIFICATION_TRANSFORM_CHANGED and is_inside_tree():
+			if not global_transform.is_equal_approx(_tree_initial_transform): INSTANCING.restore_furniture(self)
+		elif what == NOTIFICATION_VISIBILITY_CHANGED or what == NOTIFICATION_EXIT_TREE:
+			INSTANCING.restore_furniture(self)
 	if _lamp_parts.is_empty(): return
 	if what == NOTIFICATION_TRANSFORM_CHANGED and is_inside_tree():
 		if not global_transform.is_equal_approx(_lamp_initial_transform): restore_individual_meshes()

@@ -116,7 +116,11 @@ func clone_cycle(area: String, focus: Vector3, wanted: String) -> void:
 	if mother != null and copy != null:
 		check(mother.global_position.distance_to(origin) < .05, "%s: a mãe ficou onde estava" % area)
 		check(absf(copy.global_position.x - (origin.x + 7.0)) < .1, "%s: a cópia está 7 m ao lado (%s)" % [area, str(copy.global_position)])
-		check(copy.find_children("*", "MeshInstance3D", true, false).size() == mother.find_children("*", "MeshInstance3D", true, false).size(), "%s: a cópia tem as mesmas malhas" % area)
+		# A cópia nasce das fontes antes da finalização visual. Lotes derivados D4
+		# coexistem com essas fontes na mãe, mas não são novas peças para copiar.
+		var copy_sources := copy.find_children("*", "MeshInstance3D", true, false).filter(func(mesh: Node) -> bool: return not mesh.get_meta("furniture_batch_visual", false))
+		var mother_sources := mother.find_children("*", "MeshInstance3D", true, false).filter(func(mesh: Node) -> bool: return not mesh.get_meta("furniture_batch_visual", false))
+		check(copy_sources.size() == mother_sources.size(), "%s: a cópia tem as mesmas malhas" % area)
 	region.free()
 	await process_frame
 	document.regions[area][chosen.id] = authored(chosen, {"deleted": true})

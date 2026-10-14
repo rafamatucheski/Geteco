@@ -6,6 +6,8 @@ extends Node3D
 var venue_id := ""
 var table_index := 0
 var fabric := Color("b96a46")
+const INSTANCING := preload("res://world/urban_detail/HarborPropInstancing.gd")
+var _furniture_built := false
 
 static var _materials: Dictionary = {}
 static var _boxes: Dictionary = {}
@@ -21,6 +23,14 @@ func _ready() -> void:
 	set_meta("source_id","world/harbor/restaurants/HarborRestaurantLife.gd")
 	set_meta("venue_id",venue_id)
 	_build()
+	_furniture_built = true
+	INSTANCING.schedule_furniture(self)
+
+func _enter_tree() -> void:
+	if _furniture_built: INSTANCING.schedule_furniture(self)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_EXIT_TREE: INSTANCING.restore_furniture(self)
 
 func _build() -> void:
 	var wood := Color("986c44")
@@ -129,6 +139,8 @@ func _cylinder(label: String, radius: float, height: float, point: Vector3, colo
 	result.mesh = _cylinders[key]
 	result.position = point
 	result.material_override = _material(color)
+	# O segundo copo ganha nome automático do Godot; seu papel não pode depender disso.
+	if INSTANCING.furniture_enabled and label == "Glass": result.set_meta("furniture_protected", true)
 	add_child(result)
 	return result
 

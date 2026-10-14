@@ -7,6 +7,8 @@ class_name HarborPublicRealm3D
 
 var zone_id := ""
 var materials := {}
+const INSTANCING := preload("res://world/urban_detail/HarborPropInstancing.gd")
+var _furniture_built := false
 
 static func records() -> Array[Dictionary]:
 	return [
@@ -25,6 +27,14 @@ func _ready() -> void:
 		"northbank_promenade_west": _build_promenade(false)
 		"northbank_promenade_east": _build_promenade(true)
 		"museum_compass": _build_compass()
+	_furniture_built = true
+	INSTANCING.schedule_furniture(self)
+
+func _enter_tree() -> void:
+	if _furniture_built: INSTANCING.schedule_furniture(self)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_EXIT_TREE: INSTANCING.restore_furniture(self)
 
 func _material(hex: String, roughness := 0.86) -> StandardMaterial3D:
 	var key := hex + ":" + str(roughness)
