@@ -138,7 +138,7 @@ static func build_building(data: Dictionary) -> Node3D:
 		
 			"office":
 				# Um arquivo ausente ou uma variação editada ainda não assada usa o caminho original.
-				if baked_enabled: building = BUILDING_BAKE.create(norm_data)
+				if baked_enabled and PaintedHarborHouses.style_for(building_id, building_kind).is_empty(): building = BUILDING_BAKE.create(norm_data)
 				if building == null: building = UrbanCommercialBuilding.new()
 		
 			"corner_shop", "shop", "commercial_laundromat", "warehouse_shop", "bank_branch":

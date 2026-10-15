@@ -6,6 +6,10 @@ class_name UrbanIndustrialBuilding
 ## roll-up loading bays, sawtooth monitor roofs with skylights, and loading dock curbs.
 
 func build() -> void:
+	var painted := PaintedHarborHouses.style_for(building_id, building_kind)
+	if not painted.is_empty():
+		PaintedHarborHouses.build(self, painted)
+		return
 
 	var half_d := building_size.y * 0.5
 	var front_z := half_d

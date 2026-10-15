@@ -12,6 +12,12 @@ const COBRA := {
 	"BrickDuplex": "casa-tijolo-duplex", "TinRoofHouse": "casa-telha-zinco", "CornerBungalow": "casa-bangalo",
 }
 const PATROL := ["casa-patrol-a", "casa-patrol-b"]
+## Prédios comerciais do porto com pacote próprio (output/imagegen, 15/10). O nome
+## pintado vem do prompt (LAUNDRY, UNION WORKSHOP...) e não é o letreiro do jogo.
+const HARBOR := {
+	"Laundry": "lavanderia", "UnionWorkshop": "oficina-artesao", "MarketHall": "mercado-municipal",
+	"FreightOffice": "escritorio-frete", "Aquarium": "aquario",
+}
 ## A casa do líder mantém a geometria antiga: CobraLeaderEntrance recorta HouseBody,
 ## FrontDoor e FrontPorch para a porta trancada da missão, e a fachada pintada não
 ## tem essas peças.
@@ -28,6 +34,7 @@ static func style_for(building_id: String, kind: String) -> String:
 		if COBRA.has(building_id): return COBRA[building_id]
 		var values: Array = COBRA.values()
 		return values[posmod(hash(building_id), values.size())]
+	if HARBOR.has(building_id): return HARBOR[building_id]
 	if building_id.begins_with("PatrolCourt"):
 		return PATROL[posmod(hash(building_id), PATROL.size())]
 	return ""

@@ -6,6 +6,10 @@ class_name UrbanShopfrontBuilding
 ## and visual identity communicated by appearance (e.g. washing machine drums for laundromat).
 
 func build() -> void:
+	var painted := PaintedHarborHouses.style_for(building_id, building_kind)
+	if not painted.is_empty():
+		PaintedHarborHouses.build(self, painted)
+		return
 	var half_w := building_size.x * 0.5
 	var half_d := building_size.y * 0.5
 	var front_z := half_d
