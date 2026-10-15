@@ -57,8 +57,9 @@ static func _run(chunk: Node3D, budget_usec: int) -> Dictionary:
 	var report := {"sources": 0, "batches": 0, "scopes": 0}
 	if not enabled or chunk.has_meta(FINISHED) or not chunk.has_meta("vegetation_ready_frame"): return report
 	if Engine.get_meta("geteco_live_preview_build", false): return report
-	var region_id: Variant = chunk.get_parent().get("region_id") if chunk.get_parent() != null else null
-	if region_id is String and not bool(region_enabled.get(region_id, true)): return report
+	# str(): o region_id das regiões pode ser StringName, e "is String" deixava o interruptor sem efeito.
+	var region_id := str(chunk.get_parent().get("region_id")) if chunk.get_parent() != null else ""
+	if not bool(region_enabled.get(region_id, true)): return report
 	chunk.set_meta(FINISHED, true)
 	_slice_began = STALL_WORK.begin()
 	_slice_reference = weakref(chunk)
