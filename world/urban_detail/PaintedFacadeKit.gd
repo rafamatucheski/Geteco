@@ -158,6 +158,18 @@ static func build(parent: Node3D, style: String, size: Vector3, collision_parent
 	var gable_h := ridge_height(style, size.y) - size.y
 	var front_openings := openings(style, "front")
 	var back_openings := openings(style, "back")
+	# As pinturas trazem embasamento e degrau: a soleira da porta fica 0,7-1 m acima
+	# da base da imagem e o prédio lia como pousado num degrau gigante. Afunda o
+	# prédio até a soleira mais baixa da frente encostar na calçada; o embasamento
+	# que sobra fica abaixo do chão. `options.ground_door = false` desliga.
+	var sink := 0.0
+	if bool(options.get("ground_door", true)):
+		var lowest := INF
+		for opening in front_openings:
+			if bool(opening.leaf): lowest = minf(lowest, (1.0 - float(opening.rect[3])) * size.y)
+		if lowest < INF: sink = maxf(0.0, lowest - 0.03)
+	root.position.y -= sink
+	root.set_meta("ground_sink", sink)
 	# Frente e fundos: faixas de parede em volta de cada vão.
 	var front := SurfaceTool.new()
 	front.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -217,7 +229,7 @@ static func build(parent: Node3D, style: String, size: Vector3, collision_parent
 		var box := BoxShape3D.new()
 		box.size = size
 		shape.shape = box
-		shape.position = Vector3(0, half.y, 0)
+		shape.position = Vector3(0, half.y - sink, 0)
 		body.add_child(shape)
 		collision_parent.add_child(body)
 	return root

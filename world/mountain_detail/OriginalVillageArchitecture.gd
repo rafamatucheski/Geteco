@@ -7,6 +7,9 @@ const GROUND := preload("res://assets/regions/source/world/mountain_pass/Mountai
 const FINISH := preload("res://assets/regions/source/world/mountain_pass/MountainSurfaceFinish.gd")
 const SHADOW_FINISH := preload("res://world/mountain_detail/MountainShadowFinish.gd")
 const PAINTED_KIT := preload("res://world/urban_detail/PaintedFacadeKit.gd")
+## Desligado: a pintura do terminal tem 14 m e só cabem 8,3 m entre a encosta e o
+## caminho do ônibus; esticada, a porta ficava com 1,4 m. Liga com uma pintura de 8 m.
+const PAINTED_TERMINAL := false
 var materials: Dictionary = {}
 var solids: Array[Dictionary] = []
 
@@ -61,7 +64,7 @@ func _station() -> void:
 	_slab(Rect2(7387,-1713,141,93), 0.09, 0.18, "stone")
 	var mesh_start := get_child_count()
 	var office_bounds := Rect2(LAYOUT.STATION_BOUNDS.position-LAYOUT.STATION_SHIFT,LAYOUT.STATION_BOUNDS.size)
-	if PAINTED_KIT.enabled():
+	if PAINTED_TERMINAL and PAINTED_KIT.enabled():
 		_painted_office(office_bounds)
 	else:
 		_procedural_office(office_bounds, mesh_start)
