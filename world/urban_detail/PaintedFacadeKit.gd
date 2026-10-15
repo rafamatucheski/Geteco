@@ -331,6 +331,10 @@ static func _add_mesh(root: Node3D, mesh_name: String, st: SurfaceTool, mat: Mat
 	mesh.name = mesh_name
 	mesh.mesh = st.commit()
 	mesh.material_override = mat
+	# Paredes e telhado são planos de uma face: a parede de costas para o sol não
+	# entrava no mapa de sombra, só telhado e cornija sombreavam, e a sombra saía
+	# descolada da base (casa "voando" no deserto). Sombra dos dois lados fecha a caixa.
+	mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_DOUBLE_SIDED
 	root.add_child(mesh)
 
 
