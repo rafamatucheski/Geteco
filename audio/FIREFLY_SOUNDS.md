@@ -31,6 +31,23 @@ que já existia.
 | `wildlife/coyote_*`, `crickets_*` | coyote howling at night / desert night crickets | `DesertAmbience`: só à noite |
 | `mining/drip_*`, `machinery_*` | water dripping in a cave / creaking metal and machinery in a mine tunnel | `MiningAmbience`: caverna e britador |
 
+## Menu e carregamento (15/10/2026)
+
+Música pelo gerador de música do Firefly (20 créditos por faixa, 60 s, 48 kHz estéreo).
+Tratamento em `tools/audio/process_menu_audio.py`: o final se funde com o começo (loop sem
+emenda), volume casado com a música do menu que já existia (rms ~0,05) e saída em Ogg Vorbis
+(~0,7 MB por faixa em vez de 11 MB de WAV). Originais em `evidence/firefly_originais_20261015/menu`.
+
+| Arquivo | Prompt (tags) | Usado em |
+|---|---|---|
+| `audio/menu/menu_music_0.ogg` | calm nostalgic and dreamy, warm / synthwave, ambient / vlog; tempo lento, energia baixa | `ui/MenuAudio.get_music_stream()`: uma das duas faixas por abertura do jogo |
+| `audio/menu/menu_music_1.ogg` | mesmas, trocando ambient por lofi | idem |
+| `audio/menu/loading_music.ogg` | warm, playful / synthwave / vlog | `ui/LoadingMusic.gd`, ligado em `runtime/StartupCurtain.gd` (entra com a cobertura, sai com o fade) |
+| `audio/menu/hover_*`, `click_*`, `back_*`, `start_*` | soft synth tick / click / descending note / warm chord swell | `ui/MenuAudio.gd`; botão cujo texto tem voltar/cancelar/fechar/sair toca `back` |
+
+O tema original da V1 (`harbor_night_menu.wav`) e os sons sintéticos continuam como reserva
+se os arquivos novos não estiverem importados.
+
 ## Não ligado (e por quê)
 
 - `vehicle_fx/turn_signal_*`: o jogo não tem pisca-pisca; faltaria a mecânica e as luzes.

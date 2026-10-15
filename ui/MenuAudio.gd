@@ -9,7 +9,13 @@ extends RefCounted
 static var _cached_hover: AudioStreamWAV = null
 static var _cached_click: AudioStreamWAV = null
 static var _cached_start: AudioStreamWAV = null
-static var _cached_music: AudioStreamWAV = null
+static var _cached_music: AudioStream = null
+## Sons e músicas gerados no Firefly (2026-10-15), tratados por tools/audio/process_menu_audio.py.
+## Sem o arquivo importado cada som cai no sintetizado/V1 que já existia.
+const FIREFLY := preload("res://audio/FireflyBank.gd")
+const MUSIC_TRACKS := ["res://audio/menu/menu_music_0.ogg", "res://audio/menu/menu_music_1.ogg"]
+## Palavras que marcam botão de voltar/cancelar: o clique dele soa como "voltar", não "confirmar".
+const BACK_WORDS := ["voltar", "cancelar", "fechar", "sair", "back", "cancel", "close"]
 
 # ==============================================================================
 # RESOLUÇÃO SEGURA DE BARRAMENTO DE ÁUDIO
@@ -30,7 +36,9 @@ static func get_music_bus_name() -> String:
 # ==============================================================================
 
 ## Retorna stream de áudio para o efeito de "hover" (botão ganha foco / mouse entra)
-static func get_hover_stream() -> AudioStreamWAV:
+static func get_hover_stream() -> AudioStream:
+	var recorded := FIREFLY.take("menu", "hover")
+	if recorded != null: return recorded
 	if _cached_hover != null:
 		return _cached_hover
 
@@ -62,7 +70,9 @@ static func get_hover_stream() -> AudioStreamWAV:
 	return stream
 
 ## Retorna stream de áudio para o efeito de "clique" (botão pressionado)
-static func get_click_stream() -> AudioStreamWAV:
+static func get_click_stream() -> AudioStream:
+	var recorded := FIREFLY.take("menu", "click")
+	if recorded != null: return recorded
 	if _cached_click != null:
 		return _cached_click
 
@@ -94,7 +104,9 @@ static func get_click_stream() -> AudioStreamWAV:
 	return stream
 
 ## Retorna stream de áudio para início cinematográfico de partida (Novo Jogo / Continuar)
-static func get_start_stream() -> AudioStreamWAV:
+static func get_start_stream() -> AudioStream:
+	var recorded := FIREFLY.take("menu", "start")
+	if recorded != null: return recorded
 	if _cached_start != null:
 		return _cached_start
 
@@ -129,22 +141,35 @@ static func get_start_stream() -> AudioStreamWAV:
 # SÍNTESE DE MÚSICA DE FUNDO (AMBIENT SYNTH LOOP)
 # ==============================================================================
 
-## Original nostalgic street theme, pre-rendered to avoid synthesis on menu open.
-static func get_music_stream() -> AudioStreamWAV:
-	if _cached_music == null:
-		const MUSIC_PATH := "res://audio/menu/harbor_night_menu.wav"
-		if not ResourceLoader.exists(MUSIC_PATH):
-			push_warning("Música do menu ausente: " + MUSIC_PATH)
-			return null
-		var original := load(MUSIC_PATH) as AudioStreamWAV
-		if original == null:
-			push_warning("Não foi possível carregar a música do menu.")
-			return null
-		_cached_music = original.duplicate() as AudioStreamWAV
-		_cached_music.loop_mode = AudioStreamWAV.LOOP_FORWARD
-		_cached_music.loop_begin = 0
-		# Imported WAV data may be compressed: byte count is not PCM frame count.
-		_cached_music.loop_end = roundi(_cached_music.get_length() * _cached_music.mix_rate)
+## Música do menu: duas faixas novas (synthwave noturno de porto, em loop sem emenda); uma
+## delas sai por abertura do jogo e fica a mesma até fechar. Sem os arquivos, o tema original
+## da V1, pré-renderizado para não sintetizar ao abrir o menu.
+static func get_music_stream() -> AudioStream:
+	if _cached_music != null: return _cached_music
+	var available: Array[String] = []
+	for path in MUSIC_TRACKS:
+		if ResourceLoader.exists(path): available.append(path)
+	if not available.is_empty():
+		var track := load(available[randi() % available.size()]) as AudioStreamOggVorbis
+		if track != null:
+			var looped_track := track.duplicate() as AudioStreamOggVorbis
+			looped_track.loop = true
+			_cached_music = looped_track
+			return _cached_music
+	const MUSIC_PATH := "res://audio/menu/harbor_night_menu.wav"
+	if not ResourceLoader.exists(MUSIC_PATH):
+		push_warning("Música do menu ausente: " + MUSIC_PATH)
+		return null
+	var original := load(MUSIC_PATH) as AudioStreamWAV
+	if original == null:
+		push_warning("Não foi possível carregar a música do menu.")
+		return null
+	var looped := original.duplicate() as AudioStreamWAV
+	looped.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	looped.loop_begin = 0
+	# Imported WAV data may be compressed: byte count is not PCM frame count.
+	looped.loop_end = roundi(looped.get_length() * looped.mix_rate)
+	_cached_music = looped
 	return _cached_music
 
 # ==============================================================================
@@ -158,6 +183,11 @@ static func play_hover(host_node: Node) -> void:
 ## Executa som de clique no contexto do host_node informado
 static func play_click(host_node: Node) -> void:
 	_play_sfx(host_node, "__MenuClickPlayer", get_click_stream(), -2.0)
+
+## Executa o som de voltar/cancelar (cai no clique se não houver gravação)
+static func play_back(host_node: Node) -> void:
+	var recorded := FIREFLY.take("menu", "back")
+	_play_sfx(host_node, "__MenuBackPlayer", recorded if recorded != null else get_click_stream(), -3.0)
 
 ## Executa som cinematográfico de início de partida
 static func play_start(host_node: Node) -> void:
@@ -210,7 +240,15 @@ static func hook_button(btn: BaseButton, host_node: Node) -> void:
 			else:
 				play_hover(host_node)
 	)
-	btn.pressed.connect(func(): play_click(host_node))
+	var raw_text: Variant = btn.get("text")
+	var caption := str(raw_text).strip_edges() if raw_text != null else ""
+	var label := (caption if not caption.is_empty() else str(btn.name)).to_lower()
+	var is_back := false
+	for word in BACK_WORDS:
+		if label.contains(word): is_back = true
+	btn.pressed.connect(func():
+		if is_back: play_back(host_node)
+		else: play_click(host_node))
 	if btn is OptionButton:
 		btn.get_popup().id_focused.connect(func(_id): play_hover(host_node))
 		btn.item_selected.connect(func(_id): play_click(host_node))
