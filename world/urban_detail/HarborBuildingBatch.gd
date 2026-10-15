@@ -48,8 +48,11 @@ func _process(_delta: float) -> void:
 static func finish_chunk(chunk: Node3D) -> void:
 	if not enabled or chunk.has_meta(FINISHED_META) or not chunk.has_meta("vegetation_ready_frame"): return
 	chunk.set_meta(FINISHED_META, true)
+	# Medido no log de quadros lentos: roda inteira no fim do trecho (suspeita das travadas de 15/10).
+	var began := preload("res://runtime/StallWorkTrace.gd").begin()
 	for child in chunk.get_children():
 		if child is Node3D and _is_target(child): _optimize_building(child)
+	preload("res://runtime/StallWorkTrace.gd").finish_slow("chunk.building_batch", began, 1500)
 
 static func _is_target(node: Node) -> bool:
 	# O piloto ainda precisa do marco de sombras do chunk, sem fundir outra vez.
