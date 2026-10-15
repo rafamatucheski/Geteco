@@ -42,9 +42,21 @@ func run() -> void:
 		if not is_instance_valid(target): continue
 		var label := "%s <%s>" % [target.name, target.get_script().resource_path.get_file() if target.get_script() else target.get_class()]
 		var before := _layers(target)
-		var forward: Vector3 = -target.global_basis.z
-		forward.y = 0
-		forward = forward.normalized() if forward.length() > .1 else Vector3.FORWARD
+		# Chega por uma direção livre (viatura, contêiner e parede no caminho mascarariam o resultado).
+		var forward: Vector3 = Vector3.FORWARD
+		var space: PhysicsDirectSpaceState3D = target.get_world_3d().direct_space_state
+		for angle in [0.0, PI * .5, PI, PI * 1.5, PI * .25, PI * .75, PI * 1.25, PI * 1.75]:
+			var candidate := Vector3.FORWARD.rotated(Vector3.UP, angle)
+			var probe := PhysicsShapeQueryParameters3D.new()
+			var box := BoxShape3D.new()
+			box.size = Vector3(2.4, 1.2, 9.0)
+			probe.shape = box
+			probe.transform = Transform3D(Basis(Vector3.UP, atan2(-candidate.x, -candidate.z)), target.global_position - candidate * 5.5 + Vector3.UP * .9)
+			probe.collision_mask = 1 | 4
+			probe.exclude = [target.get_rid(), car.get_rid(), world.player.get_rid()]
+			if space.intersect_shape(probe, 1).is_empty():
+				forward = candidate
+				break
 		var start: Vector3 = target.global_position - forward * 10.0
 		car.global_position = start + Vector3.UP * .3
 		car.rotation = Vector3(0, atan2(-forward.x, -forward.z), 0)
