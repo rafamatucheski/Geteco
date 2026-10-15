@@ -11,8 +11,8 @@ class_name PaintedFacadeKit
 ## módulo, como sobrados geminados. A frente é montada em volta do vão da porta
 ## (sem transparência), então tudo continua na passada opaca e funde por trecho.
 ##
-## Interruptor: GETECO_PAINTED_FACADES=1 liga nos sobrados (padrão desligado
-## enquanto o visual é avaliado).
+## Interruptor: ligado por padrão nos sobrados/terraços desde 15/10;
+## GETECO_PAINTED_FACADES=0 volta aos sobrados de caixas (A/B).
 
 const ROOT := "res://assets/facades/"
 const MODULE_W := 6.0
@@ -23,18 +23,42 @@ const STYLES := ["tijolo-vermelho", "reboco-creme", "concreto-cinza", "rosa-prai
 const RESIDENTIAL := ["tijolo-vermelho", "reboco-creme", "concreto-cinza", "rosa-praia", "tijolo-londrino",
 	"pastilha-60", "madeira-azul"]
 const PLAYER_LAYER := 2
-const DOOR_OPEN_SECONDS := 0.45
+## Porta empurrada pela mão, não de mola: abre devagar e fecha mais devagar ainda,
+## com uma pausa antes de fechar. 0,45 s lia como porta automática de shopping.
+const DOOR_OPEN_SECONDS := 1.8
+const DOOR_CLOSE_SECONDS := 2.4
+const DOOR_CLOSE_DELAY := 1.2
+## Ângulo máximo: 80° em vez de 90°, folha não bate rente na parede do corredor.
+const DOOR_MAX_ANGLE := deg_to_rad(80.0)
+## Só abre com o jogador ao alcance do braço (antes 3 m: abria de longe).
+const DOOR_REACH := 1.0
 
 static var _materials := {}
 static var _styles := {}
 
 
 static func enabled() -> bool:
-	return OS.get_environment("GETECO_PAINTED_FACADES") == "1"
+	return OS.get_environment("GETECO_PAINTED_FACADES") != "0"
 
 
 static func residential_style(key: String) -> String:
 	return RESIDENTIAL[posmod(hash(key), RESIDENTIAL.size())]
+
+
+## Centro (x local, frente em +Z) do vão de porta pintado mais próximo de `wanted`.
+static func nearest_door_x(style: String, width: float, wanted: float) -> float:
+	var rect: Array = style_data(style).get("doors", {}).get("front", [])
+	if rect.size() != 4: return wanted
+	var modules := maxi(1, roundi(width / MODULE_W))
+	var module_w := width / float(modules)
+	var best := wanted
+	var best_distance := INF
+	for index in modules:
+		var center := -width * 0.5 + module_w * (float(index) + (float(rect[0]) + float(rect[2])) * 0.5)
+		if absf(center - wanted) < best_distance:
+			best_distance = absf(center - wanted)
+			best = center
+	return best
 
 
 static func style_data(style: String) -> Dictionary:
@@ -76,7 +100,7 @@ static func _corridor_material() -> StandardMaterial3D:
 ## Monta o prédio com a frente em +Z, base em y=0 e centro em (0, 0). `size` é
 ## largura (X), altura (Y) e profundidade (Z). Devolve o nó visual; a colisão vai
 ## para `collision_parent` (se houver) como uma caixa só.
-static func build(parent: Node3D, style: String, size: Vector3, collision_parent: Node3D = null) -> Node3D:
+static func build(parent: Node3D, style: String, size: Vector3, collision_parent: Node3D = null, walk_in_x := NAN) -> Node3D:
 	var root := Node3D.new()
 	root.name = "PaintedFacade_" + style
 	parent.add_child(root)
@@ -96,7 +120,12 @@ static func build(parent: Node3D, style: String, size: Vector3, collision_parent
 		_face_with_opening(front, Transform3D(Basis.IDENTITY, Vector3(x0, 0, half.z)), module_w, size.y, doors.get("front", []))
 		# Fundos olham para -Z: gira 180° e começa do outro canto.
 		_face_with_opening(back, Transform3D(Basis(Vector3.UP, PI), Vector3(-x0, 0, -half.z)), module_w, size.y, doors.get("back", []))
-		_door(root, style, "front", doors.get("front", []), Transform3D(Basis.IDENTITY, Vector3(x0, 0, half.z)), module_w, size.y, collision_parent)
+		var front_rect: Array = doors.get("front", [])
+		var door_center := x0 + module_w * (float(front_rect[0]) + float(front_rect[2])) * 0.5 if front_rect.size() == 4 else INF
+		# Na entrada de verdade a folha pintada continua (é a porta que abre), mas sem
+		# o corredor escuro: atrás dela fica o interior do acesso.
+		var walk_in := not is_nan(walk_in_x) and absf(door_center - walk_in_x) <= 0.5
+		_door(root, style, "front", front_rect, Transform3D(Basis.IDENTITY, Vector3(x0, 0, half.z)), module_w, size.y, collision_parent, walk_in)
 		_door(root, style, "back", doors.get("back", []), Transform3D(Basis(Vector3.UP, PI), Vector3(-x0, 0, -half.z)), module_w, size.y, collision_parent)
 	_add_mesh(root, "Front", front, material(style, "front"))
 	_add_mesh(root, "Back", back, material(style, "back"))
@@ -189,7 +218,7 @@ static func _add_mesh(root: Node3D, mesh_name: String, st: SurfaceTool, mat: Mat
 
 ## Folha 3D no vão: frente e verso pintados, dobradiça na ombreira esquerda,
 ## abre para dentro de um corredor escuro. Abre sozinha com o jogador perto.
-static func _door(root: Node3D, style: String, side: String, rect: Array, xform: Transform3D, w: float, h: float, collision_parent: Node3D) -> void:
+static func _door(root: Node3D, style: String, side: String, rect: Array, xform: Transform3D, w: float, h: float, collision_parent: Node3D, walk_in := false) -> void:
 	if rect.size() != 4: return
 	var leaf_w := (float(rect[2]) - float(rect[0])) * w
 	var leaf_h := (float(rect[3]) - float(rect[1])) * h
@@ -198,6 +227,7 @@ static func _door(root: Node3D, style: String, side: String, rect: Array, xform:
 	anchor.name = "Doorway_" + side
 	anchor.transform = xform.translated_local(Vector3(float(rect[0]) * w, bottom, 0))
 	root.add_child(anchor)
+	if walk_in: anchor.set_meta("walk_in", true)
 	var corridor := MeshInstance3D.new()
 	corridor.name = "Corridor"
 	var corridor_mesh := BoxMesh.new()
@@ -205,7 +235,8 @@ static func _door(root: Node3D, style: String, side: String, rect: Array, xform:
 	corridor.mesh = corridor_mesh
 	corridor.position = Vector3(leaf_w * 0.5, leaf_h * 0.5, -0.8)
 	corridor.material_override = _corridor_material()
-	anchor.add_child(corridor)
+	if not walk_in: anchor.add_child(corridor)
+	else: corridor.free()
 	var door := PaintedDoor.new()
 	door.name = "Door"
 	anchor.add_child(door)
@@ -224,7 +255,7 @@ static func _door(root: Node3D, style: String, side: String, rect: Array, xform:
 	inside.rotation.y = PI
 	inside.material_override = material(style, part + "_inside")
 	door.hinge.add_child(inside)
-	if collision_parent != null: door.watch_player(Vector3(leaf_w, leaf_h, 3.0))
+	if collision_parent != null: door.watch_player(Vector3(leaf_w + 0.4, leaf_h, DOOR_REACH))
 
 
 ## Dobradiça com abertura animada. Usa uma Area3D (física avisa a entrada) em vez
@@ -242,12 +273,20 @@ class PaintedDoor extends Node3D:
 	func set_open_amount(amount: float) -> void:
 		open_amount = clampf(amount, 0.0, 1.0)
 		# Rotação positiva em Y leva a ponta da folha (+X) para -Z: para dentro.
-		hinge.rotation.y = open_amount * PI * 0.5
+		hinge.rotation.y = open_amount * PaintedFacadeKit.DOOR_MAX_ANGLE
 
 	func swing(open: bool) -> void:
 		if _tween != null: _tween.kill()
 		_tween = create_tween()
-		_tween.tween_method(set_open_amount, open_amount, 1.0 if open else 0.0, PaintedFacadeKit.DOOR_OPEN_SECONDS * absf((1.0 if open else 0.0) - open_amount))
+		if open:
+			# Empurrão firme no começo, a folha perde força até parar.
+			_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+			_tween.tween_method(set_open_amount, open_amount, 1.0, PaintedFacadeKit.DOOR_OPEN_SECONDS * (1.0 - open_amount))
+		else:
+			# Espera, começa a fechar devagar e encosta devagar no batente.
+			_tween.tween_interval(PaintedFacadeKit.DOOR_CLOSE_DELAY)
+			_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+			_tween.tween_method(set_open_amount, open_amount, 0.0, PaintedFacadeKit.DOOR_CLOSE_SECONDS * open_amount)
 
 	func watch_player(zone: Vector3) -> void:
 		var area := Area3D.new()
@@ -259,7 +298,8 @@ class PaintedDoor extends Node3D:
 		var box := BoxShape3D.new()
 		box.size = zone
 		shape.shape = box
-		shape.position = Vector3(zone.x * 0.5, zone.y * 0.5, zone.z * 0.5)
+		# Na frente da folha (+Z local é a rua), com 0,2 m de folga de cada lado.
+		shape.position = Vector3(zone.x * 0.5 - 0.2, zone.y * 0.5, zone.z * 0.5 + 0.04)
 		area.add_child(shape)
 		add_child(area)
 		_area = area

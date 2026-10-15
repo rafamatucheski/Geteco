@@ -197,7 +197,9 @@ func _prepare_access() -> void:
 		var owned: bool = _owns_architecture(node) or _belongs_to_native_roof(relative*original.get_aabb())
 		var canopy: bool = _is_venue_canopy(node)
 		if not _relevant_visual(relative*original.get_aabb(),owned or canopy): continue
-		var opened: Mesh = _cut_mesh(original,relative,[_door_cut()])
+		# Fachada pintada já tem o vão aberto no lugar da porta desenhada; o corte
+		# de 2,1 m abria um buraco largo no meio das janelas pintadas.
+		var opened: Mesh = original if _painted_part(node) else _cut_mesh(original,relative,[_door_cut()])
 		_meshes.append({"node":node,"original":original,"open_mesh":opened,"transform":relative,"visible":node.visible,"owned_architecture":owned,"hide_inside":canopy})
 	_prepare_multimeshes()
 	for node in facade.find_children("*","CollisionShape3D",true,false):
@@ -402,7 +404,18 @@ func _add_box_shape(bounds: AABB) -> void:
 	node.position = bounds.get_center()
 	_replacement_body.add_child(node)
 
+## Peça de PaintedFacadeKit (paredes/telhado pintados, porta própria que abre devagar).
+static func _painted_part(node: Node) -> bool:
+	var current := node
+	while current != null:
+		if String(current.name).begins_with("PaintedFacade_"): return true
+		current = current.get_parent()
+	return false
+
 func _make_open_door() -> void:
+	# Sobrado pintado: a folha pintada do kit é a porta de verdade, abre devagar e só
+	# ao alcance do braço; a folha de metal fixa aparecia aberta a 8 m de distância.
+	if not facade.find_children("PaintedFacade_*","",true,false).is_empty(): return
 	_door_visual = Node3D.new()
 	_door_visual.name = "OpenDoorLeaf"
 	var leaf := MeshInstance3D.new()

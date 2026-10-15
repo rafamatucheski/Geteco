@@ -93,6 +93,10 @@ static func _append(row: Dictionary) -> void:
 	if kind == "l_shaped_block": entry_local.x = -size.x*.25
 	# Aligned to the pedestrian gate beside Maciota's M8 parking bay.
 	if source_id == "FreightOffice": entry_local.x = 4.0
+	# Sobrado pintado: a entrada de verdade vai para o vão de porta desenhado mais
+	# próximo; senão o corte da porta real abria no meio das janelas pintadas.
+	if kind in ["brownstone", "rowhouse_terrace"] and PaintedFacadeKit.enabled():
+		entry_local.x = PaintedFacadeKit.nearest_door_x(PaintedFacadeKit.residential_style(source_id), size.x, entry_local.x)
 	var entry := at+basis*(entry_local+Vector3.BACK*.9)
 	var def := {
 		"id":id,"original_name":proper,"region":"harbor","source_id":source_id,

@@ -14,7 +14,11 @@ const SIGN_H := 0.40
 func build() -> void:
 	if PaintedFacadeKit.enabled():
 		# Prédio inteiro pintado (estilo GTA III/VC): ~11 peças em vez de ~60.
-		PaintedFacadeKit.build(visuals_root, PaintedFacadeKit.residential_style(building_id + str(variant_seed)), Vector3(building_size.x, height, building_size.y), collision_root)
+		# Prédio com interior: a porta e o corredor do vão de entrada são da entrada
+		# real (HarborBuildingExteriorAccess); o catálogo já a alinhou ao vão pintado.
+		var access: Dictionary = load("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").for_source(building_id)
+		var walk_in_x: float = float((access.entrance_local as Vector3).x) if not access.is_empty() else NAN
+		PaintedFacadeKit.build(visuals_root, PaintedFacadeKit.residential_style(building_id), Vector3(building_size.x, height, building_size.y), collision_root, walk_in_x)
 		return
 	if building_kind == "rowhouse_terrace":
 		_build_v1_terrace()

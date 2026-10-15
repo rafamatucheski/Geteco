@@ -50,6 +50,9 @@ static func decorate(chunk: Node3D, building: UrbanBuildingBase, roof_y: float, 
 	var key := building.building_id
 	var kind := building.building_kind
 	var facade := _read_facade(building)
+	# Fachada pintada já traz canos, ar-condicionado e sujeira desenhados; sem
+	# janelas 3D para ler, a pichação caía em cima das janelas pintadas.
+	if not building.find_children("PaintedFacade_*", "", true, false).is_empty(): facade = {}
 	if not facade.is_empty():
 		if kind in RESIDENTIAL or kind in OFFICE:
 			_fire_escape(key, kind, facade, batches, chunk)

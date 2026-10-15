@@ -44,6 +44,20 @@ func run() -> void:
 	MATERIALS.set_night(0)
 	for source in cases:
 		var chunk := facade(source)
+		var painted := chunk.find_children("PaintedFacade_*", "", true, false)
+		if not painted.is_empty():
+			# Prédio pintado (PaintedFacadeKit): a luz da janela é a máscara de emissão
+			# da própria fachada, no mesmo relógio das janelas.
+			var front: MeshInstance3D = painted[0].get_node("Front")
+			var lit: StandardMaterial3D = front.material_override
+			check(lit.emission_enabled and lit.emission_texture != null, source.id+": painted facade carries night window mask")
+			check(is_zero_approx(lit.emission_energy_multiplier), source.id+": painted lights off during day")
+			MATERIALS.set_night(1)
+			check(lit.emission_energy_multiplier > 1, source.id+": painted night emission reaches facade")
+			MATERIALS.set_night(0)
+			check(chunk.find_children("*","Light3D",true,false).is_empty(),source.id+": windows add no dynamic lights")
+			chunk.free()
+			continue
 		var windows := panes(chunk)
 		check(not windows.is_empty(),source.id+": real facade has lit-window coverage")
 		if source.id in ["CanalHomesWest","cemetery_keeper"]:
