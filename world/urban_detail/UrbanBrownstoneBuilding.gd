@@ -12,6 +12,10 @@ const SIGN_Y := 4.32
 const SIGN_H := 0.40
 
 func build() -> void:
+	if PaintedFacadeKit.enabled():
+		# Prédio inteiro pintado (estilo GTA III/VC): ~11 peças em vez de ~60.
+		PaintedFacadeKit.build(visuals_root, PaintedFacadeKit.residential_style(building_id + str(variant_seed)), Vector3(building_size.x, height, building_size.y), collision_root)
+		return
 	if building_kind == "rowhouse_terrace":
 		_build_v1_terrace()
 		return

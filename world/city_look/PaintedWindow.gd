@@ -64,6 +64,12 @@ static func material(win_w: float, win_h: float, panes: int, curtain: int, sash:
 	return mat
 
 
+## Outros materiais pintados (PaintedFacadeKit) acendem pelo mesmo relógio.
+static func register_night(mat: StandardMaterial3D) -> void:
+	mat.emission_energy_multiplier = lerpf(0.0, 1.8, _night)
+	_lit_materials.append(mat)
+
+
 ## Acompanha o relógio junto com as janelas acesas de CityLookMaterials.
 static func set_night(value: float) -> void:
 	_night = clampf(value, 0.0, 1.0)
