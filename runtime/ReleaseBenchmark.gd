@@ -14,6 +14,8 @@ const ROUTES := {
 	# Porto -> ponte -> serra e volta: o streaming entra em trechos novos com o jogo rodando (travadas de 15/10).
 	"travessia": [Vector3(330, 0, -285), Vector3(600, 0, -285), Vector3(700, 4, -300), Vector3(745, 4, -420)],
 	"deserto": [Vector3(-1040, 0, -1320), Vector3(-950, 0, -1320), Vector3(-950, 0, -1260), Vector3(-1040, 0, -1260)],
+	# Northbank e canal concentram 6 dos 15 sobrados/terraços (A/B das janelas pintadas, 15/10).
+	"sobrados": [Vector3(295, 0, 100), Vector3(340, 0, 100), Vector3(340, 0, -60), Vector3(295, 0, -60)],
 }
 const SPEED := 12.0
 var WARMUP_LOOPS := 1
@@ -21,7 +23,7 @@ const MEASURE_LOOPS := 2
 const TOGGLES := ["GETECO_POP_VC", "GETECO_SUN_SHADOW_NEAR", "GETECO_TRAFFIC_RAILS", "GETECO_PED_POSE_LOD", "GETECO_LIGHT_BUDGET",
 	"GETECO_DETAIL_RANGE", "GETECO_BAKED_BUILDINGS", "GETECO_SKID_BUDGET", "GETECO_DASH_BATCH", "GETECO_DISPATCH_FAST",
 	"GETECO_PED_DUMMY", "GETECO_BUILDING_BATCH", "GETECO_PROP_INSTANCING", "GETECO_GROUND_STACK", "GETECO_SHADOW_SHELL",
-	"GETECO_BRIDGE_MERGE", "GETECO_FURNITURE_MERGE", "GETECO_CELL_MERGE", "GETECO_BRIDGE_LOOK"]
+	"GETECO_BRIDGE_MERGE", "GETECO_FURNITURE_MERGE", "GETECO_CELL_MERGE", "GETECO_BRIDGE_LOOK", "GETECO_PAINTED_WINDOWS"]
 
 var world: Node
 var route: Array = ROUTE_WEST
@@ -64,6 +66,16 @@ func _run() -> void:
 	# Sem v-sync nem limite de fps: preso em 60/144 Hz o tempo de quadro esconde diferenças.
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = 0
+	# Com --no-save o jogo começa novo: o mundo fica segurado em pausa e logo depois o
+	# filme da balsa roda ~70 s com o 3D desligado. Sem esperar, a medição pegava essa
+	# tela: 11 draw calls e 0,6 ms (15/10). Exige 3 s seguidos de mundo jogável e
+	# visível, porque o filme só começa ~1 s depois de ready_for_play.
+	var stable_since := -1
+	while stable_since < 0 or Time.get_ticks_msec() - stable_since < 3000:
+		await get_tree().process_frame
+		var playable: bool = not get_tree().paused and world.session.ready_for_play and not get_viewport().disable_3d
+		if not playable: stable_since = -1
+		elif stable_since < 0: stable_since = Time.get_ticks_msec()
 	var weather: Variant = world.session.weather
 	weather.time_of_day = 12.0 / 24.0
 	if "weather_state" in weather: weather.weather_state = 0
