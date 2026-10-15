@@ -69,7 +69,8 @@ def normalize(d, target):
     return [x * g for x in d]
 
 
-ONSET_KEYS = ("door_close", "door_open", "distant_shot", "turbo_flutter", "wastegate", "handbrake")
+ONSET_KEYS = ("door_close", "door_open", "distant_shot", "turbo_flutter", "wastegate", "handbrake",
+              "dry_fire", "grenade_pin", "ricochet", "bullet_whiz")
 
 
 def cut_to_onset(d, rate, frac=0.25, pre=0.04):
@@ -138,8 +139,12 @@ def backup(folder, names):
 # nome -> (pico alvo, duração máxima, fade final). Alvos casam com o que o jogo já tem:
 # tiros ~0,6-0,7; efeitos de veículo 0,8-0,85; detalhes de ambiente ~0,45.
 SPEC = {
-    "weapons_fire": {"pistol": (.62, 1.4, .25), "shotgun": (.70, 1.8, .35), 
-                      "distant_shot": (.45, 3.5, .8)},
+    "weapons_fire": {"pistol": (.62, 1.4, .25), "shotgun": (.70, 1.8, .35),
+                      "distant_shot": (.45, 3.5, .8),
+                      "dry_fire": (.55, 0.6, .10), "gun_draw": (.50, 1.2, .15), "grenade_pin": (.55, 1.0, .10),
+                      "rocket_flight": (.55, 4.0, .40), "explosion_tail": (.55, 5.0, 1.2), "ricochet": (.60, 1.4, .30),
+                      "bullet_whiz": (.55, 0.8, .10)},
+    "katana": {"draw": (.60, 1.6, .20)},
     "desert_ambience": {"wind": (.45, 15.0, .6)},
     "wildlife": {"coyote": (.45, 5.0, .6), "crickets": (.45, 15.0, .6)},
     "mining": {"drip": (.45, 15.0, .6), "machinery": (.45, 15.0, .6)},
@@ -235,6 +240,22 @@ make_loop("service_vehicles", "reverse_beep", "reverse_beep_loop.wav", .5, "onse
 make_loop("vehicle_fx", "supercharger", "supercharger_loop.wav", .6, "xfade", xf=0.6)
 make_loop("vehicle_fx", "turn_signal", "turn_signal_loop.wav", .45, "onset", min_len=2.0)
 make_loop("desert_ambience", "wind", "wind_loop.wav", .45, "xfade", xf=1.5)
+make_loop("weapons_fire", "rocket_flight", "rocket_flight_loop.wav", .55, "xfade", xf=0.8)
+
+
+def reversed_copies(folder, source_key, target_key, peak_target, fade_in=0.004):
+    """Guardar arma = sacar arma ao contrário (couro e metal entrando): sem gastar crédito."""
+    for k in range(4):
+        src = os.path.join(AUDIO, folder, f"{source_key}_{k}.wav")
+        if not os.path.exists(src): continue
+        rate, d = load(src)
+        d = normalize(fade(d[::-1], rate, fade_in, 0.05), peak_target)
+        save(os.path.join(AUDIO, folder, f"{target_key}_{k}.wav"), rate, d)
+        report[f"{folder}/{target_key}_{k}.wav"] = f"{len(d) / rate:.2f}s (ao contrário de {source_key})"
+
+
+reversed_copies("weapons_fire", "gun_draw", "gun_holster", .45)
+reversed_copies("katana", "draw", "sheath", .55)
 
 os.makedirs(BACKUP, exist_ok=True)
 with open(os.path.join(BACKUP, "relatorio.json"), "w", encoding="utf-8") as f:

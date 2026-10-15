@@ -20,7 +20,9 @@ func run() -> void:
 	# o mínimo é o que sobrou de bom, não 4.
 	var banks := [
 		["weapons_fire", "pistol", 3], ["weapons_fire", "shotgun", 3], ["weapons_fire", "rifle_shot", 3],
-		["weapons_fire", "distant_shot", 1],
+		["weapons_fire", "distant_shot", 1], ["weapons_fire", "dry_fire", 3], ["weapons_fire", "gun_draw", 3],
+		["weapons_fire", "gun_holster", 3], ["weapons_fire", "grenade_pin", 3], ["weapons_fire", "explosion_tail", 3],
+		["weapons_fire", "ricochet", 3], ["weapons_fire", "bullet_whiz", 3], ["katana", "draw", 3], ["katana", "sheath", 3],
 		["vehicle_fx", "ignition", 2], ["vehicle_fx", "engine_off", 1], ["vehicle_fx", "door_open", 3],
 		["vehicle_fx", "door_close", 3], ["vehicle_fx", "handbrake", 3], ["vehicle_fx", "backfire", 2],
 		["vehicle_fx", "car_horn", 3], ["vehicle_fx", "wastegate", 3], ["vehicle_fx", "turbo_flutter", 3],
@@ -35,7 +37,7 @@ func run() -> void:
 			var stream: AudioStream = FIREFLY.stream(bank[0], bank[1], index)
 			check(stream != null and stream.get_length() > 0.05, "%s/%s_%d carrega" % [bank[0], bank[1], index])
 			check(stream == null or stream.get_length() < 16.0, "%s/%s_%d não passa de 16 s" % [bank[0], bank[1], index])
-	for entry in [["service_vehicles", "siren_loop.wav", 3.0], ["service_vehicles", "reverse_beep_loop.wav", 1.5], ["vehicle_fx", "supercharger_loop.wav", 1.0]]:
+	for entry in [["service_vehicles", "siren_loop.wav", 3.0], ["service_vehicles", "reverse_beep_loop.wav", 1.5], ["vehicle_fx", "supercharger_loop.wav", 1.0], ["weapons_fire", "rocket_flight_loop.wav", 1.5]]:
 		var looped: AudioStreamWAV = FIREFLY.loop(entry[0], entry[1])
 		check(looped != null and looped.loop_mode == AudioStreamWAV.LOOP_FORWARD and looped.get_length() >= float(entry[2]) and looped.loop_end > 0, "%s/%s repete sem parar" % [entry[0], entry[1]])
 	# O sorteio de tiros mistura os takes do V1 com os novos, sem repetir o anterior.

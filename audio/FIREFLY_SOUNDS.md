@@ -48,6 +48,23 @@ emenda), volume casado com a música do menu que já existia (rms ~0,05) e saíd
 O tema original da V1 (`harbor_night_menu.wav`) e os sons sintéticos continuam como reserva
 se os arquivos novos não estiverem importados.
 
+## Combate (15/10/2026)
+
+Gerados a partir da auditoria de armas e golpes (eventos que não tinham som nenhum).
+
+| Arquivo | Prompt | Usado em |
+|---|---|---|
+| `weapons_fire/dry_fire_*` | empty pistol trigger pull, dry fire metallic click | `Gameplay._stall_fire_at`: gatilho com pente vazio (antes da recarga automática) |
+| `weapons_fire/gun_draw_*`, `gun_holster_*` | pistol drawn from a leather holster | `_weapon_switch_sound`: equipar/guardar arma de fogo; guardar é o saque tocado ao contrário |
+| `katana/draw_*`, `sheath_*` | katana drawn from a wooden scabbard | idem, ao pegar e largar a katana; embainhar é o saque ao contrário |
+| `weapons_fire/grenade_pin_*` | hand grenade pin pulled | início do arremesso da granada |
+| `weapons_fire/rocket_flight_loop.wav` | rocket propelled grenade in flight, burning engine hiss | `Projectile._attach_flight_sound`: loop preso ao foguete até a detonação |
+| `weapons_fire/explosion_tail_*` | explosion aftermath, low rumble echo, debris falling | `_detonate_explosion`: camada sob o estrondo, alcance 1,4x o da explosão |
+| `weapons_fire/ricochet_*` | bullet ricochet off metal | `_impact_sound`: em 35% dos impactos de metal |
+| `weapons_fire/bullet_whiz_*` | supersonic bullet whizzing past close | `_bullet_whiz`: bala de NPC/polícia que passa a menos de 3 m, uma vez por bala |
+
+Fica de fora: machado, taco e soco gravados no lugar dos sintéticos, e a ignição do lança-chamas.
+
 ## Não ligado (e por quê)
 
 - `vehicle_fx/turn_signal_*`: o jogo não tem pisca-pisca; faltaria a mecânica e as luzes.

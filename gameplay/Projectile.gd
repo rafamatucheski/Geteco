@@ -1,5 +1,6 @@
 extends Node3D
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+const FIREFLY := preload("res://audio/FireflyBank.gd")
 
 var controller: Node3D
 var shooter: Node3D
@@ -27,6 +28,22 @@ func _ready() -> void:
 		_build_rocket(visual)
 	# Foguete deixa rastro de fumaça (V1 `RocketTrail`); granada não.
 	if not grenade and is_instance_valid(controller) and controller.get("effects") != null: controller.effects.attach_rocket_trail(self)
+	if not grenade: _attach_flight_sound()
+
+## Chiado do motor do foguete em voo (Firefly, 2026-10-15), em loop até a detonação. Sem o arquivo
+## importado o foguete voa mudo, como antes.
+func _attach_flight_sound() -> void:
+	var loop := FIREFLY.loop("weapons_fire", "rocket_flight_loop.wav")
+	if loop == null: return
+	var voice := AudioStreamPlayer3D.new()
+	voice.name = "RocketFlight"
+	voice.stream = loop
+	voice.bus = FIREFLY.bus_name()
+	voice.volume_db = -9.0
+	voice.unit_size = 12.0
+	voice.max_distance = 70.0
+	add_child(voice)
+	voice.play()
 
 func _build_rocket(root: Node3D) -> void:
 	var body_material := StandardMaterial3D.new()

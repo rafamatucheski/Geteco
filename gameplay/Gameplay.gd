@@ -1005,6 +1005,7 @@ func _update_back_katana(id: String) -> void:
 		if id == "katana": _start_sheath("draw")
 		elif _sheath_last_id == "katana": _start_sheath("holster")
 	_sheath_last_id = id
+		_weapon_switch_sound(_sheath_last_id, id)
 	if back_katana == null or not is_instance_valid(player): return
 	var carried: bool = state != null and bool(state.owns_weapon("katana")) and not bool(player.get("dead"))
 	var moving: bool = _sheath_clip != ""
@@ -1290,6 +1291,7 @@ func _stall_fire_at(target: Vector3) -> bool:
 		# V1 (`Player._shoot_towards`): pente vazio recarrega sozinho quando há reserva.
 		cooldown = 0.25
 		if not reload_weapon(): message.emit("Sem munição.")
+		if not grenade: _firefly_sound("weapons_fire", "dry_fire", player.global_position, -7.0, 20.0)
 		return false
 	cooldown = float(data.fire_interval)
 	_attack_serial += 1
@@ -1300,7 +1302,7 @@ func _stall_fire_at(target: Vector3) -> bool:
 	if not melee and not grenade: weapon_fired.emit(id, player.global_position)
 	if melee: _melee_swing_sound(id, data)
 	elif data.get("is_flame", false): _flame_sound()
-	elif grenade: pass # Som e munição acompanham a saída da mão.
+	elif grenade: _firefly_sound("weapons_fire", "grenade_pin", player.global_position, -9.0, 14.0) # O arremesso e a munição acompanham a saída da mão.
 	else: _shot_sound(id, data)
 	if not melee and not data.get("is_grenade", false): _flash_muzzle(id)
 	aim_point = target
@@ -1924,6 +1926,8 @@ func _detonate_explosion(point: Vector3, radius: float, amount: float, source: N
 	var traced := Time.get_ticks_usec() if get_meta("trace_explosion",false) else 0
 	_sound("explosion", point, EXPLOSION_VOLUME_DB)
 	traced = _trace_explosion_cost("audio",traced)
+	# Cauda: o estrondo sozinho acabava seco; o rumor e os estilhaços caindo vêm por baixo dele.
+	_firefly_sound("weapons_fire", "explosion_tail", point, EXPLOSION_VOLUME_DB - 7.0, HEARING_EXPLOSION * 1.4, 0.05)
 	if emergency != null: emergency.ignite(point, damage_source, 1.0)
 	traced = _trace_explosion_cost("ground_fire",traced)
 	var sphere := SphereShape3D.new()
@@ -2225,6 +2229,7 @@ func _advance_police_rounds(delta: float) -> void:
 	for index in range(_police_rounds.size() - 1, -1, -1):
 		var round_index: Dictionary = _police_rounds[index]
 		var step := minf(float(round_index.speed) * delta, float(round_index.range) - float(round_index.distance))
+		_bullet_whiz(round_index)
 		var end: Vector3 = round_index.point + round_index.direction * step
 		var query := PhysicsRayQueryParameters3D.create(round_index.point, end, 7, [round_index.rid])
 		var hit: Dictionary = round_index.blocked if not round_index.blocked.is_empty() else get_world_3d().direct_space_state.intersect_ray(query)
@@ -2242,6 +2247,18 @@ func _advance_police_rounds(delta: float) -> void:
 		if finished: _police_rounds.remove_at(index)
 
 func police_reload(officer: Node3D, weapon_id: String) -> void:
+## Zunido da bala de NPC/polícia que passa a menos de 3 m do jogador: uma vez por bala, no ponto
+## mais próximo da trajetória (só enquanto a bala ainda vai passar por ele).
+func _bullet_whiz(round_index: Dictionary) -> void:
+	if round_index.get("whizzed", false) or not is_instance_valid(player): return
+	var offset: Vector3 = player.global_position + Vector3.UP * 1.0 - (round_index.point as Vector3)
+	var along: float = offset.dot(round_index.direction)
+	if along < -0.5 or along > float(round_index.speed) * 0.05: return
+	var closest: Vector3 = (round_index.point as Vector3) + (round_index.direction as Vector3) * maxf(along, 0.0)
+	if closest.distance_to(player.global_position + Vector3.UP * 1.0) > 3.0: return
+	round_index["whizzed"] = true
+	_firefly_sound("weapons_fire", "bullet_whiz", closest, -6.0, 14.0, 0.06)
+
 	if not is_instance_valid(officer): return
 	var sample := AUDIO.reload_take(weapon_id, _rng)
 	if sample != null:
@@ -2432,6 +2449,28 @@ func _impact_sound(collider: Object, point: Vector3, amount: float, normal := Ve
 	_recent_impacts.append({"time": _combat_clock, "material": material})
 	_play_stream(AUDIO.impact_take(material, _rng), point, -14.0 + clampf((amount - 15.0) / 15.0, -0.8, 2.0))
 
+	# Bala em metal às vezes ricocheteia: assobio por cima do toc, em um terço dos impactos.
+	if material == "metal" and _rng.randf() < 0.35: _firefly_sound("weapons_fire", "ricochet", point, -13.0, 40.0, 0.08)
+
+## Sons de combate do Firefly (2026-10-15): pente vazio, sacar/guardar, pino da granada, cauda de
+## explosão, ricochete e zunido de bala. Sem o arquivo importado não toca nada, como antes.
+func _firefly_sound(folder: String, key: String, point: Vector3, volume_db: float, reach: float, pitch_jitter := 0.04) -> void:
+	var take: AudioStream = AUDIO.FIREFLY.take(folder, key, _rng)
+	if take == null: return
+	_play_stream(take, point, volume_db, _rng.randf_range(1.0 - pitch_jitter, 1.0 + pitch_jitter), reach)
+
+func _is_firearm(id: String) -> bool:
+	var data: Dictionary = CATALOG.WEAPONS.get(id, {})
+	return not data.is_empty() and not data.get("is_melee", false) and not data.get("is_grenade", false)
+
+## Troca de arma: katana sai/volta da bainha; arma de fogo sai/volta do coldre (punho livre, melee ou veículo).
+func _weapon_switch_sound(from_id: String, to_id: String) -> void:
+	if not is_instance_valid(player) or from_id == to_id: return
+	var at := player.global_position
+	if to_id == "katana": _firefly_sound("katana", "draw", at, -8.0, 14.0)
+	elif from_id == "katana": _firefly_sound("katana", "sheath", at, -9.0, 14.0)
+	elif _is_firearm(to_id): _firefly_sound("weapons_fire", "gun_draw", at, -11.0, 12.0)
+	elif _is_firearm(from_id): _firefly_sound("weapons_fire", "gun_holster", at, -12.0, 12.0)
 func police_evasion_seconds() -> float:
 	if police_case != null and police_case.descending: return 8.0
 	return EVASION_SECONDS[clampi(stars, 0, 6)]

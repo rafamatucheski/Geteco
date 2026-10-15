@@ -68,7 +68,9 @@ static func loop(folder: String, file: String) -> AudioStreamWAV:
 ## primeiro tiro, a primeira porta e o primeiro turbo não pagam leitura de disco.
 static func prewarm(tree: SceneTree) -> void:
 	var sets := {
-		"weapons_fire": ["pistol", "shotgun", "rifle_shot", "distant_shot"],
+		"weapons_fire": ["pistol", "shotgun", "rifle_shot", "distant_shot", "dry_fire", "gun_draw", "gun_holster",
+			"grenade_pin", "explosion_tail", "ricochet", "bullet_whiz"],
+		"katana": ["draw", "sheath"],
 		"vehicle_fx": ["door_open", "door_close", "ignition", "engine_off", "handbrake", "backfire",
 			"car_horn", "wastegate", "turbo_flutter", "turbo_spool", "turbo_spooldown", "diesel_turbo"],
 		"service_vehicles": ["horn"],
@@ -79,6 +81,7 @@ static func prewarm(tree: SceneTree) -> void:
 	loop("service_vehicles", "siren_loop.wav")
 	loop("service_vehicles", "reverse_beep_loop.wav")
 	loop("vehicle_fx", "supercharger_loop.wav")
+	loop("weapons_fire", "rocket_flight_loop.wav")
 
 static func bus_name() -> StringName:
 	return SFX_BUS if AudioServer.get_bus_index(SFX_BUS) >= 0 else &"Master"
