@@ -5,7 +5,13 @@ const FLEET = preload("res://runtime/FleetCatalog.gd")
 const ENGINE_PROFILE = preload("res://audio/VehicleEngineProfile.gd")
 const TANK_AUDIO := preload("res://audio/tank/TankAudio.gd")
 const BANKS := preload("res://audio/EngineBankCache.gd")
+const FIREFLY := preload("res://audio/FireflyBank.gd")
 const GROUP := &"service_vehicle_engine_mixer"
+## Bipe de ré (Firefly, 2026-10-15) dos serviços pesados, fora do orçamento de motor: no
+## máximo dois bipes audíveis ao mesmo tempo, os dos veículos mais próximos.
+const BEEP_FAMILIES := ["truck", "bus", "fire_diesel", "ambulance", "diesel"]
+const MAX_BEEPERS := 2
+var _beepers: Dictionary = {}
 const MAX_REGISTERED := 32
 const MAX_AUDIBLE := 6
 const MAX_VOICES := 12
@@ -88,6 +94,7 @@ func unregister_id(id: int) -> void:
 	for slot in _slots:
 		if slot.id == id:
 			_release(slot)
+	_drop_beeper(id)
 	_entries.erase(id)
 	var used := false
 	for other in _entries.values():
@@ -123,12 +130,14 @@ func set_enabled(enabled: bool) -> void:
 	if not enabled:
 		for slot in _slots:
 			_release(slot)
+		_clear_beepers()
 	set_process(enabled and not _entries.is_empty())
 
 func shutdown() -> void:
 	for id in _entries.keys():
 		unregister_id(id)
 	_free_slots()
+	_clear_beepers()
 	_banks.clear()
 	_world = null
 	_listener = null
@@ -158,6 +167,7 @@ func _process(delta: float) -> void:
 		return
 	_clock -= delta
 	var candidates: Array[Dictionary] = []
+	var reversing: Array[Dictionary] = []
 	for id in _entries.keys():
 		var entry: Dictionary = _entries[id]
 		var vehicle: CharacterBody3D = entry.vehicle.get_ref()
@@ -179,8 +189,11 @@ func _process(delta: float) -> void:
 		var load_value := clampf(maxf(0, entry.acceleration) / maxf(vehicle.drive_acceleration, 1), 0, 1)
 		var rpm := clampf(0.1 + ratio * 0.72 + load_value * 0.18, 0, 1) * 6
 		entry.rpm = lerpf(entry.rpm, rpm, minf(1, delta * 5))
+		if float(vehicle.speed) < -0.4 and entry.family in BEEP_FAMILIES:
+			reversing.append({"id": id, "distance": distance})
 		if _clock <= 0:
 			candidates.append({"id": id, "distance": distance})
+	_update_beepers(reversing)
 	if _clock <= 0:
 		_clock = 0.1
 		candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
@@ -247,6 +260,45 @@ func _mix(slot: Dictionary) -> void:
 		player.pitch_scale = 1.0 + clampf(entry.acceleration * 0.01, -0.05, 0.08)
 		if not player.playing:
 			player.play()
+
+## Bipe de ré dos dois veículos de serviço mais próximos que andam para trás.
+func _update_beepers(reversing: Array[Dictionary]) -> void:
+	reversing.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		if a.distance == b.distance: return a.id < b.id
+		return a.distance < b.distance)
+	var wanted: Array[int] = []
+	for candidate in reversing.slice(0, MAX_BEEPERS): wanted.append(candidate.id)
+	for id in _beepers.keys():
+		if id not in wanted: _drop_beeper(id)
+	for id in wanted:
+		var vehicle: CharacterBody3D = _entries[id].vehicle.get_ref()
+		if not is_instance_valid(vehicle): continue
+		var beeper: AudioStreamPlayer3D = _beepers.get(id)
+		if beeper == null:
+			var loop := FIREFLY.loop("service_vehicles", "reverse_beep_loop.wav")
+			if loop == null: continue
+			beeper = AudioStreamPlayer3D.new()
+			beeper.name = "ReverseBeep%d" % id
+			beeper.stream = loop
+			beeper.max_distance = 40.0
+			beeper.unit_size = 6.0
+			beeper.volume_db = -12.0
+			if AudioServer.get_bus_index("SFX") >= 0: beeper.bus = &"SFX"
+			add_child(beeper)
+			_beepers[id] = beeper
+		beeper.global_position = vehicle.global_position
+		if not beeper.playing: beeper.play()
+
+func _drop_beeper(id: int) -> void:
+	var beeper: AudioStreamPlayer3D = _beepers.get(id)
+	if beeper == null: return
+	_beepers.erase(id)
+	if is_instance_valid(beeper):
+		beeper.stop()
+		beeper.free()
+
+func _clear_beepers() -> void:
+	for id in _beepers.keys(): _drop_beeper(id)
 
 func _release(slot: Dictionary) -> void:
 	for player in slot.players:

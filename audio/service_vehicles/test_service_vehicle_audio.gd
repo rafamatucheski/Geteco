@@ -86,6 +86,30 @@ func _run() -> void:
 	var removed_id := cars[1].get_instance_id()
 	cars[1].free()
 	_check(not mixer._entries.has(removed_id), "tree exit unregisters")
+	# Bipe de ré: só serviço pesado andando para trás, separado do orçamento de motor.
+	var truck := TestVehicle.new()
+	truck.archetype = "american_dump_truck"
+	truck.controlled = true
+	truck.external_input = true
+	world.add_child(truck)
+	truck.position = Vector3(2, 0, 2)
+	_check(mixer.register_vehicle(truck, "fire"), "heavy service vehicle registers")
+	truck.speed = 3.0
+	mixer._process(0.1)
+	_check(mixer._beepers.is_empty(), "no reverse beep going forward")
+	truck.speed = -3.0
+	mixer._process(0.1)
+	var beeper: AudioStreamPlayer3D = mixer._beepers.get(truck.get_instance_id())
+	_check(beeper != null and beeper.playing and beeper.stream is AudioStreamWAV, "reverse beep plays while backing up")
+	_check(_voices(mixer) <= 12, "beep stays outside the engine voice ceiling")
+	truck.speed = 3.0
+	mixer._process(0.1)
+	_check(mixer._beepers.is_empty(), "reverse beep stops going forward")
+	truck.speed = -3.0
+	mixer._process(0.1)
+	mixer.set_enabled(false)
+	_check(mixer._beepers.is_empty(), "suspension releases the reverse beep")
+	mixer.set_enabled(true)
 	mixer.shutdown()
 	mixer.shutdown()
 	_check(mixer._entries.is_empty() and mixer._banks.is_empty(), "resources released")

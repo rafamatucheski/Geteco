@@ -6,6 +6,7 @@ extends RefCounted
 const PATH := "res://audio/menu/loading_music.ogg"
 const NODE_NAME := "LoadingMusic"
 const LEVEL_DB := -16.0
+const SILENCE_DB := -60.0
 
 static func attach(curtain: Node) -> AudioStreamPlayer:
 	if not is_instance_valid(curtain) or not ResourceLoader.exists(PATH): return null
@@ -29,7 +30,8 @@ static func fade_out(curtain: Node, seconds: float) -> void:
 	if not is_instance_valid(curtain): return
 	var player := curtain.get_node_or_null(NODE_NAME) as AudioStreamPlayer
 	if player == null: return
-	_fade(player, -40.0, seconds)
+	# -60 dB: ao fim do fade a música já é inaudível, então o queue_free da cobertura não corta nada.
+	_fade(player, SILENCE_DB, seconds)
 
 ## Um fade por vez: o de saída cancela o de entrada se a cobertura sair antes dele terminar.
 static func _fade(player: AudioStreamPlayer, target_db: float, seconds: float) -> void:

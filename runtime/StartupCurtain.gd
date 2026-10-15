@@ -3,6 +3,8 @@ extends CanvasLayer
 const NODE_NAME := "LoadingCurtain"
 const SESSION_OPS := preload("res://runtime/SessionOperations.gd")
 const LOADING_MUSIC := preload("res://ui/LoadingMusic.gd")
+## Duração do fade final da cobertura (imagem e música).
+const LIFT_SECONDS := 1.0
 var _diagnostic_stage := 0
 const DISPLAY_FONT: FontFile = preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
 const BODY_FONT: FontFile = preload("res://assets/fonts/barlow/BarlowSemiCondensed-Regular.ttf")
@@ -110,10 +112,11 @@ func lift(settle_frames := 8) -> void:
 	for i in settle_frames: await get_tree().process_frame
 	_shown = 1.0
 	_update_progress()
-	LOADING_MUSIC.fade_out(self, .45)
+	# A imagem e a música saem juntas e devagar (1 s): nada corta de uma vez ao entrar no jogo.
+	LOADING_MUSIC.fade_out(self, LIFT_SECONDS)
 	if _root != null:
 		var tween := create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
-		tween.tween_property(_root, "modulate:a", 0.0, .45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		tween.tween_property(_root, "modulate:a", 0.0, LIFT_SECONDS).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 		await tween.finished
 	queue_free()
 
