@@ -29,8 +29,15 @@ func run() -> void:
 	world.gameplay.health = 1000000
 	# Com estrela a polícia vem a pé; sem ela só existem guardas e patrulha.
 	if "--estrelas" in OS.get_cmdline_user_args(): world.gameplay.register_crime(60, world.player.global_position, "test")
-	for second in 20: await create_timer(1.0).timeout
 	var car: CharacterBody3D = world.driving.car
+	# Carro sem motorista fica em repouso e não roda física: o Dante entra, como no jogo.
+	world.player.teleport(car.driver_door_anchor(-1) - car.global_basis.x * .2)
+	for frame in 3: await physics_frame
+	world.driving.interact()
+	var seated_deadline := Time.get_ticks_msec() + 15000
+	while not world.player.seated and Time.get_ticks_msec() < seated_deadline: await process_frame
+	print("ATROPELO motorista sentado=", world.player.seated)
+	for second in 40: await create_timer(1.0).timeout
 	for target in _candidates():
 		if not is_instance_valid(target): continue
 		var label := "%s <%s>" % [target.name, target.get_script().resource_path.get_file() if target.get_script() else target.get_class()]
