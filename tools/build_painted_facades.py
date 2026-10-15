@@ -14,7 +14,7 @@ Grava style.json com:
   com "leaf" (folha 3D que abre) ou sem folha (garagem/portão aberto);
 - doors: o primeiro vão com folha de cada lado, formato antigo (sobrados).
 
-Os vãos e o tamanho do módulo de cada estilo ficam em tools/painted_facades.json
+Os vãos e o tamanho do módulo de cada estilo ficam em tools/painted_facades*.json
 (medidos à mão na folha de contato; a detecção automática erra porta cortada pela
 base de pedra, portão largo e corredor claro). Estilo sem entrada lá cai na
 detecção automática de uma porta só.
@@ -139,7 +139,11 @@ def styles() -> list:
 
 
 def main() -> None:
-    config = json.loads(CONFIG.read_text(encoding="utf-8")) if CONFIG.exists() else {}
+    # Um arquivo por região (painted_facades_<região>.json) para agentes em paralelo
+    # não editarem o mesmo arquivo.
+    config = {}
+    for path in sorted(CONFIG.parent.glob("painted_facades*.json")):
+        config.update(json.loads(path.read_text(encoding="utf-8")))
     for style in styles():
         source = SOURCE / style
         target = TARGET / style
