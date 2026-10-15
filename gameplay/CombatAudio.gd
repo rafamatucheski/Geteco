@@ -1,5 +1,10 @@
 extends RefCounted
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+const FIREFLY := preload("res://audio/FireflyBank.gd")
+## Tomadas extras gravadas no Firefly (2026-10-15) que entram no mesmo sorteio dos 5 takes
+## do V1: família do tiro -> nome em audio/weapons_fire. O fuzil usa tiros únicos fatiados
+## da rajada. Sem o arquivo importado o sorteio fica só com os takes do V1.
+const FIREFLY_GUNFIRE := {"pistol": "pistol", "shotgun": "shotgun", "ak47": "rifle_shot", "m4a1": "rifle_shot"}
 ## Áudio de combate do V2: amostras copiadas do V1 (recarga, impactos, RPG, tiros
 ## silenciados) e os geradores procedurais que o V1 usava para golpes, faca, taco,
 ## lança-chamas e arremesso de granada. Nada aqui é efeito novo: são
@@ -41,6 +46,7 @@ static var _last_contact_take: Dictionary = {}
 ## advancing gameplay RNG, starting a voice or changing the no-repeat history.
 ## Batches are bounded to one family; filesystem work runs on loader threads.
 static func prewarm_gameplay_banks(tree: SceneTree) -> void:
+	await FIREFLY.prewarm(tree)
 	for family in CONTACT_FAMILIES:
 		for index in RELOAD_TAKES: _contact_sample(family, index)
 		await tree.process_frame
@@ -140,10 +146,16 @@ static func impact_take(material: String, rng: RandomNumberGenerator) -> AudioSt
 ## Take de tiro/explosão entre os 5 disponíveis, sem repetir o take anterior da mesma
 ## família — replica `AudioStreamRandomizer.PLAYBACK_RANDOM_NO_REPEATS` da V1.
 static func gunfire_take(prefix: String, rng: RandomNumberGenerator) -> AudioStream:
-	var index := rng.randi_range(0, GUNFIRE_TAKES - 1)
-	if GUNFIRE_TAKES > 1 and _last_gunfire_take.get(prefix, -1) == index:
-		index = (index + 1) % GUNFIRE_TAKES
+	var extra: int = FIREFLY.count("weapons_fire", FIREFLY_GUNFIRE[prefix]) if FIREFLY_GUNFIRE.has(prefix) else 0
+	var pool := GUNFIRE_TAKES + extra
+	var index := rng.randi_range(0, pool - 1)
+	if pool > 1 and _last_gunfire_take.get(prefix, -1) == index:
+		index = (index + 1) % pool
 	_last_gunfire_take[prefix] = index
+	if index >= GUNFIRE_TAKES:
+		var recorded := FIREFLY.stream("weapons_fire", FIREFLY_GUNFIRE[prefix], index - GUNFIRE_TAKES)
+		if recorded != null: return recorded
+		index %= GUNFIRE_TAKES
 	return wav("%s_%d.wav" % [prefix, index])
 
 ## Variação de tom por disparo (±3,5%), mesma faixa do `random_pitch` da V1.

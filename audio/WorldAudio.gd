@@ -11,6 +11,10 @@ const ROAD_SOUND := preload("res://audio/vehicle_fx/road.wav")
 const AIR_BRAKE_SOUND := preload("res://audio/vehicle_fx/air_brake.wav")
 const TURBO_SHIFT_SOUNDS := [preload("res://audio/vehicle_fx/turbo_shift_0.wav"), preload("res://audio/vehicle_fx/turbo_shift_1.wav"), preload("res://audio/vehicle_fx/turbo_shift_2.wav")]
 const SPORT_BLOWOFF_SOUNDS := [preload("res://audio/vehicle_fx/sport_blowoff_0.wav"), preload("res://audio/vehicle_fx/sport_blowoff_1.wav"), preload("res://audio/vehicle_fx/sport_blowoff_2.wav")]
+const FIREFLY := preload("res://audio/FireflyBank.gd")
+## Famílias que estouram o escapamento ao tirar o pé do acelerador em giro alto.
+const BACKFIRE_FAMILIES := ["muscle", "sport", "vq35", "m8_v8", "rosso_v12"]
+const REVERSE_BEEP_FAMILIES := ["truck", "bus", "fire_diesel"]
 const NEARBY_VEHICLE_AUDIO := preload("res://audio/vehicle_ambience/NearbyVehicleAudio.gd")
 const FOOTSTEP_CADENCE := preload("res://audio/FootstepCadence.gd")
 const BED_OFFSETS := {"city":-10.0,"water":-6.0,"port":-15.0,"birds":-9.0,"crickets":-10.0,"workshop":-20.0}
@@ -44,6 +48,13 @@ var tank_start_remaining := 0.0
 var road_audio: AudioStreamPlayer
 var shift_audio: AudioStreamPlayer
 var air_brake_audio: AudioStreamPlayer
+## Camadas gravadas no Firefly: estouro/assobio do turbo, compressor do muscle e bipe de ré.
+var extra_audio: AudioStreamPlayer
+var blower_audio: AudioStreamPlayer
+var reverse_audio: AudioStreamPlayer
+var extra_cooldown := 0.0
+var _blowoff_mix: Array = []
+var _turbo_shift_mix: Array = []
 var water_steps: Node3D
 var ambience_clock := .25
 var detail_clock := 5.0
@@ -65,7 +76,7 @@ var radio_notice_time := 0.0
 func _exit_tree() -> void:
 	if is_instance_valid(vehicle_ambience) and vehicle_ambience.has_method("shutdown"):
 		vehicle_ambience.shutdown()
-	for channel in [radio, footsteps, detail, road_audio, shift_audio, air_brake_audio] + beds.values() + layers:
+	for channel in [radio, footsteps, detail, road_audio, shift_audio, air_brake_audio, extra_audio, blower_audio, reverse_audio] + beds.values() + layers:
 		if not is_instance_valid(channel): continue
 		channel.stop()
 		channel.stream = null
@@ -143,6 +154,33 @@ func _ready() -> void:
 	air_brake_audio.name = "PlayerAirBrake"
 	air_brake_audio.bus = _bus(&"SFX")
 	add_child(air_brake_audio)
+	_ensure_firefly_players()
+
+## Camadas do Firefly. Criadas sob demanda porque há testes que montam o mixer só com
+## road/shift/air_brake e não passam por `_ready`.
+func _ensure_firefly_players() -> void:
+	if extra_audio != null: return
+	extra_audio = AudioStreamPlayer.new()
+	extra_audio.name = "PlayerEngineExtras"
+	extra_audio.bus = _bus(&"SFX")
+	add_child(extra_audio)
+	blower_audio = AudioStreamPlayer.new()
+	blower_audio.name = "PlayerSupercharger"
+	blower_audio.bus = _bus(&"SFX")
+	blower_audio.stream = FIREFLY.loop("vehicle_fx", "supercharger_loop.wav")
+	add_child(blower_audio)
+	reverse_audio = AudioStreamPlayer.new()
+	reverse_audio.name = "PlayerReverseBeep"
+	reverse_audio.bus = _bus(&"SFX")
+	reverse_audio.stream = FIREFLY.loop("service_vehicles", "reverse_beep_loop.wav")
+	add_child(reverse_audio)
+
+func _engine_fx_channels() -> Array:
+	var channels: Array = [road_audio, shift_audio, air_brake_audio]
+	for extra in [extra_audio, blower_audio, reverse_audio]:
+		if extra != null: channels.append(extra)
+	return channels
+
 func _bus(preferred: StringName) -> StringName:
 	return preferred if AudioServer.get_bus_index(preferred)>=0 else &"Master"
 func _make_bed(id: String, stream: AudioStream) -> void:
@@ -263,7 +301,37 @@ func _show_station() -> void:
 	radio_notice.show()
 	radio_notice.modulate.a=0
 
+## Estalo de tiro ouvido de longe. O estampido do jogo (`Gameplay`) some a 37,5 m; daí até
+## ~160 m tocava silêncio. Esta camada escuta o mesmo sinal `npc_gunfire` de NPC e polícia
+## e só entra depois do alcance do estampido, então nunca soma com ele. No máximo um a cada
+## 0,3 s: uma troca de tiros vira rajada distante, não metralhadora de eco.
+const DISTANT_GUNFIRE_MIN := 37.5
+const DISTANT_GUNFIRE_MAX := 160.0
+var _gunfire_linked := false
+var _distant_gunfire_msec := -10000
+
+func _link_gunfire() -> void:
+	if _gunfire_linked: return
+	var gameplay = world.get("gameplay")
+	if gameplay == null or not gameplay.has_signal("npc_gunfire"): return
+	gameplay.npc_gunfire.connect(_on_npc_gunfire)
+	_gunfire_linked = true
+
+func _on_npc_gunfire(origin: Vector3, _direction: Vector3, _shooter: Node) -> void:
+	if not is_instance_valid(world.player): return
+	var offset: Vector3 = origin - world.player.global_position
+	offset.y = 0.0
+	var distance: float = offset.length()
+	if distance < DISTANT_GUNFIRE_MIN or distance > DISTANT_GUNFIRE_MAX: return
+	var now := Time.get_ticks_msec()
+	if now - _distant_gunfire_msec < 300: return
+	var shot := FIREFLY.stream("weapons_fire", "distant_shot", 0)
+	if shot == null: return
+	_distant_gunfire_msec = now
+	FIREFLY.play_at(self, shot, origin, -7.0, rng.randf_range(0.92, 1.08), DISTANT_GUNFIRE_MAX + 40.0, 30.0)
+
 func _process(delta: float) -> void:
+	_link_gunfire()
 	_update_ambience(delta)
 	_update_radio(delta)
 	var moving: bool = world.driving.occupied
@@ -299,7 +367,7 @@ func _process(delta: float) -> void:
 		engine_car = null
 		engine_archetype = ""
 		for layer in layers: if layer.playing: layer.stop()
-		for channel in [road_audio, shift_audio, air_brake_audio]: if channel.playing: channel.stop()
+		for channel in _engine_fx_channels(): if channel.playing: channel.stop()
 		return
 	var current_car: CharacterBody3D = world.driving.car
 	_sync_engine_family(current_car)
@@ -373,7 +441,7 @@ func _sync_engine_family(car: CharacterBody3D) -> void:
 	engine_last_throttle = 0.0
 	engine_fx_cooldown = 0.0
 	engine_was_moving_fast = false
-	for channel in [road_audio, shift_audio, air_brake_audio]: if channel.playing: channel.stop()
+	for channel in _engine_fx_channels(): if channel.playing: channel.stop()
 	var next_family: String = ENGINE_PROFILE.bank_family(archetype)
 	tank_start_remaining = 0.0
 	if next_family == "tank":
@@ -420,15 +488,17 @@ func _update_vehicle_foley(car: CharacterBody3D, spec: Dictionary, _ratio: float
 			1.0 - exp(-get_process_delta_time() * (3.6 if pressure_target > engine_turbo_pressure else 7.0)))
 	else:
 		engine_turbo_pressure = 0.0
+	# Antes dos blocos abaixo: eles zeram a pressão ao aliviar o turbo e a camada nova precisa dela.
+	_update_firefly_foley(car, throttle, sport_turbo)
 	if engine_gear > previous_gear and heavy_turbo and (engine_load > 0.20 or engine_rpm > 0.30):
-		_play_vehicle_fx(TURBO_SHIFT_SOUNDS, clampf(-7.0 + engine_load * 6.0 + engine_rpm * 3.0, -14.0, 2.0) - (8.0 if family == "truck" else 0.0))
+		_play_vehicle_fx(_turbo_shift_sounds(), clampf(-7.0 + engine_load * 6.0 + engine_rpm * 3.0, -14.0, 2.0) - (8.0 if family == "truck" else 0.0))
 	elif engine_gear > previous_gear and sport_turbo and engine_turbo_pressure > 0.40:
-		_play_vehicle_fx(SPORT_BLOWOFF_SOUNDS, clampf(-21.0 + engine_turbo_pressure * 10.0 + engine_rpm * 2.0, -23.0, -11.0), 1.2)
+		_play_vehicle_fx(_blowoff_sounds(), clampf(-21.0 + engine_turbo_pressure * 10.0 + engine_rpm * 2.0, -23.0, -11.0), 1.2)
 	if heavy_turbo and engine_fx_cooldown <= 0.0 and engine_last_throttle > 0.65 and throttle < 0.15 and engine_rpm > 0.42:
-		_play_vehicle_fx(TURBO_SHIFT_SOUNDS, -2.0)
+		_play_vehicle_fx(_turbo_shift_sounds(), -2.0)
 	# Keep the coupe's pressure release quiet and sparse during repeated braking.
 	if sport_turbo and engine_fx_cooldown <= 0.0 and engine_last_throttle > 0.58 and throttle < 0.16 and engine_turbo_pressure > 0.40:
-		_play_vehicle_fx(SPORT_BLOWOFF_SOUNDS, clampf(-21.0 + engine_turbo_pressure * 10.0 + engine_rpm * 2.0, -23.0, -11.0), 1.2)
+		_play_vehicle_fx(_blowoff_sounds(), clampf(-21.0 + engine_turbo_pressure * 10.0 + engine_rpm * 2.0, -23.0, -11.0), 1.2)
 		engine_turbo_pressure *= 0.24
 	if family in ["truck", "bus", "fire_diesel"]:
 		if absf(float(car.speed)) > 1.25: engine_was_moving_fast = true
@@ -439,6 +509,60 @@ func _update_vehicle_foley(car: CharacterBody3D, spec: Dictionary, _ratio: float
 			air_brake_audio.pitch_scale = randf_range(0.96, 1.04)
 			air_brake_audio.play()
 	engine_last_throttle = throttle
+
+## Sons do Firefly casados com o motor do jogador: assobio do turbo subindo/descendo,
+## trepidação do compressor, estouro de escapamento, compressor do muscle e bipe de ré.
+## Tudo pega do estado que o motor já calcula (rpm, carga, pressão) — nada novo na física.
+func _update_firefly_foley(car: CharacterBody3D, throttle: float, sport_turbo: bool) -> void:
+	_ensure_firefly_players()
+	extra_cooldown = maxf(0.0, extra_cooldown - get_process_delta_time())
+	var lifted := engine_last_throttle > 0.6 and throttle < 0.15 and engine_rpm > 0.45
+	if extra_cooldown <= 0.0:
+		if sport_turbo and lifted and engine_turbo_pressure > 0.7 and rng.randf() < 0.35:
+			_play_extra(FIREFLY.take("vehicle_fx", "turbo_flutter", rng), -19.0 + engine_turbo_pressure * 4.0, 1.5)
+		elif sport_turbo and lifted and engine_turbo_pressure > 0.45:
+			_play_extra(FIREFLY.take("vehicle_fx", "turbo_spooldown", rng), -20.0 + engine_turbo_pressure * 6.0, 2.0)
+		elif family in BACKFIRE_FAMILIES and lifted and rng.randf() < 0.5:
+			_play_extra(FIREFLY.take("vehicle_fx", "backfire", rng), -15.0 + engine_rpm * 4.0, 2.5)
+		elif sport_turbo and throttle > 0.85 and engine_last_throttle < 0.5 and engine_rpm > 0.3:
+			_play_extra(FIREFLY.take("vehicle_fx", "turbo_spool", rng), -24.0, 3.5)
+	# Compressor do muscle: ronco que sobe com o giro e some quando o pé sai.
+	if family == "muscle" and blower_audio.stream != null:
+		var want := clampf(0.2 + engine_rpm * 0.8, 0.0, 1.0) * (0.3 + 0.7 * throttle)
+		blower_audio.pitch_scale = 0.6 + engine_rpm * 1.0
+		blower_audio.volume_db = -21.0 + linear_to_db(maxf(want, 0.0001))
+		if want > 0.08 and not blower_audio.playing: blower_audio.play()
+		elif want < 0.04 and blower_audio.playing: blower_audio.stop()
+	elif blower_audio.playing:
+		blower_audio.stop()
+	# Bipe de ré dos pesados, só enquanto o veículo anda para trás.
+	if family in REVERSE_BEEP_FAMILIES and float(car.speed) < -0.4 and reverse_audio.stream != null:
+		reverse_audio.volume_db = -15.0
+		if not reverse_audio.playing: reverse_audio.play()
+	elif reverse_audio.playing:
+		reverse_audio.stop()
+
+func _play_extra(audio: AudioStream, volume: float, cooldown: float) -> void:
+	if audio == null: return
+	extra_audio.stream = audio
+	extra_audio.volume_db = volume
+	extra_audio.pitch_scale = rng.randf_range(0.97, 1.03)
+	extra_audio.play()
+	extra_cooldown = cooldown
+
+## Listas cíclicas de `_play_vehicle_fx`: o que o jogo já tinha somado às tomadas novas, no
+## mesmo nível (as novas foram normalizadas para casar com as antigas).
+func _blowoff_sounds() -> Array:
+	if _blowoff_mix.is_empty():
+		_blowoff_mix = SPORT_BLOWOFF_SOUNDS.duplicate()
+		_blowoff_mix.append_array(FIREFLY.all("vehicle_fx", "wastegate"))
+	return _blowoff_mix
+
+func _turbo_shift_sounds() -> Array:
+	if _turbo_shift_mix.is_empty():
+		_turbo_shift_mix = TURBO_SHIFT_SOUNDS.duplicate()
+		_turbo_shift_mix.append_array(FIREFLY.all("vehicle_fx", "diesel_turbo"))
+	return _turbo_shift_mix
 
 func _play_vehicle_fx(sounds: Array, volume: float, cooldown: float = 0.18) -> void:
 	if engine_fx_cooldown > 0.0: return

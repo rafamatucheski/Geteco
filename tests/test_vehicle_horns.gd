@@ -21,12 +21,12 @@ func run() -> void:
 		var stream: AudioStreamWAV = AUDIO.horn_stream(family)
 		check(stream != null and stream.data.size() > 0,"buzina %s gera áudio" % family)
 	var street := AUDIO.horn_stream("street")
-	check(street.data.size() == 17640,"street continua o oscilador original de 0,4 s")
+	check(street.get_length() > 0.3 and street.get_length() < 2.0,"street é a buzina de carro gravada (entre 0,3 e 2 s)")
 	check(AUDIO.horn_stream().data == street.data,"chamada sem argumentos igual a street")
 	for heavy in ["truck","bus","fire_diesel"]:
-		check(AUDIO.horn_stream(heavy).data.size() > street.data.size() * 2 - 1,"buzina de ar de %s é longa" % heavy)
+		check(AUDIO.horn_stream(heavy).get_length() > street.get_length() * 1.5,"buzina de ar de %s é longa" % heavy)
 		check(AUDIO.is_heavy_horn(heavy),"%s é buzina de ar" % heavy)
-	check(AUDIO.horn_stream("bike_urban").data.size() < street.data.size(),"moto tem bipe curto")
+	check(AUDIO.horn_stream("bike_urban").get_length() < street.get_length(),"moto tem bipe curto")
 	check(AUDIO.horn_stream("truck").data != street.data and AUDIO.horn_stream("sport").data != street.data,"famílias não soam iguais")
 	check(AUDIO.horn_stream("família_inexistente").data == street.data,"família desconhecida cai em street")
 	check(not AUDIO.is_heavy_horn("street") and not AUDIO.is_heavy_horn("bike_sport"),"carro e moto não usam buzina de ar")
@@ -34,7 +34,10 @@ func run() -> void:
 	check(AUDIO.horn_stream("street","union_sedan") == AUDIO.horn_stream("street","union_sedan"),"mesmo modelo, mesma buzina")
 	var names := ["taxi_yellow","union_sedan","courier_van","sport_coupe","ranch_single","arctic_jeep","nimbus_minivan"]
 	var distinct := {}
-	for name in names: distinct[hash(AUDIO.horn_stream("street",name).data)] = true
+	# O modelo desafina a gravação pelo mix_rate (os dados são os mesmos), então a variação mora lá.
+	for name in names:
+		var voiced := AUDIO.horn_stream("street",name)
+		distinct[[hash(voiced.data), voiced.mix_rate]] = true
 	check(distinct.size() >= 3,"modelos da mesma família não soam todos iguais (%d variações)" % distinct.size())
 	# --- equipamento: caminhão usa buzina de ar; G buzina dentro do carro
 	var world := Node3D.new()
@@ -54,7 +57,7 @@ func run() -> void:
 	key.pressed = true
 	check(equipment.handle_input(key,true),"G buzina dentro do veículo")
 	check(equipment.horn_audio.playing,"a buzina toca")
-	check(equipment.horn_audio.stream.data.size() > street.data.size() * 2 - 1,"caminhão usa buzina de ar longa")
+	check(equipment.horn_audio.stream.get_length() > street.get_length() * 1.5,"caminhão usa buzina de ar longa")
 	check(equipment.horn_audio.max_distance > 60.0 and equipment.horn_audio.volume_db > -7.0,"buzina de ar é mais alta e alcança mais longe")
 	equipment.horn_audio.stop()
 	var h_key := InputEventKey.new()

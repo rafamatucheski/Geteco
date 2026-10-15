@@ -2,6 +2,7 @@ extends Node3D
 ## Two positional voices per site, owned by the streamed chunk or active room.
 ## Recorded sources are cached; no synthesis or resource work in the frame loop.
 const CATALOG := preload("res://audio/v1_ambience/V1AudioCatalog.gd")
+const FIREFLY := preload("res://audio/FireflyBank.gd")
 var cavern := false
 var _enabled := true
 var _bed: AudioStreamPlayer3D
@@ -15,7 +16,7 @@ static var _crusher_stream: AudioStreamWAV
 func _ready() -> void:
 	name = "MineCavernAmbience" if cavern else "MineCrusherAmbience"
 	_bed = _voice("DrainWater" if cavern else "CrusherMotor", -28.0 if cavern else -22.0)
-	_detail = _voice("MineStructuralCreaks", -24.0 if cavern else -19.0)
+	_detail = _voice("MineStructuralCreaks", -26.0 if cavern else -24.0)
 	if cavern:
 		_bed.stream = CATALOG.bed("water", 0)
 		_bed.pitch_scale = .87
@@ -27,9 +28,17 @@ func _ready() -> void:
 			_crusher_stream.loop_end = maxi(1, roundi(_crusher_stream.get_length() * _crusher_stream.mix_rate) - 8)
 		_bed.stream = _crusher_stream
 		_bed.pitch_scale = .72
-	for index in 3: _details.append(CATALOG.regional("scrap", index))
+	for index in 3: _details.append(_recorded_detail(index))
 	visibility_changed.connect(_update_presence)
 	_update_presence()
+
+## Gotejar (caverna) e maquinário (britador) gravados no Firefly em 2026-10-15; sem o
+## arquivo importado, volta ao ranger do V1 em vez de ficar sem som.
+func _recorded_detail(index: int) -> AudioStream:
+	var key := "drip" if cavern else "machinery"
+	var total: int = FIREFLY.count("mining", key)
+	var recorded: AudioStream = FIREFLY.stream("mining", key, index % total) if total > 0 else null
+	return recorded if recorded != null else CATALOG.regional("scrap", index)
 
 func _voice(label: String, level: float) -> AudioStreamPlayer3D:
 	var voice := AudioStreamPlayer3D.new()
@@ -68,7 +77,7 @@ func _process(delta: float) -> void:
 	_detail_clock -= elapsed
 	if _detail_clock > 0.0 or _detail.playing: return
 	_detail.stream = _details[_variant % _details.size()]
-	_detail.pitch_scale = .78 + float(_variant % 3) * .07 if cavern else .94
+	_detail.pitch_scale = 1.0 if _details[0].resource_path.begins_with("res://audio/mining/") else (.78 + float(_variant % 3) * .07 if cavern else .94)
 	_detail.position = Vector3(2.0 + float(_variant % 3) * 3.0, 1.8, -2.0) if cavern else Vector3(0, 2, 0)
 	if _detail.stream != null: _detail.play()
 	_variant += 1

@@ -31,14 +31,14 @@ func run() -> void:
 		mix._play_detail()
 		check(mix.last_kind != previous, "Avoid consecutive identical cues")
 		check(mix.detail_clock >= 24.0 and mix.detail_clock <= 52.0, "Sparse randomized intervals")
-		check(mix.last_kind != "dog", "No nocturnal calls during day")
+		check(not mix.last_kind in ["dog", "coyote", "crickets"], "No nocturnal calls during day")
 		seen[mix.last_kind] = true
 	check(seen.has("scrap") and seen.has("birds") and seen.has("gust"), "Day palette near structures")
 	world.player.position = Vector3(-800, 0, -1100)
 	world.session.weather.time_of_day = 0.9
 	for i in 10:
 		mix._play_detail()
-		check(mix.last_kind in ["gust", "dog"], "Open desert at night must not play birds/metal")
+		check(mix.last_kind in ["gust", "wind", "dog", "coyote", "crickets"], "Open desert at night must not play birds/metal")
 	world.session.state.place_id = "desert_bank"
 	for i in 60: mix._process(0.1)
 	check(not mix.detail.playing and mix.gain < 0.13, "Interiors muffle wind and stop outdoor detail")

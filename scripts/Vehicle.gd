@@ -6,6 +6,7 @@ const PROTECTION := preload("res://gameplay/DamageProtection.gd")
 const STREET := preload("res://gameplay/street_physics/StreetPhysics.gd")
 const JUNCTIONS := preload("res://gameplay/traffic_junctions/TrafficJunctions.gd")
 const DOOR_SPECS := preload("res://data/catalogs/VehicleDoorSpecs.gd")
+const FIREFLY := preload("res://audio/FireflyBank.gd")
 const WHEELIE := preload("res://gameplay/MotorcycleWheelie.gd")
 const DESERT_GROUND := preload("res://gameplay/desert_cars/DesertVehicleGround.gd")
 const TRAFFIC_RAILS := preload("res://gameplay/traffic/TrafficRails.gd")
@@ -643,6 +644,8 @@ func burnout_strength() -> float:
 	if not brake_input or throttle_input <= .2 or not is_on_floor() or horizontal_velocity.length_squared() > .75*.75: return 0.0
 	return clampf(throttle_input, 0.0, 1.0)
 
+var _handbrake_held := false
+
 func _drive_player(delta: float) -> void:
 	_handling_frame = false
 	if handling != null and controlled and not external_input and not input_locked and not engine_disabled and health > 0:
@@ -650,6 +653,10 @@ func _drive_player(delta: float) -> void:
 		var axis: Vector2 = game_input.vehicle_input()
 		if manual_wheelie != null: axis.x *= manual_wheelie.steering_scale()
 		var handbrake := Input.is_action_pressed("handbrake")
+		# Só a puxada pelo botão faz barulho de alavanca; o burnout abaixo não é o freio de mão.
+		if handbrake != _handbrake_held:
+			_handbrake_held = handbrake
+			if handbrake: FIREFLY.handbrake(self)
 		var burnout: float = game_input.vehicle_burnout_throttle() if archetype != "army_tank" else 0.0
 		if burnout > 0.0:
 			axis.y = burnout
@@ -1199,7 +1206,10 @@ func door_layout(side: int) -> Dictionary:
 
 func animate_driver_door(side: int, opened: bool, duration := .28) -> void:
 	_ensure_door_presentation()
-	if is_instance_valid(door_presentation): door_presentation.set_open(side, opened, duration)
+	if is_instance_valid(door_presentation):
+		door_presentation.set_open(side, opened, duration)
+		# Som da porta no mesmo instante da folha (abrir ao chegar, bater ao fechar).
+		FIREFLY.door(self, side, opened)
 
 func _refresh_tuning_appearance() -> void:
 	# Restore paths may assign factory paint/identity after installing saved parts.

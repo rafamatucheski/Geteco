@@ -7,6 +7,7 @@ const BAILOUT := preload("res://gameplay/VehicleBailout.gd")
 const INTERIOR := preload("res://gameplay/VehicleInterior.gd")
 const BREAK_IN := preload("res://gameplay/VehicleBreakIn.gd")
 const DESERT_GROUND := preload("res://gameplay/desert_cars/DesertVehicleGround.gd")
+const FIREFLY := preload("res://audio/FireflyBank.gd")
 var _locked_entry := false
 var world
 var car: CharacterBody3D
@@ -273,6 +274,7 @@ func _complete_entry() -> void:
 		_force_detach("invalid_entry")
 		return
 	car.controlled = true
+	FIREFLY.ignition(car)
 	car.remove_meta("ambient_parked")
 	car.remove_meta("vehicle_locked")
 	car.external_input = false
@@ -363,6 +365,7 @@ func leave() -> bool:
 		_message("Saída bloqueada — afaste a moto" if car.archetype.begins_with("bike_") else "Saída bloqueada — afaste o carro")
 		return false
 	if moving: return _begin_bailout(point,momentum)
+	FIREFLY.engine_off(car)
 	car.controlled = false
 	car.external_input = false
 	car.input_locked = true

@@ -2,6 +2,12 @@ extends Node
 ## Bounded regional mix: one wind bed and one positional detail, no PCM synthesis.
 const CATALOG := preload("res://audio/v1_ambience/V1AudioCatalog.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
+const FIREFLY := preload("res://audio/FireflyBank.gd")
+## Gravados no Firefly (2026-10-15): coiote e grilos só de noite, rajada longa de vento a
+## qualquer hora. Cada um aponta para (pasta, nome) em audio/; sem o arquivo importado o
+## sorteio usa o som que já existia (cachorro à noite, rajada do V1 de dia).
+const RECORDED := {"coyote": ["wildlife", "coyote", "dog"], "crickets": ["wildlife", "crickets", "dog"],
+	"wind": ["desert_ambience", "wind", "gust"]}
 var world
 var wind: AudioStreamPlayer
 var detail: AudioStreamPlayer3D
@@ -33,10 +39,16 @@ func _ready() -> void:
 func _warm() -> void:
 	if not bank.is_empty(): return
 	wind.stream = CATALOG.regional("wind", 1)
-	for kind in ["gust", "scrap", "birds", "dog"]:
+	for kind in ["gust", "scrap", "birds", "dog", "coyote", "crickets", "wind"]:
 		bank[kind] = []
 		for variant in 3:
-			bank[kind].append(CATALOG.regional(kind, variant) if kind in ["gust", "scrap"] else CATALOG.detail(kind, variant))
+			var recorded: AudioStream = null
+			if RECORDED.has(kind):
+				var total: int = FIREFLY.count(RECORDED[kind][0], RECORDED[kind][1])
+				if total > 0: recorded = FIREFLY.stream(RECORDED[kind][0], RECORDED[kind][1], variant % total)
+			if recorded != null: bank[kind].append(recorded)
+			elif RECORDED.has(kind): bank[kind].append(CATALOG.regional(RECORDED[kind][2], variant) if RECORDED[kind][2] == "gust" else CATALOG.detail(RECORDED[kind][2], variant))
+			else: bank[kind].append(CATALOG.regional(kind, variant) if kind in ["gust", "scrap"] else CATALOG.detail(kind, variant))
 
 func _process(delta: float) -> void:
 	# Context and fades run at 10 Hz, without world scans or per-frame resource loads.
@@ -74,7 +86,8 @@ func _play_detail() -> void:
 	var dark := hour < 0.28 or hour > 0.78
 	var anchor := LAYOUT.WORKSHOP if point.distance_to(LAYOUT.WORKSHOP) < point.distance_to(LAYOUT.TRUCK_STOP) else LAYOUT.TRUCK_STOP
 	var near_structure := Vector2(point.x - anchor.x, point.z - anchor.z).length() < 48.0
-	var kinds: Array[String] = ["gust", "dog" if dark else "birds"]
+	var kinds: Array[String] = ["gust", "wind", "dog" if dark else "birds"]
+	if dark: kinds.append_array(["coyote", "crickets"])
 	if near_structure: kinds.append("scrap")
 	# Avoid consecutive identical cues; timing and direction are independently varied.
 	if kinds.has(last_kind): kinds.erase(last_kind)
@@ -82,9 +95,9 @@ func _play_detail() -> void:
 	last_kind = kind
 	detail.stream = bank[kind][rng.randi_range(0, 2)]
 	var angle := rng.randf_range(-PI, PI)
-	var distance := rng.randf_range(16.0, 30.0)
+	var distance := rng.randf_range(45.0, 80.0) if kind == "coyote" else rng.randf_range(16.0, 30.0)
 	detail.global_position = anchor + Vector3.UP * 2.0 if kind == "scrap" else point + Vector3(cos(angle) * distance, 2.0, sin(angle) * distance)
-	detail.volume_db = -25.0 if kind == "scrap" else (-21.0 if kind == "gust" else -24.0)
+	detail.volume_db = -25.0 if kind == "scrap" else (-21.0 if kind in ["gust", "wind"] else (-22.0 if kind == "coyote" else (-27.0 if kind == "crickets" else -24.0)))
 	detail.pitch_scale = rng.randf_range(0.94, 1.04)
 	if detail.stream != null: detail.play()
 	detail_clock = rng.randf_range(24.0, 52.0)

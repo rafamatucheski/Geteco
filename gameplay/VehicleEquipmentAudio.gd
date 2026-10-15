@@ -30,6 +30,21 @@ const HORN_PROFILES := {
 ## Famílias de buzina de ar: mais alta e com alcance maior que a de carro.
 const HEAVY_HORNS := ["truck", "bus", "fire_diesel", "tank"]
 static var horns: Dictionary = {}
+## Buzinas e sirene gravadas (Firefly, 2026-10-15): carro usa vehicle_fx/car_horn, buzina de
+## ar usa service_vehicles/horn. Moto continua no oscilador (não há gravação). Se o arquivo
+## ainda não foi importado, cai no oscilador, então o jogo nunca fica sem buzina.
+const FIREFLY := preload("res://audio/FireflyBank.gd")
+
+## A gravação vem da família (cada família cai numa das tomadas, sempre a mesma); o modelo
+## só desafina (mix_rate), como o oscilador fazia, então dois carros da mesma família não soam idênticos.
+static func _recorded_horn(family: String) -> AudioStreamWAV:
+	if family.begins_with("bike"): return null
+	var heavy := family in HEAVY_HORNS
+	var folder := "service_vehicles" if heavy else "vehicle_fx"
+	var key := "horn" if heavy else "car_horn"
+	var total: int = FIREFLY.count(folder, key)
+	if total == 0: return null
+	return FIREFLY.stream(folder, key, ("%s|" % family).hash() % total) as AudioStreamWAV
 
 static func is_heavy_horn(family: String) -> bool:
 	return family in HEAVY_HORNS
@@ -40,6 +55,13 @@ static func horn_stream(family: String = "street", archetype: String = "") -> Au
 	if not HORN_PROFILES.has(family): family = "street"
 	var key := family + "|" + archetype
 	if horns.has(key): return horns[key]
+	var recorded := _recorded_horn(family)
+	if recorded != null:
+		var voiced := recorded.duplicate() as AudioStreamWAV
+		if not archetype.is_empty(): voiced.mix_rate = roundi(float(recorded.mix_rate) * (1.0 + float(archetype.hash() % 9 - 4) * .01))
+		horns[key] = voiced
+		if family == "street" and archetype.is_empty(): horn = voiced
+		return voiced
 	var profile: Dictionary = HORN_PROFILES[family]
 	var detune := 1.0 if archetype.is_empty() else 1.0 + float(archetype.hash() % 9 - 4) * .01
 	var tones: Array = profile.tones
@@ -71,6 +93,11 @@ static func horn_stream(family: String = "street", archetype: String = "") -> Au
 
 static func siren_stream() -> AudioStreamWAV:
 	if siren: return siren
+	# Sirene gravada, tratada para repetir sem emenda; sem o arquivo fica o oscilador da V1.
+	var recorded: AudioStreamWAV = FIREFLY.loop("service_vehicles", "siren_loop.wav")
+	if recorded != null:
+		siren = recorded
+		return siren
 	var data := PackedByteArray()
 	data.resize(66150 * 2)
 	var phase := 0.0
