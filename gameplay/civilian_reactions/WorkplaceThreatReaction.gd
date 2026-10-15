@@ -2,7 +2,22 @@ extends Node
 ## Opt-in adapter for workers and counter staff excluded from street crowd AI.
 ## Owns a short collision-checked retreat, then returns to the interrupted post.
 ## It adds no damage or death API and never enrolls protected garage residents.
+## Estilos opcionais (moradores dos prédios, 15/10/2026): com `styles` vazio o
+## comportamento é o original (recuo curto protegendo o rosto). Com pesos, cada
+## incidente sorteia fugir, se esconder agachado, ligar para a polícia, encarar
+## e xingar, ficar paralisado com as mãos para cima ou implorar.
 signal threat_started(actor: Node3D)
+## Pedido de denúncia do estilo "call"; o dono decide se há o que denunciar.
+signal call_requested(actor: Node3D)
+const STYLE_LINES := {
+	"flee":["Socorro!", "Sai de perto de mim!", "Alguém me ajuda!"],
+	"hide":["Ai, meu Deus...", "Não me vê, não me vê...", "Fica quieto, fica quieto..."],
+	"call":["Alô, polícia? Tem gente armada aqui!", "Polícia? Rápido, por favor!", "Manda alguém agora, tem um maluco aqui!"],
+	"confront":["Ei! Tá maluco? Abaixa isso!", "Aqui não, parceiro. Some daqui!", "Vai arrumar confusão em outro lugar!"],
+	"freeze":["Calma... calma...", "Tá bom, tá bom, eu não fiz nada...", "Não atira..."],
+	"beg":["Por favor, não me machuca!", "Leva o que quiser, só não atira!", "Eu tenho família, por favor!"],
+}
+const BUBBLE_LIFE := 2.6
 const PROTECTION := preload("res://gameplay/DamageProtection.gd")
 const QUIET_SECONDS := 4.0
 const RETREAT_DISTANCE := 1.6
@@ -29,6 +44,18 @@ var _pose_owned := false
 var _static_pose: Array[Dictionary] = []
 var react_to_aim := false
 var _model_activity := ""
+## Pesos {estilo: peso}; vazio = só o recuo original.
+var styles: Dictionary = {}
+var style := "flee"
+var retreat_distance := RETREAT_DISTANCE
+var _origin := Vector3.ZERO
+var _clock := 0.0
+var _model_yaw := 0.0
+var _model_sit := 0.0
+var _model_seat := .45
+var _crouched := false
+var _bubble: Label3D
+var _bubble_life := 0.0
 
 static func install(owner_actor: Node3D, owner_model: Node3D, owner_gameplay: Node) -> Node:
 	if not is_instance_valid(owner_actor) or not is_instance_valid(owner_model) or not is_instance_valid(owner_gameplay): return null
@@ -74,15 +101,17 @@ func _explosion(origin: Vector3, radius: float, _source: Node) -> void:
 func _notice(origin: Vector3, radius: float) -> void:
 	if not _eligible() or actor.global_position.distance_squared_to(origin) > radius * radius: return
 	quiet_left = QUIET_SECONDS
+	_origin = origin
 	if active:
 		if returning:
 			returning = false
-			_target = _retreat_target(origin)
+			_target = _retreat_target(origin) if _moves() else actor.global_position
 		return
 	active = true
 	returning = false
 	_home = actor.global_position
-	_target = _retreat_target(origin)
+	_choose_style()
+	_target = _retreat_target(origin) if _moves() else actor.global_position
 	_actor_physics = actor.is_physics_processing()
 	_actor_process = actor.is_processing()
 	actor.set_physics_process(false)
@@ -96,8 +125,15 @@ func _notice(origin: Vector3, radius: float) -> void:
 	_claim_pose()
 	set_physics_process(true)
 	threat_started.emit(actor)
+	if not styles.is_empty(): _present_style()
 
 func _process(delta: float) -> void:
+	_clock += delta
+	if is_instance_valid(_bubble):
+		_bubble_life -= delta
+		if _bubble_life <= 0.0:
+			_bubble.queue_free()
+			_bubble = null
 	_scan_clock -= delta
 	if _scan_clock > 0.0: return
 	_scan_clock = .25
@@ -132,6 +168,11 @@ func _physics_process(delta: float) -> void:
 	if quiet_left <= 0.0 and not returning:
 		returning = true
 		_target = _home
+		# Levanta antes de voltar ao posto: nada de deslizar agachado.
+		if _crouched and is_instance_valid(body):
+			body.sit_amount = _model_sit
+			body.seat_height = _model_seat
+			_crouched = false
 	if actor is CharacterBody3D:
 		var offset := _target - actor.global_position
 		offset.y = 0.0
@@ -152,6 +193,8 @@ func _physics_process(delta: float) -> void:
 			if horizontal.length_squared() > .01:
 				model.rotation.y = actor._facing_yaw(horizontal) if actor.has_method("_facing_yaw") else atan2(-horizontal.x, -horizontal.z)
 		if returning and offset.length() < .06: _release(true)
+		elif style == "hide" and not returning and not _crouched and (offset.length() < .08 or actor.velocity.length_squared() < .0001):
+			_crouch(.85, .26)
 	elif returning:
 		_release(true)
 
@@ -162,9 +205,60 @@ func _retreat_target(origin: Vector3) -> Vector3:
 	if away.length_squared() < .01: away = Vector3.BACK
 	away = away.normalized()
 	for angle in [0.0, -.6, .6]:
-		var movement := away.rotated(Vector3.UP, angle) * RETREAT_DISTANCE
+		var movement := away.rotated(Vector3.UP, angle) * retreat_distance
 		if _safe_motion(movement): return actor.global_position + movement
 	return actor.global_position
+
+func _moves() -> bool:
+	return style in ["flee", "hide", "call"]
+
+func _choose_style() -> void:
+	style = "flee"
+	retreat_distance = RETREAT_DISTANCE
+	if styles.is_empty(): return
+	var total := 0.0
+	for key in styles: total += maxf(0.0, float(styles[key]))
+	var roll := randf() * total
+	for key in styles:
+		roll -= maxf(0.0, float(styles[key]))
+		if roll <= 0.0:
+			style = str(key)
+			break
+	# Quem foge vai mais longe; quem se esconde busca um canto; quem liga se afasta pouco.
+	match style:
+		"flee": retreat_distance = randf_range(1.6, 2.8)
+		"hide": retreat_distance = randf_range(1.8, 2.6)
+		"call": retreat_distance = 1.0
+
+func _present_style() -> void:
+	_face_threat()
+	match style:
+		"beg": _crouch(.9, .30)
+		"call": call_requested.emit(actor)
+	var lines: Array = STYLE_LINES.get(style, [])
+	if lines.is_empty() or randf() < .25: return # Nem todo mundo fala.
+	var text: String = lines[randi() % lines.size()]
+	if not is_instance_valid(_bubble):
+		_bubble = preload("res://gameplay/civilian_reactions/CivilianReactionPresenter.gd").create_bubble_label()
+		actor.add_child(_bubble)
+	var binding := preload("res://audio/VoiceActorBinding.gd").resolve(actor, "civilian_reaction")
+	var spoken := preload("res://audio/ActorDialogueVoice.gd").speak(actor, text, binding, _bubble)
+	_bubble.text = str(spoken.get("message", text))
+	_bubble_life = maxf(BUBBLE_LIFE, float(spoken.get("duration", 0.0)))
+
+func _face_threat() -> void:
+	if style not in ["confront", "freeze", "beg", "call"] or not is_instance_valid(model) or model.get_parent() == null: return
+	var parent := model.get_parent() as Node3D
+	var offset := parent.global_basis.inverse() * (_origin - actor.global_position)
+	if Vector2(offset.x, offset.z).length_squared() < .01: return
+	model.rotation.y = atan2(offset.x, offset.z)
+
+## Agachar/ajoelhar usa a pose sentada nativa do modelo a uma altura baixa.
+func _crouch(amount: float, height: float) -> void:
+	if not is_instance_valid(body) or body.get("sit_amount") == null or _crouched: return
+	_crouched = true
+	body.sit_amount = amount
+	body.seat_height = height
 
 func _safe_motion(movement: Vector3) -> bool:
 	if actor.test_move(actor.global_transform, movement): return false
@@ -187,6 +281,11 @@ func _claim_pose() -> void:
 	if not is_instance_valid(body): return
 	_hand_targets = body.hand_targets.duplicate()
 	_hand_provider = body.hand_provider
+	if body.get("sit_amount") != null:
+		_model_sit = float(body.sit_amount)
+		_model_seat = float(body.seat_height)
+	_crouched = false
+	if is_instance_valid(model): _model_yaw = model.rotation.y
 	_body_process = body.is_processing()
 	_body_lod = body.lod_enabled
 	body.hand_provider = _shield_hands
@@ -196,6 +295,17 @@ func _claim_pose() -> void:
 	_pose_owned = true
 
 func _shield_hands() -> Array:
+	var shake := sin(_clock * 23.0) * .012
+	match style:
+		"freeze": return [body.to_global(Vector3(-.24 + shake, 1.96, .06)), body.to_global(Vector3(.24 - shake, 1.96, .06))]
+		"beg":
+			var plead := sin(_clock * 3.0) * .03
+			return [body.to_global(Vector3(-.04, .98 + plead, .34)), body.to_global(Vector3(.04, .98 + plead, .34))]
+		"confront":
+			var jab := sin(_clock * 6.0) * .06
+			return [body.to_global(Vector3(-.26, .98, -.02)), body.to_global(Vector3(.22, 1.50 + jab, .34))]
+		"call": return [null, body.to_global(Vector3(.19, 1.6, .12))]
+		"hide": return [body.to_global(Vector3(-.14, 1.0 if _crouched else 1.6, .10)), body.to_global(Vector3(.14, 1.0 if _crouched else 1.6, .10))]
 	return [body.to_global(Vector3(-.19, 1.6, .12)), body.to_global(Vector3(.19, 1.6, .12))]
 
 func _release(resume: bool) -> void:
@@ -205,6 +315,11 @@ func _release(resume: bool) -> void:
 	if _pose_owned and is_instance_valid(body):
 		body.hand_provider = _hand_provider
 		body.hand_targets = _hand_targets
+		if _crouched and body.get("sit_amount") != null:
+			body.sit_amount = _model_sit
+			body.seat_height = _model_seat
+		_crouched = false
+		if not styles.is_empty() and is_instance_valid(model): model.rotation.y = _model_yaw
 		body.lod_enabled = _body_lod
 		if resume: body._pose(0.0)
 		body.set_process(_body_process)

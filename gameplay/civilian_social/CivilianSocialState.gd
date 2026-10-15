@@ -147,6 +147,16 @@ func _work_line() -> String:
 		"write": return "Papelada não acaba nunca. E você, como está levando o dia?"
 		"phone": return "Estava falando com o pessoal de casa. É bom saber que está tudo bem."
 		"check": return "Estou conferindo as coisas. Se eu me perder na conta, começo de novo."
+		"sit_write": return "Sentado aqui desde cedo. Essas contas não fecham sozinhas."
+		"sit_phone": return "Tava só vendo umas mensagens. O grupo da família não para."
+		"sit_read", "read": return "Achei uma leitura boa. Só falta um pouco de sossego pra terminar."
+		"tv": return "Tá passando o jogo. Senta aí se quiser, mas não fala do resultado."
+		"sit_doze": return "Eu? Dormindo? Só estava descansando os olhos."
+		"stretch": return "Acabei de acordar. Ainda estou me achando por aqui."
+		"coffee": return "Terceiro café do dia. Ou quarto, já perdi a conta."
+		"clean": return "Se eu não varrer, ninguém varre. Cuidado onde pisa."
+		"wander": return "Tô só andando um pouco pra esticar as pernas."
+		"chat": return "A gente estava colocando o papo em dia. Tudo certo?"
 		_: return "Achei uma leitura boa. Só falta um pouco de sossego pra terminar."
 
 func snapshot() -> Dictionary:

@@ -27,6 +27,7 @@ func configure(owner_actor: CharacterBody3D, owner_gameplay: Node, owner_reactio
 		# This adapter checks real weapons, floor and line of sight itself.
 		reaction.react_to_aim = false
 		reaction.threat_started.connect(_threat_started)
+		if reaction.has_signal("call_requested"): reaction.call_requested.connect(_call_requested)
 
 func _process(delta: float) -> void:
 	if not _eligible():
@@ -118,6 +119,11 @@ func _report_pending() -> bool:
 		for witness in report.witnesses:
 			if witness.ref.get_ref() == actor: return true
 	return false
+
+## Estilo "ligar para a polícia": só denuncia quem de fato vê o jogador armado;
+## a mesma deduplicação e o mesmo atraso de testemunho de _report_threat.
+func _call_requested(_resident: Node3D) -> void:
+	if _weapon_visible() and _visible_player(15.0): _report_threat()
 
 func _threat_started(_resident: Node3D) -> void:
 	social.frightened(8.0)
