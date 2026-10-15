@@ -5,6 +5,12 @@ class_name UrbanBrownstoneBuilding
 ## Features raised stone stoops, multi-pane sash windows with lintels, dentil cornices,
 ## rooftop water towers, and chimney stacks with clay flue pots.
 
+## Placa no vão entre o 1º e o 2º andar (verga de baixo termina em 4,09 m,
+## peitoril de cima começa em 4,55 m). Na altura antiga (5,55 m / topo-0,75)
+## a faixa de pedra cortava as janelas de cima ao meio.
+const SIGN_Y := 4.32
+const SIGN_H := 0.40
+
 func build() -> void:
 	if building_kind == "rowhouse_terrace":
 		_build_v1_terrace()
@@ -53,12 +59,15 @@ func build() -> void:
 		_build_stoop(Vector3(u_center_x - unit_w * 0.22, 0, front_z), u_door_mat, u)
 		
 		# Windows on ground floor and upper floor(s)
-		_build_unit_windows(u_center_x, unit_w, front_z, -1.0, 4, "u%d" % u)
+		# A bay window ocupa a coluna da direita; sem pular essas janelas o
+		# vidro saliente atravessava as duas.
+		var has_bay := (variant_seed + u) % 2 == 0
+		_build_unit_windows(u_center_x, unit_w, front_z, -1.0, 4, "u%d" % u, has_bay)
 		
 		# Metade dos brownstones ganha uma bay window saliente para
 		# quebrar a silhueta de caixa lisa (varia por variant_seed, nao
 		# por unidade, para nao empilhar saliencia em vitrines vizinhas).
-		if (variant_seed + u) % 2 == 0:
+		if has_bay:
 			_build_bay_window(Vector3(u_center_x + unit_w * 0.22, 0, front_z), u_mat)
 	
 	# Rooftop water tower on party line
@@ -67,9 +76,9 @@ func build() -> void:
 	# Chimneys on party walls
 	# Facade proper name signage if available
 	if not proper_name.is_empty():
-		var sign_node := UrbanSignage.create_sign_3d(proper_name, Vector2(minf(unit_w * 0.7, 3.2), 0.55), 0.06, UrbanMaterials.trim_stone())
+		var sign_node := UrbanSignage.create_sign_3d(proper_name, Vector2(minf(unit_w * 0.7, 3.2), SIGN_H), 0.06, UrbanMaterials.trim_stone())
 		if sign_node != null:
-			sign_node.position = Vector3(0, height - 0.75, front_z + 0.08)
+			sign_node.position = Vector3(0, SIGN_Y, front_z + 0.08)
 			visuals_root.add_child(sign_node)
 
 func _build_v1_terrace() -> void:
@@ -103,9 +112,9 @@ func _build_v1_terrace() -> void:
 		add_chimney(visuals_root,Vector3(center_x+unit_w*.30,unit_height+.05,-half_d*.45),1.35,int(profile.flues))
 		if bool(profile.dormer): _build_roof_dormer(center_x,unit_height,half_d)
 	if not proper_name.is_empty():
-		var sign_node := UrbanSignage.create_sign_3d(proper_name,Vector2(minf(building_size.x*.55,4.4),.52),.06,UrbanMaterials.trim_stone())
+		var sign_node := UrbanSignage.create_sign_3d(proper_name,Vector2(minf(building_size.x*.55,4.4),SIGN_H),.06,UrbanMaterials.trim_stone())
 		if sign_node != null:
-			sign_node.position=Vector3(0,5.55,half_d+.10)
+			sign_node.position=Vector3(0,SIGN_Y,half_d+.10)
 			visuals_root.add_child(sign_node)
 
 func _build_roof_dormer(center_x: float, unit_height: float, half_d: float) -> void:
@@ -237,7 +246,7 @@ func _build_bay_window(at: Vector3, wall_mat: StandardMaterial3D) -> void:
 
 	visuals_root.add_child(bay)
 
-func _build_unit_windows(unit_center_x: float, unit_w: float, front_z: float, unit_height := -1.0, pane_count := 4, key_prefix := "") -> void:
+func _build_unit_windows(unit_center_x: float, unit_w: float, front_z: float, unit_height := -1.0, pane_count := 4, key_prefix := "", skip_bay_side := false) -> void:
 	var trim_mat := UrbanMaterials.trim_stone()
 	var dark_mat := UrbanMaterials.window_interior_dark()
 
@@ -253,6 +262,11 @@ func _build_unit_windows(unit_center_x: float, unit_w: float, front_z: float, un
 
 		# Pair of windows per floor
 		for side_index in 2:
+			# A porta fica em -0,22 da largura e a janela em -0,26: no térreo
+			# as duas ocupavam o mesmo lugar (bandeira redonda sobre o vidro).
+			# A porta assume aquela posição, como num sobrado de verdade.
+			if f == 0 and side_index == 0: continue
+			if skip_bay_side and side_index == 1: continue
 			var side: float = win_x_offset if side_index == 1 else -win_x_offset
 			var wx: float = unit_center_x + side
 			var wy: float = floor_y + win_h * 0.5
@@ -260,6 +274,20 @@ func _build_unit_windows(unit_center_x: float, unit_w: float, front_z: float, un
 
 			# Projecting stone sill
 			add_mesh_box(visuals_root, "WindowSill", Vector3(wx, floor_y - 0.08, front_z + 0.12), Vector3(win_w + 0.24, 0.14, 0.26), trim_mat)
+			if PaintedWindow.enabled():
+				# Moldura, caixilho, cortina e verga desenhados num quad (ver PaintedWindow).
+				var window_key := "%s_f%d_s%d" % [key_prefix, f, side_index]
+				var pick := hash(building_id + window_key + str(variant_seed))
+				var quad := MeshInstance3D.new()
+				quad.name = "PaintedWindow"
+				var quad_mesh := QuadMesh.new()
+				quad_mesh.size = PaintedWindow.quad_size(win_w, win_h)
+				quad.mesh = quad_mesh
+				quad.position = Vector3(wx, wy + PaintedWindow.quad_center_offset_y(), front_z + 0.015)
+				quad.material_override = PaintedWindow.material(win_w, win_h, pane_count, posmod(pick, 5), posmod(variant_seed, 4), is_window_lit(window_key))
+				quad.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+				visuals_root.add_child(quad)
+				continue
 			# Heavy stone lintel
 			add_mesh_box(visuals_root, "WindowLintel", Vector3(wx, floor_y + win_h + 0.10, front_z + 0.08), Vector3(win_w + 0.28, 0.20, 0.16), trim_mat)
 

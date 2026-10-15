@@ -30,6 +30,7 @@ static func set_night(value: float) -> void:
 	for index in WINDOW_TONES.size():
 		var window := window_lit(index)
 		window.emission_energy_multiplier = lerpf(0.0, 1.8, night)
+	PaintedWindow.set_night(night)
 	shop_glass().emission_energy_multiplier = lerpf(0.05, 1.25, night)
 	lamp_head().emission_energy_multiplier = lerpf(0.0, 5.0, night)
 	# Additivo: cor zero some sem custo visual; a visibilidade do nó é

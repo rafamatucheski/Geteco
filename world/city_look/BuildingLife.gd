@@ -92,6 +92,7 @@ static func _glass_materials() -> Array:
 	for index in MATERIALS.UNLIT_VARIANTS: list.append(MATERIALS.window_unlit(index))
 	list.append(UrbanMaterials.glass_window())
 	list.append(UrbanMaterials.glass_display())
+	list.append_array(PaintedWindow.all_materials())
 	return list
 
 
