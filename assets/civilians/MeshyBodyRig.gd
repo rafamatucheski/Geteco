@@ -8,6 +8,7 @@ extends RefCounted
 ##
 ## Convenção de lados: `left_*` do CivilianModel fica em -X; no GLB do Meshy o "Left" fica em +X. O
 ## mapeamento é feito pelo lado geométrico, não pelo nome.
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const TARGET_HEIGHT := 1.76
 const BONE_PREFIX := "mixamorig_"
 ## Giro da mão em torno do antebraço (palma para a coxa). Variável só para experimentos de captura.
@@ -78,6 +79,11 @@ class PoseDriver extends Node:
 	var model: Node3D
 	var pending := 0.0
 	func _process(delta: float) -> void:
+		var began := STALL_WORK.begin()
+		_stall_process(delta)
+		STALL_WORK.finish("meshy.pose_driver", began)
+
+	func _stall_process(delta: float) -> void:
 		if not is_instance_valid(model) or not model.is_visible_in_tree():
 			pending = 0.0
 			return
@@ -138,6 +144,8 @@ func build(model: Node3D, source_path: String, tint := {}) -> void:
 	model.add_child(glb_root)
 	for simulator in glb_root.find_children("*", "PhysicalBoneSimulator3D", true, false):
 		_physical_simulators.append(simulator as PhysicalBoneSimulator3D)
+		# Diagnóstico: quando e por onde o simulador sai da árvore (pilha só existe se foi remove_child/free síncrono).
+		if STALL_WORK.session_enabled: simulator.tree_exiting.connect(_on_simulator_exiting.bind(simulator.get_instance_id()))
 	if model.pose_lod_enabled: update_physical_simulators()
 	model.skeleton = skeleton
 	model.mesh_node = mesh_node
@@ -332,12 +340,38 @@ func palm_position(side: int) -> Vector3:
 	var offset: Vector3 = _hand_sources[side].transposed() * _model.palm_offsets[side] / _scale
 	return skeleton.to_global(skeleton.get_bone_global_pose(_hand_bones[side]) * offset)
 
+func _on_simulator_exiting(simulator_id: int) -> void:
+	var frames: PackedStringArray = []
+	for entry in get_stack():
+		frames.append("%s:%d %s" % [str(entry.get("source", "")).get_file(), int(entry.get("line", 0)), entry.get("function", "")])
+	_log_simulator_event("exiting", ", ".join(frames.slice(0, 8)), simulator_id)
+
+## Registro único por evento no log de sessão (rótulo `retire.*` vira `lifecycle_events`): responde quem libera o
+## simulador de ossos e de qual ator/rig, que o erro antigo não dizia.
+func _log_simulator_event(kind: String, stack: String, simulator_id := 0) -> void:
+	var began := STALL_WORK.begin()
+	if began == 0: return
+	var details := {"kind": kind, "simulator_id": simulator_id, "process_frame": Engine.get_process_frames(), "stack": stack}
+	if is_instance_valid(_model):
+		details["model"] = str(_model.name)
+		details["model_in_tree"] = _model.is_inside_tree()
+		details["model_visible"] = _model.is_visible_in_tree() if _model.is_inside_tree() else false
+		details["model_queued_free"] = _model.is_queued_for_deletion()
+		var owner_actor: Variant = _model.get("_owner_actor")
+		if is_instance_valid(owner_actor):
+			details["actor"] = str(owner_actor.get_path()) if owner_actor.is_inside_tree() else str(owner_actor.name)
+			details["actor_dead"] = owner_actor.get("dead")
+			details["actor_queued_free"] = owner_actor.is_queued_for_deletion()
+	STALL_WORK.finish("retire.meshy_simulator", began, details)
+
 ## O importador instala um modificador ativo mesmo sem ossos físicos. Só uma simulação real precisa dele.
 func update_physical_simulators() -> bool:
 	var simulating := false
 	# Um simulador liberado (corpo desmontado/ragdoll limpo) ficava na lista e gerava um erro por quadro (5329 no log de 15/10).
 	for index in range(_physical_simulators.size() - 1, -1, -1):
-		if not is_instance_valid(_physical_simulators[index]): _physical_simulators.remove_at(index)
+		if not is_instance_valid(_physical_simulators[index]):
+			_physical_simulators.remove_at(index)
+			_log_simulator_event("pruned", "")
 	for simulator in _physical_simulators:
 		var running := simulator.is_simulating_physics()
 		if simulator.active != running: simulator.active = running

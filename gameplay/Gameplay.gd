@@ -2198,6 +2198,7 @@ func civilian_shoot(shooter: CharacterBody3D, origin: Vector3, amount: float) ->
 	_play_stream(AUDIO.gunfire_take("pistol", _rng), origin, NPC_GUNFIRE_DB, _rng.randf_range(0.95, 1.05), HEARING_GUNFIRE)
 	npc_gunfire.emit(origin, direction, shooter)
 	return true
+	STALL_WORK.finish("shot.npc", STALL_WORK.begin())
 
 func police_shoot(officer: CharacterBody3D, amount: float, weapon_id: String = "pistol") -> void:
 	if police_surrendering(): return
@@ -2223,6 +2224,7 @@ func police_shoot(officer: CharacterBody3D, amount: float, weapon_id: String = "
 	visual.attack()
 	npc_gunfire.emit(origin, direction, officer)
 	# Match the weapon carried and fired by this dispatched officer.
+	STALL_WORK.finish("shot.police", STALL_WORK.begin())
 	_play_stream(AUDIO.gunfire_take(weapon_id, _rng), origin, NPC_GUNFIRE_DB, _rng.randf_range(0.95, 1.05), HEARING_GUNFIRE)
 
 func _advance_police_rounds(delta: float) -> void:
