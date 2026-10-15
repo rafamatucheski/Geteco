@@ -97,6 +97,10 @@ static func _append(row: Dictionary) -> void:
 	# próximo; senão o corte da porta real abria no meio das janelas pintadas.
 	if kind in ["brownstone", "rowhouse_terrace"] and PaintedFacadeKit.enabled():
 		entry_local.x = PaintedFacadeKit.nearest_door_x(PaintedFacadeKit.residential_style(source_id), size.x, entry_local.x)
+	# Casas pintadas do Cobra e do Patrol Court: idem (size.x já é a largura pintada).
+	var painted_house := PaintedHarborHouses.style_for(source_id, kind)
+	if not painted_house.is_empty():
+		entry_local.x = PaintedFacadeKit.nearest_door_x(painted_house, size.x, entry_local.x)
 	var entry := at+basis*(entry_local+Vector3.BACK*.9)
 	var def := {
 		"id":id,"original_name":proper,"region":"harbor","source_id":source_id,

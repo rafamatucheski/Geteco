@@ -2,6 +2,11 @@ extends "res://world/urban_detail/UrbanSkylineBuilding.gd"
 ## Exterior-only houses and warehouses using the same static detail batching.
 func build() -> void:
 	_openings.clear()
+	# Patrol Court (porto): casa pintada inteira; ver PaintedHarborHouses.
+	var painted := PaintedHarborHouses.style_for(building_id, building_kind)
+	if not painted.is_empty():
+		PaintedHarborHouses.build(self, painted)
+		return
 	match building_kind:
 		"house_gable": _house()
 		"house_duplex": _duplex()

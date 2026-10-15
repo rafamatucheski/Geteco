@@ -8,6 +8,11 @@ var _openings: Array = []
 
 func build() -> void:
 	_openings.clear()
+	# Patrol Court (porto): casa pintada inteira; ver PaintedHarborHouses.
+	var painted := PaintedHarborHouses.style_for(building_id, building_kind)
+	if not painted.is_empty():
+		PaintedHarborHouses.build(self, painted)
+		return
 	match building_kind:
 		"urban_setback": _setback()
 		"urban_twin": _twin()

@@ -7,6 +7,10 @@ const FINISH := preload("res://world/urban_detail/CobraMaterials.gd")
 ## timber support posts, residential steps, and domestic window frames.
 
 func build() -> void:
+	var painted := PaintedHarborHouses.style_for(building_id, building_kind)
+	if not painted.is_empty():
+		PaintedHarborHouses.build(self, painted)
+		return
 	var half_w := building_size.x * 0.5
 	var half_d := building_size.y * 0.5
 
