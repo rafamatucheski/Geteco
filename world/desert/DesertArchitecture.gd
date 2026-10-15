@@ -11,7 +11,30 @@ static func _box(parent: Node3D,id: String,at: Vector3,size: Vector3,color: Colo
 	result.set_meta("desert_part_id",id)
 	return result
 
+## Posto Miragem pintado (PaintedFacadeKit, estilo posto-deserto): a fachada inteira
+## vira imagem e a caixa de colisão do kit substitui as paredes. O vão da casca 3D
+## era um recuo sólido (sem interior), então não há entrada de verdade para casar.
+const PAINTED_FUEL := "posto-deserto"
+
+static func _painted_fuel(data: Dictionary) -> Node3D:
+	var root := Node3D.new()
+	root.name=str(data.id)
+	root.position=data.position
+	var size: Vector3=data.size
+	var wall_h: float=PaintedFacadeKit.natural_size(PAINTED_FUEL).y
+	PaintedFacadeKit.build(root,PAINTED_FUEL,Vector3(size.x,wall_h,size.z),root,NAN,{"snow":false})
+	# Faixa laranja do topo da pintura recebe o nome próprio do posto.
+	G.sign_name(root,str(data.name),Vector3(0,wall_h*.89,size.z*.5+.06),48)
+	var details := Node3D.new()
+	details.name="AuthoredTownDetails"
+	root.add_child(details)
+	DETAILS._fuel_shop(details,size)
+	MATERIALS.batch_visuals(details)
+	return root
+
 static func building(data: Dictionary) -> Node3D:
+	if data.kind=="fuel" and PaintedFacadeKit.enabled() and FileAccess.file_exists(PaintedFacadeKit.ROOT+PAINTED_FUEL+"/style.json"):
+		return _painted_fuel(data)
 	var root := Node3D.new()
 	root.name=str(data.id)
 	root.position=data.position

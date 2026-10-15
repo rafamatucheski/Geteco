@@ -49,8 +49,24 @@ func _ready() -> void:
 			art.box("GuidePost",Vector3(x,.65,z),Vector3(.14,1.3,.14),"white",true)
 			art.box("GuideBand",Vector3(x,.89,z+.08),Vector3(.15,.22,.018),"rubber")
 	art.finish()
+	_admin_building()
 	for lane in 2: _arm(lane)
 	set_physics_process(false)
+
+## Prédio administrativo pintado (PaintedFacadeKit, estilo pedagio) ao lado da
+## pista, de frente para ela. Fica dentro da RESERVATION (x local 7,5..12,5) e fora
+## da cobertura e dos balizadores; cabine, cancelas e cobertura seguem em 3D porque
+## têm função (as cancelas giram, a cobertura protege as faixas).
+func _admin_building() -> void:
+	const STYLE := "pedagio"
+	if not PaintedFacadeKit.enabled() or not FileAccess.file_exists(PaintedFacadeKit.ROOT+STYLE+"/style.json"): return
+	var holder := Node3D.new()
+	holder.name="TollAdminBuilding"
+	holder.position=Vector3(10,0,0)
+	holder.rotation.y=-PI*.5
+	add_child(holder)
+	var natural := PaintedFacadeKit.natural_size(STYLE)
+	PaintedFacadeKit.build(holder,STYLE,Vector3(natural.x,natural.y,5.0),holder,NAN,{"snow":false})
 
 func _arm(lane: int) -> void:
 	var side:=1.0 if lane==0 else -1.0

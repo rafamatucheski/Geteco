@@ -336,8 +336,24 @@ static func build_chunk(parent: Node3D, rect: Rect2) -> Array[OmniLight3D]:
 	_build_access_markers(parent,rect)
 	return lights
 
+## Escritório da mina pintado (PaintedFacadeKit, estilo escritorio-mina) no lugar
+## da guarita de caixas: 10 m ao longo da estrada (z 121..131), 5 m de fundo
+## (x 9,5..14,5), de frente para a pista; o portão em z=134 fica livre.
+static func _painted_office(b: RefCounted, at: Vector3) -> bool:
+	const STYLE := "escritorio-mina"
+	if not PaintedFacadeKit.enabled() or not FileAccess.file_exists(PaintedFacadeKit.ROOT+STYLE+"/style.json"): return false
+	var holder := Node3D.new()
+	holder.name="MiningOffice"
+	holder.position=at
+	holder.rotation.y=-PI*.5
+	b.root.add_child(holder)
+	var natural := PaintedFacadeKit.natural_size(STYLE)
+	PaintedFacadeKit.build(holder,STYLE,Vector3(natural.x,natural.y,5.0),holder,NAN,{"snow":false})
+	return true
+
 static func _guardhouse(b: RefCounted) -> void:
 	var at := Vector3(12,0,126)
+	if _painted_office(b,at): _gate(b); return
 	b.box("GuardhouseFoundation",at+Vector3(0,.13,0),Vector3(5,.26,4.8),"concrete",true)
 	b.box("GuardhouseClosedBody",at+Vector3(0,1.55,0),Vector3(4.4,2.85,4.2),"cream",true)
 	b.box("GuardhouseRustRoof",at+Vector3(0,3.07,0),Vector3(5.05,.24,4.85),"rust",true)
@@ -350,6 +366,9 @@ static func _guardhouse(b: RefCounted) -> void:
 	for x in [-.6,.5,1.6]: b.box("WindowMullion",at+Vector3(x,1.9,2.144),Vector3(.055,1.06,.055),"white")
 	b.box("AirConditioner",at+Vector3(2.43,.8,1.0),Vector3(.5,.65,1.1),"steel",true)
 	for i in 5: b.box("AirConditionerSlat",at+Vector3(2.70,.59+float(i)*.1,1),Vector3(.025,.035,.91),"rubber")
+	_gate(b)
+
+static func _gate(b: RefCounted) -> void:
 	# The raised gate reads as an operating worksite and never blocks access.
 	for x in [-8.9,8.9]:
 		b.box("GateBollard",Vector3(x,.75,134),Vector3(.4,1.5,.4),"yellow",true)

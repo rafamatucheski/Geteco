@@ -6,6 +6,8 @@ const MATERIALS := preload("res://world/desert/DesertTownMaterials.gd")
 const CENTER := Vector3(-528,0,-822)
 const BOUNDS := Rect2(-565,-865,75,87)
 const APPROACH := Rect2(-536,-879,16,63)
+## Prédios pintados (PaintedFacadeKit) por estilo da vila; torre d'água fica em 3D.
+const PAINTED := {"adobe":"casa-adobe","stone":"casa-pedra-deserto","ranch":"casa-rancho","shed":"galpao-deserto","store":"armazem-santa-lua"}
 static var _parts_cache: Dictionary = {}
 static var _meshes: Dictionary = {}
 
@@ -75,6 +77,7 @@ static func build_record(parent: Node3D, data: Dictionary) -> Array[OmniLight3D]
 	var groups: Dictionary={}
 	for part in _parts(data):
 		if data.kind == "home" and part.id in ["ClosedDoor", "DoorPanel", "DoorHandle"]: continue
+		if part.get("hidden",false): continue
 		var key: String=part.shape+":"+part.finish
 		if not groups.has(key): groups[key]={"shape":part.shape,"finish":part.finish,"transforms":[]}
 		groups[key].transforms.append(Transform3D(Basis.from_euler(part.rotation)*Basis.from_scale(part.size),part.position))
@@ -90,16 +93,24 @@ static func build_record(parent: Node3D, data: Dictionary) -> Array[OmniLight3D]
 		if Engine.get_meta("geteco_live_preview_build",false): instance.set_meta("preview_instance_transforms",group.transforms)
 		instance.material_override=MATERIALS.material(group.finish)
 		village.add_child(instance)
+	var frame := painted_frame(data)
+	if not frame.is_empty(): _build_painted(village,frame)
 	if data.kind == "home":
 		var door := preload("res://world/desert/village/DesertVillageDoor.gd").new()
 		door.set_meta("place_id", data.id)
+		if not frame.is_empty():
+			# A folha de verdade (controlador de acesso) ocupa o vão pintado.
+			door.set_meta("door_size",frame.door_size-Vector2(.04,.06))
+			door.set_meta("door_style",frame.style)
+			door.set_meta("door_z",frame.size.z*.5-.04)
 		village.add_child(door)
-	if data.kind=="store": G.sign_name(village,"Santa Lua",Vector3(0,3.57,4.27),44)
+	# O armazém pintado já traz "Santa Lua" no letreiro da imagem.
+	if data.kind=="store" and frame.is_empty(): G.sign_name(village,"Santa Lua",Vector3(0,3.57,4.27),44)
 	var lights: Array[OmniLight3D]=[]
 	if data.get("lamp",false):
 		var lamp := OmniLight3D.new()
 		lamp.name="PorchLanternLight"
-		lamp.position=Vector3(1.45,2.65,5.1)
+		lamp.position=Vector3(_lantern_x(data),2.65,5.1)
 		lamp.light_color=Color("ffd29b")
 		lamp.omni_range=11.0
 		lamp.omni_attenuation=1.8
@@ -143,7 +154,87 @@ static func _beam(parts: Array[Dictionary],id: String,start: Vector3,end: Vector
 	var direction := end-start
 	_box(parts,id,(start+end)*.5,Vector3(width,direction.length(),width),finish,solid,Basis(Quaternion(Vector3.UP,direction.normalized())).get_euler())
 
+## Medidas do prédio pintado: estilo, tamanho (largura e altura naturais do estilo,
+## profundidade 8 m como a casa 3D) e deslocamento em X que põe o vão com folha da
+## frente em x=0, onde está a porta de verdade, o recuo da colisão e o walkup
+## (DesertVillageHomes). A casa de adobe e o galpão têm a porta no canto direito da
+## pintura, então o prédio corre para o lado em vez de a porta mudar de lugar.
+static func painted_frame(data: Dictionary) -> Dictionary:
+	if not data.kind in ["home","store"] or not PaintedFacadeKit.enabled(): return {}
+	var style: String=PAINTED.get("store" if data.kind=="store" else str(data.get("style","")),"")
+	if style.is_empty() or not FileAccess.file_exists(PaintedFacadeKit.ROOT+style+"/style.json"): return {}
+	var natural := PaintedFacadeKit.natural_size(style)
+	var size := Vector3(natural.x,natural.y,8.0)
+	var frame := {"style":style,"size":size,"dx":0.0,"door_size":Vector2.ZERO}
+	if data.kind=="home":
+		for opening in PaintedFacadeKit.openings(style,"front"):
+			if not opening.leaf: continue
+			var rect: Array=opening.rect
+			frame.dx=-(-size.x*.5+size.x*(float(rect[0])+float(rect[2]))*.5)
+			frame.door_size=Vector2((float(rect[2])-float(rect[0]))*size.x,(1.0-float(rect[1]))*size.y)
+			break
+	return frame
+
+static func _build_painted(village: Node3D,frame: Dictionary) -> void:
+	var holder := Node3D.new()
+	holder.name="Painted"
+	holder.position.x=frame.dx
+	village.add_child(holder)
+	# A colisão da vila é feita à parte (build_collision, com recuo da porta); o kit
+	# só precisa de um pai para ligar as portas que abrem, então recebe um nó solto.
+	var sink := Node3D.new()
+	PaintedFacadeKit.build(holder,frame.style,frame.size,sink,NAN,{"snow":false})
+	sink.free()
+	if frame.door_size==Vector2.ZERO: return
+	# Na entrada da casa a folha pintada sai: quem abre é a DesertVillageDoor.
+	for anchor in holder.find_children("Doorway_front","Node3D",true,false):
+		var center: float=holder.position.x+(anchor as Node3D).position.x+frame.door_size.x*.5
+		if absf(center)<.3 and anchor.has_node("Door"): anchor.get_node("Door").free()
+
+static func _lantern_x(data: Dictionary) -> float:
+	return -1.45 if not painted_frame(data).is_empty() else 1.45
+
+static func _painted_house(parts: Array[Dictionary],data: Dictionary,frame: Dictionary) -> void:
+	var size: Vector3=frame.size
+	var h: float=size.y
+	var dx: float=frame.dx
+	var finish: String=data.finish
+	if data.kind=="home":
+		# Mesma casca da casa 3D (recuo raso da porta), só invisível: a pintura cobre.
+		var recess: float=maxf(.75,frame.door_size.x*.5+.05)
+		_box(parts,"HouseRear",Vector3(dx,h*.5,-.75),Vector3(size.x,h,6.5),finish,true)
+		var left: float=dx-size.x*.5
+		var right: float=dx+size.x*.5
+		# Porta no canto (galpão): o lado curto pode não existir.
+		if -recess-left>.05: _box(parts,"HouseSide",Vector3((left-recess)*.5,h*.5,3.25),Vector3(-recess-left,h,1.5),finish,true)
+		if right-recess>.05: _box(parts,"HouseSide",Vector3((right+recess)*.5,h*.5,3.25),Vector3(right-recess,h,1.5),finish,true)
+		_box(parts,"DoorLintel",Vector3(0,(h+2.5)*.5,3.25),Vector3(recess*2.0,h-2.5,1.5),finish,true)
+	else:
+		_box(parts,"HouseShell",Vector3(dx,h*.5,0),size,finish,true)
+	for part in parts: part.hidden=true
+	_box(parts,"PorchPaving",Vector3(dx,.024,5.38),Vector3(size.x+.5,.046,3.1),"wood" if data.get("style","")=="ranch" else "stone")
+	_bench(parts,Vector3(-data.size.x*.28,0,5.23),0)
+	var planter_x: float=dx+size.x*.5-.6
+	if absf(planter_x)<1.4: planter_x=dx-size.x*.5+.6
+	_cylinder(parts,"PorchPlanter",Vector3(planter_x,.3,5.42),.32,.6,"rust",true)
+	for i in 5:
+		_beam(parts,"DryAgave",Vector3(planter_x,.5,5.42),Vector3(planter_x+sin(float(i)*TAU/5)*.4,1.02,5.42+cos(float(i)*TAU/5)*.4),.055,"wood")
+	if data.kind=="store":
+		for x in [-4.0,4.0]:
+			_box(parts,"ProduceCrate",Vector3(x,.47,5.37),Vector3(1.15,.94,.84),"wood",true)
+			for band in [-.35,.35]: _box(parts,"CrateBand",Vector3(x+band,.47,5.81),Vector3(.075,.96,.035),"steel")
+	if data.get("lamp",false):
+		var lx := -1.45
+		_box(parts,"LanternBracket",Vector3(lx,2.72,4.45),Vector3(.065,.065,.9),"steel")
+		_box(parts,"LanternBody",Vector3(lx,2.55,4.87),Vector3(.25,.36,.25),"cream")
+		_box(parts,"LanternCap",Vector3(lx,2.77,4.87),Vector3(.36,.075,.36),"steel")
+		for side in [-1.0,1.0]: _box(parts,"LanternFrame",Vector3(lx+side*.13,2.55,5.0),Vector3(.035,.4,.035),"steel")
+
 static func _house(parts: Array[Dictionary],data: Dictionary) -> void:
+	var frame := painted_frame(data)
+	if not frame.is_empty():
+		_painted_house(parts,data,frame)
+		return
 	var size: Vector3=data.size
 	var h := size.y
 	var style: String=data.get("style","store")
