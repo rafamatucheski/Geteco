@@ -151,6 +151,8 @@ static func _release_hands(visual: Node3D) -> void:
 ## de flutuar na pose de mira.
 static func _drop_weapon(actor: Node3D, visual: Node3D) -> void:
 	if not is_instance_valid(actor) or not is_instance_valid(visual): return
+	# A arma já virou item de coleta (Gameplay.drop_dead_weapon): o enfeite deitado não volta.
+	if actor.get_meta("dead_weapon_looted", false): return
 	var gun: Variant = visual.get("weapon")
 	if not gun is Node3D or not is_instance_valid(gun) or not gun.is_inside_tree(): return
 	gun.reparent(actor, true)

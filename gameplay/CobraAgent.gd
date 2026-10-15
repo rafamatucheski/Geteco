@@ -147,5 +147,6 @@ func receive_damage(amount: float, _source: Node = null) -> void:
 	set_physics_process(false)
 	var fall_direction: Vector3 = (global_position - (_source as Node3D).global_position).normalized() if _source is Node3D else Vector3.ZERO
 	preload("res://gameplay/CharacterFallPresentation3D.gd").apply_fall(self, visual, fall_direction)
-	gameplay.drop_ammo(global_position, weapon_id)
+	if gameplay.has_method("drop_dead_weapon"): gameplay.drop_dead_weapon(self, weapon_id)
+	else: gameplay.drop_ammo(global_position, weapon_id)
 	died.emit()

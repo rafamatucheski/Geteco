@@ -245,6 +245,7 @@ static func _family(material: StandardMaterial3D) -> String:
 		shared.vertex_color_use_as_albedo = true
 		shared.albedo_color = Color(1, 1, 1, material.albedo_color.a)
 		_family_materials[key] = shared
+		preload("res://world/chunk_bake/FamilyShaderVariants.gd").note(shared)
 	return key
 
 ## Lote com posição, normal, tangente, UV e cor por vértice, no espaço do escopo.

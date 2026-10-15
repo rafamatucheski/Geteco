@@ -2640,6 +2640,24 @@ func drop_ammo(point: Vector3, id: String) -> void:
 	if _rng.randf() <= (LOOT_ARMOR_CHANCE_HEAVY if heavy else LOOT_ARMOR_CHANCE):
 		spawn_loot("armor", "", LOOT_ARMOR_POINTS, point + Vector3(_rng.randf_range(-1.0, 1.0), 0, _rng.randf_range(-1.0, 1.0)))
 
+## Morte de policial/gangue com a arma na mão (15/10): a arma que cai é sempre o item de verdade, como no
+## GTA. Antes a arma da mão ficava deitada no chão como enfeite (modelo simplificado de NPC, sem coleta) e o
+## item só saía no sorteio de drop_ammo: o jogador via uma arma que não pegava. O colete continua sorteado.
+func drop_dead_weapon(actor: Node3D, id: String) -> void:
+	if not is_instance_valid(actor): return
+	var visual: Variant = actor.get("visual")
+	var gun: Variant = visual.get("weapon") if visual is Node else null
+	var point: Vector3 = actor.global_position
+	if gun is Node3D and is_instance_valid(gun):
+		point = Vector3(gun.global_position.x, actor.global_position.y, gun.global_position.z)
+		gun.visible = false
+	actor.set_meta("dead_weapon_looted", true)
+	if CATALOG.WEAPONS.has(id):
+		spawn_loot("weapon", id, _rng.randi_range(LOOT_AMMO.x, LOOT_AMMO.y), point)
+	var heavy := id == "m4a1"
+	if _rng.randf() <= (LOOT_ARMOR_CHANCE_HEAVY if heavy else LOOT_ARMOR_CHANCE):
+		spawn_loot("armor", "", LOOT_ARMOR_POINTS, point + Vector3(_rng.randf_range(-1.0, 1.0), 0, _rng.randf_range(-1.0, 1.0)))
+
 ## Civilian deaths roll independently of killer, crime and emergency response.
 func drop_cash(actor: Node3D) -> void:
 	if not is_instance_valid(actor) or actor == player or actor.get("dead") != true or PROTECTION.is_protected(actor): return

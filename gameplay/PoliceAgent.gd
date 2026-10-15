@@ -415,7 +415,8 @@ func receive_damage(amount: float, source: Node = null) -> void:
 		set_physics_process(false)
 		var impact_dir: Vector3 = (global_position - (source as Node3D).global_position).normalized() if source is Node3D else Vector3.ZERO
 		preload("res://gameplay/CharacterFallPresentation3D.gd").apply_fall(self, visual, impact_dir)
-		controller.drop_ammo(global_position, weapon_id)
+		if controller.has_method("drop_dead_weapon"): controller.drop_dead_weapon(self, weapon_id)
+		else: controller.drop_ammo(global_position, weapon_id)
 	else:
 		var hit_dir: Vector3 = (global_position - (source as Node3D).global_position).normalized() if source is Node3D else Vector3.ZERO
 		preload("res://gameplay/CharacterFallPresentation3D.gd").apply_hit(self, visual, hit_dir, amount)

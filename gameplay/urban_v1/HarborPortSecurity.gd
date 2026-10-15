@@ -135,8 +135,12 @@ func _spawn_staff(index: int) -> void:
 func _staff_died(staff: CharacterBody3D, index: int) -> void:
 	_staff_threatened(staff)
 	_staff_respawn[index] = 180.0
+	# Referência fraca: o corpo pode sair antes (trecho descarregado), e o timer disparava com a captura
+	# liberada ("Lambda capture at index 0 was freed", log de 15/10, 60 s depois de cada guarda morto).
+	var body_ref: WeakRef = weakref(staff)
 	get_tree().create_timer(60.0,false).timeout.connect(func():
-		if is_instance_valid(staff): staff.queue_free())
+		var body: Node = body_ref.get_ref()
+		if is_instance_valid(body): body.queue_free())
 
 func _staff_threatened(staff: Node3D) -> void:
 	if staff == _talking_staff and session.modal and is_instance_valid(_conversation_content) and _conversation_content.is_inside_tree():
