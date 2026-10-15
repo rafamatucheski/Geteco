@@ -6,6 +6,7 @@ const FLOOR_Y := 0.76822128
 const GROUND := preload("res://assets/regions/source/world/mountain_pass/MountainGroundMaterials.gd")
 const FINISH := preload("res://assets/regions/source/world/mountain_pass/MountainSurfaceFinish.gd")
 const SHADOW_FINISH := preload("res://world/mountain_detail/MountainShadowFinish.gd")
+const PAINTED_KIT := preload("res://world/urban_detail/PaintedFacadeKit.gd")
 var materials: Dictionary = {}
 var solids: Array[Dictionary] = []
 
@@ -60,19 +61,10 @@ func _station() -> void:
 	_slab(Rect2(7387,-1713,141,93), 0.09, 0.18, "stone")
 	var mesh_start := get_child_count()
 	var office_bounds := Rect2(LAYOUT.STATION_BOUNDS.position-LAYOUT.STATION_SHIFT,LAYOUT.STATION_BOUNDS.size)
-	_slab(office_bounds, 1.32, 2.64, "wood")
-	_solid(office_bounds, "MiniTerminalOffice")
-	var solid_index := solids.size()-1
-	for row in 11:
-		_box(Vector2(7457.5,-1649), 0.32 + row * 0.21, Vector3(6.93,0.045,0.075), "trim")
-	for x in [7419.0,7497.0]:
-		_box(Vector2(x,-1647),1.48,Vector3(1.72,1.24,0.11),"trim")
-		_box(Vector2(x,-1645),1.49,Vector3(1.48,1.01,0.08),"warm")
-		_box(Vector2(x,-1643),1.49,Vector3(0.045,1.04,0.07),"trim")
-	_box(Vector2(7460,-1647),1.2,Vector3(1.02,2.27,0.12),"trim")
-	_box(Vector2(7460,-1645),1.47,Vector3(0.80,1.36,0.07),"glass")
-	_roof(Vector2(7457.5,-1677),7.4,5.4,2.95,0.27)
-	_record_volume(solid_index,mesh_start)
+	if PAINTED_KIT.enabled():
+		_painted_office(office_bounds)
+	else:
+		_procedural_office(office_bounds, mesh_start)
 	var canopy := _box(Vector2(7457.5,-1635),2.70,Vector3(7.6,0.14,2.30),"roof")
 	canopy.rotation.x = 0.08
 	var cap := _box(Vector2(7457.5,-1635),2.81,Vector3(7.62,0.07,2.32),"snow")
@@ -87,6 +79,36 @@ func _station() -> void:
 	_sign("ÔNIBUS",Vector2(7380,-1725),2.53,Vector2(1.38,0.60),36)
 	_box(Vector2(7524,-1668),1.3,Vector3(0.15,1.53,0.9),"green")
 	_box(Vector2(7526,-1668),1.42,Vector3(0.07,1.2,0.69),"white")
+
+func _procedural_office(office_bounds: Rect2, mesh_start: int) -> void:
+	_slab(office_bounds, 1.32, 2.64, "wood")
+	_solid(office_bounds, "MiniTerminalOffice")
+	var solid_index := solids.size()-1
+	for row in 11:
+		_box(Vector2(7457.5,-1649), 0.32 + row * 0.21, Vector3(6.93,0.045,0.075), "trim")
+	for x in [7419.0,7497.0]:
+		_box(Vector2(x,-1647),1.48,Vector3(1.72,1.24,0.11),"trim")
+		_box(Vector2(x,-1645),1.49,Vector3(1.48,1.01,0.08),"warm")
+		_box(Vector2(x,-1643),1.49,Vector3(0.045,1.04,0.07),"trim")
+	_box(Vector2(7460,-1647),1.2,Vector3(1.02,2.27,0.12),"trim")
+	_box(Vector2(7460,-1645),1.47,Vector3(0.80,1.36,0.07),"glass")
+	_roof(Vector2(7457.5,-1677),7.4,5.4,2.95,0.27)
+	_record_volume(solid_index,mesh_start)
+
+## Escritório/bilheteria pintado ("Terminal da Serra"). A pintura é de 14 m, mas o
+## terreno só tem ~8,3 m entre a encosta oeste e o caminho do ônibus (x=7550): fica
+## mais estreito e um pouco esticado na vertical para a porta não ficar anã. A frente
+## continua na linha da antiga; marquise, postes e bancos de verdade ficam na frente.
+func _painted_office(office_bounds: Rect2) -> void:
+	var size := Vector3(8.3, 3.8, 5.0)
+	var front := floor_from_local(Vector2(7457.5, office_bounds.end.y) - LAYOUT.ORIGIN)
+	var holder := Node3D.new()
+	holder.name = "PaintedTerminalOffice"
+	holder.position = front - Vector3(0, 0, size.z * 0.5)
+	add_child(holder)
+	PAINTED_KIT.build(holder, "terminal-serra", size, holder, NAN, {"snow": true})
+	var footprint := Rect2(Vector2(7457.5 - size.x * PPM * 0.5, office_bounds.end.y - size.z * PPM * FLOOR_Y), Vector2(size.x * PPM, size.z * PPM * FLOOR_Y))
+	_solid(footprint, "MiniTerminalOffice")
 
 func _shop() -> void:
 	_slab(Rect2(7703,-1682,174,105),0.10,0.20,"stone")

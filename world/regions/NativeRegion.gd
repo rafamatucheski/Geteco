@@ -33,6 +33,7 @@ const MOUNTAIN_JEEP_SCENERY := preload("res://world/mountain_jeep/MountainJeepSc
 const DRESSING := preload("res://world/regions/TerrainDressing3D.gd")
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
 const WALKUP_DOOR := preload("res://world/places/WalkupFacadeDoor.gd")
+const PAINTED_MOUNTAIN := preload("res://world/mountain_detail/PaintedMountainPlaces.gd")
 const DATA_PATH := "res://world/regions/OriginalWorldData.json"
 const CELL := 64.0
 const SCALE := 1.0/16.0
@@ -1429,7 +1430,12 @@ func _building(chunk: Node3D, data: Dictionary) -> void:
 		if facade.get("place_id", "") == "canal_north": WALKUP_DOOR.install(art, CATALOG.get_definition("canal_north"))
 
 func _mountain_place(chunk: Node3D, data: Dictionary) -> void:
-	if str(data.id).begins_with("mountain_cabin") or data.id == "lumberjack_shelter":
+	if PAINTED_MOUNTAIN.handles(str(data.id)):
+		# Chalés e loja da vila pintados; a porta de acesso continua a do WalkupFacadeDoor.
+		var painted: Node3D = PAINTED_MOUNTAIN.build(chunk, data)
+		painted.add_to_group("exterior_reveal_building")
+		WALKUP_DOOR.install(painted, data)
+	elif str(data.id).begins_with("mountain_cabin") or data.id == "lumberjack_shelter":
 		var art = _held_load("res://assets/regions/source/world/mountain_pass/art/winter_props/LumberjackCabin3D.gd").new()
 		art.add_to_group("exterior_reveal_building")
 		art.position = data.exterior_position

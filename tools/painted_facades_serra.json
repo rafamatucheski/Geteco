@@ -1,0 +1,20 @@
+{
+	"chale-cedro": {"module_w": 8.0, "side_w": 7.4,
+		"front": [{"rect": [0.432, 0.29, 0.568, 0.79], "leaf": true}],
+		"back": [{"rect": [0.785, 0.375, 0.902, 0.79], "leaf": true}]},
+	"chale-pedra": {"module_w": 8.0, "side_w": 7.6,
+		"front": [{"rect": [0.445, 0.505, 0.553, 0.925], "leaf": true}],
+		"back": [{"rect": [0.722, 0.555, 0.828, 0.925], "leaf": true}]},
+	"chale-enxaimel": {"module_w": 8.0, "side_w": 8.4,
+		"front": [{"rect": [0.355, 0.605, 0.462, 0.945], "leaf": true}, {"rect": [0.82, 0.625, 0.94, 0.945], "leaf": true}],
+		"back": [{"rect": [0.70, 0.605, 0.82, 0.93], "leaf": true}]},
+	"loja-casacos": {"module_w": 10.0, "side_w": 7.4,
+		"front": [{"rect": [0.388, 0.505, 0.49, 0.94], "leaf": true}, {"rect": [0.827, 0.525, 0.905, 0.935], "leaf": true}],
+		"back": [{"rect": [0.825, 0.495, 0.905, 0.935], "leaf": true}]},
+	"terminal-serra": {"module_w": 14.0, "side_w": 7.7,
+		"front": [{"rect": [0.455, 0.56, 0.545, 0.92], "leaf": true}, {"rect": [0.052, 0.56, 0.104, 0.92], "leaf": true}, {"rect": [0.856, 0.56, 0.905, 0.92], "leaf": true}],
+		"back": [{"rect": [0.607, 0.55, 0.693, 0.935], "leaf": true}]},
+	"pousada-serra": {"module_w": 12.0, "side_w": 8.2,
+		"front": [{"rect": [0.45, 0.575, 0.552, 0.925], "leaf": true}, {"rect": [0.453, 0.115, 0.548, 0.42], "leaf": true}],
+		"back": [{"rect": [0.732, 0.585, 0.835, 0.92], "leaf": true}]}
+}
