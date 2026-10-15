@@ -11,10 +11,12 @@ const ROUTE_PORT := [Vector3(150, 0, 82), Vector3(250, 0, 82), Vector3(250, 0, 3
 const ROUTES := {
 	"serra": [Vector3(650, 4, -290), Vector3(745, 4, -300), Vector3(745, 4, -425), Vector3(660, 4, -425)],
 	"ponte": [Vector3(440, 0, -285), Vector3(600, 0, -285)],
+	# Porto -> ponte -> serra e volta: o streaming entra em trechos novos com o jogo rodando (travadas de 15/10).
+	"travessia": [Vector3(330, 0, -285), Vector3(600, 0, -285), Vector3(700, 4, -300), Vector3(745, 4, -420)],
 	"deserto": [Vector3(-1040, 0, -1320), Vector3(-950, 0, -1320), Vector3(-950, 0, -1260), Vector3(-1040, 0, -1260)],
 }
 const SPEED := 12.0
-const WARMUP_LOOPS := 1
+var WARMUP_LOOPS := 1
 const MEASURE_LOOPS := 2
 const TOGGLES := ["GETECO_POP_VC", "GETECO_SUN_SHADOW_NEAR", "GETECO_TRAFFIC_RAILS", "GETECO_PED_POSE_LOD", "GETECO_LIGHT_BUDGET",
 	"GETECO_DETAIL_RANGE", "GETECO_BAKED_BUILDINGS", "GETECO_SKID_BUDGET", "GETECO_DASH_BATCH", "GETECO_DISPATCH_FAST",
@@ -32,6 +34,8 @@ static func requested() -> bool:
 	return false
 
 func _ready() -> void:
+	# Travessia mede a primeira passagem: sem volta de aquecimento.
+	if "--benchmark-route=travessia" in OS.get_cmdline_user_args(): WARMUP_LOOPS = 0
 	for argument in OS.get_cmdline_user_args():
 		if argument == "--benchmark-route=porto": route = ROUTE_PORT
 		var named := argument.trim_prefix("--benchmark-route=")
@@ -97,6 +101,7 @@ func _run() -> void:
 	var report := {"label": label, "build": "editor" if OS.has_feature("editor") else ("export_release" if OS.has_feature("release") else "export_debug"),
 		"route": route_name if route_name != "" else ("porto" if route == ROUTE_PORT else "oeste"), "frames": frames.size(), "frame_ms": _stats(frames),
 		"gpu_ms_main": _stats(gpu), "draw_calls": _stats(draws), "toggles": toggles,
+		"frames_over_100ms": frames.filter(func(ms): return ms > 100.0).size(), "frames_over_250ms": frames.filter(func(ms): return ms > 250.0).size(),
 		"resolution": str(get_viewport().get_visible_rect().size), "vehicles": world.production.vehicles.size(), "people": world.people.size()}
 	print("BENCH_RELEASE ", JSON.stringify({"label": label, "frame_p50": report.frame_ms.p50, "frame_p95": report.frame_ms.p95, "draws_p50": report.draw_calls.p50}))
 	var folder := "user://benchmark-west"

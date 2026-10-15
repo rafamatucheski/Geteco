@@ -298,6 +298,29 @@ static func prime(chunk: Node3D, holder: Node, cell_rect: Rect2) -> void:
 			primed += 1
 	STALL_WORK.finish("tunnel.cutaway.prime", began, {"chunk": String(chunk.name), "materials": primed})
 
+## Pré-aquece só estes materiais (os da fusão por trecho, compartilhados entre trechos). prime() varre o
+## trecho inteiro e, chamado depois de cada fusão em jogo, recompilava material de trecho recém-montado:
+## picos de até 322 ms no log de 15/10.
+static func prime_materials(materials: Array, holder: Node, cell_rect: Rect2) -> void:
+	if not corridor_rect().intersects(cell_rect) or materials.is_empty(): return
+	var began := STALL_WORK.begin()
+	if not is_instance_valid(_primer):
+		_primer = MeshInstance3D.new()
+		_primer.name = "TunnelCutawayPrimer"
+		_primer.mesh = BoxMesh.new()
+		_primer.position = Vector3(0, -2000.0, 0)
+		holder.add_child(_primer)
+	var primed := 0
+	for source in materials:
+		if not source is StandardMaterial3D: continue
+		var key: int = source.get_instance_id()
+		if _primed.has(key) and _primed[key].source.get_ref() == source: continue
+		var copy := make_alpha_copy(source)
+		_primer.material_override = copy
+		_primed[key] = {"copy": copy, "source": weakref(source)}
+		primed += 1
+	if primed > 0: STALL_WORK.finish("tunnel.cutaway.prime_materials", began, {"materials": primed})
+
 func _copy_of(source: Material) -> StandardMaterial3D:
 	if not source is StandardMaterial3D: return null
 	var key := source.get_instance_id()

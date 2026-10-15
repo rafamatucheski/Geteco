@@ -61,12 +61,15 @@ static func finish_chunk(chunk: Node3D) -> Dictionary:
 	if report.batches > 0 and chunk.get_parent() != null:
 		var area := Rect2()
 		var first := true
+		var materials := {}
 		for batch in chunk.find_children("CellBatch*", "MeshInstance3D", true, false):
 			var box: AABB = batch.global_transform * batch.get_aabb()
 			var rect := Rect2(box.position.x, box.position.z, box.size.x, box.size.z)
 			area = rect if first else area.merge(rect)
 			first = false
-		TUNNEL_CUTAWAY.prime(chunk, chunk.get_parent(), area)
+			var material: Material = batch.mesh.surface_get_material(0)
+			if material != null: materials[material.get_instance_id()] = material
+		TUNNEL_CUTAWAY.prime_materials(materials.values(), chunk.get_parent(), area)
 	return report
 
 ## Registro em cache sai do trecho e volta em outro: as fontes reaparecem porque o lote ficou no trecho velho.
