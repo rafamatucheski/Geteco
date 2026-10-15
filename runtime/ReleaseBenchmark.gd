@@ -76,6 +76,9 @@ func _run() -> void:
 		var playable: bool = not get_tree().paused and world.session.ready_for_play and not get_viewport().disable_3d
 		if not playable: stable_since = -1
 		elif stable_since < 0: stable_since = Time.get_ticks_msec()
+	# Do início do processo até jogável e visível (carregamento, pré-aquecimentos e
+	# filme pulado pela espera acima): mede o custo de loading na mesma rodada.
+	var playable_ms := stable_since
 	var weather: Variant = world.session.weather
 	weather.time_of_day = 12.0 / 24.0
 	if "weather_state" in weather: weather.weather_state = 0
@@ -113,7 +116,9 @@ func _run() -> void:
 	var report := {"label": label, "build": "editor" if OS.has_feature("editor") else ("export_release" if OS.has_feature("release") else "export_debug"),
 		"route": route_name if route_name != "" else ("porto" if route == ROUTE_PORT else "oeste"), "frames": frames.size(), "frame_ms": _stats(frames),
 		"gpu_ms_main": _stats(gpu), "draw_calls": _stats(draws), "toggles": toggles,
-		"frames_over_100ms": frames.filter(func(ms): return ms > 100.0).size(), "frames_over_250ms": frames.filter(func(ms): return ms > 250.0).size(),
+		"frames_over_100ms": frames.filter(func(ms): return ms > 100.0).size(),
+		"frames_over_6_9ms": frames.filter(func(ms): return ms > 6.94).size(), "frames_over_16_7ms": frames.filter(func(ms): return ms > 16.7).size(),
+		"frames_over_33ms": frames.filter(func(ms): return ms > 33.3).size(), "playable_ms": playable_ms, "frames_over_250ms": frames.filter(func(ms): return ms > 250.0).size(),
 		"resolution": str(get_viewport().get_visible_rect().size), "vehicles": world.production.vehicles.size(), "people": world.people.size()}
 	print("BENCH_RELEASE ", JSON.stringify({"label": label, "frame_p50": report.frame_ms.p50, "frame_p95": report.frame_ms.p95, "draws_p50": report.draw_calls.p50}))
 	var folder := "user://benchmark-west"
