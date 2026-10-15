@@ -17,6 +17,7 @@ const PATROL := ["casa-patrol-a", "casa-patrol-b"]
 const HARBOR := {
 	"Laundry": "lavanderia", "UnionWorkshop": "oficina-artesao", "MarketHall": "mercado-municipal",
 	"FreightOffice": "escritorio-frete", "Aquarium": "aquario",
+	"MaritimeMuseum": "museu-maritimo", "ColdStorage": "camara-fria",
 }
 ## A casa do líder mantém a geometria antiga: CobraLeaderEntrance recorta HouseBody,
 ## FrontDoor e FrontPorch para a porta trancada da missão, e a fachada pintada não

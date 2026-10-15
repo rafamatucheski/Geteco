@@ -1,10 +1,10 @@
 extends SceneTree
 
-## Os cinco prédios comerciais do porto (lavanderia, marcenaria, mercado, escritório de
-## frete, aquário) montam a fachada pintada e não a geometria antiga/assada.
+## Os cinco prÃ©dios comerciais do porto (lavanderia, marcenaria, mercado, escritÃ³rio de
+## frete, aquÃ¡rio) montam a fachada pintada e nÃ£o a geometria antiga/assada.
 
 const IDS := {"Laundry": "lavanderia", "UnionWorkshop": "oficina-artesao", "MarketHall": "mercado-municipal",
-	"FreightOffice": "escritorio-frete", "Aquarium": "aquario"}
+	"FreightOffice": "escritorio-frete", "Aquarium": "aquario", "MaritimeMuseum": "museu-maritimo", "ColdStorage": "camara-fria"}
 
 func _init() -> void:
 	var rows: Array = JSON.parse_string(FileAccess.get_file_as_string("res://world/regions/OriginalWorldData.json")).get("harbor_buildings", [])
