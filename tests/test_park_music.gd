@@ -20,6 +20,8 @@ func run() -> void:
 	var voice := park.get_node_or_null("ParkMusic") as AudioStreamPlayer3D
 	check(voice != null and voice.playing, "parque toca a música")
 	check(voice != null and voice.stream is AudioStreamOggVorbis and (voice.stream as AudioStreamOggVorbis).loop, "a música repete")
+	var crowd := park.get_node_or_null("ParkCrowd") as AudioStreamPlayer3D
+	check(crowd != null and crowd.playing and crowd.stream is AudioStreamWAV and (crowd.stream as AudioStreamWAV).loop_mode == AudioStreamWAV.LOOP_FORWARD, "parque tem multidão em loop")
 	park.free()
 	await process_frame
 	print("PARK_MUSIC failures=", failures)

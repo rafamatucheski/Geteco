@@ -25,6 +25,7 @@ func _ready() -> void:
 ## Posicional: ouve-se de longe, baixinho, e ela cresce ao chegar. Sem o arquivo importado o parque
 ## segue mudo como antes.
 func _start_music() -> void:
+	_start_crowd()
 	var path := "res://audio/amusement_park/park_music.ogg"
 	if not ResourceLoader.exists(path) or get_node_or_null("ParkMusic") != null: return
 	var music := load(path) as AudioStreamOggVorbis
@@ -313,3 +314,19 @@ func _carriage() -> void:
 	for side in [-1,1]: bar.beam(Vector3(side*.65,0,0),Vector3(side*.65,0,-.82),.07,.07,"d4af63","metal")
 	bar.flush()
 	model.flush()
+
+## Murmúrio de multidão e crianças (Firefly, 2026-10-15), em loop por baixo da música.
+func _start_crowd() -> void:
+	var bank := preload("res://audio/FireflyBank.gd")
+	var crowd := bank.loop("amusement_park", "crowd_loop_%d.wav" % (randi() % 2))
+	if crowd == null or get_node_or_null("ParkCrowd") != null: return
+	var voice := AudioStreamPlayer3D.new()
+	voice.name = "ParkCrowd"
+	voice.stream = crowd
+	voice.bus = bank.bus_name()
+	voice.volume_db = -4.0
+	voice.unit_size = 18.0
+	voice.max_distance = 70.0
+	voice.position = Vector3(8, 2, 14)
+	add_child(voice)
+	voice.play(randf() * crowd.get_length())

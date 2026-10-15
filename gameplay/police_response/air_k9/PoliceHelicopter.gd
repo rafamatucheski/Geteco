@@ -4,6 +4,7 @@ const MODELS = preload("res://gameplay/police_response/air_k9/AirK9Models.gd")
 const AIRFRAME = preload("res://gameplay/police_response/air_k9/PoliceHelicopterArt.gd")
 const OFFICER = preload("res://gameplay/PoliceAgent.gd")
 const RAPPEL_POSE = preload("res://gameplay/police_response/air_k9/PoliceRappelPose.gd")
+const FIREFLY := preload("res://audio/FireflyBank.gd")
 const HOVER_HEIGHT := 13.0
 const ROPE_SEGMENTS := 10
 const DESCENT_SPEED := 2.3
@@ -73,12 +74,38 @@ func _ready() -> void:
 	add_child(spotlight)
 	_build_ropes()
 	sound = AudioStreamPlayer3D.new()
-	sound.stream = rotor_audio()
+	var recorded := _recorded_rotor()
+	sound.stream = recorded if recorded != null else rotor_audio()
 	sound.unit_size = 14.0
 	sound.max_distance = 105.0
-	sound.volume_db = -13.0
+	sound.volume_db = -9.0 if recorded != null else -13.0
 	add_child(sound)
 	sound.play()
+	_play_flyover()
+
+## Rotor gravado (Firefly, 2026-10-15) em loop; sem o arquivo importado fica o sintetizado.
+func _recorded_rotor() -> AudioStreamWAV:
+	var take := FIREFLY.take("helicopter", "rotor_loop") as AudioStreamWAV
+	if take == null: return null
+	var looped := take.duplicate() as AudioStreamWAV
+	looped.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	looped.loop_begin = 0
+	looped.loop_end = maxi(1, roundi(take.get_length() * take.mix_rate) - 8)
+	return looped
+
+## Passagem do helicóptero chegando: toca uma vez ao surgir, de mais longe que o rotor.
+func _play_flyover() -> void:
+	var flyover := FIREFLY.take("helicopter", "flyover")
+	if flyover == null: return
+	var voice := AudioStreamPlayer3D.new()
+	voice.stream = flyover
+	voice.bus = FIREFLY.bus_name()
+	voice.volume_db = -7.0
+	voice.unit_size = 20.0
+	voice.max_distance = 170.0
+	add_child(voice)
+	voice.finished.connect(voice.queue_free)
+	voice.play()
 
 func _physics_process(delta: float) -> void:
 	if not is_instance_valid(director): queue_free(); return

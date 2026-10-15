@@ -80,3 +80,15 @@ Fica de fora: machado, taco e soco gravados no lugar dos sintéticos, e a igniç
 `tests/test_firefly_sounds.gd` (existem, importados, sorteio de tiros, loops, camada posicional)
 e `tests/test_firefly_engine_layers.gd` (turbo, compressor, ré no mixer real). A qualidade
 do som é de ouvido; nenhum teste mede isso.
+
+## Últimos efeitos (15/10, 50 créditos) e música do parque (Gemini/Lyria)
+
+| Pasta | Som | Uso |
+|---|---|---|
+| `amusement_park/park_music.ogg` | calíope/carrossel, loop de 172 s | `ParkLume._start_music`, posicional, centro do parque |
+| `amusement_park/crowd_loop_0/1.wav` | multidão e crianças, loop | `ParkLume._start_crowd` |
+| `helicopter/rotor_loop_0..3.wav` | rotor em loop | `PoliceHelicopter._recorded_rotor` (cai no sintetizado sem arquivo) |
+| `helicopter/flyover_0/1.wav` | sobrevoo | `PoliceHelicopter._play_flyover`, uma vez ao surgir |
+| `forklift/mast_0..3.wav`, `pallet_drop_0..3.wav` | mastro hidráulico, palete caindo | **Não ligado**: o jogo não tem mecânica de garfo/palete para disparar |
+
+O bipe de ré gravado também toca na empilhadeira do porto (`WorldAudio`). Tratamento: `tools/audio/process_firefly_extras.py` e `process_park_music.py`.

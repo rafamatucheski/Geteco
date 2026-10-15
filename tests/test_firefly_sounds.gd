@@ -29,6 +29,7 @@ func run() -> void:
 		["vehicle_fx", "turbo_spool", 3], ["vehicle_fx", "turbo_spooldown", 3], ["vehicle_fx", "diesel_turbo", 3],
 		["service_vehicles", "horn", 3], ["wildlife", "coyote", 3], ["wildlife", "crickets", 1],
 		["mining", "drip", 3], ["mining", "machinery", 3], ["desert_ambience", "wind", 3],
+		["forklift", "mast", 3], ["forklift", "pallet_drop", 3], ["helicopter", "rotor_loop", 3], ["helicopter", "flyover", 2],
 	]
 	for bank in banks:
 		var count: int = FIREFLY.count(bank[0], bank[1])

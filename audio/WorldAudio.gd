@@ -535,8 +535,8 @@ func _update_firefly_foley(car: CharacterBody3D, throttle: float, sport_turbo: b
 		elif want < 0.04 and blower_audio.playing: blower_audio.stop()
 	elif blower_audio.playing:
 		blower_audio.stop()
-	# Bipe de ré dos pesados, só enquanto o veículo anda para trás.
-	if family in REVERSE_BEEP_FAMILIES and float(car.speed) < -0.4 and reverse_audio.stream != null:
+	# Bipe de ré dos pesados e da empilhadeira do porto, só enquanto o veículo anda para trás.
+	if (family in REVERSE_BEEP_FAMILIES or str(car.get("archetype")) == "port_forklift") and float(car.speed) < -0.4 and reverse_audio.stream != null:
 		reverse_audio.volume_db = -15.0
 		if not reverse_audio.playing: reverse_audio.play()
 	elif reverse_audio.playing:
