@@ -3,6 +3,7 @@ extends Node3D
 ## separately; every inhabited storey shares the main world and native depth.
 const MATERIALS = preload("res://world/places/ShopInteriorMaterials.gd")
 const DRESSING = preload("res://world/places/harbor_buildings/HarborBuildingDressing.gd")
+const CONTENT = preload("res://world/places/harbor_buildings/HarborBuildingContent.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 # Keep shell outer faces behind the resident facade, without moving inner faces.
 const EXTERIOR_CLEARANCE := .02
@@ -53,11 +54,14 @@ func box(at: Vector3, size: Vector3, color: String, solid: String = "", kind: St
 
 func _shell() -> void:
 	var entry_x: float = definition.get("entrance_local",Vector3.ZERO).x
-	var seed_value := absi(hash(str(definition.get("id", "building"))))
-	var palettes := ["b7b4a6", "c3b59b", "b4b8af", "b8aca0", "a8b1b3"]
-	var plaster: String = palettes[seed_value % palettes.size()]
 	var residential: bool = str(definition.get("archetype", "")) in ["residential", "apartments", "residence", "brownstone"]
-	box(Vector3(0,-.045,0),Vector3(width-EXTERIOR_CLEARANCE*2,.05,depth-EXTERIOR_CLEARANCE*2),"8b6646" if residential else "7e817b","","wood" if residential else "stone")
+	# Parede e piso seguem a paleta do prédio/andar (HarborBuildingContent), em
+	# vez de cinco rebocos fixos e um único piso por família.
+	var palette: Dictionary = CONTENT.palette_for(definition, floor_index, CONTENT.family(definition)) if definition.has("floor_count") else {}
+	var plaster: String = str(palette.get("wall", "b7b4a6"))
+	var floor_color: String = str(palette.get("floor", "8b6646" if residential else "7e817b"))
+	var floor_kind := "wood" if residential or str(definition.get("archetype", "")) == "hospitality" else "stone"
+	box(Vector3(0,-.045,0),Vector3(width-EXTERIOR_CLEARANCE*2,.05,depth-EXTERIOR_CLEARANCE*2),floor_color,"",floor_kind)
 	box(Vector3(0,1.35,-depth*.5+.12+EXTERIOR_CLEARANCE*.5),Vector3(width-EXTERIOR_CLEARANCE*2,2.7,.24-EXTERIOR_CLEARANCE),plaster,"BackWall","stone")
 	for side in [-1,1]:
 		# Low camera-facing edges preserve true depth and unbroken collision.
