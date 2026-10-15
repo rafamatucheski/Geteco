@@ -234,6 +234,7 @@ func _ready() -> void:
 				wheels.append(pivot)
 			part.reparent(pivots[center],false)
 			part.position -= center
+	_seat_wheels_on_ground(pivots)
 	traced = _trace_ready("pivots",traced)
 	if archetype.begins_with("bike_"):
 		manual_wheelie = WHEELIE.new()
@@ -284,6 +285,19 @@ func is_player_damage_source() -> bool:
 ## (direção, move_and_slide, efeitos), 6 deles somavam 0,4 ms por passo. Acorda por qualquer
 ## sinal: velocidade, aceleração pedida, batida (`crash_*`), suspensão do streaming, dano,
 ## condutor. `is_on_floor()` exige que já tenha pousado.
+## O hull de colisão apoia em y=0, mas os modelos da frota trazem o fundo do pneu entre
+## +3 cm (flutua) e -3 cm (afunda) (medido em tests/measure/measure_wheel_ground_contact.gd).
+## Reassenta a visual para o pneu mais baixo tocar o chão; ignora desvios grandes, que
+## são modelo sem pneus de verdade (tanque, esteiras).
+func _seat_wheels_on_ground(pivots: Dictionary) -> void:
+	var lowest := INF
+	for center: Vector3 in pivots:
+		for part in pivots[center].get_children():
+			if part is MeshInstance3D:
+				lowest = minf(lowest,center.y+(part as MeshInstance3D).get_aabb().position.y*part.scale.y+part.position.y)
+	if lowest == INF or absf(lowest) > .06: return
+	visual.position.y -= lowest*visual.scale.y
+
 func _is_resting() -> bool:
 	return not traffic and health > 0 and not controlled and absf(speed) < 0.05 and absf(throttle_input) < 0.01 		and horizontal_velocity.length_squared() < 0.0025 and velocity.length_squared() < 0.0025 and is_on_floor() 		and not has_meta("crash_stun") and not has_meta("awaiting_ground") and not has_meta("mining_released_load") and (manual_wheelie == null or manual_wheelie.pitch == 0)
 
