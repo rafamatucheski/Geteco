@@ -342,7 +342,10 @@ static func _build_batch(entries: Array, exact := false) -> ArrayMesh:
 	arrays[Mesh.ARRAY_NORMAL] = normals
 	if use_tangent: arrays[Mesh.ARRAY_TANGENT] = tangents
 	arrays[Mesh.ARRAY_TEX_UV] = uvs
-	arrays[Mesh.ARRAY_COLOR] = colors
+	# Material original (prédio com reveal) que não usa cor no vértice: sem atributo de cor. Material conhecido
+	# com formato de vértice novo é um pipeline novo, compilado no primeiro desenho: era o que travava na serra
+	# (cabanas, 15/10), e o pré-aquecimento das variantes da família não cobre o material original.
+	if not exact or family_material.vertex_color_use_as_albedo: arrays[Mesh.ARRAY_COLOR] = colors
 	arrays[Mesh.ARRAY_INDEX] = indices
 	var mesh := ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
