@@ -1,5 +1,39 @@
 {
 	"style": "pastilha-60",
+	"module": [
+		6.0,
+		7.003
+	],
+	"side": [
+		8.0,
+		6.998
+	],
+	"eave": 0.0,
+	"snow_roof": false,
+	"openings": {
+		"front": [
+			{
+				"rect": [
+					0.7348,
+					0.5415,
+					0.9155,
+					0.8887
+				],
+				"leaf": true
+			}
+		],
+		"back": [
+			{
+				"rect": [
+					0.6392,
+					0.4921,
+					0.8328,
+					0.8791
+				],
+				"leaf": true
+			}
+		]
+	},
 	"doors": {
 		"front": [
 			0.7348,

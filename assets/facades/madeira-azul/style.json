@@ -1,5 +1,39 @@
 {
 	"style": "madeira-azul",
+	"module": [
+		6.0,
+		7.003
+	],
+	"side": [
+		8.0,
+		6.998
+	],
+	"eave": 0.0,
+	"snow_roof": false,
+	"openings": {
+		"front": [
+			{
+				"rect": [
+					0.7081,
+					0.5474,
+					0.8914,
+					0.916
+				],
+				"leaf": true
+			}
+		],
+		"back": [
+			{
+				"rect": [
+					0.665,
+					0.5334,
+					0.8449,
+					0.8975
+				],
+				"leaf": true
+			}
+		]
+	},
 	"doors": {
 		"front": [
 			0.7081,

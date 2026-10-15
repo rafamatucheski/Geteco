@@ -1,5 +1,39 @@
 {
 	"style": "concreto-cinza",
+	"module": [
+		6.0,
+		7.009
+	],
+	"side": [
+		8.0,
+		6.998
+	],
+	"eave": 0.0,
+	"snow_roof": false,
+	"openings": {
+		"front": [
+			{
+				"rect": [
+					0.715,
+					0.543,
+					0.917,
+					0.896
+				],
+				"leaf": true
+			}
+		],
+		"back": [
+			{
+				"rect": [
+					0.695,
+					0.518,
+					0.869,
+					0.876
+				],
+				"leaf": true
+			}
+		]
+	},
 	"doors": {
 		"front": [
 			0.715,

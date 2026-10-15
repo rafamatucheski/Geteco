@@ -1,5 +1,39 @@
 {
 	"style": "fabrica-tijolo",
+	"module": [
+		6.0,
+		7.003
+	],
+	"side": [
+		8.0,
+		6.998
+	],
+	"eave": 0.0,
+	"snow_roof": false,
+	"openings": {
+		"front": [
+			{
+				"rect": [
+					0.581,
+					0.568,
+					0.885,
+					0.926
+				],
+				"leaf": true
+			}
+		],
+		"back": [
+			{
+				"rect": [
+					0.605,
+					0.518,
+					0.862,
+					0.906
+				],
+				"leaf": true
+			}
+		]
+	},
 	"doors": {
 		"front": [
 			0.581,

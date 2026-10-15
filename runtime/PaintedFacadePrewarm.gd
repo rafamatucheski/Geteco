@@ -1,7 +1,7 @@
 extends RefCounted
 ## Carrega e desenha sob a cortina todas as texturas do PaintedFacadeKit (paredes,
 ## telhados, portas e máscaras de luz noturna dos 9 estilos). Sem isto cada estilo
-## lia os JPG do pacote e subia para a GPU no primeiro sobrado que aparecia na
+## (todos os de assets/facades, inclusive telhado sem neve) lia os JPG do pacote e subia para a GPU no primeiro sobrado que aparecia na
 ## rua: no A/B de 15/10 o kit teve mais quadros >100 ms (8 e 5 contra 5 e 3).
 ## Mesma receita de BridgeLookPrewarm: caixas temporárias na frente da câmera por
 ## alguns quadros; os materiais ficam retidos no cache estático do kit.
@@ -19,9 +19,11 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 	if not GUARDS._current_camera(host, camera): return
 	var began := Time.get_ticks_usec()
 	var materials: Array = []
-	for style in PaintedFacadeKit.STYLES:
+	for style in PaintedFacadeKit.all_styles():
 		PaintedFacadeKit.style_data(style)
-		for part in PARTS: materials.append(PaintedFacadeKit.material(style, part))
+		for part in PARTS + ["roof_clear"]:
+			if ResourceLoader.exists(PaintedFacadeKit.ROOT + style + "/" + part + ".jpg"):
+				materials.append(PaintedFacadeKit.material(style, part))
 	materials.append(PaintedFacadeKit._corridor_material())
 	var visual := Node3D.new()
 	visual.name = "PaintedFacadePrewarm"

@@ -1,5 +1,39 @@
 {
 	"style": "comercio-terreo",
+	"module": [
+		6.0,
+		6.997
+	],
+	"side": [
+		8.0,
+		6.998
+	],
+	"eave": 0.0,
+	"snow_roof": false,
+	"openings": {
+		"front": [
+			{
+				"rect": [
+					0.671,
+					0.618,
+					0.879,
+					0.916
+				],
+				"leaf": true
+			}
+		],
+		"back": [
+			{
+				"rect": [
+					0.6297,
+					0.5567,
+					0.7846,
+					0.9233
+				],
+				"leaf": true
+			}
+		]
+	},
 	"doors": {
 		"front": [
 			0.671,

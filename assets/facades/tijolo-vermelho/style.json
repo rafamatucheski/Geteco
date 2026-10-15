@@ -1,5 +1,39 @@
 {
 	"style": "tijolo-vermelho",
+	"module": [
+		6.0,
+		7.003
+	],
+	"side": [
+		8.0,
+		6.998
+	],
+	"eave": 0.0,
+	"snow_roof": false,
+	"openings": {
+		"front": [
+			{
+				"rect": [
+					0.7374,
+					0.5481,
+					0.8906,
+					0.8591
+				],
+				"leaf": true
+			}
+		],
+		"back": [
+			{
+				"rect": [
+					0.7038,
+					0.5725,
+					0.8768,
+					0.8599
+				],
+				"leaf": true
+			}
+		]
+	},
 	"doors": {
 		"front": [
 			0.7374,

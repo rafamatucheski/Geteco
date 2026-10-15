@@ -1,5 +1,39 @@
 {
 	"style": "tijolo-londrino",
+	"module": [
+		6.0,
+		7.003
+	],
+	"side": [
+		8.0,
+		6.998
+	],
+	"eave": 0.0,
+	"snow_roof": false,
+	"openings": {
+		"front": [
+			{
+				"rect": [
+					0.7279,
+					0.5858,
+					0.888,
+					0.9078
+				],
+				"leaf": true
+			}
+		],
+		"back": [
+			{
+				"rect": [
+					0.6951,
+					0.5437,
+					0.8819,
+					0.896
+				],
+				"leaf": true
+			}
+		]
+	},
 	"doors": {
 		"front": [
 			0.7279,
