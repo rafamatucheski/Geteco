@@ -86,7 +86,8 @@ func _weather():
 func _weather_raining() -> bool:
 	var weather = _weather()
 	if weather == null or controller.world.player == null: return false
-	if int(weather.weather_state) not in [1, 2]: return false
+	# rain_strength_at já segue a chuva gradual (engrossa/afina com o ciclo).
+	if not weather.has_method("rain_strength_at") and int(weather.weather_state) not in [1, 2]: return false
 	# A neve de Mountain não enche poça; a costura segue o mesmo peso regional da chuva.
 	var focus: Vector3 = weather.atmosphere.focus_position(controller)
 	if weather.has_method("rain_strength_at"): return weather.rain_strength_at(focus)>.001

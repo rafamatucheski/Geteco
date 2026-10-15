@@ -32,6 +32,21 @@ var coastal_wetness := 0.0
 var _visual_clouds := -1.0
 var _covered := false
 var _weather_rng := RandomNumberGenerator.new()
+# Chuva apresentada (0..1). O ciclo natural muda `weather_state` e a chuva
+# engrossa/afina até o alvo; troca feita de fora (teste, chegada, save) é
+# instantânea, porque quem força um clima espera vê-lo no mesmo quadro.
+var rain_level := 0.0
+var _known_state := -1
+const RAIN_RISE_SECONDS := 22.0
+const RAIN_FALL_SECONDS := 14.0
+# Nuvens fecham em ~1 min no ciclo natural; antes eram 4 s e o céu "piscava".
+const CLOUD_NATURAL_SECONDS := 30.0
+# Troca forçada mantém a transição curta de antes (o céu não corta seco).
+const CLOUD_FORCED_SECONDS := 4.0
+var _cloud_seconds := CLOUD_FORCED_SECONDS
+# Duração (s) de cada estado no ciclo natural: 0 limpo, 1 garoa, 2 tempestade,
+# 3 nublado. Com dia de 24 min isso dá ~4–7 trocas por dia em vez de 8–16.
+const STATE_SECONDS := {0: Vector2(300, 540), 1: Vector2(180, 300), 2: Vector2(120, 210), 3: Vector2(150, 300)}
 
 # Harbor V1 grades clear daylight almost neutrally and keeps blue shadow fill
 # (`profiles/harbor.tres`: sunlight 1.025/1.015/.985, shadow .91/.98/1.065).
@@ -75,6 +90,11 @@ func _ready() -> void:
 	weather_state = int(controller.state.world_state.get("weather",0))
 	rain_intensity = clampf(float(controller.state.world_state.get("rain_intensity",.22)),.14,.30)
 	coastal_wetness = clampf(float(controller.state.world_state.get("coastal_wetness",1.0 if weather_state in [1,2] else 0.0)),0.0,1.0)
+	# Save antigo não tem o timer: começava sempre em 120 s depois de carregar.
+	var saved_timer: Variant = controller.state.world_state.get("weather_timer",weather_timer)
+	if typeof(saved_timer) in [TYPE_INT,TYPE_FLOAT] and is_finite(float(saved_timer)):
+		weather_timer = clampf(float(saved_timer),1.0,600.0)
+	_sync_external_state()
 	precipitation = GPUParticles3D.new()
 	precipitation.amount = 600
 	precipitation.lifetime = 1.6
@@ -156,7 +176,11 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	# Harbor moisture continues while visiting shelters/other regions; snow does
 	# not fill the coastal streets and entering a room cannot dry them instantly.
-	coastal_wetness = COASTAL_LOOK.advance_wetness(coastal_wetness,weather_state in [1,2],delta)
+	_sync_external_state()
+	var rain_target := _rain_target()
+	var rain_seconds := RAIN_RISE_SECONDS if rain_target > rain_level else RAIN_FALL_SECONDS
+	rain_level = lerpf(rain_level,rain_target,1.0-exp(-maxf(delta,0.0)/rain_seconds))
+	coastal_wetness = COASTAL_LOOK.advance_wetness(coastal_wetness,rain_level>.08,delta)
 	if "--benchmark" not in OS.get_cmdline_user_args():
 		var next_time := fposmod(time_of_day+delta/DAY_LENGTH_SECONDS,1.0)
 		# Virada da meia-noite conta um dia para a fase da lua (salvo no mundo).
@@ -166,11 +190,7 @@ func _process(delta: float) -> void:
 	if controller.state.region_id != "mountain":
 		weather_timer -= delta
 		if weather_timer <= 0:
-			weather_timer = _weather_rng.randf_range(90,180)
-			var roll := _weather_rng.randf()
-			# Occasional heavy storms join the natural cycle; keep drizzle distinct.
-			weather_state = 0 if roll<.42 else 3 if roll<.70 else 1 if roll<.92 else 2
-			if weather_state==1: rain_intensity = _weather_rng.randf_range(.14,.30)
+			_advance_natural_weather()
 	var focus: Vector3 = REGIONAL_ATMOSPHERE.focus_position(controller)
 	COVERAGE.follow(precipitation,get_viewport().get_camera_3d(),focus)
 	hail.global_position = focus+Vector3.UP*10
@@ -188,6 +208,34 @@ func _process(delta: float) -> void:
 	controller.state.world_state.weather = weather_state
 	controller.state.world_state.rain_intensity = rain_intensity
 	controller.state.world_state.coastal_wetness = coastal_wetness
+	controller.state.world_state.weather_timer = weather_timer
+
+## Ciclo natural como frente de tempo: não pula etapa. Céu limpo só fecha em
+## nublado, tempestade só nasce de garoa e sempre afina em garoa antes de abrir.
+func _advance_natural_weather() -> void:
+	var roll := _weather_rng.randf()
+	match weather_state:
+		0: weather_state = 3
+		3: weather_state = 1 if roll<.45 else 0
+		1: weather_state = 2 if roll<.25 else 1 if roll<.45 else 3
+		2: weather_state = 1
+		_: weather_state = 0
+	if weather_state==1: rain_intensity = _weather_rng.randf_range(.14,.30)
+	_known_state = weather_state
+	_cloud_seconds = CLOUD_NATURAL_SECONDS
+	var span: Vector2 = STATE_SECONDS.get(weather_state,Vector2(180,300))
+	weather_timer = _weather_rng.randf_range(span.x,span.y)
+
+## Troca de clima feita fora do ciclo natural: a chuva aparece inteira na hora.
+func _sync_external_state() -> void:
+	if weather_state==_known_state: return
+	_known_state = weather_state
+	rain_level = _rain_target()
+	_cloud_seconds = CLOUD_FORCED_SECONDS
+
+func _rain_target() -> float:
+	return 1.0 if weather_state==2 else rain_intensity if weather_state==1 else 0.0
+
 ## Dia do ciclo lunar. Save antigo sem o campo começa no quarto crescente,
 ## para a primeira noite já ter alguma lua.
 func moon_day() -> int:
@@ -209,6 +257,7 @@ func _inside_shelter() -> bool:
 	return not controller.state.place_id.is_empty()
 
 func _update() -> void:
+	_sync_external_state()
 	var daylight := clampf(sin((time_of_day-.25)*TAU)*1.5+.25,0,1)
 	var inside: bool = not controller.state.place_id.is_empty() and not _embedded_building()
 	var mountain: bool = controller.state.region_id == "mountain"
@@ -221,7 +270,7 @@ func _update() -> void:
 	var desert: float = REGIONAL_ATMOSPHERE.desert_weight(focus)
 	var rain_exposure := (1.0-regional_weight)*(1.0-desert)
 	var target_clouds := _harbor_overcast()
-	_visual_clouds = target_clouds if _visual_clouds < 0.0 else lerpf(_visual_clouds,target_clouds,1.0-exp(-maxf(atmosphere_step,0.0)/4.0))
+	_visual_clouds = target_clouds if _visual_clouds < 0.0 else lerpf(_visual_clouds,target_clouds,1.0-exp(-maxf(atmosphere_step,0.0)/_cloud_seconds))
 	var local_clouds := _visual_clouds*(1.0-desert)
 	var clouds: float = lerpf(local_clouds,front,regional_weight)
 	if inside: clouds = front if mountain else _harbor_overcast()
@@ -298,7 +347,8 @@ func _update() -> void:
 	weather_audio.set_conditions(rain_strength,covered)
 	weather_audio.set_interior_silence(inside)
 	weather_audio.set_dialogue_focus(controller.session!=null and controller.session.get("dialogue_open")==true)
-	storm.sync(rain_exposure,covered)
+	# Raio só quando a chuva já engrossou: a tempestade chega, não estoura.
+	storm.sync(rain_exposure*smoothstep(.55,.9,rain_level),covered)
 	var palette: Dictionary = atmosphere.current
 	surface_effects.set_conditions(focus,hail.amount_ratio if hail.emitting else 0.0,float(palette.get("haze",0)),palette.get("fog_color",Color.WHITE),covered,desert,_harbor_overcast())
 	wind_audio.volume_db = lerpf(-30,-17,float(mountain_weather.get("intensity",0.0)))-(14.0 if covered else 0.0)+linear_to_db(maxf(.001,regional_weight))
@@ -308,8 +358,8 @@ func _update() -> void:
 ## Regional precipitation also drives wheel spray and puddles. The saved Harbor
 ## weather remains intact while the desert presents dry wind instead.
 func rain_strength_at(point: Vector3) -> float:
-	var strength := 1.0 if weather_state==2 else rain_intensity if weather_state==1 else 0.0
-	return strength*(1.0-REGIONAL_ATMOSPHERE.weights_at(point).mountain)*(1.0-REGIONAL_ATMOSPHERE.desert_weight(point))
+	_sync_external_state()
+	return rain_level*(1.0-REGIONAL_ATMOSPHERE.weights_at(point).mountain)*(1.0-REGIONAL_ATMOSPHERE.desert_weight(point))
 
 func _harbor_overcast() -> float:
 	match weather_state:

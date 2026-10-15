@@ -26,14 +26,29 @@ func run() -> void:
 	weather.set_process(false)
 	weather._weather_rng.seed = 28092026
 	var counts := [0,0,0,0]
+	# Frente de tempo: limpo só vira nublado e tempestade só nasce/termina em garoa.
+	var allowed := {0:[3],3:[0,1],1:[1,2,3],2:[1]}
 	for i in 1000:
+		var previous: int = weather.weather_state
 		weather.weather_timer = 0
 		weather._process(0)
 		counts[weather.weather_state] += 1
-		check(weather.weather_timer>=90 and weather.weather_timer<=180,"Natural weather duration remains bounded")
+		check(weather.weather_state in allowed.get(previous,[0,1,2,3]),"Natural weather never skips a stage")
+		check(weather.weather_timer>=120 and weather.weather_timer<=540,"Natural weather duration remains bounded")
 	check(counts[2]>0 and counts[2]<counts[1] and counts[2]<counts[3],"Natural storms occur less often than drizzle and overcast")
 	check(counts[0]>0 and counts[1]>0 and counts[3]>0,"Natural cycle retains clear, drizzle and overcast")
 	weather.weather_timer = 10000
+	weather.weather_state = 0
+	weather._process(0)
+	weather.rain_level = 0.0
+	# Simula o ciclo natural (que marca o estado como conhecido) entrando em tempestade.
+	weather.weather_state = 2
+	weather._known_state = 2
+	weather._process(1.0)
+	check(weather.rain_level<.2,"Natural storm builds up instead of starting at full strength")
+	weather._process(120.0)
+	check(weather.rain_level>.95,"Natural storm reaches full strength")
+	check(float(world.session.state.world_state.get("weather_timer",-1))==weather.weather_timer,"Time to next weather change is saved")
 	weather.weather_state = 1
 	weather.rain_intensity = .22
 	weather._update()

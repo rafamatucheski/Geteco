@@ -688,7 +688,11 @@ func _wetness() -> float:
 	var world := get_parent()
 	var session = world.get("session") if world != null else null
 	var weather = session.get("weather") if session != null else null
-	return 1.0 if weather != null and int(weather.weather_state) in [1, 2] else 0.0
+	if weather == null: return 0.0
+	# Aderência segue a rua: molha aos poucos e continua escorregadia enquanto
+	# seca, em vez de voltar inteira no instante em que a chuva para.
+	if weather.has_method("get_coastal_wetness"): return clampf(float(weather.get_coastal_wetness()), 0.0, 1.0)
+	return 1.0 if int(weather.weather_state) in [1, 2] else 0.0
 
 ## A consulta é reaproveitada: alocar uma PhysicsShapeQueryParameters3D (e o array `exclude`) por
 ## carro por passo era custo à toa. O formato é reatribuído porque o esmagamento pesado o troca.
