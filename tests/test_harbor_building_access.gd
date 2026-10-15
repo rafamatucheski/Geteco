@@ -52,6 +52,10 @@ func _check_facade(parent: Node3D, definition: Dictionary) -> void:
 	var access := ACCESS.install(art,str(definition.source_id))
 	await physics_frame
 	access.set_open_amount(1.0)
+	# Fachada pintada: a folha da entrada é sólida fechada e só gira quando o jogador
+	# chega (PaintedDoor). Aqui ninguém chega; abre como o jogador abriria.
+	for door in art.find_children("Door","",true,false):
+		if door.get_parent().has_meta("walk_in") and door.has_method("set_open_amount"): door.set_open_amount(1.0)
 	await physics_frame
 	await physics_frame
 	check(access.access_ready,"Facade admits a prepared room "+str(definition.id))

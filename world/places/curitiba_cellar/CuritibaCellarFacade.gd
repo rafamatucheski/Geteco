@@ -8,6 +8,9 @@ func _ready() -> void:
 	name = "CuritibaCellarFacade"
 	set_meta("place_id","harbor_curitiba_cellar")
 	add_to_group("curitiba_cellar_facade")
+	# Entrada de empurrar (WeaponShopEntrance): as folhas deslizam ao empurrar.
+	# Antes ninguém as abria e só a ação silenciosa "Entrar" levava para dentro.
+	add_to_group("v2_walkin_facade")
 	box("RearShell",Vector3(0,1.8,-5.35),Vector3(14,3.6,.3),"afa38c","RearShell","stone")
 	for side in [-1,1]:
 		box("SideShell%d"%side,Vector3(side*6.85,1.8,0),Vector3(.3,3.6,11),"b9ad95","SideShell%d"%side,"stone")

@@ -74,6 +74,7 @@ func restore_exterior() -> void:
 		if is_instance_valid(item.node): item.node.set_deferred("disabled",item.disabled)
 	_replacement_body.collision_layer = 0
 	if _door_visual != null: _door_visual.hide()
+	_hold_painted_doors(false)
 	for item in _labels:
 		if is_instance_valid(item.node): item.node.visible = item.visible
 	for item in _effects:
@@ -86,6 +87,8 @@ func restore_exterior() -> void:
 func set_floor_view(floor_index: int, storey_height: float, rooftop := false) -> void:
 	if not _prepared: _prepare_access()
 	set_open_amount(1.0)
+	# Jogador dentro: a folha pintada da entrada fica aberta até ele sair.
+	_hold_painted_doors(true)
 	var key := "%d/%s"%[floor_index,str(rooftop)]
 	if key == _view_key: return
 	_view_key = key
@@ -204,6 +207,10 @@ func _prepare_access() -> void:
 	_prepare_multimeshes()
 	for node in facade.find_children("*","CollisionShape3D",true,false):
 		if node.shape == null or node.is_queued_for_deletion(): continue
+		# A folha pintada da entrada tem colisão própria que gira com ela. Área de
+		# detecção não é sólido: desligá-la junto com as paredes deixava a porta
+		# pintada sem abrir para sempre depois que a sala era preparada (a 8 m).
+		if node.get_parent().has_meta("painted_door_leaf") or node.get_parent() is Area3D: continue
 		var relative: Transform3D = global_transform.affine_inverse()*node.global_transform
 		if node.shape is BoxShape3D and not _access_bounds().intersects(relative*AABB(-node.shape.size*.5,node.shape.size)): continue
 		_original_shapes.append({"node":node,"disabled":node.disabled})
@@ -403,6 +410,11 @@ func _add_box_shape(bounds: AABB) -> void:
 	node.shape = shape
 	node.position = bounds.get_center()
 	_replacement_body.add_child(node)
+
+func _hold_painted_doors(open: bool) -> void:
+	if facade == null: return
+	for anchor in facade.find_children("Doorway_front*","Node3D",true,false):
+		if anchor.has_meta("walk_in") and anchor.has_node("Door"): anchor.get_node("Door").hold(open)
 
 ## Peça de PaintedFacadeKit (paredes/telhado pintados, porta própria que abre devagar).
 static func _painted_part(node: Node) -> bool:

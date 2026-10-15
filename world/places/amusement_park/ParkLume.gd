@@ -219,10 +219,20 @@ func _track() -> void:
 
 func _house() -> void:
 	var c := Vector3(20,0,-12)
-	box("UmbraFacade",c+Vector3(0,2.55,0),Vector3(18,5.1,15),"423e4a",true,"wood")
-	box("UmbraPlinth",c+Vector3(0,.17,0),Vector3(18.6,.34,15.6),"71665f",true,"stone")
-	# Door is presented outside the solid facade; FullSession transfers on interaction.
-	box("UmbraDoor",c+Vector3(0,1.3,7.58),Vector3(2.3,2.6,.10),"181b24")
+	# Fachada maciça com um vão de 2,3 x 2,6 m recuado 1,3 m: as folhas da UmbraDoor
+	# giram para dentro dele (antes a porta era uma placa colada na parede e não abria).
+	for side in [-1,1]:
+		box("UmbraFacade",c+Vector3(side*5.075,2.55,0),Vector3(7.85,5.1,15),"423e4a",true,"wood")
+		box("UmbraPlinth",c+Vector3(side*5.225,.17,0),Vector3(8.15,.34,15.6),"71665f",true,"stone")
+	box("UmbraFacade",c+Vector3(0,3.85,0),Vector3(2.3,2.5,15),"423e4a",true,"wood")
+	box("UmbraFacade",c+Vector3(0,1.3,-.65),Vector3(2.3,2.6,13.7),"423e4a",true,"wood")
+	box("UmbraPlinth",c+Vector3(0,.17,-.8),Vector3(2.3,.34,14.0),"71665f",true,"stone")
+	# Fundo escuro do recuo e soleira no nível da calçada (sem degrau no vão).
+	box("UmbraDoorDark",c+Vector3(0,1.3,6.215),Vector3(2.3,2.6,.03),"0b0b10")
+	box("UmbraThreshold",c+Vector3(0,.012,6.9),Vector3(2.3,.024,1.6),"5a5049",false,"stone")
+	var door := preload("res://world/places/amusement_park/UmbraDoor.gd").new()
+	door.position = c+Vector3(0,0,7.5)
+	add_child(door)
 	for side in [-1,1]:
 		box("DoorJamb",c+Vector3(side*1.25,1.45,7.73),Vector3(.22,2.9,.28),"928171")
 		box("Tower",c+Vector3(side*7.5,3.55,0),Vector3(2.1,7.1,4),"4c4552")

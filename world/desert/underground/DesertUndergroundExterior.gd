@@ -195,7 +195,10 @@ func _build_well() -> void:
 	lid_body.collision_mask = 0
 	var lid_shape := CollisionShape3D.new()
 	var cylinder := CylinderShape3D.new()
-	cylinder.radius = 0.98
+	# Menor que a tampa desenhada (0,98 m): a descida leva o Dante até a borda a
+	# 0,95 m do centro com move_and_collide, e com o raio cheio a tampa o barrava a
+	# 1,25 m; a entrada "Entrar" abortava sem descer (auditoria de portas, 15/10).
+	cylinder.radius = 0.6
 	cylinder.height = 0.1
 	lid_shape.shape = cylinder
 	lid_body.add_child(lid_shape)

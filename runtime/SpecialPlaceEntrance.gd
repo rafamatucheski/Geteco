@@ -12,6 +12,7 @@ var busy := false
 var blocked_id := ""
 var current_place := ""
 var exit_armed := false
+var _arrival_clock := 0.0
 var hatch: Node3D
 var hatch_id := ""
 var culvert_hold := 0.0
@@ -37,6 +38,7 @@ func update(delta: float) -> void:
 	if place != current_place:
 		current_place = place
 		exit_armed = false
+		_arrival_clock = 0.0
 	if handles_place(place):
 		if not is_instance_valid(session.room) or _blocked(): return
 		if place == CULVERT:
@@ -45,8 +47,18 @@ func update(delta: float) -> void:
 			session.anchor.position = session.anchor.position.lerp(focus, 1.0-exp(-delta*7.0))
 		var branch_offset: Vector3 = session.room.exit_position-session.world.player.global_position
 		branch_offset.y = 0
-		if branch_offset.length() > 1.3: exit_armed = true
-		if exit_armed and branch_offset.length() < .8 and session.world.player.velocity.dot(branch_offset.normalized()) > .3:
+		# Também arma 1 s depois de chegar: no Cano Entupido e no Dreno do Porto a
+		# chegada fica a 0,5 m da escada e entulho impede afastar 1,3 m; a saída nunca
+		# armava. Continua exigindo empurrar rumo à escada, então ninguém sai ao pousar.
+		_arrival_clock += delta
+		if branch_offset.length() > 1.3 or _arrival_clock > 1.0: exit_armed = true
+		var player: CharacterBody3D = session.world.player
+		var toward := branch_offset.normalized()
+		# Encostado na parede da escada a velocidade zera antes dos 0,8 m: contava só a
+		# velocidade e o jogador empurrando a escada nunca saía do bueiro (auditoria de
+		# portas 15/10: parado a 0,5 m da saída). Pedir movimento rumo à saída vale.
+		var pushing := player.velocity.dot(toward) > .3 or Vector3(player.move_intent.x, 0, player.move_intent.z).dot(toward) > .5
+		if exit_armed and branch_offset.length() < .8 and pushing:
 			_leave(place)
 		return
 	if not place.is_empty(): return

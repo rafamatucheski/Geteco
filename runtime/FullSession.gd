@@ -116,6 +116,12 @@ var door_transition: CanvasLayer
 var last_save_error := ""
 var _checkpoint_retry: Timer
 
+## Umbra (parque), Fagulha e Curitiba Cellar: entra-se empurrando a porta
+## (WeaponShopEntrance), mas a ação Entrar/Sair de antes continua valendo; a Umbra
+## é em primeira pessoa e o indicador da saída é o que o jogador procura lá dentro.
+func _keeps_interaction_access(id: String) -> bool:
+	return id in ["harbor_haunted_house", "harbor_arcade", "harbor_curitiba_cellar"]
+
 func _uses_walkup_access(id: String) -> bool:
 	return (weapon_shop_entrance != null and weapon_shop_entrance.handles_place(id)) or (special_place_entrance != null and special_place_entrance.handles_place(id)) or (building_entrance != null and building_entrance.handles_place(id))
 
@@ -1506,7 +1512,7 @@ func nearest() -> Dictionary:
 		if not room_action.is_empty(): return room_action
 	if not arrival_action.is_empty(): return arrival_action
 	if not world.driving.occupied and not state.place_id.is_empty() and is_instance_valid(room):
-		if not _uses_walkup_access(state.place_id) and world.player.position.distance_to(room.exit_position) < 1.45: return {"id":"exit","label":"Sair","silent":state.place_id in ["harbor_arcade","harbor_curitiba_cellar","harbor_haunted_house"] or preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").is_building(state.place_id)}
+		if (not _uses_walkup_access(state.place_id) or _keeps_interaction_access(state.place_id)) and world.player.position.distance_to(room.exit_position) < 1.45: return {"id":"exit","label":"Sair","silent":state.place_id in ["harbor_arcade","harbor_curitiba_cellar","harbor_haunted_house"] or preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").is_building(state.place_id)}
 	var personal_action: Dictionary = personal_car.nearest_action()
 	if not personal_action.is_empty(): return personal_action
 	var residence_action: Dictionary = residence_services.nearest_action()
@@ -1525,7 +1531,7 @@ func nearest() -> Dictionary:
 		return vehicle_action if not vehicle_action.is_empty() else activities.nearest_action()
 	var point: Vector3 = world.player.position
 	if not state.place_id.is_empty():
-		if not _uses_walkup_access(state.place_id) and point.distance_to(room.exit_position) < 1.45: return {"id":"exit","label":"Sair","silent":state.place_id in ["harbor_arcade","harbor_curitiba_cellar","harbor_haunted_house"] or preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").is_building(state.place_id)}
+		if (not _uses_walkup_access(state.place_id) or _keeps_interaction_access(state.place_id)) and point.distance_to(room.exit_position) < 1.45: return {"id":"exit","label":"Sair","silent":state.place_id in ["harbor_arcade","harbor_curitiba_cellar","harbor_haunted_house"] or preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").is_building(state.place_id)}
 		var robbery_action: Dictionary = robberies.nearest_action()
 		if not robbery_action.is_empty(): return robbery_action
 		var original_action: Dictionary = services.nearest_action()
@@ -1567,7 +1573,7 @@ func nearest() -> Dictionary:
 	for entry in controller.region.entries:
 		if (SEWER_NETWORK.is_manhole(entry.place_id) or entry.place_id == "remote_coal_mine") and point.distance_to(entry.position) < 1.5:
 			return {"id":"enter","place":entry.place_id,"access":entry.id,"label":"","silent":true}
-		if _uses_walkup_access(entry.place_id): continue
+		if _uses_walkup_access(entry.place_id) and not _keeps_interaction_access(entry.place_id): continue
 		if point.distance_to(entry.position) < 1.5:
 			return {"id":"enter","place":entry.place_id,"access":entry.id,"label":"Entrar","silent":entry.place_id in ["harbor_arcade","harbor_curitiba_cellar","harbor_haunted_house"] or preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").is_building(entry.place_id)}
 	var mission_action: Dictionary = mission_world.nearest_action()
@@ -1946,7 +1952,7 @@ func _update_world_indicator() -> void:
 		if pack_target.is_finite(): target = pack_target
 	if fishing != null and fishing.active: target = fishing.target_position()
 	var maciota_exterior_marker: bool = state.place_id.is_empty() and target.is_equal_approx(world.maciota_place.entry_position)
-	var automatic_shop_exit: bool = _uses_walkup_access(state.place_id) and is_instance_valid(room) and target.is_equal_approx(room.exit_position)
+	var automatic_shop_exit: bool = _uses_walkup_access(state.place_id) and not _keeps_interaction_access(state.place_id) and is_instance_valid(room) and target.is_equal_approx(room.exit_position)
 	var indicator_camera: Camera3D = amusement_park.view if amusement_park != null and amusement_park.house_view and is_instance_valid(amusement_park.view) else world.camera
 	marker.visible = target.is_finite() and not maciota_exterior_marker and not automatic_shop_exit and not indicator_camera.is_position_behind(target)
 	if marker.visible: marker.position = indicator_camera.unproject_position(target+Vector3.UP*.06)

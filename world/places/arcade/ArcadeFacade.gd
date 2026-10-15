@@ -7,6 +7,9 @@ func _ready() -> void:
 	name = "FagulhaFacade"
 	set_meta("place_id", "harbor_arcade")
 	add_to_group("arcade_facade")
+	# Entrada de empurrar (WeaponShopEntrance): as folhas deslizam ao empurrar.
+	# Antes ninguém as abria e só a ação silenciosa "Entrar" levava para dentro.
+	add_to_group("v2_walkin_facade")
 	box("BackShell",Vector3(0,1.75,-4.87),Vector3(12,3.5,.26),"585361","BackShell","stone")
 	for side in [-1,1]:
 		box("SideShell%d"%side,Vector3(side*5.87,1.75,0),Vector3(.26,3.5,10),"675b62","SideShell%d"%side,"stone")

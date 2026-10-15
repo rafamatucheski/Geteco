@@ -49,6 +49,10 @@ var route := PackedVector3Array()
 var waypoint := 0
 var speed := 1.6
 var automatic_direction := Vector3.ZERO
+## Direção que o jogador pede neste passo físico (controle ou automática), mesmo
+## quando uma parede zera a velocidade. Saídas por "empurrar" (escada do bueiro)
+## leem isto: encostado na escada a velocidade é zero e a saída nunca disparava.
+var move_intent := Vector3.ZERO
 var controlled_automatically := false
 var input_locked := false
 var ski_controller
@@ -330,6 +334,7 @@ func _stall_physics_tick(delta: float) -> void:
 		var combat_speed := lerpf(2.3, 2.4 if alignment < 0.0 else 3.2, absf(alignment))
 		target_speed = minf(target_speed, combat_speed)
 	if is_player: target_speed *= float(get_meta("developer_speed_multiplier", 1.0))
+	move_intent = direction
 	velocity.x = direction.x * target_speed * lod_scale
 	velocity.z = direction.z * target_speed * lod_scale
 	# Floor snapping maintains support on flat ground and descents. Pushing an

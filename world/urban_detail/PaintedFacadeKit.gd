@@ -350,7 +350,12 @@ static func _door(root: Node3D, style: String, side: String, rect: Array, xform:
 	var leaf_h := (float(rect[3]) - float(rect[1])) * h
 	var bottom := (1.0 - float(rect[3])) * h
 	var anchor := Node3D.new()
-	anchor.name = "Doorway_" + side
+	# Nome único e legível: com dois vãos o Godot renomeava o segundo para "@Node3D@N"
+	# e quem procura "Doorway_front*" (ExteriorAccess, vila do deserto, testes) não o via.
+	var siblings := 0
+	for child in root.get_children():
+		if String(child.name).begins_with("Doorway_" + side): siblings += 1
+	anchor.name = "Doorway_" + side + ("" if siblings == 0 else "_%d" % (siblings + 1))
 	anchor.transform = xform.translated_local(Vector3(float(rect[0]) * w, bottom, 0))
 	root.add_child(anchor)
 	if walk_in: anchor.set_meta("walk_in", true)
@@ -382,7 +387,13 @@ static func _door(root: Node3D, style: String, side: String, rect: Array, xform:
 	inside.rotation.y = PI
 	inside.material_override = material(style, part + "_inside")
 	door.hinge.add_child(inside)
-	if walk_in and collision_parent != null: door.watch_player(Vector3(leaf_w + 0.4, leaf_h, DOOR_REACH))
+	if walk_in and collision_parent != null:
+		door.watch_player(Vector3(leaf_w + 0.4, leaf_h, DOOR_REACH))
+		# Folha sólida enquanto fechada: o corte da entrada (ExteriorAccess) abre 2,2 m
+		# na colisão do prédio e o jogador atravessava a porta pintada ainda fechada
+		# (auditoria 15/10: entrava antes de a folha abrir). Agora ele encosta, a folha
+		# gira e só então passa.
+		door.add_leaf_solid(Vector2(leaf_w, leaf_h))
 
 
 ## Dobradiça com abertura animada. Usa uma Area3D (física avisa a entrada) em vez
@@ -392,6 +403,9 @@ class PaintedDoor extends Node3D:
 	var open_amount := 0.0
 	var _tween: Tween
 	var _area: Area3D
+	var _solid: StaticBody3D
+	## Segura aberta enquanto o jogador está dentro do prédio (HarborBuildingExteriorAccess).
+	var held := false
 
 	func _init() -> void:
 		hinge.name = "Hinge"
@@ -401,6 +415,8 @@ class PaintedDoor extends Node3D:
 		open_amount = clampf(amount, 0.0, 1.0)
 		# Rotação positiva em Y leva a ponta da folha (+X) para -Z: para dentro.
 		hinge.rotation.y = open_amount * PaintedFacadeKit.DOOR_MAX_ANGLE
+		# Meio aberta já não barra: a folha gira para dentro, longe de quem empurra.
+		if _solid != null: _solid.collision_layer = 1 if open_amount < 0.35 else 0
 
 	func swing(open: bool) -> void:
 		if _tween != null: _tween.kill()
@@ -433,8 +449,32 @@ class PaintedDoor extends Node3D:
 		area.body_entered.connect(_on_enter)
 		area.body_exited.connect(_on_exit)
 
+	func add_leaf_solid(size: Vector2) -> void:
+		var body := StaticBody3D.new()
+		body.name = "LeafSolid"
+		body.collision_layer = 1
+		body.collision_mask = 0
+		# ExteriorAccess não recorta nem desliga esta colisão: ela gira com a folha.
+		body.set_meta("painted_door_leaf", true)
+		var shape := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = Vector3(size.x, size.y, 0.08)
+		shape.shape = box
+		shape.position = Vector3(size.x * 0.5, size.y * 0.5, 0)
+		body.add_child(shape)
+		hinge.add_child(body)
+		_solid = body
+		set_open_amount(open_amount)
+
+	## Mantém aberta (jogador lá dentro: a saída não pode estar trancada pela folha).
+	func hold(open: bool) -> void:
+		if held == open: return
+		held = open
+		if open: swing(true)
+		elif _area == null or _area.get_overlapping_bodies().is_empty(): swing(false)
+
 	func _on_enter(_body: Node3D) -> void:
 		swing(true)
 
 	func _on_exit(_body: Node3D) -> void:
-		if _area.get_overlapping_bodies().is_empty(): swing(false)
+		if not held and _area.get_overlapping_bodies().is_empty(): swing(false)

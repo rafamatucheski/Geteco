@@ -9,10 +9,15 @@ const V1_PUMP_OFFSET_X := 70.0 / 16.0
 const V1_PUMP_OFFSET_Z := 140.0 / 16.0
 var open_amount := 0.0
 var entrance_door: Node3D
+var entrance_body: StaticBody3D
 
 func set_open_amount(amount: float) -> void:
 	open_amount = clampf(amount, 0.0, 1.0)
 	if is_instance_valid(entrance_door): entrance_door.rotation.y = -PI * .5 * open_amount
+	# A folha abre para fora, por cima de quem empurra: sólida ela empurrava o
+	# jogador para trás dela, fora do vão, e ele não entrava (auditoria 15/10, Union).
+	# Fechada continua barrando o corpo inteiro.
+	if is_instance_valid(entrance_body): entrance_body.collision_layer = 1 if open_amount < .1 else 0
 
 func build() -> void:
 	match building_id:
@@ -191,6 +196,7 @@ func _build_walkup_door(at: Vector3, width: float, door_height: float, frame_mat
 	collision.position = Vector3(width * .5, door_height * .5, 0)
 	body.add_child(collision)
 	entrance_door.add_child(body)
+	entrance_body = body
 	set_open_amount(open_amount)
 
 func _build_atm(at: Vector3, frame_mat: Material, body_mat: Material, screen_mat: Material, suffix: String) -> void:

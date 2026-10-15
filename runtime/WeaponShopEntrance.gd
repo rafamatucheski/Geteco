@@ -5,7 +5,11 @@ const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const IDS := ["harbor_supermarket", "harbor_ammunation", "mountain_gunshop", "harbor_police", "harbor_bank", "maciota", "port_boss_garage", "harbor_clothing", "harbor_fuel", "harbor_hospital", "harbor_fire_station",
 	"mountain_cabin", "mountain_cabin_encosta", "mountain_cabin_forest", "mountain_cabin_village_1", "mountain_cabin_village_2", "mountain_cabin_village_3", "mountain_cabin_village_4",
 	"lumberjack_shelter", "lumberjack_shelter_2", "lumberjack_shelter_3", "mountain_outfitters", "mountain_boutique", "mountain_village_outfitters",
-	"westgate_garden", "quayside_house", "canal_north", "cemetery_keeper", "mountain_bunker", "ski_lodge", "cobra_leader_house", "santa_lua_home_1", "santa_lua_home_2", "santa_lua_home_3", "santa_lua_home_4"]
+	"westgate_garden", "quayside_house", "canal_north", "cemetery_keeper", "mountain_bunker", "ski_lodge", "cobra_leader_house", "santa_lua_home_1", "santa_lua_home_2", "santa_lua_home_3", "santa_lua_home_4",
+	# Umbra (parque): porta dupla de empurrar; antes só a ação "Entrar" e a porta não abria.
+	"harbor_haunted_house",
+	# Fagulha e Curitiba Cellar: folhas de correr que ninguém abria (só a ação silenciosa "Entrar").
+	"harbor_arcade", "harbor_curitiba_cellar"]
 const CAMERA_SECONDS := 0.55
 const POLICE_DOOR_Z := 250.0 / 32.0 + 0.35
 const BANK_DOOR_Z := 180.0 / 32.0 - 0.72
@@ -98,6 +102,8 @@ func update(delta: float) -> void:
 	# Cached accesses; no catalog construction or scene traversal per frame.
 	for candidate in IDS:
 		var candidate_definition := _definition_for(candidate)
+		# Parque desligado (linha de base de medição): a Umbra não existe.
+		if candidate_definition.is_empty(): continue
 		if candidate_definition.region != session.state.region_id: continue
 		var distance := player.global_position.distance_squared_to(_door_position(candidate, candidate_definition))
 		if distance < closest:
@@ -299,6 +305,7 @@ func _half_width(id: String) -> float:
 		"harbor_fire_station": return 1.4
 		"harbor_bank", "harbor_clothing", "harbor_fuel": return .48
 		"cobra_leader_house": return .23
+		"harbor_haunted_house", "harbor_arcade", "harbor_curitiba_cellar": return .9
 	return .62
 
 func _close_size(id: String) -> float:
@@ -319,6 +326,11 @@ func _original_door_position(id: String, definition: Dictionary) -> Vector3:
 	if id in preload("res://world/desert/village/DesertVillageHomes.gd").IDS: return definition.walkup_door_position
 	if id == "cobra_leader_house": return definition.walkup_door_position
 	if id == "harbor_supermarket": return definition.exterior_position + Vector3(0,0,5.5)
+	# Plano da fachada da Umbra (ParkLume._house): folhas da UmbraDoor.
+	if id == "harbor_haunted_house": return definition.exterior_position + Vector3(0,0,7.5)
+	# Plano das folhas de correr (ArcadeFacade / CuritibaCellarFacade).
+	if id == "harbor_arcade": return definition.exterior_position + Vector3(0,0,4.91)
+	if id == "harbor_curitiba_cellar": return definition.exterior_position + Vector3(0,0,5.39)
 	var family := PLACES.walkup_family(id)
 	if not family.is_empty(): return definition.exterior_position + Vector3(0, 0, PLACES.walkup_door_z(family))
 	if id == "maciota": return session.world.maciota_place.entry_position - Vector3(0, 0, .4875)
