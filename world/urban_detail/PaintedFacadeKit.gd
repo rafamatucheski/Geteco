@@ -334,8 +334,11 @@ static func _add_mesh(root: Node3D, mesh_name: String, st: SurfaceTool, mat: Mat
 	root.add_child(mesh)
 
 
-## Folha 3D no vão: frente e verso pintados, dobradiça na ombreira esquerda,
-## abre para dentro de um corredor escuro. Abre sozinha com o jogador perto.
+## Folha 3D no vão: frente e verso pintados, dobradiça na ombreira esquerda.
+## Só a ENTRADA DE VERDADE (walk_in: prédio com interior) abre com o jogador perto;
+## as outras folhas (módulo repetido, segunda porta do duplex, fundos) ficam
+## fechadas e não reagem, como porta de vizinho trancada. Antes toda porta abria
+## para um corredor falso e o jogador batia na parede: o prédio parecia quebrado.
 ## Vão sem folha (garagem, portão largo) fica só com o fundo escuro.
 static func _door(root: Node3D, style: String, side: String, rect: Array, xform: Transform3D, w: float, h: float, collision_parent: Node3D, walk_in := false, leaf := true) -> void:
 	if rect.size() != 4: return
@@ -347,7 +350,7 @@ static func _door(root: Node3D, style: String, side: String, rect: Array, xform:
 	anchor.transform = xform.translated_local(Vector3(float(rect[0]) * w, bottom, 0))
 	root.add_child(anchor)
 	if walk_in: anchor.set_meta("walk_in", true)
-	else:
+	elif not leaf:
 		var corridor := MeshInstance3D.new()
 		corridor.name = "Corridor"
 		var corridor_mesh := BoxMesh.new()
@@ -375,7 +378,7 @@ static func _door(root: Node3D, style: String, side: String, rect: Array, xform:
 	inside.rotation.y = PI
 	inside.material_override = material(style, part + "_inside")
 	door.hinge.add_child(inside)
-	if collision_parent != null: door.watch_player(Vector3(leaf_w + 0.4, leaf_h, DOOR_REACH))
+	if walk_in and collision_parent != null: door.watch_player(Vector3(leaf_w + 0.4, leaf_h, DOOR_REACH))
 
 
 ## Dobradiça com abertura animada. Usa uma Area3D (física avisa a entrada) em vez

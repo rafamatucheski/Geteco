@@ -23,7 +23,14 @@ func run() -> void:
 		var rect: Array = PaintedFacadeKit.style_data(style).get("doors", {}).get("front", [])
 		check(rect.size() == 4 and rect[2] > rect[0] and rect[3] > rect[1], style + ": style.json has a front doorway")
 		check(rect.size() == 4 and rect[3] > 0.8 and rect[1] > 0.4, style + ": doorway sits on the ground floor")
-	var built := PaintedFacadeKit.build(stage, "tijolo-vermelho", Vector3(6, 7, 8), collisions)
+	# Prédio sem interior: nenhuma porta reage (antes abria para um corredor falso).
+	var shut := PaintedFacadeKit.build(stage, "tijolo-londrino", Vector3(12, 7, 8), collisions)
+	shut.position.x = 40.0
+	check(shut.find_children("DoorZone", "", true, false).is_empty(), "building without interior: no door reacts to the player")
+	# Prédio com interior: só a entrada de verdade (walk_in_x) abre.
+	var entrance_x := PaintedFacadeKit.nearest_door_x("tijolo-vermelho", 6.0, 0.0)
+	var built := PaintedFacadeKit.build(stage, "tijolo-vermelho", Vector3(6, 7, 8), collisions, entrance_x)
+	check(built.find_children("DoorZone", "", true, false).size() == 1, "only the real entrance opens (front walk-in), back door stays shut")
 	var door = built.get_node("Doorway_front/Door")
 	var doorway: Node3D = built.get_node("Doorway_front")
 	var player := CharacterBody3D.new()
