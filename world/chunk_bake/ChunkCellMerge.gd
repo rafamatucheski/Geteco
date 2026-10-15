@@ -11,6 +11,12 @@ extends RefCounted
 ## delas, e geradores podem guardar referência a uma malha. Desligar: GETECO_CELL_MERGE=0.
 const TUNNEL_CUTAWAY := preload("res://world/urban_detail/TunnelCutaway.gd")
 static var enabled := OS.get_environment("GETECO_CELL_MERGE") != "0"
+## Por região, para isolar travadas de cache frio (15/10): GETECO_CELL_MERGE_MOUNTAIN=0 / _DESERT=0 / _HARBOR=0.
+static var region_enabled := {
+	"harbor": OS.get_environment("GETECO_CELL_MERGE_HARBOR") != "0",
+	"mountain": OS.get_environment("GETECO_CELL_MERGE_MOUNTAIN") != "0",
+	"desert": OS.get_environment("GETECO_CELL_MERGE_DESERT") != "0",
+}
 const FINISHED := &"chunk_cell_merge_finished"
 const MERGED_SOURCE := &"chunk_cell_merged_source"
 const BATCH := &"chunk_cell_batch"
@@ -51,6 +57,8 @@ static func _run(chunk: Node3D, budget_usec: int) -> Dictionary:
 	var report := {"sources": 0, "batches": 0, "scopes": 0}
 	if not enabled or chunk.has_meta(FINISHED) or not chunk.has_meta("vegetation_ready_frame"): return report
 	if Engine.get_meta("geteco_live_preview_build", false): return report
+	var region_id: Variant = chunk.get_parent().get("region_id") if chunk.get_parent() != null else null
+	if region_id is String and not bool(region_enabled.get(region_id, true)): return report
 	chunk.set_meta(FINISHED, true)
 	_slice_began = STALL_WORK.begin()
 	_slice_reference = weakref(chunk)
