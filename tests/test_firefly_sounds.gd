@@ -41,7 +41,7 @@ func run() -> void:
 	for entry in [["service_vehicles", "siren_loop.wav", 3.0], ["service_vehicles", "reverse_beep_loop.wav", 1.5], ["vehicle_fx", "supercharger_loop.wav", 1.0], ["weapons_fire", "rocket_flight_loop.wav", 1.5]]:
 		var looped: AudioStreamWAV = FIREFLY.loop(entry[0], entry[1])
 		check(looped != null and looped.loop_mode == AudioStreamWAV.LOOP_FORWARD and looped.get_length() >= float(entry[2]) and looped.loop_end > 0, "%s/%s repete sem parar" % [entry[0], entry[1]])
-	# O sorteio de tiros mistura os takes do V1 com os novos, sem repetir o anterior.
+	# Armas com tiro gravado sorteiam só os novos (sem repetir o anterior); a camada sintética de corpo sai.
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7
 	for family in ["pistol", "shotgun", "ak47", "m4a1"]:
@@ -55,7 +55,8 @@ func run() -> void:
 			previous = take
 			if take != null and take.resource_path.begins_with("res://audio/weapons_fire/"): recorded += 1
 			elif take != null: classic += 1
-		check(recorded > 40 and classic > 40, "%s mistura takes novos (%d) e do V1 (%d)" % [family, recorded, classic])
+		check(COMBAT.gun_body(family) == null, "%s não soma o corpo sintético antigo" % family)
+		check(recorded == 400 and classic == 0, "%s usa só os takes novos (%d novos, %d do V1)" % [family, recorded, classic])
 	for family in ["suppressed_pistol", "magnum", "hunting_rifle"]:
 		for i in 60:
 			var take: AudioStream = COMBAT.gunfire_take(family, rng)

@@ -83,7 +83,7 @@ func run() -> void:
 		car.throttle_input = 1.0
 		mixer._process(.05)
 	check(extras >= 20, "coupe turbo solta flutter/assobio/estouro ao aliviar (%d de 40 tentativas)" % extras)
-	check(mixer._blowoff_sounds().size() >= 6, "alívio do turbo mistura as 3 tomadas do V1 com as novas (%d)" % mixer._blowoff_sounds().size())
+	check(mixer._blowoff_sounds().size() >= 3 and not mixer._blowoff_sounds().has(mixer.SPORT_BLOWOFF_SOUNDS[0]), "alívio do turbo usa só as tomadas novas (%d)" % mixer._blowoff_sounds().size())
 	check(mixer.reverse_audio != null and not mixer.reverse_audio.playing, "coupe em marcha à frente não faz bipe de ré")
 	car.speed = -4.0
 	mixer._process(.05)

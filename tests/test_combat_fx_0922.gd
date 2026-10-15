@@ -91,7 +91,7 @@ func _initialize() -> void:
 	_check(AUDIO.grenade_bounce() != null, "quique da granada gerado")
 	var magnum_body := AUDIO.gun_body("magnum")
 	_check(magnum_body != null and magnum_body.get_length() > 0.8, "Magnum tem camada de corpo com cauda longa")
-	_check(AUDIO.gun_body("pistol").get_length() < magnum_body.get_length(), "pistola tem corpo mais curto que a Magnum")
+	_check(AUDIO.gun_body("smg").get_length() < magnum_body.get_length(), "SMG tem corpo mais curto que a Magnum (pistola usa só o tiro gravado)")
 
 	print("RESULT: %s (%d falhas)" % ["OK" if _failures == 0 else "FALHOU", _failures])
 	quit(0 if _failures == 0 else 1)

@@ -554,14 +554,15 @@ func _play_extra(audio: AudioStream, volume: float, cooldown: float) -> void:
 ## mesmo nível (as novas foram normalizadas para casar com as antigas).
 func _blowoff_sounds() -> Array:
 	if _blowoff_mix.is_empty():
-		_blowoff_mix = SPORT_BLOWOFF_SOUNDS.duplicate()
-		_blowoff_mix.append_array(FIREFLY.all("vehicle_fx", "wastegate"))
+		# Só as gravadas; as sintéticas antigas ficam se o arquivo novo não estiver importado.
+		_blowoff_mix = FIREFLY.all("vehicle_fx", "wastegate")
+		if _blowoff_mix.is_empty(): _blowoff_mix = SPORT_BLOWOFF_SOUNDS.duplicate()
 	return _blowoff_mix
 
 func _turbo_shift_sounds() -> Array:
 	if _turbo_shift_mix.is_empty():
-		_turbo_shift_mix = TURBO_SHIFT_SOUNDS.duplicate()
-		_turbo_shift_mix.append_array(FIREFLY.all("vehicle_fx", "diesel_turbo"))
+		_turbo_shift_mix = FIREFLY.all("vehicle_fx", "diesel_turbo")
+		if _turbo_shift_mix.is_empty(): _turbo_shift_mix = TURBO_SHIFT_SOUNDS.duplicate()
 	return _turbo_shift_mix
 
 func _play_vehicle_fx(sounds: Array, volume: float, cooldown: float = 0.18) -> void:

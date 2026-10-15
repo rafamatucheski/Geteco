@@ -146,16 +146,18 @@ static func impact_take(material: String, rng: RandomNumberGenerator) -> AudioSt
 ## Take de tiro/explosão entre os 5 disponíveis, sem repetir o take anterior da mesma
 ## família — replica `AudioStreamRandomizer.PLAYBACK_RANDOM_NO_REPEATS` da V1.
 static func gunfire_take(prefix: String, rng: RandomNumberGenerator) -> AudioStream:
-	var extra: int = FIREFLY.count("weapons_fire", FIREFLY_GUNFIRE[prefix]) if FIREFLY_GUNFIRE.has(prefix) else 0
-	var pool := GUNFIRE_TAKES + extra
-	var index := rng.randi_range(0, pool - 1)
-	if pool > 1 and _last_gunfire_take.get(prefix, -1) == index:
-		index = (index + 1) % pool
-	_last_gunfire_take[prefix] = index
-	if index >= GUNFIRE_TAKES:
-		var recorded := FIREFLY.stream("weapons_fire", FIREFLY_GUNFIRE[prefix], index - GUNFIRE_TAKES)
+	# Famílias com tiros gravados no Firefly usam só eles; os takes do V1 ficam de reserva.
+	var recorded_total: int = FIREFLY.count("weapons_fire", FIREFLY_GUNFIRE[prefix]) if FIREFLY_GUNFIRE.has(prefix) else 0
+	if recorded_total > 0:
+		var pick := rng.randi_range(0, recorded_total - 1)
+		if recorded_total > 1 and _last_gunfire_take.get(prefix, -1) == pick: pick = (pick + 1) % recorded_total
+		_last_gunfire_take[prefix] = pick
+		var recorded := FIREFLY.stream("weapons_fire", FIREFLY_GUNFIRE[prefix], pick)
 		if recorded != null: return recorded
-		index %= GUNFIRE_TAKES
+	var index := rng.randi_range(0, GUNFIRE_TAKES - 1)
+	if _last_gunfire_take.get(prefix, -1) == index:
+		index = (index + 1) % GUNFIRE_TAKES
+	_last_gunfire_take[prefix] = index
 	return wav("%s_%d.wav" % [prefix, index])
 
 ## Variação de tom por disparo (±3,5%), mesma faixa do `random_pitch` da V1.
@@ -433,6 +435,8 @@ const GUN_BODY := {
 
 static func gun_body(kind: String) -> AudioStream:
 	if not GUN_BODY.has(kind): return null
+	# Os tiros gravados já têm corpo e cauda; a camada sintética só complementa os takes do V1.
+	if FIREFLY_GUNFIRE.has(kind) and FIREFLY.count("weapons_fire", FIREFLY_GUNFIRE[kind]) > 0: return null
 	var key := "body_" + kind
 	if _generated.has(key): return _generated[key]
 	var spec: Array = GUN_BODY[kind]
