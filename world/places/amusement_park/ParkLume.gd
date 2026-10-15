@@ -17,7 +17,29 @@ func set_boarding_open(amount: float) -> void:
 	carriage_door.rotation.y = amount*PI*.5
 	restraint.rotation.x = -amount*1.35
 
-func _ready() -> void: build()
+func _ready() -> void:
+	build()
+	_start_music()
+
+## Música de carrossel (Gemini/Lyria, 2026-10-15) saindo dos alto-falantes do parque, em loop.
+## Posicional: ouve-se de longe, baixinho, e ela cresce ao chegar. Sem o arquivo importado o parque
+## segue mudo como antes.
+func _start_music() -> void:
+	var path := "res://audio/amusement_park/park_music.ogg"
+	if not ResourceLoader.exists(path) or get_node_or_null("ParkMusic") != null: return
+	var music := load(path) as AudioStreamOggVorbis
+	if music == null: return
+	music.loop = true
+	var voice := AudioStreamPlayer3D.new()
+	voice.name = "ParkMusic"
+	voice.stream = music
+	voice.bus = &"Music" if AudioServer.get_bus_index(&"Music") >= 0 else (&"SFX" if AudioServer.get_bus_index(&"SFX") >= 0 else &"Master")
+	voice.volume_db = 2.0
+	voice.unit_size = 22.0
+	voice.max_distance = 110.0
+	voice.position = Vector3(10, 5, 12)
+	add_child(voice)
+	voice.play(randf() * music.get_length())
 
 func build() -> void:
 	if complete: return
