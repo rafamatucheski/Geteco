@@ -18,6 +18,8 @@ func _category(node: Node, chunk: Node) -> String:
 	return name
 
 func run() -> void:
+	# Fusão inteira de uma vez: aqui não se mede tempo de quadro.
+	preload("res://world/chunk_bake/ChunkCellMerge.gd").slice_budget_usec = 0
 	var keys: Array[Vector2i] = []
 	var region_id := "harbor"
 	var all_chunks := false

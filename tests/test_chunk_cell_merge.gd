@@ -57,6 +57,8 @@ func _build(region: Node, key: Vector2i) -> Node3D:
 	return chunk
 
 func run() -> void:
+	# Fusão inteira de uma vez: aqui não se mede tempo de quadro.
+	preload("res://world/chunk_bake/ChunkCellMerge.gd").slice_budget_usec = 0
 	var keys: Array[Vector2i] = [Vector2i(3, 0), Vector2i(3, 1)]
 	var results := {}
 	for enabled in [false, true]:

@@ -9,6 +9,8 @@ const VARIANTS := preload("res://world/chunk_bake/FamilyShaderVariants.gd")
 func _initialize() -> void: run.call_deferred()
 
 func run() -> void:
+	# Fusão inteira de uma vez: aqui não se mede tempo de quadro.
+	preload("res://world/chunk_bake/ChunkCellMerge.gd").slice_budget_usec = 0
 	for region_id in ["harbor", "mountain", "desert"]:
 		var region = REGION.build_region(region_id, Vector3.INF) if region_id != "desert" else load("res://world/desert/DesertRegion.gd").build_region("desert", Vector3.INF)
 		region.initial_prewarm_only = true

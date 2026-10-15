@@ -29,33 +29,51 @@ const REMOVABLE_SCRIPTS := ["LootablePortContainer.gd", "PortContainerLoot.gd"]
 ## Escopos inteiros que outro sistema cuida: prédios com acesso/reveal e o próprio túnel.
 const PROTECTED_GROUPS := [&"harbor_building", &"v2_walkin_facade", &"harbor_building_facade", &"exterior_reveal_building", &"canal_tunnel"]
 
-## Dois quadros depois do marco do trecho: geradores com fusão própria (ponte, D2) terminam antes.
+## Dois quadros depois do marco do trecho: geradores com fusão própria (ponte, D2) terminam antes. Em jogo a
+## fusão roda em fatias de SLICE_BUDGET_USEC: montar os lotes em GDScript custava centenas de ms num quadro só
+## na vila da serra (travessia com cache frio de 15/10: 9 quadros acima de 250 ms, que o pré-aquecimento de
+## shader não resolveu).
+## Testes, censo e coletor de variantes zeram (fusão inteira de uma vez): não medem tempo de quadro.
+static var slice_budget_usec := 2000
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 static func finish_chunk_later(chunk: Node3D) -> void:
 	if not enabled or not chunk.is_inside_tree(): return
 	var reference: WeakRef = weakref(chunk)
 	for frame in 2:
 		await chunk.get_tree().process_frame
 		if not is_instance_valid(reference.get_ref()): return
-	finish_chunk(chunk)
+	await _run(chunk, slice_budget_usec)
 
-static func finish_chunk(chunk: Node3D) -> Dictionary:
+static var _slice_began := 0
+static var _slice_reference: WeakRef
+
+static func _run(chunk: Node3D, budget_usec: int) -> Dictionary:
 	var report := {"sources": 0, "batches": 0, "scopes": 0}
 	if not enabled or chunk.has_meta(FINISHED) or not chunk.has_meta("vegetation_ready_frame"): return report
 	if Engine.get_meta("geteco_live_preview_build", false): return report
 	chunk.set_meta(FINISHED, true)
+	_slice_began = STALL_WORK.begin()
+	_slice_reference = weakref(chunk)
 	# Um lote por trecho, entre objetos: as ~35 pilhas de carga do Northstar são objetos separados e, fundidas
 	# só por dentro, sobravam 239 lotes. Prédios com acesso/reveal ficam com a fusão por prédio deles.
 	var candidates: Array = []
 	for child in chunk.get_children():
 		if child is MeshInstance3D: candidates.append(child)
 		elif child is Node3D and _scope_allowed(child as Node3D): candidates.append_array(child.get_children())
-	_sum(report, _merge_scope(chunk, candidates))
+	_sum(report, await _merge_scope(chunk, candidates, false, budget_usec))
 	# Prédios só com reveal (cabanas da serra: 220 malhas cada, poços do porto): o reveal escolhe peça a peça
 	# dentro do prédio pela caixa e troca o material pela cor dele, então o lote fica dentro do prédio, em
 	# célula pequena e com o material original, sem cor no vértice.
-	for child in chunk.get_children():
-		if child is Node3D and _reveal_scope_allowed(child as Node3D):
-			_sum(report, _merge_scope(child as Node3D, child.get_children(), true))
+	var reveal_scopes: Array = []
+	if is_instance_valid(_slice_reference.get_ref()):
+		for child in chunk.get_children():
+			if child is Node3D and _reveal_scope_allowed(child as Node3D): reveal_scopes.append(child)
+	for scope in reveal_scopes:
+		if not is_instance_valid(scope): continue
+		_sum(report, await _merge_scope(scope as Node3D, scope.get_children(), true, budget_usec))
+	_arrays.clear()
+	if not is_instance_valid(_slice_reference.get_ref()): return report
+	STALL_WORK.finish_slow("chunk.cell_merge", _slice_began, 1500)
 	# Os materiais da família nascem depois do pré-aquecimento do corte do túnel: sem isto, a primeira
 	# entrada no túnel compilava uma cópia com alfa por família (pico de 1,1 s na captura de 14/10).
 	if report.batches > 0 and chunk.get_parent() != null:
@@ -71,6 +89,24 @@ static func finish_chunk(chunk: Node3D) -> Dictionary:
 			if material != null: materials[material.get_instance_id()] = material
 		TUNNEL_CUTAWAY.prime_materials(materials.values(), chunk.get_parent(), area)
 	return report
+
+## Cede o quadro quando a fatia passou do orçamento. Devolve false se o trecho sumiu enquanto esperava.
+static func _yield_if_due(budget_usec: int) -> bool:
+	if budget_usec <= 0 or Time.get_ticks_usec() - _slice_began < budget_usec: return true
+	var chunk := _slice_reference.get_ref() as Node
+	if not is_instance_valid(chunk) or not chunk.is_inside_tree(): return false
+	STALL_WORK.finish_slow("chunk.cell_merge", _slice_began, 1500)
+	await chunk.get_tree().process_frame
+	_slice_began = STALL_WORK.begin()
+	var still := _slice_reference.get_ref() as Node
+	return is_instance_valid(still) and still.is_inside_tree()
+
+## Arrays por malha e superfície, lidos uma vez por trecho: cabanas e contêineres repetem a mesma malha.
+static var _arrays := {}
+static func _arrays_of(mesh: Mesh, surface: int) -> Array:
+	var key := "%d:%d" % [mesh.get_instance_id(), surface]
+	if not _arrays.has(key): _arrays[key] = mesh.surface_get_arrays(surface)
+	return _arrays[key]
 
 ## Registro em cache sai do trecho e volta em outro: as fontes reaparecem porque o lote ficou no trecho velho.
 ## O trecho novo funde de novo quando termina de montar.
@@ -119,13 +155,16 @@ static func _is_dynamic(node: Node) -> bool:
 	# processando (animação, guincho, sinal) mexe em algo e fica de fora.
 	return node.is_processing() or node.is_physics_processing() or node.is_processing_input() or node.is_processing_unhandled_input()
 
-static func _merge_scope(scope: Node3D, candidates: Array, exact := false) -> Dictionary:
+static func _merge_scope(scope: Node3D, candidates: Array, exact := false, budget_usec := 0) -> Dictionary:
 	var groups := {}
 	var to_scope := scope.global_transform.affine_inverse()
 	_collect(candidates, scope, to_scope, groups, exact)
 	var report := {"sources": 0, "batches": 0}
 	var holder: Node3D = null
 	for key in groups:
+		# Cada grupo é atômico: a fonte só some quando o lote dela já existe, então ceder entre grupos não
+		# deixa buraco nem desenho em dobro.
+		if not await _yield_if_due(budget_usec) or not is_instance_valid(scope): return report
 		# Grupo de um só também vira lote: a fonte só some se todas as superfícies dela tiverem lote.
 		var entries: Array = groups[key]
 		var mesh := _build_batch(entries, exact)
@@ -208,7 +247,7 @@ static func _add_mesh(mesh_node: MeshInstance3D, scope: Node3D, to_scope: Transf
 		shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	for surface in surfaces.size():
 		if _family(surfaces[surface]).is_empty(): return
-		if surfaces[surface].normal_enabled and mesh.surface_get_arrays(surface)[Mesh.ARRAY_TANGENT] == null: return
+		if surfaces[surface].normal_enabled and _arrays_of(mesh, surface)[Mesh.ARRAY_TANGENT] == null: return
 	for surface in surfaces.size():
 		var material: StandardMaterial3D = surfaces[surface]
 		var family := ("m%d" % material.get_instance_id()) if exact else _family(material)
@@ -260,7 +299,7 @@ static func _build_batch(entries: Array, exact := false) -> ArrayMesh:
 	var colors := PackedColorArray()
 	var indices := PackedInt32Array()
 	for entry in entries:
-		var arrays: Array = entry.mesh.surface_get_arrays(entry.surface)
+		var arrays: Array = _arrays_of(entry.mesh, entry.surface)
 		var source_vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 		if source_vertices.is_empty(): continue
 		var transform: Transform3D = entry.transform
