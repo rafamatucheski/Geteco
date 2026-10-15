@@ -62,6 +62,7 @@ static func build_building(data: Dictionary) -> Node3D:
 	var building_kind := str(data.get("kind", data.get("service", "")))
 	var point: Vector3 = extract_position(data)
 	var size: Vector2 = extract_size(data)
+	size.x = PaintedHarborHouses.footprint_width(building_id, size.x)
 	
 	# Store normalized coordinates back into data dictionary for downstream consumers
 	var norm_data: Dictionary = data.duplicate()

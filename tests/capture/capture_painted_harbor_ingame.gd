@@ -7,6 +7,8 @@ extends SceneTree
 var points := {
 	"maritime_museum": Vector3(376.25, 0.0, 43.75 + 7.8 + 4.0),
 	"cold_storage": Vector3(162.5, 0.0, 44.375 + 8.75 + 4.0),
+	"market_hall": Vector3(109.4, 0.0, 41.6 + 6.9 + 4.0),
+	"aquarium": Vector3(381.3, 0.0, 96.9 + 8.45 + 4.0),
 }
 
 func _initialize() -> void: run.call_deferred()

@@ -34,6 +34,8 @@ const DOOR_MAX_ANGLE := deg_to_rad(80.0)
 ## Só abre com o jogador ao alcance do braço (antes 3 m: abria de longe).
 const DOOR_REACH := 1.0
 const ROOF_OVERHANG := 0.35
+## Vão de folha mais largo que isto vira porta dupla (duas folhas, as duas abrem juntas).
+const DOUBLE_DOOR_MIN := 1.8
 
 static var _materials := {}
 static var _styles := {}
@@ -369,31 +371,61 @@ static func _door(root: Node3D, style: String, side: String, rect: Array, xform:
 		corridor.material_override = _corridor_material()
 		anchor.add_child(corridor)
 	if not leaf: return
+	var double := leaf_w > DOUBLE_DOOR_MIN
+	var panel_w := leaf_w * 0.5 if double else leaf_w
+	var main := _leaf(anchor, "Door", style, side, panel_w, leaf_h, 0.0, false, walk_in, collision_parent, leaf_w)
+	if double:
+		# Segunda folha presa na outra ponta do vão, imagem espelhada, gira junto.
+		var second := _leaf(anchor, "Door2", style, side, panel_w, leaf_h, leaf_w, true, walk_in, collision_parent)
+		main.partner = second
+		second.partner = main
+
+
+## Uma folha: `hinge_x` é onde fica a dobradiça no vão; `mirrored` estende a folha
+## para -X e inverte a imagem (folha direita de porta dupla).
+static func _leaf(anchor: Node3D, node_name: String, style: String, side: String, panel_w: float, leaf_h: float, hinge_x: float, mirrored: bool, walk_in: bool, collision_parent: Node3D, watch_w := 0.0) -> PaintedDoor:
 	var door := PaintedDoor.new()
-	door.name = "Door"
+	door.name = node_name
+	door.mirrored = mirrored
 	anchor.add_child(door)
-	door.position = Vector3(0, 0, -0.04)
+	door.position = Vector3(hinge_x, 0, -0.04)
+	var sign_x := -1.0 if mirrored else 1.0
 	var part := "door_front" if side == "front" else "door_back"
 	var outside := MeshInstance3D.new()
 	outside.mesh = QuadMesh.new()
-	outside.mesh.size = Vector2(leaf_w, leaf_h)
-	outside.position = Vector3(leaf_w * 0.5, leaf_h * 0.5, 0.005)
-	outside.material_override = material(style, part)
+	outside.mesh.size = Vector2(panel_w, leaf_h)
+	outside.position = Vector3(sign_x * panel_w * 0.5, leaf_h * 0.5, 0.005)
+	outside.material_override = _leaf_material(style, part, mirrored)
 	door.hinge.add_child(outside)
 	var inside := MeshInstance3D.new()
 	inside.mesh = QuadMesh.new()
-	inside.mesh.size = Vector2(leaf_w, leaf_h)
-	inside.position = Vector3(leaf_w * 0.5, leaf_h * 0.5, -0.005)
+	inside.mesh.size = Vector2(panel_w, leaf_h)
+	inside.position = Vector3(sign_x * panel_w * 0.5, leaf_h * 0.5, -0.005)
 	inside.rotation.y = PI
-	inside.material_override = material(style, part + "_inside")
+	inside.material_override = _leaf_material(style, part + "_inside", mirrored)
 	door.hinge.add_child(inside)
 	if walk_in and collision_parent != null:
-		door.watch_player(Vector3(leaf_w + 0.4, leaf_h, DOOR_REACH))
+		# Porta dupla: só a folha esquerda vigia o jogador (largura do vão todo) e puxa a outra.
+		if watch_w > 0.0: door.watch_player(Vector3(watch_w + 0.4, leaf_h, DOOR_REACH))
 		# Folha sólida enquanto fechada: o corte da entrada (ExteriorAccess) abre 2,2 m
 		# na colisão do prédio e o jogador atravessava a porta pintada ainda fechada
 		# (auditoria 15/10: entrava antes de a folha abrir). Agora ele encosta, a folha
 		# gira e só então passa.
-		door.add_leaf_solid(Vector2(leaf_w, leaf_h))
+		door.add_leaf_solid(Vector2(panel_w, leaf_h))
+	return door
+
+
+## Material da folha; a folha espelhada usa a mesma imagem com U invertido.
+static func _leaf_material(style: String, part: String, mirrored: bool) -> Material:
+	var base := material(style, part)
+	if not mirrored: return base
+	var key := style + "/" + part + "/mirror"
+	if not _materials.has(key):
+		var copy: StandardMaterial3D = base.duplicate()
+		copy.uv1_scale = Vector3(-1, 1, 1)
+		copy.uv1_offset = Vector3(1, 0, 0)
+		_materials[key] = copy
+	return _materials[key]
 
 
 ## Dobradiça com abertura animada. Usa uma Area3D (física avisa a entrada) em vez
@@ -406,6 +438,11 @@ class PaintedDoor extends Node3D:
 	var _solid: StaticBody3D
 	## Segura aberta enquanto o jogador está dentro do prédio (HarborBuildingExteriorAccess).
 	var held := false
+	## Folha direita de porta dupla: dobradiça na outra ponta, gira ao contrário.
+	var mirrored := false
+	## A outra folha da porta dupla: abre, fecha e segura junto.
+	var partner: PaintedDoor
+	var _syncing := false
 
 	func _init() -> void:
 		hinge.name = "Hinge"
@@ -414,11 +451,12 @@ class PaintedDoor extends Node3D:
 	func set_open_amount(amount: float) -> void:
 		open_amount = clampf(amount, 0.0, 1.0)
 		# Rotação positiva em Y leva a ponta da folha (+X) para -Z: para dentro.
-		hinge.rotation.y = open_amount * PaintedFacadeKit.DOOR_MAX_ANGLE
+		hinge.rotation.y = open_amount * PaintedFacadeKit.DOOR_MAX_ANGLE * (-1.0 if mirrored else 1.0)
 		# Meio aberta já não barra: a folha gira para dentro, longe de quem empurra.
 		if _solid != null: _solid.collision_layer = 1 if open_amount < 0.35 else 0
 
 	func swing(open: bool) -> void:
+		_sync_partner(func(other): other.swing(open))
 		if _tween != null: _tween.kill()
 		_tween = create_tween()
 		if open:
@@ -460,7 +498,7 @@ class PaintedDoor extends Node3D:
 		var box := BoxShape3D.new()
 		box.size = Vector3(size.x, size.y, 0.08)
 		shape.shape = box
-		shape.position = Vector3(size.x * 0.5, size.y * 0.5, 0)
+		shape.position = Vector3((-1.0 if mirrored else 1.0) * size.x * 0.5, size.y * 0.5, 0)
 		body.add_child(shape)
 		hinge.add_child(body)
 		_solid = body
@@ -468,10 +506,21 @@ class PaintedDoor extends Node3D:
 
 	## Mantém aberta (jogador lá dentro: a saída não pode estar trancada pela folha).
 	func hold(open: bool) -> void:
+		_sync_partner(func(other): other.hold(open))
 		if held == open: return
 		held = open
 		if open: swing(true)
-		elif _area == null or _area.get_overlapping_bodies().is_empty(): swing(false)
+		else:
+			var watcher := _area if _area != null or partner == null else partner._area
+			if watcher == null or watcher.get_overlapping_bodies().is_empty(): swing(false)
+
+	func _sync_partner(action: Callable) -> void:
+		if partner == null or _syncing: return
+		_syncing = true
+		partner._syncing = true
+		action.call(partner)
+		partner._syncing = false
+		_syncing = false
 
 	func _on_enter(_body: Node3D) -> void:
 		swing(true)

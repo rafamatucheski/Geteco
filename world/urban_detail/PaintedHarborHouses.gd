@@ -28,6 +28,17 @@ const KEEP_GEOMETRY := ["CourtyardHouse"]
 const COBRA_PORCH := 1.8
 
 
+## Largura do prédio pintado. O kit repete o módulo da frente em prédio largo, e a
+## porta repetia junto (duas portas lado a lado, uma só com interior); estilo de
+## porto cabe num módulo só, na largura natural da pintura, e o catálogo, o interior
+## e a fábrica usam esta mesma largura para casco, corte da entrada e piso baterem.
+## Até 15% de folga a imagem estica; acima disso o prédio fica na largura natural.
+static func footprint_width(building_id: String, width: float) -> float:
+	if not PaintedFacadeKit.enabled() or not HARBOR.has(building_id): return width
+	var natural := PaintedFacadeKit.natural_size(HARBOR[building_id]).x
+	return width if width <= natural * 1.15 else natural
+
+
 ## Estilo pintado do prédio, ou "" quando ele continua com a geometria antiga.
 static func style_for(building_id: String, kind: String) -> String:
 	if not PaintedFacadeKit.enabled() or building_id in KEEP_GEOMETRY: return ""

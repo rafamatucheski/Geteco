@@ -61,6 +61,7 @@ static func _append(row: Dictionary) -> void:
 	var id: String = LEGACY_IDS.get(source_id,"harbor_building_"+source_id.to_snake_case())
 	var kind := str(row.get("kind","office"))
 	var size: Vector2 = row.size
+	size.x = PaintedHarborHouses.footprint_width(source_id, size.x)
 	var base_position: Vector3 = row.position
 	var yaw := float(row.get("editor_rotation",0.0))+(PI if row.get("entrance_north",false) else 0.0)
 	if source_id == "new_1790426066_503_97028106":
