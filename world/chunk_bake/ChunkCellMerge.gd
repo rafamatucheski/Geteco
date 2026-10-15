@@ -10,7 +10,11 @@ extends RefCounted
 ## As fontes ficam escondidas, não apagadas: o id das peças do editor de mundo depende do nome e da posição
 ## delas, e geradores podem guardar referência a uma malha. Desligar: GETECO_CELL_MERGE=0.
 const TUNNEL_CUTAWAY := preload("res://world/urban_detail/TunnelCutaway.gd")
-static var enabled := OS.get_environment("GETECO_CELL_MERGE") != "0"
+## Desligada por padrão desde 15/10: no export não deu ganho de tempo de quadro mensurável (draw calls -8 a
+## -19%) e, com cache de shader frio, a travessia porto -> serra teve 6-9 quadros acima de 250 ms (pico de
+## 1,3 s) contra nenhum sem ela. Causa ainda não isolada: não é a CPU da fusão (fatiada, sem span), nem as
+## variantes de shader da família (pré-aquecidas), nem uma região só. GETECO_CELL_MERGE=1 liga.
+static var enabled := OS.get_environment("GETECO_CELL_MERGE") == "1"
 ## Por região, para isolar travadas de cache frio (15/10): GETECO_CELL_MERGE_MOUNTAIN=0 / _DESERT=0 / _HARBOR=0.
 static var region_enabled := {
 	"harbor": OS.get_environment("GETECO_CELL_MERGE_HARBOR") != "0",
