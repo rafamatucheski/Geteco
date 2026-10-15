@@ -335,6 +335,9 @@ func palm_position(side: int) -> Vector3:
 ## O importador instala um modificador ativo mesmo sem ossos físicos. Só uma simulação real precisa dele.
 func update_physical_simulators() -> bool:
 	var simulating := false
+	# Um simulador liberado (corpo desmontado/ragdoll limpo) ficava na lista e gerava um erro por quadro (5329 no log de 15/10).
+	for index in range(_physical_simulators.size() - 1, -1, -1):
+		if not is_instance_valid(_physical_simulators[index]): _physical_simulators.remove_at(index)
 	for simulator in _physical_simulators:
 		var running := simulator.is_simulating_physics()
 		if simulator.active != running: simulator.active = running
