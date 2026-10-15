@@ -5,12 +5,15 @@ const TIRE := preload("res://gameplay/vehicle_effects/VehicleTireEffects.gd")
 const IMPACT := preload("res://gameplay/vehicle_effects/VehicleImpactEffects.gd")
 const POWERTRAIN := preload("res://gameplay/vehicle_effects/VehiclePowertrainEffects.gd")
 const EFFECT_DISTANCE := 85.0
+const WINDSHIELD := preload("res://gameplay/vehicle_effects/VehicleWindshieldRain.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 
 var vehicle: CharacterBody3D
 var tire_effects: Node
 var impact_effects: Node
 var powertrain_effects: Node
+# Gotas e limpador: só nasce para o veículo conduzido (ver VehicleWindshieldRain).
+var windshield_rain: RefCounted
 var presentation_enabled := true
 var _active := true
 var _range_clock := 0.0
@@ -52,6 +55,9 @@ func physics_tick(delta: float, incoming_velocity: Vector3) -> void:
 	stage = STALL_WORK.begin()
 	impact_effects.physics_tick(_active,incoming_velocity)
 	STALL_WORK.finish_slow("vehicle.effects.impact", stage, 5000, vehicle)
+	if windshield_rain != null or vehicle.controlled:
+		if windshield_rain == null: windshield_rain = WINDSHIELD.new(vehicle)
+		windshield_rain.tick(delta)
 
 func _presentation_active() -> bool:
 	if not presentation_enabled or not vehicle.visible or not vehicle.is_visible_in_tree(): return false

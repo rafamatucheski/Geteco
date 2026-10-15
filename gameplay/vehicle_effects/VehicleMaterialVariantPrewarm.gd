@@ -13,6 +13,7 @@ extends RefCounted
 const PAINT = preload("res://runtime/VehiclePaint.gd")
 const USAGE = preload("res://runtime/VehicleUsage.gd")
 const DAMAGE = preload("res://gameplay/vehicle_effects/VehicleDamage.gd")
+const RAIN = preload("res://gameplay/vehicle_effects/VehicleRain.gd")
 const GUARDS = preload("res://gameplay/emergency/EffectsPrewarm.gd")
 const DRAW_FRAMES := 3
 const MAX_WAIT_FRAMES := 24
@@ -118,6 +119,13 @@ static func _variants(base: StandardMaterial3D) -> Array[StandardMaterial3D]:
 		dented.normal_texture = DAMAGE._dents()
 		dented.uv1_triplanar = true
 		result.append(dented)
+		# Chuva (VehicleRain): gotas triplanares em UV1, em pintura limpa e em suja.
+		for source: StandardMaterial3D in [base, detailed]:
+			var beaded := source.duplicate() as StandardMaterial3D
+			beaded.normal_enabled = true
+			beaded.normal_texture = RAIN.beads()
+			beaded.uv1_triplanar = true
+			result.append(beaded)
 	return result
 
 ## Aproxima a MaterialKey do motor: bools/enums e presença de texturas mudam o

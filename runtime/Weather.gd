@@ -120,6 +120,11 @@ func _ready() -> void:
 	process.gravity = Vector3(0,-5,0)
 	precipitation.process_material = process
 	controller.world.add_child(precipitation)
+	# Carros molham e secam por conta própria (umidade por veículo, abrigo por raio).
+	var vehicle_rain := preload("res://gameplay/vehicle_effects/VehicleRain.gd").new()
+	vehicle_rain.name = "VehicleRain"
+	vehicle_rain.weather = self
+	add_child(vehicle_rain)
 	# Separate hail keeps the original snow layer visible during the icy front.
 	hail = GPUParticles3D.new()
 	hail.amount = 300
