@@ -34,6 +34,8 @@ func _ready() -> void:
  box("",Vector3(7.4,4.40,center_z-1),Vector3(.8,.6,.8),"735b50")
  EXTERIOR_LIFE.build(self)
  preload("res://assets/maciota/GarageWallDetails.gd").build(self)
+ var painted_skin := preload("res://assets/maciota/GaragePaintedSkin.gd")
+ if painted_skin.enabled(): painted_skin.apply(self,center_z)
  var backyard := preload("res://assets/maciota/GarageBackyard.gd").new()
  # The old project car stays east of FreightOffice's full footprint.
  backyard.position.x = 3.5
