@@ -45,6 +45,17 @@ static func build(building: UrbanBuildingBase) -> Array[PaintedFacadeKit.Painted
 	return doors
 
 
+## Altura do piso do telhado acima do chão (mesma folga de +0,14 m que o catálogo dava ao
+## prédio antigo). Segue o kit: parede natural menos o afundamento até a soleira da porta.
+static func roof_height() -> float:
+	var wall_h := PaintedFacadeKit.natural_size(STYLE).y
+	var lowest := INF
+	for opening in PaintedFacadeKit.openings(STYLE, "front"):
+		if bool(opening.leaf): lowest = minf(lowest, (1.0 - float(opening.rect[3])) * wall_h)
+	var sink := maxf(0.0, lowest - 0.03) if lowest < INF else 0.0
+	return wall_h - sink + 0.14
+
+
 static func _opening_half_width(width: float) -> float:
 	var rects: Array = PaintedFacadeKit.openings(STYLE, "front")
 	if rects.is_empty(): return 1.2

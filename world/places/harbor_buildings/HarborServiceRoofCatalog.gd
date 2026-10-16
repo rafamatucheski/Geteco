@@ -34,6 +34,8 @@ static func definitions() -> Array[Dictionary]:
 				var record: Dictionary = original_by_id[mapping[id]]
 				size=Vector2(record.size[0],record.size[1])/16.0
 				height=load("res://world/urban_detail/UrbanBuildingFactory.gd").resolved_height(record)+.14
+				# Delegacia pintada: a parede tem a altura da pintura, menos o que afunda até a soleira.
+				if id=="harbor_police" and not PaintedHarborHouses.style_for("Police","police_precinct").is_empty(): height=PaintedPoliceStation.roof_height()
 			"harbor_hospital": center+=Vector3(-50.0/18.0,0,0); size=Vector2(151.0/18.0,221.0/(18*.76822128)); height=5.35
 			"canal_north": size=Vector2(9.3,6.65); height=5.34
 			"cobra_leader_house":

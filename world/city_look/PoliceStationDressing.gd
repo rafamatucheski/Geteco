@@ -151,11 +151,15 @@ static func _facade(t: SurfaceTool, glow: Dictionary, building: UrbanBuildingBas
 	# primeiro trecho livre (a tampa do bueiro do esgoto fica nessa calçada).
 	var start := INF
 	var fz := hz + 3.0
-	for row in [hz + 3.0, hz + 0.7]:
+	# Pintada: de um ângulo isométrico os mastros na frente da fachada cobriam o letreiro
+	# HARBOR PATROL e a porta dupla. Ficam além da quina direita, rente à parede, com as
+	# bandeiras apontando para fora do prédio.
+	var rows: Array = [hz + 0.7, hz + 2.0] if painted else [hz + 3.0, hz + 0.7]
+	for row in rows:
 		# Junto à parede, só depois do mural PROCURADOS (ocupa ex+2,2 a ex+4,0).
-		# Pintada: a porta é mais larga (vão de ~3,2 m), os mastros ficam além dela.
-		var candidate: float = (ex + (3.8 if painted else 2.2)) if row > hz + 1.0 else ex + 4.15
-		while candidate < hw + 1.5 and start == INF:
+		var candidate: float = (hw + 0.5) if painted else ((ex + 2.2) if row > hz + 1.0 else ex + 4.15)
+		var limit: float = hw + 3.0 if painted else hw + 1.5
+		while candidate < limit and start == INF:
 			var ok := true
 			for i in 3:
 				if not _clear(obstacles, candidate + i * 0.9, row, 0.3): ok = false
