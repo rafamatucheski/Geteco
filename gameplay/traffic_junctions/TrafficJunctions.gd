@@ -123,9 +123,20 @@ static func configure(graph, layouts: Array = []) -> void:
 		_prune(key)
 
 ## Cruzamentos ao longo de uma rota: [{key, offset}] ordenados pelo deslocamento.
+## Rotas de NativeTrafficRoutes.route_near são compartilhadas entre carros (cache por aresta e
+## faixa) e imutáveis: a lista vale até o próximo configure() (geração). Sem isto cada carro novo
+## pagava um get_closest_offset linear na curva inteira para cada cruzamento do mapa.
 static func along(route: Curve3D) -> Array:
+	if route == null or junctions.is_empty(): return []
+	if not route.has_meta("traffic_nodes"): return _along(route)
+	var cached: Array = route.get_meta("junctions_along", [])
+	if cached.size() == 2 and int(cached[0]) == _generation: return cached[1]
+	var result := _along(route)
+	route.set_meta("junctions_along", [_generation, result])
+	return result
+
+static func _along(route: Curve3D) -> Array:
 	var result: Array = []
-	if route == null or junctions.is_empty(): return result
 	for key in junctions:
 		var center: Vector3 = junctions[key]
 		var offset := route.get_closest_offset(center)

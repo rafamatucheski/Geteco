@@ -6,12 +6,36 @@ var segments: Array[Dictionary] = []
 var vertices: Array[Vector3] = []
 var edges: Dictionary = {}
 var _vertex_ids: Dictionary = {}
+## Curvas de route_near por (aresta escolhida, faixa). A curva depende só da aresta e da
+## faixa, mas cada chamada refazia a busca do ciclo, montava a Curve3D e, no chamador, pagava
+## o bake (0,25 m) e a varredura de 1 m de HarborPortPolicy.route_is_ambient_safe. No release de
+## 13-15/10 `traffic_spawn` passou de 16 ms 173 vezes no porto (máx. 107 ms; p50 0,14 ms) com
+## `spawn_vehicle_add_child` < 2 ms: o custo era a rota, não o carro. Curvas compartilhadas são
+## só lidas pelos carros (nenhum consumidor altera pontos ou metadados de uma rota de route_near).
+## Limite de entradas: cada curva baked longa ocupa ~100 KB.
+const ROUTE_CACHE_LIMIT := 64
+var _route_cache: Dictionary = {}
+var _route_cache_order: Array[Vector3i] = []
+## Identidade do grafo a que o cache pertence: ProductionWorld._graph_restore troca os
+## dicionários sem passar por configure().
+var _route_cache_edges: Dictionary = {}
+## Arestas achatadas para a escolha de route_near (mesma ordem de `edges`). A varredura antiga
+## normalizava e calculava o deslocamento de faixa de cada aresta do mapa em GDScript a cada
+## chamada; aqui a distância ao eixo, menos meia largura (o deslocamento de faixa nunca passa
+## disso), descarta a aresta antes, sem mudar a escolhida.
+var _edge_refs: Array[Dictionary] = []
+var _edge_a := PackedVector3Array()
+var _edge_b := PackedVector3Array()
+var _edge_direction := PackedVector3Array()
+var _edge_half_width := PackedFloat32Array()
+var _edge_index_ready := false
 
 func configure(roads: Array, minimum_width: float = 5.0) -> void:
 	segments.clear()
 	vertices.clear()
 	edges.clear()
 	_vertex_ids.clear()
+	_clear_route_cache()
 	for road in roads:
 		if not road is Dictionary or not road.has("points"): continue
 		var points: PackedVector3Array = road.points
@@ -82,19 +106,60 @@ func _connect(from: int, to: int, segment: Dictionary) -> void:
 
 func route_near(point: Vector3, lane_index := 0, heading := Vector3.ZERO) -> Curve3D:
 	if vertices.is_empty(): return null
+	if not is_same(_route_cache_edges, edges): _clear_route_cache()
+	if not _edge_index_ready: _build_edge_index()
 	var selected: Dictionary = {}
 	var distance := INF
+	var use_heading := heading.length_squared() > .01
+	var wanted := heading.normalized() if use_heading else Vector3.ZERO
+	for index in _edge_refs.size():
+		var direction := _edge_direction[index]
+		if use_heading and direction.dot(wanted) < .5: continue
+		var a := _edge_a[index]
+		var b := _edge_b[index]
+		if distance < INF:
+			var bound := Geometry3D.get_closest_point_to_segment(point, a, b).distance_to(point) - _edge_half_width[index]
+			if bound > 0.0 and bound * bound > distance: continue
+		var edge: Dictionary = _edge_refs[index]
+		var offset := _lane_offset(direction, edge, lane_index)
+		var closest := Geometry3D.get_closest_point_to_segment(point, a + offset, b + offset)
+		var separation := closest.distance_squared_to(point)
+		if separation < distance:
+			distance = separation
+			selected = edge
+	if selected.is_empty(): return null
+	var key := Vector3i(int(selected.from), int(selected.to), lane_index)
+	if _route_cache.has(key): return _route_cache[key]
+	var curve := _route_from(selected, lane_index)
+	if curve == null: return null
+	_route_cache[key] = curve
+	_route_cache_order.append(key)
+	while _route_cache_order.size() > ROUTE_CACHE_LIMIT: _route_cache.erase(_route_cache_order.pop_front())
+	return curve
+
+func _clear_route_cache() -> void:
+	_route_cache.clear()
+	_route_cache_order.clear()
+	_route_cache_edges = edges
+	_edge_index_ready = false
+
+func _build_edge_index() -> void:
+	_edge_refs.clear()
+	_edge_a.clear()
+	_edge_b.clear()
+	_edge_direction.clear()
+	_edge_half_width.clear()
 	for from in edges:
 		for edge in edges[from]:
-			var direction := (vertices[edge.to] - vertices[from]).normalized()
-			if heading.length_squared() > .01 and direction.dot(heading.normalized()) < .5: continue
-			var offset := _lane_offset(direction, edge, lane_index)
-			var closest := Geometry3D.get_closest_point_to_segment(point, vertices[from] + offset, vertices[edge.to] + offset)
-			var separation := closest.distance_squared_to(point)
-			if separation < distance:
-				distance = separation
-				selected = edge
-	if selected.is_empty(): return null
+			_edge_refs.append(edge)
+			_edge_a.append(vertices[from])
+			_edge_b.append(vertices[edge.to])
+			_edge_direction.append((vertices[edge.to] - vertices[from]).normalized())
+			# Folga de 1 cm sobre o maior deslocamento possível (width/2) contra arredondamento.
+			_edge_half_width.append(float(edge.width) * .5 + .01)
+	_edge_index_ready = true
+
+func _route_from(selected: Dictionary, lane_index: int) -> Curve3D:
 	var path := _cycle(selected)
 	var closed := not path.is_empty()
 	if not closed: path = _open_path(selected)

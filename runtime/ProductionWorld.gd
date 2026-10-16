@@ -796,6 +796,7 @@ static func _graph_restore(graph, snapshot: Array) -> void:
 	graph._vertex_ids = snapshot[3].duplicate()
 
 func _configure_routes() -> void:
+	_carriageway_grid = {}
 	var key := _route_key()
 	var cached: Dictionary = _route_cache.get(key,{})
 	if not cached.is_empty():
@@ -1487,14 +1488,47 @@ func _on_screen(point: Vector3, radius: float = 1.0) -> bool:
 		if not camera.is_position_behind(sample) and rect.has_point(camera.unproject_position(sample)): return true
 	return false
 
+## Grade de trechos de pista para _on_carriageway. A admissão de um pedestre testa ~20-40
+## pontos da calçada e cada um varria todos os trechos de todas as ruas residentes (e
+## remontava _resident_roads, com conectores e túnel): é o grosso de population_spawn
+## (p99 4,2 ms no porto, release 13-15/10). Mesmo teste exato, só nos trechos da célula.
+## Refeita quando o conjunto residente muda (_configure_routes), como os grafos de rota.
+const CARRIAGEWAY_CELL := 16.0
+var _carriageway_grid: Dictionary = {}
+var _carriageway_key := ""
+
+func _carriageway_cells() -> Dictionary:
+	var key := _route_key()
+	if key == _carriageway_key and not _carriageway_grid.is_empty(): return _carriageway_grid
+	_carriageway_key = key
+	_carriageway_grid = carriageway_grid(_resident_roads())
+	return _carriageway_grid
+
 func _on_carriageway(point: Vector3) -> bool:
-	var flat := Vector2(point.x,point.z)
-	for road in _resident_roads():
+	return grid_on_carriageway(_carriageway_cells(), point)
+
+static func carriageway_grid(roads: Array) -> Dictionary:
+	var grid := {}
+	for road in roads:
 		var points: PackedVector3Array = road.points
 		var half := float(road.width)*.5+.3
 		for i in range(points.size()-1):
-			var nearest := Geometry2D.get_closest_point_to_segment(flat,Vector2(points[i].x,points[i].z),Vector2(points[i+1].x,points[i+1].z))
-			if flat.distance_to(nearest) < half: return true
+			var a := Vector2(points[i].x,points[i].z)
+			var b := Vector2(points[i+1].x,points[i+1].z)
+			var bounds := Rect2(a,Vector2.ZERO).expand(b).grow(half)
+			for x in range(floori(bounds.position.x/CARRIAGEWAY_CELL),floori(bounds.end.x/CARRIAGEWAY_CELL)+1):
+				for z in range(floori(bounds.position.y/CARRIAGEWAY_CELL),floori(bounds.end.y/CARRIAGEWAY_CELL)+1):
+					var cell := Vector2i(x,z)
+					if not grid.has(cell): grid[cell] = []
+					grid[cell].append([a,b,half])
+	return grid
+
+static func grid_on_carriageway(grid: Dictionary, point: Vector3) -> bool:
+	var flat := Vector2(point.x,point.z)
+	var cell := Vector2i(floori(flat.x/CARRIAGEWAY_CELL),floori(flat.y/CARRIAGEWAY_CELL))
+	for segment in grid.get(cell,[]):
+		var nearest := Geometry2D.get_closest_point_to_segment(flat,segment[0],segment[1])
+		if flat.distance_to(nearest) < segment[2]: return true
 	return false
 
 const WRECK_LINGER_MSEC := 6000

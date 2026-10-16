@@ -74,6 +74,17 @@ func run() -> void:
 	check(not director._reactive(witness, true), "proteção explícita respeitada")
 	director.reset_population()
 	check(not witness.controlled_automatically and is_equal_approx(witness.speed, 1.6), "limpeza devolve controle e velocidade")
+	# Varredura do diretor (15/10 filtra parados antes do laço pedestres x veículos):
+	# estacionado não assusta ninguém; o mesmo carro andando na direção da calçada assusta.
+	car.add_to_group("drivable")
+	car.global_position = Vector3(0, 0, 18)
+	car.velocity = Vector3.ZERO
+	director._poll_vehicle_danger()
+	check(director.reactors.is_empty(), "varredura ignora carro parado")
+	car.velocity = Vector3.FORWARD * 10
+	director._poll_vehicle_danger()
+	check(not director.reactors.is_empty(), "varredura reage a carro em movimento")
+	director.reset_population()
 	world.free()
 	print("PEDESTRIAN_DANGER checks=", checks, " failures=", failures)
 	quit(0 if failures == 0 else 1)

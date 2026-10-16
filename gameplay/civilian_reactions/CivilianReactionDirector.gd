@@ -196,7 +196,13 @@ func _poll_horns() -> void:
 ## Sem depender de buzina, motorista ou rota. Escolhe a ameaça mais urgente;
 ## sair de lado evita correr à frente do próprio carro que vem atropelando.
 func _poll_vehicle_danger() -> void:
-	var vehicles := get_tree().get_nodes_in_group("drivable")
+	# Filtra uma vez por varredura os parados (assess() os recusa de qualquer jeito): a maioria
+	# dos "drivable" são carros estacionados, e o laço é pedestres x veículos.
+	var vehicles: Array = []
+	for vehicle in get_tree().get_nodes_in_group("drivable"):
+		if is_instance_valid(vehicle) and vehicle is CharacterBody3D and Vector2(vehicle.velocity.x, vehicle.velocity.z).length() >= VEHICLE_DANGER.MIN_SPEED:
+			vehicles.append(vehicle)
+	if vehicles.is_empty(): return
 	var path_checks := 0
 	for person in _people():
 		if not _reactive(person, true): continue
