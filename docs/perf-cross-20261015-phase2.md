@@ -117,3 +117,26 @@ rodadas da serra e da travessia (entrada da serra), às vezes também na cidade/
   `HARBOR_STALL_LOG=1 HARBOR_STALL_STACKS=1` até capturar o quadro (b) com pilha; testar com
   PerfTune/PredatorSense totalmente desligados (serviço elevado) e com o modo de apresentação
   Vulkan "Prefer native" no painel NVIDIA; investigar a memória privada de ~5,2 GB do jogo.
+
+## 16/10 (tarde): pilha capturada na emenda da ponte
+
+Release `artifacts/perf-city` (com o mirante fatiado, f8019943), rotas ponte/travessia com
+`HARBOR_STALL_LOG=1 HARBOR_STALL_STACKS=1`. Logs em `artifacts/perf-city/evidence/stall-logs/`.
+
+- O quadro isolado aparece ~1 vez por travessia/ponte: 293, 309, 317, 370, 632 ms, sempre com a
+  serra carregada (`mountain` 12–16 trechos), zero nós novos, `setup_ms` < 1, process ~14 ms.
+- Pilha (endereços traduzidos pela tabela de exportação): thread principal em
+  `nvoglv64 → RtlAcquireSRWLockExclusive → RtlSleepConditionVariableSRW`, 100% das amostras, fase de
+  render. Outra thread do driver, disparada pelo pool do `dxcore` (`TpSetWaitEx`), está em
+  `win32u!NtGdiDdDDIDestroyAllocation2`: o driver destrói memória de vídeo segurando a trava.
+- A/B `GETECO_RETIRE_HOLD_MESHES=1` (malhas dos trechos descartados nunca liberadas): o quadro
+  continuou em 2 de 3 travessias (309, 317 ms). Não é a liberação das malhas dos trechos; a
+  liberação vem de dentro do motor/driver Vulkan (blocos de memória do alocador, buffers de
+  transferência). Interruptor removido depois do teste.
+- `--rendering-driver d3d12`: inviável como teste rápido (sem cache, compilou shaders por mais de
+  6 min sem ficar jogável).
+- Outra classe, corrigível: 80–140 ms ao entrar na serra com 3–9 pipelines `surface` novos no
+  quadro (um deles junto de `traffic_spawn`, 53 ms). Falta identificar os materiais e
+  pré-aquecê-los sob a cortina.
+- No build do editor (teste do usuário, `Jogar.cmd`) também apareceram `setup_ms` 90–140 ms sem nós
+  novos e uma fatia de 203 ms em `chunk.cell_merge`; não reproduzidos no release.
