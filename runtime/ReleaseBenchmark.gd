@@ -19,6 +19,8 @@ const ROUTE_PORT := [Vector3(150, 0, 82), Vector3(250, 0, 82), Vector3(250, 0, 3
 const ROUTES := {
 	"serra": [Vector3(650, 4, -290), Vector3(745, 4, -300), Vector3(745, 4, -425), Vector3(660, 4, -425)],
 	"ponte": [Vector3(440, 0, -285), Vector3(600, 0, -285)],
+	"ponte_norte": [Vector3(364.55,.032,-254),Vector3(342.5,2.4,-280),Vector3(342.5,2.4,-373.5),Vector3(342.5,0,-445)],
+	"ponte_tronco": [Vector3(382.5,0,-130),Vector3(382.5,0,-248),Vector3(386,0,-278),Vector3(405,0,-282),Vector3(382.5,0,-248),Vector3(382.5,0,-130)],
 	# Porto -> ponte -> serra e volta: o streaming entra em trechos novos com o jogo rodando (travadas de 15/10).
 	"travessia": [Vector3(330, 0, -285), Vector3(600, 0, -285), Vector3(700, 4, -300), Vector3(745, 4, -420)],
 	"deserto": [Vector3(-1040, 0, -1320), Vector3(-950, 0, -1320), Vector3(-950, 0, -1260), Vector3(-1040, 0, -1260)],
@@ -32,7 +34,7 @@ const TOGGLES := ["GETECO_POP_VC", "GETECO_SUN_SHADOW_NEAR", "GETECO_TRAFFIC_RAI
 	"GETECO_DETAIL_RANGE", "GETECO_BAKED_BUILDINGS", "GETECO_SKID_BUDGET", "GETECO_DASH_BATCH", "GETECO_DISPATCH_FAST",
 	"GETECO_PED_DUMMY", "GETECO_BUILDING_BATCH", "GETECO_PROP_INSTANCING", "GETECO_GROUND_STACK", "GETECO_SHADOW_SHELL",
 	"GETECO_BRIDGE_MERGE", "GETECO_FURNITURE_MERGE", "GETECO_CELL_MERGE", "GETECO_BRIDGE_LOOK", "GETECO_PAINTED_WINDOWS", "GETECO_PAINTED_FACADES",
-	"GETECO_SUN_SPLITS"]
+	"GETECO_SUN_SPLITS", "GETECO_UNIFIED_BRIDGE"]
 
 const AUTOPILOT := preload("res://runtime/BenchmarkAutopilot.gd")
 
@@ -143,14 +145,20 @@ func _run() -> void:
 	if autopilot != null: autopilot.finish()
 	var toggles := {}
 	for name in TOGGLES: toggles[name] = OS.get_environment(name)
+	var measured_ms := 0.0
+	for frame_ms in frames: measured_ms += frame_ms
 	var report := {"label": label, "build": "editor" if OS.has_feature("editor") else ("export_release" if OS.has_feature("release") else "export_debug"),
 		"route": route_name if route_name != "" else ("porto" if route == ROUTE_PORT else "oeste"), "frames": frames.size(), "frame_ms": _stats(frames),
+		"duration_ms": measured_ms, "average_fps": frames.size()*1000.0/maxf(measured_ms,.001), "frame_samples_ms": frames,
 		"gpu_ms_main": _stats(gpu), "draw_calls": _stats(draws), "toggles": toggles,
+		"frames_over_66_7ms": frames.filter(func(ms): return ms > 66.7).size(),
 		"frames_over_100ms": frames.filter(func(ms): return ms > 100.0).size(),
 		"frames_over_6_9ms": frames.filter(func(ms): return ms > 6.94).size(), "frames_over_16_7ms": frames.filter(func(ms): return ms > 16.7).size(),
 		"frames_over_33ms": frames.filter(func(ms): return ms > 33.3).size(), "playable_ms": playable_ms, "frames_over_250ms": frames.filter(func(ms): return ms > 250.0).size(),
 		"resolution": str(get_viewport().get_visible_rect().size), "viewport_pixels": str(get_viewport().size), "msaa": get_viewport().msaa_3d,
-		"hour": bench_hour, "rain": bench_rain, "vehicles": world.production.vehicles.size(), "people": world.people.size()}
+		"hour": bench_hour, "rain": bench_rain, "vehicles": world.production.vehicles.size(), "people": world.people.size(),
+		"requested_population": world.production.requested_population, "vsync_mode": DisplayServer.window_get_vsync_mode(), "max_fps": Engine.max_fps,
+		"engine": Engine.get_version_info().string, "cpu": OS.get_processor_name()}
 	if chaos_stars > 0:
 		report.chaos = {"stars_requested": chaos_stars, "stars_final": int(world.gameplay.stars), "dispatch_units_peak": _chaos_peak_units,
 			"dispatch_units_final": world.dispatch.units.size() if is_instance_valid(world.get("dispatch")) else -1}

@@ -1,0 +1,26 @@
+--- a/world/urban_detail/HarborUrbanSurface3D.gd
++++ b/world/urban_detail/HarborUrbanSurface3D.gd
+@@ -114,12 +114,23 @@
+ 
+ ## `cover`: contorno das ruas do chunk (HarborRoadGeometry3D.chunk_cover); o lote não fica por baixo da rua.
+ func build_chunk(parent: Node3D, rect: Rect2, cover: Array[PackedVector2Array] = []) -> Array[Rect2]:
++	# O cover regional ja exclui a ponte; seus lotes antigos nao podem voltar
++	# por baixo do asfalto. Ownership exato independe do diagnostico GROUND_STACK.
++	var bridge_kit = preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd")
++	var bridge_cuts: Array[PackedVector2Array] = []
++	if bridge_kit.enabled():
++		if rect.intersects(bridge_kit.east_bounds(),true): bridge_cuts.append(bridge_kit.east_footprint())
++		if rect.intersects(Rect2(328.75,-374.25,36.55,126.0),true): bridge_cuts.append(bridge_kit.north_footprint())
+ 	var exposed: Array[Rect2] = []
+ 	var grouped: Dictionary = {}
+ 	for source in _visible_surfaces:
+ 		var clipped := (source.rect as Rect2).intersection(rect)
+ 		if not clipped.has_area(): continue
+ 		for part in _rounded_parts(source,clipped):
++			if not bridge_cuts.is_empty():
++				var polygons: Array[PackedVector2Array] = []
++				polygons.assign(part.polygons)
++				part.polygons = GROUND_CUT.subtract_exact(polygons,bridge_cuts)
+ 			var key := "%s|%s" % [part.kind, (part.color as Color).to_html()]
+ 			if not grouped.has(key):
+ 				grouped[key] = {"kind":part.kind,"color":part.color,"polygons":[]}

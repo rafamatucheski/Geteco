@@ -14,7 +14,8 @@ func _initialize() -> void:
 
 func run() -> void:
 	var harbor := Vector3(243.75,0,237.5)
-	var forest := Vector3(640,0,-267)
+	# A floresta começa depois do corredor costeiro protegido da ponte/túnel.
+	var forest := Vector3(700,0,-267)
 	var summit := Vector3(670,0,-485)
 	var resort := Vector3(11490.0/16,0,-7690.0/16)
 	var cemetery := Vector3(-650.0/16,0,1740.0/16)

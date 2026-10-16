@@ -1,0 +1,8 @@
+{
+  "invalidated_label": "bridge_unified_20261016_trunk_before_1",
+  "own_pid": 150536,
+  "other_pid": 2272,
+  "other_start_local": "2026-10-16 17:02:18",
+  "other_script": "tests/measure/measure_lightning_storm.gd",
+  "reason": "Outra medição renderizada iniciou após nossa aquisição da fila; interrompido apenas o processo próprio; baseline anterior preservada em trunk-before-first-observed.json."
+}

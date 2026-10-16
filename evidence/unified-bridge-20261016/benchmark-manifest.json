@@ -1,0 +1,54 @@
+{
+  "gpu": [
+    {
+      "Name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "DriverVersion": "32.0.16.1047"
+    }
+  ],
+  "started_utc": "2026-10-16T19:48:27.0449217Z",
+  "scope": "Main renderizado, carga normal solicitada do projeto, cinematic route; --skip-arrival, --no-save, --no-dispatch. Norte em estado anterior à missão final; travessia física e estado concluído validados separadamente. A fila aguarda outros Godot; não mede headless nem usa PNG durante a medição.",
+  "engine": "Godot 4.7.2 .NET release",
+  "cpu": "13th Gen Intel(R) Core(TM) i7-13650HX",
+  "scenarios": [
+    {
+      "Id": "trunk",
+      "Hour": 12,
+      "Start": "harbor,382.5,-130",
+      "Rain": 0,
+      "Route": "ponte_tronco"
+    },
+    {
+      "Id": "north",
+      "Hour": 12,
+      "Start": "harbor,364.55,-254",
+      "Rain": 0,
+      "Route": "ponte_norte"
+    },
+    {
+      "Id": "east",
+      "Hour": 12,
+      "Start": "harbor,440,-285",
+      "Rain": 0,
+      "Route": "ponte"
+    },
+    {
+      "Id": "night_rain",
+      "Hour": 21,
+      "Start": "harbor,440,-285",
+      "Rain": 2,
+      "Route": "ponte"
+    },
+    {
+      "Id": "first_visit",
+      "Hour": 12,
+      "Start": "harbor,330,-285",
+      "Rain": 0,
+      "Route": "travessia"
+    }
+  ],
+  "package": "C414EE776484D4FCD89D8F60976DEC5B69379538CAE15FCE0325A0FAD9DA2AE8",
+  "binary": "32836AA8E479C39787469E5CDC808DCD7C89094681AC137C57E20AB613C1C5EB",
+  "queued_utc": "2026-10-16T19:52:43.2084276Z",
+  "previous_queue_attempt": "Um Bash órfão executou a baseline serial válida, preservada em trunk-before-first-observed.json. A segunda tentativa PID150536 foi interrompida por interferência do benchmark externo PID2272 antes de produzir novo JSON; o arquivo antes1 permanece o primeiro válido.",
+  "final_status": "Usuário solicitou entrega com FPS pendente. Sem A/B concluído; nenhuma execução própria permanece agendada."
+}

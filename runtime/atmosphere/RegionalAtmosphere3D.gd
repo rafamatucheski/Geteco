@@ -4,7 +4,12 @@ const PALETTE := preload("res://runtime/atmosphere/AtmospherePalette.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const CEMETERY := preload("res://world/regions/OriginalCemetery3D.gd")
 const SHELTER := preload("res://runtime/cold/OriginalHeatSources.gd")
-const WORLD_CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
+const NORTH_GATEWAY := preload("res://world/north_gateway/NorthGatewayLayout.gd")
+const BRIDGE_KIT := preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd")
+# A região lógica muda na cabeceira, mas clima, chuva e paleta só começam
+# a transição em terra, depois da ponte e de sua entrada no deserto.
+const DESERT_CLIMATE_START := -NORTH_GATEWAY.END_Z + 12.0
+const DESERT_CLIMATE_END := 470.0
 var current: Dictionary = {}
 var weights: Dictionary = {}
 
@@ -51,7 +56,7 @@ static func sample_at(point: Vector3, hour: float, clouds: float, snow: float) -
 
 static func desert_weight(point: Vector3) -> float:
 	if point.x>440.0 or point.x < -1550.0: return 0.0
-	return smoothstep(360.0,470.0,-point.z)
+	return smoothstep(DESERT_CLIMATE_START if BRIDGE_KIT.enabled() else 360.0,DESERT_CLIMATE_END,-point.z)
 
 func apply(controller, hour: float, clouds: float, snow: float, inside: bool, delta: float) -> void:
 	var point := focus_position(controller)
@@ -72,13 +77,13 @@ func apply(controller, hour: float, clouds: float, snow: float, inside: bool, de
 	var chroma := clock_tint/maxf(clock_tint.r,maxf(clock_tint.g,clock_tint.b))
 	var regional_clouds: float = lerpf(clouds,snow,weights.mountain)
 	controller.sun.light_color *= Color.WHITE.lerp(chroma,(1.0-regional_clouds)*daylight_at(hour))
-	# The open water crossing gets direct sun from every side. Ease the local
-	# daytime exposure across the approach and bridge without a light seam.
-	var bridge_x := smoothstep(395.0,415.0,point.x)*(1.0-smoothstep(565.0,590.0,point.x))
-	var bridge_z := 1.0-smoothstep(18.0,45.0,absf(point.z-WORLD_CONNECTION.CENTER_Z))
-	var bridge_day := bridge_x*bridge_z*daylight_at(hour)
-	controller.sun.light_energy *= 1.0-0.16*bridge_day
-	env.ambient_light_energy *= 1.0-0.08*bridge_day
+	# Somente o diagnóstico A/B conserva a antiga variação artificial de exposição.
+	if not BRIDGE_KIT.enabled():
+		var bridge_x := smoothstep(395.0,415.0,point.x)*(1.0-smoothstep(565.0,590.0,point.x))
+		var bridge_z := 1.0-smoothstep(18.0,45.0,absf(point.z+285.0))
+		var bridge_day := bridge_x*bridge_z*daylight_at(hour)
+		controller.sun.light_energy *= 1.0-.16*bridge_day
+		env.ambient_light_energy *= 1.0-.08*bridge_day
 	env.ambient_light_color *= current.shadow_tint
 	# Outdoor bounce keeps shaded sidewalks and actors readable. Weather resets
 	# the base energy each update; isolated interiors return above unchanged.

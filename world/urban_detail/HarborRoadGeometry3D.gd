@@ -8,6 +8,7 @@ class_name HarborRoadGeometry3D
 
 const SOURCE_SCALE := 1.0 / 16.0
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
+const UNIFIED_BRIDGE := preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd")
 const SIDEWALK_MARGIN := 42.0 * SOURCE_SCALE
 const DASH_LENGTH := 28.0 * SOURCE_SCALE
 const DASH_GAP := 26.0 * SOURCE_SCALE
@@ -166,6 +167,12 @@ func build_chunk(parent: Node3D, rect: Rect2) -> void:
 	for opening in CATALOG.sewer_openings():
 		var sewer_opening := Rect2(opening.position * SOURCE_SCALE, opening.size * SOURCE_SCALE)
 		if rect.intersects(sewer_opening): opening_clips.append(_rect_polygon(sewer_opening))
+	# O corredor novo é dono do piso inteiro, incluindo os antigos tapa-vãos.
+	# Recortar a autoria regional evita sobreposição e mantém o grafo das vias.
+	if UNIFIED_BRIDGE.enabled() and rect.intersects(UNIFIED_BRIDGE.east_bounds()):
+		opening_clips.append(UNIFIED_BRIDGE.east_footprint())
+	if UNIFIED_BRIDGE.enabled() and rect.intersects(Rect2(328.75,-374.25,36.55,126.0)):
+		opening_clips.append(UNIFIED_BRIDGE.north_footprint())
 	var chunk_layers: Array = []
 	for layer in _layers:
 		var clipped: Array[PackedVector2Array] = []
@@ -509,7 +516,7 @@ func _build_markings(parent: Node3D, rect: Rect2) -> void:
 					var midpoint := (from + to) * 0.5
 					# Half-open chunk ownership: padding duplicated coplanar paint
 					# in adjacent chunks while streaming across their border.
-					if rect.has_point(midpoint) and not _marking_hits_junction(midpoint) and not _marking_hits_junction(from) and not _marking_hits_junction(to):
+					if rect.has_point(midpoint) and not UNIFIED_BRIDGE.owns_surface_point(midpoint) and not _marking_hits_junction(midpoint) and not _marking_hits_junction(from) and not _marking_hits_junction(to):
 						if dash_batch_enabled and not _mark_touches(tunnel_cuts, from, to): _queue_mark(batches, from, to)
 						else: _add_mark(mark_parent, from, to, count)
 						count += 1
@@ -712,6 +719,11 @@ func set_weather_wetness(value: float) -> void:
 
 func _coastal_asphalt_material() -> ShaderMaterial:
 	if _coastal_material != null: return _coastal_material
+	if UNIFIED_BRIDGE.enabled():
+		_coastal_material = preload("res://world/regions/unified_bridge/UnifiedRoadAsphalt.gd").material()
+		_coastal_material.set_shader_parameter("wetness",_weather_wetness)
+		_apply_coastal_reflection()
+		return _coastal_material
 	# Keep _material's StandardMaterial3D contract for bridges/tunnels and
 	# external consumers; the streamed Harbor road shares this planar receiver.
 	var base := _material(ROAD_COLOR)
@@ -799,3 +811,4 @@ func _counter_clockwise(points: PackedVector2Array) -> PackedVector2Array:
 	if result.size() > 1 and result[0].distance_to(result[-1]) <= 0.0001: result.resize(result.size()-1)
 	if Geometry2D.is_polygon_clockwise(result): result.reverse()
 	return result
+# O recorte transfere apenas a superfície à ponte; as vias continuam no grafo.

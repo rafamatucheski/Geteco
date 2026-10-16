@@ -6,11 +6,13 @@ const LAYOUT := preload("res://world/north_gateway/NorthGatewayLayout.gd")
 const POLICY := preload("res://world/north_gateway/NorthGatewayPolicy.gd")
 const STORE := preload("res://runtime/SaveStore.gd")
 const FAR_FIXTURE := Vector3(403.125,.1,-21.875) # Authored northbank road, outside site release but inside connection retention.
+const PARK_FIXTURE := Vector3(394.0,.12,-125.0)
 var world
 var checks := 0
 var failures: Array[String] = []
 var output := ""
 var fingerprint_started: Dictionary = {}
+var diagnostics: Array[Dictionary] = []
 
 func _initialize() -> void:
 	create_timer(330).timeout.connect(func(): push_error("NORTH_GATEWAY bounded integration timeout"); quit(3))
@@ -37,10 +39,12 @@ func run() -> void:
 	fingerprint_started = FIXTURE.source_fingerprint()
 	output = FIXTURE.output_dir("north-gateway-integration")
 	var initial := LAYOUT.APPROACH+Vector3(2.1,.12,0)
-	var save_path := FIXTURE.write_fixture(output,"before-document.json",FIXTURE.full_snapshot(initial))
+	var save_path := FIXTURE.write_fixture(output,"before-document.json",checkpoint_at(initial))
 	check(not save_path.is_empty(),"valid isolated checkpoint created without touching player save")
 	if save_path.is_empty(): finish(); return
 	if not await boot(save_path): finish(); return
+	if not await stage_default_car(): finish(); return
+	if not live_attempt("before_gateway_checks"): finish(); return
 	var gateway = get_first_node_in_group("north_gateway")
 	check(is_instance_valid(gateway),"WorldConnection installs the production gateway")
 	if not is_instance_valid(gateway): finish(); return
@@ -69,21 +73,25 @@ func run() -> void:
 	# placement or progress substitution occurs during either walking attempt.
 	var walked := await walk_to(gate.origin+Vector3(0,0,3),20.0,true)
 	check(walked,"player physically reaches the works through the curved access")
+	if not live_attempt("after_access_walk"): finish(); return
 	var blocked_from: Vector3 = world.player.global_position
 	await walk_to(gate.origin+Vector3(0,0,-5),4.0,false)
+	if not live_attempt("after_closed_barrier_walk"): finish(); return
 	check(world.player.global_position.z>gate.origin.z+.25 and world.player.global_position.distance_to(blocked_from)>1.0,"real actor approaches barrier and cannot cross")
 	world.player.automatic_direction = Vector3.ZERO
-	# Independent car fixture starts before its physical attempt. The player
-	# stands beside the carriageway so it cannot be the obstacle under test.
-	world.player.teleport(gate.origin+Vector3(6,.1,7))
-	await frames(3)
-	var car = world.production.spawn_vehicle("sport_coupe",gate.origin+Vector3(0,.08,11),0.0)
+	var spawn_pose := carriageway_spawn_pose(gate.origin+Vector3(0,0,11))
+	# O observador fica atras do carro, sobre o eixo com apoio comprovado. O
+	# antigo deslocamento lateral de 6 m punha Dante fora do tabuleiro da curva.
+	if not await stage_observer(spawn_pose.origin): finish(); return
+	var car = world.production.spawn_vehicle("sport_coupe",spawn_pose.origin,spawn_pose.basis.get_euler().y)
 	check(is_instance_valid(car),"real physical vehicle fixture spawned")
 	if is_instance_valid(car):
 		car.set_meta("race_owned",true)
 		car.set_external_driver(true)
 		var car_start: Vector3 = car.global_position
 		for index in 300:
+			if index%60==0: diagnostic("closed_car_attempt",{"iteration":index,"car_position":str(car.global_position)})
+			if world.gameplay.health<=0 or world.session.rescue_pending: break
 			car.throttle_input = 1.0 if car.speed<6.0 else 0.0
 			car.steer_input = 0.0
 			car.brake_input = false
@@ -92,8 +100,14 @@ func run() -> void:
 		check(car.global_position.distance_to(car_start)>2.0 and car.global_position.z>gate.origin.z+.5,"real vehicle moves under throttle and stops before the closed works")
 		car.queue_free()
 		await frames(3)
+	if not live_attempt("before_final_document"): finish(); return
 	var accepted: Dictionary = FIXTURE.final_event(world.session.state.campaign)
+	diagnostic("final_document_result",{"event_result":accepted})
 	check(accepted.ok,"real final document event accepted by live campaign")
+	if not accepted.ok:
+		print("NORTH_GATEWAY_ABORT final document rejected; completed-state checks not exercised")
+		finish()
+		return
 	# Wait for the production poll instead of assigning completed or rebuilding
 	# scenery from the test; this verifies completion while the world stays open.
 	await create_timer(.6).timeout
@@ -103,13 +117,15 @@ func run() -> void:
 	check(ray(gate.origin+Vector3(0,.8,3),gate.origin+Vector3(0,.8,-3)).is_empty(),"completed bridge removes physical work barrier")
 	check(FIXTURE.graph_snapshot(world.production.traffic_routes)==full_roads and FIXTURE.graph_snapshot(world.production.ambient_traffic_routes)==ambient_roads,"completion preserves existing traffic graphs and east access")
 	check(world.session.state.region_id=="harbor","gateway does not claim to travel to an unimplemented map 2")
+	if not await finish_live_epilogue(): finish(); return
 	check_completed_support()
 	world.player.teleport(gate.origin+Vector3(0,.1,5))
 	await frames(3)
 	check(await walk_to(LAYOUT.TERMINAL,35.0,false),"real actor crosses completed span and reaches safe terminal")
 	check(world.player.global_position.y>LAYOUT.DECK_HEIGHT-.35,"no fall or world-boundary rescue during crossing")
 	var terminal_hit := ray(Vector3(LAYOUT.TERMINAL.x,LAYOUT.DECK_HEIGHT+.8,LAYOUT.END_Z+2),Vector3(LAYOUT.TERMINAL.x,LAYOUT.DECK_HEIGHT+.8,LAYOUT.END_Z-2))
-	check(not terminal_hit.is_empty(),"unfinished destination has permanent solid terminal protection")
+	# O destino norte é a estrada jogável do deserto; a proteção fica nas laterais.
+	check(terminal_hit.is_empty(),"completed bridge keeps the through access to the desert open")
 	var mounted_id: int = gateway.scenery.get_instance_id()
 	for index in 10: gateway.reconcile()
 	check(gateway.scenery.get_instance_id()==mounted_id and get_nodes_in_group("north_gateway").size()==1,"repeated reconcile does not duplicate scenery or controllers")
@@ -122,7 +138,7 @@ func run() -> void:
 	world.free()
 	world = null
 	await frames(3)
-	var old_path := FIXTURE.write_fixture(output,"legacy-completed.json",FIXTURE.full_snapshot(initial,true,true))
+	var old_path := FIXTURE.write_fixture(output,"legacy-completed.json",checkpoint_at(initial,true,true))
 	check(not old_path.is_empty(),"genuine version-1 completed save fixture validated")
 	if not old_path.is_empty() and await boot(old_path):
 		var restored = get_first_node_in_group("north_gateway")
@@ -161,6 +177,7 @@ func ray(from: Vector3, to: Vector3) -> Dictionary:
 	return world.get_world_3d().direct_space_state.intersect_ray(query)
 
 func walk_to(target: Vector3, seconds: float, follow_access: bool) -> bool:
+	diagnostic("walk_begin",{"target":str(target),"follow_access":follow_access})
 	var offsets := PackedVector3Array()
 	if follow_access:
 		for index in range(1,ceili(LAYOUT.length()/2.0)):
@@ -170,6 +187,11 @@ func walk_to(target: Vector3, seconds: float, follow_access: bool) -> bool:
 	offsets.append(target)
 	var waypoint := 0
 	for index in ceili(seconds*float(Engine.physics_ticks_per_second)):
+		if index%30==0: diagnostic("walk_sample",{"target":str(target),"waypoint":waypoint,"iteration":index})
+		if world.gameplay.health<=0 or world.session.rescue_pending:
+			diagnostic("walk_aborted_death",{"target":str(target),"waypoint":waypoint})
+			world.player.automatic_direction = Vector3.ZERO
+			return false
 		var delta: Vector3 = offsets[waypoint]-world.player.global_position
 		delta.y = 0
 		if delta.length()<.65:
@@ -181,6 +203,143 @@ func walk_to(target: Vector3, seconds: float, follow_access: bool) -> bool:
 		world.player.automatic_direction = delta.normalized()
 		await physics_frame
 	world.player.automatic_direction = Vector3.ZERO
+	diagnostic("walk_timeout",{"target":str(target),"waypoint":waypoint})
+	return false
+
+func finish_live_epilogue() -> bool:
+	# Exercitar o mesmo botao Continuar do jogador completa o callback real;
+	# nao apagar o modal, alterar o ledger ou desbloquear Dante manualmente.
+	var opened: bool = world.session.dialogue_open and is_instance_valid(world.session.dialogue_card)
+	check(opened,"real post-finale epilogue dialogue opens")
+	diagnostic("epilogue_before_ui_advance")
+	if not opened: return false
+	var advances := 0
+	for index in 8:
+		if not world.session.dialogue_open: break
+		if not is_instance_valid(world.session.dialogue_card): break
+		world.session.dialogue_card.advance_button.pressed.emit()
+		advances += 1
+		await frames(2)
+	var closed: bool = not world.session.dialogue_open and not world.session.modal
+	var callback_complete: bool = world.session.state.campaign.snapshot().get("aftermath",{}).get("call_complete",false)
+	var input_released: bool = not world.player.input_locked
+	check(closed,"Continue button closes the real epilogue dialogue")
+	check(callback_complete,"real epilogue callback completes the aftermath ledger")
+	check(input_released,"real dialogue close returns player control before walking")
+	diagnostic("epilogue_after_ui_advance",{"ui_advances":advances,"closed":closed,"callback_complete":callback_complete})
+	return closed and callback_complete and input_released
+
+func checkpoint_at(point: Vector3, completed := false, old_save := false) -> Dictionary:
+	var data := FIXTURE.full_snapshot(point,completed,old_save)
+	# O carro persistido nasce fora do canteiro e do jogador. Isto é preparação
+	# da fixture; somente os trechos posteriores exercitam movimento físico.
+	data.world.vehicles = [{"archetype":"sport_coupe","vehicle_id":"player_coupe",
+		"was_driven":false,"paint":"d5a544ff","position":[PARK_FIXTURE.x,PARK_FIXTURE.y,PARK_FIXTURE.z],
+		"yaw":PI*.5,"health":80.0,"region":"harbor","equipment":{}}]
+	return data
+
+func stage_default_car() -> bool:
+	var car: CharacterBody3D = world.driving.car
+	world.production.region.prepare_collision_at(PARK_FIXTURE)
+	await frames(4)
+	var parked := false
+	for point in [PARK_FIXTURE,PARK_FIXTURE+Vector3(6,0,0),PARK_FIXTURE+Vector3(12,0,0)]:
+		world.production.region.prepare_collision_at(point)
+		await frames(2)
+		if not world.production.vehicle_position_clear(car,point,PI*.5): continue
+		car.place(point,PI*.5)
+		car.input_locked = true
+		parked = true
+		break
+	check(parked,"default car staged on supported avenue outside gateway and actor")
+	check(not LAYOUT.bounds().grow(5.0).has_point(Vector2(car.global_position.x,car.global_position.z)),"default car cannot retain the empty gateway fixture")
+	check(world.session.position_clear(world.player.global_position),"initial actor has collision clearance")
+	diagnostic("default_car_staged",{"staged":parked,"car_position":str(car.global_position)})
+	return parked and world.session.position_clear(world.player.global_position)
+
+func live_attempt(stage: String) -> bool:
+	var healthy: bool = world.gameplay.health>0 and not world.session.rescue_pending
+	var expected_mission: bool = world.session.state.campaign.active_id=="cobra_finale" and world.session.state.campaign.step==7
+	diagnostic(stage)
+	check(healthy,"%s: actor alive without rescue"%stage)
+	check(expected_mission,"%s: final-document mission remains active"%stage)
+	if not healthy or not expected_mission:
+		print("NORTH_GATEWAY_ABORT invalid live attempt; downstream completion checks not exercised")
+	return healthy and expected_mission
+
+func diagnostic(stage: String, details: Dictionary = {}) -> void:
+	var contacts: Array[Dictionary] = []
+	for index in mini(world.player.get_slide_collision_count(),8):
+		var collision: KinematicCollision3D = world.player.get_slide_collision(index)
+		var body = collision.get_collider()
+		contacts.append({"body":str(body.get_path()) if is_instance_valid(body) and body is Node else str(body),
+			"point":str(collision.get_position()),"normal":str(collision.get_normal())})
+	var row := {"stage":stage,"timestamp_usec":Time.get_ticks_usec(),"position":str(world.player.global_position),
+		"health":world.gameplay.health,"rescue_pending":world.session.rescue_pending,"input_locked":world.player.input_locked,
+		"physics_active":world.player.is_physics_processing(),"floor":world.player.is_on_floor(),
+		"campaign":world.session.state.campaign.snapshot(),"contacts":contacts,"details":details}
+	diagnostics.append(row)
+	print("NORTH_GATEWAY_DIAGNOSTIC ",JSON.stringify(row))
+
+func carriageway_spawn_pose(wanted: Vector3) -> Transform3D:
+	var best := 0.0
+	var separation := INF
+	for index in ceili(LAYOUT.length()*2.0)+1:
+		var distance := minf(float(index)*.5,LAYOUT.length())
+		var point := LAYOUT.sample(distance)
+		var flat := Vector2(point.x-wanted.x,point.z-wanted.z).length_squared()
+		if flat<separation:
+			separation = flat
+			best = distance
+	var point := LAYOUT.sample(best)
+	var forward := LAYOUT.sample(minf(best+.5,LAYOUT.length()))-LAYOUT.sample(maxf(best-.5,0))
+	var yaw := atan2(-forward.x,-forward.z)
+	var basis := Basis(Vector3.UP,yaw)
+	# A caixa do veículo é horizontal. Seus quatro apoios precisam alcançar a
+	# rampa e o casco não pode nascer enterrado na quina superior da inclinação.
+	var car: CharacterBody3D = world.driving.car
+	var highest := -INF
+	var supports: Array[Dictionary] = []
+	for x in [-car.half_width,car.half_width]:
+		for z in [-car.half_length,car.half_length]:
+			var support: Vector3 = point+basis*Vector3(x,0,z)
+			var hit := ray(support+Vector3.UP*2,support-Vector3.UP*2)
+			if not hit.is_empty(): highest = maxf(highest,hit.position.y)
+			supports.append({"at":str(support),"hit":str(hit.get("position",Vector3.INF))})
+	check(is_finite(highest),"ramp vehicle fixture has real floor probes")
+	point.y = highest+.04 if is_finite(highest) else point.y+.12
+	diagnostic("ramp_spawn_pose",{"position":str(point),"yaw":yaw,"supports":supports})
+	return Transform3D(basis,point)
+
+func stage_observer(car_position: Vector3) -> bool:
+	var closest_distance := 0.0
+	var separation := INF
+	for index in ceili(LAYOUT.length()*2.0)+1:
+		var distance := minf(float(index)*.5,LAYOUT.length())
+		var sample := LAYOUT.sample(distance)
+		var flat := Vector2(sample.x-car_position.x,sample.z-car_position.z).length_squared()
+		if flat<separation:
+			separation = flat
+			closest_distance = distance
+	for behind in [8.0,10.0,12.0]:
+		var point := LAYOUT.sample(maxf(0.0,closest_distance-behind))
+		var hit := ray(point+Vector3.UP*2,point-Vector3.UP*2)
+		if hit.is_empty() or hit.normal.y<.8: continue
+		point.y = hit.position.y+.08
+		if point.distance_to(car_position)<5.0 or not world.session.position_clear(point): continue
+		var supported := true
+		for offset in [Vector3(.25,0,.25),Vector3(-.25,0,.25),Vector3(.25,0,-.25),Vector3(-.25,0,-.25)]:
+			var support := ray(point+offset+Vector3.UP*.6,point+offset-Vector3.UP*.6)
+			if support.is_empty() or support.normal.y<.8: supported=false
+		if not supported: continue
+		world.player.teleport(point)
+		await frames(6)
+		var floor_hit := ray(world.player.global_position+Vector3.UP*.5,world.player.global_position-Vector3.UP*.7)
+		check(not floor_hit.is_empty() and floor_hit.normal.y>.8,"car observer stands on supported bridge behind the vehicle")
+		diagnostic("car_observer_staged",{"car_position":str(car_position),"behind_meters":behind,"supported_pose":str(point)})
+		return not floor_hit.is_empty() and floor_hit.normal.y>.8 and live_attempt("before_closed_car_attempt")
+	check(false,"car observer has a clear supported pose behind the vehicle")
+	diagnostic("car_observer_staging_failed",{"car_position":str(car_position)})
 	return false
 
 func check_completed_support() -> void:
@@ -254,7 +413,7 @@ func finish() -> void:
 	if not output.is_empty():
 		var file := FileAccess.open(output.path_join("report.json"),FileAccess.WRITE)
 		if file!=null:
-			file.store_string(JSON.stringify({"checks":checks,"failures":failures,"source_sha256_start":fingerprint_started,"source_sha256_end":fingerprint_ended,"args":OS.get_cmdline_args(),"user_args":OS.get_cmdline_user_args(),"cpu":OS.get_processor_name(),"os":OS.get_name(),"os_version":OS.get_version(),"engine":Engine.get_version_info().string,"scope":"Real Main/.NET with explicit checkpoint and streaming-position fixtures. Physical actor/car attempts use real movement. No full-campaign playthrough, rendered visual or FPS claim."},"\t"))
+			file.store_string(JSON.stringify({"checks":checks,"failures":failures,"diagnostics":diagnostics,"source_sha256_start":fingerprint_started,"source_sha256_end":fingerprint_ended,"args":OS.get_cmdline_args(),"user_args":OS.get_cmdline_user_args(),"cpu":OS.get_processor_name(),"os":OS.get_name(),"os_version":OS.get_version(),"engine":Engine.get_version_info().string,"scope":"Real Main/.NET with explicit checkpoint and streaming-position fixtures. Default car parking is staged before checks, not a driving test. Physical actor/car attempts use real movement. No full-campaign playthrough, rendered visual or FPS claim."},"\t"))
 			file.close()
 	print("NORTH_GATEWAY_INTEGRATION checks=%d failures=%d evidence=%s"%[checks,failures.size(),output])
 	quit(0 if failures.is_empty() else 1)

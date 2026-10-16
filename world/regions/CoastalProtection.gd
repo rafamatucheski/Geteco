@@ -5,6 +5,8 @@ const CELL := 64.0
 const HEIGHT := 1.15
 const NORTH_GATEWAY_LAYOUT := preload("res://world/north_gateway/NorthGatewayLayout.gd")
 const NORTH_GATEWAY_POLICY := preload("res://world/north_gateway/NorthGatewayPolicy.gd")
+const UNIFIED_BRIDGE := preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd")
+const GROUND_CUT := preload("res://world/urban_detail/GroundCut.gd")
 var polygons: Array[PackedVector2Array] = []
 var boundaries: Array[Dictionary] = []
 var cells: Dictionary = {}
@@ -12,6 +14,8 @@ var materials: Dictionary = {}
 var box_mesh := BoxMesh.new()
 var bridge_walks: Array[PackedVector2Array] = []
 var existing_perimeters: Array[PackedVector2Array] = []
+var _unified_footprints: Array[PackedVector2Array] = []
+var _unified_bounds: Array[Rect2] = []
 
 func configure(data: Dictionary, extra: Array[PackedVector2Array], road_surfaces: Array) -> void:
 	polygons.clear()
@@ -19,6 +23,11 @@ func configure(data: Dictionary, extra: Array[PackedVector2Array], road_surfaces
 	cells.clear()
 	bridge_walks.clear()
 	existing_perimeters.clear()
+	_unified_footprints.clear()
+	_unified_bounds.clear()
+	if UNIFIED_BRIDGE.enabled():
+		_unified_footprints = [UNIFIED_BRIDGE.east_footprint(), UNIFIED_BRIDGE.north_footprint()]
+		for footprint in _unified_footprints: _unified_bounds.append(GROUND_CUT.bounds(footprint))
 	for row in data.harbor_land:
 		polygons.append(_rect(Rect2(float(row[0])/16,float(row[1])/16,float(row[2])/16,float(row[3])/16)))
 	polygons.append_array(extra)
@@ -50,9 +59,12 @@ func configure(data: Dictionary, extra: Array[PackedVector2Array], road_surfaces
 	polygons.append(foundry_deck)
 	bridge_walks.append(foundry_deck)
 	# Existing bridge/tunnel structure owns its guards, including the eastern exit.
-	polygons.append(_rect(Rect2(393.75,-296.5,11.25,23)))
-	polygons.append(PackedVector2Array([Vector2(405,-296),Vector2(456.25,-292.15),Vector2(456.25,-277.85),Vector2(405,-274.5)]))
-	polygons.append(_rect(Rect2(456.25,-292.2,122.0,14.4)))
+	if UNIFIED_BRIDGE.enabled():
+		polygons.append(UNIFIED_BRIDGE.east_footprint())
+	else:
+		polygons.append(_rect(Rect2(393.75,-296.5,11.25,23)))
+		polygons.append(PackedVector2Array([Vector2(405,-296),Vector2(456.25,-292.15),Vector2(456.25,-277.85),Vector2(405,-274.5)]))
+		polygons.append(_rect(Rect2(456.25,-292.2,122.0,14.4)))
 	_extract()
 
 static func _rect(rect: Rect2) -> PackedVector2Array:
@@ -79,6 +91,7 @@ func _extract() -> void:
 		var cuts: Array[float] = [0.0,1.0]
 		if not NORTH_GATEWAY_POLICY.baseline_disabled():
 			cuts.append_array(NORTH_GATEWAY_LAYOUT.shore_opening_cuts(a,b))
+		cuts.append_array(_unified_cuts(a,b))
 		for other in edges:
 			if not edge.bounds.intersects(other.bounds): continue
 			var hit = Geometry2D.segment_intersects_segment(a,b,other.a,other.b)
@@ -111,6 +124,7 @@ func _existing_guard(point: Vector2) -> bool:
 	# Split at both ends of the access before testing its midpoint; only the
 	# local portal is opened and the new bridge owns its continuous guards.
 	if not NORTH_GATEWAY_POLICY.baseline_disabled() and NORTH_GATEWAY_LAYOUT.reserves_shore_opening(point): return true
+	if _unified_owns(point): return true
 	if Rect2(217.9,191.4,20.2,11.2).has_point(point): return true
 	if point.x>=200 and point.x<=273.75 and point.y>=18.1 and point.y<=31.9: return true
 	if point.x>=405 and point.y < -270: return true
@@ -120,6 +134,36 @@ func _existing_guard(point: Vector2) -> bool:
 	if Rect2(3128.0/16,1736.0/16,295.0/16,48.0/16).has_point(point): return true
 	if Rect2(4210.0/16,3118.0/16,76.0/16,134.0/16).has_point(point): return true
 	return false
+
+func _unified_owns(point: Vector2) -> bool:
+	for i in _unified_footprints.size():
+		if not _unified_bounds[i].grow(.001).has_point(point): continue
+		var polygon := _unified_footprints[i]
+		if Geometry2D.is_point_in_polygon(point,polygon): return true
+		# A própria borda pertence à nova estrutura, inclusive segmentos coincidentes.
+		for k in polygon.size():
+			if point.distance_to(Geometry2D.get_closest_point_to_segment(point,polygon[k],polygon[(k+1)%polygon.size()]))<.001: return true
+	return false
+
+func _unified_cuts(a: Vector2, b: Vector2) -> Array[float]:
+	var cuts: Array[float] = []
+	var delta := b-a
+	var length_squared := delta.length_squared()
+	if length_squared<.000001: return cuts
+	var bounds := Rect2(a,Vector2.ZERO).expand(b).grow(.001)
+	for i in _unified_footprints.size():
+		if not bounds.intersects(_unified_bounds[i],true): continue
+		var polygon := _unified_footprints[i]
+		for k in polygon.size():
+			var p := polygon[k]
+			var q := polygon[(k+1)%polygon.size()]
+			var hit = Geometry2D.segment_intersects_segment(a,b,p,q)
+			if hit is Vector2: cuts.append(clampf((hit-a).dot(delta)/length_squared,0,1))
+			# A interseção de segmentos colineares não fornece um ponto único.
+			for endpoint in [p,q]:
+				if endpoint.distance_to(Geometry2D.get_closest_point_to_segment(endpoint,a,b))<.001:
+					cuts.append(clampf((endpoint-a).dot(delta)/length_squared,0,1))
+	return cuts
 
 func _style(point: Vector2) -> String:
 	if point.y < -150: return "highway"
@@ -215,7 +259,12 @@ func _build_walk_support(parent: Node3D, rect: Rect2) -> void:
 	# sidewalks need support before a pedestrian can reach the new guard.
 	var faces := PackedVector3Array()
 	for polygon in bridge_walks:
-		for piece in Geometry2D.intersect_polygons(polygon,_rect(rect)):
+		var pieces: Array[PackedVector2Array] = []
+		for clipped in Geometry2D.intersect_polygons(polygon,_rect(rect)): pieces.append(clipped)
+		# Só o novo construtor pode fornecer piso neste território. Recortar antes
+		# de triangular mantém o suporte da cidade fora da ponte e evita piso duplo.
+		pieces = GROUND_CUT.subtract_exact(pieces,_unified_footprints)
+		for piece in pieces:
 			var triangles := Geometry2D.triangulate_polygon(piece)
 			for i in range(0,triangles.size(),3):
 				var a: Vector2 = piece[triangles[i]]

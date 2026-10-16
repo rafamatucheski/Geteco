@@ -6,6 +6,7 @@ const G := preload("res://world/desert/DesertGeometry.gd")
 const DETAIL := preload("res://world/desert/DesertSurfaceDetail.gd")
 const JUNCTIONS := preload("res://gameplay/traffic_junctions/TrafficJunctions.gd")
 const TOWN_MATERIALS := preload("res://world/desert/DesertTownMaterials.gd")
+const UNIFIED_BRIDGE := preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd")
 var _roads: Array[Dictionary] = []
 var corridors: Array[Dictionary] = []
 var shoulders: Array[Dictionary] = []
@@ -41,15 +42,16 @@ func build_chunk(parent: Node3D, rect: Rect2) -> void:
 	# Avoid coincident triangles at T/crossings instead of relying on depth ties.
 	var shoulder_segments := DETAIL.prepare_shoulder_segments(rect,_roads)
 	_emit(parent,"GravelShoulder",_unique(shoulders,rect),rect,.008,DETAIL.shoulder_material(),false,shoulder_segments)
-	_emit(parent,"WeatheredAsphalt",_unique(corridors,rect),rect,.018,G.material(Color("706d61"),false,true),true)
+	var asphalt: Material = UNIFIED_BRIDGE.material("asphalt") if UNIFIED_BRIDGE.enabled() else G.material(Color("706d61"),false,true)
+	_emit(parent,"WeatheredAsphalt",_unique(corridors,rect),rect,.026 if UNIFIED_BRIDGE.enabled() else .018,asphalt,true)
 	var white: Array[PackedVector2Array] = []
 	var yellow: Array[PackedVector2Array] = []
 	for row in paint:
 		if not row.bounds.intersects(rect,true): continue
 		if row.id=="white": white.append(row.polygon)
 		else: yellow.append(row.polygon)
-	_emit(parent,"WornEdge",white,rect,.027,G.material(Color("c5bea7")),false)
-	_emit(parent,"LaneDash",yellow,rect,.028,G.material(Color("bbad73")),false)
+	_emit(parent,"WornEdge",white,rect,.035 if UNIFIED_BRIDGE.enabled() else .027,UNIFIED_BRIDGE.material("white") if UNIFIED_BRIDGE.enabled() else G.material(Color("c5bea7")),false)
+	_emit(parent,"LaneDash",yellow,rect,.035 if UNIFIED_BRIDGE.enabled() else .028,UNIFIED_BRIDGE.material("yellow") if UNIFIED_BRIDGE.enabled() else G.material(Color("bbad73")),false)
 	_bank_walk(parent,rect)
 
 func _bank_walk(parent: Node3D, rect: Rect2) -> void:
@@ -128,9 +130,11 @@ func _build_paint(road: Dictionary) -> void:
 		# its paint, so clipping does not leave a half-width dash through the T.
 		for expanded in Geometry2D.offset_polygon(row.polygon,.2,Geometry2D.JOIN_ROUND): masks.append(_record(expanded,row.id))
 	# Junction fillets extend into corner approaches: remove side paint there too.
+	var edge_inset: float = UNIFIED_BRIDGE.EDGE_LINE_INSET if UNIFIED_BRIDGE.enabled() else .25
+	var edge_width: float = UNIFIED_BRIDGE.EDGE_LINE_WIDTH if UNIFIED_BRIDGE.enabled() else .11
 	for side in [-1.0,1.0]:
-		var edge := _offset_path(path,side*(float(road.width)*.5-.25))
-		for i in range(1,edge.size()): _paint_strip(edge[i-1],edge[i],.11,"white",masks)
+		var edge := _offset_path(path,side*(float(road.width)*.5-edge_inset))
+		for i in range(1,edge.size()): _paint_strip(edge[i-1],edge[i],edge_width,"white",masks)
 	var travelled := 0.0
 	for i in range(1,path.size()):
 		var a := path[i-1]
@@ -174,7 +178,17 @@ func _paint_strip(a: Vector2, b: Vector2, width: float, color: String, masks: Ar
 	var direction := a.direction_to(b)
 	var normal := Vector2(-direction.y,direction.x)*width*.5
 	var polygon := PackedVector2Array([a+normal,b+normal,b-normal,a-normal])
-	for part in _subtract(polygon,masks): paint.append(_record(part,color))
+	var parts := _subtract(polygon,masks)
+	if color == "yellow" and UNIFIED_BRIDGE.enabled():
+		# A primeira marca regional comecava no fim das duas linhas da ponte.
+		# Ownership exato e respiro curto conservam o restante da pintura autorada.
+		var terminal_z: float = LAYOUT.BRIDGE_END.z
+		var terminal_gap := PackedVector2Array([Vector2(341.5,terminal_z+.001),Vector2(343.5,terminal_z+.001),
+			Vector2(343.5,terminal_z-.75),Vector2(341.5,terminal_z-.75)])
+		var bounds: Rect2 = _record(polygon,"").bounds
+		if bounds.intersects(Rect2(328.75,terminal_z-.75,36.55,126.75),true):
+			parts = preload("res://world/urban_detail/GroundCut.gd").subtract_exact(parts,[UNIFIED_BRIDGE.north_footprint(),terminal_gap])
+	for part in parts: paint.append(_record(part,color))
 
 func _emit(parent: Node3D, id: String, polygons: Array[PackedVector2Array], rect: Rect2, offset: float, material: Material, solid: bool, shoulder_segments: Array = []) -> void:
 	if polygons.is_empty(): return
@@ -202,7 +216,7 @@ func _emit(parent: Node3D, id: String, polygons: Array[PackedVector2Array], rect
 			var clip := PackedVector2Array([tile.position,Vector2(tile.end.x,tile.position.y),tile.end,Vector2(tile.position.x,tile.end.y)])
 			for part in Geometry2D.intersect_polygons(polygon,clip):
 				if Geometry2D.is_polygon_clockwise(part): part.reverse()
-				if solid:
+				if solid and not UNIFIED_BRIDGE.enabled():
 					# The raised asphalt used to present a vertical collision edge to
 					# cars on sand. Bevel its perimeter into the existing shoulder.
 					# Clipped tile seams also taper below the adjacent asphalt surface.
@@ -247,6 +261,11 @@ func _emit(parent: Node3D, id: String, polygons: Array[PackedVector2Array], rect
 		body.set_meta("vehicle_surface","hard")
 		var collider := CollisionShape3D.new(); var shape := ConcavePolygonShape3D.new()
 		var physical_faces := vertices.duplicate()
+		# A ponte nova e o terreno compartilham a cota física; o acabamento sobe
+		# apenas no desenho. Assim não há lâmina de 18 mm nem rampa sobreposta
+		# avançando para dentro do tabuleiro na chegada ao deserto.
+		if UNIFIED_BRIDGE.enabled():
+			for i in physical_faces.size(): physical_faces[i].y -= offset
 		physical_faces.append_array(edge_faces)
 		shape.set_faces(physical_faces); collider.shape=shape; body.add_child(collider); node.add_child(body)
 

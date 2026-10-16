@@ -72,7 +72,9 @@ func _free_pair(pair: Array) -> void:
 
 ## Acesso de Harbor com as duas regiões residentes.
 func _check_harbor_access(point: Vector3, label: String) -> void:
-	var pair: Array = await _mount_pair(point)
+	var kit := preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd")
+	var bridge_owned: bool = kit.owns_east_point(Vector2(point.x,point.z))
+	var pair: Array = await _mount_pair(point,bridge_owned)
 	var harbor: Node3D = pair[0]
 	var mountain: Node3D = pair[1]
 	check(mountain.chunks.has(mountain._cell(point)), label + ": Mountain streamed the cell (both regions resident)")
@@ -82,12 +84,13 @@ func _check_harbor_access(point: Vector3, label: String) -> void:
 	for hit in hits:
 		check(not str(hit.path).contains("MountainNativeRegion"), label + " [físico]: no Mountain collider (" + str(hit.path) + ")")
 	if not hits.is_empty():
-		check(str(hits[0].path).contains("HarborNativeRegion"), label + " [físico]: top floor is Harbor (" + str(hits[0].path) + ")")
+		var expected_owner := "HarborMountainConnection" if bridge_owned else "HarborNativeRegion"
+		check(str(hits[0].path).contains(expected_owner), label + " [físico]: top floor belongs to " + expected_owner + " (" + str(hits[0].path) + ")")
 		check(absf(float(hits[0].y)) <= 0.06, label + " [físico]: floor level with authored road (" + str(hits[0].y) + ")")
 	# Visual
 	check(_terrain_cover(mountain, point) == 0, label + " [visual]: no MountainTerrain mesh over the point")
 	var harbor_surface := false
-	for item in _visual_cover(harbor, point):
+	for item in _visual_cover(pair[2] if bridge_owned else harbor, point):
 		if absf(float(item.top)) <= 0.08 and not _is_water(str(item.path)): harbor_surface = true
 	check(harbor_surface, label + " [visual]: Harbor surface mesh at road level")
 	await _free_pair(pair)
@@ -154,9 +157,27 @@ func _check_bridge_seam() -> void:
 	for x in [413.0, 430.0, 445.0]:
 		check(Geometry2D.is_point_in_polygon(Vector2(x, CONNECTION.CENTER_Z), gap),
 			"approach [visual]: asphalt covers the driving median at x=%s" % x)
-	var deck: MeshInstance3D = pair[2].find_child("ContinuousBridgeDeck", true, false)
-	check(deck != null and (deck.global_transform * deck.get_aabb()).end.y < -0.015,
-		"deck [visual]: structural concrete stays below the mountain asphalt")
+	if CONNECTION.unified_bridge_enabled():
+		# O dono agora inclui o asfalto: não deve existir um segundo piso regional
+		# sobre ele, nem o antigo preenchimento central entre as duas pistas.
+		check(pair[2].get_meta("bridge_surface_owner","") == "UnifiedBridgeKit",
+			"deck [visual]: single constructor owns the entire crossing")
+		check(pair[2].find_child("HarborConnectorGapAsphalt",true,false) == null,
+			"deck [visual]: no legacy median patch")
+		var surfaces: Array[Node] = pair[2].find_children("UnifiedEastBridge_asphalt_*","MeshInstance3D",true,false)
+		check(not surfaces.is_empty(),"deck [visual]: unified asphalt is present")
+		for surface in surfaces:
+			var bounds: AABB = surface.global_transform*surface.get_aabb()
+			check(absf(bounds.position.y-.026)<.001 and absf(bounds.end.y-.026)<.001,
+				"deck [visual]: continuous asphalt has a single finish level")
+		for region in [pair[0],pair[1]]:
+			for item in _visual_cover(region,Vector3(500,0,-285)):
+				check(_is_water(str(item.path)) or float(item.top)<-.015 or float(item.top)>.08,
+					"deck [visual]: no second regional road at crossing centre")
+	else:
+		var deck: MeshInstance3D = pair[2].find_child("ContinuousBridgeDeck", true, false)
+		check(deck != null and (deck.global_transform * deck.get_aabb()).end.y < -0.015,
+			"deck [visual]: structural concrete stays below the mountain asphalt")
 	var actor := CharacterBody3D.new()
 	actor.collision_layer = 2
 	actor.collision_mask = 1

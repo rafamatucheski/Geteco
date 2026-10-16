@@ -11,6 +11,7 @@ const NORTH_GATEWAY_POLICY := preload("res://world/north_gateway/NorthGatewayPol
 const PIER_FOAM_REACH := 1.3
 const LOOK_MESH := preload("res://world/regions/bridge_look/BridgeLookMesh.gd")
 const LOOK_CONCRETE := preload("res://world/regions/bridge_look/bridge_concrete.gdshader")
+const UNIFIED_BRIDGE := preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd")
 const SEAM := Vector3(7300.0, 0.0, -4560.0) * UNIT
 const HARBOR_ABUTMENT_X := 6300.0 * UNIT
 const HARBOR_CONNECTOR_X := 6480.0 * UNIT
@@ -27,6 +28,9 @@ const TRAFFIC_MERGE_X := SEAM.x + 12.0
 const MOUNTAIN_BLEND_END_X := TUNNEL_END_X + 20.0
 const MOUNTAIN_NORTH_FADE := Vector2(-203.75, -128.75)
 
+static func unified_bridge_enabled() -> bool:
+	return UNIFIED_BRIDGE.enabled()
+
 static func tunnel_camera_weight(point: Vector3) -> float:
 	if absf(point.z-CENTER_Z) > TUNNEL_CLEAR_HALF_WIDTH or point.y > 4.4: return 0.0
 	var approach := maxf(TUNNEL_START_X-point.x,point.x-TUNNEL_END_X)
@@ -39,6 +43,67 @@ var bridge_lamps: Array[OmniLight3D] = []
 ## GETECO_BRIDGE_LOOK=0 restaura as caixas lisas de antes; colisão é a mesma nos dois.
 static var look_enabled := OS.get_environment("GETECO_BRIDGE_LOOK") != "0"
 static var _look_materials: Dictionary = {}
+static var _unified_geometry: PackedScene
+static var _unified_materials: Array[Material] = []
+static var unified_geometry_summary: Dictionary = {}
+
+## Chamado sob a cortina. O builder fica fora da arvore: nao executa _ready,
+## nao monta o braco norte e nao registra fisica no mundo do jogador.
+static func prewarm_unified_geometry() -> void:
+	if not UNIFIED_BRIDGE.enabled() or _unified_geometry != null: return
+	var began := Time.get_ticks_usec()
+	var builder := Node3D.new()
+	var builder_script: Script = load("res://world/regions/WorldConnection3D.gd")
+	builder.set_script(builder_script)
+	builder.call("_build_unified_bridge")
+	builder.call("_build_tunnel")
+	_unified_materials.clear()
+	var meshes := builder.find_children("*","MeshInstance3D",true,false)
+	for entry in meshes:
+		var mesh := entry as MeshInstance3D
+		for surface in mesh.mesh.get_surface_count():
+			var finish := mesh.get_active_material(surface)
+			if finish != null and not _unified_materials.has(finish): _unified_materials.append(finish)
+	var shapes := builder.find_children("*","CollisionShape3D",true,false).size()
+	# A raiz do blueprint precisa ser neutra; instanciar nunca pode recursar _ready.
+	builder.set_script(null)
+	builder.name = "UnifiedBridgeGeometryBlueprint"
+	_own_unified_geometry(builder,builder)
+	var blueprint := PackedScene.new()
+	var error := blueprint.pack(builder)
+	if error == OK: _unified_geometry = blueprint
+	else: push_error("Falha ao preparar geometria da ponte: %s" % error)
+	unified_geometry_summary = {"prepared":error==OK,"meshes":meshes.size(),"shapes":shapes,"materials":_unified_materials.size(),"usec":Time.get_ticks_usec()-began}
+	builder.free()
+
+static func _own_unified_geometry(node: Node, root: Node) -> void:
+	for child in node.get_children():
+		child.owner = root
+		_own_unified_geometry(child,root)
+
+static func unified_geometry_materials() -> Array:
+	prewarm_unified_geometry()
+	return _unified_materials.duplicate()
+
+func _mount_unified_geometry() -> bool:
+	if _unified_geometry == null: return false
+	var geometry := _unified_geometry.instantiate() as Node3D
+	for child in geometry.get_children():
+		# Ownership serve apenas ao pack; a raiz temporaria deixa de ser ancestral
+		# ao transferir os filhos. Limpar antes evita referencias inconsistentes.
+		child.owner = null
+		_own_unified_geometry(child,null)
+		geometry.remove_child(child)
+		add_child(child)
+	geometry.free()
+	bridge_lamps.clear()
+	# Uma varredura por montagem, sem descoberta de luzes em loops por quadro.
+	for lamp in find_children("*","OmniLight3D",true,false):
+		if lamp.get_meta("bridge_night_lamp",false): bridge_lamps.append(lamp as OmniLight3D)
+	set_meta("unified_bridge",true)
+	set_meta("bridge_surface_owner","UnifiedBridgeKit")
+	set_meta("unified_geometry_cached",true)
+	return true
 
 static func logical_region(point: Vector3) -> String:
 	if preload("res://world/desert/DesertLayout.gd").contains(point): return "desert"
@@ -46,10 +111,12 @@ static func logical_region(point: Vector3) -> String:
 
 static func mountain_weight(point: Vector3) -> float:
 	# Streaming starts over the sea; the climate starts on the eastern shore.
-	return smoothstep(BRIDGE_END_X, MOUNTAIN_BLEND_END_X, point.x) * (1.0 - smoothstep(MOUNTAIN_NORTH_FADE.x, MOUNTAIN_NORTH_FADE.y, point.z))
+	var climate_start := TUNNEL_END_X+12.0 if UNIFIED_BRIDGE.enabled() else BRIDGE_END_X
+	var climate_end := TUNNEL_END_X+60.0 if UNIFIED_BRIDGE.enabled() else MOUNTAIN_BLEND_END_X
+	return smoothstep(climate_start, climate_end, point.x) * (1.0 - smoothstep(MOUNTAIN_NORTH_FADE.x, MOUNTAIN_NORTH_FADE.y, point.z))
 
 static func configure_ground_material(material: ShaderMaterial) -> void:
-	material.set_shader_parameter("mountain_entry_x", Vector2(BRIDGE_END_X, MOUNTAIN_BLEND_END_X))
+	material.set_shader_parameter("mountain_entry_x", Vector2(TUNNEL_END_X+12.0,TUNNEL_END_X+60.0) if UNIFIED_BRIDGE.enabled() else Vector2(BRIDGE_END_X, MOUNTAIN_BLEND_END_X))
 	material.set_shader_parameter("mountain_north_fade", MOUNTAIN_NORTH_FADE)
 
 static func reserves_approach_for_driving(point: Vector2) -> bool:
@@ -68,9 +135,17 @@ static func traffic_connectors() -> Array[Dictionary]:
 
 func _ready() -> void:
 	name = "HarborMountainConnection"
-	if look_enabled: _build_bridge_look()
-	else: _build_bridge()
-	_build_tunnel()
+	if UNIFIED_BRIDGE.enabled():
+		# Fixtures sem primer mantem o mesmo caminho construtivo. A producao ja
+		# recebeu esse cache da cortina e apenas instancia recursos compartilhados.
+		prewarm_unified_geometry()
+		if not _mount_unified_geometry():
+			_build_unified_bridge()
+			_build_tunnel()
+	else:
+		if look_enabled: _build_bridge_look()
+		else: _build_bridge()
+		_build_tunnel()
 	# The northern worksite shares this connection's streaming owner. It never
 	# contributes an edge to the eastern mountain traffic connectors above.
 	var owner_world := get_parent() as Node3D
@@ -196,6 +271,73 @@ func _pavement_face(surface: SurfaceTool, points: PackedVector3Array, normal: Ve
 			surface.set_uv(Vector2(point.x,point.z)*.5)
 			surface.add_vertex(point)
 
+func _build_unified_bridge() -> void:
+	# O perfil inteiro nasce da mesma linha e possui o próprio piso físico. Não
+	# existe mais um asfalto de remendo entre duas pistas regionais sobrepostas.
+	var kit := UNIFIED_BRIDGE.new()
+	var sections := UNIFIED_BRIDGE.east_sections()
+	var mouth := UNIFIED_BRIDGE.east_mouth_limits()
+	for i in range(sections.size()-1):
+		var first: Dictionary = sections[i]
+		var last: Dictionary = sections[i+1]
+		var a: Vector3 = first.point
+		var b: Vector3 = last.point
+		var midpoint := (a+b)*.5
+		var city_junction := is_equal_approx(midpoint.x,375.0) and midpoint.z > -136.0
+		var west_open := is_equal_approx(midpoint.x,375.0) and midpoint.z>=mouth.x and midpoint.z<=mouth.y
+		var walk_a := UNIFIED_BRIDGE.WALK_HEIGHT
+		var walk_b := UNIFIED_BRIDGE.WALK_HEIGHT
+		if is_equal_approx(a.x,375.0): walk_a *= smoothstep(133.0,135.0,-a.z)
+		if is_equal_approx(b.x,375.0): walk_b *= smoothstep(133.0,135.0,-b.z)
+		if i==sections.size()-2: walk_b = 0.0
+		var west_a := walk_a
+		var west_b := walk_b
+		if is_equal_approx(a.x,375.0): west_a *= smoothstep(0.0,2.0,maxf(a.z-mouth.y,mouth.x-a.z))
+		if is_equal_approx(b.x,375.0): west_b *= smoothstep(0.0,2.0,maxf(b.z-mouth.y,mouth.x-b.z))
+		var walk_exclusions: Array[PackedVector2Array] = []
+		var white_exclusions: Array[PackedVector2Array] = []
+		if is_equal_approx(midpoint.x,375.0) and midpoint.z>=mouth.x-2.0 and midpoint.z<=mouth.y+2.0:
+			# O asfalto do braco norte atravessa esta faixa. A esquina restante
+			# continua sendo passeio deste corpo, sem duas superficies empilhadas.
+			walk_exclusions.append(UNIFIED_BRIDGE.north_asphalt_footprint())
+			white_exclusions.append(UNIFIED_BRIDGE.north_entry_paint_footprint())
+		kit.add_segment(a,b,first.side,last.side,first.road,last.road,first.deck,last.deck,
+			not city_junction and midpoint.x<TUNNEL_START_X,{
+				"guard_negative":not west_open,
+				"start_cap":i==0,"end_cap":i==sections.size()-2,
+				"walk_height_a":walk_a,"walk_height_b":walk_b,
+				"walk_exclusions":walk_exclusions,
+				"white_negative_exclusions":white_exclusions,
+				"walk_negative_a":west_a,"walk_negative_b":west_b})
+	# Apoios com cabeça larga e fuste estreito repetem a mesma modulação. Nenhum
+	# volume fica sobre a pista ou passa a vedar o braço norte independente.
+	for z in [-151.0,-180.0,-209.0,-238.0,-261.0]:
+		_add_unified_support(kit,Vector3(375,0,z),Vector3.RIGHT,13.125,absf(z+125.0))
+	for x in [418.75,440.0,487.5,522.5,559.375]:
+		var best_distance := INF
+		var section_distance := 0.0
+		for row in sections:
+			var delta: float = row.point.distance_squared_to(Vector3(x,0,CENTER_Z))
+			if delta < best_distance:
+				best_distance = delta
+				section_distance = row.distance
+		_add_unified_support(kit,Vector3(x,0,CENTER_Z),Vector3.BACK,UNIFIED_BRIDGE.east_deck_half_width(x),section_distance)
+	kit.commit(self,"UnifiedEastBridge")
+	set_meta("unified_bridge",true)
+	set_meta("bridge_surface_owner","UnifiedBridgeKit")
+	_build_bridge_lamps(UNIFIED_BRIDGE.material("steel") as StandardMaterial3D)
+
+func _add_unified_support(kit: UNIFIED_BRIDGE, point: Vector3, side: Vector3, half_width: float, distance: float) -> void:
+	kit.section_at(distance)
+	var cap_size := Vector3(half_width*2.0-.5,.6,1.4) if absf(side.x)>.9 else Vector3(1.4,.6,half_width*2.0-.5)
+	kit.add_box("concrete",point+Vector3.DOWN*1.05,cap_size)
+	for sign_value in [-1.0,1.0]:
+		var center: Vector3 = point+side*float(sign_value)*(half_width-1.1)
+		var bottom := HARBOR_OCEAN.surface_y(Vector2(center.x,center.z))-2.5
+		var height := -.75-bottom
+		kit.add_box("concrete",Vector3(center.x,bottom+height*.5,center.z),Vector3(1.35,height,1.35),true)
+		kit.add_box("concrete",Vector3(center.x,bottom+.3,center.z),Vector3(2.1,.6,2.1))
+
 func _build_bridge() -> void:
 	var concrete := _material("bridge_concrete",Color("707b7a"))
 	var edge := _material("bridge_edge",Color("a7aaa0"))
@@ -280,14 +422,17 @@ func _build_bridge_lamps(steel: StandardMaterial3D) -> void:
 		var x := 460.0+float(index)*19.0
 		var side := -1.0 if index%2==0 else 1.0
 		var rail_width := lerpf(6.5,BRIDGE_HALF_WIDTH,clampf((x-SEAM.x)/(TRAFFIC_MERGE_X-SEAM.x),0.0,1.0))
+		if UNIFIED_BRIDGE.enabled(): rail_width = UNIFIED_BRIDGE.east_deck_half_width(x)-.18
 		var rail_z := CENTER_Z+side*rail_width
 		# The pole grows from the guard rail; its head hangs above the outer
 		# shoulder, leaving the whole driving lane clear.
-		_box("BridgeLampPole",Vector3(x,2.72,rail_z),Vector3(.12,3.0,.12),steel)
+		var pole_bottom := UNIFIED_BRIDGE.WALK_HEIGHT if UNIFIED_BRIDGE.enabled() else 1.22
+		_box("BridgeLampPole",Vector3(x,(4.22+pole_bottom)*.5,rail_z),Vector3(.12,4.22-pole_bottom,.12),steel)
 		_box("BridgeLampArm",Vector3(x,4.20,rail_z-side*.40),Vector3(.12,.10,.82),steel)
 		_box("BridgeLampHead",Vector3(x,4.15,rail_z-side*.82),Vector3(.42,.13,.36),glass)
 		var lamp := OmniLight3D.new()
 		lamp.name = "BridgeNightLight"
+		lamp.set_meta("bridge_night_lamp",true)
 		lamp.position = Vector3(x,4.10,rail_z-side*.82)
 		lamp.light_color = Color("ffe4b5")
 		lamp.omni_range = 17.0
@@ -322,6 +467,7 @@ const LOOK_SLABS := Vector2(-100.0, 2.0)
 ## vista do porto e da serra.
 static func set_look_wetness(value: float) -> void:
 	if _look_materials.has("concrete"): _look_materials.concrete.set_shader_parameter("rain_wetness", clampf(value, 0.0, 1.0))
+	if UNIFIED_BRIDGE.enabled(): UNIFIED_BRIDGE.set_wetness(value)
 
 static func _look_concrete() -> ShaderMaterial:
 	if _look_materials.has("concrete"): return _look_materials.concrete
@@ -629,20 +775,23 @@ func _polygon_mesh(label: String, polygon: PackedVector2Array, y: float, materia
 	return result
 
 func _build_tunnel() -> void:
-	var rock := _material("tunnel_rock",Color("454b47"))
-	var lining := _material("tunnel_lining",Color("777b72"))
-	var steel := _material("tunnel_steel",Color("a4afa8"),.62,.18)
-	var road_geometry := preload("res://world/urban_detail/HarborRoadGeometry3D.gd").new()
-	var paving := road_geometry._material(road_geometry.SIDEWALK_COLOR).duplicate() as StandardMaterial3D
-	paving.uv1_triplanar = true
-	paving.uv1_world_triplanar = true
-	paving.uv1_scale = Vector3.ONE * .5
+	var rock := UNIFIED_BRIDGE.material("concrete") as StandardMaterial3D if UNIFIED_BRIDGE.enabled() else _material("tunnel_rock",Color("454b47"))
+	var lining := UNIFIED_BRIDGE.material("concrete") as StandardMaterial3D if UNIFIED_BRIDGE.enabled() else _material("tunnel_lining",Color("777b72"))
+	var steel := UNIFIED_BRIDGE.material("steel") as StandardMaterial3D if UNIFIED_BRIDGE.enabled() else _material("tunnel_steel",Color("a4afa8"),.62,.18)
+	var paving: StandardMaterial3D
+	if not UNIFIED_BRIDGE.enabled():
+		var road_geometry := preload("res://world/urban_detail/HarborRoadGeometry3D.gd").new()
+		paving = road_geometry._material(road_geometry.SIDEWALK_COLOR).duplicate() as StandardMaterial3D
+		paving.uv1_triplanar = true
+		paving.uv1_world_triplanar = true
+		paving.uv1_scale = Vector3.ONE * .5
 	var length := TUNNEL_END_X-TUNNEL_START_X
 	var road_half_width := 140.0 * UNIT * .5
 	for side in [-1.0,1.0]:
 		# The rural shoulder continues underneath this structure. Cover it up to
 		# the lining with a supported, walkable pavement, flush with bridge margins.
-		_pavement("TunnelSidewalk",TUNNEL_START_X-.575,TUNNEL_END_X+.575,CENTER_Z+side*road_half_width,CENTER_Z+side*TUNNEL_CLEAR_HALF_WIDTH,paving)
+		if not UNIFIED_BRIDGE.enabled():
+			_pavement("TunnelSidewalk",TUNNEL_START_X-.575,TUNNEL_END_X+.575,CENTER_Z+side*road_half_width,CENTER_Z+side*TUNNEL_CLEAR_HALF_WIDTH,paving)
 		_box("TunnelWall",Vector3((TUNNEL_START_X+TUNNEL_END_X)*.5,2.2,CENTER_Z+side*(TUNNEL_CLEAR_HALF_WIDTH+.55)),Vector3(length,4.4,1.1),rock,true)
 		_box("TunnelCurb",Vector3((TUNNEL_START_X+TUNNEL_END_X)*.5,.22,CENTER_Z+side*TUNNEL_CLEAR_HALF_WIDTH),Vector3(length,.44,.45),lining,true)
 	_box("TunnelRoof",Vector3((TUNNEL_START_X+TUNNEL_END_X)*.5,4.65,CENTER_Z),Vector3(length,.5,TUNNEL_CLEAR_HALF_WIDTH*2.0+2.2),lining,true)

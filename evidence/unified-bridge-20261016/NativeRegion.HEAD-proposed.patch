@@ -1,0 +1,156 @@
+--- a/world/regions/NativeRegion.gd
++++ b/world/regions/NativeRegion.gd
+@@ -809,6 +809,19 @@
+ ## Chão base do porto: colisão em caixa de 0,3 m como antes; o visual é o topo só onde nenhum piso de cima
+ ## (`cover`) cobre, mais as quatro laterais (a margem com o mar continua igual).
+ func _land_piece(chunk: Node3D, piece: Rect2, cover: Array[PackedVector2Array]) -> void:
++	# A ponte é dona também do chão físico. Recortar só o visual deixava a
++	# caixa integral em y=0 atravessando o tronco e a boca do ramal norte.
++	var bridge_kit = preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd")
++	if region_id == "harbor" and bridge_kit.enabled():
++		var cuts: Array[PackedVector2Array] = []
++		var outline := GROUND_CUT.rect_polygon(piece)
++		if piece.intersects(bridge_kit.east_bounds(),true):
++			if not Geometry2D.intersect_polygons(outline,bridge_kit.east_footprint()).is_empty(): cuts.append(bridge_kit.east_footprint())
++		if piece.intersects(Rect2(328.75,-374.25,36.55,126.0),true):
++			if not Geometry2D.intersect_polygons(outline,bridge_kit.north_footprint()).is_empty(): cuts.append(bridge_kit.north_footprint())
++		if not cuts.is_empty():
++			_land_outside_bridge(chunk,piece,cover,cuts)
++			return
+ 	var mesh := GROUND_CUT.flat_mesh(GROUND_CUT.subtract([GROUND_CUT.rect_polygon(piece)],cover),0.0,1.0)
+ 	if mesh == null: mesh = ArrayMesh.new()
+ 	var corners := [Vector2(piece.position.x,piece.position.y),Vector2(piece.end.x,piece.position.y),Vector2(piece.end.x,piece.end.y),Vector2(piece.position.x,piece.end.y)]
+@@ -843,6 +856,64 @@
+ 	body.add_child(collider)
+ 	land.add_child(body)
+ 
++func _land_outside_bridge(chunk: Node3D, piece: Rect2, cover: Array[PackedVector2Array], cuts: Array[PackedVector2Array]) -> void:
++	# Ownership é obrigatório inclusive no diagnóstico de pisos empilhados.
++	# A mesma borda recortada gera paredes visíveis e colisão sem ler a GPU.
++	var polygons := GROUND_CUT.subtract_exact([GROUND_CUT.rect_polygon(piece)],cuts)
++	if polygons.is_empty(): return
++	var mesh := GROUND_CUT.flat_mesh(GROUND_CUT.subtract(polygons,cover),0.0,1.0)
++	if mesh == null: mesh = ArrayMesh.new()
++	var walls := PackedVector3Array()
++	var normals := PackedVector3Array()
++	var faces := PackedVector3Array()
++	for polygon in polygons:
++		var indices := Geometry2D.triangulate_polygon(polygon)
++		if indices.is_empty():
++			push_error("Poligono de chao da ponte sem triangulacao: %s"%piece)
++			return
++		# O contorno anti-horário XZ dá faces superiores horárias vistas de cima.
++		for index in range(0,indices.size(),3):
++			var a: Vector2 = polygon[indices[index]]
++			var b: Vector2 = polygon[indices[index+1]]
++			var c: Vector2 = polygon[indices[index+2]]
++			if (b-a).cross(c-a) == 0.0: continue
++			faces.append_array(PackedVector3Array([Vector3(a.x,0,a.y),Vector3(b.x,0,b.y),Vector3(c.x,0,c.y),
++				Vector3(c.x,-.3,c.y),Vector3(b.x,-.3,b.y),Vector3(a.x,-.3,a.y)]))
++		for side in polygon.size():
++			var a: Vector2 = polygon[side]
++			var b: Vector2 = polygon[(side+1)%polygon.size()]
++			var edge := b-a
++			if edge.length_squared() == 0.0: continue
++			var normal := Vector3(edge.y,0,-edge.x).normalized()
++			var wall := PackedVector3Array([Vector3(a.x,0,a.y),Vector3(b.x,-.3,b.y),Vector3(b.x,0,b.y),
++				Vector3(a.x,0,a.y),Vector3(a.x,-.3,a.y),Vector3(b.x,-.3,b.y)])
++			walls.append_array(wall)
++			faces.append_array(wall)
++			for _point in wall: normals.append(normal)
++	if faces.is_empty():
++		push_error("Chão da ponte sem triangulação válida: %s"%piece)
++		return
++	if not walls.is_empty():
++		var arrays := []
++		arrays.resize(Mesh.ARRAY_MAX)
++		arrays[Mesh.ARRAY_VERTEX] = walls
++		arrays[Mesh.ARRAY_NORMAL] = normals
++		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
++	var land := MeshInstance3D.new()
++	land.name = "LandOutsideUnifiedBridge"
++	land.mesh = mesh
++	land.material_override = _material(Color("737b69"))
++	chunk.add_child(land)
++	var body := StaticBody3D.new()
++	body.collision_layer = 1
++	body.collision_mask = 0
++	var collider := CollisionShape3D.new()
++	var shape := ConcavePolygonShape3D.new()
++	shape.set_faces(faces)
++	collider.shape = shape
++	body.add_child(collider)
++	land.add_child(body)
++
+ func _box(parent: Node3D,label: String,point: Vector3,size: Vector3,color: Color,solid := false) -> MeshInstance3D:
+ 	var mesh := MeshInstance3D.new()
+ 	mesh.name = label
+@@ -892,7 +963,8 @@
+ 		mesh.mesh = surface.commit()
+ 		if color == HARBOR_ROAD_GEOMETRY.ROAD_COLOR:
+ 			if harbor_road_geometry == null: harbor_road_geometry = HARBOR_ROAD_GEOMETRY.new()
+-			mesh.material_override = harbor_road_geometry._material(color)
++			var unified_bridge := preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd")
++			mesh.material_override = unified_bridge.material("asphalt") if unified_bridge.enabled() else harbor_road_geometry._material(color)
+ 		else:
+ 			# Estrada de terra ganha o mesmo chão procedural das peças do editor.
+ 			var dirt := ShaderMaterial.new()
+@@ -1382,13 +1454,18 @@
+ 			var road_color := HARBOR_ROAD_GEOMETRY.ROAD_COLOR if surface_kind == "asphalt" else Color("544a3b")
+ 			var shape := ROUTE_GEOMETRY.polygon(record.left_a,record.left_b,record.right_b,record.right_a)
+ 			var pieces := route_geometry.outside_roads(shape,record.road_id,true)
++			var unified_bridge := preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd")
++			if unified_bridge.enabled() and ROUTE_GEOMETRY.bounds(shape).intersects(unified_bridge.east_bounds()):
++				pieces = GROUND_CUT.subtract_exact(pieces,[unified_bridge.east_footprint()])
+ 			var rows: Array = chunk.get_meta("road_surface_rows",[])
+ 			for piece in pieces: rows.append({"polygon":piece,"top":.026,"color":road_color})
+ 			chunk.set_meta("road_surface_rows",rows)
+ 			# Only the main two-lane pass needs a centre stripe.
+ 			if mountain_pass_road:
+-				var line := _box(chunk,"CenterLine",center+Vector3(0,.034,0),Vector3(.09,.008,offset.length()*.64),Color("b6aa71"))
+-				line.rotation.y = atan2(offset.x,offset.z)
++				if unified_bridge.enabled(): _mountain_center_marking(chunk,center,offset)
++				else:
++					var line := _box(chunk,"CenterLine",center+Vector3(0,.034,0),Vector3(.09,.008,offset.length()*.64),Color("b6aa71"))
++					line.rotation.y = atan2(offset.x,offset.z)
+ 			# Rural pass/track shoulders are terrain. The generic 2.5 m sidewalks
+ 			# crossed junction asphalt and made wide floating ribbons on the bends.
+ 		"building": _building(chunk,record.data)
+@@ -1398,6 +1475,32 @@
+ 			chunk.add_child(art)
+ 			art.build(record.position,record.size)
+ 		"mountain_place": _mountain_place(chunk,record.data)
++
++func _mountain_center_marking(chunk: Node3D, center: Vector3, offset: Vector3) -> void:
++	var bridge_kit = preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd")
++	var direction := offset.normalized()
++	var side := Vector3(-direction.z,0,direction.x)*.045
++	var a := center-direction*offset.length()*.32
++	var b := center+direction*offset.length()*.32
++	var polygon := PackedVector2Array()
++	for point in [a+side,b+side,b-side,a-side]: polygon.append(Vector2(point.x,point.z))
++	var bounds := GROUND_CUT.bounds(polygon)
++	if not bounds.intersects(bridge_kit.east_bounds().grow(.75),true):
++		var line := _box(chunk,"CenterLine",center+Vector3(0,.034,0),Vector3(.09,.008,offset.length()*.64),Color("b6aa71"))
++		line.rotation.y = atan2(offset.x,offset.z)
++		return
++	# O centro do segmento nao prova ownership da faixa inteira. Recortar o
++	# desenho real e reservar 75 cm apos a cabeceira evita fundir dupla e traco.
++	var terminal_gap := GROUND_CUT.rect_polygon(Rect2(bridge_kit.EAST_END-.001,bridge_kit.EAST_Z-1.0,.751,2.0))
++	var pieces := GROUND_CUT.subtract_exact([polygon],[bridge_kit.east_footprint(),terminal_gap])
++	var mesh := GROUND_CUT.flat_mesh(pieces,.038,1.0)
++	if mesh == null: return
++	var clipped_line := MeshInstance3D.new()
++	clipped_line.name = "CenterLineClippedAtBridge"
++	clipped_line.mesh = mesh
++	clipped_line.material_override = _material(Color("b6aa71"))
++	clipped_line.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
++	chunk.add_child(clipped_line)
+ 
+ func _mountain_owns_terrain(key: Vector2i) -> bool:
+ 	# MountainTerrain3D only builds whole 64 m cells. A cell is Mountain's when its centre is:
+@@ -1742,3 +1845,4 @@
+ 	var slow: Array = Engine.get_meta("slow_stream_records")
+ 	slow.append("PROCESS %s %.0f ms"%[what,spent/1000.0])
+ 	Engine.set_meta("slow_stream_records",slow)
++# O construtor da ponte fornece o piso do corredor sem mudar o grafo regional.

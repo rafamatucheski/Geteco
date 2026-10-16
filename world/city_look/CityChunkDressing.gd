@@ -25,6 +25,7 @@ const POLICE := preload("res://world/city_look/PoliceStationDressing.gd")
 const NIGHT_GROUP := &"city_look_night"
 const FRAGILE := preload("res://gameplay/street_physics/FragileProps3D.gd")
 const WORLD_CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
+const BRIDGE_SURFACE := preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd")
 const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
 const JUNCTIONS := preload("res://gameplay/traffic_junctions/TrafficJunctions.gd")
 const PLACEMENTS := preload("res://world/editing/WorldPlacements.gd")
@@ -128,6 +129,8 @@ static func _in_chunk(context: Dictionary, point: Vector2) -> bool:
 ## Distância até o eixo da via mais próxima menos a meia largura: <0 é asfalto,
 ## 0..SIDEWALK é calçada.
 static func _road_clearance(context: Dictionary, point: Vector2) -> float:
+	# O canteiro entre as antigas pistas agora pertence ao asfalto contínuo.
+	if BRIDGE_SURFACE.enabled() and BRIDGE_SURFACE.east_bounds().has_point(point) and Geometry2D.is_point_in_polygon(point,BRIDGE_SURFACE.east_asphalt_footprint()): return -1.0
 	var best := INF
 	for road in context.roads:
 		var points: PackedVector2Array = road.points
@@ -753,6 +756,10 @@ static func _road_wear(context: Dictionary, batches: Dictionary) -> void:
 				var key := "%s|w|%d|%d" % [road.id, index, int(s * 10.0)]
 				var roll := _roll(key)
 				var along := a + tangent * s
+				# A ponte reconstruída não recebe os antigos remendos procedurais.
+				if BRIDGE_SURFACE.owns_surface_point(along):
+					s += 3.0
+					continue
 				var lane := (1.0 if _roll(key + "l") < 0.5 else -1.0) * width * 0.25
 				if roll < 0.22:
 					# Óleo pinga no meio da faixa, onde o carro para.

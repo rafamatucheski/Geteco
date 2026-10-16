@@ -1,6 +1,6 @@
 extends RefCounted
 ## World coordinates. This spur is scenery/player access, never an NPC traffic road.
-const APPROACH := Vector3(364.55, 0.032, -254.0)
+const APPROACH := Vector3(364.55, 0.0, -254.0)
 const TERMINAL := Vector3(342.5, 2.4, -361.5)
 const WORK_POSITION := Vector3(342.5, 2.4, -282.8)
 const DECK_HEIGHT := 2.4
@@ -35,6 +35,10 @@ static func sample(distance: float) -> Vector3:
 
 static func deck_half_width_at(distance: float) -> float:
 	return deck_half_width(sample(distance))
+
+static func walk_height_at(distance: float) -> float:
+	# Um metro de concordância evita degrau junto à calçada urbana e à areia.
+	return lerpf(0.008, 0.07, clampf(distance, 0.0, 1.0)) * clampf(length() - distance, 0.0, 1.0)
 
 static func deck_half_width(point: Vector3) -> float:
 	var z := point.z
@@ -116,10 +120,12 @@ static func _prepare() -> void:
 		var u := 1.0 - t
 		planar.append(a * u * u * u + b * 3.0 * u * u * t + c * 3.0 * u * t * t + d * t * t * t)
 		if i > 0: planar_distance.append(planar_distance[-1] + planar[i - 1].distance_to(planar[i]))
+	# O modo A/B preserva o piso original elevado; o novo nasce no físico da rua.
+	var start_height := 0.032 if OS.get_environment("GETECO_UNIFIED_BRIDGE") == "0" else APPROACH.y
 	for i in planar.size():
 		# Keep the junction and dry bank level; start the incline beyond the coast.
 		var rise := smoothstep(9.0, planar_distance[-1], planar_distance[i])
-		_points.append(Vector3(planar[i].x, lerpf(APPROACH.y, DECK_HEIGHT, rise), planar[i].y))
+		_points.append(Vector3(planar[i].x, lerpf(start_height, DECK_HEIGHT, rise), planar[i].y))
 	# Include all width/gap boundaries exactly, then subdivide for curved guards.
 	var stops: Array[float] = [-281.0, WORK_POSITION.z, -286.8, -292.0, -297.0,
 		-303.0, GAP_SOUTH, GAP_NORTH, -330.0, -343.0, -352.0, TERMINAL.z, END_Z]
