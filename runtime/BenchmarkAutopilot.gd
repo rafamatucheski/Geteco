@@ -160,7 +160,14 @@ func _distance_to_corner() -> float:
 func _place(distance: float) -> void:
 	var point := _lane_point(distance)
 	var direction := _directions[_segment_at(distance)]
-	car.global_position = point + Vector3.UP * .1
+	# Pousa no chão de verdade: a rota é em y=0 e a calçada/asfalto da cidade fica a
+	# ~0,12 m; com +0,1 o carro nascia dentro do piso e às vezes atravessava o mundo
+	# (dirigindooeste_1 da fase 2 terminou em y=-3190).
+	var query := PhysicsRayQueryParameters3D.create(point + Vector3.UP * 30.0, point + Vector3.DOWN * 30.0, 1)
+	query.exclude = [car.get_rid()]
+	var hit := car.get_world_3d().direct_space_state.intersect_ray(query)
+	if not hit.is_empty(): point.y = float(hit.position.y)
+	car.global_position = point + Vector3.UP * .35
 	car.rotation = Vector3(0, atan2(-direction.x, -direction.z), 0)
 	car.set("speed", 0.0)
 	car.set("horizontal_velocity", Vector3.ZERO)
