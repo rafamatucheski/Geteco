@@ -103,7 +103,9 @@ func _prepare() -> void:
 		for surface in part.mesh.get_surface_count():
 			var material:=part.get_active_material(surface)
 			var role:=ROLES.key(part,surface).get_slice("#",0)
-			var is_paint: bool=role=="paint" or (vehicle._paint!=null and material in vehicle._paint.materials and role!="roof_paint")
+			# A lista da pintura é tipada (StandardMaterial3D): procurar um ShaderMaterial (pintura
+			# molhada, para-brisa) nela registrava erro do motor a cada batida, sem mudar o resultado.
+			var is_paint: bool=role=="paint" or (vehicle._paint!=null and material is StandardMaterial3D and material in vehicle._paint.materials and role!="roof_paint")
 			eligible.append(is_paint)
 			painted=painted or is_paint
 		if not painted: continue
