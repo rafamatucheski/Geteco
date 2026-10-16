@@ -19,6 +19,15 @@ const LOWRISE_BUILDING := preload("res://world/urban_detail/UrbanLowriseBuilding
 const BUILDING_BATCH := preload("res://world/urban_detail/HarborBuildingBatch.gd")
 const BUILDING_BAKE := preload("res://assets/buildings/baked/BuildingBakeCatalog.gd")
 static var baked_enabled := OS.get_environment("GETECO_BAKED_BUILDINGS") != "0"
+## Cenas assadas (~1,35 MB cada) eram lidas com load() síncrono na primeira vez que
+## o prédio entrava no streaming: base release de 15/10, rota sobrados, quadros de
+## 80-116 ms com stream.harbor.record.building de NorthbankFront3 (79,6 ms),
+## UnionApartments (89,8) e TransitHouse (58,9), todos escritórios assados. O primeiro
+## prédio montado (sob a cortina) pede todas em threads; cada montagem seguinte só
+## recolhe as prontas no cache do catálogo. Se uma ainda não terminou, o load() do
+## catálogo espera a mesma tarefa: nunca pior que antes. Custo: ~20 MB de RAM retidos.
+static var _bake_pending: Array[String] = []
+static var _bake_requested := false
 const V1_HEIGHT_OVERRIDES := {
 	# HarborEastDistrict assigns these two silhouettes after instantiation.
 	# Keep their different skyline heights when converting 2D source pixels to metres.
@@ -57,7 +66,35 @@ static func extract_size(data: Dictionary) -> Vector2:
 			return Vector2(float(s[0]) * (1.0 / 16.0), float(s[1]) * (1.0 / 16.0))
 	return Vector2(10.0, 10.0)
 
+static func _prefetch_baked() -> void:
+	if not baked_enabled: return
+	if not _bake_requested:
+		_bake_requested = true
+		var manifest_path: String = BUILDING_BAKE.OUTPUT + "/manifest.tres"
+		if not ResourceLoader.exists(manifest_path): return
+		var manifest_resource := load(manifest_path) as Resource
+		if manifest_resource == null: return
+		var manifest: Dictionary = manifest_resource.get_meta("building_manifest", {})
+		# Mesma regra do catálogo: no editor, fonte alterada invalida as cenas e ele não as usa.
+		var stamp: String = BUILDING_BAKE.source_stamp()
+		if not stamp.is_empty() and manifest.get("source_stamp", "") != stamp: return
+		for entry in manifest.get("variants", {}).values():
+			var path := str(entry.get("scene", ""))
+			if path.is_empty() or path in _bake_pending or BUILDING_BAKE._scenes.has(path) or not ResourceLoader.exists(path): continue
+			if ResourceLoader.load_threaded_request(path, "PackedScene") == OK: _bake_pending.append(path)
+		return
+	for index in range(_bake_pending.size() - 1, -1, -1):
+		var path := _bake_pending[index]
+		var status := ResourceLoader.load_threaded_get_status(path)
+		if status == ResourceLoader.THREAD_LOAD_IN_PROGRESS: continue
+		_bake_pending.remove_at(index)
+		if status != ResourceLoader.THREAD_LOAD_LOADED: continue
+		# Sempre recolhe a tarefa (libera o registro do carregador), mesmo se o catálogo já a usou.
+		var scene := ResourceLoader.load_threaded_get(path) as PackedScene
+		if scene != null and not BUILDING_BAKE._scenes.has(path): BUILDING_BAKE._scenes[path] = scene
+
 static func build_building(data: Dictionary) -> Node3D:
+	_prefetch_baked()
 	var building_id := str(data.get("id", ""))
 	var building_kind := str(data.get("kind", data.get("service", "")))
 	var point: Vector3 = extract_position(data)
