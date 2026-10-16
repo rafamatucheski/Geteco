@@ -68,7 +68,7 @@ static func loop(folder: String, file: String) -> AudioStreamWAV:
 ## primeiro tiro, a primeira porta e o primeiro turbo não pagam leitura de disco.
 static func prewarm(tree: SceneTree) -> void:
 	var sets := {
-		"weapons_fire": ["pistol", "shotgun", "rifle_shot", "magnum", "smg", "sawed_off", "hunting_rifle", "distant_shot", "dry_fire", "gun_draw", "gun_holster",
+		"weapons_fire": ["pistol", "shotgun", "rifle_shot", "magnum", "smg", "sawed_off", "hunting_rifle", "rpg", "shotgun_pump", "distant_shot", "dry_fire", "gun_draw", "gun_holster",
 			"grenade_pin", "explosion_tail", "ricochet", "bullet_whiz"],
 		"katana": ["draw", "sheath"],
 		"vehicle_fx": ["door_open", "door_close", "ignition", "engine_off", "handbrake", "backfire",

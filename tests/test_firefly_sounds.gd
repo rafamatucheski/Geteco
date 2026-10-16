@@ -44,7 +44,7 @@ func run() -> void:
 	# Armas com tiro gravado sorteiam só os novos (sem repetir o anterior); a camada sintética de corpo sai.
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7
-	for family in ["pistol", "shotgun", "ak47", "m4a1"]:
+	for family in ["pistol", "shotgun", "ak47", "m4a1", "magnum", "smg", "sawed_off", "hunting_rifle", "rpg"]:
 		var recorded := 0
 		var classic := 0
 		var previous: AudioStream
@@ -57,7 +57,7 @@ func run() -> void:
 			elif take != null: classic += 1
 		check(COMBAT.gun_body(family) == null, "%s não soma o corpo sintético antigo" % family)
 		check(recorded == 400 and classic == 0, "%s usa só os takes novos (%d novos, %d do V1)" % [family, recorded, classic])
-	for family in ["suppressed_pistol", "magnum", "hunting_rifle"]:
+	for family in ["suppressed_pistol"]:
 		for i in 60:
 			var take: AudioStream = COMBAT.gunfire_take(family, rng)
 			check(take == null or not take.resource_path.begins_with("res://audio/weapons_fire/"), "%s continua só com os takes do V1" % family)

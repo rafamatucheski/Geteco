@@ -17,7 +17,7 @@ const BACKFIRE_FAMILIES := ["muscle", "sport", "vq35", "m8_v8", "rosso_v12"]
 const REVERSE_BEEP_FAMILIES := ["truck", "bus", "fire_diesel"]
 const NEARBY_VEHICLE_AUDIO := preload("res://audio/vehicle_ambience/NearbyVehicleAudio.gd")
 const FOOTSTEP_CADENCE := preload("res://audio/FootstepCadence.gd")
-const BED_OFFSETS := {"city":-10.0,"water":-6.0,"port":-15.0,"birds":-9.0,"crickets":-10.0,"workshop":-20.0}
+const BED_OFFSETS := {"dockside":-12.0,"swell":-9.0,"rocks":-11.0,"traffic":-12.0,"city":-10.0,"water":-6.0,"port":-15.0,"birds":-9.0,"crickets":-10.0,"workshop":-20.0}
 var world
 var layers: Array[AudioStreamPlayer] = []
 var engine_car: CharacterBody3D
@@ -25,7 +25,7 @@ var radio: AudioStreamPlayer
 var ambience: AudioStreamPlayer
 var footsteps: AudioStreamPlayer3D
 var beds: Dictionary = {}
-var bed_gains := {"city":0.0,"water":0.0,"port":0.0,"birds":0.0,"crickets":0.0,"workshop":0.0}
+var bed_gains := {"dockside":0.0,"swell":0.0,"rocks":0.0,"traffic":0.0,"city":0.0,"water":0.0,"port":0.0,"birds":0.0,"crickets":0.0,"workshop":0.0}
 var bed_targets := bed_gains.duplicate()
 var detail: AudioStreamPlayer3D
 var activity_audio
@@ -93,11 +93,17 @@ func _ready() -> void:
 	radio.bus = _bus(&"Music")
 	radio.volume_db = RADIO_VOLUME_DB
 	add_child(radio)
-	_make_bed("city",V1_AUDIO.bed("street",0))
-	_make_bed("water",V1_AUDIO.bed("water",1))
-	_make_bed("port",V1_AUDIO.bed("workshop",1))
-	_make_bed("birds",V1_AUDIO.bed("birds",1))
-	_make_bed("crickets",V1_AUDIO.bed("crickets",0))
+	# Leitos gerados no ElevenLabs (2026-10-16): gente falando, trânsito, porto, mata de dia e
+	# de noite, e o mar (praia, oceano aberto, ondas nas pedras). Só a oficina segue a do V1.
+	_make_bed("traffic",_recorded_bed("city_traffic",V1_AUDIO.bed("street",0)))
+	_make_bed("city",_recorded_bed("crowd",V1_AUDIO.bed("street",0)))
+	_make_bed("water",_recorded_bed("ocean_shore",V1_AUDIO.bed("water",1)))
+	_make_bed("swell",_recorded_bed("ocean_open",null))
+	_make_bed("rocks",_recorded_bed("wave_rocks",null))
+	_make_bed("port",_recorded_bed("port_terminal",V1_AUDIO.bed("workshop",1)))
+	_make_bed("dockside",_recorded_bed("harbor",null))
+	_make_bed("birds",_recorded_bed("forest_day",V1_AUDIO.bed("birds",1)))
+	_make_bed("crickets",_recorded_bed("forest_night",V1_AUDIO.bed("crickets",0)))
 	_make_bed("workshop",V1_AUDIO.bed("workshop",0))
 	ambience = beds.city
 	detail = AudioStreamPlayer3D.new()
@@ -183,6 +189,12 @@ func _engine_fx_channels() -> Array:
 
 func _bus(preferred: StringName) -> StringName:
 	return preferred if AudioServer.get_bus_index(preferred)>=0 else &"Master"
+## Uma tomada sorteada por abertura do jogo; sem o arquivo importado, o leito do V1.
+func _recorded_bed(key: String, fallback: AudioStream) -> AudioStream:
+	var total := FIREFLY.count("ambience_el", key)
+	if total == 0: return fallback
+	var looped := FIREFLY.loop("ambience_el", "%s_%d.wav" % [key, rng.randi_range(0, total - 1)])
+	return looped if looped != null else fallback
 func _make_bed(id: String, stream: AudioStream) -> void:
 	var player := AudioStreamPlayer.new()
 	player.name = id.capitalize()+"Ambience"
@@ -582,6 +594,10 @@ func _update_ambience(delta: float) -> void:
 		ambience_clock = 0
 		var state = world.session.state
 		bed_targets = PROFILES.targets(str(state.region_id),str(state.place_id),world.player.global_position,_dark(),_nearby_crowd_gain())
+		bed_targets["traffic"] = float(bed_targets.get("city",0.0))*.8
+		bed_targets["dockside"] = float(bed_targets.get("port",0.0))*.7
+		bed_targets["swell"] = float(bed_targets.get("water",0.0))*.7
+		bed_targets["rocks"] = float(bed_targets.get("port",0.0))*.5+float(bed_targets.get("water",0.0))*.25
 		detail_context = PROFILES.activity_context(str(state.region_id),str(state.place_id),world.player.global_position)
 	for id in beds:
 		var target := float(bed_targets.get(id,0.0))*focus
@@ -589,7 +605,7 @@ func _update_ambience(delta: float) -> void:
 		var offset: float = BED_OFFSETS[id]
 		var player: AudioStreamPlayer = beds[id]
 		player.volume_db = offset+linear_to_db(maxf(float(bed_gains[id]),.0001))
-		if bed_gains[id]>.005 and not player.playing: player.play(rng.randf_range(0,maxf(0,player.stream.get_length()-1)))
+		if bed_gains[id]>.005 and player.stream != null and not player.playing: player.play(rng.randf_range(0,maxf(0,player.stream.get_length()-1)))
 		elif bed_gains[id]<=.001 and player.playing: player.stop()
 	detail_clock -= delta
 	if focus<.8 or detail_context.is_empty():
@@ -604,13 +620,18 @@ func _play_context_detail() -> void:
 	match detail_context:
 		"workshop": kind = "workshop"
 		"salvage","sawmill": kind = "scrap"
-		"port","dock": kind = "gull" if not _dark() and rng.randf()<.65 else "ship_horn"
+		"port","dock":
+			var roll := rng.randf()
+			kind = "ship_horn" if roll<.25 else ("clang" if roll<.55 else ("buoy" if roll<.7 else ("gull" if not _dark() else "ship_horn")))
 		"nature": kind = "dog" if _dark() else "birds"
 		"city": kind = "dog" if _dark() else ""
 	if kind.is_empty():
 		detail_clock = rng.randf_range(12,24)
 		return
-	if kind=="scrap": detail.stream = V1_AUDIO.regional("scrap",detail_variant)
+	var recorded_key: String = {"ship_horn":"ship_horn","clang":"container_clang","buoy":"buoy_bell"}.get(kind,"")
+	if not recorded_key.is_empty() and FIREFLY.count("ambience_el",recorded_key)>0: detail.stream = FIREFLY.take("ambience_el",recorded_key,rng)
+	elif kind=="clang" or kind=="buoy": detail.stream = null
+	elif kind=="scrap": detail.stream = V1_AUDIO.regional("scrap",detail_variant)
 	else: detail.stream = V1_AUDIO.detail(kind,detail_variant)
 	detail_variant = (detail_variant+1)%6
 	if detail.stream == null:

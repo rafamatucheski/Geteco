@@ -38,7 +38,8 @@ func _ready() -> void:
 
 func _warm() -> void:
 	if not bank.is_empty(): return
-	wind.stream = CATALOG.regional("wind", 1)
+	wind.stream = FIREFLY.loop("ambience_el", "sand_wind_0.wav")
+	if wind.stream == null: wind.stream = CATALOG.regional("wind", 1)
 	for kind in ["gust", "scrap", "birds", "dog", "coyote", "crickets", "wind"]:
 		bank[kind] = []
 		for variant in 3:

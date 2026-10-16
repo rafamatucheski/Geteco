@@ -75,6 +75,6 @@ func _run() -> void:
 	for id in audio.RELOAD_WEAPONS:
 		check(audio.reload_take(id, rng) != null and audio.reload_seconds(id) >= audio.MIN_RELOAD, "%s possui banco/duração de recarga" % id)
 	var pump := audio.shotgun_pump()
-	check(pump != null and pump.get_length() >= 0.30 and pump.get_length() <= 0.36, "shotgun possui efeito curto de bombeamento após o disparo")
+	check(pump != null and pump.get_length() >= 0.20 and pump.get_length() <= 1.0, "shotgun possui efeito curto de bombeamento após o disparo")
 	print("WEAPON_PRESENTATION_CONTRACT checks=%d failures=%s" % [checks, failures])
 	quit(0 if failures.is_empty() else 1)

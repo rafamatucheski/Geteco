@@ -55,7 +55,7 @@ func run() -> void:
 	var mixer = weather.weather_audio
 	mixer.set_process(false)
 	mixer._process(3.1)
-	check(mixer.layers.size()==3,"V1 three rain layers installed")
+	check(mixer.layers.size()==4,"três camadas de chuva + leito de tempestade instalados")
 	check(mixer.layers[0].playing and mixer.layers[1].playing,"Rain bed and surface drops play")
 	check(not mixer.layers[2].playing,"Drizzle does not play heavy sheets")
 	var drizzle_ratio: float = weather.precipitation.amount_ratio

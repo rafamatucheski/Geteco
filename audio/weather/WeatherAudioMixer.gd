@@ -1,8 +1,12 @@
 extends Node
 ## Three constant voices, authored offline. No PCM generation or transient Tweens.
 ## A private bus filters only this weather instance, then sends to the user's Ambient.
-const LOOPS := [preload("res://audio/weather/rain_bed.wav"), preload("res://audio/weather/rain_drops.wav"), preload("res://audio/weather/rain_sheets.wav")]
-const THUNDER := [preload("res://audio/weather/thunder_0.wav"), preload("res://audio/weather/thunder_1.wav")]
+const FIREFLY := preload("res://audio/FireflyBank.gd")
+## Sons gerados no ElevenLabs (2026-10-16) em audio/ambience_el: chuva fraca e forte, tempestade
+## (vento + chuva) e trovões (estalo próximo + ribombo). Os arquivos de chuva já são loops
+## sem emenda; os trovões são pontuais.
+const LOOPS := [["rain_light_0.wav"], ["rain_light_1.wav"], ["rain_heavy_0.wav"], ["storm_0.wav"]]
+const THUNDER_KEYS := ["thunder_crack", "thunder_roll"]
 # Rain is a background bed, including storms: retain space for voices/engines/shots.
 const RAIN_TRIM_DB := -16.0
 var layers: Array[AudioStreamPlayer] = []
@@ -30,12 +34,8 @@ func _ready() -> void:
 	AudioServer.add_bus_effect(index, low_pass)
 	for i in LOOPS.size():
 		var player := AudioStreamPlayer.new()
-		player.name = ["RainBed", "SurfaceDrops", "HeavySheets"][i]
-		var wav := LOOPS[i].duplicate() as AudioStreamWAV
-		wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
-		wav.loop_begin = 0
-		wav.loop_end = int(wav.get_length() * wav.mix_rate)
-		player.stream = wav
+		player.name = ["RainBed", "SurfaceDrops", "HeavySheets", "StormBed"][i]
+		player.stream = FIREFLY.loop("ambience_el", LOOPS[i][0])
 		player.bus = bus_name
 		player.volume_db = -80.0
 		add_child(player)
@@ -66,9 +66,10 @@ func _process(delta: float) -> void:
 	shelter_mix = move_toward(shelter_mix, 1.0 if sheltered else 0.0, delta / 0.8)
 	low_pass.cutoff_hz = exp(lerpf(log(18000.0), log(850.0), shelter_mix))
 	var outside_gain := lerpf(1.0, 0.24, shelter_mix)
-	var gains := [sqrt(intensity) * 0.72, intensity * lerpf(0.64, 0.08, shelter_mix), smoothstep(0.38, 1.0, intensity) * 0.78]
+	var gains := [sqrt(intensity) * 0.72, intensity * lerpf(0.64, 0.08, shelter_mix), smoothstep(0.38, 1.0, intensity) * 0.78, smoothstep(0.7, 1.0, intensity) * 0.5]
 	for i in layers.size():
 		var player := layers[i]
+		if player.stream == null: continue
 		var gain: float = gains[i] * outside_gain * focus_gain
 		player.volume_db = linear_to_db(maxf(gain, 0.0001)) + RAIN_TRIM_DB
 		if gain > 0.001 and not player.playing:
@@ -80,7 +81,10 @@ func _process(delta: float) -> void:
 func play_thunder() -> void:
 	if interior_silence:
 		return
-	thunder.stream = THUNDER[_rng.randi_range(0, THUNDER.size() - 1)]
+	var pool: Array[AudioStream] = []
+	for key in THUNDER_KEYS: pool.append_array(FIREFLY.all("ambience_el", key))
+	if pool.is_empty(): return
+	thunder.stream = pool[_rng.randi_range(0, pool.size() - 1)]
 	thunder.pitch_scale = _rng.randf_range(0.94, 1.04)
 	thunder.play()
 

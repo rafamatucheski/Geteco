@@ -5,7 +5,7 @@ const FIREFLY := preload("res://audio/FireflyBank.gd")
 ## do V1: família do tiro -> nome em audio/weapons_fire. O fuzil usa tiros únicos fatiados
 ## da rajada. Sem o arquivo importado o sorteio fica só com os takes do V1.
 const FIREFLY_GUNFIRE := {"pistol": "pistol", "shotgun": "shotgun", "ak47": "rifle_shot", "m4a1": "rifle_shot",
-	"magnum": "magnum", "smg": "smg", "sawed_off": "sawed_off", "hunting_rifle": "hunting_rifle"}
+	"magnum": "magnum", "smg": "smg", "sawed_off": "sawed_off", "hunting_rifle": "hunting_rifle", "rpg": "rpg"}
 ## Áudio de combate do V2: amostras copiadas do V1 (recarga, impactos, RPG, tiros
 ## silenciados) e os geradores procedurais que o V1 usava para golpes, faca, taco,
 ## lança-chamas e arremesso de granada. Nada aqui é efeito novo: são
@@ -466,6 +466,9 @@ static func gun_body(kind: String) -> AudioStream:
 
 ## Deslizamento da telha e fechamento do ferrolho, sincronizados ao bombeamento após o tiro.
 static func shotgun_pump() -> AudioStream:
+	# Bombeada gravada (ElevenLabs, 2026-10-16); a sintética fica só se o arquivo não existir.
+	var recorded := FIREFLY.take("weapons_fire", "shotgun_pump")
+	if recorded != null: return recorded
 	if _generated.has("shotgun_pump"): return _generated["shotgun_pump"]
 	var rate := 22050
 	var count := int(rate * 0.34)
