@@ -2,13 +2,13 @@
 
 importer="wav"
 type="AudioStreamWAV"
-uid="uid://crv1q5cejfap0"
-path="res://.godot/imported/hover_2.wav-6d0d741cc29d1a164609ee84ae4d3f00.sample"
+uid="uid://c6xgvyub1a4j0"
+path="res://.godot/imported/magnum_2.wav-54a417e49ee7256b2d9e8e09206f4e74.sample"
 
 [deps]
 
-source_file="res://audio/menu/hover_2.wav"
-dest_files=["res://.godot/imported/hover_2.wav-6d0d741cc29d1a164609ee84ae4d3f00.sample"]
+source_file="res://audio/weapons_fire/magnum_2.wav"
+dest_files=["res://.godot/imported/magnum_2.wav-54a417e49ee7256b2d9e8e09206f4e74.sample"]
 
 [params]
 

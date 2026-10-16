@@ -2,13 +2,13 @@
 
 importer="wav"
 type="AudioStreamWAV"
-uid="uid://yddqwfp3ck45"
-path="res://.godot/imported/back_1.wav-80e940e9bd762d076eca8d652949d9b0.sample"
+uid="uid://dddw37eq8ug00"
+path="res://.godot/imported/smg_1.wav-3571fff21f404beb8eecee6631ed53c1.sample"
 
 [deps]
 
-source_file="res://audio/menu/back_1.wav"
-dest_files=["res://.godot/imported/back_1.wav-80e940e9bd762d076eca8d652949d9b0.sample"]
+source_file="res://audio/weapons_fire/smg_1.wav"
+dest_files=["res://.godot/imported/smg_1.wav-3571fff21f404beb8eecee6631ed53c1.sample"]
 
 [params]
 

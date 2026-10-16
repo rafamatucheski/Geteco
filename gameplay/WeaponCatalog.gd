@@ -81,7 +81,7 @@ const WEAPONS = {
 		"damage": 34, "fire_interval": 0.26, "projectile_speed": 620.0,
 		"pellets": 1, "spread": 0.0, "magazine_size": 12, "starting_reserve": 60,
 		"automatic": false, "tracer_color": Color("ffe36b"), "stance": "pistol",
-		"sound_type": "pistol", "audio_volume_db": -2.0, "pitch_variance": 0.06
+		"sound_type": "pistol", "audio_volume_db": 6, "pitch_variance": 0.06
 	},
 	"magnum": {
 		"falloff_start": 180.0, "max_range": 380.0, "min_damage_ratio": 0.6,
@@ -89,7 +89,7 @@ const WEAPONS = {
 		"damage": 70, "fire_interval": 0.58, "projectile_speed": 720.0,
 		"pellets": 1, "spread": 0.0, "magazine_size": 6, "starting_reserve": 36,
 		"automatic": false, "tracer_color": Color("ffb940"), "stance": "pistol",
-		"sound_type": "magnum", "audio_volume_db": 2.0, "pitch_variance": 0.04
+		"sound_type": "magnum", "audio_volume_db": 7, "pitch_variance": 0.04
 	},
 	"smg": {
 		"falloff_start": 120.0, "max_range": 260.0, "min_damage_ratio": 0.45,
@@ -98,7 +98,7 @@ const WEAPONS = {
 		"damage": 25, "fire_interval": 0.11, "projectile_speed": 650.0,
 		"pellets": 1, "spread": 0.035, "magazine_size": 30, "starting_reserve": 150,
 		"automatic": true, "tracer_color": Color("78dcff"), "stance": "rifle",
-		"sound_type": "smg", "audio_volume_db": -3.0, "pitch_variance": 0.08
+		"sound_type": "smg", "audio_volume_db": 4, "pitch_variance": 0.08
 	},
 	"shotgun": {
 		"falloff_start": 50.0, "max_range": 145.0, "min_damage_ratio": 0.15,
@@ -106,7 +106,7 @@ const WEAPONS = {
 		"damage": 18, "fire_interval": 0.78, "projectile_speed": 480.0,
 		"pellets": 8, "spread": 0.20, "magazine_size": 6, "starting_reserve": 36,
 		"automatic": false, "tracer_color": Color("ff9b63"), "stance": "rifle",
-		"sound_type": "shotgun", "audio_volume_db": 1.0, "pitch_variance": 0.05
+		"sound_type": "shotgun", "audio_volume_db": 6, "pitch_variance": 0.05
 	},
 	"sawed_off": {
 		"falloff_start": 35.0, "max_range": 110.0, "min_damage_ratio": 0.1,
@@ -114,7 +114,7 @@ const WEAPONS = {
 		"damage": 18, "fire_interval": 0.44, "projectile_speed": 480.0,
 		"pellets": 10, "spread": 0.34, "magazine_size": 2, "starting_reserve": 24,
 		"automatic": false, "tracer_color": Color("ff793f"), "stance": "pistol",
-		"sound_type": "sawed_off", "audio_volume_db": 1.5, "pitch_variance": 0.05
+		"sound_type": "sawed_off", "audio_volume_db": 6.5, "pitch_variance": 0.05
 	},
 	"ak47": {
 		"falloff_start": 250.0, "max_range": 440.0, "min_damage_ratio": 0.6,
@@ -122,7 +122,7 @@ const WEAPONS = {
 		"damage": 42, "fire_interval": 0.15, "projectile_speed": 760.0,
 		"pellets": 1, "spread": 0.040, "magazine_size": 30, "starting_reserve": 180,
 		"automatic": true, "tracer_color": Color("ff6348"), "stance": "rifle",
-		"sound_type": "ak47", "audio_volume_db": 0.5, "pitch_variance": 0.06
+		"sound_type": "ak47", "audio_volume_db": 6.5, "pitch_variance": 0.06
 	},
 	"m4a1": {
 		"falloff_start": 275.0, "max_range": 470.0, "min_damage_ratio": 0.65,
@@ -130,7 +130,7 @@ const WEAPONS = {
 		"damage": 35, "fire_interval": 0.12, "projectile_speed": 800.0,
 		"pellets": 1, "spread": 0.020, "magazine_size": 30, "starting_reserve": 180,
 		"automatic": true, "tracer_color": Color("70a1ff"), "stance": "rifle",
-		"sound_type": "m4a1", "audio_volume_db": -0.5, "pitch_variance": 0.06
+		"sound_type": "m4a1", "audio_volume_db": 5.5, "pitch_variance": 0.06
 	},
 	"rpg": {
 		"blast_radius": 112.0,
@@ -139,7 +139,7 @@ const WEAPONS = {
 		"damage": 95, "fire_interval": 1.65, "projectile_speed": 420.0,
 		"pellets": 1, "spread": 0.0, "magazine_size": 1, "starting_reserve": 8,
 		"automatic": false, "tracer_color": Color("ff4757"), "is_explosive": true, "stance": "shoulder_rpg",
-		"sound_type": "rpg", "audio_volume_db": 2.5, "pitch_variance": 0.03
+		"sound_type": "rpg", "audio_volume_db": 5.5, "pitch_variance": 0.03
 	},
 	"flamethrower": {
 		"falloff_start": 38.0, "max_range": 90.0, "min_damage_ratio": 0.25,
@@ -164,7 +164,7 @@ const WEAPONS = {
 		"damage": 120, "fire_interval": 0.95, "projectile_speed": 1000.0,
 		"pellets": 1, "spread": 0.004, "magazine_size": 5, "starting_reserve": 35,
 		"automatic": false, "tracer_color": Color("f1c40f"), "stance": "rifle",
-		"sound_type": "hunting_rifle", "audio_volume_db": 0.0, "pitch_variance": 0.03
+		"sound_type": "hunting_rifle", "audio_volume_db": 6, "pitch_variance": 0.03
 	}
 }
 

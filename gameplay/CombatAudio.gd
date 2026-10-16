@@ -4,7 +4,8 @@ const FIREFLY := preload("res://audio/FireflyBank.gd")
 ## Tomadas extras gravadas no Firefly (2026-10-15) que entram no mesmo sorteio dos 5 takes
 ## do V1: família do tiro -> nome em audio/weapons_fire. O fuzil usa tiros únicos fatiados
 ## da rajada. Sem o arquivo importado o sorteio fica só com os takes do V1.
-const FIREFLY_GUNFIRE := {"pistol": "pistol", "shotgun": "shotgun", "ak47": "rifle_shot", "m4a1": "rifle_shot"}
+const FIREFLY_GUNFIRE := {"pistol": "pistol", "shotgun": "shotgun", "ak47": "rifle_shot", "m4a1": "rifle_shot",
+	"magnum": "magnum", "smg": "smg", "sawed_off": "sawed_off", "hunting_rifle": "hunting_rifle"}
 ## Áudio de combate do V2: amostras copiadas do V1 (recarga, impactos, RPG, tiros
 ## silenciados) e os geradores procedurais que o V1 usava para golpes, faca, taco,
 ## lança-chamas e arremesso de granada. Nada aqui é efeito novo: são
