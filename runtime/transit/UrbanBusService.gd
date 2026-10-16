@@ -26,6 +26,8 @@ var person_blocker := ""
 var measured_usec := 0
 var measured_ticks := 0
 var driver_work: Node
+## Verdadeiro enquanto `prepare_startup` espalha os ônibus entre quadros.
+var _building := false
 
 func configure(value) -> void:
 	controller = value
@@ -46,14 +48,39 @@ func build() -> void:
 	_stall_build()
 	if stall_began != 0: TRANSIT_WORK.finish("urban.build", stall_began, {"fleet":fleet.size(),"people":people.size(),"stops":stops.size(),"failure":failure})
 
+## Monta a linha sob a cortina de carregamento, um ônibus por quadro.
+## Medido no export release (fase 2, 16/10): a montagem preguiçosa no primeiro tique de
+## física com `ready_for_play` custava ~100 ms (`urban.build`; o 1º ônibus ~70 ms, dos quais
+## ~50 ms são as primitivas da seção 0) e virava um quadro de 140–195 ms em todas as rotas.
+## O caminho preguiçoso em `_stall_physics_process` continua como reserva (testes, porto
+## ainda não montado).
+func prepare_startup() -> void:
+	if prepared or controller == null or not controller.regions.has("harbor"): return
+	var stall_began := TRANSIT_WORK.begin()
+	_building = true
+	if _stall_build_route():
+		for index in 2:
+			await get_tree().process_frame
+			if not is_instance_valid(self) or not is_inside_tree(): return
+			_spawn_bus(index)
+		_finish_build()
+	_building = false
+	if stall_began != 0: TRANSIT_WORK.finish("urban.build.startup", stall_began, {"fleet":fleet.size(),"people":people.size(),"stops":stops.size(),"failure":failure})
+
 func _stall_build() -> void:
+	if not _stall_build_route(): return
+	for index in 2: _spawn_bus(index)
+	_finish_build()
+
+## Rota, paradas e passageiros (barato); devolve false quando a linha não pode operar.
+func _stall_build_route() -> bool:
 	prepared = true
 	var roads: Array = []
 	for road in controller.regions.harbor.roads:
 		if road.id in CORRIDOR: roads.append(road)
-	if roads.size()!=4: failure="Corredor incompleto"; return
+	if roads.size()!=4: failure="Corredor incompleto"; return false
 	for road in roads:
-		if int(road.get("lanes_per_direction",1)) != 2: failure="Corredor requer duas faixas por sentido"; return
+		if int(road.get("lanes_per_direction",1)) != 2: failure="Corredor requer duas faixas por sentido"; return false
 	var graph_began := TRANSIT_WORK.begin()
 	var graph := GRAPH.new()
 	graph.configure(roads)
@@ -61,7 +88,7 @@ func _stall_build() -> void:
 	var route_began := TRANSIT_WORK.begin()
 	route = graph.route_near(Vector3(110,0,143),1)
 	if route_began != 0: TRANSIT_WORK.finish("urban.route_near",route_began,{"valid":route!=null})
-	if route==null or route.get_meta("traffic_open",true): failure="Corredor sem circuito conectado"; route=null; return
+	if route==null or route.get_meta("traffic_open",true): failure="Corredor sem circuito conectado"; route=null; return false
 	var path_began := TRANSIT_WORK.begin()
 	path_poses = PATH.new()
 	path_poses.configure(route)
@@ -81,32 +108,36 @@ func _stall_build() -> void:
 			continue
 		stops.append({"id":index,"offset":offset,"definition":definition,"gate":local_gate,"inside":station_point(definition,Vector2(-121,12)),"berth":berth})
 	stops.sort_custom(func(a,b): return a.offset<b.offset)
-	if stops.size()<2: failure="Menos de duas estações alinhadas"; route=null; return
+	if stops.size()<2: failure="Menos de duas estações alinhadas"; route=null; return false
 	for index in stops.size():
 		for seat in 3:
 			people.append({"id":600+index*3+seat,"actor":null,"stop":index,"destination":(index+2+seat)%stops.size(),"phase":"waiting","bus":null,"slot":seat,"age":0.0})
-	for index in 2:
-		var bus_began := TRANSIT_WORK.begin()
-		var bus := BUS.new()
-		bus.name = "Biarticulado510_%d" % index
-		bus.set_meta("vehicle_theft_handler",Callable(self,"claim_bus"))
-		bus.set_meta("vehicle_exit_handler",Callable(self,"prepare_driver_exit"))
-		var ready_began := TRANSIT_WORK.begin()
-		add_child(bus)
-		if ready_began != 0: TRANSIT_WORK.finish("urban.bus.add_child_ready",ready_began,{"index":index,"name":str(bus.name)})
-		var pose_began := TRANSIT_WORK.begin()
-		bus.path_poses = path_poses
-		# Whole-number grouping/index; preserve integer truncation and precision.
-		@warning_ignore("integer_division")
-		bus.service_stop = index*stops.size()/2
-		bus.set_route(route,float(stops[bus.service_stop].offset))
-		bus._apply_poses(path_poses.at(bus.route_distance),false)
-		bus.stop_offset = bus.route_distance
-		bus.service_state = "exchange"
-		bus.dwell = 9+index*3
-		fleet.append(bus)
-		if pose_began != 0: TRANSIT_WORK.finish("urban.bus.route_pose",pose_began,{"index":index})
-		if bus_began != 0: TRANSIT_WORK.finish("urban.bus.construct_ready_pose",bus_began,{"index":index})
+	return true
+
+func _spawn_bus(index: int) -> void:
+	var bus_began := TRANSIT_WORK.begin()
+	var bus := BUS.new()
+	bus.name = "Biarticulado510_%d" % index
+	bus.set_meta("vehicle_theft_handler",Callable(self,"claim_bus"))
+	bus.set_meta("vehicle_exit_handler",Callable(self,"prepare_driver_exit"))
+	var ready_began := TRANSIT_WORK.begin()
+	add_child(bus)
+	if ready_began != 0: TRANSIT_WORK.finish("urban.bus.add_child_ready",ready_began,{"index":index,"name":str(bus.name)})
+	var pose_began := TRANSIT_WORK.begin()
+	bus.path_poses = path_poses
+	# Whole-number grouping/index; preserve integer truncation and precision.
+	@warning_ignore("integer_division")
+	bus.service_stop = index*stops.size()/2
+	bus.set_route(route,float(stops[bus.service_stop].offset))
+	bus._apply_poses(path_poses.at(bus.route_distance),false)
+	bus.stop_offset = bus.route_distance
+	bus.service_state = "exchange"
+	bus.dwell = 9+index*3
+	fleet.append(bus)
+	if pose_began != 0: TRANSIT_WORK.finish("urban.bus.route_pose",pose_began,{"index":index})
+	if bus_began != 0: TRANSIT_WORK.finish("urban.bus.construct_ready_pose",bus_began,{"index":index})
+
+func _finish_build() -> void:
 	var saved_car = controller.world.driving.car
 	if is_instance_valid(saved_car) and saved_car.get_meta("biarticulated",false) and (saved_car.stolen or saved_car.driver_shift) and not fleet.has(saved_car): fleet.append(saved_car)
 	driver_work=preload("res://runtime/transit/BusDriverShift.gd").new()
@@ -176,6 +207,7 @@ func _physics_process(delta: float) -> void:
 
 func _stall_physics_process(delta: float) -> void:
 	if controller==null or controller.session==null or not controller.session.ready_for_play: return
+	if _building: return
 	if not prepared:
 		if controller.regions.has("harbor"): build()
 		return

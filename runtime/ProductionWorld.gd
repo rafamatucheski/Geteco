@@ -299,6 +299,12 @@ func build() -> void:
 	await preload("res://gameplay/VehicleInteriorMaterialPrewarm.gd").run(world, curtain)
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	_install_world_edits()
+	# Linha 510 montada aqui, depois das edições do mundo (mexem nas estações) e antes de
+	# `ready_for_play`: montada no primeiro tique jogável, custava ~100 ms (pico de
+	# 140–195 ms em `urban.physics` em todas as rotas do benchmark de 16/10).
+	if is_instance_valid(urban_transit) and is_instance_valid(urban_transit.urban_service):
+		await urban_transit.urban_service.prepare_startup()
+		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	ready_for_play = true
 	curtain.set_stage(.93, "Levando você ao ponto salvo…")
 	await session.restore_location()
