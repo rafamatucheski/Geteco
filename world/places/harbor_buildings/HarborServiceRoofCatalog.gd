@@ -19,7 +19,12 @@ static func definitions() -> Array[Dictionary]:
 		var height := 4.35
 		var yaw := float(source.get("editor_rotation",0.0))
 		match id:
-			"harbor_bank": size=Vector2(14.375,11.25); height=4.93
+			"harbor_bank":
+				size=Vector2(14.375,11.25); height=4.93
+				# Banco pintado: largura natural do estilo e a altura da pintura (como a delegacia).
+				if not PaintedHarborHouses.style_for("NorthFrontage0","bank_branch").is_empty():
+					size.x=PaintedHarborHouses.footprint_width("NorthFrontage0",size.x)
+					height=PaintedBankBranch.roof_height()
 			"harbor_supermarket": size=Vector2(14.2,11); height=4.40
 			"harbor_ammunation": size=Vector2(14.20,10.70); height=3.13
 			"harbor_clothing": size=Vector2(14.375,11.25); height=6.94

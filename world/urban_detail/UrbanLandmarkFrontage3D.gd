@@ -10,9 +10,15 @@ const V1_PUMP_OFFSET_Z := 140.0 / 16.0
 var open_amount := 0.0
 var entrance_door: Node3D
 var entrance_body: StaticBody3D
+## Folhas do kit pintado (banco): seguem o mesmo set_open_amount que WeaponShopEntrance dá.
+var painted_doors: Array[PaintedFacadeKit.PaintedDoor] = []
 
 func set_open_amount(amount: float) -> void:
 	open_amount = clampf(amount, 0.0, 1.0)
+	if not painted_doors.is_empty():
+		for leaf in painted_doors:
+			if is_instance_valid(leaf): leaf.set_open_amount(open_amount)
+		return
 	if is_instance_valid(entrance_door): entrance_door.rotation.y = -PI * .5 * open_amount
 	# A folha abre para fora, por cima de quem empurra: sólida ela empurrava o
 	# jogador para trás dela, fora do vão, e ele não entrava (auditoria 15/10, Union).
@@ -21,10 +27,19 @@ func set_open_amount(amount: float) -> void:
 
 func build() -> void:
 	match building_id:
-		"NorthFrontage0": _build_north_pier_bank()
+		"NorthFrontage0":
+			# Fachada pintada (estilo banco); GETECO_PAINTED_FACADES=0 volta ao 3D autoral.
+			if PaintedHarborHouses.style_for(building_id, building_kind).is_empty(): _build_north_pier_bank()
+			else: _build_painted_bank()
 		"NorthFrontage3": _build_union_clothing()
 		"NorthFrontage4": _build_fuel_store()
 		_: _build_default_box()
+
+func _build_painted_bank() -> void:
+	painted_doors = PaintedBankBranch.build(self)
+	height = PaintedBankBranch.wall_height()
+	# WeaponShopEntrance mede o contato da porta por entrance_door.
+	if not painted_doors.is_empty(): entrance_door = painted_doors[0]
 
 func _build_north_pier_bank() -> void:
 	height = 4.8

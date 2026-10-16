@@ -303,7 +303,9 @@ func _half_width(id: String) -> float:
 		"harbor_police": return .95
 		"harbor_hospital": return 1.1
 		"harbor_fire_station": return 1.4
-		"harbor_bank", "harbor_clothing", "harbor_fuel": return .48
+		# Banco pintado: vão de ~2,9 m (a porta antiga tinha 1,42 m).
+		"harbor_bank": return .48 if PaintedHarborHouses.style_for("NorthFrontage0", "bank_branch").is_empty() else 1.1
+		"harbor_clothing", "harbor_fuel": return .48
 		"cobra_leader_house": return .23
 		"harbor_haunted_house", "harbor_arcade", "harbor_curitiba_cellar": return .9
 	return .62

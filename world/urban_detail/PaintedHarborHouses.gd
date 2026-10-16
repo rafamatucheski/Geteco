@@ -22,6 +22,7 @@ const HARBOR := {
 	"PromenadeCafe": "cafe-orla",
 	"NorthFireStation": "bombeiros",
 	"Police": "delegacia",
+	"NorthFrontage0": "banco",
 }
 ## A casa do líder mantém a geometria antiga: CobraLeaderEntrance recorta HouseBody,
 ## FrontDoor e FrontPorch para a porta trancada da missão, e a fachada pintada não
