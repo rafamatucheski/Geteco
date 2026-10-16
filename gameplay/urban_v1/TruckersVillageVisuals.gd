@@ -141,18 +141,23 @@ func _ground() -> void:
 
 func _station() -> void:
 	_author_transform=STATION_TRANSFORM
-	_box(Vector3(-30,1.6,-34),Vector3(24,3.2,10),"b1a68c")
+	# Fachada pintada (PaintedTonicoShop): paredes, telhado, porta, janelas e letreiro
+	# vêm do kit; a colisão `TonicoShop` abaixo continua a mesma.
+	var painted_shop: bool = preload("res://gameplay/urban_v1/PaintedTonicoShop.gd").enabled()
+	if painted_shop: preload("res://gameplay/urban_v1/PaintedTonicoShop.gd").build(self,STATION_TRANSFORM)
+	else: _box(Vector3(-30,1.6,-34),Vector3(24,3.2,10),"b1a68c")
 	_solid("TonicoShop",Vector3(-30,1.6,-34),Vector3(24,3.2,10))
-	for x in [-37.5,-23.0]:
-		_box(Vector3(x,1.85,-28.94),Vector3(4.3,1.5,.10),"465455")
-		for edge in [-2.24,2.24]: _box(Vector3(x+edge,1.8,-28.82),Vector3(.14,1.7,.18),"6b5842")
-		_box(Vector3(x,1.85,-28.80),Vector3(.10,1.5,.12),"aa9d79")
-	_box(Vector3(-30,1.15,-28.91),Vector3(1.3,2.3,.14),"60533f")
-	_box(Vector3(-29.55,1.1,-28.79),Vector3(.1,.12,.06),"bba781")
-	_box(Vector3(-30,3.37,-34),Vector3(25,.23,11),"755541",Vector3(0,0,.025))
-	for x in range(-42,-17): _box(Vector3(x,3.51,-34),Vector3(.06,.045,11),"8e6750")
-	_box(Vector3(-30,3.0,-28.78),Vector3(10,.6,.18),"666d58")
-	_label("Tonico",Vector3(-30,3.03,-28.66),.024)
+	if not painted_shop:
+		for x in [-37.5,-23.0]:
+			_box(Vector3(x,1.85,-28.94),Vector3(4.3,1.5,.10),"465455")
+			for edge in [-2.24,2.24]: _box(Vector3(x+edge,1.8,-28.82),Vector3(.14,1.7,.18),"6b5842")
+			_box(Vector3(x,1.85,-28.80),Vector3(.10,1.5,.12),"aa9d79")
+		_box(Vector3(-30,1.15,-28.91),Vector3(1.3,2.3,.14),"60533f")
+		_box(Vector3(-29.55,1.1,-28.79),Vector3(.1,.12,.06),"bba781")
+		_box(Vector3(-30,3.37,-34),Vector3(25,.23,11),"755541",Vector3(0,0,.025))
+		for x in range(-42,-17): _box(Vector3(x,3.51,-34),Vector3(.06,.045,11),"8e6750")
+		_box(Vector3(-30,3.0,-28.78),Vector3(10,.6,.18),"666d58")
+		_label("Tonico",Vector3(-30,3.03,-28.66),.024)
 	for x in [-44.0,-12.0]:
 		for z in [-23.0,-5.0]:
 			_box(Vector3(x,2.7,z),Vector3(.34,5.4,.34),"aaa18b")

@@ -1,0 +1,35 @@
+{
+	"style": "loja-tonico",
+	"module": [
+		18.7,
+		2.898
+	],
+	"side": [
+		7.4,
+		2.9
+	],
+	"eave": 0.0,
+	"snow_roof": false,
+	"openings": {
+		"front": [
+			{
+				"rect": [
+					0.4533,
+					0.264,
+					0.5467,
+					1.0
+				],
+				"leaf": true
+			}
+		],
+		"back": []
+	},
+	"doors": {
+		"front": [
+			0.4533,
+			0.264,
+			0.5467,
+			1.0
+		]
+	}
+}
