@@ -299,6 +299,11 @@ func build() -> void:
 	await preload("res://gameplay/VehicleInteriorMaterialPrewarm.gd").run(world, curtain)
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	_install_world_edits()
+	# Estações de tubo e rodoviária montadas sob a cortina (depois das edições, que as movem): montadas ao
+	# chegar perto custavam 84-140 ms num quadro (teleporte de aquecimento do benchmark, 16/10).
+	if is_instance_valid(urban_transit):
+		await urban_transit.prepare_startup_stations()
+		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	# Linha 510 montada aqui, depois das edições do mundo (mexem nas estações) e antes de
 	# `ready_for_play`: montada no primeiro tique jogável, custava ~100 ms (pico de
 	# 140–195 ms em `urban.physics` em todas as rotas do benchmark de 16/10).
@@ -333,6 +338,8 @@ func build() -> void:
 		push_warning("Startup streaming still has pending work after its settling budget; runtime streaming will continue.")
 	# Antes do terminal: assim o JIT fica neste span em qualquer local de início.
 	_prewarm_route_jit()
+	# O jogador já está no ponto salvo: estações próximas na árvore ainda sob a cortina (só recolocadas).
+	if is_instance_valid(urban_transit): urban_transit.refresh(true)
 	# First C# route resolution must finish while the startup curtain owns input.
 	# Reuse the real terminal curve later; keep its cost in the loading trace.
 	if is_instance_valid(urban_transit) and is_instance_valid(urban_transit.terminal_operations):

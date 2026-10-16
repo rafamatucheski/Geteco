@@ -19,7 +19,18 @@ const STOPS := [
 ]
 var controller
 var definitions: Array[Dictionary] = []
+## Estações perto do jogador (na árvore). Quem consulta `instances` continua vendo só as próximas.
 var instances: Dictionary = {}
+## Toda estação já montada, inclusive as guardadas fora da árvore. Montar custava 50-140 ms num quadro: a
+## rodoviária tem ~270 malhas e cada tubo ~170 malhas e ~160 colisões, e o teleporte de aquecimento do
+## benchmark (233,194 -> 64,82 / 152,82) montava rodoviária e tubos juntos (oeste_1 109 ms e porto_1 84 ms de
+## _process no release de 16/10; 124-140 ms e +680-790 nós num quadro no editor). Afastar-se só tira a estação da
+## árvore; voltar a recoloca sem montar de novo (_ready não roda outra vez). Todas são montadas sob a cortina.
+var _built: Dictionary = {}
+## GETECO_TRANSIT_CACHE=0 volta ao comportamento antigo (monta tudo ao chegar, libera ao sair) para comparar.
+static var cache_enabled := OS.get_environment("GETECO_TRANSIT_CACHE") != "0"
+## Uma estação entra ou sai da árvore por chamada; havendo mais, a próxima chamada vem no quadro seguinte.
+var _refresh_soon := false
 var _elapsed := 0.0
 var terminal_operations: Node3D
 var urban_service: Node3D
@@ -27,6 +38,8 @@ var urban_service: Node3D
 func configure(owner_controller, use_edits := true) -> void:
 	controller = owner_controller
 	name = "UrbanTransitPresentation"
+	# Definições novas (edições do mundo): as estações montadas com as antigas não servem mais.
+	_forget_built()
 	definitions.clear()
 	for index in STOPS.size():
 		var source: Dictionary = STOPS[index]
@@ -97,11 +110,14 @@ func on_region_changed() -> void:
 
 func _process(delta: float) -> void:
 	_elapsed += delta
-	if _elapsed < INTERVAL: return
+	if _elapsed < INTERVAL and not _refresh_soon: return
 	_elapsed = 0.0
 	refresh()
 
-func refresh() -> void:
+## Sem limite: só sob a cortina (prepare_startup_stations) e nos testes.
+func refresh(unlimited := false) -> void:
+	_refresh_soon = false
+	if not cache_enabled: unlimited = true
 	if controller == null or not is_inside_tree(): return
 	if controller.state.region_id != "harbor":
 		if not instances.is_empty(): _clear()
@@ -110,19 +126,86 @@ func refresh() -> void:
 	var focus: Vector3 = controller.world.player.global_position
 	if not controller.state.place_id.is_empty() and controller.session != null:
 		focus = controller.session.return_point
+	# Saídas primeiro (baratas e liberam a vez), depois a entrada mais próxima.
+	var nearest: Dictionary = {}
+	var nearest_distance := INF
+	var changes := 0
 	for definition in definitions:
+		var id: String = definition.id
 		if definition.get("deleted",false):
-			if instances.has(definition.id): instances[definition.id].queue_free(); instances.erase(definition.id)
+			if instances.has(id): instances.erase(id)
+			if _built.has(id):
+				if is_instance_valid(_built[id]): _built[id].queue_free()
+				_built.erase(id)
 			continue
 		var point: Vector3 = definition.position
 		var distance := Vector2(point.x-focus.x,point.z-focus.z).length()
-		var id: String = definition.id
 		if instances.has(id):
 			if distance > UNLOAD_DISTANCE:
-				instances[id].queue_free()
-				instances.erase(id)
+				if changes > 0 and not unlimited:
+					_refresh_soon = true
+					continue
+				_park(id)
+				changes += 1
 		elif distance <= LOAD_DISTANCE:
-			instances[id] = build_geometry(self,definition)
+			if unlimited: _show(definition)
+			elif distance < nearest_distance:
+				if not nearest.is_empty(): _refresh_soon = true
+				nearest = definition
+				nearest_distance = distance
+			else: _refresh_soon = true
+	if nearest.is_empty(): return
+	if changes > 0:
+		_refresh_soon = true
+		return
+	_show(nearest)
+
+## Recoloca a estação guardada ou monta uma nova.
+func _show(definition: Dictionary) -> void:
+	var id: String = definition.id
+	var station: Node3D = _built.get(id)
+	if is_instance_valid(station):
+		if station.get_parent() == null: add_child(station)
+	else:
+		station = build_geometry(self,definition)
+		_built[id] = station
+	instances[id] = station
+
+func _park(id: String) -> void:
+	var station: Node3D = instances.get(id)
+	instances.erase(id)
+	if not is_instance_valid(station): return
+	# Montada com definições antigas (configure de novo): não volta, é liberada como antes.
+	if _built.get(id) != station or not cache_enabled:
+		_built.erase(id)
+		station.queue_free()
+		return
+	if station.get_parent() == self: remove_child(station)
+
+## Monta todas as estações enquanto a cortina cobre a tela, uma por quadro, e deixa na árvore só as
+## próximas. Assim nenhuma estação é montada com o jogo rodando (só recolocada).
+func prepare_startup_stations() -> void:
+	if not cache_enabled: return
+	for definition in definitions:
+		if definition.get("deleted",false) or is_instance_valid(_built.get(definition.id)): continue
+		if not is_inside_tree(): return
+		_show(definition)
+		await get_tree().process_frame
+	# O jogador pode estar em outra região: aí todas ficam guardadas.
+	if controller != null and controller.state.region_id != "harbor":
+		_clear()
+		return
+	for id in instances.keys(): _park(id)
+	refresh(true)
+
+func _notification(what: int) -> void:
+	# As guardadas fora da árvore não são filhas: sem isto vazariam com a apresentação.
+	if what == NOTIFICATION_PREDELETE: _forget_built()
+
+func _forget_built() -> void:
+	for station in _built.values():
+		if is_instance_valid(station) and station.get_parent() == null: station.free()
+	_built.clear()
 
 static func build_geometry(parent: Node3D, definition: Dictionary) -> Node3D:
 	var calibration := Node3D.new()
@@ -142,7 +225,7 @@ static func build_geometry(parent: Node3D, definition: Dictionary) -> Node3D:
 			PIECES.apply(calibration,{row.id:row})
 	return calibration
 
+## Fora de Harbor: as estações saem da árvore e ficam guardadas para a volta.
 func _clear() -> void:
-	for instance in instances.values():
-		if is_instance_valid(instance): instance.queue_free()
+	for id in instances.keys(): _park(id)
 	instances.clear()
