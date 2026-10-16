@@ -1,5 +1,7 @@
 extends "res://assets/regions/source/world/harbor/cemetery/CemeteryPropBuilder.gd"
 
+const CITY_PROPS := preload("res://world/city_look/CityPropKit.gd")
+
 var variant_index := 0
 func _ready() -> void:
 	# Install after facade finalization so the purchase cue receives no building
@@ -46,9 +48,14 @@ func _ready() -> void:
 		_window(x,1.65,3.19,timber)
 		if variant == 2: _window(x,3.9,3.19,timber)
 		box("Planter",Vector3(1.65,.32,.52),Vector3(x,.34,3.51),"7c7060")
-		for leaf in 5:
-			var shrub := cylinder("Shrub",.21,.45,Vector3(x-.6+leaf*.3,.66,3.52),"537258")
-			shrub.scale.z = .75
+		# Uma malha de moitas compartilhada no lugar de cinco cilindros de 12 lados
+		# (480 triângulos e cinco nós por jardineira, e liam como colunas).
+		var hedge := MeshInstance3D.new()
+		hedge.name = "Shrub"
+		hedge.mesh = CITY_PROPS.mesh("hedge")
+		hedge.material_override = CITY_PROPS.material()
+		hedge.position = Vector3(x,.48,3.51)
+		add_child(hedge)
 	for x in [-.95,.95]:
 		box("PorchLampBack",Vector3(.19,.3,.13),Vector3(x,1.95,3.29),"39443e")
 		box("PorchLampGlass",Vector3(.14,.21,.14),Vector3(x,1.95,3.4),"ecd7a2")

@@ -80,6 +80,7 @@ static func mesh(kind: String) -> ArrayMesh:
 		"drain": _drain(tool)
 		"bench_seat": _bench_seat(tool)
 		"planter": _planter(tool)
+		"hedge": _hedge(tool)
 		_: preload("res://world/city_look/BuildingLifeKit.gd").build(kind, tool)
 	tool.generate_normals()
 	var result := tool.commit()
@@ -124,6 +125,44 @@ static func cylinder(tool: SurfaceTool, base: Vector3, radius: float, height: fl
 		tool.add_vertex(b1); tool.add_vertex(t1); tool.add_vertex(t0)
 		var cap := base + Vector3.UP * height
 		tool.add_vertex(cap); tool.add_vertex(t0); tool.add_vertex(t1)
+
+
+## Volume orgânico baixo (moita, saco cheio): dois anéis irregulares e um polo,
+## sem fundo porque sempre apoia em terra ou chão. O cone que fazia esse papel
+## lia como chapéu de festa; aqui o bojo fica no meio e o topo arredonda.
+## `variant` gira e deforma cada cópia; `tip` puxa o polo (nó do saco de lixo).
+## Com 6 lados são 30 triângulos, o mesmo custo de um cilindro de 10 lados.
+static func blob(tool: SurfaceTool, base: Vector3, radius: Vector2, height: float, color: Color, sides := 6, variant := 0, tip := 0.0) -> void:
+	# [altura relativa, raio relativo, clareamento]: a base mais escura e o
+	# topo mais claro dão volume mesmo de longe, quando o sombreamento some.
+	var rings := [[0.0, 0.86, -0.12], [0.5, 1.0, 0.0], [0.86, 0.62, 0.1]]
+	var points := []
+	for ring in rings:
+		var row := []
+		for i in sides:
+			var angle := TAU * float(i) / sides + float(variant) * 0.9
+			var wobble := 1.0 + 0.13 * sin(float(i * 7 + variant * 5) + float(ring[0]) * 4.0)
+			var reach: float = ring[1] * wobble
+			row.append(base + Vector3(cos(angle) * radius.x * reach, height * ring[0], sin(angle) * radius.y * reach))
+		points.append(row)
+	for r in rings.size() - 1:
+		tool.set_color(_shade(color, rings[r][2]))
+		for i in sides:
+			var j := (i + 1) % sides
+			var l0: Vector3 = points[r][i]
+			var l1: Vector3 = points[r][j]
+			var u0: Vector3 = points[r + 1][i]
+			var u1: Vector3 = points[r + 1][j]
+			tool.add_vertex(l0); tool.add_vertex(l1); tool.add_vertex(u0)
+			tool.add_vertex(l1); tool.add_vertex(u1); tool.add_vertex(u0)
+	var pole := base + Vector3.UP * height * (1.0 + tip)
+	tool.set_color(_shade(color, rings[-1][2]))
+	for i in sides:
+		tool.add_vertex(pole); tool.add_vertex(points[-1][i]); tool.add_vertex(points[-1][(i + 1) % sides])
+
+
+static func _shade(color: Color, amount: float) -> Color:
+	return color.lightened(amount) if amount > 0.0 else color.darkened(-amount)
 
 
 # --- Mobiliário de calçada ---
@@ -179,10 +218,10 @@ static func _dumpster(t: SurfaceTool) -> void:
 
 
 static func _trash_bags(t: SurfaceTool) -> void:
-	var bag := Color("1d1f22")
-	cylinder(t, Vector3(0, 0, 0), .28, .5, bag, 7, .12)
-	cylinder(t, Vector3(.42, 0, .12), .24, .42, Color("26292c"), 7, .1)
-	cylinder(t, Vector3(.18, 0, -.34), .22, .38, Color("3f4a2e"), 7, .1)
+	# Sacos estufados com o nó puxado para cima, não cones.
+	blob(t, Vector3.ZERO, Vector2(.3, .27), .46, Color("1d1f22"), 6, 0, .14)
+	blob(t, Vector3(.42, 0, .12), Vector2(.25, .23), .4, Color("24272a"), 6, 3, .16)
+	blob(t, Vector3(.18, 0, -.34), Vector2(.24, .22), .36, Color("3a4430"), 6, 6, .16)
 	box(t, Vector3(-.4, .16, .2), Vector3(.4, .32, .34), Color("9a7d55"), .4)
 
 
@@ -195,10 +234,23 @@ static func _bench_seat(t: SurfaceTool) -> void:
 	preload("res://world/urban_detail/BenchFinish.gd").append_to(t, 1.7, .44, .49, .93)
 
 
+## Vaso de concreto com uma moita aparada. A terra é só a face de cima (a caixa
+## já fecha o volume) e fica 1 cm acima do concreto para não piscar; a borda
+## clara que sobra em volta faz o papel do friso. 49 triângulos, antes 45.
 static func _planter(t: SurfaceTool) -> void:
-	box(t, Vector3(0, .25, 0), Vector3(1.1, .5, 1.1), Color("9a948a"))
-	box(t, Vector3(0, .52, 0), Vector3(.94, .06, .94), Color("4a3a2a"))
-	cylinder(t, Vector3(0, .5, 0), .42, .5, Color("46703f"), 7, .12)
+	box(t, Vector3(0, .24, 0), Vector3(1.1, .48, 1.1), Color("a19b90"))
+	t.set_color(Color("3b2f24"))
+	var soil := [Vector3(-.45, .49, -.45), Vector3(.45, .49, -.45), Vector3(.45, .49, .45), Vector3(-.45, .49, .45)]
+	# Mesma ordem da face de cima de box(): normal para +Y.
+	for index in [0, 1, 2, 0, 2, 3]: t.add_vertex(soil[index])
+	blob(t, Vector3(0, .49, 0), Vector2(.42, .4), .62, Color("46703f"), 7, 1)
+
+
+## Fileira de moitas para jardineira de 1,65 m (fachadas das casas). Uma malha
+## compartilhada no lugar de cinco cilindros de 12 lados: 90 triângulos, não 480.
+static func _hedge(t: SurfaceTool) -> void:
+	for i in 3:
+		blob(t, Vector3(-.5 + i * .5, 0, 0), Vector2(.32, .2), .4 + .06 * float(i % 2), Color("537258"), 6, i + 2)
 
 
 # --- Sinalização viária ---
