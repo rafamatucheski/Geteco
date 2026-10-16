@@ -27,7 +27,9 @@ func _ready() -> void:
 
 func _input(event: InputEvent) -> void:
 	if world.has_meta("menu_preview") or world.session == null or not world.session.ready_for_play: return
-	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_F10:
+	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode in [KEY_F10, KEY_O]:
+		# O também é "portas do ônibus": dentro de veículo só o F10 abre o painel.
+		if event.physical_keycode == KEY_O and (world.driving.occupied or world.player.seated or world.session.modal): return
 		if visible: close_panel(true)
 		else: open_panel()
 		get_viewport().set_input_as_handled()
@@ -103,7 +105,7 @@ func _build() -> void:
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	heading.add_child(title)
 	_button(heading,"Voltar à pausa",func(): close_panel(false))
-	_button(heading,"Jogar · F10",func(): close_panel(true))
+	_button(heading,"Jogar · O / F10",func(): close_panel(true))
 	enabled_toggle = CheckButton.new()
 	enabled_toggle.text = "Modo desenvolvedor · suspende o salvamento"
 	column.add_child(enabled_toggle)
@@ -136,6 +138,7 @@ func _build() -> void:
 	flight_row.add_child(flight_rate)
 	flight_rate.value_changed.connect(func(value): tools.flight_speed = value)
 	flight_row.add_child(STYLE.label("WASD move · Espaço sobe · Ctrl desce · Shift acelera",16,STYLE.MUTED))
+	_build_environment(column)
 	_section(column,"TELETRANSPORTE")
 	var travel := HBoxContainer.new()
 	column.add_child(travel)
@@ -198,6 +201,7 @@ func _travel_selected() -> void:
 func _refresh() -> void:
 	if surface == null: return
 	_syncing = true
+	if _hour_slider != null and _weather() != null and not _hour_slider.has_focus(): _hour_slider.value = _weather().time_of_day*24.0
 	enabled_toggle.set_pressed_no_signal(tools.active)
 	enabled_toggle.disabled = tools.busy
 	god_toggle.set_pressed_no_signal(tools.invincible)
@@ -211,3 +215,70 @@ func _refresh() -> void:
 	var point: Vector3 = world.player.global_position
 	position_label.text = String(TranslationServer.translate("%s · X %.1f  Y %.1f  Z %.1f · %d FPS · %d civis de teste")) % [world.session.state.region_id,point.x,point.y,point.z,Engine.get_frames_per_second(),tools.civilians.size()]
 	_syncing = false
+
+func _weather() -> Node:
+	return world.session.weather if world.session != null and is_instance_valid(world.session.weather) else null
+
+func _set_hour(hour: float) -> void:
+	var weather := _weather()
+	if weather == null: return
+	weather.time_of_day = fposmod(hour,24.0)/24.0
+	weather._update()
+	tools.report("Hora: %02d:%02d." % [int(hour),int(fposmod(hour,1.0)*60.0)],"hour")
+
+## state: 0 limpo, 1 garoa, 2 tempestade, 3 nublado.
+func _set_weather(state: int, label: String, intensity := -1.0) -> void:
+	var weather := _weather()
+	if weather == null: return
+	weather.weather_state = state
+	if intensity >= 0.0: weather.rain_intensity = intensity
+	weather.weather_locked = _lock_weather.button_pressed
+	weather._sync_external_state()
+	weather._update()
+	tools.report("Clima: " + label + ".","weather")
+
+var _lock_weather: CheckButton
+var _hour_slider: HSlider
+var _hour_label: Label
+
+func _build_environment(column: VBoxContainer) -> void:
+	_section(column,"AMBIENTE · HORA E CLIMA")
+	var hours := HFlowContainer.new()
+	column.add_child(hours)
+	for pair in [["Madrugada 03h",3.0],["Amanhecer 05:30",5.5],["Manhã 08h",8.0],["Meio-dia 12h",12.0],["Tarde 16h",16.0],["Pôr do sol 18:30",18.5],["Noite 21h",21.0],["Meia-noite",0.0]]:
+		_button(hours,pair[0],func(): _set_hour(pair[1]))
+	var slider_row := HBoxContainer.new()
+	column.add_child(slider_row)
+	_hour_label = STYLE.label("Hora",18)
+	slider_row.add_child(_hour_label)
+	_hour_slider = HSlider.new()
+	_hour_slider.min_value = 0; _hour_slider.max_value = 23.99; _hour_slider.step = .05
+	_hour_slider.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_hour_slider.custom_minimum_size.x = 300
+	slider_row.add_child(_hour_slider)
+	_hour_slider.value_changed.connect(func(value):
+		if not _syncing: _set_hour(value))
+	slider_row.add_child(STYLE.label("Velocidade do relógio",18))
+	var clock_speed := OptionButton.new()
+	for pair in [["Congelado",0.0],["Normal",1.0],["10×",10.0],["60×",60.0],["300×",300.0]]:
+		clock_speed.add_item(pair[0])
+		clock_speed.set_item_metadata(clock_speed.item_count-1,pair[1])
+	clock_speed.select(1)
+	slider_row.add_child(clock_speed)
+	clock_speed.item_selected.connect(func(index):
+		var weather := _weather()
+		if weather != null: weather.time_scale = float(clock_speed.get_item_metadata(index)))
+	var skies := HFlowContainer.new()
+	column.add_child(skies)
+	_lock_weather = CheckButton.new()
+	_lock_weather.text = "Travar clima"
+	_lock_weather.toggled.connect(func(value):
+		var weather := _weather()
+		if weather != null: weather.weather_locked = value)
+	for entry in [["Céu limpo",0,-1.0],["Nublado",3,-1.0],["Garoa",1,.2],["Chuva forte",1,.3],["Tempestade",2,-1.0]]:
+		_button(skies,entry[0],func(): _set_weather(entry[1],entry[0],entry[2]))
+	skies.add_child(_lock_weather)
+	var actions := HFlowContainer.new()
+	column.add_child(actions)
+	_button(actions,"Curar Dante",func(): world.gameplay.heal(1000.0); tools.report("Vida restaurada.","heal"))
+	_button(actions,"Limpar procurado",func(): world.gameplay.clear_wanted(); tools.report("Nível de procurado zerado.","wanted"))

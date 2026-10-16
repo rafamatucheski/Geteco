@@ -11,6 +11,9 @@ const DAY_LENGTH_SECONDS := 1440.0
 var controller
 var time_of_day := .32
 var weather_state := 0
+## Ferramentas do painel de desenvolvedor: velocidade do relógio (0 congela) e clima fixo.
+var time_scale := 1.0
+var weather_locked := false
 var weather_timer := 120.0
 var clock := 0.0
 var precipitation: GPUParticles3D
@@ -26,6 +29,7 @@ var atmosphere_step := .2
 var weather_audio: Node
 var storm: Node
 var surface_effects: Node3D
+var rain_ground: Node3D
 var rain_intensity := .22
 var coastal_look := COASTAL_LOOK.new()
 var coastal_wetness := 0.0
@@ -81,6 +85,7 @@ func _exit_tree() -> void:
 	for emitter in [precipitation,hail,snow]:
 		if is_instance_valid(emitter): emitter.queue_free()
 	if is_instance_valid(surface_effects): surface_effects.queue_free()
+	if is_instance_valid(rain_ground): rain_ground.queue_free()
 	PARTICLE_TEXTURES.release_cache()
 func _ready() -> void:
 	# Follow after the gameplay camera has applied its lead, zoom and orbit.
@@ -172,6 +177,8 @@ func _ready() -> void:
 	add_child(storm)
 	surface_effects = preload("res://runtime/atmosphere/WeatherSurfaceEffects.gd").new()
 	controller.world.add_child(surface_effects)
+	rain_ground = preload("res://runtime/atmosphere/RainGroundPresentation.gd").new()
+	controller.world.add_child(rain_ground)
 	wind_audio = AudioStreamPlayer.new()
 	wind_audio.stream = preload("res://audio/regional/wind_0.ogg")
 	if AudioServer.get_bus_index("Ambient")>=0: wind_audio.bus = &"Ambient"
@@ -187,14 +194,14 @@ func _process(delta: float) -> void:
 	rain_level = lerpf(rain_level,rain_target,1.0-exp(-maxf(delta,0.0)/rain_seconds))
 	coastal_wetness = COASTAL_LOOK.advance_wetness(coastal_wetness,rain_level>.08,delta)
 	if "--benchmark" not in OS.get_cmdline_user_args():
-		var next_time := fposmod(time_of_day+delta/DAY_LENGTH_SECONDS,1.0)
+		var next_time := fposmod(time_of_day+delta*time_scale/DAY_LENGTH_SECONDS,1.0)
 		# Virada da meia-noite conta um dia para a fase da lua (salvo no mundo).
 		if next_time < time_of_day: controller.state.world_state.moon_day = moon_day()+1
 		time_of_day = next_time
 	# Harbor keeps its own weather. Mountain reads the persisted thermal clock.
 	if controller.state.region_id != "mountain":
-		weather_timer -= delta
-		if weather_timer <= 0:
+		if not weather_locked: weather_timer -= delta
+		if weather_timer <= 0 and not weather_locked:
 			_advance_natural_weather()
 	var focus: Vector3 = REGIONAL_ATMOSPHERE.focus_position(controller)
 	COVERAGE.follow(precipitation,get_viewport().get_camera_3d(),focus)
@@ -339,9 +346,11 @@ func _update() -> void:
 	snow.visible = not covered and regional_weight > .001
 	var storm_state: int = int(mountain_weather.get("state",0))
 	var rain_strength := rain_strength_at(focus)
-	precipitation.amount_ratio = rain_strength
+	# Preserve drizzle density; reserve the additional drops for heavy rain.
+	precipitation.amount_ratio = rain_strength*lerpf(1000.0/COASTAL_RAIN.MAX_DROPS,1.0,smoothstep(.35,1.0,rain_strength))
 	precipitation.speed_scale = lerpf(.65,1.0,rain_strength)
 	COASTAL_RAIN.apply(precipitation,rain_strength,daylight,get_viewport().get_camera_3d())
+	rain_ground.set_conditions(focus,rain_strength,daylight,covered)
 	precipitation.emitting = not covered and rain_strength>.001
 	snow.emitting = not covered and storm_state>0 and regional_weight>.001
 	snow.amount_ratio = regional_weight*(150.0 if storm_state==1 else 260.0 if storm_state==3 else 400.0)/400.0
