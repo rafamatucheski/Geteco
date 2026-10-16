@@ -45,7 +45,7 @@ func build() -> void:
 		# os caminhões nascem perto do incidente e não dependem das baias.
 		var painted := PaintedHarborHouses.style_for(building_id, building_kind)
 		if not painted.is_empty():
-			PaintedHarborHouses.build(self, painted)
+			PaintedFireStation.build(self)
 			return
 		_build_fire_station()
 	elif building_kind == "police_precinct" or building_id == "Police":
