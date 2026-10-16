@@ -13,6 +13,7 @@ const STATIC_GENERATORS := [
 	"ResidenceExterior3D.gd", "ResidenceParking.gd",
 ]
 static var enabled := OS.get_environment("GETECO_SHADOW_SHELL") != "0"
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 
 static func schedule(chunk: Node3D) -> void:
 	if not (enabled or preload("res://world/chunk_bake/ChunkCellMerge.gd").enabled) or Engine.get_meta("geteco_live_preview_build", false): return
@@ -27,12 +28,22 @@ static func _finish_deferred(reference: WeakRef) -> void:
 	if chunk.has_meta(BUILDING_BATCH.PENDING_META): BUILDING_BATCH.finish_chunk(chunk)
 	# Fusão geral por célula antes da casca: a casca lê os volumes que sobraram visíveis.
 	await preload("res://world/chunk_bake/ChunkCellMerge.gd").finish_chunk_later(chunk)
-	if is_instance_valid(reference.get_ref()): finish_chunk(chunk)
+	if is_instance_valid(reference.get_ref()): await _finish(chunk, slice_budget_usec)
+
+## Em jogo a casca é montada em fatias: a varredura de todas as malhas do trecho e o laço por vértice em
+## GDScript rodavam num quadro só, sem span no log (travessia de 15/10: quadros de 117-239 ms sem atribuição
+## logo depois da fusão do trecho). Testes chamam finish_chunk e montam de uma vez.
+static var slice_budget_usec := 2000
 
 static func finish_chunk(chunk: Node3D) -> void:
+	_finish(chunk, 0)
+
+static func _finish(chunk: Node3D, budget_usec: int) -> void:
 	if not enabled or chunk.has_meta(FINISHED) or not chunk.has_meta("vegetation_ready_frame"): return
 	if Engine.get_meta("geteco_live_preview_build", false): return
 	chunk.set_meta(FINISHED, true)
+	var reference: WeakRef = weakref(chunk)
+	var began := STALL_WORK.begin()
 	var vertices := PackedVector3Array()
 	var normals := PackedVector3Array()
 	var indices := PackedInt32Array()
@@ -40,8 +51,14 @@ static func finish_chunk(chunk: Node3D) -> void:
 	var small: Array[MeshInstance3D] = []
 	var inverse := chunk.global_transform.affine_inverse()
 	for found in chunk.find_children("*", "MeshInstance3D", true, false):
+		if budget_usec > 0 and Time.get_ticks_usec() - began >= budget_usec:
+			STALL_WORK.finish_slow("chunk.shadow_shell", began, 1500)
+			await chunk.get_tree().process_frame
+			began = STALL_WORK.begin()
+			if not is_instance_valid(reference.get_ref()) or not chunk.is_inside_tree(): return
+		if not is_instance_valid(found): continue
 		var source := found as MeshInstance3D
-		if not _eligible(source, chunk): continue
+		if not chunk.is_ancestor_of(source) or not _eligible(source, chunk): continue
 		var original := int(source.get_meta(ORIGINAL_SHADOW, source.cast_shadow))
 		if original == GeometryInstance3D.SHADOW_CASTING_SETTING_OFF: continue
 		var size := (source.global_transform * source.get_aabb()).size
@@ -57,16 +74,26 @@ static func finish_chunk(chunk: Node3D) -> void:
 		var transform := inverse * source.global_transform
 		var normal_transform := transform.basis.inverse().transposed()
 		var offset := vertices.size()
-		for point in points: vertices.append(transform * point)
-		for normal in source_normals: normals.append((normal_transform * normal).normalized())
+		# Em bloco: a normal vai sem normalized() porque o vértice a grava em octaedro (o tamanho se perde).
+		vertices.append_array(transform * points)
+		normals.append_array(Transform3D(normal_transform, Vector3.ZERO) * source_normals)
 		if triangles.is_empty():
 			for index in points.size(): triangles.append(index)
+		# A escala negativa deixa de estar no nó ao assar a transformação.
+		var flip := transform.basis.determinant() < 0.0
+		var start := indices.size()
+		indices.resize(start + triangles.size())
 		for triangle in range(0, triangles.size(), 3):
-			indices.append(offset + triangles[triangle])
-			# A escala negativa deixa de estar no nó ao assar a transformação.
-			indices.append(offset + triangles[triangle + (2 if transform.basis.determinant() < 0.0 else 1)])
-			indices.append(offset + triangles[triangle + (1 if transform.basis.determinant() < 0.0 else 2)])
+			indices[start + triangle] = offset + triangles[triangle]
+			indices[start + triangle + 1] = offset + triangles[triangle + (2 if flip else 1)]
+			indices[start + triangle + 2] = offset + triangles[triangle + (1 if flip else 2)]
 		covered.append(source)
+	# Fonte liberada ou levada para outro trecho enquanto a casca era montada: a casca teria a sombra dela.
+	# Sem casca neste trecho (as fontes ficam com a sombra própria); só perde a economia.
+	for source in covered + small:
+		if not is_instance_valid(source) or not chunk.is_ancestor_of(source):
+			STALL_WORK.finish_slow("chunk.shadow_shell", began, 1500)
+			return
 	if not vertices.is_empty():
 		var arrays := []
 		arrays.resize(Mesh.ARRAY_MAX)
@@ -88,6 +115,7 @@ static func finish_chunk(chunk: Node3D) -> void:
 		if not source.has_meta(ORIGINAL_SHADOW): source.set_meta(ORIGINAL_SHADOW, source.cast_shadow)
 		source.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	chunk.set_meta("chunk_shadow_shell_counts", {"covered": covered.size(), "small": small.size()})
+	STALL_WORK.finish_slow("chunk.shadow_shell", began, 1500)
 
 static func _eligible(source: MeshInstance3D, chunk: Node3D) -> bool:
 	if not source.is_visible_in_tree() or source.is_queued_for_deletion(): return false
