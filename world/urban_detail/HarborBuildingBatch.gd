@@ -20,6 +20,14 @@ const EXTENDED_TARGET_SCRIPTS := [
 static var enabled := OS.get_environment("GETECO_BUILDING_BATCH") != "0"
 const PENDING_META := &"harbor_building_batch_pending"
 const FINISHED_META := &"harbor_building_batch_finished"
+## Marcado quando a fusão do trecho terminou de fato (FINISHED_META é posto no começo, contra fusão dupla).
+const DONE_META := &"harbor_building_batch_done"
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+## Em jogo a fusão dos prédios do trecho roda em fatias deste orçamento: inteira num quadro custava 17-26 ms
+## depois de jogável e até 60 ms na cidade (chunk.building_batch, release, fase 2 de 16/10). Cada grupo é
+## atômico (o lote entra e as fontes saem na mesma chamada), então ceder entre grupos não mostra buraco nem
+## desenho em dobro. Testes e medições chamam finish_chunk, inteiro de uma vez.
+static var slice_budget_usec := 2000
 
 static func schedule(building: Node3D) -> void:
 	if not enabled or not _is_target(building): return
@@ -41,18 +49,63 @@ func _process(_delta: float) -> void:
 	var chunk := get_parent() as Node3D
 	# Este marco só existe depois de telhados, texturas, noite e corte do túnel.
 	if not chunk.has_meta("vegetation_ready_frame"): return
-	finish_chunk(chunk)
 	set_process(false)
 	queue_free()
+	# Fatiada, como a da casca (ChunkShadowShell._finish_deferred, que espera esta antes da fusão por célula).
+	# Quem chegar primeiro faz; o outro só espera DONE_META.
+	finish_chunk_sliced(chunk, slice_budget_usec)
 
 static func finish_chunk(chunk: Node3D) -> void:
 	if not enabled or chunk.has_meta(FINISHED_META) or not chunk.has_meta("vegetation_ready_frame"): return
 	chunk.set_meta(FINISHED_META, true)
 	# Medido no log de quadros lentos: roda inteira no fim do trecho (suspeita das travadas de 15/10).
-	var began := preload("res://runtime/StallWorkTrace.gd").begin()
+	var began := STALL_WORK.begin()
 	for child in chunk.get_children():
-		if child is Node3D and _is_target(child): _optimize_building(child)
-	preload("res://runtime/StallWorkTrace.gd").finish_slow("chunk.building_batch", began, 1500)
+		if not (child is Node3D and _is_target(child)): continue
+		var merges: Array = []
+		_optimize_building(child, merges)
+		for merge in merges: _apply_merge(merge)
+	chunk.set_meta(DONE_META, true)
+	STALL_WORK.finish_slow("chunk.building_batch", began, 1500)
+
+## Igual a finish_chunk, cedendo o quadro a cada `budget_usec` entre prédios e entre grupos. Se a fusão já
+## começou por outro caminho, espera ela terminar: quem vem depois (fusão por célula, casca) lê o resultado.
+static func finish_chunk_sliced(chunk: Node3D, budget_usec: int) -> void:
+	if not enabled or not chunk.has_meta("vegetation_ready_frame"): return
+	var reference: WeakRef = weakref(chunk)
+	var tree := Engine.get_main_loop() as SceneTree
+	if chunk.has_meta(FINISHED_META):
+		while not chunk.has_meta(DONE_META):
+			await tree.process_frame
+			if not is_instance_valid(reference.get_ref()) or not chunk.is_inside_tree(): return
+		return
+	chunk.set_meta(FINISHED_META, true)
+	var began := STALL_WORK.begin()
+	# Orçamento pelo relógio próprio: `began` é 0 com o rastreio desligado.
+	var budget_began := Time.get_ticks_usec()
+	var buildings: Array = []
+	for child in chunk.get_children():
+		if child is Node3D and _is_target(child): buildings.append(child)
+	for building in buildings:
+		if budget_usec > 0 and Time.get_ticks_usec() - budget_began >= budget_usec:
+			STALL_WORK.finish_slow("chunk.building_batch", began, 1500)
+			await tree.process_frame
+			began = STALL_WORK.begin()
+			budget_began = Time.get_ticks_usec()
+			if not is_instance_valid(reference.get_ref()) or not chunk.is_inside_tree(): return
+		if not is_instance_valid(building) or building.get_parent() != chunk: continue
+		var merges: Array = []
+		_optimize_building(building, merges)
+		for merge in merges:
+			if budget_usec > 0 and Time.get_ticks_usec() - budget_began >= budget_usec:
+				STALL_WORK.finish_slow("chunk.building_batch", began, 1500)
+				await tree.process_frame
+				began = STALL_WORK.begin()
+				budget_began = Time.get_ticks_usec()
+				if not is_instance_valid(reference.get_ref()) or not chunk.is_inside_tree(): return
+			_apply_merge(merge)
+	chunk.set_meta(DONE_META, true)
+	STALL_WORK.finish_slow("chunk.building_batch", began, 1500)
 
 static func _is_target(node: Node) -> bool:
 	# O piloto ainda precisa do marco de sombras do chunk, sem fundir outra vez.
@@ -62,11 +115,9 @@ static func _is_target(node: Node) -> bool:
 	if path in TARGET_SCRIPTS: return true
 	return path in EXTENDED_TARGET_SCRIPTS and preload("res://world/chunk_bake/ChunkCellMerge.gd").enabled
 
-static func _optimize_building(building: Node3D) -> void:
-	var access := building.get_node_or_null("BuildingAccess")
-	# Uma visita pode preparar a fachada durante o streaming fatiado. Nesse caso
-	# o adaptador já guarda referências individuais e elas precisam continuar vivas.
-	if access != null and "_prepared" in access and access.get("_prepared"): return
+## Junta em `merges` os grupos a fundir ({parent, entries, building}); a fusão em si é _apply_merge.
+static func _optimize_building(building: Node3D, merges: Array) -> void:
+	if _access_prepared(building): return
 	if building.get_meta("baked_commercial", false):
 		for mesh: MeshInstance3D in building.find_children("*", "MeshInstance3D", true, false):
 			if mesh.get_meta("baked_batch_shadow", false): mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -78,14 +129,30 @@ static func _optimize_building(building: Node3D) -> void:
 			for leaf in building.get(property): moving.append(leaf)
 	if "fire_door_visual" in building and is_instance_valid(building.get("fire_door_visual")):
 		moving.append(building.get("fire_door_visual"))
-	_collect_branch(building, building, moving)
+	_collect_branch(building, building, moving, merges)
 
-static func _collect_branch(node: Node3D, building: Node3D, moving: Array[Node]) -> void:
+## Uma visita pode preparar a fachada durante o streaming fatiado. Nesse caso
+## o adaptador já guarda referências individuais e elas precisam continuar vivas.
+static func _access_prepared(building: Node3D) -> bool:
+	var access := building.get_node_or_null("BuildingAccess")
+	return access != null and "_prepared" in access and access.get("_prepared")
+
+## Revalida depois de ceder o quadro: prédio liberado, fonte que saiu ou fachada preparada no meio ficam
+## como estão (só perde a fusão daquele grupo).
+static func _apply_merge(merge: Dictionary) -> void:
+	var building: Variant = merge.building
+	var parent: Variant = merge.parent
+	if not is_instance_valid(building) or not is_instance_valid(parent) or _access_prepared(building): return
+	for entry in merge.entries:
+		if not is_instance_valid(entry) or (entry as Node).get_parent() != parent: return
+	_merge(parent, merge.entries)
+
+static func _collect_branch(node: Node3D, building: Node3D, moving: Array[Node], merges: Array) -> void:
 	var groups := {}
 	for child in node.get_children():
 		if child in moving: continue
 		if child.get_script() != null:
-			if child is Node3D and _is_target(child): _optimize_building(child)
+			if child is Node3D and _is_target(child): _optimize_building(child, merges)
 			continue
 		if child is MeshInstance3D:
 			var mesh := child as MeshInstance3D
@@ -103,9 +170,9 @@ static func _collect_branch(node: Node3D, building: Node3D, moving: Array[Node])
 		elif child is Label3D:
 			child.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		elif child is Node3D and not child is CollisionObject3D and child.get_groups().is_empty():
-			_collect_branch(child, building, moving)
+			_collect_branch(child, building, moving, merges)
 	for entries in groups.values():
-		if entries.size() > 1: _merge(node, entries)
+		if entries.size() > 1: merges.append({"parent": node, "entries": entries, "building": building})
 
 static func _eligible(mesh: MeshInstance3D) -> bool:
 	if mesh.mesh == null or mesh.mesh.get_surface_count() != 1 or not mesh.visible: return false

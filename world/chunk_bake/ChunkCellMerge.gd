@@ -57,7 +57,10 @@ static func finish_chunk_later(chunk: Node3D) -> void:
 ## cedeu o quadro, o outro começou) e o estado compartilhado fazia o primeiro olhar o trecho do segundo. Ele
 ## seguia num trecho já liberado (SCRIPT ERROR em _merge_scope, _sum e get_children na auditoria de 15/10).
 class Slice:
+	## Começo do span do log (0 com o rastreio desligado) e, separado, o relógio do orçamento: com o rastreio
+	## desligado `began` é 0 e a fatia cedia o quadro a cada peça (uma peça por quadro).
 	var began := 0
+	var budget_began := 0
 	var reference: WeakRef
 	var budget_usec := 0
 
@@ -71,6 +74,7 @@ static func _run(chunk: Node3D, budget_usec: int) -> Dictionary:
 	chunk.set_meta(FINISHED, true)
 	var slice := Slice.new()
 	slice.began = STALL_WORK.begin()
+	slice.budget_began = Time.get_ticks_usec()
 	slice.reference = weakref(chunk)
 	slice.budget_usec = budget_usec
 	# Um lote por trecho, entre objetos: as ~35 pilhas de carga do Northstar são objetos separados e, fundidas
@@ -111,12 +115,13 @@ static func _run(chunk: Node3D, budget_usec: int) -> Dictionary:
 
 ## Cede o quadro quando a fatia passou do orçamento. Devolve false se o trecho sumiu enquanto esperava.
 static func _yield_if_due(slice: Slice) -> bool:
-	if slice.budget_usec <= 0 or Time.get_ticks_usec() - slice.began < slice.budget_usec: return true
+	if slice.budget_usec <= 0 or Time.get_ticks_usec() - slice.budget_began < slice.budget_usec: return true
 	var chunk: Variant = slice.reference.get_ref()
 	if not is_instance_valid(chunk) or not (chunk as Node).is_inside_tree(): return false
 	STALL_WORK.finish_slow("chunk.cell_merge", slice.began, 1500)
 	await (chunk as Node).get_tree().process_frame
 	slice.began = STALL_WORK.begin()
+	slice.budget_began = Time.get_ticks_usec()
 	var still: Variant = slice.reference.get_ref()
 	return is_instance_valid(still) and (still as Node).is_inside_tree()
 
@@ -180,55 +185,97 @@ static func _merge_scope(scope: Node3D, candidates: Array, exact: bool, slice: S
 	var to_scope := scope.global_transform.affine_inverse()
 	var report := {"sources": 0, "batches": 0}
 	if not await _collect(candidates, scope, to_scope, groups, exact, slice): return report
+	# Superfícies de cada fonte ainda sem lote. A fonte só some quando todas tiverem: uma malha com superfícies
+	# em famílias (grupos) diferentes sumia em parte ao sair o primeiro lote e só voltava inteira quando o
+	# grupo da outra superfície era montado, quadros depois (buraco visível no meio da fusão fatiada).
+	var pending_surfaces := {}
+	for key in groups:
+		for entry in groups[key]:
+			var id: int = entry.node.get_instance_id()
+			pending_surfaces[id] = int(pending_surfaces.get(id, 0)) + 1
 	var holder: Node3D = null
 	for key in groups:
-		# Cada grupo é atômico: a fonte só some quando o lote dela já existe, então ceder entre grupos não
+		# Cada lote é atômico: a fonte só some quando o lote dela já existe, então ceder entre lotes não
 		# deixa buraco nem desenho em dobro.
 		if not await _yield_if_due(slice) or not is_instance_valid(scope) or not scope.is_inside_tree(): return report
-		# Grupo de um só também vira lote: a fonte só some se todas as superfícies dela tiverem lote.
+		# Grupo de um só também vira lote.
 		# Enquanto a fatia esperava, uma fonte pode ter sido liberada ou saído do escopo (registro que volta ao
 		# cache e entra em outro trecho): fica fora do lote, senão o lote desenharia peça que não está mais aqui.
-		var entries: Array = []
+		var valid_entries: Array = []
 		for entry in groups[key]:
-			if is_instance_valid(entry.node) and scope.is_ancestor_of(entry.node): entries.append(entry)
-		if entries.is_empty(): continue
-		var mesh: ArrayMesh = await _build_batch(entries, exact, slice)
-		if mesh == null or not is_instance_valid(scope) or not scope.is_inside_tree(): continue
-		# A montagem também cede o quadro entre peças: se alguma fonte sumiu nesse meio-tempo, o lote teria a
-		# geometria dela. Descarta o lote e deixa as fontes que sobraram como estão (só perde a fusão do grupo).
-		if entries.any(func(entry): return not is_instance_valid(entry.node) or not scope.is_ancestor_of(entry.node)): continue
-		var first: MeshInstance3D = entries[0].node
-		if holder == null:
-			holder = Node3D.new()
-			holder.name = "CellMergeBatches"
-			holder.set_meta(BATCH, true)
-			scope.add_child(holder)
-		var batch := MeshInstance3D.new()
-		batch.name = "CellBatch"
-		batch.mesh = mesh
-		batch.set_meta(BATCH, true)
-		batch.layers = first.layers
-		batch.cast_shadow = entries[0].shadow
-		batch.gi_mode = first.gi_mode
-		batch.visibility_range_begin = first.visibility_range_begin
-		batch.visibility_range_begin_margin = first.visibility_range_begin_margin
-		var range_end := 0.0
-		var range_margin := 0.0
-		for entry in entries:
-			range_end = maxf(range_end, entry.node.visibility_range_end)
-			range_margin = maxf(range_margin, entry.node.visibility_range_end_margin)
-		batch.visibility_range_end = range_end
-		batch.visibility_range_end_margin = range_margin
-		batch.visibility_range_fade_mode = first.visibility_range_fade_mode
-		holder.add_child(batch)
-		report.batches += 1
-		for entry in entries:
-			var source: MeshInstance3D = entry.node
-			if source.has_meta(MERGED_SOURCE): continue
-			source.set_meta(MERGED_SOURCE, true)
-			source.visible = false
-			report.sources += 1
+			if is_instance_valid(entry.node) and scope.is_ancestor_of(entry.node): valid_entries.append(entry)
+		if valid_entries.is_empty(): continue
+		# Lote limitado por vértices, não pelo grupo: um grupo grande (célula de 32 m da vila) era um lote só,
+		# montado e enviado à placa de uma vez. Partes menores, mesma geometria.
+		for entries: Array in await _split_by_vertices(valid_entries, slice):
+			if not is_instance_valid(scope) or not scope.is_inside_tree(): return report
+			var mesh: ArrayMesh = await _build_batch(entries, exact, slice)
+			holder = _commit_batch(scope, holder, entries, mesh, pending_surfaces, report)
 	return report
+
+## Põe o lote na árvore e esconde as fontes que ficaram com todas as superfícies em lote. Devolve o holder.
+static func _commit_batch(scope: Node3D, holder: Node3D, entries: Array, mesh: ArrayMesh, pending_surfaces: Dictionary, report: Dictionary) -> Node3D:
+	if mesh == null or not is_instance_valid(scope) or not scope.is_inside_tree(): return holder
+	# A montagem também cede o quadro entre peças: se alguma fonte sumiu nesse meio-tempo, o lote teria a
+	# geometria dela. Descarta o lote e deixa as fontes que sobraram como estão (só perde a fusão do grupo).
+	if entries.any(func(entry): return not is_instance_valid(entry.node) or not scope.is_ancestor_of(entry.node)): return holder
+	var first: MeshInstance3D = entries[0].node
+	if holder == null:
+		holder = Node3D.new()
+		holder.name = "CellMergeBatches"
+		holder.set_meta(BATCH, true)
+		scope.add_child(holder)
+	var batch := MeshInstance3D.new()
+	batch.name = "CellBatch"
+	batch.mesh = mesh
+	batch.set_meta(BATCH, true)
+	batch.layers = first.layers
+	batch.cast_shadow = entries[0].shadow
+	batch.gi_mode = first.gi_mode
+	batch.visibility_range_begin = first.visibility_range_begin
+	batch.visibility_range_begin_margin = first.visibility_range_begin_margin
+	var range_end := 0.0
+	var range_margin := 0.0
+	for entry in entries:
+		range_end = maxf(range_end, entry.node.visibility_range_end)
+		range_margin = maxf(range_margin, entry.node.visibility_range_end_margin)
+	batch.visibility_range_end = range_end
+	batch.visibility_range_end_margin = range_margin
+	batch.visibility_range_fade_mode = first.visibility_range_fade_mode
+	holder.add_child(batch)
+	report.batches += 1
+	for entry in entries:
+		var source: MeshInstance3D = entry.node
+		var id := source.get_instance_id()
+		pending_surfaces[id] = int(pending_surfaces.get(id, 1)) - 1
+		if int(pending_surfaces[id]) > 0 or source.has_meta(MERGED_SOURCE): continue
+		source.set_meta(MERGED_SOURCE, true)
+		source.visible = false
+		report.sources += 1
+	return holder
+
+## Teto de vértices por lote. 16.384 vértices com tangente e cor são ~1 MB enviados num add_surface; a média
+## dos lotes fica bem abaixo disso, só a célula densa (vila, cais) chegava a dezenas de milhares.
+const MAX_BATCH_VERTICES := 16384
+## Acima disto a montagem das arrays do lote vai para um trabalhador (laços por vértice de tangente, cor e
+## normal não uniforme em GDScript); abaixo, o custo de esperar um quadro pelo trabalhador não compensa.
+const WORKER_MIN_VERTICES := 2048
+
+static func _split_by_vertices(entries: Array, slice: Slice) -> Array:
+	var parts: Array = []
+	var current: Array = []
+	var count := 0
+	for entry in entries:
+		if not await _yield_if_due(slice): return []
+		var vertices: PackedVector3Array = _arrays_of(entry.mesh, entry.surface)[Mesh.ARRAY_VERTEX]
+		if not current.is_empty() and count + vertices.size() > MAX_BATCH_VERTICES:
+			parts.append(current)
+			current = []
+			count = 0
+		current.append(entry)
+		count += vertices.size()
+	if not current.is_empty(): parts.append(current)
+	return parts
 
 ## Varre em profundidade cedendo o quadro pelo orçamento: na vila da serra (~1.200 malhas, centenas de
 ## materiais novos, cada um com a lista de propriedades lida em _family) a coleta inteira cabia num quadro só
@@ -327,38 +374,92 @@ static func _family(material: StandardMaterial3D) -> String:
 		preload("res://world/chunk_bake/FamilyShaderVariants.gd").note(shared)
 	return key
 
-## Lote com posição, normal, tangente, UV e cor por vértice, no espaço do escopo. Cede o quadro entre peças
-## (um lote de célula de 32 m na vila juntava milhares de vértices) e transforma posição, normal, UV e cor em
-## bloco: o laço em GDScript por vértice era o grosso do custo da fusão.
+## Lote com posição, normal, tangente, UV e cor por vértice, no espaço do escopo. No thread principal só a
+## leitura das arrays de origem (cedendo o quadro entre peças) e o commit; a montagem das arrays (_assemble,
+## conta pura) vai para um WorkerThreadPool quando o lote é grande. Com o orçamento zerado (testes, censo)
+## tudo roda aqui, de uma vez.
 static func _build_batch(entries: Array, exact: bool, slice: Slice) -> ArrayMesh:
 	var family_material: StandardMaterial3D = entries[0].material if exact else _family_materials.get(_family(entries[0].material))
 	if family_material == null: return null
 	var use_tangent := family_material.normal_enabled
+	var parts: Array = []
+	var total := 0
+	for entry in entries:
+		if not await _yield_if_due(slice): return null
+		var arrays: Array = _arrays_of(entry.mesh, entry.surface)
+		var source_vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+		if source_vertices.is_empty(): continue
+		var source: StandardMaterial3D = entry.material
+		var tint := source.albedo_color
+		var keep_colors: bool = source.vertex_color_use_as_albedo and arrays[Mesh.ARRAY_COLOR] != null
+		# Material original: a cor do vértice só importa se ele já a usava; senão vai branco, sem efeito.
+		if exact: tint = Color.WHITE
+		# Família com cor linear: a cor do material (sRGB) entra convertida, como o shader faria com albedo_color.
+		elif not family_material.vertex_color_is_srgb: tint = tint.srgb_to_linear()
+		parts.append({"arrays": arrays, "transform": entry.transform, "tint": tint, "keep_colors": keep_colors})
+		total += source_vertices.size()
+	if parts.is_empty(): return null
+	var built := {}
+	if slice.budget_usec > 0 and total >= WORKER_MIN_VERTICES:
+		var task := WorkerThreadPool.add_task(Callable(_script(), "_assemble").bind(parts, use_tangent, built), false, "cell merge batch")
+		await _await_task(task, slice)
+	else:
+		_assemble(parts, use_tangent, built)
+	# O commit (envio à placa) começa numa fatia nova se esta já gastou o orçamento.
+	if not await _yield_if_due(slice): return null
+	if not built.has("indices"): return null
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = built.vertices
+	arrays[Mesh.ARRAY_NORMAL] = built.normals
+	if use_tangent: arrays[Mesh.ARRAY_TANGENT] = built.tangents
+	arrays[Mesh.ARRAY_TEX_UV] = built.uvs
+	# Material original (prédio com reveal) que não usa cor no vértice: sem atributo de cor. Material conhecido
+	# com formato de vértice novo é um pipeline novo, compilado no primeiro desenho: era o que travava na serra
+	# (cabanas, 15/10), e o pré-aquecimento das variantes da família não cobre o material original.
+	if not exact or family_material.vertex_color_use_as_albedo: arrays[Mesh.ARRAY_COLOR] = built.colors
+	arrays[Mesh.ARRAY_INDEX] = built.indices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	mesh.surface_set_material(0, family_material)
+	return mesh
+
+static var _self_script: Script
+static func _script() -> Script:
+	if _self_script == null: _self_script = load("res://world/chunk_bake/ChunkCellMerge.gd")
+	return _self_script
+
+## Espera o trabalhador cedendo quadros (o span da fatia não inclui a espera). Toda tarefa é esperada até o
+## fim, mesmo se o trecho sumiu: o chamador revalida depois.
+static func _await_task(task: int, slice: Slice) -> void:
+	if not WorkerThreadPool.is_task_completed(task):
+		STALL_WORK.finish_slow("chunk.cell_merge", slice.began, 1500)
+		var tree := Engine.get_main_loop() as SceneTree
+		while not WorkerThreadPool.is_task_completed(task): await tree.process_frame
+		slice.began = STALL_WORK.begin()
+		slice.budget_began = Time.get_ticks_usec()
+	WorkerThreadPool.wait_for_task_completion(task)
+
+## Conta pura (segura num trabalhador): transforma posição, normal, UV e cor em bloco e reindexa. O laço em
+## GDScript por vértice (tangente, cor do vértice, escala não uniforme) era o grosso do custo da fusão.
+static func _assemble(parts: Array, use_tangent: bool, out: Dictionary) -> void:
 	var vertices := PackedVector3Array()
 	var normals := PackedVector3Array()
 	var tangents := PackedFloat32Array()
 	var uvs := PackedVector2Array()
 	var colors := PackedColorArray()
 	var indices := PackedInt32Array()
-	for entry in entries:
-		if not await _yield_if_due(slice): return null
-		var arrays: Array = _arrays_of(entry.mesh, entry.surface)
+	for part: Dictionary in parts:
+		var arrays: Array = part.arrays
 		var source_vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
-		if source_vertices.is_empty(): continue
 		var count_vertices := source_vertices.size()
-		var transform: Transform3D = entry.transform
+		var transform: Transform3D = part.transform
 		var normal_basis := transform.basis.inverse().transposed()
-		var source: StandardMaterial3D = entry.material
-		var tint := source.albedo_color
+		var tint: Color = part.tint
 		var source_normals: Variant = arrays[Mesh.ARRAY_NORMAL]
 		var source_tangents: Variant = arrays[Mesh.ARRAY_TANGENT]
 		var source_uvs: Variant = arrays[Mesh.ARRAY_TEX_UV]
 		var source_colors: Variant = arrays[Mesh.ARRAY_COLOR]
-		var keep_colors: bool = source.vertex_color_use_as_albedo and source_colors != null
-		# Material original: a cor do vértice só importa se ele já a usava; senão vai branco, sem efeito.
-		if exact: tint = Color.WHITE
-		# Família com cor linear: a cor do material (sRGB) entra convertida, como o shader faria com albedo_color.
-		elif not family_material.vertex_color_is_srgb: tint = tint.srgb_to_linear()
 		var base := vertices.size()
 		vertices.append_array(transform * source_vertices)
 		if source_normals == null:
@@ -378,7 +479,7 @@ static func _build_batch(entries: Array, exact: bool, slice: Slice) -> ArrayMesh
 			zero.resize(count_vertices)
 			uvs.append_array(zero)
 		# Cor do vértice em sRGB como albedo_color; a cor do vértice original multiplica se o material a usava.
-		if keep_colors:
+		if bool(part.keep_colors):
 			for color in (source_colors as PackedColorArray): colors.append(tint * color)
 		else:
 			var flat := PackedColorArray()
@@ -409,22 +510,12 @@ static func _build_batch(entries: Array, exact: bool, slice: Slice) -> ArrayMesh
 				indices[start + index] = base + index
 				indices[start + index + 1] = base + (index + 2 if flip else index + 1)
 				indices[start + index + 2] = base + (index + 1 if flip else index + 2)
-	if vertices.is_empty(): return null
-	var arrays := []
-	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = vertices
-	arrays[Mesh.ARRAY_NORMAL] = normals
-	if use_tangent: arrays[Mesh.ARRAY_TANGENT] = tangents
-	arrays[Mesh.ARRAY_TEX_UV] = uvs
-	# Material original (prédio com reveal) que não usa cor no vértice: sem atributo de cor. Material conhecido
-	# com formato de vértice novo é um pipeline novo, compilado no primeiro desenho: era o que travava na serra
-	# (cabanas, 15/10), e o pré-aquecimento das variantes da família não cobre o material original.
-	if not exact or family_material.vertex_color_use_as_albedo: arrays[Mesh.ARRAY_COLOR] = colors
-	arrays[Mesh.ARRAY_INDEX] = indices
-	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	mesh.surface_set_material(0, family_material)
-	return mesh
+	out.vertices = vertices
+	out.normals = normals
+	out.tangents = tangents
+	out.uvs = uvs
+	out.colors = colors
+	out.indices = indices
 
 ## Base de rotação com escala uniforme (positiva ou espelhada): normal transformada só muda de tamanho.
 static func _uniform_rotation(basis: Basis) -> bool:

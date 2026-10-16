@@ -75,6 +75,14 @@ var elapsed := 0.0
 var materials := {}
 var extra_land: Array[PackedVector2Array] = []
 var terrain: TERRAIN
+## Tarefas do WorkerThreadPool que calculam o terreno da serra (MountainTerrain3D.chunk_data), id -> true.
+## Toda tarefa precisa de wait_for_task_completion; trecho descartado antes de usar o resultado deixa a sua
+## aqui, recolhida por _collect_terrain_tasks quando termina ou na destruição da região.
+var _terrain_tasks: Dictionary = {}
+## Quantos trechos da fila já começam o cálculo do terreno no trabalhador, à frente da vez deles.
+const TERRAIN_PREFETCH_JOBS := 6
+## Resultado do trabalhador para o _build_surfaces em andamento (vazio: build_chunk calcula na hora).
+var _surface_terrain_data: Dictionary = {}
 var chairlifts: Array[Node3D] = []
 var chairlift_operating := false
 var mountain_night_level := 0.0
@@ -231,6 +239,8 @@ func _exit_tree() -> void:
 ## Unmount mantém a região para reuso; só a destruição libera o cache.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
+		for task in _terrain_tasks.keys(): WorkerThreadPool.wait_for_task_completion(task)
+		_terrain_tasks.clear()
 		for nodes in _record_cache.values():
 			for node in nodes:
 				# Nós com pai pertencem à árvore; não disputar sua destruição.
@@ -600,6 +610,7 @@ func _process(_delta: float) -> void:
 	var drain_began := Time.get_ticks_usec()
 	_drain_retired()
 	_note_slow("liberação", drain_began, 100000)
+	_collect_terrain_tasks()
 	var began := Time.get_ticks_usec()
 	# Com fila grande (dirigindo rápido) a construção ganha mais tempo por quadro, senão
 	# o chunk em que o carro entra ainda não existe e `set_focus` o constrói inteiro de uma vez.
@@ -614,10 +625,13 @@ func _process(_delta: float) -> void:
 			_note_slow("novo chunk",chunk_began,50000)
 		var left: float = budget-(Time.get_ticks_usec()-began)
 		if left <= 0.0: return
+		_prefetch_terrain_tasks()
 		var job_began := Time.get_ticks_usec()
 		var job_done := _run_build_job(build_jobs[0],left)
 		_note_slow("etapa estágio %d"%int(build_jobs[0].stage),job_began,100000)
 		if job_done: build_jobs.pop_front()
+		# Terreno da serra ainda no trabalhador: tentar de novo neste quadro só giraria o orçamento à toa.
+		elif build_jobs[0].get("waiting_worker",false): return
 		if Time.get_ticks_usec()-began >= budget: return
 
 ## Registros que custam 40-80 ms para montar (a vila e a serraria da montanha): o nó pronto é
@@ -635,7 +649,9 @@ const CACHED_PORT_MODELS := ["ship_cargo","supplies","crane"]
 ## segurar a cidade inteira na memória nem alongar demais o carregamento.
 ## harbor_dressing entra porque a grama da Cobra agora é espalhada antes de o nó ser guardado
 ## (RetainedRegionPreparation cede um quadro) e espera a árvore se for chamada fora dela.
-const CACHED_KINDS_MEASURED := ["container","salvage","mountain_place","harbor_dressing"]
+## mountain_jeep_scenery (portais e lombadas da trilha do jipe): 24-32 ms num quadro já jogável, na serra e
+## na travessia (release, fase 2 de 16/10); estático, sem processo nem luz.
+const CACHED_KINDS_MEASURED := ["container","salvage","mountain_place","harbor_dressing","mountain_jeep_scenery"]
 const CACHED_BUILDING_IDS := ["NorthFireStation","BridgeCourtWest","PorchHouse","BridgeQuayHouse","BridgeCourtEast",
 	"NorthbankFront0","NorthbankFront1","NorthFrontage2","NorthFrontage3","new_1790432236_682_2325181222"]
 ## harbor_prop medido a 381 ms (posição do registro no chão, x/z).
@@ -1011,8 +1027,13 @@ func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
 	while true:
 		match int(job.stage):
 			0:
+				if _terrain_chunk_pending(job,budget_usec): return false
 				var stage_began := STALL_WORK.begin()
+				# Pelo membro, não por parâmetro: testes sobrescrevem _build_surfaces com a assinatura de 3 argumentos.
+				_surface_terrain_data = job.get("terrain_data",{})
 				_build_surfaces(chunk,rect,key)
+				_surface_terrain_data = {}
+				job.erase("terrain_data")
 				STALL_WORK.finish_slow("stream.%s.surfaces"%region_id,stage_began,2000)
 				job.stage = 1
 			1:
@@ -1054,8 +1075,11 @@ func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
 				if region_id == "harbor":
 					if not job.has("dressing"): job.dressing = {"step": 0, "region": self, "chunk": chunk, "rect": rect}
 					var dressing_began := STALL_WORK.begin()
+					var dressing_step := int(job.dressing.get("step",0))
 					var dressing_more: bool = CITY_DRESSING.build_chunk_step(job.dressing)
-					STALL_WORK.finish_slow("stream.harbor.dressing_step",dressing_began,2000)
+					# Com o número do passo: na fase 2 (16/10) passos de 42-148 ms apareciam sem dizer qual
+					# (noite, postes, escadas, paredes, telhados, lote, lixo...). O prefixo antigo continua igual.
+					STALL_WORK.finish_slow("stream.harbor.dressing_step.%d"%dressing_step,dressing_began,2000)
 					if not dressing_more:
 						# O continue tambem precisa devolver o controle ao esgotar o orcamento.
 						if Time.get_ticks_usec()-began >= budget_usec: return false
@@ -1111,6 +1135,53 @@ func _ensure_chunk(key: Vector2i) -> void:
 		if build_jobs[index].key == key:
 			_run_build_job(build_jobs[index],INF)
 			build_jobs.remove_at(index)
+
+## Estágio 0 da serra: alturas, malha e máscara das trilhas saem prontas de um WorkerThreadPool
+## (MountainTerrain3D.chunk_data) e aqui fica só a montagem (malha, colisão, nós). Devolve true enquanto o
+## trabalhador calcula: o trecho cede a vez sem gastar o orçamento esperando. Sem orçamento (0 ou INF: chão
+## agora para um veículo, ou trecho imediato) espera a tarefa já começada ou deixa build_chunk calcular aqui.
+func _terrain_chunk_pending(job: Dictionary, budget_usec: float) -> bool:
+	if job.has("terrain_data") or not _terrain_task_wanted(job): return false
+	var now := budget_usec <= 0.0 or is_inf(budget_usec)
+	if not job.has("terrain_task"):
+		if now: return false
+		_start_terrain_task(job)
+	var task: int = job.terrain_task
+	if _terrain_tasks.has(task):
+		if not now and not WorkerThreadPool.is_task_completed(task):
+			job.waiting_worker = true
+			return true
+		WorkerThreadPool.wait_for_task_completion(task)
+		_terrain_tasks.erase(task)
+	job.terrain_data = job.terrain_result
+	job.erase("terrain_task")
+	job.erase("terrain_result")
+	job.erase("waiting_worker")
+	return false
+
+func _terrain_task_wanted(job: Dictionary) -> bool:
+	return region_id == "mountain" and terrain != null and int(job.stage) == 0 and _mountain_owns_terrain(job.key)
+
+func _start_terrain_task(job: Dictionary) -> void:
+	if job.has("terrain_task") or job.has("terrain_data") or not _terrain_task_wanted(job): return
+	var result := {}
+	var task := WorkerThreadPool.add_task(Callable(TERRAIN,"prepare_task").bind(terrain,job.rect,result),false,"mountain terrain chunk")
+	_terrain_tasks[task] = true
+	job.terrain_task = task
+	job.terrain_result = result
+
+## Os próximos trechos da fila já calculam no trabalhador enquanto o da frente monta.
+func _prefetch_terrain_tasks() -> void:
+	if region_id != "mountain" or terrain == null: return
+	for index in mini(build_jobs.size(),TERRAIN_PREFETCH_JOBS): _start_terrain_task(build_jobs[index])
+
+## Libera as tarefas terminadas (inclusive as de trechos já descartados); o resultado fica no job.
+func _collect_terrain_tasks() -> void:
+	if _terrain_tasks.is_empty(): return
+	for task in _terrain_tasks.keys():
+		if WorkerThreadPool.is_task_completed(task):
+			WorkerThreadPool.wait_for_task_completion(task)
+			_terrain_tasks.erase(task)
 
 func _build_surfaces(chunk: Node3D, rect: Rect2, key: Vector2i) -> void:
 	if region_id == "harbor":
@@ -1197,7 +1268,7 @@ func _build_surfaces(chunk: Node3D, rect: Rect2, key: Vector2i) -> void:
 		# solid wall through the original bridge route when both regions reside.
 		if _mountain_owns_terrain(key):
 			var shore_edges := preload("res://world/regions/MountainBridgeShore.gd").frontiers(key,MOUNTAIN_BRIDGE_VOID_CELLS,_mountain_owns_terrain)
-			terrain.build_chunk(chunk,rect,shore_edges)
+			terrain.build_chunk(chunk,rect,shore_edges,_surface_terrain_data)
 			preload("res://world/regions/ScenarioBoundary3D.gd").build_mountain(chunk,rect,terrain.surface_height_at)
 
 func _build_record(chunk: Node3D, record: Dictionary) -> void:

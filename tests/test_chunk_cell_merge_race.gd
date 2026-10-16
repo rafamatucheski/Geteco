@@ -55,7 +55,8 @@ func run() -> void:
 	freed_source.queue_free()
 	b.remove_child(leaving)
 	region.add_child(leaving)
-	for frame in 200:
+	# Cada lote cede o quadro várias vezes com 1 µs (coleta, divisão por vértices, montagem, envio).
+	for frame in 1000:
 		await process_frame
 		if finished.has("a") and finished.has("b"): break
 	check(finished.has("a"), "Fusão do trecho liberado termina (não fica presa nem segue no trecho alheio)")

@@ -2,6 +2,7 @@ extends RefCounted
 ## Metric XZ coordinates; NativeRegion owns the returned mesh and collision.
 const CATALOG = preload("res://world/places/PlaceCatalog.gd")
 const LAKE_BASINS := preload("res://world/regions/LakeBasins.gd")
+const TRAIL_BLEND := preload("res://world/regions/MountainTrailBlend.gd")
 const STEP := 4.0
 const CELL := 64.0
 const BLEND := 28.0
@@ -15,10 +16,14 @@ var _clearings: Array[Rect2] = []
 ## Clareira mais longe que BLEND não muda o resultado (a distância parte de BLEND), então basta a da célula.
 var _clearing_cells: Dictionary = {}
 var _material: ShaderMaterial
-var _trail_blend := preload("res://world/regions/MountainTrailBlend.gd").new()
+var _trail_blend := TRAIL_BLEND.new()
 var _height_samples: Dictionary = {}
 var _height_sample_order: Array[Vector2] = []
 var _height_sample_next := 0
+## Cópia da margem do lago (LakeBasins.snapshot) tirada no configure: o cálculo de alturas roda também num
+## trabalhador (chunk_data) e não pode ler as estáticas que outro configure() reatribuiria no meio.
+var _lake_shore := PackedVector2Array()
+var _lake_bounds := Rect2()
 
 func configure(roads: Array, entries: Array, clearings: Array) -> void:
 	_trail_blend.configure(roads)
@@ -70,6 +75,9 @@ func configure(roads: Array, entries: Array, clearings: Array) -> void:
 					if not _segments.has(key): _segments[key] = []
 					_segments[key].append({"a":a,"b":b,"radius":radius})
 	LAKE_BASINS.configure(roads)
+	var lake: Array = LAKE_BASINS.snapshot()
+	_lake_shore = lake[0]
+	_lake_bounds = lake[1]
 	_material = ShaderMaterial.new()
 	_material.shader = preload("res://world/regions/mountain_terrain.gdshader")
 	preload("res://world/regions/WorldConnection3D.gd").configure_ground_material(_material)
@@ -96,6 +104,11 @@ func height_at(point: Vector2) -> float:
 	# Keep the exact result; FIFO eviction bounds memory during long journeys.
 	if _height_samples.has(point): return _height_samples[point]
 	var height := _calculate_height(point)
+	_remember_height(point, height)
+	return height
+
+func _remember_height(point: Vector2, height: float) -> void:
+	if _height_samples.has(point): return
 	if _height_sample_order.size() < HEIGHT_SAMPLE_LIMIT:
 		_height_sample_order.append(point)
 	else:
@@ -103,7 +116,6 @@ func height_at(point: Vector2) -> float:
 		_height_sample_order[_height_sample_next] = point
 		_height_sample_next = (_height_sample_next + 1) % HEIGHT_SAMPLE_LIMIT
 	_height_samples[point] = height
-	return height
 
 func _calculate_height(point: Vector2) -> float:
 	var weight := smoothstep(0.0,BLEND,_clearance(point))
@@ -112,7 +124,7 @@ func _calculate_height(point: Vector2) -> float:
 	var detail := 0.5+0.5*sin(point.x*0.075+0.7)*sin(point.y*0.068)
 	# The flat road reservation meets the physical road top at y=0. Lowering
 	# this terrain made a one-way curb at every narrow track edge.
-	return weight*(broad*6.0+detail*1.5)-LAKE_BASINS.depth_at(point)
+	return weight*(broad*6.0+detail*1.5)-LAKE_BASINS.depth_in(_lake_shore,_lake_bounds,point)
 
 func surface_height_at(point: Vector2) -> float:
 	# Same diagonal and interpolation as build_chunk, for trees/rocks without floating.
@@ -125,22 +137,26 @@ func surface_height_at(point: Vector2) -> float:
 	if f.x+f.y <= 1.0: return a+(b-a)*f.x+(c-a)*f.y
 	return d+(c-d)*(1.0-f.x)+(b-d)*(1.0-f.y)
 
-func build_chunk(parent: Node3D, rect: Rect2, shore_edges: Array[Dictionary] = []) -> MeshInstance3D:
-	# Only aligned 64m NativeRegion chunks: no partial edge cells or mismatched seams.
-	if rect.size != Vector2.ONE*CELL or rect.position != Vector2(_cell(rect.position))*CELL:
-		push_error("MountainTerrain3D requires aligned 64m chunks")
-		return null
+## Cálculo puro do trecho (alturas, normais, cores, índices e máscara das trilhas), sem nó, sem recurso de
+## servidor e sem escrever em estado compartilhado: roda num WorkerThreadPool. O estágio de superfícies da
+## serra fazia isto no thread principal e custava 30-62 ms por trecho, 13-16 quadros acima de 33 ms por
+## travessia (release, fase 2 de 16/10): ~1.450 alturas, cada uma varrendo as estradas e clareiras da célula,
+## mais a máscara 129×129 em GDScript. Sem o cache de alturas (escrito pelo thread principal): o valor é o
+## mesmo de height_at, que só guarda _calculate_height.
+func chunk_data(rect: Rect2) -> Dictionary:
 	var vertices := PackedVector3Array()
 	var normals := PackedVector3Array()
 	var colors := PackedColorArray()
 	var indices := PackedInt32Array()
+	var heights := PackedFloat64Array()
 	var steps := int(CELL/STEP)
 	for z in range(steps+1):
 		for x in range(steps+1):
 			var point := rect.position+Vector2(x,z)*STEP
-			var h := height_at(point)
+			var h := _calculate_height(point)
+			heights.append(h)
 			vertices.append(Vector3(point.x,h,point.y))
-			var normal := Vector3(height_at(point-Vector2.RIGHT)-height_at(point+Vector2.RIGHT),2.0,height_at(point-Vector2.DOWN)-height_at(point+Vector2.DOWN)).normalized()
+			var normal := Vector3(_calculate_height(point-Vector2.RIGHT)-_calculate_height(point+Vector2.RIGHT),2.0,_calculate_height(point-Vector2.DOWN)-_calculate_height(point+Vector2.DOWN)).normalized()
 			normals.append(normal)
 			var original_y: float = point.y*16.0-CATALOG.MOUNTAIN_OFFSET.y
 			var snow := 1.0-smoothstep(-1500.0,-1200.0,original_y)
@@ -153,19 +169,41 @@ func build_chunk(parent: Node3D, rect: Rect2, shore_edges: Array[Dictionary] = [
 			var c := a+steps+1
 			var d := c+1
 			indices.append_array(PackedInt32Array([a,b,c,b,d,c]))
+	return {"rect":rect,"vertices":vertices,"normals":normals,"colors":colors,"indices":indices,"heights":heights,"trail":_trail_blend.mask_for(rect)}
+
+## Entrada do trabalhador: o terreno vai como argumento (referência forte), então não some com a tarefa no ar.
+## O resultado é escrito no dicionário de saída e só é lido depois de wait_for_task_completion.
+static func prepare_task(terrain: RefCounted, rect: Rect2, out: Dictionary) -> void:
+	out.merge(terrain.chunk_data(rect))
+
+## Monta o trecho. `data` vem de chunk_data (pronto num trabalhador); vazio, calcula aqui mesmo (testes,
+## ferramentas e quem precisa do chão já). No thread principal ficam só a malha, a forma de colisão e os nós.
+func build_chunk(parent: Node3D, rect: Rect2, shore_edges: Array[Dictionary] = [], data: Dictionary = {}) -> MeshInstance3D:
+	# Only aligned 64m NativeRegion chunks: no partial edge cells or mismatched seams.
+	if rect.size != Vector2.ONE*CELL or rect.position != Vector2(_cell(rect.position))*CELL:
+		push_error("MountainTerrain3D requires aligned 64m chunks")
+		return null
+	if data.is_empty() or data.get("rect") != rect: data = chunk_data(rect)
+	# Árvores, pedras, grama e o piloto leem surface_height_at nos mesmos pontos da grade: ficam no cache como
+	# quando build_chunk calculava aqui.
+	var steps := int(CELL/STEP)
+	var heights: PackedFloat64Array = data.heights
+	for z in range(steps+1):
+		for x in range(steps+1):
+			_remember_height(rect.position+Vector2(x,z)*STEP,heights[z*(steps+1)+x])
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
-	arrays[Mesh.ARRAY_VERTEX] = vertices
-	arrays[Mesh.ARRAY_NORMAL] = normals
-	arrays[Mesh.ARRAY_COLOR] = colors
-	arrays[Mesh.ARRAY_INDEX] = indices
+	arrays[Mesh.ARRAY_VERTEX] = data.vertices
+	arrays[Mesh.ARRAY_NORMAL] = data.normals
+	arrays[Mesh.ARRAY_COLOR] = data.colors
+	arrays[Mesh.ARRAY_INDEX] = data.indices
 	var mesh := ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
 	var result := MeshInstance3D.new()
 	result.name = "MountainTerrain"
 	result.mesh = mesh
 	var chunk_material := _material.duplicate() as ShaderMaterial
-	chunk_material.set_shader_parameter("trail_mask",ImageTexture.create_from_image(_trail_blend.image_for(rect)))
+	chunk_material.set_shader_parameter("trail_mask",ImageTexture.create_from_image(Image.create_from_data(TRAIL_BLEND.SIZE,TRAIL_BLEND.SIZE,false,Image.FORMAT_R8,data.trail)))
 	result.material_override = chunk_material
 	result.set_instance_shader_parameter("origin",rect.position)
 	result.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

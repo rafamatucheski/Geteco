@@ -26,6 +26,11 @@ func configure(roads: Array) -> void:
 					cells[key].append({"a":a,"b":b,"inner":inner,"outer":outer,"bounds":bounds})
 
 func image_for(rect: Rect2) -> Image:
+	return Image.create_from_data(SIZE,SIZE,false,Image.FORMAT_R8,mask_for(rect))
+
+## Só os bytes da máscara: conta pura sobre `cells` (escrito apenas em configure), segura num trabalhador.
+## O terreno da serra calcula a máscara fora do thread principal e cria a Image/textura ao montar o trecho.
+func mask_for(rect: Rect2) -> PackedByteArray:
 	var values := PackedByteArray()
 	values.resize(SIZE*SIZE)
 	for segment in cells.get(Vector2i((rect.position/CELL).floor()),[]):
@@ -63,4 +68,4 @@ func image_for(rect: Rect2) -> Image:
 				var weight := 1.0-smoothstep(float(segment.inner),float(segment.outer),distance)
 				var index := y*SIZE+x
 				values[index] = maxi(values[index],roundi(weight*255.0))
-	return Image.create_from_data(SIZE,SIZE,false,Image.FORMAT_R8,values)
+	return values

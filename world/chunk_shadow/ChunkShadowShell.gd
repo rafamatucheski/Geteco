@@ -24,8 +24,11 @@ static func schedule(chunk: Node3D) -> void:
 static func _finish_deferred(reference: WeakRef) -> void:
 	var chunk := reference.get_ref() as Node3D
 	if not is_instance_valid(chunk) or chunk.is_queued_for_deletion() or not chunk.is_inside_tree(): return
-	# Não ativar a fusão antiga em trechos onde nenhum gerador a agendou.
-	if chunk.has_meta(BUILDING_BATCH.PENDING_META): BUILDING_BATCH.finish_chunk(chunk)
+	# Não ativar a fusão antiga em trechos onde nenhum gerador a agendou. Fatiada (era um quadro só, 17-60 ms
+	# na fase 2 de 16/10) e esperada inteira: a fusão por célula e a casca leem o que ela deixou.
+	if chunk.has_meta(BUILDING_BATCH.PENDING_META):
+		await BUILDING_BATCH.finish_chunk_sliced(chunk, slice_budget_usec)
+		if not is_instance_valid(reference.get_ref()) or not chunk.is_inside_tree(): return
 	# Fusão geral por célula antes da casca: a casca lê os volumes que sobraram visíveis.
 	await preload("res://world/chunk_bake/ChunkCellMerge.gd").finish_chunk_later(chunk)
 	if is_instance_valid(reference.get_ref()): await _finish(chunk, slice_budget_usec)
@@ -44,6 +47,8 @@ static func _finish(chunk: Node3D, budget_usec: int) -> void:
 	chunk.set_meta(FINISHED, true)
 	var reference: WeakRef = weakref(chunk)
 	var began := STALL_WORK.begin()
+	# Relógio do orçamento separado do span: com o rastreio desligado `began` é 0 e cada malha cedia o quadro.
+	var budget_began := Time.get_ticks_usec()
 	var vertices := PackedVector3Array()
 	var normals := PackedVector3Array()
 	var indices := PackedInt32Array()
@@ -51,10 +56,11 @@ static func _finish(chunk: Node3D, budget_usec: int) -> void:
 	var small: Array[MeshInstance3D] = []
 	var inverse := chunk.global_transform.affine_inverse()
 	for found in chunk.find_children("*", "MeshInstance3D", true, false):
-		if budget_usec > 0 and Time.get_ticks_usec() - began >= budget_usec:
+		if budget_usec > 0 and Time.get_ticks_usec() - budget_began >= budget_usec:
 			STALL_WORK.finish_slow("chunk.shadow_shell", began, 1500)
 			await chunk.get_tree().process_frame
 			began = STALL_WORK.begin()
+			budget_began = Time.get_ticks_usec()
 			if not is_instance_valid(reference.get_ref()) or not chunk.is_inside_tree(): return
 		if not is_instance_valid(found): continue
 		var source := found as MeshInstance3D

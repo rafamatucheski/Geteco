@@ -47,11 +47,21 @@ static func _load() -> void:
 ## Profundidade (>= 0) a subtrair da altura do terreno em `point` (XZ de mundo).
 static func depth_at(point: Vector2) -> float:
 	if not _loaded: _load()
-	if _shore.size() < 3 or not _bounds.has_point(point): return 0.0
-	if not Geometry2D.is_point_in_polygon(point, _shore): return 0.0
+	return depth_in(_shore, _bounds, point)
+
+## Margem já carregada, para quem calcula alturas fora do thread principal: o terreno da serra guarda uma
+## cópia no configure e o trabalhador lê só ela, nunca as estáticas que configure() reatribui.
+static func snapshot() -> Array:
+	if not _loaded: _load()
+	return [_shore, _bounds]
+
+## Função pura (sem estado estático): a mesma conta de depth_at sobre uma margem dada.
+static func depth_in(shore: PackedVector2Array, bounds: Rect2, point: Vector2) -> float:
+	if shore.size() < 3 or not bounds.has_point(point): return 0.0
+	if not Geometry2D.is_point_in_polygon(point, shore): return 0.0
 	var edge := INF
-	for i in _shore.size():
-		edge = minf(edge, point.distance_to(Geometry2D.get_closest_point_to_segment(point, _shore[i], _shore[(i + 1) % _shore.size()])))
+	for i in shore.size():
+		edge = minf(edge, point.distance_to(Geometry2D.get_closest_point_to_segment(point, shore[i], shore[(i + 1) % shore.size()])))
 	return DEPTH * smoothstep(0.0, RAMP, edge)
 
 ## Mesmo arredondamento de NativeLake._smooth, para bacia e água coincidirem.

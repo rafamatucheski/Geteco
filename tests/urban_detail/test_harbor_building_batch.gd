@@ -35,7 +35,8 @@ func geometry_signature(meshes: Array[MeshInstance3D]) -> Dictionary:
 		for surface in mesh.mesh.get_surface_count():
 			var arrays := mesh.mesh.surface_get_arrays(surface)
 			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
-			var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+			# Malha sem índice (triângulos soltos) também entra na assinatura; antes dava SCRIPT ERROR e ficava de fora.
+			var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
 			var material := mesh.get_active_material(surface)
 			var material_id := material.get_instance_id() if material != null else 0
 			var count := indices.size() if not indices.is_empty() else vertices.size()
@@ -218,7 +219,13 @@ func run() -> void:
 		BATCH.finish_chunk(chunk)
 		check(not chunk.has_meta(BATCH.FINISHED_META), "%s aguarda o acabamento" % key)
 		chunk.set_meta("vegetation_ready_frame", ready_frame)
-		BATCH.finish_chunk(chunk)
+		# Metade dos trechos pela versão fatiada do jogo, cedendo o quadro a cada grupo (orçamento de 1 µs):
+		# o resultado tem de ser o mesmo da fusão inteira de uma vez.
+		if key.x % 2 == 0:
+			await BATCH.finish_chunk_sliced(chunk, 1)
+			check(chunk.has_meta(BATCH.DONE_META), "%s fusão fatiada termina" % key)
+		else:
+			BATCH.finish_chunk(chunk)
 		var after := target_meshes(chunk)
 		check(after.size() <= before_count, "%s não aumenta malhas dos prédios" % key)
 		if after.size() < before_count: reduced_chunks += 1
@@ -254,6 +261,11 @@ func run() -> void:
 	await process_frame
 	await process_frame
 	var rebuilt: Node3D = region.chunks[Vector2i(1, 1)]
+	# A fusão em jogo é fatiada (2 ms por quadro): espera ela terminar, não um número fixo de quadros.
+	for frame in 600:
+		if rebuilt.has_meta(BATCH.DONE_META): break
+		await process_frame
+	check(rebuilt.has_meta(BATCH.DONE_META), "fusão fatiada termina")
 	check(rebuilt.has_meta(BATCH.FINISHED_META), "recarga fatiada aplica a fusão automaticamente")
 	check(rebuilt.find_child("BuildingBatchFinalizer", true, false) == null, "finalizador não deixa processamento permanente")
 	region.free()
@@ -267,6 +279,9 @@ func run() -> void:
 	await process_frame
 	await process_frame
 	var production_chunk: Node3D = editable.chunks[Vector2i(1, 1)]
+	for frame in 600:
+		if production_chunk.has_meta(BATCH.DONE_META): break
+		await process_frame
 	check(production_chunk.has_meta(BATCH.FINISHED_META), "EditableRegion ativa fusão no caminho real do jogo")
 	check(production_chunk.find_child("BuildingStaticBatch", true, false) != null, "EditableRegion contém geometria fundida")
 	check(production_chunk.find_child("BuildingBatchFinalizer", true, false) == null, "EditableRegion libera finalizador transitório")
