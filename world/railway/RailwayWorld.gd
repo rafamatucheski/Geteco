@@ -6,6 +6,7 @@ const CELL := 64.0
 const LOAD_DISTANCE := 240.0
 const RELEASE_DISTANCE := 310.0
 const UPDATE_INTERVAL := 0.2
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 var controller
 var chunks: Dictionary = {}
 var station_nodes: Dictionary = {}
@@ -22,6 +23,7 @@ var _gate: Node3D
 var _source_roads: Array[Dictionary] = []
 var _clearance_regions: Dictionary = {}
 var _clearance_changed := false
+var _clearance_buildings: Array = []
 var _batches: Dictionary = {}
 var _batch_parent: Node3D
 var _body: StaticBody3D
@@ -42,15 +44,22 @@ func _process(delta: float) -> void:
 	# so their support is complete before admitting a passenger.
 	if not _pending.is_empty():
 		var key: Vector2i = _pending.pop_front()
-		if not chunks.has(key): _build_chunk(key)
+		if not chunks.has(key):
+			var chunk_began := STALL_WORK.begin()
+			_build_chunk(key)
+			STALL_WORK.finish("railway.chunk", chunk_began, {"key":str(key)})
 	_elapsed += delta
 	if _elapsed < UPDATE_INTERVAL: return
 	_elapsed = 0.0
 	if controller == null or not is_instance_valid(controller.world.player): return
+	var began := STALL_WORK.begin()
 	_prepare_clearance_roads()
+	STALL_WORK.finish_slow("railway.clearance_roads", began, 2000, self)
 	if _clearance_changed:
 		_clearance_changed = false
+		began = STALL_WORK.begin()
 		_recheck_supports()
+		STALL_WORK.finish_slow("railway.recheck_supports", began, 2000, self)
 	if controller.session != null:
 		var railway = controller.session.get("railway")
 		if is_instance_valid(railway) and (bool(railway.get("landing")) or bool(railway.get("_boarding"))): return
@@ -161,9 +170,15 @@ func _prepare_clearance_roads() -> void:
 		if regions == _clearance_regions: return
 		_clearance_regions = regions
 		_source_roads.clear()
+		_clearance_buildings.clear()
 		_clearance_changed = true
 		for region in regions.values():
 			for road in region.roads: _source_roads.append(road)
+			# Pegadas dos prédios para _pillar_clear, montadas só quando as regiões mudam
+			# (antes cada pilar duplicava e mesclava o cache de regiões de novo).
+			for building in region.buildings:
+				var p: Vector3 = building.position
+				_clearance_buildings.append([Vector2(p.x,p.z), building.size*.5+Vector2.ONE*2])
 			if region.get("walkways") is Array:
 				for road in region.walkways: _source_roads.append(road)
 	if _source_roads.is_empty():
@@ -215,13 +230,10 @@ func _pillar_clear(point: Vector3) -> bool:
 			var b := Vector2(points[index].x,points[index].z)
 			if Geometry2D.get_closest_point_to_segment(planar,a,b).distance_to(planar) < radius: return false
 	if controller != null:
-		var regions: Dictionary = controller._region_cache.duplicate()
-		regions.merge(controller.regions,true)
-		for region in regions.values():
-			for building in region.buildings:
-				var p: Vector3 = building.position
-				var half: Vector2 = building.size*.5+Vector2.ONE*2
-				if absf(p.x-point.x)<half.x and absf(p.z-point.z)<half.y: return false
+		for footprint in _clearance_buildings:
+			var center: Vector2 = footprint[0]
+			var half: Vector2 = footprint[1]
+			if absf(center.x-point.x)<half.x and absf(center.y-point.z)<half.y: return false
 	return true
 
 func _new_group(label: String) -> Node3D:

@@ -58,6 +58,10 @@ static func detail(mat: StandardMaterial3D, kind: String, tile := 2.0, bump := 1
 
 ## Normal map a partir de uma altura (com repetição nas bordas, para não marcar emenda).
 static func normal_from_height(height: PackedFloat32Array, size: int, strength: float) -> ImageTexture:
+	return ImageTexture.create_from_image(_normal_image(height, size, strength))
+
+
+static func _normal_image(height: PackedFloat32Array, size: int, strength: float) -> Image:
 	var image := Image.create(size, size, true, Image.FORMAT_RGB8)
 	for y in size:
 		for x in size:
@@ -66,7 +70,7 @@ static func normal_from_height(height: PackedFloat32Array, size: int, strength: 
 			var n := Vector3(-gx * strength, gy * strength, 1.0).normalized()
 			image.set_pixel(x, y, Color(n.x * 0.5 + 0.5, n.y * 0.5 + 0.5, n.z * 0.5 + 0.5))
 	image.generate_mipmaps()
-	return ImageTexture.create_from_image(image)
+	return image
 
 
 ## Altura = luminância do albedo (mortar/juntas escuras entram para dentro; `invert` p/ tijolo).
@@ -81,9 +85,96 @@ static func normal_from_albedo(albedo: Image, strength: float, invert := false) 
 	return normal_from_height(height, size, strength)
 
 
+## Os mapas de cada tipo custam ~150 ms de GDScript no release (65.536 pixels + 3 ruídos + normal).
+## Gerados na primeira vez que alguém pede, caíam no meio do jogo: o primeiro cacto do deserto
+## travou 150–250 ms a travessia em (479, -333), sem span (16/10/2026). Agora o primeiro pedido
+## (no carregamento) dispara os outros tipos em threads do WorkerThreadPool; o thread principal
+## só cria as texturas quando a imagem fica pronta, e quem pedir um tipo em andamento espera a
+## tarefa em vez de refazer. O resultado é o mesmo: a semente vem do nome do tipo.
+const KINDS := ["brick", "paving", "granite", "concrete", "plaster", "tar", "gravel", "corrugated",
+	"shingle", "wood", "metal", "fabric", "snow", "bark", "cactus", "foliage"]
+static var _mutex := Mutex.new()
+static var _built_images: Dictionary = {}
+static var _tasks: Dictionary = {}
+static var _poller: Node
+
+
+class BackgroundPoller extends Node:
+	func _process(_delta: float) -> void:
+		UrbanSurfaces._collect_background(false)
+
+	func _exit_tree() -> void:
+		UrbanSurfaces._collect_background(true)
+
+
 static func _maps_for(kind: String) -> Dictionary:
 	if _maps.has(kind):
 		return _maps[kind]
+	var images := {}
+	if _tasks.has(kind):
+		WorkerThreadPool.wait_for_task_completion(int(_tasks[kind]))
+		_tasks.erase(kind)
+		_mutex.lock()
+		images = _built_images.get(kind, {})
+		_built_images.erase(kind)
+		_mutex.unlock()
+	if images.is_empty():
+		images = _build_images(kind)
+	_install(kind, images)
+	_start_background()
+	return _maps[kind]
+
+
+static func _install(kind: String, images: Dictionary) -> void:
+	_maps[kind] = {
+		"albedo": ImageTexture.create_from_image(images["albedo"]),
+		"normal": ImageTexture.create_from_image(images["normal"]),
+		"rough": ImageTexture.create_from_image(images["rough"]),
+		"mean": images["mean"],
+	}
+
+
+static func _start_background() -> void:
+	if is_instance_valid(_poller) or not _tasks.is_empty(): return
+	var tree := Engine.get_main_loop() as SceneTree
+	if tree == null or tree.root == null: return
+	for kind in KINDS:
+		if _maps.has(kind) or _tasks.has(kind): continue
+		_tasks[kind] = WorkerThreadPool.add_task(_build_in_background.bind(kind), false, "UrbanSurfaces " + kind)
+	if _tasks.is_empty(): return
+	_poller = BackgroundPoller.new()
+	_poller.name = "UrbanSurfacesBackground"
+	_poller.process_mode = Node.PROCESS_MODE_ALWAYS
+	tree.root.add_child.call_deferred(_poller)
+
+
+static func _build_in_background(kind: String) -> void:
+	var images := _build_images(kind)
+	_mutex.lock()
+	_built_images[kind] = images
+	_mutex.unlock()
+
+
+## Thread principal: instala o que terminou (no máximo um tipo por quadro: 3 texturas de 256²).
+static func _collect_background(finish_all: bool) -> void:
+	for kind in _tasks.keys():
+		var task: int = _tasks[kind]
+		if not finish_all and not WorkerThreadPool.is_task_completed(task): continue
+		WorkerThreadPool.wait_for_task_completion(task)
+		_tasks.erase(kind)
+		_mutex.lock()
+		var images: Dictionary = _built_images.get(kind, {})
+		_built_images.erase(kind)
+		_mutex.unlock()
+		if not finish_all and not _maps.has(kind) and not images.is_empty(): _install(kind, images)
+		if not finish_all: break
+	if _tasks.is_empty() and is_instance_valid(_poller) and not finish_all:
+		_poller.queue_free()
+		_poller = null
+
+
+## Só Image, ruído e matemática: roda em qualquer thread.
+static func _build_images(kind: String) -> Dictionary:
 	var seed_value := hash(kind)
 	var coarse := _noise(seed_value, 0.012)
 	var medium := _noise(seed_value + 1, 0.045)
@@ -108,14 +199,7 @@ static func _maps_for(kind: String) -> Dictionary:
 			rough.set_pixel(x, y, Color(clampf(0.92 + (mean - l) * 0.9, 0.62, 1.0), 0, 0))
 	albedo.generate_mipmaps()
 	rough.generate_mipmaps()
-	var result := {
-		"albedo": ImageTexture.create_from_image(albedo),
-		"normal": normal_from_height(height, SIZE, _bump_for(kind)),
-		"rough": ImageTexture.create_from_image(rough),
-		"mean": mean,
-	}
-	_maps[kind] = result
-	return result
+	return {"albedo": albedo, "normal": _normal_image(height, SIZE, _bump_for(kind)), "rough": rough, "mean": mean}
 
 
 static func _bump_for(kind: String) -> float:

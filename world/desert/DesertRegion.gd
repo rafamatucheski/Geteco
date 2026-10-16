@@ -483,9 +483,18 @@ func _water_tower(chunk: Node3D, at: Vector3) -> void:
 	G.cylinder(chunk,"TankRim",at+Vector3(0,13.04,0),3.3,.2,Color("736c56"))
 
 func _dress(chunk: Node3D, rect: Rect2, key: Vector2i) -> void:
+	# Spans por etapa (16/10): o pico de ~150 ms sem span na travessia em (479, -333) cai
+	# justamente no quadro em que um trecho do deserto se veste.
+	var began := STALL_WORK.begin()
 	DETAIL.build_chunk(chunk,rect,roads,_decoration_clear,_ground_height)
+	STALL_WORK.finish_slow("stream.desert.dress.detail",began,2000)
+	began = STALL_WORK.begin()
 	if rect.intersects(RELIEF.BOUNDS): CANYON_DRESSING.build_chunk(chunk,rect,6102026,_ground_height)
+	STALL_WORK.finish_slow("stream.desert.dress.canyon",began,2000)
+	began = STALL_WORK.begin()
 	if rect.intersects(RELIEF.BOUNDS): DRY_FLORA.build_chunk(chunk,rect,6102026,_ground_height)
+	STALL_WORK.finish_slow("stream.desert.dress.flora",began,2000)
+	began = STALL_WORK.begin()
 	var rng := RandomNumberGenerator.new()
 	rng.seed=absi(key.x*73856093^key.y*19349663)+6606
 	for i in 8:
@@ -507,6 +516,7 @@ func _dress(chunk: Node3D, rect: Rect2, key: Vector2i) -> void:
 		var center := rect.get_center()
 		if not RELIEF.BOUNDS.grow(34).has_point(center) and _decoration_clear(center,34):
 			ROCK_FORMS.create_outcrop(chunk,Vector3(center.x,_ground_height(center),center.y),28.0,23.0,absi(key.x*771+key.y*331),true)
+	STALL_WORK.finish_slow("stream.desert.dress.props",began,2000)
 
 func _ground_height(point: Vector2) -> float:
 	if SMUGGLER_LAYOUT.enabled() and SMUGGLER_LAYOUT.BOUNDS.has_point(point): return preload("res://world/desert/canyon/DesertSmugglerTerrain.gd").surface_height(point)
