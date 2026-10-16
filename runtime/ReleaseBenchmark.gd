@@ -4,6 +4,9 @@ extends Node
 ## e release com os mesmos interruptores (variáveis de ambiente).
 ## Uso: GetecoV2.exe -- --no-save --benchmark --no-dispatch --benchmark-route=oeste --play-at=harbor,64,82 --label=x
 ##      (porto: --benchmark-route=porto --play-at=harbor,150,82). Grava user://benchmark-west/<label>.json e sai.
+## Noite e chuva (15/10): --benchmark-hour=H (0..24, padrão 12) e --benchmark-rain[=1|2] (2 tempestade, padrão;
+## 1 garoa) com o chão já molhado. Exercitam o que o meio-dia seco não liga: postes/faróis/janelas, sombras de
+## faróis, partículas de chuva, respingos e a captura do reflexo do chão molhado. Sem as opções, nada muda.
 const ROUTE_WEST := [Vector3(64, 0, 82), Vector3(150, 0, 82), Vector3(143, 0, 60), Vector3(84, 0, 60), Vector3(84, 0, 123), Vector3(65, 0, 113)]
 const ROUTE_PORT := [Vector3(150, 0, 82), Vector3(250, 0, 82), Vector3(250, 0, 30), Vector3(180, 0, 30), Vector3(180, 0, 82)]
 ## Pontos quentes das outras regiões (censo de 14/10). Serra: --play-at=mountain,650,-290; ponte cidade–serra:
@@ -23,12 +26,15 @@ const MEASURE_LOOPS := 2
 const TOGGLES := ["GETECO_POP_VC", "GETECO_SUN_SHADOW_NEAR", "GETECO_TRAFFIC_RAILS", "GETECO_PED_POSE_LOD", "GETECO_LIGHT_BUDGET",
 	"GETECO_DETAIL_RANGE", "GETECO_BAKED_BUILDINGS", "GETECO_SKID_BUDGET", "GETECO_DASH_BATCH", "GETECO_DISPATCH_FAST",
 	"GETECO_PED_DUMMY", "GETECO_BUILDING_BATCH", "GETECO_PROP_INSTANCING", "GETECO_GROUND_STACK", "GETECO_SHADOW_SHELL",
-	"GETECO_BRIDGE_MERGE", "GETECO_FURNITURE_MERGE", "GETECO_CELL_MERGE", "GETECO_BRIDGE_LOOK", "GETECO_PAINTED_WINDOWS", "GETECO_PAINTED_FACADES"]
+	"GETECO_BRIDGE_MERGE", "GETECO_FURNITURE_MERGE", "GETECO_CELL_MERGE", "GETECO_BRIDGE_LOOK", "GETECO_PAINTED_WINDOWS", "GETECO_PAINTED_FACADES",
+	"GETECO_SUN_SPLITS"]
 
 var world: Node
 var route: Array = ROUTE_WEST
 var label := "release"
 var route_name := ""
+var bench_hour := 12.0
+var bench_rain := 0
 
 static func requested() -> bool:
 	for argument in OS.get_cmdline_user_args():
@@ -45,6 +51,9 @@ func _ready() -> void:
 			route = ROUTES[named]
 			route_name = named
 		if argument.begins_with("--label="): label = argument.trim_prefix("--label=")
+		if argument.begins_with("--benchmark-hour="): bench_hour = fposmod(float(argument.trim_prefix("--benchmark-hour=")), 24.0)
+		if argument == "--benchmark-rain": bench_rain = 2
+		elif argument.begins_with("--benchmark-rain="): bench_rain = clampi(int(argument.trim_prefix("--benchmark-rain=")), 0, 2)
 	_run.call_deferred()
 
 func _route_point(distance: float) -> Dictionary:
@@ -80,8 +89,11 @@ func _run() -> void:
 	# filme pulado pela espera acima): mede o custo de loading na mesma rodada.
 	var playable_ms := stable_since
 	var weather: Variant = world.session.weather
-	weather.time_of_day = 12.0 / 24.0
-	if "weather_state" in weather: weather.weather_state = 0
+	weather.time_of_day = bench_hour / 24.0
+	if "weather_state" in weather: weather.weather_state = bench_rain
+	# Chuva já assentada: a umidade da costa leva minutos para subir sozinha e o reflexo do chão
+	# só liga acima de 0,015. Sem chuva continua seco, como antes.
+	if bench_rain > 0 and "coastal_wetness" in weather: weather.coastal_wetness = 1.0
 	if "weather_timer" in weather: weather.weather_timer = 1.0e9
 	var car: CharacterBody3D = world.driving.car
 	car.set_physics_process(false)
@@ -119,7 +131,8 @@ func _run() -> void:
 		"frames_over_100ms": frames.filter(func(ms): return ms > 100.0).size(),
 		"frames_over_6_9ms": frames.filter(func(ms): return ms > 6.94).size(), "frames_over_16_7ms": frames.filter(func(ms): return ms > 16.7).size(),
 		"frames_over_33ms": frames.filter(func(ms): return ms > 33.3).size(), "playable_ms": playable_ms, "frames_over_250ms": frames.filter(func(ms): return ms > 250.0).size(),
-		"resolution": str(get_viewport().get_visible_rect().size), "vehicles": world.production.vehicles.size(), "people": world.people.size()}
+		"resolution": str(get_viewport().get_visible_rect().size), "viewport_pixels": str(get_viewport().size), "msaa": get_viewport().msaa_3d,
+		"hour": bench_hour, "rain": bench_rain, "vehicles": world.production.vehicles.size(), "people": world.people.size()}
 	print("BENCH_RELEASE ", JSON.stringify({"label": label, "frame_p50": report.frame_ms.p50, "frame_p95": report.frame_ms.p95, "draws_p50": report.draw_calls.p50}))
 	var folder := "user://benchmark-west"
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))

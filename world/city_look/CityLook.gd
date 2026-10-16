@@ -295,11 +295,15 @@ func _orient_sun() -> void:
 	if sun == null or not is_instance_valid(sun): return
 	var session = controller.get("session")
 	if not String(controller.state.place_id).is_empty() and (session==null or not is_instance_valid(session.weather) or not session.weather._embedded_building()): return
-	sun.rotation_degrees.y = -135.0
+	# Roda todo quadro: só escreve quando o valor muda. Cada escrita de rotação
+	# propaga transformação e reenvia a luz ao RenderingServer, mesmo igual.
+	var angles: Vector3 = sun.rotation_degrees
+	angles.y = -135.0
 	if controller.state.region_id == "harbor":
 		# Weather owns the coastal solar angle. Re-clamping it every rendered
 		# frame used to fight Weather's slower updates and alternate shadows.
-		if session != null and is_instance_valid(session.weather) and session.weather.get("coastal_look") != null and session.weather.coastal_look.installed: return
-		sun.rotation_degrees.x = maxf(sun.rotation_degrees.x, -35.0)
+		if not (session != null and is_instance_valid(session.weather) and session.weather.get("coastal_look") != null and session.weather.coastal_look.installed):
+			angles.x = maxf(angles.x, -35.0)
 	elif controller.state.region_id == "mountain":
-		sun.rotation_degrees.x = maxf(sun.rotation_degrees.x, -42.0)
+		angles.x = maxf(angles.x, -42.0)
+	if not angles.is_equal_approx(sun.rotation_degrees): sun.rotation_degrees = angles

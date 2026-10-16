@@ -60,6 +60,7 @@ func run() -> void:
 		owner.free()
 	source.free()
 	await _check_interpolated_batch(stage)
+	_check_dynamic_bodies(stage)
 	var camera := Camera3D.new()
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	camera.size = 12
@@ -169,3 +170,45 @@ func _check_interpolated_batch(stage: Node3D) -> void:
 	if source.physics_interpolation_mode != Node.PHYSICS_INTERPOLATION_MODE_ON:
 		errors.append("Reflection sync altered source interpolation")
 	source.free()
+
+## Malhas de veículo/ator: corpo inteiro de um lado decide todas as malhas; corpo
+## cruzando o plano volta ao teste exato por malha.
+func _check_dynamic_bodies(stage: Node3D) -> void:
+	var owner := PLANAR.new()
+	owner._bits = Vector2i(1 << 16, 1 << 17)
+	owner._plane_normal = Vector3.BACK
+	owner._plane_point = Vector3.ZERO
+	# O teste exato por malha só marca a fachada com uma fachada selecionada.
+	var facade := MeshInstance3D.new()
+	owner._facade = facade
+	var body := CharacterBody3D.new()
+	stage.add_child(body)
+	var front := MeshInstance3D.new()
+	front.mesh = BoxMesh.new()
+	front.mesh.size = Vector3(.5, .5, .5)
+	front.position = Vector3(0, 0, 2.5)
+	var back := MeshInstance3D.new()
+	back.mesh = front.mesh
+	back.position = Vector3(0, 0, -2.5)
+	body.add_child(front)
+	body.add_child(back)
+	for mesh in [front, back]:
+		owner._registered[mesh.get_instance_id()] = weakref(mesh)
+		owner._dynamic[mesh.get_instance_id()] = weakref(mesh)
+		owner._add_dynamic_to_body(mesh, body)
+	body.position = Vector3(0, 0, 10)
+	owner._classify_dynamic()
+	if not (front.layers & (1 << 17)) or not (back.layers & (1 << 17)): errors.append("Body entirely in front lost the facade layer")
+	body.position = Vector3(0, 0, -10)
+	owner._classify_dynamic()
+	if (front.layers & (1 << 17)) or (back.layers & (1 << 17)): errors.append("Body entirely behind kept the facade layer")
+	body.position = Vector3.ZERO
+	owner._classify_dynamic()
+	if not (front.layers & (1 << 17)) or (back.layers & (1 << 17)): errors.append("Straddling body was not classified per mesh")
+	if not (front.layers & 1) or not (back.layers & 1): errors.append("Dynamic classification touched gameplay layers")
+	owner._remove_node(back)
+	owner._remove_node(front)
+	if not owner._bodies.is_empty(): errors.append("Removed meshes left a dynamic body entry")
+	owner.free()
+	body.free()
+	facade.free()

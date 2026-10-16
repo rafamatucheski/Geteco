@@ -115,7 +115,9 @@ void fragment() {
 	SPECULAR = 0.25;
 
 	float e = 0.05;
-	float h0 = ground_noise(q * 3.3, 4096.0) + ground_noise(q * 11.0, 8192.0) * 0.5;
+	// Mesmo ruído de `fine` e `grain` acima: reaproveitar poupa 2 ruídos (8 hashes)
+	// por pixel de chão sem mudar um bit da imagem.
+	float h0 = fine + grain * 0.5;
 	float hx = ground_noise((q + vec2(e, 0.0)) * 3.3, 4096.0) + ground_noise((q + vec2(e, 0.0)) * 11.0, 8192.0) * 0.5;
 	float hz = ground_noise((q + vec2(0.0, e)) * 3.3, 4096.0) + ground_noise((q + vec2(0.0, e)) * 11.0, 8192.0) * 0.5;
 	vec2 bump = vec2(hx - h0, hz - h0) / e * bump_scale;

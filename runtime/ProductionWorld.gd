@@ -22,6 +22,12 @@ const MAX_POPULATION := 40
 const TRAFFIC_TARGET := 40
 static var population_vc_enabled := OS.get_environment("GETECO_POP_VC") != "0"
 static var sun_shadow_near_enabled := OS.get_environment("GETECO_SUN_SHADOW_NEAR") != "0"
+# A/B de cascatas do sol (fase 2 da revisão de desempenho, 15/10): padrão continua 4.
+# Com sombra só até 55 m na câmera ortográfica, 4 cascatas repetem a passada de
+# sombra dos mesmos prédios 4 vezes (CPU de culling + draw calls). GETECO_SUN_SPLITS=2
+# mede o custo de 2 cascatas antes de qualquer troca de padrão (troca visual: menos
+# resolução de sombra perto da câmera).
+static var sun_shadow_splits := clampi(int(OS.get_environment("GETECO_SUN_SPLITS")) if OS.get_environment("GETECO_SUN_SPLITS") != "" else 4, 1, 4)
 const VC_MAX_POPULATION := 25
 const VC_TRAFFIC_TARGET := 16
 # Os 51/25 m do reVC valem para a câmera baixa em perspectiva dele. A nossa fica a ~30 m de altura e,
@@ -154,6 +160,8 @@ func build() -> void:
 	sun.light_energy = 1.6
 	sun.shadow_enabled = true
 	sun.directional_shadow_max_distance = 55 if sun_shadow_near_enabled else 110
+	if sun_shadow_splits < 4:
+		sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS if sun_shadow_splits >= 2 else DirectionalLight3D.SHADOW_ORTHOGONAL
 	SESSION_OPS.attach(world, sun, self, diagnostic_build)
 	world.maciota_place = SESSION_OPS.instantiate(preload("res://world/maciota/MaciotaPlace.gd"), self)
 	world.maciota_place.exterior_origin = preload("res://world/maciota/MaciotaPlace.gd").INDUSTRIAL_ORIGIN

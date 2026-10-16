@@ -15,6 +15,15 @@ var _environment: Environment
 var _bits := Vector2i.ZERO
 var _registered: Dictionary = {}
 var _dynamic: Dictionary = {}
+# Malhas dinâmicas agrupadas pelo corpo (veículo/ator) dono. Antes a captura
+# da fachada reclassificava cada malha de carro e pedestre em todo quadro com
+# a câmera andando: reflection.dynamic custou 0,28–0,36 ms de média e até 2 ms
+# por quadro no circuito oeste (evidence/profile-west-cpu-20261013). Um teste
+# por corpo resolve quem está inteiro de um lado do plano; só quem cruza o
+# plano volta ao teste por malha, e o layer só é reescrito quando o lado muda.
+const DYNAMIC_BODY_MARGIN := 1.5
+var _bodies: Dictionary = {}
+var _dynamic_body: Dictionary = {}
 var _batches: Dictionary = {}
 var _view_cameras: Dictionary = {}
 var _pending: Array[Node] = []
@@ -106,6 +115,12 @@ func _remove_node(node: Node) -> void:
 		if node is VisualInstance3D: node.layers &= ~(_bits.x | _bits.y)
 		_registered.erase(id)
 		_dynamic.erase(id)
+		if _dynamic_body.has(id):
+			var body_id: int = _dynamic_body[id]
+			_dynamic_body.erase(id)
+			if _bodies.has(body_id):
+				_bodies[body_id].meshes.erase(id)
+				if _bodies[body_id].meshes.is_empty(): _bodies.erase(body_id)
 
 func _register(node: Node) -> void:
 	if node.has_meta("coastal_capture_only"): return
@@ -114,9 +129,12 @@ func _register(node: Node) -> void:
 	if _registered.has(node.get_instance_id()): return
 	var parent := node
 	var dynamic := false
+	var body: Node3D
 	while parent != controller.world and parent != null:
 		if parent.name in EXCLUDED or parent is GPUParticles3D or parent is CPUParticles3D: return
-		if parent is CharacterBody3D or parent is RigidBody3D: dynamic = true
+		if parent is CharacterBody3D or parent is RigidBody3D:
+			dynamic = true
+			if body == null: body = parent
 		parent = parent.get_parent()
 	if node.is_in_group(FACADE_GROUP): return
 	var ground_receiver := false
@@ -132,9 +150,83 @@ func _register(node: Node) -> void:
 	# Exclude horizontal terrain/floors, including sidewalks. They would hide
 	# above-ground geometry from the camera mirrored below the wet street.
 	_registered[node.get_instance_id()] = weakref(node)
-	if dynamic: _dynamic[node.get_instance_id()] = weakref(node)
+	if dynamic:
+		_dynamic[node.get_instance_id()] = weakref(node)
+		_add_dynamic_to_body(node, body)
 	if not ground_receiver and bounds.size.y >= .18 and bounds.end.y >= .25: node.layers |= _bits.x
 	_update_facade_layer(node, bounds)
+
+func _add_dynamic_to_body(node: GeometryInstance3D, body: Node3D) -> void:
+	var body_id := body.get_instance_id()
+	if not _bodies.has(body_id):
+		_bodies[body_id] = {"body": weakref(body), "meshes": {}, "local": AABB(), "dirty": true, "side": 0}
+	var entry: Dictionary = _bodies[body_id]
+	entry.meshes[node.get_instance_id()] = weakref(node)
+	# Peça nova (arma, roupa, dano) amplia a caixa e precisa receber o lado atual.
+	entry.dirty = true
+	entry.side = 0
+	_dynamic_body[node.get_instance_id()] = body_id
+
+## Caixa de todas as malhas no espaço do corpo, com folga para portas, rodas e
+## peças presas a ossos que se movem em relação ao corpo.
+static func _body_local_bounds(body: Node3D, meshes: Dictionary) -> AABB:
+	var inverse := body.global_transform.affine_inverse()
+	var bounds := AABB()
+	var has_bounds := false
+	for ref in meshes.values():
+		var mesh = ref.get_ref()
+		if not is_instance_valid(mesh): continue
+		var part: AABB = (inverse * mesh.global_transform) * mesh.get_aabb()
+		bounds = bounds.merge(part) if has_bounds else part
+		has_bounds = true
+	return bounds.grow(DYNAMIC_BODY_MARGIN) if has_bounds else AABB()
+
+func _set_facade_bit(node: GeometryInstance3D, in_front: bool) -> void:
+	# Mesma regra de _update_facade_layer para malha inteira de um lado do plano:
+	# fonte com lote de captura próprio nunca entra com o layer de fachada.
+	var mask := node.layers & ~_bits.y
+	if in_front and not _batches.has(node.get_instance_id()): mask |= _bits.y
+	if node.layers != mask: node.layers = mask
+
+func _classify_dynamic() -> void:
+	for body_id in _bodies.keys():
+		var entry: Dictionary = _bodies[body_id]
+		var body = entry.body.get_ref()
+		if not is_instance_valid(body):
+			_bodies.erase(body_id)
+			continue
+		# Corpo escondido não contribui para a captura (como a malha escondida antes).
+		if not body.is_visible_in_tree():
+			if _benchmark: last_hidden_dynamic_count += entry.meshes.size()
+			continue
+		if entry.dirty:
+			entry.local = _body_local_bounds(body, entry.meshes)
+			entry.dirty = false
+		var bounds: AABB = body.global_transform * entry.local
+		var distance := _plane_normal.dot(bounds.get_center() - _plane_point)
+		var radius := _plane_normal.abs().dot(bounds.size * .5)
+		var side := 1 if distance - radius >= -.08 else (-1 if distance + radius <= .08 else 0)
+		if side != 0:
+			if side == entry.side: continue
+			entry.side = side
+			for ref in entry.meshes.values():
+				var visual = ref.get_ref()
+				if not is_instance_valid(visual): continue
+				if _benchmark: last_dynamic_checked += 1
+				_set_facade_bit(visual, side > 0)
+			continue
+		# Cruza o plano: teste exato por malha, como antes.
+		entry.side = 0
+		for ref in entry.meshes.values():
+			var visual = ref.get_ref()
+			if not is_instance_valid(visual): continue
+			if _benchmark: last_dynamic_checked += 1
+			# Hidden accessories/LOD meshes cannot contribute to this capture.
+			# A newly visible mesh is classified before UPDATE_ONCE below.
+			if not visual.is_visible_in_tree():
+				if _benchmark: last_hidden_dynamic_count += 1
+				continue
+			_update_facade_layer(visual, visual.global_transform * visual.get_aabb())
 
 func _update_facade_layer(node: GeometryInstance3D, bounds: AABB) -> void:
 	var mask := node.layers & ~_bits.y
@@ -231,10 +323,16 @@ func _process_reflections(delta: float) -> void:
 	if not moving and not facade_entered and _capture_clock < .05: return
 	_capture_clock = 0.0
 	_last_camera = camera.global_transform
-	if wet:
+	# As capturas são viewports sem MSAA (o principal usa o MSAA do jogador): cada
+	# material precisa de pipeline próprio nesse formato, compilado no primeiro
+	# desenho. Sem isto a conta caía na primeira chuva ou na primeira vez que a
+	# fachada da delegacia entra na tela. Sob a cortina (ready_for_play falso)
+	# a captura do chão roda seca, sem ligar a textura a ninguém, só para compilar.
+	var priming: bool = not wet and controller.session.get("ready_for_play") == false
+	if wet or priming:
 		mirror_camera(camera, ground_camera, Vector3.UP, Vector3(0, .035, 0))
 		ground_view.render_target_update_mode = SubViewport.UPDATE_ONCE
-		_bind_ground(true)
+		if wet: _bind_ground(true)
 	if _facade_visible:
 		var batch_started := Time.get_ticks_usec() if _benchmark else 0
 		for entry in _batches.values():
@@ -250,17 +348,7 @@ func _process_reflections(delta: float) -> void:
 		var dynamic_started := Time.get_ticks_usec() if _benchmark else 0
 		# Vehicles/actors can cross the reflecting half-space without a camera
 		# change. Only this small dynamic set needs refreshed eligibility.
-		for ref in _dynamic.values():
-			var visual = ref.get_ref()
-			if is_instance_valid(visual):
-				if _benchmark:
-					last_dynamic_checked += 1
-				# Hidden accessories/LOD meshes cannot contribute to this capture.
-				# A newly visible mesh is classified before UPDATE_ONCE below.
-				if not visual.is_visible_in_tree():
-					if _benchmark: last_hidden_dynamic_count += 1
-					continue
-				_update_facade_layer(visual, visual.global_transform * visual.get_aabb())
+		_classify_dynamic()
 		if _benchmark: last_dynamic_usec = Time.get_ticks_usec() - dynamic_started
 		mirror_camera(camera, facade_camera, _plane_normal, _plane_point)
 		facade_view.render_target_update_mode = SubViewport.UPDATE_ONCE
@@ -338,6 +426,8 @@ func _select_facade(camera: Camera3D) -> void:
 	for ref in _registered.values():
 		var node = ref.get_ref()
 		if is_instance_valid(node): _update_facade_layer(node, node.global_transform * node.get_aabb())
+	# Lado por corpo era relativo ao plano anterior.
+	for entry in _bodies.values(): entry.side = 0
 
 func _bind_ground(enabled: bool) -> void:
 	var projection := projection_for(ground_camera) if enabled else Projection.IDENTITY
@@ -367,6 +457,8 @@ func _exit_tree() -> void:
 		if is_instance_valid(node): node.layers &= ~(_bits.x | _bits.y)
 	_registered.clear()
 	_dynamic.clear()
+	_bodies.clear()
+	_dynamic_body.clear()
 	for entry in _view_cameras.values():
 		var camera = entry.camera.get_ref()
 		if is_instance_valid(camera): camera.cull_mask |= int(entry.bits)

@@ -10,6 +10,10 @@ var controller
 var lights: Array[OmniLight3D] = []
 var assignments: Dictionary = {}
 var _elapsed := 0.0
+## Postes do editor de mundo já têm OmniLight própria e também se registram como
+## "lamp" no FragileProps: sem este filtro o pool punha uma segunda luz no mesmo
+## poste (energia dobrada) e gastava uma das 6 vagas que iriam para outro poste.
+var _editor_lamp_roots: Dictionary = {}
 
 func _ready() -> void:
 	name = "CityLocalLighting"
@@ -50,16 +54,23 @@ func refresh() -> void:
 ## dia: 33 OmniLight ao meio-dia no release de 2026-10-13. No porto seguem o mesmo fator de noite da cidade;
 ## nas outras regiões continuam como eram.
 func _apply_editor_lights(night: float) -> void:
+	_editor_lamp_roots.clear()
 	for node in get_tree().get_nodes_in_group(&"editor_night_light"):
 		var light := node as OmniLight3D
 		if light == null or str(light.get_meta("region_id", "")) != "harbor": continue
-		light.light_energy = float(light.get_meta("base_energy", light.light_energy)) * night
-		light.visible = night > .01
+		if light.get_parent() != null: _editor_lamp_roots[light.get_parent().get_instance_id()] = true
+		# 4 Hz para todos os postes do editor: só reenvia ao RenderingServer o que mudou.
+		var energy := float(light.get_meta("base_energy", light.light_energy)) * night
+		if not is_equal_approx(light.light_energy, energy): light.light_energy = energy
+		if light.visible != (night > .01): light.visible = night > .01
 
 func nearby_sources(focus: Vector3) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	for item in FRAGILE.query(focus,REACH):
 		if item.kind != "lamp": continue
+		if item.has("root") and not _editor_lamp_roots.is_empty():
+			var root = item.root.get_ref()
+			if is_instance_valid(root) and _editor_lamp_roots.has(root.get_instance_id()): continue
 		var chunk = item.chunk.get_ref()
 		if not is_instance_valid(chunk) or not chunk.is_visible_in_tree(): continue
 		var point: Vector3 = item.point+Vector3(0,5.0,0)
