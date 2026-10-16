@@ -20,6 +20,7 @@ const HARBOR := {
 	"MaritimeMuseum": "museu-maritimo", "ColdStorage": "camara-fria",
 	"CornerDiner": "lanchonete-esquina", "IslandGrocer": "mercado-ilha", "IslandCinema": "cinema",
 	"PromenadeCafe": "cafe-orla",
+	"NorthFireStation": "bombeiros",
 }
 ## A casa do líder mantém a geometria antiga: CobraLeaderEntrance recorta HouseBody,
 ## FrontDoor e FrontPorch para a porta trancada da missão, e a fachada pintada não

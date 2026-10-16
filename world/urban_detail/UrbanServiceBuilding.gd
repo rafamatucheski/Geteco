@@ -34,6 +34,13 @@ func set_open_amount(amount: float) -> void:
 
 func build() -> void:
 	if building_kind == "fire_station" or building_id == "NorthFireStation":
+		# Fachada pintada (estilo bombeiros): o visual troca, a entrada continua a do
+		# lugar harbor_fire_station (proximidade na baia central, sem colisão no vão);
+		# os caminhões nascem perto do incidente e não dependem das baias.
+		var painted := PaintedHarborHouses.style_for(building_id, building_kind)
+		if not painted.is_empty():
+			PaintedHarborHouses.build(self, painted)
+			return
 		_build_fire_station()
 	elif building_kind == "police_precinct" or building_id == "Police":
 		_build_police_precinct()
