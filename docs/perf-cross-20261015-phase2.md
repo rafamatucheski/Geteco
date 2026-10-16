@@ -48,3 +48,49 @@ sincronização), `physics_ticks`.
    `stream.harbor.record.building` ~100 ms (oeste, dirigindo); `stream.harbor.dressing_step`
    ~98 ms; `stream.harbor.record.original_facade` 103–114 ms; `chunk.building_batch`.
 5. Cenários especiais: caos 3 estrelas ok (p50 5–6 ms, pior 46–59 ms).
+
+## Fase 3 (16/10 ~02:20-03:50): pastas de log por rodada (UTC = local + 3 h)
+
+| rodada | início local |
+|---|---|
+| fase3_oeste_1 | 02:20:32 |
+| fase3_porto_1 | 02:23:42 |
+| fase3_sobrados_1 | 02:26:57 |
+| fase3_serra_1 | 02:30:38 |
+| fase3_ponte_1 | 02:33:16 |
+| fase3_travessia_1 | 02:36:33 |
+| fase3_deserto_1 | 02:41:10 |
+| fase3_oeste_2 | 02:43:12 |
+| fase3_porto_2 | 02:46:23 |
+| fase3_sobrados_2 | 02:49:37 |
+| fase3_serra_2 | 02:53:19 |
+| fase3_ponte_2 | 02:55:56 |
+| fase3_travessia_2 | 02:59:14 |
+| fase3_deserto_2 | 03:03:50 |
+| fase3_caos3porto_1 | 03:05:50 |
+| fase3_caos3porto_2 | 03:09:05 |
+| fase3_noiteoeste_1 | 03:12:21 |
+| fase3_noiteoeste_2 | 03:15:30 |
+| fase3_chuvaoeste_1 | 03:18:40 |
+| fase3_chuvaoeste_2 | 03:21:51 |
+| fase3_dirigindooeste_1 | 03:25:01 |
+| fase3_dirigindooeste_2 | 03:33:26 |
+| fase3_semdiagsobrados_1 | 03:39:07 |
+| fase3_semdiagsobrados_2 | 03:42:48 |
+| fase3_semdiagserra_1 | 03:46:28 |
+| fase3_semdiagserra_2 | 03:49:07 |
+
+Resultado: quadros >33 ms caíram muito (oeste 16-17 -> 1, travessia 41-49 -> 7-8, sobrados
+11-14 -> 1, chuva 19-23 -> 1-2). Sobra 1 quadro isolado de 110-220 ms por rodada, de dois tipos:
+- (A) render_bracket 110-180 ms sem span (o agente de pipelines zerou as compilações "draw"):
+  suspeitas = upload de textura grande no primeiro desenho, realocação do atlas de sombra,
+  pipeline de especialização/sombra. Exemplos (posição do jogador): sobrados (303,0,100) e
+  (295,0,2); serra (657,4,-382) e (731,4,-425); ponte (532,0,-285); deserto (-980,0,-1260) e
+  (-964,0,-1320); chuva no início (64,0,82); porto (155,0,82) e (226,0,30); caos (192,0,30) e
+  (170,0,82); noite (103,0,60) e (102,0,82).
+- (B) early_to_late 80-115 ms com spans pequenos perto do início da rota, depois do teleporte
+  de aquecimento (233,0,194) -> (64-68,0,82) e em (154,0,82); travessia_1 (233,0,189) com
+  stream.harbor.dressing_step.5 de 185 ms; oeste_1 terminal.build/terminal.physics.
+- Regressão: ponte_1 (548,0,-285) chunk.cell_merge de 176 ms na fase pós-render com 0 tiques
+  de física (provável espera de tarefa de trabalhador no thread principal).
+- Chuva/noite: p50 subiu ~1 ms (reflexos agora com MSAA 4x).
