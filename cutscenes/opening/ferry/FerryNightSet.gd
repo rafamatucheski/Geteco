@@ -51,23 +51,25 @@ func configure(world, boat: Node3D) -> void:
 	weather.precipitation.hide()
 	var env: Environment = world.production.environment.environment
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color("101c2b")
+	# Fundo e névoa na mesma cor: de cima, o fim do mundo carregado não deixa borda.
+	env.background_color = Color("17263a")
 	env.ambient_light_color = Color("95afc9")
 	env.ambient_light_energy = .43
 	env.tonemap_exposure = 1.05
 	env.fog_enabled = true
 	env.fog_mode = Environment.FOG_MODE_DEPTH
-	env.fog_light_color = Color("1c2c3c")
-	env.fog_light_energy = .65
-	env.fog_density = .012
-	env.fog_depth_begin = 35
-	env.fog_depth_end = 240
+	env.fog_light_color = Color("17263a")
+	env.fog_light_energy = 1.0
+	env.fog_density = .02
+	env.fog_depth_begin = 28
+	env.fog_depth_end = 175
 	env.fog_sky_affect = 1.0
 	world.production.sun.light_energy = .3
 	world.production.sun.light_color = Color("97b5d3")
 	world.production.sun.rotation_degrees = Vector3(-48,-30,0)
 	world.production.sun.directional_shadow_max_distance = 150.0
 	_extend_ocean(world)
+	_hide_stray_skirts(world)
 	_wet_deck()
 	_practicals()
 	_rain()
@@ -93,7 +95,9 @@ func _extend_ocean(world) -> void:
 			for z in 17:
 				for x in 17:
 					var point := Vector2(tx*256+x*16,tz*256+z*16)
-					vertices.append(Vector3(point.x,OCEAN.WATER_Y-.002,point.y))
+					# 12 cm acima da água de jogo: as bordas das placas submersas do canal
+					# ficavam na superfície e, vistas do alto, riscavam o mar em linhas retas.
+					vertices.append(Vector3(point.x,OCEAN.WATER_Y+.12,point.y))
 					normals.append(Vector3.UP)
 					colors.append(Color(source.shore_distance(point)/24.0,0,0,1))
 					uvs.append(Vector2(x*16,z*16))
@@ -116,6 +120,21 @@ func _extend_ocean(world) -> void:
 			water.material_override = material
 			water.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			add_child(water)
+
+func _hide_stray_skirts(world) -> void:
+	# Três saias de placa (-0,3..0 m) dos lotes fundidos caem fora do próprio chunk de
+	# 64 m, em água aberta (ex.: Chunk_2_1 desenhando em x=248..312 no canal). Vistas do
+	# alto, riscavam o mar em linhas retas. Só na filmagem; as saias do cais ficam.
+	for chunk in world.production.region.find_children("Chunk_*","Node3D",false,false):
+		var parts := String(chunk.name).split("_")
+		if parts.size() != 3: continue
+		var origin := Vector2(int(parts[1])*64.0,int(parts[2])*64.0)
+		for mesh in chunk.find_children("*","MeshInstance3D",true,false):
+			if mesh.mesh == null: continue
+			var box: AABB = mesh.global_transform * mesh.get_aabb()
+			if absf(box.position.y+.3) > .01 or absf(box.end.y) > .01: continue
+			if box.position.x < origin.x-1 or box.position.z < origin.y-1 or box.end.x > origin.x+65 or box.end.z > origin.y+65:
+				mesh.hide()
 
 func _wet_deck() -> void:
 	# Only this authoring instance: preserve the gameplay boat's shared materials.

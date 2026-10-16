@@ -25,8 +25,9 @@
       "text": "É a sua primeira vez por aqui?",
       "en": "Is this your first time here?",
       "start": 12.0,
-      "end": 13.838,
+      "end": 13.73,
       "memory": false,
+      "caption_pt": "Primeira vez vindo pra cá?",
       "end_en": 13.739
     },
     {
@@ -35,8 +36,9 @@
       "text": "É. Vim encontrar meu irmão.",
       "en": "Yeah. I'm here to see my brother.",
       "start": 16.0,
-      "end": 18.506,
+      "end": 20.298,
       "memory": false,
+      "caption_pt": "É. Vim atrás do meu irmão.",
       "end_en": 17.928
     },
     {
@@ -45,8 +47,9 @@
       "text": "Faz tempo que vocês não se veem?",
       "en": "Been a while since you saw each other?",
       "start": 21.0,
-      "end": 22.669,
+      "end": 23.006,
       "memory": false,
+      "caption_pt": "Vocês não se veem faz tempo?",
       "end_en": 22.931
     },
     {
@@ -55,8 +58,9 @@
       "text": "Tempo demais.",
       "en": "Too long.",
       "start": 25.0,
-      "end": 26.04,
+      "end": 26.118,
       "memory": false,
+      "caption_pt": "Tempo demais.",
       "end_en": 25.809
     },
     {
@@ -65,8 +69,9 @@
       "text": "Dante? Escuta. O Vicente saiu da prisão.",
       "en": "Dante? Listen. Vicente got out of prison.",
       "start": 31.0,
-      "end": 36.348,
+      "end": 35.621,
       "memory": true,
+      "caption_pt": "Dante? Escuta. O Vicente saiu da prisão.",
       "end_en": 35.809
     },
     {
@@ -75,8 +80,9 @@
       "text": "Meu irmão? Como assim, saiu?",
       "en": "My brother? What do you mean, got out?",
       "start": 37.0,
-      "end": 39.858,
+      "end": 40.557,
       "memory": true,
+      "caption_pt": "Meu irmão? Como assim, saiu?",
       "end_en": 38.96
     },
     {
@@ -85,8 +91,9 @@
       "text": "Viram ele em Harbor. Mas ele não atende mais o telefone.",
       "en": "He was seen in Harbor. But he's stopped answering his phone.",
       "start": 42.0,
-      "end": 47.547,
+      "end": 45.53,
       "memory": true,
+      "caption_pt": "Viram ele em Harbor. Mas agora ele não atende mais.",
       "end_en": 46.256
     },
     {
@@ -95,8 +102,9 @@
       "text": "Peraí... Quem tá falando?",
       "en": "Wait... Who is this?",
       "start": 49.0,
-      "end": 51.227,
+      "end": 51.248,
       "memory": true,
+      "caption_pt": "Peraí... quem tá falando?",
       "end_en": 50.683
     },
     {
@@ -105,8 +113,9 @@
       "text": "Olha lá. Já tão preparando o desembarque.",
       "en": "Look. They're getting ready for us to get off.",
       "start": 57.0,
-      "end": 60.009,
+      "end": 60.764,
       "memory": false,
+      "caption_pt": "Olha lá. Já tão preparando o desembarque.",
       "end_en": 60.043
     },
     {
@@ -115,8 +124,9 @@
       "text": "Valeu pela conversa.",
       "en": "Thanks for the company.",
       "start": 62.0,
-      "end": 63.44,
+      "end": 63.515,
       "memory": false,
+      "caption_pt": "Valeu pela conversa.",
       "end_en": 63.033
     },
     {
@@ -125,8 +135,9 @@
       "text": "Boa sorte com seu irmão.",
       "en": "Good luck with your brother.",
       "start": 65.0,
-      "end": 66.76,
+      "end": 66.763,
       "memory": false,
+      "caption_pt": "Boa sorte com teu irmão.",
       "end_en": 66.394
     }
   ]

@@ -25,26 +25,37 @@ As tomadas têm duração natural, sem acelerar a fala para caber nos planos.
 
 O porto mudou depois da primeira captura (viaduto sobre o canal, passarela do
 terminal, fachadas pintadas), e os planos antigos passaram a ter pilares na frente
-dos rostos. A segunda montagem mantém as mesmas onze falas nos mesmos instantes
-(PT e EN continuam sincronizados) e refaz só a imagem e as camadas de ambiente:
+dos rostos. A segunda montagem mantém as onze falas nos mesmos instantes e refaz a
+imagem, as vozes e o som:
 
 - 14 planos: descida aérea pelo canal ao lado do Northstar; travelling rente à água;
-  conversa no convés; "Tempo demais" por cima do ombro, olhando o caminho percorrido;
-  a balsa entra na sombra do viaduto e a lembrança começa ali.
-- A lembrança fica fria e dessaturada (`adjustment_*` do Environment, só na captura).
-  Em "ele foi visto em Harbor" o filme corta para **Vicente** de costas na rua do
-  cais, parando sob o poste; o rosto fica para o jogo.
-- Volta ao presente por cima dos contêineres do cargueiro, despedida e Dante
-  andando até a amurada da popa enquanto a câmera sobe até a cidade.
-- A balsa desce o canal e entra **de proa** na vaga: a vaga entre o píer e o
-  cargueiro tem ~16 m e não comporta o giro da primeira montagem.
-  `capture_ferry_opening.gd --check-route` varre a caixa do casco acima da linha
-  d'água contra os sólidos; só restam contatos com a passarela no próprio berço,
-  que existem também na posição de jogo da balsa.
-- Som: camadas gravadas de porto, mar aberto e chuva fraca (`audio/ambience_el`),
-  apito, sino de boia, viaduto, trânsito atrás de Vicente, contêineres na
-  atracação e um pad grave sob a lembrança. A margem voz/fundo por fala ficou
-  entre 8,5 e 16,6 dB (RMS no intervalo de cada fala).
+  conversa no convés enquanto a balsa **gira na parte larga do canal**; "Tempo demais"
+  por cima do ombro; a balsa recua para a sombra do viaduto e a lembrança começa ali.
+- A balsa entra **de popa** na vaga, como no jogo: o convés aberto, onde Dante está,
+  encosta no terminal (`ARRIVAL`). Na vaga (~16 m entre o píer e o cargueiro) o giro
+  não cabe; por isso ele acontece antes do viaduto. `--check-route` varre o casco
+  acima da linha d'água: livre até 47 s; depois só toca a passarela no próprio berço,
+  como na posição de jogo da balsa.
+- A lembrança fica fria e dessaturada (`adjustment_*`, só na captura). Em "ele não
+  atende mais" o filme mostra **Vicente** (corpo do Dante, `dante_trench`, cachecol
+  vermelho) na amurada do cais oeste: olha o celular aceso, joga-o no mar e vai embora.
+- Vozes: o stem português usa as tomadas do elenco dirigido do jogo
+  (`audio/mission_voices/directed/runtime.json`): Dante, o passageiro e Maciota ao
+  telefone. As tomadas Qwen VoiceDesign desenhavam uma voz por fala; a segunda fala do
+  passageiro media 299 Hz contra 119-170 Hz nas outras e soava como mulher. Cada tomada
+  entra sem o silêncio inicial, no instante da fala; `caption_pt` em `timing.json` traz
+  o que o stem diz (o `text` continua sendo a chave do roteiro). O stem inglês segue o
+  dub existente (`tools/build_ferry_english_voice.py`, elenco inglês do jogo, 104-167 Hz).
+  `FerryVoiceTrack` (troca do stem pelas tomadas em tempo real) segue desativado na
+  prática, como antes: ligá-lo expôs a falha "trocar a língua da voz em pausa preserva a
+  pausa e o mudo da trilha embutida" em `test_directed_ferry_production`.
+- Sem trilha musical (rejeitada na revisão); o stem `music.ogg` fica mudo para manter
+  a mixagem de três stems. Camadas gravadas de porto, mar e chuva (`audio/ambience_el`)
+  e efeitos pontuais. Margem voz/fundo por fala: 9,5 a 22,7 dB (RMS no intervalo).
+- De cima não aparecem os limites do mundo: névoa mais densa na cor do fundo, oceano
+  da filmagem 12 cm acima da água de jogo e três saias de placa que os lotes fundidos
+  desenham fora do próprio chunk (em água aberta) ficam ocultas na filmagem. A captura
+  passa o jogador por pontos da rota antes de filmar para todo o canal estar montado.
 
 ## Reprodução da produção
 

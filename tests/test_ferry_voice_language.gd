@@ -30,7 +30,7 @@ func run() -> void:
 				check(film.stems[2].stream.resource_path.ends_with("voice_en.ogg") and film.stems[2].playing, "English production stem plays")
 				check(absf(film.stems[2].stream.get_length()-film.duration)<.1 and film.stems[2].bus == "SFX", "Dub covers full movie on voice bus")
 			film._show_caption(16.1)
-			check(("I'm here to see my brother" in film.subtitle.text) if text_language=="en" else ("Vim encontrar meu irmão" in film.subtitle.text), "Subtitles follow text choice")
+			check(("I'm here to see my brother" in film.subtitle.text) if text_language=="en" else ("Vim atrás do meu irmão" in film.subtitle.text), "Subtitles follow text choice")
 			film.pause_playback()
 			check(film.video.paused and film.stems.all(func(stem): return stem.stream_paused), "Pause freezes movie and every stem")
 			film.resume_playback()

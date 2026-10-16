@@ -26,7 +26,8 @@ func run() -> void:
 	check(paused and root.disable_3d, "ferry opening owns pause and suspends hidden city rendering")
 	check(film.video.stream != null and film.video.stream.resource_path.ends_with("/ferry/arrival.ogv"), "opening selects the produced boat movie")
 	film._show_caption(16.1)
-	check("Vim encontrar meu irmão" in film.subtitle.text, "Dante explains the boat journey")
+	# 16/10: o stem português usa o elenco dirigido, que diz "Vim atrás do meu irmão".
+	check("Vim atrás do meu irmão" in film.subtitle.text, "Dante explains the boat journey")
 	film._show_caption(31.1)
 	check("Vicente" in film.subtitle.text and "lembrança" in film.subtitle.text, "phone call appears as a memory aboard the ferry")
 	film._show_caption(3.0)

@@ -37,7 +37,15 @@ func run() -> void:
 		await process_frame
 		if world.session != null and world.session.ready_for_play: break
 	assert(world.session != null and world.session.ready_for_play)
-	world.player.teleport(Vector3(233,.56,188.2))
+	# A abertura começa ~120 m ao norte do berço. Com o foco só no berço, as células do
+	# canal ficavam meio montadas e, vistas do alto, só o contorno das placas aparecia
+	# riscando o mar. Passa o jogador por pontos de terra ao longo da rota e espera cada
+	# trecho terminar; todos ficam a até 2 células do berço (retention_radius).
+	for point in [Vector3(282,.6,72),Vector3(282,.6,128),Vector3(201,.6,191),Vector3(233,.56,188.2)]:
+		world.player.teleport(point)
+		var settle := Time.get_ticks_msec() + 60000
+		for i in 20: await physics_frame
+		while not world.production.region.is_streaming_idle() and Time.get_ticks_msec() < settle: await physics_frame
 	world.production.region.set_focus(Vector3(233,0,183.5))
 	for i in 120: await physics_frame
 	director = preload("res://cutscenes/opening/ferry/FerryDirector.gd").new()
@@ -84,6 +92,26 @@ func run() -> void:
 			await process_frame
 			quit(0)
 			return
+	if "--hide-skirts" in OS.get_cmdline_user_args():
+		for mesh in world.find_children("*","MeshInstance3D",true,false):
+			if mesh.mesh == null or not "CellMergeBatches" in str(mesh.get_path()): continue
+			var box: AABB = mesh.global_transform * mesh.get_aabb()
+			if absf(box.position.y+.3) < .01 and absf(box.end.y) < .01:
+				print("FERRY_HIDE_SKIRT ",mesh.get_path()," ",box)
+				mesh.hide()
+	if "--water-meshes" in OS.get_cmdline_user_args():
+		# Diagnóstico: superfícies grandes perto da linha d'água (riscos vistos do alto).
+		for mesh in world.get_tree().root.find_children("*","MeshInstance3D",true,false):
+			if not mesh.is_visible_in_tree() or mesh.mesh == null: continue
+			var box: AABB = mesh.global_transform * mesh.get_aabb()
+			if box.position.y > .3 or box.end.y < -1.6: continue
+			if maxf(box.size.x,box.size.z) < 30.0: continue
+			var material = mesh.material_override if mesh.material_override != null else mesh.mesh.surface_get_material(0)
+			print("FERRY_WATER_MESH ",mesh.get_path()," y=%.3f..%.3f"%[box.position.y,box.end.y]," xz=",Vector2(box.position.x,box.position.z),"..",Vector2(box.end.x,box.end.z)," mat=",material.resource_path if material else "-"," ",material.get_class() if material else "")
+		world.queue_free()
+		await process_frame
+		quit(0)
+		return
 	if "--validate-motion" in OS.get_cmdline_user_args():
 		# Mesma checagem de braço/celular do gravador, sem gravar: os ossos são CPU.
 		var jumps := 0

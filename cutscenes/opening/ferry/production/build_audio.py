@@ -54,13 +54,43 @@ def srt_time(t):
     ms=round(t*1000)
     return f"{ms//3600000:02}:{ms//60000%60:02}:{ms//1000%60:02},{ms%1000:03}"
 
+def directed_takes():
+    # The gameplay cast's validated takes (Dante, the passenger and Maciota on the
+    # phone). They replace the per-line Qwen VoiceDesign takes, which designed a new
+    # voice for every line: the passenger's second line measured 299 Hz against
+    # 119-170 Hz on his others, heard as a woman for one sentence (16/10).
+    found={}
+    def walk(node):
+        if isinstance(node,dict):
+            if "spoken_text" in node and "path" in node: found[(node["source"],node["language"])]=node
+            for value in node.values(): walk(value)
+        elif isinstance(node,list):
+            for value in node: walk(value)
+    walk(json.loads((GAME/"audio/mission_voices/directed/runtime.json").read_text(encoding="utf-8")))
+    return found
+
+def speech_lead(signal):
+    # Silence before the first syllable; the take is scheduled this much earlier.
+    mono=signal.mean(axis=1) if signal.ndim==2 else signal
+    energy=np.sqrt(np.convolve(mono**2,np.ones(480)/480,"same"))
+    voiced=np.where(energy>max(float(energy.max())*.06,.002))[0]
+    return max(0.0,voiced[0]/RATE-.04) if len(voiced) else 0.0
+
 def main():
     manifest=json.loads((ROOT/"production/voices.json").read_text(encoding="utf-8"))
+    takes=directed_takes()
     voices=np.zeros((round(DURATION*RATE),2))
     rows=[]
+    leads={}
     previous=0.0
     for line in manifest["lines"]:
-        signal=read(ROOT/"production/takes"/line["file"])
+        take=takes[(line["text"],"pt_BR")]
+        signal=read(GAME/take["path"].replace("res://",""))
+        lead=speech_lead(signal)
+        signal=signal[round(lead*RATE):]
+        english=takes.get((line["text"],"en"))
+        leads[line["id"]]={"lead_pt":round(lead,3),"lead_en":round(speech_lead(read(GAME/english["path"].replace("res://",""))),3) if english else 0.0,
+            "spoken_pt":take["spoken_text"],"spoken_en":english["spoken_text"] if english else line["en"]}
         start=line["start"]
         assert start>=previous+.25, "Overlapping natural-duration performances"
         memory=line["id"] in ["release","surprise","clue","identity"]
@@ -71,7 +101,7 @@ def main():
         put(voices,signal,start)
         previous=start+len(signal)/RATE
         row={key:line[key] for key in ["id","speaker","text","en"]}
-        row.update(start=start,end=round(previous,3),memory=memory)
+        row.update(start=start,end=round(previous,3),memory=memory,caption_pt=leads[line["id"]]["spoken_pt"])
         rows.append(row)
     ambience=loop_recording(GAME/"audio/living_city/water_0.ogg",.06)
     ambience+=loop_recording(GAME/"audio/acoustic/engine_diesel_0.wav",.045)
@@ -117,13 +147,10 @@ def main():
     for start in [52.0,52.35]:
         t=np.arange(round(.13*RATE))/RATE
         put(voices,fade(np.sin(2*np.pi*440*t),.012,.025),start,.027)
-    # Low sustained pad under the remembered call; it swells as Vicente appears.
-    t=np.arange(len(music))/RATE
-    swell=np.clip((t-29.5)/3,0,1)*np.clip((53.5-t)/2,0,1)*(1+.6*np.clip((t-42)/2,0,1)*np.clip((49.5-t)/1.5,0,1))
-    pad=sum(np.sin(2*np.pi*f*t+p)*w for f,p,w in [(55,0,.6),(82.41,1.1,.35),(110.6,2.3,.2),(164.81,.4,.12)])
-    pad*=1+.15*np.sin(2*np.pi*.11*t)
-    music+=np.column_stack([pad*.9,pad*1.1])*swell[:,None]*.011
     music=fade(music,.1,1.8)
+    # No score since 16/10: the plucked motif and the pad were rejected in review.
+    # The stem stays (silent) so the player's three-stem mix is unchanged.
+    music*=0.0
     metrics={"voice":save("voice",voices),"ambience":save("ambience",ambience),"music":save("music",music)}
     save("review_mix",voices+ambience+music)
     # The English stem (tools/build_ferry_english_voice.py) stores its own line
@@ -139,7 +166,8 @@ def main():
     for lang in ["pt","en"]:
         blocks=[]
         for i,row in enumerate(rows):
-            text=row["text" if lang=="pt" else "en"]
+            # PT: what the directed Portuguese stem says; EN: the English dub's script.
+            text=row["caption_pt"] if lang=="pt" else row["en"]
             if row["memory"]: text=("[Lembrança] " if lang=="pt" else "[Memory] ")+text
             blocks.append(f"{i+1}\n{srt_time(row['start'])} --> {srt_time(row['end']+.18)}\n{text}\n")
         (ROOT/"production"/(lang+".srt")).write_text("\n".join(blocks),encoding="utf-8")

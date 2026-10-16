@@ -1,43 +1,43 @@
 1
-00:00:12,000 --> 00:00:14,018
-É a sua primeira vez por aqui?
+00:00:12,000 --> 00:00:13,910
+Primeira vez vindo pra cá?
 
 2
-00:00:16,000 --> 00:00:18,686
-É. Vim encontrar meu irmão.
+00:00:16,000 --> 00:00:20,478
+É. Vim atrás do meu irmão.
 
 3
-00:00:21,000 --> 00:00:22,849
-Faz tempo que vocês não se veem?
+00:00:21,000 --> 00:00:23,186
+Vocês não se veem faz tempo?
 
 4
-00:00:25,000 --> 00:00:26,220
+00:00:25,000 --> 00:00:26,298
 Tempo demais.
 
 5
-00:00:31,000 --> 00:00:36,528
+00:00:31,000 --> 00:00:35,801
 [Lembrança] Dante? Escuta. O Vicente saiu da prisão.
 
 6
-00:00:37,000 --> 00:00:40,038
+00:00:37,000 --> 00:00:40,737
 [Lembrança] Meu irmão? Como assim, saiu?
 
 7
-00:00:42,000 --> 00:00:47,727
-[Lembrança] Viram ele em Harbor. Mas ele não atende mais o telefone.
+00:00:42,000 --> 00:00:45,710
+[Lembrança] Viram ele em Harbor. Mas agora ele não atende mais.
 
 8
-00:00:49,000 --> 00:00:51,407
-[Lembrança] Peraí... Quem tá falando?
+00:00:49,000 --> 00:00:51,428
+[Lembrança] Peraí... quem tá falando?
 
 9
-00:00:57,000 --> 00:01:00,189
+00:00:57,000 --> 00:01:00,944
 Olha lá. Já tão preparando o desembarque.
 
 10
-00:01:02,000 --> 00:01:03,620
+00:01:02,000 --> 00:01:03,695
 Valeu pela conversa.
 
 11
-00:01:05,000 --> 00:01:06,940
-Boa sorte com seu irmão.
+00:01:05,000 --> 00:01:06,943
+Boa sorte com teu irmão.

@@ -177,7 +177,9 @@ func _show_caption(time: float) -> void:
 			var speaker := "Dante" if line.speaker == "dante" else ("Passenger" if language == "en" else "Passageiro")
 			if line.speaker == "caller": speaker = "Voice on the phone" if language == "en" else "Voz ao telefone"
 			if line.get("memory",false): speaker += " · memory" if language == "en" else " · lembrança"
-			var text := voice_track.caption(index, language) if voice_track.directed else str(line.en if language == "en" else line.text)
+			# caption_pt: o que o stem português diz de fato (elenco dirigido); text é a
+			# chave do roteiro usada para achar as tomadas e o dub inglês.
+			var text := voice_track.caption(index, language) if voice_track.directed else str(line.en if language == "en" else line.get("caption_pt", line.text))
 			subtitle.text = speaker+"\n"+text
 			break
 

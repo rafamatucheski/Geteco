@@ -12,6 +12,9 @@ var dante
 var passenger
 var vicente
 var vicente_light: SpotLight3D
+var vicente_phone: Node3D
+var _vicente_grip: Node3D
+var _toss_from := Vector3.INF
 var camera: Camera3D
 var phone: Node3D
 var bag: Node3D
@@ -24,16 +27,20 @@ var environment: Environment
 var _grade_base := {}
 var _shot_origin := Vector3.ZERO
 var _last_shot := -1
-# Rota da balsa (tempo, posição). Desce o canal a leste do Northstar, passa sob o
-# viaduto no começo da lembrança e entra de proa na vaga entre o píer e o cargueiro:
-# a vaga tem ~16 m de largura e não comporta o giro de 180° da primeira montagem
-# (a varredura da caixa do casco batia no cargueiro e nos pilares do viaduto).
-const ROUTE := [[0.0,Vector3(256,0,70)],[29.0,Vector3(242,0,161.5)],[45.0,Vector3(236,0,170)],[54.0,Vector3(234,0,177)],[61.0,Vector3(233,0,183.5)]]
-# Vicente na lembrança: anda para o sul pela rua do cais, contra a luz do poste.
-const VICENTE_FROM := Vector3(204.8,0,185.5)
-const VICENTE_TO := Vector3(204.8,0,194.5)
-# Ele para no cone de luz do poste; a luz prática garante a leitura da silhueta.
-const VICENTE_LAMP := Vector3(203.4,4.6,190.5)
+# Rota da balsa (tempo, posição). Desce o canal de proa a leste do Northstar, gira
+# na parte larga do canal durante a conversa e entra de popa na vaga, como no jogo:
+# o convés aberto (onde Dante está) é a popa e encosta no terminal (ARRIVAL). Na vaga
+# entre o píer e o cargueiro (~16 m) o giro não cabe; de proa, Dante saía para a água.
+const ROUTE := [[0.0,Vector3(256,0,70)],[12.0,Vector3(255,0,112)],[27.0,Vector3(253,0,140)],[36.0,Vector3(242,0,161.5)],[47.0,Vector3(236,0,170)],[54.0,Vector3(234,0,177)],[61.0,Vector3(233,0,183.5)]]
+const TURN_FROM := 12.0
+const TURN_TO := 27.0
+# Vicente na lembrança: no cais oeste, junto à amurada (sólida em x = 198..198,5 pelo
+# mapa de --probe), olha o celular aceso, joga-o no mar e some no escuro. É por isso
+# que "ele não atende mais".
+const VICENTE_SPOT := Vector3(198.9,0,191.5)
+const VICENTE_LAMP := Vector3(199.8,4.6,191.0)
+const PHONE_TOSS := 44.85
+const WATER_Y := -0.82 # superfície do oceano da filmagem (FerryNightSet)
 
 func configure(p_world) -> void:
 	world = p_world
@@ -87,17 +94,45 @@ func configure(p_world) -> void:
 		extra.set_process(false)
 		_prepare_closeup_materials(extra)
 		extras.append(extra)
-	# Vicente só aparece de costas, escuro, contra a luz: o rosto fica para o jogo.
-	vicente = CIVILIAN.new()
+	# Vicente usa o corpo do Dante (são irmãos) com o sobretudo escuro e o cachecol
+	# vermelho; o civil segmentado antigo parecia feito de cilindros de perto.
+	vicente = ACTOR.new()
 	vicente.name = "FilmVicente"
-	vicente.appearance_locked = true
-	vicente.appearance_variant = 41
-	vicente.wardrobe_overrides = {"female":false,"build":1,"top":2,"bottom":0,"hat":1,"bag":0,"backpack":false,
-		"beard":2,"hair":0,"top_color":Color("24282d"),"bottom_color":Color("1b1e23"),"hair_color":Color("16120f")}
+	vicente.is_player = true
 	add_child(vicente)
-	vicente.set_process(false)
-	vicente.global_position = VICENTE_FROM
+	vicente.set_physics_process(false)
+	vicente.input_locked = true
+	vicente.collision_layer = 0
+	vicente.collision_mask = 0
+	vicente.set_outfit("dante_trench")
+	vicente.global_position = VICENTE_SPOT
+	vicente.visual.rotation.y = PI*.5
 	vicente.hide()
+	vicente_phone = Node3D.new()
+	add_child(vicente_phone)
+	_box(vicente_phone,Vector3.ZERO,Vector3(.070,.145,.009),Color("15232a"))
+	var screen := MeshInstance3D.new()
+	var face := BoxMesh.new()
+	face.size = Vector3(.062,.128,.001)
+	screen.mesh = face
+	var glow := StandardMaterial3D.new()
+	glow.albedo_color = Color("9fc3ff")
+	glow.emission_enabled = true
+	glow.emission = Color("b9d4ff")
+	glow.emission_energy_multiplier = 1.6
+	screen.material_override = glow
+	screen.position = Vector3(0,0,.005)
+	vicente_phone.add_child(screen)
+	var screen_light := OmniLight3D.new()
+	screen_light.light_color = Color("a9c8ff")
+	# Só o rosto e a mão: com 1,1 / 1,3 m a luz pintava uma faixa branca na amurada.
+	screen_light.light_energy = .35
+	screen_light.omni_range = .7
+	screen_light.position = Vector3(0,0,.08)
+	vicente_phone.add_child(screen_light)
+	vicente_phone.hide()
+	_vicente_grip = Node3D.new()
+	add_child(_vicente_grip)
 	vicente_light = SpotLight3D.new()
 	vicente_light.light_color = Color("ffc98e")
 	vicente_light.light_energy = 14.0
@@ -107,7 +142,7 @@ func configure(p_world) -> void:
 	vicente_light.shadow_enabled = true
 	add_child(vicente_light)
 	vicente_light.global_position = VICENTE_LAMP
-	vicente_light.look_at(Vector3(VICENTE_LAMP.x+1.2,0,VICENTE_LAMP.z+.6),Vector3.FORWARD)
+	vicente_light.look_at(Vector3(VICENTE_SPOT.x-.2,0,VICENTE_SPOT.z+.3),Vector3.FORWARD)
 	vicente_light.hide()
 	phone = Node3D.new()
 	ferry.add_child(phone)
@@ -200,7 +235,7 @@ func sample(t: float, delta: float) -> void:
 	elapsed = t
 	var arrival_u := smoothstep(0.0, 61.0, t)
 	ferry.position = route_position(t)
-	ferry.rotation.y = PI
+	ferry.rotation.y = PI*(1.0-smoothstep(TURN_FROM,TURN_TO,t))
 	ferry.position.y = .025*sin(t*.85)*(1.0-arrival_u)
 	ferry.rotation.z = .003*sin(t*.7)*(1.0-arrival_u)
 	ferry.rotation.x = .002*sin(t*.53+1.0)*(1.0-arrival_u)
@@ -268,16 +303,48 @@ func _direct_vicente(t: float, delta: float) -> void:
 	var on_screen := t >= 41.9 and t < 49.1
 	vicente.visible = on_screen
 	vicente_light.visible = on_screen
-	if not on_screen: return
-	# Anda, para sob o poste como quem confere a rua, e segue para o escuro.
-	var walked := smoothstep(42.0,45.6,t)*.55 + smoothstep(46.7,49.6,t)*.45
-	var before := smoothstep(42.0,45.6,t-delta)*.55 + smoothstep(46.7,49.6,t-delta)*.45
-	vicente.global_position = VICENTE_FROM.lerp(VICENTE_TO,walked)
-	vicente.rotation.y = 0.0
-	vicente.clock = t
-	vicente._speed = (walked-before)*VICENTE_FROM.distance_to(VICENTE_TO)/maxf(delta,.001)
-	vicente._travel = (walked-before)*VICENTE_FROM.distance_to(VICENTE_TO)
-	vicente._pose(delta)
+	if not on_screen:
+		vicente_phone.hide()
+		_toss_from = Vector3.INF
+		return
+	vicente._pose_delta = delta
+	# Olha o aparelho aceso; ergue-o num arremesso curto por cima da amurada; fica um
+	# instante olhando a água; vira para o sul e vai embora pelo cais.
+	var turn := smoothstep(46.3,47.0,t)
+	vicente.visual.rotation.y = lerpf(PI*.5,PI,turn)
+	var walk_start := 46.8
+	var walked := maxf(0.0,t-walk_start)*1.1
+	var before := maxf(0.0,t-delta-walk_start)*1.1
+	vicente.global_position = VICENTE_SPOT+Vector3(.3*smoothstep(46.8,47.6,t),0,walked)
+	vicente._idle_clock = t
+	vicente._apply_pose(vicente._idle_pose)
+	vicente._apply_idle_breath()
+	if t >= walk_start:
+		vicente.phase = fposmod(vicente.phase+(walked-before)/1.8,1.0)
+		vicente._pose_cycle("Walking",vicente.phase,vicente.WALK_START)
+		var walk_pose: Array = vicente._capture_pose()
+		vicente._apply_blend(vicente._idle_pose,walk_pose,smoothstep(walk_start,walk_start+.6,t))
+	var look := smoothstep(42.0,42.8,t)*(1.0-smoothstep(45.0,45.9,t))
+	var raise := smoothstep(44.35,44.8,t)*(1.0-smoothstep(44.9,45.6,t))
+	var arm := .55*look+.38*raise
+	var head: int = vicente.skeleton.find_bone("Head")
+	if head >= 0:
+		var rest: Quaternion = vicente.skeleton.get_bone_pose_rotation(head)
+		# Cabeça baixa no aparelho; depois acompanha a queda até a água.
+		var down := .32*look+.22*smoothstep(44.9,45.4,t)*(1.0-smoothstep(46.0,46.6,t))
+		vicente.skeleton.set_bone_pose_rotation(head,rest*Quaternion(Vector3.RIGHT,down))
+	var holding := t < PHONE_TOSS
+	preload("res://cutscenes/opening/ferry/FerryPhonePose.gd").apply(vicente,vicente_phone if holding else _vicente_grip,arm)
+	if holding:
+		vicente_phone.show()
+		_toss_from = vicente_phone.global_position
+		return
+	# Arremesso: arco curto para oeste, por cima da amurada, até a linha d'água.
+	var dt := t-PHONE_TOSS
+	var point := _toss_from+Vector3(-1.7,1.1,.15)*dt+Vector3(0,-4.9,0)*dt*dt
+	vicente_phone.visible = point.y > WATER_Y
+	vicente_phone.global_position = point
+	vicente_phone.rotation = Vector3(dt*9.0,dt*3.0,dt*6.0)
 
 func _direct_camera(t: float) -> void:
 	var index := shot_at(t)
@@ -314,9 +381,10 @@ func _direct_camera(t: float) -> void:
 			# Por cima do ombro: o que ele olha é o caminho que ficou para trás.
 			_local_shot(Vector3(.38,1.9,2.85).lerp(Vector3(.28,1.93,3.25),e)+hand,Vector3(-.6,1.55,12))
 		6:
-			# A balsa entra na sombra do viaduto: a lembrança começa aqui.
-			camera.fov = 42.0
-			_world_shot(Vector3(262,4,151).lerp(Vector3(261,3.6,152.5),u),ferry.global_position+Vector3(0,1.4,0))
+			# Rente à água sob o viaduto, a balsa recua na direção da sombra: a lembrança
+			# começa aqui.
+			camera.fov = 40.0
+			_world_shot(Vector3(246,3.2,167).lerp(Vector3(246.5,3.0,166.4),u),ferry.global_position+Vector3(0,1.6,0))
 			rain_on_camera = true
 		7:
 			camera.fov = 31.0
@@ -326,10 +394,12 @@ func _direct_camera(t: float) -> void:
 			_local_shot(Vector3(-2.3,1.95,4.75).lerp(Vector3(-2.05,1.95,4.25),u)+hand*.6,Vector3(0,1.9,4.3))
 		9:
 			# "Ele foi visto em Harbor": Vicente de costas na rua do cais.
-			camera.fov = 36.0
+			# Atrás e à direita dele: o aparelho aceso, a amurada e a água escura.
+			camera.fov = 38.0
 			var v: Vector3 = vicente.global_position
-			camera.global_position = v+Vector3(1.0,1.1,-3.9).lerp(Vector3(.7,1.0,-3.0),e)+hand
-			camera.look_at(v+Vector3(-.2,1.3,4),Vector3.UP)
+			camera.global_position = Vector3(202.7,1.7,189.3).lerp(Vector3(202.2,1.62,189.8),e)+hand
+			var phone_focus := Vector3(198.4,1.2,191.6).lerp(Vector3(197.6,-.2,191.8),smoothstep(44.9,45.6,t))
+			camera.look_at(phone_focus.lerp(v+Vector3(0,1.3,0),smoothstep(46.2,47.4,t)),Vector3.UP)
 			rain_on_camera = true
 		10:
 			camera.fov = 27.0
@@ -347,15 +417,17 @@ func _direct_camera(t: float) -> void:
 			_local_shot(Vector3(.62,1.75,7.7).lerp(Vector3(.62,1.72,7.1),u)+hand,Vector3(.62,1.6,4.3))
 		13:
 			# Ele deixa o convés; a câmera sobe até a cidade iluminada.
-			# A popa dá para o píer e para a cidade: a câmera fica atrás dele enquanto
-			# anda até a amurada e sobe em linha reta, inclinando do ombro para a cidade.
-			# (Pela frente, a escada da passarela o escondia no meio da subida.)
-			camera.fov = lerpf(42.0,50.0,e)
+			# A popa encosta no terminal: ele anda até a borda, de frente para a câmera
+			# no cais, e a câmera sobe por cima do terminal até a cidade ao norte.
+			camera.fov = lerpf(40.0,50.0,e)
 			var rise := smoothstep(.3,1.0,u)
-			var near := ferry.to_global(Vector3(.8,2.25,3.1))
-			var far := ferry.to_global(Vector3(.3,20,-4))
-			var head_point := ferry.to_global(dante.position+Vector3(0,1.5,1.5))
-			camera.global_position = near.lerp(far,rise)
+			var near := ferry.to_global(Vector3(-2.4,1.65,8.2))
+			var far := Vector3(230,23,204)
+			var head_point := ferry.to_global(dante.position+Vector3(0,1.5,0))
+			var eye := near.lerp(far,rise)
+			# Sobe antes de recuar: o telhado do terminal fica logo atrás da câmera.
+			eye.y = lerpf(near.y,far.y,smoothstep(0.0,.55,rise))
+			camera.global_position = eye
 			camera.look_at(head_point.lerp(Vector3(222,6,128),smoothstep(.35,1.0,u)),Vector3.UP)
 			rain_on_camera = rise > .3
 	night_set.rain.global_position = (camera.global_position if rain_on_camera else ferry.global_position)+Vector3.UP*9
