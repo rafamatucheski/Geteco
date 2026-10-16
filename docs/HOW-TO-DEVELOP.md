@@ -20,6 +20,14 @@ no jogo, não.
 - Não use `tasklist | grep Godot...` para esperar outro Godot: o nome sai truncado e nunca casa.
 - Testes abrem a janela do jogo. **Não feche** janelas de teste: o teste morre sem erro.
 - Não deixe um teste/script travado segurando a fila; se o seu travar, mate o processo seu.
+- A fila é por **ordem de chegada** (senhas em `$TEMP/geteco-godot-queue.d/`; senha de processo
+  morto e cadeado órfão são descartados sozinhos). Limites de execução (a espera não conta):
+  - `GODOT_RUN_TIMEOUT` (s): padrão 900 em `--script`, sem limite no resto. Estourou → **exit 124**.
+  - `GODOT_ERROR_GRACE` (s, padrão 90): após `SCRIPT ERROR` sem nenhuma saída nesse tempo, o
+    teste é encerrado → **exit 125**. Os dois matam a árvore inteira do Godot (`taskkill /T`), e
+    INT/TERM no script (ex.: `timeout` externo) também.
+  - `GODOT_LOCK_DIR`: cadeado/fila isolados (só para testar o próprio script; aí não espera
+    Godot de fora, salvo `GODOT_WAIT_OTHERS=1`).
 
 ## 2. Medir desempenho: só em release, sempre A/B
 
