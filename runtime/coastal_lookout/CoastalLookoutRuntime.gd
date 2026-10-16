@@ -5,6 +5,7 @@ const BINOCULARS = preload("res://runtime/coastal_lookout/CoastalBinoculars.gd")
 const HORIZON = preload("res://world/desert/DesertHorizon.gd")
 const CITY = preload("res://world/places/coastal_lookout/LookoutDistantCity.gd")
 const SEA = preload("res://world/places/coastal_lookout/LookoutDistantSea.gd")
+const STALL_WORK = preload("res://runtime/StallWorkTrace.gd")
 const ENTRY := Vector3(319.5,0.05,-130.5)
 var world
 var site: Node3D
@@ -16,6 +17,7 @@ var _site_template: PackedScene
 var _horizon_template: PackedScene
 var _city_template: PackedScene
 var _city_sources: Array[Dictionary] = []
+var _preparing := false
 var active: bool:
 	get: return is_instance_valid(binoculars) and binoculars.active
 
@@ -28,24 +30,58 @@ func _ready() -> void:
 	_update_residency()
 
 func _prepare_templates() -> void:
-	if _site_template != null: return
+	if _site_template != null or _preparing: return
+	_preparing = true
 	var began := Time.get_ticks_usec()
 	# FullSession creates this runtime under its loading curtain, before physics
 	# or play is admitted. Build detached templates here, not on first approach.
 	# Only resources remain cached: distant collision/light/render nodes are freed.
+	# Cede o quadro entre as partes: montado de uma vez levava ~11 s num quadro só (o
+	# horizonte do deserto, ~9 s), a janela parava de responder no carregamento
+	# (auditoria de 16/10). _update_residency já espera os modelos ficarem prontos.
+	var tree := get_tree()
+	await tree.process_frame
+	if not is_inside_tree():
+		_preparing = false
+		return
+	var t := STALL_WORK.begin()
 	var model = SITE.new()
 	model.build()
+	STALL_WORK.finish("lookout.site.build", t)
+	await tree.process_frame
+	if not is_inside_tree():
+		model.free()
+		return
+	t = STALL_WORK.begin()
 	model.add_child(SEA.build())
 	_site_template = _pack_detached(model)
-	var relief: Node3D = HORIZON.build()
+	STALL_WORK.finish("lookout.site.pack", t)
+	await tree.process_frame
+	if not is_inside_tree(): return
+	var relief: Node3D = await HORIZON.build_sliced(tree)
+	if not is_inside_tree():
+		relief.free()
+		return
+	t = STALL_WORK.begin()
 	relief.name = "LookoutDesertHorizon"
 	_horizon_template = _pack_detached(relief)
+	STALL_WORK.finish("lookout.pack_horizon", t)
+	await tree.process_frame
+	if not is_inside_tree(): return
+	t = STALL_WORK.begin()
 	var city = CITY.new()
 	city.build(world.production)
 	_city_sources.assign(city.source_buildings)
 	_city_template = _pack_detached(city)
+	STALL_WORK.finish("lookout.city", t)
+	_preparing = false
 	set_meta("template_prepare_ms",float(Time.get_ticks_usec()-began)/1000.0)
 	set_meta("template_generation_count",int(get_meta("template_generation_count",0))+1)
+	_update_residency()
+
+## ProductionWorld segura `ready_for_play` até isto ficar falso: as fatias do preparo não podem cair no jogo.
+func is_preparing() -> bool:
+	return _preparing and is_inside_tree()
 
 func _pack_detached(model: Node) -> PackedScene:
 	_assign_template_owners(model,model)

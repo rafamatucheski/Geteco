@@ -19,6 +19,21 @@ static func build_visuals() -> Node3D:
 	root.add_child(preload("res://world/desert/canyon/ScavengerRemains.gd").build())
 	return root
 
+## Versão fatiada de build_visuals para o mirante costeiro (carregamento de 16/10).
+static func build_visuals_sliced(tree: SceneTree) -> Node3D:
+	if not L.enabled(): return Node3D.new()
+	var root: Node3D = await T.build_visuals_sliced(tree)
+	root.name="SmugglerCanyon"
+	await tree.process_frame
+	var structure := Node3D.new()
+	structure.name="ExposedGorgeBridge"
+	root.add_child(structure)
+	_bridge(structure,Rect2(-1500,-850,400,450),false)
+	G.batch_repeated_meshes(structure)
+	await tree.process_frame
+	root.add_child(preload("res://world/desert/canyon/ScavengerRemains.gd").build())
+	return root
+
 static func build_chunk(parent: Node3D,rect: Rect2) -> Node3D:
 	if not L.enabled(): return null
 	T.build_collision(parent,rect)

@@ -36,6 +36,8 @@ func configure(owner_session) -> void:
 	session = owner_session
 	world = session.world
 
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+
 func _ready() -> void:
 	name = "AmusementParkRuntime"
 	rewards = REWARDS.new()
@@ -48,8 +50,18 @@ func _ready() -> void:
 	vending.configure(session)
 	# Build outside the scene tree while the loading curtain is up. Collision,
 	# light and render instances are admitted only when the player approaches.
+	# Adiado para o próximo quadro (call_deferred ainda cairia no mesmo): dentro do _ready da sessão somava ~1 s ao quadro único de ~15 s do
+	# carregamento (16/10). _process só usa o modelo depois de `ready_for_play`.
+	_prepare_site()
+
+func _prepare_site() -> void:
+	# GETECO_PARK_SYNC_PREPARE=1 monta no próprio _ready, como antes (A/B do carregamento).
+	if OS.get_environment("GETECO_PARK_SYNC_PREPARE") != "1": await get_tree().process_frame
+	if is_instance_valid(_prepared) or is_instance_valid(site) or not is_inside_tree(): return
+	var started := STALL_WORK.begin()
 	_prepared = SITE.new()
 	_prepared.build()
+	STALL_WORK.finish("park.prepare_site", started, {})
 
 func _process(delta: float) -> void:
 	if get_tree().paused or not is_instance_valid(world) or not session.ready_for_play: return

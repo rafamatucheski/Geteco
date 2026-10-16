@@ -74,7 +74,10 @@ func _initialize_world() -> bool:
 	world = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival",true)
 	root.add_child(world)
-	for _frame in 360:
+	# Prazo em tempo, não em quadros: o carregamento cede quadros em fatias (mirante costeiro, 16/10) e cada
+	# quadro longo consome vários passos de física; 360 passos acabavam antes da sessão ficar jogável.
+	var deadline := Time.get_ticks_msec() + 240000
+	while Time.get_ticks_msec() < deadline:
 		await physics_frame
 		if world.session != null and world.session.ready_for_play: break
 	if world.session == null or not world.session.ready_for_play: return false

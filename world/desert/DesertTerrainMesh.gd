@@ -35,6 +35,27 @@ static func build_visuals() -> Node3D:
 	release_generation_scratch()
 	return root
 
+## Mesma montagem de build_visuals, cedendo o quadro quando passa do orçamento: o horizonte
+## do mirante costeiro montava o terreno inteiro do deserto num quadro só (~9 s congelando
+## a janela no carregamento, auditoria de 16/10). Resultado idêntico.
+static func build_visuals_sliced(tree: SceneTree, budget_usec := 12000) -> Node3D:
+	var root := Node3D.new()
+	root.name="DesertCanyonTerrain"
+	var slice := Time.get_ticks_usec()
+	for z in range(floori(FIELD.BOUNDS.position.y/CELL),ceili(FIELD.BOUNDS.end.y/CELL)):
+		for x in range(floori(FIELD.BOUNDS.position.x/CELL),ceili(FIELD.BOUNDS.end.x/CELL)):
+			var key := Vector2i(x,z)
+			var node := MeshInstance3D.new()
+			node.name="Canyon_%d_%d"%[x,z]
+			node.mesh=mesh_for(key)
+			node.material_override=material()
+			root.add_child(node)
+			if Time.get_ticks_usec() - slice > budget_usec:
+				await tree.process_frame
+				slice = Time.get_ticks_usec()
+	release_generation_scratch()
+	return root
+
 static func release_generation_scratch() -> bool:
 	# Only after EVERY visual cell and tile is cached: no later height/collision
 	# query needs the classification or analytic height/normal dictionaries.

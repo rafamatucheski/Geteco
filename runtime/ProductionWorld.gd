@@ -310,6 +310,11 @@ func build() -> void:
 	if is_instance_valid(urban_transit) and is_instance_valid(urban_transit.urban_service):
 		await urban_transit.urban_service.prepare_startup()
 		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+	# O mirante costeiro monta seus modelos em fatias desde o _ready da sessão (antes, ~11 s num quadro
+	# só, 16/10); num carregamento rápido elas ainda podem estar correndo, e cairiam no jogo.
+	while is_instance_valid(session) and session.coastal_lookout != null and session.coastal_lookout.is_preparing():
+		await get_tree().process_frame
+		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	ready_for_play = true
 	curtain.set_stage(.93, "Levando você ao ponto salvo…")
 	await session.restore_location()

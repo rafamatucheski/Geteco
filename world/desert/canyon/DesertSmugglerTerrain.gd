@@ -146,6 +146,26 @@ static func build_visuals() -> Node3D:
 	_refined.clear()
 	return root
 
+## Igual a build_visuals, cedendo o quadro quando a fatia passa do orçamento: montada de uma vez
+## dentro do mirante costeiro, a geologia do cânion segurava ~2 s num quadro só no carregamento (16/10).
+static func build_visuals_sliced(tree: SceneTree,budget_usec := 12000) -> Node3D:
+	var root := Node3D.new()
+	root.name="SmugglerGorgeGeology"
+	var slice := Time.get_ticks_usec()
+	for z in range(floori(L.BOUNDS.position.y/CELL),ceili(L.BOUNDS.end.y/CELL)):
+		for x in range(floori(L.BOUNDS.position.x/CELL),ceili(L.BOUNDS.end.x/CELL)):
+			var node := MeshInstance3D.new()
+			node.name="GorgeRock_%d_%d"%[x,z]
+			node.mesh=mesh_for(Vector2i(x,z))
+			node.material_override=material()
+			root.add_child(node)
+			if Time.get_ticks_usec()-slice > budget_usec:
+				await tree.process_frame
+				slice=Time.get_ticks_usec()
+	_samples.clear()
+	_refined.clear()
+	return root
+
 static func build_collision(parent: Node3D,rect: Rect2) -> void:
 	if not rect.intersects(L.BOUNDS): return
 	var key := Vector2i((rect.get_center()/CELL).floor())
