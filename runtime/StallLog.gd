@@ -44,6 +44,15 @@ var _warned_world := false
 var _census_clock := 0.0
 var _last_sample_usec := 0
 var _last_pipelines: Dictionary = {}
+## Amostra de render do quadro anterior (memória de vídeo, preparo da cena, passe de sombra).
+## O quadro isolado de 110-370 ms em render_bracket_ms (fase 3, 16/10) não tinha span nem
+## compilação de pipeline; estes contadores separam preparo da cena, desenho da viewport e o resto.
+var _last_render: Dictionary = {}
+## Registros "slow_after": os tempos de CPU/GPU da viewport chegam com quadros de atraso, então
+## o custo real do quadro lento só aparece alguns quadros depois.
+var _after_pending: Array[Dictionary] = []
+var _record_unplayable := false
+const AFTER_FRAMES := [1, 3, 6]
 var _work_summary: Dictionary = {}
 var _profile_self := false
 var _self_ms := PackedFloat32Array()
@@ -81,6 +90,11 @@ func _ready() -> void:
 		return
 	_enabled = true
 	_profile_self = OS.get_environment("HARBOR_STALL_SELF_PROFILE") == "1"
+	_record_unplayable = OS.get_environment("HARBOR_STALL_UNPLAYABLE") == "1"
+	# Pilha nativa da thread principal nas travadas (C#, só Windows): ver StallStackSampler.cs.
+	if OS.get_environment("HARBOR_STALL_STACKS") == "1" and ClassDB.class_exists(&"CSharpScript"):
+		var sampler_script: Variant = load("res://runtime/StallStackSampler.cs")
+		if sampler_script != null: add_child(sampler_script.new())
 	STALL_WORK.enabled = OS.get_environment("HARBOR_STALL_WORK") != "0"
 	_started_usec = Time.get_ticks_usec()
 	get_tree().node_removed.connect(_on_node_removed)
@@ -111,6 +125,11 @@ func _process(delta: float) -> void:
 		_frames.append(ms)
 		_summarize_work(work)
 		if ms >= _threshold_ms and _slow_records < MAX_SLOW_RECORDS: _record_slow(ms, now, physics_frames - _previous_physics_frames, work)
+	elif _previous_usec > 0 and _record_unplayable and is_instance_valid(_world):
+		# Diagnóstico: transições (fim do filme, pausa, 3D religado) ficam fora da janela de
+		# estatística, mas o quadro lento delas também é registrado, marcado "playing": false.
+		var idle_ms := float(now - _previous_usec) / 1000.0
+		if idle_ms >= _threshold_ms and _slow_records < MAX_SLOW_RECORDS: _record_slow(idle_ms, now, physics_frames - _previous_physics_frames, work, false)
 	_previous_usec = now
 	if observe_intervals:
 		interval_observed.emit(now, work, _removed_total, _removed_roots)
@@ -130,6 +149,8 @@ func _process(delta: float) -> void:
 	_last_objects = int(Performance.get_monitor(Performance.OBJECT_COUNT))
 	_last_chunks = _chunk_total()
 	_last_pipelines = _pipeline_counts()
+	if not _after_pending.is_empty(): _flush_after()
+	_last_render = _render_sample()
 	_last_sample_usec = Time.get_ticks_usec()
 	if _profile_self: _self_ms.append(float(_last_sample_usec - now) / 1000.0)
 
@@ -154,6 +175,34 @@ func _pipeline_counts() -> Dictionary:
 		"surface": int(Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_SURFACE)),
 		"draw": int(Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_DRAW)),
 		"specialization": int(Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_SPECIALIZATION))}
+
+func _render_sample() -> Dictionary:
+	# Tudo leitura de contador já pronto no servidor: custo de microssegundos por quadro.
+	var rid := get_tree().root.get_viewport_rid()
+	return {"setup_ms": snappedf(RenderingServer.get_frame_setup_time_cpu(), 0.01),
+		"vp_cpu_ms": snappedf(RenderingServer.viewport_get_measured_render_time_cpu(rid), 0.01),
+		"vp_gpu_ms": snappedf(RenderingServer.viewport_get_measured_render_time_gpu(rid), 0.01),
+		"tex_mb": snappedf(RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TEXTURE_MEM_USED) / 1048576.0, 0.1),
+		"buf_mb": snappedf(RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_BUFFER_MEM_USED) / 1048576.0, 0.1),
+		"vid_mb": snappedf(RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_VIDEO_MEM_USED) / 1048576.0, 0.1),
+		"objects": RenderingServer.viewport_get_render_info(rid, RenderingServer.VIEWPORT_RENDER_INFO_TYPE_VISIBLE, RenderingServer.VIEWPORT_RENDER_INFO_OBJECTS_IN_FRAME),
+		"draws": RenderingServer.viewport_get_render_info(rid, RenderingServer.VIEWPORT_RENDER_INFO_TYPE_VISIBLE, RenderingServer.VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME),
+		"shadow_objects": RenderingServer.viewport_get_render_info(rid, RenderingServer.VIEWPORT_RENDER_INFO_TYPE_SHADOW, RenderingServer.VIEWPORT_RENDER_INFO_OBJECTS_IN_FRAME),
+		"shadow_draws": RenderingServer.viewport_get_render_info(rid, RenderingServer.VIEWPORT_RENDER_INFO_TYPE_SHADOW, RenderingServer.VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME),
+		"canvas_draws": RenderingServer.viewport_get_render_info(rid, RenderingServer.VIEWPORT_RENDER_INFO_TYPE_CANVAS, RenderingServer.VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME),
+		"frame": Engine.get_process_frames()}
+
+func _flush_after() -> void:
+	var frame := Engine.get_process_frames()
+	var keep: Array[Dictionary] = []
+	for pending in _after_pending:
+		if frame < int(pending.due):
+			keep.append(pending)
+			continue
+		var record := {"type": "slow_after", "slow_t": pending.slow_t, "slow_frame": pending.slow_frame,
+			"frames_after": frame - int(pending.slow_frame), "render": _render_sample()}
+		_write(record)
+	_after_pending = keep
 
 func _summarize_work(work: Array[Dictionary]) -> void:
 	for event in work:
@@ -296,7 +345,7 @@ func _flush_window() -> void:
 	_frames.clear()
 	STALL_WORK.finish("logger.window_clear", began)
 
-func _record_slow(ms: float, now: int, physics_steps: int, work: Array[Dictionary] = []) -> void:
+func _record_slow(ms: float, now: int, physics_steps: int, work: Array[Dictionary] = [], playing := true) -> void:
 	_slow_records += 1
 	var nodes := int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
 	var objects := int(Performance.get_monitor(Performance.OBJECT_COUNT))
@@ -321,6 +370,16 @@ func _record_slow(ms: float, now: int, physics_steps: int, work: Array[Dictionar
 		if _last_pipelines.has(key): pipeline_delta[key] = pipelines[key] - int(_last_pipelines[key])
 	record["pipelines"] = pipelines
 	record["pipelines_delta"] = pipeline_delta
+	var render := _render_sample()
+	record["render"] = render
+	record["render_before"] = _last_render
+	if not playing:
+		record["playing"] = false
+		record["paused"] = get_tree().paused
+		record["disable_3d"] = get_viewport().disable_3d
+	for offset in AFTER_FRAMES:
+		if _after_pending.size() < 32:
+			_after_pending.append({"due": int(render.frame) + offset, "slow_t": record.t, "slow_frame": int(render.frame)})
 	if not work.is_empty(): record["work"] = work
 	record["removed_nodes"] = _removed_total
 	if not _removed_roots.is_empty(): record["removed_roots"] = _removed_roots.duplicate(true)
