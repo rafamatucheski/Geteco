@@ -7,7 +7,9 @@ extends SceneTree
 
 const IDS := {"Laundry": "lavanderia", "UnionWorkshop": "oficina-artesao", "MarketHall": "mercado-municipal",
 	"FreightOffice": "escritorio-frete", "Aquarium": "aquario", "MaritimeMuseum": "museu-maritimo",
-	"ColdStorage": "camara-fria"}
+	"ColdStorage": "camara-fria",
+	"CornerDiner": "lanchonete-esquina", "IslandGrocer": "mercado-ilha", "IslandCinema": "cinema",
+	"PromenadeCafe": "cafe-orla"}
 
 func _init() -> void:
 	var rows: Array = JSON.parse_string(FileAccess.get_file_as_string("res://world/regions/OriginalWorldData.json")).get("harbor_buildings", [])

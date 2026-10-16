@@ -5,7 +5,10 @@ extends SceneTree
 ## Antes: GETECO_PAINTED_FACADES=0 com --label=caixas. PNG em evidence/painted-facades-20261015/.
 ## Ponto = centro da casa (OriginalWorldData /16) + 14 m em +Z, olhando para -Z.
 var points := {
-	"piston_garage": Vector3(166.0, 0.0, 109.3 + 6.0),
+	"corner_diner": Vector3(38.81, 0.0, 74.0),
+	"island_grocer": Vector3(308.12, 0.0, 133.7),
+	"island_cinema": Vector3(329.38, 0.0, 133.7),
+	"promenade_cafe": Vector3(361.88, 0.0, 105.3),
 }
 
 func _initialize() -> void: run.call_deferred()
