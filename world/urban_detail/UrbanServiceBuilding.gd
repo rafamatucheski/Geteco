@@ -3,6 +3,7 @@ class_name UrbanServiceBuilding
 
 var police_door_visuals: Array[Node3D] = []
 var police_door_bodies: Array[StaticBody3D] = []
+var painted_police_doors: Array[PaintedFacadeKit.PaintedDoor] = []
 var fire_door_visual: Node3D
 var fire_door_body: StaticBody3D
 var fire_door_shape: BoxShape3D
@@ -22,6 +23,11 @@ func set_open_amount(amount: float) -> void:
 		return
 	if building_kind != "police_precinct" and building_id != "Police": return
 	open_amount = clampf(amount, 0.0, 1.0)
+	if not painted_police_doors.is_empty():
+		# Fachada pintada: as folhas do kit seguem a mesma abertura que WeaponShopEntrance dá.
+		for leaf in painted_police_doors:
+			if is_instance_valid(leaf): leaf.set_open_amount(open_amount)
+		return
 	for i in police_door_visuals.size():
 		var side := -1.0 if i == 0 else 1.0
 		police_door_visuals[i].rotation.y = -side * 1.2 * open_amount
@@ -162,6 +168,12 @@ func _build_fire_station() -> void:
 			visuals_root.add_child(sign_node)
 
 func _build_police_precinct() -> void:
+	if not PaintedHarborHouses.style_for(building_id, building_kind).is_empty():
+		# Fachada pintada (estilo delegacia): casco, vestíbulo e folhas em PaintedPoliceStation.
+		painted_police_doors = PaintedPoliceStation.build(self)
+		# Contato da porta (WeaponShopEntrance) mede a distância até a primeira folha.
+		for leaf in painted_police_doors: police_door_visuals.append(leaf.hinge)
+		return
 	var half_w := building_size.x * 0.5
 	var half_d := building_size.y * 0.5
 	var front_z := half_d

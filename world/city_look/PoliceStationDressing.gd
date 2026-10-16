@@ -36,7 +36,10 @@ static func decorate(chunk: Node3D, building: UrbanBuildingBase, roof_y: float, 
 	t.set_smooth_group(-1)
 	var glow := {"lightbox": [], "globe": [], "neon": [], "red": [], "blue": [], "pad": []}
 	var obstacles := _ground_obstacles(chunk, building)
-	_facade(t, glow, building, hw, hz, ex, obstacles)
+	# Fachada pintada (PaintedPoliceStation) já traz brasão, letreiro HARBOR PATROL,
+	# lampiões, pilastras e a porta: só ficam os adereços de rua e o telhado.
+	var painted := building.has_meta("painted_facade_style")
+	_facade(t, glow, building, hw, hz, ex, obstacles, painted)
 	var pad := _roof(t, glow, hw, hz, local_roof, roof_center, roof_size, occupied, batches, building)
 	t.generate_normals()
 	var mesh := MeshInstance3D.new()
@@ -48,9 +51,10 @@ static func decorate(chunk: Node3D, building: UrbanBuildingBase, roof_y: float, 
 	for key in glow:
 		if glow[key].is_empty(): continue
 		chunk.add_child(_emissive(key, glow[key], building.global_transform))
-	_labels(chunk, building, hw, hz, ex)
+	if not painted: _labels(chunk, building, hw, hz, ex)
 	if pad.x < INF: _park_helicopter(chunk, building, local_roof, pad)
-	COASTAL_FACADE.decorate(building)
+	# O acabamento costeiro mira as caixas de parede do prédio antigo.
+	if not painted: COASTAL_FACADE.decorate(building)
 
 
 ## Helicóptero estacionado no heliponto: a mesma fuselagem da resposta aérea, parada,
@@ -93,48 +97,49 @@ static func _clear(obstacles: Array, x: float, z: float, radius: float) -> bool:
 	return true
 
 
-static func _facade(t: SurfaceTool, glow: Dictionary, building: UrbanBuildingBase, hw: float, hz: float, ex: float, obstacles: Array) -> void:
+static func _facade(t: SurfaceTool, glow: Dictionary, building: UrbanBuildingBase, hw: float, hz: float, ex: float, obstacles: Array, painted := false) -> void:
 	var h := building.height
-	# Pilastras de concreto no andar de cima (quebram a fachada lisa).
-	if h > 5.0:
-		var count := int(building.building_size.x / 2.2)
-		for i in count + 1:
-			var x := -hw + 0.15 + i * (building.building_size.x - 0.3) / count
-			KIT.box(t, Vector3(x, (3.9 + h) * 0.5, hz + 0.08), Vector3(0.3, h - 3.9, 0.16), CONCRETE)
-		KIT.box(t, Vector3(0, h - 0.2, hz + 0.1), Vector3(building.building_size.x, 0.3, 0.2), CONCRETE)
-	# Rodapé de granito escuro.
-	KIT.box(t, Vector3(0, 0.25, hz + 0.05), Vector3(building.building_size.x, 0.5, 0.1), Color("3a3d42"))
-	# Faixa de neon azul logo acima da faixa pintada do arquétipo.
-	glow.neon.append([Vector3(0, 3.95, hz + 0.12), Vector3(building.building_size.x - 0.2, 0.07, 0.05)])
-	# Marquise da entrada com colunas e letreiro luminoso.
-	var canopy_w := 4.4
-	KIT.box(t, Vector3(ex, 3.02, hz + 1.0), Vector3(canopy_w, 0.2, 2.0), NAVY)
-	KIT.box(t, Vector3(ex, 3.14, hz + 1.0), Vector3(canopy_w + 0.1, 0.05, 2.1), Color("2e3b55"))
-	KIT.box(t, Vector3(ex, 3.17, hz + 2.03), Vector3(canopy_w + 0.1, 0.04, 0.08), Color("d9b43a"))
-	for side in [-1.0, 1.0]:
-		KIT.cylinder(t, Vector3(ex + side * (canopy_w * 0.5 - 0.2), 0, hz + 1.85), 0.1, 2.95, STEEL, 8)
-	glow.lightbox.append([Vector3(ex, 2.72, hz + 2.03), Vector3(canopy_w - 0.2, 0.4, 0.05)])
-	# Giroflex nas pontas da marquise.
-	glow.red.append([Vector3(ex - canopy_w * 0.5 + 0.25, 3.25, hz + 1.9), Vector3(0.28, 0.14, 0.18)])
-	glow.blue.append([Vector3(ex + canopy_w * 0.5 - 0.25, 3.25, hz + 1.9), Vector3(0.28, 0.14, 0.18)])
-	# Lampiões azuis ladeando a porta (a marca da delegacia de filme).
-	for side in [-1.0, 1.0]:
-		var x: float = ex + side * 1.55
-		KIT.box(t, Vector3(x, 0.1, hz + 0.55), Vector3(0.36, 0.2, 0.36), Color("26292c"))
-		KIT.cylinder(t, Vector3(x, 0.2, hz + 0.55), 0.06, 1.75, Color("26292c"), 8)
-		KIT.box(t, Vector3(x, 1.97, hz + 0.55), Vector3(0.12, 0.08, 0.12), Color("26292c"))
-		glow.globe.append([Vector3(x, 2.2, hz + 0.55), Vector3(0.36, 0.4, 0.36)])
-		KIT.box(t, Vector3(x, 2.44, hz + 0.55), Vector3(0.2, 0.06, 0.2), Color("26292c"))
-	# Mural PROCURADOS com cartazes.
-	var board_x := clampf(ex + 3.1, -hw + 1.2, hw - 1.2)
-	KIT.box(t, Vector3(board_x, 1.65, hz + 0.05), Vector3(1.8, 1.2, 0.08), Color("3a2a1c"))
-	KIT.box(t, Vector3(board_x, 1.65, hz + 0.1), Vector3(1.65, 1.05, 0.02), Color("a0764c"))
-	for row in 2:
-		for col in 3:
-			var p := Vector3(board_x - 0.52 + col * 0.52, 1.4 + row * 0.5, hz + 0.115)
-			KIT.box(t, p, Vector3(0.38, 0.44, 0.01), Color("ede6cf"))
-			KIT.box(t, p + Vector3(0, 0.05, 0.006), Vector3(0.2, 0.22, 0.004), [Color("5a4a3c"), Color("3a3230"), Color("6e5a48")][(row + col) % 3])
-			KIT.box(t, p + Vector3(0, -0.15, 0.006), Vector3(0.28, 0.04, 0.004), Color("a1231f"))
+	if not painted:
+		# Pilastras de concreto no andar de cima (quebram a fachada lisa).
+		if h > 5.0:
+			var count := int(building.building_size.x / 2.2)
+			for i in count + 1:
+				var x := -hw + 0.15 + i * (building.building_size.x - 0.3) / count
+				KIT.box(t, Vector3(x, (3.9 + h) * 0.5, hz + 0.08), Vector3(0.3, h - 3.9, 0.16), CONCRETE)
+			KIT.box(t, Vector3(0, h - 0.2, hz + 0.1), Vector3(building.building_size.x, 0.3, 0.2), CONCRETE)
+		# Rodapé de granito escuro.
+		KIT.box(t, Vector3(0, 0.25, hz + 0.05), Vector3(building.building_size.x, 0.5, 0.1), Color("3a3d42"))
+		# Faixa de neon azul logo acima da faixa pintada do arquétipo.
+		glow.neon.append([Vector3(0, 3.95, hz + 0.12), Vector3(building.building_size.x - 0.2, 0.07, 0.05)])
+		# Marquise da entrada com colunas e letreiro luminoso.
+		var canopy_w := 4.4
+		KIT.box(t, Vector3(ex, 3.02, hz + 1.0), Vector3(canopy_w, 0.2, 2.0), NAVY)
+		KIT.box(t, Vector3(ex, 3.14, hz + 1.0), Vector3(canopy_w + 0.1, 0.05, 2.1), Color("2e3b55"))
+		KIT.box(t, Vector3(ex, 3.17, hz + 2.03), Vector3(canopy_w + 0.1, 0.04, 0.08), Color("d9b43a"))
+		for side in [-1.0, 1.0]:
+			KIT.cylinder(t, Vector3(ex + side * (canopy_w * 0.5 - 0.2), 0, hz + 1.85), 0.1, 2.95, STEEL, 8)
+		glow.lightbox.append([Vector3(ex, 2.72, hz + 2.03), Vector3(canopy_w - 0.2, 0.4, 0.05)])
+		# Giroflex nas pontas da marquise.
+		glow.red.append([Vector3(ex - canopy_w * 0.5 + 0.25, 3.25, hz + 1.9), Vector3(0.28, 0.14, 0.18)])
+		glow.blue.append([Vector3(ex + canopy_w * 0.5 - 0.25, 3.25, hz + 1.9), Vector3(0.28, 0.14, 0.18)])
+		# Lampiões azuis ladeando a porta (a marca da delegacia de filme).
+		for side in [-1.0, 1.0]:
+			var x: float = ex + side * 1.55
+			KIT.box(t, Vector3(x, 0.1, hz + 0.55), Vector3(0.36, 0.2, 0.36), Color("26292c"))
+			KIT.cylinder(t, Vector3(x, 0.2, hz + 0.55), 0.06, 1.75, Color("26292c"), 8)
+			KIT.box(t, Vector3(x, 1.97, hz + 0.55), Vector3(0.12, 0.08, 0.12), Color("26292c"))
+			glow.globe.append([Vector3(x, 2.2, hz + 0.55), Vector3(0.36, 0.4, 0.36)])
+			KIT.box(t, Vector3(x, 2.44, hz + 0.55), Vector3(0.2, 0.06, 0.2), Color("26292c"))
+		# Mural PROCURADOS com cartazes.
+		var board_x := clampf(ex + 3.1, -hw + 1.2, hw - 1.2)
+		KIT.box(t, Vector3(board_x, 1.65, hz + 0.05), Vector3(1.8, 1.2, 0.08), Color("3a2a1c"))
+		KIT.box(t, Vector3(board_x, 1.65, hz + 0.1), Vector3(1.65, 1.05, 0.02), Color("a0764c"))
+		for row in 2:
+			for col in 3:
+				var p := Vector3(board_x - 0.52 + col * 0.52, 1.4 + row * 0.5, hz + 0.115)
+				KIT.box(t, p, Vector3(0.38, 0.44, 0.01), Color("ede6cf"))
+				KIT.box(t, p + Vector3(0, 0.05, 0.006), Vector3(0.2, 0.22, 0.004), [Color("5a4a3c"), Color("3a3230"), Color("6e5a48")][(row + col) % 3])
+				KIT.box(t, p + Vector3(0, -0.15, 0.006), Vector3(0.28, 0.04, 0.004), Color("a1231f"))
 	# Câmeras de segurança nas quinas.
 	for side in [-1.0, 1.0]:
 		var x: float = side * (hw - 0.3)
@@ -148,7 +153,8 @@ static func _facade(t: SurfaceTool, glow: Dictionary, building: UrbanBuildingBas
 	var fz := hz + 3.0
 	for row in [hz + 3.0, hz + 0.7]:
 		# Junto à parede, só depois do mural PROCURADOS (ocupa ex+2,2 a ex+4,0).
-		var candidate: float = ex + 2.2 if row > hz + 1.0 else ex + 4.15
+		# Pintada: a porta é mais larga (vão de ~3,2 m), os mastros ficam além dela.
+		var candidate: float = (ex + (3.8 if painted else 2.2)) if row > hz + 1.0 else ex + 4.15
 		while candidate < hw + 1.5 and start == INF:
 			var ok := true
 			for i in 3:
@@ -166,6 +172,8 @@ static func _facade(t: SurfaceTool, glow: Dictionary, building: UrbanBuildingBas
 		KIT.box(t, Vector3(fx + 0.62, 6.55, fz), Vector3(1.2, 0.8, 0.02), colors[0], 0.25)
 		KIT.box(t, Vector3(fx + 0.62, 6.55, fz + 0.012), Vector3(1.2, 0.18, 0.02), colors[1], 0.25)
 		KIT.box(t, Vector3(fx + 0.34, 6.72, fz + 0.02), Vector3(0.22, 0.22, 0.02), colors[1], 0.25)
+	# Sem o portão de viaturas pintado não há o que zebrar.
+	if painted: return
 	# Zebrado amarelo em frente ao portão de viaturas.
 	var bay_w := building.building_size.x * 0.48
 	var bay_x := -hw + 0.6 + bay_w * 0.5
