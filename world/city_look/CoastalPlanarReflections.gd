@@ -46,6 +46,7 @@ var last_dynamic_checked := 0
 var last_hidden_dynamic_count := 0
 var last_rebuilt_batch_names: Array[String] = []
 var _benchmark := false
+var _match_msaa := OS.get_environment("HARBOR_PIPELINE_MSAA_SYNC") != "0"
 
 func _ready() -> void:
 	_benchmark = "--benchmark" in OS.get_cmdline_user_args()
@@ -92,6 +93,11 @@ func _make_view(label: String, width: int) -> SubViewport:
 	view.render_target_update_mode = SubViewport.UPDATE_DISABLED
 	view.positional_shadow_atlas_size = 0
 	view.mesh_lod_threshold = 2.0
+	# Mesmo MSAA do principal: o Forward Mobile só pré-compila pipelines com o número de amostras do
+	# viewport principal (Settings.sync_pipeline_msaa). Sem MSAA aqui, cada material refletido
+	# compilava no primeiro desenho da captura: 586 ms na primeira chuva do release (fase 2, 16/10).
+	# Custo de GPU pequeno (640x360 e 512x288) e o reflexo ganha borda suavizada.
+	if _match_msaa: view.msaa_3d = get_viewport().msaa_3d
 	add_child(view)
 	var camera := Camera3D.new()
 	# Copy the displayed source camera in _process; do not interpolate it twice.
@@ -295,6 +301,11 @@ func _process_reflections(delta: float) -> void:
 		if _active: _disable()
 		return
 	_active = true
+	# O jogador pode trocar o MSAA no menu: as capturas acompanham (ver _make_view).
+	var samples := get_viewport().msaa_3d
+	if _match_msaa and ground_view.msaa_3d != samples:
+		ground_view.msaa_3d = samples
+		facade_view.msaa_3d = samples
 	# Dedicated facade batches exist only in the capture layer; the player's
 	# camera (including binocular view) must not draw them a second time.
 	if not _view_cameras.has(camera.get_instance_id()):

@@ -11,6 +11,12 @@ var cargo_surface: RefCounted
 ## Espelho d'água do lago alpino abaixo do chão, dentro da bacia de LakeBasins (0,6 m).
 const ALPINE_WATER_Y := -.2
 const WATER_SHADER := preload("res://world/regions/mountain_lake.gdshader")
+## Água com bacia: fundo pelo mapa de alturas do terreno, sem ler o depth (ver mountain_lake.gdshader).
+const ALPINE_WATER_SHADER := preload("res://world/regions/mountain_lake_alpine.gdshader")
+## Versão antiga (fundo lido no depth), só para A/B: HARBOR_ALPINE_LAKE_DEPTH=1.
+const DEPTH_WATER_SHADER := preload("res://world/regions/mountain_lake_depth.gdshader")
+## Folga da grade de alturas além da malha da água (passos do terreno), para o raio inclinado.
+const FLOOR_MARGIN_STEPS := 2
 func _ready() -> void:
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://world/regions/OriginalLakeData.json"))[variant]
 	_collect_road_clearance()
@@ -82,12 +88,12 @@ func _ice(at: Vector2,index: int,ice_scale: float) -> void:
 		var point := Vector2(cos(angle)*22,sin(angle)*13)*radius
 		rim.append((point.rotated(index*1.17)*ice_scale+at)*SCALE)
 	_surface("FracturedIce",rim,.08,Color("a2c7ce"))
-func _material(color: Color,water := false) -> Material:
-	var key := color.to_html()+str(water)
+func _material(color: Color,water := false,basin := false) -> Material:
+	var key := color.to_html()+str(water)+str(basin)
 	if materials.has(key): return materials[key]
 	if water:
 		var water_material := ShaderMaterial.new()
-		water_material.shader = WATER_SHADER
+		water_material.shader = _basin_shader(water_material) if basin else WATER_SHADER
 		water_material.set_shader_parameter("base_color",Vector3(color.r,color.g,color.b))
 		materials[key] = water_material
 		return water_material
@@ -116,11 +122,11 @@ func _surface(id: String,polygon: PackedVector2Array,height: float,color: Color,
 	var mesh := MeshInstance3D.new()
 	mesh.name = id
 	mesh.mesh = surface.commit()
-	mesh.material_override = _material(color,water)
+	mesh.material_override = _material(color,water,id == "AlpineWater")
 	mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mesh)
 	# Só a água com bacia no terreno lê a profundidade (ver mountain_lake.gdshader).
-	if id == "AlpineWater": mesh.set_instance_shader_parameter("depth_fade",1.0)
+	if mesh.material_override is ShaderMaterial and mesh.material_override.shader != WATER_SHADER: mesh.set_instance_shader_parameter("depth_fade",1.0)
 	if water and id.ends_with("Shallows") and height > 0.0:
 		_water_edge(polygon,height,color.darkened(.28))
 func _add_water_triangle(surface: SurfaceTool,a: Vector2,b: Vector2,c: Vector2,height: float,n: int,row: int,column: int,upper: bool) -> void:
@@ -249,7 +255,43 @@ func _basin_water() -> void:
 	var mesh := MeshInstance3D.new()
 	mesh.name = "AlpineWater"
 	mesh.mesh = surface.commit()
-	mesh.material_override = _material(Color("226274"), true)
+	mesh.material_override = _material(Color("226274"), true, true)
 	mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(mesh)
-	mesh.set_instance_shader_parameter("depth_fade", 1.0)
+	if mesh.material_override.shader != WATER_SHADER: mesh.set_instance_shader_parameter("depth_fade", 1.0)
+
+## Fundo do lago com bacia para o shader: alturas dos cantos da grade do terreno da serra sob a água
+## (MountainTerrain3D.height_at, a mesma grade e diagonal que o terreno desenha). Substitui a leitura do
+## buffer de profundidade, que com MSAA tirava do jogo inteiro a pré-compilação de pipelines (16/10).
+## Diferença conhecida: o depth também via o que estivesse dentro d'água (pedra, pessoa); o mapa só vê o
+## terreno, então não há espuma em volta de quem entra no lago.
+func _basin_shader(material: ShaderMaterial) -> Shader:
+	if OS.get_environment("HARBOR_ALPINE_LAKE_DEPTH") == "1": return DEPTH_WATER_SHADER
+	var terrain: RefCounted = null
+	var node := get_parent()
+	while node != null and terrain == null:
+		var candidate: Variant = node.get("terrain")
+		if candidate is RefCounted and candidate.has_method("height_at"): terrain = candidate
+		node = node.get_parent()
+	var basins := preload("res://world/regions/LakeBasins.gd")
+	basins.depth_at(Vector2.ZERO) # carrega o contorno
+	var bounds: Rect2 = basins._bounds
+	# Sem terreno (cena de teste) não há fundo a desenhar: água lisa, como os outros lagos.
+	if terrain == null or bounds.size == Vector2.ZERO: return WATER_SHADER
+	var step: float = float(terrain.get_script().get_script_constant_map().get("STEP", 4.0))
+	var first := Vector2i(floori(bounds.position.x / step) - FLOOR_MARGIN_STEPS, floori(bounds.position.y / step) - FLOOR_MARGIN_STEPS)
+	var last := Vector2i(ceili(bounds.end.x / step) + FLOOR_MARGIN_STEPS, ceili(bounds.end.y / step) + FLOOR_MARGIN_STEPS)
+	var size := last - first + Vector2i.ONE
+	var heights := PackedFloat32Array()
+	heights.resize(size.x * size.y)
+	for row in size.y:
+		for column in size.x:
+			heights[row * size.x + column] = terrain.height_at(Vector2(first.x + column, first.y + row) * step)
+	var image := Image.create_from_data(size.x, size.y, false, Image.FORMAT_RF, heights.to_byte_array())
+	material.set_shader_parameter("floor_heights", ImageTexture.create_from_image(image))
+	material.set_shader_parameter("floor_origin", Vector2(first) * step)
+	material.set_shader_parameter("floor_step", step)
+	material.set_shader_parameter("floor_size", size)
+	# Vértice da malha da água (relativo a este nó) -> coordenada do terreno (a mesma de position).
+	material.set_shader_parameter("floor_offset", position)
+	return ALPINE_WATER_SHADER

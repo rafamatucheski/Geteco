@@ -1,6 +1,8 @@
 extends Node
 ## Exterior occlusion aid. Each officer owns a separate self-occlusion box.
 const SHADER := preload("res://world/city_look/occluded_silhouette.gdshader")
+## A/B de pipelines (16/10): HARBOR_PIPELINE_DEPTH_FREE=0 volta à versão que lia hint_depth_texture.
+const LEGACY_SHADER := preload("res://world/city_look/occluded_silhouette_depth_texture.gdshader")
 const TINT := Color(0.22, 0.62, 1.0, 0.72)
 const MAX_DISTANCE_SQUARED := 70.0 * 70.0
 var _material: ShaderMaterial
@@ -28,7 +30,7 @@ func _process(delta: float) -> void:
 		return
 	if _material == null:
 		_material = ShaderMaterial.new()
-		_material.shader = SHADER
+		_material.shader = LEGACY_SHADER if OS.get_environment("HARBOR_PIPELINE_DEPTH_FREE") == "0" else SHADER
 		_material.set_shader_parameter("tint", TINT)
 		_material.set_shader_parameter("minimum_occluder_height", 1.2)
 	var inverse := officer.global_transform.affine_inverse()

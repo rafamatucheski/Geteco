@@ -148,6 +148,7 @@ func apply_settings() -> void:
 	_apply_bus_volume("Ambient", ambient_volume)
 	var view := root_view()
 	view.msaa_3d = mini(msaa, MAX_MSAA) as Viewport.MSAA
+	sync_pipeline_msaa(view.msaa_3d)
 	view.scaling_3d_scale = render_scale
 	# FSR 1 reconstrói bordas melhor que o bilinear quando a escala cai.
 	view.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR if render_scale < .999 else Viewport.SCALING_3D_MODE_BILINEAR
@@ -235,6 +236,22 @@ func _process(_delta: float) -> void:
 	_fps_peak = 0.0
 
 func root_view() -> Window: return get_tree().root
+
+## O Forward Mobile pré-compila em segundo plano, ao criar cada superfície, o pipeline "ubershader" de cor
+## com o número de amostras de rendering/anti_aliasing/quality/msaa_3d (RenderForwardMobile::
+## _update_global_pipeline_data_requirements_from_project, relido a cada quadro) — não com o MSAA do viewport.
+## O projeto diz 2x e o jogador pode escolher 4x (ou nada): aí nenhum pipeline pré-compilado servia, e cada
+## material novo na tela compilava síncrono no primeiro desenho (fonte "draw"). Fase 2 de 16/10, release com
+## MSAA 4x: render_bracket de 106–586 ms sem span na chuva, noite, serra e travessia. Acompanhar o MSAA real
+## devolve a compilação ao segundo plano; trocar no menu recompila tudo uma vez, também em segundo plano.
+## Só vale enquanto nenhum material vivo ler hint_depth_texture: com MSAA isso põe resolução de depth no
+## framebuffer e nenhum pipeline pré-compilado serve mais (ver occluded_silhouette.gdshader). Medido no
+## editor, chuva no circuito oeste: compilações "draw" 183 sob a cortina + ~100 em jogo -> 0 + 0.
+## A/B: HARBOR_PIPELINE_MSAA_SYNC=0 volta ao comportamento antigo (aqui e nas capturas de reflexo).
+static func sync_pipeline_msaa(samples: int) -> void:
+	const KEY := "rendering/anti_aliasing/quality/msaa_3d"
+	if OS.get_environment("HARBOR_PIPELINE_MSAA_SYNC") == "0": return
+	if int(ProjectSettings.get_setting(KEY, 0)) != samples: ProjectSettings.set_setting(KEY, samples)
 
 func save_settings(path := "user://settings.cfg") -> Error:
 	var config := ConfigFile.new()
