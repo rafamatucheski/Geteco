@@ -21,6 +21,31 @@ A memória usa filtragem de telefone. Música original simples, água, motor e
 chuva sustentam a viagem. Os efeitos são arquivos já existentes no projeto.
 As tomadas têm duração natural, sem acelerar a fala para caber nos planos.
 
+## Segunda montagem (16/10/2026)
+
+O porto mudou depois da primeira captura (viaduto sobre o canal, passarela do
+terminal, fachadas pintadas), e os planos antigos passaram a ter pilares na frente
+dos rostos. A segunda montagem mantém as mesmas onze falas nos mesmos instantes
+(PT e EN continuam sincronizados) e refaz só a imagem e as camadas de ambiente:
+
+- 14 planos: descida aérea pelo canal ao lado do Northstar; travelling rente à água;
+  conversa no convés; "Tempo demais" por cima do ombro, olhando o caminho percorrido;
+  a balsa entra na sombra do viaduto e a lembrança começa ali.
+- A lembrança fica fria e dessaturada (`adjustment_*` do Environment, só na captura).
+  Em "ele foi visto em Harbor" o filme corta para **Vicente** de costas na rua do
+  cais, parando sob o poste; o rosto fica para o jogo.
+- Volta ao presente por cima dos contêineres do cargueiro, despedida e Dante
+  andando até a amurada da popa enquanto a câmera sobe até a cidade.
+- A balsa desce o canal e entra **de proa** na vaga: a vaga entre o píer e o
+  cargueiro tem ~16 m e não comporta o giro da primeira montagem.
+  `capture_ferry_opening.gd --check-route` varre a caixa do casco acima da linha
+  d'água contra os sólidos; só restam contatos com a passarela no próprio berço,
+  que existem também na posição de jogo da balsa.
+- Som: camadas gravadas de porto, mar aberto e chuva fraca (`audio/ambience_el`),
+  apito, sino de boia, viaduto, trânsito atrás de Vicente, contêineres na
+  atracação e um pad grave sob a lembrança. A margem voz/fundo por fala ficou
+  entre 8,5 e 16,6 dB (RMS no intervalo de cada fala).
+
 ## Reprodução da produção
 
 1. `generate_voices.py`: usa o ambiente local `tools/opening_voice_design`, GPU
@@ -31,10 +56,14 @@ As tomadas têm duração natural, sem acelerar a fala para caber nos planos.
 3. `python build_audio.py`: requer numpy, scipy e imageio_ffmpeg; gera os stems,
    PCM intermediários, `timing.json` e as legendas SRT.
 4. Compilar `Harbor.csproj` e usar Godot **4.7.2 .NET**, com
-   `--fixed-fps 30 --write-movie D:/geteco/artifacts/opening-ferry-night-20261003/source1080.avi`
+   `--fixed-fps 30 --write-movie evidence/intro-v2-20261016/movie/source1080.avi`
    e `--script res://tests/capture/capture_ferry_opening.gd`, argumentos de usuário
-   `--no-save --full-session --skip-arrival --output=D:/geteco/artifacts/opening-ferry-night-20261003`. Os overrides `.movie` preservam
-   1080p sem modificar a resolução normal de gameplay.
+   `--no-save --full-session --skip-arrival --verify-work-routes --output=<mesma pasta>`.
+   Os overrides `.movie` preservam 1080p sem modificar a resolução normal de gameplay.
+   `--stills` (com `--times=3,9.5,...` opcional) grava quadros soltos para revisar
+   planos sem gravar o filme; `--check-route` só confere a rota da balsa.
+   `--probe=x0,z0,x1,z1` imprime um mapa livre/ocupado (cápsula de pessoa, passo de
+   0,5 m) para traçar rotas de figurantes quando o cais muda.
 5. `python encode_movie.py`: retira o aquecimento pelo marcador de frame salvo
    em `render.json`. Gera `arrival.ogv` com a voz embutida e uma prévia MP4 com
    mixagem completa e legendas PT/EN selecionáveis. O áudio da codificação vem

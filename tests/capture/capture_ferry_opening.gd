@@ -22,14 +22,18 @@ func run() -> void:
 		push_error("Ferry authoring requires real MultiMesh instance data and the rendered set")
 		quit(2)
 		return
-	create_timer(600).timeout.connect(func(): push_error("Ferry capture timed out"); quit(2))
+	# O filme inteiro (carga de ~90 s e 2.190 quadros gravados) passa de 10 min.
+	create_timer(2400).timeout.connect(func(): push_error("Ferry capture timed out"); quit(2))
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--output="): output = arg.trim_prefix("--output=")
 	root.get_node("V2Launch").selected_path = "user://opening-authoring-isolated.json"
 	world = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival",true)
 	root.add_child(world)
-	for i in 1200:
+	# Prazo em tempo, não em quadros: o pré-aquecimento das regiões sob a cortina
+	# passou de 20 s (16/10) e 1200 quadros acabavam antes do jogo ficar pronto.
+	var ready_deadline := Time.get_ticks_msec() + 240000
+	while Time.get_ticks_msec() < ready_deadline:
 		await process_frame
 		if world.session != null and world.session.ready_for_play: break
 	assert(world.session != null and world.session.ready_for_play)
@@ -71,12 +75,61 @@ func run() -> void:
 		root.get_texture().get_image().save_png(output+"/layout.png")
 		quit()
 		return
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--probe="):
+			# Mapa livre/ocupado para uma cápsula de pessoa: "." livre, "#" sólido, " " sem chão.
+			var r := Array(arg.trim_prefix("--probe=").split(",")).map(func(v): return float(v))
+			await _probe(r[0],r[1],r[2],r[3])
+			world.queue_free()
+			await process_frame
+			quit(0)
+			return
+	if "--validate-motion" in OS.get_cmdline_user_args():
+		# Mesma checagem de braço/celular do gravador, sem gravar: os ossos são CPU.
+		var jumps := 0
+		var last: Array[Quaternion] = []
+		for frame in roundi(director.length*30.0):
+			var t := float(frame)/30.0
+			director.sample(t,1.0/30.0)
+			var now: Array[Quaternion] = []
+			for name in ["RightArm","RightForeArm","RightHand"]:
+				now.append(director.dante.skeleton.get_bone_pose_rotation(director.dante.skeleton.find_bone(name)))
+			if not last.is_empty():
+				for i in now.size():
+					var step := last[i].angle_to(now[i])
+					if step >= .1:
+						jumps += 1
+						if jumps <= 20: print("FERRY_MOTION_JUMP quadro=%d t=%.2f osso=%d %.1f°"%[frame,t,i,rad_to_deg(step)])
+			var phone_at: Vector3 = director.ferry.to_local(director.phone.global_position)
+			if director.phone.visible and frame > 0 and phone_at.distance_to(previous_phone) >= .04:
+				jumps += 1
+				if jumps <= 20: print("FERRY_MOTION_PHONE quadro=%d t=%.2f %.3f m"%[frame,t,phone_at.distance_to(previous_phone)])
+			previous_phone = phone_at
+			last = now
+		print("FERRY_MOTION jumps=",jumps)
+		world.queue_free()
+		await process_frame
+		quit(0 if jumps == 0 else 1)
+		return
+	if "--check-route" in OS.get_cmdline_user_args():
+		var clear := await _check_route()
+		world.queue_free()
+		await process_frame
+		quit(0 if clear else 1)
+		return
 	if "--stills" in OS.get_cmdline_user_args():
-		for t in [3.0,9.0,13.0,17.0,26.0,32.0,43.0,58.0,63.0,70.0]:
+		var times := [3.0,9.5,14.0,18.5,23.0,27.0,30.0,33.5,39.0,44.0,46.5,51.5,57.5,64.0,69.5,72.0]
+		for arg in OS.get_cmdline_user_args():
+			if arg.begins_with("--times="):
+				times.clear()
+				for value in arg.trim_prefix("--times=").split(","): times.append(float(value))
+		for t in times:
+			# Um segundo de pré-rolagem: passada, mistura de poses e olhar têm estado.
+			for i in 30: director.sample(maxf(t-1.0+i/30.0,0.0),1.0/30.0)
 			director.sample(t,1.0/30.0)
 			for i in 4: await process_frame
 			await RenderingServer.frame_post_draw
-			var result := root.get_texture().get_image().save_png(output+"/shot-%02d.png"%int(t))
+			var result := root.get_texture().get_image().save_png(output+"/shot-%04.1f.png"%t)
 			assert(result == OK)
 		print("FERRY_STILLS_OK")
 		world.queue_free()
@@ -174,6 +227,78 @@ func _check_work_routes() -> bool:
 	await physics_frame
 	return failures.is_empty()
 
+func _probe(x0: float, z0: float, x1: float, z1: float) -> void:
+	var modes: Dictionary = {}
+	for body in world.find_children("*","StaticBody3D",true,false):
+		modes[body] = body.disable_mode
+		body.disable_mode = CollisionObject3D.DISABLE_MODE_KEEP_ACTIVE
+	await physics_frame
+	await physics_frame
+	var space: PhysicsDirectSpaceState3D = world.get_world_3d().direct_space_state
+	var shape := CapsuleShape3D.new()
+	shape.radius = .25
+	shape.height = 1.6
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = shape
+	query.collision_mask = 1
+	print("FERRY_PROBE x=%.1f..%.1f z=%.1f..%.1f passo 0,5 m (linhas = z)"%[x0,x1,z0,z1])
+	var z := z0
+	while z <= z1:
+		var row := "FERRY_PROBE %6.1f "%z
+		var x := x0
+		while x <= x1:
+			var point := Vector3(x,.14,z)
+			query.transform = Transform3D(Basis.IDENTITY,point+Vector3.UP*.87)
+			var ground := space.intersect_ray(PhysicsRayQueryParameters3D.create(point+Vector3.UP*.2,point-Vector3.UP*.25,1))
+			row += " " if ground.is_empty() else ("#" if not space.intersect_shape(query,1).is_empty() else ".")
+			x += .5
+		print(row)
+		z += .5
+	for body in modes: body.disable_mode = modes[body]
+
+func _check_route() -> bool:
+	# Só a parte do casco acima da linha d'água importa na imagem; abaixo dela
+	# a caixa tocava o fundo modelado do canal em trechos de água livre.
+	var ferry: Node3D = director.ferry
+	var box := AABB()
+	var first := true
+	for mesh in ferry.find_children("*","MeshInstance3D",true,false):
+		if director.dante.is_ancestor_of(mesh) or director.passenger.is_ancestor_of(mesh): continue
+		var local: AABB = ferry.global_transform.affine_inverse() * mesh.global_transform * mesh.get_aabb()
+		box = local if first else box.merge(local)
+		first = false
+	box.position.y = .3
+	box.size.y = 1.2
+	var shape := BoxShape3D.new()
+	shape.size = box.size
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = shape
+	var excluded: Array[RID] = []
+	for body in ferry.find_children("*","CollisionObject3D",true,false): excluded.append(body.get_rid())
+	query.exclude = excluded
+	var modes: Dictionary = {}
+	for body in world.find_children("*","StaticBody3D",true,false):
+		modes[body] = body.disable_mode
+		body.disable_mode = CollisionObject3D.DISABLE_MODE_KEEP_ACTIVE
+	await physics_frame
+	await physics_frame
+	var space: PhysicsDirectSpaceState3D = world.get_world_3d().direct_space_state
+	var hits_by_time := {}
+	for frame in range(0,roundi(director.length*30.0),15):
+		var t := float(frame)/30.0
+		director.sample(t,.5)
+		query.transform = ferry.global_transform*Transform3D(Basis.IDENTITY,box.get_center())
+		var hits := space.intersect_shape(query,6)
+		if not hits.is_empty():
+			var names := []
+			for hit in hits: names.append(str(hit.collider.get_path()).get_file())
+			hits_by_time["%.1f"%t] = {"position":ferry.global_position,"solids":names}
+	FileAccess.open(output+"/route.json",FileAccess.WRITE).store_string(JSON.stringify({"hull":str(box),"hits":hits_by_time},"\t"))
+	print("FERRY_ROUTE hull=",box," hits=",hits_by_time.size())
+	for t in hits_by_time: print("FERRY_ROUTE_HIT ",t," ",hits_by_time[t])
+	for body in modes: body.disable_mode = modes[body]
+	return hits_by_time.is_empty()
+
 func _validate_motion() -> void:
 	# Detect the reported flips and circling across all 2,190 authored frames.
 	var rotations: Array[Quaternion] = []
@@ -183,8 +308,11 @@ func _validate_motion() -> void:
 	var relative_phone: Vector3 = director.ferry.to_local(director.phone.global_position)
 	if not previous_bones.is_empty():
 		for i in rotations.size():
-			max_bone_step = maxf(max_bone_step,previous_bones[i].angle_to(rotations[i]))
-		max_phone_step = maxf(max_phone_step,relative_phone.distance_to(previous_phone))
+			var bone_step := previous_bones[i].angle_to(rotations[i])
+			if bone_step >= .1 and max_bone_step < .1:
+				push_error("Primeiro salto de braço: quadro %d (%.2f s), osso %d, %.1f°"%[movie_frames,elapsed,i,rad_to_deg(bone_step)])
+			max_bone_step = maxf(max_bone_step,bone_step)
+		if director.phone.visible: max_phone_step = maxf(max_phone_step,relative_phone.distance_to(previous_phone))
 	previous_bones = rotations
 	previous_phone = relative_phone
 	for body in director.night_set.frozen_bodies:

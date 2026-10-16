@@ -16,7 +16,9 @@ func configure(world) -> void:
 	# His lane stays west of the stair landing and clear of the boarding ramp.
 	var porter := WORKER.new()
 	porter.configure({"id":"FilmQuayPorter","kind":"dock_worker","worker_index":23,
-		"position":Vector3(220,.14,194),"route":[Vector3(220,0,194),Vector3(220,0,197),Vector3(220,0,199.8),Vector3(221.2,0,197)]})
+		# 16/10: postes novos em x=220,5/222 (z=195,5) cortavam a volta diagonal;
+		# a volta passou meio metro para oeste (mapa de --probe no README).
+		"position":Vector3(219.5,.14,194),"route":[Vector3(219.5,0,194),Vector3(219.5,0,197),Vector3(219.5,0,199.5),Vector3(220.4,0,197)]})
 	porter.process_mode = Node.PROCESS_MODE_DISABLED
 	world.add_child(porter)
 	for body in world.find_children("*", "CharacterBody3D", true, false):

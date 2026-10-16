@@ -73,14 +73,34 @@ def main():
         row={key:line[key] for key in ["id","speaker","text","en"]}
         row.update(start=start,end=round(previous,3),memory=memory)
         rows.append(row)
-    ambience=loop_recording(GAME/"audio/living_city/water_0.ogg",.07)
+    ambience=loop_recording(GAME/"audio/living_city/water_0.ogg",.06)
     ambience+=loop_recording(GAME/"audio/acoustic/engine_diesel_0.wav",.045)
-    ambience+=loop_recording(GAME/"audio/weather/rain_bed.wav",.06)
-    ambience+=loop_recording(GAME/"audio/weather/rain_drops.wav",.028)
+    # Second cut (16/10): the recorded harbor, open sea and light rain beds.
+    ambience+=loop_recording(GAME/"audio/ambience_el/harbor_0.wav",.05)
+    ambience+=loop_recording(GAME/"audio/ambience_el/ocean_open_0.wav",.035)
+    ambience+=loop_recording(GAME/"audio/ambience_el/rain_light_0.wav",.06)
+    ambience+=loop_recording(GAME/"audio/weather/rain_drops.wav",.022)
     # Perspective of the remembered call: sea recedes, then returns with the pier.
     time=np.arange(len(ambience))/RATE
-    duck=1-.64*np.clip((time-29)/1.5,0,1)*np.clip((54-time)/1.5,0,1)
+    duck=1-.8*np.clip((time-29)/1.5,0,1)*np.clip((54-time)/1.5,0,1)
     ambience*=duck[:,None]
+    # Spot sounds placed on the picture: horn over the channel, the buoy as the
+    # ferry passes the city, the viaduct's low roll into the memory, distant
+    # traffic behind Vicente, then the horn and container work at the berth.
+    def spot(name, start, peak, length=None, pan=0.0):
+        signal=read(GAME/"audio/ambience_el"/name)
+        if length: signal=signal[:round(length*RATE)]
+        signal=fade(signal,.05,min(1.2,len(signal)/RATE*.4))
+        signal*=peak/max(.001,np.max(np.abs(signal)))
+        if pan: signal=signal*np.array([math.sqrt((1-pan)/2),math.sqrt((1+pan)/2)])*math.sqrt(2)
+        put(ambience,signal,start)
+    spot("ship_horn_1.wav",1.2,.11,6.0,-.35)
+    spot("buoy_bell_0.wav",8.0,.05,3.6,.4)
+    spot("thunder_roll_0.wav",27.4,.045,4.0)
+    spot("city_traffic_0.wav",41.8,.05,7.6,-.2)
+    spot("ship_horn_2.wav",54.6,.09,5.0,.3)
+    spot("container_clang_0.wav",56.0,.06,6.0,.45)
+    spot("port_terminal_0.wav",60.0,.045,13.0)
     # Gentle wooden/guitar-like original motif. No licensed music or trailer hit.
     music=np.zeros_like(ambience)
     def pluck(freq,duration=3.8):
@@ -97,10 +117,23 @@ def main():
     for start in [52.0,52.35]:
         t=np.arange(round(.13*RATE))/RATE
         put(voices,fade(np.sin(2*np.pi*440*t),.012,.025),start,.027)
+    # Low sustained pad under the remembered call; it swells as Vicente appears.
+    t=np.arange(len(music))/RATE
+    swell=np.clip((t-29.5)/3,0,1)*np.clip((53.5-t)/2,0,1)*(1+.6*np.clip((t-42)/2,0,1)*np.clip((49.5-t)/1.5,0,1))
+    pad=sum(np.sin(2*np.pi*f*t+p)*w for f,p,w in [(55,0,.6),(82.41,1.1,.35),(110.6,2.3,.2),(164.81,.4,.12)])
+    pad*=1+.15*np.sin(2*np.pi*.11*t)
+    music+=np.column_stack([pad*.9,pad*1.1])*swell[:,None]*.011
     music=fade(music,.1,1.8)
     metrics={"voice":save("voice",voices),"ambience":save("ambience",ambience),"music":save("music",music)}
     save("review_mix",voices+ambience+music)
-    timing={"duration":DURATION,"fps":30,"language":"pt-BR","shots":[0.0,7.0,12.0,16.0,21.0,25.0,29.0,36.5,42.0,49.0,54.0,61.0,67.5],"lines":rows}
+    # The English stem (tools/build_ferry_english_voice.py) stores its own line
+    # ends here; keep them while the line still starts at the same moment.
+    previous_timing=json.loads((ROOT/"timing.json").read_text(encoding="utf-8")) if (ROOT/"timing.json").exists() else {"lines":[]}
+    english={row["id"]:row for row in previous_timing["lines"] if "end_en" in row}
+    for row in rows:
+        old=english.get(row["id"])
+        if old and abs(old["start"]-row["start"])<1e-6: row["end_en"]=old["end_en"]
+    timing={"duration":DURATION,"fps":30,"language":"pt-BR","shots":[0.0,7.0,12.0,16.0,21.0,25.0,29.0,31.0,36.5,42.0,49.0,54.0,61.0,67.5],"lines":rows}
     (ROOT/"timing.json").write_text(json.dumps(timing,ensure_ascii=False,indent=2),encoding="utf-8")
     (ROOT/"production/audio_metrics.json").write_text(json.dumps(metrics,indent=2),encoding="utf-8")
     for lang in ["pt","en"]:
