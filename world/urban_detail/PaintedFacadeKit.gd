@@ -148,6 +148,15 @@ static func _corridor_material() -> StandardMaterial3D:
 ## e telhado de duas águas com cumeeira paralela à frente; sem empena, laje plana
 ## com cornija em anel.
 static func build(parent: Node3D, style: String, size: Vector3, collision_parent: Node3D = null, walk_in_x := NAN, options := {}) -> Node3D:
+	# Montagem roda no quadro do streaming: o span separa o custo do kit do resto
+	# de stream.*.record.building (nada disto foi medido ainda, 15/10).
+	var began := preload("res://runtime/StallWorkTrace.gd").begin()
+	var root := _build(parent, style, size, collision_parent, walk_in_x, options)
+	preload("res://runtime/StallWorkTrace.gd").finish("painted.build", began, {"style":style})
+	return root
+
+
+static func _build(parent: Node3D, style: String, size: Vector3, collision_parent: Node3D, walk_in_x: float, options: Dictionary) -> Node3D:
 	var root := Node3D.new()
 	root.name = "PaintedFacade_" + style
 	parent.add_child(root)
@@ -397,6 +406,14 @@ static func _leaf(anchor: Node3D, node_name: String, style: String, side: String
 	outside.position = Vector3(sign_x * panel_w * 0.5, leaf_h * 0.5, 0.005)
 	outside.material_override = _leaf_material(style, part, mirrored)
 	door.hinge.add_child(outside)
+	if not walk_in:
+		# Folha que nunca abre: o verso fica dentro do casco fechado (sem corredor
+		# atrás de vão com folha) e ninguém o vê, nem com o andar recortado, porque
+		# a parede interna do cômodo cobre o vão. Só a sombra dependia dele; a frente
+		# projeta dos dois lados no lugar. Um MeshInstance (e uma sombra) a menos por
+		# folha fechada: 2-3 por sobrado de dois módulos.
+		outside.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_DOUBLE_SIDED
+		return door
 	var inside := MeshInstance3D.new()
 	inside.mesh = QuadMesh.new()
 	inside.mesh.size = Vector2(panel_w, leaf_h)
@@ -404,7 +421,7 @@ static func _leaf(anchor: Node3D, node_name: String, style: String, side: String
 	inside.rotation.y = PI
 	inside.material_override = _leaf_material(style, part + "_inside", mirrored)
 	door.hinge.add_child(inside)
-	if walk_in and collision_parent != null:
+	if collision_parent != null:
 		# Porta dupla: só a folha esquerda vigia o jogador (largura do vão todo) e puxa a outra.
 		if watch_w > 0.0: door.watch_player(Vector3(watch_w + 0.4, leaf_h, DOOR_REACH))
 		# Folha sólida enquanto fechada: o corte da entrada (ExteriorAccess) abre 2,2 m

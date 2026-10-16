@@ -25,6 +25,12 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 			if ResourceLoader.exists(PaintedFacadeKit.ROOT + style + "/" + part + ".jpg"):
 				materials.append(PaintedFacadeKit.material(style, part))
 	materials.append(PaintedFacadeKit._corridor_material())
+	# Recorte do trem na frente do prédio ocupado (HarborBuildingMovingSightline):
+	# o ShaderMaterial nasce ao entrar no prédio, sem cortina, e o shader só era
+	# compilado quando o trem aparecia na tela com o jogador lá dentro.
+	var clip := ShaderMaterial.new()
+	clip.shader = preload("res://world/places/harbor_buildings/HarborBuildingMovingSightline.gdshader")
+	materials.append(clip)
 	var visual := Node3D.new()
 	visual.name = "PaintedFacadePrewarm"
 	visual.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF

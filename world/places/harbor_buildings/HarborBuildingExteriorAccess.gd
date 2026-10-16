@@ -21,6 +21,14 @@ var _scan_clock := 0.0
 var _view_floor := -1
 var _view_storey := 3.0
 var _view_rooftop := false
+## Lotes MultiMesh já varridos (id -> instance_count) e malhas já recusadas por
+## _relevant_visual. A varredura de 0,5 s com o jogador dentro refazia, a cada
+## passada, o laço GDScript por TODAS as instâncias dos lotes CityLook_ do trecho
+## que não tinham nada nesta parcela (só os capturados eram pulados). Peças de
+## apresentação não se mexem: a resposta de antes continua valendo.
+var _scanned_batches := {}
+var _rejected_meshes := {}
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 
 func _ready() -> void:
 	set_process(false)
@@ -91,6 +99,11 @@ func set_floor_view(floor_index: int, storey_height: float, rooftop := false) ->
 	_hold_painted_doors(true)
 	var key := "%d/%s"%[floor_index,str(rooftop)]
 	if key == _view_key: return
+	var began := STALL_WORK.begin()
+	_apply_floor_view(key, floor_index, storey_height, rooftop)
+	STALL_WORK.finish("building.access.floor_view", began, {"place":str(definition.get("id","")), "floor":floor_index})
+
+func _apply_floor_view(key: String, floor_index: int, storey_height: float, rooftop: bool) -> void:
 	_view_key = key
 	_view_floor = floor_index
 	_view_storey = storey_height
@@ -132,6 +145,7 @@ func _process(delta: float) -> void:
 	_scan_clock -= delta
 	if _scan_clock>0 or not _open: return
 	_scan_clock = .5
+	var began := STALL_WORK.begin()
 	# City dressing is scheduled after the building record. Capture only newly
 	# mounted presentation nodes so late rooftop details cannot float indoors.
 	var known := {}
@@ -139,11 +153,15 @@ func _process(delta: float) -> void:
 		if is_instance_valid(item.node): known[item.node.get_instance_id()] = true
 	var changed := false
 	for node in _presentation_nodes("MeshInstance3D"):
-		if is_ancestor_of(node) or known.has(node.get_instance_id()) or node.mesh==null or node.skin!=null or node.is_queued_for_deletion(): continue
+		var node_id: int = node.get_instance_id()
+		if known.has(node_id) or _rejected_meshes.get(node_id) == node.mesh: continue
+		if is_ancestor_of(node) or node.mesh==null or node.skin!=null or node.is_queued_for_deletion(): continue
 		var relative: Transform3D = global_transform.affine_inverse()*node.global_transform
 		var owned: bool = _owns_architecture(node) or _belongs_to_native_roof(relative*node.mesh.get_aabb())
 		var canopy: bool = _is_venue_canopy(node)
-		if not _relevant_visual(relative*node.mesh.get_aabb(),owned or canopy): continue
+		if not _relevant_visual(relative*node.mesh.get_aabb(),owned or canopy):
+			_rejected_meshes[node_id] = node.mesh
+			continue
 		_meshes.append({"node":node,"original":node.mesh,"open_mesh":_cut_mesh(node.mesh,relative,[_door_cut()]),"transform":relative,"visible":node.visible,"owned_architecture":owned,"hide_inside":canopy})
 		changed = true
 	var known_labels := {}
@@ -163,6 +181,7 @@ func _process(delta: float) -> void:
 		_add_roof_prop_solids()
 		_view_key = ""
 		set_floor_view(_view_floor,_view_storey,_view_rooftop)
+	STALL_WORK.finish_slow("building.access.rescan", began, 2000, self)
 
 func _door_cut() -> AABB:
 	var half_depth: float = definition.size.y*.5
@@ -181,6 +200,13 @@ func _interior_cut() -> AABB:
 
 func _prepare_access() -> void:
 	if _prepared: return
+	# Roda síncrono quando a sala é preparada a 8 m da porta (jogo andando, sem
+	# cortina): o span deixa a fase 2 medir o corte da fachada e das colisões.
+	var began := STALL_WORK.begin()
+	_prepare_access_now()
+	STALL_WORK.finish("building.access.prepare", began, {"place":str(definition.get("id",""))})
+
+func _prepare_access_now() -> void:
 	_sync_transform()
 	_prepared = true
 	var cuts: Array[AABB] = [_interior_cut(),_door_cut()]
@@ -346,6 +372,10 @@ func _prepare_multimeshes() -> void:
 			if item.node == batch: captured = true; break
 		if captured: continue
 		var source: MultiMesh = batch.multimesh
+		# Mesmo recurso já varrido sem nada nesta parcela: não repete o laço por instância.
+		var batch_id: int = batch.get_instance_id()
+		if _scanned_batches.get(batch_id) == source: continue
+		_scanned_batches[batch_id] = source
 		var owned: bool = _owns_architecture(batch)
 		var opened: MultiMesh = null
 		var frame: Transform3D = global_transform.affine_inverse()*batch.global_transform
