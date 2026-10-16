@@ -621,15 +621,8 @@ func _stall_spawn_glass(point: Vector3, direction: Vector3) -> void:
 	burst.amount = 26
 	burst.lifetime = 0.9
 	burst.explosiveness = 0.95
-	var shard := BoxMesh.new()
-	shard.size = Vector3(0.05, 0.01, 0.07)
-	burst.mesh = shard
-	var material := StandardMaterial3D.new()
-	material.albedo_color = Color(0.78, 0.9, 0.95, 0.85)
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	material.metallic_specular = 1.0
-	material.roughness = 0.05
-	burst.material_override = material
+	burst.mesh = glass_shard_mesh()
+	burst.material_override = glass_shard_material()
 	burst.direction = (direction + Vector3.UP * 0.6).normalized()
 	burst.spread = 55.0
 	burst.initial_velocity_min = 2.0
@@ -647,6 +640,51 @@ func _stall_spawn_glass(point: Vector3, direction: Vector3) -> void:
 	burst.finished.connect(burst.queue_free)
 	STALL_WORK.finish_slow("street.glass.attach",stage,5000,self)
 	_scatter(point, direction, 22, Vector2(0.04, 0.09), Color(0.8, 0.92, 0.98, 0.9), 0.05, 60.0, 0.0 if baseline else .6)
+
+
+## Materiais dos detritos, com as mesmas flags usadas em jogo: VehicleMaterialVariantPrewarm os
+## desenha sob a cortina. Sem isso a primeira batida forte compilava o shader no quadro do choque
+## (street.scatter.material 18 ms e street.glass 19 ms no release de 13/10).
+## O vidro em lascas não anima o material: um só, vivo a sessão inteira (antes, um por estouro).
+static var _glass_shard_material: StandardMaterial3D
+static var _glass_shard_mesh: BoxMesh
+
+static func glass_shard_material() -> StandardMaterial3D:
+	if _glass_shard_material == null:
+		_glass_shard_material = StandardMaterial3D.new()
+		_glass_shard_material.albedo_color = Color(0.78, 0.9, 0.95, 0.85)
+		_glass_shard_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		_glass_shard_material.metallic_specular = 1.0
+		_glass_shard_material.roughness = 0.05
+	return _glass_shard_material
+
+static func glass_shard_mesh() -> BoxMesh:
+	if _glass_shard_mesh == null:
+		_glass_shard_mesh = BoxMesh.new()
+		_glass_shard_mesh.size = Vector3(0.05, 0.01, 0.07)
+	return _glass_shard_mesh
+
+## Por pedaço: o alfa de cada mancha some no seu tempo.
+static func debris_material(color: Color, roughness: float) -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.albedo_color = color
+	material.roughness = roughness
+	material.metallic_specular = 1.0 if roughness < 0.2 else 0.3
+	material.cull_mode = BaseMaterial3D.CULL_DISABLED
+	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	return material
+
+## Por poça: o alfa seca com a idade.
+static func puddle_material() -> StandardMaterial3D:
+	var wet := StandardMaterial3D.new()
+	wet.albedo_color = Color(0.08, 0.1, 0.12, 0.55)
+	wet.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	wet.roughness = 0.03
+	wet.metallic_specular = 1.0
+	return wet
+
+static func warm_materials() -> Array[Material]:
+	return [glass_shard_material(), debris_material(Color.WHITE, .05), puddle_material()]
 
 
 func spawn_litter(point: Vector3, direction: Vector3) -> void:
@@ -690,12 +728,7 @@ func _stall_scatter(point: Vector3, direction: Vector3, count: int, size: Vector
 	mesh.mesh = tool.commit()
 	STALL_WORK.finish_slow("street.scatter.commit",stage,5000,self)
 	stage = STALL_WORK.begin()
-	var material := StandardMaterial3D.new()
-	material.albedo_color = color
-	material.roughness = roughness
-	material.metallic_specular = 1.0 if roughness < 0.2 else 0.3
-	material.cull_mode = BaseMaterial3D.CULL_DISABLED
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	var material := debris_material(color, roughness)
 	mesh.material_override = material
 	mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	STALL_WORK.finish_slow("street.scatter.material",stage,5000,self)
@@ -734,11 +767,7 @@ func spawn_geyser(point: Vector3) -> void:
 	disc.height = 0.005
 	disc.radial_segments = 18
 	puddle.mesh = disc
-	var wet := StandardMaterial3D.new()
-	wet.albedo_color = Color(0.08, 0.1, 0.12, 0.55)
-	wet.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	wet.roughness = 0.03
-	wet.metallic_specular = 1.0
+	var wet := puddle_material()
 	puddle.material_override = wet
 	puddle.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(puddle)

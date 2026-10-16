@@ -15,11 +15,22 @@ const USAGE = preload("res://runtime/VehicleUsage.gd")
 const DAMAGE = preload("res://gameplay/vehicle_effects/VehicleDamage.gd")
 const RAIN = preload("res://gameplay/vehicle_effects/VehicleRain.gd")
 const GUARDS = preload("res://gameplay/emergency/EffectsPrewarm.gd")
+const RESOURCES = preload("res://gameplay/vehicle_effects/VehicleEffectResources.gd")
+const TIRES = preload("res://gameplay/vehicle_effects/VehicleTireEffects.gd")
+const WINDSHIELD = preload("res://gameplay/vehicle_effects/VehicleWindshieldRain.gd")
+const STREET = preload("res://gameplay/street_physics/StreetPhysics.gd")
 const DRAW_FRAMES := 3
 const MAX_WAIT_FRAMES := 24
 const SPACING := .7
 static var _bases: Dictionary = {}         # assinatura -> pintura base (cópia)
 static var _retained: Array[StandardMaterial3D] = []
+## Efeitos do veículo e da rua que nascem só no jogo (fumaça, fogo, estouro, marcas de pneu,
+## chuva no para-brisa, lascas de vidro, detritos). Cada um compilava o próprio shader no
+## quadro em que aparecia: vehicle.effects.powertrain 17-46 ms (10 rodadas de benchmark no
+## release de 15/10, sempre ~115 s depois do início), vehicle_damage.fire até 80 ms,
+## street.glass/scatter 18-19 ms. O ParticleProcessMaterial e o StandardMaterial3D só guardam o
+## shader enquanto houver material vivo com as mesmas flags: estes ficam retidos.
+static var _retained_effects: Array[Resource] = []
 static var _drawn := false
 static var last_summary: Dictionary = {}
 
@@ -61,13 +72,24 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 	visual.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	var box := BoxMesh.new()
 	box.size = Vector3.ONE * .5
-	var columns := maxi(1, ceili(sqrt(float(variants.size()))))
-	for index in variants.size():
+	var effect_materials := _effect_materials()
+	var drawn: Array[Material] = []
+	drawn.append_array(variants)
+	drawn.append_array(effect_materials)
+	var columns := maxi(1, ceili(sqrt(float(drawn.size()))))
+	for index in drawn.size():
 		var part := MeshInstance3D.new()
 		part.mesh = box
-		part.material_override = variants[index]
+		part.material_override = drawn[index]
 		part.position = Vector3((index % columns - (columns - 1) * .5) * SPACING, -floorf(float(index) / columns) * SPACING, 0)
 		visual.add_child(part)
+	var emitters := _effect_emitters()
+	# Os processos ficam retidos depois que os emissores são liberados com `visual`.
+	var processes: Array[Resource] = []
+	for emitter in emitters: processes.append(emitter.process_material)
+	for index in emitters.size():
+		emitters[index].position = Vector3((index - (emitters.size() - 1) * .5) * SPACING, SPACING, 0)
+		visual.add_child(emitters[index])
 	host.add_child(visual)
 	_position(visual, camera)
 	var draws: Array[int] = [0]
@@ -87,10 +109,12 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 	if is_instance_valid(visual): visual.free()
 	if completed:
 		_retained.append_array(variants)
+		_retained_effects.append_array(effect_materials)
+		_retained_effects.append_array(processes)
 		_drawn = true
 		_bases.clear()
-	last_summary = {"bases":base_count, "glass":0, "variants":variants.size(), "completed":completed,
-		"draws":draws[0], "usec":Time.get_ticks_usec()-began}
+	last_summary = {"bases":base_count, "glass":0, "variants":variants.size(), "effects":effect_materials.size(),
+		"emitters":processes.size(), "completed":completed, "draws":draws[0], "usec":Time.get_ticks_usec()-began}
 	print("Variantes de material de veículo preparadas: ", JSON.stringify(last_summary))
 
 ## Mesmas mudanças de flags de VehicleUsage.apply e VehicleDamage._stall_apply_wear;
@@ -119,13 +143,41 @@ static func _variants(base: StandardMaterial3D) -> Array[StandardMaterial3D]:
 		dented.normal_texture = DAMAGE._dents()
 		dented.uv1_triplanar = true
 		result.append(dented)
-		# Chuva (VehicleRain): gotas triplanares em UV1, em pintura limpa e em suja.
-		for source: StandardMaterial3D in [base, detailed]:
+		# Chuva (VehicleRain): gotas triplanares em UV1, em pintura limpa, suja, repintada e gasta
+		# (sem verniz): o amassado tira as gotas, mas o desgaste antes dele não.
+		for source: StandardMaterial3D in [base, detailed, reset, worn]:
 			var beaded := source.duplicate() as StandardMaterial3D
 			beaded.normal_enabled = true
 			beaded.normal_texture = RAIN.beads()
 			beaded.uv1_triplanar = true
 			result.append(beaded)
+	return result
+
+## Materiais desenhados numa caixa: marcas de pneu, para-brisa molhado e limpador, detritos da rua.
+static func _effect_materials() -> Array[Material]:
+	var result: Array[Material] = [TIRES.mark_material()]
+	for material in WINDSHIELD.warm_materials(): result.append(material)
+	result.append_array(STREET.warm_materials())
+	return result
+
+## Emissores com as mesmas receitas de VehicleTireEffects/PowertrainEffects/ImpactEffects/Damage:
+## processo simples e processo com rampa de cor + curva de escala (burnout, fogo e fumaça do
+## motor), cada um com o quad de fumaça e com a chama procedural.
+static func _effect_emitters() -> Array[GPUParticles3D]:
+	var result: Array[GPUParticles3D] = []
+	for ramped in [false, true]:
+		for wisp in [true, false]:
+			var emitter := RESOURCES.emitter("WarmVehicleEffect", 14, .5, Vector2(.3, .3), wisp)
+			var process := RESOURCES.particle_process()
+			if ramped:
+				var ramps: Array = TIRES.burnout_ramps()
+				process.color_ramp = ramps[0]
+				process.scale_curve = ramps[1]
+			emitter.process_material = process
+			# Partículas já no primeiro desenho, mesmo com fixed_fps=30 (como EffectsPrewarm).
+			emitter.preprocess = .1
+			emitter.emitting = true
+			result.append(emitter)
 	return result
 
 ## Aproxima a MaterialKey do motor: bools/enums e presença de texturas mudam o

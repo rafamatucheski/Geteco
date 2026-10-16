@@ -240,7 +240,17 @@ func _set_burnout_smoke(side: int, enabled: bool) -> void:
 	_burnout_smoke[side] = enabled
 	var emitter := emitters[side]
 	var process := emitter.process_material as ParticleProcessMaterial
-	if enabled and _burnout_fade == null:
+	if enabled: burnout_ramps()
+	emitter.amount = 36 if enabled else 18
+	emitter.lifetime = 1.5 if enabled else .48
+	emitter.draw_pass_1 = RESOURCES.quad(Vector2(.9,.9) if enabled else Vector2(.26,.26))
+	process.color_ramp = _burnout_fade if enabled else null
+	process.scale_curve = _burnout_growth if enabled else null
+
+## Rampa de alfa e curva de crescimento da fumaça do burnout. Com elas o ParticleProcessMaterial
+## vira outra variante de shader; VehicleMaterialVariantPrewarm a desenha sob a cortina.
+static func burnout_ramps() -> Array:
+	if _burnout_fade == null:
 		var gradient := Gradient.new()
 		gradient.offsets = PackedFloat32Array([0.0,.12,.55,1.0])
 		gradient.colors = PackedColorArray([Color(1,1,1,0),Color.WHITE,Color(1,1,1,.65),Color(1,1,1,0)])
@@ -252,11 +262,7 @@ func _set_burnout_smoke(side: int, enabled: bool) -> void:
 		curve.add_point(Vector2(1,1))
 		_burnout_growth = CurveTexture.new()
 		_burnout_growth.curve = curve
-	emitter.amount = 36 if enabled else 18
-	emitter.lifetime = 1.5 if enabled else .48
-	emitter.draw_pass_1 = RESOURCES.quad(Vector2(.9,.9) if enabled else Vector2(.26,.26))
-	process.color_ramp = _burnout_fade if enabled else null
-	process.scale_curve = _burnout_growth if enabled else null
+	return [_burnout_fade, _burnout_growth]
 
 func _set_emitting(side: int, value: bool) -> void:
 	if side < emitters.size(): emitters[side].emitting = value

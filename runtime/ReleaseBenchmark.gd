@@ -7,6 +7,8 @@ extends Node
 ## Noite e chuva (15/10): --benchmark-hour=H (0..24, padrão 12) e --benchmark-rain[=1|2] (2 tempestade, padrão;
 ## 1 garoa) com o chão já molhado. Exercitam o que o meio-dia seco não liga: postes/faróis/janelas, sombras de
 ## faróis, partículas de chuva, respingos e a captura do reflexo do chão molhado. Sem as opções, nada muda.
+## Dirigindo (15/10): --benchmark-drive faz o carro andar a rota com a própria física e direção
+## automática (BenchmarkAutopilot), para medir o custo de dirigir que o teleporte não exercita.
 const ROUTE_WEST := [Vector3(64, 0, 82), Vector3(150, 0, 82), Vector3(143, 0, 60), Vector3(84, 0, 60), Vector3(84, 0, 123), Vector3(65, 0, 113)]
 const ROUTE_PORT := [Vector3(150, 0, 82), Vector3(250, 0, 82), Vector3(250, 0, 30), Vector3(180, 0, 30), Vector3(180, 0, 82)]
 ## Pontos quentes das outras regiões (censo de 14/10). Serra: --play-at=mountain,650,-290; ponte cidade–serra:
@@ -28,6 +30,8 @@ const TOGGLES := ["GETECO_POP_VC", "GETECO_SUN_SHADOW_NEAR", "GETECO_TRAFFIC_RAI
 	"GETECO_PED_DUMMY", "GETECO_BUILDING_BATCH", "GETECO_PROP_INSTANCING", "GETECO_GROUND_STACK", "GETECO_SHADOW_SHELL",
 	"GETECO_BRIDGE_MERGE", "GETECO_FURNITURE_MERGE", "GETECO_CELL_MERGE", "GETECO_BRIDGE_LOOK", "GETECO_PAINTED_WINDOWS", "GETECO_PAINTED_FACADES",
 	"GETECO_SUN_SPLITS"]
+
+const AUTOPILOT := preload("res://runtime/BenchmarkAutopilot.gd")
 
 var world: Node
 var route: Array = ROUTE_WEST
@@ -96,7 +100,9 @@ func _run() -> void:
 	if bench_rain > 0 and "coastal_wetness" in weather: weather.coastal_wetness = 1.0
 	if "weather_timer" in weather: weather.weather_timer = 1.0e9
 	var car: CharacterBody3D = world.driving.car
-	car.set_physics_process(false)
+	var autopilot: RefCounted = AUTOPILOT.new(self, car, route, SPEED) if AUTOPILOT.requested() else null
+	if autopilot != null: autopilot.begin()
+	else: car.set_physics_process(false)
 	car.visible = true
 	world.player.set_physics_process(false)
 	world.player.visible = false
@@ -111,18 +117,21 @@ func _run() -> void:
 	var previous := Time.get_ticks_usec()
 	while distance < total * (WARMUP_LOOPS + MEASURE_LOOPS):
 		var sample := _route_point(distance)
-		car.global_position = sample.point + Vector3.UP * .1
-		car.rotation = Vector3(0, sample.yaw, 0)
-		world.player.global_position = sample.point
+		if autopilot == null:
+			car.global_position = sample.point + Vector3.UP * .1
+			car.rotation = Vector3(0, sample.yaw, 0)
+		world.player.global_position = sample.point if autopilot == null else car.global_position
 		await get_tree().process_frame
 		var now := Time.get_ticks_usec()
 		var frame_ms := (now - previous) / 1000.0
 		previous = now
-		distance += SPEED * minf(frame_ms, 100.0) / 1000.0
+		if autopilot != null: distance = autopilot.drive(minf(frame_ms, 100.0) / 1000.0)
+		else: distance += SPEED * minf(frame_ms, 100.0) / 1000.0
 		if distance < total * WARMUP_LOOPS: continue
 		frames.append(frame_ms)
 		gpu.append(RenderingServer.viewport_get_measured_render_time_gpu(viewport))
 		draws.append(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
+	if autopilot != null: autopilot.finish()
 	var toggles := {}
 	for name in TOGGLES: toggles[name] = OS.get_environment(name)
 	var report := {"label": label, "build": "editor" if OS.has_feature("editor") else ("export_release" if OS.has_feature("release") else "export_debug"),
@@ -133,6 +142,7 @@ func _run() -> void:
 		"frames_over_33ms": frames.filter(func(ms): return ms > 33.3).size(), "playable_ms": playable_ms, "frames_over_250ms": frames.filter(func(ms): return ms > 250.0).size(),
 		"resolution": str(get_viewport().get_visible_rect().size), "viewport_pixels": str(get_viewport().size), "msaa": get_viewport().msaa_3d,
 		"hour": bench_hour, "rain": bench_rain, "vehicles": world.production.vehicles.size(), "people": world.people.size()}
+	if autopilot != null: report.drive = autopilot.summary()
 	print("BENCH_RELEASE ", JSON.stringify({"label": label, "frame_p50": report.frame_ms.p50, "frame_p95": report.frame_ms.p95, "draws_p50": report.draw_calls.p50}))
 	var folder := "user://benchmark-west"
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))

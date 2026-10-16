@@ -26,11 +26,13 @@ static func enabled() -> bool:
 	return OS.get_environment("HARBOR_VEHICLE_RAIN") != "0" and "--no-vehicle-rain" not in OS.get_cmdline_user_args()
 
 func _physics_process(delta: float) -> void:
-	if not enabled() or weather == null or DisplayServer.get_name() == "headless": return
+	# Relógio primeiro: enabled() lê o ambiente e copia os argumentos da linha de comando,
+	# e isso não precisa acontecer a cada passo de física, só a 4 Hz.
 	_clock += delta
 	if _clock < STEP: return
 	var dt := _clock
 	_clock = 0.0
+	if not enabled() or weather == null or DisplayServer.get_name() == "headless": return
 	var controller = weather.get("controller")
 	if controller == null: return
 	var focus: Vector3 = ATMOSPHERE.focus_position(controller)

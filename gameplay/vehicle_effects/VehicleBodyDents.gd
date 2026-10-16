@@ -6,6 +6,13 @@ const MAX_DENTS := 12
 const MAX_DEPTH := .34
 const MAX_VERTICES := 60000
 const REST_MESH_META := "body_dents_rest_mesh"
+## Arrays em repouso por Mesh compartilhado. `surface_get_arrays` lê o buffer de volta da GPU
+## e, no RenderingDevice, espera os quadros em voo terminarem: cada carro batido pela primeira
+## vez pagava isso por superfície (street.crash.damage_self ~4 ms p50 e até 12 ms no release,
+## logs de 13-15/10). Carros do mesmo modelo dividem as malhas, então a leitura é uma por malha.
+## Limitado: malha recortada (porta) é única do carro e não deve ficar presa para sempre.
+const REST_CACHE_LIMIT := 48
+static var _rest_cache: Dictionary = {}   # Mesh -> Array (arrays por superfície)
 var vehicle: CharacterBody3D
 var dents: Array = []
 var parts: Array[Dictionary] = []
@@ -71,8 +78,10 @@ func impact(amount: float, point: Vector3) -> void:
 	var prior:=float(row.depth)
 	row.depth=minf(MAX_DEPTH,prior+depth)
 	if row.depth>prior:
+		var fresh:=not prepared
 		_prepare()
-		_rebuild()
+		# Só este amassado mudou: o resto da lataria continua exatamente como estava.
+		_rebuild({} if fresh else row)
 	# Short damped body recoil. No permanent processing on damaged vehicles.
 	if vehicle.controlled and vehicle.health>0:
 		_kick=Vector3(direction.z,0,-direction.x)*clampf(amount*.002,.012,.045)
@@ -88,51 +97,102 @@ func _prepare() -> void:
 		if part.mesh==null or part.skeleton!=NodePath("") or part.is_queued_for_deletion() or not part.visible: continue
 		var path:=str(vehicle.visual.get_path_to(part)).to_lower()
 		if "wheel" in path or "interior" in path or "rider" in path: continue
-		var arrays: Array = []
 		var eligible: Array[bool] = []
-		var count:=0
 		var painted:=false
+		# Papel antes da geometria: peça sem pintura (vidro, farol, cromado) não lê arrays.
 		for surface in part.mesh.get_surface_count():
-			var data:=part.mesh.surface_get_arrays(surface)
-			arrays.append(data)
 			var material:=part.get_active_material(surface)
 			var role:=ROLES.key(part,surface).get_slice("#",0)
 			var is_paint: bool=role=="paint" or (vehicle._paint!=null and material in vehicle._paint.materials and role!="roof_paint")
 			eligible.append(is_paint)
 			painted=painted or is_paint
-			count+=(data[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()
-		if not painted or total+count>MAX_VERTICES: continue
+		if not painted: continue
+		var count:=0
+		for surface in part.mesh.get_surface_count(): count+=part.mesh.surface_get_array_len(surface)
+		if total+count>MAX_VERTICES: continue
+		var arrays:=_rest_arrays(part.mesh)
 		total+=count
 		parts.append({"node":part,"mesh":part.mesh,"arrays":arrays,"eligible":eligible,"transform":inverse*part.global_transform})
 		part.set_meta(REST_MESH_META,part.mesh)
 
-func _rebuild() -> void:
+static func _rest_arrays(mesh: Mesh) -> Array:
+	var cached: Array=_rest_cache.get(mesh,[])
+	# Alguém reescreveu as superfícies da malha no lugar: a cópia não vale mais.
+	var valid:=cached.size()==mesh.get_surface_count()
+	for surface in cached.size():
+		if not valid: break
+		valid=(cached[surface][Mesh.ARRAY_VERTEX] as PackedVector3Array).size()==mesh.surface_get_array_len(surface)
+	if valid and not cached.is_empty(): return cached
+	var arrays: Array=[]
+	for surface in mesh.get_surface_count(): arrays.append(mesh.surface_get_arrays(surface))
+	_rest_cache.erase(mesh)
+	while _rest_cache.size()>=REST_CACHE_LIMIT: _rest_cache.erase(_rest_cache.keys()[0])
+	_rest_cache[mesh]=arrays
+	return arrays
+
+## Peça cuja caixa (em repouso, coordenadas do veículo) fica fora da esfera do amassado.
+static func _outside(entry: Dictionary, point: Vector3, radius: float) -> bool:
+	var box: AABB=(entry.transform as Transform3D)*(entry.mesh as Mesh).get_aabb()
+	var nearest:=point.clamp(box.position,box.end)
+	return nearest.distance_squared_to(point)>=radius*radius
+
+## `changed` vazio = reconstrói tudo a partir do repouso (primeira batida, carga, troca de malha).
+## Com o registro que acabou de aprofundar, só vértices dentro do raio dele mudam: o deslocamento
+## de cada vértice só depende dos amassados que o alcançam (peso zero fora do raio). Os demais
+## reaproveitam a posição já aplicada, então o resultado é o mesmo da reconstrução completa.
+func _rebuild(changed: Dictionary = {}) -> void:
 	var started:=Time.get_ticks_usec()
+	var partial:=not changed.is_empty()
+	var changed_point:=Vector3(changed.point[0],changed.point[1],changed.point[2]) if partial else Vector3.ZERO
+	var changed_radius:=float(changed.radius) if partial else 0.0
+	# Registros convertidos uma vez, não por vértice.
+	var dent_points: Array[Vector3]=[]
+	var dent_offsets: Array[Vector3]=[]
+	var dent_radii: Array[float]=[]
+	for row in dents:
+		dent_points.append(Vector3(row.point[0],row.point[1],row.point[2]))
+		dent_offsets.append(Vector3(row.direction[0],row.direction[1],row.direction[2])*float(row.depth))
+		dent_radii.append(float(row.radius))
 	for entry in parts:
 		var part: MeshInstance3D=entry.node
 		if not is_instance_valid(part): continue
+		if partial and entry.has("applied_mesh") and part.mesh==entry.applied_mesh and _outside(entry,changed_point,changed_radius): continue
+		var reuse: bool=partial and entry.has("applied_mesh") and part.mesh==entry.applied_mesh
 		var mesh:=ArrayMesh.new()
 		var transform: Transform3D=entry.transform
 		var inverse:=transform.affine_inverse()
+		if not entry.has("rest_points"): entry["rest_points"]=[]
+		if not entry.has("applied_vertices"): entry["applied_vertices"]=[]
 		for surface in entry.arrays.size():
 			var arrays: Array=entry.arrays[surface].duplicate()
 			if entry.eligible[surface]:
-				var vertices: PackedVector3Array=arrays[Mesh.ARRAY_VERTEX].duplicate()
+				var source: PackedVector3Array=arrays[Mesh.ARRAY_VERTEX]
+				while entry.rest_points.size()<=surface: entry.rest_points.append(null)
+				while entry.applied_vertices.size()<=surface: entry.applied_vertices.append(null)
+				if entry.rest_points[surface]==null:
+					var points:=PackedVector3Array()
+					points.resize(source.size())
+					for index in source.size(): points[index]=transform*source[index]
+					entry.rest_points[surface]=points
+				var rest_points: PackedVector3Array=entry.rest_points[surface]
+				var applied: Variant=entry.applied_vertices[surface] if reuse else null
+				var vertices: PackedVector3Array=(applied as PackedVector3Array).duplicate() if applied!=null else source.duplicate()
+				var radius_squared:=changed_radius*changed_radius
 				for index in vertices.size():
-					var rest:=transform*vertices[index]
+					var rest:=rest_points[index]
+					if applied!=null and rest.distance_squared_to(changed_point)>=radius_squared: continue
 					# Beltline/roof and cabin remain stable, including upper door frames.
 					var belt:=1.0-smoothstep(vehicle.body_height*.58,vehicle.body_height*.82,rest.y)
 					var displacement:=Vector3.ZERO
-					for row in dents:
-						var point:=Vector3(row.point[0],row.point[1],row.point[2])
-						var direction:=Vector3(row.direction[0],row.direction[1],row.direction[2])
-						var distance:=rest.distance_to(point)/float(row.radius)
+					for dent in dent_points.size():
+						var distance:=rest.distance_to(dent_points[dent])/dent_radii[dent]
 						if distance>=1: continue
 						var weight:=pow(1.0-distance*distance,2)*belt
-						displacement+=direction*float(row.depth)*weight
+						displacement+=dent_offsets[dent]*weight
 					if displacement.length()>MAX_DEPTH: displacement=displacement.normalized()*MAX_DEPTH
 					vertices[index]=inverse*(rest+displacement)
 				arrays[Mesh.ARRAY_VERTEX]=vertices
+				entry.applied_vertices[surface]=vertices
 				# Keep the authored topology, UVs and split seams. SurfaceTool reindexes
 				# exported meshes, which can merge vertices at hard panel boundaries.
 				_update_normals(arrays)

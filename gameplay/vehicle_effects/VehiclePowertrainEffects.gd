@@ -3,6 +3,7 @@ extends Node
 
 const RESOURCES := preload("res://gameplay/vehicle_effects/VehicleEffectResources.gd")
 const BACKFIRE_SPEED := 220.0/16.0
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 
 var vehicle: CharacterBody3D
 var exhaust: GPUParticles3D
@@ -54,6 +55,13 @@ func physics_tick(active: bool) -> void:
 
 func _ensure_exhaust() -> void:
 	if is_instance_valid(exhaust): return
+	# Criação do emissor com span próprio: separa compilação de shader (deveria ter sumido com
+	# VehicleMaterialVariantPrewarm) do resto de vehicle.effects.powertrain.
+	var began := STALL_WORK.begin()
+	_create_exhaust()
+	STALL_WORK.finish_slow("vehicle.effects.powertrain.create_exhaust", began, 2000, vehicle)
+
+func _create_exhaust() -> void:
 	exhaust = RESOURCES.emitter("NormalExhaust",14,.62,Vector2(.15,.15),true)
 	exhaust.process_material = RESOURCES.particle_process()
 	vehicle.add_child(exhaust)
@@ -61,6 +69,13 @@ func _ensure_exhaust() -> void:
 
 func _ensure_damage_smoke() -> void:
 	if is_instance_valid(damage_smoke): return
+	# Criação do emissor com span próprio: separa compilação de shader (deveria ter sumido com
+	# VehicleMaterialVariantPrewarm) do resto de vehicle.effects.powertrain.
+	var began := STALL_WORK.begin()
+	_create_damage_smoke()
+	STALL_WORK.finish_slow("vehicle.effects.powertrain.create_damage_smoke", began, 2000, vehicle)
+
+func _create_damage_smoke() -> void:
 	damage_smoke = RESOURCES.emitter("DamageSmoke",28,1.20,Vector2(.38,.38),true)
 	damage_smoke.process_material = RESOURCES.particle_process()
 	vehicle.add_child(damage_smoke)
@@ -68,6 +83,13 @@ func _ensure_damage_smoke() -> void:
 
 func _ensure_backfire() -> void:
 	if is_instance_valid(backfire): return
+	# Criação do emissor com span próprio: separa compilação de shader (deveria ter sumido com
+	# VehicleMaterialVariantPrewarm) do resto de vehicle.effects.powertrain.
+	var began := STALL_WORK.begin()
+	_create_backfire()
+	STALL_WORK.finish_slow("vehicle.effects.powertrain.create_backfire", began, 2000, vehicle)
+
+func _create_backfire() -> void:
 	backfire = RESOURCES.emitter("ExhaustBackfire",12,.18,Vector2(.075,.22),false)
 	backfire.one_shot = true
 	backfire.explosiveness = 1.0

@@ -18,14 +18,58 @@ static func sample(vehicle: CharacterBody3D, wheel_position: Vector3) -> Diction
 	if not is_nan(level): kind = "water"
 	return {"point":point,"normal":normal.normalized(),"kind":kind,"wet":kind=="water" or _weather_wet(vehicle),"water_y":level}
 
-static func _surface_kind(collider: Object, point: Vector3) -> String:
+## Ancestrais e rótulo de nome por colisor (id de instância não se repete). A sondagem roda a
+## 20 Hz por roda traseira de cada carro a até 85 m da câmera; subir 8 pais montando string a
+## cada amostra era o grosso do custo dela. O metadado `vehicle_surface` continua lido ao vivo
+## (testes e regiões o trocam depois de criar o corpo); só a cadeia de pais e o texto ficam.
+const LABEL_CACHE_LIMIT := 4096
+static var _labels: Dictionary = {}   # instance id -> [ancestrais (Array), texto dos nomes]
+
+static func _collider_labels(collider: Object) -> Array:
+	var id := collider.get_instance_id() if collider != null else 0
+	var cached: Array = _labels.get(id, [])
+	if cached.is_empty():
+		var chain: Array = []
+		var names: Array[StringName] = []
+		var cursor := collider as Node
+		var labels := ""
+		for depth in 8:
+			if cursor == null: break
+			chain.append(cursor)
+			names.append(cursor.name)
+			labels += " "+str(cursor.name).to_lower()
+			cursor = cursor.get_parent()
+		cached = [chain, labels, names]
+		if id != 0:
+			if _labels.size() >= LABEL_CACHE_LIMIT: _labels.clear()
+			_labels[id] = cached
+	# Mesmo resultado do laço original: o primeiro ancestral com o metadado decide. Nome ou pai
+	# trocado depois (editor, testes) invalida a entrada; comparar StringName não aloca.
+	var chain: Array = cached[0]
+	var names: Array[StringName] = cached[2]
+	for index in chain.size():
+		var node = chain[index]
+		var parent_ok: bool = is_instance_valid(node) and (index == 7 or node.get_parent() == (chain[index + 1] if index + 1 < chain.size() else null))
+		if not parent_ok or node.name != names[index]:
+			_labels.erase(id)
+			return _collider_labels(collider) if is_instance_valid(collider) else _collider_labels_uncached(collider)
+		if node.has_meta("vehicle_surface"): return ["meta", str(node.get_meta("vehicle_surface"))]
+	return ["labels", cached[1]]
+
+static func _collider_labels_uncached(collider: Object) -> Array:
 	var cursor := collider as Node
 	var labels := ""
 	for depth in 8:
 		if cursor == null: break
-		if cursor.has_meta("vehicle_surface"): return str(cursor.get_meta("vehicle_surface"))
+		if cursor.has_meta("vehicle_surface"): return ["meta", str(cursor.get_meta("vehicle_surface"))]
 		labels += " "+str(cursor.name).to_lower()
 		cursor = cursor.get_parent()
+	return ["labels", labels]
+
+static func _surface_kind(collider: Object, point: Vector3) -> String:
+	var resolved := _collider_labels(collider)
+	if resolved[0] == "meta": return resolved[1]
+	var labels: String = resolved[1]
 	if "earthroad" in labels or "dirtroad" in labels: return "dirt"
 	if "road" in labels or "sidewalk" in labels or "gangway" in labels or "deck" in labels:
 		return "hard"
@@ -65,8 +109,17 @@ static func _inside_water(vehicle: Node, point: Vector3) -> bool:
 
 ## Altura do espelho d'água sob `point`, ou NAN fora de qualquer lago. O respingo nasce aí, não
 ## no fundo da bacia (0,2–0,6 m abaixo), senão a água cobre as partículas.
+static var _water_frame := -1
+static var _water_surfaces: Array = []
+
 static func water_level(vehicle: Node, point: Vector3) -> float:
-	for candidate in vehicle.get_tree().get_nodes_in_group("native_water_surface"):
+	# Uma cópia do grupo por passo de física, não uma por roda por carro.
+	var frame := Engine.get_physics_frames()
+	if frame != _water_frame:
+		_water_frame = frame
+		_water_surfaces = vehicle.get_tree().get_nodes_in_group("native_water_surface")
+	for candidate in _water_surfaces:
+		if not is_instance_valid(candidate): continue
 		if candidate is Node3D and candidate.is_visible_in_tree() and candidate.has_method("contains_water"):
 			if absf(point.y-candidate.global_position.y)<.8 and candidate.contains_water(point):
 				return candidate.global_position.y+(float(candidate.ALPINE_WATER_Y) if str(candidate.get("variant")) == "alpine" else .05)
