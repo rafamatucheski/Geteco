@@ -130,6 +130,32 @@ def glow_mask(path: pathlib.Path, width: int) -> Image.Image:
     return night
 
 
+# Fachada é textura 3D vista de perto e de longe: VRAM comprimida (BC7 no PC) com
+# mipmaps. O padrão do Godot para JPG novo era sem perda, sem mips e sem VRAM:
+# 3,5 s de carga decodificando 335 materiais, ~1 GB retido e cintilação de longe
+# (auditoria de desempenho de 15/10).
+NL = chr(10)
+IMPORT_PARAMS = {"compress/mode": "2", "compress/high_quality": "true", "mipmaps/generate": "true",
+                 "detect_3d/compress_to": "0"}
+
+
+def write_import_params(texture: pathlib.Path) -> None:
+    """Grava os parâmetros acima no .import (cria um mínimo se ainda não existe;
+    o Godot completa uid/caminho na importação e respeita [params])."""
+    path = texture.with_name(texture.name + ".import")
+    if not path.exists():
+        lines = ["[remap]", "", 'importer="texture"', 'type="CompressedTexture2D"', "", "[params]", ""]
+        lines += [f"{k}={v}" for k, v in IMPORT_PARAMS.items()]
+        path.write_text(NL.join(lines) + NL, encoding="utf-8")
+        return
+    text = path.read_text(encoding="utf-8").splitlines()
+    out = []
+    for line in text:
+        key = line.split("=", 1)[0]
+        out.append(f"{key}={IMPORT_PARAMS[key]}" if key in IMPORT_PARAMS and "=" in line else line)
+    path.write_text(NL.join(out) + NL, encoding="utf-8")
+
+
 def styles() -> list:
     requested = [a.split("=", 1)[1].split(",") for a in sys.argv[1:] if a.startswith("--styles=")]
     if requested:
@@ -182,6 +208,8 @@ def main() -> None:
             "openings": openings,
             "doors": doors,
         }
+        for texture in target.glob("*.jpg"):
+            write_import_params(texture)
         (target / "style.json").write_text(json.dumps(data, indent="\t"), encoding="utf-8")
         print(style, json.dumps({k: data[k] for k in ["module", "side", "eave"]}), len(openings["front"]), len(openings["back"]))
 

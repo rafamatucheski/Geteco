@@ -3,27 +3,29 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ctikuohbne6cq"
-path="res://.godot/imported/door_back_inside.jpg-8e8b9be4b2a4391c7039f82d905d78da.ctex"
+path.bptc="res://.godot/imported/door_back_inside.jpg-8e8b9be4b2a4391c7039f82d905d78da.bptc.ctex"
+path.astc="res://.godot/imported/door_back_inside.jpg-8e8b9be4b2a4391c7039f82d905d78da.astc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/facades/galpao-deserto/door_back_inside.jpg"
-dest_files=["res://.godot/imported/door_back_inside.jpg-8e8b9be4b2a4391c7039f82d905d78da.ctex"]
+dest_files=["res://.godot/imported/door_back_inside.jpg-8e8b9be4b2a4391c7039f82d905d78da.bptc.ctex", "res://.godot/imported/door_back_inside.jpg-8e8b9be4b2a4391c7039f82d905d78da.astc.ctex"]
 
 [params]
 
-compress/mode=0
-compress/high_quality=false
+compress/mode=2
+compress/high_quality=true
 compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=false
+mipmaps/generate=true
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""
@@ -37,4 +39,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=1
+detect_3d/compress_to=0
