@@ -10,9 +10,14 @@ const BAKED_PATH := "res://world/regions/terrain3d_pilot/terminal_mesh.res"
 static func enabled() -> bool:
 	return "--terrain3d-baseline" not in OS.get_cmdline_user_args()
 
+static var _baked: ArrayMesh
+
 static func attach(source: RefCounted, surface: MeshInstance3D, rect: Rect2, trail: Texture2D) -> void:
 	if rect.position != ORIGIN or not enabled(): return
-	var mesh := load(BAKED_PATH) as ArrayMesh
+	# Guardada: só o trecho do terminal segura a malha, e ao sair dele o recurso deixava o cache; a volta
+	# relia o .res do disco no meio do jogo, no estágio síncrono de superfícies.
+	if _baked == null: _baked = load(BAKED_PATH) as ArrayMesh
+	var mesh := _baked
 	if mesh == null:
 		push_error("Missing Terrain3D baked pilot: run tools/terrain3d/bake_mountain.gd")
 		return

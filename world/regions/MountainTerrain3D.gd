@@ -9,6 +9,11 @@ const GRID_MARGIN := 6.0 # More than a grid diagonal: flat corridors survive tri
 const HEIGHT_SAMPLE_LIMIT := 32768
 var _segments: Dictionary = {}
 var _clearings: Array[Rect2] = []
+## Clareiras por célula de CELL m, como _segments. _clearance varria as ~150 clareiras (6 da V1 + entradas ×
+## 4 campos) para cada amostra de altura; um trecho pede ~1.450 amostras (vértices e as 4 vizinhas da
+## normal), e o estágio de superfícies da serra custava 20-80 ms por trecho em jogo (travessia de 15/10).
+## Clareira mais longe que BLEND não muda o resultado (a distância parte de BLEND), então basta a da célula.
+var _clearing_cells: Dictionary = {}
 var _material: ShaderMaterial
 var _trail_blend := preload("res://world/regions/MountainTrailBlend.gd").new()
 var _height_samples: Dictionary = {}
@@ -19,6 +24,7 @@ func configure(roads: Array, entries: Array, clearings: Array) -> void:
 	_trail_blend.configure(roads)
 	_segments.clear()
 	_clearings.clear()
+	_clearing_cells.clear()
 	_height_samples.clear()
 	_height_sample_order.clear()
 	_height_sample_next = 0
@@ -40,6 +46,15 @@ func configure(roads: Array, entries: Array, clearings: Array) -> void:
 				var p: Vector3 = entry[field]
 				var center := Vector2(p.x,p.z)
 				_clearings.append(Rect2(center-Vector2.ONE*22.0,Vector2.ONE*44.0))
+	for rect in _clearings:
+		var reach := rect.grow(BLEND)
+		var first := _cell(reach.position)
+		var last := _cell(reach.end)
+		for x in range(first.x,last.x+1):
+			for z in range(first.y,last.y+1):
+				var key := Vector2i(x,z)
+				if not _clearing_cells.has(key): _clearing_cells[key] = []
+				_clearing_cells[key].append(rect)
 	for road in roads:
 		var points: PackedVector3Array = road.points
 		var radius: float = float(road.width)*0.5+3.0+GRID_MARGIN
@@ -64,7 +79,7 @@ func _cell(point: Vector2) -> Vector2i:
 
 func _clearance(point: Vector2) -> float:
 	var distance := BLEND
-	for rect in _clearings:
+	for rect in _clearing_cells.get(_cell(point),[]):
 		var nearest := point.clamp(rect.position,rect.end)
 		distance = minf(distance,point.distance_to(nearest))
 		if distance <= 0.0: return 0.0

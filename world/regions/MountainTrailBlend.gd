@@ -32,8 +32,32 @@ func image_for(rect: Rect2) -> Image:
 		var bounds: Rect2 = segment.bounds.intersection(rect)
 		var first := Vector2i(((bounds.position-rect.position)/STEP).floor()).clamp(Vector2i.ZERO,Vector2i(SIZE-1,SIZE-1))
 		var last := Vector2i(((bounds.end-rect.position)/STEP).ceil()).clamp(Vector2i.ZERO,Vector2i(SIZE-1,SIZE-1))
+		var a: Vector2 = segment.a
+		var b: Vector2 = segment.b
+		var outer := float(segment.outer)
 		for y in range(first.y,last.y+1):
-			for x in range(first.x,last.x+1):
+			# Só a faixa da linha que a cápsula do trecho (raio outer) cruza: fora dela o peso é 0 e não muda o
+			# máximo. A caixa inteira de um trecho diagonal cobria quase o trecho de 64 m (16.641 pixels por
+			# segmento em GDScript) no estágio de superfícies da serra, que travava 20-80 ms em jogo (15/10).
+			var row_y := rect.position.y+y*STEP
+			var t0 := 0.0
+			var t1 := 1.0
+			if not is_zero_approx(b.y-a.y):
+				t0 = (row_y-outer-a.y)/(b.y-a.y)
+				t1 = (row_y+outer-a.y)/(b.y-a.y)
+				if t0 > t1:
+					var swap := t0
+					t0 = t1
+					t1 = swap
+				t0 = maxf(t0,0.0)
+				t1 = minf(t1,1.0)
+				if t0 > t1: continue
+			elif absf(row_y-a.y) > outer: continue
+			var x0 := a.x+(b.x-a.x)*t0
+			var x1 := a.x+(b.x-a.x)*t1
+			var row_first := maxi(first.x,floori((minf(x0,x1)-outer-rect.position.x)/STEP))
+			var row_last := mini(last.x,ceili((maxf(x0,x1)+outer-rect.position.x)/STEP))
+			for x in range(row_first,row_last+1):
 				var point := rect.position+Vector2(x,y)*STEP
 				var distance := point.distance_to(Geometry2D.get_closest_point_to_segment(point,segment.a,segment.b))
 				var weight := 1.0-smoothstep(float(segment.inner),float(segment.outer),distance)

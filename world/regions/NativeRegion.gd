@@ -623,10 +623,13 @@ func _process(_delta: float) -> void:
 ## Registros que custam 40-80 ms para montar (a vila e a serraria da montanha): o nó pronto é
 ## guardado ao liberar o chunk e reaproveitado na próxima visita; o pré-aquecimento monta cada um
 ## uma vez. Só entra em cache quem ainda não tem pai (não está em uso em outro chunk).
-const CACHED_RECORDS := ["mountain_village","mountain_zoo","sawmill_yard","harbor_public_realm","lake","ship"]
+## south_port_ship_detail (cordame e acabamento do Santa Mare): 32-59 ms ao entrar no cais (release, 15/10).
+const CACHED_RECORDS := ["mountain_village","mountain_zoo","sawmill_yard","harbor_public_realm","lake","ship","south_port_ship_detail"]
 ## A carga do Santa Mare custava 590 ms num quadro ao chegar perto (release, 2026-10-13). Montada uma vez
-## no pré-aquecimento e reaproveitada como os registros acima.
-const CACHED_PORT_MODELS := ["ship_cargo"]
+## no pré-aquecimento e reaproveitada como os registros acima. Paletes e tambores (supplies, 50-87 ms cada)
+## e os guindastes do cais (crane, 15-28 ms) pesavam igual na travessia e no porto do release de 15/10;
+## são estáticos (sem processo, sem saque, sem luz), como a carga.
+const CACHED_PORT_MODELS := ["ship_cargo","supplies","crane"]
 ## Medido em 8 sessões de release (2026-10-12/13): tudo que montou em 50 ms ou mais num quadro.
 ## Tipos inteiros quando são poucos registros; dos 66 prédios e 131 props só os medidos, para não
 ## segurar a cidade inteira na memória nem alongar demais o carregamento.
@@ -1015,8 +1018,13 @@ func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
 			1:
 				# Vegetação/pedras do terreno: passo próprio, o terreno sozinho já custa 40–95 ms.
 				if region_id == "mountain" and _mountain_owns_terrain(key):
+					# Spans próprios: nos logs de 15/10 a maior parte dos quadros >33 ms da serra caía no processo sem
+					# span nenhum; vegetação e acabamento do trecho eram os passos do streaming sem medição.
+					var dressing_began := STALL_WORK.begin()
 					if not job.has("terrain_dressing"): job.terrain_dressing = DRESSING.begin(rect,region_id,terrain.surface_height_at,_dressing_reserved)
-					if not DRESSING.step(job.terrain_dressing,maxf(1500.0,budget_usec-(Time.get_ticks_usec()-began))): return false
+					var dressing_done: bool = DRESSING.step(job.terrain_dressing,maxf(1500.0,budget_usec-(Time.get_ticks_usec()-began)))
+					STALL_WORK.finish_slow("stream.mountain.terrain_dressing",dressing_began,2000)
+					if not dressing_done: return false
 					chunk.add_child(job.terrain_dressing.root)
 					job.erase("terrain_dressing")
 				job.stage = 2
@@ -1057,8 +1065,10 @@ func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
 					CANAL_TUNNEL.carve_chunk(chunk,rect)
 					STALL_WORK.finish_slow("stream.harbor.carve_tunnel",carve_began,2000)
 				elif region_id == "mountain":
+					var finish_began := STALL_WORK.begin()
 					_build_road_surfaces(chunk,rect)
 					_apply_night_lights(chunk)
+					STALL_WORK.finish_slow("stream.mountain.road_surfaces",finish_began,2000)
 				job.stage = 4
 				chunk.set_meta("vegetation_ready_frame", Engine.get_physics_frames())
 				# A serra também: a vila e a serraria tinham 1.200+ superfícies por trecho, 97% com sombra (censo 14/10).

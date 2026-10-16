@@ -71,18 +71,30 @@ static func build_region(_id := "desert", first_focus := Vector3.INF) -> Node3D:
 static func get_definition(_id := "desert") -> Dictionary:
 	return {"id":"desert","source_id":"world/desert/DesertRegion.gd","unit_scale":1.0,"offset":Vector2.ZERO}
 
+## Montar o deserto custou 9,4 s num quadro só ao começar perto da passagem norte (travessia do release de
+## 15/10, "world.mount_region:desert"), sem nenhum span dentro. Cada etapa vai para o log da sessão.
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 func _ready() -> void:
 	name="DesertNativeRegion"
+	var began := STALL_WORK.begin()
 	prepare_data()
 	prepared=true
+	STALL_WORK.finish_slow("desert.ready.prepare_data",began,2000)
+	began = STALL_WORK.begin()
 	_horizon=preload("res://world/desert/DesertHorizon.gd").build()
 	add_child(_horizon)
+	STALL_WORK.finish_slow("desert.ready.horizon",began,2000)
+	began = STALL_WORK.begin()
 	ambient=preload("res://world/desert/DesertAmbientLife.gd").new()
 	add_child(ambient)
 	wildlife=WILDLIFE.new()
 	add_child(wildlife)
 	wildlife.configure(_ground_height,6102026)
+	STALL_WORK.finish_slow("desert.ready.ambient_wildlife",began,2000)
+	began = STALL_WORK.begin()
 	expansion_life=EXPANSION.create_life(self,_ground_height,_decoration_clear)
+	STALL_WORK.finish_slow("desert.ready.expansion_life",began,2000)
+	began = STALL_WORK.begin()
 	if MINING_LAYOUT.enabled():
 		mining_life=preload("res://world/mining/MiningLife.gd").new()
 		add_child(mining_life)
@@ -90,7 +102,10 @@ func _ready() -> void:
 		mining_dust=preload("res://world/mining/MiningDust.gd").new()
 		add_child(mining_dust)
 		mining_dust.configure(_ground_height)
+	STALL_WORK.finish_slow("desert.ready.mining",began,2000)
+	began = STALL_WORK.begin()
 	if not initial_prewarm_only: set_focus(initial_focus if initial_focus.is_finite() else spawn_position)
+	STALL_WORK.finish_slow("desert.ready.set_focus",began,2000)
 
 func prepare_data() -> void:
 	if data_prepared: return
@@ -223,7 +238,9 @@ func _ensure_chunk_surfaces(key: Vector2i) -> void:
 	add_child(chunk)
 	chunks[key]=chunk
 	# Collidable terrain and all road support are ready before admitting actors.
+	var began := STALL_WORK.begin()
 	_build_surfaces(chunk,rect)
+	STALL_WORK.finish_slow("stream.desert.surfaces",began,2000)
 	build_jobs.append({"key":key,"rect":rect,"index":0,"dressed":false})
 
 func _process(_delta: float) -> void:
@@ -242,7 +259,9 @@ func _run_build_job(job: Dictionary, _budget: float) -> void:
 	var chunk: Node3D=chunks[job.key]
 	var items: Array=records.get(job.key,[])
 	if int(job.index)<items.size():
+		var record_began := STALL_WORK.begin()
 		_build_record(chunk,items[int(job.index)])
+		STALL_WORK.finish_slow("stream.desert.record.%s"%str(items[int(job.index)].get("kind","?")),record_began,2000)
 		job.index=int(job.index)+1
 	elif not bool(job.dressed):
 		_dress(chunk,job.rect,job.key)
