@@ -15,6 +15,15 @@ public partial class SessionDiagnostics : Node
     private long previous, window;
     private Process process;
     private double previousCpu;
+    // Amostra de CPU/memória do processo feita fora da thread principal (16/10/2026). No Windows,
+    // Process.Refresh + WorkingSet64/PrivateMemorySize64 tiram um retrato de TODOS os processos
+    // da máquina (NtQuerySystemInformation): 18–25 ms por segundo na thread do jogo, medidos no
+    // export pelo telemetry_main_thread_usec. Era o pico de ~1 Hz sem span das rotas da cidade.
+    private sealed record ProcessSample(double CpuPercent, long WorkingSet, long PrivateMemory, long SampledAt);
+    private volatile ProcessSample processSample;
+    private System.Threading.Timer processTimer;
+    private int processSampling;
+    private long previousCpuAt;
     private JsonElement worldContext;
     private long telemetryUsec;
     private readonly System.Collections.Generic.List<int> frameContextIds = new(512);
@@ -78,7 +87,8 @@ public partial class SessionDiagnostics : Node
             OS.AddLogger(sink);
             process = Process.GetCurrentProcess();
             previousCpu = process.TotalProcessorTime.TotalMilliseconds;
-            previous = window = Stopwatch.GetTimestamp();
+            previous = window = previousCpuAt = Stopwatch.GetTimestamp();
+            processTimer = new System.Threading.Timer(SampleProcess, null, 1000, 1000);
             sink.Record(new { type = "session_start", utc = DateTime.UtcNow, pid = System.Environment.ProcessId,
                 engine = Engine.GetVersionInfo()["string"].AsString(), version = ProjectSettings.GetSetting("application/config/version").AsString(),
                 cpu = OS.GetProcessorName(), logical_processors = System.Environment.ProcessorCount,
@@ -161,14 +171,12 @@ public partial class SessionDiagnostics : Node
         }
         try
         {
-            process.Refresh();
-            double cpu = process.TotalProcessorTime.TotalMilliseconds;
-            double elapsed = (now - window) * 1000.0 / Stopwatch.Frequency;
-            // Process CPU normalized to the whole machine, not Godot's TIME_PROCESS monitor.
+            var sample = processSample;
             sink.Metrics(frames.ToArray(), frameContextIds.ToArray(), frameStateIds.ToArray(), new {
-                cpu_percent = (cpu - previousCpu) / elapsed / System.Environment.ProcessorCount * 100,
-                working_set_bytes = process.WorkingSet64, managed_bytes = GC.GetTotalMemory(false),
-                private_memory_bytes = process.PrivateMemorySize64, engine_monitors = EngineMonitors(),
+                cpu_percent = sample?.CpuPercent ?? -1.0,
+                working_set_bytes = sample?.WorkingSet ?? -1, managed_bytes = GC.GetTotalMemory(false),
+                private_memory_bytes = sample?.PrivateMemory ?? -1, engine_monitors = EngineMonitors(),
+                process_sample_scope = "background_sample_up_to_1s_old",
                 engine_usec = Time.GetTicksUsec(), process_frame = Engine.GetProcessFrames(),
                 gc_collections = new[] { GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2) },
                 allocated_bytes = GC.GetTotalAllocatedBytes(false), gc_pause_ms = GC.GetTotalPauseDuration().TotalMilliseconds,
@@ -186,7 +194,6 @@ public partial class SessionDiagnostics : Node
                 focused = DisplayServer.WindowIsFocused(), max_fps = Engine.MaxFps,
                 resolution = GetTree().Root.Size.ToString(), vsync = DisplayServer.WindowGetVsyncMode().ToString()
             });
-            previousCpu = cpu;
         }
         catch (Exception e) { sink.Record(new { type = "telemetry_error", error = e.ToString() }); }
         frames.Clear();
@@ -196,8 +203,32 @@ public partial class SessionDiagnostics : Node
         Interlocked.Add(ref telemetryUsec, (Stopwatch.GetTimestamp() - now) * 1000000 / Stopwatch.Frequency);
     }
 
+    // Thread do Timer: só System.Diagnostics, nenhuma API do Godot.
+    private void SampleProcess(object state)
+    {
+        if (Interlocked.Exchange(ref processSampling, 1) == 1) return;
+        try
+        {
+            var current = process;
+            if (current == null) return;
+            current.Refresh();
+            long now = Stopwatch.GetTimestamp();
+            double cpu = current.TotalProcessorTime.TotalMilliseconds;
+            double elapsed = Math.Max(1e-3, (now - previousCpuAt) * 1000.0 / Stopwatch.Frequency);
+            // Process CPU normalized to the whole machine, not Godot's TIME_PROCESS monitor.
+            processSample = new ProcessSample((cpu - previousCpu) / elapsed / System.Environment.ProcessorCount * 100,
+                current.WorkingSet64, current.PrivateMemorySize64, now);
+            previousCpu = cpu;
+            previousCpuAt = now;
+        }
+        catch (Exception) { }
+        finally { Volatile.Write(ref processSampling, 0); }
+    }
+
     public override void _ExitTree()
     {
+        processTimer?.Dispose();
+        processTimer = null;
         if (sink == null) return;
         AppDomain.CurrentDomain.UnhandledException -= OnUnhandledException;
         System.Threading.Tasks.TaskScheduler.UnobservedTaskException -= OnUnobservedTaskException;
