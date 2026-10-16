@@ -22,9 +22,26 @@ var _batches: Dictionary = {}
 var _roof: Node3D
 var _facade: Node3D
 var _fixed: Node3D
+## Fachadas pintadas (galpao-vertice e anexo-vertice) no lugar do visual 3D das paredes
+## de cima e do telhado. A colisao, os portoes, a porta deslizante, o interior e o
+## cutaway nao mudam: so deixam de aparecer as caixas que a pintura ja traz.
+var _painted := false
+## Pecas 3D que a pintura NAO traz e que continuam visiveis por cima dela.
+const PAINTED_KEEP := ["EntranceCanopy", "DoorHood", "DockLamp"]
+## Detalhes colados na parede externa que furariam a pintura (ficam so como colisao/nada).
+const PAINTED_HIDE := ["RearCladdingRib", "SideCladdingRib", "Downpipe", "FrontBrandBand"]
+## A pintura fica 5 cm para fora da face externa das paredes 3D (sem z-fighting).
+const PAINTED_OUT := 0.05
+
+## Ligado por padrao (16/10) depois do teste novo, dos testes do Vertice e das capturas de
+## dia e noite. GETECO_PAINTED_VERTICE=0 volta ao galpao 3D de caixas (A/B) e
+## GETECO_PAINTED_FACADES=0 desliga todo o kit.
+static func painted_enabled() -> bool:
+	return OS.get_environment("GETECO_PAINTED_VERTICE") != "0" and PaintedFacadeKit.enabled()
 
 func _ready() -> void:
 	name = "VerticeWarehouse"
+	_painted = painted_enabled()
 	_fixed = _group("PermanentArchitecture")
 	_roof = _group("RoofCutaway")
 	_facade = _group("FacadeCutaway")
@@ -37,12 +54,28 @@ func _ready() -> void:
 	_build_storage()
 	_build_lights()
 	_commit_batches()
+	if _painted: _build_painted()
 
 func _group(id: String) -> Node3D:
 	var group := Node3D.new()
 	group.name = id
 	add_child(group)
 	return group
+
+func _build_painted() -> void:
+	# Mesmo grupo das paredes de cima: o cutaway esconde a pintura junto com elas.
+	# Galpao: face externa das paredes em x +-28,2 / z -20,2..18,2; anexo: x 27,85..42,15 / z -0,15..30,15.
+	var out := PAINTED_OUT
+	var warehouse := PaintedFacadeKit.build(_facade, "galpao-vertice", Vector3(56.4 + out * 2.0, 9.0, 38.4 + out * 2.0), null, NAN, {"snow": false})
+	warehouse.position += Vector3(0, 0, -1)
+	var annex := PaintedFacadeKit.build(_facade, "anexo-vertice", Vector3(14.3 + out * 2.0, 3.7, 30.3 + out * 2.0), null, NAN)
+	annex.position += Vector3(35, 0, 15)
+	# Os vaos das baias sao dos portoes 3D que abrem: o corredor escuro do kit taparia
+	# o interior visto pelo portao aberto.
+	for root_node in [warehouse, annex]:
+		for corridor in root_node.find_children("Corridor", "MeshInstance3D", true, false):
+			corridor.get_parent().remove_child(corridor)
+			corridor.queue_free()
 
 func set_cutaway(active: bool) -> void:
 	for part in roof_parts: part.visible = not active
@@ -83,6 +116,7 @@ func _build_shell() -> void:
 			_box("Downpipe", Vector3(x, 4.4, z), Vector3(.16, 8.8, .16), "steel", false, _facade)
 	# The teal band and masonry plinth distinguish a company from a port gantry.
 	_box("FrontBrandBand", Vector3(0, 7.0, 18.29), Vector3(56.4, 1.5, .15), "teal", false, _facade)
+	if _painted: return
 	var sign_node := Label3D.new()
 	sign_node.name = "CompanyName"
 	sign_node.text = "VÉRTICE"
@@ -239,6 +273,7 @@ func _rack(at: Vector3) -> void:
 			_box("CartonBand", at + Vector3(x, y + .65, .911), Vector3(.08, 1.07, .014), "dark")
 
 func _gable(z: float) -> void:
+	if _painted: return
 	var builder := SurfaceTool.new()
 	builder.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var points := PackedVector3Array([Vector3(-28, 9, z), Vector3(0, 11.2, z), Vector3(28, 9, z)])
@@ -293,13 +328,17 @@ func _box(id: String, at: Vector3, size: Vector3, material_key: String, solid :=
 		var bounds: AABB = local_transform*mesh.get_aabb()
 		if bounds.end.y>11.45 and size.x<10 and size.z<10:
 			rooftop_obstacle_bounds.append(bounds)
-	var key := "%s:%s" % [group.get_instance_id(), material_key]
-	if not _batches.has(key):
-		var surface := SurfaceTool.new()
-		surface.begin(Mesh.PRIMITIVE_TRIANGLES)
-		_batches[key] = {"surface": surface, "group": group, "material": _material(material_key)}
-	var builder: SurfaceTool = _batches[key].surface
-	builder.append_from(mesh, 0, local_transform)
+	# Fachada pintada: o telhado 3D e os detalhes da parede externa deixam de ter visual
+	# (a pintura traz telhado, claraboias, faixa, letreiro); a colisao fica.
+	var painted_skip: bool = _painted and id not in PAINTED_KEEP and (group == _roof or id in PAINTED_HIDE)
+	if not painted_skip:
+		var key := "%s:%s" % [group.get_instance_id(), material_key]
+		if not _batches.has(key):
+			var surface := SurfaceTool.new()
+			surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+			_batches[key] = {"surface": surface, "group": group, "material": _material(material_key)}
+		var builder: SurfaceTool = _batches[key].surface
+		builder.append_from(mesh, 0, local_transform)
 	if solid:
 		# Cutaway hides meshes, never architecture physics.
 		var body_parent: Node3D = self if group in [_fixed, _roof, _facade] else group

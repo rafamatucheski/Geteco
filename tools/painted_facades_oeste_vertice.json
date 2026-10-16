@@ -1,0 +1,124 @@
+{
+	"galpao-vertice": {
+		"module_w": 56.5,
+		"side_w": 40.0,
+		"eave": 0.2035,
+		"margin": 0,
+		"sizes": {
+			"frente-dia": 2800,
+			"frente-noite": 2800,
+			"fundos-dia": 2800,
+			"fundos-noite": 2800,
+			"lateral-dia": 2048,
+			"lateral-noite": 2048,
+			"telhado": 1536
+		},
+		"front_warp": [
+			[
+				0,
+				0
+			],
+			[
+				0.09531,
+				0.11062
+			],
+			[
+				0.23809,
+				0.25221
+			],
+			[
+				0.4287,
+				0.4292
+			],
+			[
+				0.57148,
+				0.5708
+			],
+			[
+				0.76191,
+				0.74779
+			],
+			[
+				0.90469,
+				0.88938
+			],
+			[
+				1,
+				1
+			]
+		],
+		"roof_crop": [
+			0,
+			0.4953,
+			1,
+			1
+		],
+		"front": [
+			{
+				"rect": [
+					0.11062,
+					0.4002,
+					0.25221,
+					1.0
+				],
+				"leaf": false
+			},
+			{
+				"rect": [
+					0.4292,
+					0.4002,
+					0.5708,
+					1.0
+				],
+				"leaf": false
+			},
+			{
+				"rect": [
+					0.74779,
+					0.4002,
+					0.88938,
+					1.0
+				],
+				"leaf": false
+			}
+		],
+		"back": [
+			{
+				"rect": [
+					0.9286,
+					0.7666,
+					0.9465,
+					1.0
+				],
+				"leaf": true
+			}
+		]
+	},
+	"anexo-vertice": {
+		"module_w": 14.4,
+		"side_w": 30.0,
+		"eave": 0.0,
+		"margin": 0,
+		"sizes": {
+			"frente-dia": 1536,
+			"frente-noite": 1536,
+			"fundos-dia": 1536,
+			"fundos-noite": 1536,
+			"lateral-dia": 2560,
+			"lateral-noite": 2560,
+			"telhado": 1024
+		},
+		"front": [
+			{
+				"rect": [
+					0.4142,
+					0.3786,
+					0.5858,
+					1.0
+				],
+				"leaf": false
+			}
+		],
+		"back": []
+	}
+}

@@ -1,0 +1,28 @@
+{
+	"style": "anexo-vertice",
+	"module": [
+		14.4,
+		3.806
+	],
+	"side": [
+		30.0,
+		3.7
+	],
+	"eave": 0.0,
+	"snow_roof": false,
+	"openings": {
+		"front": [
+			{
+				"rect": [
+					0.4142,
+					0.3786,
+					0.5858,
+					1.0
+				],
+				"leaf": false
+			}
+		],
+		"back": []
+	},
+	"doors": {}
+}

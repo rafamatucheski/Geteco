@@ -15,7 +15,7 @@ Grava style.json com:
 - doors: o primeiro vão com folha de cada lado, formato antigo (sobrados).
 
 Os vãos e o tamanho do módulo de cada estilo ficam em tools/painted_facades*.json
-(medidos à mão na folha de contato; a detecção automática erra porta cortada pela
+(medidos à mão na folha de contato; "eave" opcional força a fração da empena quando o fundo da lateral não é transparente nem preto; a detecção automática erra porta cortada pela
 base de pedra, portão largo e corredor claro). Estilo sem entrada lá cai na
 detecção automática de uma porta só.
 
@@ -83,9 +83,25 @@ def detect_door(path: pathlib.Path) -> list:
     return [x0 / width, top / height, x1 / width, bottom / height]
 
 
-def grow(rect: list) -> list:
-    return [round(max(0.0, rect[0] - DOOR_MARGIN), 4), round(max(0.0, rect[1] - DOOR_MARGIN), 4),
-            round(min(1.0, rect[2] + DOOR_MARGIN), 4), round(min(1.0, rect[3] + DOOR_MARGIN * .5), 4)]
+def grow(rect: list, margin: float = DOOR_MARGIN) -> list:
+    return [round(max(0.0, rect[0] - margin), 4), round(max(0.0, rect[1] - margin), 4),
+            round(min(1.0, rect[2] + margin), 4), round(min(1.0, rect[3] + margin * .5), 4)]
+
+
+def warp_columns(image: Image.Image, points: list) -> Image.Image:
+    """Estica/comprime faixas verticais da imagem (já no tamanho final) para levar
+    pontos da origem (fração em U) a outros pontos de destino. Serve para casar os
+    vãos pintados com portões 3D que já existem em outro lugar (galpão Vértice:
+    a arte tem baias a 18,67 m de espaçamento e os portões do jogo ficam a 18 m).
+    `points`: [[u_origem, u_destino], ...] crescentes, de 0 a 1."""
+    width = image.width
+    out = Image.new("RGB", image.size)
+    for (s0, d0), (s1, d1) in zip(points, points[1:]):
+        x0, x1 = round(s0 * width), round(s1 * width)
+        y0, y1 = round(d0 * width), round(d1 * width)
+        if y1 > y0 and x1 > x0:
+            out.paste(image.crop((x0, 0, x1, image.height)).resize((y1 - y0, image.height), Image.LANCZOS), (y0, 0))
+    return out
 
 
 def side_eave(path: pathlib.Path) -> float:
@@ -118,9 +134,11 @@ def flatten(image: Image.Image) -> Image.Image:
     return image.convert("RGB")
 
 
-def glow_mask(path: pathlib.Path, width: int) -> Image.Image:
+def glow_mask(path: pathlib.Path, width: int, warp: list = None) -> Image.Image:
     night = flatten(Image.open(path))
     night = night.resize((width, round(width * night.height / night.width)), Image.LANCZOS)
+    if warp:
+        night = warp_columns(night, warp)
     pixels = night.load()
     for y in range(night.height):
         for x in range(night.width):
@@ -175,14 +193,27 @@ def main() -> None:
         target = TARGET / style
         target.mkdir(parents=True, exist_ok=True)
         entry = config.get(style, {})
+        # Opções por estilo (só para quem pede; os demais seguem os padrões acima):
+        # "sizes" troca a largura de saída de uma peça (galpão de 56 m precisa de mais
+        # que 768 px), "front_warp" casa os vãos da frente com portões 3D existentes,
+        # "roof_crop" usa só um recorte do telhado (a arte traz as duas águas; o kit
+        # espelha a mesma água nas duas), "margin" é a folga dos vãos (0 = pixel preto exato).
+        sizes = entry.get("sizes", {})
+        front_warp = entry.get("front_warp")
         for part, width in SIZES.items():
             if not (source / f"{part}.png").exists():
                 continue
             image = flatten(Image.open(source / f"{part}.png"))
+            if part == "telhado" and "roof_crop" in entry:
+                box = entry["roof_crop"]
+                image = image.crop((round(box[0] * image.width), round(box[1] * image.height), round(box[2] * image.width), round(box[3] * image.height)))
+            width = int(sizes.get(part, width))
             image = image.resize((width, round(width * image.height / image.width)), Image.LANCZOS)
+            if part == "frente-dia" and front_warp:
+                image = warp_columns(image, front_warp)
             image.save(target / f"{NAMES[part]}.jpg", quality=88, optimize=True)
         for part, (name, width) in GLOWS.items():
-            glow_mask(source / f"{part}.png", width).save(target / f"{name}.jpg", quality=85, optimize=True)
+            glow_mask(source / f"{part}.png", int(sizes.get(part, width)), front_warp if part == "frente-noite" else None).save(target / f"{name}.jpg", quality=85, optimize=True)
         front = Image.open(source / "frente-dia.png")
         side = Image.open(source / "lateral-dia.png")
         module_w = float(entry.get("module_w", DEFAULT_MODULE_W))
@@ -190,7 +221,7 @@ def main() -> None:
         openings = {}
         for key, name in [("front", "frente"), ("back", "fundos")]:
             if key in entry:
-                openings[key] = [{"rect": grow(o["rect"]), "leaf": bool(o.get("leaf", True))} for o in entry[key]]
+                openings[key] = [{"rect": grow(o["rect"], float(entry.get("margin", DOOR_MARGIN))), "leaf": bool(o.get("leaf", True))} for o in entry[key]]
             else:
                 rect = detect_door(source / f"{name}-dia.png")
                 openings[key] = [{"rect": grow(rect), "leaf": True}] if rect else []
@@ -203,7 +234,7 @@ def main() -> None:
             "style": style,
             "module": [module_w, round(module_w * front.height / front.width, 3)],
             "side": [side_w, round(side_w * side.height / side.width, 3)],
-            "eave": side_eave(source / "lateral-dia.png"),
+            "eave": float(entry["eave"]) if "eave" in entry else side_eave(source / "lateral-dia.png"),
             "snow_roof": (source / "telhado-sem-neve.png").exists(),
             "openings": openings,
             "doors": doors,
