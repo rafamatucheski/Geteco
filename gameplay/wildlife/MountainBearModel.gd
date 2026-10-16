@@ -13,6 +13,10 @@ var fur_parts: Array[MeshInstance3D] = []
 var fur_color := Color("3a2a1e")
 var _flash_applied := false
 var _fur_colors: Array[Color] = []
+## Malhas compartilhadas por todas as peças (a escala é por nó): antes cada urso criava
+## ~70 SphereMesh 20x10 e ~20 cilindros novos; o primeiro urso da serra custava 53 ms.
+static var _sphere: SphereMesh
+static var _claws := {}
 
 func _ready() -> void:
 	if is_cub:
@@ -87,12 +91,13 @@ func _ready() -> void:
 ## uma cor só. StandardMaterial3D de propósito: hurt_flash troca albedo_color.
 func part(parent: Node3D, point: Vector3, size: Vector3, color: Color) -> MeshInstance3D:
 	var mesh := MeshInstance3D.new()
-	var sphere := SphereMesh.new()
-	sphere.radial_segments = 20
-	sphere.rings = 10
-	sphere.height = 2
-	sphere.radius = 1
-	mesh.mesh = sphere
+	if _sphere == null:
+		_sphere = SphereMesh.new()
+		_sphere.radial_segments = 20
+		_sphere.rings = 10
+		_sphere.height = 2
+		_sphere.radius = 1
+	mesh.mesh = _sphere
 	mesh.scale = size * 0.5
 	mesh.position = point
 	var material := StandardMaterial3D.new()
@@ -108,12 +113,15 @@ func part(parent: Node3D, point: Vector3, size: Vector3, color: Color) -> MeshIn
 
 func _claw(parent: Node3D, point: Vector3, radius: float, length: float, color: Color, forward := false) -> void:
 	var part_node := MeshInstance3D.new()
-	var mesh := CylinderMesh.new()
-	mesh.top_radius = 0.001
-	mesh.bottom_radius = radius
-	mesh.height = length
-	mesh.radial_segments = 6
-	part_node.mesh = mesh
+	var key := Vector2(radius, length)
+	if not _claws.has(key):
+		var claw_mesh := CylinderMesh.new()
+		claw_mesh.top_radius = 0.001
+		claw_mesh.bottom_radius = radius
+		claw_mesh.height = length
+		claw_mesh.radial_segments = 6
+		_claws[key] = claw_mesh
+	part_node.mesh = _claws[key]
 	part_node.position = point
 	if forward: part_node.rotation.x = PI*0.5
 	var mat := StandardMaterial3D.new()
