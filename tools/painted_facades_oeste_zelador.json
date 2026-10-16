@@ -1,0 +1,5 @@
+{
+	"casa-zelador": {"module_w": 7.1, "side_w": 5.4, "eave": 0.2955,
+		"front": [{"rect": [0.4122, 0.2264, 0.5883, 1.0], "leaf": true}],
+		"back": []}
+}

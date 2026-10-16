@@ -130,6 +130,8 @@ func _piece(source: MeshInstance3D, low: Vector3, high: Vector3) -> void:
 	piece.mesh = box
 	piece.material_override = source.material_override
 	piece.layers = source.layers
+	# Casco escondido por fachada pintada (sólido só de colisão): as partes também.
+	piece.visible = source.visible
 	piece.position = (low + high) * .5
 	source.get_parent().add_child(piece)
 	_solid(piece)

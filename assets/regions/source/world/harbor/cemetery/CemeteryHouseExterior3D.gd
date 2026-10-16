@@ -1,7 +1,21 @@
 extends "res://assets/regions/source/world/harbor/cemetery/CemeteryPropBuilder.gd"
 
+const KIT := preload("res://world/urban_detail/PaintedFacadeKit.gd")
+const PAINTED_STYLE := "casa-zelador"
+## Casco do chalé (m): o mesmo das caixas antigas, para colisão, interior e porta baterem.
+const HULL := Vector3(7.1, 2.7, 5.4)
+## Plano da folha: logo à frente do casco, na linha da dobradiça do WalkupFacadeDoor (z 2,8).
+const LEAF_Z := 2.77
+static var _recess_material: StandardMaterial3D
+
 var door: Node3D
 var window_light: MeshInstance3D
+
+
+## PROVISÓRIO: desligado por padrão até esclarecer o travamento de test_keeper_house;
+## só liga com GETECO_PAINTED_KEEPER=1. Ao fechar, inverter para `!= "0"` (liga por padrão).
+static func painted_enabled() -> bool:
+	return KIT.enabled() and OS.get_environment("GETECO_PAINTED_KEEPER") == "1"
 
 func _ready() -> void:
 	box("StoneFoundation", Vector3(7.6, .3, 5.9), Vector3(0, .05, 0), "666657")
@@ -42,6 +56,69 @@ func _ready() -> void:
 		box("Firewood", Vector3(.8, .17, .22), Vector3(2.75, .22 + i * .16, 3.0), "5e4a34")
 	var sign_node := lettering("06h — 00h\nNÃO ENTRE DE MADRUGADA", Vector3(-2.2, .70, 2.96), 14)
 	sign_node.modulate = Color("dfc894")
+	if painted_enabled(): _paint_over()
+
+
+## Troca o visual por PaintedFacadeKit sem tocar no que o jogo usa do chalé:
+## - `LimewashedCottage` fica (escondido): é o sólido do interior (`interior_solid_id`) e a
+##   colisão das paredes, que o WalkupFacadeDoor recorta para o vão da porta;
+## - `HingedDoor` fica vazio: o WalkupFacadeDoor leva os filhos dele para a dobradiça que o
+##   empurrão do jogador gira, então a folha pintada é filha dele (a única porta que abre);
+## - fundação, degrau, telhado, janelas, placa, lenha e lampião 3D saem (o desenho já os traz;
+##   escondidos, a fundação e o degrau seriam um meio-fio invisível sem pintura por cima).
+func _paint_over() -> void:
+	for node in get_children():
+		if node.name == &"LimewashedCottage" or node == door: continue
+		if node is MeshInstance3D or node is Label3D or node.name == &"OilLantern": node.free()
+	window_light = null
+	for node in door.get_children(): node.free()
+	# Pivô na origem: a folha pintada usa coordenadas da casa e o adaptador a leva à dobradiça.
+	door.position = Vector3.ZERO
+	var cottage := get_node("LimewashedCottage") as MeshInstance3D
+	# O desenho assenta no chão (a fundação saiu): o casco desce até y=0.
+	(cottage.mesh as BoxMesh).size = Vector3(HULL.x, HULL.y + .15, HULL.z)
+	cottage.position.y = (HULL.y + .15) * .5
+	cottage.visible = false
+	var holder := Node3D.new()
+	holder.name = "PaintedKeeperHouse"
+	add_child(holder)
+	var facade := KIT.build(holder, PAINTED_STYLE, HULL, null, NAN, {"snow": false})
+	var opening: Array = KIT.openings(PAINTED_STYLE, "front")[0].rect
+	# O kit põe a própria folha no vão; aqui a folha é a do WalkupFacadeDoor.
+	for node in facade.get_children():
+		if str(node.name).begins_with("Doorway_front"):
+			for child in node.get_children(): child.free()
+	var leaf_w := (float(opening[2]) - float(opening[0])) * HULL.x
+	var leaf_h := (float(opening[3]) - float(opening[1])) * HULL.y
+	var center_x := (-.5 + (float(opening[0]) + float(opening[2])) * .5) * HULL.x
+	var bottom := (1.0 - float(opening[3])) * HULL.y - float(facade.get_meta("ground_sink", 0.0))
+	var recess := MeshInstance3D.new()
+	recess.name = "DoorRecessPainted"
+	var recess_mesh := BoxMesh.new()
+	recess_mesh.size = Vector3(leaf_w, leaf_h, .5)
+	recess.mesh = recess_mesh
+	recess.position = Vector3(center_x, bottom + leaf_h * .5, HULL.z * .5 - .25)
+	recess.material_override = _recess()
+	holder.add_child(recess)
+	for inside in [false, true]:
+		var leaf := MeshInstance3D.new()
+		leaf.name = "PaintedDoorLeaf" + ("Inside" if inside else "")
+		leaf.mesh = QuadMesh.new()
+		(leaf.mesh as QuadMesh).size = Vector2(leaf_w, leaf_h)
+		leaf.material_override = KIT.material(PAINTED_STYLE, "door_front_inside" if inside else "door_front")
+		leaf.position = Vector3(center_x, bottom + leaf_h * .5, LEAF_Z - (.01 if inside else 0.0))
+		if inside: leaf.rotation.y = PI
+		door.add_child(leaf)
+
+
+static func _recess() -> StandardMaterial3D:
+	if _recess_material == null:
+		_recess_material = StandardMaterial3D.new()
+		_recess_material.albedo_color = Color("1c1a17")
+		_recess_material.roughness = .95
+		# Só as faces de dentro: de fora se vê o fundo do vão.
+		_recess_material.cull_mode = BaseMaterial3D.CULL_FRONT
+	return _recess_material
 
 func set_door_open(open: bool) -> void:
 	if door:
