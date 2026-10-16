@@ -221,7 +221,7 @@ static func _flush(chunk: Node3D, batches: Dictionary) -> void:
 			shadows = false
 		else:
 			multimesh.mesh = KIT.mesh(kind)
-			material = KIT.material()
+			material = KIT.material_for(kind)
 			# Peça de telhado pequena (antena, respiro, antena parabólica) segue sem
 			# sombra: dobrava as primitivas na passada de sombra sem aparecer nesta câmera.
 			shadows = kind in SHADOW_CASTERS

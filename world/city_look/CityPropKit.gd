@@ -49,8 +49,50 @@ static func material() -> StandardMaterial3D:
 	return _material
 
 
+## Adereços em camadas: cada camada vira uma superfície com textura própria
+## (granito, folhagem, plástico), em vez da cor lisa do kit, que deixava vaso e
+## sacos com cara de brinquedo. Quem desenha estes tipos não põe material_override.
+const LAYERED := {"planter": ["stone", "leaves"], "trash_bags": ["plastic"], "hedge": ["leaves"]}
+const FLORA := preload("res://assets/urban_detail/FloraSurfaces.gd")
+
+
+## Material do MultiMesh deste tipo; null deixa valer o material de cada superfície.
+static func material_for(kind: String) -> StandardMaterial3D:
+	return null if LAYERED.has(kind) else material()
+
+
+## Mesmas opções do FloraSurfaces.bark() (cor de vértice sRGB, triplanar, relevo e
+## rugosidade por textura): só textura e valores mudam, então o shader é o mesmo que
+## as árvores do porto já compilaram e não há variante nova para pré-aquecer.
+static func layer_material(layer: String) -> StandardMaterial3D:
+	match layer:
+		"stone": return FLORA.material("granite", Color.WHITE, 1.1, 0.9, 0.93, true)
+		"leaves": return FLORA.material("foliage", Color.WHITE, 0.55, 1.2, 0.96, true)
+		_: return FLORA.material("fabric", Color.WHITE, 0.45, 1.6, 0.48, true)
+
+
+static func _layered_mesh(kind: String) -> ArrayMesh:
+	var result := ArrayMesh.new()
+	for layer: String in LAYERED[kind]:
+		var tool := SurfaceTool.new()
+		tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+		tool.set_material(layer_material(layer))
+		tool.set_smooth_group(-1)
+		match kind + ":" + layer:
+			"planter:stone": _planter_stone(tool)
+			"planter:leaves": _planter_leaves(tool)
+			"trash_bags:plastic": _trash_bags(tool)
+			"hedge:leaves": _hedge(tool)
+		tool.generate_normals()
+		tool.commit(result)
+	return result
+
+
 static func mesh(kind: String) -> ArrayMesh:
 	if _meshes.has(kind): return _meshes[kind]
+	if LAYERED.has(kind):
+		_meshes[kind] = _layered_mesh(kind)
+		return _meshes[kind]
 	var tool := SurfaceTool.new()
 	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
 	# Destroços reutilizam a malha fora do MultiMeshInstance e de seu override.
@@ -65,7 +107,6 @@ static func mesh(kind: String) -> ArrayMesh:
 		"mailbox": _mailbox(tool)
 		"phone_booth": _phone_booth(tool)
 		"dumpster": _dumpster(tool)
-		"trash_bags": _trash_bags(tool)
 		"bollard": _bollard(tool)
 		"signal_pole": _signal_pole(tool)
 		"stop_sign": _stop_sign(tool)
@@ -79,8 +120,6 @@ static func mesh(kind: String) -> ArrayMesh:
 		"manhole": _manhole(tool)
 		"drain": _drain(tool)
 		"bench_seat": _bench_seat(tool)
-		"planter": _planter(tool)
-		"hedge": _hedge(tool)
 		_: preload("res://world/city_look/BuildingLifeKit.gd").build(kind, tool)
 	tool.generate_normals()
 	var result := tool.commit()
@@ -127,38 +166,48 @@ static func cylinder(tool: SurfaceTool, base: Vector3, radius: float, height: fl
 		tool.add_vertex(cap); tool.add_vertex(t0); tool.add_vertex(t1)
 
 
-## Volume orgânico baixo (moita, saco cheio): dois anéis irregulares e um polo,
-## sem fundo porque sempre apoia em terra ou chão. O cone que fazia esse papel
-## lia como chapéu de festa; aqui o bojo fica no meio e o topo arredonda.
+## Volume orgânico baixo (tufo de folhagem, saco cheio): dois anéis irregulares
+## e um polo, sem fundo porque sempre apoia em terra ou chão. Topo achatado e
+## contorno torto de propósito: a versão lisa e simétrica lia como bola de
+## brinquedo. Cada triângulo leva um tom levemente diferente (folha ao sol e à
+## sombra); a textura do material faz o resto de perto.
 ## `variant` gira e deforma cada cópia; `tip` puxa o polo (nó do saco de lixo).
-## Com 6 lados são 30 triângulos, o mesmo custo de um cilindro de 10 lados.
-static func blob(tool: SurfaceTool, base: Vector3, radius: Vector2, height: float, color: Color, sides := 6, variant := 0, tip := 0.0) -> void:
-	# [altura relativa, raio relativo, clareamento]: a base mais escura e o
-	# topo mais claro dão volume mesmo de longe, quando o sombreamento some.
-	var rings := [[0.0, 0.86, -0.12], [0.5, 1.0, 0.0], [0.86, 0.62, 0.1]]
+## Com 6 lados são 30 triângulos.
+static func blob(tool: SurfaceTool, base: Vector3, radius: Vector2, height: float, color: Color, sides := 6, variant := 0, tip := 0.0, roughness := 0.2) -> void:
+	# [altura relativa, raio relativo, clareamento]: base mais escura, topo mais claro.
+	var rings := [[0.0, 0.92, -0.16], [0.48, 1.04, -0.04], [0.82, 0.72, 0.06]]
 	var points := []
-	for ring in rings:
+	for r in rings.size():
 		var row := []
 		for i in sides:
-			var angle := TAU * float(i) / sides + float(variant) * 0.9
-			var wobble := 1.0 + 0.13 * sin(float(i * 7 + variant * 5) + float(ring[0]) * 4.0)
-			var reach: float = ring[1] * wobble
-			row.append(base + Vector3(cos(angle) * radius.x * reach, height * ring[0], sin(angle) * radius.y * reach))
+			var angle := TAU * (float(i) + 0.35 * sin(float(i * 3 + variant))) / sides + float(variant) * 0.9
+			var wobble := 1.0 + roughness * sin(float(i * 7 + variant * 5 + r * 11) * 1.3)
+			var reach: float = rings[r][1] * wobble
+			var lift: float = rings[r][0] + (0.0 if r == 0 else roughness * 0.35 * sin(float(i * 5 + variant * 3)))
+			row.append(base + Vector3(cos(angle) * radius.x * reach, height * lift, sin(angle) * radius.y * reach))
 		points.append(row)
+	var face := 0
 	for r in rings.size() - 1:
-		tool.set_color(_shade(color, rings[r][2]))
 		for i in sides:
 			var j := (i + 1) % sides
 			var l0: Vector3 = points[r][i]
 			var l1: Vector3 = points[r][j]
 			var u0: Vector3 = points[r + 1][i]
 			var u1: Vector3 = points[r + 1][j]
+			tool.set_color(_mottle(color, rings[r][2], face, variant)); face += 1
 			tool.add_vertex(l0); tool.add_vertex(l1); tool.add_vertex(u0)
+			tool.set_color(_mottle(color, rings[r][2], face, variant)); face += 1
 			tool.add_vertex(l1); tool.add_vertex(u1); tool.add_vertex(u0)
-	var pole := base + Vector3.UP * height * (1.0 + tip)
-	tool.set_color(_shade(color, rings[-1][2]))
+	var pole := base + Vector3.UP * height * (0.94 + tip)
 	for i in sides:
+		tool.set_color(_mottle(color, rings[-1][2] + 0.04, face, variant)); face += 1
 		tool.add_vertex(pole); tool.add_vertex(points[-1][i]); tool.add_vertex(points[-1][(i + 1) % sides])
+
+
+## Tom por triângulo: a maioria um pouco mais escura, uma ou outra mais clara.
+static func _mottle(color: Color, amount: float, face: int, variant: int) -> Color:
+	var noise := fposmod(sin(float(face * 37 + variant * 101) * 12.9898) * 43758.5453, 1.0)
+	return _shade(color, amount + (noise - 0.6) * 0.14)
 
 
 static func _shade(color: Color, amount: float) -> Color:
@@ -218,11 +267,12 @@ static func _dumpster(t: SurfaceTool) -> void:
 
 
 static func _trash_bags(t: SurfaceTool) -> void:
-	# Sacos estufados com o nó puxado para cima, não cones.
-	blob(t, Vector3.ZERO, Vector2(.3, .27), .46, Color("1d1f22"), 6, 0, .14)
-	blob(t, Vector3(.42, 0, .12), Vector2(.25, .23), .4, Color("24272a"), 6, 3, .16)
-	blob(t, Vector3(.18, 0, -.34), Vector2(.24, .22), .36, Color("3a4430"), 6, 6, .16)
-	box(t, Vector3(-.4, .16, .2), Vector3(.4, .32, .34), Color("9a7d55"), .4)
+	# Sacos estufados com o nó puxado para cima; o plástico (textura "fabric",
+	# rugosidade baixa) dá vinco e brilho. Caixa de papelão desbotada ao lado.
+	blob(t, Vector3.ZERO, Vector2(.3, .27), .44, Color("1a1c1e"), 6, 0, .16, .14)
+	blob(t, Vector3(.42, 0, .12), Vector2(.25, .23), .38, Color("222528"), 6, 3, .18, .14)
+	blob(t, Vector3(.18, 0, -.34), Vector2(.24, .22), .34, Color("2c3327"), 6, 6, .18, .14)
+	box(t, Vector3(-.4, .16, .2), Vector3(.4, .32, .34), Color("7d6a50"), .4)
 
 
 static func _bollard(t: SurfaceTool) -> void:
@@ -234,23 +284,41 @@ static func _bench_seat(t: SurfaceTool) -> void:
 	preload("res://world/urban_detail/BenchFinish.gd").append_to(t, 1.7, .44, .49, .93)
 
 
-## Vaso de concreto com uma moita aparada. A terra é só a face de cima (a caixa
-## já fecha o volume) e fica 1 cm acima do concreto para não piscar; a borda
-## clara que sobra em volta faz o papel do friso. 49 triângulos, antes 45.
-static func _planter(t: SurfaceTool) -> void:
-	box(t, Vector3(0, .24, 0), Vector3(1.1, .48, 1.1), Color("a19b90"))
-	t.set_color(Color("3b2f24"))
-	var soil := [Vector3(-.45, .49, -.45), Vector3(.45, .49, -.45), Vector3(.45, .49, .45), Vector3(-.45, .49, .45)]
+## Vaso de granito de Harbor (tom das jardineiras do porto, #6e736b, um pouco mais
+## escuro porque a textura clareia): corpo,
+## tampa um pouco mais larga e clara que marca a borda, e a terra só como face
+## de cima, 1 cm acima da tampa para não piscar.
+static func _planter_stone(t: SurfaceTool) -> void:
+	box(t, Vector3(0, .21, 0), Vector3(1.02, .42, 1.02), Color("5f625d"))
+	box(t, Vector3(0, .46, 0), Vector3(1.1, .08, 1.1), Color("71746e"))
+	t.set_color(Color("2a241e"))
+	var soil := [Vector3(-.43, .51, -.43), Vector3(.43, .51, -.43), Vector3(.43, .51, .43), Vector3(-.43, .51, .43)]
 	# Mesma ordem da face de cima de box(): normal para +Y.
 	for index in [0, 1, 2, 0, 2, 3]: t.add_vertex(soil[index])
-	blob(t, Vector3(0, .49, 0), Vector2(.42, .4), .62, Color("46703f"), 7, 1)
 
 
-## Fileira de moitas para jardineira de 1,65 m (fachadas das casas). Uma malha
-## compartilhada no lugar de cinco cilindros de 12 lados: 90 triângulos, não 480.
+## Verdes do porto: o marítimo #3d5945 do HarborRouteMaterials puxado para o
+## cinza e o oliva (a textura de folhagem ainda clareia e satura um pouco).
+const HARBOR_LEAVES := ["37443b", "3f4b3e", "333f37", "454a39", "3a4636"]
+
+
+## Moita do vaso: sete tufos pequenos de alturas diferentes, mais altos no meio.
+## Tufo grande e único lia como pedra facetada ou bola.
+static func _planter_leaves(t: SurfaceTool) -> void:
+	var spots := [Vector2(0, 0), Vector2(.24, .1), Vector2(-.22, .16), Vector2(.12, -.24), Vector2(-.18, -.2), Vector2(.02, .27), Vector2(.28, -.14)]
+	for i in spots.size():
+		var spot: Vector2 = spots[i]
+		var size := .2 - spot.length() * .12
+		var height := .44 - spot.length() * .42 + .05 * float(i % 3)
+		blob(t, Vector3(spot.x, .5, spot.y), Vector2(size, size * .92), height, Color(HARBOR_LEAVES[i % HARBOR_LEAVES.size()]), 5, i * 2 + 1, 0.0, .26)
+
+
+## Fileira de tufos para jardineira de 1,65 m (fachadas das casas). Uma malha
+## compartilhada no lugar de cinco cilindros de 12 lados: 175 triângulos, não 480.
 static func _hedge(t: SurfaceTool) -> void:
-	for i in 3:
-		blob(t, Vector3(-.5 + i * .5, 0, 0), Vector2(.32, .2), .4 + .06 * float(i % 2), Color("537258"), 6, i + 2)
+	for i in 7:
+		var x := -.66 + i * .22
+		blob(t, Vector3(x, 0, .04 * float(i % 2 * 2 - 1)), Vector2(.16, .15), .26 + .07 * float((i * 5) % 3), Color(HARBOR_LEAVES[i % HARBOR_LEAVES.size()]), 5, i + 2, 0.0, .26)
 
 
 # --- Sinalização viária ---

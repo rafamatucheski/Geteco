@@ -1,6 +1,7 @@
 extends SceneTree
 ## Captura de perto do vaso da calçada, dos sacos de lixo e da jardineira das
 ## casas, com a versão em cone ao lado (reconstruída aqui) para comparar.
+## Cada malha usa o material das próprias superfícies, como no jogo.
 ## Saída: evidence/street-greenery/<nome>.png (fora do Git).
 
 const KIT := preload("res://world/city_look/CityPropKit.gd")
@@ -51,7 +52,7 @@ func _initialize() -> void:
 	var camera := Camera3D.new()
 	camera.fov = 40
 	root.add_child(camera)
-	camera.look_at_from_position(Vector3(.2, 3.4, 4.6), Vector3(.2, .3, -.2))
+	camera.look_at_from_position(Vector3(.4, 2.6, 3.4), Vector3(.4, .4, -.3))
 	for _frame in 8: await process_frame
 	var out := ProjectSettings.globalize_path("res://evidence/street-greenery")
 	DirAccess.make_dir_recursive_absolute(out)
@@ -66,7 +67,6 @@ func _initialize() -> void:
 func _place(root: Node3D, mesh: Mesh, at: Vector3) -> void:
 	var instance := MeshInstance3D.new()
 	instance.mesh = mesh
-	instance.material_override = KIT.material()
 	instance.position = at
 	root.add_child(instance)
 
@@ -75,6 +75,7 @@ func _place(root: Node3D, mesh: Mesh, at: Vector3) -> void:
 func _old_mesh(kind: String) -> ArrayMesh:
 	var t := SurfaceTool.new()
 	t.begin(Mesh.PRIMITIVE_TRIANGLES)
+	t.set_material(KIT.material())
 	t.set_smooth_group(-1)
 	if kind == "planter":
 		KIT.box(t, Vector3(0, .25, 0), Vector3(1.1, .5, 1.1), Color("9a948a"))

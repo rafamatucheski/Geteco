@@ -53,7 +53,6 @@ func _ready() -> void:
 		var hedge := MeshInstance3D.new()
 		hedge.name = "Shrub"
 		hedge.mesh = CITY_PROPS.mesh("hedge")
-		hedge.material_override = CITY_PROPS.material()
 		hedge.position = Vector3(x,.48,3.51)
 		add_child(hedge)
 	for x in [-.95,.95]:
