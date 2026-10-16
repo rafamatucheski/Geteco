@@ -94,3 +94,26 @@ Resultado: quadros >33 ms caíram muito (oeste 16-17 -> 1, travessia 41-49 -> 7-
 - Regressão: ponte_1 (548,0,-285) chunk.cell_merge de 176 ms na fase pós-render com 0 tiques
   de física (provável espera de tarefa de trabalhador no thread principal).
 - Chuva/noite: p50 subiu ~1 ms (reflexos agora com MSAA 4x).
+
+## Fase 4 e estado final (16/10 ~08:20) — PROBLEMA EM ABERTO
+
+Medido em release (fase 4, 2 rodadas por cenário; PC limpo com 10,6 GB livres; sem PredatorSense):
+quadros >33 ms caíram de dezenas por rodada (linha de base de 15/10) para 0–2 na maioria das
+rotas; p99 caiu pela metade; ponte, porto, sobrados, deserto, caos e dirigindo sem pico > 45 ms.
+
+**Em aberto (não resolvido, causa não provada):** um quadro isolado de 220–250 ms em 6 de 7
+rodadas da serra e da travessia (entrada da serra), às vezes também na cidade/noite/chuva/ponte.
+- Persiste com o PC limpo (RAM livre 10,6 GB) e sem o app PredatorSense (rodadas `limpo_*` e
+  `semacer_*`); PerfTune e um PredatorSense elevado não puderam ser fechados.
+- VRAM descartada: ~1,6 GB usados de 8 GB (StallLog `vid_mb`).
+- Dois sabores nos logs: (a) render_bracket 160–300 ms sem span, com a thread principal presa no
+  driver NVIDIA (`nvoglv64.dll`, SRWLock) enquanto uma thread do Windows/dxcore destrói alocações
+  (`NtGdiDdDDIDestroyAllocation2`) — amostrado por `runtime/StallStackSampler.cs`
+  (`HARBOR_STALL_STACKS=1`); (b) early_to_late ~200 ms sem span na serra em (745,4,-395..-401).
+- Não reproduz no editor (`tests/measure/trace_unspanned_spikes.gd --rota=serra`, maior quadro
+  22 ms na vila) nem na rodada `pilha_serra_1` com o amostrador ligado (máx. 59 ms): é
+  intermitente.
+- Próximos passos se for retomado: rodar serra/travessia várias vezes em release com
+  `HARBOR_STALL_LOG=1 HARBOR_STALL_STACKS=1` até capturar o quadro (b) com pilha; testar com
+  PerfTune/PredatorSense totalmente desligados (serviço elevado) e com o modo de apresentação
+  Vulkan "Prefer native" no painel NVIDIA; investigar a memória privada de ~5,2 GB do jogo.

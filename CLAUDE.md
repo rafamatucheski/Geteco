@@ -5,6 +5,10 @@ Antigravity) além do desenvolvedor no editor do Godot. As regras abaixo existem
 trabalhos paralelos não se atropelem. Leia também [AGENTS.md](AGENTS.md) (regras de jogo,
 interiores, desempenho e Git) e [README.md](README.md).
 
+**Antes de qualquer mudança, leia [docs/HOW-TO-DEVELOP.md](docs/HOW-TO-DEVELOP.md)**: fila única
+de Godot (`tools/run_godot_locked.sh`), como medir desempenho em release e as regras de código
+que evitam quadros grandes (streaming, shaders, prédios pintados, portas).
+
 ## Estrutura
 
 A raiz do repositório **é o jogo** (a antiga V2, promovida em 2026-09-24). O projeto Godot
