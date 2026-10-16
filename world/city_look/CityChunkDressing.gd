@@ -88,7 +88,8 @@ static func build_chunk_step(state: Dictionary) -> bool:
 		2: _sidewalk_lamps(state.chunk, state.context)
 		3: STAIRS.build_chunk(state.chunk)
 		4: _texture_walls(state.chunk)
-		5: _face_ground_up(state.chunk)
+		5:
+			if not _face_ground_up_step(state): return false
 		6: _junction_signage(state.context, state.batches, state.chunk)
 		7: _sidewalk_furniture(state.context, state.batches)
 		8: _building_surroundings(state.context, state.batches)
@@ -1089,25 +1090,54 @@ static var _ground_meshes := {}
 
 static func _face_ground_up(chunk: Node3D) -> void:
 	for node in chunk.find_children("*", "MeshInstance3D", true, false):
-		var mesh := node as MeshInstance3D
-		if mesh.mesh == null or not mesh.mesh is ArrayMesh: continue
-		var box := mesh.global_transform * mesh.get_aabb()
-		if box.size.y > 0.4 or box.end.y > 0.3 or maxf(box.size.x, box.size.z) < 3.0: continue
-		if not _faces_down(mesh.mesh): continue
-		var key := mesh.mesh.get_instance_id()
-		if not _ground_meshes.has(key): _ground_meshes[key] = _flipped(mesh.mesh)
-		# A malha original fica (escondida): a colisão do piso é gerada dela
-		# depois deste passo e precisa continuar igual à que os testes de via
-		# conferem. Só o desenho usa a cópia invertida.
-		var visual := MeshInstance3D.new()
-		visual.name = String(mesh.name) + "_Lit"
-		visual.mesh = _ground_meshes[key]
-		visual.material_override = mesh.material_override
-		visual.cast_shadow = mesh.cast_shadow
-		visual.layers = mesh.layers
-		mesh.add_sibling(visual)
-		visual.transform = mesh.transform
-		mesh.visible = false
+		_face_ground_mesh(node as MeshInstance3D)
+
+
+## Passo 5 fatiado. Cada piso candidato pede surface_get_arrays, que espera a GPU
+## terminar os quadros em voo (MeshArrayCache): no release de 16/10 o passo
+## inteiro num quadro deu 185 ms logo depois do jogo ficar jogável (travessia_1,
+## no desembarque). No editor, a travessia leu 602 pisos em 99 trechos (~6 por
+## trecho) e nenhum estava virado para baixo: o passo vale como garantia, mas não
+## pode concentrar as leituras num quadro.
+const FACE_GROUND_BUDGET_USEC := 2000
+
+static func _face_ground_up_step(state: Dictionary) -> bool:
+	var chunk: Node3D = state.chunk
+	if not state.has("ground_nodes"):
+		state.ground_nodes = chunk.find_children("*", "MeshInstance3D", true, false)
+		state.ground_index = 0
+	var nodes: Array = state.ground_nodes
+	var began := Time.get_ticks_usec()
+	while int(state.ground_index) < nodes.size():
+		var node: Variant = nodes[int(state.ground_index)]
+		state.ground_index = int(state.ground_index) + 1
+		# Entre um quadro e outro um registro pode ter saído do trecho (volta ao cache de registros).
+		if is_instance_valid(node) and chunk.is_ancestor_of(node): _face_ground_mesh(node as MeshInstance3D)
+		if Time.get_ticks_usec() - began >= FACE_GROUND_BUDGET_USEC: return false
+	state.erase("ground_nodes")
+	state.erase("ground_index")
+	return true
+
+
+static func _face_ground_mesh(mesh: MeshInstance3D) -> void:
+	if mesh.mesh == null or not mesh.mesh is ArrayMesh: return
+	var box := mesh.global_transform * mesh.get_aabb()
+	if box.size.y > 0.4 or box.end.y > 0.3 or maxf(box.size.x, box.size.z) < 3.0: return
+	if not _faces_down(mesh.mesh): return
+	var key := mesh.mesh.get_instance_id()
+	if not _ground_meshes.has(key): _ground_meshes[key] = _flipped(mesh.mesh)
+	# A malha original fica (escondida): a colisão do piso é gerada dela
+	# depois deste passo e precisa continuar igual à que os testes de via
+	# conferem. Só o desenho usa a cópia invertida.
+	var visual := MeshInstance3D.new()
+	visual.name = String(mesh.name) + "_Lit"
+	visual.mesh = _ground_meshes[key]
+	visual.material_override = mesh.material_override
+	visual.cast_shadow = mesh.cast_shadow
+	visual.layers = mesh.layers
+	mesh.add_sibling(visual)
+	visual.transform = mesh.transform
+	mesh.visible = false
 
 
 static func _flipped(source: ArrayMesh) -> ArrayMesh:
@@ -1144,7 +1174,19 @@ static func _flipped(source: ArrayMesh) -> ArrayMesh:
 	return result
 
 
+## Resposta por malha: piso compartilhado entre trechos (registro em cache) não lê de novo da GPU.
+static var _faces_down_by_mesh := {}
+
 static func _faces_down(array_mesh: ArrayMesh) -> bool:
+	var id := array_mesh.get_instance_id()
+	var known: Variant = _faces_down_by_mesh.get(id)
+	if known != null and known.ref.get_ref() == array_mesh: return known.down
+	if _faces_down_by_mesh.size() > 4096: _faces_down_by_mesh.clear()
+	var down := _faces_down_read(array_mesh)
+	_faces_down_by_mesh[id] = {"ref": weakref(array_mesh), "down": down}
+	return down
+
+static func _faces_down_read(array_mesh: ArrayMesh) -> bool:
 	var arrays := array_mesh.surface_get_arrays(0)
 	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var indices = arrays[Mesh.ARRAY_INDEX]

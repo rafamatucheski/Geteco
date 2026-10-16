@@ -14,6 +14,7 @@ const STATIC_GENERATORS := [
 ]
 static var enabled := OS.get_environment("GETECO_SHADOW_SHELL") != "0"
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 
 static func schedule(chunk: Node3D) -> void:
 	if not (enabled or preload("res://world/chunk_bake/ChunkCellMerge.gd").enabled) or Engine.get_meta("geteco_live_preview_build", false): return
@@ -73,7 +74,8 @@ static func _finish(chunk: Node3D, budget_usec: int) -> void:
 			continue
 		# A caixa local transformada preserva orientação; uma AABB mundial inflaria
 		# paredes diagonais. Malhas compostas não viram blocos que tapariam seus vãos.
-		var arrays := source.mesh.surface_get_arrays(0)
+		# Do cache: cada surface_get_arrays espera a GPU terminar (MeshArrayCache), e as caixas se repetem.
+		var arrays := MESH_ARRAYS.arrays_of(source.mesh, 0)
 		var points: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 		var source_normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
 		var triangles: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]

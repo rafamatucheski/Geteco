@@ -94,7 +94,6 @@ static func _run(chunk: Node3D, budget_usec: int) -> Dictionary:
 	for scope in reveal_scopes:
 		if not is_instance_valid(scope) or not is_instance_valid(slice.reference.get_ref()): continue
 		_sum(report, await _merge_scope(scope as Node3D, scope.get_children(), true, slice))
-	_arrays.clear()
 	if not is_instance_valid(slice.reference.get_ref()): return report
 	STALL_WORK.finish_slow("chunk.cell_merge", slice.began, 1500)
 	# Os materiais da família nascem depois do pré-aquecimento do corte do túnel: sem isto, a primeira
@@ -125,12 +124,11 @@ static func _yield_if_due(slice: Slice) -> bool:
 	var still: Variant = slice.reference.get_ref()
 	return is_instance_valid(still) and (still as Node).is_inside_tree()
 
-## Arrays por malha e superfície, lidos uma vez por trecho: cabanas e contêineres repetem a mesma malha.
-static var _arrays := {}
+## Arrays por malha e superfície. Eram lidas uma vez por trecho, mas cada leitura espera a GPU (a fatia de
+## 176 ms da ponte no release de 16/10): agora vêm do cache entre trechos, por parâmetros nas primitivas.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 static func _arrays_of(mesh: Mesh, surface: int) -> Array:
-	var key := "%d:%d" % [mesh.get_instance_id(), surface]
-	if not _arrays.has(key): _arrays[key] = mesh.surface_get_arrays(surface)
-	return _arrays[key]
+	return MESH_ARRAYS.arrays_of(mesh, surface)
 
 ## Registro em cache sai do trecho e volta em outro: as fontes reaparecem porque o lote ficou no trecho velho.
 ## O trecho novo funde de novo quando termina de montar.

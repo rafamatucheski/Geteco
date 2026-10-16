@@ -7,9 +7,13 @@ extends SceneTree
 ##
 ## Uso: tools/run_godot_locked.sh --path . --script res://tests/measure/trace_unspanned_spikes.gd -- --no-save \
 ##        --benchmark --no-dispatch --play-at=harbor,295,100 --rota=sobrados [--voltas=2] [--limite-ms=60]
+## O ReleaseBenchmark começa no desembarque (233,194) e teleporta para a rota: --play-at=harbor,233,194 repete
+## esse primeiro salto (rotas oeste/porto/ponte/travessia).
 const ROUTES := {
 	"sobrados": [Vector3(295, 0, 100), Vector3(340, 0, 100), Vector3(340, 0, -60), Vector3(295, 0, -60)],
 	"travessia": [Vector3(330, 0, -285), Vector3(600, 0, -285), Vector3(700, 4, -300), Vector3(745, 4, -420)],
+	"ponte": [Vector3(440, 0, -285), Vector3(600, 0, -285)],
+	"porto": [Vector3(150, 0, 82), Vector3(250, 0, 82), Vector3(250, 0, 30), Vector3(180, 0, 30), Vector3(180, 0, 82)],
 	"oeste": [Vector3(64, 0, 82), Vector3(150, 0, 82), Vector3(143, 0, 60), Vector3(84, 0, 60), Vector3(84, 0, 123), Vector3(65, 0, 113)],
 }
 const SPEED := 12.0
@@ -126,5 +130,8 @@ func run() -> void:
 				"process_ms": snappedf(Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, .1), "groups": _summary(_added),
 				"spans": _slow_spans(spans)}))
 	if "--perfil" in OS.get_cmdline_user_args(): EngineDebugger.profiler_enable("servers", false)
+	# Leituras de malha da placa (cada uma espera a GPU) que o cache poupou ou não.
+	var arrays: Variant = preload("res://world/chunk_bake/MeshArrayCache.gd")
+	print("TRACE_MESH_READS ", JSON.stringify({"reads": arrays.reads, "hits": arrays.hits}))
 	print("TRACE_DONE")
 	quit(0)
