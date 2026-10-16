@@ -7,6 +7,9 @@ extends Node
 ## Noite e chuva (15/10): --benchmark-hour=H (0..24, padrão 12) e --benchmark-rain[=1|2] (2 tempestade, padrão;
 ## 1 garoa) com o chão já molhado. Exercitam o que o meio-dia seco não liga: postes/faróis/janelas, sombras de
 ## faróis, partículas de chuva, respingos e a captura do reflexo do chão molhado. Sem as opções, nada muda.
+## Caos (15/10): --benchmark-chaos=N (1..6) mantém N estrelas do começo ao fim, com a polícia sabendo onde o
+## carro está, para medir despacho, viaturas, sirenes/luzes e reação civil. Sem --no-dispatch (senão não há
+## despacho). As rotas e o resto da medição ficam iguais; o jogador fica invencível só nesse modo.
 ## Dirigindo (15/10): --benchmark-drive faz o carro andar a rota com a própria física e direção
 ## automática (BenchmarkAutopilot), para medir o custo de dirigir que o teleporte não exercita.
 const ROUTE_WEST := [Vector3(64, 0, 82), Vector3(150, 0, 82), Vector3(143, 0, 60), Vector3(84, 0, 60), Vector3(84, 0, 123), Vector3(65, 0, 113)]
@@ -39,6 +42,9 @@ var label := "release"
 var route_name := ""
 var bench_hour := 12.0
 var bench_rain := 0
+var chaos_stars := 0
+var _chaos_clock := 0.0
+var _chaos_peak_units := 0
 
 static func requested() -> bool:
 	for argument in OS.get_cmdline_user_args():
@@ -58,6 +64,7 @@ func _ready() -> void:
 		if argument.begins_with("--benchmark-hour="): bench_hour = fposmod(float(argument.trim_prefix("--benchmark-hour=")), 24.0)
 		if argument == "--benchmark-rain": bench_rain = 2
 		elif argument.begins_with("--benchmark-rain="): bench_rain = clampi(int(argument.trim_prefix("--benchmark-rain=")), 0, 2)
+		if argument.begins_with("--benchmark-chaos="): chaos_stars = clampi(int(argument.trim_prefix("--benchmark-chaos=")), 0, 6)
 	_run.call_deferred()
 
 func _route_point(distance: float) -> Dictionary:
@@ -107,6 +114,7 @@ func _run() -> void:
 	world.player.set_physics_process(false)
 	world.player.visible = false
 	world.camera.target = car
+	if chaos_stars > 0 and not world.gameplay.god_mode: world.gameplay.toggle_god_mode()
 	var viewport := get_viewport().get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(viewport, true)
 	var total: float = _route_point(0.0).total
@@ -121,6 +129,7 @@ func _run() -> void:
 			car.global_position = sample.point + Vector3.UP * .1
 			car.rotation = Vector3(0, sample.yaw, 0)
 		world.player.global_position = sample.point if autopilot == null else car.global_position
+		if chaos_stars > 0: _sustain_chaos(sample.point)
 		await get_tree().process_frame
 		var now := Time.get_ticks_usec()
 		var frame_ms := (now - previous) / 1000.0
@@ -142,6 +151,9 @@ func _run() -> void:
 		"frames_over_33ms": frames.filter(func(ms): return ms > 33.3).size(), "playable_ms": playable_ms, "frames_over_250ms": frames.filter(func(ms): return ms > 250.0).size(),
 		"resolution": str(get_viewport().get_visible_rect().size), "viewport_pixels": str(get_viewport().size), "msaa": get_viewport().msaa_3d,
 		"hour": bench_hour, "rain": bench_rain, "vehicles": world.production.vehicles.size(), "people": world.people.size()}
+	if chaos_stars > 0:
+		report.chaos = {"stars_requested": chaos_stars, "stars_final": int(world.gameplay.stars), "dispatch_units_peak": _chaos_peak_units,
+			"dispatch_units_final": world.dispatch.units.size() if is_instance_valid(world.get("dispatch")) else -1}
 	if autopilot != null: report.drive = autopilot.summary()
 	print("BENCH_RELEASE ", JSON.stringify({"label": label, "frame_p50": report.frame_ms.p50, "frame_p95": report.frame_ms.p95, "draws_p50": report.draw_calls.p50}))
 	var folder := "user://benchmark-west"
@@ -151,6 +163,20 @@ func _run() -> void:
 		file.store_string(JSON.stringify(report, "\t"))
 		file.close()
 	get_tree().quit(0)
+
+## Uma vez por segundo repõe o crime que faltar para N estrelas e informa a posição atual do carro
+## (o benchmark teleporta o carro; sem o contato a polícia perderia o alvo e as estrelas cairiam).
+func _sustain_chaos(point: Vector3) -> void:
+	var units: int = world.dispatch.units.size() if is_instance_valid(world.get("dispatch")) else 0
+	_chaos_peak_units = maxi(_chaos_peak_units, units)
+	var now := Time.get_ticks_msec() / 1000.0
+	if now < _chaos_clock: return
+	_chaos_clock = now + 1.0
+	var gameplay = world.gameplay
+	if int(gameplay.stars) < chaos_stars:
+		var needed: int = int(gameplay.STAR_THRESHOLDS[chaos_stars]) - int(gameplay.crime_points)
+		gameplay.register_crime(maxi(needed, 1), point, "benchmark_chaos")
+	gameplay.report_contact(point)
 
 func _stats(values: Array[float]) -> Dictionary:
 	if values.is_empty(): return {}
