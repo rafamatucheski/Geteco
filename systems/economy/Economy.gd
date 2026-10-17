@@ -306,6 +306,7 @@ func discover(id: String) -> bool:
 
 func grant_item(id: String, count: int = 1) -> bool:
 	if not _valid_id(id) or count <= 0 or count > 999: return false
+	if id.begins_with("fish:") and GRID.spec(id).is_empty(): return false
 	if int(_data.inventory.get(id, 0)) + count > 999: return false
 	if grid_enabled():
 		var candidate: Dictionary = _data.grid_inventory.duplicate(true)
@@ -497,6 +498,7 @@ static func validate_snapshot(data: Dictionary) -> bool:
 		if data.personal_loadout_enabled and data.equipped_weapon != "fists" and data.equipped_weapon not in data.personal_loadout.values(): return false
 	for id in data.inventory:
 		if not _valid_id(id) or not _integer(data.inventory[id], 1, 999): return false
+		if str(id).begins_with("fish:") and GRID.spec(id).is_empty(): return false
 	for id in data.transactions:
 		if not _valid_id(id) or not data.transactions[id] is Dictionary: return false
 		var entry: Dictionary = data.transactions[id]

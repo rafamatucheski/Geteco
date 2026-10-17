@@ -2,9 +2,9 @@
 extends RefCounted
 class_name HarborUrbanSurface3D
 
-## Harbor's single exterior pavement, with inset planted beds.
+## Harbor's exterior pavement partition, with inset planted beds.
 ## Keep source rectangles stable for editor IDs and access reservations;
-## rebuild their visible union with a shared finish rather than painted patches.
+## rebuild their visible union with shared finishes appropriate to each court.
 
 const SCALE := 1.0 / 16.0
 const GROUND := preload("res://assets/regions/source/world/harbor/UrbanGround.gd")
@@ -67,14 +67,15 @@ func _compose_visible_surfaces() -> void:
 				var inner := (_surfaces[i].rect as Rect2).grow(-GARDEN_EDGE)
 				var lawn := piece.intersection(inner)
 				if lawn.has_area():
-					_visible_surfaces.append({"rect":lawn,"kind":"grass","color":Color("687c65")})
+					_visible_surfaces.append({"rect":lawn,"kind":"grass","color":Color("566848"),"garden":_surfaces[i].get("boundary",_surfaces[i].rect),"neighbour":_surfaces[i].get("neighbour","concrete")})
 				for border in _rect_difference(piece,inner):
-					_visible_surfaces.append({"rect":border,"kind":"edging","color":PAVING.EDGE_COLOR})
+					_visible_surfaces.append({"rect":border,"kind":"edging","color":PAVING.EDGE_COLOR,"garden":_surfaces[i].get("boundary",_surfaces[i].rect),"neighbour":_surfaces[i].get("neighbour","concrete")})
 			else:
 				# Retire authored patch tints, while keeping deliberate new editor
 				# recolours functional. Old saved edits with the source tint migrate.
-				var finish: Color = PAVING.COLOR if _surfaces[i].color == _surfaces[i].get("authored_color",_surfaces[i].color) else _surfaces[i].color
-				_visible_surfaces.append({"rect":piece,"kind":"concrete","color":finish})
+				var family := String(_surfaces[i].get("finish", "concrete"))
+				var finish: Color = PAVING.FINISH_COLORS[family] if _surfaces[i].color == _surfaces[i].get("authored_color",_surfaces[i].color) else _surfaces[i].color
+				_visible_surfaces.append({"rect":piece,"kind":family,"color":finish,"court":_surfaces[i].get("boundary",_surfaces[i].rect) if family != "concrete" else Rect2(),"neighbour":_surfaces[i].get("neighbour","concrete")})
 	_merge_neighbours()
 
 
@@ -98,6 +99,7 @@ func _merge_neighbours() -> void:
 		for i in _visible_surfaces.size():
 			for j in range(i+1,_visible_surfaces.size()):
 				if _visible_surfaces[i].kind != _visible_surfaces[j].kind or _visible_surfaces[i].color != _visible_surfaces[j].color: continue
+				if _visible_surfaces[i].get("court",Rect2()) != _visible_surfaces[j].get("court",Rect2()) or _visible_surfaces[i].get("garden",Rect2()) != _visible_surfaces[j].get("garden",Rect2()): continue
 				var a: Rect2 = _visible_surfaces[i].rect
 				var b: Rect2 = _visible_surfaces[j].rect
 				var horizontal := is_equal_approx(a.position.y,b.position.y) and is_equal_approx(a.size.y,b.size.y) and (is_equal_approx(a.end.x,b.position.x) or is_equal_approx(b.end.x,a.position.x))
@@ -112,19 +114,70 @@ func _merge_neighbours() -> void:
 
 ## `cover`: contorno das ruas do chunk (HarborRoadGeometry3D.chunk_cover); o lote não fica por baixo da rua.
 func build_chunk(parent: Node3D, rect: Rect2, cover: Array[PackedVector2Array] = []) -> Array[Rect2]:
+	# O cover regional ja exclui a ponte; seus lotes antigos nao podem voltar
+	# por baixo do asfalto. Ownership exato independe do diagnostico GROUND_STACK.
+	var bridge_kit = preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd")
+	var bridge_cuts: Array[PackedVector2Array] = []
+	if bridge_kit.enabled():
+		if rect.intersects(bridge_kit.east_bounds(),true): bridge_cuts.append(bridge_kit.east_footprint())
+		if rect.intersects(Rect2(328.75,-374.25,36.55,126.0),true): bridge_cuts.append(bridge_kit.north_footprint())
 	var exposed: Array[Rect2] = []
 	var grouped: Dictionary = {}
 	for source in _visible_surfaces:
 		var clipped := (source.rect as Rect2).intersection(rect)
 		if not clipped.has_area(): continue
-		var key := "%s|%s" % [source.kind, (source.color as Color).to_html()]
-		if not grouped.has(key):
-			grouped[key] = {"kind": source.kind, "color": source.color, "rects": []}
-		grouped[key].rects.append(clipped)
+		for part in _rounded_parts(source,clipped):
+			if not bridge_cuts.is_empty():
+				var polygons: Array[PackedVector2Array] = []
+				polygons.assign(part.polygons)
+				part.polygons = GROUND_CUT.subtract_exact(polygons,bridge_cuts)
+			var key := "%s|%s" % [part.kind, (part.color as Color).to_html()]
+			if not grouped.has(key):
+				grouped[key] = {"kind":part.kind,"color":part.color,"polygons":[]}
+			grouped[key].polygons.append_array(part.polygons)
 		exposed.append(clipped)
 	for key in grouped:
 		_add_group(parent, grouped[key], cover)
 	return exposed
+
+
+## Round the authored perimeter in world space, never the streaming rectangle.
+## Its exact complement replaces the old sharp corner with neighbouring paving.
+## All parts share the original height, and are still cut by road/building cover.
+func _rounded_parts(source: Dictionary, clipped: Rect2) -> Array[Dictionary]:
+	var subject: Array[PackedVector2Array] = [GROUND_CUT.rect_polygon(clipped)]
+	var garden: Rect2 = source.get("garden",Rect2())
+	var court: Rect2 = source.get("court",Rect2())
+	var boundary := garden if garden.has_area() else court
+	if not boundary.has_area() or boundary.get_area() > 5000.0 or minf(boundary.size.x,boundary.size.y) < 2.0:
+		return [{"kind":source.kind,"color":source.color,"polygons":subject}]
+	var radius := minf(2.2,minf(boundary.size.x,boundary.size.y)*.22)
+	var outer := _round_outline(boundary,radius)
+	var inside: Array[PackedVector2Array] = []
+	inside.assign(Geometry2D.intersect_polygons(subject[0],outer))
+	var result: Array[Dictionary] = []
+	var remainder := GROUND_CUT.subtract_exact(subject,[outer])
+	var neighbour := String(source.get("neighbour","concrete"))
+	if garden.has_area():
+		var inner := _round_outline(garden.grow(-GARDEN_EDGE),maxf(.05,radius-GARDEN_EDGE))
+		var grass: Array[PackedVector2Array] = []
+		for polygon in inside: grass.append_array(Geometry2D.intersect_polygons(polygon,inner))
+		result.append({"kind":"grass","color":Color("566848"),"polygons":grass})
+		result.append({"kind":"edging","color":PAVING.EDGE_COLOR,"polygons":GROUND_CUT.subtract_exact(inside,[inner])})
+	else:
+		result.append({"kind":source.kind,"color":source.color,"polygons":inside})
+	result.append({"kind":neighbour,"color":PAVING.FINISH_COLORS[neighbour],"polygons":remainder})
+	return result
+
+
+func _round_outline(rect: Rect2, radius: float) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	var centers := [rect.position+Vector2(radius,radius),Vector2(rect.end.x-radius,rect.position.y+radius),rect.end-Vector2(radius,radius),Vector2(rect.position.x+radius,rect.end.y-radius)]
+	for corner in 4:
+		for step in 7:
+			var angle := PI+float(corner)*PI*.5+float(step)*PI/12.0
+			points.append(centers[corner]+Vector2(cos(angle),sin(angle))*radius)
+	return GROUND_CUT.counter_clockwise(points)
 
 
 func source_access_points() -> PackedVector2Array:
@@ -188,7 +241,7 @@ func _add_east() -> void:
 func _add_north() -> void:
 	_add(Rect2(4380,-2400,2380,2300), "concrete", Color("999789"))
 	# Historic "gravel" IDs stay in the editor catalog. The built northern
-	# station promenade receives the same mineral pavement during composition.
+	# station promenade receives the quay finish during composition.
 	_add(Rect2(5700,-4470,600,2120), "gravel", Color("82887d"))
 	for x in [5708.0,6250.0]: _add(Rect2(x,-4430,42,2030),"gravel",Color("b0ac96"))
 	_add(Rect2(5980,-4050,40,1650), "grass", Color("7d8b74"))
@@ -226,8 +279,31 @@ func _north_accesses() -> Array[Dictionary]:
 
 
 func _add(source_rect: Rect2, kind: String, color: Color) -> void:
+	var neighbour := "concrete"
+	for previous in _surfaces:
+		if previous.kind != "grass" and (previous.rect as Rect2).has_point(source_rect.get_center()*SCALE): neighbour = String(previous.get("finish","concrete"))
 	for piece in _carved(source_rect):
-		_surfaces.append({"rect":Rect2(piece.position*SCALE,piece.size*SCALE),"kind":kind,"color":color,"authored_color":color})
+		_surfaces.append({"rect":Rect2(piece.position*SCALE,piece.size*SCALE),"kind":kind,"color":color,"authored_color":color,"finish":_finish_for_lot(source_rect,kind),"boundary":Rect2(source_rect.position*SCALE,source_rect.size*SCALE),"neighbour":neighbour})
+
+
+## Choose the use of the authored lot BEFORE carving or streaming it. The large
+## background stays a neutral sidewalk; individual courts replace its faces.
+func _finish_for_lot(source: Rect2, kind: String) -> String:
+	var rect := Rect2(source.position*SCALE, source.size*SCALE)
+	if rect.get_area() > 5000.0: return "concrete"
+	var center := rect.get_center()
+	if kind == "brick": return "brick"
+	if center.x < 200.0:
+		if center.x > 140.0 or Rect2(47,53,28,8).has_point(center): return "service"
+		if center.y < 72.0 and center.x < 76.0: return "brick"
+		if center.x > 85.0: return "limestone"
+	elif center.x > 270.0:
+		if center.y > 135.0 or center.y < -150.0: return "quay"
+		if center.y > 75.0 and center.x < 345.0: return "brick"
+		if center.y > 0.0: return "limestone"
+		if center.y > -70.0: return "brick"
+		return "service"
+	return "concrete"
 
 
 ## Splits source_rect around any raised-apron hole it overlaps, so the flat
@@ -264,7 +340,7 @@ func _add_access(source_rect: Rect2, kind: String, color: Color) -> void:
 
 func _add_group(parent: Node3D, group: Dictionary, cover: Array[PackedVector2Array] = []) -> void:
 	var pieces: Array[PackedVector2Array] = []
-	for rect_value in group.rects: pieces.append(GROUND_CUT.rect_polygon(rect_value as Rect2))
+	pieces.assign(group.polygons)
 	var mesh := GROUND_CUT.flat_mesh(GROUND_CUT.subtract(pieces, cover), 0.008, 4.0)
 	if mesh == null: return
 	mesh.surface_set_material(0,_material(String(group.kind),group.color))
@@ -280,8 +356,8 @@ func _add_group(parent: Node3D, group: Dictionary, cover: Array[PackedVector2Arr
 func _material(kind: String, color: Color) -> StandardMaterial3D:
 	var key := "%s|%s" % [kind,color.to_html()]
 	if _materials.has(key): return _materials[key]
-	if kind in ["stone","concrete","edging"]:
-		_materials[key] = PAVING.material(color)
+	if kind in PAVING.FINISH_COLORS or kind in ["stone","edging"]:
+		_materials[key] = PAVING.material(color,kind if kind in PAVING.FINISH_COLORS else "concrete")
 		return _materials[key]
 	if kind == "grass":
 		_materials[key] = PAVING.lawn_material(color)

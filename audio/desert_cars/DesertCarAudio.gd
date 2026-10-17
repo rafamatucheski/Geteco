@@ -1,7 +1,10 @@
 extends Node3D
-## Bounded two-band mixer. Uses the SAME gearbox object as motion and HUD.
-## Legacy banks contain offline combustion synthesis, not field recordings.
+## Authored loaded/coast mixer, using the SAME gearbox as motion and HUD.
+## Legacy banks remain available while shared banks warm and for A/B diagnosis.
 const BANKS := preload("res://audio/EngineBankCache.gd")
+const DESIGN_BANKS := preload("res://audio/EngineDesignBanks.gd")
+const DESIGN_VOICE := preload("res://audio/EngineDesignVoice.gd")
+const DESIGN_CATALOG := preload("res://audio/FleetEngineDesign.gd")
 const PROFILE := preload("res://audio/VehicleEngineProfile.gd")
 const CATALOG := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
 var drivetrain: RefCounted
@@ -25,6 +28,7 @@ var _recorded_path := ""
 var _audible_rpm := 0.0
 var _audible_load := 0.0
 var _audible_cut := 0.0
+var _design_voice: Node3D
 
 func bind(car: Node3D, state: RefCounted) -> void:
 	vehicle = car
@@ -40,6 +44,7 @@ func bind(car: Node3D, state: RefCounted) -> void:
 
 func _ready() -> void:
 	if not is_instance_valid(vehicle) or drivetrain == null: set_process(false); return
+	DESIGN_BANKS.prewarm.call_deferred(get_tree())
 	name = "DesertCarAudio"
 	for i in 2: _layers.append(_player("EngineBand%d" % i,-80.0))
 	_apply_profile()
@@ -109,6 +114,7 @@ func _process(delta: float) -> void:
 	running = running or (not vehicle.is_physics_processing() and float(drivetrain.rpm) > 1000.0)
 	var active := (_foreground or _in_range) and running and vehicle.is_visible_in_tree() and float(vehicle.get("health")) > 0.0 and not bool(vehicle.get("engine_disabled"))
 	if not active:
+		if is_instance_valid(_design_voice): _design_voice.stop()
 		for player in _layers: player.stop()
 		_tire.stop()
 		_shift.stop()
@@ -140,6 +146,14 @@ func _process(delta: float) -> void:
 	var exhaust := float(drivetrain.spec.get("exhaust",0.0))
 	# Injection increases engine load. It is not an external air-brake purge.
 	var nitro_load := 1.5 if drivetrain.nitro_active else 0.0
+	if _mix_designed_engine(delta, -16.0 + power * 4.0 + _audible_cut + exhaust * 2.0 + nitro_load):
+		for player in _layers: player.stop()
+		if is_instance_valid(_recorded_idle): _recorded_idle.stop()
+		_shift.stop()
+		_last_shift = int(drivetrain.shift_serial)
+		_last_throttle = float(drivetrain.throttle)
+		_loop_level(_tire, float(drivetrain.wheelspin), -28.0, delta)
+		return
 	# Real idle recordings supply low-speed character for these two families.
 	# Do not stretch an idle recording across the entire rev range: fade it out
 	# before 2000 RPM, leaving the RPM-aligned load banks in charge.
@@ -172,6 +186,23 @@ func _process(delta: float) -> void:
 		_play_shift()
 	_last_throttle = float(drivetrain.throttle)
 	_loop_level(_tire,float(drivetrain.wheelspin),-28.0,delta)
+
+func _mix_designed_engine(delta: float, level: float) -> bool:
+	var archetype := str(vehicle.get("archetype"))
+	var profile := DESIGN_CATALOG.profile(archetype)
+	if not DESIGN_BANKS.enabled() or not DESIGN_BANKS.is_ready(profile):
+		if is_instance_valid(_design_voice): _design_voice.stop()
+		return false
+	if not is_instance_valid(_design_voice):
+		_design_voice = DESIGN_VOICE.new()
+		_design_voice.name = "EngineDesign"
+		_design_voice.spatial_range = 85.0
+		_design_voice.spatial_unit_size = 12.0
+		add_child(_design_voice)
+	if not _design_voice.configure(archetype): return false
+	_design_voice.update_mix(_audible_rpm, _audible_load, delta, level, vehicle.global_position,
+		_foreground, true, int(drivetrain.shift_serial) != _last_shift)
+	return true
 
 func has_wheelspin_voice() -> bool:
 	# Only claim the longitudinal tire sound while it is actually being mixed.

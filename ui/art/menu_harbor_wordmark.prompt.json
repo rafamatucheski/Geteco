@@ -1,0 +1,10 @@
+{
+  "tool": "built-in image_gen",
+  "transparent_background": true,
+  "source": "C:/Users/rafae/.codex/generated_images/01a13f3f-db8c-75a0-a2b0-643d252490c6/exec-7b41ef3c-cc47-4778-97eb-28738f5339d6.png",
+  "output": "res://ui/art/menu_harbor_wordmark.png",
+  "prompts": [
+    "Use case: background-extraction. Edit target: approved HARBOR game menu reference. Extract ONLY the exact large ivory HARBOR title lettering in the center upper half as a standalone transparent PNG wordmark. Preserve its precise bold heavy condensed uppercase letter shapes, wide spacing, flat warm ivory fill and subtle speckled printed distress. H A R B O R must remain exactly spelled. Crop tightly to the full horizontal wordmark with a small safe transparent margin on all sides, approximately 5:1 width-to-height, retaining every letter without clipping. Remove ALL other content including water, buildings, lights, menu options, selection band, triangle, footer. Genuine alpha transparency everywhere outside the six ivory letter forms, including counters inside A/B/O/R and gaps between letters. No background color, no checkerboard rendering, no shadows, no outline, no extra text or decoration. This is an extraction of the approved exact lettering, not a new typographic design.",
+    "Refine this transparent HARBOR wordmark extraction ONLY. Keep exact six letters, letter shapes, spacing, flat ivory color and subtle internal print texture. Clean every exterior edge and the interior counters to smooth crisp anti-aliased contours: remove stray white specks/fragments and residual outline halos outside the letter shapes. All empty spaces must be genuinely transparent alpha, including counters and spaces between letters. No outline, glow, drop shadow or background. Tighten canvas vertically to small transparent margin above and below letter height, preserve full width. Letter surface distress remains subtle and internal, not jagged external debris. Output a clean production-ready transparent PNG wordmark."
+  ]
+}

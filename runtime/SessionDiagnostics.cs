@@ -350,9 +350,34 @@ public partial class SessionLogSink : Logger
         attribution = "concurrent_context_not_proven_cause" });
 
     public override void _LogMessage(string message, bool error) => Record(new { type = error ? "stderr" : "stdout", message });
+
+    // Erro repetido (teste de 16/10): o mesmo erro do CobraPatrol a cada passo de física gravou 9.155
+    // registros com retrato completo do jogo (~20 KB cada, 75% do log) e os picos foram de 19 para 175 por
+    // minuto enquanto durou. O retrato completo vai só nas primeiras ocorrências de cada ponto; depois, uma
+    // contagem por segundo.
+    private const int ERROR_FULL_RECORDS = 3;
+    private sealed class ErrorRepeat { public long Count; public long Suppressed; public long ReportedAt; }
+    private readonly ConcurrentDictionary<string, ErrorRepeat> errorRepeats = new();
+
     public override void _LogError(string function, string file, int line, string code, string rationale,
         bool editorNotify, int errorType, Godot.Collections.Array<ScriptBacktrace> scriptBacktraces)
     {
+        var repeat = errorRepeats.GetOrAdd(file + ":" + line + "::" + code, _ => new ErrorRepeat());
+        long count = Interlocked.Increment(ref repeat.Count);
+        if (count > ERROR_FULL_RECORDS)
+        {
+            Interlocked.Increment(ref repeat.Suppressed);
+            long now = Stopwatch.GetTimestamp();
+            long last = Interlocked.Read(ref repeat.ReportedAt);
+            if (now - last >= Stopwatch.Frequency && Interlocked.CompareExchange(ref repeat.ReportedAt, now, last) == last)
+            {
+                long suppressed = Interlocked.Exchange(ref repeat.Suppressed, 0);
+                Record(new { type = "error_repeat", error_type = errorType, function, file, line, code,
+                    source_key = file + "::" + function, total = count, suppressed_since_last = suppressed,
+                    attribution = "repeated_error_context_omitted" });
+            }
+            return;
+        }
         try
         {
             var traces = new string[scriptBacktraces.Count];

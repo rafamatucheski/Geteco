@@ -18,7 +18,7 @@ var train: Node3D
 var riding := false
 var landing := false
 var menu_open := false
-var camera_mode := 0
+var camera_mode := 1
 var origin_id := ""
 var destination_id := ""
 var route := PackedVector3Array()
@@ -41,7 +41,6 @@ var _ambient_to := "harbor_north"
 var _ambient_returning := false
 var _ambient_initialized := false
 var _next_desert := false
-var _camera_axis_latched := false
 var _arrival_retry := 0.0
 var _arrival_notice_sent := false
 
@@ -192,7 +191,7 @@ func travel_to(target: String, instant := false) -> bool:
 	_ui_clock = 0.0
 	_arrival_retry = 0.0
 	_arrival_notice_sent = false
-	camera_mode = 0
+	camera_mode = 1
 	_parked_station = ""
 	var actor = session.world.player
 	actor.input_locked = true
@@ -413,24 +412,17 @@ func _update_camera(interpolated := false) -> void:
 	camera.target = train
 	camera.near = .06
 	camera.far = 280.0
-	if camera_mode == 0:
-		camera.projection = Camera3D.PROJECTION_PERSPECTIVE
-		camera.fov = 76.0
-		camera.global_position = pose * MODEL.WINDOW_EYE
-		# The elevated passenger looks down through the window at the city below,
-		# keeping the real nearby scenery in view without extending world streaming.
-		camera.look_at(pose * Vector3(7.0, .70, -4.0), Vector3.UP)
-	else:
-		camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-		camera.size = 26.0
-		camera.global_position = pose * Vector3(19, 17, 23)
-		camera.look_at(pose * Vector3(0, 1.1, -4.0), Vector3.UP)
+	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+	camera.size = 36.0
+	camera.global_position = pose * Vector3(21, 19, 27)
+	camera.look_at(pose * Vector3(0, 1.1, -4.0), Vector3.UP)
 	# The real actor remains present for external cameras and through the windows.
 	session.world.player.visible = bool(_saved.visible)
 
-func set_camera_mode(mode: Variant) -> void:
+func set_camera_mode(_mode: Variant) -> void:
 	if not riding: return
-	camera_mode = 1 if str(mode) in ["1", "exterior"] else 0
+	# Older callers may still request an interior view; the ride now has one view.
+	camera_mode = 1
 	if not _boarding: _update_camera()
 	trip_updated.emit(get_trip_state())
 
@@ -441,7 +433,7 @@ func get_trip_state() -> Dictionary:
 		"origin_name": str(source.get("label", "")), "destination_name": str(destination.get("label", "")),
 		"progress": clampf(distance / maxf(.001, route_length), 0.0, 1.0),
 		"remaining_seconds": ceili(maxf(0.0, route_length - distance) / CRUISE_SPEED + _dwell),
-		"camera_mode": camera_mode, "mode": "interior" if camera_mode == 0 else "exterior",
+		"camera_mode": camera_mode, "mode": "exterior",
 		"riding": riding, "landing": landing}
 
 func handle_input(event: InputEvent) -> bool:
@@ -455,19 +447,12 @@ func handle_input(event: InputEvent) -> bool:
 	if event.is_action_pressed("pause_game") or (get_tree().paused and event.is_action_pressed("ui_cancel")): return false
 	if get_tree().paused: return false
 	if event is InputEventJoypadMotion:
-		if event.axis == JOY_AXIS_RIGHT_X:
-			if absf(event.axis_value) < .35: _camera_axis_latched = false
-			elif absf(event.axis_value) > .65 and not _camera_axis_latched and not landing:
-				_camera_axis_latched = true
-				set_camera_mode(1 - camera_mode)
 		# Direction/aim sticks are owned by this ride, never by the actor.
 		return true
 	# Buttons remain interactive; consume only gameplay events before other systems.
 	if event is InputEventMouseButton or event is InputEventMouseMotion or event is InputEventScreenTouch or event is InputEventScreenDrag: return false
 	if not landing:
 		if event.is_action_pressed("interact"): skip_trip()
-		elif event.is_action_pressed("camera_left") or event.is_action_pressed("camera_right"):
-			set_camera_mode(1 - camera_mode)
 	return not event.is_action("ui_accept") and not event.is_action("ui_left") and not event.is_action("ui_right") and not event.is_action("ui_up") and not event.is_action("ui_down")
 
 func skip_trip() -> void:

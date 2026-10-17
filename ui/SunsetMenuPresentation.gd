@@ -8,6 +8,10 @@ var background: ColorRect
 var brand_accent: ColorRect
 var resume_label: Label
 var source_menu: Control
+var artwork: TextureRect
+var footer: Label
+var main_content: Control
+var wordmark: TextureRect
 
 func install(menu: Control) -> void:
 	source_menu = menu
@@ -23,47 +27,77 @@ func install(menu: Control) -> void:
 	background.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(background)
-	menu.game_title.reparent(self)
+	artwork = TextureRect.new()
+	artwork.texture = preload("res://ui/art/menu_harbor_deepwater.png")
+	artwork.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	artwork.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+	artwork.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	artwork.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	background.add_child(artwork)
+	main_content = Control.new()
+	main_content.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	main_content.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(main_content)
+	menu.game_title.reparent(main_content)
+	menu.game_title.hide()
+	wordmark = TextureRect.new()
+	var title_texture := AtlasTexture.new()
+	title_texture.atlas = preload("res://ui/art/menu_harbor_wordmark.png")
+	title_texture.region = Rect2(50, 130, 2070, 480)
+	wordmark.texture = title_texture
+	wordmark.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	wordmark.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	wordmark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	main_content.add_child(wordmark)
+	menu.game_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	menu.game_title.add_theme_font_override("font", DISPLAY_FONT)
 	menu.game_title.add_theme_color_override("font_color", STYLE.TEXT)
 	menu.game_title.add_theme_constant_override("outline_size", 0)
 	menu.game_title.add_theme_constant_override("shadow_offset_y", 0)
+	menu.game_title.add_theme_constant_override("shadow_offset_x", 0)
 	menu.sub_title.hide()
 	brand_accent = ColorRect.new()
 	brand_accent.color = STYLE.ACCENT
 	brand_accent.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(brand_accent)
-	buttons.assign([menu.btn_new_game, menu.btn_load_game, menu.btn_import, menu.btn_settings, menu.btn_quit])
-	if menu.btn_continue.visible: buttons.push_front(menu.btn_continue)
+	brand_accent.hide()
+	buttons.assign([menu.btn_continue, menu.btn_new_game, menu.btn_load_game, menu.btn_settings, menu.btn_quit])
+	var menu_font := FontVariation.new()
+	menu_font.base_font = DISPLAY_FONT
+	menu_font.spacing_glyph = 3
 	for button in buttons:
-		button.reparent(self)
+		button.reparent(main_content)
 		button.custom_minimum_size = Vector2.ZERO
-		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		button.add_theme_font_override("font", DISPLAY_FONT)
+		button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		button.add_theme_font_override("font", menu_font)
+		button.add_theme_color_override("font_shadow_color", Color(0, 0, 0, .9))
+		button.add_theme_constant_override("shadow_offset_y", 1)
 		var normal := StyleBoxFlat.new()
 		normal.bg_color = Color(0, 0, 0, 0)
-		normal.content_margin_left = 14
+		normal.content_margin_left = 12
+		normal.content_margin_right = 12
 		var active := normal.duplicate() as StyleBoxFlat
-		active.bg_color = Color(STYLE.ACCENT, .10)
-		active.border_width_left = 2
-		active.border_color = STYLE.ACCENT
+		active.bg_color = Color("eee5d0")
 		var pressed := active.duplicate() as StyleBoxFlat
-		pressed.bg_color = Color(STYLE.ACCENT, .18)
+		pressed.bg_color = STYLE.ACCENT
 		button.add_theme_stylebox_override("normal", normal)
 		button.add_theme_stylebox_override("hover", active)
 		button.add_theme_stylebox_override("focus", active)
 		button.add_theme_stylebox_override("pressed", pressed)
 		button.add_theme_color_override("font_color", STYLE.TEXT)
-		button.add_theme_color_override("font_hover_color", STYLE.ACCENT)
-		button.add_theme_color_override("font_focus_color", STYLE.ACCENT)
-		button.add_theme_color_override("font_pressed_color", Color.WHITE)
-	if not menu.latest_save.is_empty():
-		resume_label = Label.new()
-		resume_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		resume_label.add_theme_font_override("font", BODY_FONT)
-		resume_label.add_theme_color_override("font_color", STYLE.MUTED)
-		resume_label.text = str(menu.latest_save.get("label", ""))
-		add_child(resume_label)
+		button.add_theme_color_override("font_hover_color", Color("111b23"))
+		button.add_theme_color_override("font_focus_color", Color("111b23"))
+		button.add_theme_color_override("font_pressed_color", Color("111b23"))
+		button.add_theme_stylebox_override("disabled", normal)
+	# Keep migration available on the save screen without crowding the main menu.
+	menu.btn_import.reparent(menu.get_node("%LoadPanel").get_node("Margin/VBox/Actions"))
+	menu.btn_import.custom_minimum_size = Vector2(180, 36)
+	footer = Label.new()
+	footer.text = "Enter / A  ·  Selecionar"
+	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	footer.add_theme_font_override("font", BODY_FONT)
+	footer.add_theme_color_override("font_color", STYLE.MUTED)
+	main_content.add_child(footer)
 	resized.connect(arrange)
 	arrange()
 	# Only opacity changes. The opaque backdrop always covers the warming world.
@@ -74,22 +108,27 @@ func install(menu: Control) -> void:
 		intro.tween_property(child, "modulate:a", 1.0, .45)
 
 func arrange() -> void:
-	var left := size.x * .12
-	source_menu.game_title.position = Vector2(left, size.y * .13)
-	source_menu.game_title.size = Vector2(size.x * .55, size.y * .13)
-	source_menu.game_title.add_theme_font_size_override("font_size", maxi(42, int(size.y * .10)))
-	brand_accent.position = Vector2(left + 4, size.y * .28)
-	brand_accent.size = Vector2(44, 2)
-	var menu_top := size.y * .35
-	for i in buttons.size():
-		var button := buttons[i]
-		button.position = Vector2(left - 10, menu_top + size.y * i * .066)
-		button.size = Vector2(minf(420, size.x * .72), size.y * .058)
-		button.add_theme_font_size_override("font_size", maxi(15, int(size.y * .027)))
-	if resume_label != null:
-		resume_label.position = Vector2(left + 4, menu_top + size.y * (buttons.size() * .066 + .018))
-		resume_label.size = Vector2(minf(420, size.x * .72), size.y * .09)
-		resume_label.add_theme_font_size_override("font_size", maxi(13, int(size.y * .019)))
+	wordmark.position = Vector2(size.x * .29, size.y * .235)
+	wordmark.size = Vector2(size.x * .42, size.y * .17)
+	source_menu.game_title.position = Vector2(size.x * .20, size.y * .22)
+	source_menu.game_title.size = Vector2(size.x * .60, size.y * .19)
+	source_menu.game_title.add_theme_font_size_override("font_size", maxi(42, int(minf(size.y * .18, size.x * .12))))
+	var menu_top := size.y * .47
+	var row := 0
+	for button in buttons:
+		if not button.visible: continue
+		var width := minf(size.x * .48, size.y * .36)
+		button.position = Vector2((size.x - width) * .5, menu_top + size.y * row * .058)
+		button.size = Vector2(width, size.y * .047)
+		button.add_theme_font_size_override("font_size", maxi(15, int(size.y * .026)))
+		row += 1
+	footer.position = Vector2(0, size.y * .90)
+	footer.size = Vector2(size.x, size.y * .04)
+	footer.add_theme_font_size_override("font_size", maxi(12, int(size.y * .018)))
+
+func show_main(value: bool) -> void:
+	main_content.visible = value
+	if value: arrange()
 
 func play_start_transition() -> void:
 	var tween := create_tween().set_trans(Tween.TRANS_SINE)

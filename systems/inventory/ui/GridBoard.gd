@@ -32,7 +32,7 @@ func configure(owner_adapter, container: String, data: Dictionary, cell_size := 
 		button.position=Vector2(float(entry.x),float(entry.y))*cell+Vector2.ONE*3
 		button.size=Vector2(GRID.extent(entry))*cell-Vector2.ONE*6
 		button.item_texture=ICONS.get_icon(str(definition.get("icon","quest")))
-		button.tooltip_text=str(definition.label)
+		button.tooltip_text=str(definition.label)+(" · Somente leitura: aproxime-se do porta-malas" if not adapter.can_edit(container_id) else "")
 		button.add_theme_stylebox_override("normal",_item_style(false))
 		button.add_theme_stylebox_override("hover",_item_style(true))
 		button.pressed.connect(func(): selected.emit(container_id,i))
@@ -43,12 +43,13 @@ func configure(owner_adapter, container: String, data: Dictionary, cell_size := 
 		art.expand_mode=TextureRect.EXPAND_IGNORE_SIZE; art.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		art.position=Vector2(7,7); art.size=button.size-Vector2(14,19); art.mouse_filter=Control.MOUSE_FILTER_IGNORE; button.add_child(art)
 		var amount := Label.new()
-		amount.text=str(entry.amount) if int(entry.amount)>1 else ""
-		amount.position=Vector2(button.size.x-28,1); amount.add_theme_font_size_override("font_size",12)
+		amount.text="×%d"%int(entry.amount) if int(entry.amount)>1 else ""
+		amount.position=Vector2(button.size.x-32,button.size.y-18); amount.add_theme_color_override("font_color",STYLE.TEXT); amount.add_theme_font_size_override("font_size",12)
 		amount.mouse_filter=Control.MOUSE_FILTER_IGNORE; button.add_child(amount)
 		if definition.get("quest",false):
 			var tag := Label.new(); tag.text="◇"; tag.modulate=STYLE.WAYPOINT; tag.position=Vector2(5,button.size.y-18)
 			tag.add_theme_font_size_override("font_size",10); tag.mouse_filter=Control.MOUSE_FILTER_IGNORE; button.add_child(tag)
+	modulate=Color.WHITE if adapter.can_edit(container_id) else Color(.7,.7,.7,1)
 	queue_redraw()
 
 func _draw() -> void:
@@ -61,9 +62,9 @@ func _draw() -> void:
 		draw_rect(rect,Color(.35,.68,.48,.4) if hover_valid else Color(.85,.35,.25,.4))
 
 func _item_style(active: bool) -> StyleBoxFlat:
-	var style:=StyleBoxFlat.new(); style.bg_color=STYLE.SURFACE.lightened(.04) if active else STYLE.SURFACE
-	style.border_color=STYLE.ACCENT if active else STYLE.LINE
-	style.set_border_width_all(1); style.set_corner_radius_all(8)
+	var style:=StyleBoxFlat.new(); style.bg_color=STYLE.SURFACE.lightened(.12) if active else STYLE.SURFACE
+	style.border_color=STYLE.ACCENT if active else STYLE.LINE.darkened(.25)
+	style.set_border_width_all(2 if active else 1); style.set_corner_radius_all(2)
 	return style
 
 func mark_selected(index: int) -> void:

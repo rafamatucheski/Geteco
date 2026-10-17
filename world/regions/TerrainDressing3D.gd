@@ -80,11 +80,11 @@ static func step(job: Dictionary, budget_usec: float) -> bool:
 		if Time.get_ticks_usec() - began >= budget_usec: return false
 	if int(job.phase) == 1: job.phase = 2
 	if int(job.phase) == 2:
-		_batch(root, "Grass", _grass_mesh(), job.grass, Color("586643"), false)
-		_batch_rocks(root, "Pebbles", job.stones, Color("8a8470"), false, 0)
-		_batch_rocks(root, "SnowPebbles", job.snow_stones, Color("d4dde0"), false, 0)
-		_batch_rocks(root, "Rocks", job.large, Color("7d8479"), true, 1)
-		_batch_rocks(root, "SnowRocks", job.snow_large, Color("d2dce0"), true, 1)
+		_batch(root, "Grass", _grass_mesh(), job.grass, Color("46583a"), false)
+		_batch_rocks(root, "Pebbles", job.stones, Color("777262"), false, 0)
+		_batch_rocks(root, "SnowPebbles", job.snow_stones, Color("bbc0b9"), false, 0)
+		_batch_rocks(root, "Rocks", job.large, Color("616a6b"), true, 1)
+		_batch_rocks(root, "SnowRocks", job.snow_large, Color("b1b7b3"), true, 1)
 		root.set_meta("grass_count", job.grass.size())
 		root.set_meta("pebble_count", job.stones.size() + job.snow_stones.size())
 		root.set_meta("solid_rock_count", job.large.size() + job.snow_large.size())

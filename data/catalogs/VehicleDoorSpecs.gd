@@ -15,6 +15,7 @@ extends RefCounted
 ## meio da carroceria em vez da cabine.
 
 const DOORS := {
+	"desert_cargo_truck": {"class":"truck","zf":-3.98,"zr":-2.78,"sill":.81,"belt":2.14,"top":3.02,"x":1.11,"seat_z":-3.35},
 	"armored_truck": {"class":"truck","zf":-2.06,"zr":-1.04,"sill":.87,"belt":1.99,"top":2.60,"x":1.16,"seat_z":-1.50},
 	"jessica_jetta_gli": {"zf":-.85,"zr":.22,"sill":.32,"belt":.99,"top":1.46,"x":.91,"seat_z":-.16},
 	"digo_amarok_2014": {"class":"tall","zf":-1.03,"zr":.17,"sill":.49,"belt":1.23,"top":1.86,"x":.965},

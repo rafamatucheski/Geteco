@@ -48,6 +48,8 @@ void fragment() {
 	vec3 color = base_color;
 	float rough = 0.95;
 	float bump_scale = 0.06;
+	// Mountain yards retain granular soil but share the quieter regional finish.
+	float softness = max(surface_softness, mountain * 0.72);
 
 	if (kind == 0 || kind == 3) {
 		// Terra/areia: manchas claras secas e escuras úmidas, sulcos de pisada.
@@ -91,12 +93,12 @@ void fragment() {
 	// Quiet broad soil patches instead of sharp pebbles and high contrast ruts.
 	vec3 quiet_soil = mix(base_color, vec3(0.20, 0.18, 0.14), 0.3);
 	quiet_soil *= 0.90 + macro * 0.12 + mid * 0.07;
-	color = mix(color, quiet_soil, surface_softness);
-	bump_scale *= 1.0 - surface_softness * 0.88;
+	color = mix(color, quiet_soil, softness);
+	bump_scale *= 1.0 - softness * 0.88;
 	// Neve assentada nas manchas altas, só em Mountain (mesma cobertura do terreno).
 	float snow = smoothstep(0.62, 0.72, macro * 0.55 + mid * 0.3 + fine * 0.15) * mountain * (kind == 1 ? 0.55 : 0.8);
 	float quiet_snow = smoothstep(0.36, 0.78, macro * 0.6 + mid * 0.4) * mountain * 0.55;
-	snow = mix(snow, quiet_snow, surface_softness);
+	snow = mix(snow, quiet_snow, softness);
 	// Borda das malhas com alfa: capim ralo e neve acumulada na transição, para a
 	// terra não terminar num corte limpo sobre o terreno.
 	if (edge_alpha) {
@@ -105,7 +107,7 @@ void fragment() {
 		color = mix(color, vec3(0.30, 0.34, 0.22), grass_rim * 0.55);
 		snow = max(snow, rim * smoothstep(0.3, 0.7, macro) * mountain * surface_softness * 0.85);
 	}
-	color = mix(color, vec3(0.86, 0.89, 0.93) * (0.92 + grain * 0.08), snow);
+	color = mix(color, mix(vec3(0.86, 0.89, 0.93), vec3(0.85, 0.84, 0.80), mountain) * (0.97 + grain * 0.03), snow);
 	ALBEDO = color;
 	if (edge_alpha) {
 		float soft_edge = smoothstep(0.04, 0.94, COLOR.a + (macro - 0.5) * 0.13);

@@ -12,6 +12,7 @@ var content_column: VBoxContainer
 var drop_button: Button
 var boards: Array=[]
 var feedback_clock:=0.0
+var equipment_buttons: Dictionary = {}
 func _ready() -> void:
 	mouse_filter=MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -19,7 +20,7 @@ func _ready() -> void:
 	hide(); set_process(false); get_viewport().size_changed.connect(_layout)
 	get_node("/root/GameInput").device_changed.connect(_update_hints)
 	get_node("/root/GameInput").bindings_changed.connect(_update_hints)
-func _style(color: Color,border: Color,radius:=10) -> StyleBoxFlat:
+func _style(color: Color,border: Color,radius:=3) -> StyleBoxFlat:
 	var style:=StyleBoxFlat.new(); style.bg_color=color; style.border_color=border
 	style.set_border_width_all(1); style.set_corner_radius_all(radius)
 	style.content_margin_left=12; style.content_margin_right=12; style.content_margin_top=8; style.content_margin_bottom=8
@@ -27,43 +28,51 @@ func _style(color: Color,border: Color,radius:=10) -> StyleBoxFlat:
 func _layout() -> void:
 	if not is_instance_valid(card): return
 	var view:=get_viewport_rect().size
-	if is_instance_valid(screen_scroll) and is_instance_valid(content_column):
-		var content_size := content_column.get_combined_minimum_size()
-		var overflow := content_size.y>view.y-96
-		screen_scroll.custom_minimum_size=Vector2(content_size.x+(14 if overflow else 0),minf(content_size.y,view.y-96))
+	if is_instance_valid(screen_scroll) and is_instance_valid(content_column) and is_instance_valid(body):
+		# Reserve the actual header, details, actions and hints before sizing
+		# the grid viewport. Only the grids scroll; actions never leave view.
+		var body_size:=body.get_combined_minimum_size()
+		var fixed_height:=content_column.get_combined_minimum_size().y-screen_scroll.get_combined_minimum_size().y
+		var body_height:=maxf(72,minf(body_size.y,view.y-96-fixed_height))
+		var overflow:=body_size.y>body_height
+		screen_scroll.custom_minimum_size=Vector2(body_size.x+(14 if overflow else 0),body_height)
 	card.reset_size()
 	card.position=((view-card.size)*.5).max(Vector2(16,16))
 func refresh() -> void:
 	if not visible: return
 	if is_instance_valid(card): remove_child(card); card.queue_free()
-	boards.clear(); drop_button=null
+	boards.clear(); equipment_buttons.clear(); drop_button=null
 	card=PanelContainer.new(); card.name="InventoryCard"; add_child(card)
-	card.add_theme_stylebox_override("panel",STYLE.compact(false,12,Vector2(18,16))); card.resized.connect(_layout)
-	screen_scroll=ScrollContainer.new(); screen_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; screen_scroll.follow_focus=true; card.add_child(screen_scroll)
-	var outer:=_column(screen_scroll,10); content_column=outer
+	card.add_theme_stylebox_override("panel",_style(STYLE.INK,STYLE.LINE.darkened(.25),3)); card.resized.connect(_layout)
+	var outer:=_column(card,10); content_column=outer
 	var header:=_row(outer)
-	_label(header,"INVENTÁRIO",18).size_flags_horizontal=SIZE_EXPAND_FILL
+	_label(header,"INVENTÁRIO",20).size_flags_horizontal=SIZE_EXPAND_FILL
 	_button(header,"Roupas",func(): wardrobe_visible=not wardrobe_visible; selected_outfit=""; refresh())
 	if adapter.session.get("wine") != null:
 		_button(header,"Vinhos",func(): adapter.close(); adapter.session.wine.open_bag())
 	var travel_bag: bool = adapter.travel_bag_available()
 	_button(header,"×",adapter.close).tooltip_text="Fechar"
-	body=_row(outer,16)
+	screen_scroll=ScrollContainer.new(); screen_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED; screen_scroll.follow_focus=true; outer.add_child(screen_scroll)
+	body=_row(screen_scroll,16)
 	var left:=_column(body,8); left.custom_minimum_size.x=296
 	var snapshot: Dictionary=adapter.economy().grid_snapshot()
 	var loadout: Dictionary=adapter.economy().personal_loadout()
-	_label(left,"ARMAS",11).modulate=STYLE.MUTED
+	_label(left,"EQUIPAMENTO",12).modulate=STYLE.MUTED
 	var equipment:=_row(left,6)
 	for slot in ["curta","longa","corpo","granada"]:
 		var id:=str(loadout.get(slot,""))
-		var weapon:=_button(equipment,"",func(): equipment_id=id; selected_index=-1; selected_outfit=""; _details())
-		weapon.custom_minimum_size=Vector2(69,48); weapon.expand_icon=true; weapon.add_theme_constant_override("icon_max_width",56)
+		var weapon:=_button(equipment,"",_select_equipment.bind(id))
+		equipment_buttons[id]=weapon
+		weapon.custom_minimum_size=Vector2(69,44); weapon.expand_icon=true; weapon.add_theme_constant_override("icon_max_width",56)
 		weapon.icon=ICONS.get_icon(id) if not id.is_empty() else null
 		weapon.text="—" if id.is_empty() else ""; weapon.disabled=id.is_empty()
 		weapon.tooltip_text=str(GRID.spec("weapon:"+id).get("label",slot)) if not id.is_empty() else "Sem arma • "+slot
-	_label(left,"ITENS",11).modulate=STYLE.MUTED
+	_label(left,"BAGAGEM",12).modulate=STYLE.MUTED
 	var pockets:=_row(left)
-	_label(pockets,"Bolsos",12).size_flags_horizontal=SIZE_EXPAND_FILL
+	var pocket_labels:=_column(pockets,2)
+	pocket_labels.size_flags_horizontal=SIZE_EXPAND_FILL
+	_label(pocket_labels,"Bolsos",14)
+	_label(pocket_labels,"%d / 2 espaços"%_used(snapshot.pockets),12).modulate=STYLE.MUTED
 	_board(pockets,"pockets",snapshot,44)
 	var kind:=str(snapshot.bag)
 	var bag_header:=_row(left)
@@ -71,24 +80,30 @@ func refresh() -> void:
 	_icon(bag_header,"case" if kind=="handbag" else "bag",32)
 	_label(bag_header,"Mala" if kind=="handbag" else "Mochila" if kind=="backpack" else "Sem mochila",17).size_flags_horizontal=SIZE_EXPAND_FILL
 	if not kind.is_empty():
-		_label(bag_header,"%d / %d"%[_used(snapshot.storage),GRID.dimensions(snapshot,"storage").x*GRID.dimensions(snapshot,"storage").y],12).modulate=GOLD
+		_label(bag_header,"%d / %d espaços"%[_used(snapshot.storage),GRID.dimensions(snapshot,"storage").x*GRID.dimensions(snapshot,"storage").y],12).modulate=STYLE.MUTED
 		var scroll:=ScrollContainer.new(); scroll.custom_minimum_size=Vector2(296,216); scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
 		left.add_child(scroll); _board(scroll,"storage",snapshot,72)
 		drop_button=_button(left,"↓  Soltar mochila     G" if kind=="backpack" else "↓  Soltar mala     G",_drop)
-		drop_button.name="DropBag"; drop_button.custom_minimum_size.y=42
-		drop_button.add_theme_font_size_override("font_size",15)
-		drop_button.add_theme_stylebox_override("normal",STYLE.button())
+		drop_button.name="DropBag"; drop_button.custom_minimum_size.y=34
+		drop_button.add_theme_font_size_override("font_size",14)
+		drop_button.add_theme_stylebox_override("normal",_control_style())
 		drop_button.tooltip_text="Deixa a bagagem e seu conteúdo no chão. Você pode pegá-la novamente."
+	else:
+		var empty:=_label(left,"Sem mochila equipada",14); empty.modulate=STYLE.MUTED
+	if kind=="handbag":
+		_label(left,"Mala na mão · armas longas bloqueadas",12).modulate=STYLE.MUTED
 	if wardrobe_visible: _wardrobe(left)
 	if trunk_visible:
 		var right:=_column(body,8); right.custom_minimum_size.x=240
 		var trunk_header:=_row(right)
-		_label(trunk_header,"MONALIZA",16).size_flags_horizontal=SIZE_EXPAND_FILL
-		_label(trunk_header,"%d / 24"%_used(snapshot.trunk),12).modulate=GOLD
+		_label(trunk_header,"PORTA-MALAS",18).size_flags_horizontal=SIZE_EXPAND_FILL
+		_label(trunk_header,"%d / 24 espaços"%_used(snapshot.trunk),12).modulate=STYLE.MUTED
+		_label(right,"MONALIZA",12).modulate=STYLE.MUTED
 		var access: bool=adapter.trunk_access()
-		var lock_label:=_label(right,"●  Porta-malas aberto" if access else "⌁  Aproxime-se do porta-malas",12)
-		lock_label.modulate=STYLE.MUTED if access else GOLD
-		lock_label.tooltip_text="Até 6 pilhas de munição, com 99 tiros por pilha. Outros itens não entram."
+		var lock_label:=_label(right,"●  Transferência disponível" if access else "Aproxime-se do porta-malas",12)
+		lock_label.modulate=STYLE.MUTED if access else STYLE.TEXT
+		lock_label.name="TrunkAccess"
+		var limits:=_label(right,"Armas e munição\nAté 6 pilhas de 99 tiros",12); limits.modulate=STYLE.MUTED
 		_board(right,"trunk",snapshot,60)
 		if travel_bag:
 			var offer := _label(right,"Presente do Maciota pela vitória na Prova de rua. Retire sua mala aqui.",12)
@@ -97,11 +112,23 @@ func refresh() -> void:
 			take.name="ClaimTravelBag"
 			var hint := _label(right,"24 espaços · bloqueia armas longas.\n"+("Seus itens passam para a mala; a mochila fica vazia no chão." if kind=="backpack" else "Solte a mala atual antes de retirar esta." if kind=="handbag" else "A mala fica na mão esquerda."),12)
 			hint.custom_minimum_size.x=240; hint.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; hint.modulate=STYLE.MUTED
-	details=_column(left,5); details.custom_minimum_size.x=296
-	feedback=_label(left,"",12); feedback.custom_minimum_size.x=296; feedback.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; feedback.hide(); feedback.modulate=GOLD
+	if is_instance_valid(drop_button):
+		drop_button.reparent(outer)
+		drop_button.size_flags_horizontal=SIZE_SHRINK_BEGIN
+		drop_button.custom_minimum_size.x=296
+	var divider:=HSeparator.new(); outer.add_child(divider)
+	details=_column(outer,7); details.custom_minimum_size.x=296
+	details.name="SelectedItem"
+	feedback=_label(outer,"",13); feedback.custom_minimum_size.x=296; feedback.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; feedback.hide(); feedback.modulate=STYLE.MUTED
 	var footer:=_row(outer)
-	device_hint=_label(footer,"",11); device_hint.modulate=STYLE.MUTED
+	device_hint=_label(footer,"",12); device_hint.modulate=STYLE.MUTED
+	device_hint.custom_minimum_size.x=296
+	device_hint.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	device_hint.size_flags_horizontal=SIZE_EXPAND_FILL
 	_details(); _update_hints(); _layout.call_deferred()
+	for board in boards: board.mark_selected(selected_index if board.container_id==selected_container and equipment_id.is_empty() else -1)
+	for key in equipment_buttons:
+		if not key.is_empty() and key==equipment_id: equipment_buttons[key].add_theme_stylebox_override("normal",_control_style(true))
 	STYLE.trap_focus.call_deferred(card)
 func _input(event: InputEvent) -> void:
 	if not visible or not event is InputEventKey or not event.pressed or event.echo: return
@@ -113,7 +140,15 @@ func _drop() -> void:
 	if adapter.drop_bag(): adapter.close()
 func _select(container: String,index: int) -> void:
 	selected_container=container; selected_index=index; equipment_id=""; selected_outfit=""; _details()
+	for weapon in equipment_buttons.values(): weapon.add_theme_stylebox_override("normal",_control_style())
 	for board in boards: board.mark_selected(index if board.container_id==container else -1)
+func _select_equipment(id: String) -> void:
+	equipment_id=id; selected_index=-1; selected_outfit=""
+	for board in boards: board.mark_selected(-1)
+	for key in equipment_buttons:
+		equipment_buttons[key].add_theme_stylebox_override("normal",_control_style(key==id))
+	_details()
+
 func quick_use(container: String,index: int) -> void:
 	if not adapter.can_edit(container): return
 	var data: Dictionary=adapter.economy().grid_snapshot()
@@ -133,25 +168,30 @@ func _details() -> void:
 	var data: Dictionary=adapter.economy().grid_snapshot()
 	var id:="weapon:"+equipment_id if not equipment_id.is_empty() else ""
 	if selected_index>=0 and data.has(selected_container) and selected_index<data[selected_container].size(): id=str(data[selected_container][selected_index].id)
-	details.visible=not id.is_empty()
-	if id.is_empty(): _layout.call_deferred(); return
+	details.show()
+	if id.is_empty():
+		_label(details,"Selecione um item",14).modulate=STYLE.MUTED
+		_layout.call_deferred(); return
 	var spec:=GRID.spec(id)
 	var title:=_row(details,8); _icon(title,str(spec.get("icon","quest")),32)
-	var label:=_label(title,str(spec.label),14); label.size_flags_horizontal=SIZE_EXPAND_FILL; label.tooltip_text=str(spec.get("description","")); label.mouse_filter=MOUSE_FILTER_STOP
-	if spec.get("quest",false): _label(title,"Missão",11).modulate=GOLD
+	var label:=_label(title,str(spec.label),16); label.custom_minimum_size.x=180; label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; label.size_flags_horizontal=SIZE_EXPAND_FILL; label.tooltip_text=str(spec.get("description","")); label.mouse_filter=MOUSE_FILTER_STOP
+	if spec.get("quest",false): _label(title,"Missão",11).modulate=STYLE.MUTED
 	if spec.has("weapon"):
 		var ammo: Dictionary=adapter.economy().snapshot().weapons.get(spec.weapon,{})
-		if int(ammo.get("magazine",-1))>=0: _label(title,"%d / 99"%(int(ammo.magazine)+int(ammo.reserve)),12).modulate=GOLD
-	var actions:=_row(details,5)
+		if int(ammo.get("magazine",-1))>=0: _label(title,"%d / 99"%(int(ammo.magazine)+int(ammo.reserve)),12).modulate=STYLE.MUTED
+	if spec.has("heal"): _label(details,"Recupera %d de vida"%int(spec.heal),13).modulate=STYLE.MUTED
+	var location:=_label(details,"Equipamento" if not equipment_id.is_empty() else {"pockets":"Bolsos","storage":"Mala" if data.bag=="handbag" else "Mochila","trunk":"Porta-malas"}.get(selected_container,""),12)
+	location.modulate=STYLE.MUTED
+	var actions:=HFlowContainer.new(); actions.add_theme_constant_override("h_separation",6); actions.add_theme_constant_override("v_separation",6); details.add_child(actions)
 	var editable: bool=adapter.can_edit(selected_container) if equipment_id.is_empty() else true
-	if spec.has("heal"): _button(actions,"Beber" if id=="water" else "Comer" if id in ["apple","sandwich"] else "Usar",func(): adapter.consume(selected_container,selected_index),not editable)
-	if spec.has("weapon"): _button(actions,"Equipar",func(): adapter.equip(selected_container,selected_index,equipment_id),not editable or not adapter.session.state.weapons_allowed())
+	if spec.has("heal"): _primary(actions,"Beber" if id=="water" else "Comer" if id in ["apple","sandwich"] else "Usar",func(): adapter.consume(selected_container,selected_index),not editable)
+	if spec.has("weapon"): _primary(actions,"Equipar",func(): adapter.equip(selected_container,selected_index,equipment_id),not editable or not adapter.session.state.weapons_allowed() or (data.bag=="handbag" and spec.weapon in GRID.LONG))
 	if not equipment_id.is_empty():
-		_button(actions,"↓ Mochila",func(): adapter.store_weapon(equipment_id,"storage"),data.bag=="")
+		_button(actions,"↓ Mala" if data.bag=="handbag" else "↓ Mochila",func(): adapter.store_weapon(equipment_id,"storage"),data.bag=="")
 		if trunk_visible: _button(actions,"→ Carro",func(): adapter.store_weapon(equipment_id,"trunk"),not adapter.trunk_access())
 	else:
 		if selected_container!="pockets": _button(actions,"Bolso",func(): adapter.move(selected_container,selected_index,"pockets"),not editable)
-		if selected_container!="storage": _button(actions,"Mochila",func(): adapter.move(selected_container,selected_index,"storage"),not editable or data.bag=="")
+		if selected_container!="storage": _button(actions,"Mala" if data.bag=="handbag" else "Mochila",func(): adapter.move(selected_container,selected_index,"storage"),not editable or data.bag=="")
 		if selected_container!="trunk" and trunk_visible and GRID.accepts("trunk",id): _button(actions,"→ Carro",func(): adapter.move(selected_container,selected_index,"trunk"),not adapter.trunk_access())
 		if int(spec.get("w",1))>1: _button(actions,"↻",func(): adapter.rotate(selected_container,selected_index),not editable).tooltip_text="Girar • R"
 	_layout.call_deferred()
@@ -160,7 +200,7 @@ func _details() -> void:
 func _update_hints() -> void:
 	if not is_instance_valid(device_hint): return
 	var controls := get_node("/root/GameInput")
-	device_hint.text=(String(TranslationServer.translate("%s  selecionar   ·   %s  fechar"))%[controls.prompt("ui_accept"),controls.prompt("ui_cancel")]) if controls.using_gamepad else String(TranslationServer.translate("%s  fechar   ·   Arrastar  mover   ·   Clique direito  usar"))%controls.prompt("inventory")
+	device_hint.text=(String(TranslationServer.translate("%s  selecionar   ·   %s  fechar"))%[controls.prompt("ui_accept"),controls.prompt("ui_cancel")]) if controls.using_gamepad else String(TranslationServer.translate("%s  fechar   ·   Arrastar  mover · Clique direito  usar\nShift + clique  transferir · R  girar"))%controls.prompt("inventory")
 	if controls.get_meta("touch_controls_active",false): device_hint.text=tr("Toque para selecionar · Arraste para mover")
 	if is_instance_valid(drop_button):
 		var kind: String=adapter.economy().grid_snapshot().bag
@@ -179,7 +219,7 @@ func _wardrobe(parent: Control) -> void:
 		var button := _button(row,"",func(): selected_outfit=id; selected_index=-1; equipment_id=""; _details())
 		button.custom_minimum_size=Vector2(44,42); button.tooltip_text=str(OUTFITS.OUTFITS[id].name).capitalize()
 		var glyph := GLYPH.new("shirt",OUTFITS.OUTFITS[id].jacket_color.lightened(.35)); button.add_child(glyph); glyph.position=Vector2(12,9); glyph.size=Vector2(20,24)
-		if id==adapter.economy().outfit: button.add_theme_stylebox_override("normal",STYLE.compact(true,8))
+		if id==adapter.economy().outfit: button.add_theme_stylebox_override("normal",_control_style(true))
 
 func _outfit_details() -> void:
 	details.show()
@@ -195,7 +235,6 @@ func _outfit_details() -> void:
 		if preload("res://runtime/OutfitDisguise.gd").equip(adapter.session, selected_outfit):
 			adapter.session.save_game(); refresh(),equipped)
 	_layout.call_deferred(); STYLE.trap_focus.call_deferred(card,false)
-	screen_scroll.ensure_control_visible.call_deferred(details)
 func say(text: String) -> void:
 	if not is_instance_valid(feedback): return
 	feedback.text=text; feedback.show(); feedback_clock=3; set_process(true)
@@ -219,4 +258,25 @@ func _icon(parent: Node,id: String,pixels: int) -> TextureRect:
 func _label(parent: Node,text: String,font_size: int) -> Label:
 	var label:=Label.new(); label.text=text; label.add_theme_font_size_override("font_size",font_size); parent.add_child(label); return label
 func _button(parent: Node,text: String,action: Callable,disabled:=false) -> Button:
-	var button:=Button.new(); button.text=text; button.disabled=disabled; button.add_theme_font_size_override("font_size",12); button.custom_minimum_size.y=32; button.pressed.connect(action); parent.add_child(button); return button
+	var button:=Button.new(); button.text=text; button.disabled=disabled; button.add_theme_font_size_override("font_size",14); button.custom_minimum_size.y=34; button.pressed.connect(action)
+	for state in ["normal","hover","pressed","disabled","focus"]:
+		var active: bool=state in ["hover","pressed","focus"]
+		var box:=_control_style(active)
+		if state=="disabled": box.bg_color=STYLE.SURFACE.darkened(.12)
+		if state=="focus": box.bg_color=Color.TRANSPARENT; box.set_border_width_all(2)
+		button.add_theme_stylebox_override(state,box)
+	parent.add_child(button); return button
+
+func _primary(parent: Node,text: String,action: Callable,disabled:=false) -> Button:
+	var button:=_button(parent,text,action,disabled)
+	var normal:=_control_style(true); normal.bg_color=GOLD
+	button.add_theme_stylebox_override("normal",normal)
+	button.add_theme_color_override("font_color",STYLE.INK)
+	button.add_theme_color_override("font_focus_color",STYLE.INK)
+	return button
+
+func _control_style(active:=false) -> StyleBoxFlat:
+	var box:=_style(STYLE.SURFACE.lightened(.035) if active else STYLE.SURFACE, GOLD if active else STYLE.LINE.darkened(.25),2)
+	box.content_margin_left=10; box.content_margin_right=10
+	box.content_margin_top=5; box.content_margin_bottom=5
+	return box

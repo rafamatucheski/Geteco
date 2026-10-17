@@ -27,6 +27,7 @@ var _gameplay: Node
 var gameplay: Node:
 	get: return _gameplay
 var _spawn_index := 0
+var water_dynamics: RefCounted
 
 static func reserved(point: Vector2, margin := 0.0) -> bool:
 	return LOCATION.reserved(point,margin)
@@ -47,6 +48,9 @@ func build() -> void:
 	add_child(_solids)
 	_build_materials()
 	_build_pond()
+	water_dynamics = preload("res://world/places/fishing/FishingWaterDynamics.gd").new(pond_polygon)
+	_materials.water.set_shader_parameter("rain_height", water_dynamics.texture)
+	preload("res://world/places/fishing/FishingLakeDetail.gd").build(self)
 	_build_entrance()
 	_build_furniture()
 	_flush()
@@ -98,6 +102,15 @@ func contains_water(world_position: Vector3) -> bool:
 	var point := to_local(world_position)
 	return Geometry2D.is_point_in_polygon(Vector2(point.x, point.z), pond_polygon)
 
+func rain_surface_height_at(point: Vector3) -> float:
+	var local := to_local(point)
+	return global_position.y + WATER_Y + water_dynamics.height_at(Vector2(local.x, local.z))
+
+func receive_rain_impact(point: Vector3, strength: float, delay: float) -> void:
+	if not _near or not contains_water(point): return
+	var local := to_local(point)
+	water_dynamics.impact(Vector2(local.x, local.z), strength, delay)
+
 func set_focus(point: Vector3) -> void:
 	_focus = point
 	_update_budget()
@@ -109,6 +122,7 @@ func bind_gameplay(gameplay_node: Node) -> void:
 		if is_instance_valid(angler): angler.bind_gameplay(gameplay_node)
 
 func _process(delta: float) -> void:
+	if water_dynamics != null: water_dynamics.update(delta)
 	# Only one new native rig per frame on first admission.
 	if _spawn_index < NAMES.size(): _spawn_angler()
 	_clock -= delta
@@ -145,11 +159,11 @@ func _spawn_angler() -> void:
 	angler.set_active(_near)
 
 func _build_materials() -> void:
-	for row in [["wood","98794f","wood"],["darkwood","55452f","wood"],
-		["gravel","ada386","gravel"],["earth","857756","gravel"],
-		["stone","8e9381","concrete"],["metal","3a4943",""],
-		["roof","557766",""],["cream","ebe4cb",""],["leaf","567449",""],
-		["leaf_dark","415b38",""],["terracotta","a27855",""]]:
+	for row in [["wood","796347","wood"],["darkwood","493d2e","wood"],
+		["gravel","928675","gravel"],["earth","756449","gravel"],
+		["stone","777e70","concrete"],["metal","3a4943",""],
+		["roof","466454",""],["cream","c0b7a0",""],["leaf","465f3e",""],
+		["leaf_dark","364b32",""],["terracotta","a27855",""]]:
 		var material := StandardMaterial3D.new()
 		material.albedo_color = Color(row[1])
 		material.roughness = .91
@@ -185,7 +199,17 @@ func _build_pond() -> void:
 		var a := _shore(angle)
 		var b := _shore(next)
 		pond_polygon.append(Vector2(a.x, a.z))
-		_triangle("water", Vector3(0, WATER_Y, -4), b + Vector3.UP * WATER_Y, a + Vector3.UP * WATER_Y)
+		# Concentric strips let the shared height field deform the actual surface.
+		var water_center := Vector3(0, WATER_Y, -4)
+		for radial in 24:
+			var inner := float(radial) / 24.0
+			var outer := float(radial + 1) / 24.0
+			var ai := water_center.lerp(a + Vector3.UP * WATER_Y, inner)
+			var bi := water_center.lerp(b + Vector3.UP * WATER_Y, inner)
+			var ao := water_center.lerp(a + Vector3.UP * WATER_Y, outer)
+			var bo := water_center.lerp(b + Vector3.UP * WATER_Y, outer)
+			_triangle("water", ai, bo, ao)
+			if radial > 0: _triangle("water", ai, bi, bo)
 		# Every shore band shares its contour, without coplanar duplicate layers.
 		_ring_quad("stone", a, b, _shore(angle, .4), _shore(next, .4), .075)
 		if FINISH.previous_finish():

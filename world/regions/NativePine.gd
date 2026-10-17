@@ -49,7 +49,7 @@ static func _conifer(bark: SurfaceTool, leaves: SurfaceTool, snow: SurfaceTool, 
 	var slim := .76 if variant in [1,2,7] else 1.0
 	var tiers := 6
 	var lean := Vector3(.05,0,.02) if variant==7 else Vector3.ZERO
-	var tint: Color = [Color("2a4a38"),Color("33523d"),Color("3a5a40"),Color("2d4c42")][variant%4]
+	var tint: Color = [Color("233d30"),Color("2c4433"),Color("344b36"),Color("2b4238")][variant%4]
 	var first_y := 1.15*tall+(.55 if variant==6 else 0.0)
 	var step := .72*tall
 	var top_y := first_y+step*(tiers-1)+1.35*tall
@@ -66,7 +66,7 @@ static func _conifer(bark: SurfaceTool, leaves: SurfaceTool, snow: SurfaceTool, 
 		_skirt(leaves,base,radius,1.15*tall,.62*tall,10-int(t*3.0),rng,shade.darkened(.35),shade.lightened(.12),.28)
 		_skirt(leaves,base+Vector3(0,.34*tall,0),radius*.72,1.0*tall,.5*tall,8-int(t*2.0),rng,shade.darkened(.25),shade.lightened(.2),.22)
 		if snowy:
-			_skirt(snow,base+Vector3(0,.07,0),radius*.8,1.17*tall,.34*tall,10-int(t*3.0),rng,Color("c5d4dc"),Color("f4f9fb"),.34)
+			_skirt(snow,base+Vector3(0,.07,0),radius*.52,.86*tall,.20*tall,10-int(t*3.0),rng,Color("aeb9b7"),Color("e0dfd5"),.34)
 	var tip_base := Vector3(0,top_y-1.1*tall,0)+lean*tiers
 	_skirt(leaves,tip_base,.34*slim,1.25*tall,.3*tall,5,rng,tint.darkened(.3),tint.lightened(.25),.15)
 
@@ -111,10 +111,10 @@ static func _birch(bark: SurfaceTool, leaves: SurfaceTool, snow: SurfaceTool, rn
 		_tube(bark,start,end,.07,.035,6,Color("cbcabb"),Color("b8b7a8"),rng,0.0)
 		var radii := Vector3(.82+rng.randf()*.25,.62+rng.randf()*.2,.78+rng.randf()*.25)
 		NATIVE_ROCK.append_blob(leaves,end+Vector3(0,.2,0),radii,float(limb)*1.9+.3,.3,green.darkened(.28),green.lightened(.22),1)
-		if snowy: NATIVE_ROCK.append_blob(snow,end+Vector3(0,.2+radii.y*.62,0),Vector3(radii.x*.7,.2,radii.z*.7),float(limb)+.5,.18,Color("d3e0e6"),Color("f6fafb"),0)
+		if snowy: NATIVE_ROCK.append_blob(snow,end+Vector3(0,.2+radii.y*.62,0),Vector3(radii.x*.52,.14,radii.z*.52),float(limb)+.5,.18,Color("b6bfb9"),Color("e3e2d9"),0)
 	var crown := Vector3(.12,height+.15,.1)
 	NATIVE_ROCK.append_blob(leaves,crown,Vector3(.95,.8,.9),2.6,.3,green.darkened(.22),green.lightened(.3),1)
-	if snowy: NATIVE_ROCK.append_blob(snow,crown+Vector3(0,.6,0),Vector3(.7,.22,.65),1.1,.18,Color("d3e0e6"),Color("f6fafb"),0)
+	if snowy: NATIVE_ROCK.append_blob(snow,crown+Vector3(0,.6,0),Vector3(.7,.22,.65),1.1,.18,Color("b6bfb9"),Color("e3e2d9"),0)
 
 static func _oak(bark: SurfaceTool, leaves: SurfaceTool, snow: SurfaceTool, rng: RandomNumberGenerator, snowy: bool) -> void:
 	_tube(bark,Vector3.ZERO,Vector3(0,2.1,0),.36,.22,9,Color("5e4a37"),Color("4f3f30"),rng,.1)
@@ -130,9 +130,9 @@ static func _oak(bark: SurfaceTool, leaves: SurfaceTool, snow: SurfaceTool, rng:
 		_tube(bark,start,end,.16,.08,7,Color("62503c"),Color("55453a"),rng,.04)
 		var radii := Vector3(1.15+rng.randf()*.3,.9+rng.randf()*.25,1.1+rng.randf()*.3)
 		NATIVE_ROCK.append_blob(leaves,end+Vector3(0,.35,0),radii,float(fork)*1.7+.9,.28,green.darkened(.3),green.lightened(.2),1)
-		if snowy: NATIVE_ROCK.append_blob(snow,end+Vector3(0,.35+radii.y*.62,0),Vector3(radii.x*.72,.22,radii.z*.72),float(fork)+.2,.18,Color("d3e0e6"),Color("f6fafb"),0)
+		if snowy: NATIVE_ROCK.append_blob(snow,end+Vector3(0,.35+radii.y*.62,0),Vector3(radii.x*.52,.14,radii.z*.52),float(fork)+.2,.18,Color("b6bfb9"),Color("e3e2d9"),0)
 	NATIVE_ROCK.append_blob(leaves,Vector3(0,4.1,0),Vector3(1.3,.95,1.25),5.3,.28,green.darkened(.25),green.lightened(.28),1)
-	if snowy: NATIVE_ROCK.append_blob(snow,Vector3(0,4.8,0),Vector3(.95,.24,.9),2.1,.18,Color("d3e0e6"),Color("f6fafb"),0)
+	if snowy: NATIVE_ROCK.append_blob(snow,Vector3(0,4.8,0),Vector3(.95,.24,.9),2.1,.18,Color("b6bfb9"),Color("e3e2d9"),0)
 
 static func _dead(bark: SurfaceTool, snow: SurfaceTool, rng: RandomNumberGenerator, snowy: bool) -> void:
 	var wood := Color("77705f")
@@ -144,7 +144,7 @@ static func _dead(bark: SurfaceTool, snow: SurfaceTool, rng: RandomNumberGenerat
 		_tube(bark,start,end,.07,.025,6,wood,wood.lightened(.1),rng,0.0)
 		var twig_end := end+Vector3(cos(angle+.7)*.4,.42,sin(angle+.7)*.4)
 		_tube(bark,end,twig_end,.03,.01,5,wood,wood.lightened(.12),rng,0.0)
-		if snowy: NATIVE_ROCK.append_blob(snow,start.lerp(end,.55)+Vector3(0,.06,0),Vector3(.3,.07,.12),float(limb),.15,Color("d3e0e6"),Color("f6fafb"),0)
+		if snowy: NATIVE_ROCK.append_blob(snow,start.lerp(end,.55)+Vector3(0,.06,0),Vector3(.3,.07,.12),float(limb),.15,Color("b6bfb9"),Color("e3e2d9"),0)
 
 # ---------------------------------------------------------------- primitivas
 
@@ -178,7 +178,7 @@ static func _leaf_material() -> StandardMaterial3D:
 	return _material("leaf",Color.WHITE,true,true)
 
 static func _snow_material() -> StandardMaterial3D:
-	return _material("snow",Color("e6eff2"),true,true)
+	return _material("snow",Color("deded2"),true,true)
 
 static func _material(key: String, color: Color, vertex_colors: bool, double_sided: bool) -> StandardMaterial3D:
 	var cached := _material_cache.get(key) as StandardMaterial3D
@@ -187,6 +187,8 @@ static func _material(key: String, color: Color, vertex_colors: bool, double_sid
 	material.albedo_color = color
 	material.roughness = 1.0
 	material.vertex_color_use_as_albedo = vertex_colors
+	# Palette hex values are authored in sRGB; keep deep fir after chunk merging.
+	material.vertex_color_is_srgb = true
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_PIXEL
 	if double_sided: material.cull_mode = BaseMaterial3D.CULL_DISABLED
 	_material_cache[key] = material

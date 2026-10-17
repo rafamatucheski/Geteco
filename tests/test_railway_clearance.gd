@@ -11,6 +11,7 @@ var failures: Array[String] = []
 var collision_findings: Array[Dictionary] = []
 var shape_queries := 0
 var evidence := ""
+var access_capture := 0
 
 
 func _initialize() -> void:
@@ -75,14 +76,14 @@ func run() -> void:
 		for pair in [["harbor_central", "harbor_north"], ["harbor_central", "mountain_pines"], ["harbor_central", "desert_copper"], ["mountain_pines", "desert_copper"]]:
 			if argument("--route-pair=") == "harbor" and pair != ["harbor_central", "harbor_north"]: continue
 			for reverse in [false, true]:
-				var points := NETWORK.get_route(pair[0], pair[1])
-				if reverse: points.reverse()
+				var points := NETWORK.get_route(pair[1], pair[0]) if reverse else NETWORK.get_route(pair[0], pair[1])
 				await scan_edge(str(pair[0]) + "-" + str(pair[1]) + ("-return" if reverse else ""), points, railway_world)
 		check(collision_findings.is_empty(), "coach and locomotive envelopes clear existing solids on every line, both directions")
 	if "--scan-only" not in OS.get_cmdline_user_args():
 		for station in NETWORK.stations():
 			var selected_station := argument("--station=")
-			if not selected_station.is_empty() and station.id != selected_station: continue
+			if selected_station == "harbor" and station.region != "harbor": continue
+			if not selected_station.is_empty() and selected_station != "harbor" and station.id != selected_station: continue
 			await check_station_access(station, railway_world)
 	finish()
 
@@ -111,7 +112,7 @@ func prepare(point: Vector3, railway_world: Node) -> void:
 func scan_edge(id: String, points: PackedVector3Array, railway_world: Node) -> void:
 	var length := NETWORK.route_length(points)
 	var coach_shape := BoxShape3D.new()
-	coach_shape.size = Vector3(2.9, 2.7, 10.3)
+	coach_shape.size = Vector3(3.42, 2.90, 10.8)
 	var engine_shape := BoxShape3D.new()
 	engine_shape.size = Vector3(2.85, 2.8, 7.95)
 	var samples := ceili(length / 5.0)
@@ -198,6 +199,10 @@ func walk(route: PackedVector3Array) -> bool:
 		var direction: Vector3 = route[waypoint] - world.player.global_position
 		direction.y = 0
 		if direction.length() < 0.20:
+			if "--capture-access" in OS.get_cmdline_user_args() and DisplayServer.get_name() != "headless":
+				await RenderingServer.frame_post_draw
+				root.get_texture().get_image().save_png(evidence.path_join("access-%03d.png"%access_capture))
+				access_capture+=1
 			waypoint += 1
 			continue
 		world.player.automatic_direction = direction.normalized()

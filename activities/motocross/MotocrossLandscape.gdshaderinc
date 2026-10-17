@@ -4,7 +4,7 @@ float clearing_ellipse(vec2 p, vec2 center, vec2 radius) {
 	return 1.0-smoothstep(.70,1.0,length((p-center)/radius));
 }
 vec3 landscape_color(vec2 p) {
-	vec3 grass = texture(grass_texture,p*.06).rgb;
+	vec3 grass = texture(grass_texture,p*.16).rgb;
 	vec3 earth = mix(texture(earth_texture,p*.045).rgb,texture(earth_texture,p*.65).rgb,.32);
 	float noise = texture(earth_texture,p*.13).r-.22;
 	vec2 irregular = p+vec2(sin(p.y*.83),cos(p.x*.71))*.38;

@@ -76,11 +76,8 @@ func run() -> void:
 	check(not ui.is_station_open() and ui._journey_panel.visible, "boarding replaces selector with compact journey HUD")
 	check(ui._journey_title.text.contains("Porto") and ui._journey_title.text.contains("Montanha"), "journey shows departure and chosen destination")
 	check(is_equal_approx(ui._progress.value, 0.25) and ui._journey_time.text == "1:12", "runtime progress and remaining duration reach HUD")
-	check(ui._inside.button_pressed and not ui._outside.button_pressed, "inside view is visibly selected at boarding")
-	ui._outside.pressed.emit()
-	check(transit.camera_mode == 1 and ui._outside.button_pressed and not ui._inside.button_pressed, "outside-view button dispatches without mutually active toggles")
-	ui._inside.pressed.emit()
-	check(transit.camera_mode == 0 and ui._inside.button_pressed and not ui._outside.button_pressed, "player can switch back inside during ride")
+	check(ui.find_children("InteriorView", "", true, false).is_empty() and ui.find_children("ExteriorView", "", true, false).is_empty(), "single external view needs no camera toggle buttons")
+	check(ui._skip.has_focus(), "controller focus goes directly to the remaining journey action")
 	ui._skip.pressed.emit()
 	check(transit.skip_count == 1, "skip button asks runtime to finish ride")
 	trip.progress = 2.0

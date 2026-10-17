@@ -60,6 +60,26 @@ func run() -> void:
 		dry_geometry(boundary,ocean.shores)
 	ocean.configure([],[])
 	assert(is_equal_approx(dry_geometry(ocean.build_chunk(holder,Rect2(0,0,16,16)),[]),256.0),"Reconfigure does not retain stale dry land")
+	# The quay experiment must not replace canal/tunnel or distant sea materials.
+	var pilot := preload("res://world/regions/HarborWaterPilot.gd")
+	var prior_enabled: bool = pilot.enabled
+	pilot.enabled = true
+	ocean.configure([[2048,2048,256,1024]],[])
+	var pilot_a := ocean.build_chunk(holder,Rect2(128,128,64,64))
+	var pilot_b := ocean.build_chunk(holder,Rect2(192,128,64,64))
+	var outside := ocean.build_chunk(holder,Rect2(64,128,64,64))
+	assert(pilot_a.material_override.shader == pilot.SURFACE,"Quay uses pilot")
+	assert(pilot_a.material_override == pilot_b.material_override,"Pilot chunks share one material")
+	assert(outside.material_override.shader == ocean.SHADER,"Touching outer boundary stays original")
+	assert(not pilot.includes_chunk(Rect2(256,64,64,64)),"Canal outside pilot")
+	assert(pilot_a.get_node("ShoreWash").material_override.shader == pilot.SHORE,"Same shoreline pass uses pilot foam")
+	dry_geometry(pilot_a,ocean.shores)
+	for point in pilot_a.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]:
+		assert(is_equal_approx(point.y,-0.94),"Pilot preserves water level and shore contact")
+	pilot.enabled = false
+	ocean.configure([],[])
+	assert(ocean.build_chunk(holder,Rect2(128,128,64,64)).material_override.shader == ocean.SHADER,"A/B control retains production ocean")
+	pilot.enabled = prior_enabled
 	holder.free()
 	print("HARBOR_OCEAN PASS: exact dry land exclusion, tiny islands, oblique/coastal area, empty dry chunks, shared material, seams, height, no collision and reload")
 	quit()

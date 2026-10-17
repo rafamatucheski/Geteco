@@ -1,5 +1,6 @@
 extends Node3D
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+const GPU_RELEASE := preload("res://runtime/GpuReleaseQueue.gd")
 ## Native production geography. Geometry/physics load only near the player.
 const MOUNTAIN_FACTORY := preload("res://world/mountain_detail/MountainDetailFactory.gd")
 const MOUNTAIN_ZOO := preload("res://world/mountain_detail/zoo/MountainZoo.gd")
@@ -732,6 +733,8 @@ func _retire_chunk(chunk: Node3D) -> void:
 	# before a joint is freed while its model still exists in the scene tree.
 	chunk.process_mode = Node.PROCESS_MODE_DISABLED
 	chunk.hide()
+	# Fusão e casca de sombra em andamento param ao ver a marca (o trecho continua na árvore escondido).
+	chunk.set_meta(GPU_RELEASE.RETIRED_META, true)
 	_retiring.append(chunk)
 	STALL_WORK.finish("retire.hide_and_enqueue", stall_began, {"region": region_id})
 
@@ -769,13 +772,15 @@ func _drain_retired_slice() -> void:
 				_retire_stack.pop_back()
 				if top != chunk:
 					top.get_parent().remove_child(top)
-					top.free()
+					# Dona única de malha vai para a fila de vídeo: soltar centenas de buffers juntos
+					# prende a thread principal no driver (emenda da ponte, 16/10).
+					if not GPU_RELEASE.adopt_detached_leaf(top): top.free()
 			else:
 				var last := top.get_child(count-1)
 				if last.get_child_count() > 0: _retire_stack.append(last)
 				else:
 					top.remove_child(last)
-					last.free()
+					if not GPU_RELEASE.adopt_detached_leaf(last): last.free()
 			if Time.get_ticks_usec()-began >= RETIRE_BUDGET_USEC: return
 		chunk.queue_free()
 		_retiring.pop_front()
@@ -843,7 +848,11 @@ func _land_piece(chunk: Node3D, piece: Rect2, cover: Array[PackedVector2Array]) 
 	var land := MeshInstance3D.new()
 	land.name = "Land"
 	land.mesh = mesh
-	land.material_override = _material(Color("737b69"))
+	# Native clipped top replaces FreightOutskirts' old y=.001 overlay.
+	# Authored woodland land matches this rectangle, already split by chunk.
+	var woodland := Rect2(-430,-160,350,318).encloses(piece)
+	land.material_override = preload("res://activities/motocross/MotocrossGroundDetail.gd").ground_material() if woodland else _material(Color("737b69"))
+	if woodland: land.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	chunk.add_child(land)
 	var body := StaticBody3D.new()
 	body.collision_layer = 1
@@ -1532,6 +1541,8 @@ func _dressing_reserved(point: Vector2, radius: float) -> bool:
 	return false
 
 func _authored_surface(chunk: Node3D, polygon: PackedVector2Array, woodland := false, cover: Array[PackedVector2Array] = []) -> void:
+	polygon = GROUND_CUT._without_degenerate_edges(polygon)
+	if polygon.size() < 3: return
 	var indices := Geometry2D.triangulate_polygon(polygon)
 	if indices.is_empty(): return
 	var vertices := PackedVector3Array()
@@ -1542,6 +1553,8 @@ func _authored_surface(chunk: Node3D, polygon: PackedVector2Array, woodland := f
 		var a := vertices[indices[i]]
 		var b := vertices[indices[i+1]]
 		var c := vertices[indices[i+2]]
+		# Hole clipping may retain coincident bridge vertices before the cover cut.
+		if (b-a).cross(c-a).length_squared() == 0.0: continue
 		surface.set_normal(Vector3.UP)
 		surface.set_uv(Vector2(a.x,a.z))
 		surface.add_vertex(a)

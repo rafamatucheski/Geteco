@@ -1,5 +1,23 @@
 # Migração de interiores — checklist
 
+## Ferrovia costeira e acessos de Harbor — 15/10/2026
+
+Escopo: **2 acessos de Harbor compactados / 1 vagão existente reformado / 0 lugares ou interiores novos**. O acabamento de corrimãos compartilhado alcança as quatro estações; a redução dos lances de 14 para 8 m fica restrita a Harbor. Inventário global e número de interiores certificados inalterados; nenhuma nova certificação integral.
+
+- [x] Circuito Harbor Central → Northgate → Harbor Central fechado junto às margens; travessia norte na borda do terreno, fora dos quarteirões. Northgate deslocada 15 m ao norte para alinhar a chegada. Portão da campanha e ramais regionais preservados.
+- [x] Rede: **112 verificações**; reservas locais: **20 verificações / 1.402 amostras**. Saves nas antigas escadas, passarelas e parte removida da plataforma retornam ao acesso apoiado; posições ainda apoiadas são preservadas.
+- [x] Main renderizada/.NET: **740 consultas / zero interseções** da composição ao longo dos dois lados do circuito; **13 verificações**, incluindo subida e descida dos dois acessos com Actor real, sem teleporte durante a caminhada. [Log](../evidence/railway-coastal-20261015/clearance-final.log), [resultado e fotos de percurso](../evidence/railway-clearance-32468-8258777/clearance.json). Rodadas anteriores encontraram encosta, prédio salvo e contato na ponta da plataforma; foram corrigidos antes da rodada aprovada.
+- [x] Trem: teto abaulado com colisão convexa correspondente, bogies, materiais separados e texturas locais, sem deslizamento no movimento. Modelo **10 checks**; câmera de embarque **6 checks**; UI **25 checks**. Externa única de tamanho ortográfico 36; seleção interna removida e snapshot de restauração preservado.
+- [x] Viagem produtiva e recuperação: **162 verificações** na Main/.NET, incluindo volta pelo circuito, câmera e controles restaurados, pausa, cancelamento, plataforma ocupada, bloqueio do deserto antes da missão final, desbloqueio pelo evento de campanha e save/load real em arquivo isolado. [Log](../evidence/railway-coastal-20261015/runtime-final.log).
+- [ ] Comparação de desempenho: duas tentativas posteriores interrompidas ao detectar jogos iniciados por sessões concorrentes; processos alheios preservados. Fotos físicas não são benchmark nem certificação temporal de iluminação; nenhuma luz foi acrescentada nesta reforma.
+
+- [x] Pilares e streaming: **96 verificações**, iniciando por Harbor, montanha e deserto, sem falhas após disponibilização das regiões. [Log](../evidence/railway-coastal-20261015/pillars-final.log).
+- [ ] Cenário de fundo: superfícies claras/com aparência ausente na borda da montanha e no convés de Santa Mare durante a volta. Causa ainda não isolada; arquivos de cenário com alterações concorrentes preservados. Não considerar aprovação visual integral.
+
+Depois: [escadas](../evidence/railway-coastal-visual-20261015-harbor_central-50660-16119661/stairs-west.png), [trem junto à água](../evidence/railway-coastal-visual-20261015-harbor_central-50660-16119661/coast-harbor_north-035.png), [viagens e chegadas](../evidence/railway-coastal-visual-20261015-harbor_central-50660-16119661/metrics.json). As duas chegadas terminaram com apoio no piso, câmera restaurada e controles liberados.
+
+Antes: [acesso na Main](../evidence/railway-coastal-before-20261015-harbor_central-20272-6625916/station.png). [Traçado derivado das rotas finais](../evidence/railway-coastal-20261015/circuit-final-map.png) é um diagrama, não uma captura de gameplay. Não recertifica escadas da montanha/deserto, iluminação global ou interiores fora deste escopo.
+
 ## Pisos dos acessos de Harbor — 13/10/2026
 
 Escopo: **6 lugares físicos existentes / 0 interiores reformados / 0 lugares novos**:

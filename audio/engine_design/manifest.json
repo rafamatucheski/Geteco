@@ -1,0 +1,1337 @@
+{
+  "schema_version": 2,
+  "generator": "build_engine_design_pack.py",
+  "sample_rate": 22050,
+  "channels": 1,
+  "pcm_bits": 16,
+  "default_loop_frames": 44100,
+  "guard_frames": 8,
+  "provenance": "Original offline procedural synthesis; no source recordings or downloaded samples.",
+  "status": "fleet_runtime_enabled",
+  "profiles": [
+    {
+      "id": "jz2_i6_turbo",
+      "label": "Inspirado no 2JZ · seis em linha turbo",
+      "description": "I6 turbo, escape cheio e admissão discreta; inspiração 2JZ-GTE, não gravação.",
+      "cylinders": 6,
+      "rpm_bands": [
+        840,
+        1320,
+        2040,
+        3000,
+        4200,
+        5640,
+        6960
+      ],
+      "turbo": true,
+      "architecture": "piston_four_stroke",
+      "fuel": "petrol",
+      "bypass_valve": true,
+      "band_frames": [
+        132300,
+        132300,
+        44100,
+        44100,
+        44100,
+        44100,
+        44100
+      ],
+      "loaded": [
+        "jz2_i6_turbo/engine_jz2_i6_turbo_0.wav",
+        "jz2_i6_turbo/engine_jz2_i6_turbo_1.wav",
+        "jz2_i6_turbo/engine_jz2_i6_turbo_2.wav",
+        "jz2_i6_turbo/engine_jz2_i6_turbo_3.wav",
+        "jz2_i6_turbo/engine_jz2_i6_turbo_4.wav",
+        "jz2_i6_turbo/engine_jz2_i6_turbo_5.wav",
+        "jz2_i6_turbo/engine_jz2_i6_turbo_6.wav"
+      ],
+      "coast": [
+        "jz2_i6_turbo/coast_jz2_i6_turbo_0.wav",
+        "jz2_i6_turbo/coast_jz2_i6_turbo_1.wav",
+        "jz2_i6_turbo/coast_jz2_i6_turbo_2.wav",
+        "jz2_i6_turbo/coast_jz2_i6_turbo_3.wav",
+        "jz2_i6_turbo/coast_jz2_i6_turbo_4.wav",
+        "jz2_i6_turbo/coast_jz2_i6_turbo_5.wav",
+        "jz2_i6_turbo/coast_jz2_i6_turbo_6.wav"
+      ],
+      "effects": {
+        "turbo_spool": {
+          "path": "jz2_i6_turbo/turbo_spool.wav",
+          "loop": true,
+          "guard_frames": 8
+        },
+        "bypass_release": {
+          "path": "jz2_i6_turbo/bypass_release.wav",
+          "loop": false,
+          "guard_frames": 0
+        }
+      },
+      "sha256": {
+        "jz2_i6_turbo/engine_jz2_i6_turbo_0.wav": "7d7e1222c1cb92529e6de42fb0808060b7fe1387fddcabb6ef40738c969df069",
+        "jz2_i6_turbo/engine_jz2_i6_turbo_1.wav": "67fc2d0cde1cb88794a9ba86c4f210dae53f8b55d4334c56c9f577b69ee07231",
+        "jz2_i6_turbo/engine_jz2_i6_turbo_2.wav": "372b3d5f8c7b5e4e259dbbdca0abd3cf688fc415c7318d3837c06ca83f7df6e3",
+        "jz2_i6_turbo/engine_jz2_i6_turbo_3.wav": "c1db3559e46a218b13d144057fe77ed66341f94e81a4c908da463ca69ac32b76",
+        "jz2_i6_turbo/engine_jz2_i6_turbo_4.wav": "b7516c4e8bdb03a5cbc1728c3fc92fad7d8c0e0e0da4d2618e36f85f41995d14",
+        "jz2_i6_turbo/engine_jz2_i6_turbo_5.wav": "7319bda7f33b1f87e73ea37b9ddbcf0e536214a71b490ae81725819f1ecfb69d",
+        "jz2_i6_turbo/engine_jz2_i6_turbo_6.wav": "0315171c47ed633dc352a120ec6b0369729527252a90b3cdf1cbac8bae93de88",
+        "jz2_i6_turbo/coast_jz2_i6_turbo_0.wav": "087123b08be2dce6ed7a744abd97312cffff7e7e8b9cff9fadd44b6124b1326e",
+        "jz2_i6_turbo/coast_jz2_i6_turbo_1.wav": "6bf0d4b8c8f997e797bffa2095194fd0996ed4789c98682a5bd6d83643a3def6",
+        "jz2_i6_turbo/coast_jz2_i6_turbo_2.wav": "9c16577a039c18c82be630f6aedeaaf2ab597697d4427b54fd865ddf236d0dd0",
+        "jz2_i6_turbo/coast_jz2_i6_turbo_3.wav": "6fee7533f3de82b0c495df2ce26b86ad499fa3e3760a9b61cb7180e1891381b7",
+        "jz2_i6_turbo/coast_jz2_i6_turbo_4.wav": "4160907f2568d242e0b98662f7b589f6c2c95d1c3476a3620a79109e3b1a0ce6",
+        "jz2_i6_turbo/coast_jz2_i6_turbo_5.wav": "5a803c3224a31ca320a912272491cf2050e80ffbb78fa08e8def77bdc9412d67",
+        "jz2_i6_turbo/coast_jz2_i6_turbo_6.wav": "9ab6da807554a7a13538df4822d54ec84b1f85fcb74e182cc867350afdd371c1",
+        "jz2_i6_turbo/turbo_spool.wav": "7b37bc6e5ef6dcb838424a3a8302acf2c74f97a1c3b1f567a6f951e45d360423",
+        "jz2_i6_turbo/bypass_release.wav": "93f615ad806513a321528b46a8671422f8578fea3487d6d4109b182874f65c8e"
+      },
+      "nominal_cycles_per_second": [
+        7.0,
+        11.0,
+        17.0,
+        25.0,
+        35.0,
+        47.0,
+        58.0
+      ]
+    },
+    {
+      "id": "rb26_i6_turbo",
+      "label": "Inspirado no RB26 · Skyline R34",
+      "description": "I6 turbo, admissão mais presente e escape mais brilhante; inspiração RB26DETT.",
+      "cylinders": 6,
+      "rpm_bands": [
+        960,
+        1440,
+        2160,
+        3240,
+        4560,
+        6120,
+        7800
+      ],
+      "turbo": true,
+      "architecture": "piston_four_stroke",
+      "fuel": "petrol",
+      "bypass_valve": true,
+      "band_frames": [
+        132300,
+        132300,
+        44100,
+        44100,
+        44100,
+        44100,
+        44100
+      ],
+      "loaded": [
+        "rb26_i6_turbo/engine_rb26_i6_turbo_0.wav",
+        "rb26_i6_turbo/engine_rb26_i6_turbo_1.wav",
+        "rb26_i6_turbo/engine_rb26_i6_turbo_2.wav",
+        "rb26_i6_turbo/engine_rb26_i6_turbo_3.wav",
+        "rb26_i6_turbo/engine_rb26_i6_turbo_4.wav",
+        "rb26_i6_turbo/engine_rb26_i6_turbo_5.wav",
+        "rb26_i6_turbo/engine_rb26_i6_turbo_6.wav"
+      ],
+      "coast": [
+        "rb26_i6_turbo/coast_rb26_i6_turbo_0.wav",
+        "rb26_i6_turbo/coast_rb26_i6_turbo_1.wav",
+        "rb26_i6_turbo/coast_rb26_i6_turbo_2.wav",
+        "rb26_i6_turbo/coast_rb26_i6_turbo_3.wav",
+        "rb26_i6_turbo/coast_rb26_i6_turbo_4.wav",
+        "rb26_i6_turbo/coast_rb26_i6_turbo_5.wav",
+        "rb26_i6_turbo/coast_rb26_i6_turbo_6.wav"
+      ],
+      "effects": {
+        "turbo_spool": {
+          "path": "rb26_i6_turbo/turbo_spool.wav",
+          "loop": true,
+          "guard_frames": 8
+        },
+        "bypass_release": {
+          "path": "rb26_i6_turbo/bypass_release.wav",
+          "loop": false,
+          "guard_frames": 0
+        }
+      },
+      "sha256": {
+        "rb26_i6_turbo/engine_rb26_i6_turbo_0.wav": "d3836fd0693a1c7202975f1189658475504f23ba182b8059e8c72c3e88b58b36",
+        "rb26_i6_turbo/engine_rb26_i6_turbo_1.wav": "838eb4925a5853af6d97bcaec4bafec042801838c37aebac052a57bd243a376d",
+        "rb26_i6_turbo/engine_rb26_i6_turbo_2.wav": "48a4a5de2c6b1b6dcc0bd8b410e9e3b3fe746be1292c4a9ff756b8b863efc65c",
+        "rb26_i6_turbo/engine_rb26_i6_turbo_3.wav": "f4fb9423976aec6b5ffa97229487972433e4be103510bc33caa5883e6c9a4da0",
+        "rb26_i6_turbo/engine_rb26_i6_turbo_4.wav": "e958bab5ae11854cb06f7de9b9ca610c2168ac54aeaee7db59341e9eb292dd78",
+        "rb26_i6_turbo/engine_rb26_i6_turbo_5.wav": "e21085755123ac671060a2120b86b3ac1554c2f693623b83bbc33d9c655fc320",
+        "rb26_i6_turbo/engine_rb26_i6_turbo_6.wav": "262af15634def44f22bb1f9d5291c883dd8677c8f1693da49c0894f754b7717e",
+        "rb26_i6_turbo/coast_rb26_i6_turbo_0.wav": "e7110669418726b9f11f59840ce4da37bca60da31469d1f3f52072cc28bd53d0",
+        "rb26_i6_turbo/coast_rb26_i6_turbo_1.wav": "7a5c4f93df0e835dbe8e13f7f92140ca36a5aa017f005ac5f88b72e9b6ef1e61",
+        "rb26_i6_turbo/coast_rb26_i6_turbo_2.wav": "3795a37c5a79ad1ec783770dd01fb124ddea883807150d4ae232af6c028d7f16",
+        "rb26_i6_turbo/coast_rb26_i6_turbo_3.wav": "1f487348e9f373c320bac5a910bcede5715b741263346d3c339a2650b1bc5ec2",
+        "rb26_i6_turbo/coast_rb26_i6_turbo_4.wav": "04d13fac4fdfcaa2e3185caf447dca81530d07225b07bead755c8e95fefa2067",
+        "rb26_i6_turbo/coast_rb26_i6_turbo_5.wav": "102547e6a458dca6fe73bc2adb3e3dc1c2f926b422721a85beab32ef45e21a0f",
+        "rb26_i6_turbo/coast_rb26_i6_turbo_6.wav": "4df1ec52daf7a9f426f5b553b9edfa77353385062212577167406273da1e2068",
+        "rb26_i6_turbo/turbo_spool.wav": "4010bcf66add789ea14de490866a36371a050dc95fb1238e33625c2bb4fe88e1",
+        "rb26_i6_turbo/bypass_release.wav": "936018928cb16446256e26cb50192013c59b6a512aa5383c577088e30dcfb417"
+      },
+      "nominal_cycles_per_second": [
+        8.0,
+        12.0,
+        18.0,
+        27.0,
+        38.0,
+        51.0,
+        65.0
+      ]
+    },
+    {
+      "id": "v8_crossplane",
+      "label": "V8 · cross-plane aspirado",
+      "description": "V8 aspirado cross-plane, escape de dois bancos; não representa todo V8.",
+      "cylinders": 8,
+      "rpm_bands": [
+        720,
+        1200,
+        1800,
+        2640,
+        3720,
+        5040,
+        6480
+      ],
+      "turbo": false,
+      "architecture": "piston_four_stroke",
+      "fuel": "petrol",
+      "bypass_valve": false,
+      "band_frames": [
+        132300,
+        132300,
+        44100,
+        44100,
+        44100,
+        44100,
+        44100
+      ],
+      "loaded": [
+        "v8_crossplane/engine_v8_crossplane_0.wav",
+        "v8_crossplane/engine_v8_crossplane_1.wav",
+        "v8_crossplane/engine_v8_crossplane_2.wav",
+        "v8_crossplane/engine_v8_crossplane_3.wav",
+        "v8_crossplane/engine_v8_crossplane_4.wav",
+        "v8_crossplane/engine_v8_crossplane_5.wav",
+        "v8_crossplane/engine_v8_crossplane_6.wav"
+      ],
+      "coast": [
+        "v8_crossplane/coast_v8_crossplane_0.wav",
+        "v8_crossplane/coast_v8_crossplane_1.wav",
+        "v8_crossplane/coast_v8_crossplane_2.wav",
+        "v8_crossplane/coast_v8_crossplane_3.wav",
+        "v8_crossplane/coast_v8_crossplane_4.wav",
+        "v8_crossplane/coast_v8_crossplane_5.wav",
+        "v8_crossplane/coast_v8_crossplane_6.wav"
+      ],
+      "effects": {},
+      "sha256": {
+        "v8_crossplane/engine_v8_crossplane_0.wav": "b7ae15963b2913c24bd1cc1d795525e6e08d4b3d77b2f637f6de4f2de33273e4",
+        "v8_crossplane/engine_v8_crossplane_1.wav": "995275a95c3d7b7a1f01a1dd3fa20814562eceb135789be50d7c1836256703b5",
+        "v8_crossplane/engine_v8_crossplane_2.wav": "817b762d48cff60b25f3f22e2beca1d3fb7608424ed3115835309382a79a07ed",
+        "v8_crossplane/engine_v8_crossplane_3.wav": "10617a29e1e8f03d4b39482f9dfeed10530c099cf6bdf77246e57cc07b27e3c9",
+        "v8_crossplane/engine_v8_crossplane_4.wav": "18c87349be43c76fc2125161ae3c74927e9ae8619ae26752973f2a7826c7a8f3",
+        "v8_crossplane/engine_v8_crossplane_5.wav": "408d420f2ef4e1902dc6840f58f61e12ec8f2d6796dab90b88f40f22ef3e3960",
+        "v8_crossplane/engine_v8_crossplane_6.wav": "19e8fc51562b747c15a2b03cf57a557bcd546f583f37d4cd4e636ac1dca3bddb",
+        "v8_crossplane/coast_v8_crossplane_0.wav": "3c0657c397cd4b3306879780fa660f50c10edd2b8eb49c935e648fcd6493fb65",
+        "v8_crossplane/coast_v8_crossplane_1.wav": "fa6adaa13a14059dbe6725c5e2a89bc02fa7cba3066bc85f940f6f0488e7c0dd",
+        "v8_crossplane/coast_v8_crossplane_2.wav": "b8b1783964e703344f26d2138680da835d06d0d5c1bfd76f3916061eeb774207",
+        "v8_crossplane/coast_v8_crossplane_3.wav": "d33ce00baaffa84ec11865faae33462efe9d603deee6e0b77f48a5140cade03e",
+        "v8_crossplane/coast_v8_crossplane_4.wav": "c13102ecb9bef929703d885d5ee38015419116863acacf768364c82956f744e5",
+        "v8_crossplane/coast_v8_crossplane_5.wav": "d96d0e2f8250d31e1834632d25fae00d1d4329bddcf93a2925f99c10367bc4bb",
+        "v8_crossplane/coast_v8_crossplane_6.wav": "52e06acddf4d3a03e349c6a62dcf8bb629dfcb8ef45483a7e1eb98d41f261b91"
+      },
+      "nominal_cycles_per_second": [
+        6.0,
+        10.0,
+        15.0,
+        22.0,
+        31.0,
+        42.0,
+        54.0
+      ]
+    },
+    {
+      "id": "v12_gt",
+      "label": "V12 · GT aspirado",
+      "description": "V12 aspirado de alto giro, ignição regular e textura aguda; inspiração de classe GT.",
+      "cylinders": 12,
+      "rpm_bands": [
+        840,
+        1440,
+        2280,
+        3360,
+        4800,
+        6480,
+        8400
+      ],
+      "turbo": false,
+      "architecture": "piston_four_stroke",
+      "fuel": "petrol",
+      "bypass_valve": false,
+      "band_frames": [
+        132300,
+        132300,
+        44100,
+        44100,
+        44100,
+        44100,
+        44100
+      ],
+      "loaded": [
+        "v12_gt/engine_v12_gt_0.wav",
+        "v12_gt/engine_v12_gt_1.wav",
+        "v12_gt/engine_v12_gt_2.wav",
+        "v12_gt/engine_v12_gt_3.wav",
+        "v12_gt/engine_v12_gt_4.wav",
+        "v12_gt/engine_v12_gt_5.wav",
+        "v12_gt/engine_v12_gt_6.wav"
+      ],
+      "coast": [
+        "v12_gt/coast_v12_gt_0.wav",
+        "v12_gt/coast_v12_gt_1.wav",
+        "v12_gt/coast_v12_gt_2.wav",
+        "v12_gt/coast_v12_gt_3.wav",
+        "v12_gt/coast_v12_gt_4.wav",
+        "v12_gt/coast_v12_gt_5.wav",
+        "v12_gt/coast_v12_gt_6.wav"
+      ],
+      "effects": {},
+      "sha256": {
+        "v12_gt/engine_v12_gt_0.wav": "857b53778f59805624f9d0a62cd41d6e38c490a0d493445d3bbc7655715fd2ef",
+        "v12_gt/engine_v12_gt_1.wav": "3a041c48fe140cd189fd9d41ff6c85214e0ecc76a057e844342c0a33773525a1",
+        "v12_gt/engine_v12_gt_2.wav": "055ae9957e1ccaf69e1fa42a0d987cacc1e9fd5e6400c3a8d0a4de2b85bb90a6",
+        "v12_gt/engine_v12_gt_3.wav": "d517b3383e7dfdbcf33fa72502d40ae2aa17346407f05ce50685d6ae153402b0",
+        "v12_gt/engine_v12_gt_4.wav": "e67ccf484e1320974d4a881fef200e5c606afc6229fcd7fa87d9621132c8e3bb",
+        "v12_gt/engine_v12_gt_5.wav": "152db620d263acba50eef02d952cc91181eba6f393a7aaf73ab9056389ee65f6",
+        "v12_gt/engine_v12_gt_6.wav": "3ed28697c4394d2083f0e97d0e534af3304535d24a149a17372cd96886f06963",
+        "v12_gt/coast_v12_gt_0.wav": "2958e8ad990733d1caf719c00780c1e4186d2aafa2731da8dd44c2800ab1312f",
+        "v12_gt/coast_v12_gt_1.wav": "980a1844e122f98962d888e3570ee1b76df12ee707a777e274e6aa8060e1be72",
+        "v12_gt/coast_v12_gt_2.wav": "398c9cc783216199992824aae51dfa2b1fedfbc26ef459eaf9380fa826468ee9",
+        "v12_gt/coast_v12_gt_3.wav": "b6af3626e2efc75011ff236ca8d563d6f5f0f50ba80b61b8a8c4ab6d8a51043e",
+        "v12_gt/coast_v12_gt_4.wav": "723f847ca51094fded4a0c2d58e9002854fedd5305c494df8ef2e572b24a1a25",
+        "v12_gt/coast_v12_gt_5.wav": "2d95ac58208f464c34e0cf52a854e9e76a47886ac4e21c0d38601b50621dc9a8",
+        "v12_gt/coast_v12_gt_6.wav": "8f26bc4e652390e459275d66b845d7a19532ab8182470c5457741a6c26f22e24"
+      },
+      "nominal_cycles_per_second": [
+        7.0,
+        12.0,
+        19.0,
+        28.0,
+        40.0,
+        54.0,
+        70.0
+      ]
+    },
+    {
+      "id": "ap_i4_turbo",
+      "label": "Inspirado no AP turbo · Gol preparado",
+      "description": "I4 turbo preparado, referência autoral AP; candidato ao Gol do Digo, não som de fábrica.",
+      "cylinders": 4,
+      "rpm_bands": [
+        960,
+        1440,
+        2160,
+        3120,
+        4320,
+        5520,
+        6720
+      ],
+      "turbo": true,
+      "architecture": "piston_four_stroke",
+      "fuel": "petrol",
+      "bypass_valve": true,
+      "band_frames": [
+        132300,
+        132300,
+        44100,
+        44100,
+        44100,
+        44100,
+        44100
+      ],
+      "loaded": [
+        "ap_i4_turbo/engine_ap_i4_turbo_0.wav",
+        "ap_i4_turbo/engine_ap_i4_turbo_1.wav",
+        "ap_i4_turbo/engine_ap_i4_turbo_2.wav",
+        "ap_i4_turbo/engine_ap_i4_turbo_3.wav",
+        "ap_i4_turbo/engine_ap_i4_turbo_4.wav",
+        "ap_i4_turbo/engine_ap_i4_turbo_5.wav",
+        "ap_i4_turbo/engine_ap_i4_turbo_6.wav"
+      ],
+      "coast": [
+        "ap_i4_turbo/coast_ap_i4_turbo_0.wav",
+        "ap_i4_turbo/coast_ap_i4_turbo_1.wav",
+        "ap_i4_turbo/coast_ap_i4_turbo_2.wav",
+        "ap_i4_turbo/coast_ap_i4_turbo_3.wav",
+        "ap_i4_turbo/coast_ap_i4_turbo_4.wav",
+        "ap_i4_turbo/coast_ap_i4_turbo_5.wav",
+        "ap_i4_turbo/coast_ap_i4_turbo_6.wav"
+      ],
+      "effects": {
+        "turbo_spool": {
+          "path": "ap_i4_turbo/turbo_spool.wav",
+          "loop": true,
+          "guard_frames": 8
+        },
+        "bypass_release": {
+          "path": "ap_i4_turbo/bypass_release.wav",
+          "loop": false,
+          "guard_frames": 0
+        }
+      },
+      "sha256": {
+        "ap_i4_turbo/engine_ap_i4_turbo_0.wav": "8ba1677f8fc65aef819dc995b292a13fc1a1b667f10c68ebef0e8ce9c024777b",
+        "ap_i4_turbo/engine_ap_i4_turbo_1.wav": "6bb084f2d793f97e6afc92ca2ba2282dd3ee97e96e3317c09c04852e247d356b",
+        "ap_i4_turbo/engine_ap_i4_turbo_2.wav": "8080a95cfac279bb5d8284d4b8a7b8479a0749bc1f1d7f0956465c1b95147be0",
+        "ap_i4_turbo/engine_ap_i4_turbo_3.wav": "82dc54a1328478bf7a84bfc2ff7e86192b60eb07b360d6033cefdcedaac20d3a",
+        "ap_i4_turbo/engine_ap_i4_turbo_4.wav": "9633bcb60ca9b20360db5e011ba7881c43a73149d4622682207184cd66a57fc3",
+        "ap_i4_turbo/engine_ap_i4_turbo_5.wav": "168982f28039769fc2f52e7c166478453cbf38adcd2e8f8ea8aa626c9e71ae32",
+        "ap_i4_turbo/engine_ap_i4_turbo_6.wav": "1c9377193acfe31832497ef6ffb200d71ffeb35fbc67822880d665f667dd913b",
+        "ap_i4_turbo/coast_ap_i4_turbo_0.wav": "ad1929cd4df7ddc000e114f7f178baabf3bb453d2d7ab18d41ecc5d362c82052",
+        "ap_i4_turbo/coast_ap_i4_turbo_1.wav": "3d9b2f4bf2d6ac4a1a64958e4650887563e740a6572ba9e2968e82e8d892d91e",
+        "ap_i4_turbo/coast_ap_i4_turbo_2.wav": "92cdb4c2eb0cdef57fa409f04c5a76152e5df865cb398da2d4ab296007c041c4",
+        "ap_i4_turbo/coast_ap_i4_turbo_3.wav": "786f444d796814068cf8e9b10beb7dc409bbdc18533728d248e0bb2e16beac5b",
+        "ap_i4_turbo/coast_ap_i4_turbo_4.wav": "70e134dd58da4f9db55a59889d78e38d3fca3c189297a75f7bbbd01a4c38d0b8",
+        "ap_i4_turbo/coast_ap_i4_turbo_5.wav": "faec442e450a0bb293492b569e29a40871e22ab974b9b43f45fe86ca740e7310",
+        "ap_i4_turbo/coast_ap_i4_turbo_6.wav": "a568f8e4a8a1266d1eaa5dcf46c48a559d6de43fb4a984a7b0ca124f67813261",
+        "ap_i4_turbo/turbo_spool.wav": "ca34f3bdbbd57d808643e2d8d684f0b65a9dfa72e0556412479ca45d0490a21e",
+        "ap_i4_turbo/bypass_release.wav": "79ccb1e6d573e463c3cd48140e57d4e3f7a2566e5c3d674537e972be133090a3"
+      },
+      "nominal_cycles_per_second": [
+        8.0,
+        12.0,
+        18.0,
+        26.0,
+        36.0,
+        46.0,
+        56.0
+      ]
+    },
+    {
+      "id": "ea888_i4_turbo",
+      "label": "Inspirado no EA888 · Jetta GLI",
+      "description": "I4 turbo moderno, escape contido e carga cheia; inspiração EA888 do Jetta GLI.",
+      "cylinders": 4,
+      "rpm_bands": [
+        840,
+        1320,
+        2040,
+        3000,
+        4200,
+        5400,
+        6600
+      ],
+      "turbo": true,
+      "architecture": "piston_four_stroke",
+      "fuel": "petrol",
+      "bypass_valve": true,
+      "band_frames": [
+        132300,
+        132300,
+        44100,
+        44100,
+        44100,
+        44100,
+        44100
+      ],
+      "loaded": [
+        "ea888_i4_turbo/engine_ea888_i4_turbo_0.wav",
+        "ea888_i4_turbo/engine_ea888_i4_turbo_1.wav",
+        "ea888_i4_turbo/engine_ea888_i4_turbo_2.wav",
+        "ea888_i4_turbo/engine_ea888_i4_turbo_3.wav",
+        "ea888_i4_turbo/engine_ea888_i4_turbo_4.wav",
+        "ea888_i4_turbo/engine_ea888_i4_turbo_5.wav",
+        "ea888_i4_turbo/engine_ea888_i4_turbo_6.wav"
+      ],
+      "coast": [
+        "ea888_i4_turbo/coast_ea888_i4_turbo_0.wav",
+        "ea888_i4_turbo/coast_ea888_i4_turbo_1.wav",
+        "ea888_i4_turbo/coast_ea888_i4_turbo_2.wav",
+        "ea888_i4_turbo/coast_ea888_i4_turbo_3.wav",
+        "ea888_i4_turbo/coast_ea888_i4_turbo_4.wav",
+        "ea888_i4_turbo/coast_ea888_i4_turbo_5.wav",
+        "ea888_i4_turbo/coast_ea888_i4_turbo_6.wav"
+      ],
+      "effects": {
+        "turbo_spool": {
+          "path": "ea888_i4_turbo/turbo_spool.wav",
+          "loop": true,
+          "guard_frames": 8
+        },
+        "bypass_release": {
+          "path": "ea888_i4_turbo/bypass_release.wav",
+          "loop": false,
+          "guard_frames": 0
+        }
+      },
+      "sha256": {
+        "ea888_i4_turbo/engine_ea888_i4_turbo_0.wav": "fc073c1258d91708b1f47de645052eb31bf93298369133d64c4e39ee7b2550df",
+        "ea888_i4_turbo/engine_ea888_i4_turbo_1.wav": "3296de3c0569d6d2d4f239ace10f506898e9ec16ea403063c29e62a0d19b0e9f",
+        "ea888_i4_turbo/engine_ea888_i4_turbo_2.wav": "d0aeec1452ab3c41baef013c94dd09ab0d3e66ffb190d290c421dbd794fc6f2d",
+        "ea888_i4_turbo/engine_ea888_i4_turbo_3.wav": "74125f5e685a5cfa920001b17655aab570eb9ff616b307028de2acb79254541d",
+        "ea888_i4_turbo/engine_ea888_i4_turbo_4.wav": "4af10ae6c89eacbe9c1222ed72e351de9ae66cc136453e777e49019b8072d144",
+        "ea888_i4_turbo/engine_ea888_i4_turbo_5.wav": "c083bc010be1ef71c6dda04014854fabc61d9f2aff721f33d547259e528b03e8",
+        "ea888_i4_turbo/engine_ea888_i4_turbo_6.wav": "b0c88cb44f471363b058274cf93eacbd95464c3f0ca42212c787e090bfe0846f",
+        "ea888_i4_turbo/coast_ea888_i4_turbo_0.wav": "57524c874e7c66db7e33acfbffb8c746e3bc4d70c75a0615c0eefdf976c8046f",
+        "ea888_i4_turbo/coast_ea888_i4_turbo_1.wav": "745211facd44da85bbbd031a984acb2f0dfdb9b1991392d6199a44d151a9fd52",
+        "ea888_i4_turbo/coast_ea888_i4_turbo_2.wav": "92369f54b146bea02eb5ede298211e138477a257b7f69e07a6e3b3634c116634",
+        "ea888_i4_turbo/coast_ea888_i4_turbo_3.wav": "f8634a0c5ecfb65a7643f77c1e04c3f8f031899d0f75e71aa7c5990416b40f01",
+        "ea888_i4_turbo/coast_ea888_i4_turbo_4.wav": "e135d8e9e46174d08bd76c876880e9e05078d5b187a205b5ffef7bda65ee1496",
+        "ea888_i4_turbo/coast_ea888_i4_turbo_5.wav": "50e12ba13488660b4b2471b3edbd058f8cef5bbbbbd32ad6060fbeff5aded9ba",
+        "ea888_i4_turbo/coast_ea888_i4_turbo_6.wav": "b1c365529265d207232a895ac63bf0868c6683cc12f4abd85e8a3bb3df3ccb4c",
+        "ea888_i4_turbo/turbo_spool.wav": "715de55c97aa641cd1d9f864fc8c8b7a9eafa8e3ec732a38c17d145a8e0e55d7",
+        "ea888_i4_turbo/bypass_release.wav": "daf9e7eae5b337af4d3272025eda490973fa842a42b94015b6dc0684f2ae3251"
+      },
+      "nominal_cycles_per_second": [
+        7.0,
+        11.0,
+        17.0,
+        25.0,
+        35.0,
+        45.0,
+        55.0
+      ]
+    },
+    {
+      "id": "vq35_v6_na",
+      "label": "Inspirado no VQ35 · 350Z aspirado",
+      "description": "V6 aspirado com dois bancos e admissão presente; inspiração VQ35, sem efeitos de turbo.",
+      "cylinders": 6,
+      "rpm_bands": [
+        840,
+        1320,
+        2040,
+        3000,
+        4200,
+        5520,
+        6720
+      ],
+      "turbo": false,
+      "architecture": "piston_four_stroke",
+      "fuel": "petrol",
+      "bypass_valve": false,
+      "band_frames": [
+        132300,
+        132300,
+        44100,
+        44100,
+        44100,
+        44100,
+        44100
+      ],
+      "loaded": [
+        "vq35_v6_na/engine_vq35_v6_na_0.wav",
+        "vq35_v6_na/engine_vq35_v6_na_1.wav",
+        "vq35_v6_na/engine_vq35_v6_na_2.wav",
+        "vq35_v6_na/engine_vq35_v6_na_3.wav",
+        "vq35_v6_na/engine_vq35_v6_na_4.wav",
+        "vq35_v6_na/engine_vq35_v6_na_5.wav",
+        "vq35_v6_na/engine_vq35_v6_na_6.wav"
+      ],
+      "coast": [
+        "vq35_v6_na/coast_vq35_v6_na_0.wav",
+        "vq35_v6_na/coast_vq35_v6_na_1.wav",
+        "vq35_v6_na/coast_vq35_v6_na_2.wav",
+        "vq35_v6_na/coast_vq35_v6_na_3.wav",
+        "vq35_v6_na/coast_vq35_v6_na_4.wav",
+        "vq35_v6_na/coast_vq35_v6_na_5.wav",
+        "vq35_v6_na/coast_vq35_v6_na_6.wav"
+      ],
+      "effects": {},
+      "sha256": {
+        "vq35_v6_na/engine_vq35_v6_na_0.wav": "9dd92045ce9b1cd7e93588869339314910e1db026df5af9d1c46073221eca19f",
+        "vq35_v6_na/engine_vq35_v6_na_1.wav": "fc5bb204cc6009230b6c10af78ce33e47b789d5ac24fb2849dacf753e765afb3",
+        "vq35_v6_na/engine_vq35_v6_na_2.wav": "f608e485449e8046205a86951d23fc5023aa2c167556ecd2509f14e04861707b",
+        "vq35_v6_na/engine_vq35_v6_na_3.wav": "acbf3e3d2ec0ed27cab4ad342af72cd67ca83034de1ebaad6e7af39d96e6c949",
+        "vq35_v6_na/engine_vq35_v6_na_4.wav": "78a71e7c7bdb2bfa05b389dca95f0ad19fbe69fa43549d4c44cb0158436fb1e1",
+        "vq35_v6_na/engine_vq35_v6_na_5.wav": "442a29b678a83f6cf35a54cc7ebcea35bbdddc56aac0eb2279620912add88847",
+        "vq35_v6_na/engine_vq35_v6_na_6.wav": "82c1ab59c443993638f51630df3b3760e7d93a305c38724aba24b7cf05b2bbae",
+        "vq35_v6_na/coast_vq35_v6_na_0.wav": "17df531b6e1e41f922948e5feab62e25d05178c0f2db5767617f3dc00c97899d",
+        "vq35_v6_na/coast_vq35_v6_na_1.wav": "ac1677dbf88450e022fcb0a1e790b522015cef038b4aa45ebba2809f1fd24a2d",
+        "vq35_v6_na/coast_vq35_v6_na_2.wav": "7e6e505874affa08b23a912e766bb9b96a9119b5e7ad0f469108f0a223134748",
+        "vq35_v6_na/coast_vq35_v6_na_3.wav": "6de06db708ef2107c7ee364b3c1500c1d0d1a155ee92c9c5ee708aeddcb52c16",
+        "vq35_v6_na/coast_vq35_v6_na_4.wav": "832cd996031ea1a7c15beedaee1bb6cba5f450db0f02e64932932ff2f24aac02",
+        "vq35_v6_na/coast_vq35_v6_na_5.wav": "d7c7493eb6f73cd5cb15c88c17b407316f60363752f86647eacd1c4fea98d78b",
+        "vq35_v6_na/coast_vq35_v6_na_6.wav": "6b3fa812d827735db1b46a37bee7a8b0481d122f26f40df3611d7074ab58437a"
+      },
+      "nominal_cycles_per_second": [
+        7.0,
+        11.0,
+        17.0,
+        25.0,
+        35.0,
+        46.0,
+        56.0
+      ]
+    },
+    {
+      "id": "tdi_i4_diesel",
+      "label": "I4 turbodiesel · picape 2.0",
+      "description": "Quatro cilindros turbodiesel para picape/utilitário, referência Amarok 2.0; sem BOV esportiva.",
+      "cylinders": 4,
+      "rpm_bands": [
+        840,
+        1200,
+        1680,
+        2160,
+        2760,
+        3480,
+        4320
+      ],
+      "turbo": true,
+      "architecture": "piston_four_stroke",
+      "fuel": "diesel",
+      "bypass_valve": false,
+      "band_frames": [
+        132300,
+        132300,
+        44100,
+        44100,
+        44100,
+        44100,
+        44100
+      ],
+      "loaded": [
+        "tdi_i4_diesel/engine_tdi_i4_diesel_0.wav",
+        "tdi_i4_diesel/engine_tdi_i4_diesel_1.wav",
+        "tdi_i4_diesel/engine_tdi_i4_diesel_2.wav",
+        "tdi_i4_diesel/engine_tdi_i4_diesel_3.wav",
+        "tdi_i4_diesel/engine_tdi_i4_diesel_4.wav",
+        "tdi_i4_diesel/engine_tdi_i4_diesel_5.wav",
+        "tdi_i4_diesel/engine_tdi_i4_diesel_6.wav"
+      ],
+      "coast": [
+        "tdi_i4_diesel/coast_tdi_i4_diesel_0.wav",
+        "tdi_i4_diesel/coast_tdi_i4_diesel_1.wav",
+        "tdi_i4_diesel/coast_tdi_i4_diesel_2.wav",
+        "tdi_i4_diesel/coast_tdi_i4_diesel_3.wav",
+        "tdi_i4_diesel/coast_tdi_i4_diesel_4.wav",
+        "tdi_i4_diesel/coast_tdi_i4_diesel_5.wav",
+        "tdi_i4_diesel/coast_tdi_i4_diesel_6.wav"
+      ],
+      "effects": {
+        "turbo_spool": {
+          "path": "tdi_i4_diesel/turbo_spool.wav",
+          "loop": true,
+          "guard_frames": 8
+        }
+      },
+      "sha256": {
+        "tdi_i4_diesel/engine_tdi_i4_diesel_0.wav": "24e541e595e20ede596e2f4d543eed9cb40d056171c94e1945adf8f08de3dad9",
+        "tdi_i4_diesel/engine_tdi_i4_diesel_1.wav": "66e3de243191a33dbe48bef2db1c9a9086db2464065a45343464d0185b065800",
+        "tdi_i4_diesel/engine_tdi_i4_diesel_2.wav": "79d469173568fd0ca76762718f96fb4b76f128aacffccd433a3ade56d6af7f0d",
+        "tdi_i4_diesel/engine_tdi_i4_diesel_3.wav": "02a6be7b176ffb9be117e06b7b7f5a3fb5f56173496f82cc43a768478da55a17",
+        "tdi_i4_diesel/engine_tdi_i4_diesel_4.wav": "45acc1bb3a574914c85e545de390200edcadf3634dc1bf7618907d05b84933ea",
+        "tdi_i4_diesel/engine_tdi_i4_diesel_5.wav": "048787ad74e73e1a364ea6468e5591c25a442eae0448ba8090596fc2eb7a7e2d",
+        "tdi_i4_diesel/engine_tdi_i4_diesel_6.wav": "bdfae71410a0b4ecc7273251a486181841f45f02520a04c0a7b74939825f1c2a",
+        "tdi_i4_diesel/coast_tdi_i4_diesel_0.wav": "afe3bdf93b4738617093db1e7fc99b5e5f99e07dbc8248e49679d2771ef1410a",
+        "tdi_i4_diesel/coast_tdi_i4_diesel_1.wav": "f53f37977f2ec3e838e127ddf7f19397f0c99521faaaf3bf33a1e932bb94fc2a",
+        "tdi_i4_diesel/coast_tdi_i4_diesel_2.wav": "22f5215a170a88c06a579ee2ff8b62ec822d2f2315696f8c388dee62a5d099f8",
+        "tdi_i4_diesel/coast_tdi_i4_diesel_3.wav": "ff4191e12bb930543a246ef8e920d41cf025f7085eb19394dbdb504ae94a91df",
+        "tdi_i4_diesel/coast_tdi_i4_diesel_4.wav": "327965c1f8b8943ae857bea9389326f822a243295ba9429651e70395fd690be8",
+        "tdi_i4_diesel/coast_tdi_i4_diesel_5.wav": "549f9b7228053ea57b299b0672cdcde13d39af6619ad9c0f7eabbc38379e04dc",
+        "tdi_i4_diesel/coast_tdi_i4_diesel_6.wav": "a3fe0d84c2cfd2fa1f3db3a3364fb7edec7127ff3458e99678fa0e710d5dac10",
+        "tdi_i4_diesel/turbo_spool.wav": "89f9202afbe03e65d28f1d617685c7302c8e6dcdeeb83adae8b52fc7e3f5c9f8"
+      },
+      "nominal_cycles_per_second": [
+        7.0,
+        10.0,
+        14.0,
+        18.0,
+        23.0,
+        29.0,
+        36.0
+      ]
+    },
+    {
+      "id": "city_i4_na",
+      "label": "I4 aspirado · compacto urbano",
+      "description": "I4 aspirado pequeno com escape de rua e admissão contida; candidato aos compactos da cidade.",
+      "cylinders": 4,
+      "rpm_bands": [
+        840,
+        1320,
+        1920,
+        2760,
+        3840,
+        5040,
+        6240
+      ],
+      "turbo": false,
+      "architecture": "piston_four_stroke",
+      "fuel": "petrol",
+      "bypass_valve": false,
+      "band_frames": [
+        132300,
+        132300,
+        44100,
+        44100,
+        44100,
+        44100,
+        44100
+      ],
+      "loaded": [
+        "city_i4_na/engine_city_i4_na_0.wav",
+        "city_i4_na/engine_city_i4_na_1.wav",
+        "city_i4_na/engine_city_i4_na_2.wav",
+        "city_i4_na/engine_city_i4_na_3.wav",
+        "city_i4_na/engine_city_i4_na_4.wav",
+        "city_i4_na/engine_city_i4_na_5.wav",
+        "city_i4_na/engine_city_i4_na_6.wav"
+      ],
+      "coast": [
+        "city_i4_na/coast_city_i4_na_0.wav",
+        "city_i4_na/coast_city_i4_na_1.wav",
+        "city_i4_na/coast_city_i4_na_2.wav",
+        "city_i4_na/coast_city_i4_na_3.wav",
+        "city_i4_na/coast_city_i4_na_4.wav",
+        "city_i4_na/coast_city_i4_na_5.wav",
+        "city_i4_na/coast_city_i4_na_6.wav"
+      ],
+      "effects": {},
+      "sha256": {
+        "city_i4_na/engine_city_i4_na_0.wav": "50c160da69991c5a781e4c22dfeab6f0edff778260027e5370044e13b964cf2c",
+        "city_i4_na/engine_city_i4_na_1.wav": "4ae219b70286c1919e0dd28dd783e92bea5a7f62e8f9bf72c3806fb7d6164a75",
+        "city_i4_na/engine_city_i4_na_2.wav": "df0cf94c9a958ddcd125345137b716f9e90afafebdf5ca975fbeb5d5dde3d6ee",
+        "city_i4_na/engine_city_i4_na_3.wav": "db98dc71b58e9e5d109b11b5d9fa6f964f8475674b3282bf197c32c7a1864a13",
+        "city_i4_na/engine_city_i4_na_4.wav": "c29ef58ddd18bc4b2854a9b2aadbc6f1c88c25e12938bd2042ee185b70fc0968",
+        "city_i4_na/engine_city_i4_na_5.wav": "7fb2f86fa0e1059c35cc20b31618af3d06020288152e648eac81daf99ad1ac1e",
+        "city_i4_na/engine_city_i4_na_6.wav": "fad0ce972e52597c01048b4c70d17ecc1053bfd781a5782d5f3c43b09d179401",
+        "city_i4_na/coast_city_i4_na_0.wav": "0508db63b282b8eaea082b61fa057f855ae83ebfdb57d62300fc6d913df5428a",
+        "city_i4_na/coast_city_i4_na_1.wav": "8164413b0bae11b287f322e76f440ffb4d80b11f23eee4066fd88218f923c0c0",
+        "city_i4_na/coast_city_i4_na_2.wav": "fb52680a8a3503b6b0f755a891c11a537ce021347c7f22fb7abc03ba1aaa16f7",
+        "city_i4_na/coast_city_i4_na_3.wav": "da830d88297184d2f1a407edd78a52ca25ec8205395d2a4bb087f1e650d399c9",
+        "city_i4_na/coast_city_i4_na_4.wav": "89d8201da1c813ebf5d9b612de1c0948027d06d134a685c1df0100737b0eb1bb",
+        "city_i4_na/coast_city_i4_na_5.wav": "57364d67b5ba42fc07e354a9ba513083e07d1235367ea0211ad115ffa61d1cb7",
+        "city_i4_na/coast_city_i4_na_6.wav": "4c4f2f908b4a21b0fbdc6b16edb90611f37b0b8f4103e2c3b5604c4033d4974a"
+      },
+      "nominal_cycles_per_second": [
+        7.0,
+        11.0,
+        16.0,
+        23.0,
+        32.0,
+        42.0,
+        52.0
+      ]
+    },
+    {
+      "id": "v8_twin_turbo",
+      "label": "V8 biturbo · gran turismo moderno",
+      "description": "V8 biturbo moderno, escape de dois bancos e admissão sob pressão; aplicação autoral para o M8.",
+      "cylinders": 8,
+      "rpm_bands": [
+        720,
+        1200,
+        1800,
+        2760,
+        3960,
+        5400,
+        7080
+      ],
+      "turbo": true,
+      "architecture": "piston_four_stroke",
+      "fuel": "petrol",
+      "bypass_valve": true,
+      "band_frames": [
+        132300,
+        132300,
+        44100,
+        44100,
+        44100,
+        44100,
+        44100
+      ],
+      "loaded": [
+        "v8_twin_turbo/engine_v8_twin_turbo_0.wav",
+        "v8_twin_turbo/engine_v8_twin_turbo_1.wav",
+        "v8_twin_turbo/engine_v8_twin_turbo_2.wav",
+        "v8_twin_turbo/engine_v8_twin_turbo_3.wav",
+        "v8_twin_turbo/engine_v8_twin_turbo_4.wav",
+        "v8_twin_turbo/engine_v8_twin_turbo_5.wav",
+        "v8_twin_turbo/engine_v8_twin_turbo_6.wav"
+      ],
+      "coast": [
+        "v8_twin_turbo/coast_v8_twin_turbo_0.wav",
+        "v8_twin_turbo/coast_v8_twin_turbo_1.wav",
+        "v8_twin_turbo/coast_v8_twin_turbo_2.wav",
+        "v8_twin_turbo/coast_v8_twin_turbo_3.wav",
+        "v8_twin_turbo/coast_v8_twin_turbo_4.wav",
+        "v8_twin_turbo/coast_v8_twin_turbo_5.wav",
+        "v8_twin_turbo/coast_v8_twin_turbo_6.wav"
+      ],
+      "effects": {
+        "turbo_spool": {
+          "path": "v8_twin_turbo/turbo_spool.wav",
+          "loop": true,
+          "guard_frames": 8
+        },
+        "bypass_release": {
+          "path": "v8_twin_turbo/bypass_release.wav",
+          "loop": false,
+          "guard_frames": 0
+        }
+      },
+      "sha256": {
+        "v8_twin_turbo/engine_v8_twin_turbo_0.wav": "a9691a121b8f6f1e854d461aadfebfbe2f490a4db361f059113413d5ba05515f",
+        "v8_twin_turbo/engine_v8_twin_turbo_1.wav": "1babff153a5bf621d22f4268c83962a653593de0b2dca234990037e2a8f397b9",
+        "v8_twin_turbo/engine_v8_twin_turbo_2.wav": "a20951923b3947857a1fa63237c60851e32cea0743491508c8de56c08f3b0301",
+        "v8_twin_turbo/engine_v8_twin_turbo_3.wav": "5b5f4ce7b4d60bbdd46d5ba2d1c1d83643d4f5705378f90f60947cbe9b04bbee",
+        "v8_twin_turbo/engine_v8_twin_turbo_4.wav": "98d7fe3e5e29cc5d82b10e03299a145291d6a330192aba915e4a972faf342606",
+        "v8_twin_turbo/engine_v8_twin_turbo_5.wav": "59a463e9fc2d4adc0f0259806ed331f59cc20024f67b788141aaae5ec083bb69",
+        "v8_twin_turbo/engine_v8_twin_turbo_6.wav": "55e155350bc3bc2ea252b5c57c16fd61c58da5875a09ce05e7add8fabde8e3bd",
+        "v8_twin_turbo/coast_v8_twin_turbo_0.wav": "53ea3a53b55caa04c99c07c3059f1c8e75ece47943ca7dcac58b4111e577b7e3",
+        "v8_twin_turbo/coast_v8_twin_turbo_1.wav": "f34c2980076013516a653283c867ae94022a5997114a567b5fcccfb7dc85a467",
+        "v8_twin_turbo/coast_v8_twin_turbo_2.wav": "7e2cac3c91e3bdb43246ecd519ab62ea803d189b190b7261e4277cb9556ee83d",
+        "v8_twin_turbo/coast_v8_twin_turbo_3.wav": "03b31665074e2061ea22138180ab6822265cf4d15a9c325d60a31fe13b641801",
+        "v8_twin_turbo/coast_v8_twin_turbo_4.wav": "a4c668e35d61981ce9c5010ff79e6db4410ed85eda0b5a81349ab072c524b271",
+        "v8_twin_turbo/coast_v8_twin_turbo_5.wav": "f620a06ff779de50016e3ef98fceacfeebbc18e5afb7f0a5cf8e01af3f3746c5",
+        "v8_twin_turbo/coast_v8_twin_turbo_6.wav": "6cc1391a86ca8a43983fce2875fed50752e612bb2f7737bc055217600de69112",
+        "v8_twin_turbo/turbo_spool.wav": "62c92c1059ebc17bf8ad4709bcead7b8316f86623afa5d0e7559407139b7869c",
+        "v8_twin_turbo/bypass_release.wav": "adc5025ca8210ab63706a98133e94a056ccf795f8cd49359cdb3edcc4f45f1df"
+      },
+      "nominal_cycles_per_second": [
+        6.0,
+        10.0,
+        15.0,
+        23.0,
+        33.0,
+        45.0,
+        59.0
+      ]
+    },
+    {
+      "id": "truck_i6_diesel",
+      "label": "I6 turbodiesel · caminhão pesado",
+      "description": "Seis em linha diesel de baixa rotação para caminhões pesados, bombeiro e carro-forte; sem BOV.",
+      "cylinders": 6,
+      "rpm_bands": [
+        600,
+        840,
+        1080,
+        1320,
+        1680,
+        2040,
+        2400
+      ],
+      "turbo": true,
+      "architecture": "piston_four_stroke",
+      "fuel": "diesel",
+      "bypass_valve": false,
+      "band_frames": [
+        132300,
+        132300,
+        132300,
+        132300,
+        44100,
+        44100,
+        44100
+      ],
+      "loaded": [
+        "truck_i6_diesel/engine_truck_i6_diesel_0.wav",
+        "truck_i6_diesel/engine_truck_i6_diesel_1.wav",
+        "truck_i6_diesel/engine_truck_i6_diesel_2.wav",
+        "truck_i6_diesel/engine_truck_i6_diesel_3.wav",
+        "truck_i6_diesel/engine_truck_i6_diesel_4.wav",
+        "truck_i6_diesel/engine_truck_i6_diesel_5.wav",
+        "truck_i6_diesel/engine_truck_i6_diesel_6.wav"
+      ],
+      "coast": [
+        "truck_i6_diesel/coast_truck_i6_diesel_0.wav",
+        "truck_i6_diesel/coast_truck_i6_diesel_1.wav",
+        "truck_i6_diesel/coast_truck_i6_diesel_2.wav",
+        "truck_i6_diesel/coast_truck_i6_diesel_3.wav",
+        "truck_i6_diesel/coast_truck_i6_diesel_4.wav",
+        "truck_i6_diesel/coast_truck_i6_diesel_5.wav",
+        "truck_i6_diesel/coast_truck_i6_diesel_6.wav"
+      ],
+      "effects": {
+        "turbo_spool": {
+          "path": "truck_i6_diesel/turbo_spool.wav",
+          "loop": true,
+          "guard_frames": 8
+        }
+      },
+      "sha256": {
+        "truck_i6_diesel/engine_truck_i6_diesel_0.wav": "cc18d1d36aeee91c90a4edc83ebf61e24c7fc48928057f92299d3389a0121a54",
+        "truck_i6_diesel/engine_truck_i6_diesel_1.wav": "ab4a4d2607dd41bfe1854a3242bb92fc2efa1b3edaf059b6f85c90cd0f0eb555",
+        "truck_i6_diesel/engine_truck_i6_diesel_2.wav": "201dfc8d53e76c347404d067b454a60477b9bab99c9027e5c59308f1cba0d061",
+        "truck_i6_diesel/engine_truck_i6_diesel_3.wav": "e294021feada8bdd5909098e518e4f84519757ccd639713b0515f5ece1b77577",
+        "truck_i6_diesel/engine_truck_i6_diesel_4.wav": "781b2b240ff42cdd9987062b0f18cda7da7a857c2c6ffb962057ff6d6d2af34a",
+        "truck_i6_diesel/engine_truck_i6_diesel_5.wav": "ab32ec37848f3ec62a77b0cc629422d092c9d63fa15a96d9cd187ae560c74460",
+        "truck_i6_diesel/engine_truck_i6_diesel_6.wav": "7c4bbf038a19b8a55cdd1956e604cc2e55cad48b949f0193f748bf532cf024b2",
+        "truck_i6_diesel/coast_truck_i6_diesel_0.wav": "acdfd0c1eb2f110795f8d961d8047f475c57e38f1d4de9f82ddc0a031dfe584e",
+        "truck_i6_diesel/coast_truck_i6_diesel_1.wav": "8fc7391a38131a05d992c300353835fd836f04502a6042299375c9c9dd3ca668",
+        "truck_i6_diesel/coast_truck_i6_diesel_2.wav": "abd927cc9d2f3c9842d6d40be2393b1cad6b51f9644c4ff4d7516dedfcedb0bc",
+        "truck_i6_diesel/coast_truck_i6_diesel_3.wav": "45a90452e933cab39a3cc35134033f63f8d9b75c1df2851882e9fbd10abad12f",
+        "truck_i6_diesel/coast_truck_i6_diesel_4.wav": "27e306761669bf2cf4bac263df05c527c7ba76ac4a3ae3c5e2fac93b54aa19c4",
+        "truck_i6_diesel/coast_truck_i6_diesel_5.wav": "64dcb4bb40c31eabca25d7473602a1f12fb9da5e899c87a85091e77626b367fd",
+        "truck_i6_diesel/coast_truck_i6_diesel_6.wav": "bd8206b2985b7ed52ca1d5e9dfce3ec7875f1ff9180b5478735953795a61c5d4",
+        "truck_i6_diesel/turbo_spool.wav": "22c902b08c07c2f83bbaad2fd890d980bcae7ef86fd0bd58201f450f6e2a1a5e"
+      },
+      "nominal_cycles_per_second": [
+        5.0,
+        7.0,
+        9.0,
+        11.0,
+        14.0,
+        17.0,
+        20.0
+      ]
+    },
+    {
+      "id": "bus_i6_diesel",
+      "label": "I6 turbodiesel · ônibus urbano",
+      "description": "Diesel seis em linha de ônibus, cadência baixa e escape amortecido; sem válvula esportiva de alívio.",
+      "cylinders": 6,
+      "rpm_bands": [
+        600,
+        840,
+        1080,
+        1320,
+        1560,
+        1920,
+        2280
+      ],
+      "turbo": true,
+      "architecture": "piston_four_stroke",
+      "fuel": "diesel",
+      "bypass_valve": false,
+      "band_frames": [
+        132300,
+        132300,
+        132300,
+        132300,
+        44100,
+        44100,
+        44100
+      ],
+      "loaded": [
+        "bus_i6_diesel/engine_bus_i6_diesel_0.wav",
+        "bus_i6_diesel/engine_bus_i6_diesel_1.wav",
+        "bus_i6_diesel/engine_bus_i6_diesel_2.wav",
+        "bus_i6_diesel/engine_bus_i6_diesel_3.wav",
+        "bus_i6_diesel/engine_bus_i6_diesel_4.wav",
+        "bus_i6_diesel/engine_bus_i6_diesel_5.wav",
+        "bus_i6_diesel/engine_bus_i6_diesel_6.wav"
+      ],
+      "coast": [
+        "bus_i6_diesel/coast_bus_i6_diesel_0.wav",
+        "bus_i6_diesel/coast_bus_i6_diesel_1.wav",
+        "bus_i6_diesel/coast_bus_i6_diesel_2.wav",
+        "bus_i6_diesel/coast_bus_i6_diesel_3.wav",
+        "bus_i6_diesel/coast_bus_i6_diesel_4.wav",
+        "bus_i6_diesel/coast_bus_i6_diesel_5.wav",
+        "bus_i6_diesel/coast_bus_i6_diesel_6.wav"
+      ],
+      "effects": {
+        "turbo_spool": {
+          "path": "bus_i6_diesel/turbo_spool.wav",
+          "loop": true,
+          "guard_frames": 8
+        }
+      },
+      "sha256": {
+        "bus_i6_diesel/engine_bus_i6_diesel_0.wav": "ff37cb1f1d68a74746693e4966a5d8789b0ece7715def1329b99d8512e06a60e",
+        "bus_i6_diesel/engine_bus_i6_diesel_1.wav": "9b48a2ef98c87077c4c512fee0b38c019f7429a1ad38f06b0670be5942c49324",
+        "bus_i6_diesel/engine_bus_i6_diesel_2.wav": "58724ec89f8bd73a67f3dfc80eb91656d8c1cd2f2e2c6e63f4b8f8fa2c8c70fb",
+        "bus_i6_diesel/engine_bus_i6_diesel_3.wav": "8bcf261720c3c3380e4bc7d4b209526db18b1dc6721cb7d5aba080f594c06ba2",
+        "bus_i6_diesel/engine_bus_i6_diesel_4.wav": "c77b49222cca8b4200892bcb7e9faa766a05a2d8c8b08b1ba1d39588f2d7b507",
+        "bus_i6_diesel/engine_bus_i6_diesel_5.wav": "be51bbd12d4198b3d243e3eb54b6e8c74c3cfa6b7d90d44de4682ff3090375fc",
+        "bus_i6_diesel/engine_bus_i6_diesel_6.wav": "e8f5855aeece4b8a1557636ef3cc1be8d4a56a64d593fd7c496845f282d9597f",
+        "bus_i6_diesel/coast_bus_i6_diesel_0.wav": "4aff25046888643aabf5a0c44def3a34e7a43546b2f09666530bce83210f85ae",
+        "bus_i6_diesel/coast_bus_i6_diesel_1.wav": "caaf97bf0dd996b9f9235f7348f20bba07adaf3dbc27b299a629366571ca0b93",
+        "bus_i6_diesel/coast_bus_i6_diesel_2.wav": "57bce410f48a4c3bf5186b7bc062ce1e97db316dcf719b2a54c21f297a8802fc",
+        "bus_i6_diesel/coast_bus_i6_diesel_3.wav": "0bc696223607f813691689f4cb990801dcb5fdc11a9e98917fdcc1a1df63fe6b",
+        "bus_i6_diesel/coast_bus_i6_diesel_4.wav": "cb1ed6f50adf6772438451147a9befbe163ae371e96ff006e8b8733976b50b2c",
+        "bus_i6_diesel/coast_bus_i6_diesel_5.wav": "c89be918936d691846d0c83bbd14a1590cbfdb329b6aacc6784011e930e1a216",
+        "bus_i6_diesel/coast_bus_i6_diesel_6.wav": "fe2a7993cf278229e4c8440e7c0b9c90cf30a07f6d3e91411f21a38181cead5f",
+        "bus_i6_diesel/turbo_spool.wav": "5719b67cc53448c20186d9c73605364dfa614406611d3792fbdd0d6735fd9a9b"
+      },
+      "nominal_cycles_per_second": [
+        5.0,
+        7.0,
+        9.0,
+        11.0,
+        13.0,
+        16.0,
+        19.0
+      ]
+    },
+    {
+      "id": "work_i4_diesel",
+      "label": "I4 turbodiesel · máquina de trabalho",
+      "description": "Diesel quatro cilindros de trabalho para retroescavadeira e trator, com clatter mecânico e giro limitado.",
+      "cylinders": 4,
+      "rpm_bands": [
+        720,
+        960,
+        1200,
+        1560,
+        1920,
+        2280,
+        2640
+      ],
+      "turbo": true,
+      "architecture": "piston_four_stroke",
+      "fuel": "diesel",
+      "bypass_valve": false,
+      "band_frames": [
+        132300,
+        132300,
+        132300,
+        44100,
+        44100,
+        44100,
+        44100
+      ],
+      "loaded": [
+        "work_i4_diesel/engine_work_i4_diesel_0.wav",
+        "work_i4_diesel/engine_work_i4_diesel_1.wav",
+        "work_i4_diesel/engine_work_i4_diesel_2.wav",
+        "work_i4_diesel/engine_work_i4_diesel_3.wav",
+        "work_i4_diesel/engine_work_i4_diesel_4.wav",
+        "work_i4_diesel/engine_work_i4_diesel_5.wav",
+        "work_i4_diesel/engine_work_i4_diesel_6.wav"
+      ],
+      "coast": [
+        "work_i4_diesel/coast_work_i4_diesel_0.wav",
+        "work_i4_diesel/coast_work_i4_diesel_1.wav",
+        "work_i4_diesel/coast_work_i4_diesel_2.wav",
+        "work_i4_diesel/coast_work_i4_diesel_3.wav",
+        "work_i4_diesel/coast_work_i4_diesel_4.wav",
+        "work_i4_diesel/coast_work_i4_diesel_5.wav",
+        "work_i4_diesel/coast_work_i4_diesel_6.wav"
+      ],
+      "effects": {
+        "turbo_spool": {
+          "path": "work_i4_diesel/turbo_spool.wav",
+          "loop": true,
+          "guard_frames": 8
+        }
+      },
+      "sha256": {
+        "work_i4_diesel/engine_work_i4_diesel_0.wav": "523d49b8a0b85127d645a77d9ffb2511022306429fd480b8de2a0d65fc07a407",
+        "work_i4_diesel/engine_work_i4_diesel_1.wav": "e70f0f73809964cec706e7167544b527999d69766b36923f394cfc0bfb02e9f3",
+        "work_i4_diesel/engine_work_i4_diesel_2.wav": "c737647720fe1929e18dbe776ce5772ff71e70af5ca3067c6932e0a9d2bbc8e0",
+        "work_i4_diesel/engine_work_i4_diesel_3.wav": "7c14e8cdf2d01ab99acb6ab277cab5c5ca5073849863c463a6b9b16f9638e858",
+        "work_i4_diesel/engine_work_i4_diesel_4.wav": "267e438bfd08d021c3e014d578ad13caf30e5e6f8d01837da3463a2e06794954",
+        "work_i4_diesel/engine_work_i4_diesel_5.wav": "145a22f297a9219a05f59d9d1f009c6b2bd115ecbf694bed1b048df5728a5c67",
+        "work_i4_diesel/engine_work_i4_diesel_6.wav": "93b5c5239ac00b255d78b0b80b8ea2a801f466c23aeae9a85fa766400709fb20",
+        "work_i4_diesel/coast_work_i4_diesel_0.wav": "bb94e33e1419fb08ac5f0d3d77af179ec947be4d4071fdeaef613ff0de6a9fdc",
+        "work_i4_diesel/coast_work_i4_diesel_1.wav": "1f99d57321ea3d05d0d37ac0e24996c2bdc0f96532b11aade21af0735d81d468",
+        "work_i4_diesel/coast_work_i4_diesel_2.wav": "7b24162304a7125bd03eceac9cf81f66e8d1a9b3ead17c100cda4a4f9fe0d76f",
+        "work_i4_diesel/coast_work_i4_diesel_3.wav": "cd3f0d2db9b9cf6f9dc2c871311dae263af87763f0dc9d8d1a2c727ed2ddded5",
+        "work_i4_diesel/coast_work_i4_diesel_4.wav": "473773fd35ef7cd3681f3c934ab6acb75f52b9a6941c7f0fe85266b65bc9962c",
+        "work_i4_diesel/coast_work_i4_diesel_5.wav": "3c8ebcf4493a6876e53d75409c73b219203c5976ae810d474b183bb0521a76a1",
+        "work_i4_diesel/coast_work_i4_diesel_6.wav": "808e9b0ab4a4e0be2e8a3372cbe1b59104453a8aa0e0363b901856b8b0e47dc9",
+        "work_i4_diesel/turbo_spool.wav": "52d62624ffee28c56b043ca9205af6932a1b41ac1b6e9f2c5bee39991343b092"
+      },
+      "nominal_cycles_per_second": [
+        6.0,
+        8.0,
+        10.0,
+        13.0,
+        16.0,
+        19.0,
+        22.0
+      ]
+    },
+    {
+      "id": "truck_v12_diesel",
+      "label": "V12 turbodiesel · Freight Cargo",
+      "description": "V12 diesel de baixa rotação para o Freight Cargo V12 ficcional; não usa o V12 esportivo de alto giro.",
+      "cylinders": 12,
+      "rpm_bands": [
+        600,
+        840,
+        1080,
+        1320,
+        1680,
+        2040,
+        2400
+      ],
+      "turbo": true,
+      "architecture": "piston_four_stroke",
+      "fuel": "diesel",
+      "bypass_valve": false,
+      "band_frames": [
+        132300,
+        132300,
+        132300,
+        132300,
+        44100,
+        44100,
+        44100
+      ],
+      "loaded": [
+        "truck_v12_diesel/engine_truck_v12_diesel_0.wav",
+        "truck_v12_diesel/engine_truck_v12_diesel_1.wav",
+        "truck_v12_diesel/engine_truck_v12_diesel_2.wav",
+        "truck_v12_diesel/engine_truck_v12_diesel_3.wav",
+        "truck_v12_diesel/engine_truck_v12_diesel_4.wav",
+        "truck_v12_diesel/engine_truck_v12_diesel_5.wav",
+        "truck_v12_diesel/engine_truck_v12_diesel_6.wav"
+      ],
+      "coast": [
+        "truck_v12_diesel/coast_truck_v12_diesel_0.wav",
+        "truck_v12_diesel/coast_truck_v12_diesel_1.wav",
+        "truck_v12_diesel/coast_truck_v12_diesel_2.wav",
+        "truck_v12_diesel/coast_truck_v12_diesel_3.wav",
+        "truck_v12_diesel/coast_truck_v12_diesel_4.wav",
+        "truck_v12_diesel/coast_truck_v12_diesel_5.wav",
+        "truck_v12_diesel/coast_truck_v12_diesel_6.wav"
+      ],
+      "effects": {
+        "turbo_spool": {
+          "path": "truck_v12_diesel/turbo_spool.wav",
+          "loop": true,
+          "guard_frames": 8
+        }
+      },
+      "sha256": {
+        "truck_v12_diesel/engine_truck_v12_diesel_0.wav": "2bf40b3a47a0b7f2caf6ac841da006cac8477fac2d102ec6abd5f6f4248e2971",
+        "truck_v12_diesel/engine_truck_v12_diesel_1.wav": "7fc542a99c36a1345233b2b0c5a490102cd0ba61694b170b55cb0861e1dc5fea",
+        "truck_v12_diesel/engine_truck_v12_diesel_2.wav": "f5017f4cd67ae8a2bd8eb9d1cf8cf41c90b6e07db1f3404a600fb0e76ab1a335",
+        "truck_v12_diesel/engine_truck_v12_diesel_3.wav": "0e3aeb23e9b4b8cd0c15d52cd027b8d463bfc5604cecde712bd60994f294fd4c",
+        "truck_v12_diesel/engine_truck_v12_diesel_4.wav": "85796e0c21a4fdddae85dfb96f6ce39fca1d23ffc482a22d88dbc38870ca55b0",
+        "truck_v12_diesel/engine_truck_v12_diesel_5.wav": "1e11fb0b214c67ff0e8aac1c75aae53d3980eb929276d8463a148dd8d42929ac",
+        "truck_v12_diesel/engine_truck_v12_diesel_6.wav": "2c83c592a6e906900ff7b6c27809157d125aeafc44d5c16052d70d652ed632ee",
+        "truck_v12_diesel/coast_truck_v12_diesel_0.wav": "a987d3c46cf1ad29ddeb09f22b61a7a2b5df39e4604ed4af08ba2cb3bbc66b81",
+        "truck_v12_diesel/coast_truck_v12_diesel_1.wav": "378c3e00df3a13b9e3ebdb84fb461b1a0bed152053770223eda4c398be79bc18",
+        "truck_v12_diesel/coast_truck_v12_diesel_2.wav": "429714d40ba7c59b114533b54280b110d06b1dd27d601d105a84b220b1812a64",
+        "truck_v12_diesel/coast_truck_v12_diesel_3.wav": "c8e034a3951a50917c8e655219f36a62c793c971a4ea962184658900e2663f40",
+        "truck_v12_diesel/coast_truck_v12_diesel_4.wav": "b6835251da975b1f3a8b556dd0501f4581fa4ae0c4f0c9db15dd5b3123085c82",
+        "truck_v12_diesel/coast_truck_v12_diesel_5.wav": "2d507afdb240be98adc04012646b69059c2dcc4db21ea900b1fcba8df20b8be0",
+        "truck_v12_diesel/coast_truck_v12_diesel_6.wav": "01cb45c595855e05b5268630035ebcce58678d972015b1b0ab1901eb020e57b2",
+        "truck_v12_diesel/turbo_spool.wav": "8adc4fb327eb66cdf71f62abb8a96c2051014259274788d3dcc93493ec495549"
+      },
+      "nominal_cycles_per_second": [
+        5.0,
+        7.0,
+        9.0,
+        11.0,
+        14.0,
+        17.0,
+        20.0
+      ]
+    },
+    {
+      "id": "utility_v6_na",
+      "label": "V6 aspirado · SUV e utilitário",
+      "description": "V6 aspirado de utilitário, escape encorpado e menos agressivo; não atribui marca ou motor real aos SUVs ficcionais.",
+      "cylinders": 6,
+      "rpm_bands": [
+        720,
+        1200,
+        1800,
+        2640,
+        3600,
+        4800,
+        6000
+      ],
+      "turbo": false,
+      "architecture": "piston_four_stroke",
+      "fuel": "petrol",
+      "bypass_valve": false,
+      "band_frames": [
+        132300,
+        132300,
+        44100,
+        44100,
+        44100,
+        44100,
+        44100
+      ],
+      "loaded": [
+        "utility_v6_na/engine_utility_v6_na_0.wav",
+        "utility_v6_na/engine_utility_v6_na_1.wav",
+        "utility_v6_na/engine_utility_v6_na_2.wav",
+        "utility_v6_na/engine_utility_v6_na_3.wav",
+        "utility_v6_na/engine_utility_v6_na_4.wav",
+        "utility_v6_na/engine_utility_v6_na_5.wav",
+        "utility_v6_na/engine_utility_v6_na_6.wav"
+      ],
+      "coast": [
+        "utility_v6_na/coast_utility_v6_na_0.wav",
+        "utility_v6_na/coast_utility_v6_na_1.wav",
+        "utility_v6_na/coast_utility_v6_na_2.wav",
+        "utility_v6_na/coast_utility_v6_na_3.wav",
+        "utility_v6_na/coast_utility_v6_na_4.wav",
+        "utility_v6_na/coast_utility_v6_na_5.wav",
+        "utility_v6_na/coast_utility_v6_na_6.wav"
+      ],
+      "effects": {},
+      "sha256": {
+        "utility_v6_na/engine_utility_v6_na_0.wav": "5b86d54d51f3d702db7e5f142ae7b5b605e8043f549a6f71b0a0fd10d0d81ba6",
+        "utility_v6_na/engine_utility_v6_na_1.wav": "1a6cb70b26bb0e21b8af77504158f10290cea18c50aae7bee35299c530efdb23",
+        "utility_v6_na/engine_utility_v6_na_2.wav": "664915c64bec2b717bb22ed616b67b248f3adbacf3689e27ad0bc00c8c251ba6",
+        "utility_v6_na/engine_utility_v6_na_3.wav": "fb26499d9fb72fd428e45790160a9b11d4ea114cacce372c8156c5a3ebde90e5",
+        "utility_v6_na/engine_utility_v6_na_4.wav": "18ef99ab23fe36740ca44f8aef02901f0ce30421ec4e204924bb533b736bb379",
+        "utility_v6_na/engine_utility_v6_na_5.wav": "413132ae946d84e1252b556ed8c69ea4bbb7d266258a5523345a2fdac3081be7",
+        "utility_v6_na/engine_utility_v6_na_6.wav": "c377e861d95210e10352e61b9136d51e03c101c611f7db8e438bd2724ee768ef",
+        "utility_v6_na/coast_utility_v6_na_0.wav": "c6722f2775f1d7484cdeeeddb44dc702eaaa3e07b7efd13d36b47ca6441400f6",
+        "utility_v6_na/coast_utility_v6_na_1.wav": "7683658d904c74213680b225efc02949344ec72fc9f7873e7c655210bc7c0643",
+        "utility_v6_na/coast_utility_v6_na_2.wav": "20b8a659ea7f98c64a59a0b45a86f5080148807a4a9ac54353be16f1fa187c90",
+        "utility_v6_na/coast_utility_v6_na_3.wav": "d146fe411deacef04213ba81bc003d6d4c3ce12e619dfa97337238da95b83e2c",
+        "utility_v6_na/coast_utility_v6_na_4.wav": "3030828282c6247c673c77ed89df92341a19fbe8686291d0c678bdf72eba4cac",
+        "utility_v6_na/coast_utility_v6_na_5.wav": "40ba0a0c1a840773062a0654bb267398868a064382d494b982265def90ac862d",
+        "utility_v6_na/coast_utility_v6_na_6.wav": "261b1ee3056cf1a5521e90ccdaf652ea92ed8c2f0c3222364aed9f6a62a40585"
+      },
+      "nominal_cycles_per_second": [
+        6.0,
+        10.0,
+        15.0,
+        22.0,
+        30.0,
+        40.0,
+        50.0
+      ]
+    },
+    {
+      "id": "sport_i4_na",
+      "label": "I4 aspirado · esportivo leve",
+      "description": "Quatro cilindros aspirado de alto giro para hatches preparados e esportivos leves; nenhuma turbina presumida.",
+      "cylinders": 4,
+      "rpm_bands": [
+        960,
+        1440,
+        2160,
+        3240,
+        4560,
+        5880,
+        7200
+      ],
+      "turbo": false,
+      "architecture": "piston_four_stroke",
+      "fuel": "petrol",
+      "bypass_valve": false,
+      "band_frames": [
+        132300,
+        132300,
+        44100,
+        44100,
+        44100,
+        44100,
+        44100
+      ],
+      "loaded": [
+        "sport_i4_na/engine_sport_i4_na_0.wav",
+        "sport_i4_na/engine_sport_i4_na_1.wav",
+        "sport_i4_na/engine_sport_i4_na_2.wav",
+        "sport_i4_na/engine_sport_i4_na_3.wav",
+        "sport_i4_na/engine_sport_i4_na_4.wav",
+        "sport_i4_na/engine_sport_i4_na_5.wav",
+        "sport_i4_na/engine_sport_i4_na_6.wav"
+      ],
+      "coast": [
+        "sport_i4_na/coast_sport_i4_na_0.wav",
+        "sport_i4_na/coast_sport_i4_na_1.wav",
+        "sport_i4_na/coast_sport_i4_na_2.wav",
+        "sport_i4_na/coast_sport_i4_na_3.wav",
+        "sport_i4_na/coast_sport_i4_na_4.wav",
+        "sport_i4_na/coast_sport_i4_na_5.wav",
+        "sport_i4_na/coast_sport_i4_na_6.wav"
+      ],
+      "effects": {},
+      "sha256": {
+        "sport_i4_na/engine_sport_i4_na_0.wav": "73b542fbea62e303f54d83473c81e282c4f3de632d3c67c0ec788fa9a8cff041",
+        "sport_i4_na/engine_sport_i4_na_1.wav": "37503ec6b1084cba598a232737b55b4ff7143b6b772aa825d160be780911bad8",
+        "sport_i4_na/engine_sport_i4_na_2.wav": "29911ff2ae8414d4e60be4a48bd3cc32b89c3f547470355d1c722e389e6ea004",
+        "sport_i4_na/engine_sport_i4_na_3.wav": "ee9b2d74137e1408c01d5a630f6c8a3d5ba91fd8d90f460e9c870132a6bc4efd",
+        "sport_i4_na/engine_sport_i4_na_4.wav": "39e4b966666488a850169e8ddc5daa77bbcb3bebc846d2b630c591c9cf7d34ff",
+        "sport_i4_na/engine_sport_i4_na_5.wav": "706442441ce2f3006ee58d8e11881624db8ec94d03632e42406ec91818f96ee2",
+        "sport_i4_na/engine_sport_i4_na_6.wav": "b8f165ce6542dd4a05f5ab265516400d1f6ad7983ae326529c4cf03ebddc543d",
+        "sport_i4_na/coast_sport_i4_na_0.wav": "1982b73a6d1f7ba86778bb33eaea0fdbbf994282592f26b15558f083627d1e8e",
+        "sport_i4_na/coast_sport_i4_na_1.wav": "ec5e76b81d92d1ce39623d6ae81c9c959391742a4e1607805e279e8068fe6158",
+        "sport_i4_na/coast_sport_i4_na_2.wav": "24bc78cac12d17e1f56df7f084fdaa3bcc3ebe202833adcd983ae4b122148e4a",
+        "sport_i4_na/coast_sport_i4_na_3.wav": "488712dc5e6a18b8ccf92d908ee2458e659c66e848b0e02d8227273000149222",
+        "sport_i4_na/coast_sport_i4_na_4.wav": "c05af6d8139702be9cd83155b653932fbd1894d526223974a798069d88d356b8",
+        "sport_i4_na/coast_sport_i4_na_5.wav": "ae3677b45516d374ebcd10101efbbd1dd0d21d9bead9cc7941ac94630c0fd7b5",
+        "sport_i4_na/coast_sport_i4_na_6.wav": "a0d52389027f7a3f8a6c3c7d1f226abe57b69925245cb6f208f37f0bd81edbd4"
+      },
+      "nominal_cycles_per_second": [
+        8.0,
+        12.0,
+        18.0,
+        27.0,
+        38.0,
+        49.0,
+        60.0
+      ]
+    },
+    {
+      "id": "classic_i4_na",
+      "label": "I4 aspirado · sedã e perua clássicos",
+      "description": "Quatro cilindros aspirado de rua para sedãs/peruas clássicos, com ritmo e escape próprios dos compactos antigos.",
+      "cylinders": 4,
+      "rpm_bands": [
+        720,
+        1080,
+        1680,
+        2400,
+        3360,
+        4560,
+        5760
+      ],
+      "turbo": false,
+      "architecture": "piston_four_stroke",
+      "fuel": "petrol",
+      "bypass_valve": false,
+      "band_frames": [
+        132300,
+        132300,
+        44100,
+        44100,
+        44100,
+        44100,
+        44100
+      ],
+      "loaded": [
+        "classic_i4_na/engine_classic_i4_na_0.wav",
+        "classic_i4_na/engine_classic_i4_na_1.wav",
+        "classic_i4_na/engine_classic_i4_na_2.wav",
+        "classic_i4_na/engine_classic_i4_na_3.wav",
+        "classic_i4_na/engine_classic_i4_na_4.wav",
+        "classic_i4_na/engine_classic_i4_na_5.wav",
+        "classic_i4_na/engine_classic_i4_na_6.wav"
+      ],
+      "coast": [
+        "classic_i4_na/coast_classic_i4_na_0.wav",
+        "classic_i4_na/coast_classic_i4_na_1.wav",
+        "classic_i4_na/coast_classic_i4_na_2.wav",
+        "classic_i4_na/coast_classic_i4_na_3.wav",
+        "classic_i4_na/coast_classic_i4_na_4.wav",
+        "classic_i4_na/coast_classic_i4_na_5.wav",
+        "classic_i4_na/coast_classic_i4_na_6.wav"
+      ],
+      "effects": {},
+      "sha256": {
+        "classic_i4_na/engine_classic_i4_na_0.wav": "583fa0366cc9735bf2ce51b07113506d3a6b76b3f39b470143c6ca07d8805fbd",
+        "classic_i4_na/engine_classic_i4_na_1.wav": "01af63de60f9b6d9154347a72a902f2f8015447861478c430faa387c9a8c8ab7",
+        "classic_i4_na/engine_classic_i4_na_2.wav": "172a0eb0a99d1c7bd071b74788fc48096d5cdbae811af7df7280186ffea51128",
+        "classic_i4_na/engine_classic_i4_na_3.wav": "c08b384c124bee805dcb6d0dc08a0e235a27214aaefdb00a5a4bdd9c45ec3814",
+        "classic_i4_na/engine_classic_i4_na_4.wav": "69a08ef65908d1a9a18f078a7239f260da4d2fc5771b0fb7286e9ee2c260c96f",
+        "classic_i4_na/engine_classic_i4_na_5.wav": "2b736f37d9aec244c6a34d80a5a3beb0ff1c2bc8d3a124cdab32a170dce9ba78",
+        "classic_i4_na/engine_classic_i4_na_6.wav": "d6302fb42c6ba1f855697f6e7771181eb42c93f5d9d441f04ae9d2c341949ae6",
+        "classic_i4_na/coast_classic_i4_na_0.wav": "fe9f58558f44d11cd99535b7c9ce98ca561258d6cf0d5573a43926e85ffd5b3f",
+        "classic_i4_na/coast_classic_i4_na_1.wav": "61cf9ce6719f116fa89f16b213e5c730827f92c0fc98423a2e97c41e8d02419c",
+        "classic_i4_na/coast_classic_i4_na_2.wav": "d2d0abfb2f713a406d22216c68357c9ed42912aa746f59de79414b6102703dc1",
+        "classic_i4_na/coast_classic_i4_na_3.wav": "ebd8eacd924e2d28d751e55af5822209d8cead985d6df4512f8b298d4226a3da",
+        "classic_i4_na/coast_classic_i4_na_4.wav": "0cf875c3ca748a5d71cc9eba5068f7bae318b185e890ec86cb79dd0277ffde2a",
+        "classic_i4_na/coast_classic_i4_na_5.wav": "3b7a7b14a50ddba7da7fbe309e42d651e946022a6764c0fde620c3fa4eed1bee",
+        "classic_i4_na/coast_classic_i4_na_6.wav": "752af604e0b4527ae800cb46cb61812f8471f8be8d34a56d868a9e8de39ca405"
+      },
+      "nominal_cycles_per_second": [
+        6.0,
+        9.0,
+        14.0,
+        20.0,
+        28.0,
+        38.0,
+        48.0
+      ]
+    }
+  ]
+}

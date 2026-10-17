@@ -1,6 +1,7 @@
 extends CanvasLayer
-## Opaque static loading cover; only real progress and the final fade animate.
+## Illustrated loading cover; real progress stays fixed above the cycling artwork.
 const NODE_NAME := "LoadingCurtain"
+const ARTWORK := preload("res://ui/LoadingArtwork.gd")
 const SESSION_OPS := preload("res://runtime/SessionOperations.gd")
 const LOADING_MUSIC := preload("res://ui/LoadingMusic.gd")
 ## Duração do fade final da cobertura (imagem e música).
@@ -9,7 +10,7 @@ var _diagnostic_stage := 0
 const DISPLAY_FONT: FontFile = preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
 const BODY_FONT: FontFile = preload("res://assets/fonts/barlow/BarlowSemiCondensed-Regular.ttf")
 const BACKGROUND := Color("101216")
-const ACCENT := Color("d2aa78")
+const ACCENT := Color("eee0bd")
 const TEXT := Color("eee9df")
 var variant := 0
 var stage_only := false
@@ -24,7 +25,7 @@ var stage_message := "Carregando…"
 var _lifting := false
 
 static func variant_for(region_id: String) -> int:
-	return 1 if region_id == "mountain" else 0
+	return 1 if region_id == "mountain" else 2 if region_id == "desert" else 0
 
 static func existing(tree: SceneTree) -> CanvasLayer:
 	return tree.root.get_node_or_null(NODE_NAME) as CanvasLayer
@@ -46,28 +47,38 @@ func _ready() -> void:
 	ink.color = BACKGROUND
 	ink.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_root.add_child(ink)
-	var center := CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_root.add_child(center)
+	var art := ARTWORK.new()
+	art.name = "Artwork"
+	art.first_index = 3 if variant == 1 else 7 if variant == 2 else -1
+	art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_root.add_child(art)
+	var margin := MarginContainer.new()
+	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	margin.add_theme_constant_override("margin_left", 48)
+	margin.add_theme_constant_override("margin_right", 48)
+	margin.add_theme_constant_override("margin_bottom", 52)
+	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_root.add_child(margin)
 	var stack := VBoxContainer.new()
-	stack.custom_minimum_size.x = 280
-	stack.add_theme_constant_override("separation", 18)
-	center.add_child(stack)
-	var brand := _label("GETECO", 40, TEXT, DISPLAY_FONT)
+	stack.custom_minimum_size.x = 220
+	stack.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	stack.size_flags_vertical = Control.SIZE_SHRINK_END
+	stack.add_theme_constant_override("separation", 8)
+	margin.add_child(stack)
+	var brand := _label("HARBOR", 32, TEXT, DISPLAY_FONT)
 	brand.name = "Brand"
-	brand.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	stack.add_child(brand)
 	var status := HBoxContainer.new()
 	stack.add_child(status)
 	# Technical stage details stay available for diagnostics, outside the interface.
-	_stage = _label("Carregando…", 16, Color("9a9b9f"), BODY_FONT)
+	_stage = _label("Carregando…", 16, TEXT, BODY_FONT)
 	_stage.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	status.add_child(_stage)
-	_percent = _label("0%", 16, Color("9a9b9f"), BODY_FONT)
+	_percent = _label("0%", 16, TEXT, BODY_FONT)
 	status.add_child(_percent)
 	_track = ColorRect.new()
-	_track.color = Color("292c31")
-	_track.custom_minimum_size.y = 2
+	_track.color = Color("5a5b58")
+	_track.custom_minimum_size.y = 3
 	stack.add_child(_track)
 	_fill = ColorRect.new()
 	_fill.color = ACCENT
@@ -82,6 +93,9 @@ func _label(text: String, font_size: int, color: Color, font: Font) -> Label:
 	label.add_theme_font_override("font", font)
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", color)
+	label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, .85))
+	label.add_theme_constant_override("shadow_offset_x", 1)
+	label.add_theme_constant_override("shadow_offset_y", 1)
 	return label
 
 func set_variant(index: int) -> void:

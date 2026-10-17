@@ -43,6 +43,23 @@ func shot(label: String) -> void:
 	if DisplayServer.get_name()=="headless": return
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png("res://evidence/inventory-ux-20260928/"+label+".png")
+func labels_contain(node: Node,text: String) -> bool:
+	if node is Label and text in node.text: return true
+	for child in node.get_children():
+		if labels_contain(child,text): return true
+	return false
+func actions_disabled(node: Node) -> bool:
+	var found:=false
+	for button in node.find_children("*","Button",true,false):
+		found=true
+		if not button.disabled: return false
+	return found
+func selected_actions_fit(ui) -> bool:
+	if ui.screen_scroll.is_ancestor_of(ui.details): return false
+	for action in ui.details.find_children("*","Button",true,false):
+		if not ui.card.get_global_rect().encloses(action.get_global_rect()): return false
+		if not Rect2(Vector2.ZERO,Vector2(root.size)).encloses(action.get_global_rect()): return false
+	return true
 func run() -> void:
 	if "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://evidence/inventory-ux-20260928"))
@@ -62,6 +79,11 @@ func run() -> void:
 	check(ui.drop_button.get_global_rect().end.y<720,"drop button stays inside screen")
 	check(ui.card.size.x<450 and ui.card.size.y<680,"compact main panel")
 	await shot("mochila")
+	ui._select("pockets",0); await frames()
+	check(ui.details.visible and ui.details.get_parent()==ui.content_column,"item details share the panel footer")
+	check(ui.card.get_rect().end.y<=720 and ui.card.size.x<450,"selected actions fit compact 720p inventory")
+	ui._select_equipment("pistol"); await frames()
+	check(ui.boards.all(func(board): return board.selection==-1),"equipment selection clears grid highlights")
 	var source:="storage"
 	var index:=-1
 	for i in e.grid_snapshot().storage.size():
@@ -77,6 +99,7 @@ func run() -> void:
 	ui.trunk_visible=true; ui.refresh(); await frames()
 	check(ui.card.size.x<900 and ui.card.get_rect().end.y<=720,"trunk panel remains inside screen")
 	await shot("monaliza-remota")
+	check(labels_contain(ui.card,"Armas e munição") and labels_contain(ui.card,"6 pilhas"),"trunk restrictions remain visible without a tooltip")
 	var trunk
 	for board in ui.boards:
 		if board.container_id=="trunk": trunk=board
@@ -92,6 +115,11 @@ func run() -> void:
 	check(trunk._can_drop_data(Vector2(5,5),payload),"near trunk accepts rifle footprint")
 	trunk._drop_data(Vector2(5,5),payload); await frames()
 	check(e.grid_snapshot().trunk.size()==1,"drag moves rifle into trunk")
+	ui._select("trunk",0); await frames()
+	check(selected_actions_fit(ui),"selected trunk rifle actions remain fully visible outside the grid scroll at 720p")
+	ad.near=false; ui.refresh(); ui._select("trunk",0); await frames()
+	check(actions_disabled(ui.details),"remote trunk selected-item actions are disabled")
+	ad.near=true; ui.refresh(); await frames()
 	await shot("monaliza-aberta")
 	ui.drop_button.pressed.emit(); await frames()
 	check(ad.dropped>0 and not ui.visible and e.grid_snapshot().bag=="","visible drop button drops bag and closes HUD")
@@ -99,6 +127,19 @@ func run() -> void:
 	var key:=InputEventKey.new(); key.physical_keycode=KEY_G; key.pressed=true
 	Input.parse_input_event(key); await frames()
 	check(not ui.visible and e.grid_snapshot().bag=="","G drops only while inventory is open")
+	check(e.grid_equip_bag("handbag"),"handbag fixture equips after dropping backpack")
+	ui.show(); ui.refresh(); await frames()
+	check(labels_contain(ui.card,"armas longas bloqueadas"),"handbag exposes its weapon restriction")
+	ui._select("trunk",0); await frames()
+	var equip_actions:=ui.details.find_children("*","Button",true,false).filter(func(button): return button.text=="Equipar")
+	check(equip_actions.size()==1 and equip_actions[0].disabled,"handbag disables equipping a stored long weapon")
+	check(selected_actions_fit(ui),"handbag selected long-weapon actions remain fully visible at 720p")
+	check(ui.drop_button.text.contains(String(TranslationServer.translate("Soltar mala"))),"handbag drop uses the correct container name")
+	check(ui.card.get_rect().end.y<=720 and ui.card.size.x<900,"handbag and trunk remain bounded at 720p")
+	await shot("mala-720p")
+	root.size=Vector2i(1920,1080); await frames()
+	check(ui.card.position.x>=0 and ui.card.position.y>=0 and ui.card.get_rect().end.x<=1920 and ui.card.get_rect().end.y<=1080,"inventory remains inside 1080p viewport")
+	await shot("mala-1080p")
 	print("PANEL_RESULT checks=",checks," failures=",failures)
 	ui.free(); backdrop.free(); ad.ui=null
 	quit(1 if failures else 0)

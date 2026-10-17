@@ -30,7 +30,12 @@ func _process(_delta: float) -> bool:
 			"reeling":
 				if reeling and fishing_driver.fight.tension > .72: fishing_input(false)
 				elif not reeling and fishing_driver.fight.tension < .3: fishing_input(true)
-			"caught", "missed", "line_broke":
+			"caught":
+				if reeling: fishing_input(false)
+				if fishing_driver._phase_time >= .6:
+					fishing_action("reload", true)
+					fishing_action("reload", false)
+			"missed", "line_broke":
 				if reeling: fishing_input(false)
 	if tracing:
 		var now := Time.get_ticks_usec()
@@ -39,10 +44,13 @@ func _process(_delta: float) -> bool:
 	return false
 
 func fishing_input(pressed: bool) -> void:
-	var event := InputEventAction.new()
-	event.action = "interact"
-	event.pressed = pressed
 	reeling = pressed
+	fishing_action("interact", pressed)
+
+func fishing_action(action: String, pressed: bool) -> void:
+	var event := InputEventAction.new()
+	event.action = action
+	event.pressed = pressed
 	world.session._input(event)
 
 func sample(next: String, seconds: float) -> void:
@@ -117,7 +125,11 @@ func run() -> void:
 		await sample("fishing",30)
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png(folder.path_join("fishing.png"))
-		fishing_driver.cancel_attempt()
+		fishing_action("exit_vehicle", true)
+		fishing_action("exit_vehicle", false)
+		var exit_deadline := Time.get_ticks_msec() + 3500
+		while fishing_driver.active and Time.get_ticks_msec() < exit_deadline: await physics_frame
+		if fishing_driver.active: push_error("Fishing did not finish its exit animation"); quit(7); return
 		fishing_driver = null
 	var summary := {}
 	for key in intervals:

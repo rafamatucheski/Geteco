@@ -1,7 +1,7 @@
 extends RefCounted
 ## Shared visual kit: shop displays and product viewer use the same geometry.
 const P = preload("res://assets/regions/source/characters/pedestrians/CitizenDetails.gd")
-const ARSENAL = preload("res://assets/regions/source/scripts/player/ArsenalWeapon3D.gd")
+const ARSENAL = preload("res://gameplay/ArsenalWeapon3D.gd")
 const RED = Color("a3322d")
 const INK = Color("222b2d")
 const CREAM = Color("eee1bf")
@@ -135,48 +135,8 @@ static func _build_item(root: Node3D, id: String) -> void:
 		box(root,Vector3(.26,.06,.025),Vector3(0,.17,.10),CREAM)
 		text(root,"A / N",Vector3(0,.17,.12),.0009,INK)
 		return
-	root.set_meta("weapon_muzzle", ARSENAL.build(root,id))
-	if id == "grenade":
-		for row in 4:
-			for col in 8:
-				var angle := col*TAU/8
-				var tile := box(root,Vector3(.023,.014,.014),Vector3(sin(angle)*.042,-.03+row*.019,-.10+cos(angle)*.042),OLIVE)
-				tile.rotation.y = angle
-		box(root,Vector3(.015,.013,.095),Vector3(0,.064,-.075),INK)
-		var ring := MeshInstance3D.new()
-		var torus := TorusMesh.new()
-		torus.inner_radius = .014
-		torus.outer_radius = .019
-		ring.mesh = torus
-		ring.position = Vector3(.025,.058,-.10)
-		ring.rotation.x = PI*.5
-		root.add_child(ring)
-		return
-	if id in ["knife","axe","knuckles","bat","hunting_rifle","rpg"]: return
-	# Machined details at display scale: rails, ejection port and screws.
-	for side in [-1,1]:
-		box(root,Vector3(.006,.023,.055),Vector3(side*.026,.022,-.025),Color("111619"))
-		for z in [-.048,.015]:
-			P.piece(root,Vector3(.009,.009,.009),Vector3(side*.031,.023,z),Color("969b9b"),true)
-	if id in ["ak47","m4a1","smg"]:
-		for i in 7:
-			box(root,Vector3(.054,.007,.008),Vector3(0,.052,-.11+i*.018),INK)
-	# Other firearms already include their fitted guard in the authored model.
-	# Adding this generic pair again leaves a loose U below the pistol grip.
-	if id == "flamethrower":
-		box(root,Vector3(.012,.06,.012),Vector3(0,-.063,-.031),INK)
-		box(root,Vector3(.012,.012,.07),Vector3(0,-.091,.0),INK)
-	if id in ["shotgun","sawed_off"]:
-		for i in 7: box(root,Vector3(.056,.055,.005),Vector3(0,-.01,-.21+i*.016),Color("69432b"))
-	if id in ["ak47","m4a1","smg"]:
-		for i in 5: box(root,Vector3(.031,.006,.056),Vector3(0,-.06-i*.022,-.055),Color("505654"))
-	for part in root.get_children():
-		if part is MeshInstance3D and part.mesh is BoxMesh:
-			part.mesh = bevel_box(part.mesh.size)
-	if id=="magnum":
-		for i in 6:
-			var angle := i*TAU/6
-			P.piece(root,Vector3(.015,.015,.004),Vector3(sin(angle)*.020,.01+cos(angle)*.020,-.043),Color("111719"),true)
+	# Use the equipped model unchanged: accessories and reload pieces must agree.
+	root.set_meta("weapon_muzzle", ARSENAL.build_cached(root,id))
 
 static func bevel_box(size: Vector3) -> ArrayMesh:
 	if _bevel_meshes.has(size): return _bevel_meshes[size]

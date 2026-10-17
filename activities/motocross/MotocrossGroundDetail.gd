@@ -12,7 +12,7 @@ static var _ground: ShaderMaterial
 static var _grass: StandardMaterial3D
 
 static func bind_textures(material: ShaderMaterial) -> void:
-	material.set_shader_parameter("grass_texture",GRASS.ground_material("grass").albedo_texture)
+	material.set_shader_parameter("grass_texture",preload("res://assets/materials/woodland/woodland.png"))
 	material.set_shader_parameter("earth_texture",preload("res://world/urban_detail/RuralGroundMaterial.gd").material().get_shader_parameter("earth_texture"))
 
 static func ground_material() -> ShaderMaterial:
@@ -25,7 +25,7 @@ static func ground_material() -> ShaderMaterial:
 static func grass_material() -> StandardMaterial3D:
 	if _grass == null:
 		_grass = GRASS._tuft_material().duplicate()
-		_grass.albedo_color = Color(.56,.68,.39)
+		_grass.albedo_color = Color(.61,.68,.49)
 		_grass.specular_mode = BaseMaterial3D.SPECULAR_DISABLED
 	return _grass
 

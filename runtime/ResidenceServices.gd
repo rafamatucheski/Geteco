@@ -4,6 +4,7 @@ extends Node
 const WEAPONS := preload("res://gameplay/WeaponCatalog.gd")
 const HOMES := preload("res://data/catalogs/ResidenceCatalog.gd")
 const CATS := preload("res://runtime/cats/CatAdoption.gd")
+const CATCH_ITEMS := preload("res://activities/fishing/FishingCatchItems.gd")
 var session
 var _home := ""
 var _menu_health := 0.0
@@ -402,8 +403,17 @@ func _fridge() -> void:
 	_station_menu("Geladeira")
 	session._button("Comer uma refeição · +35 vida",_consume.bind("meal"))
 	session._button("Beber suco · +15 vida",_consume.bind("drink"))
+	var fish := CATCH_ITEMS.carried(session)
+	for index in fish.size():
+		session._button("Cozinhar · " + str(fish[index].label), _cook_fish.bind(str(fish[index].id), CATCH_ITEMS.next_receipt(session, "cook", index)))
 	session._button("Fechar",session.close_menu)
 	_focus()
+
+func _cook_fish(id: String, receipt: String) -> void:
+	if _station != "food" or not _menu_available(): return
+	var ok := CATCH_ITEMS.cook(session, id, receipt)
+	_fridge()
+	session.show_message("Peixe assado guardado na bagagem." if ok else "Não foi possível cozinhar este peixe.")
 
 func _consume(kind: String) -> void:
 	if kind not in ["meal","drink"] or _station != "food" or not _menu_available(): return

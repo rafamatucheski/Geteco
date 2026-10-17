@@ -90,10 +90,6 @@ func run() -> void:
 				n += 1
 				print("FIRST plan #%d = %.1f ms" % [n, ms])
 			print("FIRST plan total(%d) = %.1f ms" % [n, total])
-		"cone":
-			var c0 := Time.get_ticks_usec()
-			preload("res://gameplay/VehicleEquipment.gd")._cone_texture()
-			print("FIRST _cone_texture=%.1f ms" % [float(Time.get_ticks_usec() - c0) / 1000.0])
 		"audio":
 			var AU = preload("res://gameplay/VehicleEquipmentAudio.gd")
 			var q0 := Time.get_ticks_usec()

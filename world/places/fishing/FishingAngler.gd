@@ -241,6 +241,9 @@ func _update_gear() -> void:
 		-_idle_reel*.085 - _idle_lift*.12 - lifted*.33 - catch_snap*.045
 	_rod.rotation.z = sin(_time*.48+float(identity))*.016 + _idle_glance*.012
 	var bobber := water_target+Vector3.UP*(.04+sin(_time*1.4)*.014)
+	var lake := get_parent()
+	if lake.has_method("rain_surface_height_at"):
+		bobber.y += lake.rain_surface_height_at(water_target) - water_target.y
 	var hand_height: Vector3 = person.to_global(Vector3(0,1.10,.30))
 	bobber = bobber.lerp(hand_height, _idle_reel * .055)
 	bobber.y += _idle_lift * .025

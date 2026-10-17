@@ -1,44 +1,33 @@
 @tool
 extends RefCounted
-## One mineral paving finish for Harbor sidewalks, courts and building lots.
-## World projection keeps the one-metre joints aligned across roads/chunks.
-const COLOR := Color("aaa9a1")
-const EDGE_COLOR := Color("878d88")
-static var _tile: Texture2D
+## Shared mineral finishes, projected in world space across chunk boundaries.
+const COLOR := Color("a0abb1")
+const EDGE_COLOR := Color("76786b")
+# Offline textures are explicit export dependencies and shared across chunks.
+const TILES := {
+	"concrete": preload("res://assets/materials/harbor_paving/concrete.png"),
+	"service": preload("res://assets/materials/harbor_paving/service.png"),
+	"limestone": preload("res://assets/materials/harbor_paving/limestone.png"),
+	"brick": preload("res://assets/materials/harbor_paving/brick.png"),
+	"quay": preload("res://assets/materials/harbor_paving/quay.png"),
+}
 static var _lawn_tile: Texture2D
 static var _materials: Dictionary = {}
 
-static func material(tint := COLOR) -> StandardMaterial3D:
-	var key := tint.to_html()
+const FINISH_COLORS := {"concrete": COLOR, "service": Color("777d7a"), "limestone": Color("85877f"), "brick": Color("696258"), "quay": Color("787f7d")}
+
+static func material(tint := COLOR, finish: String = "concrete") -> StandardMaterial3D:
+	var key := finish + "/" + tint.to_html()
 	if _materials.has(key): return _materials[key]
-	if _tile == null:
-		var image := Image.create(256,256,false,Image.FORMAT_RGB8)
-		var noise := FastNoiseLite.new()
-		noise.seed = 13102026
-		noise.frequency = 1.0
-		for y in 256:
-			for x in 256:
-				var a := TAU * float(x) / 256.0
-				var b := TAU * float(y) / 256.0
-				var periodic := Vector3((3.0+cos(b))*cos(a),(3.0+cos(b))*sin(a),sin(b))
-				var grain := noise.get_noise_3dv(periodic*28.0)
-				var mineral := noise.get_noise_3dv(periodic*3.0)
-				# Three-centimetre recessed joints survive the gameplay mip level;
-				# adjacent slabs keep the same tone instead of a checkerboard.
-				var tone := .89 + grain*.055 + mineral*.025
-				if x%64 < 2 or y%64 < 2: tone -= .30
-				elif x%64 == 2 or y%64 == 2: tone -= .065
-				image.set_pixel(x,y,Color(tone,tone,tone))
-		image.generate_mipmaps()
-		_tile = ImageTexture.create_from_image(image)
+
 	var result := StandardMaterial3D.new()
 	result.albedo_color = tint
-	result.albedo_texture = _tile
+	result.albedo_texture = TILES.get(finish,TILES.concrete)
 	result.roughness = .94
 	result.metallic_specular = .12
 	result.uv1_triplanar = true
 	result.uv1_world_triplanar = true
-	result.uv1_scale = Vector3.ONE*.25
+	result.uv1_scale = Vector3.ONE / (8.0 if finish == "concrete" else 4.0 if finish == "brick" else 16.0)
 	result.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	result.cull_mode = BaseMaterial3D.CULL_DISABLED
 	_materials[key] = result

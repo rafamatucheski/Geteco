@@ -5,12 +5,7 @@ const PROFILES := preload("res://gameplay/VehicleLightProfiles.gd")
 const SURFACES := preload("res://runtime/VehicleSurfaceRoles.gd")
 const ENGINE_PROFILE := preload("res://audio/VehicleEngineProfile.gd")
 const LIGHT_BUDGET := preload("res://gameplay/lights/LightBudget.gd")
-## Legado, com GETECO_LIGHT_BUDGET=0: fachos reais de NPC só nos mais próximos
-## do jogador: iluminam pedestres e lataria em volta. O que se vê de cima é a
-## mancha no chão (`ground_pool`), que custa quase nada. Medido em 22/09/2026
-## (RTX 4060, mobile, VSync off, não isolado): 5 fachos somaram 0,8–2,3 ms ao p95;
-## as manchas ficaram dentro do ruído. O limite do renderizador "mobile" também
-## é de 8 SpotLights por malha, e o asfalto é malha grande.
+## Nearby traffic uses real projectors under the shared light budget.
 static var npc_beam_budget := 2
 ## Chave global do acendimento noturno automático (medição A/B e futura opção).
 static var night_auto_enabled := true
@@ -18,8 +13,6 @@ const NPC_BEAM_RADIUS := 45.0
 static var _npc_beams: Dictionary = {}
 static var _npc_frame := -1
 static var _npc_allowed: Dictionary = {}
-static var _pool_texture: ImageTexture
-static var _pool_materials: Dictionary = {}
 static var _glow_texture: ImageTexture
 signal changed
 var car: CharacterBody3D
@@ -43,11 +36,6 @@ var _lens_state := -1
 ## Facho único de NPC, centrado entre os faróis (metade das luzes por carro).
 var npc_beam: SpotLight3D
 var profile: Dictionary = {}
-## Mancha de luz no chão à frente do carro, como a dos postes (CityLookMaterials
-## `light_pool`) e o cone da V1 (`HeadlightTextureGenerator`). Com a câmera alta,
-## uma SpotLight comum quase não aparece no asfalto; é esta mancha que mostra o
-## farol — e o formato, a cor e o brilho dela seguem o perfil do modelo.
-var ground_pool: Node3D
 ## Acendimento automático de quem dirige sozinho (trânsito, ônibus, viaturas).
 var auto_lit := false
 var beacons: Array[Dictionary] = []
@@ -108,8 +96,8 @@ func _ready() -> void:
 	var front := Vector3.ZERO
 	for mount in mounts: front += mount
 	npc_beam = _projector(front / mounts.size(), float(profile.energy) * (1.0 if profile.single else 1.6), float(profile.angle) + (0.0 if profile.single else 8.0))
+	npc_beam.shadow_enabled = true
 	for item in lens_materials: item.material.emission = profile.color
-	ground_pool = _ground_pool(front / mounts.size())
 	_build_cab_markers()
 	if not bar_mounts.is_empty():
 		var center := Vector3.ZERO
@@ -277,55 +265,27 @@ func _projector(mount: Vector3, energy: float, angle: float) -> SpotLight3D:
 	# (13/10: "farol voando"). Pendurado no visual ele acompanha a lente. Carros seguem no corpo.
 	# `mount` sai da lente já na pose atual do visual, então a conversão usa o transform atual.
 	var on_visual: bool = car.archetype.begins_with("bike_") and is_instance_valid(car.visual) and car.visual.get_parent() == car
-	var placement := Transform3D(Basis(Vector3.RIGHT, deg_to_rad(-4)), mount + Vector3(0, 0, -.06))
+	var placement := Transform3D(Basis(Vector3.RIGHT, deg_to_rad(-7)), mount + Vector3(0, 0, -.06))
 	light.transform = car.visual.transform.affine_inverse() * placement if on_visual else placement
 	light.light_color = profile.color
-	light.light_energy = energy
-	if LIGHT_BUDGET.enabled: light.set_meta("budget_energy", energy)
+	# Let the actual beam reveal road texture and vertical surfaces. The old
+	# emissive pool flattened the road while the physical source was barely visible.
+	light.light_energy = energy * 2.2
+	if LIGHT_BUDGET.enabled: light.set_meta("budget_energy", light.light_energy)
 	light.spot_range = float(profile.range)
 	light.spot_angle = angle
-	light.shadow_enabled = false
+	light.spot_attenuation = .7
+	light.spot_angle_attenuation = 1.5
+	light.light_specular = .35
+	# Every enabled projector must stop at opaque bodywork, including race
+	# opponents and parked theft alarms. Hidden projectors do not render shadows.
+	light.shadow_enabled = true
 	light.distance_fade_enabled = true
 	light.distance_fade_begin = 35.0
 	light.distance_fade_length = 15.0
 	light.hide()
 	(car.visual if on_visual else car).add_child(light)
 	return light
-
-func _ground_pool(front: Vector3) -> Node3D:
-	var length := float(profile.range) * .42
-	var width := minf(2.0 * tan(deg_to_rad(float(profile.angle))) * length * .55, length * 1.1)
-	if profile.single: width *= .7
-	if LIGHT_BUDGET.enabled:
-		var decal := Decal.new()
-		decal.name = "HeadlightGroundDecal"
-		# Volume raso: uma projeção alta também colore capôs e a parte baixa
-		# dos carros à frente. O decal representa a mancha na pista, não a lataria.
-		decal.size = Vector3(width, .4, length)
-		decal.position = Vector3(front.x * .2, -.03, front.z - length * .5 + .2)
-		decal.texture_albedo = _cone_texture()
-		decal.texture_emission = _cone_texture()
-		decal.albedo_mix = 0.0
-		decal.modulate = profile.color
-		decal.emission_energy = clampf(float(profile.energy) * .42, .3, .9)
-		decal.normal_fade = .8
-		decal.upper_fade = 0.0
-		decal.lower_fade = 0.0
-		decal.hide()
-		car.add_child(decal)
-		return decal
-	var plane := PlaneMesh.new()
-	plane.size = Vector2(width, length)
-	var instance := MeshInstance3D.new()
-	instance.mesh = plane
-	instance.material_override = _pool_material(str(profile.family), profile.color, float(profile.energy))
-	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	# Rente ao chão, logo à frente do para-choque; o teste de profundidade deixa
-	# a calçada e os carros da frente taparem a mancha como tapam a dos postes.
-	instance.position = Vector3(front.x * .2, .07, front.z - length * .5 + .2)
-	instance.hide()
-	car.add_child(instance)
-	return instance
 
 func _glow(parent: Node3D, point: Vector3, color: Color, size: float) -> Sprite3D:
 	var sprite := Sprite3D.new()
@@ -351,37 +311,6 @@ static func _lens_glow_texture() -> ImageTexture:
 	image.generate_mipmaps()
 	_glow_texture = ImageTexture.create_from_image(image)
 	return _glow_texture
-
-static func _pool_material(family: String, color: Color, energy: float) -> StandardMaterial3D:
-	if _pool_materials.has(family): return _pool_materials[family]
-	var material := StandardMaterial3D.new()
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	material.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
-	material.cull_mode = BaseMaterial3D.CULL_DISABLED
-	material.disable_receive_shadows = true
-	material.albedo_texture = _cone_texture()
-	material.albedo_color = Color(color.r, color.g, color.b) * clampf(energy * .42, .3, .9)
-	_pool_materials[family] = material
-	return material
-
-## Cone com o vértice no para-choque (v = 1) abrindo para longe (v = 0):
-## mais forte perto do carro e esmaecendo nas bordas e no fim do alcance.
-static func _cone_texture() -> ImageTexture:
-	if _pool_texture != null: return _pool_texture
-	var image := Image.create(64, 128, false, Image.FORMAT_RGBA8)
-	for y in 128:
-		var along := 1.0 - float(y) / 127.0
-		var spread := lerpf(.18, 1.0, sqrt(along))
-		var reach := (1.0 - smoothstep(.55, 1.0, along)) * smoothstep(0.0, .08, along)
-		for x in 64:
-			var across := absf(float(x) / 63.0 * 2.0 - 1.0) / spread
-			var value := reach * (1.0 - smoothstep(.55, 1.0, across)) * lerpf(1.0, .55, along)
-			image.set_pixel(x, y, Color(value, value, value, value if LIGHT_BUDGET.enabled else 1.0))
-	if LIGHT_BUDGET.enabled: image.generate_mipmaps()
-	_pool_texture = ImageTexture.create_from_image(image)
-	return _pool_texture
 
 ## Papel de uma lente do modelo original. Exportações mais novas marcam a
 ## chave; as antigas não, e aí vale cor emissiva + posição: branco-creme na
@@ -526,7 +455,6 @@ func _refresh(force_budget: bool = true) -> void:
 			var broken: bool = (item.side < 0 and broken_left) or (item.side > 0 and broken_right)
 			item.lamp.visible = driver_lit and not broken
 		if is_instance_valid(npc_beam): npc_beam.visible = auto_lit and not driver_lit and _npc_beam_allowed() and not (broken_left and broken_right)
-		if is_instance_valid(ground_pool): ground_pool.visible = lit and car.health > 0 and not (broken_left and broken_right)
 	# Lenses change only with power/damage. Avoid resending the same material
 	# parameters for every parked/traffic car on every rendered frame.
 	var lens_state := int(lit) | (int(broken_left) << 1) | (int(broken_right) << 2)
@@ -597,7 +525,7 @@ func _side_broken(side: int) -> bool:
 func _budget_request() -> Dictionary:
 	var camera := get_viewport().get_camera_3d()
 	var point := camera.global_position if is_instance_valid(camera) else Vector3.ZERO
-	if camera == null and is_instance_valid(world):
+	if is_instance_valid(world):
 		var player = world.get("player")
 		if is_instance_valid(player): point = player.global_position
 	var lights: Array[Light3D] = []
@@ -607,7 +535,7 @@ func _budget_request() -> Dictionary:
 	if is_instance_valid(npc_beam): lights.append(npc_beam)
 	if is_instance_valid(halo): lights.append(halo)
 	var player_driven: bool = is_instance_valid(car) and car.controlled and not car.external_input and not car.traffic
-	var result := {"lights": lights, "wanted": wanted, "player": player_driven, "camera": point, "decal": ground_pool as Decal, "pool": false}
+	var result := {"lights": lights, "wanted": wanted, "player": player_driven, "camera": point, "decal": null, "pool": false}
 	if not is_instance_valid(car) or not car.is_inside_tree() or car.is_queued_for_deletion() or not car.is_visible_in_tree() or car.health <= 0: return result
 	var occupied: bool = car.controlled
 	var automatic := night_auto_enabled and npc_driven() and is_dark()
@@ -615,13 +543,10 @@ func _budget_request() -> Dictionary:
 	var alarm_blink: bool = alarm_remaining > 0 and int(Time.get_ticks_msec() / 167) % 2 == 0
 	var race: bool = car.has_meta("desert_drag_physics")
 	var driver: bool = ((headlights_on or (auto_lit and player_driven)) and (occupied or race) and (not npc_driven() or race)) or alarm_blink
-	result.pool = (automatic or driver) and not (broken_left and broken_right) and not (profile.single and (broken_left or broken_right))
-	# O tráfego mantém projetores latentes para o roubo/save, mas nunca os acende.
-	if car.traffic: return result
 	if driver:
 		for item in lamps:
 			if not _side_broken(item.side): wanted.append({"light": item.lamp, "headlight": true})
-	elif automatic and result.pool:
+	elif automatic and not (broken_left and broken_right) and not (profile.single and (broken_left or broken_right)):
 		wanted.append({"light": npc_beam, "headlight": true})
 	if is_instance_valid(halo) and ((siren_on and occupied) or alarm_remaining > 0):
 		wanted.append({"light": halo, "headlight": false})
@@ -657,7 +582,7 @@ func _exit_tree() -> void:
 		# do quadro. Ocultá-las agora devolve vagas sem sobreposição na reentrada.
 		for item in lamps:
 			if is_instance_valid(item.lamp): item.lamp.hide()
-		for source in [npc_beam, halo, ground_pool]:
+		for source in [npc_beam, halo]:
 			if is_instance_valid(source): source.hide()
 		for item in glows:
 			if is_instance_valid(item.sprite): item.sprite.hide()
@@ -675,7 +600,6 @@ func _exit_tree() -> void:
 	for marker in cab_markers:
 		if is_instance_valid(marker): marker.queue_free()
 	if is_instance_valid(npc_beam): npc_beam.queue_free()
-	if is_instance_valid(ground_pool): ground_pool.queue_free()
 	for item in glows:
 		if is_instance_valid(item.sprite): item.sprite.queue_free()
 	for item in beacon_glows:

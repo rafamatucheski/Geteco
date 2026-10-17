@@ -1,0 +1,33 @@
+{
+  "direction": "Porto vivido — selected option 1",
+  "reference": "Original generated concept approved by user; GTA III / Vice City material language, no extracted game assets",
+  "generated_assets": [
+    {
+      "file": "harbor_paving/concrete.png",
+      "tool": "image_gen built-in",
+      "brief": "Seamless aged poured concrete albedo, fine aggregate, sparse paper and hairline cracks, no paving grid; 12 metre reference footprint",
+      "runtime_import_size": 512,
+      "prompt": "Production-ready seamless square game albedo, aged poured urban concrete sidewalk exactly top down, original GTA III inspired industrial harbor mood. Natural warm gray taupe concrete, fine mineral aggregate, broad restrained mineral variations, smoother worn foot traffic, tiny pits, sparse very thin branching cracks. No tiles, square grid, cobblestones, full-width seams or big cloudlike stains. Few dry soil residues and dark flecks, three small aged paper scraps without readable words. Reference footprint 12 metres. No perspective, lighting gradients, shadows, text or border. 1024x1024."
+    },
+    {
+      "file": "harbor_paving/port_apron.png",
+      "tool": "image_gen built-in",
+      "brief": "Seamless industrial harbor concrete apron, muted gray-green, worn tire arcs, sparse oil and hairline cracks, no square grid; 16 metre footprint",
+      "runtime_import_size": 512,
+      "prompt": "Seamless square albedo of weathered working harbor concrete apron, top down diffuse only. Muted gray-green concrete around RGB 130 132 122, fine aggregate, faint curving parallel rubber tire tracks over one portion, thin sparse broken joints without grid, small concentrated oil freckles, rusty grit and calm worn areas. No checkerboard, giant stains, high-contrast noise, protruding objects, puddles or baked lighting. Reference footprint 16 metres. Uniform seamless edge tones. 1024x1024."
+    },
+    {
+      "file": "woodland/woodland.png",
+      "tool": "image_gen built-in",
+      "brief": "Original seamless woodland duff albedo: dark olive moss, brown earth, dry leaf clusters, fine twigs, no cloudy pattern or tree shadows",
+      "runtime_import_size": 512,
+      "prompt": "Seamless top-down woodland game-floor albedo, original muted industrial countryside direction. Dark olive moss and fine short ground vegetation 60%, brown earth 40%, small dry oak leaves and fragments in two irregular asymmetric patches, fine twigs and grit. Low contrast average RGB 65 73 43. Calm grassy areas, no neon yellow, circular clouds, periodic shapes, camouflage or rectangular divisions. Fine small details at eight-metre reference scale, no tree shadows or protruding objects, no lighting or borders. 1024x1024."
+    }
+  ],
+  "authored_generators": [
+    "tools/build_harbor_paving.py",
+    "tools/build_harbor_facades.py",
+    "tools/build_woodland_materials.py"
+  ],
+  "replacement_contract": "Replace existing material/mesh finish; no new floor layer. Preserve geometry partition and physical support."
+}

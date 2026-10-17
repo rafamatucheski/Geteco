@@ -38,7 +38,9 @@ func _get_message(source: StringName, _context: StringName) -> StringName:
 	var translated := _resolve(value, 0)
 	if _cache.size() >= CACHE_LIMIT: _cache.clear()
 	_cache[value] = translated
-	return StringName(translated) if translated != value else StringName()
+	# Identity is a resolved source-language message too. Returning empty here
+	# lets Godot try the English fallback on the first display of composed labels.
+	return StringName(translated)
 
 func _resolve(value: String, depth: int) -> String:
 	if _messages.has(value): return _messages[value]

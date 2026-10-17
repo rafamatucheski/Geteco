@@ -27,6 +27,7 @@ var digo_routine: Node3D
 var tuning_panel: CanvasLayer
 var tuning_car: CharacterBody3D
 var entrance_toll: Node
+var heist: Node3D
 var _room: Node3D
 var _resident: Node3D
 var _workshop_site := "town"
@@ -35,6 +36,9 @@ var _tick := 0.0
 func configure(owner_session) -> void:
 	session = owner_session
 	name = "DesertRuntime"
+	heist=preload("res://gameplay/desert_heist/DesertHeist.gd").new()
+	add_child(heist)
+	heist.configure(session)
 	entrance_toll=preload("res://runtime/desert/entrance/DesertToll.gd").new()
 	add_child(entrance_toll)
 	entrance_toll.configure(session)
@@ -82,6 +86,7 @@ func configure(owner_session) -> void:
 func busy() -> bool: return (is_instance_valid(drag) and drag.active) or (is_instance_valid(extras) and extras.busy())
 func controls_locked() -> bool: return (is_instance_valid(drag) and drag.active) or (is_instance_valid(extras) and extras.controls_locked())
 func save_block_reason() -> String:
+	if is_instance_valid(heist) and not heist.save_block_reason().is_empty(): return heist.save_block_reason()
 	if is_instance_valid(entrance_toll) and not entrance_toll.save_block_reason().is_empty(): return entrance_toll.save_block_reason()
 	if is_instance_valid(extras):
 		var extra_reason: String=extras.save_block_reason()
@@ -91,6 +96,7 @@ func save_block_reason() -> String:
 	if is_instance_valid(canyon) and not canyon.save_block_reason().is_empty(): return canyon.save_block_reason()
 	return frontier.save_block_reason() if is_instance_valid(frontier) else ""
 func cancel_attempt() -> void:
+	if is_instance_valid(heist): heist.cancel_attempt()
 	if is_instance_valid(entrance_toll): entrance_toll.cancel_attempt()
 	if is_instance_valid(extras): extras.cancel_attempt()
 	if is_instance_valid(drag): drag.cancel_attempt()
@@ -157,6 +163,7 @@ func _store_owned(car: CharacterBody3D) -> void:
 	if not session.state.world_state.has("desert_fleet"): session.state.world_state.desert_fleet={}
 	session.state.world_state.desert_fleet[car.vehicle_id]=preload("res://runtime/FleetState.gd").capture(car,session.state.region_id)
 func write_snapshot() -> void:
+	if is_instance_valid(heist): heist.write_snapshot()
 	for car in owned_cars.values():
 		if is_instance_valid(car): _store_owned(car)
 func _reconcile_resident() -> void:
@@ -175,6 +182,9 @@ func _reconcile_resident() -> void:
 	_resident.position = local
 	room.add_child(_resident)
 func nearest_action() -> Dictionary:
+	if is_instance_valid(heist):
+		var cargo_action: Dictionary=heist.nearest_action()
+		if not cargo_action.is_empty(): return cargo_action
 	if is_instance_valid(entrance_toll):
 		var toll_action: Dictionary=entrance_toll.nearest_action()
 		if not toll_action.is_empty(): return toll_action
@@ -203,6 +213,7 @@ func nearest_action() -> Dictionary:
 		return {"id":"desert","target":"rest","label":"Descansar até as 20h"}
 	return drag.nearest_action()
 func perform(action: Dictionary) -> bool:
+	if str(action.get("target","")).begins_with("cargo_heist:"): return heist.perform(action)
 	if action.get("id","")=="desert" and action.get("target","")=="entrance_toll": return entrance_toll.perform()
 	if str(action.get("target","")).begins_with("canyon_cache:"): return canyon.perform(action)
 	if is_instance_valid(extras) and extras.handles(action): return extras.perform(action)
@@ -344,11 +355,13 @@ func _buy_car(id: String) -> void:
 	session.show_message("Carro entregue no pátio do Digo.")
 	session.save_game()
 func objective() -> String:
+	if is_instance_valid(heist) and not heist.objective().is_empty(): return heist.objective()
 	if is_instance_valid(drag) and drag.active: return drag.objective()
 	if is_instance_valid(extras) and not extras.objective().is_empty(): return extras.objective()
 	var job: String=contracts.objective()
 	return job if not job.is_empty() else story.objective()
 func target_position() -> Vector3:
+	if is_instance_valid(heist) and not heist.objective().is_empty(): return heist.target_position()
 	if is_instance_valid(drag) and drag.active: return drag.target_position()
 	if is_instance_valid(extras) and not extras.objective().is_empty(): return extras.target_position()
 	return contracts.target_position() if not contracts.objective().is_empty() else story.target_position()

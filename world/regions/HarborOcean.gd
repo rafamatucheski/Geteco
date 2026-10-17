@@ -20,10 +20,12 @@ static func surface_y(point: Vector2, shore: float = DEPTH_RANGE) -> float:
 	var across := 1.0-smoothstep(25.0,70.0,absf(point.y-BRIDGE_CENTER_Z))
 	return WATER_Y-BRIDGE_DROP*along*across*smoothstep(8.0,22.0,shore)
 const SHADER := preload("res://world/regions/harbor_ocean.gdshader")
+const WATER_PILOT := preload("res://world/regions/HarborWaterPilot.gd")
 const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
 const GROUND_CUT := preload("res://world/urban_detail/GroundCut.gd")
 var shores: Array[PackedVector2Array] = []
 var material: ShaderMaterial
+var pilot_material: ShaderMaterial
 var shore_wash := preload("res://world/regions/HarborShoreWash.gd").new()
 
 func configure(land: Array, extra: Array[PackedVector2Array]) -> void:
@@ -34,6 +36,7 @@ func configure(land: Array, extra: Array[PackedVector2Array]) -> void:
 	shores.append_array(extra)
 	material = ShaderMaterial.new()
 	material.shader = SHADER
+	pilot_material = WATER_PILOT.make_material(WATER_PILOT.SURFACE) if WATER_PILOT.enabled else null
 	shore_wash.configure(shores)
 
 func shore_distance(point: Vector2) -> float:
@@ -128,7 +131,7 @@ func build_chunk(parent: Node3D, rect: Rect2) -> MeshInstance3D:
 	var surface := MeshInstance3D.new()
 	surface.name = "Water"
 	surface.mesh = mesh
-	surface.material_override = material
+	surface.material_override = pilot_material if WATER_PILOT.includes_chunk(rect) else material
 	surface.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(surface)
 	shore_wash.build_chunk(surface,rect)

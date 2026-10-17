@@ -27,8 +27,6 @@ var _journey_panel: PanelContainer
 var _journey_title: Label
 var _journey_time: Label
 var _progress: ProgressBar
-var _inside: Button
-var _outside: Button
 var _skip: Button
 var _journey_actions: BoxContainer
 var _station_actions: BoxContainer
@@ -163,16 +161,6 @@ func _build_journey_hud() -> void:
 	_journey_actions = BoxContainer.new()
 	_journey_actions.add_theme_constant_override("separation", 8)
 	column.add_child(_journey_actions)
-	_inside = _button("Vista interna", "InteriorView")
-	_inside.toggle_mode = true
-	_inside.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_inside.pressed.connect(_request_camera.bind(0))
-	_journey_actions.add_child(_inside)
-	_outside = _button("Vista externa", "ExteriorView")
-	_outside.toggle_mode = true
-	_outside.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_outside.pressed.connect(_request_camera.bind(1))
-	_journey_actions.add_child(_outside)
 	_skip = _button("Pular viagem", "SkipTrip")
 	_skip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_skip.pressed.connect(_request_skip)
@@ -290,8 +278,8 @@ func show_journey(state: Dictionary) -> void:
 	_skip.disabled = false
 	update_journey(state)
 	_layout()
-	_wire_focus([_inside, _outside, _skip], true)
-	_focus_when_visible.call_deferred(weakref(_inside))
+	_wire_focus([_skip], true)
+	_focus_when_visible.call_deferred(weakref(_skip))
 
 
 func update_journey(state: Dictionary) -> void:
@@ -301,9 +289,6 @@ func update_journey(state: Dictionary) -> void:
 	_journey_title.text = "%s  →  %s" % [departure, arrival]
 	_progress.value = clampf(float(state.get("progress", 0.0)), 0.0, 1.0)
 	_journey_time.text = _duration(ceili(maxf(0.0, float(state.get("remaining_seconds", 0.0)))))
-	var camera_mode := int(state.get("camera_mode", 0))
-	_inside.set_pressed_no_signal(camera_mode == 0)
-	_outside.set_pressed_no_signal(camera_mode == 1)
 
 
 func hide_journey() -> void:
@@ -333,13 +318,6 @@ func _request_travel(instant: bool) -> void:
 	var destination := _destination(selected_id)
 	if not is_station_open() or not bool(destination.get("available", false)) or selected_id == origin_id: return
 	if is_instance_valid(transit): transit.travel_to(selected_id, instant)
-
-
-func _request_camera(mode: int) -> void:
-	if not _journey_active or not is_instance_valid(transit): return
-	transit.set_camera_mode(mode)
-	_inside.set_pressed_no_signal(mode == 0)
-	_outside.set_pressed_no_signal(mode == 1)
 
 
 func _request_skip() -> void:

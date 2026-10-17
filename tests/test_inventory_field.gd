@@ -1,4 +1,5 @@
 extends SceneTree
+const PHYSICAL_FIXTURE:=preload("res://tests/fixtures/TravelBagScene.gd")
 const GRID := preload("res://systems/inventory/GridInventory.gd")
 var world
 var failures: Array[String]=[]
@@ -20,10 +21,8 @@ func run() -> void:
 	root.size = Vector2i(1280,720)
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(out))
 	world=load("res://Main.tscn").instantiate(); world.set_meta("skip_arrival",true); root.add_child(world); current_scene=world
-	for i in 2400:
-		await physics_frame
-		if world.session!=null and world.session.ready_for_play: break
-	check(world.session!=null and world.session.ready_for_play,"real session ready")
+	var startup_ready: bool=await PHYSICAL_FIXTURE.wait_for_startup(world)
+	check(startup_ready,"real session ready after curtain, streaming and physical ground")
 	if not failures.is_empty(): quit(1); return
 	var session=world.session
 	var field=session.field_inventory
@@ -47,10 +46,19 @@ func run() -> void:
 	personal.vehicle_id="personal_monaliza"; personal.controlled=false; personal.external_input=false; personal.speed=0
 	session.garage_rewards.cars.personal_monaliza=personal
 	session.garage_rewards.data.vehicles.personal_monaliza=session.garage_rewards._initial_record("monaliza",personal.position,personal.rotation.y,"")
+	check(await PHYSICAL_FIXTURE.wait_for_vehicle_support(world,personal),"spawned Monaliza has real floor support")
+	if not failures.is_empty(): world.free(); quit(1); return
 	world.player.teleport(personal.global_position+Vector3(12,.05,0)); await frames()
 	check(session.personal_car.award_first_backpack(),"Maciota awards backpack after first mission without trunk access")
 	world.player.teleport(session.personal_car._rear()+Vector3(0,.05,.8)); await frames()
-	check(session.personal_car.perform("trunk"),"opening real Monaliza trunk retains awarded backpack")
+	var opened_trunk: bool=session.personal_car.perform("trunk")
+	if not opened_trunk:
+		var rear: Vector3=session.personal_car._rear()
+		var sight:=PhysicsRayQueryParameters3D.create(world.player.global_position+Vector3.UP*.8,rear+Vector3.UP*.8,7)
+		sight.exclude=[world.player.get_rid(),personal.get_rid()]
+		var hit: Dictionary=world.get_world_3d().direct_space_state.intersect_ray(sight)
+		print("FIELD_TRUNK_DIAGNOSTIC ",{"action":session.personal_car.nearest_action(),"available":session.personal_car._available(),"near":session.personal_car._near_trunk(),"modal":session.modal,"driving":world.driving.occupied,"blocked":session.is_transition_blocked(),"player":world.player.global_position,"rear":rear,"distance":world.player.global_position.distance_to(rear),"visible":personal.is_visible_in_tree(),"speed":personal.speed,"health":personal.health,"controlled":personal.controlled,"external_input":personal.external_input,"awaiting_ground":personal.has_meta("awaiting_ground"),"suspended":personal.get_meta("garage_suspended",false),"ray":str(hit.get("collider","clear"))})
+	check(opened_trunk,"opening real Monaliza trunk retains awarded backpack")
 	check(economy.grid_snapshot().bag=="backpack","first mission equips the backpack")
 	check(not session.personal_car.award_first_backpack(),"mission award is one-time")
 	var discovery_save=preload("res://runtime/GameState.gd").new()

@@ -60,7 +60,8 @@ func _ready() -> void:
 	import_dialog.filters = PackedStringArray(["*.json ; Save Geteco V1"])
 	import_dialog.file_selected.connect(_inspect_v1_save)
 	import_dialog.canceled.connect(func():
-		_main_enabled(true)
+		_main_enabled(false)
+		btn_import.disabled = false
 		btn_import.grab_focus())
 	add_child(import_dialog)
 	presentation = preload("res://ui/SunsetMenuPresentation.gd").new()
@@ -76,6 +77,16 @@ func _ready() -> void:
 	settings = preload("res://ui/SettingsMenu.tscn").instantiate()
 	add_child(settings)
 	settings.hide()
+	# Local skin: in-game settings retain their existing presentation.
+	var sea_panel := StyleBoxFlat.new()
+	sea_panel.bg_color = Color(0.025, 0.045, 0.06, .94)
+	sea_panel.content_margin_left = 28
+	sea_panel.content_margin_right = 28
+	sea_panel.content_margin_top = 24
+	sea_panel.content_margin_bottom = 24
+	settings._panel.add_theme_stylebox_override("panel", sea_panel)
+	%LoadPanel.set_meta("preserve_panel_style", true)
+	%LoadPanel.add_theme_stylebox_override("panel", sea_panel.duplicate())
 	settings.closed.connect(func():
 		_main_enabled(true)
 		btn_settings.grab_focus())
@@ -106,6 +117,7 @@ func _ready() -> void:
 
 func _main_enabled(enabled: bool) -> void:
 	for button in [btn_continue, btn_new_game, btn_load_game, btn_import, btn_settings, btn_quit]: button.disabled = not enabled
+	presentation.show_main(enabled)
 
 func _show_slots(new_game: bool) -> void:
 	if starting: return
@@ -135,6 +147,7 @@ func _show_slots(new_game: bool) -> void:
 	shade.show()
 	%LoadPanel.show()
 	STYLE.apply(%LoadPanel)
+	btn_import.disabled = false
 	STYLE.trap_focus(%LoadPanel)
 
 func _close_slots() -> void:
@@ -143,7 +156,7 @@ func _close_slots() -> void:
 	shade.hide()
 	_main_enabled(true)
 	STYLE.trap_focus(self, false)
-	(btn_import if selecting_import else (btn_new_game if selecting_new else btn_load_game)).grab_focus()
+	(btn_new_game if selecting_new else btn_load_game).grab_focus()
 
 func _choose_v1_save() -> void:
 	if starting: return

@@ -1,0 +1,16 @@
+{
+  "tool": "built-in image_gen",
+  "status": "Revised artwork previews grounded in actual gameplay screenshots; not yet added to loading rotation.",
+  "artworks": [
+    {
+      "file": "port_day_reference.png",
+      "reference": "evidence/art-direction-review-20261014/current/port.png",
+      "prompt": "Create a faithful illustrated loading artwork FROM THIS ACTUAL GAME SCREENSHOT for HARBOR, 1920x1080 16:9. The user rejected generic invented environments: preserve the recognizable specific geometry, props, colors and modest scale of this exact port. Maintain oblique elevated/isometric composition: straight black road with dashed yellow center line running diagonally across center, concrete paved quays, narrow turquoise rectangular water channels with white railings, distinctive SMALL YELLOW lattice dock cranes, red-cab trucks, small orange forklifts, individual spaced blue cyan yellow red white cargo containers, green-roof sheds bottom-left and red sawtooth roof warehouse lower area. Stylize the actual scene into bold black-ink graphic novel loading art reminiscent of GTA IV, painterly print texture, rich but natural daylight, warm sun, cyan water. Do not transform it into a generic realistic commercial harbor. NO boats, ships, giant gray cranes, skyline, invented foreground character, new buildings. Keep the actual arrangement and camera angle, improve only rendering and composition. Remove all HUD, minimap, text, markers, stats, logos. Full bleed illustration. Bottom-left shed shadows naturally dark enough for white loading UI later."
+    },
+    {
+      "file": "village_day_reference.png",
+      "reference": "evidence/world-props-ground-20261002/final-village/village.png",
+      "prompt": "Repaint the supplied ACTUAL HARBOR GAME SCREENSHOT into a polished 1920x1080 16:9 illustrated loading art. This is the specific snow village square, NOT a new invented village. Keep the recognizable elevated oblique view, same modest dark timber cabins with simple thick snow roofs left and bottom, small wooden clothing shop at right with two coats displayed at entrance, square gray stone paving in snowy ground, EXACTLY two timber benches facing a small round black raised metal brazier with a wood fire between them, modest straight black lamp post left. One adult in dark blue winter clothing by the bench. Bright clear winter DAY with sunlit white snow and blue shadows. Strong ink contours, hand-painted graphic-novel texture inspired by GTA IV loading art, natural rich colors, preserve geometry and humble scale while improving artistry. No mountains invented in background, no ski resort, no church, no fountain, no extra houses. Remove ALL HUD, health bars, minimap, floating arrow, objectives, signs lettering and text. Full bleed illustration no frame or logo. Lower-left existing cabin wall may be shaded for later white loading UI. It must be recognizably the same place as the screenshot."
+    }
+  ]
+}

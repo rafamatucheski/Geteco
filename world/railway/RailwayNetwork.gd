@@ -13,7 +13,7 @@ static func stations() -> Array[Dictionary]:
 	if _station_cache.is_empty():
 		_station_cache = [
 			_station("harbor_central", "Harbor Central", Vector3(-12,12,52), "harbor", -1.0),
-			_station("harbor_north", "Northgate", Vector3(386,12,-179), "harbor", -1.0),
+			_station("harbor_north", "Northgate", Vector3(386,12,-194), "harbor", -1.0),
 			_station("mountain_pines", "Pinhais", Vector3(730,12,-402), "mountain", -1.0),
 			_station("desert_copper", "Cobre", Vector3(-72,12,-925), "desert", -1.0),
 		]
@@ -45,6 +45,12 @@ static func ground_landing_rect(id: String) -> Rect2:
 ## supported entrance. Do not apply this to vehicles or arbitrary Harbor roofs.
 static func restore_harbor_pedestrian(point: Vector3) -> Vector3:
 	if point.y<.5: return point
+	# Only migrate unsupported former surfaces; a save on an overlapping
+	# platform or retained landing keeps its exact position.
+	for old in [Vector3(-12,12,52),Vector3(386,12,-179)]:
+		var target := "harbor_central" if old.x < 0 else "harbor_north"
+		if _on_access_surface(point,old,false) and not _on_access_surface(point,get_station(target).position,true):
+			return get_station(target).entry
 	var p := Vector2(point.x-145,point.z-67)
 	var floor_y := TRACK_HEIGHT+PLATFORM_HEIGHT
 	var rise := floor_y/3.0
@@ -62,6 +68,23 @@ static func restore_harbor_pedestrian(point: Vector3) -> Vector3:
 		if absf(point.y-rise*(index+fraction))<.35:
 			return get_station("harbor_central").entry
 	return point
+
+static func _on_access_surface(point: Vector3, origin: Vector3, compact: bool) -> bool:
+	var local := Vector2(origin.x-point.x,point.z-origin.z)
+	var floor_y := origin.y+PLATFORM_HEIGHT
+	var rise := floor_y/3.0
+	var far_z := 2.0 if compact else -4.0
+	var landing_z := .5 if compact else -5.5
+	if Rect2(2,-17,4.8,34).has_point(local) and absf(point.y-floor_y)<.35: return true
+	if Rect2(6.8,landing_z-1.35,1.1,2.7).has_point(local) and absf(point.y-floor_y)<.35: return true
+	for deck in [[rise,landing_z],[rise*2,11.5],[floor_y,landing_z]]:
+		if Rect2(7.9,float(deck[1])-1.5,5.5,3).has_point(local) and absf(point.y-float(deck[0]))<.35: return true
+	for index in 3:
+		var x := 12.0 if index != 1 else 9.3
+		if absf(local.x-x)>1.06 or local.y<far_z or local.y>10.0: continue
+		var fraction := inverse_lerp(10.0,far_z,local.y) if index != 1 else inverse_lerp(far_z,10.0,local.y)
+		if absf(point.y-rise*(index+fraction))<.35: return true
+	return false
 
 static func nearest_station(point: Vector3, radius: float = 8.0) -> Dictionary:
 	var result := {}
@@ -86,12 +109,16 @@ static func approach_path(id: String) -> PackedVector3Array:
 		Vector3(12,rise*2,10), Vector3(12,rise*3,-4), Vector3(12,rise*3,-5.5),
 		Vector3(PLATFORM_OFFSET,rise*3,-5.5), Vector3(PLATFORM_OFFSET,rise*3,0),
 	])
+	if station.region == "harbor":
+		for i in local.size():
+			if local[i].z == -4.0: local[i].z = 2.0
+			elif local[i].z == -5.5: local[i].z = .5
 	var result := PackedVector3Array([station.entry])
 	for point in local: result.append(Vector3(origin.x+point.x*side,point.y+0.12,origin.z+point.z))
 	return result
 
 static func nodes() -> Dictionary:
-	var result := {"junction_west":Vector3(350,14,-245), "junction_east":Vector3(420,14,-245)}
+	var result := {"junction_west":Vector3(350,14,-245), "junction_east":Vector3(420,14,-245), "north_throat":Vector3(386,12,-217)}
 	for station in stations(): result[station.id] = station.position
 	return result
 
@@ -99,12 +126,13 @@ static func edges() -> Array[Dictionary]:
 	if not _edge_cache.is_empty(): return _edge_cache.duplicate(true)
 	_edge_cache = [
 		_edge("harbor_viaduct", "harbor_central", "harbor_north", [
-			Vector3(-12,12,52), Vector3(-12,12,20), Vector3(260,14,20),
-			Vector3(260,14,-125), Vector3(386,12,-125), Vector3(386,12,-179)]),
-		_edge("north_east", "harbor_north", "junction_east", [
-			Vector3(386,12,-179), Vector3(386,12,-209), Vector3(403,14,-238), Vector3(420,14,-245)]),
-		_edge("north_west", "harbor_north", "junction_west", [
-			Vector3(386,12,-179), Vector3(386,12,-209), Vector3(368,14,-238), Vector3(350,14,-245)]),
+			Vector3(-12,12,52), Vector3(-12,12,-18), Vector3(210,14,-18),
+			Vector3(260,14,-65), Vector3(260,14,-157), Vector3(386,12,-157), Vector3(386,12,-194)]),
+		_edge("north_throat", "harbor_north", "north_throat", [Vector3(386,12,-194), Vector3(386,12,-217)]),
+		_coastal_edge(),
+		_north_east_edge(),
+		_edge("north_west", "north_throat", "junction_west", [
+			Vector3(386,12,-217), Vector3(368,14,-238), Vector3(350,14,-245)]),
 		_edge("junction_chord", "junction_west", "junction_east", [
 			Vector3(350,14,-245), Vector3(364,14,-261), Vector3(406,14,-261), Vector3(420,14,-245)]),
 		_edge("pines_scenic", "junction_east", "mountain_pines", [
@@ -117,6 +145,35 @@ static func edges() -> Array[Dictionary]:
 	]
 	return _edge_cache.duplicate(true)
 
+static func _north_east_edge() -> Dictionary:
+	var points := PackedVector3Array()
+	# The curve starts beyond the platform and its full coach overhang.
+	for i in 29:
+		var t := float(i)/28.0
+		var angle := PI+t*PI*.5
+		points.append(Vector3(414.0+28.0*cos(angle),lerpf(12,14,t),-217.0+28.0*sin(angle)))
+	_append_segment(points,Vector3(420,14,-245))
+	return {"id":"north_east","from":"north_throat","to":"junction_east","points":points,
+		"length":route_length(points),"requires_act1":false}
+
+static func _coastal_edge() -> Dictionary:
+	var points := PackedVector3Array()
+	# A quarter circle begins eastbound, tangent to the common mountain throat.
+	for i in 19:
+		var angle := -PI*.5+float(i)/18.0*PI*.5
+		points.append(Vector3(420.0+18.0*cos(angle),14,-227.0+18.0*sin(angle)))
+	var tail := _rounded([Vector3(438,14,-227),Vector3(438,14,-100),Vector3(430,14,-70),
+		Vector3(430,14,45),Vector3(540,14,45),Vector3(540,14,162),Vector3(440,14,162),
+		Vector3(210,14,162),Vector3(-17,12,162),Vector3(-17,12,92)],18.0)
+	for i in range(1,tail.size()): points.append(tail[i])
+	# Ease back to the station after clearing the saved western infill block.
+	for i in range(1,17):
+		var t := float(i)/16.0
+		points.append(Vector3(-17.0+5.0*smoothstep(0,1,t),12,92.0-16.0*t))
+	_append_segment(points,Vector3(-12,12,52))
+	return {"id":"harbor_coast","from":"junction_east","to":"harbor_central","points":points,
+		"length":route_length(points),"requires_act1":false}
+
 static func _edge(id: String, from: String, to: String, controls: Array, gated := false) -> Dictionary:
 	var points := _rounded(controls, 18.0)
 	return {"id":id, "from":from, "to":to, "points":points,
@@ -125,6 +182,14 @@ static func _edge(id: String, from: String, to: String, controls: Array, gated :
 static func get_route(from_id: String, to_id: String) -> PackedVector3Array:
 	if from_id == to_id or get_station(from_id).is_empty() or get_station(to_id).is_empty():
 		return PackedVector3Array()
+	if from_id == "harbor_north" and to_id == "harbor_central":
+		var loop := PackedVector3Array()
+		for id in ["north_throat", "north_east", "harbor_coast"]:
+			for edge in edges():
+				if edge.id != id: continue
+				for point in edge.points:
+					if loop.is_empty() or not loop[-1].is_equal_approx(point): loop.append(point)
+		return loop
 	var distances := {from_id:0.0}
 	var previous := {}
 	var open: Array[String] = [from_id]

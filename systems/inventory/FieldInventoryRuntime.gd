@@ -30,6 +30,33 @@ func configure(owner_session) -> void:
 
 func economy(): return session.state.economy
 
+## Commit an already validated transaction as one inventory/wallet update.
+## Fishing defers persistence until its catch decision has also been recorded.
+func commit_candidate(expected: Dictionary, candidate: Dictionary, persist := true) -> bool:
+	if session.controller.save_invalid or session.world.gameplay.health <= 0: return false
+	if economy().snapshot() != expected or not economy().validate_snapshot(candidate): return false
+	if persist and not session.save_block_reason().is_empty(): return false
+	economy()._data = candidate.duplicate(true)
+	if persist and not session.save_game():
+		economy()._data = expected.duplicate(true)
+		return false
+	if is_instance_valid(ui): ui.refresh()
+	_update_carried()
+	return true
+
+func can_receive(id: String) -> bool:
+	if GRID.spec(id).is_empty() or not economy().grid_enabled(): return false
+	var candidate: Dictionary = economy().grid_snapshot()
+	return GRID.add_carried(candidate, id, 1) == 0 and int(economy()._data.inventory.get(id, 0)) < 999
+
+func store_item(id: String) -> bool:
+	if not can_receive(id): return false
+	var expected: Dictionary = economy().snapshot()
+	var candidate: Dictionary = expected.duplicate(true)
+	if GRID.add_carried(candidate.grid_inventory, id, 1) != 0: return false
+	candidate.inventory[id] = int(candidate.inventory.get(id, 0)) + 1
+	return commit_candidate(expected, candidate, false)
+
 func trunk_access() -> bool:
 	return session.personal_car!=null and session.personal_car._available() and session.personal_car._near_trunk() and not session.world.driving.occupied and session.world.gameplay.health>0 and not session.is_transition_blocked()
 

@@ -91,6 +91,10 @@ func vehicle_stolen(side: int) -> void:
 func _physics_process(delta: float) -> void:
 	if not session.ready_for_play: return
 	for model in passengers:
+		# Depois do desembarque o modelo é do guarda; o rabecão libera os dois juntos enquanto a patrulha
+		# (filha do carro) continua viva. Sem isto o erro abortava este quadro inteiro, a cada passo de
+		# física (9.155 erros no teste de 16/10), e a patrulha nunca era recolhida.
+		if not is_instance_valid(model): continue
 		if model.get_parent() != car: continue
 		model.process_mode = Node.PROCESS_MODE_INHERIT if model.is_visible_in_tree() else Node.PROCESS_MODE_DISABLED
 		model.rest_in_seat(delta)
@@ -110,7 +114,8 @@ func _physics_process(delta: float) -> void:
 		return
 	if car.health<=0 and not deployed:
 		# Uma explosão não produz ocupantes novos e ilesos.
-		for model in passengers: model.hide()
+		for model in passengers:
+			if is_instance_valid(model): model.hide()
 		deployed = true
 		hostile = false
 		pilot = null

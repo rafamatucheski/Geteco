@@ -3,8 +3,8 @@ extends RefCounted
 ## The same meshes appear equipped and as floor loot, preserving their silhouette.
 
 static func build(root: Node3D, id: String) -> void:
-	var steel := _mat(Color("697782"), 0.78, 0.32)
-	var dark := _mat(Color("222b30"), 0.62, 0.42)
+	var steel := _mat(Color("697782"), 0.60, 0.40)
+	var dark := _mat(Color("222b30"), 0.45, 0.46)
 	var rubber := _mat(Color("252629"), 0.0, 0.86)
 	var wood := _mat(Color("714331"), 0.0, 0.62)
 	var brass := _mat(Color("b7955b"), 0.65, 0.38)
@@ -66,14 +66,14 @@ static func build(root: Node3D, id: String) -> void:
 		_cylinder(root, "BatGrip", Vector3(0, 0, 0.075), 0.0185, 0.15, rubber, Vector3(90, 0, 0))
 		_lathe(root, "BatPommel", PackedVector2Array([Vector2(0.150,0.0185),Vector2(0.160,0.0235),Vector2(0.178,0.0262),Vector2(0.194,0.0215),Vector2(0.199,0.0)]), wood)
 	elif id == "hunting_rifle":
-		_profile(root,"WalnutStock",PackedVector2Array([Vector2(0.18,-0.085),Vector2(0.175,0.042),Vector2(0.13,0.037),Vector2(0.085,0.045),Vector2(-0.25,0.018),Vector2(-0.25,-0.017),Vector2(-0.065,-0.025),Vector2(-0.012,-0.035),Vector2(0.035,-0.07),Vector2(0.065,-0.052),Vector2(0.10,-0.014),Vector2(0.14,-0.052)]),0.046,wood)
+		_stock_profile(root,"WalnutStock",PackedVector2Array([Vector2(0.18,-0.085),Vector2(0.175,0.042),Vector2(0.13,0.037),Vector2(0.085,0.045),Vector2(-0.25,0.018),Vector2(-0.25,-0.017),Vector2(-0.065,-0.025),Vector2(-0.012,-0.035),Vector2(0.035,-0.07),Vector2(0.065,-0.052),Vector2(0.10,-0.014),Vector2(0.14,-0.052)]),0.046,wood)
 		_box(root,"ButtPad",Vector3(0,-0.02,0.182),Vector3(0.050,0.135,0.015),rubber)
-		_box(root,"Receiver",Vector3(0,0.04,-0.055),Vector3(0.041,0.035,0.19),dark)
+		_section_box(root,"Receiver",Vector3(0,0.04,-0.055),Vector3(0.041,0.035,0.19),dark,0.006)
 		_cylinder(root,"Barrel",Vector3(0,0.055,-0.375),0.012,0.43,steel,Vector3(90,0,0))
 		_cylinder(root,"Bore",Vector3(0,0.055,-0.591),0.007,0.003,rubber,Vector3(90,0,0))
 		_cylinder(root,"Bolt",Vector3(0.023,0.053,-0.021),0.008,0.042,steel,Vector3(0,0,90))
 		_cylinder(root,"BoltLever",Vector3(0.046,0.035,-0.021),0.006,0.039,steel,Vector3(0,0,-25))
-		_box(root,"BoltKnob",Vector3(0.052,0.015,-0.021),Vector3(0.020,0.019,0.020),dark)
+		_section_box(root,"BoltKnob",Vector3(0.052,0.015,-0.021),Vector3(0.020,0.019,0.020),dark,0.004)
 		for z in [-0.145,-0.015]:
 			_box(root,"ScopeMount",Vector3(0,0.074,z),Vector3(0.048,0.035,0.022),dark)
 			_cylinder(root,"ScopeRing",Vector3(0,0.097,z),0.025,0.022,brass,Vector3(90,0,0))
@@ -86,8 +86,8 @@ static func build(root: Node3D, id: String) -> void:
 		for z in [-0.18,-0.15,-0.12]:
 			_box(root,"ForestockCheckering",Vector3(0,-0.019,z),Vector3(0.048,0.004,0.011),rubber)
 	else:
-		_profile(root,"Frame",PackedVector2Array([Vector2(0.035,0.033),Vector2(-0.14,0.033),Vector2(-0.14,0.016),Vector2(-0.025,0.003),Vector2(-0.004,-0.062),Vector2(0.035,-0.066),Vector2(0.042,-0.045)]),0.033,dark)
-		_box(root,"Slide",Vector3(0,0.052,-0.05),Vector3(0.038,0.036,0.181),steel)
+		_profile(root,"Frame",PackedVector2Array([Vector2(0.035,0.033),Vector2(-0.132,0.033),Vector2(-0.140,0.024),Vector2(-0.132,0.015),Vector2(-0.052,0.010),Vector2(-0.025,0.003),Vector2(-0.004,-0.057),Vector2(0.005,-0.066),Vector2(0.032,-0.066),Vector2(0.042,-0.045)]),0.033,dark)
+		_section_box(root,"Slide",Vector3(0,0.052,-0.05),Vector3(0.038,0.036,0.181),steel,0.0045)
 		_box(root,"FrontSight",Vector3(0,0.075,-0.121),Vector3(0.007,0.011,0.009),dark)
 		for x in [-0.012,0.012]:
 			_box(root,"RearSightLeft" if x < 0.0 else "RearSightRight",Vector3(x,0.075,0.025),Vector3(0.008,0.010,0.012),dark)
@@ -116,12 +116,59 @@ static func _trigger_guard(root: Node3D, p: Vector3, mat: Material) -> void:
 	_box(root,"GuardFront",p+Vector3(0,-0.004,-0.027),Vector3(0.015,0.036,0.008),mat)
 	_box(root,"Trigger",p+Vector3(0,0,0.006),Vector3(0.008,0.026,0.008),mat)
 
+static var _materials: Dictionary = {}
+static var _section_meshes: Dictionary = {}
+const MATERIAL_CACHE_LIMIT := 128
+const SECTION_CACHE_LIMIT := 64
+
 static func _mat(color: Color, metallic: float, roughness: float) -> StandardMaterial3D:
+	var key := "%s:%.4f:%.4f" % [color.to_html(true), metallic, roughness]
+	if _materials.has(key): return _materials[key]
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = color
 	mat.metallic = metallic
 	mat.roughness = roughness
+	if _materials.size() < MATERIAL_CACHE_LIMIT: _materials[key] = mat
 	return mat
+
+## Octagonal cross section catches light on broad, deliberate bevels. The
+## original box bounds and node origin stay exact for grips and animation.
+static func _section_box(root: Node3D, label: String, p: Vector3, size: Vector3, mat: Material, bevel: float) -> void:
+	var part := MeshInstance3D.new()
+	part.name = label
+	part.mesh = section_mesh(size, bevel)
+	part.material_override = mat
+	part.position = p
+	root.add_child(part)
+
+static func section_mesh(size: Vector3, bevel: float) -> ArrayMesh:
+	var key := Vector4(size.x, size.y, size.z, bevel)
+	if _section_meshes.has(key): return _section_meshes[key]
+	var half := size * 0.5
+	var b := minf(bevel, minf(half.x, half.y) * 0.7)
+	var outline := PackedVector2Array([
+		Vector2(-half.x+b,-half.y), Vector2(half.x-b,-half.y),
+		Vector2(half.x,-half.y+b), Vector2(half.x,half.y-b),
+		Vector2(half.x-b,half.y), Vector2(-half.x+b,half.y),
+		Vector2(-half.x,half.y-b), Vector2(-half.x,-half.y+b)])
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var indices := Geometry2D.triangulate_polygon(outline)
+	for side in [-1.0,1.0]:
+		st.set_normal(Vector3(0,0,side))
+		for t in range(0,indices.size(),3):
+			for k in ([2,1,0] if side > 0.0 else [0,1,2]):
+				var point := outline[indices[t+k]]
+				st.add_vertex(Vector3(point.x,point.y,side*half.z))
+	for i in outline.size():
+		var a := outline[i]
+		var c := outline[(i+1)%outline.size()]
+		st.set_normal(Vector3(c.y-a.y,a.x-c.x,0).normalized())
+		var points := [Vector3(a.x,a.y,-half.z),Vector3(a.x,a.y,half.z),Vector3(c.x,c.y,half.z),Vector3(c.x,c.y,-half.z)]
+		for k in [0,1,2,0,2,3]: st.add_vertex(points[k])
+	var mesh := st.commit()
+	if _section_meshes.size() < SECTION_CACHE_LIMIT: _section_meshes[key] = mesh
+	return mesh
 
 static func _box(root: Node3D, label: String, p: Vector3, size: Vector3, mat: Material) -> void:
 	var part := MeshInstance3D.new()
@@ -217,6 +264,38 @@ static func _lathe(root: Node3D, label: String, profile: PackedVector2Array, mat
 	var part := MeshInstance3D.new()
 	part.name = label
 	part.mesh = surface.commit()
+	part.material_override = mat
+	root.add_child(part)
+
+## A shaped wooden stock narrows at the fore-end and wrist. The authored
+## Y/Z outline, butt and grip contact positions stay untouched.
+static func _stock_profile(root: Node3D, label: String, outline: PackedVector2Array, width: float, mat: Material) -> void:
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var indices := Geometry2D.triangulate_polygon(outline)
+	var min_z := outline[0].x
+	var max_z := outline[0].x
+	for point in outline:
+		min_z = minf(min_z,point.x)
+		max_z = maxf(max_z,point.x)
+	var sides: Array[PackedVector3Array] = []
+	for sign_value in [-1.0,1.0]:
+		var points := PackedVector3Array()
+		for point in outline:
+			var portion := inverse_lerp(min_z,max_z,point.x)
+			var cheek_width := width * lerpf(.72,1.0,smoothstep(.25,.8,portion))
+			points.append(Vector3(sign_value*cheek_width*.5,point.y,point.x))
+		sides.append(points)
+		for t in range(0,indices.size(),3):
+			for k in ([0,1,2] if sign_value > 0.0 else [2,1,0]): st.add_vertex(points[indices[t+k]])
+	for i in outline.size():
+		var next := (i+1)%outline.size()
+		var points := [sides[0][i],sides[1][i],sides[1][next],sides[0][next]]
+		for k in [0,1,2,0,2,3]: st.add_vertex(points[k])
+	st.generate_normals()
+	var part := MeshInstance3D.new()
+	part.name = label
+	part.mesh = st.commit()
 	part.material_override = mat
 	root.add_child(part)
 

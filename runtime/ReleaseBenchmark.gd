@@ -24,6 +24,8 @@ const ROUTES := {
 	# Porto -> ponte -> serra e volta: o streaming entra em trechos novos com o jogo rodando (travadas de 15/10).
 	"travessia": [Vector3(330, 0, -285), Vector3(600, 0, -285), Vector3(700, 4, -300), Vector3(745, 4, -420)],
 	"deserto": [Vector3(-1040, 0, -1320), Vector3(-950, 0, -1320), Vector3(-950, 0, -1260), Vector3(-1040, 0, -1260)],
+	# Estrada do sal: câmera e população reais ao lado do trajeto das cargas da madrugada.
+	"carga_deserto": [Vector3(-700, 0, -1542.5), Vector3(-500, 0, -1542.5)],
 	# Northbank e canal concentram 6 dos 15 sobrados/terraços (A/B das janelas pintadas, 15/10).
 	"sobrados": [Vector3(295, 0, 100), Vector3(340, 0, 100), Vector3(340, 0, -60), Vector3(295, 0, -60)],
 }
@@ -34,7 +36,7 @@ const TOGGLES := ["GETECO_POP_VC", "GETECO_SUN_SHADOW_NEAR", "GETECO_TRAFFIC_RAI
 	"GETECO_DETAIL_RANGE", "GETECO_BAKED_BUILDINGS", "GETECO_SKID_BUDGET", "GETECO_DASH_BATCH", "GETECO_DISPATCH_FAST",
 	"GETECO_PED_DUMMY", "GETECO_BUILDING_BATCH", "GETECO_PROP_INSTANCING", "GETECO_GROUND_STACK", "GETECO_SHADOW_SHELL",
 	"GETECO_BRIDGE_MERGE", "GETECO_FURNITURE_MERGE", "GETECO_CELL_MERGE", "GETECO_BRIDGE_LOOK", "GETECO_PAINTED_WINDOWS", "GETECO_PAINTED_FACADES",
-	"GETECO_SUN_SPLITS", "GETECO_UNIFIED_BRIDGE"]
+	"GETECO_SUN_SPLITS", "GETECO_UNIFIED_BRIDGE", "GETECO_DESERT_CARGO_HEIST"]
 
 const AUTOPILOT := preload("res://runtime/BenchmarkAutopilot.gd")
 
@@ -47,6 +49,11 @@ var bench_rain := 0
 var chaos_stars := 0
 var _chaos_clock := 0.0
 var _chaos_peak_units := 0
+var _cargo_peak_trucks := 0
+var _cargo_peak_guards := 0
+var _cargo_peak_alive_guards := 0
+var _cargo_observation_due := 0
+var _cargo_observed_seconds := 0
 
 static func requested() -> bool:
 	for argument in OS.get_cmdline_user_args():
@@ -132,6 +139,7 @@ func _run() -> void:
 			car.rotation = Vector3(0, sample.yaw, 0)
 		world.player.global_position = sample.point if autopilot == null else car.global_position
 		if chaos_stars > 0: _sustain_chaos(sample.point)
+		if route_name == "carga_deserto" and distance >= total * WARMUP_LOOPS: _observe_cargo()
 		await get_tree().process_frame
 		var now := Time.get_ticks_usec()
 		var frame_ms := (now - previous) / 1000.0
@@ -163,6 +171,10 @@ func _run() -> void:
 		report.chaos = {"stars_requested": chaos_stars, "stars_final": int(world.gameplay.stars), "dispatch_units_peak": _chaos_peak_units,
 			"dispatch_units_final": world.dispatch.units.size() if is_instance_valid(world.get("dispatch")) else -1}
 	if autopilot != null: report.drive = autopilot.summary()
+	if route_name == "carga_deserto":
+		report.cargo = {"trucks_peak":_cargo_peak_trucks,"guards_peak":_cargo_peak_guards,"alive_guards_peak":_cargo_peak_alive_guards,
+			"scope":"Rota renderizada da estrada do sal; observação de carga ativa, sem simular combate ou abertura.",
+			"activity_observed":_cargo_peak_trucks > 0,"activity_observed_seconds":_cargo_observed_seconds}
 	print("BENCH_RELEASE ", JSON.stringify({"label": label, "frame_p50": report.frame_ms.p50, "frame_p95": report.frame_ms.p95, "draws_p50": report.draw_calls.p50}))
 	var folder := "user://benchmark-west"
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
@@ -171,6 +183,28 @@ func _run() -> void:
 		file.store_string(JSON.stringify(report, "\t"))
 		file.close()
 	get_tree().quit(0)
+
+func _observe_cargo() -> void:
+	# Uma leitura por segundo registra a carga alcançada sem varrer entidades por quadro.
+	var now := Time.get_ticks_msec()
+	if now < _cargo_observation_due: return
+	_cargo_observation_due = now + 1000
+	var desert: Variant = world.session.get("desert")
+	if desert == null: return
+	var heist: Variant = desert.get("heist")
+	if heist == null: return
+	_cargo_peak_trucks = maxi(_cargo_peak_trucks, 1 if is_instance_valid(heist.get("truck")) else 0)
+	if is_instance_valid(heist.get("truck")): _cargo_observed_seconds += 1
+	var guards: Variant = heist.get("guards")
+	if guards is Array or guards is Dictionary:
+		var present := 0
+		var alive := 0
+		for guard in (guards.values() if guards is Dictionary else guards):
+			if not is_instance_valid(guard): continue
+			present += 1
+			if not guard.dead: alive += 1
+		_cargo_peak_guards = maxi(_cargo_peak_guards, present)
+		_cargo_peak_alive_guards = maxi(_cargo_peak_alive_guards, alive)
 
 ## Uma vez por segundo repõe o crime que faltar para N estrelas e informa a posição atual do carro
 ## (o benchmark teleporta o carro; sem o contato a polícia perderia o alvo e as estrelas cairiam).

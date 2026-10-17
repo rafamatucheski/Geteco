@@ -1,0 +1,17 @@
+{
+  "tool": "built-in image_gen",
+  "artworks": [
+    {
+      "file": "country_day.png",
+      "prompt": "New HARBOR loading illustration, 1920x1080 landscape, polished hand-inked graphic novel style inspired by GTA IV loading artwork, bold contours and fine print grain. Completely new daytime rural-road scene: camera low beside a gently curving two-lane asphalt country road, a modest older dark-green pickup driving toward foreground right, grassy shoulders, wooden fence, scattered leafy trees, low rolling green hills. Bright late morning with clear blue sky and small white clouds, crisp sunlit greens, ochre road verge, natural warm highlights. Believable modest game world, no landmarks, no farm machinery or speculative gameplay. Compose a lovely sense of road-trip motion with restrained dust along shoulder, natural tree shadow in bottom-left for small white loading overlay later. Main truck and road on right and center. Bright DAY, not dusk, no moon, no dramatic orange sky. Full bleed SINGLE illustration with NO text, logos, labels, UI, borders."
+    },
+    {
+      "file": "square_day.png",
+      "prompt": "HARBOR loading art, new bright daytime town-square scene, 1920x1080 16:9. Sophisticated GTA IV loading-screen inspired hand-painted graphic novel with strong ink contours and subtle screenprint texture. Modest small Brazilian coastal-town square, tiled walking path, mature shade trees, benches, low stucco buildings with terracotta roofs behind. People in everyday clothing passing through, two friends conversing by a parked modest motorcycle on right, a person sitting on a bench. Lived-in calm everyday scene, human proportions accurate, no tourist monuments, no oversized structures or invented attractions. Clear late-morning BLUE sky, bright natural greens, pale cream walls, warm paving, sunshine with crisp leafy shadows. More color and openness than nocturnal art, no orange sunset no moon. Composition broad and cinematic, foreground shaded tree and paving bottom-left quiet enough for small loading UI later. Full bleed single illustration only, no text, signs, logos, interface or border."
+    },
+    {
+      "file": "port_day.png",
+      "prompt": "HARBOR game loading concept art, 1920x1080 landscape. Use attached artwork ONLY as reference for sophisticated bold ink outlines, engraved texture and graphic-novel rendering, NOT its dark lighting. New composition: bright working harbor at midday viewed from a dock, a dockworker in blue coveralls foreground right coiling a rope, small work boat, stacked modest cargo and port cranes behind, clear cyan sky with white clouds, sunlit blue water, off-white concrete and rust-red containers. Grounded ordinary harbor life, no extravagant skyline or new gameplay promises. Daylight is unmistakable, lively warm sunshine and crisp shadows, no night no sunset. Shaded dock bollard at extreme lower-left leaves natural quiet space for white loading UI later. Entire image full bleed artwork, NO words, logos, UI, borders or progress bar."
+    }
+  ]
+}

@@ -66,7 +66,7 @@ var traffic := false:
 		traffic = value
 		for part in _motorcycle_rider_parts:
 			if is_instance_valid(part): part.visible = value
-var _motorcycle_rider_parts: Array[MeshInstance3D] = []
+var _motorcycle_rider_parts: Array[Node3D] = []
 var _motorcycle_seat := Vector3(0, -.05, .30)
 var _motorcycle_grips: Dictionary = {}
 var manual_wheelie: RefCounted
@@ -629,6 +629,19 @@ func _bind_motorcycle_rider() -> void:
 		part.visible = traffic
 		if color == "253043" and absf(center.x) < .01:
 			_motorcycle_seat = center - Vector3(0, .95, 0)
+	# Keep the authored chassis/grips, replacing only the obsolete baked person.
+	# Offline fleet baking still needs the original authored geometry.
+	if not is_inside_tree(): return
+	for part in _motorcycle_rider_parts:
+		part.get_parent().remove_child(part)
+		part.queue_free()
+	_motorcycle_rider_parts.clear()
+	# Appearance must not consume traffic/gameplay RNG (paint, routes, encounters).
+	var identity := posmod(vehicle_id.hash() if not vehicle_id.is_empty() else str(get_instance_id()).hash(),100000)
+	var rider := preload("res://assets/civilians/TrafficMotorcyclist.gd").create(self,identity)
+	visual.add_child(rider)
+	rider.visible = traffic
+	_motorcycle_rider_parts.append(rider)
 
 func motorcycle_handholds() -> Dictionary:
 	var holds := {}

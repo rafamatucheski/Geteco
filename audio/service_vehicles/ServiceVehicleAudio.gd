@@ -5,6 +5,9 @@ const FLEET = preload("res://runtime/FleetCatalog.gd")
 const ENGINE_PROFILE = preload("res://audio/VehicleEngineProfile.gd")
 const TANK_AUDIO := preload("res://audio/tank/TankAudio.gd")
 const BANKS := preload("res://audio/EngineBankCache.gd")
+const DESIGN_BANKS := preload("res://audio/EngineDesignBanks.gd")
+const DESIGN_CATALOG := preload("res://audio/FleetEngineDesign.gd")
+const DESIGN_VOICE := preload("res://audio/EngineDesignVoice.gd")
 const FIREFLY := preload("res://audio/FireflyBank.gd")
 const GROUP := &"service_vehicle_engine_mixer"
 ## Bipe de ré (Firefly, 2026-10-15) dos serviços pesados, fora do orçamento de motor: no
@@ -15,6 +18,7 @@ var _beepers: Dictionary = {}
 const MAX_REGISTERED := 32
 const MAX_AUDIBLE := 6
 const MAX_VOICES := 12
+const MAX_DESIGN_VOICES := MAX_AUDIBLE * 4
 const RANGE := 45.0
 var _entries: Dictionary = {}
 var _banks: Dictionary = {}
@@ -41,6 +45,7 @@ func configure(world: Node, listener: Node3D) -> bool:
 		return false
 	_world = world
 	_listener = listener
+	DESIGN_BANKS.prewarm.call_deferred(get_tree())
 	set_process(_enabled and not _entries.is_empty())
 	return true
 
@@ -147,6 +152,8 @@ func _exit_tree() -> void:
 	shutdown()
 
 func _eligible(vehicle: CharacterBody3D, entry: Dictionary) -> bool:
+	# Registration does not transfer engine ownership from the desert adapter.
+	if vehicle.has_node("DesertCarAudio"): return false
 	if vehicle.is_queued_for_deletion() or not entry.active or not vehicle.is_inside_tree():
 		return false
 	if not vehicle.can_process() or not vehicle.is_physics_processing() or not vehicle.is_visible_in_tree():
@@ -187,6 +194,8 @@ func _process(delta: float) -> void:
 		entry.acceleration = lerpf(entry.acceleration, clampf(acceleration, -10, 10), minf(1, delta * 5))
 		var ratio := clampf(speed / maxf(vehicle.max_forward_speed, 1), 0, 1)
 		var load_value := clampf(maxf(0, entry.acceleration) / maxf(vehicle.drive_acceleration, 1), 0, 1)
+		# Dispatch/traffic can bypass the drivetrain, so infer audio load locally.
+		entry.design_load = 0.0 if float(entry.acceleration) < -0.2 else clampf(0.12 + ratio * 0.3 + load_value * 0.6, 0.0, 1.0)
 		var rpm := clampf(0.1 + ratio * 0.72 + load_value * 0.18, 0, 1) * 6
 		entry.rpm = lerpf(entry.rpm, rpm, minf(1, delta * 5))
 		if float(vehicle.speed) < -0.4 and entry.family in BEEP_FAMILIES:
@@ -209,7 +218,7 @@ func _process(delta: float) -> void:
 			_assign(id)
 	for slot in _slots:
 		if slot.id != 0:
-			_mix(slot)
+			_mix(slot, delta)
 
 func _assign(id: int) -> void:
 	for slot in _slots:
@@ -233,13 +242,15 @@ func _assign(id: int) -> void:
 		players.append(player)
 	_slots.append({"id": id, "players": players})
 
-func _mix(slot: Dictionary) -> void:
+func _mix(slot: Dictionary, delta := 0.1) -> void:
 	var entry: Dictionary = _entries[slot.id]
 	var vehicle: CharacterBody3D = entry.vehicle.get_ref()
 	var lower := mini(5, floori(entry.rpm))
 	var blend := clampf(float(entry.rpm) - lower, 0, 1)
 	var camera := get_viewport().get_camera_3d()
 	var audio_height := camera.global_position.y - _listener.global_position.y if camera != null else 0.0
+	var at := vehicle.global_position + Vector3.UP * (audio_height + 0.7)
+	if _mix_design(slot, entry, vehicle, delta, at): return
 	if entry.family == "tank":
 		TANK_AUDIO.mix_spatial(slot.players, vehicle, clampf((float(entry.rpm) - 0.6) / 5.4, 0.0, 1.0),
 			1.0, -23.0, vehicle.global_position + Vector3.UP * (audio_height + 0.7))
@@ -260,6 +271,28 @@ func _mix(slot: Dictionary) -> void:
 		player.pitch_scale = 1.0 + clampf(entry.acceleration * 0.01, -0.05, 0.08)
 		if not player.playing:
 			player.play()
+
+func _mix_design(slot: Dictionary, entry: Dictionary, vehicle: CharacterBody3D, delta: float, at: Vector3) -> bool:
+	var voice: Variant = slot.get("design_voice")
+	var profile := DESIGN_CATALOG.profile(str(vehicle.archetype))
+	if not is_instance_valid(voice):
+		if not DESIGN_BANKS.enabled() or not DESIGN_BANKS.is_ready(profile): return false
+		voice = DESIGN_VOICE.new()
+		voice.name = "ServiceEngineDesign%d" % _slots.find(slot)
+		add_child(voice)
+		slot.design_voice = voice
+	if not voice.configure(str(vehicle.archetype)): return false
+	for player in slot.players: player.stop()
+	var anchors: Array = DESIGN_CATALOG.rpm_bands(profile)
+	var band := 0.0 if absf(float(vehicle.speed)) < 0.35 else clampf(float(entry.rpm), 0.0, 6.0)
+	var lower := mini(5, floori(band))
+	var target_rpm := exp(lerpf(log(float(anchors[lower])), log(float(anchors[lower + 1])), band - lower))
+	var current_rpm := float(entry.get("design_rpm", anchors[0])) if entry.get("design_profile", "") == profile else float(anchors[0])
+	var response := 10.0 if target_rpm > current_rpm else 6.0
+	entry.design_profile = profile
+	entry.design_rpm = lerpf(current_rpm, target_rpm, 1.0 - exp(-maxf(delta, 0.0) * response))
+	voice.update_mix(float(entry.design_rpm), float(entry.get("design_load", 0.0)), delta, -23.0, at, false, false)
+	return true
 
 ## Bipe de ré dos dois veículos de serviço mais próximos que andam para trás.
 func _update_beepers(reversing: Array[Dictionary]) -> void:
@@ -301,6 +334,8 @@ func _clear_beepers() -> void:
 	for id in _beepers.keys(): _drop_beeper(id)
 
 func _release(slot: Dictionary) -> void:
+	var voice: Variant = slot.get("design_voice")
+	if is_instance_valid(voice): voice.stop()
 	for player in slot.players:
 		player.stop()
 		player.stream = null
@@ -311,6 +346,8 @@ func _free_slots() -> void:
 		_release(slot)
 		for player in slot.players:
 			player.free()
+		var voice: Node3D = slot.get("design_voice")
+		if is_instance_valid(voice): voice.free()
 	_slots.clear()
 
 func _has_bank(family: String) -> bool:
@@ -318,3 +355,20 @@ func _has_bank(family: String) -> bool:
 
 func _load_bank(family: String) -> Array[AudioStreamWAV]:
 	return BANKS.bank(family)
+
+func snapshot() -> Dictionary:
+	var audible_ids: Array[int] = []
+	var playing_voices := 0
+	var design_slots := 0
+	for slot in _slots:
+		if slot.id != 0: audible_ids.append(int(slot.id))
+		for player in slot.players:
+			if player.playing: playing_voices += 1
+		var voice: Variant = slot.get("design_voice")
+		if is_instance_valid(voice):
+			design_slots += 1
+			playing_voices += int(voice.snapshot().motor_voices)
+	return {"registered": _entries.size(), "audible": audible_ids.size(), "audible_ids": audible_ids,
+		"playing_voices": playing_voices, "voice_limit": MAX_DESIGN_VOICES if design_slots > 0 else MAX_VOICES,
+		"design_slots": design_slots, "design_voice_limit": MAX_DESIGN_VOICES,
+		"beepers": _beepers.size(), "beeper_limit": MAX_BEEPERS, "range": RANGE}

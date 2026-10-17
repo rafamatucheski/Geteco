@@ -92,7 +92,7 @@ func _stall_ready() -> void:
 		beam.position=Vector3(side*.87,1.05,-half_length-.1)
 		beam.rotation.x=deg_to_rad(-5)
 		beam.spot_range=20; beam.spot_angle=32; beam.light_energy=1.4
-		beam.light_color=Color("fff0d7"); beam.shadow_enabled=false
+		beam.light_color=Color("fff0d7"); beam.shadow_enabled=true
 		add_child(beam); headlights.append(beam)
 
 func set_active(value: bool) -> void:

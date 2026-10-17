@@ -45,6 +45,22 @@ func run() -> void:
 	var aisle := actor.move_and_collide(Vector3(0,0,3))
 	check(aisle == null, "human capsule travels along unobstructed centre aisle")
 	check(train.solids.size() > 25, "classified coach and engine solid inventory present")
+	var roof_ray := PhysicsRayQueryParameters3D.create(Vector3(0, 3.6, 0), Vector3(0, 2.6, 0), 1)
+	var roof_hit := space.intersect_ray(roof_ray)
+	check(not roof_hit.is_empty() and absf(roof_hit.position.y - 3.14) < .005, "arched coach roof has collision at its visible crest")
+	var local_surfaces := true
+	for material in train._materials.values():
+		if material.uv1_world_triplanar: local_surfaces = false
+	check(local_surfaces, "moving train textures stay attached to the vehicle instead of swimming in world space")
+	var roof: MeshInstance3D = train.get_node("CoachRoof")
+	var roof_transform := roof.transform
+	var wheel_positions: Array[Vector3] = []
+	for wheel in train._wheels: wheel_positions.append(wheel.position)
+	train.advance_wheels(7.3)
+	var wheels_grounded := true
+	for index in train._wheels.size():
+		if not train._wheels[index].position.is_equal_approx(wheel_positions[index]): wheels_grounded = false
+	check(wheels_grounded and roof.transform == roof_transform, "rolling animation changes wheel rotation only and leaves roof attachments fixed")
 	print("TRAIN_MODEL_RESULT failures=", failures)
 	world.queue_free()
 	quit(1 if failures else 0)

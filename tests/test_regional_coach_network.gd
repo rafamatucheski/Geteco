@@ -59,7 +59,7 @@ func run() -> void:
 	check(bus.passengers.all(func(person): return person.visible and person.sit_amount==1.0 and not person.is_processing()),"Seated rigs visible without individual frame loops")
 	bus.traffic=true
 	bus.equipment._refresh()
-	check(bus.equipment.auto_lit and bus.equipment.npc_beam.visible and bus.equipment.ground_pool.visible,"Shared heavy bus headlight illuminates at night")
+	check(bus.equipment.auto_lit and bus.equipment.npc_beam.visible and bus.equipment._budget_request().decal == null,"Shared heavy bus headlight illuminates at night")
 	light_world.production.state.world_state.time=.5
 	bus.equipment._refresh()
 	check(not bus.equipment.auto_lit and not bus.equipment.npc_beam.visible,"Daylight switches off the night beam")

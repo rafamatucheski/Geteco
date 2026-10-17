@@ -42,9 +42,17 @@ void vertex() {
 }
 
 void fragment() {
-	vec3 grass=texture(grass_texture,world_point*0.06).rgb;
+	vec3 grass=texture(grass_texture,world_point*0.16).rgb;
 	vec2 local_point=world_point-venue_origin;
 	bool near_venue=abs(local_point.x)<38.0 && local_point.y>-31.0 && local_point.y<36.0;
+	// The venue owns a submerged bed. Do not draw the former flat meadow
+	// through its transparent water; dry support and shore masks stay intact.
+	if (near_venue) {
+		vec2 pond_point=local_point-vec2(0.0,-4.0);
+		float pond_angle=atan(pond_point.y/18.0,pond_point.x/27.0);
+		float pond_lobe=1.0+0.045*sin(pond_angle*3.0+0.6)+0.025*cos(pond_angle*5.0);
+		if (length(pond_point/vec2(27.0,18.0))<pond_lobe-0.002) { discard; }
+	}
 	vec3 earth=vec3(0.0);
 	if (road_surface || near_venue) {
 		// Exactly the rural road samples and weights outside the local mask.

@@ -168,6 +168,11 @@ static func flat_mesh(polygons: Array[PackedVector2Array], y: float, uv_scale: f
 	var uvs := PackedVector2Array()
 	var indices := PackedInt32Array()
 	for polygon in polygons:
+		# Clip intersections can differ by micrometres yet collapse in Godot's
+		# triangle-mesh readback/physics deduplication. Clean the contour first,
+		# not only after a failed triangulation, to avoid zero-area bridge faces.
+		polygon = _without_degenerate_edges(polygon)
+		if polygon.size() < 3: continue
 		var triangles := Geometry2D.triangulate_polygon(polygon)
 		if triangles.is_empty():
 			# Global clipping followed by a local inverse transform can leave
@@ -186,8 +191,15 @@ static func flat_mesh(polygons: Array[PackedVector2Array], y: float, uv_scale: f
 			vertices.append(Vector3(point.x, y, point.y))
 			normals.append(Vector3.UP)
 			uvs.append(point / uv_scale)
-		for index in triangles: indices.append(offset + index)
-	if vertices.is_empty(): return null
+		for triangle in range(0,triangles.size(),3):
+			var a := polygon[triangles[triangle]]
+			var b := polygon[triangles[triangle+1]]
+			var c := polygon[triangles[triangle+2]]
+			# Clipped hole bridges can triangulate duplicate vertices. Zero-area
+			# faces have no front side; discard only these, retaining tiny real faces.
+			if (b-a).cross(c-a) == 0.0: continue
+			for corner in 3: indices.append(offset + triangles[triangle+corner])
+	if indices.is_empty(): return null
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = vertices
@@ -203,7 +215,7 @@ static func _without_degenerate_edges(polygon: PackedVector2Array) -> PackedVect
 	var clean := polygon.duplicate()
 	const EDGE_EPS := 0.00005
 	var changed := true
-	while changed and clean.size() > 3:
+	while changed and clean.size() >= 3:
 		changed = false
 		for index in clean.size():
 			var previous := clean[(index+clean.size()-1)%clean.size()]
@@ -211,7 +223,9 @@ static func _without_degenerate_edges(polygon: PackedVector2Array) -> PackedVect
 			var after := clean[(index+1)%clean.size()]
 			var axis := after-previous
 			var distance := absf(axis.cross(point-previous))/maxf(axis.length(),EDGE_EPS)
-			if point.distance_to(previous) <= EDGE_EPS or distance <= EDGE_EPS:
+			# A backtracking spike may have a distant tip but coincident
+			# neighbours (a,b,a+epsilon). Remove its tip before deduplication.
+			if previous.distance_to(after) <= EDGE_EPS or point.distance_to(previous) <= EDGE_EPS or distance <= EDGE_EPS:
 				clean.remove_at(index)
 				changed = true
 				break

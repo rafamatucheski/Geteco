@@ -1,6 +1,7 @@
 extends Node3D
 ## Independent streamed region. Coordinates never pass through Harbor's legacy pixel adapter.
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
+const GPU_RELEASE := preload("res://runtime/GpuReleaseQueue.gd")
 const UNDERGROUND := preload("res://world/desert/underground/DesertUnderground.gd")
 const G := preload("res://world/desert/DesertGeometry.gd")
 const ART := preload("res://world/desert/DesertArchitecture.gd")
@@ -302,7 +303,7 @@ func release_chunks() -> void:
 	if is_instance_valid(mining_dust): mining_dust.suspend()
 	pending.clear()
 	build_jobs.clear()
-	for chunk in chunks.values(): chunk.queue_free()
+	for chunk in chunks.values(): GPU_RELEASE.retire(chunk)
 	chunks.clear()
 	_lamps.clear()
 	vehicle_support_cells.clear()
@@ -315,7 +316,11 @@ func _trim_chunks() -> void:
 	for key in chunks.keys():
 		if vehicle_support_cells.has(key): continue
 		if absi(key.x-current_cell.x)>retention_radius or absi(key.y-current_cell.y)>retention_radius:
-			chunks[key].queue_free()
+			# Descarte gradual (fila de vídeo, 16/10): o trecho some já e é liberado aos poucos. Os postes dele
+			# saem da lista agora, porque continuam válidos (escondidos) até a fila chegar neles.
+			var retired: Node3D = chunks[key]
+			_lamps=_lamps.filter(func(lamp): return is_instance_valid(lamp) and not retired.is_ancestor_of(lamp))
+			GPU_RELEASE.retire(retired)
 			chunks.erase(key)
 			for i in range(build_jobs.size()-1,-1,-1):
 				if build_jobs[i].key==key: build_jobs.remove_at(i)

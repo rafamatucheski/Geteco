@@ -31,6 +31,7 @@ func run() -> void:
 	check(not belt.purchase() and game.state.economy.balance == 0, "no duplicate purchase")
 	await process_frame
 	check(belt.lamp.is_visible_in_tree(), "illuminates unarmed")
+	check(belt.lamp is OmniLight3D, "body lamp illuminates all directions rather than a forward cone")
 	game.state.grant_weapon("pistol")
 	game.state.equip_weapon("pistol")
 	await process_frame
@@ -44,5 +45,8 @@ func run() -> void:
 	game.player.visual.rotation.y = PI / 2
 	await process_frame
 	check(belt.global_position.distance_to(game.player.global_position) < 1.1 and belt.lamp.shadow_enabled, "waist attachment and wall shadows")
+	game.health = 0
+	await process_frame
+	check(not belt.lamp.visible and not belt.glass.emission_enabled, "death extinguishes light and lens")
 	game.free()
 	quit(1 if failures else 0)

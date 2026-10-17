@@ -373,14 +373,15 @@ func _ready() -> void:
 	# Asfalto escuro reflete pouco: com 2,5 o facho mal aparecia na rua e só a
 	# calçada perto do Dante acendia (medido na Main à meia-noite, 25/09/2026).
 	flashlight.spot_range = 24.0
-	flashlight.spot_angle = 32.0
+	flashlight.spot_angle = 26.0
 	flashlight.spot_attenuation = 0.7
 	# Borda do cone suave: com 7,0 e borda dura, o facho rasante no concreto claro
 	# do cais virava uma cápsula branca estourada (vídeo de 25/09/2026).
-	flashlight.spot_angle_attenuation = 2.2
+	flashlight.spot_angle_attenuation = 1.65
+	flashlight.light_color = Color(.94, .97, 1.0)
 	flashlight.light_energy = 5.0
 	flashlight.light_specular = 0.2
-	flashlight.shadow_enabled = false
+	flashlight.shadow_enabled = true
 	gun.add_child(flashlight)
 	flashlight.hide()
 	laser = MeshInstance3D.new()
@@ -1004,8 +1005,8 @@ func _update_back_katana(id: String) -> void:
 	if id != _sheath_last_id and _sheath_last_id != "":
 		if id == "katana": _start_sheath("draw")
 		elif _sheath_last_id == "katana": _start_sheath("holster")
-	_sheath_last_id = id
 		_weapon_switch_sound(_sheath_last_id, id)
+	_sheath_last_id = id
 	if back_katana == null or not is_instance_valid(player): return
 	var carried: bool = state != null and bool(state.owns_weapon("katana")) and not bool(player.get("dead"))
 	var moving: bool = _sheath_clip != ""
@@ -1290,8 +1291,8 @@ func _stall_fire_at(target: Vector3) -> bool:
 	if not melee and (not has_ammo or (not grenade and not state.consume_ammo(id, 1))):
 		# V1 (`Player._shoot_towards`): pente vazio recarrega sozinho quando há reserva.
 		cooldown = 0.25
-		if not reload_weapon(): message.emit("Sem munição.")
 		if not grenade: _firefly_sound("weapons_fire", "dry_fire", player.global_position, -7.0, 20.0)
+		if not reload_weapon(): message.emit("Sem munição.")
 		return false
 	cooldown = float(data.fire_interval)
 	_attack_serial += 1
@@ -1925,9 +1926,9 @@ func _capture_explosion_context() -> Dictionary:
 func _detonate_explosion(point: Vector3, radius: float, amount: float, source: Node3D, hurt_source: bool, crusher: Node3D, damage_source: Node3D) -> void:
 	var traced := Time.get_ticks_usec() if get_meta("trace_explosion",false) else 0
 	_sound("explosion", point, EXPLOSION_VOLUME_DB)
-	traced = _trace_explosion_cost("audio",traced)
 	# Cauda: o estrondo sozinho acabava seco; o rumor e os estilhaços caindo vêm por baixo dele.
 	_firefly_sound("weapons_fire", "explosion_tail", point, EXPLOSION_VOLUME_DB - 7.0, HEARING_EXPLOSION * 1.4, 0.05)
+	traced = _trace_explosion_cost("audio",traced)
 	if emergency != null: emergency.ignite(point, damage_source, 1.0)
 	traced = _trace_explosion_cost("ground_fire",traced)
 	var sphere := SphereShape3D.new()
@@ -2197,8 +2198,8 @@ func civilian_shoot(shooter: CharacterBody3D, origin: Vector3, amount: float) ->
 		"damage": amount, "data": data, "source": weakref(shooter), "rid": shooter.get_rid(), "visual": token, "blocked": blocked})
 	_play_stream(AUDIO.gunfire_take("pistol", _rng), origin, NPC_GUNFIRE_DB, _rng.randf_range(0.95, 1.05), HEARING_GUNFIRE)
 	npc_gunfire.emit(origin, direction, shooter)
-	return true
 	STALL_WORK.finish("shot.npc", STALL_WORK.begin())
+	return true
 
 func police_shoot(officer: CharacterBody3D, amount: float, weapon_id: String = "pistol") -> void:
 	if police_surrendering(): return
@@ -2223,15 +2224,15 @@ func police_shoot(officer: CharacterBody3D, amount: float, weapon_id: String = "
 		"damage": amount, "data": data, "source": weakref(officer), "rid": officer.get_rid(), "visual": token, "blocked": blocked})
 	visual.attack()
 	npc_gunfire.emit(origin, direction, officer)
-	# Match the weapon carried and fired by this dispatched officer.
 	STALL_WORK.finish("shot.police", STALL_WORK.begin())
+	# Match the weapon carried and fired by this dispatched officer.
 	_play_stream(AUDIO.gunfire_take(weapon_id, _rng), origin, NPC_GUNFIRE_DB, _rng.randf_range(0.95, 1.05), HEARING_GUNFIRE)
 
 func _advance_police_rounds(delta: float) -> void:
 	for index in range(_police_rounds.size() - 1, -1, -1):
 		var round_index: Dictionary = _police_rounds[index]
-		var step := minf(float(round_index.speed) * delta, float(round_index.range) - float(round_index.distance))
 		_bullet_whiz(round_index)
+		var step := minf(float(round_index.speed) * delta, float(round_index.range) - float(round_index.distance))
 		var end: Vector3 = round_index.point + round_index.direction * step
 		var query := PhysicsRayQueryParameters3D.create(round_index.point, end, 7, [round_index.rid])
 		var hit: Dictionary = round_index.blocked if not round_index.blocked.is_empty() else get_world_3d().direct_space_state.intersect_ray(query)
@@ -2248,7 +2249,6 @@ func _advance_police_rounds(delta: float) -> void:
 			_hit_effect(hit, damage, round_index.direction)
 		if finished: _police_rounds.remove_at(index)
 
-func police_reload(officer: Node3D, weapon_id: String) -> void:
 ## Zunido da bala de NPC/polícia que passa a menos de 3 m do jogador: uma vez por bala, no ponto
 ## mais próximo da trajetória (só enquanto a bala ainda vai passar por ele).
 func _bullet_whiz(round_index: Dictionary) -> void:
@@ -2261,6 +2261,7 @@ func _bullet_whiz(round_index: Dictionary) -> void:
 	round_index["whizzed"] = true
 	_firefly_sound("weapons_fire", "bullet_whiz", closest, -6.0, 14.0, 0.06)
 
+func police_reload(officer: Node3D, weapon_id: String) -> void:
 	if not is_instance_valid(officer): return
 	var sample := AUDIO.reload_take(weapon_id, _rng)
 	if sample != null:
@@ -2450,7 +2451,6 @@ func _impact_sound(collider: Object, point: Vector3, amount: float, normal := Ve
 		if entry.material == material: return
 	_recent_impacts.append({"time": _combat_clock, "material": material})
 	_play_stream(AUDIO.impact_take(material, _rng), point, -14.0 + clampf((amount - 15.0) / 15.0, -0.8, 2.0))
-
 	# Bala em metal às vezes ricocheteia: assobio por cima do toc, em um terço dos impactos.
 	if material == "metal" and _rng.randf() < 0.35: _firefly_sound("weapons_fire", "ricochet", point, -13.0, 40.0, 0.08)
 
@@ -2473,6 +2473,7 @@ func _weapon_switch_sound(from_id: String, to_id: String) -> void:
 	elif from_id == "katana": _firefly_sound("katana", "sheath", at, -9.0, 14.0)
 	elif _is_firearm(to_id): _firefly_sound("weapons_fire", "gun_draw", at, -11.0, 12.0)
 	elif _is_firearm(from_id): _firefly_sound("weapons_fire", "gun_holster", at, -12.0, 12.0)
+
 func police_evasion_seconds() -> float:
 	if police_case != null and police_case.descending: return 8.0
 	return EVASION_SECONDS[clampi(stars, 0, 6)]

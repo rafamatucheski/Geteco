@@ -41,15 +41,14 @@ func run() -> void:
 	var rail := NETWORK.get_route("harbor_central","harbor_north")
 	check(rail.size()>2 and rail[0].is_equal_approx(station.position),"Viaduct starts at relocated stop")
 	var clear_buildings := true
-	# The added west-to-east leg must stay in the Foundry corridor, clear even
-	# in plan view of the authored blocks; no reliance on clipping through roofs.
-	for point in rail:
-		if point.x>260 or point.z<0: continue
+	# Both sides of the coastal circuit avoid authored building footprints.
+	var whole_loop := rail+NETWORK.get_route("harbor_north","harbor_central")
+	for point in whole_loop:
 		for building in source.harbor_buildings:
 			var center := Vector2(building.position[0],building.position[1])/16
 			var size := Vector2(building.size[0],building.size[1])/16
 			if Rect2(center-size*.5,size).grow(2.0).has_point(Vector2(point.x,point.z)): clear_buildings=false
-	check(clear_buildings,"New Foundry rail leg avoids authored building footprints")
+	check(clear_buildings,"Both coastal rail legs avoid authored building footprints")
 	var platform_outline := PackedVector2Array([platform.position,Vector2(platform.end.x,platform.position.y),platform.end,Vector2(platform.position.x,platform.end.y)])
 	var train_clear := true
 	var envelope_samples := 0
@@ -67,13 +66,13 @@ func run() -> void:
 			var center := Vector2(point.x,point.z)
 			var envelope := PackedVector2Array()
 			for corner in [Vector2(-1,-1),Vector2(1,-1),Vector2(1,1),Vector2(-1,1)]:
-				envelope.append(center+side*corner.x*1.45+tangent*corner.y*5.15)
+				envelope.append(center+side*corner.x*1.71+tangent*corner.y*5.4)
 			envelope_samples+=1
 			if not Geometry2D.intersect_polygons(envelope,platform_outline).is_empty(): train_clear=false
-	check(train_clear,"10.3 m coach envelope clears relocated platform in both directions at 0.1 m intervals")
+	check(train_clear,"10.8 m coach envelope clears relocated platform in both directions at 0.1 m intervals")
 	var report := {"checks":checks,"failures":failures,"station":str(station),"access":str(points),"route_length_m":NETWORK.route_length(rail),"road_network_unchanged":true}
 	report.envelope_samples=envelope_samples
-	var folder := "res://evidence/railway-neco-relocation-20261014"
+	var folder := "res://evidence/railway-coastal-20261015"
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
 	FileAccess.open(folder+"/network.json",FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
 	print("RAILWAY_NECO ",JSON.stringify(report))

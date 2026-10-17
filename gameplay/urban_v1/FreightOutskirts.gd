@@ -21,7 +21,6 @@ var _trunks: StaticBody3D
 func _ready() -> void:
 	name = "FreightOutskirts"
 	_build_resources()
-	_ground_finish()
 	_trunks = StaticBody3D.new()
 	_trunks.name = "WoodlandTrunks"
 	add_child(_trunks)
@@ -38,7 +37,7 @@ func _ready() -> void:
 		var point := Vector2(rng.randf_range(-422,-101),rng.randf_range(-153,150))
 		if not _available(point,8.1): continue
 		var scale_value := rng.randf_range(0.5,1.25)
-		var tint := Color(0.83,0.96,0.76).lerp(Color(1.03,0.93,0.70),rng.randf())
+		var tint := Color(.86,.95,.82).lerp(Color(.99,.96,.80),rng.randf())
 		_put("shrub",Vector3(point.x,0.36*scale_value,point.y),Vector3(1.2,0.65,1.0)*scale_value,rng.randf()*TAU,tint)
 	for index in 72:
 		var point := Vector2(rng.randf_range(-422,-101),rng.randf_range(-153,150))
@@ -77,12 +76,12 @@ func _build_resources() -> void:
 	crown.height = 1.0
 	crown.radial_segments = 9
 	crown.rings = 5
-	_meshes["shrub"] = crown
+	_meshes["shrub"] = _shrub_mesh()
 	_meshes["stone"] = crown
 	_meshes["grass"] = preload("res://world/urban_detail/HarborGrassTufts.gd")._tuft_mesh()
 	_materials["grass"] = preload("res://activities/motocross/MotocrossGroundDetail.gd").grass_material()
-	for entry in [["trunk",Color("65503b")],["crown_0",Color("425d36")],["crown_1",Color("66784a")],
-		["crown_2",Color("526d43")],["shrub",Color("5e7545")],["stone",Color("8e9280")]]:
+	for entry in [["trunk",Color("514232")],["crown_0",Color("364a32")],["crown_1",Color("53613b")],
+		["crown_2",Color("435637")],["shrub",Color("4b6039")],["stone",Color("777c6c")]]:
 		var material := StandardMaterial3D.new()
 		material.albedo_color = entry[1]
 		material.vertex_color_use_as_albedo = true
@@ -112,6 +111,30 @@ static func _limb(surface: SurfaceTool, start: Vector3, finish: Vector3, radius:
 		_face(surface,bottom_a,top_a,top_b,tint)
 		_face(surface,bottom_a,top_b,bottom_b,tint)
 		_face(surface,finish,top_b,top_a,tint)
+
+static func _shrub_mesh() -> ArrayMesh:
+	# Replace the old spherical shrub with 12 broad folded leaves (48 triangles).
+	# Same footprint, placements and MultiMesh batches; no added instances/physics.
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for leaf in 12:
+		var angle := float(leaf)*2.39996
+		var outer := leaf < 7
+		var direction := Vector3(cos(angle),0,sin(angle))
+		var side := Vector3(-sin(angle),0,cos(angle))
+		var base := Vector3(0,-.50,0)+direction*.035
+		var tip := direction*(.48 if outer else .31)+Vector3.UP*(.02+sin(angle)*.10 if outer else .43)
+		var middle := base.lerp(tip,.57)
+		var width := .115 if outer else .092
+		var left := middle+side*width
+		var right := middle-side*width
+		var crest := middle+Vector3.UP*.065
+		var tint := Color.WHITE.darkened(.10+float(leaf%3)*.055)
+		_face(surface,base,left,crest,tint.darkened(.10))
+		_face(surface,left,tip,crest,tint)
+		_face(surface,tip,right,crest,tint.lightened(.035))
+		_face(surface,right,base,crest,tint.darkened(.06))
+	return surface.commit()
 
 static func _wood_mesh() -> ArrayMesh:
 	var surface := SurfaceTool.new()
@@ -152,30 +175,6 @@ static func _canopy_mesh(variant: int) -> ArrayMesh:
 				if ring > 0: _face(surface,points[0],points[1],points[2],tint)
 				if ring < 3: _face(surface,points[0],points[2],points[3],tint)
 	return surface.commit()
-
-func _ground_finish() -> void:
-	var pieces := _rect_outside(LAND,SECRET_CELLAR_OPENING)
-	for index in pieces.size():
-		var piece: Rect2 = pieces[index]
-		var ground := MeshInstance3D.new()
-		ground.name = "WoodlandFloorFinish%d"%index
-		var plane := PlaneMesh.new()
-		plane.size = piece.size
-		ground.mesh = plane
-		ground.position = Vector3(piece.get_center().x,0.001,piece.get_center().y)
-		ground.material_override = preload("res://activities/motocross/MotocrossGroundDetail.gd").ground_material()
-		ground.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		add_child(ground)
-
-func _rect_outside(surface: Rect2,hole: Rect2) -> Array[Rect2]:
-	var overlap := surface.intersection(hole)
-	if not overlap.has_area(): return [surface]
-	var pieces: Array[Rect2] = []
-	if overlap.position.y>surface.position.y: pieces.append(Rect2(surface.position,Vector2(surface.size.x,overlap.position.y-surface.position.y)))
-	if overlap.end.y<surface.end.y: pieces.append(Rect2(Vector2(surface.position.x,overlap.end.y),Vector2(surface.size.x,surface.end.y-overlap.end.y)))
-	if overlap.position.x>surface.position.x: pieces.append(Rect2(Vector2(surface.position.x,overlap.position.y),Vector2(overlap.position.x-surface.position.x,overlap.size.y)))
-	if overlap.end.x<surface.end.x: pieces.append(Rect2(Vector2(overlap.end.x,overlap.position.y),Vector2(surface.end.x-overlap.end.x,overlap.size.y)))
-	return pieces
 
 func _tree(point: Vector2, rng: RandomNumberGenerator) -> void:
 	var height := rng.randf_range(7.0,12.0)

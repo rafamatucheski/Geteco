@@ -1792,8 +1792,8 @@
 			"piece/unit/harbor/0_1/Objeto~500_1146": {
 				"id": "piece/unit/harbor/0_1/Objeto~500_1146",
 				"position": [
-					50.061107635498,
-					114.502029418945
+					50.0337219238281,
+					114.576278686523
 				],
 				"rotation": 0.0,
 				"source_record": "unit/harbor/0_1",

@@ -8,7 +8,7 @@
     <AssemblyName>Harbor</AssemblyName>
     <ImplicitUsings>disable</ImplicitUsings>
     <Nullable>disable</Nullable>
-    <!-- Cópias de projetos antigas em evidence/ e builds/ não são código do jogo. -->
-    <DefaultItemExcludes>$(DefaultItemExcludes);evidence/**;builds/**</DefaultItemExcludes>
+    <!-- Cópias de diagnóstico e builds não são código do jogo. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);evidence/**;builds/**;artifacts/**</DefaultItemExcludes>
   </PropertyGroup>
 </Project>

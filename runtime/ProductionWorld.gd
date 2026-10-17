@@ -1,6 +1,7 @@
 extends Node
 const SESSION_OPS := preload("res://runtime/SessionOperations.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+const GPU_RELEASE := preload("res://runtime/GpuReleaseQueue.gd")
 const REGION := preload("res://world/editing/EditableRegion.gd")
 const WORLD_CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
@@ -68,6 +69,9 @@ const TRAFFIC_MOTORCYCLE_TYPES := ["bike_urban", "bike_sport", "bike_cruiser"]
 signal logical_region_changed(previous_region: String, next_region: String)
 const CONNECTION_PRELOAD_DISTANCE := 240.0
 const CONNECTION_RELEASE_DISTANCE := 320.0
+## GETECO_SEAM_HOLD=0 desliga a folga da emenda (A/B).
+static var _seam_hold_enabled := OS.get_environment("GETECO_SEAM_HOLD") != "0"
+var _seam_retention := false
 var world
 var state = preload("res://runtime/GameState.gd").new()
 var store = preload("res://runtime/SaveStore.gd").new()
@@ -945,6 +949,13 @@ func _update_physical_residency(point: Vector3) -> void:
 	var seam_anchor := point
 	var seam_preload := seam_distance <= CONNECTION_PRELOAD_DISTANCE
 	var seam_keep := seam_distance <= CONNECTION_RELEASE_DISTANCE
+	# Folga da emenda: perto da ponte porto e serra guardam o raio maior. Antes o raio trocava 2<->1
+	# entre as duas ao cruzar a divisa no meio da ponte: uma descartava uma faixa de trechos e a outra
+	# carregava outra no mesmo instante, e andar perto da divisa repetia isso (relato do jogador, 16/10).
+	# Liga a CONNECTION_PRELOAD_DISTANCE e só desliga depois de CONNECTION_RELEASE_DISTANCE.
+	if _seam_hold_enabled:
+		if seam_preload: _seam_retention = true
+		elif not seam_keep: _seam_retention = false
 	for id in ["harbor","mountain","desert"]:
 		for vehicle in support[id]:
 			var position: Vector3 = vehicle.position
@@ -967,14 +978,16 @@ func _update_physical_residency(point: Vector3) -> void:
 		for id in ["harbor","mountain","desert"]:
 			if id != physical_region and support[id].is_empty(): _unmount_region(id)
 		if is_instance_valid(connection):
-			connection.queue_free()
+			# Conexão da ponte (dezenas de malhas e colisões) sai pela fila de vídeo, aos poucos (16/10).
+			GPU_RELEASE.retire(connection)
 			connection = null
 	var dispatch_support := _active_dispatch_support()
 	for id in regions:
 		var mounted: Node3D = regions[id]
 		if not is_instance_valid(mounted): continue
 		mounted.set_vehicle_support(support[id]+dispatch_support[id])
-		mounted.set_retention_radius(2 if id == physical_region else 1)
+		var seam_side: bool = _seam_retention and (id == "harbor" or id == "mountain")
+		mounted.set_retention_radius(2 if id == physical_region or seam_side else 1)
 		var region_focus := point
 		if id != physical_region and seam_distance > CONNECTION_PRELOAD_DISTANCE:
 			if not support[id].is_empty(): region_focus = support[id][0].position

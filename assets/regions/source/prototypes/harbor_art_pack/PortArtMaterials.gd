@@ -60,10 +60,10 @@ static func _container_paint_texture() -> ImageTexture:
 			var g := grain_image.get_pixel(x, y).r
 			# Amostra do fio com y comprimido: colunas longas e finas.
 			var s := streak_image.get_pixel((x * 3) % SIZE, int(y * 0.1667) % SIZE).r
-			var value := lerpf(0.78, 1.04, b) * lerpf(0.93, 1.05, g)
+			var value := lerpf(0.69, 0.96, b) * lerpf(0.95, 1.025, g)
 			var color := Color(value, value, value)
 			# Escorrido de ferrugem: tinge de marrom onde o fio é forte.
-			var rust := smoothstep(0.62, 0.86, s) * smoothstep(0.35, 0.7, b)
+			var rust := smoothstep(0.54, 0.79, s) * smoothstep(0.35, 0.7, b)
 			color = color.lerp(Color(0.62, 0.40, 0.30) * value, rust * 0.72)
 			# Lascas de tinta: aço cru escuro e áspero, manchas pequenas e raras.
 			var chip := smoothstep(0.80, 0.90, g * 0.7 + b * 0.45)
@@ -82,19 +82,19 @@ static func container_paint(id_name: String, color: Color, metallic: float, roug
 	return m
 
 static func container_blue() -> StandardMaterial3D:
-	return container_paint("port_container_blue", Color("#2d6c93"), 0.40, 0.55)
+	return container_paint("port_container_blue", Color("#365e73"), 0.24, 0.78)
 
 static func container_rust() -> StandardMaterial3D:
-	return container_paint("port_container_rust", Color("#a24632"), 0.35, 0.65)
+	return container_paint("port_container_rust", Color("#915b48"), 0.22, 0.85)
 
 static func container_teal() -> StandardMaterial3D:
-	return container_paint("port_container_teal", Color("#2f8392"), 0.40, 0.55)
+	return container_paint("port_container_teal", Color("#416d69"), 0.24, 0.80)
 
 static func container_amber() -> StandardMaterial3D:
-	return container_paint("port_container_amber", Color("#cc9230"), 0.35, 0.60)
+	return container_paint("port_container_amber", Color("#9b8049"), 0.22, 0.84)
 
 static func container_white() -> StandardMaterial3D:
-	return container_paint("port_container_white", Color("#e0e3e6"), 0.25, 0.50)
+	return container_paint("port_container_white", Color("#aaa99a"), 0.18, 0.85)
 
 # Faixa de marca e placas de identificação: tinta lisa, sem o desgaste do casco.
 static func container_marking() -> StandardMaterial3D:

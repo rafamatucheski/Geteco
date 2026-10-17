@@ -43,13 +43,8 @@ static func _prepare() -> void:
 		_shrubs.append({"point":Vector3(point.x,.30,point.y),"size":rng.randf_range(.7,1.45),"yaw":rng.randf()*TAU})
 	_meshes.trunk = WOOD._wood_mesh()
 	for variant in 3: _meshes["crown_%d"%variant] = WOOD._canopy_mesh(variant)
-	var shrub := SphereMesh.new()
-	shrub.radius = .5
-	shrub.height = 1
-	shrub.radial_segments = 8
-	shrub.rings = 4
-	_meshes.shrub = shrub
-	for row in [["trunk","65503b"],["crown_0","425d36"],["crown_1","66784a"],["crown_2","526d43"],["shrub","5e7545"]]:
+	_meshes.shrub = WOOD._shrub_mesh()
+	for row in [["trunk","514232"],["crown_0","364a32"],["crown_1","53613b"],["crown_2","435637"],["shrub","4b6039"]]:
 		var material := StandardMaterial3D.new()
 		material.albedo_color = Color(row[1])
 		material.vertex_color_use_as_albedo = true

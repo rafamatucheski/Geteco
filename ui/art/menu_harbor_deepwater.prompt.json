@@ -1,0 +1,7 @@
+{
+  "tool": "built-in image_gen",
+  "use_case": "precise-object-edit",
+  "source": "C:/Users/rafae/.codex/generated_images/01a13f3f-db8c-75a0-a2b0-643d252490c6/exec-7b41ef3c-cc47-4778-97eb-28738f5339d6.png",
+  "output": "res://ui/art/menu_harbor_deepwater.png",
+  "prompt": "Use case: precise-object-edit. Asset type: clean background plate for the HARBOR game main menu, desired 1920x1080 landscape 16:9. Edit the supplied approved mockup ONLY to remove every UI overlay: the large HARBOR title, all menu option text, cream selection rectangle, orange triangular pointer, and bottom Enter/Selecionar hint and outlined key. Seamlessly reconstruct the dark rippling water underneath those removed overlays. Preserve the exact illustration, camera, crop, composition, palette, night lighting and ink-grained texture everywhere else: very distant warehouses and containers along the top edge, slender yellow cranes and warm lights with reflected streaks in the water, the cropped yellow crane and teal container on the concrete right-hand quay. Keep the enormous central and lower dark water negative space, the same irregular light reflection crossing it. Do not add or move objects, ships, people, skyline, docks or lights; do not zoom or change perspective. This must look like the SAME approved picture with only the user interface removed. Output a clean full-bleed opaque background illustration with absolutely NO text, letters, logos, UI, shapes, buttons, frames or watermark."
+}

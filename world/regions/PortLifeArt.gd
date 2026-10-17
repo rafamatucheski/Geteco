@@ -337,7 +337,6 @@ func _shelter() -> void:
 			box(Vector3(x,.07,z),Vector3(.34,.14,.34),"53615f")
 			box(Vector3(x,2.86,z),Vector3(.3,.1,.3),"53615f")
 	# Pavimento de blocos marca a área de espera sem criar degrau físico.
-	box(Vector3(232.5,.13,198.9),Vector3(8.6,.02,4.6),"pier_paving")
 	box(Vector3(232.5,2.97,198.9),Vector3(7.7,.18,3.6),"pier_roof",true)
 	# Fáscia e platibanda: a espessura do telhado passa a ler como beiral de verdade.
 	for side in [-1.0,1.0]:

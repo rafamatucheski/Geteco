@@ -1,6 +1,7 @@
 extends RefCounted
 ## Pure spatial storage. Callers commit a whole candidate only after success.
 const WEAPONS := preload("res://gameplay/WeaponCatalog.gd")
+const CATCH_ITEMS := preload("res://activities/fishing/FishingCatchItems.gd")
 const LONG := ["shotgun","sawed_off","ak47","m4a1","hunting_rifle","rpg","flamethrower","katana"]
 const TRUNK_SIZE := Vector2i(4,6)
 const TRUNK_AMMO_SLOTS := 6
@@ -13,13 +14,14 @@ const ITEMS := {
 	"water":{"label":"Água","description":"Uma garrafa de água. Recupera 5 de vida.","heal":5,"stack":5,"icon":"water"},
 	"sandwich":{"label":"Sanduíche","description":"Um lanche embalado. Recupera 20 de vida.","heal":20,"stack":5,"icon":"sandwich"},
 	"first_aid":{"label":"Primeiros socorros","description":"Recupera 40 de vida.","heal":40,"stack":5,"icon":"med"},
-	"lockpick":{"label":"Gazua","description":"Usada para abrir fechaduras.","stack":10,"icon":"key"},
+	"lockpick":{"label":"Gazua","description":"Usada para abrir fechaduras.","stack":10,"icon":"lockpick"},
 	"garage_part":{"label":"Peça da garagem","description":"Entregue a peça ao Maciota.","quest":true,"stack":1,"icon":"scrap"},
 	"backpack":{"label":"Mochila","description":"12 espaços. Deixa as mãos livres.","stack":1,"icon":"bag"},
 	"handbag":{"label":"Mala de mão","description":"24 espaços. Ocupa uma mão e impede o uso de armas longas.","stack":1,"icon":"case"},
 }
 
 static func spec(id: String) -> Dictionary:
+	if id.begins_with("fish:") or id == "cooked_fish": return CATCH_ITEMS.spec(id)
 	if id.begins_with("weapon:"):
 		var weapon := id.trim_prefix("weapon:")
 		if not WEAPONS.WEAPONS.has(weapon): return {}

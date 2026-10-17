@@ -129,11 +129,29 @@ func run() -> void:
 	var photographed := {}
 	var trace := []
 	var old_phase := ""
+	var observed_water_fish := false
+	var observed_landing := false
+	var observed_release := false
+	var landing_id := 0
+	var catches_before_landing := 0
 	var simulation_start := Time.get_ticks_msec()
 	while fishing.active and Time.get_ticks_msec()-simulation_start < 110000:
 		if fishing.phase != old_phase:
 			old_phase = fishing.phase
 			trace.append({"ms":Time.get_ticks_msec()-simulation_start,"phase":old_phase,"tension":fishing.fight.tension,"progress":fishing.fight.progress})
+			if old_phase == "landing":
+				observed_landing = true
+				landing_id = fishing._rod._fish.get_instance_id()
+				catches_before_landing = fishing.caught
+			if old_phase == "caught" and landing_id != 0:
+				check(fishing._rod._fish.get_instance_id() == landing_id, "the hooked fish is the same visible fish lifted from water")
+				check(fishing.caught == catches_before_landing + 1, "landing awards exactly one catch after extraction")
+				landing_id = 0
+			if old_phase == "releasing": observed_release = true
+		if fishing.phase == "reeling" and is_instance_valid(fishing._rod):
+			observed_water_fish = observed_water_fish or fishing._rod._fish.visible
+		if fishing.phase == "landing" and not photographed.has("landing"):
+			check(fishing.caught == catches_before_landing, "fish is not awarded while still being lifted")
 		match str(fishing.phase):
 			"ready": press("interact"); reel = true
 			"charging":
@@ -142,16 +160,24 @@ func run() -> void:
 			"reeling":
 				if reel and fishing.fight.tension > .72: press("interact",false); reel = false
 				elif not reel and fishing.fight.tension < .30: press("interact"); reel = true
-			"caught", "missed", "line_broke":
+			"caught":
 				if reel: press("interact",false); reel = false
-		if fishing.phase in ["waiting","bite","reeling","caught"] and not photographed.has(fishing.phase):
+				if fishing._phase_time >= .6:
+					press("reload")
+					press("reload",false)
+			"missed", "line_broke":
+				if reel: press("interact",false); reel = false
+		if fishing.phase in ["waiting","bite","hooking","reeling","landing","caught","releasing"] and not photographed.has(fishing.phase):
 			photographed[fishing.phase] = true
 			await capture("fishing-"+fishing.phase)
 		await physics_frame
-	check(not fishing.active and fishing.last_result.get("finished",false),"full 90 second competition settles automatically")
+	check(not fishing.active and fishing.last_result.get("finished",false),"full 90 second competition settles after resolving any held catch")
 	var competition_result: Dictionary = fishing.last_result.duplicate(true)
 	check(fishing.caught > 0 and fishing.best > 0,"casts and controlled reeling land real generated fish")
+	check(observed_water_fish and observed_landing, "normal gameplay enables the fish node and extraction phase (pixels reviewed separately)")
+	check(observed_release, "release input resolves the held catch through its animation")
 	check(not world.player.input_locked and not fishing.controls_locked(),"completion restores movement and frees rod")
+	check(world.get_viewport().get_camera_3d() == world.camera and not world.camera.locked, "tournament restores the ordinary gameplay camera")
 	var expected: int = 490 + (100 if fishing.last_result.get("won",false) else 0)
 	check(world.session.state.economy.balance == expected,"cash equals entry debit plus exactly the earned prize")
 	check(FISH_STATE.claim(world.session.state.world_state,world.session.state.economy)==0,"completed award cannot be claimed twice")
@@ -166,6 +192,7 @@ func run() -> void:
 	check(fishing.start(-1) and fishing.controls_locked(),"reenter after tournament without a stuck menu or actor")
 	press("exit_vehicle")
 	check(not fishing.active and not world.player.input_locked,"F cancellation restores controls")
+	check(world.get_viewport().get_camera_3d() == world.camera and not world.camera.locked, "cancellation restores camera ownership and lock")
 	check(fishing.start(-1),"next visit starts after cancellation")
 	var token: int = world.session._begin_transition("fishing_test")
 	check(token>0 and not fishing.active,"position transition cancels rod before moving the actor")
@@ -176,4 +203,6 @@ func run() -> void:
 	check(map.markers.any(func(marker): return marker.id=="fishing" and marker.kind=="fishing"),"world map exposes Lago Sereno fishing destination")
 	FileAccess.open(folder.path_join("result.json"),FileAccess.WRITE).store_string(JSON.stringify({"checks":checks,"failures":failures,"competition":competition_result,"trace":trace},"\t"))
 	print("FISHING_SESSION_RESULT ",folder," checks=",checks," failures=",failures)
+	world.queue_free()
+	for frame in 8: await process_frame
 	quit(1 if not failures.is_empty() else 0)

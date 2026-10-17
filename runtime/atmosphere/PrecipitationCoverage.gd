@@ -1,10 +1,10 @@
 extends RefCounted
 ## Fit the near weather volume to the actual view, including driving zoom/orbit.
-## Local simulation keeps living drops with the volume at any vehicle speed.
+## Spawn volume follows the view; living drops remain in world space.
 const MARGIN := 8.0
 
 static func configure(emitter: GPUParticles3D) -> void:
-	emitter.local_coords = true
+	emitter.local_coords = false
 	emitter.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	emitter.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	emitter.preprocess = emitter.lifetime

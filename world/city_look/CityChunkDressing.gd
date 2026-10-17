@@ -899,6 +899,7 @@ static func _rooftops(chunk: Node3D, _roof_context: Dictionary, batches: Diction
 		if not node is UrbanBuildingBase: continue
 		var building: UrbanBuildingBase = node
 		var key := building.building_id
+		ROOFS.replace_existing(building, building.building_kind, key)
 		# A laje real (maior caixa horizontal mais alta do prédio) manda na
 		# altura e no tamanho: altura nominal de UrbanBuildingBase não bate
 		# com arquétipo que monta platibanda/penthouse próprio, e o tom de laje
@@ -921,15 +922,8 @@ static func _rooftops(chunk: Node3D, _roof_context: Dictionary, batches: Diction
 			if key == "Police" and slab_index == 0: POLICE.decorate(chunk, building, branch_roof_y, branch_roof_center, branch_size, branch_occupied, batches)
 			# Acabamento da laje: textura de verdade (manta, brita, placas, zinco...)
 			# por tipo de prédio, sem tocar no material compartilhado da fábrica.
-			var surface := ROOFS.pick(building.building_kind, _roll(unit_key + "tint"))
-			var inset := branch_size - Vector2.ONE * 0.7
-			_push(batches, "roofmat:%d" % surface, xform * Transform3D(Basis.IDENTITY.scaled(Vector3(inset.x, 1, inset.y)), Vector3(branch_roof_center.x, branch_roof_y, branch_roof_center.y)))
-			for patch in 2:
-				if _roll(unit_key + "tar%d" % patch) < 0.5: continue
-				var px := (_roll(unit_key + "tx%d" % patch) - 0.5) * (branch_size.x - 2.5)
-				var pz := (_roll(unit_key + "tz%d" % patch) - 0.5) * (branch_size.y - 2.5)
-				var ps := Vector3(1.5 + _roll(unit_key + "tw%d" % patch) * 3.0, 1, 1.2 + _roll(unit_key + "th%d" % patch) * 2.5)
-				_push(batches, "decal:roof_tar", xform * Transform3D(Basis.IDENTITY.scaled(ps), Vector3(branch_roof_center.x + px, branch_roof_y + 0.004, branch_roof_center.y + pz)))
+			# The source roof mesh owns its finish, including baked wear. Never
+			# add a second roofmat/tar plane over the existing roof surface.
 			# Laje é o que mais aparece nesta câmera: mais ocupação que o comum.
 			var wanted := clampi(int(branch_size.x * branch_size.y / 18.0), 2, 10)
 			var placed := 0
@@ -985,7 +979,7 @@ static func _roof_slabs(building: UrbanBuildingBase) -> Array:
 	var inverse := building.global_transform.affine_inverse()
 	for node in building.find_children("*", "MeshInstance3D", true, false):
 		var mesh := node as MeshInstance3D
-		if not mesh.mesh is BoxMesh: continue
+		if not mesh.mesh is BoxMesh and not mesh.get_meta("harbor_source_box", false): continue
 		var box := inverse * (mesh.global_transform * mesh.get_aabb())
 		if box.size.x < 2.8 or box.size.z < 2.8 or box.size.y < 2.5 or box.position.y > 0.5: continue
 		result.append(box)
@@ -1061,7 +1055,7 @@ static func _place_billboard(chunk: Node3D, building: UrbanBuildingBase, roof_y:
 
 ## Prédios montados fora dos arquétipos (hospital, residências, fachadas
 ## autorais): só o acabamento da laje, sem adereços (não sabemos o que há lá).
-static func _other_roofs(chunk: Node3D, batches: Dictionary) -> void:
+static func _other_roofs(chunk: Node3D, _batches: Dictionary) -> void:
 	for child in chunk.get_children():
 		# Walk-in cargo owns a retractable roof; a chunk-wide slab would remain
 		# opaque over the player after its actual roof had disappeared.
@@ -1070,10 +1064,7 @@ static func _other_roofs(chunk: Node3D, batches: Dictionary) -> void:
 		if child.find_children("*", "MeshInstance3D", true, false).size() < 3: continue
 		var roof := ROOFS.find_roof(child)
 		if roof.size == Vector3.ZERO or roof.end.y < 2.5: continue
-		var surface := ROOFS.pick("", _roll(String(child.name) + "tint"))
-		var inset := Vector2(roof.size.x, roof.size.z) - Vector2.ONE * 0.6
-		if inset.x < 3.0 or inset.y < 3.0: continue
-		_push(batches, "roofmat:%d" % surface, child.global_transform * Transform3D(Basis.IDENTITY.scaled(Vector3(inset.x, 1, inset.y)), Vector3(roof.get_center().x, roof.end.y + 0.012, roof.get_center().z)))
+		ROOFS.replace_existing(child, "", String(child.name))
 
 
 
@@ -1082,17 +1073,7 @@ static func _other_roofs(chunk: Node3D, batches: Dictionary) -> void:
 ## material_override de caixa grande sem textura e sem emissão: vidro, letreiro,
 ## toldo e acabamento pequeno ficam como estão.
 static func _texture_walls(chunk: Node3D) -> void:
-	for node in chunk.find_children("*", "MeshInstance3D", true, false):
-		var mesh := node as MeshInstance3D
-		var material := mesh.material_override as StandardMaterial3D
-		if material == null or material.albedo_texture != null or material.emission_enabled: continue
-		if material.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED or material.metallic > 0.2: continue
-		if not mesh.mesh is BoxMesh: continue
-		var box := mesh.global_transform * mesh.get_aabb()
-		# Parede: alta e larga; laje/chão (baixo) e poste (fino) não entram.
-		if box.size.y < 2.5 or maxf(box.size.x, box.size.z) < 3.0: continue
-		if not _inside_building_node(mesh): continue
-		mesh.material_override = UrbanMaterials.textured_wall(material.albedo_color, material.roughness)
+	preload("res://world/city_look/HarborFacadeTones.gd").apply(chunk)
 
 
 static func _inside_building_node(node: Node) -> bool:

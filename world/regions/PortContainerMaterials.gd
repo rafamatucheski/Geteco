@@ -5,10 +5,13 @@ static var cache: Dictionary = {}
 static func material(color: Color, timber := false) -> StandardMaterial3D:
 	var key := color.to_html()+str(timber)
 	if cache.has(key): return cache[key]
+	# Weathered cargo belongs to the same restrained dock palette; no extra
+	# material layers or objects are introduced for the new finish.
+	if not timber: color = color.lerp(Color("7f7968"),.18).darkened(.12)
 	var surface_material := StandardMaterial3D.new()
 	surface_material.resource_name = "Cargo_"+key
-	surface_material.roughness = .94 if timber else .72
-	surface_material.metallic = 0.0 if timber else .32
+	surface_material.roughness = .94 if timber else .86
+	surface_material.metallic = 0.0 if timber else .20
 	surface_material.uv1_triplanar = true
 	surface_material.uv1_scale = Vector3(.8,.8,.8)
 	var image := Image.create(128,128,false,Image.FORMAT_RGB8)

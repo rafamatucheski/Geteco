@@ -30,8 +30,8 @@ func _ready() -> void:
 	add_child(shade)
 	shell = PanelContainer.new()
 	var skin := STYLE.panel()
-	skin.bg_color = Color("18231f")
-	skin.border_color = Color("47604f")
+	skin.bg_color = STYLE.INK
+	skin.border_color = Color("5e8168")
 	skin.border_width_top = 3
 	skin.content_margin_left = 22
 	skin.content_margin_right = 22
@@ -42,7 +42,7 @@ func _ready() -> void:
 	shell.add_child(column)
 	var header := HBoxContainer.new()
 	column.add_child(header)
-	var title := STYLE.label("Boa Praça",30,Color("f3ead4"))
+	var title := STYLE.label("Boa Praça",26,Color("f3ead4"))
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	header.add_child(title)
 	wallet = STYLE.label("",23,STYLE.MONEY)
@@ -58,7 +58,7 @@ func _ready() -> void:
 		tab.text = category
 		tab.toggle_mode = true
 		tab.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		tab.custom_minimum_size.y = 38
+		tab.custom_minimum_size.y = 34
 		_style_button(tab)
 		tab.pressed.connect(_select.bind(category))
 		tabs.add_child(tab)
@@ -83,13 +83,13 @@ func _ready() -> void:
 	footer.add_child(status)
 	var bottom := HBoxContainer.new()
 	footer.add_child(bottom)
-	var hint := STYLE.label("Alimentos ficam no inventário.",14,STYLE.MUTED)
+	var hint := STYLE.label("",14,STYLE.MUTED)
 	hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	hint.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	bottom.add_child(hint)
 	close_button = Button.new()
 	close_button.text = "Voltar"
-	close_button.custom_minimum_size = Vector2(100,38)
+	close_button.custom_minimum_size = Vector2(100,34)
 	_style_button(close_button)
 	close_button.pressed.connect(session.close_menu)
 	bottom.add_child(close_button)
@@ -131,7 +131,7 @@ func _card(id: String) -> void:
 	var button := Button.new()
 	button.name = "Buy_"+id
 	button.tooltip_text = "Comprar "+str(spec.label)
-	button.custom_minimum_size = Vector2(0,76)
+	button.custom_minimum_size = Vector2(0,84)
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	button.clip_contents = true
 	_style_button(button)
@@ -147,7 +147,7 @@ func _card(id: String) -> void:
 	margin.add_child(content)
 	var icon := TextureRect.new()
 	icon.texture = ICONS.get_icon(str(spec.icon))
-	icon.custom_minimum_size = Vector2(36,48)
+	icon.custom_minimum_size = Vector2(44,56)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -157,20 +157,25 @@ func _card(id: String) -> void:
 	text.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	text.add_theme_constant_override("separation",2)
 	content.add_child(text)
-	var label := STYLE.label(str(spec.label),16)
+	var label := STYLE.label(str(spec.label),15)
 	label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	label.add_theme_font_override("font",STYLE.FONT)
 	text.add_child(label)
-	var benefit := STYLE.label("100 proteção" if id=="armor" else String(TranslationServer.translate("+%d vida"))%spec.heal,12,STYLE.ARMOR if id=="armor" else GREEN)
+	var benefit := STYLE.label("100 proteção" if id=="armor" else String(TranslationServer.translate("+%d vida"))%spec.heal,14,STYLE.ARMOR if id=="armor" else GREEN)
+	benefit.add_theme_font_override("font",STYLE.FONT)
 	text.add_child(benefit)
 	var row := HBoxContainer.new()
 	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	text.add_child(row)
-	var price := STYLE.label("R$ %d"%_price(id),17,STYLE.MONEY)
-	price.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var price := STYLE.label("R$ %d"%_price(id),16,STYLE.MONEY)
 	row.add_child(price)
+	var action := STYLE.label("Comprar",14,STYLE.ACCENT)
+	action.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	action.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	row.add_child(action)
 	var count := STYLE.label("",12,STYLE.MUTED)
 	row.add_child(count)
-	cards[id] = {"button":button,"count":count,"content":content}
+	cards[id] = {"button":button,"count":count,"content":content,"action":action}
 	button.pressed.connect(_buy.bind(id))
 	button.mouse_entered.connect(_describe.bind(id))
 	button.focus_entered.connect(_describe.bind(id))
@@ -178,15 +183,15 @@ func _card(id: String) -> void:
 func _style_button(button: Button) -> void:
 	button.focus_mode = Control.FOCUS_ALL
 	for state in ["normal","hover","pressed","disabled"]:
-		var skin := STYLE.compact(false,8,Vector2(10,7))
+		var skin := STYLE.compact(false,3,Vector2(10,5))
 		skin.bg_color = Color("26372d") if state in ["hover","pressed"] else Color("202e27")
 		skin.border_color = GREEN if state in ["hover","pressed"] else Color("3a4b3f")
 		skin.shadow_size = 0
 		button.add_theme_stylebox_override(state,skin)
-	var focus := STYLE.compact(false,8)
+	var focus := STYLE.compact(false,3)
 	focus.bg_color = Color.TRANSPARENT
 	focus.border_color = GREEN
-	focus.set_border_width_all(2)
+	focus.set_border_width_all(1)
 	focus.shadow_size = 0
 	button.add_theme_stylebox_override("focus",focus)
 	button.add_theme_color_override("font_pressed_color",GREEN)
@@ -209,7 +214,9 @@ func refresh() -> void:
 		var row: Dictionary = cards[id]
 		var reason := _reason(id)
 		# Keep blocked cards focusable so keyboard/controller users can hear/read why.
-		row.content.modulate.a = 1.0 if reason.is_empty() else .48
+		row.content.modulate.a = 1.0 if reason.is_empty() else .78
+		row.action.text = ("Equipar" if id == "armor" else "Comprar 1") if reason.is_empty() else reason
+		row.action.add_theme_color_override("font_color",STYLE.ACCENT if reason.is_empty() else STYLE.MUTED)
 		row.count.text = "Equipado" if id=="armor" and session.world.gameplay.armor>=100 else String(TranslationServer.translate("%d un."))%int(session.state.economy.inventory.get(id,0)) if id!="armor" else ""
 		row.button.tooltip_text = reason if not reason.is_empty() else "Comprar "+str(GRID.spec(id).label if id!="armor" else "colete")
 

@@ -8,12 +8,16 @@ extends RefCounted
 ## `MeshyBodyRig.attach_accessories` posiciona essa origem para o crânio de cada corpo.
 const KIT := preload("res://assets/civilians/CivilianMeshKit.gd")
 ## Cor de cada tipo quando o chamador não escolhe uma; `lens` é fixo no kit.
-const KINDS := ["cap", "beanie", "cowboy", "straw", "fedora", "sunglasses", "clown"]
+const KINDS := ["cap", "beanie", "cowboy", "straw", "fedora", "sunglasses", "clown", "motorcycle_helmet"]
 
 static func mesh(kind: String) -> ArrayMesh:
 	return KIT.cached("acc|" + kind, func() -> ArrayMesh:
 		var b := KIT._builder()
 		match kind:
+			"motorcycle_helmet":
+				b.ellipsoid(Vector3(0,.20,-.008),Vector3(.145,.15,.156),KIT.SLOT_ACCENT,Basis.IDENTITY,16,10)
+				b.ellipsoid(Vector3(0,.19,.127),Vector3(.12,.065,.044),KIT.SLOT_LENS,Basis.IDENTITY,14,6)
+				b.ellipsoid(Vector3(0,.10,.09),Vector3(.135,.033,.10),KIT.SLOT_ACCENT,Basis.IDENTITY,12,5)
 			"cap": # boné
 				b.ellipsoid(Vector3(0, .238, -.006), Vector3(.109, .075, .12), KIT.SLOT_ACCENT, Basis.IDENTITY, 12, 6)
 				b.ellipsoid(Vector3(0, .222, .115), Vector3(.085, .011, .085), KIT.SLOT_ACCENT, Basis(Vector3.RIGHT, .12), 10, 3, .85)

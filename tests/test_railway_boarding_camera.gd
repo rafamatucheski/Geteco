@@ -53,7 +53,16 @@ func run() -> void:
 	check(transit.updates == 1 and transit.last_alpha == 1.0, "boarding applies camera only after opaque fade")
 	check(transit.last_mode == 1 and not transit._boarding and session.door_transition.alpha == 0.0, "chosen outside mode survives boarding and fade clears")
 	transit.set_camera_mode(0)
-	check(transit.updates == 2 and transit.last_mode == 0, "camera switches immediately after admission")
+	check(transit.updates == 2 and transit.last_mode == 1, "legacy interior request preserves the external camera after admission")
+	var camera_key := InputEventAction.new()
+	camera_key.action = "camera_right"
+	camera_key.pressed = true
+	transit.handle_input(camera_key)
+	var camera_stick := InputEventJoypadMotion.new()
+	camera_stick.axis = JOY_AXIS_RIGHT_X
+	camera_stick.axis_value = 1.0
+	transit.handle_input(camera_stick)
+	check(transit.updates == 2 and transit.camera_mode == 1, "keyboard and controller cannot toggle into the removed interior view")
 	print("RAILWAY_BOARDING_CAMERA_RESULT failures=", failures)
 	session.free()
 	quit(1 if failures else 0)

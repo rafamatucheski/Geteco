@@ -5,6 +5,7 @@ extends CanvasLayer
 signal purchase_requested(part_id: String)
 signal remove_requested(slot: String)
 signal closed
+const STYLE := preload("res://ui/GameStyle.gd")
 const CARS := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
 const TUNING := preload("res://gameplay/desert_cars/DesertTuning.gd")
 const PERF := preload("res://data/catalogs/VehiclePerformance.gd")
@@ -31,6 +32,7 @@ var _tabs: HFlowContainer
 var _cards: VBoxContainer
 var _scroll: ScrollContainer
 var _bars: Array = []
+var _root_control: Control
 var _car_id := "desert_faisca"
 var _parts: Dictionary = {}
 var _owned: Array = []
@@ -47,24 +49,36 @@ var mechanic_name := "Digo"
 
 func _ready() -> void:
 	layer = 36
+	_root_control = Control.new()
+	_root_control.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_root_control.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_root_control.theme = STYLE.create_theme(15)
+	for state in ["normal", "hover", "pressed", "disabled", "focus"]:
+		var button_style := STYLE.button(false)
+		button_style.set_corner_radius_all(3)
+		button_style.content_margin_top = 6
+		button_style.content_margin_bottom = 6
+		button_style.border_color = GOLD if state in ["hover", "focus", "pressed"] else STYLE.LINE
+		_root_control.theme.set_stylebox(state, "Button", button_style)
+	add_child(_root_control)
 	_dim = ColorRect.new()
 	_dim.color = Color("101719")
 	_dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_dim.mouse_filter = Control.MOUSE_FILTER_STOP
-	add_child(_dim)
+	_root_control.add_child(_dim)
 	# Carro à direita, lista à esquerda e desempenho embaixo, como nas oficinas de GTA.
 	_showroom = SHOWROOM.new()
 	_showroom.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_showroom.offset_left = 432.0
-	add_child(_showroom)
+	_root_control.add_child(_showroom)
 	_root = PanelContainer.new()
 	_root.set_anchors_and_offsets_preset(Control.PRESET_LEFT_WIDE)
 	_root.offset_left = 20.0
 	_root.offset_right = 432.0
 	_root.offset_top = 20.0
 	_root.offset_bottom = -20.0
-	_root.add_theme_stylebox_override("panel",_box(Color("151e21"),Color("45514e"),1,8,16))
-	add_child(_root)
+	_root.add_theme_stylebox_override("panel",_box(STYLE.INK,STYLE.LINE,1,8,16))
+	_root_control.add_child(_root)
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation",10)
 	_root.add_child(column)
@@ -82,14 +96,14 @@ func _ready() -> void:
 	_stats_panel.offset_right = -20.0
 	_stats_panel.offset_top = -164.0
 	_stats_panel.offset_bottom = -20.0
-	add_child(_stats_panel)
+	_root_control.add_child(_stats_panel)
 	_view_controls = _build_view_controls()
 	_view_controls.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
 	_view_controls.offset_left = -355.0
 	_view_controls.offset_right = -20.0
 	_view_controls.offset_top = 20.0
 	_view_controls.offset_bottom = 56.0
-	add_child(_view_controls)
+	_root_control.add_child(_view_controls)
 	visibility_changed.connect(func(): if not visible: _showroom.hide_showroom())
 	hide()
 
@@ -98,7 +112,7 @@ func _box(fill: Color, border: Color, width: int, radius: int, margin: int) -> S
 	style.bg_color = fill
 	style.border_color = border
 	style.set_border_width_all(width)
-	style.set_corner_radius_all(radius)
+	style.set_corner_radius_all(mini(radius,3))
 	style.content_margin_left = margin
 	style.content_margin_right = margin
 	style.content_margin_top = margin*.8
@@ -123,7 +137,7 @@ func _build_header() -> Control:
 	var names := VBoxContainer.new()
 	names.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_title = Label.new()
-	_title.add_theme_font_size_override("font_size",21)
+	_title.add_theme_font_size_override("font_size",24)
 	_title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	names.add_child(_title)
 	_subtitle = Label.new()
@@ -222,6 +236,7 @@ func _build_parts() -> Control:
 	_scroll = ScrollContainer.new()
 	_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_scroll.follow_focus = true
 	_cards = VBoxContainer.new()
 	_cards.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_cards.add_theme_constant_override("separation",8)
@@ -334,7 +349,7 @@ func _card(id: String) -> Control:
 	name_label.text = str(part.label)+("   ✓ INSTALADA" if installed else "")
 	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	name_label.add_theme_font_size_override("font_size",17)
+	name_label.add_theme_font_size_override("font_size",16)
 	name_label.add_theme_color_override("font_color",GOOD if installed else (MUTED if locked else Color.WHITE))
 	if part.has("neon") or part.has("body_color") or part.has("wheel_color"):
 		var title_row := HBoxContainer.new()
@@ -350,7 +365,7 @@ func _card(id: String) -> Control:
 		info.add_child(name_label)
 	var effect := Label.new()
 	effect.text = str(part.effect)
-	effect.visible = not (part.has("body_color") or part.has("body_roughness") or part.has("wheel_color"))
+	effect.visible = part.has("wheel_color") or not (part.has("body_color") or part.has("body_roughness"))
 	effect.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	effect.add_theme_color_override("font_color",MUTED)
 	info.add_child(effect)
@@ -360,12 +375,17 @@ func _card(id: String) -> Control:
 	var price := Label.new()
 	price.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	if locked: price.text = String(TranslationServer.translate("Vença %d provas (você: %d)")) % [int(part.wins),_wins]
-	elif id in _owned: price.text = "Já é sua"
+	elif id in _owned: price.text = "Comprada"
 	else: price.text = "R$ %s" % _money_text(cost)
 	price.add_theme_color_override("font_color",MUTED if locked or id in _owned else GOLD)
 	side.add_child(price)
 	var button := Button.new()
-	button.custom_minimum_size = Vector2(112,34)
+	button.custom_minimum_size = Vector2(112,36)
+	var action_style := STYLE.button(not installed and not locked and cost <= _money)
+	action_style.set_corner_radius_all(3)
+	action_style.content_margin_top = 6
+	action_style.content_margin_bottom = 6
+	button.add_theme_stylebox_override("normal",action_style)
 	panel.set_meta("action_button",button)
 	if installed:
 		button.text = "Remover"
@@ -380,7 +400,7 @@ func _card(id: String) -> Control:
 		button.text = "Instalar"
 		button.pressed.connect(func(): purchase_requested.emit(id))
 	else:
-		button.text = "Comprar" if _pending != id else String(TranslationServer.translate("Confirmar R$ %s")) % _money_text(cost)
+		button.text = "Comprar e instalar" if _pending != id else String(TranslationServer.translate("Confirmar R$ %s")) % _money_text(cost)
 		button.pressed.connect(_buy_pressed.bind(id))
 	side.add_child(button)
 	row.add_child(side)
@@ -400,7 +420,7 @@ func _buy_pressed(id: String) -> void:
 		return
 	_pending = id
 	_rebuild_cards()
-	_message.text = "Clique de novo para confirmar a compra."
+	_message.text = "Confirme para comprar e instalar a peça."
 	# Os cartões foram refeitos: devolve o foco ao mesmo botão para confirmar pelo teclado.
 	var again := button_for_part(id)
 	_focus_later(again)
@@ -414,6 +434,8 @@ func _preview(change: Dictionary) -> void:
 		else: candidate[change.slot] = change.id
 		shown = PERF.measure(_car_id,candidate)
 	var changed := not change.is_empty()
+	# Cosmetic slots keep the vehicle visible without irrelevant mechanical bars.
+	_stats_panel.visible = _slot not in ["paint", "finish", "wheels", "neon"]
 	if is_instance_valid(_showroom): _showroom.apply_parts(candidate if changed else _parts)
 	for bar in _bars:
 		var current := float(_base[bar.key])

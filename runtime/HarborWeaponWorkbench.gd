@@ -25,34 +25,35 @@ var apply_button: Button
 var preview_state: Dictionary
 var status: Label
 
-const TEXT := Color("eee1bf")
-const TEXT_DIM := Color("c9d4cf")
+const TEXT := Color("f1eee7")
+const TEXT_DIM := Color("d0d2d6")
 const TEXT_DISABLED := Color("9aa7a2")
 
 ## Estilo compartilhado com o catálogo: botões legíveis em todos os estados,
 ## inclusive desabilitado e aba/opção selecionada.
 static func style_button(button: Button) -> void:
 	var base := StyleBoxFlat.new()
-	base.bg_color = Color("26393a")
-	base.border_color = Color("5d7572")
-	base.set_border_width_all(1)
-	base.set_corner_radius_all(4)
-	base.set_content_margin_all(6)
+	base.bg_color = Color("1c2025")
+	base.border_color = Color("343a42")
+	base.border_width_bottom = 1
+	base.set_corner_radius_all(2)
+	base.set_content_margin_all(5)
 	var hover := base.duplicate() as StyleBoxFlat
-	hover.bg_color = Color("34504f")
-	hover.border_color = TEXT
+	hover.bg_color = Color("252b32")
+	hover.border_color = Color("75808b")
 	var pressed := base.duplicate() as StyleBoxFlat
-	pressed.bg_color = Color("7c2622")
-	pressed.border_color = TEXT
-	pressed.set_border_width_all(2)
+	pressed.bg_color = Color("292821")
+	pressed.border_color = Color("d5ad63")
+	pressed.border_width_left = 2
 	var disabled := base.duplicate() as StyleBoxFlat
-	disabled.bg_color = Color("1d2929")
-	disabled.border_color = Color("3d4d4b")
+	disabled.bg_color = Color("202329")
+	disabled.border_color = Color("3d424a")
 	button.add_theme_stylebox_override("normal", base)
 	button.add_theme_stylebox_override("hover", hover)
 	var focus := hover.duplicate() as StyleBoxFlat
-	focus.border_color = Color("ffd878")
-	focus.set_border_width_all(3)
+	focus.border_color = Color("d9e1e8")
+	focus.draw_center = false
+	focus.set_border_width_all(2)
 	button.add_theme_stylebox_override("focus", focus)
 	MENU_AUDIO.hook_button(button, button)
 	button.add_theme_stylebox_override("pressed", pressed)
@@ -61,37 +62,62 @@ static func style_button(button: Button) -> void:
 	button.add_theme_color_override("font_color", TEXT_DIM)
 	for key in ["font_hover_color", "font_focus_color", "font_pressed_color", "font_hover_pressed_color"]: button.add_theme_color_override(key, TEXT)
 	button.add_theme_color_override("font_disabled_color", TEXT_DISABLED)
+	button.add_theme_font_override("font", preload("res://assets/fonts/barlow/BarlowSemiCondensed-Regular.ttf"))
+	button.add_theme_font_size_override("font_size", 16)
 
 ## Fundo claro atrás da prévia 3D transparente: armas escuras destacam sem
 ## custo de renderização adicional.
 static func stage_style() -> StyleBoxFlat:
 	var stage := StyleBoxFlat.new()
-	stage.bg_color = Color("6f8580")
-	stage.border_color = Color("93a8a2")
+	stage.bg_color = Color("68716e")
+	stage.border_color = Color("7d8882")
 	stage.set_border_width_all(1)
-	stage.set_corner_radius_all(4)
+	stage.set_corner_radius_all(2)
 	return stage
+
+static func primary_button(button: Button) -> void:
+	var primary := StyleBoxFlat.new()
+	primary.bg_color = Color("d5ad63")
+	primary.border_color = Color("f2cf89")
+	primary.set_border_width_all(1)
+	primary.set_corner_radius_all(2)
+	primary.set_content_margin_all(6)
+	button.add_theme_stylebox_override("normal", primary)
+	var hover := primary.duplicate() as StyleBoxFlat
+	hover.bg_color = Color("e5c07b")
+	button.add_theme_stylebox_override("hover", hover)
+	button.add_theme_stylebox_override("pressed", hover)
+	var focus := primary.duplicate() as StyleBoxFlat
+	focus.draw_center = false
+	focus.border_color = Color("fff0ca")
+	focus.set_border_width_all(2)
+	button.add_theme_stylebox_override("focus", focus)
+	for key in ["font_color", "font_hover_color", "font_pressed_color", "font_focus_color"]:
+		button.add_theme_color_override(key, Color("181b20"))
 
 func configure(owner_session) -> void:
 	session = owner_session
 
 func _ready() -> void:
-	set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	offset_left = -430
-	offset_right = 430
-	offset_top = -310
-	offset_bottom = 310
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	offset_left = 28
+	offset_right = -28
+	offset_top = 22
+	offset_bottom = -22
 	var style := StyleBoxFlat.new()
-	style.bg_color = Color("172323")
+	style.bg_color = Color("171a1f")
 	style.border_color = Color("a3322d")
 	style.border_width_top = 6
 	style.set_content_margin_all(18)
 	add_theme_stylebox_override("panel", style)
+	add_theme_font_override("font", preload("res://assets/fonts/barlow/BarlowSemiCondensed-Regular.ttf"))
+	add_theme_font_size_override("font_size", 16)
 	var box := VBoxContainer.new()
 	box.add_theme_constant_override("separation", 12)
 	add_child(box)
 	title = Label.new()
-	title.add_theme_font_size_override("font_size", 23)
+	title.add_theme_font_size_override("font_size", 24)
+	title.add_theme_font_override("font", preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf"))
 	title.add_theme_color_override("font_color", TEXT)
 	box.add_child(title)
 	wallet = Label.new()
@@ -103,7 +129,7 @@ func _ready() -> void:
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	box.add_child(body)
 	var view := SubViewportContainer.new()
-	view.custom_minimum_size = Vector2(440, 300)
+	view.custom_minimum_size = Vector2(360, 220)
 	view.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	view.stretch = true
 	var stage := PanelContainer.new()
@@ -137,7 +163,7 @@ func _ready() -> void:
 	viewport.add_child(environment)
 	# Lista rolável: acabamentos e peças por arma passam de seis opções.
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size.x = 300
+	scroll.custom_minimum_size.x = 370
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.follow_focus = true
 	body.add_child(scroll)
@@ -150,20 +176,23 @@ func _ready() -> void:
 	detail.add_theme_color_override("font_color", TEXT_DIM)
 	status = Label.new()
 	status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	status.add_theme_font_size_override("font_size", 17)
+	status.add_theme_font_size_override("font_size", 16)
 	status.add_theme_color_override("font_color", TEXT)
 	box.add_child(status)
 	box.add_child(detail)
 	var actions := HBoxContainer.new()
 	box.add_child(actions)
 	apply_button = Button.new()
-	apply_button.custom_minimum_size.y = 40
-	apply_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	apply_button.custom_minimum_size = Vector2(270, 36)
+	apply_button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	apply_button.pressed.connect(apply_selection)
 	style_button(apply_button)
+	primary_button(apply_button)
+	apply_button.add_theme_font_size_override("font_size", 18)
 	actions.add_child(apply_button)
 	var back := Button.new()
-	back.text = "VOLTAR"
+	back.text = "Voltar"
+	back.custom_minimum_size.y = 36
 	back.pressed.connect(close)
 	style_button(back)
 	actions.add_child(back)
@@ -172,7 +201,7 @@ func _ready() -> void:
 func open(id: String) -> void:
 	if session == null or id not in CUSTOM.CUSTOMIZABLE or not session.state.economy.owns_weapon(id): return
 	weapon_id = id
-	title.text = "AMMU-NATION / PERSONALIZAR — " + str(WEAPONS.WEAPONS[id].get("short_label", id))
+	title.text = "AMMU-NATION / EDITAR ARMA — " + str(WEAPONS.WEAPONS[id].get("short_label", id))
 	for child in slots.get_children(): child.free()
 	var available: Array[String] = []
 	for category in CUSTOM.SLOTS:
@@ -206,7 +235,7 @@ func select_slot(value: String) -> void:
 	for part in CUSTOM.PARTS:
 		if CUSTOM.PARTS[part].slot == slot and CUSTOM.supports(weapon_id, part):
 			var owned := CUSTOM.owns(session.world.gameplay.customization, weapon_id, part)
-			var tag := " • INSTALADO" if part == current else (" • ADQUIRIDO" if owned else " • $%d" % CUSTOM.PARTS[part].price)
+			var tag := " • INSTALADO" if part == current else (" • ADQUIRIDO" if owned else " • R$%d" % CUSTOM.PARTS[part].price)
 			var effect := CUSTOM.effect_summary(part)
 			_option(part, str(CUSTOM.PARTS[part].label) + tag + ("\n" + effect if not effect.is_empty() else ""))
 	select_candidate(CUSTOM.selected(session.world.gameplay.customization, weapon_id, slot))
@@ -236,7 +265,7 @@ func select_candidate(part: String) -> void:
 	preview_state[weapon_id] = entry
 	_rebuild_model()
 	var price := 0 if part == "none" or CUSTOM.owns(session.world.gameplay.customization, weapon_id, part) else int(CUSTOM.PARTS[part].price)
-	wallet.text = String(TranslationServer.translate("SALDO: $%d")) % session.state.economy.balance
+	wallet.text = String(TranslationServer.translate("SALDO: R$%d")) % session.state.economy.balance
 	detail.text = compare_stats(weapon_id, session.world.gameplay.customization, preview_state)
 	if part != "none" and CUSTOM.PARTS[part].has("note"): detail.text += "\n" + str(CUSTOM.PARTS[part].note)
 	var current: String = CUSTOM.selected(session.world.gameplay.customization, weapon_id, slot)
@@ -247,8 +276,8 @@ func select_candidate(part: String) -> void:
 	if same: apply_button.text = "JÁ INSTALADO"
 	elif part == "none": apply_button.text = "REMOVER " + str(CUSTOM.PARTS[current].label).to_upper()
 	elif owned: apply_button.text = "INSTALAR (JÁ ADQUIRIDO)"
-	elif short: apply_button.text = String(TranslationServer.translate("SALDO INSUFICIENTE • $%d")) % price
-	else: apply_button.text = String(TranslationServer.translate("COMPRAR E INSTALAR • $%d")) % price
+	elif short: apply_button.text = String(TranslationServer.translate("SALDO INSUFICIENTE • R$%d")) % price
+	else: apply_button.text = String(TranslationServer.translate("COMPRAR E INSTALAR • R$%d")) % price
 	apply_button.disabled = same or short
 	SHOP_FOCUS.rebuild.call_deferred(self)
 
@@ -276,8 +305,8 @@ func candidate_status(part: String, current: String, owned: bool, price: int, sh
 	if part == current: return line + " — instalado agora"
 	line += String(TranslationServer.translate(" • Instalado agora: %s")) % part_name(current)
 	if owned: return line + " • sem custo"
-	if short: return line + String(TranslationServer.translate(" • faltam $%d")) % (price - int(session.state.economy.balance))
-	return line + String(TranslationServer.translate(" • custo $%d")) % price
+	if short: return line + String(TranslationServer.translate(" • faltam R$%d")) % (price - int(session.state.economy.balance))
+	return line + String(TranslationServer.translate(" • custo R$%d")) % price
 
 func _rebuild_model() -> void:
 	for child in model.get_children(): child.free()

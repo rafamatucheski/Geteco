@@ -2146,6 +2146,7 @@ func show_services(service: String) -> void:
 	if _service_threatened(): return
 	_show_services_available(service)
 	_service_menu_open = modal
+	if modal and panel.visible: preload("res://ui/ShopPresentation.gd").apply(panel)
 
 func _show_services_available(service: String) -> void:
 	if service == "supermarket":
@@ -2205,6 +2206,7 @@ func _show_shop(category: String) -> void:
 				close_menu()
 				if result.ok: save_game())
 	_button("Voltar",close_menu)
+	preload("res://ui/ShopPresentation.gd").apply(panel)
 func _show_customization() -> void:
 	var catalog = preload("res://gameplay/WeaponCustomization.gd")
 	var id: String = state.equipped_weapon
@@ -2224,6 +2226,7 @@ func _show_customization() -> void:
 			save_game()
 			_show_customization())
 	_button("Voltar",func(): _show_shop("weapon"))
+	preload("res://ui/ShopPresentation.gd").apply(panel)
 func _show_saber_customization() -> void:
 	_menu("Katana")
 	panel.hide()

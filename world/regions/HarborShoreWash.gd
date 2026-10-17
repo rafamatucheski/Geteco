@@ -1,11 +1,13 @@
 extends RefCounted
 ## Narrow, static shoreline strips. GPU animates the wash; no frame callbacks.
 const WIDTH := 1.7
+const WATER_PILOT := preload("res://world/regions/HarborWaterPilot.gd")
 const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
 const GROUND_CUT := preload("res://world/urban_detail/GroundCut.gd")
 var strips: Array[Dictionary] = []
 var dry_land: Array[PackedVector2Array] = []
 var material: ShaderMaterial
+var pilot_material: ShaderMaterial
 
 func configure(polygons: Array[PackedVector2Array]) -> void:
 	strips.clear()
@@ -14,6 +16,7 @@ func configure(polygons: Array[PackedVector2Array]) -> void:
 		if polygon.size() >= 3: dry_land.append(polygon)
 	material = ShaderMaterial.new()
 	material.shader = preload("res://world/regions/harbor_shore_wash.gdshader")
+	pilot_material = WATER_PILOT.make_material(WATER_PILOT.SHORE) if WATER_PILOT.enabled else null
 	for polygon in polygons:
 		for i in polygon.size():
 			var a := polygon[i]
@@ -90,6 +93,6 @@ func build_chunk(parent: Node3D, rect: Rect2) -> void:
 	var instance := MeshInstance3D.new()
 	instance.name = "ShoreWash"
 	instance.mesh = mesh
-	instance.material_override = material
+	instance.material_override = pilot_material if WATER_PILOT.includes_chunk(rect) else material
 	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(instance)

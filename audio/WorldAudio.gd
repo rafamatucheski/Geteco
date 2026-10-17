@@ -6,6 +6,9 @@ const PROFILES := preload("res://audio/v1_ambience/AmbienceProfile.gd")
 const FLEET := preload("res://runtime/FleetCatalog.gd")
 const ENGINE_PROFILE := preload("res://audio/VehicleEngineProfile.gd")
 const ENGINE_BANKS := preload("res://audio/EngineBankCache.gd")
+const DESIGN_BANKS := preload("res://audio/EngineDesignBanks.gd")
+const DESIGN_VOICE := preload("res://audio/EngineDesignVoice.gd")
+const DESIGN_CATALOG := preload("res://audio/FleetEngineDesign.gd")
 const TANK_AUDIO := preload("res://audio/tank/TankAudio.gd")
 const ROAD_SOUND := preload("res://audio/vehicle_fx/road.wav")
 const AIR_BRAKE_SOUND := preload("res://audio/vehicle_fx/air_brake.wav")
@@ -21,6 +24,10 @@ const BED_OFFSETS := {"dockside":-12.0,"swell":-9.0,"rocks":-11.0,"traffic":-12.
 var world
 var layers: Array[AudioStreamPlayer] = []
 var engine_car: CharacterBody3D
+var design_voice: Node3D
+var design_rpm := 0.0
+var design_cut := 0.0
+var design_last_shift := 0
 var radio: AudioStreamPlayer
 var ambience: AudioStreamPlayer
 var footsteps: AudioStreamPlayer3D
@@ -74,6 +81,7 @@ var radio_notice: Label
 var radio_notice_time := 0.0
 
 func _exit_tree() -> void:
+	if is_instance_valid(design_voice): design_voice.stop()
 	if is_instance_valid(vehicle_ambience) and vehicle_ambience.has_method("shutdown"):
 		vehicle_ambience.shutdown()
 	for channel in [radio, footsteps, detail, road_audio, shift_audio, air_brake_audio, extra_audio, blower_audio, reverse_audio] + beds.values() + layers:
@@ -83,6 +91,7 @@ func _exit_tree() -> void:
 	beds.clear()
 	layers.clear()
 func _ready() -> void:
+	DESIGN_BANKS.prewarm.call_deferred(get_tree())
 	rng.randomize()
 	var desert_ambience := preload("res://audio/desert_ambience/DesertAmbience.gd").new()
 	desert_ambience.name = "DesertAmbience"
@@ -376,6 +385,7 @@ func _process(delta: float) -> void:
 	# Street cars also have desert_powertrain mechanics but retain this mixer.
 	# Yield only when the vehicle actually owns a dedicated audio node.
 	if not _driver_audio_ready() or world.driving.car.health <= 0 or world.driving.car.engine_disabled or world.driving.car.has_node("DesertCarAudio"):
+		if is_instance_valid(design_voice): design_voice.stop()
 		engine_car = null
 		engine_archetype = ""
 		for layer in layers: if layer.playing: layer.stop()
@@ -417,6 +427,7 @@ func _process(delta: float) -> void:
 		target = maxf(target, idle + engine_load * (1.0 - idle) * 0.62)
 	engine_rpm = lerpf(engine_rpm, target, 1.0 - exp(-delta * (10.0 if target > engine_rpm else 6.0)))
 	var spec: Dictionary = FLEET.spec(engine_archetype)
+	if _mix_designed_engine(current_car, throttle, previous_gear, delta): return
 	_update_vehicle_foley(current_car, spec, ratio, throttle, previous_gear)
 	var tint := pow(maxf(float(spec.get("engine_pitch", 1.0)), 0.3), 0.35)
 	var cycles := float(nominal[6]) * engine_rpm * tint
@@ -440,10 +451,73 @@ func _process(delta: float) -> void:
 		layer.volume_db = master + linear_to_db(share)
 		if not layer.playing: layer.play()
 
+func _ensure_design_voice() -> void:
+	if is_instance_valid(design_voice): return
+	design_voice = DESIGN_VOICE.new()
+	design_voice.name = "PlayerEngineDesign"
+	add_child(design_voice)
+
+func _mix_designed_engine(car: CharacterBody3D, throttle: float, previous_gear: int, delta: float) -> bool:
+	var profile := DESIGN_CATALOG.profile(engine_archetype)
+	if not DESIGN_BANKS.enabled() or not DESIGN_BANKS.is_ready(profile):
+		if is_instance_valid(design_voice): design_voice.stop()
+		return false
+	_ensure_design_voice()
+	if not design_voice.configure(engine_archetype): return false
+	for layer in layers: layer.stop()
+	for channel in [road_audio, shift_audio, extra_audio, blower_audio]:
+		if is_instance_valid(channel): channel.stop()
+	var bands := DESIGN_CATALOG.rpm_bands(profile)
+	var rpm := maxf(float(bands[0]), engine_rpm * float(bands[6]))
+	var load_value := throttle
+	var shifted := engine_gear != previous_gear
+	var cut := 0.0
+	var drive: RefCounted = car.get_meta("desert_powertrain") if car.has_meta("desert_powertrain") else null
+	if drive != null:
+		rpm = float(drive.rpm)
+		load_value = float(drive.throttle)
+		shifted = int(drive.shift_serial) != design_last_shift
+		design_last_shift = int(drive.shift_serial)
+		cut = -8.0 if float(drive.shift_remaining) > 0.0 else 0.0
+		if drive.limiter: cut -= 4.0
+	if design_rpm <= 0.0: design_rpm = rpm
+	design_rpm = lerpf(design_rpm, rpm, 1.0 - exp(-delta * (10.0 if rpm > design_rpm else 6.0)))
+	design_cut = lerpf(design_cut, cut, 1.0 - exp(-delta * 18.0))
+	# The authored PCM has about 3 dB more headroom than the former banks.
+	# Retain the driver's existing load/RPM envelope and foreground presence.
+	var rpm_fraction := clampf(design_rpm / float(bands[6]), 0.0, 1.0)
+	var road_fraction := clampf(absf(float(car.speed)) / maxf(float(car.max_forward_speed), 1.0), 0.0, 1.0)
+	var level := -17.0 + load_value * 7.0 + rpm_fraction * 6.5 + road_fraction * 1.5 + design_cut
+	if family == "vq35": level -= 5.0
+	design_voice.update_mix(design_rpm, load_value, delta, level,
+		car.global_position, true, true, shifted)
+	_update_design_utility_foley(car, throttle)
+	return true
+
+func _update_design_utility_foley(car: CharacterBody3D, throttle: float) -> void:
+	# Air brakes and reverse warnings belong to the vehicle, not turbo discharge.
+	_ensure_firefly_players()
+	if family in REVERSE_BEEP_FAMILIES:
+		if absf(float(car.speed)) > 1.25: engine_was_moving_fast = true
+		elif engine_was_moving_fast and absf(float(car.speed)) < .375 and throttle < .1:
+			engine_was_moving_fast = false
+			air_brake_audio.stream = AIR_BRAKE_SOUND
+			air_brake_audio.volume_db = -6.0
+			air_brake_audio.play()
+	if family in REVERSE_BEEP_FAMILIES and float(car.speed) < -.4 and reverse_audio.stream != null:
+		reverse_audio.volume_db = -15.0
+		if not reverse_audio.playing: reverse_audio.play()
+	else: reverse_audio.stop()
+	engine_last_throttle = throttle
+
 func _sync_engine_family(car: CharacterBody3D) -> void:
 	var archetype := str(car.archetype)
 	if engine_car == car and engine_archetype == archetype: return
 	engine_car = car
+	design_rpm = 0.0
+	design_cut = 0.0
+	design_last_shift = 0
+	if is_instance_valid(design_voice): design_voice.stop()
 	engine_archetype = archetype
 	engine_gear = 1
 	engine_rpm = 0.0

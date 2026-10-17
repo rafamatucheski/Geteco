@@ -6,6 +6,7 @@ const INSTRUMENTS := preload("res://activities/desert_drag/DragInstrumentStyles.
 const SECRETS := preload("res://runtime/desert/DesertSecretState.gd")
 const BANDITS := preload("res://runtime/desert/DesertBanditEncounter.gd")
 static func valid(world: Dictionary, economy: Dictionary) -> bool:
+	if world.has("desert_cargo_heist") and not preload("res://gameplay/desert_heist/DesertHeistState.gd").valid(world.desert_cargo_heist): return false
 	if not preload("res://runtime/desert/canyon/CanyonState.gd").validate_wallet(world,economy): return false
 	if not preload("res://runtime/TakeshiHonor.gd").validate_world(world,economy): return false
 	if not preload("res://runtime/desert/community/DesertCommunityState.gd").validate_wallet(world,economy): return false

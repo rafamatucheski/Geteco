@@ -2,9 +2,9 @@ extends RefCounted
 ## Postes e mobiliário que o carro derruba (porte de StreetLamp/FixedTrafficSignal/
 ## BreakableProp da V1, grupo "fragile_road_post").
 ##
-## V1: abaixo de 15 px/s nada; 15–35 px/s o poste balança; a partir de 35 px/s
-## (2,2 m/s na direção do choque) ele tomba em 0,7 s, apaga, perde a colisão e o
-## carro segue em frente. Mesmo limiar aqui, com três famílias:
+## Impactos fracos balançam os postes; o limiar de queda depende da fixação.
+## Postes de luz e semáforos permanecem presos à base mesmo em alta velocidade.
+## Três famílias:
 ## - "post": poste de luz, semáforo, placa — tomba girando na base;
 ## - "light": lixeira, jornaleiro, caixa de correio — vira corpo rígido e quebra;
 ## - "hydrant": hidrante — arranca e vira gêiser por alguns segundos.
@@ -18,8 +18,8 @@ const FALL_SPEED := 35.0 / 16.0
 
 ## raio de contato, perda de velocidade do carro ao atravessar, dano no carro.
 const KINDS := {
-	"lamp": {"family": "post", "radius": 0.22, "drag": 0.30, "damage": 8.0, "sound": "metal"},
-	"signal_pole": {"family": "post", "radius": 0.25, "drag": 0.35, "damage": 10.0, "sound": "metal"},
+	"lamp": {"family": "post", "radius": 0.22, "drag": 0.30, "damage": 8.0, "sound": "metal", "anchored": true, "fall_speed": 6.0},
+	"signal_pole": {"family": "post", "radius": 0.25, "drag": 0.35, "damage": 10.0, "sound": "metal", "anchored": true, "fall_speed": 8.0},
 	"stop_sign": {"family": "post", "radius": 0.12, "drag": 0.06, "damage": 2.0, "sound": "metal"},
 	"hydrant": {"family": "hydrant", "radius": 0.2, "drag": 0.18, "damage": 5.0, "sound": "metal"},
 	"trash_can": {"family": "light", "radius": 0.3, "drag": 0.03, "damage": 0.0, "sound": "metal"},
@@ -125,16 +125,23 @@ static func hit(item: Dictionary, speed: float, direction: Vector3, director: No
 	if item.has("root") and preload("res://gameplay/DamageProtection.gd").is_protected(item.root.get_ref()): return false
 	var flat := Vector3(direction.x, 0, direction.z)
 	flat = flat.normalized() if flat.length_squared() > 0.0001 else Vector3.FORWARD
-	var family: String = spec(item).family
-	director.play_prop_hit(item.point, spec(item).sound, speed)
-	if speed < FALL_SPEED and family == "post":
+	var profile := spec(item)
+	var family: String = profile.family
+	# Repeated bumper contacts must not leave wobble tweens fighting the fall.
+	var wobble: Tween = item.get("wobble")
+	if wobble != null and wobble.is_valid():
+		wobble.kill()
+		_set_transform(item, _base(item))
+	item.erase("wobble")
+	director.play_prop_hit(item.point, profile.sound, speed)
+	if speed < float(profile.get("fall_speed", FALL_SPEED)) and family == "post":
 		_wobble(item, flat, director)
 		return false
 	if item.kind == "lamp": preload("res://gameplay/street_physics/LampRecovery3D.gd").capture(item)
 	item.state = "down"
 	match family:
 		"post":
-			if speed >= 16.0:
+			if speed >= 16.0 and not profile.get("anchored", false):
 				_kill_light(item)
 				_tumble(item, flat, speed, director)
 				if item.kind == "phone_booth": director.spawn_glass(item.point + Vector3.UP, flat)
@@ -168,6 +175,7 @@ static func _wobble(item: Dictionary, flat: Vector3, director: Node) -> void:
 	var base := _base(item)
 	var axis := Vector3.UP.cross(flat).normalized()
 	var tween: Tween = director.create_tween()
+	item.wobble = tween
 	tween.set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
 	tween.tween_method(func(a: float): _set_transform(item, Transform3D(Basis(axis, a) * base.basis, base.origin)), 0.0, 0.09, 0.12)
 	tween.tween_method(func(a: float): _set_transform(item, Transform3D(Basis(axis, a) * base.basis, base.origin)), 0.09, 0.0, 0.35)

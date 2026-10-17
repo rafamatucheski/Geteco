@@ -8,12 +8,12 @@ const SIZE := 128
 
 ## tile = metros por repetição; offset alinha as juntas da textura às bordas reais da laje.
 const SPECS := {
-	"pier_concrete": {"kind": "concrete", "tint": "9aa3a0", "tile": 2.5, "offset": Vector3(.8, 0, .4), "bump": 1.1},
-	"pier_deck": {"kind": "deck", "tint": "b08a62", "tile": 1.28, "bump": 1.3},
-	"pier_deck_light": {"kind": "deck", "tint": "cdb48a", "tile": 1.28, "bump": 1.2},
+	"pier_concrete": {"kind": "concrete", "tint": "83897d", "tile": 7.5, "offset": Vector3(.8, 0, .4), "bump": .25},
+	"pier_deck": {"kind": "deck", "tint": "887352", "tile": 1.28, "bump": 1.3},
+	"pier_deck_light": {"kind": "deck", "tint": "aa9470", "tile": 1.28, "bump": 1.2},
 	"pier_bench": {"kind": "deck", "tint": "a0693f", "tile": 1.28, "bump": 1.0},
 	"pier_roof": {"kind": "roof", "tint": "4d7886", "tile": 1.28, "bump": 1.4, "metal": .18},
-	"pier_paving": {"kind": "paving", "tint": "a9aeb0", "tile": 1.28, "bump": 1.2},
+	"pier_paving": {"kind": "paving", "tint": "8d9184", "tile": 1.28, "bump": 1.2},
 	"pier_pile": {"kind": "pile", "tint": "6d5b49", "tile": 1.0, "bump": 1.3},
 	"pier_solar": {"kind": "solar", "tint": "5a7fb4", "tile": 1.28, "bump": .7, "metal": .35},
 	"pier_bulb": {"kind": "plain", "tint": "ffd9a0", "emission": "ffc47e", "energy": 2.4},
@@ -111,20 +111,10 @@ static func _concrete(albedo: Image, bump: Image, rough: Image) -> void:
 			if roll < .012: v -= .16
 			elif roll < .02: v += .08
 			var height := .62 + (fine.get_pixel(x, y).r - .5) * .12
-			var edge := mini(mini(x, SIZE - 1 - x), mini(y, SIZE - 1 - y))
-			# Juntas de dilatação na borda do tile e serra-corte no meio de cada placa.
-			var score := mini(absi(x - 64), absi(y - 64))
-			if edge == 0:
-				v *= .42
-				height = .0
-			elif edge == 1:
-				v *= .62
-				height = .2
-			elif edge <= 3:
-				v *= 1.05
-			if score == 0 and edge > 3:
-				v *= .7
-				height = .3
+			# Sparse interrupted construction cuts, not a repeating square grid.
+			if y == 51 and x > 18 and x < 99:
+				v *= .88
+				height = .53
 			var wetness: float = wet.get_pixel(x, y).r
 			var roughness := .88 - clampf((wetness - .56) * 4.0, 0.0, 1.0) * .62
 			if wetness > .56: v *= .86

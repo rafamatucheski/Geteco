@@ -6,11 +6,15 @@ const FLEET := preload("res://runtime/FleetCatalog.gd")
 const ENGINE_PROFILE := preload("res://audio/VehicleEngineProfile.gd")
 const TANK_AUDIO := preload("res://audio/tank/TankAudio.gd")
 const BANKS := preload("res://audio/EngineBankCache.gd")
+const DESIGN_BANKS := preload("res://audio/EngineDesignBanks.gd")
+const DESIGN_CATALOG := preload("res://audio/FleetEngineDesign.gd")
+const DESIGN_VOICE := preload("res://audio/EngineDesignVoice.gd")
 const GROUP := &"nearby_vehicle_engine_mixer"
 const SERVICE_GROUP := &"service_vehicle_engine_mixer"
 const MAX_TRACKED := 96
 const MAX_AUDIBLE := 6
 const MAX_VOICES := MAX_AUDIBLE * 2
+const MAX_DESIGN_VOICES := MAX_AUDIBLE * 4
 const RANGE := 45.0
 const SELECTION_INTERVAL := 0.1
 const FADE_IN_SECONDS := 0.22
@@ -48,6 +52,7 @@ func configure(world: Node, listener: Node3D) -> bool:
 	_listener = listener
 	_selection_clock = 0.0
 	BANKS.prewarm.call_deferred(get_tree())
+	DESIGN_BANKS.prewarm.call_deferred(get_tree())
 	set_process(_enabled)
 	return true
 
@@ -68,6 +73,8 @@ func shutdown() -> void:
 		_release(slot)
 		for player in slot.players:
 			player.free()
+		var voice: Node3D = slot.get("design_voice")
+		if is_instance_valid(voice): voice.free()
 	_slots.clear()
 	_states.clear()
 	_banks.clear()
@@ -155,7 +162,7 @@ func _discover_vehicles() -> Array:
 
 
 func _eligible(vehicle: CharacterBody3D) -> bool:
-	# Upgraded street drivetrains still use the original engine banks here.
+	# The dedicated desert adapter already owns these vehicles' engine audio.
 	if vehicle.has_node("DesertCarAudio"): return false
 	if vehicle.is_queued_for_deletion() or not vehicle.is_inside_tree():
 		return false
@@ -166,7 +173,7 @@ func _eligible(vehicle: CharacterBody3D) -> bool:
 	var driving: Variant = _world.get("driving")
 	if is_instance_valid(driving) and driving.occupied and driving.car == vehicle:
 		return false
-	# Player-controlled vehicles belong to WorldAudio's seven-layer foreground mixer.
+	# Player-controlled vehicles belong to WorldAudio's foreground mixer.
 	if vehicle.controlled and not vehicle.external_input:
 		return false
 	return vehicle.traffic or (vehicle.controlled and vehicle.external_input)
@@ -277,12 +284,15 @@ func _update_slot(slot: Dictionary, delta: float) -> void:
 	state.acceleration = lerpf(float(state.acceleration), clampf(acceleration, -10.0, 10.0), minf(1.0, delta * 5.0))
 	var ratio := clampf(speed / maxf(float(vehicle.max_forward_speed), 1.0), 0.0, 1.0)
 	var load_value := clampf(maxf(0.0, float(state.acceleration)) / maxf(float(vehicle.drive_acceleration), 1.0), 0.0, 1.0)
+	# Traffic controllers can bypass the drivetrain. Infer load without writing
+	# their physics state or reading an RPM that has stopped updating.
+	state.design_load = 0.0 if float(state.acceleration) < -0.2 else clampf(0.12 + ratio * 0.3 + load_value * 0.6, 0.0, 1.0)
 	var target_rpm := clampf(0.1 + ratio * 0.72 + load_value * 0.18, 0.0, 1.0) * 6.0
 	state.rpm = lerpf(float(state.rpm), target_rpm, minf(1.0, delta * 5.0))
-	_mix(slot, state, vehicle)
+	_mix(slot, state, vehicle, delta)
 
 
-func _mix(slot: Dictionary, state: Dictionary, vehicle: CharacterBody3D) -> void:
+func _mix(slot: Dictionary, state: Dictionary, vehicle: CharacterBody3D, delta := 0.1) -> void:
 	var lower := mini(5, floori(float(state.rpm)))
 	var blend := clampf(float(state.rpm) - lower, 0.0, 1.0)
 	var bank: Array = _banks[state.family]
@@ -290,6 +300,8 @@ func _mix(slot: Dictionary, state: Dictionary, vehicle: CharacterBody3D) -> void
 	# while measuring attenuation from the same ground plane as the listener.
 	var camera := get_viewport().get_camera_3d()
 	var audio_height := camera.global_position.y - _listener.global_position.y if camera != null else 0.0
+	var at := vehicle.global_position + Vector3.UP * (audio_height + 0.7)
+	if _mix_design(slot, state, vehicle, delta, at): return
 	if state.family == "tank":
 		TANK_AUDIO.mix_spatial(slot.players, vehicle, clampf((float(state.rpm) - 0.6) / 5.4, 0.0, 1.0),
 			float(slot.gain), BASE_VOLUME_DB, vehicle.global_position + Vector3.UP * (audio_height + 0.7))
@@ -313,6 +325,34 @@ func _mix(slot: Dictionary, state: Dictionary, vehicle: CharacterBody3D) -> void
 			player.play()
 
 
+func _mix_design(slot: Dictionary, state: Dictionary, vehicle: CharacterBody3D, delta: float, at: Vector3) -> bool:
+	var voice: Variant = slot.get("design_voice")
+	var profile := DESIGN_CATALOG.profile(str(vehicle.archetype))
+	if not is_instance_valid(voice):
+		if not DESIGN_BANKS.enabled() or not DESIGN_BANKS.is_ready(profile): return false
+		voice = DESIGN_VOICE.new()
+		voice.name = "NearbyEngineDesign%d" % _slots.find(slot)
+		add_child(voice)
+		slot.design_voice = voice
+	# Rebinding also silences a reused slot when its next car is dedicated/legacy.
+	if not voice.configure(str(vehicle.archetype)): return false
+	for player in slot.players: player.stop()
+	if float(slot.gain) <= 0.001:
+		voice.stop()
+		return true
+	var anchors: Array = DESIGN_CATALOG.rpm_bands(profile)
+	var band := 0.0 if absf(float(vehicle.speed)) < 0.35 else clampf(float(state.rpm), 0.0, 6.0)
+	var lower := mini(5, floori(band))
+	var target_rpm := exp(lerpf(log(float(anchors[lower])), log(float(anchors[lower + 1])), band - lower))
+	var current_rpm := float(state.get("design_rpm", anchors[0])) if state.get("design_profile", "") == profile else float(anchors[0])
+	var response := 10.0 if target_rpm > current_rpm else 6.0
+	state.design_profile = profile
+	state.design_rpm = lerpf(current_rpm, target_rpm, 1.0 - exp(-maxf(delta, 0.0) * response))
+	voice.update_mix(float(state.design_rpm), float(state.get("design_load", 0.0)), delta,
+		BASE_VOLUME_DB + linear_to_db(float(slot.gain)), at, false, false)
+	return true
+
+
 func _slot_has_id(id: int) -> bool:
 	for slot in _slots:
 		if slot.id == id:
@@ -321,6 +361,8 @@ func _slot_has_id(id: int) -> bool:
 
 
 func _release(slot: Dictionary) -> void:
+	var voice: Variant = slot.get("design_voice")
+	if is_instance_valid(voice): voice.stop()
 	for player in slot.players:
 		player.stop()
 		player.stream = null
@@ -332,12 +374,18 @@ func _release(slot: Dictionary) -> void:
 func snapshot() -> Dictionary:
 	var audible_ids: Array[int] = []
 	var playing_voices := 0
+	var design_slots := 0
 	for slot in _slots:
 		if slot.id != 0:
 			audible_ids.append(slot.id)
 		for player in slot.players:
 			if player.playing:
 				playing_voices += 1
+		var voice: Variant = slot.get("design_voice")
+		if is_instance_valid(voice):
+			design_slots += 1
+			playing_voices += int(voice.snapshot().motor_voices)
 	return {"audible": audible_ids.size(), "audible_ids": audible_ids,
-		"playing_voices": playing_voices, "voice_limit": MAX_VOICES,
+		"playing_voices": playing_voices, "voice_limit": MAX_DESIGN_VOICES if design_slots > 0 else MAX_VOICES,
+		"design_slots": design_slots, "design_voice_limit": MAX_DESIGN_VOICES,
 		"range": RANGE, "families_loaded": _banks.size()}

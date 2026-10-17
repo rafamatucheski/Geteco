@@ -41,6 +41,7 @@ static func all() -> Dictionary:
 					_data[id].mesh_count=REDESIGNED.MESH_COUNTS[id]
 	return _data
 static func spec(id: String) -> Dictionary:
+	if id == "desert_cargo_truck": return preload("res://gameplay/desert_heist/DesertCargoTruckVisual.gd").spec()
 	if id == "biarticulated_510":
 		var bus: Dictionary = all().route_city.duplicate(true)
 		bus.merge({"id":id,"label":"Biarticulado 510","durability":700,"engine_family":"bus","bounds_size":[2.56,3.1,7.8],"bounds_center":[0,1.65,0],"colors":["b92732ff"]},true)
@@ -53,6 +54,7 @@ static func spec(id: String) -> Dictionary:
 	if id == "digo_gol_1993": return preload("res://gameplay/digo/DigoCarSpec.gd").spec()
 	return all().get(id,preload("res://runtime/GarageRewardFleet.gd").spec(id))
 static func create(id: String) -> Node3D:
+	if id == "desert_cargo_truck": return preload("res://gameplay/desert_heist/DesertCargoTruckVisual.gd").create()
 	if REDESIGNED.contains(id): return REDESIGNED.create(id)
 	if id == "biarticulated_510":
 		var bus := Node3D.new()

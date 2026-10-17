@@ -17,6 +17,23 @@ func run():
 	var forest := Snapshot.new()
 	root.add_child(forest)
 	for i in 3: await physics_frame
+	check(forest.find_children("WoodlandFloorFinish*","MeshInstance3D",true,false).is_empty(),"Woodland does not add finish planes over native ground")
+	var native := preload("res://world/regions/NativeRegion.gd").new()
+	var ground_chunk := Node3D.new()
+	root.add_child(ground_chunk)
+	var cuts: Array[PackedVector2Array] = [PackedVector2Array([Vector2(-275,4),Vector2(-271,4),Vector2(-271,16),Vector2(-275,16)])]
+	native._land_piece(ground_chunk,Rect2(-280,0,32,32),cuts)
+	var native_floor := ground_chunk.get_child(0) as MeshInstance3D
+	check(native_floor.material_override == preload("res://activities/motocross/MotocrossGroundDetail.gd").ground_material(),"Native exposed woodland owns the replacement finish")
+	var top_area := 0.0
+	var faces := native_floor.mesh.get_faces()
+	for index in range(0,faces.size(),3):
+		if absf(faces[index].y)+absf(faces[index+1].y)+absf(faces[index+2].y)>.00001: continue
+		top_area += (faces[index+1]-faces[index]).cross(faces[index+2]-faces[index]).length()*.5
+	check(absf(top_area-(32*32-4*12))<.01,"Woodland top excludes road ownership instead of covering underneath")
+	check(native_floor.get_child_count()==1 and native_floor.get_child(0) is StaticBody3D,"Existing native physical support is retained")
+	ground_chunk.free()
+	native.free()
 	check(not forest.is_processing() and not forest.is_physics_processing(),"Woodland stays entirely static")
 	check(forest.tree_positions.size() > 100,"Rural extension retains substantial woodland")
 	check(forest._trunks.get_child_count() == forest.tree_positions.size(),"One real trunk collider per tree")

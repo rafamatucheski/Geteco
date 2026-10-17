@@ -18,9 +18,19 @@ const RADIUS := 44.0
 const SPACING := 0.85
 const TILES_PER_FRAME := 2
 const FOOTPRINT := 0.65 # Includes the tallest tuft's lean and wind displacement.
+const GPU_RELEASE := preload("res://runtime/GpuReleaseQueue.gd")
+## Estoque de blocos (16/10): cada bloco novo criava um MultiMesh e o bloco que saía destruía o dele, o
+## que na emenda da ponte vira criação/destruição de buffers de vídeo a cada passo (o driver segura a
+## thread principal ao destruir). Com capacidade fixa (o máximo de tufos de um bloco) o buffer é o mesmo
+## e só o conteúdo muda. GETECO_GRASS_POOL=0 volta ao comportamento antigo.
+const POOL_LIMIT := 48
+## int(TILE / SPACING) ao quadrado: o laço de _build_tile tenta no máximo 18 x 18 tufos.
+const CAPACITY := 324
+static var _pooling := OS.get_environment("GETECO_GRASS_POOL") != "0"
 
 var controller
 var _tiles: Dictionary = {} # Vector2i -> MultiMeshInstance3D
+var _pool: Array[MultiMeshInstance3D] = []
 var _queue: Array[Vector2i] = []
 var _mesh: ArrayMesh
 var _material: ShaderMaterial
@@ -49,8 +59,7 @@ func _physics_process(delta: float) -> void:
 	for key in _tiles.keys():
 		var chunk: Node3D = _support_chunk(key)
 		if not is_instance_valid(chunk) or chunk.get_instance_id() != int(_tiles[key].get_meta("support_chunk", 0)):
-			_tiles[key].queue_free()
-			_tiles.erase(key)
+			_release_tile(key)
 	var built := 0
 	var remaining: Array[Vector2i] = []
 	for key in _queue:
@@ -79,8 +88,7 @@ func _physics_process(delta: float) -> void:
 			if not _tiles.has(key) and key not in _queue: _queue.append(key)
 	for key in _tiles.keys():
 		if not wanted.has(key):
-			_tiles[key].queue_free()
-			_tiles.erase(key)
+			_release_tile(key)
 	_queue.assign(_queue.filter(func(k): return wanted.has(k)))
 	_queue.sort_custom(func(a, b): return Vector2(a - center).length_squared() < Vector2(b - center).length_squared())
 
@@ -95,9 +103,20 @@ func _support_chunk(key: Vector2i) -> Node3D:
 	return chunk
 
 func _clear() -> void:
-	for tile in _tiles.values(): tile.queue_free()
-	_tiles.clear()
+	for key in _tiles.keys(): _release_tile(key)
 	_queue.clear()
+
+## Bloco que sai: volta escondido ao estoque (buffer de vídeo mantido) ou sai pela fila gradual.
+func _release_tile(key: Vector2i) -> void:
+	var tile: MultiMeshInstance3D = _tiles[key]
+	_tiles.erase(key)
+	if not is_instance_valid(tile): return
+	if _pooling and _pool.size() < POOL_LIMIT and tile.multimesh != null and tile.multimesh.instance_count == CAPACITY:
+		tile.visible = false
+		tile.set_meta("support_chunk", 0)
+		_pool.append(tile)
+	else:
+		GPU_RELEASE.retire(tile)
 
 func _build_tile(key: Vector2i) -> void:
 	var terrain = _region.terrain
@@ -126,18 +145,31 @@ func _build_tile(key: Vector2i) -> void:
 			var s := rng.randf_range(0.7, 1.35)
 			var local_basis := Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(s, s * rng.randf_range(0.8, 1.25), s))
 			transforms.append(Transform3D(local_basis, Vector3(at.x, y, at.y)))
-	var multimesh := MultiMesh.new()
-	multimesh.transform_format = MultiMesh.TRANSFORM_3D
-	multimesh.mesh = _mesh
-	multimesh.instance_count = transforms.size()
-	for i in transforms.size(): multimesh.set_instance_transform(i, transforms[i])
-	var instance := MultiMeshInstance3D.new()
+	var instance: MultiMeshInstance3D = _pool.pop_back() if _pooling and not _pool.is_empty() else null
+	var multimesh: MultiMesh = instance.multimesh if instance != null else null
+	if instance == null:
+		multimesh = MultiMesh.new()
+		multimesh.transform_format = MultiMesh.TRANSFORM_3D
+		multimesh.mesh = _mesh
+		# Capacidade fixa com estoque: o mesmo buffer serve qualquer bloco; só visible_instance_count muda.
+		multimesh.instance_count = CAPACITY if _pooling else transforms.size()
+		instance = MultiMeshInstance3D.new()
+		instance.multimesh = multimesh
+		instance.material_override = _material
+		instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(instance)
+	var count := mini(transforms.size(), multimesh.instance_count)
+	for i in count: multimesh.set_instance_transform(i, transforms[i])
+	multimesh.visible_instance_count = count if _pooling else -1
+	# Caixa só dos tufos deste bloco: os que sobram no buffer além de visible_instance_count são de um bloco
+	# antigo e alargariam a caixa calculada (bloco desenhado fora da tela).
+	if _pooling:
+		var bounds := AABB(Vector3(corner.x, 0.0, corner.y), Vector3(TILE, 0.0, TILE))
+		for i in count: bounds = bounds.expand(transforms[i].origin)
+		instance.custom_aabb = bounds.grow(1.5)
 	instance.name = "GrassTile_%d_%d" % [key.x, key.y]
-	instance.multimesh = multimesh
-	instance.material_override = _material
-	instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	instance.set_meta("support_chunk", chunk.get_instance_id())
-	add_child(instance)
+	instance.visible = true
 	# Canto do chunk de 64 m, como o terreno: mesma coordenada de ruído.
 	instance.set_instance_shader_parameter("origin", (corner / 64.0).floor() * 64.0)
 	_tiles[key] = instance

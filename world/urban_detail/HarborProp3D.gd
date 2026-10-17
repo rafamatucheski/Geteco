@@ -102,6 +102,8 @@ func furniture_tree_ready() -> void:
 	set_notify_transform(true)
 
 func _tree(style:int,scale_factor:float,color:Color)->void:
+	# Harbor-only olive palette; keep authored species, silhouettes and batching.
+	color = color.lerp(Color("46583a"),.28).darkened(.07)
 	var trunk_h:=(3.0 if style!=2 else 3.6)*scale_factor
 	_cylinder("TreeTrunk",.22*scale_factor,trunk_h,Vector3(0,trunk_h*.5,0),Color("66513a"),true)
 	# Retain the existing collision envelope; replace only its visual mesh.
@@ -124,7 +126,7 @@ func _tree(style:int,scale_factor:float,color:Color)->void:
 		crown.rotation.y=float(index * 2 + style) * .73
 		crown.rotation.y+=float(variation)*.61
 		crown.position=Vector3(0,trunk_h+.62*scale_factor,0)+(crown_centers[index] as Vector3)*scale_factor
-		crown.material_override=preload("res://assets/urban_detail/FloraSurfaces.gd").foliage(color.lightened(.06*float(index%3)))
+		crown.material_override=preload("res://assets/urban_detail/FloraSurfaces.gd").foliage(color.lightened(.025*float(index%3)))
 		add_child(crown)
 
 func _rock()->void:

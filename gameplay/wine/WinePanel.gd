@@ -29,7 +29,7 @@ func refresh() -> void:
 	if is_instance_valid(card): remove_child(card); card.queue_free()
 	card=PanelContainer.new()
 	card.name="CellarCard"
-	var surface:=STYLE.compact(true,12,Vector2(24,20))
+	var surface:=STYLE.compact(false,3,Vector2(24,20))
 	surface.bg_color=Color("211a20")
 	card.add_theme_stylebox_override("panel",surface)
 	add_child(card)
@@ -107,6 +107,7 @@ func refresh() -> void:
 		_button(footer,"Comprar",func(): shop=true; refresh())
 	_button(footer,"Voltar ao jogo",adapter.close)
 	update_status()
+	preload("res://ui/ShopPresentation.gd").apply(card,buy_button)
 	_layout.call_deferred()
 	STYLE.trap_focus.call_deferred(card)
 

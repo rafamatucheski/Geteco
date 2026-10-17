@@ -70,6 +70,8 @@ func _pcm_ok(stream: AudioStreamWAV, looped: bool) -> bool:
 	return loudness and stream.get_length() >= 2.0 		and stream.loop_mode == (AudioStreamWAV.LOOP_FORWARD if looped else AudioStreamWAV.LOOP_DISABLED) 		and (not looped or absi(stream.loop_end - samples) <= 8)
 
 func _run() -> void:
+	await preload("res://audio/EngineBankCache.gd").prewarm(self)
+	await preload("res://audio/EngineDesignBanks.gd").prewarm(self)
 	_check(PROFILE.bank_family("army_tank") == "tank", "fleet tank selects its own family")
 	_check(PROFILE.bank_family("police_cruiser") == "police" and PROFILE.bank_family("route_city") == "bus", "normal service families remain intact")
 	var bank := TANK.engine_bank()
@@ -127,6 +129,7 @@ func _run() -> void:
 	car.engine_disabled = false
 	var normal := TankVehicle.new()
 	normal.archetype = "police_cruiser"
+	normal.controlled = true
 	normal.speed = 7.0
 	world.add_child(normal)
 	world.driving.car = normal
@@ -175,6 +178,8 @@ func _run() -> void:
 	service.shutdown()
 	_check(service.get_child_count() == 0, "shutdown frees service emitters")
 	world.free()
+	await process_frame
+	await create_timer(.1).timeout
 	print("TANK_AUDIO checks=", checks, " failures=", failures)
 	quit(0 if failures == 0 else 1)
 

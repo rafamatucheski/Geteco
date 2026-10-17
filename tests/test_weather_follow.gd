@@ -38,11 +38,13 @@ func run() -> void:
 					check(absf(relative.x)<extent.x and absf(relative.z)<extent.z,"Screen corner covered at size %s heading %s"%[size,heading])
 			var drop := Vector3(3,-8,2)
 			var before := rain.to_global(drop)
-			# 300km/h, including a frame hitch: existing rain translates with view.
+			# At high speed only the spawning volume moves; living drops must not
+			# translate with the player, which makes rain look glued to the screen.
 			var travel := Vector3(83.33*.1,0,0)
 			camera.position += travel
 			COVERAGE.follow(rain,camera,focus+travel)
-			check(rain.local_coords and (rain.to_global(drop)-before).is_equal_approx(travel),"Living rain keeps up at high speed")
+			check(not rain.local_coords,"Living rain stays in world space at high speed")
+			check((rain.to_global(drop)-before).is_equal_approx(travel),"Spawn volume still follows the moving view")
 			check(rain.visibility_aabb.has_point(drop),"Living drop stays inside culling volume")
 	check(REGIONAL.desert_weight(Vector3(345,0,-360))==0,"City end remains wet")
 	check(REGIONAL.desert_weight(Vector3(345,0,-415))>.1 and REGIONAL.desert_weight(Vector3(345,0,-415))<.9,"Desert transition blends")

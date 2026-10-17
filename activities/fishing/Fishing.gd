@@ -3,6 +3,8 @@ const RULES := preload("res://activities/fishing/FishingRules.gd")
 const STATE := preload("res://activities/fishing/FishingState.gd")
 const ROD := preload("res://activities/fishing/FishingRod.gd")
 const HUD := preload("res://activities/fishing/FishingHUD.gd")
+const CAMERA := preload("res://activities/fishing/FishingCamera.gd")
+const CATCH_ITEMS := preload("res://activities/fishing/FishingCatchItems.gd")
 signal completed(result: Dictionary)
 var session
 var site: Node3D
@@ -27,6 +29,7 @@ var _fight_hint := ""
 var _charge := 0.0
 var _held := false
 var _water := Vector3.ZERO
+var _cast_water := Vector3.ZERO
 var _origin := Vector3.ZERO
 var _old_weapon := "fists"
 var _old_lock := false
@@ -35,6 +38,11 @@ var _rod: Node3D
 var _canvas: CanvasLayer
 var _hud: Control
 var _message := ""
+var _camera = CAMERA.new()
+var _catch_record := false
+var _keep_available := true
+var _choice_message := ""
+var _exit_after_choice := false
 
 func configure(owner_session) -> void:
 	session = owner_session
@@ -135,6 +143,8 @@ func open_menu() -> bool:
 	var record := Label.new()
 	record.text = String(TranslationServer.translate("Recorde: %s · %d peixes · %d/%d espécies")) % [RULES.kg(int(saved.best)), saved.catches, saved.species.size(), RULES.SPECIES.size()]
 	session.column.add_child(record)
+	if session.world.player.global_position.distance_to(site.entry_position()) <= 3.2:
+		session._button("Vender peixes", CATCH_ITEMS.open_stock.bind(session))
 	session._button("Voltar", session.close_menu)
 	return true
 
@@ -165,6 +175,8 @@ func start(selected: int) -> bool:
 	last_result = {}
 	rivals.clear()
 	current_fish = {}
+	_exit_after_choice = false
+	_choice_message = ""
 	_message = "Vá a um ponto livre na margem."
 	for rival_name in RULES.RIVALS:
 		rivals.append({"name":rival_name, "grams":0, "next":_rng.randf_range(11, 21), "catches":0})
@@ -173,6 +185,7 @@ func start(selected: int) -> bool:
 	add_child(_canvas)
 	_hud = HUD.new()
 	_canvas.add_child(_hud)
+	_hud.catch_choice.connect(choose_catch)
 	set_physics_process(true)
 	if not _nearest_spot().is_empty(): take_spot()
 	_update_hud()
@@ -185,6 +198,7 @@ func take_spot() -> bool:
 	var player = session.world.player
 	_origin = player.global_position
 	_water = spot.water
+	_cast_water = _water
 	_old_lock = bool(player.input_locked)
 	_old_facing = player.combat_facing
 	_old_weapon = session.state.equipped_weapon
@@ -198,6 +212,7 @@ func take_spot() -> bool:
 	session.world.gameplay.aiming = false
 	_rod = ROD.new()
 	session.world.add_child(_rod)
+	_camera.begin(session.world)
 	phase = "ready"
 	_phase_time = 0
 	_held = false
@@ -210,9 +225,26 @@ func handle_input(event: InputEvent) -> bool:
 	if not controls_locked() or session.modal or get_tree().paused: return false
 	if event.is_action_pressed("pause_game") or event.is_action("camera_left") or event.is_action("camera_right"): return false
 	if event is InputEventScreenTouch or event is InputEventScreenDrag: return false
-	if event.is_action_pressed("exit_vehicle") or event.is_action_pressed("ui_cancel"):
-		if not event.is_action_pressed("pause_game"): cancel_attempt()
+	# Enter also maps to exit_vehicle, and Space maps to jump. During a decision,
+	# the focused choice owns both keys before the shared gameplay handlers.
+	if phase == "caught" and event.is_action("ui_accept"):
+		if event.is_action_pressed("ui_accept") and not event.is_echo(): _hud.activate_focused_choice()
 		return true
+	if event.is_action_pressed("exit_vehicle") or event.is_action_pressed("ui_cancel"):
+		if not event.is_action_pressed("pause_game"):
+			if phase == "caught":
+				_exit_after_choice = true
+				choose_catch("release")
+			elif phase in ["storing", "releasing"]: _exit_after_choice = true
+			else: cancel_attempt()
+		return true
+	if phase == "caught":
+		# Native buttons must receive mouse/touch and focus navigation.
+		if event is InputEventMouse or event.is_action("ui_accept") or event.is_action("ui_left") or event.is_action("ui_right") or event.is_action("ui_up") or event.is_action("ui_down") or event.is_action("ui_focus_next") or event.is_action("ui_focus_prev"): return false
+		if event.is_action_pressed("interact") and not event.is_echo(): choose_catch("keep")
+		elif event.is_action_pressed("reload") and not event.is_echo(): choose_catch("release")
+		return true
+	if phase in ["storing", "releasing"]: return true
 	if event.is_action_released("interact"):
 		_held = false
 		if phase == "charging": _cast()
@@ -223,11 +255,11 @@ func handle_input(event: InputEvent) -> bool:
 			_phase_time = 0.0
 			_charge = .08
 		elif phase == "bite":
-			phase = "reeling"
+			phase = "hooking"
 			_begin_fish_fight(float(RULES.definition(str(current_fish.id)).strength))
 			_phase_time = 0.0
-			_message = "Recolha nas folgas; alivie quando o peixe arrancar."
-		elif phase in ["caught", "missed", "line_broke"]:
+			_message = "Fisgou!"
+		elif phase in ["missed", "line_broke"]:
 			phase = "ready"
 			_phase_time = 0.0
 	_update_hud()
@@ -236,6 +268,10 @@ func handle_input(event: InputEvent) -> bool:
 func _cast() -> void:
 	if phase != "charging": return
 	current_fish = RULES.roll(_rng, _charge)
+	_cast_water = _origin.lerp(_water, lerpf(.58, 1.0, _charge))
+	_cast_water.y = _water.y
+	_catch_record = false
+	_choice_message = ""
 	phase = "casting"
 	_phase_time = 0.0
 	_message = "Observe a boia."
@@ -260,15 +296,18 @@ func _physics_process(delta: float) -> void:
 	_phase_time += delta
 	if tier >= 0:
 		if not _rivals_available(): cancel_attempt("rivals"); return
+		var competition_delta := minf(delta, remaining)
 		remaining = maxf(0, remaining - delta)
-		_update_rivals(delta)
-		if remaining <= 0: _finish_tournament(); return
+		if competition_delta > 0.0: _update_rivals(competition_delta)
+		# Finish an already-earned landing before closing the camera; no new fight
+		# or rival catch can advance once the competition clock reaches zero.
+		if remaining <= 0 and phase not in ["landing", "caught", "storing", "releasing"]: _finish_tournament(); return
 	match phase:
 		"charging":
 			_charge = clampf(_phase_time / 1.1, .08, 1)
 			if _phase_time >= 1.1: _cast()
 		"casting":
-			if _phase_time >= .7:
+			if _phase_time >= .72:
 				phase = "waiting"
 				_phase_time = -_rng.randf_range(2.3, 5.5)
 		"waiting":
@@ -278,18 +317,30 @@ func _physics_process(delta: float) -> void:
 				_message = "Pressione para fisgar!"
 		"bite":
 			if _phase_time > 1.65: _lose("missed", "A fisgada veio tarde.")
+		"hooking":
+			if _phase_time >= .45:
+				phase = "reeling"
+				_phase_time = 0.0
+				_message = "Recolha nas folgas; alivie quando o peixe arrancar."
 		"reeling":
 			var result: String = _update_fish_fight(delta)
 			if result == "caught": _land()
 			elif result == "line_broke": _lose("line_broke", "Tensão alta: alivie a linha na próxima.")
 			elif result == "escaped": _lose("missed", "A linha ficou frouxa e o peixe escapou.")
-		"caught", "missed", "line_broke":
+		"landing":
+			if _phase_time >= 1.9: _complete_landing()
+		"storing", "releasing":
+			if _phase_time >= (ROD.STORE_DURATION if phase == "storing" else ROD.RELEASE_DURATION):
+				_finish_catch_choice()
+				if not active: return
+		"missed", "line_broke":
 			if _phase_time > 3.5:
 				phase = "ready"
 				_message = "Segure e solte para arremessar."
 	if is_instance_valid(_rod):
-		var visual_charge := clampf(_phase_time / .7, 0, 1) if phase == "casting" else _charge
-		_rod.present(session.world.player, _water, phase, fight.tension if phase == "reeling" else 0.0, fight.progress if phase == "reeling" else 0.0, visual_charge, current_fish, delta)
+		_rod.water_surface = site
+		_rod.present(session.world.player, _cast_water, phase, fight.tension if phase in ["reeling", "hooking"] else 0.0, fight.progress if phase == "reeling" else 0.0, _charge, current_fish, delta, _fight_hint, _held, _phase_time if phase != "waiting" else -1.0)
+		_camera.present(session.world.player, _cast_water, _rod._fish, phase, clampf(_phase_time / 1.9, 0.0, 1.0), delta)
 	_clock -= delta
 	if _clock <= 0: _clock = .1; _update_hud()
 
@@ -359,6 +410,16 @@ func _rivals_available() -> bool:
 	return true
 
 func _land() -> void:
+	# A catch is awarded only after the same fish has cleared the bank and reached Dante.
+	phase = "landing"
+	_phase_time = 0.0
+	_held = false
+	_message = "Erguendo o peixe..."
+	_update_hud()
+
+func _complete_landing() -> void:
+	if phase != "landing": return
+	_catch_record = int(current_fish.grams) > int(snapshot().best)
 	if not STATE.record_catch(session.state.world_state, serial, current_fish): cancel_attempt("invalid_catch"); return
 	best = maxi(best, int(current_fish.grams))
 	caught += 1
@@ -366,7 +427,42 @@ func _land() -> void:
 	_phase_time = 0
 	_held = false
 	_message = "%s · %s" % [RULES.definition(str(current_fish.id)).name, RULES.kg(int(current_fish.grams))]
+	_keep_available = CATCH_ITEMS.can_store(session, current_fish)
+	_choice_message = "" if _keep_available else "Bagagem cheia · solte o peixe para continuar."
 	_update_hud()
+
+func choose_catch(action: String) -> bool:
+	if not active or phase != "caught" or action not in ["keep", "release"]: return false
+	if session.modal or get_tree().paused or not _outside() or session.is_transition_blocked(): return false
+	if session.world.gameplay.health <= 0 or session.world.player.dead: return false
+	if action == "keep":
+		if not CATCH_ITEMS.store(session, current_fish):
+			_keep_available = CATCH_ITEMS.can_store(session, current_fish)
+			_choice_message = "Não foi possível guardar. Solte o peixe para continuar."
+			_update_hud()
+			return false
+		phase = "storing"
+	else: phase = "releasing"
+	# The phase guards repeated callbacks, including taps in the same frame.
+	_phase_time = 0.0
+	_held = false
+	_choice_message = ""
+	_update_hud()
+	# Active fishing queues this checkpoint until record and inventory can save together.
+	session.save_game()
+	return true
+
+func _finish_catch_choice() -> void:
+	if tier >= 0 and remaining <= 0.0:
+		_finish_tournament()
+		return
+	if _exit_after_choice:
+		cancel_attempt()
+		return
+	phase = "ready"
+	_phase_time = 0.0
+	current_fish = {}
+	_message = "Segure e solte para arremessar."
 
 func _lose(new_phase: String, reason: String) -> void:
 	phase = new_phase
@@ -407,12 +503,14 @@ func _release() -> void:
 	active = false
 	phase = ""
 	_held = false
+	_exit_after_choice = false
 	set_physics_process(false)
 	if is_instance_valid(_rod): _rod.queue_free()
 	if is_instance_valid(_canvas): _canvas.queue_free()
 	_rod = null
 	_canvas = null
 	_hud = null
+	_camera.release()
 	if not was_locked or not is_instance_valid(session) or not is_instance_valid(session.world.player): return
 	var player = session.world.player
 	player.clear_combat_weapon_pose()
@@ -424,15 +522,27 @@ func _release() -> void:
 func _update_hud() -> void:
 	if not is_instance_valid(_hud): return
 	var controls = get_node("/root/GameInput")
-	var use_key: String = controls.hint("interact")
+	var touch := bool(controls.get_meta("touch_controls_active", false)) or OS.has_feature("android") or "--touch-controls" in OS.get_cmdline_user_args()
+	var use_key: String = "Pescar" if touch else controls.hint("interact")
+	var exit_key: String = "Sair" if touch else controls.hint("exit_vehicle") + " sair"
+	var pause_key: String = "Pausa" if touch else controls.hint("pause_game") + " pausa"
 	var hint := use_key + " segure e solte: arremessar"
 	if phase == "walking": hint = use_key + " num ponto livre: começar a pescar"
 	elif phase == "charging": hint = "Solte " + use_key + " para arremessar"
 	elif phase == "waiting": hint = use_key + " quando afundar: fisgar"
 	elif phase == "bite": hint = use_key + " agora: fisgar"
+	elif phase == "hooking": hint = "Fisgou!"
 	elif phase == "reeling": hint = use_key + " recolher · solte para aliviar"
+	elif phase == "landing": hint = "Erguendo o peixe"
+	elif phase == "caught": hint = "Guardar ou soltar"
+	elif phase == "storing": hint = "Guardando o peixe…"
+	elif phase == "releasing": hint = "Soltando o peixe…"
 	var saved: Dictionary = session.state.world_state[STATE.KEY]
-	_hud.update_state({"title":RULES.TIERS[tier].name if tier >= 0 else "Pesca livre", "clock":"Vá até a margem · R$ 10 pagos" if phase == "walking" else (String(TranslationServer.translate("%d s · prêmio R$ %d")) % [ceili(remaining), RULES.TIERS[tier].prize] if tier >= 0 else "Sem limite de tempo"), "phase":phase, "detail":_message, "fight_hint":_fight_hint, "charge":_charge, "tension":fight.tension, "progress":fight.progress, "best":best, "catches":caught, "species":saved.species.size(), "tournament":tier >= 0, "ranking":RULES.ranking(best, rivals), "hint":hint, "cancel":("Volte ao balcão para encerrar" if phase == "walking" else controls.hint("exit_vehicle") + " sair") + " · " + controls.hint("pause_game") + " pausa"})
+	var camera := get_viewport().get_camera_3d()
+	var rod_screen := Vector2.ZERO
+	if is_instance_valid(camera) and controls_locked(): rod_screen = camera.unproject_position(session.world.player.global_position + Vector3.UP * 1.45)
+	var definition := RULES.definition(str(current_fish.get("id", "")))
+	_hud.update_state({"title":RULES.TIERS[tier].name if tier >= 0 else "Pesca livre", "clock":"Vá até a margem · R$ 10 pagos" if phase == "walking" else (String(TranslationServer.translate("%d s · prêmio R$ %d")) % [ceili(remaining), RULES.TIERS[tier].prize] if tier >= 0 else "Sem limite de tempo"), "phase":phase, "detail":_message, "fight_hint":_fight_hint, "charge":_charge, "tension":fight.tension, "progress":fight.progress, "best":best, "catches":caught, "species":saved.species.size(), "tournament":tier >= 0, "ranking":RULES.ranking(best, rivals), "hint":hint, "cancel":("Volte ao balcão para encerrar" if phase == "walking" else exit_key) + " · " + pause_key, "rod_screen":rod_screen, "remaining":remaining, "prize":int(RULES.TIERS[tier].prize) if tier >= 0 else 0, "touch":touch, "action_key":use_key, "release_key":controls.hint("reload"), "keep_enabled":_keep_available, "choice_message":_choice_message, "catch_name":str(definition.get("name", "")), "catch_grams":int(current_fish.get("grams", 0)), "catch_record":_catch_record, "landing":clampf(_phase_time / 1.9, 0.0, 1.0)})
 
 func _exit_tree() -> void:
 	if active and is_instance_valid(session): STATE.finish(session.state.world_state, serial, false)

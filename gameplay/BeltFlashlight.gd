@@ -4,43 +4,46 @@ const PRICE := 300
 var gameplay
 var owned := false
 var enabled := false
-var lamp: SpotLight3D
+var lamp: OmniLight3D
 var housing: Node3D
+var glass: StandardMaterial3D
 
 func _ready() -> void:
 	housing = Node3D.new()
 	housing.name = "BeltLampHousing"
 	add_child(housing)
 	var body := MeshInstance3D.new()
-	var mesh := BoxMesh.new()
-	mesh.size = Vector3(.095, .13, .075)
+	var mesh := CylinderMesh.new()
+	mesh.top_radius = .055
+	mesh.bottom_radius = .055
+	mesh.height = .17
 	body.mesh = mesh
 	var material := StandardMaterial3D.new()
 	material.albedo_color = Color("252b30")
 	material.metallic = .65
 	body.material_override = material
+	body.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	housing.add_child(body)
 	var lens := MeshInstance3D.new()
 	var lens_mesh := CylinderMesh.new()
-	lens_mesh.top_radius = .032
-	lens_mesh.bottom_radius = .032
-	lens_mesh.height = .012
+	lens_mesh.top_radius = .058
+	lens_mesh.bottom_radius = .058
+	lens_mesh.height = .10
 	lens.mesh = lens_mesh
-	lens.rotation.x = PI / 2
-	lens.position.z = -.043
-	var glass := StandardMaterial3D.new()
-	glass.albedo_color = Color("e1eadc")
+	glass = StandardMaterial3D.new()
+	glass.albedo_color = Color("e7c28a")
+	glass.emission = Color(1.0, .77, .46)
+	glass.emission_energy_multiplier = 1.2
 	lens.material_override = glass
+	lens.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	housing.add_child(lens)
-	lamp = SpotLight3D.new()
-	lamp.position.z = -.055
-	lamp.rotation.x = -.12
-	lamp.spot_range = 18.0
-	lamp.spot_angle = 42.0
-	lamp.spot_attenuation = .7
-	lamp.spot_angle_attenuation = 1.5
-	lamp.light_color = Color(1.0, .94, .83)
-	lamp.light_energy = 5.0
+	# One shadowed, local source: useful behind and beside Dante, independent of aim.
+	# Shorter reach than the tactical light; never paints a forward cone.
+	lamp = OmniLight3D.new()
+	lamp.omni_range = 7.0
+	lamp.omni_attenuation = 1.35
+	lamp.light_color = Color(1.0, .80, .54)
+	lamp.light_energy = 2.8
 	lamp.light_specular = .2
 	lamp.shadow_enabled = true
 	housing.add_child(lamp)
@@ -64,6 +67,7 @@ func update_visibility() -> void:
 	housing.visible = owned and is_instance_valid(gameplay.player) and gameplay.player.visible
 	var driving = gameplay.world.get("driving") if is_instance_valid(gameplay.world) else null
 	lamp.visible = housing.visible and enabled and gameplay.health > 0 and not (is_instance_valid(driving) and driving.occupied)
+	if glass.emission_enabled != lamp.visible: glass.emission_enabled = lamp.visible
 
 func _process(_delta: float) -> void:
 	if not owned or not is_instance_valid(gameplay.player) or not is_instance_valid(gameplay.player.visual): return

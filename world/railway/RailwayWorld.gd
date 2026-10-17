@@ -7,6 +7,7 @@ const LOAD_DISTANCE := 240.0
 const RELEASE_DISTANCE := 310.0
 const UPDATE_INTERVAL := 0.2
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+const GPU_RELEASE := preload("res://runtime/GpuReleaseQueue.gd")
 var controller
 var chunks: Dictionary = {}
 var station_nodes: Dictionary = {}
@@ -14,6 +15,9 @@ var tunnel_nodes: Dictionary = {}
 var focus := Vector3.INF
 var _descriptors: Dictionary = {}
 var _pending: Array[Vector2i] = []
+## Trechos a refazer (apoio caiu numa estrada de região que terminou de preparar): o velho fica até o
+## novo ficar pronto, um por quadro como os outros.
+var _rebuild: Dictionary = {}
 var _materials := {}
 var _unit_box := BoxMesh.new()
 var _track_slab: ArrayMesh
@@ -27,6 +31,8 @@ var _clearance_buildings: Array = []
 var _batches: Dictionary = {}
 var _batch_parent: Node3D
 var _body: StaticBody3D
+const CORRIDOR_CELL := 8.0
+var _corridor_cells: Dictionary = {}
 
 func configure(owner_controller) -> void:
 	controller = owner_controller
@@ -44,7 +50,15 @@ func _process(delta: float) -> void:
 	# so their support is complete before admitting a passenger.
 	if not _pending.is_empty():
 		var key: Vector2i = _pending.pop_front()
-		if not chunks.has(key):
+		if _rebuild.has(key) and chunks.has(key):
+			_rebuild.erase(key)
+			var old: Node3D = chunks[key]
+			chunks.erase(key)
+			var rebuild_began := STALL_WORK.begin()
+			_build_chunk(key)
+			GPU_RELEASE.retire(old)
+			STALL_WORK.finish("railway.chunk_rebuild", rebuild_began, {"key":str(key)})
+		elif not chunks.has(key):
 			var chunk_began := STALL_WORK.begin()
 			_build_chunk(key)
 			STALL_WORK.finish("railway.chunk", chunk_began, {"key":str(key)})
@@ -79,8 +93,10 @@ func set_focus(point: Vector3) -> void:
 		if distance < LOAD_DISTANCE and not chunks.has(key) and key not in _pending: _pending.append(key)
 		elif distance > RELEASE_DISTANCE:
 			_pending.erase(key)
+			_rebuild.erase(key)
 			if chunks.has(key):
-				chunks[key].queue_free()
+				# Descarte gradual: o trecho tem ~50 MultiMesh e centenas de colisões (16/10).
+				GPU_RELEASE.retire(chunks[key])
 				chunks.erase(key)
 	_pending.sort_custom(func(a: Vector2i,b: Vector2i) -> bool:
 		return Vector2(a).distance_squared_to(Vector2(point.x,point.z)/CELL) < Vector2(b).distance_squared_to(Vector2(point.x,point.z)/CELL))
@@ -88,18 +104,18 @@ func set_focus(point: Vector3) -> void:
 		var distance: float = point.distance_to(station.position)
 		if distance < 180.0: ensure_station(station.id)
 		elif distance > 240.0 and station_nodes.has(station.id):
-			station_nodes[station.id].queue_free()
+			GPU_RELEASE.retire(station_nodes[station.id])
 			station_nodes.erase(station.id)
 	for tunnel in NETWORK.tunnels():
 		var nearest := Geometry3D.get_closest_point_to_segment(point,tunnel.a,tunnel.b)
 		var distance := point.distance_to(nearest)
 		if distance < 220.0 and not tunnel_nodes.has(tunnel.id): _build_tunnel(tunnel)
 		elif distance > 280.0 and tunnel_nodes.has(tunnel.id):
-			tunnel_nodes[tunnel.id].queue_free()
+			GPU_RELEASE.retire(tunnel_nodes[tunnel.id])
 			tunnel_nodes.erase(tunnel.id)
 	if point.distance_to(NETWORK.GATE_POSITION) < 220.0 and not is_instance_valid(_gate): _build_gate()
 	elif point.distance_to(NETWORK.GATE_POSITION) > 280.0 and is_instance_valid(_gate):
-		_gate.queue_free()
+		GPU_RELEASE.retire(_gate)
 		_gate = null
 
 func ensure_station(id: String) -> Node3D:
@@ -123,7 +139,7 @@ func set_campaign_completed(completed: bool) -> void:
 	if completed == _campaign_completed: return
 	_campaign_completed = completed
 	if is_instance_valid(_gate):
-		_gate.queue_free()
+		GPU_RELEASE.retire(_gate)
 		_gate = null
 	if focus.is_finite() and focus.distance_to(NETWORK.GATE_POSITION) < 220.0: _build_gate()
 
@@ -150,12 +166,13 @@ func _prepare_descriptors() -> void:
 	# Every terminal has enough rail beyond its stop for the powered unit and
 	# buffers. These are not passenger routes or walkable region shortcuts.
 	for station in NETWORK.stations():
-		if station.id == "harbor_north": continue
+		if station.region == "harbor": continue
 		var point: Vector3 = station.position
 		var direction := 1.0 if station.id=="harbor_central" else -1.0
 		_add_descriptor(point,point+Vector3(0,0,18*direction),false,"terminal")
 
 func _add_descriptor(a: Vector3,b: Vector3,pillar: bool,id: String) -> void:
+	_corridor_cells = {}
 	var center: Vector3 = (a + b) * 0.5
 	var key := Vector2i(floori(center.x/CELL),floori(center.z/CELL))
 	if not _descriptors.has(key): _descriptors[key] = []
@@ -192,14 +209,18 @@ func _prepare_clearance_roads() -> void:
 func _recheck_supports() -> void:
 	# A neighbouring region can finish preparation after a nearby chunk was
 	# built. Rebuild only groups whose existing columns now occupy a road.
+	# Trechos entram na fila de construção (um por quadro, o velho fica até o novo existir): refeitos
+	# todos de uma vez, quando a região do outro lado da ponte terminava de preparar, eram centenas de
+	# colisões e dezenas de MultiMesh num quadro só (rastreio da travessia, 16/10).
 	for key in chunks.keys():
-		if not _supports_clear(chunks[key]):
-			chunks[key].queue_free()
-			chunks.erase(key)
-			_build_chunk(key)
+		if not _rebuild.has(key) and not _supports_clear(chunks[key]):
+			_rebuild[key] = true
+			_pending.erase(key)
+			_pending.push_front(key)
+	# Estação refaz já: o embarque precisa do apoio completo.
 	for id in station_nodes.keys():
 		if not _supports_clear(station_nodes[id]):
-			station_nodes[id].queue_free()
+			GPU_RELEASE.retire(station_nodes[id])
 			station_nodes.erase(id)
 			ensure_station(id)
 
@@ -274,7 +295,7 @@ func _build_chunk(key: Vector2i) -> void:
 			_beam(a+right*3.18*side-Vector3.UP*.37,b+right*3.18*side-Vector3.UP*.37,.16,.58,"steel")
 			# Low parapets have a real upper handrail, keeping actors on the
 			# elevated maintenance edge without obscuring the passing landscape.
-			if not _beside_platform(center,side*right.x) and not _junction_clearance(center):
+			if not _beside_platform(center,side*right.x) and not _junction_clearance(a+right*3.30*side,b+right*3.30*side):
 				_beam(a+right*3.30*side+Vector3.UP*.47,b+right*3.30*side+Vector3.UP*.47,.10,1.02,"fence",true)
 		var sleepers := maxi(1,ceili(length/1.8))
 		for index in sleepers:
@@ -301,10 +322,43 @@ func _beside_platform(point: Vector3, side_x: float) -> bool:
 			if signf(side_x) == float(station.side): return true
 	return false
 
-func _junction_clearance(point: Vector3) -> bool:
-	# Switch blades share their first metres. Guardrails belong on the outside
-	# of a rail corridor, never between tracks while a powered unit diverges.
-	return point.x > 331.0 and point.x < 445.0 and point.z < -184.0 and point.z > -280.0
+func _junction_clearance(a: Vector3,b: Vector3) -> bool:
+	for fraction in [0.0,.25,.5,.75,1.0]:
+		if _guard_inside_corridor(a.lerp(b,fraction)): return true
+	return false
+
+func _guard_inside_corridor(point: Vector3) -> bool:
+	# Omit only a guard that actually enters another running corridor. The
+	# outside perimeter, including Northgate, remains physically protected.
+	if point.x<330.0 or point.x>475.0 or point.z> -184.0 or point.z< -280.0: return false
+	# Só os trechos cuja caixa (+3 m) cobre a célula do ponto: mesmas regras de antes.
+	# A varredura de todos os descritores por ponto custava 127 ms num trecho só
+	# (142 testes de guarda) no export, 140–180 ms nos sobrados e na travessia (16/10).
+	if _corridor_cells.is_empty(): _index_corridor()
+	for row in _corridor_cells.get(_corridor_cell(point), []):
+		if point.x<minf(row.a.x,row.b.x)-3.0 or point.x>maxf(row.a.x,row.b.x)+3.0: continue
+		if point.z<minf(row.a.z,row.b.z)-3.0 or point.z>maxf(row.a.z,row.b.z)+3.0: continue
+		if point.distance_to(Geometry3D.get_closest_point_to_segment(point,row.a,row.b))<3.0: return true
+	return false
+
+static func _corridor_cell(point: Vector3) -> Vector2i:
+	return Vector2i(floori(point.x/CORRIDOR_CELL),floori(point.z/CORRIDOR_CELL))
+
+## Índice espacial dos descritores para _guard_inside_corridor: cada trecho entra em
+## toda célula que a caixa dele, com a folga de 3 m do teste, toca.
+func _index_corridor() -> void:
+	_corridor_cells = {}
+	for rows in _descriptors.values():
+		for row in rows:
+			var low := _corridor_cell(Vector3(minf(row.a.x,row.b.x)-3.0,0,minf(row.a.z,row.b.z)-3.0))
+			var high := _corridor_cell(Vector3(maxf(row.a.x,row.b.x)+3.0,0,maxf(row.a.z,row.b.z)+3.0))
+			for x in range(low.x,high.x+1):
+				for z in range(low.y,high.y+1):
+					var cell := Vector2i(x,z)
+					if not _corridor_cells.has(cell): _corridor_cells[cell] = []
+					_corridor_cells[cell].append(row)
+	# Marca índice pronto mesmo sem trecho algum, para não refazer a cada chamada.
+	if _corridor_cells.is_empty(): _corridor_cells[Vector2i(1 << 30, 1 << 30)] = []
 
 func _build_station(station: Dictionary) -> Node3D:
 	var group := _new_group("Station_"+str(station.id))
@@ -318,7 +372,10 @@ func _build_station(station: Dictionary) -> Node3D:
 	_station_box(origin,side,Vector3(2.12,floor_y+.014,0),Vector3(.28,.028,33.8),"warning")
 	_station_box(origin,side,Vector3(2.38,floor_y+.024,0),Vector3(.08,.04,33.8),"ivory")
 	# The outer guard leaves the upper stair bridge unobstructed.
-	for rail in [[-11.95,10.1],[6.45,21.1]]:
+	var access_z := .5 if station.region == "harbor" else -5.5
+	var opening_start := access_z-1.35
+	var opening_end := access_z+1.35
+	for rail in [[(-17.0+opening_start)*.5,opening_start+17.0],[(opening_end+17.0)*.5,17.0-opening_end]]:
 		_station_box(origin,side,Vector3(6.69,floor_y+.55,rail[0]),Vector3(.12,1.1,rail[1]),"fence",true)
 	for end in [-17.0,17.0]:
 		_station_box(origin,side,Vector3(4.4,floor_y+.55,end),Vector3(4.6,1.1,.12),"fence",true)
@@ -357,7 +414,7 @@ func _build_station(station: Dictionary) -> Node3D:
 			_record_support(foot)
 			# Columns meet the underside, without a coplanar cap on the walking floor.
 			_station_box(origin,side,Vector3(5.75,floor_y*.5-.52,z),Vector3(.6,floor_y+.16,.6),"concrete",true)
-	_build_access(origin,side,floor_y,accent)
+	_build_access(origin,side,floor_y,accent,station.region == "harbor")
 	_flush_batches()
 	var light := OmniLight3D.new()
 	light.position = Vector3(origin.x+side*4.4,floor_y+2.8,origin.z)
@@ -403,19 +460,23 @@ func _detail_station_canopy(origin: Vector3,side: float,floor_y: float,z: float,
 	_beam(a,b,.10,.10,"steel",true)
 	_station_box(origin,side,Vector3(6.12,floor_y+2.66,support_z),Vector3(.23,.24,.25),"steel",true)
 
-func _build_access(origin: Vector3,side: float,floor_y: float,accent: String) -> void:
+func _build_access(origin: Vector3,side: float,floor_y: float,accent: String, compact := false) -> void:
 	var rise := floor_y/3.0
+	var far_z := 2.0 if compact else -4.0
+	var landing_z := .5 if compact else -5.5
+	var run := 10.0-far_z
 	_station_box(origin,side,Vector3(10.65,-.10,11.5),Vector3(5.6,.20,5.5),"platform",true)
-	for deck in [[rise,-5.5],[rise*2,11.5],[floor_y,-5.5]]:
+	for deck in [[rise,landing_z],[rise*2,11.5],[floor_y,landing_z]]:
 		_station_box(origin,side,Vector3(10.65,deck[0]-.12,deck[1]),Vector3(5.5,.24,3.0),"platform",true)
-		_station_box(origin,side,Vector3(10.65,deck[0]+.55,deck[1]+(-1.5 if deck[1]<0 else 1.5)),Vector3(5.5,1.1,.10),"fence",true)
+		var edge_z: float = deck[1]+(-1.5 if deck[1]<5 else 1.5)
+		_access_guard(Vector3(origin.x+side*7.9,deck[0],origin.z+edge_z),Vector3(origin.x+side*13.4,deck[0],origin.z+edge_z))
 		for x in [8.0,13.3]:
 			if is_equal_approx(float(deck[0]),floor_y) and x==8.0: continue
-			_station_box(origin,side,Vector3(x,deck[0]+.55,deck[1]),Vector3(.10,1.1,3.0),"fence",true)
+			_access_guard(Vector3(origin.x+side*x,deck[0],origin.z+deck[1]-1.5),Vector3(origin.x+side*x,deck[0],origin.z+deck[1]+1.5))
 	for index in 3:
 		var x := 12.0 if index!=1 else 9.3
-		var start_z := 10.0 if index!=1 else -4.0
-		var end_z := -4.0 if index!=1 else 10.0
+		var start_z := 10.0 if index!=1 else far_z
+		var end_z := far_z if index!=1 else 10.0
 		var a := Vector3(origin.x+side*x,rise*index,origin.z+start_z)
 		var b := Vector3(origin.x+side*x,rise*(index+1),origin.z+end_z)
 		_ramp(a,b,2.12,"platform")
@@ -426,21 +487,40 @@ func _build_access(origin: Vector3,side: float,floor_y: float,accent: String) ->
 			var midpoint := a.lerp(b,(start+end)*.5)
 			midpoint.y = lerpf(a.y,b.y,end)-.055
 			# The final tread ends at the landing seam instead of sharing its top.
-			_box(midpoint,Vector3(2.12,.11,14.0/count+(0.0 if step==count-1 else .008)),"platform")
+			_box(midpoint,Vector3(2.12,.11,run/count+(0.0 if step==count-1 else .008)),"concrete")
+			var nose := a.lerp(b,end)
+			nose.y += .006
+			_box(nose,Vector3(2.04,.018,.045),"steel")
 		for rail_side in [-1.0,1.0]:
-			_beam(a+Vector3(rail_side*1.10,.57,0),b+Vector3(rail_side*1.10,.57,0),.08,1.1,"fence",true)
+			_access_guard(a+Vector3(rail_side*1.10,0,0),b+Vector3(rail_side*1.10,0,0))
+			_beam(a+Vector3(rail_side*1.04,-.18,0),b+Vector3(rail_side*1.04,-.18,0),.14,.28,"steel")
 	# Upper connection at the north end of the staircase, open on both sides.
 	# Join only the gap: the platform and landing already own their top faces.
-	_station_box(origin,side,Vector3(7.35,floor_y-.12,-5.5),Vector3(1.1,.24,2.7),"platform",true)
-	for z in [-6.85,-4.15]:
-		_station_box(origin,side,Vector3(8.8,floor_y+.55,z),Vector3(5.0,1.1,.10),"fence",true)
+	_station_box(origin,side,Vector3(7.35,floor_y-.12,landing_z),Vector3(1.1,.24,2.7),"platform",true)
+	for z in [landing_z-1.35,landing_z+1.35]:
+		_access_guard(Vector3(origin.x+side*6.3,floor_y,origin.z+z),Vector3(origin.x+side*11.3,floor_y,origin.z+z))
 	for x in [8.1,13.2]:
-		for z in [-6.6,12.7]:
+		for z in [landing_z-1.1,12.7]:
 			_station_box(origin,side,Vector3(x,floor_y*.5-.12,z),Vector3(.18,floor_y-.24,.18),accent,true)
 	# Functional ticket mast at ground level; proper station name is repeated
 	# where a pedestrian approaches, without decorative descriptive text.
 	_station_box(origin,side,Vector3(8.2,1.7,14.1),Vector3(.16,3.4,.16),accent,true)
 	_station_box(origin,side,Vector3(8.2,3.2,14.1),Vector3(1.0,.70,.12),accent)
+
+func _access_guard(a: Vector3,b: Vector3) -> void:
+	# Open railing with continuous physical guard, not a tall opaque side wall.
+	for height in [.16,.55,1.05]:
+		_beam(a+Vector3.UP*height,b+Vector3.UP*height,.055,.055,"steel")
+	var count := maxi(1,ceili(a.distance_to(b)/.85))
+	for i in count+1:
+		var point := a.lerp(b,float(i)/count)
+		_box(point+Vector3.UP*.53,Vector3(.065,1.06,.065),"steel")
+	var shape := BoxShape3D.new()
+	shape.size = Vector3(.10,1.1,a.distance_to(b)+.02)
+	var collision := CollisionShape3D.new()
+	collision.shape = shape
+	collision.transform = Transform3D(_basis((b-a).normalized()),(a+b)*.5+Vector3.UP*.55)
+	_body.add_child(collision)
 
 func _station_box(origin: Vector3,side: float,local: Vector3,size: Vector3,material: String,solid := false) -> void:
 	_box(Vector3(origin.x+local.x*side,local.y,origin.z+local.z),size,material,Basis.IDENTITY,solid)

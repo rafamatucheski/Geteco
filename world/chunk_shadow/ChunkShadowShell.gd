@@ -15,6 +15,8 @@ const STATIC_GENERATORS := [
 static var enabled := OS.get_environment("GETECO_SHADOW_SHELL") != "0"
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
+## Trecho descartado continua na árvore escondido (marca da fila de vídeo): a casca para como a fusão (16/10).
+const GPU_RELEASE := preload("res://runtime/GpuReleaseQueue.gd")
 
 static func schedule(chunk: Node3D) -> void:
 	if not (enabled or preload("res://world/chunk_bake/ChunkCellMerge.gd").enabled) or Engine.get_meta("geteco_live_preview_build", false): return
@@ -24,15 +26,15 @@ static func schedule(chunk: Node3D) -> void:
 
 static func _finish_deferred(reference: WeakRef) -> void:
 	var chunk := reference.get_ref() as Node3D
-	if not is_instance_valid(chunk) or chunk.is_queued_for_deletion() or not chunk.is_inside_tree(): return
+	if not is_instance_valid(chunk) or GPU_RELEASE.is_retired(chunk) or not chunk.is_inside_tree(): return
 	# Não ativar a fusão antiga em trechos onde nenhum gerador a agendou. Fatiada (era um quadro só, 17-60 ms
 	# na fase 2 de 16/10) e esperada inteira: a fusão por célula e a casca leem o que ela deixou.
 	if chunk.has_meta(BUILDING_BATCH.PENDING_META):
 		await BUILDING_BATCH.finish_chunk_sliced(chunk, slice_budget_usec)
-		if not is_instance_valid(reference.get_ref()) or not chunk.is_inside_tree(): return
+		if not is_instance_valid(reference.get_ref()) or not chunk.is_inside_tree() or GPU_RELEASE.is_retired(chunk): return
 	# Fusão geral por célula antes da casca: a casca lê os volumes que sobraram visíveis.
 	await preload("res://world/chunk_bake/ChunkCellMerge.gd").finish_chunk_later(chunk)
-	if is_instance_valid(reference.get_ref()): await _finish(chunk, slice_budget_usec)
+	if is_instance_valid(reference.get_ref()) and not GPU_RELEASE.is_retired(chunk): await _finish(chunk, slice_budget_usec)
 
 ## Em jogo a casca é montada em fatias: a varredura de todas as malhas do trecho e o laço por vértice em
 ## GDScript rodavam num quadro só, sem span no log (travessia de 15/10: quadros de 117-239 ms sem atribuição
@@ -62,7 +64,7 @@ static func _finish(chunk: Node3D, budget_usec: int) -> void:
 			await chunk.get_tree().process_frame
 			began = STALL_WORK.begin()
 			budget_began = Time.get_ticks_usec()
-			if not is_instance_valid(reference.get_ref()) or not chunk.is_inside_tree(): return
+			if not is_instance_valid(reference.get_ref()) or not chunk.is_inside_tree() or GPU_RELEASE.is_retired(chunk): return
 		if not is_instance_valid(found): continue
 		var source := found as MeshInstance3D
 		if not chunk.is_ancestor_of(source) or not _eligible(source, chunk): continue

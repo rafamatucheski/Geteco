@@ -9,8 +9,8 @@ render_mode cull_disabled, diffuse_lambert, specular_disabled;
 
 instance uniform vec2 origin = vec2(0.0);
 uniform vec3 root_color : source_color = vec3(0.09, 0.12, 0.05);
-uniform vec3 tip_color : source_color = vec3(0.30, 0.36, 0.15);
-uniform vec3 dry_tip : source_color = vec3(0.42, 0.38, 0.20);
+uniform vec3 tip_color : source_color = vec3(0.28, 0.35, 0.20);
+uniform vec3 dry_tip : source_color = vec3(0.37, 0.36, 0.24);
 varying float tip;
 varying float tint;
 
@@ -36,5 +36,5 @@ void fragment() {
 	ALBEDO = mix(root_color, tip_mix, smoothstep(0.0, 1.0, tip)) * (0.85 + tint * 0.3);
 	ROUGHNESS = 0.9;
 	// Folha fina deixa passar luz: contraluz ilumina a ponta.
-	BACKLIGHT = vec3(0.25, 0.3, 0.12) * tip;
+	BACKLIGHT = vec3(0.16, 0.20, 0.09) * tip;
 }

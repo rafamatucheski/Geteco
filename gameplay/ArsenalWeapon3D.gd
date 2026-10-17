@@ -1,6 +1,7 @@
 extends RefCounted
 ## Shared geometry for equipped weapons and the trunk arsenal.
 const POSE = preload("res://gameplay/WeaponPoseData.gd")
+const GEO := preload("res://gameplay/WeaponPresentation3D.gd")
 const SURFACES := preload("res://assets/urban_detail/UrbanSurfaces.gd")
 
 ## Materiais de arma com textura (veio da madeira, metal escovado) em vez de cor chapada.
@@ -53,19 +54,14 @@ static func build_cached(root: Node3D, id: String) -> Vector3:
 
 static func build(root: Node3D, id: String) -> Vector3:
 	if id == "katana": return preload("res://gameplay/KatanaModel.gd").build(root)
-	var mat_chrome := _textured("metal", Color(0.56, 0.60, 0.65), 0.30, 0.92, 0.18)
-	var mat_gunmetal := _textured("metal", Color(0.18, 0.20, 0.24), 0.35, 0.85, 0.18)
+	var mat_chrome := _textured("metal", Color(0.56, 0.60, 0.65), 0.32, 0.72, 0.18)
+	var mat_gunmetal := _textured("metal", Color(0.18, 0.20, 0.24), 0.40, 0.62, 0.18)
 
-	var mat_polymer := StandardMaterial3D.new()
-	mat_polymer.albedo_color = Color(0.08, 0.08, 0.10)
-	mat_polymer.roughness = 0.70
+	var mat_polymer := GEO._mat(Color("25282c"), 0.0, 0.70)
 
 	var mat_wood := _textured("wood", Color(0.36, 0.19, 0.10), 0.55, 0.0, 0.30)
 
-	var mat_brass := StandardMaterial3D.new()
-	mat_brass.albedo_color = Color(0.92, 0.78, 0.22)
-	mat_brass.metallic = 0.88
-	mat_brass.roughness = 0.25
+	var mat_brass := GEO._mat(Color("b8a16a"), 0.72, 0.38)
 
 	var flash_pos := Vector3(0.0, 0.0, -0.15)
 
@@ -116,30 +112,25 @@ static func build(root: Node3D, id: String) -> Vector3:
 			# 4. Telha de Bombeamento Estriada de Madeira
 			var pump = MeshInstance3D.new()
 			pump.name = "Pump"
-			var box_p = BoxMesh.new()
-			box_p.size = Vector3(0.052, 0.052, 0.14)
-			pump.mesh = box_p
+			var box_p := Vector3(0.052, 0.052, 0.14)
+			pump.mesh = GEO.section_mesh(box_p, .009)
 			pump.material_override = mat_wood
 			pump.position = Vector3(0.0, -0.01, -0.16)
 			root.add_child(pump)
 
 			# 5. Caixa da Culatra (Receptor) com Janela de EjeÃƒÂ§ÃƒÂ£o
 			var receiver = MeshInstance3D.new()
-			var box_rc = BoxMesh.new()
-			box_rc.size = Vector3(0.048, 0.075, 0.16)
-			receiver.mesh = box_rc
+			var box_rc := Vector3(0.048, 0.075, 0.16)
+			receiver.mesh = GEO.section_mesh(box_rc, .008)
 			receiver.material_override = mat_gunmetal
 			receiver.position = Vector3(0.0, 0.01, 0.0)
 			root.add_child(receiver)
 
 			# 6. Coronha ClÃƒÂ¡ssica de Madeira com Soleira
-			var stock = MeshInstance3D.new()
-			var box_s = BoxMesh.new()
-			box_s.size = Vector3(0.042, 0.085, 0.20)
-			stock.mesh = box_s
-			stock.material_override = mat_wood
-			stock.position = Vector3(0.0, -0.04, 0.16)
-			root.add_child(stock)
+			GEO._stock_profile(root, "WalnutShoulderStock", PackedVector2Array([
+				Vector2(.06,-.018),Vector2(.105,-.007),Vector2(.17,.0025),
+				Vector2(.26,-.004),Vector2(.26,-.0825),Vector2(.19,-.078),
+				Vector2(.12,-.050),Vector2(.06,-.054)]), .042, mat_wood)
 
 			var pad = MeshInstance3D.new()
 			var box_pd = BoxMesh.new()
@@ -173,11 +164,7 @@ static func build(root: Node3D, id: String) -> Vector3:
 			# Tambor Giratório (nó animado na recarga: mantém nome e eixo)
 			var cylinder_mg = MeshInstance3D.new()
 			cylinder_mg.name = "ReloadCylinder"
-			var cyl_mg = CylinderMesh.new()
-			cyl_mg.top_radius = 0.028
-			cyl_mg.bottom_radius = 0.028
-			cyl_mg.height = 0.08
-			cylinder_mg.mesh = cyl_mg
+			cylinder_mg.mesh = _fluted_drum_mesh()
 			# Aço claro e pouco metálico: com metal alto o tambor refletia o ambiente escuro e
 			# sumia contra a armação de gunmetal na vista lateral.
 			var mat_drum := StandardMaterial3D.new()
@@ -190,7 +177,7 @@ static func build(root: Node3D, id: String) -> Vector3:
 			root.add_child(cylinder_mg)
 
 			# Cabo de madeira com perfil inclinado para trás (substitui a caixa inclinada)
-			geo._profile(root, "Grip", PackedVector2Array([Vector2(0.050,0.022),Vector2(-0.023,0.0),Vector2(0.005,-0.115),Vector2(0.073,-0.108),Vector2(0.067,-0.045),Vector2(0.059,-0.010)]), 0.032, mat_wood)
+			geo._profile(root, "Grip", PackedVector2Array([Vector2(0.050,0.022),Vector2(-0.023,0.0),Vector2(0.005,-0.115),Vector2(0.073,-0.108),Vector2(0.067,-0.045),Vector2(0.059,-0.010)]), 0.031, mat_wood)
 
 			flash_pos = Vector3(0.0, 0.03, -0.165)
 
@@ -209,18 +196,16 @@ static func build(root: Node3D, id: String) -> Vector3:
 
 			# Guarda-mÃƒÂ£o de Madeira
 			var hguard_ak = MeshInstance3D.new()
-			var box_hg = BoxMesh.new()
-			box_hg.size = Vector3(0.048, 0.060, 0.16)
-			hguard_ak.mesh = box_hg
+			var box_hg := Vector3(0.048, 0.060, 0.16)
+			hguard_ak.mesh = GEO.section_mesh(box_hg, .009)
 			hguard_ak.material_override = mat_wood
 			hguard_ak.position = Vector3(0.0, 0.01, -0.15)
 			root.add_child(hguard_ak)
 
 			# Receptor de AÃƒÂ§o Estampado
 			var receiver_ak = MeshInstance3D.new()
-			var box_rak = BoxMesh.new()
-			box_rak.size = Vector3(0.046, 0.075, 0.20)
-			receiver_ak.mesh = box_rak
+			var box_rak := Vector3(0.046, 0.075, 0.20)
+			receiver_ak.mesh = GEO.section_mesh(box_rak, .010)
 			receiver_ak.material_override = mat_gunmetal
 			receiver_ak.position = Vector3(0.0, 0.01, 0.0)
 			root.add_child(receiver_ak)
@@ -229,7 +214,7 @@ static func build(root: Node3D, id: String) -> Vector3:
 			preload("res://gameplay/WeaponPresentation3D.gd")._profile(root,"CurvedMagazine",PackedVector2Array([Vector2(-0.083,-0.025),Vector2(-0.025,-0.025),Vector2(-0.022,-0.080),Vector2(-0.032,-0.13),Vector2(-0.065,-0.185),Vector2(-0.115,-0.165),Vector2(-0.084,-0.115),Vector2(-0.078,-0.070)]),0.028,mat_gunmetal)
 
 			# Coronha de Madeira ClÃƒÂ¡ssica
-			preload("res://gameplay/WeaponPresentation3D.gd")._profile(root,"ShapedStock",PackedVector2Array([Vector2(0.07,0.016),Vector2(0.15,0.015),Vector2(0.29,0.02),Vector2(0.29,-0.06),Vector2(0.23,-0.056),Vector2(0.14,-0.024),Vector2(0.07,-0.02)]),0.040,mat_wood)
+			GEO._stock_profile(root,"ShapedStock",PackedVector2Array([Vector2(0.07,0.016),Vector2(0.15,0.015),Vector2(0.29,0.02),Vector2(0.29,-0.06),Vector2(0.23,-0.056),Vector2(0.14,-0.024),Vector2(0.07,-0.02)]),0.040,mat_wood)
 
 			flash_pos = Vector3(0.0, 0.02, -0.42)
 
@@ -248,18 +233,16 @@ static func build(root: Node3D, id: String) -> Vector3:
 
 			# Guarda-mÃƒÂ£o Quad-Rail Preto
 			var rail_m4 = MeshInstance3D.new()
-			var box_rm4 = BoxMesh.new()
-			box_rm4.size = Vector3(0.046, 0.055, 0.16)
-			rail_m4.mesh = box_rm4
+			var box_rm4 := Vector3(0.046, 0.055, 0.16)
+			rail_m4.mesh = GEO.section_mesh(box_rm4, .010)
 			rail_m4.material_override = mat_polymer
 			rail_m4.position = Vector3(0.0, 0.015, -0.15)
 			root.add_child(rail_m4)
 
 			# Receptor Preto com Mira HologrÃƒÂ¡fica
 			var receiver_m4 = MeshInstance3D.new()
-			var box_rcm4 = BoxMesh.new()
-			box_rcm4.size = Vector3(0.046, 0.075, 0.20)
-			receiver_m4.mesh = box_rcm4
+			var box_rcm4 := Vector3(0.046, 0.075, 0.20)
+			receiver_m4.mesh = GEO.section_mesh(box_rcm4, .010)
 			receiver_m4.material_override = mat_gunmetal
 			receiver_m4.position = Vector3(0.0, 0.01, 0.0)
 			root.add_child(receiver_m4)
@@ -273,23 +256,16 @@ static func build(root: Node3D, id: String) -> Vector3:
 			root.add_child(holo_sight)
 
 			# Carregador STANAG 30 Tiros
-			var mag_m4 = MeshInstance3D.new()
-			var box_mm4 = BoxMesh.new()
-			box_mm4.size = Vector3(0.026, 0.16, 0.055)
-			mag_m4.mesh = box_mm4
-			mag_m4.material_override = mat_polymer
-			mag_m4.position = Vector3(0.0, -0.10, -0.04)
-			mag_m4.rotation_degrees = Vector3(10, 0, 0)
-			root.add_child(mag_m4)
+			GEO._profile(root, "STANAGMagazine", PackedVector2Array([
+				Vector2(-.069,-.020),Vector2(-.014,-.020),Vector2(-.015,-.095),
+				Vector2(-.029,-.176),Vector2(-.058,-.183),Vector2(-.083,-.164),
+				Vector2(-.074,-.092)]), .026, mat_polymer)
 
 			# Coronha TÃƒÂ¡tica RetrÃƒÂ¡til Crane
-			var stock_m4 = MeshInstance3D.new()
-			var box_sm4 = BoxMesh.new()
-			box_sm4.size = Vector3(0.038, 0.080, 0.18)
-			stock_m4.mesh = box_sm4
-			stock_m4.material_override = mat_polymer
-			stock_m4.position = Vector3(0.0, 0.0, 0.16)
-			root.add_child(stock_m4)
+			GEO._profile(root, "RetractableStock", PackedVector2Array([
+				Vector2(.07,.016),Vector2(.14,.016),Vector2(.17,.040),
+				Vector2(.25,.040),Vector2(.25,-.040),Vector2(.205,-.040),
+				Vector2(.16,-.018),Vector2(.07,-.016)]), .038, mat_polymer)
 
 			flash_pos = Vector3(0.0, 0.02, -0.40)
 
@@ -325,11 +301,7 @@ static func build(root: Node3D, id: String) -> Vector3:
 			# Ogiva CÃƒÂ´nica RPG Frontal
 			var warhead = MeshInstance3D.new()
 			warhead.name = "LoadedRocket"
-			var cyl_wh = CylinderMesh.new()
-			cyl_wh.top_radius = 0.008
-			cyl_wh.bottom_radius = 0.056
-			cyl_wh.height = 0.18
-			warhead.mesh = cyl_wh
+			warhead.mesh = _rocket_mesh()
 			warhead.material_override = _make_mat(Color(0.32, 0.42, 0.20), 0.3)
 			warhead.rotation_degrees = Vector3(-90, 0, 0)
 			warhead.position = Vector3(0.0, 0.08, -0.40)
@@ -349,17 +321,15 @@ static func build(root: Node3D, id: String) -> Vector3:
 
 			# Empunhadura e Gatilho do RPG
 			var grip_rpg = MeshInstance3D.new()
-			var box_grpg = BoxMesh.new()
-			box_grpg.size = Vector3(0.032, 0.09, 0.045)
-			grip_rpg.mesh = box_grpg
+			var box_grpg := Vector3(0.032, 0.09, 0.045)
+			grip_rpg.mesh = GEO.section_mesh(box_grpg, .005)
 			grip_rpg.material_override = mat_gunmetal
 			grip_rpg.position = Vector3(0.0, 0.0, -0.10)
 			root.add_child(grip_rpg)
 			var support_handle := MeshInstance3D.new()
 			support_handle.name = "SupportHandle"
-			var support_box := BoxMesh.new()
-			support_box.size = Vector3(0.032, 0.09, 0.04)
-			support_handle.mesh = support_box
+			var support_box := Vector3(0.032, 0.09, 0.04)
+			support_handle.mesh = GEO.section_mesh(support_box, .005)
 			support_handle.position = Vector3(0, 0, -0.22)
 			support_handle.material_override = mat_wood
 			root.add_child(support_handle)
@@ -386,7 +356,7 @@ static func build(root: Node3D, id: String) -> Vector3:
 			cyl_tk.bottom_radius = 0.045
 			cyl_tk.height = 0.16
 			fuel_tank.mesh = cyl_tk
-			fuel_tank.material_override = _make_mat(Color(0.85, 0.15, 0.12), 0.3)
+			fuel_tank.material_override = GEO._mat(Color("993f32"), 0.28, 0.52)
 			fuel_tank.rotation_degrees = Vector3(90, 0, 0)
 			fuel_tank.position = Vector3(0.075, -0.045, -0.06)
 			root.add_child(fuel_tank)
@@ -420,9 +390,8 @@ static func build(root: Node3D, id: String) -> Vector3:
 		"smg", "micro_smg":
 			# 1. Receptor TÃƒÂ¡tico com Trilho Superior
 			var receiver = MeshInstance3D.new()
-			var box_r = BoxMesh.new()
-			box_r.size = Vector3(0.046, 0.072, 0.24)
-			receiver.mesh = box_r
+			var box_r := Vector3(0.046, 0.072, 0.24)
+			receiver.mesh = GEO.section_mesh(box_r, .011)
 			receiver.material_override = mat_gunmetal
 			receiver.position = Vector3(0.0, 0.01, -0.06)
 			root.add_child(receiver)
@@ -458,15 +427,18 @@ static func build(root: Node3D, id: String) -> Vector3:
 			comp.position = Vector3(0.0, 0.01, -0.32)
 			root.add_child(comp)
 
+			GEO._profile(root, "ContouredForeEnd", PackedVector2Array([
+				Vector2(-.230,.025),Vector2(-.128,.025),Vector2(-.120,-.025),
+				Vector2(-.205,-.029),Vector2(-.231,-.010)]), .050, mat_polymer)
+
 			# 3. Carregador Curvo Banana de 30 Tiros
 			var geo_smg := preload("res://gameplay/WeaponPresentation3D.gd")
 			geo_smg._profile(root, "Magazine", PackedVector2Array([Vector2(-0.045,-0.030),Vector2(-0.095,-0.030),Vector2(-0.108,-0.090),Vector2(-0.128,-0.190),Vector2(-0.075,-0.195),Vector2(-0.058,-0.100)]), 0.028, mat_polymer)
 
 			# 4. Empunhadura e coronha de arame rebatível
 			var grip = MeshInstance3D.new()
-			var box_gp = BoxMesh.new()
-			box_gp.size = Vector3(0.034, 0.09, 0.05)
-			grip.mesh = box_gp
+			var box_gp := Vector3(0.034, 0.09, 0.05)
+			grip.mesh = GEO.section_mesh(box_gp, .005)
 			grip.material_override = mat_polymer
 			grip.position = Vector3(0.0, -0.05, 0.03)
 			grip.rotation_degrees = Vector3(-12, 0, 0)
@@ -506,3 +478,59 @@ static func build(root: Node3D, id: String) -> Vector3:
 
 	preload("res://gameplay/WeaponFinish3D.gd").apply(root, id, flash_pos)
 	return flash_pos
+
+## Ogive with shoulder and neck, preserving LoadedRocket's local Y extents.
+## The reload rig rotates/translates that MeshInstance as one piece.
+static var _rocket_body_mesh: ArrayMesh
+static func _rocket_mesh() -> ArrayMesh:
+	if _rocket_body_mesh != null: return _rocket_body_mesh
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var profile := PackedVector2Array([
+		Vector2(-.09,.023),Vector2(-.075,.045),Vector2(-.052,.056),
+		Vector2(-.025,.056),Vector2(.025,.036),Vector2(.070,.015),Vector2(.09,.008)])
+	var segments := 16
+	for ring in profile.size()-1:
+		for side in segments:
+			var a := TAU*side/segments
+			var b := TAU*(side+1)/segments
+			var first := profile[ring]
+			var second := profile[ring+1]
+			var points := [Vector3(cos(a)*first.y,first.x,sin(a)*first.y),Vector3(cos(b)*first.y,first.x,sin(b)*first.y),Vector3(cos(b)*second.y,second.x,sin(b)*second.y),Vector3(cos(a)*second.y,second.x,sin(a)*second.y)]
+			for k in [0,1,2,0,2,3]: st.add_vertex(points[k])
+	for end in [0,profile.size()-1]:
+		var row := profile[end]
+		for side in segments:
+			var a := TAU*side/segments
+			var b := TAU*(side+1)/segments
+			var points := [Vector3(0,row.x,0),Vector3(cos(a)*row.y,row.x,sin(a)*row.y),Vector3(cos(b)*row.y,row.x,sin(b)*row.y)]
+			for k in ([0,2,1] if end == 0 else [0,1,2]): st.add_vertex(points[k])
+	st.generate_normals()
+	_rocket_body_mesh = st.commit()
+	return _rocket_body_mesh
+
+## Six broad cylinder flutes are geometry, so they remain readable from either
+## side and rotate with the real reload cylinder. Same .028 radius/.08 length.
+static var _revolver_drum_mesh: ArrayMesh
+static func _fluted_drum_mesh() -> ArrayMesh:
+	if _revolver_drum_mesh != null: return _revolver_drum_mesh
+	var ring := PackedVector2Array()
+	for flute in 6:
+		for step in 6:
+			var angle := TAU * (float(flute) + float(step)/6.0) / 6.0
+			var radius := .025 if step in [2,3] else .028
+			ring.append(Vector2(cos(angle),sin(angle))*radius)
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for i in ring.size():
+		var a := ring[i]
+		var b := ring[(i+1)%ring.size()]
+		st.set_normal(Vector3(b.y-a.y,0,a.x-b.x).normalized())
+		var points := [Vector3(a.x,-.04,a.y),Vector3(b.x,-.04,b.y),Vector3(b.x,.04,b.y),Vector3(a.x,.04,a.y)]
+		for k in [0,1,2,0,2,3]: st.add_vertex(points[k])
+		for side in [-1.0,1.0]:
+			st.set_normal(Vector3(0,side,0))
+			var cap := [Vector3(0,side*.04,0),Vector3(a.x,side*.04,a.y),Vector3(b.x,side*.04,b.y)]
+			for k in ([0,2,1] if side < 0.0 else [0,1,2]): st.add_vertex(cap[k])
+	_revolver_drum_mesh = st.commit()
+	return _revolver_drum_mesh

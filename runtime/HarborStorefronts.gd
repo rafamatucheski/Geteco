@@ -57,7 +57,7 @@ func open_clothing() -> bool:
 	active_kind = "clothing"
 	filter = "Todos"
 	selected_outfit = session.state.economy.outfit
-	_open_shell("UNION / ROUPAS")
+	_open_shell("UNION")
 	_build_clothing()
 	_finish_open()
 	return true
@@ -125,7 +125,11 @@ func _open_shell(title_text: String, shell_size := Vector2(880, 600)) -> void:
 	shell_panel.set_anchors_preset(Control.PRESET_CENTER)
 	shell_panel.position = -shell_size * .5
 	shell_panel.size = shell_size
-	shell_panel.add_theme_stylebox_override("panel", STYLE.panel(true))
+	shell_panel.set_meta("preserve_panel_style", true)
+	var skin := STYLE.panel()
+	skin.bg_color = STYLE.INK
+	skin.border_color = STYLE.LINE
+	shell_panel.add_theme_stylebox_override("panel", skin)
 	add_child(shell_panel)
 	var margin := MarginContainer.new()
 	for side in ["left", "right", "top", "bottom"]: margin.add_theme_constant_override("margin_"+side, 20)
@@ -154,9 +158,28 @@ func _finish_open() -> void:
 	session.dialogue_open = false
 	session.world.player.input_locked = true
 	if is_instance_valid(session.world.driving.car): session.world.driving.car.input_locked = true
-	if active_kind != "weapons": STYLE.apply(self)
+	if active_kind != "weapons":
+		STYLE.apply(self)
+		_refine_buttons()
 	STYLE.trap_focus(self, false)
 	_grab_first_focus.call_deferred()
+
+func _refine_buttons() -> void:
+	for node in find_children("*", "Button", true, false):
+		var button := node as Button
+		var primary := bool(button.get_meta("primary_action",false))
+		for state in ["normal", "hover", "pressed", "disabled"]:
+			var skin := STYLE.button(primary or (button.toggle_mode and button.button_pressed))
+			skin.set_corner_radius_all(3)
+			skin.content_margin_top = 6
+			skin.content_margin_bottom = 6
+			skin.shadow_size = 0
+			button.add_theme_stylebox_override(state,skin)
+		var focus := STYLE.compact(true,3)
+		focus.bg_color = Color.TRANSPARENT
+		focus.shadow_size = 0
+		button.add_theme_stylebox_override("focus",focus)
+		button.add_theme_font_size_override("font_size",15)
 
 func _grab_first_focus() -> void:
 	if not is_inside_tree() or not visible: return
@@ -181,8 +204,12 @@ func _build_clothing() -> void:
 	body.add_child(right)
 	var filters := HBoxContainer.new()
 	right.add_child(filters)
-	filters.add_child(_button("Todas", _set_filter.bind("Todos")))
-	filters.add_child(_button("Inverno", _set_filter.bind("Distrito do Gelo")))
+	for entry in [["Todas", "Todos"], ["Inverno", "Distrito do Gelo"]]:
+		var tab := _button(entry[0], _set_filter.bind(entry[1]))
+		tab.toggle_mode = true
+		tab.button_pressed = filter == entry[1]
+		tab.set_meta("primary_action", filter == entry[1])
+		filters.add_child(tab)
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -196,7 +223,14 @@ func _build_clothing() -> void:
 		var spec: Dictionary = OUTFITS.OUTFITS[id]
 		if filter != "Todos" and spec.district != filter: continue
 		var owned: bool = session.state.economy.owns_outfit(id)
-		list.add_child(_button(_outfit_name(id) + (" · seu" if owned else " · R$ %d" % int(spec.price)), _select_outfit.bind(id)))
+		var equipped: bool = session.state.economy.outfit == id
+		var state_text := " · Equipado" if equipped else " · Comprado" if owned else " · R$ %d" % int(spec.price)
+		var option := _button(_outfit_name(id) + state_text, _select_outfit.bind(id))
+		option.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		option.toggle_mode = true
+		option.button_pressed = id == selected_outfit
+		option.set_meta("primary_action", id == selected_outfit)
+		list.add_child(option)
 	var detail := VBoxContainer.new()
 	detail.name = "OutfitDetail"
 	right.add_child(detail)
@@ -205,7 +239,8 @@ func _build_clothing() -> void:
 func _build_outfit_preview() -> Control:
 	var container := SubViewportContainer.new()
 	container.name = "OutfitPreview"
-	container.custom_minimum_size = Vector2(340, 470)
+	container.custom_minimum_size = Vector2(320, 390)
+	container.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	container.stretch = true
 	preview_viewport = SubViewport.new()
@@ -218,7 +253,8 @@ func _build_outfit_preview() -> Control:
 	container.gui_input.connect(_preview_input)
 	var camera := Camera3D.new()
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
-	camera.size = 2.05
+	camera.keep_aspect = Camera3D.KEEP_HEIGHT
+	camera.size = 2.4
 	camera.look_at_from_position(Vector3(0, 1.05, 3.5), Vector3(0, .9, 0))
 	preview_viewport.add_child(camera)
 	for spec in [[Vector3(-30,35,0),1.25,Color("ffe5cc")], [Vector3(-20,-50,0),.65,Color("c6dbed")]]:
@@ -236,6 +272,9 @@ func _build_outfit_preview() -> Control:
 	environment.environment.ambient_light_energy = .45
 	preview_viewport.add_child(environment)
 	preview_actor = ACTOR.new()
+	# The container enters the tree after this builder returns. PROCESS_MODE_DISABLED
+	# survives _ready automatic callback enabling and the storefront ALWAYS parent.
+	preview_actor.process_mode = Node.PROCESS_MODE_DISABLED
 	preview_actor.is_player = true
 	preview_actor.outfit_id = selected_outfit
 	preview_actor.collision_layer = 0
@@ -244,7 +283,37 @@ func _build_outfit_preview() -> Control:
 	preview_viewport.add_child(preview_actor)
 	preview_actor.set_physics_process(false)
 	preview_actor.set_process(false)
+	# Frame the actual posed skeleton once, independent of the imported root origin.
+	container.resized.connect(func(): _fit_outfit_camera.call_deferred(camera, container))
+	_fit_outfit_camera.call_deferred(camera, container)
 	return container
+
+func _fit_outfit_camera(camera: Camera3D, container: SubViewportContainer) -> void:
+	if not is_instance_valid(camera) or not is_instance_valid(preview_actor) or not is_instance_valid(container): return
+	if container.size.x < 1.0 or container.size.y < 1.0: return
+	var low := Vector3(INF, INF, INF)
+	var high := Vector3(-INF, -INF, -INF)
+	# Imported descendants do not necessarily have an owner in the runtime actor.
+	# Include their actual transformed mesh bounds, including outfit accessories.
+	for child in preview_actor.find_children("*", "MeshInstance3D", true, false):
+		var mesh := child as MeshInstance3D
+		if mesh.mesh == null or not mesh.is_visible_in_tree(): continue
+		var bounds := mesh.get_aabb()
+		for index in 8:
+			var point := mesh.to_global(bounds.get_endpoint(index))
+			low = low.min(point)
+			high = high.max(point)
+	var skeleton: Skeleton3D = preview_actor.skeleton
+	if is_instance_valid(skeleton):
+		for index in skeleton.get_bone_count():
+			var point := skeleton.to_global(skeleton.get_bone_global_pose(index).origin)
+			low = low.min(point)
+			high = high.max(point)
+	if not is_finite(low.y) or not is_finite(high.y): return
+	var center := (low + high) * .5
+	var aspect := container.size.x / container.size.y
+	camera.size = maxf(high.y - low.y + .3, (high.x - low.x + .25) / aspect) * 1.08
+	camera.look_at_from_position(center + Vector3(0, .02, 4), center)
 
 func _preview_input(event: InputEvent) -> void:
 	if active_kind != "clothing" or not is_instance_valid(preview_actor): return
@@ -270,7 +339,11 @@ func _refresh_outfit_detail(detail: VBoxContainer) -> void:
 	var owned: bool = session.state.economy.owns_outfit(selected_outfit)
 	var equipped: bool = session.state.economy.outfit == selected_outfit
 	var action := _button("Equipado" if equipped else ("Vestir" if owned else String(TranslationServer.translate("Comprar e vestir · R$ %d")) % int(spec.price)), _wear_outfit)
-	action.disabled = equipped
+	action.set_meta("primary_action", not equipped)
+	var missing := maxi(0, int(spec.price) - session.state.economy.balance)
+	if not owned and missing > 0:
+		action.text = String(TranslationServer.translate("Faltam R$ %d")) % missing
+	action.disabled = equipped or (not owned and missing > 0)
 	detail.add_child(action)
 
 func _cold_protection(id: String) -> float:
@@ -303,7 +376,7 @@ func _run_maciota(recover: bool) -> void:
 func _rebuild_current() -> void:
 	var message := status_label.text if is_instance_valid(status_label) else ""
 	if active_kind == "clothing":
-		_open_shell("UNION / ROUPAS")
+		_open_shell("UNION")
 		_build_clothing()
 	elif active_kind == "maciota":
 		open_maciota_service()
@@ -333,7 +406,7 @@ func _label(text: String, p_size: int, color: Color) -> Label:
 func _button(text: String, callback: Callable) -> Button:
 	var button := Button.new()
 	button.text = text
-	button.custom_minimum_size.y = 38
+	button.custom_minimum_size.y = 34
 	button.focus_mode = Control.FOCUS_ALL
 	button.pressed.connect(callback)
 	return button

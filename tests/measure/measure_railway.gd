@@ -164,6 +164,42 @@ func run() -> void:
 			await create_timer(12).timeout
 			await capture(id)
 			if not visual_only: await sample(id)
+	if "--railway-coastal-loop" in args:
+		# Supplement the gameplay view with a real west-side architectural photo.
+		var saved_transform: Transform3D = world.camera.global_transform
+		var saved_size: float = world.camera.size
+		world.camera.set_process(false)
+		world.camera.size = 30.0
+		world.camera.global_position = Vector3(-48,24,76)
+		world.camera.look_at(Vector3(-22,6,58))
+		await create_timer(.2).timeout
+		await capture("stairs-west")
+		world.camera.global_transform = saved_transform
+		world.camera.size = saved_size
+		world.camera.set_process(true)
+		for destination in ["harbor_north", "harbor_central"]:
+			var railway = world.session.railway
+			var origin_id := "harbor_central" if destination == "harbor_north" else "harbor_north"
+			var origin: Dictionary = preload("res://world/railway/RailwayNetwork.gd").get_station(origin_id)
+			world.player.teleport(origin.arrival)
+			await physics_frame
+			if not railway.perform(origin_id) or not railway.travel_to(destination,false):
+				push_error("Coastal circuit admission failed"); quit(1); return
+			await create_timer(3).timeout
+			await capture("coast-depart-"+origin_id)
+			if not visual_only: await sample("coast-to-"+destination)
+			var deadline := Time.get_ticks_msec()+100000
+			var sequence := 0
+			while railway.busy() and Time.get_ticks_msec()<deadline:
+				await create_timer(.25 if visual_only else 5.0).timeout
+				await capture("coast-"+destination+"-%03d"%sequence)
+				sequence+=1
+			if railway.busy(): push_error("Coastal circuit did not arrive"); quit(1); return
+			await capture("coast-arrival-"+destination)
+			report["arrival-"+destination] = {"point":str(world.player.global_position),"on_floor":world.player.is_on_floor(),"camera_restored":world.camera.is_processing(),"input_unlocked":not world.player.input_locked}
+		FileAccess.open(output.path_join("metrics.json"),FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
+		print("RAILWAY_COASTAL_EVIDENCE ",output)
+		world.free(); quit(0); return
 	if "--railway-trip" in args:
 		var railway=world.session.get("railway")
 		if railway==null: push_error("No railway installed"); quit(1); return
@@ -182,8 +218,6 @@ func run() -> void:
 			var capture_limit := 8000 if "--railway-boarding-only" in args else 140000
 			while railway.busy() and Time.get_ticks_msec()-trip_started<capture_limit:
 				await process_frame
-				var wanted_mode := 1 if Time.get_ticks_msec()-trip_started<14000 else 0
-				if railway.camera_mode!=wanted_mode: railway.set_camera_mode(wanted_mode)
 			temporal_active=false
 			await process_frame
 			if "--railway-boarding-only" in args:
@@ -198,13 +232,6 @@ func run() -> void:
 			var arrived: bool=not railway.busy()
 			world.free(); quit(0 if arrived else 1); return
 		await create_timer(3).timeout
-		await capture("inside")
-		if visual_only:
-			for i in 10:
-				await create_timer(2).timeout
-				await capture("inside-%02d"%i)
-		else: await sample("inside")
-		railway.set_camera_mode("exterior")
 		await capture("exterior")
 		if visual_only:
 			for i in 10:

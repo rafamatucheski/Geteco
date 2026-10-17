@@ -51,16 +51,17 @@ float ground_fine(vec2 local_xz) {
 	return ground_noise(local_xz * 1.5, 96.0);
 }
 
-// Cobertura de neve (0..1): `snow_amount` é a neve de altitude (1 no alto da serra).
+// Shared terrain/grass coverage: broad wind-scoured pockets, not camouflage.
+float ground_cover_fields(float macro, float mid, float fine, float snow_amount) {
+	// A continuous snow field: sparse scoured edges, not repeating green islands.
+	float drift = smoothstep(0.28, 0.64, macro * 0.70 + mid * 0.30);
+	float cover = mix(0.78 + drift * 0.20, 0.99, snow_amount);
+	float exposed = smoothstep(0.66, 0.82, macro * 0.35 + mid * 0.65 + (fine - 0.5) * 0.035);
+	return cover * (1.0 - exposed * 0.46);
+}
+
 float ground_cover(vec2 p, float fine, float snow_amount) {
-	float macro = ground_fbm(p, 32.0);
-	float mid = ground_fbm(p + 91.0, 8.0);
-	// Uma faixa de mistura evita manchas com contorno binário na câmera do jogo.
-	float drift = smoothstep(0.44, 0.60, macro * 0.6 + mid * 0.4 + (fine - 0.5) * 0.05);
-	float cover = clamp(max(snow_amount, drift * 0.85), 0.0, 1.0);
-	// Terra aparecendo pela neve em pontos.
-	cover *= 1.0 - smoothstep(0.64, 0.80, mid + (fine - 0.5) * 0.06) * 0.8;
-	return cover;
+	return ground_cover_fields(ground_fbm(p, 32.0), ground_fbm(p + 91.0, 8.0), fine, snow_amount);
 }
 
 // Neve de altitude a partir de Z de mundo, como MountainTerrain3D pinta o vértice

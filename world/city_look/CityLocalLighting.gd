@@ -20,6 +20,9 @@ func _ready() -> void:
 	for index in CAPACITY:
 		var light := OmniLight3D.new()
 		light.name = "LocalLamp%d" % index
+		# Slots jump between unrelated static fittings. Interpolating that jump
+		# sends a phantom light across roofs/roads for one rendered frame.
+		light.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 		light.shadow_enabled = false
 		light.omni_attenuation = 1.35
 		light.distance_fade_enabled = true

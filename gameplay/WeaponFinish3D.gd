@@ -1,18 +1,50 @@
 extends RefCounted
 ## Small, shared model finishing pass. Gameplay anchors and moving parts stay intact.
 const GEO = preload("res://gameplay/WeaponPresentation3D.gd")
+static var _muzzle_mesh: ArrayMesh
 
 static func apply(root: Node3D, id: String, muzzle: Vector3) -> void:
 	if id == "fists": return
-	var steel := GEO._mat(Color("56616b"), 0.78, 0.34)
-	var dark := GEO._mat(Color("20272b"), 0.55, 0.48)
+	var steel := GEO._mat(Color("56616b"), 0.65, 0.40)
+	var dark := GEO._mat(Color("20272b"), 0.45, 0.48)
 	var rubber := GEO._mat(Color("181b1c"), 0.0, 0.84)
 	var brass := GEO._mat(Color("a78a50"), 0.7, 0.4)
 	if id in ["ak47", "m4a1", "smg", "micro_smg", "shotgun", "magnum"]:
-		# Dark recessed muzzle surrounded by a steel lip, not a solid capped cylinder.
+		# A real annular lip and recessed bore: the opening remains readable
+		# when the weapon turns, instead of a black disk painted on a closed cap.
 		var tip := muzzle + Vector3(0, 0, 0.021)
-		GEO._cylinder(root, "MuzzleLip", tip, 0.016, 0.014, steel, Vector3(90,0,0))
-		GEO._cylinder(root, "MuzzleOpening", tip + Vector3(0,0,-0.0075), 0.010, 0.001, rubber, Vector3(90,0,0))
+		var bore_scale := 1.0
+		# Open the physical barrel as well: an annulus behind its solid cap
+		# is invisible. Keep the existing effect anchor and exterior envelope.
+		var nearest := INF
+		var barrel: MeshInstance3D
+		for child in root.get_children():
+			if not child is MeshInstance3D or not child.mesh is CylinderMesh: continue
+			if child.mesh.height < 0.08 or absf(child.rotation_degrees.x - 90.0) > 0.1: continue
+			if absf(child.position.x - muzzle.x) > 0.001 or absf(child.position.y - muzzle.y) > 0.001: continue
+			var front: float = child.position.z - child.mesh.height * 0.5
+			if absf(front - muzzle.z) < nearest:
+				nearest = absf(front - muzzle.z)
+				barrel = child
+		if barrel != null:
+			var opened := barrel.mesh.duplicate() as CylinderMesh
+			opened.cap_bottom = false
+			barrel.mesh = opened
+			bore_scale = opened.bottom_radius / 0.016
+			tip.z = minf(tip.z, barrel.position.z - opened.height * 0.5 + 0.007)
+			# Join the sleeve at its rear edge instead of overlapping two
+			# cylindrical walls at the same radius (visible z-fighting).
+			var sleeve_length := tip.z + 0.007 - (barrel.position.z - opened.height * 0.5)
+			opened.height -= sleeve_length
+			barrel.position.z += sleeve_length * 0.5
+		var lip := MeshInstance3D.new()
+		lip.name = "MuzzleLip"
+		lip.mesh = _open_muzzle_mesh()
+		lip.position = tip
+		lip.scale = Vector3(bore_scale, bore_scale, 1.0)
+		lip.material_override = steel
+		root.add_child(lip)
+		GEO._cylinder(root, "MuzzleOpening", tip + Vector3(0,0,0.006), 0.010 * bore_scale, 0.001, rubber, Vector3(90,0,0))
 	if id in ["ak47", "m4a1", "smg", "micro_smg"]:
 		GEO._trigger_guard(root, Vector3(0,-0.039,-0.015), dark)
 		GEO._box(root,"EjectionRecess",Vector3(0.024,0.02,-0.012),Vector3(0.002,0.022,0.06),rubber)
@@ -154,6 +186,36 @@ static func _face(st: SurfaceTool, points: Array[Vector3]) -> void:
 		for k in [0,i+1,i]:
 			st.set_normal(normal)
 			st.add_vertex(points[k])
+
+static func _open_muzzle_mesh() -> ArrayMesh:
+	if _muzzle_mesh != null: return _muzzle_mesh
+	# Closed tube section, travelling from the rear outer wall around the lip
+	# and back through the inner wall. No triangle crosses the bore opening.
+	var profile := PackedVector2Array([
+		Vector2(0.007, 0.016), Vector2(-0.005, 0.016),
+		Vector2(-0.007, 0.014), Vector2(-0.007, 0.010),
+		Vector2(0.007, 0.010), Vector2(0.007, 0.016)])
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for row in profile.size() - 1:
+		var dz := profile[row + 1].x - profile[row].x
+		var dr := profile[row + 1].y - profile[row].y
+		for segment in 16:
+			var a := TAU * segment / 16.0
+			var b := TAU * (segment + 1) / 16.0
+			var middle := (a + b) * 0.5
+			var normal := Vector3(-dz * cos(middle), -dz * sin(middle), dr).normalized()
+			var points: Array[Vector3] = [
+				Vector3(cos(a) * profile[row].y, sin(a) * profile[row].y, profile[row].x),
+				Vector3(cos(a) * profile[row + 1].y, sin(a) * profile[row + 1].y, profile[row + 1].x),
+				Vector3(cos(b) * profile[row + 1].y, sin(b) * profile[row + 1].y, profile[row + 1].x),
+				Vector3(cos(b) * profile[row].y, sin(b) * profile[row].y, profile[row].x)]
+			if (points[1] - points[0]).cross(points[2] - points[0]).dot(normal) > 0: points.reverse()
+			for index in [0, 1, 2, 0, 2, 3]:
+				st.set_normal(normal)
+				st.add_vertex(points[index])
+	_muzzle_mesh = st.commit()
+	return _muzzle_mesh
 
 static func _batch_static(root: Node3D) -> void:
 	var batches := {}

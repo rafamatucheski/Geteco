@@ -45,12 +45,18 @@ const PROTECTED_GROUPS := [&"harbor_building", &"v2_walkin_facade", &"harbor_bui
 ## Testes, censo e coletor de variantes zeram (fusão inteira de uma vez): não medem tempo de quadro.
 static var slice_budget_usec := 2000
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+const GPU_RELEASE := preload("res://runtime/GpuReleaseQueue.gd")
+## Trecho descartado fica na árvore, escondido, sendo desmontado folha a folha: a fusão tem de parar já
+## (crash de 16/10 na ponte: folhas órfãs ainda válidas em _add_mesh e holder liberado em _commit_batch).
+static func _chunk_alive(chunk: Variant) -> bool:
+	return is_instance_valid(chunk) and (chunk as Node).is_inside_tree() and not GPU_RELEASE.is_retired(chunk)
+
 static func finish_chunk_later(chunk: Node3D) -> void:
-	if not enabled or not chunk.is_inside_tree(): return
+	if not enabled or not _chunk_alive(chunk): return
 	var reference: WeakRef = weakref(chunk)
 	for frame in 2:
 		await chunk.get_tree().process_frame
-		if not is_instance_valid(reference.get_ref()): return
+		if not _chunk_alive(reference.get_ref()): return
 	await _run(chunk, slice_budget_usec)
 
 ## Estado da fatia é por execução, não estático: com teleporte rápido dois trechos fundem ao mesmo tempo (um
@@ -66,7 +72,7 @@ class Slice:
 
 static func _run(chunk: Node3D, budget_usec: int) -> Dictionary:
 	var report := {"sources": 0, "batches": 0, "scopes": 0}
-	if not enabled or chunk.has_meta(FINISHED) or not chunk.has_meta("vegetation_ready_frame"): return report
+	if not enabled or chunk.has_meta(FINISHED) or not chunk.has_meta("vegetation_ready_frame") or not _chunk_alive(chunk): return report
 	if Engine.get_meta("geteco_live_preview_build", false): return report
 	# str(): o region_id das regiões pode ser StringName, e "is String" deixava o interruptor sem efeito.
 	var region_id := str(chunk.get_parent().get("region_id")) if chunk.get_parent() != null else ""
@@ -94,7 +100,7 @@ static func _run(chunk: Node3D, budget_usec: int) -> Dictionary:
 	for scope in reveal_scopes:
 		if not is_instance_valid(scope) or not is_instance_valid(slice.reference.get_ref()): continue
 		_sum(report, await _merge_scope(scope as Node3D, scope.get_children(), true, slice))
-	if not is_instance_valid(slice.reference.get_ref()): return report
+	if not _chunk_alive(slice.reference.get_ref()): return report
 	STALL_WORK.finish_slow("chunk.cell_merge", slice.began, 1500)
 	# Os materiais da família nascem depois do pré-aquecimento do corte do túnel: sem isto, a primeira
 	# entrada no túnel compilava uma cópia com alfa por família (pico de 1,1 s na captura de 14/10).
@@ -116,13 +122,13 @@ static func _run(chunk: Node3D, budget_usec: int) -> Dictionary:
 static func _yield_if_due(slice: Slice) -> bool:
 	if slice.budget_usec <= 0 or Time.get_ticks_usec() - slice.budget_began < slice.budget_usec: return true
 	var chunk: Variant = slice.reference.get_ref()
-	if not is_instance_valid(chunk) or not (chunk as Node).is_inside_tree(): return false
+	if not _chunk_alive(chunk): return false
 	STALL_WORK.finish_slow("chunk.cell_merge", slice.began, 1500)
 	await (chunk as Node).get_tree().process_frame
 	slice.began = STALL_WORK.begin()
 	slice.budget_began = Time.get_ticks_usec()
 	var still: Variant = slice.reference.get_ref()
-	return is_instance_valid(still) and (still as Node).is_inside_tree()
+	return _chunk_alive(still)
 
 ## Arrays por malha e superfície. Eram lidas uma vez por trecho, mas cada leitura espera a GPU (a fatia de
 ## 176 ms da ponte no release de 16/10): agora vêm do cache entre trechos, por parâmetros nas primitivas.
@@ -183,12 +189,14 @@ static func _merge_scope(scope: Node3D, candidates: Array, exact: bool, slice: S
 	var to_scope := scope.global_transform.affine_inverse()
 	var report := {"sources": 0, "batches": 0}
 	if not await _collect(candidates, scope, to_scope, groups, exact, slice): return report
+	if not _chunk_alive(slice.reference.get_ref()) or not is_instance_valid(scope): return report
 	# Superfícies de cada fonte ainda sem lote. A fonte só some quando todas tiverem: uma malha com superfícies
 	# em famílias (grupos) diferentes sumia em parte ao sair o primeiro lote e só voltava inteira quando o
 	# grupo da outra superfície era montado, quadros depois (buraco visível no meio da fusão fatiada).
 	var pending_surfaces := {}
 	for key in groups:
 		for entry in groups[key]:
+			if not is_instance_valid(entry.node): continue
 			var id: int = entry.node.get_instance_id()
 			pending_surfaces[id] = int(pending_surfaces.get(id, 0)) + 1
 	var holder: Node3D = null
@@ -208,6 +216,9 @@ static func _merge_scope(scope: Node3D, candidates: Array, exact: bool, slice: S
 		for entries: Array in await _split_by_vertices(valid_entries, slice):
 			if not is_instance_valid(scope) or not scope.is_inside_tree(): return report
 			var mesh: ArrayMesh = await _build_batch(entries, exact, slice)
+			# O holder é folha do trecho: a desmontagem pode liberá-lo enquanto o trabalhador monta o lote.
+			if not _chunk_alive(slice.reference.get_ref()) or not is_instance_valid(scope) or not scope.is_inside_tree(): return report
+			if not is_instance_valid(holder): holder = null
 			holder = _commit_batch(scope, holder, entries, mesh, pending_surfaces, report)
 	return report
 
@@ -286,6 +297,8 @@ static func _collect(candidates: Array, scope: Node3D, to_scope: Transform3D, gr
 		if not await _yield_if_due(slice) or not is_instance_valid(scope): return false
 		var child: Variant = stack.pop_back()
 		if not is_instance_valid(child): continue
+		# Folha tirada pela desmontagem e guardada pela fila de vídeo: válida, mas fora da árvore e do escopo.
+		if not (child as Node).is_inside_tree() or not scope.is_ancestor_of(child): continue
 		if child.has_meta(BATCH) or child.has_meta(MERGED_SOURCE): continue
 		if not child is Node3D or not (child as Node3D).visible: continue
 		if _is_dynamic(child) or _protected(child): continue
