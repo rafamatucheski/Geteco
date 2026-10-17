@@ -20,6 +20,16 @@ var _clock := 0.0
 
 func _ready() -> void:
 	name = "MountainWildlife"
+	# O primeiro urso da sessão gerava os sons (síntese em GDScript), as malhas compartilhadas e
+	# as variantes de material na hora: wildlife.bear_spawn de 22,7 ms e quadro de 78 ms na
+	# primeira volta da serra (EXE de 17/10). Um modelo descartável faz isso na montagem.
+	var audio := preload("res://audio/wildlife/BearAudio.gd")
+	audio.get_breathing_stream()
+	audio.get_grunt_alert_stream()
+	audio.get_charge_stream()
+	var warm: Node3D = preload("res://gameplay/wildlife/MountainBearModel.gd").new()
+	add_child(warm)
+	warm.free()
 
 func _process(delta: float) -> void:
 	_advance_queue()
