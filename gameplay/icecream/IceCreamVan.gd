@@ -45,6 +45,14 @@ static func prewarm() -> void:
 		var visual: Node3D = preload("res://runtime/FleetCatalog.gd").create("courier_van")
 		if visual != null:
 			_visual_roof["courier_van"] = _paint_top(visual)
+			# O vidro transparente também: o primeiro gerava shader novo na primeira van (19 ms,
+			# serra perfinv7 de 17/10). Os materiais originais vêm da cena da frota, compartilhados.
+			for part: MeshInstance3D in visual.find_children("*","MeshInstance3D",true,false):
+				if part.mesh == null or part.has_meta("wheel_center"): continue
+				for surface in part.mesh.get_surface_count():
+					if SURFACES.key(part,surface) != "glass": continue
+					var original := part.get_active_material(surface) as StandardMaterial3D
+					if original != null: _glass_for(original).get_rid()
 			visual.free()
 	# A pintura do teto também lê os vértices da pintura base (surface_get_arrays): monta a da
 	# altura medida já aqui, que é a mesma chave quando o visual fica na origem do carro.
@@ -96,13 +104,7 @@ func _ready() -> void:
 			if SURFACES.key(part,surface) != "glass": continue
 			var original := part.get_active_material(surface) as StandardMaterial3D
 			if original != null:
-				# Um vidro por material original, compartilhado entre as vans.
-				if not _glass.has(original):
-					var glass := original.duplicate() as StandardMaterial3D
-					glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-					glass.albedo_color = Color(.68,.84,.9,.23)
-					_glass[original] = glass
-				part.set_surface_override_material(surface,_glass[original])
+				part.set_surface_override_material(surface,_glass_for(original))
 	traced = _span("icecream_crew_glass", traced)
 	song = AudioStreamPlayer3D.new()
 	song.name = "IceCreamJingle"
@@ -125,6 +127,15 @@ func _ready() -> void:
 	car.add_child(roof)
 	_update_ambience()
 	_span("icecream_roof_collision_ambience", traced)
+
+## Um vidro por material original, compartilhado entre as vans.
+static func _glass_for(original: StandardMaterial3D) -> StandardMaterial3D:
+	if not _glass.has(original):
+		var glass := original.duplicate() as StandardMaterial3D
+		glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		glass.albedo_color = Color(.68,.84,.9,.23)
+		_glass[original] = glass
+	return _glass[original]
 
 func _span(label: String, began: int) -> int:
 	if began == 0: return 0
