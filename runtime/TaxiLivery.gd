@@ -11,12 +11,16 @@ static func decorate(model: Node3D) -> void:
 	model.add_child(art)
 	art.build(model)
 
+static func _new_sign_material() -> StandardMaterial3D:
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color("fff0b0")
+	material.emission_enabled = true
+	material.emission = Color("ffe49b")
+	material.emission_energy_multiplier = .65
+	return material
+
 func build(model: Node3D) -> void:
-	sign_material = StandardMaterial3D.new()
-	sign_material.albedo_color = Color("fff0b0")
-	sign_material.emission_enabled = true
-	sign_material.emission = Color("ffe49b")
-	sign_material.emission_energy_multiplier = .65
+	sign_material = _new_sign_material()
 	for part in model.find_children("*","MeshInstance3D",true,false):
 		if part.mesh == null: continue
 		var bounds: AABB = part.transform*part.get_aabb()
@@ -53,6 +57,7 @@ func _label(text: String, point: Vector3, pixel: float, color: Color) -> Label3D
 	return label
 
 func _ready() -> void:
+	if sign_material == null or plates.is_empty(): _recover_state()
 	var vehicle = get_parent().get_parent()
 	if vehicle != null and "vehicle_id" in vehicle: registration(vehicle.vehicle_id)
 
@@ -62,5 +67,34 @@ func registration(id: String) -> void:
 
 func set_available(value: bool) -> void:
 	available = value
+	# Táxi vindo da cena assada chega sem `sign_material` (veja _recover_state).
+	if sign_material == null: _recover_state()
+	if sign_material == null: return
 	sign_material.emission_energy_multiplier = .65 if value else 0.0
 	sign_material.albedo_color = Color("fff0b0") if value else Color("575249")
+
+
+## O táxi do jogo vem de `assets/fleet/redesigned/taxi_yellow.scn` (RedesignedFleet), assado
+## por tools/fleet_fixups/build_passenger_batch.gd DEPOIS de decorate(): o nó TaxiLivery volta
+## da cena com o script, mas sem as variáveis (não são exportadas), e o assado fundiu o
+## letreiro numa superfície da malha única "Body" (medido em 16/10: superfície 11, emissiva,
+## albedo fff0b0). Por isso a busca por peça/geometria de build() não acha nada aqui, e
+## `sign_material` nulo dava os 3 erros em TaxiRank._close_slot do log de 16/10 e travava
+## tests/test_taxi_service.gd. Reencontra placas e letreiro e dá a cada carro um material
+## próprio: o da cena é sub-recurso compartilhado, apagaria o letreiro de todos os táxis juntos.
+func _recover_state() -> void:
+	for child in get_children():
+		if child is Label3D and str(child.text).begins_with("HBR-") and not plates.has(child): plates.append(child)
+	var model := get_parent()
+	if model == null or sign_material != null: return
+	var reference := _new_sign_material()
+	for part: MeshInstance3D in model.find_children("*","MeshInstance3D",true,false):
+		if part.mesh == null or is_ancestor_of(part): continue
+		for index in part.mesh.get_surface_count():
+			var material := part.get_active_material(index) as StandardMaterial3D
+			if material == null or not material.emission_enabled: continue
+			if not material.albedo_color.is_equal_approx(reference.albedo_color): continue
+			if not material.emission.is_equal_approx(reference.emission): continue
+			# Cópia do material assado (mantém o acabamento da cena), uma por carro.
+			if sign_material == null: sign_material = material.duplicate() as StandardMaterial3D
+			part.set_surface_override_material(index, sign_material)
