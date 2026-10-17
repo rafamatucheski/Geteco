@@ -52,6 +52,16 @@ static func apply(model: Node3D, id: String, identity: String, paints: Array[Sta
 	cargo.scale = Vector3(float(bed[2]) / 1.6, 1, float(bed[3]) / 1.7)
 	model.add_child(cargo)
 
+## Sob a cortina: as duas texturas de desgaste (16 mil set_pixel com ruído em GDScript cada)
+## e as cargas de caçamba eram geradas no primeiro carro do trânsito que precisava delas;
+## vehicle_id_usage de 4-9 ms e traffic_spawn de 17-21 ms aos ~51 s de toda rodada da serra
+## (EXE de 17/10).
+static func prewarm() -> void:
+	if not enabled: return
+	for level in [1, 2]: _texture(level)
+	for kind in [1, 2, 3]: _load_mesh(kind)
+	_material()
+
 static func _texture(level: int) -> ImageTexture:
 	if _textures.has(level): return _textures[level]
 	var image := Image.create(128, 128, true, Image.FORMAT_RGBA8)

@@ -582,6 +582,7 @@ func _hold_fleet_scenes_incremental() -> void:
 	# trânsito montava palhaços (26 ms), pintura do teto (11 ms) e teto (3 ms) num quadro
 	# (serra, EXE perfinv6 de 17/10); a segunda custava 0,3 ms.
 	preload("res://gameplay/icecream/IceCreamVan.gd").prewarm()
+	preload("res://runtime/VehicleUsage.gd").prewarm()
 	var ids: Array = TRAFFIC_CAR_TYPES + TRAFFIC_MOTORCYCLE_TYPES + ["police_cruiser", "medic_box", "rescue_pumper", "station_wagon"]
 	ids.append(str(starting_vehicle().get("archetype", "sport_coupe")))
 	for record in state.world_state.get("garage_rewards", {}).get("vehicles", {}).values():
