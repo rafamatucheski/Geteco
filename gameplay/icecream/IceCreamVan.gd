@@ -71,11 +71,15 @@ static func _paint_top(root: Node3D) -> float:
 
 func _ready() -> void:
 	add_to_group(GROUP)
+	# Etapas medidas só com diagnóstico de sessão (a montagem custou 35 ms em 17/10).
+	var traced := Time.get_ticks_usec() if preload("res://runtime/StallWorkTrace.gd").session_enabled else 0
 	var roof_height := _roof_height()
+	traced = _span("icecream_roof", traced)
 	var art := MeshInstance3D.new()
 	art.name = "SorveteLivery"
 	art.mesh = _livery_for_roof(roof_height)
 	add_child(art)
+	traced = _span("icecream_livery", traced)
 	crew = Node3D.new()
 	crew.name = "Clowns"
 	add_child(crew)
@@ -99,6 +103,7 @@ func _ready() -> void:
 					glass.albedo_color = Color(.68,.84,.9,.23)
 					_glass[original] = glass
 				part.set_surface_override_material(surface,_glass[original])
+	traced = _span("icecream_crew_glass", traced)
 	song = AudioStreamPlayer3D.new()
 	song.name = "IceCreamJingle"
 	song.stream = song_stream()
@@ -109,6 +114,7 @@ func _ready() -> void:
 	song.max_db = -10.0
 	song.position.y = 2.1
 	add_child(song)
+	traced = _span("icecream_song", traced)
 	# Solid rooftop ornament; the existing road sensor keeps the van's dimensions.
 	var roof := CollisionShape3D.new()
 	roof.name = "IceCreamRoofCollision"
@@ -118,6 +124,12 @@ func _ready() -> void:
 	roof.position = Vector3(0,roof_height+.50,.5)
 	car.add_child(roof)
 	_update_ambience()
+	_span("icecream_roof_collision_ambience", traced)
+
+func _span(label: String, began: int) -> int:
+	if began == 0: return 0
+	preload("res://runtime/SessionOperations.gd").completed(car, "vehicle", label, began)
+	return Time.get_ticks_usec()
 
 func _roof_height() -> float:
 	# A courier's highest painted vertices are its roof. Read once on attachment,

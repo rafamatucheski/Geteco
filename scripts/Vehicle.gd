@@ -34,9 +34,16 @@ var vehicle_id := "":
 	set(value):
 		vehicle_id = value
 		if is_instance_valid(visual) and _paint != null:
+			# Spans só com diagnóstico de sessão: a van de sorvete custou 35 ms neste setter (17/10).
+			var traced := Time.get_ticks_usec() if preload("res://runtime/StallWorkTrace.gd").session_enabled else 0
 			preload("res://runtime/VehicleUsage.gd").apply(visual, archetype, value, _paint.materials)
+			preload("res://runtime/SessionOperations.gd").completed(self, "vehicle", "vehicle_id_usage", traced)
+			traced = Time.get_ticks_usec() if traced != 0 else 0
 			_refresh_tuning_appearance()
+			preload("res://runtime/SessionOperations.gd").completed(self, "vehicle", "vehicle_id_tuning", traced)
+			traced = Time.get_ticks_usec() if traced != 0 else 0
 			preload("res://gameplay/icecream/IceCreamVan.gd").attach(self)
+			preload("res://runtime/SessionOperations.gd").completed(self, "vehicle", "vehicle_id_icecream_attach", traced)
 		if is_instance_valid(visual) and visual.has_node("TaxiLivery"):
 			visual.get_node("TaxiLivery").registration(value)
 		if value.begins_with("cobra_patrol_") and is_instance_valid(visual):
