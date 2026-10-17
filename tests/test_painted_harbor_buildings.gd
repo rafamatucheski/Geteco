@@ -9,7 +9,11 @@ const IDS := {"Laundry": "lavanderia", "UnionWorkshop": "oficina-artesao", "Mark
 	"FreightOffice": "escritorio-frete", "Aquarium": "aquario", "MaritimeMuseum": "museu-maritimo",
 	"ColdStorage": "camara-fria",
 	"CornerDiner": "lanchonete-esquina", "IslandGrocer": "mercado-ilha", "IslandCinema": "cinema",
-	"PromenadeCafe": "cafe-orla"}
+	"PromenadeCafe": "cafe-orla",
+	# Rodada "restantes" (17/10): o portão largo da NorthbankHomes2 é passagem aberta, não folha.
+	"RoadsideSupplies": "loja-estrada", "ParcelOffice": "escritorio-encomendas", "ServiceCafe": "cafe-servico",
+	"CycleWorkshop": "oficina-bicicletas", "CornerPharmacy": "farmacia-esquina", "NorthbankHomes2": "oficina-margem-norte",
+	"CommunityHall": "salao-comunitario", "ServiceLodge": "pousada-servico"}
 
 func _init() -> void:
 	var rows: Array = JSON.parse_string(FileAccess.get_file_as_string("res://world/regions/OriginalWorldData.json")).get("harbor_buildings", [])
