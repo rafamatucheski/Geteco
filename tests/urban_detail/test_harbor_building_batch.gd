@@ -170,7 +170,21 @@ func verify_service_doors() -> void:
 		chunk.add_child(service)
 	var protected := protected_snapshot(chunk)
 	var doors := door_motion_snapshot(chunk)
-	check(doors.size() == 2, "exercita portas da delegacia e do quartel fora dos trechos medidos")
+	# Com a fachada pintada (GETECO_PAINTED_FACADES, ligada por padrão) o quartel
+	# (PaintedFireStation) não tem mais a persiana 3D `fire_door_visual`: os portões das viaturas
+	# são vãos sem folha e as portas de pedestre (frente e fundos) são folhas do kit
+	# (PaintedFacadeKit.PaintedDoor). Elas entram no mesmo exercício de movimento para o quartel
+	# continuar coberto; a delegacia pintada já entra por `police_door_visuals`. A contagem
+	# exata de 2 casos (um por prédio) valia só para o 3D antigo; o contrato é cada prédio ter folhas.
+	for service: UrbanServiceBuilding in chunk.get_children():
+		if service.building_kind != "fire_station" or is_instance_valid(service.fire_door_visual): continue
+		for leaf in service.find_children("*", "Node3D", true, false):
+			if leaf is PaintedFacadeKit.PaintedDoor: doors.append(_door_case(leaf, "set_open_amount", "open_amount", [leaf.hinge]))
+	var covered := {}
+	for entry in doors:
+		for service: UrbanServiceBuilding in chunk.get_children():
+			if service == entry.owner or service.is_ancestor_of(entry.owner): covered[service.building_kind] = true
+	check(covered.has("police_precinct") and covered.has("fire_station"), "exercita portas da delegacia e do quartel fora dos trechos medidos")
 	chunk.set_meta("vegetation_ready_frame", Engine.get_physics_frames())
 	BATCH.finish_chunk(chunk)
 	for entry in protected:
