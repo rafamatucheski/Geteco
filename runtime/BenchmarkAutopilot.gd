@@ -18,6 +18,8 @@ const CORNER_SPEED := 6.0
 const PATIENCE := 4.0
 const STUCK_PROGRESS := 2.0
 const RECOVERY_SKIP := 4.0
+## A rota é desenhada no chão; 8 m abaixo dela já é queda, não rampa nem desnível de rua.
+const FALL_TOLERANCE := 8.0
 
 var bench: Node
 var car: CharacterBody3D
@@ -25,6 +27,7 @@ var speed_target := 12.0
 var lane := 1.8
 var progress := 0.0
 var recoveries := 0
+var falls := 0
 var _starts: Array[Vector3] = []
 var _directions: Array[Vector3] = []
 var _lengths: Array[float] = []
@@ -76,6 +79,17 @@ func drive(delta: float) -> float:
 	var speed := absf(float(car.get("speed")))
 	_speed_sum += speed
 	_speed_samples += 1
+	# Caiu pelo chão: o progresso projeta só x/z, então o carro em queda continuava "andando" a
+	# rota no ar e nunca contava como preso (dirigindooeste_2 de 16/10 terminou em y≈-11400 com
+	# 11 draw calls na mediana). Volta para a rota na hora e conta à parte.
+	if car.global_position.y < _lane_point(progress).y - FALL_TOLERANCE:
+		falls += 1
+		recoveries += 1
+		_place(progress)
+		_stuck_progress = progress
+		_stuck_clock = 0.0
+		_release()
+		return progress
 	# Preso: pouco avanço na rota por PATIENCE segundos.
 	_stuck_clock += delta
 	if progress - _stuck_progress >= STUCK_PROGRESS:
@@ -109,7 +123,7 @@ func finish() -> void:
 	_release()
 
 func summary() -> Dictionary:
-	return {"recoveries": recoveries, "mean_speed_mps": snappedf(_speed_sum / maxf(1, _speed_samples), .01),
+	return {"recoveries": recoveries, "falls": falls,"mean_speed_mps": snappedf(_speed_sum / maxf(1, _speed_samples), .01),
 		"lane_offset_m": lane, "distance_m": snappedf(progress, .1), "frames_3d_off": frames_3d_off, "frames_paused": frames_paused}
 
 func _press(action: StringName, strength: float) -> void:
