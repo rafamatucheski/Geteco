@@ -177,7 +177,9 @@ func _place(distance: float) -> void:
 	# Pousa no chão de verdade: a rota é em y=0 e a calçada/asfalto da cidade fica a
 	# ~0,12 m; com +0,1 o carro nascia dentro do piso e às vezes atravessava o mundo
 	# (dirigindooeste_1 da fase 2 terminou em y=-3190).
-	var query := PhysicsRayQueryParameters3D.create(point + Vector3.UP * 30.0, point + Vector3.DOWN * 30.0, 1)
+	# Raio a partir de 3 m, não de 30: de cima, ele batia no deck da passarela de pedestres do oeste
+	# (y≈5,8) e o carro era posto lá em cima, caía e se quebrava (perfinv2 de 17/10).
+	var query := PhysicsRayQueryParameters3D.create(point + Vector3.UP * 3.0, point + Vector3.DOWN * 30.0, 1)
 	query.exclude = [car.get_rid()]
 	var hit := car.get_world_3d().direct_space_state.intersect_ray(query)
 	if not hit.is_empty(): point.y = float(hit.position.y)
@@ -187,4 +189,7 @@ func _place(distance: float) -> void:
 	car.set("horizontal_velocity", Vector3.ZERO)
 	car.velocity = Vector3.ZERO
 	if car.get("handling") != null and car.handling.has_method("reset"): car.handling.reset()
+	# Batidas e quedas tiram vida; com o carro quebrado o piloto só avançava pelos saltos de
+	# recuperação (0,4 m/s de média em 17/10). A medição é de dirigir, não de dano acumulado.
+	if car.has_method("repair") and car.health < car.max_health: car.repair()
 	car.reset_physics_interpolation()
