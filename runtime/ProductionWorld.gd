@@ -441,6 +441,10 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	await preload("res://assets/civilians/MeshyBodyPrewarm.gd").run(world, curtain)
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+	# Primeira aparição da Cobra e da polícia no tiroteio (sumiço do morto, itens largados, giroflex):
+	# quadros de 588-646 ms no desenho no release de 17/10. Depois dos GLBs do Meshy, já carregados acima.
+	await preload("res://gameplay/emergency/SpawnVisualPrewarm.gd").run(world, curtain)
+	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	_trace_cost("startup:combat_resources",phase_traced)
 	# Um quadro entre as etapas pesadas deixa a tela de carregamento andar; o mundo
 	# já está montado e o 'ready_for_play' ainda é falso nesse trecho.
