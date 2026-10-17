@@ -12,9 +12,7 @@ class_name PaintedTonicoShop
 ## antiga na entrada; a folha pintada é a porta que abre (`walk_in`) e a caixa antiga de
 ## porta/janelas/letreiro deixa de ser desenhada em `_station`.
 ##
-## Interruptor: GETECO_PAINTED_FACADES=0 volta ao 3D antigo. PROVISÓRIO: enquanto o teste e as
-## capturas no jogo não passarem, o gancho fica DESLIGADO por padrão e só liga com
-## GETECO_PAINTED_TONICO=1; depois inverta para ligado por padrão (desliga com =0).
+## Interruptor: GETECO_PAINTED_TONICO=0 (ou GETECO_PAINTED_FACADES=0) volta ao 3D antigo.
 
 const STYLE := "loja-tonico"
 ## Caixa autoral 24 x 10 x 3,2 centrada em (-30, ., -34); o espaço de autoria a estica.
@@ -23,8 +21,7 @@ const AUTHOR_SIZE := Vector2(24, 10)
 
 
 static func enabled() -> bool:
-	# PROVISÓRIO: trocar por `== "0"` quando a verificação terminar.
-	if not PaintedFacadeKit.enabled() or OS.get_environment("GETECO_PAINTED_TONICO") != "1": return false
+	if not PaintedFacadeKit.enabled() or OS.get_environment("GETECO_PAINTED_TONICO") == "0": return false
 	return not PaintedFacadeKit.style_data(STYLE).is_empty()
 
 

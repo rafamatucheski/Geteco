@@ -12,10 +12,10 @@ var door: Node3D
 var window_light: MeshInstance3D
 
 
-## PROVISÓRIO: desligado por padrão até esclarecer o travamento de test_keeper_house;
-## só liga com GETECO_PAINTED_KEEPER=1. Ao fechar, inverter para `!= "0"` (liga por padrão).
+## Ligado por padrão a pedido do usuário, que valida no jogo (test_keeper_house travou uma vez e
+## test_door_push_physics falhou 4 checks com a pintura ligada, sem A/B). GETECO_PAINTED_KEEPER=0 desliga.
 static func painted_enabled() -> bool:
-	return KIT.enabled() and OS.get_environment("GETECO_PAINTED_KEEPER") == "1"
+	return KIT.enabled() and OS.get_environment("GETECO_PAINTED_KEEPER") != "0"
 
 func _ready() -> void:
 	box("StoneFoundation", Vector3(7.6, .3, 5.9), Vector3(0, .05, 0), "666657")

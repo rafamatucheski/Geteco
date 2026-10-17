@@ -11,7 +11,7 @@ extends RefCounted
 ## A porta pintada do kit NÃO é usada (seria uma segunda porta): o vão pintado é a
 ## abertura onde a `DoorPivot` 3D de sempre gira, e ela só ganha a imagem `door_front`.
 ##
-## Interruptor: GETECO_PAINTED_TRUCKERS_HOMES (provisório: =1 liga; depois =0 desliga) e GETECO_PAINTED_FACADES=0 voltam
+## Interruptor: GETECO_PAINTED_TRUCKERS_HOMES=0 desliga (ligado por padrão a pedido do usuário, que valida no jogo) e GETECO_PAINTED_FACADES=0 voltam
 ## às caixas antigas, para A/B.
 
 ## Mesma ordem de HOME_LAYOUT. Cores antigas das paredes -> estilo mais próximo:
@@ -29,7 +29,7 @@ const DEFAULT_DOOR_HEIGHT := 2.28
 static func enabled() -> bool:
 	# PROVISÓRIO: desligado por padrão até o teste e as capturas passarem. Quando passarem,
 	# inverter para `== "0"` (ligado por padrão, "0" desliga).
-	if not PaintedFacadeKit.enabled() or OS.get_environment("GETECO_PAINTED_TRUCKERS_HOMES") != "1": return false
+	if not PaintedFacadeKit.enabled() or OS.get_environment("GETECO_PAINTED_TRUCKERS_HOMES") == "0": return false
 	# Pacote de textura ausente (ainda não importado): cai nas caixas em vez de quebrar.
 	return not PaintedFacadeKit.style_data(STYLES[0]).is_empty()
 
