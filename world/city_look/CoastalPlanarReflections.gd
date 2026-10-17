@@ -47,6 +47,8 @@ var last_hidden_dynamic_count := 0
 var last_rebuilt_batch_names: Array[String] = []
 var _benchmark := false
 var _match_msaa := OS.get_environment("HARBOR_PIPELINE_MSAA_SYNC") != "0"
+## GETECO_REFLECTION_HZ=0 volta a capturar todo quadro em movimento (A/B).
+var _moving_capture_hz := float(OS.get_environment("GETECO_REFLECTION_HZ")) if OS.has_environment("GETECO_REFLECTION_HZ") else 60.0
 
 func _ready() -> void:
 	_benchmark = "--benchmark" in OS.get_cmdline_user_args()
@@ -332,6 +334,11 @@ func _process_reflections(delta: float) -> void:
 	# refreshes at 20Hz for moving traffic; textures remain world projected.
 	var moving := not camera.global_transform.is_equal_approx(_last_camera)
 	if not moving and not facade_entered and _capture_clock < .05: return
+	# Em movimento, no máximo _moving_capture_hz capturas por segundo. Sem limite, a 150+ fps o
+	# chão molhado redesenhava a cena num segundo viewport a cada quadro: chuva no oeste (EXE,
+	# 17/10) p50 6,3-6,4 ms contra 4,7-4,9 seco, GPU 2,5 contra 1,6 ms. A textura é projetada
+	# no mundo com a câmera da captura, então até 1/60 s de atraso não desloca o reflexo.
+	if moving and not facade_entered and _moving_capture_hz > 0 and _capture_clock < 1.0 / _moving_capture_hz: return
 	_capture_clock = 0.0
 	_last_camera = camera.global_transform
 	# As capturas são viewports sem MSAA (o principal usa o MSAA do jogador): cada
