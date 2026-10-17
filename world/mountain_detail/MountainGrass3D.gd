@@ -27,6 +27,15 @@ const POOL_LIMIT := 48
 ## int(TILE / SPACING) ao quadrado: o laço de _build_tile tenta no máximo 18 x 18 tufos.
 const CAPACITY := 324
 static var _pooling := OS.get_environment("GETECO_GRASS_POOL") != "0"
+## Montagem fatiada (17/10): cada bloco testa até 324 pontos (reserva, altura e um raio de física cada) e
+## eram 2 blocos inteiros por passo de física, sem span. Na rota da serra, nos trechos sem neve, isso dava
+## um passo de física de 28-45 ms a cada fileira nova de blocos (EXE de 17/10, 15-38 quadros > 33 ms por
+## rodada). Agora os pontos são testados em fatias de BUILD_BUDGET_USEC por passo e o bloco só aparece
+## quando termina. GETECO_GRASS_SLICED=0 volta aos 2 blocos inteiros por passo (A/B).
+const BUILD_BUDGET_USEC := 2000
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+static var _sliced := OS.get_environment("GETECO_GRASS_SLICED") != "0"
+var _job: Dictionary = {}
 
 var controller
 var _tiles: Dictionary = {} # Vector2i -> MultiMeshInstance3D
@@ -51,6 +60,7 @@ func _physics_process(delta: float) -> void:
 	if not outdoors or not is_instance_valid(region) or region.get("terrain") == null:
 		if not _tiles.is_empty(): _clear()
 		_queue.clear()
+		_job = {}
 		return
 	if region != _region:
 		_clear()
@@ -60,15 +70,19 @@ func _physics_process(delta: float) -> void:
 		var chunk: Node3D = _support_chunk(key)
 		if not is_instance_valid(chunk) or chunk.get_instance_id() != int(_tiles[key].get_meta("support_chunk", 0)):
 			_release_tile(key)
-	var built := 0
-	var remaining: Array[Vector2i] = []
-	for key in _queue:
-		if built >= TILES_PER_FRAME or not is_instance_valid(_support_chunk(key)):
-			remaining.append(key)
-			continue
-		if not _tiles.has(key): _build_tile(key)
-		built += 1
-	_queue = remaining
+	var traced := STALL_WORK.begin()
+	if _sliced: _advance_build(Time.get_ticks_usec())
+	else:
+		var built := 0
+		var remaining: Array[Vector2i] = []
+		for key in _queue:
+			if built >= TILES_PER_FRAME or not is_instance_valid(_support_chunk(key)):
+				remaining.append(key)
+				continue
+			if not _tiles.has(key): _build_tile(key)
+			built += 1
+		_queue = remaining
+	STALL_WORK.finish_slow("mountain.grass.build", traced, 2000)
 	_clock += delta
 	if _clock < 0.3: return
 	_clock = 0.0
@@ -90,6 +104,7 @@ func _physics_process(delta: float) -> void:
 		if not wanted.has(key):
 			_release_tile(key)
 	_queue.assign(_queue.filter(func(k): return wanted.has(k)))
+	if not _job.is_empty() and not wanted.has(_job.key): _job = {}
 	_queue.sort_custom(func(a, b): return Vector2(a - center).length_squared() < Vector2(b - center).length_squared())
 
 func _support_chunk(key: Vector2i) -> Node3D:
@@ -105,6 +120,7 @@ func _support_chunk(key: Vector2i) -> Node3D:
 func _clear() -> void:
 	for key in _tiles.keys(): _release_tile(key)
 	_queue.clear()
+	_job = {}
 
 ## Bloco que sai: volta escondido ao estoque (buffer de vídeo mantido) ou sai pela fila gradual.
 func _release_tile(key: Vector2i) -> void:
@@ -119,32 +135,73 @@ func _release_tile(key: Vector2i) -> void:
 		GPU_RELEASE.retire(tile)
 
 func _build_tile(key: Vector2i) -> void:
-	var terrain = _region.terrain
-	var corner := Vector2(key) * TILE
+	var job := _begin_tile(key)
+	if job.is_empty(): return
+	_sample_tile(job, 0, INF)
+	_commit_tile(job)
+
+## Fatias: o bloco da frente da fila é amostrado até o orçamento acabar; sobra para o próximo passo.
+func _advance_build(began: int) -> void:
+	while Time.get_ticks_usec() - began < BUILD_BUDGET_USEC:
+		if _job.is_empty():
+			var next := -1
+			for index in _queue.size():
+				if not _tiles.has(_queue[index]) and is_instance_valid(_support_chunk(_queue[index])):
+					next = index
+					break
+			if next < 0: return
+			_job = _begin_tile(_queue[next])
+			_queue.remove_at(next)
+			if _job.is_empty(): continue
+		if not _sample_tile(_job, began, BUILD_BUDGET_USEC): return
+		# O trecho de apoio pode ter saído ou sido trocado enquanto o bloco era amostrado.
+		var chunk := _support_chunk(_job.key)
+		if is_instance_valid(chunk) and chunk.get_instance_id() == int(_job.chunk_id) and not _tiles.has(_job.key): _commit_tile(_job)
+		_job = {}
+
+func _begin_tile(key: Vector2i) -> Dictionary:
 	var chunk := _support_chunk(key)
-	if not is_instance_valid(chunk): return
+	if not is_instance_valid(chunk): return {}
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash(key)
-	var space := get_world_3d().direct_space_state
 	var transforms: Array[Transform3D] = []
-	var steps := int(TILE / SPACING)
-	for ix in steps:
-		for iz in steps:
-			var at := corner + (Vector2(ix, iz) + Vector2(rng.randf(), rng.randf())) * SPACING
-			# Shared spatial reservations cover complete road segments, water and rooms,
-			# even before their meshes exist. A nearby road vertex is not sufficient.
-			if terrain.is_reserved(at, FOOTPRINT): continue
-			var y: float = terrain.surface_height_at(at)
-			# Rampa da bacia de lago: capim até perto da água (linha d'água em -0,2);
-			# só a beira molhada fica sem.
-			if y < -0.1: continue
-			var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(at.x, y + 6.0, at.y), Vector3(at.x, y - 1.0, at.y), 1))
-			# Fail closed: empty space, pavement, furniture and walls are never soil.
-			if hit.is_empty() or not hit.collider.get_meta("mountain_terrain", false): continue
-			if absf(float(hit.position.y) - y) > 0.08 or hit.normal.y < 0.8: continue
-			var s := rng.randf_range(0.7, 1.35)
-			var local_basis := Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(s, s * rng.randf_range(0.8, 1.25), s))
-			transforms.append(Transform3D(local_basis, Vector3(at.x, y, at.y)))
+	return {"key": key, "chunk_id": chunk.get_instance_id(), "corner": Vector2(key) * TILE, "rng": rng, "steps": int(TILE / SPACING), "next": 0, "transforms": transforms}
+
+## Testa pontos do bloco a partir de job.next; devolve true quando acabou. A ordem dos pontos e das chamadas ao
+## gerador é a mesma da montagem inteira, então o bloco sai igual com ou sem fatias.
+func _sample_tile(job: Dictionary, began: int, budget_usec: float) -> bool:
+	var terrain = _region.terrain
+	var corner: Vector2 = job.corner
+	var rng: RandomNumberGenerator = job.rng
+	var steps: int = job.steps
+	var transforms: Array[Transform3D] = job.transforms
+	var space := get_world_3d().direct_space_state
+	while int(job.next) < steps * steps:
+		if Time.get_ticks_usec() - began >= budget_usec: return false
+		var ix := int(job.next) / steps
+		var iz := int(job.next) % steps
+		job.next = int(job.next) + 1
+		var at := corner + (Vector2(ix, iz) + Vector2(rng.randf(), rng.randf())) * SPACING
+		# Shared spatial reservations cover complete road segments, water and rooms,
+		# even before their meshes exist. A nearby road vertex is not sufficient.
+		if terrain.is_reserved(at, FOOTPRINT): continue
+		var y: float = terrain.surface_height_at(at)
+		# Rampa da bacia de lago: capim até perto da água (linha d'água em -0,2);
+		# só a beira molhada fica sem.
+		if y < -0.1: continue
+		var hit := space.intersect_ray(PhysicsRayQueryParameters3D.create(Vector3(at.x, y + 6.0, at.y), Vector3(at.x, y - 1.0, at.y), 1))
+		# Fail closed: empty space, pavement, furniture and walls are never soil.
+		if hit.is_empty() or not hit.collider.get_meta("mountain_terrain", false): continue
+		if absf(float(hit.position.y) - y) > 0.08 or hit.normal.y < 0.8: continue
+		var s := rng.randf_range(0.7, 1.35)
+		var local_basis := Basis(Vector3.UP, rng.randf() * TAU).scaled(Vector3(s, s * rng.randf_range(0.8, 1.25), s))
+		transforms.append(Transform3D(local_basis, Vector3(at.x, y, at.y)))
+	return true
+
+func _commit_tile(job: Dictionary) -> void:
+	var key: Vector2i = job.key
+	var corner: Vector2 = job.corner
+	var transforms: Array[Transform3D] = job.transforms
 	var instance: MultiMeshInstance3D = _pool.pop_back() if _pooling and not _pool.is_empty() else null
 	var multimesh: MultiMesh = instance.multimesh if instance != null else null
 	if instance == null:
@@ -168,7 +225,7 @@ func _build_tile(key: Vector2i) -> void:
 		for i in count: bounds = bounds.expand(transforms[i].origin)
 		instance.custom_aabb = bounds.grow(1.5)
 	instance.name = "GrassTile_%d_%d" % [key.x, key.y]
-	instance.set_meta("support_chunk", chunk.get_instance_id())
+	instance.set_meta("support_chunk", int(job.chunk_id))
 	instance.visible = true
 	# Canto do chunk de 64 m, como o terreno: mesma coordenada de ruído.
 	instance.set_instance_shader_parameter("origin", (corner / 64.0).floor() * 64.0)

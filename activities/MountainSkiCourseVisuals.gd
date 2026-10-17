@@ -1,5 +1,8 @@
 extends Node3D
 ## Bounded course markers. Ground probes run only near the skier, at 2 Hz.
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+## Diagnóstico (serra, 17/10): GETECO_SKI_MARKER_RAYS=0 não lança os raios dos marcadores.
+static var _rays_enabled := OS.get_environment("GETECO_SKI_MARKER_RAYS") != "0"
 var progression
 var markers: Array[Node3D] = []
 var clock := 0.0
@@ -38,14 +41,18 @@ func _physics_process(delta: float) -> void:
 	clock = 0
 	var session = progression.session
 	var outside: bool = progression._outside()
+	var traced := STALL_WORK.begin()
+	var rays := 0
 	for marker in markers:
 		marker.visible = outside and progression._flat(session.world.player.position).distance_to(progression._flat(marker.position)) < 95
-		if not marker.visible: continue
+		if not marker.visible or not _rays_enabled: continue
+		rays += 1
 		var point: Vector3 = progression._flat(marker.position)
 		var query := PhysicsRayQueryParameters3D.create(point+Vector3.UP*3,point-Vector3.UP*5,1)
 		var hit := get_world_3d().direct_space_state.intersect_ray(query)
 		marker.visible = not hit.is_empty()
 		if marker.visible: marker.position.y = hit.position.y + .02
+	STALL_WORK.finish("ski.course_markers", traced, {"rays": rays})
 func _box(parent: Node3D, point: Vector3, size: Vector3, color: Color) -> void:
 	var mesh := MeshInstance3D.new()
 	var box := BoxMesh.new()
