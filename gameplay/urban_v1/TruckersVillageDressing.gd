@@ -72,8 +72,11 @@ static func _shade_tree(v: Node3D,at: Vector3) -> void:
 ## Household detail, authored in each home's local frame. Closed walls,
 ## furniture and yard boundaries use the same transform for visual and physics.
 static func dress_home(v: Node3D,index: int) -> void:
+	# Casa com casca pintada: calha, cano, tijolos e remendos colados na parede de
+	# caixa ficariam flutuando diante da imagem (que já tem o próprio desgaste).
+	var painted: bool = v.homes!=null and bool(v.homes.homes[index].get("painted",false))
 	_fence(v,index)
-	_facade(v,index)
+	_facade(v,index,painted)
 	_clothesline(v,index)
 	if index in [0,3,5]: _water_tank(v,Vector3(7.7,0,-3.2))
 	if index in [1,2,4]: _vegetable_bed(v,Vector3(-7.8,0,-4.3))
@@ -83,9 +86,9 @@ static func dress_home(v: Node3D,index: int) -> void:
 	_pot(v,Vector3(5.4,0,5.0),index)
 	_pot(v,Vector3(6.1,0,5.8),index+1)
 	# Small repairs tell individual stories without text on the homes.
-	if index%2 == 0:
+	if index%2 == 0 and not painted:
 		v._box(Vector3(-3.6,1.85,4.77),Vector3(1.65,.13,.075),"7d674d",Vector3(0,0,.17))
-	if index in [1,4]:
+	if index in [1,4] and not painted:
 		v._box(Vector3(4.3,3.62,-1.5),Vector3(2.8,.07,2.5),"635e4c",Vector3(0,0,-.19),true)
 	if index in [0,3]:
 		v._box(Vector3(4.5,4.08,-2.4),Vector3(.65,1.35,.65),"8e6450",Vector3.ZERO,true)
@@ -117,16 +120,17 @@ static func _fence_panel(v: Node3D,at: Vector3,size: Vector3) -> void:
 		v._box(at+Vector3(0,y,0),Vector3(size.x,.12,size.z),"817456")
 	v._solid("YardFence",at+Vector3(0,.65,0),Vector3(size.x,1.3,size.z))
 
-static func _facade(v: Node3D,index: int) -> void:
-	# Rain gutters, drainpipe, weathered foundation and several exposed bricks.
-	v._box(Vector3(6.48,2.92,0),Vector3(.15,.13,9.5),"635e4c")
-	v._box(Vector3(6.54,1.52,-4.23),Vector3(.09,2.9,.09),"797d6d")
-	for row in 3:
-		for col in 4:
-			var x := -5.8+col*.43+(row%2)*.18
-			v._box(Vector3(x,.29+row*.19,4.59),Vector3(.38,.14,.035),"8e6450")
-	for z in [-3.5,-2.7,-1.9]:
-		v._box(Vector3(-6.54,.24,z),Vector3(.04,.33,.56),"8e6450")
+static func _facade(v: Node3D,index: int,painted := false) -> void:
+	if not painted:
+		# Rain gutters, drainpipe, weathered foundation and several exposed bricks.
+		v._box(Vector3(6.48,2.92,0),Vector3(.15,.13,9.5),"635e4c")
+		v._box(Vector3(6.54,1.52,-4.23),Vector3(.09,2.9,.09),"797d6d")
+		for row in 3:
+			for col in 4:
+				var x := -5.8+col*.43+(row%2)*.18
+				v._box(Vector3(x,.29+row*.19,4.59),Vector3(.38,.14,.035),"8e6450")
+		for z in [-3.5,-2.7,-1.9]:
+			v._box(Vector3(-6.54,.24,z),Vector3(.04,.33,.56),"8e6450")
 	# A shallow crate keeps the porch occupied while its centre remains clear.
 	if index in [1,3,5]:
 		v._box(Vector3(3.0,.23,5.9),Vector3(.9,.46,.65),"8b7556")

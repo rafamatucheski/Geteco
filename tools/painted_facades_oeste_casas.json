@@ -1,0 +1,53 @@
+{
+	"casa-rural-chapa": {
+		"module_w": 12.6,
+		"side_w": 8.6,
+		"eave": 0.3,
+		"front": [
+			{
+				"rect": [
+					0.3845,
+					0.3111,
+					0.504,
+					0.994
+				],
+				"leaf": true
+			}
+		],
+		"back": []
+	},
+	"casa-rural-chapa-b": {
+		"module_w": 12.6,
+		"side_w": 8.6,
+		"eave": 0.3,
+		"front": [
+			{
+				"rect": [
+					0.3848,
+					0.3122,
+					0.5037,
+					0.994
+				],
+				"leaf": true
+			}
+		],
+		"back": []
+	},
+	"casa-rural-chapa-c": {
+		"module_w": 12.6,
+		"side_w": 8.6,
+		"eave": 0.3,
+		"front": [
+			{
+				"rect": [
+					0.3848,
+					0.3122,
+					0.5037,
+					0.994
+				],
+				"leaf": true
+			}
+		],
+		"back": []
+	}
+}

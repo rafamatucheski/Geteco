@@ -7,8 +7,11 @@ var checks := 0
 var failures: Array[String] = []
 class WorldFixture extends Node3D:
 	var player: Node3D
+class StateFixture extends RefCounted:
+	var place_id := ""
 class SessionFixture extends RefCounted:
 	var world
+	var state := StateFixture.new()
 	var weather = null
 class WeatherFixture extends Node:
 	var updates:=0
@@ -58,7 +61,9 @@ func run() -> void:
 	for index in 6:
 		var room:Dictionary=homes.homes[index]
 		var home:Node3D=room.root
-		var exterior:=home.to_global(Vector3(0,.04,6))
+		# Com a casca pintada o vão fica fora do centro: segue a entrada da própria casa.
+		var door_x:=home.to_local(room.entry).x
+		var exterior:=home.to_global(Vector3(door_x,.04,6))
 		var motion:Vector3=home.basis*Vector3(0,0,-5)
 		check(player.test_move(Transform3D(Basis.IDENTITY,exterior),motion),"Closed house%d door blocks player"%index)
 		check(npc.test_move(Transform3D(Basis.IDENTITY,exterior),motion),"Closed house%d door blocks resident"%index)
@@ -113,7 +118,7 @@ func run() -> void:
 			for frame in 2: await physics_frame
 		player.teleport(home.to_global(Vector3(0,.04,1)))
 		for frame in 10: await physics_frame
-		player.teleport(home.to_global(Vector3(0,.04,3)))
+		player.teleport(home.to_global(Vector3(door_x,.04,3)))
 		for frame in 28: await physics_frame
 		player.global_position.y=.04
 		contact=player.move_and_collide(home.basis*Vector3(0,0,4))

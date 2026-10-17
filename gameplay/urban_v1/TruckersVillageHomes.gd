@@ -3,6 +3,8 @@ const BOX_BATCH := preload("res://runtime/transit/StaticBoxBatch.gd")
 ## Six native 3D walk-in homes. Player, residents, architecture and furniture
 ## share one depth buffer and physical world; no sprite/projection workaround.
 const PICKUP := preload("res://systems/inventory/PickupPresentation.gd")
+## Casca pintada (fachada GTA) por cima das caixas; ver TruckersVillagePaintedHomes.gd.
+const PAINTED := preload("res://gameplay/urban_v1/TruckersVillagePaintedHomes.gd")
 signal house_entered(index: int)
 signal house_exited(index: int)
 var homes: Array[Dictionary] = []
@@ -44,7 +46,10 @@ func build(village: Node3D,layout: Array) -> void:
 		var upper := Node3D.new()
 		upper.name = "UpperWalls"
 		home.add_child(upper)
-		var room: Dictionary = {"id":"truckers_home_%d"%(i+1),"index":i,"root":home,"roof":roof,"upper":upper,"center":home.global_position,"inside":Rect2(-6.3,-4.3,12.6,8.6),"entry":home.to_global(Vector3(0,0,4.5)),"outside":home.to_global(Vector3(0,0,6)),"open":false,"amount":0.0,"solid_start":solids.size()}
+		# Com a casca pintada o vão da porta fica onde a imagem o desenhou (fora do centro).
+		var door_layout := PAINTED.door_layout(i)
+		var door_x := float(door_layout.x)
+		var room: Dictionary = {"id":"truckers_home_%d"%(i+1),"index":i,"root":home,"roof":roof,"upper":upper,"center":home.global_position,"inside":Rect2(-6.3,-4.3,12.6,8.6),"entry":home.to_global(Vector3(door_x,0,4.5)),"outside":home.to_global(Vector3(door_x,0,6)),"open":false,"amount":0.0,"solid_start":solids.size(),"door_layout":door_layout,"painted":bool(door_layout.painted)}
 		homes.append(room)
 		_shell(room,Color(layout[i][1]))
 		_furnish(room,i)
@@ -173,7 +178,16 @@ func _shell(room: Dictionary,color: Color) -> void:
 	# All floor finishes are shallow and walkable over the terrain collider.
 	_box(home,Vector3(0,.017,0),Vector3(12.6,.028,8.6),"80694d")
 	for z in range(-4,5): _box(home,Vector3(0,.036,z),Vector3(12.6,.008,.028),"655540")
-	var walls: Array = [[Vector3(-6.4,1.5,0),Vector3(.2,3,9)],[Vector3(6.4,1.5,0),Vector3(.2,3,9)],[Vector3(-3.7,1.5,4.4),Vector3(5.6,3,.2)],[Vector3(3.7,1.5,4.4),Vector3(5.6,3,.2)]]
+	var door: Dictionary = room.door_layout
+	var painted: bool = room.painted
+	var door_x: float = door.x
+	var door_w: float = door.width
+	# A frente tem um vão só, do tamanho da porta; os dois trechos vão da quina ao batente.
+	var front_left := (-6.5+door_x-door_w*.5)*.5
+	var front_left_w := door_x-door_w*.5+6.5
+	var front_right := (6.5+door_x+door_w*.5)*.5
+	var front_right_w := 6.5-door_x-door_w*.5
+	var walls: Array = [[Vector3(-6.4,1.5,0),Vector3(.2,3,9)],[Vector3(6.4,1.5,0),Vector3(.2,3,9)],[Vector3(front_left,1.5,4.4),Vector3(front_left_w,3,.2)],[Vector3(front_right,1.5,4.4),Vector3(front_right_w,3,.2)]]
 	if room.index == 0:
 		# Casa 1 grows into a narrow pantry annex. Split the original rear wall
 		# around its doorway so the route to the cellar is physically continuous.
@@ -190,9 +204,11 @@ func _shell(room: Dictionary,color: Color) -> void:
 	if room.index == 0:
 		_box(upper,Vector3(.65,2.69,-4.4),Vector3(1.66,.62,.2),paint)
 		_solid(room,"CellarDoorHeader",Vector3(.65,2.69,-4.4),Vector3(1.66,.62,.2))
-	_box(upper,Vector3(0,2.66,4.4),Vector3(1.8,.68,.2),paint)
-	_solid(room,"DoorHeader",Vector3(0,2.66,4.4),Vector3(1.8,.68,.2))
-	for x in [-3.6,3.6]:
+	_box(upper,Vector3(door_x,2.66,4.4),Vector3(door_w,.68,.2),paint)
+	_solid(room,"DoorHeader",Vector3(door_x,2.66,4.4),Vector3(door_w,.68,.2))
+	# Com a fachada pintada as janelas e cortinas são da imagem (e só se veem de fora,
+	# onde UpperWalls está visível): as caixas atravessariam a pintura.
+	for x in ([] if painted else [-3.6,3.6]):
 		for z in [-4.51,4.51]:
 			_box(upper,Vector3(x,1.75,z),Vector3(1.8,1.3,.05),"536968")
 			for edge in [-.94,.94]: _box(upper,Vector3(x+edge,1.75,z*1.01),Vector3(.10,1.5,.09),"675c45")
@@ -202,15 +218,23 @@ func _shell(room: Dictionary,color: Color) -> void:
 		for edge in [-.75,.75]: _box(upper,Vector3(x+edge,1.8,-4.18),Vector3(.30,1.4,.035),"b4aa87")
 	var pivot := Node3D.new()
 	pivot.name = "DoorPivot"
-	pivot.position = Vector3(-.9,0,4.4)
+	pivot.position = Vector3(door_x-door_w*.5,0,4.4)
 	home.add_child(pivot)
-	_box(pivot,Vector3(.9,1.14,0),Vector3(1.8,2.28,.13),"67533c")
-	for x in [.12,.6,1.08,1.56]: _box(pivot,Vector3(x,1.15,.074),Vector3(.035,2.12,.035),"8b7351")
-	_box(pivot,Vector3(1.55,1.05,.12),Vector3(.10,.06,.1),"b79855")
-	var door_body := _solid(room,"EntryDoor",Vector3(.9,1.14,0),Vector3(1.8,2.28,.16),pivot)
+	if painted:
+		# A folha enche exatamente o vão pintado e leva a imagem da porta do pacote.
+		var leaf_h: float = door.height
+		_box(pivot,Vector3(door_w*.5,leaf_h*.5,0),Vector3(door_w,leaf_h,.13),"67533c")
+		PAINTED.dress_door(pivot,room.index,door_w,leaf_h,.13)
+	else:
+		_box(pivot,Vector3(.9,1.14,0),Vector3(1.8,2.28,.13),"67533c")
+		for x in [.12,.6,1.08,1.56]: _box(pivot,Vector3(x,1.15,.074),Vector3(.035,2.12,.035),"8b7351")
+		_box(pivot,Vector3(1.55,1.05,.12),Vector3(.10,.06,.1),"b79855")
+	var door_body := _solid(room,"EntryDoor",Vector3(door_w*.5,1.14,0),Vector3(door_w,2.28,.16),pivot)
 	room.door = pivot
 	room.door_body = door_body
-	for side in [-1.0,1.0]:
+	# O telhado de duas águas pintado (do kit) substitui as duas lajes de chapa; o
+	# telhadinho da varanda continua 3D e some junto no recorte.
+	for side in ([] if painted else [-1.0,1.0]):
 		_box(roof,Vector3(side*3.6,3.65,0),Vector3(7.55,.16,10.4),"865f48",Vector3(0,0,-side*.19))
 		for z in range(-5,6): _box(roof,Vector3(side*3.6,3.77,z),Vector3(7.55,.05,.07),"9a7254",Vector3(0,0,-side*.19))
 	_box(roof,Vector3(0,2.92,5.65),Vector3(9,.12,2.5),"716b50",Vector3(.08,0,0))
@@ -219,7 +243,8 @@ func _shell(room: Dictionary,color: Color) -> void:
 		_solid(room,"PorchPost",Vector3(x,1.43,6.55),Vector3(.14,2.86,.14))
 	_bench(room,Vector3(-2.8,0,5.9))
 	_light(home,Vector3(0,2.55,-.4),"ffe1b2")
-	_light(home,Vector3(.9,2.3,4.9),"ffcf89")
+	_light(home,Vector3(door_x+.9,2.3,4.9),"ffcf89")
+	if painted: room.painted_shell = PAINTED.build_shell(room)
 
 func _furnish(room: Dictionary,index: int) -> void:
 	var home: Node3D = room.root

@@ -1,0 +1,35 @@
+{
+	"style": "casa-rural-chapa-b",
+	"module": [
+		12.6,
+		3.004
+	],
+	"side": [
+		8.6,
+		4.209
+	],
+	"eave": 0.3,
+	"snow_roof": false,
+	"openings": {
+		"front": [
+			{
+				"rect": [
+					0.3728,
+					0.3002,
+					0.5157,
+					1.0
+				],
+				"leaf": true
+			}
+		],
+		"back": []
+	},
+	"doors": {
+		"front": [
+			0.3728,
+			0.3002,
+			0.5157,
+			1.0
+		]
+	}
+}
