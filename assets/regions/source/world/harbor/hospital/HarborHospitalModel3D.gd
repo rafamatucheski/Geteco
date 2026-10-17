@@ -9,6 +9,18 @@ var public_walkup_enabled := false
 var open_amount := 0.0
 var materials: Dictionary = {}
 const OVERHEAD_LAYER := 2
+## Ala oeste pintada (frente BAY MEDICAL, fundos, lateral e telhado são imagens do
+## PaintedFacadeKit). Pegada em px do modelo: x -130..30, y -115..115, parede de 5,0 m.
+const PAINTED_STYLE := "clinica-oeste-v2"
+const WEST_CENTER_PX := Vector2(-50.0, 0.0)
+const WEST_SIZE_PX := Vector2(160.0, 230.0)
+const WEST_HEIGHT := 5.0
+## Descida dos equipamentos de telhado: a laje antiga ficava em 5,265 m e a pintada
+## em 5,0 m, então o que apoiava na antiga flutuaria 0,25 m sobre a pintada.
+const PAINTED_ROOF_DROP := 0.25
+## Nó do kit pintado (null com GETECO_PAINTED_CLINIC=0, GETECO_PAINTED_FACADES=0 ou
+## fora da fábrica urbana).
+var painted_west: Node3D
 
 func overhead(mesh: MeshInstance3D) -> MeshInstance3D:
 	mesh.layers = OVERHEAD_LAYER
@@ -39,7 +51,68 @@ func box(point: Vector2, size: Vector2, bottom: float, height: float, color: Col
 	parent.add_child(node)
 	return node
 
+## Interruptor da ala oeste pintada: respeita o do kit (GETECO_PAINTED_FACADES) e tem o seu
+## (GETECO_PAINTED_CLINIC=0 volta às caixas antigas para A/B). Só na versão com a entrada
+## pública por onde o jogador passa (a da fábrica urbana).
+func painted_west_enabled() -> bool:
+	# Ligado por padrão a pedido do usuário (16/10), sem a rodada final de verificação completa.
+	return public_walkup_enabled and PaintedFacadeKit.enabled() and OS.get_environment("GETECO_PAINTED_CLINIC") != "0"
+
+## Caixa que continua existindo só pela colisão (e pelo `interior_solid_id`): o visual
+## fica escondido porque a ala oeste pintada ocupa o mesmo lugar. A colisão derivada
+## (UrbanBuildingFactory.finalize_building) lê o AABB da malha, não a visibilidade.
+func _collision_only(node: MeshInstance3D, painted: bool) -> MeshInstance3D:
+	if painted: node.visible = false
+	return node
+
+func _build_painted_west() -> void:
+	var size := Vector3(WEST_SIZE_PX.x / PPM, WEST_HEIGHT, WEST_SIZE_PX.y / (PPM * FLOOR_RATIO))
+	var kit_parent := Node3D.new()
+	kit_parent.name = "PaintedWestWing"
+	kit_parent.position = floor_point(WEST_CENTER_PX)
+	add_child(kit_parent)
+	# Sem colisão do kit (as caixas escondidas já a fazem) e sem porta pintada: a entrada
+	# é a porta deslizante 3D (`public_leaves`).
+	painted_west = PaintedFacadeKit.build(kit_parent, PAINTED_STYLE, size, null, NAN, {"snow": false})
+	# O vão pintado é sem folha e o kit põe um corredor escuro atrás dele; aqui a entrada
+	# real é a porta 3D, e o corredor seria um beco falso. No lugar, o recuo de 1,37 m da
+	# entrada (o da antiga caixa de ala) ganha um forro claro.
+	for corridor in painted_west.find_children("Corridor", "MeshInstance3D", true, false):
+		corridor.get_parent().remove_child(corridor)
+		corridor.free()
+	_add_entry_liner(kit_parent)
+	# finalize_building cria colisão trimesh para toda malha larga com y < 2,8 m; a das
+	# laterais pintadas (paredes planas na mesma face das caixas escondidas) seria só
+	# redundante. Um corpo vazio faz a rotina pular a malha (corpo sem forma, inerte).
+	var sides := painted_west.get_node_or_null("Sides")
+	if sides != null:
+		var marker := StaticBody3D.new()
+		marker.name = "NoDerivedCollision"
+		marker.collision_layer = 0
+		marker.collision_mask = 0
+		sides.add_child(marker)
+
+## Forro do recuo atrás da folha deslizante: fundo, laterais, teto e piso do vão pintado
+## (x -32..30 px, 2,1 m de altura, do plano da fachada até a parede de fundo em y=96 px).
+func _add_entry_liner(parent: Node3D) -> void:
+	var liner := MeshInstance3D.new()
+	liner.name = "EntryLiner"
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(62.0 / PPM, 2.1, 19.0 / (PPM * FLOOR_RATIO))
+	liner.mesh = mesh
+	var liner_material := StandardMaterial3D.new()
+	liner_material.albedo_color = Color("c9cdc3")
+	liner_material.roughness = 0.85
+	# Só as faces de dentro: de fora se vê o fundo do recuo pelo vão, nunca o forro por fora.
+	liner_material.cull_mode = BaseMaterial3D.CULL_FRONT
+	liner.material_override = liner_material
+	liner.position = floor_point(Vector2(-1.0, 105.5), 1.05) - parent.position
+	liner.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	parent.add_child(liner)
+
 func _ready() -> void:
+	var painted := painted_west_enabled()
+	var roof_drop := PAINTED_ROOF_DROP if painted else 0.0
 	var ivory := Color("dddcd0")
 	var teal := Color("337f80")
 	var charcoal := Color("35444a")
@@ -48,10 +121,10 @@ func _ready() -> void:
 	if public_walkup_enabled:
 		# Preserve the ward footprint, with a standing vestibule behind the
 		# public sliding leaves. Ambulance geometry is independent to the east.
-		box(Vector2(-50, -9.5), Vector2(160, 211), 0, 5.0, ivory)
-		var west_jamb := box(Vector2(-81, 105.5), Vector2(98, 19), 0, 5.0, ivory)
+		_collision_only(box(Vector2(-50, -9.5), Vector2(160, 211), 0, 5.0, ivory), painted)
+		var west_jamb := _collision_only(box(Vector2(-81, 105.5), Vector2(98, 19), 0, 5.0, ivory), painted)
 		west_jamb.set_meta("interior_solid_id", "hospital_public_west_jamb")
-		box(Vector2(-1, 105.5), Vector2(62, 19), 2.1, 2.9, ivory)
+		_collision_only(box(Vector2(-1, 105.5), Vector2(62, 19), 2.1, 2.9, ivory), painted)
 	else:
 		box(Vector2(-50, 0), Vector2(160, 230), 0, 5.0, ivory)
 	box(Vector2(80, -67.5), Vector2(100, 95), 0, 4.0, ivory)
@@ -66,14 +139,17 @@ func _ready() -> void:
 	for x in range(54, 132, 13):
 		box(Vector2(x, 40), Vector2(0.7, 50), 0.09, 0.008, Color("a5afb0"))
 	# Clean parapets and inset roof surfaces retain a readable silhouette.
-	box(Vector2(-50, 0), Vector2(164, 234), 5.0, 0.23, Color("eeeade"))
-	box(Vector2(-50, 0), Vector2(151, 221), 5.24, 0.025, Color("78878b"))
+	# Parapeito e laje do telhado da ala oeste: o telhado pintado e a cornija do kit tomam o lugar.
+	if not painted:
+		box(Vector2(-50, 0), Vector2(164, 234), 5.0, 0.23, Color("eeeade"))
+		box(Vector2(-50, 0), Vector2(151, 221), 5.24, 0.025, Color("78878b"))
 	box(Vector2(80, -54.5), Vector2(103, 124), 4.0, 0.20, Color("eeeade"))
 	box(Vector2(80, -54.5), Vector2(93, 114), 4.2, 0.03, Color("718387"))
 	var service_roof := overhead(box(Vector2(67.5, 94.5), Vector2(78, 42), 3.1, 0.17, Color("eeeade")))
 	service_roof.name = "AdmissionWingRoof"
 	# Repeated, recessed windows with raised fins on the street frontage.
-	for x in [-110.0, -76.0, -42.0, -8.0, 26.0]:
+	# Janelas da frente da ala oeste: a frente pintada já as traz.
+	for x in ([] if painted else [-110.0, -76.0, -42.0, -8.0, 26.0]):
 		for level in [1.4, 3.3]:
 			if level < 2.0 and x > -30.0: continue # Public doorway occupies this facade band.
 			var window_height := 1.0 if level > 3.0 else 1.15
@@ -84,9 +160,9 @@ func _ready() -> void:
 		box(Vector2(130.5, y), Vector2(1.2, 23), 1.3, 1.85, charcoal)
 		box(Vector2(131.2, y), Vector2(0.6, 20), 1.4, 1.65, glazing, self, true)
 		box(Vector2(133, y-13), Vector2(5, 1.2), 0.4, 3.4, Color("c7cfca"))
-	box(Vector2(-40, 116.5), Vector2(179, 2), 2.9, 0.14, teal)
+	if not painted: box(Vector2(-40, 116.5), Vector2(179, 2), 2.9, 0.14, teal)
 	if public_walkup_enabled:
-		box(Vector2(-81, 116.5), Vector2(97, 2), 0.1, 0.35, Color("6c8182"))
+		if not painted: box(Vector2(-81, 116.5), Vector2(97, 2), 0.1, 0.35, Color("6c8182"))
 		box(Vector2(41, 116.5), Vector2(17, 2), 0.1, 0.35, Color("6c8182"))
 	else:
 		box(Vector2(-40, 116.5), Vector2(179, 2), 0.1, 0.35, Color("6c8182"))
@@ -131,33 +207,39 @@ func _ready() -> void:
 	box(Vector2(36, 40), Vector2(2, 68), 0, 2.75, Color("acc2bf"))
 	box(Vector2(62, 7), Vector2(52, 2), 0, 2.7, Color("e0e4d9"))
 	box(Vector2(62, 73), Vector2(52, 2), 0, 2.7, Color("e0e4d9"))
-	# Rooftop plant, louvres and a restrained medical cross.
+	# Rooftop plant, louvres and a restrained medical cross. Com o telhado pintado (5,0 m,
+	# não a laje antiga de 5,265 m) o equipamento desce junto para não flutuar; as juntas
+	# finas da laje antiga somem, o telhado pintado já tem as suas.
 	for x in [-88.0, -53.0]:
-		box(Vector2(x, -72), Vector2(25, 34), 5.25, 0.7, Color("b7c1be"))
-		for line in 5: box(Vector2(x, -85+line*6), Vector2(20, 1.4), 5.96, 0.02, charcoal)
+		box(Vector2(x, -72), Vector2(25, 34), 5.25 - roof_drop, 0.7, Color("b7c1be"))
+		for line in 5: box(Vector2(x, -85+line*6), Vector2(20, 1.4), 5.96 - roof_drop, 0.02, charcoal)
 	for y in [-40.0, 65.0]:
-		box(Vector2(-85, y), Vector2(35, 24), 5.27, 0.30, charcoal)
-		box(Vector2(-85, y), Vector2(31, 20), 5.58, 0.04, glazing, self, true)
-		box(Vector2(-85, y), Vector2(1.2, 20), 5.64, 0.03, Color("d2ddd6"))
-	for y in range(-105, 111, 27):
-		box(Vector2(-50, y), Vector2(147, 0.5), 5.27, 0.008, Color("6d8083"))
-	box(Vector2(-4, -11), Vector2(44, 44), 5.27, 0.04, teal)
-	box(Vector2(-4, -11), Vector2(9, 30), 5.32, 0.03, Color("f0eddf"))
-	box(Vector2(-4, -11), Vector2(30, 9), 5.32, 0.03, Color("f0eddf"))
-	var title := Label3D.new()
-	title.name = "HospitalName"
-	title.text = "BAY MEDICAL"
-	title.font_size = 64
-	title.pixel_size = 0.006
-	title.position = floor_point(Vector2(-43, 117.7), 4.75)
-	title.modulate = Color("285d61")
-	title.outline_size = 0
-	var nameplate := box(Vector2(-43, 117.35), Vector2(76, 0.5), 4.4, 0.6, Color("eeeade"))
-	nameplate.name = "HospitalNameplate"
-	add_child(title)
+		box(Vector2(-85, y), Vector2(35, 24), 5.27 - roof_drop, 0.30, charcoal)
+		box(Vector2(-85, y), Vector2(31, 20), 5.58 - roof_drop, 0.04, glazing, self, true)
+		box(Vector2(-85, y), Vector2(1.2, 20), 5.64 - roof_drop, 0.03, Color("d2ddd6"))
+	if not painted:
+		for y in range(-105, 111, 27):
+			box(Vector2(-50, y), Vector2(147, 0.5), 5.27, 0.008, Color("6d8083"))
+	box(Vector2(-4, -11), Vector2(44, 44), 5.27 - roof_drop, 0.04, teal)
+	box(Vector2(-4, -11), Vector2(9, 30), 5.32 - roof_drop, 0.03, Color("f0eddf"))
+	box(Vector2(-4, -11), Vector2(30, 9), 5.32 - roof_drop, 0.03, Color("f0eddf"))
+	# A frente pintada já traz BAY MEDICAL e a cruz: sem letreiro nem placa 3D.
+	if not painted:
+		var title := Label3D.new()
+		title.name = "HospitalName"
+		title.text = "BAY MEDICAL"
+		title.font_size = 64
+		title.pixel_size = 0.006
+		title.position = floor_point(Vector2(-43, 117.7), 4.75)
+		title.modulate = Color("285d61")
+		title.outline_size = 0
+		var nameplate := box(Vector2(-43, 117.35), Vector2(76, 0.5), 4.4, 0.6, Color("eeeade"))
+		nameplate.name = "HospitalNameplate"
+		add_child(title)
 	# Side cross marks emergency admission without adding explanatory signage.
 	box(Vector2(108, -7), Vector2(2, 19), 2.7, 0.10, Color("e4ede5"))
 	box(Vector2(108, -7), Vector2(2, 5), 2.3, 0.92, Color("e4ede5"))
+	if painted: _build_painted_west()
 
 func _apron(point: Vector2, size: Vector2, height: float) -> void:
 	var floor_mesh := box(point,size,0,height,Color("b4babc"))

@@ -1,0 +1,28 @@
+{
+	"style": "clinica-oeste-v2",
+	"module": [
+		8.9,
+		5.012
+	],
+	"side": [
+		16.6,
+		4.979
+	],
+	"eave": 0.0,
+	"snow_roof": false,
+	"openings": {
+		"front": [
+			{
+				"rect": [
+					0.6128,
+					0.5802,
+					1.0,
+					1.0
+				],
+				"leaf": false
+			}
+		],
+		"back": []
+	},
+	"doors": {}
+}
