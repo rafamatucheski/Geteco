@@ -18,6 +18,8 @@ func configure(owner_session) -> void:
 	if not is_instance_valid(presentation):
 		presentation = preload("res://runtime/cold/HeatPresentation.gd").new()
 		add_child(presentation)
+		# configure roda na montagem da sessão, sob a cortina: as fontes nascem aqui, não no jogo.
+		presentation.prewarm()
 func _process(delta: float) -> void:
 	if not active or not is_instance_valid(session) or not session.ready_for_play: return
 	var point: Vector3 = session.world.driving.car.global_position if session.world.driving.occupied else session.world.player.global_position

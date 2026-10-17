@@ -55,15 +55,54 @@ valem comparações dentro do mesmo bloco de rodadas. Os p50 abaixo não devem s
 
   O maior span `mountain.grass.build` na rodada fatiada ficou em ~2,0 ms.
 
+## Causa 3: fontes de calor do frio montadas no `_process` (t≈107,6 s, 47 ms)
+
+- Evidência: o quadro de 54-57 ms de t≈107,6 s tinha `early_to_late` ~47 ms e nenhum span. `early_to_late` mede só os
+  `_process` dos nós (os passos de física caem em `post_render_to_next_callback`). Uma sonda temporária por subárvore
+  (uma marca como primeiro filho de cada nó de `/root`, de `World3D` e dos contêineres dentro dele; prioridade igual
+  processa em ordem de árvore) pôs 43,6 e 44,9 ms, nas duas rodadas em que o pico caiu, entre `/root/World3D/Fishing`
+  (sem `_process`) e o nó seguinte, `ColdSurvival`. O `_process` dele chama `HeatPresentation.update_sources`, que
+  monta inteiro (fogo, pedras/braseiro, colisão) cada fonte de calor ao entrar no raio de 80 m e a libera ao sair.
+  Perto de (656,-371) ficam a fogueira do lago (`smuggler_camp`, 34 m) e o abrigo da patrulha (26 m).
+- O pico é intermitente: caiu em 10 de 15 rodadas sem a correção (todas as de 17/10 na rota, exports grama a calor). Coincide com o summit_suv que o estacionamento de
+  beira de estrada põe na vaga `snow_0` só na 3ª volta. Uma rodada com `--no-roadside-parking` não teve o pico, mas
+  essa relação não foi explicada (veja "Não verificado").
+- Correção: as 7 fontes são montadas uma vez sob a cortina (`HeatPresentation.prewarm`, chamado em
+  `ColdSurvival.configure`) e, fora do raio, **estacionadas** (escondidas, colisão zerada, processo desligado) em vez
+  de liberadas. A variante "invólucro" (fonte já fornecida pelo trecho) é montada na 1ª vez e também reaproveitada.
+  Span `cold.heat_source.build` em qualquer montagem em jogo. `GETECO_HEAT_POOL=0` volta ao jeito antigo.
+- Medição (export `artifacts/export-20261017-calor`, intercalado):
+
+| cenário | p50 ms | p95 ms | p99 ms | pior ms | > 33 ms | quadro ~47 ms em `_process` (~107 s) | montagens em jogo |
+|---|---|---|---|---|---|---|---|
+| pool r1 | 4,89 | 9,41 | 11,57 | 45,49 | 1 | não | 0 |
+| `GETECO_HEAT_POOL=0` r1 | 4,93 | 9,64 | 11,92 | 58,58 | 1 | sim (108,2 s, 47,5 ms) | 9,3 e 5,5 ms |
+| pool r2 | 5,03 | 9,60 | 11,82 | 49,64 | 1 | não | 0 |
+| `GETECO_HEAT_POOL=0` r2 | 6,45 | 11,80 | 14,51 | 63,33 | 1 | não (intermitente) | 12,3 e 8,8 ms |
+
+  Com pool não houve montagem em jogo e nem o quadro de 47 ms. O quadro que ainda passa de 33 ms nas rodadas com pool
+  é **outro** (abaixo). Dois sorteios sem o pico, num caso que aparece em ~2/3 das rodadas, ainda deixam ~1 chance em
+  9 de ser acaso: o nome da causa vem da sonda, não só do A/B.
+
+## Também corrigido de passagem: cabine medida pela GPU (8,5-8,9 ms em t≈4,2 s)
+
+- `VehicleInterior._derive` lia os vidros com `surface_get_arrays` (volta da GPU) na 1ª vez que o jogador chegava a
+  1,8 m de um modelo (`Driving._process` → `INTERIOR.prewarm` → `spec`). Agora os vértices dos vidros de cada modelo da
+  frota são lidos sob a cortina (`_prewarm_fleet_shaders` → `VehicleInterior.cache_glass`) e o recorte da porta
+  herda o cache ao trocar a malha. Span `vehicle.interior.spec`; `GETECO_INTERIOR_SPEC_CACHE=0` volta ao antigo.
+- Medição (export `artifacts/export-20261017-interior`, intercalado): `vehicle.interior.spec` de 8,5 e 8,9 ms com o
+  interruptor desligado, nenhum span ≥ 2 ms com o cache (2 rodadas de cada). Não era o pico de 107 s.
+
 ## O que sobra (não resolvido)
 
-- **t≈107,6 s, 54-57 ms**: `early_to_late` ~47 ms sem span, uma vez por rodada, no mesmo instante nas duas rodadas
-  fatiadas (3ª volta, perna (660,-425)→(650,-290)). É o único quadro > 33 ms que fica dentro da medição. Causa não
-  identificada; precisa de span no processo (o candidato óbvio é o streaming de um trecho, mas não foi provado).
+- **Passo de física de 40-43 ms sem span no começo da 3ª volta** (t≈82-87 s, jogador em (705,-296) ou (745,-312),
+  perto das tocas): `physics_callback_ms` 40-43 em 1 passo. Apareceu em 3 de 5 rodadas recentes, com e sem o pool de
+  calor. Suspeita, não provada: os ursos estacionados acordando (`MountainBear3D.wake`, commit 62797e0b) ao voltar ao
+  raio da toca. É hoje o quadro > 33 ms que sobra dentro da medição.
 - Primeira volta (aquecimento, fora da medição mas depois de jogável): `stream.mountain.surfaces` de 27-35 ms em
   t≈13,8 s em toda rodada, e 1-2 quadros de 33-36 ms em `render_bracket` em t≈4,5 e 16,6 s.
 - t≈114 s, ~40-45 ms em `post_render`: fim do benchmark (gravação do resultado), fora da medição.
-- Por isso o pior quadro não caiu (54-57 ms): ele vem do item de t≈107,6 s, não das causas acima.
+- Com a causa 3 corrigida o pior quadro da medição ficou em 45-50 ms (o passo de física acima), não 54-58 ms.
 
 ## Não verificado
 
@@ -75,4 +114,9 @@ valem comparações dentro do mesmo bloco de rodadas. Os p50 abaixo não devem s
   estacionamento (visível = presente, ursa volta curada), mas ele não roda até o ambiente de teste ser consertado.
 - Os erros de motor `Condition "p_elem->_root" is true` (6 por execução) aparecem com e sem o estacionamento: não vêm
   desta mudança, e a origem não foi investigada.
+- Fontes de calor: não olhei no jogo se a fogueira estacionada reaparece certa (fogo animando, colisão) ao voltar;
+  `tests/cold/test_admission.gd` passou (11 verificações). Por que o pico só caía com o estacionamento de beira de
+  estrada ligado não foi explicado; a montagem da fonte não teve span lento no quadro de 47 ms do cenário antigo, então
+  o passo exato dentro de `ColdSurvival._process` (montagem, troca de invólucro ou descarte) não foi isolado.
+- Exports pararam de sair sozinhos depois de gravar o pacote (4 de 6); usei `GODOT_RUN_TIMEOUT=240` no export.
 - Nada disso foi olhado no jogo (`Jogar.cmd`) por uma pessoa.

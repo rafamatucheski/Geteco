@@ -4,6 +4,71 @@ const SOURCES = preload("res://runtime/cold/OriginalHeatSources.gd")
 var visuals: Dictionary = {}
 var provider_ids: Dictionary = {}
 var elapsed := 1.0
+## Fontes montadas uma vez e estacionadas (escondidas, sem colisão, sem processo) em vez de liberadas.
+## Antes cada entrada no raio de 80 m montava fogo, pedras e colisão no _process: na serra (17/10) a sonda
+## por subárvore achou 43-45 ms nesse ponto (ColdSurvival), o último quadro > 33 ms da rota do benchmark.
+## As variantes completas são montadas em `prewarm` sob a cortina. GETECO_HEAT_POOL=0 volta ao antigo.
+static var pool_enabled := OS.get_environment("GETECO_HEAT_POOL") != "0"
+var _parked: Dictionary = {}
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+
+## Sob a cortina: monta a versão completa de cada fonte e a deixa estacionada.
+func prewarm() -> void:
+	if not pool_enabled: return
+	for source in SOURCES.SOURCES:
+		var key := _key(source.id, null)
+		if _parked.has(key): continue
+		var visual := _build(source.id, null)
+		add_child(visual)
+		visual.position = SOURCES.to_world(source.point)
+		if source.id == "resort_brazier": visual.build("brazier")
+		_install_solids(visual, source.id)
+		_park(visual, key)
+
+static func _key(id: String, existing: Node3D) -> String:
+	if existing == null: return id + "|full"
+	return id + "|wrap|" + str(existing.get_meta("native_heat_has_effects",false)) + "|" + str(existing.get_meta("native_heat_has_solids",false))
+
+func _build(id: String, existing: Node3D) -> Node3D:
+	var visual: Node3D
+	if existing != null:
+		# Borrow the streamed source without reparenting or freeing it.
+		# This owned wrapper contains only missing effects/collisions.
+		visual = Node3D.new()
+		visual.set_meta("reuses_native_heat_source",true)
+		if not existing.get_meta("native_heat_has_effects",false):
+			var flame := preload("res://runtime/cold/HearthEffects.gd").new()
+			flame.scale = Vector3.ONE*1.5
+			flame.position = existing.get_meta("native_heat_flame_offset",Vector3(0,.15,0))
+			visual.add_child(flame)
+	elif id == "resort_brazier":
+		visual = preload("res://runtime/cold/ResortBrazier.gd").new()
+	elif id in ["logging_camp","summit_camp","smuggler_camp"]:
+		visual = _campfire()
+	else:
+		# Original transit brazier materializes V1 heater-only markers explicitly.
+		visual = preload("res://runtime/cold/TransitBrazier.gd").new()
+	visual.name = id
+	return visual
+
+func _park(visual: Node3D, key: String) -> void:
+	visual.set_meta("heat_pool_key", key)
+	for body: CollisionObject3D in visual.find_children("*","CollisionObject3D",true,false):
+		if not body.has_meta("heat_pool_layer"): body.set_meta("heat_pool_layer", body.collision_layer)
+		body.collision_layer = 0
+	visual.hide()
+	visual.process_mode = Node.PROCESS_MODE_DISABLED
+	_parked[key] = visual
+
+func _unpark(key: String) -> Node3D:
+	var visual: Variant = _parked.get(key)
+	_parked.erase(key)
+	if not is_instance_valid(visual) or visual.is_queued_for_deletion(): return null
+	for body: CollisionObject3D in visual.find_children("*","CollisionObject3D",true,false):
+		body.collision_layer = int(body.get_meta("heat_pool_layer", 1))
+	visual.process_mode = Node.PROCESS_MODE_INHERIT
+	visual.show()
+	return visual
 func update_sources(delta: float,point: Vector3,enabled: bool,retain_existing: bool = false,radius: float = 80.0) -> void:
 	elapsed += delta
 	if elapsed<.25: return
@@ -27,29 +92,18 @@ func update_sources(delta: float,point: Vector3,enabled: bool,retain_existing: b
 			if visuals.has(source.id):
 				if is_instance_valid(visuals[source.id]) and not visuals[source.id].is_queued_for_deletion() and provider_ids.get(source.id,0) == provider_id: continue
 				_discard(source.id)
-			var visual: Node3D
-			if existing != null:
-				# Borrow the streamed source without reparenting or freeing it.
-				# This owned wrapper contains only missing effects/collisions.
-				visual = Node3D.new()
-				visual.set_meta("reuses_native_heat_source",true)
-				if not existing.get_meta("native_heat_has_effects",false):
-					var flame := preload("res://runtime/cold/HearthEffects.gd").new()
-					flame.scale = Vector3.ONE*1.5
-					flame.position = existing.get_meta("native_heat_flame_offset",Vector3(0,.15,0))
-					visual.add_child(flame)
-			elif source.id == "resort_brazier":
-				visual = preload("res://runtime/cold/ResortBrazier.gd").new()
-			elif source.id in ["logging_camp","summit_camp","smuggler_camp"]:
-				visual = _campfire()
-			else:
-				# Original transit brazier materializes V1 heater-only markers explicitly.
-				visual = preload("res://runtime/cold/TransitBrazier.gd").new()
-			visual.name = source.id
-			add_child(visual)
-			visual.global_position = at
-			if source.id == "resort_brazier" and existing == null: visual.build("brazier")
-			if existing == null or not existing.get_meta("native_heat_has_solids",false): _install_solids(visual,source.id)
+			var key := _key(source.id, existing)
+			var visual: Node3D = _unpark(key) if pool_enabled else null
+			if visual == null:
+				var began := STALL_WORK.begin()
+				visual = _build(source.id, existing)
+				add_child(visual)
+				visual.global_position = at
+				if source.id == "resort_brazier" and existing == null: visual.build("brazier")
+				if existing == null or not existing.get_meta("native_heat_has_solids",false): _install_solids(visual,source.id)
+				if pool_enabled: visual.set_meta("heat_pool_key", key)
+				STALL_WORK.finish_slow("cold.heat_source.build", began, 2000, visual)
+			# Colisão religada ou nova: a admissão espera um passo de física antes de confiar nela.
 			visual.set_meta("thermal_created_frame",Engine.get_physics_frames())
 			visuals[source.id] = visual
 			provider_ids[source.id] = provider_id
@@ -60,7 +114,9 @@ func update_sources(delta: float,point: Vector3,enabled: bool,retain_existing: b
 
 func _discard(id: String) -> void:
 	var visual: Variant = visuals.get(id)
-	if is_instance_valid(visual):
+	if pool_enabled and is_instance_valid(visual) and visual.has_meta("heat_pool_key") and not _parked.has(str(visual.get_meta("heat_pool_key"))):
+		_park(visual, str(visual.get_meta("heat_pool_key")))
+	elif is_instance_valid(visual):
 		# Remove owned solids immediately before replacing the wrapper; deferred
 		# deletion must not leave overlapping old/new colliders in admission queries.
 		for body: CollisionObject3D in visual.find_children("*","CollisionObject3D",true,false):
