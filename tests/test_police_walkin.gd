@@ -68,9 +68,15 @@ func run() -> void:
 	check(is_zero_approx(facade.open_amount), "police doors start closed")
 	var vestibule_point := door - Vector3(0, 0, .35) + Vector3.UP * .14
 	check(not session.position_clear(vestibule_point), "closed doors block the full actor")
+	# Desde 28/09 a porta abre por empurrão (WeaponShopEntrance._push_requested): exige
+	# encostar na folha E a intenção de movimento para dentro, não basta estar perto.
+	world.player.teleport(door + Vector3(0, .08, .3))
+	Input.action_press("move_up")
+	var pushed_open: bool = await wait_until(func(): return facade.open_amount > .9, 60)
+	Input.action_release("move_up")
+	check(pushed_open, "pushing inward opens both physical doors")
 	world.player.teleport(door + Vector3(0, .08, 2.0))
-	await frames(28)
-	check(facade.open_amount > .9, "proximity opens both physical doors")
+	await frames(2)
 	check(session.position_clear(vestibule_point), "open vestibule admits the full actor")
 	check(session.nearest().get("id", "") != "enter", "entry requires no E action")
 	await capture("exterior")

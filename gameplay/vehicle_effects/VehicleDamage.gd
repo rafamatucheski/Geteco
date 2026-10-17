@@ -155,7 +155,9 @@ func _stall_apply_wear(wear: float) -> void:
 		if vehicle.has_meta("tuning_appearance"):
 			base = vehicle.get_meta("tuning_appearance").damage_base(material,base)
 		material.roughness = lerpf(base.roughness, maxf(base.roughness, .68), wear)
-		material.metallic = lerpf(base.metallic, base.metallic * .55, wear)
+		# Metálico fica como está: reduzi-lo a 55% trocava o reflexo do ambiente por cor difusa
+		# e a pintura metalizada mudava de cor depois da batida. O brilho cai só pela rugosidade.
+		material.metallic = base.metallic
 		material.clearcoat_enabled = base.clearcoat and wear < .4
 		if stage == _stage: continue
 		material.detail_enabled = stage > 0

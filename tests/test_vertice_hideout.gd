@@ -73,6 +73,10 @@ func run() -> void:
 	await frames(20)
 	check(not is_equal_approx(height,gun.visual.get_child(0).position.y),"Secret weapon floats while the room is active")
 	check(await walk(gun.position+Vector3(0,0,1.1)),"Weapon approach remains physically walkable")
+	# A M4A1 traz 30+180 tiros e a grade limita a reserva a 99 por arma (o excedente vira
+	# bloco de munição na bagagem). Sem mochila só há 2 bolsos, então a coleta é recusada
+	# por "ammo_full" de propósito; o jogador precisa de uma mochila para levar o prêmio.
+	if session.state.economy.grid_enabled(): check(session.state.economy.grid_equip_bag("backpack"),"Player carries a backpack for the secret weapon's ammunition")
 	world.player.teleport(gun.position+Vector3.UP*.04)
 	var health: float = world.gameplay.health
 	world.gameplay.health = 0
