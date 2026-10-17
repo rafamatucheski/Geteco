@@ -51,10 +51,21 @@ const LAMP_CLEARANCE := 9.0
 static var _lamp_meshes: Dictionary = {}
 const DECAL_Y := 0.034
 const WORKSHOP_VEHICLE_ACCESS := [Rect2(153.0,100.8,10.0,10.7),Rect2(167.0,97.2,11.1,5.5),Rect2(156.8,109.7,33.0,2.4)]
-const SHADOW_CASTERS := ["water_tank", "cooling_tower", "signal_pole", "dumpster", "phone_booth", "billboard_frame", "ac_unit", "fe_platform", "fe_stair", "fe_stair_m", "window_ac", "laundry",
+# "ac_unit" fica fora: é a peça de telhado mais numerosa (peso 0.2 em ROOF_PROPS) e só
+# aparece no telhado, onde a sombra dela quase não se vê e custa passe de sombra em cada
+# instância. Caixa-d'água e torre de resfriamento continuam: são elas que dão a silhueta.
+const SHADOW_CASTERS := ["water_tank", "cooling_tower", "signal_pole", "dumpster", "phone_booth", "billboard_frame", "fe_platform", "fe_stair", "fe_stair_m", "window_ac", "laundry",
 	# Mobília de calçada: sem sombra, lixeira/hidrante/jornaleiro pareciam soltos,
 	# flutuando sobre a calçada (relato do jogador em 2026-09-24).
 	"trash_can", "news_box", "mailbox", "hydrant", "stop_sign", "bench_seat", "planter", "bollard", "trash_bags"]
+# Corte por distância (m, até a peça) só para peças PEQUENAS de telhado: a câmera do
+# jogo fica 25 m acima e 25 m atrás do jogador (CameraRig.EXTERIOR_OFFSET) e o quadro
+# cobre uns 50 m em volta dele; nada além de 60-80 m aparece na tela de jogo. Em
+# 2026-10-16, quatro pontos da cidade não mostraram peça cortada dentro do quadro. Caixa-d'água, torre de resfriamento,
+# outdoor, beacon e neon ficam fora de propósito: formam a silhueta da cidade de longe.
+# O MultiMesh cobre o chunk inteiro (CELL = 64 m) e o Godot mede a distância até o
+# centro da AABB, por isso _flush soma meia diagonal da AABB a este valor.
+const ROOF_SMALL_RANGE := {"pigeons": 60.0, "roof_chairs": 60.0, "laundry": 65.0, "roof_garden": 70.0, "vent": 70.0, "antenna": 80.0, "dish": 75.0, "pipe_run": 65.0, "roof_hatch": 65.0, "skylight": 65.0, "satellite_row": 75.0}
 
 
 static func _workshop_driving(point: Vector2) -> bool:
@@ -236,6 +247,11 @@ static func _flush(chunk: Node3D, batches: Dictionary) -> void:
 		instance.multimesh = multimesh
 		instance.material_override = material
 		if not shadows: instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		if ROOF_SMALL_RANGE.has(kind):
+			# Meia diagonal da AABB: sem ela a peça no canto do chunk sumiria a ~25 m.
+			instance.visibility_range_end = float(ROOF_SMALL_RANGE[kind]) + multimesh.get_aabb().size.length() * 0.5
+			# Margem só como histerese (sem fade), para não piscar na borda do corte.
+			instance.visibility_range_end_margin = 4.0
 		chunk.add_child(instance)
 		built[kind] = multimesh
 		if kind == "signal_amber":
@@ -922,6 +938,8 @@ static func _rooftops(chunk: Node3D, _roof_context: Dictionary, batches: Diction
 				var akey := unit_key + "|roof|" + str(attempt)
 				var kind := _pick(ROOF_PROPS, _roll(akey) * 1.0)
 				if kind.is_empty(): continue
+				# "vent" cai no 0.5 padrão. BuildingLife._roof_life empurra outro vent (com
+				# vapor) fora deste sorteio, com STEAM_VENT_RADIUS 0.6; mantenha os dois coerentes.
 				var radius := 0.9 if kind in ["ac_unit", "roof_hatch"] else 0.5
 				if kind == "pipe_run": radius = 2.2
 				if kind in ["roof_shed", "roof_garden"]: radius = 1.6

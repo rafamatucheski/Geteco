@@ -179,32 +179,72 @@ static func _awning_small(t: SurfaceTool) -> void:
 
 ## Horta/vasos de telhado: jardineiras de madeira com plantas e um guarda-sol.
 static func _roof_garden(t: SurfaceTool) -> void:
+	# Visto do alto: a terra vira um quad só (a caixa de 4 cm tinha 5 faces escondidas
+	# dentro da jardineira) e as plantas viram cones de 4 lados — de longe a copa
+	# pontuda lê igual e cai de 54 para 36 vértices cada. Mesmos raios/alturas.
 	for x in [-0.9, 0.9]:
 		KIT.box(t, Vector3(x, 0.2, 0), Vector3(1.4, 0.4, 0.7), Color("7a5537"))
-		KIT.box(t, Vector3(x, 0.41, 0), Vector3(1.3, 0.04, 0.6), Color("4a3524"))
+		t.set_color(Color("4a3524"))
+		var a := Vector3(x - 0.65, 0.43, -0.3)
+		var b := Vector3(x + 0.65, 0.43, -0.3)
+		var c := Vector3(x + 0.65, 0.43, 0.3)
+		var d := Vector3(x - 0.65, 0.43, 0.3)
+		# Mesma ordem de KIT.box para a face de cima (normal para cima).
+		t.add_vertex(a); t.add_vertex(b); t.add_vertex(c)
+		t.add_vertex(a); t.add_vertex(c); t.add_vertex(d)
 		for p in 4:
 			var px: float = x - 0.5 + p * 0.33
-			KIT.cylinder(t, Vector3(px, 0.42, 0), 0.16, 0.34 + fmod(p * 0.17, 0.2), [Color("4f8a45"), Color("6aa04f"), Color("3f7a3a")][p % 3], 6, 0.05)
-	KIT.cylinder(t, Vector3(0, 0, 0.8), 0.03, 1.9, Color("8a8f90"), 5)
+			KIT.cylinder(t, Vector3(px, 0.42, 0), 0.16, 0.34 + fmod(p * 0.17, 0.2), [Color("4f8a45"), Color("6aa04f"), Color("3f7a3a")][p % 3], 4, 0.05)
+	# Haste de 3 cm fica sob o guarda-sol: 3 lados bastam para não parecer flutuar.
+	KIT.cylinder(t, Vector3(0, 0, 0.8), 0.03, 1.9, Color("8a8f90"), 3)
+	# O guarda-sol é a silhueta que se vê do alto: mantém 8 lados.
 	KIT.cylinder(t, Vector3(0, 1.75, 0.8), 0.9, 0.18, Color("d65a44"), 8, 0.05)
 
 
 ## Casinha de depósito/escada com porta e telhado de zinco.
 static func _roof_shed(t: SurfaceTool) -> void:
-	KIT.box(t, Vector3(0, 1.0, 0), Vector3(2.0, 2.0, 1.6), Color("a39b8c"))
-	KIT.box(t, Vector3(0, 2.07, 0.05), Vector3(2.2, 0.14, 1.8), Color("6e7577"))
-	KIT.box(t, Vector3(0.4, 0.85, 0.81), Vector3(0.8, 1.7, 0.04), Color("5a4a3c"))
-	KIT.box(t, Vector3(-0.55, 1.4, 0.81), Vector3(0.5, 0.4, 0.03), Color("2e3a40"))
+	# Quem vê do alto nunca vê o fundo das caixas, e porta/janela de 3–4 cm só mostram
+	# a face da frente: caixas sem fundo e porta/janela como um quad (144 -> 72 vértices).
+	# Faces na mesma ordem de KIT.box (normal para fora); índice: bit0=x, bit1=y, bit2=z.
+	var faces := {
+		"no_bottom": [[0, 1, 3, 2], [4, 6, 7, 5], [2, 3, 7, 6], [0, 2, 6, 4], [1, 5, 7, 3]],
+		"front": [[4, 6, 7, 5]],
+	}
+	var emit := func(center: Vector3, size: Vector3, color: Color, which: String) -> void:
+		var h := size * 0.5
+		t.set_color(color)
+		for f in faces[which]:
+			var q: Array[Vector3] = []
+			for i in f:
+				q.append(center + Vector3(h.x if i & 1 else -h.x, h.y if i & 2 else -h.y, h.z if i & 4 else -h.z))
+			t.add_vertex(q[0]); t.add_vertex(q[1]); t.add_vertex(q[2])
+			t.add_vertex(q[0]); t.add_vertex(q[2]); t.add_vertex(q[3])
+	emit.call(Vector3(0, 1.0, 0), Vector3(2.0, 2.0, 1.6), Color("a39b8c"), "no_bottom")
+	emit.call(Vector3(0, 2.07, 0.05), Vector3(2.2, 0.14, 1.8), Color("6e7577"), "no_bottom")
+	emit.call(Vector3(0.4, 0.85, 0.81), Vector3(0.8, 1.7, 0.04), Color("5a4a3c"), "front")
+	emit.call(Vector3(-0.55, 1.4, 0.81), Vector3(0.5, 0.4, 0.03), Color("2e3a40"), "front")
 
 
 ## Canto de convivência: duas cadeiras de praia e uma caixa térmica.
 static func _roof_chairs(t: SurfaceTool) -> void:
+	# As pernas de 3 cm somem sob o assento visto do alto (eram 144 dos 324 vértices):
+	# saem. Assento e caixa térmica perdem a face de baixo, que nunca aparece.
+	var no_bottom := [[0, 1, 3, 2], [4, 6, 7, 5], [2, 3, 7, 6], [0, 2, 6, 4], [1, 5, 7, 3]]
+	var emit := func(center: Vector3, size: Vector3, color: Color) -> void:
+		var h := size * 0.5
+		t.set_color(color)
+		for f in no_bottom:
+			var q: Array[Vector3] = []
+			for i in f:
+				q.append(center + Vector3(h.x if i & 1 else -h.x, h.y if i & 2 else -h.y, h.z if i & 4 else -h.z))
+			# Mesma ordem de KIT.box (normal para fora).
+			t.add_vertex(q[0]); t.add_vertex(q[1]); t.add_vertex(q[2])
+			t.add_vertex(q[0]); t.add_vertex(q[2]); t.add_vertex(q[3])
 	for x in [-0.45, 0.45]:
 		var seat: Color = Color("2f7bbf") if x < 0 else Color("e0b23c")
-		KIT.box(t, Vector3(x, 0.22, 0), Vector3(0.55, 0.05, 0.9), seat)
+		emit.call(Vector3(x, 0.22, 0), Vector3(0.55, 0.05, 0.9), seat)
 		KIT.box(t, Vector3(x, 0.45, -0.4), Vector3(0.55, 0.5, 0.05), seat)
-		for leg in [-0.22, 0.22]: KIT.box(t, Vector3(x + leg, 0.1, 0), Vector3(0.03, 0.2, 0.8), Color("9aa0a2"))
-	KIT.box(t, Vector3(0, 0.15, 0.6), Vector3(0.4, 0.3, 0.3), Color("d8453c"))
+	emit.call(Vector3(0, 0.15, 0.6), Vector3(0.4, 0.3, 0.3), Color("d8453c"))
 
 
 

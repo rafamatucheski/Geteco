@@ -321,13 +321,18 @@ static func _roof_life(chunk: Node3D, building: UrbanBuildingBase, key: String, 
 			_push(batches, "satellite_row", xform * Transform3D(Basis.IDENTITY, Vector3(spot.x, roof_y, spot.y)))
 			occupied.append({"point": spot, "radius": 1.2})
 	# Vapor de respiro: vida visível mesmo parado. No máximo dois por chunk.
+	# Este "vent" é um segundo caminho, de propósito fora do sorteio ROOF_PROPS de
+	# CityChunkDressing._rooftops: só aqui ele ganha a pluma de vapor. Lá o vent usa
+	# raio 0.5 (o padrão); aqui 0.6 deixa folga para a pluma. Mudar um raio exige
+	# rever o outro (ver comentário em _rooftops).
+	const STEAM_VENT_RADIUS := 0.6
 	if (kind in OFFICE or kind in INDUSTRIAL) and _roll(key + "|steam") < 0.45 and int(chunk.get_meta("city_steam", 0)) < 2:
-		var spot := _free_roof_spot(key + "|steam", roof_center, roof_size, occupied, 0.6)
+		var spot := _free_roof_spot(key + "|steam", roof_center, roof_size, occupied, STEAM_VENT_RADIUS)
 		if spot.is_finite():
 			chunk.set_meta("city_steam", int(chunk.get_meta("city_steam", 0)) + 1)
 			_push(batches, "vent", xform * Transform3D(Basis.IDENTITY, Vector3(spot.x, roof_y, spot.y)))
 			chunk.add_child(_steam(xform * Vector3(spot.x, roof_y + 0.85, spot.y), key))
-			occupied.append({"point": spot, "radius": 0.6})
+			occupied.append({"point": spot, "radius": STEAM_VENT_RADIUS})
 	# Balizamento vermelho em prédio alto.
 	if roof_y - building.global_position.y >= 9.0:
 		var spot := _free_roof_spot(key + "|bea", roof_center, roof_size * 0.5, occupied, 0.5)
@@ -347,23 +352,46 @@ static func _free_roof_spot(key: String, center: Vector2, size: Vector2, occupie
 	return Vector2.INF
 
 
+# Recursos do vapor compartilhados por todos os respiros: antes cada respiro criava
+# material, malha, curva e gradiente próprios — material distinto quebra o agrupamento
+# de draw calls e força compilar/enviar recurso novo a cada chunk que entra no streaming.
+static var _steam_quad: QuadMesh
+static var _steam_material: StandardMaterial3D
+static var _steam_curve: Curve
+static var _steam_ramp: Gradient
+# Além disso o vapor (meio-transparente, 0.9 m) some na névoa; não vale desenhar longe.
+const STEAM_VISIBILITY_END := 70.0
+const STEAM_VISIBILITY_MARGIN := 10.0
+
+
 static func _steam(point: Vector3, _key: String) -> CPUParticles3D:
+	if _steam_material == null:
+		_steam_quad = QuadMesh.new()
+		_steam_quad.size = Vector2(0.9, 0.9)
+		_steam_material = StandardMaterial3D.new()
+		_steam_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		_steam_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		_steam_material.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+		_steam_material.vertex_color_use_as_albedo = true
+		_steam_material.albedo_texture = MATERIALS.radial_texture("steam", [Color(1, 1, 1, 0.55), Color(1, 1, 1, 0.25), Color(1, 1, 1, 0)], [0.0, 0.5, 1.0], 64)
+		_steam_material.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
+		_steam_curve = Curve.new()
+		_steam_curve.add_point(Vector2(0, 0.4))
+		_steam_curve.add_point(Vector2(1, 2.2))
+		_steam_ramp = Gradient.new()
+		_steam_ramp.colors = PackedColorArray([Color(0.92, 0.93, 0.94, 0.0), Color(0.92, 0.93, 0.94, 0.5), Color(0.9, 0.9, 0.92, 0.0)])
+		_steam_ramp.offsets = PackedFloat32Array([0.0, 0.2, 1.0])
 	var steam := CPUParticles3D.new()
 	steam.name = "RoofSteam"
 	steam.amount = 10
 	steam.lifetime = 3.2
 	steam.preprocess = 3.0
-	var quad := QuadMesh.new()
-	quad.size = Vector2(0.9, 0.9)
-	steam.mesh = quad
-	var material := StandardMaterial3D.new()
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	material.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
-	material.vertex_color_use_as_albedo = true
-	material.albedo_texture = MATERIALS.radial_texture("steam", [Color(1, 1, 1, 0.55), Color(1, 1, 1, 0.25), Color(1, 1, 1, 0)], [0.0, 0.5, 1.0], 64)
-	material.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
-	steam.material_override = material
+	steam.mesh = _steam_quad
+	steam.material_override = _steam_material
+	# Corte por distância com margem de fade para o vapor não "estalar" ao sumir.
+	steam.visibility_range_end = STEAM_VISIBILITY_END
+	steam.visibility_range_end_margin = STEAM_VISIBILITY_MARGIN
+	steam.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_SELF
 	steam.direction = Vector3(0.25, 1, 0.1)
 	steam.spread = 12.0
 	steam.gravity = Vector3(0.35, 0.4, 0)
@@ -371,18 +399,23 @@ static func _steam(point: Vector3, _key: String) -> CPUParticles3D:
 	steam.initial_velocity_max = 0.9
 	steam.scale_amount_min = 0.8
 	steam.scale_amount_max = 1.5
-	var curve := Curve.new()
-	curve.add_point(Vector2(0, 0.4))
-	curve.add_point(Vector2(1, 2.2))
-	steam.scale_amount_curve = curve
-	var ramp := Gradient.new()
-	ramp.colors = PackedColorArray([Color(0.92, 0.93, 0.94, 0.0), Color(0.92, 0.93, 0.94, 0.5), Color(0.9, 0.9, 0.92, 0.0)])
-	ramp.offsets = PackedFloat32Array([0.0, 0.2, 1.0])
-	steam.color_ramp = ramp
+	steam.scale_amount_curve = _steam_curve
+	steam.color_ramp = _steam_ramp
 	steam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	steam.position = point
 	steam.emitting = true
 	return steam
+
+
+## Alcance de visibilidade do letreiro: é sinal de skyline, então precisa aparecer de longe,
+## mas além de ~150 m o texto já não se lê e só custa draw call/transparência.
+const NEON_VISIBILITY_END := 150.0
+const NEON_VISIBILITY_MARGIN := 10.0
+## Recursos compartilhados entre todos os letreiros: antes cada prédio carregava a fonte,
+## criava um BoxMesh e um material próprios; agora um único de cada e a largura vai na escala.
+static var _neon_font: Font
+static var _neon_bar_mesh: BoxMesh
+static var _neon_bar_material: Material
 
 
 ## Letreiro de neon com o nome próprio, em pé na borda sul do telhado.
@@ -393,21 +426,33 @@ static func _roof_neon(chunk: Node3D, building: UrbanBuildingBase, key: String, 
 	if building.building_id == "NorthFrontage0":
 		name = "$"
 		color = Color("d8c46b")
+	if _neon_font == null:
+		_neon_font = load(FONT_PATH)
+	if _neon_bar_mesh == null:
+		# Malha unitária em X: a largura de cada treliça vem de frame.scale.x.
+		_neon_bar_mesh = BoxMesh.new()
+		_neon_bar_mesh.size = Vector3(1.0, 0.08, 0.08)
+	if _neon_bar_material == null:
+		_neon_bar_material = MATERIALS.flat(Color("2b2f31"), 0.6)
 	var root := Node3D.new()
 	root.name = "RoofNeon_" + key
 	chunk.add_child(root)
 	root.global_transform = building.global_transform * Transform3D(Basis.IDENTITY, Vector3(roof_center.x, roof_y, roof_center.y + roof_size.y * 0.5 - 0.9))
 	# Treliça de sustentação atrás das letras.
 	var frame := MeshInstance3D.new()
-	var bar := BoxMesh.new()
-	bar.size = Vector3(minf(roof_size.x - 1.0, name.length() * 0.95 + 0.6), 0.08, 0.08)
-	frame.mesh = bar
-	frame.material_override = MATERIALS.flat(Color("2b2f31"), 0.6)
+	frame.mesh = _neon_bar_mesh
+	frame.material_override = _neon_bar_material
+	frame.scale = Vector3(minf(roof_size.x - 1.0, name.length() * 0.95 + 0.6), 1.0, 1.0)
 	frame.position = Vector3(0, 0.25, -0.1)
+	frame.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	frame.visibility_range_end = NEON_VISIBILITY_END
+	frame.visibility_range_end_margin = NEON_VISIBILITY_MARGIN
 	root.add_child(frame)
 	var label := Label3D.new()
 	label.text = name
-	label.font = load(FONT_PATH)
+	label.font = _neon_font
+	label.visibility_range_end = NEON_VISIBILITY_END
+	label.visibility_range_end_margin = NEON_VISIBILITY_MARGIN
 	label.font_size = 128
 	label.pixel_size = 0.013
 	label.outline_size = 18
