@@ -184,7 +184,7 @@ func _layout() -> void:
 func _priority(kind: String) -> int:
 	if kind=="objective": return 0
 	if kind=="lock": return 1
-	if kind in ["workshop","race","ski","lift","mine","plane","zoo","jeep","train"]: return 2
+	if kind in ["workshop","race","ski","lift","mine","plane","forge","jeep","train"]: return 2
 	if kind in ["home","place"]: return 4
 	return 3
 

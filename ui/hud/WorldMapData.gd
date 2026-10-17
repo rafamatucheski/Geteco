@@ -35,6 +35,7 @@ func collect(controller) -> void:
 		if not completed: add_marker("north_gate","Passagem fechada",GATE.WORK_POSITION,"lock","harbor")
 	if regions.has("mountain"): _mountain_markers(regions.mountain)
 	if regions.has("desert"): _desert_markers()
+	_forge_markers(controller.state,regions)
 	for station in preload("res://runtime/regional/RegionalCoachRoute.gd").stations():
 		if regions.has(station.region): add_marker("coach_"+str(station.id),str(station.label),station.arrival,"bus",str(station.region))
 	if "--railway-baseline" not in OS.get_cmdline_user_args(): _railway_markers(controller.state)
@@ -119,7 +120,7 @@ func add_marker(id: String, title: String, point: Vector3, kind: String, region:
 	markers.append({"id":id,"title":title,"point":planar(point),"kind":kind,"region":region,"detail":"","objective":false})
 
 func _mountain_markers(region) -> void:
-	add_marker("zoo","Zoológico",preload("res://world/mountain_detail/zoo/MountainZoo.gd").CENTER,"zoo","mountain")
+	add_marker("forge","Forja da Serra",preload("res://world/mountain_detail/forge/MountainForge.gd").CENTER,"forge","mountain")
 	add_marker("jeep","Trilha de jipe",preload("res://world/mountain_jeep/MountainJeepCourse.gd").start(),"jeep","mountain")
 	for records in region.records.values():
 		for record in records:
@@ -142,7 +143,7 @@ func _mountain_markers(region) -> void:
 		if land.biome!="mountain": continue
 		var coverage: PackedVector2Array=land.polygon.duplicate()
 		for road in roads:
-			if road.region!="mountain" or road.surface not in ["ski","cable"]: continue
+			if road.region!="mountain" or (road.surface not in ["ski","cable"] and road.id!="forge_hermit_trail"): continue
 			for point in road.points: coverage.append_array(rectangle(Rect2(point-Vector2.ONE*18,Vector2.ONE*36)))
 		land.polygon=Geometry2D.convex_hull(coverage)
 	var downhill := preload("res://activities/mountain_downhill/MountainDownhillCourse.gd").new()
@@ -157,6 +158,21 @@ func _desert_markers() -> void:
 	add_marker("wash","Leito seco",preload("res://activities/desert_wash/DesertWashCourse.gd").gate(0),"jeep","desert")
 	for b in DESERT.buildings():
 		if b.kind in ["motel","diner","shop"]: add_marker(b.id,b.name,b.position,"food" if b.kind=="diner" else "home" if b.kind=="motel" else "place","desert")
+
+## Pista da Forja da Serra: a cabana e o acampamento só entram no mapa depois que alguém
+## conta onde ficam (estágio em world_state.blade_forge).
+func _forge_markers(state, regions: Dictionary) -> void:
+	if not state is Object or not state.get("world_state") is Dictionary: return
+	var forge := preload("res://gameplay/forge/BladeForge.gd")
+	var saved: Variant = state.world_state.get("blade_forge",{})
+	var stage: String = str(saved.get("stage","unknown")) if forge.valid_quest(saved) else "unknown"
+	var index := forge.stage_index(stage)
+	if regions.has("mountain") and index>=forge.stage_index("seek_hermit"):
+		add_marker("forge_hermit","Cabana do Mestre Aurélio",preload("res://world/mountain_detail/forge/ForgeHermitCabin.gd").CENTER,"home","mountain")
+		if stage=="seek_hermit": markers.back().detail="O Seu Bento disse que o mestre sabe fazer aço lendário."
+	if regions.has("desert") and index>=forge.stage_index("seek_miner"):
+		add_marker("forge_miner","Acampamento do Tião",preload("res://world/desert/DesertMinerCamp.gd").CENTER,"mine","desert")
+		if stage=="seek_miner": markers.back().detail="O minério negro para a lâmina lendária."
 
 func _railway_markers(state) -> void:
 	if not state is Object or not state.campaign is Object: return

@@ -237,9 +237,9 @@ func _record_support(point: Vector3) -> void:
 func _pillar_clear(point: Vector3) -> bool:
 	_prepare_clearance_roads()
 	var planar := Vector2(point.x,point.z)
-	# The elevated rail may pass over the zoo, but a bridge pier must never
-	# occupy an enclosure or its visitor circulation below it.
-	if preload("res://world/mountain_detail/zoo/MountainZoo.gd").FOOTPRINT.grow(2.0).has_point(planar): return false
+	# The elevated rail may pass over the forge yard, but a bridge pier must never
+	# occupy the yard or the walk to the workshop below it.
+	if preload("res://world/mountain_detail/forge/MountainForge.gd").FOOTPRINT.grow(2.0).has_point(planar): return false
 	# As rampas abertas do túnel do canal descem abaixo da rua: um pilar de 1,2 m
 	# plantado no nível da rua ali cai no meio da pista na saída do túnel.
 	if preload("res://world/urban_detail/CanalTunnel3D.gd").reserves(planar,2.0): return false

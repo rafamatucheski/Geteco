@@ -16,6 +16,7 @@ const ABANDONED := preload("res://world/desert/DesertAbandonedSite.gd")
 const BANDIT_CAMP := preload("res://world/desert/DesertBanditCamp.gd")
 const WILDLIFE := preload("res://world/desert/DesertWildlife.gd")
 const DRY_FLORA := preload("res://world/desert/DesertDryFlora.gd")
+const GROUND_COVER := preload("res://world/desert/DesertGroundCover.gd")
 const EXPANSION := preload("res://world/desert/expansion/DesertExpansion.gd")
 const MINING_LAYOUT := preload("res://world/mining/MiningLayout.gd")
 const MINING_ART := preload("res://world/mining/MiningExterior.gd")
@@ -146,6 +147,8 @@ func prepare_data() -> void:
 	_record(preload("res://world/desert/entrance/DesertTollPlaza.gd").POSITION,{"kind":"entrance_toll"})
 	_record(preload("res://world/desert/DesertCoachStop.gd").POSITION,{"kind":"coach_stop","position":preload("res://world/desert/DesertCoachStop.gd").POSITION})
 	_record(ABANDONED.POSITION,{"kind":"abandoned_site","position":ABANDONED.POSITION})
+	# Minerador da pista da Forja da Serra, ao lado do acesso da Mineração.
+	_record(preload("res://world/desert/DesertMinerCamp.gd").CENTER,{"kind":"forge_miner_camp"})
 	for i in 4:
 		var point := LAYOUT.TRUCK_STOP+Vector3(-26-float(i)*6.4,0,3)
 		_record(point,{"kind":"bitrem","position":point,"index":i})
@@ -267,6 +270,10 @@ func _run_build_job(job: Dictionary, _budget: float) -> void:
 	elif not bool(job.dressed):
 		_dress(chunk,job.rect,job.key)
 		job.dressed=true
+	elif not bool(job.get("ground_cover_done",false)):
+		# Chão povoado (moitas, pedras, cascalho): ~4 mil peças por trecho, montadas em fatias do mesmo orçamento.
+		if not job.has("ground_cover"): job.ground_cover=GROUND_COVER.begin(job.rect)
+		job.ground_cover_done=GROUND_COVER.step(chunk,job.rect,job.ground_cover,_ground_height,_decoration_clear,_budget)
 	elif int(job.get("expansion_stage",0))<EXPANSION.STAGES:
 		var stage:=int(job.get("expansion_stage",0))
 		EXPANSION.build_stage(chunk,job.rect,stage,_ground_height,_decoration_clear)
@@ -428,6 +435,7 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 			for lamp in MOON_VILLAGE.build_record(chunk,record.data):
 				lamp.light_energy=1.8*_night_level
 				_lamps.append(lamp)
+		"forge_miner_camp": chunk.add_child(preload("res://world/desert/DesertMinerCamp.gd").new())
 		"abandoned_site":
 			abandoned_site=ABANDONED.build()
 			chunk.add_child(abandoned_site)

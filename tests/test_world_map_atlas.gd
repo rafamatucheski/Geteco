@@ -36,7 +36,7 @@ func run() -> void:
 			for i in road.points.size():
 				if matches[0].points[i]!=ATLAS.planar(road.points[i]): check(false,"road coordinate drift"); break
 	check(atlas.markers.any(func(m): return m.title=="Union" and m.kind=="clothing"),"authored clothing identity")
-	for kind in ["plane","zoo","jeep","race","mine","ski","lift","bank","hospital","weapons"]:
+	for kind in ["plane","forge","jeep","race","mine","ski","lift","bank","hospital","weapons"]:
 		check(atlas.markers.any(func(m): return m.kind==kind),"specific symbol: "+kind)
 	var before: Array=[]
 	for road in atlas.roads: before.append(road.points)

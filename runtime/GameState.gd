@@ -98,7 +98,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 	if typeof(moisture) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(moisture)) or moisture < 0 or moisture > 1: return false
 	if not data.world.get("rewards",[]) is Array or not data.world.get("vehicles",[]) is Array: return false
 	if data.world.has("armored_transport") and not preload("res://gameplay/armored/ArmoredSchedule.gd").valid_saved(data.world.armored_transport): return false
-	if data.world.has("mountain_zoo") and not preload("res://world/mountain_detail/zoo/ZooTicketState.gd").valid(data.world.mountain_zoo,data.economy): return false
+	if not preload("res://gameplay/forge/BladeForge.gd").valid_save(data.world,data.combat,data.economy): return false
 	if data.world.has("ashbend_secret_car_claimed") and not data.world.ashbend_secret_car_claimed is bool: return false
 	if data.world.has("remote_coal_secret_revealed") and not data.world.remote_coal_secret_revealed is bool: return false
 	if data.world.has("mining_raid"):
@@ -171,6 +171,8 @@ func restore_snapshot(data: Dictionary) -> bool:
 	if not preload("res://runtime/desert/DesertSaveContract.gd").valid(data.world,data.economy): return false
 	if data.region_id == "desert" and not preload("res://world/north_gateway/NorthGatewayPolicy.gd").campaign_completed(next_campaign.snapshot()): return false
 	var next_world: Dictionary = _normalize_reward_aliases(data.world)
+	# O zoológico da serra virou a Forja da Serra (17/10/2026): o ingresso antigo não vale mais nada.
+	next_world.erase("mountain_zoo")
 	economy = next_economy
 	campaign = next_campaign
 	canonical_campaign = next_canonical_campaign

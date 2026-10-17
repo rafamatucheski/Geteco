@@ -51,7 +51,7 @@ func _prepare() -> void:
 			var points := PackedVector3Array()
 			for p in avenue.points: points.append(CATALOG._at(Vector2(p[0],p[1]),"harbor"))
 			terrain_roads.append({"id": avenue.id, "points": points, "width": float(avenue.width)*SCALE})
-		terrain.configure(terrain_roads, CATALOG.definitions()+entries, EDITS.clearings(self)+[MOUNTAIN_ZOO.FOOTPRINT])
+		terrain.configure(terrain_roads, CATALOG.definitions()+entries, EDITS.clearings(self)+[MOUNTAIN_FORGE.FOOTPRINT,FORGE_HERMIT.FOOTPRINT])
 
 func _build_record(chunk: Node3D, record: Dictionary) -> void:
 	var first_child := chunk.get_child_count()

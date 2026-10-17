@@ -431,11 +431,15 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	await preload("res://runtime/BridgeLookPrewarm.gd").run(world, curtain)
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+	await preload("res://world/desert/DesertGroundCover.gd").prewarm_draw(world, curtain)
+	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	await preload("res://runtime/FamilyVariantPrewarm.gd").run(world, curtain)
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	await preload("res://runtime/PaintedFacadePrewarm.gd").run(world, curtain)
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	await preload("res://runtime/WildlifePrewarm.gd").run(world, curtain)
+	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+	await preload("res://runtime/ForgePrewarm.gd").run(world, curtain)
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	await preload("res://activities/skate/SkateModel.gd").prewarm_colors(world)
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return

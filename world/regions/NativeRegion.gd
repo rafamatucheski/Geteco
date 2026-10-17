@@ -3,7 +3,10 @@ const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const GPU_RELEASE := preload("res://runtime/GpuReleaseQueue.gd")
 ## Native production geography. Geometry/physics load only near the player.
 const MOUNTAIN_FACTORY := preload("res://world/mountain_detail/MountainDetailFactory.gd")
-const MOUNTAIN_ZOO := preload("res://world/mountain_detail/zoo/MountainZoo.gd")
+const MOUNTAIN_FORGE := preload("res://world/mountain_detail/forge/MountainForge.gd")
+const FORGE_HERMIT := preload("res://world/mountain_detail/forge/ForgeHermitCabin.gd")
+## A/B de desempenho: GETECO_BLADE_FORGE=0 deixa a clareira da forja e a da cabana vazias (terreno e trilhas iguais).
+static var _blade_forge_enabled := OS.get_environment("GETECO_BLADE_FORGE") != "0"
 const MOUNTAIN_SHADOW := preload("res://world/mountain_detail/MountainShadowFinish.gd")
 const URBAN_FACTORY := preload("res://world/urban_detail/UrbanBuildingFactory.gd")
 const NATURAL_GROUND := preload("res://world/regions/natural_ground.gdshader")
@@ -378,7 +381,8 @@ func _prepare() -> void:
 		_record(CATALOG._at(Vector2(5450,-1150),region_id),{"kind":"cargo_plane","position":CATALOG._at(Vector2(5450,-1150),region_id)})
 		_record(CATALOG._at(Vector2(6350,560),region_id),{"kind":"sawmill_yard"})
 		_record(CATALOG._at(Vector2(7560,-1650),region_id),{"kind":"mountain_village"})
-		_record(MOUNTAIN_ZOO.CENTER,{"kind":"mountain_zoo","position":MOUNTAIN_ZOO.CENTER})
+		_record(MOUNTAIN_FORGE.CENTER,{"kind":"mountain_forge","position":MOUNTAIN_FORGE.CENTER})
+		_record(FORGE_HERMIT.CENTER,{"kind":"forge_hermit_cabin","position":FORGE_HERMIT.CENTER})
 		for record in MOUNTAIN_FACTORY.get_environmental_records():
 			_record(record.position,record)
 		_prepare_forest()
@@ -415,7 +419,7 @@ func _prepare() -> void:
 			for point in avenue.points:
 				avenue_points.append(CATALOG._at(Vector2(point[0],point[1]),"harbor"))
 			terrain_roads.append({"id":avenue.id,"points":avenue_points,"width":float(avenue.width)*SCALE})
-		terrain.configure(terrain_roads,reservations,[MOUNTAIN_ZOO.FOOTPRINT])
+		terrain.configure(terrain_roads,reservations,[MOUNTAIN_FORGE.FOOTPRINT,FORGE_HERMIT.FOOTPRINT])
 func map_routes() -> Array[Dictionary]:
 	return roads + walkways
 
@@ -431,7 +435,8 @@ func _revise_mountain_routes() -> void:
 		_add_road(road.id,road.points,road.width,road.surface)
 	walkways = ROUTE_LAYOUT.paths()
 	walkways.append_array(MOUNTAIN_JEEP_COURSE.paths(main))
-	walkways.append(MOUNTAIN_ZOO.approach())
+	walkways.append(MOUNTAIN_FORGE.approach())
+	walkways.append(FORGE_HERMIT.approach())
 	for path in walkways:
 		if path.id in ["cave_trail","forest_shop_walk"]: path.points = ROUTE_LAYOUT.snap_start(path.points,main)
 		_record_path(path)
@@ -639,7 +644,7 @@ func _process(_delta: float) -> void:
 ## guardado ao liberar o chunk e reaproveitado na próxima visita; o pré-aquecimento monta cada um
 ## uma vez. Só entra em cache quem ainda não tem pai (não está em uso em outro chunk).
 ## south_port_ship_detail (cordame e acabamento do Santa Mare): 32-59 ms ao entrar no cais (release, 15/10).
-const CACHED_RECORDS := ["mountain_village","mountain_zoo","sawmill_yard","harbor_public_realm","lake","ship","south_port_ship_detail"]
+const CACHED_RECORDS := ["mountain_village","mountain_forge","forge_hermit_cabin","sawmill_yard","harbor_public_realm","lake","ship","south_port_ship_detail"]
 ## A carga do Santa Mare custava 590 ms num quadro ao chegar perto (release, 2026-10-13). Montada uma vez
 ## no pré-aquecimento e reaproveitada como os registros acima. Paletes e tambores (supplies, 50-87 ms cada)
 ## e os guindastes do cais (crane, 15-28 ms) pesavam igual na travessia e no porto do release de 15/10;
@@ -1429,10 +1434,16 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 		"sawmill_yard":
 			MOUNTAIN_FACTORY.populate_sawmill_chunk(chunk,record)
 		"mountain_village": MOUNTAIN_FACTORY.populate_village_chunk(chunk,record)
-		"mountain_zoo":
-			var zoo := MOUNTAIN_ZOO.new()
-			zoo.position = record.position
-			chunk.add_child(zoo)
+		"mountain_forge":
+			if not _blade_forge_enabled: return
+			var forge := MOUNTAIN_FORGE.new()
+			forge.position = record.position
+			chunk.add_child(forge)
+		"forge_hermit_cabin":
+			if not _blade_forge_enabled: return
+			var cabin := FORGE_HERMIT.new()
+			cabin.position = record.position
+			chunk.add_child(cabin)
 		"environmental_parity":
 			var mechanism := MOUNTAIN_FACTORY.populate_environmental_chunk(chunk,record)
 			if mechanism != null:
@@ -1745,7 +1756,8 @@ func _prepare_forest() -> void:
 		records[key] = records[key].filter(func(record):
 			if record.kind != "tree": return true
 			var original := Vector2(record.position.x,record.position.z)/SCALE-CATALOG.MOUNTAIN_OFFSET
-			if MOUNTAIN_ZOO.FOOTPRINT.grow(2.0).has_point(Vector2(record.position.x,record.position.z)): return false
+			var planar := Vector2(record.position.x,record.position.z)
+			if MOUNTAIN_FORGE.FOOTPRINT.grow(2.0).has_point(planar) or FORGE_HERMIT.FOOTPRINT.grow(2.0).has_point(planar): return false
 			return not _helipad_reserved(original) and not _fort_exit_reserved(Vector2(record.position.x,record.position.z)) and not preload("res://world/mountain_detail/OriginalVillageLayout.gd").is_reserved(original))
 
 func _build_ship(chunk: Node3D) -> void:

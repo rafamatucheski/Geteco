@@ -26,6 +26,7 @@ const OFFICER = preload("res://gameplay/PoliceAgent.gd")
 const POLICE_CASE = preload("res://gameplay/police_response/PoliceCaseDirector.gd")
 const PROJECTILE = preload("res://gameplay/Projectile.gd")
 const CUSTOM = preload("res://gameplay/WeaponCustomization.gd")
+const FORGE := preload("res://gameplay/forge/BladeForge.gd")
 const EMERGENCY = preload("res://gameplay/emergency/EmergencyManager.gd")
 const AUDIO = preload("res://gameplay/CombatAudio.gd")
 const PROTECTION = preload("res://gameplay/DamageProtection.gd")
@@ -479,8 +480,35 @@ func _katana_on_bone(skeleton: Skeleton3D, bone: String, node_name: String) -> N
 	katana.name = node_name
 	attachment.add_child(katana)
 	KATANA_MODEL.build(katana, false, Color("68cfff"))
+	if FORGE.legendary(customization, "katana"): preload("res://gameplay/WeaponAttachmentVisuals.gd").legendary(katana, "katana")
 	katana.visible = false
 	return katana
+
+## Forja da Serra: cobra o próximo nível (ou a lendária), grava na entrada da arma e
+## remonta a lâmina. O efeito no combate sai de `weapon_data` (WeaponCustomization).
+func buy_forge_upgrade(id: String, track: String, quest_stage: String) -> Dictionary:
+	if state == null or not state.owns_weapon(id): return {"ok":false, "reason":"Você não tem essa arma."}
+	var offer: Dictionary = FORGE.offer(customization, quest_stage, id, track)
+	if not offer.ok: return offer
+	if not state.spend(int(offer.price), str(offer.receipt)): return {"ok":false, "reason":"Saldo insuficiente."}
+	FORGE.install(customization, id, track)
+	refresh_blade_visuals()
+	changed.emit()
+	return offer
+
+## Remonta a lâmina na mão no próximo quadro e as katanas das costas/bainha agora.
+func refresh_blade_visuals() -> void:
+	visual_id = "@rebuild"
+	for katana: Node3D in [back_katana, hand_katana]:
+		if not is_instance_valid(katana): continue
+		var shown := katana.visible
+		for child in katana.get_children():
+			katana.remove_child(child)
+			child.free()
+		if katana.has_meta("forge_legendary"): katana.remove_meta("forge_legendary")
+		KATANA_MODEL.build(katana, false, Color("68cfff"))
+		if FORGE.legendary(customization, "katana"): preload("res://gameplay/WeaponAttachmentVisuals.gd").legendary(katana, "katana")
+		katana.visible = shown
 
 func equipped() -> String:
 	return String(state.equipped_weapon) if state != null else ""
@@ -2806,7 +2834,7 @@ func restore_state(data: Dictionary) -> bool:
 	if police_case != null: police_case.restore(data.get("police_case", {}))
 	hidden_time = float(data.hidden_time)
 	customization = restored_customization
-	visual_id = "@rebuild"
+	refresh_blade_visuals()
 	_update_stars()
 	last_known = player.global_position if is_instance_valid(player) else Vector3.ZERO
 	last_known_valid = stars > 0

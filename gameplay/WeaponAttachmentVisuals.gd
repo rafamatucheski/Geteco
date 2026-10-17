@@ -6,6 +6,8 @@ const FINISHES := {"matte":Color("282d32"), "sand":Color("b9a175"), "olive":Colo
 const LONG_BARREL := .075
 
 static func apply(root: Node3D, id: String, entry: Dictionary, muzzle: Vector3) -> void:
+	var forge: Variant = entry.get("forge", {})
+	if forge is Dictionary and forge.get("legendary", false) == true: legendary(root, id)
 	var parts: Dictionary = entry.get("parts",{})
 	# Peças de arma branca recolorem só o material que representam (madeira do
 	# taco, aço da lâmina, latão da soqueira); o acabamento vem depois e prevalece.
@@ -219,3 +221,82 @@ static func _finish(node: Node, finish: String) -> void:
 			material.roughness = .2 if finish in ["chrome", "gold"] else .68
 			node.material_override = material
 	for child in node.get_children(): _finish(child,finish)
+
+## Aço lendário da Forja da Serra: corpo da lâmina escurecido (aço de minério do deserto)
+## e o fio aceso como metal tirado da brasa. Só materiais em cache (`legendary_steel`/
+## `legendary_glow`), os mesmos que `ForgePrewarm` desenha sob a cortina: trocar de arma
+## não cria material novo nem compila variante de shader no jogo.
+static var _legendary_materials: Dictionary = {}
+
+static func legendary_steel() -> StandardMaterial3D:
+	if not _legendary_materials.has("steel"):
+		var material := StandardMaterial3D.new()
+		material.albedo_color = Color("2b2f37")
+		material.metallic = 0.86
+		material.roughness = 0.34
+		material.cull_mode = BaseMaterial3D.CULL_DISABLED
+		_legendary_materials["steel"] = material
+	return _legendary_materials["steel"]
+
+static func legendary_glow() -> StandardMaterial3D:
+	if not _legendary_materials.has("glow"):
+		var material := StandardMaterial3D.new()
+		material.albedo_color = Color("ff9a3c")
+		material.metallic = 0.4
+		material.roughness = 0.3
+		material.emission_enabled = true
+		material.emission = Color("ff7a1f")
+		material.emission_energy_multiplier = 2.4
+		material.cull_mode = BaseMaterial3D.CULL_DISABLED
+		_legendary_materials["glow"] = material
+	return _legendary_materials["glow"]
+
+static func legendary(root: Node3D, id: String) -> void:
+	if root.has_meta("forge_legendary"): return
+	root.set_meta("forge_legendary", true)
+	var steel := legendary_steel()
+	var glow := legendary_glow()
+	match id:
+		"katana":
+			# A lâmina de energia (Takeshi) não é aço: fica como está.
+			var body := root.find_child("ForgedSteel", true, false) as MeshInstance3D
+			var hamon := root.find_child("Hamon", true, false) as MeshInstance3D
+			if body != null: body.material_override = steel
+			if hamon != null: hamon.material_override = glow
+		# Faca e machado passam pelo agrupamento por material do ArsenalWeapon3D (os nós viram
+		# "FinishedMaterial_…"): troca pela cor de origem, como as peças de bancada fazem.
+		"axe": _swap(root, {"222b30":steel, "aeb8bf":glow})
+		"knife":
+			_swap(root, {"697782":steel})
+			# A faca não tem malha de fio separada: um filete aceso acompanha o gume reto
+			# (y = -0,018 de z -0,045 a -0,15) e sobe até a ponta, como no perfil da lâmina.
+			GEO._box(root, "LegendaryEdge", Vector3(0, -0.0182, -0.0975), Vector3(0.0034, 0.0026, 0.105), glow)
+			var rise := Vector2(-0.085, 0.024)
+			var tip := MeshInstance3D.new()
+			tip.name = "LegendaryEdgeTip"
+			var mesh := BoxMesh.new()
+			mesh.size = Vector3(0.0034, 0.0026, rise.length())
+			tip.mesh = mesh
+			tip.material_override = glow
+			tip.position = Vector3(0, -0.018 + rise.y * 0.5, -0.15 + rise.x * 0.5)
+			tip.rotation.x = atan2(rise.y, -rise.x)
+			root.add_child(tip)
+
+static func _swap(node: Node, by_color: Dictionary) -> void:
+	if node is MeshInstance3D and node.mesh != null:
+		var mesh_node := node as MeshInstance3D
+		if mesh_node.material_override is StandardMaterial3D:
+			var target: Variant = _target(by_color, mesh_node.material_override.albedo_color)
+			if target != null: mesh_node.material_override = target
+		else:
+			for surface in mesh_node.mesh.get_surface_count():
+				# get_active_material não resolve fora da árvore (a arma é montada antes de entrar nela).
+				var source := mesh_node.get_surface_override_material(surface) as StandardMaterial3D
+				if source == null: source = mesh_node.mesh.surface_get_material(surface) as StandardMaterial3D
+				if source == null: continue
+				var target: Variant = _target(by_color, source.albedo_color)
+				if target == null: continue
+				# Malha agrupada tem uma superfície por material: o override do nó basta.
+				if mesh_node.mesh.get_surface_count() == 1: mesh_node.material_override = target
+				else: mesh_node.set_surface_override_material(surface, target)
+	for child in node.get_children(): _swap(child, by_color)

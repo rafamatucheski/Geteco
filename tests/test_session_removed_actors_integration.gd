@@ -1,5 +1,5 @@
 extends SceneTree
-const ZOO_CENTER := Vector3(716,0,-363)
+const FORGE_CENTER := Vector3(716,0,-363)
 var checks := 0
 var failures := 0
 func _initialize() -> void:
@@ -66,33 +66,34 @@ func run() -> void:
 	world.player.teleport(cemetery.CENTER + Vector3.UP*.05); urban.refresh_context()
 	await frames(3)
 	check(not is_instance_valid(cemetery.keeper) and cemetery.deaths.has("keeper"), "Cemetery return preserves death without resurrecting keeper")
-	world.production._update_physical_residency(ZOO_CENTER)
-	world.production._update_logical_region(ZOO_CENTER)
-	world.player.teleport(ZOO_CENTER + Vector3(-5,.08,24))
-	var zoo: Node
-	var zoo_deadline := Time.get_ticks_msec() + 15000
-	while Time.get_ticks_msec() < zoo_deadline:
-		zoo = world.production.region.find_child("MountainZoo", true, false)
-		if is_instance_valid(zoo) and zoo.is_node_ready(): break
+	# Ferreiro da Forja da Serra (no lugar do caixa do zoológico): removido não ressuscita
+	# enquanto o jogador está perto, e volta um só depois que ele sai do raio e retorna.
+	world.production._update_physical_residency(FORGE_CENTER)
+	world.production._update_logical_region(FORGE_CENTER)
+	world.player.teleport(FORGE_CENTER + Vector3(-1,.08,-1.5))
+	var forge: Node
+	var forge_deadline := Time.get_ticks_msec() + 15000
+	while Time.get_ticks_msec() < forge_deadline:
+		forge = world.production.region.find_child("MountainForge", true, false)
+		if is_instance_valid(forge) and forge.is_node_ready(): break
 		await process_frame
-	check(is_instance_valid(zoo), "Real mountain zoo loaded")
+	check(is_instance_valid(forge), "Real mountain forge loaded")
 	if failures: await finish(world); return
-	var admission = zoo.admission
+	var smith = forge.smith
 	for i in 240:
 		await physics_frame
-		if not admission.visitors.is_empty(): break
-	check(not admission.visitors.is_empty(), "Real admission spawns visitors")
+		if smith.available(): break
+	check(smith.available(), "Real forge spawns the smith")
 	if failures: await finish(world); return
-	var visitor: Dictionary = admission.visitors[0]
-	visitor.actor.queue_free(); await frames(3)
-	check(visitor.actor == null and visitor.phase == "done", "Real zoo tick retires removed visitor")
-	world.player.teleport(ZOO_CENTER + Vector3(70,.08,0)); await frames(5)
-	check(admission.visitors.is_empty(), "Real admission clears residents at distance")
-	world.player.teleport(ZOO_CENTER + Vector3(-5,.08,24))
+	smith.actor.queue_free(); await frames(20)
+	check(not smith.available() and smith.nearest_action().is_empty(), "Removed smith stays absent near the forge")
+	world.player.teleport(FORGE_CENTER + Vector3(80,.08,0)); await frames(20)
+	check(not smith._initialized, "Smith residency clears at distance")
+	world.player.teleport(FORGE_CENTER + Vector3(-1,.08,-1.5))
 	for i in 240:
 		await physics_frame
-		if not admission.visitors.is_empty(): break
-	check(admission._initialized and not admission.visitors.is_empty(), "Admission recovers after return")
+		if smith.available(): break
+	check(smith.available() and smith.find_children("Forge*", "CharacterBody3D", false, false).size() == 1, "One smith returns after leaving and coming back")
 	await finish(world)
 func finish(world: Node) -> void:
 	world.free(); await process_frame

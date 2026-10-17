@@ -1,4 +1,5 @@
 extends Node
+const BLADE_FORGE_TALK := preload("res://gameplay/forge/BladeForgeTalk.gd")
 const STALL_WORK_READY := preload("res://runtime/StallWorkTrace.gd")
 const SESSION_OPS := preload("res://runtime/SessionOperations.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
@@ -1492,10 +1493,9 @@ func nearest() -> Dictionary:
 	if desert != null:
 		var desert_action: Dictionary = desert.nearest_action()
 		if not desert_action.is_empty(): return desert_action
-	for zoo in get_tree().get_nodes_in_group("mountain_zoo"):
-		if zoo.admission != null:
-			var zoo_action: Dictionary = zoo.admission.nearest_action()
-			if not zoo_action.is_empty(): return zoo_action
+	for site in get_tree().get_nodes_in_group("blade_forge_site"):
+		var forge_action: Dictionary = site.nearest_action()
+		if not forge_action.is_empty(): return forge_action
 	if skate != null:
 		var skate_action: Dictionary = skate.nearest_action()
 		if not skate_action.is_empty(): return skate_action
@@ -1604,7 +1604,7 @@ func interact() -> bool:
 	if mining != null and action.get("id","") == "mining": return mining.perform(action)
 	if desert != null and action.get("id","") in ["desert","desert_story","desert_drag"]: return desert.perform(action)
 	if mountain_activities != null and mountain_activities.handles(action): return mountain_activities.perform(action)
-	if action.get("id", "") == "zoo_ticket": return action.provider.purchase()
+	if action.get("id", "") == "blade_forge": return BLADE_FORGE_TALK.perform(self, action)
 	if action.get("id", "") == "skate": return skate.perform(str(action.target))
 	if action.get("id","") == "motocross": return motocross.perform(str(action.target))
 	if str(action.get("id","")).begins_with("ski_"): return mountain_progression.perform(action.target)

@@ -193,6 +193,7 @@ const PARTS := {
 	"knuckle_silver": {"slot":"finish", "label":"Prata escovada", "price":250, "for":["knuckles"], "recolor":{"d4ac0d":Color("c3c8cc")}, "metallic":0.9, "roughness":0.35},
 }
 const GEO = preload("res://gameplay/WeaponPresentation3D.gd")
+const FORGE = preload("res://gameplay/forge/BladeForge.gd")
 const _INT_STATS := ["magazine_size", "pellets"]
 ## Tempo-base de recarga do Gameplay (`reload_weapon`), só para exibir segundos.
 const _RELOAD_SLOW := ["rpg", "shotgun", "hunting_rifle"]
@@ -225,6 +226,9 @@ static func effective_data(id: String, state: Dictionary) -> Dictionary:
 		var part := selected(state, id, slot)
 		if part == "none" or part == "flashlight" or not supports(id, part): continue
 		_apply(data, id, PARTS[part], base_magazine)
+	# Níveis da Forja da Serra (faca, machado, katana) valem sobre as peças da bancada.
+	var forge: Variant = state.get(id, {}).get("forge", {})
+	if forge is Dictionary: FORGE.apply(data, forge)
 	if data.has("fire_interval"): data["fire_interval"] = maxf(0.05, float(data.fire_interval))
 	if data.has("min_damage_ratio"): data["min_damage_ratio"] = minf(0.95, float(data.min_damage_ratio))
 	if data.has("damage"): data["damage"] = maxi(1, roundi(float(data.damage)))
@@ -314,7 +318,8 @@ static func stats(id: String, state: Dictionary) -> Array:
 static func normalize(value: Variant) -> Dictionary:
 	var result := {}
 	if not value is Dictionary: return result
-	for id in CUSTOMIZABLE:
+	# A katana não tem peças de bancada, mas guarda os níveis da forja na mesma entrada.
+	for id in CUSTOMIZABLE + ["katana"]:
 		var entry: Variant = value.get(id, {})
 		if not entry is Dictionary: continue
 		var clean := {"owned": id in COMPATIBLE and entry.get("owned",false) == true, "installed":false,
@@ -327,7 +332,9 @@ static func normalize(value: Variant) -> Dictionary:
 			for slot in entry.get("parts",{}):
 				var part: Variant = entry.parts[slot]
 				if part in clean.owned_parts and PARTS[part].slot == slot: clean.parts[slot] = part
-		if clean.owned or not clean.owned_parts.is_empty(): result[id] = clean
+		var forge := FORGE.normalize(id, entry.get("forge", {}))
+		if not forge.is_empty(): clean["forge"] = forge
+		if clean.owned or not clean.owned_parts.is_empty() or clean.has("forge"): result[id] = clean
 	return result
 
 static func installed(state: Dictionary, id: String) -> bool:

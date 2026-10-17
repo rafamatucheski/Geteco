@@ -1,6 +1,7 @@
 extends Node3D
 ## Source braziers, streamed only near the actor. No Light3D or viewport added.
 const SOURCES = preload("res://runtime/cold/OriginalHeatSources.gd")
+const CAMPFIRES := ["logging_camp","summit_camp","smuggler_camp","hermit_camp"]
 var visuals: Dictionary = {}
 var provider_ids: Dictionary = {}
 var elapsed := 1.0
@@ -43,7 +44,7 @@ func _build(id: String, existing: Node3D) -> Node3D:
 			visual.add_child(flame)
 	elif id == "resort_brazier":
 		visual = preload("res://runtime/cold/ResortBrazier.gd").new()
-	elif id in ["logging_camp","summit_camp","smuggler_camp"]:
+	elif id in CAMPFIRES:
 		visual = _campfire()
 	else:
 		# Original transit brazier materializes V1 heater-only markers explicitly.
@@ -142,7 +143,7 @@ func _install_solids(visual: Node3D,id: String) -> void:
 	var shape := CollisionShape3D.new()
 	var cylinder := CylinderShape3D.new()
 	cylinder.radius = .73 if id == "resort_brazier" else .67
-	cylinder.height = .85 if id not in ["logging_camp","summit_camp","smuggler_camp"] else .25
+	cylinder.height = .85 if id not in CAMPFIRES else .25
 	shape.shape = cylinder
 	shape.position.y = cylinder.height*.5
 	body.add_child(shape)

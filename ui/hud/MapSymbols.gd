@@ -1,6 +1,6 @@
 extends RefCounted
 ## Small, cached vector pictograms. No font-dependent emoji or external service.
-const LABELS := {"player":"Jogador","objective":"Missão","waypoint":"Destino","workshop":"Oficina","fuel":"Posto","bank":"Banco","hospital":"Hospital","police":"Polícia","fire":"Bombeiros","shop":"Mercado","clothing":"Roupas","weapons":"Armas","port":"Porto","home":"Casa / chalé","ski":"Esqui","lift":"Teleférico","cave":"Caverna","plane":"Avião","zoo":"Zoológico","fishing":"Pesca","race":"Corrida","jeep":"Jipe","mine":"Mineração","bus":"Ônibus","train":"Estações de trem","food":"Restaurante","lock":"Passagem fechada","sewer":"Bueiro","place":"Local"}
+const LABELS := {"player":"Jogador","objective":"Missão","waypoint":"Destino","workshop":"Oficina","fuel":"Posto","bank":"Banco","hospital":"Hospital","police":"Polícia","fire":"Bombeiros","shop":"Mercado","clothing":"Roupas","weapons":"Armas","port":"Porto","home":"Casa / chalé","ski":"Esqui","lift":"Teleférico","cave":"Caverna","plane":"Avião","forge":"Forja","fishing":"Pesca","race":"Corrida","jeep":"Jipe","mine":"Mineração","bus":"Ônibus","train":"Estações de trem","food":"Restaurante","lock":"Passagem fechada","sewer":"Bueiro","place":"Local"}
 const PATHS := {
 	"fishing":'<path d="M3 21 11 3l8 1v10a4 4 0 0 1-8 0v-2l3 2M12 3l-1 9"/><path d="m4 6 2 3-2 3-3-3Z"/>',
 	"train":'<rect x="5" y="2" width="14" height="16" rx="3"/><path d="M5 7h14M5 12h14M9 3v8M15 3v8M8 18l-4 5M16 18l4 5M6 21h12"/><circle cx="9" cy="15" r="1"/><circle cx="15" cy="15" r="1"/>',
@@ -22,7 +22,7 @@ const PATHS := {
 	"lift":'<path d="m1 4 22-3M12 3v6M4 11h16v11H4ZM4 16h16M9 11v5M15 11v5"/>',
 	"cave":'<path d="M2 22 5 9l7-7 7 7 3 13h-6v-8l-4-4-4 4v8Z"/>',
 	"plane":'<path d="m12 1 2 8 9 6v3l-9-3v5l3 2H7l3-2v-5l-9 3v-3 0l9-6Z"/>',
-	"zoo":'<ellipse cx="12" cy="17" rx="6" ry="4"/><ellipse cx="4" cy="10" rx="2" ry="3"/><ellipse cx="9" cy="5" rx="2" ry="3"/><ellipse cx="15" cy="5" rx="2" ry="3"/><ellipse cx="20" cy="10" rx="2" ry="3"/>',
+	"forge":'<path d="M2 8h15c0 3 2 4 5 4-3 1-5 2-6 4H9c-1-2-3-3-4-4M8 16l-2 6h12l-2-6"/><path d="M14 2l-3 4M18 3l-2 3"/>',
 	"race":'<path d="M3 23V2h18v13H3M3 6h18M3 11h18M8 2v13M15 2v13"/><path d="M3 2h5v4H3zM8 6h7v5H8zM15 2h6v4h-6zM15 11h6v4h-6z" fill="white"/>',
 	"jeep":'<path d="m3 9 3-6h12l3 6v10H3ZM3 11h18M8 4v7M16 4v7M5 19v3M19 19v3"/><circle cx="7" cy="15" r="1"/><circle cx="17" cy="15" r="1"/>',
 	"mine":'<path d="m3 2 18 20M21 2 3 22M1 7c5-7 9-6 12-5M11 2c5-1 9 1 12 5"/>',
@@ -49,6 +49,7 @@ static func tint(kind: String) -> Color:
 	if kind=="hospital": return Color("f27e79")
 	if kind in ["race","jeep","ski","mine"]: return Color("dec590")
 	if kind=="sewer": return Color("9fc9a8")
+	if kind=="forge": return Color("f0a35a")
 	return Color("e4e9e7")
 
 static func draw(canvas: CanvasItem, point: Vector2, kind: String, radius := 14.0, selected := false) -> void:

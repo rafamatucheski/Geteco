@@ -1,10 +1,12 @@
 extends RefCounted
 ## Shared low-poly primitives, grouped by shape/material into MultiMeshes.
+## Veio do zoológico da serra (ZooGeometry); as cores de chão usam o shader de cascalho.
+const GROUND_COLORS := ["9e937a","8d8a5a","ae9870","6f6a5c"]
 var groups: Dictionary = {}
 static var meshes: Dictionary = {}
 static var materials: Dictionary = {}
 func part(kind: String, at: Vector3, size: Vector3, color: String, rotation := Vector3.ZERO) -> void:
-	var patterned := color in ["d8b56a","e4dfcf","9e937a","8d8a5a","ae9870"]
+	var patterned := color in GROUND_COLORS
 	var key := kind+":"+(color if patterned else "vertex")
 	if not groups.has(key): groups[key]=[]
 	groups[key].append([Transform3D(Basis.from_euler(rotation)*Basis.from_scale(size),at),Color.WHITE if patterned else Color(color)])
@@ -33,16 +35,9 @@ func flush(parent: Node3D) -> void:
 			mat.albedo_color=Color(minf(tint.r*mat.albedo_color.r,1.0),minf(tint.g*mat.albedo_color.g,1.0),minf(tint.b*mat.albedo_color.b,1.0))
 			mat.roughness=1.0
 			materials[bits[1]]=mat
-			if bits[1] in ["d8b56a","e4dfcf"]:
-				var coat:=ShaderMaterial.new()
-				coat.shader=preload("res://world/mountain_detail/zoo/animal_coat.gdshader")
-				coat.set_shader_parameter("base_color",Color(bits[1]))
-				coat.set_shader_parameter("marking",Color("795131") if bits[1]=="d8b56a" else Color("242725"))
-				coat.set_shader_parameter("pattern",1 if bits[1]=="d8b56a" else 2)
-				materials[bits[1]]=coat
-			if bits[1] in ["9e937a","8d8a5a","ae9870"]:
+			if bits[1] in GROUND_COLORS:
 				var ground:=ShaderMaterial.new()
-				ground.shader=preload("res://world/mountain_detail/zoo/zoo_ground.gdshader")
+				ground.shader=preload("res://world/mountain_detail/forge/forge_ground.gdshader")
 				ground.set_shader_parameter("soil",Color(bits[1]))
 				materials[bits[1]]=ground
 		var mm:=MultiMesh.new()
@@ -87,7 +82,7 @@ static func polygon(parent: Node3D, outline: PackedVector2Array, y: float, color
 			surface.set_normal(Vector3.UP)
 			surface.add_vertex(Vector3(point.x,y,point.y))
 	var node:=MeshInstance3D.new(); node.mesh=surface.commit()
-	var mat:=ShaderMaterial.new(); mat.shader=preload("res://world/mountain_detail/zoo/zoo_ground.gdshader")
+	var mat:=ShaderMaterial.new(); mat.shader=preload("res://world/mountain_detail/forge/forge_ground.gdshader")
 	mat.set_shader_parameter("soil",color); node.material_override=mat
 	parent.add_child(node)
 	node.create_trimesh_collision()

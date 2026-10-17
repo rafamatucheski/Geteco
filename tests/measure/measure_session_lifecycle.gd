@@ -36,7 +36,7 @@ func run() -> void:
 	for site in [
 		{"id":"terminal","position":Vector3(106.25,.1,72)},
 		{"id":"cemetery","position":Vector3(-40.625,.1,99)},
-		{"id":"zoo","position":Vector3(716,.1,-339)}]:
+		{"id":"forge","position":Vector3(716,.1,-339)}]:
 		world.player.teleport(site.position)
 		world.production._update_physical_residency(site.position)
 		world.production._update_logical_region(site.position)
