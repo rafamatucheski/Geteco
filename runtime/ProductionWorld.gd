@@ -1770,8 +1770,14 @@ func _create_traffic_vehicle() -> void:
 		if car==null: continue
 		car.vehicle_id="street_"+str(Time.get_ticks_usec())
 		if id=="courier_van" and preload("res://gameplay/icecream/IceCreamVan.gd").choose(vehicles):
+			# Etapas medidas à parte: a van de sorvete custou 39-43 ms no traffic_spawn da serra
+			# (EXE de 17/10) e a altura do teto, pré-aquecida, não era a causa.
+			var paint_began := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
 			car.paint_color=Color("fff0dd")
+			_trace_cost("traffic_spawn_icecream_paint",paint_began)
+			paint_began = Time.get_ticks_usec() if paint_began != 0 else 0
 			car.vehicle_id=preload("res://gameplay/icecream/IceCreamVan.gd").PREFIX+str(Time.get_ticks_usec())
+			_trace_cost("traffic_spawn_icecream_id",paint_began)
 		car.route=route
 		car.route_distance=offset
 		car.set_meta("ambient_traffic",true)

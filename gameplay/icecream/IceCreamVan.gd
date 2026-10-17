@@ -46,6 +46,11 @@ static func prewarm() -> void:
 		if visual != null:
 			_visual_roof["courier_van"] = _paint_top(visual)
 			visual.free()
+	# A pintura do teto também lê os vértices da pintura base (surface_get_arrays): monta a da
+	# altura medida já aqui, que é a mesma chave quando o visual fica na origem do carro.
+	if _visual_roof.has("courier_van") and is_finite(float(_visual_roof["courier_van"])):
+		var top := float(_visual_roof["courier_van"])
+		_livery_for_roof(top if top > 1.2 else 2.10)
 
 ## Ponto mais alto da pintura no espaço do nó raiz do visual, sem precisar estar na árvore.
 static func _paint_top(root: Node3D) -> float:
