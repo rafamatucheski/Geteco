@@ -12,7 +12,7 @@ var points := {
 }
 
 func _initialize() -> void:
-	OS.set_environment("GETECO_PAINTED_TALL", "" if "--off" in OS.get_cmdline_user_args() else "1")
+	OS.set_environment("GETECO_PAINTED_TALL", "0" if "--off" in OS.get_cmdline_user_args() else "1")
 	run.call_deferred()
 
 func run() -> void:
