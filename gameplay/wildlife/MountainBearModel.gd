@@ -84,6 +84,22 @@ func _ready() -> void:
 	shadow.material_override.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	shadow.material_override.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	shadow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_keep_shader_variants(shadow)
+
+## Os ursos nascem perto da toca e somem ao se afastar; com o último material de uma variante
+## liberado, o Godot descarta o shader dela e a volta seguinte recompilava tudo: serra no EXE
+## de 17/10, quadro de 64-75 ms a cada volta com pipelines_delta.surface +6. Uma cópia de cada
+## variante (pelo com borda, focinho/garras, bafo transparente, sombra sem luz) fica viva.
+static var _kept: Array[Material] = []
+
+func _keep_shader_variants(shadow: MeshInstance3D) -> void:
+	if not _kept.is_empty(): return
+	for source in [fur_parts[0], breath, shadow]:
+		if is_instance_valid(source) and source.material_override != null: _kept.append(source.material_override.duplicate())
+	for claw in find_children("*", "MeshInstance3D", true, false):
+		if claw.mesh is CylinderMesh and claw.material_override != null:
+			_kept.append(claw.material_override.duplicate())
+			break
 
 ## Peça do urso: esfera mais lisa que a dos moradores (10x5 segmentos virava bolha
 ## facetada vista de perto) e material com brilho de borda, que imita a pelagem

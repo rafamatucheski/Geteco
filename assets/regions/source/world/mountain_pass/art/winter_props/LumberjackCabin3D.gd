@@ -21,6 +21,7 @@ const SURFACE_FINISH := preload("res://assets/regions/source/world/mountain_pass
 @export var snow_color: Color = Color("#f0f4f8")
 
 var _materials: Dictionary = {}
+static var _kept: Dictionary = {}
 var _is_built: bool = false
 
 func _init(p_main_color: Color = Color("#543820")) -> void:
@@ -46,6 +47,9 @@ func _mat(id: String, color: Color, roughness: float = 0.8, metallic: float = 0.
 	m.shading_mode = StandardMaterial3D.SHADING_MODE_PER_PIXEL
 	SURFACE_FINISH.apply(m, id)
 	_materials[id] = m
+	# A cabana sai da memória com o trecho; sem outra cabana viva, a variante de shader do
+	# acabamento era descartada e recompilada na volta (serra, EXE de 17/10). Uma cópia fica viva.
+	if not _kept.has(id): _kept[id] = m.duplicate()
 	return m
 
 func _add_box(pos: Vector3, size: Vector3, mat: Material, rot_deg: Vector3 = Vector3.ZERO) -> MeshInstance3D:

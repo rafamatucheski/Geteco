@@ -56,6 +56,7 @@ func _advance_queue() -> void:
 			continue
 		var bears: Array = _spawned[den.id]
 		var step := int(job.step)
+		var traced := preload("res://runtime/StallWorkTrace.gd").begin()
 		if step == 0:
 			var mother := BEAR.new()
 			mother.name = "ForestBear_" + String(den.id)
@@ -76,6 +77,7 @@ func _advance_queue() -> void:
 			add_child(cub)
 			cub.global_position = _ground(job.region, cub.home)
 			bears.append(cub)
+		preload("res://runtime/StallWorkTrace.gd").finish("wildlife.bear_spawn", traced)
 		job.step = step + 1
 		if int(job.step) > den.cubs.size(): _queue.pop_front()
 		return
