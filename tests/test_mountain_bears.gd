@@ -1,6 +1,7 @@
 extends SceneTree
 ## Ursos de Mountain no mundo de produção: nascem perto da toca, a ursa ataca o
 ## jogador exposto, filhotes existem e o urso morre com dano. Rodar com --no-save.
+## Rodar com --no-save --play-at=mountain,790,-382 (a viagem pelo controlador é recusada na sessão de teste).
 ## Também grava uma captura em res://evidence/mountain-bears-0924/.
 ## Não mede equilíbrio de dano nem desempenho.
 
@@ -31,13 +32,20 @@ func run() -> void:
 		await process_frame
 		if world.session != null and world.session.ready_for_play: break
 	var controller = world.session.controller
-	controller.travel("mountain")
+	# A viagem recusa enquanto a sessão ainda bloqueia transições (abertura/chegada): tentar até aceitar.
+	for i in 1800:
+		if controller.state.region_id == "mountain" or controller.travel("mountain"): break
+		await process_frame
 	for i in 900:
 		await process_frame
 		if not controller.travel_busy and controller.state.region_id == "mountain": break
-	world.session.weather.time_of_day = .45
+	if world.session.weather != null: world.session.weather.time_of_day = .45
 	var den: Vector3 = CATALOG._at(Vector2(8220, -1150), "mountain")
 	var region = controller.regions.get("mountain")
+	if region == null:
+		print("FAIL test_mountain_bears: serra não montada (região=%s, regiões=%s, viagem ocupada=%s, pronto=%s, lugar=%s)" % [controller.state.region_id, controller.regions.keys(), controller.travel_busy, world.session.ready_for_play, controller.state.place_id])
+		quit(1)
+		return
 	var stand := den + Vector3(9, 0, 0)
 	stand.y = region.terrain.surface_height_at(Vector2(stand.x, stand.z)) + .2
 	world.player.teleport(stand)
@@ -73,7 +81,17 @@ func run() -> void:
 	world.player.teleport(away)
 	region.set_focus(away)
 	await frames(90)
-	check(root.get_tree().get_nodes_in_group("bear_adult").filter(func(b): return not b.is_queued_for_deletion()).size() <= 1, "longe da toca da ursa ela deveria sair de cena")
+	# Com o estacionamento (GETECO_BEAR_POOL) o urso fica na árvore escondido; sair de cena = não visível.
+	var present := func(b): return not b.is_queued_for_deletion() and b.is_visible_in_tree()
+	check(root.get_tree().get_nodes_in_group("bear_adult").filter(present).size() <= 1, "longe da toca da ursa ela deveria sair de cena")
+	# De volta à toca a ursa renasce curada (a V1 curava os ursos ao voltar).
+	world.player.teleport(stand)
+	region.set_focus(stand)
+	await frames(90)
+	var back: Array = root.get_tree().get_nodes_in_group("bear_adult").filter(present)
+	var mother_back := back.filter(func(b): return not b.dead and b.health >= 360.0 and b.collision_layer == 2)
+	check(not mother_back.is_empty(), "de volta à toca a ursa deveria renascer viva e sólida")
+	check(root.get_tree().get_nodes_in_group("bear_cub").filter(present).size() == 2, "de volta à toca os dois filhotes deveriam voltar")
 	if failures.is_empty():
 		print("PASS test_mountain_bears")
 		quit(0)

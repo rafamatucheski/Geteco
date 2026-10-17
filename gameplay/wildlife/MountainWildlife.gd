@@ -14,12 +14,27 @@ const DENS := [
 	{"id": "lone_den", "point": Vector2(8670, -200), "cubs": []},
 ]
 
+## Os ursos eram destruídos além de DESPAWN_RADIUS e recriados ao voltar: a rota da serra sai das
+## duas tocas a cada volta e cada volta pagava wildlife.bear_spawn de 22-26 ms e mais ~30 ms sem span
+## (~90 malhas e ~90 StandardMaterial3D novos por urso; EXE de 17/10, perfinv9). Agora os quatro
+## ursos são montados uma vez, na montagem do mundo, e ficam estacionados (escondidos, sem processo
+## e fora do espaço de física) longe do jogador. GETECO_BEAR_POOL=0 volta ao criar/destruir (A/B).
+static var _pool_enabled := OS.get_environment("GETECO_BEAR_POOL") != "0"
+## Diagnóstico: GETECO_WILDLIFE=0 não solta urso nenhum.
+static var _wildlife_enabled := OS.get_environment("GETECO_WILDLIFE") != "0"
+
 var controller
 var _spawned: Dictionary = {} # den id -> Array[MountainBear3D]
+var _parked: Dictionary = {} # den id -> Array[MountainBear3D], só com o estacionamento ligado
 var _clock := 0.0
 
 func _ready() -> void:
 	name = "MountainWildlife"
+	# Sem fauna (A/B de 17/10: os passos de física de 30-45 ms perto da toca da família continuaram
+	# iguais sem urso nenhum; eram da grama, MountainGrass3D).
+	if not _wildlife_enabled:
+		set_process(false)
+		return
 	# O primeiro urso da sessão gerava os sons (síntese em GDScript), as malhas compartilhadas e
 	# as variantes de material na hora: wildlife.bear_spawn de 22,7 ms e quadro de 78 ms na
 	# primeira volta da serra (EXE de 17/10). Um modelo descartável faz isso na montagem.
@@ -30,6 +45,32 @@ func _ready() -> void:
 	var warm: Node3D = preload("res://gameplay/wildlife/MountainBearModel.gd").new()
 	add_child(warm)
 	warm.free()
+	if _pool_enabled:
+		for den in DENS: _parked[den.id] = _build_den(den, CATALOG._at(den.point, "mountain"))
+
+func _build_den(den: Dictionary, home: Vector3) -> Array:
+	var bears: Array = []
+	for step in den.cubs.size() + 1:
+		var bear = _make_bear(den, home, step, bears)
+		add_child(bear)
+		bear.park()
+		bears.append(bear)
+	return bears
+
+func _make_bear(den: Dictionary, home: Vector3, step: int, bears: Array):
+	var bear := BEAR.new()
+	bear.controller = controller
+	if step == 0:
+		bear.name = "ForestBear_" + String(den.id)
+		bear.home = home
+	else:
+		var offset: Vector2 = den.cubs[step-1]
+		bear.name = "BearCub_" + String(den.id) + "_" + str(step)
+		bear.is_cub = true
+		bear.family_guardian = bears[0]
+		bear.family_offset = Vector3(offset.x, 0, offset.y) / 16.0
+		bear.home = home + bear.family_offset
+	return bear
 
 func _process(delta: float) -> void:
 	_advance_queue()
@@ -54,6 +95,12 @@ func _ground(region, point: Vector3) -> Vector3:
 var _queue: Array[Dictionary] = []
 
 func _spawn(den: Dictionary, home: Vector3, region) -> void:
+	if _parked.has(den.id):
+		var traced := preload("res://runtime/StallWorkTrace.gd").begin()
+		for bear in _parked[den.id]: bear.wake(_ground(region, bear.home))
+		_spawned[den.id] = _parked[den.id]
+		preload("res://runtime/StallWorkTrace.gd").finish("wildlife.bear_wake", traced)
+		return
 	_spawned[den.id] = []
 	_queue.append({"den": den, "home": home, "region": region, "step": 0})
 
@@ -67,26 +114,10 @@ func _advance_queue() -> void:
 		var bears: Array = _spawned[den.id]
 		var step := int(job.step)
 		var traced := preload("res://runtime/StallWorkTrace.gd").begin()
-		if step == 0:
-			var mother := BEAR.new()
-			mother.name = "ForestBear_" + String(den.id)
-			mother.controller = controller
-			mother.home = job.home
-			add_child(mother)
-			mother.global_position = _ground(job.region, job.home)
-			bears.append(mother)
-		else:
-			var offset: Vector2 = den.cubs[step-1]
-			var cub := BEAR.new()
-			cub.name = "BearCub_" + String(den.id) + "_" + str(bears.size())
-			cub.controller = controller
-			cub.is_cub = true
-			cub.family_guardian = bears[0]
-			cub.family_offset = Vector3(offset.x, 0, offset.y) / 16.0
-			cub.home = job.home + cub.family_offset
-			add_child(cub)
-			cub.global_position = _ground(job.region, cub.home)
-			bears.append(cub)
+		var bear = _make_bear(den, job.home, step, bears)
+		add_child(bear)
+		bear.global_position = _ground(job.region, bear.home)
+		bears.append(bear)
 		preload("res://runtime/StallWorkTrace.gd").finish("wildlife.bear_spawn", traced)
 		job.step = step + 1
 		if int(job.step) > den.cubs.size(): _queue.pop_front()
@@ -94,5 +125,7 @@ func _advance_queue() -> void:
 
 func _despawn(id: String) -> void:
 	for bear in _spawned[id]:
-		if is_instance_valid(bear): bear.queue_free()
+		if not is_instance_valid(bear): continue
+		if _parked.has(id): bear.park()
+		else: bear.queue_free()
 	_spawned.erase(id)

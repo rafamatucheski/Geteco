@@ -50,6 +50,7 @@ var elapsed := 0.0
 var model: Node3D
 var voice: AudioStreamPlayer3D
 var breath: AudioStreamPlayer3D
+var _death_tween: Tween
 
 func _ready() -> void:
 	add_to_group("mountain_wildlife")
@@ -230,9 +231,46 @@ func receive_damage(amount: float, _source: Node = null) -> void:
 	model.charging = false
 	model.dead = true
 	_voice("death", true)
-	var tween := create_tween()
-	tween.tween_property(model, "rotation:z", -PI * 0.45, 0.45).set_trans(Tween.TRANS_QUAD)
-	tween.parallel().tween_property(model, "position:y", 0.26 if is_cub else 0.45, 0.45)
+	_death_tween = create_tween()
+	_death_tween.tween_property(model, "rotation:z", -PI * 0.45, 0.45).set_trans(Tween.TRANS_QUAD)
+	_death_tween.parallel().tween_property(model, "position:y", 0.26 if is_cub else 0.45, 0.45)
+
+## Estacionado pelo MountainWildlife longe da toca: escondido e sem processo. Com o processo
+## desligado o CollisionObject3D sai do espaço de física (disable_mode REMOVE), e a investida ou a
+## queda da morte em andamento ficam congeladas até wake() reiniciar tudo.
+func park() -> void:
+	hide()
+	process_mode = Node.PROCESS_MODE_DISABLED
+	if is_instance_valid(breath): breath.stop()
+	if is_instance_valid(voice): voice.stop()
+
+## Volta curado ao ponto dado, como a V1 fazia ao reencontrar a toca (NPCMedicalCare).
+func wake(point: Vector3) -> void:
+	if _death_tween != null: _death_tween.kill()
+	_death_tween = null
+	dead = false
+	health = 55.0 if is_cub else 360.0
+	state = State.WANDER
+	state_time = 0.0
+	charge_hit = false
+	charge_cooldown = 2.0
+	bite_cooldown = 0.0
+	threat_time = 0.0
+	sound_cooldown = 0.0
+	velocity = Vector3.ZERO
+	collision_layer = 2
+	if is_instance_valid(model):
+		model.dead = false
+		model.walking = false
+		model.alert = false
+		model.charging = false
+		model.hurt_flash = 0.0
+		model.rotation.z = 0.0
+		model.position.y = 0.0
+	process_mode = Node.PROCESS_MODE_INHERIT
+	global_position = point
+	reset_physics_interpolation()
+	show()
 
 func _voice(event: String, urgent := false) -> void:
 	if sound_cooldown > 0 and not urgent: return
