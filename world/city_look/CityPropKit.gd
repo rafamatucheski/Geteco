@@ -13,7 +13,9 @@ static var _material: StandardMaterial3D
 static var detail_range_enabled := OS.get_environment("GETECO_DETAIL_RANGE") != "0"
 const DETAIL_NEAR_DISTANCE := 40.0
 const DETAIL_RANGE_MARGIN := 4.0
-const DETAIL_PROP_KINDS := ["hydrant", "trash_can", "news_box", "mailbox", "trash_bags", "bollard", "bench_seat", "planter", "vent", "dish", "pipe_run", "window_ac", "flower_box", "pigeons", "laundry", "posters", "satellite_row", "roof_chairs"]
+const DETAIL_PROP_KINDS := ["hydrant", "trash_can", "news_box", "mailbox", "trash_bags", "bollard", "bench_seat", "planter", "vent", "dish", "pipe_run", "window_ac", "flower_box", "pigeons", "laundry", "posters", "satellite_row", "roof_chairs",
+	# Peças baixas do SidewalkFill (as de mesa, banca e árvore ficam de fora: dão volume de longe).
+	"a_frame", "beer_crates", "pot_plant", "wheelie_bins", "bike_rack", "tire_stack", "drums", "clothes_rack", "flower_buckets", "gas_cylinders", "door_bench"]
 
 
 static func apply_detail_range(instance: GeometryInstance3D) -> void:
@@ -52,7 +54,9 @@ static func material() -> StandardMaterial3D:
 ## Adereços em camadas: cada camada vira uma superfície com textura própria
 ## (granito, folhagem, plástico), em vez da cor lisa do kit, que deixava vaso e
 ## sacos com cara de brinquedo. Quem desenha estes tipos não põe material_override.
-const LAYERED := {"planter": ["stone", "leaves"], "trash_bags": ["plastic"], "hedge": ["leaves"]}
+const LAYERED := {"planter": ["stone", "leaves"], "trash_bags": ["plastic"], "hedge": ["leaves"],
+	# SidewalkFillKit: árvore de rua e vaso de porta.
+	"street_tree": ["bark", "leaves"], "street_tree_b": ["bark", "leaves"], "pot_plant": ["stone", "leaves"]}
 const FLORA := preload("res://assets/urban_detail/FloraSurfaces.gd")
 
 
@@ -67,6 +71,7 @@ static func material_for(kind: String) -> StandardMaterial3D:
 static func layer_material(layer: String) -> StandardMaterial3D:
 	match layer:
 		"stone": return FLORA.material("granite", Color.WHITE, 1.1, 0.9, 0.93, true)
+		"bark": return FLORA.bark()
 		"leaves": return FLORA.material("foliage", Color.WHITE, 0.55, 1.2, 0.96, true)
 		_: return FLORA.material("fabric", Color.WHITE, 0.45, 1.6, 0.48, true)
 
@@ -83,6 +88,7 @@ static func _layered_mesh(kind: String) -> ArrayMesh:
 			"planter:leaves": _planter_leaves(tool)
 			"trash_bags:plastic": _trash_bags(tool)
 			"hedge:leaves": _hedge(tool)
+			_: preload("res://world/city_look/SidewalkFillKit.gd").build_layer(kind, layer, tool)
 		tool.generate_normals()
 		tool.commit(result)
 	return result
@@ -120,7 +126,10 @@ static func mesh(kind: String) -> ArrayMesh:
 		"manhole": _manhole(tool)
 		"drain": _drain(tool)
 		"bench_seat": _bench_seat(tool)
-		_: preload("res://world/city_look/BuildingLifeKit.gd").build(kind, tool)
+		_:
+			var fill := preload("res://world/city_look/SidewalkFillKit.gd")
+			if kind in fill.KINDS: fill.build(kind, tool)
+			else: preload("res://world/city_look/BuildingLifeKit.gd").build(kind, tool)
 	tool.generate_normals()
 	var result := tool.commit()
 	_meshes[kind] = result

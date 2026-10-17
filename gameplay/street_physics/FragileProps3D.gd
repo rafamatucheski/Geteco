@@ -34,6 +34,26 @@ const KINDS := {
 	"pallet": {"family": "light", "radius": 1.2, "drag": 0.05, "damage": 1.0, "sound": "wood"},
 	"desert_rock": {"family": "light", "radius": 1.1, "drag": 0.20, "damage": 7.0, "sound": "stone"},
 	"desert_tree": {"family": "light", "radius": 0.4, "drag": 0.10, "damage": 3.0, "sound": "wood"},
+	# Térreo da calçada (SidewalkFill): plástico, madeira e lata que o carro espalha.
+	"cafe_set": {"family": "light", "radius": 0.85, "drag": 0.04, "damage": 0.5, "sound": "wood"},
+	"cafe_parasol": {"family": "light", "radius": 0.9, "drag": 0.05, "damage": 0.5, "sound": "wood"},
+	"produce_stand": {"family": "light", "radius": 0.9, "drag": 0.05, "damage": 0.5, "sound": "wood"},
+	"a_frame": {"family": "light", "radius": 0.35, "drag": 0.01, "damage": 0.0, "sound": "wood"},
+	"beer_crates": {"family": "light", "radius": 0.45, "drag": 0.02, "damage": 0.0, "sound": "glass"},
+	"pot_plant": {"family": "light", "radius": 0.38, "drag": 0.04, "damage": 0.5, "sound": "stone"},
+	"wheelie_bins": {"family": "light", "radius": 0.7, "drag": 0.03, "damage": 0.0, "sound": "metal"},
+	"bike_rack": {"family": "light", "radius": 1.2, "drag": 0.06, "damage": 1.0, "sound": "metal"},
+	"pallet_stack": {"family": "light", "radius": 0.75, "drag": 0.06, "damage": 1.0, "sound": "wood"},
+	"tire_stack": {"family": "light", "radius": 0.75, "drag": 0.04, "damage": 0.5, "sound": "wood"},
+	"drums": {"family": "light", "radius": 0.65, "drag": 0.06, "damage": 1.0, "sound": "metal"},
+	"cafe_parasol_b": {"family": "light", "radius": 0.9, "drag": 0.05, "damage": 0.5, "sound": "wood"},
+	"food_cart": {"family": "light", "radius": 0.9, "drag": 0.1, "damage": 2.0, "sound": "metal"},
+	"ice_freezer": {"family": "light", "radius": 0.6, "drag": 0.12, "damage": 2.0, "sound": "metal"},
+	"clothes_rack": {"family": "light", "radius": 0.8, "drag": 0.02, "damage": 0.0, "sound": "metal"},
+	"flower_buckets": {"family": "light", "radius": 0.7, "drag": 0.02, "damage": 0.0, "sound": "metal"},
+	"gas_cylinders": {"family": "light", "radius": 0.55, "drag": 0.05, "damage": 1.0, "sound": "metal"},
+	"door_bench": {"family": "light", "radius": 0.65, "drag": 0.04, "damage": 0.5, "sound": "wood"},
+	"motorcycle": {"family": "light", "radius": 1.0, "drag": 0.18, "damage": 4.0, "sound": "metal"},
 }
 
 static var cells := {}
@@ -319,7 +339,9 @@ const DEBRIS_LAYER := 8
 const MAX_DEBRIS := 18
 const DEBRIS_LIFETIME := 10.0
 ## kg; o carro leva ~1200 kg.
-const MASSES := {"trash_can": 11.0, "news_box": 28.0, "mailbox": 45.0, "hydrant": 60.0, "bench_seat": 55.0, "dumpster": 100.0, "trash_bags": 5.0, "planter": 90.0, "desert_rock": 180.0, "desert_tree": 35.0, "lamp": 90.0, "signal_pole": 120.0, "stop_sign": 18.0, "phone_booth": 200.0}
+const MASSES := {"trash_can": 11.0, "news_box": 28.0, "mailbox": 45.0, "hydrant": 60.0, "bench_seat": 55.0, "dumpster": 100.0, "trash_bags": 5.0, "planter": 90.0, "desert_rock": 180.0, "desert_tree": 35.0, "lamp": 90.0, "signal_pole": 120.0, "stop_sign": 18.0, "phone_booth": 200.0,
+	"cafe_set": 14.0, "cafe_parasol": 18.0, "produce_stand": 30.0, "a_frame": 6.0, "beer_crates": 16.0, "pot_plant": 25.0, "wheelie_bins": 22.0, "bike_rack": 40.0, "pallet_stack": 60.0, "tire_stack": 45.0, "drums": 50.0,
+	"cafe_parasol_b": 18.0, "food_cart": 60.0, "ice_freezer": 70.0, "clothes_rack": 12.0, "flower_buckets": 15.0, "gas_cylinders": 45.0, "door_bench": 15.0, "motorcycle": 150.0}
 static var _debris: Array = []
 
 

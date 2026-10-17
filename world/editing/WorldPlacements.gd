@@ -11,9 +11,16 @@ const PIECES := preload("res://world/editing/WorldEditPieces.gd")
 const UNITS := preload("res://world/editing/WorldUnits.gd")
 const PREFIX := "piece/pl/"
 const LAMP := "sidewalk_lamp"
-const KINDS := ["signal_pole", "stop_sign", "hydrant", "trash_can", "news_box", "mailbox", "phone_booth", "bench_seat", "dumpster", "trash_bags", "planter"]
+const KINDS := ["signal_pole", "stop_sign", "hydrant", "trash_can", "news_box", "mailbox", "phone_booth", "bench_seat", "dumpster", "trash_bags", "planter",
+	"street_tree", "street_tree_b", "cafe_set", "cafe_parasol", "produce_stand", "a_frame", "beer_crates", "pot_plant", "wheelie_bins", "bike_rack", "pallet_stack", "tire_stack", "drums",
+	"cafe_parasol_b", "food_cart", "ice_freezer", "clothes_rack", "flower_buckets", "gas_cylinders", "door_bench", "motorcycle"]
 const LABELS := {"signal_pole": "Semáforo", "stop_sign": "Placa de pare", "hydrant": "Hidrante", "trash_can": "Lixeira", "news_box": "Banca de jornal", "mailbox": "Caixa de correio",
-	"phone_booth": "Orelhão", "bench_seat": "Banco", "dumpster": "Caçamba", "trash_bags": "Sacos de lixo", "planter": "Jardineira", "sidewalk_lamp": "Poste de calçada"}
+	"phone_booth": "Orelhão", "bench_seat": "Banco", "dumpster": "Caçamba", "trash_bags": "Sacos de lixo", "planter": "Jardineira", "sidewalk_lamp": "Poste de calçada",
+	"street_tree": "Árvore de rua", "street_tree_b": "Árvore de rua alta", "cafe_set": "Mesa de bar", "cafe_parasol": "Mesa com guarda-sol", "produce_stand": "Banca de fruta",
+	"a_frame": "Cavalete", "beer_crates": "Engradados", "pot_plant": "Vaso", "wheelie_bins": "Lixeiras de casa", "bike_rack": "Paraciclo", "pallet_stack": "Paletes",
+	"tire_stack": "Pneus", "drums": "Tambores", "cafe_parasol_b": "Mesa com guarda-sol verde", "food_cart": "Carrinho de lanche",
+	"ice_freezer": "Freezer de sorvete", "clothes_rack": "Arara de roupa", "flower_buckets": "Baldes de flor", "gas_cylinders": "Botijões",
+	"door_bench": "Banco de porta", "motorcycle": "Moto estacionada"}
 
 static func _changes(region: Node) -> Dictionary:
 	var all: Variant = region.get("_piece_changes")

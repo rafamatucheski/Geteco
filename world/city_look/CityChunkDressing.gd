@@ -29,7 +29,10 @@ const BRIDGE_SURFACE := preload("res://world/regions/unified_bridge/UnifiedBridg
 const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
 const JUNCTIONS := preload("res://gameplay/traffic_junctions/TrafficJunctions.gd")
 const PLACEMENTS := preload("res://world/editing/WorldPlacements.gd")
-const FRAGILE_KINDS := ["signal_pole", "stop_sign", "hydrant", "trash_can", "news_box", "mailbox", "phone_booth", "bench_seat", "dumpster", "trash_bags", "planter"]
+const FILL := preload("res://world/city_look/SidewalkFill.gd")
+const FRAGILE_KINDS := ["signal_pole", "stop_sign", "hydrant", "trash_can", "news_box", "mailbox", "phone_booth", "bench_seat", "dumpster", "trash_bags", "planter",
+	"cafe_set", "cafe_parasol", "cafe_parasol_b", "produce_stand", "a_frame", "beer_crates", "pot_plant", "wheelie_bins", "bike_rack", "pallet_stack", "tire_stack", "drums",
+	"food_cart", "ice_freezer", "clothes_rack", "flower_buckets", "gas_cylinders", "door_bench", "motorcycle"]
 
 # Fração de janelas acesas à noite. Residência acende menos que vitrine.
 const WINDOW_LIT_RATIO := 0.60
@@ -57,7 +60,9 @@ const WORKSHOP_VEHICLE_ACCESS := [Rect2(153.0,100.8,10.0,10.7),Rect2(167.0,97.2,
 const SHADOW_CASTERS := ["water_tank", "cooling_tower", "signal_pole", "dumpster", "phone_booth", "billboard_frame", "fe_platform", "fe_stair", "fe_stair_m", "window_ac", "laundry",
 	# Mobília de calçada: sem sombra, lixeira/hidrante/jornaleiro pareciam soltos,
 	# flutuando sobre a calçada (relato do jogador em 2026-09-24).
-	"trash_can", "news_box", "mailbox", "hydrant", "stop_sign", "bench_seat", "planter", "bollard", "trash_bags"]
+	"trash_can", "news_box", "mailbox", "hydrant", "stop_sign", "bench_seat", "planter", "bollard", "trash_bags",
+	# SidewalkFill: árvore e guarda-sol são as sombras que mais assentam a rua vista de cima.
+	"street_tree", "street_tree_b", "cafe_set", "cafe_parasol", "cafe_parasol_b", "produce_stand", "pallet_stack", "food_cart", "motorcycle", "ice_freezer"]
 # Corte por distância (m, até a peça) só para peças PEQUENAS de telhado: a câmera do
 # jogo fica 25 m acima e 25 m atrás do jogador (CameraRig.EXTERIOR_OFFSET) e o quadro
 # cobre uns 50 m em volta dele; nada além de 60-80 m aparece na tela de jogo. Em
@@ -82,6 +87,8 @@ static func build_chunk(region: Node3D, chunk: Node3D, rect: Rect2) -> void:
 	_texture_walls(chunk)
 	_face_ground_up(chunk)
 	_junction_signage(context, batches, chunk)
+	FILL.street_trees(context, batches)
+	FILL.frontage(chunk, context, batches)
 	_sidewalk_furniture(context, batches)
 	_building_surroundings(context, batches)
 	_road_wear(context, batches)
@@ -103,16 +110,18 @@ static func build_chunk_step(state: Dictionary) -> bool:
 		5:
 			if not _face_ground_up_step(state): return false
 		6: _junction_signage(state.context, state.batches, state.chunk)
-		7: _sidewalk_furniture(state.context, state.batches)
-		8: _building_surroundings(state.context, state.batches)
-		9: _road_wear(state.context, state.batches)
-		10: _rooftops(state.chunk, state.context, state.batches)
-		11: _flush(state.chunk, state.batches)
-		12:
+		7: FILL.street_trees(state.context, state.batches)
+		8: FILL.frontage(state.chunk, state.context, state.batches)
+		9: _sidewalk_furniture(state.context, state.batches)
+		10: _building_surroundings(state.context, state.batches)
+		11: _road_wear(state.context, state.batches)
+		12: _rooftops(state.chunk, state.context, state.batches)
+		13: _flush(state.chunk, state.batches)
+		14:
 			if not state.has("ground_litter"): state.ground_litter = GROUND_LITTER.begin(state.chunk, state.context, state.batches, WORKSHOP_VEHICLE_ACCESS)
 			if not GROUND_LITTER.step(state.ground_litter): return false
 	state.step += 1
-	return state.step > 12
+	return state.step > 14
 
 
 # ---------------------------------------------------------------------------
@@ -274,6 +283,7 @@ static func _flush(chunk: Node3D, batches: Dictionary) -> void:
 			collision.transform = chunk.global_transform.affine_inverse() * placement * Transform3D(Basis.IDENTITY, Vector3(0, .25, 0))
 			body.add_child(collision)
 		chunk.add_child(body)
+	FILL.add_trunk_collision(chunk, batches)
 	_register_fragile(chunk, batches, built)
 
 
@@ -669,11 +679,12 @@ static func _sidewalk_furniture(context: Dictionary, batches: Dictionary) -> voi
 					if kind.is_empty(): continue
 					if _near_junction(context, point) or _near_lamp(context, point): continue
 					if _road_clearance(context, point) < 0.25 or _inside_building(context, point, 0.6): continue
+					if FILL.occupied_near(context, point, 1.0): continue
 					# Orelhão e banco ficam mais para dentro, encostados no lado
 					# do prédio, para não invadir o meio-fio.
 					if kind in ["phone_booth", "bench_seat", "planter"]:
 						point = along + outward * (width * 0.5 + SIDEWALK - 0.7)
-						if _inside_building(context, point, 0.5): continue
+						if _inside_building(context, point, 0.5) or FILL.occupied_near(context, point, 1.2): continue
 					# Both divided lanes share a structural bridge deck. Their inner
 					# "sidewalks" are the driving median, not a place for furniture.
 					if WORLD_CONNECTION.reserves_approach_for_driving(point): continue
@@ -729,6 +740,7 @@ static func _building_surroundings(context: Dictionary, batches: Dictionary) -> 
 			if _inside_building(context, point, 0.9) or _road_clearance(context, point) < SIDEWALK + 0.4: continue
 			if _refuse_overlaps_transit(context,point): continue
 			if point.distance_to(SEWER_ACCESS) < SEWER_CLEARANCE: continue
+			if FILL.occupied_near(context, point, 1.2): continue
 			_add(batches, "dumpster", Vector3(point.x, 0.012, point.y), Vector2(-side, 0), 1.0)
 			var bags := point + Vector2(0, 1.5)
 			if _roll(key + "bags") < 0.6 and bags.distance_to(SEWER_ACCESS) >= SEWER_CLEARANCE and not _inside_building(context, bags, 0.4) and not _refuse_overlaps_transit(context,bags):
@@ -828,6 +840,9 @@ static func _decal_spec(kind: String) -> Dictionary:
 			return {"material": MATERIALS.ground_decal("crack", _crack_texture(), Color(0.03, 0.03, 0.035, 0.75))}
 		"grime":
 			return {"material": MATERIALS.ground_decal("grime", MATERIALS.alpha_blob("grime", 0.0), Color(0.12, 0.10, 0.07, 0.3))}
+		"tree_pit":
+			# Terra escura da gola da árvore de rua (SidewalkFill): mesmo shader dos outros decalques.
+			return {"material": MATERIALS.ground_decal("tree_pit", _soft_rect_texture(0.1), Color(0.13, 0.09, 0.06, 0.88))}
 		"roof_tar":
 			return {"material": MATERIALS.ground_decal("roof_tar", _soft_rect_texture(0.08), Color(0.06, 0.06, 0.07, 0.45))}
 	if kind.begins_with("roof_"):
