@@ -90,6 +90,11 @@ func _player() -> Node3D:
 	return controller.world.player if controller != null and controller.world != null else null
 
 func _physics_process(delta: float) -> void:
+	var traced := preload("res://runtime/StallWorkTrace.gd").begin()
+	_physics_step(delta)
+	preload("res://runtime/StallWorkTrace.gd").finish_slow("wildlife.bear_physics", traced, 5000, self)
+
+func _physics_step(delta: float) -> void:
 	if dead:
 		velocity = Vector3(0, velocity.y - GRAVITY * delta, 0)
 		move_and_slide()

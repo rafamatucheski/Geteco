@@ -99,6 +99,13 @@ valem comparações dentro do mesmo bloco de rodadas. Os p50 abaixo não devem s
   perto das tocas): `physics_callback_ms` 40-43 em 1 passo. Apareceu em 3 de 5 rodadas recentes, com e sem o pool de
   calor. Suspeita, não provada: os ursos estacionados acordando (`MountainBear3D.wake`, commit 62797e0b) ao voltar ao
   raio da toca. É hoje o quadro > 33 ms que sobra dentro da medição.
+  **Ursos descartados (17/10, 1 rodada, export `builds/bearphys`):** com `wildlife.bear_physics` (span de
+  `MountainBear3D._physics_process`, `finish_slow` ≥ 5 ms) o pico apareceu em t≈135 s com 49,8 ms em 1 passo, mas os
+  ursos tinham acordado em t≈122 s (`wildlife.bear_wake` 0,2 ms) e no passo do pico nenhum span de script de física
+  passou de 0,4 ms (urso 0,16 ms, veículo 0,40 ms). O único passo lento do urso foi o 1º depois do 1º despertar (4,5 ms,
+  t≈48 s). Então o custo está fora dos scripts medidos: passo nativo da física (Jolt) ou um `_physics_process` sem span.
+  Próximo passo: span em volta de `PhysicsServer3D` (ou contar corpos ativos/pares no passo) e cobrir os demais
+  `_physics_process` da serra. Uma rodada só: o horário do pico varia entre rodadas.
 - Primeira volta (aquecimento, fora da medição mas depois de jogável): `stream.mountain.surfaces` de 27-35 ms em
   t≈13,8 s em toda rodada, e 1-2 quadros de 33-36 ms em `render_bracket` em t≈4,5 e 16,6 s.
 - t≈114 s, ~40-45 ms em `post_render`: fim do benchmark (gravação do resultado), fora da medição.
