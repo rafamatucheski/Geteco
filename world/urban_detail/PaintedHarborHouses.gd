@@ -23,6 +23,10 @@ const HARBOR := {
 	"NorthFireStation": "bombeiros",
 	"Police": "delegacia",
 	"NorthFrontage0": "banco",
+	# Rodada "restantes" do Codex (17/10): vãos medidos por script em metros (1,0-1,2 x 2,2-2,5 m),
+	# tools/painted_facades_porto_restantes.json. Salão e pousada voltaram ao Codex (portas baixas).
+	"RoadsideSupplies": "loja-estrada", "ParcelOffice": "escritorio-encomendas", "ServiceCafe": "cafe-servico",
+	"CycleWorkshop": "oficina-bicicletas", "CornerPharmacy": "farmacia-esquina", "NorthbankHomes2": "oficina-margem-norte",
 }
 ## A casa do líder mantém a geometria antiga: CobraLeaderEntrance recorta HouseBody,
 ## FrontDoor e FrontPorch para a porta trancada da missão, e a fachada pintada não
