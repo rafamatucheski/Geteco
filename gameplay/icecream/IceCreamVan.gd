@@ -8,6 +8,7 @@ static var _livery: ArrayMesh
 static var _roof_liveries: Dictionary = {}
 static var _roof_heights: Dictionary = {}
 static var _glass: Dictionary = {}
+static var _visual_roof: Dictionary = {}
 static var _clown: ArrayMesh
 static var _song: AudioStreamWAV
 static var enabled := true # Process-local A/B measurement only; never saved.
@@ -37,6 +38,31 @@ static func prewarm() -> void:
 	livery_mesh()
 	clown_mesh()
 	song_stream()
+	# Altura do teto da courier sob a cortina: surface_get_arrays lê os vértices de volta do
+	# servidor de render, e mesmo com o cache a primeira van que nascia no trânsito custava
+	# 38,7 ms num quadro (serra, EXE de 17/10).
+	if not _visual_roof.has("courier_van"):
+		var visual: Node3D = preload("res://runtime/FleetCatalog.gd").create("courier_van")
+		if visual != null:
+			_visual_roof["courier_van"] = _paint_top(visual)
+			visual.free()
+
+## Ponto mais alto da pintura no espaço do nó raiz do visual, sem precisar estar na árvore.
+static func _paint_top(root: Node3D) -> float:
+	var height := -INF
+	for part: MeshInstance3D in root.find_children("*","MeshInstance3D",true,false):
+		if part.mesh == null or part.has_meta("wheel_center"): continue
+		var to_root := Transform3D.IDENTITY
+		var node: Node = part
+		while node != root and node is Node3D:
+			to_root = (node as Node3D).transform * to_root
+			node = node.get_parent()
+		for surface in part.mesh.get_surface_count():
+			if SURFACES.key(part,surface) != "paint": continue
+			var vertices: PackedVector3Array = to_root * (part.mesh.surface_get_arrays(surface)[Mesh.ARRAY_VERTEX] as PackedVector3Array)
+			for vertex in vertices:
+				if vertex.y > height: height = vertex.y
+	return height
 
 func _ready() -> void:
 	add_to_group(GROUP)
@@ -94,6 +120,10 @@ func _roof_height() -> float:
 	# Todas as vans usam as mesmas malhas do FleetCatalog: a varredura (vértice a vértice em
 	# GDScript) custou 43 ms num quadro da serra no EXE de 17/10 e agora roda uma vez por
 	# conjunto de malhas e posições, não a cada van que nasce no trânsito.
+	# Caminho rápido: altura medida no pré-aquecimento, levada do visual para o carro.
+	if _visual_roof.has(car.archetype) and is_finite(float(_visual_roof[car.archetype])):
+		var top := car.to_local(car.visual.to_global(Vector3(0, float(_visual_roof[car.archetype]), 0))).y
+		return top if top > 1.2 else 2.10
 	var parts: Array[MeshInstance3D] = []
 	var key := ""
 	for part: MeshInstance3D in car.visual.find_children("*","MeshInstance3D",true,false):
