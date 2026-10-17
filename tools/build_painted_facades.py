@@ -174,12 +174,83 @@ def write_import_params(texture: pathlib.Path) -> None:
     path.write_text(NL.join(out) + NL, encoding="utf-8")
 
 
-def styles() -> list:
+def styles(config: dict) -> list:
     requested = [a.split("=", 1)[1].split(",") for a in sys.argv[1:] if a.startswith("--styles=")]
     if requested:
         return requested[0]
+    # Pacote alto só entra na conversão geral depois de ter os vãos medidos no JSON:
+    # a detecção automática de uma porta só não serve para térreo de prédio alto.
     return sorted(p.name for p in SOURCE.iterdir()
-                  if p.is_dir() and p.name not in SKIP and (p / "frente-dia.png").exists())
+                  if p.is_dir() and p.name not in SKIP and ((p / "frente-dia.png").exists()
+                  or ((p / TALL_MARKER).exists() and p.name in config)))
+
+
+# Prédio alto (pacote em peças por andar, 23 imagens): para cada lado o térreo
+# (4 m), UM andar típico (3 m) que o kit repete na vertical e o topo com
+# coroamento (3 m). Detectado pela presença do andar da frente.
+TALL_MARKER = "frente-andar-dia.png"
+TALL_SIDES = {"frente": "front", "lateral": "side", "fundos": "back"}
+TALL_PIECES = {"terreo": "ground", "andar": "floor", "topo": "top"}
+# Largura de saída por lado. O andar é largo e baixo (16 x 3 m = 4096 x 768 px na
+# torre cívica): 2048 px dá 128 px/m num módulo de 16 m (os estilos de uma altura
+# ficam entre 40 e 130 px/m) e mantém a altura do andar em 384 px, sem borrar
+# esquadria nem junta de pedra. A lateral (6 m) fica com 1024 px = 170 px/m.
+TALL_WIDTHS = {"front": 2048, "back": 2048, "side": 1024}
+TALL_DOORS = {"porta-frente": "door_front", "porta-frente-verso": "door_front_inside",
+              "porta-fundos": "door_back", "porta-fundos-verso": "door_back_inside", "telhado": "roof"}
+
+
+def convert_tall(style: str, source: pathlib.Path, target: pathlib.Path, entry: dict) -> dict:
+    """Converte o pacote alto e devolve o style.json. As alturas das peças saem da
+    proporção das imagens da frente (largura do módulo conhecida); a lateral e os
+    fundos têm de bater com elas, senão o andar repetido sai com degrau na quina."""
+    sizes = entry.get("sizes", {})
+    module_w = float(entry.get("module_w", DEFAULT_MODULE_W))
+    side_w = float(entry.get("side_w", DEFAULT_SIDE_W))
+    heights = {}
+    for side, key in TALL_SIDES.items():
+        span = side_w if key == "side" else module_w
+        for piece, name in TALL_PIECES.items():
+            day = Image.open(source / f"{side}-{piece}-dia.png")
+            height = span * day.height / day.width
+            heights.setdefault(name, {})[key] = round(height, 3)
+            width = int(sizes.get(f"{side}-{piece}", TALL_WIDTHS[key]))
+            image = flatten(day).resize((width, round(width * day.height / day.width)), Image.LANCZOS)
+            image.save(target / f"{key}_{name}.jpg", quality=88, optimize=True)
+            glow_mask(source / f"{side}-{piece}-noite.png", width).save(target / f"{key}_{name}_glow.jpg", quality=85, optimize=True)
+    for part, name in TALL_DOORS.items():
+        if not (source / f"{part}.png").exists():
+            continue
+        width = int(sizes.get(part, SIZES[part]))
+        image = flatten(Image.open(source / f"{part}.png"))
+        image.resize((width, round(width * image.height / image.width)), Image.LANCZOS).save(target / f"{name}.jpg", quality=88, optimize=True)
+    for name, by_side in heights.items():
+        if max(by_side.values()) - min(by_side.values()) > 0.05:
+            print(f"  aviso {style}: altura de '{name}' difere entre os lados {by_side} (vale a da frente)")
+    floors = [heights["ground"]["front"], heights["floor"]["front"], heights["top"]["front"]]
+    openings = {}
+    for key in ["front", "back"]:
+        # Vãos só no térreo: o retângulo é fração da imagem do térreo daquele lado.
+        openings[key] = [{"rect": grow(o["rect"], float(entry.get("margin", DOOR_MARGIN))), "leaf": bool(o.get("leaf", True))}
+                         for o in entry.get(key, [])]
+    doors = {}
+    for key in ["front", "back"]:
+        leafs = [o["rect"] for o in openings[key] if o["leaf"]]
+        if leafs:
+            doors[key] = leafs[0]
+    return {
+        "style": style,
+        "tall": True,
+        # [térreo, andar típico (repetido), topo] em metros.
+        "floors": floors,
+        # Módulo e lateral: largura e altura do TÉRREO (o kit soma os andares).
+        "module": [module_w, floors[0]],
+        "side": [side_w, heights["ground"]["side"]],
+        "eave": 0.0,
+        "snow_roof": False,
+        "openings": openings,
+        "doors": doors,
+    }
 
 
 def main() -> None:
@@ -188,11 +259,18 @@ def main() -> None:
     config = {}
     for path in sorted(CONFIG.parent.glob("painted_facades*.json")):
         config.update(json.loads(path.read_text(encoding="utf-8")))
-    for style in styles():
+    for style in styles(config):
         source = SOURCE / style
         target = TARGET / style
         target.mkdir(parents=True, exist_ok=True)
         entry = config.get(style, {})
+        if (source / TALL_MARKER).exists():
+            data = convert_tall(style, source, target, entry)
+            for texture in target.glob("*.jpg"):
+                write_import_params(texture)
+            (target / "style.json").write_text(json.dumps(data, indent="\t"), encoding="utf-8")
+            print(style, "alto", json.dumps({k: data[k] for k in ["floors", "module", "side"]}), len(data["openings"]["front"]), len(data["openings"]["back"]))
+            continue
         # Opções por estilo (só para quem pede; os demais seguem os padrões acima):
         # "sizes" troca a largura de saída de uma peça (galpão de 56 m precisa de mais
         # que 768 px), "front_warp" casa os vãos da frente com portões 3D existentes,

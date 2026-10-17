@@ -47,6 +47,10 @@ static func footprint_width(building_id: String, width: float) -> float:
 ## Estilo pintado do prédio, ou "" quando ele continua com a geometria antiga.
 static func style_for(building_id: String, kind: String) -> String:
 	if not PaintedFacadeKit.enabled() or building_id in KEEP_GEOMETRY: return ""
+	# Prédio alto (piloto, GETECO_PAINTED_TALL=0 desliga): a fábrica pula a cena assada e o
+	# catálogo leva a entrada para o vão pintado, como nos estilos de uma altura.
+	var tall := preload("res://world/urban_detail/PaintedTallBuildings.gd").style_for(building_id)
+	if not tall.is_empty(): return tall
 	if kind == "cobra_house":
 		if COBRA.has(building_id): return COBRA[building_id]
 		var values: Array = COBRA.values()

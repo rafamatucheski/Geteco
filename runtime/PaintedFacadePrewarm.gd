@@ -7,6 +7,11 @@ extends RefCounted
 ## alguns quadros; os materiais ficam retidos no cache estático do kit.
 const GUARDS := preload("res://gameplay/emergency/EffectsPrewarm.gd")
 const PARTS := ["front", "back", "side", "roof", "door_front", "door_front_inside", "door_back", "door_back_inside"]
+## Peças do prédio alto (térreo, andar, topo de cada lado e as máscaras de luz):
+## só entram com o piloto ligado (padrão; GETECO_PAINTED_TALL=0 desliga), senão
+## seriam ~18 texturas carregadas a troco de nada.
+const TALL_PARTS := ["front_ground", "front_floor", "front_top", "back_ground", "back_floor", "back_top",
+	"side_ground", "side_floor", "side_top"]
 const DRAW_FRAMES := 3
 const MAX_WAIT_FRAMES := 24
 static var _done := false
@@ -21,7 +26,7 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 	var materials: Array = []
 	for style in PaintedFacadeKit.all_styles():
 		PaintedFacadeKit.style_data(style)
-		for part in PARTS + ["roof_clear"]:
+		for part in PARTS + ["roof_clear"] + (TALL_PARTS if preload("res://world/urban_detail/PaintedTallBuildings.gd").enabled() else []):
 			if ResourceLoader.exists(PaintedFacadeKit.ROOT + style + "/" + part + ".jpg"):
 				materials.append(PaintedFacadeKit.material(style, part))
 	materials.append(PaintedFacadeKit._corridor_material())

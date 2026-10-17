@@ -81,6 +81,8 @@ static func _append(row: Dictionary) -> void:
 		size.y -= 1.8
 	var height: float = load("res://world/urban_detail/UrbanBuildingFactory.gd").resolved_height(row)
 	if kind == "rowhouse_terrace": height = 7.05 if "East" in source_id else 6.85
+	# Prédio alto pintado (piloto): andares e cobertura na altura da casca pintada.
+	height = preload("res://world/urban_detail/PaintedTallBuildings.gd").height_for(source_id, height)
 	var roof_height := height+.10
 	var inhabited_height := height
 	if kind == "house_gable": inhabited_height *= .72

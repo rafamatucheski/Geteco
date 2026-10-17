@@ -6,6 +6,8 @@ class_name UrbanCommercialBuilding
 ## rooftop HVAC chillers, and communication antennas.
 
 func build() -> void:
+	# Prédio alto pintado (piloto; GETECO_PAINTED_TALL=0 desliga; ver PaintedTallBuildings).
+	if preload("res://world/urban_detail/PaintedTallBuildings.gd").build_into(self): return
 	var painted := PaintedHarborHouses.style_for(building_id, building_kind)
 	if not painted.is_empty():
 		PaintedHarborHouses.build(self, painted)

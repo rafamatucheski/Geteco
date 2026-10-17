@@ -117,7 +117,9 @@ static func material(style: String, part: String) -> StandardMaterial3D:
 	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 	# Telhado de duas águas é visto por baixo no beiral.
 	if part.begins_with("roof"): mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	if part in ["front", "back", "side"]:
+	# Paredes: front/back/side e, no prédio alto, as peças por andar (front_ground,
+	# side_floor, back_top...). Porta e telhado começam com outro nome e não acendem.
+	if part.get_slice("_", 0) in ["front", "back", "side"]:
 		mat.emission_enabled = true
 		# Operador ADD soma a cor à textura: preto deixa só a máscara acender.
 		mat.emission = Color.BLACK
@@ -157,6 +159,7 @@ static func build(parent: Node3D, style: String, size: Vector3, collision_parent
 
 
 static func _build(parent: Node3D, style: String, size: Vector3, collision_parent: Node3D, walk_in_x: float, options: Dictionary) -> Node3D:
+	if is_tall(style): return _build_tall(parent, style, size, collision_parent, walk_in_x, options)
 	var root := Node3D.new()
 	root.name = "PaintedFacade_" + style
 	parent.add_child(root)
@@ -244,6 +247,115 @@ static func _build(parent: Node3D, style: String, size: Vector3, collision_paren
 		body.add_child(shape)
 		collision_parent.add_child(body)
 	return root
+
+
+## Prédio alto (style.json "tall": true, pacote em peças por andar): cada face é o
+## térreo (com os vãos de porta) + N cópias do andar típico + o topo com coroamento.
+## O desenho do andar foi pintado para emendar consigo mesmo na vertical, então o
+## prédio cresce sem esticar janela. Estilos de uma altura não passam por aqui.
+static func is_tall(style: String) -> bool:
+	return bool(style_data(style).get("tall", false))
+
+
+## Andares para uma altura pedida: N = (altura - térreo - topo) / andar, arredondado,
+## mínimo 0. A altura construída é a soma exata das peças ("height"), não a pedida:
+## quem monta o prédio (catálogo, cobertura, colisão) deve usar esta.
+static func tall_layout(style: String, wanted_h: float) -> Dictionary:
+	var floors: Array = style_data(style).get("floors", [4.0, 3.0, 3.0])
+	var ground := float(floors[0])
+	var floor_h := float(floors[1])
+	var top := float(floors[2])
+	var count := maxi(0, roundi((wanted_h - ground - top) / floor_h))
+	return {"ground": ground, "floor": floor_h, "top": top, "count": count, "height": ground + floor_h * float(count) + top}
+
+
+static func _build_tall(parent: Node3D, style: String, size: Vector3, collision_parent: Node3D, walk_in_x: float, options: Dictionary) -> Node3D:
+	var root := Node3D.new()
+	root.name = "PaintedFacade_" + style
+	parent.add_child(root)
+	var layout := tall_layout(style, size.y)
+	var ground_h: float = layout.ground
+	var count: int = layout.count
+	var built := Vector3(size.x, float(layout.height), size.z)
+	var half := built * 0.5
+	var module_w := natural_size(style).x
+	var modules := maxi(1, roundi(size.x / module_w))
+	module_w = size.x / float(modules)
+	var side_modules := maxi(1, roundi(size.z / natural_size(style).z))
+	var side_w := size.z / float(side_modules)
+	var front_openings := openings(style, "front")
+	var back_openings := openings(style, "back")
+	# Mesma regra dos estilos de uma altura: a soleira mais baixa da frente encosta na
+	# calçada. Os vãos são fração da imagem do térreo, então a conta usa a altura dele.
+	var sink := 0.0
+	if bool(options.get("ground_door", true)):
+		var lowest := INF
+		for opening in front_openings:
+			if bool(opening.leaf): lowest = minf(lowest, (1.0 - float(opening.rect[3])) * ground_h)
+		if lowest < INF: sink = maxf(0.0, lowest - 0.03)
+	root.position.y -= sink
+	root.set_meta("ground_sink", sink)
+	root.set_meta("tall_floors", count)
+	root.set_meta("painted_height", built.y)
+	# Uma malha por lado e peça (9 texturas): front_ground, front_floor, front_top...
+	var pieces := {}
+	for side in ["front", "back", "side"]:
+		for piece in ["ground", "floor", "top"]:
+			var st := SurfaceTool.new()
+			st.begin(Mesh.PRIMITIVE_TRIANGLES)
+			pieces[side + "_" + piece] = st
+	for index in modules:
+		var x0 := -half.x + module_w * float(index)
+		var front_xform := Transform3D(Basis.IDENTITY, Vector3(x0, 0, half.z))
+		var back_xform := Transform3D(Basis(Vector3.UP, PI), Vector3(-x0, 0, -half.z))
+		_face_with_openings(pieces.front_ground, front_xform, module_w, ground_h, front_openings)
+		_face_with_openings(pieces.back_ground, back_xform, module_w, ground_h, back_openings)
+		_tall_stack(pieces.front_floor, pieces.front_top, front_xform, module_w, layout)
+		_tall_stack(pieces.back_floor, pieces.back_top, back_xform, module_w, layout)
+		for opening in front_openings:
+			var rect: Array = opening.rect
+			var center := x0 + module_w * (float(rect[0]) + float(rect[2])) * 0.5
+			var walk_in: bool = bool(opening.leaf) and not is_nan(walk_in_x) and absf(center - walk_in_x) <= 0.5
+			_door(root, style, "front", rect, front_xform, module_w, ground_h, collision_parent, walk_in, bool(opening.leaf))
+		for opening in back_openings:
+			_door(root, style, "back", opening.rect, back_xform, module_w, ground_h, collision_parent, false, bool(opening.leaf))
+	for index in side_modules:
+		var z0 := -half.z + side_w * float(index)
+		for xform in [Transform3D(Basis(Vector3.UP, PI * 0.5), Vector3(half.x, 0, z0 + side_w)),
+				Transform3D(Basis(Vector3.UP, -PI * 0.5), Vector3(-half.x, 0, z0))]:
+			_quad(pieces.side_ground, xform, side_w, ground_h, Rect2(0, 0, 1, 1))
+			_tall_stack(pieces.side_floor, pieces.side_top, xform, side_w, layout)
+	for key in pieces:
+		# Sem andar repetido (N = 0) a malha do andar fica vazia: não vira nó.
+		if count == 0 and key.ends_with("_floor"): continue
+		_add_mesh(root, key.to_pascal_case(), pieces[key], material(style, key))
+	var roof := SurfaceTool.new()
+	roof.begin(Mesh.PRIMITIVE_TRIANGLES)
+	_quad(roof, Transform3D(Basis(Vector3.RIGHT, -PI * 0.5), Vector3(-half.x, built.y, half.z)), built.x, built.z, Rect2(0, 0, 1, 1))
+	_add_mesh(root, "Roof", roof, material(style, "roof"))
+	root.add_child(_cornice(built))
+	if collision_parent != null:
+		var body := StaticBody3D.new()
+		body.name = "PaintedFacadeSolid"
+		body.collision_mask = 0
+		var shape := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = built
+		shape.shape = box
+		shape.position = Vector3(0, half.y - sink, 0)
+		body.add_child(shape)
+		collision_parent.add_child(body)
+	return root
+
+
+## Andares repetidos e topo de uma face, acima do térreo; cada andar usa a imagem
+## inteira (a borda de baixo de um encosta na de cima do outro).
+static func _tall_stack(floor_st: SurfaceTool, top_st: SurfaceTool, xform: Transform3D, w: float, layout: Dictionary) -> void:
+	var y: float = layout.ground
+	for index in int(layout.count):
+		_quad(floor_st, xform.translated_local(Vector3(0, y, 0)), w, layout["floor"], Rect2(0, 0, 1, 1))
+		y += float(layout["floor"])
+	_quad(top_st, xform.translated_local(Vector3(0, y, 0)), w, layout.top, Rect2(0, 0, 1, 1))
 
 
 static func _cornice(size: Vector3) -> MeshInstance3D:
