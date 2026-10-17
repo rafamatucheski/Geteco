@@ -22,6 +22,7 @@ def build():
     for card in data['cards']:
         card.update(latest.get('updates', {}).get(card['id'], {}))
     data['cards'].extend(latest['cards'])
+    data['cards'] = [c for c in data['cards'] if c['id'] not in set(latest.get('remove', []))]
     data['date'] = latest['date']
     data['update_scope'] = latest['scope']
     data['catalogs'] = story.get('catalogs', {})

@@ -170,7 +170,7 @@
       "title": "Testes quebrados conhecidos",
       "status": "issue",
       "area": "qualidade",
-      "description": "test_native_driving (carro inicial nasce no túnel do canal), test_harbor_service_roofs, test_vertice_hideout (grade recusa 90 balas), test_vehicle_twotone, test_mountain_bears (viagem para a serra recusada na sessão de teste), test_truckers_village_integration.",
+      "description": "Seguem falhando: test_harbor_service_roofs (telhado frio do banco), test_vertice_hideout (coleta da arma secreta, com e sem pintura), test_vehicle_twotone (union_sedan, antes da parte do táxi), test_police_walkin (teste desatualizado: espera porta por proximidade), test_mountain_bears (viagem para a serra recusada na sessão de teste), test_truckers_village_integration. Corrigido: test_native_driving voltou a passar em 17/10 (verificação dos commits 62797e0b e 6da3282e).",
       "sources": [
         "docs/commit-grande-20261016.md",
         "docs/perf-serra-picos-20261017.md"
@@ -199,14 +199,14 @@
     },
     {
       "id": "pending-git-20261017",
-      "title": "Arquivos soltos fora do Git",
-      "status": "issue",
+      "title": "Tudo commitado e enviado ao GitHub",
+      "status": "implemented",
       "area": "ferramentas",
-      "description": "Main enviado ao GitHub em 17/10. Ficam fora: .import das fachadas da pousada/salão, JSON em evidence/, pastas em artifacts/ e temporários de testes. arrival.ogv perto do limite de 100 MB do GitHub.",
+      "description": "Em 17/10 o main foi enviado ao GitHub (até o commit do board). Ficam fora de propósito: .import das fachadas da pousada/salão, JSON em evidence/, pastas em artifacts/ e temporários de testes.",
       "sources": [
         "git status"
       ],
-      "next": "Considerar Git LFS para vídeos."
+      "next": "arrival.ogv tem 70-77 MB, perto do limite de 100 MB do GitHub: considerar Git LFS para vídeos."
     },
     {
       "id": "plan-train-levels-20261017",
@@ -219,5 +219,22 @@
       ]
     }
   ],
-  "updates": {}
+  "updates": {
+    "inv-070": {
+      "status": "implemented",
+      "title": "Benchmarks contaminados por concorrência: resolvido com a fila única",
+      "description": "Desde 15-16/10 todo Godot passa por tools/run_godot_locked.sh (um por vez, ordem de chegada) e as medições são feitas no export release com tools/perf_cross_bench.sh. As medições antigas de trem, mapa, prédios, carro-forte e mina continuam inválidas até serem refeitas assim.",
+      "sources": [
+        "tools/run_godot_locked.sh",
+        "docs/HOW-TO-DEVELOP.md"
+      ]
+    },
+    "inv-073": {
+      "description": "Carro abaixo do mapa: resgate de veículo que cai do mundo entrou em 13/10 (49d069fd); no benchmark dirigindo ainda há quedas sob a passarela. Cabine do caminhão, primeira entrada na Ammu-Nation e achados do vídeo de setembro seguem sem reconfirmação.",
+      "next": "Reconfirmar jogando cabine do caminhão e primeira entrada na Ammu-Nation."
+    }
+  },
+  "remove": [
+    "inv-007"
+  ]
 }
