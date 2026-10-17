@@ -122,6 +122,11 @@ func _run() -> void:
 	car.visible = true
 	world.player.set_physics_process(false)
 	world.player.visible = false
+	# O jogador é posto no carro a cada quadro, mas sem entrar nele: a cápsula dele (camada 2)
+	# continuava sólida e o carro (máscara 7) colidia com ela e era empurrado pelo chão. Na
+	# rodada dirigindo de 17/10 foram 236 quedas e 0,34 m/s de média. Driving zera a camada
+	# ao entrar no carro; aqui fazemos o mesmo.
+	world.player.collision_layer = 0
 	world.camera.target = car
 	if chaos_stars > 0 and not world.gameplay.god_mode: world.gameplay.toggle_god_mode()
 	var viewport := get_viewport().get_viewport_rid()
