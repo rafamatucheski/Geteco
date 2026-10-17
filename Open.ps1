@@ -5,8 +5,26 @@ $GodotPath = Resolve-ProjectGodot $GodotPath
 Build-ProjectCSharp $PSScriptRoot $GodotPath
 # New scripts can arrive even when the import directory already exists.
 $importLog = Join-Path $PSScriptRoot 'startup-import.log'
-$import = Start-Process -FilePath $GodotPath -ArgumentList @('--headless','--path',('"'+$PSScriptRoot+'"'),'--editor','--import','--quit','--log-file',('"'+$importLog+'"')) -WindowStyle Hidden -Wait -PassThru
-if ($import.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $importLog)) { throw "A preparação do Geteco V2 falhou. Consulte $importLog" }
+$import = Start-Process -FilePath $GodotPath -ArgumentList @('--headless','--path',('"'+$PSScriptRoot+'"'),'--editor','--import','--quit','--log-file',('"'+$importLog+'"')) -WindowStyle Hidden -PassThru
+# Em 16/10 o Godot headless terminou a importação (o log chega a "loading_editor_layout DONE") e o
+# lançador _console.exe ficou vivo, sem filho e sem CPU: `-Wait` esperava para sempre e o jogo nunca
+# abria. Agora espera o processo OU o fim do log parado por 20 s, e encerra a árvore se sobrar.
+$importFinished = $false
+$importStarted = Get-Date
+while (-not $import.HasExited) {
+    Start-Sleep -Seconds 2
+    if (Test-Path -LiteralPath $importLog) {
+        $logFile = Get-Item -LiteralPath $importLog
+        $idle = ((Get-Date) - $logFile.LastWriteTime).TotalSeconds
+        if ($idle -ge 20 -and (Select-String -LiteralPath $importLog -Pattern 'DONE \] loading_editor_layout' -Quiet)) { $importFinished = $true; break }
+    }
+    if (((Get-Date) - $importStarted).TotalMinutes -ge 15) { break }
+}
+if (-not $import.HasExited) {
+    & taskkill.exe /F /T /PID $import.Id | Out-Null
+    if (-not $importFinished) { throw "A preparação do Geteco V2 passou de 15 minutos sem terminar. Consulte $importLog" }
+} elseif ($import.ExitCode -ne 0) { throw "A preparação do Geteco V2 falhou. Consulte $importLog" }
+if (-not (Test-Path -LiteralPath $importLog)) { throw "A preparação do Geteco V2 não gerou log. Consulte $importLog" }
 $importErrors = Select-String -LiteralPath $importLog -Pattern '^SCRIPT ERROR:|^ERROR: Failed to load script|Parse Error:|Compile Error:'
 if ($importErrors) { throw "Há erros nos scripts do Geteco V2. Consulte $importLog" }
 if ($PrepareOnly) { return }
