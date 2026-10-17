@@ -54,12 +54,18 @@ func run() -> void:
 	var player := curtain.get_node_or_null("LoadingMusic") as AudioStreamPlayer
 	check(player != null and player.playing, "tela de carregamento toca a música")
 	check(player != null and player.stream is AudioStreamOggVorbis and (player.stream as AudioStreamOggVorbis).loop, "música de carregamento repete")
-	for i in 30: await process_frame
-	check(player != null and player.volume_db > -40.0, "música de carregamento entra (%.1f dB)" % (player.volume_db if player != null else 0.0))
+	check(player != null and is_equal_approx((player.stream as AudioStreamOggVorbis).loop_offset, LOADING_MUSIC.LOOP_OFFSET), "loop volta depois da introdução")
+	# Começa baixinha (mas audível, o bloqueio da cena congela tweens) e cresce.
+	check(player != null and player.volume_db <= LOADING_MUSIC.START_DB + 0.5, "música de carregamento começa baixa (%.1f dB)" % (player.volume_db if player != null else 0.0))
+	await create_timer(1.0).timeout
+	check(player != null and player.volume_db > LOADING_MUSIC.START_DB + 0.1, "música de carregamento cresce (%.1f dB)" % (player.volume_db if player != null else 0.0))
+	# A cobertura some e a música termina o fade sozinha, sem corte, e depois se libera.
 	LOADING_MUSIC.fade_out(curtain, 0.2)
-	await create_timer(0.5).timeout
-	check(player != null and player.volume_db <= -39.0, "música de carregamento sai com a cobertura (%.1f dB)" % (player.volume_db if player != null else 0.0))
 	curtain.free()
+	await create_timer(0.5).timeout
+	check(is_instance_valid(player) and player.playing, "música segue em fade depois que a cobertura some")
+	await create_timer(LOADING_MUSIC.OUT_SECONDS).timeout
+	check(not is_instance_valid(player), "música de carregamento termina o fade e é liberada")
 	await process_frame
 	print("MENU_AUDIO_FIREFLY failures=", failures)
 	quit(0 if failures.is_empty() else 1)

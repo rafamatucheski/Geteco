@@ -81,7 +81,7 @@ if __name__ == "__main__":
     # menu_b termina em silêncio (cauda longa): mistura 8 s; menu_a tem fade curto; loading não tem fade
     music(os.path.join(src, "menu_a.wav"), os.path.join(MENU, "menu_music_0.ogg"), 5.0)
     music(os.path.join(src, "menu_b.wav"), os.path.join(MENU, "menu_music_1.ogg"), 8.0)
-    music(os.path.join(src, "loading.wav"), os.path.join(MENU, "loading_music.ogg"), 4.0)
+    # loading_music.ogg saiu daqui em 16/10: agora vem do Gemini via process_loading_music.py.
     # sons de menu: (pico alvo, duração máxima, fade final)
     spec = {"click": (0.50, 0.30, 0.12), "hover": (0.35, 0.20, 0.08), "back": (0.45, 0.40, 0.20), "start": (0.60, 2.2, 0.5)}
     for key, (peak, max_len, fade_out) in spec.items():

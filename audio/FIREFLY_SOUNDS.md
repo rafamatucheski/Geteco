@@ -42,7 +42,7 @@ emenda), volume casado com a música do menu que já existia (rms ~0,05) e saíd
 |---|---|---|
 | `audio/menu/menu_music_0.ogg` | calm nostalgic and dreamy, warm / synthwave, ambient / vlog; tempo lento, energia baixa | `ui/MenuAudio.get_music_stream()`: uma das duas faixas por abertura do jogo |
 | `audio/menu/menu_music_1.ogg` | mesmas, trocando ambient por lofi | idem |
-| `audio/menu/loading_music.ogg` | warm, playful / synthwave / vlog | `ui/LoadingMusic.gd`, ligado em `runtime/StartupCurtain.gd` (entra com a cobertura, sai com o fade) |
+| `audio/menu/loading_music.ogg` | **trocada em 16/10** por faixa do Gemini (Lyria): crime drama lento, ~55-60 BPM, menor, cordas/violino/guitarra/bateria pesada (`tools/audio/process_loading_music.py`: começa limpo na introdução, loop volta a 6 s); a synthwave original e a tentativa a ~75 BPM ficaram em `evidence/` | `ui/LoadingMusic.gd`, ligado em `runtime/StartupCurtain.gd` (entra baixinha com a cobertura, cresce em 8 s, sai em fade de 2,5 s depois dela) |
 | `audio/menu/hover_*`, `click_*`, `back_*`, `start_*` | soft synth tick / click / descending note / warm chord swell | `ui/MenuAudio.gd`; botão cujo texto tem voltar/cancelar/fechar/sair toca `back` |
 
 O tema original da V1 (`harbor_night_menu.wav`) e os sons sintéticos continuam como reserva
