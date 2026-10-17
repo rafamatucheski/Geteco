@@ -18,8 +18,12 @@ def build():
     for card in data['cards']:
         card.update(changes.get('updates', {}).get(card['id'], {}))
     data['cards'].extend(changes['cards'])
-    data['date'] = changes['date']
-    data['update_scope'] = changes['scope']
+    latest = json.loads(read('docs/board-atualizacoes-20261017.json'))
+    for card in data['cards']:
+        card.update(latest.get('updates', {}).get(card['id'], {}))
+    data['cards'].extend(latest['cards'])
+    data['date'] = latest['date']
+    data['update_scope'] = latest['scope']
     data['catalogs'] = story.get('catalogs', {})
     fleet = json.loads(read('assets/fleet/catalog.json'))['vehicles']
     catalogs = []
@@ -56,7 +60,7 @@ def build():
                 index.append({'path':p.relative_to(ROOT).as_posix(),'kind':p.suffix[1:], 'group':folder})
     data['file_index']=index
     payload=json.dumps(data,ensure_ascii=False).replace('</','<\\/')
-    page=TEMPLATE.replace('__DATA__',payload).replace('__AGENTS__',str(data.get('extra_agents',1))).replace('__DATE__', '08/10/2026')
+    page=TEMPLATE.replace('__DATA__',payload).replace('__AGENTS__',str(data.get('extra_agents',1))).replace('__DATE__', '17/10/2026')
     (DOCS/'painel-geteco.html').write_text(page,encoding='utf-8')
     print(json.dumps({'cards':len(data['cards']),'catalog_rows':sum(len(c['rows']) for c in catalogs),'indexed_files':len(index)},ensure_ascii=False))
 
@@ -74,7 +78,7 @@ TEMPLATE='''<!doctype html>
 <p id="result" role="status" aria-live="polite"></p><section id="board" class="board"></section>
 <section id="catalogs"><h2>Catálogos e objetos identificados</h2><p class="muted">Busca por texto também filtra estas listas. Os filtros de área/estado se aplicam aos cards. Fontes preservam os IDs técnicos; alguns nomes históricos vêm diretamente dos arquivos.</p><div id="catalog-content"></div><div id="story-catalogs"></div></section>
 <section id="files"><h2>Índice de arquivos de conteúdo e fontes</h2><p class="muted">Fontes, modelos, cenas, texturas, sons e dados nas 12 pastas de produção. Exclui caches/importações, evidências, builds, testes, ferramentas e a árvore duplicada geteco_v2. A presença no disco não comprova uso no jogo. Objetos procedurais podem representar milhares de instâncias em um único arquivo; contagem exata de instâncias ativas exige levantamento em runtime.</p><select id="file-group" aria-label="Pasta do índice"><option value="all">Todas as pastas</option></select><p id="file-count"></p><div class="tablewrap"><table><thead><tr><th>Arquivo</th><th>Tipo</th></tr></thead><tbody id="file-rows"></tbody></table></div><button id="more">Mostrar mais arquivos</button></section>
-<footer><b>Escopo e manutenção</b><p>Fotografia documental de __DATE__, incluindo trabalho de 07–08/10. Alterações de outras sessões podem avançar após a coleta. Evidências anteriores valem somente para seus cenários e versões. Pendências de performance, colisão, oclusão, áudio percebido e iluminação temporal continuam explícitas.</p><p>Dados revisáveis: <a href="board-inventario-20261007.json">mundo e sistemas</a> · <a href="board-historia-20261007.json">história, elenco e áudio</a> · <a href="board-atualizacoes-20261008.json">atualizações de 07–08/10</a>. Para reconstruir o HTML: <code>python tools/build_geteco_board.py</code>. Não calcula automaticamente o estado de uma feature.</p><p>Validação futura do jogo: compilar <code>Harbor.csproj</code> e usar a instalação Godot 4.7.2 <b>.NET</b> do projeto. Testes headless não certificam FPS. As correções e validações posteriores estão identificadas nos cards; este painel não certifica todo o jogo.</p></footer>
+<footer><b>Escopo e manutenção</b><p>Fotografia documental de __DATE__, incluindo trabalho de 07–17/10. Alterações de outras sessões podem avançar após a coleta. Evidências anteriores valem somente para seus cenários e versões. Pendências de performance, colisão, oclusão, áudio percebido e iluminação temporal continuam explícitas.</p><p>Dados revisáveis: <a href="board-inventario-20261007.json">mundo e sistemas</a> · <a href="board-historia-20261007.json">história, elenco e áudio</a> · <a href="board-atualizacoes-20261008.json">atualizações de 07–08/10</a> · <a href="board-atualizacoes-20261017.json">atualizações de 08–17/10</a>. Para reconstruir o HTML: <code>python tools/build_geteco_board.py</code>. Não calcula automaticamente o estado de uma feature.</p><p>Validação futura do jogo: compilar <code>Harbor.csproj</code> e usar a instalação Godot 4.7.2 <b>.NET</b> do projeto. Testes headless não certificam FPS. As correções e validações posteriores estão identificadas nos cards; este painel não certifica todo o jogo.</p></footer>
 </main><script id="board-data" type="application/json">__DATA__</script><script>
 'use strict';
 const data=JSON.parse(document.getElementById('board-data').textContent);

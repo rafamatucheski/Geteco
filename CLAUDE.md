@@ -9,6 +9,27 @@ interiores, desempenho e Git) e [README.md](README.md).
 de Godot (`tools/run_godot_locked.sh`), como medir desempenho em release e as regras de código
 que evitam quadros grandes (streaming, shaders, prédios pintados, portas).
 
+### Resumo do How to Develop (detalhes e razões no guia)
+
+- **Godot só pela fila** `tools/run_godot_locked.sh <args>`, um por vez na máquina. Export:
+  `GODOT_RUN_TIMEOUT=240 tools/run_godot_locked.sh --headless --path . --export-release "Geteco V2 Windows" <pasta>/GetecoV2.exe`
+  (o export às vezes não sai sozinho depois de gravar o pacote). Não feche janelas de teste.
+- **Meta:** p50 ≤ 16,7 ms, nenhum quadro > 33 ms depois de jogável, p50 ≤ 6,9 ms onde der.
+- **Medir só no export release**, A/B no mesmo export e no mesmo dia com interruptor `GETECO_*`
+  (nunca trocar arquivos pelo HEAD). Rotas: `tools/perf_cross_bench.sh <pasta> <rótulo> [rodadas] [rotas]`;
+  tudo: `tools/perf_cross_phase2.sh`. Logs em `%APPDATA%/GetecoV2/session-logs/`; diagnóstico com
+  `HARBOR_STALL_LOG=1` e `HARBOR_STALL_STACKS=1`.
+- **Código novo pesado leva span** (`StallWorkTrace.begin/finish/finish_slow`) para o pico ter nome.
+- **Nada pesado num quadro só:** sob a cortina, fatiado (~2 ms) ou em `WorkerThreadPool`.
+  Nunca `surface_get_arrays` no jogo (use `MeshArrayCache`), nem varrer o mapa inteiro por ponto,
+  nem `load()` síncrono grande, nem cálculo procedural na primeira aparição.
+- **Shader nunca compila no jogo:** sem `hint_depth_texture`; material novo entra num pré-aquecimento
+  (`BridgeLookPrewarm`, `VehicleMaterialVariantPrewarm`, `PaintedFacadePrewarm`, `WildlifePrewarm`) e fica retido.
+- Objetos que somem e voltam (ursos, fontes de calor): montar uma vez e **estacionar**, não recriar.
+- Luz nova passa por `LightBudget`; textura nova em BC7 com mipmaps.
+- Board do projeto: `docs/painel-geteco.html`, gerado por `python tools/build_geteco_board.py` a partir
+  de `docs/board-*.json` (acrescente um `board-atualizacoes-<data>.json` novo em vez de reescrever os antigos).
+
 ## Estrutura
 
 A raiz do repositório **é o jogo** (a antiga V2, promovida em 2026-09-24). O projeto Godot

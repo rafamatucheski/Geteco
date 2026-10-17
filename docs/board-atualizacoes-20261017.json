@@ -1,0 +1,223 @@
+{
+  "date": "2026-10-17",
+  "period": "2026-10-08 a 2026-10-17",
+  "scope": "Reconciliação do git log (368 commits desde 28/09) e dos relatórios de 08-17/10. Não reexecuta testes nem certifica o jogo inteiro.",
+  "cards": [
+    {
+      "id": "meshy-npcs-20261017",
+      "title": "Corpos Meshy nos NPCs, policiais e pedestres",
+      "status": "partial",
+      "area": "personagens",
+      "description": "Mecânico, Neco, Nelson, Maciota, Luisa, palhaços, bombeiro, paramédico, funerário, bancário, moradores da serra/vila/esgoto, 7 corpos policiais nos 5 escalões e catálogo de 8 pedestres usam corpos do Meshy. Mãos corrigidas (palma na coxa, pega do Dante). Carro do Meshy ficou desligado por padrão: o piloto ficou pior que o carro de caixas.",
+      "sources": [
+        "docs/npc-meshy-desempenho-maos-20261011.md"
+      ],
+      "next": "Medir desempenho das famílias inteiras e variedade; carro do Meshy só com novo modelo."
+    },
+    {
+      "id": "world-editor-20261017",
+      "title": "Editor de mundo edita tudo",
+      "status": "implemented",
+      "area": "ferramentas",
+      "description": "Peças automáticas, cópias, mobiliário em lote, lugares da sessão, deserto e todos os mapas, prévia 3D do mapa inteiro sem reconstruir ao editar, vias editáveis em 3D e Jogar aqui.",
+      "sources": [
+        "docs/world-editor.md"
+      ]
+    },
+    {
+      "id": "painted-facades-20261017",
+      "title": "Prédios pintados estilo GTA (PaintedFacadeKit)",
+      "status": "partial",
+      "area": "mundo",
+      "description": "Porto, delegacia HARBOR PATROL, bombeiros, banco NORTH PIER, Piston & Co, galpão VÉRTICE, clínica BAY MEDICAL, torre cívica, sobrados, casas da Cobra/Patrol Court, deserto, vila da serra, zelador, Tônico, casas rurais, salão e pousada. Texturas BC7 com mipmaps, sombra das paredes, só a entrada real abre. A/B no release: à noite p50 5,6-5,8 ms com pintura contra 8,27 ms sem.",
+      "sources": [
+        "docs/commit-grande-20261016.md",
+        "docs/perf-exe-20261017.md"
+      ],
+      "next": "Riscos do commit de 16/10: zelador (test_door_push_physics), casa 3 esbranquiçada, telhado da clínica 0,35 m acima, torre cívica com nome errado (CIVIC TOWER x HORIZON) e duas portas pintadas."
+    },
+    {
+      "id": "sounds-20261017",
+      "title": "Sons novos: Firefly, ElevenLabs e música Gemini",
+      "status": "implemented",
+      "area": "audio",
+      "description": "~97 WAVs do Firefly (armas, veículos, turbo, sirene, deserto, mina, rotor, multidão), ElevenLabs (armas, bombeada, clima, mar, porto), música do parque e tema de carregamento do Gemini/Lyria. Sons antigos ficam de reserva.",
+      "sources": [
+        "docs/engine-sound-integration.md"
+      ]
+    },
+    {
+      "id": "intro-v2-20261017",
+      "title": "Abertura de barco refeita no porto atual",
+      "status": "partial",
+      "area": "historia",
+      "description": "Planos novos, vozes do elenco do jogo sem trilha sintética, Vicente com o celular e saída para o terminal.",
+      "sources": [
+        "cutscenes/opening/ferry/"
+      ],
+      "next": "Defeito conhecido registrado; arrival.ogv tem 70-77 MB, acima do recomendado pelo GitHub."
+    },
+    {
+      "id": "katana-mixamo-20261017",
+      "title": "Katana, mortes do Mixamo e golpes da UAL",
+      "status": "implemented",
+      "area": "combate",
+      "description": "Katana nas costas com sacar/guardar, golpes de greatsword e som de corte; três mortes do Mixamo em Dante, policiais e civis; socos, soqueira, tiro e recarga da pistola pela UAL.",
+      "sources": [
+        "gameplay/MeleeMoveset.gd"
+      ]
+    },
+    {
+      "id": "sewers-desert-20261017",
+      "title": "Bueiros de Harbor e entradas subterrâneas do deserto",
+      "status": "implemented",
+      "area": "lugares",
+      "description": "Rede de bueiros com salas, moradores e segredos; descida pela tampa; galeria da rodovia, poço de Santa Lua, adega do motel e poço da mina no deserto.",
+      "sources": [
+        "world/"
+      ]
+    },
+    {
+      "id": "vehicles-rain-20261017",
+      "title": "Carros molham, desgaste e motoristas arrastados",
+      "status": "implemented",
+      "area": "veiculos",
+      "description": "Pintura molhada com gotas e limpador, pneus assentados no chão, motorista puxado pela porta, arma do policial morto vira item, desgaste e cargas de caçamba gerados no carregamento.",
+      "sources": [
+        "docs/vehicle-art-standard.md"
+      ]
+    },
+    {
+      "id": "weather-20261017",
+      "title": "Clima muda aos poucos e ponte cidade-serra nova",
+      "status": "implemented",
+      "area": "mundo",
+      "description": "Frente de tempo gradual, chuva aos poucos, aderência pela rua molhada; ponte com concreto texturizado, pilares e guarda-corpo; molha na chuva.",
+      "sources": [
+        "world/"
+      ]
+    },
+    {
+      "id": "perf-release-20261017",
+      "title": "Bateria de desempenho no EXE release",
+      "status": "partial",
+      "area": "performance",
+      "description": "Deserto, ponte, sobrados, oeste e porto a 60 fps sem quadro > 33 ms; 144 fps no p50. Corrigidos: carro de sorvete, desgaste, reflexo da chuva a 60 Hz, primeira aparição da Cobra/polícia, ursos estacionados, grama em fatias de 2 ms, cabine sem ler GPU, fontes de calor estacionadas. Serra: p50 3,4 ms, 2-4 quadros > 33 ms.",
+      "sources": [
+        "docs/perf-exe-20261017.md",
+        "docs/perf-serra-picos-20261017.md",
+        "docs/HOW-TO-DEVELOP.md"
+      ],
+      "next": "Ver cards de problema da serra, travessia e noite."
+    },
+    {
+      "id": "tooling-20261017",
+      "title": "Fila única de Godot, StallLog e benchmark controlado",
+      "status": "implemented",
+      "area": "ferramentas",
+      "description": "tools/run_godot_locked.sh (ordem de chegada, limite de tempo, vigia de erro), benchmark de release com rotas e caos, log de sessão com spans, pilha nativa e contadores de render; guia docs/HOW-TO-DEVELOP.md.",
+      "sources": [
+        "docs/HOW-TO-DEVELOP.md",
+        "tools/run_godot_locked.sh",
+        "tools/perf_cross_bench.sh"
+      ]
+    },
+    {
+      "id": "drawcalls-20261017",
+      "title": "Fusão por trecho e redução de draw calls",
+      "status": "implemented",
+      "area": "performance",
+      "description": "Fusão com cor no vértice: -37% superfícies e -55% sombras nos pontos quentes, fatiada em 2 ms; porto com uma camada de chão; faixas tracejadas em MultiMesh; trânsito distante sobre trilhos; faróis limitados a 8 luzes.",
+      "sources": [
+        "docs/otimizacao-drawcalls-20261014.md",
+        "docs/otimizacao-paralela-20261013.md"
+      ]
+    },
+    {
+      "id": "issue-serra-physics-20261017",
+      "title": "Serra: passo de física de 40-50 ms sem nome",
+      "status": "issue",
+      "area": "performance",
+      "description": "Na 3ª volta da serra, 1 passo de física de 40-50 ms em 3 de 5 rodadas. Ursos descartados em 17/10 (script <= 0,4 ms no passo do pico). Suspeita: passo nativo do Jolt ou _physics_process sem span.",
+      "sources": [
+        "docs/perf-serra-picos-20261017.md"
+      ],
+      "next": "Span em volta do passo de física do motor e nos demais _physics_process da serra."
+    },
+    {
+      "id": "issue-serra-lumber-20261017",
+      "title": "Serra: pico de 64-75 ms na madeireira",
+      "status": "issue",
+      "area": "performance",
+      "description": "A cada volta, ao entrar no trecho da madeireira: cabana do lenhador montada caixa a caixa (~800 malhas e ~140 colisores num segundo).",
+      "sources": [
+        "docs/perf-exe-20261017.md"
+      ],
+      "next": "Montar a cabana sob a cortina ou fatiada."
+    },
+    {
+      "id": "issue-travessia-noite-20261017",
+      "title": "Travessia e noite no oeste com picos",
+      "status": "issue",
+      "area": "performance",
+      "description": "Travessia: 4-7 quadros > 33 ms (pior 60-166 ms). Noite no oeste: 2-5 quadros (62-74 ms). 144 fps no oeste/porto/chuva/noite passa no p50, mas p95 fica em 9-10 ms. Chuva: GPU 2,5 contra 1,6 ms no seco.",
+      "sources": [
+        "docs/perf-exe-20261017.md"
+      ]
+    },
+    {
+      "id": "issue-tests-20261017",
+      "title": "Testes quebrados conhecidos",
+      "status": "issue",
+      "area": "qualidade",
+      "description": "test_native_driving (carro inicial nasce no túnel do canal), test_harbor_service_roofs, test_vertice_hideout (grade recusa 90 balas), test_vehicle_twotone, test_mountain_bears (viagem para a serra recusada na sessão de teste), test_truckers_village_integration.",
+      "sources": [
+        "docs/commit-grande-20261016.md",
+        "docs/perf-serra-picos-20261017.md"
+      ]
+    },
+    {
+      "id": "issue-benchmark-drive-20261017",
+      "title": "Benchmark dirigindo sem volta válida",
+      "status": "issue",
+      "area": "qualidade",
+      "description": "Ainda 27 quedas sob a passarela e em z~60; o caos do benchmark não mata ninguém, então o sumiço de corpos (suspeito da travada da Cobra/polícia) não é exercitado.",
+      "sources": [
+        "docs/perf-exe-20261017.md"
+      ]
+    },
+    {
+      "id": "pending-playtest-20261017",
+      "title": "Correções de 16-17/10 sem teste jogando",
+      "status": "unverified",
+      "area": "qualidade",
+      "description": "Nada das correções de desempenho foi olhado no jogo por uma pessoa: reflexo a 60 Hz, SpawnVisualPrewarm no tiroteio, ursos acordando, fogueira estacionada, grama dirigindo rápido. Export para jogar: artifacts/export-20261017-jogar/GetecoV2.exe.",
+      "sources": [
+        "docs/perf-exe-20261017.md",
+        "docs/perf-serra-picos-20261017.md"
+      ]
+    },
+    {
+      "id": "pending-git-20261017",
+      "title": "Arquivos soltos fora do Git",
+      "status": "issue",
+      "area": "ferramentas",
+      "description": "Main enviado ao GitHub em 17/10. Ficam fora: .import das fachadas da pousada/salão, JSON em evidence/, pastas em artifacts/ e temporários de testes. arrival.ogv perto do limite de 100 MB do GitHub.",
+      "sources": [
+        "git status"
+      ],
+      "next": "Considerar Git LFS para vídeos."
+    },
+    {
+      "id": "plan-train-levels-20261017",
+      "title": "Trem de passageiros, elevado e viaduto",
+      "status": "planned",
+      "area": "transporte",
+      "description": "Trem: etapas 2-3 esperam locais das estações e preço. Ruas em níveis: túnel do canal feito; elevado e viaduto do trilho seguem no plano.",
+      "sources": [
+        "docs/"
+      ]
+    }
+  ],
+  "updates": {}
+}
