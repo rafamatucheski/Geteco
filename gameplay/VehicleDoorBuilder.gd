@@ -226,6 +226,7 @@ static func _advance_part(work: Dictionary, job: Job = null) -> bool:
 		var arrays: Array = work.rebuilt[surface] if work.rebuilt[surface] != null else mesh.surface_get_arrays(surface)
 		work.replacement.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 		work.replacement.surface_set_material(surface, mesh.surface_get_material(surface))
+		preload("res://gameplay/VehicleInterior.gd").inherit_glass(mesh, work.replacement, surface, arrays)
 		work.upload_surface = surface + 1
 		if int(work.upload_surface) >= mesh.get_surface_count():
 			work.result.swaps.append([work.part, work.expected_mesh, work.replacement,mesh])

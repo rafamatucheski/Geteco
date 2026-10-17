@@ -573,6 +573,8 @@ func _prewarm_fleet_shaders(_incremental: bool, curtain: CanvasLayer = null) -> 
 			RenderingServer.frame_post_draw.disconnect(count_draw)
 		# Bases de pintura para as variantes de uso/desgaste (desenhadas depois).
 		preload("res://gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd").collect(model, str(id))
+		# Vidros na CPU para medir a cabine em jogo sem ler a malha da GPU (VehicleInterior.spec).
+		preload("res://gameplay/VehicleInterior.gd").cache_glass(model)
 		model.free()
 		await get_tree().process_frame
 

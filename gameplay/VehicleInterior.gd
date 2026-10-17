@@ -15,6 +15,7 @@ extends RefCounted
 ## O trânsito segue
 ## com os modelos achatados, de vidro opaco, como antes.
 const ROLES := preload("res://runtime/VehicleSurfaceRoles.gd")
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 
 ## Altura do quadril (junta da coxa) do Dante de pé sobre a sola. Medido no esqueleto.
 const STANDING_HIP := 0.77
@@ -91,6 +92,14 @@ const OVERRIDES := {
 static var _specs: Dictionary = {}
 static var _meshes: Dictionary = {}
 static var _material: StandardMaterial3D
+## Vértices dos vidros por malha ("id:superfície" -> {ref, vertices}), lidos sob a cortina por
+## `cache_glass`. `surface_get_arrays` lê o buffer de volta da GPU e espera os quadros em voo: na
+## serra (17/10) a primeira medição da cabine do summit_suv estacionado, ao passar a 1,8 m da porta
+## (Driving._process -> prewarm -> spec), custou um quadro de 47 ms. GETECO_INTERIOR_SPEC_CACHE=0
+## volta à leitura direta, para A/B.
+static var spec_cache := OS.get_environment("GETECO_INTERIOR_SPEC_CACHE") != "0"
+static var _glass_vertices: Dictionary = {}
+const GLASS_CACHE_PRUNE := 512
 
 # --- API ----------------------------------------------------------------------------------
 
@@ -126,9 +135,45 @@ static func spec(vehicle: Node3D) -> Dictionary:
 	if _specs.has(id): return _specs[id]
 	# Medir exige o modelo na árvore (transform global das peças).
 	if not vehicle.is_inside_tree() or vehicle.get("visual") == null: return {}
+	var began := STALL_WORK.begin()
 	var s := _derive(vehicle)
+	STALL_WORK.finish_slow("vehicle.interior.spec", began, 2000, vehicle)
 	_specs[id] = s
 	return s
+
+## Sob a cortina: lê uma vez para a CPU os vidros do modelo da frota (malhas compartilhadas por
+## todas as instâncias do arquétipo), para `_derive` em jogo não voltar à GPU.
+static func cache_glass(model: Node3D) -> void:
+	if not spec_cache or not enabled or not is_instance_valid(model): return
+	for part in model.find_children("*", "MeshInstance3D", true, false):
+		var mesh: Mesh = part.mesh
+		if mesh == null or part.has_meta("wheel_center"): continue
+		for surface in mesh.get_surface_count():
+			var material: Material = part.get_active_material(surface)
+			if material != null and _is_glass(part, surface, material): _glass_points(mesh, surface)
+
+## O recorte da porta troca a malha da peça por uma nova montada na CPU: se a original já estava
+## no cache, a nova herda os vértices que o recorte acabou de usar, sem leitura de GPU.
+static func inherit_glass(original: Mesh, replacement: Mesh, surface: int, arrays: Array) -> void:
+	if not spec_cache or original == null or replacement == null: return
+	if not _glass_vertices.has("%d:%d" % [original.get_instance_id(), surface]): return
+	if arrays.size() <= Mesh.ARRAY_VERTEX or not arrays[Mesh.ARRAY_VERTEX] is PackedVector3Array: return
+	_remember_glass(replacement, surface, arrays[Mesh.ARRAY_VERTEX])
+
+static func _glass_points(mesh: Mesh, surface: int) -> PackedVector3Array:
+	if not spec_cache: return mesh.surface_get_arrays(surface)[Mesh.ARRAY_VERTEX]
+	var entry: Variant = _glass_vertices.get("%d:%d" % [mesh.get_instance_id(), surface])
+	if entry != null and entry.ref.get_ref() == mesh: return entry.vertices
+	var vertices: PackedVector3Array = mesh.surface_get_arrays(surface)[Mesh.ARRAY_VERTEX]
+	_remember_glass(mesh, surface, vertices)
+	return vertices
+
+static func _remember_glass(mesh: Mesh, surface: int, vertices: PackedVector3Array) -> void:
+	if _glass_vertices.size() >= GLASS_CACHE_PRUNE:
+		# Recortes de porta de carros que já sumiram: só as entradas mortas saem.
+		for key in _glass_vertices.keys():
+			if _glass_vertices[key].ref.get_ref() == null: _glass_vertices.erase(key)
+	_glass_vertices["%d:%d" % [mesh.get_instance_id(), surface]] = {"ref": weakref(mesh), "vertices": vertices}
 
 # --- Especificação ------------------------------------------------------------------------
 
@@ -166,8 +211,7 @@ static func _derive(vehicle: Node3D) -> Dictionary:
 		for surface in mesh.get_surface_count():
 			var material: Material = part.get_active_material(surface)
 			if material == null or not _is_glass(part, surface, material): continue
-			var arrays := mesh.surface_get_arrays(surface)
-			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+			var vertices := _glass_points(mesh, surface)
 			var xf: Transform3D = to_car * part.global_transform
 			var patch := {"z0": INF, "z1": -INF, "points": []}
 			for v in vertices:
