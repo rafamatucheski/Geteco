@@ -6,6 +6,8 @@ const KIT := preload("res://world/city_look/CityPropKit.gd")
 const SURFACES := preload("res://runtime/VehicleSurfaceRoles.gd")
 static var _livery: ArrayMesh
 static var _roof_liveries: Dictionary = {}
+static var _roof_heights: Dictionary = {}
+static var _glass: Dictionary = {}
 static var _clown: ArrayMesh
 static var _song: AudioStreamWAV
 static var enabled := true # Process-local A/B measurement only; never saved.
@@ -59,10 +61,13 @@ func _ready() -> void:
 			if SURFACES.key(part,surface) != "glass": continue
 			var original := part.get_active_material(surface) as StandardMaterial3D
 			if original != null:
-				var glass := original.duplicate() as StandardMaterial3D
-				glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-				glass.albedo_color = Color(.68,.84,.9,.23)
-				part.set_surface_override_material(surface,glass)
+				# Um vidro por material original, compartilhado entre as vans.
+				if not _glass.has(original):
+					var glass := original.duplicate() as StandardMaterial3D
+					glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+					glass.albedo_color = Color(.68,.84,.9,.23)
+					_glass[original] = glass
+				part.set_surface_override_material(surface,_glass[original])
 	song = AudioStreamPlayer3D.new()
 	song.name = "IceCreamJingle"
 	song.stream = song_stream()
@@ -86,15 +91,28 @@ func _ready() -> void:
 func _roof_height() -> float:
 	# A courier's highest painted vertices are its roof. Read once on attachment,
 	# before adding the ornament; wheels, windows and trim cannot move the mount.
-	var height := 0.0
+	# Todas as vans usam as mesmas malhas do FleetCatalog: a varredura (vértice a vértice em
+	# GDScript) custou 43 ms num quadro da serra no EXE de 17/10 e agora roda uma vez por
+	# conjunto de malhas e posições, não a cada van que nasce no trânsito.
+	var parts: Array[MeshInstance3D] = []
+	var key := ""
 	for part: MeshInstance3D in car.visual.find_children("*","MeshInstance3D",true,false):
 		if part.mesh == null or part.has_meta("wheel_center"): continue
+		parts.append(part)
+		key += "%d:%s;" % [part.mesh.get_instance_id(), car.global_transform.affine_inverse() * part.global_transform]
+	if _roof_heights.has(key): return _roof_heights[key]
+	var height := 0.0
+	for part in parts:
+		var to_car: Transform3D = car.global_transform.affine_inverse() * part.global_transform
 		for surface in part.mesh.get_surface_count():
 			if SURFACES.key(part,surface) != "paint": continue
-			var vertices: PackedVector3Array = part.mesh.surface_get_arrays(surface)[Mesh.ARRAY_VERTEX]
+			# Transformação do array inteiro em código nativo; o laço só compara alturas.
+			var vertices: PackedVector3Array = to_car * (part.mesh.surface_get_arrays(surface)[Mesh.ARRAY_VERTEX] as PackedVector3Array)
 			for vertex in vertices:
-				height = maxf(height,car.to_local(part.to_global(vertex)).y)
-	return height if height > 1.2 else 2.10
+				if vertex.y > height: height = vertex.y
+	height = height if height > 1.2 else 2.10
+	_roof_heights[key] = height
+	return height
 
 static func _livery_for_roof(height: float) -> ArrayMesh:
 	var key := roundi(height*1000.0)
