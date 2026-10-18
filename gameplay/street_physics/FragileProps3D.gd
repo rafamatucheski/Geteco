@@ -253,6 +253,10 @@ static func _tumble(item: Dictionary, flat: Vector3, speed: float, director: Nod
 	var launch := flat * speed * randf_range(0.95, 1.3) + side * speed * randf_range(-0.15, 0.15) + Vector3.UP * clampf(speed * 0.18, 0.5, 4.0)
 	launch = launch.limit_length(26.0)
 	var spin := side * clampf(speed * 1.6, 2.0, 22.0) + Vector3.UP * randf_range(-4.0, 4.0)
+	if item.kind == "desert_tree":
+		# Árvore cede e tomba onde estava: com a velocidade cheia do carro ela saía voando longe.
+		launch = flat * minf(speed * 0.15, 2.5) + Vector3.UP * 0.3
+		spin = side * clampf(speed * 0.25, 1.0, 2.5)
 	if item.kind == "trash_can":
 		_break_trash_can(base, launch, spin, director)
 		return
@@ -269,7 +273,7 @@ static func _tumble(item: Dictionary, flat: Vector3, speed: float, director: Nod
 				var fragment := _debris_body(director, base.origin, float(MASSES.get(item.kind, 15.0)) / shards.size())
 				fragment.add_child(shards[index])
 				_add_box_shape(fragment, shards[index].get_aabb())
-				fragment.linear_velocity = launch + side * (float(index) - 1.0) * minf(speed * .1, 3.0)
+				fragment.linear_velocity = launch + side * (float(index) - 1.0) * minf(speed * .1, 0.6 if item.kind == "desert_tree" else 3.0)
 				fragment.angular_velocity = spin * (0.6 + float(index) * .3)
 			source.free()
 			return
