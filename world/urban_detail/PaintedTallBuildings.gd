@@ -16,6 +16,17 @@ extends RefCounted
 ## continua abaixo da torre vizinha quando ela também for pintada (13 m).
 const TALL := {
 	"CivicTower": {"style": "torre-civica", "height": 10.0},
+	# Escritórios A/B/C (pacotes de 15/10, módulo 12 m, lateral 6 m): 10 m = térreo +
+	# 1 andar + topo, como a CivicTower e abaixo da ExchangeTower. Caixa antiga tinha
+	# 7,5 m (só térreo + topo, sem o andar que repete). Interruptor próprio para A/B:
+	# GETECO_PAINTED_OFFICES=0 devolve só estes três às caixas assadas.
+	# "max_stretch": o lote tem 14,4-16,3 m e o kit esticaria o módulo de 12 m inteiro
+	# (até 1,35x), levando junto a porta pintada: a de A (1,5 m) passava de 1,8 m e
+	# virava porta dupla. Acima de 1,15x o prédio fica com 13,8 m (catálogo, interior e
+	# fábrica usam a mesma largura, como nos prédios de PaintedHarborHouses.HARBOR).
+	"BridgeCourtEast": {"style": "escritorio-a", "height": 10.0, "switch": "GETECO_PAINTED_OFFICES", "max_stretch": 1.15},
+	"NorthFrontage5": {"style": "escritorio-b", "height": 10.0, "switch": "GETECO_PAINTED_OFFICES", "max_stretch": 1.15},
+	"NorthbankFront2": {"style": "escritorio-c", "height": 10.0, "switch": "GETECO_PAINTED_OFFICES", "max_stretch": 1.15},
 }
 
 
@@ -26,15 +37,25 @@ static func enabled() -> bool:
 ## Estilo alto do prédio, ou "" (piloto desligado, id sem pacote ou estilo não importado).
 static func style_for(building_id: String) -> String:
 	if not enabled() or not TALL.has(building_id): return ""
+	if OS.get_environment(str(TALL[building_id].get("switch", ""))) == "0": return ""
 	var style: String = TALL[building_id].style
 	return style if PaintedFacadeKit.is_tall(style) else ""
 
 
-## Altura da casca pintada (soma exata das peças); `fallback` quando não é prédio alto.
+## Largura do prédio alto com "max_stretch": no máximo o módulo da frente vezes o
+## fator; os demais (e o piloto desligado) ficam com `width`.
+static func footprint_width(building_id: String, width: float) -> float:
+	var style := style_for(building_id)
+	if style.is_empty() or not TALL[building_id].has("max_stretch"): return width
+	return minf(width, PaintedFacadeKit.natural_size(style).x * float(TALL[building_id].max_stretch))
+
+
+## Altura da casca pintada acima da calçada (soma exata das peças menos o que o kit
+## afunda até a soleira da porta); `fallback` quando não é prédio alto.
 static func height_for(building_id: String, fallback: float) -> float:
 	var style := style_for(building_id)
 	if style.is_empty(): return fallback
-	return float(PaintedFacadeKit.tall_layout(style, float(TALL[building_id].height)).height)
+	return float(PaintedFacadeKit.tall_layout(style, float(TALL[building_id].height)).height) - PaintedFacadeKit.tall_sink(style)
 
 
 ## Monta o prédio alto em `building` (UrbanBuildingBase) se ele tiver estilo alto.

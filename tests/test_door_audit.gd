@@ -497,6 +497,9 @@ func _check_alignment(e: Dictionary, r: Dictionary, door: Vector3) -> void:
 	for leaf in leaves:
 		var quad: MeshInstance3D = leaf.hinge.get_child(0)
 		var center: Vector3 = leaf.global_transform * Vector3(quad.mesh.size.x * .5, 0, 0)
+		# Porta dupla: cada folha fica a meia largura do vão; o que tem de casar com a
+		# entrada real é o meio das duas (fim da folha esquerda, presa na ombreira).
+		if leaf.get("partner") != null: center = leaf.global_transform * Vector3(quad.mesh.size.x, 0, 0)
 		best = minf(best, _flat(center - door))
 	r.alignment_m = snappedf(best, .01)
 	for leaf in leaves:

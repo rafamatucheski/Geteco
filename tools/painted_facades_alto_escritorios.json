@@ -1,0 +1,5 @@
+{
+	"escritorio-a": {"module_w": 12.0, "side_w": 6.0, "margin": 0.0015, "front": [{"rect": [0.4369, 0.4655, 0.5617, 0.9475], "leaf": true}], "back": [{"rect": [0.4945, 0.3757, 0.5870, 1.0], "leaf": true}]},
+	"escritorio-b": {"module_w": 12.0, "side_w": 6.0, "margin": 0.004, "front": [{"rect": [0.4282, 0.3660, 0.5709, 1.0], "leaf": true}], "back": [{"rect": [0.2610, 0.3798, 0.3485, 1.0], "leaf": true}]},
+	"escritorio-c": {"module_w": 12.0, "side_w": 6.0, "margin": 0.004, "front": [{"rect": [0.6312, 0.5055, 0.8564, 0.9530], "leaf": true}], "back": [{"rect": [0.8240, 0.4566, 0.8885, 0.9434], "leaf": true}]}
+}
