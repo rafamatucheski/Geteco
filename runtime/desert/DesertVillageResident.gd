@@ -39,6 +39,8 @@ func _ready() -> void:
 	home_model.pants_color=Color(str(look.get("pants","3f4644")))
 	home_model.wardrobe_overrides={"female":bool(look.get("female",false)),"height":1.0,"build":0,"top":1,"bottom":0,"shoe":0,"hat":0,"backpack":false,"bag":0,"glasses":false}
 	if look.has("skin"): home_model.wardrobe_overrides.skin=Color(str(look.skin))
+	# Corpo Meshy de pedestre do mesmo sexo; o guarda-roupa acima só vale sem corpo compatível.
+	preload("res://assets/civilians/CivilianBodyCatalog.gd").apply_keeping_sex(home_model,identity)
 	visual.add_child(home_model)
 	if home_activity=="sleep":
 		visual.rotation.x=-PI*.5

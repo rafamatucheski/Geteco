@@ -4,9 +4,12 @@ extends Node3D
 const SITE := preload("res://world/desert/DesertAbandonedSite.gd")
 const SECRET := preload("res://runtime/desert/DesertSecretState.gd")
 const BANDITS := preload("res://runtime/desert/DesertBanditEncounter.gd")
+const WILDS := preload("res://runtime/desert/wilds/DesertWilds.gd")
 const INTERACTION_DISTANCE := 1.25
 var session
 var bandits: Node3D
+## Casinhas, foras-da-lei e cavernas espalhados no meio do nada (DesertWilds).
+var wilds: Node3D
 var _clock := 0.0
 var _definitions: Array[Dictionary] = SITE.definitions()
 var _observed_site: Node3D
@@ -24,6 +27,10 @@ func configure(owner_session) -> void:
 		add_child(bandits)
 		bandits.configure(session)
 		bandits.cleared.connect(_bandits_cleared)
+	if not is_instance_valid(wilds):
+		wilds=WILDS.new()
+		add_child(wilds)
+		wilds.configure(session)
 	_refresh_visuals()
 
 func _process(delta: float) -> void:
@@ -69,10 +76,13 @@ func perform(action: Dictionary) -> bool:
 	return true
 
 func save_block_reason() -> String:
-	return str(bandits.save_block_reason()) if is_instance_valid(bandits) else ""
+	var reason := str(bandits.save_block_reason()) if is_instance_valid(bandits) else ""
+	if reason.is_empty() and is_instance_valid(wilds): reason=wilds.save_block_reason()
+	return reason
 
 func cancel_attempt() -> void:
 	if is_instance_valid(bandits): bandits.cancel_attempt()
+	if is_instance_valid(wilds): wilds.release_all()
 	_observed_site=null
 	_last_visual_site=null
 	_last_visual_mask=-1

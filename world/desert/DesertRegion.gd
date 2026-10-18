@@ -544,6 +544,7 @@ func _decoration_clear(point: Vector2, radius: float) -> bool:
 	if not MOON_VILLAGE.reservation_clear(point,radius): return false
 	if not MINING_LAYOUT.reservation_clear(point,radius): return false
 	if not ABANDONED.reservation_clear(point,radius) or BANDIT_CAMP.reserved(point,radius): return false
+	if preload("res://runtime/desert/wilds/DesertWilds.gd").reserved(point,radius): return false
 	if not EXPANSION.reservation_clear(point,radius): return false
 	if RELIEF.passage_clear(point,radius): return false
 	# Small props sit on gentle ground; escarpments are the rock formation itself.
