@@ -321,10 +321,12 @@ func _prepare() -> void:
 			var prop_position:=CATALOG._at(prop_data.point,region_id)
 			_record(prop_position,{"kind":"harbor_prop","position":prop_position,"data":prop_data})
 		_record(CATALOG._at(Vector2(3570,1400),region_id),{"kind":"ship"})
+		# A 2ª mesa da Anchor (685,1132) e a da Early Shift (6255,-1238) ficavam na frente das portas da
+		# Corner Diner e da Service Cafe e travavam a entrada (test_door_audit, 18/10); foram para o lado.
 		for venue in [
-			["anchor",Color("b96a46"),Vector2(555,1132),Vector2(685,1132)],
+			["anchor",Color("b96a46"),Vector2(555,1132),Vector2(615,1140)],
 			["tideline",Color("477f7d"),Vector2(5735,1644),Vector2(5845,1644)],
-			["early_shift",Color("68784a"),Vector2(6145,-1238),Vector2(6255,-1238)]]:
+			["early_shift",Color("68784a"),Vector2(6145,-1238),Vector2(6200,-1250)]]:
 			for table_index in 2:
 				var table_position := CATALOG._at(venue[2+table_index],region_id)
 				_record(table_position,{"kind":"harbor_restaurant","venue_id":venue[0],"fabric":venue[1],"table_index":table_index,"position":table_position})
