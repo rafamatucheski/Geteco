@@ -1366,6 +1366,16 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 			cemetery.position = record.position
 			chunk.add_child(cemetery)
 		"south_port_model":
+			# Prédio do porto com fachada pintada (galpão, oficina, garagem: PaintedHarborHouses.LOWRISE)
+			# monta pela fábrica, com a mesma pegada e altura do catálogo, no lugar do modelo antigo.
+			if str(record.id).begins_with("PortBuilding") and not PaintedHarborHouses.style_for(str(record.id), str(record.model_kind)).is_empty():
+				var def: Dictionary = preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").for_source(str(record.id))
+				var painted_port := URBAN_FACTORY.populate_chunk(chunk, {"id": str(record.id), "kind": str(record.model_kind), "position": record.position,
+					"size": (record.footprint as Rect2).size / 16.0, "height_override": float(def.get("roof_height", 4.6)) - .10, "variant_seed": int(record.variant)})
+				if painted_port != null:
+					painted_port.add_to_group("exterior_reveal_building")
+					preload("res://world/places/harbor_buildings/HarborBuildingExteriorAccess.gd").install(painted_port,str(record.id))
+				return
 			var port_art: Node3D = SOUTH_PORT.mount(chunk,record)
 			if str(record.id).begins_with("PortBuilding"):
 				port_art.add_to_group("exterior_reveal_building")

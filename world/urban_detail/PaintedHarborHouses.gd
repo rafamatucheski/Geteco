@@ -30,6 +30,18 @@ const HARBOR := {
 	"CycleWorkshop": "oficina-bicicletas", "CornerPharmacy": "farmacia-esquina", "NorthbankHomes2": "oficina-margem-norte",
 	"CommunityHall": "salao-comunitario", "ServiceLodge": "pousada-servico",
 }
+## Pacotes baixos de 15/10 (mercearia, galpão, oficina, garagem, estação), importados em
+## 18/10 com vãos medidos à mão em tools/painted_facades_porto_baixos.json. Os PortBuilding
+## são os prédios do porto sul (OriginalSouthPort), que trocam o modelo antigo pelo kit.
+## GETECO_PAINTED_LOWRISE=0 devolve estes seis à geometria antiga (A/B).
+const LOWRISE := {
+	"NorthGrocer": "mercearia-esquina", "TransitHouse": "estacao-onibus",
+	"PortBuilding0": "galpao-portuario", "PortBuilding1": "galpao-portuario",
+	"PortBuilding2": "garagem-predio", "PortBuilding3": "oficina-mecanica",
+}
+## Galpão de 40 m: dois módulos de 20 m (portão e porta de serviço em cada um, como baias
+## de armazém) em vez de encolher o prédio do porto para a largura de um módulo.
+const LOWRISE_REPEAT := ["PortBuilding0", "PortBuilding1"]
 ## A casa do líder mantém a geometria antiga: CobraLeaderEntrance recorta HouseBody,
 ## FrontDoor e FrontPorch para a porta trancada da missão, e a fachada pintada não
 ## tem essas peças.
@@ -45,9 +57,15 @@ const COBRA_PORCH := 1.8
 ## e a fábrica usam esta mesma largura para casco, corte da entrada e piso baterem.
 ## Até 15% de folga a imagem estica; acima disso o prédio fica na largura natural.
 static func footprint_width(building_id: String, width: float) -> float:
-	if not PaintedFacadeKit.enabled() or not HARBOR.has(building_id): return width
-	var natural := PaintedFacadeKit.natural_size(HARBOR[building_id]).x
+	var style: String = HARBOR.get(building_id, lowrise_style(building_id))
+	if not PaintedFacadeKit.enabled() or style.is_empty() or building_id in LOWRISE_REPEAT: return width
+	var natural := PaintedFacadeKit.natural_size(style).x
 	return width if width <= natural * 1.15 else natural
+
+
+static func lowrise_style(building_id: String) -> String:
+	if OS.get_environment("GETECO_PAINTED_LOWRISE") == "0": return ""
+	return LOWRISE.get(building_id, "")
 
 
 ## Estilo pintado do prédio, ou "" quando ele continua com a geometria antiga.
@@ -62,6 +80,8 @@ static func style_for(building_id: String, kind: String) -> String:
 		var values: Array = COBRA.values()
 		return values[posmod(hash(building_id), values.size())]
 	if HARBOR.has(building_id): return HARBOR[building_id]
+	var lowrise := lowrise_style(building_id)
+	if not lowrise.is_empty(): return lowrise
 	if building_id.begins_with("PatrolCourt"):
 		return PATROL[posmod(hash(building_id), PATROL.size())]
 	return ""

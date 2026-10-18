@@ -1,0 +1,181 @@
+{
+	"mercearia-esquina": {
+		"nota": "NorthGrocer (Canal Grocery). Frente 10 x 6 m (1620x971), lateral 6 x 6 m. Vaos medidos a mao em frente-dia/fundos-dia: miolo escuro por preenchimento (lum < 40) e base no topo da soleira clara pelo perfil vertical do centro do vao (frente 470..620 x 572..946 = 0,93 x 2,31 m; fundos 1202..1371 x 527..957 = 1,05 x 2,66 m). A pintura deixa o vao vazio (sem folha desenhada); a folha 3D e porta-frente.png. margin 0: rect = pixel medido.",
+		"module_w": 10.0,
+		"side_w": 6.0,
+		"eave": 0.0,
+		"margin": 0.0,
+		"front": [
+			{
+				"rect": [
+					0.2901,
+					0.5891,
+					0.3833,
+					0.9743
+				],
+				"leaf": true
+			}
+		],
+		"back": [
+			{
+				"rect": [
+					0.742,
+					0.5427,
+					0.8469,
+					0.9856
+				],
+				"leaf": true
+			}
+		]
+	},
+	"galpao-portuario": {
+		"nota": "Galpoes PortBuilding0/1 do porto sul (40 x 20,6 m = dois modulos). Frente 20 x 8 m (1983x793), lateral 6 x 8 m. Portao: preto puro 773..1209 x 310..792 (lum < 14) = 4,4 x 4,87 m, sem folha (o portao de enrolar do pacote nao e montado: o kit so tem folha de dobradica). Porta de servico 54..140 x 586..792 = 0,88 x 2,08 m; fundos 1771..1854 x 552..792 = 0,85 x 2,42 m. margin 0. sizes: frente/fundos/telhado em 1536 px (77 px/m num modulo de 20 m; 768 dava 38 px/m).",
+		"module_w": 20.0,
+		"side_w": 6.0,
+		"eave": 0.0,
+		"margin": 0.0,
+		"front": [
+			{
+				"rect": [
+					0.3898,
+					0.3909,
+					0.6102,
+					1.0
+				],
+				"leaf": false
+			},
+			{
+				"rect": [
+					0.0272,
+					0.739,
+					0.0711,
+					1.0
+				],
+				"leaf": true
+			}
+		],
+		"back": [
+			{
+				"rect": [
+					0.8931,
+					0.6961,
+					0.9355,
+					1.0
+				],
+				"leaf": true
+			}
+		],
+		"sizes": {
+			"frente-dia": 1536,
+			"fundos-dia": 1536,
+			"frente-noite": 1536,
+			"fundos-noite": 1536,
+			"telhado": 1536
+		}
+	},
+	"oficina-mecanica": {
+		"nota": "PortBuilding3 do porto sul (12,5 x 16,9 m). Frente 12 x 6 m (1774x887), lateral 6 x 6 m. Portao preto 425..1241 x 387..886 = 5,52 x 3,38 m sem folha; porta 1400..1505 x 538..886 = 0,72 x 2,35 m; fundos 1180..1310 x 472..881 = 0,89 x 2,77 m. margin 0.",
+		"module_w": 12.0,
+		"side_w": 6.0,
+		"eave": 0.0,
+		"margin": 0.0,
+		"front": [
+			{
+				"rect": [
+					0.2396,
+					0.4363,
+					0.7001,
+					1.0
+				],
+				"leaf": false
+			},
+			{
+				"rect": [
+					0.7892,
+					0.6065,
+					0.8489,
+					1.0
+				],
+				"leaf": true
+			}
+		],
+		"back": [
+			{
+				"rect": [
+					0.6652,
+					0.5321,
+					0.739,
+					0.9932
+				],
+				"leaf": true
+			}
+		]
+	},
+	"garagem-predio": {
+		"nota": "PortBuilding2 do porto sul (13,1 x 11,25 m). Frente 14 x 6 m (1915x821), lateral 6 x 6 m. Vao da rampa 582..1329 x 453..807 = 5,46 x 2,59 m sem folha (a rampa pintada fica de fundo); porta de pedestre 1674..1783 x 516..813 = 0,80 x 2,17 m; fundos 1656..1773 x 505..816 = 0,86 x 2,27 m. margin 0.",
+		"module_w": 14.0,
+		"side_w": 6.0,
+		"eave": 0.0,
+		"margin": 0.0,
+		"front": [
+			{
+				"rect": [
+					0.3039,
+					0.5518,
+					0.6945,
+					0.9829
+				],
+				"leaf": false
+			},
+			{
+				"rect": [
+					0.8742,
+					0.6285,
+					0.9316,
+					0.9903
+				],
+				"leaf": true
+			}
+		],
+		"back": [
+			{
+				"rect": [
+					0.8648,
+					0.6151,
+					0.9264,
+					0.9939
+				],
+				"leaf": true
+			}
+		]
+	},
+	"estacao-onibus": {
+		"nota": "TransitHouse (a pintura diz TRANSIT HOUSE). Frente 12 x 5 m (1942x809), lateral 6 x 5 m (1374x1145). Vao 975..1218 x 389..763 = 1,51 x 2,31 m (base no topo da soleira cinza); fundos 1202..1354 x 439..808 = 0,94 x 2,28 m. Folha unica (abaixo de DOUBLE_DOOR_MIN). margin 0.",
+		"module_w": 12.0,
+		"side_w": 6.0,
+		"eave": 0.0,
+		"margin": 0.0,
+		"front": [
+			{
+				"rect": [
+					0.5021,
+					0.4808,
+					0.6277,
+					0.9431
+				],
+				"leaf": true
+			}
+		],
+		"back": [
+			{
+				"rect": [
+					0.6189,
+					0.5426,
+					0.6977,
+					1.0
+				],
+				"leaf": true
+			}
+		]
+	}
+}
