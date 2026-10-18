@@ -70,6 +70,16 @@ static func apply(model: Node3D, identity: int) -> bool:
 	model.body_accessories = roll_accessories(rng, 0.20, 0.14, HATS)
 	return true
 
+## Para NPC de guarda-roupa fixo (moradores, funcionários): tenta o corpo Meshy do mesmo sexo e, sem
+## entrada compatível, devolve o guarda-roupa original ao corpo do kit. Sem isto `apply` recusava
+## qualquer override e os interiores ficavam cheios do corpo antigo (playtest 18/10).
+static func apply_keeping_sex(model: Node3D, identity: int) -> bool:
+	var original: Dictionary = model.wardrobe_overrides
+	model.wardrobe_overrides = {"female": bool(original.get("female", false))} if original.has("female") else {}
+	if apply(model, identity): return true
+	model.wardrobe_overrides = original
+	return false
+
 ## Sorteia chapéu (chance `hat_chance`, tipo por pesos de `hats`) e óculos escuros (`glasses_chance`).
 static func roll_accessories(rng: RandomNumberGenerator, hat_chance: float, glasses_chance: float, hats: Array) -> Array:
 	var list: Array = []

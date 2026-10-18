@@ -69,6 +69,8 @@ func _ready() -> void:
 	resident_model.pants_color = Color(str(appearance.get("pants", "414c4e")))
 	resident_model.wardrobe_overrides = {"female":bool(appearance.get("female", false)), "height":1.0, "top":int(appearance.get("top", 1)),
 		"bottom":0, "shoe":0, "hat":0, "bag":0, "backpack":false}
+	# Corpo Meshy dos pedestres (mesmo sexo); o guarda-roupa acima só vale quando não há corpo compatível.
+	preload("res://assets/civilians/CivilianBodyCatalog.gd").apply_keeping_sex(resident_model, identity)
 	visual.add_child(resident_model)
 	work_activity = str(specification.get("activity", "read"))
 	if work_activity == "sleep" and sleep_bed == Transform3D(): work_activity = "sit_doze"

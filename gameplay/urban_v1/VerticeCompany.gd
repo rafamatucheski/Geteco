@@ -308,6 +308,7 @@ func _build_staff() -> void:
 			model.coat_color = Color("283c4a")
 			model.pants_color = Color("23313a")
 			model.wardrobe_overrides = {"top":1,"bottom":0,"shoe":1,"hat":1,"backpack":false,"bag":0}
+			preload("res://assets/civilians/CivilianBodyCatalog.gd").apply_keeping_sex(model, int(model.appearance_variant))
 		elif office:
 			model = preload("res://assets/CivilianModel.gd").new()
 			model.appearance_locked = true
@@ -315,6 +316,7 @@ func _build_staff() -> void:
 			model.coat_color = Color("d9d4c4") if i%2 == 0 else Color("5d7186")
 			model.pants_color = Color("2f3440")
 			model.wardrobe_overrides = {"top":0,"bottom":0,"shoe":0,"hat":0,"backpack":false,"bag":0}
+			preload("res://assets/civilians/CivilianBodyCatalog.gd").apply_keeping_sex(model, int(model.appearance_variant))
 		else:
 			model = preload("res://gameplay/routines_v1/DockWorkerModel.gd").new()
 			model.worker_index = i
@@ -336,6 +338,7 @@ func _build_staff() -> void:
 		seated.coat_color = Color("8a4f4a") if z < 15 else Color("e3ddcc")
 		seated.pants_color = Color("2b3140")
 		seated.wardrobe_overrides = {"top":0,"bottom":0,"shoe":0,"hat":0,"backpack":false,"bag":0}
+		preload("res://assets/civilians/CivilianBodyCatalog.gd").apply_keeping_sex(seated, int(seated.appearance_variant))
 		seated.sit_amount = 1.0
 		seated.seat_height = .5
 		seated.position = Vector3(39.3,0,z+1.05)

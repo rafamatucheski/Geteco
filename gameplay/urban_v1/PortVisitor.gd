@@ -13,6 +13,7 @@ func _build_model() -> void:
 	model.coat_color = definition.get("coat_color",Color("7d8474"))
 	model.pants_color = Color("34434a")
 	model.wardrobe_overrides = {"top":1,"bottom":0,"shoe":1,"hat":1 if fishing else 0,"backpack":not fishing,"bag":0}
+	preload("res://assets/civilians/CivilianBodyCatalog.gd").apply_keeping_sex(model, int(model.appearance_variant))
 	add_child(model)
 	if fishing:
 		rod = Node3D.new()

@@ -80,6 +80,7 @@ func _process(delta: float) -> void:
 		model.coat_color=Color(routine.coat)
 		model.pants_color=Color("4b4940")
 		model.wardrobe_overrides={"female":routine.female,"skin":Color(routine.skin),"hair_color":Color("44352a"),"hat":1 if routine.id=="truck_driver" else 0,"top":0,"bottom":0,"shoe":0,"bag":0,"backpack":false}
+		preload("res://assets/civilians/CivilianBodyCatalog.gd").apply_keeping_sex(model, int(model.appearance_variant))
 		model.rotation.y=PI
 		actor.visual.add_child(model)
 		session.world.people.append(actor)
