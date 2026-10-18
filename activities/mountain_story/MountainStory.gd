@@ -61,7 +61,11 @@ func cancel_attempt() -> void:
 
 func objective() -> String:
 	if session == null or not _valid or session.state.region_id != "mountain": return ""
-	match PROGRESS.next_event(snapshot()):
+	return journal_line(session.state.world_state)
+
+## Mesmo texto do objetivo, sem depender da região: o diário (JournalArcs) mostra de qualquer lugar.
+static func journal_line(world_state: Dictionary) -> String:
+	match PROGRESS.next_event(PROGRESS.data(world_state)):
 		"cargo_identified": return "Carga dos Cobras · Investigue as caixas no avião caído no lago."
 		"cargo_manifest": return "Carga dos Cobras · Entre pela rampa e examine o manifesto no corredor."
 		"cave_shelter": return "Rastro de Vicente · Procure vestígios na Caverna da Queda."

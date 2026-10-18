@@ -87,7 +87,17 @@ func _ready() -> void:
 	TranslationServer.set_locale(text_language)
 	apply_settings()
 
-func load_settings(path := "user://settings.cfg") -> Error:
+## Teste roda com --isolated-save-root=<pasta temporária> (tools/run_core_suite.sh,
+## tests/run_suite.ps1): as preferências ficam lá. Antes o teste lia o settings.cfg do jogador e
+## o idioma do texto dele mudava o resultado (comparação de frase em português falhava em inglês).
+static func default_path() -> String:
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--isolated-save-root="):
+			return argument.trim_prefix("--isolated-save-root=").replace("\\", "/").path_join("settings.cfg")
+	return "user://settings.cfg"
+
+func load_settings(path := "") -> Error:
+	if path.is_empty(): path = default_path()
 	var config := ConfigFile.new()
 	var result := config.load(path)
 	if result == OK:
@@ -253,7 +263,8 @@ static func sync_pipeline_msaa(samples: int) -> void:
 	if OS.get_environment("HARBOR_PIPELINE_MSAA_SYNC") == "0": return
 	if int(ProjectSettings.get_setting(KEY, 0)) != samples: ProjectSettings.set_setting(KEY, samples)
 
-func save_settings(path := "user://settings.cfg") -> Error:
+func save_settings(path := "") -> Error:
+	if path.is_empty(): path = default_path()
 	var config := ConfigFile.new()
 	config.set_value("audio","master_volume",master_volume)
 	config.set_value("audio","music_volume",music_volume)

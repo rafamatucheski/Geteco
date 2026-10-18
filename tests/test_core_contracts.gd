@@ -14,6 +14,7 @@ const STORY_PAY := preload("res://systems/campaign/StoryPay.gd")
 const MISSIONS := preload("res://data/campaign/HarborMissions.gd")
 const TOWS := preload("res://data/catalogs/TowJobs.gd")
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
+const ARCS := preload("res://runtime/JournalArcs.gd")
 
 class IsolatedLaunch extends "res://runtime/SessionLaunch.gd":
 	var folder := ""
@@ -70,6 +71,7 @@ func run() -> void:
 	desert_caves()
 	recovery_penalty()
 	economy_balance()
+	journal_arcs()
 	await crime_victims()
 	finish()
 
@@ -230,6 +232,28 @@ func economy_balance() -> void:
 	check(cycle == 7100, "rodada completa do guincho paga R$ 7.100 (%d)" % cycle)
 	check(TOWS.reward_accepted(4, 6000) and TOWS.reward_accepted(4, 2400) and not TOWS.reward_accepted(4, 999), "contrato de guincho antigo continua válido")
 	check(preload("res://gameplay/armored/ArmoredSchedule.gd").CASH_PER_TRUCK == 20000, "carro-forte paga R$ 20.000")
+
+# --- Diário: toda história em andamento aparece, de qualquer região --------------------------
+
+func journal_arcs() -> void:
+	var fresh_campaign: Dictionary = STATE.new().campaign.snapshot()
+	var fresh: Array[String] = ARCS.lines({}, fresh_campaign)
+	check(fresh.size() == 1 and fresh[0] == TranslationServer.translate(preload("res://activities/mountain_story/MountainStory.gd").journal_line({})), "jogo novo: só a pista da serra (%s)" % [fresh])
+	var world := {"blade_forge": {"version": 1, "stage": "seek_hermit"}, "urban_operations": {"truckers_village": {"version": 1, "started": true, "belt": true, "crank": false, "completed": false}}}
+	var some: Array[String] = ARCS.lines(world, fresh_campaign)
+	check(some.size() == 3, "Forja da Serra e Tonico entram no diário (%s)" % [some])
+	check(ARCS.lines({"urban_operations": {"truckers_village": {"started": true, "completed": true}}, "blade_forge": {"version": 1, "stage": "done"}}, fresh_campaign).size() == 1, "história terminada sai do diário")
+	var saved: Dictionary = FIXTURE.full_snapshot(Vector3.ZERO, true)
+	var finished = STATE.new()
+	if check(finished.restore_snapshot(saved), "fixture: Harbor concluído para o deserto"):
+		var desert_lines: Array[String] = ARCS.lines(finished.world_state, finished.campaign.snapshot())
+		var desert_prefix := String(TranslationServer.translate("Deserto")) + " · "
+		check(desert_lines.any(func(line): return line.begins_with(desert_prefix)), "depois do Harbor, o ato 2 do deserto aparece (%s)" % [desert_lines])
+		var done_world: Dictionary = finished.world_state.duplicate(true)
+		var story: Dictionary = preload("res://runtime/desert/DesertStoryState.gd").data(done_world)
+		story.delivered = true
+		done_world.desert_story = story
+		check(not ARCS.lines(done_world, finished.campaign.snapshot()).any(func(line): return line.begins_with(desert_prefix)), "ato 2 entregue sai do diário")
 
 # --- Tabela de vítimas: arma e atropelamento contam igual ------------------------------------
 

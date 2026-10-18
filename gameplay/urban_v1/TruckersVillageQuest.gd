@@ -230,10 +230,16 @@ func _service_vehicle():
 
 func objective() -> String:
 	if _local() and commerce.data.hostility > 0: return "Moradores armados · Afaste-se da vila!"
-	if not _local() or not data.started or data.completed: return ""
-	if data.belt and data.crank: return "Tonico · Volte ao posto e restaure a bomba de ar."
-	if data.belt: return "Tonico · Encontre a manivela na carroça, no fundo leste da vila (1/2)."
-	if data.crank: return "Tonico · Encontre a correia na sucata atrás das casas do oeste (1/2)."
+	if not _local(): return ""
+	return journal_line(data)
+
+## Mesmo texto do objetivo, sem depender de estar na vila (diário, JournalArcs). Recebe o
+## bloco salvo em world_state.urban_operations.truckers_village.
+static func journal_line(saved: Dictionary) -> String:
+	if not saved.get("started", false) or saved.get("completed", false): return ""
+	if saved.get("belt", false) and saved.get("crank", false): return "Tonico · Volte ao posto e restaure a bomba de ar."
+	if saved.get("belt", false): return "Tonico · Encontre a manivela na carroça, no fundo leste da vila (1/2)."
+	if saved.get("crank", false): return "Tonico · Encontre a correia na sucata atrás das casas do oeste (1/2)."
 	return "Tonico · Procure a correia na sucata oeste e a manivela na carroça leste (0/2)."
 
 func snapshot() -> Dictionary:

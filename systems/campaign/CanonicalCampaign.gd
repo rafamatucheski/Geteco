@@ -6,9 +6,17 @@ var catalog: Dictionary = {}
 var _data := {"version": 1, "current_stage": "prologue_call", "completed_beats": [],
 	"completed_contracts": [], "flags": {}, "regions": ["central"], "territories": ["mercado_velho"]}
 
+## Lido uma vez por execução e compartilhado só para leitura: cada GameState.new() criava um
+## ledger novo e relia o JSON do disco, e um save valida o estado umas quatro vezes.
+static var _shared: Dictionary = {}
+
 func _init() -> void:
-	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(PATH))
-	if parsed is Dictionary: catalog = parsed
+	if _shared.is_empty():
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(PATH))
+		if parsed is Dictionary:
+			_shared = parsed
+			_shared.make_read_only()
+	catalog = _shared
 
 func snapshot() -> Dictionary:
 	return _data.duplicate(true)

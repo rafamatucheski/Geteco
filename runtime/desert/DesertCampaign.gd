@@ -163,14 +163,22 @@ func race_finished(result: Dictionary) -> void:
 		_say([["Jessica","Você melhorou. Ainda lembra daquele serviço em Harbor?"],["Dante","Lembro. Agora tenho o que vim buscar."],["Jessica","Então termina essa conversa com seu irmão."]])
 func objective() -> String:
 	if session.state.region_id != "desert": return ""
-	var data := STATE.data(session.state.world_state)
+	return objective_for(session.state.world_state)
+
+## Mesmo texto do objetivo, sem depender da região (diário, JournalArcs).
+static func objective_for(world_state: Dictionary) -> String:
+	var data := STATE.data(world_state)
 	if not data.met_vicente: return "Encontre Vicente no encontro da arrancada."
-	if not DIGO.workshop_unlocked(session.state.world_state): return "Corra contra Digo na reta."
+	if not DIGO.workshop_unlocked(world_state): return "Corra contra Digo na reta."
 	if not data.cargo_found: return "Confira a carga dos Cobras no posto Miragem."
 	if not data.bank_proof: return "Leve o manifesto a Irene no Cobre."
 	if not data.jessica_met: return "Avance nas provas de arrancada e enfrente Jessica."
 	if not data.delivered: return "Mostre a prova da armação a Vicente."
 	return "Explore o deserto e complete o campeonato de arrancada."
+
+## Ato 2 terminado: o diário para de listar o deserto como história em andamento.
+static func act_complete(world_state: Dictionary) -> bool:
+	return bool(STATE.data(world_state).delivered)
 func target_position() -> Vector3:
 	var data := STATE.data(session.state.world_state)
 	if not data.met_vicente or (data.bank_proof and data.jessica_met and not data.delivered): return LOCATIONS.vicente

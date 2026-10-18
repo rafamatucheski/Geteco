@@ -12,6 +12,7 @@ const DOOR_TRANSITION := preload("res://runtime/DoorTransition.gd")
 const REWARD_AUDIO := preload("res://gameplay/RewardAudio.gd")
 const RECOVERY_PENALTY := preload("res://runtime/RecoveryPenalty.gd")
 const STORY_PAY := preload("res://systems/campaign/StoryPay.gd")
+const JOURNAL_ARCS := preload("res://runtime/JournalArcs.gd")
 const WORKPLACE_REACTION := preload("res://gameplay/civilian_reactions/WorkplaceThreatReaction.gd")
 const DIALOGUE_CARD := preload("res://ui/dialogue/DialogueCard.gd")
 const DIALOGUE_CAPTION := preload("res://ui/dialogue/DialogueCaption.gd")
@@ -2137,6 +2138,10 @@ func show_journal() -> void:
 					close_menu()
 					return
 				if not dialogue_open: close_menu())
+	# Histórias fora da campanha do Harbor, de qualquer região (JournalArcs).
+	var village: Dictionary = {}
+	if urban_operations != null and is_instance_valid(urban_operations.village_quest): village = urban_operations.village_quest.data
+	for line in JOURNAL_ARCS.lines(state.world_state, state.campaign.snapshot(), village): _button(line, close_menu)
 	var secret_file: Variant = urban_operations.get("secret_file") if urban_operations != null else null
 	if is_instance_valid(secret_file) and secret_file.available():
 		_button("Arquivo de Vicente",secret_file.open_from_journal)
@@ -2420,7 +2425,15 @@ func _save_indicator() -> Control:
 		feedback.add_child(indicator)
 	return indicator
 
+## Autosave tem ~170 chamadores e cada gravação faz ~25 snapshots e quatro validações completas:
+## o span dá nome ao pico no log de quadros lentos (antes aparecia sem dono).
 func save_game(manual := false) -> bool:
+	var began := STALL_WORK_READY.begin()
+	var saved := _save_game(manual)
+	STALL_WORK_READY.finish_slow("session.save_game", began, 4000, self)
+	return saved
+
+func _save_game(manual: bool) -> bool:
 	var blocked := save_block_reason()
 	if not blocked.is_empty():
 		if manual: _save_indicator().reject(blocked)

@@ -83,20 +83,25 @@ fi
 
 passed=0
 failed=0
+tmp_root="$(cygpath -u "${TEMP:-/tmp}" 2>/dev/null || echo /tmp)"
 for entry in "${entries[@]}"; do
 	IFS='|' read -r mode script extra expected <<< "$entry"
 	name="$(basename "$script" .gd)"
 	log="$out/$name.log"
 	args=(--path . --script "res://$script")
 	[ "$mode" = "headless" ] && args=(--headless "${args[@]}")
+	# Pasta própria por teste: preferências (idioma do texto!) nunca vêm do settings.cfg do jogador.
+	isolated="$(mktemp -d "$tmp_root/geteco-core-XXXXXX")"
+	isolated_arg="$(cygpath -m "$isolated" 2>/dev/null || echo "$isolated")"
 	# shellcheck disable=SC2206
-	[ -n "$extra" ] && args+=(-- $extra)
+	args+=(-- $extra "--isolated-save-root=$isolated_arg")
 	limit=180
 	[ "$tier" = "full" ] && case " ${WORLD[*]} " in *"|$script|"*) limit=600 ;; esac
 	started=$(date +%s)
 	echo "core-suite: $name ($mode)…"
 	GODOT_RUN_TIMEOUT=$limit tools/run_godot_locked.sh "${args[@]}" > "$log" 2>&1
 	code=$?
+	case "$isolated" in "$tmp_root"/geteco-core-*) rm -rf -- "$isolated" ;; esac
 	seconds=$(( $(date +%s) - started ))
 	problems=""
 	[ "$code" != 0 ] && problems="código $code"

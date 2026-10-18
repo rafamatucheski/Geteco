@@ -19,7 +19,7 @@
 - O avião acidentado pertence aos Cobras e deve participar de uma investigação de carga. Na caverna próxima, Dante encontra uma pista de Vicente, seu irmão, indicando que passou por ali e que Dante chegou perto de encontrá-lo. Preserve a revelação maior do passado para o ato 2.
 - Incluir uma corrida noturna de descida de carro em alta velocidade contra seis NPCs competitivos: seis adversários mais Dante, sete carros no total.
 - Criar uma trilha própria para corrida de jipe por checkpoints e adaptar o cenário aos acessos, percurso, largada e chegada dessas atividades.
-- O roteiro e o estado da implementação estão em [plano-montanha-cobras-20261005.md](docs/plano-montanha-cobras-20261005.md). Essas atividades ainda precisam ser implementadas e validadas; não conte este registro como conteúdo jogável.
+- O roteiro está em [plano-montanha-cobras-20261005.md](docs/plano-montanha-cobras-20261005.md), mas o estado de lá ("patch não aplicado") ficou velho: a história do avião e da caverna, a descida noturna e a trilha do jipe estão ligadas na sessão por `runtime/MountainActivities.gd`, aparecem no diário e têm testes próprios (`tests/test_mountain_downhill_*.gd`, `tests/test_mountain_jeep_*.gd`). O que continua pendente é validação jogando e medição em release (conferido no código em 18/10/2026).
 
 # Preferências visuais do projeto
 
