@@ -1,6 +1,5 @@
 extends SceneTree
 ## Real Main/session: caption, voice, modal input and recovery share one lifecycle.
-const HOME := preload("res://cutscenes/opening/home/HomeCall.gd")
 const ARRIVAL := preload("res://runtime/ArrivalDialogue.gd")
 var checks := 0
 var failures: Array[String] = []
@@ -106,22 +105,8 @@ func run() -> void:
 	check(guided_completions[0] == 1 and not session.arrival._meeting_started and not session.arrival.dialogue_in_progress() and not session.arrival.voice.playing and not session.dialogue_card.visible, "Recovery interrupts guided speech without completing it or preventing a retry")
 	session.close_menu()
 	session.arrival.active = false
-	for selected_voice in ["en", "pt_BR"]:
-		settings.voice_language = selected_voice
-		TranslationServer.set_locale("pt_BR" if selected_voice == "en" else "en")
-		var film := HOME.new()
-		root.add_child(film)
-		film.set_process(false)
-		var timing_ok := true
-		var bank_ok := true
-		for index in film._recorded_lines.size():
-			var stream: AudioStream = film._recorded_lines[index]
-			bank_ok = bank_ok and stream != null and str(stream.get_meta("voice_language", "")) == selected_voice
-			timing_ok = timing_ok and stream != null and float(film.line_times[index][1])-float(film.line_times[index][0]) >= stream.get_length()
-		check(bank_ok and timing_ok, "Home call %s audio matches preference and every shot contains its entire take" % selected_voice)
-		film._show_caption(float(film.line_times[1][0])+.1)
-		check(("Seu irmão" in film.subtitle.text) if selected_voice == "en" else ("Your brother" in film.subtitle.text), "Home caption locale is independent from its selected voice")
-		film.free()
+	# A abertura antiga em casa (cutscenes/opening/home/HomeCall.gd) saiu em 18/10/2026; voz e
+	# legenda da abertura atual ficam em tests/test_ferry_voice_language.gd.
 	settings.voice_language = previous_voice
 	TranslationServer.set_locale(previous_locale)
 	world.queue_free()

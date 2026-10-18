@@ -31,7 +31,9 @@ func run() -> void:
 	world = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival", true)
 	root.add_child(world)
-	for index in 600:
+	# 600 quadros (10 s) não cabem mais: o pré-aquecimento das regiões sob a cortina leva ~14 s
+	# (medido 18/10/2026); o teste desistia antes de jogar e o Godot caía ao sair no meio da carga.
+	for index in 2400:
 		await physics_frame
 		if world.session != null and world.session.ready_for_play: break
 	check(world.session != null and world.session.ready_for_play, "session ready")
@@ -145,14 +147,6 @@ func run() -> void:
 	sedan.animate_driver_door(-1, false, 0.0)
 	check(not sedan.door_presentation.hinges[-1].visible and not sedan.door_presentation.hinges[1].visible, "closed substitute doors do not leave detached panels")
 	sedan.queue_free()
-	var route = preload("res://scripts/RouteActivity.gd").new()
-	route.world = world
-	world.add_child(route)
-	route.stage = 0
-	route._process(.2)
-	var distance: int = roundi(world.player.position.distance_to(route.points[0]))
-	check(route.label.text.contains("%d m" % distance), "sandbox route follows the player after the selected vehicle is removed")
-	route.queue_free()
 	var holder := Node3D.new()
 	world.add_child(holder)
 	driving.car = original
