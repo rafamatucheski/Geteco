@@ -28,6 +28,9 @@ var retreat_time := 0.0
 var _steering := preload("res://gameplay/crowd/PedestrianSteering.gd").new()
 var alerted := false
 var magazine := 0
+## Repassados ao CobraModel: sorteio de aparência por indivíduo (-1 = cada um sorteia o seu).
+var look_seed := -1
+var uniform_tones: Array = []
 var reload_timer := 0.0
 
 func configure(p_gameplay: Node3D, p_tier: int = 0) -> void:
@@ -55,6 +58,8 @@ func _ready() -> void:
 	if not is_instance_valid(visual):
 		visual = MODEL.new()
 		visual.tier = tier
+		visual.look_seed = look_seed if look_seed >= 0 else randi() % 100000
+		visual.uniform_tones = uniform_tones
 		add_child(visual)
 	magazine = int(CATALOG.get_weapon(weapon_id).magazine_size)
 	last_known = global_position

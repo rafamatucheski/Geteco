@@ -5,13 +5,20 @@ var seated := false
 var seat_armed := false
 var cobra_uniform := true
 var standing_body_scale := Vector3.ONE
+## >= 0: corpo, pele, cabelo, altura e tom da roupa sorteados por indivíduo. Com só o nível, todo
+## capanga do mesmo nível saía idêntico (playtest 18/10: "todos os NPCs lá são iguais").
+var look_seed := -1
+## Tons de roupa do sorteio (cor do corpo Meshy); vazio = tons da gangue.
+var uniform_tones: Array = []
+const GANG_TONES := [Color(0.36, 0.44, 0.38), Color(0.30, 0.31, 0.33), Color(0.27, 0.32, 0.42), Color(0.42, 0.34, 0.28), Color(0.40, 0.40, 0.36)]
+const SKINS := [Color("e0b28e"), Color("c79570"), Color("ac785a"), Color("94664a"), Color("80553e"), Color("5e3d2c")]
 var _seat_hands: Callable
 var _seat_aim_time := 0.0
 var _seat_target := Vector3.ZERO
 
 func _ready() -> void:
 	model_root = self
-	body = preload("res://assets/civilians/RigBodySwap.gd").install(self, {
+	var look := {
 		"role": "cobra", "role_index": tier, "variant": 730 + tier, "female": false, "build": [0, 1, 2][tier],
 		"height": [1.0, 1.02, 1.04][tier], "top": 0, "bottom": 0, "shoe": 1,
 		"hair": [1, 2, 0][tier], "beard": [0, 1, 2][tier], "hat": 0,
@@ -19,7 +26,23 @@ func _ready() -> void:
 		"skin": [Color("c79570"), Color("ac785a"), Color("80553e")][tier],
 		"hair_color": Color("171917"), "top_color": Color("23302a"),
 		"bottom_color": Color("202522"), "shoe_color": Color("191c19"),
-		"inner": Color("222923"), "accent": Color("82916c")})
+		"inner": Color("222923"), "accent": Color("82916c")}
+	if look_seed >= 0:
+		# Só corpos e materiais que os pedestres já usam: nada novo para carregar ou compilar.
+		var rng := RandomNumberGenerator.new()
+		rng.seed = look_seed
+		var tones: Array = uniform_tones if not uniform_tones.is_empty() else GANG_TONES
+		look.female = rng.randf() < .25
+		look.role_index = rng.randi_range(0, 3)
+		look.build = rng.randi_range(0, 2)
+		look.height = rng.randf_range(.96, 1.06)
+		look.hair = rng.randi_range(0, 2)
+		look.beard = rng.randi_range(0, 2)
+		look.glasses = rng.randf() < .2
+		look.skin = SKINS[rng.randi_range(0, SKINS.size() - 1)]
+		look.hair_color = Color("171917").lerp(Color("5a3d26"), rng.randf() * .6)
+		look.body_tone = tones[rng.randi_range(0, tones.size() - 1)]
+	body = preload("res://assets/civilians/RigBodySwap.gd").install(self, look)
 	torso_node = body.spine
 	head_node = body.head_node
 	if cobra_uniform: LOOK.dress(self)

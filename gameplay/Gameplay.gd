@@ -2783,10 +2783,27 @@ func _update_loot(delta: float) -> void:
 			_loot.remove_at(index)
 			continue
 		if not attack_allowed() or not is_instance_valid(player) or not pickup.can_collect(player.global_position): continue
-		if not _grant_loot(pickup): continue
+		if not _grant_loot(pickup):
+			_loot_refused(pickup)
+			continue
 		pickup.collect()
 		_loot.remove_at(index)
 		changed.emit()
+
+## Arma ou munição que não cabe ficava no chão em silêncio e parecia que não dava para pegar.
+## Avisa uma vez por item, ao pisar nele.
+func _loot_refused(pickup: Node3D) -> void:
+	if pickup.kind == "cash" or pickup.has_meta("refusal_noticed"): return
+	pickup.set_meta("refusal_noticed", true)
+	var active_session: Variant = world.get("session") if is_instance_valid(world) else null
+	if active_session == null or not active_session.has_method("show_message"): return
+	if pickup.kind == "armor":
+		active_session.show_message("Colete já está cheio.")
+		return
+	var id := String(pickup.weapon_id)
+	var label := String(CATALOG.WEAPONS.get(id, {}).get("short_label", id)).capitalize()
+	if state.owns_weapon(id): active_session.show_message("Sem espaço para munição de %s. Abra a mochila (Tab) e libere espaço." % label)
+	else: active_session.show_message("Sem espaço na mochila para %s. Abra a mochila (Tab) e libere espaço." % label)
 
 func _grant_loot(pickup: Node3D) -> bool:
 	if pickup.kind == "cash":

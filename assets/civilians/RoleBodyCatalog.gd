@@ -62,6 +62,10 @@ const ROLES := {
 		{"file": PEDESTRIANS + "m_medium_a.glb", "female": false, "tint": {"tone": Color(0.36, 0.44, 0.38), "brightness": 0.9}},
 		{"file": PEDESTRIANS + "m_medium_b.glb", "female": false, "tint": {"tone": Color(0.36, 0.44, 0.38), "brightness": 0.9}},
 		{"file": PEDESTRIANS + "m_heavy_a.glb", "female": false, "tint": {"tone": Color(0.36, 0.44, 0.38), "brightness": 0.9}},
+		# Só o sorteio por indivíduo (CobraModel.look_seed) chega nestes; o índice por nível fica nos três primeiros.
+		{"file": PEDESTRIANS + "m_heavy_b.glb", "female": false, "tint": {"tone": Color(0.36, 0.44, 0.38), "brightness": 0.9}},
+		{"file": PEDESTRIANS + "f_medium_a.glb", "female": true, "tint": {"tone": Color(0.36, 0.44, 0.38), "brightness": 0.9}},
+		{"file": PEDESTRIANS + "f_slim_b.glb", "female": true, "tint": {"tone": Color(0.36, 0.44, 0.38), "brightness": 0.9}},
 	],
 	# Moradores da montanha: pedestres comuns; a cor do casaco vem do look (`body_tone`) e o gorro de `body_accessories`.
 	"winter": [
