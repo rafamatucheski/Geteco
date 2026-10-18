@@ -120,6 +120,7 @@ func _physics_process(delta: float) -> void:
 			continue
 		if dispatch_owned or record.assigned or dispatch_clock > 0 or crews.size() >= 3: continue
 		if record.role == "mortician" and not mortician_dispatch_allowed(key): continue
+		if record.role == "medic" and record.age < RULES.medic_response_delay(key): continue
 		if gameplay.player.global_position.distance_to(record.actor.global_position) > RESPONSE_RADIUS: continue
 		if _dispatch(key): dispatch_clock = 10.0
 

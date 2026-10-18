@@ -745,6 +745,7 @@ func _dispatch_emergency(delta: float) -> void:
 			# A ocorrência permanece disponível para quando a situação acalmar.
 			record.erase("search")
 			continue
+		if record.role == "medic" and float(record.age) < RULES.medic_response_delay(int(key)): continue
 		# Um caminhão de bombeiros por vez, só depois de 10-15 s de fogo, e 30-45 s de pausa se o anterior foi destruído.
 		if record.role == "fire":
 			if fire_trucks >= RULES.MAX_FIRE_TRUCKS or _clock < _fire_lockout_until: continue
@@ -767,7 +768,7 @@ func _depot_candidates(service: String, target: Vector3) -> Array[Dictionary]:
 		var edge: Dictionary = router.nearest_edge(depot)
 		if edge.is_empty(): continue
 		var direction: Vector3 = (routes.vertices[edge.edge.to] - routes.vertices[edge.edge.from]).normalized()
-		result.append({"point": edge.closest, "yaw": atan2(-direction.x, -direction.z), "distance": depot.distance_to(target)})
+		result.append({"point": edge.closest, "yaw": atan2(-direction.x, -direction.z), "distance": depot.distance_to(target), "depot": true})
 	return result
 
 ## Despacha a viatura da ocorrência `key` do EmergencyManager, sem teleporte:
@@ -797,7 +798,7 @@ func dispatch_service_to(key: int, budget: int = -1) -> RefCounted:
 	if state.is_empty():
 		var sweep := TRACE.begin()
 		var found := _depot_candidates(service, point)
-		found.append_array(router.spawn_candidates(point, RULES.SPAWN_MIN, RULES.SPAWN_MAX))
+		found.append_array(router.spawn_candidates(point, RULES.SERVICE_SPAWN_MIN, RULES.SERVICE_SPAWN_MAX))
 		TRACE.end("service.candidates", sweep, {"count": found.size()})
 		state = {"candidates": found, "index": 0, "checked": 0, "best": {}, "best_length": INF}
 		if budget >= 0:
@@ -818,7 +819,8 @@ func dispatch_service_to(key: int, budget: int = -1) -> RefCounted:
 		var candidate: Dictionary = candidates[state.index]
 		state.index += 1
 		var start: Vector3 = candidate.point
-		if is_visible_to_player(start): continue
+		# Sair da garagem é crível mesmo perto; surgir no meio da rua, não.
+		if is_visible_to_player(start) or (not candidate.get("depot", false) and distance_to_player(start) < RULES.SERVICE_SPAWN_PLAYER_CLEARANCE): continue
 		state.checked += 1
 		work += 1
 		var probe := TRACE.begin()
@@ -839,7 +841,7 @@ func dispatch_service_to(key: int, budget: int = -1) -> RefCounted:
 	if not best.is_empty() and budget >= 0:
 		# O ponto foi escolhido quadros atrás: confirma que ainda está livre e fora da vista.
 		var chosen: Dictionary = best.candidate
-		if is_visible_to_player(chosen.point) or not _space_clear(size, chosen.point, chosen.yaw, no_exclusions): best = {}
+		if is_visible_to_player(chosen.point) or (not chosen.get("depot", false) and distance_to_player(chosen.point) < RULES.SERVICE_SPAWN_PLAYER_CLEARANCE) or not _space_clear(size, chosen.point, chosen.yaw, no_exclusions): best = {}
 	if not best.is_empty():
 		var candidate: Dictionary = best.candidate
 		var plan: Dictionary = best.plan

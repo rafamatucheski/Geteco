@@ -116,8 +116,21 @@ func _spawn(definition: Dictionary) -> void:
 		restore_position = false
 		if not point.is_finite() or not session.position_clear(point+Vector3.UP*.04): return
 	var kind: String = definition.get("kind", "")
+	# 2026-10-17: o morador da serra sempre reaparecia no mesmo ponto do catálogo e com a
+	# mesma semente de rotina. Na primeira aparição (sem estado salvo) ele começa em um
+	# ponto livre ao redor do posto e com rotina própria desta visita.
+	var wanderer: bool = kind == "mountain_resident" and state.is_empty() and str(definition.get("place_id", "")).is_empty() and not bool(definition.get("stationary", false))
+	if wanderer:
+		var radius: float = float(definition.get("wander_radius", 3.0))
+		for _attempt in 6:
+			var angle := randf_range(0.0, TAU)
+			var candidate: Vector3 = definition.position + Vector3(cos(angle), 0.0, sin(angle)) * randf_range(0.0, radius)
+			if session.position_clear(candidate + Vector3.UP * .04):
+				point = candidate
+				break
 	var actor = PORT_WORKER.new() if kind == "dock_worker" else (MOUNTAIN_RESIDENT.new() if kind == "mountain_resident" else ACTOR.new())
 	actor.configure(definition,Callable(session,"position_clear"))
+	if wanderer: actor.rng.seed = randi()
 	if kind in ["dock_worker", "mountain_resident"]: actor.died.connect(_port_worker_died.bind(id))
 	actor.position = point+Vector3.UP*.04
 	world.add_child(actor)

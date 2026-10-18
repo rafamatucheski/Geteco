@@ -125,7 +125,7 @@ static func _mountain_residents() -> Array[Dictionary]:
 			"display_name":original_names.get(record[1],record[1]), "region":"mountain", "place_id":"",
 			"kind":"mountain_resident", "role":record[2], "coat_color":record[3],
 			"position":_world_point(record[0],"mountain"), "stationary":record[5],
-			"wander_radius":3.0, "appearance_variant":index, "lines":lines,
+			"wander_radius":9.0, "appearance_variant":index, "lines":lines,
 			"source":"world/mountain_pass/MountainPass.gd -> MountainSettlement.gd",
 		})
 	return result

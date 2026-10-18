@@ -174,7 +174,7 @@ func _tick_mountain_routine(delta: float) -> void:
 		if offset.length() < .35 or travel_left <= 0:
 			velocity.x = 0
 			velocity.z = 0
-			_set_activity("idle",rng.randf_range(5.0,10.0))
+			_set_activity("idle",rng.randf_range(2.0,5.0))
 		else:
 			var direction := offset.normalized()
 			velocity.x = direction.x * rng.randf_range(1.25,1.55)
@@ -184,13 +184,15 @@ func _tick_mountain_routine(delta: float) -> void:
 	velocity.z = 0
 	if activity_left > 0: return
 	routine_cycle += 1
-	if routine_cycle % 2 == 0 and _choose_wander_target():
-		travel_left = 8.0
+	# Passeia em dois de cada três ciclos (antes um de cada dois, com idle de 5-10 s):
+	# os moradores pareciam parados.
+	if routine_cycle % 3 != 0 and _choose_wander_target():
+		travel_left = 10.0
 		_set_activity("walk",travel_left)
 	elif definition.get("role","") == "logger" and routine_cycle % 3 == 0:
 		_set_activity("work",rng.randf_range(6.0,10.0))
 	else:
-		_set_activity("drink" if routine_cycle % 3 == 1 else "warm",rng.randf_range(5.0,9.0))
+		_set_activity("drink" if routine_cycle % 2 == 1 else "warm",rng.randf_range(5.0,9.0))
 
 func _choose_wander_target() -> bool:
 	var radius: float = float(definition.get("wander_radius",3.0))

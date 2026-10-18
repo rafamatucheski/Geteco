@@ -85,8 +85,8 @@ func _service(role: String) -> void:
 	var expected_role: String = role
 	check(emergency.incidents[key].role == expected_role, "papel da ocorrência (%s)" % role)
 	var unit: RefCounted = null
-	# Bombeiro espera 10-15 s; IML aguarda 20-35 s; médico sai sem atraso próprio.
-	var wait_ticks := 2400 if role == "mortician" else (1200 if role == "fire" else 300)
+	# Bombeiro espera 10-15 s; IML aguarda 20-35 s; médico espera 12-22 s (desde 2026-10-17).
+	var wait_ticks := 2400 if role == "mortician" else (1200 if role == "fire" else 1800)
 	for tick in wait_ticks:
 		await physics_frame
 		if not controller.units.is_empty():

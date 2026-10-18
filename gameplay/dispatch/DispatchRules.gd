@@ -60,6 +60,17 @@ const MORTICIAN_COOLDOWN := 60.0
 static func mortician_response_delay(incident_key: int) -> float:
 	return 20.0 + 3.0 * float(posmod(incident_key, 6))
 
+## 2026-10-17: o socorro saía no primeiro tiro (a ocorrência "medic" nasce no ferimento) e
+## a ambulância "aparecia do lado" do jogador. Agora espera 12-22 s, como o IML.
+static func medic_response_delay(incident_key: int) -> float:
+	return 12.0 + 2.0 * float(posmod(incident_key, 6))
+## Viaturas de serviço nascem mais longe que a polícia (que precisa chegar logo) e nunca
+## perto do jogador: estar fora do quadro da câmera não basta, ela vira e vê o carro surgir.
+## Antes usavam SPAWN_MIN/MAX da polícia (32-112 m da vítima, sem distância ao jogador).
+const SERVICE_SPAWN_MIN := 1100.0 / PX
+const SERVICE_SPAWN_MAX := 2600.0 / PX
+const SERVICE_SPAWN_PLAYER_CLEARANCE := 960.0 / PX # garagens (depots) ficam fora desta regra
+
 const MAX_CREWS := 3
 ## Bombeiros: um caminhão por vez e sem reforço. Outra ocorrência de fogo só é atendida depois
 ## que o caminhão atual sair de cena (antes vinham até MAX_CREWS e a rua enchia deles).
