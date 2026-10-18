@@ -4,6 +4,35 @@ const STORE = preload("res://runtime/SaveStore.gd")
 const SLOT_IDS := ["slot_01", "slot_02", "slot_03", "slot_04", "slot_05"]
 var selected_path: String = STORE.PATH
 var direct_start_consumed := false
+## Aviso para a sessão mostrar depois de carregar um slot recuperado; ela consome e limpa.
+var recovery_notice := ""
+## Planos de recuperação por slot, válidos enquanto as três cópias não mudarem no disco:
+## a busca valida o save dezenas de vezes e o menu lista os slots mais de uma vez.
+var _recovery_cache: Dictionary = {}
+const RECOVERY_LABELS := {"@place": "local salvo", "@combat": "vida e procura", "services": "serviços",
+	"robberies": "assaltos", "arrival": "chegada", "garage_rewards": "prêmios da garagem", "cold": "frio da serra",
+	"mission_world": "guincho", "urban_operations": "porto e cemitério", "activities": "atividades",
+	"vehicles": "carros", "rewards": "achados", "fishing": "pesca", "motocross": "motocross", "skate": "skate",
+	"jessica": "Jessica", "digo": "Digo", "mountain_progression": "serra", "wine_cellar": "adega"}
+
+static func recovery_names(dropped: Array) -> String:
+	var names: Array[String] = []
+	for key in dropped: names.append(str(RECOVERY_LABELS.get(str(key), str(key))))
+	return ", ".join(names)
+
+func _recovery_stamp(path: String) -> String:
+	var parts: Array[String] = []
+	for source in [path, path + ".bak", path + ".tmp"]:
+		parts.append(str(FileAccess.get_modified_time(source)) if FileAccess.file_exists(source) else "-")
+	return "|".join(parts)
+
+func _recovery_plan(path: String) -> Dictionary:
+	var stamp := _recovery_stamp(path)
+	var cached: Dictionary = _recovery_cache.get(path, {})
+	if cached.get("stamp", "") != stamp:
+		cached = {"stamp": stamp, "plan": STORE.recovery_plan(path)}
+		_recovery_cache[path] = cached
+	return cached.plan
 
 func _ready() -> void:
 	# O editor de mundo abre o jogo com o documento ainda não salvo ("Jogar aqui").
@@ -34,6 +63,12 @@ func list_slots() -> Array[Dictionary]:
 		var exists := FileAccess.file_exists(path) or FileAccess.file_exists(path + ".bak") or FileAccess.file_exists(path + ".tmp")
 		var reusable: bool = id != "progress" and data.is_empty() and FileAccess.file_exists(path+".tmp") and not FileAccess.file_exists(path) and not FileAccess.file_exists(path+".bak")
 		var selected := path + (".tmp" if temporary else (".bak" if backup else ""))
+		var recovery := {}
+		if data.is_empty() and exists and not reusable:
+			recovery = _recovery_plan(path)
+			if not recovery.is_empty():
+				data = recovery.data
+				selected = str(recovery.source)
 		var modified := FileAccess.get_modified_time(selected) if not data.is_empty() else 0
 		var label := "Progresso anterior" if id == "progress" else "Slot " + str(SLOT_IDS.find(id) + 1)
 		if not exists: label += " · Vazio"
@@ -45,15 +80,18 @@ func list_slots() -> Array[Dictionary]:
 			label += "\n" + Time.get_datetime_string_from_unix_time(modified).replace("T", " ") + " UTC"
 			if backup: label += " · Recuperar backup"
 			if temporary: label += " · Recuperar temporário"
+			if not recovery.is_empty(): label += String(TranslationServer.translate(" · Recuperável — volta ao padrão: %s")) % recovery_names(recovery.dropped)
 		result.append({"id": id, "path": path, "valid": not data.is_empty(), "exists": exists, "backup":backup,
 			"temporary":temporary,"reusable":reusable,"modified": modified, "label": label,
-			"region": str(data.get("region_id", "harbor"))})
+			"region": str(data.get("region_id", "harbor")), "recoverable": not recovery.is_empty(),
+			"recovery_dropped": recovery.get("dropped", [])})
 	return result
 
 func latest_slot() -> Dictionary:
 	var latest: Dictionary = {}
 	for row in list_slots():
-		if row.valid and (latest.is_empty() or row.modified > latest.modified): latest = row
+		# Continuar nunca recupera às cegas: o slot recuperável pede escolha no Carregar.
+		if row.valid and not row.recoverable and (latest.is_empty() or row.modified > latest.modified): latest = row
 	return latest
 
 func prepare(id: String, new_game: bool) -> Error:
@@ -65,9 +103,26 @@ func prepare(id: String, new_game: bool) -> Error:
 				var preserved := _preserve_orphan_temporary(row.path)
 				if preserved != OK: return preserved
 		if not new_game and not row.valid: return ERR_FILE_CORRUPT
+		if not new_game and row.recoverable:
+			var recovered := _publish_recovery(row.path)
+			if recovered != OK: return recovered
 		selected_path = row.path
 		return OK
 	return ERR_INVALID_PARAMETER
+
+func _publish_recovery(path: String) -> Error:
+	# Refaz o plano na hora da escolha: o disco pode ter mudado depois da listagem.
+	_recovery_cache.erase(path)
+	var plan := _recovery_plan(path)
+	if plan.is_empty(): return ERR_FILE_CORRUPT
+	var store = STORE.new()
+	store.path = path
+	var result: Error = store.publish_recovery(plan)
+	_recovery_cache.erase(path)
+	if result != OK: return result
+	recovery_notice = String(TranslationServer.translate("Save recuperado. Voltaram ao padrão: %s. As cópias originais ficaram ao lado do arquivo (.pre-recovery).")) % recovery_names(plan.dropped)
+	push_warning("Save recuperado em %s; blocos redefinidos: %s" % [path, plan.dropped])
+	return OK
 
 func _preserve_orphan_temporary(path: String) -> Error:
 	# Recheck at selection time; listing never moves files. A recoverable save

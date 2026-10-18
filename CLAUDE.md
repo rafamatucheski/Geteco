@@ -27,6 +27,8 @@ que evitam quadros grandes (streaming, shaders, prédios pintados, portas).
   (`BridgeLookPrewarm`, `VehicleMaterialVariantPrewarm`, `PaintedFacadePrewarm`, `WildlifePrewarm`) e fica retido.
 - Objetos que somem e voltam (ursos, fontes de calor): montar uma vez e **estacionar**, não recriar.
 - Luz nova passa por `LightBudget`; textura nova em BC7 com mipmaps.
+- **Antes de commitar:** `tools/run_core_suite.sh` (contratos, ~2 min); depois de mudança estrutural,
+  `tools/run_core_suite.sh full` (inclui a verificação abaixo). Resumo em `evidence/test-suite/core/`.
 - Board do projeto: `docs/painel-geteco.html`, gerado por `python tools/build_geteco_board.py` a partir
   de `docs/board-*.json` (acrescente um `board-atualizacoes-<data>.json` novo em vez de reescrever os antigos).
 

@@ -39,6 +39,8 @@ func run() -> void:
 		await create_timer(1.6).timeout
 		world.production.save_invalid = true
 		check(not session.save_game() and not indicator.visible, "blocked save does not display success")
+		await frames(3)
+		check(indicator.visible and indicator.failed and not indicator.blocked_reason.is_empty(), "salvamento desligado fica avisado no canto")
 	world.queue_free()
 	await frames(3)
 	print("SAVE_INDICATOR_RESULT checks=", checks, " failures=", failures.size())
@@ -53,13 +55,12 @@ func check_checkpoint_policy() -> void:
 	controller.store = isolated
 	controller.no_save = false
 	check(session.save_game(), "safe checkpoint published")
+	# Desde a chegada nova (06/10) a conversa com Maciota conclui a abertura de uma vez
+	# (Progression.complete_meeting); a bancada mecânico→peça do tutorial antigo não existe mais.
 	check(session._intro_interact("maciota"), "intro begins after pre-mission checkpoint")
-	var before := FileAccess.get_file_as_string(isolated.path)
-	check(JSON.parse_string(before).intro.phase == "meet_maciota", "intro restart is before acceptance")
-	check(session._intro_interact("mechanic") and session._intro_interact("workbench"), "intro objectives advance in memory")
-	check(not session.save_game(true) and FileAccess.get_file_as_string(isolated.path) == before, "intro cannot publish intermediate objectives")
-	check(session._intro_interact("maciota"), "intro completion accepted")
+	check(session.state.intro.stage == "complete", "Maciota conversation completes the intro")
 	check(JSON.parse_string(FileAccess.get_file_as_string(isolated.path)).intro.phase == "complete", "intro completion publishes checkpoint")
+	var before := ""
 	session.close_menu()
 	check(session.mission_world.begin("primeiro_giro"), "campaign accepts mission after checkpoint")
 	session.close_menu()

@@ -4,10 +4,16 @@ class State extends RefCounted:
 class Target extends Node3D:
 	var health := 100.0
 	func receive_damage(amount: float, _source: Node): health -= amount
+## Desde 28/09 a agressão comum vai para as testemunhas (PoliceCaseDirector.observe), que
+## não existem fora da árvore; o teste checa a denúncia entregue, como somava antes.
+class RecordingCombat extends "res://gameplay/Gameplay.gd":
+	func report_observed_crime(points: int, point: Vector3, kind: String = "theft", _victim: Node3D = null) -> bool:
+		register_crime(points, point, kind)
+		return true
 var failures: Array[String] = []
 func _initialize() -> void: run.call_deferred()
 func run() -> void:
-	var combat = preload("res://gameplay/Gameplay.gd").new()
+	var combat = RecordingCombat.new()
 	var player := CharacterBody3D.new()
 	root.add_child(player)
 	combat.player = player

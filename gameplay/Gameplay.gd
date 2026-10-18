@@ -30,6 +30,7 @@ const FORGE := preload("res://gameplay/forge/BladeForge.gd")
 const EMERGENCY = preload("res://gameplay/emergency/EmergencyManager.gd")
 const AUDIO = preload("res://gameplay/CombatAudio.gd")
 const PROTECTION = preload("res://gameplay/DamageProtection.gd")
+const CRIME_VICTIMS := preload("res://gameplay/police_response/CrimeVictims.gd")
 const BLAST_QUERY := preload("res://gameplay/BlastQuery.gd")
 const EFFECTS = preload("res://gameplay/CombatEffects.gd")
 const WEAPON_SURFACE = preload("res://gameplay/WeaponSurface.gd")
@@ -1656,7 +1657,11 @@ func report_vehicle_assault(victim: Node3D, vehicle: Node) -> void:
 	var last := float(_vehicle_contact.get(id, -INF))
 	_vehicle_contact[id] = _combat_clock
 	var new_contact := _combat_clock - last > VEHICLE_CONTACT_GAP
-	if victim.get_meta("gameplay_role", "") == "police":
+	# Mesma tabela do dano de arma: Cobra e segurança de comboio não viram homicídio de civil.
+	# Papel desconhecido continua valendo pessoa aqui: só Actor (pedestre) chega a esta função.
+	var victim_class := CRIME_VICTIMS.classify(victim)
+	if not CRIME_VICTIMS.reports_crime(victim_class): return
+	if victim_class == CRIME_VICTIMS.POLICE:
 		if new_contact: _report_police_assault(victim)
 		if victim.get("dead") == true: _report_police_killed(victim)
 		return
@@ -1729,11 +1734,12 @@ func _stall_damage(actor: Object, amount: float, source: Node, continuous: bool 
 			if is_instance_valid(reactions): reactions.report_assault(actor, source)
 		if actor is Node3D and role in ["civilian", "emergency"]:
 			emergency.report_injury(actor, actor.get("dead") == true)
-		if source == player and not was_dead and role != "cobra" and not actor.get_meta("local_security",false):
-			if role == "police":
+		var victim_class := CRIME_VICTIMS.classify(actor)
+		if source == player and not was_dead and CRIME_VICTIMS.reports_crime(victim_class):
+			if victim_class == CRIME_VICTIMS.POLICE:
 				if _crime_due(actor, continuous): _report_police_assault(actor as Node3D)
 				if killed: _report_police_killed(actor as Node3D)
-			elif killed and role in ["civilian", "emergency"]:
+			elif killed and CRIME_VICTIMS.killing_is_murder(victim_class):
 				_report_civilian_killed(actor as Node3D)
 			elif _crime_due(actor, continuous):
 				report_observed_crime(12, player.global_position, "assault", actor as Node3D)

@@ -76,6 +76,12 @@ no jogo, não.
 9. **Luzes:** nenhuma luz dinâmica nova sem passar pelo orçamento (`LightBudget`); sombra em luz
    local só se indispensável.
 10. **Textura nova** em VRAM comprimida (BC7) com mipmaps; nunca sem perda/sem mips em 3D.
+11. **Recompensa do mundo passa pelo contrato da carteira.** Achado único (cofre, caverna,
+    esconderijo) usa `Economy.grant_world_reward` com id estável: o recibo vai no save e impede
+    pagar duas vezes. Dinheiro solto (`collect_loose_cash`) é só para quem renasce (civil, saque
+    de combate) e recusa mais de R$ 300. Nada de "já pegou" em variável estática.
+12. **NPC humano novo** declara `gameplay_role`; se a morte dele deve contar homicídio, o papel
+    entra em `PERSON_ROLES` de `gameplay/police_response/CrimeVictims.gd`.
 
 ## 4. Prédios pintados (estilo GTA) — `PaintedFacadeKit`
 
@@ -99,8 +105,15 @@ no jogo, não.
 
 ## 6. Antes de commitar
 
-- Rode a verificação do CLAUDE.md (`test_regions`, `test_bridge_approach_terrain`,
-  `test_native_driving -- --no-save`, `cold/test_admission`) e os testes que citam seus arquivos.
+- Rode a **suíte central**: `tools/run_core_suite.sh` (rápida, ~2 min, contratos sem carregar o
+  mundo: save e recuperação, carteira/recibos, campanha, garagem, crime) e, depois de mudança
+  estrutural, `tools/run_core_suite.sh full` (inclui a verificação do CLAUDE.md —
+  `test_regions`, `test_bridge_approach_terrain`, `test_native_driving -- --no-save`,
+  `cold/test_admission` — mais o indicador de save e o deserto). Tudo passa pela fila; o resumo
+  fica em `evidence/test-suite/core/<data>/RESUMO.md`. Rode também os testes que citam seus arquivos.
+- Teste novo de contrato (sem `Main.tscn`, segundos) vale mais que mais um teste de sessão
+  inteira: comece por `tests/test_core_contracts.gd` e, se for central, ponha na lista FAST do
+  `tools/run_core_suite.sh`.
 - Se tocou em sistema com custo por quadro ou streaming: meça em release (seção 2) antes de dizer
   que ficou bom.
 - Muitos arquivos têm mudanças não commitadas de OUTRAS sessões: commite só os seus trechos

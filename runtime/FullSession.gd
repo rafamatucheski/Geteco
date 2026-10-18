@@ -116,6 +116,7 @@ var fishing: Node
 var fishing_runtime: Node
 var door_transition: CanvasLayer
 var last_save_error := ""
+var _save_block_shown := false
 var _checkpoint_retry: Timer
 
 ## Umbra (parque), Fagulha e Curitiba Cellar: entra-se empurrando a porta
@@ -614,7 +615,7 @@ func _ready() -> void:
 	_timed_add(world, services, "services")
 	services.configure(self)
 	SESSION_OPS.finish(diagnostic_services)
-	if state.world_state.has("services") and not services.restore_snapshot(state.world_state.services): controller.save_invalid = true
+	if state.world_state.has("services") and not services.restore_snapshot(state.world_state.services): controller.block_saving("serviços não restauraram")
 	var diagnostic_storefronts := SESSION_OPS.begin(self, "storefronts", "create_and_configure")
 	storefronts = preload("res://runtime/HarborStorefronts.gd").new()
 	_timed_add(world.hud, storefronts, "storefronts")
@@ -640,7 +641,7 @@ func _ready() -> void:
 		SESSION_OPS.finish(diagnostic_arcade)
 	var diagnostic_robberies := SESSION_OPS.begin(self, "robberies", "create_and_configure")
 	robberies = preload("res://runtime/Robberies.gd").new()
-	if state.world_state.has("robberies") and not robberies.restore_snapshot(state.world_state.robberies): controller.save_invalid = true
+	if state.world_state.has("robberies") and not robberies.restore_snapshot(state.world_state.robberies): controller.block_saving("assaltos não restauraram")
 	_timed_add(world, robberies, "robberies")
 	robberies.configure(self)
 	SESSION_OPS.finish(diagnostic_robberies)
@@ -648,12 +649,12 @@ func _ready() -> void:
 	arrival = preload("res://runtime/Arrival.gd").new()
 	arrival.configure(self)
 	SESSION_OPS.finish(diagnostic_arrival)
-	if state.world_state.has("arrival") and not arrival.restore_state(state.world_state.arrival): controller.save_invalid = true
+	if state.world_state.has("arrival") and not arrival.restore_state(state.world_state.arrival): controller.block_saving("chegada não restaurou")
 	_timed_add(world, arrival, "arrival")
 	arrival.changed.connect(save_game)
 	var diagnostic_garage_rewards := SESSION_OPS.begin(self, "garage_rewards", "create_and_configure")
 	garage_rewards = preload("res://runtime/GarageRewards.gd").new()
-	if state.world_state.has("garage_rewards") and not garage_rewards.restore_snapshot(state.world_state.garage_rewards): controller.save_invalid = true
+	if state.world_state.has("garage_rewards") and not garage_rewards.restore_snapshot(state.world_state.garage_rewards): controller.block_saving("prêmios da garagem não restauraram")
 	_timed_add(world, garage_rewards, "garage_rewards")
 	garage_rewards.configure(self)
 	SESSION_OPS.finish(diagnostic_garage_rewards)
@@ -709,7 +710,7 @@ func _ready() -> void:
 	urban_operations.configure(self)
 	SESSION_OPS.finish(diagnostic_urban_operations)
 	_timed_add(world, urban_operations, "urban_operations")
-	if state.world_state.has("urban_operations") and not urban_operations.restore_snapshot(state.world_state.urban_operations): controller.save_invalid = true
+	if state.world_state.has("urban_operations") and not urban_operations.restore_snapshot(state.world_state.urban_operations): controller.block_saving("porto e cemitério não restauraram")
 	var diagnostic_port_container_loot := SESSION_OPS.begin(self, "port_container_loot", "create_and_configure")
 	port_container_loot = preload("res://gameplay/urban_v1/PortContainerLoot.gd").new()
 	port_container_loot.configure(self)
@@ -739,7 +740,7 @@ func _ready() -> void:
 		cold = preload("res://runtime/ColdSurvival.gd").new()
 		cold.configure(self)
 		SESSION_OPS.finish(diagnostic_cold)
-		if state.world_state.has("cold") and not cold.restore(state.world_state.cold): controller.save_invalid = true
+		if state.world_state.has("cold") and not cold.restore(state.world_state.cold): controller.block_saving("frio da serra não restaurou")
 		_timed_add(world, cold, "cold")
 	if "--railway-baseline" not in OS.get_cmdline_user_args():
 		railway_world = preload("res://world/railway/RailwayWorld.gd").new()
@@ -868,9 +869,10 @@ func restore_location() -> void:
 	if place_matches_region:
 		if not await enter_place(place,false): restore_blocked = true
 	else:
+		# Só o local se perde: Dante volta pelo ponto de retorno e o resto do save continua
+		# gravável (antes isto desligava o salvamento pelo resto da sessão).
 		if not place.is_empty():
-			controller.save_invalid = true
-			show_message("Local salvo incompatível com a região; arquivo original preservado.")
+			show_message("Local salvo incompatível com a região; retomada pelo ponto de retorno.")
 		var point: Vector3 = world.maciota_place.exterior_return if state.region_id == "harbor" else controller.region.spawn_position
 		for entry in controller.region.entries:
 			if entry.id == state.checkpoint_id: point = entry.return_position
@@ -906,7 +908,7 @@ func restore_location() -> void:
 	if not state.combat_state.is_empty(): world.gameplay.restore_state(state.combat_state)
 	if state.world_state.has("mission_world"):
 		if not mission_world.restore_snapshot(state.world_state.mission_world):
-			controller.save_invalid = true
+			controller.block_saving("guincho não restaurou")
 			show_message("Não foi possível restaurar o guincho; save preservado.")
 	elif state.campaign.active_id == "cobra_contact":
 		mission_world.begin_tow_job({"story":true,"kind":"local"})
@@ -918,6 +920,12 @@ func restore_location() -> void:
 	garage_rewards.on_location_changed()
 	apply_outfit()
 	_refresh_routine_context()
+	# O menu acabou de recuperar este slot (SessionLaunch._publish_recovery): diga o que voltou ao padrão.
+	var launch := get_node_or_null("/root/V2Launch")
+	var recovery_text: Variant = launch.get("recovery_notice") if launch != null else null
+	if recovery_text is String and not recovery_text.is_empty():
+		show_message(recovery_text)
+		launch.recovery_notice = ""
 	if world.gameplay.health <= 0 or restore_blocked: _on_death()
 
 func _saved_garage_driver() -> Dictionary:
@@ -1855,6 +1863,10 @@ func _process(delta: float) -> void:
 		if notice_time <= 0.0: clear_speech()
 		elif is_instance_valid(speech_caption): speech_caption.visible = not get_tree().paused
 	if not ready_for_play or get_tree().paused: return
+	# Aviso fixo enquanto o salvamento estiver desligado (antes o autosave só parava).
+	if controller.save_invalid != _save_block_shown:
+		_save_block_shown = controller.save_invalid
+		_save_indicator().set_blocked(controller.save_block_text() if _save_block_shown else "")
 	service_roofs.update(delta)
 	if not service_roofs.is_active():
 		weapon_shop_entrance.update(delta)
@@ -2357,7 +2369,7 @@ func save_block_reason() -> String:
 		if not desert_reason.is_empty(): return desert_reason
 	if jessica != null and jessica.riding: return "Aguarde Jessica estacionar para salvar."
 	if skate != null and skate.controls_locked(): return "Desça do skate e se recupere para salvar."
-	if controller.save_invalid: return "Save inválido preservado; salvamento bloqueado."
+	if controller.save_invalid: return controller.save_block_text()
 	if motocross != null and motocross.mounted: return "Termine a corrida ou desça da moto para salvar."
 	if world.gameplay.health <= 0: return "Salvar indisponível enquanto o jogador estiver morto."
 	if world.gameplay.stars > 0: return "Perca todas as estrelas da polícia para salvar."
@@ -2430,10 +2442,13 @@ func save_game(manual := false) -> bool:
 	if jessica != null: state.world_state.jessica_vehicle = jessica.vehicle_snapshot()
 	if urban_operations != null:
 		var urban_snapshot: Dictionary = urban_operations.snapshot()
+		# Estado urbano no meio de uma troca: recusa só esta gravação; o próximo pedido de
+		# salvar tenta de novo. Antes um único instante assim desligava o salvamento pelo
+		# resto da sessão, em silêncio. Sem fila de 1 s: cada tentativa refaz todos os snapshots.
 		if not preload("res://gameplay/urban_v1/UrbanOperations.gd").validate_snapshot(urban_snapshot):
-			controller.save_invalid = true
-			last_save_error = "Estado urbano incompleto; salvamento bloqueado."
-			_save_indicator().reject(last_save_error)
+			last_save_error = "Estado urbano incompleto; salvamento adiado."
+			push_warning(last_save_error)
+			if manual: _save_indicator().reject(last_save_error)
 			return false
 		state.world_state.urban_operations = urban_snapshot
 	if controller.no_save: return true

@@ -2,14 +2,17 @@ extends Node3D
 ## Vida no meio do nada (playtest 18/10: "o deserto é muito vazio"). Casinhas com morador,
 ## acampamentos de foras-da-lei e cavernas com um achado, espalhados longe das estradas.
 ## Como o DesertBanditEncounter, cada lugar só existe perto do jogador: monta a ~110 m (um por
-## passo, com o streaming parado) e solta a ~150 m. Nada é salvo: quem morre volta na próxima
-## visita; o achado da caverna sai uma vez por sessão do jogo.
+## passo, com o streaming parado) e solta a ~150 m. Quem morre volta na próxima visita; o achado
+## da caverna sai uma vez por save, com recibo na carteira (ver claim_cave).
 ## GETECO_DESERT_WILDS=0 desliga tudo (A/B no mesmo export).
 const G := preload("res://world/desert/DesertGeometry.gd")
 const HM := preload("res://world/desert/DesertTerrainMesh.gd")
 const COVER := preload("res://world/desert/DesertGroundCover.gd")
 const RESIDENT := preload("res://runtime/desert/DesertVillageResident.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+const REWARD_AUDIO := preload("res://gameplay/RewardAudio.gd")
+const CAVE_AMMO := 24
+const CLAIM_FAILURES := {"inventory_full": "Inventário cheio.", "ammo_full": "Munição no limite.", "wallet_full": "Carteira cheia."}
 const BUILD_DISTANCE := 110.0
 const RELEASE_DISTANCE := 150.0
 const AGGRO_DISTANCE := 26.0
@@ -41,7 +44,6 @@ const SITES := [
 var session
 var sites: Dictionary = {}
 var _clock := 0.0
-static var _claimed: Dictionary = {}
 static var _enabled := -1
 
 static func enabled() -> bool:
@@ -57,6 +59,33 @@ static func reserved(point: Vector2, radius := 0.0) -> bool:
 
 static func ground(point: Vector2) -> Vector3:
 	return Vector3(point.x, HM.surface_height(point), point.y)
+
+## O achado passa pelo contrato de recompensa do mundo (Economy.grant_world_reward), como os
+## cofres do deserto. Antes ele caía como saque solto: a lata de R$ 420 passava do teto de
+## dinheiro solto (300) e era recusada em silêncio, e o "já pegou" era uma variável estática
+## perdida a cada abertura do jogo, então o resto voltava sempre (revisão cruzada 18/10).
+static func cave_reward(site: Dictionary) -> Dictionary:
+	if str(site.get("kind", "")) != "cave": return {}
+	var id := "desert_wilds_" + str(site.id)
+	if str(site.get("loot", "")) == "weapon": return {"id": id, "kind": "weapon", "item": str(site.weapon), "ammo": CAVE_AMMO}
+	return {"id": id, "kind": "cash", "amount": int(site.amount)}
+
+static func cave_claimed(economy, site: Dictionary) -> bool:
+	var reward := cave_reward(site)
+	return not reward.is_empty() and economy.has_reward_receipt(str(reward.id))
+
+## Arma que o jogador já tem vira munição (como o saque do chão); o recibo de valor zero
+## marca o achado do mesmo jeito. Falha (bolso cheio, munição no limite) não marca nada:
+## o jogador pode voltar depois.
+static func claim_cave(economy, site: Dictionary) -> Dictionary:
+	var reward := cave_reward(site)
+	if reward.is_empty(): return {"ok": false, "reason": "invalid_reward", "changed": false}
+	var result: Dictionary = economy.grant_world_reward(reward)
+	if result.ok or str(result.get("reason", "")) != "already_owned": return result
+	if economy.has_reward_receipt(str(reward.id)): return {"ok": true, "reason": "already_applied", "changed": false}
+	if not economy.add_ammo(str(reward.item), CAVE_AMMO): return {"ok": false, "reason": "ammo_full", "changed": false}
+	if not economy.grant_reward(str(reward.id), 0): return {"ok": false, "reason": "grant_failed", "changed": false}
+	return {"ok": true, "reason": "ammo", "changed": true}
 
 func configure(owner_session) -> void:
 	session = owner_session
@@ -187,14 +216,22 @@ func _update_site(site: Dictionary, record: Dictionary, planar: Vector2) -> void
 					actor.engaged = record.engaged
 					if record.engaged: actor.alerted = true
 		"cave":
-			if _claimed.has(site.id) or not record.has("loot_point"): return
+			if record.get("claimed", false) or not record.has("loot_point"): return
 			var at: Vector3 = record.loot_point
-			if Vector2(at.x, at.z).distance_to(planar) > LOOT_DISTANCE: return
-			_claimed[site.id] = true
-			var gameplay = session.world.gameplay
-			if str(site.loot) == "weapon": gameplay.spawn_loot("weapon", str(site.weapon), 24, at + Vector3(.5, 0, 0))
-			else: gameplay.spawn_loot("cash", "", int(site.amount), at + Vector3(.5, 0, 0))
+			if Vector2(at.x, at.z).distance_to(planar) > LOOT_DISTANCE:
+				record.notified = false
+				return
+			# Uma tentativa (e um aviso de falha) por aproximação, não a cada tique.
+			if record.get("notified", false) or session.world.gameplay.health <= 0: return
+			record.notified = true
+			var result := claim_cave(session.state.economy, site)
+			if not result.ok:
+				session.show_message(str(CLAIM_FAILURES.get(str(result.get("reason", "")), "Não foi possível concluir a coleta.")))
+				return
+			record.claimed = true
+			if result.get("changed", false): REWARD_AUDIO.play(session, REWARD_AUDIO.kind_for_reward(str(cave_reward(site).kind)))
 			session.show_message(str(site.note))
+			session.save_game()
 
 func _gunfire(_weapon: String, origin: Vector3) -> void:
 	if not _outside(): return
@@ -245,6 +282,7 @@ func _cave(root: Node3D, record: Dictionary, site: Dictionary) -> void:
 	G.cylinder(root, "OldLantern", Vector3(.85, .2, -2.4), .1, .32, Color("3f3a33"))
 	for i in 3: G.box(root, "Bone", Vector3(-1.6 + float(i) * .3, .05, -1.4 + float(i) * .2), Vector3(.45, .06, .08), Color("cfc4a8")).rotation.y = float(i) * .9
 	record.loot_point = root.global_transform * Vector3(0, .1, -1.8)
+	record.claimed = cave_claimed(session.state.economy, site)
 
 func _rock(root: Node3D, mesh: Mesh, at: Vector3, size: Vector3, yaw: float, rng: RandomNumberGenerator) -> void:
 	var rock := MeshInstance3D.new()

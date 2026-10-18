@@ -517,5 +517,19 @@
   "Abrir portas": "Open doors",
   "Linha 510 · %s · %d m\n%s  %s   |   %d passageiros   |   %d paradas   |   R$ %d\n%s": "Route 510 · %s · %d m\n%s  %s   |   %d passengers   |   %d stops   |   R$ %d\n%s",
   "  Sair do ônibus": "  Get off bus",
-  "Passagem ocupada. Aguardando um local seguro…": "Passage occupied. Waiting for a safe place…"
+  "Passagem ocupada. Aguardando um local seguro…": "Passage occupied. Waiting for a safe place…",
+  " · Recuperável — volta ao padrão: %s": " · Recoverable — resets: %s",
+  "Save recuperado. Voltaram ao padrão: %s. As cópias originais ficaram ao lado do arquivo (.pre-recovery).": "Save recovered. Reset to default: %s. The original copies were kept next to the file (.pre-recovery).",
+  "um sistema não restaurou o save": "a game system could not restore the save",
+  "Salvamento desligado nesta sessão (%s). O arquivo do save no disco foi preservado sem mudanças.": "Saving is off for this session (%s). The save file on disk was kept unchanged.",
+  "Local salvo incompatível com a região; retomada pelo ponto de retorno.": "Saved location does not match the region; resumed at the return point.",
+  "Estado urbano incompleto; salvamento adiado.": "Urban state incomplete; save postponed.",
+  "o save escolhido não passou na validação": "the chosen save failed validation",
+  "serviços não restauraram": "services did not restore",
+  "assaltos não restauraram": "robberies did not restore",
+  "chegada não restaurou": "arrival did not restore",
+  "prêmios da garagem não restauraram": "garage rewards did not restore",
+  "porto e cemitério não restauraram": "port and cemetery did not restore",
+  "frio da serra não restaurou": "mountain cold did not restore",
+  "guincho não restaurou": "tow job did not restore"
 }

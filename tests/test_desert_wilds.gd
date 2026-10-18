@@ -77,12 +77,16 @@ func run() -> void:
 				check(record.engaged, "%s atacam quando o jogador chega" % site.id)
 				check(not wilds.save_block_reason().is_empty(), "%s: salvar bloqueado em combate" % site.id)
 			"cave":
-				var before: int = world.gameplay._loot.size()
+				var economy = world.session.state.economy
+				var balance_before: int = economy.balance
 				var inside: Vector3 = record.loot_point
 				world.player.teleport(inside + Vector3(0, .1, 0))
 				deadline = Time.get_ticks_msec() + 3000
-				while Time.get_ticks_msec() < deadline and world.gameplay._loot.size() == before: await physics_frame
-				check(WILDS._claimed.has(site.id), "%s entrega o achado" % site.id)
+				while Time.get_ticks_msec() < deadline and not WILDS.cave_claimed(economy, site): await physics_frame
+				check(WILDS.cave_claimed(economy, site) and record.claimed, "%s entrega o achado com recibo" % site.id)
+				if str(site.loot) == "cash": check(economy.balance == balance_before + int(site.amount), "%s paga R$ %d inteiros" % [site.id, int(site.amount)])
+				var again: Dictionary = WILDS.claim_cave(economy, site)
+				check(again.ok and not again.get("changed", true) and (str(site.loot) != "cash" or economy.balance == balance_before + int(site.amount)), "%s não paga de novo" % site.id)
 				var ray := PhysicsRayQueryParameters3D.create(inside + Vector3.UP * 1.0, inside + Vector3.UP * 6.0, 1)
 				check(not world.get_world_3d().direct_space_state.intersect_ray(ray).is_empty(), "%s tem teto de verdade" % site.id)
 		world.player.teleport(center + Vector3(-4, .1, 9))

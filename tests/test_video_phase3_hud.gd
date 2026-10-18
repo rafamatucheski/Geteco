@@ -169,7 +169,9 @@ func check_saves() -> void:
 		blocker.store_string("This file intentionally prevents creating the save directory.")
 		blocker.close()
 	check(blocker != null, "isolated filesystem failure fixture created")
-	check(not session.save_game() and session.last_save_error.begins_with("Não foi possível salvar") and session.get_node("SaveFeedback/Indicator").failed, "automatic save failure uses corner indicator")
+	# O idioma do texto vem do settings.cfg do usuário: compare com a frase já traduzida.
+	var save_error_prefix := String(TranslationServer.translate("Não foi possível salvar (%d).")).split("(")[0]
+	check(not session.save_game() and session.last_save_error.begins_with(save_error_prefix) and session.get_node("SaveFeedback/Indicator").failed, "automatic save failure uses corner indicator")
 	check(session.notice.text == "Mensagem funcional de controle", "disk failure does not replace central gameplay notice")
 	await capture("save-error")
 	controller.no_save = true

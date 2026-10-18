@@ -82,7 +82,15 @@ var sun: DirectionalLight3D
 var environment: WorldEnvironment
 var vehicles: Array[CharacterBody3D] = []
 var no_save := false
-var save_invalid := false
+## Um sistema não conseguiu restaurar o próprio bloco do save: gravar agora trocaria o dado
+## bom do disco pelo padrão, então o salvamento fica desligado nesta sessão. Antes isso era
+## silencioso (o autosave só parava); agora vai para o log e para o aviso fixo do HUD.
+var save_invalid := false:
+	set(value):
+		if value and not save_invalid:
+			push_warning("Salvamento desligado nesta sessão: %s" % (save_invalid_reason if not save_invalid_reason.is_empty() else "um sistema não restaurou o save"))
+		save_invalid = value
+var save_invalid_reason := ""
 var loaded_save := false
 var ready_for_play := false
 var startup_streaming_settled := false
@@ -110,6 +118,16 @@ var background_loading_status: Dictionary = {}
 var _fleet_scenes: Array[Resource] = []
 var _fleet_extra: Array[Resource] = []
 
+## Desliga o salvamento dizendo qual sistema causou; o primeiro motivo é o que vale.
+func block_saving(reason: String) -> void:
+	if save_invalid_reason.is_empty(): save_invalid_reason = reason
+	save_invalid = true
+
+## Texto do aviso fixo e da recusa do F5 enquanto o salvamento estiver desligado.
+func save_block_text() -> String:
+	var reason := String(TranslationServer.translate(save_invalid_reason if not save_invalid_reason.is_empty() else "um sistema não restaurou o save"))
+	return String(TranslationServer.translate("Salvamento desligado nesta sessão (%s). O arquivo do save no disco foi preservado sem mudanças.")) % reason
+
 func build() -> void:
 	var diagnostic_build := SESSION_OPS.begin(self, "world", "startup")
 	var startup_traced := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
@@ -119,7 +137,7 @@ func build() -> void:
 	if world.has_meta("menu_save_path"): store.path = str(world.get_meta("menu_save_path"))
 	if not no_save or world.has_meta("menu_save_path"):
 		var result: Dictionary = store.load_into(state)
-		save_invalid = result.get("invalid",false)
+		if result.get("invalid",false): block_saving("o save escolhido não passou na validação")
 		loaded_save = result.get("ok",false)
 	# The menu may read a journey, but must never persist preview-time changes.
 	if world.has_meta("menu_preview"): no_save = true
