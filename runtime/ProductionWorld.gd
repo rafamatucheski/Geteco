@@ -69,6 +69,9 @@ const TRAFFIC_MOTORCYCLE_TYPES := ["bike_urban", "bike_sport", "bike_cruiser"]
 signal logical_region_changed(previous_region: String, next_region: String)
 const CONNECTION_PRELOAD_DISTANCE := 240.0
 const CONNECTION_RELEASE_DISTANCE := 320.0
+## Obra da passagem norte: também mora na conexão (NorthGateway).
+const NORTH_CONNECTION_ANCHOR := Vector3(342.5,2.4,-373.5)
+const NORTH_CONNECTION_PRELOAD := 150.0
 ## GETECO_SEAM_HOLD=0 desliga a folga da emenda (A/B).
 static var _seam_hold_enabled := OS.get_environment("GETECO_SEAM_HOLD") != "0"
 var _seam_retention := false
@@ -972,9 +975,8 @@ func _update_physical_residency(point: Vector3) -> void:
 	var support := _persistent_vehicle_support()
 	_mount_region(physical_region,point)
 	var seam_distance := Vector2(point.x-WORLD_CONNECTION.SEAM.x,point.z-WORLD_CONNECTION.SEAM.z).length()
-	var north_anchor := Vector3(342.5,2.4,-373.5)
-	var north_distance := Vector2(point.x-north_anchor.x,point.z-north_anchor.z).length()
-	var north_preload := north_distance<150.0
+	var north_distance := Vector2(point.x-NORTH_CONNECTION_ANCHOR.x,point.z-NORTH_CONNECTION_ANCHOR.z).length()
+	var north_preload := north_distance<NORTH_CONNECTION_PRELOAD
 	var north_keep := north_distance<230.0
 	if north_preload:
 		_mount_region("harbor",point)
@@ -1001,12 +1003,7 @@ func _update_physical_residency(point: Vector3) -> void:
 	if seam_preload:
 		_mount_region("harbor",seam_anchor)
 		_mount_region("mountain",seam_anchor)
-	if seam_preload or north_preload:
-		if not is_instance_valid(connection):
-			var traced := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
-			connection = WORLD_CONNECTION.new()
-			world.add_child(connection)
-			_trace_cost("world_connection",traced)
+	if seam_preload or north_preload: _mount_connection()
 	elif not seam_keep and not north_keep:
 		for id in ["harbor","mountain","desert"]:
 			if id != physical_region and support[id].is_empty(): _unmount_region(id)
@@ -1026,6 +1023,23 @@ func _update_physical_residency(point: Vector3) -> void:
 			if not support[id].is_empty(): region_focus = support[id][0].position
 			elif seam_preload: region_focus = seam_anchor
 		mounted.set_focus(region_focus)
+
+func _mount_connection() -> void:
+	if is_instance_valid(connection): return
+	var traced := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
+	connection = WORLD_CONNECTION.new()
+	world.add_child(connection)
+	_trace_cost("world_connection",traced)
+
+## Desde a ponte unificada (6079bffd, 16/10) o piso do corredor é só da conexão: as regiões recortam a
+## pegada dela. O ponto de partida da serra (spawn_position) fica nesse tabuleiro. Viagem e resgate
+## conferem o chão antes de _update_physical_residency chegar lá, então montam a conexão aqui; sem
+## isso a viagem padrão para a serra dava "sem solo" e o resgate na serra longe da emenda ficava
+## preso em "Local de resgate ocupado" (sonda de 18/10). É o mesmo custo de logo depois do teleporte.
+func prepare_connection_at(point: Vector3) -> void:
+	var seam_distance := Vector2(point.x-WORLD_CONNECTION.SEAM.x,point.z-WORLD_CONNECTION.SEAM.z).length()
+	var north_distance := Vector2(point.x-NORTH_CONNECTION_ANCHOR.x,point.z-NORTH_CONNECTION_ANCHOR.z).length()
+	if seam_distance <= CONNECTION_PRELOAD_DISTANCE or north_distance < NORTH_CONNECTION_PRELOAD: _mount_connection()
 
 ## Folga da divisa porto/serra. Sem ela, parado na ponte em cima da linha (x≈456), o jogador trocou de
 ## região 7 vezes em 11 s mexendo menos de 1 m (release de 2026-10-13), e cada troca refaz rotas,
@@ -1837,6 +1851,7 @@ func _travel_checked(region_id: String,destination_override := Vector3.INF) -> v
 	var destination: Vector3 = (destination_override if destination_override.is_finite() else next_region.spawn_position)+Vector3.UP*.12
 	# Fast travel pauses normal streaming; finish the destination cell under the transition.
 	next_region.set_focus(destination,true)
+	prepare_connection_at(destination)
 	# Keep the source region intact until the destination has synchronized collision.
 	for i in 3: await get_tree().physics_frame
 	if not session.position_clear(destination):

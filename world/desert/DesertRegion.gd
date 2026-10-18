@@ -38,6 +38,7 @@ var current_cell := Vector2i(100000,100000)
 var retention_radius := 2
 var _residency_dirty := false
 var _lamp_cleanup_after_frame := -1
+var _dressing_yield_frame := -1
 var chunks: Dictionary = {}
 var records: Dictionary = {}
 var pending: Array[Vector2i] = []
@@ -251,6 +252,8 @@ func _process(_delta: float) -> void:
 	if _lamp_cleanup_after_frame >= 0 and Engine.get_process_frames() >= _lamp_cleanup_after_frame:
 		_lamps=_lamps.filter(func(lamp): return is_instance_valid(lamp) and not lamp.is_queued_for_deletion())
 		_lamp_cleanup_after_frame=-1
+	# Um lugar do DesertWilds montou neste quadro: o enfeite fatiado fica para o próximo, sem somar.
+	if _dressing_yield_frame==Engine.get_process_frames(): return
 	var began := Time.get_ticks_usec()
 	if not pending.is_empty(): _ensure_chunk_surfaces(pending.pop_front())
 	while not build_jobs.is_empty() and Time.get_ticks_usec()-began<BUILD_BUDGET_USEC:
@@ -291,6 +294,15 @@ func _run_build_job(job: Dictionary, _budget: float) -> void:
 		preload("res://world/chunk_bake/ChunkCellMerge.gd").finish_chunk_later(chunk)
 
 func is_streaming_idle() -> bool: return pending.is_empty() and build_jobs.is_empty()
+## Só as superfícies (chão e colisão), que saem síncronas, um trecho por quadro. O enfeite que vem
+## depois é fatiado em ~1 ms por quadro, então terminar conta quadros, não tempo: 34 trechos perto
+## da arrancada levaram ~1.600 quadros, 27 s a 60 fps (padrão) no editor, contra 0,7 s das
+## superfícies (sonda de 18/10). Quem só precisa de chão firme (DesertWilds) espera isto.
+func surfaces_idle() -> bool: return pending.is_empty()
+## Quem monta algo neste quadro antes do _process do deserto (process_priority menor) pede para o
+## enfeite não rodar junto. Sem isso, a montagem de 2,5 ms (editor) caía no mesmo quadro de uma
+## fatia de chão povoado de até 5,4 ms e o quadro perdia o vsync de 60 Hz (34 ms, teste de 18/10).
+func yield_dressing_this_frame() -> void: _dressing_yield_frame=Engine.get_process_frames()
 func prewarm() -> void:
 	# Shared materials are generated once. Do not instantiate the entire 3km desert.
 	preload("res://world/desert/DesertTownMaterials.gd").prewarm()

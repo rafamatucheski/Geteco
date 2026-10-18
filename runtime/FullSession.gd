@@ -2734,6 +2734,8 @@ func _respawn() -> void:
 	var recovery_place: Dictionary = PLACES.get_definition(RECOVERY_PENALTY.place_for(state.region_id, arrested))
 	if not recovery_place.is_empty(): destination = recovery_place.return_position+Vector3.UP*.1
 	controller.region.set_focus(destination)
+	# Na serra o ponto de resgate é o spawn_position, no tabuleiro da ponte: o piso é da conexão.
+	controller.prepare_connection_at(destination)
 	if cold != null: cold.prepare_collision_at(destination)
 	for i in 3:
 		await get_tree().physics_frame
@@ -2742,6 +2744,7 @@ func _respawn() -> void:
 		# Porta ocupada (ambulância, viatura estacionada): usa o ponto de resgate da região.
 		destination = fallback
 		controller.region.set_focus(destination)
+		controller.prepare_connection_at(destination)
 		if cold != null: cold.prepare_collision_at(destination)
 		for i in 3:
 			await get_tree().physics_frame

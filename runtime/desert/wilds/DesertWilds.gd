@@ -2,7 +2,7 @@ extends Node3D
 ## Vida no meio do nada (playtest 18/10: "o deserto é muito vazio"). Casinhas com morador,
 ## acampamentos de foras-da-lei e cavernas com um achado, espalhados longe das estradas.
 ## Como o DesertBanditEncounter, cada lugar só existe perto do jogador: monta a ~110 m (um por
-## passo, com o streaming parado) e solta a ~150 m. Quem morre volta na próxima visita; o achado
+## passo, sem trecho de chão na fila) e solta a ~150 m. Quem morre volta na próxima visita; o achado
 ## da caverna sai uma vez por save, com recibo na carteira (ver claim_cave).
 ## GETECO_DESERT_WILDS=0 desliga tudo (A/B no mesmo export).
 const G := preload("res://world/desert/DesertGeometry.gd")
@@ -90,6 +90,8 @@ static func claim_cave(economy, site: Dictionary) -> Dictionary:
 func configure(owner_session) -> void:
 	session = owner_session
 	name = "DesertWilds"
+	# Antes do deserto no quadro: no quadro em que um lugar monta, o enfeite dele pode ceder a vez.
+	process_priority = -1
 	if session.world.gameplay.has_signal("weapon_fired"): session.world.gameplay.weapon_fired.connect(_gunfire)
 
 func _outside() -> bool:
@@ -112,8 +114,11 @@ func _process(delta: float) -> void:
 		if sites.has(id):
 			if distance > RELEASE_DISTANCE: _release(id)
 			else: _update_site(site, sites[id], planar)
-		elif not built_one and distance < BUILD_DISTANCE and is_instance_valid(region) and region.is_streaming_idle():
+		# Espera só as superfícies, não o enfeite fatiado: com is_streaming_idle(), a 60 fps os
+		# foras-da-lei de outlaws_flats (perto da arrancada) nasciam até ~27 s depois da chegada.
+		elif not built_one and distance < BUILD_DISTANCE and is_instance_valid(region) and region.surfaces_idle():
 			if not region.prepare_collision_at(ground(site.center)): continue
+			region.yield_dressing_this_frame()
 			var trace := STALL_WORK.begin()
 			sites[id] = _build(site)
 			STALL_WORK.finish_slow("desert.wilds.build", trace, 2000)
