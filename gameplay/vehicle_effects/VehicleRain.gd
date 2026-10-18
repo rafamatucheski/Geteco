@@ -15,7 +15,12 @@ const RAY_NEAR := 90.0          # teto só é medido perto do foco
 const WET_RISE_SECONDS := 14.0  # chuva forte molha a lataria inteira nesse tempo
 const DRY_SECONDS := 120.0      # parado ao sol, leva ~2 min para secar
 const LEVELS := 20.0            # degraus de umidade que viram material novo
-const BEAD_SCALE := 1.5
+## 2026-10-18: gotas de 1-3 cm (escala 1,5), relevo 0,9 e rugosidade mínima 0,05 faziam a
+## lataria cintilar quadro a quadro vista de cima, na tempestade: o usuário via a traseira
+## "meio transparente, meio amarela (poste), piscando". Gotas maiores, relevo e brilho contidos.
+const BEAD_SCALE := .7
+const BEAD_STRENGTH := .4
+const WET_MIN_ROUGHNESS := .2
 static var _beads: Texture2D
 var weather: Node
 var _clock := 0.0
@@ -93,7 +98,7 @@ static func _apply_material(material: StandardMaterial3D, wet: float, gloss: flo
 		_restore(material, base, record)
 		material.remove_meta("rain_base")
 		return
-	material.roughness = maxf(.05, float(base[0]) * (1.0 - .6 * gloss))
+	material.roughness = maxf(minf(WET_MIN_ROUGHNESS, float(base[0])), float(base[0]) * (1.0 - .6 * gloss))
 	if material.clearcoat_enabled: material.clearcoat = lerpf(float(base[1]), 1.0, gloss * .75)
 	var albedo: Color = base[2]
 	material.albedo_color = Color(albedo.r * (1.0 - .24 * wet), albedo.g * (1.0 - .24 * wet), albedo.b * (1.0 - .24 * wet), albedo.a)
@@ -105,7 +110,7 @@ static func _apply_material(material: StandardMaterial3D, wet: float, gloss: flo
 			material.uv1_triplanar = true
 			material.uv1_scale = Vector3.ONE * BEAD_SCALE
 			record.beaded = true
-		material.normal_scale = clampf(wet * bead, 0.0, 1.0) * .9
+		material.normal_scale = clampf(wet * bead, 0.0, 1.0) * BEAD_STRENGTH
 	elif record.beaded:
 		_strip_beads(material)
 		record.beaded = false
