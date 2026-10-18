@@ -274,12 +274,11 @@ func _start(id: String, new_game: bool) -> void:
 				await sky.discard_preview()
 				sky.boot_path(path)
 			shade.hide()
-			AUDIO.play_start(self)
 			if await sky.continue_game(): return
 		# New game retains its opening; failed preloads use the normal loading flow.
 		await sky.discard_preview()
+	# Só o clique leve do botão: o acorde de partida soava alto demais; a música vem com a tela de carregamento.
 	shade.show()
-	AUDIO.play_start(self)
 	await _show_loading(id, new_game)
 	if sky != null: sky.cancel_continue()
 	if DisplayServer.get_name() == "headless":

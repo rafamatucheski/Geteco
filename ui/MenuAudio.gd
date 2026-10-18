@@ -182,7 +182,7 @@ static func play_hover(host_node: Node) -> void:
 
 ## Executa som de clique no contexto do host_node informado
 static func play_click(host_node: Node) -> void:
-	_play_sfx(host_node, "__MenuClickPlayer", get_click_stream(), -2.0)
+	_play_sfx(host_node, "__MenuClickPlayer", get_click_stream(), -9.0)
 
 ## Executa o som de voltar/cancelar (cai no clique se não houver gravação)
 static func play_back(host_node: Node) -> void:
