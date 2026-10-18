@@ -81,6 +81,7 @@ func configure(roads: Array, entries: Array, clearings: Array) -> void:
 	_material = ShaderMaterial.new()
 	_material.shader = preload("res://world/regions/mountain_terrain.gdshader")
 	preload("res://world/regions/WorldConnection3D.gd").configure_ground_material(_material)
+	preload("res://world/regions/MountainGroundFinish.gd").apply_ground(_material)
 
 func _cell(point: Vector2) -> Vector2i:
 	return Vector2i(floori(point.x/CELL),floori(point.y/CELL))

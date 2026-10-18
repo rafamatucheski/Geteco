@@ -6,6 +6,7 @@ const CEMETERY := preload("res://world/regions/OriginalCemetery3D.gd")
 const SHELTER := preload("res://runtime/cold/OriginalHeatSources.gd")
 const NORTH_GATEWAY := preload("res://world/north_gateway/NorthGatewayLayout.gd")
 const BRIDGE_KIT := preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd")
+const FINISH := preload("res://world/regions/MountainGroundFinish.gd")
 # A região lógica muda na cabeceira, mas clima, chuva e paleta só começam
 # a transição em terra, depois da ponte e de sua entrada no deserto.
 const DESERT_CLIMATE_START := -NORTH_GATEWAY.END_Z + 12.0
@@ -99,6 +100,13 @@ func apply(controller, hour: float, clouds: float, snow: float, inside: bool, de
 	env.fog_light_energy = 1.0
 	env.fog_sun_scatter = 0.0
 	env.fog_density = current.haze
+	# Serra lavada (relato de 18/10): o chão novo só lê com um pouco menos de véu e mais
+	# contraste/cor. Pesado pela serra, então porto e deserto não mudam; desliga no A/B.
+	if FINISH.enabled():
+		var serra: float = weights.mountain
+		env.fog_density *= 1.0 - .22*serra
+		env.adjustment_contrast += .05*serra
+		env.adjustment_saturation *= 1.0 + .10*serra
 	var desert := desert_weight(point)
 	env.fog_depth_begin = lerpf(18.0,90.0,desert)
 	env.fog_depth_end = lerpf(75.0,1400.0,desert)

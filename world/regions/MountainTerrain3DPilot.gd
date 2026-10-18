@@ -34,6 +34,7 @@ static func attach(source: RefCounted, surface: MeshInstance3D, rect: Rect2, tra
 	material.shader = SHADER
 	material.set_shader_parameter("trail_mask",trail)
 	preload("res://world/regions/WorldConnection3D.gd").configure_ground_material(material)
+	preload("res://world/regions/MountainGroundFinish.gd").apply_ground(material)
 	surface.material_override = material
 	surface.set_instance_shader_parameter("origin",ORIGIN)
 	surface.set_meta("terrain3d_baked_pilot",true)

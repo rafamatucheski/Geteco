@@ -52,6 +52,13 @@ void fragment() {
 	// Exposed slate follows the actual slope.
 	float cliff = smoothstep(0.10, 0.30, slope + (mid - 0.5) * 0.08);
 	color = mix(color, rock * (0.88 + mid * 0.20 + (d1 - 0.5) * 0.05 * detail), cliff);
+	// Acabamento da serra (mountain_ground.gdshaderinc). A pegada do pixel em metros
+	// decide quanto grão aparece; o relevo vai direto na normal (a malha não tem tangente).
+	float footprint = max(length(dFdx(local_xz)), length(dFdy(local_xz)));
+	vec2 finish_slope = vec2(0.0);
+	if (ground_finish > 0.5) {
+		color = ground_finish_surface(color, p, mid, d1, d2, detail, footprint, cover, cliff, height, finish_slope);
+	}
 	// Encosta da bacia dos lagos: margem úmida acima da linha d'água (-0,2) e lama
 	// plena logo abaixo. Bem mais escura que o capim: a luz de inverno clareia ~2,5x.
 	// (smoothstep sempre com limites em ordem crescente: invertidos, o GLSL não
@@ -65,7 +72,11 @@ void fragment() {
 	float wear = smoothstep(0.03, 0.92, trail + (mid - 0.5) * 0.23 * trail);
 	vec3 packed = mix(vec3(0.27,0.23,0.18), vec3(0.48,0.48,0.44), snow_amount * 0.65);
 	packed *= 0.94 + mid * 0.10 + (d1 - 0.5) * 0.08 * detail;
-	color = mix(color, packed, wear * 0.88);
+	if (ground_finish > 0.5) {
+		color = ground_finish_trail(color, p, trail, mid, d1, fine, footprint, snow_amount, cover, wear, finish_slope);
+	} else {
+		color = mix(color, packed, wear * 0.88);
+	}
 	// Authored local rock exposure, fading completely before every pilot border.
 	vec2 patch = (local_xz - vec2(36.0,18.0)) / vec2(7.0,3.5);
 	float pilot = 1.0 - smoothstep(0.35,1.0,length(patch) + (mid - 0.5) * 0.12);
@@ -81,6 +92,7 @@ void fragment() {
 	vec2 bump = vec2(hx - h0, hz - h0) / e * 0.035 * detail;
 	NORMAL_MAP = vec3(0.5 - bump.x, 0.5 - bump.y, 1.0);
 	NORMAL_MAP_DEPTH = 1.0;
+	NORMAL = normalize(NORMAL + (VIEW_MATRIX * vec4(-finish_slope.x, 0.0, -finish_slope.y, 0.0)).xyz);
 	float snowy = cover * (1.0 - cliff) * (1.0 - wear * 0.8);
 	ROUGHNESS = mix(mix(0.96, 0.88, snowy), 0.55, wet);
 	SPECULAR = mix(0.15, 0.20, snowy);

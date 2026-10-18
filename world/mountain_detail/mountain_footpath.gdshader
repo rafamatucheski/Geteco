@@ -34,6 +34,17 @@ void fragment() {
 	vec3 color = mix(packed_snow, gravel, clamp(trodden * 0.8 + patches * 0.4 - 0.15, 0.0, 1.0));
 	color = mix(gravel, color, mountain_weight);
 	color *= 0.88 + grain * 0.22;
+	if (ground_finish > 0.5) {
+		// Acostamento de verdade (MountainGroundFinish): cascalho escuro e lama de neve junto
+		// ao asfalto, seixos, e só a margem de fora fica neve pisada. Antes a faixa era quase
+		// da cor da neve e o asfalto parecia encostar direto no branco.
+		float footprint = max(length(dFdx(UV)), length(dFdy(UV)));
+		vec3 slush = mix(vec3(0.17, 0.16, 0.14), vec3(0.27, 0.27, 0.26), patches);
+		float bed = 1.0 - smoothstep(0.30, 0.62, UV.x + (patches - 0.5) * 0.30);
+		vec2 stones = ground_pebbles(vec2(UV.x * 1.6, UV.y), 5.0, 0.45, footprint);
+		slush = mix(slush, slush * (0.55 + stones.y * 0.2), stones.x * (1.0 - smoothstep(0.02, 0.07, footprint)));
+		color = mix(color, slush * (0.9 + grain * 0.2), smoothstep(0.0, 0.7, bed) * mountain_weight);
+	}
 	ALBEDO = color;
 	ROUGHNESS = 0.92;
 	SPECULAR = 0.2;
