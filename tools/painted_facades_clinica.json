@@ -3,7 +3,44 @@
 		"nota": "Ala oeste da clinica (Clinic, BAY MEDICAL). Vao medido nos pixels pretos de frente-dia.png (1024..1670 x 546..940 de 1671x941, retangulo cheio de 647x395 = 3,45 x 2,10 m) e conferido no overlay. O build_painted_facades.py alarga cada vao em DOOR_MARGIN (0,012; 0,006 embaixo), entao o rect abaixo ja vem encolhido para o vao final ficar exatamente no preto medido: [0,6128, 0,5802, 1,0, 1,0]. Fundos sem vao. A entrada real e a porta 3D deslizante do HarborHospitalModel3D.",
 		"module_w": 8.9,
 		"side_w": 16.6,
-		"front": [{"rect": [0.6248, 0.5922, 0.988, 0.994], "leaf": false}],
+		"front": [
+			{
+				"rect": [
+					0.6248,
+					0.5922,
+					0.988,
+					0.994
+				],
+				"leaf": false
+			}
+		],
 		"back": []
+	},
+	"clinica-leste": {
+		"nota": "Ala das ambulâncias do hospital (caixa de 5,6 x 6,9 x 4 m em (80,-67.5) px do HarborHospitalModel3D). Vão da frente medido nos pixels pretos de frente-dia.png (316..1166 x 274..1060 de 1484x1060 = 3,2 x 2,96 m); fundos com a porta de serviço do prompt (258..499 x 503..1060). Rects já encolhidos pelo DOOR_MARGIN. Sem folha: a ala não tem interior.",
+		"module_w": 5.6,
+		"side_w": 6.9,
+		"front": [
+			{
+				"rect": [
+					0.2249,
+					0.2705,
+					0.7737,
+					0.994
+				],
+				"leaf": false
+			}
+		],
+		"back": [
+			{
+				"rect": [
+					0.1859,
+					0.4865,
+					0.3243,
+					0.994
+				],
+				"leaf": false
+			}
+		]
 	}
 }

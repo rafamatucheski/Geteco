@@ -18,6 +18,12 @@ const WEST_HEIGHT := 5.0
 ## Descida dos equipamentos de telhado: a laje antiga ficava em 5,265 m e a pintada
 ## em 5,0 m, então o que apoiava na antiga flutuaria 0,25 m sobre a pintada.
 const PAINTED_ROOF_DROP := 0.25
+## Ala das ambulâncias pintada (pacote clinica-leste, 18/10): a caixa de 5,6 x 6,9 x 4 m a leste,
+## com a boca da ambulância virada para o pátio coberto. Mesmo interruptor da ala oeste.
+const EAST_STYLE := "clinica-leste"
+const EAST_CENTER_PX := Vector2(80.0, -67.5)
+const EAST_SIZE_PX := Vector2(100.0, 95.0)
+const EAST_HEIGHT := 4.0
 ## Nó do kit pintado (null com GETECO_PAINTED_CLINIC=0, GETECO_PAINTED_FACADES=0 ou
 ## fora da fábrica urbana).
 var painted_west: Node3D
@@ -127,7 +133,8 @@ func _ready() -> void:
 		_collision_only(box(Vector2(-1, 105.5), Vector2(62, 19), 2.1, 2.9, ivory), painted)
 	else:
 		box(Vector2(-50, 0), Vector2(160, 230), 0, 5.0, ivory)
-	box(Vector2(80, -67.5), Vector2(100, 95), 0, 4.0, ivory)
+	var east_painted := painted and PaintedFacadeKit.style_data(EAST_STYLE).size() > 0
+	_collision_only(box(Vector2(80, -67.5), Vector2(100, 95), 0, 4.0, ivory), east_painted)
 	box(Vector2(67.5, -7), Vector2(75, 26), 0, 4.0, ivory)
 	box(Vector2(67.5, 94.5), Vector2(75, 41), 0, 3.1, ivory)
 	_apron(Vector2(80, 40), Vector2(100, 68), .09)
@@ -143,8 +150,12 @@ func _ready() -> void:
 	if not painted:
 		box(Vector2(-50, 0), Vector2(164, 234), 5.0, 0.23, Color("eeeade"))
 		box(Vector2(-50, 0), Vector2(151, 221), 5.24, 0.025, Color("78878b"))
-	box(Vector2(80, -54.5), Vector2(103, 124), 4.0, 0.20, Color("eeeade"))
-	box(Vector2(80, -54.5), Vector2(93, 114), 4.2, 0.03, Color("718387"))
+	# Com a ala leste pintada, o telhado do kit cobre a ala; a laje fica só sobre o conector.
+	if east_painted:
+		box(Vector2(67.5, -7), Vector2(78, 29), 4.0, 0.20, Color("eeeade"))
+	else:
+		box(Vector2(80, -54.5), Vector2(103, 124), 4.0, 0.20, Color("eeeade"))
+		box(Vector2(80, -54.5), Vector2(93, 114), 4.2, 0.03, Color("718387"))
 	var service_roof := overhead(box(Vector2(67.5, 94.5), Vector2(78, 42), 3.1, 0.17, Color("eeeade")))
 	service_roof.name = "AdmissionWingRoof"
 	# Repeated, recessed windows with raised fins on the street frontage.
@@ -156,7 +167,7 @@ func _ready() -> void:
 			box(Vector2(x, 115.4), Vector2(24, 1.4), level, window_height, charcoal)
 			box(Vector2(x, 116.3), Vector2(21, 0.8), level+0.09, window_height-0.19, glazing, self, true)
 			box(Vector2(x, 117.2), Vector2(1.0, 1.6), level+0.08, window_height-0.17, Color("d9e5de"))
-	for y in [-99.0, -69.0, -39.0]:
+	for y in ([] if east_painted else [-99.0, -69.0, -39.0]):
 		box(Vector2(130.5, y), Vector2(1.2, 23), 1.3, 1.85, charcoal)
 		box(Vector2(131.2, y), Vector2(0.6, 20), 1.4, 1.65, glazing, self, true)
 		box(Vector2(133, y-13), Vector2(5, 1.2), 0.4, 3.4, Color("c7cfca"))
@@ -240,6 +251,25 @@ func _ready() -> void:
 	box(Vector2(108, -7), Vector2(2, 19), 2.7, 0.10, Color("e4ede5"))
 	box(Vector2(108, -7), Vector2(2, 5), 2.3, 0.92, Color("e4ede5"))
 	if painted: _build_painted_west()
+	if east_painted:
+		_build_painted_east()
+		# Conector e recepção das ambulâncias seguem lisos (sem pacote próprio); a faixa de azulejo
+		# azul-petróleo e o rodapé grafite das alas pintadas amarram a identidade nova.
+		for row in [[Vector2(67.5, -7), Vector2(75, 26), 4.0], [Vector2(67.5, 94.5), Vector2(75, 41), 3.1]]:
+			var at: Vector2 = row[0]
+			var size: Vector2 = row[1]
+			var top: float = row[2]
+			box(at, size + Vector2(1.2, 1.2), 0.0, 0.42, charcoal)
+			box(at, size + Vector2(1.0, 1.0), top - 0.85, 0.42, teal)
+
+func _build_painted_east() -> void:
+	var kit_parent := Node3D.new()
+	kit_parent.name = "PaintedEastWing"
+	kit_parent.position = floor_point(EAST_CENTER_PX)
+	add_child(kit_parent)
+	# Sem colisão (a caixa escondida faz) e sem folha: a ala não tem interior; a boca da
+	# ambulância fica como recuo escuro do kit, como as garagens pintadas.
+	PaintedFacadeKit.build(kit_parent, EAST_STYLE, Vector3(EAST_SIZE_PX.x / PPM, EAST_HEIGHT, EAST_SIZE_PX.y / (PPM * FLOOR_RATIO)), null, NAN, {"snow": false})
 
 func _apron(point: Vector2, size: Vector2, height: float) -> void:
 	var floor_mesh := box(point,size,0,height,Color("b4babc"))

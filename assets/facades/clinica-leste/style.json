@@ -1,0 +1,38 @@
+{
+	"style": "clinica-leste",
+	"module": [
+		5.6,
+		4.0
+	],
+	"side": [
+		6.9,
+		4.001
+	],
+	"eave": 0.0,
+	"snow_roof": false,
+	"openings": {
+		"front": [
+			{
+				"rect": [
+					0.2129,
+					0.2585,
+					0.7857,
+					1.0
+				],
+				"leaf": false
+			}
+		],
+		"back": [
+			{
+				"rect": [
+					0.1739,
+					0.4745,
+					0.3363,
+					1.0
+				],
+				"leaf": false
+			}
+		]
+	},
+	"doors": {}
+}
