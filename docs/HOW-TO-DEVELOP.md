@@ -80,7 +80,10 @@ no jogo, não.
     esconderijo) usa `Economy.grant_world_reward` com id estável: o recibo vai no save e impede
     pagar duas vezes. Dinheiro solto (`collect_loose_cash`) é só para quem renasce (civil, saque
     de combate) e recusa mais de R$ 300. Nada de "já pegou" em variável estática.
-12. **NPC humano novo** declara `gameplay_role`; se a morte dele deve contar homicídio, o papel
+12. **Morte e prisão custam** (`runtime/RecoveryPenalty.gd`): 10% do dinheiro, teto R$ 2.000;
+    no Harbor a morte volta pelo Bay Medical e a prisão pela delegacia, que leva a munição
+    carregada. Armas nunca são confiscadas: o recibo de compra exige a arma no save.
+13. **NPC humano novo** declara `gameplay_role`; se a morte dele deve contar homicídio, o papel
     entra em `PERSON_ROLES` de `gameplay/police_response/CrimeVictims.gd`.
 
 ## 4. Prédios pintados (estilo GTA) — `PaintedFacadeKit`

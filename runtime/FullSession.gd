@@ -10,6 +10,7 @@ const MISSIONS := preload("res://data/campaign/HarborMissions.gd")
 const V1_DEATH_AUDIO := preload("res://audio/V1DeathAudio.gd")
 const DOOR_TRANSITION := preload("res://runtime/DoorTransition.gd")
 const REWARD_AUDIO := preload("res://gameplay/RewardAudio.gd")
+const RECOVERY_PENALTY := preload("res://runtime/RecoveryPenalty.gd")
 const WORKPLACE_REACTION := preload("res://gameplay/civilian_reactions/WorkplaceThreatReaction.gd")
 const DIALOGUE_CARD := preload("res://ui/dialogue/DialogueCard.gd")
 const DIALOGUE_CAPTION := preload("res://ui/dialogue/DialogueCaption.gd")
@@ -2705,15 +2706,25 @@ func _respawn() -> void:
 		show_message("Aguarde a transição atual e tente novamente.")
 		return
 	respawn_busy = true
-	var destination: Vector3 = controller.region.spawn_position+Vector3.UP*.1
-	if arrest_pending and state.region_id == "harbor":
-		var police: Dictionary = PLACES.get_definition("harbor_police")
-		if not police.is_empty(): destination = police.return_position+Vector3.UP*.1
+	var arrested := arrest_pending
+	var fallback: Vector3 = controller.region.spawn_position+Vector3.UP*.1
+	var destination := fallback
+	# Morte acorda na porta do Bay Medical, prisão sai pela delegacia (RecoveryPenalty).
+	var recovery_place: Dictionary = PLACES.get_definition(RECOVERY_PENALTY.place_for(state.region_id, arrested))
+	if not recovery_place.is_empty(): destination = recovery_place.return_position+Vector3.UP*.1
 	controller.region.set_focus(destination)
 	if cold != null: cold.prepare_collision_at(destination)
 	for i in 3:
 		await get_tree().physics_frame
 		if not _owns_transition(token): return
+	if not position_clear(destination) and destination != fallback:
+		# Porta ocupada (ambulância, viatura estacionada): usa o ponto de resgate da região.
+		destination = fallback
+		controller.region.set_focus(destination)
+		if cold != null: cold.prepare_collision_at(destination)
+		for i in 3:
+			await get_tree().physics_frame
+			if not _owns_transition(token): return
 	if not position_clear(destination):
 		respawn_busy = false
 		_finish_transition(token)
@@ -2768,7 +2779,14 @@ func _respawn() -> void:
 	respawn_busy = false
 	_finish_transition(token)
 	close_menu()
+	# Só depois do resgate concluído: "Tentar novamente" não pode cobrar duas vezes.
+	var notices: Array[String] = []
 	if bank_death_loss>0:
-		show_message(String(TranslationServer.translate("Assalto fracassado: − R$ %d"))%bank_death_loss)
+		notices.append(String(TranslationServer.translate("Assalto fracassado: − R$ %d"))%bank_death_loss)
 		bank_death_loss=0
+	var penalty_text := RECOVERY_PENALTY.message(RECOVERY_PENALTY.apply(state.economy, arrested), arrested)
+	if not penalty_text.is_empty(): notices.append(penalty_text)
+	if not notices.is_empty():
+		show_message(" · ".join(notices))
+		world.gameplay.changed.emit()
 	save_game()

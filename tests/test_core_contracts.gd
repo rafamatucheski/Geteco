@@ -8,6 +8,7 @@ const STORE := preload("res://runtime/SaveStore.gd")
 const ECONOMY := preload("res://systems/economy/Economy.gd")
 const WILDS := preload("res://runtime/desert/wilds/DesertWilds.gd")
 const VICTIMS := preload("res://gameplay/police_response/CrimeVictims.gd")
+const PENALTY := preload("res://runtime/RecoveryPenalty.gd")
 
 class IsolatedLaunch extends "res://runtime/SessionLaunch.gd":
 	var folder := ""
@@ -61,6 +62,7 @@ func run() -> void:
 	save_recovery()
 	slot_recovery()
 	desert_caves()
+	recovery_penalty()
 	await crime_victims()
 	finish()
 
@@ -160,6 +162,38 @@ func desert_caves() -> void:
 	var state = STATE.new()
 	state.economy = wallet
 	check(STATE.new().restore_snapshot(state.snapshot()), "recibos das cavernas passam na validação do save")
+
+# --- Morte e prisão custam: conta, multa e munição apreendida --------------------------------
+
+func recovery_penalty() -> void:
+	check(PENALTY.fee(0) == 0 and PENALTY.fee(999) == 99 and PENALTY.fee(50000) == PENALTY.CAP, "conta: 10%% do dinheiro, teto R$ %d" % PENALTY.CAP)
+	check(PENALTY.place_for("harbor", false) == PENALTY.HOSPITAL and PENALTY.place_for("harbor", true) == PENALTY.PRECINCT and PENALTY.place_for("desert", false).is_empty(), "Harbor volta pelo hospital ou pela delegacia; deserto pelo ponto da região")
+	for id in [PENALTY.HOSPITAL, PENALTY.PRECINCT]:
+		check(not preload("res://world/places/PlaceCatalog.gd").get_definition(id).is_empty(), "%s existe no catálogo" % id)
+	var wallet = ECONOMY.new()
+	wallet.grant_reward("test_recovery_wallet", 5000)
+	var death: Dictionary = PENALTY.apply(wallet, false)
+	check(death.amount == 500 and wallet.balance == 4500 and death.ammo == 0, "morte cobra a conta e não mexe na munição")
+	check(wallet.buy_weapon("pistol"), "fixture: pistola comprada com recibo")
+	var loaded: Dictionary = wallet.get_ammo("pistol")
+	var before_arrest: int = wallet.balance
+	var arrest: Dictionary = PENALTY.apply(wallet, true)
+	check(arrest.amount == PENALTY.fee(before_arrest) and wallet.balance == before_arrest - arrest.amount and arrest.ammo == int(loaded.magazine) + int(loaded.reserve) and arrest.ammo > 0, "prisão cobra a multa e leva a munição (%s)" % [arrest])
+	check(wallet.owns_weapon("pistol") and int(wallet.get_ammo("pistol").magazine) == 0 and int(wallet.get_ammo("pistol").reserve) == 0, "a arma comprada fica, vazia")
+	check(ECONOMY.validate_snapshot(wallet.snapshot()), "carteira continua válida depois do confisco")
+	var broke = ECONOMY.new()
+	check(PENALTY.apply(broke, true).amount == 0 and broke.balance == 0, "sem dinheiro, sem dívida")
+	var grid = ECONOMY.new()
+	grid.enable_grid_inventory()
+	grid.grant_weapon("smg")
+	grid.add_ammo("smg", 120)
+	var carried := int(grid.get_ammo("smg").magazine) + int(grid.get_ammo("smg").reserve)
+	var taken: int = grid.confiscate_carried_ammo()
+	check(taken == carried and taken > 0 and int(grid.get_ammo("smg").reserve) == 0, "inventário em grade: bolsos e arma esvaziados (%d de %d)" % [taken, carried])
+	check(grid.owns_weapon("smg") and ECONOMY.validate_snapshot(grid.snapshot()), "inventário em grade continua válido")
+	var cheat = ECONOMY.new()
+	cheat.cheat_infinite_money = true
+	check(PENALTY.apply(cheat, false).amount == 0, "modo desenvolvedor com dinheiro infinito não paga")
 
 # --- Tabela de vítimas: arma e atropelamento contam igual ------------------------------------
 

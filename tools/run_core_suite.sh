@@ -15,9 +15,12 @@
 #
 # Resultado: tabela em evidence/test-suite/core/<data>/RESUMO.md (fora do Git) e um log por
 # teste ao lado. Sai com 0 só se todos passaram. Um teste passa quando sai com código 0 e o
-# log não tem erro de script/engine (mesma regra de tests/Runner.Common.ps1).
+# log não tem erro de script/engine (regra de tests/Runner.Common.ps1, menos vazamento no
+# encerramento e o erro esperado declarado na linha do teste).
 #
-# Adicionar um teste: uma linha em FAST (sem mundo, headless) ou WORLD ("modo|script|args").
+# Adicionar um teste: uma linha em FAST (sem mundo, headless) ou WORLD ("modo|script|args|erro
+# esperado"). O último campo, opcional, é uma regex de ERROR que o próprio teste provoca de
+# propósito (ex.: falha de disco simulada) e que não conta como falha.
 # Modo "rendered" abre janela (capturas de tela); "headless" usa o driver dummy, que serve
 # para lógica e NUNCA para medir desempenho.
 set -u
@@ -40,7 +43,8 @@ WORLD=(
 	"headless|tests/test_bridge_approach_terrain.gd|"
 	"headless|tests/test_native_driving.gd|--no-save"
 	"headless|tests/cold/test_admission.gd|"
-	"headless|tests/test_save_indicator.gd|--no-save --skip-arrival"
+	"headless|tests/test_save_indicator.gd|--no-save --skip-arrival|Could not create directory: .*/missing-parent-"
+	"headless|tests/test_recovery_penalty_session.gd|--no-save --skip-arrival"
 	"rendered|tests/test_desert_wilds.gd|--no-save --no-traffic"
 )
 
@@ -80,7 +84,7 @@ fi
 passed=0
 failed=0
 for entry in "${entries[@]}"; do
-	IFS='|' read -r mode script extra <<< "$entry"
+	IFS='|' read -r mode script extra expected <<< "$entry"
 	name="$(basename "$script" .gd)"
 	log="$out/$name.log"
 	args=(--path . --script "res://$script")
@@ -97,7 +101,7 @@ for entry in "${entries[@]}"; do
 	problems=""
 	[ "$code" != 0 ] && problems="código $code"
 	# Vazamento no encerramento ("... at exit") é limpeza do teste, não erro de jogo: fica no log.
-	if grep -E '^\s*ERROR:|SCRIPT ERROR|Parse Error|Compile Error|Failed to load script|Invalid (call|access|assignment)' "$log" | grep -qv 'at exit'; then
+	if grep -E '^\s*ERROR:|SCRIPT ERROR|Parse Error|Compile Error|Failed to load script|Invalid (call|access|assignment)' "$log" | grep -v 'at exit' | grep -qvE "${expected:-^$}"; then
 		problems="${problems:+$problems; }erro no log"
 	fi
 	last="$(grep -E 'PASS|FAIL|checks=|failures=' "$log" | tail -1 | tr '|' '/' | cut -c1-140)"

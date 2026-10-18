@@ -186,6 +186,40 @@ func collect_loose_cash(amount: int) -> bool:
 	_data.balance += amount
 	return true
 
+## Perda sem recibo (conta do hospital, multa da prisão): acontece uma vez, no fim do resgate,
+## sem retentativa, como o dinheiro solto no sentido contrário. Um recibo por morte encheria o
+## livro de transações (MAX_OPAQUE_RECEIPTS) e o valor varia, então não cabe em RecurringReceipts.
+func charge_fee(amount: int) -> bool:
+	if cheat_infinite_money: return true
+	if amount <= 0 or amount > int(_data.balance): return false
+	_data.balance -= amount
+	return true
+
+## Prisão: a polícia leva a munição que o jogador carrega (pente, reserva e munição nos bolsos
+## e na mochila). As armas ficam, porque o recibo de compra e o de recompensa exigem a arma no
+## save; porta-malas e bolsa largada no chão também ficam. Devolve quantos tiros saíram.
+func confiscate_carried_ammo() -> int:
+	var candidate: Dictionary = _data.duplicate(true)
+	var grid: bool = candidate.has("grid_inventory")
+	var taken := 0
+	for id in candidate.weapons:
+		var ammo: Dictionary = candidate.weapons[id]
+		if int(ammo.magazine) < 0: continue
+		if grid and str(id) not in candidate.personal_loadout.values() and GRID.count(candidate.grid_inventory, "weapon:" + str(id)) == 0: continue
+		taken += int(ammo.magazine) + int(ammo.reserve)
+		ammo.magazine = 0
+		ammo.reserve = 0
+	if grid:
+		for container in ["pockets", "storage"]:
+			var entries: Array = candidate.grid_inventory[container]
+			for i in range(entries.size() - 1, -1, -1):
+				if not str(entries[i].id).begins_with("ammo:"): continue
+				taken += int(entries[i].amount)
+				entries.remove_at(i)
+	if taken == 0 or not validate_snapshot(candidate): return 0
+	_data = candidate
+	return taken
+
 func grant_reward(receipt_id: String, amount: int) -> bool:
 	if not _valid_id(receipt_id) or receipt_id.length() > 110 or amount < 0 or amount > LIMIT or int(_data.balance) > LIMIT - amount: return false
 	var key := "reward:" + receipt_id

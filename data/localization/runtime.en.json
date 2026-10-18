@@ -531,5 +531,8 @@
   "prêmios da garagem não restauraram": "garage rewards did not restore",
   "porto e cemitério não restauraram": "port and cemetery did not restore",
   "frio da serra não restaurou": "mountain cold did not restore",
-  "guincho não restaurou": "tow job did not restore"
+  "guincho não restaurou": "tow job did not restore",
+  "Conta do hospital: − R$ %d": "Hospital bill: − R$ %d",
+  "Multa da prisão: − R$ %d": "Arrest fine: − R$ %d",
+  "Munição apreendida: %d tiros": "Ammo confiscated: %d rounds"
 }
