@@ -46,6 +46,7 @@ func _ready() -> void:
 	lamp.light_energy = 2.8
 	lamp.light_specular = .2
 	lamp.shadow_enabled = true
+	lamp.shadow_caster_mask = preload("res://gameplay/PersonalLightLayers.gd").SHADOW_MASK
 	housing.add_child(lamp)
 	update_visibility()
 

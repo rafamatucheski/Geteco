@@ -58,7 +58,7 @@ func _ready() -> void:
 	# masks owned by silhouettes, interiors, cutaways or another session system.
 	# Bits 18/19 are reserved even before their scenes stream in (secret
 	# passages, residence mirror and canopy cutaway). Coastal owns 16/17.
-	var used := (1 << 18) | (1 << 19)
+	var used := (1 << 18) | (1 << 19) | preload("res://gameplay/PersonalLightLayers.gd").PLAYER_LAYER
 	var queue: Array[Node] = [controller.world]
 	while not queue.is_empty():
 		var node: Node = queue.pop_back()

@@ -2,13 +2,24 @@ extends SceneTree
 ## Production scene and actual belt light; never reads or writes player saves.
 var world
 var failures := 0
-const OUT := "res://evidence/belt-flashlight-20261012"
+const OUT := "res://artifacts/flashlight-fix-20261017/integration"
 func _initialize() -> void: run.call_deferred()
 func check(ok: bool, label: String) -> void:
 	print(("PASS " if ok else "FAIL ") + label)
 	if not ok: failures += 1
 func settle(count := 12) -> void:
 	for i in count: await physics_frame
+func press_light() -> void:
+	var event := InputEventAction.new()
+	event.action = "weapon_flashlight"
+	event.pressed = true
+	Input.parse_input_event(event)
+	await process_frame
+	event = InputEventAction.new()
+	event.action = "weapon_flashlight"
+	event.pressed = false
+	Input.parse_input_event(event)
+	await settle()
 func capture(label: String) -> void:
 	if DisplayServer.get_name() == "headless": return
 	await RenderingServer.frame_post_draw
@@ -70,13 +81,30 @@ func run() -> void:
 		check(not world.gameplay.belt_flashlight.enabled, "session input switches belt off " + id)
 		world.session._toggle_weapon_flashlight()
 		world.gameplay.state.equip_weapon("fists")
+		# Both owned: the shared command must reach the weapon attachment too.
+		world.gameplay.state.equip_weapon("pistol")
+		world.gameplay.buy_attachment("pistol", "flashlight")
+		world.gameplay.flashlight_enabled = false
+		await press_light()
+		check(not world.gameplay.belt_flashlight.enabled and not world.gameplay.flashlight_enabled, "shared command switches available lights off " + id)
+		await press_light()
+		await settle()
+		check(world.gameplay.belt_flashlight.lamp.is_visible_in_tree() and world.gameplay.flashlight.is_visible_in_tree(), "shared command lights both belt and weapon " + id)
+		world.gameplay.state.equip_weapon("fists")
+		await settle()
+		check(not world.gameplay.flashlight.is_visible_in_tree() and world.gameplay.belt_flashlight.lamp.is_visible_in_tree(), "unarmed keeps belt and hides weapon light " + id)
 		if DisplayServer.get_name() != "headless" and "--temporal" in OS.get_cmdline_user_args():
+			world.gameplay.state.equip_weapon("pistol")
 			var started := Time.get_ticks_msec()
 			var timestamps: Array[int] = []
 			var folder := OUT.path_join(id + "-temporal")
 			DirAccess.make_dir_recursive_absolute(folder)
 			while Time.get_ticks_msec()-started < 30000:
-				world.player.combat_facing = float(Time.get_ticks_msec()-started)*.00025
+				var elapsed := Time.get_ticks_msec()-started
+				# Each source alone, then together, while aiming through a full turn.
+				world.gameplay.belt_flashlight.enabled = elapsed < 10000 or elapsed >= 20000
+				world.gameplay.flashlight_enabled = elapsed >= 10000
+				root.get_node("GameInput").touch_aim = Vector2.from_angle(float(elapsed)*.00065)
 				await RenderingServer.frame_post_draw
 				timestamps.append(Time.get_ticks_msec()-started)
 				root.get_texture().get_image().save_jpg(folder.path_join("%05d.jpg" % timestamps.size()),.85)
@@ -87,6 +115,14 @@ func run() -> void:
 		check(world.camera.environment == previous_env,"restore exterior environment " + id)
 		check(world.production.sun.light_cull_mask == previous_sun,"restore sunlight " + id)
 		check(world.gameplay.belt_flashlight.lamp.shadow_enabled == previous_shadows,"restore exterior shadow policy " + id)
+	# The shared input must not draw or activate a weapon inside Maciota's garage.
+	check(await world.session.enter_place("maciota",false), "enter weapon-free garage")
+	await settle()
+	check(not world.gameplay.state.equip_weapon("pistol"), "garage blocks equipping firearm")
+	await press_light()
+	check(not world.gameplay.attack_allowed() and not world.gameplay.gun.visible and not world.gameplay.flashlight.is_visible_in_tree(), "light command preserves garage weapon restrictions")
+	check(await world.session.leave_place(), "leave garage")
+	check(world.gameplay.state.equip_weapon("pistol"), "firearm inventory and use restored outside")
 	world.queue_free()
 	await process_frame
 	quit(1 if failures else 0)

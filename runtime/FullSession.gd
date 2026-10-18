@@ -1839,11 +1839,10 @@ func _input(event: InputEvent) -> void:
 		if event.physical_keycode == KEY_F5: save_game(true)
 		elif event.physical_keycode == KEY_F9: load_game()
 
-## Purchased belt equipment takes priority; legacy weapon lamps remain available.
+## One command synchronizes the belt and the usable weapon attachment.
 func _toggle_weapon_flashlight() -> void:
 	if world.driving.occupied: return
-	if world.gameplay.belt_flashlight.toggle(): return
-	if world.gameplay.toggle_flashlight(): return
+	if world.gameplay.toggle_personal_lights(): return
 	var id: String = world.gameplay.equipped()
 	if not state.can_attack() or id in ["", "fists"]: return
 	if not preload("res://gameplay/WeaponCustomization.gd").installed(world.gameplay.customization, id):

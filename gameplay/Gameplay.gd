@@ -367,6 +367,9 @@ func _ready() -> void:
 	_flash_material.emission_enabled = true
 	_flash_material.emission = Color("ff8734")
 	_build_socket()
+	var personal_light_layers := preload("res://gameplay/PersonalLightLayers.gd").new()
+	personal_light_layers.gameplay = self
+	add_child(personal_light_layers)
 	emergency = EMERGENCY.new()
 	emergency.configure(world, self)
 	add_child(emergency)
@@ -374,15 +377,16 @@ func _ready() -> void:
 	# Asfalto escuro reflete pouco: com 2,5 o facho mal aparecia na rua e só a
 	# calçada perto do Dante acendia (medido na Main à meia-noite, 25/09/2026).
 	flashlight.spot_range = 24.0
-	flashlight.spot_angle = 26.0
+	flashlight.spot_angle = 32.0
 	flashlight.spot_attenuation = 0.7
 	# Borda do cone suave: com 7,0 e borda dura, o facho rasante no concreto claro
 	# do cais virava uma cápsula branca estourada (vídeo de 25/09/2026).
-	flashlight.spot_angle_attenuation = 1.65
+	flashlight.spot_angle_attenuation = 1.35
 	flashlight.light_color = Color(.94, .97, 1.0)
 	flashlight.light_energy = 5.0
 	flashlight.light_specular = 0.2
 	flashlight.shadow_enabled = true
+	flashlight.shadow_caster_mask = preload("res://gameplay/PersonalLightLayers.gd").SHADOW_MASK
 	gun.add_child(flashlight)
 	flashlight.hide()
 	laser = MeshInstance3D.new()
@@ -1259,6 +1263,19 @@ func install_attachment(id: String, part: String, installed: bool = true) -> boo
 func toggle_flashlight() -> bool:
 	if not attack_allowed() or not CUSTOM.installed(customization, equipped()): return false
 	flashlight_enabled = not flashlight_enabled
+	return true
+
+func toggle_personal_lights() -> bool:
+	# One remappable command for all usable equipment. If either is on, switch
+	# both off; otherwise switch both on. An unavailable weapon keeps its state.
+	var belt_available: bool = is_instance_valid(belt_flashlight) and belt_flashlight.owned
+	var weapon_available: bool = attack_allowed() and CUSTOM.installed(customization, equipped())
+	if not belt_available and not weapon_available: return false
+	var enable: bool = not ((belt_available and belt_flashlight.enabled) or (weapon_available and flashlight_enabled))
+	if belt_available:
+		belt_flashlight.enabled = enable
+		belt_flashlight.update_visibility()
+	if weapon_available: flashlight_enabled = enable
 	return true
 
 func aim_from_screen(screen: Vector2) -> Vector3:

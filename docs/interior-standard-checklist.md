@@ -1,5 +1,18 @@
 # Migração de interiores — checklist
 
+## Lanternas pessoais nos boeiros — 17/10/2026
+
+Escopo: **2 lugares / 2 interiores existentes examinados; 0 lugares novos e 0 migrações integrais concluídas**. Correção do equipamento compartilhado, sem mudar câmera, geometria, circulação ou spawn. Contagens globais de interiores certificados permanecem inalteradas.
+
+- [x] Cinto: removida a sombra excessiva do próprio portador apenas nas lanternas pessoais; paredes, escadas, NPCs e sombras externas preservados. Feixe da arma ampliado e comando compartilhado corrigido.
+- [x] Main/.NET renderizada: entrada/saída de `harbor_sewer` e `sewer_market`, restauração exterior, ambas as lanternas pelo comando de entrada, arma guardada e restrições da garagem.
+- [x] Oclusão da luz por parede e iluminação radial; regressão de camadas/reflexos. Sem mudanças físicas; auditoria integral de colisão/mobiliário não realizada nesta tarefa.
+- [x] Comparação renderizada de 30 s/local: cerca de 144 FPS, p95 final 9,112/9,642 ms, nenhum frame acima de 33,3 ms, sem regressão além da tolerância de 5%.
+- [ ] Certificação temporal completa: sequências de 30 s/local analisadas, mas gravação com intervalos de até 110 ms limita defeitos de um frame; sem aprovação universal de flickering.
+- [ ] Suíte geral de combate: fixture/expectativas divergentes, detalhadas no relatório; não aprovada nesta revisão.
+
+[Resultado, fotos reais antes/depois, métricas e limitações](../artifacts/flashlight-fix-20261017/resultado.md). Não recertifica o interior inteiro nem outros mapas.
+
 ## Ferrovia costeira e acessos de Harbor — 15/10/2026
 
 Escopo: **2 acessos de Harbor compactados / 1 vagão existente reformado / 0 lugares ou interiores novos**. O acabamento de corrimãos compartilhado alcança as quatro estações; a redução dos lances de 14 para 8 m fica restrita a Harbor. Inventário global e número de interiores certificados inalterados; nenhuma nova certificação integral.
