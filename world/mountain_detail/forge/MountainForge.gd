@@ -1,14 +1,15 @@
 extends Node3D
 ## Forja da Serra: ferraria do Seu Bento na clareira ao norte do lago alpino (antes o
-## zoológico "Serra Viva", 03/10–17/10/2026). Mesma clareira, mesmo acesso a pé pela
-## estrada e mesma reserva de terreno/árvores/pilares da ferrovia, então o resto do mapa
-## não muda. Origem do nó = CENTER; a entrada fica em z = +20, virada para a estrada.
+## zoológico "Serra Viva", 03/10–17/10/2026), com acesso a pé pela estrada. Origem do nó =
+## CENTER; a entrada fica em z = +7, virada para a estrada. FOOTPRINT reserva terreno, árvores
+## e pilares da ferrovia. 18/10: o pátio de 46x39 m herdado do zoológico era grande e verde
+## demais para uma ferraria; agora é um terreiro de terra batida só em volta da oficina.
 const GEO := preload("res://world/mountain_detail/forge/ForgeGeometry.gd")
 const SURFACE := preload("res://world/mountain_detail/forge/forge_surface.gdshader")
 const RESIDENT := preload("res://world/mountain_detail/forge/ForgeResident.gd")
 const CENTER := Vector3(716,0,-363)
-const FOOTPRINT := Rect2(690,-386,52,49)
-const BOUNDARY := [Vector2(-2,20),Vector2(-10,20),Vector2(-19,17),Vector2(-23,10),Vector2(-23,-8),Vector2(-19,-17),Vector2(-10,-19),Vector2(8,-19),Vector2(19,-17),Vector2(23,-10),Vector2(23,9),Vector2(18,17),Vector2(9,20),Vector2(2,20)]
+const FOOTPRINT := Rect2(702,-378,28,25)
+const BOUNDARY := [Vector2(-2,7),Vector2(-9,7),Vector2(-12,4),Vector2(-12,-10),Vector2(-10,-13),Vector2(10,-13),Vector2(12,-10),Vector2(12,4),Vector2(9,7),Vector2(2,7)]
 ## Centro da brasa da fornalha, local. É também a fonte de calor `blade_forge` do frio
 ## (OriginalHeatSources), que acende a chama por cima dela.
 const HEARTH := Vector3(-3.5,0,-8.4)
@@ -18,25 +19,26 @@ var session
 static var _surfaces: Dictionary = {}
 
 static func approach() -> Dictionary:
-	return {"id":"mountain_forge_walk","width":3.0,"points":PackedVector3Array([Vector3(716,0,-330),Vector3(716,0,-338),Vector3(716,0,-343)])}
+	return {"id":"mountain_forge_walk","width":3.0,"points":PackedVector3Array([Vector3(716,0,-330),Vector3(716,0,-343),Vector3(716,0,-356)])}
 
 func _ready() -> void:
 	name = "MountainForge"
 	add_to_group("blade_forge_site")
 	var g := GEO.new()
 	var outer := PackedVector2Array(BOUNDARY)
-	GEO.polygon(self, outer, .035, Color("8d8a5a"))
+	# Terra batida, não capim: o verde do pátio antigo lia como gramado de parque.
+	GEO.polygon(self, outer, .035, Color("857559"))
 	_yard_fence(g, outer)
 	# Caminho de cascalho da porteira até a frente da oficina.
-	for polygon in Geometry2D.offset_polyline(PackedVector2Array([Vector2(0,20),Vector2(0,10),Vector2(-.6,2.5)]), 1.6, Geometry2D.JOIN_ROUND, Geometry2D.END_ROUND):
+	for polygon in Geometry2D.offset_polyline(PackedVector2Array([Vector2(0,7),Vector2(0,4),Vector2(-.6,1.0)]), 1.6, Geometry2D.JOIN_ROUND, Geometry2D.END_ROUND):
 		GEO.polygon(self, polygon, .052, Color("9e937a"))
 	_gate(g)
 	_workshop(g)
 	_hearth(g)
 	_tools(g)
-	_woodpile(g, Vector3(10.5,0,-7.5))
+	_woodpile(g, Vector3(9.6,0,-7.0))
 	_ore_pile(g, Vector3(-9.5,0,-6.0))
-	for at in [Vector3(-8.0,0,8.5), Vector3(8.0,0,8.5)]: _bench(g, at)
+	for at in [Vector3(-7.5,0,3.0), Vector3(7.5,0,3.0)]: _bench(g, at)
 	# Pedras baixas e arbustos amaciam a cerca sem esconder a oficina da estrada.
 	for i in outer.size():
 		var p: Vector2 = outer[i]
@@ -74,21 +76,21 @@ func _yard_fence(g: RefCounted, outer: PackedVector2Array) -> void:
 
 func _gate(g: RefCounted) -> void:
 	for x in [-2.05,2.05]:
-		g.part("box", Vector3(x,1.7,20), Vector3(.32,3.4,.32), "59452e")
-		GEO.solid(self, "GatePost", Vector3(x,1.7,20), Vector3(.32,3.4,.32))
-	g.part("box", Vector3(0,3.4,20), Vector3(4.6,.7,.30), "3d3129")
-	GEO.solid(self, "GateBeam", Vector3(0,3.4,20), Vector3(4.6,.7,.30))
+		g.part("box", Vector3(x,1.7,7), Vector3(.32,3.4,.32), "59452e")
+		GEO.solid(self, "GatePost", Vector3(x,1.7,7), Vector3(.32,3.4,.32))
+	g.part("box", Vector3(0,3.4,7), Vector3(4.6,.7,.30), "3d3129")
+	GEO.solid(self, "GateBeam", Vector3(0,3.4,7), Vector3(4.6,.7,.30))
 	var label := Label3D.new()
 	label.text = "Forja da Serra"
 	label.font_size = 64
 	label.pixel_size = .008
-	label.position = Vector3(0,3.41,20.17)
+	label.position = Vector3(0,3.41,7.17)
 	label.modulate = Color("f0c890")
 	label.outline_size = 0
 	add_child(label)
 	# Ferradura e martelo cruzados sobre a viga: o ofício lido de longe, sem letreiro explicativo.
-	g.part("box", Vector3(0,4.05,20.05), Vector3(.9,.10,.10), "2d3033", Vector3(0,0,.6))
-	g.part("box", Vector3(0,4.05,20.05), Vector3(.9,.10,.10), "2d3033", Vector3(0,0,-.6))
+	g.part("box", Vector3(0,4.05,7.05), Vector3(.9,.10,.10), "2d3033", Vector3(0,0,.6))
+	g.part("box", Vector3(0,4.05,7.05), Vector3(.9,.10,.10), "2d3033", Vector3(0,0,-.6))
 
 func _workshop(g: RefCounted) -> void:
 	# Oficina aberta na frente (z = -1,5): fundo e laterais de pedra, esteios de madeira,
