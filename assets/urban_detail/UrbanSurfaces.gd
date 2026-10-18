@@ -209,6 +209,7 @@ static func _bump_for(kind: String) -> float:
 		"gravel": return 6.0
 		"metal", "fabric": return 1.6
 		"snow": return 2.0
+		"cactus": return 5.0
 		_: return 3.0
 
 
@@ -352,11 +353,29 @@ static func _pixel(kind: String, x: int, y: int, n: Vector3, seed_value: int, co
 			if _hash01(x / 5, y / 9, 81) > 0.9: v -= 0.12
 			return [Color(v * 1.03, v, v * 0.93), furrow]
 		"cactus":
-			# Costelas verticais lisas (32 px) e pintas claras de espinho em fileira nas cristas.
-			var rib := absf(sin(float(x) * TAU / 32.0))
-			var v := 0.58 + rib * 0.3 + (stain - 0.5) * 0.1 + (n.z - 0.5) * 0.06
-			if rib > 0.92 and y % 12 == 0: v = minf(v + 0.28, 1.0)
-			return [Color(v * 0.96, v, v * 0.92), rib]
+			# Costela de ~6 cm (64 px num metro): crista arredondada e sulco estreito e escuro, como
+			# no saguaro. A versão de 32 px com pinta de 1 px lia como listra lisa de plástico.
+			var phase := fposmod(float(x) / 64.0, 1.0)
+			var ridge := sin(phase * PI)
+			var rib := pow(ridge, 0.6)
+			var groove := 1.0 - smoothstep(0.0, 0.18, minf(phase, 1.0 - phase))
+			# Faixas verticais de tom (sol e idade): o ruído médio esticado 8x na vertical.
+			var streak := (medium.get_pixel(x, (y / 8) % SIZE).r - 0.5) * 0.14
+			var v := 0.52 + rib * 0.34 - groove * 0.2 + streak + (n.z - 0.5) * 0.05
+			var warm := 0.0
+			# Aréolas na crista a cada ~6 cm (16 px divide o mapa sem emenda), alternadas entre costelas:
+			# ponto claro de lã e espinhos amarelados que escorrem para baixo.
+			var local_y := posmod(y + floori(float(x) / 64.0) * 8, 16)
+			var cx := absf(phase - 0.5) * 64.0
+			var spot := Vector2(cx, float(local_y) - 4.0).length()
+			if spot < 2.2:
+				v = 0.95
+				warm = 0.12
+			elif cx < 1.0 and local_y > 6 and local_y < 12:
+				v = minf(v + 0.3, 1.0)
+				warm = 0.2
+			var height := rib - groove * 0.6 + (0.25 if spot < 2.2 else 0.0)
+			return [Color(minf(v * (0.96 + warm), 1.0), minf(v * (1.0 + warm * 0.6), 1.0), v * (0.9 - warm * 0.4)), height]
 		"foliage":
 			var leaf: float = medium.get_pixel((x * 2) % SIZE, (y * 2) % SIZE).r
 			var v := 0.5 + leaf * 0.38 + (n.z - 0.5) * 0.22

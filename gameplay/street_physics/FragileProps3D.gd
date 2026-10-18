@@ -34,6 +34,9 @@ const KINDS := {
 	"pallet": {"family": "light", "radius": 1.2, "drag": 0.05, "damage": 1.0, "sound": "wood"},
 	"desert_rock": {"family": "light", "radius": 1.1, "drag": 0.20, "damage": 7.0, "sound": "stone"},
 	"desert_tree": {"family": "light", "radius": 0.4, "drag": 0.10, "damage": 3.0, "sound": "wood"},
+	# Chão povoado do deserto (DesertGroundCover): moita grande e pedra solta.
+	"desert_shrub": {"family": "light", "radius": 0.55, "drag": 0.04, "damage": 0.0, "sound": "wood"},
+	"desert_stone": {"family": "light", "radius": 0.45, "drag": 0.18, "damage": 2.0, "sound": "stone"},
 	# Térreo da calçada (SidewalkFill): plástico, madeira e lata que o carro espalha.
 	"cafe_set": {"family": "light", "radius": 0.85, "drag": 0.04, "damage": 0.5, "sound": "wood"},
 	"cafe_parasol": {"family": "light", "radius": 0.9, "drag": 0.05, "damage": 0.5, "sound": "wood"},
@@ -253,7 +256,7 @@ static func _tumble(item: Dictionary, flat: Vector3, speed: float, director: Nod
 	var launch := flat * speed * randf_range(0.95, 1.3) + side * speed * randf_range(-0.15, 0.15) + Vector3.UP * clampf(speed * 0.18, 0.5, 4.0)
 	launch = launch.limit_length(26.0)
 	var spin := side * clampf(speed * 1.6, 2.0, 22.0) + Vector3.UP * randf_range(-4.0, 4.0)
-	if item.kind == "desert_tree":
+	if item.kind in ["desert_tree", "desert_shrub", "desert_stone"]:
 		# Árvore cede e tomba onde estava: com a velocidade cheia do carro ela saía voando longe.
 		launch = flat * minf(speed * 0.15, 2.5) + Vector3.UP * 0.3
 		spin = side * clampf(speed * 0.25, 1.0, 2.5)
@@ -343,7 +346,7 @@ const DEBRIS_LAYER := 8
 const MAX_DEBRIS := 18
 const DEBRIS_LIFETIME := 10.0
 ## kg; o carro leva ~1200 kg.
-const MASSES := {"trash_can": 11.0, "news_box": 28.0, "mailbox": 45.0, "hydrant": 60.0, "bench_seat": 55.0, "dumpster": 100.0, "trash_bags": 5.0, "planter": 90.0, "desert_rock": 180.0, "desert_tree": 35.0, "lamp": 90.0, "signal_pole": 120.0, "stop_sign": 18.0, "phone_booth": 200.0,
+const MASSES := {"trash_can": 11.0, "news_box": 28.0, "mailbox": 45.0, "hydrant": 60.0, "bench_seat": 55.0, "dumpster": 100.0, "trash_bags": 5.0, "planter": 90.0, "desert_rock": 180.0, "desert_tree": 35.0, "desert_shrub": 8.0, "desert_stone": 60.0, "lamp": 90.0, "signal_pole": 120.0, "stop_sign": 18.0, "phone_booth": 200.0,
 	"cafe_set": 14.0, "cafe_parasol": 18.0, "produce_stand": 30.0, "a_frame": 6.0, "beer_crates": 16.0, "pot_plant": 25.0, "wheelie_bins": 22.0, "bike_rack": 40.0, "pallet_stack": 60.0, "tire_stack": 45.0, "drums": 50.0,
 	"cafe_parasol_b": 18.0, "food_cart": 60.0, "ice_freezer": 70.0, "clothes_rack": 12.0, "flower_buckets": 15.0, "gas_cylinders": 45.0, "door_bench": 15.0, "motorcycle": 150.0}
 static var _debris: Array = []

@@ -31,6 +31,8 @@ class Build:
 	var preview: Array = [[], [], [], [], []]
 	var preview_enabled := false
 	var committed := false
+	## [tipo, índice] das peças grandes que o carro acerta (moitas e pedras); o resto é chão.
+	var solid: Array[Vector2i] = []
 	## Altura da célula atual: com o chão plano (fora do relevo, da mina e do cânion, quase todo o
 	## deserto) os 4 cantos bastam e cada peça interpola, em vez de chamar a altura do trecho por peça.
 	var height: Callable
@@ -66,6 +68,7 @@ class Build:
 		sage = PackedFloat32Array(); brittle = PackedFloat32Array(); stone = PackedFloat32Array()
 		gravel = PackedFloat32Array(); tuft = PackedFloat32Array()
 		preview.clear()
+		solid.clear()
 
 static func enabled() -> bool:
 	if _enabled < 0: _enabled = 0 if OS.get_environment("GETECO_DESERT_GROUND_COVER") == "0" else 1
@@ -148,11 +151,13 @@ static func _add(state: Build, kind: int, p: Vector2, size: float, rng: RandomNu
 	basis = basis.scaled(squash * size)
 	# Peças sólidas afundam um pouco para não flutuar em chão inclinado.
 	var origin := Vector3(p.x, state.height_at(p) - (.25 * size if tumble else .04), p.y)
+	if (kind <= 1 and size >= .9) or (kind == 2 and size >= .45): state.solid.append(Vector2i(kind, state.buffer(kind).size() / 16))
 	state.push(kind, PackedFloat32Array([basis.x.x, basis.y.x, basis.z.x, origin.x, basis.x.y, basis.y.y, basis.z.y, origin.y, basis.x.z, basis.y.z, basis.z.z, origin.z, color.r, color.g, color.b, 1.0]))
 	if state.preview_enabled: state.preview[kind].append(Transform3D(basis, origin))
 
 static func _commit(chunk: Node3D, state: Build) -> void:
 	_prepare()
+	var visuals: Array = [null, null, null, null, null]
 	for kind in KINDS.size():
 		var buffer := state.buffer(kind)
 		if buffer.is_empty(): continue
@@ -176,6 +181,13 @@ static func _commit(chunk: Node3D, state: Build) -> void:
 			for i in batch.instance_count: colors.append(Color(buffer[i * 16 + 12], buffer[i * 16 + 13], buffer[i * 16 + 14], 1.0))
 			node.set_meta("preview_instance_colors", colors)
 		chunk.add_child(node)
+		visuals[kind] = node
+	# Moitas grandes e pedras entram no índice de quebráveis como as pedras e árvores do deserto:
+	# sem colisor nativo, a varredura do carro as derruba em vez de passar por cima delas.
+	var fragile := preload("res://gameplay/street_physics/FragileProps3D.gd")
+	for entry in state.solid:
+		var node: MultiMeshInstance3D = visuals[entry.x]
+		if node != null: fragile.register_instance("desert_stone" if entry.x == 2 else "desert_shrub", node.multimesh, entry.y, chunk, [], [], node)
 	state.release()
 
 static func material() -> StandardMaterial3D:
@@ -317,6 +329,12 @@ static func prewarm_draw(host: Node3D, curtain: CanvasLayer) -> void:
 		node.material_override = _material
 		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		stage.add_child(node)
+	# Pele do saguaro (UV do cilindro, não triplanar): variante própria, aquecida junto.
+	var saguaro := MeshInstance3D.new()
+	saguaro.mesh = CylinderMesh.new()
+	saguaro.scale = Vector3.ONE * .2
+	saguaro.material_override = preload("res://world/desert/DesertArchitecture.gd").saguaro_skin(Color("647052"), 1.0)
+	stage.add_child(saguaro)
 	var draws: Array[int] = [0]
 	var count_draw := func() -> void: draws[0] += 1
 	RenderingServer.frame_post_draw.connect(count_draw)

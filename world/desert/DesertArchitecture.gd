@@ -1,5 +1,6 @@
 extends RefCounted
 const G := preload("res://world/desert/DesertGeometry.gd")
+const FLORA := preload("res://assets/urban_detail/FloraSurfaces.gd")
 const DETAILS := preload("res://world/desert/DesertTownDetails.gd")
 const TRUCK_DETAILS := preload("res://world/desert/DesertTruckDetails.gd")
 const BITREM := preload("res://world/desert/DesertBitremModel.gd")
@@ -107,12 +108,28 @@ static func truck_stop(include_trucks := true) -> Node3D:
 	MATERIALS.batch_visuals(root)
 	return root
 
+static var _saguaro_skins := {}
+## Um material por cor e comprimento (arredondado a 0,25 m) para a aréola manter o espaçamento.
+static func saguaro_skin(tint: Color, length: float) -> StandardMaterial3D:
+	var rows := maxf(roundf(length*4.0)*.25,.25)
+	var key := "%s:%.2f" % [tint.to_html(false),rows]
+	if _saguaro_skins.has(key): return _saguaro_skins[key]
+	var mat := FLORA.material("cactus",tint,1.0,1.0,.9,true).duplicate() as StandardMaterial3D
+	mat.uv1_triplanar=false
+	mat.uv1_world_triplanar=false
+	mat.uv1_scale=Vector3(4.0,rows,1.0)
+	_saguaro_skins[key]=mat
+	return mat
+
 static func cactus(height: float) -> Node3D:
 	var root := Node3D.new()
 	root.name="Saguaro"
-	G.cylinder(root,"Stem",Vector3(0,height*.5,0),.18,height,Color("647052"),height>2.2)
+	# Mapa de costelas e aréolas da flora no UV do cilindro (16 costelas em volta, aréola a cada ~6 cm):
+	# o triplanar das outras plantas fazia faixa escura no tronco e anéis nos braços.
+	G.cylinder(root,"Stem",Vector3(0,height*.5,0),.18,height,Color("647052"),height>2.2).material_override=saguaro_skin(Color("647052"),height)
 	for side in [-1.0,1.0]:
 		var arm := G.cylinder(root,"Arm",Vector3(side*.35,height*.53,0),.11,.7,Color("6c7454"))
 		arm.rotation.z=PI*.5
-		G.cylinder(root,"Tip",Vector3(side*.66,height*.67,0),.115,height*.29,Color("6c7454"))
+		arm.material_override=saguaro_skin(Color("6c7454"),.7)
+		G.cylinder(root,"Tip",Vector3(side*.66,height*.67,0),.115,height*.29,Color("6c7454")).material_override=saguaro_skin(Color("6c7454"),height*.29)
 	return root
