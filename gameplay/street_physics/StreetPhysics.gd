@@ -180,7 +180,8 @@ func _hit_people(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> 
 func _hit_props(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> void:
 	# Closing speed cannot exceed planar speed. Below the existing impact limit,
 	# FragileProps.hit has no effect; skip collecting candidates for creeping cars.
-	if planar.length() < FRAGILE.WOBBLE_SPEED: return
+	# Postes que não cedem seguram o carro até parado; abaixo disso nada mais reage.
+	if planar.length() < 0.05: return
 	var start := vehicle.global_transform
 	var inverse := start.affine_inverse()
 	var local_motion := inverse.basis * motion
@@ -221,9 +222,14 @@ func _hit_props(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> v
 		toward.y = 0
 		var closing := planar.dot(toward.normalized()) if toward.length_squared() > 0.0001 else planar.length()
 		if closing <= 0.0: continue
+		if closing < FRAGILE.WOBBLE_SPEED:
+			_hold_at_post(vehicle, item, toward)
+			continue
 		var hit_began := STALL_WORK.begin()
 		var yielded := FRAGILE.hit(item, closing, planar, self)
 		STALL_WORK.finish_slow("street.pre.props.hit", hit_began, 5000, vehicle)
+		if not yielded:
+			_hold_at_post(vehicle, item, toward)
 		if yielded:
 			var spec: Dictionary = FRAGILE.spec(item)
 			var response := CRUSH.light_impact_response(vehicle, planar.length())
@@ -234,6 +240,24 @@ func _hit_props(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> v
 			if is_instance_valid(effects) and is_instance_valid(effects.get("impact_effects")):
 				effects.impact_effects.present_impact(item.point + Vector3.UP * 0.6, -toward.normalized(), closing, hash(item.point))
 			if spec.family == "post" and response > 0.01: _shake_if_player(vehicle, 0.12 * response)
+
+
+## Poste em pé que não cedeu é obstáculo: a maioria não tem colisor nativo (a mobília do
+## CityLook não atrapalha pedestre), então devagar o carro atravessava o poste.
+func _hold_at_post(vehicle: CharacterBody3D, item: Dictionary, toward: Vector3) -> void:
+	if item.get("state", "") != "standing" or FRAGILE.spec(item).family != "post": return
+	if toward.length_squared() < 0.0001: return
+	var normal := toward.normalized()
+	var into := vehicle.velocity.x * normal.x + vehicle.velocity.z * normal.z
+	if into <= 0.0: return
+	var keep := Vector3(vehicle.velocity.x, 0, vehicle.velocity.z) - normal * into
+	var factor := keep.length() / maxf(Vector2(vehicle.velocity.x, vehicle.velocity.z).length(), 0.001)
+	vehicle.velocity.x = keep.x
+	vehicle.velocity.z = keep.z
+	var horizontal = vehicle.get("horizontal_velocity")
+	if horizontal is Vector3: vehicle.set("horizontal_velocity", Vector3(keep.x, horizontal.y, keep.z))
+	var current: Variant = vehicle.get("speed")
+	if current is float: vehicle.set("speed", current * factor)
 
 
 static func swept_prop_contact(point: Vector3, motion: Vector3, width: float, length: float) -> bool:
