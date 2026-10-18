@@ -134,7 +134,7 @@ def flatten(image: Image.Image) -> Image.Image:
     return image.convert("RGB")
 
 
-def glow_mask(path: pathlib.Path, width: int, warp: list = None) -> Image.Image:
+def glow_mask(path: pathlib.Path, width: int, warp: list = None, min_r: int = 115) -> Image.Image:
     night = flatten(Image.open(path))
     night = night.resize((width, round(width * night.height / night.width)), Image.LANCZOS)
     if warp:
@@ -143,7 +143,7 @@ def glow_mask(path: pathlib.Path, width: int, warp: list = None) -> Image.Image:
     for y in range(night.height):
         for x in range(night.width):
             r, g, b = pixels[x, y]
-            warm = r > 115 and r > b * 1.5 and g > b * 1.15
+            warm = r > min_r and r > b * 1.5 and g > b * 1.15
             pixels[x, y] = (r, g, b) if warm else (0, 0, 0)
     return night
 
@@ -217,7 +217,9 @@ def convert_tall(style: str, source: pathlib.Path, target: pathlib.Path, entry: 
             width = int(sizes.get(f"{side}-{piece}", TALL_WIDTHS[key]))
             image = flatten(day).resize((width, round(width * day.height / day.width)), Image.LANCZOS)
             image.save(target / f"{key}_{name}.jpg", quality=88, optimize=True)
-            glow_mask(source / f"{side}-{piece}-noite.png", width).save(target / f"{key}_{name}_glow.jpg", quality=85, optimize=True)
+            # "glow_min_r": parede quente e clara à noite (reboco ocre, tijolo) passava
+            # no corte padrão e acendia inteira; o estilo sobe o mínimo de vermelho.
+            glow_mask(source / f"{side}-{piece}-noite.png", width, None, int(entry.get("glow_min_r", 115))).save(target / f"{key}_{name}_glow.jpg", quality=85, optimize=True)
     for part, name in TALL_DOORS.items():
         if not (source / f"{part}.png").exists():
             continue

@@ -16,6 +16,15 @@ extends RefCounted
 ## continua abaixo da torre vizinha quando ela também for pintada (13 m).
 const TALL := {
 	"CivicTower": {"style": "torre-civica", "height": 10.0},
+	# Rodada de 18/10 (pacotes do Codex de 15-16/10): GETECO_PAINTED_TALL_18=0 desliga só
+	# estes três para A/B. Exchange com 13 m (térreo + 2 andares + topo; V1 tinha 8 m)
+	# fica acima da CivicTower vizinha. Os dois de moradia são "office" que usavam a
+	# casca/cena assada antiga; a largura de cada um fica a até 16% da pintura (lofts
+	# 14 m em 13,1 m; misto 10 m em 11,6 m), e o letreiro pintado FOUNDRY LOFTS não é o
+	# nome do jogo (NORTH UNION), como nos prédios de HARBOR em PaintedHarborHouses.
+	"ExchangeTower": {"style": "torre-exchange", "height": 13.0, "env": "GETECO_PAINTED_TALL_18"},
+	"UnionApartments": {"style": "lofts-fundicao", "height": 13.0, "env": "GETECO_PAINTED_TALL_18"},
+	"Apartments": {"style": "predio-misto", "height": 10.0, "env": "GETECO_PAINTED_TALL_18"},
 }
 
 
@@ -26,6 +35,7 @@ static func enabled() -> bool:
 ## Estilo alto do prédio, ou "" (piloto desligado, id sem pacote ou estilo não importado).
 static func style_for(building_id: String) -> String:
 	if not enabled() or not TALL.has(building_id): return ""
+	if TALL[building_id].has("env") and OS.get_environment(TALL[building_id].env) == "0": return ""
 	var style: String = TALL[building_id].style
 	return style if PaintedFacadeKit.is_tall(style) else ""
 
