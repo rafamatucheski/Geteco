@@ -9,6 +9,11 @@ const ECONOMY := preload("res://systems/economy/Economy.gd")
 const WILDS := preload("res://runtime/desert/wilds/DesertWilds.gd")
 const VICTIMS := preload("res://gameplay/police_response/CrimeVictims.gd")
 const PENALTY := preload("res://runtime/RecoveryPenalty.gd")
+const BALANCE := preload("res://data/catalogs/EconomyBalance.gd")
+const STORY_PAY := preload("res://systems/campaign/StoryPay.gd")
+const MISSIONS := preload("res://data/campaign/HarborMissions.gd")
+const TOWS := preload("res://data/catalogs/TowJobs.gd")
+const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 
 class IsolatedLaunch extends "res://runtime/SessionLaunch.gd":
 	var folder := ""
@@ -46,10 +51,11 @@ func _initialize() -> void:
 	create_timer(60).timeout.connect(func(): failures.append("watchdog 60 s"); finish())
 	run.call_deferred()
 
-func check(ok: bool, label: String) -> void:
+func check(ok: bool, label: String) -> bool:
 	checks += 1
 	print("CORE_CONTRACTS ", "PASS " if ok else "FAIL ", label)
 	if not ok: failures.append(label)
+	return ok
 
 func write(path: String, text: String) -> void:
 	var file := FileAccess.open(path, FileAccess.WRITE)
@@ -63,6 +69,7 @@ func run() -> void:
 	slot_recovery()
 	desert_caves()
 	recovery_penalty()
+	economy_balance()
 	await crime_victims()
 	finish()
 
@@ -194,6 +201,35 @@ func recovery_penalty() -> void:
 	var cheat = ECONOMY.new()
 	cheat.cheat_infinite_money = true
 	check(PENALTY.apply(cheat, false).amount == 0, "modo desenvolvedor com dinheiro infinito não paga")
+
+# --- Economia: a história paga e libera o guincho; nada quebra save antigo -------------------
+
+func economy_balance() -> void:
+	var story_total := 0
+	for id in MISSIONS.ORDER: story_total += STORY_PAY.total(id)
+	check(story_total == 21500, "história do Harbor paga R$ 21.500 no total (%d)" % story_total)
+	var wallet = ECONOMY.new()
+	var paid: int = STORY_PAY.settle({"claimed_rewards": ["primeiro_giro", "cobra_contact", "missao_inexistente"]}, wallet)
+	check(paid == BALANCE.STORY_BONUS.primeiro_giro + BALANCE.STORY_BONUS.cobra_contact and wallet.balance == paid, "bônus sai para cada missão recebida")
+	check(STORY_PAY.settle({"claimed_rewards": ["primeiro_giro", "cobra_contact"]}, wallet) == 0, "bônus não sai duas vezes")
+	var saved: Dictionary = FIXTURE.full_snapshot(Vector3.ZERO, true)
+	var state = STATE.new()
+	if check(state.restore_snapshot(saved), "fixture: save com o Harbor concluído"):
+		# Como MissionWorld faz ao concluir: recebe a recompensa base antes do bônus.
+		for id in state.campaign.snapshot().pending_rewards.keys(): state.campaign.claim_reward(state.economy, id)
+		var claimed: Array = state.campaign.snapshot().claimed_rewards
+		var back_pay: int = STORY_PAY.settle(state.campaign.snapshot(), state.economy)
+		var expected := 0
+		for id in claimed: expected += int(BALANCE.STORY_BONUS.get(str(id), 0))
+		check(back_pay == expected and back_pay > 0, "save antigo recebe o retroativo uma vez (R$ %d)" % back_pay)
+		check(STATE.new().restore_snapshot(state.snapshot()), "recibos de bônus passam na validação do save")
+	check(TOWS.unlocked([]).size() == 1 and TOWS.unlocked([])[0] == 0 and TOWS.next_index(7, []) == 0, "guincho começa só com o reboque simples")
+	check(TOWS.unlocked(MISSIONS.ORDER).size() == TOWS.JOBS.size(), "fim do Harbor libera todas as faixas")
+	var cycle := 0
+	for job in TOWS.JOBS: cycle += int(job.reward)
+	check(cycle == 7100, "rodada completa do guincho paga R$ 7.100 (%d)" % cycle)
+	check(TOWS.reward_accepted(4, 6000) and TOWS.reward_accepted(4, 2400) and not TOWS.reward_accepted(4, 999), "contrato de guincho antigo continua válido")
+	check(preload("res://gameplay/armored/ArmoredSchedule.gd").CASH_PER_TRUCK == 20000, "carro-forte paga R$ 20.000")
 
 # --- Tabela de vítimas: arma e atropelamento contam igual ------------------------------------
 

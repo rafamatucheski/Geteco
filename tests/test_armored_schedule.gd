@@ -15,7 +15,7 @@ func run() -> void:
 	var reverse := SCHEDULE.departure(3,14.0/24.0)
 	check(reverse.origin == "desert_bank" and reverse.destination == "harbor_bank","Convoy can originate from desert bank")
 	check(SCHEDULE.departure(8,9.0/24.0).origin != first.origin,"Following week rotates origin")
-	check(SCHEDULE.CASH_PER_TRUCK == 40000,"Confirmed reward is 40k per truck, 80k total")
+	check(SCHEDULE.CASH_PER_TRUCK == preload("res://data/catalogs/EconomyBalance.gd").ARMORED_CASH_PER_TRUCK and SCHEDULE.CASH_PER_TRUCK > 0,"Reward per truck comes from the economy table")
 	var previous := SCHEDULE.security(0)
 	for level in range(1,7):
 		var next := SCHEDULE.security(level)
@@ -44,17 +44,17 @@ func run() -> void:
 	check(SCHEDULE.restore(pose_record).is_empty(),"Invalid admission marker rejected before restore")
 	row.opened[0] = true
 	row.taken[0] = true
-	row.pending = 40000
-	check(SCHEDULE.valid_saved(saved),"One opened truck records exactly 40k carried")
-	row.pending = 80000
+	row.pending = SCHEDULE.CASH_PER_TRUCK
+	check(SCHEDULE.valid_saved(saved),"One opened truck records exactly one truck carried")
+	row.pending = SCHEDULE.CASH_PER_TRUCK * 2
 	check(not SCHEDULE.valid_saved(saved),"Cannot claim both rewards after opening only one truck")
 	row.pending = 0
 	row.secured[0] = true
 	check(SCHEDULE.valid_saved(saved),"Secured first truck stays consumed")
 	row.opened[1] = true
 	row.taken[1] = true
-	row.pending = 40000
-	check(SCHEDULE.valid_saved(saved),"Returning for second truck preserves only its unpaid 40k")
+	row.pending = SCHEDULE.CASH_PER_TRUCK
+	check(SCHEDULE.valid_saved(saved),"Returning for second truck preserves only its unpaid truck")
 	row.phase = "finished"
 	row.pending = 0
 	check(SCHEDULE.valid_saved(saved),"Failed event consumes stolen cargo without granting it")

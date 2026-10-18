@@ -1,6 +1,8 @@
 extends RefCounted
 ## Calendar time is the existing saved moon_day + time, never the OS clock.
-const CASH_PER_TRUCK := 40000
+## Valor por carro-forte vem da tabela de economia (era 40.000). Salvar fica bloqueado com
+## saque pendente, então nenhum save guarda o valor antigo em "pending".
+const CASH_PER_TRUCK: int = preload("res://data/catalogs/EconomyBalance.gd").ARMORED_CASH_PER_TRUCK
 const DAYS := [1, 3, 5]
 const HOURS := [9, 14, 17]
 const BANKS := ["harbor_bank", "desert_bank"]

@@ -216,7 +216,7 @@ func run() -> void:
 	var economy_before: Dictionary = session.state.economy.snapshot()
 	if not check(session.nearest().get("id", "") == "armored_transport", "ordinary session interaction selects the exposed service vault"): _trace("vault-unreachable"); finish(1); return
 	check(await session.interact(), "ordinary E interaction takes the service cash under live threat")
-	check(convoy.data.pending == 40000 and session.state.economy.balance == wallet_before, "R$40000 stays unsecured while the armed response is active")
+	check(convoy.data.pending == SCHEDULE.CASH_PER_TRUCK and session.state.economy.balance == wallet_before, "one truck stays unsecured while the armed response is active")
 	check(not session.save_block_reason().is_empty() and not session.save_game(), "production checkpoint writes are refused while carrying the money")
 	_persist_diagnostic()
 	await photo("robbery")

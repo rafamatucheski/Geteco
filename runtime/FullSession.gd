@@ -11,6 +11,7 @@ const V1_DEATH_AUDIO := preload("res://audio/V1DeathAudio.gd")
 const DOOR_TRANSITION := preload("res://runtime/DoorTransition.gd")
 const REWARD_AUDIO := preload("res://gameplay/RewardAudio.gd")
 const RECOVERY_PENALTY := preload("res://runtime/RecoveryPenalty.gd")
+const STORY_PAY := preload("res://systems/campaign/StoryPay.gd")
 const WORKPLACE_REACTION := preload("res://gameplay/civilian_reactions/WorkplaceThreatReaction.gd")
 const DIALOGUE_CARD := preload("res://ui/dialogue/DialogueCard.gd")
 const DIALOGUE_CAPTION := preload("res://ui/dialogue/DialogueCaption.gd")
@@ -923,10 +924,17 @@ func restore_location() -> void:
 	_refresh_routine_context()
 	# O menu acabou de recuperar este slot (SessionLaunch._publish_recovery): diga o que voltou ao padrão.
 	var launch := get_node_or_null("/root/V2Launch")
+	var load_notices: Array[String] = []
 	var recovery_text: Variant = launch.get("recovery_notice") if launch != null else null
 	if recovery_text is String and not recovery_text.is_empty():
-		show_message(recovery_text)
+		load_notices.append(recovery_text)
 		launch.recovery_notice = ""
+	# Save de antes do bônus de missão (EconomyBalance.STORY_BONUS): paga uma vez o que faltou.
+	var back_pay: int = STORY_PAY.settle(state.campaign.snapshot(), state.economy)
+	if back_pay > 0:
+		load_notices.append(String(TranslationServer.translate("Bônus das missões já concluídas: + R$ %d")) % back_pay)
+		world.gameplay.changed.emit()
+	if not load_notices.is_empty(): show_message(" · ".join(load_notices))
 	if world.gameplay.health <= 0 or restore_blocked: _on_death()
 
 func _saved_garage_driver() -> Dictionary:

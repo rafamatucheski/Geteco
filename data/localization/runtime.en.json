@@ -534,5 +534,7 @@
   "guincho não restaurou": "tow job did not restore",
   "Conta do hospital: − R$ %d": "Hospital bill: − R$ %d",
   "Multa da prisão: − R$ %d": "Arrest fine: − R$ %d",
-  "Munição apreendida: %d tiros": "Ammo confiscated: %d rounds"
+  "Munição apreendida: %d tiros": "Ammo confiscated: %d rounds",
+  "%s concluída · + R$ %d": "%s complete · + R$ %d",
+  "Bônus das missões já concluídas: + R$ %d": "Bonus for missions already completed: + R$ %d"
 }

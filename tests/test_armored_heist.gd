@@ -235,18 +235,18 @@ func run() -> void:
 	check(event.data.opened[0] and event.fleet[0].opened and f.session.state.economy.inventory.get("lockpick",0) == 2, "solved cylinder opens the visible vault without consuming an unbroken pick")
 	event._explosion(event.fleet[0].door_point(), 3, f.world.player)
 	check(event.data.opened[0], "a later explosion cannot close an already opened vault")
-	check(event.perform(0) and event.data.pending == 40000 and f.session.state.economy.balance == balance, "first truck carries R$40000 pending escape instead of instant wallet credit")
-	check(not event.perform(0) and event.data.pending == 40000, "the same truck cannot be collected twice")
+	check(event.perform(0) and event.data.pending == SCHEDULE.CASH_PER_TRUCK and f.session.state.economy.balance == balance, "first truck carries one truck pending escape instead of instant wallet credit")
+	check(not event.perform(0) and event.data.pending == SCHEDULE.CASH_PER_TRUCK, "the same truck cannot be collected twice")
 	check(not event.save_block_reason().is_empty(), "unsecured money blocks checkpoints")
 	f.world.player.position += Vector3(200, 0, 0)
 	f.game.stars = 1
 	event._tick_escape(10)
-	check(event.data.pending == 40000 and f.session.state.economy.balance == balance, "distance alone cannot secure cash while police still want Dante")
+	check(event.data.pending == SCHEDULE.CASH_PER_TRUCK and f.session.state.economy.balance == balance, "distance alone cannot secure cash while police still want Dante")
 	f.game.stars = 0
 	event._tick_escape(8)
-	check(event.data.pending == 0 and f.session.state.economy.balance == balance + 40000, "clean escape credits exactly the first truck's R$40000")
+	check(event.data.pending == 0 and f.session.state.economy.balance == balance + SCHEDULE.CASH_PER_TRUCK, "clean escape credits exactly the first truck's one truck")
 	event._secure_cash()
-	check(f.session.state.economy.balance == balance + 40000, "repeated settlement cannot duplicate the first receipt")
+	check(f.session.state.economy.balance == balance + SCHEDULE.CASH_PER_TRUCK, "repeated settlement cannot duplicate the first receipt")
 	f.world.player.position = event.fleet[1].door_point() - Vector3.UP * .4
 	event._explosion(event.fleet[1].door_point(), 3, null)
 	check(not event.data.opened[1], "unattributed explosion cannot produce a player vault breach")
@@ -254,9 +254,9 @@ func run() -> void:
 	check(event.data.opened[1] and event.perform(1), "returning after escape can breach and take the second truck")
 	f.world.player.position += Vector3(200, 0, 0)
 	event._tick_escape(8)
-	check(f.session.state.economy.balance == balance + 80000 and event.data.secured == [true, true], "separate escapes pay R$40000 per truck with two distinct receipts")
+	check(f.session.state.economy.balance == balance + SCHEDULE.CASH_PER_TRUCK * 2 and event.data.secured == [true, true], "separate escapes pay one truck per truck with two distinct receipts")
 	event._secure_cash()
-	check(f.session.state.economy.balance == balance + 80000 and event.save_block_reason().is_empty(), "finished payouts remain idempotent and release the save block")
+	check(f.session.state.economy.balance == balance + SCHEDULE.CASH_PER_TRUCK * 2 and event.save_block_reason().is_empty(), "finished payouts remain idempotent and release the save block")
 	event._persist()
 	check(SCHEDULE.valid_saved(f.session.state.world_state[SCHEDULE.KEY]), "physical heist state persists in the production validated schema")
 	f.world.free()
@@ -273,16 +273,16 @@ func run() -> void:
 		pursuer.global_position = f.world.player.global_position + Vector3(20, 0, 0)
 		event.guards[0] = pursuer
 		event._tick_escape(9)
-		check(event.data.pending == 40000 and event.escape_seconds == 0 and f.session.state.economy.balance == before_escape, "living nearby guard blocks cash even with fleet far away and no stars (" + released_by + ")")
+		check(event.data.pending == SCHEDULE.CASH_PER_TRUCK and event.escape_seconds == 0 and f.session.state.economy.balance == before_escape, "living nearby guard blocks cash even with fleet far away and no stars (" + released_by + ")")
 		if released_by == "distance":
 			pursuer.global_position = f.world.player.global_position + Vector3(36, 0, 0)
 		else:
 			pursuer.dead = true
 			pursuer.health = 0
 		event._tick_escape(7.9)
-		check(event.data.pending == 40000 and f.session.state.economy.balance == before_escape, "guard clearance starts a fresh full eight-second escape window (" + released_by + ")")
+		check(event.data.pending == SCHEDULE.CASH_PER_TRUCK and f.session.state.economy.balance == before_escape, "guard clearance starts a fresh full eight-second escape window (" + released_by + ")")
 		event._tick_escape(.2)
-		check(event.data.pending == 0 and f.session.state.economy.balance == before_escape + 40000, "guard outside combat perimeter or dead releases the reward after escape (" + released_by + ")")
+		check(event.data.pending == 0 and f.session.state.economy.balance == before_escape + SCHEDULE.CASH_PER_TRUCK, "guard outside combat perimeter or dead releases the reward after escape (" + released_by + ")")
 		f.world.free()
 	for phase in ["loading", "unloading"]:
 		f = fixture()
@@ -291,7 +291,7 @@ func run() -> void:
 		event._update_crew()
 		check(event.fleet[0].opened and not event.data.opened[0] and event.nearest_action().label.contains("40.000"), phase + " exposes the service vault and offers opportunistic robbery")
 		f.session.state.economy.consume_item("lockpick", 3)
-		check(event.perform(0) and event.data.pending == 40000 and event.data.opened[0] and not event.minigame.active, phase + " can be robbed directly without a lockpick while guards handle cash")
+		check(event.perform(0) and event.data.pending == SCHEDULE.CASH_PER_TRUCK and event.data.opened[0] and not event.minigame.active, phase + " can be robbed directly without a lockpick while guards handle cash")
 		check(SCHEDULE.valid_saved(f.session.state.world_state[SCHEDULE.KEY]), phase + " robbery records a valid breached and taken vault")
 		f.world.free()
 	f = fixture()

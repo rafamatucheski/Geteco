@@ -6,8 +6,9 @@ extends RefCounted
 ##   prisão: sai pela delegacia (Harbor), paga a multa e perde a munição que carregava.
 ## Serra e deserto não têm hospital nem delegacia no catálogo: o resgate continua no ponto da
 ## região, com a mesma conta.
-const RATE := 0.10
-const CAP := 2000
+const BALANCE := preload("res://data/catalogs/EconomyBalance.gd")
+const RATE: float = BALANCE.RECOVERY_RATE
+const CAP: int = BALANCE.RECOVERY_CAP
 const HOSPITAL := "harbor_hospital"
 const PRECINCT := "harbor_police"
 

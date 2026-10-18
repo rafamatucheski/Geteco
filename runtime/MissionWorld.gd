@@ -22,6 +22,7 @@ var failure_retry_clock := 0.0
 var street_race: Node3D
 var pending_clue := ""
 const STREET_COURSE := preload("res://gameplay/urban_v1/CobraRaceCourse.gd")
+const STORY_PAY := preload("res://systems/campaign/StoryPay.gd")
 
 func _ready() -> void:
 	targets.neco = Vector3(-750,0,550)*UNIT+Vector3(-6,0,8.7)
@@ -250,6 +251,10 @@ func _event(event: String, target: String, extras := {}) -> bool:
 		pending_clue = completed_id
 		session.state.world_state.harbor_pending_clue = pending_clue
 	for id in session.state.campaign.snapshot().pending_rewards.keys(): session.state.campaign.claim_reward(session.state.economy,id)
+	# Bônus de conclusão (EconomyBalance.STORY_BONUS) e aviso do total: antes a missão pagava
+	# em silêncio, só o número da carteira mudava.
+	if STORY_PAY.settle(session.state.campaign.snapshot(),session.state.economy) > 0 and not completed_id.is_empty():
+		session.show_message(STORY_PAY.completion_notice(completed_id))
 	if session.state.campaign.active_id.is_empty(): session.save_game()
 	return true
 
@@ -625,7 +630,8 @@ static func _tow_identity(job: Dictionary) -> String:
 	var index: Variant = job.get("index")
 	if typeof(index) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(index)) or float(index) != floorf(float(index)) or int(index) not in range(5): return ""
 	var source: Dictionary = preload("res://data/catalogs/TowJobs.gd").JOBS[int(index)]
-	for field in ["kind","reward","duration"]:
+	if not preload("res://data/catalogs/TowJobs.gd").reward_accepted(int(index), job.get("reward")): return ""
+	for field in ["kind","duration"]:
 		if job.get(field) != source[field]: return ""
 	return token
 

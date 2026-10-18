@@ -374,7 +374,8 @@ func _tow_service_position() -> Vector3:
 
 func _accept_tow() -> bool:
 	if not _data.tow_contract.is_empty() or _data.tow_taken_today >= 3 or _data.tow_delivered_today >= 6: session.show_message("Serviços do dia encerrados."); return true
-	var index: int = int(_data.tow_completed)%TowJobs.JOBS.size()
+	# Faixas que pagam mais abrem com a história (EconomyBalance.TOW_TIERS).
+	var index: int = TowJobs.next_index(int(_data.tow_completed), session.state.campaign.snapshot().completed)
 	var job: Dictionary = TowJobs.JOBS[index].duplicate(true)
 	if not is_instance_valid(session.mission_world) or not session.mission_world.has_method("begin_tow_job"): return false
 	job.token = "tow_%d"%(int(_data.tow_serial)+1)
@@ -512,6 +513,6 @@ static func validate_snapshot(saved: Dictionary) -> bool:
 		var job: Dictionary = saved.tow_contract
 		if typeof(job.get("index")) not in [TYPE_INT,TYPE_FLOAT] or float(job.index)!=floorf(float(job.index)) or int(job.index)<0 or int(job.index)>=TowJobs.JOBS.size(): return false
 		var source: Dictionary = TowJobs.JOBS[int(job.index)]
-		if job.get("reward") != source.reward or job.get("duration") != source.duration or job.get("kind") != source.kind or not job.get("token") is String: return false
+		if not TowJobs.reward_accepted(int(job.index), job.get("reward")) or job.get("duration") != source.duration or job.get("kind") != source.kind or not job.get("token") is String: return false
 		if typeof(job.get("remaining")) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(job.remaining)) or float(job.remaining)<=0 or float(job.remaining)>float(source.duration): return false
 	return true
