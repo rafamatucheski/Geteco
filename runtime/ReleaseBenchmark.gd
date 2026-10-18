@@ -26,6 +26,9 @@ const ROUTES := {
 	"deserto": [Vector3(-1040, 0, -1320), Vector3(-950, 0, -1320), Vector3(-950, 0, -1260), Vector3(-1040, 0, -1260)],
 	# Estrada do sal: câmera e população reais ao lado do trajeto das cargas da madrugada.
 	"carga_deserto": [Vector3(-700, 0, -1542.5), Vector3(-500, 0, -1542.5)],
+	# Rota 66 do pedágio à estrada do sal (17/10): ~11 trechos novos se vestindo com o jogo rodando
+	# (chão povoado do deserto, A/B com GETECO_DESERT_GROUND_COVER=0). --play-at=desert,342.5,-470.
+	"rota66": [Vector3(347, 0, -470), Vector3(347, 0, -1500), Vector3(347, 0, -470)],
 	# Northbank e canal concentram 6 dos 15 sobrados/terraços (A/B das janelas pintadas, 15/10).
 	"sobrados": [Vector3(295, 0, 100), Vector3(340, 0, 100), Vector3(340, 0, -60), Vector3(295, 0, -60)],
 }

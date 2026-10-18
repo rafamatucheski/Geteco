@@ -11,6 +11,8 @@ static func material(color: Color, ground := false, asphalt := false) -> Materia
 		shader.shader = SURFACE
 		shader.set_shader_parameter("base_color",color)
 		shader.set_shader_parameter("asphalt",asphalt)
+		# Salpicado do chão anda junto com a cobertura nova (GETECO_DESERT_GROUND_COVER=0 desliga os dois).
+		shader.set_shader_parameter("speckle",1.0 if preload("res://world/desert/DesertGroundCover.gd").enabled() else 0.0)
 		mat=shader
 	else:
 		var standard := StandardMaterial3D.new()

@@ -66,6 +66,7 @@ static func _init_shoulder() -> void:
 	_shoulder_material.shader=SURFACE
 	_shoulder_material.set_shader_parameter("base_color",Color("b9a079"))
 	_shoulder_material.set_shader_parameter("shoulder",true)
+	_shoulder_material.set_shader_parameter("speckle",1.0 if preload("res://world/desert/DesertGroundCover.gd").enabled() else 0.0)
 
 static func shoulder_material() -> Material:
 	_prepare_resources()

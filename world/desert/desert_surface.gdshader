@@ -3,6 +3,7 @@ render_mode diffuse_burley;
 uniform vec4 base_color : source_color = vec4(0.59,0.44,0.28,1.0);
 uniform bool asphalt = false;
 uniform bool shoulder = false;
+uniform float speckle = 1.0;
 varying highp vec3 world_pos;
 
 vec3 surface_linear(vec3 srgb) {
@@ -63,6 +64,26 @@ void fragment() {
 		float ripple=sin(phase)*ripple_lod;
 		color=sand*(0.91+drift.x*0.18+ripple*0.055);
 		color+=(grain.x-0.5)*0.014*grain_lod;
+		// Chão salpicado da arte de carregamento (desert_highway.png): manchas cinzentas de pavimento
+		// de deserto e seixos de 4-10 cm, escuros e claros. Some com a pegada do pixel para não cintilar.
+		vec3 crust=field(p*0.045+vec2(41.0,-17.0));
+		float pavement=smoothstep(0.5,0.82,crust.x)*speckle;
+		color=mix(color,color*vec3(0.80,0.80,0.82),pavement*0.55);
+		highp vec2 cell=floor(p*3.2);
+		vec2 local=fract(p*3.2)-0.5;
+		vec2 jitter=vec2(hash(cell+3.1),hash(cell+9.7))-0.5;
+		float stone_radius=mix(0.12,0.32,hash(cell+5.5));
+		float density=mix(0.16,0.5,max(smoothstep(0.3,0.75,mineral.x),pavement));
+		float present=step(hash(cell+17.3),density);
+		float edge=length(local-jitter*0.45);
+		float aa=max(fwidth(edge),0.001);
+		float pebble=present*(1.0-smoothstep(stone_radius-aa,stone_radius+aa,edge));
+		float speckle_lod=(1.0-smoothstep(0.02,0.07,footprint))*speckle;
+		float tone=hash(cell+23.9);
+		vec3 stone_color=tone<0.62?color*vec3(0.50,0.49,0.50):color*vec3(1.12,1.10,1.06);
+		color=mix(color,stone_color,pebble*speckle_lod);
+		// Longe, só a média do salpicado: escurece de leve em vez de serrilhar.
+		color*=1.0-(1.0-speckle_lod)*speckle*density*0.07;
 		float gravel=shoulder?COLOR.r:0.0;
 		color=mix(color,color*vec3(0.67,0.72,0.77)+(grain.x-0.5)*grain_lod*0.020,gravel);
 		color*=1.0-gravel*smoothstep(0.57,0.8,drift.x)*0.16;
