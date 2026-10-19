@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-19",
+  "period": "2026-10-19",
+  "scope": "Katana na mão fora do golpe (parado, andando, correndo). Visto em capturas do palco de teste e do jogo (deserto, câmera do jogo); ninguém jogou com controle.",
+  "cards": [
+    {
+      "id": "katana-carregar-20261019",
+      "title": "Katana carregada para cima: parado, andando e correndo",
+      "status": "implemented",
+      "area": "combate",
+      "description": "Antes o Dante segurava a katana com os dois braços esticados e a lâmina na horizontal à frente ao andar e correr ('graveto'), e parado tocava a guarda baixa de greatsword do Mixamo, curvado. Agora: parado, duas mãos no cabo ao lado direito do peito com a lâmina em pé (hassō baixo, respiração); andando, só a direita, lâmina para cima e um pouco para fora do ombro, a esquerda balança com o passo; correndo, a lâmina vai para trás e para fora por cima do ombro. Em guarda (mirando, até 2,5 s depois de um golpe ou no RAGE) anda com as duas mãos. A ponta tem inércia ao arrancar, frear e virar. A troca golpe ↔ carregar mistura braços e lâmina (antes a espada girava de uma vez, até 34°/quadro). Ângulos escolhidos para a câmera do jogo: de costas, ≥ 50% da lâmina aparece (antes, correndo, ~19%).",
+      "sources": [
+        "gameplay/KatanaMoveset.gd",
+        "scripts/Actor.gd",
+        "gameplay/Gameplay.gd",
+        "tests/test_katana_carry.gd",
+        "tools/capture_katana_locomotion.gd",
+        "tests/capture/capture_katana_carry_session.gd"
+      ],
+      "next": "Jogar com teclado/controle e ver a troca de arma andando e o RAGE; o modelo da katana tem a curvatura para o lado do fio (katana real curva para o dorso)."
+    }
+  ],
+  "remove": []
+}

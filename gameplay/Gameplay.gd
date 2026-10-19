@@ -204,8 +204,8 @@ var _sheath_kind := ""
 var _sheath_length := 0.0
 var _sheath_age := 0.0
 var _sheath_last_id := ""
-var _katana_stance_clock := 0.0
-var _katana_stance_active := false
+## Como o Dante carrega a katana parado, andando e correndo (e os cortes de reserva).
+var _katana_moves = preload("res://gameplay/KatanaMoveset.gd").new()
 var visual_id := "@unbuilt"
 var contact_age := 10.0
 var _occupancy: Dictionary = {}
@@ -567,7 +567,6 @@ func _stall_physics_tick(delta: float) -> void:
 	_update_shoves(delta)
 	_update_combat_clip(player_delta)
 	_update_sheath(player_delta)
-	_update_katana_stance(player_delta)
 	_update_swing(player_delta)
 	_update_recoil(player_delta)
 	_update_muzzle_and_flame(delta)
@@ -702,11 +701,12 @@ func _update_weapon_pose(delta: float) -> void:
 		_shotgun_pump_sound_serial = _attack_serial
 		_play_stream(AUDIO.shotgun_pump(), player.global_position, -8.0 + _rng.randf_range(-1.0, 1.0), _rng.randf_range(0.97, 1.03), 12.0)
 	if id == "katana":
-		if _clip_name.begins_with("mixsword/gs_") or _katana_stance_active:
-			# Golpe ou guarda do Mixamo: o clipe move os braços; a katana vai nas duas mãos.
-			_pose_frame = {"visible": true, "armed": true, "native_sword": true, "hand_grip": HAND_KATANA_GUARD, "melee_action": _clip_name != ""}
-		else:
-			_pose_frame = preload("res://gameplay/KatanaMoveset.gd").pose(_katana_combo,_rig_pose.action_age,sprinting,float(player.phase))
+		# O carregar avança mesmo durante o golpe: ao fim do clipe a pose volta com os pesos em dia.
+		var ready: bool = aiming or _combat_clock - _katana_attack_clock < _katana_moves.READY_SECONDS or (is_instance_valid(rage) and rage.active)
+		_pose_frame = _katana_moves.update(delta, speed_now, float(player.phase), float(rig.get("body_bob", 0.0)), player.visual.rotation.y, ready, _katana_combo, _rig_pose.action_age)
+		if _clip_name.begins_with("mixsword/gs_"):
+			# Golpe do Mixamo: o clipe move os braços; a katana vai nas duas mãos.
+			_pose_frame = {"visible": true, "armed": true, "native_sword": true, "hand_grip": HAND_KATANA_GUARD, "melee_action": true}
 	if player.has_method("set_combat_weapon_pose"):
 		player.set_combat_weapon_pose(id, _pose_frame)
 
@@ -1064,8 +1064,9 @@ const SHEATH_HANDOFF := 0.08
 ## Power 18,5 m/s em 0,70 s; Low 27,6 m/s em 0,84 s). O dano entra nesse instante.
 const KATANA_ATTACKS := [["mixsword/gs_downward", 0.20, 0.64, 1.10], ["mixsword/gs_power", 0.25, 0.70, 1.30], ["mixsword/gs_low", 0.40, 0.84, 1.35]]
 const KATANA_ATTACK_RATE := 1.25
-## Guarda de duas mãos parado com a katana na mão (andando, segue a pose procedural, sem pés deslizando).
-const KATANA_STANCE := "mixsword/gs_idle"
+## Parado, andando e correndo com a katana na mão: `KatanaMoveset` (lâmina para cima). A guarda parada
+## "Great Sword Idle" do Mixamo saiu em 19/10/2026: lia como espadão baixo apontado para a frente, com o
+## Dante curvado.
 ## Medidas no esqueleto do Dante com o clipe da greatsword (cabo = origem da katana, ponta em -Z):
 ## nas costas (osso Spine02), o cabo fica onde a mão direita termina o guardar, atrás do ombro direito,
 ## e a lâmina desce até atrás do quadril esquerdo. Na mão (osso RightHand), a pegada do último quadro
@@ -1111,17 +1112,6 @@ func _update_sheath(delta: float) -> void:
 		if hand_katana != null and _sheath_clip.ends_with("sheathe_greatsword"):
 			# As medidas autoradas têm quatro casas decimais: normalize antes do slerp.
 			hand_katana.transform = HAND_KATANA_GUARD.orthonormalized().interpolate_with(HAND_KATANA_SHEATHED.orthonormalized(), progress)
-
-func _update_katana_stance(delta: float) -> void:
-	if not is_instance_valid(player) or not "animation" in player or player.animation == null: return
-	var want: bool = equipped() == "katana" and _clip_name == "" and _sheath_clip == "" and not bool(player.get("dead")) 		and attack_allowed() and Vector2(player.velocity.x, player.velocity.z).length() < 0.12 and player.animation.has_animation(KATANA_STANCE)
-	if want:
-		_katana_stance_clock = fposmod(_katana_stance_clock + delta, player.animation.get_animation(KATANA_STANCE).length)
-		player.combat_clip = KATANA_STANCE
-		player.combat_clip_time = _katana_stance_clock
-	elif _katana_stance_active and player.combat_clip == KATANA_STANCE:
-		player.combat_clip = ""
-	_katana_stance_active = want
 
 func _end_sheath() -> void:
 	_sheath_clip = ""

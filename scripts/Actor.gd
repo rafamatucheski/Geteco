@@ -135,6 +135,19 @@ const GRIP_ELBOW_UP_MAX := -0.1
 const GRIP_FINGER_RATE := 6.0
 ## Duração da mistura de poses ao entrar e sair do clipe de golpe (não calibrada).
 const COMBAT_BLEND := 0.08
+## Katana: troca entre o clipe nativo (golpe, sacar/guardar) e a pose de carregar. Os braços e a lâmina
+## passam de uma para a outra nesse tempo; antes a espada girava de uma vez e os braços pulavam para a
+## pose de antes do golpe (`_presented_arm_rotations` não andava durante o clipe). Entrar no golpe é
+## curto para não atrasar a preparação; sair é mais longo: o fim do clipe deixa a lâmina ~90° longe do
+## carregar, e em 0,14 s ela girava ~13°/quadro.
+const SWORD_SWITCH_INTO_CLIP := 0.10
+const SWORD_SWITCH_OUT_OF_CLIP := 0.24
+var _sword_native_last := false
+var _sword_switch_age := 1.0
+var _sword_native_grip := Transform3D.IDENTITY
+var _sword_carry_basis := Basis.IDENTITY
+## Lâmina apresentada (no espaço do `visual`) no último quadro antes da troca.
+var _sword_from_basis := Basis.IDENTITY
 const LOCOMOTION_BLEND_RATE := 7.0
 const RUN_BLEND_RATE := 4.5
 const MOVING_SPEED_EPSILON := 0.12
@@ -786,12 +799,73 @@ func _two_hand_sword_transform(grip: Transform3D) -> Transform3D:
 			result.basis = result.basis.slerp(aligned, weight)
 	return result
 
+## Lâmina carregada (pose procedural): orientação pedida, cabo na palma realizada.
+func _carried_sword_transform(local_basis: Basis) -> Transform3D:
+	var blade_basis := (visual.global_basis * local_basis).orthonormalized()
+	return Transform3D(blade_basis, combat_palm_position("Right") - blade_basis * combat_weapon_grip)
+
+## Mistura da troca clipe ↔ carregar. A orientação parte da lâmina apresentada no quadro da troca (fixa
+## no corpo) e chega à do modo novo; derivá-la da mão a cada quadro fazia a lâmina herdar o giro do
+## pulso, que o IK limita a 18 rad/s (picos de 34°/quadro na saída do golpe). A posição fica presa à mão
+## atual: cabo na palma com a orientação mostrada, indo para a pegada do clipe ao entrar nele.
+func _sword_switch_transform() -> Transform3D:
+	var held := _two_hand_sword_transform(_sword_native_grip)
+	var weight := smoothstep(0.0, _sword_switch_length(), _sword_switch_age)
+	var body := visual.global_basis.orthonormalized()
+	var target := held.basis if _sword_native_last else (body * _sword_carry_basis).orthonormalized()
+	var blade_basis := (body * _sword_from_basis).orthonormalized().slerp(target, weight).orthonormalized()
+	var at_palm := combat_palm_position("Right") - blade_basis * combat_weapon_grip
+	return Transform3D(blade_basis, at_palm.lerp(held.origin, weight) if _sword_native_last else held.origin.lerp(at_palm, weight))
+
+func _sword_switch_length() -> float:
+	return SWORD_SWITCH_INTO_CLIP if _sword_native_last else SWORD_SWITCH_OUT_OF_CLIP
+
+func _sword_switching() -> bool:
+	return combat_weapon_id == "katana" and _sword_switch_age < _sword_switch_length()
+
+func _track_sword_switch(native: bool) -> void:
+	if native == _sword_native_last:
+		_sword_switch_age += _pose_delta
+	else:
+		_sword_native_last = native
+		_sword_switch_age = 0.0
+		if is_instance_valid(combat_weapon_mount):
+			_sword_from_basis = (visual.global_basis.orthonormalized().inverse() * combat_weapon_mount.global_basis).orthonormalized()
+		if not native:
+			# O solver de pegada recomeça da pose apresentada no fim do clipe, não da de antes do golpe.
+			_grip_fingers.clear()
+			_elbow_solved.clear()
+			_twist_previous.clear()
+	if native and not combat_weapon_pose.has("hand_grip"):
+		# Clipe sem pegada medida (`native_sword_basis`): não há o que misturar.
+		_sword_switch_age = SWORD_SWITCH_OUT_OF_CLIP
+	elif native: _sword_native_grip = combat_weapon_pose.hand_grip
+	elif combat_weapon_pose.has("basis"): _sword_carry_basis = combat_weapon_pose.basis
+
+## Entrando no clipe, os braços saem da pose de carregar (não da locomoção crua) e chegam ao clipe em
+## SWORD_SWITCH_INTO_CLIP; o que foi apresentado fica guardado para a saída partir do fim do clipe.
+func _present_native_sword_arms() -> void:
+	var weight := smoothstep(0.0, SWORD_SWITCH_INTO_CLIP, _sword_switch_age)
+	for side in ["Right", "Left"]:
+		for part in ["Shoulder", "Arm", "ForeArm", "Hand"]:
+			var bone: int = _combat_bones.get(side + part, -1)
+			if bone < 0: continue
+			var rotation := skeleton.get_bone_pose_rotation(bone)
+			if weight < 1.0 and _presented_arm_rotations.has(bone):
+				rotation = (_presented_arm_rotations[bone] as Quaternion).slerp(rotation, weight).normalized()
+				skeleton.set_bone_pose_rotation(bone, rotation)
+			_presented_arm_rotations[bone] = rotation
+
 func _apply_combat_weapon_pose() -> void:
-	if combat_weapon_pose.get("native_sword", false) and skeleton != null:
+	var native_sword: bool = combat_weapon_pose.get("native_sword", false) and skeleton != null
+	if combat_weapon_id == "katana": _track_sword_switch(native_sword)
+	if native_sword:
 		# Preserve the imported sword move, including its elbow and wrist arcs.
 		_set_combat_grips(true, false, true, false, false, true)
+		if combat_weapon_id == "katana": _present_native_sword_arms()
 		if is_instance_valid(combat_weapon_mount):
-			combat_weapon_mount.global_transform = _two_hand_sword_transform(combat_weapon_pose.hand_grip) if combat_weapon_pose.has("hand_grip") else combat_weapon_transform(combat_weapon_grip)
+			if _sword_switching(): combat_weapon_mount.global_transform = _sword_switch_transform()
+			else: combat_weapon_mount.global_transform = _two_hand_sword_transform(combat_weapon_pose.hand_grip) if combat_weapon_pose.has("hand_grip") else combat_weapon_transform(combat_weapon_grip)
 		return
 	_elbow_previous = _elbow_solved.duplicate()
 	var support_hand_before: Quaternion = _presented_arm_rotations.get(_combat_bones.get("LeftHand", -1), Quaternion.IDENTITY)
@@ -1310,6 +1384,8 @@ func combat_realized_palm_basis(side: String) -> Basis:
 func combat_weapon_transform(grip: Vector3) -> Transform3D:
 	if combat_weapon_pose.is_empty() or not is_instance_valid(visual):
 		return Transform3D(global_basis, global_position)
+	if _sword_switching() and skeleton != null and _combat_bones.has("RightHand"):
+		return _sword_switch_transform()
 	if combat_weapon_pose.get("native_sword", false) and skeleton != null and _combat_bones.has("RightHand"):
 		var index: int = _combat_bones.RightHand
 		var chain := skeleton.get_bone_pose(index)

@@ -17,7 +17,6 @@ func _initialize() -> void: run.call_deferred()
 
 func step(delta: float) -> void:
 	gp._update_combat_clip(delta)
-	gp._update_katana_stance(delta)
 	gp._update_weapon_pose(delta)
 	await physics_frame
 
