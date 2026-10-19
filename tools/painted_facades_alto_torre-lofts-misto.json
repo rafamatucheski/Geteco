@@ -1,0 +1,12 @@
+{
+	"torre-exchange": {"module_w": 16.0, "side_w": 6.0, "margin": 0.0,
+		"front": [{"rect": [0.1463, 0.159, 0.2342, 1.0], "leaf": true}, {"rect": [0.2663, 0.159, 0.3543, 1.0], "leaf": true},
+			{"rect": [0.6463, 0.159, 0.7342, 1.0], "leaf": true}, {"rect": [0.7663, 0.159, 0.8543, 1.0], "leaf": true}],
+		"back": [{"rect": [0.0862, 0.4115, 0.1511, 1.0], "leaf": true}, {"rect": [0.5862, 0.4115, 0.6511, 1.0], "leaf": true}]},
+	"lofts-fundicao": {"module_w": 14.0, "side_w": 6.0, "margin": 0.0, "glow_min_r": 135,
+		"front": [{"rect": [0.1456, 0.3502, 0.2254, 1.0], "leaf": true}],
+		"back": [{"rect": [0.1456, 0.3502, 0.2254, 1.0], "leaf": true}]},
+	"predio-misto": {"module_w": 10.0, "side_w": 6.0, "margin": 0.0, "glow_min_r": 150,
+		"front": [{"rect": [0.8422, 0.343, 0.9465, 1.0], "leaf": true}],
+		"back": [{"rect": [0.821, 0.3127, 0.9188, 1.0], "leaf": true}]}
+}
