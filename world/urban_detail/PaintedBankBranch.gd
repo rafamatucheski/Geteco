@@ -41,8 +41,16 @@ static func build(building: UrbanBuildingBase) -> Array[PaintedFacadeKit.Painted
 			for zone in leaf.find_children("DoorZone", "Area3D", false, false): zone.free()
 			doors.append(leaf)
 	var sink: float = root.get_meta("ground_sink", 0.0)
-	_add_hull(building, size, natural.y - sink, _opening_half_width(size.x), _opening_height(natural.y))
+	_add_hull(building, size, natural.y - sink, opening_half_width(size.x), _opening_height(natural.y))
 	return doors
+
+
+## Entrada de verdade num prédio de pegada `size` (frente em +Z): centro do vão pintado,
+## no chão e no plano das folhas fechadas. WeaponShopEntrance seguia a porta de vidro do
+## banco 3D antigo, 0,72 m recuada, e a entrada ficava 0,68 m atrás das folhas pintadas,
+## dentro do vestíbulo (auditoria de portas, 19/10).
+static func entrance_local(size: Vector2) -> Vector3:
+	return Vector3(PaintedFacadeKit.nearest_door_x(STYLE, size.x, 0.0), 0.0, size.y * 0.5 - PaintedFacadeKit.LEAF_INSET)
 
 
 ## Altura da parede pintada acima do chão (o kit afunda o prédio até a soleira).
@@ -60,7 +68,8 @@ static func roof_height() -> float:
 	return wall_height() + 0.14
 
 
-static func _opening_half_width(width: float) -> float:
+## Meia largura do vão pintado da frente num prédio de `width` metros.
+static func opening_half_width(width: float) -> float:
 	var rects: Array = PaintedFacadeKit.openings(STYLE, "front")
 	if rects.is_empty(): return 1.2
 	var rect: Array = rects[0].rect

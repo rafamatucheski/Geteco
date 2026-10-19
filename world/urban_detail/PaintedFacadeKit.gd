@@ -36,6 +36,9 @@ const DOOR_REACH := 1.0
 const ROOF_OVERHANG := 0.35
 ## Vão de folha mais largo que isto vira porta dupla (duas folhas, as duas abrem juntas).
 const DOUBLE_DOOR_MIN := 1.8
+## Dobradiça da folha atrás do plano da fachada; a entrada de verdade de quem segue o
+## vão pintado (PaintedBankBranch.entrance_local) fica neste plano.
+const LEAF_INSET := 0.04
 
 static var _materials := {}
 static var _styles := {}
@@ -513,7 +516,7 @@ static func _leaf(anchor: Node3D, node_name: String, style: String, side: String
 	door.name = node_name
 	door.mirrored = mirrored
 	anchor.add_child(door)
-	door.position = Vector3(hinge_x, 0, -0.04)
+	door.position = Vector3(hinge_x, 0, -LEAF_INSET)
 	var sign_x := -1.0 if mirrored else 1.0
 	var part := "door_front" if side == "front" else "door_back"
 	var outside := MeshInstance3D.new()

@@ -12,7 +12,15 @@ const IDS := ["harbor_supermarket", "harbor_ammunation", "mountain_gunshop", "ha
 	"harbor_arcade", "harbor_curitiba_cellar"]
 const CAMERA_SECONDS := 0.55
 const POLICE_DOOR_Z := 250.0 / 32.0 + 0.35
+## Porta de vidro 0,72 m recuada das lojas 3D da North Frontage (UrbanLandmarkFrontage3D
+## ._build_glazed_door): Union, Fuel e o banco sem fachada pintada.
 const BANK_DOOR_Z := 180.0 / 32.0 - 0.72
+## Pegadas V1 (OriginalWorldData, 16 px/m) do banco e da delegacia: a entrada pintada sai do vão nelas.
+const BANK_FOOTPRINT := Vector2(230.0, 180.0) / 16.0
+const POLICE_FOOTPRINT := Vector2(190.0, 250.0) / 16.0
+## Raio da cápsula do Actor (0,30 m) mais 5 cm: o corpo inteiro cabe no vão pintado. No
+## banco (meia abertura de 1,45 m) dá o 1,1 m que ele já usava.
+const DOOR_CLEARANCE := 0.35
 
 var session: Node
 var _facade: Node3D
@@ -141,6 +149,12 @@ func update(delta: float) -> void:
 	var outer := -.1 if id == "harbor_police" else -1.15 if id in ["harbor_ammunation", "mountain_gunshop"] else -.8
 	var inner := .6 if id == "harbor_police" else -.15 if id in ["harbor_ammunation", "mountain_gunshop"] else .3
 	if id in ["harbor_ammunation", "mountain_gunshop"]: inner = maxf(inner, _contact_depth + .35)
+	if id == "harbor_bank" and _painted(id):
+		# Entrada no plano das folhas pintadas, 0,68 m à frente da porta de vidro antiga: a
+		# mesma janela física de antes, em que o jogador cruza ~0,1 m antes das folhas já
+		# abertas (sonda de 18/10) e no máximo a 1 m delas, ainda no vestíbulo de 1,5 m.
+		outer = -.12
+		inner = .98
 	if depth < outer or depth > inner: return
 	_blocked_entry_id = id
 	if not _entry_available(id): return
@@ -300,15 +314,33 @@ func _half_width(id: String) -> float:
 	match id:
 		"maciota", "port_boss_garage": return 1.8
 		"harbor_ammunation": return 1.05
-		"harbor_police": return .95
+		# Delegacia pintada: porta dupla de ~2,1 m que o editor estica para ~3,2 m.
+		"harbor_police": return _painted_half_width(id, PaintedPoliceStation.opening_half_width(PaintedHarborHouses.footprint_width("Police", POLICE_FOOTPRINT.x))) if _painted(id) else .95
 		"harbor_hospital": return 1.1
 		"harbor_fire_station": return 1.4
 		# Banco pintado: vão de ~2,9 m (a porta antiga tinha 1,42 m).
-		"harbor_bank": return .48 if PaintedHarborHouses.style_for("NorthFrontage0", "bank_branch").is_empty() else 1.1
+		"harbor_bank": return _painted_half_width(id, PaintedBankBranch.opening_half_width(_bank_footprint().x)) if _painted(id) else .48
 		"harbor_clothing", "harbor_fuel": return .48
 		"cobra_leader_house": return .23
 		"harbor_haunted_house", "harbor_arcade", "harbor_curitiba_cellar": return .9
 	return .62
+
+## Até onde, para o lado, empurrar e atravessar valem: o vão pintado na pegada que o
+## editor de mundo esticou, menos a cápsula. A delegacia (18 m de frente, meia abertura
+## de ~1,6 m) tinha 0,95 m fixo e a folha não abria para quem empurrava mais de lado.
+func _painted_half_width(id: String, half_opening: float) -> float:
+	var stretch: Vector3 = _definition_for(id).get("editor_scale", Vector3.ONE)
+	return half_opening * stretch.x - DOOR_CLEARANCE
+
+func _painted(id: String) -> bool:
+	match id:
+		"harbor_bank": return not PaintedHarborHouses.style_for("NorthFrontage0", "bank_branch").is_empty()
+		"harbor_police": return not PaintedHarborHouses.style_for("Police", "police_precinct").is_empty()
+	return false
+
+## Pegada do banco pintado: a fábrica põe o prédio na largura natural da pintura.
+func _bank_footprint() -> Vector2:
+	return Vector2(PaintedHarborHouses.footprint_width("NorthFrontage0", BANK_FOOTPRINT.x), BANK_FOOTPRINT.y)
 
 func _close_size(id: String) -> float:
 	if PLACES.walkup_family(id) == "cabin": return 8.0
@@ -340,5 +372,6 @@ func _original_door_position(id: String, definition: Dictionary) -> Vector3:
 	if id == "harbor_hospital": return definition.exterior_position + Vector3(0, 0, 120.0 / (18.0 * .76822128))
 	if id == "harbor_fire_station": return definition.exterior_position + PLACES.FIRE_STATION_DOOR_OFFSET
 	if id in ["harbor_clothing", "harbor_fuel"]: return definition.exterior_position + Vector3(0, 0, BANK_DOOR_Z)
+	if id == "harbor_bank" and _painted(id): return definition.exterior_position + PaintedBankBranch.entrance_local(_bank_footprint())
 	var z := POLICE_DOOR_Z if id == "harbor_police" else BANK_DOOR_Z if id == "harbor_bank" else 5.8 if id == "harbor_ammunation" else 2.7
 	return definition.exterior_position + Vector3(0, 0, z)

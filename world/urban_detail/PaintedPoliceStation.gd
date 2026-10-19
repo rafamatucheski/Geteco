@@ -41,7 +41,7 @@ static func build(building: UrbanBuildingBase) -> Array[PaintedFacadeKit.Painted
 			for zone in leaf.find_children("DoorZone", "Area3D", false, false): zone.free()
 			doors.append(leaf)
 	var sink: float = root.get_meta("ground_sink", 0.0)
-	_add_hull(building, size, natural.y - sink, _opening_half_width(size.x))
+	_add_hull(building, size, natural.y - sink, opening_half_width(size.x))
 	return doors
 
 
@@ -56,7 +56,9 @@ static func roof_height() -> float:
 	return wall_h - sink + 0.14
 
 
-static func _opening_half_width(width: float) -> float:
+## Meia largura do vão pintado da frente num prédio de `width` metros, em escala de
+## origem (o editor estica depois; WeaponShopEntrance multiplica pela escala dele).
+static func opening_half_width(width: float) -> float:
 	var rects: Array = PaintedFacadeKit.openings(STYLE, "front")
 	if rects.is_empty(): return 1.2
 	var rect: Array = rects[0].rect
