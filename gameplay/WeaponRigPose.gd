@@ -91,7 +91,12 @@ const STOCK_TOE := 0.08
 ## pistola; a base da coronha encostava 4–5 cm no antebraço direito logo atrás do pulso.
 ## Medido em 2026-10-06: bolso 3 cm mais baixo na mira e na recarga, 3 cm mais alto
 ## com a arma baixa (a ponta da coronha sai de cima do antebraço).
-const STOCK_POCKET_SHIFT := {"hunting_rifle": Vector3(0, -0.03, 0)}
+## M4A1: a coronha retrátil (a4634240) sobe em degrau até y 0,04 do modelo em z 0,17, e a
+## quina de dentro desse degrau entrava 3,7–4,3 cm na gola/peito direito mirando andando
+## ou de lado. 1,5 cm mais baixo e 1 cm à frente (medido em 2026-10-19: mira, tiro e recarga,
+## parado e andando, ≤ 2,0 cm, só a base da coronha apoiada no peito; só 1,5 cm mais baixo,
+## andando e atirando o topo do receptor encostava na lapela).
+const STOCK_POCKET_SHIFT := {"hunting_rifle": Vector3(0, -0.03, 0), "m4a1": Vector3(0, -0.015, 0.01)}
 const STOCK_POCKET_SHIFT_READY := {"hunting_rifle": Vector3(0, 0.03, 0)}
 const STOCK_ELBOW := Vector3(1.4, -1.2, 0.3)
 const RELOAD_LEFT_POLE := Vector3(-0.2, -1.5, 1.0)

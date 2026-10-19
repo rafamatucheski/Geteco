@@ -1,0 +1,263 @@
+diff --git a/tests/_diag_loco_contact.gd b/tests/_diag_loco_contact.gd
+new file mode 100644
+index 00000000..c6e5be0f
+--- /dev/null
++++ b/tests/_diag_loco_contact.gd
+@@ -0,0 +1,182 @@
++extends "res://tests/test_weapon_locomotion.gd"
++## DIAGNÓSTICO TEMPORÁRIO (não versionar): onde estão os contatos de test_weapon_locomotion.
++## Args: only=knuckles,m4a1  clip=1 (preenche _clip_palms como o jogo)  every=1 (pele a cada N quadros)
++var _parts: Array[String] = []
++var _clip := false
++var _every := 1
++
++func _named_points(id: String) -> PackedVector3Array:
++	var gun := Node3D.new()
++	root.add_child(gun)
++	ARSENAL.build(gun, id)
++	var out := PackedVector3Array()
++	_parts.clear()
++	for node in gun.find_children("*", "MeshInstance3D", true, false):
++		var mesh_instance := node as MeshInstance3D
++		if mesh_instance.mesh == null: continue
++		var local: Transform3D = gun.global_transform.affine_inverse() * mesh_instance.global_transform
++		var faces := mesh_instance.mesh.get_faces()
++		for i in range(0, faces.size(), 3):
++			out.append(local * faces[i])
++			_parts.append(String(mesh_instance.name))
++	gun.queue_free()
++	return out
++
++func _bone_of_vertex(i: int) -> String:
++	var best := -1.0
++	var bone_name := ""
++	var skin: Skin = actor._combat_skin.skin
++	for k in _per:
++		var w := _weights[i * _per + k]
++		if w > best:
++			best = w
++			var b := _bones[i * _per + k]
++			var bone := skin.get_bind_bone(b)
++			bone_name = actor.skeleton.get_bone_name(bone) if bone >= 0 else String(skin.get_bind_name(b))
++	return bone_name
++
++## Igual a _skin_penetration, devolvendo também o ponto mais fundo e onde ele está.
++func _skin_detail(id: String, left_grip: bool) -> Dictionary:
++	var body := _skinned()
++	var positions: PackedVector3Array = body[0]
++	var normals: PackedVector3Array = body[1]
++	var grid := {}
++	for i in positions.size():
++		var key := Vector3i((positions[i] / GRID_CELL).floor())
++		if not grid.has(key): grid[key] = []
++		grid[key].append(i)
++	var weapon: Transform3D = actor.combat_weapon_transform(DATA.GRIPS.get(id, Vector3.ZERO))
++	var palms := [actor.combat_palm_position("Right")]
++	if left_grip: palms.append(actor.combat_palm_position("Left"))
++	var deepest := -INF
++	var info := {}
++	var by_part := {}
++	for pi in _gun_points.size():
++		var point := _gun_points[pi]
++		var q: Vector3 = weapon * point
++		if palms.any(func(palm): return q.distance_to(palm) < 0.07): continue
++		var cell := Vector3i((q / GRID_CELL).floor())
++		var near_distance: Array[float] = []
++		var near_depth: Array[float] = []
++		var near_index: Array[int] = []
++		for dx in [-1, 0, 1]:
++			for dy in [-1, 0, 1]:
++				for dz in [-1, 0, 1]:
++					var key := cell + Vector3i(dx, dy, dz)
++					if not grid.has(key): continue
++					for i in grid[key]:
++						var d := q.distance_squared_to(positions[i])
++						if near_distance.size() >= NEAREST and d >= near_distance[-1]: continue
++						var slot := near_distance.bsearch(d)
++						near_distance.insert(slot, d)
++						near_depth.insert(slot, -(q - positions[i]).dot(normals[i]))
++						near_index.insert(slot, i)
++						if near_distance.size() > NEAREST:
++							near_distance.pop_back()
++							near_depth.pop_back()
++							near_index.pop_back()
++		if near_depth.size() >= 3:
++			var sorted_depth := near_depth.duplicate()
++			sorted_depth.sort()
++			var depth: float = sorted_depth[sorted_depth.size() / 2]
++			var part := _parts[pi]
++			if depth > 0.02:
++				var bone := _bone_of_vertex(near_index[0])
++				var key := "%s×%s" % [part, bone]
++				by_part[key] = maxf(float(by_part.get(key, -INF)), depth)
++			if depth > deepest:
++				deepest = depth
++				info = {"depth": depth, "part": part, "local": point, "bone": _bone_of_vertex(near_index[0]),
++					"actor": actor.visual.to_local(q), "rpalm": actor.visual.to_local(palms[0]),
++					"lpalm": actor.visual.to_local(actor.combat_palm_position("Left")),
++					"near": "%s @ %s" % [str(near_depth.map(func(v): return snappedf(v, 0.001))), str(near_distance.map(func(v): return snappedf(sqrt(v), 0.001)))]}
++	info["by_part"] = by_part
++	return info
++
++func _face_detail() -> Array[String]:
++	var out: Array[String] = []
++	var head := bone_local("Head").lerp(bone_local("head_end"), 0.4)
++	for side in ["Right", "Left"]:
++		for segment in [[side + "Arm", side + "ForeArm"], [side + "ForeArm", side + "Hand"]]:
++			var a := bone_local(segment[0])
++			var b := bone_local(segment[1])
++			for i in 11:
++				var p := a.lerp(b, float(i) / 10.0)
++				if p.z < head.z - 0.06 and p.z > head.z - 0.30 and absf(p.x - head.x) < 0.10 and p.y > head.y - 0.13 and p.y < head.y + 0.15:
++					out.append("%s→%s t=%.1f rel(x=%.3f y=%.3f z=%.3f)" % [segment[0], segment[1], float(i) / 10.0, p.x - head.x, p.y - head.y, p.z - head.z])
++					break
++	return out
++
++func _move_step(pose, id: String, direction: Vector3, speed: float, aiming: bool, reloading: bool, progress: float) -> Dictionary:
++	actor.combat_facing = 0.0 if aiming else NAN
++	actor.visual.rotation.y = 0.0 if aiming else atan2(-direction.x, -direction.z)
++	actor._pose_locomotion(direction, speed, direction * speed * DT, speed, DT)
++	# Como Actor._process no jogo: palmas do clipe antes da camada de arma.
++	if _clip: actor._clip_palms = {"Left": actor._clip_palm("Left"), "Right": actor._clip_palm("Right")}
++	var packet: Dictionary = pose.update(id, DT, aiming, reloading, progress, speed > 0.12, speed > 4.2, actor.phase, actor.combat_rig_info())
++	actor.set_combat_weapon_pose(id, packet)
++	actor._apply_combat_weapon_pose()
++	return packet
++
++func run() -> void:
++	var only := ["knuckles", "m4a1"]
++	var states_only := []
++	for arg in OS.get_cmdline_user_args():
++		if arg.begins_with("only="): only = Array(arg.trim_prefix("only=").split(","))
++		if arg.begins_with("states="): states_only = Array(arg.trim_prefix("states=").split(","))
++		if arg == "clip=1": _clip = true
++		if arg.begins_with("every="): _every = int(arg.trim_prefix("every="))
++	actor = ACTOR.new()
++	actor.is_player = true
++	actor.controlled_automatically = true
++	root.add_child(actor)
++	actor.set_physics_process(false)
++	await process_frame
++	var arrays: Array = actor._combat_skin.mesh.surface_get_arrays(0)
++	_verts = arrays[Mesh.ARRAY_VERTEX]
++	_norms = arrays[Mesh.ARRAY_NORMAL]
++	_bones = arrays[Mesh.ARRAY_BONES]
++	_weights = arrays[Mesh.ARRAY_WEIGHTS]
++	_per = _bones.size() / _verts.size()
++	print("DIAG clip=%s only=%s" % [_clip, only])
++	for id in ALL:
++		var focus: bool = id in only
++		if focus and id != "fists": _gun_points = _named_points(id)
++		var states := [["andando", Vector3.FORWARD, WALK, false, false, false], ["correndo", Vector3.FORWARD, RUN, false, false, false],
++			["mirando andando", Vector3.FORWARD, 3.2, true, false, false], ["mirando de lado", Vector3.RIGHT, 2.3, true, false, false],
++			["mirando para trás", Vector3.BACK, 2.4, true, false, false]]
++		if id in MELEE:
++			states.append(["golpeando andando", Vector3.FORWARD, WALK, false, false, true])
++			states.append(["golpeando correndo", Vector3.FORWARD, RUN, false, false, true])
++		elif id != "grenade":
++			states.append(["recarregando andando", Vector3.FORWARD, WALK, false, true, false])
++			states.append(["recarregando correndo", Vector3.FORWARD, RUN, false, true, false])
++		var pose = POSE.new()
++		for state in states:
++			var cadence := int(round(float(CATALOG.WEAPONS[id].fire_interval) / DT))
++			var detail: bool = focus and (states_only.is_empty() or state[0] in states_only)
++			var deepest := -INF
++			var deepest_info := {}
++			var parts_max := {}
++			var face_frames := 0
++			for frame in FRAMES:
++				if state[5] and frame >= 20 and (frame - 20) % cadence == 0: pose.attack(id)
++				var progress := clampf(float(frame - 20) / float(FRAMES - 30), 0.0, 1.0)
++				var packet := _move_step(pose, id, state[1], state[2], state[3], state[4] and progress < 1.0, progress)
++				if not detail or frame < 30: continue
++				var face := _face_detail()
++				if not face.is_empty():
++					face_frames += 1
++					print("DIAG %s %s f=%d phase=%.3f face: %s | rpalm=%s lpalm=%s follow=%.2f" % [id, state[0], frame, actor.phase, "; ".join(face),
++						actor.visual.to_local(actor.combat_palm_position("Right")), actor.visual.to_local(actor.combat_palm_position("Left")), float(packet.get("follow_clip", 0.0))])
++				if id != "fists" and frame % _every == 0 and bool(packet.get("visible", true)):
++					var info := _skin_detail(id, bool(packet.get("left_grip", false)) and float(packet.get("support_weight", 0.0)) > 0.5)
++					for key in info.by_part: parts_max[key] = maxf(float(parts_max.get(key, -INF)), float(info.by_part[key]))
++					if frame % 8 == 0 or float(info.get("depth", -1.0)) > 0.03:
++						print("DIAG %s %s f=%d phase=%.3f depth=%.3f part=%s local=%s bone=%s at=%s rpalm=%s lpalm=%s" % [id, state[0], frame, actor.phase, float(info.get("depth", -1.0)), info.get("part", ""), info.get("local", ""), info.get("bone", ""), info.get("actor", ""), info.get("rpalm", ""), info.get("lpalm", "")])
++					if float(info.get("depth", -INF)) > deepest:
++						deepest = float(info.depth)
++						deepest_info = info
++			if detail:
++				print("DIAG RESUMO %s %s: face=%d quadros, pele máx %.3f (%s × %s), partes>2cm %s" % [id, state[0], face_frames, deepest, deepest_info.get("part", ""), deepest_info.get("bone", ""), parts_max])
++	quit(0)
+diff --git a/tests/_diag_m4_pocket.gd b/tests/_diag_m4_pocket.gd
+new file mode 100644
+index 00000000..a158a1da
+--- /dev/null
++++ b/tests/_diag_m4_pocket.gd
+@@ -0,0 +1,69 @@
++extends "res://tests/_diag_loco_contact.gd"
++## DIAGNÓSTICO TEMPORÁRIO (não versionar): bolso da coronha da M4A1 deslocado (x para fora,
++## y para cima, z para a frente do peito; espaço V1), só na mira/recarga como o do rifle de caça.
++## Args: shifts=0,0,0;0,-0.015,0  every=2
++
++class ShiftedPose extends "res://gameplay/WeaponRigPose.gd":
++	var extra := Vector3.ZERO
++	func _stock_pocket(yaw: float, gun_basis: Basis = Basis.IDENTITY, id := "", low_ready := 0.0) -> Vector3:
++		var base := super(yaw, gun_basis, id, low_ready)
++		if id != "m4a1": return base
++		var forward := Basis(Vector3.UP, yaw) * Vector3.FORWARD
++		var right := Basis(Vector3.UP, yaw) * Vector3.RIGHT
++		var shift := extra * (1.0 - low_ready)
++		return base + right * shift.x + Vector3(0, shift.y, 0) + forward * shift.z
++
++func run() -> void:
++	var shifts: Array[Vector3] = [Vector3.ZERO]
++	_every = 2
++	for arg in OS.get_cmdline_user_args():
++		if arg.begins_with("shifts="):
++			shifts.clear()
++			for text in arg.trim_prefix("shifts=").split(";"):
++				var c := text.split(",")
++				shifts.append(Vector3(float(c[0]), float(c[1]), float(c[2])))
++		if arg.begins_with("every="): _every = int(arg.trim_prefix("every="))
++	actor = ACTOR.new()
++	actor.is_player = true
++	actor.controlled_automatically = true
++	root.add_child(actor)
++	actor.set_physics_process(false)
++	await process_frame
++	var arrays: Array = actor._combat_skin.mesh.surface_get_arrays(0)
++	_verts = arrays[Mesh.ARRAY_VERTEX]
++	_norms = arrays[Mesh.ARRAY_NORMAL]
++	_bones = arrays[Mesh.ARRAY_BONES]
++	_weights = arrays[Mesh.ARRAY_WEIGHTS]
++	_per = _bones.size() / _verts.size()
++	_gun_points = _named_points("m4a1")
++	var states := [["parado mirando", Vector3.ZERO, 0.0, true, false, false], ["parado atirando", Vector3.ZERO, 0.0, true, false, true],
++		["mirando andando", Vector3.FORWARD, 3.2, true, false, false], ["andando atirando", Vector3.FORWARD, 3.2, true, false, true], ["mirando de lado", Vector3.RIGHT, 2.3, true, false, false],
++		["mirando para trás", Vector3.BACK, 2.4, true, false, false], ["andando", Vector3.FORWARD, WALK, false, false, false],
++		["recarregando andando", Vector3.FORWARD, WALK, false, true, false], ["parado recarga", Vector3.ZERO, 0.0, false, true, false]]
++	var cadence := int(maxf(1.0, round(float(CATALOG.WEAPONS.m4a1.fire_interval) / DT)))
++	for shift in shifts:
++		var pose := ShiftedPose.new()
++		pose.extra = shift
++		var summary: Array[String] = []
++		for state in states:
++			var deepest := -INF
++			var where := ""
++			var face := 0
++			var reach := 0.0
++			for frame in FRAMES:
++				if state[5] and frame % cadence == 0: pose.attack("m4a1")
++				var progress := clampf(float(frame - 20) / float(FRAMES - 30), 0.0, 1.0)
++				var packet := _move_step(pose, "m4a1", state[1], state[2], state[3], state[4] and progress < 1.0, progress)
++				if frame < 30: continue
++				if not anatomy_defects().is_empty(): face += 1
++				if bool(packet.get("support_locked", false)):
++					var weapon: Transform3D = actor.combat_weapon_transform(DATA.GRIPS.m4a1)
++					reach = maxf(reach, actor.combat_palm_position("Left").distance_to(weapon * (packet.support_point as Vector3)))
++				if frame % _every == 0 and bool(packet.get("visible", true)):
++					var info := _skin_detail("m4a1", bool(packet.get("left_grip", false)) and float(packet.get("support_weight", 0.0)) > 0.5)
++					if float(info.get("depth", -INF)) > deepest:
++						deepest = float(info.depth)
++						where = "%s %s f%d near %s" % [info.local, info.bone, frame, info.near]
++			summary.append("%s=%.3f (%s; apoio %.3f; anatomia %d)" % [state[0], deepest, where, reach, face])
++		print("DIAG M4 shift=%s\n  %s" % [shift, "\n  ".join(summary)])
++	quit(0)

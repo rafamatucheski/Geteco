@@ -913,6 +913,15 @@ func _apply_combat_weapon_pose() -> void:
 	for required in ["RightArm", "RightForeArm", "RightHand", "LeftArm", "LeftForeArm", "LeftHand"]:
 		if not _combat_bones.has(required): return
 	var pose := combat_weapon_pose
+	# Soqueira correndo / soco por clipe: alvo = palma do clipe DESTE quadro, lida antes de a
+	# camada de arma mexer em quadril, coluna e clavícula. O jogo a guarda em `_clip_palms`
+	# logo depois da locomoção; quem chama `_pose_locomotion` direto (testes, tiras de
+	# quadros) não, e o padrão antigo (`combat_palm_position` lido no meio desta função, com a
+	# coluna já endireitada) não era a palma do clipe: correndo, a mão esquerda subia à frente
+	# do rosto (test_weapon_locomotion, 18 quadros; com a palma do clipe, nenhum).
+	var follow_clip := clampf(float(pose.get("follow_clip", 0.0)), 0.0, 1.0)
+	var clip_palms := _clip_palms
+	if follow_clip > 0.0 and clip_palms.is_empty(): clip_palms = {"Left": _clip_palm("Left"), "Right": _clip_palm("Right")}
 	var armed := bool(pose.get("armed", combat_weapon_id != "fists"))
 	var right_grip := bool(pose.get("right_grip", false))
 	var left_grip := bool(pose.get("left_grip", false))
@@ -985,9 +994,7 @@ func _apply_combat_weapon_pose() -> void:
 	var left_free := float(pose.get("left_free", 0.0))
 	var right_target: Vector3 = pose.right
 	# Soqueira correndo: alvo = palma do clipe de corrida (antes de qualquer solução de braço neste quadro).
-	var follow_clip := clampf(float(pose.get("follow_clip", 0.0)), 0.0, 1.0)
-	var clip_left_target := visual.to_local(_clip_palms.get("Left", combat_palm_position("Left")))
-	if follow_clip > 0.0: right_target = right_target.lerp(visual.to_local(_clip_palms.get("Right", combat_palm_position("Right"))), follow_clip)
+	if follow_clip > 0.0: right_target = right_target.lerp(visual.to_local(clip_palms.Right), follow_clip)
 	var support_weight := float(pose.get("support_weight", 1.0 if pose.get("support_locked", false) else 0.0))
 	var lock_support := right_solve and left_solve and left_grip and support_weight > 0.0
 	if lock_support:
@@ -1008,7 +1015,7 @@ func _apply_combat_weapon_pose() -> void:
 			_blend_arm_bone(entry[0], entry[1], right_weight)
 	if left_solve:
 		var left_target: Vector3 = pose.left
-		if follow_clip > 0.0: left_target = left_target.lerp(clip_left_target, follow_clip)
+		if follow_clip > 0.0: left_target = left_target.lerp(visual.to_local(clip_palms.Left), follow_clip)
 		if lock_support:
 			var realised_delta: Vector3 = visual.global_basis * (pose.left - pose.right)
 			left_target = visual.to_local(combat_palm_position("Right") + realised_delta)
