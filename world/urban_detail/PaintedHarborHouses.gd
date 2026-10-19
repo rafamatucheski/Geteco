@@ -11,7 +11,17 @@ const COBRA := {
 	"CobraWorkshop": "casa-oficina-cobra", "CourtyardHouse": "casa-patio",
 	"BrickDuplex": "casa-tijolo-duplex", "TinRoofHouse": "casa-telha-zinco", "CornerBungalow": "casa-bangalo",
 }
-const PATROL := ["casa-patrol-a", "casa-patrol-b"]
+## O hash dos quatro ids caía todo em casa-patrol-b: quatro sobrados de pedra iguais
+## lado a lado (19/10). Cada um tem pacote próprio de módulo de 8 m (uma porta só) e
+## altura natural diferente: pedra e madeira com 6 m, casa térrea de zinco com 4 m,
+## enxaimel. A casa-tijolo-duplex ficou de fora: as portas dela ficam nas pontas
+## (0,13 e 0,87 da largura) e o jogador escorregava pela quina sem entrar.
+## PatrolCourtNorth abre para o norte (entrance_north em OriginalWorldData.json): a
+## frente sul dava de cara com os fundos do PatrolCourtSouth, sem vão para chegar à porta.
+const PATROL := {
+	"PatrolCourtWest": "casa-patrol-b", "PatrolCourtMiddle": "casa-patrol-a",
+	"PatrolCourtNorth": "casa-telha-zinco", "PatrolCourtSouth": "chale-enxaimel",
+}
 ## Prédios comerciais do porto com pacote próprio (output/imagegen, 15/10). O nome
 ## pintado vem do prompt (LAUNDRY, UNION WORKSHOP...) e não é o letreiro do jogo.
 const HARBOR := {
@@ -86,7 +96,11 @@ static func style_for(building_id: String, kind: String) -> String:
 	var lowrise := lowrise_style(building_id)
 	if not lowrise.is_empty(): return lowrise
 	if building_id.begins_with("PatrolCourt"):
-		return PATROL[posmod(hash(building_id), PATROL.size())]
+		# GETECO_PATROL_COURT=0 volta ao sorteio antigo (A/B): os quatro em casa-patrol-b.
+		if OS.get_environment("GETECO_PATROL_COURT") == "0":
+			return ["casa-patrol-a", "casa-patrol-b"][posmod(hash(building_id), 2)]
+		var values: Array = PATROL.values()
+		return PATROL.get(building_id, values[posmod(hash(building_id), values.size())])
 	return ""
 
 

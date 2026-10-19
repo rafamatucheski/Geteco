@@ -26,7 +26,13 @@ static func definitions() -> Array[Dictionary]:
 	var source: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://world/regions/OriginalWorldData.json"))
 	for record: Dictionary in source.get("harbor_buildings",[]):
 		var id := str(record.id)
-		if EXISTING.has(id) or bool(record.get("exterior_only", false)): continue
+		# Os sobrados pintados do Patrol Court têm porta desenhada; lacrados, o jogador
+		# esbarrava na porta sem entrar (19/10). Com pacote pintado ganham interior.
+		# GETECO_PATROL_COURT=0 lacra de novo (A/B).
+		var painted_entry := bool(record.get("exterior_only", false)) and id.begins_with("PatrolCourt") \
+			and OS.get_environment("GETECO_PATROL_COURT") != "0" \
+			and not PaintedHarborHouses.style_for(id, str(record.get("kind", ""))).is_empty()
+		if EXISTING.has(id) or (bool(record.get("exterior_only", false)) and not painted_entry): continue
 		var edit: Dictionary = edits.get("building/"+id,{})
 		if edit.get("deleted",false): continue
 		var row := record.duplicate(true)

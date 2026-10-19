@@ -1491,7 +1491,7 @@
       "name": "",
       "color": "#957361",
       "exterior_only": true,
-      "entrance_north": false
+      "entrance_north": true
     },
     {
       "id": "PatrolCourtSouth",

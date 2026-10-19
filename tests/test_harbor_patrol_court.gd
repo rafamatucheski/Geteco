@@ -36,10 +36,13 @@ func run() -> void:
 	var stage := Node3D.new()
 	root.add_child(stage)
 	var infill: Array[Dictionary] = []
+	var styles := {}
 	for row: Dictionary in source.harbor_buildings:
 		if not str(row.id).begins_with("PatrolCourt"): continue
 		infill.append(row)
-		check(CATALOG.for_source(row.id).is_empty(), str(row.id) + " remains exterior only")
+		var access := CATALOG.for_source(row.id)
+		check(not access.is_empty() and bool(access.get("continuous_access", false)), str(row.id) + " painted door has walk-in interior")
+		styles[PaintedHarborHouses.style_for(str(row.id), str(row.kind))] = true
 		var at := FACTORY.extract_position(row)
 		var size := FACTORY.extract_size(row)
 		var footprint := Rect2(Vector2(at.x, at.z)-size*.5, size)
@@ -58,6 +61,7 @@ func run() -> void:
 		var art := FACTORY.build_building(row)
 		stage.add_child(art)
 	check(infill.size() == 4, "four low-rise buildings behind police")
+	check(styles.size() == 4 and not styles.has(""), "four distinct painted facades")
 	check(not CATALOG.for_source("Apartments").is_empty(), "existing apartment interior preserved")
 	check(not CATALOG.for_source("Aquarium").is_empty(), "existing aquarium interior preserved")
 	check(clear_of_roads(SKATE.FOOTPRINT.grow(.5), source, edits), "skate court and perimeter clear streets")
@@ -89,7 +93,7 @@ func run() -> void:
 		var query := PhysicsRayQueryParameters3D.create(at + Vector3(0,1,10), at + Vector3(0,1,-10), 1)
 		check(not stage.get_world_3d().direct_space_state.intersect_ray(query).is_empty(), str(row.id) + " facade has solid collision")
 		walker.position = at + Vector3(0,.025,size.y*.5+1)
-		check(walker.move_and_collide(Vector3(0,0,-3), true) != null, str(row.id) + " swept pedestrian cannot enter sealed facade")
+		check(walker.move_and_collide(Vector3(0,0,-3), true) != null, str(row.id) + " swept pedestrian cannot cross wall beside door")
 		walker.position = at + Vector3(-size.x*.5-1,.025,-size.y*.5-.5)
 		check(walker.move_and_collide(Vector3(0,0,size.y+1), true) == null, str(row.id) + " side passage remains walkable")
 	stage.free()
