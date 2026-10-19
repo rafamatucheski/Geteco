@@ -57,6 +57,9 @@ const COBRA_PORCH := 1.8
 ## e a fábrica usam esta mesma largura para casco, corte da entrada e piso baterem.
 ## Até 15% de folga a imagem estica; acima disso o prédio fica na largura natural.
 static func footprint_width(building_id: String, width: float) -> float:
+	# Prédio alto com teto de esticamento (PaintedTallBuildings "max_stretch").
+	var tall := preload("res://world/urban_detail/PaintedTallBuildings.gd").footprint_width(building_id, width)
+	if tall != width: return tall
 	var style: String = HARBOR.get(building_id, lowrise_style(building_id))
 	if not PaintedFacadeKit.enabled() or style.is_empty() or building_id in LOWRISE_REPEAT: return width
 	var natural := PaintedFacadeKit.natural_size(style).x

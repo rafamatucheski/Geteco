@@ -272,6 +272,18 @@ static func tall_layout(style: String, wanted_h: float) -> Dictionary:
 	return {"ground": ground, "floor": floor_h, "top": top, "count": count, "height": ground + floor_h * float(count) + top}
 
 
+## Quanto o prédio alto afunda para a soleira mais baixa da frente encostar na
+## calçada (conta de _build_tall). Quem guarda a altura do prédio (catálogo:
+## cobertura e andares do interior) desconta isto, senão a cobertura fica acima
+## do telhado pintado.
+static func tall_sink(style: String) -> float:
+	var ground_h := float(style_data(style).get("floors", [4.0, 3.0, 3.0])[0])
+	var lowest := INF
+	for opening in openings(style, "front"):
+		if bool(opening.leaf): lowest = minf(lowest, (1.0 - float(opening.rect[3])) * ground_h)
+	return maxf(0.0, lowest - 0.03) if lowest < INF else 0.0
+
+
 static func _build_tall(parent: Node3D, style: String, size: Vector3, collision_parent: Node3D, walk_in_x: float, options: Dictionary) -> Node3D:
 	var root := Node3D.new()
 	root.name = "PaintedFacade_" + style
@@ -290,12 +302,7 @@ static func _build_tall(parent: Node3D, style: String, size: Vector3, collision_
 	var back_openings := openings(style, "back")
 	# Mesma regra dos estilos de uma altura: a soleira mais baixa da frente encosta na
 	# calçada. Os vãos são fração da imagem do térreo, então a conta usa a altura dele.
-	var sink := 0.0
-	if bool(options.get("ground_door", true)):
-		var lowest := INF
-		for opening in front_openings:
-			if bool(opening.leaf): lowest = minf(lowest, (1.0 - float(opening.rect[3])) * ground_h)
-		if lowest < INF: sink = maxf(0.0, lowest - 0.03)
+	var sink := tall_sink(style) if bool(options.get("ground_door", true)) else 0.0
 	root.position.y -= sink
 	root.set_meta("ground_sink", sink)
 	root.set_meta("tall_floors", count)
