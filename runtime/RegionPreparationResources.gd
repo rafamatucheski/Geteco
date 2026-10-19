@@ -17,6 +17,7 @@ const RESOURCES := {
     "res://world/regions/mountain_terrain.gdshader",
     "res://world/regions/mountain_terrain3d_pilot.gdshader",
     "res://world/regions/natural_ground.gdshader",
+    "res://world/regions/natural_ground_edge.gdshader",
     "res://world/regions/ship_deck_nonslip.png",
     "res://world/regions/ship_hull_weathered.png",
     "res://world/regions/terrain3d_pilot/terminal_mesh.res",
@@ -47,6 +48,7 @@ const RESOURCES := {
     "res://world/regions/mountain_terrain.gdshader",
     "res://world/regions/mountain_terrain3d_pilot.gdshader",
     "res://world/regions/natural_ground.gdshader",
+    "res://world/regions/natural_ground_edge.gdshader",
     "res://world/regions/ship_deck_nonslip.png",
     "res://world/regions/ship_hull_weathered.png",
     "res://world/regions/terrain3d_pilot/terminal_mesh.res"

@@ -193,7 +193,6 @@ func _ground_standing_pose() -> void:
 				point += (poses[arrays[Mesh.ARRAY_BONES][index*influences+slot]]*vertices[index])*weight
 			lowest = minf(lowest,point.y)
 	if is_finite(lowest): _player.visual.global_position.y += _model.global_position.y+.008-lowest
-	skeleton.force_update_all_bone_transforms()
 	_player.visual.reset_physics_interpolation()
 
 func preview_weapon(id: String, force := false, custom_state: Variant = null) -> void:
@@ -261,7 +260,8 @@ func _start_mirror() -> void:
 	mirror_viewport.size = Vector2i(384, 768)
 	mirror_viewport.world_3d = get_viewport().world_3d
 	mirror_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
-	mirror_viewport.msaa_3d = Viewport.MSAA_4X
+	# Segue o MSAA do jogo: 4x fixo recompilava no espelho os materiais já prontos no viewport principal.
+	mirror_viewport.msaa_3d = preload("res://runtime/RenderPolicy.gd").subviewport_msaa(Viewport.MSAA_4X)
 	add_child(mirror_viewport)
 	var reflection := Camera3D.new()
 	reflection.cull_mask = 0xFFFFF & ~MIRROR_LAYER

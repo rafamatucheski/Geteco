@@ -1,6 +1,7 @@
 @tool
 extends RefCounted
 ## Opaque ground, shared textures, one static mesh/body per intersected chunk.
+const COLLISION_FACES := preload("res://world/chunk_bake/CollisionFaces.gd")
 const STEP := 4.0 # Same grid and triangle diagonal as MountainTerrain3D.
 const SURFACES := ["grass","earth","sand","gravel","concrete","asphalt","pavers"]
 const LABELS := ["Grama","Terra","Areia","Cascalho","Concreto","Asfalto","Piso de blocos"]
@@ -9,7 +10,7 @@ static var materials: Dictionary = {}
 static func color(surface: String) -> Color:
 	return Color(COLORS[maxi(0,SURFACES.find(surface))])
 static func texture(surface: String) -> Image:
-	var result := Image.create(64,64,false,Image.FORMAT_RGB8)
+	var result := Image.create_empty(64,64,false,Image.FORMAT_RGB8)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 9017 + SURFACES.find(surface)
 	var base := color(surface)
@@ -28,12 +29,17 @@ static func texture(surface: String) -> Image:
 	result.generate_mipmaps()
 	return result
 const NATURAL := ["earth","gravel","grass","sand"]
+## Peças do editor não ligam edge_alpha: usam a variante opaca (sem ALPHA), que tem prepasse de
+## profundidade e não entra na fila transparente. GETECO_GROUND_OPAQUE=0 volta à variante de borda,
+## o comportamento antigo (A/B). As duas variantes são aquecidas em LocalLightShadowPrewarm.
+static var opaque_enabled := OS.get_environment("GETECO_GROUND_OPAQUE") != "0"
 const NATURAL_SHADER := preload("res://world/regions/natural_ground.gdshader")
+const NATURAL_EDGE_SHADER := preload("res://world/regions/natural_ground_edge.gdshader")
 static func material(surface: String) -> Material:
 	if not materials.has(surface) and surface in NATURAL:
 		# Chão natural com detalhe procedural; a textura 64x64 lia como papel liso.
 		var natural := ShaderMaterial.new()
-		natural.shader = NATURAL_SHADER
+		natural.shader = NATURAL_SHADER if opaque_enabled else NATURAL_EDGE_SHADER
 		natural.set_shader_parameter("kind",NATURAL.find(surface) if surface != "sand" else 3)
 		natural.set_shader_parameter("base_color",color(surface))
 		natural.set_shader_parameter("uv_meters",2.0)
@@ -152,7 +158,8 @@ static func create(row: Dictionary, clip: Rect2, height: Callable = Callable(), 
 	body.collision_mask = 0
 	body.set_meta("editor_id",row.id)
 	var shape := CollisionShape3D.new()
-	shape.shape = mesh.create_trimesh_shape()
+	# Das arrays da CPU: create_trimesh_shape lia a malha de volta da GPU.
+	shape.shape = COLLISION_FACES.shape_from_arrays(arrays)
 	body.add_child(shape)
 	result.add_child(body)
 	return result

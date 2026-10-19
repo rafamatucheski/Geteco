@@ -9,7 +9,8 @@ const FORGE_HERMIT := preload("res://world/mountain_detail/forge/ForgeHermitCabi
 static var _blade_forge_enabled := OS.get_environment("GETECO_BLADE_FORGE") != "0"
 const MOUNTAIN_SHADOW := preload("res://world/mountain_detail/MountainShadowFinish.gd")
 const URBAN_FACTORY := preload("res://world/urban_detail/UrbanBuildingFactory.gd")
-const NATURAL_GROUND := preload("res://world/regions/natural_ground.gdshader")
+## Estrada de terra: a malha visível é a faixa com borda esmaecida (edge_alpha), por isso a variante de borda.
+const NATURAL_GROUND := preload("res://world/regions/natural_ground_edge.gdshader")
 const HARBOR_ROUTE_FACTORY := preload("res://world/harbor_route_detail/HarborRouteDetailFactory.gd")
 const HARBOR_PUBLIC_REALM := preload("res://world/urban_detail/HarborPublicRealm3D.gd")
 const HARBOR_BRIDGE := preload("res://world/urban_detail/HarborBridge3D.gd")

@@ -204,6 +204,9 @@ func _ready() -> void:
 	_blast_light = OmniLight3D.new()
 	_blast_light.light_color = Color(1.0, 0.62, 0.22)
 	_blast_light.shadow_enabled = false
+	# Luz de explosão não alimenta a névoa volumétrica (opção de vídeo): o clarão dura décimos de
+	# segundo e só adicionaria trabalho à névoa no quadro mais caro do combate (auditoria Godot 4.7, 19/10).
+	_blast_light.light_volumetric_fog_energy = 0.0
 	_blast_light.visible = false
 	add_child(_blast_light)
 	_shell_mesh = CylinderMesh.new()

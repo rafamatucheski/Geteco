@@ -33,7 +33,8 @@ func _ready() -> void:
 	_viewport.own_world_3d = true
 	_viewport.transparent_bg = false
 	_viewport.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
-	_viewport.msaa_3d = Viewport.MSAA_4X
+	# Segue o MSAA do jogo: 4x fixo recompilava os materiais do carro na primeira vista da oficina.
+	_viewport.msaa_3d = preload("res://runtime/RenderPolicy.gd").subviewport_msaa(Viewport.MSAA_4X)
 	_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 	add_child(_viewport)
 	var environment := Environment.new()

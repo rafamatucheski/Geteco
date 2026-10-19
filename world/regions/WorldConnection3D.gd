@@ -42,6 +42,15 @@ var bridge_lamps: Array[OmniLight3D] = []
 ## Acabamento da ponte (concreto com textura, pilares com forma, fáscia e guarda-corpo).
 ## GETECO_BRIDGE_LOOK=0 restaura as caixas lisas de antes; colisão é a mesma nos dois.
 static var look_enabled := OS.get_environment("GETECO_BRIDGE_LOOK") != "0"
+## Sombra das luzes do teto do túnel da ponte (A/B do pico isolado de 220–250 ms na emenda
+## ponte–serra, auditoria Godot 4.7 de 19/10, §5 item 1). GETECO_TUNNEL_LIGHT_SHADOWS=0 desliga.
+static var tunnel_light_shadows := OS.get_environment("GETECO_TUNNEL_LIGHT_SHADOWS") != "0"
+## Fade por distância da câmera nas luzes do túnel. Dentro dele a câmera é de perseguição (~6 m atrás);
+## por fora, a ortográfica fica a ~36 m e o teto esconde as luzes: além do fade nem a luz nem o mapa
+## de sombra são processados.
+const TUNNEL_LIGHT_FADE_BEGIN := 45.0
+const TUNNEL_LIGHT_FADE_LENGTH := 10.0
+const TUNNEL_LIGHT_SHADOW_FADE := 25.0
 static var _look_materials: Dictionary = {}
 static var _unified_geometry: PackedScene
 static var _unified_materials: Array[Material] = []
@@ -818,7 +827,18 @@ func _build_tunnel() -> void:
 		lamp.light_color = Color("ffe9c5")
 		lamp.light_energy = 1.3
 		lamp.omni_range = 10.0
-		lamp.shadow_enabled = true
+		# Eram 5 omni com sombra cúbica (6 passadas cada), fora de qualquer pré-aquecimento: a primeira
+		# ativação de "omni shadow cubemap" é suspeita do pico da emenda ponte–serra. Paraboloide duplo
+		# custa 2 passadas e é a variante aquecida em LocalLightShadowPrewarm. A costura do paraboloide
+		# fica no plano perpendicular ao Z local: girada para o Z apontar para baixo, ela cai na altura
+		# da lâmpada (teto), e não cortando o piso abaixo de cada luz.
+		lamp.rotation_degrees = Vector3(90.0, 0.0, 0.0)
+		lamp.shadow_enabled = tunnel_light_shadows
+		lamp.omni_shadow_mode = OmniLight3D.SHADOW_DUAL_PARABOLOID
+		lamp.distance_fade_enabled = true
+		lamp.distance_fade_begin = TUNNEL_LIGHT_FADE_BEGIN
+		lamp.distance_fade_length = TUNNEL_LIGHT_FADE_LENGTH
+		lamp.distance_fade_shadow = TUNNEL_LIGHT_SHADOW_FADE
 		add_child(lamp)
 	for x in [TUNNEL_START_X,TUNNEL_END_X]:
 		for side in [-1.0,1.0]:

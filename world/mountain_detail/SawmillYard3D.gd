@@ -56,7 +56,7 @@ func _build_ground_polygons() -> void:
 		_ground_shader = Shader.new()
 		# Opaque interior pixels occlude the expensive terrain underneath, while
 		# the perimeter keeps its existing alpha blend. Compile once for this place.
-		_ground_shader.code = preload("res://world/regions/natural_ground.gdshader").code.replace(
+		_ground_shader.code = preload("res://world/regions/natural_ground_edge.gdshader").code.replace(
 			"render_mode diffuse_lambert, specular_schlick_ggx;",
 			"render_mode diffuse_lambert, specular_schlick_ggx, depth_prepass_alpha;")
 	earth_mat.shader = _ground_shader

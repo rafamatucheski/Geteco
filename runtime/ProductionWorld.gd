@@ -29,6 +29,23 @@ static var sun_shadow_near_enabled := OS.get_environment("GETECO_SUN_SHADOW_NEAR
 # mede o custo de 2 cascatas antes de qualquer troca de padrão (troca visual: menos
 # resolução de sombra perto da câmera).
 static var sun_shadow_splits := clampi(int(OS.get_environment("GETECO_SUN_SPLITS")) if OS.get_environment("GETECO_SUN_SPLITS") != "" else 4, 1, 4)
+## Cascatas do sol para a câmera ortográfica (auditoria Godot 4.7 de 19/10, §4 "Sombra do sol").
+## A câmera de jogo fica a ~36 m do foco (CameraRig) e o chão visível vai de ~25 a ~55 m de
+## profundidade. Pelo código-fonte do Godot (RendererSceneCull::_light_instance_setup_directional_shadow,
+## de memória, não conferido nesta versão): com câmera ortográfica o `directional_shadow_max_distance`
+## é ignorado ("impractical ... in orthogonal camera") e as cascatas dividem near..far, isto é,
+## 0,1..180 m (EXTERIOR_FAR). Com os padrões (0,1 / 0,2 / 0,5) a 1ª cascata (0–18 m) quase não tem
+## chão visível e a 3ª/4ª (36–90 / 90–180 m) cobrem sobretudo o que está fora da tela. Os valores
+## abaixo são frações de 180 m que põem as três primeiras na faixa visível e o esmaecimento depois
+## dela. Na perseguição do túnel (perspectiva) o max_distance volta a valer e as mesmas frações
+## caem perto da câmera, onde a perspectiva precisa de resolução. GETECO_SUN_SHADOW_TUNE=0 volta
+## aos padrões do Godot (A/B). Se a dúvida acima se provar falsa (max_distance valendo), as frações
+## passam a ser de 40–80 m e a sombra fica mais curta que a tela: conferir com captura.
+static var sun_shadow_tune := OS.get_environment("GETECO_SUN_SHADOW_TUNE") != "0"
+const SUN_SHADOW_SPLITS := Vector3(.16, .22, .32)
+## Com 2 cascatas (GETECO_SUN_SPLITS=2) a divisão fica no fim da faixa visível (~60 m).
+const SUN_SHADOW_SPLIT_2_CASCADES := .33
+const SUN_SHADOW_FADE_START := .4
 const VC_MAX_POPULATION := 25
 const VC_TRAFFIC_TARGET := 16
 # Os 51/25 m do reVC valem para a câmera baixa em perspectiva dele. A nossa fica a ~30 m de altura e,
@@ -187,6 +204,11 @@ func build() -> void:
 	sun.directional_shadow_max_distance = 55 if sun_shadow_near_enabled else 110
 	if sun_shadow_splits < 4:
 		sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS if sun_shadow_splits >= 2 else DirectionalLight3D.SHADOW_ORTHOGONAL
+	if sun_shadow_tune:
+		sun.directional_shadow_split_1 = SUN_SHADOW_SPLIT_2_CASCADES if sun_shadow_splits == 2 else SUN_SHADOW_SPLITS.x
+		sun.directional_shadow_split_2 = SUN_SHADOW_SPLITS.y
+		sun.directional_shadow_split_3 = SUN_SHADOW_SPLITS.z
+		sun.directional_shadow_fade_start = SUN_SHADOW_FADE_START
 	SESSION_OPS.attach(world, sun, self, diagnostic_build)
 	world.maciota_place = SESSION_OPS.instantiate(preload("res://world/maciota/MaciotaPlace.gd"), self)
 	world.maciota_place.exterior_origin = preload("res://world/maciota/MaciotaPlace.gd").INDUSTRIAL_ORIGIN
@@ -452,6 +474,10 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	await preload("res://runtime/BridgeLookPrewarm.gd").run(world, curtain)
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+	# Omni (cubo e paraboloide) e spot com sombra + chão natural opaco e de borda: a feature de
+	# pipeline de sombra local passa a existir antes do jogo (túnel da ponte, lanterna, faróis).
+	await preload("res://runtime/LocalLightShadowPrewarm.gd").run(world, curtain)
+	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	await preload("res://world/desert/DesertGroundCover.gd").prewarm_draw(world, curtain)
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	await preload("res://runtime/FamilyVariantPrewarm.gd").run(world, curtain)
@@ -610,6 +636,8 @@ func _hold_fleet_scenes_incremental() -> void:
 	# (serra, EXE perfinv6 de 17/10); a segunda custava 0,3 ms.
 	preload("res://gameplay/icecream/IceCreamVan.gd").prewarm()
 	preload("res://runtime/VehicleUsage.gd").prewarm()
+	# A 1ª morte fazia load() síncrono da biblioteca Mixamo (auditoria de 19/10, §5).
+	preload("res://gameplay/MixamoDeath.gd").prewarm()
 	var ids: Array = TRAFFIC_CAR_TYPES + TRAFFIC_MOTORCYCLE_TYPES + ["police_cruiser", "medic_box", "rescue_pumper", "station_wagon"]
 	ids.append(str(starting_vehicle().get("archetype", "sport_coupe")))
 	for record in state.world_state.get("garage_rewards", {}).get("vehicles", {}).values():

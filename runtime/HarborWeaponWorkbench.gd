@@ -141,7 +141,8 @@ func _ready() -> void:
 	viewport.size = Vector2i(440, 300)
 	viewport.own_world_3d = true
 	viewport.transparent_bg = true
-	viewport.msaa_3d = Viewport.MSAA_2X
+	# Segue o MSAA do jogo: 2x fixo recompilava os materiais da bancada quando o jogador usa outro valor.
+	viewport.msaa_3d = preload("res://runtime/RenderPolicy.gd").subviewport_msaa(Viewport.MSAA_2X)
 	view.add_child(viewport)
 	model = Node3D.new()
 	viewport.add_child(model)

@@ -5,6 +5,22 @@ const PROFILES := preload("res://gameplay/VehicleLightProfiles.gd")
 const SURFACES := preload("res://runtime/VehicleSurfaceRoles.gd")
 const ENGINE_PROFILE := preload("res://audio/VehicleEngineProfile.gd")
 const LIGHT_BUDGET := preload("res://gameplay/lights/LightBudget.gd")
+const RENDER_POLICY := preload("res://runtime/RenderPolicy.gd")
+## Política de sombra dos faróis (auditoria Godot 4.7 de 19/10, §4 "luzes com sombra"):
+## - nas sombras Baixa/Média só os projetores do carro do jogador projetam sombra; rival de racha,
+##   alarme piscando e carro roubado por NPC acendem sem sombra (na Alta, como antes);
+## - o facho de NPC perde a sombra a npc_beam_shadow_fade m da câmera (o mapa de sombra nem é
+##   renderizado além disso);
+## - faróis não alimentam a névoa volumétrica (opção de vídeo), que recalcularia cada facho.
+## GETECO_HEADLIGHT_SHADOW_POLICY=0 volta ao comportamento antigo (A/B).
+static var headlight_shadow_policy := OS.get_environment("GETECO_HEADLIGHT_SHADOW_POLICY") != "0"
+## A distância de fade é medida da CÂMERA, não do jogador. A câmera ortográfica fica a ~36 m do
+## foco: com 20 m (+ o fade_length de 15 m) a sombra do facho de NPC sumia na visão normal de cima;
+## 60 m mantém a sombra na tela e corta a dos fachos que já estão fora dela. GETECO_NPC_BEAM_SHADOW_FADE=<metros> ajusta no A/B.
+static var npc_beam_shadow_fade := float(OS.get_environment("GETECO_NPC_BEAM_SHADOW_FADE")) if OS.get_environment("GETECO_NPC_BEAM_SHADOW_FADE").is_valid_float() else 60.0
+static var _shadow_quality_frame := -1
+static var _shadow_quality := 1
+var _lamp_shadow_state := -1
 ## Nearby traffic uses real projectors under the shared light budget.
 static var npc_beam_budget := 2
 ## Chave global do acendimento noturno automático (medição A/B e futura opção).
@@ -97,6 +113,7 @@ func _ready() -> void:
 	for mount in mounts: front += mount
 	npc_beam = _projector(front / mounts.size(), float(profile.energy) * (1.0 if profile.single else 1.6), float(profile.angle) + (0.0 if profile.single else 8.0))
 	npc_beam.shadow_enabled = true
+	if headlight_shadow_policy: npc_beam.distance_fade_shadow = npc_beam_shadow_fade
 	for item in lens_materials: item.material.emission = profile.color
 	_build_cab_markers()
 	if not bar_mounts.is_empty():
@@ -283,6 +300,7 @@ func _projector(mount: Vector3, energy: float, angle: float) -> SpotLight3D:
 	light.distance_fade_enabled = true
 	light.distance_fade_begin = 35.0
 	light.distance_fade_length = 15.0
+	if headlight_shadow_policy: light.light_volumetric_fog_energy = 0.0
 	light.hide()
 	(car.visual if on_visual else car).add_child(light)
 	return light
@@ -446,6 +464,7 @@ func _refresh(force_budget: bool = true) -> void:
 	var race_lit: bool = car.has_meta("desert_drag_physics") and car.health>0
 	var driver_lit: bool = (headlights_on and (occupied or race_lit) and (not npc_driven() or race_lit)) or alarm_blink
 	var lit: bool = driver_lit or auto_lit
+	if headlight_shadow_policy: _apply_lamp_shadows()
 	if LIGHT_BUDGET.enabled:
 		for item in glows:
 			var broken: bool = _side_broken(item.side)
@@ -512,6 +531,20 @@ func _refresh(force_budget: bool = true) -> void:
 		beacon.material.emission_enabled = active
 		beacon.material.emission_energy_multiplier = 2.8 if active else 0.0
 	for item in beacon_glows: item.sprite.visible = item.side == phase
+
+## Liga/desliga a sombra dos projetores só quando o dono ou a qualidade mudam (roubo, troca de
+## carro, menu de vídeo); escrever shadow_enabled todo quadro reenviaria a luz ao servidor.
+func _apply_lamp_shadows() -> void:
+	var frame := Engine.get_process_frames()
+	if frame != _shadow_quality_frame:
+		_shadow_quality_frame = frame
+		_shadow_quality = RENDER_POLICY.shadow_quality()
+	var player_driven: bool = car.controlled and not car.external_input and not car.traffic
+	var state := 1 if player_driven or _shadow_quality >= 2 else 0
+	if state == _lamp_shadow_state: return
+	_lamp_shadow_state = state
+	for item in lamps:
+		if is_instance_valid(item.lamp): item.lamp.shadow_enabled = state == 1
 
 func _side_broken(side: int) -> bool:
 	# Um farol central de moto quebra quando qualquer lado da lente é atingido.

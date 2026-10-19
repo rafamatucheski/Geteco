@@ -149,7 +149,8 @@ func _build_catalog() -> void:
 	preview.size = Vector2i(720, 140)
 	preview.own_world_3d = true
 	preview.transparent_bg = true
-	preview.msaa_3d = Viewport.MSAA_4X
+	# Segue o MSAA do jogo: 4x fixo recompilava os materiais da vitrine no primeiro desenho.
+	preview.msaa_3d = preload("res://runtime/RenderPolicy.gd").subviewport_msaa(Viewport.MSAA_4X)
 	container.add_child(preview)
 	gun = Node3D.new()
 	preview.add_child(gun)
