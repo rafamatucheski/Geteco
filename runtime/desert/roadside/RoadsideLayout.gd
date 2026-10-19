@@ -69,8 +69,11 @@ static func reserved(point: Vector2, radius := 0.0) -> bool:
 		if (candidate.center as Vector2).distance_to(point) < SITE_RADIUS + radius: return true
 	return false
 
-## Ponto do trecho vazio ~`ahead` metros à frente de quem dirige por ele, ou {} se o jogador não
-## está num trecho ou o ponto cairia fora dele. Puro: o teste de contrato usa sem mundo.
+## Ponto do trecho vazio ~`ahead` metros à frente de quem dirige pela estrada do trecho, ou {} se
+## o jogador não está nessa estrada, não anda ao longo dela ou o ponto cairia fora do trecho.
+## O jogador pode estar antes do trecho (na mesma reta): com a exigência antiga de já estar
+## dentro dele, os trechos de 180 m nunca tinham um ponto 240 m à frente, e a Route 66 inteira
+## ficava sem evento (A/B em release de 19/10). Puro: o teste de contrato usa sem mundo.
 static func event_point(position: Vector2, heading: Vector2, ahead := 240.0, max_offset := 14.0) -> Dictionary:
 	if heading.length() < .01: return {}
 	for stretch in EVENT_STRETCHES:
@@ -79,11 +82,12 @@ static func event_point(position: Vector2, heading: Vector2, ahead := 240.0, max
 		var along := b - a
 		var length := along.length()
 		var direction := along / length
-		var t := clampf((position - a).dot(direction) / length, 0.0, 1.0)
-		var on_road := a + along * t
-		if on_road.distance_to(position) > max_offset: continue
-		var sign := 1.0 if heading.dot(direction) >= 0.0 else -1.0
-		var target_t := t + sign * ahead / length
+		# Distância lateral à reta do trecho; quem cruza a estrada de lado não conta.
+		if absf((position - a).cross(direction)) > max_offset: continue
+		var travel := heading.normalized().dot(direction)
+		if absf(travel) < .8: continue
+		var sign := 1.0 if travel > 0.0 else -1.0
+		var target_t := ((position - a).dot(direction) + sign * ahead) / length
 		# Só no miolo do trecho: nada nasce colado num lugar ou num cruzamento.
 		if target_t < .06 or target_t > .94: continue
 		return {"stretch": str(stretch.id), "point": a + along * target_t, "direction": direction * sign}

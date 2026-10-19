@@ -302,6 +302,17 @@ func desert_roadside() -> void:
 	check(ROADSIDE.event_point(Vector2(342.5, -905), Vector2(0, 1), 120.0).is_empty(), "dirigindo para fora do trecho: sem evento")
 	check(ROADSIDE.event_point(Vector2(380, -950), Vector2(0, -1), 60.0).is_empty(), "fora da pista: sem evento")
 	check(ROADSIDE.event_point(Vector2(342.5, -950), Vector2.ZERO).is_empty(), "parado: sem evento")
+	check(ROADSIDE.event_point(Vector2(342.5, -1000), Vector2(1, 0), 60.0).is_empty(), "cruzando a estrada de lado: sem evento")
+	# Todo trecho recebe evento na distância padrão (240 m) para quem chega pela mesma estrada, nos
+	# dois sentidos. Antes os trechos de 180 m (as duas pontas da Route 66) nunca recebiam.
+	for stretch in ROADSIDE.EVENT_STRETCHES:
+		var a: Vector2 = stretch.a
+		var b: Vector2 = stretch.b
+		var direction: Vector2 = (b - a).normalized()
+		var middle: Vector2 = (a + b) * .5
+		var forward := ROADSIDE.event_point(middle - direction * 240.0, direction)
+		var backward := ROADSIDE.event_point(middle + direction * 240.0, -direction)
+		check(forward.get("stretch", "") == stretch.id and (forward.point as Vector2).distance_to(middle) < .5 and backward.get("stretch", "") == stretch.id and (backward.point as Vector2).distance_to(middle) < .5, "trecho %s recebe evento nos dois sentidos" % stretch.id)
 	for route in ROADSIDE.COURIER_ROUTES:
 		check(int(BALANCE.ROADSIDE_COURIER.get(str(route.id), 0)) > 0, "entrega %s tem pagamento na tabela" % route.id)
 	check(BALANCE.ROADSIDE_TRUCK_CASHBOX.y <= 300 and BALANCE.ROADSIDE_ROADBLOCK_LOOT.y <= 300, "dinheiro solto dos eventos cabe no teto de 300")
