@@ -8,9 +8,12 @@ class World extends Node:
 	var production := Production.new()
 	var maciota_place: Node3D
 var checks := 0
+var failures: Array[String]=[]
 func check(value: bool, message: String) -> void:
 	checks+=1
-	if not value: push_error(message); quit(1)
+	if not value:
+		failures.append(message)
+		push_error(message)
 func _initialize() -> void: run.call_deferred()
 func run() -> void:
 	var world := World.new()
@@ -25,6 +28,10 @@ func run() -> void:
 	var atlas := ATLAS.new(); atlas.collect(controller)
 	check(atlas.region_bounds.size()==3,"all prepared regions visible without mounting")
 	check(atlas.markers.any(func(m): return m.kind=="lock"),"unfinished campaign marks north gate")
+	check(not atlas.relief_cache_hit,"a new world prepares its own relief package")
+	var reopened := ATLAS.new(); reopened.collect(controller)
+	check(reopened.relief_cache_hit and reopened.relief==atlas.relief,"reopening the same world data reuses the prepared relief instance")
+	check(reopened.markers.any(func(m): return m.id=="north_gate"),"a relief cache hit still collects the current campaign markers")
 	for id in world.production._region_cache:
 		var region=world.production._region_cache[id]
 		check(not region.is_inside_tree() and region.chunks.is_empty(),"map must not load distant chunks")
@@ -43,6 +50,10 @@ func run() -> void:
 	check(state.restore_snapshot(FIXTURE.full_snapshot(Vector3(80,0,80),true)),"completed state")
 	var unlocked := ATLAS.new(); unlocked.collect(controller)
 	check(not unlocked.markers.any(func(m): return m.id=="north_gate"),"gate follows actual final campaign completion")
+	check(atlas.markers.any(func(m): return m.id=="north_gate"),"recollecting progression does not mutate the prior map snapshot")
+	var unlocked_reopened := ATLAS.new(); unlocked_reopened.collect(controller)
+	check(unlocked_reopened.relief_cache_hit and unlocked_reopened.relief==unlocked.relief,"reopening the updated world also reuses its relief instance")
+	check(not unlocked_reopened.markers.any(func(m): return m.id=="north_gate"),"cached presentation does not restore the completed campaign barrier")
 	check(unlocked.roads.size()==before.size(),"unlock does not change east mountain access")
 	for i in before.size(): check(before[i]==unlocked.roads[i].points,"map never mutates progression geometry")
 	for active in ["mountain","desert"]:
@@ -50,7 +61,11 @@ func run() -> void:
 		var from_region := ATLAS.new(); from_region.collect(controller)
 		check(from_region.roads.size()==unlocked.roads.size(),"same full atlas from "+active)
 		check(from_region.markers.size()==unlocked.markers.size(),"same places from "+active)
-	for region in world.production._region_cache.values(): region.free()
+		check(from_region.relief_cache_hit and from_region.relief==unlocked.relief,"changing the active region reuses the same session relief: "+active)
+	for region in world.production._region_cache.values():
+		check(not region.is_inside_tree() and region.chunks.is_empty(),"repeated map collection never mounts regions or chunks")
+		region.free()
 	world.free()
-	print("WORLD_MAP_ATLAS PASS ",checks," checks")
-	quit()
+	if failures.is_empty(): print("WORLD_MAP_ATLAS PASS ",checks," checks")
+	else: print("WORLD_MAP_ATLAS FAIL ",failures.size()," of ",checks," checks")
+	quit(0 if failures.is_empty() else 1)

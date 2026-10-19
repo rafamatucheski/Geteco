@@ -5,6 +5,7 @@ const CATALOG := preload("res://world/places/PlaceCatalog.gd")
 const DESERT := preload("res://world/desert/DesertLayout.gd")
 const GATE := preload("res://world/north_gateway/NorthGatewayLayout.gd")
 const SYMBOLS := preload("res://ui/hud/MapSymbols.gd")
+const RELIEF := preload("res://ui/hud/MapRelief.gd")
 var roads: Array[Dictionary]=[]
 var lands: Array[Dictionary]=[]
 var buildings: Array[PackedVector2Array]=[]
@@ -13,6 +14,8 @@ var bounds := Rect2()
 var region_bounds := {}
 var _definitions := {}
 var _first := true
+var relief := RELIEF.new()
+var relief_cache_hit := false
 
 static func planar(point: Vector3) -> Vector2: return Vector2(point.x,point.z)
 static func rectangle(rect: Rect2) -> PackedVector2Array:
@@ -54,6 +57,26 @@ func collect(controller) -> void:
 		var rect: Rect2=region_bounds[id]
 		if _first: bounds=rect; _first=false
 		else: bounds=bounds.merge(rect)
+	# Presentation is prepared once from this snapshot. Navigation bounds and
+	# the authoritative land/road/marker arrays remain independent of the relief.
+	# Only the immutable presentation package is reused. Roads and markers above
+	# are still collected afresh, including editor geometry and quest discovery.
+	var signature_parts: Array=[lands,roads,region_bounds]
+	for id in regions:
+		var region: Variant=regions[id]
+		if region is Node:
+			signature_parts.append([str(id),region.get_instance_id(),region.get("records")])
+	var signature := hash(signature_parts)
+	var owner_node: Node=controller.world if controller.world is Node else null
+	var cached: Dictionary=owner_node.get_meta("map_relief_cache",{}) if owner_node!=null else {}
+	if int(cached.get("signature",-1))==signature and cached.get("relief")!=null:
+		relief=cached.relief
+		relief_cache_hit=true
+	else:
+		relief.prepare(lands,regions,region_bounds)
+		# The world owns at most one package; ending the session releases its
+		# meshes. The package never retains the world/terrain nodes themselves.
+		if owner_node!=null: owner_node.set_meta("map_relief_cache",{"signature":signature,"relief":relief})
 
 func _read_region(id: String, region) -> void:
 	var extent := Rect2(); var first := true
@@ -67,7 +90,6 @@ func _read_region(id: String, region) -> void:
 		var definition: Dictionary=_definitions.get(entry.get("place_id",""),{})
 		var title := str(definition.get("original_name",entry.get("label","Destino")))
 		add_marker(str(entry.get("id",title)),title,entry.position,_service_icon(str(definition.get("service",""))),id)
-		if str(definition.get("service",""))=="sewer": markers.back().detail="Esgoto de Harbor: escuro, sujo e com moradores de rua. Há segredos lá embaixo."
 	if not region is Node: return # Small contract fixture; production always supplies Nodes.
 	for building in region.buildings:
 		var polygon := rectangle(Rect2(-building.size*.5,building.size))
