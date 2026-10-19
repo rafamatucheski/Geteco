@@ -1,6 +1,7 @@
 extends SceneTree
 ## Real Main/session: caption, voice, modal input and recovery share one lifecycle.
 const ARRIVAL := preload("res://runtime/ArrivalDialogue.gd")
+const VOICE := preload("res://audio/ExpressiveVoice.gd")
 var checks := 0
 var failures: Array[String] = []
 var completions := 0
@@ -40,8 +41,13 @@ func run() -> void:
 	await process_frame
 	check(session.modal and session.dialogue_open and world.player.input_locked, "Conversation retains gameplay input lock")
 	check(session.dialogue_card.visible and not session.panel.visible, "Conversation uses the compact card without the old menu panel")
-	check(session.dialogue_card.message.text == line.message, "English voice leaves Portuguese text intact")
-	check(session.dialogue_voice.playing and session.dialogue_voice.stream.resource_path.begins_with("res://audio/mission_voices/en/"), "Real dialogue player uses English")
+	# Desde as vozes dirigidas (ExpressiveVoice/DirectedVoice) a legenda mostra o que o ator diz
+	# na tomada, no idioma do texto, e o áudio vem de mission_voices/directed/<idioma>/.
+	var english_caption: String = VOICE.presentation(line.message, "maciota", "en", "en").message
+	var portuguese_caption: String = VOICE.presentation(line.message, "maciota", "en", "pt_BR").message
+	check(session.dialogue_card.message.text == portuguese_caption and portuguese_caption != english_caption, "English voice leaves the Portuguese caption intact (%s)" % session.dialogue_card.message.text)
+	var english_path: String = session.dialogue_voice.stream.resource_path if session.dialogue_voice.stream != null else ""
+	check(session.dialogue_voice.playing and english_path.begins_with("res://audio/mission_voices/") and "/en/" in english_path, "Real dialogue player uses English (%s)" % english_path)
 	check(session.dialogue_card.advance_button.has_focus(), "Continue receives real keyboard/controller focus")
 	var card_id: int = session.dialogue_card.get_instance_id()
 	var event := InputEventAction.new()
@@ -53,7 +59,8 @@ func run() -> void:
 	paused = false
 	session._input(event)
 	check(session.dialogue_open and session.dialogue_card.speaker_label.text == "DANTE" and completions == 0, "One interaction advances exactly one line")
-	check(is_equal_approx(session.dialogue_voice.volume_db, -8.0), "English Dante shares the opening and Maciota dialogue level")
+	# O nível vem da normalização por tomada (ExpressiveVoice.playback_volume), não de -8 fixo.
+	check(session.dialogue_voice.stream != null and is_equal_approx(session.dialogue_voice.volume_db, VOICE.playback_volume(session.dialogue_voice.stream, 0.0)), "English Dante plays at its take's normalized level (%.2f dB)" % session.dialogue_voice.volume_db)
 	session.dialogue_card.advance_button.pressed.emit()
 	check(completions == 1 and not session.modal and not session.dialogue_card.visible and not session.dialogue_voice.playing, "Completion closes UI/audio exactly once")
 	check(not world.player.input_locked, "Closing a conversation restores movement")
@@ -86,7 +93,8 @@ func run() -> void:
 	session.close_menu()
 	settings.voice_language = "pt_BR"
 	session.show_dialogue([line])
-	check(session.dialogue_voice.stream.resource_path.begins_with("res://audio/mission_voices/maciota_baritone/"), "Switching back restores the stable Portuguese Maciota voice")
+	var portuguese_path: String = session.dialogue_voice.stream.resource_path if session.dialogue_voice.stream != null else ""
+	check(portuguese_path.begins_with("res://audio/mission_voices/") and ("/pt_BR/" in portuguese_path or "maciota_baritone" in portuguese_path), "Switching back restores the Portuguese Maciota voice (%s)" % portuguese_path)
 	session.close_menu()
 	var guided_completions := [0]
 	session.arrival.active = true

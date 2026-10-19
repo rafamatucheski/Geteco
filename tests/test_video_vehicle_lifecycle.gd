@@ -98,7 +98,8 @@ func run() -> void:
 	check(bike._motorcycle_rider_parts.all(func(part): return not part.visible), "fixed pilot stays hidden after Dante mounts")
 	check(world.player.visible and world.player.global_position.distance_to(bike.driver_seat_anchor()) < .01, "Dante replaces the old pilot at the motorcycle seat")
 	driving._process(.2)
-	check(driving.prompt.text.contains("moto"), "motorcycle exit uses motorcycle wording")
+	# Dirigindo não há aviso "F Sair" (pedido do usuário, 25/09, ver Driving.gd); o F continua saindo.
+	check(driving.prompt.text.is_empty(), "riding the motorcycle keeps the screen free of an exit prompt")
 	# Even legacy bikes retaining ambient metadata must survive entering the port.
 	bike.set_meta("ambient_traffic", true)
 	var land: Rect2 = preload("res://world/regions/OriginalSouthPortLayout.gd").LAND
@@ -145,7 +146,14 @@ func run() -> void:
 	sedan.animate_driver_door(-1, true, 0.0)
 	check(sedan.door_presentation.hinges[-1].visible, "substitute door appears while open")
 	sedan.animate_driver_door(-1, false, 0.0)
-	check(not sedan.door_presentation.hinges[-1].visible and not sedan.door_presentation.hinges[1].visible, "closed substitute doors do not leave detached panels")
+	# Desde as portas de verdade (29/09) a folha articulada é a própria porta: fechada fica rente
+	# (0°) e só o forro interno some.
+	var closed_flush := true
+	for side in sedan.door_presentation.hinges:
+		closed_flush = closed_flush and is_zero_approx(sedan.door_presentation.hinges[side].rotation.y)
+		var liner: Variant = sedan.door_presentation._liners.get(side)
+		if is_instance_valid(liner): closed_flush = closed_flush and not liner.visible
+	check(closed_flush, "closed doors sit flush without their inner liner")
 	sedan.queue_free()
 	var holder := Node3D.new()
 	world.add_child(holder)
