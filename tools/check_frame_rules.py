@@ -9,7 +9,7 @@ depois de diminuir, rode --update-baseline para a catraca não deixar voltar.
 
 Uso:
   python -I tools/check_frame_rules.py                 # confere a árvore de trabalho
-  python -I tools/check_frame_rules.py --staged        # também recusa commit com 200+ arquivos
+  python -I tools/check_frame_rules.py --staged        # só o que está no índice; recusa 200+ arquivos
   python -I tools/check_frame_rules.py --update-baseline
 Variável: GETECO_ALLOW_BIG_COMMIT=1 libera o limite de arquivos (consolidação combinada).
 Sai com 0 quando está tudo dentro da catraca.
@@ -61,9 +61,26 @@ def count_all():
     return counts
 
 
+def count_staged():
+    """Só os .gd de jogo que estão no índice, com o conteúdo que vai ser commitado. Assim a mudança
+    não commitada de outra sessão nunca bloqueia o commit de quem não tocou nela."""
+    out = subprocess.run(["git", "diff", "--cached", "--name-only", "--diff-filter=ACMR", "--", *GAME_DIRS],
+                         cwd=ROOT, capture_output=True, text=True, encoding="utf-8")
+    counts = {name: {} for name in RULES}
+    for rel in out.stdout.splitlines():
+        if not rel.endswith(".gd"):
+            continue
+        shown = subprocess.run(["git", "show", ":" + rel], cwd=ROOT, capture_output=True)
+        text = shown.stdout.decode("utf-8", errors="replace")
+        for name, rule in RULES.items():
+            counts[name][rel] = len(rule["pattern"].findall(text))
+    return counts
+
+
 def main(argv):
-    counts = count_all()
+    counts = count_staged() if "--staged" in argv else count_all()
     if "--update-baseline" in argv:
+        counts = count_all()
         BASELINE.write_text(json.dumps(counts, indent=1, ensure_ascii=False, sort_keys=True) + "\n", encoding="utf-8")
         total = {name: sum(v.values()) for name, v in counts.items()}
         print(f"frame-rules: baseline gravada {total}")
@@ -85,6 +102,9 @@ def main(argv):
         for line in problems:
             print("  " + line)
         return 1
+    if "--staged" in argv:
+        print(f"frame-rules: ok ({sum(len(v) for v in counts.values()) // max(1, len(RULES))} arquivo(s) de jogo no commit)")
+        return 0
     total = {name: sum(v.values()) for name, v in counts.items()}
     print(f"frame-rules: ok {total}")
     return 0
