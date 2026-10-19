@@ -79,6 +79,9 @@ var _speed := 0.0
 var _move_w := 0.0
 var _run_w := 0.0
 var _travel := 0.0
+## Direção do passo no espaço do corpo (x = lado, y = frente). Quem mira e anda de lado ou recua
+## pisa nessa direção, como o Dante; só para frente fazia o NPC deslizar de lado com passada de frente.
+var _step_dir := Vector2(0.0, 1.0)
 var _last_position := Vector3.INF
 var _pending := 0.0
 var _frame := 0
@@ -373,10 +376,11 @@ func _measure(delta: float) -> void:
 	step.y = 0.0
 	var distance := step.length()
 	if distance > 3.0: distance = 0.0
-	var forward := global_basis.z
-	forward.y = 0.0
-	if distance > 0.0001 and step.dot(forward) < -0.3 * distance * forward.length(): _travel -= distance
-	else: _travel += distance
+	if distance > 0.0001:
+		var local := global_basis.inverse() * step
+		var heading := Vector2(local.x, local.z).normalized()
+		if heading != Vector2.ZERO: _step_dir = _step_dir.lerp(heading, 1.0 - exp(-10.0 * delta)).normalized()
+	_travel += distance
 	_speed = lerpf(_speed, distance / maxf(delta, 0.0001), 1.0 - exp(-8.0 * delta))
 
 ## Pose procedural e esqueleto importado usam a mesma decisão no mesmo quadro.
@@ -484,8 +488,11 @@ func _pose(dt: float) -> void:
 	for i in 2:
 		var side := -1.0 if i == 0 else 1.0
 		var f := _foot(fposmod(_phase + 0.5 * i, 1.0), duty, reach, behind, lift, strike, push, rw * mw)
-		ankles.append((Vector3(side * lerpf(0.098, 0.078, rw * mw), f.y, f.x) + _idle_stance[i] * idle).lerp(Vector3(side * 0.13, ankle_height, 0.4), _sit()))
-		pitches.append(f.z)
+		# De lado os pés abrem um pouco para não cruzarem a canela no passo.
+		var width := side * (lerpf(0.098, 0.078, rw * mw) + 0.045 * absf(_step_dir.x) * mw)
+		ankles.append((Vector3(width + _step_dir.x * f.x, f.y, _step_dir.y * f.x) + _idle_stance[i] * idle).lerp(Vector3(side * 0.13, ankle_height, 0.4), _sit()))
+		# Rolamento calcanhar/ponta só faz sentido no eixo do pé; recuando ele inverte.
+		pitches.append(f.z * _step_dir.y)
 
 	# Pelve: sobe no meio do apoio andando, desce no apoio correndo; gira com a
 	# perna que avança, cai do lado do balanço e transfere o peso lateralmente.

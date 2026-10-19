@@ -11,6 +11,7 @@ var look_seed := -1
 ## Tons de roupa do sorteio (cor do corpo Meshy); vazio = tons da gangue.
 var uniform_tones: Array = []
 const GANG_TONES := [Color(0.36, 0.44, 0.38), Color(0.30, 0.31, 0.33), Color(0.27, 0.32, 0.42), Color(0.42, 0.34, 0.28), Color(0.40, 0.40, 0.36)]
+const BANDANA_TONES := [Color("8e1c1c"), Color("1d2a4a"), Color("141414"), Color("3b4a2a"), Color("6a5a3e"), Color("b9b2a4")]
 const SKINS := [Color("e0b28e"), Color("c79570"), Color("ac785a"), Color("94664a"), Color("80553e"), Color("5e3d2c")]
 var _seat_hands: Callable
 var _seat_aim_time := 0.0
@@ -42,6 +43,14 @@ func _ready() -> void:
 		look.skin = SKINS[rng.randi_range(0, SKINS.size() - 1)]
 		look.hair_color = Color("171917").lerp(Color("5a3d26"), rng.randf() * .6)
 		look.body_tone = tones[rng.randi_range(0, tones.size() - 1)]
+	# Bandido de rua usa lenço no rosto (playtest 19/10); a cor sai do mesmo sorteio do indivíduo.
+	var mask_rng := RandomNumberGenerator.new()
+	mask_rng.seed = (look_seed if look_seed >= 0 else 7919 * (tier + 1)) + 104729
+	if mask_rng.randf() < .8:
+		var cloth: Color = BANDANA_TONES[mask_rng.randi_range(0, BANDANA_TONES.size() - 1)]
+		var worn: Array = [{"kind": "bandana", "color": cloth, "band": cloth.darkened(.3)}]
+		if mask_rng.randf() < .4: worn.append({"kind": ["cap", "beanie"][mask_rng.randi_range(0, 1)], "color": Color("1c1e20").lerp(cloth, .3)})
+		look.body_accessories = worn
 	body = preload("res://assets/civilians/RigBodySwap.gd").install(self, look)
 	torso_node = body.spine
 	head_node = body.head_node

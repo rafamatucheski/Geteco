@@ -171,13 +171,14 @@ func _stall_physics_tick(delta: float) -> void:
 		var aim := last_known - global_position
 		aim.y = 0
 		if aim.length_squared() > 0.01:
-			visual.rotation.y = atan2(-aim.x, -aim.z) - global_rotation.y
+			# Gira o tronco em vez de estalar; o tiro espera o peito alinhar (_facing_target).
+			visual.rotation.y = lerp_angle(visual.rotation.y, atan2(-aim.x, -aim.z) - global_rotation.y, 1.0 - exp(-12.0 * delta))
 		visible_aim_time += delta
 		if hostile and distance <= ATTACK_RANGE and visible_aim_time >= AIM_SECONDS and cooldown <= 0 and controller.health > 0:
 			_try_fire()
 	else:
 		visible_aim_time = 0.0
-		if direction.length_squared() > 0.1: visual.rotation.y = atan2(-direction.x, -direction.z) - global_rotation.y
+		if direction.length_squared() > 0.1: visual.rotation.y = lerp_angle(visual.rotation.y, atan2(-direction.x, -direction.z) - global_rotation.y, 1.0 - exp(-10.0 * delta))
 	var move := direction.normalized() * _tactic_speed
 	# Tactical units may move laterally or retreat at close range; a global
 	# seven-metre hold would erase flanking and containment behavior.
@@ -375,9 +376,20 @@ func _start_reload() -> void:
 	if is_instance_valid(controller) and controller.has_method("police_reload"):
 		controller.police_reload(self, weapon_id)
 
+## Só dispara com o peito do modelo (-Z) a até 35° do último ponto visto; virando, a arma ainda aponta para outro lado.
+func _facing_target() -> bool:
+	if not is_instance_valid(visual): return true
+	var facing := -visual.global_basis.z
+	var toward := last_known - global_position
+	facing.y = 0.0
+	toward.y = 0.0
+	if facing.length_squared() < 0.0001 or toward.length_squared() < 0.0001: return true
+	return facing.normalized().dot(toward.normalized()) >= cos(deg_to_rad(35.0))
+
 func _try_fire() -> bool:
 	if dead or reload_timer > 0.0 or burst_pause > 0.0 or not is_instance_valid(controller): return false
 	if controller.has_method("police_force_authorized") and not _force_authorized(): return false
+	if not _facing_target(): return false
 	if magazine <= 0:
 		_start_reload()
 		return false

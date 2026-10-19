@@ -8,7 +8,7 @@ extends RefCounted
 ## `MeshyBodyRig.attach_accessories` posiciona essa origem para o crânio de cada corpo.
 const KIT := preload("res://assets/civilians/CivilianMeshKit.gd")
 ## Cor de cada tipo quando o chamador não escolhe uma; `lens` é fixo no kit.
-const KINDS := ["cap", "beanie", "cowboy", "straw", "fedora", "sunglasses", "clown", "motorcycle_helmet"]
+const KINDS := ["cap", "beanie", "cowboy", "straw", "fedora", "sunglasses", "clown", "motorcycle_helmet", "bandana"]
 
 static func mesh(kind: String) -> ArrayMesh:
 	return KIT.cached("acc|" + kind, func() -> ArrayMesh:
@@ -44,6 +44,12 @@ static func mesh(kind: String) -> ArrayMesh:
 					b.ellipsoid(Vector3(side * .125, .2, -.02), Vector3(.075, .085, .085), KIT.SLOT_ACCENT, Basis.IDENTITY, 10, 6)
 					b.ellipsoid(Vector3(side * .06, .275, .0), Vector3(.075, .06, .08), KIT.SLOT_ACCENT, Basis.IDENTITY, 8, 5)
 				b.ellipsoid(Vector3(0, .15, .125), Vector3(.034, .034, .034), KIT.SLOT_INNER, Basis.IDENTITY, 8, 5)
+			"bandana": # lenço de bandido: cobre do nariz ao queixo, ponta caída no peito e nó na nuca (cor `band`)
+				b.loft([[.165, .1, .118, KIT.SLOT_ACCENT, .006], [.13, .104, .126, KIT.SLOT_ACCENT, .012], [.088, .096, .122, KIT.SLOT_ACCENT, .016], [.055, .08, .104, KIT.SLOT_ACCENT, .014]], KIT.SLOT_ACCENT, Transform3D.IDENTITY, 16, false, false)
+				b.ellipsoid(Vector3(0, .045, .118), Vector3(.075, .06, .018), KIT.SLOT_ACCENT, Basis(Vector3.RIGHT, .35), 10, 5)
+				b.ellipsoid(Vector3(0, .155, -.128), Vector3(.03, .022, .02), KIT.SLOT_INNER, Basis.IDENTITY, 6, 4)
+				for side in [-1.0, 1.0]:
+					b.ellipsoid(Vector3(side * .022, .12, -.138), Vector3(.016, .045, .008), KIT.SLOT_INNER, Basis(Vector3.FORWARD, side * .4), 5, 3)
 			"sunglasses": # lentes escuras e hastes (geometria do `glasses` do kit, um pouco maiores)
 				for side in [-1.0, 1.0]:
 					b.ellipsoid(Vector3(side * .039, .172, .121), Vector3(.03, .02, .007), KIT.SLOT_LENS, Basis.IDENTITY, 8, 4)

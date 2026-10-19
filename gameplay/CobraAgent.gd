@@ -93,7 +93,8 @@ func _physics_process(delta: float) -> void:
 			if gameplay._clear_at(candidate):
 				retreat = candidate
 				break
-	if direction.length_squared() > 0.01: visual.rotation.y = atan2(-direction.x, -direction.z)
+	# Gira o tronco para o alvo em vez de estalar; o tiro espera o peito alinhar (CobraGunfire).
+	if direction.length_squared() > 0.01: visual.rotation.y = lerp_angle(visual.rotation.y, atan2(-direction.x, -direction.z), 1.0 - exp(-12.0 * delta))
 	var reload_seconds := preload("res://gameplay/CombatAudio.gd").reload_seconds(weapon_id)
 	visual.update_pose(delta, sees_target, reload_timer > 0.0, 1.0 - reload_timer / maxf(reload_seconds, 0.01), gait)
 	if sees_target and distance < float(CATALOG.get_weapon(weapon_id).max_range) / 16.0 and cooldown <= 0 and reload_timer <= 0:

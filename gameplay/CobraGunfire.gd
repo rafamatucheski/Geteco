@@ -5,6 +5,14 @@ const CATALOG := preload("res://gameplay/WeaponCatalog.gd")
 static func fire(gameplay, shooter: CharacterBody3D, model: Node3D, target: Node3D, weapon_id: String, amount: float = -1.0, bridge_origin: Vector3 = Vector3.INF) -> bool:
 	if not is_instance_valid(shooter) or not is_instance_valid(target) or not is_instance_valid(model): return false
 	if gameplay.health <= 0 or not gameplay.state.weapons_allowed(): return false
+	# A pé, só atira com o peito virado para o alvo (o modelo antigo olha para -Z): de costas ou
+	# virando, o tiro saía da arma apontada para outro lado. No banco do carro o braço mira sozinho.
+	if not bridge_origin.is_finite():
+		var facing := -model.global_basis.z
+		var toward := target.global_position - shooter.global_position
+		facing.y = 0.0
+		toward.y = 0.0
+		if facing.length_squared() > 0.0001 and toward.length_squared() > 0.0001 and facing.normalized().dot(toward.normalized()) < cos(deg_to_rad(35.0)): return false
 	var data: Dictionary = CATALOG.get_weapon(weapon_id)
 	var pellets := int(data.get("pellets", 1))
 	if gameplay._police_rounds.size() + pellets > 128: return false
