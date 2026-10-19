@@ -17,7 +17,21 @@ var _post_flush := 0
 var _context: Dictionary = {}
 var _context_at := 0
 var _context_id := 0
+var _shutting_down := false
 var _previous_probe_usec := 0
+## Telemetria pesada fora do quadro do pico (auditoria 19/10, §1). Nos logs de 19/10, o callback
+## logo depois de um quadro > 33 ms (frame_spike + RuntimeSnapshot + JSON.stringify do histórico de
+## até 360 quadros) custava 11–21 ms na thread principal e criava um SEGUNDO pico (36–52 ms em 6
+## casos numa sessão). Agora o quadro do pico só guarda referências e pede ao C# um retrato do
+## runtime (objeto CLR, serializado na thread de escrita); o JSON sai em fatias de até
+## DEFERRED_BUDGET_USEC nos callbacks seguintes. `previous_probe_ms` continua sendo o custo total do
+## callback anterior (inclui a fatia), para conferir no log que o segundo pico sumiu.
+const DEFERRED_BUDGET_USEC := 1500
+const DEFERRED_MAX_JOBS := 64
+var _deferred: Array[Dictionary] = []
+var _deferred_dropped := 0
+var _previous_deferred_usec := 0
+var _rich_sink := false
 var _late_process_usec := 0
 var _late_process_frame := 0
 class EndProbe:
@@ -133,7 +147,8 @@ func _phases(now: int) -> Dictionary:
 		"late_process_frame":_late_process_frame, "render_frame":_render_frame,
 		"physics_callback_ms":float(_physics_usec)/1000.0, "physics_ticks":_physics_ticks,
 		"previous_probe_ms":float(_previous_probe_usec)/1000.0,
-		"scope":"wall_brackets_overlap_physics; render_bracket_is_not_GPU_time"}
+		"previous_deferred_ms":float(_previous_deferred_usec)/1000.0, "deferred_pending":_deferred.size(),
+		"scope":"wall_brackets_overlap_physics; render_bracket_is_not_GPU_time; previous_probe_includes_deferred"}
 	if valid:
 		phases["early_to_late_ms"] = float(_late_process_usec-_previous)/1000.0
 		phases["late_to_render_pre_ms"] = float(_render_pre_usec-_late_process_usec)/1000.0
@@ -161,7 +176,9 @@ func _coverage(now: int, spans: Array) -> Dictionary:
 		"scope":"lower_bound_from_retained_spans_only; excludes_fast_spans; no_causal_attribution"}
 
 func _capture_history(now: int, frame_ms: float, work: Dictionary) -> void:
-	_sample_context(now)
+	# O contexto (RuntimeSnapshot + JSON do mundo, a cada 250 ms) espera o callback seguinte se este
+	# acabou de ver um pico; o registro do pico leva o último publicado e a idade dele (context_age_ms).
+	if frame_ms < 33.3: _sample_context(now)
 	var sample := {"engine_usec":now, "process_frame":Engine.get_process_frames(),
 		"physics_frame":Engine.get_physics_frames(), "interval_ms":frame_ms,
 		"nodes":Performance.get_monitor(Performance.OBJECT_NODE_COUNT),
@@ -177,20 +194,22 @@ func _capture_history(now: int, frame_ms: float, work: Dictionary) -> void:
 		"phases":_phases(now)}
 	if frame_ms >= 33.3:
 		if _post_until == 0:
-			var ordered: Array[Dictionary] = []
+			# Só referências no quadro do pico: as linhas do anel nunca são alteradas depois de
+			# gravadas (o anel troca o Dictionary inteiro), então o JSON pode sair depois.
+			var ordered: Array = []
 			for i in _history.size():
 				var row := _history[(_history_cursor + i) % _history.size()] if _history.size() == HISTORY_CAPACITY else _history[i]
 				if _previous - int(row.engine_usec) <= 2000000: ordered.append(row)
-			_send({"type":"frame_history", "phase":"before", "trigger_usec":now,
-				"frames":ordered, "capacity":HISTORY_CAPACITY, "window_seconds":2,
-				"runtime":JSON.parse_string(get_parent().call("RuntimeSnapshot"))})
+			_defer_rows({"type":"frame_history", "phase":"before", "trigger_usec":now,
+				"capacity":HISTORY_CAPACITY, "window_seconds":2, "serialization":"deferred_slices_runtime_at_trigger"},
+				ordered, _hold_snapshot())
 		_post_until = now + 2000000
 		_post_flush = now if _post_flush == 0 else _post_flush
 	if _post_until != 0:
 		_post.append(sample)
 		if now - _post_flush >= 500000 or _post.size() >= HISTORY_CAPACITY or now >= _post_until:
-			_send({"type":"frame_history", "phase":"after", "frames":_post,
-				"runtime":JSON.parse_string(get_parent().call("RuntimeSnapshot"))})
+			_defer_rows({"type":"frame_history", "phase":"after", "serialization":"deferred_slices_runtime_at_flush"},
+				_post, _hold_snapshot())
 			_post = []
 			_post_flush = now
 		if now >= _post_until:
@@ -222,6 +241,7 @@ func _ready() -> void:
 		add_child(probe)
 	WORK.take_session()
 	WORK.session_enabled = true
+	_rich_sink = get_parent().has_method("HoldRuntimeSnapshot") and get_parent().has_method("RecordProfileWithSnapshot")
 	_previous = Time.get_ticks_usec()
 	_window_start = _previous
 	_render_timing = not "--headless" in OS.get_cmdline_args()
@@ -259,12 +279,15 @@ func _process(_delta: float) -> void:
 		_send({"type":"slow_operations", "start_usec":_previous, "end_usec":now,
 			"slow_spans":work.slow_spans, "dropped":work.dropped,
 			"frame_ms":frame_ms, "threshold_ms":2.0})
-	if frame_ms >= 33.3:
+	var spike := frame_ms >= 33.3
+	if spike:
+		# "context" e "runtime" entram na thread de escrita do C# a partir do retrato tirado aqui
+		# (_hold_snapshot); o Dictionary vira JSON num callback seguinte (_drain_deferred).
 		var record := {"type":"frame_spike", "start_usec":_previous, "end_usec":now,
 			"process_frame":Engine.get_process_frames(), "physics_frame":Engine.get_physics_frames(),
-			"frame_ms":frame_ms, "context":_context, "context_age_ms":float(now-_context_at)/1000.0,
+			"frame_ms":frame_ms, "context_age_ms":float(now-_context_at)/1000.0, "context_id":_context_id,
 			"phases":_phases(now), "coverage":_coverage(now, work.slow_spans),
-			"runtime":JSON.parse_string(get_parent().call("RuntimeSnapshot")),
+			"serialization":"deferred_runtime_and_context_at_spike",
 			"monitor_scope":"latest_available_not_exact_frame",
 			"render_pre_usec":_render_pre_usec, "render_post_usec":_render_post_usec, "systems":work.systems, "slow_spans":work.slow_spans,
 			"dropped":work.dropped, "paused":get_tree().paused, "focused":DisplayServer.window_is_focused(),
@@ -275,16 +298,77 @@ func _process(_delta: float) -> void:
 			record["render_cpu_ms"] = _render_cpu_ms
 			record["render_gpu_ms"] = _render_gpu_ms
 			record["render_scope"] = "latest_available_viewport_sample_not_exact_spike"
-		_send(record)
+		_defer_record(record, _hold_snapshot())
 	_physics_usec = 0
 	_physics_ticks = 0
 	_previous = now
 	if now - _window_start >= 1000000: _flush(now)
+	# Nada de fatia no callback que acabou de ver o pico: é exatamente o quadro que não pode crescer.
+	_previous_deferred_usec = 0
+	if not spike and not _deferred.is_empty():
+		var drain_start := Time.get_ticks_usec()
+		_drain_deferred(DEFERRED_BUDGET_USEC)
+		_previous_deferred_usec = Time.get_ticks_usec() - drain_start
 	_previous_probe_usec = Time.get_ticks_usec() - now
 	_telemetry_total_usec += _previous_probe_usec
 
 func _send(record: Dictionary) -> void:
 	get_parent().call("RecordProfile", JSON.stringify(record))
+
+## Retrato do runtime (GC, fila de escrita, monitores, operações ativas) e do último contexto publicado,
+## guardado no C# como objeto CLR: custa microssegundos aqui e só é serializado na thread de escrita.
+func _hold_snapshot() -> int:
+	return int(get_parent().call("HoldRuntimeSnapshot")) if _rich_sink else 0
+
+func _enqueue_deferred(job: Dictionary) -> void:
+	# Teto para pico em rajada (carregamento travado): perde o mais antigo e conta, não cresce sem fim.
+	if _deferred.size() >= DEFERRED_MAX_JOBS:
+		_deferred.pop_front()
+		_deferred_dropped += 1
+	_deferred.append(job)
+
+func _defer_record(record: Dictionary, snapshot: int) -> void:
+	_enqueue_deferred({"record":record, "snapshot":snapshot, "attach_context":true})
+
+## Registro com lista longa (histórico de quadros): cada linha vira JSON separada, dentro do orçamento.
+func _defer_rows(header: Dictionary, rows: Array, snapshot: int) -> void:
+	_enqueue_deferred({"record":header, "rows":rows, "parts":PackedStringArray(), "cursor":0,
+		"snapshot":snapshot, "attach_context":false})
+
+## budget_usec < 0 esvazia tudo (saída do jogo). A checagem de tempo é por linha/registro: uma linha
+## custa dezenas de microssegundos, então a fatia passa do orçamento no máximo por uma linha.
+func _drain_deferred(budget_usec: int) -> void:
+	var started := Time.get_ticks_usec()
+	while not _deferred.is_empty():
+		var job: Dictionary = _deferred[0]
+		if job.has("rows"):
+			var rows: Array = job.rows
+			var parts: PackedStringArray = job.parts
+			var cursor: int = job.cursor
+			while cursor < rows.size():
+				parts.append(JSON.stringify(rows[cursor]))
+				cursor += 1
+				if budget_usec >= 0 and Time.get_ticks_usec() - started >= budget_usec: break
+			job.parts = parts
+			job.cursor = cursor
+			if cursor < rows.size(): return
+		_deferred.pop_front()
+		_emit_deferred(job)
+		if budget_usec >= 0 and Time.get_ticks_usec() - started >= budget_usec: return
+
+func _emit_deferred(job: Dictionary) -> void:
+	var record: Dictionary = job.record
+	if _deferred_dropped > 0:
+		record["deferred_jobs_dropped"] = _deferred_dropped
+		_deferred_dropped = 0
+	var json := JSON.stringify(record)
+	if job.has("rows"):
+		# Cabeçalho + linhas já serializadas: só concatenação aqui, nada de reconverter as linhas.
+		json = json.left(-1) + (',' if record.size() > 0 else '') + '"frames":[' + ",".join(job.parts) + "]}"
+	if _rich_sink:
+		get_parent().call("RecordProfileWithSnapshot", json, int(job.snapshot), bool(job.attach_context))
+	else:
+		get_parent().call("RecordProfile", json)
 
 ## Resumo de 1 s com percentis exatos, tempo de render CPU/GPU e carga da cena. É o registro para
 ## comparar rodadas (editor × release, dirigindo × parado) sem reconstruir tudo dos quadros.
@@ -354,6 +438,9 @@ func _orphan_report(now: int) -> void:
 ## Donos das luzes visíveis: em 13/10, ao meio-dia, entraram +14 OmniLight com novos chunks e a GPU foi de
 ## ~3 para 10,8 ms. O inventário só contava a classe; agrupar pelo script mais próximo aponta quem acende.
 func _light_report(now: int) -> void:
+	# During exit_tree, visible children can already have left World3D. Retain
+	# the last complete inventory; the final timing/metrics flush still runs.
+	if _shutting_down: return
 	if now - _lights_at < LIGHT_REPORT_INTERVAL_USEC: return
 	_lights_at = now
 	var groups := {}
@@ -393,8 +480,11 @@ func _flush(now: int) -> void:
 	_window_start = now
 
 func _exit_tree() -> void:
+	_shutting_down = true
 	# Capture the last interval while the parent writer is still alive.
 	_process(0.0)
+	# Na saída não há quadro seguinte: o que ficou adiado sai inteiro, enquanto o C# ainda escreve.
+	_drain_deferred(-1)
 	if not _post.is_empty():
 		_send({"type":"frame_history", "phase":"after_shutdown", "frames":_post})
 	if RenderingServer.frame_pre_draw.is_connected(_render_pre): RenderingServer.frame_pre_draw.disconnect(_render_pre)

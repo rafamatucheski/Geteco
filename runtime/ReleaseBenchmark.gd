@@ -40,11 +40,12 @@ const ROUTES := {
 const SPEED := 12.0
 var WARMUP_LOOPS := 1
 const MEASURE_LOOPS := 2
-const TOGGLES := ["GETECO_POP_VC", "GETECO_SUN_SHADOW_NEAR", "GETECO_TRAFFIC_RAILS", "GETECO_PED_POSE_LOD", "GETECO_LIGHT_BUDGET",
+const TOGGLES := ["GETECO_OCCLUSION", "GETECO_PROC_LOD", "GETECO_TUNNEL_LIGHT_SHADOWS", "GETECO_LOCAL_SHADOW_PREWARM",
+	"GETECO_HEADLIGHT_SHADOW_POLICY", "GETECO_SUN_SHADOW_TUNE", "GETECO_GROUND_OPAQUE", "GETECO_SUBVIEWPORT_MSAA_MATCH", "GETECO_POP_VC", "GETECO_SUN_SHADOW_NEAR", "GETECO_TRAFFIC_RAILS", "GETECO_PED_POSE_LOD", "GETECO_LIGHT_BUDGET",
 	"GETECO_DETAIL_RANGE", "GETECO_BAKED_BUILDINGS", "GETECO_SKID_BUDGET", "GETECO_DASH_BATCH", "GETECO_DISPATCH_FAST",
 	"GETECO_PED_DUMMY", "GETECO_BUILDING_BATCH", "GETECO_PROP_INSTANCING", "GETECO_GROUND_STACK", "GETECO_SHADOW_SHELL",
 	"GETECO_BRIDGE_MERGE", "GETECO_FURNITURE_MERGE", "GETECO_CELL_MERGE", "GETECO_BRIDGE_LOOK", "GETECO_PAINTED_WINDOWS", "GETECO_PAINTED_FACADES",
-	"GETECO_SUN_SPLITS", "GETECO_UNIFIED_BRIDGE", "GETECO_DESERT_CARGO_HEIST", "GETECO_DESERT_ROADSIDE"]
+	"GETECO_SUN_SPLITS", "GETECO_UNIFIED_BRIDGE", "GETECO_DESERT_CARGO_HEIST", "GETECO_DESERT_ROADSIDE", "GETECO_RAGDOLL"]
 ## Distância ao longo da volta da rota66 (ida para o sul de z -470, volta a partir de z -1500) em que cada
 ## evento nasce, 240 m antes do ponto, como o jogo faria: a van na mão da ida, o bloqueio na mão da volta
 ## (o carro do benchmark anda na faixa leste nos dois sentidos, então desvia dele pela outra mão).
@@ -201,7 +202,7 @@ func _run() -> void:
 		"resolution": str(get_viewport().get_visible_rect().size), "viewport_pixels": str(get_viewport().size), "msaa": get_viewport().msaa_3d,
 		"hour": bench_hour, "rain": bench_rain, "vehicles": world.production.vehicles.size(), "people": world.people.size(),
 		"requested_population": world.production.requested_population, "vsync_mode": DisplayServer.window_get_vsync_mode(), "max_fps": Engine.max_fps,
-		"engine": Engine.get_version_info().string, "cpu": OS.get_processor_name()}
+		"engine": Engine.get_version_info().string, "cpu": OS.get_processor_name(), "graphics": _graphics_report()}
 	if chaos_stars > 0:
 		report.chaos = {"stars_requested": chaos_stars, "stars_final": int(world.gameplay.stars), "dispatch_units_peak": _chaos_peak_units,
 			"dispatch_units_final": world.dispatch.units.size() if is_instance_valid(world.get("dispatch")) else -1}
@@ -240,6 +241,56 @@ func _road_events(distance: float, total: float) -> void:
 		if not started and along < float(cue.at) + 150.0: continue
 		_road_events_fired[key] = true
 		_road_event_log.append({"loop": loop, "kind": str(cue.kind), "started": started, "late_m": snappedf(along - float(cue.at), .1), "at_msec": Time.get_ticks_msec()})
+## Todas as opções gráficas que valeram na rodada (auditoria 19/10, §1): antes o JSON só tinha resolução,
+## MSAA e vsync, e o settings.cfg do jogador mudou SSAO, névoa, escala e sombra entre rodadas sem deixar
+## rastro. Grava a preferência lida (settings) e o que o motor está usando (applied), porque os dois podem
+## divergir: o benchmark desliga vsync/FPS, e SSAO/névoa só valem no Forward+.
+func _graphics_report() -> Dictionary:
+	const SETTINGS := preload("res://runtime/Settings.gd")
+	var view := get_viewport()
+	var report := {"rendering_method": RenderingServer.get_current_rendering_method(),
+		"rendering_driver": RenderingServer.get_current_rendering_driver_name(),
+		"project_rendering_method": str(ProjectSettings.get_setting("rendering/renderer/rendering_method", "")),
+		"video_adapter": RenderingServer.get_video_adapter_name(), "video_api": RenderingServer.get_video_adapter_api_version(),
+		"settings_path": "", "settings_file_found": false, "preset": "", "settings": {},
+		"engine_args": OS.get_cmdline_args(), "user_args": OS.get_cmdline_user_args(),
+		# override.cfg ao lado do exe muda o projeto sem recompilar (bancada: GETECO_TRACK_CALL_STACKS=1).
+		"always_track_call_stacks": bool(ProjectSettings.get_setting("debug/settings/gdscript/always_track_call_stacks", false)),
+		"override_cfg_present": FileAccess.file_exists(OS.get_executable_path().get_base_dir().path_join("override.cfg"))}
+	var settings: Node = get_node_or_null("/root/V2Settings")
+	if settings != null:
+		var path: String = SETTINGS.default_path()
+		report.settings_path = path
+		report.settings_file_found = FileAccess.file_exists(path)
+		# graphics_preset() só existe com as opções gráficas novas; sem elas, "personalizado".
+		var preset: int = settings.graphics_preset() if settings.has_method("graphics_preset") else 0
+		report.preset = ["personalizado", "baixa", "media", "alta"][clampi(preset, 0, 3)]
+		var chosen := {}
+		for key in ["msaa", "render_scale", "shadow_quality", "aa_mode", "upscale_mode", "shadow_distance", "anisotropy",
+				"reflection_quality", "detail_quality", "ssao", "volumetric_fog", "glow", "glow_strength"]:
+			chosen[key] = settings.get(key)
+		for key in ["window_mode", "resolution", "vsync", "fps_limit", "brightness"]: chosen[key] = settings.get(key)
+		chosen["resolution_size"] = str(SETTINGS.RESOLUTIONS[clampi(int(settings.resolution), 0, SETTINGS.RESOLUTIONS.size() - 1)])
+		chosen["fps_limit_value"] = SETTINGS.FPS_LIMITS[clampi(int(settings.fps_limit), 0, SETTINGS.FPS_LIMITS.size() - 1)]
+		chosen["shadow_atlas"] = SETTINGS.SHADOW_ATLAS[clampi(int(settings.shadow_quality), 0, 2)]
+		chosen["shadow_distance_m"] = settings.shadow_distance_metres()
+		report.settings = chosen
+	var environment: Environment = view.find_world_3d().environment if view.find_world_3d() != null else null
+	report.applied = {"msaa_3d": view.msaa_3d, "screen_space_aa": view.screen_space_aa, "use_taa": view.use_taa,
+		"scaling_3d_mode": view.scaling_3d_mode, "scaling_3d_scale": view.scaling_3d_scale,
+		"anisotropic_filtering_level": view.anisotropic_filtering_level, "mesh_lod_threshold": view.mesh_lod_threshold,
+		"pipeline_msaa_3d": int(ProjectSettings.get_setting("rendering/anti_aliasing/quality/msaa_3d", 0)),
+		"max_fps": Engine.max_fps, "vsync_mode": DisplayServer.window_get_vsync_mode(),
+		"window_mode": DisplayServer.window_get_mode(), "window_size": str(DisplayServer.window_get_size()),
+		"screen_size": str(DisplayServer.screen_get_size()), "screen_scale": DisplayServer.screen_get_scale(),
+		"viewport_pixels": str(view.size), "max_physics_steps": Engine.max_physics_steps_per_frame,
+		"environment_found": environment != null}
+	if environment != null:
+		report.applied.merge({"ssao": environment.ssao_enabled, "ssr": environment.ssr_enabled, "ssil": environment.ssil_enabled,
+			"sdfgi": environment.sdfgi_enabled, "volumetric_fog": environment.volumetric_fog_enabled,
+			"glow": environment.glow_enabled, "glow_intensity": environment.glow_intensity, "fog": environment.fog_enabled})
+	return report
+
 
 func _observe_cargo() -> void:
 	# Uma leitura por segundo registra a carga alcançada sem varrer entidades por quadro.

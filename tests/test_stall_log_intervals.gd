@@ -96,9 +96,13 @@ func run() -> void:
 	check(saturated.any(func(event): return event.label == "fixture.critical"), "pico Ã© preservado quando buffer estÃ¡ cheio de eventos rÃ¡pidos")
 	check(saturated[-1].label == "trace.events_dropped" and saturated[-1].count == 1, "substituiÃ§Ã£o no buffer informa perda")
 	WORK.enabled = false
+	# A telemetria de sessão (SessionSystemProfile) também abre eventos; aqui só vale a medição do StallLog.
+	var session_was := WORK.session_enabled
+	WORK.session_enabled = false
 	check(WORK.begin() == 0, "mediÃ§Ã£o desativada nÃ£o abre evento")
 	WORK.finish("fixture.disabled", Time.get_ticks_usec())
 	check(WORK.take().is_empty(), "mediÃ§Ã£o desativada nÃ£o acumula eventos")
+	WORK.session_enabled = session_was
 	var observed: Array[Dictionary] = []
 	logger._threshold_ms = 1000000.0
 	logger.interval_observed.connect(func(now, work, removed, roots):

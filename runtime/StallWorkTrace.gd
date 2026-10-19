@@ -1,6 +1,6 @@
 extends RefCounted
-## Cronometragem opt-in do descarte. Sem StallLog ativo, nÃ£o guarda eventos.
-## Os tempos sÃ£o aninhados: nÃ£o somar pai e filho para estimar o custo do quadro.
+## Cronometragem opt-in do descarte. Sem StallLog ativo, não guarda eventos.
+## Os tempos são aninhados: não somar pai e filho para estimar o custo do quadro.
 const MAX_EVENTS := 256
 static var enabled := false
 static var events: Array[Dictionary] = []
@@ -107,7 +107,7 @@ static func finish_slow(label: String, began: int, minimum_usec: int = 10000, so
 	if aggregate_enabled: _aggregate(label,ended-began)
 	if not enabled: return
 	if ended - began < minimum_usec: return
-	# Um pico nÃ£o pode desaparecer atrÃ¡s dos eventos rÃ¡pidos de um quadro.
+	# Um pico não pode desaparecer atrás dos eventos rápidos de um quadro.
 	if events.size() >= MAX_EVENTS:
 		for i in events.size():
 			if float(events[i].get("ms", 0.0)) < float(minimum_usec) / 1000.0:

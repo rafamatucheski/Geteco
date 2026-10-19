@@ -5,18 +5,18 @@ signal interval_observed(now_usec: int, work: Array, removed_count: int, removed
 var observe_intervals := false
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const LOG_WRITER := preload("res://runtime/StallLogWriter.gd")
-## Registro de quadros lentos para quem joga e depois manda o arquivo. SÃ³ liga com a variÃ¡vel de
-## ambiente HARBOR_STALL_LOG=1 (o Jogar.cmd define); fora disso o nÃ³ se remove e nÃ£o custa nada.
+## Registro de quadros lentos para quem joga e depois manda o arquivo. Só liga com a variável de
+## ambiente HARBOR_STALL_LOG=1 (o Jogar.cmd define); fora disso o nó se remove e não custa nada.
 ##
 ## Grava em evidence/stall-logs/stalls-AAAAMMDD-HHMMSS.log, uma linha JSON por registro:
-##  - "header": versÃ£o, GPU, renderizador, resoluÃ§Ã£o e as chaves de A/B ativas (C#, bake);
-##  - "window": a cada 10 s, FPS e p50/p95/p99/mÃ¡x do tempo de quadro em MILISSEGUNDOS, mais as
-##    contagens de quadros acima de 33,3/50/100 ms (a mÃ©dia de FPS sozinha esconde os engasgos);
-##  - "slow": cada quadro acima de HARBOR_STALL_MS (padrÃ£o 40 ms) com o que o motor e o jogo tinham
-##    naquele instante: passos de fÃ­sica no quadro, monitores do motor, nÃ³s/objetos, unidades de
-##    despacho, chunks e, com o rastro ligado, os trechos lentos (>= 2 ms) que caÃ­ram dentro do quadro.
-## O tempo de quadro Ã© o intervalo real entre dois _process seguidos, o mesmo critÃ©rio do FrameStallRecorder.
-## NÃ£o decide causa: registra o contexto para a causa ser lida depois, sem repetir a rodada.
+##  - "header": versão, GPU, renderizador, resolução e as chaves de A/B ativas (C#, bake);
+##  - "window": a cada 10 s, FPS e p50/p95/p99/máx do tempo de quadro em MILISSEGUNDOS, mais as
+##    contagens de quadros acima de 33,3/50/100 ms (a média de FPS sozinha esconde os engasgos);
+##  - "slow": cada quadro acima de HARBOR_STALL_MS (padrão 40 ms) com o que o motor e o jogo tinham
+##    naquele instante: passos de física no quadro, monitores do motor, nós/objetos, unidades de
+##    despacho, chunks e, com o rastro ligado, os trechos lentos (>= 2 ms) que caíram dentro do quadro.
+## O tempo de quadro é o intervalo real entre dois _process seguidos, o mesmo critério do FrameStallRecorder.
+## Não decide causa: registra o contexto para a causa ser lida depois, sem repetir a rodada.
 
 const WINDOW_SECONDS := 10.0
 const MAX_SLOW_RECORDS := 1500
@@ -62,22 +62,24 @@ var _census_scripts: Dictionary = {}
 var _census_seen: Dictionary = {}
 var _census_started_usec := 0
 var _census_ready: Dictionary = {}
-## SaÃ­das da Ã¡rvore desde o callback anterior, inclusive destaque para cache.
-## Guarda atÃ© 24 raÃ­zes marcadas com queue_free; nÃ£o prova causa nem liberaÃ§Ã£o de objetos.
+## Saídas da árvore desde o callback anterior, inclusive destaque para cache.
+## Guarda até 24 raízes marcadas com queue_free; não prova causa nem liberação de objetos.
 var _removed_roots: Array[Dictionary] = []
 var _removed_total := 0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	# Chave de A/B: teto de passos de física por quadro (padrão do motor: 8). Com 8, um quadro lento vira
+	# até 8 passos de catch-up, cada um caro, e o quadro seguinte fica pior (espiral medida em 2026-10-01).
+	# Lida antes de decidir se o registro liga: o A/B 3 × 8 em release roda sem HARBOR_STALL_LOG, e antes
+	# a chave era ignorada em silêncio nesse caso (auditoria 19/10, §6).
+	var steps_text := OS.get_environment("HARBOR_MAX_PHYSICS_STEPS")
+	if steps_text.is_valid_int() and int(steps_text) >= 1: Engine.max_physics_steps_per_frame = int(steps_text)
 	if OS.get_environment("HARBOR_STALL_LOG") != "1" or "--headless" in OS.get_cmdline_args():
-		queue_free()
+		_disable()
 		return
 	var requested := OS.get_environment("HARBOR_STALL_MS")
 	if requested.is_valid_float() and float(requested) > 0.0: _threshold_ms = float(requested)
-	# Chave de A/B: teto de passos de fÃ­sica por quadro (padrÃ£o do motor: 8). Com 8, um quadro lento vira
-	# atÃ© 8 passos de catch-up, cada um caro, e o quadro seguinte fica pior (espiral medida em 2026-10-01).
-	var steps_text := OS.get_environment("HARBOR_MAX_PHYSICS_STEPS")
-	if steps_text.is_valid_int() and int(steps_text) >= 1: Engine.max_physics_steps_per_frame = int(steps_text)
 	var folder := ProjectSettings.globalize_path("res://evidence/stall-logs")
 	if DirAccess.make_dir_recursive_absolute(folder) != OK:
 		folder = ProjectSettings.globalize_path("user://stall-logs")
@@ -86,7 +88,7 @@ func _ready() -> void:
 	_path = "%s/stalls-%s.log" % [folder, stamp]
 	_writer = LOG_WRITER.new()
 	if _writer.start(_path) != OK:
-		queue_free()
+		_disable()
 		return
 	_enabled = true
 	_profile_self = OS.get_environment("HARBOR_STALL_SELF_PROFILE") == "1"
@@ -98,7 +100,7 @@ func _ready() -> void:
 	STALL_WORK.enabled = OS.get_environment("HARBOR_STALL_WORK") != "0"
 	_started_usec = Time.get_ticks_usec()
 	get_tree().node_removed.connect(_on_node_removed)
-	# Tempo de render por quadro (CPU e GPU) para separar "engasgou na simulaÃ§Ã£o" de "engasgou no desenho".
+	# Tempo de render por quadro (CPU e GPU) para separar "engasgou na simulação" de "engasgou no desenho".
 	RenderingServer.viewport_set_measure_render_time(get_tree().root.get_viewport_rid(), true)
 	_write({"type": "header", "log": _path, "threshold_ms": _threshold_ms,
 		"format_version": 2, "delta_scope": "nodes_objects_chunks_previous_process_sample", "work_trace": STALL_WORK.enabled,
@@ -114,12 +116,20 @@ func _ready() -> void:
 		"trace": OS.get_environment("HARBOR_STALL_TRACE") != "0"})
 	print("StallLog: gravando quadros lentos (> %.0f ms) em %s" % [_threshold_ms, _path])
 
+## Desligado fica na árvore, parado. A doc do Godot proíbe free()/queue_free() de autoload em runtime
+## ("the engine will crash"), e os testes de medição procuram /root/StallLog e leem `_enabled`.
+func _disable() -> void:
+	_enabled = false
+	set_process(false)
+	set_physics_process(false)
+	process_mode = Node.PROCESS_MODE_DISABLED
+
 func _process(delta: float) -> void:
 	if not _enabled: return
 	var now := Time.get_ticks_usec()
 	var physics_frames := Engine.get_physics_frames()
 	var work := STALL_WORK.take()
-	# SÃ³ conta com a partida pronta, sem pausa e com a janela em foco: carregamento e Alt-Tab nÃ£o sÃ£o engasgo do jogo.
+	# Só conta com a partida pronta, sem pausa e com a janela em foco: carregamento e Alt-Tab não são engasgo do jogo.
 	if _previous_usec > 0 and _playing():
 		var ms := float(now - _previous_usec) / 1000.0
 		_frames.append(ms)
@@ -143,7 +153,7 @@ func _process(delta: float) -> void:
 	if _window_clock >= WINDOW_SECONDS: _flush_window()
 	_ensure_world()
 	if not _census_pending.is_empty() and _playing(): _advance_census()
-	# A amostra anterior precisa avanÃ§ar em TODO quadro, inclusive os rÃ¡pidos.
+	# A amostra anterior precisa avançar em TODO quadro, inclusive os rápidos.
 	# Antes, nodes_delta/objects_delta comparavam dois registros lentos distantes.
 	_last_nodes = int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
 	_last_objects = int(Performance.get_monitor(Performance.OBJECT_COUNT))
@@ -168,8 +178,8 @@ func _chunk_total() -> int:
 	return total
 
 func _pipeline_counts() -> Dictionary:
-	# Contadores cumulativos do motor, nÃ£o duraÃ§Ã£o de compilaÃ§Ã£o. O cache do
-	# driver pode esconder o custo mesmo quando surgem combinaÃ§Ãµes novas.
+	# Contadores cumulativos do motor, não duração de compilação. O cache do
+	# driver pode esconder o custo mesmo quando surgem combinações novas.
 	return {"canvas": int(Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_CANVAS)),
 		"mesh": int(Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_MESH)),
 		"surface": int(Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_SURFACE)),
@@ -216,7 +226,7 @@ func _summarize_work(work: Array[Dictionary]) -> void:
 
 func _on_node_removed(node: Node) -> void:
 	_removed_total += 1
-	# SÃ³ a raiz marcada: os filhos saem junto e entrariam Ã s centenas.
+	# Só a raiz marcada: os filhos saem junto e entrariam às centenas.
 	if not node.is_queued_for_deletion() or _removed_roots.size() >= 24: return
 	var script: Variant = node.get_script()
 	var parent := node.get_parent()
@@ -234,9 +244,9 @@ func _start_census() -> void:
 func _advance_census() -> void:
 	var began := Time.get_ticks_usec()
 	while not _census_pending.is_empty() and Time.get_ticks_usec() - began < CENSUS_BUDGET_USEC:
-		# NÃ³s podem sair, morrer ou mudar de pai entre as fatias.
-		# NÃ£o converter para Node antes de validar: uma referÃªncia jÃ¡ liberada
-		# gera erro na prÃ³pria atribuiÃ§Ã£o tipada, antes do is_instance_valid.
+		# Nós podem sair, morrer ou mudar de pai entre as fatias.
+		# Não converter para Node antes de validar: uma referência já liberada
+		# gera erro na própria atribuição tipada, antes do is_instance_valid.
 		var candidate: Variant = _census_pending.pop_back()
 		if not is_instance_valid(candidate): continue
 		var node: Node = candidate
@@ -254,7 +264,7 @@ func _advance_census() -> void:
 		_census_pending.append_array(node.get_children())
 	if not _census_pending.is_empty(): return
 	var ended := Time.get_ticks_usec()
-	# Ã‰ uma amostra ao longo de um intervalo, nÃ£o uma fotografia de um quadro.
+	# É uma amostra ao longo de um intervalo, não uma fotografia de um quadro.
 	_census_ready = {"classes": _top(_census_classes, 12), "scripts": _top(_census_scripts, 14),
 		"nodes_visited": _census_seen.size(), "sampling_ms": float(ended - _census_started_usec) / 1000.0,
 		"started_t": float(_census_started_usec - _started_usec) / 1000000.0,
@@ -270,7 +280,7 @@ func _top(counts: Dictionary, limit: int) -> Dictionary:
 
 func _playing() -> bool:
 	if get_tree().paused or not is_instance_valid(_world): return false
-	# Sondas renderizadas automatizadas podem medir sem roubar o foco do usuÃ¡rio.
+	# Sondas renderizadas automatizadas podem medir sem roubar o foco do usuário.
 	if not DisplayServer.window_is_focused() and OS.get_environment("HARBOR_STALL_BACKGROUND") != "1": return false
 	var session: Variant = _world.get("session")
 	return session != null and bool(session.get("ready_for_play"))
@@ -330,7 +340,7 @@ func _flush_window() -> void:
 		_work_summary.clear()
 	STALL_WORK.finish("logger.window_summaries", began)
 	began = STALL_WORK.begin()
-	# Censo por fatias: a varredura inteira custou atÃ© 19 ms num callback.
+	# Censo por fatias: a varredura inteira custou até 19 ms num callback.
 	# Publicar somente o resultado completo, com seu intervalo de amostragem.
 	if not _census_ready.is_empty():
 		record["census"] = _census_ready
@@ -387,7 +397,7 @@ func _record_slow(ms: float, now: int, physics_steps: int, work: Array[Dictionar
 	if not spans.is_empty(): record["spans"] = spans
 	_write(record)
 
-## Quadro a quadro os contadores abaixo sÃ³ entram nos registros lentos e nas janelas; nada roda por quadro.
+## Quadro a quadro os contadores abaixo só entram nos registros lentos e nas janelas; nada roda por quadro.
 func _game_state(with_deltas: bool) -> Dictionary:
 	var state := {}
 	if not is_instance_valid(_world): return state
@@ -395,8 +405,8 @@ func _game_state(with_deltas: bool) -> Dictionary:
 	if gameplay != null:
 		state["stars"] = int(gameplay.get("stars"))
 		if with_deltas:
-			# Arma na mÃ£o e o que os efeitos de combate tÃªm ligado agora: chama/explosÃ£o custam GPU (partÃ­culas
-			# translÃºcidas + luzes) e a primeira vez de cada luz pode recompilar pipelines no Mobile.
+			# Arma na mão e o que os efeitos de combate têm ligado agora: chama/explosão custam GPU (partículas
+			# translúcidas + luzes) e a primeira vez de cada luz pode recompilar pipelines no Mobile.
 			var equipped: Variant = gameplay.call("equipped") if gameplay.has_method("equipped") else null
 			if equipped != null: state["weapon"] = str(equipped)
 			var effects: Variant = gameplay.get("effects")
@@ -408,7 +418,7 @@ func _game_state(with_deltas: bool) -> Dictionary:
 					elif child is Light3D and child.visible: lights += 1
 				state["effects_emitting"] = emitting
 				state["effects_lights"] = lights
-			# Fogo vivo agora: focos no chÃ£o (lanÃ§a-chamas/explosÃ£o), pessoas queimando e carros com vida 0 ainda em cena.
+			# Fogo vivo agora: focos no chão (lança-chamas/explosão), pessoas queimando e carros com vida 0 ainda em cena.
 			var tree := get_tree()
 			state["fires_ground"] = tree.get_nodes_in_group("ground_fire").size()
 			state["burning_people"] = tree.get_nodes_in_group("v2_burning_actor").size()
@@ -423,7 +433,7 @@ func _game_state(with_deltas: bool) -> Dictionary:
 			var key := "%s:%s" % [unit.get("service"), unit.get("state")]
 			census[key] = int(census.get(key, 0)) + 1
 		state["units"] = census
-		# PerseguiÃ§Ã£o: cada viatura de polÃ­cia com estado, distÃ¢ncia ao alvo (m) e velocidade (m/s), e a velocidade do alvo.
+		# Perseguição: cada viatura de polícia com estado, distância ao alvo (m) e velocidade (m/s), e a velocidade do alvo.
 		var target: Variant = gameplay.call("pursuit_target") if gameplay != null and gameplay.has_method("pursuit_target") else null
 		var chase: Array = []
 		for unit in units:
@@ -468,7 +478,7 @@ func _count_wrecks() -> int:
 			if is_instance_valid(car) and float(car.get("health")) <= 0.0: count += 1
 	return count
 
-## Trechos lentos do rastro (perf_costs) que COMEÃ‡ARAM dentro do quadro lento, os mais longos primeiro.
+## Trechos lentos do rastro (perf_costs) que COMEÇARAM dentro do quadro lento, os mais longos primeiro.
 func _spans_in_frame(from_usec: int, to_usec: int) -> Array:
 	if not is_instance_valid(_world) or not _world.has_meta("perf_costs"): return []
 	var costs: Variant = _world.get_meta("perf_costs")

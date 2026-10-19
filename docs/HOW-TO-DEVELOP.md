@@ -36,6 +36,18 @@ no jogo, não.
   (`oeste porto sobrados serra ponte travessia deserto`) e os cenários de caos, noite, chuva,
   dirigindo e diagnóstico desligado, 2 rodadas cada. Resumo em
   `evidence/perf-cross-20261015/<rótulo>_all.tsv`. Só rotas: `tools/perf_cross_bench.sh`.
+- **Opções gráficas fixas:** a bancada roda com `--isolated-save-root=<export>/bench-save-root` e
+  copia `tools/bench/settings.cfg` (preset Média, janela 1280x720) para lá antes de **cada** rodada;
+  o `settings.cfg` do jogador não entra mais. `BENCH_SETTINGS=<arquivo>` troca o arquivo. O JSON
+  grava em `graphics` o que valeu (preset, MSAA/AA, escala, sombra, SSAO, névoa, janela,
+  renderizador, driver, argumentos). Argumentos do motor vão em `ENGINE_EXTRA` (antes do `--`,
+  ex. `ENGINE_EXTRA="--rendering-driver d3d12"`); `BENCH_EXTRA` continua indo para o jogo.
+- **Pilha de GDScript em release** (`debug/settings/gdscript/always_track_call_stacks`): não liga
+  em runtime (o Godot lê uma vez, antes dos scripts). `GETECO_TRACK_CALL_STACKS=1` na bancada põe
+  `tools/bench/override-callstacks.cfg` como `override.cfg` ao lado do exe; sem a variável, a cópia é
+  renomeada para `override.cfg.callstacks-off`. Para A/B do custo, duas pastas do mesmo export.
+- `frame_spike` e `frame_history` são serializados nos quadros seguintes ao pico, em fatias de
+  ≤ 1,5 ms; `phases.previous_probe_ms` (inclui a fatia) e `previous_deferred_ms` mostram o custo.
 - Compare com uma linha de base medida **na mesma máquina e no mesmo dia**. Para "antes", use
   interruptor de ambiente (`GETECO_*`), nunca troque arquivos para o HEAD.
 - Relate em ms: p50, p95, p99, máximo e contagem de quadros > 16,7 / 33 / 100 ms. Diga o que

@@ -59,7 +59,15 @@ other_godot_running() {
 pid_alive() {
 	local pid="$1" winpid="${2:-}"
 	[ -n "$pid" ] || return 1
-	kill -0 "$pid" 2>/dev/null && return 0
+	if kill -0 "$pid" 2>/dev/null; then
+		# O MSYS reaproveita pids: em 19/10 uma senha de 16:14 (dono morto) ficou "viva" porque o pid
+		# virou um `head` de outra sessão, e a fila da máquina inteira parou por horas atrás dela.
+		# Com o pid Windows gravado, só vale se for o mesmo processo.
+		local current
+		current=$(cat "/proc/$pid/winpid" 2>/dev/null || echo "")
+		[ -z "$winpid" ] || [ -z "$current" ] || [ "$current" = "$winpid" ] && return 0
+		return 1
+	fi
 	[ -n "$winpid" ] || return 1
 	tasklist //FI "PID eq $winpid" //NH 2>/dev/null | tr -d '\r' | grep -qw "$winpid"
 }

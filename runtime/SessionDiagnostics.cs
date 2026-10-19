@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 
 // First autoload: one process = one session. Never changes gameplay or saves.
@@ -66,7 +67,9 @@ public partial class SessionDiagnostics : Node
         navigation_ms = Performance.GetMonitor(Performance.Monitor.TimeNavigationProcess) * 1000,
         audio_output_latency_ms = Performance.GetMonitor(Performance.Monitor.AudioOutputLatency) * 1000
     };
-    public string RuntimeSnapshot() => JsonSerializer.Serialize(new {
+    // Todos os valores são lidos na hora (thread principal); o objeto resultante é só dado CLR imutável,
+    // seguro para serializar na thread de escrita.
+    private object RuntimeSnapshotObject() => new {
         engine_usec = Time.GetTicksUsec(), process_frame = Engine.GetProcessFrames(),
         gc_collections = new[] { GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2) },
         allocated_bytes = GC.GetTotalAllocatedBytes(false), managed_bytes = GC.GetTotalMemory(false),
@@ -74,7 +77,38 @@ public partial class SessionDiagnostics : Node
         writer_queue = sink?.QueueCount ?? 0, records_dropped = DroppedRecords,
         telemetry_main_thread_usec = TelemetryUsec, writer = sink?.WriterSnapshot(),
         engine_monitors = EngineMonitors(),
-        active_operations = sink?.ActiveOperations() ?? Array.Empty<object>() });
+        active_operations = sink?.ActiveOperations() ?? Array.Empty<object>() };
+    public string RuntimeSnapshot() => JsonSerializer.Serialize(RuntimeSnapshotObject());
+
+    // Retrato guardado no quadro do pico (auditoria 19/10, §1): o SessionSystemProfile pede o retrato no
+    // callback do pico e manda o JSON do registro só nos callbacks seguintes, fatiado. Serializar o
+    // retrato e reparsear em GDScript (o caminho antigo) custava parte dos 11–21 ms do segundo pico.
+    // Poucos e com teto: um id não consumido some quando chegam HeldSnapshotLimit mais novos.
+    private const int HeldSnapshotLimit = 64;
+    private readonly System.Collections.Generic.Dictionary<int, (object Runtime, JsonElement Context)> heldSnapshots = new();
+    private readonly System.Collections.Generic.Queue<int> heldOrder = new();
+    private int heldSnapshotId;
+    public int HoldRuntimeSnapshot()
+    {
+        if (sink == null) return 0;
+        long began = Stopwatch.GetTimestamp();
+        int id = ++heldSnapshotId;
+        heldSnapshots[id] = (RuntimeSnapshotObject(), worldContext);
+        heldOrder.Enqueue(id);
+        while (heldOrder.Count > HeldSnapshotLimit) heldSnapshots.Remove(heldOrder.Dequeue());
+        Interlocked.Add(ref telemetryUsec, (Stopwatch.GetTimestamp() - began) * 1000000 / Stopwatch.Frequency);
+        return id;
+    }
+    // O JSON chega pronto do GDScript; "runtime" (e "context", se pedido e ausente) entram na thread de
+    // escrita a partir do retrato guardado. Id 0 ou vencido: retrato de agora, marcado como tal.
+    public void RecordProfileWithSnapshot(string json, int snapshotId, bool attachContext)
+    {
+        if (sink == null) return;
+        (object Runtime, JsonElement Context) snapshot = default;
+        bool held = snapshotId != 0 && heldSnapshots.Remove(snapshotId, out snapshot);
+        if (!held) snapshot = (RuntimeSnapshotObject(), worldContext);
+        sink.ProfileWith(json, snapshot.Runtime, attachContext ? snapshot.Context : default, held ? "held_at_request" : "taken_at_send");
+    }
 
     public override void _EnterTree()
     {
@@ -115,7 +149,7 @@ public partial class SessionDiagnostics : Node
         catch (Exception e)
         {
             // Report once; lack of writable storage must not stop the game.
-            GD.PrintErr("SessionDiagnostics indisponÃƒÂ­vel: " + e.Message);
+            GD.PrintErr("SessionDiagnostics indisponível: " + e.Message);
             SetProcess(false);
         }
     }
@@ -264,6 +298,7 @@ public partial class SessionLogSink : Logger
     private record Envelope(long sequence, double elapsed_ms, DateTime utc, object data);
     private record FrameWindow(double[] Values, int[] ContextIds, int[] StateIds, object Context);
     private record ProfileRecord(string Json);
+    private record RichProfileRecord(string Json, object Runtime, JsonElement Context, string SnapshotScope);
     private record Operation(long id, string system, string operation, string source, JsonElement details, long started, long engine_usec, long process_frame, long parent_id);
     private readonly ConcurrentDictionary<long, Operation> active = new();
     private long operationId;
@@ -322,9 +357,14 @@ public partial class SessionLogSink : Logger
         if (json.Length > 2 * 1024 * 1024) { Record(new { type = "profile_record_oversize", chars = json.Length }); Interlocked.Increment(ref droppedOversize); Interlocked.Increment(ref dropped); return; }
         Record(new ProfileRecord(json));
     }
+    // Mesmo teto e orçamento do Profile; runtime/context já são dados CLR lidos na thread principal.
+    public void ProfileWith(string json, object runtime, JsonElement context, string snapshotScope) {
+        if (json.Length > 2 * 1024 * 1024) { Record(new { type = "profile_record_oversize", chars = json.Length }); Interlocked.Increment(ref droppedOversize); Interlocked.Increment(ref dropped); return; }
+        Record(new RichProfileRecord(json, runtime, context, snapshotScope));
+    }
     public void Record(object data)
     {
-        long profileCost = data is ProfileRecord payload ? payload.Json.Length * 2L : 0;
+        long profileCost = data is ProfileRecord payload ? payload.Json.Length * 2L : data is RichProfileRecord rich ? rich.Json.Length * 2L : 0;
         if (profileCost > 0 && Interlocked.Add(ref profileQueuedBytes, profileCost) > ProfileBudgetBytes) {
             Interlocked.Add(ref profileQueuedBytes, -profileCost);
             Interlocked.Increment(ref droppedBudget);
@@ -425,6 +465,24 @@ public partial class SessionLogSink : Logger
                             envelope = envelope with { data = document.RootElement.Clone() };
                         }
                         catch (JsonException e)
+                        {
+                            envelope = envelope with { data = new { type = "telemetry_error", error = e.Message } };
+                        }
+                    }
+                    else if (envelope.data is RichProfileRecord rich)
+                    {
+                        Interlocked.Add(ref profileQueuedBytes, -rich.Json.Length * 2L);
+                        try
+                        {
+                            if (JsonNode.Parse(rich.Json) is not JsonObject node || node["type"]?.GetValueKind() != JsonValueKind.String)
+                                throw new JsonException("Profile record must be an object with a string type.");
+                            node["runtime"] = JsonSerializer.SerializeToNode(rich.Runtime);
+                            node["runtime_snapshot_scope"] = rich.SnapshotScope;
+                            if (rich.Context.ValueKind != JsonValueKind.Undefined && !node.ContainsKey("context"))
+                                node["context"] = JsonNode.Parse(rich.Context.GetRawText());
+                            envelope = envelope with { data = node };
+                        }
+                        catch (Exception e) when (e is JsonException or InvalidOperationException)
                         {
                             envelope = envelope with { data = new { type = "telemetry_error", error = e.Message } };
                         }
