@@ -15,6 +15,14 @@ const CROSS_SECTION := [
 	Vector2(.46,.93),Vector2(.52,.98),Vector2(.57,1),Vector2(.66,.87),
 	Vector2(.77,.61),Vector2(.89,.27),Vector2(1,0),
 ]
+# The north escarpment is the drag camera's skyline. A retreating talus,
+# steep fractured wall and broad cap read as rock instead of rounded dunes.
+const DRAG_SECTION := [
+	Vector2(0,0),Vector2(.07,.025),Vector2(.20,.13),Vector2(.29,.27),
+	Vector2(.34,.42),Vector2(.36,.63),Vector2(.39,.85),Vector2(.42,.96),
+	Vector2(.48,.99),Vector2(.56,1),Vector2(.65,.98),Vector2(.70,.89),
+	Vector2(.79,.58),Vector2(.90,.23),Vector2(1,0),
+]
 static var _stone: ShaderMaterial
 
 static func material() -> ShaderMaterial:
@@ -31,7 +39,7 @@ static func build() -> Node3D:
 	var far := _buffer()
 	# Authored high points and asymmetric saddles prevent a regular row of identical mesas.
 	# Endpoint heights taper into buried feet; no vertical rectangular cut at the ends.
-	var north := {"side":"north","from":-1720.0,"to":680.0,"width":360.0,"seed":73,"profile":[Vector2(0,.05),Vector2(.07,.49),Vector2(.17,.97),Vector2(.22,.88),Vector2(.31,.33),Vector2(.43,.73),Vector2(.48,.95),Vector2(.57,.46),Vector2(.69,.87),Vector2(.75,.62),Vector2(.87,.97),Vector2(.94,.45),Vector2(1,.06)]}
+	var north := {"side":"north","from":-1720.0,"to":680.0,"width":360.0,"seed":73,"profile":[Vector2(0,.05),Vector2(.055,.30),Vector2(.10,.86),Vector2(.20,.89),Vector2(.24,.38),Vector2(.32,.31),Vector2(.36,.73),Vector2(.46,.77),Vector2(.50,.36),Vector2(.58,.40),Vector2(.62,.94),Vector2(.75,.91),Vector2(.80,.51),Vector2(.88,.56),Vector2(.94,.22),Vector2(1,.06)]}
 	var west := {"side":"west","from":-2200.0,"to":-305.0,"width":310.0,"seed":29,"profile":[Vector2(0,.06),Vector2(.10,.44),Vector2(.21,.92),Vector2(.28,.72),Vector2(.42,.33),Vector2(.53,.67),Vector2(.65,.91),Vector2(.78,.36),Vector2(.90,.68),Vector2(1,.04)]}
 	var east := {"side":"east","from":-2180.0,"to":-565.0,"width":225.0,"seed":51,"profile":[Vector2(0,.04),Vector2(.14,.68),Vector2(.26,.43),Vector2(.39,.89),Vector2(.46,.98),Vector2(.60,.39),Vector2(.74,.78),Vector2(.86,.45),Vector2(1,.03)]}
 	var south := {"side":"south","from":-1690.0,"to":90.0,"width":210.0,"seed":97,"profile":[Vector2(0,.03),Vector2(.10,.66),Vector2(.21,.38),Vector2(.35,.89),Vector2(.41,.76),Vector2(.55,.29),Vector2(.69,.68),Vector2(.82,.42),Vector2(.92,.30),Vector2(1,.02)]}
@@ -49,6 +57,7 @@ static func _buffer() -> Dictionary:
 	return {"vertices":PackedVector3Array(),"normals":PackedVector3Array(),"colors":PackedColorArray()}
 
 static func _ridge(data: Dictionary, definition: Dictionary, distant: bool) -> void:
+	var section_points: Array = DRAG_SECTION if definition.side=="north" else CROSS_SECTION
 	var steps := ceili((float(definition.to)-float(definition.from))/STEP)
 	var rows: Array=[]
 	var colors: Array=[]
@@ -79,8 +88,9 @@ static func _ridge(data: Dictionary, definition: Dictionary, distant: bool) -> v
 		if distant: depth*=.92
 		var ring := PackedVector3Array()
 		var tones := PackedColorArray()
-		for j in CROSS_SECTION.size():
-			var section: Vector2=CROSS_SECTION[j]
+		var previous_depth := MARGIN-.5
+		for j in section_points.size():
+			var section: Vector2=section_points[j]
 			var erosion := gullies*sin(section.y*PI)*height*.23
 			var shoulder := sin(along*.021+phase+section.x*4.1)*height*.06*sin(section.y*PI)
 			var y := maxf(-.7,section.y*height-erosion+shoulder-.7)
@@ -90,6 +100,12 @@ static func _ridge(data: Dictionary, definition: Dictionary, distant: bool) -> v
 			d+=(sin(along*.028+phase)*19.0+sin(along*.061+phase*.7)*6.0+gullies*39.0)*wall_weight
 			d+=fracture*21.0*wall_weight
 			d=maxf(MARGIN,d)
+			if definition.side=="north":
+				# Keep a single visible rock face. Deep drainage displacement used
+				# to fold adjacent wall rows backwards, exposing triangular holes
+				# from the low race camera when back-face culling removed the fold.
+				d=maxf(previous_depth+.5,d)
+				previous_depth=d
 			var point := _position(str(definition.side),along,d,y)
 			ring.append(point)
 			# Mineral variation follows eroded faces; no full-width pale bands around each hill.

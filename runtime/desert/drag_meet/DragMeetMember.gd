@@ -35,4 +35,4 @@ func converse(target: Vector3, speaking: bool, animate: bool) -> void:
 	var direction := target-global_position
 	if direction.length_squared()>.01: visual.rotation.y = atan2(direction.x,direction.z)
 	visual.activity = "talk" if speaking else ""
-	visual.set_process(animate)
+	preload("res://runtime/desert/drag_meet/DragMeetAppearance.gd").set_animation_active(visual,animate)

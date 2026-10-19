@@ -36,13 +36,14 @@ static func refresh(force: bool = false) -> void:
 		all_lights.append_array(request.lights)
 		for source: Dictionary in request.wanted:
 			var distance: float = source.light.global_position.distance_to(request.camera)
+			var race_headlight: bool = bool(request.get("race_headlights",false)) and source.headlight
 			# Fade by distance to the player, independent of camera elevation/zoom.
 			var energy := float(source.light.get_meta("budget_energy", source.light.light_energy))
-			var weight := 1.0 if request.player else 1.0 - smoothstep(22.0, LIGHT_RADIUS, distance)
+			var weight := 1.0 if request.player or race_headlight else 1.0 - smoothstep(22.0, LIGHT_RADIUS, distance)
 			var target := energy * weight
 			if not is_equal_approx(source.light.light_energy, target): source.light.light_energy = target
-			if request.player or distance <= LIGHT_RADIUS:
-				lights.append({"node": source.light, "player": request.player, "headlight": source.headlight, "distance": distance})
+			if request.player or race_headlight or distance <= LIGHT_RADIUS:
+				lights.append({"node": source.light, "player": request.player, "headlight": source.headlight, "distance": distance, "race_headlight": race_headlight})
 	lights.sort_custom(_nearer)
 	# Real shadowed traffic beams replace the emissive pavement decals. Bound
 	# their cost independently so the player's projectors always keep priority.
@@ -104,6 +105,11 @@ static func _nearer(a: Dictionary, b: Dictionary) -> bool:
 	if a.player != b.player: return a.player
 	# Protege o par de faróis do jogador antes do halo da sua sirene.
 	if a.player and a.headlight != b.headlight: return a.headlight
+	# A framed physical opponent uses the same two NPC slots, ahead of ambient
+	# traffic. Neither the total cap nor the number of steady NPC sources grows.
+	var a_race: bool = bool(a.get("race_headlight",false))
+	var b_race: bool = bool(b.get("race_headlight",false))
+	if a_race != b_race: return a_race
 	var a_distance: float = a.distance - (NPC_PRIORITY_MARGIN if not a.player and a.headlight and _npc_incumbents.has(a.node.get_instance_id()) else 0.0)
 	var b_distance: float = b.distance - (NPC_PRIORITY_MARGIN if not b.player and b.headlight and _npc_incumbents.has(b.node.get_instance_id()) else 0.0)
 	if not is_equal_approx(a_distance, b_distance): return a_distance < b_distance

@@ -1,0 +1,107 @@
+{
+  "source": "evidence/drag-night-session-43108-7127425/temporal/sequence.json",
+  "scope": "Rendered capture positions only; physics assertions live in the suite log. Capture cadence is not a performance benchmark.",
+  "pass_count": 4,
+  "passes": [
+    {
+      "pass": 1,
+      "last_capture_race_seconds": 8.4,
+      "last_x": -699.202453613281,
+      "position_derived_drops_gt5_mps": []
+    },
+    {
+      "pass": 2,
+      "last_capture_race_seconds": 13.0000000000002,
+      "last_x": -488.347564697266,
+      "position_derived_drops_gt5_mps": []
+    },
+    {
+      "pass": 3,
+      "last_capture_race_seconds": 12.9500000000002,
+      "last_x": -490.816802978516,
+      "position_derived_drops_gt5_mps": []
+    },
+    {
+      "pass": 4,
+      "last_capture_race_seconds": 20.5666666666668,
+      "last_x": -63.7937660217285,
+      "position_derived_drops_gt5_mps": []
+    }
+  ],
+  "former_contact_sites_fourth_pass": [
+    {
+      "previous_contact_x": -769.922668457031,
+      "nearby_frames": [
+        {
+          "file": "02146.jpg",
+          "t": 6.49999999999998,
+          "x": -771.090393066406,
+          "y": 0.000941161881200969,
+          "physics_frame": 5575,
+          "derived_speed_mps": 34.78820800782315
+        },
+        {
+          "file": "02147.jpg",
+          "t": 6.53333333333332,
+          "x": -769.927124023438,
+          "y": 0.000941168749704957,
+          "physics_frame": 5577,
+          "derived_speed_mps": 34.898071289034725
+        },
+        {
+          "file": "02148.jpg",
+          "t": 6.56666666666665,
+          "x": -768.760192871094,
+          "y": 0.000941106700338423,
+          "physics_frame": 5579,
+          "derived_speed_mps": 35.00793457032224
+        },
+        {
+          "file": "02149.jpg",
+          "t": 6.59999999999998,
+          "x": -767.589538574219,
+          "y": 0.000941406819038093,
+          "physics_frame": 5581,
+          "derived_speed_mps": 35.119628906253865
+        }
+      ]
+    },
+    {
+      "previous_contact_x": -673.984191894531,
+      "nearby_frames": [
+        {
+          "file": "02220.jpg",
+          "t": 8.96666666666669,
+          "x": -675.713623046875,
+          "y": 0.000941408157814294,
+          "physics_frame": 5723,
+          "derived_speed_mps": 42.16552734375465
+        },
+        {
+          "file": "02221.jpg",
+          "t": 9.00000000000003,
+          "x": -674.30517578125,
+          "y": 0.000941461592447013,
+          "physics_frame": 5725,
+          "derived_speed_mps": 42.25341796874115
+        },
+        {
+          "file": "02222.jpg",
+          "t": 9.03333333333336,
+          "x": -672.893798828125,
+          "y": 0.000941399950534105,
+          "physics_frame": 5727,
+          "derived_speed_mps": 42.34130859375466
+        },
+        {
+          "file": "02223.jpg",
+          "t": 9.0666666666667,
+          "x": -671.4794921875,
+          "y": 0.000941394362598658,
+          "physics_frame": 5729,
+          "derived_speed_mps": 42.429199218741104
+        }
+      ]
+    }
+  ]
+}

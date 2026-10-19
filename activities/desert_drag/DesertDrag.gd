@@ -61,6 +61,16 @@ var board_controller: Node
 var takeshi_controller: Node
 var takeshi_meet: Node3D
 var open_meet: Node3D
+var night_controller: Node
+var _night_pending := false
+var _night_distance := 800.0
+var _night_attempt := false
+var challenge_controller: Node
+var _challenge_pending := false
+var _challenge_distance := 800.0
+var _challenge_attempt := false
+var _run_telemetry: RefCounted
+var loaner_controller: Node
 
 func configure(owner_session, strip_start: Vector3 = Vector3.INF, forward: Vector3 = Vector3.RIGHT) -> void:
 	session = owner_session
@@ -71,6 +81,15 @@ func configure(owner_session, strip_start: Vector3 = Vector3.INF, forward: Vecto
 	set_physics_process(false)
 	set_process(false)
 	set_process_input(false)
+	night_controller = preload("res://activities/desert_drag/DragNightController.gd").new()
+	add_child(night_controller)
+	night_controller.configure(self)
+	challenge_controller = preload("res://activities/desert_drag/DragRivalChallengeController.gd").new()
+	add_child(challenge_controller)
+	challenge_controller.configure(self)
+	loaner_controller = preload("res://activities/desert_drag/DragLoanerController.gd").new()
+	add_child(loaner_controller)
+	loaner_controller.configure(self)
 	board_controller = preload("res://activities/desert_drag/DesertDragBoardController.gd").new()
 	add_child(board_controller)
 	board_controller.configure(self)
@@ -96,7 +115,8 @@ func is_night() -> bool:
 
 func save_block_reason() -> String:
 	if is_instance_valid(open_meet) and not open_meet.pending.is_empty(): return "Saia da fila da arrancada para salvar."
-	return "Encerre a arrancada para salvar." if active else ""
+	if active: return "Encerre a arrancada para salvar."
+	return loaner_controller.save_block_reason() if is_instance_valid(loaner_controller) else ""
 
 func objective() -> String:
 	if active and is_instance_valid(player_car): return "Drag · %s · %d m"%[rival_config(rival_id).name,ceili(maxf(0,distance-_offset(player_car.global_position)))]
@@ -172,7 +192,31 @@ func start_rival(identity: String) -> bool:
 		return true
 	return _start(identity)
 
+func start_night_pass(identity: String, metres: float) -> bool:
+	if active or _night_pending or _challenge_pending or metres not in [201.0,402.0,800.0]: return false
+	_night_pending = true
+	_night_distance = metres
+	var started := start_rival(identity)
+	if not started: cancel_waiting_context("start_blocked")
+	return started
+
+func start_challenge_pass(identity: String, metres: float) -> bool:
+	if active or _night_pending or _challenge_pending or metres not in [201.0,402.0,800.0]: return false
+	if not is_instance_valid(challenge_controller) or not challenge_controller.can_start(identity): return false
+	_challenge_pending=true
+	_challenge_distance=metres
+	var started:=start_rival(identity)
+	if not started: cancel_waiting_context("start_blocked")
+	return started
+
+func cancel_waiting_context(reason: String = "cancelled") -> void:
+	_night_pending = false
+	_challenge_pending = false
+	if not _night_attempt and is_instance_valid(night_controller): night_controller.cancel_attempt(reason)
+	if not _challenge_attempt and is_instance_valid(challenge_controller): challenge_controller.cancel_attempt(reason)
+
 func can_race(identity: String) -> bool:
+	if _challenge_pending and is_instance_valid(challenge_controller) and challenge_controller.can_start(identity): return true
 	if OPEN_ROSTER.CARS.has(identity): return true
 	return HONOR.can_race(session.state.world_state) if identity=="takeshi" else PROGRESS.can_race(session.state.world_state,identity)
 
@@ -185,9 +229,17 @@ func _start(identity: String = "") -> bool:
 	if identity.is_empty(): identity = PROGRESS.current_rival(session.state.world_state)
 	if not can_race(identity): return false
 	player_car = session.world.driving.car
+	var dispatch_reason := ""
+	if _challenge_pending: dispatch_reason=challenge_controller.validate_dispatch(player_car)
+	elif _night_pending: dispatch_reason=night_controller.validate_dispatch(player_car)
+	if not dispatch_reason.is_empty():
+		if is_instance_valid(open_meet) and not open_meet.pending.is_empty(): open_meet.cancel_ticket(false,dispatch_reason)
+		else: cancel_waiting_context("preparation_changed")
+		session.show_message(dispatch_reason)
+		return false
 	rival_id = identity
 	var config: Dictionary = rival_config(rival_id)
-	distance = float(config.distance)
+	distance = _challenge_distance if _challenge_pending else (_night_distance if _night_pending else float(config.distance))
 	var player_pose := grid(0)
 	var opponent_pose := grid(1)
 	var production = session.world.production
@@ -224,6 +276,7 @@ func _start(identity: String = "") -> bool:
 	for i in 2:
 		var car = player_car if i==0 else opponent
 		var drive := POWERTRAIN.new()
+		drive.race_mode = true
 		drive.configure(powertrain_profile_for_vehicle(car),CARS.parts_for_vehicle(car) if i==0 else _rival_parts())
 		drive.reset()
 		drive.launch_blend_seconds = .35
@@ -240,11 +293,18 @@ func _start(identity: String = "") -> bool:
 		var previous_audio: Variant = sound.drivetrain if existing_sound else null
 		if not existing_sound: sound = AUDIO.new()
 		sound.bind(car,drive)
+		sound.set_race_role("player" if i==0 else "rival")
 		if not existing_sound: car.add_child(sound)
 		var equipment = car.ensure_equipment(session.world)
 		var was_lit: bool = equipment.headlights_on if is_instance_valid(equipment) else false
 		if is_instance_valid(equipment): equipment.headlights_on = true
 		racers.append({"car":car,"drive":drive,"sound":sound,"finish":INF,"was_lit":was_lit,"travel":0.0,"previous_power":previous_power,"existing_sound":existing_sound,"previous_audio":previous_audio})
+	_night_attempt = _night_pending
+	_night_pending = false
+	_challenge_attempt = _challenge_pending
+	_challenge_pending = false
+	_run_telemetry=preload("res://activities/desert_drag/DragRunTelemetry.gd").new()
+	if _challenge_attempt: challenge_controller.begin_attempt(player_car)
 	active = true
 	phase = "staging"
 	countdown = 3.0
@@ -266,6 +326,7 @@ func _start(identity: String = "") -> bool:
 	add_child(race_camera)
 	_update_camera(0)
 	race_camera.make_current()
+	preload("res://gameplay/lights/LightBudget.gd").refresh(true)
 	# Camera framing widens with the lead, but Dante keeps hearing his own
 	# engine from the cabin. The opponent retains physical distance/panning.
 	race_listener = AudioListener3D.new()
@@ -279,6 +340,11 @@ func _start(identity: String = "") -> bool:
 	hud = HUD.new()
 	hud.set_style(preload("res://activities/desert_drag/DragInstrumentStyles.gd").selection(session.state.world_state))
 	hud.race_distance = distance
+	if _night_attempt:
+		var event_status: Dictionary = night_controller.status()
+		hud.event_title = "NOITE DE ACERTO · %d/3"%int(event_status.get("round",1))
+	elif _challenge_attempt:
+		hud.event_title="DESAFIO · "+str(config.name).to_upper()
 	hud.show_start_lights = true
 	hud.racing = false
 	# Fill the instruments before entering the tree: the first rendered staging
@@ -305,6 +371,7 @@ static func powertrain_profile_for_vehicle(vehicle: Node) -> String:
 
 func _rival_parts() -> Dictionary:
 	# Same purchasable catalogue and rules as Dante; no catch-up velocity.
+	if (_night_pending or _night_attempt) and is_instance_valid(night_controller): return night_controller.rival_parts(rival_id)
 	return rival_parts(rival_id)
 
 static func rival_parts(identity: String) -> Dictionary:
@@ -344,6 +411,7 @@ func request_shift() -> String:
 		return "false_start"
 	if phase != "racing": return "blocked"
 	var outcome: String = racers[0].drive.shift_up()
+	if outcome.is_empty(): return outcome
 	_feedback = {"perfect":"Troca perfeita", "good":"Boa troca", "early":"Troca antecipada", "late":"Troca atrasada", "max":"Última marcha"}.get(outcome,outcome)
 	_feedback_time = 1.2
 	return outcome
@@ -357,7 +425,7 @@ func _physics_process(delta: float) -> void:
 	if session.modal: return
 	var throttle := _throttle()
 	if phase == "staging":
-		racers[0].drive.stage(delta,throttle)
+		racers[0].drive.stage(delta,throttle,_digital_throttle())
 		# Rivals feather the throttle toward their own launch band.
 		var other = racers[1].drive
 		other.stage(delta,1.0 if other.rpm < other.redline*.57 else 0.0)
@@ -386,13 +454,18 @@ func _physics_process(delta: float) -> void:
 			_move_car(entry,delta)
 			var after := _offset(entry.car.global_position)
 			if not crossed:
+				if i==0:
+					_run_telemetry.observe(drive,before,after,before_elapsed,delta,distance)
+					if _challenge_attempt: challenge_controller.observe(drive,after,delta)
 				entry.finish = PROGRESS.crossing_time(before,after,distance,before_elapsed,delta)
 			if entry.car.global_position.y < start_point.y-3:
 				cancel_attempt("unsupported_track")
 				return
 		if is_finite(float(racers[0].finish)) and is_finite(float(racers[1].finish)):
 			phase = "braking"
-		elif elapsed > 60 or elapsed > minf(float(racers[0].finish),float(racers[1].finish))+8.0:
+		# Technical proofs judge the player's run, even when a faster rival has
+		# already finished. Keep the absolute timeout and rival-DNF recovery.
+		elif elapsed > 60 or ((not _challenge_attempt or is_finite(float(racers[0].finish))) and elapsed > minf(float(racers[0].finish),float(racers[1].finish))+8.0):
 			if is_finite(float(racers[0].finish)): phase = "braking"
 			else: cancel_attempt("timeout"); return
 	elif phase == "braking":
@@ -406,10 +479,17 @@ func _physics_process(delta: float) -> void:
 	_feedback_time = maxf(0,_feedback_time-delta)
 	_update_camera(delta)
 
-func _process(_delta: float) -> void:
+var _challenge_status_clock := 0.0
+
+func _process(delta: float) -> void:
 	if not active or not is_instance_valid(hud) or racers.size()!=2: return
 	layer.visible = not session.modal
 	if session.modal: return
+	if _challenge_attempt:
+		_challenge_status_clock-=delta
+		if _challenge_status_clock<=0.0:
+			_challenge_status_clock=.1
+			hud.challenge_status=challenge_controller.live_status()
 	var title := str(ceili(countdown)) if phase=="staging" else ("FREANDO" if phase=="braking" else "")
 	hud.feedback = _feedback if _feedback_time>0 else ""
 	hud.show_start_lights = phase=="staging"
@@ -431,10 +511,11 @@ func _rival_control(delta: float) -> void:
 		_rival_target = drive.ideal_shift_rpm+_rng.randf_range(-120,110)
 		_rival_shift_delay = -1
 
-func _step_runoff(entry: Dictionary, delta: float) -> void:
+func _step_runoff(entry: Dictionary, delta: float, course_distance: float = -1.0) -> void:
 	var drive = entry.drive
 	var speed: float = drive.speed_mps
-	var room := maxf(1.0,distance+175.0-_offset(entry.car.global_position))
+	var finish_distance := distance if course_distance<0.0 else course_distance
+	var room := maxf(1.0,finish_distance+175.0-_offset(entry.car.global_position))
 	# Reserve distance for the pressure ramp and the gentle final release.
 	# Fast builds need more braking force, not an instantaneous speed cap.
 	var required := speed*speed/(2.0*maxf(1.0,room-speed*.25-8.0))
@@ -462,7 +543,10 @@ func _move_car(entry: Dictionary, delta: float) -> void:
 			drive.speed_mps = 0
 			car.velocity = Vector3.ZERO
 			return
-	car.velocity = direction*drive.speed_mps + Vector3.UP*(car.velocity.y-18*delta)
+	# Match ordinary Vehicle motion: floor snapping maintains grounded support.
+	# Pushing downward after contact can catch a coplanar floor's exposed edge.
+	var vertical_speed: float = 0.0 if car.is_on_floor() else car.velocity.y-18*delta
+	car.velocity = direction*drive.speed_mps + Vector3.UP*vertical_speed
 	car.move_and_slide()
 	var moved: Vector3 = car.global_position-before
 	var actual := maxf(0,moved.dot(direction)/maxf(.001,delta))
@@ -512,6 +596,13 @@ func _throttle() -> float:
 	for device in Input.get_connected_joypads(): result = maxf(result,Input.get_joy_axis(device,JOY_AXIS_TRIGGER_RIGHT))
 	return clampf(result,0,1)
 
+func _digital_throttle() -> bool:
+	if _throttle_override>=0: return false
+	if Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP): return true
+	for device in Input.get_connected_joypads():
+		if Input.get_joy_axis(device,JOY_AXIS_TRIGGER_RIGHT)>.02: return false
+	return true
+
 func _nitro() -> bool:
 	if _throttle_override>=0: return _nitro_override
 	if Input.is_physical_key_pressed(KEY_SHIFT): return true
@@ -538,7 +629,13 @@ func _finish() -> void:
 	var other_time: float = racers[1].finish
 	var casual := OPEN_ROSTER.CARS.has(rival_id)
 	var result: Dictionary
-	if casual:
+	var night := _night_attempt
+	var challenge := _challenge_attempt
+	if challenge:
+		result=challenge_controller.record_finish(player_time,other_time,player_car)
+	elif night:
+		result = night_controller.record_finish(player_time,other_time,player_car)
+	elif casual:
 		result = {"finished":true,"casual":true,"first_win":false,"rival_id":rival_id,"won":player_time<other_time,"seconds":player_time,"number":27}
 	else:
 		result = HONOR.record_finish(session.state.world_state,player_time<other_time,player_time) if rival_id=="takeshi" else PROGRESS.record_finish(session.state.world_state,rival_id,player_time<other_time,player_time)
@@ -546,22 +643,30 @@ func _finish() -> void:
 		_cleanup()
 		return
 	result["rival_seconds"] = other_time if is_finite(other_time) else -1.0
-	result["best_seconds"] = float(HONOR.data(session.state.world_state).best_seconds) if rival_id=="takeshi" else float(snapshot().best.get(rival_id,player_time))
+	if not night and not challenge:
+		result["best_seconds"] = float(HONOR.data(session.state.world_state).best_seconds) if rival_id=="takeshi" else float(snapshot().best.get(rival_id,player_time))
+	if is_instance_valid(_run_telemetry): result["telemetry"]=_run_telemetry.snapshot()
 	last_result = result
 	_cleanup()
 	if not result.get("finished",false): return
 	race_completed.emit(result)
-	if not casual: session.save_game()
+	if night or challenge or not casual: session.save_game()
 
 func cancel_attempt(reason: String = "cancelled") -> void:
 	if not active: return
+	if _night_attempt and is_instance_valid(night_controller): night_controller.cancel_attempt(reason)
+	if _challenge_attempt and is_instance_valid(challenge_controller): challenge_controller.cancel_attempt(reason)
 	last_result = {"finished":false,"reason":reason}
 	_cleanup()
 	if reason == "false_start" and is_instance_valid(session): session.show_message("Queimou a largada. Espere o sinal verde para trocar a marcha.")
 	elif reason in ["cancelled","timeout","unsupported_track"] and is_instance_valid(session): session.show_message("Arrancada interrompida. Volte à concentração para tentar novamente.")
 
 func _cleanup() -> void:
+	if _challenge_attempt and is_instance_valid(challenge_controller): challenge_controller.cancel_attempt("cleanup")
 	active = false
+	_night_attempt = false
+	_challenge_attempt = false
+	_run_telemetry=null
 	phase = ""
 	set_process(false)
 	set_physics_process(false)
@@ -575,6 +680,7 @@ func _cleanup() -> void:
 		previous_listener.make_current()
 	for entry in racers:
 		if is_instance_valid(entry.sound):
+			entry.sound.set_race_role("")
 			if entry.existing_sound and is_instance_valid(entry.car): entry.sound.bind(entry.car,entry.previous_audio)
 			else: entry.sound.queue_free()
 		if not is_instance_valid(entry.car): continue

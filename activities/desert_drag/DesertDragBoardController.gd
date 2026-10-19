@@ -56,6 +56,9 @@ func _build() -> void:
 	board.instruments_requested.connect(_open_instruments)
 	board.takeshi_requested.connect(_open_takeshi)
 	board.open_meet_requested.connect(_open_meet)
+	board.night_requested.connect(_open_night)
+	board.challenges_requested.connect(_open_challenges)
+	board.loaner_requested.connect(_open_loaner)
 	get_viewport().size_changed.connect(_layout)
 	layer.hide()
 
@@ -164,6 +167,22 @@ func _open_takeshi() -> void:
 	session.close_menu()
 	race.takeshi_controller.open()
 
+func _open_night(identity: String) -> void:
+	if not session.modal or race.active or not is_instance_valid(layer) or not layer.visible: return
+	if not PROGRESS.can_race(session.state.world_state,identity): return
+	session.close_menu()
+	race.night_controller.open(identity)
+
+func _open_challenges() -> void:
+	if not session.modal or race.active or not is_instance_valid(layer) or not layer.visible: return
+	session.close_menu()
+	race.challenge_controller.open()
+
+func _open_loaner() -> void:
+	if not session.modal or race.active or not is_instance_valid(layer) or not layer.visible: return
+	session.close_menu()
+	race.loaner_controller.open()
+
 func _completed(result: Dictionary) -> void:
 	if str(result.get("rival_id",""))=="takeshi":
 		race.takeshi_controller.completed.call_deferred(result.duplicate(true))
@@ -216,7 +235,7 @@ func _result_action(action: String) -> void:
 	if action=="stay":
 		session.close_menu()
 		return
-	if action not in ["rematch","entry"]: return
+	if action not in ["rematch","entry","night_continue","night_repeat","night_overview","challenge_continue","challenge_overview"]: return
 	result_busy=true
 	results.set_busy(true)
 	var identity: String=str(race.last_result.get("rival_id",""))
@@ -228,6 +247,23 @@ func _result_action(action: String) -> void:
 		results.set_message("Entrada ocupada. Tente novamente ou escolha Ficar aqui.")
 		return
 	session.close_menu()
+	if action=="challenge_overview":
+		race.challenge_controller.open(identity)
+		return
+	if action=="challenge_continue":
+		race.challenge_controller.selected=identity
+		var step := int(race.last_result.get("challenge_step",0))
+		race.challenge_controller.selected_step=1 if step==0 and race.last_result.get("challenge_success",false) else step
+		if not race.challenge_controller.request_next(): race.challenge_controller.open(identity)
+		return
+	if action=="night_overview":
+		race.night_controller.open(identity)
+		return
+	if action in ["night_continue","night_repeat"]:
+		race.night_controller.selected=identity
+		if not race.night_controller.request_next():
+			if race.night_controller.open(identity): race.night_controller.panel.set_message("Aguarde a pista ficar livre para continuar a noite.")
+		return
 	if action=="rematch" and not race.start_rival(identity):
 		if open_board():
 			board.select_rival(identity)

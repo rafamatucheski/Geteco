@@ -29,6 +29,39 @@ var _audible_rpm := 0.0
 var _audible_load := 0.0
 var _audible_cut := 0.0
 var _design_voice: Node3D
+var race_role := ""
+var _spatial_dirty := true
+
+func set_race_role(role: String) -> void:
+	var next := role if role in ["player","rival"] else ""
+	if race_role==next: return
+	race_role=next
+	_spatial_dirty=true
+	_apply_design_role()
+
+func _race_gain() -> float:
+	return -4.0 if race_role=="rival" else 0.0
+
+func _apply_spatial_role() -> void:
+	for player in _layers+[_shift,_tire,_recorded_idle]:
+		if not is_instance_valid(player): continue
+		player.attenuation_model=AudioStreamPlayer3D.ATTENUATION_DISABLED if _foreground else AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
+		player.max_distance=0.0 if _foreground else 85.0
+		player.panning_strength=0.0 if _foreground else 1.0
+		player.attenuation_filter_db=0.0 if _foreground else -24.0
+		player.unit_size=4.0 if player==_tire else (3.0 if race_role=="rival" else 12.0)
+		player.max_db=-24.0 if player==_tire else (-18.0 if race_role=="rival" else 1.0)
+	_spatial_dirty=false
+
+func _apply_design_role() -> void:
+	if not is_instance_valid(_design_voice): return
+	# Own these per-car voices only; no global bus or shared engine-bank changes.
+	# At a 4 m lane separation, a 12 m source scale amplified the opponent.
+	_design_voice.spatial_unit_size=3.0 if race_role=="rival" else 12.0
+	for player in _design_voice.get_children():
+		if not player is AudioStreamPlayer3D: continue
+		player.unit_size=_design_voice.spatial_unit_size
+		player.max_db=-18.0 if race_role=="rival" else 3.0
 
 func bind(car: Node3D, state: RefCounted) -> void:
 	vehicle = car
@@ -40,6 +73,7 @@ func bind(car: Node3D, state: RefCounted) -> void:
 	_last_throttle = float(state.throttle) if state != null else 0.0
 	_blowoff_cooldown = .2
 	_external_observing = false
+	_spatial_dirty = true
 	if is_node_ready() and state != null: _apply_profile()
 
 func _ready() -> void:
@@ -86,19 +120,10 @@ func _process(delta: float) -> void:
 	if not is_instance_valid(vehicle) or drivetrain == null: queue_free(); return
 	# Match WorldAudio's foreground engine for Dante. A raised or cinematic
 	# camera must not attenuate/mute his own motor; NPCs keep spatial falloff.
-	var foreground := bool(vehicle.get("controlled")) and not bool(vehicle.get("traffic")) and not bool(vehicle.get("external_input"))
-	if foreground != _foreground:
+	var foreground := race_role=="player" or (race_role!="rival" and bool(vehicle.get("controlled")) and not bool(vehicle.get("traffic")) and not bool(vehicle.get("external_input")))
+	if foreground != _foreground or _spatial_dirty:
 		_foreground = foreground
-		for player in _layers + [_shift, _tire]:
-			player.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED if foreground else AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
-			player.max_distance = 0.0 if foreground else 85.0
-			player.panning_strength = 0.0 if foreground else 1.0
-			player.attenuation_filter_db = 0.0 if foreground else -24.0
-		if is_instance_valid(_recorded_idle):
-			_recorded_idle.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED if foreground else AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
-			_recorded_idle.max_distance = 0.0 if foreground else 85.0
-			_recorded_idle.panning_strength = 0.0 if foreground else 1.0
-			_recorded_idle.attenuation_filter_db = 0.0 if foreground else -24.0
+		_apply_spatial_role()
 		_range_clock = 0.0
 	_range_clock -= delta
 	_blowoff_cooldown = maxf(0.0,_blowoff_cooldown-delta)
@@ -125,12 +150,15 @@ func _process(delta: float) -> void:
 		_audible_cut = 0.0
 		return
 	_synchronize_external(delta)
-	# Gear engagement and the reverse adapter can jump physical RPM in one
-	# tick. Give the audible rotor inertia without changing torque or the HUD.
+	# Race clutch inertia is already in the authoritative RPM. Street/reverse
+	# adapters retain their audible smoothing without changing street handling.
 	var target_rpm := float(drivetrain.rpm)
 	var response := 10.0 if target_rpm > _audible_rpm else 6.0
-	_audible_rpm = lerpf(_audible_rpm, target_rpm, 1.0-exp(-maxf(delta,0.0)*response))
-	_audible_load = lerpf(_audible_load,float(drivetrain.throttle),1.0-exp(-maxf(delta,0.0)*7.0))
+	var continuous_shift := bool(drivetrain.race_mode)
+	var clutch := float(drivetrain.shift_torque_factor) if continuous_shift else (0.0 if float(drivetrain.shift_remaining)>0.0 else 1.0)
+	_audible_rpm = target_rpm if continuous_shift else lerpf(_audible_rpm,target_rpm,1.0-exp(-maxf(delta,0.0)*response))
+	var target_load := float(drivetrain.throttle)*(lerpf(.18,1.0,clutch) if continuous_shift else 1.0)
+	_audible_load = lerpf(_audible_load,target_load,1.0-exp(-maxf(delta,0.0)*(20.0 if continuous_shift else 7.0)))
 	# Each nominal value is complete four-stroke cycles per second: RPM / 120.
 	# Align both bands to that SAME rate, otherwise the crossfade plays two
 	# incompatible notes and produces beating/chirps as the engine accelerates.
@@ -140,19 +168,20 @@ func _process(delta: float) -> void:
 	while low < 5 and cycles > float(nominal[low+1]): low += 1
 	var fraction := clampf(log(cycles/float(nominal[low]))/log(float(nominal[low+1])/float(nominal[low])),0.0,1.0)
 	var power := _audible_load
-	var cut := -8.0 if float(drivetrain.shift_remaining) > 0.0 else 0.0
+	var cut := -8.0*(1.0-clutch)
 	if drivetrain.limiter: cut -= 4.0
 	_audible_cut = lerpf(_audible_cut,cut,1.0-exp(-maxf(delta,0.0)*18.0))
 	var exhaust := float(drivetrain.spec.get("exhaust",0.0))
 	# Injection increases engine load. It is not an external air-brake purge.
 	var nitro_load := 1.5 if drivetrain.nitro_active else 0.0
-	if _mix_designed_engine(delta, -16.0 + power * 4.0 + _audible_cut + exhaust * 2.0 + nitro_load):
+	var role_gain := _race_gain()
+	if _mix_designed_engine(delta,-16.0+power*4.0+_audible_cut+exhaust*2.0+nitro_load+role_gain):
 		for player in _layers: player.stop()
 		if is_instance_valid(_recorded_idle): _recorded_idle.stop()
 		_shift.stop()
 		_last_shift = int(drivetrain.shift_serial)
 		_last_throttle = float(drivetrain.throttle)
-		_loop_level(_tire, float(drivetrain.wheelspin), -28.0, delta)
+		_loop_level(_tire,float(drivetrain.wheelspin),-28.0+role_gain,delta)
 		return
 	# Real idle recordings supply low-speed character for these two families.
 	# Do not stretch an idle recording across the entire rev range: fade it out
@@ -161,7 +190,7 @@ func _process(delta: float) -> void:
 	if is_instance_valid(_recorded_idle):
 		idle_weight = (1.0-smoothstep(1050.0,2000.0,_audible_rpm))*(1.0-power*.4)
 		_recorded_idle.pitch_scale = clampf(_audible_rpm/(750.0 if _family == "diesel" else 900.0),.85,1.6)
-		_loop_level(_recorded_idle,idle_weight,-14.0,delta)
+		_loop_level(_recorded_idle,idle_weight,-14.0+role_gain,delta)
 	var synthesized_gain := linear_to_db(1.0-idle_weight*.82)
 	for i in 2:
 		var index := low+i
@@ -177,7 +206,7 @@ func _process(delta: float) -> void:
 			player.play()
 		elif not player.playing: player.play()
 		var weight := sqrt(maxf(.00001,1.0-fraction if i == 0 else fraction))
-		player.volume_db = lerpf(player.volume_db,-19.0+linear_to_db(weight)+power*4.0+_audible_cut+exhaust*2.0+nitro_load+synthesized_gain,1.0-exp(-delta*25.0))
+		player.volume_db = lerpf(player.volume_db,-19.0+linear_to_db(weight)+power*4.0+_audible_cut+exhaust*2.0+nitro_load+synthesized_gain+role_gain,1.0-exp(-delta*25.0))
 		player.pitch_scale = clampf(cycles/float(nominal[index]),.35,3.0)
 	if int(drivetrain.shift_serial) != _last_shift:
 		_last_shift = int(drivetrain.shift_serial)
@@ -185,7 +214,7 @@ func _process(delta: float) -> void:
 	elif _last_throttle > .65 and float(drivetrain.throttle) < .25 and float(drivetrain.turbo_pressure) > .5:
 		_play_shift()
 	_last_throttle = float(drivetrain.throttle)
-	_loop_level(_tire,float(drivetrain.wheelspin),-28.0,delta)
+	_loop_level(_tire,float(drivetrain.wheelspin),-28.0+role_gain,delta)
 
 func _mix_designed_engine(delta: float, level: float) -> bool:
 	var archetype := str(vehicle.get("archetype"))
@@ -193,13 +222,15 @@ func _mix_designed_engine(delta: float, level: float) -> bool:
 	if not DESIGN_BANKS.enabled() or not DESIGN_BANKS.is_ready(profile):
 		if is_instance_valid(_design_voice): _design_voice.stop()
 		return false
-	if not is_instance_valid(_design_voice):
+	var created := not is_instance_valid(_design_voice)
+	if created:
 		_design_voice = DESIGN_VOICE.new()
 		_design_voice.name = "EngineDesign"
 		_design_voice.spatial_range = 85.0
 		_design_voice.spatial_unit_size = 12.0
 		add_child(_design_voice)
 	if not _design_voice.configure(archetype): return false
+	if created: _apply_design_role()
 	_design_voice.update_mix(_audible_rpm, _audible_load, delta, level, vehicle.global_position,
 		_foreground, true, int(drivetrain.shift_serial) != _last_shift)
 	return true
@@ -240,7 +271,7 @@ func _play_shift() -> void:
 	# already supplied by the authoritative transmission.
 	if float(drivetrain.spec.boost_gain) <= .01 or _family == "diesel" or float(drivetrain.turbo_pressure) < .25: return
 	_blowoff_cooldown = .22
-	_shift.volume_db = -23.0
+	_shift.volume_db = -23.0+_race_gain()
 	_shift.play()
 
 func _loop_level(player: AudioStreamPlayer3D, amount: float, level: float, delta: float) -> void:

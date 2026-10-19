@@ -334,7 +334,8 @@ func button_for_part(id: String) -> Button:
 func _card(id: String) -> Control:
 	var part: Dictionary = TUNING.PARTS[id]
 	var installed: bool = str(_parts.get(_slot,"")) == id
-	var locked := _wins < int(part.wins)
+	var rival_reward := str(part.get("rival_reward",""))
+	var locked := (_wins < int(part.wins)) or (not rival_reward.is_empty() and id not in _owned)
 	var cost := 0 if id in _owned else int(part.cost)
 	var panel := PanelContainer.new()
 	panel.set_meta("part_id",id)
@@ -374,8 +375,9 @@ func _card(id: String) -> Control:
 	side.add_theme_constant_override("separation",10)
 	var price := Label.new()
 	price.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	if locked: price.text = String(TranslationServer.translate("Vença %d provas (você: %d)")) % [int(part.wins),_wins]
-	elif id in _owned: price.text = "Comprada"
+	if locked and not rival_reward.is_empty(): price.text = "Desafios de "+str(preload("res://activities/desert_drag/DragRivalChallengeCatalog.gd").RIVALS[rival_reward].name)
+	elif locked: price.text = String(TranslationServer.translate("Vença %d provas (você: %d)")) % [int(part.wins),_wins]
+	elif id in _owned: price.text = "Conquistada" if not rival_reward.is_empty() else "Comprada"
 	else: price.text = "R$ %s" % _money_text(cost)
 	price.add_theme_color_override("font_color",MUTED if locked or id in _owned else GOLD)
 	side.add_child(price)

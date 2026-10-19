@@ -1,10 +1,10 @@
 extends Node3D
-## Spatial islands share a finite mixer: two conversations, one music source,
-## two engines, one workshop bed and one occasional car-side detail.
+## Five spatial loops and one detail. Music is owned by DragMeetScore so the
+## 800 m race never depends on the crowd's streaming radius.
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const ROSTER := preload("res://runtime/desert/drag_meet/DragMeetRoster.gd")
-const LOOP_BUDGET := 6
-const CATEGORY_BUDGET := {"crowd":2,"music":1,"engine":2,"work":1}
+const LOOP_BUDGET := 5
+const CATEGORY_BUDGET := {"crowd":2,"engine":2,"work":1}
 var voices: Array[AudioStreamPlayer3D] = []
 var sources: Array[Dictionary] = []
 var _streams: Dictionary = {}
@@ -13,11 +13,10 @@ var _last_detail := -1
 
 func _ready() -> void:
 	name = "DragMeetAmbience"
-	_source("vicente_crowd","crowd",LAYOUT.drag_vicente_point()+Vector3.UP,"res://audio/living_city/cafe_1.ogg",-16.0,62.0)
+	_source("vicente_crowd","crowd",LAYOUT.drag_vicente_point()+Vector3.UP,"res://audio/ambience_el/crowd_1.wav",-19.0,62.0)
 	for team in ROSTER.LEADERS:
-		_source(team+"_crowd","crowd",ROSTER.LEADERS[team]+Vector3.UP,"res://audio/living_city/cafe_%d.ogg"%(sources.size()%2),-16.0,60.0)
-	_source("east_music","music",Vector3(-904,1.3,-1268),"res://audio/living_city/porto_groove.ogg",-15.0,85.0)
-	_source("west_music","music",Vector3(-1028,1.3,-1292),"res://audio/living_city/porto_groove.ogg",-16.0,85.0)
+		_source(team+"_crowd","crowd",ROSTER.LEADERS[team]+Vector3.UP,"res://audio/ambience_el/crowd_%d.wav"%(sources.size()%3),-19.0,60.0)
+	_source("start_crowd","crowd",Vector3(-899,1,-1334),"res://audio/ambience_el/crowd_2.wav",-19.0,60.0)
 	for row in [["vicente",Vector3(-945,.7,-1259.5),"muscle"],["livia",Vector3(-964,.7,-1296.8),"street"],
 		["raul",Vector3(-1008,.7,-1298),"muscle"],["jessica",Vector3(-908.5,.7,-1260),"street"],["nadir",Vector3(-960.5,.7,-1241),"muscle"]]:
 		_source(str(row[0])+"_engine","engine",row[1],"res://audio/acoustic/engine_%s_1.wav"%row[2],-23.0,48.0)
@@ -31,14 +30,17 @@ func _source(id: String, category: String, point: Vector3, path: String, volume:
 func _voice(title: String) -> AudioStreamPlayer3D:
 	var player := AudioStreamPlayer3D.new()
 	player.name = title
-	player.bus = &"SFX" if AudioServer.get_bus_index("SFX")>=0 else &"Master"
+	player.bus = &"Ambient" if AudioServer.get_bus_index("Ambient")>=0 else &"Master"
+	player.area_mask = 0
 	player.unit_size = 15.0
 	player.volume_db = -50.0
+	player.max_db = -16.0
+	player.set_meta("target_gain",-72.0)
 	add_child(player)
 	voices.append(player)
 	return player
 
-func update(listener: Vector3, suppressed: bool, elapsed: float, workshop_active := true) -> void:
+func update(listener: Vector3, suppressed: bool, elapsed: float, workshop_active := true, heat_phase := "idle", speaking := false) -> void:
 	var selected: Array[Dictionary] = []
 	for category in CATEGORY_BUDGET:
 		var choices: Array[Dictionary] = []
@@ -57,8 +59,7 @@ func update(listener: Vector3, suppressed: bool, elapsed: float, workshop_active
 	for index in LOOP_BUDGET:
 		var voice := voices[index]
 		if str(voice.get_meta("source_id","")) not in retained:
-			voice.stop()
-			voice.set_meta("source_id","")
+			voice.set_meta("target_gain",-72.0)
 	for source in selected:
 		var voice: AudioStreamPlayer3D
 		for index in LOOP_BUDGET:
@@ -71,19 +72,36 @@ func update(listener: Vector3, suppressed: bool, elapsed: float, workshop_active
 			voice.stream = _stream(source.path,true)
 			voice.position = source.position
 			voice.max_distance = float(source.reach)
+			voice.bus = &"SFX" if source.category=="engine" and AudioServer.get_bus_index("SFX")>=0 else (&"Ambient" if AudioServer.get_bus_index("Ambient")>=0 else &"Master")
+			voice.unit_size = 6.0 if source.category=="engine" else 15.0
+			voice.max_db = -22.0 if source.category=="engine" else -16.0
 			voice.set_meta("source_id",source.id)
-			voice.volume_db = float(source.volume)-8.0
+			voice.volume_db = -60.0
 			if voice.stream!=null: voice.play(fposmod(float(abs(hash(source.id))%71),maxf(.1,voice.stream.get_length())))
 		var pitch := 1.0
-		var gain := float(source.volume)-(20.0 if suppressed else 0.0)
+		var gain := float(source.volume)-(20.0 if suppressed else 0.0)-(12.0 if speaking else 0.0)
+		if heat_phase in ["staging","racing","braking"]:
+			# Leave the RPM cues of the two actual racers intelligible. Spatial
+			# spectators can still be heard passing, with no extra artificial motors.
+			gain += (1.0 if heat_phase=="staging" else -4.0) if source.category=="crowd" else -18.0
 		if source.category=="engine":
 			var phase := fposmod(elapsed+float(abs(hash(source.id))%17),19.0)
 			var rev := sin((phase-12.0)*PI/2.0) if phase>12.0 and phase<14.0 else 0.0
 			pitch+=rev*.55
 			gain+=rev*4.0
 		voice.pitch_scale = pitch
-		voice.volume_db = move_toward(voice.volume_db,gain,8.0)
-	_play_detail(listener,suppressed,elapsed)
+		voice.set_meta("target_gain",gain)
+	_play_detail(listener,suppressed or speaking or heat_phase in ["staging","racing","braking"],elapsed)
+	set_process(true)
+
+func _process(delta: float) -> void:
+	for index in LOOP_BUDGET:
+		var voice := voices[index]
+		var target := float(voice.get_meta("target_gain",-72.0))
+		voice.volume_db = move_toward(voice.volume_db,target,maxf(0.0,delta)*42.0)
+		if target<=-72.0 and voice.volume_db<=-71.99:
+			voice.stop()
+			voice.set_meta("source_id","")
 
 func _play_detail(listener: Vector3, suppressed: bool, elapsed: float) -> void:
 	var beat := int(elapsed/6.0)
@@ -117,4 +135,9 @@ func _stream(path: String, looped: bool) -> AudioStream:
 	return stream
 
 func stop() -> void:
-	for voice in voices: voice.stop()
+	for voice in voices:
+		voice.stop()
+		voice.volume_db=-72.0
+		voice.set_meta("target_gain",-72.0)
+		voice.set_meta("source_id","")
+	set_process(false)

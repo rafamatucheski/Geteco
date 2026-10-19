@@ -12,6 +12,9 @@ static var _bay_paint_material: ShaderMaterial
 static var _bay_paint_mesh: ArrayMesh
 static var _detail_materials: Dictionary = {}
 static var _paint_materials: Dictionary = {}
+## The same 24 spectators and 12 display cars form more readable groups along
+## the whole course. Milestone groups stay outside both the strip and return.
+const STRIP_POCKETS := [-899.0,-790.0,-699.0,-598.0,-498.0,-380.0,-245.0,-102.0]
 
 static func records() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
@@ -23,21 +26,21 @@ static func records() -> Array[Dictionary]:
 		{"position":Vector3(-992,0,-1304),"color":Color("d0b954"),"size":10.0},
 		{"position":Vector3(-960,0,-1305),"color":Color("bb663b"),"size":12.0},
 		{"position":Vector3(-971,0,-1225),"color":Color("436477"),"size":12.0},
-		{"position":Vector3(-936,0,-1227),"color":Color("68734b"),"size":10.0},
-		{"position":Vector3(-908,0,-1226),"color":Color("a34b3d"),"size":12.0},
-		{"position":Vector3(-899,0,-1262),"color":Color("a5a28e"),"size":10.0},
+		{"position":Vector3(-498,0,-1337),"color":Color("68734b"),"size":10.0},
+		{"position":Vector3(-102,0,-1337),"color":Color("a34b3d"),"size":10.0},
+		{"position":Vector3(-899,0,-1336),"color":Color("b16c43"),"size":10.0},
 	]:
 		result.append({"kind":"drag_meet","position":data.position,"type":"tent","data":data})
 	for data in [
 		{"position":Vector3(-972,0,-1223),"type":"tables"},
-		{"position":Vector3(-909,0,-1225),"type":"tables"},
-		{"position":Vector3(-936,0,-1224),"type":"tables"},
+		{"position":Vector3(-102,0,-1338),"type":"tables"},
+		{"position":Vector3(-498,0,-1338),"type":"tables"},
 		{"position":Vector3(-1000,0,-1299),"type":"pit_tools"},
 		{"position":Vector3(-970,0,-1301),"type":"pit_tools"},
 		{"position":Vector3(-925,0,-1248),"type":"pit_tools"},
 		{"position":Vector3(-976,0,-1249),"type":"pit_tools"},
 		{"position":Vector3(-934,0,-1265),"type":"tires"},
-		{"position":Vector3(-925,0,-1224),"type":"tires"},
+		{"position":Vector3(-380,0,-1335),"type":"tires"},
 		{"position":Vector3(-901,0,-1250),"type":"tires"},
 		{"position":Vector3(-922,0,-1306),"type":"speakers"},
 		{"position":Vector3(-1028,0,-1292),"type":"speakers"},
@@ -45,9 +48,12 @@ static func records() -> Array[Dictionary]:
 		{"position":Vector3(-976,0,-1268),"type":"speakers"},
 		{"position":Vector3(-1016,0,-1221),"type":"trailer"},
 		{"position":Vector3(-999,0,-1221),"type":"trailer"},
-		{"position":Vector3(-939,0,-1270),"type":"team_box"},
+		{"position":Vector3(-699,0,-1337),"type":"team_box"},
 		{"position":Vector3(-981,0,-1267),"type":"team_box"},
 		{"position":Vector3(-909,0,-1294),"type":"team_box"},
+		{"position":Vector3(-899,0,-1337),"type":"pit_tools"},
+		{"position":Vector3(-893,0,-1294),"type":"tables"},
+		{"position":Vector3(-899,0,-1311),"type":"barrier"},
 	]:
 		result.append({"kind":"drag_meet","position":data.position,"type":data.type,"data":data})
 	# Independent barriers leave the access, staging point and braking runoff open.
@@ -58,25 +64,27 @@ static func records() -> Array[Dictionary]:
 	result.append({"kind":"drag_workshop","position":LAYOUT.drag_workshop_point()})
 	return result
 
-## Six finite spectator pockets follow the race, independently of the paddock's
+## Eight finite spectator pockets follow the race, independently of the paddock's
 ## proximity-controlled population. Streaming owns every car, person and barrier.
 static func strip_records() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
-	var models := ["desert_mirage_gt","desert_faisca_rally","desert_coyote_drag","desert_siroco"]
+	var models := ["desert_mirage_gt","monaliza","desert_coyote_drag","ranch_pickup","station_wagon","metro_hatch"]
 	var paints := [Color("8d4936"),Color("acb3b9"),Color("314b62"),Color("727545")]
-	for pocket in 6:
-		var x := -843.0 + float(pocket) * 143.0
-		var side := 1.0 if pocket in [1,4] else -1.0
-		var spectator_z := -1320.0 + side * 11.0
-		for offset in [-4.0,4.0]:
-			result.append({"kind":"drag_meet","position":Vector3(x+offset,0,-1320.0+side*8.3),"type":"barrier","data":{}})
-		for slot in 4:
-			var point := Vector3(x-3.6+float(slot)*2.4,.03,spectator_z)
+	for pocket in STRIP_POCKETS.size():
+		var x: float=STRIP_POCKETS[pocket]
+		# The far shoulder remains readable above the HUD in the side camera.
+		# One 7.6 m solid barrier protects the three-person group without adding
+		# another row of scenery or blocking the service lane at z=-1350.
+		# The first two pockets already have the continuous starting barrier.
+		if pocket>=2: result.append({"kind":"drag_meet","position":Vector3(x,0,-1328.3),"type":"barrier","data":{}})
+		for slot in 3:
+			var point := Vector3(x-2.4+float(slot)*2.4,.03,-1331)
 			var data := {"team":"strip","point":point,"walk_end":point,"focus":Vector3(x,0,-1320),
-				"coat":paints[(pocket+slot)%paints.size()],"roamer":false,"identity":11000+pocket*4+slot}
+				"coat":paints[(pocket+slot)%paints.size()],"roamer":false,"identity":11000+pocket*3+slot}
 			result.append({"kind":"drag_meet","position":point,"type":"strip_spectator","data":data})
-		for slot in 2:
-			var car := _car("strip_%d_%d"%[pocket,slot],Vector3(x+(-10.0 if slot==0 else 10.0),0,-1320.0+side*14.3),models[(pocket+slot)%models.size()],PI*.5)
+		for slot in (2 if pocket%2==0 else 1):
+			var offset := -10.0 if slot==0 else 10.0
+			var car := _car("strip_%d_%d"%[pocket,slot],Vector3(x+offset,0,-1334.3),models[(pocket+slot)%models.size()],PI*.5)
 			car.paint=paints[(pocket+slot)%paints.size()]
 			result.append({"kind":"drag_meet","position":car.position,"type":"strip_car","data":car})
 	return result
@@ -102,7 +110,7 @@ static func car_spots() -> Array[Dictionary]:
 		{"z":-1289.0,"x":[-1032,-1024,-1016,-988,-980,-956,-948]},
 		{"z":-1218.0,"x":[-981,-969,-957,-945,-933,-921,-909,-897]},
 	]
-	var models := ["desert_coyote_drag","desert_mirage_gt","desert_faisca_rally","desert_siroco","desert_mirage","desert_coyote","desert_faisca"]
+	var models := ["desert_coyote_drag","monaliza","desert_faisca_rally","station_wagon","desert_mirage","muscle_classic","metro_hatch","ranch_pickup","nordic_estate"]
 	var colors := [Color("c45e32"),Color("b4b8b0"),Color("30567b"),Color("b89834"),Color("744055"),Color("334942"),Color("c6c4b6")]
 	var index := 0
 	for row in rows:
@@ -132,7 +140,16 @@ static func build_ground(parent: Node3D, rect: Rect2) -> void:
 	ground.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	ground.set_meta("vehicle_surface","hard")
 	for child in ground.get_children():
-		if child is StaticBody3D: child.set_meta("vehicle_surface","hard")
+		if not child is StaticBody3D: continue
+		child.set_meta("vehicle_surface","hard")
+		# The visual film stays above the sand, but its physical support shares
+		# the road datum. A 12 mm vertical face stopped arriving car hulls here.
+		for collider in child.get_children():
+			if not collider is CollisionShape3D or not collider.shape is ConcavePolygonShape3D: continue
+			var faces: PackedVector3Array = collider.shape.get_faces()
+			for index in faces.size():
+				faces[index].y = LAYOUT.surface_height(Vector2(faces[index].x,faces[index].z))
+			collider.shape.set_faces(faces)
 	# Concrete expansion joints and individual parking outlines read at driving
 	# scale without descriptive signs or a second surface over the access road.
 	for data in car_spots():
@@ -229,7 +246,10 @@ static func _parked_car(node: Node3D, data: Dictionary) -> void:
 	var model := FLEET.create(str(data.model))
 	if model!=null:
 		body.add_child(model)
-		if data.has("paint"): _paint_model(model,data.paint)
+		if data.has("paint"):
+			var finish := preload("res://runtime/VehiclePaint.gd").new()
+			finish.bind(model,str(data.model))
+			finish.apply(data.paint)
 	body.name="ParkedCarBody"
 	body.collision_layer=1
 	body.collision_mask=0

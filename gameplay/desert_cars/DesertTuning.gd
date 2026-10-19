@@ -3,6 +3,12 @@ extends RefCounted
 const CARS := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
 const STREET := preload("res://gameplay/desert_cars/StreetPowertrainCatalog.gd")
 const PARTS := {
+	"rival_digo_ecu":{"label":"Mapa Digo · saída", "slot":"ecu", "cost":0, "wins":0, "rival_reward":"digo", "effect":"Torque +5,5%; resposta em baixa +10%; giro máximo −100 rpm", "torque":1.055, "low":1.10, "redline_add":-100.0, "cap":.02},
+	"rival_livia_tires":{"label":"Pneus Lívia · rua", "slot":"tires", "cost":0, "wins":0, "rival_reward":"livia", "effect":"Tração: asfalto +18%; terra −3,2% no total; agilidade −4%", "grip":1.18, "dirt":.82, "turn":.96},
+	"rival_raul_gear":{"label":"Relação Raul · equilíbrio", "slot":"gearbox", "cost":0, "wins":0, "rival_reward":"raul", "effect":"Relação −6%; mais final, saída um pouco mais longa", "ratio":.94},
+	"rival_jessica_turbo":{"label":"Turbo Jessica · resposta", "slot":"turbo", "cost":0, "wins":0, "rival_reward":"jessica", "effect":"Pressão +27%; responde antes do esportivo, com menos pico", "boost":.27, "spool":.26, "cap":.035},
+	"rival_nadir_weight":{"label":"Alívio Nadir · reforçado", "slot":"weight", "cost":0, "wins":0, "rival_reward":"nadir", "effect":"Peso −7%; resistência −3%; preserva mais resistência que o alívio comum", "mass":.93, "durability":.97, "cap":.01},
+	"rival_rauhz_nitro":{"label":"Nitro Rauhz · dosado", "slot":"nitro", "cost":0, "wins":0, "rival_reward":"rauhz", "effect":"Torque +38% durante 3,6 s; entre o progressivo e o de descarga forte", "nitro_force":.38, "nitro_seconds":3.6},
 	"paint_rosso":{"label":"Vermelho", "slot":"paint", "cost":1200, "wins":0, "effect":"Pintura da carroceria", "body_color":"b62930"},
 	"paint_ocean":{"label":"Azul petróleo", "slot":"paint", "cost":1200, "wins":0, "effect":"Pintura da carroceria", "body_color":"285968"},
 	"paint_pearl":{"label":"Branco pérola", "slot":"paint", "cost":1200, "wins":0, "effect":"Pintura da carroceria", "body_color":"e4e1d6"},
@@ -90,6 +96,7 @@ static func tuned_spec(car_id: String, parts: Dictionary = {}) -> Dictionary:
 static func purchase_check(parts: Dictionary, owned: Array, part_id: String, wins: int, money: int) -> Dictionary:
 	if not PARTS.has(part_id): return {"ok":false,"reason":"Peça inexistente"}
 	var p: Dictionary = PARTS[part_id]
+	if p.has("rival_reward") and part_id not in owned: return {"ok":false,"reason":"Conclua os dois desafios deste rival e retire a peça no quadro."}
 	if wins < int(p.wins): return {"ok":false,"reason":String(TranslationServer.translate("Vença %d provas diferentes")) % int(p.wins)}
 	var cost := 0 if part_id in owned else int(p.cost)
 	if money < cost: return {"ok":false,"reason":"Saldo insuficiente"}

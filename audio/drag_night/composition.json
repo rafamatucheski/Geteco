@@ -1,0 +1,40 @@
+{
+  "title": "Noite de Acerto",
+  "bpm": 104,
+  "bars": 32,
+  "meter": "4/4",
+  "key": "D minor",
+  "sample_rate": 44100,
+  "frames": 3256615,
+  "seconds": 73.84614512471656,
+  "source": "Original deterministic synthesis; no external samples or referenced composition",
+  "files": {
+    "patio": {
+      "peak_dbfs": -12.91,
+      "rms_dbfs": -26.571,
+      "clipped_samples": 0,
+      "seam_step": 0.00040827877819538116,
+      "max_adjacent_step": 0.024362132418900728,
+      "frames": 3256615,
+      "rate": 44100,
+      "sha256": "d2c03c4e1a86c1382346446f16c1004fe4ecfee3c7aaae79f4fe63b862058963"
+    },
+    "pulso": {
+      "peak_dbfs": -6.89,
+      "rms_dbfs": -22.843,
+      "clipped_samples": 0,
+      "seam_step": 0.0038195275265024975,
+      "max_adjacent_step": 0.13851644843816757,
+      "frames": 3256615,
+      "rate": 44100,
+      "sha256": "66516ad9623ee73d473deb9e09491f9f3a19aca27ae084055b11369d912c8194"
+    }
+  },
+  "preview": {
+    "peak_dbfs": -4.808,
+    "rms_dbfs": -21.317,
+    "clipped_samples": 0,
+    "seam_step": 0.0017856284976005554,
+    "max_adjacent_step": 0.15147966891527176
+  }
+}

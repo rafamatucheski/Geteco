@@ -535,13 +535,17 @@ func _budget_request() -> Dictionary:
 	if is_instance_valid(npc_beam): lights.append(npc_beam)
 	if is_instance_valid(halo): lights.append(halo)
 	var player_driven: bool = is_instance_valid(car) and car.controlled and not car.external_input and not car.traffic
-	var result := {"lights": lights, "wanted": wanted, "player": player_driven, "camera": point, "decal": null, "pool": false}
+	var result := {"lights": lights, "wanted": wanted, "player": player_driven, "camera": point, "race_headlights": false, "decal": null, "pool": false}
 	if not is_instance_valid(car) or not car.is_inside_tree() or car.is_queued_for_deletion() or not car.is_visible_in_tree() or car.health <= 0: return result
 	var occupied: bool = car.controlled
 	var automatic := night_auto_enabled and npc_driven() and is_dark()
 	@warning_ignore("integer_division")
 	var alarm_blink: bool = alarm_remaining > 0 and int(Time.get_ticks_msec() / 167) % 2 == 0
 	var race: bool = car.has_meta("desert_drag_physics")
+	# The side camera still shows both racers beyond the ordinary 25 m traffic
+	# radius. Keep only their existing headlights eligible while the beam is framed;
+	# race cleanup removes the marker and changing camera restores normal traffic.
+	result.race_headlights = race and is_instance_valid(camera) and camera.name == &"DesertDragSideCamera" and _beam_framed(camera)
 	var driver: bool = ((headlights_on or (auto_lit and player_driven)) and (occupied or race) and (not npc_driven() or race)) or alarm_blink
 	if driver:
 		for item in lamps:
@@ -551,6 +555,28 @@ func _budget_request() -> Dictionary:
 	if is_instance_valid(halo) and ((siren_on and occupied) or alarm_remaining > 0):
 		wanted.append({"light": halo, "headlight": false})
 	return result
+
+## O facho ilumina a pista à frente do carro e entra no quadro antes da
+## carroceria. Testar só o centro do carro apagava um facho visível e piscava a
+## cada quadro na borda (prova de 19/10: Digo 39 m atrás, 0 ↔ 0,25 de energia).
+## Vale o volume do projetor, o mesmo que o renderizador usa para recortar.
+func _beam_framed(camera: Camera3D) -> bool:
+	var planes := camera.get_frustum()
+	for item in lamps:
+		if not is_instance_valid(item.lamp): continue
+		var box: AABB = item.lamp.global_transform * item.lamp.get_aabb()
+		var inside := true
+		for plane: Plane in planes:
+			var beyond := true
+			for corner in 8:
+				if not plane.is_point_over(box.get_endpoint(corner)):
+					beyond = false
+					break
+			if beyond:
+				inside = false
+				break
+		if inside: return true
+	return false
 
 func receive_impact(local_point: Vector3, severity: float) -> void:
 	if severity < 3.0: return

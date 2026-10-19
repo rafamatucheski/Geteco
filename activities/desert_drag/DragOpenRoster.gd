@@ -6,8 +6,8 @@ const CARS := {
 	"open_celia":{"name":"Célia","car":"desert_siroco","distance":800.0,"reaction":.21,"mistake":.04,"number":58},
 	"open_ivo":{"name":"Ivo","car":"desert_coyote","distance":800.0,"reaction":.19,"mistake":.05,"number":63},
 	"open_mara":{"name":"Mara","car":"desert_mirage","distance":800.0,"reaction":.23,"mistake":.04,"number":76},
-	"open_denis":{"name":"Denis","car":"desert_faisca_rally","distance":800.0,"reaction":.24,"mistake":.05,"number":83},
-	"open_luna":{"name":"Luna","car":"desert_siroco","distance":800.0,"reaction":.22,"mistake":.05,"number":92},
+	"open_denis":{"name":"Denis","car":"ranch_pickup","distance":800.0,"reaction":.24,"mistake":.05,"number":83},
+	"open_luna":{"name":"Luna","car":"monaliza","distance":800.0,"reaction":.22,"mistake":.05,"number":92},
 }
 
 static func attach_number(car: Node3D, number: int) -> void:

@@ -3,6 +3,7 @@ extends "res://runtime/desert/drag_meet/DragMeetGuest.gd"
 ## Only nearby spectators animate/simulate; no extra population controller.
 var _near_clock := 0.0
 var _gameplay: Node
+var _near := false
 
 func _create_person() -> Node3D:
 	return preload("res://runtime/desert/drag_meet/DragSpectatorModel.gd").new()
@@ -33,9 +34,10 @@ func _process(delta: float) -> void:
 func _update_budget() -> void:
 	var view_camera := get_viewport().get_camera_3d()
 	if not is_instance_valid(view_camera): return
-	var near := view_camera.global_position.distance_squared_to(global_position) < 45.0 * 45.0
-	if is_instance_valid(person): person.set_process(near and not dead)
-	set_physics_process(near or _panic > 0.0)
+	var radius := 60.0 if _near else 45.0
+	_near = view_camera.global_position.distance_squared_to(global_position) < radius * radius
+	preload("res://runtime/desert/drag_meet/DragMeetAppearance.gd").set_animation_active(person,not dead and (_near or _panic>0.0))
+	set_physics_process(not dead and (_near or _panic > 0.0))
 
 func _weapon_fired(_id: String, origin: Vector3) -> void:
 	if global_position.distance_squared_to(origin) < 52.0 * 52.0:

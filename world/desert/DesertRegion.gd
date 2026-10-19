@@ -23,6 +23,7 @@ const MINING_ART := preload("res://world/mining/MiningExterior.gd")
 const MOON_VILLAGE := preload("res://world/desert/DesertMoonVillage.gd")
 const VILLAGE_HOMES := preload("res://world/desert/village/DesertVillageHomes.gd")
 const DRAG_MEET := preload("res://world/desert/drag_meet/DesertDragMeet.gd")
+const DRAG_SUPPORT := preload("res://world/desert/DragTrackSupport.gd")
 const SMUGGLER_LAYOUT := preload("res://world/desert/canyon/DesertSmugglerLayout.gd")
 const SMUGGLER_SCENERY := preload("res://world/desert/canyon/DesertSmugglerScenery.gd")
 const CELL := 96.0
@@ -50,6 +51,13 @@ var entries: Array[Dictionary] = []
 var terrain: Node3D = null
 var harbor_road_geometry: RefCounted = null
 var vehicle_support_cells: Dictionary = {}
+# The side camera sees the entire course's north shoulder. Warm this bounded
+# band on approach, then retain it through the return; ordinary city streaming
+# stays unchanged. Preparation uses the existing one-cell/frame build budget.
+const DRAG_VIEW_BOUNDS := Rect2(-1056,-1440,1248,192)
+var drag_view_cells: Dictionary = {}
+var drag_view_pending: Array[Vector2i] = []
+var drag_track_support: StaticBody3D
 var source_data: Dictionary = {}
 var _night_level := 0.0
 var _lamps: Array[OmniLight3D] = []
@@ -177,6 +185,7 @@ func map_routes() -> Array[Dictionary]: return roads+walkways
 func set_focus(point: Vector3, complete_focus_chunk := false) -> void:
 	focus=point
 	if not prepared: return
+	_update_drag_residency(point)
 	var cell := _cell(point)
 	if cell==current_cell:
 		if complete_focus_chunk: _complete_focus_chunk(cell)
@@ -256,6 +265,7 @@ func _process(_delta: float) -> void:
 	if _dressing_yield_frame==Engine.get_process_frames(): return
 	var began := Time.get_ticks_usec()
 	if not pending.is_empty(): _ensure_chunk_surfaces(pending.pop_front())
+	elif not drag_view_pending.is_empty(): _ensure_chunk_surfaces(drag_view_pending.pop_front())
 	while not build_jobs.is_empty() and Time.get_ticks_usec()-began<BUILD_BUDGET_USEC:
 		_run_build_job(build_jobs[0],BUILD_BUDGET_USEC)
 
@@ -293,12 +303,28 @@ func _run_build_job(job: Dictionary, _budget: float) -> void:
 		chunk.set_meta("vegetation_ready_frame", Engine.get_physics_frames())
 		preload("res://world/chunk_bake/ChunkCellMerge.gd").finish_chunk_later(chunk)
 
-func is_streaming_idle() -> bool: return pending.is_empty() and build_jobs.is_empty()
+func _update_drag_residency(point: Vector3) -> void:
+	var planar := Vector2(point.x,point.z)
+	var near_course := DRAG_VIEW_BOUNDS.grow(180 if drag_view_cells.is_empty() else 280).has_point(planar)
+	if near_course == (not drag_view_cells.is_empty()): return
+	drag_view_pending.clear()
+	drag_view_cells.clear()
+	_residency_dirty = true
+	if not near_course: return
+	for x in range(-11,2):
+		for z in range(-15,-13):
+			var key := Vector2i(x,z)
+			drag_view_cells[key] = true
+			if not chunks.has(key): drag_view_pending.append(key)
+	var at := _cell(point)
+	drag_view_pending.sort_custom(func(a: Vector2i,b: Vector2i): return Vector2(a-at).length_squared()<Vector2(b-at).length_squared())
+
+func is_streaming_idle() -> bool: return pending.is_empty() and drag_view_pending.is_empty() and build_jobs.is_empty()
 ## Só as superfícies (chão e colisão), que saem síncronas, um trecho por quadro. O enfeite que vem
 ## depois é fatiado em ~1 ms por quadro, então terminar conta quadros, não tempo: 34 trechos perto
 ## da arrancada levaram ~1.600 quadros, 27 s a 60 fps (padrão) no editor, contra 0,7 s das
 ## superfícies (sonda de 18/10). Quem só precisa de chão firme (DesertWilds) espera isto.
-func surfaces_idle() -> bool: return pending.is_empty()
+func surfaces_idle() -> bool: return pending.is_empty() and drag_view_pending.is_empty()
 ## Quem monta algo neste quadro antes do _process do deserto (process_priority menor) pede para o
 ## enfeite não rodar junto. Sem isso, a montagem de 2,5 ms (editor) caía no mesmo quadro de uma
 ## fatia de chão povoado de até 5,4 ms e o quadro perdia o vsync de 60 Hz (34 ms, teste de 18/10).
@@ -321,7 +347,11 @@ func release_chunks() -> void:
 	if is_instance_valid(mining_life): mining_life.suspend()
 	if is_instance_valid(mining_dust): mining_dust.suspend()
 	pending.clear()
+	drag_view_pending.clear()
+	drag_view_cells.clear()
 	build_jobs.clear()
+	if is_instance_valid(drag_track_support): GPU_RELEASE.retire(drag_track_support)
+	drag_track_support = null
 	for chunk in chunks.values(): GPU_RELEASE.retire(chunk)
 	chunks.clear()
 	_lamps.clear()
@@ -333,7 +363,7 @@ func _trim_chunks() -> void:
 	if current_cell.x==100000 or not _residency_dirty: return
 	_residency_dirty=false
 	for key in chunks.keys():
-		if vehicle_support_cells.has(key): continue
+		if vehicle_support_cells.has(key) or drag_view_cells.has(key): continue
 		if absi(key.x-current_cell.x)>retention_radius or absi(key.y-current_cell.y)>retention_radius:
 			# Descarte gradual (fila de vídeo, 16/10): o trecho some já e é liberado aos poucos. Os postes dele
 			# saem da lista agora, porque continuam válidos (escondidos) até a fila chegar neles.
@@ -399,6 +429,9 @@ func _build_surfaces(chunk: Node3D, rect: Rect2) -> void:
 	preload("res://world/desert/north_pass/DesertNorthPassScenery.gd").build_chunk(chunk,rect,north_pass_completed)
 	if preload("res://runtime/desert/DesertActivitiesPolicy.gd").enabled(): preload("res://world/desert/community/DesertCommunitySite.gd").build_chunk(chunk,rect)
 	DRAG_MEET.build_ground(chunk,rect)
+	if rect.intersects(DRAG_SUPPORT.BOUNDS):
+		if not is_instance_valid(drag_track_support): drag_track_support = DRAG_SUPPORT.install(self)
+		DRAG_SUPPORT.replace_chunk_collision(self,chunk)
 	preload("res://world/desert/DesertGroundOwnership.gd").compose(chunk,rect,road_geometry)
 	preload("res://activities/desert_drag/DesertDragBoardProp.gd").build_chunk(chunk,rect)
 	_boundary_ridge(chunk,rect)

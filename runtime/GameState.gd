@@ -169,7 +169,14 @@ func restore_snapshot(data: Dictionary) -> bool:
 		if not data.world.urban_operations is Dictionary or not preload("res://gameplay/urban_v1/UrbanOperations.gd").validate_snapshot(data.world.urban_operations): return false
 	if not _validate_cross_contracts(next_economy,next_campaign,next_canonical_campaign,data.world): return false
 	if not preload("res://runtime/desert/DesertSaveContract.gd").valid(data.world,data.economy): return false
-	if data.region_id == "desert" and not preload("res://world/north_gateway/NorthGatewayPolicy.gd").campaign_completed(next_campaign.snapshot()): return false
+	# The dedicated Rachas profile starts at the meet without completing story
+	# missions. This save mode does not change the bridge's campaign-only policy.
+	if data.world.has("drag_standalone"):
+		var racing_mode: Variant=data.world.drag_standalone
+		if not racing_mode is Dictionary or racing_mode.size()!=1: return false
+		var racing_version: Variant=racing_mode.get("version")
+		if typeof(racing_version) not in [TYPE_INT,TYPE_FLOAT] or float(racing_version)!=1.0: return false
+	if data.region_id == "desert" and not data.world.has("drag_standalone") and not preload("res://world/north_gateway/NorthGatewayPolicy.gd").campaign_completed(next_campaign.snapshot()): return false
 	var next_world: Dictionary = _normalize_reward_aliases(data.world)
 	# O zoológico da serra virou a Forja da Serra (17/10/2026): o ingresso antigo não vale mais nada.
 	next_world.erase("mountain_zoo")

@@ -3,6 +3,7 @@ extends RefCounted
 static func receive(actor: Node3D, visual: Node3D, amount: float, source: Node) -> void:
 	if actor.dead or not is_finite(amount) or amount <= 0: return
 	if preload("res://gameplay/DamageProtection.gd").is_protected(actor): return
+	preload("res://runtime/desert/drag_meet/DragMeetAppearance.gd").set_animation_active(visual,true)
 	actor.health = maxf(0.0, actor.health - amount)
 	var push: Vector3 = actor.global_position - source.global_position if source is Node3D else Vector3.ZERO
 	if actor.health <= 0:

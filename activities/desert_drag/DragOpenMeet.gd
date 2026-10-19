@@ -28,6 +28,9 @@ var dispatching := false
 var ready_clock := 0.0
 var skip_current_heat := false
 var last_admission_reason := ""
+var blocked_phase := ""
+var recovery_clock := 0.0
+var _was_on_foot := false
 var signals: Node3D
 var status_layer: CanvasLayer
 var status: Label
@@ -44,7 +47,8 @@ func track_busy() -> bool:
 func ticket() -> Dictionary:
 	return {"queued":not pending.is_empty(),"position":1+heats_ahead if not pending.is_empty() else 0,
 		"number":int(registered_car.get_meta("drag_entry_number",27)) if is_instance_valid(registered_car) else 27,
-		"rival":pending,"heat":phase,"racing":track_busy(),"waiting":waiting.size()}
+		"rival":pending,"heat":phase,"racing":track_busy(),"waiting":waiting.size(),
+		"reason":last_admission_reason,"on_foot":not session.world.driving.occupied}
 
 func request(identity: String, join_queue: bool) -> bool:
 	if not enabled or race.active or not pending.is_empty() or not race.can_race(identity): return false
@@ -60,16 +64,19 @@ func request(identity: String, join_queue: bool) -> bool:
 	skip_current_heat = not heat.is_empty()
 	ready_clock = 0.0
 	_refresh()
-	session.show_message("Inscrição #27 · %dª posição. Aguarde no carro junto ao quadro."%(1+heats_ahead))
+	session.show_message("Inscrição #27 · %dª posição. Pode esperar a pé; volte ao seu carro quando chamado."%(1+heats_ahead))
 	return true
 
-func cancel_ticket(notify := true) -> void:
+func cancel_ticket(notify := true, reason := "Inscrição na fila cancelada.") -> void:
 	if pending.is_empty(): return
+	if race.has_method("cancel_waiting_context"): race.cancel_waiting_context(reason)
 	pending = ""
 	heats_ahead = 0
 	ready_clock = 0.0
+	last_admission_reason = ""
+	_clear_registration_number()
 	_refresh()
-	if notify: session.show_message("Inscrição na fila cancelada.")
+	if notify: session.show_message(reason)
 
 func _physics_process(delta: float) -> void:
 	if not is_instance_valid(session) or not session.ready_for_play: return
@@ -82,8 +89,14 @@ func _physics_process(delta: float) -> void:
 	if session.modal or session.get_tree().paused or session.is_transition_blocked(): return
 	if session.world.gameplay.stars>0:
 		clear_visit(); return
-	if not pending.is_empty() and (not is_instance_valid(registered_car) or registered_car.health<=0 or not session.world.driving.occupied or session.world.driving.car!=registered_car):
-		cancel_ticket()
+	if not pending.is_empty():
+		if not is_instance_valid(registered_car) or registered_car.health<=0 or registered_car.engine_disabled:
+			cancel_ticket(true,"Inscrição cancelada: o carro inscrito não pode correr.")
+		elif session.world.driving.occupied and session.world.driving.car!=registered_car:
+			cancel_ticket(true,"Inscrição cancelada: você trocou de carro.")
+		elif _was_on_foot == session.world.driving.occupied:
+			_was_on_foot = not session.world.driving.occupied
+			_refresh()
 	if not _healthy():
 		clear_visit(); return
 	_advance_transit(delta)
@@ -99,6 +112,9 @@ func _physics_process(delta: float) -> void:
 		if waiting.size()==2: _promote()
 		return
 	clock += delta
+	if phase=="blocked":
+		_try_resume_blocked(delta)
+		return
 	if phase=="lining":
 		var lined := true
 		for i in heat.size():
@@ -126,7 +142,7 @@ func _physics_process(delta: float) -> void:
 		for entry in heat:
 			var drive = entry.drive
 			if is_finite(float(entry.finish)):
-				race._step_runoff(entry,delta)
+				race._step_runoff(entry,delta,800.0)
 			else:
 				if drive.rpm>=drive.ideal_shift_rpm: drive.shift_up()
 				drive.step(delta,1.0 if clock>.24 else 0.0,false)
@@ -137,14 +153,36 @@ func _physics_process(delta: float) -> void:
 			_refresh()
 	if phase=="finished":
 		_release_heat()
-	# Obstruction cancels an ambient heat; it never awards a fictional finish.
+	# Keep the physical heat and the player's place while the obstruction is
+	# present. Recovery never teleports a car or awards a fictional finish.
 	elif clock>45.0 and phase in ["lining","racing"]:
-		cancel_ticket()
+		blocked_phase = phase
 		phase = "blocked"
+		recovery_clock = 0.0
 		for entry in heat:
 			entry.drive.speed_mps = 0.0
+			entry.car.speed = 0.0
 			entry.car.velocity = Vector3.ZERO
+			entry.car.throttle_input = 0.0
+			entry.car.brake_input = true
+		last_admission_reason = "Pista obstruída · sua posição está reservada."
 		_refresh()
+
+func _try_resume_blocked(delta: float) -> void:
+	for entry in heat: entry.drive.follow_external_motion(0.0,0.0,delta)
+	recovery_clock -= delta
+	if recovery_clock>0.0: return
+	recovery_clock = .5
+	for entry in heat:
+		if is_finite(float(entry.finish)): continue
+		if entry.car.test_move(entry.car.global_transform,race.direction*.8): return
+	phase = blocked_phase if blocked_phase in ["lining","racing"] else "lining"
+	blocked_phase = ""
+	clock = 0.0
+	for entry in heat:
+		if not is_finite(float(entry.finish)): entry.drive.gear = 1
+	last_admission_reason = ""
+	_refresh()
 
 func _healthy() -> bool:
 	for entry in heat+waiting+transit:
@@ -177,6 +215,7 @@ func _admit() -> void:
 	car.set_physics_process(false)
 	var drive = DRIVE.new()
 	drive.configure(str(ROSTER.CARS[identity].car))
+	drive.race_mode = true
 	drive.launch_blend_seconds = .35
 	car.set_meta("desert_powertrain",drive)
 	DRIVER.attach(car,identity)
@@ -212,18 +251,19 @@ func _release_heat() -> void:
 	_refresh()
 
 func _dispatch(delta: float) -> void:
+	if not session.world.driving.occupied:
+		_set_admission_reason("Sua vez · entre no carro #27 junto ao quadro.")
+		return
 	ready_clock += delta
 	var reason: String = race.start_block_reason()
-	last_admission_reason = reason
 	if not reason.is_empty():
-		if ready_clock>20.0: cancel_ticket()
+		_set_admission_reason(reason)
 		return
 	var identity := pending
 	if ROSTER.CARS.has(identity):
 		var candidates := waiting.filter(func(e): return int(e.lane)==1)
 		if candidates.is_empty():
-			last_admission_reason = "Aguardando o adversário chegar pelo acesso."
-			if ready_clock>60.0: cancel_ticket()
+			_set_admission_reason("Aguardando o adversário chegar pelo acesso.")
 			return
 		var entry: Dictionary = candidates[0]
 		identity = str(entry.identity)
@@ -232,19 +272,24 @@ func _dispatch(delta: float) -> void:
 			entry.car.rotation.y = rotate_toward(entry.car.rotation.y,race.grid(1).basis.get_euler().y,delta*2.0)
 			entry.drive.speed_mps = minf(3.0,remaining/maxf(delta,.001))
 			race._move_car(entry,delta)
-			last_admission_reason = "Adversário alinhando."
+			_set_admission_reason("Adversário alinhando.")
 			return
 	dispatching = true
 	# Waiting visitors remain behind the grid. The player's heat owns the tree.
 	if is_instance_valid(signals): signals.queue_free(); signals = null
 	var started: bool = race.start_rival(identity)
-	if not started: last_admission_reason = "Pista ou alinhamento obstruído."
+	if not started and not pending.is_empty(): _set_admission_reason("Pista ou alinhamento obstruído · sua posição está reservada.")
 	dispatching = false
 	if started:
 		pending = ""
 		heats_ahead = 0
+		last_admission_reason = ""
 		_refresh()
-	elif ready_clock>20.0: cancel_ticket()
+
+func _set_admission_reason(reason: String) -> void:
+	if last_admission_reason==reason: return
+	last_admission_reason = reason
+	_refresh()
 
 func _out_of_view(car: Node3D) -> bool:
 	return _point_out_of_view(car.global_position,110.0)
@@ -349,7 +394,10 @@ func _advance_transit(delta: float) -> void:
 		var region = session.world.production.regions.get("desert")
 		if not is_instance_valid(region) or not region.prepare_collision_at(car.global_position+motion*delta): continue
 		var before: Vector3 = car.global_position
-		car.velocity = motion+Vector3.UP*(car.velocity.y-18.0*delta)
+		# Match Vehicle's grounded contract: floor snap keeps support without
+		# pressing a grounded hull into the next coplanar triangle's edge.
+		var vertical_speed: float = 0.0 if car.is_on_floor() else car.velocity.y-18.0*delta
+		car.velocity = motion+Vector3.UP*vertical_speed
 		car.move_and_slide()
 		var moved: Vector3 = car.global_position-before
 		car.speed = Vector2(moved.x,moved.z).length()/maxf(delta,.001)
@@ -376,17 +424,25 @@ func _release_car(car: Node3D) -> void:
 		car.queue_free()
 
 func clear_visit() -> void:
-	cancel_ticket(false)
+	# Consuming a ticket transfers ownership to the race. Only an outstanding
+	# registration may disarm its context when the ambient visit is released.
+	if not pending.is_empty(): cancel_ticket(false,"Você saiu do encontro.")
 	for entry in heat+waiting+transit: _release_car(entry.car)
 	heat.clear(); waiting.clear(); transit.clear()
-	phase = "idle"; clock = 0.0
+	phase = "idle"; clock = 0.0; blocked_phase = ""; recovery_clock = 0.0
+	last_admission_reason = ""
 	if is_instance_valid(signals): signals.queue_free(); signals = null
+	_clear_registration_number()
+	if is_instance_valid(status_layer): status_layer.hide()
+
+func _clear_registration_number() -> void:
 	if is_instance_valid(registered_car):
 		var badge = registered_car.get_node_or_null("DragEntryNumber")
-		if is_instance_valid(badge): badge.queue_free()
-		registered_car.remove_meta("drag_entry_number")
+		if is_instance_valid(badge):
+			registered_car.remove_child(badge)
+			badge.queue_free()
+		if registered_car.has_meta("drag_entry_number"): registered_car.remove_meta("drag_entry_number")
 	registered_car = null
-	if is_instance_valid(status_layer): status_layer.hide()
 
 func _refresh() -> void:
 	if not is_instance_valid(status_layer):
@@ -402,7 +458,10 @@ func _refresh() -> void:
 		status.add_theme_constant_override("shadow_offset_y",2)
 		status_layer.add_child(status)
 	status_layer.visible = not pending.is_empty() and not race.active
-	status.text = "#27 · %dª posição · %s"%[1+heats_ahead,"Sua vez: pare junto ao quadro" if heat.is_empty() and heats_ahead==0 else "Aguardando largada"]
+	var instruction := "Sua vez: pare junto ao quadro" if heat.is_empty() and heats_ahead==0 else "Aguardando largada"
+	if not last_admission_reason.is_empty(): instruction = last_admission_reason
+	elif not session.world.driving.occupied: instruction = "Pode esperar a pé · carro #27 inscrito"
+	status.text = "#27 · %dª posição · %s"%[1+heats_ahead,instruction]
 	changed.emit()
 
 func _exit_tree() -> void:

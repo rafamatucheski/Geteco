@@ -51,7 +51,9 @@ func _button(column: VBoxContainer, title: String, action: String) -> Button:
 func show_ticket(data: Dictionary) -> void:
 	var queued: bool = data.queued
 	state_label.text = "NA PISTA · "+{"lining":"ALINHANDO","staging":"PREPARANDO A LARGADA","racing":"BATERIA EM ANDAMENTO","finished":"LIBERANDO A PISTA","blocked":"PISTA OBSTRUÍDA","idle":"LIVRE"}.get(str(data.heat),"LIVRE")
-	queue_label.text = "INSCRIÇÃO #%02d · %dª POSIÇÃO\nAguarde no carro junto ao quadro. Você será chamado para alinhar."%[int(data.number),int(data.position)] if queued else "Dois carros por bateria. No máximo uma bateria à sua frente na fila.\nAdversário visitante escolhido entre os próximos carros."
+	queue_label.text = "INSCRIÇÃO #%02d · %dª POSIÇÃO\nPode esperar a pé. Volte ao carro inscrito quando chegar sua vez."%[int(data.number),int(data.position)] if queued else "Dois carros por bateria. No máximo uma bateria à sua frente na fila.\nAdversário visitante escolhido entre os próximos carros."
+	if queued and not str(data.get("reason","")).is_empty():
+		queue_label.text = "INSCRIÇÃO #%02d · %dª POSIÇÃO\n%s"%[int(data.number),int(data.position),str(data.reason)]
 	now_button.text = "Correr agora" if not data.racing and int(data.waiting)==2 else "Próxima largada · 1ª posição"
 	now_button.disabled = queued
 	queue_button.disabled = queued

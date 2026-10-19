@@ -5,7 +5,11 @@ signal race_requested(identity: String)
 signal instruments_requested
 signal takeshi_requested
 signal open_meet_requested
+signal night_requested(identity: String)
+signal challenges_requested
+signal loaner_requested
 const PROGRESS := preload("res://activities/desert_drag/DesertDragProgress.gd")
+const NIGHT_CATALOG := preload("res://activities/desert_drag/DragNightCatalog.gd")
 const NAMES := ["Digo", "Lívia", "Raul", "Jessica", "Nadir", "Rauhz"]
 const ATLAS_IDS := ["digo", "livia", "raul", "jessica", "nadir"]
 const ROW_STEP := 72
@@ -28,6 +32,9 @@ var instruments_button: Button
 var takeshi_button: Button
 var message := ""
 var open_meet_button: Button
+var night_button: Button
+var challenges_button: Button
+var loaner_button: Button
 
 func _ready() -> void:
 	font = _font("Regular")
@@ -97,12 +104,38 @@ func _ready() -> void:
 	open_meet_button.add_theme_font_size_override("font_size",15)
 	open_meet_button.pressed.connect(func(): open_meet_requested.emit())
 	add_child(open_meet_button)
+	challenges_button = Button.new()
+	challenges_button.name = "DesafiosDosRivais"
+	challenges_button.text = "DESAFIOS DOS RIVAIS"
+	challenges_button.position = Vector2(266,592)
+	challenges_button.size = Vector2(272,28)
+	_button_style(challenges_button,false)
+	challenges_button.add_theme_font_size_override("font_size",15)
+	challenges_button.pressed.connect(func(): challenges_requested.emit())
+	add_child(challenges_button)
 	race_button = Button.new()
-	race_button.position = Vector2(551, 511)
-	race_button.size = Vector2(317, 54)
+	race_button.position = Vector2(551, 475)
+	race_button.size = Vector2(317, 44)
 	_button_style(race_button, true)
 	race_button.pressed.connect(func(): race_requested.emit(selected))
 	add_child(race_button)
+	night_button = Button.new()
+	night_button.name = "NoiteDeAcerto"
+	night_button.text = "NOITE DE ACERTO  →"
+	night_button.position = Vector2(551, 527)
+	night_button.size = Vector2(317, 40)
+	_button_style(night_button, false)
+	night_button.pressed.connect(func(): night_requested.emit(selected))
+	add_child(night_button)
+	loaner_button=Button.new()
+	loaner_button.name="CarroDaOficina"
+	loaner_button.text="CARRO DA OFICINA"
+	loaner_button.position=Vector2(30,96)
+	loaner_button.size=Vector2(300,30)
+	_button_style(loaner_button,false)
+	loaner_button.add_theme_font_size_override("font_size",15)
+	loaner_button.pressed.connect(func(): loaner_requested.emit())
+	add_child(loaner_button)
 	_update_button()
 
 func _font(weight: String) -> Font:
@@ -140,13 +173,16 @@ func set_message(text: String) -> void:
 	message = text
 	open_meet_button.visible = message.is_empty()
 	takeshi_button.visible = message.is_empty()
+	challenges_button.visible = message.is_empty()
 	queue_redraw()
 
 func _update_button() -> void:
 	if race_button == null: return
 	open_meet_button.visible = message.is_empty()
 	takeshi_button.visible = message.is_empty()
+	challenges_button.visible = message.is_empty()
 	race_button.disabled = selected != current and selected not in wins
+	night_button.disabled = race_button.disabled
 	race_button.text = "REVANCHE  →" if selected in wins else ("CORRER  →" if selected == current else "VENÇA " + NAMES[PROGRESS.RIVALS.find(current)].to_upper())
 
 func _style(color: Color, border := Color.TRANSPARENT) -> StyleBoxFlat:
@@ -193,7 +229,7 @@ func _draw() -> void:
 	_label(Vector2(450, 46), "%02d / %02d" % [wins.size(),PROGRESS.RIVALS.size()], 26, AMBER, true)
 	_label(Vector2(450, 69), "VITÓRIAS", 13, MUTED, true)
 	draw_line(Vector2(30, 95), Vector2(868, 95), Color("34414e"), 1)
-	_label(Vector2(42, 120), "ADVERSÁRIOS", 14, MUTED, true)
+	# The workshop loan entry occupies the former decorative list heading.
 	_label(Vector2(400, 120), "STATUS", 14, MUTED, true)
 	for i in PROGRESS.RIVALS.size():
 		var id: String = PROGRESS.RIVALS[i]
@@ -208,20 +244,23 @@ func _draw() -> void:
 		var status := "REVANCHE" if id in wins else ("DISPONÍVEL" if id == current else "BLOQUEADO")
 		_label(Vector2(394, y + 42), status, 14, CYAN if id in wins else (AMBER if id == current else MUTED), true)
 	var index := PROGRESS.RIVALS.find(selected)
-	draw_rect(Rect2(551, 110, 317, 278), Color("1b2630"))
-	_portrait(selected, Rect2(609, 110, 202, 278))
-	draw_rect(Rect2(551, 329, 317, 59), Color(.045, .065, .085, .93))
-	_label(Vector2(568, 368), NAMES[index].to_upper(), 34, INK, true)
-	_label(Vector2(551, 414), "PRIMEIRA VITÓRIA" if selected not in wins else "PRÊMIO CONQUISTADO", 13, MUTED, true)
-	_label(Vector2(551, 447), "R$ %d" % PROGRESS.reward_amount(selected), 29, AMBER, true)
-	_label(Vector2(741, 414), "SEU RECORDE", 13, MUTED, true)
-	_label(Vector2(741, 447), "%.3f s" % float(best[selected]) if best.has(selected) else "—", 27, INK, true)
+	draw_rect(Rect2(551, 110, 317, 208), Color("1b2630"))
+	_portrait(selected, Rect2(626, 110, 168, 208))
+	draw_rect(Rect2(551, 263, 317, 55), Color(.045, .065, .085, .93))
+	_label(Vector2(568, 300), NAMES[index].to_upper(), 32, INK, true)
+	var specialty := NIGHT_CATALOG.get_rival(selected)
+	_label(Vector2(551, 343), str(specialty.specialty).to_upper(), 18, AMBER, true,317)
+	_label(Vector2(551, 367), "PRIMEIRA VITÓRIA" if selected not in wins else "PRÊMIO CONQUISTADO", 13, MUTED, true)
+	_label(Vector2(551, 398), "R$ %d" % PROGRESS.reward_amount(selected), 27, AMBER, true)
+	_label(Vector2(741, 367), "RECORDE · 800 M", 13, MUTED, true)
+	_label(Vector2(741, 398), "%.3f s" % float(best[selected]) if best.has(selected) else "—", 25, INK, true)
+	_label(Vector2(551, 424), str(specialty.parts), 15, INK, true,317)
 	if selected in wins:
-		_label(Vector2(551, 485), "REVANCHE · MELHORE SEU TEMPO", 15, CYAN, true)
+		_label(Vector2(551, 454), "201 M  /  2 × 402 M  /  800 M", 15, CYAN, true)
 	elif selected != current:
-		_label(Vector2(551, 485), "VENÇA " + NAMES[PROGRESS.RIVALS.find(current)].to_upper() + " PARA LIBERAR", 15, MUTED, true)
-	elif selected=="rauhz":
-		_label(Vector2(551, 485), "FINAL · FOCUS MK1 2002", 15, AMBER, true)
+		_label(Vector2(551, 454), "VENÇA " + NAMES[PROGRESS.RIVALS.find(current)].to_upper() + " PARA LIBERAR", 15, MUTED, true)
+	else:
+		_label(Vector2(551, 454), "201 M  /  2 × 402 M  /  800 M", 15, MUTED, true)
 	draw_line(Vector2(30, 581), Vector2(868, 581), Color("34414e"), 1)
 	if not message.is_empty():
 		draw_multiline_string(font, Vector2(32, 605), message, HORIZONTAL_ALIGNMENT_LEFT, 835, 17, 2, AMBER)

@@ -23,6 +23,9 @@ static func valid(value: Variant, economy: Dictionary = {}) -> bool:
 			if not part is String or not TUNING.PARTS.has(part) or part in seen: return false
 			seen.append(part)
 			if not economy.is_empty():
+				# The shared desert save contract verifies these gifts against the
+				# two durable rival proofs. They are never purchases or resale items.
+				if TUNING.PARTS[part].has("rival_reward"): continue
 				if record.get("honor_gift",false) and part in preload("res://data/TakeshiRewardSpec.gd").PARTS.values(): continue
 				var receipt: Dictionary = economy.get("transactions",{}).get("spend:desert_part:"+id+":"+part,{})
 				if receipt.get("amount",-1) != TUNING.PARTS[part].cost: return false

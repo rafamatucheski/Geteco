@@ -2598,6 +2598,7 @@ func _save_game(manual: bool) -> bool:
 	if desert != null: desert.write_snapshot()
 	if mining != null: mining.write_snapshot()
 	controller.capture_player_vehicle()
+	if desert!=null and is_instance_valid(desert.drag) and is_instance_valid(desert.drag.loaner_controller): desert.drag.loaner_controller.prepare_save()
 	if cold != null: state.world_state.cold = cold.snapshot()
 	if wine != null: state.world_state.wine_cellar = wine.snapshot()
 	if garage_rewards != null: state.world_state.garage_rewards = garage_rewards.snapshot()

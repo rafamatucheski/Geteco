@@ -246,7 +246,7 @@ func perform(action: Dictionary) -> bool:
 	return false
 func _race_completed(result: Dictionary) -> void:
 	PROGRESS.claim_rewards(session.state.world_state,session.state.economy)
-	story.race_finished(result)
+	if not result.get("night",false) and not result.get("challenge",false): story.race_finished(result)
 	session.save_game()
 func _nearby_car() -> CharacterBody3D:
 	if not _at_workshop(): return null

@@ -12,6 +12,7 @@ const CURTAIN = preload("res://runtime/StartupCurtain.gd")
 @onready var sub_title: Label = %SubTitle
 var btn_continue: Button
 var btn_import: Button
+var btn_rachas: Button
 var latest_save: Dictionary = {}
 var settings: Control
 var presentation: Control
@@ -46,6 +47,10 @@ func _ready() -> void:
 	btn_import.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	btn_new_game.get_parent().add_child(btn_import)
 	btn_new_game.get_parent().move_child(btn_import,btn_load_game.get_index()+1)
+	btn_rachas=Button.new()
+	btn_rachas.text="RACHAS"
+	btn_new_game.get_parent().add_child(btn_rachas)
+	btn_rachas.pressed.connect(_start_rachas)
 	btn_continue.pressed.connect(func(): _start(str(latest_save.id), false))
 	btn_new_game.pressed.connect(func(): _show_slots(true))
 	btn_load_game.pressed.connect(func(): _show_slots(false))
@@ -116,7 +121,7 @@ func _ready() -> void:
 		(btn_continue if btn_continue.visible else btn_new_game).grab_focus()
 
 func _main_enabled(enabled: bool) -> void:
-	for button in [btn_continue, btn_new_game, btn_load_game, btn_import, btn_settings, btn_quit]: button.disabled = not enabled
+	for button in [btn_continue, btn_new_game, btn_load_game, btn_import, btn_rachas, btn_settings, btn_quit]: button.disabled = not enabled
 	presentation.show_main(enabled)
 
 func _show_slots(new_game: bool) -> void:
@@ -232,10 +237,35 @@ func _start_direct() -> void:
 	STYLE.trap_focus(self,false)
 	(btn_continue if btn_continue.visible else btn_new_game).grab_focus()
 
+func _start_rachas() -> void:
+	if starting: return
+	var error := preload("res://runtime/desert/DragStandaloneProfile.gd").prepare(get_node("/root/V2Launch"))
+	if error!=OK:
+		_show_slots(false)
+		%Title.text="RACHAS"
+		%LabelLoadStatus.text="Não foi possível abrir o perfil dos rachas (%d). O progresso existente foi preservado."%error
+		return
+	starting=true
+	_main_enabled(false)
+	if sky!=null:
+		await sky.begin_continue()
+		await sky.discard_preview()
+	shade.show()
+	await _show_loading("rachas",false)
+	if sky!=null: sky.cancel_continue()
+	error=get_tree().change_scene_to_file("res://Main.tscn")
+	if error!=OK:
+		var stale=CURTAIN.existing(get_tree())
+		if stale!=null: stale.queue_free()
+		starting=false
+		_show_slots(false)
+		%LabelLoadStatus.text="Não foi possível abrir os rachas (%d)."%error
+
 ## Abre a tela de carregamento na raiz (sobrevive à troca de cena) e deixa ela
 ## desenhar antes do carregamento bloqueante da cena Main; a música sai em fade.
 func _show_loading(id: String, new_game: bool) -> void:
 	var region := "harbor"
+	if id=="rachas": region="desert"
 	if not new_game:
 		for row in get_node("/root/V2Launch").list_slots():
 			if row.id == id: region = str(row.get("region", "harbor"))

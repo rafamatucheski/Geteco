@@ -12,6 +12,8 @@ const DOMAINS := {
 	"northgate_auto":{"kind":"spend","prefix":"northgate_auto:","amount":100,"max":10000000},
 	"tonico_drink":{"kind":"spend","prefix":"tonico_drink_","amount":20,"max":1000000},
 	"tonico_register":{"kind":"reward","prefix":"tonico_register_","amount":180,"max":1000000},
+	"drag_night_finish":{"kind":"reward","prefix":"drag_night_finish:","amount":600,"max":1000000},
+	"drag_night_win":{"kind":"reward","prefix":"drag_night_win:","amount":300,"max":1000000},
 }
 
 static func _classify(kind: String, receipt_id: String) -> Dictionary:

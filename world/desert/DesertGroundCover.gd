@@ -1,7 +1,8 @@
 extends RefCounted
 ## Chão povoado do deserto (arte de carregamento desert_highway.png): moitas de sálvia, arbustos secos,
 ## pedras, cascalho e tufos de capim. Cinco malhas e um material compartilhados; cada trecho vira no
-## máximo cinco MultiMesh, sem colisão, sem luz e sem callback por quadro.
+## máximo cinco MultiMesh; o corredor da arrancada usa lotes de 48 m para recortar
+## a vegetação fora da câmera. Sem colisão nativa, luz ou callback por quadro.
 ## A disposição é fatiada por orçamento de tempo (HOW-TO-DEVELOP, regra 1): o trecho de 96 m tem
 ## ~4 mil peças e as alturas/reservas custam dezenas de ms se feitas num quadro só.
 ## GETECO_DESERT_GROUND_COVER=0 desliga a camada (A/B no mesmo export).
@@ -14,8 +15,14 @@ const KINDS := ["sage", "brittle", "stone", "gravel", "tuft"]
 ## Distância da câmera (não do jogador): a ortográfica fica a ~36 m do chão e o canto da tela
 ## ultrawide a ~72 m. O cascalho some antes das moitas, que são o que dá a leitura de longe.
 const VISIBILITY := [115.0, 115.0, 105.0, 85.0, 90.0]
+## Only the retained drag-camera corridor needs a spatial fade. A hard limit on
+## an entire 96 m batch revealed rectangular holes during the side-on race.
+const DRAG_CORRIDOR := Rect2(-1056,-1440,1248,192)
+const DRAG_BATCH_SIZE := 48.0
 static var _meshes: Array[ArrayMesh] = []
+static var _mesh_bounds: Array[AABB] = []
 static var _material: StandardMaterial3D
+static var _drag_materials: Array[StandardMaterial3D] = []
 static var _enabled := -1
 
 class Build:
@@ -31,6 +38,14 @@ class Build:
 	var preview: Array = [[], [], [], [], []]
 	var preview_enabled := false
 	var committed := false
+	## The generator still visits the original 96 m rect once. Routing the finished
+	## row into a smaller buffer preserves RNG and chips crossing an internal edge.
+	var parts: Array[Build] = []
+	var part_origin := Vector2.ZERO
+	var part_columns := 0
+	var next_part := 0
+	var bounds: Array[AABB] = [AABB(),AABB(),AABB(),AABB(),AABB()]
+	var has_bounds: Array[bool] = [false,false,false,false,false]
 	## [tipo, índice] das peças grandes que o carro acerta (moitas e pedras); o resto é chão.
 	var solid: Array[Vector2i] = []
 	## Altura da célula atual: com o chão plano (fora do relevo, da mina e do cânion, quase todo o
@@ -69,6 +84,7 @@ class Build:
 		gravel = PackedFloat32Array(); tuft = PackedFloat32Array()
 		preview.clear()
 		solid.clear()
+		parts.clear()
 
 static func enabled() -> bool:
 	if _enabled < 0: _enabled = 0 if OS.get_environment("GETECO_DESERT_GROUND_COVER") == "0" else 1
@@ -82,6 +98,11 @@ static func begin(rect: Rect2) -> Build:
 		return state
 	for z in range(floori(area.position.y / SUB), ceili(area.end.y / SUB)):
 		for x in range(floori(area.position.x / SUB), ceili(area.end.x / SUB)): state.cells.append(Vector2i(x, z))
+	if DRAG_CORRIDOR.intersects(rect):
+		_prepare()
+		state.part_origin=rect.position
+		state.part_columns=ceili(rect.size.x/DRAG_BATCH_SIZE)
+		for i in state.part_columns*ceili(rect.size.y/DRAG_BATCH_SIZE): state.parts.append(Build.new())
 	return state
 
 ## Devolve true quando o trecho terminou. `budget_usec` é por chamada; INF completa de uma vez
@@ -92,13 +113,27 @@ static func step(chunk: Node3D, rect: Rect2, state: Build, height: Callable, cle
 	var trace := STALL_WORK.begin()
 	state.height = height
 	state.preview_enabled = Engine.get_meta("geteco_live_preview_build", false)
+	var worked := false
 	while state.next < state.cells.size():
 		_cell(state, rect, state.cells[state.next], clear)
 		state.next += 1
+		worked=true
 		if Time.get_ticks_usec() - began >= budget_usec: break
 	if state.next >= state.cells.size():
-		_commit(chunk, state)
-		state.committed = true
+		if state.parts.is_empty():
+			_commit(chunk, state, rect)
+			state.committed = true
+		else:
+			# Do not turn four uploads/registrations into one larger final spike.
+			# Finite calls commit one 48 m part at a time until the same budget ends.
+			while state.next_part<state.parts.size():
+				if worked and Time.get_ticks_usec()-began>=budget_usec: break
+				_commit(chunk,state.parts[state.next_part],rect,"_%d"%state.next_part)
+				state.next_part+=1
+				worked=true
+			if state.next_part==state.parts.size():
+				state.release()
+				state.committed=true
 	STALL_WORK.finish_slow("stream.desert.dress.ground_cover", trace, 2000)
 	return state.committed
 
@@ -151,11 +186,21 @@ static func _add(state: Build, kind: int, p: Vector2, size: float, rng: RandomNu
 	basis = basis.scaled(squash * size)
 	# Peças sólidas afundam um pouco para não flutuar em chão inclinado.
 	var origin := Vector3(p.x, state.height_at(p) - (.25 * size if tumble else .04), p.y)
-	if (kind <= 1 and size >= .9) or (kind == 2 and size >= .45): state.solid.append(Vector2i(kind, state.buffer(kind).size() / 16))
-	state.push(kind, PackedFloat32Array([basis.x.x, basis.y.x, basis.z.x, origin.x, basis.x.y, basis.y.y, basis.z.y, origin.y, basis.x.z, basis.y.z, basis.z.z, origin.z, color.r, color.g, color.b, 1.0]))
-	if state.preview_enabled: state.preview[kind].append(Transform3D(basis, origin))
+	var target := state
+	if not state.parts.is_empty():
+		var local := p-state.part_origin
+		var part := floori(local.y/DRAG_BATCH_SIZE)*state.part_columns+floori(local.x/DRAG_BATCH_SIZE)
+		target=state.parts[part]
+		# Bound the original geometry during the already budgeted generation.
+		# The upload need not synchronously ask the renderer to discover its AABB.
+		var instance_bounds: AABB=Transform3D(basis,origin)*_mesh_bounds[kind]
+		target.bounds[kind]=target.bounds[kind].merge(instance_bounds) if target.has_bounds[kind] else instance_bounds
+		target.has_bounds[kind]=true
+	if (kind <= 1 and size >= .9) or (kind == 2 and size >= .45): target.solid.append(Vector2i(kind, target.buffer(kind).size() / 16))
+	target.push(kind, PackedFloat32Array([basis.x.x, basis.y.x, basis.z.x, origin.x, basis.x.y, basis.y.y, basis.z.y, origin.y, basis.x.z, basis.y.z, basis.z.z, origin.z, color.r, color.g, color.b, 1.0]))
+	if state.preview_enabled: target.preview[kind].append(Transform3D(basis, origin))
 
-static func _commit(chunk: Node3D, state: Build) -> void:
+static func _commit(chunk: Node3D, state: Build, rect: Rect2, suffix := "") -> void:
 	_prepare()
 	var visuals: Array = [null, null, null, null, null]
 	for kind in KINDS.size():
@@ -167,14 +212,16 @@ static func _commit(chunk: Node3D, state: Build) -> void:
 		batch.mesh = _meshes[kind]
 		batch.instance_count = buffer.size() / 16
 		batch.buffer = buffer
+		if state.has_bounds[kind]: batch.custom_aabb=state.bounds[kind]
 		var node := MultiMeshInstance3D.new()
-		node.name = "DesertGroundCover_%s" % KINDS[kind]
+		node.name = "DesertGroundCover%s_%s" % [suffix,KINDS[kind]]
 		node.multimesh = batch
 		node.material_override = _material
 		# Sem sombra: com as moitas projetando, o p50 de GPU subiu ~1,4 ms na rota66 do release de 17/10
 		# (o passe direcional desenha os trechos além da tela). O pé escuro da malha assenta a moita.
 		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		node.visibility_range_end = VISIBILITY[kind]
+		if DRAG_CORRIDOR.intersects(rect): configure_drag_visibility(node,kind)
 		if Engine.get_meta("geteco_live_preview_build", false):
 			node.set_meta("preview_instance_transforms", state.preview[kind])
 			var colors: Array = []
@@ -189,6 +236,28 @@ static func _commit(chunk: Node3D, state: Build) -> void:
 		var node: MultiMeshInstance3D = visuals[entry.x]
 		if node != null: fragile.register_instance("desert_stone" if entry.x == 2 else "desert_shrub", node.multimesh, entry.y, chunk, [], [], node)
 	state.release()
+
+static func configure_drag_visibility(node: MultiMeshInstance3D, kind: int) -> void:
+	# StandardMaterial's pixel dither works with Mobile; GeometryInstance HLOD
+	# fade does not. Instance transforms/colours and breakable indices stay intact.
+	node.material_override=_drag_material(kind)
+	var bounds: AABB=node.multimesh.custom_aabb
+	if not bounds.has_volume(): bounds=node.get_aabb()
+	var radius: float=bounds.size.length()*.5
+	# Culling uses the batch centre. Its closest vertex is already fully faded
+	# before this bound, so streaming-sized rectangles cannot pop into view.
+	node.visibility_range_end=float(VISIBILITY[kind])+15.0+radius+2.0
+
+static func _drag_material(kind: int) -> StandardMaterial3D:
+	_prepare()
+	if _drag_materials.is_empty():
+		for distance: float in VISIBILITY:
+			var material:=_material.duplicate() as StandardMaterial3D
+			material.distance_fade_mode=BaseMaterial3D.DISTANCE_FADE_PIXEL_DITHER
+			material.distance_fade_max_distance=distance-25.0
+			material.distance_fade_min_distance=distance+15.0
+			_drag_materials.append(material)
+	return _drag_materials[kind]
 
 static func material() -> StandardMaterial3D:
 	_prepare()
@@ -208,6 +277,7 @@ static func _prepare() -> void:
 	_material.roughness = 1.0
 	_material.metallic_specular = 0.0
 	_meshes = [_sage(), _brittle(), _stone(), _gravel(), _tuft()]
+	for mesh in _meshes: _mesh_bounds.append(mesh.get_aabb())
 
 static func _sage() -> ArrayMesh:
 	# Moita arredondada cinza-oliva: um domo e cinco bolos baixos em volta, com galhos no pé.
@@ -329,6 +399,13 @@ static func prewarm_draw(host: Node3D, curtain: CanvasLayer) -> void:
 		node.material_override = _material
 		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		stage.add_child(node)
+		# Warm the local drag corridor's dither variant under the same curtain.
+		var drag_node:=MultiMeshInstance3D.new()
+		drag_node.multimesh=batch
+		drag_node.material_override=_drag_material(kind)
+		drag_node.position.y=.7
+		drag_node.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		stage.add_child(drag_node)
 	# Pele do saguaro (UV do cilindro, não triplanar): variante própria, aquecida junto.
 	var saguaro := MeshInstance3D.new()
 	saguaro.mesh = CylinderMesh.new()

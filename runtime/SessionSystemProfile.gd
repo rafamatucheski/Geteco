@@ -87,7 +87,7 @@ func _sample_context(now: int) -> void:
 	var world := get_tree().root.get_node_or_null("World3D")
 	if world != null and "player" in world:
 		var player: Variant = world.get("player")
-		if is_instance_valid(player) and player is Node3D:
+		if is_instance_valid(player) and player is Node3D and player.is_inside_tree():
 			_context["player_position"] = [player.global_position.x, player.global_position.y, player.global_position.z]
 			if "health" in player: _context["player_health"] = player.health
 		var session: Variant = world.get("session")
@@ -117,7 +117,7 @@ func _sample_context(now: int) -> void:
 		if is_instance_valid(driving):
 			_context["driving"] = driving.occupied
 			var car: Variant = driving.car
-			if is_instance_valid(car):
+			if is_instance_valid(car) and car.is_inside_tree():
 				_context["vehicle"] = {"archetype":car.archetype, "speed":car.speed, "position":[car.global_position.x,car.global_position.y,car.global_position.z]}
 	var location := str(_context.get("region", "")) + "/" + str(_context.get("place", ""))
 	if location != _last_location:

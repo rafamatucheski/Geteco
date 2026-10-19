@@ -1,0 +1,250 @@
+{
+  "before": {
+    "source": "evidence/drag-design-32352-7342303/metrics.json",
+    "environment": {
+      "engine": "4.7.2-stable (official)",
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "max_fps": 0,
+      "native": true,
+      "population": 0,
+      "renderer": "mobile",
+      "resolution": [
+        1280,
+        720
+      ],
+      "scene": "Main.tscn",
+      "time": 0.9,
+      "user_args": [
+        "--no-save",
+        "--design-before"
+      ],
+      "vsync": 0
+    },
+    "windows": {
+      "board": {
+        "fps": 431.973722189516,
+        "frames": 12914,
+        "max": 20.223,
+        "over33": 0,
+        "over66": 0,
+        "p50": 2.094,
+        "p95": 3.707,
+        "p99": 4.597,
+        "seconds": 29.8953370000001
+      },
+      "paddock": {
+        "fps": 328.41576395667,
+        "frames": 9852,
+        "max": 9.087,
+        "over33": 0,
+        "over66": 0,
+        "p50": 2.653,
+        "p95": 5.177,
+        "p99": 5.951,
+        "seconds": 29.99856
+      },
+      "race-0": {
+        "fps": 288.132499236097,
+        "frames": 5968,
+        "max": 30.932,
+        "over33": 0,
+        "over66": 0,
+        "p50": 3.089,
+        "p95": 5.649,
+        "p99": 7.982,
+        "seconds": 20.7126929999999
+      },
+      "race-1": {
+        "fps": 285.247514544289,
+        "frames": 5904,
+        "max": 24.625,
+        "over33": 0,
+        "over66": 0,
+        "p50": 3.186,
+        "p95": 5.555,
+        "p99": 7.566,
+        "seconds": 20.697814
+      }
+    }
+  },
+  "initial": {
+    "source": "evidence/drag-design-43472-7115622/metrics.json",
+    "environment": {
+      "engine": "4.7.2-stable (official)",
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "max_fps": 0,
+      "native": true,
+      "population": 0,
+      "renderer": "mobile",
+      "resolution": [
+        1280,
+        720
+      ],
+      "scene": "Main.tscn",
+      "time": 0.9,
+      "user_args": [
+        "--no-save"
+      ],
+      "vsync": 0
+    },
+    "windows": {
+      "board": {
+        "fps": 348.002821868591,
+        "frames": 10409,
+        "max": 17.889,
+        "over33": 0,
+        "over66": 0,
+        "p50": 2.596,
+        "p95": 4.439,
+        "p99": 5.413,
+        "seconds": 29.9106770000002
+      },
+      "paddock": {
+        "fps": 220.436794191002,
+        "frames": 6613,
+        "max": 28.772,
+        "over33": 0,
+        "over66": 0,
+        "p50": 3.894,
+        "p95": 7.106,
+        "p99": 8.386,
+        "seconds": 29.999529
+      },
+      "race-0": {
+        "fps": 236.837412106026,
+        "frames": 4907,
+        "max": 15.591,
+        "over33": 0,
+        "over66": 0,
+        "p50": 3.994,
+        "p95": 6.206,
+        "p99": 7.765,
+        "seconds": 20.718855
+      },
+      "race-1": {
+        "fps": 255.066201668799,
+        "frames": 5276,
+        "max": 12.626,
+        "over33": 0,
+        "over66": 0,
+        "p50": 3.643,
+        "p95": 5.872,
+        "p99": 6.94,
+        "seconds": 20.684826
+      }
+    }
+  },
+  "final": {
+    "source": "evidence/drag-design-45440-7360929/metrics.json",
+    "environment": {
+      "engine": "4.7.2-stable (official)",
+      "gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "max_fps": 0,
+      "native": true,
+      "population": 0,
+      "renderer": "mobile",
+      "resolution": [
+        1280,
+        720
+      ],
+      "scene": "Main.tscn",
+      "time": 0.9,
+      "user_args": [
+        "--no-save"
+      ],
+      "vsync": 0
+    },
+    "windows": {
+      "board": {
+        "census": {
+          "course_cells": 26,
+          "meet_residents": 27,
+          "models_processing": 14,
+          "pose_drivers_processing": 14,
+          "queue_cars": 0,
+          "queue_enabled": false,
+          "region_chunks": 31,
+          "strip_spectators": 24
+        },
+        "fps": 426.444079148049,
+        "frames": 12757,
+        "max": 17.862,
+        "over33": 0,
+        "over66": 0,
+        "p50": 2.142,
+        "p95": 3.777,
+        "p99": 4.212,
+        "seconds": 29.9148249999999
+      },
+      "paddock": {
+        "census": {
+          "course_cells": 26,
+          "meet_residents": 27,
+          "models_processing": 14,
+          "pose_drivers_processing": 14,
+          "queue_cars": 2,
+          "queue_enabled": true,
+          "region_chunks": 31,
+          "strip_spectators": 24
+        },
+        "fps": 278.981280356089,
+        "frames": 8370,
+        "max": 10.915,
+        "over33": 0,
+        "over66": 0,
+        "p50": 3.194,
+        "p95": 5.56,
+        "p99": 6.114,
+        "seconds": 30.002013
+      },
+      "race-0": {
+        "census": {
+          "course_cells": 26,
+          "meet_residents": 0,
+          "models_processing": 4,
+          "pose_drivers_processing": 4,
+          "queue_cars": 0,
+          "queue_enabled": false,
+          "region_chunks": 30,
+          "strip_spectators": 24
+        },
+        "fps": 286.741410272458,
+        "frames": 5940,
+        "max": 13.158,
+        "over33": 0,
+        "over66": 0,
+        "p50": 3.253,
+        "p95": 5.377,
+        "p99": 6.308,
+        "seconds": 20.715529
+      },
+      "race-1": {
+        "census": {
+          "course_cells": 26,
+          "meet_residents": 0,
+          "models_processing": 4,
+          "pose_drivers_processing": 4,
+          "queue_cars": 0,
+          "queue_enabled": false,
+          "region_chunks": 30,
+          "strip_spectators": 24
+        },
+        "fps": 288.070962591949,
+        "frames": 5961,
+        "max": 12.876,
+        "over33": 0,
+        "over66": 0,
+        "p50": 3.265,
+        "p95": 5.237,
+        "p99": 6.27,
+        "seconds": 20.692818
+      }
+    }
+  },
+  "limits": [
+    "Paddock baseline had six queued cars blocked outside view; current circulation differs.",
+    "Concurrent workspace revisions prevent per-file causal attribution.",
+    "Race windows sum 41.4 s; not 30 s per single pass.",
+    "Paddock p95 remains 7.4% above baseline; no approval of whole-meet performance."
+  ]
+}

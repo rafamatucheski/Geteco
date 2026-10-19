@@ -1,0 +1,43 @@
+--- a/gameplay/VehicleEquipment.gd
++++ b/gameplay/VehicleEquipment.gd
+@@ -543,9 +543,9 @@
+ 	var alarm_blink: bool = alarm_remaining > 0 and int(Time.get_ticks_msec() / 167) % 2 == 0
+ 	var race: bool = car.has_meta("desert_drag_physics")
+ 	# The side camera still shows both racers beyond the ordinary 25 m traffic
+-	# radius. Keep only their existing headlights eligible while actually framed;
++	# radius. Keep only their existing headlights eligible while the beam is framed;
+ 	# race cleanup removes the marker and changing camera restores normal traffic.
+-	result.race_headlights = race and is_instance_valid(camera) and camera.name == &"DesertDragSideCamera" and camera.is_position_in_frustum(car.global_position+Vector3.UP*.7)
++	result.race_headlights = race and is_instance_valid(camera) and camera.name == &"DesertDragSideCamera" and _beam_framed(camera)
+ 	var driver: bool = ((headlights_on or (auto_lit and player_driven)) and (occupied or race) and (not npc_driven() or race)) or alarm_blink
+ 	if driver:
+ 		for item in lamps:
+@@ -556,6 +556,28 @@
+ 		wanted.append({"light": halo, "headlight": false})
+ 	return result
+ 
++## O facho ilumina a pista à frente do carro e entra no quadro antes da
++## carroceria. Testar só o centro do carro apagava um facho visível e piscava a
++## cada quadro na borda (prova de 19/10: Digo 39 m atrás, 0 ↔ 0,25 de energia).
++## Vale o volume do projetor, o mesmo que o renderizador usa para recortar.
++func _beam_framed(camera: Camera3D) -> bool:
++	var planes := camera.get_frustum()
++	for item in lamps:
++		if not is_instance_valid(item.lamp): continue
++		var box: AABB = item.lamp.global_transform * item.lamp.get_aabb()
++		var inside := true
++		for plane: Plane in planes:
++			var beyond := true
++			for corner in 8:
++				if not plane.is_point_over(box.get_endpoint(corner)):
++					beyond = false
++					break
++			if beyond:
++				inside = false
++				break
++		if inside: return true
++	return false
++
+ func receive_impact(local_point: Vector3, severity: float) -> void:
+ 	if severity < 3.0: return
+ 	var changed_now := false

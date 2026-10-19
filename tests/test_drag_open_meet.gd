@@ -194,10 +194,13 @@ func run() -> void:
 	var good_brake_samples := 0
 	var recording_brakes := false
 	var audio_capture: AudioEffectRecord
-	if "--audio" in OS.get_cmdline_user_args():
+	if "--audio" in OS.get_cmdline_user_args() or "--race-audio" in OS.get_cmdline_user_args():
 		audio_capture = AudioEffectRecord.new()
 		audio_capture.format = AudioStreamWAV.FORMAT_16_BITS
 		AudioServer.add_bus_effect(0,audio_capture,0)
+		if "--race-audio" in OS.get_cmdline_user_args():
+			audio_capture.set_recording_active(true)
+			recording_brakes = true
 	while race.active and Time.get_ticks_msec()<deadline:
 		race._throttle_override = .54 if race.phase=="staging" else 1.0
 		if race.phase=="racing" and race.racers[0].drive.rpm>=race.racers[0].drive.ideal_shift_rpm: race.request_shift()
@@ -216,7 +219,7 @@ func run() -> void:
 	if audio_capture!=null:
 		audio_capture.set_recording_active(false)
 		var clip := audio_capture.get_recording()
-		if clip!=null: clip.save_to_wav(ProjectSettings.globalize_path(output.path_join("braking.wav")))
+		if clip!=null: clip.save_to_wav(ProjectSettings.globalize_path(output.path_join("race-audio.wav" if "--race-audio" in OS.get_cmdline_user_args() else "braking.wav")))
 		AudioServer.remove_bus_effect(0,0)
 	check(not race.active and race.last_result.get("finished",false) and race.last_result.get("casual",false),"real 800m crossing and braking produce a free heat result")
 	check(race.snapshot()==before and session.state.economy.balance==balance,"free result changes neither ranking nor reward balance")

@@ -1,0 +1,526 @@
+--- a/activities/desert_drag/DesertDragHUD.gd
++++ b/activities/desert_drag/DesertDragHUD.gd
+@@ -9,6 +9,10 @@
+ const AMBER := Color("ffbe63")
+ const CYAN := Color("58d7ec")
+ const TRACK := Color("343b43")
++const GO := Color("6cf4b4")
++# Quanto tempo as lâmpadas ficam verdes depois da largada: a confirmação do
++# verde aparece onde o olhar já está, no conta-giros, e não só na árvore 3D.
++const GO_FLASH := .6
+ const STYLES := ["classic", "bar", "street", "pro", "champion"]
+ const DRIVE := preload("res://gameplay/desert_cars/DesertDrivetrain.gd")
+ 
+@@ -38,6 +42,7 @@
+ var challenge_status := ""
+ var _race_controls := true
+ var _shift_active := false
++var _nitro_installed := true
+ var _dial_center := Vector2(INF, INF)
+ var _dial_redline := -1.0
+ var _dial_shift := -1.0
+@@ -81,6 +86,7 @@
+ 	_max_gear = drive.spec.gears.size()
+ 	_race_controls = drive.race_mode
+ 	_shift_active = drive.shift_remaining>0.0
++	_nitro_installed = float(drive.spec.nitro_seconds)>0.0
+ 	remaining = distance_left
+ 	seconds = elapsed
+ 	gap = lead
+@@ -102,8 +108,13 @@
+ 	var factor := minf(size.x / 1280.0, size.y / 720.0)
+ 	if factor <= 0.0:
+ 		return
+-	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE * factor)
+ 	var canvas := size / factor
++	# Em tela ultralarga (21:9) os painéis iam para as bordas, a ~860 px lógicos
++	# do conta-giros. A HUD fica numa faixa 16:9 centrada; telas mais estreitas
++	# que 16:9 não mudam.
++	var inset := maxf(0.0, canvas.x - canvas.y * 16.0 / 9.0) * .5
++	canvas.x -= inset * 2.0
++	draw_set_transform(Vector2(inset * factor, 0.0), 0.0, Vector2.ONE * factor)
+ 	_draw_progress(canvas)
+ 	_draw_timer(canvas)
+ 	_draw_instruments(canvas)
+@@ -184,6 +195,32 @@
+ 		if ratio>=_good_from(false)-.12: return "PREPARE A TROCA"
+ 	return headline
+ 
++func message(staging: bool, ratio: float) -> Array:
++	# Uma instrução por vez. Troca devida agora vence o veredito da troca
++	# anterior: o veredito dura 1,2 s e, se a faixa seguinte chegasse nesse
++	# intervalo, o painel elogiava a troca velha em vez de pedir a nova.
++	var cue := _cue(staging,ratio)
++	if staging:
++		var over := ratio>_good_to(true)
++		return [cue,CORAL if over else (AMBER if ratio>=_good_from(true) else PAPER)]
++	if cue=="NO LIMITE": return [cue,CORAL]
++	if cue=="TROQUE AGORA": return [cue,AMBER]
++	if not feedback.is_empty():
++		var text := feedback.to_upper()
++		return [text,feedback_tone(text)]
++	return [cue,MUTED if cue in ["TROCANDO","ÚLTIMA MARCHA"] else PAPER]
++
++static func feedback_tone(text: String) -> Color:
++	# Recebe o texto-fonte em português, antes do tr().
++	if "ADIANT" in text or "ATRAS" in text or "PATIN" in text or "BAIXO" in text: return CORAL
++	if "IDEAL" in text or "PERFEITA" in text or "BOA" in text: return AMBER
++	return PAPER
++
++func start_lamps_lit(staging: bool) -> int:
++	# 3, 2, 1 acendem uma, duas e três lâmpadas âmbar; -1 é verde.
++	if staging: return 4-clampi(int(headline),1,3) if headline.is_valid_int() else 0
++	return -1 if racing and seconds<GO_FLASH else 0
++
+ func _draw_meet_progress() -> void:
+ 	var at := Vector2(24,24)
+ 	_panel(Rect2(at,Vector2(330,73)))
+@@ -202,10 +239,14 @@
+ 	_text(at+Vector2(14,36),"%d"%ceili(maxf(0.0,remaining)),34,PAPER,155,HORIZONTAL_ALIGNMENT_RIGHT)
+ 	_text(at+Vector2(175,34),"m",18,MUTED)
+ 	var progress := clampf(1.0-remaining/maxf(1.0,race_distance),0.0,1.0)
++	var opponent := clampf(progress-gap/maxf(1.0,race_distance),0.0,1.0)
+ 	draw_line(at+Vector2(16,49),at+Vector2(210,49),TRACK,3)
+ 	draw_line(at+Vector2(16,49),at+Vector2(16+194*progress,49),AMBER,3)
+-	draw_circle(at+Vector2(16+194*progress,49),4,AMBER,true,-1,true)
+ 	draw_line(at+Vector2(210,43),at+Vector2(210,55),PAPER,2)
++	# Mesmas cores dos sublinhados dos nomes: âmbar Dante, coral rival. O ponto
++	# do rival fica por baixo; lado a lado os dois viram um só marcador.
++	draw_circle(at+Vector2(16+194*opponent,49),4,CORAL,true,-1,true)
++	draw_circle(at+Vector2(16+194*progress,49),4,AMBER,true,-1,true)
+ 	_text(at+Vector2(16,75),"TEMPO",12,MUTED)
+ 	_text(at+Vector2(88,77),"%05.2f s"%seconds,20,PAPER,123,HORIZONTAL_ALIGNMENT_RIGHT)
+ 
+@@ -217,7 +258,6 @@
+ 	var ratio := clampf(rpm/maxf(redline,1.0),0.0,1.0)
+ 	var good := ratio>=_good_from(staging) and ratio<=_good_to(staging)
+ 	var perfect := ratio>=_perfect_from(staging) and ratio<=_perfect_to(staging)
+-	var tint := CORAL if ratio>.985 else (AMBER if good else PAPER)
+ 	_cache_dial_geometry(center,staging)
+ 	# Separate silhouettes: 13 px of air after the 98 px dial, no rectangular
+ 	# backing under the arc. Smaller plate retains legible type and contrast.
+@@ -243,19 +283,22 @@
+ 	draw_line(center+Vector2(185,-61),center+Vector2(185,-9),Color(TRACK,.7),1)
+ 	_text(center+Vector2(196,-15),"%03d"%roundi(speed),38,PAPER,126,HORIZONTAL_ALIGNMENT_CENTER)
+ 	_text(center+Vector2(196,1),"km/h",12,MUTED,126,HORIZONTAL_ALIGNMENT_CENTER)
+-	_text(center+Vector2(123,16),"NITRO",12,CYAN if _nitro_active else MUTED)
+-	draw_rect(Rect2(center+Vector2(165,10),Vector2(107,3)),TRACK)
+-	draw_rect(Rect2(center+Vector2(165,10),Vector2(107*clampf(nitro,0,1),3)),CYAN if _nitro_active else Color("718691"))
+-	_literal(center+Vector2(278,16),"A" if input_gamepad else "SHIFT",12,CYAN if nitro>0 else MUTED,44,HORIZONTAL_ALIGNMENT_RIGHT)
++	if _nitro_installed:
++		_text(center+Vector2(123,16),"NITRO",12,CYAN if _nitro_active else MUTED)
++		draw_rect(Rect2(center+Vector2(165,9),Vector2(107,4)),TRACK)
++		draw_rect(Rect2(center+Vector2(165,9),Vector2(107*clampf(nitro,0,1),4)),CYAN if _nitro_active else Color("718691"))
++		_literal(center+Vector2(278,16),"A" if input_gamepad else "SHIFT",12,CYAN if nitro>0 else MUTED,44,HORIZONTAL_ALIGNMENT_RIGHT)
++	else:
++		# Barra vazia com a tecla acesa convidava a apertar SHIFT à toa.
++		_text(center+Vector2(123,16),"SEM NITRO",12,MUTED)
+ 	_draw_shift_lamps(center+Vector2(0,-111),ratio,staging)
+-	var cue := _cue(staging,ratio)
+-	if not staging and not feedback.is_empty(): cue=feedback.to_upper()
+-	if not cue.is_empty():
+-		_text(center+Vector2(123,-80),cue,17,tint,200,HORIZONTAL_ALIGNMENT_CENTER)
++	var line := message(staging,ratio)
++	if not str(line[0]).is_empty():
++		_text(center+Vector2(123,-80),line[0],17,line[1],200,HORIZONTAL_ALIGNMENT_CENTER)
+ 	draw_line(center+Vector2(123,-72),center+Vector2(323,-72),Color(AMBER if good else TRACK,.65),1)
+ 	if not preview_mode:
+ 		var actions: Array[String]=["RT" if input_gamepad else "W / ↑",tr("ACELERAR")]
+-		if not staging: actions.append_array(["RB" if input_gamepad else "ESPAÇO",tr("TROCAR")])
++		if not staging: actions.append_array(["RB" if input_gamepad else tr("ESPAÇO"),tr("TROCAR")])
+ 		actions.append_array(["B" if input_gamepad else "Q",tr("ABANDONAR"),"START" if input_gamepad else "ESC",tr("PAUSA")])
+ 		var hints := ""
+ 		for index in range(0,actions.size(),2):
+@@ -266,6 +309,15 @@
+ 		_literal(at,hints,16,PAPER,560,HORIZONTAL_ALIGNMENT_CENTER)
+ 
+ func _draw_shift_lamps(center: Vector2, ratio: float, staging: bool) -> void:
++	draw_rect(Rect2(center+Vector2(-52,-11),Vector2(104,22)),Color(INK,.85))
++	# Na preparação o casulo vira o semáforo, logo acima do ponteiro que o
++	# jogador segura na faixa (como no conceito escolhido). As luzes de troca
++	# não diziam nada ali: apagadas em marcha lenta, todas acesas na faixa.
++	var start := start_lamps_lit(staging)
++	if start!=0:
++		for lamp in 3:
++			draw_circle(center+Vector2((lamp-1)*30,0),7,GO if start<0 else (AMBER if lamp<start else TRACK),true,-1,true)
++		return
+ 	for lamp in 5:
+ 		var threshold := _good_from(staging)-.12+lamp*.03
+ 		var lit := ratio>=threshold
+@@ -489,7 +541,7 @@
+ 
+ func _draw_controls(at: Vector2) -> void:
+ 	_control_key(at, "RT" if input_gamepad else "W / ↑", "ACELERAR", 138)
+-	_control_key(at + Vector2(150, 0), "RB" if input_gamepad else "ESPAÇO", "TROCAR", 159)
++	_control_key(at + Vector2(150, 0), "RB" if input_gamepad else tr("ESPAÇO"), "TROCAR", 159)
+ 	_control_key(at + Vector2(321, 0), "B" if input_gamepad else "Q", "ABANDONAR", 132)
+ 	_control_key(at + Vector2(474, 0), "START" if input_gamepad else "ESC", "PAUSA", 126)
+ 
+@@ -503,15 +555,11 @@
+ func _draw_start(canvas: Vector2) -> void:
+ 	var staging := show_start_lights or headline.is_valid_int()
+ 	if style_id=="classic":
+-		var center := Vector2(canvas.x*.5,38)
+-		if staging:
+-			var count := clampi(int(headline),1,3)
+-			for lamp in 3:
+-				draw_circle(center+Vector2((lamp-1)*27,0),6,AMBER if lamp<4-count else TRACK,true,-1,true)
++		# A contagem mora no casulo do conta-giros; o título não desce mais
++		# 24 px na preparação para abrir espaço às lâmpadas aqui em cima.
+ 		var title := event_title if not event_title.is_empty() else "ARRANCADA · %d M"%roundi(race_distance)
+-		var title_y := 34.0 if staging else 10.0
+-		_panel(Rect2(center+Vector2(-158,title_y-22),Vector2(316,31)))
+-		_text(center+Vector2(-150,title_y),title,17,PAPER,300,HORIZONTAL_ALIGNMENT_CENTER)
++		_panel(Rect2(Vector2(canvas.x*.5-158,26),Vector2(316,31)))
++		_text(Vector2(canvas.x*.5-150,48),title,17,PAPER,300,HORIZONTAL_ALIGNMENT_CENTER)
+ 		return
+ 	if not staging:
+ 		return
+--- a/activities/desert_drag/DesertDragResults.gd
++++ b/activities/desert_drag/DesertDragResults.gd
+@@ -128,7 +128,9 @@
+ 	var player_time := float(result.get("seconds",0.0))
+ 	var opponent_time := float(result.get("rival_seconds",-1.0))
+ 	var gap := absf(player_time-opponent_time)
+-	var detail := "%.3f s %s"%[gap,"À FRENTE" if result.get("won",false) else "ATRÁS"] if opponent_time>0 else "RIVAL NÃO COMPLETOU"
++	# Modelos de tradução não casam texto que começa por número: a palavra é
++	# traduzida antes de se juntar ao número.
++	var detail := "%.3f s %s"%[gap,tr("À FRENTE" if result.get("won",false) else "ATRÁS")] if opponent_time>0 else "RIVAL NÃO COMPLETOU"
+ 	if challenge: detail=str(result.get("challenge_detail",detail))
+ 	_label(Vector2(34,144),detail,17 if challenge else 20,ACCENT)
+ 	draw_line(Vector2(32,170),Vector2(708,170),Color("35424d"),1)
+@@ -140,11 +142,12 @@
+ 	_label(Vector2(394,202),rival_name.to_upper(),18,MUTED)
+ 	_label(Vector2(32,257),"%.3f"%player_time,46)
+ 	_label(Vector2(394,257),"%.3f"%opponent_time if opponent_time>0 else "DNF",46)
+-	_label(Vector2(235,254),"s",22,MUTED)
+-	if opponent_time>0: _label(Vector2(597,254),"s",22,MUTED)
++	# A unidade segue a largura do tempo; a coluna fixa deixava ~70 px de vão.
++	_label(Vector2(40+FONT.get_string_size("%.3f"%player_time,HORIZONTAL_ALIGNMENT_LEFT,-1,46).x,254),"s",22,MUTED)
++	if opponent_time>0: _label(Vector2(402+FONT.get_string_size("%.3f"%opponent_time,HORIZONTAL_ALIGNMENT_LEFT,-1,46).x,254),"s",22,MUTED)
+ 	var telemetry: Dictionary=result.get("telemetry",{})
+ 	if not telemetry.is_empty():
+-		_label(Vector2(32,281),"%s · %d boas trocas · nitro %.1f s"%[str(telemetry.get("launch","")),int(telemetry.get("good_shifts",0)),float(telemetry.get("nitro_seconds",0.0))],15,MUTED,false)
++		_label(Vector2(32,281),"%s · %s · nitro %.1f s"%[str(telemetry.get("launch","")),String(tr("%d boas trocas"))%int(telemetry.get("good_shifts",0)),float(telemetry.get("nitro_seconds",0.0))],15,MUTED,false)
+ 	draw_line(Vector2(364,190),Vector2(364,268),Color("35424d"),1)
+ 	var record_label := "SEM PONTOS NO RANKING" if result.get("casual",false) else String(TranslationServer.translate("SEU RECORDE   %.3f s")) %float(result.get("best_seconds",player_time))
+ 	if night: record_label="%s   %.3f s"%["NOVO RECORDE" if result.get("record_improved",false) else "RECORDE DO ACERTO",float(result.get("best_seconds",player_time))]
+@@ -180,7 +183,7 @@
+ func _draw_telemetry() -> void:
+ 	var data: Dictionary=result.get("telemetry",{})
+ 	_label(Vector2(32,202),"SUA PASSAGEM",18,MUTED)
+-	_label(Vector2(32,230),"%s · %d boas / %d erros"%[str(data.get("launch","")),int(data.get("good_shifts",0)),int(data.get("bad_shifts",0))],20)
++	_label(Vector2(32,230),"%s · %s"%[str(data.get("launch","")),String(tr("%d boas / %d erros"))%[int(data.get("good_shifts",0)),int(data.get("bad_shifts",0))]],20)
+ 	_label(Vector2(32,260),"Limitador %.2f s · nitro %.2f s · máxima %.0f km/h"%[float(data.get("limiter_seconds",0)),float(data.get("nitro_seconds",0)),float(data.get("top_kmh",0))],18,MUTED,false)
+ 	var splits: Dictionary=data.get("splits",{})
+ 	var labels: Array[String]=[]
+--- /dev/null
++++ b/data/localization/drag-hud.en.json
+@@ -0,0 +1,61 @@
++{
++  "ACELERAR": "THROTTLE",
++  "SEGURE O GIRO": "HOLD THE REVS",
++  "ALIVIE O ACELERADOR": "EASE OFF THE THROTTLE",
++  "PREPARE A TROCA": "GET READY TO SHIFT",
++  "TROCANDO": "SHIFTING",
++  "ÚLTIMA MARCHA": "TOP GEAR",
++  "BOA LARGADA": "GOOD START",
++  "SEM NITRO": "NO NITRO",
++  "1º / 2": "1st / 2",
++  "2º / 2": "2nd / 2",
++  "NOITE DE ACERTO": "SETUP NIGHT",
++  "DESAFIO": "CHALLENGE",
++  "Largada boa": "Good start",
++  "Prepare a largada": "Set up the launch",
++  "Largada fora da faixa": "Launch outside the zone",
++  "complete 201 m": "finish 201 m",
++  "Trocas boas %d / 2 · erros %d": "Good shifts %d / 2 · errors %d",
++  "Trocas boas %d / 3 · erros %d": "Good shifts %d / 3 · errors %d",
++  "Patinagem %.0f%% / 25%%": "Wheelspin %.0f%% / 25%%",
++  "limite %.1f / 0,5 s": "limiter %.1f / 0.5 s",
++  "Limitador final %.2f / 0,35 s": "Final limiter %.2f / 0.35 s",
++  "Complete 402 m para registrar a marca": "Finish 402 m to set your mark",
++  "Repita %.3f s · tolerância ±0,30 s": "Repeat %.3f s · tolerance ±0.30 s",
++  "Sem nitro · usado %.1f s": "No nitro · used %.1f s",
++  "Conserve 90%% · atual %.0f%%": "Keep 90%% · now %.0f%%",
++  "Conserve velocidade nos 100 m finais": "Keep your speed through the final 100 m",
++  "trocas %d / 2": "shifts %d / 2",
++  "erros %d": "errors %d",
++  "Trocas %d / 3 · erros %d · limite %.1f / 0,5 s": "Shifts %d / 3 · errors %d · limiter %.1f / 0.5 s",
++  "VER PASSAGEM": "VIEW RUN",
++  "VER RESULTADO": "VIEW RESULT",
++  "SUA PASSAGEM": "YOUR RUN",
++  "%d boas trocas": "%d good shifts",
++  "%d boas / %d erros": "%d good / %d errors",
++  "Limitador %.2f s · nitro %.2f s · máxima %.0f km/h": "Limiter %.2f s · nitro %.2f s · top %.0f km/h",
++  "Compare as parciais com outra passada usando o mesmo acerto.": "Compare the splits with another run on the same setup.",
++  "Prepare mais giro antes do verde.": "Build more revs before the green.",
++  "Solte um pouco o acelerador antes do verde.": "Ease off the throttle a little before the green.",
++  "Troque dentro da faixa âmbar para manter o motor cheio.": "Shift inside the amber zone to keep the engine in its power.",
++  "Antecipe a próxima marcha antes de segurar o limitador.": "Take the next gear before you sit on the limiter.",
++  "Experimente mais aderência para aproveitar a força na saída.": "Try more grip to put the power down off the line.",
++  "SEM PONTOS NO RANKING": "NO RANKING POINTS",
++  "BATERIA LIVRE": "OPEN HEAT",
++  "REPETIR NOITE": "REPEAT NIGHT",
++  "VER A NOITE": "VIEW THE NIGHT",
++  "PRÓXIMA PROVA": "NEXT TRIAL",
++  "REPETIR PROVA": "RETRY TRIAL",
++  "VER DESAFIOS": "VIEW CHALLENGES",
++  "NOITE VENCIDA": "NIGHT WON",
++  "NOITE CONCLUÍDA": "NIGHT COMPLETE",
++  "PASSAGEM VENCIDA": "RUN WON",
++  "PASSAGEM CONCLUÍDA": "RUN COMPLETE",
++  "PEÇA CONQUISTADA": "PART EARNED",
++  "PROVA CUMPRIDA": "TRIAL PASSED",
++  "TENTE OUTRO ACERTO": "TRY ANOTHER SETUP",
++  "NOVO RECORDE": "NEW RECORD",
++  "RECORDE DO ACERTO": "SETUP RECORD",
++  "OBJETIVO PENDENTE": "OBJECTIVE PENDING",
++  "CUMPRIDA": "PASSED"
++}
+--- /dev/null
++++ b/tests/test_drag_hud_presentation.gd
+@@ -0,0 +1,132 @@
++extends SceneTree
++## HUD da arrancada: uma instrução por vez, semáforo no conta-giros, nitro
++## ausente declarado e textos da corrida e do resultado traduzidos em inglês.
++## Não desenha nem mede: a leitura visual fica com as capturas.
++const HUD := preload("res://activities/desert_drag/DesertDragHUD.gd")
++const DRIVE := preload("res://gameplay/desert_cars/DesertDrivetrain.gd")
++const CHALLENGE := preload("res://activities/desert_drag/DragRivalChallengeController.gd")
++const TELEMETRY := preload("res://activities/desert_drag/DragRivalChallengeTelemetry.gd")
++# Palavras que só existem no português destas telas; nenhuma pode sobrar em inglês.
++# "LIMITE " leva o espaço porque LIMITER é inglês.
++const PORTUGUESE := ["ACELER", "GIRO", "TROC", "MARCHA", "LARGADA", "FAIXA", "LIMITE ", "ERROS", "BOAS",
++	"PASSAGEM", "NOITE", "DESAFIO", "PROVA", "RECORDE", "CONSERVE", "REPITA", "PATINAGEM", "ESPAÇO",
++	"À FRENTE", "ATRÁS", "SEM ", "º", "ANTECIPE", "SOLTE", "EXPERIMENTE", "PARCIAIS", "TOLERÂNCIA", "ATUAL"]
++var checks := 0
++var failures := 0
++
++func _initialize() -> void:
++	run.call_deferred()
++
++func check(ok: bool, message: String) -> void:
++	checks += 1
++	if not ok:
++		failures += 1
++		print("DRAG_HUD FAIL ", message)
++
++func english(source: String) -> void:
++	var shown := String(TranslationServer.translate(source))
++	var upper := shown.to_upper()
++	var leftover := PORTUGUESE.filter(func(word): return word in upper)
++	check(leftover.is_empty(), "inglês sem português: '%s' -> '%s' %s" % [source, shown, leftover])
++
++func run() -> void:
++	var hud := HUD.new()
++	var drive := DRIVE.new()
++	drive.configure("desert_faisca", {})
++	drive.race_mode = true
++	hud.update_state(drive, 800.0, 0.0, 0.0, "3", "Digo")
++	check(not hud._nitro_installed, "carro sem nitro é declarado sem nitro")
++	drive.configure("desert_faisca", {"nitro":"nitro_race"})
++	drive.race_mode = true
++	hud.update_state(drive, 800.0, 0.0, 0.0, "3", "Digo")
++	check(hud._nitro_installed, "nitro instalado continua com barra e tecla")
++
++	# Semáforo da largada: 3, 2, 1 acendem uma, duas e três lâmpadas; verde ao largar.
++	hud.show_start_lights = true
++	for row in [["3", 1], ["2", 2], ["1", 3]]:
++		hud.headline = row[0]
++		check(hud.start_lamps_lit(true) == row[1], "contagem %s acende %d lâmpadas" % row)
++	hud.show_start_lights = false
++	hud.headline = ""
++	hud.racing = true
++	hud.seconds = .2
++	check(hud.start_lamps_lit(false) == -1, "logo depois da largada o semáforo fica verde")
++	hud.seconds = 1.0
++	check(hud.start_lamps_lit(false) == 0, "depois do verde o casulo volta às luzes de troca")
++
++	# Instrução única: troca devida agora vence o veredito da troca anterior.
++	hud.gear = 2
++	hud._max_gear = 6
++	hud._shift_active = false
++	hud.feedback = "TROCA IDEAL"
++	var band: float = hud._good_from(false) + .02
++	var line: Array = hud.message(false, band)
++	check(line[0] == "TROQUE AGORA" and line[1] == HUD.AMBER, "faixa de troca vence o veredito: " + str(line))
++	line = hud.message(false, .995)
++	check(line[0] == "NO LIMITE" and line[1] == HUD.CORAL, "limitador vence o veredito: " + str(line))
++	line = hud.message(false, .3)
++	check(line[0] == "TROCA IDEAL" and line[1] == HUD.AMBER, "fora da faixa o veredito positivo aparece em âmbar")
++	hud.feedback = "Adiantou"
++	line = hud.message(false, .3)
++	check(line[0] == "ADIANTOU" and line[1] == HUD.CORAL, "veredito negativo aparece em coral")
++	hud._shift_active = true
++	line = hud.message(false, .3)
++	check(line[0] == "ADIANTOU", "durante a troca o veredito recém-dado fica visível")
++	hud._shift_active = false
++	hud.feedback = ""
++	hud.gear = 6
++	line = hud.message(false, .995)
++	check(line[0] == "ÚLTIMA MARCHA", "na última marcha não pede troca nem acusa limite")
++	line = hud.message(true, .55)
++	check(line[0] == "GIRO IDEAL" and line[1] == HUD.AMBER, "preparação no centro da faixa")
++	line = hud.message(true, .9)
++	check(line[0] == "ALIVIE O ACELERADOR" and line[1] == HUD.CORAL, "preparação acima da faixa alerta em coral")
++	hud.free()
++
++	preload("res://runtime/Localization.gd").install()
++	var old_locale := TranslationServer.get_locale()
++	TranslationServer.set_locale("en")
++	for text in ["ACELERAR", "ESPAÇO", "TROCAR", "ABANDONAR", "PAUSA", "SEM NITRO", "NITRO", "MARCHA", "TEMPO",
++			"1º / 2", "2º / 2", "LADO A LADO", "ACELERE ATÉ A FAIXA", "ALIVIE O ACELERADOR", "SEGURE O GIRO",
++			"GIRO IDEAL", "TROCANDO", "ÚLTIMA MARCHA", "NO LIMITE", "TROQUE AGORA", "PREPARE A TROCA", "FREANDO",
++			"LARGADA IDEAL", "BOA LARGADA", "PATINOU", "GIRO BAIXO", "TROCA IDEAL", "BOA TROCA", "ADIANTOU", "ATRASOU",
++			"ARRANCADA · 800 M", "NOITE DE ACERTO · 2/3", "DESAFIO · LÍVIA"]:
++		english(text)
++	# Objetivos ao vivo dos desafios, formatados pelo controlador real.
++	var challenge := CHALLENGE.new()
++	var telemetry := TELEMETRY.new()
++	challenge._telemetry = telemetry
++	challenge._reference_seconds = 12.345
++	telemetry.first60_seconds = 4.0
++	telemetry.spin60_seconds = .5
++	telemetry.tail_entry_speed = 60.0
++	telemetry.tail_min_speed = 57.0
++	for launch in ["", "BOA LARGADA", "GIRO BAIXO"]:
++		telemetry.launch = launch
++		for key in ["digo:0", "digo:1", "raul:0", "raul:1", "livia:0", "livia:1", "jessica:0", "jessica:1",
++				"nadir:0", "nadir:1", "rauhz:0", "rauhz:1"]:
++			challenge._armed = {"rival_id":key.get_slice(":", 0), "step":int(key.get_slice(":", 1))}
++			var status := challenge.live_status()
++			check(not status.is_empty(), "objetivo ao vivo existe para " + key)
++			english(status)
++	challenge.free()
++	# Resultado: as mesmas composições que DesertDragResults desenha.
++	for text in ["VER PASSAGEM", "VER RESULTADO", "SUA PASSAGEM", "LARGADA IDEAL · %s · nitro 1.4 s" % String(TranslationServer.translate("%d boas trocas")) % 4,
++			"BOA LARGADA · %s" % String(TranslationServer.translate("%d boas / %d erros")) % [3, 1],
++			"Limitador %.2f s · nitro %.2f s · máxima %.0f km/h" % [.42, 1.3, 211.0],
++			"%.3f s %s" % [.819, TranslationServer.translate("À FRENTE")], "%.3f s %s" % [.2, TranslationServer.translate("ATRÁS")],
++			"Compare as parciais com outra passada usando o mesmo acerto.", "Prepare mais giro antes do verde.",
++			"Solte um pouco o acelerador antes do verde.", "Troque dentro da faixa âmbar para manter o motor cheio.",
++			"Antecipe a próxima marcha antes de segurar o limitador.", "Experimente mais aderência para aproveitar a força na saída.",
++			"REPETIR NOITE", "VER A NOITE", "PRÓXIMA PROVA", "REPETIR PROVA", "VER DESAFIOS", "NOITE VENCIDA", "NOITE CONCLUÍDA",
++			"PASSAGEM VENCIDA", "PASSAGEM CONCLUÍDA", "PEÇA CONQUISTADA", "PROVA CUMPRIDA", "TENTE OUTRO ACERTO",
++			"SEM PONTOS NO RANKING", "RIVAL NÃO COMPLETOU"]:
++		english(text)
++	# O português continua a fonte: nada disso pode mudar a tela em pt_BR.
++	TranslationServer.set_locale("pt_BR")
++	check(String(TranslationServer.translate("ESPAÇO")) == "ESPAÇO", "pt_BR mantém ESPAÇO")
++	check(String(TranslationServer.translate("1º / 2")) == "1º / 2", "pt_BR mantém a posição")
++	check(String(TranslationServer.translate("Trocas boas 1 / 2 · erros 0")) == "Trocas boas 1 / 2 · erros 0", "pt_BR mantém o objetivo")
++	TranslationServer.set_locale(old_locale)
++	print("DRAG_HUD_PRESENTATION checks=%d failures=%d" % [checks, failures])
++	quit(0 if failures == 0 else 1)
+--- /dev/null
++++ b/tests/capture/capture_drag_hud_states.gd
+@@ -0,0 +1,108 @@
++extends SceneTree
++## Capturas da HUD da arrancada em estados escolhidos, sobre fundo de duas cores
++## parecido com o pátio ao anoitecer. Não é o Main nem medição de desempenho:
++## a cena real fica com test_desert_drag_runtime.gd --capture-out.
++## --hud=<caminho> desenha outra cópia da HUD (comparação antes/depois no mesmo
++## executável); --out=res://evidence/<pasta> escolhe a pasta.
++const DRIVE := preload("res://gameplay/desert_cars/DesertDrivetrain.gd")
++const CHALLENGE := preload("res://activities/desert_drag/DragRivalChallengeController.gd")
++const TELEMETRY := preload("res://activities/desert_drag/DragRivalChallengeTelemetry.gd")
++# 1720×720 é 21:9 na mesma escala lógica de 3440×1440.
++const RESOLUTIONS := [Vector2i(1280,720),Vector2i(960,540),Vector2i(1720,720)]
++const CASES := [
++	{"id":"01_staging_3","staging":true,"headline":"3","ratio":.30,"gear":1,"speed":0.0,"remaining":800.0,"elapsed":0.0,"gap":0.0},
++	{"id":"02_staging_1","staging":true,"headline":"1","ratio":.55,"gear":1,"speed":0.0,"remaining":800.0,"elapsed":0.0,"gap":0.0},
++	{"id":"03_green","feedback":"LARGADA IDEAL","ratio":.47,"gear":1,"speed":14.0,"remaining":797.0,"elapsed":.3,"gap":.4},
++	{"id":"04_shift_due_after_verdict","feedback":"TROCA IDEAL","ratio":.93,"gear":2,"speed":96.0,"remaining":712.0,"elapsed":4.1,"gap":3.2},
++	{"id":"05_early_shift","feedback":"ADIANTOU","ratio":.55,"gear":3,"speed":121.0,"remaining":640.0,"elapsed":6.0,"gap":-6.5},
++	{"id":"06_no_nitro_behind","nitro":false,"ratio":.80,"gear":4,"speed":168.0,"remaining":310.0,"elapsed":12.4,"gap":-31.0},
++	{"id":"07_challenge_livia","challenge":"livia","ratio":.88,"gear":4,"speed":119.0,"remaining":216.0,"elapsed":9.15,"gap":-67.6,"feedback":"BOA TROCA"},
++]
++var failures: Array[String] = []
++
++func _initialize() -> void:
++	create_timer(90).timeout.connect(func(): push_error("DRAG_HUD_STATES timeout"); quit(3))
++	run.call_deferred()
++
++func check(ok: bool, message: String) -> void:
++	if not ok:
++		failures.append(message)
++		print("DRAG_HUD_STATES FAIL ",message)
++
++func run() -> void:
++	if DisplayServer.get_name()=="headless" or "--no-save" not in OS.get_cmdline_user_args():
++		push_error("Capturas exigem janela renderizada e --no-save.")
++		quit(2)
++		return
++	var hud_path := "res://activities/desert_drag/DesertDragHUD.gd"
++	var output := "res://evidence/drag-hud-states-%d"%Time.get_unix_time_from_system()
++	for argument in OS.get_cmdline_user_args():
++		if argument.begins_with("--hud="): hud_path=argument.trim_prefix("--hud=")
++		if argument.begins_with("--out="): output=argument.trim_prefix("--out=")
++	if not output.begins_with("res://evidence/") or DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(output))!=OK:
++		push_error("Pasta de saída inválida: "+output)
++		quit(2)
++		return
++	preload("res://runtime/Localization.gd").install()
++	root.content_scale_mode=Window.CONTENT_SCALE_MODE_DISABLED
++	root.min_size=Vector2i(640,360)
++	# Céu e areia do pátio às 21 h, para julgar contraste como na corrida.
++	var sky := ColorRect.new()
++	sky.color=Color("2a3340")
++	root.add_child(sky)
++	sky.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
++	var sand := ColorRect.new()
++	sand.color=Color("6e5a45")
++	root.add_child(sand)
++	sand.set_anchors_preset(Control.PRESET_FULL_RECT)
++	sand.anchor_top=.42
++	var asphalt := ColorRect.new()
++	asphalt.color=Color("1d2228")
++	root.add_child(asphalt)
++	asphalt.set_anchors_preset(Control.PRESET_FULL_RECT)
++	asphalt.anchor_top=.5
++	asphalt.anchor_bottom=.72
++	var hud: Control = load(hud_path).new()
++	root.add_child(hud)
++	var challenge := CHALLENGE.new()
++	var telemetry := TELEMETRY.new()
++	challenge._telemetry=telemetry
++	telemetry.launch="BOA LARGADA"
++	telemetry.limiter_seconds=.2
++	telemetry.nitro_seconds=.8
++	var count := 0
++	for locale in ["en","pt_BR"]:
++		TranslationServer.set_locale(locale)
++		for resolution in RESOLUTIONS:
++			root.size=resolution
++			for frame in 4: await process_frame
++			for row in CASES:
++				var drive := DRIVE.new()
++				drive.configure("desert_faisca",{"nitro":"nitro_race"} if row.get("nitro",true) else {})
++				drive.race_mode=true
++				drive.rpm=drive.redline*float(row.ratio)
++				drive.speed_mps=float(row.speed)/3.6
++				drive.gear=int(row.gear)
++				drive.nitro=.68 if row.get("nitro",true) else 0.0
++				var staging: bool=row.get("staging",false)
++				hud.race_distance=800.0
++				hud.show_start_lights=staging
++				hud.racing=not staging
++				hud.feedback=str(row.get("feedback",""))
++				hud.rival_offscreen=1 if float(row.gap)<-50.0 else 0
++				hud.event_title=""
++				hud.challenge_status=""
++				if row.has("challenge"):
++					challenge._armed={"rival_id":row.challenge,"step":1}
++					hud.event_title="DESAFIO · LÍVIA"
++					hud.challenge_status=challenge.live_status()
++				hud.update_state(drive,float(row.remaining),float(row.elapsed),float(row.gap),str(row.get("headline","")),"Digo" if not row.has("challenge") else "Lívia")
++				hud.queue_redraw()
++				await process_frame
++				await RenderingServer.frame_post_draw
++				var name := "%s-%dx%d-%s.png"%[locale.left(2),resolution.x,resolution.y,row.id]
++				check(root.get_texture().get_image().save_png(output.path_join(name))==OK,"gravar "+name)
++				count+=1
++	challenge.free()
++	print("DRAG_HUD_STATES output=",ProjectSettings.globalize_path(output)," captures=",count," failures=",failures.size())
++	quit(0 if failures.is_empty() else 1)

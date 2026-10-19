@@ -71,11 +71,12 @@ func reconcile() -> void:
 		person.pants_color = Color("202522")
 		person.wardrobe_overrides = {"female":false,"build":2,"height":1.04,"top":0,"bottom":0,"shoe":1,"hair":0,"beard":2,"hat":0,"glasses":false,"bag":0,"backpack":false,"skin":Color("80553e"),"hair_color":Color("171917"),"top_color":Color("23302a"),"bottom_color":Color("202522"),"inner":Color("222923"),"accent":Color("82916c")}
 		person.rotation.y = -PI*.5
+		preload("res://runtime/desert/drag_meet/DragMeetAppearance.gd").apply(person)
 		actor.visual = person
 		actor.add_child(person)
 		add_child(actor)
 		preload("res://gameplay/urban_v1/CobraAppearance.gd").dress(person)
-		person.set_process(false)
+		preload("res://runtime/desert/drag_meet/DragMeetAppearance.gd").set_animation_active(person,false)
 	if str(HONOR.data(session.state.world_state).reward)=="car":
 		if is_instance_valid(parked): parked.queue_free(); parked=null
 	elif not is_instance_valid(parked):

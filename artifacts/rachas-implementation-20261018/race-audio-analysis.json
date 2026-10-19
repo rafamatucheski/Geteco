@@ -1,0 +1,226 @@
+{
+  "source": "evidence/open-drag-37200-7534534/race-audio.wav",
+  "capture_contract": "AudioEffectRecord PCM16 at Master bus effect slot 0; complete admitted free race including staging and braking; mixed scene, no separated player/rival stems",
+  "sample_rate_hz": 48000,
+  "channels": 2,
+  "sample_width_bytes": 2,
+  "frames": 1407488,
+  "duration_seconds": 29.322666666666667,
+  "channel_metrics": [
+    {
+      "channel": 0,
+      "sample_peak_dbfs": -8.543441179275655,
+      "rms_dbfs": -20.10660138515966,
+      "dc": 0.00013007919065906334,
+      "rail_sample_count": 0,
+      "longest_rail_run_samples": 0,
+      "near_full_scale_098_count": 0,
+      "four_times_oversampled_peak_dbfs_estimate": -8.537913804244587
+    },
+    {
+      "channel": 1,
+      "sample_peak_dbfs": -8.815594920714219,
+      "rms_dbfs": -20.324529050502996,
+      "dc": 0.00012861266488289997,
+      "rail_sample_count": 0,
+      "longest_rail_run_samples": 0,
+      "near_full_scale_098_count": 0,
+      "four_times_oversampled_peak_dbfs_estimate": -8.807680129331946
+    }
+  ],
+  "combined_rms_dbfs": -20.214198418131435,
+  "sample_peak_dbfs": -8.543441179275655,
+  "crest_factor_db": 11.67075723885578,
+  "exact_zero_frames": 0,
+  "longest_exact_zero_run_seconds": 0.0,
+  "stereo_correlation": 0.991361319956909,
+  "one_second_windows": [
+    {
+      "start_seconds": 0.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -20.380673843142787,
+      "sample_peak_dbfs": -10.353410081882279
+    },
+    {
+      "start_seconds": 1.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -19.7878347715069,
+      "sample_peak_dbfs": -10.540495299068294
+    },
+    {
+      "start_seconds": 2.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -19.907460305252556,
+      "sample_peak_dbfs": -10.718941723446333
+    },
+    {
+      "start_seconds": 3.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -19.634311504524092,
+      "sample_peak_dbfs": -9.473252319759323
+    },
+    {
+      "start_seconds": 4.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -19.378643739857832,
+      "sample_peak_dbfs": -10.220851415667745
+    },
+    {
+      "start_seconds": 5.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -19.97806785180269,
+      "sample_peak_dbfs": -10.804959454037311
+    },
+    {
+      "start_seconds": 6.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -20.481369422444367,
+      "sample_peak_dbfs": -11.093876881158902
+    },
+    {
+      "start_seconds": 7.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -18.883752898123845,
+      "sample_peak_dbfs": -9.079195166698051
+    },
+    {
+      "start_seconds": 8.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -20.477698263400566,
+      "sample_peak_dbfs": -9.954979274712024
+    },
+    {
+      "start_seconds": 9.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -19.336224067431797,
+      "sample_peak_dbfs": -11.122445779750938
+    },
+    {
+      "start_seconds": 10.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -19.58003623522772,
+      "sample_peak_dbfs": -10.532470558288843
+    },
+    {
+      "start_seconds": 11.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -19.933246908127227,
+      "sample_peak_dbfs": -11.226078922603397
+    },
+    {
+      "start_seconds": 12.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -20.292719089299123,
+      "sample_peak_dbfs": -10.48447718534446
+    },
+    {
+      "start_seconds": 13.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -19.399701044196103,
+      "sample_peak_dbfs": -9.943312530663741
+    },
+    {
+      "start_seconds": 14.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -19.183818975213445,
+      "sample_peak_dbfs": -9.562859681252531
+    },
+    {
+      "start_seconds": 15.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -19.37296436677578,
+      "sample_peak_dbfs": -9.493788214620384
+    },
+    {
+      "start_seconds": 16.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -19.557093553411352,
+      "sample_peak_dbfs": -10.093674028825854
+    },
+    {
+      "start_seconds": 17.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -19.81554168875768,
+      "sample_peak_dbfs": -10.71075049250002
+    },
+    {
+      "start_seconds": 18.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -19.988606269782128,
+      "sample_peak_dbfs": -10.793930918468611
+    },
+    {
+      "start_seconds": 19.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -18.218479223564582,
+      "sample_peak_dbfs": -8.596052933257228
+    },
+    {
+      "start_seconds": 20.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -18.26862173073385,
+      "sample_peak_dbfs": -8.543441179275655
+    },
+    {
+      "start_seconds": 21.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -18.4648679295343,
+      "sample_peak_dbfs": -9.681637441478898
+    },
+    {
+      "start_seconds": 22.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -19.112316578981126,
+      "sample_peak_dbfs": -9.426830950271961
+    },
+    {
+      "start_seconds": 23.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -27.314594582530614,
+      "sample_peak_dbfs": -15.33748636057452
+    },
+    {
+      "start_seconds": 24.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -25.51498056541679,
+      "sample_peak_dbfs": -12.947871462733527
+    },
+    {
+      "start_seconds": 25.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -26.141258704251634,
+      "sample_peak_dbfs": -14.10838297107757
+    },
+    {
+      "start_seconds": 26.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -26.725748230126364,
+      "sample_peak_dbfs": -15.132274204255191
+    },
+    {
+      "start_seconds": 27.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -23.340183687293784,
+      "sample_peak_dbfs": -11.107197341095969
+    },
+    {
+      "start_seconds": 28.0,
+      "duration_seconds": 1.0,
+      "rms_dbfs": -22.8150060414617,
+      "sample_peak_dbfs": -11.376024021060832
+    },
+    {
+      "start_seconds": 29.0,
+      "duration_seconds": 0.32266666666666666,
+      "rms_dbfs": -23.15257938413157,
+      "sample_peak_dbfs": -12.78348692563678
+    }
+  ],
+  "limitations": [
+    "No subjective listening performed",
+    "Summed mix cannot isolate player versus rival loudness",
+    "No before recording, so no measured before/after loudness claim",
+    "4x polyphase peak is an estimate, not a calibrated BS.1770 true-peak measurement",
+    "Signal levels do not certify timbre, masking, balance, absence of clicks or final device volume"
+  ]
+}

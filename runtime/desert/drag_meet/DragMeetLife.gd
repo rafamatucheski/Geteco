@@ -6,22 +6,25 @@ const MEMBER := preload("res://runtime/desert/drag_meet/DragMeetMember.gd")
 const GUEST := preload("res://runtime/desert/drag_meet/DragMeetGuest.gd")
 const ROSTER := preload("res://runtime/desert/drag_meet/DragMeetRoster.gd")
 const AMBIENCE := preload("res://runtime/desert/drag_meet/DragMeetAmbience.gd")
+const SCORE := preload("res://runtime/desert/drag_meet/DragMeetScore.gd")
 const CREW_OFFSETS := ROSTER.CREW_OFFSETS
 const VISITOR_POINTS := ROSTER.VISITOR_POINTS
 const MAX_RESIDENTS := 34
 const ADMIT_RADIUS := 88.0
-const RELEASE_RADIUS := 112.0
+const RELEASE_RADIUS := 220.0 # Beyond every sound island's reach; no cutoff beside the start.
 var session
 var gameplay: Node
 var guest_specs: Array[Dictionary] = ROSTER.guests()
 var members: Dictionary = {}
 var retired: Dictionary = {}
 var ambience: Node3D
+var score: Node
 var active := false
 var _clock := 0.0
 var _elapsed := 0.0
 var _last_alert_ms := -1000
 var _last_alert_radius := 0.0
+var barks := preload("res://runtime/desert/drag_meet/DragMeetBarks.gd").new()
 
 func configure(owner_session) -> void:
 	session = owner_session
@@ -31,13 +34,35 @@ func configure(owner_session) -> void:
 	gameplay.npc_gunfire.connect(_npc_gunfire)
 	gameplay.explosion_occurred.connect(_explosion)
 	gameplay.player_died.connect(_clear)
+	score=SCORE.new()
+	add_child(score)
 
 func _process(delta: float) -> void:
 	_elapsed += delta
 	_clock += delta
 	if _clock<.18: return
 	_clock = 0.0
+	_update_score()
 	reconcile()
+
+func _update_score() -> void:
+	if not is_instance_valid(score): return
+	if session==null or not session.ready_for_play:
+		score.stop()
+		return
+	var phase := "idle"
+	var drag = session.desert.drag if is_instance_valid(session.desert) else null
+	if is_instance_valid(drag):
+		if drag.active: phase=str(drag.phase)
+		elif is_instance_valid(drag.board_controller) and is_instance_valid(drag.board_controller.results_layer) and drag.board_controller.results_layer.visible:
+			phase="results"
+	var blocked: bool = session.world.gameplay.health<=0 or session.state.region_id!="desert" or not session.state.place_id.is_empty() or session.is_transition_blocked()
+	var radio_active := false
+	if is_instance_valid(session.controller.world_audio):
+		var radio = session.controller.world_audio.radio
+		radio_active=is_instance_valid(radio) and radio.playing
+	var speaking: bool = session.dialogue_open or barks.is_speaking()
+	score.update_context(session.world.player.global_position,phase,blocked,speaking,radio_active,_elapsed)
 
 func reconcile() -> void:
 	if session==null or not session.ready_for_play or session.world.gameplay.health<=0:
@@ -57,7 +82,15 @@ func reconcile() -> void:
 	if is_instance_valid(session.desert.digo_routine) and is_instance_valid(session.desert.digo_routine.actor):
 		var worker: Node3D = session.desert.digo_routine.actor
 		workshop_active = worker.state in ["repair","tools"] and not worker.talking and not worker.suspended and worker.audio_enabled
-	ambience.update(point,suppressed,_elapsed,workshop_active)
+	var heat_phase := "idle"
+	if is_instance_valid(session.desert.drag):
+		if session.desert.drag.active: heat_phase=str(session.desert.drag.phase)
+		elif is_instance_valid(session.desert.drag.open_meet): heat_phase=session.desert.drag.open_meet.phase
+	barks.update(session,point,suppressed or session.world.gameplay.stars>0,_elapsed)
+	# Activity ownership freezes people but is not a dialogue/music mute. Keep
+	# local spectator sound around the start while the score follows the race.
+	var audio_suppressed: bool = session.modal or session.dialogue_open or session.world.gameplay.health<=0 or session.is_transition_blocked()
+	ambience.update(point,audio_suppressed,_elapsed,workshop_active,heat_phase,barks.is_speaking())
 	var admitted := false
 	for slot in MAX_RESIDENTS:
 		var candidate = members.get(slot)
@@ -71,8 +104,7 @@ func reconcile() -> void:
 		if admitted or retired.has(slot): continue
 		var anchor := _point(slot)
 		if point.distance_to(anchor)>ADMIT_RADIUS: continue
-		if not session.controller.region.is_streaming_idle(): continue
-		session.controller.region.prepare_collision_at(anchor)
+		if not session.controller.region.prepare_collision_at(anchor): continue
 		var placement := _floor_anchor(anchor)
 		if placement.is_empty(): continue
 		if slot<CREW_OFFSETS.size():
@@ -115,7 +147,8 @@ func _update_actor(slot: int,actor: Node3D,listener: Vector3,suppressed: bool) -
 		actor.converse(target,speaking and slot>=2,near)
 		return
 	actor.social_paused = session.modal or session.is_transition_blocked()
-	actor.person.set_process(near)
+	preload("res://runtime/desert/drag_meet/DragMeetAppearance.gd").set_animation_active(actor.person,near or actor._panic>0.0)
+	actor.set_physics_process(near or actor._panic>0.0)
 
 func retreat_clear(actor: CharacterBody3D, point: Vector3) -> bool:
 	var shape := CapsuleShape3D.new()
@@ -146,6 +179,14 @@ func _npc_gunfire(origin: Vector3, _direction: Vector3, _shooter: Node3D) -> voi
 func _explosion(origin: Vector3, radius: float, _source: Node) -> void: alert_crowd(origin,maxf(65.0,radius*3.0))
 
 func _clear() -> void:
+	if is_instance_valid(score) and (not is_instance_valid(gameplay) or gameplay.health<=0): score.stop()
+	barks.stop()
+	# Streaming the crowd out during a pass is still the same visit. Do not
+	# replay everyone's greeting after each of the night's four returns.
+	var same_visit: bool = is_instance_valid(score) and score.mode in ["staging","racing","braking","results"]
+	if not same_visit:
+		barks.heard.clear()
+		barks.next_at=_elapsed+8.0
 	for actor in members.values():
 		if not is_instance_valid(actor): continue
 		actor.hide()
@@ -162,6 +203,7 @@ func _clear() -> void:
 	active = false
 
 func _exit_tree() -> void:
+	if is_instance_valid(score): score.stop()
 	if is_instance_valid(gameplay):
 		if gameplay.player_died.is_connected(_clear): gameplay.player_died.disconnect(_clear)
 		if gameplay.weapon_fired.is_connected(_weapon_fired): gameplay.weapon_fired.disconnect(_weapon_fired)

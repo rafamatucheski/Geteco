@@ -16,10 +16,23 @@ var _travelling := false
 var social_paused := false
 
 func _ready() -> void:
-	super._ready()
-	for old in visual.get_children():
-		visual.remove_child(old)
-		old.queue_free()
+	# Own the authored body's construction while retaining Actor's locomotion,
+	# damage and witness contract. Actor._ready would build a discarded body.
+	set_meta("gameplay_role","civilian")
+	add_to_group("police_witness")
+	collision_layer = 2
+	collision_mask = 7
+	floor_snap_length = .3
+	var shape := CollisionShape3D.new()
+	var capsule := CapsuleShape3D.new()
+	capsule.radius = .30
+	capsule.height = 1.7
+	shape.shape = capsule
+	shape.position.y = .86
+	add_child(shape)
+	visual = Node3D.new()
+	visual.name = "Visual"
+	add_child(visual)
 	person = _create_person()
 	person.appearance_locked = true
 	person.appearance_variant = identity
@@ -30,7 +43,9 @@ func _ready() -> void:
 		"hair":4 if identity%3==0 else identity%3,"beard":0 if identity%3==0 else identity%2,
 		"inner":Color("a7a398"),"accent":specification.coat.darkened(.2),"hat":1 if identity%5==0 else 0}
 	person.rotation.y = PI
+	preload("res://runtime/desert/drag_meet/DragMeetAppearance.gd").apply(person)
 	visual.add_child(person)
+	last_position = global_position
 	_home = global_position
 	_end = specification.walk_end+Vector3.UP*_home.y
 	_destination = _home
@@ -88,10 +103,11 @@ func alert(origin: Vector3) -> void:
 	_destination = _home
 	_rest = 4.0
 	_travelling = false
-	person.set_process(true)
+	preload("res://runtime/desert/drag_meet/DragMeetAppearance.gd").set_animation_active(person,true)
 
 func receive_damage(amount: float, source: Node = null) -> void:
 	if dead or amount<=0: return
+	preload("res://runtime/desert/drag_meet/DragMeetAppearance.gd").set_animation_active(person,true)
 	var origin: Vector3 = source.global_position if source is Node3D else global_position
 	super.receive_damage(amount,source)
 	if is_instance_valid(host): host.alert_crowd(origin,22.0)

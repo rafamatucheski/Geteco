@@ -12,6 +12,7 @@ static func dress(model: Node3D) -> void:
 	model.wardrobe_overrides.merge({"top":2,"bottom":0,"shoe":1,"bag":0,"backpack":false,
 		"top_color":COAT,"bottom_color":PANTS,"inner":Color("9b9b92"),"accent":TRIM,
 		"body_profile":{"bust":false},"head_scale":Vector3.ONE*.94},true)
+	preload("res://runtime/desert/drag_meet/DragMeetAppearance.gd").apply(model)
 
 ## Shared by the person at the meet, the seated driver and the baked portrait.
 ## Jackets use their continuous cloth shell rather than isolated chest bulges.
@@ -23,9 +24,14 @@ static func style_rival(model: Node3D, identity: String) -> void:
 		"nadir":{"hair":2,"top_color":Color("293c4c"),"inner":Color("959ca0"),"accent":Color("4d6674")},
 		"jessica":{"hair":3,"top_color":Color("bbb4a9"),"inner":Color("41464a"),"accent":Color("858b91")},
 	}
+	if identity.begins_with("open_"):
+		model.wardrobe_overrides["female"] = identity in ["open_celia","open_mara","open_luna"]
+		preload("res://runtime/desert/drag_meet/DragMeetAppearance.gd").apply(model)
+		return
 	if not looks.has(identity): return
 	model.wardrobe_overrides.merge({"top":2,"body_profile":{"bust":false},"head_scale":Vector3.ONE*.94},true)
 	model.wardrobe_overrides.merge(looks[identity],true)
+	preload("res://runtime/desert/drag_meet/DragMeetAppearance.gd").apply(model)
 
 static func insignia(model: Node3D) -> void:
 	if not is_instance_valid(model.spine): return

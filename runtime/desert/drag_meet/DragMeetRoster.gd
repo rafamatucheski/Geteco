@@ -13,7 +13,7 @@ const TEAM_POINTS := {
 	"nadir":[Vector3(-970,0,-1243),Vector3(-969,0,-1240),Vector3(-965,0,-1240),Vector3(-963,0,-1243)],
 }
 const WALK_ENDS := {"livia":Vector3(-963,0,-1287),"raul":Vector3(-998,0,-1292),"jessica":Vector3(-918,0,-1254),"nadir":Vector3(-964,0,-1236)}
-const VISITOR_POINTS := [Vector3(-1020,0,-1297),Vector3(-990,0,-1304),Vector3(-949,0,-1304),Vector3(-905,0,-1288),Vector3(-938,0,-1233),Vector3(-985,0,-1227)]
+const VISITOR_POINTS := [Vector3(-1020,0,-1297),Vector3(-990,0,-1304),Vector3(-949,0,-1304),Vector3(-905,0,-1288),Vector3(-899,0,-1335.4),Vector3(-985,0,-1227)]
 
 static func guests() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []

@@ -21,11 +21,15 @@ func _run() -> void:
 		var p: Dictionary = TUNING.PARTS[id]
 		_check(str(p.slot) in TUNING.SLOTS,"Espaço desconhecido na peça "+str(id))
 		_check(int(p.wins) <= WINS.maximum(),"Peça %s pede %d vitórias; o máximo é %d" % [id,int(p.wins),WINS.maximum()])
-		_check(int(p.cost) > 0 and not str(p.effect).is_empty(),"Peça sem preço ou descrição: "+str(id))
+		if p.has("rival_reward"):
+			_check(int(p.cost)==0 and str(p.rival_reward) in preload("res://activities/desert_drag/DragRivalChallengeCatalog.gd").IDS,"Prêmio de rival sem procedência: "+str(id))
+			_check(not TUNING.purchase_check({},[],str(id),WINS.maximum(),1000000).ok,"Dinheiro não pode substituir a conquista do rival: "+str(id))
+		else: _check(int(p.cost)>0,"Peça de loja sem preço: "+str(id))
+		_check(not str(p.effect).is_empty(),"Peça sem efeito explicado: "+str(id))
 	for slot in TUNING.SLOTS:
 		_check(TUNING.PARTS.values().any(func(p): return str(p.slot) == str(slot)),"Espaço vazio: "+str(slot))
-	# Contagem de vitórias: cada prova vale uma, no máximo 7, missão pulada não conta.
-	_check(WINS.maximum() == 7,"Máximo de vitórias inesperado: %d" % WINS.maximum())
+	# Seis rivais, duas corridas da campanha e um mérito da Noite; missão pulada não conta.
+	_check(WINS.maximum() == 9,"Máximo de vitórias inesperado: %d" % WINS.maximum())
 	_check(WINS.count({},{}) == 0,"Sem vitórias deve contar zero")
 	var drag := {"desert_drag":{"version":1,"finishes":2,"wins":["digo","livia"],"completed_rivals":["digo","livia"],"best":{"digo":20.0,"livia":21.0},"last_rival":"livia","last_won":true}}
 	_check(WINS.count(drag,{"completed":["cobra_race","cobra_finale","primeiro_giro"]}) == 4,"Contagem de vitórias misturadas errada")
@@ -36,7 +40,9 @@ func _run() -> void:
 		var p: Dictionary = TUNING.PARTS[id]
 		var s := TUNING.tuned_spec("sedan_classic",{str(p.slot):str(id)})
 		if p.has("torque"): _check(float(s.torque_nm) > float(stock.torque_nm),"Torque não subiu: "+str(id))
-		if p.has("redline_add"): _check(float(s.redline) > float(stock.redline),"Giro máximo não subiu: "+str(id))
+		if p.has("redline_add"):
+			if float(p.redline_add)<0: _check(float(s.redline)<float(stock.redline),"Trade-off de giro não foi aplicado: "+str(id))
+			else: _check(float(s.redline)>float(stock.redline),"Giro máximo não subiu: "+str(id))
 		if p.has("cap"): _check(float(s.street_cap_mps) > float(stock.street_cap_mps),"Teto de rua não subiu: "+str(id))
 		if p.has("neon"): _check(str(s.neon_color) == str(p.neon) and float(s.neon_strength) == 1.0,"Neon não aplicado: "+str(id))
 		if p.has("nitro_force"): _check(float(s.nitro_seconds) > 0.0,"Nitro sem duração: "+str(id))
