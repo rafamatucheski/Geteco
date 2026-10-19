@@ -1,5 +1,6 @@
 extends Node3D
 ## World-space circuit east of Vértice, inside the area marked by the player.
+const COLLISION_FACES := preload("res://world/chunk_bake/CollisionFaces.gd")
 const ENTRY := Vector3(-224,.15,-37)
 const BOUNDS := Rect2(-247,-147,155,112)
 const HALF_WIDTH := 5.2
@@ -236,7 +237,9 @@ func _material(color: Color) -> StandardMaterial3D:
 
 func _mesh(surface: SurfaceTool, title: String, solid: bool) -> MeshInstance3D:
 	surface.generate_normals()
-	var mesh := surface.commit()
+	# Malha e colisão das mesmas arrays da CPU: create_trimesh_shape lia a malha de volta da GPU (auditoria 19/10).
+	var built: Array = COLLISION_FACES.commit_with_shape(surface)
+	var mesh: ArrayMesh = built[0]
 	var visual := MeshInstance3D.new()
 	visual.name = title
 	visual.mesh = mesh
@@ -248,7 +251,7 @@ func _mesh(surface: SurfaceTool, title: String, solid: bool) -> MeshInstance3D:
 		body.collision_layer = 1
 		body.collision_mask = 0
 		var shape := CollisionShape3D.new()
-		shape.shape = _rim_flush_collider(mesh) if title == "QuarryHills" else mesh.create_trimesh_shape()
+		shape.shape = _rim_flush_collider(built[2]) if title == "QuarryHills" else built[1]
 		body.add_child(shape)
 		add_child(body)
 	return visual
@@ -257,8 +260,8 @@ func _mesh(surface: SurfaceTool, title: String, solid: bool) -> MeshInstance3D:
 ## na borda do terreno travava a picape de lado como uma parede invisível (a caixa do
 ## carro assenta a ~0,3 mm do piso; medido dirigindo em 12/10/2026). O desenho fica como
 ## está; só o colisor encosta os vértices da borda no chão (rampa de 2 mm em ~2 m).
-func _rim_flush_collider(mesh: ArrayMesh) -> ConcavePolygonShape3D:
-	var faces := mesh.get_faces()
+func _rim_flush_collider(source_faces: PackedVector3Array) -> ConcavePolygonShape3D:
+	var faces := source_faces.duplicate()
 	for i in faces.size():
 		var v := faces[i]
 		var edge := minf(minf(v.x-BOUNDS.position.x,BOUNDS.end.x-v.x),minf(v.z-BOUNDS.position.y,BOUNDS.end.y-v.z))
@@ -550,6 +553,8 @@ func _dress_quarry() -> void:
 	stone.radius = 1
 	stone.height = 2
 	rocks.mesh = stone
+	# Uma vez, na CPU: get_faces por pedra lia a esfera de volta da GPU a cada uma.
+	var stone_faces := COLLISION_FACES.faces_of(stone)
 	var transforms: Array[Transform3D] = []
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 280926
@@ -574,7 +579,7 @@ func _dress_quarry() -> void:
 		# Bake the exact visible mesh into an unscaled convex physical hull.
 		var shape := ConvexPolygonShape3D.new()
 		var vertices := PackedVector3Array()
-		for vertex in stone.get_faces(): vertices.append(placement.basis * vertex)
+		for vertex in stone_faces: vertices.append(placement.basis * vertex)
 		shape.points = vertices
 		collision.shape = shape
 		collision.position = p

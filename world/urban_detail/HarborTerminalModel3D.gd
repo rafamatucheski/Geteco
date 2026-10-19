@@ -1,5 +1,6 @@
 extends Node3D
 class_name HarborTerminalModel3D
+const COLLISION_FACES := preload("res://world/chunk_bake/CollisionFaces.gd")
 
 ## A modular Brazilian intercity terminal in native 3D geometry.
 ## Authored in calibrated metric ground coordinates (PPM = 18.0, FLOOR_Y = 0.76822128).
@@ -272,7 +273,8 @@ func _compose_ground() -> void:
 			local.append(points)
 		var mesh := GROUND_CUT.flat_mesh(local,bounds.end.y,1.0)
 		if mesh == null: mesh = ArrayMesh.new()
-		var faces := slab.mesh.get_faces()
+		# BoxMesh: triângulos gerados na CPU, sem ler a placa de volta.
+		var faces := COLLISION_FACES.faces_of(slab.mesh)
 		var sides := PackedVector3Array()
 		var normals := PackedVector3Array()
 		for i in range(0,faces.size(),3):

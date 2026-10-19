@@ -12,18 +12,34 @@ func check(ok: bool, label: String) -> void:
 	print(("TERRAIN PASS " if ok else "TERRAIN FAIL ") + label)
 	if not ok: failures.append(label)
 
-func face_keys(faces: PackedVector3Array) -> Dictionary:
-	var keys: Dictionary = {}
+## A malha na GPU guarda posições comprimidas (quantizadas): a leitura de volta difere da CPU em ~0,05 mm.
+## A colisão agora sai das arrays exatas da CPU (auditoria de 19/10), então a comparação usa tolerância.
+const FACE_TOLERANCE := 0.001
+
+## Triângulos na rotação canônica (preserva o sentido), ordenados por uma chave arredondada a 1 cm.
+func canonical_faces(faces: PackedVector3Array) -> Array:
+	var out: Array = []
 	for offset in range(0, faces.size(), 3):
-		# Canonical cyclic rotation preserves winding while allowing BVH order.
-		var a := str(faces[offset])
-		var b := str(faces[offset + 1])
-		var c := str(faces[offset + 2])
-		var rotations: Array[String] = [a + "|" + b + "|" + c, b + "|" + c + "|" + a, c + "|" + a + "|" + b]
-		rotations.sort()
-		var key: String = rotations[0]
-		keys[key] = int(keys.get(key, 0)) + 1
-	return keys
+		var tri := [faces[offset], faces[offset + 1], faces[offset + 2]]
+		var best := 0
+		var best_key := ""
+		for r in 3:
+			var key := "%s|%s|%s" % [tri[r].snapped(Vector3.ONE * .01), tri[(r + 1) % 3].snapped(Vector3.ONE * .01), tri[(r + 2) % 3].snapped(Vector3.ONE * .01)]
+			if r == 0 or key < best_key:
+				best = r
+				best_key = key
+		out.append([best_key, tri[best], tri[(best + 1) % 3], tri[(best + 2) % 3]])
+	out.sort_custom(func(x, y): return x[0] < y[0])
+	return out
+
+func same_faces(a: PackedVector3Array, b: PackedVector3Array) -> bool:
+	if a.size() != b.size(): return false
+	var ca := canonical_faces(a)
+	var cb := canonical_faces(b)
+	for i in ca.size():
+		for k in range(1, 4):
+			if (ca[i][k] as Vector3).distance_to(cb[i][k]) > FACE_TOLERANCE: return false
+	return true
 
 func inspect(mesh: MeshInstance3D, label: String) -> void:
 	check(mesh.get_child_count() == 1, label + " one body")
@@ -42,7 +58,7 @@ func inspect(mesh: MeshInstance3D, label: String) -> void:
 	# Deliberate readback here only: compare to the original engine conversion.
 	var reference := mesh.mesh.create_trimesh_shape()
 	check(actual.size() == 1536, label + " full 512 triangles")
-	check(face_keys(actual) == face_keys(reference.get_faces()), label + " rendering triangles and winding preserved")
+	check(same_faces(actual, reference.get_faces()), label + " rendering triangles and winding preserved")
 
 func ground(point: Vector2, terrain: RefCounted, label: String) -> void:
 	var expected: float = terrain.surface_height_at(point)

@@ -48,7 +48,10 @@ static func rock(parent: Node3D, label: String, at: Vector3, size: Vector3, colo
 		body.collision_mask=0
 		var shape := CollisionShape3D.new()
 		# Convex hull tracks the visible tapered silhouette rather than an invisible box.
-		shape.shape=mesh.create_convex_shape(true,false)
+		# Pontos da CPU (a física calcula o casco, como o clean de create_convex_shape): sem ler a malha da GPU.
+		var hull := ConvexPolygonShape3D.new()
+		hull.points=vertices
+		shape.shape=hull
 		body.add_child(shape)
 		node.add_child(body)
 	return node

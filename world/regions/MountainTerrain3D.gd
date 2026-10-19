@@ -170,7 +170,12 @@ func chunk_data(rect: Rect2) -> Dictionary:
 			var c := a+steps+1
 			var d := c+1
 			indices.append_array(PackedInt32Array([a,b,c,b,d,c]))
-	return {"rect":rect,"vertices":vertices,"normals":normals,"colors":colors,"indices":indices,"heights":heights,"trail":_trail_blend.mask_for(rect)}
+	# Triângulos da colisão já no trabalhador: create_trimesh_shape lia a malha de volta da GPU no thread
+	# principal (mesmo custo do surface_get_arrays proibido, auditoria de 19/10).
+	var faces := PackedVector3Array()
+	faces.resize(indices.size())
+	for i in indices.size(): faces[i] = vertices[indices[i]]
+	return {"rect":rect,"vertices":vertices,"normals":normals,"colors":colors,"indices":indices,"faces":faces,"heights":heights,"trail":_trail_blend.mask_for(rect)}
 
 ## Entrada do trabalhador: o terreno vai como argumento (referência forte), então não some com a tarefa no ar.
 ## O resultado é escrito no dicionário de saída e só é lido depois de wait_for_task_completion.
@@ -214,7 +219,17 @@ func build_chunk(parent: Node3D, rect: Rect2, shore_edges: Array[Dictionary] = [
 	body.collision_layer = 1
 	body.collision_mask = 0
 	var shape := CollisionShape3D.new()
-	shape.shape = mesh.create_trimesh_shape()
+	# Mesmos triângulos da malha, na mesma ordem (o que create_trimesh_shape faria, sem ler a GPU).
+	var collision_shape := ConcavePolygonShape3D.new()
+	# Dado de fora sem "faces" (montado por um teste ou versão antiga do trabalhador): a mesma expansão aqui.
+	var faces: PackedVector3Array = data.get("faces", PackedVector3Array())
+	if faces.is_empty():
+		var indices: PackedInt32Array = data.indices
+		var vertices: PackedVector3Array = data.vertices
+		faces.resize(indices.size())
+		for i in indices.size(): faces[i] = vertices[indices[i]]
+	collision_shape.set_faces(faces)
+	shape.shape = collision_shape
 	body.add_child(shape)
 	result.add_child(body)
 	# Only the explicit bridge water spans have permanent exposed banks.

@@ -21,14 +21,23 @@ const PATH_Y := 0.014
 const LAMP_OFFSET := 2.3
 const LAMP_SPACING := 50.0
 const LIT_LAMPS := 8
+## Célula dos lotes de postes, como TerrainDressing3D e os trechos de NativeRegion.
+const LAMP_CELL := 64.0
+## Além disso o poste é um risco de poucos pixels; à noite o vidro ainda aparece até aqui.
+const LAMP_VISIBLE_RANGE := 420.0
 
 var controller
 var _region: Node3D
 var _paths: MeshInstance3D
 var _lamp_points: Array[Vector3] = []
 var _lamp_transforms: Array[Transform3D] = []
-var _lamp_glass: MultiMeshInstance3D
-var _glass_material: StandardMaterial3D
+static var _glass_material: StandardMaterial3D
+static var _wood_material: StandardMaterial3D
+static var _iron_material: StandardMaterial3D
+static var _pole_mesh: BoxMesh
+static var _arm_mesh: BoxMesh
+static var _cap_mesh: BoxMesh
+static var _glass_mesh: BoxMesh
 var _lights: Array[OmniLight3D] = []
 var _clock := 0.0
 
@@ -126,45 +135,69 @@ func _build_lamps() -> void:
 	# Giro calculado uma vez: nearest_road percorre todas as estradas residentes.
 	_lamp_transforms.clear()
 	for i in _lamp_points.size(): _lamp_transforms.append(_lamp_transform(i))
-	var wood := StandardMaterial3D.new()
-	wood.albedo_color = Color("4a3526")
-	wood.roughness = 0.9
-	var iron := StandardMaterial3D.new()
-	iron.albedo_color = Color("22262a")
-	iron.roughness = 0.6
-	iron.metallic = 0.4
+	_ensure_lamp_materials()
+	var parts := [[_pole_mesh, _wood_material, Vector3(0, 1.8, 0)], [_arm_mesh, _wood_material, Vector3(0, 3.45, -0.4)], [_cap_mesh, _iron_material, Vector3(0, 3.3, -0.8)], [_glass_mesh, _glass_material, Vector3(0, 3.06, -0.8)]]
+	# Células de LAMP_CELL m em vez de 4 MultiMeshes da região inteira: cada lote tem AABB do tamanho da
+	# célula, então o frustum descarta os postes atrás da câmera e visibility_range some com os longe
+	# (pendência de 02/10; auditoria de 19/10, §4). Mesmo esquema de células do TerrainDressing3D.
+	var cells := {}
+	for i in _lamp_points.size():
+		var key := Vector2i(floori(_lamp_points[i].x / LAMP_CELL), floori(_lamp_points[i].z / LAMP_CELL))
+		if not cells.has(key): cells[key] = []
+		cells[key].append(i)
+	for key: Vector2i in cells:
+		var indices: Array = cells[key]
+		var cell := Node3D.new()
+		cell.name = "MountainLampCell_%d_%d" % [key.x, key.y]
+		for part_index in parts.size():
+			var part: Array = parts[part_index]
+			var multimesh := MultiMesh.new()
+			multimesh.transform_format = MultiMesh.TRANSFORM_3D
+			multimesh.mesh = part[0]
+			multimesh.instance_count = indices.size()
+			for k in indices.size():
+				multimesh.set_instance_transform(k, _lamp_transforms[int(indices[k])].translated_local(part[2]))
+			var instance := MultiMeshInstance3D.new()
+			instance.name = "MountainLamp_" + str(part_index)
+			instance.multimesh = multimesh
+			instance.material_override = part[1]
+			# Sem fade: o fade passa o material para o caminho transparente (variante de shader nova no jogo).
+			instance.visibility_range_end = LAMP_VISIBLE_RANGE
+			instance.visibility_range_end_margin = 16.0
+			if part[1] == _glass_material:
+				instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			cell.add_child(instance)
+		add_child(cell)
+
+## Malhas e materiais dos postes uma vez por execução: _build roda de novo a cada remontagem de Mountain e
+## recriava tudo (e o finish.apply de novo) sem necessidade.
+static func _ensure_lamp_materials() -> void:
+	if _glass_material != null: return
+	_wood_material = StandardMaterial3D.new()
+	_wood_material.albedo_color = Color("4a3526")
+	_wood_material.roughness = 0.9
+	_iron_material = StandardMaterial3D.new()
+	_iron_material.albedo_color = Color("22262a")
+	_iron_material.roughness = 0.6
+	_iron_material.metallic = 0.4
 	var finish := preload("res://assets/regions/source/world/mountain_pass/MountainSurfaceFinish.gd")
-	finish.apply(wood, "wood")
-	finish.apply(iron, "iron")
-	_glass_material = StandardMaterial3D.new()
-	_glass_material.albedo_color = Color("f3d7a1")
-	_glass_material.emission_enabled = true
-	_glass_material.emission = Color("ffc47a")
-	_glass_material.emission_energy_multiplier = 0.0
-	var pole := BoxMesh.new()
-	pole.size = Vector3(0.2, 3.6, 0.2)
-	var arm := BoxMesh.new()
-	arm.size = Vector3(0.12, 0.12, 0.9)
-	var cap := BoxMesh.new()
-	cap.size = Vector3(0.42, 0.1, 0.42)
-	var glass := BoxMesh.new()
-	glass.size = Vector3(0.3, 0.38, 0.3)
-	var parts := [[pole, wood, Vector3(0, 1.8, 0)], [arm, wood, Vector3(0, 3.45, -0.4)], [cap, iron, Vector3(0, 3.3, -0.8)], [glass, _glass_material, Vector3(0, 3.06, -0.8)]]
-	for part in parts:
-		var multimesh := MultiMesh.new()
-		multimesh.transform_format = MultiMesh.TRANSFORM_3D
-		multimesh.mesh = part[0]
-		multimesh.instance_count = _lamp_points.size()
-		for i in _lamp_points.size():
-			multimesh.set_instance_transform(i, _lamp_transforms[i].translated_local(part[2]))
-		var instance := MultiMeshInstance3D.new()
-		instance.name = "MountainLamp_" + str(parts.find(part))
-		instance.multimesh = multimesh
-		instance.material_override = part[1]
-		add_child(instance)
-		if part[1] == _glass_material:
-			instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-			_lamp_glass = instance
+	finish.apply(_wood_material, "wood")
+	finish.apply(_iron_material, "iron")
+	_pole_mesh = BoxMesh.new()
+	_pole_mesh.size = Vector3(0.2, 3.6, 0.2)
+	_arm_mesh = BoxMesh.new()
+	_arm_mesh.size = Vector3(0.12, 0.12, 0.9)
+	_cap_mesh = BoxMesh.new()
+	_cap_mesh.size = Vector3(0.42, 0.1, 0.42)
+	_glass_mesh = BoxMesh.new()
+	_glass_mesh.size = Vector3(0.3, 0.38, 0.3)
+	# Por último: é a guarda do "já montado" acima.
+	var glass := StandardMaterial3D.new()
+	glass.albedo_color = Color("f3d7a1")
+	glass.emission_enabled = true
+	glass.emission = Color("ffc47a")
+	glass.emission_energy_multiplier = 0.0
+	_glass_material = glass
 
 ## O braço do poste aponta para a estrada (-Z local).
 func _lamp_transform(index: int) -> Transform3D:

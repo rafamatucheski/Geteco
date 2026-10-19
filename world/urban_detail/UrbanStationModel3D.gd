@@ -1,5 +1,6 @@
 extends Node3D
 class_name UrbanStationModel3D
+const COLLISION_FACES := preload("res://world/chunk_bake/CollisionFaces.gd")
 
 ## Native 3D Urban Station architecture (BRT / Metro tube stop & headhouse).
 ## Authored in calibrated metric geometry (ground projection PPM = 18.0).
@@ -52,7 +53,9 @@ func build(angle: float = 0.0, is_terminal: bool = false) -> void:
 		surface.generate_normals()
 		var mesh := MeshInstance3D.new()
 		mesh.name = "Station_" + key.replace(":", "_")
-		var committed_mesh := surface.commit()
+		# Malha e colisão das mesmas arrays da CPU: create_trimesh_shape lia a malha de volta da GPU.
+		var built: Array = COLLISION_FACES.commit_with_shape(surface)
+		var committed_mesh: ArrayMesh = built[0]
 		mesh.mesh = committed_mesh
 		mesh.material_override = materials[surface_materials[key]]
 		
@@ -60,7 +63,7 @@ func build(angle: float = 0.0, is_terminal: bool = false) -> void:
 		if not solid_id.is_empty():
 			mesh.set_meta("interior_solid_id", StringName(solid_id))
 			# Generate native physical collision for structural solid elements
-			_create_solid_collision(committed_mesh, solid_id)
+			_create_solid_collision(built[1], solid_id)
 		
 		if surface_materials[key] == "glass":
 			mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -244,8 +247,7 @@ func _headhouse() -> void:
 		_box(Rect2(x, -46, 2.2, 2.2), 0.12, 2.15, "steel")
 	active_solid = ""
 
-func _create_solid_collision(p_mesh: Mesh, solid_name: String) -> void:
-	var shape := p_mesh.create_trimesh_shape()
+func _create_solid_collision(shape: Shape3D, solid_name: String) -> void:
 	if shape != null:
 		var col := CollisionShape3D.new()
 		col.name = "Solid_" + solid_name

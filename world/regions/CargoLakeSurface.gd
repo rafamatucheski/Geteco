@@ -1,4 +1,5 @@
 extends RefCounted
+const COLLISION_FACES := preload("res://world/chunk_bake/CollisionFaces.gd")
 
 ## Secret-lake surfaces only. NativeLake retains its original wet/dry domains.
 ## Geometry and static noise belong to the streamed lake; no frame loop or lights.
@@ -31,7 +32,7 @@ func build(owner_lake: Node3D, data: Dictionary) -> void:
 		var bounds := Rect2(_shader_origin(), Vector2.ONE * 64.0)
 		_trail_mask = ImageTexture.create_from_image(terrain._trail_blend.image_for(bounds))
 	else:
-		var empty_mask := Image.create(1, 1, false, Image.FORMAT_RGBA8)
+		var empty_mask := Image.create_empty(1, 1, false, Image.FORMAT_RGBA8)
 		empty_mask.fill(Color.BLACK)
 		_trail_mask = ImageTexture.create_from_image(empty_mask)
 	camp = lake._points(data.camp_ground, Vector2(180, 180))
@@ -226,7 +227,9 @@ func _material(kind: int) -> ShaderMaterial:
 func _finish_mesh(id: String, surface: SurfaceTool, kind: int, solid: bool) -> MeshInstance3D:
 	surface.generate_normals()
 	surface.index()
-	var mesh := surface.commit()
+	# Malha e colisão das mesmas arrays da CPU: create_trimesh_shape lia a malha de volta da GPU (auditoria 19/10).
+	var built: Array = COLLISION_FACES.commit_with_shape(surface)
+	var mesh: ArrayMesh = built[0]
 	var part := MeshInstance3D.new()
 	part.name = id
 	part.mesh = mesh
@@ -241,7 +244,7 @@ func _finish_mesh(id: String, surface: SurfaceTool, kind: int, solid: bool) -> M
 		body.collision_mask = 0
 		body.set_meta("cargo_lake_surface", id)
 		var collision := CollisionShape3D.new()
-		collision.shape = mesh.create_trimesh_shape()
+		collision.shape = built[1]
 		body.add_child(collision)
 		part.add_child(body)
 	return part

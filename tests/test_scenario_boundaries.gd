@@ -78,7 +78,15 @@ func run() -> void:
 	for body in get_nodes_in_group(BOUNDARY.GROUP):
 		var visible_mesh: MeshInstance3D = body.get_parent()
 		var shape: ConcavePolygonShape3D = body.get_child(0).shape
-		check(shape.get_faces() == visible_mesh.mesh.get_faces(), "collision matches visible ridge")
+		# A colisão sai das arrays exatas da CPU; a leitura da GPU vem quantizada (~0,05 mm).
+		var collision_faces := shape.get_faces()
+		var visible_faces := visible_mesh.mesh.get_faces()
+		var matches := collision_faces.size() == visible_faces.size()
+		for k in collision_faces.size() if matches else 0:
+			if collision_faces[k].distance_to(visible_faces[k]) > .001:
+				matches = false
+				break
+		check(matches, "collision matches visible ridge")
 	if "--capture" in OS.get_cmdline_user_args():
 		var camera := Camera3D.new()
 		root.add_child(camera)

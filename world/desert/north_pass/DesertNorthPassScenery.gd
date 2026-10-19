@@ -1,4 +1,5 @@
 extends RefCounted
+const COLLISION_FACES := preload("res://world/chunk_bake/CollisionFaces.gd")
 const L:=preload("res://world/desert/north_pass/DesertNorthPassLayout.gd")
 const G:=preload("res://world/desert/DesertGeometry.gd")
 const ROCK:=preload("res://world/desert/DesertSurfaceRocks.gd")
@@ -65,7 +66,9 @@ static func _cliff(parent: Node3D, label: String, area: Rect2, side: int) -> voi
 		for j in range(1,a.size()-1):
 			for point in [a[0],a[j+1],a[j],b[0],b[j],b[j+1]]: surface.add_vertex(point)
 	surface.generate_normals()
-	var mesh:=surface.commit()
+	# Malha e colisão das mesmas arrays da CPU: create_trimesh_shape lia a malha de volta da GPU (auditoria 19/10).
+	var built: Array=COLLISION_FACES.commit_with_shape(surface)
+	var mesh: ArrayMesh=built[0]
 	var node:=MeshInstance3D.new()
 	node.name=label
 	node.mesh=mesh
@@ -75,7 +78,7 @@ static func _cliff(parent: Node3D, label: String, area: Rect2, side: int) -> voi
 	body.collision_layer=1
 	body.collision_mask=0
 	var collider:=CollisionShape3D.new()
-	collider.shape=mesh.create_trimesh_shape()
+	collider.shape=built[1]
 	body.add_child(collider)
 	node.add_child(body)
 

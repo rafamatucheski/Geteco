@@ -2,6 +2,7 @@ extends RefCounted
 ## Continuous visible escarpments owned by surface chunks, never teleport triggers.
 const DESERT := preload("res://world/desert/DesertLayout.gd")
 const CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
+const COLLISION_FACES := preload("res://world/chunk_bake/CollisionFaces.gd")
 const GROUP := "scenario_boundary"
 const WIDTH := 10.0
 const INSET := 4.0
@@ -69,7 +70,9 @@ static func _strip(parent: Node3D, rect: Rect2, a: Vector2, b: Vector2, height: 
 				surface.set_color(_color(vertex, snow))
 				surface.add_vertex(vertex)
 	surface.generate_normals()
-	var mesh := surface.commit()
+	# Malha e colisão das mesmas arrays da CPU: create_trimesh_shape lia a malha de volta da GPU no streaming.
+	var built: Array = COLLISION_FACES.commit_with_shape(surface, true)
+	var mesh: ArrayMesh = built[0]
 	var ridge := MeshInstance3D.new()
 	ridge.name = "ScenarioBoundaryRidge"
 	ridge.mesh = mesh
@@ -80,9 +83,7 @@ static func _strip(parent: Node3D, rect: Rect2, a: Vector2, b: Vector2, height: 
 	body.collision_mask = 0
 	body.add_to_group(GROUP)
 	var collider := CollisionShape3D.new()
-	var shape := mesh.create_trimesh_shape()
-	shape.backface_collision = true
-	collider.shape = shape
+	collider.shape = built[1]
 	body.add_child(collider)
 	ridge.add_child(body)
 

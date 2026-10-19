@@ -1,5 +1,6 @@
 extends Node3D
 ## Bounded, spatially culled grass. Same blade geometry/material as Harbor.
+const COLLISION_FACES := preload("res://world/chunk_bake/CollisionFaces.gd")
 const GRASS := preload("res://world/urban_detail/HarborGrassTufts.gd")
 const AREA := Rect2(-247,-147,160,125)
 # RentalDeck footprint: its opaque top already owns the surface at y=.13.
@@ -51,10 +52,14 @@ func _yard() -> void:
 	# invisível de verdade para a picape (a caixa do carro assenta a ~0,3 mm do chão e
 	# o degrau a travava de lado; medido dirigindo a 202 m do Digo em 12/10/2026).
 	var body := StaticBody3D.new(); body.name = "ConnectedYardFloor"
-	var shape := CollisionShape3D.new(); shape.shape = _yard_mesh(columns,.0).create_trimesh_shape()
+	var shape := CollisionShape3D.new(); shape.shape = COLLISION_FACES.commit_with_shape(_yard_surface(columns,.0))[1]
 	body.add_child(shape); add_child(body)
 
 func _yard_mesh(columns: Array[float], lift: float) -> ArrayMesh:
+	return _yard_surface(columns,lift).commit()
+
+## O colisor sai das arrays da CPU (create_trimesh_shape lia a malha de volta da GPU).
+func _yard_surface(columns: Array[float], lift: float) -> SurfaceTool:
 	var surface := SurfaceTool.new(); surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for z in range(-43,24):
 		for column in columns.size()-1:
@@ -66,7 +71,7 @@ func _yard_mesh(columns: Array[float], lift: float) -> ArrayMesh:
 				var p: Vector2 = Vector2(x,z)+Vector2(offset.x*width,offset.y)
 				surface.add_vertex(Vector3(p.x,yard_height(p)-.002+lift,p.y))
 	surface.generate_normals()
-	return surface.commit()
+	return surface
 
 var _rng := RandomNumberGenerator.new()
 var _cells: Array[Vector2i] = []

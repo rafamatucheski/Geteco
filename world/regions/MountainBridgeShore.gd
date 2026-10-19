@@ -7,6 +7,7 @@ const BOTTOM := -5.5
 const CORNER_BLEND := 16.0
 const BRIDGE_CENTER_Z := -285.0
 const RINGS := [0.0,0.16,0.48,1.0]
+const COLLISION_FACES := preload("res://world/chunk_bake/CollisionFaces.gd")
 static var _rock: StandardMaterial3D
 
 static func frontiers(key: Vector2i, void_cells: Array, owns: Callable) -> Array[Dictionary]:
@@ -141,9 +142,11 @@ static func build_chunk(parent: Node3D, rect: Rect2, terrain: RefCounted, edges:
 			var facing := Vector3(edge.tangent.x,0,edge.tangent.y)*(-1.0 if endpoint == 0.0 else 1.0)
 			for index in rim.size()-1:
 				_triangle(surface,[base,rim[index],rim[index+1]],[facing,facing,facing],[_color(1.0),_color(1.0),_color(1.0)],facing)
+	# Malha e colisão das mesmas arrays da CPU: create_trimesh_shape lia a malha de volta da GPU no streaming.
+	var built: Array = COLLISION_FACES.commit_with_shape(surface)
 	var result := MeshInstance3D.new()
 	result.name = "MountainBridgeShore"
-	result.mesh = surface.commit()
+	result.mesh = built[0]
 	result.material_override = _material()
 	result.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	parent.add_child(result)
@@ -153,7 +156,7 @@ static func build_chunk(parent: Node3D, rect: Rect2, terrain: RefCounted, edges:
 	body.collision_layer = 1
 	body.collision_mask = 0
 	var collision := CollisionShape3D.new()
-	collision.shape = result.mesh.create_trimesh_shape()
+	collision.shape = built[1]
 	body.add_child(collision)
 	result.add_child(body)
 	return result

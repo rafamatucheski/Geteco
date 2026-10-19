@@ -1,7 +1,8 @@
 """Confere as regras do docs/HOW-TO-DEVELOP.md que mais custaram quadros, sem rodar o Godot.
 
 Por que existe: as regras "luz nova passa pelo LightBudget" e "nunca surface_get_arrays no jogo"
-estavam só no documento; em 18/10/2026 cerca de 55 arquivos criavam luz direto e 86 lugares
+(e, desde 19/10, as leituras de malha por dentro do motor e a varredura de grupo por quadro) estavam só
+no documento; em 18/10/2026 cerca de 55 arquivos criavam luz direto e 86 lugares
 liam malha da GPU (revisão cruzada, F10). Quebrar tudo de uma vez não é viável, então é uma
 catraca: tools/frame_rules_baseline.json guarda quantas ocorrências cada arquivo tem hoje, e a
 checagem só falha quando um arquivo passa desse número (código novo). Diminuir é sempre bem-vindo;
@@ -35,7 +36,44 @@ RULES = {
         "pattern": re.compile(r"\bsurface_get_arrays\("),
         "why": "surface_get_arrays lê a malha da GPU e espera os quadros em voo; use MeshArrayCache (§3.2)",
     },
+    # Os mesmos surface_get_arrays por dentro do motor (auditoria de 19/10, §3 item 8): a catraca só olhava a
+    # chamada explícita. Colisão sai das arrays que o código montou (world/chunk_bake/CollisionFaces.gd);
+    # lote de caixas usa StaticBoxBatch (por isso BOX_BATCH.append_from não conta). get_faces() de uma forma
+    # (ConcavePolygonShape3D) não lê a GPU, mas o texto não distingue: fica na baseline do arquivo.
+    "mesh_readback_internal": {
+        "pattern": re.compile(r"\bcreate_trimesh_shape\(|\bcreate_convex_shape\(|\bget_faces\(|(?<!BOX_BATCH)\.append_from\("),
+        "why": "create_trimesh_shape/create_convex_shape/get_faces/append_from leem a malha da GPU por dentro; "
+               "monte com as arrays da CPU (CollisionFaces, MeshArrayCache) (§3.2)",
+    },
+    "group_scan_per_frame": {
+        "pattern": None,  # contado por função em count_text: precisa saber em que func a linha está
+        "why": "get_nodes_in_group/find_children dentro de _process/_physics_process varre a árvore todo quadro; "
+               "guarde a lista ou use sinal (§3)",
+    },
 }
+FUNC_LINE = re.compile(r"^(?:static\s+)?func\s+(\w+)")
+PER_FRAME_FUNCS = ("_process", "_physics_process")
+GROUP_SCAN = re.compile(r"\b(get_nodes_in_group|find_children)\(")
+
+
+def count_text(text):
+    """Ocorrências de cada regra num arquivo. A varredura de grupo só conta dentro de _process e
+    _physics_process (a func corrente muda em toda linha `func` sem recuo; lambda e func interna não)."""
+    result = {}
+    for name, rule in RULES.items():
+        if rule["pattern"] is not None:
+            result[name] = len(rule["pattern"].findall(text))
+    current = ""
+    scans = 0
+    for line in text.splitlines():
+        match = FUNC_LINE.match(line)
+        if match:
+            current = match.group(1)
+            continue
+        if current in PER_FRAME_FUNCS and not line.lstrip().startswith("#"):
+            scans += len(GROUP_SCAN.findall(line))
+    result["group_scan_per_frame"] = scans
+    return result
 
 
 def tracked_game_files():
@@ -54,8 +92,7 @@ def count_all():
         if not path.exists():
             continue
         text = path.read_text(encoding="utf-8", errors="replace")
-        for name, rule in RULES.items():
-            n = len(rule["pattern"].findall(text))
+        for name, n in count_text(text).items():
             if n:
                 counts[name][rel] = n
     return counts
@@ -72,8 +109,8 @@ def count_staged():
             continue
         shown = subprocess.run(["git", "show", ":" + rel], cwd=ROOT, capture_output=True)
         text = shown.stdout.decode("utf-8", errors="replace")
-        for name, rule in RULES.items():
-            counts[name][rel] = len(rule["pattern"].findall(text))
+        for name, n in count_text(text).items():
+            counts[name][rel] = n
     return counts
 
 

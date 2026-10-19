@@ -1,4 +1,5 @@
 extends Node3D
+const COLLISION_FACES := preload("res://world/chunk_bake/CollisionFaces.gd")
 const LAYOUT := preload("res://activities/skate/SkateParkLayout.gd")
 static var _concrete: StandardMaterial3D
 
@@ -19,7 +20,9 @@ func _ready() -> void:
 	surface.generate_normals()
 	var floor_mesh := MeshInstance3D.new()
 	floor_mesh.name = "BowlConcrete"
-	floor_mesh.mesh = surface.commit()
+	# Malha e colisão das mesmas arrays da CPU: create_trimesh_shape lia a malha de volta da GPU (auditoria 19/10).
+	var floor_built: Array = COLLISION_FACES.commit_with_shape(surface)
+	floor_mesh.mesh = floor_built[0]
 	var concrete := _concrete_material()
 	floor_mesh.material_override = concrete
 	add_child(floor_mesh)
@@ -27,7 +30,7 @@ func _ready() -> void:
 	body.collision_layer = 1
 	body.collision_mask = 0
 	var shape := CollisionShape3D.new()
-	shape.shape = floor_mesh.mesh.create_trimesh_shape()
+	shape.shape = floor_built[1]
 	body.add_child(shape)
 	add_child(body)
 	var rim := SurfaceTool.new()
@@ -56,7 +59,7 @@ func _ready() -> void:
 static func _concrete_material() -> StandardMaterial3D:
 	if _concrete != null: return _concrete
 	# Poured skate concrete: fine aggregate and wear, without the port slab grid.
-	var image := Image.create(128, 128, false, Image.FORMAT_RGB8)
+	var image := Image.create_empty(128, 128, false, Image.FORMAT_RGB8)
 	var noise := FastNoiseLite.new()
 	noise.seed = 8173
 	noise.frequency = .045
@@ -100,14 +103,15 @@ func _build_street_section(concrete: Material) -> void:
 	for index in [0, 1, 2, 1, 3, 2, 2, 3, 4, 3, 5, 4, 0, 2, 4, 1, 5, 3]:
 		bank.add_vertex(vertices[index])
 	bank.generate_normals()
-	var mesh := bank.commit()
+	var bank_built: Array = COLLISION_FACES.commit_with_shape(bank)
+	var mesh: ArrayMesh = bank_built[0]
 	var art := MeshInstance3D.new()
 	art.mesh = mesh
 	art.material_override = concrete
 	add_child(art)
 	var body := StaticBody3D.new()
 	var hull := CollisionShape3D.new()
-	hull.shape = mesh.create_trimesh_shape()
+	hull.shape = bank_built[1]
 	body.add_child(hull)
 	add_child(body)
 	# Grind ledge and flat rail, both occupy physical space. Tricks remain simple.

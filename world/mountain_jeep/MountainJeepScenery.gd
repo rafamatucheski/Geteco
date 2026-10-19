@@ -1,5 +1,6 @@
 extends RefCounted
 ## Chunk-owned geometry, no timers, lights or per-frame processing.
+const COLLISION_FACES := preload("res://world/chunk_bake/CollisionFaces.gd")
 const COURSE := preload("res://world/mountain_jeep/MountainJeepCourse.gd")
 static var _soil: ShaderMaterial
 static var _paint: Dictionary = {}
@@ -82,7 +83,9 @@ static func _build_crest(parent: Node3D, first: float, last: float) -> void:
 	surface.generate_normals()
 	var mesh := MeshInstance3D.new()
 	mesh.name="JeepTrailCrest"
-	mesh.mesh=surface.commit()
+	# Malha e colisão das mesmas arrays da CPU: create_trimesh_shape lia a malha de volta da GPU (auditoria 19/10).
+	var built: Array=COLLISION_FACES.commit_with_shape(surface)
+	mesh.mesh=built[0]
 	if _soil==null:
 		_soil=ShaderMaterial.new()
 		_soil.shader=preload("res://world/mountain_jeep/jeep_trail.gdshader")
@@ -95,6 +98,6 @@ static func _build_crest(parent: Node3D, first: float, last: float) -> void:
 	body.set_meta("vehicle_ramp_structure",true)
 	body.set_meta("mountain_jeep_crest",true)
 	var collision := CollisionShape3D.new()
-	collision.shape=mesh.mesh.create_trimesh_shape()
+	collision.shape=built[1]
 	body.add_child(collision)
 	parent.add_child(body)

@@ -1,6 +1,7 @@
 extends RefCounted
 ## The tunnel is cut through a small authored ridge. Its skin and collision are
 ## the same triangles, with buried irregular feet and genuinely open portals.
+const COLLISION_FACES := preload("res://world/chunk_bake/CollisionFaces.gd")
 static func build(parent: Node3D, a: Vector3, b: Vector3, material: StandardMaterial3D) -> void:
 	var along := (b-a).normalized()
 	var right := along.cross(Vector3.UP).normalized()
@@ -39,7 +40,9 @@ static func build(parent: Node3D, a: Vector3, b: Vector3, material: StandardMate
 			_face(surface,PackedVector3Array([outer,middle,inner,Vector3(inner.x,-.45,inner.z),Vector3(outer.x,-.45,outer.z)]),outward)
 		var roof_base := (a if end_index==0 else b).y+6.34
 		_face(surface,PackedVector3Array([ring[2],ring[3],ring[4],Vector3(ring[4].x,roof_base,ring[4].z),Vector3(ring[2].x,roof_base,ring[2].z)]),outward)
-	var mesh := surface.commit()
+	# Malha e colisão das mesmas arrays da CPU: create_trimesh_shape lia a malha de volta da GPU (auditoria 19/10).
+	var built: Array = COLLISION_FACES.commit_with_shape(surface)
+	var mesh: ArrayMesh = built[0]
 	var stone := material.duplicate() as StandardMaterial3D
 	stone.vertex_color_use_as_albedo = true
 	var visual := MeshInstance3D.new()
@@ -53,7 +56,7 @@ static func build(parent: Node3D, a: Vector3, b: Vector3, material: StandardMate
 	body.collision_mask = 0
 	body.add_to_group("railway_solid")
 	var collision := CollisionShape3D.new()
-	collision.shape = mesh.create_trimesh_shape()
+	collision.shape = built[1]
 	body.add_child(collision)
 	parent.add_child(body)
 

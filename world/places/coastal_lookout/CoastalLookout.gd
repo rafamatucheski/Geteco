@@ -1,6 +1,8 @@
 extends Node3D
 ## Authored public coastal overlook. Static batches, physical pedestrian access,
 ## no traffic edges, lights, frame callbacks or campaign shortcuts.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
+const COLLISION_FACES := preload("res://world/chunk_bake/CollisionFaces.gd")
 const ENTRANCE := Vector3(319.5, .055, -130.5)
 const BASE_PLAZA := Vector3(303, 10.2, -198)
 const BASE_CENTER := BASE_PLAZA
@@ -338,7 +340,8 @@ func _append_mesh(id: String, mesh: Mesh, mesh_transform: Transform3D, solid: bo
 	# Cylinder creates an index buffer referring only to primitive vertices;
 	# manually emitted ring/quad vertices then disappear from that same batch.
 	# Expand source indices here, preserving each primitive's normals and UVs.
-	var arrays := mesh.surface_get_arrays(0)
+	# Cópia na CPU (compartilhada, só leitura): surface_get_arrays lia a malha de volta da GPU.
+	var arrays := MESH_ARRAYS.arrays_of(mesh, 0)
 	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
 	var uvs: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV]
@@ -357,7 +360,7 @@ func _collision_box(point: Vector3, size: Vector3, box_basis: Basis) -> void:
 	var mesh := BoxMesh.new()
 	mesh.size = size
 	var box_transform := Transform3D(box_basis,point)
-	for p in mesh.get_faces(): _collision.append(box_transform*p)
+	for p in COLLISION_FACES.faces_of(mesh): _collision.append(box_transform*p)
 
 func _flush() -> void:
 	for id in _batches:
