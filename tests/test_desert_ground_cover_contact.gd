@@ -31,6 +31,10 @@ func run() -> void:
 		var debris: Array = street.get_children().slice(before)
 		for body in debris:
 			if body is RigidBody3D: check(body.linear_velocity.length() < 4.0, "%s falls near the car instead of flying" % item.kind)
+			# Sem o material da instância a moita virava uma pedra branca ao ser atropelada (19/10).
+			for mesh in body.find_children("*", "MeshInstance3D", true, false):
+				var material: Material = mesh.material_override
+				check(material is StandardMaterial3D and not (material as StandardMaterial3D).albedo_color.is_equal_approx(Color.WHITE), "%s debris keeps its colour (%s)" % [item.kind, material])
 		vehicle.free()
 	print("registrados em 48x48 m: ", items.size())
 	print("DESERT_GROUND_COVER_CONTACT checks=%d failures=%s" % [checks, failures])

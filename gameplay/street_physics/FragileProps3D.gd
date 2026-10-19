@@ -285,6 +285,7 @@ static func _tumble(item: Dictionary, flat: Vector3, speed: float, director: Nod
 	if mesh != null:
 		var visual := MeshInstance3D.new()
 		visual.mesh = mesh
+		visual.material_override = _instance_material(item)
 		visual.transform = Transform3D(base.basis, Vector3.ZERO)
 		piece.add_child(visual)
 		_add_box_shape(piece, visual.transform * mesh.get_aabb())
@@ -384,6 +385,26 @@ static func _debris_body(director: Node, origin: Vector3, mass: float) -> RigidB
 	_debris = alive
 	return body
 
+
+## A cópia física de uma instância de MultiMesh precisa do material e da cor dela. Sem isso a moita
+## e a pedra do chão do deserto (cor por instância, vertex_color_use_as_albedo) saíam com o material
+## branco padrão quando o carro passava (vídeo do playtest de 19/10). Mesmas opções do material de
+## origem, só a cor muda: mesmo shader, nada compila no jogo. Uma cópia por cor, guardada.
+static var _instance_materials := {}
+static func _instance_material(item: Dictionary) -> Material:
+	var visual: Variant = item.visual.get_ref() if item.has("visual") else null
+	if not is_instance_valid(visual): return null
+	var source: Material = visual.material_override
+	var multimesh: MultiMesh = item.multimesh
+	if not source is StandardMaterial3D or not multimesh.use_colors: return source
+	var color := multimesh.get_instance_color(int(item.index))
+	var key := "%d:%s" % [source.get_instance_id(), color.to_html()]
+	if not _instance_materials.has(key):
+		if _instance_materials.size() > 64: _instance_materials.clear()
+		var tinted := (source as StandardMaterial3D).duplicate() as StandardMaterial3D
+		tinted.albedo_color = source.albedo_color * color
+		_instance_materials[key] = tinted
+	return _instance_materials[key]
 
 static func _flat_material(color: Color) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
