@@ -15,6 +15,9 @@ const POLICE_DOOR_Z := 250.0 / 32.0 + 0.35
 ## Porta de vidro 0,72 m recuada das lojas 3D da North Frontage (UrbanLandmarkFrontage3D
 ## ._build_glazed_door): Union, Fuel e o banco sem fachada pintada.
 const BANK_DOOR_Z := 180.0 / 32.0 - 0.72
+## Vestíbulo atrás dessa porta de vidro: recuo de 1,65 m da fachada (_build_recessed_shell)
+## menos os 0,72 m da folha. O corpo (cápsula de 0,30 m) para a ~0,63 m do plano dela.
+const GLAZED_VESTIBULE_DEPTH := 1.65 - 0.72
 ## Pegadas V1 (OriginalWorldData, 16 px/m) do banco, da delegacia e do quartel: a entrada
 ## pintada sai do vão nelas (a do quartel é a mesma de PlaceCatalog.FIRE_STATION_DOOR_OFFSET).
 const BANK_FOOTPRINT := Vector2(230.0, 180.0) / 16.0
@@ -151,7 +154,10 @@ func update(delta: float) -> void:
 	if session.activities != null and not session.activities.can_enter_home(id): return
 	if id == "cobra_leader_house" and not _leader_accessible(): return
 	# Pushing opens the door; only an intentional inward crossing transfers.
-	if is_instance_valid(_facade) and _facade_id == id and _door_amount < .85: return
+	# Union/posto: quem já está atrás da folha (cápsula + meia espessura dela) atravessou; a
+	# folha fecha quando ele passa de 0,5 m e sem isso ficava preso no vestíbulo.
+	var behind_leaf := id in ["harbor_clothing", "harbor_fuel"] and depth > DOOR_CLEARANCE
+	if is_instance_valid(_facade) and _facade_id == id and _door_amount < .85 and not behind_leaf: return
 	if absf(side) > width or _movement_intent(player).dot(inward) <= .3: return
 	var outer := -.1 if id == "harbor_police" else -1.15 if id in ["harbor_ammunation", "mountain_gunshop"] else -.8
 	var inner := .6 if id == "harbor_police" else -.15 if id in ["harbor_ammunation", "mountain_gunshop"] else .3
@@ -162,6 +168,13 @@ func update(delta: float) -> void:
 		# abertas (sonda de 18/10) e no máximo a 1 m delas, ainda no vestíbulo de 1,5 m.
 		outer = -.12
 		inner = .98
+	if id in ["harbor_clothing", "harbor_fuel"]:
+		# Vale até o fundo do vestíbulo. A folha só chega a 0,85 ~0,25 s depois de começar a
+		# empurrar (a −0,6 m): andando (3,5 m/s) o jogador já está a ~0,27 m, a menos de um
+		# passo de física dos 0,3 m de antes, e correndo (6,5 m/s) chega ao fundo antes dos
+		# 0,85, fora da janela (19/10, Union parou a 0,63 m sem entrar).
+		var stretch: Vector3 = definition.get("editor_scale", Vector3.ONE)
+		inner = GLAZED_VESTIBULE_DEPTH * stretch.z
 	if id == "harbor_fire_station" and _painted(id):
 		# Baia pintada aberta: vale do plano dela (a entrada fica 0,06 m à frente) até o fundo
 		# do vestíbulo. Até 0,3 m, quem corria passava da janela e quem parava lá dentro só

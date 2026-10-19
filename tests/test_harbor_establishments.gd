@@ -6,13 +6,6 @@ const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const SERVICES := preload("res://runtime/Services.gd")
 const CUSTOM := preload("res://gameplay/WeaponCustomization.gd")
 const GRID := preload("res://systems/inventory/GridInventory.gd")
-## Direcional a meio curso: ~1,6 m/s, a mesma velocidade de Actor.speed com que
-## test_door_audit anda até as portas. Andando a 3,5 m/s, a folha da Union/posto só chega a
-## 0,85 aberta ~0,27 m depois do plano e a travessia fecha em 0,3 m (WeaponShopEntrance,
-## checada em _process): sobra menos de um passo de física, e num quadro de 40 ms o jogador
-## passa direto para o vestíbulo sem entrar (19/10, Union parou 0,63 m para dentro).
-## Pendência do jogo, não deste teste; aqui a entrada tem que ser determinística.
-const DOOR_WALK := .46
 
 var world: Node3D
 var session: Node
@@ -101,7 +94,9 @@ func enter_place(id: String) -> bool:
 		var inward: Vector3 = walk._inward(id)
 		await place_player(door - inward * (1.12 if id == "harbor_ammunation" else 1.8))
 		check(session.nearest().get("id", "") != "enter", id + " has no E entry")
-		if not await walk_until(inward, func(): return walk._entering or state.place_id == id, 360, DOOR_WALK):
+		# Direcional no fim do curso (3,5 m/s), como o jogador: a Union e o posto aceitam a
+		# travessia até o fundo do vestíbulo (antes só até 0,3 m e o teste andava a 1,6 m/s).
+		if not await walk_until(inward, func(): return walk._entering or state.place_id == id, 360):
 			var local: Vector3 = world.player.global_position - door
 			return check(false, "entrada caminhando: " + id, "parou %.2f m para dentro e %.2f m de lado da porta %s" % [local.dot(inward), local.dot(Vector3(-inward.z, 0, inward.x)), door])
 		if not await wait_until(func(): return state.place_id == id and is_instance_valid(session.room), 180, "entrada caminhando: " + id): return false
