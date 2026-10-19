@@ -494,15 +494,34 @@ func _check_alignment(e: Dictionary, r: Dictionary, door: Vector3) -> void:
 		r.notes.append("fachada pintada sem folha de entrada (walk_in) na porta real")
 		return
 	var best := INF
-	for leaf in leaves:
-		var quad: MeshInstance3D = leaf.hinge.get_child(0)
-		var center: Vector3 = leaf.global_transform * Vector3(quad.mesh.size.x * .5, 0, 0)
-		best = minf(best, _flat(center - door))
+	for center in _walk_in_openings(art): best = minf(best, _flat(center - door))
 	r.alignment_m = snappedf(best, .01)
 	for leaf in leaves:
 		if leaf._area != null: r["leaf_zone"] = {"monitoring":leaf._area.monitoring, "processing":leaf.can_process(), "in_tree":leaf._area.is_inside_tree(), "mask":leaf._area.collision_mask, "zone_origin":_v(leaf._area.get_child(0).global_position)}
 	r.aligned = best <= .35
-	if not r.aligned: r.notes.append("folha pintada a %.2f m da entrada real" % best)
+	if not r.aligned: r.notes.append("vão pintado a %.2f m da entrada real" % best)
+
+## Centro visível de cada vão de entrada: o meio das folhas fechadas (porta dupla: as
+## duas), no quad pintado com a escala que ele tem no mundo. Antes media só a folha
+## esquerda, a meia largura do quad sem escala a partir da dobradiça: porta dupla dava
+## 1/4 do vão de erro mesmo centrada, e no prédio esticado pelo editor (a folha é pivô
+## rígido, o quad estica) a delegacia 18x10 m dava 1,11 m com o vão a 0,01 m da entrada
+## em x e o jogador cruzando no meio dele (sonda de 18/10).
+func _walk_in_openings(node: Node) -> Array[Vector3]:
+	var result: Array[Vector3] = []
+	if node == null: return result
+	for anchor in node.find_children("Doorway_front*", "Node3D", true, false):
+		if not anchor.has_meta("walk_in"): continue
+		var sum := Vector3.ZERO
+		var count := 0
+		for leaf in anchor.get_children():
+			if not leaf is PaintedFacadeKit.PaintedDoor: continue
+			var quad: Node3D = leaf.hinge.get_child(0)
+			# Posição fechada: sem o giro da dobradiça, a folha pode estar abrindo.
+			sum += leaf.global_transform * (leaf.hinge.position + quad.position)
+			count += 1
+		if count > 0: result.append(sum / float(count))
+	return result
 
 ## Portas pintadas no mundo: só a entrada de verdade reage ao jogador.
 func _audit_painted_doors(region: String) -> void:
