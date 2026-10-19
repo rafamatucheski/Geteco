@@ -47,6 +47,7 @@ WORLD=(
 	"headless|tests/test_save_indicator.gd|--no-save --skip-arrival|Could not create directory: .*/missing-parent-"
 	"headless|tests/test_recovery_penalty_session.gd|--no-save --skip-arrival"
 	"rendered|tests/test_desert_wilds.gd|--no-save --no-traffic"
+	"rendered|tests/test_desert_roadside_session.gd|--no-save --no-traffic"
 	"rendered|tests/test_dialogue_flow.gd|--no-save --skip-arrival"
 	"rendered|tests/test_video_vehicle_lifecycle.gd|--no-save --skip-arrival"
 )

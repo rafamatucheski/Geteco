@@ -15,6 +15,10 @@ const MISSIONS := preload("res://data/campaign/HarborMissions.gd")
 const TOWS := preload("res://data/catalogs/TowJobs.gd")
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const ARCS := preload("res://runtime/JournalArcs.gd")
+const ROADSIDE := preload("res://runtime/desert/roadside/RoadsideLayout.gd")
+const ROADSIDE_STATE := preload("res://runtime/desert/roadside/RoadsideState.gd")
+const ROADSIDE_SECRETS := preload("res://runtime/desert/roadside/RoadsideSecrets.gd")
+const DESERT_LAYOUT := preload("res://world/desert/DesertLayout.gd")
 
 class IsolatedLaunch extends "res://runtime/SessionLaunch.gd":
 	var folder := ""
@@ -72,6 +76,7 @@ func run() -> void:
 	recovery_penalty()
 	economy_balance()
 	journal_arcs()
+	desert_roadside()
 	await crime_victims()
 	finish()
 
@@ -256,6 +261,76 @@ func journal_arcs() -> void:
 		check(not ARCS.lines(done_world, finished.campaign.snapshot()).any(func(line): return line.begins_with(desert_prefix)), "ato 2 entregue sai do diário")
 
 # --- Tabela de vítimas: arma e atropelamento contam igual ------------------------------------
+
+# --- Beira de estrada do deserto (fase 1, 19/10) ----------------------------------------------
+
+func road_distance(point: Vector2) -> Dictionary:
+	var best := {"distance": INF, "toward": Vector2.ZERO, "id": ""}
+	for road in DESERT_LAYOUT.roads():
+		var points: PackedVector3Array = road.points
+		for i in range(1, points.size()):
+			var closest := Geometry2D.get_closest_point_to_segment(point, Vector2(points[i - 1].x, points[i - 1].z), Vector2(points[i].x, points[i].z))
+			if closest.distance_to(point) < best.distance: best = {"distance": closest.distance_to(point), "toward": (closest - point).normalized(), "id": str(road.id)}
+	return best
+
+func desert_roadside() -> void:
+	ROADSIDE._enabled = 1
+	for definition in ROADSIDE.SITES:
+		var center: Vector2 = definition.center
+		var road := road_distance(center)
+		# Fora da pista (cabe o lugar inteiro) e perto o bastante para ser visto de quem passa.
+		check(road.distance >= 14.0 and road.distance <= 32.0, "%s a %.1f m da %s" % [definition.id, road.distance, road.id])
+		var front := Basis(Vector3.UP, float(definition.yaw)) * Vector3.BACK
+		check(Vector2(front.x, front.z).dot(road.toward) > .9, "%s de frente para a estrada" % definition.id)
+		check(DESERT_LAYOUT.BOUNDS.grow(-40).has_point(center), "%s dentro do deserto" % definition.id)
+		check(DESERT_LAYOUT.drag_reservation_clear(center, 8.0), "%s fora da reserva da arrancada" % definition.id)
+		for site in WILDS.SITES:
+			check((site.center as Vector2).distance_to(center) > ROADSIDE.SITE_RADIUS + WILDS.SITE_RADIUS + 20.0, "%s longe de %s" % [definition.id, site.id])
+		for building in DESERT_LAYOUT.buildings():
+			check(Vector2(building.position.x, building.position.z).distance_to(center) > 60.0, "%s longe de %s" % [definition.id, building.id])
+		check(ROADSIDE.reserved(center), "%s reservado contra enfeite" % definition.id)
+		# A linha de luz (DesertUtilityLines) não consulta reservas: o lugar desvia dos postes.
+		var nearest_pole := INF
+		for record in preload("res://world/desert/DesertUtilityLines.gd").records():
+			if record.kind == "utility_pole": nearest_pole = minf(nearest_pole, Vector2(record.position.x, record.position.z).distance_to(center))
+		check(nearest_pole > 16.0, "%s longe dos postes (%.1f m)" % [definition.id, nearest_pole])
+	for stretch in ROADSIDE.EVENT_STRETCHES:
+		check(road_distance(stretch.a).distance < 1.0 and road_distance(stretch.b).distance < 1.0, "trecho %s em cima da estrada" % stretch.id)
+	# Ponto de evento: à frente de quem dirige no trecho; nada fora dele nem colado na ponta.
+	var south := ROADSIDE.event_point(Vector2(342.5, -905), Vector2(0, -1), 120.0)
+	check(not south.is_empty() and south.stretch == "route66_north" and absf(south.point.y - -1025.0) < .5 and south.direction.dot(Vector2(0, -1)) > .99, "evento nasce 120 m à frente na Route 66 (%s)" % [south])
+	check(ROADSIDE.event_point(Vector2(342.5, -905), Vector2(0, 1), 120.0).is_empty(), "dirigindo para fora do trecho: sem evento")
+	check(ROADSIDE.event_point(Vector2(380, -950), Vector2(0, -1), 60.0).is_empty(), "fora da pista: sem evento")
+	check(ROADSIDE.event_point(Vector2(342.5, -950), Vector2.ZERO).is_empty(), "parado: sem evento")
+	for route in ROADSIDE.COURIER_ROUTES:
+		check(int(BALANCE.ROADSIDE_COURIER.get(str(route.id), 0)) > 0, "entrega %s tem pagamento na tabela" % route.id)
+	check(BALANCE.ROADSIDE_TRUCK_CASHBOX.y <= 300 and BALANCE.ROADSIDE_ROADBLOCK_LOOT.y <= 300, "dinheiro solto dos eventos cabe no teto de 300")
+	# Estado salvo: opcional, inválido volta ao padrão, recibo sempre novo.
+	var world := {}
+	check(ROADSIDE_STATE.data(world) == ROADSIDE_STATE.defaults(), "save antigo sem beira de estrada")
+	var first := ROADSIDE_STATE.next_receipt(world, "repair")
+	check(first == "desert_roadside:repair:1" and ROADSIDE_STATE.next_receipt(world, "courier") == "desert_roadside:courier:2", "recibos em sequência (%s)" % first)
+	world[ROADSIDE_STATE.KEY] = {"version": 1, "revealed": "x", "serial": -1}
+	check(ROADSIDE_STATE.data(world) == ROADSIDE_STATE.defaults(), "bloco inválido volta ao padrão")
+	world = {}
+	var wallet := ECONOMY.new()
+	var all := ROADSIDE_SECRETS.missing(world, wallet)
+	check(all.size() == 10, "torre conhece 10 achados (%d)" % all.size())
+	var tower: Dictionary = ROADSIDE.site("radio_tower")
+	var origin := Vector3(tower.center.x, 0, tower.center.y)
+	var seen := ROADSIDE_SECRETS.nearest(world, wallet, origin, 3)
+	check(seen.size() == 3 and ROADSIDE_STATE.reveal(world, seen.map(func(entry): return entry.id)).size() == 3, "torre revela os três mais perto")
+	check(ROADSIDE_STATE.reveal(world, [seen[0].id]).is_empty(), "revelar de novo não duplica")
+	var next := ROADSIDE_SECRETS.nearest(world, wallet, origin, 3, ROADSIDE_STATE.data(world).revealed)
+	check(next.size() == 3 and next.all(func(entry): return not seen.any(func(old): return old.id == entry.id)), "segunda subida aponta outros três")
+	check(ROADSIDE_SECRETS.map_markers(world, wallet).size() == ROADSIDE.SITES.size() + 3, "mapa: lugares mais os três avistados")
+	ROADSIDE_STATE.reveal(world, ["cave:cave_sun"])
+	var with_cave := ROADSIDE_SECRETS.map_markers(world, wallet).size()
+	WILDS.claim_cave(wallet, site("cave_sun"))
+	check(ROADSIDE_SECRETS.map_markers(world, wallet).size() == with_cave - 1 and not ROADSIDE_SECRETS.missing(world, wallet).any(func(entry): return entry.id == "cave:cave_sun"), "achado pego sai do mapa e da torre")
+	ROADSIDE._enabled = 0
+	check(not ROADSIDE.reserved(ROADSIDE.SITES[0].center) and ROADSIDE_SECRETS.map_markers(world, wallet).is_empty(), "GETECO_DESERT_ROADSIDE=0 tira reserva e marcadores")
+	ROADSIDE._enabled = 1
 
 func classify_role(role: String) -> String:
 	var person := FakePerson.new(role)

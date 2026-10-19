@@ -1755,6 +1755,7 @@ func interact() -> bool:
 	if action.get("id", "") == "building_social": return building_social.open(action.target)
 	if action.get("id","") == "building_stairs": return await action.provider.use_stairs()
 	if action.get("id","") == "building_lockpick": return await action.provider.perform(action)
+	if action.get("id","") == "desert_roadside" and is_instance_valid(action.get("provider")): return action.provider.perform(action)
 	if action.get("id","") == "service_roof_stairs": return await service_roofs.use_stairs()
 	if mining != null and action.get("id","") == "mining": return mining.perform(action)
 	if desert != null and action.get("id","") in ["desert","desert_story","desert_drag"]: return desert.perform(action)
@@ -2062,6 +2063,9 @@ func _process(delta: float) -> void:
 		if not village_objective.is_empty(): _set_objective(village_objective)
 	if jessica != null and state.campaign.active_id == "jessica_bank": _set_objective(jessica.objective())
 	if desert != null and state.region_id == "desert": _set_objective(desert.objective())
+	if desert != null and state.region_id == "desert" and is_instance_valid(desert.frontier) and is_instance_valid(desert.frontier.roadside):
+		var roadside_objective: String = desert.frontier.roadside.objective()
+		if not roadside_objective.is_empty(): _set_objective(roadside_objective)
 	if mountain_activities != null:
 		var pack_objective: String = mountain_activities.objective()
 		if not pack_objective.is_empty(): _set_objective(pack_objective)

@@ -5,11 +5,14 @@ const SITE := preload("res://world/desert/DesertAbandonedSite.gd")
 const SECRET := preload("res://runtime/desert/DesertSecretState.gd")
 const BANDITS := preload("res://runtime/desert/DesertBanditEncounter.gd")
 const WILDS := preload("res://runtime/desert/wilds/DesertWilds.gd")
+const ROADSIDE := preload("res://runtime/desert/roadside/DesertRoadside.gd")
 const INTERACTION_DISTANCE := 1.25
 var session
 var bandits: Node3D
 ## Casinhas, foras-da-lei e cavernas espalhados no meio do nada (DesertWilds).
 var wilds: Node3D
+## Posto, torre, ferro-velho, lanche da reta e os eventos de estrada (DesertRoadside).
+var roadside: Node3D
 var _clock := 0.0
 var _definitions: Array[Dictionary] = SITE.definitions()
 var _observed_site: Node3D
@@ -31,6 +34,10 @@ func configure(owner_session) -> void:
 		wilds=WILDS.new()
 		add_child(wilds)
 		wilds.configure(session)
+	if not is_instance_valid(roadside):
+		roadside=ROADSIDE.new()
+		add_child(roadside)
+		roadside.configure(session)
 	_refresh_visuals()
 
 func _process(delta: float) -> void:
@@ -41,6 +48,11 @@ func _process(delta: float) -> void:
 	_refresh_visuals()
 
 func nearest_action() -> Dictionary:
+	# A beira de estrada também atende quem está ao volante (conserto no posto), então vem
+	# antes da checagem de "a pé" dos achados.
+	if is_instance_valid(roadside):
+		var roadside_action: Dictionary=roadside.nearest_action()
+		if not roadside_action.is_empty(): return roadside_action
 	if not _available() or not is_instance_valid(_site()): return {}
 	var player: CharacterBody3D=session.world.player
 	var state := SECRET.data(session.state.world_state)
@@ -78,11 +90,13 @@ func perform(action: Dictionary) -> bool:
 func save_block_reason() -> String:
 	var reason := str(bandits.save_block_reason()) if is_instance_valid(bandits) else ""
 	if reason.is_empty() and is_instance_valid(wilds): reason=wilds.save_block_reason()
+	if reason.is_empty() and is_instance_valid(roadside): reason=roadside.save_block_reason()
 	return reason
 
 func cancel_attempt() -> void:
 	if is_instance_valid(bandits): bandits.cancel_attempt()
 	if is_instance_valid(wilds): wilds.release_all()
+	if is_instance_valid(roadside): roadside.cancel_attempt()
 	_observed_site=null
 	_last_visual_site=null
 	_last_visual_mask=-1

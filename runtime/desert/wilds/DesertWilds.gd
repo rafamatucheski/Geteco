@@ -52,6 +52,8 @@ static func enabled() -> bool:
 
 ## Usado por DesertRegion._decoration_clear para não pôr cacto dentro de casa ou caverna.
 static func reserved(point: Vector2, radius := 0.0) -> bool:
+	# Os lugares da beira de estrada usam a mesma reserva (e têm o próprio interruptor).
+	if preload("res://runtime/desert/roadside/RoadsideLayout.gd").reserved(point, radius): return true
 	if not enabled(): return false
 	for site in SITES:
 		if (site.center as Vector2).distance_to(point) < SITE_RADIUS + radius: return true

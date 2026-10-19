@@ -43,3 +43,17 @@ const ARMORED_CASH_PER_TRUCK := 20000
 ## Morte e prisão (RecoveryPenalty): parte do dinheiro na mão, com teto.
 const RECOVERY_RATE := 0.10
 const RECOVERY_CAP := 2000
+
+## Beira de estrada do deserto (runtime/desert/roadside, 19/10/2026). Renda de bolso, como o
+## guincho do começo: o ferro-velho do Nonato paga a sucata pela regra e pelo limite diário da
+## prensa do Neco (GarageRewards.scrap_value), por isso não aparece aqui.
+## Conserto no Sol Poente: mais caro que a oficina de Northgate (100), que ainda tira a polícia.
+const ROADSIDE_REPAIR := 150
+## Entregas do orelhão por destino (RoadsideLayout.COURIER_ROUTES).
+const ROADSIDE_COURIER := {"miragem": 350, "arrancada": 600}
+## Caminhão quebrado: ajudar o caminhoneiro paga por recibo; se ele não está mais lá, a caixinha
+## da cabine é dinheiro solto (Economy.collect_loose_cash aceita até 300).
+const ROADSIDE_TRUCK_HELP := 200
+const ROADSIDE_TRUCK_CASHBOX := Vector2i(120, 240)
+## Bloqueio de bandidos: o que sobra na picape depois da briga (dinheiro solto).
+const ROADSIDE_ROADBLOCK_LOOT := Vector2i(220, 300)

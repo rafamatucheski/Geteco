@@ -36,6 +36,7 @@ func collect(controller) -> void:
 	if regions.has("mountain"): _mountain_markers(regions.mountain)
 	if regions.has("desert"): _desert_markers()
 	_forge_markers(controller.state,regions)
+	if regions.has("desert"): _roadside_markers(controller.state)
 	for station in preload("res://runtime/regional/RegionalCoachRoute.gd").stations():
 		if regions.has(station.region): add_marker("coach_"+str(station.id),str(station.label),station.arrival,"bus",str(station.region))
 	if "--railway-baseline" not in OS.get_cmdline_user_args(): _railway_markers(controller.state)
@@ -173,6 +174,13 @@ func _forge_markers(state, regions: Dictionary) -> void:
 	if regions.has("desert") and index>=forge.stage_index("seek_miner"):
 		add_marker("forge_miner","Acampamento do Tião",preload("res://world/desert/DesertMinerCamp.gd").CENTER,"mine","desert")
 		if stage=="seek_miner": markers.back().detail="O minério negro para a lâmina lendária."
+
+## Beira de estrada do deserto: posto, torre, ferro-velho, lanche e o que a torre de rádio avistou.
+func _roadside_markers(state) -> void:
+	if not state is Object or not state.get("world_state") is Dictionary or state.get("economy") == null: return
+	for entry in preload("res://runtime/desert/roadside/RoadsideSecrets.gd").map_markers(state.world_state,state.economy):
+		add_marker(str(entry.id),str(entry.title),entry.point,str(entry.kind),"desert")
+		markers.back().detail=str(entry.detail)
 
 func _railway_markers(state) -> void:
 	if not state is Object or not state.campaign is Object: return
