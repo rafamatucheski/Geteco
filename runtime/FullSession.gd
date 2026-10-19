@@ -158,15 +158,146 @@ func blocks_driving_change() -> bool:
 func allows_saved_driver_animation() -> bool:
 	return _restoring_saved_driver and not ready_for_play and not modal and not is_transition_blocked()
 
+## Quem para em cada evento da sessão, em que ordem e com que argumento. Antes cada evento
+## (morte, prisão, resgate, carregar, menu, transição, viagem) tinha a própria lista escrita à
+## mão, um pouco diferente das outras, e sistema esquecido numa delas seguia rodando através
+## daquele evento. As listas viraram este registro na ordem exata de antes; inventário e
+## diferenças entre eventos em docs/session-cleanup-registry.md, contrato em
+## tests/test_session_cleanup_registry.gd.
+## Etapa numerada = o evento é cortado onde a função intercala estado ou um guarda (ex.: a
+## ilusão é cancelada antes do guarda do resgate; health = 0 antes de desmontar embarques).
+## Passo: [sistema, método, argumentos, regra]. Sistema é a propriedade da sessão ("world.x"
+## desce um nível, "" é a própria sessão); nulo ou liberado é pulado. Regras: if_method (só se
+## o método existir), if_riding (só com alguém embarcado), if_jessica_bank (Jessica montada e
+## o assalto dela ativo), abort_if_active (o sistema seguiu ativo: a etapa para e devolve false).
+const CANCEL_STEPS := {
+	&"death_1": [["upside_world", "cancel", ["death", false]]],
+	&"death_2": [
+		["fishing", "cancel_attempt", ["Pesca interrompida."]],
+		["coastal_lookout", "leave"],
+		["amusement_park", "leave"],
+		["regional_coach", "cancel_for_transition"],
+		["railway", "cancel_for_transition"],
+	],
+	&"death_3": [
+		["desert", "cancel_attempt"],
+		["mining", "cancel_attempt"],
+		["jessica", "cancel_for_transition"],
+		["services", "cancel_auto_service", ["player_death"], "if_method"],
+		["world.driving", "cancel_transition", ["player_death"], "if_method"],
+	],
+	&"death_4": [
+		["passenger_transport", "_brake", [], "if_riding"],
+		["", "interrupt_dialogue"],
+		["garage_rewards", "cancel_press_delivery"],
+		["activities", "cancel_attempt"],
+		["mountain_progression", "cancel_attempt"],
+		["mountain_activities", "cancel_attempt"],
+		["mission_world", "cancel_attempt", ["player_death"]],
+	],
+	&"arrest_1": [["upside_world", "cancel", ["arrest"]]],
+	&"arrest_2": [
+		["amusement_park", "leave"],
+		["regional_coach", "cancel_for_transition"],
+		["railway", "cancel_for_transition"],
+		["", "interrupt_dialogue"],
+		["desert", "cancel_attempt"],
+		["mining", "cancel_attempt"],
+	],
+	&"arrest_3": [
+		["services", "cancel_auto_service", ["player_arrest"], "if_method"],
+		["world.driving", "cancel_transition", ["player_arrest"], "if_method"],
+		["passenger_transport", "_brake", [], "if_riding"],
+		["jessica", "cancel_for_transition"],
+		["garage_rewards", "cancel_press_delivery"],
+		["activities", "cancel_attempt"],
+		["mountain_progression", "cancel_attempt"],
+		["mountain_activities", "cancel_attempt"],
+		["mission_world", "cancel_attempt", ["player_arrest"]],
+	],
+	# O resgate também passa por "transition" (_begin_transition) entre rescue_1 e rescue_2.
+	&"rescue_1": [["upside_world", "cancel", ["rescue", false]]],
+	&"rescue_2": [
+		["passenger_transport", "cancel_for_transition"],
+		["building_entrance", "reset"],
+		["service_roofs", "clear", [true]],
+	],
+	&"rescue_3": [
+		["world.traffic_yield", "release_all", ["rescue"]],
+		["world.dispatch", "dismiss_all", ["rescue"]],
+	],
+	&"load_1": [
+		["upside_world", "cancel", ["load"]],
+		["fishing", "cancel_attempt", ["Pesca encerrada."]],
+		["coastal_lookout", "leave"],
+		["amusement_park", "leave"],
+	],
+	&"load_2": [
+		["garage_rewards", "cancel_press_delivery"],
+		["world.traffic_yield", "release_all", ["load"]],
+		["world.dispatch", "dismiss_all", ["load"]],
+	],
+	&"menu_1": [
+		["upside_world", "cancel", ["main_menu"]],
+		["amusement_park", "leave"],
+		["desert", "cancel_attempt"],
+		["mining", "cancel_attempt"],
+	],
+	&"menu_2": [
+		["garage_rewards", "cancel_press_delivery"],
+		["world.traffic_yield", "release_all", ["main_menu"]],
+		["world.dispatch", "dismiss_all", ["main_menu"]],
+	],
+	&"transition": [
+		["arcade", "close"],
+		["fishing", "cancel_attempt", ["Pesca encerrada."]],
+		["coastal_lookout", "leave"],
+		["amusement_park", "leave", [], "abort_if_active"],
+		["mountain_activities", "cancel_attempt"],
+	],
+	# Chamada por ProductionWorld._travel_checked, depois de conferir o solo do destino.
+	&"travel": [
+		["armored_transport", "suspend_for_travel"],
+		["passenger_transport", "cancel_for_transition"],
+		["activities", "cancel_attempt"],
+		["mountain_progression", "cancel_attempt"],
+		["mountain_activities", "cancel_attempt"],
+		["garage_rewards", "cancel_press_delivery"],
+		["mission_world", "cancel_attempt", ["world_transition"], "if_jessica_bank"],
+		["jessica", "cancel_for_transition"],
+		["world.traffic_yield", "release_all", ["travel"]],
+		["world.dispatch", "dismiss_all", ["travel"]],
+	],
+}
+
+## Roda uma etapa de CANCEL_STEPS. Devolve false só quando um passo abort_if_active recusou.
+func _cancel_for(stage: StringName) -> bool:
+	if not CANCEL_STEPS.has(stage):
+		push_error("Etapa de limpeza desconhecida: %s" % stage)
+		return true
+	for step: Array in CANCEL_STEPS[stage]:
+		var system = _cancel_system(step[0])
+		if system == null: continue
+		var method: String = step[1]
+		var rule: String = step[3] if step.size() > 3 else ""
+		if rule == "if_method" and not system.has_method(method): continue
+		if rule == "if_riding" and not system.riding: continue
+		if rule == "if_jessica_bank" and not (is_instance_valid(jessica) and state.campaign.active_id == "jessica_bank"): continue
+		system.callv(method, step[2] if step.size() > 2 else [])
+		if rule == "abort_if_active" and system.active: return false
+	return true
+
+func _cancel_system(path: String) -> Object:
+	if path.is_empty(): return self
+	var system: Variant = self
+	for part in path.split("."):
+		system = system.get(part)
+		if not is_instance_valid(system): return null
+	return system
+
 func _begin_transition(kind: String, _vehicle := false) -> int:
 	if not transition_kind.is_empty() or (controller != null and controller.travel_busy): return -1
-	if arcade != null: arcade.close()
-	if fishing != null: fishing.cancel_attempt("Pesca encerrada.")
-	if coastal_lookout != null: coastal_lookout.leave()
-	if amusement_park != null:
-		amusement_park.leave()
-		if amusement_park.active: return -1
-	if mountain_activities != null: mountain_activities.cancel_attempt()
+	if not _cancel_for(&"transition"): return -1
 	transition_generation += 1
 	transition_kind = kind
 	# Legacy consumers already treat this public flag as the session transition
@@ -2488,10 +2619,8 @@ func load_game() -> void:
 	if upside_world != null and upside_world.busy() and upside_world._released:
 		show_message("Aguarde a conclusão da transição para carregar.")
 		return
-	if upside_world != null: upside_world.cancel("load")
-	if fishing != null: fishing.cancel_attempt("Pesca encerrada.")
-	if coastal_lookout != null: coastal_lookout.leave()
-	if amusement_park != null: amusement_park.leave()
+	# Ilusão, pesca, mirante e parque terminam antes das recusas abaixo, como sempre foi.
+	_cancel_for(&"load_1")
 	if desert != null and desert.busy(): show_message("Encerre a prova para carregar."); return
 	if jessica != null and jessica.riding:
 		show_message("Aguarde Jessica estacionar para carregar."); return
@@ -2500,25 +2629,19 @@ func load_game() -> void:
 	if passenger_transport != null and passenger_transport.riding:
 		show_message("Aguarde o desembarque para carregar."); return
 	if world.driving.occupied: show_message("Saia do veículo para carregar."); return
-	garage_rewards.cancel_press_delivery()
-	if is_instance_valid(world.traffic_yield): world.traffic_yield.release_all("load")
-	if is_instance_valid(world.dispatch): world.dispatch.dismiss_all("load")
+	_cancel_for(&"load_2")
 	var result := get_tree().reload_current_scene()
 	if result != OK: show_message(String(TranslationServer.translate("Não foi possível carregar o jogo (%d).")) % result)
 func return_to_main_menu() -> void:
 	if upside_world != null and upside_world.busy() and upside_world._released:
 		show_message("Aguarde a conclusão da transição.")
 		return
-	if upside_world != null: upside_world.cancel("main_menu")
-	if amusement_park != null: amusement_park.leave()
-	if desert != null: desert.cancel_attempt()
-	if mining != null: mining.cancel_attempt()
+	# Deserto e mineração já são cancelados quando o menu recusa abaixo, como sempre foi.
+	_cancel_for(&"menu_1")
 	if is_transition_blocked() or (passenger_transport != null and passenger_transport.riding):
 		show_message("Aguarde a conclusão da chegada, do resgate ou da transição.")
 		return
-	garage_rewards.cancel_press_delivery()
-	if is_instance_valid(world.traffic_yield): world.traffic_yield.release_all("main_menu")
-	if is_instance_valid(world.dispatch): world.dispatch.dismiss_all("main_menu")
+	_cancel_for(&"menu_2")
 	var launch = get_node_or_null("/root/V2Launch")
 	if launch != null: launch.direct_start_consumed = true
 	var was_paused := get_tree().paused
@@ -2646,27 +2769,14 @@ func _exit_tree() -> void:
 
 func _on_arrest() -> void:
 	if arrest_pending or rescue_pending: return
-	if upside_world != null: upside_world.cancel("arrest")
+	_cancel_for(&"arrest_1")
 	arrest_pending = true
 	# Gameplay's arrest signal already owns this lock; illusion cleanup must
 	# not release it while the custody presentation is running.
 	world.player.input_locked = true
-	if amusement_park != null: amusement_park.leave()
-	if regional_coach != null: regional_coach.cancel_for_transition()
-	if railway != null: railway.cancel_for_transition()
-	interrupt_dialogue()
-	if desert != null: desert.cancel_attempt()
-	if mining != null: mining.cancel_attempt()
+	_cancel_for(&"arrest_2")
 	prompt.text = ""
-	if services != null and services.has_method("cancel_auto_service"): services.cancel_auto_service("player_arrest")
-	if is_instance_valid(world.driving) and world.driving.has_method("cancel_transition"): world.driving.cancel_transition("player_arrest")
-	if passenger_transport != null and passenger_transport.riding: passenger_transport._brake()
-	if jessica != null: jessica.cancel_for_transition()
-	garage_rewards.cancel_press_delivery()
-	activities.cancel_attempt()
-	mountain_progression.cancel_attempt()
-	if mountain_activities != null: mountain_activities.cancel_attempt()
-	mission_world.cancel_attempt("player_arrest")
+	_cancel_for(&"arrest_3")
 	# Service/mission teardown may restore an earlier input snapshot.
 	# Custody takes final ownership before yielding to the presentation.
 	world.player.input_locked = true
@@ -2675,13 +2785,10 @@ func _on_arrest() -> void:
 	await _respawn()
 
 func _on_death() -> void:
-	if upside_world != null: upside_world.cancel("death",false)
+	_cancel_for(&"death_1")
 	if rescue_pending: return
-	if fishing != null: fishing.cancel_attempt("Pesca interrompida.")
-	if coastal_lookout != null: coastal_lookout.leave()
-	if amusement_park != null: amusement_park.leave()
-	if regional_coach != null: regional_coach.cancel_for_transition()
-	if railway != null: railway.cancel_for_transition()
+	_cancel_for(&"death_2")
+	# Fora do registro: a resposta é o saque perdido, mostrado no "SE FODEU".
 	bank_death_loss = robberies.player_died() if robberies != null else 0
 	# The old arrest coroutine must not select custody or consume this rescue.
 	arrest_pending = false
@@ -2689,11 +2796,7 @@ func _on_death() -> void:
 	# directly, without damage_player. Establish the same dead state before any
 	# boarding cleanup or death presentation reads it.
 	world.gameplay.health = 0
-	if desert != null: desert.cancel_attempt()
-	if mining != null: mining.cancel_attempt()
-	if jessica != null: jessica.cancel_for_transition()
-	if services != null and services.has_method("cancel_auto_service"): services.cancel_auto_service("player_death")
-	if is_instance_valid(world.driving) and world.driving.has_method("cancel_transition"): world.driving.cancel_transition("player_death")
+	_cancel_for(&"death_3")
 	world.player.input_locked = true
 	world.player.on_player_death()
 	# Damage may have posed death before Driving restored the on-foot capsule.
@@ -2708,19 +2811,13 @@ func _on_death() -> void:
 	rescue_pending = true
 	prompt.text = ""
 	world.hud.refresh_from_state()
-	if passenger_transport != null and passenger_transport.riding: passenger_transport._brake()
-	interrupt_dialogue()
-	garage_rewards.cancel_press_delivery()
-	activities.cancel_attempt()
-	mountain_progression.cancel_attempt()
-	if mountain_activities != null: mountain_activities.cancel_attempt()
-	mission_world.cancel_attempt("player_death")
+	_cancel_for(&"death_4")
 	await _show_v1_death_presentation()
 	if not rescue_pending or not is_inside_tree(): return
 	await _respawn()
 
 func _respawn() -> void:
-	if upside_world != null: upside_world.cancel("rescue",false)
+	_cancel_for(&"rescue_1")
 	if respawn_busy: return
 	var token := _begin_transition("rescue")
 	if token < 0:
@@ -2764,9 +2861,7 @@ func _respawn() -> void:
 			world.driving.car.controlled = false
 			world.driving.car.external_input = false
 			world.driving.car.throttle_input = 0
-	if passenger_transport != null: passenger_transport.cancel_for_transition()
-	if building_entrance != null: building_entrance.reset()
-	if service_roofs != null: service_roofs.clear(true)
+	_cancel_for(&"rescue_2")
 	if is_instance_valid(room):
 		if room == world.maciota_place: room.set_interior_active(false)
 		else: room.queue_free()
@@ -2775,8 +2870,7 @@ func _respawn() -> void:
 	state.set_location(state.region_id)
 	world.gameplay.respawn()
 	world.player.respawn_player()
-	if is_instance_valid(world.traffic_yield): world.traffic_yield.release_all("rescue")
-	if is_instance_valid(world.dispatch): world.dispatch.dismiss_all("rescue")
+	_cancel_for(&"rescue_3")
 	sync_dispatch_location()
 	if cold != null: cold.recover_after_rescue()
 	if wine != null: wine.recover()

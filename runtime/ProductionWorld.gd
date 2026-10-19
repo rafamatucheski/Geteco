@@ -1862,17 +1862,8 @@ func _travel_checked(region_id: String,destination_override := Vector3.INF) -> v
 		get_tree().paused = was_paused
 		session.show_message("Destino ocupado ou sem solo. Viagem não realizada.")
 		return
-	if session.armored_transport != null: session.armored_transport.suspend_for_travel()
-	session.passenger_transport.cancel_for_transition()
-	session.activities.cancel_attempt()
-	session.mountain_progression.cancel_attempt()
-	if session.mountain_activities != null: session.mountain_activities.cancel_attempt()
-	session.garage_rewards.cancel_press_delivery()
-	if session.jessica != null:
-		if state.campaign.active_id == "jessica_bank": session.mission_world.cancel_attempt("world_transition")
-		session.jessica.cancel_for_transition()
-	if is_instance_valid(world.traffic_yield): world.traffic_yield.release_all("travel")
-	if is_instance_valid(world.dispatch): world.dispatch.dismiss_all("travel")
+	# Quem para na viagem fica no registro da sessão (FullSession.CANCEL_STEPS, etapa "travel").
+	session._cancel_for(&"travel")
 	world.gameplay.on_region_changed()
 	world.gameplay.emergency.reset_region()
 	# Fast travel unloads the population. Logical city/mountain seam crossings do
