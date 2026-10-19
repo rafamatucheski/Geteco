@@ -81,6 +81,8 @@ func run() -> void:
 	# Approach parking is clear of the authored meet residents and staging grid.
 	var style_car := "desert_mirage_gt" if "--style-car" in OS.get_cmdline_user_args() else "desert_mirage"
 	if "--street-profile" in OS.get_cmdline_user_args(): style_car="porto_rosso"
+	for argument in OS.get_cmdline_user_args():
+		if argument.begins_with("--car="): style_car=argument.trim_prefix("--car=")
 	var car = world.production.spawn_vehicle(style_car,race.staging_point+Vector3(0,.1,-6),-PI*.5)
 	check(is_instance_valid(car),"production desert car spawned")
 	if not is_instance_valid(car): finish(); return

@@ -988,6 +988,9 @@ static func _cabin(t: SurfaceTool, s: Dictionary) -> void:
 	# Forro do teto sob o teto, com luz de cortesia; quebra-sóis e retrovisor interno.
 	var roof_z0 := wz1 - .02
 	var roof_z1 := minf(rear - .1, floor_back)
+	# `rear` is the bottom of the rear glass. The flat lining and its trim
+	# must stop at the upper edge, before the glazing slopes toward the boot.
+	roof_z1 = minf(roof_z1, float(s.rear_top) - .04)
 	roof_z1 = minf(roof_z1, float(s.get("roof_rear", roof_z1)))
 	if bool(s.get("roof_liner", true)):
 		_box(_alpha_tool, Vector3(0, roof - .04, (roof_z0 + roof_z1) * .5), Vector3(w * 2 - .06, .03, roof_z1 - roof_z0), Color(C_ROOF, .30))
