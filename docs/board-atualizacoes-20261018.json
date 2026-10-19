@@ -1,0 +1,112 @@
+{
+  "date": "2026-10-18",
+  "period": "2026-10-18",
+  "scope": "Revisão cruzada de sistemas e correções do dia (commits 1d417437 a 4b76aa33, mais e1fad702 da sessão da serra/deserto). Testes pela fila com preferências isoladas; nada visto jogando por uma pessoa.",
+  "cards": [
+    {
+      "id": "save-recuperacao-20261018",
+      "title": "Save recuperável e salvamento desligado com aviso",
+      "status": "implemented",
+      "area": "sistemas",
+      "description": "Um bloco opcional quebrado não deixa mais o slot inabrível: o menu mostra 'Recuperável — volta ao padrão: …', só a escolha explícita aplica (Continuar não recupera) e as cópias originais ficam como .pre-recovery. Carteira, campanha e abertura nunca são descartadas. Quando um sistema não restaura, o salvamento desliga com motivo no log e aviso fixo no canto (antes parava calado).",
+      "sources": ["runtime/SaveStore.gd", "runtime/SessionLaunch.gd", "ui/SaveIndicator.gd", "tests/test_core_contracts.gd"],
+      "next": "Ver no menu um slot recuperável (docs/playtest-checklist-20261018.md, item 6). Os ~15 sistemas que desligam o salvamento por conta própria continuam desligando, agora com aviso."
+    },
+    {
+      "id": "morte-prisao-custo-20261018",
+      "title": "Morte e prisão custam: Bay Medical, delegacia, conta e multa",
+      "status": "implemented",
+      "area": "jogabilidade",
+      "description": "Morte no Harbor volta pela porta do Bay Medical, prisão pela delegacia; os dois cobram 10% do dinheiro (teto R$ 2.000) e a prisão leva a munição carregada. Armas ficam: o recibo de compra exige a arma no save. Serra e deserto continuam no ponto da região, com a mesma conta.",
+      "sources": ["runtime/RecoveryPenalty.gd", "systems/economy/Economy.gd", "tests/test_recovery_penalty_session.gd"],
+      "next": "Sentir jogando se 10%/R$ 2.000 pesa o bastante. Confisco de arma de verdade pediria estado de apreensão na delegacia."
+    },
+    {
+      "id": "economia-historia-20261018",
+      "title": "Economia: a história paga e libera o guincho",
+      "status": "implemented",
+      "area": "sistemas",
+      "description": "Tabela única em data/catalogs/EconomyBalance.gd. História do Harbor paga R$ 21.500 (era 2.170) por bônus com recibo próprio, porque a recompensa base é contrato do save; saves antigos recebem o retroativo uma vez. Guincho R$ 600–2.400 por faixas que abrem com missões; carro-forte R$ 20.000 (era 40.000). Concluir missão mostra '+ R$ X'.",
+      "sources": ["data/catalogs/EconomyBalance.gd", "systems/campaign/StoryPay.gd", "data/catalogs/TowJobs.gd"],
+      "next": "Medir jogando quantos minutos leva cada missão e cada reboque; ajustar só na tabela."
+    },
+    {
+      "id": "diario-historias-20261018",
+      "title": "Diário com todas as histórias em andamento",
+      "status": "implemented",
+      "area": "interface",
+      "description": "O J lista, de qualquer região, Carga dos Cobras / Rastro de Vicente, Forja da Serra, Tonico e o ato 2 do deserto (depois do Harbor), com o mesmo texto do objetivo de cada região. História terminada sai do diário.",
+      "sources": ["runtime/JournalArcs.gd", "tests/test_core_contracts.gd"],
+      "next": "Ver o diário na tela (checklist, item 3)."
+    },
+    {
+      "id": "crime-vitimas-20261018",
+      "title": "Crime igual por arma e atropelamento",
+      "status": "implemented",
+      "area": "policia",
+      "description": "gameplay/police_response/CrimeVictims.gd decide para os dois caminhos. Matar morador de prédio, trabalhador, morador do esgoto, contato do deserto, público de evento, pescador ou convidado do encontro é homicídio; atropelar Cobra ou segurança de comboio não vira homicídio de civil. Papel desconhecido mantém o comportamento antigo.",
+      "sources": ["gameplay/police_response/CrimeVictims.gd", "gameplay/Gameplay.gd", "tests/test_core_contracts.gd"]
+    },
+    {
+      "id": "deserto-achados-encontros-20261018",
+      "title": "Deserto: cavernas pagam uma vez e encontros aparecem na hora",
+      "status": "implemented",
+      "area": "mundo",
+      "description": "Cavernas do DesertWilds pagam pelo contrato de recompensa (a lata de R$ 420 passava do teto de dinheiro solto; o 'já pegou' se perdia ao reabrir). Foras-da-lei, bandidos, moradores e o caminhão do assalto esperam só o chão (surfaces_idle): a 60 fps padrão chegavam a esperar ~27 s perto da arrancada.",
+      "sources": ["runtime/desert/wilds/DesertWilds.gd", "runtime/desert/DesertBanditEncounter.gd", "runtime/desert/DesertLocals.gd", "gameplay/desert_heist/DesertHeist.gd"],
+      "next": "DragMeetTakeshi ainda espera o deserto inteiro (is_streaming_idle); o arquivo tem mudança não commitada da sessão da arrancada."
+    },
+    {
+      "id": "serra-viagem-resgate-20261018",
+      "title": "Serra: viagem e resgate montam o piso da ponte",
+      "status": "implemented",
+      "area": "mundo",
+      "description": "Desde a ponte unificada (16/10) o ponto de chegada e de resgate da serra fica no tabuleiro, que só existe com a conexão montada: viagem recusada ('Destino ocupado ou sem solo') e resgate preso longe da emenda. A conexão agora monta antes da conferência do chão (e1fad702).",
+      "sources": ["runtime/ProductionWorld.gd", "tests/test_mountain_story_runtime.gd"]
+    },
+    {
+      "id": "suite-central-20261018",
+      "title": "Suíte central pela fila",
+      "status": "implemented",
+      "area": "qualidade",
+      "description": "tools/run_core_suite.sh: fast (contratos, ~2 min) e full (com a verificação do CLAUDE.md, indicador de save, morte/prisão, deserto, diálogo e veículo). Cada teste tem pasta isolada de preferências (--isolated-save-root, agora lido pelo Settings), então o idioma do jogador não muda o resultado. Resumo em evidence/test-suite/core/.",
+      "sources": ["tools/run_core_suite.sh", "tests/test_core_contracts.gd", "runtime/Settings.gd", "docs/HOW-TO-DEVELOP.md"]
+    },
+    {
+      "id": "codigo-morto-20261018",
+      "title": "Código morto removido",
+      "status": "implemented",
+      "area": "ferramentas",
+      "description": "Saíram 109 arquivos sem referência: inventário snake_case antigo, ui/menu_presentation, aberturas antigas (v3, home, frames, scripts) e o protótipo --sandbox/--slice (Street, Traffic, RouteActivity, V2Session). World.gd ficou só com o caminho do ProductionWorld.",
+      "sources": ["scripts/World.gd"]
+    },
+    {
+      "id": "playtest-20261018",
+      "title": "Mudanças de 18/10 sem teste jogando",
+      "status": "unverified",
+      "area": "qualidade",
+      "description": "Roteiro de ~15 min com o passo e o esperado para cada mudança do dia: morte/prisão, pagamentos, diário, deserto, crime e recuperação de save num slot vazio.",
+      "sources": ["docs/playtest-checklist-20261018.md"],
+      "next": "Jogar o roteiro e anotar o que divergir."
+    }
+  ],
+  "updates": {
+    "issue-tests-20261017": {
+      "description": "Seguem falhando: test_harbor_service_roofs (telhado frio do banco), test_vehicle_twotone (union_sedan), test_vertice_hideout (1 check: reentrada não pode recriar segredos coletados), test_vehicle_damage_look (2 checks da carcaça), test_truckers_village_integration e test_armored_heist (o carro falso do teste não tem traffic_escape nem body_dents; para antes das verificações de valor). test_mountain_bears tinha a mesma recusa de viagem que e1fad702 corrigiu; não reconfirmado. Corrigidos em 18/10: test_private_security_crime, test_save_indicator, test_dialogue_flow, test_video_vehicle_lifecycle (testes atualizados ao comportamento atual), test_desert_wilds e test_mountain_story_runtime (defeitos de jogo corrigidos).",
+      "sources": ["docs/commit-grande-20261016.md", "docs/perf-serra-picos-20261017.md", "tools/run_core_suite.sh"]
+    },
+    "tow-jobs": {
+      "description": "Primeiro reboque R$ 600; Esportivo do outro lado R$ 900 (depois de Primeiro Giro); Viatura fora de serviço R$ 1.400 (A conta chega); Colecionador sem sorte R$ 1.800 (Serviço com Jessica); Encomenda da madrugada R$ 2.400 (A última volta). Valores em EconomyBalance.TOW_TIERS; contrato gravado com o valor antigo continua válido.",
+      "sources": ["data/catalogs/TowJobs.gd", "data/catalogs/EconomyBalance.gd", "activities/Activities.gd"]
+    },
+    "inv-061": {
+      "description": "Carteira, itens e recibos compartilhados sustentam missões, roubos, casas, lojas e recompensas; não criar contabilidade paralela por atividade. Valores ajustáveis ficam em data/catalogs/EconomyBalance.gd; valor gravado em recibo nunca muda (pague a diferença com recibo novo, como StoryPay).",
+      "sources": ["systems/economy", "data/catalogs/EconomyBalance.gd", "systems/Progression.gd", "runtime/GameState.gd"]
+    },
+    "inv-062": {
+      "description": "Persistência e checkpoints com contratos específicos por sistema; slot com bloco opcional quebrado agora é recuperável pelo menu. Importação V1 preserva progresso compatível, mas save V1 avançado fica bloqueado por 'decisões' sem tela para escolher.",
+      "next": "Tela de decisões da importação V1 (revisão cruzada 18/10, item 15)."
+    }
+  },
+  "remove": []
+}

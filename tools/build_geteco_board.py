@@ -14,15 +14,18 @@ def build():
     data = json.loads(read('docs/board-inventario-20261007.json'))
     story = json.loads(read('docs/board-historia-20261007.json'))
     data['cards'].extend(story['cards'])
-    changes = json.loads(read('docs/board-atualizacoes-20261008.json'))
-    for card in data['cards']:
-        card.update(changes.get('updates', {}).get(card['id'], {}))
-    data['cards'].extend(changes['cards'])
-    latest = json.loads(read('docs/board-atualizacoes-20261017.json'))
-    for card in data['cards']:
-        card.update(latest.get('updates', {}).get(card['id'], {}))
-    data['cards'].extend(latest['cards'])
-    data['cards'] = [c for c in data['cards'] if c['id'] not in set(latest.get('remove', []))]
+    # Every docs/board-atualizacoes-<date>.json, oldest first: each one updates the cards seen so
+    # far, adds its own and removes what it lists. The newest one dates the board. (The two files
+    # used to be hard-coded, so a new day's file was silently ignored.)
+    latest = None
+    for path in sorted(DOCS.glob('board-atualizacoes-*.json')):
+        changes = json.loads(read(path.relative_to(ROOT).as_posix()))
+        for card in data['cards']:
+            card.update(changes.get('updates', {}).get(card['id'], {}))
+        data['cards'].extend(changes.get('cards', []))
+        removed = set(changes.get('remove', []))
+        data['cards'] = [c for c in data['cards'] if c['id'] not in removed]
+        latest = changes
     data['date'] = latest['date']
     data['update_scope'] = latest['scope']
     data['catalogs'] = story.get('catalogs', {})
