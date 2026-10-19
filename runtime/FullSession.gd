@@ -2792,6 +2792,15 @@ func _on_death() -> void:
 	bank_death_loss = robberies.player_died() if robberies != null else 0
 	# The old arrest coroutine must not select custody or consume this rescue.
 	arrest_pending = false
+	# Um resgate que não é desta morte pode estar em curso: o _respawn da própria prisão (delegacia
+	# escolhida, cortina abrindo; a rendição não para as balas de civis hostis) ou o da chegada.
+	# Ele terminava depois desta morte, limpava rescue_pending, cobrava a multa e deixava o corpo
+	# morto e travado na delegacia; esta morte via rescue_pending falso e pulava o próprio resgate.
+	# Soltar a transição dele o faz parar no próximo _owns_transition, sem mexer nas bandeiras nem
+	# cobrar nada, e deixa o _respawn desta morte começar (morte prevalece, como na apresentação).
+	if respawn_busy:
+		respawn_busy = false
+		if transition_kind == "rescue": _finish_transition(transition_generation)
 	# Falling out of the world and an invalid restored position reach this path
 	# directly, without damage_player. Establish the same dead state before any
 	# boarding cleanup or death presentation reads it.
