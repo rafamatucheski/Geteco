@@ -245,7 +245,10 @@ func _follow_silhouettes() -> void:
 		_refresh_silhouette()
 		return
 	if not is_instance_valid(_silhouette_reference): return
-	var inverse := Projection(_silhouette_reference.global_transform.affine_inverse())
+	# Match the pose used to render the meshes. The current physics transform
+	# leads the interpolated body by up to one tick: at race speed the rear
+	# leaves its own exclusion box and the overlay flashes through the body.
+	var inverse := Projection(_silhouette_reference.get_global_transform_interpolated().affine_inverse())
 	for target in _silhouettes:
 		if is_instance_valid(target):
 			_silhouettes[target].set_shader_parameter("target_inverse", inverse)
