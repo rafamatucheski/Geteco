@@ -568,7 +568,7 @@ func _dress(chunk: Node3D, rect: Rect2, key: Vector2i) -> void:
 			rock.rotation.z=.12
 		node.position=Vector3(p.x,_ground_height(p),p.y)
 		chunk.add_child(node)
-		preload("res://gameplay/street_physics/FragileProps3D.gd").register_node("desert_tree" if i%3==0 else "desert_rock",node,chunk)
+		preload("res://gameplay/street_physics/FragileProps3D.gd").register_node("desert_tree" if i%3==0 else "desert_rock",node,chunk,{},[],.8 if i%3==0 else -1.0)
 	# Broad stratified mesas leave recognizable empty basins and road sightlines.
 	if posmod(key.x*7+key.y*3,9)==0:
 		var center := rect.get_center()

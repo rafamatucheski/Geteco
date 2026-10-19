@@ -12,6 +12,7 @@ const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 ## Célula de disposição em metros, alinhada ao mundo: trechos vizinhos sorteiam as mesmas peças.
 const SUB := 8.0
 const KINDS := ["sage", "brittle", "stone", "gravel", "tuft"]
+const CONTACT_KINDS := ["desert_shrub", "desert_shrub", "desert_stone", "desert_gravel", "desert_grass"]
 ## Distância da câmera (não do jogador): a ortográfica fica a ~36 m do chão e o canto da tela
 ## ultrawide a ~72 m. O cascalho some antes das moitas, que são o que dá a leitura de longe.
 const VISIBILITY := [115.0, 115.0, 105.0, 85.0, 90.0]
@@ -48,6 +49,8 @@ class Build:
 	var has_bounds: Array[bool] = [false,false,false,false,false]
 	## [tipo, índice] das peças grandes que o carro acerta (moitas e pedras); o resto é chão.
 	var solid: Array[Vector2i] = []
+	var visuals: Array = []
+	var next_contact := 0
 	## Altura da célula atual: com o chão plano (fora do relevo, da mina e do cânion, quase todo o
 	## deserto) os 4 cantos bastam e cada peça interpola, em vez de chamar a altura do trecho por peça.
 	var height: Callable
@@ -85,6 +88,7 @@ class Build:
 		preview.clear()
 		solid.clear()
 		parts.clear()
+		visuals.clear()
 
 static func enabled() -> bool:
 	if _enabled < 0: _enabled = 0 if OS.get_environment("GETECO_DESERT_GROUND_COVER") == "0" else 1
@@ -121,14 +125,13 @@ static func step(chunk: Node3D, rect: Rect2, state: Build, height: Callable, cle
 		if Time.get_ticks_usec() - began >= budget_usec: break
 	if state.next >= state.cells.size():
 		if state.parts.is_empty():
-			_commit(chunk, state, rect)
-			state.committed = true
+			state.committed = _commit(chunk, state, rect, "", budget_usec, began)
 		else:
 			# Do not turn four uploads/registrations into one larger final spike.
 			# Finite calls commit one 48 m part at a time until the same budget ends.
 			while state.next_part<state.parts.size():
 				if worked and Time.get_ticks_usec()-began>=budget_usec: break
-				_commit(chunk,state.parts[state.next_part],rect,"_%d"%state.next_part)
+				if not _commit(chunk,state.parts[state.next_part],rect,"_%d"%state.next_part,budget_usec,began): break
 				state.next_part+=1
 				worked=true
 			if state.next_part==state.parts.size():
@@ -196,11 +199,28 @@ static func _add(state: Build, kind: int, p: Vector2, size: float, rng: RandomNu
 		var instance_bounds: AABB=Transform3D(basis,origin)*_mesh_bounds[kind]
 		target.bounds[kind]=target.bounds[kind].merge(instance_bounds) if target.has_bounds[kind] else instance_bounds
 		target.has_bounds[kind]=true
-	if (kind <= 1 and size >= .9) or (kind == 2 and size >= .45): target.solid.append(Vector2i(kind, target.buffer(kind).size() / 16))
+	target.solid.append(Vector2i(kind, target.buffer(kind).size() / 16))
 	target.push(kind, PackedFloat32Array([basis.x.x, basis.y.x, basis.z.x, origin.x, basis.x.y, basis.y.y, basis.z.y, origin.y, basis.x.z, basis.y.z, basis.z.z, origin.z, color.r, color.g, color.b, 1.0]))
 	if state.preview_enabled: target.preview[kind].append(Transform3D(basis, origin))
 
-static func _commit(chunk: Node3D, state: Build, rect: Rect2, suffix := "") -> void:
+static func _commit(chunk: Node3D, state: Build, rect: Rect2, suffix := "", budget_usec := INF, began := 0) -> bool:
+	if state.visuals.is_empty(): _upload(chunk, state, rect, suffix)
+	var fragile := preload("res://gameplay/street_physics/FragileProps3D.gd")
+	while state.next_contact < state.solid.size():
+		var entry := state.solid[state.next_contact]
+		var node: MultiMeshInstance3D = state.visuals[entry.x]
+		if node != null:
+			var pose := node.multimesh.get_instance_transform(entry.y)
+			var bounds: AABB = Transform3D(pose.basis, Vector3.ZERO) * _mesh_bounds[entry.x]
+			var radius := maxf(bounds.size.x, bounds.size.z) * .5
+			fragile.register_instance(CONTACT_KINDS[entry.x], node.multimesh, entry.y, chunk, [], [], node, radius)
+		state.next_contact += 1
+		# Dense gravel remains indexed without a multi-thousand-item commit spike.
+		if state.next_contact % 32 == 0 and Time.get_ticks_usec() - began >= budget_usec: return false
+	state.release()
+	return true
+
+static func _upload(chunk: Node3D, state: Build, rect: Rect2, suffix: String) -> void:
 	_prepare()
 	var visuals: Array = [null, null, null, null, null]
 	for kind in KINDS.size():
@@ -229,13 +249,7 @@ static func _commit(chunk: Node3D, state: Build, rect: Rect2, suffix := "") -> v
 			node.set_meta("preview_instance_colors", colors)
 		chunk.add_child(node)
 		visuals[kind] = node
-	# Moitas grandes e pedras entram no índice de quebráveis como as pedras e árvores do deserto:
-	# sem colisor nativo, a varredura do carro as derruba em vez de passar por cima delas.
-	var fragile := preload("res://gameplay/street_physics/FragileProps3D.gd")
-	for entry in state.solid:
-		var node: MultiMeshInstance3D = visuals[entry.x]
-		if node != null: fragile.register_instance("desert_stone" if entry.x == 2 else "desert_shrub", node.multimesh, entry.y, chunk, [], [], node)
-	state.release()
+	state.visuals = visuals
 
 static func configure_drag_visibility(node: MultiMeshInstance3D, kind: int) -> void:
 	# StandardMaterial's pixel dither works with Mobile; GeometryInstance HLOD
@@ -277,7 +291,20 @@ static func _prepare() -> void:
 	_material.roughness = 1.0
 	_material.metallic_specular = 0.0
 	_meshes = [_sage(), _brittle(), _stone(), _gravel(), _tuft()]
-	for mesh in _meshes: _mesh_bounds.append(mesh.get_aabb())
+	for kind in _meshes.size():
+		var mesh := _meshes[kind]
+		_mesh_bounds.append(mesh.get_aabb())
+		# Shared shards are prepared with the five source meshes, never fractured/read
+		# back from the GPU for every pebble struck during gameplay.
+		var source := MeshInstance3D.new()
+		source.mesh = mesh
+		source.material_override = _material
+		var fragments: Array[Mesh] = []
+		for shard in preload("res://gameplay/street_physics/PropFracture3D.gd").split(source, 0):
+			fragments.append(shard.mesh)
+			shard.free()
+		mesh.set_meta("street_fracture_meshes", fragments)
+		source.free()
 
 static func _sage() -> ArrayMesh:
 	# Moita arredondada cinza-oliva: um domo e cinco bolos baixos em volta, com galhos no pé.

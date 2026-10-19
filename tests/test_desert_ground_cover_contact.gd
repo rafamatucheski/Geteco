@@ -1,8 +1,13 @@
 extends "res://tests/tank_control/test_heavy_impacts.gd"
-## Moitas grandes e pedras do chão povoado do deserto são acertadas pelo carro, não atravessadas.
+## All five cover meshes, including their smallest instances, break on car contact.
 const COVER := preload("res://world/desert/DesertGroundCover.gd")
 
 func run() -> void:
+	if DisplayServer.get_name() == "headless":
+		printerr("DESERT_GROUND_COVER_CONTACT requires real MultiMesh transforms")
+		quit(2)
+		return
+	create_timer(60).timeout.connect(func(): quit(3))
 	world = Node3D.new()
 	root.add_child(world)
 	street = Street.new()
@@ -11,24 +16,38 @@ func run() -> void:
 	world.add_child(chunk)
 	var rect := Rect2(-400, -800, 48, 48)
 	var state := COVER.begin(rect)
-	COVER.step(chunk, rect, state, func(_p): return 0.0, func(_p, _r): return true, INF)
+	var slices := 0
+	while not state.committed:
+		COVER.step(chunk, rect, state, func(_p): return 0.0, func(_p, _r): return true, 1000)
+		slices += 1
 	var items := FRAGILE.query(Vector3(rect.get_center().x, 0, rect.get_center().y), 40)
-	var shrubs := items.filter(func(item): return item.kind == "desert_shrub")
-	var stones := items.filter(func(item): return item.kind == "desert_stone")
-	check(not shrubs.is_empty(), "large shrubs are registered as car contacts")
-	check(not stones.is_empty(), "loose stones are registered as car contacts")
-	for item in [shrubs[0] if not shrubs.is_empty() else null, stones[0] if not stones.is_empty() else null]:
-		if item == null: continue
+	var total := 0
+	for visual in chunk.get_children(): total += visual.multimesh.instance_count
+	check(items.size() == total, "every visible cover piece has exactly one indexed contact")
+	check(slices > 1, "dense contact registration resumes across budgeted slices")
+	for kind in COVER.KINDS:
+		var candidates := items.filter(func(item): return str(item.visual.get_ref().name).ends_with("_" + kind))
+		check(not candidates.is_empty(), "%s contacts exist" % kind)
+		if candidates.is_empty(): continue
+		candidates.sort_custom(func(a, b): return a.base.basis.get_scale().length_squared() < b.base.basis.get_scale().length_squared())
+		var item: Dictionary = candidates[0]
 		var count: int = item.multimesh.instance_count
 		check(item.index < count, "%s index fits its batch" % item.kind)
+		var registry: Dictionary = FRAGILE.cells
+		FRAGILE.cells = {FRAGILE._key(item.point):[item]}
 		var vehicle := car(1.0)
 		vehicle.position = item.point + Vector3(0, 0, 6)
 		CRUSH.set_planar(vehicle, Vector3.FORWARD * 20)
 		var before := street.get_child_count()
+		check(not FRAGILE.hit(item, .1, Vector3.FORWARD, street), "%s does not break below contact threshold" % kind)
 		street._hit_props(vehicle, vehicle.horizontal_velocity, Vector3.FORWARD * 10)
 		check(item.state == "down", "%s reacts to a passing car" % item.kind)
-		check(street.get_child_count() > before, "%s becomes debris" % item.kind)
-		var debris: Array = street.get_children().slice(before)
+		var debris: Array = street.get_children().slice(before).filter(func(node): return node is RigidBody3D)
+		check(debris.size() == 3, "%s fractures into three physical pieces like the beige rocks" % kind)
+		check(not FRAGILE.hit(item, 20, Vector3.FORWARD, street), "%s cannot break twice" % kind)
+		for frame in 2: await physics_frame
+		await RenderingServer.frame_post_draw
+		check(is_zero_approx(item.multimesh.get_instance_transform(item.index).basis.determinant()), "%s original disappears" % kind)
 		for body in debris:
 			if body is RigidBody3D: check(body.linear_velocity.length() < 4.0, "%s falls near the car instead of flying" % item.kind)
 			# Sem o material da instância a moita virava uma pedra branca ao ser atropelada (19/10).
@@ -36,6 +55,12 @@ func run() -> void:
 				var material: Material = mesh.material_override
 				check(material is StandardMaterial3D and not (material as StandardMaterial3D).albedo_color.is_equal_approx(Color.WHITE), "%s debris keeps its colour (%s)" % [item.kind, material])
 		vehicle.free()
+		for body in debris: body.free()
+		FRAGILE.cells = registry
+	chunk.free()
+	check(FRAGILE.query(Vector3(rect.get_center().x, 0, rect.get_center().y), 40).is_empty(), "unloaded cover releases its contacts")
+	# Collision-grace timers outlive the manually removed bodies.
+	await create_timer(.4, false, true).timeout
 	print("registrados em 48x48 m: ", items.size())
 	print("DESERT_GROUND_COVER_CONTACT checks=%d failures=%s" % [checks, failures])
 	quit(0 if failures.is_empty() else 1)

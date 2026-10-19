@@ -37,6 +37,8 @@ const KINDS := {
 	# Chão povoado do deserto (DesertGroundCover): moita grande e pedra solta.
 	"desert_shrub": {"family": "light", "radius": 0.55, "drag": 0.04, "damage": 0.0, "sound": "wood"},
 	"desert_stone": {"family": "light", "radius": 0.45, "drag": 0.18, "damage": 2.0, "sound": "stone"},
+	"desert_gravel": {"family": "light", "radius": 0.15, "drag": 0.0, "damage": 0.0, "sound": "stone"},
+	"desert_grass": {"family": "light", "radius": 0.25, "drag": 0.0, "damage": 0.0, "sound": "wood"},
 	# Térreo da calçada (SidewalkFill): plástico, madeira e lata que o carro espalha.
 	"cafe_set": {"family": "light", "radius": 0.85, "drag": 0.04, "damage": 0.5, "sound": "wood"},
 	"cafe_parasol": {"family": "light", "radius": 0.9, "drag": 0.05, "damage": 0.5, "sound": "wood"},
@@ -80,11 +82,12 @@ static func register_node(kind: String, root: Node3D, chunk: Node3D, pool: Dicti
 
 
 ## Mobília em MultiMesh (CityLook): anima a instância.
-static func register_instance(kind: String, multimesh: MultiMesh, index: int, chunk: Node3D, extra: Array = [], colliders: Array = [], visual: MultiMeshInstance3D = null) -> void:
+static func register_instance(kind: String, multimesh: MultiMesh, index: int, chunk: Node3D, extra: Array = [], colliders: Array = [], visual: MultiMeshInstance3D = null, contact_radius := -1.0) -> void:
 	var xform := multimesh.get_instance_transform(index)
 	var point := chunk.global_transform * xform.origin
 	var item := {"kind": kind, "multimesh": multimesh, "index": index, "extra": extra, "colliders": colliders.map(func(shape): return weakref(shape)), "chunk": weakref(chunk), "base": xform, "point": point, "state": "standing"}
 	if visual != null: item.visual = weakref(visual)
+	if contact_radius > 0.0: item.radius = contact_radius
 	_register(item)
 
 
@@ -156,7 +159,11 @@ static func hit(item: Dictionary, speed: float, direction: Vector3, director: No
 		wobble.kill()
 		_set_transform(item, _base(item))
 	item.erase("wobble")
-	director.play_prop_hit(item.point, profile.sound, speed)
+	# Small cover needs a quiet crunch, rather than a full car-crash sound per twig.
+	var sound_speed := speed
+	if item.kind in ["desert_shrub", "desert_stone", "desert_gravel", "desert_grass"]:
+		sound_speed = clampf(speed * float(item.get("radius", profile.radius)) * .35, .8, 5.0)
+	director.play_prop_hit(item.point, profile.sound, sound_speed)
 	if speed < float(profile.get("fall_speed", FALL_SPEED)) and family == "post":
 		_wobble(item, flat, director)
 		return false
@@ -256,10 +263,27 @@ static func _tumble(item: Dictionary, flat: Vector3, speed: float, director: Nod
 	var launch := flat * speed * randf_range(0.95, 1.3) + side * speed * randf_range(-0.15, 0.15) + Vector3.UP * clampf(speed * 0.18, 0.5, 4.0)
 	launch = launch.limit_length(26.0)
 	var spin := side * clampf(speed * 1.6, 2.0, 22.0) + Vector3.UP * randf_range(-4.0, 4.0)
-	if item.kind in ["desert_tree", "desert_shrub", "desert_stone"]:
+	if item.kind in ["desert_tree", "desert_shrub", "desert_stone", "desert_gravel", "desert_grass"]:
 		# Árvore cede e tomba onde estava: com a velocidade cheia do carro ela saía voando longe.
 		launch = flat * minf(speed * 0.15, 2.5) + Vector3.UP * 0.3
 		spin = side * clampf(speed * 0.25, 1.0, 2.5)
+	if mesh != null and mesh.has_meta("street_fracture_meshes"):
+		# Same spatial fracture as the beige boulders, with shared source shards.
+		# Scale, vertex colours and instance tint survive the MultiMesh hand-off.
+		var shards: Array = mesh.get_meta("street_fracture_meshes")
+		var material := _instance_material(item)
+		for index in shards.size():
+			var fragment := _debris_body(director, base.origin, maxf(.05, float(MASSES.get(item.kind, 1.0)) * absf(base.basis.determinant()) / shards.size()))
+			var visual := MeshInstance3D.new()
+			visual.mesh = shards[index]
+			visual.material_override = material
+			visual.transform = Transform3D(base.basis, Vector3.ZERO)
+			visual.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			fragment.add_child(visual)
+			_add_box_shape(fragment, visual.transform * visual.mesh.get_aabb())
+			fragment.linear_velocity = launch + side * (float(index) - 1.0) * .35
+			fragment.angular_velocity = spin * (.6 + float(index) * .3)
+		return
 	if item.kind == "trash_can":
 		_break_trash_can(base, launch, spin, director)
 		return

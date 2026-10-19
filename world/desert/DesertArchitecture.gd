@@ -126,10 +126,10 @@ static func cactus(height: float) -> Node3D:
 	root.name="Saguaro"
 	# Mapa de costelas e aréolas da flora no UV do cilindro (16 costelas em volta, aréola a cada ~6 cm):
 	# o triplanar das outras plantas fazia faixa escura no tronco e anéis nos braços.
-	G.cylinder(root,"Stem",Vector3(0,height*.5,0),.18,height,Color("647052"),height>2.2).material_override=saguaro_skin(Color("647052"),height)
+	G.cylinder(root,"Stem",Vector3(0,height*.5,0),.18,height,Color("647052"),true).material_override=saguaro_skin(Color("647052"),height)
 	for side in [-1.0,1.0]:
-		var arm := G.cylinder(root,"Arm",Vector3(side*.35,height*.53,0),.11,.7,Color("6c7454"))
+		var arm := G.cylinder(root,"Arm",Vector3(side*.35,height*.53,0),.11,.7,Color("6c7454"),true)
 		arm.rotation.z=PI*.5
 		arm.material_override=saguaro_skin(Color("6c7454"),.7)
-		G.cylinder(root,"Tip",Vector3(side*.66,height*.67,0),.115,height*.29,Color("6c7454")).material_override=saguaro_skin(Color("6c7454"),height*.29)
+		G.cylinder(root,"Tip",Vector3(side*.66,height*.67,0),.115,height*.29,Color("6c7454"),true).material_override=saguaro_skin(Color("6c7454"),height*.29)
 	return root

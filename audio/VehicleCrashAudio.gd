@@ -135,6 +135,8 @@ static func play_body_impact(context: Node3D, target: Object, point: Vector3, sp
 	return play_contact(context, target, point, speed, kind, key)
 
 static func play_contact(context: Node3D, target: Object, point: Vector3, speed: float, kind := "", key := "") -> bool:
+	# Prop profiles call stone; the retained crash bank names those takes solid.
+	if kind == "stone": kind = "solid"
 	if not is_finite(speed) or speed < MIN_SPEED or not point.is_finite(): return false
 	if not is_instance_valid(context) or not context.is_inside_tree(): return false
 	var camera := context.get_viewport().get_camera_3d()

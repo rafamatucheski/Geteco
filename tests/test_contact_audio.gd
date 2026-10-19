@@ -89,6 +89,8 @@ func run() -> void:
 		check(AUDIO.contact_kind(wall,200,false) == material, "authored material " + material)
 		check(AUDIO.play_contact(car,wall,Vector3.ZERO,12,material,material), "stream for " + material)
 		await frames(8)
+	check(AUDIO.play_contact(car, wall, Vector3.ZERO, 2, "stone", "loose_stone"), "stone prop profile resolves to an existing solid take")
+	check(pool.voices.any(func(voice): return voice.stream != null and voice.stream.resource_path.contains("/solid_")), "stone uses the solid bank rather than a missing stone sample")
 	check(not AUDIO.play_contact(car,wall,Vector3(500,0,0),12), "distant contact culled before emission")
 	for voice in pool.voices: voice.stop()
 	pool.contacts.clear(); pool.sources.clear()
