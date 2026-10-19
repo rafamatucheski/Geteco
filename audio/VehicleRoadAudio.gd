@@ -34,6 +34,7 @@ func update_contacts(contacts: Array[Dictionary], speed: float, sliding: bool, d
 		if contact.is_empty(): continue
 		var kind := str(contact.kind)
 		if kind == "water": kind = "wet"
+		elif kind == "sand": kind = "dirt"
 		if not weights.has(kind): kind = "hard"
 		weights[kind] += .5
 		if bool(contact.wet) and kind != "wet":

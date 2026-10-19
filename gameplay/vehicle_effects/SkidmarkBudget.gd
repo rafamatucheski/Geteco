@@ -119,6 +119,7 @@ static func mark_color(mark: Dictionary, now: int) -> Color:
 	var tint := Color(.035,.035,.03,(1.0-age)*(.48 if mark.kind=="hard" else .30))
 	if mark.kind == "snow": tint = Color(.38,.43,.44,(1.0-age)*.38)
 	elif mark.kind == "dirt": tint = Color(.15,.10,.07,minf(1.0,(1.0-age)*.36*depth))
+	elif mark.kind == "sand": tint = Color(.42,.33,.22,minf(1.0,(1.0-age)*.30*depth))
 	elif mark.kind == "grass": tint = Color(.13,.15,.06,minf(1.0,(1.0-age)*.42*depth))
 	return tint
 

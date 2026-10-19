@@ -30,7 +30,7 @@ const MARK_LIFETIME_MSEC := 10000
 # Sulco em chÃ£o macio fica mais tempo que a borracha do asfalto: Ã© o rastro que o
 # carro deixa na grama/terra mesmo andando reto, sem derrapar.
 const RUT_LIFETIME_MSEC := 30000
-const SOFT_KINDS := ["grass","dirt","snow"]
+const SOFT_KINDS := ["grass","dirt","snow","sand"]
 const PROBE_INTERVAL := .05
 const REDRAW_INTERVAL := .10
 
@@ -205,6 +205,11 @@ func _stall_emit_surface(side: int, contact: Dictionary, mode: String, road_spee
 		process.scale_min = .48+heft*.3
 		process.scale_max = 1.25+heft*.9
 		process.color = Color(.38,.30,.22,.48+heft*.2)
+	elif mode == "sand":
+		# Poeira clara da areia do deserto, na cor do chão, não a fumaça cinza-azulada do asfalto.
+		process.scale_min = .55+heft*.3
+		process.scale_max = 1.35+heft*.9
+		process.color = Color(.78,.66,.48,.40+heft*.2)
 	elif mode == "grass":
 		# Tufos arrancados sobem e caem (gravidade), nÃ£o pairam como poeira.
 		process.initial_velocity_min = 1.0+heft
@@ -431,6 +436,7 @@ func _stall_redraw_marks() -> void:
 		var tint := Color(.035,.035,.03,(1.0-age)*(.48 if mark.kind=="hard" else .30))
 		if mark.kind == "snow": tint = Color(.38,.43,.44,(1.0-age)*.38)
 		elif mark.kind == "dirt": tint = Color(.15,.10,.07,minf(1.0,(1.0-age)*.36*depth))
+		elif mark.kind == "sand": tint = Color(.42,.33,.22,minf(1.0,(1.0-age)*.30*depth))
 		elif mark.kind == "grass": tint = Color(.13,.15,.06,minf(1.0,(1.0-age)*.42*depth))
 		vertices[cursor] = mark.corner_a_left
 		vertices[cursor+1] = mark.corner_b_left

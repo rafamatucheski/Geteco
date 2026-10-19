@@ -73,6 +73,9 @@ static func _surface_kind(collider: Object, point: Vector3) -> String:
 	if "earthroad" in labels or "dirtroad" in labels: return "dirt"
 	if "road" in labels or "sidewalk" in labels or "gangway" in labels or "deck" in labels:
 		return "hard"
+	# Chão do deserto (DesertNativeRegion/…/DesertGround): antes caía em "hard", e a roda
+	# deslizando na areia soltava a fumaça branca de pneu no asfalto (vídeo do playtest de 19/10).
+	if "desertground" in labels: return "sand"
 	# A encosta abaixo da neve é pasto (MountainGrass3D e o som de passos já a tratam assim).
 	if "mountainterrain" in labels:
 		return "snow" if point.z < SNOW_EDGE_Z else "grass"
