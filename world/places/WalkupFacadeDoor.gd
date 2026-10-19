@@ -3,6 +3,9 @@ extends Node3D
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
 var open_amount := 0.0
 var hinge: Node3D
+## Folhas pintadas da entrada (PaintedFacadeKit `walk_in`) sem zona de proximidade própria:
+## giram com este empurrão, que continua sendo a colisão e a admissão (Casa do Zelador).
+var painted_leaves: Array[Node3D] = []
 
 static func install(art: Node3D, data: Dictionary) -> Node3D:
 	var family := CATALOG.walkup_family(str(data.id))
@@ -18,6 +21,8 @@ static func install(art: Node3D, data: Dictionary) -> Node3D:
 func set_open_amount(amount: float) -> void:
 	open_amount = clampf(amount, 0.0, 1.0)
 	if is_instance_valid(hinge): hinge.rotation.y = open_amount * PI * .5
+	for leaf in painted_leaves:
+		if is_instance_valid(leaf): leaf.set_open_amount(open_amount)
 
 func _build(art: Node3D, family: String) -> void:
 	var z: float = CATALOG.walkup_door_z(family)
@@ -88,6 +93,11 @@ func _build(art: Node3D, family: String) -> void:
 	collision.shape = shape
 	collision.position = Vector3(width * .5, bottom + height * .5, 0)
 	body.add_child(collision)
+	# Chalés pintados da serra abrem a folha do kit pela zona dela; essas ficam de fora.
+	for anchor in art.find_children("Doorway_front*", "Node3D", true, false):
+		if not anchor.has_meta("walk_in") or not anchor.find_children("DoorZone", "Area3D", true, false).is_empty(): continue
+		for leaf in anchor.get_children():
+			if leaf is PaintedFacadeKit.PaintedDoor: painted_leaves.append(leaf)
 	set_open_amount(0.0)
 
 func _named_parts(art: Node3D, names: Array) -> Array[Node3D]:

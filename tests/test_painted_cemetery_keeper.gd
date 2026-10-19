@@ -1,7 +1,8 @@
 extends SceneTree
 ## Casa do Zelador pintada: um kit só, nenhuma peça 3D antiga visível, a única porta é a
-## do WalkupFacadeDoor (folha pintada na dobradiça dela), colisão do casco e interior
-## preservados, e o interruptor GETECO_PAINTED_KEEPER=0 devolve o 3D antigo.
+## folha do kit na entrada de verdade (walk_in), girada pelo WalkupFacadeDoor junto com a
+## dobradiça invisível dele; colisão do casco e interior preservados, e o interruptor
+## GETECO_PAINTED_KEEPER=0 devolve o 3D antigo.
 const EXTERIOR := "res://assets/regions/source/world/harbor/cemetery/CemeteryHouseExterior3D.gd"
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
 var checks := 0
@@ -54,21 +55,28 @@ func run() -> void:
 	for piece in art.find_children("LimewashedCottagePassage*", "MeshInstance3D", true, false):
 		check(not (piece as Node3D).visible, "hull passage piece hidden")
 	check(not art.find_children("LimewashedCottagePassage*", "MeshInstance3D", true, false).is_empty(), "hull still cut for the doorway")
-	var painted_leaves := art.find_children("PaintedDoorLeaf*", "MeshInstance3D", true, false)
-	check(painted_leaves.size() == 2, "one painted leaf (front + inside)")
+	var house: Node3D = art.get_node("PaintedKeeperHouse")
+	var doors := house.find_children("Door*", "", true, false).filter(func(n): return n is PaintedFacadeKit.PaintedDoor)
+	check(doors.size() == 1, "one kit door leaf")
+	var door: PaintedFacadeKit.PaintedDoor = doors[0] if not doors.is_empty() else null
+	check(door != null and door.get_parent().has_meta("walk_in"), "the kit leaf is the real entrance (walk_in)")
+	check(door != null and door._area == null and door._solid == null, "kit leaf has no zone or solid of its own")
 	var hinge: Node3D = adapter.get_node("DoorHinge")
-	for leaf in painted_leaves: check(hinge.is_ancestor_of(leaf), "painted leaf lives on the walk-up hinge")
-	check(art.get_node("PaintedKeeperHouse").find_children("Door", "", true, false).is_empty(), "kit has no door of its own (no duplicate)")
 	check(hinge.get_node("DoorSolid") != null, "walk-up door solid kept")
-	var leaf: MeshInstance3D = painted_leaves[0]
-	var quad := leaf.mesh as QuadMesh
-	check(quad.size.x > 1.2 and quad.size.x < 1.6 and quad.size.y > 2.0 and quad.size.y < 2.3, "leaf fills the painted doorway")
-	check(absf(leaf.global_position.y - quad.size.y * .5) < .06, "door sill at ground level")
-	check(absf(leaf.global_position.x) < .02, "painted doorway centered on the real door (x=0)")
-	var before := leaf.global_position
+	check(hinge.find_children("*", "MeshInstance3D", true, false).is_empty(), "walk-up hinge carries no second visible leaf")
+	check(adapter.painted_leaves.size() == 1 and adapter.painted_leaves[0] == door, "adapter drives the kit leaf")
+	var quad: MeshInstance3D = door.hinge.get_child(0)
+	var leaf_size := (quad.mesh as QuadMesh).size
+	check(leaf_size.x > 1.2 and leaf_size.x < 1.6 and leaf_size.y > 2.0 and leaf_size.y < 2.3, "leaf fills the painted doorway")
+	check(absf(quad.global_position.y - leaf_size.y * .5) < .06, "door sill at ground level")
+	check(absf(quad.global_position.x) < .02, "painted doorway centered on the real door (x=0)")
+	var door_z := CATALOG.walkup_door_z("keeper")
+	check(absf(quad.global_position.z - door_z) < .35, "leaf on the real door line (z=%.2f, folha %.2f)" % [door_z, quad.global_position.z])
+	var before := quad.global_position
 	adapter.set_open_amount(1.0)
-	check(leaf.global_position.distance_to(before) > .3, "leaf swings with the walk-up hinge")
+	check(is_equal_approx(door.open_amount, 1.0) and quad.global_position.distance_to(before) > .3, "leaf swings with the walk-up push")
 	adapter.set_open_amount(0.0)
+	check(quad.global_position.distance_to(before) < .001, "leaf closes with the walk-up push")
 	# O que sobra visível é o kit, a folha e o vão escuro: nada fora do holder pintado.
 	for mesh in visible_meshes(art):
 		check(art.get_node("PaintedKeeperHouse").is_ancestor_of(mesh) or hinge.is_ancestor_of(mesh), "visible mesh belongs to the painted house: " + str(mesh.name))

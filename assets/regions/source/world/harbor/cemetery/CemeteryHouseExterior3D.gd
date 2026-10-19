@@ -4,8 +4,6 @@ const KIT := preload("res://world/urban_detail/PaintedFacadeKit.gd")
 const PAINTED_STYLE := "casa-zelador"
 ## Casco do chalé (m): o mesmo das caixas antigas, para colisão, interior e porta baterem.
 const HULL := Vector3(7.1, 2.7, 5.4)
-## Plano da folha: logo à frente do casco, na linha da dobradiça do WalkupFacadeDoor (z 2,8).
-const LEAF_Z := 2.77
 static var _recess_material: StandardMaterial3D
 
 var door: Node3D
@@ -62,8 +60,11 @@ func _ready() -> void:
 ## Troca o visual por PaintedFacadeKit sem tocar no que o jogo usa do chalé:
 ## - `LimewashedCottage` fica (escondido): é o sólido do interior (`interior_solid_id`) e a
 ##   colisão das paredes, que o WalkupFacadeDoor recorta para o vão da porta;
-## - `HingedDoor` fica vazio: o WalkupFacadeDoor leva os filhos dele para a dobradiça que o
-##   empurrão do jogador gira, então a folha pintada é filha dele (a única porta que abre);
+## - a porta que abre é a folha do kit na entrada de verdade (`walk_in`, como na delegacia e
+##   no banco pintados), sem zona nem sólido próprios: o WalkupFacadeDoor a gira junto com a
+##   dobradiça invisível que o empurrão do jogador abre. `HingedDoor` fica vazio (o adaptador
+##   o procura). Antes a folha era um quad pendurado nessa dobradiça, 0,17 m para dentro da
+##   ombreira pintada: aberta, a ponta furava a fachada, e a auditoria não a via (19/10);
 ## - fundação, degrau, telhado, janelas, placa, lenha e lampião 3D saem (o desenho já os traz;
 ##   escondidos, a fundação e o degrau seriam um meio-fio invisível sem pintura por cima).
 func _paint_over() -> void:
@@ -72,8 +73,6 @@ func _paint_over() -> void:
 		if node is MeshInstance3D or node is Label3D or node.name == &"OilLantern": node.free()
 	window_light = null
 	for node in door.get_children(): node.free()
-	# Pivô na origem: a folha pintada usa coordenadas da casa e o adaptador a leva à dobradiça.
-	door.position = Vector3.ZERO
 	var cottage := get_node("LimewashedCottage") as MeshInstance3D
 	# O desenho assenta no chão (a fundação saiu): o casco desce até y=0.
 	(cottage.mesh as BoxMesh).size = Vector3(HULL.x, HULL.y + .15, HULL.z)
@@ -82,15 +81,11 @@ func _paint_over() -> void:
 	var holder := Node3D.new()
 	holder.name = "PaintedKeeperHouse"
 	add_child(holder)
-	var facade := KIT.build(holder, PAINTED_STYLE, HULL, null, NAN, {"snow": false})
 	var opening: Array = KIT.openings(PAINTED_STYLE, "front")[0].rect
-	# O kit põe a própria folha no vão; aqui a folha é a do WalkupFacadeDoor.
-	for node in facade.get_children():
-		if str(node.name).begins_with("Doorway_front"):
-			for child in node.get_children(): child.free()
 	var leaf_w := (float(opening[2]) - float(opening[0])) * HULL.x
 	var leaf_h := (float(opening[3]) - float(opening[1])) * HULL.y
 	var center_x := (-.5 + (float(opening[0]) + float(opening[2])) * .5) * HULL.x
+	var facade := KIT.build(holder, PAINTED_STYLE, HULL, null, center_x, {"snow": false})
 	var bottom := (1.0 - float(opening[3])) * HULL.y - float(facade.get_meta("ground_sink", 0.0))
 	var recess := MeshInstance3D.new()
 	recess.name = "DoorRecessPainted"
@@ -100,15 +95,6 @@ func _paint_over() -> void:
 	recess.position = Vector3(center_x, bottom + leaf_h * .5, HULL.z * .5 - .25)
 	recess.material_override = _recess()
 	holder.add_child(recess)
-	for inside in [false, true]:
-		var leaf := MeshInstance3D.new()
-		leaf.name = "PaintedDoorLeaf" + ("Inside" if inside else "")
-		leaf.mesh = QuadMesh.new()
-		(leaf.mesh as QuadMesh).size = Vector2(leaf_w, leaf_h)
-		leaf.material_override = KIT.material(PAINTED_STYLE, "door_front_inside" if inside else "door_front")
-		leaf.position = Vector3(center_x, bottom + leaf_h * .5, LEAF_Z - (.01 if inside else 0.0))
-		if inside: leaf.rotation.y = PI
-		door.add_child(leaf)
 
 
 static func _recess() -> StandardMaterial3D:

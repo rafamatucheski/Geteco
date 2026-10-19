@@ -481,6 +481,10 @@ static func _door(root: Node3D, style: String, side: String, rect: Array, xform:
 	anchor.name = "Doorway_" + side + ("" if siblings == 0 else "_%d" % (siblings + 1))
 	anchor.transform = xform.translated_local(Vector3(float(rect[0]) * w, bottom, 0))
 	root.add_child(anchor)
+	# Medida do vão no próprio nó: a auditoria de portas confere se a entrada real cai num
+	# vão sem folha (baia do quartel, recuo da porta de correr do Bay Medical) por aqui.
+	anchor.set_meta("opening_size", Vector2(leaf_w, leaf_h))
+	if not leaf: anchor.set_meta("leafless", true)
 	if walk_in: anchor.set_meta("walk_in", true)
 	elif not leaf:
 		var corridor := MeshInstance3D.new()

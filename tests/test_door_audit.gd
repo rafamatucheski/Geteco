@@ -456,7 +456,9 @@ func _door_kind(e: Dictionary) -> String:
 		"walkup":
 			if e.id in ["maciota", "port_boss_garage"]: return "portão já aberto"
 			var walk = session.weapon_shop_entrance
-			if is_instance_valid(walk._facade) and _painted(_walkup_art(walk._facade)): return "folha pintada (kit) + dobradiça invisível"
+			if is_instance_valid(walk._facade) and _painted(_walkup_art(walk._facade)):
+				if _walk_in_leaves(_walkup_art(walk._facade)).is_empty(): return "vão pintado sem folha"
+				return "folha pintada (kit) + dobradiça invisível"
 			return "folha com dobradiça (empurrar)"
 		"special":
 			if e.id == "mountain_mystery_cave": return "boca de caverna"
@@ -490,8 +492,7 @@ func _check_alignment(e: Dictionary, r: Dictionary, door: Vector3) -> void:
 	if art == null or not _painted(art): return
 	var leaves := _walk_in_leaves(art)
 	if leaves.is_empty():
-		r.aligned = false
-		r.notes.append("fachada pintada sem folha de entrada (walk_in) na porta real")
+		_check_leafless_opening(art, r, door)
 		return
 	var best := INF
 	for center in _walk_in_openings(art): best = minf(best, _flat(center - door))
@@ -500,6 +501,36 @@ func _check_alignment(e: Dictionary, r: Dictionary, door: Vector3) -> void:
 		if leaf._area != null: r["leaf_zone"] = {"monitoring":leaf._area.monitoring, "processing":leaf.can_process(), "in_tree":leaf._area.is_inside_tree(), "mask":leaf._area.collision_mask, "zone_origin":_v(leaf._area.get_child(0).global_position)}
 	r.aligned = best <= .35
 	if not r.aligned: r.notes.append("vão pintado a %.2f m da entrada real" % best)
+
+## Fachada pintada sem folha walk_in: vale se a entrada real cai num vão que a pintura
+## desenhou SEM folha (style.json "leaf": false), onde não há folha para coincidir com ela.
+## O vão inteiro é a porta: alinhado se a entrada fica dentro da largura dele e a até
+## DOOR_REACH (o alcance em que uma folha pintada abre) do plano dele. Casos de 19/10:
+## quartel (baia da direita aberta, a do portão de enrolar antigo; a folha pintada da
+## lateral é outra porta, e o vestíbulo de PaintedFireStation fica na baia) e Bay Medical
+## (recuo pintado da porta de vidro de correr 3D, 0,36 m à frente do plano, sob a marquise).
+## Folha pintada removida ou entrada ao lado do vão continuam falhando.
+func _check_leafless_opening(art: Node, r: Dictionary, door: Vector3) -> void:
+	var best := {}
+	for anchor in art.find_children("Doorway_front*", "Node3D", true, false):
+		if not anchor.has_meta("leafless"): continue
+		var size: Vector2 = anchor.get_meta("opening_size")
+		var left: Vector3 = anchor.global_transform * Vector3.ZERO
+		var right: Vector3 = anchor.global_transform * Vector3(size.x, 0, 0)
+		var across := Vector2(right.x - left.x, right.z - left.z)
+		var outward := Vector2(anchor.global_basis.z.x, anchor.global_basis.z.z).normalized()
+		var to_door := Vector2(door.x - left.x, door.z - left.z)
+		var t := to_door.dot(across) / across.length_squared()
+		var row := {"lateral_m":absf(t - .5) * across.length(), "half_m":across.length() * .5,
+			"depth_m":to_door.dot(outward), "inside":t >= 0.0 and t <= 1.0}
+		if best.is_empty() or (row.inside and not best.inside) or (row.inside == best.inside and absf(row.depth_m) < absf(best.depth_m)): best = row
+	if best.is_empty():
+		r.aligned = false
+		r.notes.append("fachada pintada sem folha de entrada (walk_in) nem vão sem folha na porta real")
+		return
+	r.painted_opening = {"leafless":true, "lateral_m":snappedf(best.lateral_m, .01), "half_width_m":snappedf(best.half_m, .01), "depth_m":snappedf(best.depth_m, .01)}
+	r.aligned = best.inside and absf(best.depth_m) <= PaintedFacadeKit.DOOR_REACH
+	if not r.aligned: r.notes.append("vão pintado sem folha não contém a entrada real (%.2f m do meio, meia largura %.2f m, %.2f m do plano)" % [best.lateral_m, best.half_m, best.depth_m])
 
 ## Centro visível de cada vão de entrada: o meio das folhas fechadas (porta dupla: as
 ## duas), no quad pintado com a escala que ele tem no mundo. Antes media só a folha
