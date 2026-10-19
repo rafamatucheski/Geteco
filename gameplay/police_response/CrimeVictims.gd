@@ -15,7 +15,8 @@ const HOSTILE := "hostile"
 const OWNER_HANDLED := "owner_handled"
 const OTHER := "other"
 const PERSON_ROLES := ["civilian", "emergency", "ambient_worker", "urban_routine", "sewer_resident",
-	"desert_contact", "desert_digo_mechanic", "digo_instructor", "jessica", "vicente_crew", "motocross_spectator"]
+	"desert_contact", "desert_digo_mechanic", "digo_instructor", "jessica", "vicente_crew", "motocross_spectator",
+	"angler", "meet_guest"]
 ## Gangue em combate: ferir um Cobra (ou um fora-da-lei, que herda o papel) não é denúncia.
 const HOSTILE_ROLES := ["cobra"]
 

@@ -25,6 +25,8 @@ func _ready() -> void:
 	super._ready()
 	controlled_automatically = true
 	set_meta("authored_population_owner","lago_sereno")
+	# Papel próprio (CrimeVictims.PERSON_ROLES): matar um pescador conta homicídio, como civil.
+	set_meta("gameplay_role","angler")
 	set_meta("civilian_reaction_lod",true)
 	add_to_group("fishing_angler")
 	add_to_group("v2_damageable")

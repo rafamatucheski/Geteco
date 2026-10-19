@@ -31,6 +31,8 @@ static func valid_state(value: Variant) -> bool:
 func configure(owner_session) -> void:
 	session=owner_session
 	name="DesertBanditEncounter"
+	# Antes do deserto no quadro, para o enfeite ceder a vez no quadro em que o acampamento monta.
+	process_priority=-1
 	if not session.state.world_state.has(STATE_KEY): session.state.world_state[STATE_KEY]=default_state()
 	if valid_state(session.state.world_state[STATE_KEY]): _known_mask=int(session.state.world_state[STATE_KEY].defeated_mask)
 
@@ -82,7 +84,9 @@ func _process(delta: float) -> void:
 	var region: Node3D=session.controller.regions.get("desert")
 	if not is_instance_valid(region): return
 	if not is_instance_valid(camp):
-		if distance>SPAWN_DISTANCE or not region.is_streaming_idle(): return
+		# Só o chão do deserto, não o enfeite fatiado (e1fad702: a 60 fps isso esperava ~27 s).
+		if distance>SPAWN_DISTANCE or not region.surfaces_idle(): return
+		region.yield_dressing_this_frame()
 		region.prepare_collision_at(CAMP.CENTER)
 		camp=CAMP.build()
 		add_child(camp)

@@ -19,6 +19,8 @@ var _elapsed := 0.0
 func configure(owner_session) -> void:
 	session=owner_session
 	name="DesertLocals"
+	# Antes do deserto no quadro, para o enfeite ceder a vez no quadro em que um morador nasce.
+	process_priority=-1
 
 func _process(delta: float) -> void:
 	_elapsed+=delta
@@ -53,7 +55,11 @@ func _process(delta: float) -> void:
 		if not active or distance>150: retired.erase(routine.id)
 		if not active or distance>75 or retired.has(routine.id) or admitted: continue
 		if session.world.people.size()>=session.controller._population_cap(): continue
-		if not session.controller.region.is_streaming_idle(): continue
+		# Espera só o chão do deserto, não o enfeite fatiado (DesertRegion.surfaces_idle): com
+		# is_streaming_idle(), a 60 fps (padrão) o morador podia esperar ~27 s perto da arrancada (e1fad702).
+		var ground: Node3D=session.controller.region
+		if not (ground.surfaces_idle() if ground.has_method("surfaces_idle") else ground.is_streaming_idle()): continue
+		if ground.has_method("yield_dressing_this_frame"): ground.yield_dressing_this_frame()
 		session.controller.region.prepare_collision_at(routine.a)
 		session.controller.region.prepare_collision_at(routine.b)
 		var clear:=true

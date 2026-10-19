@@ -8,6 +8,8 @@ var person: Node3D
 
 func _ready() -> void:
 	super._ready()
+	# Papel próprio (CrimeVictims.PERSON_ROLES): matar um convidado conta homicídio, como civil.
+	set_meta("gameplay_role","meet_guest")
 	add_to_group("v2_damageable")
 	person = visual.get_child(0)
 	visual.rotation.y = initial_yaw

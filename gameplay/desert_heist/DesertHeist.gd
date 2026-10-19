@@ -19,6 +19,8 @@ var _door_follow_time := 0.0
 func configure(owner_session) -> void:
 	session=owner_session
 	name="DesertCargoHeist"
+	# Antes do deserto no quadro, para o enfeite ceder a vez no quadro em que o caminhão entra.
+	process_priority=-1
 	set_physics_process(false)
 	if OS.get_environment("GETECO_DESERT_CARGO_HEIST")=="0": set_process(false); return
 	var began := STALL.begin()
@@ -100,7 +102,10 @@ func _process(delta: float) -> void:
 
 func _admit_truck(point: Vector3) -> void:
 	var region: Node3D=session.controller.regions.get("desert")
-	if not is_instance_valid(region) or not region.is_streaming_idle(): return
+	# Espera só o chão do deserto, não o enfeite fatiado (DesertRegion.surfaces_idle): com
+	# is_streaming_idle(), a 60 fps (padrão) o caminhão podia esperar ~27 s perto da arrancada (e1fad702).
+	if not is_instance_valid(region) or not region.surfaces_idle(): return
+	region.yield_dressing_this_frame()
 	if not region.prepare_collision_at(point): return
 	var began := STALL.begin()
 	var car:=TRUCK.new()

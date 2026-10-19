@@ -268,6 +268,7 @@ func crime_victims() -> void:
 	check(classify_role("cobra") == VICTIMS.HOSTILE, "Cobra é gangue em combate")
 	check(classify_role("police") == VICTIMS.POLICE, "policial é policial")
 	check(classify_role("") == VICTIMS.OTHER, "sem papel continua 'outro'")
+	check(classify_role("angler") == VICTIMS.PERSON and classify_role("meet_guest") == VICTIMS.PERSON, "pescador e convidado do encontro contam como pessoa")
 	var guard := FakePerson.new("security")
 	guard.set_meta("local_security", true)
 	check(VICTIMS.classify(guard) == VICTIMS.OWNER_HANDLED, "segurança do comboio: o dono atribui o crime")
