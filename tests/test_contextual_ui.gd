@@ -62,6 +62,10 @@ func run() -> void:
 	await wait_seconds(2); check(not hud.money.change.visible and hud.money_label.is_visible_in_tree(),"delta expires; balance remains")
 	var pad := InputEventJoypadButton.new(); pad.button_index=JOY_BUTTON_GUIDE; pad.pressed=true; Input.parse_input_event(pad); await frames()
 	check(controls.using_gamepad and hud.backpack_hint.text==controls.prompt("inventory"),"last gamepad input updates backpack binding")
+	# Desconectar o controle em uso abre a pausa (GameInput.active_controller_lost → PauseInput).
+	controls._on_joy_connection_changed(controls.active_joypad if controls.active_joypad >= 0 else 0, false); await frames()
+	check(world.pause_panel.visible and paused, "unplugging the controller in use opens the pause menu")
+	world.pause_panel.resume_game(); await frames()
 	hud.interaction_row.update_prompt("Conversar","interact",controls)
 	check(hud.interaction_key.text==controls.prompt("interact") and hud.interaction_label.text=="Conversar","only current controller prompt")
 	var mouse := InputEventMouseMotion.new(); mouse.relative=Vector2(8,0); Input.parse_input_event(mouse); await frames()

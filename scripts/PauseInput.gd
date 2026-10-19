@@ -1,6 +1,19 @@
 extends Node
 var world: Node3D
 
+func _ready() -> void:
+	var controls := get_node_or_null("/root/GameInput")
+	if controls != null and controls.has_signal("active_controller_lost"): controls.active_controller_lost.connect(_on_controller_lost)
+
+## Controle em uso desconectado: pausa, para o jogador não ficar parado no meio do trânsito.
+func _on_controller_lost(_device: int) -> void:
+	if not is_instance_valid(world) or world.has_meta("menu_preview") or get_tree().paused: return
+	if not is_instance_valid(world.pause_panel) or world.pause_panel.visible: return
+	if world.session != null:
+		var arrival = world.session.get("arrival")
+		if arrival != null and arrival.phase == "opening": return
+	world._toggle_pause()
+
 func _unhandled_input(event: InputEvent) -> void:
 	if world.has_meta("menu_preview"): return
 	if world.session != null:

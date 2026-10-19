@@ -8,6 +8,9 @@ const MENU_CURSOR_SVG := """<svg xmlns="http://www.w3.org/2000/svg" width="32" h
 signal bindings_changed
 signal device_changed
 signal controller_connection_changed(device: int, connected: bool, controller_name: String)
+## O controle que o jogador estava usando foi desconectado (PauseInput abre a pausa, como em
+## console). Antes ninguém ouvia controller_connection_changed: o jogo seguia sem controle.
+signal active_controller_lost(device: int)
 var using_gamepad := false
 var active_joypad := -1
 var sprint_toggled := false
@@ -640,6 +643,7 @@ func _resolve_joypad(device := -1) -> int:
 
 func _on_joy_connection_changed(device: int, connected: bool) -> void:
 	var old_joypad := active_joypad
+	var was_using_gamepad := using_gamepad
 	if connected and active_joypad < 0: active_joypad = device
 	elif not connected and active_joypad == device: active_joypad = _resolve_joypad()
 	if not connected and old_joypad == device:
@@ -648,6 +652,7 @@ func _on_joy_connection_changed(device: int, connected: bool) -> void:
 		_aim_stick = Vector2.ZERO
 		if active_joypad < 0: using_gamepad = false
 	controller_connection_changed.emit(device,connected,Input.get_joy_name(device) if connected else "")
+	if not connected and was_using_gamepad and (old_joypad == device or old_joypad < 0): active_controller_lost.emit(device)
 	if old_joypad != active_joypad: device_changed.emit()
 
 func _pad_button_hint(button: int, playstation: bool) -> String:
