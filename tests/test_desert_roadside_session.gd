@@ -12,6 +12,7 @@ const ROADSIDE := preload("res://runtime/desert/roadside/DesertRoadside.gd")
 const BALANCE := preload("res://data/catalogs/EconomyBalance.gd")
 const GARAGE := preload("res://runtime/GarageRewards.gd")
 const HM := preload("res://world/desert/DesertTerrainMesh.gd")
+const AUTOPILOT := preload("res://runtime/BenchmarkAutopilot.gd")
 const FOLDER := "res://evidence/desert-roadside-20261019"
 ## Terreno ocupado por cada lugar em coordenadas locais (x, z), de RoadsideBuild.
 const FOOTPRINTS := {"station": Rect2(-12, -8, 24, 20), "tower": Rect2(-8, -7, 16, 14),
@@ -128,6 +129,7 @@ func run() -> void:
 	await parking()
 	await breakdown_event()
 	await roadblock_event()
+	await natural_event()
 	finish(0 if failures.is_empty() else 1)
 
 func sol_poente() -> void:
@@ -265,6 +267,44 @@ func roadblock_event() -> void:
 	for i in 30: await process_frame
 	await RenderingServer.frame_post_draw
 	root.get_texture().get_image().save_png(ProjectSettings.globalize_path("%s/roadblock.png" % FOLDER))
+
+## Sem forçar nada: jogador ao volante na Route 66, o piloto do benchmark aperta as mesmas ações de
+## acelerar e virar do jogador, e o evento tem de nascer sozinho à frente quando o relógio deixa.
+func natural_event() -> void:
+	var events: Node3D = roadside.events
+	events.release_all()
+	var start := Vector3(347, 0, -700)
+	start.y = HM.surface_height(Vector2(start.x, start.z)) + .12
+	await stand(start + Vector3(9, 0, 0))
+	await frames(30)
+	var car: CharacterBody3D = session.controller.spawn_vehicle("union_sedan", start, 0.0)
+	if not check(is_instance_valid(car), "carro na Route 66 para dirigir"): return
+	await frames(10)
+	var entered := false
+	for side in [-1, 1]:
+		await stand(car.to_global(Vector3(side * (car.half_width + .65), .04, .15)))
+		if world.driving.interact():
+			entered = await until(func(): return world.driving.occupied and not world.driving.is_body_transition_active(), 8.0)
+			if entered: break
+	if not check(entered, "jogador ao volante na Route 66"): return
+	# Só o relógio de "pode nascer" vencido; o resto (velocidade, trecho, ponto à frente) é o do jogo.
+	events._next_at = events._desert_time
+	var autopilot = AUTOPILOT.new(world, car, [start, Vector3(347, start.y, -1150)], 14.0)
+	autopilot.begin()
+	var started := false
+	var fastest := 0.0
+	var deadline := Time.get_ticks_msec() + 30000
+	while Time.get_ticks_msec() < deadline and not started:
+		await physics_frame
+		autopilot.drive(1.0 / Engine.physics_ticks_per_second)
+		fastest = maxf(fastest, Vector2(car.velocity.x, car.velocity.z).length())
+		started = not events.event.is_empty()
+	var driven_to: Vector3 = car.global_position
+	autopilot.finish()
+	if not check(started, "evento nasce sozinho dirigindo (até %.1f m/s, carro em %s)" % [fastest, driven_to]): return
+	var point: Vector3 = events.event.point
+	check(absf(point.x - 342.5) < .5 and point.z < driven_to.z - 150.0 and point.z > -1080.0, "evento nasce à frente, no trecho route66_north (%s, carro em %s)" % [point, driven_to])
+	check(await until(func(): return events.event.is_empty() or events.event.pending.is_empty(), 10.0), "peças do evento natural montam")
 
 func finish(code: int) -> void:
 	print("DESERT_ROADSIDE checks=%d failures=%s" % [checks, failures])

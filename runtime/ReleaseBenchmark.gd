@@ -12,6 +12,11 @@ extends Node
 ## despacho). As rotas e o resto da medição ficam iguais; o jogador fica invencível só nesse modo.
 ## Dirigindo (15/10): --benchmark-drive faz o carro andar a rota com a própria física e direção
 ## automática (BenchmarkAutopilot), para medir o custo de dirigir que o teleporte não exercita.
+## Eventos de estrada (19/10): --benchmark-road-events, só na rota66, força uma van quebrada na ida e um
+## bloqueio de bandidos na volta, em cada volta medida, nos trechos da Route 66 (DesertRoadEvents.force_start).
+## O disparo do jogo pede o jogador ao volante (aqui o carro é teleportado e o jogador não entra nele) e
+## sorteia o tipo e a hora, o que deixaria o A/B sem par. Com GETECO_DESERT_ROADSIDE=0 não existe evento e
+## as chamadas não fazem nada: o lado desligado anda a mesma rota. Jogador e carro ficam invencíveis.
 const ROUTE_WEST := [Vector3(64, 0, 82), Vector3(150, 0, 82), Vector3(143, 0, 60), Vector3(84, 0, 60), Vector3(84, 0, 123), Vector3(65, 0, 113)]
 const ROUTE_PORT := [Vector3(150, 0, 82), Vector3(250, 0, 82), Vector3(250, 0, 30), Vector3(180, 0, 30), Vector3(180, 0, 82)]
 ## Pontos quentes das outras regiões (censo de 14/10). Serra: --play-at=mountain,650,-290; ponte cidade–serra:
@@ -39,7 +44,14 @@ const TOGGLES := ["GETECO_POP_VC", "GETECO_SUN_SHADOW_NEAR", "GETECO_TRAFFIC_RAI
 	"GETECO_DETAIL_RANGE", "GETECO_BAKED_BUILDINGS", "GETECO_SKID_BUDGET", "GETECO_DASH_BATCH", "GETECO_DISPATCH_FAST",
 	"GETECO_PED_DUMMY", "GETECO_BUILDING_BATCH", "GETECO_PROP_INSTANCING", "GETECO_GROUND_STACK", "GETECO_SHADOW_SHELL",
 	"GETECO_BRIDGE_MERGE", "GETECO_FURNITURE_MERGE", "GETECO_CELL_MERGE", "GETECO_BRIDGE_LOOK", "GETECO_PAINTED_WINDOWS", "GETECO_PAINTED_FACADES",
-	"GETECO_SUN_SPLITS", "GETECO_UNIFIED_BRIDGE", "GETECO_DESERT_CARGO_HEIST"]
+	"GETECO_SUN_SPLITS", "GETECO_UNIFIED_BRIDGE", "GETECO_DESERT_CARGO_HEIST", "GETECO_DESERT_ROADSIDE"]
+## Distância ao longo da volta da rota66 (ida para o sul de z -470, volta a partir de z -1500) em que cada
+## evento nasce, 240 m antes do ponto, como o jogo faria: a van na mão da ida, o bloqueio na mão da volta
+## (o carro do benchmark anda na faixa leste nos dois sentidos, então desvia dele pela outra mão).
+const ROAD_EVENT_CUES := [
+	{"at": 290.0, "kind": "breakdown", "point": Vector2(342.5, -1000), "direction": Vector2(0, -1)},
+	{"at": 1300.0, "kind": "roadblock", "point": Vector2(342.5, -990), "direction": Vector2(0, 1)},
+]
 
 const AUTOPILOT := preload("res://runtime/BenchmarkAutopilot.gd")
 
@@ -57,6 +69,10 @@ var _cargo_peak_guards := 0
 var _cargo_peak_alive_guards := 0
 var _cargo_observation_due := 0
 var _cargo_observed_seconds := 0
+var road_events := false
+var _road_events_fired := {}
+var _road_event_log: Array = []
+var _road_event_engaged_frames := 0
 
 static func requested() -> bool:
 	for argument in OS.get_cmdline_user_args():
@@ -77,6 +93,7 @@ func _ready() -> void:
 		if argument == "--benchmark-rain": bench_rain = 2
 		elif argument.begins_with("--benchmark-rain="): bench_rain = clampi(int(argument.trim_prefix("--benchmark-rain=")), 0, 2)
 		if argument.begins_with("--benchmark-chaos="): chaos_stars = clampi(int(argument.trim_prefix("--benchmark-chaos=")), 0, 6)
+		if argument == "--benchmark-road-events": road_events = true
 	_run.call_deferred()
 
 func _route_point(distance: float) -> Dictionary:
@@ -132,6 +149,15 @@ func _run() -> void:
 	world.player.collision_layer = 0
 	world.camera.target = car
 	if chaos_stars > 0 and not world.gameplay.god_mode: world.gameplay.toggle_god_mode()
+	road_events = road_events and route_name == "rota66"
+	if road_events:
+		# O carro passa a ser o alvo, como ao volante no jogo: com o jogador escondido e dentro da
+		# lataria, police_can_see nunca via ninguém e o bloqueio não atirava (primeira rodada de 19/10,
+		# 0 quadros em combate). Driving só põe o jogador na posição do carro, o que o benchmark já faz;
+		# o carro segue teleportado, sem velocidade, então o disparo natural de evento não acontece.
+		world.driving.occupied = true
+		if not world.gameplay.god_mode: world.gameplay.toggle_god_mode()
+		car.set_meta(preload("res://gameplay/DamageProtection.gd").META, true)
 	var viewport := get_viewport().get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(viewport, true)
 	var total: float = _route_point(0.0).total
@@ -148,6 +174,7 @@ func _run() -> void:
 		world.player.global_position = sample.point if autopilot == null else car.global_position
 		if chaos_stars > 0: _sustain_chaos(sample.point)
 		if route_name == "carga_deserto" and distance >= total * WARMUP_LOOPS: _observe_cargo()
+		if road_events and distance >= total * WARMUP_LOOPS: _road_events(distance, total)
 		await get_tree().process_frame
 		var now := Time.get_ticks_usec()
 		var frame_ms := (now - previous) / 1000.0
@@ -179,6 +206,9 @@ func _run() -> void:
 		report.chaos = {"stars_requested": chaos_stars, "stars_final": int(world.gameplay.stars), "dispatch_units_peak": _chaos_peak_units,
 			"dispatch_units_final": world.dispatch.units.size() if is_instance_valid(world.get("dispatch")) else -1}
 	if autopilot != null: report.drive = autopilot.summary()
+	if road_events:
+		report.road_events = {"cues": _road_event_log, "engaged_frames": _road_event_engaged_frames,
+			"scope": "Eventos forçados na rota66 (van na ida, bloqueio na volta) em cada volta medida; sem eles com GETECO_DESERT_ROADSIDE=0."}
 	if route_name == "carga_deserto":
 		report.cargo = {"trucks_peak":_cargo_peak_trucks,"guards_peak":_cargo_peak_guards,"alive_guards_peak":_cargo_peak_alive_guards,
 			"scope":"Rota renderizada da estrada do sal; observação de carga ativa, sem simular combate ou abertura.",
@@ -191,6 +221,25 @@ func _run() -> void:
 		file.store_string(JSON.stringify(report, "\t"))
 		file.close()
 	get_tree().quit(0)
+
+func _road_events(distance: float, total: float) -> void:
+	var session = world.session
+	var events: Variant = null
+	if session.desert != null and is_instance_valid(session.desert.frontier) and is_instance_valid(session.desert.frontier.get("roadside")):
+		events = session.desert.frontier.roadside.get("events")
+	if not is_instance_valid(events): return
+	if not events.event.is_empty() and events.event.get("engaged", false): _road_event_engaged_frames += 1
+	var loop := int(distance / total)
+	var along := fposmod(distance, total)
+	for index in ROAD_EVENT_CUES.size():
+		var cue: Dictionary = ROAD_EVENT_CUES[index]
+		var key := "%d:%d" % [loop, index]
+		if along < float(cue.at) or _road_events_fired.has(key): continue
+		# Como no jogo: sem o chão do ponto pronto, tenta de novo no quadro seguinte (até 150 m depois).
+		var started: bool = events.force_start(str(cue.kind), cue.point, cue.direction)
+		if not started and along < float(cue.at) + 150.0: continue
+		_road_events_fired[key] = true
+		_road_event_log.append({"loop": loop, "kind": str(cue.kind), "started": started, "late_m": snappedf(along - float(cue.at), .1), "at_msec": Time.get_ticks_msec()})
 
 func _observe_cargo() -> void:
 	# Uma leitura por segundo registra a carga alcançada sem varrer entidades por quadro.

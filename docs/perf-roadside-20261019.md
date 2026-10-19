@@ -35,3 +35,36 @@ Leitura:
 
 Não medido: os eventos de estrada (acima), o tiroteio do bloqueio, os outros três lugares em
 rota de benchmark (nenhuma rota passa por eles), e a noite.
+
+## Eventos de estrada em release (19/10, à tarde)
+
+`--benchmark-road-events` (ReleaseBenchmark, só na rota66) força, em cada volta medida, uma van
+quebrada na ida (z -1000) e um bloqueio de bandidos na volta (z -990), 240 m antes, como o jogo.
+O carro passa a ser o alvo (`driving.occupied`), senão o jogador escondido dentro da lataria nunca
+é visto e ninguém atira; jogador e carro invencíveis. O lado desligado roda com o mesmo interruptor
+e `GETECO_DESERT_ROADSIDE=0` (sem eventos). `BENCH_EXTRA="--benchmark-road-events"` passa a opção
+pelo `tools/perf_cross_bench.sh`.
+
+Spans das peças (log da sessão, uma peça por quadro; três exports e rodadas do dia):
+
+| peça | chamadas por rodada | máx ms |
+|---|---|---|
+| `desert.road_event.vehicle` (van ou picape) | 4 | 0,87-1,33 |
+| `desert.road_event.driver` | 2 | 1,16-1,77 |
+| `desert.road_event.outlaw` | 6 | 1,63 com a janela em foco; 2,0-2,8 sem foco |
+| `desert.road_event.props` | 2 | 0,10-0,13 |
+
+Os quatro eventos nasceram nas três rodadas com o interruptor, no ponto marcado (`late_m` 0 a
+0,1). Com o carro como alvo o bloqueio atirou: 1877 e 3206 quadros em combate nas duas rodadas
+ligadas (antes, 0).
+
+**O A/B de tempo de quadro dessa tarde não vale.** Nas quatro rodadas (evOn1, evOff1, evOn2,
+evOff2) a janela do benchmark ficou sem foco em 415 a 514 janelas de medição: alguém usava a
+máquina. Há quadros de 7 a 12 s e sequências de ~500 ms (o Windows freando janela de fundo) também
+no lado desligado, então p50, p95 e máximo dessas rodadas não medem o jogo. A rodada evA1 da manhã
+(janela em foco, eventos sem tiroteio) deu p50 4,29 ms, p95 7,63, máx 69,4, 11 quadros > 33 ms,
+na mesma faixa das rodadas sem eventos.
+
+Falta medir: o custo do tiroteio do bloqueio no tempo de quadro, com a máquina parada e a janela
+em foco (rodar de novo evOn/evOff). A peça do bandido fica perto de 2 ms; se passar disso com
+foco, vale pré-aquecer o modelo do fora-da-lei.

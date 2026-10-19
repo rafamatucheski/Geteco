@@ -6,6 +6,7 @@
 #   tools/perf_cross_bench.sh artifacts/perf-baseline base 2
 # Resultado: user://benchmark-west/<rótulo>_<rota>_<n>.json (AppData/Roaming/GetecoV2)
 # e um resumo em evidence/perf-cross-20261015/<rótulo>.tsv.
+# BENCH_EXTRA="--benchmark-road-events" acrescenta argumentos do ReleaseBenchmark às rodadas.
 set -u
 DIR="$1"; LABEL="$2"; RUNS="${3:-2}"; shift; shift; [ $# -gt 0 ] && shift
 ROUTES="${*:-oeste porto sobrados serra ponte travessia deserto}"
@@ -22,7 +23,7 @@ start_for() {
 for run in $(seq 1 "$RUNS"); do
 	for route in $ROUTES; do
 		GODOT_BIN="$ROOT/$DIR/GetecoV2.exe" "$ROOT/tools/run_godot_locked.sh" -- --no-save --benchmark --no-dispatch \
-			--benchmark-route="$route" --play-at="$(start_for "$route")" --label="${LABEL}_${route}_${run}" 2>&1 | grep -E "BENCH_RELEASE" \
+			--benchmark-route="$route" --play-at="$(start_for "$route")" --label="${LABEL}_${route}_${run}" ${BENCH_EXTRA:-} 2>&1 | grep -E "BENCH_RELEASE" \
 			| sed "s/^/$route $run /" | tee -a "$OUT/$LABEL.log"
 	done
 done
