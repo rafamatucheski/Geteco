@@ -456,6 +456,8 @@ func _door_kind(e: Dictionary) -> String:
 		"walkup":
 			if e.id in ["maciota", "port_boss_garage"]: return "portão já aberto"
 			var walk = session.weapon_shop_entrance
+			# Quartel pintado: baia aberta, sem portão para empurrar (WeaponShopEntrance não a segue).
+			if e.id == "harbor_fire_station" and walk._painted(e.id): return "vão pintado sem folha (baia aberta)"
 			if is_instance_valid(walk._facade) and _painted(_walkup_art(walk._facade)):
 				if _walk_in_leaves(_walkup_art(walk._facade)).is_empty(): return "vão pintado sem folha"
 				return "folha pintada (kit) + dobradiça invisível"

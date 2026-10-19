@@ -27,6 +27,15 @@ static func build(building: UrbanBuildingBase) -> void:
 	_add_hull(building, size, wall_h - sink, gate, (1.0 - gate.top) * wall_h - sink)
 
 
+## Baia da entrada num prédio de `width` metros, em escala de origem (o editor estica
+## depois): x = meia largura do vão, y = quanto o meio dele fica ao lado da entrada do
+## lugar (FIRE_STATION_DOOR_OFFSET não fica no meio da baia: +0,22 m na largura natural).
+static func entrance_bay(width: float) -> Vector2:
+	var gate := _central_gate(width)
+	var entry_x: float = preload("res://world/places/PlaceCatalog.gd").FIRE_STATION_DOOR_OFFSET.x
+	return Vector2((gate.x1 - gate.x0) * 0.5, (gate.x0 + gate.x1) * 0.5 - entry_x)
+
+
 ## Portão central: o vão sem folha que contém a entrada do lugar (PlaceCatalog).
 static func _central_gate(width: float) -> Dictionary:
 	var entry_x: float = preload("res://world/places/PlaceCatalog.gd").FIRE_STATION_DOOR_OFFSET.x

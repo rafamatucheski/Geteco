@@ -63,6 +63,20 @@ func _init() -> void:
 		if not openings[i].leaf and entry_x > x0 + 0.3 and entry_x < x1 - 0.3: in_bay = true
 	checks += 1
 	if not in_bay: failures.append("entrada x=%.2f não cai num portão" % entry_x)
+	# Gatilho a pé (WeaponShopEntrance): todo ponto que o corpo (cápsula de 0,30 m) alcança na
+	# baia da entrada, encostado nas ombreiras, sem passar delas. Com 1,4 m fixo só o meio da
+	# baia trocava de lugar e quem entrava pela beira parava no vestíbulo (sonda de 19/10).
+	var walk: Node = load("res://runtime/WeaponShopEntrance.gd").new()
+	var middle: float = entry_x + walk._opening_shift("harbor_fire_station")
+	var reach: float = walk._half_width("harbor_fire_station")
+	walk.free()
+	for opening in openings:
+		var x0 := -8.0 + float(opening.rect[0]) * 16.0
+		var x1 := -8.0 + float(opening.rect[2]) * 16.0
+		if opening.leaf or entry_x < x0 or entry_x > x1: continue
+		checks += 1
+		if middle - reach > x0 + 0.3 or middle + reach < x1 - 0.3 or middle - reach < x0 or middle + reach > x1:
+			failures.append("gatilho a pé [%.2f, %.2f] fora da baia [%.2f, %.2f] menos a cápsula" % [middle - reach, middle + reach, x0, x1])
 	var front_z: float = building.building_size.y * 0.5
 	for shape_node in building.collision_root.find_children("*", "CollisionShape3D", true, false):
 		var box := shape_node.shape as BoxShape3D

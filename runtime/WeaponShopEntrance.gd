@@ -15,12 +15,18 @@ const POLICE_DOOR_Z := 250.0 / 32.0 + 0.35
 ## Porta de vidro 0,72 m recuada das lojas 3D da North Frontage (UrbanLandmarkFrontage3D
 ## ._build_glazed_door): Union, Fuel e o banco sem fachada pintada.
 const BANK_DOOR_Z := 180.0 / 32.0 - 0.72
-## Pegadas V1 (OriginalWorldData, 16 px/m) do banco e da delegacia: a entrada pintada sai do vão nelas.
+## Pegadas V1 (OriginalWorldData, 16 px/m) do banco, da delegacia e do quartel: a entrada
+## pintada sai do vão nelas (a do quartel é a mesma de PlaceCatalog.FIRE_STATION_DOOR_OFFSET).
 const BANK_FOOTPRINT := Vector2(230.0, 180.0) / 16.0
 const POLICE_FOOTPRINT := Vector2(190.0, 250.0) / 16.0
+const FIRE_STATION_FOOTPRINT := Vector2(310.0, 220.0) / 16.0
 ## Raio da cápsula do Actor (0,30 m) mais 5 cm: o corpo inteiro cabe no vão pintado. No
 ## banco (meia abertura de 1,45 m) dá o 1,1 m que ele já usava.
 const DOOR_CLEARANCE := 0.35
+## Baia aberta do quartel: as paredes do vão seguem pelo vestíbulo, então vale todo ponto
+## que o corpo alcança lá dentro, encostado na ombreira (raio da cápsula menos 5 cm). Com
+## DOOR_CLEARANCE, quem entrava rente à parede ficava 5 cm fora e parava no vestíbulo.
+const BAY_CLEARANCE := 0.25
 
 var session: Node
 var _facade: Node3D
@@ -134,8 +140,9 @@ func update(delta: float) -> void:
 	var across := Vector3(-inward.z, 0, inward.x)
 	var depth := local.dot(inward)
 	var width := _half_width(id)
+	var side := local.dot(across) - _opening_shift(id)
 	if not _blocked_entry_id.is_empty():
-		if _blocked_entry_id != id or depth < -1.6 or absf(local.dot(across)) > width + .5:
+		if _blocked_entry_id != id or depth < -1.6 or absf(side) > width + .5:
 			_blocked_entry_id = ""
 	if not near or _entering or _leaving or _reentry_remaining > 0.0 or _blocked_entry_id == id or _blocked():
 		return
@@ -145,7 +152,7 @@ func update(delta: float) -> void:
 	if id == "cobra_leader_house" and not _leader_accessible(): return
 	# Pushing opens the door; only an intentional inward crossing transfers.
 	if is_instance_valid(_facade) and _facade_id == id and _door_amount < .85: return
-	if absf(local.dot(across)) > width or _movement_intent(player).dot(inward) <= .3: return
+	if absf(side) > width or _movement_intent(player).dot(inward) <= .3: return
 	var outer := -.1 if id == "harbor_police" else -1.15 if id in ["harbor_ammunation", "mountain_gunshop"] else -.8
 	var inner := .6 if id == "harbor_police" else -.15 if id in ["harbor_ammunation", "mountain_gunshop"] else .3
 	if id in ["harbor_ammunation", "mountain_gunshop"]: inner = maxf(inner, _contact_depth + .35)
@@ -155,6 +162,12 @@ func update(delta: float) -> void:
 		# abertas (sonda de 18/10) e no máximo a 1 m delas, ainda no vestíbulo de 1,5 m.
 		outer = -.12
 		inner = .98
+	if id == "harbor_fire_station" and _painted(id):
+		# Baia pintada aberta: vale do plano dela (a entrada fica 0,06 m à frente) até o fundo
+		# do vestíbulo. Até 0,3 m, quem corria passava da janela e quem parava lá dentro só
+		# entrava recuando para a rua (sonda de 19/10).
+		outer = 0.0
+		inner = PaintedFireStation.VESTIBULE_DEPTH
 	if depth < outer or depth > inner: return
 	_blocked_entry_id = id
 	if not _entry_available(id): return
@@ -189,7 +202,9 @@ func _entry_interrupted() -> bool:
 
 func _update_facade(id: String, near: bool, delta: float) -> void:
 	# These garages already have raised/open gates; do not search for hinges.
-	if id in ["maciota", "port_boss_garage"]: return
+	# A baia pintada do quartel também é aberta: o portão antigo não existe nela (sem
+	# visual nem colisão), e esperar o valor dele chegar a 0,85 deixava passar da janela.
+	if id in ["maciota", "port_boss_garage"] or id == "harbor_fire_station" and _painted(id): return
 	if not is_instance_valid(_facade) or _facade_id != id:
 		_push_remaining = 0.0
 		set_physics_process(false)
@@ -317,7 +332,9 @@ func _half_width(id: String) -> float:
 		# Delegacia pintada: porta dupla de ~2,1 m que o editor estica para ~3,2 m.
 		"harbor_police": return _painted_half_width(id, PaintedPoliceStation.opening_half_width(PaintedHarborHouses.footprint_width("Police", POLICE_FOOTPRINT.x))) if _painted(id) else .95
 		"harbor_hospital": return 1.1
-		"harbor_fire_station": return 1.4
+		# Quartel pintado: baia aberta de ~5,4 m; 1,4 m cobria só o meio dela e quem entrava
+		# pela beira parava no vestíbulo sem trocar de lugar.
+		"harbor_fire_station": return _painted_half_width(id, _fire_station_bay().x, BAY_CLEARANCE) if _painted(id) else 1.4
 		# Banco pintado: vão de ~2,9 m (a porta antiga tinha 1,42 m).
 		"harbor_bank": return _painted_half_width(id, PaintedBankBranch.opening_half_width(_bank_footprint().x)) if _painted(id) else .48
 		"harbor_clothing", "harbor_fuel": return .48
@@ -328,15 +345,28 @@ func _half_width(id: String) -> float:
 ## Até onde, para o lado, empurrar e atravessar valem: o vão pintado na pegada que o
 ## editor de mundo esticou, menos a cápsula. A delegacia (18 m de frente, meia abertura
 ## de ~1,6 m) tinha 0,95 m fixo e a folha não abria para quem empurrava mais de lado.
-func _painted_half_width(id: String, half_opening: float) -> float:
+func _painted_half_width(id: String, half_opening: float, clearance := DOOR_CLEARANCE) -> float:
 	var stretch: Vector3 = _definition_for(id).get("editor_scale", Vector3.ONE)
-	return half_opening * stretch.x - DOOR_CLEARANCE
+	return half_opening * stretch.x - clearance
+
+## Quanto o meio do vão fica ao lado da entrada, na direção `across`: só a baia pintada do
+## quartel não é centrada nela (+0,22 m), e a meia largura vale a partir do meio do vão.
+func _opening_shift(id: String) -> float:
+	if id != "harbor_fire_station" or not _painted(id): return 0.0
+	var stretch: Vector3 = _definition_for(id).get("editor_scale", Vector3.ONE)
+	return _fire_station_bay().y * stretch.x
 
 func _painted(id: String) -> bool:
 	match id:
 		"harbor_bank": return not PaintedHarborHouses.style_for("NorthFrontage0", "bank_branch").is_empty()
 		"harbor_police": return not PaintedHarborHouses.style_for("Police", "police_precinct").is_empty()
+		"harbor_fire_station": return not PaintedHarborHouses.style_for("NorthFireStation", "fire_station").is_empty()
 	return false
+
+## Baia da entrada do quartel pintado (meia largura, deslocamento do meio) na pegada que a
+## fábrica usa: a largura natural da pintura, como no banco.
+func _fire_station_bay() -> Vector2:
+	return PaintedFireStation.entrance_bay(PaintedHarborHouses.footprint_width("NorthFireStation", FIRE_STATION_FOOTPRINT.x))
 
 ## Pegada do banco pintado: a fábrica põe o prédio na largura natural da pintura.
 func _bank_footprint() -> Vector2:
