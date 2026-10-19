@@ -7,7 +7,7 @@ static func material(tint: Color, world_projection := false) -> StandardMaterial
 	var key := tint.to_html() + str(world_projection)
 	if materials.has(key): return materials[key]
 	if tile == null:
-		var image := Image.create(256,256,false,Image.FORMAT_RGB8)
+		var image := Image.create_empty(256,256,false,Image.FORMAT_RGB8)
 		var noise := FastNoiseLite.new()
 		noise.seed = 73129
 		noise.frequency = 1.0

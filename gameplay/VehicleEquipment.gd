@@ -302,7 +302,7 @@ func _glow(parent: Node3D, point: Vector3, color: Color, size: float) -> Sprite3
 
 static func _lens_glow_texture() -> ImageTexture:
 	if _glow_texture != null: return _glow_texture
-	var image := Image.create(64, 64, false, Image.FORMAT_RGBA8)
+	var image := Image.create_empty(64, 64, false, Image.FORMAT_RGBA8)
 	for y in 64:
 		for x in 64:
 			var radius := Vector2(float(x) / 63.0 * 2.0 - 1.0, float(y) / 63.0 * 2.0 - 1.0).length()

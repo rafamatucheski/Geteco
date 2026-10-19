@@ -103,7 +103,7 @@ valem comparações dentro do mesmo bloco de rodadas. Os p50 abaixo não devem s
   `MountainBear3D._physics_process`, `finish_slow` ≥ 5 ms) o pico apareceu em t≈135 s com 49,8 ms em 1 passo, mas os
   ursos tinham acordado em t≈122 s (`wildlife.bear_wake` 0,2 ms) e no passo do pico nenhum span de script de física
   passou de 0,4 ms (urso 0,16 ms, veículo 0,40 ms). O único passo lento do urso foi o 1º depois do 1º despertar (4,5 ms,
-  t≈48 s). Então o custo está fora dos scripts medidos: passo nativo da física (Jolt) ou um `_physics_process` sem span.
+  t≈48 s). Então o custo está fora dos scripts medidos: passo nativo da física (GodotPhysics3D, o motor em `project.godot`) ou um `_physics_process` sem span.
   Próximo passo: span em volta de `PhysicsServer3D` (ou contar corpos ativos/pares no passo) e cobrir os demais
   `_physics_process` da serra. Uma rodada só: o horário do pico varia entre rodadas.
 - Primeira volta (aquecimento, fora da medição mas depois de jogável): `stream.mountain.surfaces` de 27-35 ms em

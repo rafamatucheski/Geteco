@@ -173,7 +173,7 @@ func _fade() -> void:
 ## Marca com borda gasta (não retângulo chapado).
 static func _mark_texture() -> ImageTexture:
 	var size := 32
-	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var image := Image.create_empty(size, size, false, Image.FORMAT_RGBA8)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 4410
 	for y in size:

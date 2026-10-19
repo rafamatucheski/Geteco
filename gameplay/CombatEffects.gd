@@ -393,7 +393,7 @@ func _fire(emitter: CPUParticles3D, point: Vector3, direction: Vector3) -> void:
 
 ## Gera textura procedural orgânica de poça de sangue com contorno multi-lobular e respingos satélites.
 static func _make_blood_texture() -> ImageTexture:
-	var img := Image.create(64, 64, false, Image.FORMAT_RGBA8)
+	var img := Image.create_empty(64, 64, false, Image.FORMAT_RGBA8)
 	var cx := 31.5
 	var cy := 31.5
 	var satellites := [
@@ -424,7 +424,7 @@ static func _make_blood_texture() -> ImageTexture:
 
 ## Marca de queimado: centro escuro, borda irregular esfumada.
 static func _make_scorch_texture() -> ImageTexture:
-	var img := Image.create(64, 64, false, Image.FORMAT_RGBA8)
+	var img := Image.create_empty(64, 64, false, Image.FORMAT_RGBA8)
 	for y in 64:
 		for x in 64:
 			var dx := (float(x) - 31.5) / 31.5

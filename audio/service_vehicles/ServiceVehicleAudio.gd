@@ -20,6 +20,9 @@ const MAX_AUDIBLE := 6
 const MAX_VOICES := 12
 const MAX_DESIGN_VOICES := MAX_AUDIBLE * 4
 const RANGE := 45.0
+## Troca da ponte para a família certa: desce ao silêncio antes de trocar o fluxo (trocar com a
+## voz tocando estala), como em NearbyVehicleAudio.
+const BANK_SWAP_SECONDS := 0.12
 var _entries: Dictionary = {}
 var _banks: Dictionary = {}
 var _slots: Array[Dictionary] = []
@@ -71,15 +74,12 @@ func register_vehicle(vehicle: CharacterBody3D, service: String) -> bool:
 	var family := ENGINE_PROFILE.bank_family(str(vehicle.archetype))
 	if not _has_bank(family):
 		family = "street"
-	if not _banks.has(family):
-		var bank := _load_bank(family)
-		if bank.size() != 7:
-			return false
-		_banks[family] = bank
+	# Banco ainda em leitura não recusa o registro: a viatura toca a ponte até ele ficar pronto.
+	var playing_family := family if _ensure_bank(family) else ""
 	var on_exit := unregister_id.bind(id)
 	vehicle.tree_exiting.connect(on_exit, CONNECT_ONE_SHOT)
 	_entries[id] = {"vehicle": weakref(vehicle), "service": service,
-		"family": family, "active": true, "previous": absf(vehicle.speed),
+		"family": family, "bank_family": playing_family, "swap_gain": 1.0, "active": true, "previous": absf(vehicle.speed),
 		"acceleration": 0.0, "rpm": 0.0, "on_exit": on_exit}
 	_clock = 0.0
 	set_process(_enabled)
@@ -103,7 +103,7 @@ func unregister_id(id: int) -> void:
 	_entries.erase(id)
 	var used := false
 	for other in _entries.values():
-		if other.family == entry.family:
+		if other.family == entry.family or other.bank_family == entry.family:
 			used = true
 	if not used:
 		_banks.erase(entry.family)
@@ -255,19 +255,21 @@ func _mix(slot: Dictionary, delta := 0.1) -> void:
 		TANK_AUDIO.mix_spatial(slot.players, vehicle, clampf((float(entry.rpm) - 0.6) / 5.4, 0.0, 1.0),
 			1.0, -23.0, vehicle.global_position + Vector3.UP * (audio_height + 0.7))
 		return
+	_update_bank_swap(entry, delta)
 	# Parity preserves the shared sample across adjacent layer boundaries.
 	for layer in [lower, lower + 1]:
 		var player: AudioStreamPlayer3D = slot.players[layer % 2]
 		var weight := 1.0 - blend if layer == lower else blend
 		player.global_position = vehicle.global_position + Vector3.UP * (audio_height + 0.7)
-		if weight <= 0.001:
+		var amplitude := sqrt(maxf(0.0, weight)) * float(entry.swap_gain)
+		if amplitude <= 0.001 or str(entry.bank_family).is_empty():
 			player.stop()
 			continue
-		var stream: AudioStreamWAV = _banks[entry.family][layer]
+		var stream: AudioStreamWAV = _banks[entry.bank_family][layer]
 		if player.stream != stream:
 			player.stop()
 			player.stream = stream
-		player.volume_db = -23.0 + (-13.0 if entry.family == "electric" else 0.0) + linear_to_db(sqrt(weight))
+		player.volume_db = -23.0 + (-13.0 if entry.family == "electric" else 0.0) + linear_to_db(amplitude)
 		player.pitch_scale = 1.0 + clampf(entry.acceleration * 0.01, -0.05, 0.08)
 		if not player.playing:
 			player.play()
@@ -349,6 +351,34 @@ func _free_slots() -> void:
 		var voice: Node3D = slot.get("design_voice")
 		if is_instance_valid(voice): voice.free()
 	_slots.clear()
+
+## Liga a ponte enquanto a família da viatura carrega e troca por ela quando fica pronta.
+func _update_bank_swap(entry: Dictionary, delta: float) -> void:
+	var current := str(entry.bank_family)
+	if current == entry.family:
+		entry.swap_gain = move_toward(float(entry.swap_gain), 1.0, delta / BANK_SWAP_SECONDS)
+		return
+	if _ensure_bank(str(entry.family)):
+		if current.is_empty():
+			entry.bank_family = entry.family
+			return
+		entry.swap_gain = move_toward(float(entry.swap_gain), 0.0, delta / BANK_SWAP_SECONDS)
+		if float(entry.swap_gain) <= 0.001:
+			entry.bank_family = entry.family
+	elif current.is_empty():
+		var bridge := BANKS.bridge_family(str(entry.family))
+		if not bridge.is_empty() and _ensure_bank(bridge):
+			entry.bank_family = bridge
+
+## Banco pronto; não guarda o vazio de uma família em leitura para tentar de novo depois.
+func _ensure_bank(family: String) -> bool:
+	if _banks.has(family):
+		return true
+	var bank := _load_bank(family)
+	if bank.size() != 7:
+		return false
+	_banks[family] = bank
+	return true
 
 func _has_bank(family: String) -> bool:
 	return BANKS.has_bank(family)

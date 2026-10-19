@@ -191,6 +191,9 @@ func _process(delta: float) -> void:
 		idle_weight = (1.0-smoothstep(1050.0,2000.0,_audible_rpm))*(1.0-power*.4)
 		_recorded_idle.pitch_scale = clampf(_audible_rpm/(750.0 if _family == "diesel" else 900.0),.85,1.6)
 		_loop_level(_recorded_idle,idle_weight,-14.0+role_gain,delta)
+	# O banco pode ainda estar em leitura (EngineBankCache não espera): tenta de novo até ficar
+	# pronto. A camada nova entra em -80 dB e sobe pelo lerp abaixo, sem estalo.
+	if _bank.size() != 7 and not _family.is_empty(): _bank = BANKS.bank(_family)
 	var synthesized_gain := linear_to_db(1.0-idle_weight*.82)
 	for i in 2:
 		var index := low+i

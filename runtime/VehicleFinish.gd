@@ -111,7 +111,7 @@ static func _glazing_texture() -> ImageTexture:
 	if _glass_texture != null: return _glass_texture
 	# Soft sky bands keep glass readable under the game's flat ambient fill;
 	# specular/clearcoat still respond to real lights. Opaque, shared, no probe.
-	var image := Image.create(64,64,false,Image.FORMAT_RGB8)
+	var image := Image.create_empty(64,64,false,Image.FORMAT_RGB8)
 	for y in 64:
 		for x in 64:
 			var u := x/63.0

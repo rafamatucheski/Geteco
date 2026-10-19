@@ -763,7 +763,7 @@ func _apply_wetness(material: StandardMaterial3D) -> void:
 
 func _weather_roughness_texture() -> Texture2D:
 	if _roughness_texture != null: return _roughness_texture
-	var image := Image.create(128,128,false,Image.FORMAT_L8)
+	var image := Image.create_empty(128,128,false,Image.FORMAT_L8)
 	var noise := FastNoiseLite.new()
 	noise.seed = 13102026
 	noise.frequency = 1.0
@@ -784,7 +784,7 @@ func _weather_roughness_texture() -> Texture2D:
 	return _roughness_texture
 
 func _asphalt_texture() -> Texture2D:
-	var image := Image.create(128, 128, false, Image.FORMAT_RGB8)
+	var image := Image.create_empty(128, 128, false, Image.FORMAT_RGB8)
 	var noise := FastNoiseLite.new()
 	noise.seed = 2147
 	noise.frequency = 1.0

@@ -464,7 +464,7 @@ static var _roof_cuts: Dictionary = {}
 ## a repintura do veículo (VehiclePaint.apply) reescreve o albedo com alfa 1.
 static func _roof_alpha_texture() -> ImageTexture:
 	if _roof_texture == null:
-		var image := Image.create(2, 2, false, Image.FORMAT_RGBA8)
+		var image := Image.create_empty(2, 2, false, Image.FORMAT_RGBA8)
 		image.fill(Color(1, 1, 1, ROOF_ALPHA))
 		_roof_texture = ImageTexture.create_from_image(image)
 	return _roof_texture

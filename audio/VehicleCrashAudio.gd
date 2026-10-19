@@ -85,7 +85,11 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	for voice in voices: voice.stop()
 	var bus_index := AudioServer.get_bus_index(bus_name)
-	if bus_index >= 0: AudioServer.remove_bus(bus_index)
+	if bus_index >= 0:
+		# Um pool por mundo (meta em `pool`), não por colisão: só some com o mundo.
+		var stage := STALL_WORK.begin()
+		AudioServer.remove_bus(bus_index)
+		STALL_WORK.finish_slow("contact_audio.pool_bus_remove", stage, 1000)
 	contacts.clear()
 	sources.clear()
 

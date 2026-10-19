@@ -112,7 +112,7 @@ static func _material(kind: String, source: StandardMaterial3D = null) -> Standa
 
 static func _texture(kind: String) -> ImageTexture:
 	if _textures.has(kind): return _textures[kind]
-	var image := Image.create(128,128,false,Image.FORMAT_RGB8)
+	var image := Image.create_empty(128,128,false,Image.FORMAT_RGB8)
 	for y in 128:
 		for x in 128:
 			var u := x/127.0

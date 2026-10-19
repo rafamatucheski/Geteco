@@ -72,7 +72,7 @@ static func material(surface: int) -> StandardMaterial3D:
 
 static func _image(surface: int) -> Image:
 	var size := 256
-	var image := Image.create(size, size, false, Image.FORMAT_RGB8)
+	var image := Image.create_empty(size, size, false, Image.FORMAT_RGB8)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7700 + surface * 31
 	var noise := FastNoiseLite.new()

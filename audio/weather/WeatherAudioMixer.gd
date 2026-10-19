@@ -2,6 +2,7 @@ extends Node
 ## Three constant voices, authored offline. No PCM generation or transient Tweens.
 ## A private bus filters only this weather instance, then sends to the user's Ambient.
 const FIREFLY := preload("res://audio/FireflyBank.gd")
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 ## Sons gerados no ElevenLabs (2026-10-16) em audio/ambience_el: chuva fraca e forte, tempestade
 ## (vento + chuva) e trovões (estalo próximo + ribombo). Os arquivos de chuva já são loops
 ## sem emenda; os trovões são pontuais.
@@ -25,6 +26,8 @@ var _rng := RandomNumberGenerator.new()
 func _ready() -> void:
 	_rng.randomize()
 	bus_name = StringName("Weather_%d" % get_instance_id())
+	# Um bus por clima da sessão (Weather.gd cria um mixer só), não por evento: span basta.
+	var began := STALL_WORK.begin()
 	AudioServer.add_bus()
 	var index := AudioServer.bus_count - 1
 	AudioServer.set_bus_name(index, bus_name)
@@ -32,6 +35,7 @@ func _ready() -> void:
 	low_pass = AudioEffectLowPassFilter.new()
 	low_pass.cutoff_hz = 18000.0
 	AudioServer.add_bus_effect(index, low_pass)
+	STALL_WORK.finish_slow("audio.weather_bus_add", began, 1000, self)
 	for i in LOOPS.size():
 		var player := AudioStreamPlayer.new()
 		player.name = ["RainBed", "SurfaceDrops", "HeavySheets", "StormBed"][i]
@@ -95,4 +99,6 @@ func _exit_tree() -> void:
 		thunder.stop()
 	var index := AudioServer.get_bus_index(bus_name)
 	if index >= 0:
+		var began := STALL_WORK.begin()
 		AudioServer.remove_bus(index)
+		STALL_WORK.finish_slow("audio.weather_bus_remove", began, 1000)

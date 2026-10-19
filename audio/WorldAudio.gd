@@ -41,6 +41,10 @@ var radio_index := -1
 var step_distance := 0.0
 var previous := Vector3.ZERO
 var family := ""
+## Banco cujos fluxos estão nas `layers`: `family` ou a ponte `street` enquanto ela carrega.
+var engine_bank_family := ""
+var engine_swap_gain := 1.0
+const ENGINE_BANK_SWAP_SECONDS := 0.12
 var engine_archetype := ""
 var engine_gear := 1
 var engine_rpm := 0.0
@@ -433,9 +437,9 @@ func _process(delta: float) -> void:
 	var cycles := float(nominal[6]) * engine_rpm * tint
 	var timbre := cycles / maxf(tint, 0.3) * (0.8 + 0.2 * engine_load)
 	var lower := 0
-	while lower < 5 and timbre > float(nominal[lower + 1]): lower += 1
+	while lower < 5 and timbre > float(bank_nominal[lower + 1]): lower += 1
 	var upper := lower + 1
-	var blend := clampf(log(maxf(timbre, 0.5) / float(nominal[lower])) / maxf(log(float(nominal[upper]) / float(nominal[lower])), 0.001), 0.0, 1.0)
+	var blend := clampf(log(maxf(timbre, 0.5) / float(bank_nominal[lower])) / maxf(log(float(bank_nominal[upper]) / float(bank_nominal[lower])), 0.001), 0.0, 1.0)
 	var master := -20.0 + engine_load * 7.0 + engine_rpm * 6.5 + ratio * 1.5
 	if family == "vq35": master -= 5.0
 	if family == "electric": master -= 13.0
@@ -447,10 +451,13 @@ func _process(delta: float) -> void:
 		if share <= 0.002 or layer.stream == null:
 			if layer.playing: layer.stop()
 			continue
-		layer.pitch_scale = clampf(cycles / float(nominal[index]), 0.35, 3.0)
+		layer.pitch_scale = clampf(cycles / float(bank_nominal[index]), 0.35, 3.0)
 		layer.volume_db = master + linear_to_db(share)
 		if not layer.playing: layer.play()
 
+	_update_engine_bank(delta)
+	# Seleção de camada e pitch seguem as frequências do banco que toca (a ponte tem as suas).
+	var bank_nominal: Array = ENGINE_PROFILE.NOMINAL.get(engine_bank_family, nominal)
 func _ensure_design_voice() -> void:
 	if is_instance_valid(design_voice): return
 	design_voice = DESIGN_VOICE.new()
@@ -465,6 +472,7 @@ func _mix_designed_engine(car: CharacterBody3D, throttle: float, previous_gear: 
 	_ensure_design_voice()
 	if not design_voice.configure(engine_archetype): return false
 	for layer in layers: layer.stop()
+		share *= engine_swap_gain
 	for channel in [road_audio, shift_audio, extra_audio, blower_audio]:
 		if is_instance_valid(channel): channel.stop()
 	var bands := DESIGN_CATALOG.rpm_bands(profile)
@@ -548,7 +556,14 @@ func _sync_engine_family(car: CharacterBody3D) -> void:
 	# Nearby audio already warms and retains these immutable seven-band loops.
 	# Its duplicates have no resource path: loading the originals here again
 	# misses ResourceLoader's weak cache after warm-up releases them.
-	var bank := ENGINE_BANKS.bank(family)
+	# Não espera a leitura: sem o banco pronto toca a ponte e `_update_engine_bank` troca depois.
+	_bind_engine_layers(ENGINE_BANKS.bridge_family(family))
+	engine_swap_gain = 1.0
+
+func _bind_engine_layers(bank_family: String) -> void:
+	var bank: Array[AudioStreamWAV] = []
+	if not bank_family.is_empty(): bank = ENGINE_BANKS.bank(bank_family)
+	engine_bank_family = bank_family if bank.size() == 7 else ""
 	for index in 7:
 		layers[index].stop()
 		layers[index].stream = bank[index] if bank.size() == 7 else null
@@ -575,6 +590,23 @@ func _update_vehicle_foley(car: CharacterBody3D, spec: Dictionary, _ratio: float
 	else:
 		engine_turbo_pressure = 0.0
 	# Antes dos blocos abaixo: eles zeram a pressão ao aliviar o turbo e a camada nova precisa dela.
+## Troca a ponte pela família certa quando ela termina de carregar: desce ao silêncio, troca
+## os fluxos e sobe. Trocar o stream com a camada tocando corta a onda e estala.
+func _update_engine_bank(delta: float) -> void:
+	if engine_bank_family == family:
+		engine_swap_gain = move_toward(engine_swap_gain, 1.0, delta / ENGINE_BANK_SWAP_SECONDS)
+		return
+	if ENGINE_BANKS.is_ready(family):
+		if engine_bank_family.is_empty():
+			_bind_engine_layers(family)
+			return
+		engine_swap_gain = move_toward(engine_swap_gain, 0.0, delta / ENGINE_BANK_SWAP_SECONDS)
+		if engine_swap_gain <= 0.001:
+			_bind_engine_layers(family)
+	elif engine_bank_family.is_empty():
+		var bridge := ENGINE_BANKS.bridge_family(family)
+		if not bridge.is_empty(): _bind_engine_layers(bridge)
+
 	_update_firefly_foley(car, throttle, sport_turbo)
 	if engine_gear > previous_gear and heavy_turbo and (engine_load > 0.20 or engine_rpm > 0.30):
 		_play_vehicle_fx(_turbo_shift_sounds(), clampf(-7.0 + engine_load * 6.0 + engine_rpm * 3.0, -14.0, 2.0) - (8.0 if family == "truck" else 0.0))

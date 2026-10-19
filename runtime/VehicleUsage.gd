@@ -64,7 +64,7 @@ static func prewarm() -> void:
 
 static func _texture(level: int) -> ImageTexture:
 	if _textures.has(level): return _textures[level]
-	var image := Image.create(128, 128, true, Image.FORMAT_RGBA8)
+	var image := Image.create_empty(128, 128, true, Image.FORMAT_RGBA8)
 	image.fill(Color.TRANSPARENT)
 	var noise := FastNoiseLite.new()
 	noise.seed = 7123

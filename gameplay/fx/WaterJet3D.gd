@@ -30,7 +30,7 @@ static func _meshes() -> void:
 	if _drop_mesh != null: return
 	# Gota cheia com borda macia. A textura macia comum (alfa (1-r)²) deixava só um
 	# ponto de 3 px por gota e o fim do arco sumia vista de cima.
-	var image := Image.create(32, 32, false, Image.FORMAT_RGBA8)
+	var image := Image.create_empty(32, 32, false, Image.FORMAT_RGBA8)
 	for y in 32:
 		for x in 32:
 			var r := Vector2(x - 15.5, y - 15.5).length() / 15.5

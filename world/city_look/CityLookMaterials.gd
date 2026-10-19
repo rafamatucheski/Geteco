@@ -179,7 +179,7 @@ static func window_glass_dark() -> StandardMaterial3D:
 
 static func _blinds_texture() -> ImageTexture:
 	if _cache.has("blinds_tex"): return _cache["blinds_tex"]
-	var image := Image.create(8, 16, false, Image.FORMAT_RGBA8)
+	var image := Image.create_empty(8, 16, false, Image.FORMAT_RGBA8)
 	for y in 16:
 		for x in 8:
 			image.set_pixel(x, y, Color(1, 1, 1) if y % 4 != 0 else Color(0.55, 0.55, 0.55))

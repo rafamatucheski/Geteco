@@ -16,7 +16,7 @@ static func ground(kind := "grass") -> StandardMaterial3D:
 static func surface(kind: String, tint: Color) -> StandardMaterial3D:
 	var key := kind + tint.to_html()
 	if cache.has(key): return cache[key]
-	var image := Image.create(256,256,false,Image.FORMAT_RGB8)
+	var image := Image.create_empty(256,256,false,Image.FORMAT_RGB8)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 770017
 	for y in 256:

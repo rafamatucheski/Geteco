@@ -150,7 +150,7 @@ func update(time_of_day: float, camera: Camera3D, exterior: bool, delta: float) 
 
 static func _ground_texture() -> ImageTexture:
 	if _pool_texture != null: return _pool_texture
-	var image := Image.create(96,128,false,Image.FORMAT_RGBA8)
+	var image := Image.create_empty(96,128,false,Image.FORMAT_RGBA8)
 	for y in 128:
 		var along := absf(float(y)/127.0*2.0-1.0)
 		var end_fade := 1.0-smoothstep(.53,1.0,along)

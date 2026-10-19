@@ -846,7 +846,7 @@ static func material(id: String) -> Material:
 	return result
 
 static func _hazard_texture() -> ImageTexture:
-	var image := Image.create(64, 64, false, Image.FORMAT_RGB8)
+	var image := Image.create_empty(64, 64, false, Image.FORMAT_RGB8)
 	for y in 64:
 		for x in 64:
 			# Whole-number grouping/index; preserve integer truncation and precision.

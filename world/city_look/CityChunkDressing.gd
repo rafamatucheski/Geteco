@@ -860,7 +860,7 @@ static func _soft_rect_texture(edge := 0.42) -> ImageTexture:
 	var key := "rect_%.2f" % edge
 	if _textures.has(key): return _textures[key]
 	var size := 64
-	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var image := Image.create_empty(size, size, false, Image.FORMAT_RGBA8)
 	for y in size:
 		for x in size:
 			var u := absf((x + 0.5) / size * 2.0 - 1.0)
@@ -877,7 +877,7 @@ static func _soft_rect_texture(edge := 0.42) -> ImageTexture:
 static func _crack_texture() -> ImageTexture:
 	if _textures.has("crack"): return _textures["crack"]
 	var size := 128
-	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var image := Image.create_empty(size, size, false, Image.FORMAT_RGBA8)
 	image.fill(Color(1, 1, 1, 0))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 90221

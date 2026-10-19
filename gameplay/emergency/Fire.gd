@@ -121,9 +121,11 @@ func _build_visuals() -> void:
 	smoke_process.scale_min = 0.8
 	smoke_process.scale_max = 1.4
 	var grow := Curve.new()
+	# Desde o Godot 4.4 a Curve prende os pontos em [min_value, max_value] (padrão 0..1) no add_point:
+	# o limite vem antes, senão o pico desenhado (2,2) era cortado em 1,0.
+	grow.max_value = 2.2
 	grow.add_point(Vector2(0.0, 0.5))
 	grow.add_point(Vector2(1.0, 2.2))
-	grow.max_value = 2.2
 	var grow_texture := CurveTexture.new()
 	grow_texture.curve = grow
 	smoke_process.scale_curve = grow_texture

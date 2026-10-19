@@ -20,6 +20,9 @@ const SELECTION_INTERVAL := 0.1
 const FADE_IN_SECONDS := 0.22
 const FADE_OUT_SECONDS := 0.28
 const BASE_VOLUME_DB := -24.0
+## Troca da ponte (`street`) para a família certa quando ela termina de carregar: desce até o
+## silêncio, troca o fluxo e sobe. Trocar o stream com a voz tocando corta a onda e estala.
+const BANK_SWAP_SECONDS := 0.12
 
 var _world: Node
 var _listener: Node3D
@@ -196,9 +199,10 @@ func _ensure_state(vehicle: CharacterBody3D) -> void:
 		_states[id].vehicle = weakref(vehicle)
 		return
 	var archetype := str(vehicle.archetype)
-	var family := _resolve_family(archetype)
+	var wanted := _resolve_family(archetype)
 	var spec: Dictionary = FLEET.spec(archetype)
-	_states[id] = {"vehicle": weakref(vehicle), "family": family,
+	# "family" é o banco que toca agora (pode ser a ponte); "wanted_family", o da viatura.
+	_states[id] = {"vehicle": weakref(vehicle), "family": wanted, "wanted_family": wanted, "swap_gain": 1.0,
 		"engine_pitch": clampf(float(spec.get("engine_pitch", 1.0)), 0.6, 1.4),
 		"previous_speed": absf(float(vehicle.speed)), "acceleration": 0.0, "rpm": 0.6}
 
@@ -206,24 +210,36 @@ func _ensure_state(vehicle: CharacterBody3D) -> void:
 func _resolve_family(archetype: String) -> String:
 	if _family_by_archetype.has(archetype):
 		return str(_family_by_archetype[archetype])
+	# Existência no disco, não prontidão: a família ainda em leitura não pode virar `street`
+	# para sempre neste arquétipo.
 	var family := ENGINE_PROFILE.bank_family(archetype)
-	if not _ensure_bank(family):
+	if not BANKS.has_bank(family):
 		family = "street"
-		_ensure_bank(family)
 	_family_by_archetype[archetype] = family
 	return family
 
 
+## Banco pronto para tocar. Não guarda o vazio de uma família ainda em leitura: o próximo
+## pedido tenta de novo sem esperar.
 func _ensure_bank(family: String) -> bool:
 	if _banks.has(family):
-		return not (_banks[family] as Array).is_empty()
-	_banks[family] = BANKS.bank(family)
-	return not (_banks[family] as Array).is_empty()
+		return (_banks[family] as Array).size() == 7
+	var bank := BANKS.bank(family)
+	if bank.size() != 7:
+		return false
+	_banks[family] = bank
+	return true
 
 
 func _assign(id: int) -> void:
-	if not _states.has(id) or (_banks.get(_states[id].family, []) as Array).size() != 7:
+	if not _states.has(id):
 		return
+	var state: Dictionary = _states[id]
+	if not _ensure_bank(str(state.family)):
+		var playable := BANKS.bridge_family(str(state.wanted_family))
+		if playable.is_empty() or not _ensure_bank(playable):
+			return
+		state.family = playable
 	for slot in _slots:
 		if slot.id == id:
 			slot.target_gain = 1.0
@@ -289,7 +305,17 @@ func _update_slot(slot: Dictionary, delta: float) -> void:
 	state.design_load = 0.0 if float(state.acceleration) < -0.2 else clampf(0.12 + ratio * 0.3 + load_value * 0.6, 0.0, 1.0)
 	var target_rpm := clampf(0.1 + ratio * 0.72 + load_value * 0.18, 0.0, 1.0) * 6.0
 	state.rpm = lerpf(float(state.rpm), target_rpm, minf(1.0, delta * 5.0))
+	_update_bank_swap(state, delta)
 	_mix(slot, state, vehicle, delta)
+
+
+func _update_bank_swap(state: Dictionary, delta: float) -> void:
+	if state.family != state.wanted_family and _ensure_bank(str(state.wanted_family)):
+		state.swap_gain = move_toward(float(state.swap_gain), 0.0, delta / BANK_SWAP_SECONDS)
+		if float(state.swap_gain) <= 0.001:
+			state.family = state.wanted_family
+	elif float(state.swap_gain) < 1.0:
+		state.swap_gain = move_toward(float(state.swap_gain), 1.0, delta / BANK_SWAP_SECONDS)
 
 
 func _mix(slot: Dictionary, state: Dictionary, vehicle: CharacterBody3D, delta := 0.1) -> void:
@@ -310,7 +336,7 @@ func _mix(slot: Dictionary, state: Dictionary, vehicle: CharacterBody3D, delta :
 		var player: AudioStreamPlayer3D = slot.players[layer % 2]
 		var weight := 1.0 - blend if layer == lower else blend
 		player.global_position = vehicle.global_position + Vector3.UP * (audio_height + 0.7)
-		var amplitude := sqrt(maxf(0.0, weight)) * float(slot.gain)
+		var amplitude := sqrt(maxf(0.0, weight)) * float(slot.gain) * float(state.get("swap_gain", 1.0))
 		if amplitude <= 0.001:
 			player.stop()
 			continue

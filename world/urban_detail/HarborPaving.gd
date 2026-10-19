@@ -38,7 +38,7 @@ static func lawn_material(tint: Color) -> StandardMaterial3D:
 	var key := "lawn/"+tint.to_html()
 	if _materials.has(key): return _materials[key]
 	if _lawn_tile == null:
-		var image := Image.create(256,256,false,Image.FORMAT_RGB8)
+		var image := Image.create_empty(256,256,false,Image.FORMAT_RGB8)
 		var rng := RandomNumberGenerator.new()
 		rng.seed = 14102026
 		# Two-metre tile. Fine blades occupy centimetres, never large wavy

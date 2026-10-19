@@ -256,7 +256,7 @@ static func graffiti_material(variant: int) -> StandardMaterial3D:
 static func _graffiti_texture(seed_value: int) -> ImageTexture:
 	var width := 192
 	var height := 96
-	var image := Image.create(width, height, false, Image.FORMAT_RGBA8)
+	var image := Image.create_empty(width, height, false, Image.FORMAT_RGBA8)
 	image.fill(Color(0, 0, 0, 0))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 51013 + seed_value * 131
@@ -376,6 +376,9 @@ static func _steam(point: Vector3, _key: String) -> CPUParticles3D:
 		_steam_material.albedo_texture = MATERIALS.radial_texture("steam", [Color(1, 1, 1, 0.55), Color(1, 1, 1, 0.25), Color(1, 1, 1, 0)], [0.0, 0.5, 1.0], 64)
 		_steam_material.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED
 		_steam_curve = Curve.new()
+		# Desde o Godot 4.4 a Curve prende os pontos em [min_value, max_value] (padrão 0..1) no add_point:
+		# o limite vem antes, senão o pico desenhado (2,2) era cortado em 1,0.
+		_steam_curve.max_value = 2.2
 		_steam_curve.add_point(Vector2(0, 0.4))
 		_steam_curve.add_point(Vector2(1, 2.2))
 		_steam_ramp = Gradient.new()

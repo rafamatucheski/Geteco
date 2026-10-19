@@ -7,10 +7,31 @@ const JOINTS := ["Pelvis", "Spine", "Head", "left_upper_leg", "left_lower_leg", 
 	"right_upper_leg", "right_lower_leg", "RightFoot", "right_upper_arm", "RightForearm"]
 ## O corpo passa da pose atual para o clipe em vez de pular para ele.
 const BLEND_IN := 0.15
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 static var _library: AnimationLibrary
+static var _requested := false
 
+## Pede a biblioteca em segundo plano, sob a cortina do carregamento. Sem isto o `load()` síncrono
+## caía no quadro da primeira morte em combate.
+static func prewarm() -> void:
+	if _library != null or _requested or not ResourceLoader.exists(LIBRARY): return
+	_requested = ResourceLoader.load_threaded_request(LIBRARY, "AnimationLibrary") == OK
+
+## Depois do `prewarm` nunca espera: enquanto a leitura não terminou devolve null e a queda
+## procedural roda (`load_threaded_get` com a carga em andamento bloquearia o quadro). Sem
+## `prewarm` (testes, ferramentas) carrega na hora, com span para o pico ter nome.
 static func library() -> AnimationLibrary:
-	if _library == null and ResourceLoader.exists(LIBRARY): _library = load(LIBRARY) as AnimationLibrary
+	if _library != null or not ResourceLoader.exists(LIBRARY): return _library
+	if _requested:
+		var status := ResourceLoader.load_threaded_get_status(LIBRARY)
+		if status == ResourceLoader.THREAD_LOAD_IN_PROGRESS: return null
+		_requested = false
+		if status == ResourceLoader.THREAD_LOAD_LOADED:
+			_library = ResourceLoader.load_threaded_get(LIBRARY) as AnimationLibrary
+			return _library
+	var began := STALL_WORK.begin()
+	_library = load(LIBRARY) as AnimationLibrary
+	STALL_WORK.finish_slow("gameplay.mixamo_death_library", began, 2000)
 	return _library
 
 ## Empurrão no referencial do corpo (frente = +Z, esquerda do Dante = +X): cai para o lado do empurrão.

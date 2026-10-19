@@ -1,6 +1,7 @@
 extends Node
 ## Replace only the speech stem when all eleven validated takes fit the film.
 const VOICE := preload("res://audio/ExpressiveVoice.gd")
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const DEADLINES := [15.82,20.82,24.82,28.82,36.82,41.82,48.82,51.82,61.82,64.82,67.32]
 var directed := false
 var reason := ""
@@ -110,6 +111,7 @@ func fade(tween: Tween, seconds: float) -> void:
 func _phone_bus() -> StringName:
 	if _memory_bus.is_empty():
 		_memory_bus = "FerryMemoryVoice_%d" % get_instance_id()
+		var began := STALL_WORK.begin()
 		AudioServer.add_bus()
 		var index := AudioServer.bus_count - 1
 		AudioServer.set_bus_name(index, _memory_bus)
@@ -120,6 +122,7 @@ func _phone_bus() -> StringName:
 		low.cutoff_hz = 3700.0
 		AudioServer.add_bus_effect(index, high)
 		AudioServer.add_bus_effect(index, low)
+		STALL_WORK.finish_slow("audio.ferry_voice_bus_add", began, 1000, self)
 	return StringName(_memory_bus)
 
 func _disconnect_beep() -> AudioStreamWAV:
@@ -140,4 +143,7 @@ func _disconnect_beep() -> AudioStreamWAV:
 func _exit_tree() -> void:
 	stop()
 	var index := AudioServer.get_bus_index(_memory_bus)
-	if not _memory_bus.is_empty() and index >= 0: AudioServer.remove_bus(index)
+	if not _memory_bus.is_empty() and index >= 0:
+		var began := STALL_WORK.begin()
+		AudioServer.remove_bus(index)
+		STALL_WORK.finish_slow("audio.ferry_voice_bus_remove", began, 1000)

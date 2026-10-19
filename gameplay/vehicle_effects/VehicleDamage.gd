@@ -213,7 +213,7 @@ static func _scratches(level: int) -> Texture2D:
 		var rng := RandomNumberGenerator.new()
 		rng.seed = 4401
 		for index in WEAR_STAGES:
-			var image := Image.create(256, 256, false, Image.FORMAT_RGBA8)
+			var image := Image.create_empty(256, 256, false, Image.FORMAT_RGBA8)
 			image.fill(Color(0, 0, 0, 0))
 			# Fuligem só no dano pesado e quase opaca: mancha escura translúcida sobre
 			# amarelo/laranja é justamente o que lê como marrom.
@@ -267,8 +267,8 @@ static func _char(embers: bool) -> Texture2D:
 		cracks.seed = 91
 		cracks.frequency = .03
 		cracks.fractal_octaves = 2
-		var albedo := Image.create(128, 128, false, Image.FORMAT_RGB8)
-		var glow := Image.create(128, 128, false, Image.FORMAT_RGB8)
+		var albedo := Image.create_empty(128, 128, false, Image.FORMAT_RGB8)
+		var glow := Image.create_empty(128, 128, false, Image.FORMAT_RGB8)
 		for y in 128:
 			for x in 128:
 				var ash := smoothstep(.3, .55, noise.get_noise_2d(x, y))
@@ -334,6 +334,9 @@ func _stall_update_fire() -> void:
 		smoke.scale_min = .8
 		smoke.scale_max = 1.4
 		var grow := Curve.new()
+		# Desde o Godot 4.4 a Curve prende os pontos em [min_value, max_value] (padrão 0..1) no add_point:
+		# o limite vem antes, senão o pico desenhado (2,2) era cortado em 1,0.
+		grow.max_value = 2.2
 		grow.add_point(Vector2(0, .5))
 		grow.add_point(Vector2(1, 2.2))
 		var grow_texture := CurveTexture.new()

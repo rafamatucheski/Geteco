@@ -238,7 +238,7 @@ func _commit(surface: SurfaceTool, title: String, metallic: bool, target_parent:
 
 static func _grip_mat() -> StandardMaterial3D:
 	if _grip_material != null: return _grip_material
-	var image := Image.create(128, 128, false, Image.FORMAT_RGB8)
+	var image := Image.create_empty(128, 128, false, Image.FORMAT_RGB8)
 	var random := RandomNumberGenerator.new()
 	random.seed = 7281
 	for y in 128:

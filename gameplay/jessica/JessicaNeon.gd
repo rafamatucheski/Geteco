@@ -77,7 +77,7 @@ func _ready() -> void:
 
 static func _ground_texture() -> ImageTexture:
 	if _pool_texture != null: return _pool_texture
-	var image := Image.create(64,64,false,Image.FORMAT_RGBA8)
+	var image := Image.create_empty(64,64,false,Image.FORMAT_RGBA8)
 	for y in 64:
 		for x in 64:
 			var across: float = float(x)/63.0*2.0-1.0

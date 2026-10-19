@@ -56,9 +56,9 @@ static func material(key: String) -> StandardMaterial3D:
 static func _maps_for(kind: String) -> Dictionary:
 	if _maps.has(kind): return _maps[kind]
 	var started := STALL_WORK.begin()
-	var albedo := Image.create(SIZE, SIZE, false, Image.FORMAT_RGBA8)
-	var bump := Image.create(SIZE, SIZE, false, Image.FORMAT_RGBA8)
-	var rough := Image.create(SIZE, SIZE, false, Image.FORMAT_RGBA8)
+	var albedo := Image.create_empty(SIZE, SIZE, false, Image.FORMAT_RGBA8)
+	var bump := Image.create_empty(SIZE, SIZE, false, Image.FORMAT_RGBA8)
+	var rough := Image.create_empty(SIZE, SIZE, false, Image.FORMAT_RGBA8)
 	match kind:
 		"concrete": _concrete(albedo, bump, rough)
 		"deck": _deck(albedo, bump, rough)

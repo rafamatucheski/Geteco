@@ -782,7 +782,7 @@ func _restore_draft() -> void:
 		document = draft.document
 func _rebuild_catalog() -> void:
 	if worker_pid > 0: return
-	worker_pid = OS.create_process(OS.get_executable_path(),PackedStringArray(["--minimized","--resolution","64x64","--path",ProjectSettings.globalize_path("res://"),"--script","res://addons/geteco_world_editor/export_catalog.gd","--log-file",ProjectSettings.globalize_path("res://.godot/world_editor_catalog.log"),"--","--output="+CACHE_PATH]))
+	worker_pid = OS.create_process(OS.get_executable_path(),PackedStringArray(["--resolution","64x64","--path",ProjectSettings.globalize_path("res://"),"--script","res://addons/geteco_world_editor/export_catalog.gd","--log-file",ProjectSettings.globalize_path("res://.godot/world_editor_catalog.log"),"--","--output="+CACHE_PATH]))
 	if worker_pid < 0:
 		status.text = "Não foi possível abrir o gerador de catálogo."
 		return

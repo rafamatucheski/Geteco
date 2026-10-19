@@ -19,7 +19,7 @@ static func material(kind: String, color: Color) -> StandardMaterial3D:
 static func texture(kind: String) -> Texture2D:
 	if _textures.has(kind): return _textures[kind]
 	var pixels_started := STALL_WORK.begin()
-	var image := Image.create(64, 64, false, Image.FORMAT_RGBA8)
+	var image := Image.create_empty(64, 64, false, Image.FORMAT_RGBA8)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 61722
 	for y in 64:

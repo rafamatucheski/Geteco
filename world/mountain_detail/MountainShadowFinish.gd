@@ -48,7 +48,7 @@ static func _contact(tight: bool) -> StandardMaterial3D:
 static func _soft_rect() -> ImageTexture:
 	if _texture != null: return _texture
 	var size := 64
-	var image := Image.create(size, size, false, Image.FORMAT_RGBA8)
+	var image := Image.create_empty(size, size, false, Image.FORMAT_RGBA8)
 	for y in size:
 		for x in size:
 			var u := absf((x + 0.5) / size * 2.0 - 1.0)

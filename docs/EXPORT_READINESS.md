@@ -11,6 +11,8 @@ A árvore de origem possui os recursos dinâmicos inventariados e o preset produ
 1. os templates Windows compatíveis com Godot 4.7.2 não estão instalados, portanto nenhum `.exe` foi produzido;
 2. 99 WAVs de combate são carregados em produção por `FileAccess` + `AudioStreamWAV.load_from_file()`. No PCK eles existem apenas como recursos importados: `ResourceLoader` os encontra, mas `FileAccess.file_exists()` não encontra os caminhos `.wav` originais.
 
+> **Atualização 2026-10-19:** os dois pontos abaixo estão superados. O ponto 2 foi resolvido: `gameplay/CombatAudio.gd` (comentário das linhas 13-16) carrega os WAVs como recursos importados por `ResourceLoader`, sem `load_from_file`. E `export_presets.cfg` é versionado no Git (a limitação de versionamento descrita mais abaixo não vale mais). O texto original fica como registro da verificação de 2026-09-21.
+
 O segundo ponto é um defeito do carregador de produção e ficou somente documentado, conforme o limite de escopo. O filtro explícito do preset para os WAVs não muda o resultado. A documentação do Godot recomenda `ResourceLoader` para recursos exportados ou o modo de importação *Keep File* quando `FileAccess` for obrigatório: <https://docs.godotengine.org/en/stable/classes/class_fileaccess.html>.
 
 ## Preset Windows
@@ -26,7 +28,9 @@ O segundo ponto é um defeito do carregador de produção e ficou somente docume
 
 Nenhum preset anterior existia no V2 no início desta tarefa.
 
-### Limitação de versionamento
+### Limitação de versionamento (superada)
+
+Hoje `export_presets.cfg` está na raiz do repositório e é versionado. Registro original:
 
 O `.gitignore` da raiz do workspace contém a regra global `export_presets.cfg`. Por isso, o preset existe em `geteco_v2/export_presets.cfg`, é aceito pelo Godot e foi usado nos PCKs desta verificação, mas fica ignorado pelo Git e não aparece em uma adição normal de arquivos. Alterar o `.gitignore` estava fora do escopo exclusivo desta tarefa, e nenhum commit foi feito. Antes da integração, o responsável deve permitir explicitamente esse arquivo no controle de versão ou adicioná-lo de forma intencional apesar da regra.
 

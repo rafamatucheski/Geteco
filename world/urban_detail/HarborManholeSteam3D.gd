@@ -22,6 +22,9 @@ func _ready() -> void:
 	scale_amount_min = 0.7
 	scale_amount_max = 1.2
 	var grow := Curve.new()
+	# Desde o Godot 4.4 a Curve prende os pontos em [min_value, max_value] (padrão 0..1) no add_point:
+	# o limite vem antes, senão o pico desenhado (1,6) era cortado em 1,0.
+	grow.max_value = 1.6
 	grow.add_point(Vector2(0, 0.35))
 	grow.add_point(Vector2(1, 1.6))
 	scale_amount_curve = grow

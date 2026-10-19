@@ -167,7 +167,7 @@ static func beads() -> Texture2D:
 				if r2 >= 1.0: continue
 				var index := posmod(int(cy) + dy, SIZE) * SIZE + posmod(int(cx) + dx, SIZE)
 				height[index] = maxf(height[index], sqrt(1.0 - r2) * radius * .5)
-	var image := Image.create(SIZE, SIZE, true, Image.FORMAT_RGB8)
+	var image := Image.create_empty(SIZE, SIZE, true, Image.FORMAT_RGB8)
 	for y in SIZE:
 		for x in SIZE:
 			var dx := height[y * SIZE + posmod(x + 1, SIZE)] - height[y * SIZE + posmod(x - 1, SIZE)]

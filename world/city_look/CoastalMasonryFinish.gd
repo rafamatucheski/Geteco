@@ -30,7 +30,7 @@ static func _same_wall_pair(candidate: MeshInstance3D, source: MeshInstance3D) -
 
 static func _material() -> StandardMaterial3D:
 	if _wall_material != null: return _wall_material
-	var albedo := Image.create(MAP_SIZE, MAP_SIZE, false, Image.FORMAT_RGB8)
+	var albedo := Image.create_empty(MAP_SIZE, MAP_SIZE, false, Image.FORMAT_RGB8)
 	var heights := PackedFloat32Array()
 	heights.resize(MAP_SIZE * MAP_SIZE)
 	var tint_rng := RandomNumberGenerator.new()

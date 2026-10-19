@@ -9,7 +9,7 @@ static func release_cache() -> void:
 static func texture(kind: String) -> Texture2D:
 	if _textures.has(kind): return _textures[kind]
 	var size := Vector2i(3,18) if kind=="rain" else Vector2i(16,16)
-	var image := Image.create(size.x,size.y,false,Image.FORMAT_RGBA8)
+	var image := Image.create_empty(size.x,size.y,false,Image.FORMAT_RGBA8)
 	for y in size.y:
 		for x in size.x:
 			var alpha: float

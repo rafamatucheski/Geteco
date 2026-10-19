@@ -3,6 +3,7 @@ extends Node3D
 ## leaves so gunshots, footsteps and impacts only echo underground.
 
 const BUS_NAME := &"SecretTunnelReverb"
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const SAMPLE_RATE := 22050
 static var _ambient_stream: AudioStreamWAV
 static var _drip_stream: AudioStreamWAV
@@ -70,9 +71,14 @@ func _enable_reverb() -> void:
 	var sfx_index := AudioServer.get_bus_index(&"SFX")
 	if sfx_index < 0 or _owns_routing: return
 	var tunnel_index := AudioServer.get_bus_index(BUS_NAME)
+	var began := STALL_WORK.begin()
 	if tunnel_index < 0:
-		AudioServer.add_bus()
-		tunnel_index = AudioServer.bus_count-1
+		# O envio de um bus só vale para um bus à ESQUERDA dele. Criado no fim (à direita do SFX),
+		# o envio SFX→túnel era ignorado e o reverb nunca soava; inserir na posição do SFX põe o
+		# túnel antes dele (o SFX desliza uma casa para a direita).
+		AudioServer.add_bus(sfx_index)
+		tunnel_index = sfx_index
+		sfx_index = AudioServer.get_bus_index(&"SFX")
 		AudioServer.set_bus_name(tunnel_index,BUS_NAME)
 		AudioServer.set_bus_send(tunnel_index,&"Master")
 		var reverb := AudioEffectReverb.new()
@@ -83,6 +89,10 @@ func _enable_reverb() -> void:
 		reverb.predelay_msec = 38.0
 		reverb.predelay_feedback = .22
 		AudioServer.add_bus_effect(tunnel_index,reverb)
+	elif tunnel_index > sfx_index:
+		AudioServer.move_bus(tunnel_index,sfx_index)
+		sfx_index = AudioServer.get_bus_index(&"SFX")
+	STALL_WORK.finish_slow("audio.tunnel_reverb_bus",began,1000,self)
 	_previous_sfx_send = AudioServer.get_bus_send(sfx_index)
 	AudioServer.set_bus_send(sfx_index,BUS_NAME)
 	_owns_routing = true

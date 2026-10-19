@@ -7,7 +7,7 @@ static var _quads: Dictionary = {}
 
 static func soft_texture() -> Texture2D:
 	if _soft_texture != null: return _soft_texture
-	var image := Image.create(32,32,false,Image.FORMAT_RGBA8)
+	var image := Image.create_empty(32,32,false,Image.FORMAT_RGBA8)
 	for y in 32:
 		for x in 32:
 			var radius := Vector2(x-15.5,y-15.5).length()/15.5
@@ -17,7 +17,7 @@ static func soft_texture() -> Texture2D:
 
 static func wisp_texture() -> Texture2D:
 	if _wisp_texture != null: return _wisp_texture
-	var image := Image.create(32,32,false,Image.FORMAT_RGBA8)
+	var image := Image.create_empty(32,32,false,Image.FORMAT_RGBA8)
 	var centers: Array[Vector3] = [
 		Vector3(15.5, 15.5, 12.0),
 		Vector3(12.5, 14.0, 9.0),

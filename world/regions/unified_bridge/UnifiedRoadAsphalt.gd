@@ -18,7 +18,7 @@ static func material() -> ShaderMaterial:
 
 static func aggregate() -> Texture2D:
 	if _aggregate != null: return _aggregate
-	var image := Image.create(128,128,false,Image.FORMAT_RGB8)
+	var image := Image.create_empty(128,128,false,Image.FORMAT_RGB8)
 	var noise := FastNoiseLite.new()
 	noise.seed = 2147
 	noise.frequency = 1.0
@@ -37,7 +37,7 @@ static func aggregate() -> Texture2D:
 
 static func roughness() -> Texture2D:
 	if _roughness != null: return _roughness
-	var image := Image.create(128,128,false,Image.FORMAT_L8)
+	var image := Image.create_empty(128,128,false,Image.FORMAT_L8)
 	var noise := FastNoiseLite.new()
 	noise.seed = 13102026
 	noise.frequency = 1.0
