@@ -114,6 +114,7 @@ func _build(region) -> void:
 	var path_material := ShaderMaterial.new()
 	path_material.shader = preload("res://world/mountain_detail/mountain_footpath.gdshader")
 	CONNECTION.configure_ground_material(path_material)
+	preload("res://world/regions/MountainGroundFinish.gd").apply_ground(path_material)
 	_paths.material_override = path_material
 	_paths.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	# Native terrain now blends this shoulder into the same opaque ground surface.

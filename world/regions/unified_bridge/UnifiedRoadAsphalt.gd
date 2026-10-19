@@ -13,6 +13,7 @@ static func material() -> ShaderMaterial:
 	_material.shader = SHADER
 	_material.set_shader_parameter("base_texture", aggregate())
 	_material.set_shader_parameter("roughness_texture", roughness())
+	preload("res://world/regions/MountainGroundFinish.gd").apply_asphalt(_material)
 	return _material
 
 static func aggregate() -> Texture2D:

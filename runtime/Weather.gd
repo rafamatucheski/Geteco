@@ -277,6 +277,9 @@ func _update() -> void:
 	if controller.session != null and controller.session.cold != null:
 		mountain_weather = controller.session.cold.weather_sample()
 	var front: float = float(mountain_weather.get("front",0.0))
+	# Nevasca na serra deixa pó e bancos de neve no asfalto (MountainGroundFinish).
+	var bridge_kit := preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd")
+	if bridge_kit.enabled(): preload("res://world/regions/MountainGroundFinish.gd").set_snowfall(front,bridge_kit.material("asphalt"))
 	var focus: Vector3 = REGIONAL_ATMOSPHERE.focus_position(controller)
 	var regional_weight: float = REGIONAL_ATMOSPHERE.weights_at(focus).mountain
 	var desert: float = REGIONAL_ATMOSPHERE.desert_weight(focus)
