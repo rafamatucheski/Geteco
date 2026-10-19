@@ -24,6 +24,7 @@
   "gameplay/vehicle_effects/VehicleDamage.gd": 1,
   "runtime/TrunkView.gd": 2,
   "runtime/amusement_park/AmusementParkRuntime.gd": 1,
+  "runtime/desert/roadside/RoadsideLamp.gd": 1,
   "runtime/transit/BiarticulatedBus.gd": 1,
   "world/city_look/CityLocalLighting.gd": 1,
   "world/desert/DesertBankInterior.gd": 1,

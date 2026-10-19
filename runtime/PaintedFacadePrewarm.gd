@@ -30,6 +30,9 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 			if ResourceLoader.exists(PaintedFacadeKit.ROOT + style + "/" + part + ".jpg"):
 				materials.append(PaintedFacadeKit.material(style, part))
 	materials.append(PaintedFacadeKit._corridor_material())
+	# Beira de estrada do deserto: compõe os quatro lugares (malha por material) e desenha o atlas
+	# das placas e as cópias de pintura das carcaças aqui, não na primeira visita a cada lugar.
+	materials.append_array(preload("res://runtime/desert/roadside/RoadsideBuild.gd").prewarm())
 	# Recorte do trem na frente do prédio ocupado (HarborBuildingMovingSightline):
 	# o ShaderMaterial nasce ao entrar no prédio, sem cortina, e o shader só era
 	# compilado quando o trem aparecia na tela com o jogador lá dentro.
