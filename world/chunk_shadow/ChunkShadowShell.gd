@@ -17,9 +17,11 @@ const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 ## Trecho descartado continua na árvore escondido (marca da fila de vídeo): a casca para como a fusão (16/10).
 const GPU_RELEASE := preload("res://runtime/GpuReleaseQueue.gd")
+## Oclusores do trecho saem das mesmas caixas (GETECO_OCCLUSION=1; ver ChunkOccluders.gd).
+const OCCLUDERS := preload("res://world/chunk_bake/ChunkOccluders.gd")
 
 static func schedule(chunk: Node3D) -> void:
-	if not (enabled or preload("res://world/chunk_bake/ChunkCellMerge.gd").enabled) or Engine.get_meta("geteco_live_preview_build", false): return
+	if not (enabled or OCCLUDERS.enabled or preload("res://world/chunk_bake/ChunkCellMerge.gd").enabled) or Engine.get_meta("geteco_live_preview_build", false): return
 	# EditableRegion aplica WorldUnits após o retorno de NativeRegion._run_build_job.
 	# O adiamento preserva esse contrato também quando o trecho é montado de uma vez.
 	_finish_deferred.call_deferred(weakref(chunk))
@@ -45,9 +47,12 @@ static func finish_chunk(chunk: Node3D) -> void:
 	_finish(chunk, 0)
 
 static func _finish(chunk: Node3D, budget_usec: int) -> void:
-	if not enabled or chunk.has_meta(FINISHED) or not chunk.has_meta("vegetation_ready_frame"): return
+	# A varredura serve à casca e aos oclusores; cada um tem o próprio interruptor.
+	var shell_on := enabled
+	if not (shell_on or OCCLUDERS.enabled) or chunk.has_meta(FINISHED) or not chunk.has_meta("vegetation_ready_frame"): return
 	if Engine.get_meta("geteco_live_preview_build", false): return
 	chunk.set_meta(FINISHED, true)
+	var occluder_boxes: Array = []
 	var reference: WeakRef = weakref(chunk)
 	var began := STALL_WORK.begin()
 	# Relógio do orçamento separado do span: com o rastreio desligado `began` é 0 e cada malha cedia o quadro.
@@ -74,6 +79,10 @@ static func _finish(chunk: Node3D, budget_usec: int) -> void:
 		if maxf(size.x, maxf(size.y, size.z)) < 1.5:
 			small.append(source)
 			continue
+		var transform := inverse * source.global_transform
+		OCCLUDERS.note_box(occluder_boxes, source, transform)
+		covered.append(source)
+		if not shell_on: continue
 		# A caixa local transformada preserva orientação; uma AABB mundial inflaria
 		# paredes diagonais. Malhas compostas não viram blocos que tapariam seus vãos.
 		# Do cache: cada surface_get_arrays espera a GPU terminar (MeshArrayCache), e as caixas se repetem.
@@ -81,7 +90,6 @@ static func _finish(chunk: Node3D, budget_usec: int) -> void:
 		var points: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 		var source_normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
 		var triangles: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
-		var transform := inverse * source.global_transform
 		var normal_transform := transform.basis.inverse().transposed()
 		var offset := vertices.size()
 		# Em bloco: a normal vai sem normalized() porque o vértice a grava em octaedro (o tamanho se perde).
@@ -97,13 +105,16 @@ static func _finish(chunk: Node3D, budget_usec: int) -> void:
 			indices[start + triangle] = offset + triangles[triangle]
 			indices[start + triangle + 1] = offset + triangles[triangle + (2 if flip else 1)]
 			indices[start + triangle + 2] = offset + triangles[triangle + (1 if flip else 2)]
-		covered.append(source)
 	# Fonte liberada ou levada para outro trecho enquanto a casca era montada: a casca teria a sombra dela.
 	# Sem casca neste trecho (as fontes ficam com a sombra própria); só perde a economia.
 	for source in covered + small:
 		if not is_instance_valid(source) or not chunk.is_ancestor_of(source):
 			STALL_WORK.finish_slow("chunk.shadow_shell", began, 1500)
 			return
+	if not shell_on:
+		STALL_WORK.finish_slow("chunk.shadow_shell", began, 1500)
+		OCCLUDERS.build(chunk, occluder_boxes)
+		return
 	if not vertices.is_empty():
 		var arrays := []
 		arrays.resize(Mesh.ARRAY_MAX)
@@ -126,6 +137,8 @@ static func _finish(chunk: Node3D, budget_usec: int) -> void:
 		source.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	chunk.set_meta("chunk_shadow_shell_counts", {"covered": covered.size(), "small": small.size()})
 	STALL_WORK.finish_slow("chunk.shadow_shell", began, 1500)
+	# Não esperada: monta num trabalhador e insere sozinha (testes de casca não dependem dela).
+	OCCLUDERS.build(chunk, occluder_boxes)
 
 static func _eligible(source: MeshInstance3D, chunk: Node3D) -> bool:
 	if not source.is_visible_in_tree() or source.is_queued_for_deletion(): return false

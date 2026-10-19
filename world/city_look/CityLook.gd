@@ -204,6 +204,8 @@ func _refresh_silhouette() -> void:
 			has_box = true
 			if geometry.material_overlay == null:
 				geometry.material_overlay = material
+			# A silhueta existe para ver o alvo atrás do prédio: o occlusion culling não pode escondê-lo.
+			geometry.ignore_occlusion_culling = true
 	# One box encloses all visible pieces, so the rider cannot light up through
 	# the motorcycle and the motorcycle cannot light up through its rider.
 	box = box.grow(.08)

@@ -45,6 +45,8 @@ const PROTECTED_GROUPS := [&"harbor_building", &"v2_walkin_facade", &"harbor_bui
 ## Testes, censo e coletor de variantes zeram (fusão inteira de uma vez): não medem tempo de quadro.
 static var slice_budget_usec := 2000
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+## LOD gerado em runtime nos lotes (desligado por padrão; ver ChunkMeshLod.gd).
+const PROC_LOD := preload("res://world/chunk_bake/ChunkMeshLod.gd")
 const GPU_RELEASE := preload("res://runtime/GpuReleaseQueue.gd")
 ## Trecho descartado fica na árvore, escondido, sendo desmontado folha a folha: a fusão tem de parar já
 ## (crash de 16/10 na ponte: folhas órfãs ainda válidas em _add_mesh e holder liberado em _commit_batch).
@@ -434,8 +436,18 @@ static func _build_batch(entries: Array, exact: bool, slice: Slice) -> ArrayMesh
 	# (cabanas, 15/10), e o pré-aquecimento das variantes da família não cobre o material original.
 	if not exact or family_material.vertex_color_use_as_albedo: arrays[Mesh.ARRAY_COLOR] = built.colors
 	arrays[Mesh.ARRAY_INDEX] = built.indices
+	# LOD do lote (GETECO_PROC_LOD=1): simplificação só no trabalhador; aqui só entram os índices prontos.
+	var lods := {}
+	if PROC_LOD.wanted((built.indices as PackedInt32Array).size(), slice.budget_usec):
+		var generated := {}
+		var lod_task := WorkerThreadPool.add_task(Callable(PROC_LOD, "generate").bind(arrays, generated), false, "cell merge lod")
+		await _await_task(lod_task, slice)
+		if not await _yield_if_due(slice): return null
+		if generated.has("lods"):
+			arrays = generated.arrays
+			lods = generated.lods
 	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, [], lods)
 	mesh.surface_set_material(0, family_material)
 	return mesh
 
