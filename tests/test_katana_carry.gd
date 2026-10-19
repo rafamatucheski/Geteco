@@ -5,7 +5,9 @@ extends SceneTree
 ## - parado: duas mãos; andando: só a direita; correndo: lâmina deitada para trás; em guarda: anda com
 ##   as duas mãos, mas corre com uma;
 ## - folga da lâmina até a cabeça e o ombro, e as palmas chegam ao cabo;
-## - saindo do golpe do Mixamo, a lâmina e a mão não saltam de um quadro para o outro.
+## - saindo do golpe do Mixamo, a lâmina e a mão não saltam de um quadro para o outro;
+## - com os clipes da greatsword (19/10/2026, pedido do usuário): Great Sword Idle, Walk e Run, fio para o
+##   inimigo e pé de apoio sem deslizar demais. O carregar procedural fica como reserva sem a biblioteca.
 ## Lógica e geometria só (pode rodar headless); a aparência fica com tools/capture_katana_locomotion.gd.
 const MOVES := preload("res://gameplay/KatanaMoveset.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
@@ -107,7 +109,9 @@ func contracts() -> void:
 	var cut: Dictionary = moves.update(DT, 0.0, 0.0, 0.0, 0.0, true, 0, MOVES.CONTACT[0])
 	check(cut.melee_action and cut.support_locked and blade(cut).z < -0.8, "corte de reserva com as duas mãos e a lâmina à frente no contato")
 
-## No Dante de verdade: folgas e palmas no cabo parado, andando e correndo, e a volta do golpe.
+## No Dante de verdade, com os clipes da greatsword: parado, andando e correndo tocam Great Sword Idle, Walk
+## e Run, o fio fica para o inimigo, a lâmina longe da cabeça e o pé de apoio quase não desliza; o golpe
+## entra e sai sem salto. Depois, sem o Walk na biblioteca, o carregar procedural (reserva).
 func skeleton_checks() -> void:
 	var stage := Node3D.new(); root.add_child(stage)
 	var ground := StaticBody3D.new(); var shape := CollisionShape3D.new(); var box := BoxShape3D.new(); box.size = Vector3(400, 0.2, 400)
@@ -126,6 +130,61 @@ func skeleton_checks() -> void:
 		gp._update_combat_clip(DT)
 		gp._update_weapon_pose(DT)
 		await physics_frame
+	check(gp._sword_locomotion_clips(), "biblioteca tem Great Sword Idle, Walk e Run")
+	for state in [["parado", 0.0, actor.SWORD_IDLE], ["andando", 3.5, actor.SWORD_WALK], ["correndo", 6.5, actor.SWORD_RUN]]:
+		actor.automatic_direction = Vector3.FORWARD if state[1] > 0.0 else Vector3.ZERO
+		actor.speed = state[1]
+		for i in 80: await step.call()
+		var playing := true
+		var heard := {}
+		var worst_head := INF
+		var edge_sum := 0.0
+		var feet: Array = []
+		for i in 60:
+			await step.call()
+			playing = playing and actor.animation.assigned_animation == state[2] and actor.combat_weapon_pose.get("native_sword", false)
+			heard[actor.animation.assigned_animation] = true
+			worst_head = minf(worst_head, clearance(actor, gp.gun).head)
+			var body: Basis = actor.visual.global_basis.orthonormalized().inverse()
+			var d: Vector3 = body * -(gp.gun.global_basis.z as Vector3).normalized()
+			var edge: Vector3 = body * (gp.gun.global_basis.x as Vector3).normalized()
+			# Parado e andando: fio para baixo e para a frente. Correndo a espada vai arrastada atrás: fio para fora.
+			var want := Vector3(0, -1, -1)
+			if state[2] == actor.SWORD_RUN: want = actor.visual.to_local(gp.gun.global_transform * Vector3(0, 0, -0.6)) * Vector3(1, 0, 1)
+			want = (want - d * want.dot(d)).normalized()
+			edge_sum += edge.dot(want) / 60.0
+			var sk: Skeleton3D = actor.skeleton
+			var low := {}
+			for side in ["Left", "Right"]:
+				var foot := sk.to_global(sk.get_bone_global_pose(sk.find_bone(side + "Foot")).origin)
+				if low.is_empty() or foot.y < low.y: low = {"side": side, "y": foot.y, "at": foot}
+			feet.append(low)
+		check(playing, "%s: toca %s com a katana na pegada do clipe (tocou %s)" % [state[0], state[2], heard.keys()])
+		check(edge_sum > 0.6, "%s: fio para o inimigo (%.2f; 1 = certo, 0 = de lado)" % [state[0], edge_sum])
+		check(worst_head > HEAD_CLEARANCE, "%s: lâmina longe da cabeça (%.3f m do centro)" % [state[0], worst_head])
+		if state[1] > 0.0:
+			# Pé de apoio: o mais baixo, perto do chão, no mesmo lado de um quadro para o outro.
+			var floor_y := INF
+			for f in feet: floor_y = minf(floor_y, f.y)
+			var slips: Array[float] = []
+			for i in range(1, feet.size()):
+				if feet[i].side == feet[i - 1].side and feet[i].y < floor_y + 0.02 and feet[i - 1].y < floor_y + 0.02:
+					slips.append(Vector2(feet[i].at.x - feet[i - 1].at.x, feet[i].at.z - feet[i - 1].at.z).length() / DT)
+			slips.sort()
+			var slip: float = slips[slips.size() / 2] if not slips.is_empty() else INF
+			check(slip < state[1] * 0.35, "%s: pé de apoio desliza %.2f m/s (%.0f%% da velocidade)" % [state[0], slip, slip / state[1] * 100.0])
+	# Golpe andando e volta à locomoção: tudo é clipe com a mesma pegada, sem salto da lâmina.
+	actor.automatic_direction = Vector3.FORWARD
+	actor.speed = 3.5
+	for i in 40: await step.call()
+	gp._play_katana_clip()
+	check(gp._clip_name.begins_with("mixsword/gs_"), "golpe da katana usa o clipe do Mixamo")
+	var exit: float = await strike_exit(actor, gp, step)
+	check(exit < 15.0, "saindo do golpe a lâmina gira no máximo %.1f°/quadro (sem salto)" % exit)
+	check(actor.animation.assigned_animation == actor.SWORD_WALK, "depois do golpe volta ao Great Sword Walk")
+	# Reserva sem a biblioteca: tira o Walk (só em memória) e confere o carregar procedural.
+	(actor.animation.get_animation_library("mixsword") as AnimationLibrary).remove_animation("gs_walk")
+	check(not gp._sword_locomotion_clips(), "sem o Walk na biblioteca, volta ao carregar procedural")
 	for state in [["parado", 0.0], ["andando", 3.5], ["correndo", 6.5]]:
 		actor.automatic_direction = Vector3.FORWARD if state[1] > 0.0 else Vector3.ZERO
 		actor.speed = state[1]
@@ -144,30 +203,33 @@ func skeleton_checks() -> void:
 			worst_reach = maxf(worst_reach, actor.visual.to_local(actor.combat_palm_position("Right")).distance_to(pose.right))
 			if pose.get("support_locked", false):
 				worst_support = maxf(worst_support, actor.combat_palm_position("Left").distance_to(gp.gun.global_transform * (KATANA.GRIP + MOVES.SUPPORT)))
-		check(worst_head > HEAD_CLEARANCE, "%s: lâmina longe da cabeça (%.3f m do centro)" % [state[0], worst_head])
-		check(worst_shoulder > 0.08, "%s: lâmina por fora do ombro (%.3f m da articulação)" % [state[0], worst_shoulder])
-		check(worst_reach < 0.04, "%s: a mão direita chega aonde a pose pede (erro máx %.3f m)" % [state[0], worst_reach])
-		check(worst_support < 0.035, "%s: mão esquerda no cabo quando segura com as duas (erro máx %.3f m)" % [state[0], worst_support])
-	# Golpe andando e volta ao carregar: depois da mistura (SWORD_SWITCH_BLEND), nenhum quadro gira a
-	# lâmina mais que o próprio carregar faria; antes a espada girava de uma vez no fim do clipe.
+		check(worst_head > HEAD_CLEARANCE, "reserva %s: lâmina longe da cabeça (%.3f m do centro)" % [state[0], worst_head])
+		check(worst_shoulder > 0.08, "reserva %s: lâmina por fora do ombro (%.3f m da articulação)" % [state[0], worst_shoulder])
+		check(worst_reach < 0.04, "reserva %s: a mão direita chega aonde a pose pede (erro máx %.3f m)" % [state[0], worst_reach])
+		check(worst_support < 0.035, "reserva %s: mão esquerda no cabo quando segura com as duas (erro máx %.3f m)" % [state[0], worst_support])
+	# Golpe na reserva: do clipe ao carregar procedural, a lâmina gira com mistura (antes, até 34°/quadro).
 	actor.automatic_direction = Vector3.FORWARD
 	actor.speed = 3.5
 	for i in 40: await step.call()
 	gp._play_katana_clip()
-	check(gp._clip_name.begins_with("mixsword/gs_"), "golpe da katana usa o clipe do Mixamo")
+	exit = await strike_exit(actor, gp, step)
+	check(exit < 15.0, "reserva: saindo do golpe a lâmina gira no máximo %.1f°/quadro (sem salto)" % exit)
+	check(actor.combat_weapon_pose.get("right_solve", false) and blade(actor.combat_weapon_pose).y > 0.5, "reserva: depois do golpe volta ao carregar com a lâmina para cima")
+	stage.queue_free()
+	await process_frame
+
+## Maior giro da lâmina por quadro nos 30 quadros depois de o golpe acabar.
+func strike_exit(actor, gp, step: Callable) -> float:
 	var previous := Vector3.ZERO
 	var exit_frames := -1
-	var worst_exit := 0.0
+	var worst := 0.0
 	while exit_frames < 30:
 		await step.call()
 		var direction: Vector3 = actor.visual.global_basis.inverse() * -(gp.gun.global_basis.z as Vector3).normalized()
-		if exit_frames >= 0 and previous != Vector3.ZERO: worst_exit = maxf(worst_exit, rad_to_deg(previous.angle_to(direction)))
+		if exit_frames >= 0 and previous != Vector3.ZERO: worst = maxf(worst, rad_to_deg(previous.angle_to(direction)))
 		previous = direction
 		if gp._clip_name == "" or exit_frames >= 0: exit_frames += 1
-	check(worst_exit < 15.0, "saindo do golpe a lâmina gira no máximo %.1f°/quadro (sem salto)" % worst_exit)
-	check(actor.combat_weapon_pose.get("right_solve", false) and blade(actor.combat_weapon_pose).y > 0.5, "depois do golpe volta ao carregar com a lâmina para cima")
-	stage.queue_free()
-	await process_frame
+	return worst
 
 func clearance(actor, gun: Node3D) -> Dictionary:
 	var sk: Skeleton3D = actor.skeleton

@@ -700,13 +700,17 @@ func _update_weapon_pose(delta: float) -> void:
 	if id == "shotgun" and reload_timer <= 0.0 and float(_pose_frame.get("pump", 0.0)) > 0.02 and _shotgun_pump_sound_serial != _attack_serial:
 		_shotgun_pump_sound_serial = _attack_serial
 		_play_stream(AUDIO.shotgun_pump(), player.global_position, -8.0 + _rng.randf_range(-1.0, 1.0), _rng.randf_range(0.97, 1.03), 12.0)
+	var sword_clips := id == "katana" and _sword_locomotion_clips()
+	if "sword_locomotion" in player: player.sword_locomotion = sword_clips
 	if id == "katana":
-		# O carregar avança mesmo durante o golpe: ao fim do clipe a pose volta com os pesos em dia.
-		var ready: bool = aiming or _combat_clock - _katana_attack_clock < _katana_moves.READY_SECONDS or (is_instance_valid(rage) and rage.active)
-		_pose_frame = _katana_moves.update(delta, speed_now, float(player.phase), float(rig.get("body_bob", 0.0)), player.visual.rotation.y, ready, _katana_combo, _rig_pose.action_age)
-		if _clip_name.begins_with("mixsword/gs_"):
-			# Golpe do Mixamo: o clipe move os braços; a katana vai nas duas mãos.
-			_pose_frame = {"visible": true, "armed": true, "native_sword": true, "hand_grip": HAND_KATANA_GUARD, "melee_action": true}
+		if sword_clips or _clip_name.begins_with("mixsword/gs_"):
+			# Clipes da greatsword (parado, andando, correndo e golpes): o clipe move os braços e a katana vai
+			# nas duas mãos, com o fio para o inimigo.
+			_pose_frame = {"visible": true, "armed": true, "native_sword": true, "hand_grip": HAND_KATANA_HELD, "melee_action": _clip_name != ""}
+		else:
+			# Sem a biblioteca do Mixamo: carregar procedural (lâmina para cima) e cortes de reserva.
+			var ready: bool = aiming or _combat_clock - _katana_attack_clock < _katana_moves.READY_SECONDS or (is_instance_valid(rage) and rage.active)
+			_pose_frame = _katana_moves.update(delta, speed_now, float(player.phase), float(rig.get("body_bob", 0.0)), player.visual.rotation.y, ready, _katana_combo, _rig_pose.action_age)
 	if player.has_method("set_combat_weapon_pose"):
 		player.set_combat_weapon_pose(id, _pose_frame)
 
@@ -1064,9 +1068,8 @@ const SHEATH_HANDOFF := 0.08
 ## Power 18,5 m/s em 0,70 s; Low 27,6 m/s em 0,84 s). O dano entra nesse instante.
 const KATANA_ATTACKS := [["mixsword/gs_downward", 0.20, 0.64, 1.10], ["mixsword/gs_power", 0.25, 0.70, 1.30], ["mixsword/gs_low", 0.40, 0.84, 1.35]]
 const KATANA_ATTACK_RATE := 1.25
-## Parado, andando e correndo com a katana na mão: `KatanaMoveset` (lâmina para cima). A guarda parada
-## "Great Sword Idle" do Mixamo saiu em 19/10/2026: lia como espadão baixo apontado para a frente, com o
-## Dante curvado.
+## Parado, andando e correndo com a katana na mão: clipes da greatsword do Mixamo (Great Sword Idle, Walk e
+## Run; o Actor troca a locomoção com `sword_locomotion`). Sem eles, `KatanaMoveset` (lâmina para cima).
 ## Medidas no esqueleto do Dante com o clipe da greatsword (cabo = origem da katana, ponta em -Z):
 ## nas costas (osso Spine02), o cabo fica onde a mão direita termina o guardar, atrás do ombro direito,
 ## e a lâmina desce até atrás do quadril esquerdo. Na mão (osso RightHand), a pegada do último quadro
@@ -1074,6 +1077,15 @@ const KATANA_ATTACK_RATE := 1.25
 const BACK_KATANA_LOCAL := Transform3D(Vector3(0.9194, 0.3636, -0.1498), Vector3(-0.1279, -0.0835, -0.9883), Vector3(-0.3718, 0.9278, -0.0303), Vector3(-0.2682, 0.6383, -0.1395))
 const HAND_KATANA_SHEATHED := Transform3D(Vector3(-0.4291, -0.1897, -0.8831), Vector3(-0.8707, 0.3469, 0.3486), Vector3(0.2402, 0.9185, -0.3141), Vector3.ZERO)
 const HAND_KATANA_GUARD := Transform3D(Vector3(0.4451, -0.8449, -0.2967), Vector3(-0.1447, -0.3949, 0.9073), Vector3(-0.8837, -0.3609, -0.2980), Vector3.ZERO)
+## Pegada usada na mão: a da guarda girada −90° em torno da lâmina (Basis(Vector3.BACK, −PI/2)). A medida
+## acima só fixava o eixo entre as mãos. Medido no Dante (fio · direção certa, 1 = certo, 0 = de lado):
+## com a guarda, parado −0,39 e andando −0,46 (fio para trás) e os golpes cortavam de lado (0,07; 0,13;
+## −0,39); girada, parado 0,92, andando 0,89 e golpes 1,00; 1,00; 0,94. Correndo, com a espada arrastada
+## atrás, o fio fica para fora (0,10 contra "para baixo").
+const HAND_KATANA_HELD := Transform3D(Vector3(0.1447, 0.3949, -0.9073), Vector3(0.4451, -0.8449, -0.2967), Vector3(-0.8837, -0.3609, -0.2980), Vector3.ZERO)
+
+func _sword_locomotion_clips() -> bool:
+	return is_instance_valid(player) and player.has_method("has_sword_locomotion") and player.has_sword_locomotion()
 
 func _start_sheath(kind: String) -> void:
 	if not is_instance_valid(player) or not "animation" in player or player.animation == null: return
@@ -1106,12 +1118,12 @@ func _update_sheath(delta: float) -> void:
 		player.combat_clip_time = clip_length * progress
 		# O IK da arma seguinte não pode sobrescrever os braços do clipe de sacar/guardar.
 		# Mantém também as pernas de locomoção quando o jogador troca de arma andando.
-		_pose_frame = {"visible": false, "armed": true, "native_sword": true, "hand_grip": HAND_KATANA_GUARD}
+		_pose_frame = {"visible": false, "armed": true, "native_sword": true, "hand_grip": HAND_KATANA_HELD}
 		if player.has_method("set_combat_weapon_pose"): player.set_combat_weapon_pose("katana", _pose_frame)
 		# A pegada gira junto com o clipe: guarda (lâmina à frente) no início, posição das costas no fim.
 		if hand_katana != null and _sheath_clip.ends_with("sheathe_greatsword"):
 			# As medidas autoradas têm quatro casas decimais: normalize antes do slerp.
-			hand_katana.transform = HAND_KATANA_GUARD.orthonormalized().interpolate_with(HAND_KATANA_SHEATHED.orthonormalized(), progress)
+			hand_katana.transform = HAND_KATANA_HELD.orthonormalized().interpolate_with(HAND_KATANA_SHEATHED.orthonormalized(), progress)
 
 func _end_sheath() -> void:
 	_sheath_clip = ""

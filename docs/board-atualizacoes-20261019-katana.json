@@ -1,23 +1,27 @@
 {
   "date": "2026-10-19",
   "period": "2026-10-19",
-  "scope": "Katana na mão fora do golpe (parado, andando, correndo). Visto em capturas do palco de teste e do jogo (deserto, câmera do jogo); ninguém jogou com controle.",
+  "scope": "Katana na mão fora do golpe (parado, andando, correndo) e o lado do fio. Visto em capturas do palco de teste e do jogo (deserto, câmera do jogo); ninguém jogou com controle.",
   "cards": [
     {
       "id": "katana-carregar-20261019",
-      "title": "Katana carregada para cima: parado, andando e correndo",
+      "title": "Katana: parado, andando e correndo com a greatsword do Mixamo, fio para o inimigo",
       "status": "implemented",
       "area": "combate",
-      "description": "Antes o Dante segurava a katana com os dois braços esticados e a lâmina na horizontal à frente ao andar e correr ('graveto'), e parado tocava a guarda baixa de greatsword do Mixamo, curvado. Agora: parado, duas mãos no cabo ao lado direito do peito com a lâmina em pé (hassō baixo, respiração); andando, só a direita, lâmina para cima e um pouco para fora do ombro, a esquerda balança com o passo; correndo, a lâmina vai para trás e para fora por cima do ombro. Em guarda (mirando, até 2,5 s depois de um golpe ou no RAGE) anda com as duas mãos. A ponta tem inércia ao arrancar, frear e virar. A troca golpe ↔ carregar mistura braços e lâmina (antes a espada girava de uma vez, até 34°/quadro). Ângulos escolhidos para a câmera do jogo: de costas, ≥ 50% da lâmina aparece (antes, correndo, ~19%).",
+      "description": "Antes o Dante andava e corria com os dois braços esticados e a lâmina horizontal à frente ('graveto'). Agora, com a katana na mão, a locomoção usa os clipes da greatsword do Mixamo retargetados: Great Sword Idle parado, Great Sword Walk andando e Great Sword Run correndo (baixados 'In Place'; ciclo travado na distância com passada de 2,0 e 2,8 m, pé de apoio desliza 18% e 8%). A pegada nas mãos foi girada −90° em torno da lâmina: o fio aponta para o inimigo parado/andando e vai à frente nos três golpes (antes os golpes cortavam de lado). A curvatura do modelo passou para o dorso, como numa katana real. O carregar procedural (lâmina para cima, guarda depois de golpe, inércia) fica como reserva sem a biblioteca do Mixamo.",
       "sources": [
-        "gameplay/KatanaMoveset.gd",
         "scripts/Actor.gd",
         "gameplay/Gameplay.gd",
+        "gameplay/KatanaModel.gd",
+        "gameplay/KatanaMoveset.gd",
+        "tools/retarget_mixamo_sword_to_dante.gd",
+        "assets/dante/mixamo/Great Sword Walk.fbx",
+        "assets/dante/mixamo/Great Sword Run.fbx",
         "tests/test_katana_carry.gd",
         "tools/capture_katana_locomotion.gd",
         "tests/capture/capture_katana_carry_session.gd"
       ],
-      "next": "Jogar com teclado/controle e ver a troca de arma andando e o RAGE; o modelo da katana tem a curvatura para o lado do fio (katana real curva para o dorso)."
+      "next": "Jogar com teclado/controle: troca de arma andando, RAGE, mirar com a katana (andar de lado/para trás usa os clipes de arma de fogo nas pernas)."
     }
   ],
   "remove": []

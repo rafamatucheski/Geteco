@@ -14,6 +14,9 @@ const SOURCES := {
 	"gs_low": "res://assets/dante/mixamo/Great Sword Low Slash.fbx",
 	"gs_combo": "res://assets/dante/mixamo/Great Sword Combo Slash.fbx",
 	"gs_idle": "res://assets/dante/mixamo/Great Sword Idle.fbx",
+	# Andar e correr da greatsword (baixados "In Place", sem pele, 30 fps): locomoção com a katana.
+	"gs_walk": "res://assets/dante/mixamo/Great Sword Walk.fbx",
+	"gs_run": "res://assets/dante/mixamo/Great Sword Run.fbx",
 }
 const FPS := 30.0
 # Ossos do Dante -> ossos do Mixamo (o importador troca ':' por '_').

@@ -1,7 +1,10 @@
 extends RefCounted
 ## Authored nodachi silhouette: curved steel, hamon, brass fittings and wrapped long grip.
 ## The energy conversion is emissive geometry, with no additional dynamic lights.
-const TIP := Vector3(0.08, 0.0, -1.12)
+## Fio no +X do modelo. A lâmina curva para o DORSO (−X), como uma katana de verdade: curvada para o
+## lado do fio, o lado convexo (que o olho lê como o que corta) era o dorso e o Dante parecia segurar a
+## espada com o fio virado para si (pedido de 19/10/2026).
+const TIP := Vector3(-0.08, 0.0, -1.12)
 const GRIP := Vector3(0.0, 0.0, 0.04)
 
 static func create(saber := false, color := Color("68cfff")) -> Node3D:
@@ -101,7 +104,7 @@ static func _steel_blade(root: Node3D, steel: Material, edge: Material) -> void:
 	_add_mesh(root, "Hamon", hamon, edge)
 
 static func _section(t: float) -> PackedVector3Array:
-	var center := Vector3(.08 * t * t, 0, -.12 - t)
+	var center := Vector3(-.08 * t * t, 0, -.12 - t)
 	var taper := clampf((1.0-t) / .12, 0.0, 1.0)
 	var width := .027 * taper
 	var thickness := .004 * taper
@@ -143,8 +146,8 @@ static func _blade(root: Node3D, label: String, material: Material, width: float
 	for i in 16:
 		var t0 := float(i) / 16.0
 		var t1 := float(i + 1) / 16.0
-		var p0 := Vector3(0.08 * t0 * t0, raised, -0.12 - t0)
-		var p1 := Vector3(0.08 * t1 * t1, raised, -0.12 - t1)
+		var p0 := Vector3(-0.08 * t0 * t0, raised, -0.12 - t0)
+		var p1 := Vector3(-0.08 * t1 * t1, raised, -0.12 - t1)
 		var w0 := width * (1.0 - maxf(0.0, (t0 - 0.88) / 0.12))
 		var w1 := width * (1.0 - maxf(0.0, (t1 - 0.88) / 0.12))
 		var ring0 := PackedVector3Array([p0+Vector3(-w0,-.004,0), p0+Vector3(-w0,.004,0), p0+Vector3(w0,.004,0), p0+Vector3(w0,-.004,0)])
