@@ -14,10 +14,19 @@ const ENTRIES := [
 	{"id": "m_medium_b", "file": "m_medium_b.glb", "female": false, "build": 1},
 	{"id": "m_heavy_a", "file": "m_heavy_a.glb", "female": false, "build": 2},
 	{"id": "m_heavy_b", "file": "m_heavy_b.glb", "female": false, "build": 2},
+	# Lote de diversidade (19/10): homem magro (faltava o build 0 masculino), asiático, latino e brasileiro pardo.
+	{"id": "m_slim_a", "file": "m_slim_a.glb", "female": false, "build": 0},
+	{"id": "m_slim_b", "file": "m_slim_b.glb", "female": false, "build": 0},
+	{"id": "m_medium_c", "file": "m_medium_c.glb", "female": false, "build": 1},
+	{"id": "m_medium_d", "file": "m_medium_d.glb", "female": false, "build": 1},
 	{"id": "f_medium_a", "file": "f_medium_a.glb", "female": true, "build": 1},
 	{"id": "f_medium_b", "file": "f_medium_b.glb", "female": true, "build": 1},
 	{"id": "f_slim_a", "file": "f_slim_a.glb", "female": true, "build": 0},
 	{"id": "f_slim_b", "file": "f_slim_b.glb", "female": true, "build": 0},
+	# Lote de diversidade (19/10): mulher negra de cabelo crespo, sul-asiática e a primeira robusta (build 2 feminino).
+	{"id": "f_slim_c", "file": "f_slim_c.glb", "female": true, "build": 0},
+	{"id": "f_medium_c", "file": "f_medium_c.glb", "female": true, "build": 1},
+	{"id": "f_heavy_a", "file": "f_heavy_a.glb", "female": true, "build": 2},
 ]
 ## Peças de cabeça sorteadas por identidade (chapéus/bonés/óculos escuros), presas ao crânio pelo `MeshyBodyRig`.
 ## Cada passo do sorteio usa o mesmo gerador da identidade, então a pessoa mantém o visual entre sessões.
