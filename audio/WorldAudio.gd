@@ -433,6 +433,9 @@ func _process(delta: float) -> void:
 	var spec: Dictionary = FLEET.spec(engine_archetype)
 	if _mix_designed_engine(current_car, throttle, previous_gear, delta): return
 	_update_vehicle_foley(current_car, spec, ratio, throttle, previous_gear)
+	_update_engine_bank(delta)
+	# Seleção de camada e pitch seguem as frequências do banco que toca (a ponte tem as suas).
+	var bank_nominal: Array = ENGINE_PROFILE.NOMINAL.get(engine_bank_family, nominal)
 	var tint := pow(maxf(float(spec.get("engine_pitch", 1.0)), 0.3), 0.35)
 	var cycles := float(nominal[6]) * engine_rpm * tint
 	var timbre := cycles / maxf(tint, 0.3) * (0.8 + 0.2 * engine_load)
@@ -447,6 +450,7 @@ func _process(delta: float) -> void:
 		master += linear_to_db(maxf(0.005, smoothstep(0.6, 2.1, TANK_AUDIO.START_SECONDS - tank_start_remaining)))
 	for index in 7:
 		var share := cos(blend * PI * 0.5) if index == lower else (sin(blend * PI * 0.5) if index == upper else 0.0)
+		share *= engine_swap_gain
 		var layer := layers[index]
 		if share <= 0.002 or layer.stream == null:
 			if layer.playing: layer.stop()
@@ -455,9 +459,6 @@ func _process(delta: float) -> void:
 		layer.volume_db = master + linear_to_db(share)
 		if not layer.playing: layer.play()
 
-	_update_engine_bank(delta)
-	# Seleção de camada e pitch seguem as frequências do banco que toca (a ponte tem as suas).
-	var bank_nominal: Array = ENGINE_PROFILE.NOMINAL.get(engine_bank_family, nominal)
 func _ensure_design_voice() -> void:
 	if is_instance_valid(design_voice): return
 	design_voice = DESIGN_VOICE.new()
@@ -472,7 +473,6 @@ func _mix_designed_engine(car: CharacterBody3D, throttle: float, previous_gear: 
 	_ensure_design_voice()
 	if not design_voice.configure(engine_archetype): return false
 	for layer in layers: layer.stop()
-		share *= engine_swap_gain
 	for channel in [road_audio, shift_audio, extra_audio, blower_audio]:
 		if is_instance_valid(channel): channel.stop()
 	var bands := DESIGN_CATALOG.rpm_bands(profile)
@@ -568,6 +568,23 @@ func _bind_engine_layers(bank_family: String) -> void:
 		layers[index].stop()
 		layers[index].stream = bank[index] if bank.size() == 7 else null
 
+## Troca a ponte pela família certa quando ela termina de carregar: desce ao silêncio, troca
+## os fluxos e sobe. Trocar o stream com a camada tocando corta a onda e estala.
+func _update_engine_bank(delta: float) -> void:
+	if engine_bank_family == family:
+		engine_swap_gain = move_toward(engine_swap_gain, 1.0, delta / ENGINE_BANK_SWAP_SECONDS)
+		return
+	if ENGINE_BANKS.is_ready(family):
+		if engine_bank_family.is_empty():
+			_bind_engine_layers(family)
+			return
+		engine_swap_gain = move_toward(engine_swap_gain, 0.0, delta / ENGINE_BANK_SWAP_SECONDS)
+		if engine_swap_gain <= 0.001:
+			_bind_engine_layers(family)
+	elif engine_bank_family.is_empty():
+		var bridge := ENGINE_BANKS.bridge_family(family)
+		if not bridge.is_empty(): _bind_engine_layers(bridge)
+
 func _update_vehicle_foley(car: CharacterBody3D, spec: Dictionary, _ratio: float, throttle: float, previous_gear: int) -> void:
 	if family == "tank":
 		var gain := TANK_AUDIO.tracks_gain(float(car.speed))
@@ -590,23 +607,6 @@ func _update_vehicle_foley(car: CharacterBody3D, spec: Dictionary, _ratio: float
 	else:
 		engine_turbo_pressure = 0.0
 	# Antes dos blocos abaixo: eles zeram a pressão ao aliviar o turbo e a camada nova precisa dela.
-## Troca a ponte pela família certa quando ela termina de carregar: desce ao silêncio, troca
-## os fluxos e sobe. Trocar o stream com a camada tocando corta a onda e estala.
-func _update_engine_bank(delta: float) -> void:
-	if engine_bank_family == family:
-		engine_swap_gain = move_toward(engine_swap_gain, 1.0, delta / ENGINE_BANK_SWAP_SECONDS)
-		return
-	if ENGINE_BANKS.is_ready(family):
-		if engine_bank_family.is_empty():
-			_bind_engine_layers(family)
-			return
-		engine_swap_gain = move_toward(engine_swap_gain, 0.0, delta / ENGINE_BANK_SWAP_SECONDS)
-		if engine_swap_gain <= 0.001:
-			_bind_engine_layers(family)
-	elif engine_bank_family.is_empty():
-		var bridge := ENGINE_BANKS.bridge_family(family)
-		if not bridge.is_empty(): _bind_engine_layers(bridge)
-
 	_update_firefly_foley(car, throttle, sport_turbo)
 	if engine_gear > previous_gear and heavy_turbo and (engine_load > 0.20 or engine_rpm > 0.30):
 		_play_vehicle_fx(_turbo_shift_sounds(), clampf(-7.0 + engine_load * 6.0 + engine_rpm * 3.0, -14.0, 2.0) - (8.0 if family == "truck" else 0.0))

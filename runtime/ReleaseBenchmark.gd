@@ -223,24 +223,6 @@ func _run() -> void:
 		file.close()
 	get_tree().quit(0)
 
-func _road_events(distance: float, total: float) -> void:
-	var session = world.session
-	var events: Variant = null
-	if session.desert != null and is_instance_valid(session.desert.frontier) and is_instance_valid(session.desert.frontier.get("roadside")):
-		events = session.desert.frontier.roadside.get("events")
-	if not is_instance_valid(events): return
-	if not events.event.is_empty() and events.event.get("engaged", false): _road_event_engaged_frames += 1
-	var loop := int(distance / total)
-	var along := fposmod(distance, total)
-	for index in ROAD_EVENT_CUES.size():
-		var cue: Dictionary = ROAD_EVENT_CUES[index]
-		var key := "%d:%d" % [loop, index]
-		if along < float(cue.at) or _road_events_fired.has(key): continue
-		# Como no jogo: sem o chão do ponto pronto, tenta de novo no quadro seguinte (até 150 m depois).
-		var started: bool = events.force_start(str(cue.kind), cue.point, cue.direction)
-		if not started and along < float(cue.at) + 150.0: continue
-		_road_events_fired[key] = true
-		_road_event_log.append({"loop": loop, "kind": str(cue.kind), "started": started, "late_m": snappedf(along - float(cue.at), .1), "at_msec": Time.get_ticks_msec()})
 ## Todas as opções gráficas que valeram na rodada (auditoria 19/10, §1): antes o JSON só tinha resolução,
 ## MSAA e vsync, e o settings.cfg do jogador mudou SSAO, névoa, escala e sombra entre rodadas sem deixar
 ## rastro. Grava a preferência lida (settings) e o que o motor está usando (applied), porque os dois podem
@@ -291,6 +273,24 @@ func _graphics_report() -> Dictionary:
 			"glow": environment.glow_enabled, "glow_intensity": environment.glow_intensity, "fog": environment.fog_enabled})
 	return report
 
+func _road_events(distance: float, total: float) -> void:
+	var session = world.session
+	var events: Variant = null
+	if session.desert != null and is_instance_valid(session.desert.frontier) and is_instance_valid(session.desert.frontier.get("roadside")):
+		events = session.desert.frontier.roadside.get("events")
+	if not is_instance_valid(events): return
+	if not events.event.is_empty() and events.event.get("engaged", false): _road_event_engaged_frames += 1
+	var loop := int(distance / total)
+	var along := fposmod(distance, total)
+	for index in ROAD_EVENT_CUES.size():
+		var cue: Dictionary = ROAD_EVENT_CUES[index]
+		var key := "%d:%d" % [loop, index]
+		if along < float(cue.at) or _road_events_fired.has(key): continue
+		# Como no jogo: sem o chão do ponto pronto, tenta de novo no quadro seguinte (até 150 m depois).
+		var started: bool = events.force_start(str(cue.kind), cue.point, cue.direction)
+		if not started and along < float(cue.at) + 150.0: continue
+		_road_events_fired[key] = true
+		_road_event_log.append({"loop": loop, "kind": str(cue.kind), "started": started, "late_m": snappedf(along - float(cue.at), .1), "at_msec": Time.get_ticks_msec()})
 
 func _observe_cargo() -> void:
 	# Uma leitura por segundo registra a carga alcançada sem varrer entidades por quadro.
