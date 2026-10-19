@@ -5,6 +5,14 @@ extends SceneTree
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const SERVICES := preload("res://runtime/Services.gd")
 const CUSTOM := preload("res://gameplay/WeaponCustomization.gd")
+const GRID := preload("res://systems/inventory/GridInventory.gd")
+## Direcional a meio curso: ~1,6 m/s, a mesma velocidade de Actor.speed com que
+## test_door_audit anda até as portas. Andando a 3,5 m/s, a folha da Union/posto só chega a
+## 0,85 aberta ~0,27 m depois do plano e a travessia fecha em 0,3 m (WeaponShopEntrance,
+## checada em _process): sobra menos de um passo de física, e num quadro de 40 ms o jogador
+## passa direto para o vestíbulo sem entrar (19/10, Union parou 0,63 m para dentro).
+## Pendência do jogo, não deste teste; aqui a entrada tem que ser determinística.
+const DOOR_WALK := .46
 
 var world: Node3D
 var session: Node
@@ -31,6 +39,40 @@ func wait_until(predicate: Callable, maximum: int, label: String) -> bool:
 		await physics_frame
 	return check(false, label, "timeout_frames=%d" % maximum)
 
+func wait_until_ms(predicate: Callable, milliseconds: int, label: String) -> bool:
+	var deadline := Time.get_ticks_msec() + milliseconds
+	while Time.get_ticks_msec() < deadline:
+		if predicate.call(): return true
+		await process_frame
+	return check(predicate.call(), label, "timeout_ms=%d" % milliseconds)
+
+## Segura o direcional na direção do mundo pedida pelo mesmo caminho do jogador
+## (`GameInput.touch_move` -> base da câmera em Actor e em _movement_intent). Com a câmera
+## isométrica, move_up é "para cima na tela" = (-x, -z) no mundo: segurá-lo fazia o jogador
+## deslizar ao longo da fachada sem cruzar a porta (banco, 19/10: x 40,6 -> 30,9 em z 14,68).
+func set_walk(direction: Vector3, strength := 1.0) -> void:
+	var controls: Node = root.get_node("GameInput")
+	if direction.is_zero_approx():
+		controls.touch_move = Vector2.ZERO
+		return
+	var right: Vector3 = world.camera.global_basis.x
+	var back: Vector3 = world.camera.global_basis.z
+	right.y = 0
+	back.y = 0
+	controls.touch_move = Vector2(direction.dot(right.normalized()), direction.dot(back.normalized())).limit_length() * strength
+
+## Anda na direção até `done` (solta o direcional ali, como quem para ao ver o zoom da porta).
+func walk_until(direction: Vector3, done: Callable, maximum: int, strength := 1.0) -> bool:
+	for _i in maximum:
+		if done.call():
+			set_walk(Vector3.ZERO)
+			return true
+		# Recalcula a cada passo: a câmera pode girar (controle) ou mudar de foco.
+		set_walk(direction, strength)
+		await physics_frame
+	set_walk(Vector3.ZERO)
+	return done.call()
+
 func press_key(code: Key, settle := 2) -> void:
 	for pressed in [true, false]:
 		var event := InputEventKey.new()
@@ -50,25 +92,18 @@ func place_player(point: Vector3) -> void:
 	await frames(5)
 
 func enter_place(id: String) -> bool:
-	if session.weapon_shop_entrance.handles_place(id) and id not in ["harbor_ammunation", "harbor_police"]:
-		var definition: Dictionary = {} if id == "maciota" else PLACES.get_definition(id)
-		var door: Vector3 = session.weapon_shop_entrance._door_position(id, definition)
-		var inward: Vector3 = session.weapon_shop_entrance._inward(id)
-		var action := "move_left" if id == "port_boss_garage" else "move_up"
-		await place_player(door - inward * 1.8)
+	var walk = session.weapon_shop_entrance
+	if walk.handles_place(id):
+		# Mesma porta e mesmo "para dentro" que o jogo usa para abrir a folha e aceitar a
+		# travessia; a Ammu-Nation mantém o ponto de partida antigo, 1,12 m da porta.
+		var definition: Dictionary = walk._definition_for(id)
+		var door: Vector3 = walk._door_position(id, definition)
+		var inward: Vector3 = walk._inward(id)
+		await place_player(door - inward * (1.12 if id == "harbor_ammunation" else 1.8))
 		check(session.nearest().get("id", "") != "enter", id + " has no E entry")
-		Input.action_press(action)
-		var entered := await wait_until(func(): return state.place_id == id and is_instance_valid(session.room), 240, "entrada caminhando: " + id)
-		Input.action_release(action)
-		return entered
-	if id in ["harbor_ammunation", "harbor_police"]:
-		var facade: Vector3 = PLACES.get_definition(id).exterior_position
-		var door_z := 250.0 / 32.0 + .35 if id == "harbor_police" else 5.8
-		await place_player(facade + Vector3(0, 0, door_z + (1.8 if id == "harbor_police" else 1.12)))
-		check(session.nearest().get("id", "") != "enter", id + " has no E entry")
-		Input.action_press("move_up")
-		await frames(34 if id == "harbor_police" else 20)
-		Input.action_release("move_up")
+		if not await walk_until(inward, func(): return walk._entering or state.place_id == id, 360, DOOR_WALK):
+			var local: Vector3 = world.player.global_position - door
+			return check(false, "entrada caminhando: " + id, "parou %.2f m para dentro e %.2f m de lado da porta %s" % [local.dot(inward), local.dot(Vector3(-inward.z, 0, inward.x)), door])
 		if not await wait_until(func(): return state.place_id == id and is_instance_valid(session.room), 180, "entrada caminhando: " + id): return false
 		return await wait_until(func(): return not session.is_transition_blocked(), 180, "entrada revelada: " + id)
 	var point: Vector3 = world.maciota_place.entry_position if id == "maciota" else PLACES.get_definition(id).entry_position
@@ -88,9 +123,8 @@ func leave_place(id: String) -> bool:
 	if session.weapon_shop_entrance.handles_place(id):
 		await place_player(session.room.exit_position + Vector3(0, 0, -0.53))
 		check(session.nearest().get("id", "") != "exit", id + " has no E exit")
-		Input.action_press("move_down")
-		await frames(16)
-		Input.action_release("move_down")
+		# A saída (_update_exit) quer o jogador andando para +z do mundo, não "para baixo na tela".
+		await walk_until(Vector3.BACK, func(): return session.weapon_shop_entrance._leaving or state.place_id.is_empty(), 16)
 		var left := await wait_until(func(): return state.place_id.is_empty() and not is_instance_valid(session.room), 180, "saída caminhando: " + id)
 		if left:
 			await wait_until(func(): return not session.weapon_shop_entrance._leaving, 90, "zoom de saída termina: " + id)
@@ -179,11 +213,18 @@ func _run() -> void:
 		push_error("HARBOR_SHOPS refuses to run without --no-save --skip-arrival")
 		quit(2)
 		return
+	# As checagens comparam texto em português. Sem --isolated-save-root o Settings carrega o
+	# idioma do settings.cfg do jogador (19/10: "en" trocava "Comprar e vestir" por "Buy and wear").
+	# Só o locale do processo; nada é gravado nas preferências.
+	TranslationServer.set_locale("pt_BR")
 	world = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival", true)
 	root.add_child(world)
 	current_scene = world
-	if not await wait_until(func(): return world.session != null and world.session.ready_for_play and world.production.ready_for_play, 900, "sessão inicia"):
+	# A cortina de carregamento leva ~35 s nesta máquina (19/10) e os quadros longos dela dão
+	# poucos passos de física: 900 quadros de física estouravam antes do mundo ficar pronto.
+	# Prazo em tempo, como test_door_audit.
+	if not await wait_until_ms(func(): return world.session != null and world.session.ready_for_play and world.production.ready_for_play, 240000, "sessão inicia"):
 		quit(1)
 		return
 	session = world.session
@@ -229,12 +270,19 @@ func _run() -> void:
 			if not ammo_transactions_before.has(key) and str(key).begins_with("spend:ammunition:") and int(ammo_transactions_after[key].amount) == 48: charged_48 = true
 		check(charged_48 and state.economy.balance == before_ammo - 48 and int(state.get_ammo("pistol").reserve) == reserve_before + 24, "reposição produtiva cobra R$ 48 e entrega 24", "balance=%d->%d reserve=%d->%d status=%s" % [before_ammo, state.economy.balance, reserve_before, int(state.get_ammo("pistol").reserve), session.storefronts.status_label.text])
 		var full: Dictionary = state.economy.snapshot()
-		full.weapons.pistol.reserve = state.economy.MAX_AMMO
+		if full.has("grid_inventory"):
+			# Inventário em grade: a arma leva até 99 tiros (o save recusa mais) e o excedente
+			# ocupa blocos de 99 nos bolsos/bagagem. Cheio = arma no limite e nenhum espaço livre.
+			full.weapons.pistol.reserve = 99 - int(full.weapons.pistol.magazine)
+			GRID.add_carried(full.grid_inventory, "ammo:pistol", 99 * 64)
+		else:
+			full.weapons.pistol.reserve = state.economy.MAX_AMMO
 		check(state.economy.restore_snapshot(full), "fixture prepara inventário cheio")
 		var full_balance: int = state.economy.balance
+		var full_reserve := int(state.get_ammo("pistol").reserve)
 		catalog.refresh()
 		await activate(catalog.ammo_button, "reposição continua acessível")
-		check(state.economy.balance == full_balance and int(state.get_ammo("pistol").reserve) == state.economy.MAX_AMMO, "inventário cheio não cobra nem altera munição")
+		check(state.economy.balance == full_balance and int(state.get_ammo("pistol").reserve) == full_reserve, "inventário cheio não cobra nem altera munição", "balance=%d->%d reserve=%d->%d" % [full_balance, state.economy.balance, full_reserve, int(state.get_ammo("pistol").reserve)])
 		await activate(catalog.workbench_button, "bancada V1 abre pela arma selecionada")
 		check(catalog.workbench.visible and catalog.panel.visible == false, "bancada V1 substitui o catálogo sem abrir menu genérico")
 		await capture("ammunation-workbench")
@@ -263,8 +311,11 @@ func _run() -> void:
 		empty_wallet.balance = 0
 		check(state.economy.restore_snapshot(empty_wallet), "fixture prepara saldo insuficiente da Union")
 		await activate(find_store_button("Parka ártica"), "Parka localizável")
-		await activate(find_store_button("Comprar e vestir"), "compra bloqueada da Union localizável")
-		check(not state.economy.owns_outfit("dante_arctic") and "faltam" in session.storefronts.status_label.text.to_lower(), "Union não cobra nem equipa com saldo insuficiente", session.storefronts.status_label.text)
+		# Desde a4634240 (16/10) o próprio botão de compra vira "Faltam R$ X" e fica desabilitado;
+		# o jogador ainda pode tentar apertá-lo.
+		var blocked := find_store_button("Faltam")
+		await activate(blocked, "compra bloqueada da Union localizável")
+		check(is_instance_valid(blocked) and blocked.disabled and not state.economy.owns_outfit("dante_arctic") and state.economy.outfit == "dante_suit" and state.economy.balance == 0, "Union não cobra nem equipa com saldo insuficiente", "%s outfit=%s balance=%d" % [blocked.text if is_instance_valid(blocked) else "sem botão", state.economy.outfit, state.economy.balance])
 		await leave_place("harbor_clothing")
 
 	# Fuel is a robbery consumer, never a generic convenience-store menu.
@@ -340,6 +391,9 @@ func _run() -> void:
 		await capture("maciota-service-menu")
 		var monaliza = session.personal_car._car()
 		if is_instance_valid(monaliza): monaliza.health = maxf(1.0, monaliza.max_health - 50.0)
+		# O saldo sai zerado da Union e só voltava com o caixa do posto: o reparo não pode
+		# depender de outro estabelecimento ter dado certo.
+		check(state.economy.balance >= 50 or state.economy.grant_reward("harbor_maciota_fixture", 100), "fixture garante saldo para o reparo")
 		var before_repair: int = state.economy.balance
 		await activate(find_store_button("Reparar"), "reparo da Monaliza localizável")
 		check(is_instance_valid(monaliza) and is_equal_approx(monaliza.health, monaliza.max_health), "Maciota repara a Monaliza")
