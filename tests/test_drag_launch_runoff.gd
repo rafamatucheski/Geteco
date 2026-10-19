@@ -23,6 +23,22 @@ func run() -> void:
 		check(drive.speed_mps>0 and drive.speed_mps<.025,"launch engages progressively without delay or velocity impulse")
 		for i in 60: drive.step(1.0/60.0,1.0,false)
 		check(drive.speed_mps>2.0,"clutch fully engages after launch")
+	# A reação do rival é atraso real: com a rampa correndo desde o sinal, quem pisa
+	# 0,26 s depois achava a embreagem já acoplada e recuperava ~0,13 s (Takeshi, 18/10).
+	var reaction_steps := roundi(float(RACE.TAKESHI.reaction)*60.0)
+	var immediate = DRIVE.new()
+	var delayed = DRIVE.new()
+	for drive in [immediate,delayed]:
+		drive.configure("supra_a80",RACE.rival_parts("takeshi"))
+		drive.launch_blend_seconds = .35
+		drive.stage(1.0,.52)
+		drive.launch()
+	for i in reaction_steps: delayed.step(1.0/60.0,0.0,false)
+	for i in 90:
+		immediate.step(1.0/60.0,1.0,false)
+		delayed.step(1.0/60.0,1.0,false)
+	print("DRAG_REACTION immediate_m=",immediate.distance_m," delayed_m=",delayed.distance_m," steps=",reaction_steps)
+	check(delayed.distance_m<=immediate.distance_m+.05,"reaction delay is not refunded by a clutch engaged before the pedal")
 	var race = RACE.new()
 	root.add_child(race)
 	for hz in [30,60,120]:

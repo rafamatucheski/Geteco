@@ -114,7 +114,10 @@ func _integrate(dt: float, pedal: float, use_nitro: bool, brake: float) -> void:
 	throttle = clampf(pedal,0.0,1.0)
 	shift_remaining = maxf(0.0,shift_remaining-dt)
 	_launch_remaining = maxf(0.0,_launch_remaining-dt)
-	_launch_blend_elapsed += dt
+	# A embreagem começa a acoplar no primeiro pedal depois do verde, não no sinal:
+	# o tempo de reação do rival é atraso de verdade. Correndo desde o sinal, a rampa
+	# devolvia ~0,13 s dos 0,26 s de Takeshi e o Mirage completo passou a perder (18/10).
+	if throttle > 0.0 or _launch_blend_elapsed > 0.0: _launch_blend_elapsed += dt
 	var clutch_rpm := lerpf(_idle,redline*.45,throttle)*(1.0-smoothstep(0.0,9.0,speed_mps))
 	var target_rpm := clampf(maxf(_coupled_rpm(),clutch_rpm),_idle,redline*1.025)
 	# Race starts carry the staged revs into clutch engagement instead of
