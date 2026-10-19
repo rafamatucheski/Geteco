@@ -118,6 +118,11 @@ no jogo, não.
   `test_regions`, `test_bridge_approach_terrain`, `test_native_driving -- --no-save`,
   `cold/test_admission` — mais o indicador de save e o deserto). Tudo passa pela fila; o resumo
   fica em `evidence/test-suite/core/<data>/RESUMO.md`. Rode também os testes que citam seus arquivos.
+- `python -I tools/check_frame_rules.py` confere sem Godot as duas regras que mais custaram
+  quadros: luz `OmniLight3D/SpotLight3D.new()` nova fora do LightBudget e `surface_get_arrays`
+  novo em pasta de jogo. É catraca (`tools/frame_rules_baseline.json`): só código novo falha;
+  ao remover ocorrências, rode `--update-baseline`. O gancho `tools/hooks/pre-commit` faz isso
+  e recusa commit com 200+ arquivos; liga com `git config core.hooksPath tools/hooks`.
 - Teste novo de contrato (sem `Main.tscn`, segundos) vale mais que mais um teste de sessão
   inteira: comece por `tests/test_core_contracts.gd` e, se for central, ponha na lista FAST do
   `tools/run_core_suite.sh`.

@@ -119,6 +119,12 @@ var fishing: Node
 var fishing_runtime: Node
 var door_transition: CanvasLayer
 var last_save_error := ""
+## O HUD lê estes campos, não o texto dos Labels antigos (ContextualHUDManager). Antes ele lia
+## objective.text/prompt.text e casava frases exatas ("J  Missões · M  Mapa", prefixo "E  ",
+## "Atender telefone"): mudar ou traduzir uma frase quebrava o aviso em silêncio (revisão 18/10).
+## hud_objective vazio = sem cartão de objetivo; hud_prompt é a legenda sem a tecla.
+var hud_objective := ""
+var hud_prompt := ""
 var _save_block_shown := false
 var _checkpoint_retry: Timer
 
@@ -2045,29 +2051,37 @@ func _process(delta: float) -> void:
 		thermal_status.visible = thermal.visible and not modal and not is_instance_valid(world.hud)
 		thermal_status.text = String(TranslationServer.translate("Calor corporal %d%% · %s"))%[roundi(thermal.temperature),thermal.text]
 	stats.text = String(TranslationServer.translate("R$ %d   Vida %d   Colete %d\n%s   %s   %s")) % [state.economy.balance,roundi(world.gameplay.health),roundi(world.gameplay.armor),str(WEAPONS.WEAPONS.get(state.equipped_weapon,{}).get("label",state.equipped_weapon)),"—" if int(ammo.magazine)<0 else "%d / %d"%[ammo.magazine,ammo.reserve],"★".repeat(world.gameplay.stars)]
-	objective.text = state.campaign.objective() if state.campaign.active_id != "" else (state.intro.objective() if state.intro.stage != "complete" else "J  Missões · M  Mapa")
-	if arrival.active: objective.text = arrival.objective_text
+	_set_objective(state.campaign.objective() if state.campaign.active_id != "" else (state.intro.objective() if state.intro.stage != "complete" else "J  Missões · M  Mapa"), state.campaign.active_id == "" and state.intro.stage == "complete")
+	if arrival.active: _set_objective(arrival.objective_text)
 	var freight: Dictionary = urban_operations.freight_status() if urban_operations != null else {}
 	freight_active = bool(freight.get("active", false)) and state.region_id == "harbor" and state.campaign.active_id.is_empty() and state.intro.stage == "complete" and not arrival.active
 	freight_target = freight.get("target", Vector3.INF) if freight_active else Vector3.INF
-	if freight_active: objective.text = str(freight.get("objective", ""))
+	if freight_active: _set_objective(str(freight.get("objective", "")))
 	if urban_operations != null and is_instance_valid(urban_operations.village_quest) and state.campaign.active_id.is_empty() and state.intro.stage == "complete" and not arrival.active and not freight_active:
 		var village_objective: String = urban_operations.village_quest.objective()
-		if not village_objective.is_empty(): objective.text = village_objective
-	if jessica != null and state.campaign.active_id == "jessica_bank": objective.text = jessica.objective()
-	if desert != null and state.region_id == "desert": objective.text = desert.objective()
+		if not village_objective.is_empty(): _set_objective(village_objective)
+	if jessica != null and state.campaign.active_id == "jessica_bank": _set_objective(jessica.objective())
+	if desert != null and state.region_id == "desert": _set_objective(desert.objective())
 	if mountain_activities != null:
 		var pack_objective: String = mountain_activities.objective()
-		if not pack_objective.is_empty(): objective.text = pack_objective
+		if not pack_objective.is_empty(): _set_objective(pack_objective)
 	var action := nearest()
-	if fishing != null and fishing.active: objective.text = fishing.objective()
+	if fishing != null and fishing.active: _set_objective(fishing.objective())
 	prompt_input_action = interaction_input_action(action)
 	var silent_exit: bool = action.get("id","") == "exit" and state.place_id in ["vertice_undercroft","remote_coal_mine"]
-	prompt.text = "" if modal or action.is_empty() or action.get("silent",false) or silent_exit else "E  "+str(action.label)
+	var prompt_hidden: bool = modal or action.is_empty() or action.get("silent",false) or silent_exit
+	prompt.text = "" if prompt_hidden else "E  "+str(action.label)
+	# Legenda curta para o HUD, quando a ação tem uma ("Atender" no lugar de "Atender telefone").
+	hud_prompt = "" if prompt_hidden else str(action.get("hud_label", action.label)).strip_edges()
 	if not modal and (prompt_input_action == "vehicle_interact" or action.get("id","") in ["port_container","railway","regional_coach","fishing","building_social"]):
 		var caption: String = str(action.get("label", "")).strip_edges()
 		if prompt_input_action == "vehicle_interact" and caption.is_empty(): caption = "Descer" if action.get("id", "") == "enter" else "Subir"
 		prompt.text = get_node("/root/GameInput").hint(prompt_input_action)+"  "+caption
+		hud_prompt = caption
+
+func _set_objective(text: String, hint := false) -> void:
+	objective.text = text
+	hud_objective = "" if hint else text.strip_edges()
 
 func _update_world_indicator() -> void:
 	if upside_world != null and upside_world.busy():

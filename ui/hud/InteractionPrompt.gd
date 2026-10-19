@@ -10,11 +10,9 @@ func _ready() -> void:
 	var row := HBoxContainer.new(); row.add_theme_constant_override("separation",8); add_child(row)
 	key=STYLE.label("",15); key.add_theme_stylebox_override("normal",STYLE.compact(true,4,Vector2(5,1))); row.add_child(key)
 	caption=STYLE.label("",15); caption.autowrap_mode=TextServer.AUTOWRAP_OFF; row.add_child(caption); hide()
+## `text` é só a legenda; a tecla vem da ação (GameInput.prompt), sem cortar prefixo de frase.
 func update_prompt(text: String, action: String, controls: Node) -> void:
 	var hint := str(controls.prompt(action))
-	for prefix in [hint+"  ",hint+" ","["+hint+"] ","E  ","E ","F  ","F "]:
-		if text.begins_with(prefix): text=text.trim_prefix(prefix); break
-	if text == "Atender telefone": text = "Atender"
 	key.text=hint; key.visible=hint!="—"; caption.text=text
 	if text==_text: return
 	_text=text

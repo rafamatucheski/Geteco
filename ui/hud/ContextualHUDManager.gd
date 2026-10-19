@@ -127,8 +127,8 @@ func _sync_channels() -> void:
 	var drag_active: bool = _session.desert != null and is_instance_valid(_session.desert.drag) and _session.desert.drag.active
 	root_control.visible=active and not drag_active
 	vehicle_name.sync(_driving)
-	var text := str(_session.objective.text).strip_edges()
-	if text in ["J  Missões · M  Mapa","J Missions · M Map"]: text=""
+	# Campo de dados da sessão (FullSession.hud_objective), não o texto do Label antigo.
+	var text := str(_session.hud_objective)
 	if text!=_last_objective:
 		_last_objective=text
 		if not text.is_empty(): objective_card.present(text,"NOVO OBJETIVO")
@@ -138,10 +138,11 @@ func _sync_channels() -> void:
 	if feedback!=_last_notice:
 		_last_notice=feedback
 		if not feedback.is_empty(): feedback_card.present(feedback)
-	var action_text := str(_session.prompt.text).strip_edges()
+	# Legenda sem tecla (FullSession.hud_prompt, Driving.prompt_caption); a tecla vem da ação.
+	var action_text := str(_session.hud_prompt) if not str(_session.prompt.text).is_empty() else ""
 	var action: String = _session.prompt_input_action
 	if action_text.is_empty() and float(_driving.status_time)<=0:
-		action_text=str(_driving.prompt.text).strip_edges()
+		action_text=str(_driving.prompt_caption)
 		action="exit_vehicle" if bool(_driving.occupied) else "vehicle_interact"
 	if bool(world.player.input_locked): action_text=""
 	interaction_row.update_prompt(action_text,action,_controls)

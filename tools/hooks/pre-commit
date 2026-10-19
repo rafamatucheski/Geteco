@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Confere as regras de quadro e o tamanho do commit antes de gravar (tools/check_frame_rules.py).
+# Desligado por padrão. Para ligar nesta máquina, uma vez:  git config core.hooksPath tools/hooks
+# Para um commit grande combinado de propósito:            GETECO_ALLOW_BIG_COMMIT=1 git commit ...
+exec python -I "$(git rev-parse --show-toplevel)/tools/check_frame_rules.py" --staged

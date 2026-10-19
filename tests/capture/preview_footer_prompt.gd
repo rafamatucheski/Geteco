@@ -10,7 +10,7 @@ func run() -> void:
 	root.add_child(background)
 	var prompt := preload("res://ui/hud/InteractionPrompt.gd").new()
 	root.add_child(prompt)
-	prompt.update_prompt("E  Atender telefone","interact",root.get_node("GameInput"))
+	prompt.update_prompt("Atender","interact",root.get_node("GameInput"))
 	await create_timer(.4).timeout
 	prompt.follow_actor(null,null,Vector2(1920,1080))
 	await process_frame

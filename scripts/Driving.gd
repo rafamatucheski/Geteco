@@ -14,6 +14,7 @@ var car: CharacterBody3D
 var occupied := false
 var transition: Node
 var prompt: Label
+var prompt_caption := ""
 var speed_label: Label
 var instructions: Label
 var status := ""
@@ -549,10 +550,13 @@ func _process(delta: float) -> void:
 	# Idem para a porta: o recorte da folha custa dezenas de ms; é feito aos poucos, quadro a quadro.
 	_door_warm_car = entry.car if not entry.is_empty() and entry.car.has_method("warm_doors") else null
 	# Carro comum não mostra aviso ao chegar perto (pedido do usuário); só a viatura trancada avisa que exige arrombar.
-	var entry_label := "F  Arrombar viatura" if entry.get("car") != null and entry.car.get_meta("police_locked", false) else ""
+	var entry_caption := "Arrombar viatura" if entry.get("car") != null and entry.car.get_meta("police_locked", false) else ""
+	var entry_label := "F  "+entry_caption if not entry_caption.is_empty() else ""
 	# Dirigindo não mostra "F Sair do carro" nem velocímetro (pedido do usuário, 25/09):
 	# o F continua saindo do veículo; a tela fica limpa.
 	prompt.text = status if status_time > 0 else ("" if occupied or _external_transition_blocked() or is_body_transition_active() else (entry_label if not entry.is_empty() else ""))
+	# O HUD mostra a tecla pela ação; aqui só a legenda (ContextualHUDManager).
+	prompt_caption = "" if status_time > 0 or occupied or _external_transition_blocked() or is_body_transition_active() or entry.is_empty() else entry_caption
 	speed_label.text = ""
 	instructions.text = "W / S  acelerar / ré    A / D  virar    Espaço  frear    F  sair    Esc  pausa" if occupied else "WASD  mover    Shift  correr    E  interagir    F  carro    Z / C  girar    Esc  pausa"
 

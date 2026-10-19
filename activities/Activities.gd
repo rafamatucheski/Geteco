@@ -95,7 +95,9 @@ func nearest_action() -> Dictionary:
 	if motorsport.mode != "": return {"id":"activity_cancel","target":"activity_cancel","label":"Cancelar tentativa","position":point}
 	if session.state.campaign.active_id != "": return {}
 	for id in Definitions.races(session.state.region_id):
-		options.append(_action("race:"+id,"Atender telefone",_phone_position(id),PHONE.RANGE))
+		var phone := _action("race:"+id,"Atender telefone",_phone_position(id),PHONE.RANGE)
+		phone.hud_label = "Atender"
+		options.append(phone)
 	if world.driving.occupied:
 		for id in Definitions.drifts(session.state.region_id):
 			var row: Dictionary = Definitions.drifts(session.state.region_id)[id]
