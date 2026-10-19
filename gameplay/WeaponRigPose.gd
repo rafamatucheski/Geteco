@@ -76,6 +76,9 @@ const STOCK_STANCE := -0.75
 ## Fração do saque a partir da qual a arma longa aparece na mão.
 const EQUIP_SHOW := 0.6
 const EQUIP_SHOW_HANDGUN := 0.15
+## Lança-chamas: o apoio fica longe da empunhadura e o antebraço esquerdo ainda subia
+## por dentro do corpo da arma quando ela aparecia a 0,6 do saque (4,5 cm vindo dos punhos).
+const EQUIP_SHOW_BY_ID := {"flamethrower": 0.95}
 const STOCK_POCKET := Vector3(-0.02, -0.025, 0.06)
 const LEFT_PALM_REACH := 0.41 / (1.03 / 0.82)
 const SUPPORT_MIN_REACH_Z := -0.03
@@ -104,6 +107,10 @@ const RPG_MUZZLE := Vector3(0.0, 0.08, -0.31)
 const RPG_ROCKET_GRAB := 0.27
 const RPG_ROCKET_SEAT := Vector2(0.50, 0.62)
 const RPG_ROCKET_CENTER := 0.09
+## Palma na lateral da ogiva voltada para o ombro esquerdo (raio 5,6 cm + palma), não no
+## eixo: com a palma no centro, punho e antebraço ficavam até 5 cm dentro da ogiva no
+## encaixe e na volta ao tubo.
+const RPG_ROCKET_SIDE := 0.07
 const RPG_POLE := Vector3(0.4, -1.5, -0.2)
 ## Submetralhadora na recarga rolada como AK/M4: coronha curta, o receptor fica rente
 ## ao peito, e a −0,38 o topo dele entrava 5 cm na jaqueta andando (medido: −0,60 → 3 cm).
@@ -644,7 +651,7 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 	# Arma longa aparece na mão quando o braço chega (~0,1 s de saque, como tirá-la das
 	# costas): antes, presa à mão que ainda vinha da arma anterior, ela atravessava o
 	# tronco 5–9 cm nos primeiros quadros (medido em 2026-10-06).
-	if id in LONG_GUNS or id in ["rpg", "flamethrower"]: visible = visible and equip_blend >= EQUIP_SHOW
+	if id in LONG_GUNS or id in ["rpg", "flamethrower"]: visible = visible and equip_blend >= float(EQUIP_SHOW_BY_ID.get(id, EQUIP_SHOW))
 	# Pistola/magnum/cano serrado: 2 quadros de saque; no primeiro a mão ainda era o
 	# punho fechado da arma anterior e a pistola aparecia dentro dela.
 	if id in HANDGUNS or id == "sawed_off": visible = visible and equip_blend >= EQUIP_SHOW_HANDGUN
@@ -1002,7 +1009,9 @@ func reload_targets(id: String, progress: float) -> Dictionary:
 			# empurra para dentro e volta ao tubo.
 			left = tube.lerp(belt, smoothstep(0.08, 0.24, t))
 			left = left.lerp(mouth + axis * 0.22, smoothstep(0.30, 0.48, t))
-			left = left.lerp(mouth + axis * RPG_ROCKET_CENTER, smoothstep(RPG_ROCKET_SEAT.x, RPG_ROCKET_SEAT.y, t))
+			var seat := mouth + axis * RPG_ROCKET_CENTER
+			var toward := _shoulder("Left", -0.60) - seat
+			left = left.lerp(seat + (toward - axis * toward.dot(axis)).normalized() * RPG_ROCKET_SIDE, smoothstep(RPG_ROCKET_SEAT.x, RPG_ROCKET_SEAT.y, t))
 			left = left.lerp(tube, smoothstep(0.66, 0.80, t))
 			# Volta ao ombro mais longa que a das outras armas (0,80–1,0): em 0,12 da
 			# recarga o tubo subia varrendo o antebraço direito.

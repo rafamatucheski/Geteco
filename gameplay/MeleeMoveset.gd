@@ -41,25 +41,31 @@ const GUARD_LEFT := Vector3(-0.10, 1.11, -0.29)
 const GUARD_ROLL := 0.6
 const POLE_RIGHT := Vector3(0.65, -1.5, -0.5)
 const POLE_LEFT := Vector3(-0.65, -1.5, -0.5)
+## Guarda esquerda no agachamento do uppercut (dip 0,075): parada na altura do queixo,
+## o corpo descia 9 cm e a cabeça encontrava o punho.
+const GUARD_DIP := Vector3(-0.01, -0.06, 0.0)
 
 ## Jab (esq.), direto (dir.), gancho (esq.) e uppercut (dir., o pesado).
 ## Contato em 0,14 s em todas. Jab e direto saem em LINHA RETA da guarda ao alvo
 ## ("path": "line") e voltam pelo mesmo caminho, girando o punho de semivertical
 ## para palma para baixo no impacto; só gancho e uppercut fazem arco.
+## Na primeira chave a outra mão volta à guarda (posição, giro e polo): na cadência
+## da soqueira (0,34 s) o soco seguinte sai antes de o anterior voltar, e a mão que
+## não golpeia ficava parada a meio caminho, na frente do queixo, o soco inteiro.
 const PUNCHES := [
 	{"side": "left", "end": 0.36, "keys": [
-		{"t": 0.04, "ease": "out", "path": "line", "l": Vector3(-0.105, 1.10, -0.27), "torso": 0.08, "hip": 0.02, "dip": 0.015, "lean": 0.02},
+		{"t": 0.04, "ease": "out", "path": "line", "l": Vector3(-0.105, 1.10, -0.27), "r": GUARD_RIGHT, "rr": GUARD_ROLL, "rp": POLE_RIGHT, "torso": 0.08, "hip": 0.02, "dip": 0.015, "lean": 0.02},
 		{"t": 0.14, "ease": "in", "path": "line", "l": Vector3(-0.04, 1.14, -0.50), "lr": 0.0, "torso": -0.42, "hip": -0.16, "lean": 0.10, "step": 0.05, "dip": 0.02},
 		{"t": 0.18, "ease": "out", "path": "line", "l": Vector3(-0.042, 1.138, -0.485), "torso": -0.40, "hip": -0.16},
 	]},
 	{"side": "right", "end": 0.40, "keys": [
-		{"t": 0.05, "ease": "out", "path": "line", "r": Vector3(0.13, 1.08, -0.23), "torso": -0.24, "hip": -0.12, "dip": 0.025, "lean": 0.03},
+		{"t": 0.05, "ease": "out", "path": "line", "r": Vector3(0.13, 1.08, -0.23), "l": GUARD_LEFT, "lr": GUARD_ROLL, "lp": POLE_LEFT, "torso": -0.24, "hip": -0.12, "dip": 0.025, "lean": 0.03},
 		{"t": 0.14, "ease": "in", "path": "line", "r": Vector3(0.03, 1.14, -0.51), "rr": 0.0, "torso": 0.56, "hip": 0.30, "lean": 0.14, "step": 0.07, "dip": 0.03},
 		{"t": 0.19, "ease": "out", "path": "line", "r": Vector3(0.032, 1.138, -0.495), "torso": 0.54, "hip": 0.30},
 	]},
 	{"side": "left", "end": 0.44, "keys": [
 		# O gancho abre o cotovelo para fora e para cima e varre à altura do queixo.
-		{"t": 0.05, "ease": "out", "l": Vector3(-0.24, 1.12, -0.22), "lr": 0.6, "lp": Vector3(-1.3, -0.4, 0.2), "torso": 0.30, "hip": 0.14, "dip": 0.035},
+		{"t": 0.05, "ease": "out", "l": Vector3(-0.24, 1.12, -0.22), "lr": 0.6, "lp": Vector3(-1.3, -0.4, 0.2), "r": GUARD_RIGHT, "rr": GUARD_ROLL, "rp": POLE_RIGHT, "torso": 0.30, "hip": 0.14, "dip": 0.035},
 		{"t": 0.10, "ease": "in", "l": Vector3(-0.20, 1.15, -0.40), "lr": 0.3, "lp": Vector3(-1.5, 0.0, 0.3), "torso": -0.10, "hip": -0.12},
 		{"t": 0.14, "ease": "in", "l": Vector3(-0.01, 1.15, -0.40), "lr": 0.0, "torso": -0.66, "hip": -0.32, "lean": 0.08, "step": 0.04},
 		{"t": 0.20, "ease": "out", "l": Vector3(0.0, 1.08, -0.36), "torso": -0.72, "hip": -0.34},
@@ -67,19 +73,22 @@ const PUNCHES := [
 	{"side": "right", "end": 0.50, "heavy": true, "keys": [
 		# Afunda os joelhos, o punho cai à altura do peito e sobe com o corpo; a esquerda
 		# volta logo à guarda (vinda do gancho, passava pela frente do queixo).
-		{"t": 0.06, "ease": "out", "r": Vector3(0.14, 0.96, -0.22), "rr": 1.3, "l": GUARD_LEFT, "rp": Vector3(0.35, -1.5, -0.9), "torso": -0.32, "hip": -0.16, "dip": 0.075, "lean": 0.14},
-		{"t": 0.14, "ease": "in", "r": Vector3(0.09, 1.13, -0.43), "rr": 1.45, "torso": 0.36, "hip": 0.26, "dip": -0.005, "lean": -0.05, "step": 0.05},
+		{"t": 0.06, "ease": "out", "r": Vector3(0.14, 0.96, -0.22), "rr": 1.3, "l": GUARD_LEFT + GUARD_DIP, "lr": GUARD_ROLL, "lp": POLE_LEFT, "rp": Vector3(0.35, -1.5, -0.9), "torso": -0.32, "hip": -0.16, "dip": 0.075, "lean": 0.14},
+		{"t": 0.14, "ease": "in", "r": Vector3(0.09, 1.13, -0.43), "rr": 1.45, "l": GUARD_LEFT, "torso": 0.36, "hip": 0.26, "dip": -0.005, "lean": -0.05, "step": 0.05},
 		{"t": 0.21, "ease": "out", "r": Vector3(0.09, 1.15, -0.40), "lean": -0.08, "torso": 0.40},
 	]},
 ]
 
 ## Taco/machado: forehand, backhand e golpe por cima (o pesado). Contato em 0,36 s.
+## Follow-through do forehand e backhand até o contato 2,5 cm mais baixos que a
+## versão de 06/10: desde 12/10 o Dante fica em pé com o quadril na altura de repouso
+## (2,8 cm abaixo de antes) e o punho direito passava rente ao queixo.
 const SWINGS := [
 	{"end": 0.88, "keys": [
 		{"t": 0.24, "ease": "inout", "r": Vector3(0.23, 1.17, -0.05), "d": Vector3(0.42, 0.55, 0.72), "k": Vector3(0, -1, 0), "torso": -0.62, "hip": -0.26, "dip": 0.025, "step": -0.025},
 		{"t": 0.26, "ease": "in", "r": Vector3(0.21, 1.12, -0.15), "d": Vector3(0.55, 0.5, 0.55), "k": Vector3(0, -1, 0), "torso": -0.18, "hip": 0.18, "dip": 0.04, "step": 0.03},
 		{"t": 0.36, "ease": "swing", "r": Vector3(0.05, 1.06, -0.35), "d": Vector3(0.1, 0.0, -1), "k": Vector3(0, -1, 0), "torso": 0.32, "hip": 0.36, "lean": 0.10, "step": 0.07, "dip": 0.04},
-		{"t": 0.47, "ease": "out", "r": Vector3(-0.15, 1.08, -0.27), "d": Vector3(-0.6, 0.6, 0.5), "k": Vector3(0, -1, 0), "torso": 0.70, "hip": 0.40, "lean": 0.06},
+		{"t": 0.47, "ease": "out", "r": Vector3(-0.15, 1.055, -0.27), "d": Vector3(-0.6, 0.6, 0.5), "k": Vector3(0, -1, 0), "torso": 0.70, "hip": 0.40, "lean": 0.06},
 		# Enrola ao lado do ombro esquerdo, afastado da cabeça: rente a ela, a volta
 		# pela frente obrigava a correção de colisão a girar o machado 55°/quadro; mais
 		# perto do peito os antebraços se cruzavam golpeando andando.
@@ -98,8 +107,8 @@ const SWINGS := [
 		# direito, e por cima passaria na frente do rosto.
 		{"t": 0.12, "ease": "inout", "r": Vector3(-0.05, 1.02, -0.30), "d": Vector3(-0.55, 0.05, -0.83), "k": Vector3(0, -1, 0), "torso": 0.25, "hip": 0.10},
 		{"t": 0.24, "ease": "inout", "r": Vector3(-0.15, 1.13, -0.08), "d": Vector3(-0.45, 0.55, 0.7), "k": Vector3(0, -1, 0), "torso": 0.50, "hip": 0.20, "dip": 0.025, "step": -0.02},
-		{"t": 0.26, "ease": "in", "r": Vector3(-0.15, 1.10, -0.22), "d": Vector3(-0.55, 0.5, 0.55), "k": Vector3(0, -1, 0), "torso": 0.14, "hip": -0.10, "dip": 0.04, "step": 0.03},
-		{"t": 0.36, "ease": "swing", "r": Vector3(0.04, 1.06, -0.36), "d": Vector3(-0.1, 0.0, -1), "k": Vector3(0, -1, 0), "torso": -0.28, "hip": -0.30, "lean": 0.10, "step": 0.06, "dip": 0.04},
+		{"t": 0.26, "ease": "in", "r": Vector3(-0.16, 1.07, -0.22), "d": Vector3(-0.55, 0.5, 0.55), "k": Vector3(0, -1, 0), "torso": 0.14, "hip": -0.10, "dip": 0.04, "step": 0.03},
+		{"t": 0.36, "ease": "swing", "r": Vector3(0.04, 1.035, -0.36), "d": Vector3(-0.1, 0.0, -1), "k": Vector3(0, -1, 0), "torso": -0.28, "hip": -0.30, "lean": 0.10, "step": 0.06, "dip": 0.04},
 		{"t": 0.47, "ease": "out", "r": Vector3(0.22, 1.07, -0.22), "d": Vector3(0.75, 0.35, 0.55), "k": Vector3(0, -1, 0), "torso": -0.55, "hip": -0.34, "lean": 0.05},
 		{"t": 0.57, "ease": "out", "r": Vector3(0.21, 1.14, -0.10), "d": Vector3(0.4, 0.6, 0.7), "k": Vector3(0, -1, 0), "torso": -0.40, "hip": -0.22, "lean": 0.02},
 	]},
