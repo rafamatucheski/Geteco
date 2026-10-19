@@ -16,6 +16,8 @@ func configure(owner_session, owner_race: Node3D) -> void:
 	session = owner_session
 	race = owner_race
 	name = "TakeshiAtDragMeet"
+	# Antes do deserto no quadro, para o enfeite ceder a vez no quadro em que Takeshi e o Supra entram.
+	process_priority = -1
 	session.world.gameplay.player_died.connect(_reset_visit)
 
 func _reset_visit() -> void:
@@ -38,11 +40,15 @@ func reconcile() -> void:
 	if is_instance_valid(actor) and actor.dead: retired = true
 	if retired: return
 	if not is_instance_valid(actor):
-		if not session.controller.region.is_streaming_idle(): return
+		# Só o chão do deserto, não o enfeite fatiado (DesertRegion.surfaces_idle): perto da arrancada, a 60 fps
+		# (padrão), chegando de fora ele e o Supra apareciam 25 s depois do chão pronto (sonda de 18/10).
+		var ground: Node3D = session.controller.region
+		if not ground.surfaces_idle(): return
 		session.controller.region.prepare_collision_at(POINT)
 		if not session.position_clear(POINT+Vector3.UP*.1): return
 		var hit := get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(POINT+Vector3.UP*.35,POINT-Vector3.UP*.4,1))
 		if hit.is_empty() or float(hit.normal.y)<.95: return
+		ground.yield_dressing_this_frame()
 		actor = preload("res://runtime/desert/drag_meet/TrackParticipant.gd").new()
 		actor.name = "Takeshi"
 		actor.position = hit.position+Vector3.UP*.025
