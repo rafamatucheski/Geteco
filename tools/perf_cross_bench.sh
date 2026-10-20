@@ -23,6 +23,7 @@ start_for() {
 		serra) echo "mountain,650,-290" ;; ponte) echo "harbor,440,-285" ;; travessia) echo "harbor,330,-285" ;;
 		deserto) echo "desert,-1040,-1320" ;; rota66) echo "desert,347,-470" ;;
 		cidade_deserto) echo "desert,-360,-893" ;; estrada_sal) echo "desert,-1150,-1542.5" ;;
+		cavernas) echo "desert,-950,-1440" ;;
 	esac
 }
 for run in $(seq 1 "$RUNS"); do

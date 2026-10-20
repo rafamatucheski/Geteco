@@ -39,6 +39,9 @@ const ROUTES := {
 	"cidade_deserto": [Vector3(-360, 0, -893), Vector3(-40, 0, -893), Vector3(-360, 0, -893)],
 	# Estrada do Sal (20/10): motel, balança, capela e salinas ao lado da pista. --play-at=desert,-1150,-1542.5.
 	"estrada_sal": [Vector3(-1150, 0, -1542.5), Vector3(150, 0, -1542.5)],
+	# Cavernas (20/10): passa a ~30 m da caverna do coiote e a ~50 m da do Vicente, cruzando a
+	# estrada do sal; cada morro monta a 110 m. A/B com GETECO_DESERT_WILDS=0. --play-at=desert,-950,-1440.
+	"cavernas": [Vector3(-950, 0, -1440), Vector3(-1260, 0, -1440), Vector3(-1260, 0, -1680), Vector3(-1050, 0, -1680), Vector3(-950, 0, -1440)],
 	# Northbank e canal concentram 6 dos 15 sobrados/terraços (A/B das janelas pintadas, 15/10).
 	"sobrados": [Vector3(295, 0, 100), Vector3(340, 0, 100), Vector3(340, 0, -60), Vector3(295, 0, -60)],
 }
