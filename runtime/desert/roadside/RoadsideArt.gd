@@ -61,6 +61,27 @@ static func asphalt() -> Material: return G.material(Color("706d61"), false, tru
 static func gravel(tint: Color) -> Material: return G.material(tint, true)
 static func color(tint: Color) -> Material: return G.material(tint)
 
+## Cor do lugar sobre uma textura de detalhe em cinza com mapa de normais (reboco, tábua, caixote,
+## metal, crosta de sal, salmoura, azulejo, cascalho; tools/roadside_art/build_roadside_surfaces.py).
+## A cor chapada lia "flat" na câmera do jogo (revisão de 20/10): a textura dá o granulado e o relevo
+## e a mesma imagem serve para todas as cores. Cache por tipo e cor; entra no pré-aquecimento pelo
+## RoadsideBuild.prewarm (todo material das malhas compostas).
+static var _details: Dictionary = {}
+const SURFACES := "res://assets/roadside/surfaces/"
+static func detail(kind: String, tint: Color, roughness := .9) -> Material:
+	var key := "%s:%s:%.2f" % [kind, tint.to_html(false), roughness]
+	if not _details.has(key):
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = tint
+		mat.albedo_texture = load(SURFACES + kind + ".jpg")
+		mat.normal_enabled = true
+		mat.normal_texture = load(SURFACES + kind + "_normal.png")
+		mat.normal_scale = .8
+		mat.roughness = roughness
+		mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+		_details[key] = mat
+	return _details[key]
+
 # --- Lote de malha ----------------------------------------------------------------------------
 
 ## Junta caixas, cilindros e quadros por material e entrega uma malha por material. Só dados

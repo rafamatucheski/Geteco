@@ -74,6 +74,28 @@ func _process(delta: float) -> void:
 			sites[id] = _build(definition)
 			STALL_WORK.finish_slow("desert.roadside.build", trace, 2000)
 			built_one = true
+	if not built_one: _park_vehicles(planar)
+
+## Um veículo por passo: estaciona o carro de um lugar montado que esteja faltando (o controlador
+## recolhe carro parado a mais de 145 m). Carro levado pelo jogador fica com ele; só volta outro
+## quando aquele sumir.
+func _park_vehicles(player: Vector2) -> void:
+	for record in sites.values():
+		if record.parked or not record.has("parked_cars"): continue
+		var slots: Array = LAYOUT.PARKED.get(str(record.definition.kind), [])
+		for index in slots.size():
+			var car: Variant = record.parked_cars.get(index)
+			if car != null and is_instance_valid(car) and not car.is_queued_for_deletion(): continue
+			var slot: Array = slots[index]
+			var at := LAYOUT.at(record.definition, slot[1])
+			var distance := player.distance_to(Vector2(at.x, at.z))
+			if distance < LAYOUT.PARKED_SPAWN_MIN or distance > LAYOUT.PARKED_SPAWN_MAX: continue
+			var trace := STALL_WORK.begin()
+			var spawned: CharacterBody3D = session.controller.spawn_vehicle(str(slot[0]), ground(Vector2(at.x, at.z)) + Vector3.UP * .1, float(record.definition.yaw) + float(slot[2]))
+			STALL_WORK.finish_slow("desert.roadside.parked_vehicle", trace, 2000)
+			if spawned != null: spawned.set_meta("roadside_site", str(record.definition.id))
+			record.parked_cars[index] = spawned
+			return
 
 ## Cômodos de entrar a pé (Estrada do Sal): com o jogador dentro, o telhado some para a câmera de
 ## cima ver o cômodo. Por quadro, mas só nos lugares montados que têm cômodo (três) e sem alocar.
@@ -122,6 +144,7 @@ func _build(definition: Dictionary) -> Dictionary:
 			_admit_resident(root, record, LAYOUT.MOTEL_CLERK, PI, "Dona Lurdes", "read", 77)
 	var roofs := root.get_node_or_null("WalkInRoofs")
 	if roofs != null: record["roofs"] = roofs
+	record["parked_cars"] = {}
 	G.batch_repeated_meshes(root)
 	return record
 

@@ -71,8 +71,14 @@ func run() -> void:
 	for hour in [13.0, 21.5]:
 		weather.time_of_day = hour / 24.0
 		weather.time_scale = 0.0
+		var approached := {}
 		for entry in SHOTS:
 			var id: String = entry[0]
+			if not approached.has(id):
+				# Passa a ~100 m antes: os carros estacionados nascem fora da tela (60–140 m).
+				approached[id] = true
+				await stand(LAYOUT.at(LAYOUT.site(id), Vector3(0, 0, 100)))
+				for i in 120: await physics_frame
 			await stand(LAYOUT.at(LAYOUT.site(id), entry[1]))
 			var waited := 0
 			while not roadside.sites.has(id) and waited < 600:

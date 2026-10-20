@@ -68,13 +68,29 @@ static func _room(b, roofs, center: Vector3, size: Vector3, wall: Material, inne
 	if right_w > .05:
 		_box(b, wall, Vector3(center.x + w * .5 - right_w * .5, center.y + h * .5, front_z), Vector3(right_w, h, WALL), {"-z": inner}, Vector2(2, 2), true)
 	_box(b, wall, Vector3(center.x + door_x, center.y + DOOR_H + (h - DOOR_H) * .5, front_z), Vector3(DOOR_W, h - DOOR_H, WALL), {"-z": inner})
+	# Rodapé de cimento por fora, beiral sob o telhado e batentes da porta: a parede lisa lia chapada.
+	var plinth := ART.detail("gravel", Color("8c8576"))
+	var trim := ART.detail("metal", Color("e8e4da"), .6)
+	_box(b, plinth, center + Vector3(0, .15, -d * .5 - .02), Vector3(w + .04, .3, .06), {"-y": null})
+	for side in [-1.0, 1.0]: _box(b, plinth, center + Vector3(side * (w * .5 + .02), .15, 0), Vector3(.06, .3, d + .04), {"-y": null})
+	if left_w > .05: _box(b, plinth, Vector3(center.x - w * .5 + left_w * .5, .15, front_z + WALL * .5 + .02), Vector3(left_w + .02, .3, .06), {"-y": null})
+	if right_w > .05: _box(b, plinth, Vector3(center.x + w * .5 - right_w * .5, .15, front_z + WALL * .5 + .02), Vector3(right_w + .02, .3, .06), {"-y": null})
+	for side in [-1.0, 1.0]:
+		_box(b, trim, Vector3(center.x + door_x + side * (DOOR_W * .5 + .04), DOOR_H * .5, front_z + WALL * .5 + .03), Vector3(.08, DOOR_H, .06), {"-y": null})
+	_box(b, trim, Vector3(center.x + door_x, DOOR_H + .04, front_z + WALL * .5 + .03), Vector3(DOOR_W + .16, .08, .06))
+	_box(b, trim, center + Vector3(0, h - .06, 0), Vector3(w + .1, .12, d + .1), {"-y": null, "+y": null})
 
 ## Janela escura (vidro) colada numa parede de frente +z.
 static func _window(b, at: Vector3, w: float, h: float, facing := 1.0) -> void:
-	var glass := ART.color(Color("2b3a40"))
-	var frame := ART.color(Color("d8d4c8"))
-	b.quad(glass, at + Vector3(0, 0, .012 * facing), Vector3(w * .5 * facing, 0, 0), Vector3(0, h * .5, 0), Rect2())
-	_box(b, frame, at + Vector3(0, -h * .5 - .04, .04 * facing), Vector3(w + .12, .08, .1))
+	var glass := ART.detail("metal", Color("26343a"), .12)
+	var frame := ART.detail("metal", Color("d8d4c8"), .55)
+	b.quad(glass, at + Vector3(0, 0, .012 * facing), Vector3(w * .5 * facing, 0, 0), Vector3(0, h * .5, 0), Rect2(0, 0, w * .5, h * .5))
+	# Moldura (quatro lados), travessa do meio e peitoril saliente.
+	for side in [-1.0, 1.0]:
+		_box(b, frame, at + Vector3(side * (w * .5 + .03), 0, .035 * facing), Vector3(.06, h + .12, .07))
+		_box(b, frame, at + Vector3(0, side * (h * .5 + .03), .035 * facing), Vector3(w + .12, .06, .07))
+	_box(b, frame, at + Vector3(0, 0, .03 * facing), Vector3(.04, h, .05))
+	_box(b, frame, at + Vector3(0, -h * .5 - .09, .08 * facing), Vector3(w + .24, .05, .16))
 
 static func _desk(b, at: Vector3, yaw: float, top: Material, legs: Material) -> void:
 	var basis := Basis(Vector3.UP, yaw)
@@ -95,8 +111,8 @@ static func _chair(b, at: Vector3, yaw: float, mat: Material) -> void:
 ## Pilha de sacos de sal sobre palete (faces com o carimbo do atlas).
 static func _bags(b, at: Vector3, layers: int, yaw := 0.0) -> void:
 	var basis := Basis(Vector3.UP, yaw)
-	var wood := ART.color(Color("8a6a46"))
-	b.box(wood, Transform3D(basis, at + Vector3(0, .07, 0)), Vector3(1.2, .14, 1.0), {"-y": null})
+	var wood := ART.detail("planks", Color("8a6a46"), .85)
+	b.box(wood, Transform3D(basis, at + Vector3(0, .07, 0)), Vector3(1.2, .14, 1.0), {"-y": null}, Vector2(1.2, 1.2))
 	var bag := ART.uv("salt_bag")
 	var raffia := ART.color(Color("e4e0d0"))
 	for layer in layers:
@@ -110,20 +126,20 @@ static func _bags(b, at: Vector3, layers: int, yaw := 0.0) -> void:
 ## carregadeira) e seis tanques de evaporação atrás. A estrada fica em z ≈ +60.
 
 static func compose_salt_works(b, roofs) -> void:
-	var salt := ART.color(Color("f0eee8"))
+	var salt := ART.detail("salt_crust", Color("f2f0ea"), .95)
 	# Salmoura saturada: os tons claros sumiam no branco do sol (captura de 20/10).
-	var crust := ART.color(Color("e2ddd0"))
-	var brine_a := ART.color(Color("b98476"))
-	var brine_b := ART.color(Color("7fa7b0"))
-	var berm := ART.color(Color("b59b78"))
+	var crust := ART.detail("salt_crust", Color("e2ddd0"), .95)
+	var brine_a := ART.detail("brine", Color("b98476"), .3)
+	var brine_b := ART.detail("brine", Color("7fa7b0"), .25)
+	var berm := ART.detail("gravel", Color("b59b78"))
 	var dark := ART.color(Color("2e3032"))
 	var steel := ART.color(Color("8d9193"))
-	var yellow := ART.color(Color("d49a12"))
+	var yellow := ART.detail("metal", Color("d49a12"), .5)
 	var rubber := ART.color(Color("1c1c1b"))
 	var concrete := ART.concrete()
 	var navy := ART.color(Color("1c3a60"))
 	# Acesso de cascalho de sal da estrada até o galpão e a placa na entrada.
-	_box(b, ART.gravel(Color("d9d2c2")), Vector3(0, .03, 45), Vector3(9, .06, 26), {"-y": null}, Vector2(4, 4))
+	_box(b, ART.detail("gravel", Color("d9d2c2")), Vector3(0, .03, 45), Vector3(9, .06, 26), {"-y": null}, Vector2(3, 3))
 	_post_sign(b, navy, Vector3(-9, 3.4, 54), Vector3(6.0, 1.5, .14), "salt_sign", 4.2)
 	# Galpão de ensaque aberto: piso de concreto, oito colunas, telhado de chapa branca inclinado.
 	_box(b, concrete, Vector3(0, -.1, 27), Vector3(19, .3, 11), {"-y": null}, Vector2(4, 4))
@@ -171,9 +187,9 @@ static func compose_salt_works(b, roofs) -> void:
 	b.solid(_t(loader.x, 1.2, loader.z + .4), Vector3(2.6, 2.4, 4.8))
 	# Escritório da salina (entra a pé): mesa do encarregado, cofre do pagamento, rádio, estante.
 	var office := Vector3(13.5, 0, 28)
-	_room(b, roofs, office, Vector3(5.0, 2.9, 4.0), ART.color(Color("d6cfbf")), ART.color(Color("efe9da")), ART.color(Color("9c8a6c")), ART.white_sheet(), -.9)
+	_room(b, roofs, office, Vector3(5.0, 2.9, 4.0), ART.detail("plaster", Color("d6cfbf")), ART.detail("plaster", Color("efe9da")), ART.detail("planks", Color("9c8a6c"), .8), ART.white_sheet(), -.9)
 	_window(b, office + Vector3(1.3, 1.6, 2.0 + .01), 1.5, .9)
-	var wood := ART.color(Color("7a5a3a"))
+	var wood := ART.detail("planks", Color("7a5a3a"), .8)
 	_desk(b, office + Vector3(.9, 0, -1.1), 0.0, wood, dark)
 	_chair(b, office + Vector3(.9, 0, -.45), PI, ART.color(Color("3b4a5a")))
 	_box(b, dark, office + Vector3(.6, .86, -1.25), Vector3(.35, .2, .25))
@@ -191,7 +207,7 @@ static func compose_salt_works(b, roofs) -> void:
 	for z in rows:
 		for x in cols:
 			var surface: Material = [brine_a, crust, brine_b, crust, brine_a, crust][index]
-			_box(b, surface, Vector3(x, .18, z), Vector3(29.2, .04, 19.2), {"-y": null}, Vector2(6, 6))
+			_box(b, surface, Vector3(x, .18, z), Vector3(29.2, .04, 19.2), {"-y": null}, Vector2(14, 14))
 			index += 1
 	for z in [2.0, -18.0, -38.0]:
 		_box(b, berm, Vector3(0, .3, z), Vector3(91, .6, 1.2), {"-y": null}, Vector2(4, 4), true)
@@ -202,7 +218,13 @@ static func compose_salt_works(b, roofs) -> void:
 	for x in range(-28, 29, 4): _box(b, wood, Vector3(float(x), .95, -18.4), Vector3(.06, .6, .06), {"-y": null})
 	_box(b, wood, Vector3(0, 1.25, -18.4), Vector3(60, .05, .05))
 	# Casa de bombas na ponta oeste, com a tubulação que corre pelo talude até os tanques.
-	_box(b, ART.color(Color("c9bfa8")), Vector3(-50, 1.2, -8), Vector3(3, 2.4, 3), {"-y": null}, Vector2(2, 2), true)
+	_box(b, ART.detail("plaster", Color("c9bfa8")), Vector3(-50, 1.2, -8), Vector3(3, 2.4, 3), {"-y": null}, Vector2(2, 2), true)
+	b.quad(b.atlas, Vector3(-48.48, 1.5, -8), Vector3(0, 0, -.3), Vector3(0, .3, 0), ART.uv("hazard"))
+	# Tambores de óleo, mangueira enrolada e paletes vazios encostados na casa de bombas.
+	for k in 3: b.cylinder(ART.detail("metal", [Color("2a5f9e"), Color("8e4a2c"), Color("3e6b3a")][k], .55), _t(-52.2 + float(k) * .62, .45, -5.9), .29, .9, 12)
+	b.solid(_t(-51.6, .45, -5.9), Vector3(1.9, .9, .6))
+	b.cylinder(ART.color(Color("2b2b2b")), _t(-47.6, .1, -5.6), .55, .2, 14, .35)
+	for k in 3: _box(b, ART.detail("planks", Color("8a6a46"), .85), Vector3(-52.6, .07 + float(k) * .15, -10.4), Vector3(1.2, .14, 1.0), {"-y": null}, Vector2(1.2, 1.2))
 	b.box(ART.rust_sheet(), _t(-50, 2.48, -8, 0, deg_to_rad(4)), Vector3(3.4, .1, 3.4), {}, Vector2(3, 3))
 	_pipe(b, ART.color(Color("4b6176")), Vector3(-48.4, .5, -8), Vector3(-45, .75, -8), .14)
 	_pipe(b, ART.color(Color("4b6176")), Vector3(-45, .75, -8), Vector3(-45, .75, -30), .14)
@@ -234,13 +256,13 @@ static func compose_weigh_station(b, roofs) -> void:
 	for x in [-8.0, -4.0, 0.0, 4.0, 8.0]: _box(b, dark, Vector3(x, .105, 12), Vector3(.05, .01, 3.2), {"-y": null})
 	# Cabine do fiscal: janela de frente para a balança, porta no canto, toldo.
 	var cabin := Vector3(0, 0, 3.0)
-	_room(b, roofs, cabin, Vector3(5.2, 2.8, 3.8), ART.color(Color("e0dccf")), ART.color(Color("f0ece0")), ART.color(Color("8f8a80")), ART.white_sheet(), -1.6)
+	_room(b, roofs, cabin, Vector3(5.2, 2.8, 3.8), ART.detail("plaster", Color("e0dccf")), ART.detail("plaster", Color("f0ece0")), ART.detail("pool_tile", Color("8f8a80"), .7), ART.white_sheet(), -1.6)
 	_window(b, cabin + Vector3(.9, 1.55, 1.9 + .01), 2.4, 1.0)
 	_box(b, green, cabin + Vector3(0, 2.95, 2.5), Vector3(5.6, .1, 1.4))
 	b.quad(b.atlas, cabin + Vector3(.9, 2.25, 1.92), Vector3(.18, 0, 0), Vector3(0, .07, 0), ART.uv("light"))
 	# Dentro: bancada sob a janela com monitor do peso, rádio, garrafa de café, cadeira, arquivo e o
 	# quadro de limites na parede do fundo.
-	var wood := ART.color(Color("8a6a46"))
+	var wood := ART.detail("planks", Color("8a6a46"), .8)
 	_box(b, wood, cabin + Vector3(.9, .78, 1.45), Vector3(2.6, .05, .6))
 	_box(b, dark, cabin + Vector3(.9, .38, 1.45), Vector3(2.5, .76, .55), {"-y": null})
 	b.solid(_t(cabin.x + .9, .4, cabin.z + 1.45), Vector3(2.6, .8, .6))
@@ -249,7 +271,11 @@ static func compose_weigh_station(b, roofs) -> void:
 	_box(b, ART.color(Color("4a4e50")), cabin + Vector3(1.5, .93, 1.5), Vector3(.35, .25, .22))
 	b.cylinder(red, _t(cabin.x + 2.0, .93, cabin.z + 1.5), .07, .3, 8)
 	_chair(b, cabin + Vector3(.7, 0, .8), 0.0, ART.color(Color("3b4a5a")))
-	_box(b, ART.color(Color("6c7276")), cabin + Vector3(-2.1, .65, -1.45), Vector3(.6, 1.3, .55), {"-y": null}, Vector2(2, 2), true)
+	_box(b, ART.detail("metal", Color("6c7276"), .5), cabin + Vector3(-2.1, .65, -1.45), Vector3(.6, 1.3, .55), {"-y": null}, Vector2(.6, 1.3), true)
+	# Pilha de pneus e cones empilhados atrás da cabine.
+	for k in 4: b.cylinder(ART.color(Color("1c1c1b")), _t(-3.6 + float(k % 2) * .05, .13 + float(k) * .25, -.6), .38, .24, 12)
+	b.solid(_t(-3.6, .5, -.6), Vector3(.8, 1.0, .8))
+	for k in 4: b.cylinder(ART.color(Color("e05a1c")), _t(-4.6, .36 + float(k) * .12, -.4), .18, .72, 8, .04)
 	b.quad(b.atlas, cabin + Vector3(.3, 1.7, -1.9 + WALL + .01), Vector3(.35, 0, 0), Vector3(0, .44, 0), ART.uv("weigh_board"))
 	b.cylinder(ART.color(Color("c6c4bd")), _t(cabin.x - 1.2, 2.55, cabin.z), .22, .05, 10)
 	# Cancela vermelha e branca na saída da balança, PARE e cones.
@@ -269,10 +295,10 @@ static func compose_weigh_station(b, roofs) -> void:
 	# Baú parado esperando a vez, com a carga de caixotes ao lado.
 	for k in 4:
 		var crate := Vector3(-14.5 + float(k % 2) * 1.25, .5 + float(k / 2) * 1.0, 6.5)
-		_box(b, ART.color(Color("9a7a52")), crate, Vector3(1.2, 1.0, 1.2), {"-y": null}, Vector2(1.2, 1.2))
+		_box(b, ART.detail("crate", Color("b08a5a"), .85), crate, Vector3(1.2, 1.0, 1.2), {"-y": null}, Vector2(1.2, 1.0))
 	b.solid(_t(-13.9, 1.0, 6.5), Vector3(2.5, 2.0, 1.2))
 	# Banheiro químico azul e o poste do holofote.
-	_box(b, ART.color(Color("2a5f9e")), Vector3(4.8, 1.15, 1.2), Vector3(1.2, 2.3, 1.2), {"-y": null}, Vector2(2, 2), true)
+	_box(b, ART.detail("metal", Color("2a5f9e"), .45), Vector3(4.8, 1.15, 1.2), Vector3(1.2, 2.3, 1.2), {"-y": null}, Vector2(1.2, 2.3), true)
 	b.cylinder(ART.color(Color("2a5f9e")), _t(4.8, 2.35, 1.2), .62, .12, 10)
 	_box(b, steel, Vector3(-4.2, 3.5, 6.5), Vector3(.2, 7.0, .2), {"-y": null}, Vector2(2, 2), true)
 	_box(b, dark, Vector3(-4.2, 7.0, 6.9), Vector3(.7, .35, .5))
@@ -282,15 +308,15 @@ static func compose_weigh_station(b, roofs) -> void:
 ## piscina vazia cercada, máquina de refrigerante, palmeiras e o letreiro de neon. Estrada em z ≈ +24.
 
 static func compose_motel(b, roofs) -> void:
-	var stucco := ART.color(Color("e8d9c0"))
-	var inner := ART.color(Color("efe6d4"))
-	var teal := ART.color(Color("3f9aa8"))
+	var stucco := ART.detail("plaster", Color("e8d9c0"))
+	var inner := ART.detail("plaster", Color("efe6d4"))
+	var teal := ART.detail("plaster", Color("3f9aa8"))
 	var dark := ART.color(Color("2e3032"))
 	var steel := ART.color(Color("c6c4bd"))
 	var white := ART.color(Color("e4e1d9"))
-	var tile := ART.color(Color("4f8fa0"))
+	var tile := ART.detail("pool_tile", Color("4f8fa0"), .3)
 	var concrete := ART.concrete()
-	var wood := ART.color(Color("7a5a3a"))
+	var wood := ART.detail("planks", Color("7a5a3a"), .8)
 	# Estacionamento de asfalto com as vagas pintadas, calçada sob a marquise.
 	_box(b, ART.asphalt(), Vector3(-1, -.15, 8.5), Vector3(38, .4, 15), {"-y": null}, Vector2(4, 4))
 	for k in 7: _box(b, white, Vector3(-16.0 + float(k) * 3.4, .06, 6.0), Vector3(.12, .01, 4.6), {"-y": null})
@@ -299,6 +325,20 @@ static func compose_motel(b, roofs) -> void:
 	var block_c := Vector3(-3.2, 1.5, -3.7)
 	var block_size := Vector3(18.2, 3.0, 5.0)
 	_box(b, stucco, block_c, block_size, {"-y": null, "+y": null}, Vector2(2.5, 2.5), true)
+	var plinth := ART.detail("gravel", Color("8c8576"))
+	_box(b, plinth, Vector3(block_c.x, .15, block_c.z + block_size.z * .5 + .03), Vector3(block_size.x, .3, .06), {"-y": null})
+	_box(b, plinth, Vector3(block_c.x, .15, block_c.z - block_size.z * .5 - .03), Vector3(block_size.x, .3, .06), {"-y": null})
+	for x in [-12.0, 5.7]: _pipe(b, ART.detail("metal", Color("c6c4bd"), .5), Vector3(x, .1, -6.3), Vector3(x, 3.0, -6.3), .05)
+	# Lixeiras, máquina de gelo e carrinho da arrumadeira na calçada.
+	for k in 2:
+		var bin := Vector3(-15.0 + float(k) * 19.0, 0, .9)
+		b.cylinder(ART.detail("metal", Color("3e6b3a"), .5), _t(bin.x, .45, bin.z), .28, .9, 12)
+		b.solid(_t(bin.x, .45, bin.z), Vector3(.56, .9, .56))
+	_box(b, ART.detail("metal", Color("e4e1d9"), .4), Vector3(4.6, .7, -.6), Vector3(.9, 1.4, .7), {"-y": null}, Vector2(.9, 1.4), true)
+	b.quad(b.atlas, Vector3(4.6, 1.15, -.24), Vector3(.3, 0, 0), Vector3(0, .1, 0), ART.uv("light"))
+	_box(b, ART.detail("metal", Color("c6c4bd"), .5), Vector3(-7.4, .55, .2), Vector3(.6, .7, 1.1), {"-y": null})
+	_box(b, ART.color(Color("e8e4da")), Vector3(-7.4, .95, .2), Vector3(.55, .15, 1.0), {"-y": null})
+	b.solid(_t(-7.4, .5, .2), Vector3(.6, 1.0, 1.1))
 	var door := ART.uv("room_door")
 	for k in 5:
 		var x := -10.6 + float(k) * 3.64
@@ -307,7 +347,7 @@ static func compose_motel(b, roofs) -> void:
 		_box(b, ART.color(Color("c6c4bd")), Vector3(x + .75, .62, -1.0), Vector3.ONE * .5 * Vector3(1.4, 1.0, .8), {"-y": null})
 	# Quarto 1 aberto (entra a pé): cama de casal, criados, abajur, TV na cômoda, cadeira e cortina.
 	var room := Vector3(-14.1, 0, -3.7)
-	_room(b, roofs, room, Vector3(3.64, 3.0, 5.0), stucco, inner, ART.color(Color("8a5a48")), ART.white_sheet(), -.6)
+	_room(b, roofs, room, Vector3(3.64, 3.0, 5.0), stucco, inner, ART.detail("planks", Color("8a5a48"), .8), ART.white_sheet(), -.6)
 	_window(b, room + Vector3(.95, 1.55, 2.5 + .01), .9, .9)
 	var bedspread := ART.color(Color("b0473a"))
 	_box(b, wood, room + Vector3(.2, .25, -1.25), Vector3(1.7, .5, 2.1), {"-y": null}, Vector2(2, 2), true)
@@ -329,7 +369,7 @@ static func compose_motel(b, roofs) -> void:
 	_box(b, white, Vector3(-3.2, 3.08, -3.7), Vector3(18.6, .16, 5.4))
 	# Recepção (entra a pé): balcão, quadro de chaves, banquinho, vaso, TV e o folheteiro.
 	var lobby := Vector3(10.5, 0, -2.5)
-	_room(b, roofs, lobby, Vector3(5.2, 3.0, 4.6), teal, inner, ART.color(Color("b8a88a")), ART.white_sheet(), -1.2)
+	_room(b, roofs, lobby, Vector3(5.2, 3.0, 4.6), teal, inner, ART.detail("pool_tile", Color("b8a88a"), .6), ART.white_sheet(), -1.2)
 	_window(b, lobby + Vector3(1.0, 1.6, 2.3 + .01), 2.0, 1.1)
 	_box(b, wood, lobby + Vector3(.6, .55, -.4), Vector3(2.8, 1.1, .6), {"-y": null}, Vector2(2, 2), true)
 	_box(b, ART.color(Color("d8c8a8")), lobby + Vector3(.6, 1.12, -.4), Vector3(2.9, .05, .7))
@@ -348,7 +388,7 @@ static func compose_motel(b, roofs) -> void:
 	# Piscina vazia (acima do chão, como as de motel de estrada), cercada, com escada e espreguiçadeiras.
 	var pool := Vector3(13.0, 0, 7.0)
 	_box(b, concrete, pool + Vector3(0, .07, 0), Vector3(11, .08, 8), {"-y": null}, Vector2(4, 4))
-	_box(b, tile, pool + Vector3(0, .13, 0), Vector3(7.6, .04, 4.6), {"-y": null}, Vector2(1, 1))
+	_box(b, tile, pool + Vector3(0, .13, 0), Vector3(7.6, .04, 4.6), {"-y": null}, Vector2(1.2, 1.2))
 	for side in [-1.0, 1.0]:
 		_box(b, white, pool + Vector3(0, .35, side * 2.45), Vector3(8.0, .7, .3), {"-y": null}, Vector2(2, 2), true)
 		_box(b, white, pool + Vector3(side * 3.95, .35, 0), Vector3(.3, .7, 4.6), {"-y": null}, Vector2(2, 2), true)

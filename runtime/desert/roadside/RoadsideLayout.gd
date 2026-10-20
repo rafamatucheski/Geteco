@@ -55,6 +55,17 @@ const FOOD_VENDOR := Vector3(-2.4, 0, 1.9)
 const SALT_FOREMAN := Vector3(14.4, 0, 28.6)
 const WEIGH_INSPECTOR := Vector3(.7, 0, 3.6)
 const MOTEL_CLERK := Vector3(11.1, 0, -3.6)
+## Veículos de verdade da frota estacionados nos lugares (não carcaças): [modelo, ponto local, giro
+## local]. Pintura, vidro, rodas e faróis do modelo, e dá para levar. A frente do carro é -z local.
+const PARKED := {
+	"salt_works": [["desert_faisca", Vector3(19.5, 0, 36.0), PI * .5]],
+	"weigh_station": [["cargo_flatbed_truck", Vector3(-6.5, 0, 12.0), PI * .5]],
+	"motel": [["desert_bison", Vector3(-12.6, 0, 8.6), 0.05], ["desert_coyote", Vector3(-5.8, 0, 8.8), -.04], ["desert_mirage", Vector3(1.0, 0, 8.7), .02]],
+}
+## Repõe o carro que o controlador recolheu (> 145 m) só nesta faixa: longe da tela, perto o
+## bastante para estar lá quando o jogador chegar.
+const PARKED_SPAWN_MIN := 60.0
+const PARKED_SPAWN_MAX := 140.0
 ## Entregas do orelhão do Sol Poente: destino, tempo e pagamento (valores em EconomyBalance).
 const COURIER_ROUTES := [
 	{"id": "miragem", "name": "Miragem", "point": Vector3(285, 0, -750), "seconds": 140.0},

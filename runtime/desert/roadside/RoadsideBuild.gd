@@ -27,8 +27,6 @@ const KINDS := ["station", "tower", "scrapyard", "food_truck", "salt_works", "we
 const WRECK_MODELS := ["ranch_single", "courier_van"]
 ## Tinta de carcaça: escura e suja (as cores limpas da frota liam como carro estacionado).
 const WRECK_TINTS := [Color("5e4334"), Color("475257"), Color("7c7563"), Color("4d5640"), Color("6a3226")]
-## Carros parados (não carcaças) na Estrada do Sal: mesmas carrocerias, tintas limpas de frota.
-const PARKED_TINTS := [Color("d8d4c8"), Color("8a2a24"), Color("2f4f6f")]
 const PAINTED_SHOP := "posto-deserto"
 const PAINTED_OFFICE := "escritorio-mina"
 const SHOP_SIZE := Vector3(11, 3.8, 6.2)
@@ -83,14 +81,11 @@ static func weigh_station(root: Node3D) -> void:
 	ART.instantiate(root, baked("weigh_station"))
 	_walk_in_roofs(root, "weigh_station")
 	_lamp(root, Vector3(-4.2, 6.7, 7.2), Color("f4f6ff"), 18.0, 1.7)
-	ART.later(root, [Callable(ART, "wrecks").bind(root, [["courier_van", _t(-8.5, -.3, 9.0, PI * .5), PARKED_TINTS[0]]])])
 
 static func motel(root: Node3D) -> void:
 	ART.instantiate(root, baked("motel"))
 	_walk_in_roofs(root, "motel")
 	_lamp(root, Vector3(9.3, 2.9, .3), Color("ffd9b0"), 14.0, 1.5)
-	ART.later(root, [Callable(ART, "wrecks").bind(root, [["ranch_single", _t(-12.6, -.3, 9.5, .05), PARKED_TINTS[1]],
-		["courier_van", _t(-5.8, -.3, 9.8, -.04), PARKED_TINTS[2]]])])
 
 ## Telhados dos cômodos de entrar a pé num nó só, para o coordenador esconder com o jogador dentro.
 static func _walk_in_roofs(root: Node3D, kind: String) -> void:
@@ -137,7 +132,7 @@ static func prewarm() -> Array:
 		for pair in baked(kind).meshes + _baked.get(kind + ":roofs", {}).get("meshes", []):
 			if pair[1] not in materials: materials.append(pair[1])
 	for model in WRECK_MODELS:
-		for mat in ART.wreck_materials(model, WRECK_TINTS + PARKED_TINTS):
+		for mat in ART.wreck_materials(model, WRECK_TINTS):
 			if mat not in materials: materials.append(mat)
 	return materials
 
