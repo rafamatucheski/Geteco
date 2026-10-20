@@ -73,6 +73,22 @@
         "runtime/ReleaseBenchmark.gd"
       ],
       "next": "Jogar com controle; os 2–8 quadros acima de 33 ms nas rotas do deserto existem com a beira de estrada desligada e seguem sem nome."
+    },
+    {
+      "id": "cavernas-cartas-vicente-20261020",
+      "title": "Cavernas de arenito, caixa de munição, 10 cartas de Vicente e o Coyote escondido",
+      "status": "implemented",
+      "area": "gameplay",
+      "description": "As 4 cavernas do deserto (antes um anel de pedras com salão de 7 x 8 m) viraram morros de arenito de ~22 x 20 m (CaveBuild, textura nova sandstone): túnel escorado com trilhos, salão com vagonete e acampamento, salão dos fundos com o achado; o morro some com o jogador dentro (corte, como os cômodos da Estrada do Sal). Cada caverna tem uma caixa de munição que repõe as armas de fogo do jogador uma vez por dia de jogo (world_state.desert_cave_ammo, validado no contrato do deserto). 10 cartas de Vicente escritas da prisão (VicenteLetters) espalhadas por Harbor (cais, oficina do Maciota, sobrados), ponte e serra, Caverna do Sussurro, Motel Oásis, capela e arquibancada; cada uma é lida ao ser achada (colecionáveis normais, R$ 50 cada). As dez liberam a mala do Maciota (ou a Prova de rua, o que vier antes) e revelam a quinta caverna, escondida da torre de rádio, ao sul do leito seco (-1170, -1730): sem as cartas, só a lona com cadeado; com elas, o Coyote 440 do Vicente, que vira carro do jogador ao entrar (frota e garagem do deserto, peças montadas, recibo próprio).",
+      "sources": [
+        "runtime/desert/wilds/CaveBuild.gd",
+        "runtime/desert/wilds/DesertWilds.gd",
+        "data/catalogs/VicenteLetters.gd",
+        "activities/ActivityDefinitions.gd",
+        "tests/test_vicente_letters.gd",
+        "tests/test_desert_wilds.gd"
+      ],
+      "next": "Jogar com controle (sair de ré não é preciso: o Coyote fica de frente para a boca); medir em release a montagem das cavernas; dublagem das cartas se o elenco de voz for usado."
     }
   ],
   "remove": []

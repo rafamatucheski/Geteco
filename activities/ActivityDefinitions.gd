@@ -40,4 +40,24 @@ static func collectibles() -> Array:
 		# Native model local positions, not projected coordinates re-scaled twice.
 		{"id":"mountain_expedition_pack","region":"mountain","place":"","point":at(Vector2(6200,-320),"mountain")+Vector3(3.2,0,3.8)},
 		{"id":"mountain_expedition_journal","region":"mountain","place":"mountain_mystery_cave","point":Vector3(-3.4,0,-.5)},
-		{"id":"mountain_expedition_camera","region":"mountain","place":"mountain_mystery_cave","point":Vector3(4.6,0,-2.7)}]
+		{"id":"mountain_expedition_camera","region":"mountain","place":"mountain_mystery_cave","point":Vector3(4.6,0,-2.7)}] + vicente_letters()
+
+## Cartas de Vicente (20/10/2026). Harbor e serra em coordenadas de mundo (a ponte, de x ~500 em
+## diante, já é a região da serra), presas ao chão pelo raio
+## do pickup; as do deserto ficam dentro de cômodos e da caverna, com teto, então vão com a altura
+## do piso ("fixed": o raio de 12 m pararia no telhado).
+static func vicente_letters() -> Array:
+	var roadside := preload("res://runtime/desert/roadside/RoadsideLayout.gd")
+	var whisper := Vector2(-360, -1690)
+	var cave := Vector3(whisper.x, 0, whisper.y) + Basis(Vector3.UP, 1.8) * Vector3(0, .05, -3.6)
+	return [
+		{"id":"vicente_letter_01","region":"harbor","place":"","point":Vector3(232,0,30)},
+		{"id":"vicente_letter_02","region":"harbor","place":"","point":Vector3(166,0,114)},
+		{"id":"vicente_letter_03","region":"harbor","place":"","point":Vector3(322,0,-58)},
+		{"id":"vicente_letter_04","region":"mountain","place":"","point":Vector3(520,0,-285)},
+		{"id":"vicente_letter_05","region":"mountain","place":"","point":Vector3(745,0,-362)},
+		{"id":"vicente_letter_06","region":"mountain","place":"","point":Vector3(700,0,-425)},
+		{"id":"vicente_letter_07","region":"desert","place":"","point":cave,"fixed":true},
+		{"id":"vicente_letter_08","region":"desert","place":"","point":roadside.at(roadside.site("motel"), Vector3(-14.1, .15, -4.6)),"fixed":true},
+		{"id":"vicente_letter_09","region":"desert","place":"","point":roadside.at(roadside.site("chapel"), Vector3(0, .15, -5.2)),"fixed":true},
+		{"id":"vicente_letter_10","region":"desert","place":"","point":roadside.at(roadside.site("grandstand"), Vector3(19.5, .15, -.4)),"fixed":true}]

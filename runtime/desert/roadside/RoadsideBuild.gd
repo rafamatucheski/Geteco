@@ -23,9 +23,12 @@ const FLEET := preload("res://runtime/FleetCatalog.gd")
 const SALT_ROAD := preload("res://runtime/desert/roadside/RoadsideSaltRoad.gd")
 const TOWN := preload("res://runtime/desert/roadside/RoadsideTown.gd")
 const FACADES := preload("res://runtime/desert/roadside/RoadsideFacades.gd")
+const CAVE := preload("res://runtime/desert/wilds/CaveBuild.gd")
 const KINDS := ["station", "tower", "scrapyard", "food_truck", "salt_works", "weigh_station", "motel", "chapel", "grandstand",
 	"town_street", "homes_yards", "village_square", "workshop_yard",
-	"facade_bank", "facade_diner", "facade_market", "facade_motel", "facade_digo"]
+	"facade_bank", "facade_diner", "facade_market", "facade_motel", "facade_digo",
+	# Cavernas do DesertWilds (CaveBuild): "cave:<id do lugar>", morro no lote roofs.
+	"cave:cave_coyote", "cave:cave_vulture", "cave:cave_whisper", "cave:cave_sun", "cave:cave_brother"]
 ## Carcaças: só modelos da frota comum (cena retida e desenhada no pré-aquecimento da frota),
 ## de carroceria em 3 superfícies (~8 desenhos por carcaça; o sedã tem 15 só na carroceria).
 const WRECK_MODELS := ["ranch_single", "courier_van"]
@@ -148,6 +151,11 @@ static func baked(kind: String) -> Dictionary:
 			"village_square": TOWN.compose_village_square(b, null)
 			"workshop_yard": TOWN.compose_workshop_yard(b, null)
 			"facade_bank", "facade_diner", "facade_market", "facade_motel", "facade_digo": FACADES.compose(b, kind)
+			_:
+				if kind.begins_with("cave:"):
+					var mass := ART.batch()
+					CAVE.compose(b, mass, kind.trim_prefix("cave:"))
+					_baked[kind + ":roofs"] = mass.bake()
 		_baked[kind] = b.bake()
 	return _baked[kind]
 

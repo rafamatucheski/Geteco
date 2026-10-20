@@ -52,6 +52,18 @@ const ENTRIES := {
 		"name": "Câmera quebrada",
 		"region": "Câmara profunda da montanha",
 	},
+	# Cartas de Vicente (data/catalogs/VicenteLetters.gd): as dez liberam a mala do Maciota e
+	# apontam a caverna escondida do Coyote.
+	"vicente_letter_01": {"name": "Carta de Vicente nº 1", "region": "Cais do porto, Harbor"},
+	"vicente_letter_02": {"name": "Carta de Vicente nº 2", "region": "Oficina do Maciota, Harbor"},
+	"vicente_letter_03": {"name": "Carta de Vicente nº 3", "region": "Sobrados do canal, Harbor"},
+	"vicente_letter_04": {"name": "Carta de Vicente nº 4", "region": "Ponte para a serra"},
+	"vicente_letter_05": {"name": "Carta de Vicente nº 5", "region": "Estrada da serra"},
+	"vicente_letter_06": {"name": "Carta de Vicente nº 6", "region": "Curva alta da serra"},
+	"vicente_letter_07": {"name": "Carta de Vicente nº 7", "region": "Caverna do Sussurro, deserto"},
+	"vicente_letter_08": {"name": "Carta de Vicente nº 8", "region": "Motel Oásis, Estrada do Sal"},
+	"vicente_letter_09": {"name": "Carta de Vicente nº 9", "region": "Capela da Estrada, deserto"},
+	"vicente_letter_10": {"name": "Carta de Vicente nº 10", "region": "Arquibancada da reta, deserto"},
 }
 
 const FIND_CASH := 50

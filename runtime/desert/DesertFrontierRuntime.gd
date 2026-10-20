@@ -53,6 +53,9 @@ func nearest_action() -> Dictionary:
 	if is_instance_valid(roadside):
 		var roadside_action: Dictionary=roadside.nearest_action()
 		if not roadside_action.is_empty(): return roadside_action
+	if is_instance_valid(wilds):
+		var wilds_action: Dictionary=wilds.nearest_action()
+		if not wilds_action.is_empty(): return wilds_action
 	if not _available() or not is_instance_valid(_site()): return {}
 	var player: CharacterBody3D=session.world.player
 	var state := SECRET.data(session.state.world_state)

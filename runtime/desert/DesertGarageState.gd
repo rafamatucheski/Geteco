@@ -1,6 +1,8 @@
 extends RefCounted
 const TUNING := preload("res://gameplay/desert_cars/DesertTuning.gd")
 const CARS := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
+const LETTERS := preload("res://data/catalogs/VicenteLetters.gd")
+const RECEIPTS := preload("res://systems/economy/RecurringReceipts.gd")
 static func defaults() -> Dictionary:
 	return {"version":1,"vehicles":{},"purchased":{}}
 static func data(world: Dictionary) -> Dictionary:
@@ -16,6 +18,7 @@ static func valid(value: Variant, economy: Dictionary = {}) -> bool:
 		var record: Variant = value.vehicles[id]
 		if not record is Dictionary or not record.get("archetype") is String: return false
 		if record.has("honor_gift") and (record.honor_gift != true or id != "takeshi_supra" or record.archetype != "supra_a80"): return false
+		if record.has("vicente_gift") and (record.vicente_gift != true or id != LETTERS.CAR_ID or record.archetype != LETTERS.CAR_ARCHETYPE): return false
 		if not record.get("parts") is Dictionary or TUNING.clean_parts(record.parts) != record.parts: return false
 		if not record.get("owned") is Array or record.owned.size()>TUNING.PARTS.size(): return false
 		var seen: Array = []
@@ -27,6 +30,8 @@ static func valid(value: Variant, economy: Dictionary = {}) -> bool:
 				# two durable rival proofs. They are never purchases or resale items.
 				if TUNING.PARTS[part].has("rival_reward"): continue
 				if record.get("honor_gift",false) and part in preload("res://data/TakeshiRewardSpec.gd").PARTS.values(): continue
+				# Peças que vieram montadas no Coyote do Vicente, com o recibo do achado da caverna.
+				if record.get("vicente_gift",false) and part in LETTERS.CAR_PARTS.values() and not RECEIPTS.lookup(economy,"reward",LETTERS.CAR_RECEIPT).is_empty(): continue
 				var receipt: Dictionary = economy.get("transactions",{}).get("spend:desert_part:"+id+":"+part,{})
 				if receipt.get("amount",-1) != TUNING.PARTS[part].cost: return false
 		for part in record.parts.values():

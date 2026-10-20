@@ -95,8 +95,10 @@ func award_first_backpack() -> bool:
 
 func travel_bag_available() -> bool:
 	if not _available() or not session.state.economy.grid_enabled(): return false
-	# Actual victory, never an active attempt or a skipped legacy mission.
-	return "cobra_race" in session.state.campaign._data.completed and TRAVEL_BAG_CLAIM not in session.state.economy._data.grid_inventory.claimed
+	# Actual victory, never an active attempt or a skipped legacy mission; or the ten
+	# Vicente letters (VicenteLetters, 20/10/2026), whichever comes first.
+	var earned: bool = "cobra_race" in session.state.campaign._data.completed or preload("res://data/catalogs/VicenteLetters.gd").complete(session.state.economy._data.collectibles)
+	return earned and TRAVEL_BAG_CLAIM not in session.state.economy._data.grid_inventory.claimed
 
 func claim_travel_bag() -> bool:
 	var field = session.field_inventory

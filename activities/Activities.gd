@@ -5,6 +5,7 @@ const Residence := preload("res://activities/Residence.gd")
 const TowJobs := preload("res://data/catalogs/TowJobs.gd")
 const PICKUP := preload("res://systems/inventory/PickupPresentation.gd")
 const REWARD_AUDIO := preload("res://gameplay/RewardAudio.gd")
+const LETTERS := preload("res://data/catalogs/VicenteLetters.gd")
 const PHONE := preload("res://activities/RacePhone.gd")
 ## Frase de descoberta da V1: a conquista espera ela terminar (1,15 s) para não sobrepor.
 const DISCOVERY_CUE_SECONDS := 1.15
@@ -299,12 +300,14 @@ func _rebuild() -> void:
 		if _place != "":
 			if not is_instance_valid(session.room): continue
 			point = session.room.to_global(point)
-		_create_pickup(entry.id,point)
+		_create_pickup(entry.id,point,bool(entry.get("fixed",false)))
 
-func _create_pickup(id: String, point: Vector3) -> void:
+func _create_pickup(id: String, point: Vector3, fixed := false) -> void:
 	var area := Area3D.new()
 	area.position = point+Vector3.UP*.4
 	area.set_meta("source_point",point)
+	# Altura do piso dada pelo ponto (cômodo ou caverna com teto): sem raio de chão.
+	if fixed: area.set_meta("grounded",true)
 	area.monitoring = false
 	area.collision_layer = 0
 	area.collision_mask = 2
@@ -323,10 +326,12 @@ func _create_pickup(id: String, point: Vector3) -> void:
 	var mesh := MeshInstance3D.new()
 	var item := BoxMesh.new()
 	item.size = Vector3(.27,.1,.19) if id != "mountain_expedition_pack" else Vector3(.35,.4,.25)
+	if LETTERS.is_letter(id): item.size = Vector3(.3,.03,.2)
 	mesh.mesh = item
 	mesh.position.y = .26
 	var material := StandardMaterial3D.new()
-	material.albedo_color = Color("b6a57d")
+	# Envelope amarelado das cartas de Vicente; o resto segue o achado de papel antigo.
+	material.albedo_color = Color("efe4c8") if LETTERS.is_letter(id) else Color("b6a57d")
 	mesh.material_override = material
 	art.add_child(mesh)
 	holder.configure(art,id)
@@ -342,9 +347,25 @@ func _create_pickup(id: String, point: Vector3) -> void:
 			_achievements()
 			var announcement := ""
 			if session.mountain_progression != null: announcement = session.mountain_progression.on_collectible()
-			if _commit(): session.show_message(announcement if not announcement.is_empty() else "Achado recolhido."))
+			# A carta é lida mesmo quando o save fica para depois (combate, --no-save): o achado já
+			# está na carteira e o checkpoint segue a regra normal de admissão.
+			var saved := _commit()
+			if LETTERS.is_letter(id): _read_letter(id)
+			elif saved: session.show_message(announcement if not announcement.is_empty() else "Achado recolhido."))
 	session.world.add_child(area)
 	_pickups[id] = area
+
+## Lê a carta achada. Na décima: a mala do Maciota fica disponível no porta-malas da Monaliza
+## (como depois da Prova de rua) e a caverna escondida vira marcador no mapa.
+func _read_letter(id: String) -> void:
+	var found := LETTERS.found(session.state.economy.snapshot().collectibles)
+	var lines := [{"speaker":"%s nº %d · %d de 10" % [LETTERS.SPEAKER, LETTERS.IDS.find(id) + 1, found],"message":LETTERS.TEXTS[id]}]
+	if found == LETTERS.IDS.size():
+		var roadside_state := preload("res://runtime/desert/roadside/RoadsideState.gd")
+		roadside_state.reveal(session.state.world_state, ["cave:cave_brother"])
+		lines.append({"speaker":"Maciota","message":"Dez cartas. Ele escreveu mais do que falou a vida inteira. A mala que eu guardei pra você tá no porta-malas da Monaliza."})
+		session.save_game()
+	session.show_dialogue(lines)
 
 func _beacon(point: Vector3, color: Color, gate: bool = false) -> Node3D:
 	var root := Node3D.new()

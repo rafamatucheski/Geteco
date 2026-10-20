@@ -7,10 +7,20 @@ extends Node3D
 ## GETECO_DESERT_WILDS=0 desliga tudo (A/B no mesmo export).
 const G := preload("res://world/desert/DesertGeometry.gd")
 const HM := preload("res://world/desert/DesertTerrainMesh.gd")
-const COVER := preload("res://world/desert/DesertGroundCover.gd")
 const RESIDENT := preload("res://runtime/desert/DesertVillageResident.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const REWARD_AUDIO := preload("res://gameplay/RewardAudio.gd")
+const BUILD := preload("res://runtime/desert/roadside/RoadsideBuild.gd")
+const ART := preload("res://runtime/desert/roadside/RoadsideArt.gd")
+const CAVE := preload("res://runtime/desert/wilds/CaveBuild.gd")
+const LETTERS := preload("res://data/catalogs/VicenteLetters.gd")
+const FLEET_STATE := preload("res://runtime/FleetState.gd")
+const GARAGE_STATE := preload("res://runtime/desert/DesertGarageState.gd")
+const ADAPTER := preload("res://gameplay/desert_cars/DesertCarAdapter.gd")
+## Caixa de munição de cada caverna (20/10): repõe uma vez por dia de jogo, para cada arma de fogo
+## que o jogador tem. Explosivos e lança-chamas ficam de fora (são achados de outro tipo).
+const AMMO_REFILL := {"pistol": 24, "magnum": 12, "smg": 60, "shotgun": 12, "sawed_off": 8, "ak47": 60, "m4a1": 60, "hunting_rifle": 10}
+const AMMO_REACH := 2.0
 const CAVE_AMMO := 24
 const CLAIM_FAILURES := {"inventory_full": "Inventário cheio.", "ammo_full": "Munição no limite.", "wallet_full": "Carteira cheia."}
 const BUILD_DISTANCE := 110.0
@@ -21,6 +31,8 @@ const GUNFIRE_DISTANCE := 70.0
 const LOOT_DISTANCE := 2.2
 ## Raio de reserva: flora e chão povoado não nascem dentro do lugar.
 const SITE_RADIUS := 16.0
+## A caverna de 20/10 é um morro de ~22 x 20 m com pedras soltas em volta.
+const CAVE_RADIUS := 19.0
 ## Pontos achados por varredura com as mesmas reservas dos enfeites do deserto
 ## (DesertRegion._decoration_clear, 22 m, longe de estrada e em chão plano).
 const SITES := [
@@ -40,6 +52,10 @@ const SITES := [
 		"note": "Marcas de giz contam dias. Alguém morou aqui por muito tempo."},
 	{"id": "cave_sun", "kind": "cave", "center": Vector2(-280, -810), "yaw": 0.2, "loot": "weapon", "weapon": "smg",
 		"note": "Uma caixa de munição militar, sem número de série."},
+	# A caverna do Vicente (20/10): fora do mapa e da torre até a décima carta; dentro, sob a lona,
+	# o Coyote 440 dos irmãos. "Ao sul do leito seco", como diz o risco na caverna do coiote.
+	{"id": "cave_brother", "kind": "cave", "center": Vector2(-1170, -1730), "yaw": 0.3, "loot": "car", "secret": true,
+		"note": "No chaveiro, uma foto gasta: dois meninos na mureta do canal. Atrás, a letra do Vicente: \"Ele ainda acelera do mesmo jeito. Cuida dele.\""},
 ]
 var session
 var sites: Dictionary = {}
@@ -56,7 +72,8 @@ static func reserved(point: Vector2, radius := 0.0) -> bool:
 	if preload("res://runtime/desert/roadside/RoadsideLayout.gd").reserved(point, radius): return true
 	if not enabled(): return false
 	for site in SITES:
-		if (site.center as Vector2).distance_to(point) < SITE_RADIUS + radius: return true
+		var reach := CAVE_RADIUS if str(site.kind) == "cave" else SITE_RADIUS
+		if (site.center as Vector2).distance_to(point) < reach + radius: return true
 	return false
 
 static func ground(point: Vector2) -> Vector3:
@@ -70,6 +87,7 @@ static func cave_reward(site: Dictionary) -> Dictionary:
 	if str(site.get("kind", "")) != "cave": return {}
 	var id := "desert_wilds_" + str(site.id)
 	if str(site.get("loot", "")) == "weapon": return {"id": id, "kind": "weapon", "item": str(site.weapon), "ammo": CAVE_AMMO}
+	if str(site.get("loot", "")) == "car": return {"id": id, "kind": "car"}
 	return {"id": id, "kind": "cash", "amount": int(site.amount)}
 
 static func cave_claimed(economy, site: Dictionary) -> bool:
@@ -100,6 +118,7 @@ func _outside() -> bool:
 	return is_instance_valid(session) and session.ready_for_play and session.state.region_id == "desert" and session.state.place_id.is_empty()
 
 func _process(delta: float) -> void:
+	_cave_roofs()
 	_clock += delta
 	if _clock < .3: return
 	_clock = 0.0
@@ -223,6 +242,9 @@ func _update_site(site: Dictionary, record: Dictionary, planar: Vector2) -> void
 					actor.engaged = record.engaged
 					if record.engaged: actor.alerted = true
 		"cave":
+			if str(site.get("loot", "")) == "car":
+				_update_brother(site, record, planar)
+				return
 			if record.get("claimed", false) or not record.has("loot_point"): return
 			var at: Vector3 = record.loot_point
 			if Vector2(at.x, at.z).distance_to(planar) > LOOT_DISTANCE:
@@ -255,69 +277,132 @@ func save_block_reason() -> String:
 
 # --- Caverna ---------------------------------------------------------------------------------
 
+## Morro da caverna some com o jogador dentro (a câmera de cima vê o salão em corte); todo quadro,
+## como os cômodos da Estrada do Sal, para a troca não atrasar ao passar pela boca.
+func _cave_roofs() -> void:
+	if sites.is_empty() or not is_instance_valid(session) or not session.ready_for_play: return
+	var player: Vector3 = session.world.player.global_position
+	for record in sites.values():
+		var roofs: Node3D = record.get("roofs")
+		if not is_instance_valid(roofs): continue
+		var local := (record.root as Node3D).to_local(player)
+		var inside := false
+		if local.y < CAVE.CEILING:
+			for rect: Rect2 in roofs.get_meta("walk_in", []):
+				if rect.grow(.4).has_point(Vector2(local.x, local.z)):
+					inside = true
+					break
+		if roofs.visible == inside: roofs.visible = not inside
+
 func _cave(root: Node3D, record: Dictionary, site: Dictionary) -> void:
-	# Morro de pedra com um salão de ~7 x 8 m por dentro; a boca fica na frente (+z). Pedras grandes
-	# usam a mesma malha facetada do chão do deserto (sem shader novo); a colisão é por caixa.
-	var stone: Mesh = COVER.meshes()[2]
-	var rng := RandomNumberGenerator.new()
-	rng.seed = absi(hash(site.id))
-	var ring := 14
-	for i in ring:
-		var angle := float(i) / float(ring) * TAU
-		# Deixa a boca aberta em torno de +z (ângulo PI/2 no círculo xz).
-		if absf(wrapf(angle - PI * .5, -PI, PI)) < .42: continue
-		var radius := 4.6 + rng.randf_range(-.3, .4)
-		var at := Vector3(cos(angle) * radius, 1.4, sin(angle) * radius)
-		var size := Vector3(rng.randf_range(2.6, 3.4), rng.randf_range(3.4, 4.2), rng.randf_range(2.2, 2.8))
-		_rock(root, stone, at, size, angle, rng)
-	# Teto e topo do morro: lajes por cima do salão, pedras soltas em cima para o contorno.
-	# A laje fica escondida dentro das pedras do topo; só a colisão e a sombra do salão contam.
-	G.box(root, "CaveCeiling", Vector3(0, 3.3, 0), Vector3(7.6, .6, 7.6), Color("5d5245"), true)
-	for i in 9:
-		var angle := float(i) / 9.0 * TAU + rng.randf_range(-.2, .2)
-		_rock(root, stone, Vector3(cos(angle) * 3.6, 3.7, sin(angle) * 3.6), Vector3(3.6, 2.4, 3.2), angle, rng)
-	for i in 4:
-		var angle := float(i) * 1.57 + .4
-		_rock(root, stone, Vector3(cos(angle) * 1.5, 4.3, sin(angle) * 1.5), Vector3(3.4, 2.2, 3.2), angle, rng)
-	_rock(root, stone, Vector3(0, 5.0, 0), Vector3(4.0, 2.4, 3.8), 0.0, rng)
-	# Ombreiras da boca, mais altas, para ler como entrada de longe.
-	for side in [-1.0, 1.0]: _rock(root, stone, Vector3(side * 1.9, 1.6, 4.6), Vector3(1.8, 3.8, 2.2), side, rng)
-	G.box(root, "CaveFloor", Vector3(0, .03, -.5), Vector3(7.6, .06, 7.6), Color("5d5245"))
-	# O achado no fundo: caixote, lampião apagado e ossos de animal.
-	var crate := G.box(root, "HiddenCrate", Vector3(0, .35, -2.6), Vector3(1.0, .7, .7), Color("5f4a33"), true)
-	G.box(crate, "CrateLid", Vector3(0, .38, 0), Vector3(1.05, .06, .75), Color("4e3c29"))
-	G.cylinder(root, "OldLantern", Vector3(.85, .2, -2.4), .1, .32, Color("3f3a33"))
-	for i in 3: G.box(root, "Bone", Vector3(-1.6 + float(i) * .3, .05, -1.4 + float(i) * .2), Vector3(.45, .06, .08), Color("cfc4a8")).rotation.y = float(i) * .9
-	record.loot_point = root.global_transform * Vector3(0, .1, -1.8)
+	# Morro de arenito com túnel, salão e salão dos fundos (CaveBuild, assado uma vez por caverna,
+	# sob a cortina pelo pré-aquecimento da beira de estrada). O morro vai num nó próprio que some
+	# com o jogador dentro; a fogueira tem a luz da beira de estrada (só à noite, no LightBudget).
+	var kind := "cave:" + str(site.id)
+	ART.instantiate(root, BUILD.baked(kind))
+	var roofs := Node3D.new()
+	roofs.name = "CaveMass"
+	root.add_child(roofs)
+	ART.instantiate(roofs, BUILD._baked[kind + ":roofs"])
+	roofs.set_meta("walk_in", CAVE.cavity(str(site.id)))
+	record.roofs = roofs
+	BUILD._lamp(root, CAVE.fire_point(str(site.id)) + Vector3(0, .4, 0), Color("ffb46a") if CAVE.garage(str(site.id)) else Color("ff9a4a"), 9.0, 2.2)
+	if CAVE.garage(str(site.id)) and not cave_claimed(session.state.economy, site):
+		# Lona por cima do carro, presa com corrente: some quando as dez cartas estão achadas.
+		var tarp := G.box(root, "VicenteTarp", CAVE.CAR_POINT + Vector3(0, .7, 0), Vector3(2.2, 1.4, 4.9), Color("4d5a3c"), true)
+		G.box(tarp, "TarpFold", Vector3(0, .72, 0), Vector3(1.7, .06, 4.2), Color("3f4a31"))
+		record.tarp = tarp
+	record.loot_point = root.global_transform * CAVE.loot_point(str(site.id))
 	record.claimed = cave_claimed(session.state.economy, site)
 
-func _rock(root: Node3D, mesh: Mesh, at: Vector3, size: Vector3, yaw: float, rng: RandomNumberGenerator) -> void:
-	var rock := MeshInstance3D.new()
-	rock.name = "CaveRock"
-	rock.mesh = mesh
-	rock.material_override = COVER.material()
-	rock.position = at
-	rock.rotation = Vector3(rng.randf_range(-.12, .12), yaw + rng.randf_range(-.3, .3), rng.randf_range(-.12, .12))
-	# A malha tem ~1,2 m de diâmetro e 0,9 m de altura.
-	rock.scale = Vector3(size.x / 1.2, size.y / .9, size.z / 1.05)
-	root.add_child(rock)
-	var body := StaticBody3D.new()
-	body.collision_layer = 1
-	body.collision_mask = 0
-	var shape := CollisionShape3D.new()
-	var box := BoxShape3D.new()
-	box.size = size * .82
-	shape.shape = box
-	body.add_child(shape)
-	body.position = at
-	body.rotation.y = rock.rotation.y
-	root.add_child(body)
+## Caverna do Vicente: sem as dez cartas, só a lona com cadeado (e um aviso por aproximação); com
+## elas, a lona sai e o Coyote fica ali parado. Entrar nele é o achado: vira carro do jogador (frota
+## do deserto, mesma via do Supra do Takeshi) com as peças que o Vicente deixou montadas.
+func _update_brother(site: Dictionary, record: Dictionary, planar: Vector2) -> void:
+	if record.get("claimed", false): return
+	var letters := LETTERS.complete(session.state.economy.snapshot().collectibles)
+	var root: Node3D = record.root
+	var spot: Vector3 = root.global_transform * CAVE.CAR_POINT
+	if not letters:
+		if Vector2(spot.x, spot.z).distance_to(planar) > 3.6:
+			record.notified = false
+			return
+		if record.get("notified", false): return
+		record.notified = true
+		session.show_message("Uma lona sobre algo do tamanho de um carro, presa com corrente e cadeado. Riscados na pedra, dez traços.")
+		return
+	var car: Variant = record.get("car")
+	if not is_instance_valid(car):
+		if is_instance_valid(record.get("tarp")): record.tarp.queue_free()
+		car = session.controller.spawn_vehicle(LETTERS.CAR_ARCHETYPE, spot + Vector3(0, .15, 0), root.rotation.y + CAVE.CAR_YAW)
+		if not is_instance_valid(car): return
+		car.paint_color = Color(LETTERS.CAR_PAINT)
+		car.set_meta("vicente_gift", true)
+		record.car = car
+		return
+	if not session.world.driving.occupied or session.world.driving.car != car: return
+	if not session.state.economy.grant_reward(LETTERS.CAR_RECEIPT, 0): return
+	car.vehicle_id = LETTERS.CAR_ID
+	var world: Dictionary = session.state.world_state
+	if not world.has("desert_fleet"): world.desert_fleet = {}
+	world.desert_fleet[LETTERS.CAR_ID] = FLEET_STATE.capture(car, session.state.region_id)
+	var garage: Dictionary = GARAGE_STATE.data(world)
+	garage.vehicles[LETTERS.CAR_ID] = {"archetype": LETTERS.CAR_ARCHETYPE, "parts": LETTERS.CAR_PARTS.duplicate(), "owned": LETTERS.CAR_PARTS.values(), "presets": {}, "vicente_gift": true}
+	world.desert_garage = garage
+	ADAPTER.attach(car, LETTERS.CAR_PARTS)
+	if session.desert != null and session.desert.has_method("_track_owned"): session.desert._track_owned(car)
+	record.claimed = true
+	REWARD_AUDIO.play(session, "collectible")
+	session.show_dialogue([{"speaker": "Coyote 440 do Vicente", "message": str(site.note)}])
+	session.save_game()
+
+## Caixa de munição das cavernas (a pé, perto da pilha de caixotes do acampamento).
+func nearest_action() -> Dictionary:
+	if sites.is_empty() or not is_instance_valid(session) or session.modal or session.world.driving.occupied: return {}
+	var player: Vector3 = session.world.player.global_position
+	for site in SITES:
+		if str(site.kind) != "cave" or CAVE.garage(str(site.id)) or not sites.has(site.id): continue
+		var record: Dictionary = sites[site.id]
+		var crate: Vector3 = (record.root as Node3D).global_transform * CAVE.ammo_point(str(site.id))
+		if Vector2(crate.x, crate.z).distance_to(Vector2(player.x, player.z)) <= AMMO_REACH and absf(player.y - crate.y) < 2.0:
+			return {"id": "desert_roadside", "target": "cave_ammo:" + str(site.id), "label": "Pegar munição da caixa", "provider": self}
+	return {}
+
+func perform(action: Dictionary) -> bool:
+	var target := str(action.get("target", ""))
+	if not target.begins_with("cave_ammo:") or nearest_action().get("target", "") != target: return false
+	return take_ammo(target.trim_prefix("cave_ammo:"))
+
+func take_ammo(id: String) -> bool:
+	var day: int = session.weather.moon_day()
+	var world: Dictionary = session.state.world_state
+	var state: Dictionary = world.get("desert_cave_ammo", {}).duplicate()
+	if int(state.get(id, -1)) == day:
+		session.show_message("A caixa está vazia. Alguém repõe de madrugada.")
+		return true
+	var economy = session.state.economy
+	var got: Array[String] = []
+	for weapon in AMMO_REFILL:
+		if not economy.snapshot().weapons.has(weapon): continue
+		if economy.add_ammo(weapon, int(AMMO_REFILL[weapon])): got.append("%s +%d" % [weapon, int(AMMO_REFILL[weapon])])
+	if got.is_empty():
+		session.show_message("Munição de vários calibres, mas nenhuma serve: você não tem arma de fogo ou já está no limite.")
+		return true
+	state[id] = day
+	world.desert_cave_ammo = state
+	REWARD_AUDIO.play(session, "pickup")
+	session.show_message(String(TranslationServer.translate("Munição da caixa: %s.")) % ", ".join(got))
+	session.save_game()
+	return true
 
 # --- Ciclo de vida --------------------------------------------------------------------------
 
 func _release(id: String) -> void:
 	var record: Dictionary = sites.get(id, {})
 	sites.erase(id)
+	# Coyote ainda não levado volta para debaixo da lona na próxima visita.
+	var car: Variant = record.get("car")
+	if is_instance_valid(car) and not record.get("claimed", false) and not (is_instance_valid(session) and session.world.driving.car == car): car.queue_free()
 	for actor in record.get("actors", []):
 		if is_instance_valid(actor):
 			actor.set_physics_process(false)

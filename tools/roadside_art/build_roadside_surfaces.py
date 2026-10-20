@@ -194,8 +194,26 @@ def clay_tile():
     return gray(albedo), normal_from_height(height, 3.0)
 
 
+def sandstone():
+    """Arenito das cavernas do deserto (20/10): manchas grandes de tom, grão e pintas, camadas
+    horizontais bem fracas e lascas escuras raras. A primeira versão tinha faixas fortes com
+    linha escura na borda e lia como veio de madeira (caixotes empilhados) na câmera do jogo."""
+    y = np.arange(SIZE)[:, None].astype(np.float32)
+    mottle = tile_noise(4, 4)
+    blotch = tile_noise(12, 3)
+    grain = tile_noise(140, 2)
+    speck = (tile_noise(200, 1) > .8).astype(np.float32)
+    warp = (tile_noise(3, 2) - .5) * .08
+    layers = np.sin(((y / SIZE) + warp) * np.pi * 2 * 5) * .5 + .5
+    chip = np.clip((tile_noise(18, 2) - .72) * 6, 0, 1)
+    albedo = .8 + (mottle - .5) * .3 + (blotch - .5) * .14 + (grain - .5) * .1 + layers * .05 - speck * .08 - chip * .22
+    height = mottle * .5 + blotch * .4 + grain * .25 - chip * .6 + layers * .1
+    return gray(albedo), normal_from_height(height, 4.0)
+
+
 SURFACES = {"plaster": plaster, "planks": planks, "crate": crate, "metal": metal,
-            "salt_crust": salt_crust, "brine": brine, "pool_tile": pool_tile, "gravel": gravel, "clay_tile": clay_tile}
+            "salt_crust": salt_crust, "brine": brine, "pool_tile": pool_tile, "gravel": gravel, "clay_tile": clay_tile,
+            "sandstone": sandstone}
 
 
 def write_import(texture, params):

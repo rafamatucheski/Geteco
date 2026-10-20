@@ -51,9 +51,14 @@ func _services() -> void:
 	_check(not extended.reload_weapon("pistol", 19), "Capacity beyond original customization refused")
 	_check(restored.restore_snapshot(_roundtrip(extended.snapshot())), "Extended magazine survives restore")
 	var collection := Economy.new()
+	var letters: Array = preload("res://data/catalogs/VicenteLetters.gd").IDS
 	for id in Economy.Collectibles.ENTRIES:
+		if id in letters: continue
 		_check(collection.collect(id), "Original collectible pays once")
 	_check(collection.balance == 1300, "Original 10 finds plus milestones total 1300")
+	# Cartas de Vicente (20/10/2026): R$ 50 cada, sem marco novo (os marcos são 3, 5 e 10 achados).
+	for id in letters: _check(collection.collect(id), "Vicente letter pays once")
+	_check(collection.balance == 1800, "Ten Vicente letters add R$ 500")
 	_check(not economy.purchase("outfit", "dante_ski", "ski").ok, "Ski outfit absent from original shop ORDER is not sold for free")
 	_check(economy.grant_outfit("dante_ski") and economy.equip_outfit("dante_ski"), "Original ski service can grant special outfit")
 	var pickup := Economy.new()

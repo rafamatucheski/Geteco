@@ -106,7 +106,7 @@ func refresh() -> void:
 		var limits:=_label(right,"Armas e munição\nAté 6 pilhas de 99 tiros",12); limits.modulate=STYLE.MUTED
 		_board(right,"trunk",snapshot,60)
 		if travel_bag:
-			var offer := _label(right,"Presente do Maciota pela vitória na Prova de rua. Retire sua mala aqui.",12)
+			var offer := _label(right,"Presente do Maciota (Prova de rua ou as dez cartas de Vicente). Retire sua mala aqui.",12)
 			offer.custom_minimum_size.x=240; offer.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 			var take := _button(right,"Trocar mochila por mala" if kind=="backpack" else "Retirar mala do Maciota",func(): adapter.claim_travel_bag(),not access)
 			take.name="ClaimTravelBag"

@@ -5,6 +5,8 @@ const RACE := preload("res://activities/desert_drag/DesertDragProgress.gd")
 const INSTRUMENTS := preload("res://activities/desert_drag/DragInstrumentStyles.gd")
 const SECRETS := preload("res://runtime/desert/DesertSecretState.gd")
 const BANDITS := preload("res://runtime/desert/DesertBanditEncounter.gd")
+const LETTERS := preload("res://data/catalogs/VicenteLetters.gd")
+const RECEIPTS := preload("res://systems/economy/RecurringReceipts.gd")
 static func valid(world: Dictionary, economy: Dictionary) -> bool:
 	if not preload("res://activities/desert_drag/DragRivalChallengeProgress.gd").validate_world(world,economy): return false
 	if not preload("res://activities/desert_drag/DragNightProgress.gd").validate_world(world,economy): return false
@@ -25,15 +27,18 @@ static func valid(world: Dictionary, economy: Dictionary) -> bool:
 	if world.has("desert_garage") and not GARAGE.valid(world.desert_garage,economy): return false
 	if world.has("desert_fleet"):
 		# Catalogue editions and the one honor prize share this persistent fleet.
-		if not world.desert_fleet is Dictionary or world.desert_fleet.size()>preload("res://gameplay/desert_cars/DesertCarCatalog.gd").IDS.size()+1: return false
+		if not world.desert_fleet is Dictionary or world.desert_fleet.size()>preload("res://gameplay/desert_cars/DesertCarCatalog.gd").IDS.size()+2: return false
 		var bought: Dictionary = GARAGE.data(world).purchased
 		for id in world.desert_fleet:
 			var car: Variant = world.desert_fleet[id]
 			if not car is Dictionary or car.get("vehicle_id","")!=id: return false
 			if id == "takeshi_supra":
 				if world.get("takeshi",{}).get("reward","") != "car" or car.get("archetype","") != "supra_a80": return false
+			elif id == LETTERS.CAR_ID:
+				if car.get("archetype","") != LETTERS.CAR_ARCHETYPE or RECEIPTS.lookup(economy,"reward",LETTERS.CAR_RECEIPT).is_empty(): return false
 			elif bought.get(car.get("archetype",""),"")!=id: return false
 			if not preload("res://runtime/FleetState.gd").validate(car): return false
+	if world.has("desert_cave_ammo") and not preload("res://runtime/desert/wilds/CaveBuild.gd").valid_ammo_state(world.desert_cave_ammo): return false
 	if world.has("desert_drag"):
 		if "digo" in world.desert_drag.get("completed_rivals",[]) and not world.get("digo",{}).get("desert_raced",false): return false
 	return true
