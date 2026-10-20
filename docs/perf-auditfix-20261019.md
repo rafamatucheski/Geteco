@@ -39,8 +39,18 @@ Aos 148 s, já jogável: 881 ms entre o fim do `_process` e o início do desenho
 sem span e com 1,5 ms da sonda adiada. Não se repetiu nas 5 rodadas seguintes do porto. Causa não
 identificada.
 
+## Occlusion culling + LOD procedural (2 rodadas intercaladas)
+
+| rota | desligado (rodada 1 / 2) | ligado (rodada 1 / 2) |
+|---|---|---|
+| oeste | 5,28 / 5,99 (média 5,64) | 5,22 / 7,16 (média 6,19) |
+| serra | 3,01 / 4,31 (média 3,66) | 3,74 / 4,30 (média 4,02) |
+
+Draw calls caem 2-7 %. Não ajudam com a câmera alta: ficam desligados. A variação entre rodadas da
+mesma variante (oeste 5,28 → 5,99 ms) mostra que diferenças abaixo de ~10 % precisam de mais rodadas.
+
 ## Não medido
 
-Occlusion culling e LOD procedural ligados (`GETECO_OCCLUSION`, `GETECO_PROC_LOD`); D3D12; noite e chuva
+D3D12; noite e chuva
 (faróis e túnel); segunda rodada de todas as rotas; o pico de 220–250 ms da serra/travessia não apareceu
 nas rodadas desta noite (ausência numa rodada não prova que sumiu).
