@@ -62,14 +62,14 @@ static func validate_wallet(world: Dictionary, wallet: Dictionary) -> bool:
 	var receipt: Dictionary = preload("res://systems/economy/RecurringReceipts.gd").lookup(wallet, "reward", ENVELOPE_RECEIPT)
 	if not receipt.is_empty() and int(receipt.get("amount", -1)) != ENVELOPE_AMOUNT: return false
 	var met: bool = bool(world.get("desert_story", {}).get("met_vicente", false)) if world.get("desert_story") is Dictionary else false
-	if not world.has(KEY): return receipt.is_empty() and validate_track(world)
+	if not world.has(KEY): return receipt.is_empty() and validate_track(world) and validate_chain(world, wallet)
 	if not valid(world[KEY]): return false
 	var done: bool = world[KEY].stage == "done"
 	if done != not receipt.is_empty(): return false
 	if done and not met: return false
 	if met and not done: return false
 	if world[KEY].stage != "" and not bool(world.get("desert_story", {}).get("arrived", false)): return false
-	return validate_track(world)
+	return validate_track(world) and validate_chain(world, wallet)
 
 # --- A2-02 "Respeita a pista" -----------------------------------------------------------------------
 
@@ -104,4 +104,73 @@ static func validate_track(world: Dictionary) -> bool:
 	if not value.get("stage") is String or value.stage not in TRACK_STAGES: return false
 	if value.stage != "" and not complete(world): return false
 	if value.stage in ["grandstand", "done"] and not DIGO.workshop_unlocked(world): return false
+	return true
+
+# --- A2-03 "Peso morto" e A2-04 "A ordem alterada" ---------------------------------------------------
+# Missões em cadeia: cada uma tem a própria chave de etapas, começa quando a anterior acaba e, na
+# conclusão, marca a flag antiga do esqueleto de DesertStoryState que ela substitui. Save sem a chave e
+# com a flag já marcada passou por ali pelo esqueleto: conta como feita, sem a recompensa nova.
+## Valores gravados em recibo: NUNCA mudar (o save valida contra eles).
+const CHAIN := {
+	"cargo": {"key": "vicente_act2_cargo", "stages": ["", "crate", "weigh", "raul", "done"], "flag": "cargo_found",
+		"receipt": "desert_act2_cargo_freight", "amount": 900},
+	"order": {"key": "vicente_act2_order", "stages": ["", "night", "call", "done"], "flag": "bank_proof",
+		"receipt": "", "amount": 0},
+}
+
+## A missão anterior de cada uma da cadeia.
+static func chain_ready(world: Dictionary, id: String) -> bool:
+	match id:
+		"cargo": return track_complete(world)
+		"order": return chain_complete(world, "cargo")
+	return false
+
+static func chain_stage(world: Dictionary, id: String) -> String:
+	var spec: Dictionary = CHAIN[id]
+	if not world.has(spec.key):
+		return "done" if bool(STORY.data(world).get(spec.flag, false)) else ""
+	var value: Variant = world[spec.key]
+	return str(value.get("stage", "")) if value is Dictionary else ""
+
+static func chain_complete(world: Dictionary, id: String) -> bool:
+	return chain_stage(world, id) == "done"
+
+## Uma etapa por vez, só com a missão anterior concluída. "done" quem chama faz junto com a recompensa
+## e a flag antiga (chain_finish).
+static func chain_advance(world: Dictionary, id: String, to_stage: String) -> bool:
+	var spec: Dictionary = CHAIN[id]
+	var stages: Array = spec.stages
+	if to_stage == "done" or not chain_ready(world, id): return false
+	if stages.find(to_stage) != stages.find(chain_stage(world, id)) + 1: return false
+	world[spec.key] = {"version": 1, "stage": to_stage}
+	return true
+
+## Conclusão: recompensa (se houver), etapa "done" e a flag antiga, tudo ou nada.
+static func chain_finish(world: Dictionary, economy, id: String) -> Dictionary:
+	var spec: Dictionary = CHAIN[id]
+	var stages: Array = spec.stages
+	if chain_stage(world, id) != stages[stages.size() - 2] or not chain_ready(world, id): return {"ok": false, "reason": "stage"}
+	if int(spec.amount) > 0:
+		var paid: Dictionary = economy.grant_world_reward({"id": str(spec.receipt), "kind": "cash", "amount": int(spec.amount)})
+		if not paid.ok: return {"ok": false, "reason": str(paid.get("reason", "wallet_full"))}
+	world[spec.key] = {"version": 1, "stage": "done"}
+	STORY.mark(world, str(spec.flag))
+	return {"ok": true}
+
+static func validate_chain(world: Dictionary, wallet: Dictionary) -> bool:
+	for id in CHAIN:
+		var spec: Dictionary = CHAIN[id]
+		var receipt: Dictionary = {} if str(spec.receipt).is_empty() else preload("res://systems/economy/RecurringReceipts.gd").lookup(wallet, "reward", str(spec.receipt))
+		if not receipt.is_empty() and int(receipt.get("amount", -1)) != int(spec.amount): return false
+		var flag := bool(STORY.data(world).get(spec.flag, false))
+		if not world.has(spec.key):
+			if not receipt.is_empty(): return false
+			continue
+		var value: Variant = world[spec.key]
+		if not value is Dictionary or value.get("version") != 1 or value.size() != 2: return false
+		if not value.get("stage") is String or value.stage not in spec.stages: return false
+		var done: bool = value.stage == "done"
+		if done != flag: return false
+		if int(spec.amount) > 0 and done == receipt.is_empty(): return false
+		if value.stage != "" and not chain_ready(world, id): return false
 	return true

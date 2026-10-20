@@ -193,6 +193,11 @@ func nearest_action() -> Dictionary:
 		var extra_action: Dictionary=extras.nearest_action()
 		if not extra_action.is_empty(): return extra_action
 	if session.state.region_id!="desert": return {}
+	# Etapa de missão do ato 2 num ponto que já tem outra ação (a Fiscal Rosa da Balança, o orelhão do
+	# Horizonte): a missão vem antes enquanto a etapa estiver aberta.
+	if is_instance_valid(story) and is_instance_valid(story.reunion):
+		var mission_action: Dictionary=story.reunion.nearest_action()
+		if not mission_action.is_empty(): return mission_action
 	if is_instance_valid(canyon):
 		var canyon_action: Dictionary=canyon.nearest_action()
 		if not canyon_action.is_empty(): return canyon_action
