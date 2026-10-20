@@ -9,7 +9,9 @@
       "status": "implemented",
       "area": "qualidade",
       "description": "Manual lido por fatias (menos getting_started, engine_details/development, engine_api e community) e referência de classes processada por script (notas, avisos e depreciações das 310 classes usadas). Veredito: à frente da doc em desempenho, streaming, pipelines e diagnóstico; atrás em tema global da UI, tradução no formato padrão, mixagem de áudio, ícone/licenças e LOD de malha procedural. Encontrou que o relatório de 18-19/10 não media o estado atual (renderizador trocado sem commit, bancada lendo o settings.cfg do jogador, viewport 3440x1440 e não 1280x720).",
-      "sources": ["docs/auditoria-godot-docs-20261019.md"],
+      "sources": [
+        "docs/auditoria-godot-docs-20261019.md"
+      ],
       "next": "Itens 'atrás' da §4 que não mexem em FPS: Theme .tres com variações, bus de voz e compressor, tela de licenças e ícone antes de distribuir."
     },
     {
@@ -18,7 +20,10 @@
       "status": "implemented",
       "area": "performance",
       "description": "Forward+ commitado (d8969407). Na mesma build, com as correções desligadas, a média do Forward+ iguala ou supera a do Mobile (oeste 5,14 contra 5,47 ms; porto 4,02 contra 4,21; sobrados 3,61 contra 3,55; serra 3,04 contra 3,42). Libera SSAO, névoa volumétrica e FSR.",
-      "sources": ["project.godot", "docs/perf-auditfix-20261019.md"],
+      "sources": [
+        "project.godot",
+        "docs/perf-auditfix-20261019.md"
+      ],
       "next": "Medir noite e chuva em release; revalidar sync_pipeline_msaa no Forward+ (foi escrito para o Mobile)."
     },
     {
@@ -27,7 +32,13 @@
       "status": "implemented",
       "area": "ferramentas",
       "description": "perf_cross_bench/phase2 usam --isolated-save-root com tools/bench/settings.cfg; ENGINE_EXTRA para argumentos do motor; o JSON grava renderizador, driver e opções aplicadas. A sonda de picos monta o JSON fatiado nos quadros seguintes (antes o quadro N+1 custava 11-21 ms). StallLog não libera mais o próprio autoload. A fila de Godot confere o pid do Windows (pid do MSYS reaproveitado travou a fila por 2 h).",
-      "sources": ["tools/perf_cross_bench.sh", "tools/bench/settings.cfg", "runtime/SessionSystemProfile.gd", "runtime/StallLog.gd", "tools/run_godot_locked.sh"],
+      "sources": [
+        "tools/perf_cross_bench.sh",
+        "tools/bench/settings.cfg",
+        "runtime/SessionSystemProfile.gd",
+        "runtime/StallLog.gd",
+        "tools/run_godot_locked.sh"
+      ],
       "next": "Rodar a bancada completa (2 rodadas, todas as rotas) numa máquina parada: a variação entre momentos chegou a ~20 % na mesma variante."
     },
     {
@@ -36,7 +47,12 @@
       "status": "implemented",
       "area": "performance",
       "description": "create_trimesh_shape/get_faces liam a malha de volta da GPU no streaming (0,4 ms parada, ~20 ms ocupada). CollisionFaces monta a colisão das arrays da CPU; a catraca check_frame_rules.py pega essas chamadas. Postes da serra em células de 64 m.",
-      "sources": ["world/chunk_bake/CollisionFaces.gd", "world/regions/MountainTerrain3D.gd", "tools/check_frame_rules.py", "world/mountain_detail/MountainRoadside3D.gd"],
+      "sources": [
+        "world/chunk_bake/CollisionFaces.gd",
+        "world/regions/MountainTerrain3D.gd",
+        "tools/check_frame_rules.py",
+        "world/mountain_detail/MountainRoadside3D.gd"
+      ],
       "next": "~40 append_from em modelos de carro e fachadas ficaram no baseline da catraca (risco visual)."
     },
     {
@@ -45,7 +61,14 @@
       "status": "implemented",
       "area": "performance",
       "description": "Atrás de interruptores GETECO_* (ligados). Desligados um por vez no oeste e no porto, nenhum muda a média além de ±3 %. Sem o pré-aquecimento de luz com sombra o porto teve 2 quadros de 48 ms (uma rodada).",
-      "sources": ["world/regions/WorldConnection3D.gd", "runtime/LocalLightShadowPrewarm.gd", "gameplay/VehicleEquipment.gd", "runtime/ProductionWorld.gd", "world/regions/natural_ground.gdshader", "runtime/RenderPolicy.gd"],
+      "sources": [
+        "world/regions/WorldConnection3D.gd",
+        "runtime/LocalLightShadowPrewarm.gd",
+        "gameplay/VehicleEquipment.gd",
+        "runtime/ProductionWorld.gd",
+        "world/regions/natural_ground.gdshader",
+        "runtime/RenderPolicy.gd"
+      ],
       "next": "Conferir em captura as cascatas novas do sol; medir à noite (faróis, túnel)."
     },
     {
@@ -54,7 +77,11 @@
       "status": "implemented",
       "area": "audio",
       "description": "EngineBankCache não espera mais o WAV no quadro; MixamoDeath pré-carregada; reverb do túnel secreto no bus certo; export Windows sem artifacts/ nem Terrain3D (PCK de 1,17 GB); Image.create → create_empty; curvas com max_value (regra da 4.4) — fumaça e vapor voltam ao tamanho desenhado.",
-      "sources": ["audio/EngineBankCache.gd", "gameplay/MixamoDeath.gd", "export_presets.cfg"],
+      "sources": [
+        "audio/EngineBankCache.gd",
+        "gameplay/MixamoDeath.gd",
+        "export_presets.cfg"
+      ],
       "next": "Olhar no jogo a fumaça/vapor maiores e ouvir o reverb do túnel."
     },
     {
@@ -63,17 +90,23 @@
       "status": "partial",
       "area": "performance",
       "description": "Implementados atrás de GETECO_OCCLUSION e GETECO_PROC_LOD (desligados). A/B de 2 rodadas: oeste 5,64 ms desligado contra 6,19 ligado; serra 3,66 contra 4,02; draw calls caem só 2-7 %. Com a câmera alta há pouco escondido atrás de prédio e o custo de CPU come o ganho.",
-      "sources": ["world/chunk_bake/ChunkOccluders.gd", "world/chunk_bake/ChunkMeshLod.gd"],
+      "sources": [
+        "world/chunk_bake/ChunkOccluders.gd",
+        "world/chunk_bake/ChunkMeshLod.gd"
+      ],
       "next": "Manter desligado; reavaliar só para interiores/túnel em perspectiva ou para o Android."
     },
     {
       "id": "picos-abertos-20261019",
-      "title": "Picos ainda sem causa: 220–250 ms (serra/travessia) e 907 ms (porto)",
+      "title": "Picos ainda sem causa: 220–250 ms (serra/travessia), 907 ms (porto) e 1,1 s na chuva leve",
       "status": "issue",
       "area": "performance",
-      "description": "O pico de 220-250 ms não apareceu nas rodadas de 19/10 (não prova que sumiu). Um quadro de 907 ms no porto aos 148 s, 881 ms entre o fim do _process e o desenho, sem span; não se repetiu em 5 rodadas.",
-      "sources": ["docs/perf-auditfix-20261019.md", "docs/perf-serra-picos-20261017.md"],
-      "next": "A/B D3D12 × Vulkan por override.cfg com cache aquecido; gravação do cache de pipelines com --verbose."
+      "description": "O pico de 220-250 ms não apareceu nas rodadas de 19/10 (não prova que sumiu). Um quadro de 907 ms no porto aos 148 s, 881 ms entre o fim do _process e o desenho, sem span; não se repetiu em 5 rodadas. Em 20/10, chuva leve no oeste: quadro de 1.105 ms aos 170 s com 1.072 ms dentro do desenho (compilação de pipeline ou driver, hipótese). A chuva em si custa ~0,6 ms (+9 %); reflexos a 20 Hz não ajudam.",
+      "sources": [
+        "docs/perf-auditfix-20261019.md",
+        "docs/perf-serra-picos-20261017.md"
+      ],
+      "next": "Repetir chuva leve com HARBOR_STALL_LOG=1 (pipelines_delta) e pré-aquecer o efeito que aparecer; D3D12 já descartado (~20 % mais lento, mesmo pico)."
     }
   ],
   "remove": []

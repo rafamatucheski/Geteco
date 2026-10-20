@@ -66,6 +66,21 @@ as correções empatam com o antigo (ruído). A chuva forte custa ~1,6 ms no oes
 medido com média abaixo de 144 fps (139): é o próximo alvo. O pico de 220–250 ms não apareceu em nenhuma
 rodada de 19/10.
 
+## Chuva no oeste por peça (20/10, 4 corridas em sequência)
+
+| cenário | média ms | GPU p50 | draws | pior |
+|---|---|---|---|---|
+| dia | 6,46 | 1,51 | 943 | 16,4 |
+| chuva forte | 7,02 | 1,97 | 1031 | 16,9 |
+| chuva leve | 7,14 | 1,67 | 1012 | **1105,1** |
+| chuva forte, `GETECO_REFLECTION_HZ=20` | 7,47 | 1,89 | 1028 | 17,7 |
+
+A chuva custa ~0,6 ms (+9 %), não 1,6: a comparação anterior era entre momentos diferentes. Reflexos
+planares a 20 Hz não ajudam. **Na chuva leve, aos 170 s, um quadro de 1.105 ms com 1.072 ms dentro do
+desenho** (`render_bracket_ms`): assinatura de compilação de pipeline ou trava do driver, num efeito que
+aparece tarde e não está pré-aquecido (hipótese). Próximo passo: repetir com `HARBOR_STALL_LOG=1` para ter
+`pipelines_delta` no quadro.
+
 ## Não medido
 
 segunda rodada de todas as rotas; o pico de 220–250 ms da serra/travessia não apareceu
