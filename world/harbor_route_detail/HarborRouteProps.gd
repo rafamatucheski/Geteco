@@ -812,8 +812,11 @@ static func create_crosswalk_stripes(width: float = 3.6, length: float = 7.5, st
 # Variantes feitas em tools/blender/build_harbor_route_props.py. "0" volta às procedurais
 # no mesmo export, para o A/B; medida, colisão e nomes das partes que acendem são os
 # mesmos, então o resto do jogo não sabe qual das duas está na rua.
-static var blender_props_enabled := OS.get_environment("GETECO_BLENDER_PROPS") != "0"
+# GETECO_BLENDER_PROPS=0 desliga as duas ondas (cidade e porto); GETECO_BLENDER_HARBOR_PROPS=0
+# só esta, para medir o porto sem misturar com as peças do CityPropKit.
+static var blender_props_enabled := OS.get_environment("GETECO_BLENDER_PROPS") != "0" and OS.get_environment("GETECO_BLENDER_HARBOR_PROPS") != "0"
 const MODELED_SCENE := preload("res://assets/city_props/harbor_route_props.glb")
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 ## Separa variante e material no nome do nó do .glb: "TrashBin_mat_cast_iron_dark".
 const MODELED_MATERIAL_TAG := "_mat_"
 ## Nome da parte que acende em cada poste: o CityChunkDressing acha a luminária por ele
@@ -837,11 +840,13 @@ static func _add_modeled(root: Node3D, variant: String, yaw := 0.0) -> bool:
 	if not blender_props_enabled or variant.is_empty(): return false
 	if _modeled.is_empty():
 		# Cena pequena e pré-carregada; instanciada uma vez só para tirar as malhas.
+		var began: int = STALL_WORK.begin()
 		var scene := MODELED_SCENE.instantiate()
 		for node: MeshInstance3D in scene.find_children("*", "MeshInstance3D", true, false):
 			var parts := String(node.name).split(MODELED_MATERIAL_TAG)
 			if parts.size() == 2: _modeled.get_or_add(parts[0], []).append({"material": parts[1], "mesh": node.mesh, "position": node.position})
 		scene.free()
+		STALL_WORK.finish("harbor_route_props.modeled_scene", began, {"variants": _modeled.size()})
 	if not _modeled.has(variant): return false
 	for part: Dictionary in _modeled[variant]:
 		var visual := MeshInstance3D.new()
