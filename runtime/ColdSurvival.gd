@@ -51,7 +51,7 @@ func sample_context() -> Dictionary:
 	var sheltered: bool = not session.state.place_id.is_empty() or SOURCES.sheltered(point) or world.player.get_meta("mountain_shelter",false)
 	var heat := SOURCES.nearest(point) if not sheltered else {}
 	var outfit: String = session.state.economy.outfit
-	if session.mountain_progression != null and session.mountain_progression.data.rental: outfit = "dante_ski"
+	if session.mountain_progression != null and session.mountain_progression.data.rental: outfit = session.mountain_progression.suit_outfit()
 	return {"sheltered":sheltered,"vehicle":driving,"heat":not heat.is_empty(),"heat_id":heat.get("id",""),"protection":THERMAL.PROTECTION.get(outfit,0.0),"intensity":THERMAL.weather_intensity(model.weather_clock)}
 func snapshot() -> Dictionary: return model.snapshot()
 func weather_sample() -> Dictionary: return THERMAL.weather_sample(model.weather_clock)

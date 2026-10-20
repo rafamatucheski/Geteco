@@ -4,6 +4,9 @@ extends SceneTree
 ## Uso: "$GODOT" --path . --script res://tools/capture_catalog_bodies.gd -- --out=res://evidence/npc-meshy/catalog
 const CATALOG := preload("res://assets/civilians/CivilianBodyCatalog.gd")
 const CIVILIAN := preload("res://assets/CivilianModel.gd")
+const SKIERS := preload("res://assets/civilians/SkierBodyCatalog.gd")
+## --catalog=skiers: esquiadores do Cume Branco (20/10/2026) em vez dos pedestres.
+var catalog_name := "pedestres"
 var output_dir := "res://evidence/npc-meshy/catalog"
 var rig: Node3D
 var camera: Camera3D
@@ -13,6 +16,7 @@ var speed := 0.0
 func _initialize() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--out="): output_dir = arg.substr(6)
+		if arg.begins_with("--catalog="): catalog_name = arg.substr(10)
 	run.call_deferred()
 
 func _process(delta: float) -> bool:
@@ -54,14 +58,15 @@ func run() -> void:
 	stage.add_child(ground)
 	rig = Node3D.new()
 	stage.add_child(rig)
-	var entries := CATALOG.available()
+	var entries := SKIERS.available() if catalog_name == "skiers" else CATALOG.available()
+	var folder: String = SKIERS.FOLDER if catalog_name == "skiers" else CATALOG.FOLDER
 	print("catálogo: ", entries.size(), " entradas")
 	var count := entries.size()
 	for i in count:
 		var model := CIVILIAN.new()
 		model.appearance_locked = true
 		model.appearance_variant = 100 + i
-		model.body_source = CATALOG.FOLDER + String(entries[i].file)
+		model.body_source = folder + String(entries[i].file)
 		model.position = Vector3((i - (count - 1) * 0.5) * 1.15, 0, 0)
 		rig.add_child(model)
 		models.append(model)

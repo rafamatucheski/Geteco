@@ -8,6 +8,8 @@ const COURSES := {
 	"ski_slalom_pinhal":{"name":"Slalom do Pinhal","start":Vector2(7000,-3050),"points":[Vector2(7160,-3370),Vector2(6890,-3680),Vector2(7240,-4010),Vector2(6900,-4370),Vector2(7100,-4690)],"reward":480,"bonus":220,"clues":0},
 	"ski_pista_da_sombra":{"name":"Pista da Sombra","start":Vector2(7380,-3050),"points":[Vector2(7580,-3400),Vector2(7330,-3740),Vector2(7700,-4120),Vector2(7420,-4510),Vector2(7600,-4780)],"reward":900,"bonus":400,"clues":3}}
 const CLUES := ["mountain_expedition_pack","mountain_expedition_journal","mountain_expedition_camera"]
+## Trajes de locação (20/10/2026): o jogador escolhe no balcão; o mesmo preço para todos.
+const SUITS := {"dante_ski":"Vermelho Cume Branco","dante_ski_retro":"Retrô 86","dante_ski_neon":"Noite Neon","dante_ski_patrol":"Patrulha"}
 var session
 var data := {"version":1,"rental":false,"equipment":false,"rental_serial":0,"best":{},"shadow_announced":false}
 var skiing := false
@@ -23,6 +25,7 @@ var status: Label
 var _shadow_clock := 0.0
 var starts: Dictionary = {}
 var course_visuals: Node3D
+var skiers: Node3D
 var lift: Node
 var _hud_clock := 0.0
 var _gate_target := Vector3(INF, INF, INF)
@@ -41,6 +44,10 @@ func configure(owner_session) -> void:
 	course_visuals = preload("res://activities/MountainSkiCourseVisuals.gd").new()
 	course_visuals.configure(self)
 	session.world.add_child(course_visuals)
+	# Esquiadores de fundo na pista e no teleférico (20/10/2026).
+	skiers = preload("res://activities/mountain_ski/MountainSkiers.gd").new()
+	skiers.configure(self)
+	session.world.add_child(skiers)
 	status = Label.new()
 	status.position = Vector2(24,156)
 	status.add_theme_font_size_override("font_size",20)
@@ -82,20 +89,34 @@ func show_services() -> void:
 			session._button("Retirar skis e bastões",func():
 				if not _at_counter(): session.close_menu(); return
 				data.equipment=true; session.close_menu(); _commit())
+		# Trocar de traje no balcão não cobra de novo: a locação é do equipamento.
+		for suit in SUITS:
+			if suit == suit_outfit(): continue
+			session._button("Trocar para o traje %s" % SUITS[suit],func():
+				if not _at_counter() or not data.rental: session.close_menu(); return
+				data.suit=suit; session.apply_outfit(); session.close_menu(); _commit())
 	else:
-		session._button("Alugar roupa, skis e bastões · R$ 250",func():
-			if not _at_counter() or data.rental: session.close_menu(); return
-			session.close_menu()
-			if not _open(): session.show_message("Locação: 08:00 às 18:00."); return
-			var serial: int = int(data.rental_serial)+1
-			if not session.state.economy.spend(250,"ski_rental:%d"%serial): session.show_message("Saldo insuficiente."); return
-			data.rental_serial=serial; data.rental=true; data.equipment=true
-			session.apply_outfit(); _commit())
+		for suit in SUITS:
+			session._button("Alugar traje %s, skis e bastões · R$ 250" % SUITS[suit],func():
+				if not _at_counter() or data.rental: session.close_menu(); return
+				session.close_menu()
+				if not _open(): session.show_message("Locação: 08:00 às 18:00."); return
+				var serial: int = int(data.rental_serial)+1
+				if not session.state.economy.spend(250,"ski_rental:%d"%serial): session.show_message("Saldo insuficiente."); return
+				data.rental_serial=serial; data.rental=true; data.equipment=true; data.suit=suit
+				session.apply_outfit(); _commit())
 	session._button("Fechar",session.close_menu)
 	for child in session.column.get_children():
 		if child is Button:
 			child.grab_focus.call_deferred()
 			break
+
+## Traje que o Dante veste com o equipamento alugado ("" sem locação). Saves antigos, sem a
+## escolha, ficam com o vermelho de sempre.
+func suit_outfit() -> String:
+	if not data.rental: return ""
+	var suit := str(data.get("suit","dante_ski"))
+	return suit if SUITS.has(suit) else "dante_ski"
 
 func _at_counter() -> bool:
 	if session.state.region_id!="mountain" or session.state.place_id!="ski_lodge" or session.world.gameplay.health<=0 or session.controller.save_invalid or session.world.driving.occupied: return false
@@ -297,7 +318,7 @@ func _update_gate() -> void:
 func _exit_tree() -> void:
 	for node in starts.values():
 		if is_instance_valid(node): node.queue_free()
-	for node in [status, gate, equipment_visual, course_visuals, shadow]:
+	for node in [status, gate, equipment_visual, course_visuals, shadow, skiers]:
 		if is_instance_valid(node): node.queue_free()
 
 func on_collectible() -> String:
@@ -353,6 +374,7 @@ func restore_snapshot(saved: Dictionary) -> bool:
 static func validate_snapshot(saved: Dictionary) -> bool:
 	if saved.get("version")!=1 or not saved.get("rental") is bool or not saved.get("equipment") is bool or not saved.get("shadow_announced") is bool: return false
 	if saved.equipment and not saved.rental: return false
+	if saved.has("suit") and not SUITS.has(saved.suit): return false
 	var serial: Variant = saved.get("rental_serial")
 	if typeof(serial) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(serial)) or float(serial)<0 or float(serial)>1000000 or float(serial)!=floorf(float(serial)): return false
 	if not saved.get("best") is Dictionary: return false

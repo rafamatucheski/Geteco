@@ -1,6 +1,6 @@
 extends RefCounted
 ## Numerical rules from V1 ColdSurvivalController; no scene or player dependencies.
-const PROTECTION := {"dante_ski":.9,"dante_arctic":.8,"dante_trench":.6,"dante_lumberjack":.35,"dante_classic":.15,"dante_suit":.1,"dante_cowboy":.1,"dante_madmax":.1,"dante_ghillie":.25}
+const PROTECTION := {"dante_ski":.9,"dante_ski_retro":.9,"dante_ski_neon":.9,"dante_ski_patrol":.9,"dante_arctic":.8,"dante_trench":.6,"dante_lumberjack":.35,"dante_classic":.15,"dante_suit":.1,"dante_cowboy":.1,"dante_madmax":.1,"dante_ghillie":.25}
 var temperature := 100.0
 var exposure := 0.0
 var damage_fraction := 0.0

@@ -2416,7 +2416,7 @@ func _transaction() -> String:
 func apply_outfit() -> void:
 	# Palette integration is applied by the original Dante outfit shader adapter.
 	var outfit: String = state.economy.outfit
-	if mountain_progression != null and mountain_progression.data.rental: outfit = "dante_ski"
+	if mountain_progression != null and mountain_progression.data.rental: outfit = mountain_progression.suit_outfit()
 	if world.player.has_method("set_outfit"): world.player.set_outfit(outfit)
 	preload("res://activities/amusement_park/AmusementParkCosmetics.gd").apply(world.player,state.world_state)
 

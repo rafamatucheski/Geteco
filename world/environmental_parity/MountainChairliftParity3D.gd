@@ -71,7 +71,9 @@ func _build() -> void:
 
 	for index in SOURCE_CHAIRS.size():
 		var config: Dictionary = SOURCE_CHAIRS[index]
-		var chair := _build_chair(index, bool(config.rider), config.color)
+		# Passageiros de caixa da V1 saíram (20/10/2026): os esquiadores do MountainSkiers sobem o
+		# teleférico sentados numa cadeira própria, com corpo de verdade.
+		var chair := _build_chair(index, false, config.color)
 		var state := {
 			"node": chair,
 			"progress": float(config.progress),

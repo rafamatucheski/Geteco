@@ -49,6 +49,26 @@ const OUTFITS := {
 		"regions": {JACKET: [Color("c84b43"), 0.2], SHIRT: [Color("17242d"), 0.3], PANTS: [Color("182b3b"), 0.25], BOOTS: [Color("12191f"), 0.4]},
 		"zones": {HAND: [Color("151b20"), 1.0, [SKIN, JACKET]]},
 	},
+	# Trajes de locação do Cume Branco (20/10/2026): escolhidos no balcão do Summit, só valem
+	# enquanto o equipamento está alugado (MountainProgression.SUITS); não entram na loja.
+	"dante_ski_retro": {
+		# Macacão inteiro dos anos 80: jaqueta e calça no mesmo verde-água, gola e punhos rosa.
+		"regions": {JACKET: [Color("2a9d8f"), 0.12], SHIRT: [Color("e76f9a"), 0.2], PANTS: [Color("2a9d8f"), 0.12], BELT: [Color("e76f9a"), 0.4], BOOTS: [Color("e8e6e1"), 0.35]},
+		"zones": {HAND: [Color("e76f9a"), 1.0, [SKIN, JACKET]], FOREARM: [Color("e76f9a"), .55, [JACKET]]},
+		"accessories": [["beanie", Color("e76f9a")]],
+	},
+	"dante_ski_neon": {
+		# Preto fosco com mangas verde-neon, de quem desce de noite com a pista iluminada.
+		"regions": {JACKET: [Color("15191d"), 0.1], SHIRT: [Color("9be22d"), 0.2], PANTS: [Color("1d2329"), 0.15], BOOTS: [Color("0e1114"), 0.35]},
+		"zones": {HAND: [Color("0e1114"), 1.0, [SKIN, JACKET]], UPPER_ARM: [Color("9be22d"), .8, [JACKET]], FOREARM: [Color("9be22d"), .8, [JACKET]]},
+		"accessories": [["beanie", Color("9be22d")]],
+	},
+	"dante_ski_patrol": {
+		# Patrulha da pista: amarelo de resgate com ombros grafite e calça escura.
+		"regions": {JACKET: [Color("f2b632"), 0.12], SHIRT: [Color("c0392b"), 0.25], PANTS: [Color("2b2f36"), 0.2], BELT: [Color("1b1d21"), 0.5], BOOTS: [Color("1b1d21"), 0.4]},
+		"zones": {HAND: [Color("1b1d21"), 1.0, [SKIN, JACKET]], UPPER_ARM: [Color("3a3f47"), .7, [JACKET]]},
+		"accessories": [["beanie", Color("c0392b")], ["scarf", Color("2b2f36")]],
+	},
 	"dante_trench": {
 		"regions": {JACKET: [Color("353b48"), 0.2], SHIRT: [Color("cfc8bd"), 0.3], PANTS: [Color("2f3640"), 0.25], BELT: [Color("191919"), 0.5], BOOTS: [Color("191919"), 0.4]},
 		"zones": {HAND: [Color("2a1d17"), 1.0, [SKIN, JACKET]]},
