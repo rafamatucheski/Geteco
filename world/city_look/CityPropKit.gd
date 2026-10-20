@@ -9,6 +9,31 @@ extends RefCounted
 static var _meshes := {}
 static var _material: StandardMaterial3D
 
+# Peças modeladas no Blender (tools/blender/build_city_*.py), com o material do kit
+# por cima. "0" volta às versões procedurais no mesmo export, para o A/B.
+static var blender_props_enabled := OS.get_environment("GETECO_BLENDER_PROPS") != "0"
+const BLENDER_SCENES := {
+	"trash_can": preload("res://assets/city_props/trash_can.glb"),
+	"hydrant": preload("res://assets/city_props/hydrant.glb"),
+	"bench_seat": preload("res://assets/city_props/bench_seat.glb"),
+	"phone_booth": preload("res://assets/city_props/phone_booth.glb"),
+	"dumpster": preload("res://assets/city_props/dumpster.glb"),
+	"news_box": preload("res://assets/city_props/news_box.glb"),
+	"bollard": preload("res://assets/city_props/bollard.glb"),
+	"mailbox": preload("res://assets/city_props/mailbox.glb"),
+	"trash_bags": preload("res://assets/city_props/trash_bags.glb"),
+	"planter": preload("res://assets/city_props/planter.glb"),
+	# Não é tipo do kit: o CityChunkDressing pede haste e cabeça por blender_mesh().
+	"sidewalk_lamp": preload("res://assets/city_props/sidewalk_lamp.glb"),
+}
+## Nó da peça inteira dentro do .glb; as partes soltas servem aos destroços.
+const BLENDER_WHOLE := {"trash_can": "TrashCan", "hydrant": "Hydrant", "bench_seat": "BenchSeat",
+	"phone_booth": "PhoneBooth", "dumpster": "Dumpster", "news_box": "NewsBox", "bollard": "Bollard",
+	"mailbox": "Mailbox", "trash_bags": "TrashBags", "planter": "Planter"}
+## Peças que usam o material de quem as desenha (o poste leva material liso por
+## MultiMesh), sem o material de cor por vértice do kit.
+const BLENDER_OWN_MATERIAL := ["sidewalk_lamp"]
+
 # O comparativo da tarefa F usa o mesmo build; "0" restaura os detalhes originais.
 static var detail_range_enabled := OS.get_environment("GETECO_DETAIL_RANGE") != "0"
 const DETAIL_NEAR_DISTANCE := 40.0
@@ -96,6 +121,9 @@ static func _layered_mesh(kind: String) -> ArrayMesh:
 
 static func mesh(kind: String) -> ArrayMesh:
 	if _meshes.has(kind): return _meshes[kind]
+	if blender_props_enabled and BLENDER_WHOLE.has(kind):
+		_meshes[kind] = blender_mesh(kind, BLENDER_WHOLE[kind])
+		return _meshes[kind]
 	if LAYERED.has(kind):
 		_meshes[kind] = _layered_mesh(kind)
 		return _meshes[kind]
@@ -133,6 +161,26 @@ static func mesh(kind: String) -> ArrayMesh:
 	tool.generate_normals()
 	var result := tool.commit()
 	_meshes[kind] = result
+	return result
+
+
+## Malha de um nó do .glb do Blender. O .glb sai sem UV, tangente nem material, só
+## posição, normal e cor por vértice, como as procedurais: com material() por cima o
+## shader é o mesmo, então não há variante nova para pré-aquecer. A cena é pequena e já
+## vem pré-carregada; instanciar uma vez por peça custa menos que montar à mão.
+## Peças em camadas saem do Blender com uma superfície por camada, na ordem de LAYERED.
+static func blender_mesh(kind: String, part: String) -> ArrayMesh:
+	var key := kind + ":" + part
+	if _meshes.has(key): return _meshes[key]
+	var scene: Node = BLENDER_SCENES[kind].instantiate()
+	var source := scene.find_child(part, true, false) as MeshInstance3D
+	var result := source.mesh as ArrayMesh
+	scene.free()
+	if LAYERED.has(kind):
+		for index in result.get_surface_count(): result.surface_set_material(index, layer_material(LAYERED[kind][index]))
+	elif not kind in BLENDER_OWN_MATERIAL:
+		result.surface_set_material(0, material())
+	_meshes[key] = result
 	return result
 
 

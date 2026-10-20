@@ -330,33 +330,43 @@ static func _tumble(item: Dictionary, flat: Vector3, speed: float, director: Nod
 ## lixo espalha onde o corpo parar de rolar (não num ponto pré-calculado).
 static func _break_trash_can(base: Transform3D, launch: Vector3, spin: Vector3, director: Node) -> void:
 	var can := _debris_body(director, base.origin, MASSES.trash_can)
-	var shell := CylinderMesh.new()
-	shell.top_radius = 0.29
-	shell.bottom_radius = 0.26
-	shell.height = 0.82
-	shell.radial_segments = 7
-	shell.rings = 1
-	shell.material = _flat_material(Color("2f5a43"))
 	var shell_visual := MeshInstance3D.new()
-	shell_visual.mesh = shell
+	# Com a lata do Blender, o destroço usa o corpo e a tampa dela (origem no chão e no
+	# centro da tampa, respectivamente); senão, os cilindros antigos.
+	var kit := preload("res://world/city_look/CityPropKit.gd")
+	var modeled: bool = kit.blender_props_enabled
+	if modeled:
+		shell_visual.mesh = kit.blender_mesh("trash_can", "TrashCanBody")
+	else:
+		var shell := CylinderMesh.new()
+		shell.top_radius = 0.29
+		shell.bottom_radius = 0.26
+		shell.height = 0.82
+		shell.radial_segments = 7
+		shell.rings = 1
+		shell.material = _flat_material(Color("2f5a43"))
+		shell_visual.mesh = shell
 	# Amassado do para-choque: achata no sentido do choque.
 	var dent := Vector3(launch.x, 0, launch.z).normalized()
 	if dent.length_squared() < 0.01: dent = Vector3.FORWARD
-	shell_visual.transform = Transform3D(Basis.looking_at(dent, Vector3.UP).scaled(Vector3(1.0, 1.0, randf_range(0.72, 0.86))), Vector3.UP * 0.41)
+	shell_visual.transform = Transform3D(Basis.looking_at(dent, Vector3.UP).scaled(Vector3(1.0, 1.0, randf_range(0.72, 0.86))), Vector3.ZERO if modeled else Vector3.UP * 0.41)
 	can.add_child(shell_visual)
 	_add_cylinder_shape(can, 0.27, 0.82, Vector3.UP * 0.41)
 	can.linear_velocity = launch
 	can.angular_velocity = spin
 	var lid := _debris_body(director, base.origin + Vector3.UP * 0.88, 1.2)
-	var lid_mesh := CylinderMesh.new()
-	lid_mesh.top_radius = 0.22
-	lid_mesh.bottom_radius = 0.31
-	lid_mesh.height = 0.08
-	lid_mesh.radial_segments = 7
-	lid_mesh.rings = 1
-	lid_mesh.material = _flat_material(Color("1f3a2c"))
 	var lid_visual := MeshInstance3D.new()
-	lid_visual.mesh = lid_mesh
+	if modeled:
+		lid_visual.mesh = kit.blender_mesh("trash_can", "TrashCanLid")
+	else:
+		var lid_mesh := CylinderMesh.new()
+		lid_mesh.top_radius = 0.22
+		lid_mesh.bottom_radius = 0.31
+		lid_mesh.height = 0.08
+		lid_mesh.radial_segments = 7
+		lid_mesh.rings = 1
+		lid_mesh.material = _flat_material(Color("1f3a2c"))
+		lid_visual.mesh = lid_mesh
 	lid.add_child(lid_visual)
 	_add_cylinder_shape(lid, 0.3, 0.08, Vector3.ZERO)
 	# Tampa é leve e está no alto: sobe mais e gira solta.

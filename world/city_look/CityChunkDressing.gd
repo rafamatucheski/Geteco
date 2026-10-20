@@ -434,6 +434,10 @@ static func _lamp_multimesh(part: String, count: int) -> MultiMesh:
 ## luminária achatada. Malhas compartilhadas por todos os chunks.
 static func _lamp_mesh(part: String) -> ArrayMesh:
 	if _lamp_meshes.has(part): return _lamp_meshes[part]
+	# Poste do Blender: a lente fica no mesmo lugar (a mancha de luz sai das constantes).
+	if KIT.blender_props_enabled:
+		_lamp_meshes[part] = KIT.blender_mesh("sidewalk_lamp", "LampPole" if part == "pole" else "LampHead")
+		return _lamp_meshes[part]
 	var tool := SurfaceTool.new()
 	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
 	if part == "pole":

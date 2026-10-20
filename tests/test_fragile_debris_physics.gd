@@ -55,7 +55,9 @@ func run() -> void:
 					verify(material != null, kind + ": destroço mantém material")
 					if material == null: continue
 					if kind == "trash_can":
-						verify(material.albedo_color != Color.WHITE, kind + ": lata e tampa mantêm cor")
+						# Lata do Blender (GETECO_BLENDER_PROPS) leva a cor nos vértices, com o
+						# material do kit; a procedural antiga, num material de cor lisa.
+						verify(material.albedo_color != Color.WHITE or (material.vertex_color_use_as_albedo and material.vertex_color_is_srgb), kind + ": lata e tampa mantêm cor")
 					else:
 						verify(material.vertex_color_use_as_albedo and material.vertex_color_is_srgb, kind + ": preserva cores por vértice em sRGB")
 		var max_x := -INF
