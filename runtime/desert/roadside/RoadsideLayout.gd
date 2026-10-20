@@ -101,6 +101,11 @@ const PARKED := {
 const PARKED_SPAWN_MIN := 60.0
 const PARKED_SPAWN_MAX := 140.0
 ## Entregas do orelhão do Sol Poente: destino, tempo e pagamento (valores em EconomyBalance).
+## Frete de sal do Seu Bento: das Salinas ao mercado Alvorada, na cidade.
+const SALT_ROUTE := {"id": "sal", "name": "mercado Alvorada", "point": Vector3(-180, 0, -870), "seconds": 180.0}
+## Plataforma da balança (local da Balança rodoviária) e o raio que conta como "em cima".
+const WEIGH_PLATFORM := Vector3(0, 0, 12)
+const WEIGH_RADIUS := 9.0
 const COURIER_ROUTES := [
 	{"id": "miragem", "name": "Miragem", "point": Vector3(285, 0, -750), "seconds": 140.0},
 	{"id": "arrancada", "name": "encontro da arrancada", "point": Vector3(-915, 0, -1304), "seconds": 230.0},

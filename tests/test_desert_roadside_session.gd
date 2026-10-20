@@ -124,6 +124,11 @@ func run() -> void:
 			"radio_tower": await radio_tower()
 			"scrapyard": await scrapyard()
 			"food_truck": await food_truck()
+			"salt_works": await salt_works()
+			"weigh_station": await weigh_station()
+			"motel": await motel()
+			"chapel": await chapel()
+			"grandstand": await grandstand()
 		await stand(local_point(id, Vector3(0, 0, 7.0 if id == "food_truck" else 9.5)))
 		world.camera.initialized = false
 		for i in 40: await process_frame
@@ -210,6 +215,66 @@ func food_truck() -> void:
 	var before: int = economy.balance
 	if await act("food", "lanche da reta"):
 		check(economy.balance == before - int(preload("res://systems/economy/Economy.gd").SUPPLIES.sandwich.price), "sanduíche custa o preço da loja")
+
+## Ao lado do morador (não em cima dele, que tem corpo): todos ficam a menos de 2,4 m.
+func beside(id: String, local: Vector3) -> void:
+	await stand(local_point(id, local + Vector3(.9, 0, 0)))
+	await frames(6)
+
+func salt_works() -> void:
+	var economy = session.state.economy
+	await beside("salt_works", LAYOUT.SALT_FOREMAN)
+	if not await act("salt_run", "frete de sal"): return
+	check(str(roadside.courier.get("route", {}).get("id", "")) == "sal", "frete de sal vira a entrega em curso")
+	check(session.nearest().get("target", "") != "salt_run", "um frete por vez")
+	var before: int = economy.balance
+	await stand(LAYOUT.SALT_ROUTE.point)
+	check(await until(func(): return roadside.courier.is_empty(), 6.0), "chegar ao mercado encerra o frete")
+	check(economy.balance == before + int(BALANCE.ROADSIDE_COURIER.sal), "frete de sal paga R$ %d" % int(BALANCE.ROADSIDE_COURIER.sal))
+	await stand(local_point("salt_works", Vector3(0, 0, 40)))
+	await until(func(): return not roadside.sites.salt_works.parked, 10.0)
+
+func weigh_station() -> void:
+	await beside("weigh_station", LAYOUT.WEIGH_INSPECTOR)
+	await act("weigh_talk", "conversa com a fiscal")
+	var spot := local_point("weigh_station", LAYOUT.WEIGH_PLATFORM + Vector3(3.5, 0, 0))
+	spot.y = HM.surface_height(Vector2(spot.x, spot.z)) + .3
+	var car: CharacterBody3D = session.controller.spawn_vehicle("union_sedan", spot, float(LAYOUT.site("weigh_station").yaw) + PI * .5)
+	if not check(is_instance_valid(car), "carro de teste na balança"): return
+	await frames(10)
+	var entered := false
+	for side in [-1, 1]:
+		await stand(car.to_global(Vector3(side * (car.half_width + .65), .04, .15)))
+		if world.driving.interact():
+			entered = await until(func(): return world.driving.occupied and not world.driving.is_body_transition_active(), 8.0)
+			if entered: break
+	if not check(entered, "jogador entra no carro na balança"): return
+	await until(func(): return absf(car.speed) < .5, 5.0)
+	await act("weigh", "pesagem na balança")
+	world.driving.leave()
+	await until(func(): return not world.driving.occupied and not world.driving.is_body_transition_active(), 8.0)
+	car.queue_free()
+
+func motel() -> void:
+	var economy = session.state.economy
+	await beside("motel", LAYOUT.MOTEL_CLERK)
+	session.weather.time_of_day = 22.0 / 24.0
+	var before: int = economy.balance
+	if await act("motel_room", "quarto no Motel Oásis"):
+		check(economy.balance == before - BALANCE.ROADSIDE_MOTEL_ROOM, "quarto custa R$ %d" % BALANCE.ROADSIDE_MOTEL_ROOM)
+		check(absf(session.weather.time_of_day - 7.0 / 24.0) < .001, "acorda às 7h")
+	session.weather.time_of_day = 13.0 / 24.0
+
+func chapel() -> void:
+	var economy = session.state.economy
+	await beside("chapel", LAYOUT.CHAPEL_KEEPER)
+	var before: int = economy.balance
+	if await act("candle", "vela na capela"):
+		check(economy.balance == before - BALANCE.ROADSIDE_CANDLE, "vela custa R$ %d" % BALANCE.ROADSIDE_CANDLE)
+
+func grandstand() -> void:
+	await beside("grandstand", LAYOUT.TIMEKEEPER)
+	await act("timekeeper", "cronometrista da arquibancada")
 
 func parking() -> void:
 	# Longe de todos os lugares: estacionam (escondidos, sem física) em vez de soltar.

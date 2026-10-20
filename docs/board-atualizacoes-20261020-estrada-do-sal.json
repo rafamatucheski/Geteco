@@ -59,6 +59,20 @@
         "tests/capture/capture_desert_town.gd"
       ],
       "next": "Medição em release na cidade (o atlas cresceu 7 painéis e cada prédio virou um conjunto a mais); jogar com controle; toldos da lanchonete e do mercado ficam na frente para a rua, que a câmera fixa não mostra."
+    },
+    {
+      "id": "estrada-do-sal-interacoes-20261020",
+      "title": "O que fazer na Estrada do Sal: frete, quarto, vela, balança e cronometrista",
+      "status": "implemented",
+      "area": "gameplay",
+      "description": "Os lugares novos deixam de ser só cenário: Seu Bento (Salinas) dá o frete de sal até o mercado Alvorada em 180 s (R$ 450, mesmo prazo e recibo do orelhão); Dona Lurdes aluga quarto no Motel Oásis até as 7h (R$ 80, cura e salva; o Horizonte segue com o descanso de graça até as 20h); vela na capela com a Dona Fátima (R$ 10, cura 25); carro parado na plataforma da balança é pesado pela Fiscal Rosa; Seu Zé do Cronômetro diz o melhor tempo nos 800 m e as vitórias. Medição em release (export de 20/10, 2 rodadas, rotas novas cidade_deserto e estrada_sal): beira de estrada ligada custa ~0,2 ms de p50 na cidade (2,39/2,99 contra 2,23/2,78) e ~0,45 ms na Estrada do Sal (2,82/2,58 contra 2,25/2,23); máximos (48–82 ms) e quadros > 33 ms iguais com ela desligada.",
+      "sources": [
+        "runtime/desert/roadside/DesertRoadside.gd",
+        "data/catalogs/EconomyBalance.gd",
+        "tests/test_desert_roadside_session.gd",
+        "runtime/ReleaseBenchmark.gd"
+      ],
+      "next": "Jogar com controle; os 2–8 quadros acima de 33 ms nas rotas do deserto existem com a beira de estrada desligada e seguem sem nome."
     }
   ],
   "remove": []

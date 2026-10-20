@@ -14,6 +14,8 @@ const RESIDENT := preload("res://runtime/desert/DesertVillageResident.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const GARAGE := preload("res://runtime/GarageRewards.gd")
 const ECONOMY := preload("res://systems/economy/Economy.gd")
+const VEHICLES := preload("res://data/catalogs/VehicleCatalog.gd")
+const DRAG_PROGRESS := preload("res://activities/desert_drag/DesertDragProgress.gd")
 const INTERACT := 1.8
 const SERVICE_RADIUS := 6.0
 const COURIER_ARRIVAL := 12.0
@@ -214,6 +216,8 @@ func nearest_action() -> Dictionary:
 		var car: CharacterBody3D = world.driving.car
 		if is_instance_valid(car) and absf(float(car.speed)) < 1.0 and _needs_repair(car) and _near("sol_poente", LAYOUT.SOL_SERVICE, SERVICE_RADIUS, car.global_position):
 			return _action("repair", _t("Consertar o carro · R$ %d") % BALANCE.ROADSIDE_REPAIR)
+		if is_instance_valid(car) and absf(float(car.speed)) < 1.0 and _near("weigh_station", LAYOUT.WEIGH_PLATFORM, LAYOUT.WEIGH_RADIUS, car.global_position):
+			return _action("weigh", "Pesar o veículo")
 		return {}
 	if world.player.input_locked or world.driving.is_body_transition_active(): return {}
 	var at: Vector3 = world.player.global_position
@@ -225,6 +229,11 @@ func nearest_action() -> Dictionary:
 		return _action("scrap_talk", "Falar com o Nonato")
 	if _near("food_truck", LAYOUT.FOOD_COUNTER, INTERACT, at):
 		return _action("food", _t("Comprar sanduíche · R$ %d") % int(ECONOMY.SUPPLIES.sandwich.price))
+	if courier.is_empty() and _near("salt_works", LAYOUT.SALT_FOREMAN, 2.4, at): return _action("salt_run", "Pegar o frete de sal")
+	if _near("motel", LAYOUT.MOTEL_CLERK, 2.4, at): return _action("motel_room", _t("Alugar quarto até as 7h · R$ %d") % BALANCE.ROADSIDE_MOTEL_ROOM)
+	if _near("chapel", LAYOUT.CHAPEL_KEEPER, 2.4, at): return _action("candle", _t("Acender uma vela · R$ %d") % BALANCE.ROADSIDE_CANDLE)
+	if _near("weigh_station", LAYOUT.WEIGH_INSPECTOR, 2.4, at): return _action("weigh_talk", "Falar com a Fiscal Rosa")
+	if _near("grandstand", LAYOUT.TIMEKEEPER, 2.4, at): return _action("timekeeper", "Falar com o Seu Zé do Cronômetro")
 	return {}
 
 func perform(action: Dictionary) -> bool:
@@ -241,6 +250,14 @@ func perform(action: Dictionary) -> bool:
 			session.show_message("Traga um carro que não seja seu e deixe parado no pátio. Pago o peso da sucata.")
 			return true
 		"food": return _buy_food()
+		"salt_run": return _start_salt_run()
+		"motel_room": return _rent_room()
+		"candle": return _light_candle()
+		"weigh": return _weigh()
+		"weigh_talk":
+			session.show_message("Fiscal Rosa: pare o carro em cima da plataforma que eu digo o peso. Caminhão acima do limite paga multa; carro de passeio é só curiosidade.")
+			return true
+		"timekeeper": return _timekeeper()
 	return false
 
 func _needs_repair(car: Node) -> bool:
@@ -265,6 +282,64 @@ func _start_courier() -> bool:
 	courier = {"route": route, "left": float(route.seconds), "receipt": receipt}
 	var pay := int(BALANCE.ROADSIDE_COURIER.get(str(route.id), 0))
 	session.show_message(_t("Voz no orelhão: leve o pacote do balcão até o %s em %d s. Pago R$ %d.") % [_t(str(route.name)), int(route.seconds), pay])
+	return true
+
+## Frete de sal: mesmo prazo e recibo do orelhão, outro destino (um frete por vez).
+func _start_salt_run() -> bool:
+	var route: Dictionary = LAYOUT.SALT_ROUTE
+	courier = {"route": route, "left": float(route.seconds), "receipt": STATE.next_receipt(session.state.world_state, "courier")}
+	var pay := int(BALANCE.ROADSIDE_COURIER.get(str(route.id), 0))
+	session.show_message(_t("Seu Bento: leve esses sacos de sal até o %s em %d s. Pago R$ %d na entrega.") % [_t(str(route.name)), int(route.seconds), pay])
+	return true
+
+## Quarto do Motel Oásis: dorme até as 7h, levanta curado e o jogo salva (como o descanso do Horizonte).
+func _rent_room() -> bool:
+	if session.world.gameplay.stars > 0 or not session.save_block_reason().is_empty():
+		session.show_message("Dona Lurdes: com confusão atrás de você eu não alugo quarto. Resolva isso primeiro.")
+		return true
+	if not session.state.economy.spend(BALANCE.ROADSIDE_MOTEL_ROOM, STATE.next_receipt(session.state.world_state, "motel")):
+		session.show_message("Dinheiro insuficiente para o quarto.")
+		return true
+	var weather = session.weather
+	var hours := fposmod(7.0 / 24.0 - weather.time_of_day, 1.0)
+	session.activities.advance_time(hours * 600.0)
+	if weather.time_of_day + hours >= 1.0: session.state.world_state.moon_day = weather.moon_day() + 1
+	weather.time_of_day = 7.0 / 24.0
+	session.state.world_state.time = weather.time_of_day
+	weather._update()
+	session.world.gameplay.heal(100.0)
+	session.show_message("Você dorme no Motel Oásis e acorda às 7h, descansado.")
+	session.save_game()
+	return true
+
+func _light_candle() -> bool:
+	if not session.state.economy.spend(BALANCE.ROADSIDE_CANDLE, STATE.next_receipt(session.state.world_state, "candle")):
+		session.show_message("Dinheiro insuficiente para a vela.")
+		return true
+	session.world.gameplay.heal(BALANCE.ROADSIDE_CANDLE_HEAL)
+	session.show_message("Você acende uma vela para Nossa Senhora da Estrada. Dona Fátima reza junto.")
+	session.save_game()
+	return true
+
+## Balança: massa do catálogo do veículo (toneladas) com um pouco de carga e combustível.
+func _weigh() -> bool:
+	var car: CharacterBody3D = session.world.driving.car
+	if not is_instance_valid(car): return false
+	var spec: Dictionary = VEHICLES.VEHICLES.get(str(car.get("archetype")), {})
+	var kilos := int(round(float(spec.get("mass", 1.2)) * 1000.0 * (1.0 + float(car.get_instance_id() % 7) * .01) / 10.0)) * 10
+	if kilos > 3500: session.show_message(_t("Balança: %d kg. Fiscal Rosa: dentro do limite para esse eixo, pode seguir.") % kilos)
+	else: session.show_message(_t("Balança: %d kg. Fiscal Rosa: carro de passeio, nem precisava parar.") % kilos)
+	return true
+
+func _timekeeper() -> bool:
+	var progress: Dictionary = DRAG_PROGRESS.data(session.state.world_state)
+	var best: Dictionary = progress.get("best", {})
+	if best.is_empty():
+		session.show_message("Seu Zé: nunca te vi correr aqui. A reta tem 800 m; o encontro é à noite, perto do Horizonte.")
+		return true
+	var fastest := INF
+	for rival in best: fastest = minf(fastest, float(best[rival]))
+	session.show_message(_t("Seu Zé: seu melhor nos 800 m é %.3f s, em %d corrida(s), %d vitória(s) contra os rivais.") % [fastest, int(progress.get("finishes", 0)), (progress.get("wins", []) as Array).size()])
 	return true
 
 func _tick_courier(delta: float) -> void:

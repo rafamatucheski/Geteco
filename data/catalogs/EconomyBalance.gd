@@ -50,7 +50,12 @@ const RECOVERY_CAP := 2000
 ## Conserto no Sol Poente: mais caro que a oficina de Northgate (100), que ainda tira a polícia.
 const ROADSIDE_REPAIR := 150
 ## Entregas do orelhão por destino (RoadsideLayout.COURIER_ROUTES).
-const ROADSIDE_COURIER := {"miragem": 350, "arrancada": 600}
+const ROADSIDE_COURIER := {"miragem": 350, "arrancada": 600, "sal": 450}
+## Lugares da Estrada do Sal (20/10): quarto no Motel Oásis até as 7h (cura e salva, pago, ao contrário
+## do descanso de graça do Horizonte, que só vai até as 20h para a arrancada) e a vela da capela (cura pouca).
+const ROADSIDE_MOTEL_ROOM := 80
+const ROADSIDE_CANDLE := 10
+const ROADSIDE_CANDLE_HEAL := 25.0
 ## Caminhão quebrado: ajudar o caminhoneiro paga por recibo; se ele não está mais lá, a caixinha
 ## da cabine é dinheiro solto (Economy.collect_loose_cash aceita até 300).
 const ROADSIDE_TRUCK_HELP := 200
