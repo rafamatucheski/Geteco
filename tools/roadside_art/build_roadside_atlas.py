@@ -645,6 +645,97 @@ def vending(w, h):
     return weather(img, dirt=.14, streaks=.1, scale=16), glow
 
 
+# --- Fase 3 (20/10): capela de beira de estrada e arquibancada da reta -----------------------
+
+def chapel_plaque(w, h):
+    """Placa de azulejo pintado na fachada da capela."""
+    img = Image.new("RGB", (w, h), (238, 236, 228))
+    d = ImageDraw.Draw(img)
+    d.rectangle((6, 6, w - 7, h - 7), outline=(40, 70, 140), width=8)
+    d.rectangle((18, 18, w - 19, h - 19), outline=(40, 70, 140), width=2)
+    f = fit_text(d, "CAPELA DE", w * .6, h * .18, FONT_BOLD)
+    text_center(d, "CAPELA DE", w / 2, h * .3, f, (40, 70, 140))
+    f2 = fit_text(d, "NOSSA SENHORA DA ESTRADA", w * .84, h * .2, FONT_BOLD)
+    text_center(d, "NOSSA SENHORA DA ESTRADA", w / 2, h * .56, f2, (40, 70, 140))
+    f3 = fit_text(d, "PROTEGEI OS VIAJANTES", w * .6, h * .12, FONT_REGULAR)
+    text_center(d, "PROTEGEI OS VIAJANTES", w / 2, h * .78, f3, (90, 110, 160))
+    return weather(img, dirt=.14, streaks=.12, scale=16), Image.new("RGB", (w, h))
+
+
+def exvotos(w, h):
+    """Parede de ex-votos: fotos 3x4, bilhetes, cabeças e mãos de madeira, fitas coloridas."""
+    img = Image.new("RGB", (w, h), (236, 228, 210))
+    d = ImageDraw.Draw(img)
+    for _ in range(46):
+        cx, cy = rng.randrange(10, w - 10), rng.randrange(10, h - 10)
+        kind = rng.randrange(4)
+        if kind == 0:
+            pw, ph = rng.randint(22, 34), rng.randint(30, 44)
+            tone = rng.randint(90, 200)
+            d.rectangle((cx, cy, cx + pw, cy + ph), fill=(250, 248, 240))
+            d.rectangle((cx + 3, cy + 3, cx + pw - 3, cy + ph - 10), fill=(tone, tone - 10, tone - 25))
+            d.ellipse((cx + pw * .3, cy + 6, cx + pw * .7, cy + ph * .45), fill=(min(255, tone + 40), tone + 10, tone - 10))
+        elif kind == 1:
+            d.rectangle((cx, cy, cx + 40, cy + 26), fill=(252, 240, 170))
+            for k in range(3): d.line((cx + 4, cy + 7 + k * 6, cx + 34, cy + 7 + k * 6), fill=(80, 80, 90), width=1)
+        elif kind == 2:
+            d.ellipse((cx, cy, cx + 26, cy + 32), fill=(176, 130, 80))
+        else:
+            col = [(196, 30, 34), (40, 100, 180), (240, 160, 30), (40, 150, 70), (220, 220, 220)][rng.randrange(5)]
+            d.line((cx, cy, cx + rng.randint(-20, 20), cy + 50), fill=col, width=4)
+    return weather(img, dirt=.18, streaks=.1, scale=20), Image.new("RGB", (w, h))
+
+
+def saint(w, h):
+    """Imagem da santa no nicho: manto azul, auréola dourada, fundo de estrelas."""
+    img = Image.new("RGB", (w, h), (40, 50, 96))
+    glow = Image.new("RGB", (w, h), (0, 0, 0))
+    d, g = ImageDraw.Draw(img), ImageDraw.Draw(glow)
+    for _ in range(40):
+        x, y = rng.randrange(w), rng.randrange(h)
+        d.ellipse((x - 2, y - 2, x + 2, y + 2), fill=(240, 220, 140))
+    cx = w / 2
+    d.ellipse((cx - w * .2, h * .1, cx + w * .2, h * .3), fill=(232, 190, 70))
+    g.ellipse((cx - w * .2, h * .1, cx + w * .2, h * .3), fill=(200, 150, 60))
+    d.ellipse((cx - w * .1, h * .14, cx + w * .1, h * .27), fill=(230, 200, 170))
+    d.polygon([(cx, h * .22), (cx - w * .32, h * .92), (cx + w * .32, h * .92)], fill=(50, 90, 170))
+    d.polygon([(cx, h * .3), (cx - w * .14, h * .9), (cx + w * .14, h * .9)], fill=(240, 236, 226))
+    d.rectangle((cx - w * .36, h * .9, cx + w * .36, h * .97), fill=(150, 110, 60))
+    return weather(img, dirt=.12, streaks=.08, scale=16), glow
+
+
+def banner(w, h, text, sub, bg, fg):
+    img = Image.new("RGB", (w, h), bg)
+    d = ImageDraw.Draw(img)
+    f = fit_text(d, text, w * .62, h * .6, FONT_BOLD)
+    d.text((w * .04, h * .5), text, font=f, fill=fg, anchor="lm")
+    f2 = fit_text(d, sub, w * .3, h * .36, FONT_BOLD)
+    d.text((w * .96, h * .5), sub, font=f2, fill=fg, anchor="rm")
+    for k in range(6):
+        x = rng.randrange(w)
+        d.line((x, 0, x + rng.randint(-8, 8), h), fill=tuple(max(0, c - 30) for c in bg), width=2)
+    return weather(img, dirt=.24, streaks=.2, scale=20), Image.new("RGB", (w, h))
+
+
+def timing_board(w, h):
+    """Painel de tempos da reta: duas raias, tempo e velocidade em segmentos acesos à noite."""
+    img = Image.new("RGB", (w, h), (24, 26, 28))
+    glow = Image.new("RGB", (w, h), (0, 0, 0))
+    d, g = ImageDraw.Draw(img), ImageDraw.Draw(glow)
+    d.rectangle((0, 0, w - 1, h * .2), fill=(180, 34, 30))
+    f = fit_text(d, "RETA DO SAL · 400 M", w * .9, h * .15, FONT_BOLD)
+    text_center(d, "RETA DO SAL · 400 M", w / 2, h * .1, f, (250, 250, 246))
+    fd = fit_text(d, "88.888", w * .34, h * .26, FONT_BOLD)
+    for k, (lane, t, v) in enumerate((("ESQ", "11.482", "187"), ("DIR", "11.906", "179"))):
+        y = h * (.36 + .32 * k)
+        d.text((w * .04, y), lane, font=fit_text(d, lane, w * .14, h * .16, FONT_BOLD), fill=(240, 200, 60))
+        d.text((w * .22, y), t, font=fd, fill=(255, 150, 40))
+        g.text((w * .22, y), t, font=fd, fill=(255, 130, 30))
+        d.text((w * .62, y), v + " KM/H", font=fit_text(d, "188 KM/H", w * .34, h * .2, FONT_BOLD), fill=(120, 255, 140))
+        g.text((w * .62, y), v + " KM/H", font=fit_text(d, "188 KM/H", w * .34, h * .2, FONT_BOLD), fill=(80, 220, 110))
+    return weather(img, dirt=.12, streaks=.1, scale=16), glow
+
+
 PANELS = [
     ("pylon", 448, 672, pylon),
     ("fascia", 1792, 96, fascia),
@@ -680,6 +771,13 @@ PANELS = [
     ("motel_band", 1024, 64, motel_band),
     ("room_door", 128, 256, room_door),
     ("vending", 192, 320, vending),
+    ("chapel_plaque", 384, 192, chapel_plaque),
+    ("exvotos", 384, 256, exvotos),
+    ("saint", 128, 192, saint),
+    ("banner_oil", 640, 96, lambda w, h: banner(w, h, "ÓLEO SERTÃO", "LUBRIFICA DE VERDADE", (26, 70, 140), (250, 220, 60))),
+    ("banner_tire", 640, 96, lambda w, h: banner(w, h, "PNEUS VELOZ", "BORRACHARIA 24H", (200, 40, 32), (250, 248, 236))),
+    ("banner_radio", 640, 96, lambda w, h: banner(w, h, "RÁDIO SOL 98,1", "A VOZ DA ESTRADA", (240, 180, 40), (40, 30, 24))),
+    ("timing_board", 384, 192, timing_board),
 ]
 
 

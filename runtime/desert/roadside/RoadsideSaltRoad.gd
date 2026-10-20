@@ -14,6 +14,8 @@ const WALK_IN := {
 	"salt_works": [Rect2(11.0, 26.0, 5.0, 4.0)],
 	"weigh_station": [Rect2(-2.6, 1.1, 5.2, 3.8)],
 	"motel": [Rect2(-15.92, -6.2, 3.64, 5.0), Rect2(7.9, -4.8, 5.2, 4.6)],
+	"chapel": [Rect2(-2.6, -7.0, 5.2, 8.0)],
+	"grandstand": [Rect2(17.5, -2.0, 4.0, 4.0)],
 }
 
 # --- Ajudas ----------------------------------------------------------------------------------
@@ -426,3 +428,191 @@ static func compose_motel(b, roofs) -> void:
 	# Letreiro alto de neon na beira da estrada (duas faces), sobre dois postes.
 	_post_sign(b, dark, Vector3(-21, 6.2, 17.5), Vector3(2.8, 5.6, .3), "motel_sign", 9.0)
 	_box(b, concrete, Vector3(-21, .2, 17.5), Vector3(3.4, .4, .9), {"-y": null})
+
+# --- Capela de Nossa Senhora da Estrada -----------------------------------------------------------
+## Capelinha caiada com campanário, telhado de barro em duas águas e porta aberta (entra a pé: bancos,
+## altar com velas, imagem no nicho e parede de ex-votos), cercada por mureta, com as cruzes dos
+## caminhoneiros, o oratório de velas, uma árvore seca e um banco. Estrada em z ≈ +24.
+
+static func _pew(b, at: Vector3, length: float, wood: Material) -> void:
+	_box(b, wood, at + Vector3(0, .45, 0), Vector3(length, .07, .42), {"-y": null}, Vector2(1.2, 1.2))
+	_box(b, wood, at + Vector3(0, .78, -.2), Vector3(length, .5, .06), {}, Vector2(1.2, 1.2))
+	for x in [-length * .5 + .08, length * .5 - .08]:
+		_box(b, wood, at + Vector3(x, .4, -.05), Vector3(.06, .8, .5), {"-y": null}, Vector2(1.2, 1.2))
+	b.solid(_t(at.x, .45, at.z - .05), Vector3(length, .9, .5))
+
+static func _cross(b, at: Vector3, wood: Material, flower: Material) -> void:
+	_box(b, wood, at + Vector3(0, .65, 0), Vector3(.09, 1.3, .07), {"-y": null})
+	_box(b, wood, at + Vector3(0, 1.0, 0), Vector3(.6, .08, .07))
+	for k in 3: b.cylinder(flower, _t(at.x - .12 + float(k) * .12, .08, at.z + .12), .07, .14, 6, .1)
+
+static func compose_chapel(b, roofs) -> void:
+	var lime := ART.detail("plaster", Color("f1ede2"))
+	var inner := ART.detail("plaster", Color("f4efe4"))
+	var blue := ART.detail("plaster", Color("3c66a8"))
+	var clay := ART.detail("clay_tile", Color("b4583e"), .8)
+	var wood := ART.detail("planks", Color("6e4e32"), .8)
+	var floor_tile := ART.detail("pool_tile", Color("b5654a"), .7)
+	var stone := ART.detail("gravel", Color("b8ad98"))
+	var gold := ART.detail("metal", Color("c8962e"), .35)
+	var dark := ART.color(Color("2e3032"))
+	# Terreiro de terra batida e mureta caiada com o portão aberto para a estrada.
+	_box(b, ART.detail("gravel", Color("c9b18c")), Vector3(0, .03, 0), Vector3(18, .06, 18), {"-y": null}, Vector2(3, 3))
+	_box(b, stone, Vector3(0, .04, 5.5), Vector3(1.6, .08, 7), {"-y": null}, Vector2(1.5, 1.5))
+	var runs := [[Vector3(-9, 0, -9), Vector3(9, 0, -9)], [Vector3(-9, 0, -9), Vector3(-9, 0, 9)], [Vector3(9, 0, -9), Vector3(9, 0, 9)],
+		[Vector3(-9, 0, 9), Vector3(-1.2, 0, 9)], [Vector3(1.2, 0, 9), Vector3(9, 0, 9)]]
+	for run in runs:
+		var a: Vector3 = run[0]
+		var c: Vector3 = run[1]
+		var mid := (a + c) * .5
+		var size := Vector3(maxf(absf(c.x - a.x), .35), .8, maxf(absf(c.z - a.z), .35))
+		_box(b, lime, mid + Vector3(0, .4, 0), size, {"-y": null}, Vector2(2, 2), true)
+		_box(b, blue, mid + Vector3(0, .82, 0), size + Vector3(.06, -.76, .06))
+	for side in [-1.0, 1.0]: _box(b, lime, Vector3(side * 1.4, .7, 9), Vector3(.45, 1.4, .45), {"-y": null}, Vector2(2, 2), true)
+	# Corpo da capela (entra a pé), barrado azul por fora e telhado de barro em duas águas.
+	var nave := Vector3(0, 0, -3)
+	var nave_size := Vector3(5.2, 3.4, 8.0)
+	_room(b, roofs, nave, nave_size, lime, inner, floor_tile, clay, 0.0)
+	for side in [-1.0, 1.0]:
+		_box(b, blue, nave + Vector3(side * (nave_size.x * .5 + .01), .5, 0), Vector3(.04, 1.0, nave_size.z), {"-y": null})
+		var slope := Basis(Vector3.FORWARD, side * deg_to_rad(-30))
+		roofs.box(clay, Transform3D(slope, nave + Vector3(side * 1.45, nave_size.y + .95, 0)), Vector3(3.4, .12, nave_size.z + .7), {}, Vector2(1.6, 1.6))
+	roofs.cylinder(clay, Transform3D(Basis(Vector3.RIGHT, PI * .5), nave + Vector3(0, nave_size.y + 1.82, 0)), .14, nave_size.z + .8, 8)
+	# Empenas (frente e fundo) em degraus de reboco por baixo do telhado.
+	for z in [nave.z + nave_size.z * .5 - .08, nave.z - nave_size.z * .5 + .08]:
+		# Larguras abaixo da linha do telhado (30°, cumeeira a 5,2 m): o degrau de cima não fura a telha.
+		for k in 4:
+			var wk: float = [4.8, 3.4, 2.0, .7][k]
+			_box(b, lime, Vector3(0, nave_size.y + .2 + float(k) * .4, z), Vector3(wk, .4, .16), {"-y": null})
+	# Campanário na frente: dois pilares, arco, sino e a cruz no topo.
+	var front := nave.z + nave_size.z * .5
+	for side in [-1.0, 1.0]: _box(b, lime, Vector3(side * .7, nave_size.y + 2.2, front - .2), Vector3(.3, 1.6, .3))
+	_box(b, lime, Vector3(0, nave_size.y + 3.1, front - .2), Vector3(1.7, .3, .4))
+	b.cylinder(gold, _t(0, nave_size.y + 2.4, front - .2), .3, .5, 12, .14)
+	_pipe(b, dark, Vector3(0, nave_size.y + 2.65, front - .2), Vector3(0, nave_size.y + 2.95, front - .2), .02)
+	_box(b, dark, Vector3(0, nave_size.y + 3.85, front - .2), Vector3(.08, 1.1, .08))
+	_box(b, dark, Vector3(0, nave_size.y + 3.95, front - .2), Vector3(.55, .08, .08))
+	# Placa de azulejo e as folhas da porta abertas para fora.
+	b.quad(b.atlas, Vector3(1.75, 2.1, front + .02), Vector3(.62, 0, 0), Vector3(0, .31, 0), ART.uv("chapel_plaque"))
+	for side in [-1.0, 1.0]:
+		b.box(wood, _t(side * .95, 1.07, front + .32, side * deg_to_rad(65)), Vector3(.56, 2.1, .06), {}, Vector2(1.2, 2.1))
+	# Dentro: quatro bancos, altar com toalha e velas, nicho com a santa, ex-votos na parede.
+	for row in 2:
+		for side in [-1.0, 1.0]: _pew(b, nave + Vector3(side * 1.25, 0, 1.6 - float(row) * 1.4), 1.6, wood)
+	var altar := nave + Vector3(0, 0, -3.3)
+	_box(b, lime, altar + Vector3(0, .5, 0), Vector3(1.8, 1.0, .7), {"-y": null}, Vector2(2, 2), true)
+	_box(b, ART.color(Color("f6f4ee")), altar + Vector3(0, 1.02, 0), Vector3(1.9, .04, .8))
+	_box(b, ART.color(Color("a52a1d")), altar + Vector3(0, .7, .36), Vector3(.5, .64, .02))
+	for k in 5:
+		var cx := -.7 + float(k) * .35
+		b.cylinder(ART.color(Color("f2ead2")), _t(altar.x + cx, 1.16, altar.z - .1), .03, .24, 6)
+		b.quad(b.atlas, altar + Vector3(cx, 1.33, -.08), Vector3(.018, 0, 0), Vector3(0, .03, 0), ART.uv("light"))
+	for side in [-1.0, 1.0]:
+		b.cylinder(ART.detail("metal", Color("d8d4c8"), .3), _t(altar.x + side * .75, 1.12, altar.z + .1), .07, .16, 8, .1)
+		b.cylinder(ART.color(Color("e8607a")), _t(altar.x + side * .75, 1.28, altar.z + .1), .12, .14, 8, .02)
+	var back := nave.z - nave_size.z * .5 + WALL + .01
+	_box(b, blue, Vector3(0, 2.35, back + .02), Vector3(.9, 1.3, .04))
+	b.quad(b.atlas, Vector3(0, 2.35, back + .05), Vector3(.32, 0, 0), Vector3(0, .5, 0), ART.uv("saint"))
+	b.quad(b.atlas, Vector3(-nave_size.x * .5 + WALL + .02, 1.6, nave.z + .4), Vector3(0, 0, .95), Vector3(0, .64, 0), ART.uv("exvotos"))
+	# Lado de fora: cruzes dos caminhoneiros, oratório de velas, árvore seca e banco.
+	var flower := ART.color(Color("e05a7a"))
+	for k in 6: _cross(b, Vector3(-7.6 + float(k % 3) * 1.4, 0, -6.5 + float(k / 3) * 2.6), wood, flower)
+	_box(b, lime, Vector3(6.2, .55, -4), Vector3(1.4, 1.1, .6), {"-y": null}, Vector2(2, 2), true)
+	_box(b, blue, Vector3(6.2, 1.12, -4), Vector3(1.5, .06, .7))
+	for k in 6:
+		b.cylinder(ART.color(Color("c63a2a")), _t(5.65 + float(k) * .22, 1.24, -3.9), .05, .18, 6)
+		b.quad(b.atlas, Vector3(5.65 + float(k) * .22, 1.38, -3.6), Vector3(.02, 0, 0), Vector3(0, .03, 0), ART.uv("light"))
+	var trunk := ART.detail("planks", Color("6a5038"), .9)
+	var tree := Vector3(5.8, 0, 4.6)
+	_pipe(b, trunk, tree, tree + Vector3(.3, 3.0, 0), .16, 7)
+	for branch in [Vector3(1.6, 1.2, .4), Vector3(-1.2, 1.4, -.6), Vector3(.4, 1.6, 1.3), Vector3(-.5, 1.1, 1.0)]:
+		_pipe(b, trunk, tree + Vector3(.3, 2.6, 0), tree + Vector3(.3, 2.6, 0) + branch, .06, 5)
+	b.solid(_t(tree.x, 1.5, tree.z), Vector3(.4, 3.0, .4))
+	_pew(b, Vector3(-5.5, 0, 6.2), 1.8, wood)
+
+# --- Arquibancada da reta -------------------------------------------------------------------------
+## Arquibancada de aço com seis degraus de tábua, cobertura na parte de cima com faixas de patrocínio,
+## grade e barreira de pneus na frente, e a torre de cronometragem (sala de baixo entra a pé: mesa do
+## cronômetro, troféus, cartaz; em cima o painel de tempos). A pista fica em z ≈ +38.
+
+static func compose_grandstand(b, roofs) -> void:
+	var steel := ART.detail("metal", Color("8d9193"), .5)
+	var blue_steel := ART.detail("metal", Color("2f5f8f"), .5)
+	var seat := ART.detail("planks", Color("8a6a46"), .85)
+	var concrete := ART.concrete()
+	var dark := ART.color(Color("2e3032"))
+	var rubber := ART.color(Color("1c1c1b"))
+	var white := ART.detail("metal", Color("e4e1d9"), .5)
+	_box(b, ART.detail("gravel", Color("c9b18c")), Vector3(2, .03, 0), Vector3(40, .06, 18), {"-y": null}, Vector2(3, 3))
+	# Seis degraus de 0,9 m subindo para trás: tábua no assento, chapa no espelho, caixa sólida por degrau.
+	var length := 30.0
+	for i in 6:
+		var y := .45 * float(i + 1)
+		var z := 1.8 - float(i) * .9
+		_box(b, seat, Vector3(0, y, z), Vector3(length, .08, .9), {}, Vector2(1.2, 1.2))
+		_box(b, blue_steel, Vector3(0, y - .23, z + .44), Vector3(length, .45, .04), {}, Vector2(1.5, .45))
+		b.solid(_t(0, y * .5, z), Vector3(length, y, .9))
+	# Pilares e escoras por baixo (visíveis pelos lados e por trás).
+	for x in range(-15, 16, 3):
+		_box(b, steel, Vector3(float(x), 1.35, -2.7), Vector3(.14, 2.7, .14), {"-y": null})
+		_beam(b, steel, Vector3(float(x), .1, -2.7), Vector3(float(x), 2.6, 1.2), .07)
+	_box(b, steel, Vector3(0, 2.75, -2.75), Vector3(length, .12, .12))
+	# Guarda-corpo do fundo e escadas laterais com corrimão.
+	for x in range(-15, 16, 2): _box(b, steel, Vector3(float(x), 3.2, -2.8), Vector3(.05, 1.0, .05), {"-y": null})
+	_box(b, steel, Vector3(0, 3.7, -2.8), Vector3(length, .06, .06))
+	for side in [-1.0, 1.0]:
+		for i in 6:
+			_box(b, concrete, Vector3(side * 15.7, .225 * float(i + 1), 2.2 - float(i) * .9), Vector3(1.3, .45 * float(i + 1), .9), {"-y": null}, Vector2(2, 2), true)
+		_pipe(b, steel, Vector3(side * 16.35, 1.0, 2.6), Vector3(side * 16.35, 3.7, -2.4), .03)
+	# Cobertura sobre os degraus de cima, com as faixas na testeira virada para a pista.
+	for x in [-14.0, -7.0, 0.0, 7.0, 14.0]: _box(b, steel, Vector3(x, 3.4, -2.9), Vector3(.18, 6.8, .18), {"-y": null}, Vector2(2, 2), true)
+	# Só sobre os dois degraus de trás: a câmera de cima continua vendo a arquibancada.
+	b.box(ART.white_sheet(), _t(0, 6.9, -2.0, 0, deg_to_rad(-6)), Vector3(31, .12, 2.4), {}, Vector2(3, 3))
+	var banners := ["banner_oil", "banner_tire", "banner_radio"]
+	for k in 3:
+		b.quad(b.atlas, Vector3(-10.0 + float(k) * 10.0, 6.5, -.74), Vector3(4.6, 0, 0), Vector3(0, .34, 0), ART.uv(banners[k]))
+	_box(b, dark, Vector3(0, 6.5, -.79), Vector3(31, .72, .06))
+	# Grade de proteção com faixas e barreira de pneus entre a grade e a pista.
+	for x in range(-16, 17, 2): _box(b, steel, Vector3(float(x), .6, 4.0), Vector3(.06, 1.2, .06), {"-y": null})
+	for h in [.45, 1.15]: _box(b, steel, Vector3(0, h, 4.0), Vector3(32, .05, .05))
+	b.solid(_t(0, .6, 4.0), Vector3(32, 1.2, .2))
+	for k in 3:
+		b.quad(b.atlas, Vector3(-10.0 + float(k) * 10.0, .8, 4.04), Vector3(3.2, 0, 0), Vector3(0, .24, 0), ART.uv(banners[(k + 2) % 3]))
+	for x in range(-15, 16, 2):
+		for k in 3: b.cylinder(rubber, _t(float(x) + float(k % 2) * .06, .13 + float(k) * .25, 6.2), .38, .24, 12)
+	b.solid(_t(0, .4, 6.2), Vector3(31, .8, .8))
+	# Torre de cronometragem: sala de baixo (entra a pé) e a cabine de cima com o painel de tempos.
+	var tower := Vector3(19.5, 0, 0)
+	_room(b, roofs, tower, Vector3(4.0, 3.0, 4.0), ART.detail("plaster", Color("d8d2c2")), ART.detail("plaster", Color("ece6d6")), ART.detail("pool_tile", Color("9a948a"), .7), concrete, .6)
+	_window(b, tower + Vector3(-1.0, 1.6, 2.0 + .01), .9, .8)
+	# A cabine fica por cima da sala: vai no lote do telhado e some junto com o jogador lá dentro.
+	var booth := tower + Vector3(0, 3.0, 0)
+	_box(roofs, blue_steel, booth + Vector3(0, 1.4, 0), Vector3(4.2, 2.8, 4.2), {"-y": null}, Vector2(2, 2), true)
+	_window(roofs, booth + Vector3(0, 1.65, 2.11), 3.4, 1.0)
+	roofs.quad(roofs.atlas, booth + Vector3(0, 3.55, 2.14), Vector3(1.9, 0, 0), Vector3(0, .95, 0), ART.uv("timing_board"))
+	_box(roofs, dark, booth + Vector3(0, 3.55, 2.08), Vector3(4.1, 2.0, .1))
+	_box(roofs, white, booth + Vector3(0, 4.65, 0), Vector3(4.6, .14, 4.6))
+	for side in [-1.0, 1.0]:
+		roofs.cylinder(white, Transform3D(Basis(Vector3.RIGHT, PI * .5 - .3), booth + Vector3(side * 1.6, 4.95, 1.6)), .08, .5, 8, .28)
+	_pipe(roofs, steel, booth + Vector3(1.8, 4.7, -1.8), booth + Vector3(1.8, 8.0, -1.8), .04)
+	for side in [-.25, .25]: _box(b, steel, tower + Vector3(2.15, 3.6, side), Vector3(.05, 7.2, .05), {"-y": null})
+	for k in 20: _box(b, steel, tower + Vector3(2.15, .35 + float(k) * .35, 0), Vector3(.05, .035, .5))
+	# Dentro da sala: mesa do cronômetro com tela acesa, troféus na prateleira, cartaz, cadeira.
+	var wood := ART.detail("planks", Color("7a5a3a"), .8)
+	_desk(b, tower + Vector3(-.6, 0, -1.2), 0.0, wood, dark)
+	_box(b, dark, tower + Vector3(-.6, 1.0, -1.35), Vector3(.5, .4, .3))
+	b.quad(b.atlas, tower + Vector3(-.6, 1.0, -1.19), Vector3(-.2, 0, 0), Vector3(0, .15, 0), ART.uv("light"))
+	_chair(b, tower + Vector3(-.6, 0, -.5), PI, ART.color(Color("3b4a5a")))
+	_box(b, wood, tower + Vector3(1.55, 1.3, -.2), Vector3(.35, .05, 1.6))
+	var trophy := ART.detail("metal", Color("d6a83a"), .25)
+	for k in 4:
+		var cup := tower + Vector3(1.55, 1.33, -.8 + float(k) * .4)
+		b.cylinder(trophy, _t(cup.x, cup.y + .1, cup.z), .05, .2, 8, .02)
+		b.cylinder(trophy, _t(cup.x, cup.y + .28, cup.z), .06, .16, 10, .11)
+	b.quad(b.atlas, tower + Vector3(-1.84, 1.8, .2), Vector3(0, 0, .9), Vector3(0, .14, 0), ART.uv("banner_tire"))
+	# Lixeiras e caixa térmica atrás da arquibancada.
+	for k in 3:
+		var at := Vector3(-12.0 + float(k) * 9.0, 0, -5.0)
+		b.cylinder(ART.detail("metal", Color("3e6b3a"), .5), _t(at.x, .45, at.z), .28, .9, 12)
+		b.solid(_t(at.x, .45, at.z), Vector3(.56, .9, .56))
+	_box(b, ART.detail("metal", Color("2a5f9e"), .4), Vector3(9.0, .3, -4.4), Vector3(.8, .6, .5), {"-y": null}, Vector2(.8, .6), true)

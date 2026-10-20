@@ -8,9 +8,31 @@
       "title": "Estrada do Sal: Salinas, Balança rodoviária e Motel Oásis",
       "status": "implemented",
       "area": "mundo",
-      "description": "Três lugares de beira de estrada no padrão do RoadsideBuild (malha por material composta uma vez sob a cortina, caixas sólidas, uma luz pelo LightBudget, morador na porta). Salinas Estrada do Sal (100, -1600): galpão de ensaque com sacos, esteira, montes de sal, pá carregadeira, seis tanques de evaporação (salmoura rosada e azulada, crosta branca), casa de bombas e escritório. Balança rodoviária (-750, -1512): faixa com plataforma de 18 m, cancela, PARE, cones, baú esperando a pesagem e a cabine do fiscal. Motel Oásis (-1100, -1567): bloco de quartos com marquise, recepção, quarto 1 aberto, estacionamento, piscina vazia cercada, máquina de refrigerante, palmeiras e letreiro de neon com VAGAS. Os cômodos (escritório, cabine, recepção, quarto) entram a pé e o telhado some com o jogador dentro. Placas novas no atlas pintado (agora 2048x4096). Montagem de ~2 ms por lugar no editor.",
-      "sources": ["runtime/desert/roadside/RoadsideSaltRoad.gd", "runtime/desert/roadside/RoadsideLayout.gd", "runtime/desert/roadside/RoadsideBuild.gd", "runtime/desert/roadside/DesertRoadside.gd", "tools/roadside_art/build_roadside_atlas.py", "tests/test_desert_roadside_session.gd", "tests/capture/capture_salt_road.gd"],
+      "description": "Três lugares de beira de estrada no padrão do RoadsideBuild (malha por material composta uma vez sob a cortina, caixas sólidas, uma luz pelo LightBudget, morador na porta). Salinas Estrada do Sal (100, -1600): galpão de ensaque com sacos, esteira, montes de sal, pá carregadeira, seis tanques de evaporação (salmoura rosada e azulada, crosta branca), casa de bombas e escritório. Balança rodoviária (-750, -1512): faixa com plataforma de 18 m, cancela, PARE, cones, baú esperando a pesagem e a cabine do fiscal. Motel Oásis (-1100, -1567): bloco de quartos com marquise, recepção, quarto 1 aberto, estacionamento, piscina vazia cercada, máquina de refrigerante, palmeiras e letreiro de neon com VAGAS. Os cômodos (escritório, cabine, recepção, quarto) entram a pé e o telhado some com o jogador dentro. Placas novas no atlas pintado (agora 2048x4096). Montagem de ~2 ms por lugar no editor. Acabamento (20/10): texturas de superfície com mapa de normais, molduras, rodapé e carros de verdade da frota (caminhão de carroceria na balança).",
+      "sources": [
+        "runtime/desert/roadside/RoadsideSaltRoad.gd",
+        "runtime/desert/roadside/RoadsideLayout.gd",
+        "runtime/desert/roadside/RoadsideBuild.gd",
+        "runtime/desert/roadside/DesertRoadside.gd",
+        "tools/roadside_art/build_roadside_atlas.py",
+        "tests/test_desert_roadside_session.gd",
+        "tests/capture/capture_salt_road.gd"
+      ],
       "next": "Interações (cofre da salina, pesagem, pernoite no motel), medição em release na Estrada do Sal, e os próximos lugares: capela de beira de estrada e arquibancada da reta. A pedreira saiu do plano: o vazio do norte é a mina a céu aberto que já existe (MiningLayout)."
+    },
+    {
+      "id": "capela-arquibancada-20261020",
+      "title": "Capela de Nossa Senhora da Estrada e Arquibancada da reta",
+      "status": "implemented",
+      "area": "mundo",
+      "description": "Capela (-350, -1516) na beira da Estrada do Sal: caiada com barrado azul, telhado de barro em duas águas, campanário com sino e cruz, porta aberta (entra a pé: bancos, altar com toalha e velas acesas, a santa no nicho e a parede de ex-votos), mureta, cruzes dos caminhoneiros com flores, oratório de velas, árvore seca e banco. Arquibancada da reta (-300, -1282) no lado sul da pista: seis degraus de tábua sobre estrutura de aço, escadas e corrimãos, cobertura nos degraus de trás com faixas de patrocínio, grade e barreira de pneus, e a torre de cronometragem (sala de baixo entra a pé com mesa do cronômetro e troféus; em cima o painel de tempos, que some com o jogador dentro). Dois carros do deserto estacionados atrás. Telha de barro nova nas texturas de superfície e sete placas novas no atlas.",
+      "sources": [
+        "runtime/desert/roadside/RoadsideSaltRoad.gd",
+        "runtime/desert/roadside/RoadsideLayout.gd",
+        "tools/roadside_art/build_roadside_atlas.py",
+        "tools/roadside_art/build_roadside_surfaces.py"
+      ],
+      "next": "Interações (acender vela na capela, ver os tempos na torre), medição em release e jogar com controle."
     }
   ],
   "remove": []

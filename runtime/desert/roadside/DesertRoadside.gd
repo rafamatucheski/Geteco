@@ -142,6 +142,12 @@ func _build(definition: Dictionary) -> Dictionary:
 		"motel":
 			BUILD.motel(root)
 			_admit_resident(root, record, LAYOUT.MOTEL_CLERK, PI, "Dona Lurdes", "read", 77)
+		"chapel":
+			BUILD.chapel(root)
+			_admit_resident(root, record, LAYOUT.CHAPEL_KEEPER, 0.0, "Dona Fátima", "read", 81)
+		"grandstand":
+			BUILD.grandstand(root)
+			_admit_resident(root, record, LAYOUT.TIMEKEEPER, 0.0, "Seu Zé do Cronômetro", "read", 84)
 	var roofs := root.get_node_or_null("WalkInRoofs")
 	if roofs != null: record["roofs"] = roofs
 	record["parked_cars"] = {}

@@ -17,6 +17,10 @@ const SHOTS := [
 	["motel", Vector3(-2, 0, 6), "motel_patio"],
 	["motel", Vector3(-14.1, 0, -3.2), "motel_quarto"],
 	["motel", Vector3(10.0, 0, -1.6), "motel_recepcao"],
+	["chapel", Vector3(0, 0, 6), "capela_frente"],
+	["chapel", Vector3(0, 0, -3.5), "capela_dentro"],
+	["grandstand", Vector3(0, 0, 8), "arquibancada"],
+	["grandstand", Vector3(19.5, 0, .4), "torre_dentro"],
 ]
 var world: Node3D
 var session

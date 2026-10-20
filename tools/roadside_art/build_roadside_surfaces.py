@@ -179,8 +179,23 @@ def gravel():
     return gray(albedo), normal_from_height(stones * .8 + fine * .2, 3.0)
 
 
+def clay_tile():
+    """Telha colonial de barro: fileiras de canais (meio cilindro), cor variando por peça."""
+    y = np.arange(SIZE)[:, None].astype(np.float32)
+    x = np.arange(SIZE)[None, :].astype(np.float32)
+    cols, rows = 8, 6
+    u = (x * cols / SIZE) % 1.0
+    v = (y * rows / SIZE) % 1.0
+    curve = np.sin(u * np.pi)
+    lap = np.clip((v - .82) / .18, 0, 1)
+    piece = rng.random((rows, cols))[(y * rows / SIZE).astype(int) % rows, (x * cols / SIZE).astype(int) % cols]
+    albedo = .78 + (piece - .5) * .2 + curve * .12 - lap * .25 + (tile_noise(40, 2) - .5) * .08
+    height = curve * .8 - lap * .5
+    return gray(albedo), normal_from_height(height, 3.0)
+
+
 SURFACES = {"plaster": plaster, "planks": planks, "crate": crate, "metal": metal,
-            "salt_crust": salt_crust, "brine": brine, "pool_tile": pool_tile, "gravel": gravel}
+            "salt_crust": salt_crust, "brine": brine, "pool_tile": pool_tile, "gravel": gravel, "clay_tile": clay_tile}
 
 
 def write_import(texture, params):

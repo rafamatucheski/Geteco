@@ -27,6 +27,10 @@ const SITES := [
 	{"id": "salt_works", "kind": "salt_works", "center": Vector2(100, -1600), "yaw": 0.0, "name": "Salinas Estrada do Sal", "marker": "place", "radius": 62.0},
 	{"id": "weigh_station", "kind": "weigh_station", "center": Vector2(-750, -1512), "yaw": PI, "name": "Balança rodoviária", "marker": "place", "radius": 22.0},
 	{"id": "motel", "kind": "motel", "center": Vector2(-1100, -1567), "yaw": 0.0, "name": "Motel Oásis", "marker": "place", "radius": 26.0},
+	# Fase 3 (20/10): capela na beira da Estrada do Sal e arquibancada no lado sul da reta, de frente
+	# para a pista (fora da reserva de 55 m da arrancada).
+	{"id": "chapel", "kind": "chapel", "center": Vector2(-350, -1516), "yaw": PI, "name": "Capela de Nossa Senhora da Estrada", "marker": "place", "radius": 14.0},
+	{"id": "grandstand", "kind": "grandstand", "center": Vector2(-300, -1282), "yaw": PI, "name": "Arquibancada da reta", "marker": "place", "radius": 24.0},
 ]
 ## Trechos (início, fim) no eixo da pista que seguem vazios depois dos lugares acima.
 const EVENT_STRETCHES := [
@@ -35,7 +39,8 @@ const EVENT_STRETCHES := [
 	{"id": "main_east", "a": Vector2(300, -880), "b": Vector2(-60, -880)},
 	# Entre o Motel Oásis (x -1100) e o acesso ao cânion: evento não nasce na frente do lugar.
 	{"id": "salt_west", "a": Vector2(-1060, -1540), "b": Vector2(-920, -1540)},
-	{"id": "salt_middle", "a": Vector2(-520, -1540), "b": Vector2(-340, -1540)},
+	# Termina antes da capela (x -350).
+	{"id": "salt_middle", "a": Vector2(-520, -1540), "b": Vector2(-400, -1540)},
 	# A salina (x 40..160 na beira) divide o trecho leste em dois.
 	{"id": "salt_east", "a": Vector2(-70, -1540), "b": Vector2(30, -1540)},
 	{"id": "salt_far_east", "a": Vector2(170, -1540), "b": Vector2(290, -1540)},
@@ -55,12 +60,15 @@ const FOOD_VENDOR := Vector3(-2.4, 0, 1.9)
 const SALT_FOREMAN := Vector3(14.4, 0, 28.6)
 const WEIGH_INSPECTOR := Vector3(.7, 0, 3.6)
 const MOTEL_CLERK := Vector3(11.1, 0, -3.6)
+const CHAPEL_KEEPER := Vector3(2.6, 0, 3.4)
+const TIMEKEEPER := Vector3(18.3, 0, 3.0)
 ## Veículos de verdade da frota estacionados nos lugares (não carcaças): [modelo, ponto local, giro
 ## local]. Pintura, vidro, rodas e faróis do modelo, e dá para levar. A frente do carro é -z local.
 const PARKED := {
 	"salt_works": [["desert_faisca", Vector3(19.5, 0, 36.0), PI * .5]],
 	"weigh_station": [["cargo_flatbed_truck", Vector3(-6.5, 0, 12.0), PI * .5]],
 	"motel": [["desert_bison", Vector3(-12.6, 0, 8.6), 0.05], ["desert_coyote", Vector3(-5.8, 0, 8.8), -.04], ["desert_mirage", Vector3(1.0, 0, 8.7), .02]],
+	"grandstand": [["desert_siroco", Vector3(-6.0, 0, -7.5), PI * .5], ["desert_faisca", Vector3(4.0, 0, -7.6), PI * .5]],
 }
 ## Repõe o carro que o controlador recolheu (> 145 m) só nesta faixa: longe da tela, perto o
 ## bastante para estar lá quando o jogador chegar.

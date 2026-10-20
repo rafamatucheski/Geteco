@@ -21,7 +21,7 @@ const LAMP := preload("res://runtime/desert/roadside/RoadsideLamp.gd")
 const LAYOUT := preload("res://runtime/desert/roadside/RoadsideLayout.gd")
 const FLEET := preload("res://runtime/FleetCatalog.gd")
 const SALT_ROAD := preload("res://runtime/desert/roadside/RoadsideSaltRoad.gd")
-const KINDS := ["station", "tower", "scrapyard", "food_truck", "salt_works", "weigh_station", "motel"]
+const KINDS := ["station", "tower", "scrapyard", "food_truck", "salt_works", "weigh_station", "motel", "chapel", "grandstand"]
 ## Carcaças: só modelos da frota comum (cena retida e desenhada no pré-aquecimento da frota),
 ## de carroceria em 3 superfícies (~8 desenhos por carcaça; o sedã tem 15 só na carroceria).
 const WRECK_MODELS := ["ranch_single", "courier_van"]
@@ -87,6 +87,16 @@ static func motel(root: Node3D) -> void:
 	_walk_in_roofs(root, "motel")
 	_lamp(root, Vector3(9.3, 2.9, .3), Color("ffd9b0"), 14.0, 1.5)
 
+static func chapel(root: Node3D) -> void:
+	ART.instantiate(root, baked("chapel"))
+	_walk_in_roofs(root, "chapel")
+	_lamp(root, Vector3(0, 3.0, 1.6), Color("ffdcb0"), 12.0, 1.3)
+
+static func grandstand(root: Node3D) -> void:
+	ART.instantiate(root, baked("grandstand"))
+	_walk_in_roofs(root, "grandstand")
+	_lamp(root, Vector3(19.5, 6.2, 2.6), Color("f4f6ff"), 20.0, 1.8)
+
 ## Telhados dos cômodos de entrar a pé num nó só, para o coordenador esconder com o jogador dentro.
 static func _walk_in_roofs(root: Node3D, kind: String) -> void:
 	var node := Node3D.new()
@@ -113,12 +123,14 @@ static func baked(kind: String) -> Dictionary:
 			"tower": _compose_tower(b)
 			"scrapyard": _compose_scrapyard(b)
 			"food_truck": _compose_food_truck(b)
-			"salt_works", "weigh_station", "motel":
+			"salt_works", "weigh_station", "motel", "chapel", "grandstand":
 				var roofs := ART.batch()
 				match kind:
 					"salt_works": SALT_ROAD.compose_salt_works(b, roofs)
 					"weigh_station": SALT_ROAD.compose_weigh_station(b, roofs)
 					"motel": SALT_ROAD.compose_motel(b, roofs)
+					"chapel": SALT_ROAD.compose_chapel(b, roofs)
+					"grandstand": SALT_ROAD.compose_grandstand(b, roofs)
 				_baked[kind + ":roofs"] = roofs.bake()
 		_baked[kind] = b.bake()
 	return _baked[kind]
