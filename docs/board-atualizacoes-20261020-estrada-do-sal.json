@@ -46,6 +46,19 @@
         "tests/capture/capture_desert_town.gd"
       ],
       "next": "Fachadas dos prédios antigos (já texturizadas) podem ganhar molduras e toldos; medição em release na cidade; jogar com controle."
+    },
+    {
+      "id": "fachadas-cidade-deserto-20261020",
+      "title": "Fachadas e telhados do banco, Solana, Alvorada, Motel Horizonte e Digo",
+      "status": "implemented",
+      "area": "mundo",
+      "description": "Os cinco prédios antigos da cidade do deserto ganharam acabamento por cima das caixas do DesertArchitecture (RoadsideFacades, montado pelo coordenador da beira de estrada): cornija, rodapé encardido, escorridos de chuva na frente, lados e fundos, peitoris, calhas nas quinas, porta de serviço e relógio de luz nos fundos; no telhado (o que a câmera mais vê) platibanda dos fundos com rufo, remendos de manta, respiros, caixa-d'água, aquecedor solar, antena e claraboia. Por prédio: placa de bronze, caixa eletrônico 24 h, grades e câmeras no banco; letreiro de neon SOLANA no telhado e toldo listrado na lanchonete; pintura MERCADO ALVORADA na parede leste, toldo e gaiola de botijões no mercado; letreiro MOTEL HORIZONTE com VAGAS em neon, números dos quartos e ar-condicionado de parede no motel; pintura OFICINA DO DIGO na parede leste e exaustores na oficina. Sete painéis novos no atlas da beira de estrada (letreiros com brilho à noite). A câmera do jogo só vê as faces leste e sul, então as pinturas foram para o leste.",
+      "sources": [
+        "runtime/desert/roadside/RoadsideFacades.gd",
+        "tools/roadside_art/build_roadside_atlas.py",
+        "tests/capture/capture_desert_town.gd"
+      ],
+      "next": "Medição em release na cidade (o atlas cresceu 7 painéis e cada prédio virou um conjunto a mais); jogar com controle; toldos da lanchonete e do mercado ficam na frente para a rua, que a câmera fixa não mostra."
     }
   ],
   "remove": []

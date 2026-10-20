@@ -147,7 +147,7 @@ func _build(definition: Dictionary) -> Dictionary:
 		"chapel":
 			BUILD.chapel(root)
 			_admit_resident(root, record, LAYOUT.CHAPEL_KEEPER, 0.0, "Dona Fátima", "read", 81)
-		"town_street", "homes_yards", "village_square", "workshop_yard":
+		"town_street", "homes_yards", "village_square", "workshop_yard", "facade_bank", "facade_diner", "facade_market", "facade_motel", "facade_digo":
 			BUILD.dressing(root, str(definition.kind))
 		"grandstand":
 			BUILD.grandstand(root)

@@ -42,6 +42,12 @@ const DRESSINGS := [
 	{"id": "homes_yards", "kind": "homes_yards", "center": Vector2(-242, -1048), "yaw": 0.0, "build": 170.0, "park": 240.0},
 	{"id": "village_square", "kind": "village_square", "center": Vector2(-528, -822), "yaw": 0.0,
 		"clear": [Rect2(-8, -15, 16, 16), Rect2(-2, -19, 4, 3), Rect2(2.5, -21, 4, 6)]},
+	# Fachadas e telhados dos prédios antigos (RoadsideFacades): âncora e giro do próprio prédio.
+	{"id": "facade_bank", "kind": "facade_bank", "center": Vector2(-210, -920), "yaw": 0.0},
+	{"id": "facade_diner", "kind": "facade_diner", "center": Vector2(-255, -856), "yaw": PI},
+	{"id": "facade_market", "kind": "facade_market", "center": Vector2(-180, -856), "yaw": PI},
+	{"id": "facade_motel", "kind": "facade_motel", "center": Vector2(-330, -923), "yaw": 0.0},
+	{"id": "facade_digo", "kind": "facade_digo", "center": Vector2(-140, -955), "yaw": 0.0},
 	{"id": "workshop_yard", "kind": "workshop_yard", "center": Vector2(-140, -955), "yaw": 0.0,
 		"clear": [Rect2(-21.5, -8, 9, 18), Rect2(12.5, -8, 9, 18)]},
 ]

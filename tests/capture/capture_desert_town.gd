@@ -21,6 +21,8 @@ const SHOTS := [
 	[Vector3(-180, 0, -872), "mercado"],
 	[Vector3(-156, 0, -951), "oficina_oeste"],
 	[Vector3(-124, 0, -953), "oficina_leste"],
+	[Vector3(-336, 0, -911), "motel_horizonte"],
+	[Vector3(-166, 0, -858), "mercado_lado"],
 ]
 var world: Node3D
 

@@ -22,8 +22,10 @@ const LAYOUT := preload("res://runtime/desert/roadside/RoadsideLayout.gd")
 const FLEET := preload("res://runtime/FleetCatalog.gd")
 const SALT_ROAD := preload("res://runtime/desert/roadside/RoadsideSaltRoad.gd")
 const TOWN := preload("res://runtime/desert/roadside/RoadsideTown.gd")
+const FACADES := preload("res://runtime/desert/roadside/RoadsideFacades.gd")
 const KINDS := ["station", "tower", "scrapyard", "food_truck", "salt_works", "weigh_station", "motel", "chapel", "grandstand",
-	"town_street", "homes_yards", "village_square", "workshop_yard"]
+	"town_street", "homes_yards", "village_square", "workshop_yard",
+	"facade_bank", "facade_diner", "facade_market", "facade_motel", "facade_digo"]
 ## Carcaças: só modelos da frota comum (cena retida e desenhada no pré-aquecimento da frota),
 ## de carroceria em 3 superfícies (~8 desenhos por carcaça; o sedã tem 15 só na carroceria).
 const WRECK_MODELS := ["ranch_single", "courier_van"]
@@ -145,6 +147,7 @@ static func baked(kind: String) -> Dictionary:
 			"homes_yards": TOWN.compose_homes_yards(b, null)
 			"village_square": TOWN.compose_village_square(b, null)
 			"workshop_yard": TOWN.compose_workshop_yard(b, null)
+			"facade_bank", "facade_diner", "facade_market", "facade_motel", "facade_digo": FACADES.compose(b, kind)
 		_baked[kind] = b.bake()
 	return _baked[kind]
 

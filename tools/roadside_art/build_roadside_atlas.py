@@ -736,6 +736,115 @@ def timing_board(w, h):
     return weather(img, dirt=.12, streaks=.1, scale=16), glow
 
 
+# --- Fase 4 (20/10): letreiros dos prédios antigos da cidade -----------------------------------
+
+def bank_plaque(w, h):
+    """Placa de bronze do banco."""
+    a = np.full((h, w, 3), (150, 104, 56), np.float32)
+    a += (noise(w, h, 20) - .5)[..., None] * 40
+    img = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8))
+    d = ImageDraw.Draw(img)
+    d.rectangle((6, 6, w - 7, h - 7), outline=(90, 60, 30), width=6)
+    f = fit_text(d, "BANCO COBRE", w * .8, h * .38, FONT_BOLD)
+    text_center(d, "BANCO COBRE", w / 2, h * .38, f, (250, 220, 150), stroke=2, stroke_fill=(80, 50, 20))
+    f2 = fit_text(d, "AGÊNCIA DO DESERTO · DESDE 1958", w * .84, h * .2, FONT_BOLD)
+    text_center(d, "AGÊNCIA DO DESERTO · DESDE 1958", w / 2, h * .72, f2, (240, 210, 140))
+    return weather(img, dirt=.16, streaks=.18, scale=16), Image.new("RGB", (w, h))
+
+
+def diner_neon(w, h):
+    """Letreiro de telhado da lanchonete: neon vermelho e amarelo sobre chapa escura."""
+    img = Image.new("RGB", (w, h), (34, 30, 32))
+    glow = Image.new("RGB", (w, h), (0, 0, 0))
+    d, g = ImageDraw.Draw(img), ImageDraw.Draw(glow)
+    d.rectangle((0, 0, w - 1, h - 1), outline=(200, 160, 60), width=8)
+    f = fit_text(d, "SOLANA", w * .7, h * .5, FONT_BOLD)
+    text_center(d, "SOLANA", w / 2, h * .38, f, (255, 90, 80), stroke=3, stroke_fill=(120, 20, 20))
+    text_center(g, "SOLANA", w / 2, h * .38, f, (255, 60, 50))
+    f2 = fit_text(d, "LANCHES · CAFÉ · PRATO FEITO", w * .84, h * .2, FONT_BOLD)
+    text_center(d, "LANCHES · CAFÉ · PRATO FEITO", w / 2, h * .8, f2, (255, 210, 90))
+    text_center(g, "LANCHES · CAFÉ · PRATO FEITO", w / 2, h * .8, f2, (255, 180, 50))
+    return weather(img, dirt=.12, streaks=.1, scale=20), glow
+
+
+def market_wall(w, h):
+    """Propaganda pintada na parede do mercado (letra de pintor, cores desbotadas)."""
+    img = Image.new("RGB", (w, h), (226, 206, 168))
+    d = ImageDraw.Draw(img)
+    d.rectangle((0, 0, w, h * .46), fill=(40, 110, 70))
+    f = fit_text(d, "MERCADO ALVORADA", w * .9, h * .34, FONT_BOLD)
+    text_center(d, "MERCADO ALVORADA", w / 2, h * .23, f, (250, 240, 200))
+    f2 = fit_text(d, "SECOS E MOLHADOS · FRUTAS · VERDURAS · GELO", w * .9, h * .2, FONT_BOLD)
+    text_center(d, "SECOS E MOLHADOS · FRUTAS · VERDURAS · GELO", w / 2, h * .62, f2, (150, 50, 30))
+    f3 = fit_text(d, "ABERTO TODO DIA", w * .5, h * .16, FONT_HAND)
+    text_center(d, "ABERTO TODO DIA", w / 2, h * .86, f3, (40, 80, 140))
+    chip(img, 140, (236, 222, 196), (2, 6))
+    return weather(img, dirt=.26, streaks=.24, scale=24), Image.new("RGB", (w, h))
+
+
+def horizonte_sign(w, h):
+    """Letreiro de telhado do Motel Horizonte: sol no horizonte, nome e VAGAS em neon."""
+    img = Image.new("RGB", (w, h), (30, 46, 70))
+    glow = Image.new("RGB", (w, h), (0, 0, 0))
+    d, g = ImageDraw.Draw(img), ImageDraw.Draw(glow)
+    sun_logo(d, h * .55, h * .62, h * .34, sky=(30, 46, 70))
+    sun_logo(g, h * .55, h * .62, h * .34, sky=(0, 0, 0), sun=(220, 130, 40))
+    f = fit_text(d, "MOTEL HORIZONTE", w * .64, h * .36, FONT_BOLD)
+    d.text((h * 1.15, h * .36), "MOTEL HORIZONTE", font=f, fill=(255, 150, 90), anchor="lm")
+    g.text((h * 1.15, h * .36), "MOTEL HORIZONTE", font=f, fill=(255, 110, 60), anchor="lm")
+    f2 = fit_text(d, "VAGAS · AR · TV", w * .4, h * .22, FONT_BOLD)
+    d.text((h * 1.18, h * .76), "VAGAS · AR · TV", font=f2, fill=(120, 255, 150), anchor="lm")
+    g.text((h * 1.18, h * .76), "VAGAS · AR · TV", font=f2, fill=(90, 255, 120), anchor="lm")
+    return weather(img, dirt=.14, streaks=.12, scale=20), glow
+
+
+def room_numbers(w, h):
+    """Seis plaquinhas de quarto (1 a 6) lado a lado: cada quarto usa a sua fatia (uv_span)."""
+    img = Image.new("RGB", (w, h), (232, 176, 58))
+    d = ImageDraw.Draw(img)
+    cell = w / 6
+    f = fit_text(d, "6", cell * .6, h * .8, FONT_BOLD)
+    for k in range(6):
+        d.rectangle((k * cell + 2, 2, (k + 1) * cell - 3, h - 3), outline=(80, 50, 20), width=3)
+        text_center(d, str(k + 1), k * cell + cell / 2, h / 2, f, (60, 40, 20))
+    return weather(img, dirt=.12, streaks=.06, scale=12), Image.new("RGB", (w, h))
+
+
+def digo_wall(w, h):
+    """Pintura de parede da oficina: nome, serviços e uma chave inglesa."""
+    img = Image.new("RGB", (w, h), (214, 206, 190))
+    d = ImageDraw.Draw(img)
+    d.rectangle((0, h * .1, w, h * .58), fill=(176, 40, 30))
+    f = fit_text(d, "OFICINA DO DIGO", w * .78, h * .36, FONT_BOLD)
+    d.text((w * .04, h * .34), "OFICINA DO DIGO", font=f, fill=(250, 244, 230), anchor="lm")
+    f2 = fit_text(d, "MECÂNICA · FUNILARIA · PINTURA · PREPARAÇÃO", w * .9, h * .2, FONT_BOLD)
+    text_center(d, "MECÂNICA · FUNILARIA · PINTURA · PREPARAÇÃO", w / 2, h * .76, f2, (40, 40, 44))
+    cx, cy, r = w * .9, h * .34, h * .16
+    d.line((cx - r * 1.6, cy + r * 1.2, cx + r * .4, cy - r * .4), fill=(230, 230, 220), width=int(r * .55))
+    d.ellipse((cx - r * .2, cy - r * 1.1, cx + r * 1.1, cy + r * .2), fill=(230, 230, 220))
+    d.ellipse((cx + r * .2, cy - r * .9, cx + r * .7, cy - r * .3), fill=(176, 40, 30))
+    chip(img, 160, (226, 220, 206), (2, 6))
+    return weather(img, dirt=.28, streaks=.26, scale=24), Image.new("RGB", (w, h))
+
+
+def atm(w, h):
+    """Frente do caixa eletrônico: tela acesa, teclado e a boca da nota."""
+    img = Image.new("RGB", (w, h), (90, 94, 98))
+    glow = Image.new("RGB", (w, h), (0, 0, 0))
+    d, g = ImageDraw.Draw(img), ImageDraw.Draw(glow)
+    d.rectangle((0, 0, w, h * .16), fill=(150, 104, 56))
+    f = fit_text(d, "24 HORAS", w * .8, h * .1, FONT_BOLD)
+    text_center(d, "24 HORAS", w / 2, h * .08, f, (250, 230, 170))
+    d.rectangle((w * .14, h * .22, w * .86, h * .5), fill=(40, 120, 170))
+    g.rectangle((w * .14, h * .22, w * .86, h * .5), fill=(30, 100, 150))
+    for r in range(4):
+        for c in range(3):
+            x, y = w * (.28 + .16 * c), h * (.58 + .07 * r)
+            d.rectangle((x, y, x + w * .1, y + h * .045), fill=(200, 200, 196))
+    d.rectangle((w * .2, h * .9, w * .8, h * .94), fill=(20, 20, 20))
+    return weather(img, dirt=.12, streaks=.1, scale=12), glow
+
+
 PANELS = [
     ("pylon", 448, 672, pylon),
     ("fascia", 1792, 96, fascia),
@@ -778,6 +887,13 @@ PANELS = [
     ("banner_tire", 640, 96, lambda w, h: banner(w, h, "PNEUS VELOZ", "BORRACHARIA 24H", (200, 40, 32), (250, 248, 236))),
     ("banner_radio", 640, 96, lambda w, h: banner(w, h, "RÁDIO SOL 98,1", "A VOZ DA ESTRADA", (240, 180, 40), (40, 30, 24))),
     ("timing_board", 384, 192, timing_board),
+    ("bank_plaque", 384, 128, bank_plaque),
+    ("diner_neon", 512, 192, diner_neon),
+    ("market_wall", 640, 256, market_wall),
+    ("horizonte_sign", 640, 160, horizonte_sign),
+    ("room_numbers", 384, 64, room_numbers),
+    ("digo_wall", 768, 256, digo_wall),
+    ("atm", 128, 224, atm),
 ]
 
 
