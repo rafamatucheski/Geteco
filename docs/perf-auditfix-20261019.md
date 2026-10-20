@@ -49,8 +49,24 @@ identificada.
 Draw calls caem 2-7 %. Não ajudam com a câmera alta: ficam desligados. A variação entre rodadas da
 mesma variante (oeste 5,28 → 5,99 ms) mostra que diferenças abaixo de ~10 % precisam de mais rodadas.
 
+## D3D12, noite e chuva (1 rodada cada, mesma build)
+
+| teste | média ms | p50 | pior | > 33 ms |
+|---|---|---|---|---|
+| serra Vulkan | 4,24 | 3,76 | 39,4 | 1 |
+| serra D3D12 (cache aquecido) | 5,10 | 4,58 | 39,6 | 1 |
+| travessia dia (Vulkan) | 2,92 | 2,51 | 27,8 | 0 |
+| travessia 22 h, correções ligadas | 2,66 | 2,32 | 25,8 | 0 |
+| travessia 22 h, faróis/pré-aquecimento antigos | 2,52 | 2,17 | 25,3 | 0 |
+| oeste dia | 5,61 | 4,99 | 15,5 | 0 |
+| oeste chuva forte | **7,20** | 6,59 | 18,9 | 0 |
+
+**Leitura:** D3D12 ~20 % mais lento na média na serra e com o mesmo pior quadro: fica no Vulkan. À noite
+as correções empatam com o antigo (ruído). A chuva forte custa ~1,6 ms no oeste (+28 %) e é o único cenário
+medido com média abaixo de 144 fps (139): é o próximo alvo. O pico de 220–250 ms não apareceu em nenhuma
+rodada de 19/10.
+
 ## Não medido
 
-D3D12; noite e chuva
-(faróis e túnel); segunda rodada de todas as rotas; o pico de 220–250 ms da serra/travessia não apareceu
+segunda rodada de todas as rotas; o pico de 220–250 ms da serra/travessia não apareceu
 nas rodadas desta noite (ausência numa rodada não prova que sumiu).
