@@ -1,0 +1,320 @@
+{
+	"a_frame": {
+		"blender": 252,
+		"procedural": 144,
+		"shadow": false,
+		"tree": false
+	},
+	"ac_unit": {
+		"blender": 768,
+		"procedural": 78,
+		"shadow": false,
+		"tree": false
+	},
+	"antenna": {
+		"blender": 520,
+		"procedural": 51,
+		"shadow": false,
+		"tree": false
+	},
+	"awning_small": {
+		"blender": 832,
+		"procedural": 84,
+		"shadow": false,
+		"tree": false
+	},
+	"beacon_mast": {
+		"blender": 256,
+		"procedural": 30,
+		"shadow": false,
+		"tree": false
+	},
+	"beer_crates": {
+		"blender": 752,
+		"procedural": 108,
+		"shadow": false,
+		"tree": false
+	},
+	"bike_rack": {
+		"blender": 2056,
+		"procedural": 684,
+		"shadow": false,
+		"tree": false
+	},
+	"billboard_frame": {
+		"blender": 948,
+		"procedural": 132,
+		"shadow": true,
+		"tree": false
+	},
+	"cafe_parasol": {
+		"blender": 1508,
+		"procedural": 261,
+		"shadow": true,
+		"tree": false
+	},
+	"cafe_parasol_b": {
+		"blender": 1392,
+		"procedural": 261,
+		"shadow": true,
+		"tree": false
+	},
+	"cafe_set": {
+		"blender": 1552,
+		"procedural": 306,
+		"shadow": true,
+		"tree": false
+	},
+	"clothes_rack": {
+		"blender": 2272,
+		"procedural": 168,
+		"shadow": false,
+		"tree": false
+	},
+	"cooling_tower": {
+		"blender": 1300,
+		"procedural": 132,
+		"shadow": true,
+		"tree": false
+	},
+	"dish": {
+		"blender": 640,
+		"procedural": 42,
+		"shadow": false,
+		"tree": false
+	},
+	"door_bench": {
+		"blender": 428,
+		"procedural": 78,
+		"shadow": false,
+		"tree": false
+	},
+	"drain": {
+		"blender": 496,
+		"procedural": 72,
+		"shadow": false,
+		"tree": false
+	},
+	"drainpipe": {
+		"blender": 160,
+		"procedural": 30,
+		"shadow": false,
+		"tree": false
+	},
+	"drums": {
+		"blender": 1548,
+		"procedural": 360,
+		"shadow": false,
+		"tree": false
+	},
+	"fe_ladder": {
+		"blender": 208,
+		"procedural": 96,
+		"shadow": false,
+		"tree": false
+	},
+	"fe_platform": {
+		"blender": 824,
+		"procedural": 240,
+		"shadow": true,
+		"tree": false
+	},
+	"fe_stair": {
+		"blender": 720,
+		"procedural": 156,
+		"shadow": true,
+		"tree": false
+	},
+	"fe_stair_m": {
+		"blender": 720,
+		"procedural": 156,
+		"shadow": true,
+		"tree": false
+	},
+	"flower_box": {
+		"blender": 616,
+		"procedural": 174,
+		"shadow": false,
+		"tree": false
+	},
+	"flower_buckets": {
+		"blender": 2424,
+		"procedural": 444,
+		"shadow": false,
+		"tree": false
+	},
+	"food_cart": {
+		"blender": 1140,
+		"procedural": 327,
+		"shadow": true,
+		"tree": false
+	},
+	"gas_cylinders": {
+		"blender": 1656,
+		"procedural": 252,
+		"shadow": false,
+		"tree": false
+	},
+	"hedge": {
+		"blender": 880,
+		"procedural": 175,
+		"shadow": false,
+		"tree": false
+	},
+	"ice_freezer": {
+		"blender": 1356,
+		"procedural": 84,
+		"shadow": true,
+		"tree": false
+	},
+	"laundry": {
+		"blender": 592,
+		"procedural": 144,
+		"shadow": true,
+		"tree": false
+	},
+	"manhole": {
+		"blender": 832,
+		"procedural": 96,
+		"shadow": false,
+		"tree": false
+	},
+	"motorcycle": {
+		"blender": 1396,
+		"procedural": 372,
+		"shadow": true,
+		"tree": false
+	},
+	"pallet_stack": {
+		"blender": 1408,
+		"procedural": 384,
+		"shadow": true,
+		"tree": false
+	},
+	"pigeons": {
+		"blender": 1020,
+		"procedural": 180,
+		"shadow": false,
+		"tree": false
+	},
+	"pipe_run": {
+		"blender": 800,
+		"procedural": 60,
+		"shadow": false,
+		"tree": false
+	},
+	"posters": {
+		"blender": 216,
+		"procedural": 144,
+		"shadow": false,
+		"tree": false
+	},
+	"pot_plant": {
+		"blender": 588,
+		"procedural": 215,
+		"shadow": false,
+		"tree": true
+	},
+	"produce_stand": {
+		"blender": 1468,
+		"procedural": 240,
+		"shadow": true,
+		"tree": false
+	},
+	"roof_chairs": {
+		"blender": 424,
+		"procedural": 54,
+		"shadow": false,
+		"tree": false
+	},
+	"roof_garden": {
+		"blender": 1380,
+		"procedural": 157,
+		"shadow": false,
+		"tree": false
+	},
+	"roof_hatch": {
+		"blender": 196,
+		"procedural": 24,
+		"shadow": false,
+		"tree": false
+	},
+	"roof_shed": {
+		"blender": 392,
+		"procedural": 24,
+		"shadow": false,
+		"tree": false
+	},
+	"satellite_row": {
+		"blender": 1788,
+		"procedural": 126,
+		"shadow": false,
+		"tree": false
+	},
+	"signal_pole": {
+		"blender": 860,
+		"procedural": 132,
+		"shadow": true,
+		"tree": false
+	},
+	"skylight": {
+		"blender": 308,
+		"procedural": 36,
+		"shadow": false,
+		"tree": false
+	},
+	"solar_row": {
+		"blender": 768,
+		"procedural": 180,
+		"shadow": false,
+		"tree": false
+	},
+	"stop_sign": {
+		"blender": 284,
+		"procedural": 78,
+		"shadow": true,
+		"tree": false
+	},
+	"street_tree": {
+		"blender": 2716,
+		"procedural": 749,
+		"shadow": true,
+		"tree": true
+	},
+	"street_tree_b": {
+		"blender": 2116,
+		"procedural": 609,
+		"shadow": true,
+		"tree": true
+	},
+	"tire_stack": {
+		"blender": 2184,
+		"procedural": 360,
+		"shadow": false,
+		"tree": false
+	},
+	"vent": {
+		"blender": 412,
+		"procedural": 48,
+		"shadow": false,
+		"tree": false
+	},
+	"water_tank": {
+		"blender": 2112,
+		"procedural": 276,
+		"shadow": true,
+		"tree": false
+	},
+	"wheelie_bins": {
+		"blender": 1488,
+		"procedural": 120,
+		"shadow": false,
+		"tree": false
+	},
+	"window_ac": {
+		"blender": 320,
+		"procedural": 96,
+		"shadow": true,
+		"tree": false
+	}
+}

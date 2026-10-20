@@ -12,6 +12,12 @@ static var _material: StandardMaterial3D
 # Peças modeladas no Blender (tools/blender/build_city_*.py), com o material do kit
 # por cima. "0" volta às versões procedurais no mesmo export, para o A/B.
 static var blender_props_enabled := OS.get_environment("GETECO_BLENDER_PROPS") != "0"
+# Só a terceira onda (WAVE3_KINDS e VARIATION): "0" deixa as duas primeiras do Blender e
+# devolve a procedural a estes tipos, para medir a onda sozinha no mesmo export.
+static var blender_wave3_enabled := OS.get_environment("GETECO_BLENDER_WAVE3") != "0"
+# Só árvores de rua e vaso (as peças de mais triângulos da onda): "0" volta à procedural.
+static var blender_trees_enabled := OS.get_environment("GETECO_BLENDER_TREES") != "0"
+const TREE_KINDS := ["street_tree", "street_tree_b", "pot_plant"]
 const BLENDER_SCENES := {
 	"trash_can": preload("res://assets/city_props/trash_can.glb"),
 	"hydrant": preload("res://assets/city_props/hydrant.glb"),
@@ -135,7 +141,7 @@ static func _layered_mesh(kind: String) -> ArrayMesh:
 
 static func mesh(kind: String) -> ArrayMesh:
 	if _meshes.has(kind): return _meshes[kind]
-	if blender_props_enabled and (BLENDER_WHOLE.has(kind) or WAVE3_KINDS.has(kind)):
+	if blender_props_enabled and (BLENDER_WHOLE.has(kind) or wave3_modeled(kind)):
 		_meshes[kind] = blender_mesh(kind, BLENDER_WHOLE.get(kind, kind))
 		return _meshes[kind]
 	if LAYERED.has(kind):
@@ -219,7 +225,13 @@ const VARIATION := {
 
 
 static func variation_for(kind: String) -> Dictionary:
-	return VARIATION.get(kind, {}) if blender_props_enabled else {}
+	return VARIATION.get(kind, {}) if blender_props_enabled and wave3_modeled(kind) else {}
+
+
+## Tipo da terceira onda que sai do .glb (e não da procedural) com os interruptores atuais.
+static func wave3_modeled(kind: String) -> bool:
+	if not WAVE3_KINDS.has(kind) or not blender_wave3_enabled: return false
+	return blender_trees_enabled or not kind in TREE_KINDS
 
 
 ## [transform com a proporção mudada, cor da paleta]. A escolha sai da posição (e de
