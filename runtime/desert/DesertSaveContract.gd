@@ -22,6 +22,7 @@ static func valid(world: Dictionary, economy: Dictionary) -> bool:
 	if world.has(BANDITS.STATE_KEY) and not BANDITS.valid_state(world[BANDITS.STATE_KEY]): return false
 	if world.has("desert_discoveries") and not preload("res://runtime/desert/expansion/DesertDiscoveryState.gd").valid(world.desert_discoveries): return false
 	if world.has("desert_story") and not STORY.valid(world.desert_story): return false
+	if not preload("res://runtime/desert/act2/VicenteAct2State.gd").validate_wallet(world,economy): return false
 	if not RACE.validate_wallet(RACE.data(world),economy): return false
 	if not INSTRUMENTS.validate_wallet(world,economy): return false
 	if world.has("desert_garage") and not GARAGE.valid(world.desert_garage,economy): return false

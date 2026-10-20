@@ -59,6 +59,7 @@ func run() -> void:
 	var vicente = session.desert.story.actors.get("vicente")
 	if not check(is_instance_valid(vicente),"Vicente is present at the new meeting place"): finish(); return
 	check(vicente.global_position.distance_to(LAYOUT.drag_vicente_point())<.5,"campaign Vicente uses the new venue")
+	var vicente_point: Vector3 = vicente.global_position
 	world.gameplay._damage(vicente,10000.0,world.player)
 	await frames(2)
 	check(is_instance_valid(vicente) and not vicente.is_queued_for_deletion() and vicente.collision_layer!=0,"production damage preserves Vicente and his physical body")
@@ -77,7 +78,9 @@ func run() -> void:
 	for i in 12:
 		if not session.dialogue_open: break
 		session._advance_dialogue()
-	check(not session.modal and session.state.world_state.get("desert_story",{}).get("met_vicente",false),"completed conversation records the existing story flag")
+	# Desde 20/10 a conversa do encontro é a primeira etapa de "Oito anos" (runtime/desert/act2):
+	# met_vicente só vem na capela, e Vicente vai esperar no Motel Oásis.
+	check(not session.modal and preload("res://runtime/desert/act2/VicenteAct2State.gd").stage(session.state.world_state)=="motel","completed conversation starts the reunion mission")
 	await photo("vicente-gameplay")
 	var jessica = session.desert.story.actors.get("jessica")
 	if is_instance_valid(jessica):
@@ -88,7 +91,7 @@ func run() -> void:
 			session._advance_dialogue()
 		check(not session.state.world_state.get("desert_story",{}).get("jessica_met",false),"casual Jessica conversation does not bypass the race story milestone")
 		await photo("jessica-gameplay")
-		await approach(vicente.global_position+Vector3(0,.08,1.2))
+		await approach(vicente_point+Vector3(0,.08,1.2))
 	if "--temporal" in OS.get_cmdline_user_args(): await temporal_meet(session)
 	if is_instance_valid(routine.actor):
 		await approach(routine.actor.global_position+Vector3(-1.15,.08,0))
