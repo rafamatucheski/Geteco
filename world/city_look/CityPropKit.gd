@@ -26,6 +26,20 @@ const BLENDER_SCENES := {
 	# Não é tipo do kit: o CityChunkDressing pede haste e cabeça por blender_mesh().
 	"sidewalk_lamp": preload("res://assets/city_props/sidewalk_lamp.glb"),
 }
+## Terceira onda (tools/blender/build_city_props_wave3.py): um .glb por lote, e o nó de
+## cada tipo tem o nome do próprio tipo.
+const WAVE3_SCENES := {
+	"calcada": preload("res://assets/city_props/wave3_calcada.glb"),
+	"sinal": preload("res://assets/city_props/wave3_sinal.glb"),
+	"telhado": preload("res://assets/city_props/wave3_telhado.glb"),
+	"fachada": preload("res://assets/city_props/wave3_fachada.glb"),
+}
+const WAVE3_KINDS := {
+	"cafe_set": "calcada", "cafe_parasol": "calcada", "cafe_parasol_b": "calcada", "produce_stand": "calcada", "a_frame": "calcada", "beer_crates": "calcada", "wheelie_bins": "calcada", "bike_rack": "calcada", "pallet_stack": "calcada", "tire_stack": "calcada", "drums": "calcada", "food_cart": "calcada", "ice_freezer": "calcada", "clothes_rack": "calcada", "flower_buckets": "calcada", "gas_cylinders": "calcada", "door_bench": "calcada", "motorcycle": "calcada", "street_tree": "calcada", "street_tree_b": "calcada", "pot_plant": "calcada",
+	"signal_pole": "sinal", "stop_sign": "sinal", "manhole": "sinal", "drain": "sinal", "hedge": "sinal",
+	"ac_unit": "telhado", "vent": "telhado", "antenna": "telhado", "dish": "telhado", "roof_hatch": "telhado", "pipe_run": "telhado", "billboard_frame": "telhado", "water_tank": "telhado", "skylight": "telhado", "solar_row": "telhado", "cooling_tower": "telhado", "roof_shed": "telhado", "roof_chairs": "telhado", "roof_garden": "telhado",
+	"window_ac": "fachada", "flower_box": "fachada", "fe_platform": "fachada", "fe_stair": "fachada", "fe_stair_m": "fachada", "fe_ladder": "fachada", "drainpipe": "fachada", "pigeons": "fachada", "laundry": "fachada", "posters": "fachada", "beacon_mast": "fachada", "satellite_row": "fachada", "awning_small": "fachada",
+}
 ## Nó da peça inteira dentro do .glb; as partes soltas servem aos destroços.
 const BLENDER_WHOLE := {"trash_can": "TrashCan", "hydrant": "Hydrant", "bench_seat": "BenchSeat",
 	"phone_booth": "PhoneBooth", "dumpster": "Dumpster", "news_box": "NewsBox", "bollard": "Bollard",
@@ -121,8 +135,8 @@ static func _layered_mesh(kind: String) -> ArrayMesh:
 
 static func mesh(kind: String) -> ArrayMesh:
 	if _meshes.has(kind): return _meshes[kind]
-	if blender_props_enabled and BLENDER_WHOLE.has(kind):
-		_meshes[kind] = blender_mesh(kind, BLENDER_WHOLE[kind])
+	if blender_props_enabled and (BLENDER_WHOLE.has(kind) or WAVE3_KINDS.has(kind)):
+		_meshes[kind] = blender_mesh(kind, BLENDER_WHOLE.get(kind, kind))
 		return _meshes[kind]
 	if LAYERED.has(kind):
 		_meshes[kind] = _layered_mesh(kind)
@@ -164,6 +178,64 @@ static func mesh(kind: String) -> ArrayMesh:
 	return result
 
 
+## Variação por cópia na rua, para a calçada não repetir a mesma peça igualzinha:
+## "colors" é a paleta (multiplica a cor de vértice; as partes "pintáveis" dos modelos
+## são claras, as de metal e borracha escuras e quase não mudam) e "scale" é quanto cada
+## eixo pode crescer ou encolher. Tudo continua numa MultiMesh por tipo e por chunk
+## (cor por instância), então não custa draw call. Só vale com as peças do Blender.
+const VARIATION := {
+	"cafe_set": {"colors": [Color("c23b2e"), Color("2f7a55"), Color("2d6fb6"), Color("e3b02e"), Color("ececec")], "scale": Vector3(0.04, 0.05, 0.04)},
+	"cafe_parasol": {"colors": [Color("c23b2e"), Color("2f7a55"), Color("2d6fb6"), Color("e3b02e"), Color("e07a2e")], "scale": Vector3(0.04, 0.05, 0.04)},
+	"cafe_parasol_b": {"colors": [Color("2f7a55"), Color("c23b2e"), Color("3a5a8a"), Color("d8b03a"), Color("7a3a5a")], "scale": Vector3(0.04, 0.05, 0.04)},
+	"produce_stand": {"colors": [Color("ffffff"), Color("f0e6d8"), Color("e6dccb")], "scale": Vector3(0.06, 0.05, 0.05)},
+	"a_frame": {"colors": [Color("ffffff"), Color("eadfcc"), Color("d8e0e4")], "scale": Vector3(0.05, 0.08, 0.03)},
+	"beer_crates": {"colors": [Color("b23a2e"), Color("c9a634"), Color("2f6b4f"), Color("2d6fb6")], "scale": Vector3(0.03, 0.03, 0.03)},
+	"wheelie_bins": {"colors": [Color("3e6b48"), Color("5d6366"), Color("2d4f7a"), Color("8a4a2a"), Color("3a3a3a")], "scale": Vector3(0.04, 0.06, 0.04)},
+	"bike_rack": {"colors": [Color("ffffff"), Color("dfe8ff"), Color("ffe0dc")], "scale": Vector3(0.0, 0.0, 0.0)},
+	"pallet_stack": {"colors": [Color("ffffff"), Color("e8dcc8"), Color("d8ccb8")], "scale": Vector3(0.03, 0.1, 0.03)},
+	"tire_stack": {"colors": [Color("ffffff")], "scale": Vector3(0.05, 0.08, 0.05)},
+	"drums": {"colors": [Color("2c5a8a"), Color("8e3a2a"), Color("6d5a3a"), Color("2f6b4f"), Color("c9a634")], "scale": Vector3(0.04, 0.04, 0.04)},
+	"food_cart": {"colors": [Color("c23b2e"), Color("e3b02e"), Color("2d6fb6"), Color("2f7a55")], "scale": Vector3(0.03, 0.03, 0.03)},
+	"ice_freezer": {"colors": [Color("ffffff"), Color("dfe9ff"), Color("ffe9d6")], "scale": Vector3(0.05, 0.04, 0.04)},
+	"flower_buckets": {"colors": [Color("ffffff"), Color("e8ecf0"), Color("f4e8dc")], "scale": Vector3(0.04, 0.06, 0.04)},
+	"gas_cylinders": {"colors": [Color("4a6f8c"), Color("5d6366"), Color("8e3a2a"), Color("2f6b4f"), Color("c9a634")], "scale": Vector3(0.03, 0.05, 0.03)},
+	"door_bench": {"colors": [Color("ffffff"), Color("e8dcc8"), Color("d0c4b0")], "scale": Vector3(0.06, 0.04, 0.04)},
+	"motorcycle": {"colors": [Color("a8322b"), Color("2d6fb6"), Color("2f2f33"), Color("e3b02e"), Color("2f7a55")], "scale": Vector3(0.03, 0.03, 0.03)},
+	"street_tree": {"colors": [Color("ffffff"), Color("e8f0dc"), Color("f4ecd0"), Color("dfe6e0")], "scale": Vector3(0.12, 0.12, 0.12)},
+	"street_tree_b": {"colors": [Color("ffffff"), Color("e8f0dc"), Color("f4ecd0"), Color("dfe6e0")], "scale": Vector3(0.12, 0.12, 0.12)},
+	"pot_plant": {"colors": [Color("ffffff"), Color("f2e0d4"), Color("e4e8ec")], "scale": Vector3(0.1, 0.12, 0.1)},
+	"hedge": {"colors": [Color("ffffff"), Color("e8f0dc"), Color("dfe8d8")], "scale": Vector3(0.06, 0.15, 0.08)},
+	"ac_unit": {"colors": [Color("ffffff"), Color("e6ebe8"), Color("f2ede2"), Color("dde3e8")], "scale": Vector3(0.05, 0.05, 0.05)},
+	"vent": {"colors": [Color("ffffff"), Color("e8e4dc")], "scale": Vector3(0.08, 0.15, 0.08)},
+	"water_tank": {"colors": [Color("ffffff"), Color("e8dcc8"), Color("d8d0c0")], "scale": Vector3(0.05, 0.06, 0.05)},
+	"cooling_tower": {"colors": [Color("ffffff"), Color("e6ebe8"), Color("dde3e8")], "scale": Vector3(0.04, 0.04, 0.04)},
+	"roof_shed": {"colors": [Color("a39b8c"), Color("8e9aa0"), Color("b0a08a"), Color("9fa8a0"), Color("c4b8a4")], "scale": Vector3(0.08, 0.05, 0.08)},
+	"roof_chairs": {"colors": [Color("2f7bbf"), Color("e0b23c"), Color("c23b2e"), Color("2f7a55")], "scale": Vector3(0.0, 0.0, 0.0)},
+	"roof_garden": {"colors": [Color("ffffff"), Color("e8f0dc")], "scale": Vector3(0.04, 0.06, 0.04)},
+	"window_ac": {"colors": [Color("ffffff"), Color("e6ebe8"), Color("f2ede2")], "scale": Vector3(0.06, 0.06, 0.0)},
+	"flower_box": {"colors": [Color("ffffff"), Color("e8dcd0"), Color("dce6ec")], "scale": Vector3(0.08, 0.0, 0.0)},
+	"awning_small": {"colors": [Color("b8352f"), Color("2f7a55"), Color("2d6fb6"), Color("e3b02e"), Color("5a3a6a")], "scale": Vector3(0.0, 0.0, 0.0)},
+}
+
+
+static func variation_for(kind: String) -> Dictionary:
+	return VARIATION.get(kind, {}) if blender_props_enabled else {}
+
+
+## [transform com a proporção mudada, cor da paleta]. A escolha sai da posição (e de
+## `salt`), não de sorteio: a mesma peça volta igual quando o chunk recarrega.
+static func vary(kind: String, placement: Transform3D, salt := 0) -> Array:
+	var spec := variation_for(kind)
+	if spec.is_empty(): return [placement, Color.WHITE]
+	var key := hash([kind, roundi(placement.origin.x * 10.0), roundi(placement.origin.z * 10.0), salt])
+	var colors: Array = spec.get("colors", [Color.WHITE])
+	var color: Color = colors[posmod(key, colors.size())]
+	var spread: Vector3 = spec.get("scale", Vector3.ZERO)
+	var unit := func(shift: int) -> float: return float(posmod(key >> shift, 1000)) / 999.0 * 2.0 - 1.0
+	var stretch := Vector3(1.0 + spread.x * unit.call(3), 1.0 + spread.y * unit.call(11), 1.0 + spread.z * unit.call(19))
+	return [Transform3D(placement.basis * Basis.from_scale(stretch), placement.origin), color]
+
+
 ## Malha de um nó do .glb do Blender. O .glb sai sem UV, tangente nem material, só
 ## posição, normal e cor por vértice, como as procedurais: com material() por cima o
 ## shader é o mesmo, então não há variante nova para pré-aquecer. A cena é pequena e já
@@ -172,16 +244,29 @@ static func mesh(kind: String) -> ArrayMesh:
 static func blender_mesh(kind: String, part: String) -> ArrayMesh:
 	var key := kind + ":" + part
 	if _meshes.has(key): return _meshes[key]
-	var scene: Node = BLENDER_SCENES[kind].instantiate()
-	var source := scene.find_child(part, true, false) as MeshInstance3D
-	var result := source.mesh as ArrayMesh
-	scene.free()
+	var packed: PackedScene = WAVE3_SCENES[WAVE3_KINDS[kind]] if WAVE3_KINDS.has(kind) else BLENDER_SCENES[kind]
+	var result := _scene_meshes(packed)[part] as ArrayMesh
 	if LAYERED.has(kind):
 		for index in result.get_surface_count(): result.surface_set_material(index, layer_material(LAYERED[kind][index]))
 	elif not kind in BLENDER_OWN_MATERIAL:
 		result.surface_set_material(0, material())
 	_meshes[key] = result
 	return result
+
+
+## Malhas de uma cena do Blender por nome de nó. Cada .glb é instanciado uma vez só: os
+## de lote têm dezenas de tipos, e instanciar o lote inteiro por tipo custava à toa.
+static var _scene_index := {}
+
+static func _scene_meshes(packed: PackedScene) -> Dictionary:
+	if _scene_index.has(packed.resource_path): return _scene_index[packed.resource_path]
+	var index := {}
+	var scene := packed.instantiate()
+	for node: MeshInstance3D in scene.find_children("*", "MeshInstance3D", true, false):
+		index[String(node.name)] = node.mesh
+	scene.free()
+	_scene_index[packed.resource_path] = index
+	return index
 
 
 # --- Primitivas ---

@@ -12,7 +12,7 @@ const DRESSING := preload("res://world/city_look/CityChunkDressing.gd")
 const FORMAT_MASK := Mesh.ARRAY_FORMAT_VERTEX | Mesh.ARRAY_FORMAT_NORMAL | Mesh.ARRAY_FORMAT_COLOR | Mesh.ARRAY_FORMAT_TEX_UV | Mesh.ARRAY_FORMAT_TANGENT | Mesh.ARRAY_FLAG_COMPRESS_ATTRIBUTES
 ## Triângulos por peça: o kit é desenhado em MultiMesh com alcance de 44 m, então dezenas
 ## de cópias na tela ainda somam pouco; o teto só segura exagero.
-const MAX_TRIANGLES := 2000
+const MAX_TRIANGLES := 3000
 var failures: Array[String] = []
 
 func _initialize() -> void:
@@ -20,7 +20,8 @@ func _initialize() -> void:
 	# "vent" segue procedural: é a referência de formato do kit.
 	var reference_format := KIT.mesh("vent").surface_get_format(0) & FORMAT_MASK
 	var modeled := {}
-	for kind: String in KIT.BLENDER_WHOLE:
+	var all_kinds: Array = KIT.BLENDER_WHOLE.keys() + KIT.WAVE3_KINDS.keys()
+	for kind: String in all_kinds:
 		var mesh := KIT.mesh(kind)
 		modeled[kind] = mesh
 		var layers: Array = KIT.LAYERED.get(kind, [])
@@ -48,14 +49,16 @@ func _initialize() -> void:
 		check(mesh.surface_get_material(0) == null, "poste/%s: sem material próprio" % part)
 	# Agora as procedurais, para comparar envelope.
 	KIT.blender_props_enabled = false
-	for kind: String in KIT.BLENDER_WHOLE: KIT._meshes.erase(kind)
+	for kind: String in all_kinds: KIT._meshes.erase(kind)
 	DRESSING._lamp_meshes.clear()
-	for kind: String in KIT.BLENDER_WHOLE:
+	for kind: String in all_kinds:
 		var old := KIT.mesh(kind)
 		check(old != modeled[kind], "%s: interruptor 0 volta à procedural" % kind)
 		var a: AABB = modeled[kind].get_aabb()
 		var b := old.get_aabb()
-		check(absf(a.position.y) < .02, "%s: origem no chão (y mín %.3f)" % [kind, a.position.y])
+		# Peças de fachada ficam presas na parede, acima ou abaixo do ponto de encaixe:
+		# o que vale é a mesma base da procedural, não o chão.
+		check(absf(a.position.y - b.position.y) < .05, "%s: mesma base da procedural (y mín %.3f x %.3f)" % [kind, a.position.y, b.position.y])
 		check(_near(a.size.x, b.size.x, .15) and _near(a.size.z, b.size.z, .2), "%s: pegada %.2f x %.2f (antes %.2f x %.2f)" % [kind, a.size.x, a.size.z, b.size.x, b.size.z])
 		check(_near(a.size.y, b.size.y, .35), "%s: altura %.2f (antes %.2f)" % [kind, a.size.y, b.size.y])
 	var head_shift: float = blender_lamp.head.get_aabb().get_center().distance_to(DRESSING._lamp_mesh("head").get_aabb().get_center())

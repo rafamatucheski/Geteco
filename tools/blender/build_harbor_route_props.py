@@ -309,4 +309,6 @@ def main() -> None:
     bpy.ops.wm.save_as_mainfile(filepath=os.path.join(OUT_DIR, "source", "harbor_route_props.blend"), compress=True)
 
 
-main()
+# Só monta quando rodado direto: outros scripts importam as ferramentas daqui.
+if __name__ == "__main__":
+    main()

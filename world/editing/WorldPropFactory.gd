@@ -73,63 +73,91 @@ static func create(row: Dictionary) -> Node3D:
 	var color := Color(str(row.get("color","a98857")))
 	var height := .25
 	var footprint: Vector2 = SIZES.get(row.model,Vector2.ONE)
-	match str(row.model):
-		"pallet", "pallet_stack":
-			var count := 4 if row.model == "pallet_stack" else 1
-			for i in count: pallet(root,i*.25)
-			height = count*.25
-		"crate":
-			height = 1
-			box(root,Vector3(0,.5,0),Vector3(.96,.96,.96),color)
-			for x in [-.45,.45]:
-				for z in [-.505,.505]: box(root,Vector3(x,.5,z),Vector3(.10,1,.06),color.lightened(.18))
-			for y in [.12,.88]: box(root,Vector3(0,y,.54),Vector3(1,.10,.08),color.darkened(.16))
-		"barrel":
-			height = .92
-			for part in [[.45,.88,.31],[.12,.06,.33],[.78,.06,.33]]:
-				var mesh := CylinderMesh.new()
-				mesh.top_radius = part[2]
-				mesh.bottom_radius = part[2]
-				mesh.height = part[1]
-				mesh.radial_segments = 12
-				var node := MeshInstance3D.new()
-				node.mesh = mesh
-				node.position.y = part[0]
-				node.material_override = material(color if part[1] > .1 else Color("464c48"))
-				root.add_child(node)
-		"dumpster":
-			height = 1.2
-			box(root,Vector3(0,.63,0),Vector3(1.8,1.03,1),color)
-			box(root,Vector3(0,1.19,0),Vector3(1.88,.10,1.08),Color("313d36"))
-			for x in [-.82,.82]:
-				box(root,Vector3(x,.18,0),Vector3(.17,.3,.85),Color("232927"))
-				box(root,Vector3(x,.85,.55),Vector3(.3,.09,.12),Color("89948b"))
-		"trash_bags":
-			height = .8
-			for i in 3:
-				var node := MeshInstance3D.new()
-				var mesh := SphereMesh.new()
-				mesh.radius = .29
-				mesh.height = .65
-				mesh.radial_segments = 10
-				mesh.rings = 5
-				node.mesh = mesh
-				node.material_override = material(Color("303b36").lightened(i*.035))
-				node.position = Vector3((i-1)*.29,.32,-.12 if i == 1 else .12)
-				node.rotation.z = (i-1)*.18
-				root.add_child(node)
-				box(root,node.position+Vector3(0,.34,0),Vector3(.10,.12,.10),Color("424b44"))
-		"bin":
-			height = .96
-			box(root,Vector3(0,.47,0),Vector3(.56,.88,.56),color)
-			box(root,Vector3(0,.94,0),Vector3(.63,.06,.63),Color("364d3c"))
-			box(root,Vector3(0,.76,.32),Vector3(.32,.08,.10),Color("839185"))
-		"barrier":
-			height = .92
-			box(root,Vector3(0,.14,0),Vector3(2,.28,.50),color)
-			box(root,Vector3(0,.58,0),Vector3(2,.66,.30),color.lightened(.07))
-			for x in [-.65,0,.65]: box(root,Vector3(x,.66,.158),Vector3(.25,.16,.018),Color("d0ad52"))
+	# Modelo do Blender quando existe; a altura da colisão é a mesma da montagem antiga.
+	if _add_modeled(root, str(row.model), color):
+		height = MODELED_HEIGHTS[str(row.model)]
+	else:
+		match str(row.model):
+			"pallet", "pallet_stack":
+				var count := 4 if row.model == "pallet_stack" else 1
+				for i in count: pallet(root,i*.25)
+				height = count*.25
+			"crate":
+				height = 1
+				box(root,Vector3(0,.5,0),Vector3(.96,.96,.96),color)
+				for x in [-.45,.45]:
+					for z in [-.505,.505]: box(root,Vector3(x,.5,z),Vector3(.10,1,.06),color.lightened(.18))
+				for y in [.12,.88]: box(root,Vector3(0,y,.54),Vector3(1,.10,.08),color.darkened(.16))
+			"barrel":
+				height = .92
+				for part in [[.45,.88,.31],[.12,.06,.33],[.78,.06,.33]]:
+					var mesh := CylinderMesh.new()
+					mesh.top_radius = part[2]
+					mesh.bottom_radius = part[2]
+					mesh.height = part[1]
+					mesh.radial_segments = 12
+					var node := MeshInstance3D.new()
+					node.mesh = mesh
+					node.position.y = part[0]
+					node.material_override = material(color if part[1] > .1 else Color("464c48"))
+					root.add_child(node)
+			"dumpster":
+				height = 1.2
+				box(root,Vector3(0,.63,0),Vector3(1.8,1.03,1),color)
+				box(root,Vector3(0,1.19,0),Vector3(1.88,.10,1.08),Color("313d36"))
+				for x in [-.82,.82]:
+					box(root,Vector3(x,.18,0),Vector3(.17,.3,.85),Color("232927"))
+					box(root,Vector3(x,.85,.55),Vector3(.3,.09,.12),Color("89948b"))
+			"trash_bags":
+				height = .8
+				for i in 3:
+					var node := MeshInstance3D.new()
+					var mesh := SphereMesh.new()
+					mesh.radius = .29
+					mesh.height = .65
+					mesh.radial_segments = 10
+					mesh.rings = 5
+					node.mesh = mesh
+					node.material_override = material(Color("303b36").lightened(i*.035))
+					node.position = Vector3((i-1)*.29,.32,-.12 if i == 1 else .12)
+					node.rotation.z = (i-1)*.18
+					root.add_child(node)
+					box(root,node.position+Vector3(0,.34,0),Vector3(.10,.12,.10),Color("424b44"))
+			"bin":
+				height = .96
+				box(root,Vector3(0,.47,0),Vector3(.56,.88,.56),color)
+				box(root,Vector3(0,.94,0),Vector3(.63,.06,.63),Color("364d3c"))
+				box(root,Vector3(0,.76,.32),Vector3(.32,.08,.10),Color("839185"))
+			"barrier":
+				height = .92
+				box(root,Vector3(0,.14,0),Vector3(2,.28,.50),color)
+				box(root,Vector3(0,.58,0),Vector3(2,.66,.30),color.lightened(.07))
+				for x in [-.65,0,.65]: box(root,Vector3(x,.66,.158),Vector3(.25,.16,.018),Color("d0ad52"))
 	solid(root,Vector3(0,height*.5,0),Vector3(footprint.x,height,footprint.y))
 	root.scale = Vector3.ONE*float(row.get("scale",1))
 	root.rotation.y = deg_to_rad(float(row.get("rotation",0)))
 	return root
+
+# Objetos modelados no Blender (tools/blender/build_editor_props.py). "0" volta às caixas
+# antigas no mesmo export. A parte "main" leva a cor da linha do editor; as demais, a cor
+# fixa do nome do nó ("crate_mat_6b4f33"), pelos mesmos materiais de material().
+static var blender_props_enabled := OS.get_environment("GETECO_BLENDER_PROPS") != "0"
+const MODELED_SCENE := preload("res://assets/city_props/editor_props.glb")
+const MODELED_HEIGHTS := {"pallet": .25, "pallet_stack": 1.0, "crate": 1.0, "barrel": .92, "dumpster": 1.2, "trash_bags": .8, "bin": .96, "barrier": .92}
+static var _modeled: Dictionary = {}
+
+static func _add_modeled(root: Node3D, model: String, color: Color) -> bool:
+	if not blender_props_enabled or not MODELED_HEIGHTS.has(model): return false
+	if _modeled.is_empty():
+		var scene := MODELED_SCENE.instantiate()
+		for node: MeshInstance3D in scene.find_children("*", "MeshInstance3D", true, false):
+			var parts := String(node.name).split("_mat_")
+			if parts.size() == 2: _modeled.get_or_add(parts[0], []).append([parts[1], node.mesh])
+		scene.free()
+	for part: Array in _modeled.get(model, []):
+		var node := MeshInstance3D.new()
+		node.name = "Modeled_" + String(part[0])
+		node.mesh = part[1]
+		node.material_override = material(color if part[0] == "main" else Color(String(part[0])))
+		root.add_child(node)
+	return _modeled.has(model)

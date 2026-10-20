@@ -248,9 +248,17 @@ static func _flush(chunk: Node3D, batches: Dictionary) -> void:
 			# Peça de telhado pequena (antena, respiro, antena parabólica) segue sem
 			# sombra: dobrava as primitivas na passada de sombra sem aparecer nesta câmera.
 			shadows = kind in SHADOW_CASTERS
+		# Cor e proporção por cópia (KIT.VARIATION); precisa de use_colors antes da contagem.
+		var variation := KIT.variation_for(kind)
+		if not variation.is_empty(): multimesh.use_colors = true
 		multimesh.instance_count = transforms.size()
 		for index in transforms.size():
-			multimesh.set_instance_transform(index, chunk.global_transform.affine_inverse() * transforms[index])
+			var placement: Transform3D = transforms[index]
+			if not variation.is_empty():
+				var varied: Array = KIT.vary(kind, placement)
+				placement = varied[0]
+				multimesh.set_instance_color(index, varied[1])
+			multimesh.set_instance_transform(index, chunk.global_transform.affine_inverse() * placement)
 		var instance := MultiMeshInstance3D.new()
 		instance.name = "CityLook_" + kind.replace(":", "_")
 		instance.multimesh = multimesh
