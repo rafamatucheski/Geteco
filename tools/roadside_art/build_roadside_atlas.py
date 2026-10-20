@@ -27,6 +27,8 @@ FONT_BOLD = ROOT / "assets" / "fonts" / "barlow" / "BarlowSemiCondensed-SemiBold
 FONT_REGULAR = ROOT / "assets" / "fonts" / "barlow" / "BarlowSemiCondensed-Regular.ttf"
 FONT_HAND = ROOT / "assets" / "fonts" / "caveat" / "Caveat.ttf"
 SIZE = 2048
+# Altura dobrada na fase 2 (20/10): os painéis das Salinas, Balança e Motel não cabiam em 2048².
+HEIGHT = 4096
 PAD = 10
 NL = chr(10)
 IMPORT_PARAMS = {"compress/mode": "2", "compress/high_quality": "true", "mipmaps/generate": "true",
@@ -496,6 +498,153 @@ def office_sign(w, h):
     return weather(img, dirt=.2, streaks=.2, scale=14), Image.new("RGB", (w, h))
 
 
+# --- Fase 2 (20/10): Salinas, Balança de pesagem e Motel Oásis na Estrada do Sal ------------
+
+def salt_sign(w, h):
+    """Placa de chapa azul-marinho da salina, com o monte de sal e o nome em branco."""
+    img = Image.new("RGB", (w, h), (28, 58, 96))
+    d = ImageDraw.Draw(img)
+    d.rectangle((0, 0, w - 1, h - 1), outline=(226, 226, 220), width=10)
+    base_y, peak_x = h * .8, h * .55
+    for k, shade in enumerate(((240, 240, 236), (214, 214, 208))):
+        off = k * h * .28
+        d.polygon([(h * .1 + off, base_y), (peak_x + off, h * .22 + k * h * .12), (h * 1.0 + off, base_y)], fill=shade)
+    f = fit_text(d, "SALINAS ESTRADA DO SAL", w * .66, h * .38, FONT_BOLD)
+    d.text((h * 1.45, h * .36), "SALINAS ESTRADA DO SAL", font=f, fill=(250, 250, 246), anchor="lm")
+    f2 = fit_text(d, "SAL GROSSO · REFINADO · ENSACAMOS", w * .62, h * .2, FONT_BOLD)
+    d.text((h * 1.48, h * .74), "SAL GROSSO · REFINADO · ENSACAMOS", font=f2, fill=(238, 196, 64), anchor="lm")
+    chip(img, 40, (44, 74, 110), (1, 4))
+    return weather(img, dirt=.16, streaks=.16, scale=30), Image.new("RGB", (w, h))
+
+
+def salt_bag(w, h):
+    """Frente de saco de ráfia empilhado: trama clara e o carimbo azul."""
+    a = np.full((h, w, 3), (232, 228, 214), np.float32)
+    weave = (np.sin(np.arange(w) * 1.7)[None, :] * np.sin(np.arange(h) * 1.7)[:, None]) * 6
+    a += weave[..., None]
+    img = Image.fromarray(np.clip(a, 0, 255).astype(np.uint8))
+    d = ImageDraw.Draw(img)
+    f = fit_text(d, "SAL", w * .5, h * .38, FONT_BOLD)
+    text_center(d, "SAL", w / 2, h * .42, f, (40, 80, 140))
+    f2 = fit_text(d, "25 KG", w * .4, h * .18, FONT_BOLD)
+    text_center(d, "25 KG", w / 2, h * .75, f2, (40, 80, 140))
+    return weather(img, dirt=.18, streaks=.08, scale=16), Image.new("RGB", (w, h))
+
+
+def weigh_sign(w, h):
+    """Placa verde de rodovia: balança rodoviária, pesagem obrigatória para caminhões."""
+    img = Image.new("RGB", (w, h), (24, 104, 64))
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle((8, 8, w - 9, h - 9), radius=22, outline=(240, 240, 236), width=8)
+    f = fit_text(d, "BALANÇA RODOVIÁRIA", w * .84, h * .3, FONT_BOLD)
+    text_center(d, "BALANÇA RODOVIÁRIA", w / 2, h * .32, f, (250, 250, 246))
+    f2 = fit_text(d, "PESAGEM OBRIGATÓRIA · CAMINHÕES", w * .8, h * .18, FONT_BOLD)
+    text_center(d, "PESAGEM OBRIGATÓRIA · CAMINHÕES", w / 2, h * .62, f2, (250, 250, 246))
+    ax, ay = w * .5, h * .84
+    d.polygon([(ax - 60, ay - 12), (ax + 30, ay - 12), (ax + 30, ay - 28), (ax + 70, ay), (ax + 30, ay + 28), (ax + 30, ay + 12), (ax - 60, ay + 12)], fill=(250, 250, 246))
+    return weather(img, dirt=.16, streaks=.14, scale=24), Image.new("RGB", (w, h))
+
+
+def stop_sign(w, h):
+    """PARE octogonal (as duas faces usam o mesmo painel)."""
+    img = Image.new("RGB", (w, h), (226, 222, 212))
+    d = ImageDraw.Draw(img)
+    cx, cy, r = w / 2, h / 2, w * .48
+    pts = [(cx + r * np.cos(np.pi / 8 + k * np.pi / 4), cy + r * np.sin(np.pi / 8 + k * np.pi / 4)) for k in range(8)]
+    d.polygon(pts, fill=(250, 250, 246))
+    inner = [(cx + r * .9 * np.cos(np.pi / 8 + k * np.pi / 4), cy + r * .9 * np.sin(np.pi / 8 + k * np.pi / 4)) for k in range(8)]
+    d.polygon(inner, fill=(196, 30, 28))
+    f = fit_text(d, "PARE", w * .7, h * .34, FONT_BOLD)
+    text_center(d, "PARE", cx, cy, f, (250, 250, 246))
+    return weather(img, dirt=.14, streaks=.12, scale=16), Image.new("RGB", (w, h))
+
+
+def weigh_board(w, h):
+    """Quadro de limites na parede da cabine."""
+    img = Image.new("RGB", (w, h), (236, 232, 220))
+    d = ImageDraw.Draw(img)
+    d.rectangle((0, 0, w, h * .22), fill=(24, 104, 64))
+    f = fit_text(d, "LIMITES DE PESO", w * .86, h * .15, FONT_BOLD)
+    text_center(d, "LIMITES DE PESO", w / 2, h * .11, f, (250, 250, 246))
+    fr = fit_text(d, "CARRETA  41,5 T", w * .82, h * .1, FONT_REGULAR)
+    for i, line in enumerate(("TOCO  16 T", "TRUCK  23 T", "CARRETA  41,5 T", "BITREM  57 T")):
+        d.text((w * .1, h * (.32 + .15 * i)), line, font=fr, fill=(40, 36, 32))
+    return weather(img, dirt=.18, streaks=.1, scale=16), Image.new("RGB", (w, h))
+
+
+def motel_sign(w, h):
+    """Letreiro alto de neon: palmeira, MOTEL OÁSIS e VAGAS aceso à noite."""
+    img = Image.new("RGB", (w, h), (24, 70, 78))
+    glow = Image.new("RGB", (w, h), (0, 0, 0))
+    d, g = ImageDraw.Draw(img), ImageDraw.Draw(glow)
+    d.rectangle((0, 0, w - 1, h - 1), outline=(232, 176, 58), width=12)
+    # Palmeira estilizada.
+    tx, ty = w * .5, h * .34
+    d.line((tx, ty, tx - w * .03, h * .5), fill=(150, 104, 60), width=int(w * .04))
+    for k in range(6):
+        ang = np.pi * (1.1 + .16 * k)
+        d.line((tx, ty, tx + np.cos(ang) * w * .2, ty + np.sin(ang) * w * .1 + (k - 2.5) * 4), fill=(80, 196, 120), width=int(w * .03))
+        g.line((tx, ty, tx + np.cos(ang) * w * .2, ty + np.sin(ang) * w * .1 + (k - 2.5) * 4), fill=(40, 150, 80), width=int(w * .03))
+    f = fit_text(d, "MOTEL", w * .8, h * .14, FONT_BOLD)
+    text_center(d, "MOTEL", w / 2, h * .58, f, (255, 120, 150), stroke=3, stroke_fill=(120, 30, 60))
+    text_center(g, "MOTEL", w / 2, h * .58, f, (255, 80, 130))
+    f2 = fit_text(d, "OÁSIS", w * .86, h * .14, FONT_BOLD)
+    text_center(d, "OÁSIS", w / 2, h * .72, f2, (255, 214, 96), stroke=3, stroke_fill=(130, 80, 20))
+    text_center(g, "OÁSIS", w / 2, h * .72, f2, (255, 190, 60))
+    d.rectangle((w * .18, h * .82, w * .82, h * .94), fill=(30, 30, 30))
+    f3 = fit_text(d, "VAGAS", w * .56, h * .09, FONT_BOLD)
+    text_center(d, "VAGAS", w / 2, h * .88, f3, (120, 255, 150))
+    text_center(g, "VAGAS", w / 2, h * .88, f3, (90, 255, 120))
+    return weather(img, dirt=.16, streaks=.12, scale=24), glow
+
+
+def motel_band(w, h):
+    """Faixa da marquise dos quartos: azul-piscina com o nome e o telefone."""
+    img = Image.new("RGB", (w, h), (64, 156, 170))
+    glow = Image.new("RGB", (w, h), (0, 0, 0))
+    d, g = ImageDraw.Draw(img), ImageDraw.Draw(glow)
+    d.rectangle((0, h * .8, w, h), fill=(232, 176, 58))
+    text = "MOTEL OÁSIS · AR-CONDICIONADO · TV · PISCINA"
+    f = fit_text(d, text, w * .9, h * .56, FONT_BOLD)
+    text_center(d, text, w / 2, h * .42, f, (250, 248, 236))
+    text_center(g, text, w / 2, h * .42, f, (90, 200, 220))
+    return weather(img, dirt=.2, streaks=.16, scale=24), glow
+
+
+def room_door(w, h):
+    """Porta de quarto: madeira pintada, olho mágico, placa de número e a maçaneta."""
+    img = Image.new("RGB", (w, h), (120, 70, 44))
+    d = ImageDraw.Draw(img)
+    for k in range(2):
+        y0 = h * (.08 + .45 * k)
+        d.rectangle((w * .14, y0, w * .86, y0 + h * .38), outline=(90, 50, 30), width=6)
+    d.rounded_rectangle((w * .32, h * .2, w * .68, h * .3), radius=6, fill=(232, 176, 58))
+    f = fit_text(d, "Nº", w * .3, h * .08, FONT_BOLD)
+    text_center(d, "Nº", w / 2, h * .25, f, (60, 40, 20))
+    d.ellipse((w * .78, h * .52, w * .9, h * .58), fill=(206, 196, 170))
+    d.ellipse((w * .47, h * .14, w * .53, h * .17), fill=(30, 30, 30))
+    return weather(img, dirt=.22, streaks=.16, scale=16), Image.new("RGB", (w, h))
+
+
+def vending(w, h):
+    """Frente da máquina de refrigerante: logo, latas na vitrine iluminada e a moedeira."""
+    img = Image.new("RGB", (w, h), (196, 30, 34))
+    glow = Image.new("RGB", (w, h), (0, 0, 0))
+    d, g = ImageDraw.Draw(img), ImageDraw.Draw(glow)
+    d.rectangle((w * .08, h * .06, w * .66, h * .7), fill=(240, 240, 232))
+    g.rectangle((w * .08, h * .06, w * .66, h * .7), fill=(160, 160, 150))
+    cols = [(196, 30, 34), (40, 100, 180), (240, 160, 30), (40, 150, 70)]
+    for r in range(4):
+        for c in range(3):
+            x, y = w * (.14 + .18 * c), h * (.1 + .15 * r)
+            d.rounded_rectangle((x, y, x + w * .1, y + h * .11), radius=4, fill=cols[(r + c) % 4])
+    f = fit_text(d, "GELADO", w * .26, h * .3, FONT_BOLD)
+    d.text((w * .84, h * .3), "GELADO", font=f, fill=(250, 250, 246), anchor="mm")
+    d.rectangle((w * .72, h * .55, w * .94, h * .65), fill=(40, 40, 40))
+    d.rectangle((w * .1, h * .78, w * .9, h * .9), fill=(30, 30, 30))
+    return weather(img, dirt=.14, streaks=.1, scale=16), glow
+
+
 PANELS = [
     ("pylon", 448, 672, pylon),
     ("fascia", 1792, 96, fascia),
@@ -520,6 +669,17 @@ PANELS = [
     ("bale_3", 320, 160, lambda w, h: bale(w, h, (70, 110, 70))),
     ("light", 64, 64, light_panel),
     ("beacon", 64, 64, beacon),
+    # Fase 2 (20/10): no fim da lista, para os painéis antigos manterem a mesma pintura (mesma
+    # sequência do gerador aleatório).
+    ("salt_sign", 768, 192, salt_sign),
+    ("salt_bag", 128, 96, salt_bag),
+    ("weigh_sign", 640, 224, weigh_sign),
+    ("stop_sign", 128, 128, stop_sign),
+    ("weigh_board", 192, 240, weigh_board),
+    ("motel_sign", 256, 512, motel_sign),
+    ("motel_band", 1024, 64, motel_band),
+    ("room_door", 128, 256, room_door),
+    ("vending", 192, 320, vending),
 ]
 
 
@@ -535,7 +695,7 @@ def pack(panels):
         best_score = None
         for x in range(0, SIZE - bw + 1, 8):
             top = max(sky[x:x + bw])
-            if top + bh > SIZE: continue
+            if top + bh > HEIGHT: continue
             # Menor topo resultante; no empate, menos área perdida embaixo do painel.
             score = (top + bh, sum(top - s for s in sky[x:x + bw]))
             if best_score is None or score < best_score: best, best_score = (x, top), score
@@ -570,8 +730,8 @@ def write_import_params(texture):
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
     rects = pack(PANELS)
-    atlas = Image.new("RGB", (SIZE, SIZE), (90, 84, 76))
-    glow = Image.new("RGB", (SIZE, SIZE), (0, 0, 0))
+    atlas = Image.new("RGB", (SIZE, HEIGHT), (90, 84, 76))
+    glow = Image.new("RGB", (SIZE, HEIGHT), (0, 0, 0))
     uv = {}
     for name, w, h, painter in PANELS:
         x, y, _, _ = rects[name]
@@ -579,13 +739,13 @@ def main():
         paste_padded(atlas, color.convert("RGB"), x, y)
         paste_padded(glow, light.convert("RGB"), x, y)
         # Meio texel para dentro: o filtro não pega a margem esticada na borda do quad.
-        uv[name] = [(x + .5) / SIZE, (y + .5) / SIZE, (x + w - .5) / SIZE, (y + h - .5) / SIZE]
+        uv[name] = [(x + .5) / SIZE, (y + .5) / HEIGHT, (x + w - .5) / SIZE, (y + h - .5) / HEIGHT]
     atlas.save(OUT / "roadside_atlas.jpg", quality=92)
     glow.save(OUT / "roadside_atlas_glow.jpg", quality=90)
-    (OUT / "roadside_atlas.json").write_text(json.dumps({"size": SIZE, "uv": uv}, indent=1) + NL, encoding="utf-8")
+    (OUT / "roadside_atlas.json").write_text(json.dumps({"size": [SIZE, HEIGHT], "uv": uv}, indent=1) + NL, encoding="utf-8")
     for texture in ("roadside_atlas.jpg", "roadside_atlas_glow.jpg"):
         write_import_params(OUT / texture)
-    print("atlas", SIZE, "painéis", len(uv))
+    print("atlas", SIZE, "x", HEIGHT, "painéis", len(uv))
 
 
 if __name__ == "__main__":

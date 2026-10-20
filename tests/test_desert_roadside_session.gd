@@ -16,7 +16,9 @@ const AUTOPILOT := preload("res://runtime/BenchmarkAutopilot.gd")
 const FOLDER := "res://evidence/desert-roadside-20261019"
 ## Terreno ocupado por cada lugar em coordenadas locais (x, z), de RoadsideBuild.
 const FOOTPRINTS := {"station": Rect2(-12, -8, 24, 20), "tower": Rect2(-8, -7, 16, 14),
-	"scrapyard": Rect2(-15, -12, 30, 20), "food_truck": Rect2(-4, -2, 9, 8)}
+	"scrapyard": Rect2(-15, -12, 30, 20), "food_truck": Rect2(-4, -2, 9, 8),
+	# Estrada do Sal (20/10): sem a faixa de cascalho até a pista nem o letreiro na beira.
+	"salt_works": Rect2(-52, -40, 104, 76), "weigh_station": Rect2(-17, -1, 34, 20), "motel": Rect2(-22, -6, 44, 22)}
 var world: Node3D
 var session
 var roadside: Node3D

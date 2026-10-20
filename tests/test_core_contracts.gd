@@ -278,14 +278,16 @@ func desert_roadside() -> void:
 	for definition in ROADSIDE.SITES:
 		var center: Vector2 = definition.center
 		var road := road_distance(center)
-		# Fora da pista (cabe o lugar inteiro) e perto o bastante para ser visto de quem passa.
-		check(road.distance >= 14.0 and road.distance <= 32.0, "%s a %.1f m da %s" % [definition.id, road.distance, road.id])
+		# Fora da pista (cabe o lugar inteiro) e perto o bastante para ser visto de quem passa. Lugar
+		# grande (salina, raio 62 m) tem o centro mais fundo: conta a frente do lote, não o centro.
+		var depth := maxf(0.0, float(definition.get("radius", ROADSIDE.SITE_RADIUS)) - ROADSIDE.SITE_RADIUS)
+		check(road.distance >= 14.0 and road.distance - depth <= 32.0, "%s a %.1f m da %s" % [definition.id, road.distance, road.id])
 		var front := Basis(Vector3.UP, float(definition.yaw)) * Vector3.BACK
 		check(Vector2(front.x, front.z).dot(road.toward) > .9, "%s de frente para a estrada" % definition.id)
 		check(DESERT_LAYOUT.BOUNDS.grow(-40).has_point(center), "%s dentro do deserto" % definition.id)
 		check(DESERT_LAYOUT.drag_reservation_clear(center, 8.0), "%s fora da reserva da arrancada" % definition.id)
 		for site in WILDS.SITES:
-			check((site.center as Vector2).distance_to(center) > ROADSIDE.SITE_RADIUS + WILDS.SITE_RADIUS + 20.0, "%s longe de %s" % [definition.id, site.id])
+			check((site.center as Vector2).distance_to(center) > float(definition.get("radius", ROADSIDE.SITE_RADIUS)) + WILDS.SITE_RADIUS + 20.0, "%s longe de %s" % [definition.id, site.id])
 		for building in DESERT_LAYOUT.buildings():
 			check(Vector2(building.position.x, building.position.z).distance_to(center) > 60.0, "%s longe de %s" % [definition.id, building.id])
 		check(ROADSIDE.reserved(center), "%s reservado contra enfeite" % definition.id)

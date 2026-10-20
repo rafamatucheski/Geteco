@@ -48,6 +48,7 @@ func _outside() -> bool:
 
 func _process(delta: float) -> void:
 	if not courier.is_empty(): _tick_courier(delta)
+	_walk_in_roofs()
 	_clock += delta
 	if _clock < .3: return
 	_clock = 0.0
@@ -74,6 +75,24 @@ func _process(delta: float) -> void:
 			STALL_WORK.finish_slow("desert.roadside.build", trace, 2000)
 			built_one = true
 
+## Cômodos de entrar a pé (Estrada do Sal): com o jogador dentro, o telhado some para a câmera de
+## cima ver o cômodo. Por quadro, mas só nos lugares montados que têm cômodo (três) e sem alocar.
+func _walk_in_roofs() -> void:
+	if sites.is_empty() or not is_instance_valid(session) or not session.ready_for_play: return
+	var player: Vector3 = session.world.player.global_position
+	for record in sites.values():
+		if record.parked or not record.has("roofs"): continue
+		var roofs: Node3D = record.roofs
+		if not is_instance_valid(roofs): continue
+		var local := (record.root as Node3D).to_local(player)
+		var inside := false
+		if local.y < 3.5:
+			for rect: Rect2 in roofs.get_meta("walk_in", []):
+				if rect.has_point(Vector2(local.x, local.z)):
+					inside = true
+					break
+		if roofs.visible == inside: roofs.visible = not inside
+
 func _build(definition: Dictionary) -> Dictionary:
 	var root := Node3D.new()
 	root.name = "Roadside_" + str(definition.id)
@@ -92,6 +111,17 @@ func _build(definition: Dictionary) -> Dictionary:
 		"food_truck":
 			BUILD.food_truck(root)
 			_admit_resident(root, record, LAYOUT.FOOD_VENDOR, 0.0, "Dona Cida", "cook", 63)
+		"salt_works":
+			BUILD.salt_works(root)
+			_admit_resident(root, record, LAYOUT.SALT_FOREMAN, PI, "Seu Bento", "read", 71)
+		"weigh_station":
+			BUILD.weigh_station(root)
+			_admit_resident(root, record, LAYOUT.WEIGH_INSPECTOR, 0.0, "Fiscal Rosa", "read", 74)
+		"motel":
+			BUILD.motel(root)
+			_admit_resident(root, record, LAYOUT.MOTEL_CLERK, PI, "Dona Lurdes", "read", 77)
+	var roofs := root.get_node_or_null("WalkInRoofs")
+	if roofs != null: record["roofs"] = roofs
 	G.batch_repeated_meshes(root)
 	return record
 

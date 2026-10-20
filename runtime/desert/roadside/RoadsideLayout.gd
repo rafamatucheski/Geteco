@@ -18,15 +18,27 @@ const SITES := [
 	{"id": "scrapyard", "kind": "scrapyard", "center": Vector2(-1176, -1090), "yaw": -PI * .5, "name": "Ferro-velho do Nonato", "marker": "workshop"},
 	# Meio da pista de arrancada, longe do encontro (que já tem baterias de fundo, DragOpenMeet).
 	{"id": "food_truck", "kind": "food_truck", "center": Vector2(-480, -1290), "yaw": PI, "name": "Lanche da Reta", "marker": "food"},
+	# Fase 2 (20/10): o mapa de ocupação de 20/10 (evidence/deserto-ocupacao-20261020.svg) mostrou a
+	# Estrada do Sal com ~800 m sem nada dos dois lados. "radius" é a área que o enfeite respeita
+	# (padrão SITE_RADIUS). Posições conferidas com DesertRegion._decoration_clear (test_desert_roadside_session):
+	# a salina fica a leste da mina (MiningLayout.BOUNDS termina em x -26), o motel a oeste do acesso ao
+	# cânion (x -860 ± 40, DesertTerrainRelief.passage_clear) e a balança longe da Galeria da Rodovia
+	# (-640, -1527) e da entrega do assalto (-650, -1510).
+	{"id": "salt_works", "kind": "salt_works", "center": Vector2(100, -1600), "yaw": 0.0, "name": "Salinas Estrada do Sal", "marker": "place", "radius": 62.0},
+	{"id": "weigh_station", "kind": "weigh_station", "center": Vector2(-750, -1512), "yaw": PI, "name": "Balança rodoviária", "marker": "place", "radius": 22.0},
+	{"id": "motel", "kind": "motel", "center": Vector2(-1100, -1567), "yaw": 0.0, "name": "Motel Oásis", "marker": "place", "radius": 26.0},
 ]
 ## Trechos (início, fim) no eixo da pista que seguem vazios depois dos lugares acima.
 const EVENT_STRETCHES := [
 	{"id": "route66_north", "a": Vector2(342.5, -900), "b": Vector2(342.5, -1080)},
 	{"id": "route66_south", "a": Vector2(342.5, -1320), "b": Vector2(342.5, -1500)},
 	{"id": "main_east", "a": Vector2(300, -880), "b": Vector2(-60, -880)},
-	{"id": "salt_west", "a": Vector2(-1140, -1540), "b": Vector2(-790, -1540)},
+	# Entre o Motel Oásis (x -1100) e o acesso ao cânion: evento não nasce na frente do lugar.
+	{"id": "salt_west", "a": Vector2(-1060, -1540), "b": Vector2(-920, -1540)},
 	{"id": "salt_middle", "a": Vector2(-520, -1540), "b": Vector2(-340, -1540)},
-	{"id": "salt_east", "a": Vector2(-70, -1540), "b": Vector2(290, -1540)},
+	# A salina (x 40..160 na beira) divide o trecho leste em dois.
+	{"id": "salt_east", "a": Vector2(-70, -1540), "b": Vector2(30, -1540)},
+	{"id": "salt_far_east", "a": Vector2(170, -1540), "b": Vector2(290, -1540)},
 ]
 ## Pontos de interação, em coordenadas locais do lugar.
 const SOL_SERVICE := Vector3(8.5, 0, 3.5)
@@ -39,6 +51,10 @@ const SCRAP_BAY := Vector3(0, 0, 3.0)
 const SCRAP_DEALER := Vector3(8.5, 0, -0.9)
 const FOOD_COUNTER := Vector3(0, 0, 2.6)
 const FOOD_VENDOR := Vector3(-2.4, 0, 1.9)
+## Moradores da Estrada do Sal: fora das caixas sólidas (mesa, bancada, balcão).
+const SALT_FOREMAN := Vector3(14.4, 0, 28.6)
+const WEIGH_INSPECTOR := Vector3(.7, 0, 3.6)
+const MOTEL_CLERK := Vector3(11.1, 0, -3.6)
 ## Entregas do orelhão do Sol Poente: destino, tempo e pagamento (valores em EconomyBalance).
 const COURIER_ROUTES := [
 	{"id": "miragem", "name": "Miragem", "point": Vector3(285, 0, -750), "seconds": 140.0},
@@ -66,7 +82,7 @@ static func at(definition: Dictionary, local: Vector3, ground_height := 0.0) -> 
 static func reserved(point: Vector2, radius := 0.0) -> bool:
 	if not enabled(): return false
 	for candidate in SITES:
-		if (candidate.center as Vector2).distance_to(point) < SITE_RADIUS + radius: return true
+		if (candidate.center as Vector2).distance_to(point) < float(candidate.get("radius", SITE_RADIUS)) + radius: return true
 	return false
 
 ## Ponto do trecho vazio ~`ahead` metros à frente de quem dirige pela estrada do trecho, ou {} se
