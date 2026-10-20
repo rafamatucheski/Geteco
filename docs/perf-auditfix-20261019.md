@@ -81,6 +81,21 @@ desenho** (`render_bracket_ms`): assinatura de compilação de pipeline ou trava
 aparece tarde e não está pré-aquecido (hipótese). Próximo passo: repetir com `HARBOR_STALL_LOG=1` para ter
 `pipelines_delta` no quadro.
 
+## Travada de 1,1 s na 1ª chuva leve: corrigida (20/10)
+
+Causa: a primeira garoa da sessão compilava pipelines no desenho (nenhum pré-aquecimento passava pela
+chuva). Uma corrida vigiando o arquivo do cache mostrou zero gravações quando o cache já tinha a chuva;
+por isso não reproduzia depois da 1ª vez. `runtime/RainPrewarm.gd` força garoa e tempestade sob a
+cortina e restaura o clima (`GETECO_RAIN_PREWARM=0` pula). Teste com o cache de pipelines do jogo zerado
+antes de cada corrida (export-20261020-rainprewarm, chuva leve, oeste):
+
+| variante | rodada 1 | rodada 2 |
+|---|---|---|
+| sem pré-aquecimento | média 6,32, pior 16,3 | média 6,70, **pior 1.131 (1.103 no desenho, 175 s)** |
+| com pré-aquecimento | média 6,28, pior 20,6 | média 6,39, pior 16,2 |
+
+Carga até jogável igual (~107,5 s). Duas rodadas por lado: indício forte, não prova absoluta.
+
 ## Não medido
 
 segunda rodada de todas as rotas; o pico de 220–250 ms da serra/travessia não apareceu

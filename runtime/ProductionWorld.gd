@@ -468,6 +468,9 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	preload("res://gameplay/emergency/Fire.gd").prewarm_visuals()
 	await preload("res://gameplay/emergency/EffectsPrewarm.gd").run(world, curtain)
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+	# Garoa e tempestade desenhadas sob a cortina: a 1ª chuva compilava no jogo (1,1 s, 20/10).
+	await preload("res://runtime/RainPrewarm.gd").run(world, curtain)
+	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	await preload("res://gameplay/emergency/PoliceVisualPrewarm.gd").run(world, curtain)
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	await preload("res://gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd").run(world, curtain)

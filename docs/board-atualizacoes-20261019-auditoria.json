@@ -98,15 +98,28 @@
     },
     {
       "id": "picos-abertos-20261019",
-      "title": "Picos ainda sem causa: 220–250 ms (serra/travessia), 907 ms (porto) e 1,1 s na chuva leve",
+      "title": "Picos ainda sem causa: 220–250 ms (serra/travessia) e 907 ms (porto)",
       "status": "issue",
       "area": "performance",
-      "description": "O pico de 220-250 ms não apareceu nas rodadas de 19/10 (não prova que sumiu). Um quadro de 907 ms no porto aos 148 s, 881 ms entre o fim do _process e o desenho, sem span; não se repetiu em 5 rodadas. Em 20/10, chuva leve no oeste: quadro de 1.105 ms aos 170 s com 1.072 ms dentro do desenho (compilação de pipeline ou driver, hipótese). A chuva em si custa ~0,6 ms (+9 %); reflexos a 20 Hz não ajudam.",
+      "description": "O pico de 220-250 ms não apareceu nas rodadas de 19/10 (não prova que sumiu). Um quadro de 907 ms no porto aos 148 s, 881 ms entre o fim do _process e o desenho, sem span; não se repetiu em 5 rodadas. Em 20/10, chuva leve no oeste: quadro de 1.105 ms aos 170 s com 1.072 ms dentro do desenho (compilação de pipeline ou driver, hipótese). A chuva em si custa ~0,6 ms (+9 %); reflexos a 20 Hz não ajudam. A travada de 1,1 s da chuva leve foi resolvida (card rain-prewarm-20261020).",
       "sources": [
         "docs/perf-auditfix-20261019.md",
         "docs/perf-serra-picos-20261017.md"
       ],
       "next": "Repetir chuva leve com HARBOR_STALL_LOG=1 (pipelines_delta) e pré-aquecer o efeito que aparecer; D3D12 já descartado (~20 % mais lento, mesmo pico)."
+    },
+    {
+      "id": "rain-prewarm-20261020",
+      "title": "Travada de 1,1 s na primeira chuva leve: pré-aquecimento da chuva",
+      "status": "implemented",
+      "area": "performance",
+      "description": "A primeira garoa da sessão compilava pipelines no desenho (1.105-1.131 ms, tudo em render_bracket). RainPrewarm força garoa e tempestade sob a cortina e restaura o clima. Com o cache de pipelines zerado: sem pré-aquecimento 1 travada de 1.131 ms em 2 rodadas; com ele, nenhuma em 2 rodadas; carga igual.",
+      "sources": [
+        "runtime/RainPrewarm.gd",
+        "runtime/ProductionWorld.gd",
+        "docs/perf-auditfix-20261019.md"
+      ],
+      "next": "Neve e granizo da serra também não têm pré-aquecimento: verificar do mesmo jeito (cache zerado)."
     }
   ],
   "remove": []
