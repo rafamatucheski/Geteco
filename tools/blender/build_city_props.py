@@ -421,4 +421,6 @@ def main() -> None:
     bpy.ops.wm.save_as_mainfile(filepath=os.path.join(OUT_DIR, "source", "city_props.blend"), compress=True)
 
 
-main()
+# Só monta quando rodado direto: build_harbor_route_props.py importa as ferramentas daqui.
+if __name__ == "__main__":
+    main()
