@@ -33,6 +33,19 @@
         "tools/roadside_art/build_roadside_surfaces.py"
       ],
       "next": "Interações (acender vela na capela, ver os tempos na torre), medição em release e jogar com controle."
+    },
+    {
+      "id": "cidade-vila-oficina-acabamento-20261020",
+      "title": "Cidade, casas, vila Santa Lua e pátio do Digo com acabamento",
+      "status": "implemented",
+      "area": "mundo",
+      "description": "A captura de 20/10 mostrou a rua principal só com o ponto de ônibus e postes (prédios a 25–40 m da pista, areia no meio). Acabamento no mesmo padrão da Estrada do Sal (RoadsideTown, montado pelo coordenador da beira de estrada): calçadas com meio-fio dos dois lados de x -360 a -40 (abrindo no banco, ponto de ônibus e rua do Digo), pátio de lajotas com vagas e carros na frente da lanchonete Solana e do mercado Alvorada, bancos, floreiras, árvores, lixeiras, orelhão, jornaleiro e duas placas altas; quintais cercados das 10 casas com varal, caixa-d'água, horta, vaso e antena; praça da vila com poço, barracas de feira, carroça, varais, caixa-d'água e cordão de lâmpadas; pátio da oficina com pneus, tambores, motor no cavalete, bancada, compressor, portas encostadas, carcaça nos blocos e carros de cliente (frente livre para a entrada de carro). O enfeite do deserto (pedra, moita) não nasce mais em cima desses pisos.",
+      "sources": [
+        "runtime/desert/roadside/RoadsideTown.gd",
+        "runtime/desert/roadside/RoadsideLayout.gd",
+        "tests/capture/capture_desert_town.gd"
+      ],
+      "next": "Fachadas dos prédios antigos (já texturizadas) podem ganhar molduras e toldos; medição em release na cidade; jogar com controle."
     }
   ],
   "remove": []

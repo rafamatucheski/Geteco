@@ -21,7 +21,9 @@ const LAMP := preload("res://runtime/desert/roadside/RoadsideLamp.gd")
 const LAYOUT := preload("res://runtime/desert/roadside/RoadsideLayout.gd")
 const FLEET := preload("res://runtime/FleetCatalog.gd")
 const SALT_ROAD := preload("res://runtime/desert/roadside/RoadsideSaltRoad.gd")
-const KINDS := ["station", "tower", "scrapyard", "food_truck", "salt_works", "weigh_station", "motel", "chapel", "grandstand"]
+const TOWN := preload("res://runtime/desert/roadside/RoadsideTown.gd")
+const KINDS := ["station", "tower", "scrapyard", "food_truck", "salt_works", "weigh_station", "motel", "chapel", "grandstand",
+	"town_street", "homes_yards", "village_square", "workshop_yard"]
 ## Carcaças: só modelos da frota comum (cena retida e desenhada no pré-aquecimento da frota),
 ## de carroceria em 3 superfícies (~8 desenhos por carcaça; o sedã tem 15 só na carroceria).
 const WRECK_MODELS := ["ranch_single", "courier_van"]
@@ -97,6 +99,13 @@ static func grandstand(root: Node3D) -> void:
 	_walk_in_roofs(root, "grandstand")
 	_lamp(root, Vector3(19.5, 6.2, 2.6), Color("f4f6ff"), 20.0, 1.8)
 
+## Acabamento dos lugares antigos (RoadsideTown): só a composição; o pátio da oficina ganha uma
+## carcaça nos blocos no quadro seguinte.
+static func dressing(root: Node3D, kind: String) -> void:
+	ART.instantiate(root, baked(kind))
+	if kind == "workshop_yard":
+		ART.later(root, [Callable(ART, "wrecks").bind(root, [["ranch_single", _t(-16.5, -.04, -4.5, .2), WRECK_TINTS[0]]])])
+
 ## Telhados dos cômodos de entrar a pé num nó só, para o coordenador esconder com o jogador dentro.
 static func _walk_in_roofs(root: Node3D, kind: String) -> void:
 	var node := Node3D.new()
@@ -132,6 +141,10 @@ static func baked(kind: String) -> Dictionary:
 					"chapel": SALT_ROAD.compose_chapel(b, roofs)
 					"grandstand": SALT_ROAD.compose_grandstand(b, roofs)
 				_baked[kind + ":roofs"] = roofs.bake()
+			"town_street": TOWN.compose_town_street(b, null)
+			"homes_yards": TOWN.compose_homes_yards(b, null)
+			"village_square": TOWN.compose_village_square(b, null)
+			"workshop_yard": TOWN.compose_workshop_yard(b, null)
 		_baked[kind] = b.bake()
 	return _baked[kind]
 

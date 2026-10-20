@@ -32,6 +32,23 @@ const SITES := [
 	{"id": "chapel", "kind": "chapel", "center": Vector2(-350, -1516), "yaw": PI, "name": "Capela de Nossa Senhora da Estrada", "marker": "place", "radius": 14.0},
 	{"id": "grandstand", "kind": "grandstand", "center": Vector2(-300, -1282), "yaw": PI, "name": "Arquibancada da reta", "marker": "place", "radius": 24.0},
 ]
+## Acabamento dos lugares antigos (20/10): cidade, casas, vila e pátio da oficina. Mesmo coordenador
+## (monta perto, estaciona longe), sem marcador no mapa; âncora com giro 0 (ponto local = mundo − âncora).
+## "build"/"park": a rua tem 320 m, então monta antes de o jogador chegar ao meio dela.
+const DRESSINGS := [
+	# "clear": retângulos locais (x, z) onde o enfeite do deserto (pedra, moita) não nasce: piso novo.
+	{"id": "town_street", "kind": "town_street", "center": Vector2(-200, -880), "yaw": 0.0, "build": 230.0, "park": 300.0,
+		"clear": [Rect2(-86, 7.4, 102, 10.4), Rect2(-160, 4.4, 320, 3.4), Rect2(-160, -7.6, 320, 3.4)]},
+	{"id": "homes_yards", "kind": "homes_yards", "center": Vector2(-242, -1048), "yaw": 0.0, "build": 170.0, "park": 240.0},
+	{"id": "village_square", "kind": "village_square", "center": Vector2(-528, -822), "yaw": 0.0,
+		"clear": [Rect2(-8, -15, 16, 16), Rect2(-2, -19, 4, 3), Rect2(2.5, -21, 4, 6)]},
+	{"id": "workshop_yard", "kind": "workshop_yard", "center": Vector2(-140, -955), "yaw": 0.0,
+		"clear": [Rect2(-21.5, -8, 9, 18), Rect2(12.5, -8, 9, 18)]},
+]
+
+static func all_sites() -> Array:
+	return SITES + DRESSINGS
+
 ## Trechos (início, fim) no eixo da pista que seguem vazios depois dos lugares acima.
 const EVENT_STRETCHES := [
 	{"id": "route66_north", "a": Vector2(342.5, -900), "b": Vector2(342.5, -1080)},
@@ -69,6 +86,9 @@ const PARKED := {
 	"weigh_station": [["cargo_flatbed_truck", Vector3(-6.5, 0, 12.0), PI * .5]],
 	"motel": [["desert_bison", Vector3(-12.6, 0, 8.6), 0.05], ["desert_coyote", Vector3(-5.8, 0, 8.8), -.04], ["desert_mirage", Vector3(1.0, 0, 8.7), .02]],
 	"grandstand": [["desert_siroco", Vector3(-6.0, 0, -7.5), PI * .5], ["desert_faisca", Vector3(4.0, 0, -7.6), PI * .5]],
+	"town_street": [["desert_coyote", Vector3(-64.5, 0, 10.9), PI], ["desert_bison", Vector3(-58.5, 0, 10.9), PI], ["desert_mirage", Vector3(-25.5, 0, 10.9), PI]],
+	"homes_yards": [["desert_siroco", Vector3(-25.0, 0, 26.5), 0.0], ["desert_faisca", Vector3(-25.0, 0, -10.5), 0.0]],
+	"workshop_yard": [["desert_coyote", Vector3(17.0, 0, 3.5), PI * .5], ["desert_mirage", Vector3(17.0, 0, -1.2), PI * .5]],
 }
 ## Repõe o carro que o controlador recolheu (> 145 m) só nesta faixa: longe da tela, perto o
 ## bastante para estar lá quando o jogador chegar.
@@ -102,7 +122,23 @@ static func reserved(point: Vector2, radius := 0.0) -> bool:
 	if not enabled(): return false
 	for candidate in SITES:
 		if (candidate.center as Vector2).distance_to(point) < float(candidate.get("radius", SITE_RADIUS)) + radius: return true
+	for dressing in DRESSINGS:
+		var local: Vector2 = point - (dressing.center as Vector2)
+		for rect: Rect2 in _dressing_clear(dressing):
+			if rect.grow(radius).has_point(local): return true
 	return false
+
+## Quintais das casas: um retângulo atrás de cada uma (RoadsideTown.compose_homes_yards).
+static var _homes_clear: Array = []
+static func _dressing_clear(dressing: Dictionary) -> Array:
+	if str(dressing.kind) != "homes_yards": return dressing.get("clear", [])
+	if _homes_clear.is_empty():
+		var anchor: Vector2 = dressing.center
+		for i in 10:
+			var home := Vector2(-300.0 + float(i % 5) * 29.0, -1030.0 - float(floori(i / 5.0)) * 37.0) - anchor
+			var half := (14.0 + float(i % 3) * 2.0) * .5 + .6
+			_homes_clear.append(Rect2(home.x - half, home.y - 5.5 - 7.4, half * 2.0, 7.4))
+	return _homes_clear
 
 ## Ponto do trecho vazio ~`ahead` metros à frente de quem dirige pela estrada do trecho, ou {} se
 ## o jogador não está nessa estrada, não anda ao longo dela ou o ponto cairia fora do trecho.

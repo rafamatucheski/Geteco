@@ -60,14 +60,16 @@ func _process(delta: float) -> void:
 	var region: Node3D = session.controller.regions.get("desert")
 	if not is_instance_valid(region): return
 	var built_one := false
-	for definition in LAYOUT.SITES:
+	for definition in LAYOUT.all_sites():
 		var id := str(definition.id)
 		var distance := planar.distance_to(definition.center)
+		var build_at := float(definition.get("build", LAYOUT.BUILD_DISTANCE))
+		var park_at := float(definition.get("park", LAYOUT.PARK_DISTANCE))
 		if sites.has(id):
 			var record: Dictionary = sites[id]
-			if distance > LAYOUT.PARK_DISTANCE and not record.parked: _park(record, true)
-			elif distance < LAYOUT.BUILD_DISTANCE and record.parked and region.prepare_collision_at(ground(definition.center)): _park(record, false)
-		elif not built_one and distance < LAYOUT.BUILD_DISTANCE and region.surfaces_idle():
+			if distance > park_at and not record.parked: _park(record, true)
+			elif distance < build_at and record.parked and region.prepare_collision_at(ground(definition.center)): _park(record, false)
+		elif not built_one and distance < build_at and region.surfaces_idle():
 			if not region.prepare_collision_at(ground(definition.center)): continue
 			region.yield_dressing_this_frame()
 			var trace := STALL_WORK.begin()
@@ -145,6 +147,8 @@ func _build(definition: Dictionary) -> Dictionary:
 		"chapel":
 			BUILD.chapel(root)
 			_admit_resident(root, record, LAYOUT.CHAPEL_KEEPER, 0.0, "Dona Fátima", "read", 81)
+		"town_street", "homes_yards", "village_square", "workshop_yard":
+			BUILD.dressing(root, str(definition.kind))
 		"grandstand":
 			BUILD.grandstand(root)
 			_admit_resident(root, record, LAYOUT.TIMEKEEPER, 0.0, "Seu Zé do Cronômetro", "read", 84)
