@@ -1,6 +1,17 @@
 extends Node3D
 ## Static material batches; tagged solids retain complete authored volumes.
 const SURFACES := preload("res://world/places/ShopInteriorMaterials.gd")
+## Superfícies grandes da Umbra (21/10/2026): texturas de 1024 px emendáveis no lugar dos ladrilhos
+## procedurais de 64 px. Mesmas opções de material do ShopInteriorMaterials (textura + triplanar local),
+## então o shader é o mesmo já compilado; só a imagem muda. [textura, metros por repetição].
+const UMBRA_SURFACES := {
+	"wallpaper": [preload("res://assets/textures/umbra/umbra_wallpaper.jpg"), 1.6],
+	"floorboards": [preload("res://assets/textures/umbra/umbra_floor.jpg"), 2.4],
+	"crypt": [preload("res://assets/textures/umbra/umbra_stone.jpg"), 2.2],
+	"velvet": [preload("res://assets/textures/umbra/umbra_velvet.jpg"), 1.2],
+}
+## GETECO_UMBRA_CLASSIC=1 volta aos ladrilhos procedurais (A/B e salvaguarda; ver UmbraCreature).
+const UMBRA_CLASSIC_KIND := {"wallpaper":"wood","floorboards":"wood","crypt":"stone","velvet":"cloth"}
 var solid_inventory: Array[Dictionary] = []
 var direct_collisions := false
 var _materials: Dictionary = {}
@@ -11,7 +22,10 @@ func material(color: String, kind := "paint") -> StandardMaterial3D:
 	var key := color + kind
 	if _materials.has(key): return _materials[key]
 	var result: StandardMaterial3D
-	if kind in ["wood","stone","cloth"]: result = SURFACES.material(kind,Color(color))
+	if UMBRA_SURFACES.has(kind) and OS.get_environment("GETECO_UMBRA_CLASSIC") == "1":
+		result = SURFACES.material(UMBRA_CLASSIC_KIND[kind],Color(color))
+	elif UMBRA_SURFACES.has(kind): result = _umbra_surface(kind,Color(color))
+	elif kind in ["wood","stone","cloth"]: result = SURFACES.material(kind,Color(color))
 	else:
 		result = StandardMaterial3D.new()
 		result.albedo_color = Color(color)
@@ -24,6 +38,17 @@ func material(color: String, kind := "paint") -> StandardMaterial3D:
 			result.emission = Color(color)
 			result.emission_energy_multiplier = .65
 	_materials[key] = result
+	return result
+
+## A cor do autor só escurece/clareia a imagem: a textura já traz o tom.
+func _umbra_surface(kind: String, tint: Color) -> StandardMaterial3D:
+	var result := StandardMaterial3D.new()
+	var value := clampf(tint.get_luminance()*2.6, .55, 1.0)
+	result.albedo_color = Color(value, value, value)
+	result.albedo_texture = UMBRA_SURFACES[kind][0]
+	result.roughness = .95 if kind == "velvet" else .84
+	result.uv1_triplanar = true
+	result.uv1_scale = Vector3.ONE/float(UMBRA_SURFACES[kind][1])
 	return result
 
 func box(label: String, at: Vector3, size: Vector3, color: String, solid := false, kind := "paint", box_basis := Basis.IDENTITY) -> void:

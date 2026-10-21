@@ -1,14 +1,37 @@
 extends Node3D
 ## Articulated attraction rig. No combat, damage, navigation or autonomous tick.
 const GEO := preload("res://world/places/amusement_park/ParkGeometry.gd")
+const CIVILIAN := preload("res://assets/CivilianModel.gd")
+## Corpos do Meshy (21/10/2026) no lugar dos bonecos de caixa. O CivilianModel move o esqueleto Mixamo
+## pelas juntas dele; o susto inclina o corpo, vira para o visitante e estica as mãos por IK.
+## O MeshyBodyPrewarm já carrega e desenha esta pasta sob a cortina. Sem o GLB, volta o boneco antigo.
+const MESHY_FOLDER := "res://assets/civilians/meshy/umbra/"
+const MESHY_BODIES := {"wraith": "wraith.glb", "doll": "doll.glb", "skeleton": "skeleton.glb", "brute": "brute.glb"}
+## O MeshyBodyRig normaliza todo corpo para a altura de pessoa (1,76 m); a escala do nó dá o tamanho de cada um.
+const MESHY_HEIGHT := 1.76
+const MESHY_HEIGHTS := {"wraith": 2.0, "doll": 1.1, "skeleton": 1.8, "brute": 2.6}
+## GETECO_UMBRA_CLASSIC=1 volta aos bonecos de caixa e às texturas procedurais (A/B e salvaguarda).
+static var CLASSIC := OS.get_environment("GETECO_UMBRA_CLASSIC") == "1"
 var kind := "wraith"
 var joints: Dictionary = {}
 var base := Vector3.ZERO
+var body: Node3D
 
 func _ready() -> void:
 	base = position
-	if kind == "spider": _spider()
+	var source := MESHY_FOLDER + String(MESHY_BODIES.get(kind, ""))
+	if MESHY_BODIES.has(kind) and ResourceLoader.exists(source) and not CLASSIC: _meshy(source)
+	elif kind == "spider": _spider()
 	else: _humanoid()
+
+func _meshy(source: String) -> void:
+	body = CIVILIAN.new()
+	body.name = "MeshyBody"
+	body.body_source = source
+	body.appearance_locked = true
+	body.lod_enabled = false
+	add_child(body)
+	scale *= float(MESHY_HEIGHTS[kind]) / MESHY_HEIGHT
 
 func part(id: String, at: Vector3, parent: Node3D = self) -> Node3D:
 	var pivot := Node3D.new()
@@ -97,6 +120,9 @@ func _spider() -> void:
 			g.flush()
 
 func animate(time: float, amount: float, visitor: Vector3) -> void:
+	if is_instance_valid(body):
+		_animate_meshy(time, amount, visitor)
+		return
 	if kind == "spider":
 		position = base+Vector3(0,-amount*1.15,amount*.24)
 		for side in [-1,1]:
@@ -112,3 +138,19 @@ func animate(time: float, amount: float, visitor: Vector3) -> void:
 	for side in [-1,1]:
 		joints["Arm%d"%side].rotation = Vector3(-amount*1.35,0,side*(.13+sin(time*1.6+side)*.035+amount*.30))
 		joints["Forearm%d"%side].rotation.x = -.13-amount*.55
+
+func _animate_meshy(time: float, amount: float, visitor: Vector3) -> void:
+	var look := visitor - base
+	var yaw := clampf(atan2(look.x, look.z), -.8, .8)
+	rotation.y = yaw * (.25 + amount * .6)
+	position = base + Basis(Vector3.UP, rotation.y) * Vector3(0, sin(time * 1.4) * .02, amount * .30)
+	body.rotation.x = amount * .16 + sin(time * .8) * .015
+	if amount < .05:
+		body.hand_targets = [null, null]
+		return
+	# Mãos saem do peito em direção ao rosto do visitante, sem atravessar a vitrine (no máximo ~0,75 m).
+	var chest: Vector3 = body.to_global(Vector3(0, float(body.pelvis_y) * 1.5, .15))
+	var face: Vector3 = (get_parent() as Node3D).to_global(visitor + Vector3.UP * 1.6)
+	var reach: Vector3 = (face - chest).normalized() * (.75 * amount * absf(global_basis.get_scale().y))
+	var side := global_basis.x.normalized() * .22
+	body.hand_targets = [chest + reach - side, chest + reach + side]

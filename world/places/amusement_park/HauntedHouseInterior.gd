@@ -2,6 +2,7 @@ extends "res://world/places/amusement_park/ParkGeometry.gd"
 ## Umbra is a harmless walk-through attraction. Frights are mechanical props.
 var variant := 0
 var puppet: Node3D
+var brute: Node3D
 var _scare_amount := 0.0
 var _visited := false
 var annex: Node3D
@@ -19,20 +20,20 @@ func _ready() -> void:
 	set_physics_process(false)
 
 func _shell() -> void:
-	box("FloorBoards",Vector3(0,-.025,0),Vector3(18,.05,15),"55434a",false,"wood")
+	box("FloorBoards",Vector3(0,-.025,0),Vector3(18,.05,15),"55434a",false,"floorboards")
 	for i in 30: box("FloorJoin",Vector3(0,.004,-7.25+i*.5),Vector3(17.7,.007,.015),"322e39")
 	for side in [-1,1]:
-		box("RearWall%d"%side,Vector3(side*5.2,1.65,-7.36),Vector3(7.6,3.3,.28),"3f3747",true,"wood")
+		box("RearWall%d"%side,Vector3(side*5.2,1.65,-7.36),Vector3(7.6,3.3,.28),"3f3747",true,"wallpaper")
 	box("RearLintel",Vector3(0,3.05,-7.36),Vector3(2.8,.5,.28),"80705c",false,"wood")
 	for side in [-1,1]:
-		box("SideWall%d"%side,Vector3(side*8.86,1.65,0),Vector3(.28,3.3,15),"453c4d",true,"wood")
-		box("FrontWall%d"%side,Vector3(side*5.12,1.65,7.36),Vector3(7.75,3.3,.28),"3e3546",true,"wood")
+		box("SideWall%d"%side,Vector3(side*8.86,1.65,0),Vector3(.28,3.3,15),"453c4d",true,"wallpaper")
+		box("FrontWall%d"%side,Vector3(side*5.12,1.65,7.36),Vector3(7.75,3.3,.28),"3e3546",true,"wallpaper")
 		for z in [-6,-2,2,6]:
 			box("WallPilaster",Vector3(side*8.65,1.6,z),Vector3(.15,3.2,.16),"80705c")
 		box("Cornice",Vector3(side*8.60,3.07,0),Vector3(.28,.20,14.7),"847560")
 	box("Roof",Vector3(0,3.4,0),Vector3(18,.2,15),"272833",false,"wood")
 	for x in [-6,-2,2,6]: box("RoofBeam",Vector3(x,3.18,0),Vector3(.18,.25,14.7),"56473e")
-	box("EntranceCarpet",Vector3(0,.014,5.2),Vector3(2.15,.02,4.1),"70414e",false,"cloth")
+	box("EntranceCarpet",Vector3(0,.014,5.2),Vector3(2.15,.02,4.1),"70414e",false,"velvet")
 	# Front return wall is physical even when viewed in first person.
 	box("DoorHeader",Vector3(0,2.98,7.36),Vector3(2.5,.64,.28),"80705c")
 	box("ExitDoorPanel",Vector3(0,1.35,7.36),Vector3(2.35,2.7,.16),"645140",true,"wood")
@@ -41,8 +42,8 @@ func _shell() -> void:
 	box("ExitHandle",Vector3(-.70,1.15,7.19),Vector3(.27,.055,.075),"c9af71",false,"metal")
 	for side in [-1,1]: box("DoorJamb%d"%side,Vector3(side*1.27,1.4,7.32),Vector3(.16,2.8,.30),"80705c",true)
 	# Tall scenery forms a loop with >=2.1 m side aisles and an open rear gallery.
-	box("WestDisplayWall",Vector3(-3.7,1.35,-.6),Vector3(.24,2.7,7.1),"443b43",true,"wood")
-	box("EastDisplayWall",Vector3(3.7,1.35,-.6),Vector3(.24,2.7,7.1),"443b43",true,"wood")
+	box("WestDisplayWall",Vector3(-3.7,1.35,-.6),Vector3(.24,2.7,7.1),"443b43",true,"wallpaper")
+	box("EastDisplayWall",Vector3(3.7,1.35,-.6),Vector3(.24,2.7,7.1),"443b43",true,"wallpaper")
 	box("CentralStageFront",Vector3(0,.44,2.8),Vector3(7.45,.88,.28),"65544a",true,"wood")
 	box("CentralStageFloor",Vector3(0,.16,-.4),Vector3(7.2,.32,6.1),"45363c",true,"wood")
 	# The stage stays behind a visible front railing. It is never a walkable shelf.
@@ -53,7 +54,7 @@ func _displays() -> void:
 	for side in [-1,1]:
 		var base := Vector3(side*8.22,0,-.5)
 		box("PortraitCase%d"%side,base+Vector3(0,1.12,0),Vector3(.90,2.24,2.05),"58493f",true,"wood")
-		box("PortraitVelvet",base+Vector3(-side*.47,1.43,0),Vector3(.018,1.43,1.36),"2d323b",false,"cloth")
+		box("PortraitVelvet",base+Vector3(-side*.47,1.43,0),Vector3(.018,1.43,1.36),"2d323b",false,"velvet")
 		ball(base+Vector3(-side*.51,1.5,0),Vector3(.10,.52,.34),"beaa86")
 		for z in [-.09,.09]: ball(base+Vector3(-side*.57,1.60,z),Vector3(.045,.055,.055),"cba985", "glow")
 		# Low coffers fit the outer bays without pinching the 6.4 m circulation line.
@@ -75,6 +76,12 @@ func _displays() -> void:
 	puppet.position = Vector3(1.5,1.10,-1.8)
 	add_child(puppet)
 	puppet.scale = Vector3.ONE*.74
+	# Monstrão de 2,6 m em pé no palco, atrás do guarda-corpo: o teto (3,4 m) cabe com o palco a 0,32 m.
+	brute = preload("res://world/places/amusement_park/UmbraCreature.gd").new()
+	brute.name = "StageBrute"
+	brute.kind = "brute"
+	brute.position = Vector3(-.4,.32,-3.1)
+	add_child(brute)
 	for side in [-1,1]:
 		box("RearCurtain",Vector3(side*1.85,1.5,-7.13),Vector3(.8,2.9,.11),"603341",false,"cloth")
 		for i in 4: box("CurtainFold",Vector3(side*(1.52+i*.2),1.5,-7.03),Vector3(.10,2.9,.10),"79424e",false,"cloth")
@@ -99,4 +106,5 @@ func update_visitor(local_point: Vector3, delta: float) -> void:
 	var target := 1.0 if near else 0.0
 	_scare_amount = move_toward(_scare_amount,target,maxf(delta,0)*1.4)
 	puppet.animate(_clock,_scare_amount,local_point)
+	if is_instance_valid(brute): brute.animate(_clock,_scare_amount,local_point)
 	_visited = _visited or near

@@ -18,10 +18,10 @@ func _ready() -> void:
 	set_process(false)
 
 func _shell() -> void:
-	box("AnnexFloor",Vector3(0,-.11,-17.5),Vector3(18,.22,20),"302b2a",true,"wood")
-	box("NorthWall",Vector3(0,3.55,-27.36),Vector3(18,7.1,.28),"303336",true,"stone")
+	box("AnnexFloor",Vector3(0,-.11,-17.5),Vector3(18,.22,20),"302b2a",true,"floorboards")
+	box("NorthWall",Vector3(0,3.55,-27.36),Vector3(18,7.1,.28),"303336",true,"crypt")
 	for side in [-1,1]:
-		box("WingWall",Vector3(side*8.86,3.55,-17.4),Vector3(.28,7.1,20),"343239",true,"wood")
+		box("WingWall",Vector3(side*8.86,3.55,-17.4),Vector3(.28,7.1,20),"343239",true,"wallpaper")
 		for z in [-9.5,-14,-18.5,-23,-26.5]:
 			box("WallColumn",Vector3(side*8.55,3.5,z),Vector3(.32,7,.35),"62564a",true,"wood")
 			for y in [.32,3.75]: box("Wainscot",Vector3(side*8.64,y,z+1.5),Vector3(.10,.50,2.65),"443b33",false,"wood")
@@ -31,13 +31,13 @@ func _shell() -> void:
 			for cross in [-.47,0,.47]: box("WindowMullion",Vector3(side*8.54,5.4,z+cross),Vector3(.06,1.85,.07),"292b30")
 	box("WingCeiling",Vector3(0,7.15,-17.5),Vector3(18,.24,20),"191c23",true,"wood")
 	# Upper gallery spans the back half; below it the crypt remains accessible.
-	box("UpperGallery",Vector3(0,3.36,-22.7),Vector3(17.7,.28,9.4),"46382f",true,"wood")
+	box("UpperGallery",Vector3(0,3.36,-22.7),Vector3(17.7,.28,9.4),"46382f",true,"floorboards")
 	for x in [-4,4]: box("GalleryColumn",Vector3(x,1.65,-18.6),Vector3(.35,3.3,.38),"695847",true,"wood")
 	for z in [-10,-15,-20,-25]: box("CeilingBeam",Vector3(0,6.9,z),Vector3(17.8,.30,.26),"514538")
 	for y in [1.05,4.55]:
 		if y>2: _rail(Vector3(-4.55,y,-17.95),Vector3(4.55,y,-17.95))
 	# Closed wall above the original doorway seals exterior sunlight.
-	box("SouthUpperWall",Vector3(0,5.2,-7.36),Vector3(18,3.9,.28),"343239",true,"wood")
+	box("SouthUpperWall",Vector3(0,5.2,-7.36),Vector3(18,3.9,.28),"343239",true,"wallpaper")
 	for z in range(-27,-7):
 		box("BoardSeam",Vector3(0,.006,z),Vector3(17.5,.008,.012),"181c21")
 		if z < -18: box("GallerySeam",Vector3(0,3.506,z),Vector3(17.5,.008,.012),"211e23")
@@ -92,13 +92,13 @@ func _rail(a: Vector3,b: Vector3) -> void:
 func _dressing() -> void:
 	# Banquet/crypt, fireplace, library and nursery arranged off the walking lines.
 	box("BanquetTable",Vector3(0,.58,-15.7),Vector3(4.3,1.16,2.3),"40332b",true,"wood")
-	box("TableCloth",Vector3(0,1.17,-15.7),Vector3(4.42,.04,2.36),"512c32",false,"cloth")
+	box("TableCloth",Vector3(0,1.17,-15.7),Vector3(4.42,.04,2.36),"512c32",false,"velvet")
 	for x in [-1.5,0,1.5]:
 		cylinder(Vector3(x,1.21,-15.7),.27,.035,"9a8460","metal")
 		for z in [-15.1,-16.4]:
 			cylinder(Vector3(x,1.37,z),.045,.38,"b9a883")
 			ball(Vector3(x,1.59,z),Vector3(.045,.10,.045),"d8a567","glow")
-	box("Hearth",Vector3(0,4.15,-26.5),Vector3(3.2,1.3,1.1),"363339",true,"stone")
+	box("Hearth",Vector3(0,4.15,-26.5),Vector3(3.2,1.3,1.1),"363339",true,"crypt")
 	box("FireplaceMouth",Vector3(0,4.22,-25.937),Vector3(2.3,.9,.025),"101217")
 	for x in [-1.42,1.42]: box("MantelPillar",Vector3(x,4.32,-25.85),Vector3(.22,1.65,.3),"716354",true,"stone")
 	box("MantelShelf",Vector3(0,5.19,-26),Vector3(3.4,.18,1.30),"796953",true,"stone")
@@ -142,14 +142,13 @@ func _dressing() -> void:
 
 func _stations() -> void:
 	_station("BanquetWraith","wraith",Vector3(0,.35,-17.15),Vector3(0,0,-11),4.0)
-	_station("StairSpider","spider",Vector3(-6,5.4,-15),Vector3(-6,1.5,-14),2.5)
 	_station("CradleDoll","doll",Vector3(-3.1,4.4,-25.1),Vector3(-3.1,3.5,-23),2.4)
 	_station("ClockKeeper","skeleton",Vector3(5.1,3.5,-26.4),Vector3(5.5,3.5,-23),2.6)
 	_station("CryptWatcher","wraith",Vector3(0,0,-26.2),Vector3(0,0,-22.4),3.0)
 	# Full display enclosures keep mechanical motion outside visitor routes.
 	box("BanquetPlinth",Vector3(0,.45,-17.35),Vector3(1.5,.9,1.5),"33302f",true,"wood")
 	box("KeeperPlinth",Vector3(5.1,3.9,-26.3),Vector3(1.5,.8,1.5),"33302f",true,"wood")
-	box("CryptPlinth",Vector3(0,.45,-26.2),Vector3(1.7,.9,1.7),"33302f",true,"stone")
+	box("CryptPlinth",Vector3(0,.45,-26.2),Vector3(1.7,.9,1.7),"33302f",true,"crypt")
 
 func _station(id: String,type: String,at: Vector3,trigger: Vector3,radius: float) -> void:
 	var creature := CREATURE.new()

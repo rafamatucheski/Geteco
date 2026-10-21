@@ -45,7 +45,8 @@ func run() -> void:
 			check(actor.test_move(pose,row[1]),"full capsule blocked by table/hearth/balustrade/stair rail/crib player=%s"%player)
 		actor.free()
 	var annex = room.model.annex
-	check(annex.scares.size()==5,"five independent scare stations")
+	# A aranha da escada saiu a pedido do usuário (21/10/2026); ficam quatro estações.
+	check(annex.scares.size()==4,"four independent scare stations")
 	for station in annex.scares:
 		var start: Transform3D = station.rig.transform
 		annex.update_visitor(station.trigger,.12)

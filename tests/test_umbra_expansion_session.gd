@@ -60,7 +60,7 @@ func run() -> void:
 		if point==Vector3(-6,0,-10):
 			park.yaw = 0
 			await photo("staircase")
-	check(room.model.annex.scares.size()==5,"five distinct articulated fright stations")
+	check(room.model.annex.scares.size()==4,"four distinct articulated fright stations (sem aranha desde 21/10)")
 	await check_house_pause()
 	await actor_depth()
 	await record("house",true)
@@ -70,7 +70,7 @@ func run() -> void:
 	check(not park.house_view and world.player.visual.visible,"first-person state restored")
 	check(await world.session.enter_place(LAYOUT.HAUNTED_ID,false),"reentry recreates house")
 	await create_timer(.4).timeout
-	check(world.session.room.model.annex.scares.size()==5,"reentry has no duplicated creatures")
+	check(world.session.room.model.annex.scares.size()==4,"reentry has no duplicated creatures")
 	finish()
 
 func photo(id: String) -> void:
