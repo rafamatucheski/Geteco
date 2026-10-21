@@ -41,6 +41,14 @@ static func pallet(parent: Node3D,y: float) -> void:
 	for z in [-.4,-.2,0,.2,.4]: box(parent,Vector3(0,y+.20,z),Vector3(1.2,.07,.15),Color("b99768"))
 	for z in [-.4,0,.4]: box(parent,Vector3(0,y+.025,z),Vector3(1.2,.05,.15),Color("937149"))
 static func create(row: Dictionary) -> Node3D:
+	if str(row.model) == "static_snapshot":
+		var art: Node3D = preload("res://world/editing/WorldStaticSnapshots.gd").instantiate(row)
+		if art == null: return null
+		art.name = "WorldProp_static_snapshot"
+		art.scale = Vector3.ONE*float(row.get("scale",1))
+		art.rotation.y = deg_to_rad(float(row.get("rotation",0)))
+		art.set_meta("editor_id",row.id)
+		return art
 	if str(row.model) in ["desert_cactus","desert_rock"]:
 		var art: Node3D
 		if row.model == "desert_cactus":

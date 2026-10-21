@@ -13,6 +13,7 @@ const PLACES := {
 	"res://world/places/classic_meet/ClassicMeetSite.gd": ["harbor", "torque"],
 	"res://world/north_gateway/NorthGatewayScenery.gd": ["harbor", "north_gateway"],
 	"res://world/regions/WorldConnection3D.gd": ["harbor", "connection"],
+	"res://activities/motocross/MotocrossCourse.gd": ["harbor", "motocross"],
 	"res://activities/mountain_downhill/MountainDownhillProps.gd": ["mountain", "downhill"],
 	"res://gameplay/urban_v1/fort/MountainFortExit3D.gd": ["mountain", "fort_exit"],
 }
@@ -26,7 +27,8 @@ static func install(tree: SceneTree, parent: Node, document: Dictionary) -> Node
 	var rows := {}
 	for area in document.get("regions", {}):
 		for id in document.regions[area]:
-			if str(id).begins_with(UNITS.PREFIX + area + "/s_") or str(id).begins_with(UNITS.PREFIX + area + "/session_"): rows[id] = document.regions[area][id]
+			var source_id := str(document.regions[area][id].get("clone_of",id))
+			if source_id.begins_with(UNITS.PREFIX + area + "/s_") or source_id.begins_with(UNITS.PREFIX + area + "/session_"): rows[id] = document.regions[area][id]
 	if rows.is_empty(): return null
 	var watcher: Node = load("res://world/editing/WorldSessionEdits.gd").new()
 	watcher.name = "WorldSessionEdits"
@@ -44,6 +46,30 @@ static func place_of(node: Node) -> Array:
 		script = script.get_base_script()
 	return []
 
+## A staged place can live inside a streamed chunk rather than directly in the region.
+static func finalize_places(root: Node, area: String, rows: Dictionary) -> void:
+	var pending: Array = [root]
+	while not pending.is_empty():
+		var candidate: Variant = pending.pop_back()
+		if not is_instance_valid(candidate): continue
+		var node: Node = candidate
+		if node is CharacterBody3D or node is RigidBody3D: continue
+		pending.append_array(node.get_children())
+		var place := place_of(node)
+		if node is Node3D and not place.is_empty() and place[0] == area and staged_ready(node):
+			UNITS.finalize_session(node,area,str(place[1]),rows,Callable())
+
+static func staged_ready(node: Node) -> bool:
+	if node.has_method("finish_build"):
+		for property in node.get_property_list():
+			if property.name == "_steps":
+				var steps: Variant = node.get("_steps")
+				if steps is Array and not steps.is_empty(): return false
+	for child in node.get_children():
+		if child is CharacterBody3D or child is RigidBody3D: continue
+		if not staged_ready(child): return false
+	return true
+
 func _node_added(node: Node) -> void:
 	if not node is Node3D or place_of(node).is_empty(): return
 	for entry in watched:
@@ -59,6 +85,7 @@ func _process(_delta: float) -> void:
 			continue
 		if Engine.get_process_frames() - int(entry.frame) < PASSES[int(entry["pass"])]: continue
 		var place := place_of(entry.node)
+		if place[1] == "motocross" and not staged_ready(entry.node): continue
 		UNITS.finalize_session(entry.node, str(place[0]), str(place[1]), changes, Callable())
 		entry["pass"] = int(entry["pass"]) + 1
 		if int(entry["pass"]) >= PASSES.size(): watched.remove_at(index)

@@ -2,6 +2,9 @@
 extends Control
 const DATA := preload("res://world/editing/WorldEditData.gd")
 const MIN_ZOOM := .05
+const OVERVIEW_ZOOM := .75
+# Keep real geometry around the viewport so crossing a grid edge does not rebuild the map.
+const DETAIL_CELL_MARGIN := 2
 var road_drawing := preload("res://addons/geteco_world_editor/WorldRoadDrawing.gd").new()
 signal selected(id: String)
 signal committed(row: Dictionary)
@@ -18,7 +21,11 @@ var context_mesh: ArrayMesh
 var context_triangles := {}
 var mesh_key := []
 var polygon_ok := {}
+var polygon_meshes := {}
+var polygon_mesh_order: Array[int] = []
+const POLYGON_MESH_LIMIT := 32768
 var road_ready := false
+var road_cache_key: Array = []
 var context_cells := {}
 var visible_part_ids: Array = []
 var cached_cells := Rect2i(-999999,-999999,0,0)
@@ -46,6 +53,36 @@ var drag_pivot := Vector2.ZERO
 var drag_angle := 0.0
 var drag_turn := 0.0
 var context_owners: Array[String] = []
+var context_owner_parts := {}
+var context_part_cells := {}
+var context_free_parts: Array[int] = []
+var context_index_revision := 0
+var context_index_progress := 1.0
+var context_overview_items := {}
+var context_overview_mesh: ArrayMesh
+var context_overview_dirty := true
+var context_overview_excluded := ""
+var region_bounds_visible := true
+var map_region_bounds := {}
+var terrain_hover := Vector2.ZERO
+var terrain_hover_valid := false
+var overview_layer: Node2D
+var detail_object_cells: Dictionary = {}
+var detail_object_index_key: Array = []
+var detail_rows_key: Array = []
+var detail_visible_rows: Array = []
+var detail_visible_context_count := 0
+var overview_layer_key: Array = []
+var overview_revision := 0
+var overview_rebuild_ms := 0.0
+var overview_command_count := 0
+var overview_record_count := 0
+var terrain_topographies := {}
+var terrain_topography_sources := {}
+var terrain_topography_foregrounds := {}
+var terrain_topography_foreground_meshes := {}
+var terrain_topography_visible := true
+var terrain_topography_revision := 0
 func _ready() -> void:
 	clip_contents = true
 	focus_mode = Control.FOCUS_ALL
@@ -57,6 +94,9 @@ func world(p: Vector2) -> Vector2: return (p-size*.5)/zoom+center
 func snapped_point(p: Vector2) -> Vector2: return p.snapped(Vector2.ONE*grid) if grid > 0 else p
 func allowed(row: Dictionary) -> bool: return filter_type == "all" or row.type == filter_type or row.id == selected_id
 func local_outline(row: Dictionary) -> Array:
+	if row.type == "terrain":
+		var radius := float(row.get("radius",12))
+		return [[-radius,-radius],[radius,-radius],[radius,radius],[-radius,radius]]
 	if row.get("outline",[]).size() >= 3: return row.outline.duplicate(true)
 	if row.get("default_outline",[]).size() >= 3: return row.default_outline.duplicate(true)
 	var half := DATA.point(row.size)*.5
@@ -77,6 +117,7 @@ func shape_points(row: Dictionary) -> PackedVector2Array:
 
 func world_bounds() -> Rect2:
 	var rectangles: Array[Rect2] = []
+	for tile in terrain_topography_tiles(): rectangles.append(tile.bounds)
 	for item in land: rectangles.append(Rect2(float(item[0])/16.0,float(item[1])/16.0,float(item[2])/16.0,float(item[3])/16.0))
 	for item in terrain: rectangles.append(Rect2(item[0],item[1],item[2],item[3]))
 	for polygon in land_polygons:
@@ -97,7 +138,7 @@ func world_bounds() -> Rect2:
 			for point in polygon: rect=rect.expand(point)
 			rectangles.append(rect)
 		elif row.has("position"):
-			rectangles.append(Rect2(DATA.point(row.position),Vector2.ZERO).grow(2*float(row.get("scale",1))))
+			rectangles.append(Rect2(DATA.point(row.position),Vector2.ZERO).grow(float(row.radius) if row.type == "terrain" else 2*float(row.get("scale",1))))
 	for point in entries: rectangles.append(Rect2(DATA.point(point),Vector2.ZERO).grow(1))
 	if rectangles.is_empty(): return Rect2(center-Vector2(25,25),Vector2(50,50))
 	var bounds: Rect2 = rectangles[0]
@@ -115,26 +156,9 @@ func _point_hit(at: Vector2) -> int:
 	return -1
 
 func _draw() -> void:
-	draw_rect(Rect2(Vector2.ZERO,size),Color("152b38"))
-	for rect in land:
-		draw_rect(Rect2(screen(Vector2(rect[0],rect[1])/16.0),Vector2(rect[2],rect[3])*zoom/16.0),Color("293b35"))
-	for tile in terrain:
-		draw_rect(Rect2(screen(Vector2(tile[0],tile[1])),Vector2(tile[2],tile[3])*zoom),Color(tile[4]))
-	for poly in land_polygons:
-		var world := PackedVector2Array()
-		for p in poly: world.append(DATA.point(p))
-		_fill(world,Color("43524b"))
-	# A peça arrastada sai da malha estática e é desenhada à parte (_draw_piece_preview).
-	# Assim o arraste não cai num caminho que triangula cada parte a cada quadro.
-	var excluded := selected_id if dragging and drag_row.get("type", "")=="piece" else ""
-	var visible_ids := _visible_parts()
-	var key := [cached_cells,excluded]
-	if key != mesh_key:
-		_rebuild_context_mesh(visible_ids,excluded)
-		mesh_key = key
-	if context_mesh!=null:
-		draw_mesh(context_mesh,null,Transform2D(Vector2(zoom,0),Vector2(0,zoom),screen(Vector2.ZERO)))
-	_draw_foreground()
+	# Both levels retain world-space draw commands. Detail keeps the actual
+	# visible context triangles; only the distant overview uses footprints.
+	_draw_cached_overview()
 
 func _draw_foreground() -> void:
 	# Só os pisos precisam de ordem; ordenar o mapa inteiro a cada quadro custava caro.
@@ -170,7 +194,14 @@ func _draw_foreground() -> void:
 		var p := screen(DATA.point(row.position))
 		if not Rect2(Vector2(-200,-200),size+Vector2(400,400)).has_point(p): continue
 		var active: bool = row.id == selected_id
+		if overview_active() and row.type == "piece" and not active: continue
 		match str(row.type):
+			"terrain":
+				var radius := float(row.radius)*zoom
+				var tint := Color("79c8b0") if str(row.get("surface","keep")) == "grass" else Color("d2a974")
+				draw_circle(p,radius,Color(tint,.06))
+				draw_arc(p,radius,0,TAU,64,Color("e7c678") if active else Color(tint,.55),2 if active else 1,true)
+				draw_circle(p,3,tint)
 			"building", "prop", "piece", "ground":
 				var polygon := corners(row)
 				if row.type not in ["piece","ground"]: _fill(polygon,Color(row.get("color","859591")).darkened(.15))
@@ -205,13 +236,19 @@ func _draw_foreground() -> void:
 		draw_line(p-Vector2(0,4),p+Vector2(0,4),Color("e59889"),1.5)
 	_draw_gizmo()
 	_draw_road_handles()
+	_draw_region_limits()
+	if armed == "terrain" and terrain_hover_valid:
+		var radius := 12.0
+		if junction_editor != null and is_instance_valid(junction_editor.editor): radius = float(junction_editor.editor.terrain_settings.get("radius",12))
+		draw_arc(screen(terrain_hover),radius*zoom,0,TAU,64,Color("e7c678"),2,true)
+		draw_circle(screen(terrain_hover),3,Color("e7c678"))
 	draw_string(ThemeDB.fallback_font,Vector2(18,size.y-18),"%s · X %.1f  Z %.1f · %.1f px/m" % [region.capitalize(),center.x,center.y,zoom],HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color("b4c9c6"))
 	if junction_editor != null: junction_editor.draw_on(self,false)
 func _draw_roads() -> void:
 	# Reconstruir o traçado custa ~19 ms por quadro. Arrastar um objeto que não é rua e mover
 	# a câmera não mudam as ruas, então reaproveitam o traçado já calculado.
-	var roads_static: bool = (dragging and str(drag_row.get("type","")) != "road") or panning
-	if not roads_static or not road_ready:
+	var key: Array = [region,filter_type,selected_id if objects.get(selected_id,{}).get("type","") == "road" else ""]
+	if not road_ready or (dragging and str(drag_row.get("type","")) == "road") or key != road_cache_key:
 		var roads: Array = []
 		for row in objects.values():
 			if row.type == "road" and allowed(row):
@@ -222,6 +259,7 @@ func _draw_roads() -> void:
 		roads.sort_custom(func(a,b): return a.id < b.id)
 		road_drawing.configure(roads)
 		road_ready = true
+		road_cache_key = key
 	for polygon in road_drawing.pavement: _fill(PackedVector2Array(polygon),Color("aaa9a1"))
 	# Draw the whole network per layer, never a complete street over another one.
 	for layer in ["border","fill"]:
@@ -234,18 +272,43 @@ func _draw_roads() -> void:
 		if line.size() >= 2: draw_polyline(line,Color("e7c678") if mark.id == selected_id else Color("b4ac82"),1.5,true)
 	for polygon in road_drawing.crossings: _fill(PackedVector2Array(polygon),Color("eeeade"))
 
-# Triangulação de contorno inválido imprime "Invalid polygon data" a cada chamada. Verifica
-# cada polígono uma vez, em coordenadas do mundo (a tela muda com pan/zoom), e só desenha os válidos.
+# Triangulate once in stable world coordinates. Re-triangulating screen-space
+# slivers at world zoom lost precision and flooded the log with polygon errors.
 func _fill(world: PackedVector2Array, color: Color) -> void:
-	if world.size() < 3: return
+	var mesh := _polygon_mesh(world)
+	if mesh != null: draw_mesh(mesh,null,Transform2D(Vector2(zoom,0),Vector2(0,zoom),screen(Vector2.ZERO)),color)
+
+func _polygon_mesh(world: PackedVector2Array) -> ArrayMesh:
+	if world.size() < 3: return null
 	var key := hash(world)
-	if not polygon_ok.has(key):
-		if polygon_ok.size() > 20000: polygon_ok.clear()
-		polygon_ok[key] = not Geometry2D.triangulate_polygon(world).is_empty()
-	if not polygon_ok[key]: return
+	if polygon_ok.has(key): return polygon_meshes.get(key)
+	if polygon_mesh_order.size() >= POLYGON_MESH_LIMIT:
+		var retired: int = polygon_mesh_order.pop_front()
+		polygon_meshes.erase(retired)
+		polygon_ok.erase(retired)
+	polygon_mesh_order.append(key)
+	polygon_ok[key] = false
 	var points := PackedVector2Array()
-	for p in world: points.append(screen(p))
-	draw_colored_polygon(points,color)
+	for point in world:
+		if not point.is_finite(): return null
+		if points.is_empty() or point.distance_squared_to(points[-1]) > 1e-10: points.append(point)
+	if points.size() > 1 and points[0].distance_squared_to(points[-1]) <= 1e-10: points.remove_at(points.size()-1)
+	if points.size() < 3: return null
+	var area := 0.0
+	var origin := points[0]
+	for i in points.size(): area += (points[i]-origin).cross(points[(i+1)%points.size()]-origin)
+	if absf(area) <= 1e-8: return null
+	var indices := Geometry2D.triangulate_polygon(points)
+	if indices.is_empty(): return null
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = points
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays,[],{},Mesh.ARRAY_FLAG_USE_2D_VERTICES)
+	polygon_meshes[key] = mesh
+	polygon_ok[key] = true
+	return mesh
 
 func pick_candidates(p: Vector2) -> Array[String]:
 	var hits: Array = []
@@ -265,6 +328,10 @@ func pick_candidates(p: Vector2) -> Array[String]:
 			hit = distance < maxf(8,(float(row.width)*.5+float(row.get("sidewalk_width",2.625)))*zoom)
 		else:
 			distance = p.distance_to(screen(DATA.point(row.position)))
+			if row.type == "terrain":
+				area = PI*float(row.radius)*float(row.radius)
+				hit = distance <= maxf(8,float(row.radius)*zoom)
+				level = 3
 			if row.has("size"):
 				area = DATA.point(row.size).x*DATA.point(row.size).y
 				hit = Geometry2D.is_point_in_polygon(at,corners(row))
@@ -276,6 +343,9 @@ func pick_candidates(p: Vector2) -> Array[String]:
 				if row.get("ground",false): level = 0 if row.get("parts",[]).is_empty() else 1
 				# Exact footprints avoid selecting empty space beside roofs or skew paths.
 				if not row.get("parts",[]).is_empty():
+					# The footprint bounds every triangle. Avoid traversing all the
+					# mountain/harbor geometry for a click far from this object.
+					if not hit and not (not row.get("ground",false) and area < 8.0 and distance <= 7.0): continue
 					hit = false
 					height = -INF
 					for part in row.parts:
@@ -350,8 +420,11 @@ func _gui_input(event: InputEvent) -> void:
 			grab_focus()
 			if event.pressed:
 				if not armed.is_empty():
+					if not _can_edit_world():
+						accept_event()
+						return
 					placed.emit(armed,snapped_point(world(event.position)))
-					armed = ""
+					if armed != "terrain": armed = ""
 					accept_event()
 					return
 				selected_point = -1 if event.alt_pressed else _point_hit(event.position)
@@ -376,6 +449,9 @@ func _gui_input(event: InputEvent) -> void:
 			queue_redraw()
 			accept_event()
 	elif event is InputEventMouseMotion:
+		terrain_hover = world(event.position)
+		terrain_hover_valid = true
+		if armed == "terrain": queue_redraw()
 		if panning:
 			center -= event.relative/zoom
 			queue_redraw()
@@ -404,10 +480,11 @@ func gizmo_hit(at: Vector2) -> String:
 	if row.type in ["piece","ground","building","prop"] and offset.distance_to(RESIZE_OFFSET) < 11: return "resize"
 	if offset.x >= 18 and offset.x <= AXIS_LENGTH+9 and absf(offset.y) <= 9: return "x"
 	if offset.y >= 18 and offset.y <= AXIS_LENGTH+9 and absf(offset.x) <= 9: return "z"
-	if rotation_enabled and not row.get("paving",false) and absf(offset.length()-ROTATE_RADIUS) <= 7: return "rotate"
+	if rotation_enabled and row.type != "terrain" and not row.get("paving",false) and absf(offset.length()-ROTATE_RADIUS) <= 7: return "rotate"
 	return ""
 
 func _start_drag(at: Vector2,axis: String) -> void:
+	if not _can_edit_world(): return
 	dragging = true
 	drag_changed = false
 	drag_axis = axis
@@ -417,7 +494,16 @@ func _start_drag(at: Vector2,axis: String) -> void:
 	drag_angle = (at-screen(drag_pivot)).angle()
 	drag_turn = 0.0
 
+func _can_edit_world() -> bool:
+	if junction_editor != null and is_instance_valid(junction_editor.editor):
+		var owner_editor: Object = junction_editor.editor
+		if owner_editor.has_method("can_edit_world") and not owner_editor.can_edit_world():
+			owner_editor._report("Indexando objetos. Aguarde para editar; a câmera continua disponível.")
+			return false
+	return true
+
 func _update_drag(at: Vector2,snap_rotation: bool) -> void:
+	if not _can_edit_world(): cancel_drag(); return
 	var row := drag_row.duplicate(true)
 	if drag_axis == "resize":
 		var start := drag_origin-drag_pivot
@@ -480,6 +566,7 @@ func _update_drag(at: Vector2,snap_rotation: bool) -> void:
 	queue_redraw()
 
 func finish_drag() -> void:
+	if dragging and not _can_edit_world(): cancel_drag(); return
 	var changed := dragging and drag_changed and objects.has(selected_id)
 	dragging = false
 	drag_axis = ""
@@ -531,7 +618,7 @@ func _draw_gizmo() -> void:
 	var red := Color("ff7771")
 	var blue := Color("78bcff")
 	var green := Color("85d9a0")
-	if rotation_enabled and not row.get("paving",false):
+	if rotation_enabled and row.type != "terrain" and not row.get("paving",false):
 		draw_arc(origin,ROTATE_RADIUS,0,TAU,96,Color("142027"),6,true)
 		draw_arc(origin,ROTATE_RADIUS,0,TAU,96,green,3 if drag_axis == "rotate" else 2,true)
 		draw_circle(origin+Vector2(-ROTATE_RADIUS,0),5,green)
@@ -552,10 +639,15 @@ func _draw_gizmo() -> void:
 func _draw_piece_preview() -> void:
 	if not dragging or drag_row.get("type","") != "piece" or not objects.has(selected_id): return
 	var row: Dictionary = objects[selected_id]
+	if overview_active():
+		var footprint := overview_footprint(row)
+		for i in range(0,footprint.get("triangles",[]).size(),3):
+			var triangle := PackedVector2Array()
+			for j in 3: triangle.append(screen(footprint.triangles[i+j]))
+			draw_primitive(triangle,PackedColorArray([Color("827e6c")]),PackedVector2Array())
+		return
 	if row.has("outline"):
-		var outline := corners(row)
-		for i in outline.size(): outline[i] = screen(outline[i])
-		if not Geometry2D.triangulate_polygon(outline).is_empty(): draw_colored_polygon(outline,Color("827e6c"))
+		_fill(corners(row),Color("827e6c"))
 		return
 	var previous_angle := deg_to_rad(float(drag_row.get("rotation",0)))
 	var angle := -deg_to_rad(float(row.get("rotation",0)))
@@ -567,30 +659,445 @@ func _draw_piece_preview() -> void:
 		draw_primitive(polygon,PackedColorArray([Color(part[5])]),PackedVector2Array())
 
 func rebuild_context() -> void:
+	invalidate_overview()
+	context_index_revision += 1
 	context_parts.clear()
 	context_owners.clear()
-	var ordered: Array = []
+	context_owner_parts.clear()
+	context_part_cells.clear()
+	context_free_parts.clear()
+	context_overview_items.clear()
 	for row in objects.values():
 		if row.type in ["context","piece"]:
-			for part in row.get("parts",[]): ordered.append({"part":part,"owner":row.id})
-	ordered.sort_custom(func(a,b): return float(a.part[4]) < float(b.part[4]))
-	for entry in ordered:
-		context_parts.append(entry.part)
-		context_owners.append(entry.owner)
+			var overview := overview_footprint(row)
+			if not overview.is_empty(): context_overview_items[str(row.id)] = overview
+			for part in row.get("parts",[]):
+				context_parts.append(part)
+				context_owners.append(str(row.id))
 	context_cells.clear()
 	context_triangles.clear()
 	mesh_key = []
 	road_ready = false
 	cached_cells = Rect2i(-999999,-999999,0,0)
 	for index in context_parts.size():
-		var part: Array = context_parts[index]
-		for x in range(floori(part[0]/64),floori((part[0]+part[2])/64)+1):
-			for z in range(floori(part[1]/64),floori((part[1]+part[3])/64)+1):
-				var key := Vector2i(x,z)
-				if not context_cells.has(key): context_cells[key] = []
-				context_cells[key].append(index)
+		_index_context_part(index)
 
 	context_mesh=null
+	context_index_progress = 1.0
+	context_overview_dirty = true
+
+func _index_context_part(index: int) -> void:
+	var owner: String = context_owners[index]
+	if not context_owner_parts.has(owner): context_owner_parts[owner] = []
+	context_owner_parts[owner].append(index)
+	var part: Array = context_parts[index]
+	var cells: Array[Vector2i] = []
+	for x in range(floori(part[0]/64),floori((part[0]+part[2])/64)+1):
+		for z in range(floori(part[1]/64),floori((part[1]+part[3])/64)+1):
+			var key := Vector2i(x,z)
+			if not context_cells.has(key): context_cells[key] = []
+			context_cells[key].append(index)
+			cells.append(key)
+	context_part_cells[index] = cells
+
+## Stable slots keep triangulation and cell lists for every untouched object.
+## Editing one bin must not sort and re-index the entire world.
+func update_context(changed_ids: Array) -> void:
+	invalidate_overview()
+	context_index_revision += 1
+	for owner in changed_ids:
+		for index in context_owner_parts.get(owner,[]):
+			for key in context_part_cells.get(index,[]):
+				if context_cells.has(key):
+					context_cells[key].erase(index)
+					if context_cells[key].is_empty(): context_cells.erase(key)
+			context_parts[index] = null
+			context_owners[index] = ""
+			context_triangles.erase(index)
+			context_part_cells.erase(index)
+			context_free_parts.append(index)
+		context_owner_parts.erase(owner)
+		context_overview_items.erase(owner)
+		var row: Dictionary = objects.get(owner,{})
+		if row.get("type","") not in ["piece","context"]: continue
+		var overview := overview_footprint(row)
+		if not overview.is_empty(): context_overview_items[str(owner)] = overview
+		for part in row.get("parts",[]):
+			var index: int = context_free_parts.pop_back() if not context_free_parts.is_empty() else context_parts.size()
+			if index == context_parts.size():
+				context_parts.append(part)
+				context_owners.append(str(owner))
+			else:
+				context_parts[index] = part
+				context_owners[index] = str(owner)
+			_index_context_part(index)
+	mesh_key = []
+	cached_cells = Rect2i(-999999,-999999,0,0)
+	context_mesh = null
+	context_index_progress = 1.0
+	context_overview_dirty = true
+	queue_redraw()
+
+func overview_active() -> bool:
+	return zoom <= OVERVIEW_ZOOM
+
+func invalidate_overview() -> void:
+	overview_revision += 1
+
+func terrain_topography_tiles() -> Array:
+	return terrain_topographies.get(region,[]) if terrain_topography_visible else []
+
+func set_terrain_tiles(area: String, tiles: Array) -> void:
+	set_terrain_topography(area,tiles)
+
+func set_terrain_topography(area: String, tiles: Array) -> void:
+	var valid: Array = []
+	var sources := {}
+	var foregrounds := {}
+	for value in tiles:
+		if not value is Dictionary or not value.get("texture") is Texture2D: continue
+		var raw: Variant = value.get("bounds",[])
+		var bounds := Rect2()
+		if raw is Rect2: bounds = raw
+		elif raw is Array and raw.size() == 4 and DATA.number(raw[0]) and DATA.number(raw[1]) and DATA.number(raw[2]) and DATA.number(raw[3]): bounds = Rect2(raw[0],raw[1],raw[2],raw[3])
+		else: continue
+		if not bounds.position.is_finite() or not bounds.size.is_finite() or bounds.size.x <= 0 or bounds.size.y <= 0: continue
+		var ids: Array = value.get("source_ids",[]) if value.get("source_ids",[]) is Array else []
+		for id in ids:
+			if id is String: sources[id] = true
+		var front: Variant = value.get("foreground",{})
+		if front is Dictionary:
+			for id in front:
+				if id is String and front[id] is Dictionary:
+					foregrounds[id] = front[id]
+					sources[id] = true
+		valid.append({"texture":value.texture,"bounds":bounds,"source_ids":ids.duplicate(),"path":value.get("path","")})
+	terrain_topographies[area] = valid
+	terrain_topography_sources[area] = sources
+	terrain_topography_foregrounds[area] = foregrounds
+	terrain_topography_foreground_meshes[area] = _topography_foreground_mesh(foregrounds)
+	terrain_topography_revision += 1
+	if area == region: _invalidate_topography_geometry()
+
+func set_terrain_topography_visible(value: bool) -> void:
+	if terrain_topography_visible == value: return
+	terrain_topography_visible = value
+	_invalidate_topography_geometry()
+
+func _invalidate_topography_geometry() -> void:
+	invalidate_overview()
+	context_overview_dirty = true
+	context_mesh = null
+	mesh_key = []
+	queue_redraw()
+
+func _draw_terrain_topography(target: CanvasItem, world_space: bool) -> void:
+	for tile in terrain_topography_tiles():
+		var rect: Rect2 = tile.bounds
+		if not world_space: rect = Rect2(screen(rect.position),rect.size*zoom)
+		# Alpha is the real triangulated coverage; never fill the tile's whole box.
+		target.draw_texture_rect(tile.texture,rect,false)
+	if terrain_topography_visible:
+		var front: ArrayMesh = terrain_topography_foreground_meshes.get(region)
+		if front != null:
+			var transform := Transform2D.IDENTITY if world_space else Transform2D(Vector2(zoom,0),Vector2(0,zoom),screen(Vector2.ZERO))
+			target.draw_mesh(front,null,transform)
+
+func _terrain_owner_replaced(owner: String) -> bool:
+	if not terrain_topography_visible or not terrain_topography_sources.get(region,{}).has(owner): return false
+	if terrain_topography_foregrounds.get(region,{}).has(owner): return true
+	var row: Dictionary = objects.get(owner,{})
+	var parts: Array = row.get("parts",[])
+	if not parts.is_empty() and parts.all(func(part): return part is Array and part.size()>7 and part[7]==true): return true
+	return "terrain" in str(row.get("kind","")) or row.get("terrain_surface",false)
+
+func _terrain_part_replaced(index: int) -> bool:
+	if terrain_topography_tiles().is_empty(): return false
+	var part: Array = context_parts[index]
+	if part.size() > 7 and part[7] == true: return true
+	var owner: String = context_owners[index]
+	return _terrain_owner_replaced(owner)
+
+func _topography_foreground_mesh(rows: Dictionary) -> ArrayMesh:
+	var parts: Array = []
+	for row in rows.values():
+		var source: Variant = row.get("parts",[])
+		if not source is Array: continue
+		for part in source:
+			if part is Array and part.size()>=6 and DATA.number(part[4]): parts.append(part)
+	parts.sort_custom(func(a,b): return float(a[4])<float(b[4]))
+	var vertices := PackedVector2Array()
+	var colors := PackedColorArray()
+	for part in parts:
+		if not part is Array or part.size()<6: continue
+		var points := PackedVector2Array()
+		if part.size()>6:
+			for point in part[6]: points.append(DATA.point(point))
+		else: points = PackedVector2Array([Vector2(part[0],part[1]),Vector2(part[0]+part[2],part[1]),Vector2(part[0]+part[2],part[1]+part[3]),Vector2(part[0],part[1]+part[3])])
+		if points.size()<3: continue
+		var area := 0.0
+		for i in points.size(): area += (points[i]-points[0]).cross(points[(i+1)%points.size()]-points[0])
+		if absf(area)<1e-8: continue
+		for index in Geometry2D.triangulate_polygon(points):
+			vertices.append(points[index])
+			colors.append(Color(part[5]))
+	if vertices.is_empty(): return null
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	arrays[Mesh.ARRAY_COLOR] = colors
+	var result := ArrayMesh.new()
+	result.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays,[],{},Mesh.ARRAY_FLAG_USE_2D_VERTICES)
+	return result
+
+# A retained CanvasItem records geometry once. Pan/zoom change only its transform;
+# overlays and precise picking remain live on the parent Control.
+func _detail_rows() -> Array:
+	var index_key: Array = [overview_revision,context_index_revision,objects.size()]
+	if index_key != detail_object_index_key:
+		detail_object_index_key = index_key
+		detail_object_cells.clear()
+		detail_rows_key = []
+		for row: Dictionary in objects.values():
+			if row.get("type","") in ["piece","context","road"]: continue
+			var bounds := Rect2(DATA.point(row.get("position",[0,0])),Vector2.ZERO)
+			if row.has("size"):
+				for point in corners(row): bounds = bounds.expand(point)
+			else: bounds = bounds.grow(float(row.get("radius",row.get("range",2))) if row.type == "terrain" else 4*float(row.get("scale",1)))
+			for x in range(floori(bounds.position.x/64),floori(bounds.end.x/64)+1):
+				for z in range(floori(bounds.position.y/64),floori(bounds.end.y/64)+1):
+					var cell := Vector2i(x,z)
+					if not detail_object_cells.has(cell): detail_object_cells[cell] = []
+					detail_object_cells[cell].append(str(row.id))
+	var key: Array = [cached_cells,index_key]
+	if key == detail_rows_key: return detail_visible_rows
+	detail_rows_key = key
+	var found := {}
+	for x in range(cached_cells.position.x,cached_cells.end.x):
+		for z in range(cached_cells.position.y,cached_cells.end.y):
+			for id in detail_object_cells.get(Vector2i(x,z),[]): found[id] = true
+	detail_visible_rows = []
+	for id in found:
+		if objects.has(id): detail_visible_rows.append(objects[id])
+	return detail_visible_rows
+
+func _draw_detail_grid() -> void:
+	var spacing := 10.0 if zoom >= 2 else 64.0
+	var a := world(Vector2.ZERO)
+	var b := world(size)
+	for x in range(floori(a.x/spacing),ceili(b.x/spacing)+1): draw_line(screen(Vector2(x*spacing,a.y)),screen(Vector2(x*spacing,b.y)),Color(1,1,1,.045))
+	for z in range(floori(a.y/spacing),ceili(b.y/spacing)+1): draw_line(screen(Vector2(a.x,z*spacing)),screen(Vector2(b.x,z*spacing)),Color(1,1,1,.045))
+
+func _draw_cached_overview() -> void:
+	if not is_instance_valid(overview_layer):
+		overview_layer = Node2D.new()
+		overview_layer.name = "RetainedWorldOverview"
+		overview_layer.show_behind_parent = true
+		add_child(overview_layer)
+		overview_layer.draw.connect(_record_overview)
+	overview_layer.show()
+	overview_layer.transform = Transform2D(Vector2(zoom,0),Vector2(0,zoom),screen(Vector2.ZERO))
+	var detailed := not overview_active()
+	if detailed: _visible_parts()
+	var key := [region,filter_type,overview_revision,context_index_revision,objects.size(),dragging,selected_id if dragging or filter_type != "all" else "",detailed,cached_cells if detailed else Rect2i()]
+	if dragging and drag_row.get("type","") == "road":
+		key.append(hash(objects.get(selected_id,{})))
+		road_ready = false
+	if key != overview_layer_key:
+		overview_layer_key = key
+		overview_layer.queue_redraw()
+	# No inventory traversal or road commands on camera movement.
+	if detailed: _draw_detail_grid()
+	if objects.has(selected_id):
+		var row: Dictionary = objects[selected_id]
+		if dragging and row.type != "piece":
+			if row.has("size"): _fill(corners(row),Color(row.get("color","859591")))
+			elif row.type in ["tree","light","manhole"]: draw_circle(screen(DATA.point(row.position)),maxf(2,1.25*float(row.get("scale",1))*zoom),Color("79b18e"))
+		if row.type == "terrain":
+			draw_arc(screen(DATA.point(row.position)),float(row.radius)*zoom,0,TAU,64,Color("e7c678"),2.5,true)
+		elif row.has("size"):
+			var polygon := corners(row)
+			for i in polygon.size(): polygon[i] = screen(polygon[i])
+			polygon.append(polygon[0])
+			draw_polyline(polygon,Color("e7c678"),2.5,true)
+		else: draw_arc(screen(DATA.point(row.get("position",[0,0]))),8,0,TAU,20,Color("e7c678"),2,true)
+	_draw_piece_preview()
+	_draw_gizmo()
+	_draw_road_handles()
+	_draw_region_limits()
+	if armed == "terrain" and terrain_hover_valid:
+		var radius := 12.0
+		if junction_editor != null and is_instance_valid(junction_editor.editor): radius = float(junction_editor.editor.terrain_settings.get("radius",12))
+		draw_arc(screen(terrain_hover),radius*zoom,0,TAU,64,Color("e7c678"),2,true)
+	draw_string(ThemeDB.fallback_font,Vector2(18,size.y-18),"%s · X %.1f  Z %.1f · %.2f px/m" % [region.capitalize(),center.x,center.y,zoom],HORIZONTAL_ALIGNMENT_LEFT,-1,14,Color("b4c9c6"))
+	if junction_editor != null: junction_editor.draw_on(self,false)
+
+func _overview_fill(points: PackedVector2Array, color: Color) -> void:
+	var mesh := _polygon_mesh(points)
+	if mesh != null:
+		overview_layer.draw_mesh(mesh,null,Transform2D.IDENTITY,color)
+		overview_command_count += 1
+
+func _record_overview() -> void:
+	overview_record_count += 1
+	var began := Time.get_ticks_usec()
+	overview_command_count = 0
+	overview_layer.draw_rect(Rect2(-20000,-20000,40000,40000),Color("152b38"))
+	for item in land: overview_layer.draw_rect(Rect2(float(item[0])/16,float(item[1])/16,float(item[2])/16,float(item[3])/16),Color("293b35"))
+	for tile in terrain: overview_layer.draw_rect(Rect2(tile[0],tile[1],tile[2],tile[3]),Color(tile[4]))
+	for poly in land_polygons:
+		var points := PackedVector2Array()
+		for p in poly: points.append(DATA.point(p))
+		_overview_fill(points,Color("43524b"))
+	_draw_terrain_topography(overview_layer,true)
+	var excluded := selected_id if dragging and drag_row.get("type","") == "piece" else ""
+	var detailed := not overview_active()
+	var context: ArrayMesh
+	var rows: Array
+	if detailed:
+		var visible := _visible_parts()
+		var detail_key := [cached_cells,excluded,context_index_revision,terrain_topography_revision]
+		if detail_key != mesh_key:
+			_rebuild_context_mesh(visible,excluded)
+			mesh_key = detail_key
+		context = context_mesh
+		detail_visible_context_count = visible.size()
+		rows = _detail_rows()
+	else:
+		context = _overview_mesh(excluded)
+		rows = objects.values()
+	if context != null: overview_layer.draw_mesh(context,null)
+	var grounds: Array = []
+	for row in rows:
+		if row.type == "ground" and allowed(row) and not (dragging and row.id == selected_id): grounds.append(row)
+	grounds.sort_custom(func(a,b):
+		var ap := str(a.id).begins_with("paving/")
+		var bp := str(b.id).begins_with("paving/")
+		if ap and bp: return str(a.id).get_file().to_int()<str(b.id).get_file().to_int()
+		if ap != bp: return ap
+		return str(a.id)<str(b.id))
+	for row in grounds: _overview_fill(corners(row),Color(row.color) if row.get("paving",false) else preload("res://world/editing/WorldGroundFactory.gd").color(row.surface))
+	# Configure only on an actual road invalidation, then retain its whole network.
+	var road_key := [region,filter_type,selected_id if objects.get(selected_id,{}).get("type","") == "road" else ""]
+	if not road_ready or road_cache_key != road_key:
+		var roads: Array = []
+		for row in objects.values():
+			if row.type != "road" or not allowed(row): continue
+			var source: Dictionary = row.duplicate(true)
+			source.surface = row.get("surface","asphalt")
+			source.urban = region == "harbor" and not row.get("pathway",false)
+			roads.append(source)
+		roads.sort_custom(func(a,b): return a.id<b.id)
+		road_drawing.configure(roads)
+		road_ready = true
+		road_cache_key = road_key
+	for polygon in road_drawing.pavement: _overview_fill(PackedVector2Array(polygon),Color("aaa9a1"))
+	for layer in ["border","fill"]:
+		for surface in road_drawing.surfaces:
+			var color := Color("596967") if layer == "border" else (Color("3b4852") if surface.surface == "asphalt" else Color("796652"))
+			for polygon in surface[layer]: _overview_fill(PackedVector2Array(polygon),color)
+	for mark in road_drawing.markings:
+		if mark.points.size() >= 2: overview_layer.draw_polyline(PackedVector2Array(mark.points),Color("b4ac82"),2,true)
+	for polygon in road_drawing.crossings: _overview_fill(PackedVector2Array(polygon),Color("eeeade"))
+	for row in rows:
+		if not allowed(row) or row.type in ["road","context","piece","ground"]: continue
+		if dragging and row.id == selected_id: continue
+		var at := DATA.point(row.position)
+		match str(row.type):
+			"building","prop": _overview_fill(corners(row),Color(row.get("color","859591")).darkened(.15))
+			"tree": overview_layer.draw_circle(at,1.25*float(row.get("scale",1)),Color("c4d8cc") if row.get("snow",false) else Color("56886c"))
+			"light": overview_layer.draw_circle(at,1.2,Color(row.get("color","ffe0ab")))
+			"manhole": overview_layer.draw_circle(at,1.05,Color("9fc9a8"))
+			"terrain": overview_layer.draw_arc(at,float(row.radius),0,TAU,48,Color("d2a974"),1.0,true)
+	if detailed:
+		for row: Dictionary in rows:
+			if row.type not in ["building","prop","ground"] or not allowed(row) or (dragging and row.id == selected_id): continue
+			var outline := corners(row)
+			if outline.size()<3: continue
+			outline.append(outline[0])
+			overview_layer.draw_polyline(outline,Color("8a9e9c"),-1.0,false)
+	for entry in entries:
+		var at := DATA.point(entry)
+		overview_layer.draw_line(at-Vector2(3,0),at+Vector2(3,0),Color("e59889"),1.5)
+		overview_layer.draw_line(at-Vector2(0,3),at+Vector2(0,3),Color("e59889"),1.5)
+	overview_rebuild_ms = float(Time.get_ticks_usec()-began)/1000.0
+
+func set_region_bounds_visible(value: bool) -> void:
+	region_bounds_visible = value
+	if value and map_region_bounds.is_empty() and junction_editor != null and is_instance_valid(junction_editor.editor):
+		for area in ["harbor","mountain","desert"]: map_region_bounds[area] = junction_editor.editor.region_bounds(area)
+	queue_redraw()
+
+func set_region_bounds(bounds: Dictionary) -> void:
+	map_region_bounds = bounds.duplicate()
+	queue_redraw()
+
+func _draw_region_limits() -> void:
+	if not region_bounds_visible: return
+	var colors := {"harbor":Color("79c8b0"),"mountain":Color("b6cae8"),"desert":Color("d8b579")}
+	for area in map_region_bounds:
+		var rect: Rect2 = map_region_bounds[area]
+		if not rect.has_area(): continue
+		var display := Rect2(screen(rect.position),rect.size*zoom)
+		var tint: Color = colors.get(area,Color.WHITE)
+		draw_rect(display,Color(tint,.7),false,1.5)
+		if display.intersects(Rect2(Vector2.ZERO,size)):
+			var label := "Montanha" if area == "mountain" else ("Deserto" if area == "desert" else "Harbor")
+			draw_string(ThemeDB.fallback_font,display.position+Vector2(6,18),label,HORIZONTAL_ALIGNMENT_LEFT,-1,14,tint)
+
+## At world scale a compact footprint carries the object shape; detailed scene
+## triangles remain available unchanged as soon as the user zooms in.
+func overview_footprint(row: Dictionary) -> Dictionary:
+	var parts: Array = row.get("parts",[])
+	if parts.is_empty() or not row.has("position") or not row.has("size"): return {}
+	var compact := row.duplicate()
+	if compact.get("outline",[]).size() > 32: compact.erase("outline")
+	if compact.get("default_outline",[]).size() > 32: compact.erase("default_outline")
+	var polygon := corners(compact)
+	var indices := Geometry2D.triangulate_polygon(polygon)
+	if indices.is_empty():
+		compact.erase("outline")
+		compact.erase("default_outline")
+		polygon = corners(compact)
+		indices = Geometry2D.triangulate_polygon(polygon)
+	var triangles := PackedVector2Array()
+	for index in indices: triangles.append(polygon[index])
+	var top: Array = parts[-1]
+	var label := str(row.get("label","")).to_lower()
+	var ground: bool = row.get("ground",false) or "terrain" in label or "terreno" in label
+	var layer := -1 if row.type == "context" else (0 if ground else 1)
+	return {"triangles":triangles,"color":Color(top[5]),"height":float(row.get("selection_height",top[4])),"layer":layer}
+
+func _overview_mesh(excluded := "") -> ArrayMesh:
+	if not context_overview_dirty and context_overview_excluded == excluded: return context_overview_mesh
+	var ids: Array = context_overview_items.keys()
+	ids.sort_custom(func(a,b):
+		var al := int(context_overview_items[a].layer)
+		var bl := int(context_overview_items[b].layer)
+		if al != bl: return al < bl
+		var ah := float(context_overview_items[a].height)
+		var bh := float(context_overview_items[b].height)
+		return ah < bh if not is_equal_approx(ah,bh) else str(a) < str(b))
+	var vertices := PackedVector2Array()
+	var colors := PackedColorArray()
+	for id in ids:
+		if id == excluded: continue
+		if _terrain_owner_replaced(str(id)): continue
+		var item: Dictionary = context_overview_items[id]
+		for point in item.triangles:
+			vertices.append(point)
+			colors.append(item.color)
+	context_overview_mesh = null
+	if not vertices.is_empty():
+		var arrays := []
+		arrays.resize(Mesh.ARRAY_MAX)
+		arrays[Mesh.ARRAY_VERTEX] = vertices
+		arrays[Mesh.ARRAY_COLOR] = colors
+		context_overview_mesh = ArrayMesh.new()
+		context_overview_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays,[],{},Mesh.ARRAY_FLAG_USE_2D_VERTICES)
+	context_overview_dirty = false
+	context_overview_excluded = excluded
+	return context_overview_mesh
 
 func _rebuild_context_mesh(ids: Array, excluded := "") -> void:
 	# Visible static triangles in height order; pan within a cell reuses the per-part cache.
@@ -598,6 +1105,7 @@ func _rebuild_context_mesh(ids: Array, excluded := "") -> void:
 	var colors := PackedColorArray()
 	for id in ids:
 		if excluded != "" and context_owners[id] == excluded: continue
+		if _terrain_part_replaced(id): continue
 		var part: Array = context_parts[id]
 		var triangles := _part_triangles(id)
 		var color := Color(part[5])
@@ -637,12 +1145,20 @@ func _visible_parts() -> Array:
 	var first := Vector2i(floori(start.x),floori(start.y))
 	var last := Vector2i(floori(finish.x),floori(finish.y))
 	var cells := Rect2i(first,last-first+Vector2i.ONE)
-	if cells == cached_cells: return visible_part_ids
+	if cells == cached_cells or cached_cells.encloses(cells): return visible_part_ids
+	# Hysteresis: keep this complete margin until the view leaves it; do not
+	# recenter the cache on every cell crossing or ordinary camera movement.
+	cells = cells.grow(DETAIL_CELL_MARGIN)
+	first = cells.position
+	last = cells.end-Vector2i.ONE
 	cached_cells = cells
 	var found := {}
 	for x in range(first.x,last.x+1):
 		for z in range(first.y,last.y+1):
 			for index in context_cells.get(Vector2i(x,z),[]): found[index] = true
 	visible_part_ids = found.keys()
-	visible_part_ids.sort()
+	visible_part_ids.sort_custom(func(a,b):
+		var ah := float(context_parts[a][4])
+		var bh := float(context_parts[b][4])
+		return ah < bh if not is_equal_approx(ah,bh) else a < b)
 	return visible_part_ids

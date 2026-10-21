@@ -14,7 +14,7 @@ static func apply(region: Node) -> void:
 	var accepted := {}
 	for id in changes:
 		var row: Dictionary = changes[id]
-		if row.get("type", "") == "piece": continue # WorldEditPieces owns authored groups.
+		if row.get("type", "") in ["piece","terrain"]: continue # Geometry groups and terrain fields own these rows.
 		var error := DATA.validate_entity(row)
 		if not error.is_empty() or (not base.has(id) and not str(id).begins_with("new/")):
 			push_error("Editor de mundo: alteração inválida ou origem ausente: " + str(id))

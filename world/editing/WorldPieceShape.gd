@@ -8,7 +8,7 @@ static func is_shape_editable(id: String) -> bool:
 
 static func shape_info(node: Node3D) -> Dictionary:
 	if node.has_meta("world_edit_shape_info"): return node.get_meta("world_edit_shape_info")
-	if node.get_meta("world_edit_locked", false) or not is_shape_editable(str(node.get_meta("world_edit_piece_id", ""))): return {}
+	if node.get_meta("world_edit_locked", false) or not is_shape_editable(str(node.get_meta("world_edit_clone_of",node.get_meta("world_edit_piece_id", "")))): return {}
 	var meshes: Array[MeshInstance3D] = []
 	_find_meshes(node, meshes)
 	if meshes.size() != 1 or not meshes[0].mesh is BoxMesh: return {}
@@ -38,7 +38,7 @@ static func _snapshot(node: Node, entries: Array) -> void:
 
 static func apply(node: Node3D, row: Dictionary, origin: Transform3D, target: Transform3D) -> void:
 	var data: Array = row.get("stretch", [1.0, 1.0])
-	var stretch := Vector3(clampf(float(data[0]), .1, 4.0), clampf(float(row.get("height_stretch",1)),.1,4.0), clampf(float(data[1]), .1, 4.0))
+	var stretch := Vector3(clampf(float(data[0]), .02, 30.0), clampf(float(row.get("height_stretch",1)),.02,30.0), clampf(float(data[1]), .02, 30.0))
 	var outline: Array = row.get("outline", [])
 	var deform := not stretch.is_equal_approx(Vector3.ONE) or not outline.is_empty()
 	if not deform and not node.has_meta("world_edit_geometry"):

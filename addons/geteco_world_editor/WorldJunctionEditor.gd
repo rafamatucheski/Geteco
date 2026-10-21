@@ -138,6 +138,7 @@ func input_event(event: InputEvent, view3d: bool) -> bool:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 		cancel(); return true
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+		if not _can_edit(): cancel(); return true
 		if not event.pressed: finish(); return true
 		cancel()
 		var at: Vector2 = event.position
@@ -162,6 +163,7 @@ func input_event(event: InputEvent, view3d: bool) -> bool:
 		redraw()
 		return true
 	if event is InputEventMouseMotion and dragging:
+		if not _can_edit(): cancel(); return true
 		var hit: Variant = ground(event.position,drag_3d)
 		if hit != null:
 			proposed = clampf(original+(hit-start).dot(entry().direction),0,entry().max_offset)
@@ -170,12 +172,19 @@ func input_event(event: InputEvent, view3d: bool) -> bool:
 		return true
 	return false
 
+func _can_edit() -> bool:
+	if editor != null and editor.has_method("can_edit_world") and not editor.can_edit_world():
+		editor._report("Indexando objetos. Aguarde...")
+		return false
+	return true
+
 func cancel() -> void:
 	dragging = false
 	redraw()
 
 func finish() -> void:
 	if not dragging: return
+	if not _can_edit(): cancel(); return
 	dragging = false
 	if not is_equal_approx(proposed,original): change("offset",proposed)
 	redraw()

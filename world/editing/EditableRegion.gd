@@ -74,6 +74,7 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 		if ground != null: chunk.add_child(ground)
 	elif record.kind == "editor_prop":
 		var prop: Node3D = preload("res://world/editing/WorldPropFactory.gd").create(record.data)
+		if prop == null: return
 		prop.position = record.position
 		if terrain != null: prop.position.y = terrain.surface_height_at(Vector2(prop.position.x,prop.position.z))
 		chunk.add_child(prop)
@@ -112,6 +113,10 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 			for node in chunk.get_children().slice(first_child): node.set_meta("world_unit_skip",true)
 	if record.has("editor_piece_ids"):
 		var ground := UNITS.ground_of(self)
+		# Root pieces can produce sibling copies: build all of them before taking the
+		# list to apply/filter, so remote copies are pruned from the source chunk too.
+		for node in chunk.get_children().slice(first_child):
+			for piece in PIECES.collect(node): PIECES.spawn_clones(piece,_piece_changes,ground)
 		for node in chunk.get_children().slice(first_child):
 			PIECES.apply(node,_piece_changes,ground)
 			# A própria peça do registro pode ter sido excluída (apply a libera).

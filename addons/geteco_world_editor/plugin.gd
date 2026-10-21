@@ -5,13 +5,19 @@ var _owns_focus_mode := false
 var _previous_focus_mode := false
 var _opened := false
 func _enter_tree() -> void:
+	var measure := "--world-editor-measure" in OS.get_cmdline_user_args() or "--world-editor-measure" in OS.get_cmdline_args()
+	if measure: set_meta("native_measure_start_usec",Time.get_ticks_usec())
 	screen = preload("res://addons/geteco_world_editor/WorldEditor.gd").new()
+	screen.deferred_bootstrap = true
 	# Main screen is a VBoxContainer: anchors alone do not allocate its height.
 	screen.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	screen.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	EditorInterface.get_editor_main_screen().add_child(screen)
 	screen.hide()
 	screen.map_focus_changed.connect(_map_focus_changed)
+	screen.ready_to_edit.connect(func():
+		if screen.visible and _opened: screen._set_view_mode(1))
+	if measure: preload("res://addons/geteco_world_editor/WorldNativeEditorMeasure.gd").run.call_deferred(weakref(self),get_tree())
 func _exit_tree() -> void:
 	_restore_editor_panels()
 	if is_instance_valid(screen): screen.queue_free()
@@ -25,7 +31,7 @@ func _make_visible(visible: bool) -> void:
 		if visible:
 			if not _opened:
 				_opened = true
-				screen._set_view_mode(1)
+				if screen.initialized: screen._set_view_mode(1)
 			_map_focus_changed(screen.map_expanded)
 		else: _restore_editor_panels()
 

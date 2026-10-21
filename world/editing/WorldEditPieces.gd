@@ -61,6 +61,9 @@ static func collect(root: Node) -> Array[Node3D]:
 ## `ground` (opcional) devolve a altura do chão num ponto XZ: a peça acompanha o relevo ao
 ## ser movida, preservando a distância que ela tinha do chão original.
 static func apply(root: Node, changes: Dictionary, ground := Callable()) -> void:
+	# Copy before deleting or transforming the source. Authored groups use this path too,
+	# including places whose pieces were already marked by their constructor.
+	for node in collect(root): spawn_clones(node,changes,ground)
 	for node in collect(root): apply_one(node,changes,ground)
 	if is_instance_valid(root) and root.has_method("refresh_ground_after_edit"): root.refresh_ground_after_edit()
 
@@ -108,22 +111,36 @@ static func _relocate_fragile(group: Node3D) -> void:
 static func spawn_clones(group: Node3D, changes: Dictionary, ground := Callable()) -> void:
 	var source_id := "piece/"+str(group.get_meta("world_edit_piece_id"))
 	var parent := group.get_parent()
-	if parent == null or group.has_meta("world_edit_origin"): return
+	if parent == null or group.has_meta("world_edit_origin") or group.has_meta("world_edit_clones_spawned") or source_id.begins_with("piece/clone/"): return
+	group.set_meta("world_edit_clones_spawned",true)
 	for id in changes:
 		var row: Dictionary = changes[id]
 		if str(row.get("clone_of","")) != source_id or row.get("deleted",false): continue
 		# Sem scripts, grupos nem sinais: a cópia é cenário puro (um terraço duplicado com script
 		# reconstruiria os filhos e se registraria como um segundo terraço funcional).
 		var copy := group.duplicate(0) as Node3D
+		# duplicate() also duplicates metadata. Cached geometry holds Node references
+		# into the source tree and must be rebuilt against the copied tree.
+		_clear_clone_state(copy)
 		for key in group.get_meta_list():
-			if key not in [&"record_cache_key",&"world_edit_origin",&"world_edit_geometry",&"world_edit_shape_info"]: copy.set_meta(key,group.get_meta(key))
+			if key not in [&"record_cache_key",&"world_edit_origin",&"world_edit_geometry",&"world_edit_shape_info",&"world_edit_clones_spawned",&"editor_id"]: copy.set_meta(key,group.get_meta(key))
 		copy.set_meta("world_edit_piece_id",str(id).trim_prefix("piece/"))
+		copy.set_meta("world_edit_clone_of",source_id)
 		copy.set_meta("world_edit_label",str(group.get_meta("world_edit_label","Peça"))+" (cópia)")
+		if copy.has_meta("world_edit_clones_spawned"): copy.remove_meta("world_edit_clones_spawned")
 		copy.remove_meta("world_edit_origin")
 		copy.name = "EditorPiece_"+str(id).trim_prefix("piece/").replace("/","_")
 		parent.add_child(copy)
 		copy.global_transform = group.global_transform
 		apply_one(copy,changes,ground)
+
+static func _clear_clone_state(node: Node, root := true) -> void:
+	for key in [&"record_cache_key",&"world_edit_origin",&"world_edit_geometry",&"world_edit_shape_info",&"world_edit_clones_spawned",&"editor_id"]:
+		if node.has_meta(key): node.remove_meta(key)
+	# The copied group owns its full static subtree. Nested source identities would
+	# make 3D picking and later edits address the original instead of the copy.
+	if not root and node.has_meta("world_edit_piece_id"): node.remove_meta("world_edit_piece_id")
+	for child in node.get_children(): _clear_clone_state(child,false)
 
 static func record_key(record: Dictionary) -> String:
 	var base := record.duplicate(true)
@@ -139,21 +156,15 @@ static func prepare(region: Node3D, changes: Dictionary) -> void:
 	for id in changes:
 		var row: Dictionary = changes[id]
 		if row.get("type","") != "piece": continue
-		if str(id).begins_with("piece/clone/"):
-			# A cópia nasce junto da origem (spawn_clones): só garante que o registro dela seja agrupado.
-			if sources.has(row.get("source_record","")):
-				var origin_record: Dictionary = sources[row.source_record].record
-				if not origin_record.has("editor_piece_ids"): origin_record.editor_piece_ids = []
-				origin_record.editor_piece_ids.append(row.get("clone_of",""))
-			continue
-		if str(id).begins_with("piece/transit/") or str(id).begins_with("piece/unit/") or str(id).begins_with("piece/pl/"): continue # Built by UrbanTransitPresentation / pelo chunk (WorldUnits, WorldPlacements).
+		var source_id := str(row.get("clone_of",id))
+		if source_id.begins_with("piece/transit/") or source_id.begins_with("piece/unit/") or source_id.begins_with("piece/pl/"): continue # Built by UrbanTransitPresentation / pelo chunk (WorldUnits, WorldPlacements).
 		if not sources.has(row.get("source_record","")):
 			push_warning("Editor de mundo: origem da peça não encontrada: "+str(id))
 			continue
 		var source: Dictionary = sources[row.source_record]
 		var record: Dictionary = source.record
 		if not record.has("editor_piece_ids"): record.editor_piece_ids = []
-		record.editor_piece_ids.append(id)
+		if source_id not in record.editor_piece_ids: record.editor_piece_ids.append(source_id)
 		if row.get("deleted",false): continue
 		var target := Vector2i(floori(float(row.position[0])/64.0),floori(float(row.position[1])/64.0))
 		if target == source.cell: continue

@@ -16,7 +16,8 @@ static func read() -> Dictionary:
 static func add_locations(catalog: Dictionary) -> void:
 	if not catalog.has("context"): return
 	var relief: Rect2 = preload("res://world/desert/DesertTerrainRelief.gd").BOUNDS
-	var sites := [["mining","Mineração",Vector2(-180,-1760),Vector2(300,310)], ["canyon","Cânion",relief.get_center(),relief.size]]
+	var mining: Rect2 = preload("res://world/mining/MiningLayout.gd").BOUNDS
+	var sites := [["mining","Mineração",mining.get_center(),mining.size], ["canyon","Cânion",relief.get_center(),relief.size]]
 	for site in preload("res://world/desert/expansion/DesertRelics.gd").sites():
 		var label: String = {"station":"Estação abandonada","mine":"Mina abandonada","wagon":"Vagão descarrilado","wreck":"Caminhonete abandonada"}.get(site.id,site.id)
 		sites.append([site.id,label,site.position,Vector2.ONE*float(site.radius)*2])

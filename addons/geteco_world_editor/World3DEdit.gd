@@ -15,6 +15,7 @@ var candidate := {}
 var transforms := {}
 var axis := ""
 var synchronizing := false
+var index_revision := 0
 ## Arraste de via na visão 3D: {"original": linha, "index": ponto (-1 = via inteira), "start": Vector3, "candidate": linha}.
 var road_drag := {}
 const ROAD_HANDLE := 11.0
@@ -29,11 +30,24 @@ func setup(owner_editor, owner_preview) -> void:
 	preview.surface.set_drag_forwarding(Callable(),can_drop,drop)
 
 func rebuild() -> void:
+	index_revision += 1
 	cancel()
 	meshes.clear()
 	groups.clear()
+	triangles.clear()
 	if is_instance_valid(preview.geometry): index_nodes(preview.geometry,"")
 	queue_redraw()
+
+func remove_group(id: String) -> void:
+	groups.erase(id)
+	meshes = meshes.filter(func(item): return str(item.id) != id)
+	queue_redraw()
+
+func _can_edit() -> bool:
+	if editor is Object and editor.has_method("can_edit_world") and not editor.can_edit_world():
+		editor._report("Indexando objetos. Aguarde para editar; a câmera continua disponível.")
+		return false
+	return true
 
 func set_mode(value: int) -> void:
 	cancel()
@@ -60,9 +74,9 @@ func _triangle_mesh(mesh: Mesh) -> TriangleMesh:
 	return triangles[mesh]
 
 ## Primeira peça selecionável que o raio realmente toca, da mais próxima para a mais distante.
-func pick(at: Vector2) -> String:
+func pick(at: Vector2, cycle := false) -> String:
 	var ray: Vector3 = preview.camera.project_ray_origin(at)
-	var end: Vector3 = ray+preview.camera.project_ray_normal(at)*2000
+	var end: Vector3 = ray+preview.camera.project_ray_normal(at)*preview.camera.far
 	var hits: Array[Dictionary] = []
 	for item in meshes:
 		var node: Node3D = item.node
@@ -72,12 +86,17 @@ func pick(at: Vector2) -> String:
 		if hit == null: continue
 		hits.append({"distance":ray.distance_squared_to(node.global_transform*(hit as Vector3)),"item":item})
 	hits.sort_custom(func(a,b): return a.distance < b.distance)
+	var ids: Array[String] = []
 	for hit in hits:
 		var node: Node3D = hit.item.node
 		var inverse := node.global_transform.affine_inverse()
 		var triangle_mesh := _triangle_mesh((node as MeshInstance3D).mesh)
-		if triangle_mesh == null or not triangle_mesh.intersect_ray(inverse*ray,inverse*end-inverse*ray).is_empty(): return hit.item.id
-	return ""
+		if triangle_mesh == null or not triangle_mesh.intersect_ray(inverse*ray,inverse*end-inverse*ray).is_empty():
+			if not cycle: return hit.item.id
+			if str(hit.item.id) not in ids: ids.append(str(hit.item.id))
+	if ids.is_empty(): return ""
+	var current := ids.find(str(editor.canvas.selected_id))
+	return ids[(current+1)%ids.size()]
 
 func road_row() -> Dictionary:
 	var row: Dictionary = editor.canvas.objects.get(editor.canvas.selected_id,{})
@@ -118,6 +137,7 @@ func roadish(id: String) -> bool:
 	return false
 
 func begin_road(at: Vector2, index: int) -> void:
+	if not _can_edit(): return
 	var row := road_row()
 	var point: Variant = plane_point(at,preview.focus.y)
 	if row.is_empty() or point == null: return
@@ -126,6 +146,7 @@ func begin_road(at: Vector2, index: int) -> void:
 	queue_redraw()
 
 func update_road(at: Vector2, snap: bool) -> void:
+	if not _can_edit(): cancel(); return
 	var point: Variant = plane_point(at,preview.focus.y)
 	if point == null: return
 	var next: Dictionary = road_drag.original.duplicate(true)
@@ -143,6 +164,7 @@ func update_road(at: Vector2, snap: bool) -> void:
 
 func finish_road() -> void:
 	if road_drag.is_empty(): return
+	if not _can_edit(): cancel(); return
 	var row: Dictionary = road_drag.candidate
 	var changed: bool = row != road_drag.original
 	road_drag = {}
@@ -180,6 +202,11 @@ func input_event(event: InputEvent) -> bool:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		preview.surface.grab_focus()
 		if event.pressed:
+			if editor.terrain_mode:
+				if not _can_edit(): return true
+				var terrain_hit: Variant = preview.terrain_point(event.position)
+				if terrain_hit != null: editor._place("terrain",Vector2(terrain_hit.x,terrain_hit.z))
+				return true
 			if not editor.canvas.armed.is_empty():
 				var point: Variant = plane_point(event.position,preview.focus.y)
 				if point != null: editor._place(editor.canvas.armed,Vector2(point.x,point.z))
@@ -188,8 +215,8 @@ func input_event(event: InputEvent) -> bool:
 			if handle >= 0:
 				begin_road(event.position,handle)
 				return true
-			axis = handle_at(event.position)
-			var id: String = editor.canvas.selected_id if not axis.is_empty() else pick(event.position)
+			axis = "" if event.alt_pressed else handle_at(event.position)
+			var id: String = editor.canvas.selected_id if not axis.is_empty() else pick(event.position,event.alt_pressed)
 			if axis.is_empty() and not event.alt_pressed and (id.is_empty() or roadish(id)):
 				var road := pick_road(event.position)
 				if not road.is_empty():
@@ -223,6 +250,7 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_WINDOW_FOCUS_OUT and dragging: cancel()
 
 func begin(at: Vector2) -> void:
+	if not _can_edit(): return
 	var row: Dictionary = editor.canvas.objects.get(editor.canvas.selected_id,{})
 	if row.is_empty() or row.get("locked",false) or row.type in ["context","road"] or not groups.has(row.id): return
 	if preview.desired != preview.submitted or preview.applied_revision != preview.revision:
@@ -239,6 +267,7 @@ func begin(at: Vector2) -> void:
 	dragging = true
 
 func update_drag(at: Vector2, snap := false) -> void:
+	if not _can_edit(): cancel(); return
 	if not dragging: return
 	var next := original.duplicate(true)
 	var delta := at-start_mouse
@@ -330,6 +359,7 @@ func cancel() -> void:
 
 func finish() -> void:
 	if not dragging: return
+	if not _can_edit(): cancel(); return
 	var row := candidate.duplicate(true)
 	var changed := row != original
 	cancel()
@@ -338,8 +368,9 @@ func finish() -> void:
 		editor._commit(row)
 		synchronizing = false
 		# Validation may reject the gesture; only display the accepted result.
-		if editor.document.regions.get(editor.region,{}).has(row.id):
-			var accepted: Dictionary = editor.document.regions[editor.region][row.id]
+		var changes: Dictionary = editor._scope_changes()
+		if changes.has(row.id):
+			var accepted: Dictionary = changes[row.id]
 			var matches := true
 			var fields := ["position","rotation","stretch","height_stretch","outline"] if row.type == "piece" else ["position","rotation","size","height","scale","outline"]
 			for key in fields:

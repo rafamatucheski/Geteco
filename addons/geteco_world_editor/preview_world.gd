@@ -66,6 +66,7 @@ func run() -> void:
 	scene.session.weather._update()
 	scene.process_mode = Node.PROCESS_MODE_DISABLED
 	camera = Camera3D.new()
+	camera.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
 	camera.size = camera_size
 	camera.far = 2000

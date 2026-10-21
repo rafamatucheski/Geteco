@@ -26,6 +26,9 @@ static func row_for(place_id: String) -> Dictionary:
 	var id: String = PLACES.find_key(place_id) if PLACES.find_key(place_id) != null else ""
 	return changes().get("building/"+id,{})
 
+static func is_deleted(place_id: String) -> bool:
+	return bool(row_for(place_id).get("deleted",false))
+
 static func scale_for(row: Dictionary) -> Vector3:
 	if not row.has("service_base"): return Vector3.ONE
 	var base: Dictionary = row.service_base
@@ -41,6 +44,7 @@ static func transform_for(row: Dictionary) -> Transform3D:
 
 static func update_definition(definition: Dictionary) -> void:
 	var row := row_for(str(definition.id))
+	if row.get("deleted",false): definition["editor_deleted"] = true
 	if not row.has("service_base"): return
 	definition.editor_base_exterior = definition.exterior_position
 	var transform := transform_for(row)

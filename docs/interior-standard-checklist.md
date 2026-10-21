@@ -1,5 +1,19 @@
 # Migração de interiores — checklist
 
+## Ferramentas de interiores no editor — 21/10/2026
+
+Escopo aditivo: **0 lugares físicos novos / 0 interiores novos / 0 migrações de ambiente / 0 certificações integrais**. Foram acrescentadas ferramentas para escolher salas/andares e editar seu conteúdo em um rascunho. O mundo oficial não foi reformado como demonstração; as contagens e pendências das revisões abaixo permanecem intactas.
+
+- [x] Fluxo completo do editor renderizado: `tests/test_world_editor_interior_flow.gd` cobre criar, mover, redimensionar, copiar, excluir/desfazer, trocar sala/piso e salvar em arquivo isolado. [Execução registrada](../evidence/editor-workspace-20261021/final-test_world_editor_interior_flow.log): 31 verificações, zero falhas, `.err` vazio. Aprova esse fluxo dirigido, sem certificar reformas ou todos os ambientes.
+- [ ] Comparação de fotos antes/depois de uma reforma autorada: nenhuma sala oficial foi reformada por esta ferramenta nesta etapa; não há nova aprovação visual de ambiente.
+- [ ] Entrada/saída, spawn, circulação com Dante/NPC e recuperação da sessão para uma reforma: validar por sala efetivamente alterada. O gate de entrada/saída/morador/recompensa não substitui esse percurso.
+- [ ] Colisão e oclusão de uma reforma em gameplay: os testes do adaptador são evidência dirigida, sem certificação automática de cada móvel ou de todos os interiores.
+- [ ] Desempenho renderizado por ambiente: comparação integral pendente. A [prévia do banco, andar 0](../evidence/editor-workspace-20261021/interior-final-interior-harbor_bank-floor0.json) registrou 60,002 FPS estáveis (30 s, p95 16,705 ms, p99 16,729 ms, máximo 17,373 ms), mas carga de 12.080 ms e pico de 732 ms; o log do benchmark teve aviso de antialiasing corrigido depois. Os fluxos renderizados posteriores de interior (31 verificações) e prévia inválida (10) passaram com diagnóstico limpo; isso não substitui um comparativo de gameplay por ambiente. Essa amostra não certifica entrada, gameplay ou outros interiores. A vista global 2D de Harbor atingiu 60,002 FPS em 30 s/1.801 frames (p95 16,69 ms; p99 16,80 ms; máximo 17,18 ms; zero frames acima de 33,3/66,7 ms). Carga síncrona inicial de 1.592,89 ms e primeira reconstrução de 477,89 ms seguem pendentes. Essa [amostra do editor 2D](../evidence/editor-workspace-20261021/global2d-retained-harbor.json) não certifica FPS ou entrada dos interiores.
+- [ ] Regras da garagem em uma reforma efetiva: manter invulnerabilidade dos moradores, área sem armas e inventário preservado; não confundir a prévia sem atores com teste dessas regras em gameplay.
+
+A ferramenta mantém alterações por interior e andar, valida a posição protegida antes do salvamento e preserva o histórico/rascunho. Cada reforma posterior continua sujeita ao [padrão de interiores](interior-standard.md) e ao [contrato físico e de profundidade](interior-physics-and-depth.md).
+
+
 ## Casas de Santa Lua — 19/10/2026
 
 Escopo: **4 lugares físicos / 4 interiores existentes / 0 novos / 0 aprovações integrais / 4 em andamento / 4 restantes para aprovação**. IDs `santa_lua_home_1` a `santa_lua_home_4`; não somar novamente ao inventário. Reforma localizada no gerador dessas casas: reboco, marcenaria, tecidos com bordas suaves, mesas ovais em Rosa/Lia, cortinas com dobras, quadros/cestaria, rodapés e recorte lateral da apresentação. Vigas centrais substituídas por verga traseira para deixar atores legíveis. Câmera, recompensas, posições de moradores e acessos mantidos.
@@ -1648,3 +1662,19 @@ Escopo adicional: **1 lugar físico / 1 interior existente / 0 novos / 0 certifi
 - [ ] Certificação integral de todos os móveis, portas, trajetos e climas: não realizada. Música foi verificada tecnicamente; mixagem subjetiva não certificada por audição humana nesta execução.
 
 - [x] Evidência temporal final da oficina, Main Forward+ em 1280×720: 1.799 frames completos, aproximadamente 30 s de dia e 30 s de noite, frente/traseira fixas e giro contínuo. Sem flicker/popping involuntário observado; órbita cruza o centro sem salto/congelamento. [Relatório final](../artifacts/digo-workshop-refresh-20261019/verified-main/temporal-light-review.json). Limite de captura e JPEG não contam como medição de FPS.
+
+### Motel Oásis — posição da carta 08 — 21/10/2026
+
+Escopo: **1 lugar físico / 1 interior existente / 0 novos / 0 certificações integrais adicionadas**. Apenas o ponto da carta saiu de dentro da cama para o piso livre ao pé dela; não contar o motel novamente no inventário. [Relatório e fotos antes/depois](cartas-vicente-posicionamento-20261021.md).
+
+- [x] Geometria renderizada inspecionada e cápsula livre no destino e no trajeto local desde o vão da porta, usando os sólidos reais do ambiente.
+- [ ] Caminhada, coleta, entrada/saída e corte de teto na sessão normal: usuário fará o teste.
+- [ ] Oclusão com jogador/NPC e câmera final, certificação integral do interior e performance: não validadas nesta alteração de coordenadas. Nenhum móvel, luz, colisão ou processamento foi acrescentado.
+
+
+### Deserto compacto — realocação de acessos — 21/10/2026
+
+Escopo: realocação dos estabelecimentos existentes junto da redução do território. **0 lugares novos / 0 interiores novos / 0 certificações integrais adicionadas**; a contagem global de lugares físicos e interiores distintos permanece inalterada. Banco, Digo, Santa Lua, acessos subterrâneos, mineradora e cânion preservam dimensões, móveis, câmeras e identidades; as definições de acesso e retorno acompanham os novos exteriores.
+
+- [x] Realocação rígida dos acessos, sem reduzir a escala humana ou os sólidos dos ambientes.
+- [ ] Fotografias reais, entrada/saída na sessão, colisão de acesso/spawn, oclusão de jogador/NPC e comparação renderizada: acompanhar a evidência em `artifacts/desert-compact-20261021/`; nenhuma aprovação integral é inferida da redução do mapa.

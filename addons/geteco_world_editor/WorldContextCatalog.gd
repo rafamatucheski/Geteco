@@ -54,12 +54,12 @@ static func build(region: Node3D) -> Dictionary:
 			covered += 1
 	return {"objects":rows,"record_count":total,"covered_records":covered,"kind_counts":kinds}
 
-static func from_node(node: Node3D,id: String,label: String,kind: String,fallback: Vector3,skip_pieces := false) -> Dictionary:
+static func from_node(node: Node3D,id: String,label: String,kind: String,fallback: Vector3,skip_pieces := false,skip_terrain := false) -> Dictionary:
 	var parts: Array = []
-	collect(node,parts,skip_pieces)
+	collect(node,parts,skip_pieces,skip_terrain)
 	# Curved small props can have every triangle below the map simplification
 	# threshold. Keep a visible footprint instead of classifying empty art as floor.
-	if parts.is_empty() and not skip_pieces:
+	if parts.is_empty() and not skip_pieces and not skip_terrain:
 		var points: Array[Vector3] = []
 		PIECES._points(node,points)
 		if not points.is_empty():
@@ -91,16 +91,38 @@ static func _coarse(parts: Array) -> Array:
 			for z in range(z0,z1+1):
 				var key := Vector2i(x,z)
 				if not cells.has(key) or float(cells[key][4]) < float(part[4]):
-					cells[key] = [x*COARSE_CELL,z*COARSE_CELL,COARSE_CELL,COARSE_CELL,part[4],part[5]]
+					var left := x*COARSE_CELL
+					var top := z*COARSE_CELL
+					cells[key] = [left,top,COARSE_CELL,COARSE_CELL,part[4],part[5],[[left,top],[left+COARSE_CELL,top],[left+COARSE_CELL,top+COARSE_CELL],[left,top+COARSE_CELL]],part.size()>7 and part[7] == true]
 	return cells.values()
 
-static func collect(node: Node,parts: Array,skip_pieces := false) -> void:
+## Replace old flat context owners with their actual non-terrain scenery.
+static func terrain_foreground(root: Node) -> Dictionary:
+	var owners := {}
+	for mesh: MeshInstance3D in root.find_children("*","MeshInstance3D",true,false):
+		if not mesh.get_meta("editor_terrain_surface",false): continue
+		var current: Node = mesh
+		while current != null and current != root:
+			var id := str(current.get_meta("editor_id",""))
+			if id.begins_with("context/"): owners[id] = current
+			current = current.get_parent()
+	var rows := {}
+	for id: String in owners:
+		var owner: Node3D = owners[id]
+		rows[id] = from_node(owner,id,str(owner.get_meta("world_unit_label",owner.name)),"terrain_foreground",owner.global_position,true ,true)
+	return rows
+
+static func collect(node: Node,parts: Array,skip_pieces := false,skip_terrain := false) -> void:
 	if skip_pieces and node.has_meta("world_edit_piece_id"): return
 	if node is Node3D and not node.visible: return
-	if node is MeshInstance3D and node.mesh != null:
+	var terrain_surface := bool(node.get_meta("editor_terrain_surface",false)) or str(node.name) in ["QuarryHills","DirtTrack","SculptedBanks","MountainTerrain","Land","LandOutsideUnifiedBridge","SerenoForestFloor","OriginalPortSurface"]
+	if node is MeshInstance3D and node.mesh != null and not (skip_terrain and terrain_surface):
+		var first := parts.size()
 		var material: Material = node.material_override
 		if material == null and node.mesh.get_surface_count() > 0: material = node.get_active_material(0)
 		part(node.mesh,node.global_transform,material,parts)
+		if terrain_surface:
+			for index in range(first,parts.size()): parts[index].append(true)
 	elif node is MultiMeshInstance3D and node.multimesh != null and node.multimesh.mesh != null:
 		var mm: MultiMesh = node.multimesh
 		var material: Material = node.material_override
@@ -110,7 +132,7 @@ static func collect(node: Node,parts: Array,skip_pieces := false) -> void:
 		for i in count:
 			var transform: Transform3D = transforms[i] if i<transforms.size() else mm.get_instance_transform(i)
 			part(mm.mesh,node.global_transform*transform,material,parts)
-	for child in node.get_children(): collect(child,parts,skip_pieces)
+	for child in node.get_children(): collect(child,parts,skip_pieces,skip_terrain)
 
 static func part(mesh: Mesh,transform: Transform3D,material: Material,parts: Array) -> void:
 	var bounds := transform*mesh.get_aabb()

@@ -1,5 +1,120 @@
 # Editor do mundo Geteco
 
+## Editor integrado de mundo — 21/10/2026
+
+Esta seção descreve os controles atuais. Os registros datados abaixo preservam o histórico e podem citar limitações de versões anteriores. As ferramentas desta revisão não alteram o mapa oficial como demonstração.
+
+### Abrir, localizar e acompanhar a carga
+
+Use **Godot 4.7.2 .NET** pelo `Editar.cmd` e abra a aba **Mundo**. A abertura informa leitura do documento, catálogo e indexação 2D com contagem de partes. Durante a indexação em lotes, a câmera e a navegação continuam disponíveis; edição e salvamento aguardam o índice ficar pronto.
+
+- O seletor de mapas oferece **Mundo inteiro, Harbor, Montanha e Deserto**. Escolher uma região enquadra seu conteúdo; **Opções → Enquadrar mapa atual** repete o enquadramento.
+- **Opções → Limites dos mapas** mostra ou oculta as bordas de trabalho nas visões 2D/3D. **Ir para local…** leva ao estabelecimento ou atividade. O motocross fica no exterior de Harbor, em torno de X=-176/Z=-96; seu terreno montanhoso não é a região Montanha.
+- Use **2D, 3D ou Lado a lado**. Na visão 3D, o alcance diferencia a área próxima da opção **Mapa inteiro**. A carga maior mostra suas fases e pode ser cancelada; a própria prévia oferece nova tentativa após erro.
+- **Logs** reúne atividade da sessão e trechos dos logs auxiliares, incluindo erros de script. **Atualizar** relê o diagnóstico e **Copiar logs** copia o conteúdo. Atualizar o catálogo usa uma saída exclusiva; falha não é apresentada como sucesso de um cache antigo.
+
+### Objetos e gravação
+
+| Ação | Controle |
+|---|---|
+| Selecionar/mover | Clique e arraste; alças X/Z limitam o eixo |
+| Girar/redimensionar | Ferramentas da visão e campos de Propriedades |
+| Copiar/colar | Ctrl+C, Ctrl+V e clique no destino |
+| Duplicar/excluir | Ctrl+D / Delete |
+| Desfazer/refazer | Ctrl+Z / Ctrl+Y ou Ctrl+Shift+Z |
+| Cancelar colocação/gesto | Esc |
+| Salvar | **Salvar mundo** ou Ctrl+S |
+
+Em janelas estreitas, ações secundárias também ficam em **Opções**, preservando espaço para o mapa. O asterisco no botão de salvar indica alterações pendentes.
+
+O rascunho recuperável não publica o mundo. Mudanças, histórico, troca de mapa e prévia permanecem no documento de trabalho até **Salvar mundo**. O salvamento usa arquivo temporário, cópia anterior e verificação de alteração externa. Um conflito preserva o conteúdo externo e as alterações na tela; consulte o erro antes de tentar novamente.
+
+Um rascunho incompatível com a versão atual do mundo não é aplicado automaticamente. Antes de reutilizar seu arquivo, o editor cria uma recuperação com nome baseado no SHA-256 e verifica o conteúdo copiado. O caminho aparece nos logs. Uma recuperação existente só é reutilizada quando o checksum confere; falha de cópia ou verificação mantém o rascunho antigo e bloqueia sua substituição. O novo rascunho compatível continua sendo recuperado normalmente na sessão seguinte.
+
+Se encontrar um rascunho incompatível com o mundo atual, o editor preserva seu conteúdo. Antes de reutilizar esse arquivo para a primeira nova alteração, cria e verifica uma cópia de recuperação; **Logs** informa o caminho. Se a cópia ou a verificação falhar, o rascunho antigo permanece protegido.
+
+Peças nativas carregadas em 3D podem ser copiadas como geometria estática com malhas e colisões, inclusive para outro mapa ou interior. Essa cópia não recria personagens, missões ou rotinas de serviço. A geometria fica em estágio de rascunho até o salvamento explícito. Sem a geometria carregada, a cópia de uma peça nativa permanece limitada ao ambiente de origem e a interface informa a necessidade de carregar a prévia antes de transferir.
+
+Quando a topografia de uma área termina de carregar em **2D sozinho**, o auxiliar também entrega suas peças nativas individuais. Aguarde **Indexando objetos em 2D**; depois selecione, mova ou exclua essas peças com os controles normais. A imagem do relevo é o chão: objetos editáveis ficam em uma camada própria, sem uma segunda cópia decorativa fixa. Na visão 3D/lado a lado, o mesmo processo auxiliar fornece essas peças; o editor evita gerar o mundo em dois workers simultâneos.
+
+**Pendências do pedido de editar tudo:** o inventário integrado nesta versão cobre **Harbor, Montanha e Deserto**. Outros mapas/cidades fora desse runtime não aparecem automaticamente no editor. Contêineres agregados de contexto não oferecem exclusão direta; aguarde suas unidades individuais para editar partes do cenário. Esses limites impedem tratar a ferramenta como cobertura irrestrita de qualquer sistema ou objeto do jogo.
+
+**Granularidade atual:** fachadas e peças autoradas podem continuar como conjuntos: uma pilastra que faz parte da mesma fachada não ganha automaticamente uma identidade separada. Mobiliário de `WorldPlacements` e lotes marcados para divisão, incluindo rochas e estacas do motocross, têm identidades individuais; outros `MultiMesh` permanecem em lote. NPCs, veículos vivos, recompensas e âncoras de missão não são convertidos em objetos estáticos do editor. Esses grupos restantes precisam de adaptadores próprios antes de afirmar que cada componente visual é manipulável separadamente.
+
+Excluir uma fachada de serviço também retira seu acesso ativo e acesso ao telhado. A identidade histórica permanece para referências de missão e recuperação de saves; uma localização salva no serviço removido recupera o jogador pelo retorno exterior. Restaurar o original reativa os acessos. Os testes específicos desta revisão são `test_world_editor_service_lifecycle.gd` e `test_world_editor_duplicate_shape.gd`; seus resultados devem ser registrados na validação final, sem presumir aprovação por esta descrição.
+
+A granularidade segue os IDs disponíveis: objetos de uma mesma malha agrupada ou MultiMesh podem formar uma única unidade de seleção. A ferramenta não promete separar cada componente sem identidade individual.
+
+As operações de cenário e as cópias estáticas não transformam NPCs, recompensas, missões ou gatilhos em objetos de decoração editáveis. Mover uma aparência de serviço não transporta automaticamente sua lógica de gameplay. Preserve os acessos e valide a atividade correspondente quando alterar seu cenário.
+
+**Jogar aqui** testa o exterior com o rascunho e sem salvar o progresso. Para testar a apresentação de uma sala no editor, use sua prévia 3D.
+
+### Relevo e textura do chão real
+
+A topografia 2D carrega em segundo plano ao ativar Terreno, visitar o motocross ou escolher Montanha/Deserto, mantendo a visão e a câmera atuais. O indicador **Relevo 2D** mostra o progresso; **Opções → Recarregar relevo 2D** permite repetir após falha. As imagens usam alturas e cobertura dos triângulos reais do terreno, com relevo sombreado e curvas de nível. As cores indicam tipos de solo aproximados; não são uma captura das texturas 3D. As linhas de caixa regional continuam distintas da borda efetiva da superfície. A atualização acompanha as aplicações de terreno sem salvar o mundo. A captura e a medição finais do motocross estão registradas na seção de validação abaixo.
+
+Use **Terreno** ou **Biblioteca → Relevo e textura**. Escolha o terreno do motocross ou da montanha, ajuste os campos e clique no chão. Cada clique cria uma aplicação independente que pode ser movida, ajustada, copiada, excluída ou desfeita. Na visão 3D, o ponto vem da superfície real; o círculo indica o raio da ferramenta.
+
+- **Elevar/baixar** aplica uma diferença de altura; **Nivelar na altura** usa uma cota alvo. Intensidade e suavidade controlam a aplicação e a borda.
+- Texturas: preservar, grama, terra, areia, cascalho, rocha, neve e asfalto. A pintura participa da superfície construída pelo provedor, com a geometria e a colisão correspondentes.
+- A visualização topográfica também reconhece as malhas reais dos cânions do Deserto com carga automática também em 2D sozinho. Essa visualização não habilita escultura de altura no Deserto: os provedores de escultura continuam limitados a motocross e montanha.
+- Alcance atual: **motocross** e **região Montanha**. A escultura do restante de Harbor e do Deserto ainda precisa de adaptadores de relevo; a ferramenta recusa esses destinos explicitamente.
+- Raio: 2–256 m no motocross; 4–256 m na montanha, cuja grade tem passo de 4 m. Altura aceita -100 a 100 m; nivelar o motocross exige cota não negativa e seu rebaixamento encontra o apoio original em Y=0.
+- **Incluir pista do motocross** começa desligado. Ligado, a edição inclui a pista e suas referências de percurso/atividade; desligado, atua no terreno ao redor. Confira acessos, emendas, apoio e circulação no jogo antes de publicar uma reforma.
+
+**Adicionar → Terreno/grama** e a categoria **Terrenos e pisos** continuam criando pisos adicionais. Para esculpir a montanha ou o motocross existente, use a ferramenta **Terreno**.
+
+### Casas, empresas e andares
+
+O seletor **Exterior** também lista os interiores reais do catálogo. Escolha uma sala; quando houver vários pisos, use **Andar**. A visão mostra mobiliário, piso e estrutura em coordenadas locais da sala. Os objetos do exterior ficam fora desse catálogo enquanto o interior está aberto.
+
+Adicione objetos ou pisos pela biblioteca, selecione móveis existentes e ajuste posição, largura, profundidade, altura ou escala. Copiar, excluir e histórico usam o mesmo documento. Os IDs e alterações incluem o andar: a mudança em uma sala não deve aparecer em outra ou em outro piso.
+
+A validação da prévia verifica as posições protegidas de entrada, saída, moradores e recompensas. Uma alteração pendente ou bloqueada mantém **Salvar mundo** indisponível e explica o motivo. Validar outro andar não aprova aquele que foi alterado. Volte ao local/andar indicado, corrija o objeto e aguarde a nova validação.
+
+A validação automática cobre os contratos implementados; a aprovação de uma reforma ainda exige circulação, colisão, oclusão e desempenho no jogo, conforme o padrão de interiores. Maciota e seu mecânico continuam protegidos e não são peças de decoração copiáveis; a restrição de armas da garagem permanece em gameplay.
+
+### Estado da validação desta revisão
+
+As execuções coordenadas desta revisão registram:
+
+- [Fluxo de interior renderizado](../evidence/editor-workspace-20261021/final-test_world_editor_interior_flow.log): 31 verificações; [prévia inválida e recuperação](../evidence/editor-workspace-20261021/final-test_world_editor_interior_invalid_preview.log): 10; [cópia estática entre mapas](../evidence/editor-workspace-20261021/final-test_world_editor_snapshot_flow.log): 13. Todas terminaram com zero falhas; os três arquivos `.err` estão vazios.
+- [Peças do motocross e terreno](../evidence/test-suite/suite-2026-10-21_204716_238-500f03f5690d41f0880730ee063a8c71.json): 344 verificações de unidades e 25 de terreno, ambas aprovadas.
+- [Movimentação para trecho remoto](../evidence/test-suite/suite-2026-10-21_204817_051-4a6891e60b204572a912a17656f2260d.json): três verificações aprovadas em 60,4 s após priorização da célula de origem. A execução teve aviso de alteração concorrente de fontes da interface; não certifica as integrações posteriores de topografia.
+
+O [lote final de oito testes](../evidence/test-suite/suite-2026-10-21_210753_595-fce6cf8d56a44d019686fab948d1caad.json) passou com **105 verificações, zero falhas** e saída limpa: detalhe retido 11, duplicação de contorno 10, LOD 8, contornos esparsos 6, primeiro plano do terreno 7, raster do terreno 7, cache/unidades da topografia 17 e fluxo de trabalho 39. Este último inclui erros provocados de catálogo/rascunho para verificar diagnóstico e recuperação.
+
+O [lote dirigido de serviços e terreno](../evidence/test-suite/suite-2026-10-21_210545_454-cf2620e38f3d41d98a344c0df0f7ba5c.json) aprovou o ciclo de serviço (24 asserções no hospital, incluindo remoção de acesso, admissão recusada, recuperação de save e restauração) e 26 verificações de terreno. Houve aviso de alteração concorrente de fontes do Canvas; esses passes funcionais não certificam as fontes finais da interface.
+
+Os lotes limpos posteriores confirmam [cinco testes / 63 verificações](../evidence/test-suite/suite-2026-10-21_211802_626-7f6a23f450074ab6a702a96cca812dd0.json): detalhe retido com pan de 120 m (13), proteção/arquivamento de rascunho (14), terreno legado (9), raster (9), cache/unidades topográficas (18). Outro [lote de quatro testes / 77 verificações](../evidence/test-suite/suite-2026-10-21_212528_188-ca8e9801e66547dfbfdfa3f070e01a64.json) aprovou apoio físico de pisos (16), andares (14), interiores (37) e terreno legado atualizado (10). São lotes separados; não somar execuções repetidas como cobertura distinta.
+
+O [último lote de assets e encerramento de LOD](../evidence/test-suite/suite-2026-10-21_213436_581-6abce34e55f547d3b371d4885382ef9e.json) aprovou 30 verificações de assets e três de teardown, com diagnóstico limpo. O runner `tests/run_suite.ps1` agora escolhe execução renderizada para os 13 testes de WorldEditor que exigem viewport/3D; uma execução headless desses testes não substitui a validação renderizada.
+
+A fixture dirigida do dock Terrain3D fica em `res://tests/capture/test_terrain3d_dock_lifecycle.gd` e passou nove verificações. Execute-a manualmente com Godot .NET e `--editor --script res://tests/capture/test_terrain3d_dock_lifecycle.gd`, fora da suíte headless automática. O encerramento global dessa rota especial produz órfãos do host; ela valida o dock e não aprova teardown do editor inteiro. Para o encerramento normal, use a evidência `native-close-final` desta seção.
+
+As últimas medições renderizadas, todas por cerca de 30 s/1.801 frames, registraram:
+
+| Cenário | FPS estável | p95 / p99 | Máximo | Carga inicial |
+|---|---:|---:|---:|---:|
+| [Motocross 2D com relevo/pintura e pan](../evidence/editor-workspace-20261021/topography-visible-harbor.json) | 60,002 | 16,700 / 16,771 ms | 17,310 ms | 31,766 s |
+| [Deserto 3D, mapa inteiro com LOD](../evidence/editor-workspace-20261021/lod-final-desert.json) | 60,002 | 16,695 / 16,770 ms | 17,375 ms | 100,423 s |
+| [Banco, andar 0, prévia 3D](../evidence/editor-workspace-20261021/interior-final-interior-harbor_bank-floor0.json) | 60,002 | 16,705 / 16,729 ms | 17,373 ms | 12,080 s |
+
+Nenhum frame dessas amostras estáveis excedeu 33,3/66,7 ms. Ambiente: Godot 4.7.2 .NET (`stable.mono` confirmado nos logs), D3D12 Forward+, RTX 4060 Laptop, janela 1440×900, VSync e limite 60. A [captura final do motocross](../evidence/editor-workspace-20261021/topography-visible-harbor.png) foi inspecionada: relevo, pista e aplicação Sand aparecem; os retângulos antigos de Course e Woodland estão substituídos. Quatro PNGs de terreno acompanham o relatório. Topografia e Deserto terminaram com saída 0 e `.err` vazio. O benchmark do banco antecedeu a correção do aviso de antialiasing; os fluxos funcionais renderizados posteriores de interior (31 verificações) e prévia inválida (10) passaram com diagnóstico limpo, sem apagar o aviso histórico do benchmark.
+
+**As primeiras cargas ainda são demoradas e têm travadas.** Durante a carga, o motocross teve pico de 1.955 ms, o Deserto de 1.337 ms e o banco de 732 ms. Reconstruções frias na faixa de 180–196 ms e pan muito além da margem de 128 m ainda não estão certificados. O resultado estável não aprova abertura instantânea, qualquer trajeto de câmera ou todos os mapas/interiores.
+
+A [medição na aba Mundo do editor nativo](../evidence/editor-workspace-20261021/native-frozen.json) usou `RenderingServer.frame_post_draw`, com validade e hashes oficiais preservados: 148,4 FPS, p95 14,073 ms, p99 27,405 ms, máximo 45,979 ms; 19 frames acima de 33,3 ms e nenhum acima de 66,7 ms em 30 s. **Não comparar esse FPS com os testes standalone:** a prévia tinha 650×379 pixels, o editor renderizava seu próprio fundo e o limite 60 não foi aplicado nessa rota. A carga registrou 21,997 s e pico de 9,271 s. O [log nativo](../evidence/editor-workspace-20261021/native-frozen.log) confirma `Godot Engine v4.7.2.stable.mono`; as compilações de `Harbor.csproj` terminaram sem erros. O campo legado `mono` do JSON não é uma verificação válida da edição .NET. A GUI terminou com saída 0, mas o log nativo registrou diagnósticos do motor `RichTextLabel.pop` / `Invalid Task ID`, sem stack, e vazamento de Terrain3D. O [smoke posterior no editor normal](../evidence/editor-workspace-20261021/native-close-final.json), de apenas 2 s, confirmou `integration_valid=true`, `dotnet=true` e `official_data_unchanged=true`, com saída GUI 0. O [log verbose](../evidence/editor-workspace-20261021/native-close-final.log) não contém instâncias, RIDs ou recursos vazados: o vazamento do wrapper Terrain3D foi corrigido. Esse smoke não é benchmark. Permanecem diagnósticos C++ de `RichTextLabel.pop` e `EditorSettings`/Android no encerramento, ainda sem atribuição; não houve `ScriptError`, mas o stderr nativo não está vazio. A estabilidade nativa integral continua pendente.
+
+A comparação histórica abaixo antecede a última integração de topografia/unidades 2D e LOD.
+
+A vista global 2D de **Harbor** passou de 5,78 FPS na base e 16,69 FPS na versão intermediária para **60,002 FPS** com a apresentação retida. Medição de 30,015 s/1.801 frames, Godot 4.7.2 .NET, Forward+, RTX 4060 Laptop, 1440×900, VSync ligado e limite 60: p50 16,667 ms, p95 16,69 ms, p99 16,80 ms e máximo 17,18 ms; nenhum frame acima de 33,3 ou 66,7 ms no período estável. O aquecimento teve um pico de 44,84 ms.
+
+**Essa amostra histórica aprova somente o cenário 2D medido.** Nessa execução anterior, a primeira reconstrução levou 477,89 ms e o harness síncrono registrou carga inicial de 1.592,89 ms; esses números não descrevem a reconstrução das fontes atuais. A inicialização nativa fatiada, outros mapas, edição contínua, interiores e gameplay não ficam certificados por esta amostra. [Métricas e amostras](../evidence/editor-workspace-20261021/global2d-retained-harbor.json), [captura real](../evidence/editor-workspace-20261021/global2d-retained-harbor.png).
+
+
+> **Histórico a partir deste ponto:** as seções datadas abaixo preservam os estados anteriores. Restrições antigas de exclusão, cópia, interiores e escultura não substituem os controles e limites descritos na revisão de 21/10 acima.
+
 ## Editar tudo e "Jogar aqui" — 10/10/2026
 
 **Nada no cenário é só de enfeite.** Tudo que o mundo constrói passa a ser uma *peça* com identidade estável: **mover** (setas X/Z no mapa, arraste na visão 3D), **girar**, mudar largura/profundidade/**altura**, **elevar** (campo Elevação), **duplicar**, excluir e restaurar o original. As peças seguem o relevo da montanha e do deserto ao serem movidas. O editor não recusa mais sobreposições nem cobrir acessos: **Colocação livre** (em Opções, ligada por padrão) desliga as recusas de sobreposição e de acesso; desmarcada, elas voltam.

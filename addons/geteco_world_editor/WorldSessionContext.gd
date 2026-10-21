@@ -167,7 +167,15 @@ static func build(parent: Node) -> Dictionary:
 	jeep.free()
 	return {"version":VERSION,"context":rows,"mountain_context":mountain_rows}
 
-static func build_preview(parent: Node3D, area: String, focus: Vector3) -> void:
+static func preview_in_range(focus: Vector3, at: Vector3, distance: float, radius := 0, area := "harbor") -> bool:
+	# Radius describes loaded cells, so expanded previews must also expand the
+	# session-owned scenery. Whole-region mode intentionally includes every site.
+	if radius < 0: return true
+	var cell := 96.0 if area == "desert" else 64.0
+	var extra := maxf(0.0,float(radius)*cell*sqrt(2.0))
+	return Vector2(focus.x,focus.z).distance_to(Vector2(at.x,at.z)) <= distance+extra
+
+static func build_preview(parent: Node3D, area: String, focus: Vector3, radius := 0) -> void:
 	# Session-owned art was present in 2D but absent from the live 3D worker.
 	# Build only nearby static presentation; never configure gameplay controllers.
 	if area == "harbor":
@@ -178,19 +186,19 @@ static func build_preview(parent: Node3D, area: String, focus: Vector3) -> void:
 			["res://activities/skate/SkatePark.gd",preload("res://activities/skate/SkateParkLayout.gd").CENTER,90.0,PREFIX+"skate_park"],
 			["res://world/places/classic_meet/ClassicMeetSite.gd",Vector3(420,0,124),90.0,PREFIX+"torque"]]
 		for definition in definitions:
-			if focus.distance_to(definition[1]) > float(definition[2]): continue
+			if not preview_in_range(focus,definition[1],float(definition[2]),radius,area): continue
 			var node = ForestSnapshot.new() if str(definition[0]).ends_with("FreightOutskirts.gd") else load(definition[0]).new()
 			node.process_mode = Node.PROCESS_MODE_DISABLED
 			parent.add_child(node)
 			_remove_actors(node)
 			_preview_batches(node)
 			node.set_meta("editor_id",definition[3])
-	if area in ["harbor","mountain"] and focus.distance_to(Vector3(475,0,-285)) < 240:
+	if area in ["harbor","mountain"] and preview_in_range(focus,Vector3(475,0,-285),240,radius,area):
 		var connection := preload("res://world/regions/WorldConnection3D.gd").new()
 		connection.process_mode = Node.PROCESS_MODE_DISABLED
 		parent.add_child(connection)
 		connection.set_meta("editor_id","context/harbor/world_connection")
-	if area == "harbor" and focus.distance_to(preload("res://world/north_gateway/NorthGatewayLayout.gd").WORK_POSITION)<180:
+	if area == "harbor" and preview_in_range(focus,preload("res://world/north_gateway/NorthGatewayLayout.gd").WORK_POSITION,180,radius,area):
 		var gateway := preload("res://world/north_gateway/NorthGatewayScenery.gd").new()
 		parent.add_child(gateway)
 		gateway.build(true)
@@ -200,14 +208,17 @@ static func build_preview(parent: Node3D, area: String, focus: Vector3) -> void:
 		parent.add_child(downhill)
 		downhill.build(preload("res://activities/mountain_downhill/MountainDownhillCourse.gd").new())
 		downhill.set_meta("editor_id",MOUNTAIN_PREFIX+"downhill")
+		downhill.set_meta("world_snapshot_ground_anchor",Vector2(downhill.course.grid(0).origin.x,downhill.course.grid(0).origin.z))
 		var jeep := Node3D.new()
 		parent.add_child(jeep)
 		jeep.set_meta("editor_id",MOUNTAIN_PREFIX+"jeep")
+		var jeep_start := preload("res://world/mountain_jeep/MountainJeepCourse.gd").start()
+		jeep.set_meta("world_snapshot_ground_anchor",Vector2(jeep_start.x,jeep_start.z))
 		for record in preload("res://world/mountain_jeep/MountainJeepCourse.gd").records():
-			if (record.position as Vector3).distance_to(focus)<160:
+			if preview_in_range(focus,record.position,160,radius,area):
 				preload("res://world/mountain_jeep/MountainJeepScenery.gd").build(jeep,record)
 		var fort_script := preload("res://gameplay/urban_v1/fort/MountainFortExit3D.gd")
-		if focus.distance_to(fort_script.WORLD_POSITION)<120:
+		if preview_in_range(focus,fort_script.WORLD_POSITION,120,radius,area):
 			var fort = fort_script.new()
 			fort.process_mode = Node.PROCESS_MODE_DISABLED
 			parent.add_child(fort)

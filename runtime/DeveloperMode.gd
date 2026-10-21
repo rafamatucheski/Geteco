@@ -18,11 +18,15 @@ var civilians: Array[Node] = []
 var _original_no_save := false
 var _original_god := false
 var _flight_state: Dictionary = {}
+var overview: Node
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	process_physics_priority = -20
 	set_physics_process(false)
+	overview = preload("res://runtime/DeveloperOverview.gd").new()
+	overview.world = world
+	add_child(overview)
 
 func report(text: String, event := "") -> void:
 	if text == message and event.is_empty(): return
@@ -44,6 +48,8 @@ func set_active(value: bool) -> bool:
 		report("Modo ativo · salvamento suspenso.", "enabled")
 	else:
 		if flying and not land(): return false
+		overview.stop()
+		world.camera.reset_developer_zoom()
 		clear_civilians()
 		world.player.remove_meta("developer_speed_multiplier")
 		world.remove_meta("developer_mode_active")
@@ -54,6 +60,17 @@ func set_active(value: bool) -> bool:
 		active = false
 		report("Modo desligado · controles normais restaurados.", "disabled")
 	return true
+
+func set_camera_zoom(value: float, view: int = 0) -> void:
+	if not active: return
+	world.camera.set_developer_zoom(value, view)
+	if is_finite(value): overview.start()
+	report("Zoom out: %.1f×." % world.camera.developer_zoom, "zoom")
+
+func reset_camera_zoom() -> void:
+	overview.stop()
+	world.camera.reset_developer_zoom()
+	report("Câmera normal restaurada.", "zoom_reset")
 
 func set_speed(value: float) -> void:
 	if not active: return
@@ -233,6 +250,7 @@ func clear_civilians() -> void:
 func _exit_tree() -> void:
 	if is_instance_valid(world) and is_instance_valid(world.player) and is_instance_valid(world.gameplay):
 		_restore_flight()
+		if is_instance_valid(world.camera): world.camera.reset_developer_zoom()
 		if active:
 			world.player.remove_meta("developer_speed_multiplier")
 			world.gameplay.god_mode = _original_god

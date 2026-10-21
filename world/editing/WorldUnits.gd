@@ -84,6 +84,7 @@ static func group_record(region: Node3D, chunk: Node3D, record: Dictionary, firs
 	if nodes.is_empty():
 		return
 	for node in nodes:
+		if node.has_meta("world_unit_session_source"): return
 		# Já editável por outro caminho (Neko, Cobra, objetos do catálogo): não duplicar.
 		if node.has_meta("editor_id") or node.has_meta("world_edit_piece_id") or not PIECES.collect(node).is_empty():
 			_skip(nodes)
@@ -181,10 +182,32 @@ static func _explode(source: MultiMeshInstance3D) -> void:
 		parent.add_child(instance)
 		instance.global_transform = source.global_transform * local
 		for body in bodies:
-			if is_instance_valid(body) and body.get_parent() == parent and body.global_position.distance_to(instance.global_position) < .02:
+			if not is_instance_valid(body) or body.get_parent() != parent: continue
+			var shapes: Array[CollisionShape3D] = []
+			for child in body.get_children():
+				if child is CollisionShape3D: shapes.append(child)
+			if shapes.size() <= 1 and body.global_position.distance_to(instance.global_position) < .02:
 				body.reparent(instance, true)
 				bodies.erase(body)
 				break
+			# Course stakes/rocks share one body containing a shape at each instance.
+			# Transfer only that shape, keeping its exact world pose and physical layer.
+			var found := false
+			for shape in shapes:
+				if shape.global_position.distance_to(instance.global_position) >= .02: continue
+				var solid := StaticBody3D.new()
+				solid.collision_layer = body.collision_layer
+				solid.collision_mask = body.collision_mask
+				if body is StaticBody3D:
+					solid.physics_material_override = body.physics_material_override
+					solid.constant_linear_velocity = body.constant_linear_velocity
+					solid.constant_angular_velocity = body.constant_angular_velocity
+				instance.add_child(solid)
+				solid.global_transform = body.global_transform
+				shape.reparent(solid,true)
+				found = true
+				break
+			if found: break
 	parent.remove_child(source)
 	source.free()
 
@@ -196,6 +219,7 @@ static func collect_units(chunk: Node3D, region_id: String, tag: String) -> Arra
 static func _walk(parent: Node, region_id: String, tag: String, result: Array, seen: Dictionary) -> void:
 	for child in parent.get_children():
 		if not child is Node3D or not child.visible or child.is_queued_for_deletion(): continue
+		if child.has_meta("world_unit_session_source"): continue
 		if _claimed(child) or _dynamic_body(child): continue
 		if child is MultiMeshInstance3D: continue # lote: nunca é peça por si só
 		var stats := {"count": 0, "box": AABB(), "has": false, "dynamic": false, "claimed": false}
@@ -243,7 +267,7 @@ static func _base_name(name: String) -> String:
 
 ## Corpo vivo (pedestre, animal, veículo, animação): nunca vira peça nem se desmonta em partes.
 static func _dynamic_body(node: Node) -> bool:
-	return node is CharacterBody3D or node is RigidBody3D or node is AnimationPlayer or node is AnimationTree or node is Skeleton3D
+	return node is CharacterBody3D or node is RigidBody3D or node is AnimationPlayer or node is AnimationTree or node is Skeleton3D or node.has_method("receive_damage") or node.is_in_group("digo_character")
 
 static func _claimed(node: Node) -> bool:
 	return node.has_meta("world_edit_piece_id") or node.has_meta("editor_id") or node.has_meta("world_unit_skip")
@@ -258,7 +282,7 @@ static func _measure(node: Node, stats: Dictionary, root := false) -> void:
 	if not root and _claimed(node):
 		stats.claimed = true
 		return
-	if node is CharacterBody3D or node is RigidBody3D or node is AnimationPlayer or node is AnimationTree or node is Skeleton3D or node is GPUParticles3D or node is Camera3D:
+	if _dynamic_body(node) or node is GPUParticles3D or node is Camera3D:
 		stats.dynamic = true
 		return
 	if node is MeshInstance3D and node.mesh != null:
@@ -340,15 +364,24 @@ static func manifest(root: Node) -> Array:
 		var start := Vector2(bounds.position.x, bounds.position.z)
 		var quad := [[start.x, start.y], [start.x + width, start.y], [start.x + width, start.y + depth], [start.x, start.y + depth]]
 		var margin := (pivot - (start + Vector2(width, depth) * .5)).abs()
+		var terrain_counts := {"meshes":0,"other":0}
+		_terrain_only(group,terrain_counts)
 		rows.append({
 			"id": "piece/" + str(group.get_meta("world_edit_piece_id")), "type": "piece", "kind": "unit", "auto": true,
 			"label": str(group.get_meta("world_edit_label", "Peça")), "locked": false, "rotation": 0.0,
 			"position": [pivot.x, pivot.y], "size": [width + 2.0 * margin.x, depth + 2.0 * margin.y],
 			"selection_height": bounds.end.y, "ground": bounds.size.y < .4,
 			"source_record": str(group.get_meta("world_edit_source", "")),
-			"parts": [[start.x, start.y, width, depth, bounds.end.y, color, quad]],
+			"parts": [[start.x, start.y, width, depth, bounds.end.y, color, quad,int(terrain_counts.meshes)>0 and int(terrain_counts.other)==0]],
 		})
 	return rows
+
+static func _terrain_only(node: Node, counts: Dictionary) -> void:
+	if node is MeshInstance3D and node.mesh != null:
+		counts.meshes = int(counts.meshes)+1
+		if not node.get_meta("editor_terrain_surface",false): counts.other = int(counts.other)+1
+	elif node is MultiMeshInstance3D and node.multimesh != null: counts.other = int(counts.other)+1
+	for child in node.get_children(): _terrain_only(child,counts)
 
 static func _tint(node: Node) -> String:
 	if node is MeshInstance3D and node.mesh != null:

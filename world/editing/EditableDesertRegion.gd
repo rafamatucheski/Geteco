@@ -136,6 +136,26 @@ func _build_added(chunk: Node3D,row: Dictionary) -> void:
 		node.rotation.y = deg_to_rad(float(row.rotation))
 
 ## Chunk pronto: pedras, cactos, relevo e ruínas (não são registros) viram peças editáveis.
+func _process(delta: float) -> void:
+	# An edited object's physical source is required by the destination, rather than
+	# optional dressing behind the drag strip's large background residency queue.
+	if not _pull.is_empty():
+		var required := {}
+		for target in _pull:
+			if not chunks.has(target): continue
+			for origin in _pull[target]: required[origin] = true
+		for origin in required:
+			if not chunks.has(origin) and not _surface_jobs.has(origin):
+				pending.erase(origin)
+				pending.push_front(origin)
+		for index in build_jobs.size():
+			if required.has(build_jobs[index].key):
+				var urgent: Dictionary = build_jobs[index]
+				build_jobs.remove_at(index)
+				build_jobs.push_front(urgent)
+				break
+	super._process(delta)
+
 func _trim_chunks() -> void:
 	if _pull.is_empty():
 		super._trim_chunks()

@@ -2,7 +2,7 @@
 extends RefCounted
 ## JSON shared by editor and production; no editor nodes or frame loop in the game.
 const PATH := "res://world/editing/world_edits.json"
-const TYPES := ["tree", "building", "road", "light", "prop", "piece", "ground", "manhole"]
+const TYPES := ["tree", "building", "road", "light", "prop", "piece", "ground", "manhole", "terrain"]
 const PROP_TYPES := ["pallet", "pallet_stack", "crate", "barrel", "dumpster", "trash_bags", "bin", "barrier", "footbridge", "desert_cactus", "desert_rock"]
 const BUILDING_TYPES := ["office", "brownstone", "warehouse", "corner_shop", "cobra_house", "l_shaped_block"] + preload("res://world/urban_detail/UrbanSkylineCatalog.gd").TYPES + preload("res://world/urban_detail/UrbanLowriseCatalog.gd").TYPES
 const BUILDING_LABELS := ["Comercial","Residencial","Galpão","Loja","Casa dos Cobra","Prédio em L"] + preload("res://world/urban_detail/UrbanSkylineCatalog.gd").LABELS + preload("res://world/urban_detail/UrbanLowriseCatalog.gd").LABELS
@@ -10,7 +10,7 @@ const BUILDING_LABELS := ["Comercial","Residencial","Galpão","Loja","Casa dos C
 const LOCKED_BUILDINGS := ["Garage", "NorthFrontage0", "NorthFrontage2", "NorthFrontage3", "NorthFrontage4", "Police", "Clinic", "NorthFireStation", "CanalHomesWest", "NorthgateAuto"]
 
 static func empty_document() -> Dictionary:
-	return {"version": 1, "regions": {"harbor": {}, "mountain": {}, "desert": {}}}
+	return {"version": 1, "regions": {"harbor": {}, "mountain": {}, "desert": {}}, "interiors":{}}
 
 static func read_document(path: String = PATH) -> Dictionary:
 	if not FileAccess.file_exists(path): return {"document": empty_document(), "error": ""}
@@ -35,12 +35,14 @@ static func validate_entity(row: Variant) -> String:
 	if row.get("type", "") not in TYPES: return "Tipo de objeto inválido."
 	if not row.get("id", "") is String or row.get("id", "").is_empty(): return "ID ausente."
 	if not row.get("deleted", false) is bool: return "Exclusão inválida."
+	if row.has("interior_floor") and (not number(row.interior_floor) or float(row.interior_floor) < 0 or floorf(float(row.interior_floor)) != float(row.interior_floor)): return "O andar do interior deve ser um inteiro a partir de zero."
 	if row.type == "piece":
 		if not str(row.id).begins_with("piece/") or not row.get("source_record", "") is String or str(row.get("source_record", "")).is_empty(): return "Peça sem origem."
 	if row.type == "manhole":
 		if not row.get("place_id","") is String or not preload("res://world/editing/WorldManholes.gd").is_editable(str(row.place_id)): return "Bueiro desconhecido."
 		if str(row.id) != "manhole/"+str(row.place_id): return "Identidade do bueiro alterada."
 	if row.get("deleted", false): return ""
+	if row.type == "terrain": return preload("res://world/editing/WorldTerrainEdits.gd").validate_row(row)
 	if row.get("service_building",false):
 		var base: Variant = row.get("service_base")
 		if row.type != "building" or not base is Dictionary or not vector(base.get("position"),2) or not vector(base.get("size"),2) or not number(base.get("height")) or base.height <= 0: return "Prédio especial sem referência original."
@@ -61,7 +63,7 @@ static func validate_entity(row: Variant) -> String:
 	if row.has("lift") and (row.type != "piece" or not number(row.lift) or absf(row.lift) > 3000): return "Elevação da peça: até 3000 m."
 	if row.has("outline"):
 		if row.type not in ["piece","ground"]: return "Este objeto não tem contorno editável."
-		if row.type == "piece" and not preload("res://world/editing/WorldEditPieces.gd").is_shape_editable(str(row.id)): return "Esta peça não permite mudar o contorno."
+		if row.type == "piece" and not preload("res://world/editing/WorldEditPieces.gd").is_shape_editable(str(row.get("clone_of",row.id))): return "Esta peça não permite mudar o contorno."
 		var shape_error := validate_outline(row.outline)
 		if not shape_error.is_empty(): return shape_error
 	if row.type == "road":
@@ -98,7 +100,8 @@ static func validate_entity(row: Variant) -> String:
 			var maximum := 2000.0
 			if not vector(row.get("size"),2) or row.size[0] < minimum or row.size[1] < minimum or row.size[0] > maximum or row.size[1] > maximum: return "Dimensões do piso fora do limite."
 		elif row.type == "prop":
-			if row.get("model", "") not in PROP_TYPES: return "Modelo de objeto inválido."
+			if row.get("model", "") not in PROP_TYPES and row.get("model", "") != "static_snapshot": return "Modelo de objeto inválido."
+			if row.get("model", "") == "static_snapshot" and not preload("res://world/editing/WorldStaticSnapshots.gd").valid_id(row.get("snapshot_id")): return "Cópia estática sem recurso válido."
 			if not vector(row.get("size"),2) or row.size[0] <= 0 or row.size[1] <= 0: return "Dimensões de objeto inválidas."
 			if not number(row.get("scale")) or row.scale < .05 or row.scale > 30: return "Escala do objeto: 0,05 a 30."
 			if row.model == "footbridge" and (row.size[0] < .8 or row.size[0] > 30 or row.size[1] < 14 or row.size[1] > 300): return "Passarela: largura 0,8 a 30 m, comprimento 14 a 300 m."
@@ -146,6 +149,20 @@ static func validate_document(doc: Variant) -> String:
 			var error := validate_entity(row)
 			if not error.is_empty(): return str(id) + ": " + error
 			if row.id != id: return "ID da chave não corresponde ao objeto."
+			if row.type == "terrain" and not row.get("deleted",false):
+				var expected_region := "harbor" if row.target == "motocross" else "mountain"
+				if region != expected_region: return "O pincel pertence ao terreno de outra região."
+	var interiors: Variant = doc.get("interiors",{})
+	if not interiors is Dictionary: return "Interiores inválidos."
+	for place in interiors:
+		if not place is String or place.is_empty() or place.length() > 256 or not interiors[place] is Dictionary: return "Identidade do interior inválida."
+		for id in interiors[place]:
+			var row: Variant = interiors[place][id]
+			if not row is Dictionary or row.get("type","") not in ["prop","tree","ground","light","building","piece"]: return "Objeto não permitido em interior."
+			var error := validate_entity(row)
+			if not error.is_empty(): return str(place)+" / "+str(id)+": "+error
+			if row.id != id: return "ID do objeto interior não corresponde à chave."
+			if row.type == "piece" and (not str(id).begins_with("piece/interior/"+place+"/") or not str(row.get("source_record","")).begins_with("interior/"+place+"/")): return "Peça de interior sem origem correspondente."
 	return ""
 
 static func disk_hash(path: String = PATH) -> String:
@@ -239,6 +256,7 @@ static func effective(base: Dictionary, changes: Dictionary) -> Dictionary:
 	return result
 
 static func new_entity(type: String, position: Vector2) -> Dictionary:
+	if type == "terrain": return preload("res://world/editing/WorldTerrainEdits.gd").new_brush(position)
 	var id := "new/" + str(Time.get_unix_time_from_system()).replace(".", "_") + "_" + str(randi())
 	var row := {"id": id, "type": type, "position": [position.x, position.y], "rotation": 0.0}
 	match type:

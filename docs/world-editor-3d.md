@@ -1,5 +1,23 @@
 # Edição direta em 3D — 26/09/2026
 
+## Atualização de uso — 21/10/2026
+
+A visão 3D agora compartilha os seletores de exterior, interiores e andares, os pincéis de relevo/textura e o documento de trabalho do editor. O [guia atual do editor](world-editor.md#editor-integrado-de-mundo--21102026) descreve os controles, os dois provedores de relevo disponíveis, as cópias de geometria e os limites da validação.
+
+- **Enquadrar mapa atual** e **Limites dos mapas** ajudam a localizar o conteúdo; o alcance da prévia distingue área próxima e mapa inteiro.
+- A topografia 2D é fornecida pelo mesmo worker quando a prévia 3D está aberta. Em 2D sozinho, a carga de terreno também fornece peças individuais editáveis; a imagem do chão não deve conservar fantasmas de peças movidas ou excluídas. A visualização reconhece cânions reais do Deserto, enquanto escultura de altura segue limitada a motocross e montanha.
+- **Terreno** usa o ponto da superfície real e apresenta o raio da aplicação. Desative a ferramenta para voltar à edição de objetos.
+- Escolher uma casa/empresa carrega sua sala real; **Andar** troca o piso quando disponível. A geometria da prévia permanece separada da simulação de gameplay.
+- Alterações de interiores exigem validação da própria sala e do próprio andar antes de salvar. Cópia de geometria estática preserva seus sólidos para a aplicação no jogo; personagens e rotinas de serviço não são duplicados.
+- O carregamento informa fases, indexação e erros. **Logs** permite ler e copiar o diagnóstico do worker; fechar a ferramenta encerra seu próprio processo auxiliar.
+
+As medições finais estáveis registraram 60,002 FPS no [motocross 2D com relevo/pintura](../evidence/editor-workspace-20261021/topography-visible-harbor.json), no [Deserto 3D inteiro com LOD](../evidence/editor-workspace-20261021/lod-final-desert.json) e na [prévia do banco, andar 0](../evidence/editor-workspace-20261021/interior-final-interior-harbor_bank-floor0.json), em amostras de 30 s/1.801 frames, sem frames acima de 33,3 ms. As primeiras cargas continuam longas: 31,766 s, 100,423 s e 12,080 s, respectivamente. A imagem final do motocross foi inspecionada com relevo e Sand visíveis. Os detalhes e pendências estão no [guia de validação](world-editor.md#estado-da-validação-desta-revisão).
+
+A [amostra nativa](../evidence/editor-workspace-20261021/native-frozen.json) usa `frame_post_draw`, prévia 650×379 e fundo do editor; não comparar seus 148,4 FPS com standalone limitado a 60. Teve 19 frames acima de 33,3 ms, pico estável de 45,979 ms e diagnósticos do motor no encerramento. O [smoke nativo posterior de 2 s](../evidence/editor-workspace-20261021/native-close-final.json), sem valor de benchmark, confirmou integração .NET e hashes preservados, saída GUI 0 e ausência de instâncias/RIDs/recursos vazados no log verbose após corrigir o wrapper Terrain3D. Mensagens C++ de RichTextLabel e EditorSettings/Android continuam sem atribuição, embora sem ScriptErrors; não declarar stderr nativo vazio. Cargas frias, reconstruções de cerca de 180–196 ms e pan muito além da margem de cache continuam pendentes. Não há certificação de ausência de travas em toda situação.
+
+## Registro da implementação de 26/09/2026
+
+
 A aba Mundo abre em 3D na primeira ativação. O seletor da barra oferece 2D, 3D e Lado a lado. O documento, a validação, o histórico e o botão Salvar mundo são compartilhados entre as visões.
 
 ## Uso

@@ -138,6 +138,7 @@ func _build() -> void:
 	flight_row.add_child(flight_rate)
 	flight_rate.value_changed.connect(func(value): tools.flight_speed = value)
 	flight_row.add_child(STYLE.label("WASD move · Espaço sobe · Ctrl desce · Shift acelera",16,STYLE.MUTED))
+	_build_camera(column)
 	_build_environment(column)
 	_section(column,"TELETRANSPORTE")
 	var travel := HBoxContainer.new()
@@ -282,3 +283,40 @@ func _build_environment(column: VBoxContainer) -> void:
 	column.add_child(actions)
 	_button(actions,"Curar Dante",func(): world.gameplay.heal(1000.0); tools.report("Vida restaurada.","heal"))
 	_button(actions,"Limpar procurado",func(): world.gameplay.clear_wanted(); tools.report("Nível de procurado zerado.","wanted"))
+
+var _zoom_amount: SpinBox
+var _zoom_view: OptionButton
+
+func _apply_zoom() -> void:
+	if not tools.active: tools.report("Ative o modo desenvolvedor."); return
+	tools.set_camera_zoom(_zoom_amount.value, _zoom_view.selected)
+
+func _build_camera(column: VBoxContainer) -> void:
+	_section(column, "CÂMERA · ZOOM OUT · MAPA INTEIRO")
+	var presets := HFlowContainer.new()
+	column.add_child(presets)
+	for factor in [2, 5, 10, 25, 50, 100, 250, 500, 1000]:
+		_button(presets, "%d×" % factor, func():
+			_zoom_amount.value = factor
+			_apply_zoom())
+	var controls := HFlowContainer.new()
+	column.add_child(controls)
+	_zoom_view = OptionButton.new()
+	for label in ["Diagonal", "De cima", "Perspectiva"]: _zoom_view.add_item(label)
+	controls.add_child(_zoom_view)
+	_zoom_view.item_selected.connect(func(_index): _apply_zoom())
+	_zoom_amount = SpinBox.new()
+	_zoom_amount.min_value = 1
+	_zoom_amount.max_value = 1000
+	_zoom_amount.step = 0.5
+	_zoom_amount.value = 10
+	_zoom_amount.suffix = "×"
+	controls.add_child(_zoom_amount)
+	_button(controls, "Aplicar zoom", _apply_zoom)
+	_button(controls, "Afastar 2×", func():
+		_zoom_amount.value = minf(1000, world.camera.developer_zoom * 2)
+		_apply_zoom())
+	_button(controls, "Aproximar 2×", func():
+		_zoom_amount.value = maxf(1, world.camera.developer_zoom / 2)
+		_apply_zoom())
+	_button(controls, "Câmera normal", func(): tools.reset_camera_zoom())

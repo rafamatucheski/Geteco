@@ -1,6 +1,29 @@
 {
+	"desert_layout_version": 2,
 	"regions": {
 		"desert": {
+			"piece/desert/drag_workshop/a7269f14f21d791ebfdf808ba1743492d76d3b246d4e6f8101d6ae96c754d391": {
+				"height_stretch": 1.02,
+				"id": "piece/desert/drag_workshop/a7269f14f21d791ebfdf808ba1743492d76d3b246d4e6f8101d6ae96c754d391",
+				"lift": -0.199999999999989,
+				"position": [
+					-866.0,
+					-722.0
+				],
+				"rotation": 0.0,
+				"source_record": "a7269f14f21d791ebfdf808ba1743492d76d3b246d4e6f8101d6ae96c754d391",
+				"type": "piece"
+			},
+			"piece/unit/desert/-3_-6/Weathered_Asphalt~-2400_-5529": {
+				"id": "piece/unit/desert/-3_-6/Weathered_Asphalt~-2400_-5529",
+				"position": [
+					-240.0,
+					-552.841003417969
+				],
+				"rotation": 0.0,
+				"source_record": "unit/desert/-3_-6",
+				"type": "piece"
+			},
 			"road/desert_route_66": {
 				"id": "road/desert_route_66",
 				"locked": false,
@@ -15,67 +38,67 @@
 					],
 					[
 						342.5,
-						-750.0
+						-490.0
 					],
 					[
 						342.5,
-						-880.0
+						-540.0
 					],
 					[
 						342.5,
-						-1500.0
+						-860.0
 					],
 					[
 						342.208343505859,
-						-1504.82141113281
+						-864.82141113281
 					],
 					[
 						341.337677001953,
-						-1509.57263183594
+						-869.57263183594
 					],
 					[
 						339.900634765625,
-						-1514.18420410156
+						-874.18420410156
 					],
 					[
 						337.918243408203,
-						-1518.5888671875
+						-878.5888671875
 					],
 					[
 						335.419342041016,
-						-1522.72253417969
+						-882.72253417969
 					],
 					[
 						332.4404296875,
-						-1526.52490234375
+						-886.52490234375
 					],
 					[
 						329.02490234375,
-						-1529.9404296875
+						-889.9404296875
 					],
 					[
 						325.222595214844,
-						-1532.91931152344
+						-892.91931152344
 					],
 					[
 						321.088928222656,
-						-1535.41821289063
+						-895.41821289063
 					],
 					[
 						316.684204101563,
-						-1537.40063476563
+						-897.40063476563
 					],
 					[
 						312.072631835938,
-						-1538.83764648438
+						-898.83764648438
 					],
 					[
 						307.321472167969,
-						-1539.70837402344
+						-899.70837402344
 					],
 					[
 						302.0,
-						-1540.0
+						-900.0
 					]
 				],
 				"surface": "asphalt",
@@ -88,120 +111,120 @@
 				"locked": false,
 				"points": [
 					[
-						-1160.0,
-						-880.0
+						-1020.0,
+						-540.0
 					],
 					[
-						-1164.0,
-						-880.0
+						-1024.0,
+						-540.0
 					],
 					[
-						-1169.57263183594,
-						-881.162353515625
+						-1029.57263183594,
+						-541.162353515625
 					],
 					[
-						-1174.18420410156,
-						-882.599365234375
+						-1034.18420410156,
+						-542.599365234375
 					],
 					[
-						-1178.5888671875,
-						-884.581787109375
+						-1038.5888671875,
+						-544.581787109375
 					],
 					[
-						-1182.72253417969,
-						-887.080627441406
+						-1042.72253417969,
+						-547.080627441406
 					],
 					[
-						-1186.52490234375,
-						-890.0595703125
+						-1046.52490234375,
+						-550.0595703125
 					],
 					[
-						-1189.9404296875,
-						-893.47509765625
+						-1049.9404296875,
+						-553.47509765625
 					],
 					[
-						-1192.91931152344,
-						-897.277404785156
+						-1052.91931152344,
+						-557.277404785156
 					],
 					[
-						-1195.41821289063,
-						-901.411071777344
+						-1055.41821289063,
+						-561.411071777344
 					],
 					[
-						-1197.40063476563,
-						-905.815795898438
+						-1057.40063476563,
+						-565.815795898438
 					],
 					[
-						-1198.83764648438,
-						-910.427368164063
+						-1058.83764648438,
+						-570.427368164063
 					],
 					[
-						-1199.70837402344,
-						-915.178527832031
+						-1059.70837402344,
+						-575.178527832031
 					],
 					[
-						-1200.0,
-						-920.0
+						-1060.0,
+						-580.0
 					],
 					[
-						-1200.0,
-						-1264.0
+						-1060.0,
+						-744.0
 					],
 					[
-						-1200.0,
-						-1500.0
+						-1060.0,
+						-860.0
 					],
 					[
-						-1199.70837402344,
-						-1504.82141113281
+						-1059.70837402344,
+						-864.82141113281
 					],
 					[
-						-1198.83764648438,
-						-1509.57263183594
+						-1058.83764648438,
+						-869.57263183594
 					],
 					[
-						-1197.40063476563,
-						-1514.18420410156
+						-1057.40063476563,
+						-874.18420410156
 					],
 					[
-						-1195.41821289063,
-						-1518.58898925781
+						-1055.41821289063,
+						-878.58898925781
 					],
 					[
-						-1192.91931152344,
-						-1522.72253417969
+						-1052.91931152344,
+						-882.72253417969
 					],
 					[
-						-1189.9404296875,
-						-1526.52490234375
+						-1049.9404296875,
+						-886.52490234375
 					],
 					[
-						-1186.52490234375,
-						-1529.9404296875
+						-1046.52490234375,
+						-889.9404296875
 					],
 					[
-						-1182.72253417969,
-						-1532.91931152344
+						-1042.72253417969,
+						-892.91931152344
 					],
 					[
-						-1178.5888671875,
-						-1535.41821289063
+						-1038.5888671875,
+						-895.41821289063
 					],
 					[
-						-1174.18420410156,
-						-1537.40063476563
+						-1034.18420410156,
+						-897.40063476563
 					],
 					[
-						-1169.57263183594,
-						-1538.83764648438
+						-1029.57263183594,
+						-898.83764648438
 					],
 					[
-						-1164.0,
-						-1540.0
+						-1024.0,
+						-900.0
 					],
 					[
-						-1160.0,
-						-1540.0
+						-1020.0,
+						-900.0
 					]
 				],
 				"surface": "asphalt",
@@ -215,23 +238,23 @@
 				"points": [
 					[
 						-180.0,
-						-1552.0
+						-900.0
 					],
 					[
 						-180.0,
-						-1574.0
-					],
-					[
-						-167.0,
-						-1598.0
-					],
-					[
-						-167.0,
-						-1611.0
+						-914.0
 					],
 					[
 						-180.0,
-						-1630.0
+						-928.0
+					],
+					[
+						-180.0,
+						-939.0
+					],
+					[
+						-180.0,
+						-950.0
 					]
 				],
 				"surface": "earth",
@@ -393,8 +416,8 @@
 				"locked": false,
 				"model": "police_precinct",
 				"position": [
-					66.0,
-					120.0
+					65.8474197387695,
+					120.127151489258
 				],
 				"rotation": 0.0,
 				"service_base": {
@@ -1172,8 +1195,8 @@
 				"id": "new/1790432236_682_2325181222",
 				"model": "urban_deco",
 				"position": [
-					279.0,
-					-84.0
+					278.816223144531,
+					-84.1986923217773
 				],
 				"rotation": 90.0,
 				"size": [
@@ -1281,6 +1304,7 @@
 			},
 			"new/1790561382_7179923_934509863": {
 				"color": "3f6e8c",
+				"deleted": true,
 				"id": "new/1790561382_7179923_934509863",
 				"model": "footbridge",
 				"position": [
@@ -1293,6 +1317,82 @@
 					2.6,
 					34.6
 				],
+				"type": "prop"
+			},
+			"new/1792619330_454_1373841836": {
+				"color": "ffffff",
+				"height": 1.5074999332428,
+				"id": "new/1792619330_454_1373841836",
+				"label": "Loose Cargo11 (cópia)",
+				"model": "static_snapshot",
+				"position": [
+					354.079406738281,
+					263.227722167969
+				],
+				"rotation": 0.0,
+				"scale": 1.0,
+				"size": [
+					5.53870964050293,
+					3.47501540184021
+				],
+				"snapshot_id": "7454047355664426e2d2c2538805cbacb978c6c9ae88bd4f64434d50c938c9b2",
+				"type": "prop"
+			},
+			"new/1792619349_35_3030771864": {
+				"color": "ffffff",
+				"height": 1.5074999332428,
+				"id": "new/1792619349_35_3030771864",
+				"label": "Loose Cargo11 (cópia)",
+				"model": "static_snapshot",
+				"position": [
+					371.782165527344,
+					363.467407226563
+				],
+				"rotation": 0.0,
+				"scale": 1.0,
+				"size": [
+					5.53870964050293,
+					3.47501540184021
+				],
+				"snapshot_id": "7454047355664426e2d2c2538805cbacb978c6c9ae88bd4f64434d50c938c9b2",
+				"type": "prop"
+			},
+			"new/1792619383_166_376301783": {
+				"color": "ffffff",
+				"height": 1.5074999332428,
+				"id": "new/1792619383_166_376301783",
+				"label": "Loose Cargo11 (cópia)",
+				"model": "static_snapshot",
+				"position": [
+					225.534606933594,
+					362.193298339844
+				],
+				"rotation": 0.0,
+				"scale": 1.0,
+				"size": [
+					5.53870964050293,
+					3.47501540184021
+				],
+				"snapshot_id": "7454047355664426e2d2c2538805cbacb978c6c9ae88bd4f64434d50c938c9b2",
+				"type": "prop"
+			},
+			"new/1792619397_661_3493688976": {
+				"color": "ffffff",
+				"height": 1.5074999332428,
+				"id": "new/1792619397_661_3493688976",
+				"label": "Loose Cargo8 (cópia)",
+				"model": "static_snapshot",
+				"position": [
+					220.213012695313,
+					363.455932617188
+				],
+				"rotation": 0.0,
+				"scale": 1.0,
+				"size": [
+					5.48107385635376,
+					3.44547319412231
+				],
+				"snapshot_id": "f53659692e2ee90f4b73d3dbddff3c7ca3a2de97ea02604855a43f76171834d1",
 				"type": "prop"
 			},
 			"new/tonico_asphalt_entry": {
@@ -1816,6 +1916,26 @@
 				"source_record": "c56d4c9ced7cf42f96ec6d055fcd243a14301b2605e4049a8c98d5047d8c5744",
 				"type": "piece"
 			},
+			"piece/harbor/original_facade/8f3b967a03ec425dac8e": {
+				"id": "piece/harbor/original_facade/8f3b967a03ec425dac8e",
+				"position": [
+					196.079742431641,
+					113.481788635254
+				],
+				"rotation": 0.0,
+				"source_record": "8f3b967a03ec425dac8eef0319be8a7f661a6fe3f6bccb9ea79e23e341410bec",
+				"type": "piece"
+			},
+			"piece/harbor/original_facade/fa28b820b602c57d4e73": {
+				"id": "piece/harbor/original_facade/fa28b820b602c57d4e73",
+				"position": [
+					160.11979675293,
+					146.626434326172
+				],
+				"rotation": 0.0,
+				"source_record": "fa28b820b602c57d4e73473957ba2627dbeb0a1f9827b73808991b40170ca4c8",
+				"type": "piece"
+			},
 			"piece/pl/harbor/0_1/dumpster~-4_895": {
 				"id": "piece/pl/harbor/0_1/dumpster~-4_895",
 				"position": [
@@ -1841,6 +1961,106 @@
 				"position": [
 					-3.45834475755692,
 					84.7341156005859
+				],
+				"rotation": 0.0,
+				"source_record": "placement/harbor",
+				"type": "piece"
+			},
+			"piece/pl/harbor/1_2/signal_pole~760_1257": {
+				"id": "piece/pl/harbor/1_2/signal_pole~760_1257",
+				"position": [
+					76.0217895507813,
+					125.737625122071
+				],
+				"rotation": 0.0,
+				"source_record": "placement/harbor",
+				"type": "piece"
+			},
+			"piece/pl/harbor/1_2/trash_bags~1221_1451": {
+				"id": "piece/pl/harbor/1_2/trash_bags~1221_1451",
+				"position": [
+					122.290603637695,
+					145.568161010742
+				],
+				"rotation": 0.0,
+				"source_record": "placement/harbor",
+				"type": "piece"
+			},
+			"piece/pl/harbor/2_2/street_tree~1649_1299": {
+				"id": "piece/pl/harbor/2_2/street_tree~1649_1299",
+				"position": [
+					170.665893554687,
+					125.884315490722
+				],
+				"rotation": 0.0,
+				"source_record": "placement/harbor",
+				"type": "piece"
+			},
+			"piece/pl/harbor/4_-2/bike_rack~2847_-825": {
+				"id": "piece/pl/harbor/4_-2/bike_rack~2847_-825",
+				"position": [
+					285.673889160157,
+					-82.2375030517578
+				],
+				"rotation": 0.0,
+				"source_record": "placement/harbor",
+				"type": "piece"
+			},
+			"piece/pl/harbor/4_-2/drums~3076_-779": {
+				"id": "piece/pl/harbor/4_-2/drums~3076_-779",
+				"position": [
+					316.62255859375,
+					-77.8625030517578
+				],
+				"rotation": 0.0,
+				"source_record": "placement/harbor",
+				"type": "piece"
+			},
+			"piece/pl/harbor/4_-2/drums~3116_-779": {
+				"id": "piece/pl/harbor/4_-2/drums~3116_-779",
+				"position": [
+					317.040283203125,
+					-79.7040634155273
+				],
+				"rotation": 0.0,
+				"source_record": "placement/harbor",
+				"type": "piece"
+			},
+			"piece/pl/harbor/4_-2/dumpster~2728_-847": {
+				"id": "piece/pl/harbor/4_-2/dumpster~2728_-847",
+				"position": [
+					280.298828125,
+					-75.7703018188477
+				],
+				"rotation": 0.0,
+				"source_record": "placement/harbor",
+				"type": "piece"
+			},
+			"piece/pl/harbor/4_-2/pallet_stack~3097_-778": {
+				"id": "piece/pl/harbor/4_-2/pallet_stack~3097_-778",
+				"position": [
+					318.156341552734,
+					-77.7624969482422
+				],
+				"rotation": 0.0,
+				"source_record": "placement/harbor",
+				"type": "piece"
+			},
+			"piece/pl/harbor/4_-2/pot_plant~2847_-851": {
+				"id": "piece/pl/harbor/4_-2/pot_plant~2847_-851",
+				"position": [
+					284.713287353516,
+					-86.1113204956055
+				],
+				"rotation": 0.0,
+				"source_record": "placement/harbor",
+				"type": "piece"
+			},
+			"piece/pl/harbor/4_-2/trash_bags~2728_-832": {
+				"id": "piece/pl/harbor/4_-2/trash_bags~2728_-832",
+				"position": [
+					281.370819091797,
+					-76.4559631347657
 				],
 				"rotation": 0.0,
 				"source_record": "placement/harbor",
@@ -2028,6 +2248,16 @@
 				"source_record": "transit/urban_station_5",
 				"type": "piece"
 			},
+			"piece/unit/harbor/-3_1/Land~-1600_960": {
+				"id": "piece/unit/harbor/-3_1/Land~-1600_960",
+				"position": [
+					-141.0,
+					192.0
+				],
+				"rotation": 0.0,
+				"source_record": "unit/harbor/-3_1",
+				"type": "piece"
+			},
 			"piece/unit/harbor/0_1/Objeto~500_1146": {
 				"id": "piece/unit/harbor/0_1/Objeto~500_1146",
 				"position": [
@@ -2036,6 +2266,36 @@
 				],
 				"rotation": 0.0,
 				"source_record": "unit/harbor/0_1",
+				"type": "piece"
+			},
+			"piece/unit/harbor/1_1/Police_Station_Detail~677_1208": {
+				"id": "piece/unit/harbor/1_1/Police_Station_Detail~677_1208",
+				"position": [
+					67.0381851196289,
+					120.983726501465
+				],
+				"rotation": 0.0,
+				"source_record": "unit/harbor/1_1",
+				"type": "piece"
+			},
+			"piece/unit/harbor/1_1/Police_Station_Detail~679_1207": {
+				"id": "piece/unit/harbor/1_1/Police_Station_Detail~679_1207",
+				"position": [
+					67.5122985839844,
+					121.27434539795
+				],
+				"rotation": 0.0,
+				"source_record": "unit/harbor/1_1",
+				"type": "piece"
+			},
+			"piece/unit/harbor/2_0/Harbor_Surface_limestone~1293_493": {
+				"id": "piece/unit/harbor/2_0/Harbor_Surface_limestone~1293_493",
+				"position": [
+					129.325149536133,
+					49.5951499938965
+				],
+				"rotation": 0.0,
+				"source_record": "unit/harbor/2_0",
 				"type": "piece"
 			},
 			"piece/unit/harbor/2_0/Objeto~1628_559": {
@@ -2047,6 +2307,36 @@
 				],
 				"rotation": 0.0,
 				"source_record": "unit/harbor/2_0",
+				"type": "piece"
+			},
+			"piece/unit/harbor/2_1/Harbor_Surface_service~1614_959": {
+				"id": "piece/unit/harbor/2_1/Harbor_Surface_service~1614_959",
+				"position": [
+					161.375,
+					95.9904022216797
+				],
+				"rotation": 0.0,
+				"source_record": "unit/harbor/2_1",
+				"type": "piece"
+			},
+			"piece/unit/harbor/5_4/Loose_Cargo11~3678_3045": {
+				"id": "piece/unit/harbor/5_4/Loose_Cargo11~3678_3045",
+				"position": [
+					375.448150634766,
+					302.728912353516
+				],
+				"rotation": 0.0,
+				"source_record": "unit/harbor/5_4",
+				"type": "piece"
+			},
+			"piece/unit/harbor/5_5/Port_Floodlight7~3450_3563": {
+				"id": "piece/unit/harbor/5_5/Port_Floodlight7~3450_3563",
+				"position": [
+					344.885162353516,
+					346.047760009766
+				],
+				"rotation": 0.0,
+				"source_record": "unit/harbor/5_5",
 				"type": "piece"
 			},
 			"road/cobra_approach": {
