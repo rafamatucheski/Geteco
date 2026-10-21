@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "voice_status": "subtitles_only",
+  "source": "docs/roteiro-diretor-geteco-20261021.md, M06-C Turno da noite (a conversa da baia virou ligação: aqui o Neco só aparece por telefone)",
+  "neco_call": [
+    {"speaker": "Neco", "pt": "Tá acordado? Tô embaixo de um caminhão da Vértice.", "en": ""},
+    {"speaker": "Dante", "pt": "Você guincha caminhão da Vértice.", "en": ""},
+    {"speaker": "Neco", "pt": "Guincho. Eles pagam em dia, coisa rara.", "en": ""},
+    {"speaker": "Dante", "pt": "E de noite?", "en": ""},
+    {"speaker": "Neco", "pt": "De noite eles não chamam guincho. Chamam outra coisa.", "en": ""},
+    {"speaker": "Dante", "pt": "Quantos?", "en": ""},
+    {"speaker": "Neco", "pt": "Dois na ronda, um na guarita. Depois das dez.", "en": ""},
+    {"speaker": "Neco", "pt": "Se der barulho, chega uma van com mais três. Gente dos Cobras, não é vigia de firma.", "en": ""},
+    {"speaker": "Neco", "pt": "Tem um bueiro na calçada do portão. Dá no porão deles, e o porão sobe no galpão.", "en": ""},
+    {"speaker": "Neco", "pt": "Eu sei porque já tirei carro de lá que não devia estar lá.", "en": ""},
+    {"speaker": "Dante", "pt": "Você vai comigo?", "en": ""},
+    {"speaker": "Neco", "pt": "Nem morto.", "en": ""},
+    {"speaker": "Neco", "pt": "Mas se precisar de um guincho às três da manhã, eu tô acordado.", "en": ""}
+  ],
+  "dispatch_book": [
+    {"speaker": "Dante", "pt": "Dia catorze. Carreta três. Saída 22h10. Destino: Estrada do Sal.", "en": ""},
+    {"speaker": "Dante", "pt": "Salinas.", "en": ""},
+    {"speaker": "Dante", "pt": "Retorno...", "en": ""},
+    {"speaker": "Dante", "pt": "Não tem retorno.", "en": ""},
+    {"speaker": "Livro de despachos", "pt": "motorista substituído — aut. 0417", "en": ""}
+  ],
+  "maciota_call": [
+    {"speaker": "Maciota", "pt": "São três e meia, Dante.", "en": ""},
+    {"speaker": "Dante", "pt": "A carga do Vicente passou pelas Salinas. No deserto.", "en": ""},
+    {"speaker": "Maciota", "pt": "...", "en": ""},
+    {"speaker": "Maciota", "pt": "A lista do Takeshi também fala do deserto.", "en": ""},
+    {"speaker": "Dante", "pt": "Eu sei.", "en": ""},
+    {"speaker": "Maciota", "pt": "Então dorme. Amanhã você tem corrida.", "en": ""}
+  ]
+}

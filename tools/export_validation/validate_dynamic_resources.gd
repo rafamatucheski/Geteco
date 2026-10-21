@@ -15,6 +15,7 @@ const JSON_PATHS := [
 	"res://data/campaign/first-favors-dialogue.json",
 	"res://data/campaign/cobra-dialogue.json",
 	"res://data/campaign/mountain-story-dialogue.json",
+	"res://data/campaign/vertice-night-dialogue.json",
 	"res://data/dialogue/english-voice-translations.json",
 	"res://audio/mission_voices/recordings.json",
 	"res://audio/mission_voices/maciota_baritone/recordings.json",
