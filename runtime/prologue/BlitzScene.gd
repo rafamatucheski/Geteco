@@ -30,6 +30,7 @@ extends CanvasLayer
 const FLEET := preload("res://runtime/FleetCatalog.gd")
 const TRUCK := preload("res://gameplay/desert_heist/DesertCargoTruckVisual.gd")
 const CIVILIAN := preload("res://assets/CivilianModel.gd")
+const POLICE_MODEL := preload("res://gameplay/PoliceModel.gd")
 const EQUIPMENT := preload("res://gameplay/VehicleEquipment.gd")
 const LIGHT_BUDGET := preload("res://gameplay/lights/LightBudget.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
@@ -46,6 +47,11 @@ const TRUCK_STOP_Z := -4.4
 const DANTE_POST := Vector3(.1, 0, -16.0)
 const POLICE_SPOT := Vector3(4.9, 0, -15.5)
 const TRUCK_PAINT := Color("583d35")
+## Farda da patrulha: a mesma cor e as mesmas peças de PoliceModel._body_look (escalão 0).
+const UNIFORM := Color(0.11, 0.15, 0.24)
+## Colegas de Dante na blitz: [nome, posição, para onde olha, appearance_index fixo (não gasta o rodízio
+## de PoliceAppearance.next_model)]. Bastos encostado na viatura com o rádio; Lima no cavalete com a lanterna.
+const COLLEAGUES := [["Bastos", Vector3(3.75, 0, -14.9), Vector3(-1, 0, .35), 3], ["Lima", Vector3(2.9, 0, -14.3), Vector3(0, 0, 1), 6]]
 const HOLD_SECONDS := 2.6
 const WARM_DRAWS := 4
 signal finished(pov: String, skipped: bool)
@@ -96,6 +102,9 @@ var dante
 var vicente
 var lantern: Node3D
 var cars: Array[Node3D] = []
+## PoliceModel dos colegas (calmos: sem ator, sem IA, sem colisão).
+var colleagues: Array[Node3D] = []
+var colleague_lantern: Node3D
 var _car_speed: Array[float] = []
 var _glows: Array[Sprite3D] = []
 var halo: OmniLight3D
@@ -171,7 +180,7 @@ func _ready() -> void:
 	_set.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	_viewport.add_child(_set)
 	_build_ui()
-	_steps = [_build_environment, _build_road, _build_police, _build_truck, _build_cast, _build_traffic, _build_rain, _build_audio]
+	_steps = [_build_environment, _build_road, _build_police, _build_truck, _build_cast, _build_colleagues, _build_traffic, _build_rain, _build_audio]
 	stage = "build"
 
 func _build_ui() -> void:
@@ -405,11 +414,14 @@ func _person(identity: String):
 	var model = CIVILIAN.new()
 	model.appearance_locked = true
 	if identity == "dante":
+		# Fardado como os colegas: rosto e corpo do Dante jovem no rig civil (o corpo Meshy da patrulha
+		# traz outro rosto), com a farda que PoliceModel veste no mesmo rig (camisa 6, quepe 4).
 		model.name = "DanteYoung"
 		model.appearance_variant = 9601
-		model.coat_color = Color("1f2a38")
-		model.pants_color = Color("1b2029")
-		model.wardrobe_overrides = {"female":false, "height":1.02, "build":1, "skin":Color("d4a688"), "hair_color":Color("2a221d"), "hat":0, "beard":0, "glasses":false, "bag":0, "backpack":false, "top":1, "bottom":0, "shoe":0}
+		model.coat_color = UNIFORM
+		model.pants_color = UNIFORM.darkened(.25)
+		model.wardrobe_overrides = {"female":false, "height":1.02, "build":1, "skin":Color("d4a688"), "hair_color":Color("2a221d"), "beard":0, "glasses":false, "bag":0, "backpack":false,
+			"top":6, "bottom":0, "shoe":2, "hat":4, "accent":Color("141a26"), "inner":Color("d9d6cc"), "shoe_color":Color("141416")}
 	else:
 		model.name = "VicenteYoung"
 		model.appearance_variant = 9511
@@ -437,6 +449,42 @@ func _build_cast() -> void:
 	lantern_light.set_meta("budget_energy", 4.0)
 	lantern_light.light_energy = 4.0
 	lantern.add_child(lantern_light)
+
+func _build_colleagues() -> void:
+	for entry in COLLEAGUES:
+		var officer: Node3D = POLICE_MODEL.new()
+		officer.name = "Blitz" + str(entry[0])
+		officer.appearance_index = int(entry[3])
+		officer.position = entry[1]
+		# PoliceModel olha para -z (o corpo articulado vai girado dentro dele).
+		officer.rotation.y = atan2(-entry[2].x, -entry[2].z)
+		_set.add_child(officer)
+		colleagues.append(officer)
+	colleague_lantern = Node3D.new()
+	colleague_lantern.name = "BlitzColleagueLantern"
+	_set.add_child(colleague_lantern)
+	# Só a lanterna acesa (emissiva): a luz de verdade fica com a de Dante, dentro do orçamento.
+	_box(colleague_lantern, Vector3(0, 0, -.06), Vector3(.05, .05, .2), _material("blitz_lantern_body", Color("26282b"), .5, .4))
+	_box(colleague_lantern, Vector3(0, 0, -.165), Vector3(.055, .055, .01), _material("blitz_lantern_lens", Color("fff3d8"), .2, .5, Color("fff0cc")))
+
+## Mãos dos colegas: Bastos com o rádio no ombro, Lima com a lanterna baixa para a pista.
+func _colleagues_tick() -> void:
+	for index in colleagues.size():
+		var officer := colleagues[index]
+		var body = officer.get("body")
+		if not is_instance_valid(body): continue
+		var forward := -officer.global_basis.z.normalized()
+		var right := forward.cross(Vector3.UP).normalized()
+		var base := officer.global_position
+		if index == 0:
+			body.hand_targets = [base + Vector3.UP * 1.5 + forward * .1 - right * .14, null]
+		else:
+			var hand := base + Vector3.UP * (1.05 + .04 * sin(stage_time * 1.3)) + forward * .32 + right * .18
+			body.hand_targets = [hand, null]
+			colleague_lantern.global_position = hand
+			colleague_lantern.look_at(hand + forward * 3.0 + Vector3.DOWN * 1.2, Vector3.UP)
+		# hand_targets fixos: o provedor de arma do PoliceModel não pode sobrescrever.
+		body.hand_provider = Callable()
 
 func _build_traffic() -> void:
 	# Os dois carros que passam antes do "terceiro" (só no prólogo).
@@ -521,6 +569,7 @@ func _process(delta: float) -> void:
 	stage_time += step
 	_captions(step)
 	_beacons()
+	_colleagues_tick()
 	if pov == "dante": _dante_tick(step)
 	else: _vicente_tick(step)
 	_follow_rain()
@@ -710,7 +759,7 @@ func _dante_begin() -> void:
 	dante.rotation.y = _dante_heading
 	_police_audio.play()
 	_police_audio.volume_db = -26.0
-	say("dante", "radio_open")
+	say("dante", "radio_open", func(): say("dante", "colleagues"))
 
 func _nape_camera(step: float, ahead := 6.0) -> void:
 	# Câmera na nuca de Dante: perto, um pouco acima, olhando para onde ele anda.
@@ -742,6 +791,7 @@ func _dante_tick(step: float) -> void:
 					_play("res://audio/vehicle_fx/air_brake.wav", -6.0)
 					_hide_prompt()
 					_set_stage("dante_walk")
+					if not speaking(): say("dante", "stopped")
 					_objective_text("walk")
 			_engine(camera.global_position.distance_to(truck.global_position))
 		"dante_walk":
@@ -966,8 +1016,9 @@ func _vicente_tick(step: float) -> void:
 			_engine(3.0)
 			# O rosto de Dante pela porta aberta, de cima, do banco do motorista.
 			var face := _head(dante)
-			camera.fov = move_toward(camera.fov, 30.0, step * 14.0)
-			camera.global_position = _cab_lean()
+			camera.fov = move_toward(camera.fov, 42.0, step * 14.0)
+			# Vicente desce o rosto até o vão: de cima, a aba do quepe tapava o rosto de Dante.
+			camera.global_position = _cab_lean() + Vector3.DOWN * .5
 			camera.look_at(face, Vector3.UP)
 			if stage_time > 4.2:
 				_cut_to_black()

@@ -55,7 +55,7 @@ func run() -> void:
 	# Falas: só legenda, cada uma com quem fala e o português; inglês existe e fica vazio.
 	var data: Dictionary = BLITZ.lines()
 	check(data.get("version") == 1.0, "JSON das falas do prólogo carrega")
-	var groups := {"dante":["radio_open", "door", "order"], "vicente":["radio_open", "radio_warning", "lights", "stop"]}
+	var groups := {"dante":["radio_open", "colleagues", "stopped", "door", "order"], "vicente":["radio_open", "radio_warning", "lights", "stop"]}
 	for pov in groups:
 		for key in groups[pov]:
 			var source: Array = data.get(pov, {}).get(key, [])

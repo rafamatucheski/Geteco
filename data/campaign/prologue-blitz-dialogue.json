@@ -21,6 +21,13 @@
       {"id": "prado_procedimento", "speaker": "Prado", "radio": true, "pt": "Procedimento, Ferraz.", "en": ""},
       {"id": "dante_copiado", "speaker": "Dante", "pt": "Copiado.", "en": ""}
     ],
+    "colleagues": [
+      {"id": "bastos_terceiro", "speaker": "Bastos", "pt": "Ferraz, o terceiro é teu.", "en": ""},
+      {"id": "dante_sei", "speaker": "Dante", "pt": "Eu sei contar, Bastos.", "en": ""}
+    ],
+    "stopped": [
+      {"id": "lima_motor", "speaker": "Lima", "pt": "Deixou o motor ligado. Vai com calma.", "en": ""}
+    ],
     "door": [
       {"id": "vicente_dante", "speaker": "Vicente", "pt": "Dante?", "en": ""}
     ],

@@ -55,6 +55,9 @@ func run() -> void:
 	blitz.pace = 4.0
 	await process_frame
 	check(paused and root.disable_3d, "a blitz pausa o mundo e desliga o 3D do viewport principal")
+	await wait_until(func(): return blitz.stage.begins_with("dante_"), 20.0)
+	check(blitz.colleagues.size() == 2 and blitz.colleagues.all(func(officer): return officer.get_script() == preload("res://gameplay/PoliceModel.gd") and is_instance_valid(officer.get("body"))), "dois colegas fardados (PoliceModel) na blitz")
+	check(blitz.dante.coat_color == blitz.UNIFORM and blitz.dante.wardrobe.get("hat") == 4, "Dante jovem com a farda e o quepe da patrulha")
 	var reached_cuff: bool = await wait_until(func(): return blitz.stage == "dante_cuff", 60.0)
 	check(reached_cuff, "o prólogo chega à algema (stage=%s)" % str(blitz.stage))
 	check(blitz.signaled and blitz.truck_speed == 0.0, "o caminhão parou depois da lanterna")
