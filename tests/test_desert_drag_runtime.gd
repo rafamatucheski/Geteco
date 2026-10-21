@@ -109,9 +109,11 @@ func run() -> void:
 	var previous_power: Variant = powertrain(car)
 	check(race.perform("start"),"nearby night action builds two-car grid")
 	if not race.active: finish(); return
-	for frame in 900:
-		if race.phase!="preparing": break
-		if frame==0: check(is_zero_approx(race.elapsed) and is_equal_approx(race.countdown,3.0),"cold scenery preparation never advances the race clock or countdown")
+	# The panorama covers 42 cells. Allow up to 60 seconds for readiness;
+	# the old limit of 900 physics ticks only allowed 15 seconds.
+	var preparation_deadline := Time.get_ticks_msec()+60000
+	check(is_zero_approx(race.elapsed) and is_equal_approx(race.countdown,3.0),"cold scenery preparation never advances the race clock or countdown")
+	while race.phase=="preparing" and Time.get_ticks_msec()<preparation_deadline:
 		await physics_frame
 	check(race.phase=="staging" and world.production.regions.desert.drag_view_ready(),"full visible course is ready before countdown")
 	if race.phase!="staging": finish(); return

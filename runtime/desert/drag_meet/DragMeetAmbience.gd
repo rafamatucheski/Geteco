@@ -16,9 +16,9 @@ func _ready() -> void:
 	_source("vicente_crowd","crowd",LAYOUT.drag_vicente_point()+Vector3.UP,"res://audio/ambience_el/crowd_1.wav",-19.0,62.0)
 	for team in ROSTER.LEADERS:
 		_source(team+"_crowd","crowd",ROSTER.LEADERS[team]+Vector3.UP,"res://audio/ambience_el/crowd_%d.wav"%(sources.size()%3),-19.0,60.0)
-	_source("start_crowd","crowd",Vector3(-899,1,-1334),"res://audio/ambience_el/crowd_2.wav",-19.0,60.0)
-	for row in [["vicente",Vector3(-945,.7,-1259.5),"muscle"],["livia",Vector3(-964,.7,-1296.8),"street"],
-		["raul",Vector3(-1008,.7,-1298),"muscle"],["jessica",Vector3(-908.5,.7,-1260),"street"],["nadir",Vector3(-960.5,.7,-1241),"muscle"]]:
+	_source("start_crowd","crowd",Vector3(-759,1,-814),"res://audio/ambience_el/crowd_2.wav",-19.0,60.0)
+	for row in [["vicente",Vector3(-805,0.7,-739.5),"muscle"],["livia",Vector3(-824,0.7,-776.8),"street"],
+		["raul",Vector3(-868,0.7,-778),"muscle"],["jessica",Vector3(-768.5,0.7,-740),"street"],["nadir",Vector3(-820.5,0.7,-721),"muscle"]]:
 		_source(str(row[0])+"_engine","engine",row[1],"res://audio/acoustic/engine_%s_1.wav"%row[2],-23.0,48.0)
 	_source("workshop","work",LAYOUT.drag_workshop_point()+Vector3(0,1,0),"res://audio/living_city/workshop_0.ogg",-24.0,38.0)
 	for index in LOOP_BUDGET: _voice("MeetLoop%d"%index)
@@ -111,7 +111,7 @@ func _play_detail(listener: Vector3, suppressed: bool, elapsed: float) -> void:
 		return
 	if beat==_last_detail: return
 	_last_detail=beat
-	var points := [Vector3(-1008,.8,-1298),Vector3(-964,.8,-1296.8),Vector3(-908.5,.8,-1260),Vector3(-960.5,.8,-1241)]
+	var points := [Vector3(-868,0.8,-778),Vector3(-824,0.8,-776.8),Vector3(-768.5,0.8,-740),Vector3(-820.5,0.8,-721)]
 	var point: Vector3 = points[beat%points.size()]
 	if listener.distance_to(point)>32.0: return
 	_detail.stream = _stream("res://audio/regional/scrap_%d.wav"%(beat%6),false)

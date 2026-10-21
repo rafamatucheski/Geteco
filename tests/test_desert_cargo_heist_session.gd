@@ -25,7 +25,8 @@ func run() -> void:
 	if not check("--no-save" in OS.get_cmdline_user_args() and OS.get_environment("HARBOR_NO_CSHARP").is_empty(),"Exige save isolado e backend .NET"):
 		finish(2); return
 	output = FIXTURE.output_dir("cargo-session")
-	var start := Vector3(-710,.08,-1525.5)
+	var cargo_point: Vector3 = STATE.START+Vector3.RIGHT*370.0
+	var start := cargo_point+Vector3(0,0,12)
 	var snapshot := FIXTURE.full_snapshot(start,true)
 	# A chamada pós-campanha pertence a outro fluxo e bloquearia controles neste cenário.
 	snapshot.campaign.aftermath = {"call_complete":true}
@@ -33,7 +34,7 @@ func run() -> void:
 	snapshot.world.pedestrian = {"region":"desert","position":[start.x,start.y,start.z]}
 	snapshot.world.time = 1.0/24.0
 	var cargo := STATE.initial(0,0)
-	cargo.position = [-710,.08,STATE.START.z]
+	cargo.position = [cargo_point.x,cargo_point.y,cargo_point.z]
 	cargo.distance = 370.0
 	snapshot.world[STATE.KEY] = cargo
 	var path := FIXTURE.write_fixture(output,"checkpoint.json",snapshot)

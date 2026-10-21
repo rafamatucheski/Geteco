@@ -1,14 +1,15 @@
 extends SceneTree
 ## Casinhas, foras-da-lei e cavernas do DesertWilds na sessão real (Main + save isolado).
 ## Uso (com tela): "$GODOT" --path . --script res://tests/test_desert_wilds.gd -- --no-save --no-traffic
-## Capturas em evidence/desert-wilds-20261018/ (fora do Git).
+## Capturas e checkpoint em uma pasta exclusiva por execução (fora do Git).
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const WILDS := preload("res://runtime/desert/wilds/DesertWilds.gd")
 const CAVE := preload("res://runtime/desert/wilds/CaveBuild.gd")
 const LETTERS := preload("res://data/catalogs/VicenteLetters.gd")
 const DEFINITIONS := preload("res://activities/ActivityDefinitions.gd")
 const CONTRACT := preload("res://runtime/desert/DesertSaveContract.gd")
-const FOLDER := "res://evidence/desert-wilds-20261018"
+const DESERT_LAYOUT := preload("res://world/desert/DesertLayout.gd")
+var FOLDER := ""
 var world: Node3D
 var failures: Array[String] = []
 var checks := 0
@@ -26,10 +27,11 @@ func check(value: bool, label: String) -> bool:
 func run() -> void:
 	if not check("--no-save" in OS.get_cmdline_user_args(), "--no-save obrigatório"): finish(2); return
 	root.size = Vector2i(1280, 720)
-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(FOLDER))
+	FOLDER = FIXTURE.output_dir("desert-wilds-compact")
+	if not check(not FOLDER.is_empty(), "pasta exclusiva de evidências criada"): finish(2); return
 	var first: Dictionary = WILDS.SITES[0]
-	var arrival := WILDS.ground(first.center) + Vector3(0, .1, 60)
-	var output := FIXTURE.output_dir("desert-wilds")
+	var arrival := approach(WILDS.ground(first.center), 60.0)
+	var output := FOLDER
 	var data := FIXTURE.full_snapshot(arrival, true)
 	data.region_id = "desert"
 	data.world.pedestrian = {"region": "desert", "position": [arrival.x, arrival.y, arrival.z]}
@@ -59,7 +61,7 @@ func run() -> void:
 	world.gameplay.health = 100000.0
 	for site in WILDS.SITES:
 		var center: Vector3 = WILDS.ground(site.center)
-		var stand := center + Vector3(0, .1, 40)
+		var stand := approach(center, 40.0)
 		world.player.teleport(stand)
 		world.production.region.set_focus(stand, true)
 		deadline = Time.get_ticks_msec() + 25000
@@ -115,7 +117,7 @@ func run() -> void:
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png(ProjectSettings.globalize_path("%s/%s.png" % [FOLDER, site.id]))
 	# Longe de tudo, nada fica montado.
-	var far := WILDS.ground(Vector2(-700, -400)) + Vector3(0, .1, 0)
+	var far := WILDS.ground(Vector2(DESERT_LAYOUT.BRIDGE_END.x, DESERT_LAYOUT.BRIDGE_END.z-12)) + Vector3(0, .1, 0)
 	world.player.teleport(far)
 	for i in 30: await physics_frame
 	var near_any := false
@@ -123,6 +125,12 @@ func run() -> void:
 		if (site.center as Vector2).distance_to(Vector2(far.x, far.z)) < WILDS.RELEASE_DISTANCE: near_any = true
 	if not near_any: check(wilds.sites.is_empty(), "lugares soltam ao se afastar")
 	finish(0 if failures.is_empty() else 1)
+
+func approach(center: Vector3, distance: float) -> Vector3:
+	# The northern homestead is now close to the perimeter: establish the same
+	# approach distance on its southern side instead of spawning beyond the map.
+	var offset := distance if center.z+distance < DESERT_LAYOUT.BOUNDS.end.y-3 else -distance
+	return center+Vector3(0,.1,offset)
 
 ## Caixa de munição: oferecida perto da pilha de caixotes, repõe as armas de fogo do jogador e
 ## fica vazia até o próximo dia de jogo.
@@ -161,7 +169,7 @@ func brother(wilds: Node3D, site: Dictionary, record: Dictionary) -> void:
 	check(LETTERS.complete(economy.snapshot().collectibles), "dez cartas achadas")
 	# A volta pelas cartas soltou a caverna: espera montar de novo.
 	var center := WILDS.ground(site.center)
-	world.player.teleport(center + Vector3(0, .1, 40))
+	world.player.teleport(approach(center, 40.0))
 	world.production.region.set_focus(center, true)
 	var deadline := Time.get_ticks_msec() + 25000
 	while Time.get_ticks_msec() < deadline and not wilds.sites.has(site.id): await physics_frame
@@ -209,5 +217,5 @@ func close_dialogue() -> void:
 	for i in 2: await process_frame
 
 func finish(code: int) -> void:
-	print("DESERT_WILDS checks=%d failures=%s" % [checks, failures])
+	print("DESERT_WILDS checks=%d failures=%s output=%s" % [checks, failures, FOLDER])
 	quit(code if failures.is_empty() or code != 0 else 1)

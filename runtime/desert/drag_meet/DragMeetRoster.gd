@@ -1,19 +1,19 @@
 extends RefCounted
 ## Authored social islands shared by contact, crowd and sound placement.
 const LEADERS := {
-	"livia":Vector3(-968,0,-1291),"raul":Vector3(-1003,0,-1288),
-	"jessica":Vector3(-915,0,-1260),"nadir":Vector3(-967,0,-1244),
+	"livia":Vector3(-828,0,-771),"raul":Vector3(-863,0,-768),
+	"jessica":Vector3(-775,0,-740),"nadir":Vector3(-827,0,-724),
 }
 const COLORS := {"livia":Color("be6038"),"raul":Color("65764c"),"jessica":Color("d8d0c6"),"nadir":Color("374f66")}
 const CREW_OFFSETS := [Vector3(-3,0,0),Vector3(3,0,0),Vector3(-5,0,4.5),Vector3(-3.5,0,6),Vector3(3.5,0,6),Vector3(5,0,4.5)]
 const TEAM_POINTS := {
-	"livia":[Vector3(-971,0,-1290),Vector3(-970,0,-1287),Vector3(-966,0,-1287),Vector3(-964,0,-1290)],
-	"raul":[Vector3(-1006,0,-1290),Vector3(-1005,0,-1293),Vector3(-1001,0,-1293),Vector3(-1000,0,-1290)],
-	"jessica":[Vector3(-918,0,-1263),Vector3(-921,0,-1262),Vector3(-921,0,-1258),Vector3(-918,0,-1257)],
-	"nadir":[Vector3(-970,0,-1243),Vector3(-969,0,-1240),Vector3(-965,0,-1240),Vector3(-963,0,-1243)],
+	"livia":[Vector3(-831,0,-770),Vector3(-830,0,-767),Vector3(-826,0,-767),Vector3(-824,0,-770)],
+	"raul":[Vector3(-866,0,-770),Vector3(-865,0,-773),Vector3(-861,0,-773),Vector3(-860,0,-770)],
+	"jessica":[Vector3(-778,0,-743),Vector3(-781,0,-742),Vector3(-781,0,-738),Vector3(-778,0,-737)],
+	"nadir":[Vector3(-830,0,-723),Vector3(-829,0,-720),Vector3(-825,0,-720),Vector3(-823,0,-723)],
 }
-const WALK_ENDS := {"livia":Vector3(-963,0,-1287),"raul":Vector3(-998,0,-1292),"jessica":Vector3(-918,0,-1254),"nadir":Vector3(-964,0,-1236)}
-const VISITOR_POINTS := [Vector3(-1020,0,-1297),Vector3(-990,0,-1304),Vector3(-949,0,-1304),Vector3(-905,0,-1288),Vector3(-899,0,-1335.4),Vector3(-985,0,-1227)]
+const WALK_ENDS := {"livia":Vector3(-823,0,-767),"raul":Vector3(-858,0,-772),"jessica":Vector3(-778,0,-734),"nadir":Vector3(-824,0,-716)}
+const VISITOR_POINTS := [Vector3(-880,0,-777),Vector3(-850,0,-784),Vector3(-809,0,-784),Vector3(-765,0,-768),Vector3(-759,0,-815.4),Vector3(-845,0,-707)]
 
 static func guests() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []

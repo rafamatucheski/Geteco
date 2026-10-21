@@ -1,6 +1,7 @@
 extends SceneTree
 ## Actual rendered Main/.NET, finite scenarios; no isolated showroom FPS claims.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
+const COMPACT := preload("res://world/desert/DesertCompactLayout.gd")
 var world
 var output := ""
 var samples: Array[float] = []
@@ -27,11 +28,13 @@ func run() -> void:
 		quit(2)
 		return
 	seed(6102026)
+	var drive_only := "--drive-only" in OS.get_cmdline_user_args()
 	root.size=Vector2i(1280,720)
 	output=FIXTURE.output_dir("desert-main-measure")
-	var snapshot:=FIXTURE.full_snapshot(Vector3(300,.08,-742),true)
+	var arrival := Vector3(300,.08,-742) + COMPACT.TRUCK_STOP
+	var snapshot:=FIXTURE.full_snapshot(arrival,true)
 	snapshot.region_id="desert"
-	snapshot.world.pedestrian={"region":"desert","position":[300,.08,-742]}
+	snapshot.world.pedestrian={"region":"desert","position":[arrival.x,arrival.y,arrival.z]}
 	var path:=FIXTURE.write_fixture(output,"checkpoint.json",snapshot)
 	if path.is_empty(): quit(1); return
 	fingerprint=source_fingerprint()
@@ -52,8 +55,8 @@ func run() -> void:
 	world.session.weather.weather_state=0
 	world.session.weather.weather_timer=3600
 	for setup in [
-		{"id":"truckstop-day","point":Vector3(300,.08,-742),"hour":.45},
-		{"id":"town-night","point":Vector3(-185,.08,-890),"hour":.9},
+		{"id":"truckstop-day","point":Vector3(300,.08,-742) + COMPACT.TRUCK_STOP,"hour":.45},
+		{"id":"town-night","point":Vector3(-185,.08,-890) + COMPACT.TOWN,"hour":.9},
 	]:
 		world.production.region.set_focus(setup.point)
 		world.production.region.prepare_collision_at(setup.point)
@@ -62,7 +65,7 @@ func run() -> void:
 		world.session.weather.time_of_day=setup.hour
 		world.session.weather._update()
 		await create_timer(10).timeout
-		await measure(setup.id)
+		if not drive_only: await measure(setup.id)
 	for id in ["desert_bank","desert_digo"]:
 		var definition:=preload("res://world/places/PlaceCatalog.gd").get_definition(id)
 		world.production.region.set_focus(definition.entry_position)
@@ -71,7 +74,7 @@ func run() -> void:
 		world.player.teleport(definition.entry_position+Vector3.UP*.08)
 		if not await world.session.enter_place(id,false): push_error("Interior entry failed: "+id); quit(1); return
 		await create_timer(10).timeout
-		await measure(id)
+		if not drive_only: await measure(id)
 		if not await world.session.leave_place(): push_error("Interior exit failed: "+id); quit(1); return
 	# The third scenario actually drives the kilometre highway; fixture placement
 	# only establishes its start. Normal vehicle handling and streaming remain live.
@@ -87,6 +90,15 @@ func run() -> void:
 	var boarding_deadline:=Time.get_ticks_msec()+10000
 	while world.driving.is_body_transition_active() and Time.get_ticks_msec()<boarding_deadline: await physics_frame
 	if not world.driving.occupied or world.driving.car!=car or not car.controlled or car.input_locked: push_error("Highway boarding incomplete"); quit(1); return
+	# Normal traversal and ambush combat are separate workloads. Keep ordinary
+	# traffic live while parking only the scripted road-event admission timer.
+	world.session.desert.frontier.roadside.events._next_at=INF
+	# Pay through the real toll interaction before sampling. An ambient car may
+	# otherwise leave its arm open by chance, making this traversal nondeterministic.
+	world.session.state.economy.grant_reward("desert_measure_toll_fixture",10)
+	var toll = world.session.desert.entrance_toll
+	if not toll.perform() or toll.paid_car!=car: push_error("Highway fixture could not pay the real toll"); quit(1); return
+	await create_timer(1.0).timeout
 	world.session.weather.time_of_day=.45
 	world.session.weather._update()
 	Input.action_press("accelerate",.32)
@@ -99,6 +111,8 @@ func run() -> void:
 	var valid: bool=car.global_position.y>-.3 and reports[-1].distance>150 and fingerprint==source_fingerprint(fingerprint)
 	var result:={"engine":Engine.get_version_info().string,"gpu":RenderingServer.get_video_adapter_name(),"cpu":OS.get_processor_name(),"renderer":RenderingServer.get_current_rendering_method(),"resolution":str(root.size),"vsync":DisplayServer.window_get_vsync_mode(),"max_fps":Engine.max_fps,"msaa":root.msaa_3d,"args":OS.get_cmdline_args(),"user_args":OS.get_cmdline_user_args(),"isolated_save":path,"source_stable":fingerprint==source_fingerprint(fingerprint),"scenarios":reports,"valid":valid,"notes":"Main .NET with real population and ordinary gameplay camera. Four 10s warmups and 30s steady captures, plus a physical 30s highway traversal including first visits. GPU/CPU attribution requires additional instrumentation. Compare bridge before/after separately; these are new-region absolute measurements, not a before/after certification."}
 	result["source_sha256_start"]=fingerprint
+	result["drive_only"]=drive_only
+	result["normal_traversal_setup"]="Production toll paid; scripted ambush admission parked; ordinary traffic remains live. Drive-only follows the same four warmup visits without their stationary capture windows."
 	result["source_sha256_end"]=source_fingerprint(fingerprint)
 	FileAccess.open(output.path_join("report.json"),FileAccess.WRITE).store_string(JSON.stringify(result,"\t"))
 	print("DESERT_MEASURE ",output," valid=",valid)

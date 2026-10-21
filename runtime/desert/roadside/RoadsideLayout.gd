@@ -1,5 +1,6 @@
 extends RefCounted
-## Beira de estrada do deserto (fase 1 do passe de conteúdo, 19/10/2026). Medição de 18/10: cerca
+## Beira de estrada do deserto. Lugares realocados no mapa compacto de 21/10/2026.
+## Histórico do passe de conteúdo de 19/10: medição de 18/10 indicava cerca
 ## de 60% de cada estrada não tinha nada a 120 m (o que a câmera de cima mostra), com trechos
 ## vazios de 340 a 684 m (Route 66 ao sul do Miragem, rodovia oeste, Rua Principal dos dois
 ## lados da cidade, as pontas da rodovia do sal). Cada lugar fica no meio de um trecho, ~22 m
@@ -11,44 +12,40 @@ const BUILD_DISTANCE := 150.0
 const PARK_DISTANCE := 220.0
 ## "yaw" vira a frente local (+z) para a estrada (ver DesertWilds._build).
 const SITES := [
-	{"id": "sol_poente", "kind": "station", "center": Vector2(366, -1200), "yaw": -PI * .5, "name": "Posto Sol Poente", "marker": "fuel"},
+	{"id": "sol_poente", "kind": "station", "center": Vector2(366, -680), "yaw": -PI * .5, "name": "Posto Sol Poente", "marker": "fuel"},
 	# Entre dois postes da linha de luz da Rua Principal (x = -812 e -768,5; DesertUtilityLines).
-	{"id": "radio_tower", "kind": "tower", "center": Vector2(-790, -858), "yaw": PI, "name": "Torre de rádio", "marker": "place"},
+	{"id": "radio_tower", "kind": "tower", "center": Vector2(-790, -518), "yaw": PI, "name": "Torre de rádio", "marker": "place"},
 	# Lado leste da rodovia oeste: o lado oeste tem a trilha da mina velha (DesertRelics.approach_paths).
-	{"id": "scrapyard", "kind": "scrapyard", "center": Vector2(-1176, -1090), "yaw": -PI * .5, "name": "Ferro-velho do Nonato", "marker": "workshop"},
+	{"id": "scrapyard", "kind": "scrapyard", "center": Vector2(-1036, -650), "yaw": -PI * .5, "name": "Ferro-velho do Nonato", "marker": "workshop"},
 	# Meio da pista de arrancada, longe do encontro (que já tem baterias de fundo, DragOpenMeet).
-	{"id": "food_truck", "kind": "food_truck", "center": Vector2(-480, -1290), "yaw": PI, "name": "Lanche da Reta", "marker": "food"},
-	# Fase 2 (20/10): o mapa de ocupação de 20/10 (evidence/deserto-ocupacao-20261020.svg) mostrou a
-	# Estrada do Sal com ~800 m sem nada dos dois lados. "radius" é a área que o enfeite respeita
-	# (padrão SITE_RADIUS). Posições conferidas com DesertRegion._decoration_clear (test_desert_roadside_session):
-	# a salina fica a leste da mina (MiningLayout.BOUNDS termina em x -26), o motel a oeste do acesso ao
-	# cânion (x -860 ± 40, DesertTerrainRelief.passage_clear) e a balança longe da Galeria da Rodovia
-	# (-640, -1527) e da entrega do assalto (-650, -1510).
-	{"id": "salt_works", "kind": "salt_works", "center": Vector2(100, -1600), "yaw": 0.0, "name": "Salinas Estrada do Sal", "marker": "place", "radius": 62.0},
-	{"id": "weigh_station", "kind": "weigh_station", "center": Vector2(-750, -1512), "yaw": PI, "name": "Balança rodoviária", "marker": "place", "radius": 22.0},
-	{"id": "motel", "kind": "motel", "center": Vector2(-1100, -1567), "yaw": 0.0, "name": "Motel Oásis", "marker": "place", "radius": 26.0},
+	{"id": "food_truck", "kind": "food_truck", "center": Vector2(-340, -770), "yaw": PI, "name": "Lanche da Reta", "marker": "food"},
+	# Estrada do Sal compacta: os lugares acompanham a nova via; manter livres
+	# as entradas da mineradora, do cânion e da galeria subterrânea.
+	{"id": "salt_works", "kind": "salt_works", "center": Vector2(240, -960), "yaw": 0.0, "name": "Salinas Estrada do Sal", "marker": "place", "radius": 62.0},
+	{"id": "weigh_station", "kind": "weigh_station", "center": Vector2(-610, -872), "yaw": PI, "name": "Balança rodoviária", "marker": "place", "radius": 22.0},
+	{"id": "motel", "kind": "motel", "center": Vector2(-960, -927), "yaw": 0.0, "name": "Motel Oásis", "marker": "place", "radius": 26.0},
 	# Fase 3 (20/10): capela na beira da Estrada do Sal e arquibancada no lado sul da reta, de frente
 	# para a pista (fora da reserva de 55 m da arrancada).
-	{"id": "chapel", "kind": "chapel", "center": Vector2(-350, -1516), "yaw": PI, "name": "Capela de Nossa Senhora da Estrada", "marker": "place", "radius": 14.0},
-	{"id": "grandstand", "kind": "grandstand", "center": Vector2(-300, -1282), "yaw": PI, "name": "Arquibancada da reta", "marker": "place", "radius": 24.0},
+	{"id": "chapel", "kind": "chapel", "center": Vector2(-210, -876), "yaw": PI, "name": "Capela de Nossa Senhora da Estrada", "marker": "place", "radius": 14.0},
+	{"id": "grandstand", "kind": "grandstand", "center": Vector2(-160, -762), "yaw": PI, "name": "Arquibancada da reta", "marker": "place", "radius": 24.0},
 ]
 ## Acabamento dos lugares antigos (20/10): cidade, casas, vila e pátio da oficina. Mesmo coordenador
 ## (monta perto, estaciona longe), sem marcador no mapa; âncora com giro 0 (ponto local = mundo − âncora).
 ## "build"/"park": a rua tem 320 m, então monta antes de o jogador chegar ao meio dela.
 const DRESSINGS := [
 	# "clear": retângulos locais (x, z) onde o enfeite do deserto (pedra, moita) não nasce: piso novo.
-	{"id": "town_street", "kind": "town_street", "center": Vector2(-200, -880), "yaw": 0.0, "build": 230.0, "park": 300.0,
+	{"id": "town_street", "kind": "town_street", "center": Vector2(-200, -540), "yaw": 0.0, "build": 230.0, "park": 300.0,
 		"clear": [Rect2(-86, 7.4, 102, 10.4), Rect2(-160, 4.4, 320, 3.4), Rect2(-160, -7.6, 320, 3.4)]},
-	{"id": "homes_yards", "kind": "homes_yards", "center": Vector2(-242, -1048), "yaw": 0.0, "build": 170.0, "park": 240.0},
-	{"id": "village_square", "kind": "village_square", "center": Vector2(-528, -822), "yaw": 0.0,
+	{"id": "homes_yards", "kind": "homes_yards", "center": Vector2(-242, -708), "yaw": 0.0, "build": 170.0, "park": 240.0},
+	{"id": "village_square", "kind": "village_square", "center": Vector2(-528, -482), "yaw": 0.0,
 		"clear": [Rect2(-8, -15, 16, 16), Rect2(-2, -19, 4, 3), Rect2(2.5, -21, 4, 6)]},
 	# Fachadas e telhados dos prédios antigos (RoadsideFacades): âncora e giro do próprio prédio.
-	{"id": "facade_bank", "kind": "facade_bank", "center": Vector2(-210, -920), "yaw": 0.0},
-	{"id": "facade_diner", "kind": "facade_diner", "center": Vector2(-255, -856), "yaw": PI},
-	{"id": "facade_market", "kind": "facade_market", "center": Vector2(-180, -856), "yaw": PI},
-	{"id": "facade_motel", "kind": "facade_motel", "center": Vector2(-330, -923), "yaw": 0.0},
-	{"id": "facade_digo", "kind": "facade_digo", "center": Vector2(-140, -955), "yaw": 0.0},
-	{"id": "workshop_yard", "kind": "workshop_yard", "center": Vector2(-140, -955), "yaw": 0.0,
+	{"id": "facade_bank", "kind": "facade_bank", "center": Vector2(-210, -580), "yaw": 0.0},
+	{"id": "facade_diner", "kind": "facade_diner", "center": Vector2(-255, -516), "yaw": PI},
+	{"id": "facade_market", "kind": "facade_market", "center": Vector2(-180, -516), "yaw": PI},
+	{"id": "facade_motel", "kind": "facade_motel", "center": Vector2(-330, -583), "yaw": 0.0},
+	{"id": "facade_digo", "kind": "facade_digo", "center": Vector2(-140, -615), "yaw": 0.0},
+	{"id": "workshop_yard", "kind": "workshop_yard", "center": Vector2(-140, -615), "yaw": 0.0,
 		"clear": [Rect2(-21.5, -8, 9, 18), Rect2(12.5, -8, 9, 18)]},
 ]
 
@@ -57,16 +54,13 @@ static func all_sites() -> Array:
 
 ## Trechos (início, fim) no eixo da pista que seguem vazios depois dos lugares acima.
 const EVENT_STRETCHES := [
-	{"id": "route66_north", "a": Vector2(342.5, -900), "b": Vector2(342.5, -1080)},
-	{"id": "route66_south", "a": Vector2(342.5, -1320), "b": Vector2(342.5, -1500)},
-	{"id": "main_east", "a": Vector2(300, -880), "b": Vector2(-60, -880)},
-	# Entre o Motel Oásis (x -1100) e o acesso ao cânion: evento não nasce na frente do lugar.
-	{"id": "salt_west", "a": Vector2(-1060, -1540), "b": Vector2(-920, -1540)},
-	# Termina antes da capela (x -350).
-	{"id": "salt_middle", "a": Vector2(-520, -1540), "b": Vector2(-400, -1540)},
-	# A salina (x 40..160 na beira) divide o trecho leste em dois.
-	{"id": "salt_east", "a": Vector2(-70, -1540), "b": Vector2(30, -1540)},
-	{"id": "salt_far_east", "a": Vector2(170, -1540), "b": Vector2(290, -1540)},
+	{"id": "route66_north", "a": Vector2(342.5, -580), "b": Vector2(342.5, -635)},
+	{"id": "route66_south", "a": Vector2(342.5, -720), "b": Vector2(342.5, -840)},
+	{"id": "main_east", "a": Vector2(260, -540), "b": Vector2(-60, -540)},
+	{"id": "salt_west", "a": Vector2(-920, -900), "b": Vector2(-800, -900)},
+	{"id": "salt_middle", "a": Vector2(-540, -900), "b": Vector2(-400, -900)},
+	{"id": "salt_east", "a": Vector2(0, -900), "b": Vector2(80, -900)},
+	{"id": "salt_far_east", "a": Vector2(90, -900), "b": Vector2(150, -900)},
 ]
 ## Pontos de interação, em coordenadas locais do lugar.
 const SOL_SERVICE := Vector3(8.5, 0, 3.5)
@@ -102,13 +96,13 @@ const PARKED_SPAWN_MIN := 60.0
 const PARKED_SPAWN_MAX := 140.0
 ## Entregas do orelhão do Sol Poente: destino, tempo e pagamento (valores em EconomyBalance).
 ## Frete de sal do Seu Bento: das Salinas ao mercado Alvorada, na cidade.
-const SALT_ROUTE := {"id": "sal", "name": "mercado Alvorada", "point": Vector3(-180, 0, -870), "seconds": 180.0}
+const SALT_ROUTE := {"id": "sal", "name": "mercado Alvorada", "point": Vector3(-180, 0, -530), "seconds": 180.0}
 ## Plataforma da balança (local da Balança rodoviária) e o raio que conta como "em cima".
 const WEIGH_PLATFORM := Vector3(0, 0, 12)
 const WEIGH_RADIUS := 9.0
 const COURIER_ROUTES := [
-	{"id": "miragem", "name": "Miragem", "point": Vector3(285, 0, -750), "seconds": 140.0},
-	{"id": "arrancada", "name": "encontro da arrancada", "point": Vector3(-915, 0, -1304), "seconds": 230.0},
+	{"id": "miragem", "name": "Miragem", "point": Vector3(285, 0, -490), "seconds": 140.0},
+	{"id": "arrancada", "name": "encontro da arrancada", "point": Vector3(-775, 0, -784), "seconds": 230.0},
 ]
 
 static var _enabled := -1
@@ -146,7 +140,7 @@ static func _dressing_clear(dressing: Dictionary) -> Array:
 	if _homes_clear.is_empty():
 		var anchor: Vector2 = dressing.center
 		for i in 10:
-			var home := Vector2(-300.0 + float(i % 5) * 29.0, -1030.0 - float(floori(i / 5.0)) * 37.0) - anchor
+			var home := Vector2(-300.0 + float(i % 5) * 29.0, -690.0 - float(floori(i / 5.0)) * 37.0) - anchor
 			var half := (14.0 + float(i % 3) * 2.0) * .5 + .6
 			_homes_clear.append(Rect2(home.x - half, home.y - 5.5 - 7.4, half * 2.0, 7.4))
 	return _homes_clear
@@ -156,7 +150,7 @@ static func _dressing_clear(dressing: Dictionary) -> Array:
 ## O jogador pode estar antes do trecho (na mesma reta): com a exigência antiga de já estar
 ## dentro dele, os trechos de 180 m nunca tinham um ponto 240 m à frente, e a Route 66 inteira
 ## ficava sem evento (A/B em release de 19/10). Puro: o teste de contrato usa sem mundo.
-static func event_point(position: Vector2, heading: Vector2, ahead := 240.0, max_offset := 14.0) -> Dictionary:
+static func event_point(position: Vector2, heading: Vector2, ahead := 100.0, max_offset := 14.0) -> Dictionary:
 	if heading.length() < .01: return {}
 	for stretch in EVENT_STRETCHES:
 		var a: Vector2 = stretch.a

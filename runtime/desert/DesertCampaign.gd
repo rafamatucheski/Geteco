@@ -11,10 +11,10 @@ const LOCATIONS := {
 	"raul":ROSTER.LEADERS.raul+Vector3(0,.05,0),
 	"jessica":ROSTER.LEADERS.jessica+Vector3(0,.05,0),
 	"nadir":ROSTER.LEADERS.nadir+Vector3(0,.05,0),
-	"rauhz":Vector3(-947,.05,-1244),
-	"bia":Vector3(-151,.05,-943),
+	"rauhz":Vector3(-807,.05,-724),
+	"bia":Vector3(-151,.05,-603),
 }
-const MANIFEST := Vector3(266,.05,-758)
+const MANIFEST := Vector3(266,.05,-498)
 var session
 var actors: Dictionary = {}
 var retired: Dictionary = {}

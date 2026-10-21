@@ -4,7 +4,7 @@ extends SceneTree
 ## pelo interact() da sessão (FullSession → DesertRuntime → fronteira → beira de estrada); os
 ## dois eventos de estrada são forçados num ponto conhecido.
 ## Uso (com tela): "$GODOT" --path . --script res://tests/test_desert_roadside_session.gd -- --no-save --no-traffic
-## Capturas em evidence/desert-roadside-20261019/ (fora do Git).
+## Capturas e checkpoint em uma pasta exclusiva por execução (fora do Git).
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const LAYOUT := preload("res://runtime/desert/roadside/RoadsideLayout.gd")
 const STATE := preload("res://runtime/desert/roadside/RoadsideState.gd")
@@ -13,7 +13,8 @@ const BALANCE := preload("res://data/catalogs/EconomyBalance.gd")
 const GARAGE := preload("res://runtime/GarageRewards.gd")
 const HM := preload("res://world/desert/DesertTerrainMesh.gd")
 const AUTOPILOT := preload("res://runtime/BenchmarkAutopilot.gd")
-const FOLDER := "res://evidence/desert-roadside-20261019"
+const DESERT_LAYOUT := preload("res://world/desert/DesertLayout.gd")
+var FOLDER := ""
 ## Terreno ocupado por cada lugar em coordenadas locais (x, z), de RoadsideBuild.
 const FOOTPRINTS := {"station": Rect2(-12, -8, 24, 20), "tower": Rect2(-8, -7, 16, 14),
 	"scrapyard": Rect2(-15, -12, 30, 20), "food_truck": Rect2(-4, -2, 9, 8),
@@ -55,6 +56,11 @@ func stand(point: Vector3) -> void:
 func local_point(id: String, local: Vector3) -> Vector3:
 	return LAYOUT.at(LAYOUT.site(id), local)
 
+func event_stretch(id: String) -> Dictionary:
+	for stretch in LAYOUT.EVENT_STRETCHES:
+		if str(stretch.id) == id: return stretch
+	return {}
+
 func act(target: String, label: String) -> bool:
 	var action: Dictionary = session.nearest()
 	if not check(str(action.get("id", "")) == "desert_roadside" and str(action.get("target", "")) == target, "%s: ação oferecida (%s)" % [label, action.get("target", action.get("id", "nenhuma"))]): return false
@@ -63,11 +69,12 @@ func act(target: String, label: String) -> bool:
 func run() -> void:
 	if not check("--no-save" in OS.get_cmdline_user_args(), "--no-save obrigatório"): finish(2); return
 	root.size = Vector2i(1280, 720)
-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(FOLDER))
+	FOLDER = FIXTURE.output_dir("desert-roadside-compact")
+	if not check(not FOLDER.is_empty(), "pasta exclusiva de evidências criada"): finish(2); return
 	var start: Dictionary = LAYOUT.site("sol_poente")
 	var arrival := Vector3(start.center.x - 60, 0, start.center.y + 30)
 	arrival.y = HM.surface_height(Vector2(arrival.x, arrival.z)) + .1
-	var output := FIXTURE.output_dir("desert-roadside")
+	var output := FOLDER
 	var data := FIXTURE.full_snapshot(arrival, true)
 	data.region_id = "desert"
 	data.world.pedestrian = {"region": "desert", "position": [arrival.x, arrival.y, arrival.z]}
@@ -277,10 +284,27 @@ func grandstand() -> void:
 	await act("timekeeper", "cronometrista da arquibancada")
 
 func parking() -> void:
-	# Longe de todos os lugares: estacionam (escondidos, sem física) em vez de soltar.
-	await stand(Vector3(-200, 0, -1700))
+	# Keep identities of every admitted place, including nearby authored dressings.
+	var admitted: Dictionary = {}
+	var authored: Dictionary = {}
+	for definition in LAYOUT.all_sites(): authored[str(definition.id)] = true
+	for id in roadside.sites:
+		admitted[id] = roadside.sites[id].root.get_instance_id()
+	var all_places_present := true
+	for definition in LAYOUT.SITES:
+		all_places_present = all_places_present and admitted.has(str(definition.id))
+	check(all_places_present, "all authored places admitted before parking")
+	var far: Vector2 = DESERT_LAYOUT.BOUNDS.position+Vector2(24,24)
+	await stand(Vector3(far.x, 0, far.y))
 	check(await until(func(): return roadside.sites.values().all(func(record): return record.parked and not record.root.visible), 3.0), "lugares estacionam longe do jogador")
-	check(roadside.sites.size() == LAYOUT.SITES.size(), "nenhum lugar foi solto")
+	var retained := true
+	for id in admitted:
+		retained = retained and roadside.sites.has(id)
+		if not roadside.sites.has(id): continue
+		var site_root: Node3D = roadside.sites[id].root
+		retained = retained and is_instance_valid(site_root) and not site_root.is_queued_for_deletion() and site_root.get_instance_id() == admitted[id]
+	for id in roadside.sites: retained = retained and authored.has(id)
+	check(retained, "all admitted place IDs and instances retained, with legitimate dressings")
 	await stand(local_point("food_truck", Vector3(0, 0, 40)))
 	check(await until(func(): return not roadside.sites.food_truck.parked and roadside.sites.food_truck.root.visible, 10.0), "lugar volta ao chegar perto")
 
@@ -289,19 +313,21 @@ func breakdown_event() -> void:
 	var economy = session.state.economy
 	events._try_start()
 	check(events.event.is_empty(), "a pé não nasce evento")
-	await stand(Vector3(330, 0, -950))
-	if not check(events.force_start("breakdown", Vector2(342.5, -1000), Vector2(0, -1)), "van quebrada nasce no trecho da Route 66"): return
+	var stretch: Dictionary = event_stretch("route66_south")
+	var event_point: Vector2 = (stretch.a as Vector2).lerp(stretch.b,.5)
+	await stand(Vector3(event_point.x-12.5, 0, event_point.y+50))
+	if not check(events.force_start("breakdown", event_point, Vector2(0, -1)), "van quebrada nasce no trecho da Route 66"): return
 	check(await until(func(): return not events.event.is_empty() and events.event.pending.is_empty(), 10.0), "van, motorista e triângulo montam em quadros separados")
 	var van = events.event.vehicle
 	await frames(60)
-	check(is_instance_valid(van) and absf(van.global_position.x - 350.0) < .5 and absf(van.global_position.z - -1000.0) < .5 and absf(van.speed) < .5, "van parada no acostamento (%s)" % (van.global_position if is_instance_valid(van) else Vector3.INF))
+	check(is_instance_valid(van) and absf(van.global_position.x - (event_point.x+events.SHOULDER)) < .5 and absf(van.global_position.z - event_point.y) < .5 and absf(van.speed) < .5, "van parada no acostamento (%s)" % (van.global_position if is_instance_valid(van) else Vector3.INF))
 	check(is_instance_valid(van) and van.engine_disabled and van.get_meta("race_owned", false), "van parada e protegida da limpeza de 145 m")
 	var driver: Node3D = events.event.actors[0]
 	await stand(driver.global_position + Vector3(1.2, 0, 0))
 	var before: int = economy.balance
 	if await act("event_help", "ajudar o entregador"):
 		check(economy.balance == before + BALANCE.ROADSIDE_TRUCK_HELP and events.event.resolved and not van.engine_disabled, "ajuda paga R$ %d e a van pega" % BALANCE.ROADSIDE_TRUCK_HELP)
-	await stand(Vector3(342.5, 0, -1200))
+	await stand(DESERT_LAYOUT.BRIDGE_END+Vector3(0,0,-12))
 	check(await until(func(): return events.event.is_empty(), 3.0), "evento resolvido solta ao se afastar")
 	await frames(2)
 	check(not is_instance_valid(van) or van.is_queued_for_deletion(), "van some junto")
@@ -309,14 +335,16 @@ func breakdown_event() -> void:
 func roadblock_event() -> void:
 	var events: Node3D = roadside.events
 	var economy = session.state.economy
-	await stand(Vector3(40, 0, -1565))
-	if not check(events.force_start("roadblock", Vector2(100, -1540), Vector2(1, 0)), "bloqueio nasce na rodovia do sal"): return
+	var stretch: Dictionary = event_stretch("salt_east")
+	var event_point: Vector2 = (stretch.a as Vector2).lerp(stretch.b,.5)
+	await stand(Vector3(event_point.x-60, 0, event_point.y-25))
+	if not check(events.force_start("roadblock", event_point, Vector2(1, 0)), "bloqueio nasce na rodovia do sal"): return
 	check(await until(func(): return not events.event.is_empty() and events.event.pending.is_empty(), 10.0), "picape e três bandidos montam")
 	var outlaws: Array = events.event.actors
 	check(outlaws.size() == 3 and not events.event.engaged, "três bandidos calmos de longe")
 	var pickup = events.event.vehicle
 	await frames(60)
-	check(absf(pickup.global_position.z - (-1540.0 + events.LANE)) < .5 and absf(pickup.global_position.x - 100.0) < .5 and absf(pickup.speed) < .5, "picape parada atravessada na faixa (%s, %.1f m/s)" % [pickup.global_position, pickup.speed])
+	check(absf(pickup.global_position.z - (event_point.y+events.LANE)) < .5 and absf(pickup.global_position.x - event_point.x) < .5 and absf(pickup.speed) < .5, "picape parada atravessada na faixa (%s, %.1f m/s)" % [pickup.global_position, pickup.speed])
 	await stand(pickup.global_position - Vector3(16, 0, 0))
 	check(await until(func(): return events.event.engaged, 6.0), "bandidos atacam quando o jogador chega")
 	check(not session.desert.save_block_reason().is_empty(), "salvar bloqueado no tiroteio")
@@ -341,7 +369,10 @@ func roadblock_event() -> void:
 func natural_event() -> void:
 	var events: Node3D = roadside.events
 	events.release_all()
-	var start := Vector3(347, 0, -700)
+	var stretch: Dictionary = event_stretch("route66_north")
+	# Give the ordinary sedan acceleration room before the 55m event window;
+	# this is still on the level road after the bridge ramp ends at z=-445.
+	var start := Vector3(float(stretch.a.x)+4.5, 0, float(stretch.a.y)+120)
 	start.y = HM.surface_height(Vector2(start.x, start.z)) + .12
 	await stand(start + Vector3(9, 0, 0))
 	await frames(30)
@@ -357,7 +388,7 @@ func natural_event() -> void:
 	if not check(entered, "jogador ao volante na Route 66"): return
 	# Só o relógio de "pode nascer" vencido; o resto (velocidade, trecho, ponto à frente) é o do jogo.
 	events._next_at = events._desert_time
-	var autopilot = AUTOPILOT.new(world, car, [start, Vector3(347, start.y, -1150)], 14.0)
+	var autopilot = AUTOPILOT.new(world, car, [start, Vector3(start.x, start.y, float(stretch.b.y)-100)], 14.0)
 	autopilot.begin()
 	var started := false
 	var fastest := 0.0
@@ -371,9 +402,11 @@ func natural_event() -> void:
 	autopilot.finish()
 	if not check(started, "evento nasce sozinho dirigindo (até %.1f m/s, carro em %s)" % [fastest, driven_to]): return
 	var point: Vector3 = events.event.point
-	check(absf(point.x - 342.5) < .5 and point.z < driven_to.z - 150.0 and point.z > -1080.0, "evento nasce à frente, no trecho route66_north (%s, carro em %s)" % [point, driven_to])
+	# Compact roads now use a 100m look-ahead. Preserve the front-of-car and
+	# authored-stretch requirements without retaining the old 240m expectation.
+	check(absf(point.x - float(stretch.a.x)) < .5 and absf(point.z-(driven_to.z-100.0)) < 20.0 and point.z > minf(stretch.a.y,stretch.b.y) and point.z < maxf(stretch.a.y,stretch.b.y), "evento nasce 100m à frente, no trecho route66_north (%s, carro em %s)" % [point, driven_to])
 	check(await until(func(): return events.event.is_empty() or events.event.pending.is_empty(), 10.0), "peças do evento natural montam")
 
 func finish(code: int) -> void:
-	print("DESERT_ROADSIDE checks=%d failures=%s" % [checks, failures])
+	print("DESERT_ROADSIDE checks=%d failures=%s output=%s" % [checks, failures, FOLDER])
 	quit(code if failures.is_empty() or code != 0 else 1)

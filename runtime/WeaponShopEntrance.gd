@@ -26,6 +26,8 @@ const FIRE_STATION_FOOTPRINT := Vector2(310.0, 220.0) / 16.0
 ## Raio da cápsula do Actor (0,30 m) mais 5 cm: o corpo inteiro cabe no vão pintado. No
 ## banco (meia abertura de 1,45 m) dá o 1,1 m que ele já usava.
 const DOOR_CLEARANCE := 0.35
+## Fundo do nicho da porta do bunker: porta em z 2,8625 e recorte até z 1,05 (WalkupFacadeDoor).
+const BUNKER_NICHE_DEPTH := 2.8625 - 1.05
 ## Baia aberta do quartel: as paredes do vão seguem pelo vestíbulo, então vale todo ponto
 ## que o corpo alcança lá dentro, encostado na ombreira (raio da cápsula menos 5 cm). Com
 ## DOOR_CLEARANCE, quem entrava rente à parede ficava 5 cm fora e parava no vestíbulo.
@@ -156,7 +158,9 @@ func update(delta: float) -> void:
 	# Pushing opens the door; only an intentional inward crossing transfers.
 	# Union/posto: quem já está atrás da folha (cápsula + meia espessura dela) atravessou; a
 	# folha fecha quando ele passa de 0,5 m e sem isso ficava preso no vestíbulo.
-	var behind_leaf := id in ["harbor_clothing", "harbor_fuel"] and depth > DOOR_CLEARANCE
+	# Estação Zero: o vão no concreto tem ~1,8 m de fundo; quem passava dos 0,3 m ficava
+	# no nicho com a folha fechada atrás e sem entrar nem sair (playtest de 21/10).
+	var behind_leaf := id in ["harbor_clothing", "harbor_fuel", "mountain_bunker"] and depth > DOOR_CLEARANCE
 	if is_instance_valid(_facade) and _facade_id == id and _door_amount < .85 and not behind_leaf: return
 	if absf(side) > width or _movement_intent(player).dot(inward) <= .3: return
 	var outer := -.1 if id == "harbor_police" else -1.15 if id in ["harbor_ammunation", "mountain_gunshop"] else -.8
@@ -175,6 +179,7 @@ func update(delta: float) -> void:
 		# 0,85, fora da janela (19/10, Union parou a 0,63 m sem entrar).
 		var stretch: Vector3 = definition.get("editor_scale", Vector3.ONE)
 		inner = GLAZED_VESTIBULE_DEPTH * stretch.z
+	if id == "mountain_bunker": inner = BUNKER_NICHE_DEPTH - DOOR_CLEARANCE
 	if id == "harbor_fire_station" and _painted(id):
 		# Baia pintada aberta: vale do plano dela (a entrada fica 0,06 m à frente) até o fundo
 		# do vestíbulo. Até 0,3 m, quem corria passava da janela e quem parava lá dentro só

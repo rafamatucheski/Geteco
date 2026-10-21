@@ -7,6 +7,7 @@ const AUDIO = preload("res://audio/desert_cars/DesertCarAudio.gd")
 const DRIVER = preload("res://activities/desert_drag/DesertDragDriver.gd")
 const SIGNALS = preload("res://activities/desert_drag/DesertDragSignals.gd")
 const LAYOUT = preload("res://world/desert/DesertLayout.gd")
+const ARRIVAL_PATH = preload("res://activities/desert_drag/DragArrivalPath.gd")
 const MAX_CARS := 6
 signal changed
 var race
@@ -50,22 +51,29 @@ func ticket() -> Dictionary:
 		"rival":pending,"heat":phase,"racing":track_busy(),"waiting":waiting.size(),
 		"reason":last_admission_reason,"on_foot":not session.world.driving.occupied}
 
-func request(identity: String, join_queue: bool) -> bool:
+func request(identity: String, _join_queue: bool = false) -> bool:
 	if not enabled or race.active or not pending.is_empty() or not race.can_race(identity): return false
 	var reason: String = race.start_block_reason()
 	last_admission_reason = reason
 	if not reason.is_empty(): session.show_message(reason); return false
-	registered_car = session.world.driving.car
-	ROSTER.attach_number(registered_car,27)
-	pending = identity
-	# Position one is the next opening after the current heat; position two
-	# permits exactly one waiting NPC pair first. Never grow an unbounded queue.
-	heats_ahead = 1 if join_queue else 0
-	skip_current_heat = not heat.is_empty()
-	ready_clock = 0.0
+	# Visitors provide races to watch, never a wait before the player's turn.
+	return race.start_rival(identity)
+
+func clear_for_player() -> void:
+	# Remove the ambient bodies from the physics world before _start checks the
+	# grid in this same frame. Deferred deletion alone still blocks placement.
+	# Do not cancel the night/challenge context or record an NPC finish.
+	for entry in heat+waiting+transit: _release_car(entry.car,true)
+	heat.clear(); waiting.clear(); transit.clear()
+	phase = "idle"; clock = 0.0; blocked_phase = ""; recovery_clock = 0.0
+	admission_clock = 1.5
+	heats_ahead = 0; skip_current_heat = false; ready_clock = 0.0
+	last_admission_reason = ""
+	if is_instance_valid(signals):
+		remove_child(signals)
+		signals.queue_free()
+		signals = null
 	_refresh()
-	session.show_message("Inscrição #27 · %dª posição. Pode esperar a pé; volte ao seu carro quando chamado."%(1+heats_ahead))
-	return true
 
 func cancel_ticket(notify := true, reason := "Inscrição na fila cancelada.") -> void:
 	if pending.is_empty(): return
@@ -194,8 +202,8 @@ func _admit() -> void:
 	var path: Array[Vector3] = []
 	for road in LAYOUT.roads():
 		if str(road.id)!="desert_drag_access": continue
-		for point in road.points:
-			if point.x>=-1100.0: path.append(Vector3(point.x,.08,point.z))
+		path=ARRIVAL_PATH.build(road)
+		break
 	if path.size()<2 or not _point_out_of_view(path[0],90.0): return
 	if (heat+waiting+transit).any(func(e): return e.car.global_position.distance_to(path[0])<10.0): return
 	var identity: String = ROSTER.IDS[visitor_serial%ROSTER.IDS.size()]
@@ -410,7 +418,7 @@ func _advance_transit(delta: float) -> void:
 		car.distance_travelled += moved.length()
 		if is_instance_valid(car.effects): car.effects.physics_tick(delta,motion)
 
-func _release_car(car: Node3D) -> void:
+func _release_car(car: Node3D, detach := false) -> void:
 	if not is_instance_valid(car): return
 	if session.world.driving.occupied and session.world.driving.car==car:
 		car.remove_meta("race_owned")
@@ -421,6 +429,7 @@ func _release_car(car: Node3D) -> void:
 		var driver = car.get_node_or_null("DragRivalDriver")
 		if is_instance_valid(driver): driver.queue_free()
 	else:
+		if detach and car.is_inside_tree(): car.get_parent().remove_child(car)
 		car.queue_free()
 
 func clear_visit() -> void:

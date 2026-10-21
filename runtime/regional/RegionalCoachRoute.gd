@@ -35,7 +35,7 @@ static func stations() -> Array[Dictionary]:
 	return [
 		{"id":"harbor","label":"Rodoviária de Harbor","name":"Rodoviária de Harbor","region":"harbor","arrival":Vector3(135,0,72),"road_point":Vector3(135,0,78.125)},
 		{"id":"mountain","label":"Estação de Gelo","name":"Estação de Gelo","region":"mountain","arrival":PLACES._at(VILLAGE.BUS_DOOR,"mountain"),"road_point":PLACES._at(VILLAGE.BERTH,"mountain")},
-		{"id":"desert","label":"Cobre · Deserto","name":"Cobre · Deserto","region":"desert","arrival":Vector3(-185,0,-886),"road_point":Vector3(-185,0,-880),"requires_act1":true},
+		{"id":"desert","label":"Cobre · Deserto","name":"Cobre · Deserto","region":"desert","arrival":Vector3(-185,0,-546),"road_point":Vector3(-185,0,-540),"requires_act1":true},
 	]
 
 static func station(id: String) -> Dictionary:

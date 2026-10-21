@@ -105,6 +105,33 @@ func _run() -> void:
 	queue._try_resume_blocked(.6)
 	check(queue.phase=="racing" and queue.pending=="livia" and drive.gear==1,"removing obstruction resumes heat from rest without a fake finish")
 	queue.heat.clear()
+	queue.pending=""
+	var ambient: Array[Node3D] = []
+	for index in 3:
+		var npc := Hull.new()
+		npc.position=Vector3(100+index*10,0,0)
+		scene.add_child(npc)
+		ambient.append(npc)
+	queue.heat=[{"car":ambient[0]}]
+	queue.waiting=[{"car":ambient[1]}]
+	queue.transit=[{"car":ambient[2]}]
+	queue.phase="blocked"
+	queue.blocked_phase="racing"
+	queue.signals=Node3D.new()
+	queue.add_child(queue.signals)
+	await physics_frame
+	await physics_frame
+	var probe := PhysicsShapeQueryParameters3D.new()
+	probe.shape=ambient[0].get_child(0).shape
+	probe.transform=Transform3D(Basis.IDENTITY,ambient[0].position+Vector3.UP*.65)
+	probe.collision_mask=4
+	check(not scene.get_world_3d().direct_space_state.intersect_shape(probe).is_empty(),"ambient heat physically occupies its place before priority admission")
+	var cancellations_before: int = race.cancelled
+	queue.clear_for_player()
+	check(scene.get_world_3d().direct_space_state.intersect_shape(probe).is_empty(),"priority admission releases collision in the same frame")
+	check(ambient.all(func(npc): return not npc.is_inside_tree()) and queue.heat.is_empty() and queue.waiting.is_empty() and queue.transit.is_empty(),"priority removes racing, waiting and returning visitors together")
+	check(queue.phase=="idle" and queue.blocked_phase.is_empty() and not is_instance_valid(queue.signals),"priority clears blocked recovery and ambient starting lights")
+	check(queue.heats_completed==0 and race.cancelled==cancellations_before,"priority neither fabricates a finish nor disarms the player's prepared race")
 	var visitor := preload("res://runtime/desert/drag_meet/DragMeetGuest.gd").new()
 	visitor.identity=9808
 	visitor.position=Vector3(-1030,.03,-1280)

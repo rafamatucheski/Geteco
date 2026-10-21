@@ -48,16 +48,22 @@ static func collectibles() -> Array:
 ## do piso ("fixed": o raio de 12 m pararia no telhado).
 static func vicente_letters() -> Array:
 	var roadside := preload("res://runtime/desert/roadside/RoadsideLayout.gd")
-	var whisper := Vector2(-360, -1690)
+	var whisper := Vector2(-360, -1010)
 	var cave := Vector3(whisper.x, 0, whisper.y) + Basis(Vector3.UP, 1.8) * Vector3(0, .05, -3.6)
 	return [
-		{"id":"vicente_letter_01","region":"harbor","place":"","point":Vector3(232,0,30)},
-		{"id":"vicente_letter_02","region":"harbor","place":"","point":Vector3(166,0,114)},
+		# Passeio do cais, entre os guindastes: fora da pista da ponte de Foundry.
+		{"id":"vicente_letter_01","region":"harbor","place":"","point":Vector3(197,0,94)},
+		# Lateral da fachada, fora da vaga do M8 e da passagem em frente ao portão.
+		{"id":"vicente_letter_02","region":"harbor","place":"","point":Vector3(161,0,108)},
 		{"id":"vicente_letter_03","region":"harbor","place":"","point":Vector3(322,0,-58)},
-		{"id":"vicente_letter_04","region":"mountain","place":"","point":Vector3(520,0,-285)},
-		{"id":"vicente_letter_05","region":"mountain","place":"","point":Vector3(745,0,-362)},
-		{"id":"vicente_letter_06","region":"mountain","place":"","point":Vector3(700,0,-425)},
+		# Passeio sul da ponte, entre o asfalto e o guarda-corpo (piso a 0,07 m).
+		{"id":"vicente_letter_04","region":"mountain","place":"","point":Vector3(520,0,-278.9)},
+		# Clareira diante da cabana; a posição anterior ficava perdida atrás dela.
+		{"id":"vicente_letter_05","region":"mountain","place":"","point":Vector3(747,0,-351.5)},
+		# Passeio diante do terminal da vila, em vez do terreno entre duas pistas.
+		{"id":"vicente_letter_06","region":"mountain","place":"","point":Vector3(732.375,0,-409.2)},
 		{"id":"vicente_letter_07","region":"desert","place":"","point":cave,"fixed":true},
-		{"id":"vicente_letter_08","region":"desert","place":"","point":roadside.at(roadside.site("motel"), Vector3(-14.1, .15, -4.6)),"fixed":true},
+		# Piso livre ao pé da cama do quarto 1, sem intersectar cama, cômoda ou cadeira.
+		{"id":"vicente_letter_08","region":"desert","place":"","point":roadside.at(roadside.site("motel"), Vector3(-13.4, .15, -3.3)),"fixed":true},
 		{"id":"vicente_letter_09","region":"desert","place":"","point":roadside.at(roadside.site("chapel"), Vector3(0, .15, -5.2)),"fixed":true},
 		{"id":"vicente_letter_10","region":"desert","place":"","point":roadside.at(roadside.site("grandstand"), Vector3(19.5, .15, -.4)),"fixed":true}]

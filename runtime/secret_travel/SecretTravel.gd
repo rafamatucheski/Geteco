@@ -5,7 +5,7 @@ const G := preload("res://world/desert/DesertGeometry.gd")
 const SITES := {
 	"harbor":{"title":"Harbor · Vila dos Caminhoneiros","point":Vector3(-392,0,72)},
 	"mountain":{"title":"Montanha · Passagem de pedra","point":Vector3(737,0,-875)},
-	"desert":{"title":"Deserto · Mina desativada","point":Vector3(-1412,0,-1060)},
+	"desert":{"title":"Deserto · Mina desativada","point":Vector3(-1272,0,-1060)},
 }
 var session
 var site: Node3D

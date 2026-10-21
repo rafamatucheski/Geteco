@@ -1,6 +1,8 @@
 extends RefCounted
 ## Local race-meet sky, driven by the existing world clock. Adds no light/shadow.
 const SHADER := preload("res://runtime/atmosphere/drag_strip_sky.gdshader")
+const COMPACT := preload("res://world/desert/DesertCompactLayout.gd")
+const STRIP := Rect2(Vector2(-1060+COMPACT.DRAG.x,-1380+COMPACT.DRAG.z),Vector2(1200,200))
 var sky: Sky
 var material: ShaderMaterial
 var previous_sky: Sky
@@ -22,7 +24,7 @@ func update_lightning(strength: float, strike_id: int) -> void:
 		material.set_shader_parameter("lightning_strength",value)
 
 func apply(env: Environment, point: Vector3, hour: float, cloud_cover: float, moon_phase: float, inside: bool) -> void:
-	var strip := Rect2(-1060,-1380,1200,200)
+	var strip := STRIP
 	var flat := Vector2(point.x,point.z)
 	var nearest := flat.clamp(strip.position,strip.end)
 	var weight := 1.0-smoothstep(80.0,280.0,flat.distance_to(nearest)) if not inside else 0.0

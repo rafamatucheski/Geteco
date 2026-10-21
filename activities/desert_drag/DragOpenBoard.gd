@@ -4,7 +4,6 @@ var heading: Label
 var state_label: Label
 var queue_label: Label
 var now_button: Button
-var queue_button: Button
 var cancel_button: Button
 
 func _ready() -> void:
@@ -31,8 +30,7 @@ func _ready() -> void:
 	queue_label.custom_minimum_size.y = 72
 	queue_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	column.add_child(queue_label)
-	now_button = _button(column,"Próxima largada","now")
-	queue_button = _button(column,"Entrar na fila · 2ª posição","queue")
+	now_button = _button(column,"Correr agora","now")
 	cancel_button = _button(column,"Sair da fila","cancel")
 	var note := Label.new()
 	note.text = "Bateria livre: tempo e resultado sem pontos no ranking."
@@ -51,10 +49,9 @@ func _button(column: VBoxContainer, title: String, action: String) -> Button:
 func show_ticket(data: Dictionary) -> void:
 	var queued: bool = data.queued
 	state_label.text = "NA PISTA · "+{"lining":"ALINHANDO","staging":"PREPARANDO A LARGADA","racing":"BATERIA EM ANDAMENTO","finished":"LIBERANDO A PISTA","blocked":"PISTA OBSTRUÍDA","idle":"LIVRE"}.get(str(data.heat),"LIVRE")
-	queue_label.text = "INSCRIÇÃO #%02d · %dª POSIÇÃO\nPode esperar a pé. Volte ao carro inscrito quando chegar sua vez."%[int(data.number),int(data.position)] if queued else "Dois carros por bateria. No máximo uma bateria à sua frente na fila.\nAdversário visitante escolhido entre os próximos carros."
+	queue_label.text = "INSCRIÇÃO #%02d · %dª POSIÇÃO\nPode esperar a pé. Volte ao carro inscrito quando chegar sua vez."%[int(data.number),int(data.position)] if queued else "Dois carros por bateria. Escolha Correr agora para alinhar com seu adversário."
 	if queued and not str(data.get("reason","")).is_empty():
 		queue_label.text = "INSCRIÇÃO #%02d · %dª POSIÇÃO\n%s"%[int(data.number),int(data.position),str(data.reason)]
-	now_button.text = "Correr agora" if not data.racing and int(data.waiting)==2 else "Próxima largada · 1ª posição"
+	now_button.text = "Correr agora"
 	now_button.disabled = queued
-	queue_button.disabled = queued
 	cancel_button.visible = queued

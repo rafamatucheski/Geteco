@@ -6,7 +6,7 @@ const FLEET := preload("res://runtime/FleetState.gd")
 const GARAGE := preload("res://runtime/desert/DesertGarageState.gd")
 const ADAPTER := preload("res://gameplay/desert_cars/DesertCarAdapter.gd")
 const MODELS := ["desert_faisca","desert_siroco","desert_mirage"]
-const PADS := [Vector3(-910,.1,-1298),Vector3(-900,.1,-1298),Vector3(-900,.1,-1306)]
+const PADS := [Vector3(-770,0.1,-778),Vector3(-760,0.1,-778),Vector3(-760,0.1,-786)]
 var race: Node3D
 var session
 var car: CharacterBody3D

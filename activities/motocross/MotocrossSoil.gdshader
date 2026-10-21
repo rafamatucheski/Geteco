@@ -1,6 +1,7 @@
 shader_type spatial;
 render_mode cull_back;
 #include "res://activities/motocross/MotocrossLandscape.gdshaderinc"
+#include "res://world/editing/terrain_paint.gdshaderinc"
 uniform sampler2D soil_noise : repeat_enable, filter_linear_mipmap;
 uniform float wetness : hint_range(0.0,1.0) = 0.0;
 uniform bool track_surface = true;
@@ -31,6 +32,9 @@ void fragment() {
 	vec3 mud = mix(vec3(.105,.041,.022),vec3(.23,.087,.036),grain);
 	ALBEDO = mix(dry,mud,wetness*.9*(1.0-grass))*mix(0.8+grit*.38,1.0,grass);
 	ALBEDO = mix(ALBEDO,vec3(.125,.073,.047),water*.55);
+	vec4 editor_finish = editor_terrain_finish(ALBEDO,world_point.xz);
+	ALBEDO = editor_finish.rgb;
 	ROUGHNESS = mix(.96,.62,wetness)-water*.19;
+	ROUGHNESS = mix(ROUGHNESS,0.95,editor_finish.a);
 	SPECULAR = mix(.18,.40,wetness)*(1.0-grass*.5);
 }

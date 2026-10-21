@@ -4,11 +4,11 @@ extends Node
 const ACTOR := preload("res://scripts/Actor.gd")
 const MODEL := preload("res://assets/CivilianModel.gd")
 const ROUTINES := [
-	{"id":"miragem_clerk","a":Vector3(269,.08,-772),"b":Vector3(278,.08,-772),"identity":9611,"coat":"a98356","skin":"a26d49","female":false},
-	{"id":"pump_attendant","a":Vector3(289,.08,-752),"b":Vector3(300,.08,-752),"identity":9612,"coat":"536b70","skin":"cd9a74","female":false},
-	{"id":"truck_driver","a":Vector3(248,.08,-763),"b":Vector3(258,.08,-763),"identity":9613,"coat":"865940","skin":"b48563","female":false},
-	{"id":"solana_customer","a":Vector3(-258,.08,-865),"b":Vector3(-250,.08,-865),"identity":9614,"coat":"a47654","skin":"c89a79","female":true},
-	{"id":"alvorada_customer","a":Vector3(-184,.08,-865),"b":Vector3(-176,.08,-865),"identity":9615,"coat":"6e7251","skin":"885e45","female":true},
+	{"id":"miragem_clerk","a":Vector3(269,.08,-512),"b":Vector3(278,.08,-512),"identity":9611,"coat":"a98356","skin":"a26d49","female":false},
+	{"id":"pump_attendant","a":Vector3(289,.08,-492),"b":Vector3(300,.08,-492),"identity":9612,"coat":"536b70","skin":"cd9a74","female":false},
+	{"id":"truck_driver","a":Vector3(248,.08,-503),"b":Vector3(258,.08,-503),"identity":9613,"coat":"865940","skin":"b48563","female":false},
+	{"id":"solana_customer","a":Vector3(-258,.08,-525),"b":Vector3(-250,.08,-525),"identity":9614,"coat":"a47654","skin":"c89a79","female":true},
+	{"id":"alvorada_customer","a":Vector3(-184,.08,-525),"b":Vector3(-176,.08,-525),"identity":9615,"coat":"6e7251","skin":"885e45","female":true},
 ]
 var session
 var locals: Dictionary = {}

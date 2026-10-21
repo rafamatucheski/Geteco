@@ -38,9 +38,10 @@ func save_block_reason() -> String:
 
 func objective() -> String:
 	if not run.active:
-		return "Trilha dos Pinheiros · leve um jipe 4x4 à largada."
-	if run.countdown>0.0: return String(TranslationServer.translate("Mantenha o jipe parado · %d")) % ceili(run.countdown)
-	return String(TranslationServer.translate("Trilha dos Pinheiros · checkpoint %d/%d · %.1f s")) % [run.gate+1,run.gates.size(),maxf(0.0,COURSE.TIME_LIMIT-run.elapsed)]
+		return "Trilha dos Pinheiros · entre no jipe e pare sob o arco de largada."
+	if run.countdown>0.0: return String(TranslationServer.translate("Não acelere · largada em %d")) % ceili(run.countdown)
+	if run.outside>0.0: return "Volte à trilha agora para não perder a tentativa!"
+	return String(TranslationServer.translate("Passe entre os postes · portão %d/%d · %.1f s")) % [run.gate+1,run.gates.size(),maxf(0.0,COURSE.TIME_LIMIT-run.elapsed)]
 
 func target_position() -> Vector3:
 	return run.target_position() if run.active else COURSE.start()
@@ -64,7 +65,7 @@ func nearest_action() -> Dictionary:
 	if point.distance_to(COURSE.start())>4.0: return {}
 	if not driving.occupied:
 		return {"id":"mountain_jeep","target":"prepare","label":"Retirar jipe da trilha","position":COURSE.start()}
-	return {"id":"mountain_jeep","target":"start","label":String(TranslationServer.translate("Trilha dos Pinheiros · %d s")) % int(COURSE.TIME_LIMIT),"position":COURSE.start()}
+	return {"id":"mountain_jeep","target":"start","label":"Participar da trilha de jipe","position":COURSE.start()}
 
 func perform(target: Variant) -> bool:
 	var action := str(target.get("target","")) if target is Dictionary else str(target)
@@ -84,6 +85,27 @@ func perform(target: Variant) -> bool:
 		session.show_message("Use um jipe 4x4 na Trilha dos Pinheiros."); return true
 	if car.health<=0 or absf(car.speed)>.8:
 		session.show_message("Pare o jipe junto à largada."); return true
+	_show_briefing()
+	return true
+
+func _show_briefing() -> void:
+	session._menu("Trilha dos Pinheiros")
+	var instructions := Label.new()
+	instructions.text = String(TranslationServer.translate("Contra o relógio · %d s\n\nFique parado durante a contagem de 3 segundos.\nAo largar, siga o marcador até o próximo portão.\nPasse ENTRE os postes, em ordem e no sentido da trilha.\nComplete todos os portões antes de o tempo acabar.\n\nSair da trilha por 2 segundos ou sair do jipe encerra a prova.")) % int(COURSE.TIME_LIMIT)
+	instructions.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	instructions.custom_minimum_size=Vector2(540,220)
+	session.column.add_child(instructions)
+	session._button("Iniciar contagem",_start_attempt)
+	session._button("Voltar",session.close_menu)
+
+func _start_attempt() -> bool:
+	session.close_menu()
+	# Recheck admission after closing the modal; the world may have changed.
+	if nearest_action().get("target","")!="start": return false
+	var car: CharacterBody3D=session.world.driving.car
+	if car.archetype!=COURSE.VEHICLE or car.health<=0 or absf(car.speed)>.8:
+		session.show_message("Pare um jipe 4x4 em boas condições junto à largada.")
+		return false
 	if not session.save_game(true): return false
 	if not run.begin(car.get_instance_id(),car.archetype,car.global_position): return false
 	driver=car
@@ -105,9 +127,13 @@ func _physics_process(delta: float) -> void:
 		if valid: valid=driver.health>0 and driver.archetype==COURSE.VEHICLE and not driver.is_queued_for_deletion()
 		if not valid:
 			cancel_attempt()
+			session.show_message("Trilha interrompida. Permaneça no mesmo jipe até a chegada. Volte à largada para tentar novamente.")
 			return
 		if not session.modal:
+			var counting_down: bool=run.countdown>0.0
 			run.tick(delta,driver.global_position,driver.get_instance_id(),true)
+			if counting_down and run.countdown<=0.0 and run.active:
+				session.show_message("VAI! Siga o marcador e passe entre os postes do primeiro portão.")
 			if run.finished:
 				var result := progress.settle(run,session.state.economy)
 				if result.is_empty():
@@ -120,7 +146,11 @@ func _physics_process(delta: float) -> void:
 				driver=null
 				_status.text=""
 			elif not run.active:
-				var message := "Tempo esgotado." if run.failure=="timeout" else "Largada queimada." if run.failure=="false_start" else "Trilha interrompida. Volte à largada."
+				var message := "Trilha interrompida. Volte à largada."
+				match run.failure:
+					"timeout": message="Tempo esgotado. Volte à largada para tentar novamente."
+					"false_start": message="Largada queimada: espere a contagem terminar antes de acelerar. Volte à largada."
+					"off_course": message="Você ficou fora da trilha por 2 segundos. Volte à largada para tentar novamente."
 				session.show_message(message)
 				driver=null
 				_status.text=""

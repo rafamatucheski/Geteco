@@ -233,7 +233,7 @@ func nearest_action() -> Dictionary:
 			return {"id":"desert","target":"workshop","label":"Preparar carro com Digo"}
 	var action: Dictionary = story.nearest_action()
 	if not action.is_empty(): return action
-	if session.state.place_id.is_empty() and not session.world.driving.occupied and session.world.player.global_position.distance_to(Vector3(-315,0,-913))<1.8:
+	if session.state.place_id.is_empty() and not session.world.driving.occupied and session.world.player.global_position.distance_to(Vector3(-315,0,-573))<1.8:
 		return {"id":"desert","target":"rest","label":"Descansar até as 20h"}
 	return drag.nearest_action()
 func perform(action: Dictionary) -> bool:
@@ -279,7 +279,7 @@ func _nearby_car() -> CharacterBody3D:
 	var car: CharacterBody3D = session.world.driving.car
 	if not is_instance_valid(car) or car.health<=0 or car.engine_disabled: return null
 	if _workshop_site=="town" and session.state.place_id=="desert_digo" and str(car.get_meta("garage_place",""))=="desert_digo": return car
-	var yard := DIGO_ROUTINE.workshop_point() if _workshop_site=="meet" else Vector3(-140,0,-943)
+	var yard := DIGO_ROUTINE.workshop_point() if _workshop_site=="meet" else Vector3(-140,0,-603)
 	if car.global_position.distance_to(yard)>55 or car.half_width>1.45 or car.half_length>3.1: return null
 	return car
 func _at_workshop() -> bool:
@@ -390,7 +390,7 @@ func _buy_car(id: String) -> void:
 	var spec: Dictionary = CARS.spec(id)
 	if session.state.economy.balance<int(spec.price): session.show_message("Saldo insuficiente."); return
 	if not _at_workshop(): session.close_menu(); return
-	var point := DIGO_ROUTINE.parking_point() if _workshop_site=="meet" else Vector3(-123,.1,-940)
+	var point := DIGO_ROUTINE.parking_point() if _workshop_site=="meet" else Vector3(-123,.1,-600)
 	session.controller.region.prepare_collision_at(point)
 	var car: CharacterBody3D = session.controller.spawn_vehicle(id,point,PI)
 	if not is_instance_valid(car): session.show_message("Libere a vaga de entrega no pátio."); return

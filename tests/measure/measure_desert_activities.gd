@@ -1,14 +1,20 @@
 extends "res://tests/measure/measure_desert.gd"
-## Same five rendered production locations before/after this content batch.
+## Five production locations follow their authored anchors after relocation.
+const VILLAGE_LAYOUT := preload("res://world/desert/DesertMoonVillage.gd")
+const MINING_LAYOUT := preload("res://world/mining/MiningLayout.gd")
+const NORTH_LAYOUT := preload("res://world/desert/north_pass/DesertNorthPassLayout.gd")
+const WASH_COURSE := preload("res://activities/desert_wash/DesertWashCourse.gd")
+const RELAY := preload("res://runtime/secret_travel/SecretTravel.gd")
 func run() -> void:
 	if DisplayServer.get_name()=="headless" or "--no-save" not in OS.get_cmdline_user_args() or not OS.get_environment("HARBOR_NO_CSHARP").is_empty(): quit(2); return
 	seed(7102026)
 	root.size=Vector2i(1280,720)
 	output=FIXTURE.output_dir("desert-activities-measure")
-	var snapshot:=FIXTURE.full_snapshot(Vector3(-540,.08,-878),true)
+	var arrival: Vector3=VILLAGE_LAYOUT.CENTER+Vector3(-12,.08,-56)
+	var snapshot:=FIXTURE.full_snapshot(arrival,true)
 	snapshot.region_id="desert"
 	snapshot.campaign.aftermath={"call_complete":true}
-	snapshot.world.pedestrian={"region":"desert","position":[-540,.08,-878]}
+	snapshot.world.pedestrian={"region":"desert","position":[arrival.x,arrival.y,arrival.z]}
 	var path:=FIXTURE.write_fixture(output,"checkpoint.json",snapshot)
 	if path.is_empty(): quit(2); return
 	fingerprint=source_fingerprint()
@@ -32,11 +38,11 @@ func run() -> void:
 	Engine.max_fps=60 if cap else 0
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if cap else DisplayServer.VSYNC_DISABLED)
 	for setup in [
-		{"id":"santa-lua","point":Vector3(-541,0,-778)},
-		{"id":"wash","point":Vector3(-710,0,-1000)},
-		{"id":"mining-job","point":Vector3(-200,-28,-1760)},
-		{"id":"north-rockfall","point":Vector3(342.5,0,-1790)},
-		{"id":"secret-relay","point":Vector3(-1412,0,-1057)},
+		{"id":"santa-lua","point":VILLAGE_LAYOUT.CENTER+Vector3(-13,0,44)},
+		{"id":"wash","point":WASH_COURSE.gate(0)},
+		{"id":"mining-job","point":MINING_LAYOUT.CENTER+Vector3(-20,-28,0)},
+		{"id":"north-rockfall","point":NORTH_LAYOUT.GATE+Vector3(0,0,20)},
+		{"id":"secret-relay","point":RELAY.SITES.desert.point+Vector3(0,0,3)},
 	]:
 		world.production.region.set_focus(setup.point)
 		world.production.region.prepare_collision_at(setup.point)
@@ -57,6 +63,7 @@ func run() -> void:
 func source_fingerprint(reference: Dictionary = {}) -> Dictionary:
 	var result:=super.source_fingerprint(reference)
 	if not reference.is_empty(): return result
+	result[get_script().resource_path]=FileAccess.get_sha256(get_script().resource_path)
 	for directory in ["res://world/desert","res://runtime/desert","res://runtime/secret_travel","res://activities/desert_wash","res://gameplay/mining/jobs"]: _hash_tree(directory,result)
 	return result
 func _hash_tree(directory: String,result: Dictionary) -> void:

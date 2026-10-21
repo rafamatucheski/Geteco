@@ -154,8 +154,11 @@ func run() -> void:
 	if not failures.is_empty(): finish(); return
 	check(meet.heat.all(func(e): return e.drive.speed_mps>0.0 and race._offset(e.car.global_position)>0.0),"NPCs move using collision bodies and actual drivetrain")
 	check(meet.waiting.all(func(e): return race._offset(e.car.global_position)<-8.0 and e.car.has_node("DragEntryNumber")),"numbered queue stays behind the grid")
-	var original_racers: Array = meet.heat.map(func(e): return e.car.get_instance_id())
-	var maximum_serial: int = meet.visitor_serial+meet.MAX_CARS-meet.heat.size()-meet.waiting.size()-meet.transit.size()
+	var original_visitors: Array = (meet.heat+meet.waiting+meet.transit).map(func(e): return e.car)
+	var serial_before: int = meet.visitor_serial
+	var before: Dictionary = race.snapshot().duplicate(true)
+	var balance: int = session.state.economy.balance
+	var count_before: int = meet.heats_completed
 	await capture("ambient")
 	if not check(race.perform("board"),"board opens during autonomous heat"):
 		print("OPEN_DRAG_BOARD_BLOCK reason=",race.start_block_reason()," at=",car.global_position," modal=",session.modal," nearest=",race.nearest_action())
@@ -163,29 +166,20 @@ func run() -> void:
 	race.board_controller.board.open_meet_button.pressed.emit()
 	check(race.board_controller.open_board_panel.is_visible_in_tree(),"board opens free heats")
 	await capture("free-board")
-	race.board_controller.open_board_panel.queue_button.pressed.emit()
-	check(not session.modal and meet.ticket().position==2,"queue action registers exactly second position")
+	race.board_controller.open_board_panel.now_button.pressed.emit()
+	check(not session.modal and race.active and meet.pending.is_empty(),"race button starts immediately during an autonomous heat")
+	check(original_visitors.all(func(visitor): return not is_instance_valid(visitor) or not visitor.is_inside_tree()),"all ambient bodies leave the physics world in the click frame")
+	check(meet.heat.is_empty() and meet.waiting.is_empty() and meet.transit.is_empty(),"player owns the strip and return road exclusively")
+	check(meet.heats_completed==count_before,"priority admission does not award fictional NPC finishes")
 	check(car.has_node("DragEntryNumber") and car.get_meta("drag_entry_number",0)==27,"player receives physical entry number 27")
 	var number: Node3D = car.get_node("DragEntryNumber/RearWindowNumber")
 	check(number.position.z>0.0 and number.basis.z.z>0.0,"number is attached to rear-facing glass, not the doors")
 	await capture("registered")
 	await capture_rear_number(car,number)
-	check(not meet.request("open_ivo",true),"duplicate registration cannot extend the queue")
-	check(not race.save_block_reason().is_empty(),"temporary queue cannot leak into a save")
-	var before: Dictionary = race.snapshot().duplicate(true)
-	var balance: int = session.state.economy.balance
-	var queued_at := Time.get_ticks_msec()
-	var count_before: int = meet.heats_completed
-	var max_cars := 0
-	while not race.active and Time.get_ticks_msec()-queued_at<90000:
-		max_cars = maxi(max_cars,meet.heat.size()+meet.waiting.size()+meet.transit.size())
-		if meet.pending.is_empty(): break
-		await physics_frame
-	check(race.active and race.OPEN_ROSTER.CARS.has(race.rival_id),"queue admits player against non-ranked visitor")
-	check(meet.heats_completed-count_before==2,"current heat and just one waiting heat precede second position")
-	check(max_cars<=meet.MAX_CARS and meet.heat.is_empty(),"bounded population and exclusive track ownership")
+	check(not meet.request("open_ivo",true),"repeated click cannot create a second race")
+	check(not race.save_block_reason().is_empty(),"active race cannot leak into a save")
+	check(race.active and race.OPEN_ROSTER.CARS.has(race.rival_id),"free heat still starts against a non-ranked visitor")
 	print("OPEN_DRAG_ADMISSION pending=",meet.pending," reason=",meet.last_admission_reason," phase=",meet.phase," car_locked=",car.input_locked," car_speed=",car.speed," car_position=",car.global_position)
-	print("OPEN_DRAG_WAIT seconds=",float(Time.get_ticks_msec()-queued_at)/1000.0)
 	if not race.active: finish(); return
 	await capture("player-staging")
 	var deadline := Time.get_ticks_msec()+60000
@@ -230,18 +224,21 @@ func run() -> void:
 	check(session.modal and race.board_controller.results_layer.visible,"free result offers normal recovery actions")
 	check(await race.return_to_entry(),"safe physical entry destination after free heat")
 	session.close_menu()
-	var returned_to_queue := false
-	for i in 2400:
-		for entry in meet.heat+meet.waiting+meet.transit:
-			if entry.car.get_instance_id() in original_racers and str(entry.get("routing",""))=="queue": returned_to_queue = true
-		if returned_to_queue: break
+	for i in 3600:
 		await physics_frame
-	check(returned_to_queue and meet.visitor_serial<=maximum_serial,"same car physically returns to the queue without respawning")
+		if meet.phase=="racing" and meet.waiting.size()==2: break
+	check(meet.phase=="racing" and meet.visitor_serial>serial_before,"ambient races and physical queue resume after the player finishes")
+	check(meet.heat.size()+meet.waiting.size()+meet.transit.size()<=meet.MAX_CARS,"resumed population stays bounded")
 	for entry in meet.heat+meet.waiting+meet.transit: print("OPEN_DRAG_RETURN ",entry.identity," ",entry.get("routing","")," ",entry.car.global_position," speed=",entry.car.speed," waypoint=",entry.get("waypoint",-1))
-	check(meet.request("open_bruno",false),"next-opening registration works after a finish")
-	check(meet.ticket().position==1,"immediate option has no extra waiting heat")
-	meet.cancel_ticket(false)
-	check(meet.pending.is_empty() and not car.input_locked,"cancelling restores unrestricted driving")
+	check(race.perform("board"),"board reopens while resumed spectators race")
+	race.board_controller.board.return_requested.emit("digo")
+	check(race.active and race._return_attempt and meet.heat.is_empty() and meet.transit.is_empty(),"out-and-back button also clears the ambient race immediately")
+	check(not race.start_return_pass("digo"),"repeated out-and-back request is rejected during an attempt")
+	race.cancel_attempt()
+	check(not race.active and not car.input_locked and not world.player.input_locked,"cancelling restores player and car controls")
+	check(race.snapshot()==before and session.state.economy.balance==balance,"cancelling priority out-and-back awards no progress or money")
+	await create_timer(2.0).timeout
+	check(not meet.transit.is_empty(),"ambient admissions resume after cancellation")
 	meet.enabled = false
 	await frames(3)
 	check(meet.heat.is_empty() and meet.waiting.is_empty() and meet.transit.is_empty() and not car.has_node("DragEntryNumber"),"leaving visit releases NPCs and temporary player number")

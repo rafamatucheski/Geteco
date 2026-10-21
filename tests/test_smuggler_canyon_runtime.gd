@@ -2,6 +2,7 @@ extends SceneTree
 ## Main production combat. Diagnostic placements are not access-route evidence.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const CANYON := preload("res://runtime/desert/canyon/CanyonState.gd")
+const ENCOUNTER := preload("res://runtime/desert/canyon/CanyonEncounter.gd")
 const L := preload("res://world/desert/canyon/DesertSmugglerLayout.gd")
 const STATE := preload("res://runtime/GameState.gd")
 const STORE := preload("res://runtime/SaveStore.gd")
@@ -93,7 +94,10 @@ func run() -> void:
 	if "--contact-only" in OS.get_cmdline_user_args():
 		finish(0 if failures.is_empty() else 1)
 		return
-	check(world.session.state.economy.grid_equip_bag("backpack"),"combat fixture equips backpack through inventory API")
+	var bag_before: String=str(world.session.state.economy.snapshot().grid_inventory.bag)
+	if bag_before.is_empty():
+		check(world.session.state.economy.grid_equip_bag("backpack"),"combat fixture equips absent backpack through inventory API")
+	check(world.session.state.economy.snapshot().grid_inventory.bag=="backpack","combat fixture has equipped backpack")
 	check(world.session.state.grant_weapon("m4a1"),"prepared combat fixture grants M4 with catalog reserve")
 	check(world.session.state.equip_weapon("m4a1"),"prepared combat fixture equips carried M4")
 	for index in 7:
@@ -142,7 +146,12 @@ func run() -> void:
 	check(stored.save(world.session.state)==OK,"cleared state writes valid isolated disk save")
 	var restored := STATE.new()
 	check(stored.load_into(restored).get("ok",false) and int(restored.world_state[CANYON.KEY].defeated_mask)==255,"cold disk restore retains cleared camp")
-	world.player.teleport(L.APPROACH+Vector3(0,.1,0))
+	# Compact approach is now inside the encounter retention radius. Leave it
+	# explicitly before checking that every resident and corpse is released.
+	var unload_point := L.CENTER+(L.APPROACH-L.CENTER).normalized()*(ENCOUNTER.DESPAWN_DISTANCE+20.0)
+	unload_point.y=.1
+	check(unload_point.distance_to(L.CENTER)>ENCOUNTER.DESPAWN_DISTANCE,"unload probe lies beyond encounter retention radius")
+	world.player.teleport(unload_point)
 	await wait_seconds(1)
 	var freed := get_nodes_in_group("desert_smugglers").is_empty()
 	for id in resident_ids: freed=freed and not is_instance_id_valid(id)
@@ -243,13 +252,33 @@ func collect_loot(pickup: Node3D) -> void:
 	var sphere := SphereShape3D.new(); sphere.radius=.04
 	query.shape=sphere; query.transform=Transform3D(Basis.IDENTITY,point+Vector3.UP*.15); query.collision_mask=1
 	check(world.get_world_3d().direct_space_state.intersect_shape(query,1).is_empty(),"loot center stays outside solid props")
-	world.player.teleport(point+Vector3(0,.08,3))
+	# The old fixed +Z start overlaps the ammunition cases at local z=8.05.
+	# Find a full supported capsule corridor, then use normal walking only.
+	var walk_start := Vector3.INF
+	for direction in [Vector3.BACK,Vector3.LEFT,Vector3.RIGHT,Vector3.FORWARD,Vector3(-1,0,-1).normalized(),Vector3(1,0,-1).normalized()]:
+		var clear := true
+		for step in range(1,13):
+			var sample: Vector3=point+direction*(3.0*float(step)/12.0)
+			sample.y=.08
+			if not world.session.position_clear(sample): clear=false; break
+		if clear:
+			walk_start=point+direction*3.0; walk_start.y=.08
+			break
+	if not check(walk_start.is_finite(),"loot walking fixture starts in a supported clear capsule corridor"):
+		entry.merge({"controls":loot_controls(),"reason":"no clear walking corridor"})
+		log.append(entry)
+		return
+	world.player.teleport(walk_start)
 	await wait_seconds(.3)
+	entry["start"]=str(walk_start)
+	entry["controls_before"]=loot_controls()
+	check(loot_walking_ready(),"loot walking starts alive with active physics and player control")
 	var travelled := 0.0
 	var previous: Vector3=world.player.global_position
 	var deadline := Time.get_ticks_msec()+3000
 	var collected := false
 	var supported := true
+	var controllable := true
 	var minimum_distance := INF
 	var trace: Array[Dictionary]=[]
 	var frame := 0
@@ -257,19 +286,28 @@ func collect_loot(pickup: Node3D) -> void:
 		travelled+=world.player.global_position.distance_to(previous)
 		previous=world.player.global_position
 		supported=supported and world.player.is_on_floor()
+		controllable=controllable and loot_walking_ready()
 		minimum_distance=minf(minimum_distance,Vector2(previous.x,previous.z).distance_to(Vector2(point.x,point.z)))
-		if frame%6==0: trace.append({"position":str(previous),"supported":world.player.is_on_floor(),"pickup_valid":is_instance_valid(pickup),"consumed":pickup.consumed if is_instance_valid(pickup) else false})
+		if frame%6==0: trace.append({"position":str(previous),"supported":world.player.is_on_floor(),"pickup_valid":is_instance_valid(pickup),"consumed":pickup.consumed if is_instance_valid(pickup) else false,"controls":loot_controls()})
 		frame+=1
+		if not controllable: break
 		if is_instance_valid(pickup) and pickup.consumed: collected=true; break
 		if not is_instance_valid(pickup): break
 		var move: Vector3=point-world.player.global_position; move.y=0
 		world.player.automatic_direction=move.normalized()
 		await physics_frame
 	world.player.automatic_direction=Vector3.ZERO
+	check(controllable,"loot walking remains alive without rescue or control interruption")
 	check(collected and travelled>1 and supported,"normal supported walking collects physical drop")
-	entry.merge({"loot_walk_metres":travelled,"supported":supported,"collected":collected,"minimum_distance":minimum_distance,"inventory_after":world.session.state.economy.snapshot(),"trace":trace})
+	entry.merge({"loot_walk_metres":travelled,"supported":supported,"controllable":controllable,"controls_after":loot_controls(),"collected":collected,"minimum_distance":minimum_distance,"inventory_after":world.session.state.economy.snapshot(),"trace":trace})
 	log.append(entry)
 	print("CANYON_LOOT_DIAGNOSTIC ",JSON.stringify(entry))
+
+func loot_controls() -> Dictionary:
+	return {"modal":world.session.modal,"tree_paused":paused,"input_locked":world.player.input_locked,"physics":world.player.is_physics_processing(),"health":world.gameplay.health,"dead":world.player.dead,"rescue":world.session.rescue_pending,"transition":world.session.has_position_transition(),"velocity":str(world.player.velocity)}
+
+func loot_walking_ready() -> bool:
+	return not paused and not world.session.modal and not world.player.input_locked and world.player.is_physics_processing() and world.gameplay.health>0 and not world.player.dead and not world.session.rescue_pending and not world.session.has_position_transition()
 
 func wait_seconds(seconds: float) -> void:
 	var deadline := Time.get_ticks_msec()+int(seconds*1000)

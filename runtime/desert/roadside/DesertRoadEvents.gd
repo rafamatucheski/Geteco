@@ -1,6 +1,6 @@
 extends Node3D
 ## Eventos de estrada do deserto: uma van de entrega quebrada no acostamento ou um bloqueio de
-## bandidos atravessado na pista, ~240 m à frente de quem dirige por um trecho vazio
+## bandidos atravessado na pista, ~100 m à frente de quem dirige por um trecho vazio
 ## (RoadsideLayout.EVENT_STRETCHES). Um evento por vez, o primeiro ~90 s depois de chegar ao
 ## deserto, sem depender da história. Modelos só do trânsito comum (courier_van, ranch_single):
 ## já entram no pré-aquecimento da frota, então nada compila shader no meio da estrada.

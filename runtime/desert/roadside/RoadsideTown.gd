@@ -10,10 +10,10 @@ extends RefCounted
 const ART := preload("res://runtime/desert/roadside/RoadsideArt.gd")
 const SR := preload("res://runtime/desert/roadside/RoadsideSaltRoad.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
-const STREET_ANCHOR := Vector3(-200, 0, -880)
-const HOMES_ANCHOR := Vector3(-242, 0, -1048)
-const VILLAGE_ANCHOR := Vector3(-528, 0, -822)
-const WORKSHOP_ANCHOR := Vector3(-140, 0, -955)
+const STREET_ANCHOR := Vector3(-200,0,-540)
+const HOMES_ANCHOR := Vector3(-242,0,-708)
+const VILLAGE_ANCHOR := Vector3(-528,0,-482)
+const WORKSHOP_ANCHOR := Vector3(-140,0,-615)
 
 static func _bench(b, at: Vector3, yaw: float) -> void:
 	var wood := ART.detail("planks", Color("7a5a3a"), .8)
@@ -108,7 +108,7 @@ static func compose_homes_yards(b, _roofs) -> void:
 	var soil := ART.detail("gravel", Color("7a6248"))
 	var green := ART.color(Color("5f7a3a"))
 	for i in 10:
-		var home := Vector3(-300.0 + float(i % 5) * 29.0, 0, -1030.0 - float(floori(i / 5.0)) * 37.0) - HOMES_ANCHOR
+		var home := Vector3(-300.0 + float(i % 5) * 29.0, 0, -690.0 - float(floori(i / 5.0)) * 37.0) - HOMES_ANCHOR
 		var half := (14.0 + float(i % 3) * 2.0) * .5
 		var back := home.z - 5.5
 		# Cerca de tábuas no quintal dos fundos (fundo e dois lados), com um vão de portão.

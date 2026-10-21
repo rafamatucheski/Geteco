@@ -5,6 +5,7 @@ const L := preload("res://world/desert/DesertLayout.gd")
 const GEOMETRY := preload("res://world/desert/DesertRoadGeometry.gd")
 const UTILITY := preload("res://world/desert/DesertUtilityLines.gd")
 const ROUTES := preload("res://gameplay/NativeTrafficRoutes.gd")
+const BRIDGE_STYLE := preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd")
 var failures: Array[String] = []
 var checks := 0
 var geometry: RefCounted
@@ -31,16 +32,17 @@ func _painted(point: Vector2) -> bool:
 func _run() -> void:
 	var roads := L.roads()
 	geometry=GEOMETRY.new(); geometry.configure(roads)
+	var edge_inset: float=BRIDGE_STYLE.EDGE_LINE_INSET if BRIDGE_STYLE.enabled() else .25
 	_check(geometry.junctions.size()>=7,"T intersections are explicit centre-line vertices")
-	_check(not _painted(Vector2(337.75,-880)),"west edge is interrupted at Route 66 / town mouth")
-	_check(_painted(Vector2(347.25,-880)),"opposite Route 66 edge stays continuous across a T")
-	_check(not _painted(Vector2(342.5,-880)),"no half dash remains through the T centre")
-	_check(not _painted(Vector2(-110,-884.25)),"town edge is interrupted at Digo street")
-	_check(_painted(Vector2(340,-887)) and not _painted(Vector2(345,-887)),"native seven-metre stop bar marks only the incoming lane")
-	_check(not _painted(Vector2(-1202,-1271)),"race-only branch does not add a stop bar to the ambient highway")
-	_check(_inside(Vector2(336,-874)),"turning fillet supplies paved support outside original T rectangle")
-	_check(not _inside(Vector2(325,-863)),"fillet does not inflate the entire intersection into a paved square")
-	_check(_inside(Vector2(-211.9,-909.3)) and not _inside(Vector2(-210,-912)),"Cobre round terminal closes the approach before the portico")
+	_check(not _painted(Vector2(342.5-(5.0-edge_inset),-540)),"west edge is interrupted at Route 66 / town mouth")
+	_check(_painted(Vector2(342.5+(5.0-edge_inset),-540)),"opposite Route 66 edge stays continuous across a T")
+	_check(not _painted(Vector2(342.5,-540)),"no half dash remains through the T centre")
+	_check(not _painted(Vector2(-110,-540-(4.5-edge_inset))),"town edge is interrupted at Digo street")
+	_check(_painted(Vector2(340,-547)) and not _painted(Vector2(345,-547)),"native seven-metre stop bar marks only the incoming lane")
+	_check(not _painted(Vector2(-1062,-751)),"race-only branch does not add a stop bar to the ambient highway")
+	_check(_inside(Vector2(336,-534)),"turning fillet supplies paved support outside original T rectangle")
+	_check(not _inside(Vector2(325,-523)),"fillet does not inflate the entire intersection into a paved square")
+	_check(_inside(Vector2(-211.9,-569.3)) and not _inside(Vector2(-210,-572)),"Cobre round terminal closes the approach before the portico")
 	var worst_turn := 0.0
 	var highway_points := 0
 	for road in roads:
@@ -56,12 +58,12 @@ func _run() -> void:
 	var off_road := 0
 	var samples := 0
 	for pair in [
-		[Vector3(342.5,0,-1480),Vector3(-1140,0,-1540)],
-		[Vector3(-1140,0,-1540),Vector3(342.5,0,-1480)],
-		[Vector3(-1150,0,-880),Vector3(-1200,0,-1300)],
-		[Vector3(-1200,0,-1300),Vector3(-1150,0,-880)],
-		[Vector3(-110,0,-910),Vector3(-370,0,-910)],
-		[Vector3(342.5,0,-700),Vector3(290,0,-758)],
+		[Vector3(342.5,0,-840),Vector3(-1000,0,-900)],
+		[Vector3(-1000,0,-900),Vector3(342.5,0,-840)],
+		[Vector3(-1010,0,-540),Vector3(-1060,0,-780)],
+		[Vector3(-1060,0,-780),Vector3(-1010,0,-540)],
+		[Vector3(-110,0,-570),Vector3(-370,0,-570)],
+		[Vector3(342.5,0,-450),Vector3(290,0,-498)],
 	]:
 		var curve: Curve3D = graph.route_between(pair[0],pair[1])
 		_check(curve!=null,"directed route exists "+str(pair))
@@ -91,10 +93,15 @@ func _run() -> void:
 			var bounds := Rect2(Vector2(building.position.x,building.position.z)-size*.5,size).grow(.3)
 			if bounds.has_point(point): pole_conflicts.append(str(record.id)+" "+str(building.id))
 	_check(pole_conflicts.is_empty(),"all poles clear carriageways and buildings: "+str(pole_conflicts))
-	_check(pole_count>90 and pole_count<200 and services==3,"bounded connected utility network serves station and town")
+	_check(pole_count>40 and pole_count<200 and services==3,"bounded utility network serves all three original connections on shorter roads")
+	var pole_positions: Dictionary = {}
+	for record in record_data:
+		if record.kind == "utility_pole": pole_positions[record.position] = true
+	for record in record_data:
+		if record.kind == "utility_span": _check(pole_positions.has(record.a) and pole_positions.has(record.b), "overhead span connects existing poles")
 	# Compare actual streamed mesh triangles with the physical surface at curves/T.
 	var region := Node3D.new(); root.add_child(region)
-	var probes: Array[Vector2] = [Vector2(336,-874),Vector2(330.78,-1528.28),Vector2(-1188.28,-891.72),Vector2(-114.69,-975.31),Vector2(302,-758),Vector2(-211.9,-909.3)]
+	var probes: Array[Vector2] = [Vector2(336,-534),Vector2(330.78,-888.28),Vector2(-1048.28,-551.72),Vector2(-114.69,-635.31),Vector2(302,-498),Vector2(-211.9,-569.3)]
 	var cells: Dictionary = {}
 	for point in probes:
 		var cell := Vector2i(floori(point.x/96),floori(point.y/96))
@@ -106,11 +113,19 @@ func _run() -> void:
 		var position := Vector3(point.x,0,point.y)
 		var query := PhysicsRayQueryParameters3D.create(position+Vector3.UP,position-Vector3.UP,1)
 		var hit := region.get_world_3d().direct_space_state.intersect_ray(query)
-		_check(not hit.is_empty() and absf(float(hit.position.y)-.018)<.003,"same mesh supports tires at "+str(point))
-	for z in [-909.65,-910.165,-910.70]:
+		# Unified paving deliberately keeps physical asphalt flush with the sand;
+		# its 26mm rendered finish is not an extra physical step for the tires.
+		var physical_height := 0.0 if BRIDGE_STYLE.enabled() else .018
+		# Several chunks share this fixture parent; Godot may rename subsequent
+		# same-named meshes to @MeshInstance3D@.... Surface ownership is semantic.
+		var road_hit: bool=not hit.is_empty() and hit.collider is StaticBody3D and hit.collider.get_meta("vehicle_surface","")=="hard" and hit.collider.get_parent() is MeshInstance3D and hit.collider.get_parent().get_meta("vehicle_surface","")=="hard"
+		var observed_path := str(hit.collider.get_path()) if not hit.is_empty() else "none"
+		var observed_height := str(hit.position.y) if not hit.is_empty() else "none"
+		_check(road_hit and absf(float(hit.position.y)-physical_height)<.003,"authored asphalt collider supports tires at %s: collider=%s y=%s expected=%.3f"%[str(point),observed_path,observed_height,physical_height])
+	for z in [-569.65,-570.165,-570.70]:
 		var position := Vector3(-210,0,float(z))
 		var hit := region.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(position+Vector3.UP,position-Vector3.UP,1))
-		var expected := lerpf(.024,.082,inverse_lerp(-909.6,-910.73,float(z)))
+		var expected := lerpf(.024,.082,inverse_lerp(-569.6,-570.73,float(z)))
 		_check(not hit.is_empty() and absf(float(hit.position.y)-expected)<.003,"Cobre walking ramp has the same rendered and physical height at "+str(z))
 	region.free()
 	print("DESERT_ROADS_RESULT ",JSON.stringify({"checks":checks,"failures":failures,"traffic_samples":samples,"poles":pole_count}))

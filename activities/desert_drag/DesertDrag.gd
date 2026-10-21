@@ -195,7 +195,7 @@ func start_rival(identity: String) -> bool:
 		if not open_meet.pending.is_empty():
 			session.show_message("Você já está inscrito. Consulte sua posição no quadro.")
 			return false
-		if open_meet.track_busy(): return open_meet.request(identity,false)
+		open_meet.clear_for_player()
 	if identity=="takeshi":
 		session.show_dialogue([{"speaker":"Takeshi","message":takeshi_controller.INTRO}],func():
 			if start_block_reason().is_empty(): _start("takeshi"))
@@ -216,10 +216,11 @@ func start_return_pass(identity: String) -> bool:
 	if not reason.is_empty():
 		session.show_message(reason)
 		return false
-	# Do not dispatch a straight-line queue ticket as an out-and-back race.
-	if is_instance_valid(open_meet) and (not open_meet.pending.is_empty() or open_meet.track_busy()):
-		session.show_message("Aguarde a pista e a fila ficarem livres.")
-		return false
+	if is_instance_valid(open_meet):
+		if not open_meet.pending.is_empty():
+			session.show_message("Cancele a inscrição atual antes de trocar de prova.")
+			return false
+		open_meet.clear_for_player()
 	_return_pending=true
 	var started := _start(identity)
 	_return_pending=false

@@ -1,5 +1,6 @@
 extends "res://tests/measure/measure_desert.gd"
-## Same Main, camera, weather and points before/after the lateral canyon.
+## Main measurements follow the canyon's current approach, bridge and gate.
+const L := preload("res://world/desert/canyon/DesertSmugglerLayout.gd")
 var failures: Array[String] = []
 var capture_only := false
 
@@ -10,7 +11,7 @@ func run() -> void:
 	capture_only="--capture-only" in OS.get_cmdline_user_args()
 	root.size=Vector2i(1280,720)
 	output=FIXTURE.output_dir("smuggler-canyon-measure")
-	var at := Vector3(-1344,.1,-805)
+	var at: Vector3 = L.APPROACH+Vector3.UP*.1
 	var snapshot := FIXTURE.full_snapshot(at,true)
 	snapshot.region_id="desert"
 	snapshot.world.pedestrian={"region":"desert","position":[at.x,at.y,at.z]}
@@ -21,6 +22,7 @@ func run() -> void:
 		for file in DirAccess.get_files_at(folder):
 			if file.ends_with(".gd") or file.ends_with(".gdshader"): fingerprint[folder.path_join(file)]=FileAccess.get_sha256(folder.path_join(file))
 	fingerprint["res://scripts/CameraRig.gd"]=FileAccess.get_sha256("res://scripts/CameraRig.gd")
+	fingerprint[get_script().resource_path]=FileAccess.get_sha256(get_script().resource_path)
 	world=load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival",true); world.set_meta("menu_save_path",path)
 	root.add_child(world); current_scene=world
@@ -41,9 +43,15 @@ func run() -> void:
 	world.session.weather._update()
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps=0
-	var points := [Vector3(-1344,.2,-805),Vector3(-1344,.2,-655),Vector3(-1344,.2,-557)]
-	if "--bridge-only" in OS.get_cmdline_user_args(): points=[Vector3(-1344,.2,-655)]
-	for point: Vector3 in points:
+	var points := [
+		{"id":"approach","point":L.APPROACH+Vector3.UP*.2},
+		{"id":"bridge","point":L.BRIDGE_START.lerp(L.BRIDGE_END,.5)+Vector3.UP*.2},
+		{"id":"defended-gate","point":Vector3(L.CENTER.x,.2,L.GATE_Z-17.0)},
+	]
+	if "--bridge-only" in OS.get_cmdline_user_args(): points=points.filter(func(row): return row.id=="bridge")
+	for setup: Dictionary in points:
+		var point: Vector3=setup.point
+		var id: String=setup.id
 		world.player.teleport(point)
 		world.production.region.set_focus(point)
 		world.production.region.prepare_collision_at(point)
@@ -54,7 +62,6 @@ func run() -> void:
 		await create_timer(5 if capture_only else 10).timeout
 		sampling=false
 		var warm := {"summary":stats(samples),"intervals_ms":samples.duplicate()}
-		var id := "approach" if point.z<-780 else ("bridge" if point.z<-600 else "defended-gate")
 		if world.player.global_position.y<-.5: failures.append("No support: "+id)
 		if capture_only:
 			for frame in 3: await process_frame
@@ -86,7 +93,7 @@ func run() -> void:
 		reports[-1]["camera_transform"]=str(world.camera.global_transform)
 	var stable := fingerprint==source_fingerprint(fingerprint)
 	if not stable: failures.append("Concurrent source changes during sampling")
-	var report := {"valid":failures.is_empty(),"failures":failures,"baseline":not preload("res://world/desert/canyon/DesertSmugglerLayout.gd").enabled(),"scenarios":reports,"engine":Engine.get_version_info().string,"gpu":RenderingServer.get_video_adapter_name(),"renderer":RenderingServer.get_current_rendering_method(),"resolution":str(root.size),"vsync":DisplayServer.window_get_vsync_mode(),"max_fps":Engine.max_fps,"source_stable":stable,"fingerprint":fingerprint,"notes":"Real Main native .NET, population24, same camera40/day .45 in both modes. Fixture placements do not prove access. 10s warmup/30s per point. Original baseline failed Main startup; --smuggler-baseline reconstructs only this feature absent while retaining startup fix. External process overlap separately recorded. Target60fps, >5% p95/p99 increase requests bounded confirmation."}
+	var report := {"valid":failures.is_empty(),"failures":failures,"baseline":not preload("res://world/desert/canyon/DesertSmugglerLayout.gd").enabled(),"scenarios":reports,"engine":Engine.get_version_info().string,"gpu":RenderingServer.get_video_adapter_name(),"renderer":RenderingServer.get_current_rendering_method(),"resolution":str(root.size),"vsync":DisplayServer.window_get_vsync_mode(),"max_fps":Engine.max_fps,"source_stable":stable,"fingerprint":fingerprint,"notes":"Real Main native .NET with live population, camera40/day .45 at current approach/bridge/gate anchors. Fixture placements do not prove access. 10s warmup/30s per point. A comparative local baseline is not implied by this current-state report. External process overlap separately recorded. Target60fps, >5% p95/p99 increase requires bounded confirmation against equivalent evidence."}
 	report["capture_only"]=capture_only
 	if capture_only: report["notes"]="Main native .NET screenshots only; no performance sampling. Five seconds to settle each pose. Fixed40m camera."
 	FileAccess.open(output.path_join("report.json"),FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))

@@ -70,7 +70,7 @@ static func _loop(source: AudioStreamWAV) -> AudioStreamWAV:
 
 static func presence(point: Vector3) -> Dictionary:
 	var bridge_x := 1.0-smoothstep(6.0,60.0,absf(point.x-L.CENTER.x))
-	var beyond_bridge := maxf(0.0,maxf(-803.0-point.z,point.z+516.0))
+	var beyond_bridge := maxf(0.0,maxf(L.BRIDGE_START.z-28.0-point.z,point.z-(L.BRIDGE_END.z+14.0)))
 	var bridge := bridge_x*(1.0-smoothstep(0.0,34.0,beyond_bridge))
 	var camp_distance := Vector2(point.x-L.CENTER.x,point.z-L.CENTER.z).length()
 	var camp := 1.0-smoothstep(12.0,52.0,camp_distance)
@@ -124,7 +124,7 @@ func _play_detail(weight: float) -> void:
 	else:
 		# The stressed member is beside the crossing, not at an arbitrary urban
 		# sound anchor. Slight position variation preserves the exposed span.
-		detail.global_position=Vector3(L.CENTER.x+(-1.8 if variant==0 else 1.8),.4,clampf(at.z+_rng.randf_range(-5,5),-796,-522))
+		detail.global_position=Vector3(L.CENTER.x+(-1.8 if variant==0 else 1.8),.4,clampf(at.z+_rng.randf_range(-5,5),L.BRIDGE_START.z-21.0,L.BRIDGE_END.z+8.0))
 		detail.volume_db=-12.0+linear_to_db(maxf(weight,.0001))
 	detail.stream=BANK[kind][variant]
 	detail.pitch_scale=_rng.randf_range(.90,1.04)

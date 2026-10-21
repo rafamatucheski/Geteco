@@ -108,15 +108,15 @@ func _open_meet_action(action: String) -> void:
 	if action=="cancel":
 		race.open_meet.cancel_ticket()
 		return
-	if action not in ["now","queue"]: return
+	if action!="now": return
 	session.close_menu()
 	var reason: String = race.start_block_reason()
 	if not reason.is_empty():
 		if open_board(): board.set_message(reason)
 		return
 	var identity: String = race.OPEN_ROSTER.IDS[race.open_meet.visitor_serial%race.OPEN_ROSTER.IDS.size()]
-	if not race.open_meet.request(identity,action=="queue"):
-		if open_board(): board.set_message("Você já tem uma inscrição. Consulte Baterias livres.")
+	if not race.open_meet.request(identity):
+		if open_board(): board.set_message("Não foi possível alinhar. Verifique o carro e as faixas de largada.")
 
 func _open_instruments() -> void:
 	if not session.modal or not is_instance_valid(layer) or not layer.visible or race.active: return
@@ -184,7 +184,7 @@ func _request_return(identity: String) -> void:
 		if open_board(): board.set_message(reason)
 		return
 	if not race.start_return_pass(identity):
-		if open_board(): board.set_message("Aguarde a pista e a fila ficarem livres.")
+		if open_board(): board.set_message("Não foi possível alinhar. Verifique o carro e as faixas de largada.")
 
 func _open_challenges() -> void:
 	if not session.modal or race.active or not is_instance_valid(layer) or not layer.visible: return

@@ -29,7 +29,7 @@ func check(ok: bool,label: String) -> bool:
 func run() -> void:
 	if not check(DisplayServer.get_name()!="headless" and "--no-save" in OS.get_cmdline_user_args() and OS.get_environment("HARBOR_NO_CSHARP").is_empty(),"rendered isolated native .NET required"): finish(2); return
 	output=FIXTURE.output_dir("smuggler-canyon-audio")
-	var point := Vector3(L.CENTER.x,.2,-655)
+	var point: Vector3 = L.BRIDGE_START.lerp(L.BRIDGE_END,.5)+Vector3.UP*.2
 	var data := FIXTURE.full_snapshot(point,true)
 	data.region_id="desert"
 	data.world.pedestrian={"region":"desert","position":[point.x,point.y,point.z]}

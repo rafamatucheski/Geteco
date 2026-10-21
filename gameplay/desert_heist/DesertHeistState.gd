@@ -1,9 +1,9 @@
 extends RefCounted
 ## Uma carga por recibo; o estado e a carteira viajam no mesmo snapshot da sessão.
 const KEY := "desert_cargo_heist"
-const DROP_POINT := Vector3(-650,0,-1510)
-const START := Vector3(-1080,.08,-1537.5)
-const END := Vector3(260,.08,-1537.5)
+const DROP_POINT := Vector3(-510,0,-870)
+const START := Vector3(-940,.08,-897.5)
+const END := Vector3(260,.08,-897.5)
 const PHASES := ["driving","intercepted","stolen","opened","looted","destroyed","departed"]
 
 static func is_departure_time(time: float) -> bool:

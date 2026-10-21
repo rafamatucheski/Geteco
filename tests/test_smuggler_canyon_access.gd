@@ -4,6 +4,7 @@ const L := preload("res://world/desert/canyon/DesertSmugglerLayout.gd")
 const REGION := preload("res://world/desert/DesertRegion.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
 const VEHICLE := preload("res://scripts/Vehicle.gd")
+const DESERT_LAYOUT := preload("res://world/desert/DesertLayout.gd")
 var region
 var actor
 var stage: Node3D
@@ -44,6 +45,8 @@ func run() -> void:
 	region=REGION.new(); region.initial_focus=L.APPROACH; stage.add_child(region)
 	actor=ACTOR.new(); actor.is_player=true; actor.controlled_automatically=true
 	actor.speed=6.5; actor.position=L.APPROACH+Vector3.UP*.2; stage.add_child(actor)
+	var bridge_mid: Vector3=L.BRIDGE_START.lerp(L.BRIDGE_END,.5)
+	var lateral_scale: float=L.BOUNDS.size.x/270.0
 	for i in 20: await physics_frame
 	if "--site-only" in OS.get_cmdline_user_args():
 		await check_site_access()
@@ -51,29 +54,30 @@ func run() -> void:
 		return
 	if not await walk(L.BRIDGE_START+Vector3(0,.12,1),12): finish(); return
 	await photo("entrance")
-	if not await walk(Vector3(L.CENTER.x,.12,-655),30): finish(); return
+	if not await walk(bridge_mid+Vector3.UP*.12,30): finish(); return
 	await photo("bridge-gameplay")
 	for side in [-1.0,1.0]:
-		# The broadened escarpments place the lower bench at 15 m; sample the
-		# exposed floor at 10 m while retaining the original >50 m depth contract.
-		var at := Vector3(L.CENTER.x+side*10,2,-655)
+		# Geology narrows while the walking deck keeps its3.8m width. Sample
+		# outside the deck at the same relative floor/scarp/rim locations.
+		var floor_offset := maxf(L.BRIDGE_WIDTH*.5+.6,10.0*lateral_scale)
+		var at := Vector3(L.CENTER.x+side*floor_offset,2,bridge_mid.z)
 		region.prepare_collision_at(at)
 		await physics_frame
 		var ray := PhysicsRayQueryParameters3D.create(at,at-Vector3.UP*100,1)
 		var hit := stage.get_world_3d().direct_space_state.intersect_ray(ray)
-		check(not hit.is_empty() and hit.position.y<-50,"deep physical gorge on side %s (no flat hidden floor)"%side)
+		check(not hit.is_empty() and hit.position.y<-L.DEPTH*(50.0/72.0),"scaled physical gorge depth on side %s (no flat hidden floor)"%side)
 		for offset in [15.0,22.0,28.0]:
-			var probe := Vector3(L.CENTER.x+side*offset,2,-655)
+			var probe := Vector3(L.CENTER.x+side*offset*lateral_scale,2,bridge_mid.z)
 			region.prepare_collision_at(probe)
 			await physics_frame
 			var probe_hit := stage.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(probe,probe-Vector3.UP*100,1))
 			var predicted := preload("res://world/desert/canyon/DesertSmugglerTerrain.gd").surface_height(Vector2(probe.x,probe.z))
 			check(not probe_hit.is_empty() and absf(probe_hit.position.y-predicted)<.03,"refined scarp physical/query agreement %s"%probe)
-		var rim := Vector3(L.CENTER.x+side*38,2,-655)
+		var rim := Vector3(L.CENTER.x+side*38.0*lateral_scale,2,bridge_mid.z)
 		region.prepare_collision_at(rim)
 		await physics_frame
 		var rim_hit := stage.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(rim,rim-Vector3.UP*100,1))
-		check(not rim_hit.is_empty() and rim_hit.position.y>-10,"nearby upper rim frames side %s"%side)
+		check(not rim_hit.is_empty() and rim_hit.position.y>-L.DEPTH*(10.0/72.0),"nearby upper rim frames side %s"%side)
 	if not await walk(Vector3(L.CENTER.x+.725,.12,L.GATE_Z-4),25): finish(); return
 	if not await walk(L.BRIDGE_END+Vector3(.725,.12,3),10): finish(); return
 	await photo("pedestrian-gate")
@@ -98,26 +102,29 @@ func run() -> void:
 		car.queue_free(); await physics_frame
 	actor.position=L.BRIDGE_END+Vector3(.725,.2,3)
 	if not await walk(Vector3(L.CENTER.x+.725,.12,L.GATE_Z-4),10): finish(); return
-	if not await walk(Vector3(L.CENTER.x,.12,-655),30): finish(); return
+	if not await walk(bridge_mid+Vector3.UP*.12,30): finish(); return
 	if not await walk(L.APPROACH,35): finish(); return
 	await photo("returned")
-	region.set_focus(Vector3(-1100,0,-1000))
+	region.set_focus(DESERT_LAYOUT.TRUCK_STOP)
 	for i in 30: await physics_frame
+	check(not region.chunks.has(region._cell(L.BRIDGE_END)),"distant focus actually releases the canyon bridge chunk")
 	region.set_focus(L.BRIDGE_END)
 	region.prepare_collision_at(L.BRIDGE_END)
 	for i in 15: await physics_frame
 	actor.position=L.BRIDGE_END+Vector3.UP*.3
 	for i in 30: await physics_frame
 	check(actor.is_on_floor() and actor.position.y>-.2,"bridge support restored after streaming return")
-	camera.size=280
-	camera.position=L.CENTER+Vector3(130,180,-235)
-	camera.look_at(Vector3(L.CENTER.x,-25,-635))
+	camera.size=maxf(L.BOUNDS.size.x,L.BOUNDS.size.y)*1.1
+	camera.position=L.CENTER+Vector3(L.BOUNDS.size.x*.5,L.DEPTH+L.BOUNDS.size.y*.5,-L.BOUNDS.size.y*.65)
+	camera.look_at(bridge_mid-Vector3.UP*L.DEPTH*.35)
 	await photo("overview-diagnostic")
 	finish()
 
 func walk(target: Vector3,seconds: float) -> bool:
 	var deadline := Time.get_ticks_msec()+int(seconds*1000)
 	var frame := 0
+	var seam_z := floorf(((L.BRIDGE_START.z+L.BRIDGE_END.z)*.5)/REGION.CELL)*REGION.CELL
+	var recording_half_span := minf(18.0,L.BRIDGE_START.distance_to(L.BRIDGE_END)*.2)
 	while Time.get_ticks_msec()<deadline:
 		var move: Vector3=target-actor.position; move.y=0
 		if move.length()<.3:
@@ -131,7 +138,7 @@ func walk(target: Vector3,seconds: float) -> bool:
 		if frame%30==0: trace.append({"ms":Time.get_ticks_msec(),"at":str(actor.position),"floor":actor.is_on_floor()})
 		if actor.position.y<-.5:
 			return check(false,"lost bridge support at %s"%actor.position)
-		if "--record-canyon" in OS.get_cmdline_user_args() and frame%6==0 and actor.position.z>-686 and actor.position.z<-650 and DisplayServer.get_name()!="headless":
+		if "--record-canyon" in OS.get_cmdline_user_args() and frame%6==0 and absf(actor.position.z-seam_z)<recording_half_span and DisplayServer.get_name()!="headless":
 			await RenderingServer.frame_post_draw
 			var stamp := Time.get_ticks_msec()
 			var filename := "temporal-%d.png"%stamp

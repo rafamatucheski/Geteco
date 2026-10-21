@@ -3,8 +3,8 @@ extends Node3D
 const MODEL := preload("res://assets/CivilianModel.gd")
 const CARS := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
 const HONOR := preload("res://runtime/TakeshiHonor.gd")
-const POINT := Vector3(-1014,0,-1275)
-const CAR_POINT := Vector3(-1019,0,-1275)
+const POINT := Vector3(-874,0,-755)
+const CAR_POINT := Vector3(-879,0,-755)
 var session
 var race: Node3D
 var actor: StaticBody3D

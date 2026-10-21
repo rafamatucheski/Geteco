@@ -1,11 +1,16 @@
 extends Node3D
 ## World-space circuit east of Vértice, inside the area marked by the player.
 const COLLISION_FACES := preload("res://world/chunk_bake/CollisionFaces.gd")
+const EDITOR_TERRAIN := preload("res://world/editing/WorldTerrainEdits.gd")
 const ENTRY := Vector3(-224,.15,-37)
 const BOUNDS := Rect2(-247,-147,155,112)
 const HALF_WIDTH := 5.2
 var curve := Curve3D.new()
 var points := PackedVector3Array()
+var _original_points := PackedVector3Array()
+var _ribbon_sides := PackedVector3Array()
+var _editor_terrain: Variant
+var _editor_paint_maps := {}
 var length := 0.0
 var gates := PackedVector3Array()
 var _materials := {}
@@ -21,6 +26,9 @@ var trackside: Node3D
 static var _soil_texture: NoiseTexture2D
 
 func _init() -> void:
+	# Its staged descendants use the same session IDs in streamed chunks and previews.
+	set_meta("world_unit_session_source","motocross")
+	_editor_terrain = EDITOR_TERRAIN.from_engine("harbor","motocross")
 	var knots := PackedVector3Array([Vector3(-218,1,-57),Vector3(-230,4,-87),Vector3(-220,11,-119),Vector3(-190,17,-132),Vector3(-154,12,-128),Vector3(-116,4,-116),Vector3(-104,2,-91),Vector3(-110,1,-60),Vector3(-135,4,-65),Vector3(-152,8,-96),Vector3(-179,5,-92),Vector3(-185,1,-59)])
 	curve.bake_interval = 1.5
 	for i in knots.size():
@@ -38,6 +46,16 @@ func _init() -> void:
 		if fraction > .80 and fraction < .91:
 			p.y += sin((fraction-.80)/.11*PI*6)*.75
 		points.append(p)
+	_original_points = points.duplicate()
+	var unique := points.size()-1
+	for i in points.size():
+		var wrapped := i%unique
+		_ribbon_sides.append((points[(wrapped+1)%unique]-points[posmod(wrapped-1,unique)]).cross(Vector3.UP).normalized())
+	if not _editor_terrain.brushes.is_empty():
+		for i in points.size():
+			var p := points[i]
+			p.y = _editor_terrain.height_at(Vector2(p.x,p.z),p.y,true)
+			points[i] = p
 	for i in 32: gates.append(sample(float(i)*length/32.0))
 	_build_grid()
 
@@ -81,6 +99,7 @@ func nearest(point: Vector3) -> Dictionary:
 	var best := INF
 	var distance := 0.0
 	var closest := Vector3.ZERO
+	var base_height := 0.0
 	var p := Vector2(point.x,point.z)
 	var cell := Vector2i(floori(point.x/GRID_CELL),floori(point.z/GRID_CELL))
 	var ring := 0
@@ -100,11 +119,12 @@ func nearest(point: Vector3) -> Dictionary:
 					if d < best:
 						best = d
 						closest = points[i].lerp(points[i+1],t)
+						base_height = _original_points[i].lerp(_original_points[i+1],t).y
 						distance = (float(i)+t)/float(points.size()-1)*length
 		# Qualquer segmento além do anel `ring` está a pelo menos `ring * GRID_CELL`.
 		if best < INF and best <= pow(float(ring)*GRID_CELL,2.0): break
 		ring += 1
-	return {"distance":distance,"lateral":sqrt(best),"point":closest}
+	return {"distance":distance,"lateral":sqrt(best),"point":closest,"base_y":base_height}
 
 signal built
 var complete := false
@@ -224,6 +244,8 @@ func _soil(track_surface: bool) -> ShaderMaterial:
 	preload("res://activities/motocross/MotocrossGroundDetail.gd").bind_textures(material)
 	material.set_shader_parameter("track_surface",track_surface)
 	material.set_shader_parameter("wetness",wetness)
+	if not _editor_paint_maps.has(track_surface): _editor_paint_maps[track_surface] = _editor_terrain.paint_maps(BOUNDS,2.0,track_surface)
+	EDITOR_TERRAIN.bind_paint(material,_editor_paint_maps[track_surface])
 	_soil_materials.append(material)
 	return material
 
@@ -253,7 +275,7 @@ func _mesh(surface: SurfaceTool, title: String, solid: bool) -> MeshInstance3D:
 		var shape := CollisionShape3D.new()
 		shape.shape = _rim_flush_collider(built[2]) if title == "QuarryHills" else built[1]
 		body.add_child(shape)
-		add_child(body)
+		visual.add_child(body)
 	return visual
 
 ## O relevo sobe 2 mm do chão para não brigar com ele na tela (z-fighting), e esse degrau
@@ -272,12 +294,13 @@ func _rim_flush_collider(source_faces: PackedVector3Array) -> ConcavePolygonShap
 
 func _height(p: Vector2, route: Dictionary = {}) -> float:
 	if route.is_empty(): route = nearest(Vector3(p.x,0,p.y))
-	var track_height := float(route.point.y)
+	var track_height := float(route.get("base_y",route.point.y))
 	var edge := minf(minf(p.x-BOUNDS.position.x,BOUNDS.end.x-p.x),minf(p.y-BOUNDS.position.y,BOUNDS.end.y-p.y))
 	var hill := 13.0*exp(-pow((p.x+185)/24,2)-pow((p.y+116)/20,2))
 	hill += 4.0*exp(-pow((p.x+134)/12,2)-pow((p.y+91)/18,2))
 	var blend := smoothstep(HALF_WIDTH,HALF_WIDTH+11,float(route.lateral))
-	return maxf(.002,lerpf(track_height-.25,hill,blend)*smoothstep(0,7,edge))
+	var original := maxf(.002,lerpf(track_height-.25,hill,blend)*smoothstep(0,7,edge))
+	return _editor_terrain.height_at(p,original) if not _editor_terrain.brushes.is_empty() else original
 
 func _build_terrain() -> void:
 	var st := SurfaceTool.new()
@@ -319,27 +342,37 @@ func _build_ribbon() -> void:
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	st.set_material(_material(Color("b18756")))
-	var edges := PackedVector3Array()
 	var unique_count := points.size()-1
-	for i in points.size():
-		var index := i%unique_count
-		var tangent := points[(index+1)%unique_count]-points[posmod(index-1,unique_count)]
-		edges.append(tangent.cross(Vector3.UP).normalized()*HALF_WIDTH)
 	for i in range(points.size()-1):
-		var a := points[i]
-		var b := points[i+1]
-		var side := edges[i]
-		var next_side := edges[i+1]
 		# Shared cross-sections give corners an outside berm; the center stays rideable.
 		for band in 6:
 			var left := float(band)/6.0*2-1
 			var right := float(band+1)/6.0*2-1
-			var corners := [a+side*left+Vector3.UP*_bank(i,left),b+next_side*left+Vector3.UP*_bank(i+1,left),a+side*right+Vector3.UP*_bank(i,right),b+next_side*right+Vector3.UP*_bank(i+1,right)]
+			var corners := [_ribbon_vertex(i,left*HALF_WIDTH),_ribbon_vertex(i+1,left*HALF_WIDTH),_ribbon_vertex(i,right*HALF_WIDTH),_ribbon_vertex(i+1,right*HALF_WIDTH)]
 			var uvs := [Vector2((left+1)*.5,float(i)*length/unique_count),Vector2((left+1)*.5,float(i+1)*length/unique_count),Vector2((right+1)*.5,float(i)*length/unique_count),Vector2((right+1)*.5,float(i+1)*length/unique_count)]
 			for corner in [0,1,2,2,1,3]:
 				st.set_uv(uvs[corner])
 				st.add_vertex(corners[corner])
 	_mesh(st,"DirtTrack",true)
+
+func _ribbon_side(index: int) -> Vector3:
+	return _ribbon_sides[index]
+
+func _ribbon_vertex(index: int, lateral: float) -> Vector3:
+	var p := _original_points[index]+_ribbon_side(index)*lateral+Vector3.UP*_bank(index,lateral/HALF_WIDTH)
+	if not _editor_terrain.brushes.is_empty(): p.y = _editor_terrain.height_at(Vector2(p.x,p.z),p.y,true)
+	return p
+
+func _triangle_height(point: Vector2, a: Vector3, b: Vector3, c: Vector3) -> float:
+	var first := Vector2(b.x-a.x,b.z-a.z)
+	var second := Vector2(c.x-a.x,c.z-a.z)
+	var offset := point-Vector2(a.x,a.z)
+	var denominator := first.cross(second)
+	if absf(denominator) < 1e-8: return NAN
+	var u := offset.cross(second)/denominator
+	var v := first.cross(offset)/denominator
+	if u < -.0001 or v < -.0001 or u+v > 1.0001: return NAN
+	return a.y+(b.y-a.y)*u+(c.y-a.y)*v
 
 ## Height of the rendered/collision clay at a lateral offset from the route,
 ## following the six-band banked cross-section rather than the flat centerline.
@@ -351,9 +384,16 @@ func ribbon_height(distance: float, lateral: float) -> float:
 	var band := clampi(floori((t+1.0)*3.0),0,5)
 	var left := float(band)/3.0-1.0
 	var u := (t-left)*3.0
-	var near := points[i].y+lerpf(_bank(i,left),_bank(i,left+1.0/3.0),u)
-	var far := points[i+1].y+lerpf(_bank(i+1,left),_bank(i+1,left+1.0/3.0),u)
-	return lerpf(near,far,index-float(i))
+	var a := _ribbon_vertex(i,left*HALF_WIDTH)
+	var b := _ribbon_vertex(i+1,left*HALF_WIDTH)
+	var c := _ribbon_vertex(i,(left+1.0/3.0)*HALF_WIDTH)
+	var d := _ribbon_vertex(i+1,(left+1.0/3.0)*HALF_WIDTH)
+	var along := index-float(i)
+	var at := a.lerp(c,u).lerp(b.lerp(d,u),along)
+	var first := _triangle_height(Vector2(at.x,at.z),a,b,c)
+	if is_finite(first): return first
+	var second := _triangle_height(Vector2(at.x,at.z),c,b,d)
+	return second if is_finite(second) else at.y
 
 ## Visible ground at any lateral offset: clay, sculpted shoulder or quarry hill.
 func ground_height(distance: float, lateral: float) -> float:
@@ -376,7 +416,7 @@ func ground_height(distance: float, lateral: float) -> float:
 		else:
 			var outer: Vector3 = points[k]+side*(HALF_WIDTH+3.0)*direction
 			outer_y = _height(Vector2(outer.x,outer.z))
-		heights.append(lerpf(points[k].y+_bank(k,direction),outer_y,(reach-HALF_WIDTH)/3.0))
+		heights.append(lerpf(_ribbon_vertex(k,HALF_WIDTH*direction).y,outer_y,(reach-HALF_WIDTH)/3.0))
 	return lerpf(heights[0],heights[1],index-float(i))
 
 ## Signed heading change over ±4.5 m; positive turns left (outside is +x of pose).
@@ -408,7 +448,7 @@ func _build_shoulders() -> void:
 		var side := (points[(index+1)%n]-points[posmod(index-1,n)]).cross(Vector3.UP).normalized()
 		var section: Array[Vector3] = []
 		for direction in [-1.0,1.0]:
-			var inner: Vector3 = points[i]+side*HALF_WIDTH*direction+Vector3.UP*_bank(i,direction)
+			var inner := _ribbon_vertex(i,HALF_WIDTH*direction)
 			var outer: Vector3 = points[i]+side*(HALF_WIDTH+3.0)*direction
 			outer.y = _height(Vector2(outer.x,outer.z))
 			if direction < 0: outer_left.append(outer.y)
@@ -516,6 +556,8 @@ func _build_props() -> void:
 	for i in stake_transforms.size(): stakes.set_instance_transform(i,stake_transforms[i])
 	var stake_visual := MultiMeshInstance3D.new()
 	stake_visual.name = "CourseStake"
+	stake_visual.set_meta("world_unit_explode",true)
+	stake_visual.set_meta("preview_instance_transforms",stake_transforms)
 	stake_visual.multimesh = stakes
 	stake_visual.material_override = _material(Color("e7e1c6"))
 	add_child(stake_visual)
@@ -588,6 +630,7 @@ func _dress_quarry() -> void:
 	for i in transforms.size(): rocks.set_instance_transform(i,transforms[i])
 	var visual := MultiMeshInstance3D.new()
 	visual.name = "QuarryRocks"
+	visual.set_meta("world_unit_explode",true)
 	visual.set_meta("preview_instance_transforms",transforms)
 	visual.multimesh = rocks
 	visual.material_override = _material(Color("746e61"))

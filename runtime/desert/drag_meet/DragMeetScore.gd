@@ -2,7 +2,7 @@ extends Node
 ## Two synchronized, offline-composed stems. Survives the spatial crowd's LOD;
 ## never changes global bus levels, the radio station, or a persisted setting.
 const STEM_PATHS := ["res://audio/drag_night/patio.ogg", "res://audio/drag_night/pulso.ogg"]
-const SPEAKERS := [Vector3(-922,1.3,-1306), Vector3(-1028,1.3,-1292)]
+const SPEAKERS := [Vector3(-782,1.3,-786), Vector3(-888,1.3,-772)]
 const LOOP_SECONDS := 73.8461451247
 const SILENT_DB := -72.0
 var players: Array[AudioStreamPlayer] = []

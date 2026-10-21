@@ -36,25 +36,25 @@ const CAVE_RADIUS := 19.0
 ## Pontos achados por varredura com as mesmas reservas dos enfeites do deserto
 ## (DesertRegion._decoration_clear, 22 m, longe de estrada e em chão plano).
 const SITES := [
-	{"id": "homestead_salt", "kind": "homestead", "center": Vector2(-360, -650), "yaw": 0.4},
-	{"id": "homestead_mesa", "kind": "homestead", "center": Vector2(-1040, -770), "yaw": 2.6},
-	{"id": "homestead_dry", "kind": "homestead", "center": Vector2(40, -1050), "yaw": -1.2},
-	{"id": "homestead_well", "kind": "homestead", "center": Vector2(-1360, -1210), "yaw": 1.5},
-	{"id": "outlaws_ridge", "kind": "outlaws", "center": Vector2(-1320, -1810), "yaw": 1.1},
-	{"id": "outlaws_wash", "kind": "outlaws", "center": Vector2(40, -1890), "yaw": -0.6},
-	{"id": "outlaws_flats", "kind": "outlaws", "center": Vector2(-880, -1130), "yaw": 3.0},
-	{"id": "outlaws_dunes", "kind": "outlaws", "center": Vector2(200, -1410), "yaw": 0.3},
-	{"id": "cave_coyote", "kind": "cave", "center": Vector2(-1120, -1410), "yaw": 0.9, "loot": "weapon", "weapon": "shotgun",
+	{"id": "homestead_salt", "kind": "homestead", "center": Vector2(-360, -485), "yaw": 0.4},
+	{"id": "homestead_mesa", "kind": "homestead", "center": Vector2(-900, -485), "yaw": 2.6},
+	{"id": "homestead_dry", "kind": "homestead", "center": Vector2(0, -710), "yaw": -1.2},
+	{"id": "homestead_well", "kind": "homestead", "center": Vector2(-1240, -850), "yaw": 1.5},
+	{"id": "outlaws_ridge", "kind": "outlaws", "center": Vector2(-1180, -1130), "yaw": 1.1},
+	{"id": "outlaws_wash", "kind": "outlaws", "center": Vector2(12, -1180), "yaw": -0.6},
+	{"id": "outlaws_flats", "kind": "outlaws", "center": Vector2(-600, -470), "yaw": 3.0},
+	{"id": "outlaws_dunes", "kind": "outlaws", "center": Vector2(-370, -1170), "yaw": 0.3},
+	{"id": "cave_coyote", "kind": "cave", "center": Vector2(-1210, -940), "yaw": 0.9, "loot": "weapon", "weapon": "shotgun",
 		"note": "Riscado na pedra: \"O cobre não saiu pela estrada. Desceu o leito seco, para o sul.\""},
-	{"id": "cave_vulture", "kind": "cave", "center": Vector2(-600, -1410), "yaw": -2.2, "loot": "cash", "amount": 420,
+	{"id": "cave_vulture", "kind": "cave", "center": Vector2(-480, -865), "yaw": -2.2, "loot": "cash", "amount": 420,
 		"note": "Uma lata enferrujada com dinheiro e um bilhete: \"Se eu não voltar, é seu. — L.\""},
-	{"id": "cave_whisper", "kind": "cave", "center": Vector2(-360, -1690), "yaw": 1.8, "loot": "cash", "amount": 260,
+	{"id": "cave_whisper", "kind": "cave", "center": Vector2(-360, -1010), "yaw": 1.8, "loot": "cash", "amount": 260,
 		"note": "Marcas de giz contam dias. Alguém morou aqui por muito tempo."},
-	{"id": "cave_sun", "kind": "cave", "center": Vector2(-280, -810), "yaw": 0.2, "loot": "weapon", "weapon": "smg",
+	{"id": "cave_sun", "kind": "cave", "center": Vector2(-280, -470), "yaw": 0.2, "loot": "weapon", "weapon": "smg",
 		"note": "Uma caixa de munição militar, sem número de série."},
 	# A caverna do Vicente (20/10): fora do mapa e da torre até a décima carta; dentro, sob a lona,
 	# o Coyote 440 dos irmãos. "Ao sul do leito seco", como diz o risco na caverna do coiote.
-	{"id": "cave_brother", "kind": "cave", "center": Vector2(-1170, -1730), "yaw": 0.3, "loot": "car", "secret": true,
+	{"id": "cave_brother", "kind": "cave", "center": Vector2(-1030, -1050), "yaw": 0.3, "loot": "car", "secret": true,
 		"note": "No chaveiro, uma foto gasta: dois meninos na mureta do canal. Atrás, a letra do Vicente: \"Ele ainda acelera do mesmo jeito. Cuida dele.\""},
 ]
 var session

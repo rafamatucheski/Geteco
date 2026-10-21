@@ -24,7 +24,7 @@ const TEXTS := {
 ## Onde cada uma está (nome curto para a tela de colecionáveis).
 const PLACES := {
 	"vicente_letter_01": "Cais do porto", "vicente_letter_02": "Oficina do Maciota", "vicente_letter_03": "Sobrados do canal",
-	"vicente_letter_04": "Ponte para a serra", "vicente_letter_05": "Estrada da serra", "vicente_letter_06": "Curva alta da serra",
+	"vicente_letter_04": "Ponte para a serra", "vicente_letter_05": "Cabana da serra", "vicente_letter_06": "Terminal da vila da serra",
 	"vicente_letter_07": "Caverna do Sussurro", "vicente_letter_08": "Motel Oásis", "vicente_letter_09": "Capela da Estrada",
 	"vicente_letter_10": "Arquibancada da reta"}
 ## O prêmio da décima: caverna escondida e o carro (DesertWilds "cave_brother").

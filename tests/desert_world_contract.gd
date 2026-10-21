@@ -2,6 +2,7 @@ extends SceneTree
 ## Finite contracts for the real region/room nodes. Rendered depth and frame-time need separate capture.
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const REGION := preload("res://world/desert/DesertRegion.gd")
+const MINING_LAYOUT := preload("res://world/mining/MiningLayout.gd")
 const PLACE := preload("res://world/places/NativePlace.gd")
 const SURFACE_PROBE := preload("res://gameplay/vehicle_effects/VehicleSurfaceProbe.gd")
 var failures: Array[String]=[]
@@ -16,10 +17,8 @@ func _run() -> void:
 	check(is_equal_approx(LAYOUT.surface_height(Vector2(342.5,-373.5)),2.4),"Bridge shore has continuous support height")
 	check(is_zero_approx(LAYOUT.surface_height(Vector2(342.5,-445))),"Ramp descends smoothly to basin")
 	var road_data := LAYOUT.roads()
-	var longest := 0.0
-	for road in road_data:
-		for i in range(1,road.points.size()): longest=maxf(longest,road.points[i-1].distance_to(road.points[i]))
-	check(longest>1400,"Desert has an uninterrupted highway straight over 1.4km")
+	check(LAYOUT.BOUNDS.get_area()<=1940.0*1576.5*.5,"Compact desert occupies at most half its previous area")
+	check(is_equal_approx(LAYOUT.DRAG_LENGTH,800.0),"Compact geography preserves the full 800m drag competition")
 	# Safety property: traffic must never cross an authored building, regardless of coordinates.
 	for building in LAYOUT.buildings():
 		var footprint := Rect2(Vector2(building.position.x,building.position.z)-Vector2(building.size.x,building.size.z)*.5,Vector2(building.size.x,building.size.z))
@@ -37,7 +36,7 @@ func _run() -> void:
 		if str(road.id).begins_with("desert_drag"): check(not road.traffic,"Drag is excluded from ambient traffic")
 	var graph := preload("res://gameplay/NativeTrafficRoutes.gd").new()
 	graph.configure(road_data.filter(func(road: Dictionary): return road.get("traffic",true)))
-	for endpoints in [[LAYOUT.BRIDGE_END,Vector3(-210,0,-907)],[Vector3(-210,0,-907),LAYOUT.BRIDGE_END],[Vector3(290,0,-750),Vector3(-140,0,-980)],[Vector3(-140,0,-980),Vector3(290,0,-750)]]:
+	for endpoints in [[LAYOUT.BRIDGE_END,LAYOUT.BANK+Vector3(0,0,13)],[LAYOUT.BANK+Vector3(0,0,13),LAYOUT.BRIDGE_END],[LAYOUT.TRUCK_STOP+Vector3(5,0,0),LAYOUT.WORKSHOP+Vector3(0,0,-25)],[LAYOUT.WORKSHOP+Vector3(0,0,-25),LAYOUT.TRUCK_STOP+Vector3(5,0,0)]]:
 		var route: Curve3D=graph.route_between(endpoints[0],endpoints[1])
 		check(route!=null and route.point_count>2,"Directed route joins bridge, town, bank, workshop and truck stop")
 	var separated := true
@@ -57,28 +56,34 @@ func _run() -> void:
 	check(warm_region.chunks.is_empty() and warm_region.is_streaming_idle(),"Distant prewarm without focus never builds spawn neighbourhood")
 	warm_region.set_focus(warm_region.spawn_position)
 	check(warm_region.chunks.has(warm_region._cell(warm_region.spawn_position)),"Explicit focus admits initial bridge spawn after prewarm")
-	for i in 180:
-		if warm_region.is_streaming_idle(): break
-		await process_frame
+	check(await _settle(warm_region,"bridge"),"Bridge streaming completes with continuous progress")
 	await physics_frame
 	await physics_frame
 	_ramp_layers(warm_region)
+	# Explicit preparation must acquire the complete panorama even when the
+	# ordinary focus is still at the remote bridge, then release its request.
+	warm_region.prepare_drag_view(true)
+	check(warm_region._drag_preparing and warm_region.drag_view_cells.size()==42,"Explicit race preparation acquires the full42-cell camera band from outside course proximity")
+	warm_region.prepare_drag_view(false)
+	warm_region.set_focus(warm_region.spawn_position)
+	check(not warm_region._drag_preparing and warm_region.drag_view_cells.is_empty() and warm_region.drag_view_pending.is_empty(),"Ending explicit preparation outside the course releases camera requests")
 	warm_region.free()
 	var region := REGION.new()
 	region.initial_focus=LAYOUT.TRUCK_STOP
 	root.add_child(region)
-	for i in 180:
-		if region.is_streaming_idle(): break
-		await process_frame
-	check(region.is_streaming_idle(),"Truck stop streaming settles finitely")
+	# Idle includes thousands of decorations per cell under the production 1 ms
+	# budget. Check natural progress and completion, rather than 180 arbitrary frames.
+	check(await _settle(region,"truck stop"),"Truck stop streaming settles finitely")
+	check(region.chunks.size()==9 and _residency_owned(region),"Truck stop keeps only its nine requested neighbouring cells")
 	await physics_frame
-	check(_floor(Vector3(342.5,0,-750)),"Highway has physical road support")
-	check(_floor(Vector3(270,0,-758)),"Truck-stop NPC position has floor")
+	await physics_frame
+	check(_floor(LAYOUT.TRUCK_STOP+Vector3(57.5,0,0)),"Highway has physical road support")
+	check(_floor(LAYOUT.TRUCK_STOP+Vector3(-15,0,-8)),"Truck-stop NPC position has floor")
 	var probe_car := CharacterBody3D.new()
 	probe_car.collision_layer=0
 	root.add_child(probe_car)
-	var asphalt_contact := SURFACE_PROBE.sample(probe_car,Vector3(342.5,.2,-750))
-	var sand_contact := SURFACE_PROBE.sample(probe_car,Vector3(352,.2,-770))
+	var asphalt_contact := SURFACE_PROBE.sample(probe_car,LAYOUT.TRUCK_STOP+Vector3(57.5,.2,0))
+	var sand_contact := SURFACE_PROBE.sample(probe_car,LAYOUT.TRUCK_STOP+Vector3(67,.2,-20))
 	check(not asphalt_contact.is_empty() and asphalt_contact.kind=="hard","Real wheel ray classifies weathered asphalt as hard")
 	check(not sand_contact.is_empty() and sand_contact.kind=="dirt","Real wheel ray classifies desert sand as dirt")
 	probe_car.free()
@@ -88,10 +93,13 @@ func _run() -> void:
 			parked+=1
 			check(node.get_meta("trailer_count")==2,"Parked road train has two trailers")
 	check(parked==4,"Four large bitrems are actually instantiated at stop")
+	region.set_focus(MINING_LAYOUT.GATE+Vector3(0,0,20))
+	check(region.drag_view_cells.is_empty() and region.drag_view_pending.is_empty(),"Ordinary mining gate focus never requests the racing panorama")
+	check(await _settle(region,"mining gate without race panorama"),"Mining gate streaming completes under the ordinary local window")
+	check(region.drag_view_cells.is_empty() and _residency_owned(region),"Settled mining residency remains local and does not activate race-camera owners")
 	region.set_focus(LAYOUT.TOWN)
-	for i in 180:
-		if region.is_streaming_idle(): break
-		await process_frame
+	check(await _settle(region,"town"),"Town streaming completes with continuous progress")
+	check(region.drag_view_cells.is_empty() and region.drag_view_pending.is_empty(),"Ordinary town focus never requests the racing panorama")
 	await physics_frame
 	for definition in LAYOUT.place_definitions():
 		check(_floor(definition.entry_position),"Exterior entry supported: "+definition.id)
@@ -115,11 +123,23 @@ func _run() -> void:
 		check(room.is_floor_clear(clerk,.34),"Resident fits behind desk: "+definition.id)
 		room.free()
 	var count := region.chunks.size()
-	region.set_focus(LAYOUT.drag_start_point())
-	for i in 180:
-		if region.is_streaming_idle(): break
-		await process_frame
-	check(region.chunks.size()<=25 and count<=25,"Streaming residency bounded independently of map area")
+	var town_owner_limit := (region.retention_radius*2+1)*(region.retention_radius*2+1)+region.drag_view_cells.size()+region.vehicle_support_cells.size()+region.developer_view_cells.size()
+	check(count<=town_owner_limit and _residency_owned(region),"Compact town residency belongs only to its local window and explicit camera/support owners")
+	region.set_focus(LAYOUT.drag_staging_point())
+	check(not region._drag_preparing and region.drag_view_cells.size()==42,"Staging proximity admits the complete camera band without explicit preparation")
+	check(await _settle(region,"drag course"),"Drag scenery completes with continuous progress")
+	# Grid alignment changes after relocation; coverage and ownership, rather
+	# than the previous coordinate-dependent 26-cell count, remain mandatory.
+	var view_bounds: Rect2=region.DRAG_VIEW_BOUNDS
+	check(view_bounds.encloses(LAYOUT.DRAG_STRIP_BOUNDS),"Race camera residency covers the complete relocated strip and braking pavement")
+	var expected_view_cells := 0
+	for x in range(floori(view_bounds.position.x/region.CELL),ceili(view_bounds.end.x/region.CELL)):
+		for z in range(floori(view_bounds.position.y/region.CELL),ceili(view_bounds.end.y/region.CELL)):
+			expected_view_cells+=1
+			check(region.drag_view_cells.has(Vector2i(x,z)),"Race camera retains authored scenery cell %d,%d"%[x,z])
+	check(expected_view_cells==42 and region.drag_view_cells.size()==expected_view_cells,"Race camera retains its complete42-cell scenery band after preparation")
+	var race_owner_limit := (region.retention_radius*2+1)*(region.retention_radius*2+1)+expected_view_cells+region.vehicle_support_cells.size()+region.developer_view_cells.size()
+	check(region.chunks.size()<=race_owner_limit and _residency_owned(region),"Streaming residency bounded independently of map area")
 	await physics_frame
 	check(_floor(LAYOUT.drag_start_point()+Vector3(0,0,2)),"Drag start lane supported")
 	check(_clear(LAYOUT.drag_staging_point()),"Race staging is clear of props")
@@ -130,17 +150,61 @@ func _run() -> void:
 	await physics_frame
 	check(_floor(rival_finish),"Distant rival has actual physical finish support")
 	region.set_vehicle_support([])
-	check(not region.chunks.has(region._cell(rival_finish)),"Removing race support releases distant finish cells")
+	check(region.vehicle_support_cells.is_empty() and region.drag_view_cells.has(region._cell(rival_finish)) and region.chunks.has(region._cell(rival_finish)),"Removing rival support preserves finish scenery still owned by race camera")
+	# Leave the camera's hysteresis region before requiring the same finish cell
+	# to disappear. Removing one owner must not destroy another owner's scenery.
+	region.set_focus(LAYOUT.BRIDGE_END)
+	check(region.drag_view_cells.is_empty() and not region.chunks.has(region._cell(rival_finish)),"Leaving race camera releases distant finish cells")
 	check(region.prepare_collision_at(rival_finish),"Late physical preparation can admit a distant desert cell")
 	check(region.chunks.has(region._cell(rival_finish)),"Prepared desert cell is resident before support update")
 	region.set_vehicle_support([])
 	check(not region.chunks.has(region._cell(rival_finish)),"Unchanged empty support still consumes pending desert trim")
 	region.release_chunks()
-	check(region.chunks.is_empty() and region.build_jobs.is_empty(),"Region release removes owned geometry jobs")
+	check(region.chunks.is_empty() and region.build_jobs.is_empty() and region._surface_jobs.is_empty() and region.pending.is_empty() and region.drag_view_pending.is_empty(),"Region release removes owned geometry jobs")
 	region.free()
 	for failure in failures: push_error(failure)
 	print("DESERT_WORLD_CONTRACT checks=%d failures=%d"%[checks,failures.size()])
 	quit(0 if failures.is_empty() else 1)
+
+func _residency_owned(region: Node) -> bool:
+	for key: Vector2i in region.chunks:
+		if region.vehicle_support_cells.has(key) or region.developer_view_cells.has(key) or region.drag_view_cells.has(key): continue
+		if absi(key.x-region.current_cell.x)>region.retention_radius or absi(key.y-region.current_cell.y)>region.retention_radius: return false
+	return true
+
+func _stream_state(region: Node) -> Array:
+	var state: Array=[region.pending.duplicate(),region.drag_view_pending.duplicate()]
+	for key: Vector2i in region._surface_jobs:
+		state.append([key,region._surface_jobs[key].stage])
+	for job: Dictionary in region.build_jobs:
+		var phase: Array=[job.key,job.index,job.get("dress_stage",0),job.get("dressed",false),job.get("ground_cover_done",false),job.get("expansion_stage",0),job.get("mining_built",false)]
+		if job.has("ground_cover"):
+			var cover: RefCounted=job.ground_cover
+			phase.append([cover.next,cover.next_contact,cover.next_part,cover.committed])
+			for part: RefCounted in cover.parts: phase.append([part.next_contact,part.committed])
+		state.append(phase)
+	return state
+
+func _settle(region: Node, label: String) -> bool:
+	var began := Time.get_ticks_msec()
+	var last_progress := began
+	var previous := _stream_state(region)
+	var frames := 0
+	# Finite functional watchdogs, not FPS/loading acceptance criteria. They
+	# catch a stalled phase or endless producer while retaining the real scheduler.
+	while not region.is_streaming_idle():
+		await process_frame
+		frames+=1
+		var now := Time.get_ticks_msec()
+		var state := _stream_state(region)
+		if state!=previous:
+			previous=state
+			last_progress=now
+		if now-began>45000 or now-last_progress>3000:
+			push_error("DESERT_STREAM stalled %s frames=%d state=%s"%[label,frames,str(state)])
+			return false
+	print("DESERT_STREAM completed %s frames=%d wall_ms=%d"%[label,frames,Time.get_ticks_msec()-began])
+	return true
 func _space() -> PhysicsDirectSpaceState3D: return root.world_3d.direct_space_state
 func _ramp_layers(region: Node3D) -> void:
 	var observed: Dictionary={}
