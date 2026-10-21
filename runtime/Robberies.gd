@@ -21,6 +21,10 @@ var _spawn_retry := 0.0
 var aftermath_controller
 var _death_latched := false
 var haul_label: Label
+## M05 (roteiro de 21/10): Helena reconhece Dante e segura o dedo sobre o alarme por três segundos.
+## Só o tempo da resposta; não vai para o save (carregar no meio despacha logo).
+const HELENA_ALARM_HOLD := 3.0
+var _helena_hold := 0.0
 
 static func defaults() -> Dictionary:
 	return {"version":4,"bank_restock_requested":false,"bank_pending":0,"bank_deaths":0,"bank_alarm":false,"bank_shots":false,"bank_dispatched":false,"bank_cycle":0,"bank_cash0":false,"bank_cash1":false,"bank_cash2":false,
@@ -126,6 +130,9 @@ func _physics_process(delta: float) -> void:
 		aftermath_controller.heist = self
 		add_child(aftermath_controller)
 	aftermath_controller.update(delta)
+	if data.bank_alarm and not data.bank_dispatched:
+		_helena_hold -= delta
+		if _helena_hold <= 0: _dispatch(true)
 	if data.fuel_alarm and not data.fuel_dispatched:
 		data.fuel_alarm_remaining=maxf(0,float(data.fuel_alarm_remaining)-delta)
 		if data.fuel_alarm_remaining<=0: _dispatch(false)
@@ -176,11 +183,19 @@ func _attach_room() -> void:
 
 func _ensure_actors() -> void:
 	if not is_instance_valid(_room): return
+	var act1 = session.get("helena_act1")
 	if session.state.place_id=="harbor_bank":
+		# M06-B: de noite o North Pier só tem o vigia da noite (guarda 1), sem caixas.
+		if act1 != null and act1.bank_night_shift():
+			_spawn_actor(Vector3(5,0,.5),float(data.guards[1]),true,1)
+			return
 		for i in 2:
 			_spawn_actor(Vector3(-5 if i==0 else 5,0,.5),float(data.guards[i]),true,i)
 			_spawn_actor(Vector3(-2.65 if i==0 else 2.65,0,-1.9),float(data.clerks[i]),false,i)
-	elif session.state.place_id=="harbor_fuel": _spawn_actor(Vector3(4.6,0,-3.8),float(data.fuel_health),false,0)
+	elif session.state.place_id=="harbor_fuel":
+		# M05-B: na noite do cofre, o gerente saiu.
+		if act1 != null and act1.fuel_closed(): return
+		_spawn_actor(Vector3(4.6,0,-3.8),float(data.fuel_health),false,0)
 
 func _spawn_actor(point: Vector3, health: float, guard: bool, index: int) -> void:
 	for existing in _actors:
@@ -228,7 +243,10 @@ func _start_alarm(bank: bool) -> void:
 	if data[key]: return
 	data[key]=true
 	if bank:
-		_dispatch(true)
+		if "campaign" in session.state and session.state.campaign.active_id == "jessica_bank" and float(data.clerks[0]) > 0:
+			_helena_hold = HELENA_ALARM_HOLD
+			session.show_message("Helena segura o dedo sobre o alarme. +3 s de fuga.")
+		else: _dispatch(true)
 	_session_save()
 
 func _dispatch(bank: bool) -> void:

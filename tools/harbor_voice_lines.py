@@ -18,12 +18,12 @@ def authored():
     block = re.search(r'const INTRO_LINES := \[(.*)\]',source,re.S).group(1)
     for entry in re.findall(r'\["[^\n]+?\]',block):
         who,pt,en=json.loads(entry); rows.append((who.lower(),pt,en,'garage'))
-    for file in ['first-favors-dialogue.json','cobra-dialogue.json','jessica-dialogue.json']:
+    for file in ['first-favors-dialogue.json','cobra-dialogue.json','jessica-dialogue.json','helena-act1-dialogue.json']:
         data=json.loads((ROOT/'data/campaign'/file).read_text(encoding='utf-8-sig'))
         for section, entries in data.items():
             if not isinstance(entries,list): continue
             for line in entries:
-                rows.append((line['speaker'].lower(),line['pt'],line['en'],file+':'+section))
+                rows.append((line['speaker'].lower().split(' · ')[0],line['pt'],line['en'],file+':'+section))
     rows.extend([
         ('takeshi','Ganhou. Pode entrar na minha casa e olhar os registros. Depois disso, a escolha é tua.','','race_finale'),
         ('ferrugem','Tá. Você dirige bem. O motorista vai atender o Maciota. Teu irmão queria sair de Harbor, mas não parecia estar fugindo.','','race'),

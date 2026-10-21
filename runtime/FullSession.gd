@@ -68,6 +68,8 @@ var garage_rewards
 var police_motor_pool
 var personal_car
 var jessica
+## Ato 1, cadeia da Helena e do Neco (runtime/harbor_act1/HelenaAct1.gd).
+var helena_act1
 var desert
 var maciota_workshop
 var mining
@@ -813,6 +815,11 @@ func _ready() -> void:
 	_timed_add(world, jessica, "jessica")
 	jessica.configure(self)
 	SESSION_OPS.finish(diagnostic_jessica)
+	var diagnostic_helena_act1 := SESSION_OPS.begin(self, "helena_act1", "create_and_configure")
+	helena_act1 = preload("res://runtime/harbor_act1/HelenaAct1.gd").new()
+	_timed_add(world, helena_act1, "helena_act1")
+	helena_act1.configure(self)
+	SESSION_OPS.finish(diagnostic_helena_act1)
 	var diagnostic_desert := SESSION_OPS.begin(self, "desert", "create_and_configure")
 	desert = preload("res://runtime/desert/DesertRuntime.gd").new()
 	_timed_add(world, desert, "desert")
@@ -1691,12 +1698,15 @@ func nearest() -> Dictionary:
 		var driver_freight: Dictionary = urban_operations.freight.nearest_action() if urban_operations != null and is_instance_valid(urban_operations.freight) else {}
 		if not driver_freight.is_empty(): return driver_freight
 		var vehicle_action: Dictionary = mission_world.nearest_vehicle_action()
+		if vehicle_action.is_empty() and helena_act1 != null: vehicle_action = helena_act1.nearest_vehicle_action()
 		return vehicle_action if not vehicle_action.is_empty() else activities.nearest_action()
 	var point: Vector3 = world.player.position
 	if not state.place_id.is_empty():
 		if (not _uses_walkup_access(state.place_id) or _keeps_interaction_access(state.place_id)) and point.distance_to(room.exit_position) < 1.45: return {"id":"exit","label":"Sair","silent":state.place_id in ["harbor_arcade","harbor_curitiba_cellar","harbor_haunted_house"] or preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").is_building(state.place_id)}
 		var robbery_action: Dictionary = robberies.nearest_action()
 		if not robbery_action.is_empty(): return robbery_action
+		var act1_indoor: Dictionary = helena_act1.nearest_action() if helena_act1 != null else {}
+		if not act1_indoor.is_empty(): return act1_indoor
 		var original_action: Dictionary = services.nearest_action()
 		if not original_action.is_empty() and not _service_threatened(str(original_action.get("target", ""))): return original_action
 		if wine != null:
@@ -1726,6 +1736,9 @@ func nearest() -> Dictionary:
 			var social_action: Dictionary = building_social.nearest_action()
 			if not social_action.is_empty(): return social_action
 		return {}
+	# Antes das atividades: o Neco da cadeia da Helena fica no mesmo ponto do serviço de guincho.
+	var act1_action: Dictionary = helena_act1.nearest_action() if helena_act1 != null else {}
+	if not act1_action.is_empty(): return act1_action
 	var activity_action: Dictionary = activities.nearest_action()
 	if not activity_action.is_empty(): return activity_action
 	var urban_action: Dictionary = urban_operations.nearest_action() if urban_operations != null else {}
@@ -1781,6 +1794,7 @@ func interact() -> bool:
 		"residence_services": return residence_services.perform("residence_services")
 		"personal_car": return personal_car.perform(action.target)
 		"jessica": return jessica.perform(str(action.target))
+		"helena_act1": return helena_act1 != null and helena_act1.perform(action)
 		"garage_reward": return garage_rewards.perform(action.target)
 		"robbery": return robberies.perform(action.target)
 		"original_service":
@@ -2053,6 +2067,9 @@ func _process(delta: float) -> void:
 		thermal_status.text = String(TranslationServer.translate("Calor corporal %d%% · %s"))%[roundi(thermal.temperature),thermal.text]
 	stats.text = String(TranslationServer.translate("R$ %d   Vida %d   Colete %d\n%s   %s   %s")) % [state.economy.balance,roundi(world.gameplay.health),roundi(world.gameplay.armor),str(WEAPONS.WEAPONS.get(state.equipped_weapon,{}).get("label",state.equipped_weapon)),"—" if int(ammo.magazine)<0 else "%d / %d"%[ammo.magazine,ammo.reserve],"★".repeat(world.gameplay.stars)]
 	_set_objective(state.campaign.objective() if state.campaign.active_id != "" else (state.intro.objective() if state.intro.stage != "complete" else "J  Missões · M  Mapa"), state.campaign.active_id == "" and state.intro.stage == "complete")
+	if helena_act1 != null and state.campaign.active_id == "" and state.intro.stage == "complete":
+		var act1_objective: String = helena_act1.objective()
+		if not act1_objective.is_empty(): _set_objective(act1_objective)
 	if arrival.active: _set_objective(arrival.objective_text)
 	var freight: Dictionary = urban_operations.freight_status() if urban_operations != null else {}
 	freight_active = bool(freight.get("active", false)) and state.region_id == "harbor" and state.campaign.active_id.is_empty() and state.intro.stage == "complete" and not arrival.active
@@ -2125,6 +2142,9 @@ func _update_world_indicator() -> void:
 			elif phase == "talk_mechanic": target = room.interaction_points.mechanic
 			elif phase == "collect_part": target = room.interaction_points.part
 		elif state.place_id == "harbor_bank" and state.campaign.target_id()=="helena": target = robberies.helena_position()
+		if helena_act1 != null:
+			var act1_inside: Vector3 = helena_act1.indoor_target()
+			if act1_inside.is_finite(): target = act1_inside
 	if mountain_activities != null and not mountain_activities.objective().is_empty():
 		var pack_target: Vector3 = mountain_activities.target_position()
 		if pack_target.is_finite(): target = pack_target
@@ -2291,6 +2311,13 @@ func show_journal() -> void:
 	var village: Dictionary = {}
 	if urban_operations != null and is_instance_valid(urban_operations.village_quest): village = urban_operations.village_quest.data
 	for line in JOURNAL_ARCS.lines(state.world_state, state.campaign.snapshot(), village): _button(line, close_menu)
+	# Cadeia da Helena: escolher a linha põe objetivo e marcador nela.
+	if helena_act1 != null and state.campaign.active_id == "":
+		for entry in helena_act1.journal_entries():
+			var act1_id: String = entry.id
+			_button(entry.text, func():
+				helena_act1.focus(act1_id)
+				close_menu())
 	var secret_file: Variant = urban_operations.get("secret_file") if urban_operations != null else null
 	if is_instance_valid(secret_file) and secret_file.available():
 		_button("Arquivo de Vicente",secret_file.open_from_journal)
