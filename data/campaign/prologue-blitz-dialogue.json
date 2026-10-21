@@ -146,7 +146,9 @@
         "speaker": "Dante",
         "pt": "Arma!",
         "en": ""
-      },
+      }
+    ],
+    "man_down": [
       {
         "id": "lima_bastos",
         "speaker": "Lima",

@@ -57,13 +57,17 @@ const TRUCK_PAINT := Color("583d35")
 const UNIFORM := Color(0.11, 0.15, 0.24)
 const HOLD_SECONDS := 2.6
 ## Bastos para na porta do motorista e Dante fica do lado dele, um passo atrás.
-const BASTOS_PATH := [Vector3(3.0, 0, -12.7), Vector3(.2, 0, -11.7), Vector3(-.7, 0, -9.7), Vector3(-.55, 0, -8.5)]
-const DANTE_BESIDE := Vector3(-1.3, 0, -7.4)
+## O último ponto fica a um braço da porta fechada (local -1,62; -4,3 do caminhão parado), na frente do
+## giro da chapa: o vidro a 2,35 m estava 1,25 m fora do alcance do braço dele (relatório de qualidade).
+const BASTOS_PATH := [Vector3(3.0, 0, -12.7), Vector3(.2, 0, -11.7), Vector3(-.4, 0, -9.9), Vector3(.18, 0, -8.7)]
+const DANTE_BESIDE := Vector3(-.75, 0, -7.6)
 ## Abrigo de Dante no tiroteio (fora da linha da cabine) e os dois pontos do atirador: exposto na frente
 ## da grade, escondido atrás do canto direito do caminhão (a cabine fica no meio).
 const DANTE_COVER := Vector3(-2.0, 0, -8.6)
 const SHOOTER_OUT := Vector3(3.3, 0, -10.6)
-const SHOOTER_EXPOSED := Vector3(1.2, 0, -11.8)
+## Exposto à esquerda da grade (x < 0,5): dali vê Bastos na porta e Dante no abrigo sem atravessar o canto
+## do caminhão.
+const SHOOTER_EXPOSED := Vector3(.4, 0, -11.7)
 const SHOOTER_HIDDEN := Vector3(3.7, 0, -10.9)
 ## "Demora a morrer": tiros que o atirador aguenta.
 const SHOOTER_HEALTH := 8
@@ -140,6 +144,7 @@ var _shooter_clock := 0.0
 var _shooter_fire_clock := .4
 var _bastos_leg := 0
 var _flee_leg := 0
+var _shot_clock := 0.0
 var _previous_mouse := Input.MOUSE_MODE_VISIBLE
 var _mouse_owned := false
 var _car_speed: Array[float] = []
@@ -190,6 +195,9 @@ static func text(entry: Variant) -> String:
 func _ready() -> void:
 	name = "BlitzScene"
 	layer = 95
+	# Depois dos rigs (prioridade 0): a lanterna e a câmera leem a pose deste quadro; os alvos de mão
+	# escritos aqui valem no quadro seguinte, o que não se vê.
+	process_priority = 100
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	var tree := get_tree()
 	_main_viewport = tree.root
@@ -358,7 +366,8 @@ func _strip(parent: Node3D, mesh_size: Vector3, material: Material, transforms: 
 	parent.add_child(node)
 
 func _build_road() -> void:
-	var wet := _material("blitz_wet_asphalt", Color("16181b"), .16, .75)
+	# Molhado, mas não espelho: com rugosidade .16 cada farol virava um pilar branco no asfalto.
+	var wet := _material("blitz_wet_asphalt", Color("202327"), .32, .5)
 	_box(_set, Vector3(0, -.03, -60), Vector3(11.8, .06, 1100), wet)
 	var verge := _material("blitz_verge", Color("1a2016"), .9, .2)
 	for side in [-1, 1]:
@@ -405,11 +414,12 @@ func _build_police() -> void:
 		var glow := Sprite3D.new()
 		glow.name = "BlitzBeaconGlow"
 		glow.texture = EQUIPMENT._lens_glow_texture()
-		glow.pixel_size = .9 / 64.0
+		glow.pixel_size = .6 / 64.0
 		glow.modulate = color
 		glow.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		glow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		glow.position = Vector3(side * .35, roof, 0)
+		# Em cima das lentes da barra (medidas na malha da viatura), não flutuando sobre ela.
+		glow.position = Vector3(side * .29, roof - .06, .05)
 		police.add_child(glow)
 		_glows.append(glow)
 		side = -side
@@ -418,10 +428,11 @@ func _build_police() -> void:
 	halo.omni_range = 9.0
 	halo.omni_attenuation = 1.8
 	# No asfalto molhado o reflexo do giroflex virava uma faixa vermelha no chão.
-	halo.light_specular = .08
+	halo.light_specular = 0.0
 	halo.shadow_enabled = false
 	halo.position = Vector3(0, roof + .3, 0)
 	halo.set_meta("budget_energy", 2.6)
+	_beacon_lenses()
 	halo.light_energy = 2.6
 	police.add_child(halo)
 
@@ -446,7 +457,7 @@ func _build_truck() -> void:
 	ring.ring_segments = 8
 	wheel.mesh = ring
 	wheel.material_override = _material("blitz_wheel", Color("1b1c1e"), .5, .4)
-	wheel.position = Vector3(-.55, 2.02, -3.9)
+	wheel.position = Vector3(-.55, 2.02, -3.75)
 	# Aro inclinado para o motorista, como volante de caminhão.
 	wheel.rotation = Vector3(-1.05, 0, 0)
 	truck.add_child(wheel)
@@ -488,7 +499,7 @@ func _light_truck() -> void:
 		part.material_override = lit
 	# Brilho nas lentes (faróis brancos na frente, lanternas vermelhas atrás): na chuva é o que se vê de longe.
 	for side in [-1.0, 1.0]:
-		for spec in [[Vector3(side * 1.05, 1.34, -5.6), Color(1, .93, .8), 1.1], [Vector3(side * 1.02, 1.06, 5.8), Color(1, .16, .1), .55]]:
+		for spec in [[Vector3(side * 1.05, 1.34, -5.6), Color(1, .93, .8), .6], [Vector3(side * 1.02, 1.06, 5.8), Color(1, .16, .1), .45]]:
 			var glow := Sprite3D.new()
 			glow.texture = EQUIPMENT._lens_glow_texture()
 			glow.pixel_size = float(spec[2]) / 64.0
@@ -501,15 +512,17 @@ func _light_truck() -> void:
 		beam.name = "BlitzTruckHeadlight"
 		beam.position = Vector3(side * 1.05, 1.34, -5.65)
 		beam.light_color = Color("ffe9c8")
-		beam.spot_range = 60.0
-		beam.spot_angle = 26.0
-		beam.spot_attenuation = .55
-		beam.light_specular = .6
+		beam.spot_range = 35.0
+		beam.spot_angle = 32.0
+		beam.spot_attenuation = .85
+		beam.spot_angle_attenuation = 1.5
+		beam.light_specular = .2
 		beam.shadow_enabled = false
-		# Baixo e um pouco para fora, como farol de verdade: pinta o asfalto molhado à frente.
-		beam.rotation_degrees = Vector3(-3.5, -side * 2.0, 0)
-		beam.set_meta("budget_energy", 9.0)
-		beam.light_energy = 9.0
+		# Baixo e um pouco para fora, como farol de verdade: uma mancha no asfalto a ~12 m, sem estourar
+		# rostos e cavaletes de perto (energia 9 com borda dura estourava; relatório de qualidade).
+		beam.rotation_degrees = Vector3(-6.0, -side * 2.0, 0)
+		beam.set_meta("budget_energy", 5.0)
+		beam.light_energy = 5.0
 		truck.add_child(beam)
 		headlights.append(beam)
 
@@ -539,7 +552,7 @@ func _lantern_node(node_name: String, beam: bool) -> Node3D:
 	item.name = node_name
 	# O tubo segue o antebraço (-Z do objeto = direção dos dedos): a mão fecha no corpo, a lente passa
 	# dos nós dos dedos.
-	_box(item, Vector3(0, 0, -.03), Vector3(.045, .045, .19), _material("blitz_lantern_body", Color("26282b"), .5, .4))
+	_box(item, Vector3(0, 0, -.03), Vector3(.045, .045, .19), _material("blitz_lantern_body", Color("6a6e72"), .45, .5))
 	_box(item, Vector3(0, 0, -.13), Vector3(.05, .05, .01), _material("blitz_lantern_lens", Color("fff3d8"), .2, .5, Color("fff0cc")))
 	if beam:
 		lantern_light = SpotLight3D.new()
@@ -623,11 +636,32 @@ func _colleagues_tick() -> void:
 	var right := forward.cross(Vector3.UP).normalized()
 	var waving := _traffic_near()
 	var sweep := (.5 + .5 * sin(stage_time * 3.4)) if waving else .15
-	_hands(lima, lima.global_position + Vector3.UP * (1.18 + .12 * sweep) + forward * .42 + right * lerpf(.25, -.35, sweep), null)
-	# Bastos no rádio até ir com Dante: a mão esquerda leva o rádio à boca.
+	# Cotovelo dobrado: com o alvo no limite do alcance o braço ficava travado e reto como um bastão.
+	_hands(lima, lima.global_position + Vector3.UP * (1.12 + .10 * sweep) + forward * .28 + right * lerpf(.20, -.25, sweep), null)
+	# Bastos no rádio até ir com Dante: a mão esquerda leva o rádio à boca (a junta da cabeça é o pescoço).
 	if stage in ["dante_open", "vicente_drive", "vicente_stop", "vicente_wait", "vicente_face"]:
-		var head: Vector3 = _head(bastos)
-		_hands(bastos, null, head + _forward(bastos) * .1 - _forward(bastos).cross(Vector3.UP).normalized() * .07 - Vector3.UP * .12)
+		var mouth: Vector3 = _head(bastos) + Vector3.UP * .14 + _forward(bastos) * .13 - _forward(bastos).cross(Vector3.UP).normalized() * .05
+		_hands(bastos, null, mouth)
+
+## Depois da pose do quadro (process_priority): o facho aponta para onde o policial olha, não para onde o
+## antebraço aponta (seguia o braço: chão aos pés em repouso, céu ao sinalizar).
+func _aim_lanterns() -> void:
+	if is_instance_valid(lantern) and lantern.is_visible_in_tree():
+		var aim: Vector3 = dante.global_position + _forward(dante) * 4.0
+		if stage == "dante_ask" or stage == "vicente_face": aim = truck.to_global(Vector3(-.55, 2.3, -3.4))
+		elif _swing > .05 and truck.position.z < 800.0: aim = truck.to_global(Vector3(-.5, 2.5, -5.0))
+		_point(lantern, aim)
+		var raised := _swing > .05 or stage in ["dante_ask", "vicente_wait", "vicente_face"]
+		lantern_light.set_meta("budget_energy", 4.0 if raised else 1.5)
+		if not LIGHT_BUDGET.enabled: lantern_light.light_energy = lantern_light.get_meta("budget_energy")
+	if is_instance_valid(colleague_lantern) and colleague_lantern.is_visible_in_tree():
+		# Lima ilumina a faixa aberta por onde os carros devem passar.
+		_point(colleague_lantern, Vector3(-LANE_X, 0, lima.global_position.z + 12.0))
+
+func _point(item: Node3D, target: Vector3) -> void:
+	var direction := target - item.global_position
+	if direction.length() < .1: return
+	item.global_basis = Basis.looking_at(direction.normalized(), Vector3.UP).scaled(item.global_basis.get_scale())
 
 func _build_traffic() -> void:
 	# Os dois carros que passam antes do "terceiro" (só no prólogo).
@@ -715,6 +749,7 @@ func _process(delta: float) -> void:
 	_colleagues_tick()
 	if pov == "dante": _dante_tick(step)
 	else: _vicente_tick(step)
+	_aim_lanterns()
 	_follow_rain()
 	if LIGHT_BUDGET.enabled: LIGHT_BUDGET.refresh()
 
@@ -731,6 +766,8 @@ func _stage_warm() -> void:
 	stage = "warm"
 	_warm_draws = 0
 	if LIGHT_BUDGET.enabled: LIGHT_BUDGET.register(self)
+	_round_shoulders(_body(dante))
+	_round_shoulders(vicente)
 	# Tudo à vista de uma câmera, ainda coberto: chuva, vidro, giroflex, lanterna, porta aberta.
 	truck.position = Vector3(LANE_X, 0, TRUCK_STOP_Z)
 	truck_door.rotation.y = -1.1
@@ -747,6 +784,22 @@ func _stage_warm() -> void:
 	_follow_rain()
 	if _rain_audio.stream != null: _rain_audio.play()
 	if not RenderingServer.frame_post_draw.is_connected(_count_draw): RenderingServer.frame_post_draw.connect(_count_draw)
+
+## Ombro redondo só nos dois irmãos (corpo do kit): a manga começa abaixo do ombro e termina em domo,
+## sem a tampa reta que saltava como ombreira quadrada. O kit dos outros NPCs não muda.
+func _round_shoulders(body) -> void:
+	if not is_instance_valid(body) or body.get("_meshy") != null or body.upper_arms.is_empty(): return
+	var kit = load("res://assets/civilians/CivilianMeshKit.gd")
+	var profile: Dictionary = kit.build_profile(bool(body.wardrobe.female), int(body.wardrobe.build))
+	profile.merge(body.wardrobe.get("body_profile", {}), true)
+	var k: float = profile.limb
+	var builder = kit._builder()
+	var sleeve: int = kit.SLOT_TOP
+	builder.loft([[-.02, .046 * k, .048 * k, sleeve], [-.07, .056 * k, .058 * k, sleeve], [-.2, .049 * k, .052 * k, sleeve], [-.3, .045 * k, .048 * k, sleeve]], sleeve, Transform3D.IDENTITY, 12)
+	builder.ellipsoid(Vector3(0, -.03, 0), Vector3(.052, .042, .054) * k, sleeve, Basis.IDENTITY, 10, 6)
+	builder.ellipsoid(Vector3(0, -kit.UPPER_ARM, 0), Vector3(.042, .045, .044) * k, sleeve, Basis.IDENTITY, 8, 5)
+	var mesh: ArrayMesh = builder.commit()
+	for arm in body.upper_arms: arm.mesh = mesh
 
 func _count_draw() -> void:
 	_warm_draws += 1
@@ -818,6 +871,27 @@ func _objective_text(key: String) -> void:
 
 # --- Peças vivas -----------------------------------------------------------------------------------
 
+var _red_lenses: Array[StandardMaterial3D] = []
+var _blue_lenses: Array[StandardMaterial3D] = []
+
+## Lentes vermelha e azul da barra: cópias próprias (o material da viatura é compartilhado) para alternar
+## com o brilho. Sem VehicleEquipment ficavam as duas acesas o tempo todo.
+func _beacon_lenses() -> void:
+	for node in police.find_children("*", "MeshInstance3D", true, false):
+		var part := node as MeshInstance3D
+		if part.mesh == null: continue
+		for surface in part.mesh.get_surface_count():
+			var original := part.get_active_material(surface) as StandardMaterial3D
+			if original == null or not original.emission_enabled: continue
+			var tint := original.emission
+			var red := tint.r > .6 and tint.g < .35 and tint.b < .35
+			var blue := tint.b > .6 and tint.r < .35
+			if not red and not blue: continue
+			var lens := original.duplicate() as StandardMaterial3D
+			_retained.append(lens)
+			part.set_surface_override_material(surface, lens)
+			(_red_lenses if red else _blue_lenses).append(lens)
+
 func _beacons() -> void:
 	# Vermelho e azul alternando em pares rápidos, como o giroflex das viaturas.
 	var phase := fposmod(stage_time * 2.2, 1.0)
@@ -826,6 +900,8 @@ func _beacons() -> void:
 	if _glows.size() == 2:
 		_glows[0].visible = red and flash
 		_glows[1].visible = not red and flash
+	for lens in _red_lenses: lens.emission_energy_multiplier = 2.8 if red and flash else 0.0
+	for lens in _blue_lenses: lens.emission_energy_multiplier = 2.8 if not red and flash else 0.0
 	if is_instance_valid(halo):
 		halo.light_color = Color(1, .15, .12) if red else Color(.2, .38, 1)
 		halo.set_meta("budget_energy", 1.5 if flash else .35)
@@ -862,12 +938,16 @@ func _forward(model: Node3D) -> Vector3:
 	if model is POLICE_MODEL: return -model.global_basis.z.normalized()
 	return model.global_basis.z.normalized()
 
-## Cabeça de verdade do rig (a pose sentada/em pé muda a altura); sem rig, estimativa.
+## Base do pescoço do rig (é onde fica a junta "cabeça"; a pose sentada/em pé muda a altura).
+## Rosto e boca ficam ~12-14 cm acima: use _eyes para câmera e mãos na cabeça.
 func _head(model) -> Vector3:
 	var body = _body(model)
 	var head = body.get("head_node") if is_instance_valid(body) else null
 	if head is Node3D and is_instance_valid(head): return head.global_position
 	return model.global_position + Vector3.UP * 1.62
+
+func _eyes(model) -> Vector3:
+	return _head(model) + Vector3.UP * .12
 
 ## Mão direita de Dante com a lanterna: baixa e livre, ou erguida balançando (`swing` 0..1) para o
 ## caminhão parar.
@@ -883,7 +963,8 @@ func _dante_hands(swing: float) -> void:
 ## Vicente ao volante: as duas mãos no aro enquanto está sentado na cabine.
 func _vicente_hands() -> void:
 	if not is_instance_valid(vicente) or vicente.get_parent() != truck: return
-	var center := truck.to_global(Vector3(-.55, 2.02, -3.92))
+	# No aro (z -3,75): em -3,92 as mãos paravam 10-14 cm antes do volante.
+	var center := truck.to_global(Vector3(-.55, 2.02, -3.75))
 	var across := truck.global_basis.x.normalized()
 	vicente.hand_targets = [center - across * .17, center + across * .17]
 
@@ -896,7 +977,7 @@ func _cab_head() -> Vector3:
 ## Olhos de Vicente debruçado no vão da porta: do banco, a linha até o rosto de Dante (mais baixo,
 ## no asfalto) cortaria a lataria da cabine.
 func _cab_lean() -> Vector3:
-	return truck.to_global(Vector3(-1.3, truck.to_local(_cab_head()).y + .02, -3.3))
+	return truck.to_global(Vector3(-.95, truck.to_local(_eyes(vicente)).y, -3.3))
 
 func _move_truck(step: float) -> void:
 	truck.position.z -= truck_speed * step
@@ -1090,13 +1171,14 @@ func _walk_dante(step: float) -> void:
 ## Bastos bate no vidro e pede para descer; a câmera, da nuca de Dante, vira acompanhando ele.
 func _dante_ask(step: float) -> void:
 	_face(dante, _door_point() + Vector3(0, 0, -.6) - dante.global_position)
-	_face(bastos, _door_point() - bastos.global_position)
+	# De frente para a chapa da porta.
+	_face(bastos, truck.global_basis.x)
 	var glass := truck.to_global(Vector3(-1.2, 2.35, -3.25))
 	if _beat("ask_line"): say("dante", "ask")
-	# Os nós dos dedos no vidro, três batidas.
+	# Os nós dos dedos na porta, na altura do ombro dele, três batidas (o vidro fica alto demais).
 	var knock := stage_time < 1.4
 	var tap := .05 * maxf(0.0, sin(stage_time * 14.0))
-	_hands(bastos, glass + (bastos.global_position - glass).normalized() * (.06 + tap) if knock else null, null)
+	_hands(bastos, truck.to_global(Vector3(-1.25 - tap, 1.62, -3.8)) if knock else null, null)
 	if stage_time < 3.2:
 		_nape_camera(step, 3.0, _head(bastos).lerp(glass, smoothstep(.2, 1.4, stage_time) * .6))
 		return
@@ -1105,12 +1187,13 @@ func _dante_ask(step: float) -> void:
 		_nape_camera(step, 3.0, glass)
 		return
 	# Close no rosto de Vicente: ele vê Dante atrás do policial.
-	var head := _cab_head()
+	var head := _eyes(vicente)
 	if _beat("face_close"):
 		vicente.activity = "talk"
 		camera.fov = 40.0
-		# Do asfalto, pelo vão da porta aberta, um pouco abaixo do rosto: a altura de quem está na pista.
-		camera.global_position = truck.to_global(Vector3(-1.75, truck.to_local(head).y - .28, -3.78))
+		# Pelo vão da porta aberta, à frente dele e fora da cabine, quase na altura do rosto (mais baixa, o
+		# painel cortava o quadro e se via a nuca).
+		camera.global_position = truck.to_global(Vector3(-1.55, truck.to_local(head).y - .05, -3.62))
 		camera.look_at(head, Vector3.UP)
 	if stage_time > 4.8 and _beat("vicente_line"): say("dante", "door")
 	if stage_time > 7.6 and _beat("step_down"):
@@ -1124,28 +1207,34 @@ func _dante_ask(step: float) -> void:
 		_face(vicente, Vector3.LEFT)
 		say("dante", "order_out")
 	if stage_time > 7.6:
-		_nape_camera(step, 3.0, _head(vicente).lerp(_head(bastos), .35))
-		var face := _head(vicente)
+		_nape_camera(step, 3.0, _eyes(vicente).lerp(_eyes(bastos), .35))
+		# Mãos ao alto, abertas acima da cabeça (com a junta do pescoço como cabeça, iam às orelhas).
+		var neck := _head(vicente)
 		var side := _forward(vicente).cross(Vector3.UP).normalized()
-		vicente.hand_targets = [face + Vector3.UP * .16 + side * .24, face + Vector3.UP * .16 - side * .24]
+		var front := _forward(vicente) * .06
+		vicente.hand_targets = [neck + Vector3.UP * .4 + side * .27 + front, neck + Vector3.UP * .4 - side * .27 + front]
 	if stage_time > 10.4: _set_stage("dante_ambush")
 
 ## Tiros do lado do passageiro: Bastos cai, Dante saca e vai para o abrigo.
 func _dante_ambush(step: float) -> void:
-	if _beat("first_shot"):
+	if _beat("shooter_out"):
+		# Sai pelo lado do passageiro, arma na mão: Dante vê primeiro e grita.
 		shooter.show()
 		shooter.global_position = SHOOTER_OUT
-		_face(shooter, bastos.global_position - shooter.global_position)
-		_enemy_shot()
-		_kill(bastos, (bastos.global_position - shooter.global_position).normalized())
-		_shake = .5
 		say("dante", "ambush")
 		_play("res://audio/weapons_fire/gun_draw_0.wav", -4.0)
 		dante.weapon.show()
 		lantern.hide()
-	# Atirador avança para a frente da grade; Dante recua para fora da linha da cabine.
-	shooter.global_position = shooter.global_position.move_toward(SHOOTER_EXPOSED, 3.0 * step)
-	_face(shooter, dante.global_position - shooter.global_position)
+	# Contorna a grade até ter linha; o primeiro tiro é em Bastos, na porta.
+	shooter.global_position = shooter.global_position.move_toward(SHOOTER_EXPOSED, 3.4 * step)
+	var first_target: Vector3 = bastos.global_position if not _beats.has("first_shot") else dante.global_position
+	_face(shooter, first_target - shooter.global_position)
+	if shooter.global_position.distance_to(SHOOTER_EXPOSED) < .3 and _beat("first_shot"):
+		_enemy_shot()
+		_kill(bastos, (bastos.global_position - shooter.global_position).normalized())
+		_shake = .5
+		say("dante", "man_down")
+		_shot_clock = stage_time
 	shooter.update_pose(step, true, false, 0.0, 0.0)
 	var cover: Vector3 = dante.global_position.move_toward(DANTE_COVER, 2.6 * step)
 	dante.global_position = cover
@@ -1155,7 +1244,7 @@ func _dante_ambush(step: float) -> void:
 	aim_pitch = asin(clampf(toward.normalized().y, -1.0, 1.0))
 	dante.update_pose(step, true, false, 0.0, 0.0)
 	_aim_camera(step)
-	if stage_time > 1.1:
+	if _beats.has("first_shot") and stage_time - _shot_clock > .7:
 		_shooter_exposed = true
 		_shooter_clock = 1.6
 		_objective_text("fight")
@@ -1167,9 +1256,10 @@ func _vicente_crouch() -> void:
 	# Agachado atrás da porta aberta, mãos na cabeça.
 	vicente.global_position = vicente.global_position.move_toward(_door_point() + Vector3(.35, 0, .55), .05)
 	vicente.sit_amount = move_toward(vicente.sit_amount, .55, .05)
-	var face := _head(vicente)
+	var neck := _head(vicente)
 	var side := _forward(vicente).cross(Vector3.UP).normalized()
-	vicente.hand_targets = [face + Vector3.UP * .08 + side * .12 - _forward(vicente) * .05, face + Vector3.UP * .08 - side * .12 - _forward(vicente) * .05]
+	var back := _forward(vicente) * .02
+	vicente.hand_targets = [neck + Vector3.UP * .27 + side * .07 - back, neck + Vector3.UP * .27 - side * .07 - back]
 
 # --- Tiroteio ----------------------------------------------------------------------------------------
 
@@ -1374,7 +1464,8 @@ func _dante_wounded(step: float) -> void:
 	var thigh: Vector3 = vicente.global_position + forward * .3 + Vector3.UP * .3 - side * .1
 	vicente.hand_targets = [thigh + side * .05, thigh - side * .07 + forward * .06]
 	if _beat("procedure"): say("dante", "order")
-	var stand: Vector3 = vicente.global_position + forward * 1.0
+	# A 0,85 m: de 1 m, agachado, as mãos dele paravam 30 cm antes dos pulsos.
+	var stand: Vector3 = vicente.global_position + forward * .85
 	var offset: Vector3 = stand - dante.global_position
 	offset.y = 0.0
 	if offset.length() > .05:
@@ -1398,7 +1489,7 @@ func _dante_wounded(step: float) -> void:
 
 ## Pulsos de Vicente juntos à frente, sobre o colo.
 func _wrists() -> Vector3:
-	return vicente.global_position + _forward(vicente) * .34 + Vector3.UP * .42
+	return vicente.global_position + _forward(vicente) * .4 + Vector3.UP * .42
 
 func _dante_cuff(step: float) -> void:
 	var holding := autoplay or Input.is_action_pressed("interact")
@@ -1412,9 +1503,10 @@ func _dante_cuff(step: float) -> void:
 	var body = _body(dante)
 	if is_instance_valid(body):
 		body.sit_amount = move_toward(body.sit_amount, .8, step * 2.0)
+		body.seat_height = .25
 	var reach := smoothstep(0.0, .5, cuff_progress)
 	if reach > .01:
-		var rest: Vector3 = dante.global_position + Vector3.UP * .7 + _forward(dante) * .3
+		var rest: Vector3 = dante.global_position + Vector3.UP * .55 + _forward(dante) * .25
 		var grip: Vector3 = rest.lerp(wrists, reach)
 		_hands(dante, grip + Vector3.UP * .05 - across * .04, grip - Vector3.UP * .02 + across * .05)
 	else:
@@ -1466,9 +1558,10 @@ func _vicente_begin() -> void:
 	say("vicente", "radio_open")
 
 func _chase_camera(step: float) -> void:
-	var target := truck.to_global(Vector3(-.6, 4.4, 11.5))
+	# Alta e à esquerda: atrás do baú (3,8 m) a pista e o facho dos faróis ficavam escondidos.
+	var target := truck.to_global(Vector3(-2.4, 5.6, 12.5))
 	camera.global_position = camera.global_position.lerp(target, 1.0 - exp(-4.0 * step)) if stage_time > .05 else target
-	camera.look_at(truck.to_global(Vector3(0, 2.2, -9.0)), Vector3.UP)
+	camera.look_at(truck.to_global(Vector3(-.4, .8, -24.0)), Vector3.UP)
 
 func _vicente_tick(step: float) -> void:
 	_dante_hands(_swing)
@@ -1512,7 +1605,7 @@ func _vicente_tick(step: float) -> void:
 		"vicente_face":
 			_engine(3.0)
 			# O rosto de Dante pela porta aberta, de cima, do banco do motorista.
-			var face := _head(dante)
+			var face := _eyes(dante)
 			camera.fov = move_toward(camera.fov, 42.0, step * 14.0)
 			# Vicente desce o rosto até o vão: de cima, a aba do quepe tapava o rosto de Dante.
 			camera.global_position = _cab_lean() + Vector3.DOWN * .5
@@ -1545,7 +1638,7 @@ func _cab_camera(step: float) -> void:
 	camera.fov = move_toward(camera.fov, 50.0, step * 10.0)
 	# Dos olhos de Vicente, um palmo à frente da cabeça (dentro dela a câmera vê o próprio rosto).
 	camera.global_position = _cab_lean()
-	camera.look_at(_head(dante) - Vector3.UP * .1, Vector3.UP)
+	camera.look_at(_eyes(dante) - Vector3.UP * .1, Vector3.UP)
 
 # --- Comandos --------------------------------------------------------------------------------------
 
