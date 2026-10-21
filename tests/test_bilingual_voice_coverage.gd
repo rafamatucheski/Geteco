@@ -37,7 +37,9 @@ func run() -> void:
 			if canonical == null or canonical.get_length() <= 0.1:
 				failures += 1
 				push_error("Unplayable %s take: %s" % [language, row.key])
-			if translated == null or canonical != translated:
+			var same_variant_group: bool = canonical != null and translated != null and canonical.has_meta("voice_variant_group") \
+				and canonical.get_meta("voice_variant_group") == translated.get_meta("voice_variant_group", "")
+			if translated == null or (canonical != translated and not same_variant_group):
 				failures += 1
 				push_error("Subtitle language changes %s take: %s" % [language, row.key])
 	print("BILINGUAL_VOICE_COVERAGE lines=%d checks=%d failures=%d" % [catalog.lines.size(), checks, failures])

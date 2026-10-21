@@ -1,0 +1,353 @@
+{
+ "note": "Gerações ElevenLabs de 20/10: rótulo (índice do plan.json ou variação) -> flow/sessão/créditos",
+ "generations": [
+  {
+   "label": "0",
+   "flow_id": "PMeCEKr4wf7YDNXpz3mm",
+   "session_id": "ba3GzK8S12sZH62fVs1a",
+   "credits": 27.0
+  },
+  {
+   "label": "1",
+   "flow_id": "PMeCEKr4wf7YDNXpz3mm",
+   "session_id": "w0SNv4XZfStLn8dewOlA",
+   "credits": 51.0
+  },
+  {
+   "label": "2",
+   "flow_id": "PMeCEKr4wf7YDNXpz3mm",
+   "session_id": "uG1VSW11rUHHWQFu35gn",
+   "credits": 32.0
+  },
+  {
+   "label": "4",
+   "flow_id": "PMeCEKr4wf7YDNXpz3mm",
+   "session_id": "T5w8PRbRhSAvetfRvopp",
+   "credits": 42.0
+  },
+  {
+   "label": "6",
+   "flow_id": "PMeCEKr4wf7YDNXpz3mm",
+   "session_id": "se7eNwb9tNoHYBkzlzZF",
+   "credits": 46.0
+  },
+  {
+   "label": "13",
+   "flow_id": "PMeCEKr4wf7YDNXpz3mm",
+   "session_id": "b3iF95eqQHXgBxMESMWS",
+   "credits": 47.0
+  },
+  {
+   "label": "15",
+   "flow_id": "PMeCEKr4wf7YDNXpz3mm",
+   "session_id": "WPLwYrSfw3HVh24iQ2LY",
+   "credits": 56.0
+  },
+  {
+   "label": "17",
+   "flow_id": "PMeCEKr4wf7YDNXpz3mm",
+   "session_id": "rL81aQW7LXfsMlhYJJnF",
+   "credits": 42.0
+  },
+  {
+   "label": "19",
+   "flow_id": "PMeCEKr4wf7YDNXpz3mm",
+   "session_id": "wVpR5AGFwfdzYJkOkx3l",
+   "credits": 31.0
+  },
+  {
+   "label": "22",
+   "flow_id": "PMeCEKr4wf7YDNXpz3mm",
+   "session_id": "D743hGd7x5HsluM99eOi",
+   "credits": 49.0
+  },
+  {
+   "label": "25",
+   "flow_id": "PMeCEKr4wf7YDNXpz3mm",
+   "session_id": "08sGdcXx9GZjH6FEpgWK",
+   "credits": 49.0
+  },
+  {
+   "label": "28",
+   "flow_id": "PMeCEKr4wf7YDNXpz3mm",
+   "session_id": "H15MnYTkaLuw0F86dFKX",
+   "credits": 113.0
+  },
+  {
+   "label": "30",
+   "flow_id": "PMeCEKr4wf7YDNXpz3mm",
+   "session_id": "V4fGa6a3KKPSDzp3BHA6",
+   "credits": 54.0
+  },
+  {
+   "label": "31",
+   "flow_id": "PMeCEKr4wf7YDNXpz3mm",
+   "session_id": "cNyxyiqjtbFxlCRRbTcV",
+   "credits": 57.0
+  },
+  {
+   "label": "33",
+   "flow_id": "PMeCEKr4wf7YDNXpz3mm",
+   "session_id": "J0EtLpcj7G9g8xnwDPFq",
+   "credits": 81.0
+  },
+  {
+   "label": "35",
+   "flow_id": "PMeCEKr4wf7YDNXpz3mm",
+   "session_id": "jpDOdyIBM1b6QlTvYprh",
+   "credits": 80.0
+  },
+  {
+   "label": "36",
+   "flow_id": "PMeCEKr4wf7YDNXpz3mm",
+   "session_id": "AruASNmBIL8nIfCoBpL0",
+   "credits": 124.0
+  },
+  {
+   "label": "3",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "7rQvM562Y4XRlJhCQsix",
+   "credits": 73.0
+  },
+  {
+   "label": "5",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "P0F3PvKHoGxBM2A6OFgV",
+   "credits": 77.0
+  },
+  {
+   "label": "7",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "Pe9PcRtm7MK8WMyO4pY8",
+   "credits": 121.0
+  },
+  {
+   "label": "8",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "DGmvM7q1A8L7zI1XoMyQ",
+   "credits": 105.0
+  },
+  {
+   "label": "9",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "jF8XynmvuEUgFl7hr5Wn",
+   "credits": 109.0
+  },
+  {
+   "label": "10",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "8vb3bSd47iydnj9nkaWi",
+   "credits": 111.0
+  },
+  {
+   "label": "11",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "vUQrIPkg2lRrSRADLHw6",
+   "credits": 92.0
+  },
+  {
+   "label": "12",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "w0JHKAU3hMywpVrm6pqF",
+   "credits": 123.0
+  },
+  {
+   "label": "14",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "qT1uZEXn1FObiozUomOG",
+   "credits": 104.0
+  },
+  {
+   "label": "16",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "DDcxRPvsS5O0ARRZXynH",
+   "credits": 143.0
+  },
+  {
+   "label": "18",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "9dPMHMNvbAFU6Re8Nw7Y",
+   "credits": 165.0
+  },
+  {
+   "label": "20",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "WzPvZLalgb0ym7qFt2Tg",
+   "credits": 161.0
+  },
+  {
+   "label": "21",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "y1bbLaFQo4clOGd4K07e",
+   "credits": 143.0
+  },
+  {
+   "label": "23",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "FvwcqFJGg8s1jXm4ECCt",
+   "credits": 163.0
+  },
+  {
+   "label": "24",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "vJW7xfHqPGq9VQopEe5s",
+   "credits": 148.0
+  },
+  {
+   "label": "26",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "rCMpmj93M4zok5gc02NU",
+   "credits": 211.0
+  },
+  {
+   "label": "27",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "yjmIEdLEqzpGGsuPwNpO",
+   "credits": 169.0
+  },
+  {
+   "label": "29",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "BEWYEFsgKePCqyzY6oz4",
+   "credits": 181.0
+  },
+  {
+   "label": "32",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "28IIe4YMo8L52XRucqZf",
+   "credits": 173.0
+  },
+  {
+   "label": "34",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "Qa4Lmh5TDpHblBzIUAcb",
+   "credits": 197.0
+  },
+  {
+   "label": "37",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "KKpc7H6BD9h0daV58EaM",
+   "credits": 170.0
+  },
+  {
+   "label": "38",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "voukwvjWC2zo6uSMlvoo",
+   "credits": 174.0
+  },
+  {
+   "label": "39",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "xNtgM5Qr9nos0Beyfwh0",
+   "credits": 183.0
+  },
+  {
+   "label": "40",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "BNJPaZaMs9ZRnZQ6Byw6",
+   "credits": 197.0
+  },
+  {
+   "label": "41",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "XagDofaeCnzGQapadFcm",
+   "credits": 206.0
+  },
+  {
+   "label": "42",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "XuP3ZemryMKQgreVgPHn",
+   "credits": 167.0
+  },
+  {
+   "label": "43",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "0STcudPAtKtmNie0UaYm",
+   "credits": 149.0
+  },
+  {
+   "label": "44",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "DvksdG7s8R4381hbuJJX",
+   "credits": 147.0
+  },
+  {
+   "label": "45",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "wsBUIpfIyVY8JD8UGrWZ",
+   "credits": 185.0
+  },
+  {
+   "label": "46",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "g97KDpSbOEGRHoAKwGGh",
+   "credits": 150.0
+  },
+  {
+   "label": "47",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "GtKYR27OVqIRhUvF0dJ5",
+   "credits": 168.0
+  },
+  {
+   "label": "48",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "XoDrYtGgKfdoHi9D6ZOz",
+   "credits": 184.0
+  },
+  {
+   "label": "49",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "9JZHghVI6FOGQcVIYq08",
+   "credits": 131.0
+  },
+  {
+   "label": "50",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "CXqJQooAES7JCQogqY97",
+   "credits": 165.0
+  },
+  {
+   "label": "dante_dor_aguda",
+   "flow_id": "PMeCEKr4wf7YDNXpz3mm",
+   "session_id": "HNqsAcHrz2BrqathfMXM",
+   "credits": 22.0
+  },
+  {
+   "label": "dante_dor_abafada",
+   "flow_id": "PMeCEKr4wf7YDNXpz3mm",
+   "session_id": "vIdUxEY5h5zhod4ceEhk",
+   "credits": 37.0
+  },
+  {
+   "label": "dante_dor_susto",
+   "flow_id": "PMeCEKr4wf7YDNXpz3mm",
+   "session_id": "uWcOvsXPIp4cjSEqhRO3",
+   "credits": 17.0
+  },
+  {
+   "label": "dante_dor_raiva",
+   "flow_id": "PMeCEKr4wf7YDNXpz3mm",
+   "session_id": "RKubwT9H01LZX0MeJpes",
+   "credits": 19.0
+  },
+  {
+   "label": "maciota_cumprimento_brincalhao",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "trFaeS2DbaS2bJL7de9D",
+   "credits": 130.0
+  },
+  {
+   "label": "maciota_cumprimento_cansado",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "G2yshUIlpNm2i3uYe2CX",
+   "credits": 133.0
+  },
+  {
+   "label": "maciota_cumprimento_caloroso",
+   "flow_id": "rGAqsa6p42w40ikyXY0C",
+   "session_id": "OSOaueYvGhLrU1oLvhQF",
+   "credits": 130.0
+  }
+ ]
+}

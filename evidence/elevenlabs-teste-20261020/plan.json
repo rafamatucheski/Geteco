@@ -1,0 +1,308 @@
+[
+ {
+  "key": "5867edd5fce8669aa10a47373679c649ddcf4fc6f8e8ef92b4bb534d196587bf",
+  "speaker": "dante",
+  "section": "arrival:HOME_CALL",
+  "prompt": "[atender sem suspeita] Alô?"
+ },
+ {
+  "key": "7c21151f4e5e7adf36ca3bafc1655039bfeec0cf3691c813ff0417106ce1643d",
+  "speaker": "dante",
+  "section": "arrival:HOME_CALL",
+  "prompt": "[reconhecer e desconfiar] Vicente? Quem tá falando?"
+ },
+ {
+  "key": "6fa6532413ae146716460900aeb5dd4fa9937e5c1643718c91cb7e6eea8c7556",
+  "speaker": "dante",
+  "section": "arrival:HOME_CALL",
+  "prompt": "[impedir que desligue] Espera..."
+ },
+ {
+  "key": "097f95303230fe217925e7a1276cb42fb653a6555a5d4d1885ff649bd31adc21",
+  "speaker": "maciota",
+  "section": "arrival:MEETING",
+  "prompt": "[ágil, acolher com cautela] Dante. A gente tem muita coisa pra conversar."
+ },
+ {
+  "key": "37225c6d7089b71a2433cf521cea7652c90d24ce52d6d3ff091a416c9577777b",
+  "speaker": "dante",
+  "section": "arrival:MEETING",
+  "prompt": "[cobrar identificação] Foi você que ligou?"
+ },
+ {
+  "key": "4fec2126ee49adb9f1bc218958bf19aeff2871e844435fae2ae9078cc9b180f5",
+  "speaker": "maciota",
+  "section": "arrival:MEETING",
+  "prompt": "[ágil, se apresentar e conduzir] Fui. Maciota. Vem, minha oficina é logo ali."
+ },
+ {
+  "key": "9e660a90d7dbbf51c0007c70aee5a8854a0f915bb75bf8d4bc2463055a05166d",
+  "speaker": "dante",
+  "section": "arrival:MEETING",
+  "prompt": "[testar o desconhecido] Como sabia que era eu?"
+ },
+ {
+  "key": "47b530567059cd9e526d7679ac984b1ec64d35d1cb0e88f10f48b273cbcb0ad3",
+  "speaker": "maciota",
+  "section": "arrival:MEETING",
+  "prompt": "[ágil, admitir acesso e baixar exposição] Um contato puxou tua foto no arquivo da polícia. Entra. No carro eu te explico."
+ },
+ {
+  "key": "faad4cfae55b5f5d800a8b6732b327f870a60b5c10912248c2c81b47a7072289",
+  "speaker": "maciota",
+  "section": "arrival:TOUR",
+  "prompt": "[ágil, situar investigação] Por aqui, tudo gira em torno de carga e oficina. Teu irmão passou nesse meio."
+ },
+ {
+  "key": "c7849d8e90a3458544696a9613242b3193ad6c027256cc93ae8b8347017a1cc5",
+  "speaker": "maciota",
+  "section": "arrival:TOUR",
+  "prompt": "[ágil, medir notícia ruim] Eu vi o Vicente. Depois vieram os clientes: carro sumido, conta que não fechava..."
+ },
+ {
+  "key": "dac021e5dabf73ca413d1e84735f7e933efdf59cc68bd1dad799a9b7802a1c24",
+  "speaker": "maciota",
+  "section": "arrival:TOUR",
+  "prompt": "[ágil, proteger e adiar] Tem gente que sabe por onde ele andou. Mas deixa eu confirmar antes de te meter nisso."
+ },
+ {
+  "key": "28281b308076e73c2bb5090f559394e02abad0ee9d9369b922ff5571886fbdf9",
+  "speaker": "maciota",
+  "section": "arrival:TOUR",
+  "prompt": "[ágil, indicar destino seguro] É entre aqueles galpões. Na oficina dá pra conversar direito."
+ },
+ {
+  "key": "a255dfce2c3d8e9496ba0fb5db2bffef9a61a8e394a2778f7337b0d31851e5d6",
+  "speaker": "maciota",
+  "section": "garage",
+  "prompt": "[ágil, abrir conversa difícil] Entra, Dante. Teu irmão passou aqui. Depois que foi embora, sobrou problema pra muita gente."
+ },
+ {
+  "key": "5ce5bfb95b8a763156fb53531076ede07392f83ac8631436ba3683419fe39a07",
+  "speaker": "dante",
+  "section": "garage",
+  "prompt": "[buscar resposta direta] Você sabe onde ele tá?"
+ },
+ {
+  "key": "ef56baa56d8ef2b0b71e052f6c99dfdadf5b24e7eef598365385ee86ad1604f7",
+  "speaker": "maciota",
+  "section": "garage",
+  "prompt": "[ágil, oferecer pista concreta] Endereço, ainda não. Mas tenho cliente que trabalhou com ele. Vou atrás."
+ },
+ {
+  "key": "d0a50245033772076aafd9f517e4f6a048c4b15b44d8292d668eb62a5cd3f966",
+  "speaker": "dante",
+  "section": "garage",
+  "prompt": "[investigar vínculo] E como é que você conhece nós dois?"
+ },
+ {
+  "key": "f5f4e183194a8b5a004b7de2fc0e986d7f6649766ded3a47c2180eb02d8c660c",
+  "speaker": "maciota",
+  "section": "garage",
+  "prompt": "[ágil, revelar dívida pessoal] Você recuperou um carro meu, anos atrás. Roubaram no transporte e botaram a culpa em mim. Quase perdi a oficina."
+ },
+ {
+  "key": "b8f577aa10a18aac9012cf55af992d13eb611889a4871531a2a268bcdd9dffe7",
+  "speaker": "dante",
+  "section": "garage",
+  "prompt": "[admitir distância] Eu não lembro de você."
+ },
+ {
+  "key": "c6bdce9bf33b86c252c63082dcf41bee31b587cee5570f17da24f3c5994c827e",
+  "speaker": "maciota",
+  "section": "garage",
+  "prompt": "[ágil, mostrar gratidão contida] Eu sei. Pra você era mais um serviço. Pra mim... era a oficina inteira. Você achou o carro e provou que eu tinha caído numa armação."
+ },
+ {
+  "key": "5aa5904c791ae1b5595919dc8d86465e73fe3119fc668f7b1247d0c39cef495b",
+  "speaker": "dante",
+  "section": "garage",
+  "prompt": "[retomar urgência] E o Vicente?"
+ },
+ {
+  "key": "01b950fab7b4067355f1e3f915beaf6c83e9c3f989e48b7b6bc34856d2ad1fa4",
+  "speaker": "maciota",
+  "section": "garage",
+  "prompt": "[ágil, relatar sem condenar] Veio fazer serviço pros Cobras. Daí o nome dele começou a aparecer em cobrança, carro sumido... corrida que ninguém queria explicar."
+ },
+ {
+  "key": "e0d5208ea71710f33f73705cffafba74e22cb601f8e016009d83a85271fd512d",
+  "speaker": "maciota",
+  "section": "garage",
+  "prompt": "[ágil, propor reciprocidade] Quero te ajudar, Dante. Só preciso que você me dê uma força também. Por aqui, é assim que a gente se mantém de pé."
+ },
+ {
+  "key": "672a6755c67f50ee1f7f05ea3f18df6ae8db5b48ebd0d172c7ac24ce51bfc7d4",
+  "speaker": "dante",
+  "section": "garage",
+  "prompt": "[aceitar ouvir proposta] Tá. Do que você precisa?"
+ },
+ {
+  "key": "2e8ba0d63817a2c53972015679c79319982e39042968f25bcf7d30d0bf3611d8",
+  "speaker": "maciota",
+  "section": "garage",
+  "prompt": "[ágil, combinar tarefas] Uma peça minha ficou no porto. Acerta o comprovante com a Helena primeiro. Você traz a encomenda; eu procuro quem trabalhou com teu irmão."
+ },
+ {
+  "key": "dcb65ee4cfdc2be4d58a19a4872e94fab919bd3396a2cbd9b96f1194c7a290ad",
+  "speaker": "maciota",
+  "section": "first-favors-dialogue.json:begin",
+  "prompt": "[ágil, orientar entrega] A Helena, do North Pier, já liberou o pagamento. Pega o comprovante no banco e leva pro porto. Marquei onde tá a encomenda."
+ },
+ {
+  "key": "d03cb95347ea2a7bc30df661f183b9d23cff4e6091f21ea3cc58f7a4b9a76f8e",
+  "speaker": "dante",
+  "section": "first-favors-dialogue.json:begin",
+  "prompt": "[questionar desvio] E isso me leva até o Vicente?"
+ },
+ {
+  "key": "80858fef18d49fcf450e9383486028d4fa8125f8f46a0d27ca6196d56d6f18eb",
+  "speaker": "maciota",
+  "section": "first-favors-dialogue.json:begin",
+  "prompt": "[ágil, explicar vínculo e lealdade] A peça é do Ferrugem. Ele trabalhou com teu irmão. Entrega direitinho que eu apresento vocês. E vai com jeito com a Helena. Quando apertou aqui, foi ela que segurou as contas."
+ },
+ {
+  "key": "0df7bd0a072820113f6b507b24bcf71f1a7256ee1ab78d8e5d352b5d0bed4e97",
+  "speaker": "maciota",
+  "section": "first-favors-dialogue.json:begin",
+  "prompt": "[ágil, eliminar mal-entendido] Tá pago, Dante. Não precisa tirar do bolso nem roubar nada. Vai ao banco, pega a encomenda e volta. Os cento e cinquenta são pelo serviço."
+ },
+ {
+  "key": "ec4c7a71f07118adf6171daae3dfc4cb142622c59f83f00d8deb00e759bf5660",
+  "speaker": "dante",
+  "section": "first-favors-dialogue.json:interact",
+  "prompt": "[reportar impedimento] Maciota, fecharam o atendimento depois daquela confusão. Não tem como pegar o comprovante."
+ },
+ {
+  "key": "e35f1d2e8bd22d02d85be3a5a396c620b913c3b81381d0751bd5b39a7f99791c",
+  "speaker": "maciota",
+  "section": "first-favors-dialogue.json:interact",
+  "prompt": "[ágil, resolver e repreender] Sai daí. O dinheiro já caiu; eu mando outra via pro porto. Busca a peça onde marquei e volta. Quem trabalha nesse banco ainda tá pagando pela confusão."
+ },
+ {
+  "key": "f638e7789690228b2ae03e875b71440cdb5afbc824162bce38b24ec5aa186bc0",
+  "speaker": "dante",
+  "section": "first-favors-dialogue.json:interact",
+  "prompt": "[testar nova pista] Você conhece o Vicente? Meu irmão."
+ },
+ {
+  "key": "774a392c6f2083642b91c79d994ad702de08c6654ff1b0737df94ec075371d9d",
+  "speaker": "dante",
+  "section": "first-favors-dialogue.json:interact",
+  "prompt": "[agradecer ajuda] Tá. Vou levar a peça. Obrigado, Helena."
+ },
+ {
+  "key": "a27f11ad766dc89b6800262ae9b3350ab83372b79b81d2b8d2c2659f9ef426f4",
+  "speaker": "maciota",
+  "section": "first-favors-dialogue.json:finish_dialogue",
+  "prompt": "[ágil, reconhecer confiança] Peça, comprovante... certinho. Teus cento e cinquenta. E leva essa mochila; vai te servir na viagem. Bota nas costas. Você fez tua parte, Dante."
+ },
+ {
+  "key": "0391ffaecc0ea63697020ca22baa9f8ee56158346008f46ee9de1a58d6419954",
+  "speaker": "dante",
+  "section": "first-favors-dialogue.json:finish_dialogue",
+  "prompt": "[ligar pistas] A Helena falou que tão cobrando duas vezes. É a turma do Ferrugem?"
+ },
+ {
+  "key": "d56b47629e5cbe1b0a22e22267feadead982568d6b508dc006d3d5f4f341a83c",
+  "speaker": "maciota",
+  "section": "first-favors-dialogue.json:finish_dialogue",
+  "prompt": "[ágil, distinguir responsabilidades] É área dos Cobras. Ferrugem mexe nos carros. A cobrança fica com os outros. Vou avisar que você vai; o endereço tá no quadro. Leva a peça e pergunta do Vicente."
+ },
+ {
+  "key": "64d8b6bfe73c3338ae1e581d7958ed12d73fd0923a1085cee15d3ad5cd2cfc18",
+  "speaker": "dante",
+  "section": "cobra-dialogue.json:supply_records_collected",
+  "prompt": "[confirmar ligação] Rotas, pagamentos... e a reunião na oficina. Tá tudo ligado."
+ },
+ {
+  "key": "dc7d5981da6b256fdc93c0b73d4500680fa403669b8d7e183687beb83e4795a9",
+  "speaker": "dante",
+  "section": "cobra-dialogue.json:transfer_document_collected",
+  "prompt": "[reconhecer nome decisivo] Vicente Ferraz. Organizador das corridas do deserto... É ele. Tenho que mostrar isso pro Maciota."
+ },
+ {
+  "key": "9f52db5340cb0b2fc0eed7d200a7c37b5662dc3f9bb52a62e786b997410054bb",
+  "speaker": "maciota",
+  "section": "cobra-dialogue.json:primeiro_giro_clue",
+  "prompt": "[ágil, encaminhar próximo contato] A peça confere. Procura o Ferrugem na oficina dos Cobras. Foi lá que teu irmão pediu trabalho. Leva a peça; deixei o serviço no quadro."
+ },
+ {
+  "key": "fedf2236713596f9d20ce1660bc2e9452f8b0f40d90d197bbd78ce55b2b74a85",
+  "speaker": "maciota",
+  "section": "cobra-dialogue.json:cobra_contact_clue",
+  "prompt": "[ágil, propor acesso por corrida] Ferrugem confirmou. Teu irmão procurou um motorista da turma das corridas. Vai ter que chegar perto deles na pista. A prova já tá no quadro."
+ },
+ {
+  "key": "fc224d5f27169c2a817249b0742eb47e895619139dcfd2af8ead03f37dfc1240",
+  "speaker": "maciota",
+  "section": "cobra-dialogue.json:cobra_race_clue",
+  "prompt": "[ágil, cuidar através de gesto] Você mandou bem, Dante. Separei uma mala reforçada pra viagem atrás do Vicente. Tá no porta-malas da Monaliza. Quando a mochila não der conta, pega lá."
+ },
+ {
+  "key": "2ae7840325900e089f34d64f8a3964018c063cfa9b846931dc7bdc033bbc9f8b",
+  "speaker": "maciota",
+  "section": "cobra-dialogue.json:cobra_race_clue",
+  "prompt": "[ágil, priorizar pessoa antes da pista] Falei com o motorista. Ele deixou teu irmão perto de uma casa em Ashbend. Os Cobras tão cobrando da mulher que mora lá. Ajuda ela. Depois pergunta o que viu."
+ },
+ {
+  "key": "3545900f88c7035938fbbe05d41b9417ac084ee7a4721a8ff54df9258360fcdf",
+  "speaker": "maciota",
+  "section": "cobra-dialogue.json:cobra_collection_clue",
+  "prompt": "[ágil, preparar viagem] Ela reconheceu teu irmão e apontou onde ficam os registros. Mas fala com a Jessica antes, perto do North Pier. Ela tem um serviço. Pra pegar a estrada, você vai precisar de dinheiro."
+ },
+ {
+  "key": "c261934eddc26710926c43bbde215edf9df812281038c2a6728b77a978116fe2",
+  "speaker": "maciota",
+  "section": "cobra-dialogue.json:cobra_supply_clue",
+  "prompt": "[ágil, explicar acordo] A lista inteira tá na casa do Takeshi. Conversa não vai abrir aquela porta. Acertei uma disputa: você ganha a corrida, ele mostra os registros."
+ },
+ {
+  "key": "3a2811f6961d84c6b001ff47eaab0bc525b9392827146ec629cbac7df0a3f7a2",
+  "speaker": "maciota",
+  "section": "cobra-dialogue.json:cobra_finale_clue",
+  "prompt": "[ágil, assegurar apoio] Vicente tá organizando corrida fora de Harbor. Vou te arrumar um contato e um canto no deserto. Você vai ter a quem procurar."
+ },
+ {
+  "key": "f49b9728d1f7553d2c546de36fe7f7a2e59631da9455207341458c7a9685f19b",
+  "speaker": "maciota",
+  "section": "cobra-dialogue.json:cobra_contact_begin",
+  "prompt": "[ágil, orientar aproximação] Leva aquela peça pro Ferrugem, na oficina dos Cobras. Ele falou com teu irmão. Entrega e vê se ele solta alguma coisa."
+ },
+ {
+  "key": "c5287890c793ca62a2e1d2ae7fdd7152348b4c4d7f0e9b82427b6fc294c41c30",
+  "speaker": "maciota",
+  "section": "cobra-dialogue.json:cobra_race_begin",
+  "prompt": "[ágil, dar condições com humor seco] Às nove da noite, até as docas. Ganha passando pelos quatro checkpoints que eu falo com o motorista que viu o Vicente. E me traz a Monaliza inteira."
+ },
+ {
+  "key": "5571d79274c73c6e3f701ca066fdecb35e07e9362fb56b4c45c729bf8b7d4495",
+  "speaker": "maciota",
+  "section": "cobra-dialogue.json:cobra_collection_begin",
+  "prompt": "[ágil, enviar para proteção] O motorista deixou o Vicente perto dessa mulher. Os Cobras tão indo cobrar. Protege ela; depois vê se consegue conversar."
+ },
+ {
+  "key": "216f8f31958b076d79d58608e387549c9a54d847efd818974fbbc57d091484fa",
+  "speaker": "maciota",
+  "section": "cobra-dialogue.json:cobra_supply_begin",
+  "prompt": "[ágil, definir ação de investigação] Teu irmão também procurava esses registros. Ela apontou os fundos da quadra. Pega os papéis e corta o abastecimento dos cobradores."
+ },
+ {
+  "key": "708b1b9fba133c50f59e28b7241f584fd96e4f03e04a089dbf0577818ec9bdd8",
+  "speaker": "maciota",
+  "section": "cobra-dialogue.json:cobra_finale_begin",
+  "prompt": "[ágil, explicar aposta decisiva] Takeshi diz que você não chega às docas antes dele. Os registros entram na aposta. Ganha, entra na casa e procura a lista de quem organiza as corridas."
+ },
+ {
+  "key": "ea22477b718982e694572e564eff635749ee69c4753681b7bad0324092e5aada",
+  "speaker": "maciota",
+  "section": "cobra-dialogue.json:jessica_bank_begin",
+  "prompt": "[ágil, encaminhar conversa] Jessica tá na rua do North Pier. Acerta o serviço com ela. Depois a gente pega os registros dos Cobras."
+ },
+ {
+  "key": "39a38041b9007a48e1b3fa7f42027fd52c9c0d48a7ea3fcc798623ca0bbc80f0",
+  "speaker": "maciota",
+  "section": "cobra-dialogue.json:jessica_bank_clue",
+  "prompt": "[ágil, alívio e retomada] Jessica avisou que vocês chegaram inteiros. Bom. Agora, os registros. Os papéis tão nos fundos da quadra dos Cobras, onde a moradora falou."
+ }
+]

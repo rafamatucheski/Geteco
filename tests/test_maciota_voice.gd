@@ -27,6 +27,9 @@ class DialogueSession extends "res://runtime/FullSession.gd":
 func _initialize() -> void: run.call_deferred()
 
 func run() -> void:
+	# Este contrato é do banco maciota_baritone; as falas da ElevenLabs o substituem de propósito
+	# e têm teste próprio (test_elevenlabs_voices.gd).
+	OS.set_environment("GETECO_ELEVENLABS_VOICES", "0")
 	var settings := root.get_node("V2Settings")
 	var original_language: String = settings.voice_language
 	settings.voice_language = "pt_BR"

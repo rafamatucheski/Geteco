@@ -2,6 +2,9 @@ extends RefCounted
 ## One immutable metadata index per session; WAVs are loaded only on speech events.
 ## Generated, technically validated takes may play while artistic review is pending.
 const MANIFEST := "res://audio/mission_voices/directed/runtime.json"
+## Falas da ElevenLabs ficam fora de runtime.json porque a publicação do banco local
+## reescreve aquele arquivo; este se sobrepõe chave a chave (tools/install_elevenlabs_voices.py).
+const OVERLAY := "res://audio/mission_voices/directed/elevenlabs.json"
 const DIRECTION := "res://data/dialogue/voice-line-direction.json"
 const CAST := "res://data/dialogue/voice-cast.json"
 static var _loaded := false
@@ -11,6 +14,7 @@ static var _legacy: Dictionary = {}
 static var _profiles: Dictionary = {}
 static var _takes: Dictionary = {}
 static var _streams: Dictionary = {}
+static var _last_variant: Dictionary = {}
 
 static func enabled() -> bool:
 	return OS.get_environment("GETECO_DIRECTED_VOICES").to_lower() not in ["0", "false", "off"]
@@ -45,10 +49,18 @@ static func _load_index() -> void:
 	var manifest := _json(MANIFEST)
 	# Whole-file hashes are calculated once, never on the frame/speech hot path.
 	# Changing acting direction or a cast profile invalidates an older runtime bank.
-	if int(manifest.get("version", 0)) == 1:
-		if str(manifest.get("cast_sha256", "")) != FileAccess.get_sha256(CAST): return
-		if str(manifest.get("direction_sha256", "")) != FileAccess.get_sha256(DIRECTION): return
+	if int(manifest.get("version", 0)) == 1 and str(manifest.get("cast_sha256", "")) == FileAccess.get_sha256(CAST) \
+			and str(manifest.get("direction_sha256", "")) == FileAccess.get_sha256(DIRECTION):
 		_takes = manifest.get("lines", {})
+	# A sobreposição não depende dos hashes do banco local: cada entrada ainda passa pela
+	# conferência de texto falado, pessoa e idioma em resolve().
+	# GETECO_ELEVENLABS_VOICES=0 volta ao banco local, para comparação A/B no mesmo build.
+	var overlay := {} if OS.get_environment("GETECO_ELEVENLABS_VOICES").to_lower() in ["0", "false", "off"] else _json(OVERLAY)
+	if int(overlay.get("version", 0)) == 1:
+		var overlay_lines: Dictionary = overlay.get("lines", {})
+		for lang in overlay_lines:
+			if not _takes.has(lang): _takes[lang] = {}
+			for row_key in overlay_lines[lang]: _takes[lang][row_key] = overlay_lines[lang][row_key]
 
 static func _add_alias(text: String, persona: String, row_key: String) -> void:
 	if text.is_empty(): return
@@ -110,7 +122,24 @@ static func resolve(row: Dictionary, requested_language: String, character_id :=
 	var path := str(entry.get("path", ""))
 	if not path.begins_with("res://audio/mission_voices/directed/") or ".." in path or not path.ends_with(".wav"): return {}
 	if not ResourceLoader.exists(path) and not FileAccess.file_exists(path): return {}
-	return entry
+	return _pick_variant(entry)
+
+## Falas repetidas (dor, cumprimento) têm vários tons; sorteia um sem repetir o anterior.
+static func _pick_variant(entry: Dictionary) -> Dictionary:
+	var variants: Variant = entry.get("variants", [])
+	if not variants is Array or variants.size() < 2: return entry
+	var key := str(entry.get("source_key", entry.path))
+	var index: int = randi() % variants.size()
+	if index == int(_last_variant.get(key, -1)): index = (index + 1) % variants.size()
+	_last_variant[key] = index
+	var chosen: Variant = variants[index]
+	if not chosen is Dictionary: return entry
+	var path := str(chosen.get("path", ""))
+	if not path.begins_with("res://audio/mission_voices/directed/") or ".." in path or not path.ends_with(".wav"): return entry
+	var result := entry.duplicate()
+	for field in ["path", "audio_sha256", "duration_seconds", "playback_gain_db"]:
+		if chosen.has(field): result[field] = chosen[field]
+	return result
 
 static func stream(entry: Dictionary) -> AudioStream:
 	if entry.is_empty(): return null
@@ -127,6 +156,9 @@ static func stream(entry: Dictionary) -> AudioStream:
 	result.set_meta("voice_language", entry.language)
 	result.set_meta("character_id", entry.character_id)
 	result.set_meta("spoken_text", entry.spoken_text)
+	# Tons sorteados da mesma fala são intercambiáveis; o grupo identifica a fala, não o arquivo.
+	if entry.get("variants", []) is Array and entry.get("variants", []).size() > 1:
+		result.set_meta("voice_variant_group", str(entry.get("source_key", "")))
 	result.set_meta("directed_gain_db", clampf(float(entry.get("playback_gain_db", entry.get("directed_gain_db", 0.0))), -24.0, 12.0))
 	if _streams.size() >= 32: _streams.erase(_streams.keys()[0])
 	_streams[path] = result
