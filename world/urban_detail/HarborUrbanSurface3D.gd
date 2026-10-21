@@ -26,13 +26,15 @@ var _access_points := PackedVector2Array()
 const _RAISED_APRON_HOLES: Array[Rect2] = []
 
 
-func configure() -> void:
+func configure(compose_visible := true) -> void:
 	_surfaces.clear()
 	_access_points.clear()
 	_add_westgate()
 	_add_east()
 	_add_north()
-	_compose_visible_surfaces()
+	# Catalog callers only read the authored rectangles. Composing their visible
+	# union here used to repeat the expensive merge for every paving validation.
+	if compose_visible: _compose_visible_surfaces()
 
 
 ## V1 paints later rectangles over earlier ones. In 3D those faces must not
@@ -93,23 +95,42 @@ func _rect_difference(rect: Rect2, cut: Rect2) -> Array[Rect2]:
 ## Dissolve obsolete access/lot seams before building meshes. Adjacent rectangles
 ## are merged only when their union is rectangular, preserving all real openings.
 func _merge_neighbours() -> void:
-	var changed := true
-	while changed:
-		changed = false
-		for i in _visible_surfaces.size():
-			for j in range(i+1,_visible_surfaces.size()):
-				if _visible_surfaces[i].kind != _visible_surfaces[j].kind or _visible_surfaces[i].color != _visible_surfaces[j].color: continue
-				if _visible_surfaces[i].get("court",Rect2()) != _visible_surfaces[j].get("court",Rect2()) or _visible_surfaces[i].get("garden",Rect2()) != _visible_surfaces[j].get("garden",Rect2()): continue
-				var a: Rect2 = _visible_surfaces[i].rect
-				var b: Rect2 = _visible_surfaces[j].rect
-				var horizontal := is_equal_approx(a.position.y,b.position.y) and is_equal_approx(a.size.y,b.size.y) and (is_equal_approx(a.end.x,b.position.x) or is_equal_approx(b.end.x,a.position.x))
-				var vertical := is_equal_approx(a.position.x,b.position.x) and is_equal_approx(a.size.x,b.size.x) and (is_equal_approx(a.end.y,b.position.y) or is_equal_approx(b.end.y,a.position.y))
-				if not horizontal and not vertical: continue
-				_visible_surfaces[i].rect = a.merge(b)
-				_visible_surfaces.remove_at(j)
-				changed = true
-				break
-			if changed: break
+	# Different finish/court/garden groups cannot merge or influence one another.
+	# Keep the same first-pair rule inside each group, without restarting scans of
+	# every unrelated rectangle or shifting the whole array after every merge.
+	var groups := {}
+	for i in _visible_surfaces.size():
+		var source: Dictionary = _visible_surfaces[i]
+		var key: Array = [source.kind,source.color,source.get("court",Rect2()),source.get("garden",Rect2())]
+		if not groups.has(key): groups[key] = []
+		groups[key].append(i)
+	var alive := PackedByteArray()
+	alive.resize(_visible_surfaces.size())
+	alive.fill(1)
+	for indices: Array in groups.values():
+		var changed := true
+		while changed:
+			changed = false
+			for position in indices.size():
+				var i: int = indices[position]
+				if not alive[i]: continue
+				for next in range(position+1,indices.size()):
+					var j: int = indices[next]
+					if not alive[j]: continue
+					var a: Rect2 = _visible_surfaces[i].rect
+					var b: Rect2 = _visible_surfaces[j].rect
+					var horizontal := is_equal_approx(a.position.y,b.position.y) and is_equal_approx(a.size.y,b.size.y) and (is_equal_approx(a.end.x,b.position.x) or is_equal_approx(b.end.x,a.position.x))
+					var vertical := is_equal_approx(a.position.x,b.position.x) and is_equal_approx(a.size.x,b.size.x) and (is_equal_approx(a.end.y,b.position.y) or is_equal_approx(b.end.y,a.position.y))
+					if not horizontal and not vertical: continue
+					_visible_surfaces[i].rect = a.merge(b)
+					alive[j] = 0
+					changed = true
+					break
+				if changed: break
+	var merged: Array[Dictionary] = []
+	for i in _visible_surfaces.size():
+		if alive[i]: merged.append(_visible_surfaces[i])
+	_visible_surfaces = merged
 
 
 ## `cover`: contorno das ruas do chunk (HarborRoadGeometry3D.chunk_cover); o lote não fica por baixo da rua.

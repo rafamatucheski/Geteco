@@ -84,6 +84,9 @@ static func _aggregate(label: String, elapsed_usec: int) -> void:
 	row.max_usec = maxi(int(row.max_usec),elapsed_usec)
 
 static func begin() -> int:
+	# The profiler's containers are consumed by the main thread. Off-tree data
+	# preparation must not resize these dictionaries concurrently with take().
+	if not Thread.is_main_thread(): return 0
 	return Time.get_ticks_usec() if enabled or aggregate_enabled or session_enabled else 0
 
 static func finish(label: String, began: int, details: Dictionary = {}) -> void:

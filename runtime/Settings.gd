@@ -49,6 +49,18 @@ var render_scale := 1.0
 var fps_limit := 1
 ## 0 baixa, 1 média, 2 alta.
 var shadow_quality := 1
+const GRAPHICS := preload("res://runtime/GraphicsOptions.gd")
+## AA: MSAA, FXAA, SMAA. Upscale: bilinear, FSR 1.
+var aa_mode := 0
+var upscale_mode := 1
+var shadow_distance := 1
+var anisotropy := 3
+var reflection_quality := 1
+var detail_quality := 1
+var ssao := false
+var volumetric_fog := false
+var glow := true
+var glow_strength := .75
 ## Ajuste de brilho do mundo: 1,0 é o original.
 var brightness := 1.0
 var show_fps := false
@@ -86,6 +98,33 @@ func _ready() -> void:
 	load_settings()
 	TranslationServer.set_locale(text_language)
 	apply_settings()
+	get_tree().node_added.connect(_graphics_node_added)
+
+func _graphics_node_added(node: Node) -> void:
+	if node.is_in_group(GRAPHICS.DETAIL_GROUP):
+		_apply_detail.call_deferred(weakref(node))
+
+func _apply_detail(reference: WeakRef) -> void:
+	var node: Node = reference.get_ref()
+	if is_instance_valid(node): GRAPHICS.apply_detail(node,detail_quality)
+
+func graphics_preset() -> int:
+	for index in GRAPHICS.PRESETS.size():
+		var matches := true
+		for key in GRAPHICS.KEYS:
+			if get(key) != GRAPHICS.PRESETS[index][key]:
+				matches = false
+				break
+		if matches: return index + 1
+	return 0
+
+func set_graphics_preset(index: int) -> void:
+	if index < 1 or index > GRAPHICS.PRESETS.size(): return
+	for key in GRAPHICS.KEYS: set(key,GRAPHICS.PRESETS[index-1][key])
+	apply_settings()
+
+func shadow_distance_metres() -> float:
+	return [40.0,55.0,80.0][clampi(shadow_distance,0,2)]
 
 ## Teste roda com --isolated-save-root=<pasta temporária> (tools/run_core_suite.sh,
 ## tests/run_suite.ps1): as preferências ficam lá. Antes o teste lia o settings.cfg do jogador e
@@ -120,6 +159,13 @@ func load_settings(path := "") -> Error:
 		brightness = clampf(float(config.get_value("display","brightness",1.0)),.6,1.6)
 		show_fps = bool(config.get_value("display","show_fps",false))
 		camera_view = clampi(int(config.get_value("display","camera_view",1)), 0, 1)
+		for key in ["aa_mode","upscale_mode","shadow_distance","anisotropy","reflection_quality","detail_quality"]:
+			var maximum := 4 if key == "anisotropy" else (1 if key == "upscale_mode" else 2)
+			set(key,clampi(int(config.get_value("graphics",key,GRAPHICS.PRESETS[1][key])),0,maximum))
+		# Legacy TAA (3) maps to SMAA (2), FSR2 (2) to FSR1 (1); SSR is no longer loaded.
+		for key in ["ssao","volumetric_fog","glow"]:
+			set(key,bool(config.get_value("graphics",key,GRAPHICS.PRESETS[1][key])))
+		glow_strength = clampf(float(config.get_value("graphics","glow_strength",.75)),0.0,1.5)
 	return result
 
 func _exit_tree() -> void:
@@ -157,15 +203,13 @@ func apply_settings() -> void:
 	_apply_bus_volume("SFX", sfx_volume)
 	_apply_bus_volume("Ambient", ambient_volume)
 	var view := root_view()
-	view.msaa_3d = mini(msaa, MAX_MSAA) as Viewport.MSAA
+	GRAPHICS.apply_viewport(view,self)
 	sync_pipeline_msaa(view.msaa_3d)
-	view.scaling_3d_scale = render_scale
-	# FSR 1 reconstrói bordas melhor que o bilinear quando a escala cai.
-	view.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR if render_scale < .999 else Viewport.SCALING_3D_MODE_BILINEAR
 	Engine.max_fps = FPS_LIMITS[fps_limit]
 	RenderingServer.directional_shadow_atlas_set_size(SHADOW_ATLAS[shadow_quality], true)
 	RenderingServer.directional_soft_shadow_filter_set_quality(SHADOW_FILTER[shadow_quality])
 	RenderingServer.positional_soft_shadow_filter_set_quality(SHADOW_FILTER[shadow_quality])
+	for node in get_tree().get_nodes_in_group(GRAPHICS.DETAIL_GROUP): GRAPHICS.apply_detail(node,detail_quality)
 	_update_fps_overlay()
 	if DisplayServer.get_name() != "headless":
 		DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED if vsync else DisplayServer.VSYNC_DISABLED)
@@ -195,6 +239,13 @@ func apply_environment(environment: Environment) -> void:
 	if environment == null: return
 	environment.adjustment_enabled = not is_equal_approx(brightness, 1.0)
 	environment.adjustment_brightness = brightness
+	var advanced := GRAPHICS.forward_plus()
+	environment.ssao_enabled = ssao and advanced
+	environment.ssr_enabled = false
+	environment.volumetric_fog_enabled = volumetric_fog and advanced
+	if environment.volumetric_fog_enabled:
+		environment.volumetric_fog_density = .005
+		environment.volumetric_fog_length = 100.0
 
 func _apply_bus_volume(bus_name: String, linear: float) -> void:
 	var idx := AudioServer.get_bus_index(bus_name)
@@ -284,6 +335,8 @@ func save_settings(path := "") -> Error:
 	config.set_value("display","brightness",brightness)
 	config.set_value("display","show_fps",show_fps)
 	config.set_value("display","camera_view",camera_view)
+	for key in GRAPHICS.KEYS:
+		if key not in ["msaa","render_scale","shadow_quality"]: config.set_value("graphics",key,get(key))
 	config.set_value("controls","bindings",get_node("/root/GameInput").export_bindings())
 	config.set_value("controls","gamepad_bindings",get_node("/root/GameInput").export_gamepad_bindings())
 	config.set_value("controls","gamepad_bindings_version",get_node("/root/GameInput").GAMEPAD_BINDINGS_VERSION)

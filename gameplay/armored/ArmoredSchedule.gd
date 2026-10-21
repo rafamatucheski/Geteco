@@ -106,6 +106,8 @@ static func restore(value: Variant) -> Dictionary:
 	for vehicle in row.vehicles:
 		if not vehicle is Dictionary or not _point(vehicle.get("point")): return {}
 		if not preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd").valid_records(vehicle.get("body_dents",[])): return {}
+		if not preload("res://gameplay/vehicle_effects/VehicleBreakawayParts.gd").valid_state(vehicle.get("breakaway_parts",{})): return {}
+		if not preload("res://gameplay/vehicle_effects/VehicleBlood.gd").valid(vehicle.get("blood_stains",0)): return {}
 		if not _number(vehicle.get("yaw"),-100000,100000) or not _number(vehicle.get("health"),0,10000): return {}
 	if not row.guards is Array or row.guards.size() > 10: return {}
 	for guard in row.guards:

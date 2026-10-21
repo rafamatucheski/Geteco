@@ -119,8 +119,10 @@ func _ready() -> void:
 ## chamada no carregamento, antes de a região entrar na árvore.
 func prepare_data() -> void:
 	if data_prepared: return
+	var preparation_started := STALL_WORK.begin()
 	source_data = JSON.parse_string(FileAccess.get_file_as_string(DATA_PATH))
 	_prepare()
+	STALL_WORK.finish("region.prepare_data." + region_id, preparation_started, {})
 	data_prepared = true
 
 ## Constrói e descarta uma vez cada célula com conteúdo, sob a cortina de
@@ -269,6 +271,7 @@ func _record(point: Vector3, item: Dictionary) -> void:
 	if not records.has(key): records[key] = []
 	records[key].append(item)
 func _prepare() -> void:
+	var records_started := STALL_WORK.begin()
 	CITY_DRESSING.invalidate_context(self)
 	if region_id == "harbor":
 		_record(CEMETERY.world_position(),{"kind":"cemetery","position":CEMETERY.world_position()})
@@ -392,11 +395,17 @@ func _prepare() -> void:
 		_revise_mountain_routes()
 	for entry in CATALOG.access_points():
 		if entry.region == region_id: entries.append(entry)
+	STALL_WORK.finish("region.prepare.records." + region_id, records_started, {})
 	if region_id == "harbor":
 		harbor_road_geometry = HARBOR_ROAD_GEOMETRY.new()
+		var geometry_started := STALL_WORK.begin()
 		harbor_road_geometry.configure(roads)
+		STALL_WORK.finish("region.prepare.roads", geometry_started, {})
 		harbor_urban_surface = HARBOR_URBAN_SURFACE.new()
+		geometry_started = STALL_WORK.begin()
 		harbor_urban_surface.configure()
+		STALL_WORK.finish("region.prepare.urban_surfaces", geometry_started, {})
+		geometry_started = STALL_WORK.begin()
 		harbor_facade_ground = preload("res://world/urban_detail/HarborFacadeGround.gd").footprints()
 		harbor_dressing_ground.clear()
 		for cell_records in records.values():
@@ -405,9 +414,14 @@ func _prepare() -> void:
 					var origin: Vector3 = record.position
 					harbor_dressing_ground.append_array(HARBOR_DRESSING.ground_footprints(record.zone_id,Vector2(origin.x,origin.z)))
 		harbor_ocean = preload("res://world/regions/HarborOcean.gd").new()
+		STALL_WORK.finish("region.prepare.footprints", geometry_started, {})
+		geometry_started = STALL_WORK.begin()
 		harbor_ocean.configure(source_data.harbor_land,extra_land)
+		STALL_WORK.finish("region.prepare.ocean", geometry_started, {})
 		coastal_protection = preload("res://world/regions/CoastalProtection.gd").new()
+		geometry_started = STALL_WORK.begin()
 		coastal_protection.configure(source_data,extra_land,harbor_road_geometry._layers[0].polygons)
+		STALL_WORK.finish("region.prepare.coast", geometry_started, {})
 	if region_id == "mountain":
 		terrain = TERRAIN.new()
 		var reservations: Array = CATALOG.definitions().duplicate()

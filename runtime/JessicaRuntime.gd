@@ -288,7 +288,8 @@ func _ensure_car() -> void:
 		car = session.controller.spawn_vehicle(CAR_SPEC.ID,point,float(_saved_vehicle.yaw))
 		if car == null: return
 		car.health = float(_saved_vehicle.health)
-		car.restore_body_dents(_saved_vehicle.get("body_dents",[]))
+		car.restore_body_dents(_saved_vehicle.get("body_dents",[]),_saved_vehicle.get("breakaway_parts",{}))
+		car.restore_blood_stains(int(_saved_vehicle.get("blood_stains",0)))
 		car.paint_color = Color.html(_saved_vehicle.get("paint","f1f0eaff"))
 		car.equipment_state = _saved_vehicle.get("equipment",{}).duplicate(true)
 	else:

@@ -1,9 +1,11 @@
 extends CanvasLayer
+signal presentation_finished(report: Dictionary)
 ## Illustrated loading cover; real progress stays fixed above the cycling artwork.
 const NODE_NAME := "LoadingCurtain"
 const ARTWORK := preload("res://ui/LoadingArtwork.gd")
 const SESSION_OPS := preload("res://runtime/SessionOperations.gd")
 const LOADING_MUSIC := preload("res://ui/LoadingMusic.gd")
+const PRESENTER := preload("res://ui/LoadingPresenter.cs")
 ## Duração do fade final da cobertura (imagem e música).
 const LIFT_SECONDS := 1.0
 var _diagnostic_stage := 0
@@ -23,6 +25,9 @@ var _shown := 0.0
 var _target := 0.0
 var stage_message := "Carregando…"
 var _lifting := false
+var _presenter: Node
+var _preparing_presentation := false
+var _presentation_ready := false
 
 static func variant_for(region_id: String) -> int:
 	return 1 if region_id == "mountain" else 2 if region_id == "desert" else 0
@@ -86,6 +91,31 @@ func _ready() -> void:
 	_track.add_child(_fill)
 	_track.resized.connect(_update_progress)
 	set_process(false)
+	prepare_presentation.call_deferred()
+
+func prepare_presentation() -> void:
+	if _presentation_ready or stage_only: return
+	if _preparing_presentation:
+		while not _presentation_ready: await get_tree().process_frame
+		return
+	_preparing_presentation = true
+	if OS.get_name() == "Windows" and DisplayServer.get_name() != "headless" and not OS.get_cmdline_args().has("--write-movie") and not OS.get_cmdline_user_args().has("--loading-presenter=godot"):
+		_presenter = PRESENTER.new()
+		add_child(_presenter)
+		var art: Control = _root.get_node("Artwork")
+		if _presenter.Begin(_root,art._order,DISPLAY_FONT.data,BODY_FONT.data):
+			# Stage immutable pixels over separate frames before any world build.
+			for index in ARTWORK.ART.size():
+				if not _presenter.AddImage(index,ARTWORK.ART[index]): break
+				await get_tree().process_frame
+			var deadline := Time.get_ticks_msec()+5000
+			while not _presenter.IsReady() and not _presenter.HasFailed() and Time.get_ticks_msec()<deadline:
+				await get_tree().process_frame
+		if not _presenter.IsReady():
+			push_warning("Loading presentation fallback: %s" % _presenter.Snapshot())
+			_presenter.queue_free()
+			_presenter = null
+	_presentation_ready = true
 
 func _label(text: String, font_size: int, color: Color, font: Font) -> Label:
 	var label := Label.new()
@@ -113,6 +143,7 @@ func _update_progress() -> void:
 	if _fill == null or _track == null: return
 	_fill.size = Vector2(_track.size.x * _shown, _track.size.y)
 	_percent.text = "%d%%" % floori(_shown * 100.0)
+	if is_instance_valid(_presenter): _presenter.SetProgress(_shown)
 
 func _process(delta: float) -> void:
 	_shown = move_toward(_shown, _target, delta * 0.9)
@@ -128,6 +159,7 @@ func lift(settle_frames := 8) -> void:
 	_update_progress()
 	# A imagem e a música saem juntas e devagar (1 s): nada corta de uma vez ao entrar no jogo.
 	LOADING_MUSIC.fade_out(self, LIFT_SECONDS)
+	if is_instance_valid(_presenter): _presenter.FadeOut(LIFT_SECONDS)
 	if _root != null:
 		var tween := create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
 		tween.tween_property(_root, "modulate:a", 0.0, LIFT_SECONDS).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
@@ -136,3 +168,13 @@ func lift(settle_frames := 8) -> void:
 
 func _exit_tree() -> void:
 	SESSION_OPS.finish(_diagnostic_stage, "removed")
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE and is_instance_valid(_presenter):
+		var report: Dictionary = _presenter.Snapshot()
+		presentation_finished.emit(report)
+		if "--benchmark" in OS.get_cmdline_user_args():
+			var summary := report.duplicate(true)
+			summary.erase("intervals_ms")
+			summary.including_fade.erase("intervals_ms")
+			print("LOADING_PRESENTATION ",JSON.stringify(summary))

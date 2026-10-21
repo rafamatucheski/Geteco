@@ -2,6 +2,7 @@
 Build Harbor.csproj first. Run: python tests/test_session_diagnostics.py --godot PATH
 """
 import argparse
+import os
 import json
 import pathlib
 import subprocess
@@ -42,6 +43,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--godot", required=True)
     args = parser.parse_args()
+    os.environ['HARBOR_SESSION_LOG'] = '1'
+    os.environ['HARBOR_SESSION_PROFILE'] = '1'
     command = [args.godot, "--headless", "--path", str(ROOT), "--script", "res://tests/test_session_diagnostics.gd"]
     first = subprocess.run(command, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=45)
     assert first.returncode == 0, first.stdout + first.stderr

@@ -132,13 +132,15 @@ func _apply_glow(night: float) -> void:
 	var holder = controller.get("environment")
 	if holder == null or not is_instance_valid(holder): return
 	var env: Environment = holder.environment
-	env.glow_enabled = true
+	var settings := get_node_or_null("/root/V2Settings")
+	var glow_factor: float = settings.glow_strength if settings != null else 1.0
+	env.glow_enabled = settings.glow if settings != null else true
 	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_ADDITIVE
 	# De dia, pintura branca ao sol passa de 1.0 e ganhava halo; o limiar sobe
 	# de dia e desce à noite, quando só as luzes passam dele.
 	env.glow_hdr_threshold = lerpf(2.4, 1.0, night)
 	env.glow_hdr_scale = 2.0
-	env.glow_intensity = lerpf(.25, .85, night)
+	env.glow_intensity = lerpf(.25, .85, night) * glow_factor
 	env.glow_bloom = 0.0
 	env.set_glow_level(0, 0.0)
 	env.set_glow_level(1, 1.0)

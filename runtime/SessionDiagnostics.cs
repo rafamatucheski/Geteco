@@ -12,6 +12,8 @@ using System.Threading;
 public partial class SessionDiagnostics : Node
 {
     private SessionLogSink sink;
+    // Essential session/errors logging is always available; profiling is opt-in in every build.
+    public bool DetailedEnabled { get; private set; }
     private readonly System.Collections.Generic.List<double> frames = new(512);
     private long previous, window;
     private Process process;
@@ -36,6 +38,7 @@ public partial class SessionDiagnostics : Node
     // The main thread publishes immutable context; error/watchdog callbacks never touch Godot.
     public int UpdateContext(string json)
     {
+        if (!DetailedEnabled || sink == null) return contextId;
         try {
             using var doc = JsonDocument.Parse(json);
             worldContext = doc.RootElement.Clone();
@@ -90,7 +93,7 @@ public partial class SessionDiagnostics : Node
     private int heldSnapshotId;
     public int HoldRuntimeSnapshot()
     {
-        if (sink == null) return 0;
+        if (sink == null || !DetailedEnabled) return 0;
         long began = Stopwatch.GetTimestamp();
         int id = ++heldSnapshotId;
         heldSnapshots[id] = (RuntimeSnapshotObject(), worldContext);
@@ -103,7 +106,7 @@ public partial class SessionDiagnostics : Node
     // escrita a partir do retrato guardado. Id 0 ou vencido: retrato de agora, marcado como tal.
     public void RecordProfileWithSnapshot(string json, int snapshotId, bool attachContext)
     {
-        if (sink == null) return;
+        if (sink == null || !DetailedEnabled) return;
         (object Runtime, JsonElement Context) snapshot = default;
         bool held = snapshotId != 0 && heldSnapshots.Remove(snapshotId, out snapshot);
         if (!held) snapshot = (RuntimeSnapshotObject(), worldContext);
@@ -114,15 +117,18 @@ public partial class SessionDiagnostics : Node
     {
         ProcessMode = ProcessModeEnum.Always;
         if (System.Environment.GetEnvironmentVariable("HARBOR_SESSION_LOG") == "0") return;
+        DetailedEnabled = System.Environment.GetEnvironmentVariable("HARBOR_SESSION_PROFILE") == "1";
         try
         {
             string folder = ProjectSettings.GlobalizePath("user://session-logs");
             sink = new SessionLogSink(folder);
             OS.AddLogger(sink);
-            process = Process.GetCurrentProcess();
-            previousCpu = process.TotalProcessorTime.TotalMilliseconds;
             previous = window = previousCpuAt = Stopwatch.GetTimestamp();
-            processTimer = new System.Threading.Timer(SampleProcess, null, 1000, 1000);
+            if (DetailedEnabled) {
+                process = Process.GetCurrentProcess();
+                previousCpu = process.TotalProcessorTime.TotalMilliseconds;
+                processTimer = new System.Threading.Timer(SampleProcess, null, 1000, 1000);
+            }
             sink.Record(new { type = "session_start", utc = DateTime.UtcNow, pid = System.Environment.ProcessId,
                 engine = Engine.GetVersionInfo()["string"].AsString(), version = ProjectSettings.GetSetting("application/config/version").AsString(),
                 cpu = OS.GetProcessorName(), logical_processors = System.Environment.ProcessorCount,
@@ -141,7 +147,8 @@ public partial class SessionDiagnostics : Node
                 coverage = "explicit_instrumentation_not_all_scripts",
                 limitations = new[] { "GPU samples are asynchronous; no exact spike attribution", "No native stacks or pre-autoload work", "No automatic logic-bug detection" },
                 telemetry_limits = new { queue_records = 8192, profile_record_chars = 2 * 1024 * 1024, profile_queue_payload_bytes = 32 * 1024 * 1024, part_bytes = 32 * 1024 * 1024 },
-                system_profile = System.Environment.GetEnvironmentVariable("HARBOR_SESSION_PROFILE") != "0" });
+                logging_mode = DetailedEnabled ? "detailed" : "essential",
+                system_profile = DetailedEnabled });
             AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
             System.Threading.Tasks.TaskScheduler.UnobservedTaskException += OnUnobservedTaskException;
             GD.Print("SessionDiagnostics: ", sink.Folder);
@@ -156,7 +163,7 @@ public partial class SessionDiagnostics : Node
 
     public override void _Ready()
     {
-        if (sink == null || System.Environment.GetEnvironmentVariable("HARBOR_SESSION_PROFILE") == "0") return;
+        if (sink == null || !DetailedEnabled) return;
         try
         {
             var script = GD.Load<GDScript>("res://runtime/SessionSystemProfile.gd");
@@ -168,13 +175,13 @@ public partial class SessionDiagnostics : Node
     }
 
     // JSON is parsed on the writer thread, never serializing Godot objects there.
-    public void RecordProfile(string json) => sink?.Profile(json);
+    public void RecordProfile(string json) { if (DetailedEnabled) sink?.Profile(json); }
 
     public long BeginOperation(string system, string operation, string source, string detailsJson)
-        => sink?.BeginOperation(system, operation, source, detailsJson) ?? 0;
+        => DetailedEnabled ? sink?.BeginOperation(system, operation, source, detailsJson) ?? 0 : 0;
     public void EndOperation(long token, string status) => sink?.EndOperation(token, status);
     public long BeginOperationAt(string system, string operation, string source, string detailsJson,
-        long engineUsec, long frame, long parentToken) => sink?.BeginOperation(system, operation, source, detailsJson, engineUsec, frame, parentToken) ?? 0;
+        long engineUsec, long frame, long parentToken) => DetailedEnabled ? sink?.BeginOperation(system, operation, source, detailsJson, engineUsec, frame, parentToken) ?? 0 : 0;
     private void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
         => sink?.ManagedException("managed_unhandled_exception", e.ExceptionObject.ToString(), e.IsTerminating);
     private void OnUnobservedTaskException(object sender, System.Threading.Tasks.UnobservedTaskExceptionEventArgs e)
@@ -184,6 +191,9 @@ public partial class SessionDiagnostics : Node
     {
         if (sink == null) return;
         long now = Stopwatch.GetTimestamp();
+        // Retain only the cheap heartbeat for hung-game reporting in essential mode.
+        sink.Touch(now);
+        if (!DetailedEnabled) return;
         var state = (GetTree().CurrentScene?.SceneFilePath ?? "", GetTree().Paused, DisplayServer.WindowIsFocused(), Engine.MaxFps, GetTree().Root.Size, DisplayServer.WindowGetVsyncMode());
         if (state != frameState) {
             frameState = state;
@@ -198,7 +208,6 @@ public partial class SessionDiagnostics : Node
         frameStateIds.Add(runtimeStateId);
         frames.Add((now - previous) * 1000.0 / Stopwatch.Frequency);
         previous = now;
-        sink.Touch(now);
         if ((now - window) < Stopwatch.Frequency) {
             Interlocked.Add(ref telemetryUsec, (Stopwatch.GetTimestamp() - now) * 1000000 / Stopwatch.Frequency);
             return;

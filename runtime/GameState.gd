@@ -72,6 +72,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 	# Reject the entire snapshot before touching live state. Maciota is a native
 	# Harbor interior and deliberately does not live in PlaceCatalog.
 	if not _location_is_compatible(data.region_id,data.place_id): return false
+	if data.world.has("digo_workshop_drive") and (data.region_id != "desert" or data.place_id != "desert_digo"): return false
 	if data.world.has("pedestrian"):
 		var pedestrian: Variant = data.world.pedestrian
 		if not pedestrian is Dictionary or pedestrian.get("region","") != data.region_id: return false
@@ -169,6 +170,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 		if not data.world.urban_operations is Dictionary or not preload("res://gameplay/urban_v1/UrbanOperations.gd").validate_snapshot(data.world.urban_operations): return false
 	if not _validate_cross_contracts(next_economy,next_campaign,next_canonical_campaign,data.world): return false
 	if not preload("res://runtime/desert/DesertSaveContract.gd").valid(data.world,data.economy): return false
+	if data.world.has("desert_drag_return") and not preload("res://activities/desert_drag/DragReturnCourse.gd").validate_snapshot(data.world.desert_drag_return): return false
 	# The dedicated Rachas profile starts at the meet without completing story
 	# missions. This save mode does not change the bridge's campaign-only policy.
 	if data.world.has("drag_standalone"):

@@ -71,6 +71,7 @@ static func apply_detail_range(instance: GeometryInstance3D) -> void:
 	var world_size := (instance.global_transform * bounds).size if instance.is_inside_tree() else (instance.transform * bounds).size
 	instance.visibility_range_end = DETAIL_NEAR_DISTANCE + DETAIL_RANGE_MARGIN + world_size.length() * 0.5
 	instance.visibility_range_end_margin = DETAIL_RANGE_MARGIN
+	preload("res://runtime/GraphicsOptions.gd").tag_detail(instance)
 	# Mobile não suporta fade de alcance. Histerese evita oscilar no limite;
 	# Forward+ pode suavizar a transição sem começar a ocultar antes de 40 m.
 	var forward_plus := RenderingServer.get_current_rendering_method() == "forward_plus"

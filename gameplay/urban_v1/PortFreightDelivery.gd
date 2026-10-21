@@ -351,7 +351,7 @@ func _restore_truck() -> void:
 	if restored_new:
 		vehicle.paint_color = Color(str(pending_truck.get("paint", "31577a")))
 		vehicle.health = float(pending_truck.health)
-		vehicle.restore_body_dents(pending_truck.get("body_dents",[]))
+		vehicle.restore_body_dents(pending_truck.get("body_dents",[]),pending_truck.get("breakaway_parts",{}))
 		vehicle.equipment_state = pending_truck.get("equipment", {}).duplicate(true)
 		if not pending_truck.get("equipment", {}).is_empty() and is_instance_valid(vehicle.equipment): vehicle.equipment.restore_state(pending_truck.equipment)
 	var entry: Dictionary = cargo.work_trucks[active_bay]

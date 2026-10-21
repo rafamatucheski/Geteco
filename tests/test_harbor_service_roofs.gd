@@ -184,6 +184,8 @@ func approach_owner(target: Dictionary) -> bool:
 	var deadline := Time.get_ticks_msec()+6000
 	while (not is_instance_valid(runtime.access_visual) or runtime.access_definition.get("id","")!=target.id) and Time.get_ticks_msec()<deadline: await physics_frame
 	if not check(is_instance_valid(runtime.access_visual) and runtime.access_definition.get("id","")==target.id,str(target.id)+" solid stair in owner"): return false
+	for waypoint: Vector3 in runtime.access_route:
+		if not check(await walk(waypoint),str(target.id)+" walks authored access route without crossing furniture"): return false
 	if not check(await walk(runtime.access_point),str(target.id)+" walk to stair without crossing furniture"): return false
 	await photo(str(target.id)+"-access")
 	garage_protection("ground")
@@ -264,6 +266,7 @@ func recovery_scenarios(target: Dictionary) -> void:
 				if not await walk(runtime.roof.to_global(jump+Vector3.UP*.04)): return
 		world.player.controlled_automatically = false
 		world.player.automatic_direction = Vector3.ZERO
+		if not check(world.session.state.weapons_allowed(),phase+" lethal interruption fixture uses a damageable owner"): return
 		create_timer(.06).timeout.connect(func(): world.gameplay.damage_environment(10000))
 		var completed: bool = await walk_off_roof(runtime) if phase=="jump" else await runtime.use_stairs()
 		check(not completed,phase+" aborts when real lethal damage interrupts it")

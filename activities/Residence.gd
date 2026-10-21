@@ -109,6 +109,7 @@ func store_vehicle() -> bool:
 	record.clear()
 	record.merge({"archetype_id":car.archetype,"health":car.health,"color":car.paint_color.to_html(),"status":"stored"})
 	record["body_dents"]=car.body_dents.snapshot() if is_instance_valid(car.body_dents) else []
+	record["breakaway_parts"]=car.breakaway_parts.snapshot() if is_instance_valid(car.breakaway_parts) else {}
 	if car.get_meta("garage_reward",false):
 		record["garage_id"]=car.vehicle_id
 		car.set_meta("garage_stored",true)
@@ -146,7 +147,7 @@ func retrieve_vehicle(slot := "car") -> bool:
 	_restore_garage_identity(car,record)
 	car.set_meta("residence_vehicle",true)
 	car.health = minf(car.max_health,float(record.health))
-	car.restore_body_dents(record.get("body_dents",[]))
+	car.restore_body_dents(record.get("body_dents",[]),record.get("breakaway_parts",{}))
 	car.paint_color = Color(record.color)
 	if slot == "motorcycle": deployed_motorcycle = car
 	else: deployed = car
@@ -188,6 +189,7 @@ func snapshot() -> Dictionary:
 		if is_instance_valid(car) and not record.is_empty():
 			record.health = maxf(0,car.health)
 			record["body_dents"]=car.body_dents.snapshot() if is_instance_valid(car.body_dents) else []
+			record["breakaway_parts"]=car.breakaway_parts.snapshot() if is_instance_valid(car.breakaway_parts) else {}
 			record.position = [car.position.x,car.position.y,car.position.z]
 			record.rotation = car.rotation.y
 	return data.duplicate(true)
@@ -224,6 +226,7 @@ static func _validate_vehicle(saved_vehicle: Variant, active_home: String) -> bo
 	var car: Dictionary = saved_vehicle
 	if car.is_empty(): return true
 	if not preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd").valid_records(car.get("body_dents",[])): return false
+	if not preload("res://gameplay/vehicle_effects/VehicleBreakawayParts.gd").valid_state(car.get("breakaway_parts",{})): return false
 	if active_home == "" or not car.get("archetype_id") is String or Fleet.spec(car.archetype_id).is_empty(): return false
 	if car.get("status") not in ["stored","deployed"] or not car.get("color") is String or not Color.html_is_valid(car.color): return false
 	if typeof(car.get("health")) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(car.health)) or float(car.health) < 0 or float(car.health) > float(Fleet.spec(car.archetype_id).get("durability",180)): return false
@@ -265,7 +268,7 @@ func _restore_slot(slot: String) -> void:
 	_restore_garage_identity(car,record)
 	car.set_meta("residence_vehicle",true)
 	car.health = minf(car.max_health,float(record.health))
-	car.restore_body_dents(record.get("body_dents",[]))
+	car.restore_body_dents(record.get("body_dents",[]),record.get("breakaway_parts",{}))
 	if slot == "motorcycle": deployed_motorcycle = car
 	else: deployed = car
 	car.paint_color = Color.html(record.color)

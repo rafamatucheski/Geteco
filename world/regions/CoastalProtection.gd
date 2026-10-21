@@ -16,9 +16,13 @@ var bridge_walks: Array[PackedVector2Array] = []
 var existing_perimeters: Array[PackedVector2Array] = []
 var _unified_footprints: Array[PackedVector2Array] = []
 var _unified_bounds: Array[Rect2] = []
+var _polygon_cells: Dictionary = {}
+var _indexed_polygon_count := -1
 
 func configure(data: Dictionary, extra: Array[PackedVector2Array], road_surfaces: Array) -> void:
 	polygons.clear()
+	_polygon_cells.clear()
+	_indexed_polygon_count = -1
 	boundaries.clear()
 	cells.clear()
 	bridge_walks.clear()
@@ -42,6 +46,7 @@ func configure(data: Dictionary, extra: Array[PackedVector2Array], road_surfaces
 	for i in south_hull.size(): south_hull[i] /= 16.0
 	existing_perimeters.append(south_hull)
 	polygons.append(_rect(Rect2(3130.0/16,1742.0/16,288.0/16,40.0/16)))
+	_index_polygons()
 	for polygon: PackedVector2Array in road_surfaces:
 		var exposed := false
 		for i in polygon.size():
@@ -65,15 +70,43 @@ func configure(data: Dictionary, extra: Array[PackedVector2Array], road_surfaces
 		polygons.append(_rect(Rect2(393.75,-296.5,11.25,23)))
 		polygons.append(PackedVector2Array([Vector2(405,-296),Vector2(456.25,-292.15),Vector2(456.25,-277.85),Vector2(405,-274.5)]))
 		polygons.append(_rect(Rect2(456.25,-292.2,122.0,14.4)))
+	_index_polygons()
 	_extract()
 
 static func _rect(rect: Rect2) -> PackedVector2Array:
 	return PackedVector2Array([rect.position,Vector2(rect.end.x,rect.position.y),rect.end,Vector2(rect.position.x,rect.end.y)])
 
 func on_land(point: Vector2) -> bool:
-	for polygon in polygons:
-		if Geometry2D.is_point_in_polygon(point,polygon): return true
+	if _indexed_polygon_count != polygons.size(): _index_polygons()
+	var key := Vector2i(floori(point.x/CELL),floori(point.y/CELL))
+	for index in _polygon_cells.get(key,[]):
+		if Geometry2D.is_point_in_polygon(point,polygons[index]): return true
 	return false
+
+func _index_polygons() -> void:
+	_polygon_cells.clear()
+	for index in polygons.size():
+		if polygons[index].is_empty(): continue
+		_put_bounds(_polygon_cells,GROUND_CUT.bounds(polygons[index]).grow(.001),index)
+	_indexed_polygon_count = polygons.size()
+
+static func _put_bounds(index: Dictionary, bounds: Rect2, value: int) -> void:
+	for x in range(floori(bounds.position.x/CELL),floori(bounds.end.x/CELL)+1):
+		for y in range(floori(bounds.position.y/CELL),floori(bounds.end.y/CELL)+1):
+			var key := Vector2i(x,y)
+			if not index.has(key): index[key] = []
+			index[key].append(value)
+
+static func _nearby_edges(index: Dictionary, bounds: Rect2) -> Array[int]:
+	var seen := {}
+	for x in range(floori(bounds.position.x/CELL),floori(bounds.end.x/CELL)+1):
+		for y in range(floori(bounds.position.y/CELL),floori(bounds.end.y/CELL)+1):
+			for value in index.get(Vector2i(x,y),[]): seen[value] = true
+	var result: Array[int] = []
+	result.assign(seen.keys())
+	# Preserve the original intersection/cut order exactly.
+	result.sort()
+	return result
 
 func _extract() -> void:
 	var edges: Array[Dictionary] = []
@@ -83,6 +116,8 @@ func _extract() -> void:
 			var b := polygon[(i+1)%polygon.size()]
 			if a.distance_to(b)<0.01: continue
 			edges.append({"a":a,"b":b,"bounds":Rect2(a,Vector2.ZERO).expand(b).grow(0.02)})
+	var edge_cells := {}
+	for index in edges.size(): _put_bounds(edge_cells,edges[index].bounds,index)
 	var seen := {}
 	for edge in edges:
 		var a: Vector2 = edge.a
@@ -92,7 +127,8 @@ func _extract() -> void:
 		if not NORTH_GATEWAY_POLICY.baseline_disabled():
 			cuts.append_array(NORTH_GATEWAY_LAYOUT.shore_opening_cuts(a,b))
 		cuts.append_array(_unified_cuts(a,b))
-		for other in edges:
+		for other_index in _nearby_edges(edge_cells,edge.bounds):
+			var other: Dictionary = edges[other_index]
 			if not edge.bounds.intersects(other.bounds): continue
 			var hit = Geometry2D.segment_intersects_segment(a,b,other.a,other.b)
 			if hit is Vector2: cuts.append(clampf((hit-a).dot(delta)/delta.length_squared(),0,1))

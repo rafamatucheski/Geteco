@@ -17,6 +17,10 @@ extends Node
 ## O disparo do jogo pede o jogador ao volante (aqui o carro é teleportado e o jogador não entra nele) e
 ## sorteia o tipo e a hora, o que deixaria o A/B sem par. Com GETECO_DESERT_ROADSIDE=0 não existe evento e
 ## as chamadas não fazem nada: o lado desligado anda a mesma rota. Jogador e carro ficam invencíveis.
+## Atropelamento (19/10): --benchmark-runover atropela, a cada RUNOVER_SECONDS da parte medida, um pedestre
+## de uma reserva montada no aquecimento, logo à frente do carro e com o impacto do jogo (BodyFlight3D a
+## 10 m/s, não letal, com o diretor de rua). Quem cai é levantado depois de 3 s e volta à reserva. A/B do
+## ragdoll com GETECO_RAGDOLL=0 (voo varrido antigo) na mesma rota e no mesmo export.
 const ROUTE_WEST := [Vector3(64, 0, 82), Vector3(150, 0, 82), Vector3(143, 0, 60), Vector3(84, 0, 60), Vector3(84, 0, 123), Vector3(65, 0, 113)]
 const ROUTE_PORT := [Vector3(150, 0, 82), Vector3(250, 0, 82), Vector3(250, 0, 30), Vector3(180, 0, 30), Vector3(180, 0, 82)]
 ## Pontos quentes das outras regiões (censo de 14/10). Serra: --play-at=mountain,650,-290; ponte cidade–serra:
@@ -63,6 +67,8 @@ const ROAD_EVENT_CUES := [
 ]
 
 const AUTOPILOT := preload("res://runtime/BenchmarkAutopilot.gd")
+const RUNOVER_SECONDS := 1.5
+const RUNOVER_POOL := 6
 
 var world: Node
 var route: Array = ROUTE_WEST
@@ -82,6 +88,12 @@ var road_events := false
 var _road_events_fired := {}
 var _road_event_log: Array = []
 var _road_event_engaged_frames := 0
+var runover := false
+var _runover_pool: Array = []
+var _runover_due := 0
+var _runover_launch_ms: Array[float] = []
+var _runover_ragdolls := 0
+var _runover_director: Node
 
 static func requested() -> bool:
 	for argument in OS.get_cmdline_user_args():
@@ -103,6 +115,7 @@ func _ready() -> void:
 		elif argument.begins_with("--benchmark-rain="): bench_rain = clampi(int(argument.trim_prefix("--benchmark-rain=")), 0, 2)
 		if argument.begins_with("--benchmark-chaos="): chaos_stars = clampi(int(argument.trim_prefix("--benchmark-chaos=")), 0, 6)
 		if argument == "--benchmark-road-events": road_events = true
+		if argument == "--benchmark-runover": runover = true
 	_run.call_deferred()
 
 func _route_point(distance: float) -> Dictionary:
@@ -174,6 +187,7 @@ func _run() -> void:
 		world.driving.occupied = true
 		if not world.gameplay.god_mode: world.gameplay.toggle_god_mode()
 		car.set_meta(preload("res://gameplay/DamageProtection.gd").META, true)
+	if runover: _runover_prepare()
 	var viewport := get_viewport().get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(viewport, true)
 	var total: float = _route_point(0.0).total
@@ -191,6 +205,7 @@ func _run() -> void:
 		if chaos_stars > 0: _sustain_chaos(sample.point)
 		if route_name == "carga_deserto" and distance >= total * WARMUP_LOOPS: _observe_cargo()
 		if road_events and distance >= total * WARMUP_LOOPS: _road_events(distance, total)
+		if runover and distance >= total * WARMUP_LOOPS: _runover(sample.point, sample.yaw)
 		await get_tree().process_frame
 		var now := Time.get_ticks_usec()
 		var frame_ms := (now - previous) / 1000.0
@@ -226,6 +241,9 @@ func _run() -> void:
 		report.chaos = {"stars_requested": chaos_stars, "stars_final": int(world.gameplay.stars), "dispatch_units_peak": _chaos_peak_units,
 			"dispatch_units_final": world.dispatch.units.size() if is_instance_valid(world.get("dispatch")) else -1}
 	if autopilot != null: report.drive = autopilot.summary()
+	if runover:
+		report.runover = {"launches": _runover_launch_ms.size(), "ragdolls": _runover_ragdolls, "launch_ms": _stats(_runover_launch_ms),
+			"scope": "Impacto disparado direto (BodyFlight3D.launch a 10 m/s, não letal) à frente do carro teleportado; não mede a varredura do para-choque."}
 	if road_events:
 		report.road_events = {"cues": _road_event_log, "engaged_frames": _road_event_engaged_frames,
 			"scope": "Eventos forçados na rota66 (van na ida, bloqueio na volta) em cada volta medida; sem eles com GETECO_DESERT_ROADSIDE=0."}
@@ -310,6 +328,50 @@ func _road_events(distance: float, total: float) -> void:
 		if not started and along < float(cue.at) + 150.0: continue
 		_road_events_fired[key] = true
 		_road_event_log.append({"loop": loop, "kind": str(cue.kind), "started": started, "late_m": snappedf(along - float(cue.at), .1), "at_msec": Time.get_ticks_msec()})
+
+## Reserva montada no aquecimento: o corpo do Meshy custa a montar e não pode entrar na medição.
+func _runover_prepare() -> void:
+	for node in world.find_children("*", "Node", true, false):
+		if node.has_method("on_body_landed") and node.has_method("vehicle_pre_move"):
+			_runover_director = node
+			break
+	for index in RUNOVER_POOL:
+		var walker: CharacterBody3D = preload("res://scripts/Actor.gd").new()
+		walker.controlled_automatically = true
+		world.add_child(walker)
+		_runover_park(walker)
+		_runover_pool.append({"actor": walker, "down_at": -1})
+
+func _runover_park(walker: CharacterBody3D) -> void:
+	walker.teleport(Vector3(0, -200, 0))
+	walker.set_physics_process(false)
+	walker.hide()
+
+func _runover(point: Vector3, yaw: float) -> void:
+	var now := Time.get_ticks_msec()
+	var forward := Vector3(-sin(yaw), 0, -cos(yaw))
+	for entry in _runover_pool:
+		var walker: CharacterBody3D = entry.actor
+		if not is_instance_valid(walker): continue
+		if walker.has_meta("street_down") and not walker.has_meta("street_flying"):
+			if entry.down_at < 0: entry.down_at = now
+			elif now - int(entry.down_at) > 3000: walker.recover_from_injury()
+		elif entry.down_at >= 0 and not walker.has_meta("street_down"):
+			entry.down_at = -1
+			_runover_park(walker)
+	if now < _runover_due: return
+	for entry in _runover_pool:
+		var walker: CharacterBody3D = entry.actor
+		if not is_instance_valid(walker) or walker.visible or walker.has_meta("street_down"): continue
+		_runover_due = now + int(RUNOVER_SECONDS * 1000.0)
+		walker.show()
+		walker.teleport(point + forward * 5.0 + Vector3.UP * .05)
+		walker.set_physics_process(true)
+		var began := Time.get_ticks_usec()
+		var flight = preload("res://gameplay/street_physics/BodyFlight3D.gd").launch(walker, forward * 10.0, false, _runover_director, world.driving.car, true)
+		_runover_launch_ms.append((Time.get_ticks_usec() - began) / 1000.0)
+		if flight != null and flight.ragdoll != null: _runover_ragdolls += 1
+		return
 
 func _observe_cargo() -> void:
 	# Uma leitura por segundo registra a carga alcançada sem varrer entidades por quadro.

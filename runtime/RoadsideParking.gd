@@ -9,7 +9,7 @@ const MAX_CARS := 6
 const MAX_PEOPLE := 4
 const ACTIVE_RADIUS := 112.0
 const RETIRE_RADIUS := 135.0
-const CITY_MODELS := ["metro_hatch", "union_sedan", "sedan_classic", "station_wagon", "ranch_pickup", "ranch_single"]
+const CITY_MODELS := ["metro_hatch", "union_sedan", "sedan_classic", "station_wagon", "ranch_pickup", "ranch_single", "besouro_1300", "mare_microvan", "toco_minitruck"]
 const MOUNTAIN_MODELS := ["arctic_jeep", "desert_jeep_4x4", "summit_suv", "winter_suv_heavy"]
 const SPECIAL_MODELS := ["muscle_classic", "sport_coupe", "aurora_executive"]
 var world: Node3D

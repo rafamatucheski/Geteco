@@ -61,6 +61,8 @@ func boot_path(path: String) -> void:
 	if packed == null:
 		_boot_failed()
 		return
+	# Finish immutable artwork transfer before constructors can block the motor.
+	if is_instance_valid(curtain): await curtain.prepare_presentation()
 	world = packed.instantiate()
 	world.set_meta("menu_preview", self)
 	world.set_meta("menu_save_path", path)

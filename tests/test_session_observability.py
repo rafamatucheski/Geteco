@@ -1,5 +1,6 @@
 """Run production observability integration, or verify an already completed fixture folder."""
 import argparse
+import os
 import importlib.util
 import json
 from pathlib import Path
@@ -13,6 +14,8 @@ parser.add_argument("--rendered", action="store_true")
 args = parser.parse_args()
 folder = args.folder
 if folder is None:
+    os.environ['HARBOR_SESSION_LOG'] = '1'
+    os.environ['HARBOR_SESSION_PROFILE'] = '1'
     assert args.godot, "Supply --godot or --folder"
     engine_args = [] if args.rendered else ["--headless"]
     run = subprocess.run([args.godot, *engine_args, "--path", str(root), "--script",

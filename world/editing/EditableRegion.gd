@@ -42,8 +42,12 @@ func _prepare() -> void:
 		PIECES.prepare(self,_piece_changes)
 		_pull = UNITS.pull_map(str(region_id),_piece_changes,CELL)
 	if region_id == "harbor":
+		var geometry_started := STALL_WORK.begin()
 		harbor_road_geometry.configure(roads)
+		STALL_WORK.finish("region.prepare.edited_roads", geometry_started, {})
+		geometry_started = STALL_WORK.begin()
 		coastal_protection.configure(source_data, extra_land, harbor_road_geometry._layers[0].polygons)
+		STALL_WORK.finish("region.prepare.edited_coast", geometry_started, {})
 	else:
 		var terrain_roads: Array[Dictionary] = roads + walkways
 		for avenue in source_data.harbor_roads:

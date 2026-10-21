@@ -4,50 +4,50 @@
 	"records": [
 		{
 			"actor": "player",
-			"control_pixels": 2245,
+			"control_pixels": 2310,
 			"pose": "front",
 			"prop": "packing_station",
-			"visible_pixels": 2245,
+			"visible_pixels": 2310,
 			"visible_ratio": 1.0
 		},
 		{
 			"actor": "player",
-			"control_pixels": 2244,
+			"control_pixels": 2305,
 			"pose": "behind",
 			"prop": "packing_station",
-			"visible_pixels": 1288,
-			"visible_ratio": 0.57397504456328
+			"visible_pixels": 1248,
+			"visible_ratio": 0.541431670281996
 		},
 		{
 			"actor": "player",
-			"control_pixels": 2246,
+			"control_pixels": 2301,
 			"pose": "side",
 			"prop": "packing_station",
-			"visible_pixels": 2246,
+			"visible_pixels": 2301,
 			"visible_ratio": 1.0
 		},
 		{
 			"actor": "npc",
-			"control_pixels": 1915,
+			"control_pixels": 1842,
 			"pose": "front",
 			"prop": "packing_station",
-			"visible_pixels": 1915,
+			"visible_pixels": 1842,
 			"visible_ratio": 1.0
 		},
 		{
 			"actor": "npc",
-			"control_pixels": 1915,
+			"control_pixels": 1842,
 			"pose": "behind",
 			"prop": "packing_station",
-			"visible_pixels": 1124,
-			"visible_ratio": 0.586945169712794
+			"visible_pixels": 1088,
+			"visible_ratio": 0.590662323561346
 		},
 		{
 			"actor": "npc",
-			"control_pixels": 1917,
+			"control_pixels": 1839,
 			"pose": "side",
 			"prop": "packing_station",
-			"visible_pixels": 1917,
+			"visible_pixels": 1839,
 			"visible_ratio": 1.0
 		}
 	]

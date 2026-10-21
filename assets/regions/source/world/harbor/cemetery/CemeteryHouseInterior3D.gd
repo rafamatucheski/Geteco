@@ -2,6 +2,9 @@ extends "res://assets/regions/source/world/harbor/cemetery/CemeteryPropBuilder.g
 
 var light: OmniLight3D
 var ledger: Node3D
+# Service ladder against the east wall, beyond the sacks and clear of the door.
+var roof_access_point := Vector3(3.60,0,2.94)
+var roof_access_yaw := PI*.5
 
 func _ready() -> void:
 	box("StoneSlab", Vector3(9.3, .25, 7.4), Vector3(0, -.18, 0), "444940")

@@ -93,7 +93,7 @@ func _run() -> void:
 		var interpolation_before: int = world.player.visual.physics_interpolation_mode
 		var shadow_before := Vector2(session.controller.sun.shadow_bias,session.controller.sun.shadow_normal_bias)
 		check(await open("wardrobe"),id+" wardrobe opens")
-		check(root.msaa_3d >= Viewport.MSAA_4X and root.scaling_3d_scale >= 1.0,id+" close view native resolution and antialiasing")
+		check(root.msaa_3d == quality_before.msaa_3d and is_equal_approx(root.scaling_3d_scale,quality_before.scaling_3d_scale),id+" close view respects selected graphics quality")
 		check(services.presentation.is_active() and root.get_camera_3d()==services.presentation.camera,id+" interaction camera current")
 		check(is_instance_valid(services.presentation.mirror_viewport),id+" live mirror")
 		var original: String=world.player.outfit_id

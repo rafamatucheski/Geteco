@@ -11,6 +11,7 @@ var definition: Dictionary = {}
 var access_definition: Dictionary = {}
 var access_point := Vector3.INF
 var access_frame := Basis.IDENTITY
+var access_route: Array[Vector3] = []
 var access_visual: Node3D
 var access_owner: Node3D
 var return_position := Vector3.ZERO
@@ -76,15 +77,32 @@ func _update_ground_access() -> void:
 		frame = physical.frame
 	if is_instance_valid(access_visual) and access_definition.get("id","")==wanted.id and access_owner==building_owner: return
 	_release_access()
-	if wanted.id in ["westgate_garden","quayside_house","canal_north"]:
-		var model: Node3D = room_owner.model
-		var point: Vector3 = model.to_global(model.roof_access_point)+Vector3.UP*.04
-		var ladder_frame := frame*Basis(Vector3.UP,PI)
-		if session.position_clear(point) and _sweep_clear(origin+Vector3.UP*.04,point) and _ladder_fits(point,ladder_frame):
+	var model: Node3D = room_owner.get("model") if is_instance_valid(room_owner) else null
+	var authored_point: Variant = model.get("roof_access_point") if is_instance_valid(model) else null
+	if authored_point is Vector3 and authored_point.is_finite():
+		# Architecture owns the placement. Never fall back around the spawn if
+		# furniture or an actor temporarily blocks the authored wall access.
+		var point: Vector3 = model.to_global(authored_point)+Vector3.UP*.04
+		var yaw: Variant = model.get("roof_access_yaw")
+		var ladder_frame := model.global_basis.orthonormalized()*Basis(Vector3.UP,float(yaw) if yaw!=null else PI)
+		var route: Array[Vector3] = []
+		var authored_route: Variant = model.get("roof_access_route")
+		if authored_route is Array:
+			for waypoint: Vector3 in authored_route: route.append(model.to_global(waypoint)+Vector3.UP*.04)
+		if route.is_empty() or not route[-1].is_equal_approx(point): route.append(point)
+		var reachable := true
+		var previous := origin+Vector3.UP*.04
+		for waypoint: Vector3 in route:
+			if not session.position_clear(waypoint) or not _sweep_clear(previous,waypoint):
+				reachable = false
+				break
+			previous = waypoint
+		if reachable and _ladder_fits(point,ladder_frame):
 			access_definition = wanted
 			access_owner = building_owner
 			access_point = point
 			access_frame = ladder_frame
+			access_route = route
 			_make_ladder()
 		return
 	var offsets: Array = [Vector3(2,0,-.5),Vector3(-2,0,-.5),Vector3(2.8,0,-1.4),Vector3(-2.8,0,-1.4),Vector3(1.4,0,-2.1),Vector3(-1.4,0,-2.1)] if wanted.owner=="service" else [Vector3.ZERO,Vector3(.65,0,0),Vector3(-.65,0,0)]
@@ -184,6 +202,7 @@ func _release_access() -> void:
 	access_owner = null
 	access_definition = {}
 	access_point = Vector3.INF
+	access_route.clear()
 
 func nearest_action() -> Dictionary:
 	if session==null or _blocked(): return {}

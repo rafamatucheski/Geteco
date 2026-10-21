@@ -2,7 +2,7 @@ extends RefCounted
 ## Low-frequency lifecycle diagnostics. Wall durations include awaits and children.
 ## Never infer success from a returned callback; callers can report explicit status.
 static func logger() -> Node:
-	if OS.get_environment("HARBOR_SESSION_PROFILE") == "0": return null
+	if OS.get_environment("HARBOR_SESSION_PROFILE") != "1": return null
 	var tree := Engine.get_main_loop() as SceneTree
 	return tree.root.get_node_or_null("SessionDiagnostics") if tree != null else null
 

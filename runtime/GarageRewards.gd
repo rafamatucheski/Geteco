@@ -162,7 +162,8 @@ func _sync() -> void:
 			if not session.controller.vehicles.has(car): session.controller.vehicles.append(car)
 
 func _restore_damage(car: CharacterBody3D, record: Dictionary) -> void:
-	car.restore_body_dents(record.get("body_dents",[]))
+	car.restore_body_dents(record.get("body_dents",[]),record.get("breakaway_parts",{}))
+	car.restore_blood_stains(int(record.get("blood_stains",0)))
 	car.health=float(record.health)
 	var ratio := float(record.get("heavy_crush_ratio",1.0))
 	if ratio >= 1.0: return
@@ -210,7 +211,9 @@ func _capture_all() -> void:
 		var point: Vector3=car.global_position-origin
 		data.vehicles[id]={"archetype":car.archetype,"region_id":car.get_meta("region_id","harbor"),"place_id":place,"position":[point.x,point.y,point.z],"yaw":car.rotation.y,"health":maxf(0,car.health),"paint":car.paint_color.to_html(true),"was_driven":session.world.driving.occupied and session.world.driving.car==car}
 		data.vehicles[id]["heavy_crush_ratio"]=float(car.get_meta("heavy_crush_ratio",1.0))
+		data.vehicles[id]["blood_stains"]=int(car.get_meta("blood_stains",0))
 		data.vehicles[id]["body_dents"]=car.body_dents.snapshot() if is_instance_valid(car.body_dents) else []
+		data.vehicles[id]["breakaway_parts"]=car.breakaway_parts.snapshot() if is_instance_valid(car.breakaway_parts) else {}
 
 func nearest_action() -> Dictionary:
 	if session==null or _transition: return {}
@@ -501,8 +504,9 @@ static func validate_snapshot(saved: Dictionary) -> bool:
 			if guests>64 or not record is Dictionary or not record.get("archetype") is String or not FLEET.all().has(record.archetype): return false
 			known[id]=record.archetype
 		if not known.has(id): return false
-		if not record is Dictionary or record.get("archetype")!=known[id] or record.get("region_id") not in ["harbor","mountain"] or record.get("place_id") not in ["","maciota","port_boss_garage"]: return false
-		if not record.place_id.is_empty() and record.region_id!="harbor": return false
+		if not record is Dictionary or record.get("archetype")!=known[id] or record.get("region_id") not in ["harbor","mountain","desert"] or record.get("place_id") not in ["","maciota","port_boss_garage","desert_digo"]: return false
+		if record.place_id == "desert_digo" and record.region_id != "desert": return false
+		if record.place_id in ["maciota","port_boss_garage"] and record.region_id!="harbor": return false
 		if not record.get("was_driven") is bool or not record.get("paint") is String or not Color.html_is_valid(record.paint): return false
 		if record.was_driven:
 			drivers+=1
@@ -513,7 +517,9 @@ static func validate_snapshot(saved: Dictionary) -> bool:
 		for key in ["yaw","health"]:
 			if typeof(record.get(key)) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(record[key])): return false
 		if record.health<0 or record.health>float(_spec(record.archetype).get("durability",100)): return false
+		if not preload("res://gameplay/vehicle_effects/VehicleBlood.gd").valid(record.get("blood_stains",0)): return false
 		if not preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd").valid_records(record.get("body_dents",[])): return false
+		if not preload("res://gameplay/vehicle_effects/VehicleBreakawayParts.gd").valid_state(record.get("breakaway_parts",{})): return false
 		if record.has("heavy_crush_ratio"):
 			var ratio: Variant=record.heavy_crush_ratio
 			if typeof(ratio) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(ratio)): return false

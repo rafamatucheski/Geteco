@@ -81,7 +81,8 @@ const CURTAIN := preload("res://runtime/StartupCurtain.gd")
 ## ninguém está olhando e ele não está perto do jogador.
 const STUCK_DESPAWN_SECONDS := 15.0
 const STUCK_DESPAWN_DISTANCE := 30.0
-const TRAFFIC_CAR_TYPES := ["sport_coupe", "union_sedan", "courier_van", "ranch_single", "arctic_jeep", "nimbus_minivan", "taxi_yellow"]
+const TRAFFIC_ROSTER := preload("res://runtime/TrafficFleetRoster.gd")
+static var TRAFFIC_CAR_TYPES: Array[String] = TRAFFIC_ROSTER.all_car_types()
 const TRAFFIC_MOTORCYCLE_TYPES := ["bike_urban", "bike_sport", "bike_cruiser"]
 signal logical_region_changed(previous_region: String, next_region: String)
 const CONNECTION_PRELOAD_DISTANCE := 240.0
@@ -137,6 +138,8 @@ var background_loading_status: Dictionary = {}
 ## e o próximo nascimento relia o arquivo: 1,7 s num quadro (medido 2026-09-23).
 var _fleet_scenes: Array[Resource] = []
 var _fleet_extra: Array[Resource] = []
+var _geography_task := -1
+var _geography_candidate: Node3D
 
 ## Desliga o salvamento dizendo qual sistema causou; o primeiro motivo é o que vale.
 func block_saving(reason: String) -> void:
@@ -180,6 +183,7 @@ func build() -> void:
 		curtain.variant = CURTAIN.variant_for(state.region_id)
 		SESSION_OPS.attach(world, curtain, self, diagnostic_build)
 	curtain.set_stage(.12, "Montando " + ("a serra" if state.region_id == "mountain" else "o deserto" if state.region_id == "desert" else "o porto") + "…")
+	await curtain.prepare_presentation()
 	if world.has_meta("menu_preview"):
 		await _hold_fleet_scenes_incremental()
 	environment = WorldEnvironment.new()
@@ -202,6 +206,7 @@ func build() -> void:
 	sun.light_energy = 1.6
 	sun.shadow_enabled = true
 	sun.directional_shadow_max_distance = 55 if sun_shadow_near_enabled else 110
+	if player_settings != null and sun_shadow_near_enabled: sun.directional_shadow_max_distance = player_settings.shadow_distance_metres()
 	if sun_shadow_splits < 4:
 		sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS if sun_shadow_splits >= 2 else DirectionalLight3D.SHADOW_ORTHOGONAL
 	if sun_shadow_tune:
@@ -214,16 +219,19 @@ func build() -> void:
 	world.maciota_place.exterior_origin = preload("res://world/maciota/MaciotaPlace.gd").INDUSTRIAL_ORIGIN
 	world.maciota_place.interior_origin = Vector3(0,0,-2000)
 	SESSION_OPS.attach(world, world.maciota_place, self, diagnostic_build)
-	if world.has_meta("menu_preview"): await get_tree().process_frame
+	await get_tree().process_frame
 	# Select the saved/player-requested cell before _ready builds any geometry.
 	# Previously we built the region's default spawn first, then threw it away.
 	var first_focus := Vector3.INF if _eager_preparation_for_benchmark() else _startup_focus_hint()
+	var initial_region := _build_region(state.region_id,first_focus)
+	if not await _prepare_geography(initial_region): return
+	_region_cache[state.region_id] = initial_region
 	region = _mount_region(state.region_id,first_focus)
 	var startup_position := _startup_position()
 	region.set_focus(startup_position,true)
 	world.street = region
 	_refresh_route_consumers()
-	if world.has_meta("menu_preview"): await get_tree().process_frame
+	await get_tree().process_frame
 	world.player = ACTOR.new()
 	world.player.is_player = true
 	world.player.name = "Dante"
@@ -266,7 +274,9 @@ func build() -> void:
 	world.session = SESSION_OPS.instantiate(preload("res://runtime/FullSession.gd"), self)
 	world.session.world = world
 	world.session.controller = self
+	world.session.incremental_startup = true
 	SESSION_OPS.attach(world, world.session, self, diagnostic_build)
+	if not world.session.startup_complete: await world.session.startup_finished
 	session = world.session
 	if "--parking-baseline" not in OS.get_cmdline_user_args():
 		roadside_parking = SESSION_OPS.instantiate(preload("res://runtime/RoadsideParking.gd"), self)
@@ -421,7 +431,7 @@ func build() -> void:
 ## Prepare resident gameplay and route data under the curtain. Distant native
 ## worlds no longer build disposable geometry; resource I/O is queued after play.
 func _prewarm_regions(curtain: CanvasLayer = null) -> void:
-	var incremental: bool = world.has_meta("menu_preview")
+	var incremental := true
 	var phase_traced := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
 	if curtain != null:
 		curtain.set_stage(.36, "Carregando veículos…")
@@ -532,6 +542,7 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 			await get_tree().process_frame
 		var detached: Node3D = _build_region(id)
 		if detached == null: continue
+		if not await _prepare_geography(detached): return
 		# Aquecer dados/conteudo sem montar uma vizinhanca do spawn que sera descartada.
 		detached.initial_prewarm_only = true
 		phase_traced = Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
@@ -574,6 +585,8 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 
 func _apply_player_settings() -> void:
 	if is_instance_valid(environment): get_node("/root/V2Settings").apply_environment(environment.environment)
+	if is_instance_valid(sun) and sun_shadow_near_enabled:
+		sun.directional_shadow_max_distance = get_node("/root/V2Settings").shadow_distance_metres()
 
 func _eager_preparation_for_benchmark() -> bool:
 	return OS.is_debug_build() and world.get_meta("background_loading_baseline",false)
@@ -663,14 +676,20 @@ func _retain_fleet_paths(paths: Array[String], retained: Array[Resource]) -> voi
 			if resource != null: retained.append(resource)
 			await get_tree().process_frame
 		return
+	# Bound resource allocation/upload pressure instead of flooding the worker
+	# pool with every vehicle at once. Keep a frame between completed requests.
 	var requested: Array[String] = []
 	for path in paths:
-		if ResourceLoader.load_threaded_request(path) == OK: requested.append(path)
-	for path in requested:
-		while ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
-			await get_tree().process_frame
-		if ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_LOADED:
-			retained.append(ResourceLoader.load_threaded_get(path))
+		requested.append(path)
+		if requested.size() < 2 and path != paths.back(): continue
+		for pending_path in requested:
+			ResourceLoader.load_threaded_request(pending_path)
+		for pending_path in requested:
+			while ResourceLoader.load_threaded_get_status(pending_path) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+				await get_tree().process_frame
+			if ResourceLoader.load_threaded_get_status(pending_path) == ResourceLoader.THREAD_LOAD_LOADED:
+				retained.append(ResourceLoader.load_threaded_get(pending_path))
+		requested.clear()
 		await get_tree().process_frame
 
 func _startup_driver_pending() -> bool:
@@ -692,7 +711,31 @@ func _settle_startup() -> bool:
 		if stable_frames >= 8: return true
 	return false
 
+func _prepare_geography(candidate: Node3D) -> bool:
+	if candidate == null: return false
+	# One worker owns one off-tree region. No scene-tree mutation or gameplay
+	# consumer may access its mutable dictionaries until the task has been joined.
+	# Dummy rendering retains the sequential contract-test path.
+	if DisplayServer.get_name() == "headless":
+		candidate.prepare_data()
+		return true
+	_geography_candidate = candidate
+	_geography_task = WorkerThreadPool.add_task(candidate.prepare_data,false,"Loading region geography")
+	while not WorkerThreadPool.is_task_completed(_geography_task):
+		await get_tree().process_frame
+	WorkerThreadPool.wait_for_task_completion(_geography_task)
+	_geography_task = -1
+	_geography_candidate = null
+	var usable: bool = is_instance_valid(world) and world.is_inside_tree() and not world.is_queued_for_deletion()
+	if not usable and is_instance_valid(candidate): candidate.free()
+	return usable
+
 func _exit_tree() -> void:
+	if _geography_task >= 0:
+		WorkerThreadPool.wait_for_task_completion(_geography_task)
+		_geography_task = -1
+	if is_instance_valid(_geography_candidate): _geography_candidate.free()
+	_geography_candidate = null
 	for cached in _region_cache.values():
 		if is_instance_valid(cached): cached.free()
 	_region_cache.clear()
@@ -1183,7 +1226,8 @@ func _restore_player_vehicle() -> void:
 			car.set_meta("awaiting_ground",true)
 			car.set_physics_process(false)
 	car.restore_health(float(saved.health))
-	car.restore_body_dents(saved.get("body_dents",[]))
+	car.restore_body_dents(saved.get("body_dents",[]),saved.get("breakaway_parts",{}))
+	car.restore_blood_stains(int(saved.get("blood_stains",0)))
 	if int(saved.get("punctured_tires",0)) > 0:
 		preload("res://gameplay/police_response/ground/TirePuncture.gd").puncture(car,int(saved.punctured_tires))
 
@@ -1836,8 +1880,10 @@ func _create_traffic_vehicle() -> void:
 		point = route.sample_baked(offset,true)
 		if not _spawn_point_allowed(point,3.0): continue
 		var ahead := route.sample_baked(minf(offset+.5,route.get_baked_length()),true)-route.sample_baked(maxf(offset-.5,0),true)
-		var id: String = TRAFFIC_MOTORCYCLE_TYPES.pick_random() if randi_range(0,9)==0 else TRAFFIC_CAR_TYPES.pick_random()
-		if state.region_id=="desert": id=["desert_faisca","desert_coyote","desert_siroco","desert_bison","desert_mirage","courier_van"].pick_random()
+		# The admitted road owns the context, including when two regions are resident.
+		var spawn_region := str(slot.road.get("region", WORLD_CONNECTION.logical_region(point)))
+		var id: String = TRAFFIC_ROSTER.select(spawn_region, str(slot.road.id))
+		if spawn_region != "desert" and randi_range(0,9)==0: id=TRAFFIC_MOTORCYCLE_TYPES.pick_random()
 		var cobra := preload("res://gameplay/urban_v1/CobraPatrol.gd").select_car(session,point)
 		if cobra: id="cobra_v8"
 		var car = spawn_vehicle(id,point+Vector3.UP*.12,atan2(-ahead.x,-ahead.z))

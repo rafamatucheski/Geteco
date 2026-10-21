@@ -1,3 +1,5 @@
+> Atualização 21/10/2026: logs essenciais são o padrão em Jogar.cmd e novas exports release. Ative `HARBOR_SESSION_PROFILE=1` para as métricas e o diagnóstico descritos abaixo, ou use `JogarDiagnostico.cmd` (inclui StallLog). Sem opt-in, não há métricas básicas periódicas. Evidências antigas abaixo preservam o comportamento da época.
+
 # Captura detalhada de sessÃµes
 
 A captura Ã© automÃ¡tica no Godot .NET. Cada processo cria uma pasta em `%APPDATA%/GetecoV2/session-logs/`. Compartilhe a pasta completa: arquivos `session-000.jsonl`, `session-001.jsonl` etc. sÃ£o partes da mesma sessÃ£o, rotacionadas aos 32 MiB.

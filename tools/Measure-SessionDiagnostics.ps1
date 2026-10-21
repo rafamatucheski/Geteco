@@ -15,14 +15,18 @@ function Get-Revision {
 $revision = Get-Revision
 $originalLog = $env:HARBOR_SESSION_LOG
 $originalProfile = $env:HARBOR_SESSION_PROFILE
+$originalStall = $env:HARBOR_STALL_LOG
+$originalSteps = $env:HARBOR_MAX_PHYSICS_STEPS
 try {
     & dotnet build (Join-Path $workspace 'Harbor.csproj') --no-restore -v quiet
     if ($LASTEXITCODE -ne 0) { throw 'Build .NET falhou.' }
     $reports = @{}
-    foreach ($mode in @('off','on')) {
+    foreach ($mode in @('detailed','essential')) {
         if ((Get-Runtimes).Count -gt 0) { throw 'Outro runtime iniciou; nao medir em concorrencia.' }
-        $env:HARBOR_SESSION_LOG = if ($mode -eq 'off') {'0'} else {'1'}
-        $env:HARBOR_SESSION_PROFILE = '1'
+        $env:HARBOR_SESSION_LOG = '1'
+        $env:HARBOR_SESSION_PROFILE = if ($mode -eq 'detailed') {'1'} else {'0'}
+        $env:HARBOR_STALL_LOG = if ($mode -eq 'detailed') {'1'} else {'0'}
+        $env:HARBOR_MAX_PHYSICS_STEPS = '3'
         $label = "$Prefix-$mode"
         if (Test-Path -LiteralPath (Join-Path $workspace "evidence/$label.json")) { throw 'Prefixo ja possui evidencia; use um prefixo novo.' }
         $stdout = Join-Path $workspace "evidence/$label.log"
@@ -48,9 +52,9 @@ try {
         $reports[$mode] = Get-Content -LiteralPath (Join-Path $workspace "evidence/$label.json") -Raw | ConvertFrom-Json
     }
     $unchanged = (Get-Revision) -eq $revision
-    $comparison = @{ baseline=$reports.off; current=$reports.on; source_unchanged=$unchanged;
-        p95_change_percent=100*($reports.on.summary.p95_ms/$reports.off.summary.p95_ms-1);
-        p99_change_percent=100*($reports.on.summary.p99_ms/$reports.off.summary.p99_ms-1);
+    $comparison = @{ baseline=$reports.detailed; current=$reports.essential; source_unchanged=$unchanged;
+        p95_change_percent=100*($reports.essential.summary.p95_ms/$reports.detailed.summary.p95_ms-1);
+        p99_change_percent=100*($reports.essential.summary.p99_ms/$reports.detailed.summary.p99_ms-1);
         budget_ms=16.67; confirmation_threshold_percent=5;
         interpretation='Paired stationary Main samples; population can vary. >5% requires confirmation; no automatic global approval.' }
     $comparison | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath (Join-Path $workspace "evidence/$Prefix-comparison.json") -Encoding UTF8
@@ -59,4 +63,6 @@ try {
 } finally {
     $env:HARBOR_SESSION_LOG = $originalLog
     $env:HARBOR_SESSION_PROFILE = $originalProfile
+    $env:HARBOR_STALL_LOG = $originalStall
+    $env:HARBOR_MAX_PHYSICS_STEPS = $originalSteps
 }

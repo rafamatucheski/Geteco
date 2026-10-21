@@ -1,4 +1,8 @@
 extends Node
+signal startup_finished
+var incremental_startup := false
+var startup_complete := false
+var _startup_slice_usec := 0
 const BLADE_FORGE_TALK := preload("res://gameplay/forge/BladeForgeTalk.gd")
 const STALL_WORK_READY := preload("res://runtime/StallWorkTrace.gd")
 const SESSION_OPS := preload("res://runtime/SessionOperations.gd")
@@ -396,13 +400,18 @@ func _garage_transfer_valid(token: int, car: CharacterBody3D, place_id: String, 
 	if not _owns_transition(token) or not is_instance_valid(car) or car.health <= 0 or world.gameplay.health <= 0: return false
 	if not world.driving.occupied or world.driving.car != car or room != expected_room: return false
 	if car.get("engine_disabled") == true: return false
+	if entering and not preload("res://runtime/ShopSafety.gd").admission_allowed(place_id,world.gameplay.stars): return false
+	if entering and place_id == "desert_digo" and not preload("res://systems/campaign/DigoProgress.gd").workshop_unlocked(state.world_state): return false
 	return state.place_id.is_empty() if entering else state.place_id == place_id
 
 func transfer_garage_vehicle(place_id: String, car: CharacterBody3D, entering: bool) -> bool:
-	if is_transition_blocked() or not is_instance_valid(car) or car.health<=0 or absf(car.speed)>.5: return false
+	var access_speed := 2.2 if place_id == "desert_digo" else .5
+	if is_transition_blocked() or not is_instance_valid(car) or car.health<=0 or absf(car.speed)>access_speed: return false
 	if not world.driving.occupied or world.driving.car != car: return false
 	if entering and (not state.place_id.is_empty() or is_instance_valid(room)): return false
 	if not entering and state.place_id != place_id: return false
+	if entering and not preload("res://runtime/ShopSafety.gd").admission_allowed(place_id,world.gameplay.stars): return false
+	if entering and place_id == "desert_digo" and not preload("res://systems/campaign/DigoProgress.gd").workshop_unlocked(state.world_state): return false
 	var definition: Dictionary = PLACES.get_definition(place_id)
 	if place_id == "maciota":
 		if state.region_id != "harbor": return false
@@ -416,6 +425,12 @@ func transfer_garage_vehicle(place_id: String, car: CharacterBody3D, entering: b
 	world.player.input_locked = true
 	car.speed = 0
 	car.horizontal_velocity = Vector3.ZERO
+	if place_id == "desert_digo": await door_transition.fade_to(1.0,.18)
+	if place_id == "desert_digo" and not _set_digo_vehicle_gate(true,token,car):
+		_restore_vehicle_transition_snapshot(snapshot,car)
+		_finish_transition(token)
+		show_message("Aguarde o portão da oficina ficar disponível.")
+		return false
 	var destination: Vector3
 	var yaw := 0.0
 	var next_room: Node3D = null
@@ -428,6 +443,7 @@ func transfer_garage_vehicle(place_id: String, car: CharacterBody3D, entering: b
 		else:
 			next_room = PLACES.create_place(place_id)
 			if next_room == null:
+				if place_id == "desert_digo": _set_digo_vehicle_gate(false)
 				_restore_vehicle_transition_snapshot(snapshot,car)
 				_finish_transition(token)
 				return false
@@ -435,6 +451,7 @@ func transfer_garage_vehicle(place_id: String, car: CharacterBody3D, entering: b
 			next_room.position = Vector3(0,0,-2400)
 			world.add_child(next_room)
 			destination = next_room.to_global(definition.vehicle_spawn)+Vector3.UP*.08
+			yaw = float(definition.get("vehicle_spawn_yaw",0.0))
 	else:
 		destination = world.maciota_place.exterior_vehicle_return+Vector3.UP*.1 if place_id == "maciota" else definition.vehicle_return+Vector3.UP*.08
 		yaw = world.maciota_place.exterior_vehicle_yaw if place_id == "maciota" else float(definition.get("vehicle_return_yaw",0))
@@ -442,12 +459,14 @@ func transfer_garage_vehicle(place_id: String, car: CharacterBody3D, entering: b
 	for i in 3:
 		await get_tree().physics_frame
 		if not _garage_transfer_valid(token,car,place_id,entering,expected_room):
+			if place_id == "desert_digo": _set_digo_vehicle_gate(false)
 			_discard_place_candidate(next_room,owns_next_room)
 			controller.region.set_focus(car.global_position if is_instance_valid(car) else world.player.global_position)
 			_restore_vehicle_transition_snapshot(snapshot,car)
 			_finish_transition(token)
 			return false
 	if not controller.vehicle_position_clear(car,destination,yaw):
+		if place_id == "desert_digo": _set_digo_vehicle_gate(false)
 		_discard_place_candidate(next_room,owns_next_room)
 		controller.region.set_focus(car.global_position)
 		_restore_vehicle_transition_snapshot(snapshot,car)
@@ -483,21 +502,41 @@ func transfer_garage_vehicle(place_id: String, car: CharacterBody3D, entering: b
 	car.set_meta("region_id",state.region_id)
 	car.place(destination,yaw)
 	world.player.teleport(destination)
+	# Actor.teleport releases the seated pose; this transfer keeps the same driver.
+	if car.has_method("shows_seated_driver") and car.shows_seated_driver():
+		preload("res://gameplay/VehicleInterior.gd").attach(car)
+		preload("res://gameplay/VehicleInterior.gd").seat_driver(world.player,car,0.0)
 	_sync_location_presentation()
 	world.camera.initialized = false
 	world.camera._process(1)
+	if place_id == "desert_digo": _set_digo_vehicle_gate(false)
 	car.input_locked = bool(snapshot.car_locked)
 	world.player.input_locked = bool(snapshot.player_locked)
 	_finish_transition(token)
+	if entering and place_id != "maciota": _install_service_npc()
 	arrival.on_location_changed()
 	_refresh_routine_context()
 	sync_dispatch_location()
 	return true
 
+func _set_digo_vehicle_gate(opened: bool, token := -1, car: CharacterBody3D = null) -> bool:
+	var from_inside: bool = state.place_id == "desert_digo"
+	var authorize := func() -> bool:
+		if not is_instance_valid(car) or not _owns_transition(token) or transition_kind != "garage_vehicle" or not car.input_locked or not world.player.input_locked or not world.driving.occupied or world.driving.car != car or state.region_id != "desert" or car.health <= 0 or world.gameplay.health <= 0: return false
+		if from_inside: return state.place_id == "desert_digo" and is_instance_valid(room)
+		return state.place_id.is_empty() and preload("res://runtime/ShopSafety.gd").admission_allowed("desert_digo",world.gameplay.stars) and preload("res://systems/campaign/DigoProgress.gd").workshop_unlocked(state.world_state)
+	var changed := false
+	var groups: Array = ["digo_interior_vehicle_gate" if from_inside else "digo_vehicle_gate"] if opened else ["digo_vehicle_gate","digo_interior_vehicle_gate"]
+	for group in groups:
+		for gate in get_tree().get_nodes_in_group(group):
+			if world.is_ancestor_of(gate) and gate.has_method("set_vehicle_access"):
+				changed = bool(gate.set_vehicle_access(opened,authorize)) or changed
+	return changed
+
 func restore_garage_driver(car: CharacterBody3D) -> bool:
 	if is_transition_blocked() or not is_instance_valid(car) or car.health<=0 or world.driving.occupied: return false
 	var place: String = state.place_id
-	if place not in ["","maciota","port_boss_garage"] or car.get_meta("garage_place","") != place: return false
+	if place not in ["","maciota","port_boss_garage","desert_digo"] or car.get_meta("garage_place","") != place: return false
 	if car.get_meta("region_id",state.region_id) != state.region_id or car.get("engine_disabled") == true: return false
 	if place == "maciota" and state.region_id != "harbor": return false
 	var definition := PLACES.get_definition(place)
@@ -638,37 +677,56 @@ func _timed_add(parent: Node, child: Node, label: String) -> void:
 	parent.add_child(child)
 	STALL_WORK_READY.finish("session.ready." + label, started, {})
 
+func _startup_frame() -> void:
+	if not incremental_startup: return
+	if Time.get_ticks_usec() - _startup_slice_usec < 4000: return
+	await get_tree().process_frame
+	_startup_slice_usec = Time.get_ticks_usec()
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	# Input and session updates cannot observe a half-constructed session.
+	set_process(false)
+	set_process_input(false)
+	_startup_slice_usec = Time.get_ticks_usec()
 	state = controller.state
 	door_transition = DOOR_TRANSITION.new()
+	await _startup_frame()
 	_timed_add(self, door_transition, "door_transition")
 	weapon_shop_entrance = preload("res://runtime/WeaponShopEntrance.gd").new()
 	weapon_shop_entrance.session = self
+	await _startup_frame()
 	_timed_add(self, weapon_shop_entrance, "weapon_shop_entrance")
 	special_place_entrance = preload("res://runtime/SpecialPlaceEntrance.gd").new()
 	special_place_entrance.session = self
+	await _startup_frame()
 	_timed_add(self, special_place_entrance, "special_place_entrance")
 	building_entrance = preload("res://runtime/HarborBuildingRuntime.gd").new()
 	building_entrance.session = self
+	await _startup_frame()
 	_timed_add(self, building_entrance, "building_entrance")
 	building_social = preload("res://runtime/BuildingSocialInteraction.gd").new()
 	building_social.session = self
+	await _startup_frame()
 	_timed_add(self, building_social, "building_social")
 	service_roofs = preload("res://runtime/HarborServiceRoofRuntime.gd").new()
 	service_roofs.session = self
+	await _startup_frame()
 	_timed_add(self, service_roofs, "service_roofs")
 	if not Engine.get_meta("coastal_lookout_baseline",false):
 		coastal_lookout = preload("res://runtime/coastal_lookout/CoastalLookoutRuntime.gd").new()
 		coastal_lookout.configure(world)
+		await _startup_frame()
 		_timed_add(self, coastal_lookout, "coastal_lookout")
 	if not Engine.get_meta("amusement_park_baseline",false):
 		var diagnostic_amusement_park := SESSION_OPS.begin(self, "amusement_park", "create_and_configure")
 		amusement_park = preload("res://runtime/amusement_park/AmusementParkRuntime.gd").new()
 		amusement_park.configure(self)
 		SESSION_OPS.finish(diagnostic_amusement_park)
+		await _startup_frame()
 		_timed_add(self, amusement_park, "amusement_park")
 	anchor = Node3D.new()
+	await _startup_frame()
 	_timed_add(world, anchor, "anchor")
 	objective = _label(Vector2(530,24),20)
 	objective.custom_minimum_size.x = 700
@@ -683,6 +741,7 @@ func _ready() -> void:
 	# Message source only; ContextualHUDManager owns the visible notification.
 	notice.hide()
 	marker = preload("res://ui/DoorAccessMarker.gd").new()
+	await _startup_frame()
 	_timed_add(world.hud, marker, "marker")
 	arrow = _label(Vector2.ZERO,30)
 	arrow.text = "▲"
@@ -694,6 +753,7 @@ func _ready() -> void:
 	panel = PanelContainer.new()
 	panel.position = Vector2(330,110)
 	panel.custom_minimum_size = Vector2(620,440)
+	await _startup_frame()
 	_timed_add(world.hud, panel, "panel")
 	var margin := MarginContainer.new()
 	for side in ["top","left","right","bottom"]: margin.add_theme_constant_override("margin_"+side,20)
@@ -712,58 +772,69 @@ func _ready() -> void:
 	world.gameplay.police_warning_issued.connect(_police_voice_warning)
 	mission_world = preload("res://runtime/MissionWorld.gd").new()
 	mission_world.session = self
+	await _startup_frame()
 	_timed_add(world, mission_world, "mission_world")
 	var diagnostic_activities := SESSION_OPS.begin(self, "activities", "create_and_configure")
 	activities = preload("res://activities/Activities.gd").new()
+	await _startup_frame()
 	_timed_add(world, activities, "activities")
 	activities.configure(self)
 	SESSION_OPS.finish(diagnostic_activities)
 	var diagnostic_motocross := SESSION_OPS.begin(self, "motocross", "create_and_configure")
 	motocross = preload("res://activities/motocross/Motocross.gd").new()
+	await _startup_frame()
 	_timed_add(world, motocross, "motocross")
 	motocross.configure(self)
 	SESSION_OPS.finish(diagnostic_motocross)
 	var diagnostic_skate := SESSION_OPS.begin(self, "skate", "create_and_configure")
 	skate = preload("res://activities/skate/Skate.gd").new()
+	await _startup_frame()
 	_timed_add(world, skate, "skate")
 	skate.configure(self)
 	SESSION_OPS.finish(diagnostic_skate)
 	var diagnostic_residence_services := SESSION_OPS.begin(self, "residence_services", "create_and_configure")
 	residence_services = preload("res://runtime/ResidenceServices.gd").new()
+	await _startup_frame()
 	_timed_add(world, residence_services, "residence_services")
 	residence_services.configure(self)
 	SESSION_OPS.finish(diagnostic_residence_services)
 	if not Engine.get_meta("cats_baseline",false):
 		var diagnostic_cats := SESSION_OPS.begin(self, "cats", "create_and_configure")
 		cats = preload("res://runtime/cats/CatRuntime.gd").new()
+		await _startup_frame()
 		_timed_add(world, cats, "cats")
 		cats.configure(self)
 		SESSION_OPS.finish(diagnostic_cats)
 	var diagnostic_mountain_progression := SESSION_OPS.begin(self, "mountain_progression", "create_and_configure")
 	mountain_progression = preload("res://activities/MountainProgression.gd").new()
+	await _startup_frame()
 	_timed_add(world, mountain_progression, "mountain_progression")
 	mountain_progression.configure(self)
 	SESSION_OPS.finish(diagnostic_mountain_progression)
 	world.player.ski_controller = mountain_progression
 	var diagnostic_mountain_activities := SESSION_OPS.begin(self, "mountain_activities", "create_and_configure")
 	mountain_activities = preload("res://runtime/MountainActivities.gd").new()
+	await _startup_frame()
 	_timed_add(world, mountain_activities, "mountain_activities")
 	mountain_activities.configure(self)
 	SESSION_OPS.finish(diagnostic_mountain_activities)
 	var diagnostic_services := SESSION_OPS.begin(self, "services", "create_and_configure")
 	services = preload("res://runtime/Services.gd").new()
+	await _startup_frame()
 	_timed_add(world, services, "services")
 	services.configure(self)
 	SESSION_OPS.finish(diagnostic_services)
 	if state.world_state.has("services") and not services.restore_snapshot(state.world_state.services): controller.block_saving("serviços não restauraram")
 	var diagnostic_storefronts := SESSION_OPS.begin(self, "storefronts", "create_and_configure")
 	storefronts = preload("res://runtime/HarborStorefronts.gd").new()
+	await _startup_frame()
 	_timed_add(world.hud, storefronts, "storefronts")
 	storefronts.configure(self)
 	SESSION_OPS.finish(diagnostic_storefronts)
 	if not Engine.get_meta("curitiba_cellar_baseline",false):
 		var diagnostic_wine := SESSION_OPS.begin(self, "wine", "create_and_configure")
 		wine = preload("res://gameplay/wine/WineRuntime.gd").new()
+		await _startup_frame()
 		_timed_add(world, wine, "wine")
 		wine.configure(self)
 		SESSION_OPS.finish(diagnostic_wine)
@@ -772,16 +843,19 @@ func _ready() -> void:
 		upside_world = preload("res://runtime/upside_world/UpsideWorldRuntime.gd").new()
 		upside_world.configure(self)
 		SESSION_OPS.finish(diagnostic_upside_world)
+		await _startup_frame()
 		_timed_add(self, upside_world, "upside_world")
 	if not Engine.get_meta("arcade_baseline",false):
 		var diagnostic_arcade := SESSION_OPS.begin(self, "arcade", "create_and_configure")
 		arcade = preload("res://activities/arcade/ArcadeRuntime.gd").new()
+		await _startup_frame()
 		_timed_add(world, arcade, "arcade")
 		arcade.configure(self)
 		SESSION_OPS.finish(diagnostic_arcade)
 	var diagnostic_robberies := SESSION_OPS.begin(self, "robberies", "create_and_configure")
 	robberies = preload("res://runtime/Robberies.gd").new()
 	if state.world_state.has("robberies") and not robberies.restore_snapshot(state.world_state.robberies): controller.block_saving("assaltos não restauraram")
+	await _startup_frame()
 	_timed_add(world, robberies, "robberies")
 	robberies.configure(self)
 	SESSION_OPS.finish(diagnostic_robberies)
@@ -790,51 +864,61 @@ func _ready() -> void:
 	arrival.configure(self)
 	SESSION_OPS.finish(diagnostic_arrival)
 	if state.world_state.has("arrival") and not arrival.restore_state(state.world_state.arrival): controller.block_saving("chegada não restaurou")
+	await _startup_frame()
 	_timed_add(world, arrival, "arrival")
 	arrival.changed.connect(save_game)
 	var diagnostic_garage_rewards := SESSION_OPS.begin(self, "garage_rewards", "create_and_configure")
 	garage_rewards = preload("res://runtime/GarageRewards.gd").new()
 	if state.world_state.has("garage_rewards") and not garage_rewards.restore_snapshot(state.world_state.garage_rewards): controller.block_saving("prêmios da garagem não restauraram")
+	await _startup_frame()
 	_timed_add(world, garage_rewards, "garage_rewards")
 	garage_rewards.configure(self)
 	SESSION_OPS.finish(diagnostic_garage_rewards)
 	var diagnostic_police_motor_pool := SESSION_OPS.begin(self, "police_motor_pool", "create_and_configure")
 	police_motor_pool = preload("res://runtime/PoliceMotorPool.gd").new()
+	await _startup_frame()
 	_timed_add(world, police_motor_pool, "police_motor_pool")
 	police_motor_pool.configure(self)
 	SESSION_OPS.finish(diagnostic_police_motor_pool)
 	var diagnostic_personal_car := SESSION_OPS.begin(self, "personal_car", "create_and_configure")
 	personal_car = preload("res://runtime/PersonalCar.gd").new()
+	await _startup_frame()
 	_timed_add(world, personal_car, "personal_car")
 	personal_car.configure(self)
 	SESSION_OPS.finish(diagnostic_personal_car)
 	var diagnostic_jessica := SESSION_OPS.begin(self, "jessica", "create_and_configure")
 	jessica = preload("res://runtime/JessicaRuntime.gd").new()
+	await _startup_frame()
 	_timed_add(world, jessica, "jessica")
 	jessica.configure(self)
 	SESSION_OPS.finish(diagnostic_jessica)
 	var diagnostic_desert := SESSION_OPS.begin(self, "desert", "create_and_configure")
 	desert = preload("res://runtime/desert/DesertRuntime.gd").new()
+	await _startup_frame()
 	_timed_add(world, desert, "desert")
 	desert.configure(self)
 	SESSION_OPS.finish(diagnostic_desert)
 	var diagnostic_maciota_workshop := SESSION_OPS.begin(self, "maciota_workshop", "create_and_configure")
 	maciota_workshop = preload("res://runtime/MaciotaWorkshop.gd").new()
+	await _startup_frame()
 	_timed_add(world, maciota_workshop, "maciota_workshop")
 	maciota_workshop.configure(self)
 	SESSION_OPS.finish(diagnostic_maciota_workshop)
 	var diagnostic_mining := SESSION_OPS.begin(self, "mining", "create_and_configure")
 	mining = preload("res://runtime/MiningRuntime.gd").new()
+	await _startup_frame()
 	_timed_add(world, mining, "mining")
 	mining.configure(self)
 	SESSION_OPS.finish(diagnostic_mining)
 	dialogue_voice = AudioStreamPlayer.new()
 	dialogue_voice.process_mode = Node.PROCESS_MODE_PAUSABLE
 	dialogue_voice.bus = &"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master"
+	await _startup_frame()
 	_timed_add(self, dialogue_voice, "dialogue_voice")
 	speech_voice = AudioStreamPlayer.new()
 	speech_voice.process_mode = Node.PROCESS_MODE_PAUSABLE
 	speech_voice.bus = dialogue_voice.bus
+	await _startup_frame()
 	_timed_add(self, speech_voice, "speech_voice")
 	var voice_settings := get_node_or_null("/root/V2Settings")
 	if voice_settings != null:
@@ -844,36 +928,43 @@ func _ready() -> void:
 	passenger_transport = preload("res://runtime/PassengerTransport.gd").new()
 	passenger_transport.configure(self)
 	SESSION_OPS.finish(diagnostic_passenger_transport)
+	await _startup_frame()
 	_timed_add(world, passenger_transport, "passenger_transport")
 	var diagnostic_urban_operations := SESSION_OPS.begin(self, "urban_operations", "create_and_configure")
 	urban_operations = preload("res://gameplay/urban_v1/UrbanOperations.gd").new()
 	urban_operations.configure(self)
 	SESSION_OPS.finish(diagnostic_urban_operations)
+	await _startup_frame()
 	_timed_add(world, urban_operations, "urban_operations")
 	if state.world_state.has("urban_operations") and not urban_operations.restore_snapshot(state.world_state.urban_operations): controller.block_saving("porto e cemitério não restauraram")
 	var diagnostic_port_container_loot := SESSION_OPS.begin(self, "port_container_loot", "create_and_configure")
 	port_container_loot = preload("res://gameplay/urban_v1/PortContainerLoot.gd").new()
 	port_container_loot.configure(self)
 	SESSION_OPS.finish(diagnostic_port_container_loot)
+	await _startup_frame()
 	_timed_add(world, port_container_loot, "port_container_loot")
 	var diagnostic_armored_transport := SESSION_OPS.begin(self, "armored_transport", "create_and_configure")
 	armored_transport = preload("res://gameplay/armored/ArmoredTransport.gd").new()
 	armored_transport.configure(self)
 	SESSION_OPS.finish(diagnostic_armored_transport)
+	await _startup_frame()
 	_timed_add(world, armored_transport, "armored_transport")
 	var diagnostic_field_inventory := SESSION_OPS.begin(self, "field_inventory", "create_and_configure")
 	field_inventory = preload("res://systems/inventory/FieldInventoryRuntime.gd").new()
+	await _startup_frame()
 	_timed_add(world, field_inventory, "field_inventory")
 	field_inventory.configure(self)
 	SESSION_OPS.finish(diagnostic_field_inventory)
 	if not Engine.get_meta("fishing_baseline",false):
 		var diagnostic_fishing := SESSION_OPS.begin(self, "fishing", "create_and_configure")
 		fishing = preload("res://activities/fishing/Fishing.gd").new()
+		await _startup_frame()
 		_timed_add(world, fishing, "fishing")
 		fishing.configure(self)
 		SESSION_OPS.finish(diagnostic_fishing)
 		fishing_runtime = preload("res://runtime/FishingRuntime.gd").new()
 		fishing_runtime.session = self
+		await _startup_frame()
 		_timed_add(self, fishing_runtime, "fishing_runtime")
 	if not world.get_meta("skip_cold",false):
 		var diagnostic_cold := SESSION_OPS.begin(self, "cold", "create_and_configure")
@@ -881,18 +972,22 @@ func _ready() -> void:
 		cold.configure(self)
 		SESSION_OPS.finish(diagnostic_cold)
 		if state.world_state.has("cold") and not cold.restore(state.world_state.cold): controller.block_saving("frio da serra não restaurou")
+		await _startup_frame()
 		_timed_add(world, cold, "cold")
 	if "--railway-baseline" not in OS.get_cmdline_user_args():
 		railway_world = preload("res://world/railway/RailwayWorld.gd").new()
 		railway_world.configure(controller)
+		await _startup_frame()
 		_timed_add(world, railway_world, "railway_world")
 		var diagnostic_railway := SESSION_OPS.begin(self, "railway", "create_and_configure")
 		railway = preload("res://runtime/railway/RailwayTransit.gd").new()
 		railway.name = "RailwayTransit"
 		railway.configure(self)
 		SESSION_OPS.finish(diagnostic_railway)
+		await _startup_frame()
 		_timed_add(world, railway, "railway")
 		var railway_ui := preload("res://ui/railway/RailwayUI.gd").new()
+		await _startup_frame()
 		_timed_add(world, railway_ui, "railway_ui")
 		railway_ui.configure(railway)
 	var diagnostic_regional_coach := SESSION_OPS.begin(self, "regional_coach", "create_and_configure")
@@ -900,11 +995,17 @@ func _ready() -> void:
 	regional_coach.name = "RegionalCoachTransit"
 	regional_coach.configure(self)
 	SESSION_OPS.finish(diagnostic_regional_coach)
+	await _startup_frame()
 	_timed_add(world, regional_coach, "regional_coach")
 	var coach_ui := preload("res://ui/railway/RailwayUI.gd").new()
+	await _startup_frame()
 	_timed_add(world, coach_ui, "coach_ui")
 	coach_ui.name = "RegionalCoachUI"
 	coach_ui.configure(regional_coach)
+	startup_complete = true
+	set_process(true)
+	set_process_input(true)
+	startup_finished.emit()
 
 func _label(point: Vector2,size_value: int) -> Label:
 	var result := Label.new()
@@ -1053,6 +1154,10 @@ func restore_location() -> void:
 	elif state.campaign.active_id == "cobra_contact":
 		mission_world.begin_tow_job({"story":true,"kind":"local"})
 	await _restore_outdoor_driver()
+	if desert != null and desert.get("workshop_drive") != null:
+		if not await desert.workshop_drive.restore_saved_driver():
+			controller.block_saving("carro da oficina do Digo não restaurou")
+			show_message("Não foi possível restaurar o carro da oficina; save preservado.")
 	if service_roofs != null and not await service_roofs.restore_saved(): restore_blocked = true
 	ready_for_play = true
 	if personal_car != null: personal_car.refresh()
@@ -1924,6 +2029,14 @@ func _input(event: InputEvent) -> void:
 			if dialogue_open and arrival != null and arrival.active and arrival.dialogue_in_progress():
 				get_viewport().set_input_as_handled()
 				return
+			# Tuning owns its pending draft. Its close signal releases this modal
+			# only after the player applies or discards those temporary changes.
+			for tuning in get_tree().get_nodes_in_group("vehicle_tuning_panels"):
+				var tuning_panel := tuning as CanvasLayer
+				if tuning_panel != null and world.is_ancestor_of(tuning_panel) and tuning_panel.visible:
+					tuning_panel.call("request_cancel")
+					get_viewport().set_input_as_handled()
+					return
 			close_menu()
 			get_viewport().set_input_as_handled()
 		elif event.is_action_pressed("interact"):

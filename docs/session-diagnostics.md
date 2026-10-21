@@ -7,8 +7,14 @@ contexto do jogador, limites observados de callbacks e detalhes rápidos de desc
 Veja [captura detalhada e leitura](session-log-detail.md). Os eventos abaixo continuam
 disponíveis e leitores de schemas anteriores podem ignorar os novos campos.
 
-Ativo automaticamente no Godot .NET. `HARBOR_SESSION_PROFILE=0` desliga apenas
-o perfil e as operações instrumentadas; erros e métricas gerais continuam.
+Desde 21/10/2026, o padrão no Jogar.cmd e em novas exports release é essencial:
+início/fim da sessão, mensagens, avisos, erros, exceções e heartbeat para detectar
+bloqueios. Não coleta métricas periódicas, inventário, contexto ou histórico de frames.
+`HARBOR_SESSION_PROFILE=1` ativa explicitamente o perfil descrito abaixo, incluindo
+métricas C# e operações instrumentadas. `JogarDiagnostico.cmd` ativa esse perfil e
+o StallLog adicional; na release, use essas mesmas variáveis antes de abrir o executável.
+`HARBOR_STALL_LOG=1` habilita o StallLog separadamente. `HARBOR_SESSION_LOG=0`
+desliga o logger de sessão, mas não o log nativo do Godot nem o StallLog independente.
 
 - `slow_operations`: até 16 maiores trechos de pelo menos 2 ms por intervalo,
   mesmo quando o quadro inteiro não chega a 33,3 ms. Preserva os detalhes

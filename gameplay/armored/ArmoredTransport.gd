@@ -373,7 +373,8 @@ func _admit() -> void:
 		car.set_physics_process(true)
 		car.show()
 		car.restore_health(car.health)
-		if data.vehicles.size()==4: car.restore_body_dents(data.vehicles[index].get("body_dents",[]))
+		if data.vehicles.size()==4: car.restore_body_dents(data.vehicles[index].get("body_dents",[]),data.vehicles[index].get("breakaway_parts",{}))
+		if data.vehicles.size()==4: car.restore_blood_stains(int(data.vehicles[index].get("blood_stains",0)))
 		if index < 2: car.set_vault(_vault_accessible(index),data.taken[index] or data.delivered[index])
 	_update_crew()
 
@@ -843,6 +844,8 @@ func _persist() -> void:
 			var point: Vector3 = car.global_position
 			records.append({"point":[point.x,point.y,point.z],"yaw":car.rotation.y,"health":car.health})
 			records[-1]["body_dents"]=car.body_dents.snapshot() if is_instance_valid(car.body_dents) else []
+			records[-1]["breakaway_parts"]=car.breakaway_parts.snapshot() if is_instance_valid(car.breakaway_parts) else {}
+			records[-1]["blood_stains"]=int(car.get_meta("blood_stains",0))
 		data.vehicles = records
 		data.virtual_poses = false
 	if not guards.is_empty():

@@ -85,6 +85,22 @@ func spend(amount: int, receipt_id: String) -> bool:
 		_data.transactions[key] = {"kind": "spend", "item": receipt_id, "amount": amount}
 	return true
 
+## One synchronous transaction for a workshop loadout, retaining a receipt per part.
+## A rejected receipt or insufficient funds must leave the entire wallet untouched.
+func spend_batch(entries: Array) -> bool:
+	var before := _data.duplicate(true)
+	var seen := {}
+	for entry in entries:
+		if not entry is Dictionary or not entry.get("receipt_id") is String or not _integer(entry.get("amount"),0,LIMIT):
+			_data = before
+			return false
+		var receipt: String = entry.receipt_id
+		if seen.has(receipt) or not spend(int(entry.amount),receipt):
+			_data = before
+			return false
+		seen[receipt] = true
+	return true
+
 func purchase_body_armor(current_armor: Variant, maximum_armor: Variant, transaction_id: String) -> Dictionary:
 	# The wallet owns the final precondition as well as the debit. UI may disable
 	# the button, but stale menus cannot charge when protection is already full.

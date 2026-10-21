@@ -1,6 +1,7 @@
 extends "res://tests/measure/measure.gd"
 ## Stationary real Main scene: 10s warmup, 30s measured, normal population/density.
-## Run serially with HARBOR_SESSION_LOG=0 then 1; no saves or input-driven movement.
+## Compare detailed vs essential logging serially; no saves or input-driven movement.
+var unfocused_frames := 0
 func run() -> void:
 	if DisplayServer.get_name() == "headless" or "--no-save" not in OS.get_cmdline_user_args():
 		quit(2)
@@ -44,6 +45,7 @@ func _process(_delta: float) -> bool:
 			measured_started = now
 		return false
 	samples.append(frame_ms)
+	if not DisplayServer.window_is_focused(): unfocused_frames += 1
 	cpu.append(Performance.get_monitor(Performance.TIME_PROCESS)*1000.0)
 	physics.append(Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS)*1000.0)
 	if now-measured_started >= 30000000:
@@ -57,7 +59,9 @@ func finish() -> void:
 		"gpu":RenderingServer.get_video_adapter_name(),"renderer":RenderingServer.get_current_rendering_method(),
 		"resolution":str(root.size),"vsync":DisplayServer.window_get_vsync_mode(),"max_fps":Engine.max_fps,
 		"population":world.people.size(),"cars":world.production.vehicles.size(),
-		"session_log":OS.get_environment("HARBOR_SESSION_LOG"),"position":str(world.player.position),
+		"session_log":OS.get_environment("HARBOR_SESSION_LOG"),"session_profile":OS.get_environment("HARBOR_SESSION_PROFILE"),
+		"stall_log":OS.get_environment("HARBOR_STALL_LOG"),"unfocused_frames":unfocused_frames,
+		"msaa":root.msaa_3d,"render_scale":root.scaling_3d_scale,"position":str(world.player.position),
 		"scene":"Main.tscn stationary harbor spawn; 20s settlement + 10s warmup + 30s sample"}
 	var file := FileAccess.open("res://evidence/"+label+".json",FileAccess.WRITE)
 	file.store_string(JSON.stringify(report,"\t"))

@@ -82,6 +82,26 @@ func _ready() -> void:
 	facade_camera.cull_mask = _bits.y
 	get_tree().node_added.connect(_queue_node)
 	get_tree().node_removed.connect(_remove_node)
+	var settings := get_node_or_null("/root/V2Settings")
+	if settings != null:
+		settings.applied.connect(_apply_graphics_quality)
+		_apply_graphics_quality()
+
+func _apply_graphics_quality() -> void:
+	var settings := get_node_or_null("/root/V2Settings")
+	if settings == null: return
+	var quality: int = clampi(settings.reflection_quality,0,2)
+	var widths := [[320,256],[640,512],[960,768]]
+	for index in 2:
+		var view: SubViewport = ground_view if index == 0 else facade_view
+		if not is_instance_valid(view): continue
+		var width: int = widths[quality][index]
+		view.size = Vector2i(width,roundi(width*9.0/16.0))
+		view.anisotropic_filtering_level = settings.anisotropy as Viewport.AnisotropicFiltering
+	# Explicit benchmark override retains its meaning; normal quality has a bounded cadence.
+	if not OS.has_environment("GETECO_REFLECTION_HZ"):
+		_moving_capture_hz = [30.0,60.0,60.0][quality]
+	_capture_clock = 1.0
 
 func _make_view(label: String, width: int) -> SubViewport:
 	var view := SubViewport.new()
@@ -408,6 +428,9 @@ func _sync_environment() -> void:
 		_environment.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 		_environment.tonemap_exposure = 1.0
 		_environment.glow_enabled = false
+		_environment.ssao_enabled = false
+		_environment.ssr_enabled = false
+		_environment.ssil_enabled = false
 		_environment.fog_enabled = false
 		_environment.volumetric_fog_enabled = false
 		_environment.adjustment_enabled = false

@@ -57,9 +57,9 @@ func begin(id: String) -> bool:
 	_ground_standing_pose()
 	_visual_global = _player.visual.global_transform
 	_quality_viewport = get_viewport()
-	quality_state = {"msaa_3d":_quality_viewport.msaa_3d,"scaling_3d_scale":_quality_viewport.scaling_3d_scale,"scaling_3d_mode":_quality_viewport.scaling_3d_mode,"screen_space_aa":_quality_viewport.screen_space_aa}
-	_quality_viewport.msaa_3d = maxi(_quality_viewport.msaa_3d,Viewport.MSAA_4X) as Viewport.MSAA
-	_quality_viewport.scaling_3d_scale = maxf(_quality_viewport.scaling_3d_scale,1.0)
+	# Close-up cameras inherit the player's graphics policy, including low presets and temporal AA.
+	# No transient quality override means exiting cannot restore stale menu preferences.
+	quality_state.clear()
 	station = id
 	camera = Camera3D.new()
 	camera.name = "ResidenceInteractionCamera"
@@ -297,8 +297,6 @@ func finish() -> void:
 	if is_instance_valid(_sole_contacts):
 		_sole_contacts.free()
 	_sole_contacts = null
-	if is_instance_valid(_quality_viewport) and not quality_state.is_empty():
-		for key in quality_state: _quality_viewport.set(key,quality_state[key])
 	quality_state.clear()
 	_quality_viewport = null
 	if _camera_tween != null: _camera_tween.kill()

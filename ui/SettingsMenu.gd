@@ -334,6 +334,13 @@ func _build_video(page: VBoxContainer) -> void:
 	_widgets.text_language = _options(["Português (Brasil)", "English"], func(index):
 		s.text_language = s.TEXT_LANGUAGES[index])
 	_row(page, "Idioma dos textos", "", _widgets.text_language)
+	_section(page, "PERFIL GRÁFICO")
+	_widgets.graphics_preset = _options(["Personalizado", "Baixo", "Médio", "Alto"], func(index):
+		s.set_graphics_preset(index)
+		_refresh_graphics_widgets())
+	_row(page, "Qualidade gráfica", "Ajuste tudo de uma vez ou personalize as opções abaixo.", _widgets.graphics_preset)
+	var renderer := _label("Forward+" if s.GRAPHICS.forward_plus() else RenderingServer.get_current_rendering_method(), 17, MUTED, BODY_FONT)
+	_row(page, "Renderizador", "", renderer)
 	_section(page, "TELA")
 	_widgets.window_mode = _options(["Janela", "Tela cheia", "Tela cheia exclusiva"], func(index):
 		s.window_mode = index
@@ -364,23 +371,60 @@ func _build_video(page: VBoxContainer) -> void:
 		s.camera_view = index
 		s.apply_settings())
 	_row(page, "Câmera", "Enquadramento dos exteriores.", _widgets.camera_view)
-	_section(page, "QUALIDADE")
-	_widgets.render_scale = _slider(.5, 1.0, .05, _percent, func(value):
-		s.render_scale = value
-		s.apply_settings())
-	_row(page, "Escala de renderização", "Abaixo de 100% o 3D é desenhado menor e ampliado (FSR). A interface continua nítida.", _widgets.render_scale)
-	_widgets.msaa = _options(["Desligado", "2×", "4×"], func(index):
-		s.msaa = index
-		s.apply_settings())
-	_row(page, "Antisserrilhado (MSAA)", "Suaviza bordas; 4× custa bastante GPU (8× foi removido).", _widgets.msaa)
-	_widgets.shadow_quality = _options(["Baixa", "Média", "Alta"], func(index):
-		s.shadow_quality = index
-		s.apply_settings())
-	_row(page, "Sombras", "Alta usa sombra suave e mais resolução.", _widgets.shadow_quality)
+	_section(page, "IMAGEM")
+	_widgets.render_scale = _slider(.5, 1.0, .05, _percent, func(value): _graphics_changed("render_scale",value))
+	_row(page, "Escala de renderização", "Reduz a resolução do 3D; a interface permanece nítida.", _widgets.render_scale)
+	_widgets.upscale_mode = _options(["Bilinear", "FSR 1"], func(index): _graphics_changed("upscale_mode",index))
+	_row(page, "Reconstrução da imagem", "Amplia o 3D quando a escala de renderização está abaixo de 100%.", _widgets.upscale_mode)
+	_widgets.aa_mode = _options(["MSAA", "FXAA", "SMAA"], func(index): _graphics_changed("aa_mode",index))
+	_row(page, "Método de antisserrilhado", "MSAA suaviza modelos; FXAA e SMAA tratam a imagem.", _widgets.aa_mode)
+	_widgets.msaa = _options(["Desligado", "2×", "4×"], func(index): _graphics_changed("msaa",index))
+	_row(page, "Antisserrilhado (MSAA)", "Amostras maiores suavizam as bordas e exigem mais da GPU.", _widgets.msaa)
+	_widgets.anisotropy = _options(["Desligado", "2×", "4×", "8×", "16×"], func(index): _graphics_changed("anisotropy",index))
+	_row(page, "Filtragem anisotrópica", "Mantém nítidas as texturas inclinadas que usam filtragem anisotrópica.", _widgets.anisotropy)
+	_section(page, "SOMBRAS E REFLEXOS")
+	_widgets.shadow_quality = _options(["Baixa", "Média", "Alta"], func(index): _graphics_changed("shadow_quality",index))
+	_row(page, "Sombras", "Controla a resolução das sombras e sua suavização.", _widgets.shadow_quality)
+	_widgets.shadow_distance = _options(["Curta", "Média", "Longa"], func(index): _graphics_changed("shadow_distance",index))
+	_row(page, "Distância das sombras", "Define até onde as sombras do sol são desenhadas.", _widgets.shadow_distance)
+	_widgets.reflection_quality = _options(["Baixa", "Média", "Alta"], func(index): _graphics_changed("reflection_quality",index))
+	_row(page, "Qualidade dos reflexos", "Resolução e frequência dos reflexos do chão molhado e das fachadas.", _widgets.reflection_quality)
+	_section(page, "DETALHES E EFEITOS")
+	_widgets.detail_quality = _options(["Baixo", "Médio", "Alto"], func(index): _graphics_changed("detail_quality",index))
+	_row(page, "Detalhes do cenário", "Alcance dos pequenos adereços e do capim; mantém as interações e colisões.", _widgets.detail_quality)
+	for entry in [["ssao","Oclusão ambiente (SSAO)","Acentua o contato entre objetos e superfícies."], ["volumetric_fog","Neblina volumétrica","Acrescenta volume à neblina e à iluminação; exige mais da GPU."], ["glow","Glow","Halo ao redor de superfícies e luzes intensas."]]:
+		var key: String = entry[0]
+		_widgets[key] = _toggle(func(value): _graphics_changed(key,value))
+		_row(page, entry[1], entry[2], _widgets[key])
+	_widgets.glow_strength = _slider(0.0,1.5,.05,_percent,func(value): _graphics_changed("glow_strength",value))
+	_row(page, "Intensidade do glow", "Ajusta a intensidade dos halos de luz.", _widgets.glow_strength)
 	_widgets.brightness = _slider(.6, 1.6, .05, _percent, func(value):
 		s.brightness = value
 		s.apply_settings())
 	_row(page, "Brilho", "Ajuda nas noites escuras sem mudar o céu.", _widgets.brightness)
+
+func _graphics_changed(key: String, value: Variant) -> void:
+	_settings().set(key,value)
+	_settings().apply_settings()
+	_refresh_graphics_widgets()
+
+func _refresh_graphics_widgets() -> void:
+	var s := _settings()
+	_widgets.graphics_preset.select(s.graphics_preset())
+	for key in ["aa_mode","upscale_mode","msaa","anisotropy","shadow_quality","shadow_distance","reflection_quality","detail_quality"]:
+		_widgets[key].select(int(s.get(key)))
+	for key in ["ssao","volumetric_fog","glow"]:
+		_widgets[key].set_pressed_no_signal(s.get(key))
+		_widgets[key].text = "Ligado" if s.get(key) else "Desligado"
+		_widgets[key].disabled = key != "glow" and not s.GRAPHICS.forward_plus()
+		_widgets[key].tooltip_text = "Disponível no Forward+." if _widgets[key].disabled else ""
+	_set_slider(_widgets.render_scale,s.render_scale,_percent)
+	_set_slider(_widgets.glow_strength,s.glow_strength,_percent)
+	for index in [1,2]: _widgets.aa_mode.set_item_disabled(index,not s.GRAPHICS.modern_renderer())
+	_widgets.upscale_mode.set_item_disabled(1,not s.GRAPHICS.modern_renderer())
+	_widgets.msaa.disabled = s.aa_mode != 0
+	(_widgets.glow_strength.get_meta("slider") as HSlider).editable = s.glow
+	_trap_focus()
 
 func _build_audio(page: VBoxContainer) -> void:
 	var s := _settings()
@@ -562,6 +606,7 @@ func _load_widgets() -> void:
 	_set_slider(_widgets.render_scale, s.render_scale, _percent)
 	_widgets.msaa.select(s.msaa)
 	_widgets.shadow_quality.select(s.shadow_quality)
+	_refresh_graphics_widgets()
 	_set_slider(_widgets.brightness, s.brightness, _percent)
 	for key in ["master_volume", "music_volume", "sfx_volume", "ambient_volume"]:
 		_set_slider(_widgets[key], float(s.get(key)), _percent)
@@ -669,6 +714,7 @@ func _restore_tab_defaults() -> void:
 			s.msaa = 1
 			s.shadow_quality = 1
 			s.brightness = 1.0
+			for key in s.GRAPHICS.KEYS: s.set(key,s.GRAPHICS.PRESETS[1][key])
 		1:
 			s.master_volume = .8
 			s.music_volume = .8
@@ -698,7 +744,7 @@ func close() -> void:
 	hide()
 	closed.emit()
 
-const SNAPSHOT_KEYS := ["master_volume", "music_volume", "sfx_volume", "ambient_volume", "mute_unfocused", "voice_language", "text_language", "window_mode", "resolution", "vsync", "msaa", "render_scale", "fps_limit", "shadow_quality", "brightness", "show_fps", "camera_view"]
+const SNAPSHOT_KEYS := ["master_volume", "music_volume", "sfx_volume", "ambient_volume", "mute_unfocused", "voice_language", "text_language", "window_mode", "resolution", "vsync", "msaa", "render_scale", "fps_limit", "shadow_quality", "brightness", "show_fps", "camera_view", "aa_mode", "upscale_mode", "shadow_distance", "anisotropy", "reflection_quality", "detail_quality", "ssao", "volumetric_fog", "glow", "glow_strength"]
 
 func _capture_snapshot() -> Dictionary:
 	var s := _settings()

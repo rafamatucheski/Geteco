@@ -1,10 +1,13 @@
 """Real .NET autoload: stage watchdog, error correlation, fast-frame spans and bounded details."""
 import json
+import os
 import pathlib
 import subprocess
 import sys
 
 root = pathlib.Path(__file__).resolve().parents[1]
+os.environ['HARBOR_SESSION_LOG'] = '1'
+os.environ['HARBOR_SESSION_PROFILE'] = '1'
 run = subprocess.run([sys.argv[1], '--headless', '--path', str(root), '--script',
                       'res://tests/test_session_detail.gd'], capture_output=True, text=True,
                      encoding='utf-8', errors='replace', timeout=45)

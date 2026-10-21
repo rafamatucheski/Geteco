@@ -81,6 +81,9 @@ const COUNTRY_STATION := 11
 const RADIO_VOLUME_DB := -12.0
 var radio_car: CharacterBody3D
 var radio_focus := 1.0
+## Exclusive room music pauses only this radio voice; station and playback
+## position remain owned by the vehicle. Weak ownership also recovers on free.
+var _scoped_music_owner: WeakRef
 var radio_notice: Label
 var radio_notice_time := 0.0
 
@@ -243,6 +246,20 @@ func _driver_audio_ready() -> bool:
 	# Occupied reserves the car at the start of boarding; control begins at the seat.
 	return world.driving.occupied and is_instance_valid(world.driving.car) and world.driving.car.controlled
 
+func set_scoped_music_override(owner: Node) -> bool:
+	if not is_instance_valid(owner): return false
+	var current: Object = _scoped_music_owner.get_ref() if _scoped_music_owner != null else null
+	if is_instance_valid(current) and current != owner: return false
+	_scoped_music_owner = weakref(owner)
+	if is_instance_valid(radio): radio.stream_paused = true
+	return true
+
+func clear_scoped_music_override(owner: Node) -> void:
+	var current: Object = _scoped_music_owner.get_ref() if _scoped_music_owner != null else null
+	if is_instance_valid(current) and current != owner: return
+	_scoped_music_owner = null
+	if is_instance_valid(radio): radio.stream_paused = false
+
 func _radio_tunable() -> bool:
 	if not _driver_audio_ready(): return false
 	var session = world.session
@@ -297,6 +314,11 @@ func _update_radio(delta: float) -> void:
 		var dialogue: bool = world.session != null and world.session.get("dialogue_open") == true
 		radio_focus = move_toward(radio_focus,.2 if dialogue else 1.0,delta*3.0)
 		radio.volume_db = RADIO_VOLUME_DB+linear_to_db(maxf(radio_focus,.001))
+	if _scoped_music_owner != null:
+		if not is_instance_valid(_scoped_music_owner.get_ref()):
+			_scoped_music_owner = null
+			radio.stream_paused = false
+		else: radio.stream_paused = true
 	radio_notice_time = maxf(0.0,radio_notice_time-delta)
 	if is_instance_valid(radio_notice):
 		radio_notice.visible = car != null and radio_notice_time > 0.0 and not get_tree().paused and not (world.session != null and world.session.modal)

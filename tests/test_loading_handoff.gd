@@ -22,9 +22,13 @@ func run() -> void:
 	var adopted := false
 	var stages := {}
 	var peak := 0.0
+	var observed_assembly := false
 	for i in 2400:
 		await process_frame
 		if not is_instance_valid(curtain): break
+		if not observed_assembly and current_scene != null and current_scene.session != null and not current_scene.session.startup_complete:
+			observed_assembly = true
+			check(not current_scene.session.is_processing() and not current_scene.session.is_processing_input(), "sessão incompleta não recebe atualizações nem entrada")
 		if current_scene != null and curtain.get_parent() != root: adopted = adopted or curtain.get_parent() == current_scene
 		stages[curtain.stage_message] = true
 		peak = maxf(peak, curtain._target)
@@ -32,6 +36,10 @@ func run() -> void:
 	check(stages.size() >= 5, "etapas mostradas: %s" % ", ".join(stages.keys()))
 	check(peak >= 1.0, "barra chegou ao fim")
 	check(not is_instance_valid(curtain), "cortina saiu depois de o mundo assentar")
+	check(current_scene.session.startup_complete, "sessão terminou todas as etapas antes de liberar o jogo")
+	check(observed_assembly, "montagem da sessão realmente foi distribuída entre frames")
+	check(current_scene.production.session == current_scene.session, "controlador recebeu a sessão completamente montada")
+	check(current_scene.session.is_processing() and current_scene.session.is_processing_input(), "sessão recuperou atualizações e entrada após a montagem")
 	var extra := 0
 	for child in root.get_children(): if child.name.begins_with("LoadingCurtain"): extra += 1
 	check(extra == 0, "nenhuma cortina duplicada ficou na raiz")

@@ -4,6 +4,14 @@ extends RefCounted
 static var _tiles: Dictionary = {}
 static var _normals: Dictionary = {}
 static var _rough: Dictionary = {}
+# Re-bake with tools/bake_loading_surfaces.gd when changing the v1 recipe.
+const BAKED := {
+	"concrete":preload("res://assets/materials/urban_ground_cache/concrete.res"),
+	"stone":preload("res://assets/materials/urban_ground_cache/stone.res"),
+	"brick":preload("res://assets/materials/urban_ground_cache/brick.res"),
+	"gravel":preload("res://assets/materials/urban_ground_cache/gravel.res"),
+	"grass":preload("res://assets/materials/urban_ground_cache/grass.res"),
+}
 
 ## Albedo + relevo + rugosidade da mesma superfície. Só albedo lia como plano
 ## chapado de cima; a normal vem da luminância do próprio tile (juntas entram).
@@ -17,6 +25,16 @@ static func bind(material: StandardMaterial3D, kind: String, bump := 2.0) -> voi
 
 static func texture(kind: String) -> Texture2D:
 	if _tiles.has(kind): return _tiles[kind]
+	if BAKED.has(kind) and not Engine.get_meta("rebake_loading_surfaces",false):
+		var bundle: Resource = BAKED[kind]
+		if bundle.recipe == "UrbanGround/v1/" + kind:
+			_tiles[kind] = bundle.albedo
+			_normals[kind] = bundle.normal
+			_rough[kind] = bundle.roughness
+			return _tiles[kind]
+	return _generate(kind)
+
+static func _generate(kind: String) -> Texture2D:
 	var img := Image.create(256,256,false,Image.FORMAT_RGBA8)
 	var noise := FastNoiseLite.new()
 	noise.seed=91327

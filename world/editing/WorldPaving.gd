@@ -3,7 +3,7 @@ extends RefCounted
 const SURFACE := preload("res://world/urban_detail/HarborUrbanSurface3D.gd")
 static func catalog() -> Dictionary:
 	var source := SURFACE.new()
-	source.configure()
+	source.configure(false)
 	var rows := {}
 	for index in source._surfaces.size():
 		var item: Dictionary = source._surfaces[index]

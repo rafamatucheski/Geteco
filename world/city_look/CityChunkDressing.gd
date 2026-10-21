@@ -269,6 +269,7 @@ static func _flush(chunk: Node3D, batches: Dictionary) -> void:
 			instance.visibility_range_end = float(ROOF_SMALL_RANGE[kind]) + multimesh.get_aabb().size.length() * 0.5
 			# Margem só como histerese (sem fade), para não piscar na borda do corte.
 			instance.visibility_range_end_margin = 4.0
+			preload("res://runtime/GraphicsOptions.gd").tag_detail(instance)
 		chunk.add_child(instance)
 		built[kind] = multimesh
 		if kind == "signal_amber":

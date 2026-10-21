@@ -263,6 +263,13 @@ func update_bank_visibility(point: Vector3,delta: float) -> void:
 func _special_solids() -> void:
 	if definition.id in ["harbor_ammunation","mountain_gunshop"]:
 		var solids := {"NorthWall":Rect2(-7.25,-5.25,14.5,.5),"WestWall":Rect2(-7.25,-5.25,.5,10.5),"EastWall":Rect2(6.75,-5.25,.5,10.5),"SouthWall":Rect2(-7.25,4.75,14.5,.5),"ServiceCounter":Rect2(-2.6,-2.8,5.2,1.2),"ArmorDisplay":Rect2(-6.35,-1.05,1.7,3.05),"ExplosivesDisplay":Rect2(4.65,-1.05,1.7,3.05),"LeftStock":Rect2(-6.05,2.2,1.1,1.6),"RightStock":Rect2(4.95,2.2,1.1,1.6),"StaffOnly":Rect2(-6.8,-4.85,13.6,1.7)}
+		if definition.id == "harbor_ammunation":
+			# The former full-width StaffOnly rectangle intersected Vance's feet
+			# and blocked an empty aisle. Cover the actual fitted rear furniture.
+			solids.erase("StaffOnly")
+			for side in [-1,1]:
+				solids["RearWeapons%d"%side] = Rect2(side*4.8-1.8,-4.9,3.6,.9)
+				solids["RearStock%d"%side] = Rect2(side*2.25-.65,-4.8,1.3,.65)
 		if definition.id == "mountain_gunshop":
 			solids.ServiceCounter.position.x += 1.7
 			solids.ArmorDisplay.position.x += 2.6

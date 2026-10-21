@@ -7,6 +7,12 @@ var failures: Array[String] = []
 class Room extends Node3D:
 	var spawn_position := Vector3.ZERO
 	var interior_spawn := Vector3.ZERO
+	var model: Node3D
+
+class AuthoredAccess extends Node3D:
+	var roof_access_point := Vector3(4.86,0,2.0)
+	var roof_access_yaw := PI*.5
+	var roof_access_route: Array[Vector3] = [Vector3(3.5,0,2.5)]
 
 class Session extends RefCounted:
 	var state := {"region_id":"harbor", "place_id":"harbor_supermarket"}
@@ -19,8 +25,9 @@ class Session extends RefCounted:
 
 class RuntimeProbe extends "res://runtime/HarborServiceRoofRuntime.gd":
 	var ladders_built := 0
+	var sweep_allowed := true
 	func _sweep_clear(_from: Vector3, _to: Vector3) -> bool:
-		return true
+		return sweep_allowed
 	func _ladder_fits(_point: Vector3, _frame: Basis) -> bool:
 		return true
 	func _make_ladder() -> void:
@@ -83,6 +90,23 @@ func run() -> void:
 	runtime._update_ground_access()
 	var expected_garage := room_a.interior_spawn + room_a.global_basis * offset + Vector3.UP * .04
 	check(runtime.access_owner == room_a and runtime.access_point.is_equal_approx(expected_garage), "garage uses its interior spawn with current room owner")
+	# A furnished house or shop owns its architectural access, independently of
+	# the spawn. A blocked authored route must never fall back into the room.
+	session.state.place_id = "cobra_leader_house"
+	var authored := AuthoredAccess.new()
+	room_a.add_child(authored)
+	room_a.model = authored
+	runtime._update_ground_access()
+	var expected_authored := authored.to_global(authored.roof_access_point)+Vector3.UP*.04
+	check(runtime.access_point.is_equal_approx(expected_authored), "wall access uses model coordinates rather than spawn offsets")
+	check((runtime.access_frame*Vector3.BACK).is_equal_approx(authored.global_basis*Vector3.RIGHT), "authored orientation points into the side wall")
+	check(runtime.access_route.size()==2 and runtime.access_route[0].is_equal_approx(authored.to_global(authored.roof_access_route[0])+Vector3.UP*.04), "authored approach waypoints preserve room transform")
+	runtime._release_access()
+	runtime.sweep_allowed = false
+	var built_before := runtime.ladders_built
+	runtime._update_ground_access()
+	check(runtime.access_visual == null and runtime.ladders_built==built_before, "blocked authored route cannot create a floating fallback ladder")
+	check(runtime.access_route.is_empty(), "released access does not retain a route from the old owner")
 	fixture.queue_free()
 	await process_frame
 	print("ROOF_ACCESS_OWNER checks=", checks, " failures=", failures.size())

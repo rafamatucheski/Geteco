@@ -5,12 +5,13 @@
 		"completed": [],
 		"failure": "",
 		"flags": {},
+		"legacy_skipped": [],
 		"pending_rewards": {},
 		"race_elapsed": 0.0,
 		"race_outside": 0.0,
 		"race_run": {},
 		"step": 0,
-		"version": 1
+		"version": 2
 	},
 	"canonical_campaign": {
 		"completed_beats": [],
@@ -28,10 +29,34 @@
 	"checkpoint_id": "canal_north",
 	"combat": {
 		"armor": 0.0,
+		"belt_flashlight": {
+			"enabled": false,
+			"owned": false
+		},
 		"crime_points": 0,
 		"customization": {},
 		"health": 90.0,
-		"hidden_time": 0.0
+		"hidden_time": 0.0,
+		"police_case": {
+			"descending": false,
+			"escalation": {
+				"fatal": 0,
+				"seconds": 0.0,
+				"shot": 0.0
+			},
+			"evidence": 0,
+			"pending": [],
+			"place": "",
+			"point": [
+				0.0,
+				0.0,
+				0.0
+			],
+			"region": "",
+			"remaining": 0.0,
+			"threat": 0.0
+		},
+		"rage_charge": 0.0
 	},
 	"economy": {
 		"achievements": [
@@ -42,12 +67,29 @@
 		"collectibles": [],
 		"discoveries": [],
 		"equipped_weapon": "fists",
+		"grid_inventory": {
+			"bag": "",
+			"claimed": [],
+			"ground": [],
+			"pockets": [],
+			"serial": 0,
+			"storage": [],
+			"trunk": [],
+			"version": 2
+		},
 		"inventory": {},
 		"outfit": "dante_suit",
 		"outfits": [
 			"dante_classic",
 			"dante_suit"
 		],
+		"personal_loadout": {
+			"corpo": "",
+			"curta": "",
+			"granada": "",
+			"longa": ""
+		},
+		"personal_loadout_enabled": true,
 		"transactions": {
 			"reward:achievement:first_grand": {
 				"amount": 50,
@@ -106,23 +148,33 @@
 		"activities": {
 			"attempt": 0,
 			"day": 1,
-			"day_clock": 26.0333333333331,
+			"day_clock": 27.633333333333,
 			"drift_best": {},
 			"drift_finished": 0,
 			"home": {
 				"active_home": "westgate_garden",
+				"cats": {
+					"adopted": [],
+					"furniture": {
+						"ball": 0,
+						"bed": 0,
+						"scratcher": 0
+					}
+				},
 				"chest": {},
 				"purchases": 3,
 				"schema_version": 1,
 				"stored_motorcycle": {
 					"archetype_id": "bike_urban",
-					"color": "34363cff",
+					"body_dents": [],
+					"color": "245cabff",
 					"health": 55.0,
 					"status": "stored"
 				},
 				"stored_vehicle": {
 					"archetype_id": "sport_coupe",
-					"color": "ffffffff",
+					"body_dents": [],
+					"color": "31577aff",
 					"health": 80.0,
 					"status": "stored"
 				}
@@ -142,8 +194,9 @@
 			"flags": {},
 			"opening_completed": false,
 			"phase": "complete",
-			"version": 1
+			"version": 2
 		},
+		"coastal_wetness": 0.0,
 		"cold": {
 			"damage_fraction": 0.0,
 			"exposure": 0.0,
@@ -151,12 +204,32 @@
 			"version": 1,
 			"weather_clock": 0.0
 		},
+		"desert_bandits": {
+			"defeated_mask": 0,
+			"version": 1
+		},
+		"desert_secrets": {
+			"desert_abandoned_cabin": false,
+			"desert_abandoned_house": false,
+			"version": 1
+		},
+		"desert_smuggler_canyon": {
+			"cache_mask": 0,
+			"defeated_mask": 0,
+			"version": 1
+		},
 		"garage_rewards": {
 			"alarm_remaining": -1.0,
 			"guards": [],
 			"police_called": false,
 			"port_status": "parked",
 			"vehicles": {},
+			"version": 1
+		},
+		"jessica_vehicle": {},
+		"mining_equipment": {},
+		"mining_raid": {
+			"escaped": false,
 			"version": 1
 		},
 		"mission_world": {
@@ -169,6 +242,7 @@
 		},
 		"motocross": {
 			"active": -1,
+			"best_lap": 0.0,
 			"bike_model": 0,
 			"owned": false,
 			"rental_serial": 0,
@@ -182,6 +256,21 @@
 				0
 			]
 		},
+		"mountain_downhill": {
+			"best_seconds": 0.0,
+			"finishes": 0,
+			"last_place": 0,
+			"reward_paid": false,
+			"version": 1,
+			"wins": 0
+		},
+		"mountain_jeep": {
+			"best": 0.0,
+			"finishes": 0,
+			"rewarded": false,
+			"vehicle": {},
+			"version": 1
+		},
 		"mountain_progression": {
 			"best": {},
 			"equipment": false,
@@ -190,11 +279,17 @@
 			"shadow_announced": false,
 			"version": 1
 		},
+		"mountain_story": {
+			"completed": [],
+			"events": [],
+			"receipts": [],
+			"version": 1
+		},
 		"outfit": "dante_classic",
 		"pedestrian": {
 			"position": [
 				9.02499961853027,
-				-0.00916667282581329,
+				-0.00890625268220901,
 				13.375
 			],
 			"region": "harbor"
@@ -209,11 +304,15 @@
 			"bank_cash1": false,
 			"bank_cash2": false,
 			"bank_cycle": 0,
+			"bank_deaths": 0,
 			"bank_dispatched": false,
+			"bank_failed": false,
+			"bank_pending": 0,
+			"bank_restock_requested": false,
 			"bank_shots": false,
 			"clerks": [
-				80.0,
-				80.0
+				100.0,
+				100.0
 			],
 			"elapsed_days": 0.0,
 			"fuel_alarm": false,
@@ -224,8 +323,8 @@
 			"fuel_register": false,
 			"fuel_resists": false,
 			"guards": [
-				50.0,
-				50.0
+				160.0,
+				160.0
 			],
 			"keycard_available": false,
 			"keycard_position": [
@@ -236,7 +335,7 @@
 			"keycard_taken": false,
 			"opening_remaining": 0.0,
 			"vault_open": false,
-			"version": 1
+			"version": 4
 		},
 		"services": {
 			"auto_serial": 0,
@@ -245,7 +344,11 @@
 			"serviced_count": 0,
 			"version": 1
 		},
-		"time": 0.339099734953671,
+		"skate": {
+			"best": 0,
+			"owned": false
+		},
+		"time": 0.341304689444436,
 		"urban_operations": {
 			"cemetery": {
 				"cases": [],
@@ -257,6 +360,7 @@
 			},
 			"freight": {
 				"active_bay": -1,
+				"cargo_loaded": false,
 				"jobs": [
 					0,
 					0,
@@ -277,7 +381,7 @@
 					0.0
 				],
 				"terminal": {
-					"clock": 3.173614,
+					"clock": 5.354407,
 					"cooldown": [
 						0.0,
 						0.0
@@ -293,8 +397,8 @@
 				"workers": {}
 			},
 			"logistics": {
-				"clock": 612.930635416648,
-				"clock_phase": 0.339099734953671,
+				"clock": 612.579064583329,
+				"clock_phase": 0.341304689444436,
 				"trucks": [
 					{
 						"deliveries": 0,
@@ -340,6 +444,21 @@
 				],
 				"version": 1
 			},
+			"secret_network": {
+				"audio_logs": [],
+				"dossier_received": false,
+				"final_door_unlocked": false,
+				"fragments": [],
+				"headquarters_discovered": false,
+				"house_discovered": false,
+				"keypad_clues": [],
+				"keypad_unlocked": false,
+				"lab_clues": [],
+				"power_nodes": [],
+				"routes": [],
+				"sealed_sector_discovered": false,
+				"version": 1
+			},
 			"security": {
 				"authorized_entry": false,
 				"authorized_visit": false,
@@ -365,25 +484,42 @@
 				"version": 1
 			},
 			"truckers_village_fleet": {},
+			"truckers_village_leisure": {
+				"best_score": 0,
+				"cache_opened": false,
+				"version": 1
+			},
 			"version": 1
 		},
 		"vehicles": [
 			{
 				"archetype": "sport_coupe",
+				"body_dents": [],
 				"equipment": {},
 				"health": 80.0,
+				"heavy_crush_ratio": 1.0,
 				"paint": "ffffffff",
 				"position": [
-					46.875,
-					0.000219173263758421,
-					110.125
+					205.0,
+					-5.94999980926514,
+					64.56884765625
 				],
+				"punctured_tires": 0,
 				"region": "harbor",
 				"vehicle_id": "player_coupe",
 				"was_driven": false,
 				"yaw": -1.57079637050629
 			}
 		],
-		"weather": 0
+		"weather": 0,
+		"weather_timer": 89.3212471999997,
+		"wine_cellar": {
+			"alcohol": 0.0,
+			"cooldown": 0.0,
+			"gift_claimed": false,
+			"serial": 0,
+			"servings": {},
+			"version": 1
+		}
 	}
 }
