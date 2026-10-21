@@ -1,12 +1,12 @@
 {
  "gerado_por": "tools/build_voice_registry.py",
  "chave": "sha256(personagem|texto da legenda), como audio/ExpressiveVoice.gd recording_key",
- "total": 481,
+ "total": 484,
  "gravadas": 66,
- "a_gravar": 411,
+ "a_gravar": 414,
  "por_personagem": {
   "vicente": 91,
-  "dante": 124,
+  "dante": 125,
   "bia": 11,
   "seu zé do cronômetro": 3,
   "raul": 10,
@@ -29,6 +29,8 @@
   "manifesto": 1,
   "anotação": 1,
   "prado": 4,
+  "bastos": 1,
+  "lima": 1,
   "conhecido do cobre": 7,
   "livro de despachos": 1
  },
@@ -4902,6 +4904,39 @@
    "spoken": "Copiado.",
    "key": "70c97914ec2f2894d27cc946c504a839dc9a1a6952d16b99aab7656489bea366",
    "source": "data/campaign/prologue-blitz-dialogue.json:dante/radio_open",
+   "variavel": false,
+   "so_direcao": false,
+   "gravada": false
+  },
+  {
+   "speaker": "Bastos",
+   "persona": "bastos",
+   "text": "Ferraz, o terceiro é teu.",
+   "spoken": "Ferraz, o terceiro é teu.",
+   "key": "d0ff013c172ec215abf20cdf7b6bd7793cfa6ea5cc3c6b696b81e6fb7451b482",
+   "source": "data/campaign/prologue-blitz-dialogue.json:dante/colleagues",
+   "variavel": false,
+   "so_direcao": false,
+   "gravada": false
+  },
+  {
+   "speaker": "Dante",
+   "persona": "dante",
+   "text": "Eu sei contar, Bastos.",
+   "spoken": "Eu sei contar, Bastos.",
+   "key": "67ddd54ec52250ef3c40f1cd85b21d23a5e4d4f091ad52921701de44abef935d",
+   "source": "data/campaign/prologue-blitz-dialogue.json:dante/colleagues",
+   "variavel": false,
+   "so_direcao": false,
+   "gravada": false
+  },
+  {
+   "speaker": "Lima",
+   "persona": "lima",
+   "text": "Deixou o motor ligado. Vai com calma.",
+   "spoken": "Deixou o motor ligado. Vai com calma.",
+   "key": "909d9a35e0e4c659bf60deb5cf55ed2d7dc97257d30549bc591b654c620eef30",
+   "source": "data/campaign/prologue-blitz-dialogue.json:dante/stopped",
    "variavel": false,
    "so_direcao": false,
    "gravada": false
