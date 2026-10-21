@@ -107,7 +107,7 @@ static func mineral_material(id: String) -> ShaderMaterial:
 	var result := ShaderMaterial.new()
 	result.shader = preload("res://world/mining/mineral_surface.gdshader")
 	result.set_shader_parameter("base_color", material(id).albedo_color)
-	result.set_shader_parameter("world_origin", Vector3(-180,0,-1760))
+	result.set_shader_parameter("world_origin", Vector3(-180,0,-1080))
 	_materials[key] = result
 	return result
 

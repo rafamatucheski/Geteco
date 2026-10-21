@@ -1,8 +1,8 @@
 extends RefCounted
 ## One metre-space contract for the remote quarry, dirt access and activities.
 ## A 28 m excavation and a 14 m haul spiral share one sampled XYZ centreline.
-const CENTER := Vector3(-180,0,-1760)
-const BOUNDS := Rect2(-326,-1910,300,310)
+const CENTER := Vector3(-180,0,-1080)
+const BOUNDS := Rect2(-326,-1230,300,310)
 const PIT_CENTER := Vector2(0,-18)
 const PIT_DEPTH := 28.0
 const HAUL_WIDTH := 14.0
@@ -12,7 +12,9 @@ const SECRET_ENTRY := SECRET_EXTERIOR+Vector3(0,0,3.7)
 const SECRET_RETURN := SECRET_EXTERIOR+Vector3(0,0,6.5)
 const SECRET_RESERVE := Rect2(-34,-20,16,22)
 const MACHINE_BAYS := []
-const ACCESS := [Vector2(-180,-1540),Vector2(-180,-1574),Vector2(-167,-1598),Vector2(-167,-1611),Vector2(-180,-1630)]
+## The loaded 8 m haul truck must reach the gate square-on. Keep the final
+## approach centred between the existing perimeter posts and raised barrier.
+const ACCESS := [Vector2(-180,-900),Vector2(-180,-914),Vector2(-180,-928),Vector2(-180,-939),Vector2(-180,-950)]
 const ACCESS_WIDTH := 10.5
 static var _haul_points := PackedVector3Array()
 static var _haul_buckets: Dictionary={}

@@ -6,7 +6,7 @@ const LAYOUT := preload("res://world/mining/MiningLayout.gd")
 const GROUND := preload("res://world/mining/MiningExterior.gd")
 const CONTACT := LAYOUT.CENTER+Vector3(-21.7,-28,2)
 const DESTINATION := LAYOUT.CENTER+Vector3(-13,-28,8.5)
-const DEPOSIT := Rect2(-197,-1754.5,8,6)
+const DEPOSIT := Rect2(Vector2(DESTINATION.x-4.0,DESTINATION.z-3.0),Vector2(8,6))
 var session
 var operation: Node
 var _clock := 0.0

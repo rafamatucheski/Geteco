@@ -3,6 +3,7 @@ const STATE := preload("res://gameplay/mining/jobs/MiningYardJobState.gd")
 const JOB := preload("res://gameplay/mining/jobs/MiningYardJob.gd")
 const ECONOMY := preload("res://systems/economy/Economy.gd")
 const OPERATION := preload("res://gameplay/mining/MiningOperation.gd")
+const LAYOUT := preload("res://world/mining/MiningLayout.gd")
 var checks := 0
 var failures: Array[String]=[]
 
@@ -16,6 +17,8 @@ func check(ok: bool, label: String) -> void:
 func run() -> void:
 	var world:={}
 	var wallet:=ECONOMY.new()
+	check(JOB.DEPOSIT.grow(-.75).has_point(Vector2(JOB.DESTINATION.x,JOB.DESTINATION.z)),"Relocated job destination lies inside the physical deposit bay")
+	check(JOB.DESTINATION.is_equal_approx(LAYOUT.CENTER+Vector3(-13,-28,8.5)),"Job bay follows the intact quarry floor without changing depth")
 	check(STATE.validate_wallet(world,wallet.snapshot()),"Old saves remain valid")
 	for malformed in [null,7,"invalid",[],{}]:
 		check(not STATE.validate_wallet({STATE.KEY:malformed},wallet.snapshot()),"Malformed checkpoint rejected without reading its fields: "+str(malformed))
@@ -99,9 +102,9 @@ func physics_contract() -> void:
 func uneven_ground_contract() -> void:
 	var stage:=Node3D.new()
 	root.add_child(stage)
-	JOB.GROUND.build_surfaces(stage,Rect2(-201,-1758,18,16))
+	JOB.GROUND.build_surfaces(stage,Rect2(Vector2(LAYOUT.CENTER.x-21,LAYOUT.CENTER.z+2),Vector2(18,16)))
 	var rock:=OPERATION.create_rock(0)
-	var point:=Vector2(-196.0,-1749.4)
+	var point:=Vector2(LAYOUT.CENTER.x-16.0,LAYOUT.CENTER.z+10.6)
 	var height:=JOB.GROUND.surface_height(point)
 	rock.position=Vector3(point.x,height+.62,point.y)
 	stage.add_child(rock)

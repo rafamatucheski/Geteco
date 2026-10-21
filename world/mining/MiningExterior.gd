@@ -6,7 +6,7 @@ const BATCH := preload("res://world/mining/MiningBatch.gd")
 const GROUND_SHADER := preload("res://world/mining/mining_ground.gdshader")
 const DESERT_GEOMETRY := preload("res://world/desert/DesertGeometry.gd")
 const GRID := 3.0
-const OWNED_GROUND := Rect2(-326,-1910,300,365)
+const OWNED_GROUND := Rect2(-326,-1230,300,365)
 static var _ground_material: ShaderMaterial
 static var _wall_material: ShaderMaterial
 static var _road_material: ShaderMaterial

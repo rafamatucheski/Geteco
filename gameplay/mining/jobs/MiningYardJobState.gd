@@ -5,6 +5,9 @@ const RECEIPT := "serra_bruta_clearance"
 const REWARD := 1800
 const COUNT := 3
 const RECEIPTS := preload("res://systems/economy/RecurringReceipts.gd")
+const LAYOUT := preload("res://world/mining/MiningLayout.gd")
+const DELIVERY_MIN := Vector2(LAYOUT.CENTER.x-16.25,LAYOUT.CENTER.z+6.25)
+const DELIVERY_MAX := Vector2(LAYOUT.CENTER.x-9.75,LAYOUT.CENTER.z+10.75)
 
 static func defaults() -> Dictionary:
 	return {"version":1,"status":"idle","delivered":{}}
@@ -28,7 +31,7 @@ static func valid(value: Variant) -> bool:
 			for axis in vector:
 				if not (axis is int or axis is float) or not is_finite(float(axis)): return false
 		var point:=Vector3(row.position[0],row.position[1],row.position[2])
-		if point.x< -196.25 or point.x> -189.75 or point.z< -1753.75 or point.z> -1749.25 or point.y< -27.8 or point.y> -26.9: return false
+		if point.x<DELIVERY_MIN.x or point.x>DELIVERY_MAX.x or point.z<DELIVERY_MIN.y or point.z>DELIVERY_MAX.y or point.y< -27.8 or point.y> -26.9: return false
 		for angle in row.rotation:
 			if absf(float(angle))>TAU: return false
 	return true

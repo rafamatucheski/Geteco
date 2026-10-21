@@ -60,11 +60,9 @@ static func sample(distance: float) -> Dictionary:
 		return {"position":point,"forward":_points[i-1].direction_to(_points[i]),"distance":s}
 	return {"position":_points[-1],"forward":_points[-2].direction_to(_points[-1]),"distance":s}
 
-static func rise(distance: float) -> float:
-	# Two shallow crests: approach/departure slope stays below thirteen percent.
-	for interval in [[70.0,108.0,1.4],[205.0,251.0,1.7]]:
-		if distance > interval[0] and distance < interval[1]:
-			return pow(sin(PI*inverse_lerp(interval[0],interval[1],distance)),2)*interval[2]
+static func rise(_distance: float) -> float:
+	# The loop uses the reserved terrain floor. Separate raised snow sheets
+	# looked detached from that floor; checkpoints must share its height too.
 	return 0.0
 
 static func checkpoints() -> Array[Dictionary]:
@@ -110,6 +108,4 @@ static func records() -> Array[Dictionary]:
 		result.append({"kind":"mountain_jeep_scenery","variant":"gate","position":gates[i].position,
 			"forward":gates[i].forward,"finish":i==gates.size()-1})
 	result.append({"kind":"mountain_jeep_scenery","variant":"start","position":start(),"forward":Vector3.LEFT})
-	for interval in [[70.0,108.0],[205.0,251.0]]:
-		result.append({"kind":"mountain_jeep_scenery","variant":"crest","position":sample((interval[0]+interval[1])*.5).position,"from":interval[0],"to":interval[1]})
 	return result

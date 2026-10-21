@@ -57,7 +57,11 @@ func run() -> void:
 	if not failures.is_empty(): await finish(); return
 	car.place(COURSE.start()+Vector3.UP*.12,COURSE.parking_yaw())
 	await frames(4)
-	check(activity.perform("start") and activity.active,"production interaction starts timed jeep attempt")
+	check(activity.perform("start") and world.session.modal and not activity.active,"interaction explains rules before starting the timer")
+	world.session.close_menu()
+	check(not activity.active and not car.input_locked,"closing instructions keeps attempt idle and releases driving controls")
+	check(activity.perform("start") and world.session.modal,"instructions can be reopened")
+	check(activity._start_attempt() and activity.active and not world.session.modal,"confirming instructions starts timed jeep attempt")
 	check(not world.session.save_game(true),"session blocks saving a moving attempt")
 	paused=true
 	var countdown: float=activity.run.countdown
@@ -81,7 +85,8 @@ func run() -> void:
 		if world.driving.occupied and not world.driving.is_body_transition_active(): break
 	car.place(COURSE.start()+Vector3.UP*.12,COURSE.parking_yaw())
 	await frames(3)
-	check(activity.perform("start"),"retry starts from fresh countdown")
+	check(activity.perform("start") and world.session.modal,"retry opens instructions without consuming time")
+	check(activity._start_attempt() and activity.run.countdown>0.0,"retry starts from fresh countdown")
 	var token: int=world.session._begin_transition("jeep_integration_probe")
 	await frames(2)
 	check(not activity.active,"real session transition token cancels attempt")

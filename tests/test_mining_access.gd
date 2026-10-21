@@ -43,7 +43,7 @@ func _run() -> void:
 		var b := Vector2(highway.points[i].x,highway.points[i].z)
 		junction_distance=minf(junction_distance,p.distance_to(Geometry2D.get_closest_point_to_segment(p,a,b)))
 	_check(junction_distance<.001 and is_zero_approx(start.y),"private access actually meets the highway at the same elevation")
-	region=REGION.build_region("desert",Vector3(-180,0,-1610))
+	region=REGION.build_region("desert",LAYOUT.GATE+Vector3(0,0,20))
 	root.add_child(region)
 	for frame in 900:
 		await physics_frame
@@ -53,7 +53,9 @@ func _run() -> void:
 	for road in region.map_routes():
 		if road.id=="mining_access": map_route=road
 	_check(not map_route.is_empty() and map_route.points==authored[0].points,"map/geography expose the same centreline as dirt geometry and clearance")
-	_check(not LAYOUT.reservation_clear(Vector2(-180,-1570),5) and not LAYOUT.reservation_clear(Vector2(LAYOUT.GATE.x,LAYOUT.GATE.z),5),"procedural props cannot occupy the access or entrance")
+	for path_point: Vector3 in authored[0].points:
+		_check(not LAYOUT.reservation_clear(Vector2(path_point.x,path_point.z),5),"procedural props cannot occupy authored mining approach: "+str(path_point))
+	_check(not LAYOUT.reservation_clear(Vector2(LAYOUT.GATE.x,LAYOUT.GATE.z),5),"procedural props cannot occupy the mining entrance")
 	if "--diagnostic-only" in OS.get_cmdline_user_args():
 		await _sweep("giant_diagnostic",Vector3(4.6,4.2,8.0),false)
 		region.free()
@@ -162,7 +164,7 @@ func _ensure_at(point: Vector3) -> void:
 	await physics_frame
 
 func _benches_and_camera() -> void:
-	var probes := [Vector3(-180,0,-1840),Vector3(-178,0,-1864),Vector3(-253,0,-1818),LAYOUT.SECRET_RETURN]
+	var probes := [LAYOUT.CENTER+Vector3(0,0,-80),LAYOUT.CENTER+Vector3(2,0,-104),LAYOUT.CENTER+Vector3(-73,0,-58),LAYOUT.SECRET_RETURN]
 	for point in probes:
 		region.set_focus(point)
 		region.prepare_collision_at(point)
@@ -174,7 +176,7 @@ func _benches_and_camera() -> void:
 		_check(not hit.is_empty() and absf(float(hit.position.y)-expected)<.04,"height API agrees with rendered terrain collision at "+str(point))
 	var camera := CAMERA.new()
 	var clearance_failures := 0
-	for point in [LAYOUT.SECRET_RETURN+Vector3.UP*.85,Vector3(-156,-27.15,-1780),Vector3(-180,-27.15,-1760)]:
+	for point in [LAYOUT.SECRET_RETURN+Vector3.UP*.85,LAYOUT.CENTER+Vector3(24,-27.15,-20),LAYOUT.CENTER+Vector3(0,-27.15,0)]:
 		for i in 8:
 			var offset := Vector3(0,25.3,25.3).rotated(Vector3.UP,float(i)*TAU/8.0)
 			camera.offset_for(point,offset,.1,true,true,Vector2(43,24),.1,point,.6,Vector3.ZERO)

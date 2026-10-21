@@ -50,7 +50,12 @@ func _initialize() -> void:
 		if child.has_meta("mountain_jeep_crest"): crests+=1
 		for body in child.find_children("*","CollisionShape3D",true,false):
 			if body.shape!=null: collision_count+=1
-	check(crests==2,"two separate real crests own trimesh collision")
+	check(crests==0,"jeep loop has no detached snow sheets or elevated colliders")
+	var grounded_gates := true
+	for gate in gates:
+		var point: Vector3 = gate.position
+		if absf(point.y-terrain.surface_height_at(Vector2(point.x,point.z)))>.02: grounded_gates=false
+	check(grounded_gates,"all jeep checkpoints rest on the terrain floor")
 	check(collision_count>=gates.size()*2,"visible gate supports have physical collision")
 	root3d.free()
 	print("MOUNTAIN_JEEP_COURSE_RESULT checks=%d failures=%d" % [checks,failures.size()])
