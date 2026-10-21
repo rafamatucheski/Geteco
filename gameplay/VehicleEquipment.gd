@@ -48,6 +48,7 @@ var _previous_speed := 0.0
 var _decelerating := false
 var _brake_hold := 0.0
 var _tail_state := -1
+var _tail_lens_preview := false
 var _lens_state := -1
 ## Facho único de NPC, centrado entre os faróis (metade das luzes por carro).
 var npc_beam: SpotLight3D
@@ -75,6 +76,14 @@ static var _marker_off: StandardMaterial3D
 func configure(vehicle: CharacterBody3D, scene: Node) -> void:
 	car = vehicle
 	world = scene
+
+## Workshop inspection exposes the lens finish while the physical service brake
+## keeps holding the car. This changes neither brake input nor other lighting.
+func set_tail_lens_preview(enabled: bool) -> void:
+	if _tail_lens_preview == enabled: return
+	_tail_lens_preview = enabled
+	_tail_state = -1
+	_refresh(false)
 
 func _ready() -> void:
 	if not is_instance_valid(car): return
@@ -489,14 +498,15 @@ func _refresh(force_budget: bool = true) -> void:
 		for marker in cab_markers: marker.material_override = _marker_on if markers_lit else _marker_off
 	# Lanterna traseira: acesa fraca à noite, forte na frenagem, apagada de dia.
 	# Carro estacionado sem motorista não "freia", mesmo com brake_input preso.
-	var braking: bool = car.health > 0 and (car.controlled or car.traffic) and (car.brake_input or car.blocked or _decelerating or (car.throttle_input < -.05 and car.speed > .5))
-	var tail_state := 2 if braking else (1 if lit else 0)
+	var braking: bool = not _tail_lens_preview and car.health > 0 and (car.controlled or car.traffic) and (car.brake_input or car.blocked or _decelerating or (car.throttle_input < -.05 and car.speed > .5))
+	var tail_lit: bool = lit and not _tail_lens_preview
+	var tail_state := 2 if braking else (1 if tail_lit else 0)
 	if tail_state != _tail_state:
 		_tail_state = tail_state
 		for index in tail_materials.size():
 			var material := tail_materials[index]
-			material.emission_enabled = lit or braking
-			material.emission_energy_multiplier = 2.5 if braking else (.9 if lit else 0.0)
+			material.emission_enabled = tail_lit or braking
+			material.emission_energy_multiplier = 2.5 if braking else (.9 if tail_lit else 0.0)
 			material.albedo_color = Color(1.0,.055,.025) if braking else _tail_colors[index]
 	var sounding := siren_on and occupied and not beacons.is_empty()
 	if is_instance_valid(siren_audio):

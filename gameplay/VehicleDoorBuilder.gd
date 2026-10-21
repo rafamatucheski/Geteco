@@ -173,6 +173,8 @@ static func _cut_part(part: MeshInstance3D, xf: Transform3D, spec: Dictionary, r
 		if _advance_part(work): return
 
 static func _begin_part(part: MeshInstance3D, xf: Transform3D, spec: Dictionary, destination: Result) -> Dictionary:
+	# Authored detachable panels and their internal supports are never door leaves.
+	if part.has_meta("breakaway_part_id") or part.get_meta("breakaway_hardware",false): return {}
 	var mesh: Mesh = part.get_meta("body_dents_rest_mesh",part.mesh)
 	var box: AABB = xf * mesh.get_aabb()
 	if box.end.z < spec.zf or box.position.z > spec.zr or box.end.y < spec.sill or box.position.y > spec.top: return {}

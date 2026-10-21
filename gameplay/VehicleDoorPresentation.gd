@@ -42,6 +42,7 @@ func configure(owner_vehicle: CharacterBody3D, deferred := false) -> void:
 		spec.fallback = true
 	var kind: String = vehicle.boarding_class()
 	angle = float(SPECS.OPEN_ANGLE.get(kind, 1.05))
+	if _configure_authored_civilian(): return
 	if vehicle.archetype == "sport_coupe":
 		var coupe_doors = preload("res://gameplay/VehicleCoupeDoors.gd").new()
 		add_child(coupe_doors)
@@ -55,6 +56,35 @@ func configure(owner_vehicle: CharacterBody3D, deferred := false) -> void:
 		coupe_doors.queue_free()
 	_job = BUILDER.begin(vehicle.visual, spec, float(spec.get("x", -1.0)))  # x da tabela evita a varredura de medição
 	if not deferred: finish_now()
+
+## The new civilian models ship complete two-sided leaves. Reuse the shared
+## geometry and instance-local paint instead of cutting the body at boarding.
+func _configure_authored_civilian() -> bool:
+	if vehicle.archetype not in preload("res://runtime/NewCivilianFleet.gd").IDS: return false
+	var leaves := {}
+	for child in vehicle.visual.get_children():
+		if not child is MeshInstance3D or not child.has_meta("new_civilian_door_side"): continue
+		var side := int(child.get_meta("new_civilian_door_side"))
+		if side not in [-1, 1] or leaves.has(side): return false
+		leaves[side] = child
+	if leaves.size() != 2: return false
+	for side in [-1, 1]:
+		var leaf: MeshInstance3D = leaves[side]
+		var hinge := Node3D.new()
+		hinge.name = "DriverDoorL" if side < 0 else "DriverDoorR"
+		hinge.position = leaf.get_meta("new_civilian_door_hinge")
+		add_child(hinge)
+		hinges[side] = hinge
+		var roles: Array[String] = []
+		for surface in leaf.mesh.get_surface_count():
+			roles.append(preload("res://runtime/VehicleSurfaceRoles.gd").key(leaf, surface))
+		leaf.set_meta("door_surface_material_keys", roles)
+		leaf.reparent(hinge, true)
+		leaf.name = "Skin"
+	_layout(float(spec.x))
+	seat_z = float(spec.get("seat_z", seat_z)) * vehicle.visual.scale.z
+	if is_instance_valid(vehicle.body_dents): vehicle.body_dents.geometry_changed()
+	return true
 
 ## Prepara mais um pedaço da porta dentro do orçamento (µs). Devolve true quando está pronta.
 func advance(budget_usec: int) -> bool:

@@ -1,6 +1,6 @@
 extends RefCounted
 ## Cosmetic history derived from the persisted identity. No health changes or frame work.
-const CIVILIAN := ["union_sedan", "sedan_classic", "metro_hatch", "station_wagon", "nordic_estate", "courier_van", "polar_van", "ranch_single", "ranch_pickup", "lumber_pickup_4x4", "atlas_crew_pickup", "sertao_trail_pickup", "sport_estate", "summit_suv", "vale_crossover"]
+const CIVILIAN := ["besouro_1300", "mare_microvan", "toco_minitruck", "union_sedan", "sedan_classic", "metro_hatch", "station_wagon", "nordic_estate", "courier_van", "polar_van", "ranch_single", "ranch_pickup", "lumber_pickup_4x4", "atlas_crew_pickup", "sertao_trail_pickup", "sport_estate", "summit_suv", "vale_crossover"]
 # Bed interior: floor height, center Z, usable width, usable length (model coordinates).
 const BEDS := {
 	"ranch_single": [.605, 1.35, 1.50, 1.70],

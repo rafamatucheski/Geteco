@@ -5,6 +5,7 @@ const SELF_RECOVERY_SECONDS := 45.0
 const GET_UP_SECONDS := 0.9
 const POSE := preload("res://gameplay/street_physics/BodyImpactPose3D.gd")
 const AUDIO := preload("res://audio/VehicleCrashAudio.gd")
+const RAGDOLL := preload("res://gameplay/street_physics/BodyRagdoll3D.gd")
 var actor: CharacterBody3D
 var director: Node
 var velocity := Vector3.ZERO
@@ -18,6 +19,10 @@ var impact_speed := 0.0
 ## Tempo mínimo no chão antes de levantar. 0 mantém o atropelamento como era; o arremesso do motorista
 ## puxado do carro usa ~1,3 s para a queda ler como queda, não como tropeço.
 var min_down := 0.0
+## Pedido de ragdoll (atropelamento). Sem corpo compatível ou acima do teto de ragdolls, segue o voo varrido.
+var ragdoll_requested := false
+var ragdoll: RefCounted
+var _impact := Vector3.ZERO
 var _visual_base := Transform3D.IDENTITY
 var _saved_layer := 2
 var _saved_mask := 7
@@ -53,6 +58,7 @@ func suspend_for_dispatch(state: Dictionary) -> void:
 	# A new solid inserted before suspension must not become an accepted baseline.
 	state.support = _ground_contact.duplicate() if _grounded and _support_matches(_ground_contact,_impact_transform()) else {}
 	set_physics_process(false)
+	if ragdoll != null: ragdoll.set_frozen(true)
 	if state.tween_running: _recovery_tween.pause()
 
 func resume_from_dispatch() -> void:
@@ -65,6 +71,7 @@ func resume_from_dispatch() -> void:
 	var state := _suspension
 	_suspension = {}
 	set_physics_process(bool(state.owner_physics))
+	if ragdoll != null: ragdoll.set_frozen(false)
 	if state.tween_running and _recovery_tween != null and _recovery_tween.is_valid(): _recovery_tween.play()
 
 func suspension_clear(exclude: Array[RID]) -> bool:
@@ -140,7 +147,7 @@ static func _capsule_minimum(hull: CapsuleShape3D, pose: Transform3D, axis: Vect
 	return pose.origin.dot(axis)-hull.radius*(pose.basis.transposed()*axis).length() \
 		-maxf(0.0,hull.height*.5-hull.radius)*absf(pose.basis.y.dot(axis))
 
-static func launch(p_actor: CharacterBody3D, impact_velocity: Vector3, p_lethal: bool, p_director: Node, p_source: Node) -> Node:
+static func launch(p_actor: CharacterBody3D, impact_velocity: Vector3, p_lethal: bool, p_director: Node, p_source: Node, p_ragdoll := false) -> Node:
 	if not is_instance_valid(p_actor) or not impact_velocity.is_finite(): return null
 	if preload("res://gameplay/DamageProtection.gd").is_protected(p_actor): return null
 	if p_actor.has_meta("street_down") or p_actor.get("dead") == true: return null
@@ -151,6 +158,8 @@ static func launch(p_actor: CharacterBody3D, impact_velocity: Vector3, p_lethal:
 	flight.lethal = p_lethal
 	flight.source = weakref(p_source) if is_instance_valid(p_source) else null
 	flight.impact_speed = impact_velocity.length()
+	flight.ragdoll_requested = p_ragdoll
+	flight._impact = impact_velocity
 	var flat := Vector3(impact_velocity.x, 0, impact_velocity.z)
 	var speed := minf(flat.length(), 37.5)
 	flight._heading = flat.normalized() if speed > .01 else Vector3.BACK
@@ -180,11 +189,19 @@ func _ready() -> void:
 		if child is CollisionShape3D:
 			_shapes.append({"node":child,"disabled":child.disabled})
 			child.disabled = true
-	_shape = CollisionShape3D.new()
 	var hull := CapsuleShape3D.new()
 	hull.radius = .38
 	hull.height = 1.85
 	_impact_hull = hull
+	if ragdoll_requested and is_instance_valid(visual) and RAGDOLL.available(visual):
+		ragdoll = RAGDOLL.new()
+		if ragdoll.build(self,visual,_impact,source.get_ref() if source != null else null):
+			# Antes do PoseDriver do Meshy (prioridade 0): o esqueleto copia as juntas no mesmo quadro.
+			process_priority = -1
+			return
+		ragdoll.dispose()
+		ragdoll = null
+	_shape = CollisionShape3D.new()
 	_shape.shape = hull
 	_shape.position = Vector3.UP*.4
 	_shape.basis = actor.global_basis.inverse()*Basis(Vector3.UP,_yaw)*Basis(Vector3.RIGHT,PI*.5)
@@ -192,8 +209,22 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	if not is_instance_valid(actor): queue_free(); return
-	if flying: _fly(delta)
+	if flying: _ragdoll_step(delta) if ragdoll != null else _fly(delta)
 	elif not lethal: _wait_for_help(delta)
+
+func _process(_delta: float) -> void:
+	if ragdoll != null and flying: ragdoll.present()
+
+func _ragdoll_step(delta: float) -> void:
+	_age += delta
+	if not ragdoll.step(delta,_ragdoll_audio): return
+	ragdoll.settle(actor)
+	_grounded = true
+	_land()
+
+func _ragdoll_audio(point: Vector3, speed: float) -> void:
+	var audio_context: Node3D = director if director is Node3D else actor
+	AUDIO.play_body_impact(audio_context,actor,point,speed,true)
 
 func _fly(delta: float) -> void:
 	_age += delta
@@ -226,6 +257,9 @@ func _fly(delta: float) -> void:
 	if _grounded and vertical == 0 and velocity.length() < .3 and _age > .35: _land()
 
 func _present(recovery := 0.0) -> void:
+	if ragdoll != null:
+		ragdoll.blend_to_initial(recovery)
+		return
 	var visual := actor_visual(actor)
 	if not is_instance_valid(visual): return
 	var fall := smoothstep(0.0,.38,_age)
@@ -288,6 +322,7 @@ func _restore() -> void:
 		_suspension = {}
 		return
 	_restore_shapes()
+	if ragdoll != null: ragdoll.dispose()
 	actor.remove_meta("street_pose_owned")
 	actor.remove_meta("street_flying")
 	actor.remove_meta("street_down")
@@ -306,7 +341,10 @@ func _restore() -> void:
 	actor.velocity = Vector3.ZERO
 	var visual := actor_visual(actor)
 	if is_instance_valid(visual): visual.transform = _visual_base
+	if ragdoll != null: ragdoll.restore_initial()
 	_pose.restore()
 
 func _exit_tree() -> void:
 	_restore()
+	# Morto (o corpo fica com a pose final) ou cancelado: o corpo rígido nunca sobrevive ao voo.
+	if ragdoll != null: ragdoll.dispose()

@@ -4,9 +4,13 @@ static func capture(car: CharacterBody3D, region: String) -> Dictionary:
 	var result := {"archetype":car.archetype,"vehicle_id":car.vehicle_id,"was_driven":car.controlled and not car.external_input,"paint":car.paint_color.to_html(true),"position":[car.position.x,car.position.y,car.position.z],"yaw":car.rotation.y,"health":car.health,"region":str(car.get_meta("region_id",region)),"equipment":car.equipment.snapshot() if is_instance_valid(car.equipment) else car.equipment_state.duplicate(true),"punctured_tires":int(car.get_meta("punctured_tires",0)),"heavy_crush_ratio":float(car.get_meta("heavy_crush_ratio",1.0))}
 	if car.has_method("fleet_snapshot_extras"): result.merge(car.fleet_snapshot_extras())
 	result["body_dents"] = car.body_dents.snapshot() if is_instance_valid(car.body_dents) else []
+	result["breakaway_parts"] = car.breakaway_parts.snapshot() if is_instance_valid(car.breakaway_parts) else {}
+	result["blood_stains"] = int(car.get_meta("blood_stains",0))
 	return result
 static func validate(data: Dictionary) -> bool:
+	if not preload("res://gameplay/vehicle_effects/VehicleBlood.gd").valid(data.get("blood_stains",0)): return false
 	if not preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd").valid_records(data.get("body_dents",[])): return false
+	if not preload("res://gameplay/vehicle_effects/VehicleBreakawayParts.gd").valid_state(data.get("breakaway_parts",{})): return false
 	if data.has("bus_work"):
 		if data.get("archetype","")!="biarticulated_510" or not data.bus_work is Dictionary: return false
 		for field in ["next_stop","stops","earned","laps"]:

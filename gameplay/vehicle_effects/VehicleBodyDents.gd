@@ -56,16 +56,18 @@ func restore_records(records: Array) -> void:
 	dents=records.duplicate(true)
 	if not dents.is_empty(): _prepare(); _rebuild()
 
-func impact(amount: float, point: Vector3) -> void:
+func impact(amount: float, point: Vector3, contact_inward := Vector3.ZERO) -> void:
 	if amount<2 or not is_finite(amount) or not point.is_finite(): return
 	if vehicle.archetype.begins_with("bike_") or vehicle.archetype in ["army_tank","biarticulated_510"]: return
 	var frontal:=absf(point.z)/maxf(vehicle.half_length,.1)>=absf(point.x)/maxf(vehicle.half_width,.1)
 	var direction:=Vector3(0,0,-signf(point.z)) if frontal else Vector3(-signf(point.x),0,0)
+	if contact_inward.is_finite() and contact_inward.length_squared()>.01:
+		direction=Vector3(contact_inward.x,0,contact_inward.z).normalized()
 	if direction.length_squared()<.5: return
 	point.x=clampf(point.x,-vehicle.half_width,vehicle.half_width)
 	point.z=clampf(point.z,-vehicle.half_length,vehicle.half_length)
 	point.y=clampf(point.y,.35,minf(.8,vehicle.body_height*.5))
-	var depth:=clampf(amount*.009,.025,.20)
+	var depth:=clampf(amount*.009,.025,.26 if contact_inward.length_squared()>.01 else .20)
 	var row: Dictionary={}
 	for existing in dents:
 		var old:=Vector3(existing.point[0],existing.point[1],existing.point[2])
@@ -99,13 +101,14 @@ func _prepare() -> void:
 		if "wheel" in path or "interior" in path or "rider" in path: continue
 		var eligible: Array[bool] = []
 		var painted:=false
+		var detachable:=part.has_meta("breakaway_part_id")
 		# Papel antes da geometria: peça sem pintura (vidro, farol, cromado) não lê arrays.
 		for surface in part.mesh.get_surface_count():
 			var material:=part.get_active_material(surface)
 			var role:=ROLES.key(part,surface).get_slice("#",0)
 			# A lista da pintura é tipada (StandardMaterial3D): procurar um ShaderMaterial (pintura
 			# molhada, para-brisa) nela registrava erro do motor a cada batida, sem mudar o resultado.
-			var is_paint: bool=role=="paint" or (vehicle._paint!=null and material is StandardMaterial3D and material in vehicle._paint.materials and role!="roof_paint")
+			var is_paint: bool=detachable or role=="paint" or (vehicle._paint!=null and material is StandardMaterial3D and material in vehicle._paint.materials and role!="roof_paint")
 			eligible.append(is_paint)
 			painted=painted or is_paint
 		if not painted: continue
@@ -157,12 +160,13 @@ func _rebuild(changed: Dictionary = {}) -> void:
 		dent_radii.append(float(row.radius))
 	for entry in parts:
 		var part: MeshInstance3D=entry.node
-		if not is_instance_valid(part): continue
+		if not is_instance_valid(part) or not part.visible: continue
 		if partial and entry.has("applied_mesh") and part.mesh==entry.applied_mesh and _outside(entry,changed_point,changed_radius): continue
 		var reuse: bool=partial and entry.has("applied_mesh") and part.mesh==entry.applied_mesh
 		var mesh:=ArrayMesh.new()
 		var transform: Transform3D=entry.transform
 		var inverse:=transform.affine_inverse()
+		var hood: bool=part.get_meta("breakaway_part_id","")=="hood"
 		if not entry.has("rest_points"): entry["rest_points"]=[]
 		if not entry.has("applied_vertices"): entry["applied_vertices"]=[]
 		for surface in entry.arrays.size():
@@ -184,13 +188,16 @@ func _rebuild(changed: Dictionary = {}) -> void:
 					var rest:=rest_points[index]
 					if applied!=null and rest.distance_squared_to(changed_point)>=radius_squared: continue
 					# Beltline/roof and cabin remain stable, including upper door frames.
-					var belt:=1.0-smoothstep(vehicle.body_height*.58,vehicle.body_height*.82,rest.y)
+					var belt:=1.0 if hood else 1.0-smoothstep(vehicle.body_height*.58,vehicle.body_height*.82,rest.y)
 					var displacement:=Vector3.ZERO
 					for dent in dent_points.size():
 						var distance:=rest.distance_to(dent_points[dent])/dent_radii[dent]
 						if distance>=1: continue
 						var weight:=pow(1.0-distance*distance,2)*belt
 						displacement+=dent_offsets[dent]*weight
+						# The engine cover buckles upward while the front edge compresses inward.
+						# Its rear stays attached through the same spatial falloff; roof/cabin do not lift.
+						if hood: displacement.y+=maxf(0.0,dent_offsets[dent].z)*weight*.55
 					if displacement.length()>MAX_DEPTH: displacement=displacement.normalized()*MAX_DEPTH
 					vertices[index]=inverse*(rest+displacement)
 				arrays[Mesh.ARRAY_VERTEX]=vertices

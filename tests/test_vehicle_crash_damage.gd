@@ -17,6 +17,10 @@ func check(condition: bool, label: String) -> void:
 		failures.append(label)
 		push_error(label)
 
+func trace_panel_materials(stage: String) -> void:
+	if "--trace-panel-materials" in OS.get_cmdline_user_args():
+		print("PANEL_MATERIAL_STAGE ",stage," physics_frame=",Engine.get_physics_frames()," debris=",get_nodes_in_group("vehicle_panel_debris").size())
+
 func run() -> void:
 	var world := Node3D.new()
 	root.add_child(world)
@@ -91,31 +95,42 @@ func run() -> void:
 		for frame in 60: await physics_frame
 		check(striking.health > striking.max_health * 0.5 and not striking.damage_look.burning,
 			"contato com a parede não drena vida quadro a quadro")
+	trace_panel_materials("before_repair_wall35")
 	striking.repair()
+	trace_panel_materials("after_repair_wall35")
 	striking.place(Vector3(0, 0.12, 0), 0)
 	striking.speed = 35.0
 	striking.horizontal_velocity = Vector3(0, 0, -35)
+	trace_panel_materials("before_wall35")
 	for frame in 60:
 		await physics_frame
 		if striking.health < striking.max_health: break
+	trace_panel_materials("after_wall35")
 	check(striking.health < striking.max_health and striking.health >= striking.max_health * 0.7 and not striking.damage_look.burning,
 		"batida forte contra parede não incendeia um carro íntegro")
 	wall.queue_free()
 	await physics_frame
+	trace_panel_materials("before_repair_cars35")
 	striking.repair()
 	struck.repair()
+	trace_panel_materials("after_repair_cars35")
 	striking.place(Vector3(0, 0.12, 0), 0)
 	struck.place(Vector3(0, 0.12, -12), 0)
 	striking.speed = 35.0
 	striking.horizontal_velocity = Vector3(0, 0, -35)
+	trace_panel_materials("before_cars35")
 	for frame in 60:
 		await physics_frame
 		if struck.health < struck.max_health: break
+	trace_panel_materials("after_cars35")
 	check(struck.health < struck.max_health and striking.health >= striking.max_health * 0.7
 		and struck.health >= struck.max_health * 0.7 and not striking.damage_look.burning and not struck.damage_look.burning,
 		"batida forte entre carros danifica ambos sem incêndio imediato")
+	trace_panel_materials("before_world_queue_free")
 	world.queue_free()
+	trace_panel_materials("after_world_queue_free")
 	await world.tree_exited
+	trace_panel_materials("after_world_tree_exited")
 	# Deletion and audio playback shutdown finish outside this physics callback.
 	await create_timer(.1).timeout
 	print("VEHICLE_CRASH_DAMAGE checks=10 failures=", failures.size())

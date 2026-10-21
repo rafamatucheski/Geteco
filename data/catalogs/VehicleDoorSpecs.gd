@@ -21,12 +21,12 @@ const DOORS := {
 	"digo_amarok_2014": {"class":"tall","zf":-1.03,"zr":.17,"sill":.49,"belt":1.23,"top":1.86,"x":.965},
 	"digo_gol_1993": {"zf": -.60, "zr": .62, "sill": .30, "belt": .91, "top": 1.43, "x": .82, "seat_z": .04},
 	# Sedãs da família "clássica": porta dianteira entre o capô e o pilar B.
-	"sedan_classic": {"zf": -.70, "zr": .12, "sill": .42, "belt": .78, "top": 1.36, "x": 0.89},
-	"union_sedan": {"alias": "sedan_classic"},
-	"taxi_yellow": {"alias": "sedan_classic", "x": 0.91},
-	"police_cruiser": {"alias": "sedan_classic"},
+	"sedan_classic": {"zf": -.70, "zr": .12, "sill": .42, "belt": .78, "top": 1.4412, "x": 0.89},
+	"union_sedan": {"alias": "sedan_classic", "top": 1.36},
+	"taxi_yellow": {"alias": "sedan_classic", "x": 0.91, "top": 1.36},
+	"police_cruiser": {"alias": "sedan_classic", "top": 1.36},
 	"metro_hatch": {"zf": -.55, "zr": .24, "sill": .42, "belt": .76, "top": 1.36, "x": 0.84},
-	"aurora_executive": {"zf": -.90, "zr": .25, "sill": .42, "belt": .82, "top": 1.38, "x": 0.98},
+	"aurora_executive": {"zf": -.90, "zr": .25, "sill": .42, "belt": .82, "top": 1.3016, "x": 0.98},
 	"orbita_micro": {"zf": -.65, "zr": .24, "sill": .40, "belt": .78, "top": 1.38, "x": 0.83},
 	"vale_crossover": {"class": "tall", "zf": -.80, "zr": -.05, "sill": .42, "belt": .90, "top": 1.56, "x": 0.99},
 	"nimbus_minivan": {"class": "tall", "zf": -1.55, "zr": -.61, "sill": .42, "belt": .98, "top": 1.85, "x": 0.98},
@@ -78,6 +78,7 @@ const DOORS := {
 const OPEN_ANGLE := {"car": 1.05, "tall": 1.10, "truck": 1.20}
 
 static func row(archetype: String) -> Dictionary:
+	if archetype in preload("res://runtime/NewCivilianFleet.gd").IDS: return preload("res://runtime/NewCivilianFleet.gd").door_spec(archetype)
 	if archetype in preload("res://gameplay/mining/MiningFleet.gd").IDS: return preload("res://gameplay/mining/MiningFleet.gd").door_spec(archetype)
 	if archetype in preload("res://gameplay/desert_cars/DesertCarCatalog.gd").IDS: return preload("res://gameplay/desert_cars/DesertCarCatalog.gd").door_spec(archetype)
 	var entry: Dictionary = DOORS.get(archetype, {})

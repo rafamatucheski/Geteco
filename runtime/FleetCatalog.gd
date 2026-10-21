@@ -1,5 +1,6 @@
 extends RefCounted
 const REDESIGNED := preload("res://runtime/RedesignedFleet.gd")
+const NEW_CIVILIANS := preload("res://runtime/NewCivilianFleet.gd")
 static var _data: Dictionary = {}
 ## Carro do Meshy no lugar do hatch de caixas (`metro_hatch`), piloto de veículos (docs/npc-meshy-carro-20261011.md).
 ## `GETECO_NO_MESHY_CARS=1` ou `meshy_cars = false` devolve o carro antigo, para comparar e como rollback.
@@ -30,6 +31,8 @@ static func all() -> Dictionary:
 			var tank: Dictionary = _data.police_cruiser.duplicate(true)
 			tank.merge({"id":"army_tank", "label":"Blindado do Exército", "colors":["64704eff"], "bounds_size":[3.18,2.85,5.3], "bounds_center":[0,1.425,0], "durability":3000, "damage_resistance":0.4, "mass":30.0, "max_speed":208.0, "acceleration":650.0, "braking":1100.0, "turn_speed":1.1, "drivetrain":"4x4", "engine_family":"tank", "roof_prop":"none"}, true)
 			_data["army_tank"] = tank
+			for id: String in NEW_CIVILIANS.IDS:
+				_data[id] = NEW_CIVILIANS.spec(id)
 			# O modelo do Meshy tem 3,04 m x 1,95 m: a colisão acompanha o desenho novo.
 			if meshy_cars and not REDESIGNED.contains("metro_hatch") and _data.has("metro_hatch") and ResourceLoader.exists(MESHY_CITYCAR):
 				_data["metro_hatch"].merge({"bounds_size": [1.95, 1.61, 3.04], "bounds_center": [0.0, 0.805, 0.0], "mesh_count": 5}, true)

@@ -163,7 +163,8 @@ func _hit_people(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> 
 			person.speed = minf(closing * 0.35, 8.0)
 			continue
 		var lethal := planar.length() >= LETHAL_SPEED and person.has_method("receive_damage")
-		FLIGHT.launch(person, planar, lethal, self, vehicle)
+		person.set_meta("vehicle_blood_side", preload("res://gameplay/vehicle_effects/VehicleBlood.gd").impact_side(vehicle, planar))
+		FLIGHT.launch(person, planar, lethal, self, vehicle, true)
 		var response := CRUSH.light_impact_response(vehicle, planar.length())
 		_scale_vehicle_speed(vehicle, 1.0 - 0.12 * response)
 		var point := person.global_position + Vector3.UP * 0.9
@@ -350,23 +351,29 @@ func _crash(vehicle: CharacterBody3D, other: CharacterBody3D, normal: Vector3, c
 func _stall_crash(vehicle: CharacterBody3D, other: CharacterBody3D, normal: Vector3, closing: float, point: Vector3, incoming: Vector3) -> void:
 	# Alvos protegidos continuam sendo sólidos, sem dano nem impulso disfarçado.
 	if PROTECTION.is_protected(other): return
-	# Apply damage here, behind the pair cooldown, instead of every contact frame.
-	var stage := STALL_WORK.begin()
-	var self_damage:=minf(closing * CRASH_DAMAGE_PER_SPEED, float(vehicle.get("max_health")) * CRASH_DAMAGE_MAX_RATIO)
-	if vehicle.has_method("receive_impact"): vehicle.receive_impact(self_damage,vehicle.to_local(point),other)
-	else: vehicle.receive_damage(self_damage,other)
-	STALL_WORK.finish_slow("street.crash.damage_self",stage,5000,vehicle)
-	stage = STALL_WORK.begin()
-	var other_damage:=minf(closing * CRASH_DAMAGE_PER_SPEED, float(other.get("max_health")) * CRASH_DAMAGE_MAX_RATIO)
-	if other.has_method("receive_impact"): other.receive_impact(other_damage,other.to_local(point),vehicle)
-	else: other.receive_damage(other_damage,vehicle)
-	STALL_WORK.finish_slow("street.crash.damage_other",stage,5000,other)
-	stage = STALL_WORK.begin()
+	# Predict the same resolved motion for detached parts before damage presentation.
+	# Applying gameplay velocity stays after damage, in the existing order.
 	var into := -normal
 	var mine := _vehicle_mass(vehicle)
 	var theirs := _vehicle_mass(other)
 	var impulse := (1.0 + CRASH_RESTITUTION) * closing / (1.0 / mine + 1.0 / theirs)
 	var push := into * impulse / theirs
+	var presentation_other: Vector3 = other.get("horizontal_velocity") + push
+	var after := incoming - into * impulse / mine
+	# Apply damage here, behind the pair cooldown, instead of every contact frame.
+	var stage := STALL_WORK.begin()
+	var self_damage:=minf(closing * CRASH_DAMAGE_PER_SPEED, float(vehicle.get("max_health")) * CRASH_DAMAGE_MAX_RATIO)
+	# Keep the uncapped physical severity for bodywork; mechanical health retains its balance.
+	# The contact normal points into this car; the other car receives the opposite direction.
+	if vehicle.has_method("receive_impact"): vehicle.receive_impact(self_damage,vehicle.to_local(point),other,closing,vehicle.global_basis.inverse()*normal,after)
+	else: vehicle.receive_damage(self_damage,other)
+	STALL_WORK.finish_slow("street.crash.damage_self",stage,5000,vehicle)
+	stage = STALL_WORK.begin()
+	var other_damage:=minf(closing * CRASH_DAMAGE_PER_SPEED, float(other.get("max_health")) * CRASH_DAMAGE_MAX_RATIO)
+	if other.has_method("receive_impact"): other.receive_impact(other_damage,other.to_local(point),vehicle,closing,other.global_basis.inverse()*-normal,presentation_other)
+	else: other.receive_damage(other_damage,vehicle)
+	STALL_WORK.finish_slow("street.crash.damage_other",stage,5000,other)
+	stage = STALL_WORK.begin()
 	var lever: Vector3 = point - other.global_position
 	lever.y = 0
 	var spin := clampf(lever.cross(push).y * 0.12, -3.5, 3.5)
@@ -375,7 +382,6 @@ func _stall_crash(vehicle: CharacterBody3D, other: CharacterBody3D, normal: Vect
 	_add_slide(other, Vector3.ZERO, spin)
 	# O move_and_slide já zerou a velocidade de quem bateu contra o corpo cinemático;
 	# devolve a parte que o momento preserva, sem empurrão para trás.
-	var after := incoming - into * impulse / mine
 	_set_impact_velocity(vehicle, after)
 	var self_lever: Vector3 = point - vehicle.global_position
 	self_lever.y = 0
@@ -462,6 +468,10 @@ func on_body_landed(actor: CharacterBody3D, lethal: bool, source: Node, impact_s
 			actor.collision_mask = 0
 			actor.set_physics_process(false)
 	var dead: bool = actor.get("dead") == true
+	if actor.has_meta("vehicle_blood_side"):
+		if dead and is_instance_valid(source) and source.has_method("restore_blood_stains"):
+			source.restore_blood_stains(int(source.get_meta("blood_stains", 0)) | int(actor.get_meta("vehicle_blood_side")))
+		actor.remove_meta("vehicle_blood_side")
 	# Centro no tronco: a queda da V2 desloca o corpo ~0,65 m para a frente.
 	blood.spawn_pool(actor.global_position + heading.normalized() * 0.6, dead, actor if _counts_as_corpse(actor) else null, heading)
 	_watch[actor.get_instance_id()] = {"health": float(actor.get("health")), "dead": dead}

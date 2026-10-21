@@ -4,6 +4,9 @@ extends RefCounted
 static var enabled := true
 static var _scenes: Dictionary = {}
 const MESH_COUNTS := {
+	"besouro_1300":10,
+	"mare_microvan":10,
+	"toco_minitruck":10,
 	"american_dump_truck":7,
 	"american_tanker_truck":7,
 	"arctic_jeep":10,
@@ -48,8 +51,8 @@ const MESH_COUNTS := {
 	"police_suv":5,
 	"police_transport":5,
 	"porto_rosso":5,
-	"ranch_pickup":10,
-	"ranch_single":10,
+	"ranch_pickup":7,
+	"ranch_single":7,
 	"rauhz_focus_mk1":5,
 	"rescue_pumper":5,
 	"sedan_classic":7,

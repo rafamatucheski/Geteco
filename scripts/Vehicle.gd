@@ -1,5 +1,8 @@
 extends CharacterBody3D
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+const DAMAGE_PANELS := preload("res://gameplay/vehicle_effects/VehiclePanelCatalog.gd")
+## Process-local comparison; normal gameplay uses the prototype on authored models.
+static var damage_prototype_enabled := not ("--vehicle-damage-baseline" in OS.get_cmdline_user_args())
 
 const VISUAL := preload("res://scripts/VehicleVisual.gd")
 const PROTECTION := preload("res://gameplay/DamageProtection.gd")
@@ -54,6 +57,7 @@ var health := 180.0
 var horizontal_velocity := Vector3.ZERO
 var damage_look: Node
 var body_dents: Node
+var breakaway_parts: Node
 var equipment: Node
 var effects: Node
 var equipment_state: Dictionary = {}
@@ -81,6 +85,7 @@ var _motorcycle_visual_rest := Transform3D.IDENTITY
 var _motorcycle_rear_contact := Vector3.ZERO
 var speed := 0.0
 var steering := 0.0
+var _motion_start_yaw := 0.0
 var throttle_input := 0.0
 var steer_input := 0.0
 var brake_input := false
@@ -192,7 +197,9 @@ func _ready() -> void:
 	rotation_shape.size = hull.size-Vector3(0,.15,0)
 	sensor_shape.size = Vector3(hull.size.x+.07,1.2,1)
 	traced = _trace_ready("spec",traced)
-	visual = preload("res://runtime/FleetCatalog.gd").create(archetype) if not specification.is_empty() else VISUAL.create(paint_color)
+	if damage_prototype_enabled and DAMAGE_PANELS.supports(archetype): visual = DAMAGE_PANELS.create(archetype)
+	if visual == null:
+		visual = preload("res://runtime/FleetCatalog.gd").create(archetype) if not specification.is_empty() else VISUAL.create(paint_color)
 	if variant_scale != Vector3.ONE:
 		visual.scale = variant_scale
 	traced = _trace_ready("visual",traced)
@@ -261,6 +268,11 @@ func _ready() -> void:
 	body_dents.name = "BodyDents"
 	body_dents.configure(self)
 	add_child(body_dents)
+	if visual.get_meta("breakaway_geometry_version",0)==1:
+		breakaway_parts = preload("res://gameplay/vehicle_effects/VehicleBreakawayParts.gd").new()
+		breakaway_parts.name = "BreakawayParts"
+		breakaway_parts.configure(self)
+		add_child(breakaway_parts)
 	_trace_ready("damage_look",traced)
 	if archetype == "army_tank":
 		tank_cannon = preload("res://gameplay/police_response/ground/TankCannon.gd").new()
@@ -463,6 +475,7 @@ func _stall_physics_tick(delta: float) -> void:
 		speed = move_toward(speed,0,20*delta)
 	stage = STALL_WORK.begin()
 	if traffic:
+		_motion_start_yaw = rotation.y
 		_traffic_rail_drive = rail_drive
 		_drive_traffic(delta)
 		_traffic_rail_drive = false
@@ -485,6 +498,7 @@ func _stall_physics_tick(delta: float) -> void:
 		return
 	var previous := global_position
 	var impact_speed := absf(speed)
+	var impact_direction := signf(speed)
 	var forward := -global_basis.z
 	if not _handling_frame:
 		var traction := .9 if controlled and brake_input and absf(speed)>5 else 9.0
@@ -534,7 +548,11 @@ func _stall_physics_tick(delta: float) -> void:
 			hit_vehicle = true
 			continue # StreetPhysics applies car-to-car damage once per actual impact.
 		if impact_speed > 4 and target is Node and target.has_method("receive_damage") and target != self and not PROTECTION.is_protected(target):
+			var living_person: bool = target is CharacterBody3D and target.get("dead") == false and target.get("health") != null
 			target.receive_damage(impact_speed*4,self)
+			if living_person and target.get("dead") == true:
+				var stains := preload("res://gameplay/vehicle_effects/VehicleBlood.gd")
+				restore_blood_stains(int(get_meta("blood_stains",0)) | stains.impact_side(self,forward * impact_direction))
 	if is_on_wall() and not hit_vehicle and impact_speed > 6 and impact_speed-absf(speed) > 4:
 		# O contato pode durar vários quadros; cobrar a batida apenas uma vez.
 		# Tempo da simulação: uma pausa de compilação de shader não é outra batida.
@@ -542,12 +560,16 @@ func _stall_physics_tick(delta: float) -> void:
 		if now-_last_wall_damage_frame >= ceili(WALL_DAMAGE_COOLDOWN_SECONDS * Engine.physics_ticks_per_second):
 			_last_wall_damage_frame = now
 			var local_pt := Vector3(0, 0, -half_length)
+			var local_inward := Vector3.BACK
+			var closing_speed := maxf(0.0,impact_speed-absf(speed))
 			for i in get_slide_collision_count():
 				var coll := get_slide_collision(i)
 				if not (coll.get_collider() is CharacterBody3D) and absf(coll.get_normal().y)<.5:
 					local_pt = to_local(coll.get_position())
+					local_inward = global_basis.inverse()*coll.get_normal()
+					closing_speed = maxf(0.0,-incoming_velocity.dot(coll.get_normal()))
 					break
-			receive_impact(minf((impact_speed-absf(speed))*WALL_DAMAGE_PER_SPEED, max_health*WALL_DAMAGE_MAX_RATIO), local_pt)
+			receive_impact(minf((impact_speed-absf(speed))*WALL_DAMAGE_PER_SPEED, max_health*WALL_DAMAGE_MAX_RATIO), local_pt, null, closing_speed, local_inward, horizontal_velocity)
 	STALL_WORK.finish_slow("vehicle.contacts", stage, 5000, self)
 	stage = STALL_WORK.begin()
 	STREET.vehicle_post_move(self,incoming_velocity,delta)
@@ -557,6 +579,12 @@ func _stall_physics_tick(delta: float) -> void:
 
 func _tick_motion_presentation(delta: float, motion: Vector3, incoming_velocity: Vector3, forward: Vector3) -> void:
 	var stage := STALL_WORK.begin()
+	if traffic:
+		# Heading error becomes tiny once the body tracks its route, even in a
+		# sustained bend. Match the wheels to the turn actually applied, including
+		# rail movement and collision-rejected turns, using the bicycle relation.
+		var travel := speed * delta
+		steering = clampf(atan(WHEELBASE * angle_difference(_motion_start_yaw, rotation.y) / travel), -0.48, 0.48) if absf(travel) > 0.001 else 0.0
 	wheel_spin += motion.dot(forward)/0.355
 	_burnout_wheel_spin = fposmod(_burnout_wheel_spin + burnout_strength()*32.0*delta, TAU)
 	for pivot in wheels:
@@ -1289,15 +1317,30 @@ func ensure_equipment(world: Node) -> Node:
 	if not equipment_state.is_empty(): equipment.restore_state(equipment_state)
 	return equipment
 
-func receive_impact(amount: float, local_point: Vector3, source: Node = null) -> void:
+func receive_impact(amount: float, local_point: Vector3, source: Node = null, closing_speed := -1.0, local_normal := Vector3.ZERO, presentation_velocity := Vector3.INF) -> void:
 	if not is_finite(amount) or amount <= 0 or not local_point.is_finite() or health <= 0 or PROTECTION.is_protected(self): return
-	if is_instance_valid(body_dents): body_dents.impact(amount * damage_resistance, local_point)
+	if not is_finite(closing_speed) or not local_normal.is_finite(): return
+	var inward := Vector3(local_normal.x,0,local_normal.z).normalized()
+	var visual_amount := amount*damage_resistance
+	if damage_prototype_enabled and closing_speed>=0:
+		# HP remains balanced for long chases; the sheet metal responds to actual closing speed.
+		visual_amount = maxf(visual_amount,maxf(0.0,closing_speed-3.0)*1.2*damage_resistance)
+	if is_instance_valid(body_dents): body_dents.impact(visual_amount,local_point,inward if damage_prototype_enabled and closing_speed>=0 else Vector3.ZERO)
+	if damage_prototype_enabled and closing_speed>=0 and is_instance_valid(breakaway_parts):
+		breakaway_parts.impact(local_point,closing_speed,inward,presentation_velocity)
 	if is_instance_valid(equipment) and equipment.has_method('receive_impact'):
 		equipment.receive_impact(local_point, amount)
 	receive_damage(amount, source)
 
-func restore_body_dents(records: Array) -> void:
+func restore_blood_stains(mask: int) -> void:
+	preload("res://gameplay/vehicle_effects/VehicleBlood.gd").apply(self, mask)
+
+func restore_body_dents(records: Array, panel_state: Dictionary = {}) -> void:
+	if not preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd").valid_records(records) or not preload("res://gameplay/vehicle_effects/VehicleBreakawayParts.gd").valid_state(panel_state): return
+	# Restore geometry first, then hide absent panels. No debris or collision event is replayed.
+	if is_instance_valid(breakaway_parts): breakaway_parts.repair()
 	if is_instance_valid(body_dents): body_dents.restore_records(records)
+	if is_instance_valid(breakaway_parts): breakaway_parts.restore_state(panel_state)
 
 func receive_damage(amount: float, _source: Node = null) -> void:
 	if not is_finite(amount) or amount <= 0 or health <= 0 or PROTECTION.is_protected(self): return
@@ -1359,3 +1402,4 @@ func repair() -> void:
 	health = max_health
 	if is_instance_valid(body_dents): body_dents.clear()
 	if is_instance_valid(damage_look): damage_look.restore()
+	if is_instance_valid(breakaway_parts): breakaway_parts.repair()
