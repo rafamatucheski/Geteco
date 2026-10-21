@@ -71,8 +71,9 @@ static func adopt_detached_leaf(node: Node) -> bool:
 
 ## Libera tudo agora (fim de sessão, testes).
 static func flush() -> void:
-	for node in _roots:
-		if is_instance_valid(node): node.queue_free()
+	# Variant: a raiz pode já ter sido liberada por fora (ver _drain_roots).
+	for node: Variant in _roots:
+		if is_instance_valid(node): (node as Node).queue_free()
 	_roots.clear()
 	_stack.clear()
 	for entry in _orphans:
@@ -116,19 +117,26 @@ static func _tick() -> void:
 	_drain_roots(began)
 	_release_orphans()
 
+## Os nós entregues podem ser liberados por fora no meio da desmontagem (troca do Main na recarga, parte
+## da cena antiga liberada antes do galho). Lê como Variant e só tipa depois de is_instance_valid: atribuir
+## uma instância já liberada a uma variável Node é erro de execução, que abortava esta função no mesmo
+## ponto a cada quadro; a fila travava para sempre e nada mais era liberado (milhares de "previously freed
+## instance" no teste do ato 2, 20/10; tests/test_gpu_release_scene_swap.gd).
 static func _drain_roots(began: int) -> void:
 	while not _roots.is_empty():
-		var root: Node = _roots[0]
-		if not is_instance_valid(root):
+		var root_value: Variant = _roots[0]
+		if not is_instance_valid(root_value):
 			_roots.pop_front()
 			_stack.clear()
 			continue
+		var root: Node = root_value
 		if _stack.is_empty(): _stack.append(root)
 		while not _stack.is_empty():
-			var top: Node = _stack.back()
-			if not is_instance_valid(top):
+			var top_value: Variant = _stack.back()
+			if not is_instance_valid(top_value):
 				_stack.pop_back()
 				continue
+			var top: Node = top_value
 			var count := top.get_child_count()
 			if count == 0:
 				_stack.pop_back()
