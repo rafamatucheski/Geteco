@@ -6,6 +6,8 @@ var failures: Array[String] = []
 func _initialize() -> void:
 	# Este teste confere a abertura: o runner a pula por padrão (Arrival.skip_opening).
 	OS.set_environment("GETECO_SKIP_OPENING", "0")
+	# O prólogo jogável (BlitzScene) tem teste próprio: aqui cai direto no filme da balsa.
+	OS.set_environment("GETECO_SKIP_PROLOGUE", "1")
 	run.call_deferred()
 
 func check(value: bool, message: String) -> void:

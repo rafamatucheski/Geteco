@@ -28,6 +28,7 @@ cd "$(dirname "$0")/.."
 
 FAST=(
 	"headless|tests/test_core_contracts.gd|"
+	"headless|tests/test_prologue_save_contract.gd|"
 	"headless|tests/test_session_cleanup_registry.gd|"
 	"headless|tests/test_orphan_save_slots.gd|"
 	"headless|tests/test_full_save.gd|"
