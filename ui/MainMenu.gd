@@ -145,7 +145,20 @@ func _show_slots(new_game: bool) -> void:
 		button.disabled = (row.exists and not row.reusable) if new_game else not row.valid
 		if not button.disabled: enabled_options += 1
 		button.pressed.connect(func(): _start(str(row.id), new_game))
-		%SlotListContainer.add_child(button)
+		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		if row.id == "progress" or not row.exists:
+			%SlotListContainer.add_child(button)
+		else:
+			# Slot numerado ocupado ganha "APAGAR", com confirmação, para liberar espaço.
+			var line := HBoxContainer.new()
+			line.add_child(button)
+			var erase := Button.new()
+			erase.text = "APAGAR"
+			erase.custom_minimum_size = Vector2(120, 58)
+			erase.pressed.connect(func(): _confirm_delete(str(row.id), new_game))
+			line.add_child(erase)
+			%SlotListContainer.add_child(line)
+			AUDIO.hook_button(erase, self)
 		AUDIO.hook_button(button, self)
 	if enabled_options == 0:
 		%LabelLoadStatus.text = "Não há slot vazio disponível. Feche esta tela para preservar os jogos existentes." if new_game else "Não há progresso válido disponível para carregar."
@@ -154,6 +167,29 @@ func _show_slots(new_game: bool) -> void:
 	STYLE.apply(%LoadPanel)
 	btn_import.disabled = false
 	STYLE.trap_focus(%LoadPanel)
+
+func _confirm_delete(id: String, new_game: bool) -> void:
+	var dialog := ConfirmationDialog.new()
+	dialog.title = "Apagar save"
+	dialog.dialog_text = "Apagar o %s? O progresso deste slot sai da lista.\nOs arquivos ficam guardados na pasta saves/apagados." % id.replace("slot_0", "Slot ")
+	dialog.ok_button_text = "Apagar"
+	dialog.cancel_button_text = "Cancelar"
+	dialog.confirmed.connect(func(): _delete_slot(id, new_game))
+	dialog.canceled.connect(dialog.queue_free)
+	dialog.confirmed.connect(dialog.queue_free)
+	add_child(dialog)
+	dialog.popup_centered()
+
+func _delete_slot(id: String, new_game: bool) -> void:
+	var launch = get_node("/root/V2Launch")
+	var error: Error = launch.delete_slot(id)
+	latest_save = launch.latest_slot()
+	btn_continue.visible = not latest_save.is_empty()
+	_show_slots(new_game)
+	if error != OK:
+		%LabelLoadStatus.text = "Não foi possível apagar tudo deste slot (%d)." % error
+	else:
+		%LabelLoadStatus.text = "Slot apagado. " + %LabelLoadStatus.text
 
 func _close_slots() -> void:
 	if starting: return

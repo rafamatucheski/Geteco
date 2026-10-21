@@ -87,6 +87,29 @@ func list_slots() -> Array[Dictionary]:
 			"recovery_dropped": recovery.get("dropped", [])})
 	return result
 
+## Apaga um slot numerado liberando-o para novo jogo. Os arquivos não são destruídos: vão para
+## saves/apagados/ com carimbo de hora, para o jogador conseguir desfazer um engano à mão.
+func delete_slot(id: String) -> Error:
+	if id not in SLOT_IDS: return ERR_INVALID_PARAMETER
+	var path := slot_path(id)
+	var folder := path.get_base_dir()
+	var stem := path.get_file()
+	var directory := DirAccess.open(folder)
+	if directory == null: return ERR_FILE_CANT_OPEN
+	var trash := folder + "/apagados"
+	var stamp := Time.get_datetime_string_from_system().replace(":", "").replace("-", "")
+	var result := OK
+	# Leva junto .bak, .tmp, .pre-recovery e sobras .corrupt: sobra de um slot apagado travaria o slot vazio.
+	for file in directory.get_files():
+		if not file.begins_with(stem): continue
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(trash))
+		var error := DirAccess.rename_absolute(ProjectSettings.globalize_path(folder + "/" + file),
+			ProjectSettings.globalize_path(trash + "/" + stamp + "_" + file))
+		if error != OK: result = error
+	_recovery_cache.erase(path)
+	if result != OK: push_warning("Apagar %s falhou em parte (%d)" % [id, result])
+	return result
+
 func latest_slot() -> Dictionary:
 	var latest: Dictionary = {}
 	for row in list_slots():
