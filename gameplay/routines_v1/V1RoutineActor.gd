@@ -70,6 +70,11 @@ func _build_model() -> void:
 	if definition.get("kind","") == "dock_worker":
 		model = preload("res://gameplay/routines_v1/DockWorkerModel.gd").new()
 		model.worker_index = int(definition.get("worker_index",0))
+	elif definition.get("body","") == "mountain_villager":
+		model = preload("res://gameplay/routines_v2/MountainVillagerModel.gd").new()
+		model.appearance_variant = int(definition.get("appearance_variant",0))
+		model.is_female = str(definition.get("display_name","")).to_upper() in ["NORA","LIA","INÊS","HELENA","RUTE","ÍRIS","DORA","ANA","MILA","LUÍSA","CECÍLIA"]
+		model.coat_color = definition.get("coat_color",Color("3f6872"))
 	else:
 		model = preload("res://assets/regions/source/world/mountain_pass/WinterResidentModel.gd").new()
 		model.role = str(definition.get("role","ranger"))
@@ -189,8 +194,6 @@ func _tick_mountain_routine(delta: float) -> void:
 	if routine_cycle % 3 != 0 and _choose_wander_target():
 		travel_left = 10.0
 		_set_activity("walk",travel_left)
-	elif definition.get("role","") == "logger" and routine_cycle % 3 == 0:
-		_set_activity("work",rng.randf_range(6.0,10.0))
 	else:
 		_set_activity("drink" if routine_cycle % 2 == 1 else "warm",rng.randf_range(5.0,9.0))
 

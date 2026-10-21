@@ -3,6 +3,7 @@ extends Node
 ## varredura pequena a cada 0,25 s fica ativa; atores distantes deixam a arvore.
 
 const CATALOG := preload("res://gameplay/routines_v1/RoutineCatalog.gd")
+const VILLAGERS := preload("res://gameplay/routines_v2/MountainVillagerCatalog.gd")
 const ACTOR := preload("res://gameplay/routines_v1/V1RoutineActor.gd")
 const PORT_WORKER := preload("res://gameplay/urban_v1/PortWorker.gd")
 const MOUNTAIN_RESIDENT := preload("res://gameplay/routines_v1/MountainResident.gd")
@@ -27,6 +28,7 @@ func configure(owner_world, owner_session, owner_controller) -> void:
 	controller = owner_controller
 	name = "V1RoutineDirector"
 	definitions = CATALOG.definitions()
+	definitions.append_array(VILLAGERS.definitions())
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_PAUSABLE

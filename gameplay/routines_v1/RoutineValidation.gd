@@ -53,6 +53,7 @@ func _run() -> void:
 
 func _catalog_contract() -> void:
 	var definitions: Array[Dictionary] = CATALOG.definitions()
+	definitions.append_array(preload("res://gameplay/routines_v2/MountainVillagerCatalog.gd").definitions())
 	var ship := definitions.filter(func(item): return str(item.id).begins_with("harbor_ship_dock_operator_"))
 	var south := definitions.filter(func(item): return str(item.id).begins_with("south_port_worker_"))
 	var mountain := definitions.filter(func(item): return str(item.id).begins_with("mountain_resident_"))
