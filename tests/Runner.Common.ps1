@@ -7,6 +7,7 @@ function Get-DispatchManifest {
         emergency = @{ script = 'test_dispatch_emergency'; tag = 'DISPATCH_EMERGENCY'; minimum = 58; groups = @('service_medic','service_fire','service_mortician','crew_limit_and_cooldown','mortician_policy','mortician_wreck') }
         lifecycle = @{ script = 'test_dispatch_lifecycle'; tag = 'DISPATCH_LIFECYCLE'; minimum = 40; groups = @('incident_removed_while_enroute','incident_removed_while_working','cancel_api','suspension_and_resume','suspension_recycles','detour_around_wall','no_road_access','crew_killed','vehicle_wrecked','patient_dies_during_care','suspension_of_people','dismiss_and_wrecks','controller_leaves_tree','no_crime_from_dispatch_vehicle') }
         integration = @{ script = 'test_dispatch_integrated_pursuit'; tag = 'DISPATCH_INTEGRATION'; minimum = 14; groups = @() }
+        gta = @{ script = 'test_dispatch_gta_chase'; tag = 'DISPATCH_GTA'; minimum = 45; groups = @('rules','chase_gta','recycle','spawn_ahead','search_fan','roadblock_ahead','blocker','busted_in_car','chase_old','toggle_off') }
     }
 }
 

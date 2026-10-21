@@ -1,5 +1,12 @@
 # Resposta policial — 28/09/2026
 
+> **21/10/2026 — perseguição de carro estilo GTA.** Rota aberta à frente do alvo, contato (PIT,
+> flanco, interceptação), bloqueador de cruzamento, reciclagem da viatura deixada para trás,
+> nascimento à frente, área de busca com cones de visão no minimapa, bloqueio com pregos a partir
+> de 3 estrelas no caminho previsto, prisão dentro do carro parado com 1–2 estrelas e rádio da
+> central no HUD. Regras e números em [gameplay/dispatch/README.md](../gameplay/dispatch/README.md),
+> seção "Perseguição de carro estilo GTA". `GETECO_GTA_CHASE=0` desliga tudo isso.
+
 ## Balanceamento e fuga — 02/10/2026
 
 Revisão solicitada para tornar a escalada gradual e a fuga legível. A implementação anterior descrita abaixo é histórica; estas regras substituem sua pontuação, fuga e chegada de especialistas.

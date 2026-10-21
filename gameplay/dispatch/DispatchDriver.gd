@@ -8,6 +8,7 @@ const OVERTAKE := preload("res://gameplay/dispatch/overtaking/OvertakeController
 const OVERTAKE_RULES := preload("res://gameplay/dispatch/overtaking/OvertakeRules.gd")
 const TRACE := preload("res://gameplay/dispatch/DispatchTrace.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+const PURSUIT := preload("res://gameplay/dispatch/PursuitRules.gd")
 
 signal replan_requested(reason: String)
 signal gave_up(reason: String)
@@ -52,6 +53,24 @@ var _last_frame := -1
 var _sensor := BoxShape3D.new()
 var _rear_sensor := BoxShape3D.new()
 
+# --- Perseguição estilo GTA (PursuitRules; tudo desligado por padrão, a unidade liga) ---
+## Rota aberta: sem frenagem até o fim enquanto a unidade replaneja antes de ele chegar.
+var open_route := false
+## Corpo perseguido: não conta como obstáculo para o sensor frontal (senão a viatura freia
+## a ~27 m dele a 20 m/s e nunca encosta). O guiamento decide se cola, raspa ou faz PIT.
+var target_body: CollisionObject3D
+## Guiamento direto: segue `guide_point` a `guide_speed` em vez da rota.
+var guidance := false
+var guide_point := Vector3.ZERO
+var guide_speed := 0.0
+## Velocidade de curva pela curvatura da rota à frente (no lugar do piso fixo de 4 m/s).
+var curvature_limit := false
+## Fator de recuperação fora da câmera sobre teto e aceleração (1 = nenhum).
+var boost := 1.0
+var _corner_cap := INF
+var _base_acceleration := -1.0
+var _base_max_speed := -1.0
+
 func setup(p_vehicle: CharacterBody3D, p_speed_cap: float, p_stall_seconds: float) -> void:
 	vehicle = p_vehicle
 	speed_cap = p_speed_cap
@@ -60,6 +79,24 @@ func setup(p_vehicle: CharacterBody3D, p_speed_cap: float, p_stall_seconds: floa
 	vehicle.set_external_driver(true)
 	_sensor.size = Vector3(vehicle.half_width * 2.0 + 0.1, 1.2, 1.0)
 	_rear_sensor.size = Vector3(vehicle.half_width * 2.0, 1.0, REVERSE_CLEARANCE)
+	_base_acceleration = float(vehicle.drive_acceleration)
+	_base_max_speed = float(vehicle.max_forward_speed)
+
+## Teto e aceleração com o fator de recuperação. O teto físico do Vehicle sobe junto só o
+## necessário para o piloto alcançar `speed_cap × boost` (nunca abaixo da ficha).
+func set_boost(value: float) -> void:
+	if not is_instance_valid(vehicle) or _base_acceleration < 0.0: return
+	value = maxf(1.0, value)
+	if is_equal_approx(value, boost) and vehicle.max_forward_speed >= minf(speed_cap * value, 45.0) - 0.01: return
+	boost = value
+	vehicle.drive_acceleration = _base_acceleration * value
+	vehicle.max_forward_speed = maxf(_base_max_speed, minf(speed_cap * value, 45.0))
+
+## Perseguição de um carro: rota aberta e o alvo fora do sensor. Desligar também solta o guiamento.
+func set_pursuit(active: bool, target: CollisionObject3D = null) -> void:
+	open_route = active
+	target_body = target if active else null
+	if not active: guidance = false
 
 ## Liga a ultrapassagem sobre o grafo real (o mesmo NativeTrafficRoutes do
 ## despacho). Sem chamada explícita, o primeiro tick tenta descobrir o grafo em
@@ -102,6 +139,9 @@ func set_route(curve: Curve3D) -> void:
 	route = curve
 	offset = 0.0
 	remaining = curve.get_baked_length() if curve != null else INF
+	# Rota nova: a curvatura medida era da anterior; o próximo tick mede de novo.
+	_corner_cap = INF
+	if curvature_limit: _sensor_clock = 0.0
 	stalled = 0.0
 	blocked_wait = 0.0
 	reversing = false
@@ -179,13 +219,18 @@ func _stall_tick(delta: float) -> void:
 	TRACE.end("driver.closest_offset", traced)
 	remaining = length - offset if route != null else INF
 	_sensor_clock -= delta
+	var corner_due := false
 	if _sensor_clock <= 0.0:
 		_sensor_clock = SENSOR_INTERVAL
+		corner_due = curvature_limit
 		var sensing := TRACE.begin()
 		blocked_ahead = _obstacle_ahead()
 		TRACE.end("driver.obstacle_sensor", sensing)
 	if reversing:
 		_reverse(delta)
+		return
+	if guidance and route != null:
+		_guide(delta)
 		return
 	# Caminho seguido: a rota principal ou, durante uma ultrapassagem, o desvio.
 	var path: Curve3D = route
@@ -214,7 +259,12 @@ func _stall_tick(delta: float) -> void:
 	if path.point_count < 2 or path_length < 0.25:
 		_brake(delta)
 		return
-	var lookahead := clampf(2.5 + absf(vehicle.speed) * 0.45, 3.0, 9.0)
+	# Na perseguição o alcance do olhar cresce até 12 m: a 30 m/s, 9 m (0,3 s) fazia a viatura serpentear.
+	var lookahead := clampf(2.5 + absf(vehicle.speed) * 0.45, 3.0, 12.0 if curvature_limit else 9.0)
+	if corner_due:
+		var cornering := TRACE.begin()
+		_corner_cap = _corner_speed(path, path_offset, path_length)
+		TRACE.end("driver.corner_scan", cornering)
 	var target := path.sample_baked(minf(path_offset + lookahead, path_length), true)
 	var beyond := path.sample_baked(minf(path_offset + lookahead + 6.0, path_length), true)
 	var position := vehicle.global_position
@@ -229,8 +279,12 @@ func _stall_tick(delta: float) -> void:
 	if leg.length_squared() > 0.25:
 		bend = absf(to_target.normalized().signed_angle_to(leg.normalized(), Vector3.UP))
 	var desired := lerpf(speed_cap, 4.0, clampf(bend / 0.9, 0.0, 1.0))
-	# Frenagem até o fim da rota: v² = 2·a·d, com folga de 0,8 m.
-	desired = minf(desired, sqrt(maxf(0.0, 2.0 * BRAKE_DECELERATION * 0.7 * (remaining - 0.8))))
+	# Perseguição: a curva limita pela curvatura medida à frente (v = √(a·R)), não pelo piso de 4 m/s.
+	if curvature_limit: desired = minf(speed_cap * boost, _corner_cap)
+	# Frenagem até o fim da rota: v² = 2·a·d, com folga de 0,8 m. Com rota aberta a unidade
+	# replaneja antes do fim; frear para o ponto onde o alvo ESTAVA era o "anda e freia".
+	if not open_route or remaining <= PURSUIT.OPEN_ROUTE_BRAKE:
+		desired = minf(desired, sqrt(maxf(0.0, 2.0 * BRAKE_DECELERATION * 0.7 * (remaining - 0.8))))
 	if blocked_ahead: desired = 0.0
 	desired = minf(desired, speed_limit)
 	var steer_command := clampf(atan2(2.0 * WHEELBASE * sin(alpha), maxf(lookahead, 1.0)) / MAX_STEER, -1.0, 1.0)
@@ -328,10 +382,62 @@ func _obstacle_ahead() -> bool:
 	query.shape = _sensor
 	query.transform = Transform3D(vehicle.global_basis, vehicle.global_position - vehicle.global_basis.z * (vehicle.half_length + length * 0.5) + Vector3.UP * 0.8)
 	query.collision_mask = 7
-	query.exclude = _excluded()
+	var excluded := _excluded()
+	# Só o sensor frontal ignora o alvo; a ultrapassagem continua o enxergando como obstáculo.
+	if is_instance_valid(target_body): excluded.append(target_body.get_rid())
+	query.exclude = excluded
 	var hits: Array = vehicle.get_world_3d().direct_space_state.intersect_shape(query,1)
 	blocker = hits[0].collider if not hits.is_empty() else null
 	return blocker!=null
+
+## Velocidade máxima para a curvatura da rota à frente, já descontada a frenagem até cada ponto.
+## Amostra a cada CORNER_STEP até a distância de frenagem + folga (no máximo ~30 amostras).
+func _corner_speed(path: Curve3D, path_offset: float, path_length: float) -> float:
+	var speed_now := absf(vehicle.speed)
+	var scan := clampf(speed_now * speed_now / (2.0 * PURSUIT.CORNER_DECEL) + 12.0, PURSUIT.CORNER_SCAN_MIN, PURSUIT.CORNER_SCAN_MAX)
+	var step := PURSUIT.CORNER_STEP
+	var limit := INF
+	var previous := path.sample_baked(path_offset, true)
+	var current := path.sample_baked(minf(path_offset + step, path_length), true)
+	var travelled := step
+	while travelled < scan and path_offset + travelled + step <= path_length:
+		var next := path.sample_baked(path_offset + travelled + step, true)
+		var incoming := current - previous
+		var outgoing := next - current
+		incoming.y = 0.0
+		outgoing.y = 0.0
+		if incoming.length_squared() > 0.01 and outgoing.length_squared() > 0.01:
+			var curvature := absf(incoming.signed_angle_to(outgoing, Vector3.UP)) / step
+			var allowed := PURSUIT.corner_speed(curvature)
+			if allowed < INF: limit = minf(limit, PURSUIT.brake_window(allowed, travelled - step))
+		previous = current
+		current = next
+		travelled += step
+	return maxf(limit, PURSUIT.MIN_CORNER_SPEED)
+
+## Guiamento direto até `guide_point` (o alvo ou um ponto no carro dele), fora da rota. A rota
+## continua acompanhada (`offset`/`remaining`) para a volta a ela ser imediata.
+func _guide(delta: float) -> void:
+	var position := vehicle.global_position
+	var forward := -vehicle.global_basis.z
+	var to_point := guide_point - position
+	to_point.y = 0.0
+	var distance := to_point.length()
+	if distance < 0.05: to_point = forward
+	var alpha := forward.signed_angle_to(to_point.normalized(), Vector3.UP)
+	var steer_command := clampf(atan2(2.0 * WHEELBASE * sin(alpha), maxf(distance, 2.0)) / MAX_STEER, -1.0, 1.0)
+	var desired := minf(guide_speed, speed_cap * boost)
+	# Ponto muito de lado (> ~70°): curva fechada devagar, como o retorno da rota.
+	if absf(alpha) > 1.2: desired = minf(desired, 6.0)
+	if blocked_ahead: desired = 0.0
+	vehicle.steer_input = steer_command
+	if vehicle.speed < -0.2: vehicle.steer_input = -vehicle.steer_input
+	if vehicle.speed > desired + 0.6:
+		vehicle.throttle_input = 0.0
+		vehicle.brake_input = true
+	else:
+		vehicle.throttle_input = clampf((desired - vehicle.speed) * 0.9, 0.0, 1.0)
+	_track_stall(delta, desired, alpha)
 
 func _rear_clear() -> bool:
 	var query := PhysicsShapeQueryParameters3D.new()

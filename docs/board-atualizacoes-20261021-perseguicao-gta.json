@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-21",
+  "period": "2026-10-21",
+  "scope": "Polícia: perseguição de carro estilo GTA (fases 1 a 3 da avaliação de 21/10). Verificado por testes de laboratório e pela suíte do despacho; ninguém jogou com controle.",
+  "cards": [
+    {
+      "id": "perseguicao-gta-20261021",
+      "title": "Perseguição policial de carro estilo GTA",
+      "status": "implemented",
+      "area": "gameplay",
+      "description": "A avaliação por leitura do código mostrou a perseguição se sabotando: rota que terminava e freava onde o jogador estava, sensor frontal que freava diante do carro dele (nunca encostava), teto de 21/25 m/s e curva a 4 m/s, viatura deixada para trás congelada segurando a vaga por 45 s e reforço nascendo atrás. Agora: rota aberta à frente do alvo com replanejamento por evento; teto 30/34 m/s, curva pela curvatura e recuperação fora da câmera; guiamento final perto do alvo (cola atrás com 1 estrela, PIT/flanco/interceptação com 2+ ou força autorizada); bloqueador que para no próximo cruzamento quando chega antes; viatura deixada para trás é reciclada e o reforço nasce à frente; busca em leque numa área por estrela, com a fuga mais lenta dentro dela; visão em cone; fora do asfalto com linha de visão; bloqueio com pregos a partir de 3 estrelas no caminho previsto; prisão dentro do carro parado com 1-2 estrelas; viaturas, cones e área no minimapa; rádio da central no HUD e em voz (ElevenLabs, filtro de rádio e chiado; só frases-base e sentidos em PT-BR, a cota acabou no meio do lote). GETECO_GTA_CHASE=0 volta tudo ao comportamento anterior.",
+      "sources": [
+        "gameplay/dispatch/PursuitRules.gd",
+        "gameplay/dispatch/PursuitPath.gd",
+        "gameplay/dispatch/PursuitRadio.gd",
+        "gameplay/dispatch/DispatchUnit.gd",
+        "gameplay/dispatch/DispatchDriver.gd",
+        "gameplay/dispatch/DispatchController.gd",
+        "gameplay/dispatch/README.md",
+        "ui/v1/MinimapPolice.gd",
+        "gameplay/dispatch/PursuitRadioAudio.gd",
+        "tools/police_radio_voice.py",
+        "tests/dispatch/test_dispatch_gta_chase.gd",
+        "tools/perf_gta_chase_ab.sh"
+      ],
+      "next": "Jogar uma fuga completa e calibrar números (teto, PIT, área de busca, taxa de fuga); gerar a voz das ruas e do inglês quando a cota da ElevenLabs renovar (tools/police_radio_voice.py); contramão em mão única no roteador."
+    }
+  ],
+  "remove": []
+}

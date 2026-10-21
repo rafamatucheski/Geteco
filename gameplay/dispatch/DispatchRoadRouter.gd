@@ -261,11 +261,17 @@ func _chain(previous: PackedInt32Array, source: int, target: int) -> Array[int]:
 
 ## Rota de `start` até o trecho de rua mais próximo de `goal`. `end_gap` é a
 ## distância restante, em planta, entre o fim da rota e o objetivo: quem chama
-## decide se a equipe ainda alcança o local a pé.
-func plan(start: Vector3, goal: Vector3, heading: Vector3 = Vector3.ZERO) -> Dictionary:
+## decide se a equipe ainda alcança o local a pé. `goal_heading` (opcional) escolhe a
+## faixa do destino pelo sentido: a perseguição termina na faixa em que o alvo anda (ou na
+## contrária, de frente para ele); sem faixa nesse sentido vale a mais próxima.
+func plan(start: Vector3, goal: Vector3, heading: Vector3 = Vector3.ZERO, goal_heading: Vector3 = Vector3.ZERO) -> Dictionary:
 	if not has_graph(): return _fail("no_graph")
 	var first := _start_edge(start, heading)
-	var last := nearest_edge(goal, true)
+	var last := {}
+	if goal_heading.length_squared() > 0.01:
+		last = nearest_edge(goal, true, goal_heading)
+		if not last.is_empty() and float(last.distance) > 12.0: last = {}
+	if last.is_empty(): last = nearest_edge(goal, true)
 	if first.is_empty() or last.is_empty(): return _fail("no_edge")
 	var e_start: Dictionary = first.edge
 	var e_goal: Dictionary = last.edge

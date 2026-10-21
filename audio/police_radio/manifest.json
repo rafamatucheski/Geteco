@@ -1,0 +1,81 @@
+{
+ "model": "eleven_v4",
+ "voices": {
+  "pt": {
+   "id": "PZMcMFpToj1IIYF0QDwX",
+   "name": "HQ Marianne - Atendimento ao Cliente"
+  },
+  "en": {
+   "id": "NDTYOmYEjbDIVCKB35i3",
+   "name": "Paige - Engaging Narrator"
+  }
+ },
+ "rate": 24000,
+ "squelch": {
+  "open": "squelch_open.wav",
+  "close": "squelch_close.wav"
+ },
+ "phrases": {
+  "all_units": {
+   "pt": "pt/phrase_00_base.wav"
+  },
+  "wanted": {
+   "pt": "pt/phrase_01_base.wav"
+  },
+  "escalated": {
+   "pt": "pt/phrase_02_base.wav"
+  },
+  "spotted": {
+   "pt": "pt/phrase_03_base.wav"
+  },
+  "fleeing": {
+   "pt": "pt/phrase_04_base.wav"
+  },
+  "lost": {
+   "pt": "pt/phrase_05_base.wav"
+  },
+  "search": {
+   "pt": "pt/phrase_06_base.wav"
+  },
+  "roadblock": {
+   "pt": "pt/phrase_07_base.wav"
+  },
+  "evaded": {
+   "pt": "pt/phrase_08_base.wav"
+  }
+ },
+ "headings": {
+  "norte": {
+   "pt": "pt/heading_09_base.wav"
+  },
+  "nordeste": {
+   "pt": "pt/heading_10_base.wav"
+  },
+  "leste": {
+   "pt": "pt/heading_11_base.wav"
+  },
+  "sudeste": {
+   "pt": "pt/heading_12_base.wav"
+  },
+  "sul": {
+   "pt": "pt/heading_13_base.wav"
+  },
+  "sudoeste": {
+   "pt": "pt/heading_14_base.wav"
+  },
+  "oeste": {
+   "pt": "pt/heading_15_base.wav"
+  },
+  "noroeste": {
+   "pt": "pt/heading_16_base.wav"
+  }
+ },
+ "streets": {},
+ "missing_groups": [
+  "pt_ruas1.mp3",
+  "pt_ruas2.mp3",
+  "en_base.mp3",
+  "en_ruas1.mp3",
+  "en_ruas2.mp3"
+ ]
+}

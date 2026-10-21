@@ -158,6 +158,13 @@ func _run() -> void:
 	world.player.collision_layer = 0
 	world.camera.target = car
 	if chaos_stars > 0 and not world.gameplay.god_mode: world.gameplay.toggle_god_mode()
+	# Perseguição (21/10): --benchmark-chase põe o carro como alvo (jogador "ao volante"), como os eventos
+	# de estrada; com --benchmark-chaos e --benchmark-drive a polícia persegue o carro andando. A/B da
+	# perseguição estilo GTA com GETECO_GTA_CHASE=0 no mesmo export. Carro protegido: sem PIT nem batida.
+	if "--benchmark-chase" in OS.get_cmdline_user_args():
+		world.driving.occupied = true
+		if not world.gameplay.god_mode: world.gameplay.toggle_god_mode()
+		car.set_meta(preload("res://gameplay/DamageProtection.gd").META, true)
 	road_events = road_events and route_name == "rota66"
 	if road_events:
 		# O carro passa a ser o alvo, como ao volante no jogo: com o jogador escondido e dentro da
@@ -211,6 +218,10 @@ func _run() -> void:
 		"hour": bench_hour, "rain": bench_rain, "vehicles": world.production.vehicles.size(), "people": world.people.size(),
 		"requested_population": world.production.requested_population, "vsync_mode": DisplayServer.window_get_vsync_mode(), "max_fps": Engine.max_fps,
 		"engine": Engine.get_version_info().string, "cpu": OS.get_processor_name(), "graphics": _graphics_report()}
+	if "--benchmark-chase" in OS.get_cmdline_user_args() and is_instance_valid(world.get("dispatch")):
+		var radio_voice: Variant = world.dispatch.get("radio_voice")
+		report.chase = {"gta_chase": OS.get_environment("GETECO_GTA_CHASE") != "0", "stats": world.dispatch.pursuit_stats.duplicate(),
+			"radio_voice_played": int(radio_voice.played) if radio_voice != null and is_instance_valid(radio_voice) else -1}
 	if chaos_stars > 0:
 		report.chaos = {"stars_requested": chaos_stars, "stars_final": int(world.gameplay.stars), "dispatch_units_peak": _chaos_peak_units,
 			"dispatch_units_final": world.dispatch.units.size() if is_instance_valid(world.get("dispatch")) else -1}

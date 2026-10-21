@@ -10,6 +10,9 @@ extends RefCounted
 ## visão. Nenhum cronômetro daqui conclui atendimento.
 
 const RULES := preload("res://gameplay/dispatch/DispatchRules.gd")
+const PURSUIT := preload("res://gameplay/dispatch/PursuitRules.gd")
+const PATH := preload("res://gameplay/dispatch/PursuitPath.gd")
+const PROTECTION := preload("res://gameplay/DamageProtection.gd")
 const TANK_WEAPON := preload("res://gameplay/police_response/ground/PoliceTankWeapon.gd")
 const TRACE := preload("res://gameplay/dispatch/DispatchTrace.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
@@ -54,6 +57,28 @@ var _tank_weapon: RefCounted
 var _moto_rider_visible := false
 ## Calculado a cada tick em rota (DispatchRules.door_warm_near); lido por door_warm_wanted.
 var _door_warm_near := false
+
+# Perseguição estilo GTA (PursuitRules); só com PursuitRules.enabled
+## Rota aberta e alvo fora do sensor ligados no piloto (perseguindo um carro).
+var pursuing := false
+## Modo do guiamento final agora: "", follow, pit, flank, swipe, block (testes e depuração).
+var guide_mode := ""
+var _target_visible := false
+var _guide_cooldown := 0.0
+var _pit_cooldown := 0.0
+var _since_plan := 0.0
+var _boosted := false
+## Alvo longe de qualquer rua (PursuitRules.OFFROAD_DISTANCE), medido a cada OFFROAD_CHECK.
+var target_offroad := false
+var _offroad_clock := 0.0
+## Linha de visão livre até o alvo fora da rua (sem cone), para o guiamento de longe.
+var _target_line := false
+## Cruzamento que o bloqueador segura (INF = nenhum).
+var block_point := Vector3.INF
+var _block_hold := 0.0
+var _block_retry := 0.0
+## Ponto de rua que esta viatura vasculha na busca em leque (INF = nenhum).
+var search_point := Vector3.INF
 
 # Serviço médico / bombeiros / legista
 var incident_id := 0
@@ -259,6 +284,11 @@ func _tick_suspension(delta: float) -> bool:
 	var distance: float = controller.distance_to_player(vehicle.global_position)
 	if not suspended:
 		if distance <= RULES.SUSPEND_DISTANCE: return false
+		if _outrun(distance):
+			# Deixada para trás numa perseguição: some fora da vista e libera a vaga para uma
+			# nova nascer à frente. Congelada, ela segurava a vaga por até 45 s.
+			controller.recycle_outrun(self)
+			return true
 		suspended = true
 		suspended_for = 0.0
 		_resume_clear_time = 0.0
@@ -277,6 +307,11 @@ func _tick_suspension(delta: float) -> bool:
 		controller.emit_dispatch_event("unit_suspended", {"unit": self})
 		return true
 	suspended_for += delta
+	if _outrun(distance):
+		# Suspensa numa pausa do contato e a perseguição voltou com ela longe: recicla agora,
+		# em vez de segurar a vaga até os 45 s.
+		controller.recycle_outrun(self)
+		return true
 	var traced := TRACE.begin()
 	var resume_clear: bool = distance <= RULES.RESUME_DISTANCE and controller.footprint_clear(vehicle, vehicle.global_position, vehicle.rotation.y) and _bodies_clear()
 	TRACE.end("unit.resume_check", traced)
@@ -301,6 +336,19 @@ func _tick_suspension(delta: float) -> bool:
 	if suspended_for >= RULES.SUSPEND_RECYCLE_SECONDS:
 		finish("suspended_too_long")
 	return true
+
+## Viatura em perseguição ativa (contato recente), sem equipe a pé, longe e fora da vista.
+func _outrun(distance: float) -> bool:
+	if not PURSUIT.enabled or not is_police() or state != "enroute" or variant == "tank": return false
+	if not officers.is_empty() or controller.gameplay.stars <= 0: return false
+	if controller.gameplay.contact_age > PURSUIT.RECYCLE_CONTACT_AGE: return false
+	# Longe também da última posição conhecida: quem está na área da busca fica (suspensa, como
+	# antes). Sem isto, perder o contato longe dela reciclava as viaturas da busca e as novas,
+	# que nascem perto dela, eram recicladas de novo (ciclo de criação de veículos).
+	# Só na busca (contato perdido): com contato vivo a última posição é o próprio alvo, alguns metros
+	# atrás dele, e a viatura deixada para trás ficaria "perto" dela (o laboratório pegou isso).
+	if controller.gameplay.contact_age > 1.0 and controller.gameplay.last_known_valid and _flat(vehicle.global_position, controller.gameplay.last_known) <= RULES.SUSPEND_DISTANCE: return false
+	return distance > RULES.SUSPEND_DISTANCE and controller.is_unseen(vehicle.global_position)
 
 ## Policiais e socorristas a pé saem da física junto com a viatura: sem camada,
 ## sem máscara, sem processamento e sem vista.
@@ -413,6 +461,7 @@ func _police_investigating(delta: float) -> void:
 		return
 	officers = officers.filter(func(o): return is_instance_valid(o) and not o.dead)
 	_set_siren(false)
+	if pursuing or driver.curvature_limit: _calm_driving()
 	if not officers.is_empty():
 		driver.hold(true)
 		driver.tick(delta)
@@ -469,7 +518,11 @@ func _stall_police_enroute(delta: float) -> void:
 	_contact_clock -= delta
 	if _contact_clock <= 0.0:
 		_contact_clock = 0.25
-		if _sees_target(target): gameplay.report_contact(target.global_position)
+		_target_visible = _sees_target(target)
+		if _target_visible: gameplay.report_contact(target.global_position)
+		# Fora da rua a viatura parada na ponta dela costuma estar de lado para o alvo: o guiamento
+		# de longe pede só linha de visão livre, sem o cone (o contato continua pelo cone acima).
+		_target_line = PURSUIT.enabled and target_offroad and target != null and target.visible and _flat(vehicle.global_position, target.global_position) <= PURSUIT.OFFROAD_GUIDE_RANGE and _line_of_sight(target)
 	var in_car := _target_in_car(target) and not searching
 	var velocity := _target_velocity(target) if not searching else Vector3.ZERO
 	var anchor: Vector3 = target.global_position if (target != null and not searching) else gameplay.last_known
@@ -483,9 +536,15 @@ func _stall_police_enroute(delta: float) -> void:
 	elif in_car: target_still = 0.0
 	else: target_still = RULES.TARGET_STOPPED_SECONDS
 	var flat := Vector2(vehicle.global_position.x - anchor.x, vehicle.global_position.z - anchor.z).length()
-	var may_stop := (not in_car) or target_still >= RULES.TARGET_STOPPED_SECONDS
+	# Quem fugiu de carro e sumiu é procurado em leque pela área, sem a viatura parar e descer
+	# no último ponto conhecido (a pé, como antes).
+	var car_search: bool = PURSUIT.enabled and searching and controller.pursuit_in_car and target != null
+	var may_stop := not car_search and ((not in_car) or target_still >= RULES.TARGET_STOPPED_SECONDS)
 	_door_warm_near = RULES.door_warm_near(flat, stop_distance, in_car, velocity.length(), stop_planner.curve != null)
 	if stop_planner.curve != null or (may_stop and flat <= stop_distance+10.0):
+		# Parar exige a frenagem até o fim da rota de parada: sai do modo perseguição.
+		_set_pursuit(false, null)
+		block_point = Vector3.INF
 		driver.hold(driver.pending_recovery())
 		if stop_planner.tick(self,anchor,delta):
 			_park_reset()
@@ -497,6 +556,11 @@ func _stall_police_enroute(delta: float) -> void:
 	_park_reset()
 	stop_planner.reset()
 	driver.hold(false)
+	if PURSUIT.enabled:
+		_gta_enroute(delta, target, in_car, car_search, anchor, velocity)
+		_vehicle_combat(delta, target)
+		driver.tick(delta)
+		return
 	var forward: Vector3 = -target.global_basis.z if (target != null and in_car) else (anchor - vehicle.global_position)
 	_goal = RULES.formation_goal(role, anchor, velocity, forward, stop_distance) if in_car else anchor
 	_goal_valid = true
@@ -506,11 +570,291 @@ func _stall_police_enroute(delta: float) -> void:
 	_vehicle_combat(delta, target)
 	driver.tick(delta)
 
+# --- Perseguição estilo GTA ---------------------------------------------------------
+
+## Rota em perseguição (PursuitRules.enabled). Carro à vista: rota aberta à frente dele, papéis e
+## guiamento final. Carro sumido: busca em leque pela área. A pé: o mesmo de antes.
+func _gta_enroute(delta: float, target: Node3D, in_car: bool, car_search: bool, anchor: Vector3, velocity: Vector3) -> void:
+	var traced := TRACE.begin()
+	_guide_cooldown = maxf(0.0, _guide_cooldown - delta)
+	_pit_cooldown = maxf(0.0, _pit_cooldown - delta)
+	_since_plan += delta
+	if in_car or car_search:
+		driver.speed_cap = PURSUIT.speed_cap(variant)
+		driver.curvature_limit = true
+	if in_car:
+		search_point = Vector3.INF
+		_chase_car(delta, target, anchor, velocity)
+	elif car_search:
+		block_point = Vector3.INF
+		_search_area(delta)
+	else:
+		# Alvo a pé: direção e parada de antes (teto e curva antigos). O planejador de parada foi
+		# calibrado para eles; a 30 m/s a viatura passava do ponto e parava fora da rua.
+		_calm_driving()
+		_goal = anchor
+		_goal_valid = true
+		_replan_towards(_goal, delta, 2.5 + float(serial % 4) * 0.4)
+	TRACE.end("unit.gta_enroute", traced)
+
+func _set_pursuit(active: bool, target: CollisionObject3D) -> void:
+	if not active and pursuing:
+		_boosted = false
+		driver.set_boost(1.0)
+	pursuing = active
+	if not active: guide_mode = ""
+	driver.set_pursuit(active, target)
+
+## Volta à direção de serviço comum (partida, averiguação): teto e curva originais.
+func _calm_driving() -> void:
+	_set_pursuit(false, null)
+	block_point = Vector3.INF
+	search_point = Vector3.INF
+	driver.speed_cap = RULES.speed_cap(variant)
+	driver.curvature_limit = false
+
+func _chase_car(delta: float, target: Node3D, anchor: Vector3, velocity: Vector3) -> void:
+	var flat := _flat(vehicle.global_position, anchor)
+	if role == PURSUIT.ROLE_BLOCKER and _blocker_tick(delta, anchor, velocity, flat): return
+	_set_pursuit(true, target as CollisionObject3D)
+	# Alvo parado ou lento: a rota termina nele com frenagem, para o planejador de parada assumir
+	# sem a viatura chegar a 30 m/s; rota aberta só com ele fugindo.
+	driver.open_route = Vector2(velocity.x, velocity.z).length() > PURSUIT.OPEN_ROUTE_MIN_TARGET_SPEED
+	_update_boost(flat)
+	# Moto só cola atrás; o tanque segue a rota e usa o canhão (PoliceTankWeapon).
+	var ram: bool = PURSUIT.ram_allowed(controller.gameplay) and variant != "motorcycle"
+	_offroad_clock -= delta
+	if _offroad_clock <= 0.0:
+		_offroad_clock = PURSUIT.OFFROAD_CHECK
+		var road: Dictionary = controller.router.nearest_edge(anchor)
+		target_offroad = road.is_empty() or float(road.distance) > PURSUIT.OFFROAD_DISTANCE
+	if variant == "tank":
+		driver.guidance = false
+		guide_mode = ""
+	elif _guidance_tick(target, anchor, velocity, flat, ram): _pit_check(target)
+	var direction := Vector3(velocity.x, 0.0, velocity.z)
+	direction = direction.normalized() if direction.length_squared() > 1.0 else -target.global_basis.z
+	var goal := PURSUIT.chase_goal(anchor, velocity)
+	var goal_heading := direction
+	# Interceptor à frente do alvo: vem de frente pela faixa contrária para fechar o caminho.
+	if role == PURSUIT.ROLE_INTERCEPTOR and ram and (vehicle.global_position - anchor).dot(direction) > 12.0:
+		goal = anchor + direction * clampf(flat * 0.5, 10.0, 60.0)
+		goal_heading = -direction
+	_goal = goal
+	_goal_valid = true
+	_pursuit_replan(delta, goal, goal_heading, target)
+
+func _flat(a: Vector3, b: Vector3) -> float:
+	return Vector2(a.x - b.x, a.z - b.z).length()
+
+## Recuperação fora da câmera: longe do alvo e sem ser vista, a viatura ganha teto e aceleração;
+## perto ou à vista, volta ao normal (nada de alcançar o jogador "no grito" na frente dele).
+func _update_boost(flat: float) -> void:
+	var unseen: bool = controller.is_unseen(vehicle.global_position)
+	if not _boosted and flat > PURSUIT.BOOST_DISTANCE and unseen: _boosted = true
+	elif _boosted and (flat < PURSUIT.BOOST_RELEASE_DISTANCE or not unseen): _boosted = false
+	driver.set_boost(PURSUIT.BOOST if _boosted else 1.0)
+
+func _overtake_idle() -> bool:
+	return driver.overtake == null or (driver.overtake.state == "idle" and not driver.overtake.unresolved)
+
+## Guiamento final perto do alvo: sai da rota e mira um ponto no carro dele (cola atrás, PIT,
+## emparelha e raspa, ou para atravessado de frente). Devolve se está guiando.
+func _guidance_tick(target: Node3D, anchor: Vector3, velocity: Vector3, flat: float, ram: bool) -> bool:
+	var forward := -vehicle.global_basis.z
+	var to_target := anchor - vehicle.global_position
+	to_target.y = 0.0
+	var target_forward := -target.global_basis.z
+	var oncoming := target_forward.dot(forward) < -0.3
+	# Alvo fora da rua e à vista: o guiamento vale de mais longe (a rota só chega à ponta da rua).
+	var reach := PURSUIT.OFFROAD_GUIDE_RANGE if target_offroad else PURSUIT.GUIDE_RANGE
+	var seen: bool = _target_line if target_offroad else _target_visible
+	# Alvo parado ou lento: na rua quem estaciona e desce é o planejador de parada (PIT num carro
+	# parado o empurrava e zerava o "parado há 1,5 s", e ninguém descia); fora da rua só encosta.
+	var slow := Vector2(velocity.x, velocity.z).length() < PURSUIT.OPEN_ROUTE_MIN_TARGET_SPEED
+	if slow and not target_offroad: seen = false
+	if slow: ram = false
+	var allowed: bool = flat <= reach and seen and _guide_cooldown <= 0.0 and _overtake_idle() and not driver.reversing
+	if allowed and not target_offroad and to_target.length_squared() > 0.01 and forward.angle_to(to_target.normalized()) > PURSUIT.GUIDE_CONE: allowed = false
+	# De frente só o interceptor com força autorizada fecha o caminho; os outros seguem a rota.
+	if allowed and oncoming and not target_offroad and not (ram and role == PURSUIT.ROLE_INTERCEPTOR): allowed = false
+	if allowed and driver.guidance and driver.blocked_ahead:
+		# Algo que não é o alvo no caminho (parede, trânsito): volta à rota por um tempo.
+		_guide_cooldown = PURSUIT.GUIDE_COOLDOWN
+		allowed = false
+	if not allowed:
+		driver.guidance = false
+		guide_mode = ""
+		return false
+	var plan: Dictionary
+	if oncoming:
+		plan = {"point": anchor + velocity * 0.6, "speed": clampf(flat * 0.35 - 2.0, 0.0, 10.0), "mode": "block"}
+	else:
+		var half_width := float(target.get("half_width")) if target.get("half_width") != null else 1.0
+		var half_length := float(target.get("half_length")) if target.get("half_length") != null else 2.2
+		plan = PURSUIT.guide(role, ram, vehicle.global_position, anchor, target_forward, velocity, half_width, half_length, vehicle.half_width)
+	driver.guidance = true
+	driver.guide_point = plan.point
+	driver.guide_speed = plan.speed
+	# Contador, não evento: a troca de modo é frequente e encheria o registro de 64 eventos.
+	if guide_mode != plan.mode:
+		controller.count_pursuit("guide_" + str(plan.mode))
+		if flat > PURSUIT.GUIDE_RANGE: controller.count_pursuit("guide_offroad")
+	guide_mode = plan.mode
+	return true
+
+## PIT: a viatura bateu na traseira lateral do alvo em movimento. O StreetPhysics já aplica o
+## impulso da batida; aqui entra o giro que faz o carro rodar (o da batida dá ~5°).
+func _pit_check(target: Node3D) -> void:
+	if _pit_cooldown > 0.0 or guide_mode != "pit": return
+	var body := target as CharacterBody3D
+	if body == null or body.get("half_width") == null: return
+	# Carro protegido (DamageProtection) não leva batida do StreetPhysics; o giro do PIT também não.
+	if PROTECTION.is_protected(body): return
+	var target_velocity: Vector3 = body.horizontal_velocity
+	if Vector2(target_velocity.x, target_velocity.z).length() < PURSUIT.PIT_MIN_TARGET_SPEED: return
+	for index in vehicle.get_slide_collision_count():
+		var collision := vehicle.get_slide_collision(index)
+		if collision.get_collider() != body: continue
+		var push: Vector3 = vehicle.horizontal_velocity - target_velocity
+		var spin := PURSUIT.pit_spin(body.to_local(collision.get_position()), push, body.global_basis, body.half_width, body.half_length)
+		if absf(spin) < 0.2: return
+		var current := float(body.get_meta("crash_spin", 0.0))
+		body.set_meta("crash_spin", clampf(current + spin, -PURSUIT.PIT_SPIN_MAX, PURSUIT.PIT_SPIN_MAX))
+		# Sem `crash_stun` o StreetPhysics não aplica o giro guardado (`_update_slide`).
+		body.set_meta("crash_stun", maxf(float(body.get_meta("crash_stun", 0.0)), 1.2))
+		_pit_cooldown = PURSUIT.PIT_COOLDOWN
+		controller.count_pursuit("pit")
+		controller.emit_dispatch_event("pit", {"unit": self, "spin": snappedf(spin, 0.01)})
+		return
+
+## Replanejamento por evento: rota acabando, alvo fora do corredor dela ou rota velha demais;
+## nunca mais que uma vez por REPLAN_MIN (defasado por viatura) e nunca durante a ré.
+func _pursuit_replan(delta: float, goal: Vector3, goal_heading: Vector3, target: Node3D) -> void:
+	_plan_clock -= delta
+	if _plan_clock > 0.0 or driver.reversing: return
+	var need: bool = driver.route == null or _since_plan >= PURSUIT.REPLAN_MAX or driver.remaining < PURSUIT.replan_remaining(vehicle.speed)
+	if not need and is_instance_valid(target):
+		var closest: Vector3 = driver.route.get_closest_point(target.global_position)
+		need = _flat(closest, target.global_position) > PURSUIT.REPLAN_CORRIDOR
+	if not need:
+		_plan_clock = 0.25
+		return
+	_plan_clock = PURSUIT.REPLAN_MIN + float(serial % 4) * PURSUIT.REPLAN_STAGGER
+	_since_plan = 0.0
+	_last_planned_goal = goal
+	var traced := TRACE.begin()
+	var spanned := STALL_WORK.begin()
+	var result: Dictionary = controller.router.plan(vehicle.global_position, goal, -vehicle.global_basis.z, goal_heading)
+	STALL_WORK.finish_slow("dispatch.unit.gta_plan", spanned, 3000, vehicle)
+	TRACE.end("router.plan:gta_pursuit", traced)
+	if result.ok:
+		_failed_plans = 0
+		driver.set_route(result.curve)
+		return
+	_failed_plans += 1
+	if _failed_plans >= 4:
+		controller.emit_dispatch_event("no_route", {"unit": self, "reason": result.reason})
+		_failed_plans = 0
+		_begin_departure()
+
+## Bloqueador: vai a um cruzamento à frente do alvo (só se chega antes dele) e para lá até o alvo
+## passar, chegar perto ou o tempo acabar. Devolve true enquanto cuida do bloqueio.
+func _blocker_tick(delta: float, anchor: Vector3, velocity: Vector3, flat: float) -> bool:
+	_block_retry -= delta
+	var direction := Vector3(velocity.x, 0.0, velocity.z)
+	if block_point == Vector3.INF:
+		if _block_retry > 0.0 or direction.length() < 6.0 or flat < 40.0: return false
+		_block_retry = PURSUIT.BLOCK_RETRY
+		var picked := _pick_block_point(anchor, velocity)
+		if picked == Vector3.INF: return false
+		var traced := TRACE.begin()
+		var result: Dictionary = controller.router.plan(vehicle.global_position, picked, -vehicle.global_basis.z)
+		TRACE.end("router.plan:block", traced)
+		if not result.ok: return false
+		block_point = picked
+		_block_hold = 0.0
+		_set_pursuit(false, null)
+		driver.set_route(result.curve)
+		controller.count_pursuit("block_planned")
+		controller.emit_dispatch_event("block_planned", {"unit": self, "point": picked})
+	var passed: bool = direction.length() > 1.0 and (anchor - block_point).dot(direction.normalized()) > 6.0
+	if passed or flat < PURSUIT.BLOCK_RELEASE_DISTANCE or _block_hold > PURSUIT.BLOCK_HOLD_MAX:
+		controller.count_pursuit("block_held" if _block_hold > 0.0 else "block_released_early")
+		block_point = Vector3.INF
+		# Vira perseguidor por um tempo antes de tentar outro cruzamento.
+		_block_retry = 6.0
+		_since_plan = PURSUIT.REPLAN_MAX
+		_plan_clock = 0.0
+		return false
+	if driver.at_route_end() or (driver.route != null and driver.remaining < 3.0 and driver.is_stopped()):
+		_block_hold += delta
+		guide_mode = "block"
+	return true
+
+## Primeiro cruzamento do caminho previsto do alvo em que a viatura chega antes dele, com folga.
+func _pick_block_point(anchor: Vector3, velocity: Vector3) -> Vector3:
+	var traced := TRACE.begin()
+	var spanned := STALL_WORK.begin()
+	var speed := Vector2(velocity.x, velocity.z).length()
+	var prediction := PATH.predict(controller.routes, controller.router, anchor, velocity, PURSUIT.BLOCK_MAX_DISTANCE)
+	var cap := maxf(1.0, PURSUIT.speed_cap(variant) * 0.75)
+	var best := Vector3.INF
+	for index: int in prediction.junctions:
+		var distance: float = prediction.distances[index]
+		if distance < PURSUIT.BLOCK_MIN_DISTANCE: continue
+		var point: Vector3 = prediction.points[index]
+		var police_eta := _flat(vehicle.global_position, point) * 1.35 / cap
+		if police_eta + PURSUIT.BLOCK_ETA_MARGIN < distance / speed:
+			best = point
+			break
+	STALL_WORK.finish_slow("dispatch.unit.block_pick", spanned, 3000, vehicle)
+	TRACE.end("unit.block_pick", traced, {"junctions": prediction.junctions.size()})
+	return best
+
+## Busca em leque: cada viatura vasculha um ponto de rua dentro da área de busca, e outro ao chegar.
+func _search_area(delta: float) -> void:
+	# Sem contato não há para onde guiar: o ponto do guiamento seria o de antes de perder o alvo.
+	driver.guidance = false
+	var gameplay: Node3D = controller.gameplay
+	var seen_velocity: Vector3 = controller.pursuit_velocity
+	seen_velocity.y = 0.0
+	if gameplay.contact_age <= PURSUIT.SEARCH_PURSUE_SECONDS and seen_velocity.length() > PURSUIT.OPEN_ROUTE_MIN_TARGET_SPEED:
+		# Dobrou a esquina: segue para onde ele estaria agora, de rota aberta, ainda sem leque.
+		_set_pursuit(true, null)
+		search_point = Vector3.INF
+		var lead := clampf(seen_velocity.length() * gameplay.contact_age + PURSUIT.SEARCH_PURSUE_LEAD, PURSUIT.SEARCH_PURSUE_LEAD, PURSUIT.SEARCH_PURSUE_MAX)
+		_goal = gameplay.last_known + seen_velocity.normalized() * lead
+		_goal_valid = true
+		if guide_mode != "dead_reckoning":
+			guide_mode = "dead_reckoning"
+			controller.count_pursuit("search_pursue")
+		_pursuit_replan(delta, _goal, seen_velocity.normalized(), null)
+		return
+	_set_pursuit(false, null)
+	var arrived: bool = search_point != Vector3.INF and (_flat(vehicle.global_position, search_point) < PURSUIT.SEARCH_POINT_REACHED or driver.at_route_end())
+	if search_point == Vector3.INF or arrived or driver.route == null:
+		var next: Vector3 = controller.search_point_for(self)
+		if next != Vector3.INF and next != search_point:
+			search_point = next
+			_plan_clock = 0.0
+			controller.count_pursuit("search_point")
+	_goal = search_point if search_point != Vector3.INF else controller.gameplay.last_known
+	_goal_valid = true
+	_replan_towards(_goal, delta, 2.0)
+
 func _sees_target(target: Node3D) -> bool:
 	if controller.player_position_override != Vector3.INF: return false
 	var gameplay: Node3D = controller.gameplay
 	if target == null or gameplay.health <= 0 or not gameplay.state.weapons_allowed() or not target.visible: return false
-	if vehicle.global_position.distance_to(target.global_position) > RULES.SIGHT_RANGE: return false
+	if PURSUIT.enabled:
+		# Cone frontal de 70 m somado ao círculo antigo de 40,6 m (nunca enxerga menos que antes).
+		if not PURSUIT.in_vision(vehicle.global_position, -vehicle.global_basis.z, target.global_position): return false
+	elif vehicle.global_position.distance_to(target.global_position) > RULES.SIGHT_RANGE: return false
+	return _line_of_sight(target)
+
+## Raio da viatura até o alvo sem nada no meio (só física; distância e cone são de quem chama).
+func _line_of_sight(target: Node3D) -> bool:
 	var traced := TRACE.begin()
 	var ray := PhysicsRayQueryParameters3D.create(vehicle.global_position + Vector3.UP * 1.4, target.global_position + Vector3.UP, 7, [vehicle.get_rid()])
 	var hit: Dictionary = vehicle.get_world_3d().direct_space_state.intersect_ray(ray)
@@ -892,6 +1236,7 @@ func on_crew_released(released: CharacterBody3D) -> void:
 func _begin_departure() -> void:
 	stop_planner.reset()
 	if is_instance_valid(vehicle): vehicle.set_meta("dispatch_needs_room",true)
+	if is_police() and driver != null: _calm_driving()
 	if is_police() and crew_remaining <= 0 and officers.is_empty():
 		_police_crew_depleted()
 		return

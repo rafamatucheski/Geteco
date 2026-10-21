@@ -23,6 +23,70 @@ não concluída volta à fila; a fuga não é registrada como embarque na carca�
 > comparativa de FPS continua pendente porque havia outras sessões do Godot
 > ativas; portanto, desempenho não está aprovado.
 
+## Perseguição de carro estilo GTA (21/10/2026)
+
+`PursuitRules.gd` (regras, sem estado), `PursuitPath.gd` (caminho provável do alvo pelo grafo) e
+`PursuitRadio.gd` (rádio da central). **`GETECO_GTA_CHASE=0` volta ao comportamento anterior
+inteiro**, para A/B no mesmo export e como reversão. A avaliação que motivou a mudança (só leitura
+do código) achou a perseguição se sabotando: a rota terminava onde o jogador *estava* e a viatura
+freava até lá antes do próximo plano (2,5–3,7 s depois); o sensor frontal freava diante do carro do
+jogador (a ~27 m a 20 m/s), então nunca havia contato; teto de 21/25 m/s e curva a 4 m/s; viatura
+deixada a mais de 130 m congelava segurando a vaga por até 45 s; e o reforço nascia no ponto mais
+próximo, quase sempre atrás.
+
+Com o interruptor ligado (padrão):
+
+- **Rota aberta**: alvo de carro à vista → objetivo ~2,2 s à frente dele, na faixa do sentido em que
+  ele anda (`plan(..., goal_heading)`); o piloto não freia no fim (`open_route`) e a unidade
+  replaneja por evento — rota acabando, alvo a mais de 12 m do corredor dela ou rota com 3,5 s —, no
+  máximo uma vez a cada 0,9 s (defasado por viatura) e nunca durante a ré.
+- **Velocidade** (só com alvo de carro; a pé vale a direção antiga, para a parada calibrada): teto
+  30/34/32 m/s (patrulha/interceptor e tática/moto); curva por curvatura
+  (`v = √(9·R)`, frenagem planejada a 9 m/s², mínimo 6 m/s), medida a 10 Hz na rota à frente;
+  fora da câmera e a mais de 45 m do alvo, +22% de teto e aceleração (volta a 1× a 25 m ou à vista).
+- **Contato**: o sensor frontal ignora o alvo (só ele; a ultrapassagem ainda o enxerga). A até
+  26 m, com o alvo visível à frente (±75°), a viatura sai da rota e guia direto: com 1 estrela sem
+  força, cola 7 m atrás; com 2+ estrelas ou força autorizada, o perseguidor faz **PIT** na traseira
+  lateral (giro extra de até 3,2 rad/s sobre o do `StreetPhysics`), os flancos emparelham e raspam,
+  e o interceptor que vem de frente para atravessado. Moto só cola; tanque não guia. Obstáculo que
+  não é o alvo devolve à rota por 1,5 s.
+- **Fora do asfalto**: alvo a mais de 12 m da rua mais próxima conta como fora da rua; com linha de
+  visão livre (sem cone) a viatura guia direto até ele a até 70 m, em vez de parar na ponta da rua.
+  A linha de visão e o sensor frontal são a única proteção contra prédio e barranco.
+- **Papéis** por prioridade entre as ativas: perseguidor, flanco esquerdo, bloqueador, flanco
+  direito, interceptor. O **bloqueador** vai ao primeiro cruzamento previsto (35–240 m à frente)
+  em que chega antes do alvo com 1 s de folga e para lá até ele passar, chegar a 18 m ou 14 s.
+- **Reciclagem**: viatura em rota, sem equipe a pé, a mais de 130 m e fora da vista, com contato há
+  até 8 s, é removida (`outrun`), devolve vaga e orçamento e adianta o próximo reforço. Sem contato
+  recente vale a suspensão antiga.
+- **Nascimento à frente**: alvo de carro a mais de 5 m/s → candidatos até 112,5 m + velocidade
+  (máx. 120 m) ordenados por estar perto de onde ele estará em 2,5 s, de preferência virados para
+  ele; atrás dele é penalizado.
+- **Busca**: área de busca de 70/90/110/140/170/200 m (1–6 estrelas) em volta da última posição.
+  Dentro dela a fuga anda a 40% (`Gameplay._evasion_rate`); fora, normal. Quem fugiu de carro é
+  seguido por estimativa nos primeiros 6 s sem contato (última posição + direção e velocidade
+  vistas, como quem dobra a esquina atrás dele) e depois procurado em leque (cada viatura num ponto
+  de rua da área, sem descer); quem fugiu a pé, como antes.
+  Visão da viatura: cone frontal de 70 m (±40°) somado ao círculo antigo de 40,6 m, com linha de
+  visão (nunca enxerga menos que antes).
+- **Bloqueio com pregos** a partir de 3 estrelas, no caminho previsto 70–150 m à frente do carro.
+- **Prisão no carro**: com 1–2 estrelas sem força autorizada, carro parado e policial à porta, o
+  `PoliceAgent` prende quem está dentro (`Gameplay._vehicle_bust_allowed`).
+- **HUD**: viaturas, policiais e helicóptero piscando no minimapa (`ui/v1/MinimapPolice.gd`); na
+  BUSCA, círculo da área e cones de visão; linha "RÁDIO ·" sob as estrelas com rua e sentido.
+- **Voz do rádio** (`PursuitRadioAudio.gd`, `GETECO_RADIO_VOICE=0` desliga): a fala é montada por
+  pedaços como o scanner do GTA — chiado de abrir o canal, frase-base, rua, sentido, chiado de
+  fechar. Pedaços gravados na ElevenLabs (Marianne em PT-BR, Paige em inglês) e passados por
+  `tools/police_radio_voice.py` (recorte pelo silêncio, banda 300–3400 Hz, saturação e chiado);
+  manifesto em `audio/police_radio/manifest.json`. Os WAVs do idioma de voz são pedidos em segundo
+  plano na carga; pedaço sem gravação ou ainda carregando é pulado. **Em 21/10 a cota mensal da
+  ElevenLabs acabou depois do primeiro grupo**: há voz só para as frases-base e os sentidos em
+  PT-BR; nomes de rua e inglês ficam em texto até gerar os 5 grupos restantes (~3,2 mil créditos).
+
+Não feito: contramão em mão única no roteador (só as rampas da ponte e da rodovia são mão única;
+mudaria o espelho C# e o `_curve` das rotas). Teste:
+`tests/dispatch/test_dispatch_gta_chase.gd` (`Run.ps1 -Suite gta`).
+
 ## Arquivos
 
 | Arquivo | Papel |
@@ -181,9 +245,10 @@ contagens por serviço, policiais a pé, destroços e unidades suspensas.
   - Cancelamento (`cancel_incident`, fim da procura, partida) = recuperação
     física, que **não** reinicia uma recuperação já em curso. Troca de região,
     `dismiss_all`, `finish` e veículo destruído = remoção imediata, sem recuperar.
-- **Limites**: 8 veículos vivos no total, 3 equipes de emergência, viaturas
-  ativas por `MAX_ACTIVE`, 5 policiais a pé; replanejamento de perseguição a
-  cada 1–1,5 s por viatura e só se o alvo andou > 3 m.
+- **Limites**: 11 veículos vivos no total (`MAX_UNITS`), 3 equipes de emergência,
+  viaturas ativas por `MAX_ACTIVE`, policiais a pé por `FOOT_LIMIT`; replanejamento de
+  perseguição a cada 2,5–3,7 s por viatura e só se o alvo andou > 3 m (com
+  `GETECO_GTA_CHASE` ligado, por evento: ver a seção da perseguição estilo GTA).
 - **Suspensão distante**: além de 130 m do jogador a viatura, a equipe e a
   colisão são congeladas e escondidas; voltam a menos de 115 m se o local
   estiver livre; após 45 s suspensa a unidade é liberada.

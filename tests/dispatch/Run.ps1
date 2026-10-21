@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('all','rules','police','emergency','lifecycle','integration','import','measure')][string]$Suite = 'all',
+    [ValidateSet('all','rules','police','emergency','lifecycle','integration','gta','import','measure')][string]$Suite = 'all',
     [switch]$AllowConcurrent,
     [int]$Stars = 4,
     [string]$GodotPath = $env:GODOT_EXE,
@@ -12,7 +12,7 @@ $engine = Resolve-GodotEngine $GodotPath
 $running = @(Assert-GodotExclusive -AllowConcurrent:$AllowConcurrent)
 Build-ProjectCSharp $project $engine
 $manifest = Get-DispatchManifest
-$names = if ($Suite -eq 'all') { @('rules','police','emergency','lifecycle') } elseif ($Suite -in @('import','measure')) { @() } else { @($Suite) }
+$names = if ($Suite -eq 'all') { @('rules','police','emergency','lifecycle','gta') } elseif ($Suite -in @('import','measure')) { @() } else { @($Suite) }
 $selected = @($names | ForEach-Object { "tests/dispatch/$($manifest[$_].script).gd" })
 if ($Suite -eq 'measure') { $selected = @('tests/dispatch/measure_dispatch.gd') }
 foreach ($relative in $selected) { if (-not (Test-Path -LiteralPath (Join-Path $project $relative))) { throw "Teste solicitado inexistente: $relative" } }

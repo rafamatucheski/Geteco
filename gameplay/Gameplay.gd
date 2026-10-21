@@ -24,6 +24,7 @@ const ARSENAL = preload("res://gameplay/ArsenalWeapon3D.gd")
 const POSE = preload("res://gameplay/WeaponPoseData.gd")
 const OFFICER = preload("res://gameplay/PoliceAgent.gd")
 const POLICE_CASE = preload("res://gameplay/police_response/PoliceCaseDirector.gd")
+const PURSUIT := preload("res://gameplay/dispatch/PursuitRules.gd")
 const PROJECTILE = preload("res://gameplay/Projectile.gd")
 const CUSTOM = preload("res://gameplay/WeaponCustomization.gd")
 const FORGE := preload("res://gameplay/forge/BladeForge.gd")
@@ -2191,7 +2192,26 @@ func police_surrendering() -> bool:
 	return police_case != null and police_case.surrendering
 
 func police_can_arrest() -> bool:
-	return stars > 0 and (police_surrendering() or (stars == 1 and not police_force_authorized()))
+	return stars > 0 and (police_surrendering() or (stars == 1 and not police_force_authorized()) or _vehicle_bust_allowed())
+
+## Perseguição estilo GTA: com 1-2 estrelas sem força autorizada, quem está num carro parado e
+## cercado é preso pelo policial que chega à porta (PoliceAgent exige carro parado e o policial ao lado).
+func _vehicle_bust_allowed() -> bool:
+	if not PURSUIT.enabled or stars > PURSUIT.BUST_MAX_STARS or police_force_authorized(): return false
+	return is_instance_valid(world) and world.get("driving") != null and bool(world.driving.occupied)
+
+## Área de busca (PursuitRules): raio por estrela em volta da última posição conhecida.
+func police_search_radius() -> float:
+	return PURSUIT.search_radius(stars) if PURSUIT.enabled else 0.0
+
+## Fora da área de busca a fuga anda normal; dentro, a PursuitRules.EVASION_INSIDE_RATE. Sair do
+## círculo é o que despista (GTA IV); esconder-se perto ainda funciona, só demora mais.
+func _evasion_rate() -> float:
+	if not PURSUIT.enabled or stars <= 0 or not last_known_valid: return 1.0
+	var target := pursuit_target()
+	if not is_instance_valid(target): return 1.0
+	var flat := Vector2(target.global_position.x - last_known.x, target.global_position.z - last_known.z).length()
+	return 1.0 if flat > police_search_radius() else PURSUIT.EVASION_INSIDE_RATE
 
 func police_investigation_active() -> bool:
 	return police_case != null and police_case.investigation_active()
@@ -2539,7 +2559,7 @@ func _update_police(delta: float) -> void:
 	if police_case != null: police_case.tick(delta)
 	police = police.filter(func(unit): return is_instance_valid(unit) and not unit.dead)
 	contact_age += delta
-	if crime_points > 0 and contact_age > 1.0: hidden_time += delta
+	if crime_points > 0 and contact_age > 1.0: hidden_time += delta * _evasion_rate()
 	elif crime_points == 0: hidden_time = 0.0
 	if crime_points > 0 and stars == 0 and hidden_time > 12.0:
 		crime_points = 0

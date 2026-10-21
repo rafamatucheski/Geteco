@@ -19,6 +19,9 @@ const ROADBLOCKS := preload("res://gameplay/police_response/ground/PoliceRoadblo
 const TRACE := preload("res://gameplay/dispatch/DispatchTrace.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const WORLD_CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
+const PURSUIT := preload("res://gameplay/dispatch/PursuitRules.gd")
+const RADIO := preload("res://gameplay/dispatch/PursuitRadio.gd")
+const RADIO_AUDIO := preload("res://gameplay/dispatch/PursuitRadioAudio.gd")
 # Cada candidato pode custar um plano de rota (~2,2 ms): 8 geravam picos de 22–53 ms
 # no quadro de despacho. Candidatos que falham voltam no próximo intervalo.
 const SPAWN_CANDIDATES_CHECKED := 3
@@ -78,6 +81,23 @@ var _investigation_seen := false
 ## Instante (_clock) antes do qual nenhum caminhão novo é despachado: o anterior foi destruído.
 var _fire_lockout_until := 0.0
 
+# Perseguição estilo GTA (PursuitRules)
+## O último contato foi com o jogador dirigindo: a busca é em leque pela área, sem descer a pé.
+var pursuit_in_car := false
+## Velocidade do carro no último contato (estimativa de para onde ele foi nos primeiros segundos).
+var pursuit_velocity := Vector3.ZERO
+## Contadores para testes e depuração (pit, guide_*, block_*, search_point, outrun, spawn_ahead).
+var pursuit_stats: Dictionary = {}
+var radio := RADIO.new()
+## Voz do rádio (criada na primeira fala; PursuitRadioAudio pede os WAVs em segundo plano).
+var radio_voice: Node
+var _search_points: Array[Vector3] = []
+var _search_center := Vector3.INF
+var _search_stars := -1
+var _search_rng := RandomNumberGenerator.new()
+var _had_contact := false
+var _radio_stars := 0
+
 func configure(p_world: Node3D, p_gameplay: Node3D, p_routes: RefCounted) -> void:
 	world = p_world
 	gameplay = p_gameplay
@@ -90,6 +110,10 @@ func configure(p_world: Node3D, p_gameplay: Node3D, p_routes: RefCounted) -> voi
 
 func _ready() -> void:
 	if _owns_dispatch: claim_dispatch()
+	# A voz do rádio pede os WAVs em segundo plano já na carga, para a primeira fala não sair muda.
+	if PURSUIT.enabled and radio_voice == null:
+		radio_voice = RADIO_AUDIO.new()
+		add_child(radio_voice)
 
 ## Chamar quando o mapa trocar (`traffic_routes.configure(region.roads)`).
 func refresh_roads() -> void:
@@ -158,6 +182,7 @@ func _physics_process(delta: float) -> void:
 			_prepared_ground_cells.erase(unit.get_instance_id())
 			units.erase(unit)
 	var step := TRACE.begin()
+	if PURSUIT.enabled: _tick_pursuit_awareness()
 	_dispatch_police(delta)
 	TRACE.end("police.dispatch_step", step)
 	if roadblocks != null:
@@ -285,6 +310,13 @@ func set_enabled(value: bool, release_ownership := true) -> void:
 func dismiss_all(reason: String) -> void:
 	if roadblocks != null: roadblocks.clear()
 	investigation_unit = null
+	radio.reset()
+	if is_instance_valid(radio_voice): radio_voice.stop()
+	pursuit_in_car = false
+	_had_contact = false
+	_radio_stars = 0
+	_search_points.clear()
+	_search_center = Vector3.INF
 	for unit in units.duplicate(): unit.finish(reason)
 	units.clear()
 	# Corpos já filtrados de uma equipe continuam filhos do controlador durante
@@ -667,8 +699,20 @@ func dispatch_police_to(anchor: Vector3, investigation: bool = false) -> RefCoun
 	var occupied := 0
 	var step := TRACE.begin()
 	var candidates := _depot_candidates("police", anchor)
-	candidates.append_array(router.spawn_candidates(anchor, RULES.SPAWN_MIN, RULES.SPAWN_MAX))
-	TRACE.end("police.candidates", step, {"count": candidates.size()})
+	var ahead := _spawn_ahead_direction(investigation)
+	if ahead.is_empty():
+		candidates.append_array(router.spawn_candidates(anchor, RULES.SPAWN_MIN, RULES.SPAWN_MAX))
+	else:
+		# Alvo fugindo de carro: o reforço nasce à frente, onde ele estará em ~2,5 s, de preferência
+		# virado para ele. Do mais próximo ao mais distante, quase sempre nascia atrás e nunca alcançava.
+		var speed: float = ahead.speed
+		var reach := clampf(RULES.SPAWN_MAX + speed, RULES.SPAWN_MAX, PURSUIT.SPAWN_AHEAD_MAX)
+		var found: Array[Dictionary] = router.spawn_candidates(anchor, RULES.SPAWN_MIN, reach)
+		var direction: Vector3 = ahead.direction
+		for candidate in found: candidate["score"] = PURSUIT.spawn_score(candidate.point, candidate.yaw, anchor, direction, speed)
+		found.sort_custom(func(x: Dictionary, y: Dictionary) -> bool: return x.score < y.score)
+		candidates.append_array(found)
+	TRACE.end("police.candidates", step, {"count": candidates.size(), "ahead": not ahead.is_empty()})
 	for candidate in candidates:
 		if checked >= POLICE_CLEARANCE_CANDIDATES or planned >= SPAWN_CANDIDATES_CHECKED: break
 		var point: Vector3 = candidate.point
@@ -696,15 +740,121 @@ func dispatch_police_to(anchor: Vector3, investigation: bool = false) -> RefCoun
 		unit.level = level
 		unit.variant = variant
 		unit.role = RULES.pursuit_role(_serial)
+		if PURSUIT.enabled and not investigation:
+			# Papéis por prioridade: a primeira viatura ativa persegue (PIT), depois flanco, bloqueio...
+			var roles: Array = []
+			for other in _active_police():
+				if other != unit: roles.append(other.role)
+			unit.role = PURSUIT.next_role(roles)
 		unit.driver.set_route(plan.curve)
 		unit.set_route_goal(anchor)
 		unit.set_siren_on()
+		if not ahead.is_empty(): count_pursuit("spawn_ahead")
 		emit_dispatch_event("dispatched", {"unit": unit, "distance": candidate.distance, "variant": variant})
 		TRACE.end("police.dispatch_to", dispatch_began, {"outcome": "dispatched", "archetype": archetype})
 		return unit
 	emit_dispatch_event("spawn_failed", {"service": "police", "checked": checked, "occupied": occupied, "planned": planned, "archetype": archetype})
 	TRACE.end("police.dispatch_to", dispatch_began, {"outcome": "spawn_failed", "archetype": archetype})
 	return null
+
+## Direção e velocidade do alvo para o nascimento à frente, ou vazio (alvo a pé, parado, sem
+## contato, averiguação ou perseguição GTA desligada).
+func _spawn_ahead_direction(investigation: bool) -> Dictionary:
+	if not PURSUIT.enabled or investigation or player_position_override != Vector3.INF or gameplay.contact_age > 1.0: return {}
+	var target: Variant = gameplay.pursuit_target()
+	if not is_instance_valid(target) or not "horizontal_velocity" in target: return {}
+	var velocity: Vector3 = target.horizontal_velocity
+	velocity.y = 0.0
+	if velocity.length() < PURSUIT.SPAWN_MOVING_SPEED: return {}
+	return {"direction": velocity.normalized(), "speed": velocity.length()}
+
+## Fala atual do rádio da central para o HUD ("" sem fala recente).
+func radio_line() -> String:
+	return radio.current(_clock) if PURSUIT.enabled else ""
+
+func count_pursuit(key: String) -> void:
+	pursuit_stats[key] = int(pursuit_stats.get(key, 0)) + 1
+
+## Viatura deixada para trás numa perseguição (DispatchUnit._outrun): some fora da vista, devolve a
+## vaga e o orçamento de despacho (ela não falhou, só ficou para trás) e adianta o próximo reforço,
+## que nasce à frente.
+func recycle_outrun(unit: RefCounted) -> void:
+	count_pursuit("outrun")
+	deployed_this_pursuit = maxi(0, deployed_this_pursuit - 1)
+	_police_clock = minf(_police_clock, 1.0)
+	emit_dispatch_event("outrun", {"unit": unit})
+	unit.finish("outrun")
+
+## Ponto de rua para a viatura vasculhar na busca em leque: dentro do raio de busca em volta da
+## última posição conhecida, longe da própria viatura e dos pontos das outras. INF sem candidatos.
+func search_point_for(unit: RefCounted) -> Vector3:
+	var center: Vector3 = gameplay.last_known
+	var stars: int = gameplay.stars
+	if _search_center == Vector3.INF or _search_center.distance_to(center) > 10.0 or _search_stars != stars:
+		var traced := TRACE.begin()
+		var spanned := STALL_WORK.begin()
+		_search_center = center
+		_search_stars = stars
+		_search_points.clear()
+		var radius := PURSUIT.search_radius(stars)
+		for candidate in router.spawn_candidates(center, 0.0, radius, PURSUIT.SEARCH_POINT_SPACING):
+			_search_points.append(candidate.point)
+		_search_rng.seed = hash(Vector3i(roundi(center.x), roundi(center.z), stars))
+		STALL_WORK.finish_slow("dispatch.search_points", spanned, 3000, self)
+		TRACE.end("pursuit.search_points", traced, {"count": _search_points.size()})
+	if _search_points.is_empty(): return Vector3.INF
+	var taken: Array[Vector3] = []
+	for other in units:
+		if other != unit and other.is_police() and other.search_point != Vector3.INF: taken.append(other.search_point)
+	var fallback: Vector3 = _search_points[_search_rng.randi_range(0, _search_points.size() - 1)]
+	for attempt in 8:
+		var candidate: Vector3 = _search_points[_search_rng.randi_range(0, _search_points.size() - 1)]
+		if candidate.distance_to(unit.vehicle.global_position) < 25.0: continue
+		var crowded := false
+		for point in taken:
+			if point.distance_to(candidate) < 20.0: crowded = true
+		if not crowded: return candidate
+	return fallback
+
+## Fala do rádio: linha no HUD e a mesma fala em voz (pedaços gravados, PursuitRadioAudio).
+func announce(event: String, street := "", heading := "", urgent := false) -> bool:
+	var settings := get_node_or_null("/root/V2Settings")
+	radio.english = settings != null and str(settings.get("text_language")).begins_with("en")
+	if not radio.announce(event, _clock, street, heading, urgent): return false
+	_speak(urgent)
+	return true
+
+func _speak(urgent: bool) -> void:
+	if radio.clips.is_empty(): return
+	if radio_voice == null:
+		radio_voice = RADIO_AUDIO.new()
+		add_child(radio_voice)
+	radio_voice.say(radio.clips, urgent)
+
+## Rádio da central e o lado (carro/a pé) do último contato. Só lê o estado; não despacha nada.
+func _tick_pursuit_awareness() -> void:
+	var stars: int = gameplay.stars
+	if stars <= 0:
+		if _radio_stars > 0: announce("evaded", "", "", true)
+		_radio_stars = 0
+		_had_contact = false
+		return
+	var target: Variant = gameplay.pursuit_target()
+	var contact: bool = gameplay.contact_age <= 1.0 and is_instance_valid(target)
+	if contact:
+		pursuit_in_car = "horizontal_velocity" in target
+		pursuit_velocity = target.horizontal_velocity if pursuit_in_car else Vector3.ZERO
+	if stars > _radio_stars:
+		announce("wanted" if _radio_stars == 0 else "escalated", "", "", true)
+	_radio_stars = stars
+	if contact and not _had_contact:
+		var street := RADIO.place(router, target.global_position)
+		if not street.is_empty(): announce("spotted", street)
+	elif not contact and _had_contact:
+		announce("lost", RADIO.place(router, gameplay.last_known))
+	elif contact and pursuit_in_car:
+		if radio.fleeing(router, target.global_position, target.horizontal_velocity, _clock): _speak(false)
+	_had_contact = contact
 
 func retain_investigator(unit: RefCounted) -> bool:
 	if not gameplay.has_method("police_investigation_active") or not gameplay.police_investigation_active(): return false

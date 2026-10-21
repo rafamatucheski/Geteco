@@ -12,6 +12,7 @@ const MAP_SIZE := Vector2(180, 180)
 const PANEL_SIZE := MAP_SIZE + Vector2(8, 8)
 const SCALE := 1.54 # Preserve the previous ground coverage inside a smaller panel.
 const NAVIGATION := preload("res://ui/v1/NavigationRoute.gd")
+const POLICE := preload("res://ui/v1/MinimapPolice.gd")
 const FONT := preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
 const WEEKDAYS := ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"]
 
@@ -165,6 +166,8 @@ func refresh() -> void:
 		if fishing_target.is_finite(): objective_target = Vector2(fishing_target.x,fishing_target.z)
 	if work_target.is_finite(): objective_target=Vector2(work_target.x,work_target.z)
 	_sync_navigation(actor)
+	# Viaturas e cones se movem sozinhos: com polícia em jogo o mapa redesenha a cada atualização (30 Hz).
+	if POLICE.active(world): _redraw_required = true
 	if not was_visible or _redraw_required or center.distance_squared_to(_drawn_center) > 0.0025 or absf(angle_difference(heading, _drawn_heading)) > 0.01 or absf(map_scale - _drawn_scale) > .002 or not objective_target.is_equal_approx(_drawn_objective):
 		_drawn_center = center
 		_drawn_heading = heading
@@ -283,6 +286,7 @@ func draw_map(target: Control) -> void:
 	var fishing_entry := preload("res://runtime/FishingLocation.gd").ENTRY
 	var fishing_point := Vector2(fishing_entry.x,fishing_entry.z)
 	if map_area.has_point(fishing_point): preload("res://ui/hud/MapSymbols.gd").draw(target,project(fishing_point),"fishing",7.0)
+	if POLICE.active(world): POLICE.draw(target, self, world, map_area, Time.get_ticks_msec() / 1000.0)
 	if objective_target != Vector2.ZERO and center.distance_to(objective_target) >= 3.0:
 		var marker := edge_marker(objective_target)
 		target.draw_circle(marker, 8, STYLE.INK)
