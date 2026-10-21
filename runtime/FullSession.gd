@@ -1105,8 +1105,13 @@ func restore_location() -> void:
 	var place: String = state.place_id
 	state.place_id = ""
 	var definition := PLACES.get_definition(place)
+	var previous_roof: Dictionary = state.world_state.get("harbor_service_roof",{})
+	if not previous_roof.is_empty() and preload("res://world/editing/WorldServiceBuildings.gd").is_deleted(str(previous_roof.get("id",""))):
+		definition = PLACES.get_definition(str(previous_roof.id))
+	var removed_place: bool = bool(definition.get("editor_deleted",false))
+	if removed_place: state.world_state.erase("harbor_service_roof")
 	var place_matches_region: bool = place == "maciota" and state.region_id == "harbor"
-	if not definition.is_empty(): place_matches_region = definition.get("region","") == state.region_id
+	if not definition.is_empty(): place_matches_region = definition.get("region","") == state.region_id and not removed_place
 	if place_matches_region:
 		if not await enter_place(place,false): restore_blocked = true
 	else:
@@ -1117,15 +1122,16 @@ func restore_location() -> void:
 		var point: Vector3 = world.maciota_place.exterior_return if state.region_id == "harbor" else controller.region.spawn_position
 		for entry in controller.region.entries:
 			if entry.id == state.checkpoint_id: point = entry.return_position
+		if removed_place and definition.get("region","") == state.region_id: point = definition.return_position
 		var fallback: Vector3 = point
 		var pedestrian: Dictionary = state.world_state.get("pedestrian",{})
-		if pedestrian.get("region","") == state.region_id:
+		if not removed_place and pedestrian.get("region","") == state.region_id:
 			var coordinates: Array = pedestrian.position
 			point = Vector3(coordinates[0],coordinates[1],coordinates[2])-Vector3.UP*.08
 			if state.region_id == "harbor":
 				point = preload("res://world/railway/RailwayNetwork.gd").restore_harbor_pedestrian(point+Vector3.UP*.08)-Vector3.UP*.08
 		var saved_roof: Dictionary = state.world_state.get("harbor_service_roof",{})
-		if not saved_roof.is_empty() and str(saved_roof.get("place","")) == "":
+		if not removed_place and not saved_roof.is_empty() and str(saved_roof.get("place","")) == "":
 			var roof_return: Array = saved_roof["return"]
 			point = Vector3(roof_return[0],roof_return[1],roof_return[2])-Vector3.UP*.08
 		var seated: Dictionary = _saved_garage_driver()
@@ -1247,6 +1253,7 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 		show_message("Perca a polícia antes de entrar.")
 		return false
 	var definition := PLACES.get_definition(id)
+	if definition.get("editor_deleted",false): return false
 	if id == "maciota":
 		if state.region_id != "harbor": return false
 	elif definition.is_empty() or (definition.get("region","") != state.region_id and not definition.get("any_region",false)):
@@ -1305,6 +1312,7 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 		destination = candidate_room.spawn_position
 		if embedded_building and building_entrance.walking_admission:
 			destination = world.player.global_position-Vector3.UP*.04
+	load("res://world/editing/WorldInteriorEdits.gd").apply_saved(candidate_room,id)
 	controller.region.set_focus(candidate_return)
 	for i in 2:
 		await get_tree().physics_frame

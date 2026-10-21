@@ -2,6 +2,7 @@ extends CanvasLayer
 
 ## Original V1 scene and theme, adapted to the single V2 session/save.
 const STYLE = preload("res://ui/GameStyle.gd")
+const COLLECTION = preload("res://ui/CollectionPresentation.gd")
 var world: Node
 var settings: Control
 var collection_button: Button
@@ -11,6 +12,8 @@ var developer_panel: CanvasLayer
 func _ready() -> void:
 	visible = false
 	for panel in [%SlotsModal, %AchievementsModal, %CollectiblesModal]: panel.hide()
+	COLLECTION.setup(%AchievementsModal,true,_show_collection)
+	COLLECTION.setup(%CollectiblesModal,false,_show_collection)
 	%BtnResume.set_meta("primary_action", true)
 	developer_panel = preload("res://ui/DeveloperPanel.gd").new()
 	developer_panel.world = world
@@ -115,7 +118,10 @@ func _close_collection() -> void:
 	if collection_button != null: collection_button.grab_focus()
 
 func _show_collection(achievements: bool) -> void:
+	%AchievementsModal.hide()
+	%CollectiblesModal.hide()
 	var data: Dictionary = world.session.state.economy.snapshot()
+	var values: Dictionary = COLLECTION.stats(world.session) if achievements else {}
 	var found: Array = data.achievements if achievements else data.collectibles
 	var catalog: Dictionary = preload("res://data/catalogs/AchievementCatalog.gd").ACHIEVEMENTS if achievements else preload("res://data/catalogs/CollectibleCatalog.gd").ENTRIES
 	var rows: VBoxContainer = %AchievementsList if achievements else %CollectiblesList
@@ -130,16 +136,15 @@ func _show_collection(achievements: bool) -> void:
 		if not ids.has(id): ids.append(id)
 	for id in ids:
 		var entry: Dictionary = catalog.get(id, {})
-		var row := Label.new()
-		row.text = str(entry.get("name", id)) + (" · Concluído" if found.has(id) else " · Pendente")
-		if achievements and entry.has("desc"): row.text += "\n" + str(entry.desc)
-		row.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		rows.add_child(row)
+		rows.add_child(COLLECTION.row(str(id),entry,found.has(id),achievements,values))
 	var progress: Label = %AchievementsProgressLabel if achievements else %CollectiblesProgressLabel
-	progress.text = "%d / %d" % [found.size(), ids.size()]
+	progress.text = "%d / %d\n%s" % [found.size(), ids.size(),tr("desbloqueadas") if achievements else tr("encontrados")]
 	var panel: Control = %AchievementsModal if achievements else %CollectiblesModal
 	collection_button = %BtnAchievements if achievements else %BtnCollectibles
 	%RootControl.get_node("CenterPanel").hide()
 	panel.show()
+	panel.get_node("Margin/VBox/Scroll").scroll_vertical = 0
 	STYLE.apply(panel)
+	COLLECTION.finish_style(panel,achievements)
 	STYLE.trap_focus(panel)
+	panel.find_child("AchievementsTab" if achievements else "CollectiblesTab",true,false).grab_focus()

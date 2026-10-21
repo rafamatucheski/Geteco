@@ -6,7 +6,7 @@ const INTRO := preload("res://systems/Progression.gd")
 const MISSIONS := preload("res://data/campaign/HarborMissions.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const SCHEMA_VERSION := 3
-const DEFAULT_WORLD_STATE := {"time":.32,"weather":0,"vehicles":[],"rewards":[],"outfit":"dante_classic"}
+const DEFAULT_WORLD_STATE := {"time":.32,"weather":0,"vehicles":[],"rewards":[],"outfit":"dante_classic","desert_layout_version":2}
 const RPG_REWARD_CANONICAL := "mountain_waterfall_secret_rpg_01"
 const RPG_REWARD_V2_ALIAS := "mountain_cave_rpg"
 const CARGO_REWARDS := [
@@ -54,9 +54,11 @@ func set_location(region: String, place: String = "") -> void:
 	place_id = place
 	if not weapons_allowed(): economy.equip_weapon("fists")
 func snapshot() -> Dictionary:
+	var saved_world := world_state.duplicate(true)
+	saved_world["desert_layout_version"] = 2
 	return {"schema_version":SCHEMA_VERSION,"game":"geteco_v2","region_id":region_id,"place_id":place_id,"checkpoint_id":checkpoint_id,
 		"economy":economy.snapshot(),"campaign":campaign.snapshot(),"canonical_campaign":canonical_campaign.snapshot(),
-		"intro":intro.snapshot(),"world":world_state.duplicate(true),"combat":combat_state.duplicate(true)}
+		"intro":intro.snapshot(),"world":saved_world,"combat":combat_state.duplicate(true)}
 func restore_snapshot(data: Dictionary) -> bool:
 	if data.get("game") != "geteco_v2": return false
 	var schema := int(data.get("schema_version",0))
@@ -65,6 +67,8 @@ func restore_snapshot(data: Dictionary) -> bool:
 	if schema != SCHEMA_VERSION: return false
 	for key in ["economy","campaign","canonical_campaign","intro","world","combat"]:
 		if not data.get(key) is Dictionary: return false
+	if not preload("res://runtime/desert/DesertLayoutMigration.gd").valid_version(data.world): return false
+	data = preload("res://runtime/desert/DesertLayoutMigration.gd").migrate_snapshot(data)
 	if not data.combat.is_empty() and not preload("res://gameplay/Gameplay.gd").validate_snapshot(data.combat): return false
 	for key in ["region_id","place_id","checkpoint_id"]:
 		if not data.get(key) is String or str(data[key]).length() > 128: return false
@@ -233,7 +237,8 @@ static func _reward_aliases(id: String) -> Array[String]:
 
 static func _world_reward_contracts() -> Dictionary:
 	var result := {}
-	for definition in PLACES.definitions():
+	# Historical receipts remain valid when an authored service facade is removed.
+	for definition in PLACES.definitions(true):
 		for reward in definition.get("rewards",[]):
 			if reward is Dictionary and reward.get("id") is String:
 				result[_canonical_reward_id(reward.id)] = reward.duplicate(true)

@@ -1,3 +1,5 @@
 lock-open-2.svg: https://github.com/tabler/tabler-icons/blob/main/icons/outline/lock-open-2.svg
 Original Tabler Icons artwork, MIT license; downloaded 2026-10-16.
 Unmodified SVG. Imported texture uses SVG scale 4. Inventory applies a monochrome tint once in its texture cache.
+
+Collection icons (2026-10-21): search, compass, flag-check, stopwatch, ski-jumping, mountain, cash, shield, target, stars, car, tool, mail, backpack, book, camera, file-search. Source https://github.com/tabler/tabler-icons/tree/main/icons/outline (MIT). Only currentColor replaced with white for Godot texture modulation.
