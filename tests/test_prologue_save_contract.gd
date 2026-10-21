@@ -55,7 +55,7 @@ func run() -> void:
 	# Falas: só legenda, cada uma com quem fala e o português; inglês existe e fica vazio.
 	var data: Dictionary = BLITZ.lines()
 	check(data.get("version") == 1.0, "JSON das falas do prólogo carrega")
-	var groups := {"dante":["radio_open", "colleagues", "stopped", "door", "order"], "vicente":["radio_open", "radio_warning", "lights", "stop"]}
+	var groups := {"dante":["radio_open", "colleagues", "stopped", "approach", "ask", "door", "order_out", "ambush", "man_down", "shooter_down", "flee", "wounded", "order", "escort", "cargo"], "vicente":["radio_open", "radio_warning", "lights", "stop"]}
 	for pov in groups:
 		for key in groups[pov]:
 			var source: Array = data.get(pov, {}).get(key, [])
@@ -65,6 +65,7 @@ func run() -> void:
 	var prado: Array = data.dante.radio_open
 	check(prado.any(func(line): return line.pt == "Procedimento, Ferraz." and line.speaker == "Prado" and line.radio), "Prado no rádio: \"Procedimento, Ferraz.\"")
 	check(data.dante.door[0].pt == "Dante?" and data.dante.order[0].pt == "Ferraz. Procedimento.", "a porta e a ordem seguem o roteiro")
+	check((data.dante.cargo as Array).any(func(line): return "nota" in str(line.pt)), "fica claro que a carga era legal")
 	check(BLITZ.text(data.get("title")) == "Oito anos depois.", "título do corte para preto")
 	for key in ["signal", "cuff", "skip"]:
 		check(not BLITZ.text(data.prompts.get(key)).is_empty(), "comando %s tem texto" % key)
