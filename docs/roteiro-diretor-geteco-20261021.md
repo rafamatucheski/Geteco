@@ -94,7 +94,7 @@ Título: *Oito anos depois.*
 
 ## Ato 1 — Harbor: "O irmão que não veio"
 
-*As oito missões que já existem (M00 a M07), mais quatro novas (M02-B, M04-B, M05-B, M06-B) que constroem a Helena, o Neco e o Vicente culpado.*
+*As oito missões que já existem (M00 a M07), mais cinco novas (M02-B, M04-B, M05-B, M06-B, M06-C) que constroem a Helena, o Neco, o Vicente culpado e a pista que leva ao deserto.*
 
 ### M00 · Chegada
 A ligação em casa (já existe). Dante de mochila, o barco, Maciota reconhecendo-o pela foto do histórico.
@@ -261,6 +261,75 @@ um gato que quer fugir.
 > **Helena:** (quase sorrindo) Então cobra.
 
 Ela vai embora a pé, sem olhar para trás. É o mais perto que os dois chegam no ato 1.
+
+### M06-C · Turno da noite — *nova; invasão da Vértice*
+*~35 min. Vértice, a distribuidora do canto oeste de Harbor (em −340, −80), depois das 22h.*
+
+O carimbo 0417 apareceu duas vezes: nos registros dos Cobras (M06) e na pasta de Helena (M06-B). Os dois
+falam de cargas. Quem levou as cargas dos Cobras para fora de Harbor nos últimos dez anos foi a Vértice.
+
+**EXT. BAIA DO NECO — NOITE.** Neco está embaixo de um caminhão. Só aparecem as botas.
+
+> **Dante:** Você guincha caminhão da Vértice.
+> **Neco:** Guincho. Eles pagam em dia, coisa rara.
+> **Dante:** E de noite?
+> **Neco:** (sai de baixo do caminhão, devagar) De noite eles não chamam guincho. Chamam outra coisa.
+> **Dante:** Quantos?
+> **Neco:** Dois na ronda, um na guarita, e depois das onze chega uma van com mais três. Gente dos Cobras,
+> não é vigia de firma. (limpa a mão) Tem também o alçapão do pátio de trás. Dá no porão. Eu sei porque
+> já tirei carro de lá que não devia estar lá.
+> **Dante:** Você vai comigo?
+> **Neco:** Nem morto. (pausa) Mas se precisar de um guincho às três da manhã, eu tô acordado.
+
+**O que Dante procura:** o livro de despachos de oito anos atrás, guardado no escritório do segundo piso.
+
+**EXT. VÉRTICE — NOITE.** Plano aberto de cima: o pátio iluminado por dois postes, as carretas paradas,
+a guarita com a TV ligada, a cerca. A neblina do canal entra pelo portão dos caminhões.
+
+**Como jogar — dois caminhos, o jogador escolhe na hora:**
+
+- **Escondido.** Entrar pelo alçapão do pátio de trás (o esconderijo da Vértice, que já existe) ou
+  pulando a cerca no canto escuro. Os vigias seguem rondas fixas e olham num cone; carretas, contêineres e
+  empilhadeiras são cobertura. Dá para passar sem ser visto, ou derrubar um vigia pelas costas sem
+  barulho. Corpo que fica no caminho da ronda é achado e dispara a busca.
+- **No tiro.** Entrar pelo portão e enfrentar todo mundo. O primeiro tiro liga o alarme: a van dos
+  Cobras chega com reforço em um minuto, as luzes do pátio acendem e a polícia vem a seguir. Possível,
+  mas o livro de despachos fica numa sala que pega fogo se a briga durar demais (o tempo aparece na tela).
+
+O meio-termo também vale: começar escondido e, se for visto, aguentar o tranco.
+
+**INT. ESCRITÓRIO DA VÉRTICE — NOITE.** Arquivo de aço, gaveta por ano. Dante acha o livro e lê em voz
+baixa, só o que importa:
+
+> **Dante:** (lendo) Dia catorze. Carreta três. Saída 22h10. Destino: Estrada do Sal. (pausa) Salinas.
+> **Dante:** Retorno... (vira a página) não tem retorno.
+
+Embaixo, a lápis, uma linha a mais com outra letra: *motorista substituído — aut. 0417*.
+
+> **Direção:** close no lápis; o jogador já viu esse número duas vezes e entende antes do Dante falar.
+> Dante não fala. Arranca a página, dobra, guarda no bolso de dentro.
+
+**Saída.** Se ninguém viu Dante: ele sai pelo mesmo caminho e a Vértice amanhece normal. Se o alarme
+tocou: fuga com estrelas, e o Neco aparece com o guincho no beco se o jogador ligar para ele ("eu disse
+que tava acordado").
+
+**EXT. CAIS — MADRUGADA.** Dante liga para o Maciota.
+
+> **Maciota:** São três e meia, Dante.
+> **Dante:** A carga do Vicente passou pelas Salinas. No deserto.
+> **Maciota:** (silêncio) A lista do Takeshi também fala do deserto.
+> **Dante:** Eu sei.
+> **Maciota:** Então dorme. Amanhã você tem corrida.
+
+**Consequência:**
+- **Escondido:** recompensa maior (o cofre do escritório fica intacto para levar: dinheiro dos Cobras),
+  e no ato 2 o Vicente comenta *"Ninguém viu nada na Vértice? Você ainda é polícia de algum jeito."*
+- **No tiro:** recompensa menor (o cofre queima junto), procurado, a Vértice amanhece com fita da polícia
+  e fica fechada uns dias. No ato 2 o Vicente comenta *"Você explodiu a Vértice? Quem é você?"*
+
+> **Por que esta missão importa para a história:** hoje o ato 1 só aponta o deserto pela lista do Takeshi.
+> Aqui o próprio Dante descobre, com as mãos, que a carga da operação passou pelas Salinas. Quando ele
+> chega ao deserto, já sabe o que procura.
 
 ### M07 · A última volta — *a despedida*
 Corrida contra Takeshi e a lista na casa dele (já existem). **Nova cena de fechamento:**
@@ -451,13 +520,13 @@ Corte para preto. Fim.
 | Parte | Missões | Tempo de história |
 |---|---|---|
 | Prólogo | 1 | ~5 min |
-| Ato 1 — Harbor | 12 (M00 a M07 e as quatro novas) + a carona opcional | ~5 h |
+| Ato 1 — Harbor | 13 (M00 a M07 e as cinco novas) + a carona opcional | ~5 h 30 |
 | Ato 2 — Deserto | 13 | ~5 h |
 | Ato 3 — Norte | 8 | ~3 h 30 |
-| **Total** | **34** | **~13 h 30** |
+| **Total** | **35** | **~14 h** |
 
 Com as atividades paralelas que já existem (serra, contratos do deserto, arrancadas, cartas, guincho,
-cânion), o jogo inteiro fica entre 15 e 16 horas. Tempos de quem joga sem pressa, contando deslocamento;
+cânion), o jogo inteiro fica perto de 16 horas. Tempos de quem joga sem pressa, contando deslocamento;
 ninguém jogou a campanha inteira ainda.
 
 ## O que muda nas missões que já existem
@@ -475,6 +544,7 @@ ninguém jogou a campanha inteira ainda.
 | **M05-B** (nova) Posto de lavagem | — | Cena do cais (Helena suspensa) e assalto ao cofre do posto dos Cobras, com Helena no telefone | Grande: Harbor não tem posto de gasolina; o assalto reaproveita o do banco |
 | M06 | Registros | Carimbo 0417 nos registros | Pequeno |
 | **M06-B** (nova) O que a Helena guardou | — | Infiltração noturna no banco para tirar a pasta de Helena | Médio: interior do banco e alarme já existem |
+| **M06-C** (nova) Turno da noite | Vértice com 2 vigias de ronda, guarita, expediente 8h–18h e alçapão do esconderijo | Invasão noturna com segurança dos Cobras: escondido ou no tiro; o livro de despachos aponta as Salinas | Grande: precisa de visão dos vigias, derrubada silenciosa, alarme, reforço e a sala que pega fogo |
 | M07 | Lista do Takeshi | Despedida de Helena no cais | Pequeno |
 | A2-01 | Motel | Chave de cliente na cama | Pequeno |
 | A2-04 | Irene | Helena lê a ordem; cena na porta vira dela | Médio (troca de ator e falas) |
