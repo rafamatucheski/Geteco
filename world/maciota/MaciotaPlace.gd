@@ -160,6 +160,7 @@ func _add_solid(parent: Node3D, id: String, bounds: AABB) -> void:
 	solid_bodies.append(body)
 
 func set_interior_active(active: bool) -> void:
+	if active: load("res://world/editing/WorldInteriorEdits.gd").apply_saved(self,"maciota")
 	interior_active = active
 	if not is_instance_valid(room): return
 	room.visible = active

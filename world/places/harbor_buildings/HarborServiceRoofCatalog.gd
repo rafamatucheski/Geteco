@@ -4,9 +4,18 @@ extends RefCounted
 const PLACE_IDS := ["harbor_bank","harbor_supermarket","harbor_ammunation","harbor_clothing","harbor_fuel","maciota","harbor_police","harbor_hospital","harbor_fire_station","canal_north","cobra_leader_house","westgate_garden","quayside_house","cemetery_keeper","port_boss_garage"]
 const SOURCE_IDS := {"NorthFrontage0":"harbor_bank","NorthFrontage1":"harbor_supermarket","NorthFrontage2":"harbor_ammunation","NorthFrontage3":"harbor_clothing","NorthFrontage4":"harbor_fuel","Police":"harbor_police","Clinic":"harbor_hospital","NorthFireStation":"harbor_fire_station","CanalHomesWest":"canal_north","CourtyardHouse":"cobra_leader_house","MotorWorkshop":"northgate_auto_roof"}
 static var _cache: Array[Dictionary] = []
+static var _cache_signature := -1
+const SERVICES := preload("res://world/editing/WorldServiceBuildings.gd")
 
-static func definitions() -> Array[Dictionary]:
-	if not _cache.is_empty(): return _cache
+static func definitions(include_deleted := false) -> Array[Dictionary]:
+	var edits := SERVICES.changes()
+	var relevant: Array = []
+	for source in SOURCE_IDS: relevant.append(edits.get("building/"+str(source),{}))
+	var signature := hash(relevant)
+	if signature != _cache_signature:
+		_cache.clear()
+		_cache_signature = signature
+	if not _cache.is_empty(): return _available(edits,include_deleted)
 	var places = preload("res://world/places/PlaceCatalog.gd")
 	var originals: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://world/regions/OriginalWorldData.json"))
 	var original_by_id := {}
@@ -65,7 +74,13 @@ static func definitions() -> Array[Dictionary]:
 	_append("vertice_roof","",Vector3(-340,0,-81),Vector2(55.5,37.5),11.40,0,"vertice")
 	var motor: Dictionary = original_by_id.MotorWorkshop
 	_append("northgate_auto_roof","",Vector3(motor.position[0]/16.0,0,motor.position[1]/16.0),Vector2(motor.size[0],motor.size[1])/16.0,load("res://world/urban_detail/UrbanBuildingFactory.gd").resolved_height(motor)+.45,0,"northgate")
-	return _cache
+	return _available(edits,include_deleted)
+
+static func _available(edits: Dictionary, include_deleted: bool) -> Array[Dictionary]:
+	if include_deleted: return _cache
+	return _cache.filter(func(row):
+		var source: Variant = SOURCE_IDS.find_key(str(row.id))
+		return source == null or not edits.get("building/"+str(source),{}).get("deleted",false))
 
 static func _append(id: String, place: String, center: Vector3, size: Vector2, height: float, yaw: float, owner := "service", index := -1) -> void:
 	_cache.append({"id":id,"place":place,"owner":owner,"index":index,"exterior_position":center,"exterior_rotation":yaw,"size":size,"roof_height":height,
@@ -77,8 +92,8 @@ static func _append(id: String, place: String, center: Vector3, size: Vector2, h
 	# Its roof exit is a separate bay to the left, preserving that solid detail.
 	if id=="harbor_fire_station": _cache[-1].jump_x = maxf(.7,size.x*.5-3.8)
 
-static func find(id: String) -> Dictionary:
-	for definition in definitions():
+static func find(id: String, include_deleted := false) -> Dictionary:
+	for definition in definitions(include_deleted):
 		if str(definition.id)==id: return definition
 	return {}
 
@@ -90,7 +105,7 @@ static func valid_snapshot(value: Variant) -> bool:
 	if value.is_empty(): return true
 	if value.size()!=3 or not value.has("id") or not value.has("place") or not value.has("return"): return false
 	if not value.id is String or not value.place is String: return false
-	var definition := find(value.id)
+	var definition := find(value.id,true)
 	if definition.is_empty() or str(definition.place)!=value.place: return false
 	if not value["return"] is Array or value["return"].size()!=3: return false
 	for coordinate in value["return"]:

@@ -73,6 +73,8 @@ const BUILD_BUDGET_USEC := 1000.0
 var current_cell := Vector2i(100000,100000)
 var retention_radius := 2
 var vehicle_support_cells: Dictionary = {}
+var developer_view_cells: Dictionary = {}
+var _developer_bounds := Rect2()
 var _residency_dirty := false
 var _chairlift_cleanup_pending := false
 var prepared := false
@@ -163,10 +165,13 @@ func prewarm_incremental() -> void:
 		await get_tree().process_frame
 	chairlifts = chairlifts.filter(func(lift): return is_instance_valid(lift))
 
-## Monta e descarta os chunks do corredor do túnel atrás da tela de carregamento para pré-aquecer
-## as variantes de shader do corte translúcido (TunnelCutaway.prime). Mesmo fluxo de
-## prewarm_incremental, mas só para essas células.
+## Os poucos trechos construídos para aquecer o túnel sobrevivem escondidos e sem física.
+## A primeira visita usa os mesmos nós; não paga outra construção completa.
+const MAX_WARM_TUNNEL_CHUNKS := 8
+var _warm_tunnel_chunks: Dictionary = {}
+var _tunnel_corridor_primed := false
 func prime_tunnel_corridor() -> void:
+	if _tunnel_corridor_primed: return
 	var began := STALL_WORK.begin()
 	while not is_streaming_idle():
 		await get_tree().process_frame
@@ -187,12 +192,23 @@ func prime_tunnel_corridor() -> void:
 		TUNNEL_CUTAWAY.prime(chunk, self, rect)
 		_hold_file_resources(chunk)
 		_suspend_chunk_mechanisms(chunk)
-		_detach_cached_records(chunk)
 		chunks.erase(key)
-		chunk.queue_free()
+		if _warm_tunnel_chunks.size() < MAX_WARM_TUNNEL_CHUNKS:
+			chunk.set_meta("warm_tunnel_key", key)
+			_keep_warm_tunnel_chunk(chunk)
+		else:
+			_detach_cached_records(chunk)
+			chunk.queue_free()
 		primed_chunks += 1
 		await get_tree().process_frame
+	_tunnel_corridor_primed = true
 	STALL_WORK.finish("tunnel.cutaway.prime_corridor", began, {"chunks": primed_chunks})
+
+func _keep_warm_tunnel_chunk(chunk: Node3D) -> void:
+	chunk.set_meta("warm_tunnel_process_mode", chunk.process_mode)
+	chunk.process_mode = Node.PROCESS_MODE_DISABLED
+	chunk.hide()
+	_warm_tunnel_chunks[chunk.get_meta("warm_tunnel_key")] = chunk
 
 ## Recursos vindos de arquivo (scripts, malhas, materiais, fontes) usados pelo chunk
 ## pré-aquecido. Sem referência viva eles saíam do cache ao descartar o chunk e a
@@ -220,7 +236,9 @@ func _hold_resource(resource: Variant) -> void:
 func release_chunks() -> void:
 	var stall_began := STALL_WORK.begin()
 	var released_chunks := chunks.size()
+	for job in build_jobs: _cancel_record_build(job)
 	build_jobs.clear()
+	developer_view_cells.clear()
 	pending.clear()
 	for key in chunks.keys():
 		_suspend_chunk_vehicles(key)
@@ -235,6 +253,7 @@ func release_chunks() -> void:
 	STALL_WORK.finish("region.release_chunks", stall_began, {"region": region_id, "chunks": released_chunks, "retiring": _retiring.size()})
 
 func _exit_tree() -> void:
+	for job in build_jobs: _cancel_record_build(job)
 	var stall_began := STALL_WORK.begin()
 	var retiring_chunks := _retiring.size()
 	for chunk in _retiring:
@@ -246,6 +265,7 @@ func _exit_tree() -> void:
 ## Unmount mantém a região para reuso; só a destruição libera o cache.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
+		for job in build_jobs: _cancel_record_build(job)
 		for task in _terrain_tasks.keys(): WorkerThreadPool.wait_for_task_completion(task)
 		_terrain_tasks.clear()
 		for nodes in _record_cache.values():
@@ -546,6 +566,7 @@ func _set_focus(point: Vector3, complete_focus_chunk: bool) -> void:
 	pending.erase(cell)
 	if complete_focus_chunk: _ensure_chunk(cell)
 	else: _ensure_chunk_surfaces(cell)
+	preload("res://world/regions/DeveloperViewCells.gd").enqueue(self)
 	_trim_chunks(cell)
 
 func prepare_collision_at(point: Vector3) -> bool:
@@ -560,6 +581,21 @@ func prepare_collision_at(point: Vector3) -> bool:
 	STALL_WORK.finish_slow("stream.%s.prepare_collision"%region_id,collision_began,2000)
 	if not had_chunk and chunks.has(key): _residency_dirty = true
 	return chunks.has(key)
+
+func set_developer_view(view: Rect2, enabled: bool, full_map := false) -> void:
+	if enabled and not _developer_bounds.has_area():
+		_developer_bounds = preload("res://world/regions/DeveloperViewCells.gd").record_bounds(records, CELL)
+	var next: Dictionary = preload("res://world/regions/DeveloperViewCells.gd").select_cells(_developer_bounds if full_map else view, _developer_bounds, CELL) if enabled else {}
+	if next == developer_view_cells: return
+	developer_view_cells = next
+	# Remove obsolete overview requests while preserving physical support and ordinary neighbours.
+	for index in range(pending.size()-1, -1, -1):
+		var key: Vector2i = pending[index]
+		if developer_view_cells.has(key) or vehicle_support_cells.has(key): continue
+		if absi(key.x-current_cell.x)>1 or absi(key.y-current_cell.y)>1: pending.remove_at(index)
+	preload("res://world/regions/DeveloperViewCells.gd").enqueue(self)
+	_residency_dirty = true
+	_trim_chunks(current_cell)
 
 func set_retention_radius(value: int) -> void:
 	var next_radius := clampi(value,1,2)
@@ -588,14 +624,16 @@ func _trim_chunks(cell: Vector2i) -> void:
 	if not _residency_dirty: return
 	_residency_dirty = false
 	for key in chunks.keys():
-		if vehicle_support_cells.has(key): continue
+		if vehicle_support_cells.has(key) or developer_view_cells.has(key): continue
 		if absi(key.x-cell.x)>retention_radius or absi(key.y-cell.y)>retention_radius:
 			_suspend_chunk_vehicles(key)
 			_suspend_chunk_mechanisms(chunks[key])
 			_retire_chunk(chunks[key])
 			chunks.erase(key)
 			for index in range(build_jobs.size()-1,-1,-1):
-				if build_jobs[index].key == key: build_jobs.remove_at(index)
+				if build_jobs[index].key == key:
+					_cancel_record_build(build_jobs[index])
+					build_jobs.remove_at(index)
 			_chairlift_cleanup_pending = true
 
 func _suspend_chunk_vehicles(key: Vector2i) -> void:
@@ -646,6 +684,9 @@ func _process(_delta: float) -> void:
 			var chunk_began := Time.get_ticks_usec()
 			_build_chunk(key,false)
 			_note_slow("novo chunk",chunk_began,50000)
+			if build_jobs.is_empty():
+				if Time.get_ticks_usec()-began >= budget: return
+				continue
 		var left: float = budget-(Time.get_ticks_usec()-began)
 		if left <= 0.0: return
 		_prefetch_terrain_tasks()
@@ -674,7 +715,7 @@ const CACHED_PORT_MODELS := ["ship_cargo","supplies","crane"]
 ## (RetainedRegionPreparation cede um quadro) e espera a árvore se for chamada fora dela.
 ## mountain_jeep_scenery (portais e lombadas da trilha do jipe): 24-32 ms num quadro já jogável, na serra e
 ## na travessia (release, fase 2 de 16/10); estático, sem processo nem luz.
-const CACHED_KINDS_MEASURED := ["container","salvage","mountain_place","harbor_dressing","mountain_jeep_scenery"]
+const CACHED_KINDS_MEASURED := ["container","salvage","mountain_place","harbor_dressing","mountain_jeep_scenery","harbor_route_zone"]
 const CACHED_BUILDING_IDS := ["NorthFireStation","BridgeCourtWest","PorchHouse","BridgeQuayHouse","BridgeCourtEast",
 	"NorthbankFront0","NorthbankFront1","NorthFrontage2","NorthFrontage3","new_1790432236_682_2325181222"]
 ## harbor_prop medido a 381 ms (posição do registro no chão, x/z).
@@ -727,6 +768,37 @@ func _build_record_cached(chunk: Node3D, record: Dictionary) -> void:
 		built.append(node)
 	_record_cache[key] = built
 
+## Um registro caro também precisa ceder o quadro; limitar só a fila não limita seu construtor.
+## O nó completo passa pelo mesmo editor/cache, sem publicar móveis ou colisões pela metade.
+func _step_record_build(chunk: Node3D, record: Dictionary, job: Dictionary, budget_usec: float) -> bool:
+	if str(record.kind) != "harbor_route_zone":
+		_build_record_cached(chunk, record)
+		return true
+	var cached: Array = _record_cache.get(_record_cache_key(record), [])
+	if not cached.is_empty() and cached.all(func(node): return is_instance_valid(node) and node.get_parent() == null):
+		_cancel_record_build(job)
+		_build_record_cached(chunk, record)
+		return true
+	if not job.has("route_zone"):
+		job.route_zone = HARBOR_ROUTE_FACTORY.begin_zone(str(record.zone_id))
+	if job.route_zone.is_empty():
+		job.erase("route_zone")
+		return true
+	var began := STALL_WORK.begin()
+	var done: bool = HARBOR_ROUTE_FACTORY.step_zone(job.route_zone, budget_usec)
+	STALL_WORK.finish_slow("stream.harbor.route_zone_step", began, 2000)
+	if not done: return false
+	var prepared: Dictionary = record.duplicate()
+	prepared["prepared_route_zone"] = job.route_zone.root
+	_build_record_cached(chunk, prepared)
+	job.erase("route_zone")
+	return true
+
+func _cancel_record_build(job: Dictionary) -> void:
+	if job.has("route_zone"):
+		HARBOR_ROUTE_FACTORY.cancel_zone(job.route_zone)
+		job.erase("route_zone")
+
 ## Tira do chunk os nós em cache antes de liberá-lo, para que sobrevivam.
 func _detach_cached_records(chunk: Node3D) -> void:
 	if not is_instance_valid(chunk): return
@@ -747,6 +819,9 @@ var _retire_stack: Array[Node] = []
 
 func _retire_chunk(chunk: Node3D) -> void:
 	if not is_instance_valid(chunk) or chunk.is_queued_for_deletion(): return
+	if chunk.has_meta("warm_tunnel_key") and _warm_tunnel_chunks.size() < MAX_WARM_TUNNEL_CHUNKS:
+		_keep_warm_tunnel_chunk(chunk)
+		return
 	var stall_began := STALL_WORK.begin()
 	_detach_cached_records(chunk)
 	STALL_WORK.finish("retire.detach_cached_records", stall_began, {"region": region_id})
@@ -1109,6 +1184,16 @@ func _rect_outside(surface: Rect2, hole: Rect2) -> Array[Rect2]:
 	return pieces
 
 func _build_chunk(key: Vector2i, immediate := true, warming := false) -> void:
+	if _warm_tunnel_chunks.has(key):
+		var reused: Node3D = _warm_tunnel_chunks[key]
+		_warm_tunnel_chunks.erase(key)
+		if is_instance_valid(reused) and not reused.is_queued_for_deletion():
+			reused.process_mode = int(reused.get_meta("warm_tunnel_process_mode", Node.PROCESS_MODE_INHERIT))
+			reused.show()
+			chunks[key] = reused
+			for lift in chairlifts:
+				if is_instance_valid(lift) and reused.is_ancestor_of(lift): lift.set_animation_active(true)
+			return
 	var chunk := Node3D.new()
 	chunk.name = "Chunk_%d_%d"%[key.x,key.y]
 	add_child(chunk)
@@ -1122,7 +1207,9 @@ func _build_chunk(key: Vector2i, immediate := true, warming := false) -> void:
 ## por vez e o acabamento, até `budget_usec` por quadro. Devolve true ao terminar.
 func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
 	var chunk: Node3D = job.chunk
-	if not is_instance_valid(chunk) or chunk.is_queued_for_deletion(): return true
+	if not is_instance_valid(chunk) or chunk.is_queued_for_deletion():
+		_cancel_record_build(job)
+		return true
 	var began := Time.get_ticks_usec()
 	var key: Vector2i = job.key
 	var rect: Rect2 = job.rect
@@ -1160,7 +1247,8 @@ func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
 					# sobrevive ao chunk de aquecimento descartado e a visita real só a reaproveita.
 					var record_began := Time.get_ticks_usec()
 					var record_stall := STALL_WORK.begin()
-					_build_record_cached(chunk,record)
+					if not _step_record_build(chunk,record,job,maxf(0.0,budget_usec-(Time.get_ticks_usec()-began))):
+						return false
 					# Com detalhes: o log mostra QUAL registro pesou (os de 200-600 ms do release de 13/10).
 					STALL_WORK.finish("stream.%s.record.%s"%[region_id,record.get("kind","?")],record_stall,
 						{"id":str(record.get("id",record.data.get("id",record.data.get("name",record.get("name",""))) if record.get("data") is Dictionary else record.get("name",""))),"model_kind":str(record.get("model_kind","")),
@@ -1225,6 +1313,8 @@ func _ensure_chunk_surfaces(key: Vector2i) -> void:
 				return
 		return
 	_build_chunk(key,false)
+	# Um trecho aquecido já está completo e não acrescenta job à fila.
+	if not build_jobs.any(func(job): return job.key == key): return
 	var created: Dictionary = build_jobs.pop_back()
 	build_jobs.push_front(created)
 	_run_build_job(created,0.0)
@@ -1477,7 +1567,7 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 				mechanism.set_operating(chairlift_operating)
 				mechanism.set_animation_active(true)
 				chairlifts.append(mechanism)
-		"harbor_route_zone": HARBOR_ROUTE_FACTORY.populate_zone_chunk(chunk, record.zone_id)
+		"harbor_route_zone": HARBOR_ROUTE_FACTORY.populate_zone_chunk(chunk, record.zone_id, record.get("prepared_route_zone"))
 		"harbor_public_realm":
 			var public_realm := HARBOR_PUBLIC_REALM.new()
 			public_realm.zone_id = record.zone_id

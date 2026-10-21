@@ -25,6 +25,15 @@ static func mount_route_detail(parent: Node3D) -> HarborRouteDetail3D:
 static func create_zone(zone_id: String) -> Node3D:
 	return HarborRouteDetail3D.build_zone(zone_id)
 
+static func begin_zone(zone_id: String) -> Dictionary:
+	return HarborRouteDetail3D.begin_zone(zone_id)
+
+static func step_zone(job: Dictionary, budget_usec: float = 1500.0) -> bool:
+	return HarborRouteDetail3D.step_zone(job, budget_usec)
+
+static func cancel_zone(job: Dictionary) -> void:
+	HarborRouteDetail3D.cancel_zone(job)
+
 ## Mounts an isolated single zone directly into the designated parent (e.g. a streaming chunk).
 ## Returns the mounted zone Node3D, which is now a direct child of parent.
 static func mount_zone(parent: Node3D, zone_id: String) -> Node3D:
@@ -46,7 +55,10 @@ static func get_zone_records() -> Array[Dictionary]:
 	]
 
 ## Populates a single zone into a streaming chunk when the chunk enters proximity focus.
-static func populate_zone_chunk(chunk: Node3D, zone_id: String) -> Node3D:
+static func populate_zone_chunk(chunk: Node3D, zone_id: String, prepared_zone: Node3D = null) -> Node3D:
 	if chunk == null:
 		return null
+	if is_instance_valid(prepared_zone) and prepared_zone.get_parent() == null:
+		chunk.add_child(prepared_zone)
+		return prepared_zone
 	return mount_zone(chunk, zone_id)

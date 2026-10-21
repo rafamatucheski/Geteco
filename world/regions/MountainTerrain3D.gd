@@ -3,6 +3,7 @@ extends RefCounted
 const CATALOG = preload("res://world/places/PlaceCatalog.gd")
 const LAKE_BASINS := preload("res://world/regions/LakeBasins.gd")
 const TRAIL_BLEND := preload("res://world/regions/MountainTrailBlend.gd")
+const EDITOR_TERRAIN := preload("res://world/editing/WorldTerrainEdits.gd")
 const STEP := 4.0
 const CELL := 64.0
 const BLEND := 28.0
@@ -20,12 +21,14 @@ var _trail_blend := TRAIL_BLEND.new()
 var _height_samples: Dictionary = {}
 var _height_sample_order: Array[Vector2] = []
 var _height_sample_next := 0
+var _editor_terrain: Variant
 ## Cópia da margem do lago (LakeBasins.snapshot) tirada no configure: o cálculo de alturas roda também num
 ## trabalhador (chunk_data) e não pode ler as estáticas que outro configure() reatribuiria no meio.
 var _lake_shore := PackedVector2Array()
 var _lake_bounds := Rect2()
 
 func configure(roads: Array, entries: Array, clearings: Array) -> void:
+	_editor_terrain = EDITOR_TERRAIN.from_engine("mountain","mountain")
 	_trail_blend.configure(roads)
 	_segments.clear()
 	_clearings.clear()
@@ -125,7 +128,8 @@ func _calculate_height(point: Vector2) -> float:
 	var detail := 0.5+0.5*sin(point.x*0.075+0.7)*sin(point.y*0.068)
 	# The flat road reservation meets the physical road top at y=0. Lowering
 	# this terrain made a one-way curb at every narrow track edge.
-	return weight*(broad*6.0+detail*1.5)-LAKE_BASINS.depth_in(_lake_shore,_lake_bounds,point)
+	var original := weight*(broad*6.0+detail*1.5)-LAKE_BASINS.depth_in(_lake_shore,_lake_bounds,point)
+	return _editor_terrain.height_at(point,original) if _editor_terrain != null and not _editor_terrain.brushes.is_empty() else original
 
 func surface_height_at(point: Vector2) -> float:
 	# Same diagonal and interpolation as build_chunk, for trees/rocks without floating.
@@ -175,7 +179,9 @@ func chunk_data(rect: Rect2) -> Dictionary:
 	var faces := PackedVector3Array()
 	faces.resize(indices.size())
 	for i in indices.size(): faces[i] = vertices[indices[i]]
-	return {"rect":rect,"vertices":vertices,"normals":normals,"colors":colors,"indices":indices,"faces":faces,"heights":heights,"trail":_trail_blend.mask_for(rect)}
+	var result := {"rect":rect,"vertices":vertices,"normals":normals,"colors":colors,"indices":indices,"faces":faces,"heights":heights,"trail":_trail_blend.mask_for(rect)}
+	if _editor_terrain != null and not _editor_terrain.brushes.is_empty(): result["editor_paint"] = _editor_terrain.paint_maps(rect)
+	return result
 
 ## Entrada do trabalhador: o terreno vai como argumento (referência forte), então não some com a tarefa no ar.
 ## O resultado é escrito no dicionário de saída e só é lido depois de wait_for_task_completion.
@@ -209,6 +215,7 @@ func build_chunk(parent: Node3D, rect: Rect2, shore_edges: Array[Dictionary] = [
 	result.name = "MountainTerrain"
 	result.mesh = mesh
 	var chunk_material := _material.duplicate() as ShaderMaterial
+	EDITOR_TERRAIN.bind_paint(chunk_material,data.get("editor_paint",{}))
 	chunk_material.set_shader_parameter("trail_mask",ImageTexture.create_from_image(Image.create_from_data(TRAIL_BLEND.SIZE,TRAIL_BLEND.SIZE,false,Image.FORMAT_R8,data.trail)))
 	result.material_override = chunk_material
 	result.set_instance_shader_parameter("origin",rect.position)

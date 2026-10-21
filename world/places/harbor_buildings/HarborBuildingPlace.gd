@@ -160,6 +160,7 @@ func change_floor(next_index: int) -> bool:
 	add_child(next)
 	_mark_walkable_floor(next)
 	var next_secrets: Node3D = SECRETS.populate(next,definition,next_index,session)
+	load("res://world/editing/WorldInteriorEdits.gd").apply_saved(next,str(definition.id))
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 	if not _owns_floor_transition(token):

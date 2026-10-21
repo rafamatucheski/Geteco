@@ -5,6 +5,7 @@ render_mode diffuse_lambert, specular_schlick_ggx;
 // Existing opaque terrain owns every finish, without extra planes or samples.
 // Periodic local coordinates preserve precision and continuity at chunk borders.
 #include "res://world/regions/mountain_ground.gdshaderinc"
+#include "res://world/editing/terrain_paint.gdshaderinc"
 
 instance uniform vec2 origin = vec2(0.0);
 uniform sampler2D trail_mask : filter_linear, repeat_disable;
@@ -77,7 +78,8 @@ void fragment() {
 	} else {
 		color = mix(color, packed, wear * 0.88);
 	}
-	ALBEDO = color;
+	vec4 editor_finish = editor_terrain_finish(color, local_xz + origin);
+	ALBEDO = editor_finish.rgb;
 	// Reuse fine + two offset samples instead of nine for the normal map.
 	float e = 0.1;
 	float h0 = fine;
@@ -89,6 +91,7 @@ void fragment() {
 	NORMAL = normalize(NORMAL + (VIEW_MATRIX * vec4(-finish_slope.x, 0.0, -finish_slope.y, 0.0)).xyz);
 	float snowy = cover * (1.0 - cliff) * (1.0 - wear * 0.8);
 	ROUGHNESS = mix(mix(0.96, 0.88, snowy), 0.55, wet);
+	ROUGHNESS = mix(ROUGHNESS,0.95,editor_finish.a);
 	SPECULAR = mix(0.15, 0.20, snowy);
 	EMISSION = vec3(0.0);
 }

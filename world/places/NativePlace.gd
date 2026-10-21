@@ -130,6 +130,7 @@ func _ready() -> void:
 	if stage_started != 0:
 		STALL_WORK.finish("native.ready.adapt", stage_started, {"place":definition.id})
 	stage_started = STALL_WORK.begin()
+	load("res://world/editing/WorldInteriorEdits.gd").apply_saved(self,str(definition.id))
 	_install_reward()
 	if stage_started != 0:
 		STALL_WORK.finish("native.ready.rewards", stage_started, {"place":definition.id})

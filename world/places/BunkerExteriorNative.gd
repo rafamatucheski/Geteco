@@ -10,6 +10,7 @@ func _ready() -> void:
 		_box("OriginalSlit",Vector3(x*S,1.8,45*S+.02),Vector3(32*S,.6,.05),Color("0f172a"))
 	_box("BunkerDoor",Vector3(0,.95,45*S+.05),Vector3(1.35,1.9,.06),Color("263a3f"))
 	_box("OriginalGenerator",Vector3(105*S,.8,130*S),Vector3(40*S,1.6,40*S),Color("2c3e50"),true)
+	_dress()
 	var mast := Vector3(85*S,3,-60*S)
 	for side in [-1,1]: _beam(mast+Vector3(side*14*S,0,0),mast+Vector3(0,4.8,0),.14,Color("e74c3c"))
 	_box("OriginalBeacon",mast+Vector3(0,4.9,0),Vector3(.23,.23,.23),Color("ff4133"))
@@ -25,6 +26,34 @@ func _ready() -> void:
 	for mesh in helipad.find_children("*","MeshInstance3D",true,false):
 		if mesh.get_meta("interior_solid_id","") != "": mesh.create_trimesh_collision()
 	# The region's connected footpath owns the approach. No slabs across the road.
+## O casco original era uma caixa lisa e o gerador um cubo mudo; o playtest de 21/10 não
+## reconheceu o lugar. Só caixas na cor única, sem material novo de shader diferente.
+func _dress() -> void:
+	var front := 45*S
+	var half_x := 125*S
+	var back := -12.5*S-57.5*S
+	# Platibanda do teto de concreto.
+	_box("RoofParapet",Vector3(0,3.2,front-.1),Vector3(half_x*2,.3,.2),Color("59626a"))
+	_box("RoofParapet",Vector3(0,3.2,back+.1),Vector3(half_x*2,.3,.2),Color("59626a"))
+	for side in [-1,1]: _box("RoofParapet",Vector3(side*(half_x-.1),3.2,(front+back)*.5),Vector3(.2,.3,front-back),Color("59626a"))
+	# Moldura de aço e faixa de perigo marcam a entrada; ficam fora do vão de 1,4 m.
+	for side in [-1,1]: _box("DoorFrame",Vector3(side*.8,1.05,front+.06),Vector3(.18,2.1,.14),Color("1d2a2e"))
+	_box("DoorLintel",Vector3(0,2.18,front+.06),Vector3(1.78,.16,.14),Color("1d2a2e"))
+	for i in 6: _box("HazardStripe",Vector3(-.75+i*.3,2.42,front+.04),Vector3(.15,.22,.04),Color("f1b51c") if i % 2 == 0 else Color("16181a"))
+	_box("DoorLamp",Vector3(0,2.66,front+.12),Vector3(.32,.14,.2),Color("ffd98a"))
+	# Pilares de reforço dão escala à parede longa.
+	for x in [-6.2,-3.4,3.4,6.2]: _box("Buttress",Vector3(x,1.45,front+.12),Vector3(.38,2.9,.24),Color("343b43"))
+	# Gerador: radiador, escapamento e tanque.
+	var gen := Vector3(105*S,0,130*S)
+	for i in 5: _box("GeneratorFin",gen+Vector3(-.9+i*.45,1.0,1.27),Vector3(.12,1.1,.06),Color("8fa1ad"))
+	_box("GeneratorExhaust",gen+Vector3(.8,2.0,-.7),Vector3(.16,1.0,.16),Color("4a4f54"))
+	_box("GeneratorTank",gen+Vector3(-1.95,.45,0),Vector3(.7,.9,1.6),Color("b2462e"),true)
+	_box("GeneratorBase",gen+Vector3(0,.06,0),Vector3(3.0,.12,3.0),Color("59626a"))
+	# Cabos do gerador até a parede.
+	_box("PowerCable",Vector3(gen.x-.4,.05,(front+gen.z-1.25)*.5),Vector3(.08,.06,gen.z-1.25-front),Color("111317"))
+	# Respiros no teto.
+	for at in [Vector3(-3.0,3.3,-2.0),Vector3(2.0,3.3,.6),Vector3(-5.5,3.3,1.2)]: _box("RoofVent",at,Vector3(.6,.4,.6),Color("4b545c"))
+
 func _beam(a: Vector3,b: Vector3,width: float,color: Color) -> void:
 	var beam := _box("OriginalAntenna",(a+b)*.5,Vector3(width,a.distance_to(b),width),color)
 	beam.quaternion = Quaternion(Vector3.UP,(b-a).normalized())

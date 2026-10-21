@@ -24,6 +24,7 @@ const ZONE_CONNECTING_STREETS := "connecting_streets"
 const ZONE_DELEGACIA := "delegacia"
 const ZONE_MACIOTA := "maciota"
 const PLACE_CATALOG := preload("res://world/places/PlaceCatalog.gd")
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 
 const ALL_ZONES := [
 	ZONE_RODOVIARIA,
@@ -67,6 +68,51 @@ static func build_zone(zone_id: String) -> Node3D:
 	if zone_node != null:
 		zone_node.name = "Zone_" + zone_id
 	return zone_node
+
+## O streaming monta a mesma zona em partes, fora da árvore. A ordem dos
+## filhos é a ordem original dos IDs piece/route, inclusive âncoras sem malha.
+## Não há estado global: cancelar o job libera somente a zona deste pedido.
+static func begin_zone(zone_id: String) -> Dictionary:
+	var count := {ZONE_RODOVIARIA: 18, ZONE_CONNECTING_STREETS: 12, ZONE_DELEGACIA: 18, ZONE_MACIOTA: 7}
+	if not count.has(zone_id): return {}
+	var root := Node3D.new()
+	root.name = "Zone_" + zone_id
+	return {"zone_id": zone_id, "root": root, "index": 0, "count": count[zone_id], "complete": false}
+
+static func step_zone(job: Dictionary, budget_usec: float = 1500.0) -> bool:
+	if job.is_empty() or bool(job.get("complete", false)): return true
+	var root := job.get("root") as Node3D
+	if not is_instance_valid(root):
+		job.complete = true
+		return true
+	var began := Time.get_ticks_usec()
+	while int(job.index) < int(job.count):
+		var piece_began := STALL_WORK.begin()
+		var fragment: Node3D
+		match str(job.zone_id):
+			ZONE_RODOVIARIA: fragment = _build_rodoviaria_zone(int(job.index))
+			ZONE_CONNECTING_STREETS: fragment = _build_connecting_streets(int(job.index))
+			ZONE_DELEGACIA: fragment = _build_delegacia_zone(int(job.index))
+			ZONE_MACIOTA: fragment = _build_maciota_zone(int(job.index))
+		if fragment == null:
+			cancel_zone(job)
+			return true
+		root.transform = fragment.transform
+		for child in fragment.get_children():
+			fragment.remove_child(child)
+			root.add_child(child)
+		fragment.free()
+		STALL_WORK.finish_slow("harbor_route_zone.%s.piece.%d" % [str(job.zone_id), int(job.index)], piece_began, 2000)
+		job.index = int(job.index) + 1
+		# Um móvel ainda é indivisível; a próxima peça só começa se houver orçamento.
+		if Time.get_ticks_usec() - began >= budget_usec: break
+	job.complete = int(job.index) >= int(job.count)
+	return bool(job.complete)
+
+static func cancel_zone(job: Dictionary) -> void:
+	var root := job.get("root") as Node3D
+	if is_instance_valid(root) and root.get_parent() == null: root.free()
+	job.clear()
 
 
 ## Retired paving keeps its child slot so saved piece/route/<zone>/<index>
@@ -156,7 +202,7 @@ static func get_transition_point(point_id: String) -> Vector3:
 # Zone 1: Rodoviária (Coach Terminal Plaza & Passenger Corridor)
 # ==============================================================================
 
-static func _build_rodoviaria_zone() -> Node3D:
+static func _build_rodoviaria_zone(selected_piece := -1) -> Node3D:
 	var zone := Node3D.new()
 	
 	# Sidewalk promenade is partitioned into West Wing (X: 92.0 to 103.5) and East Wing (X: 110.5 to 122.0).
@@ -164,101 +210,119 @@ static func _build_rodoviaria_zone() -> Node3D:
 	# at grade Y = 0.05m, matching Market Street's roadway surface and Arrival.gd disembark trajectory!
 	
 	# 1. West Wing Slab (11.5m x 4.2m at Y = 0.12m)
-	var slab_w := _ground_anchor("SidewalkSlab")
-	slab_w.position = Vector3(97.75, 0.0, 72.4)
-	zone.add_child(slab_w)
+	if selected_piece < 0 or selected_piece == 0:
+		var slab_w := _ground_anchor("SidewalkSlab")
+		slab_w.position = Vector3(97.75, 0.0, 72.4)
+		zone.add_child(slab_w)
 	
 	# West Curb along Market St edge (Z = 74.55)
-	var curb_w := _ground_anchor("CurbSegment")
-	curb_w.rotation_degrees = Vector3(0, 90, 0)
-	curb_w.position = Vector3(97.75, 0.0, 74.55)
-	zone.add_child(curb_w)
+	if selected_piece < 0 or selected_piece == 1:
+		var curb_w := _ground_anchor("CurbSegment")
+		curb_w.rotation_degrees = Vector3(0, 90, 0)
+		curb_w.position = Vector3(97.75, 0.0, 74.55)
+		zone.add_child(curb_w)
 	
 	# Preserve the intercity exit lane centred at X=121.875. The former wing,
 	# bike rack and lamp occupied its swept coach hull and blocked the V1 route.
-	var slab_e := _ground_anchor("SidewalkSlab")
-	slab_e.position = Vector3(114.75, 0.0, 72.4)
-	zone.add_child(slab_e)
+	if selected_piece < 0 or selected_piece == 2:
+		var slab_e := _ground_anchor("SidewalkSlab")
+		slab_e.position = Vector3(114.75, 0.0, 72.4)
+		zone.add_child(slab_e)
 	
 	# East Curb along Market St edge (Z = 74.55)
-	var curb_e := _ground_anchor("CurbSegment")
-	curb_e.rotation_degrees = Vector3(0, 90, 0)
-	curb_e.position = Vector3(114.75, 0.0, 74.55)
-	zone.add_child(curb_e)
+	if selected_piece < 0 or selected_piece == 3:
+		var curb_e := _ground_anchor("CurbSegment")
+		curb_e.rotation_degrees = Vector3(0, 90, 0)
+		curb_e.position = Vector3(114.75, 0.0, 74.55)
+		zone.add_child(curb_e)
 	
 	# 3. Central Passenger Disembarking Level Crossing (X: 103.5 to 110.5, Z: 70.3 to 75.0)
 	# Level paving (height = 0.05m, top at Y = 0.05m) matching Market St roadway box exactly.
 	# Dante walks from bus door (X ≈ 108.56, Z ≈ 76.31) to ARRIVAL (X = 106.25, Z = 70.625)
 	# with > 1.29m clearance to side_ramp_e and zero vertical steps or curb stones.
-	var level_crossing := _ground_anchor("SidewalkSlab")
-	level_crossing.position = Vector3(107.0, 0.0, 72.65)
-	zone.add_child(level_crossing)
+	if selected_piece < 0 or selected_piece == 4:
+		var level_crossing := _ground_anchor("SidewalkSlab")
+		level_crossing.position = Vector3(107.0, 0.0, 72.65)
+		zone.add_child(level_crossing)
 	
 	# Tactile yellow edge line marking the pedestrian boundary at Z = 74.55
-	var edge_marker := MeshInstance3D.new()
-	edge_marker.name = "BusBayEdgeMarker"
-	var em_box := PlaneMesh.new()
-	em_box.size = Vector2(7.0, 0.30)
-	edge_marker.mesh = em_box
-	edge_marker.material_override = HarborRouteMaterials.curb_yellow_marking()
-	edge_marker.position = Vector3(107.0, 0.010, 74.55)
-	edge_marker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	zone.add_child(edge_marker)
+	if selected_piece < 0 or selected_piece == 5:
+		var edge_marker := MeshInstance3D.new()
+		edge_marker.name = "BusBayEdgeMarker"
+		var em_box := PlaneMesh.new()
+		em_box.size = Vector2(7.0, 0.30)
+		edge_marker.mesh = em_box
+		edge_marker.material_override = HarborRouteMaterials.curb_yellow_marking()
+		edge_marker.position = Vector3(107.0, 0.010, 74.55)
+		edge_marker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		zone.add_child(edge_marker)
 	
 	# Side curb ramps transitioning elevated wings down into central corridor
-	var side_ramp_w := _ground_anchor("CurbRamp")
-	side_ramp_w.rotation_degrees = Vector3(0, 90, 0)
-	side_ramp_w.position = Vector3(103.5, 0.0, 72.4)
-	zone.add_child(side_ramp_w)
-	
-	var side_ramp_e := _ground_anchor("CurbRamp")
-	side_ramp_e.rotation_degrees = Vector3(0, -90, 0)
-	side_ramp_e.position = Vector3(110.5, 0.0, 72.4)
-	zone.add_child(side_ramp_e)
+	if selected_piece < 0 or selected_piece == 6:
+		var side_ramp_w := _ground_anchor("CurbRamp")
+		side_ramp_w.rotation_degrees = Vector3(0, 90, 0)
+		side_ramp_w.position = Vector3(103.5, 0.0, 72.4)
+		zone.add_child(side_ramp_w)
+
+	if selected_piece < 0 or selected_piece == 7:
+		var side_ramp_e := _ground_anchor("CurbRamp")
+		side_ramp_e.rotation_degrees = Vector3(0, -90, 0)
+		side_ramp_e.position = Vector3(110.5, 0.0, 72.4)
+		zone.add_child(side_ramp_e)
 	
 	# 4. Amenities placed exclusively in the flanking wings:
 	# West Wing Amenities (X ≤ 101.5):
-	var bench_w := HarborRouteProps.create_bench(2.2)
-	bench_w.position = Vector3(98.5, 0.008, 71.0)
-	zone.add_child(bench_w)
-	
-	var bin_w := HarborRouteProps.create_trash_bin()
-	bin_w.position = Vector3(95.0, 0.008, 71.2)
-	zone.add_child(bin_w)
-	
-	var light_w := HarborRouteProps.create_streetlight(5.4, 1.35, "standard", deg_to_rad(90.0))
-	light_w.position = Vector3(93.5, 0.008, 73.8)
-	zone.add_child(light_w)
-	
-	var planter_w := HarborRouteProps.create_planter_box(Vector3(1.8, 0.45, 0.85))
-	planter_w.position = Vector3(101.5, 0.008, 73.4)
-	zone.add_child(planter_w)
+	if selected_piece < 0 or selected_piece == 8:
+		var bench_w := HarborRouteProps.create_bench(2.2)
+		bench_w.position = Vector3(98.5, 0.008, 71.0)
+		zone.add_child(bench_w)
+
+	if selected_piece < 0 or selected_piece == 9:
+		var bin_w := HarborRouteProps.create_trash_bin()
+		bin_w.position = Vector3(95.0, 0.008, 71.2)
+		zone.add_child(bin_w)
+
+	if selected_piece < 0 or selected_piece == 10:
+		var light_w := HarborRouteProps.create_streetlight(5.4, 1.35, "standard", deg_to_rad(90.0))
+		light_w.position = Vector3(93.5, 0.008, 73.8)
+		zone.add_child(light_w)
+
+	if selected_piece < 0 or selected_piece == 11:
+		var planter_w := HarborRouteProps.create_planter_box(Vector3(1.8, 0.45, 0.85))
+		planter_w.position = Vector3(101.5, 0.008, 73.4)
+		zone.add_child(planter_w)
 	
 	# East Wing Amenities (X ≥ 113.0):
-	var planter_e := HarborRouteProps.create_planter_box(Vector3(1.8, 0.45, 0.85))
-	planter_e.position = Vector3(112.8, 0.008, 73.4)
-	zone.add_child(planter_e)
-	
-	var bench_e := HarborRouteProps.create_bench(2.2)
-	bench_e.position = Vector3(115.5, 0.008, 71.0)
-	zone.add_child(bench_e)
-	
-	var bin_e := HarborRouteProps.create_trash_bin()
-	bin_e.position = Vector3(118.0, 0.008, 71.2)
-	zone.add_child(bin_e)
-	
-	var light_e := HarborRouteProps.create_streetlight(5.4, 1.35, "standard", deg_to_rad(90.0))
-	light_e.position = Vector3(118.5, 0.008, 73.8)
-	zone.add_child(light_e)
-	
-	var bike_rack := HarborRouteProps.create_bike_rack(4, 0.85)
-	bike_rack.position = Vector3(115.5, 0.008, 73.8)
-	zone.add_child(bike_rack)
+	if selected_piece < 0 or selected_piece == 12:
+		var planter_e := HarborRouteProps.create_planter_box(Vector3(1.8, 0.45, 0.85))
+		planter_e.position = Vector3(112.8, 0.008, 73.4)
+		zone.add_child(planter_e)
+
+	if selected_piece < 0 or selected_piece == 13:
+		var bench_e := HarborRouteProps.create_bench(2.2)
+		bench_e.position = Vector3(115.5, 0.008, 71.0)
+		zone.add_child(bench_e)
+
+	if selected_piece < 0 or selected_piece == 14:
+		var bin_e := HarborRouteProps.create_trash_bin()
+		bin_e.position = Vector3(118.0, 0.008, 71.2)
+		zone.add_child(bin_e)
+
+	if selected_piece < 0 or selected_piece == 15:
+		var light_e := HarborRouteProps.create_streetlight(5.4, 1.35, "standard", deg_to_rad(90.0))
+		light_e.position = Vector3(118.5, 0.008, 73.8)
+		zone.add_child(light_e)
+
+	if selected_piece < 0 or selected_piece == 16:
+		var bike_rack := HarborRouteProps.create_bike_rack(4, 0.85)
+		bike_rack.position = Vector3(115.5, 0.008, 73.8)
+		zone.add_child(bike_rack)
 	
 	# Storm drain grate in street gutter outside west wing
-	var drain := HarborRouteProps.create_drain_grate()
-	drain.position = Vector3(101.5, 0.0, 74.85)
-	zone.add_child(drain)
+	if selected_piece < 0 or selected_piece == 17:
+		var drain := HarborRouteProps.create_drain_grate()
+		drain.position = Vector3(101.5, 0.0, 74.85)
+		zone.add_child(drain)
 	
 	return zone
 
@@ -266,75 +330,87 @@ static func _build_rodoviaria_zone() -> Node3D:
 # Zone 2: Connecting Streets (Market Street & Union Avenue Corridors)
 # ==============================================================================
 
-static func _build_connecting_streets() -> Node3D:
+static func _build_connecting_streets(selected_piece := -1) -> Node3D:
 	var zone := Node3D.new()
 	
 	# 1. Northern sidewalk of Market St towards Union Ave (X: 85.6 to 92.0, Z: 72.5 to 74.5)
 	# Começa em 85.6, alinhada à calçada leste da Union Ave: a Union Ave ocupa X 77.2–85.3
 	# e a versão anterior (X 83.0) avançava 2.3 m sobre a pista, bloqueando carros no cruzamento.
-	var slab_market := _ground_anchor("SidewalkSlab")
-	slab_market.position = Vector3(88.8, 0.0, 73.5)
-	zone.add_child(slab_market)
+	if selected_piece < 0 or selected_piece == 0:
+		var slab_market := _ground_anchor("SidewalkSlab")
+		slab_market.position = Vector3(88.8, 0.0, 73.5)
+		zone.add_child(slab_market)
 	
 	# Curb along Market St edge, trimmed to start past the pedestrian curb ramp at X = 87.8 (X: 87.8 to 92.0, span 4.2m)
 	# Eliminates collider overlap between the vertical curb and the beveled ramp wedge (X: 85.6 to 87.8)
-	var curb_market := _ground_anchor("CurbSegment")
-	curb_market.rotation_degrees = Vector3(0, 90, 0)
-	curb_market.position = Vector3(89.9, 0.0, 74.55)
-	zone.add_child(curb_market)
+	if selected_piece < 0 or selected_piece == 1:
+		var curb_market := _ground_anchor("CurbSegment")
+		curb_market.rotation_degrees = Vector3(0, 90, 0)
+		curb_market.position = Vector3(89.9, 0.0, 74.55)
+		zone.add_child(curb_market)
 	
 	# Pedestrian curb cut ramp at Market/Union intersection corner (X: 85.6 to 87.8, span 2.2m)
-	var ramp_market := _ground_anchor("CurbRamp")
-	ramp_market.position = Vector3(86.7, 0.0, 74.55)
-	zone.add_child(ramp_market)
+	if selected_piece < 0 or selected_piece == 2:
+		var ramp_market := _ground_anchor("CurbRamp")
+		ramp_market.position = Vector3(86.7, 0.0, 74.55)
+		zone.add_child(ramp_market)
 	
 	# 2. Pedestrian crosswalk across Market St at Union Ave corner
-	var crosswalk_market := HarborRouteProps.create_crosswalk_stripes(3.5, 7.5, 6)
-	crosswalk_market.position = Vector3(82.5, 0.0, 78.125)
-	zone.add_child(crosswalk_market)
+	if selected_piece < 0 or selected_piece == 3:
+		var crosswalk_market := HarborRouteProps.create_crosswalk_stripes(3.5, 7.5, 6)
+		crosswalk_market.position = Vector3(82.5, 0.0, 78.125)
+		zone.add_child(crosswalk_market)
 	
 	# 3. Eastern sidewalk along Union Avenue (runs North-South from Z: 82.0 to 128.0 at X: 86.8)
-	var slab_union_n := _ground_anchor("SidewalkSlab")
-	slab_union_n.position = Vector3(86.8, 0.0, 94.0)
-	zone.add_child(slab_union_n)
+	if selected_piece < 0 or selected_piece == 4:
+		var slab_union_n := _ground_anchor("SidewalkSlab")
+		slab_union_n.position = Vector3(86.8, 0.0, 94.0)
+		zone.add_child(slab_union_n)
 	
 	# Medical Garden Lane crosses here (Z 119.875–125.125). The former
 	# continuous slab and curb cut across both lanes beside Harbor Patrol.
-	for span in [Vector2(105.0,119.4), Vector2(125.6,127.0)]:
-		var slab := _ground_anchor("SidewalkSlab")
-		slab.position = Vector3(86.8, 0.0, (span.x+span.y)*.5)
-		zone.add_child(slab)
-		var curb := _ground_anchor("CurbSegment")
-		curb.position = Vector3(85.5, 0.0, (span.x+span.y)*.5)
-		zone.add_child(curb)
-	
-	# Curbs facing the Union Ave roadway (at X = 85.5)
-	var curb_union_n := _ground_anchor("CurbSegment")
-	curb_union_n.position = Vector3(85.5, 0.0, 94.0)
-	zone.add_child(curb_union_n)
+	if selected_piece < 0 or selected_piece == 5:
+		for span in [Vector2(105.0,119.4), Vector2(125.6,127.0)]:
+			var slab := _ground_anchor("SidewalkSlab")
+			slab.position = Vector3(86.8, 0.0, (span.x+span.y)*.5)
+			zone.add_child(slab)
+			var curb := _ground_anchor("CurbSegment")
+			curb.position = Vector3(85.5, 0.0, (span.x+span.y)*.5)
+			zone.add_child(curb)
+
+		# Curbs facing the Union Ave roadway (at X = 85.5)
+	if selected_piece < 0 or selected_piece == 6:
+		var curb_union_n := _ground_anchor("CurbSegment")
+		curb_union_n.position = Vector3(85.5, 0.0, 94.0)
+		zone.add_child(curb_union_n)
 	
 	# Streetlights spaced every ~20m along Union Avenue
-	var light_u1 := HarborRouteProps.create_streetlight(5.4, 1.35, "standard", deg_to_rad(-90.0))
-	light_u1.position = Vector3(87.5, 0.008, 94.0)
-	zone.add_child(light_u1)
+	if selected_piece < 0 or selected_piece == 7:
+		var light_u1 := HarborRouteProps.create_streetlight(5.4, 1.35, "standard", deg_to_rad(-90.0))
+		light_u1.position = Vector3(87.5, 0.008, 94.0)
+		zone.add_child(light_u1)
 	
-	var light_u2 := HarborRouteProps.create_streetlight(5.4, 1.35, "standard", deg_to_rad(-90.0))
-	light_u2.position = Vector3(87.5, 0.008, 115.0)
-	zone.add_child(light_u2)
+	if selected_piece < 0 or selected_piece == 8:
+		var light_u2 := HarborRouteProps.create_streetlight(5.4, 1.35, "standard", deg_to_rad(-90.0))
+		light_u2.position = Vector3(87.5, 0.008, 115.0)
+		zone.add_child(light_u2)
 	
 	# Municipal fire hydrant near the midway junction
-	var hydrant_mid := HarborRouteProps.create_fire_hydrant()
-	hydrant_mid.position = Vector3(87.4, 0.008, 102.5)
-	zone.add_child(hydrant_mid)
+	if selected_piece < 0 or selected_piece == 9:
+		var hydrant_mid := HarborRouteProps.create_fire_hydrant()
+		hydrant_mid.position = Vector3(87.4, 0.008, 102.5)
+		zone.add_child(hydrant_mid)
 	
 	# Storm drains along curb
-	var drain_u1 := HarborRouteProps.create_drain_grate(Vector2(0.45, 0.85))
-	drain_u1.position = Vector3(85.2, 0.0, 92.0)
-	zone.add_child(drain_u1)
+	if selected_piece < 0 or selected_piece == 10:
+		var drain_u1 := HarborRouteProps.create_drain_grate(Vector2(0.45, 0.85))
+		drain_u1.position = Vector3(85.2, 0.0, 92.0)
+		zone.add_child(drain_u1)
 	
-	var drain_u2 := HarborRouteProps.create_drain_grate(Vector2(0.45, 0.85))
-	drain_u2.position = Vector3(85.2, 0.0, 118.0)
-	zone.add_child(drain_u2)
+	if selected_piece < 0 or selected_piece == 11:
+		var drain_u2 := HarborRouteProps.create_drain_grate(Vector2(0.45, 0.85))
+		drain_u2.position = Vector3(85.2, 0.0, 118.0)
+		zone.add_child(drain_u2)
 	
 	return zone
 
@@ -342,78 +418,91 @@ static func _build_connecting_streets() -> Node3D:
 # Zone 3: Delegacia (Harbor Patrol Precinct Forecourt)
 # ==============================================================================
 
-static func _build_delegacia_zone() -> Node3D:
+static func _build_delegacia_zone(selected_piece := -1) -> Node3D:
 	var zone := Node3D.new()
 	
 	# Dock Street is now 14 m wide: its north asphalt edge is Z = 130.5.
 	# Keep every raised part behind that edge; the sewer opening remains in the road.
 	# Four paving panels preserve the editor's existing child IDs (crosswalk = 17).
-	for piece in [
+	var paving := [
 		Rect2(56.0, 125.0, 10.0, 2.35),
 		Rect2(56.0, 127.35, 10.0, 2.35),
 		Rect2(66.0, 125.0, 10.0, 2.35),
 		Rect2(66.0, 127.35, 10.0, 2.35)
-	]:
+	]
+	for index in range(paving.size()):
+		if selected_piece >= 0 and selected_piece != index: continue
+		var piece: Rect2 = paving[index]
 		if not piece.has_area(): continue
 		var slab := _ground_anchor("SidewalkSlab")
 		slab.position = Vector3(piece.get_center().x, 0.0, piece.get_center().y)
 		zone.add_child(slab)
-	
+
 	# Curbs flank the central accessible approach, entirely on the sidewalk.
-	var curb_w := _ground_anchor("CurbSegment")
-	curb_w.rotation_degrees = Vector3(0, 90, 0)
-	curb_w.position = Vector3(59.5, 0.0, 129.85)
-	zone.add_child(curb_w)
-	
-	var curb_e := _ground_anchor("CurbSegment")
-	curb_e.rotation_degrees = Vector3(0, 90, 0)
-	curb_e.position = Vector3(72.5, 0.0, 129.85)
-	zone.add_child(curb_e)
+	if selected_piece < 0 or selected_piece == 4:
+		var curb_w := _ground_anchor("CurbSegment")
+		curb_w.rotation_degrees = Vector3(0, 90, 0)
+		curb_w.position = Vector3(59.5, 0.0, 129.85)
+		zone.add_child(curb_w)
+
+	if selected_piece < 0 or selected_piece == 5:
+		var curb_e := _ground_anchor("CurbSegment")
+		curb_e.rotation_degrees = Vector3(0, 90, 0)
+		curb_e.position = Vector3(72.5, 0.0, 129.85)
+		zone.add_child(curb_e)
 	
 	# Former six-metre ramp slot: approach and forecourt are now flush.
-	var p_ramp := _ground_anchor("CurbRamp")
-	p_ramp.position = Vector3(66.0, 0.0, 130.1)
-	zone.add_child(p_ramp)
+	if selected_piece < 0 or selected_piece == 6:
+		var p_ramp := _ground_anchor("CurbRamp")
+		p_ramp.position = Vector3(66.0, 0.0, 130.1)
+		zone.add_child(p_ramp)
 	
 	# Institutional Police streetlights (Twin globe civic lamps with navy blue base)
-	var p_light_w := HarborRouteProps.create_streetlight(4.8, 1.2, "police", 0.0)
-	p_light_w.position = Vector3(57.0, 0.008, 128.8)
-	zone.add_child(p_light_w)
+	if selected_piece < 0 or selected_piece == 7:
+		var p_light_w := HarborRouteProps.create_streetlight(4.8, 1.2, "police", 0.0)
+		p_light_w.position = Vector3(57.0, 0.008, 128.8)
+		zone.add_child(p_light_w)
 	
-	var p_light_e := HarborRouteProps.create_streetlight(4.8, 1.2, "police", 0.0)
-	p_light_e.position = Vector3(75.0, 0.008, 128.8)
-	zone.add_child(p_light_e)
+	if selected_piece < 0 or selected_piece == 8:
+		var p_light_e := HarborRouteProps.create_streetlight(4.8, 1.2, "police", 0.0)
+		p_light_e.position = Vector3(75.0, 0.008, 128.8)
+		zone.add_child(p_light_e)
 	
 	# Anti-ram security bollards with police navy finish and reflective bands
 	# Flank the entrance, keeping the central six-metre ramp unobstructed.
 	var bollard_xs := [57.5, 59.0, 60.5, 71.5, 74.5]
-	for bx in bollard_xs:
+	for index in range(bollard_xs.size()):
+		if selected_piece >= 0 and selected_piece != 9 + index: continue
 		var bollard := HarborRouteProps.create_bollard("police")
-		bollard.position = Vector3(bx, 0.008, 129.1)
+		bollard.position = Vector3(bollard_xs[index], 0.008, 129.1)
 		zone.add_child(bollard)
-	
+
 	# Public civic bench on the quiet west side of the forecourt
-	var bench := HarborRouteProps.create_bench(2.0)
-	bench.position = Vector3(58.0, 0.008, 126.8)
-	bench.rotation_degrees = Vector3(0, 90, 0)
-	zone.add_child(bench)
+	if selected_piece < 0 or selected_piece == 14:
+		var bench := HarborRouteProps.create_bench(2.0)
+		bench.position = Vector3(58.0, 0.008, 126.8)
+		bench.rotation_degrees = Vector3(0, 90, 0)
+		zone.add_child(bench)
 	
 	# Litter bin near east corner
-	var bin := HarborRouteProps.create_trash_bin()
-	bin.position = Vector3(74.0, 0.008, 127.5)
-	zone.add_child(bin)
+	if selected_piece < 0 or selected_piece == 15:
+		var bin := HarborRouteProps.create_trash_bin()
+		bin.position = Vector3(74.0, 0.008, 127.5)
+		zone.add_child(bin)
 	
 	# Keep the manhole beside the forecourt clear for the lid and ladder access.
 	
 	# Storm drain grate in street gutter beside the west curb wing (clear of pedestrian ramp)
-	var drain := HarborRouteProps.create_drain_grate()
-	drain.position = Vector3(62.0, 0.0, 130.35)
-	zone.add_child(drain)
+	if selected_piece < 0 or selected_piece == 16:
+		var drain := HarborRouteProps.create_drain_grate()
+		drain.position = Vector3(62.0, 0.0, 130.35)
+		zone.add_child(drain)
 	
 	# Crosswalk across Dock Street connecting to harbor quays
-	var crosswalk_dock := HarborRouteProps.create_crosswalk_stripes(3.6, 7.5, 6)
-	crosswalk_dock.position = Vector3(67.5, 0.0, 137.5)
-	zone.add_child(crosswalk_dock)
+	if selected_piece < 0 or selected_piece == 17:
+		var crosswalk_dock := HarborRouteProps.create_crosswalk_stripes(3.6, 7.5, 6)
+		crosswalk_dock.position = Vector3(67.5, 0.0, 137.5)
+		zone.add_child(crosswalk_dock)
 	
 	return zone
 
@@ -421,7 +510,7 @@ static func _build_delegacia_zone() -> Node3D:
 # Zone 4: Garagem do Maciota (Westgate Motor Co. Frontage & Apron)
 # ==============================================================================
 
-static func _build_maciota_zone() -> Node3D:
+static func _build_maciota_zone(selected_piece := -1) -> Node3D:
 	var zone := Node3D.new()
 	# Existing apron props follow the workshop's new industrial anchor.
 	zone.position = Vector3(2696.0/16-790.0/16,0,1624.0/16-1495.0/16)
@@ -439,56 +528,63 @@ static func _build_maciota_zone() -> Node3D:
 	# vehicles. The native floor remains the supported, full-width access.
 
 	# Granite curb on the east pedestrian sidewalk flank (X: 50.8 to 57.0)
-	var curb_e := _ground_anchor("CurbSegment")
-	curb_e.rotation_degrees = Vector3(0, 90, 0)
-	curb_e.position = Vector3(55.375, 0.0, 91.9375)
-	zone.add_child(curb_e)
+	if selected_piece < 0 or selected_piece == 0:
+		var curb_e := _ground_anchor("CurbSegment")
+		curb_e.rotation_degrees = Vector3(0, 90, 0)
+		curb_e.position = Vector3(55.375, 0.0, 91.9375)
+		zone.add_child(curb_e)
 
 	# High-visibility yellow safety bollard placed on the east curb corner (X = 51.2, clear of vehicle bay)
 	# Note: West bollard at X = 42.5 was removed to clear Arrival.gd's tour car arrival stop at (42.5, 0, 104.55).
-	var bollard_e := HarborRouteProps.create_bollard("hazard")
-	bollard_e.position = Vector3(54.575, 0.03, 91.7375)
-	zone.add_child(bollard_e)
+	if selected_piece < 0 or selected_piece == 1:
+		var bollard_e := HarborRouteProps.create_bollard("hazard")
+		bollard_e.position = Vector3(54.575, 0.03, 91.7375)
+		zone.add_child(bollard_e)
 
 	# The utility corner lights the court from the east. Its pole stays outside
 	# the full turning hull and the car's forward obstacle sensor.
-	var ind_light := HarborRouteProps.create_streetlight(5.2, 1.1, "industrial", deg_to_rad(45.0))
-	ind_light.position = Vector3(55.675, 0.03, 90.9375)
-	zone.add_child(ind_light)
+	if selected_piece < 0 or selected_piece == 2:
+		var ind_light := HarborRouteProps.create_streetlight(5.2, 1.1, "industrial", deg_to_rad(45.0))
+		ind_light.position = Vector3(55.675, 0.03, 90.9375)
+		zone.add_child(ind_light)
 
 	# Fire hydrant on the far east sidewalk corner (X = 56.2)
-	var hydrant := HarborRouteProps.create_fire_hydrant()
-	hydrant.position = Vector3(55.675, 0.03, 93.0375)
-	zone.add_child(hydrant)
+	if selected_piece < 0 or selected_piece == 3:
+		var hydrant := HarborRouteProps.create_fire_hydrant()
+		hydrant.position = Vector3(55.675, 0.03, 93.0375)
+		zone.add_child(hydrant)
 
 	# Heavy scrap metal / oil drum hopper on the east apron
-	var drum := MeshInstance3D.new()
-	drum.name = "ScrapOilDrum"
-	var d_cyl := CylinderMesh.new()
-	d_cyl.top_radius = 0.32
-	d_cyl.bottom_radius = 0.32
-	d_cyl.height = 0.85
-	drum.mesh = d_cyl
-	drum.material_override = HarborRouteMaterials.cast_iron_dark()
-	drum.position = Vector3(54.875, 0.03 + 0.425, 92.7375)
-	zone.add_child(drum)
-	
-	var drum_body := StaticBody3D.new()
-	drum_body.name = "DrumCollision"
-	drum_body.collision_layer = 1
-	drum_body.collision_mask = 0
-	var d_col := CollisionShape3D.new()
-	var d_shape := CylinderShape3D.new()
-	d_shape.radius = 0.35
-	d_shape.height = 0.85
-	d_col.shape = d_shape
-	d_col.position = drum.position
-	drum_body.add_child(d_col)
-	zone.add_child(drum_body)
+	if selected_piece < 0 or selected_piece == 4:
+		var drum := MeshInstance3D.new()
+		drum.name = "ScrapOilDrum"
+		var d_cyl := CylinderMesh.new()
+		d_cyl.top_radius = 0.32
+		d_cyl.bottom_radius = 0.32
+		d_cyl.height = 0.85
+		drum.mesh = d_cyl
+		drum.material_override = HarborRouteMaterials.cast_iron_dark()
+		drum.position = Vector3(54.875, 0.03 + 0.425, 92.7375)
+		zone.add_child(drum)
+
+	if selected_piece < 0 or selected_piece == 5:
+		var drum_body := StaticBody3D.new()
+		drum_body.name = "DrumCollision"
+		drum_body.collision_layer = 1
+		drum_body.collision_mask = 0
+		var d_col := CollisionShape3D.new()
+		var d_shape := CylinderShape3D.new()
+		d_shape.radius = 0.35
+		d_shape.height = 0.85
+		d_col.shape = d_shape
+		d_col.position = Vector3(54.875, 0.03 + 0.425, 92.7375)
+		drum_body.add_child(d_col)
+		zone.add_child(drum_body)
 	
 	# Storm drain grate in street gutter outside the driveway
-	var drain := HarborRouteProps.create_drain_grate()
-	drain.position = Vector3(55.375, 0.0, 102.6875)
-	zone.add_child(drain)
+	if selected_piece < 0 or selected_piece == 6:
+		var drain := HarborRouteProps.create_drain_grate()
+		drain.position = Vector3(55.375, 0.0, 102.6875)
+		zone.add_child(drain)
 	
 	return zone

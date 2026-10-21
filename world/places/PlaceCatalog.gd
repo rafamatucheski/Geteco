@@ -28,7 +28,7 @@ static func shelter_access_exterior(index: int) -> Vector3:
 static func _at(point: Vector2, region: String) -> Vector3:
 	if region == "mountain": point += MOUNTAIN_OFFSET
 	return Vector3(point.x,0,point.y)*SCALE
-static func definitions() -> Array[Dictionary]:
+static func definitions(include_deleted := false) -> Array[Dictionary]:
 	var rows: Array = [
 		["harbor_bank","North Pier","harbor",Vector2(650,140),"assets/bank/bank-finished.tscn",Vector2(14,10),3.2,4.4,"bank"],
 		["harbor_police","Harbor Patrol","harbor",Vector2(1080,1950),"world/harbor/interiors/HarborPoliceStation3D.gd",Vector2(22.4,15.4),4.8,6.2,"police"],
@@ -164,14 +164,16 @@ static func definitions() -> Array[Dictionary]:
 	result.append_array(preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").definitions())
 	if preload("res://world/places/amusement_park/AmusementParkLayout.gd").enabled():
 		result.append(preload("res://world/places/amusement_park/HauntedHousePlace.gd").definition_data())
-	return result
+	return result if include_deleted else result.filter(func(definition): return not definition.get("editor_deleted",false))
 static func get_definition(id: String) -> Dictionary:
-	for definition in definitions():
+	# Keep stable coordinates for mission/save references even if the physical place
+	# was deliberately removed. Active enumeration and admission exclude that row.
+	for definition in definitions(true):
 		if definition.id == id: return definition
 	return {}
 static func create_place(id: String) -> Node3D:
 	var definition := get_definition(id)
-	if definition.is_empty(): return null
+	if definition.is_empty() or definition.get("editor_deleted",false): return null
 	if id == "desert_under_culvert":
 		var culvert = preload("res://world/desert/underground/DesertCulvertPlace.gd").new()
 		culvert.definition = definition
