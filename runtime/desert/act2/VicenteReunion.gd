@@ -572,14 +572,19 @@ func _say_then(rows: Array, next: Callable) -> void:
 	session.show_dialogue(lines, func():
 		if session.world.gameplay.health > 0 and not session.arrest_pending and not session.rescue_pending and session.state.region_id == "desert": next.call())
 
-## Flashback jogável da blitz (sessão do prólogo, runtime/prologue/BlitzScene.gd). Sem o módulo, a conversa
-## segue direto; o módulo chama `next` quando o flashback termina.
-const BLITZ_PATH := "res://runtime/prologue/BlitzScene.gd"
+## Flashback jogável da blitz pelos olhos do Vicente (runtime/prologue/BlitzScene.gd, a mesma noite do
+## prólogo): a cena pausa o mundo, roda num viewport próprio e chama `next` no fim ou no pulo.
+const BLITZ := preload("res://runtime/prologue/BlitzScene.gd")
+## Testes: a cena joga sozinha e mais rápido.
+var flashback_autoplay := false
+var flashback_pace := 1.0
 func _flashback(point_of_view: String, next: Callable) -> void:
-	if ResourceLoader.exists(BLITZ_PATH):
-		var blitz: Script = load(BLITZ_PATH)
-		if blitz != null and blitz.has_method("start") and blitz.start(session, point_of_view, next): return
-	next.call()
+	var scene = BLITZ.start(session, point_of_view, func(_skipped := false): next.call())
+	if scene == null:
+		next.call()
+		return
+	scene.autoplay = flashback_autoplay
+	scene.pace = flashback_pace
 
 ## A2-08: um plano curto no Vicente perto do carro, antes da largada da aposta (o jogador vê antes do Dante).
 func _vicente_shot() -> void:

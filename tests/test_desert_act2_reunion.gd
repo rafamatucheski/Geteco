@@ -591,10 +591,14 @@ func cave_mission() -> void:
 	check(world.session.desert.objective() == "Encontre Vicente na caverna da mesa de pedra, ao sul do leito seco.", "A2-06: objetivo aponta a caverna")
 	if not await visit("cave"): return
 	await photo("10-caverna")
-	# Sem o módulo do flashback (sessão do prólogo), a conversa segue direto: antes e depois.
+	# Conversa, flashback da blitz pelos olhos do Vicente (joga sozinho e rápido no teste) e o resto.
+	var reunion = world.session.desert.story.reunion
+	reunion.flashback_autoplay = true
+	reunion.flashback_pace = 4.0
 	var expected: int = ACT2_LINES.cave_before(false, false).size()
 	if not await talk("cave", expected): return
-	await wait_until(func(): return world.session.dialogue_open or REUNION.chain_at(state, "cave") == "done", 20000)
+	await wait_until(func(): return world.session.dialogue_open or REUNION.chain_at(state, "cave") == "done", 120000)
+	check(world.session.dialogue_open or REUNION.chain_at(state, "cave") == "done", "A2-06: flashback termina e devolve à fogueira")
 	if world.session.dialogue_open:
 		var rest := await close_dialogue()
 		check(rest >= ACT2_LINES.cave_after().size(), "A2-06: segunda parte da conversa depois do flashback (%d)" % rest)
