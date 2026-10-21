@@ -4,9 +4,11 @@ extends SceneTree
 const BLITZ := preload("res://runtime/prologue/BlitzScene.gd")
 const SHOTS := {
 	"dante": [["dante_open", 3.0, "01_radio"], ["dante_open", 7.5, "02_desvio"], ["dante_open+", 1.0, "03_lanterna"],
-		["dante_walk", 3.0, "04_nuca"], ["dante_ask", .8, "05_batida"], ["dante_ask", 5.0, "06_rosto_vicente"],
-		["dante_ask", 9.0, "07_desce"], ["dante_ambush", .5, "08_tiro"], ["dante_fight", 1.5, "09_mira"], ["dante_fight!", 1.3, "09b_morte"],
-		["dante_flee", 1.2, "10_fuga"], ["dante_wounded", 2.0, "11_ferido"], ["dante_cuff", 1.6, "12_maos"]],
+		["dante_walk", 3.0, "04_nuca"], ["dante_ask", .8, "05_batida"], ["dante_ask", 5.0, "06_porta"],
+		["dante_ask", 9.0, "07_desce"], ["dante_ambush", .5, "08_tiro"], ["dante_fight", 1.5, "09_mira"], ["dante_fight", 3.2, "09a_lima"], ["dante_fight!", 1.3, "09b_morte"],
+		["dante_flee", 1.2, "10_fuga"], ["dante_wounded", 2.0, "11_ferido"], ["dante_cuff", 1.6, "12_maos"],
+		["dante_escort", 2.5, "13_viatura"], ["dante_escort", 9.0, "14_bau"], ["dante_drive", 2.0, "15_saindo"],
+		["dante_prison", 4.0, "16_prisao"], ["dante_after", 3.5, "17_oito_anos"]],
 	"vicente": [["vicente_drive", 3.0, "21_estrada"], ["vicente_drive", 16.0, "22_giroflex"], ["vicente_wait", 2.0, "23_cabine"],
 		["vicente_face", 2.5, "24_rosto_dante"]],
 }

@@ -124,6 +124,12 @@
         "speaker": "Vicente",
         "pt": "Dante?",
         "en": ""
+      },
+      {
+        "id": "vicente_farda",
+        "speaker": "Vicente",
+        "pt": "Cê tá de farda.",
+        "en": ""
       }
     ],
     "order_out": [
@@ -134,13 +140,43 @@
         "en": ""
       },
       {
+        "id": "vicente_irmao",
+        "speaker": "Vicente",
+        "pt": "Ele é meu irmão.",
+        "en": ""
+      },
+      {
         "id": "bastos_desce",
         "speaker": "Bastos",
         "pt": "Desce devagar. Mão onde eu possa ver.",
         "en": ""
+      },
+      {
+        "id": "vicente_frete",
+        "speaker": "Vicente",
+        "pt": "É frete. Geladeira e fogão pra Santa Lua.",
+        "en": ""
+      },
+      {
+        "id": "bastos_bau",
+        "speaker": "Bastos",
+        "pt": "Então abre o baú.",
+        "en": ""
+      },
+      {
+        "id": "vicente_nota",
+        "speaker": "Vicente",
+        "pt": "Abro. Tá tudo com nota.",
+        "en": ""
       }
     ],
     "ambush": [
+      {
+        "id": "vicente_rato",
+        "speaker": "Vicente",
+        "pt": "Rato, não!",
+        "en": ""
+      },
       {
         "id": "dante_arma",
         "speaker": "Dante",
@@ -153,6 +189,14 @@
         "id": "lima_bastos",
         "speaker": "Lima",
         "pt": "Bastos!",
+        "en": ""
+      }
+    ],
+    "lima_cover": [
+      {
+        "id": "lima_viatura",
+        "speaker": "Lima",
+        "pt": "Tô na viatura! Segura a esquerda!",
         "en": ""
       }
     ],
@@ -170,6 +214,29 @@
         "speaker": "Lima",
         "pt": "O motorista, Ferraz!",
         "en": ""
+      },
+      {
+        "id": "vicente_nao_sabia",
+        "speaker": "Vicente",
+        "pt": "Eu não sabia que ele tava armado!",
+        "en": ""
+      }
+    ],
+    "lima_radio": [
+      {
+        "id": "lima_apoio",
+        "speaker": "Lima",
+        "radio": true,
+        "pt": "Policial baleado na doze. Manda apoio.",
+        "en": ""
+      }
+    ],
+    "wounded": [
+      {
+        "id": "vicente_nada",
+        "speaker": "Vicente",
+        "pt": "Dante... eu não fiz nada.",
+        "en": ""
       }
     ],
     "order": [
@@ -178,6 +245,28 @@
         "speaker": "Prado",
         "radio": true,
         "pt": "Ferraz. Procedimento.",
+        "en": ""
+      }
+    ],
+    "escort": [
+      {
+        "id": "vicente_abre",
+        "speaker": "Vicente",
+        "pt": "Abre o baú. Olha lá dentro.",
+        "en": ""
+      }
+    ],
+    "cargo": [
+      {
+        "id": "lima_eletro",
+        "speaker": "Lima",
+        "pt": "É eletrodoméstico, Ferraz. Tudo com nota.",
+        "en": ""
+      },
+      {
+        "id": "vicente_viu",
+        "speaker": "Vicente",
+        "pt": "Viu? Viu?!",
         "en": ""
       }
     ]
