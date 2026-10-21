@@ -2079,6 +2079,10 @@ func _process(delta: float) -> void:
 		var village_objective: String = urban_operations.village_quest.objective()
 		if not village_objective.is_empty(): _set_objective(village_objective)
 	if jessica != null and state.campaign.active_id == "jessica_bank": _set_objective(jessica.objective())
+	var vertice_night: Node = _vertice_night()
+	if vertice_night != null and state.campaign.active_id.is_empty() and state.region_id == "harbor" and not arrival.active:
+		var night_objective: String = vertice_night.objective()
+		if not night_objective.is_empty(): _set_objective(night_objective)
 	if desert != null and state.region_id == "desert": _set_objective(desert.objective())
 	if desert != null and state.region_id == "desert" and is_instance_valid(desert.frontier) and is_instance_valid(desert.frontier.roadside):
 		var roadside_objective: String = desert.frontier.roadside.objective()
@@ -2527,6 +2531,14 @@ func _refresh_reward_feedback() -> void:
 			notice_time = 0.0
 			notice.text = ""
 			notice.hide()
+## M06-C "Turno da noite" (VerticeNightShift), filho da Vértice em PortLogistics.
+func _vertice_night() -> Node:
+	if urban_operations == null or not is_instance_valid(urban_operations.cargo_handling): return null
+	var depot: Variant = urban_operations.cargo_handling.get("depot")
+	if not is_instance_valid(depot): return null
+	var shift: Variant = depot.get("night_shift")
+	return shift if is_instance_valid(shift) else null
+
 func save_block_reason() -> String:
 	if world.player.get_meta("player_air_busy", false): return "Aguarde terminar o salto ou a queda para salvar."
 	if world.get_meta("developer_mode_active",false): return "Desligue o modo desenvolvedor para salvar."
@@ -2558,6 +2570,10 @@ func save_block_reason() -> String:
 		var desert_reason: String = desert.save_block_reason()
 		if not desert_reason.is_empty(): return desert_reason
 	if jessica != null and jessica.riding: return "Aguarde Jessica estacionar para salvar."
+	var vertice_night: Node = _vertice_night()
+	if vertice_night != null:
+		var night_reason: String = vertice_night.save_block_reason()
+		if not night_reason.is_empty(): return night_reason
 	if skate != null and skate.controls_locked(): return "Desça do skate e se recupere para salvar."
 	if controller.save_invalid: return controller.save_block_text()
 	if motocross != null and motocross.mounted: return "Termine a corrida ou desça da moto para salvar."

@@ -31,6 +31,14 @@ var hatch: Node3D
 var hatch_marker: Node2D
 var hatch_busy := false
 const HATCH_POINT := Vector3(-24,0,-15.7)
+const NIGHT_STATE := preload("res://gameplay/urban_v1/vertice_night/VerticeNightState.gd")
+## M06-C "Turno da noite": a operação noturna segura a equipe do dia, abre portão/escritório
+## e acende o pátio no alarme por estes interruptores (VerticeNightShift).
+var night_shift: Node
+var night_hold := false
+var night_gate_open := false
+var night_office_access := false
+var night_alarm := false
 
 func _ready() -> void:
 	name = "Vertice"
@@ -53,10 +61,16 @@ func _ready() -> void:
 	interior_camera.size = 24
 	interior_camera.far = 150
 	add_child(interior_camera)
+	if session != null:
+		night_shift = load("res://gameplay/urban_v1/vertice_night/VerticeNightShift.gd").new()
+		night_shift.configure(session,self)
+		add_child(night_shift)
 	set_physics_process(session != null)
 
 func business_open() -> bool:
 	if session == null or session.weather == null: return true
+	# Depois do tiroteio da M06-C a Vértice fica uns dias com fita da polícia.
+	if NIGHT_STATE.closed_by_police(session.state.world_state,session.weather.moon_day()): return false
 	var hour := fposmod(float(session.weather.time_of_day),1.0)*24.0
 	return hour >= 8.0 and hour < 18.0
 
@@ -69,7 +83,7 @@ func set_region_active(active: bool) -> void:
 	dressing.set_region_active(active)
 	clutter.set_region_active(active)
 	forklifts.set_region_active(active)
-	for entry in staff: entry.actor.collision_layer = 2 if active else 0
+	for entry in staff: entry.actor.collision_layer = 2 if active and not night_hold else 0
 
 func inside(point: Vector3) -> bool:
 	var p := point-ORIGIN
@@ -426,7 +440,9 @@ func _physics_process(delta: float) -> void:
 	# Exit and an occupied threshold remain clear even after the business closes.
 	var exiting := p.x > -50 and p.x < 50 and p.z < 78 and p.z > -30
 	var gate_clearance := absf(p.x)<9 and absf(p.z-78)<4 and gate_amount>.1
-	var target := 1.0 if open or exiting or gate_clearance else 0.0
+	# Durante a invasão o portão só abre para quem sai por ele, para o alarme ou para a van.
+	if night_hold: exiting = exiting and p.z > 66
+	var target := 1.0 if open or exiting or gate_clearance or night_gate_open else 0.0
 	for truck in get_tree().get_nodes_in_group("port_logistics_truck"):
 		if is_instance_valid(truck) and truck.health>0 and truck.global_position.distance_to(ORIGIN+Vector3(0,0,78))<15: target = 1.0
 	gate_amount = move_toward(gate_amount,target,delta*.7)
@@ -435,7 +451,7 @@ func _physics_process(delta: float) -> void:
 	_set_inside(interior)
 	var at_door := p.distance_to(Vector3(35,0,30))<3
 	var threshold_occupied := absf(p.x-35)<1.7 and absf(p.z-30)<1.3 and office_amount>.4
-	office_amount = move_toward(office_amount,1.0 if (at_door and (open or interior)) or threshold_occupied else 0.0,delta*2)
+	office_amount = move_toward(office_amount,1.0 if (at_door and (open or interior or night_office_access)) or threshold_occupied else 0.0,delta*2)
 	building.set_office_open(office_amount)
 	for i in 3:
 		var keep_open := open or (dock_amounts[i]>.01 and dock_occupied(i))
@@ -447,12 +463,12 @@ func _physics_process(delta: float) -> void:
 		interior_camera.look_at(to_global(focus+Vector3.UP*.8))
 	forklifts.tick(near)
 	for seated in desk_staff:
-		seated.visible = open
-		seated.set_process(near and open)
+		seated.visible = open and not night_hold
+		seated.set_process(near and open and not night_hold)
 	for entry in staff:
 		var npc = entry.actor
-		entry.model.set_process(near)
-		if npc.dead: continue
+		entry.model.set_process(near and not night_hold)
+		if npc.dead or night_hold: continue
 		npc.set_physics_process(near)
 		if not near: continue
 		var region = session.controller.regions.get("harbor")
@@ -473,7 +489,7 @@ func _physics_process(delta: float) -> void:
 	scan -= delta
 	if scan>0: return
 	scan = .25
-	for light in lamps: light.visible = session.weather.time_of_day<.25 or session.weather.time_of_day>.75
+	for light in lamps: light.visible = night_alarm or session.weather.time_of_day<.25 or session.weather.time_of_day>.75
 	if not occupied or player.dead: return
 	for secret in secrets:
 		var found: bool = session.state.economy.snapshot().transactions.has("reward:"+secret.id)
@@ -511,7 +527,27 @@ func _set_inside(value: bool) -> void:
 		session.world.player.camera = session.world.camera
 	if session != null and session.weather != null: session.weather._update()
 
+func set_night_hold(value: bool) -> void:
+	if night_hold == value: return
+	night_hold = value
+	# Equipe do dia sai de cena (sem corpo nem colisão) enquanto os Cobras fazem a noite.
+	for entry in staff:
+		entry.actor.visible = not value
+		entry.actor.collision_layer = 2 if region_active and not value else 0
+		if value:
+			entry.actor.set_physics_process(false)
+			entry.actor.automatic_direction = Vector3.ZERO
+	for seated in desk_staff:
+		if value: seated.visible = false
+
+func set_night_alarm(value: bool) -> void:
+	night_alarm = value
+	for light in lamps: light.light_energy = 2.6 if value else 1.3
+
 func nearest_action() -> Dictionary:
+	if is_instance_valid(night_shift):
+		var night_action: Dictionary = night_shift.nearest_action()
+		if not night_action.is_empty(): return night_action
 	if session == null or session.state.region_id != "harbor" or session.world.driving.occupied: return {}
 	if _hatch_reachable(): return {"id":"urban_v1","target":"vertice_hatch","label":"","silent":true,"position":ORIGIN+HATCH_POINT}
 	if not session.state.place_id.is_empty(): return {}
@@ -521,6 +557,7 @@ func nearest_action() -> Dictionary:
 	return {}
 
 func perform(target: String) -> bool:
+	if target.begins_with("vertice_night_"): return is_instance_valid(night_shift) and night_shift.perform(target)
 	if target == "vertice_hatch":
 		if not _hatch_reachable() or session.modal: return false
 		_enter_hideout()

@@ -103,6 +103,8 @@ func restore_snapshot(data: Dictionary) -> bool:
 	if data.world.has("remote_coal_secret_revealed") and not data.world.remote_coal_secret_revealed is bool: return false
 	if data.world.has("mining_raid"):
 		if not preload("res://gameplay/mining/MiningRaidState.gd").valid_wallet(data.world.mining_raid,data.economy): return false
+	var campaign_progress: Array = next_campaign.snapshot().completed + next_campaign.snapshot().get("legacy_skipped", [])
+	if not preload("res://gameplay/urban_v1/vertice_night/VerticeNightState.gd").valid_world(data.world, data.economy, campaign_progress): return false
 	if data.world.has("mining_equipment") and not preload("res://gameplay/mining/MiningOperation.gd").validate_snapshot(data.world.mining_equipment): return false
 	if data.world.has("ashbend_secret_car") and (not data.world.ashbend_secret_car is Dictionary or not preload("res://gameplay/urban_v1/CobraSecretCar3D.gd").validate_record(data.world.ashbend_secret_car)): return false
 	if data.world.get("vehicles",[]).size() > 64: return false
