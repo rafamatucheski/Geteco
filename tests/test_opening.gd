@@ -5,7 +5,10 @@ var failures: Array[String] = []
 var completions: Array[bool] = []
 var checks := 0
 
-func _initialize() -> void: run.call_deferred()
+func _initialize() -> void:
+	# Este teste confere a abertura: o runner a pula por padrão (Arrival.skip_opening).
+	OS.set_environment("GETECO_SKIP_OPENING", "0")
+	run.call_deferred()
 
 func check(value: bool, label: String) -> void:
 	checks += 1

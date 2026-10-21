@@ -164,8 +164,20 @@ func start_or_resume(loaded: bool = false) -> void:
 		_begin_opening()
 	if story_repaired: changed.emit()
 
+## GETECO_SKIP_OPENING=1 pula o filme da abertura (e o prólogo jogável, quando houver) e cai direto no
+## desembarque. tools/run_godot_locked.sh liga por padrão: quem roda teste não precisa assistir ao filme
+## toda vez. O jogo normal (Jogar.cmd, export) não define a variável e mostra a abertura.
+static func skip_opening() -> bool:
+	return OS.get_environment("GETECO_SKIP_OPENING") == "1"
+
 func _begin_opening() -> void:
 	if is_instance_valid(presentation): return
+	if skip_opening():
+		opening_completed = true
+		STORY.mark_opening(session.state.world_state)
+		changed.emit()
+		_begin_disembark.call_deferred()
+		return
 	_set_phase("opening", "", Vector3.ZERO)
 	_lock(true)
 	presentation = preload("res://runtime/OpeningPresentation.gd").new()

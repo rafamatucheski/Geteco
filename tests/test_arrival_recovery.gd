@@ -3,7 +3,10 @@ extends SceneTree
 var world
 var failures: Array[String] = []
 
-func _initialize() -> void: run.call_deferred()
+func _initialize() -> void:
+	# Este teste confere a abertura: o runner a pula por padrão (Arrival.skip_opening).
+	OS.set_environment("GETECO_SKIP_OPENING", "0")
+	run.call_deferred()
 
 func check(value: bool, message: String) -> void:
 	if not value: failures.append(message); push_error(message)
