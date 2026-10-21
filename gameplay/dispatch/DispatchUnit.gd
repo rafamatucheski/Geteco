@@ -106,6 +106,8 @@ var _escape_retry := 0.0
 var _retirement := 0.0
 # Espera por parada concluída (ultrapassagem pendente impede estacionar)
 var _park_wait := 0.0
+## Pontos de desembarque já usados (espaço da viatura), para cada leva sair num lugar diferente.
+var _exit_points: Array[Vector3] = []
 var _park_notified := false
 var _park_stalled := false
 var stop_planner := preload("res://gameplay/dispatch/DispatchStopPlanner.gd").new()
@@ -184,6 +186,7 @@ func _sync_motorcycle_rider() -> void:
 
 func _set_state(next: String) -> void:
 	if state == next: return
+	if next == "parked": _exit_points.clear()
 	state = next
 	state_age = 0.0
 	controller.emit_dispatch_event("unit_state", {"unit": self, "state": next})
@@ -546,7 +549,10 @@ func _stall_police_enroute(delta: float) -> void:
 		_set_pursuit(false, null)
 		block_point = Vector3.INF
 		driver.hold(driver.pending_recovery())
-		if stop_planner.tick(self,anchor,delta):
+		# Sem curva de parada (cruzamento, rua estreita) a viatura já parada perto do alvo
+		# estaciona onde está: antes ela ficava em rota para sempre e a equipe às vezes nunca descia.
+		var parked_here: bool = _park_wait > 3.0 and driver.is_stopped() and not driver.pending_recovery() and flat <= stop_distance + 12.0
+		if stop_planner.tick(self,anchor,delta) or parked_here:
 			_park_reset()
 			vehicle.set_meta("dispatch_needs_room",false)
 			_set_state("parked")
@@ -988,11 +994,16 @@ func _deploy_police_crew() -> bool:
 	var limit: int = RULES.FOOT_LIMIT[clampi(maxi(controller.gameplay.stars, 1), 0, 6)]
 	var free_slots: int = mini(mini(crew_remaining, limit - controller.foot_officer_count()), RULES.OFFICERS_DEPLOY_BURST)
 	var deployed := false
+	# Pontos já usados nas levas anteriores (o camburão desce de 2 em 2): quem desceu ainda está
+	# saindo de dentro do casco e não ocupa o ponto na consulta física, então os 6 saíam do mesmo lugar.
 	var taken: Array[Vector3] = []
+	for point in _exit_points:
+		taken.append(vehicle.to_global(point))
 	var traced := TRACE.begin()
 	for index in maxi(0, free_slots):
 		var exit: Dictionary = controller.exit_point(vehicle, taken, false)
 		if exit.is_empty(): break
+		_exit_points.append(vehicle.to_local(exit.point))
 		taken.append(exit.point)
 		var officer: CharacterBody3D = controller.spawn_officer(self, exit.point, float(exit.side))
 		officers.append(officer)

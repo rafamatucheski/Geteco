@@ -1,9 +1,14 @@
 extends RefCounted
 const ACCENT := Color("e6bd72")
 
-static func text_for(stars: int, phase: String, progress: float, clock: float) -> String:
+## `remaining`: segundos que faltam da investigação local (mostrados como 0:42).
+static func text_for(stars: int, phase: String, progress: float, clock: float, remaining := -1.0) -> String:
 	if phase == "surrender": return "RENDENDO-SE"
-	if stars <= 0: return "INVESTIGAÇÃO LOCAL" if phase == "investigation" else ""
+	if stars <= 0:
+		if phase != "investigation": return ""
+		if remaining < 0.0: return "INVESTIGAÇÃO LOCAL"
+		var seconds := int(ceil(remaining))
+		return "INVESTIGAÇÃO LOCAL  %d:%02d" % [seconds / 60, seconds % 60]
 	var result := ""
 	for index in stars:
 		var color := ACCENT

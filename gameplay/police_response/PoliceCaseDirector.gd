@@ -3,7 +3,8 @@ extends Node
 ## must perceive the event; hearing alone reports a location, never an identity.
 const MAX_REPORTS := 24
 const REPORT_SECONDS := 2.5
-const INVESTIGATION_SECONDS := 300.0
+## 21/10: 300 s deixava "INVESTIGAÇÃO LOCAL" quase sempre na tela (todo crime ouvido reinicia); agora 1 min.
+const INVESTIGATION_SECONDS := 60.0
 const THREAT_SECONDS := 45.0
 const VIOLENT := ["gunfire", "suppressed", "explosion", "assault", "police_assault", "police_killed", "civilian_killed", "vehicle_assault"]
 const ESCALATION = preload("res://gameplay/police_response/PoliceEscalation.gd")

@@ -170,7 +170,8 @@ func _sync_status(delta: float) -> void:
 	if phase!=_wanted_phase: _wanted_clock=0.0; _wanted_phase=phase
 	if not get_tree().paused: _wanted_clock=fposmod(_wanted_clock+delta,10.0)
 	var progress: float=gameplay.police_evasion_progress()
-	var wanted_text := WANTED.text_for(stars,phase,progress,_wanted_clock)
+	var investigation: float=float(gameplay.police_case.investigation_left) if gameplay.get("police_case")!=null else -1.0
+	var wanted_text := WANTED.text_for(stars,phase,progress,_wanted_clock,investigation)
 	stars_label.text="[right]"+wanted_text+"[/right]" if not wanted_text.is_empty() else ""
 	stars_label.visible=not stars_label.text.is_empty()
 	search_progress.visible=stars>0 and phase=="search"

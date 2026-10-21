@@ -474,7 +474,9 @@ func exit_point(car: CharacterBody3D, taken: Array[Vector3], right_only: bool, a
 		sides.assign([-1.0, 1.0] if taken.size() % 2 == 0 else [1.0, -1.0])
 		var door := -clampf(float(car.half_length) * .18, .30, .62)
 		longitudinal.assign([door, 0.3, -1.0, 1.4])
-		if car.archetype == "police_transport": longitudinal.assign([-1.1, 0.2, 1.5])
+		# Camburão: porta lateral, meio e as duas portas de trás; com os pontos já usados de fora,
+		# os seis agentes saem espalhados.
+		if car.archetype == "police_transport": longitudinal.assign([-1.1, 0.2, 1.5, 2.3, -0.4])
 	var reach: float = car.half_width + (0.9 if right_only else 0.75)
 	var excluded: Array[RID] = [car.get_rid()]
 	var capsule := CapsuleShape3D.new()
