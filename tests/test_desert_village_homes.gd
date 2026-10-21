@@ -30,6 +30,11 @@ func run() -> void:
 		check(room.reward_points.size()==3,id+" has all three physically admitted rewards")
 		check(room.model.find_children("*","OmniLight3D",true,false).size()==2,id+" has two bounded motivated lights")
 		check(not room.model.is_processing() and not room.model.is_physics_processing(),id+" static model has no runtime loop")
+		for side in [-1.0,1.0]:
+			var start := Vector3(side*(size.x*.5-.6),1.8,size.y*.3)
+			var wall_ray := PhysicsRayQueryParameters3D.create(start,start+Vector3(side,0,0),1)
+			var wall_hit := stage.get_world_3d().direct_space_state.intersect_ray(wall_ray)
+			check(not wall_hit.is_empty(),id+" cutaway side retains full-height physical boundary "+str(side))
 		for reward in definition.rewards:
 			check(not seen_ids.has(reward.id),id+" globally unique reward receipt "+str(reward.id))
 			seen_ids[reward.id]=true

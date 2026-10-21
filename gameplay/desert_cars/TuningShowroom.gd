@@ -18,7 +18,7 @@ var _idle := 0.0
 var _distance := 6.5
 var _focus := Vector3(0,.6,0)
 var _dragging := false
-var _zoom := 1.0
+var _zoom := 1.2
 var _pitch := .28
 var _auto_rotate := true
 var _bay: Node3D
@@ -158,7 +158,7 @@ func _clear_model() -> void:
 
 func reset_view() -> void:
 	_yaw = 2.35
-	_zoom = 1.0
+	_zoom = 1.2
 	_pitch = .28
 	_idle = 0.0
 	_auto_rotate = true

@@ -177,7 +177,7 @@ func _ensure_loan() -> void:
 		car.queue_free()
 		return
 	if saved.has("health"): car.restore_health(float(saved.health))
-	car.restore_body_dents(saved.get("body_dents",[]))
+	car.restore_body_dents(saved.get("body_dents",[]),saved.get("breakaway_parts",{}))
 	if int(saved.get("punctured_tires",0))>0:
 		preload("res://gameplay/police_response/ground/TirePuncture.gd").puncture(car,int(saved.punctured_tires))
 	if float(saved.get("heavy_crush_ratio",1.0))<1.0:

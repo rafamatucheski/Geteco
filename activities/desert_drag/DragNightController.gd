@@ -225,8 +225,10 @@ func _open_preparation() -> void:
 		add_child(tuning_panel)
 		tuning_panel.layer=72
 		tuning_panel.mechanic_name="Acerto da noite"
+		tuning_panel.owned_only=true
 		tuning_panel.purchase_requested.connect(_equip_part)
 		tuning_panel.remove_requested.connect(_remove_part)
+		tuning_panel.loadout_requested.connect(_apply_preparation)
 		tuning_panel.closed.connect(_close_preparation)
 	layer.hide()
 	_refresh_preparation()
@@ -250,6 +252,21 @@ func _equip_part(part: String) -> void:
 		tuning_panel.set_message("Adquira esta peça na oficina do Digo antes de instalar.")
 		return
 	var result := GARAGE.buy(session.state.world_state,session.state.economy,car.vehicle_id,car.archetype,part,WINS.count(session.state.world_state,session.state.campaign.snapshot()))
+	if not result.ok: tuning_panel.set_message(str(result.reason)); return
+	ADAPTER.attach(car,result.parts)
+	session.save_game()
+	_refresh_preparation()
+
+func _apply_preparation(parts: Dictionary) -> void:
+	if not _can_prepare() or not is_instance_valid(tuning_panel) or not tuning_panel.visible: return
+	var car := _car()
+	var record := GARAGE.vehicle(session.state.world_state,car.vehicle_id,car.archetype)
+	if TUNING.clean_parts(parts) != parts: tuning_panel.set_message("Ajuste inválido."); return
+	for part in parts.values():
+		if part not in record.owned:
+			tuning_panel.set_message("Adquira esta peça na oficina do Digo antes de instalar.")
+			return
+	var result := GARAGE.apply_loadout(session.state.world_state,session.state.economy,car.vehicle_id,car.archetype,parts,WINS.count(session.state.world_state,session.state.campaign.snapshot()))
 	if not result.ok: tuning_panel.set_message(str(result.reason)); return
 	ADAPTER.attach(car,result.parts)
 	session.save_game()

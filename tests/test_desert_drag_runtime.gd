@@ -109,6 +109,12 @@ func run() -> void:
 	var previous_power: Variant = powertrain(car)
 	check(race.perform("start"),"nearby night action builds two-car grid")
 	if not race.active: finish(); return
+	for frame in 900:
+		if race.phase!="preparing": break
+		if frame==0: check(is_zero_approx(race.elapsed) and is_equal_approx(race.countdown,3.0),"cold scenery preparation never advances the race clock or countdown")
+		await physics_frame
+	check(race.phase=="staging" and world.production.regions.desert.drag_view_ready(),"full visible course is ready before countdown")
+	if race.phase!="staging": finish(); return
 	check(race.hud.rival=="Digo" and is_equal_approx(race.hud.remaining,800.0) and race.hud.headline=="3","HUD contains real rival distance and countdown before first render")
 	await check_normal_ui(false,"race hides ordinary HUD and both objective indicators")
 	check(race.racers.size()==2,"exactly Dante and one physical rival")
@@ -116,7 +122,7 @@ func run() -> void:
 	check(is_equal_approx(race.distance,800.0),"800 m category supports both stock and fully prepared 15–30 second builds")
 	check(race.racers[1].car.archetype=="digo_gol_1993","first rival really drives Digo's Gol")
 	check(race.racers.all(func(e): return e.car.collision_layer!=0 and e.car.collision_mask!=0),"both bodies retain collision")
-	check(root.get_camera_3d()==race.race_camera,"low side camera owns race view")
+	check(root.get_camera_3d()==race.race_camera,"dedicated race camera owns countdown and side view")
 	check(root.get_audio_listener_3d()==race.race_listener and race.race_listener.get_parent()==car,"engine listener follows Dante instead of the expanding camera")
 	await frames(2)
 	check(race.racers.all(func(e): return e.car.equipment.lamps.any(func(mount): return mount.lamp.is_visible_in_tree() and mount.lamp.light_energy>0)),"both racers have an actual enabled headlight source")
@@ -125,6 +131,10 @@ func run() -> void:
 	check(is_equal_approx(float(near_camera.setback),16.5) and is_equal_approx(float(far_camera.setback),25.5),"side camera brings start closer and bounds far-gap framing")
 	var view := root.get_visible_rect().grow(-40)
 	check(race.racers.all(func(e): return view.has_point(race.race_camera.unproject_position(e.car.global_position+Vector3.UP*.7))),"both physical cars fit the close starting camera")
+	var grid_center: Vector3 = (race.racers[0].car.global_position+race.racers[1].car.global_position)*.5
+	check((race.race_camera.global_position-grid_center).dot(race.direction)<-12 and race.race_camera.global_position.y-grid_center.y>9,"countdown camera is high behind both cars")
+	var tree_side: Vector3 = race.direction.cross(Vector3.UP).normalized()
+	check([1.73,2.65].all(func(height): return view.has_point(race.race_camera.unproject_position(race.start_point+tree_side*6.2+Vector3.UP*height))),"whole physical traffic-light countdown fits rear view")
 	check(session.blocks_driving_change() and not race.save_block_reason().is_empty(),"race owns boarding and save gates")
 	var before: float = race.countdown
 	session._menu("Pausa")
@@ -282,15 +292,17 @@ func drive_race(race,car,result_action: String = "stay") -> void:
 					far_gap_seen=true
 					far_indicator_correct=far_indicator_correct and race.hud.rival_offscreen==(-1 if lead>0 else 1)
 			if drive.rpm>=drive.ideal_shift_rpm and race.phase=="racing": press_key(KEY_SPACE)
-			if race.elapsed>2 and not paused:
+			if race.elapsed>.65 and not paused:
 				paused = true
 				if finishes_before==0: await capture_ui("racing")
 				var before: float = race.elapsed
 				var pose: Vector3 = car.global_position
+				var camera_pose: Transform3D = race.race_camera.global_transform
 				press_key(KEY_ESCAPE)
 				for frame in 15: await process_frame
 				check(paused and world.pause_panel.visible and not race.layer.visible,"actual pause hides drag instruments under readable pause controls")
 				check(is_equal_approx(race.elapsed,before) and car.global_position.distance_to(pose)<.01,"pause freezes both motion and race clock")
+				check(race.race_camera.global_transform.is_equal_approx(camera_pose),"pause freezes launch camera sweep and resumes from same pose")
 				var resume: Button=world.pause_panel.get_node("%BtnResume")
 				check(resume.is_visible_in_tree() and root.get_visible_rect().encloses(resume.get_global_rect()),"pause resume button stays visible within viewport")
 				if finishes_before==0: await capture_ui("paused")

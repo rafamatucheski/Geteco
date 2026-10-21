@@ -33,3 +33,12 @@ func _ready() -> void:
 		lamp.shadow_enabled=false
 		add_child(lamp)
 	preload("res://world/desert/DesertInteriorFinish.gd").apply(self,false)
+	preload("res://world/desert/DigoWorkshopProps.gd").install(self)
+	preload("res://world/desert/DigoWorkshopMaterials.gd").apply(self)
+	# The room ends beyond this real shutter. Admission opens it under the same
+	# owned driving transition as the exterior gate; speed never permits a fall.
+	var exit_gate := preload("res://world/desert/DigoVehicleGate.gd").new()
+	exit_gate.name = "InteriorVehicleGate"
+	exit_gate.interior_gate = true
+	exit_gate.position = Vector3(0,0,9.05)
+	add_child(exit_gate)

@@ -161,7 +161,14 @@ static func bevel_box(size: Vector3) -> ArrayMesh:
 	if _bevel_meshes.size() < GEOMETRY_CACHE_LIMIT: _bevel_meshes[size] = mesh
 	return mesh
 
-static func gunsmith(root: Node3D) -> Node3D:
+static func gunsmith(root: Node3D, modern := false) -> Node3D:
+	# The Harbor refurbishment opts into the shared human rig. The independent
+	# mountain shop retains its existing presentation outside this change.
+	if modern:
+		var resident := preload("res://world/places/VanceGunsmithModel.gd").new()
+		resident.name = "VanceMilitaryGunsmith"
+		root.add_child(resident)
+		return resident
 	var npc := Node3D.new()
 	npc.name = "VanceMilitaryGunsmith"
 	# Match the shared 1.8 m actor presentation; the original .94 m arm span

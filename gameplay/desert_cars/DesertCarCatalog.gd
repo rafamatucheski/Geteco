@@ -98,4 +98,7 @@ static func door_spec(id: String) -> Dictionary:
 	var body := str(s.body)
 	var front := l*float(s.cabin_front)
 	var rear := l*float(s.door_back)
-	return {"class":"tall" if body=="pickup" else "car","zf":front,"zr":rear,"sill":float(s.wheel_radius)*.75,"belt":float(s.shoulder),"top":float(s["size"][1])-.05,"x":w*.48}
+	var top := float(s["size"][1])-.05
+	# The offline Faísca roof is lower; preserve its real front door opening.
+	if id in ["desert_faisca","desert_faisca_rally"]: top=.82+(top-.82)*.89
+	return {"class":"tall" if body=="pickup" else "car","zf":front,"zr":rear,"sill":float(s.wheel_radius)*.75,"belt":float(s.shoulder),"top":top,"x":w*.48}

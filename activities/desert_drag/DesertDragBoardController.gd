@@ -19,6 +19,7 @@ func configure(owner_race: Node3D) -> void:
 	race=owner_race
 	session=race.session
 	race.race_completed.connect(_completed)
+	race.return_completed.connect(_completed)
 
 func open_board() -> bool:
 	if race.active or session.modal or not session.ready_for_play or session.controller.save_invalid or session.is_transition_blocked(): return false
@@ -57,6 +58,7 @@ func _build() -> void:
 	board.takeshi_requested.connect(_open_takeshi)
 	board.open_meet_requested.connect(_open_meet)
 	board.night_requested.connect(_open_night)
+	board.return_requested.connect(_request_return)
 	board.challenges_requested.connect(_open_challenges)
 	board.loaner_requested.connect(_open_loaner)
 	get_viewport().size_changed.connect(_layout)
@@ -173,6 +175,17 @@ func _open_night(identity: String) -> void:
 	session.close_menu()
 	race.night_controller.open(identity)
 
+func _request_return(identity: String) -> void:
+	if not session.modal or race.active or not is_instance_valid(layer) or not layer.visible: return
+	if not PROGRESS.can_race(session.state.world_state,identity): return
+	session.close_menu()
+	var reason: String=race.start_block_reason()
+	if not reason.is_empty():
+		if open_board(): board.set_message(reason)
+		return
+	if not race.start_return_pass(identity):
+		if open_board(): board.set_message("Aguarde a pista e a fila ficarem livres.")
+
 func _open_challenges() -> void:
 	if not session.modal or race.active or not is_instance_valid(layer) or not layer.visible: return
 	session.close_menu()
@@ -264,7 +277,10 @@ func _result_action(action: String) -> void:
 		if not race.night_controller.request_next():
 			if race.night_controller.open(identity): race.night_controller.panel.set_message("Aguarde a pista ficar livre para continuar a noite.")
 		return
-	if action=="rematch" and not race.start_rival(identity):
+	var started := true
+	if action=="rematch":
+		started=race.start_return_pass(identity) if race.last_result.get("return_mode",false) else race.start_rival(identity)
+	if not started:
 		if open_board():
 			board.select_rival(identity)
 			board.set_message("Aguarde a pista ficar livre para a revanche.")

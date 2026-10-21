@@ -24,11 +24,12 @@ func configure(owner_session) -> void:
 	add_child(panel)
 	panel.purchase_requested.connect(_buy_part)
 	panel.remove_requested.connect(_remove_part)
+	panel.loadout_requested.connect(_apply_loadout)
 	panel.closed.connect(_close_tuning)
 
 func _process(_delta: float) -> void:
 	if is_instance_valid(tuning_car) and (session.world.gameplay.health <= 0 or not _at_garage()):
-		panel.close_panel()
+		panel.discard_and_close()
 
 func _at_garage() -> bool:
 	return session != null and session.state.place_id == PLACE and session.state.region_id == "harbor"
@@ -91,6 +92,16 @@ func _buy_part(part: String) -> void:
 	var result := GARAGE.buy(session.state.world_state,session.state.economy,tuning_car.vehicle_id,tuning_car.archetype,part,_race_wins())
 	if not result.ok: panel.set_message(str(result.reason)); return
 	ADAPTER.attach(tuning_car,result.parts)
+	panel.confirm_application()
+	session.save_game()
+	_open_tuning()
+
+func _apply_loadout(parts: Dictionary) -> void:
+	if not is_instance_valid(tuning_car) or tuning_car != candidate_car(): return
+	var result := GARAGE.apply_loadout(session.state.world_state,session.state.economy,tuning_car.vehicle_id,tuning_car.archetype,parts,_race_wins())
+	if not result.ok: panel.set_message(str(result.reason)); return
+	ADAPTER.attach(tuning_car,result.parts)
+	panel.confirm_application()
 	session.save_game()
 	_open_tuning()
 

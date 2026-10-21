@@ -12,6 +12,8 @@ const SIGNALS := preload("res://activities/desert_drag/DesertDragSignals.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const HONOR := preload("res://runtime/TakeshiHonor.gd")
 const OPEN_ROSTER := preload("res://activities/desert_drag/DragOpenRoster.gd")
+const START_CAMERA_SWEEP_SECONDS := 1.8
+const RETURN_COURSE := preload("res://activities/desert_drag/DragReturnCourse.gd")
 const TAKESHI := {"name":"Takeshi","car":"supra_a80","distance":800.0,"reaction":.26,"mistake":0.0}
 # One authored 800 m strip for every round. Each car keeps its real powertrain;
 # rival builds cover progressively faster times along the same course.
@@ -25,6 +27,13 @@ const RIVALS := {
 	"rauhz":{"name":"Rauhz","car":"rauhz_focus_mk1","distance":800.0,"reaction":.085,"mistake":.005,"parts":{}},
 }
 signal race_completed(result: Dictionary)
+signal return_completed(result: Dictionary)
+var return_course: Node3D
+var _return_pending := false
+var _return_attempt := false
+var _preparation_region: Node3D
+var _preparation_overlay: Control
+var _preparation_ready_frames := 0
 var session
 var start_point := LAYOUT.drag_start_point()+Vector3.UP*.08
 var direction := LAYOUT.drag_direction()
@@ -119,10 +128,11 @@ func save_block_reason() -> String:
 	return loaner_controller.save_block_reason() if is_instance_valid(loaner_controller) else ""
 
 func objective() -> String:
-	if active and is_instance_valid(player_car): return "Drag · %s · %d m"%[rival_config(rival_id).name,ceili(maxf(0,distance-_offset(player_car.global_position)))]
+	if active and is_instance_valid(player_car): return "%s · %s · %d m"%["Ida e volta" if _return_attempt else "Drag",rival_config(rival_id).name,ceili(maxf(0,distance-_race_progress(racers[0])))]
 	return "Arrancadas do deserto · Vá à concentração"
 
 func target_position() -> Vector3:
+	if active and _return_attempt: return start_point if int(racers[0].return_gate)==2 else start_point+direction*RETURN_COURSE.TURN_AT
 	return start_point+direction*distance if active else staging_point
 
 func nearest_action() -> Dictionary:
@@ -200,6 +210,21 @@ func start_night_pass(identity: String, metres: float) -> bool:
 	if not started: cancel_waiting_context("start_blocked")
 	return started
 
+func start_return_pass(identity: String) -> bool:
+	if active or _night_pending or _challenge_pending or identity not in PROGRESS.RIVALS or not can_race(identity): return false
+	var reason := start_block_reason()
+	if not reason.is_empty():
+		session.show_message(reason)
+		return false
+	# Do not dispatch a straight-line queue ticket as an out-and-back race.
+	if is_instance_valid(open_meet) and (not open_meet.pending.is_empty() or open_meet.track_busy()):
+		session.show_message("Aguarde a pista e a fila ficarem livres.")
+		return false
+	_return_pending=true
+	var started := _start(identity)
+	_return_pending=false
+	return started
+
 func start_challenge_pass(identity: String, metres: float) -> bool:
 	if active or _night_pending or _challenge_pending or metres not in [201.0,402.0,800.0]: return false
 	if not is_instance_valid(challenge_controller) or not challenge_controller.can_start(identity): return false
@@ -239,7 +264,7 @@ func _start(identity: String = "") -> bool:
 		return false
 	rival_id = identity
 	var config: Dictionary = rival_config(rival_id)
-	distance = _challenge_distance if _challenge_pending else (_night_distance if _night_pending else float(config.distance))
+	distance = RETURN_COURSE.LENGTH if _return_pending else (_challenge_distance if _challenge_pending else (_night_distance if _night_pending else float(config.distance)))
 	var player_pose := grid(0)
 	var opponent_pose := grid(1)
 	var production = session.world.production
@@ -299,6 +324,12 @@ func _start(identity: String = "") -> bool:
 		var was_lit: bool = equipment.headlights_on if is_instance_valid(equipment) else false
 		if is_instance_valid(equipment): equipment.headlights_on = true
 		racers.append({"car":car,"drive":drive,"sound":sound,"finish":INF,"was_lit":was_lit,"travel":0.0,"previous_power":previous_power,"existing_sound":existing_sound,"previous_audio":previous_audio})
+	_return_attempt=_return_pending
+	if _return_attempt:
+		return_course=RETURN_COURSE.new()
+		add_child(return_course)
+		return_course.configure(start_point,direction)
+		for index in 2: return_course.prepare(racers[index],index)
 	_night_attempt = _night_pending
 	_night_pending = false
 	_challenge_attempt = _challenge_pending
@@ -307,6 +338,12 @@ func _start(identity: String = "") -> bool:
 	if _challenge_attempt: challenge_controller.begin_attempt(player_car)
 	active = true
 	phase = "staging"
+	_preparation_region=session.world.production.regions.get("desert")
+	if is_instance_valid(_preparation_region) and _preparation_region.has_method("prepare_drag_view"):
+		_preparation_region.prepare_drag_view(true)
+		if not _preparation_region.drag_view_ready(): phase="preparing"
+		else: _preparation_region.prepare_drag_view(false)
+	_preparation_ready_frames=0
 	countdown = 3.0
 	elapsed = 0
 	_runoff = 0
@@ -340,7 +377,9 @@ func _start(identity: String = "") -> bool:
 	hud = HUD.new()
 	hud.set_style(preload("res://activities/desert_drag/DragInstrumentStyles.gd").selection(session.state.world_state))
 	hud.race_distance = distance
-	if _night_attempt:
+	if _return_attempt:
+		hud.event_title="IDA E VOLTA"
+	elif _night_attempt:
 		var event_status: Dictionary = night_controller.status()
 		hud.event_title = "NOITE DE ACERTO · %d/3"%int(event_status.get("round",1))
 	elif _challenge_attempt:
@@ -352,9 +391,12 @@ func _start(identity: String = "") -> bool:
 	hud.update_state(racers[0].drive,distance,0.0,0.0,str(ceili(countdown)),str(config.name))
 	hud.feedback = _feedback
 	layer.add_child(hud)
+	if phase=="preparing":
+		_preparation_overlay=preload("res://activities/desert_drag/DragPreparation.gd").new()
+		layer.add_child(_preparation_overlay)
 	signals = SIGNALS.new()
 	add_child(signals)
-	signals.configure(start_point,direction,distance)
+	signals.configure(start_point,direction,0.0 if _return_attempt else distance)
 	set_physics_process(true)
 	set_process(true)
 	set_process_input(true)
@@ -424,6 +466,18 @@ func _physics_process(delta: float) -> void:
 	session.world.player.input_locked = true
 	if session.modal: return
 	var throttle := _throttle()
+	if phase=="preparing":
+		# The preparation screen owns a bounded streaming budget; no race clock,
+		# car motion or green light starts while visible course cells are missing.
+		var ready: bool=is_instance_valid(_preparation_region) and _preparation_region.drag_view_ready()
+		_preparation_ready_frames=_preparation_ready_frames+1 if ready else 0
+		if is_instance_valid(_preparation_overlay): _preparation_overlay.progress=_preparation_region.drag_view_progress() if is_instance_valid(_preparation_region) else 0.0
+		if _preparation_ready_frames>=2:
+			_preparation_region.prepare_drag_view(false)
+			if is_instance_valid(_preparation_overlay): _preparation_overlay.queue_free()
+			phase="staging"
+		_update_camera(delta)
+		return
 	if phase == "staging":
 		racers[0].drive.stage(delta,throttle,_digital_throttle())
 		# Rivals feather the throttle toward their own launch band.
@@ -447,12 +501,19 @@ func _physics_process(delta: float) -> void:
 			var nitro_value: bool = _nitro() if i==0 else (drive.gear>=3 and elapsed>6.0)
 			var crossed := is_finite(float(entry.finish))
 			if crossed:
-				_step_runoff(entry,delta)
+				if _return_attempt: return_course.runoff(entry,delta)
+				else: _step_runoff(entry,delta)
 			else:
-				drive.step(delta,throttle_value,nitro_value,_brake() if i==0 else 0.0)
-			var before := _offset(entry.car.global_position)
+				var brake_value := _brake() if i==0 else 0.0
+				if _return_attempt:
+					brake_value=maxf(brake_value,return_course.brake(entry))
+					entry.return_braking=brake_value>0.0
+					if brake_value>0.0: throttle_value=0.0; nitro_value=false
+					if drive.rpm<drive.redline*.4: drive.shift_down()
+				drive.step(delta,throttle_value,nitro_value,brake_value)
+			var before := _race_progress(entry)
 			_move_car(entry,delta)
-			var after := _offset(entry.car.global_position)
+			var after: float=return_course.observe(entry) if _return_attempt else _offset(entry.car.global_position)
 			if not crossed:
 				if i==0:
 					_run_telemetry.observe(drive,before,after,before_elapsed,delta,distance)
@@ -465,14 +526,16 @@ func _physics_process(delta: float) -> void:
 			phase = "braking"
 		# Technical proofs judge the player's run, even when a faster rival has
 		# already finished. Keep the absolute timeout and rival-DNF recovery.
-		elif elapsed > 60 or ((not _challenge_attempt or is_finite(float(racers[0].finish))) and elapsed > minf(float(racers[0].finish),float(racers[1].finish))+8.0):
+		elif elapsed > (120.0 if _return_attempt else 60.0) or ((not _challenge_attempt or is_finite(float(racers[0].finish))) and elapsed > minf(float(racers[0].finish),float(racers[1].finish))+8.0):
 			if is_finite(float(racers[0].finish)): phase = "braking"
 			else: cancel_attempt("timeout"); return
 	elif phase == "braking":
 		_runoff += delta
 		for entry in racers:
-			_step_runoff(entry,delta)
+			if _return_attempt: return_course.runoff(entry,delta)
+			else: _step_runoff(entry,delta)
 			_move_car(entry,delta)
+			if _return_attempt: return_course.observe(entry)
 		if racers.all(func(e): return e.drive.speed_mps<.15):
 			_finish()
 			return
@@ -490,11 +553,16 @@ func _process(delta: float) -> void:
 		if _challenge_status_clock<=0.0:
 			_challenge_status_clock=.1
 			hud.challenge_status=challenge_controller.live_status()
-	var title := str(ceili(countdown)) if phase=="staging" else ("FREANDO" if phase=="braking" else "")
+	var title := str(ceili(countdown)) if phase in ["preparing","staging"] else ("FREANDO" if phase=="braking" else "")
+	if _return_attempt and phase=="racing":
+		title=["IDA","CONTORNE O BARRIL","VOLTA"][int(racers[0].return_gate)]
 	hud.feedback = _feedback if _feedback_time>0 else ""
-	hud.show_start_lights = phase=="staging"
+	if _return_attempt and phase=="racing":
+		if int(racers[0].return_gate)==1: hud.feedback="Virada assistida"
+		elif int(racers[0].return_gate)==0 and return_course.brake(racers[0])>0.0: hud.feedback="Freada assistida · prepare a volta"
+	hud.show_start_lights = phase in ["preparing","staging"]
 	hud.racing = phase=="racing"
-	hud.update_state(racers[0].drive,distance-_offset(player_car.global_position),elapsed,_offset(player_car.global_position)-_offset(racers[1].car.global_position),title,str(rival_config(rival_id).name))
+	hud.update_state(racers[0].drive,maxf(0,distance-_race_progress(racers[0])),elapsed,_race_progress(racers[0])-_race_progress(racers[1]),title,str(rival_config(rival_id).name))
 
 func set_pause_overlay(paused: bool) -> void:
 	if is_instance_valid(layer): layer.visible = active and not paused and not session.modal
@@ -533,12 +601,17 @@ func _move_car(entry: Dictionary, delta: float) -> void:
 	var car = entry.car
 	var drive = entry.drive
 	var before: Vector3 = car.global_position
-	var incoming_velocity: Vector3 = direction*drive.speed_mps
+	var motion_direction: Vector3=return_course.heading(entry,delta) if _return_attempt else direction
+	if _return_attempt:
+		var turn: float=(-car.global_basis.z).signed_angle_to(motion_direction,Vector3.UP)
+		car.steering=clampf(atan2(turn*2.4,maxf(.001,drive.speed_mps*delta)),-.48,.48)
+		car.global_basis=Basis.looking_at(motion_direction,Vector3.UP)
+	var incoming_velocity: Vector3 = motion_direction*drive.speed_mps
 	# At 200+ km/h, never outrun the next streamed collision cell. The shared
 	# persistent-support pass retains these two admitted cars between updates.
 	var region: Node3D = session.world.production.regions.get("desert")
 	if is_instance_valid(region):
-		var next_point: Vector3 = before+direction*(drive.speed_mps*delta+float(car.half_length)+1.0)
+		var next_point: Vector3 = before+motion_direction*(drive.speed_mps*delta+float(car.half_length)+1.0)
 		if not region.prepare_collision_at(next_point):
 			drive.speed_mps = 0
 			car.velocity = Vector3.ZERO
@@ -546,19 +619,21 @@ func _move_car(entry: Dictionary, delta: float) -> void:
 	# Match ordinary Vehicle motion: floor snapping maintains grounded support.
 	# Pushing downward after contact can catch a coplanar floor's exposed edge.
 	var vertical_speed: float = 0.0 if car.is_on_floor() else car.velocity.y-18*delta
-	car.velocity = direction*drive.speed_mps + Vector3.UP*vertical_speed
+	car.velocity = motion_direction*drive.speed_mps + Vector3.UP*vertical_speed
 	car.move_and_slide()
 	var moved: Vector3 = car.global_position-before
-	var actual := maxf(0,moved.dot(direction)/maxf(.001,delta))
+	var actual := maxf(0,moved.dot(motion_direction)/maxf(.001,delta))
 	if actual+1.0 < drive.speed_mps: drive.speed_mps = actual
 	car.speed = actual
-	car.horizontal_velocity = direction*actual
+	car.horizontal_velocity = motion_direction*actual
 	car.throttle_input = drive.throttle
-	car.brake_input = is_finite(float(entry.finish))
-	car.wheel_spin += moved.dot(direction)/.355
+	car.brake_input = is_finite(float(entry.finish)) or (_return_attempt and entry.get("return_braking",false))
+	car.wheel_spin += moved.dot(motion_direction)/.355
 	for wheel in car.wheels: wheel.rotation.x = car.wheel_spin
+	if _return_attempt:
+		for pivot in car.steer_pivots.values(): pivot.rotation.y=car.steering if pivot.get_meta("front",false) else 0.0
 	car.distance_travelled += moved.length()
-	entry.travel += moved.dot(direction)
+	entry.travel += moved.dot(motion_direction)
 	if is_instance_valid(car.effects): car.effects.physics_tick(delta,incoming_velocity)
 	if not entry.has("launch_body"):
 		entry.launch_body = preload("res://activities/desert_drag/DragLaunchBody.gd").new()
@@ -569,7 +644,7 @@ func _update_camera(_delta: float) -> void:
 	if not is_instance_valid(race_camera) or racers.size()!=2: return
 	var a: Vector3 = racers[0].car.global_position
 	var b: Vector3 = racers[1].car.global_position
-	var frame := camera_frame(a,b)
+	var frame: Dictionary=return_course.camera_frame(racers[0],b) if _return_attempt and phase!="staging" and elapsed>=START_CAMERA_SWEEP_SECONDS else start_camera_frame(a,b)
 	race_camera.global_position = frame.position
 	race_camera.look_at(frame.target,Vector3.UP)
 	if is_instance_valid(hud):
@@ -587,8 +662,26 @@ func camera_frame(a: Vector3, b: Vector3) -> Dictionary:
 	var setback := clampf(16.5+maxf(0,absf(signed_gap)-12.0)*.28,16.5,25.5)
 	return {"target":center,"position":center+side*setback-direction*4.0+Vector3.UP*4.4,"setback":setback}
 
+func start_camera_frame(a: Vector3, b: Vector3) -> Dictionary:
+	var side_frame := camera_frame(a,b)
+	if phase not in ["preparing","staging"] and (phase != "racing" or elapsed >= START_CAMERA_SWEEP_SECONDS): return side_frame
+	# The race clock owns the sweep: pause freezes it, and every start resets it.
+	var progress := 0.0 if phase in ["preparing","staging"] else clampf(elapsed/START_CAMERA_SWEEP_SECONDS,0.0,1.0)
+	var blend := progress*progress*(3.0-2.0*progress)
+	var side := direction.cross(Vector3.UP).normalized()
+	var rear_target := (a+b)*.5+direction*2.0+Vector3.UP*.75
+	var target := rear_target.lerp(side_frame.target,blend)
+	# Orbit at a steady distance instead of cutting across the cars on a chord.
+	var angle := lerpf(atan2(4.5,16.0),atan2(float(side_frame.setback),4.0),blend)
+	var radius := lerpf(Vector2(4.5,16.0).length(),Vector2(float(side_frame.setback),4.0).length(),blend)
+	var offset := (side*sin(angle)-direction*cos(angle))*radius+Vector3.UP*lerpf(10.5,4.4,blend)
+	return {"target":target,"position":target+offset,"setback":offset.dot(side)}
+
 func _offset(point: Vector3) -> float:
 	return (point-start_point).dot(direction)
+
+func _race_progress(entry: Dictionary) -> float:
+	return float(entry.return_progress) if _return_attempt else _offset(entry.car.global_position)
 
 func _throttle() -> float:
 	if _throttle_override>=0: return _throttle_override
@@ -631,7 +724,10 @@ func _finish() -> void:
 	var result: Dictionary
 	var night := _night_attempt
 	var challenge := _challenge_attempt
-	if challenge:
+	var returning := _return_attempt
+	if returning:
+		result=RETURN_COURSE.record_finish(session.state.world_state,rival_id,player_time,other_time)
+	elif challenge:
 		result=challenge_controller.record_finish(player_time,other_time,player_car)
 	elif night:
 		result = night_controller.record_finish(player_time,other_time,player_car)
@@ -643,12 +739,16 @@ func _finish() -> void:
 		_cleanup()
 		return
 	result["rival_seconds"] = other_time if is_finite(other_time) else -1.0
-	if not night and not challenge:
+	if not night and not challenge and not returning:
 		result["best_seconds"] = float(HONOR.data(session.state.world_state).best_seconds) if rival_id=="takeshi" else float(snapshot().best.get(rival_id,player_time))
-	if is_instance_valid(_run_telemetry): result["telemetry"]=_run_telemetry.snapshot()
+	if is_instance_valid(_run_telemetry) and not returning: result["telemetry"]=_run_telemetry.snapshot()
 	last_result = result
 	_cleanup()
 	if not result.get("finished",false): return
+	if returning:
+		return_completed.emit(result)
+		session.save_game()
+		return
 	race_completed.emit(result)
 	if night or challenge or not casual: session.save_game()
 
@@ -662,8 +762,13 @@ func cancel_attempt(reason: String = "cancelled") -> void:
 	elif reason in ["cancelled","timeout","unsupported_track"] and is_instance_valid(session): session.show_message("Arrancada interrompida. Volte à concentração para tentar novamente.")
 
 func _cleanup() -> void:
+	if is_instance_valid(_preparation_region): _preparation_region.prepare_drag_view(false)
+	if is_instance_valid(_preparation_overlay): _preparation_overlay.queue_free()
 	if _challenge_attempt and is_instance_valid(challenge_controller): challenge_controller.cancel_attempt("cleanup")
 	active = false
+	_return_attempt=false
+	_return_pending=false
+	if is_instance_valid(return_course): return_course.queue_free()
 	_night_attempt = false
 	_challenge_attempt = false
 	_run_telemetry=null

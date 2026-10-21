@@ -6,6 +6,7 @@ signal instruments_requested
 signal takeshi_requested
 signal open_meet_requested
 signal night_requested(identity: String)
+signal return_requested(identity: String)
 signal challenges_requested
 signal loaner_requested
 const PROGRESS := preload("res://activities/desert_drag/DesertDragProgress.gd")
@@ -33,6 +34,7 @@ var takeshi_button: Button
 var message := ""
 var open_meet_button: Button
 var night_button: Button
+var return_button: Button
 var challenges_button: Button
 var loaner_button: Button
 
@@ -121,12 +123,22 @@ func _ready() -> void:
 	add_child(race_button)
 	night_button = Button.new()
 	night_button.name = "NoiteDeAcerto"
-	night_button.text = "NOITE DE ACERTO  →"
+	night_button.text = "NOITE DE ACERTO"
 	night_button.position = Vector2(551, 527)
-	night_button.size = Vector2(317, 40)
+	night_button.size = Vector2(154, 40)
 	_button_style(night_button, false)
+	night_button.add_theme_font_size_override("font_size",15)
 	night_button.pressed.connect(func(): night_requested.emit(selected))
 	add_child(night_button)
+	return_button=Button.new()
+	return_button.name="IdaEVolta"
+	return_button.text="IDA E VOLTA"
+	return_button.position=Vector2(714,527)
+	return_button.size=Vector2(154,40)
+	_button_style(return_button,false)
+	return_button.add_theme_font_size_override("font_size",15)
+	return_button.pressed.connect(func(): return_requested.emit(selected))
+	add_child(return_button)
 	loaner_button=Button.new()
 	loaner_button.name="CarroDaOficina"
 	loaner_button.text="CARRO DA OFICINA"
@@ -183,6 +195,7 @@ func _update_button() -> void:
 	challenges_button.visible = message.is_empty()
 	race_button.disabled = selected != current and selected not in wins
 	night_button.disabled = race_button.disabled
+	return_button.disabled = race_button.disabled
 	race_button.text = "REVANCHE  →" if selected in wins else ("CORRER  →" if selected == current else "VENÇA " + NAMES[PROGRESS.RIVALS.find(current)].to_upper())
 
 func _style(color: Color, border := Color.TRANSPARENT) -> StyleBoxFlat:

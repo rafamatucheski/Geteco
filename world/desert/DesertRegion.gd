@@ -62,6 +62,8 @@ var source_data: Dictionary = {}
 var _night_level := 0.0
 var _lamps: Array[OmniLight3D] = []
 var _horizon: Node3D
+var drag_scenery: Node3D
+var _drag_preparing := false
 var road_geometry := preload("res://world/desert/DesertRoadGeometry.gd").new()
 var ambient: Node3D
 var wildlife: Node3D
@@ -94,6 +96,9 @@ func _ready() -> void:
 	began = STALL_WORK.begin()
 	_horizon=preload("res://world/desert/DesertHorizon.gd").build()
 	add_child(_horizon)
+	drag_scenery=preload("res://world/desert/DragScenery.gd").new()
+	_horizon.add_child(drag_scenery)
+	drag_scenery.configure(self)
 	STALL_WORK.finish_slow("desert.ready.horizon",began,2000)
 	began = STALL_WORK.begin()
 	ambient=preload("res://world/desert/DesertAmbientLife.gd").new()
@@ -264,10 +269,16 @@ func _process(_delta: float) -> void:
 	# Um lugar do DesertWilds montou neste quadro: o enfeite fatiado fica para o próximo, sem somar.
 	if _dressing_yield_frame==Engine.get_process_frames(): return
 	var began := Time.get_ticks_usec()
-	if not pending.is_empty(): _ensure_chunk_surfaces(pending.pop_front())
+	if _drag_preparing and not drag_view_pending.is_empty(): _ensure_chunk_surfaces(drag_view_pending.pop_front())
+	elif not pending.is_empty(): _ensure_chunk_surfaces(pending.pop_front())
 	elif not drag_view_pending.is_empty(): _ensure_chunk_surfaces(drag_view_pending.pop_front())
-	while not build_jobs.is_empty() and Time.get_ticks_usec()-began<BUILD_BUDGET_USEC:
-		_run_build_job(build_jobs[0],BUILD_BUDGET_USEC)
+	var budget := 4000 if _drag_preparing else BUILD_BUDGET_USEC
+	while not build_jobs.is_empty() and Time.get_ticks_usec()-began<budget:
+		var next_job: Dictionary=build_jobs[0]
+		if _drag_preparing:
+			for job in build_jobs:
+				if drag_view_cells.has(job.key): next_job=job; break
+		_run_build_job(next_job,budget)
 
 func _run_build_job(job: Dictionary, _budget: float) -> void:
 	if not chunks.has(job.key):
@@ -320,6 +331,22 @@ func _update_drag_residency(point: Vector3) -> void:
 	drag_view_pending.sort_custom(func(a: Vector2i,b: Vector2i): return Vector2(a-at).length_squared()<Vector2(b-at).length_squared())
 
 func is_streaming_idle() -> bool: return pending.is_empty() and drag_view_pending.is_empty() and build_jobs.is_empty()
+
+func prepare_drag_view(enabled: bool) -> void:
+	_drag_preparing=enabled
+	if enabled: _update_drag_residency(LAYOUT.drag_staging_point())
+
+func drag_view_progress() -> float:
+	if drag_view_cells.is_empty(): return 0.0
+	var remaining := {}
+	for key in drag_view_cells:
+		if not chunks.has(key): remaining[key]=true
+	for job in build_jobs:
+		if drag_view_cells.has(job.key): remaining[job.key]=true
+	return 1.0-float(remaining.size())/float(drag_view_cells.size())
+
+func drag_view_ready() -> bool:
+	return not drag_view_cells.is_empty() and drag_view_pending.is_empty() and drag_view_progress()>=1.0
 ## Só as superfícies (chão e colisão), que saem síncronas, um trecho por quadro. O enfeite que vem
 ## depois é fatiado em ~1 ms por quadro, então terminar conta quadros, não tempo: 34 trechos perto
 ## da arrancada levaram ~1.600 quadros, 27 s a 60 fps (padrão) no editor, contra 0,7 s das
@@ -339,6 +366,7 @@ func prewarm_incremental() -> void:
 	prewarm()
 	while not is_streaming_idle(): await get_tree().process_frame
 func release_chunks() -> void:
+	_drag_preparing=false
 	if is_instance_valid(ambient): ambient.suspend()
 	if is_instance_valid(wildlife): wildlife.suspend()
 	abandoned_site=null
@@ -411,6 +439,7 @@ func _surface_quad(chunk: Node3D, id: String, rect: Rect2, offset: float, mat: M
 			if child is StaticBody3D: child.set_meta("vehicle_surface",vehicle_surface)
 
 func _build_surfaces(chunk: Node3D, rect: Rect2) -> void:
+	if is_instance_valid(drag_scenery): drag_scenery.build_collision(chunk,rect)
 	# Canyon rendering remains resident; only the identical physical faces stream.
 	# Exclude its rectangle from the old flat ground, avoiding overlapping surfaces.
 	for flat in TERRAIN_MESH.flat_remainders(rect):
@@ -573,7 +602,8 @@ func _dress(chunk: Node3D, rect: Rect2, key: Vector2i) -> void:
 	if posmod(key.x*7+key.y*3,9)==0:
 		var center := rect.get_center()
 		if not RELIEF.BOUNDS.grow(34).has_point(center) and _decoration_clear(center,34):
-			ROCK_FORMS.create_outcrop(chunk,Vector3(center.x,_ground_height(center),center.y),28.0,23.0,absi(key.x*771+key.y*331),true)
+			var persistent: bool=is_instance_valid(drag_scenery) and drag_scenery.owns_outcrop(key)
+			ROCK_FORMS.create_outcrop(chunk,Vector3(center.x,_ground_height(center),center.y),28.0,23.0,absi(key.x*771+key.y*331),true,not persistent)
 	STALL_WORK.finish_slow("stream.desert.dress.props",began,2000)
 
 func _ground_height(point: Vector2) -> float:
@@ -582,6 +612,7 @@ func _ground_height(point: Vector2) -> float:
 	return _ramp_height(point)+TERRAIN_MESH.surface_height(point)
 
 func _decoration_clear(point: Vector2, radius: float) -> bool:
+	if is_instance_valid(drag_scenery) and not drag_scenery.reservation_clear(point,radius): return false
 	if preload("res://world/desert/entrance/DesertTollPlaza.gd").RESERVATION.grow(radius).has_point(point): return false
 	if not SMUGGLER_LAYOUT.reservation_clear(point,radius): return false
 	if Rect2(-189,-891,8,6).grow(radius+.4).has_point(point): return false

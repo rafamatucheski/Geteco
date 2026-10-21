@@ -15,15 +15,19 @@ static func building(data: Dictionary) -> Node3D:
 		_piece(root,"StonePlinth",Vector3(side*half,.29,0),Vector3(.46,.58,size.z+.2),"stone")
 		_piece(root,"CornerPier",Vector3(side*(half-.28),size.y*.5,front+.23),Vector3(.46,size.y,.2),"cream")
 		_piece(root,"Cornice",Vector3(side*half,size.y-.14,0),Vector3(.55,.22,size.z+.4),"cream")
-		var segment := half-1.5
-		_piece(root,"FrontPlinth",Vector3(side*(1.5+segment*.5),.29,front+.23),Vector3(segment,.58,.25),"stone")
+		var portal_half := 2.7 if kind == "workshop" else 1.5
+		var segment := half-portal_half
+		_piece(root,"FrontPlinth",Vector3(side*(portal_half+segment*.5),.29,front+.23),Vector3(segment,.58,.25),"stone")
 		if kind!="workshop": _window(root,Vector3(side*size.x*.30,1.65,front+.34),2.1)
 	_piece(root,"FrontCornice",Vector3(0,size.y-.13,front+.33),Vector3(size.x,.22,.25),"cream")
 	# A real narrow pedestrian threshold, not an empty paved city block.
 	for x in range(-floori(half)+1,floori(half),2):
 		var slab := _piece(root,"WalkSlab",Vector3(x,.04,front+1.25),Vector3(1.93,.08,2.15),"stone")
 		slab.rotation.y=sin(float(x)*2.3)*.006
-	_door(root,Vector3(0,0,front+.02),2.1 if kind!="workshop" else 2.5)
+	if kind == "workshop":
+		_garage_portal(root,front)
+	else:
+		_door(root,Vector3(0,0,front+.02),2.1)
 	_rooftop(root,size)
 	match kind:
 		"bank": _bank(root,size)
@@ -122,6 +126,14 @@ static func _workshop(root: Node3D,size: Vector3) -> void:
 			var wheel := G.cylinder(root,"ToolCartWheel",cart+Vector3(x,.13,z),.11,.07,Color("292c29"))
 			wheel.rotation.z=PI*.5
 	_barrel(root,Vector3(-3.9,0,size.z*.5+1.1),"steel")
+
+static func _garage_portal(root: Node3D,front: float) -> void:
+	# Rolled-up shutter and full-width guides communicate a drivable bay without text.
+	for side in [-1.0,1.0]:
+		_piece(root,"GarageGuide",Vector3(side*2.79,1.7,front+.15),Vector3(.14,3.4,.2),"steel")
+	_piece(root,"GarageShutterBox",Vector3(0,3.58,front+.12),Vector3(5.7,.42,.42),"steel")
+	for x in [-2.45,2.45]:
+		_piece(root,"GarageThresholdStripe",Vector3(x,.085,front+.85),Vector3(.07,.012,1.6),"chalk")
 
 static func _motel(root: Node3D,size: Vector3) -> void:
 	var front := size.z*.5

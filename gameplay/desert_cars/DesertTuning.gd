@@ -3,6 +3,25 @@ extends RefCounted
 const CARS := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
 const STREET := preload("res://gameplay/desert_cars/StreetPowertrainCatalog.gd")
 const PARTS := {
+	"paint_black":{"label":"Preto", "slot":"paint", "cost":1200, "wins":0, "effect":"Cor da carroceria", "body_color":"101319"},
+	"paint_silver":{"label":"Prata", "slot":"paint", "cost":1200, "wins":0, "effect":"Cor da carroceria", "body_color":"aab3ba"},
+	"paint_yellow":{"label":"Amarelo", "slot":"paint", "cost":1200, "wins":0, "effect":"Cor da carroceria", "body_color":"e7bb2f"},
+	"paint_orange":{"label":"Laranja", "slot":"paint", "cost":1200, "wins":0, "effect":"Cor da carroceria", "body_color":"cf612b"},
+	"paint_green":{"label":"Verde", "slot":"paint", "cost":1200, "wins":0, "effect":"Cor da carroceria", "body_color":"376d46"},
+	"paint_purple":{"label":"Roxo", "slot":"paint", "cost":1200, "wins":0, "effect":"Cor da carroceria", "body_color":"694586"},
+	"spoiler_lip":{"label":"Lâmina", "slot":"spoiler", "cost":1700, "wins":0, "effect":"Aerofólio da carroceria", "spoiler_style":"lip"},
+	"spoiler_sport":{"label":"Esportivo", "slot":"spoiler", "cost":3200, "wins":0, "effect":"Aerofólio da carroceria", "spoiler_style":"sport"},
+	"sunroof_glass":{"label":"Vidro fumê", "slot":"sunroof", "cost":3800, "wins":0, "effect":"Vidro do teto solar", "sunroof_style":"glass"},
+	"sunroof_clear":{"label":"Vidro claro", "slot":"sunroof", "cost":3800, "wins":0, "effect":"Vidro do teto solar", "sunroof_style":"clear"},
+	"taillights_smoke":{"label":"Fumê", "slot":"taillights", "cost":950, "wins":0, "effect":"Acabamento das lanternas", "tail_color":"352c37"},
+	"taillights_amber":{"label":"Âmbar", "slot":"taillights", "cost":950, "wins":0, "effect":"Acabamento das lanternas", "tail_color":"d57a25"},
+	"taillights_ruby":{"label":"Rubi", "slot":"taillights", "cost":950, "wins":0, "effect":"Acabamento das lanternas", "tail_color":"8c1737"},
+	"wheel_five_spoke":{"label":"Cinco raios", "slot":"wheel_model", "cost":2200, "wins":0, "effect":"Modelo dos aros", "wheel_design":"five_spoke"},
+	"wheel_mesh":{"label":"Malha", "slot":"wheel_model", "cost":2800, "wins":0, "effect":"Modelo dos aros", "wheel_design":"mesh"},
+	"wheel_turbine":{"label":"Turbina", "slot":"wheel_model", "cost":3100, "wins":0, "effect":"Modelo dos aros", "wheel_design":"turbine"},
+	"wheel_size_compact":{"label":"Aro compacto", "slot":"wheel_size", "cost":850, "wins":0, "effect":"Tamanho dos aros", "rim_ratio":.60},
+	"wheel_size_sport":{"label":"Aro esportivo", "slot":"wheel_size", "cost":1100, "wins":0, "effect":"Tamanho dos aros", "rim_ratio":.72},
+	"wheel_size_large":{"label":"Aro grande", "slot":"wheel_size", "cost":1450, "wins":0, "effect":"Tamanho dos aros", "rim_ratio":.80},
 	"rival_digo_ecu":{"label":"Mapa Digo · saída", "slot":"ecu", "cost":0, "wins":0, "rival_reward":"digo", "effect":"Torque +5,5%; resposta em baixa +10%; giro máximo −100 rpm", "torque":1.055, "low":1.10, "redline_add":-100.0, "cap":.02},
 	"rival_livia_tires":{"label":"Pneus Lívia · rua", "slot":"tires", "cost":0, "wins":0, "rival_reward":"livia", "effect":"Tração: asfalto +18%; terra −3,2% no total; agilidade −4%", "grip":1.18, "dirt":.82, "turn":.96},
 	"rival_raul_gear":{"label":"Relação Raul · equilíbrio", "slot":"gearbox", "cost":0, "wins":0, "rival_reward":"raul", "effect":"Relação −6%; mais final, saída um pouco mais longa", "ratio":.94},
@@ -47,9 +66,20 @@ const PARTS := {
 }
 
 ## Ordem e nome dos espaços na oficina; peças de potência somam no teto de rua até este limite.
-const SLOTS := ["ecu","engine","turbo","nitro","gearbox","suspension","tires","weight","exhaust","paint","finish","wheels","neon"]
-const SLOT_LABELS := {"ecu":"ECU","engine":"Motor","turbo":"Turbo","nitro":"Nitro","gearbox":"Câmbio","suspension":"Suspensão","tires":"Pneus","weight":"Peso","exhaust":"Escape","paint":"Pintura","finish":"Acabamento","wheels":"Aros","neon":"Neon"}
+const SLOTS := ["ecu","engine","turbo","nitro","gearbox","suspension","tires","weight","exhaust","paint","finish","wheels","neon","spoiler","sunroof","taillights","wheel_model","wheel_size"]
+const SLOT_LABELS := {"ecu":"ECU","engine":"Motor","turbo":"Turbo","nitro":"Nitro","gearbox":"Câmbio","suspension":"Suspensão","tires":"Pneus","weight":"Peso","exhaust":"Escape","paint":"Pintura","finish":"Acabamento","wheels":"Cor dos aros","neon":"Neon","spoiler":"Aerofólio","sunroof":"Teto solar","taillights":"Lanternas","wheel_model":"Modelo de roda","wheel_size":"Tamanho do aro"}
+const SUNROOF_MODELS := ["desert_faisca","desert_coyote","desert_siroco","desert_bison","desert_mirage","desert_faisca_rally","desert_coyote_drag","desert_mirage_gt","rauhz_focus_mk1","supra_a80","digo_gol_1993","digo_amarok_2014","jessica_jetta_gli"]
 const MAX_STREET_CAP_GAIN := .20
+
+static func compatible(part_id: String, car_id: String) -> bool:
+	if not PARTS.has(part_id): return false
+	var slot := str(PARTS[part_id].slot)
+	if slot == "sunroof": return car_id in SUNROOF_MODELS
+	if slot in ["spoiler","wheel_model","wheel_size","taillights"]:
+		if not STREET.has(car_id) and car_id not in SUNROOF_MODELS: return false
+		if car_id.begins_with("bike_") or car_id in ["beach_buggy","dune_buggy","beach_cabriolet"]: return false
+		if slot == "spoiler" and (str(STREET.PROFILES.get(car_id,{}).get("kind","")) == "utility" or car_id.contains("pickup") or car_id in ["desert_bison","digo_amarok_2014"]): return false
+	return true
 
 static func clean_parts(parts: Dictionary) -> Dictionary:
 	var result := {}

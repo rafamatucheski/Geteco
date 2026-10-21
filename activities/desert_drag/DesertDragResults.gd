@@ -119,6 +119,7 @@ func _draw() -> void:
 	var heading := "BATERIA LIVRE   /   #27   /   800 M" if result.get("casual",false) else "ARRANCADA   /   800 M"
 	if night: heading="NOITE DE ACERTO   /   %d DE 3   /   %d M"%[int(result.get("night_round",1)),int(result.get("distance",800))]
 	if challenge: heading="DESAFIO   /   PROVA %d   /   %d M"%[int(result.get("challenge_step",0))+1,int(result.get("distance",800))]
+	if result.get("return_mode",false): heading="IDA E VOLTA   /   %d M"%ceili(float(result.get("distance",0)))
 	_label(Vector2(32,40),heading,16,MUTED)
 	var verdict := "VITÓRIA" if result.get("won",false) else "DERROTA"
 	if night:

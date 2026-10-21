@@ -8,6 +8,7 @@ const BANDITS := preload("res://runtime/desert/DesertBanditEncounter.gd")
 const LETTERS := preload("res://data/catalogs/VicenteLetters.gd")
 const RECEIPTS := preload("res://systems/economy/RecurringReceipts.gd")
 static func valid(world: Dictionary, economy: Dictionary) -> bool:
+	if not preload("res://runtime/desert/DigoWorkshopDrive.gd").valid_world(world): return false
 	if not preload("res://activities/desert_drag/DragRivalChallengeProgress.gd").validate_world(world,economy): return false
 	if not preload("res://activities/desert_drag/DragNightProgress.gd").validate_world(world,economy): return false
 	if world.has("desert_cargo_heist") and not preload("res://gameplay/desert_heist/DesertHeistState.gd").valid(world.desert_cargo_heist): return false

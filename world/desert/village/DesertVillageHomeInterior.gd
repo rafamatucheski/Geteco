@@ -2,6 +2,7 @@ extends Node3D
 ## Static human-scale adobe homes; the native adapter derives full furniture collision envelopes.
 const HOMES := preload("res://world/desert/village/DesertVillageHomes.gd")
 const SHOP := preload("res://world/places/ShopInteriorMaterials.gd")
+const CRAFT := preload("res://world/desert/village/DesertHomeCraft.gd")
 var variant := 0
 var _materials: Dictionary = {}
 
@@ -13,6 +14,7 @@ func _ready() -> void:
 	_table(layout.table,variant)
 	_sofa(layout.sofa,float(layout.sofa_yaw),Color(layout.cloth))
 	_identity(layout)
+	_finish(layout)
 	set_process(false)
 	set_physics_process(false)
 
@@ -20,7 +22,13 @@ func _material(color: Color,kind := "") -> Material:
 	var key := color.to_html()+kind
 	if _materials.has(key): return _materials[key]
 	var mat: StandardMaterial3D
-	if not kind.is_empty(): mat=SHOP.material(kind,color)
+	if kind=="plaster":
+		mat=StandardMaterial3D.new()
+		mat.albedo_color=color
+		mat.albedo_texture=CRAFT.plaster_texture()
+		mat.uv1_triplanar=true
+		mat.roughness=.97
+	elif not kind.is_empty(): mat=SHOP.material(kind,color)
 	else:
 		mat=StandardMaterial3D.new()
 		mat.albedo_color=color
@@ -34,6 +42,8 @@ func _box(parent: Node3D,id: String,at: Vector3,size: Vector3,color: Color,solid
 	var shape := BoxMesh.new()
 	shape.size=size
 	mesh.mesh=shape
+	if id in ["Mattress","Pillow","SeatCushion","SofaArm","SofaBack","SofaBase","Headboard","DiningTop","ChairSeat","ChairBack","KitchenTop","BedsideChest","Toolbox","LumbarCushion","FoldedQuilt"]:
+		mesh.mesh=CRAFT.rounded_box(size,.10 if kind=="cloth" else .055)
 	mesh.position=at
 	mesh.material_override=_material(color,kind)
 	if not solid.is_empty(): mesh.set_meta("interior_solid_id",solid)
@@ -47,7 +57,7 @@ func _cylinder(parent: Node3D,id: String,at: Vector3,radius: float,height: float
 	shape.top_radius=radius
 	shape.bottom_radius=radius
 	shape.height=height
-	shape.radial_segments=12
+	shape.radial_segments=24
 	mesh.mesh=shape
 	mesh.position=at
 	mesh.material_override=_material(color)
@@ -57,32 +67,38 @@ func _cylinder(parent: Node3D,id: String,at: Vector3,radius: float,height: float
 func _shell(layout: Dictionary) -> void:
 	var size: Vector2=layout.size
 	var wall:=Color(layout.wall)
-	_box(self,"TerracottaFloor",Vector3(0,-.05,0),Vector3(size.x,.06,size.y),Color("947455"),"","stone")
-	_box(self,"BackWall",Vector3(0,1.42,-size.y*.5+.12),Vector3(size.x,2.84,.24),wall,"BackWall","stone")
+	_box(self,"TerracottaFloor",Vector3(0,-.05,0),Vector3(size.x,.06,size.y),Color("947455"),"","wood" if variant==1 else "plaster")
+	_box(self,"BackWall",Vector3(0,1.42,-size.y*.5+.12),Vector3(size.x,2.84,.24),wall,"BackWall","plaster")
 	for side in [-1.0,1.0]:
-		_box(self,"SideWall",Vector3(side*(size.x*.5-.12),1.42,0),Vector3(.24,2.84,size.y),wall,"SideWall%s"%side,"stone")
+		# A stepped cutaway opens the living zone to the aligned camera. Both parts
+		# share one physical wall group, retaining the full-height boundary.
+		_box(self,"SideWall",Vector3(side*(size.x*.5-.12),1.42,-size.y*.225),Vector3(.24,2.84,size.y*.55),wall,"SideWall%s"%side,"plaster")
+		_box(self,"LowSideWall",Vector3(side*(size.x*.5-.12),.45,size.y*.275),Vector3(.24,.90,size.y*.45),wall,"SideWall%s"%side,"plaster")
 		var width: float=size.x*.5-1.05
-		_box(self,"FrontWall",Vector3(side*(1.05+width*.5),1.42,size.y*.5-.12),Vector3(width,2.84,.24),wall,"FrontWall%s"%side,"stone")
+		_box(self,"FrontWall",Vector3(side*(1.05+width*.5),1.42,size.y*.5-.12),Vector3(width,2.84,.24),wall,"FrontWall%s"%side,"plaster")
 		_box(self,"DoorJamb",Vector3(side*1.03,1.13,size.y*.5-.12),Vector3(.13,2.26,.28),Color("70503b"),"DoorJamb%s"%side,"wood")
-	# No roof in the fixed cutaway camera. Thin ceiling beams preserve the room's volume.
-	for x in [-size.x*.29,size.x*.29]:
-		_box(self,"CeilingBeam",Vector3(x,2.78,0),Vector3(.14,.18,size.y-.3),Color("68543e"),"","wood")
+	# Exposed joinery follows the rear wall, leaving actors and furniture readable.
+	_box(self,"RearLintel",Vector3(0,2.72,-size.y*.5+.27),Vector3(size.x-.48,.18,.16),Color("68543e"),"","wood")
 	for index in layout.partitions.size():
 		var rect: Rect2=layout.partitions[index]
 		var height := 1.08 if rect.size.x>rect.size.y else 2.45
 		var pos:=Vector3(rect.get_center().x,height*.5,rect.get_center().y)
-		_box(self,"RoomDivider",pos,Vector3(rect.size.x,height,rect.size.y),wall,"Partition%d"%index,"stone")
+		_box(self,"RoomDivider",pos,Vector3(rect.size.x,height,rect.size.y),wall,"Partition%d"%index,"plaster")
 		_box(self,"DividerCap",pos+Vector3(0,height*.5+.025,0),Vector3(rect.size.x+.04,.05,rect.size.y+.04),Color("795f44"),"Partition%d"%index,"wood")
 	# Deep wooden sill, divided glazing and gathered curtains read as a real rear window.
 	var wx := 0.0 if variant != 3 else 1.0
 	_box(self,"RearWindow",Vector3(wx,1.78,-size.y*.5+.255),Vector3(1.6,1.2,.035),Color("617b82"))
 	for side in [-1.0,1.0]:
 		_box(self,"WindowTrim",Vector3(wx+side*.84,1.78,-size.y*.5+.30),Vector3(.085,1.38,.12),Color("6a503a"))
-		_box(self,"Curtain",Vector3(wx+side*.66,1.79,-size.y*.5+.40),Vector3(.23,1.28,.10),Color("cbbd9b"),"","cloth")
+		for fold in 4:
+			var curtain := _cylinder(self,"CurtainFold",Vector3(wx+side*(.57+fold*.065),1.79,-size.y*.5+.40),.048,1.28,Color("cbbd9b"))
+			curtain.material_override=_material(Color("cbbd9b"),"cloth")
 	_box(self,"WindowCross",Vector3(wx,1.78,-size.y*.5+.31),Vector3(.055,1.24,.065),Color("998060"))
 	_box(self,"WindowSill",Vector3(wx,1.13,-size.y*.5+.36),Vector3(1.95,.09,.3),Color("795b40"),"WindowSill","wood")
 	_box(self,"EntryMat",Vector3(0,.001,size.y*.5-1),Vector3(1.65,.016,.72),Color("4d5143"),"","cloth")
-	_box(self,"LivingRug",Vector3(0,.003,.8),Vector3(2.35,.018,1.7),Color(layout.cloth).darkened(.16),"","cloth")
+	var rug := _cylinder(self,"WovenRug",Vector3(0,.003,.8),1.0,.018,Color(layout.cloth).darkened(.16))
+	rug.scale=Vector3(1.25,1,.88)
+	rug.material_override=_material(Color(layout.cloth).darkened(.16),"cloth")
 	# Two motivated light pools, no room-specific environment/sun or frame loop.
 	_lamp(Vector3(.3,2.48,.6),Color("ffdfb5"),.78,8.2)
 	_lamp(layout.kitchen+Vector3(0,2.35,.55),Color("ffdfbd"),.46,5.1)
@@ -134,7 +150,13 @@ func _kitchen(at: Vector3,corner: bool) -> void:
 
 func _table(at: Vector3,index: int) -> void:
 	var width:=1.85 if index!=3 else 2.2
-	_box(self,"DiningTop",at+Vector3(0,.78,0),Vector3(width,.12,1.02),Color("956f45"),"DiningTable","wood")
+	if index in [0,2]:
+		var top := _cylinder(self,"OvalDiningTop",at+Vector3(0,.78,0),.5,.12,Color("956f45"))
+		top.scale=Vector3(width,1,1.02)
+		top.set_meta("interior_solid_id","DiningTable")
+		top.material_override=_material(Color("956f45"),"wood")
+	else:
+		_box(self,"DiningTop",at+Vector3(0,.78,0),Vector3(width,.12,1.02),Color("956f45"),"DiningTable","wood")
 	for x in [-width*.4,width*.4]:
 		for z in [-.39,.39]: _box(self,"TableLeg",at+Vector3(x,.36,z),Vector3(.10,.72,.10),Color("6d5137"),"DiningTable","wood")
 	for side in [-1.0,1.0]:
@@ -158,6 +180,54 @@ func _sofa(at: Vector3,yaw: float,cloth: Color) -> void:
 	_box(couch,"SofaBack",Vector3(0,.71,-.37),Vector3(2.5,.85,.22),cloth,"Sofa","cloth")
 	for x in [-.59,.59]: _box(couch,"SeatCushion",Vector3(x,.53,.05),Vector3(1.10,.20,.70),cloth.lightened(.1),"Sofa","cloth")
 	for side in [-1.0,1.0]: _box(couch,"SofaArm",Vector3(side*1.23,.59,0),Vector3(.18,.60,.90),cloth,"Sofa","cloth")
+	var cushion := _box(couch,"LumbarCushion",Vector3(-.64,.76,-.15),Vector3(.48,.42,.19),cloth.lightened(.28),"Sofa","cloth")
+	cushion.rotation.z=.16
+	_box(couch,"FoldedQuilt",Vector3(.70,.66,.12),Vector3(.58,.07,.58),Color("b8ab88"),"Sofa","cloth")
+
+func _finish(layout: Dictionary) -> void:
+	var size: Vector2=layout.size
+	# Floor joints have no raised collision; deterministic colour variation reads as fired clay.
+	if variant!=1:
+		var nx := ceili(size.x/.75)
+		var nz := ceili(size.y/.75)
+		var joints := MultiMesh.new()
+		joints.transform_format=MultiMesh.TRANSFORM_3D
+		var unit := BoxMesh.new()
+		unit.size=Vector3.ONE
+		joints.mesh=unit
+		joints.instance_count=nx+nz-2
+		var slot := 0
+		for x in range(1,nx):
+			joints.set_instance_transform(slot,Transform3D(Basis.from_scale(Vector3(.012,.003,size.y-.48)),Vector3(-size.x*.5+x*size.x/nx,-.018,0)))
+			slot+=1
+		for z in range(1,nz):
+			joints.set_instance_transform(slot,Transform3D(Basis.from_scale(Vector3(size.x-.48,.003,.012)),Vector3(0,-.018,-size.y*.5+z*size.y/nz)))
+			slot+=1
+		var tile_joints := MultiMeshInstance3D.new()
+		tile_joints.name="TileJoints"
+		tile_joints.multimesh=joints
+		tile_joints.material_override=_material(Color("6e5d49"))
+		add_child(tile_joints)
+	# Timber skirtings remain within the already reserved wall footprint.
+	for side in [-1.0,1.0]:
+		_box(self,"Skirting",Vector3(side*(size.x*.5-.24),.10,0),Vector3(.035,.20,size.y-.48),Color("786249"),"SideWall%s"%side,"wood")
+	_box(self,"Skirting",Vector3(0,.10,-size.y*.5+.24),Vector3(size.x-.48,.20,.035),Color("786249"),"BackWall","wood")
+	# Different domestic crafts, mounted on the rear wall rather than blocking floor lanes.
+	var center := Vector3(layout.bed.x,1.98,-size.y*.5+.29)
+	if variant in [0,2]:
+		for i in 3:
+			var plate := _cylinder(self,"WovenWallBasket",center+Vector3((i-1)*.46,sin(i*1.7)*.14,0),.19,.055,Color("b89663"))
+			plate.rotation.x=PI*.5
+	else:
+		_box(self,"PictureFrame",center,Vector3(1.25,.79,.06),Color("735840"),"","wood")
+		_box(self,"LandscapeCanvas",center+Vector3(0,0,.038),Vector3(1.10,.64,.015),Color("a7a189"),"","cloth")
+		_box(self,"LandscapeHorizon",center+Vector3(0,-.16,.050),Vector3(1.10,.26,.008),Color(layout.cloth).darkened(.18))
+	# Slatted joinery breaks the monolithic headboard into recognisable hand-made wood.
+	for i in 7:
+		_box(self,"HeadboardSlat",layout.bed+Vector3((i-3)*.22,.89,-1.025),Vector3(.13,.31,.025),Color("a4835b"),"BedHeadboard","wood")
+	var bolster := _cylinder(self,"BedBolster",layout.bed+Vector3(.57,.70,-.74),.105,.37,Color(layout.cloth).lightened(.24))
+	bolster.rotation.z=PI*.5
+	bolster.material_override=_material(Color(layout.cloth).lightened(.24),"cloth")
 
 func _identity(layout: Dictionary) -> void:
 	# Each plan has a different useful living zone in addition to its own room divisions.

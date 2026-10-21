@@ -128,11 +128,14 @@ func _positions(index: int,layout: Dictionary) -> Array[Dictionary]:
 	# In home 1 the eastern ceiling beam is at x=3.48; probe the western table
 	# lane so "clear" measures table ordering rather than intentional beam cover.
 	var chair_bypass: float=-.60 if index==0 else .60
+	# Oval tops taper at the ends: probe closer to their rear edge, still outside
+	# the full physical envelope (.51 m + .32 m capsule radius).
+	var rear_distance := -.85 if index in [0,2] else -.92
 	# Chairs occupy x +/- .26 at z +/- .98. Offset x=.60 leaves capsule clearance
 	# and keeps the actor behind the tabletop silhouette without standing on a chair.
 	var result: Array[Dictionary]=[
 		{"id":"table-front","point":table+Vector3(chair_bypass,.04,.94),"expected":"clear"},
-		{"id":"table-behind","point":table+Vector3(chair_bypass,.04,-.92),"expected":"partial"},
+		{"id":"table-behind","point":table+Vector3(chair_bypass,.04,rear_distance),"expected":"partial"},
 		{"id":"table-side","point":table+Vector3(half_width+.58,.04,0),"expected":"clear"},
 		{"id":"bed-headboard-behind","point":bed+Vector3(0,.04,-1.70),"expected":"partial",
 		 "note":"Bedroom view includes mattress, headboard and native overhead beams; the mask covers their combined depth."},

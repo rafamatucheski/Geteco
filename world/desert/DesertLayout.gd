@@ -115,9 +115,15 @@ static func place_definitions() -> Array[Dictionary]:
 	# A legally parked car can occupy every point on the narrow centre approach.
 	# Authored side exits remain in the open forecourt, clear of columns/benches.
 	bank.return_clearance_offsets=[Vector3(2.8,0,0),Vector3(-2.8,0,0)]
+	var workshop := _place("desert_digo","Digo",WORKSHOP,Vector2(25,18),"desert_tuning","res://world/desert/DesertWorkshopInterior.gd",8.0,15.0)
+	workshop["vehicle_spawn"] = Vector3(0,.04,0)
+	workshop["vehicle_spawn_yaw"] = PI
+	workshop["vehicle_exit"] = Vector3(0,.04,5.2)
+	workshop["vehicle_return"] = WORKSHOP+Vector3(0,.04,13.0)
+	workshop["vehicle_return_yaw"] = PI
 	return [
 		bank,
-		_place("desert_digo","Digo",WORKSHOP,Vector2(25,18),"desert_tuning","res://world/desert/DesertWorkshopInterior.gd",8.0,15.0),
+		workshop,
 	]
 
 static func _place(id: String, title: String, exterior: Vector3, size: Vector2, service: String, model: String, spawn_z: float, camera: float) -> Dictionary:

@@ -13,6 +13,8 @@ var _tick := 0.0
 var _wake_age := 10.0
 var _last_focus := Vector3.INF
 var _reset_flock := true
+var _drag_view := false
+const DRAG_THERMALS := [Vector3(-820,36,-1470),Vector3(-460,45,-1570),Vector3(-100,32,-1475)]
 
 func _ready() -> void:
 	name="DesertAmbientLife"
@@ -23,14 +25,19 @@ func _ready() -> void:
 
 func set_focus(point: Vector3) -> void:
 	_focus=point
+	var in_drag_view := Rect2(-1120,-1450,1400,300).has_point(Vector2(point.x,point.z))
+	if in_drag_view!=_drag_view:
+		_drag_view=in_drag_view
+		_reset_flock=true
+		if _birds!=null: _birds.multimesh.visible_instance_count=9 if _drag_view else 3
 	if not LAYOUT.contains(point):
 		suspend()
 		return
 	if _last_focus==Vector3.INF or _last_focus.distance_squared_to(point)>10000:
 		_last_focus=point
 		_flock_center=point+Vector3(48,32,-35)
-		_reset_flock=true
-		if _wind!=null: _wind.restart()
+		if not _drag_view: _reset_flock=true
+		if _wind!=null and not _drag_view: _wind.restart()
 	set_active(true)
 
 func set_active(enabled: bool) -> void:
@@ -61,10 +68,11 @@ func _physics_process(delta: float) -> void:
 	_wake_age+=delta
 	# Three gliders move on physics ticks so engine interpolation sees coherent
 	# previous/current poses. The more expensive emitter work remains at 10 Hz.
-	for i in 3:
+	for i in (9 if _drag_view else 3):
 		var angle := _elapsed*.095+float(i)*.36
 		var radius := 18.0+float(i)*5.0
-		var bird_position := _flock_center+Vector3(cos(angle)*radius,sin(angle*1.7+float(i))*.7,sin(angle)*radius)
+		var center: Vector3=DRAG_THERMALS[i/3] if _drag_view else _flock_center
+		var bird_position := center+Vector3(cos(angle)*radius,sin(angle*1.7+float(i))*.7,sin(angle)*radius)
 		var bird_basis := Basis(Vector3.UP,-angle).rotated(Vector3.FORWARD,.14)
 		_birds.multimesh.set_instance_transform(i,Transform3D(bird_basis,bird_position))
 		if _reset_flock: _birds.multimesh.reset_instance_physics_interpolation(i)
@@ -78,6 +86,7 @@ func _physics_process(delta: float) -> void:
 	# Breathing gusts, not a permanent screen-wide haze. No new light or fog volume.
 	_wind.emitting=sin(_elapsed*.39)>-.25
 	var at := _focus+Vector3(-9,0,5)
+	if _drag_view: at=Vector3(floorf(_focus.x/96.0)*96.0+48.0,0,-1370.0)
 	at.y=LAYOUT.surface_height(Vector2(at.x,at.z))+preload("res://world/desert/DesertTerrainMesh.gd").surface_height(Vector2(at.x,at.z))+.18
 	_wind.global_position=at
 
@@ -129,7 +138,8 @@ func _make_birds() -> void:
 	var batch := MultiMesh.new()
 	batch.transform_format=MultiMesh.TRANSFORM_3D
 	batch.mesh=mesh
-	batch.instance_count=3
+	batch.instance_count=9
+	batch.visible_instance_count=3
 	for i in 3: batch.set_instance_transform(i,Transform3D(Basis.IDENTITY,_flock_center))
 	_birds=MultiMeshInstance3D.new()
 	_birds.name="DistantThermalGliders"

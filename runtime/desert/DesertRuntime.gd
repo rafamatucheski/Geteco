@@ -13,6 +13,8 @@ const RESIDENT := preload("res://runtime/desert/DesertCharacter.gd")
 const FRONTIER := preload("res://runtime/desert/DesertFrontierRuntime.gd")
 const MEET := preload("res://runtime/desert/drag_meet/DragMeetLife.gd")
 const DIGO_ROUTINE := preload("res://runtime/desert/DesertDigoRoutine.gd")
+const WORKSHOP_DRIVE := preload("res://runtime/desert/DigoWorkshopDrive.gd")
+const WORKSHOP_MUSIC := preload("res://audio/workshop/DigoWorkshopMusic.gd")
 var session
 var extras: Node
 var drag: Node3D
@@ -26,6 +28,8 @@ var meet_life: Node3D
 var digo_routine: Node3D
 var tuning_panel: CanvasLayer
 var tuning_car: CharacterBody3D
+var workshop_drive: Node3D
+var workshop_music: Node
 var entrance_toll: Node
 var heist: Node3D
 var _room: Node3D
@@ -36,6 +40,12 @@ var _tick := 0.0
 func configure(owner_session) -> void:
 	session = owner_session
 	name = "DesertRuntime"
+	workshop_drive = WORKSHOP_DRIVE.new()
+	add_child(workshop_drive)
+	workshop_drive.configure(session)
+	workshop_music = WORKSHOP_MUSIC.new()
+	workshop_music.name = "DigoWorkshopMusic"
+	add_child(workshop_music)
 	heist=preload("res://gameplay/desert_heist/DesertHeist.gd").new()
 	add_child(heist)
 	heist.configure(session)
@@ -77,6 +87,12 @@ func configure(owner_session) -> void:
 	add_child(tuning_panel)
 	tuning_panel.purchase_requested.connect(_buy_part)
 	tuning_panel.remove_requested.connect(_remove_part)
+	tuning_panel.loadout_requested.connect(_apply_loadout)
+	tuning_panel.preview_requested.connect(_preview_tuning)
+	tuning_panel.preview_closed.connect(_restore_tuning_preview)
+	tuning_panel.view_requested.connect(workshop_drive.focus_slot)
+	tuning_panel.camera_action.connect(workshop_drive.camera_action)
+	tuning_panel.orbit_requested.connect(workshop_drive.orbit_by)
 	tuning_panel.closed.connect(_close_tuning)
 	PROGRESS.claim_rewards(session.state.world_state,session.state.economy)
 	if preload("res://runtime/desert/DesertActivitiesPolicy.gd").enabled():
@@ -102,7 +118,7 @@ func cancel_attempt() -> void:
 	if is_instance_valid(drag): drag.cancel_attempt()
 	if is_instance_valid(frontier): frontier.cancel_attempt()
 	if is_instance_valid(canyon): canyon.cancel_attempt()
-	if is_instance_valid(tuning_panel): tuning_panel.close_panel()
+	if is_instance_valid(tuning_panel) and tuning_panel.visible: tuning_panel.discard_and_close()
 func _process(delta: float) -> void:
 	if session != null and session.ready_for_play:
 		var active_camera := get_viewport().get_camera_3d()
@@ -111,6 +127,9 @@ func _process(delta: float) -> void:
 	_tick += delta
 	if _tick < .3 or session == null or not session.ready_for_play: return
 	_tick = 0.0
+	workshop_music.sync(session.state.region_id=="desert" and session.state.place_id=="desert_digo" and is_instance_valid(session.room),session.world.production.world_audio)
+	if session.state.place_id == "desert_digo" and is_instance_valid(session.room):
+		preload("res://world/desert/DigoWorkshopMaterials.gd").update_lighting(session.room.model,session.weather.get_city_lighting_factor())
 	var desert_region: Node3D = session.controller.regions.get("desert")
 	if is_instance_valid(desert_region):
 		desert_region.set_environment_activity(session.state.region_id=="desert" and session.state.place_id.is_empty(),session.world.player.global_position)
@@ -126,7 +145,7 @@ func _process(delta: float) -> void:
 				car.restore_health(minf(saved_health,car.max_health))
 	_reconcile_resident()
 	if is_instance_valid(tuning_car) and (session.world.gameplay.health<=0 or not _at_workshop()):
-		tuning_panel.close_panel()
+		tuning_panel.discard_and_close()
 func _reconcile_owned_cars() -> void:
 	var records: Dictionary = session.state.world_state.get("desert_fleet",{})
 	for id in records:
@@ -151,7 +170,8 @@ func _reconcile_owned_cars() -> void:
 		var tuning: Dictionary = GARAGE.vehicle(session.state.world_state,id,car.archetype)
 		ADAPTER.attach(car,tuning.parts)
 		car.restore_health(float(record.health))
-		car.restore_body_dents(record.get("body_dents",[]))
+		car.restore_body_dents(record.get("body_dents",[]),record.get("breakaway_parts",{}))
+		car.restore_blood_stains(int(record.get("blood_stains",0)))
 		if int(record.get("punctured_tires",0))>0: preload("res://gameplay/police_response/ground/TirePuncture.gd").puncture(car,int(record.punctured_tires))
 		_track_owned(car)
 func _track_owned(car: CharacterBody3D) -> void:
@@ -164,6 +184,7 @@ func _store_owned(car: CharacterBody3D) -> void:
 	session.state.world_state.desert_fleet[car.vehicle_id]=preload("res://runtime/FleetState.gd").capture(car,session.state.region_id)
 func write_snapshot() -> void:
 	if is_instance_valid(heist): heist.write_snapshot()
+	if is_instance_valid(workshop_drive): workshop_drive.write_snapshot()
 	for car in owned_cars.values():
 		if is_instance_valid(car): _store_owned(car)
 func _reconcile_resident() -> void:
@@ -182,6 +203,9 @@ func _reconcile_resident() -> void:
 	_resident.position = local
 	room.add_child(_resident)
 func nearest_action() -> Dictionary:
+	if is_instance_valid(workshop_drive):
+		var workshop_action: Dictionary = workshop_drive.nearest_action()
+		if not workshop_action.is_empty(): return workshop_action
 	if is_instance_valid(heist):
 		var cargo_action: Dictionary=heist.nearest_action()
 		if not cargo_action.is_empty(): return cargo_action
@@ -213,6 +237,8 @@ func nearest_action() -> Dictionary:
 		return {"id":"desert","target":"rest","label":"Descansar até as 20h"}
 	return drag.nearest_action()
 func perform(action: Dictionary) -> bool:
+	if action.get("id","")=="desert" and str(action.get("target","")).begins_with("digo_drive_"):
+		return workshop_drive.perform(str(action.target))
 	if str(action.get("target","")).begins_with("cargo_heist:"): return heist.perform(action)
 	if action.get("id","")=="desert" and action.get("target","")=="entrance_toll": return entrance_toll.perform()
 	if str(action.get("target","")).begins_with("canyon_cache:"): return canyon.perform(action)
@@ -252,6 +278,7 @@ func _nearby_car() -> CharacterBody3D:
 	if not _at_workshop(): return null
 	var car: CharacterBody3D = session.world.driving.car
 	if not is_instance_valid(car) or car.health<=0 or car.engine_disabled: return null
+	if _workshop_site=="town" and session.state.place_id=="desert_digo" and str(car.get_meta("garage_place",""))=="desert_digo": return car
 	var yard := DIGO_ROUTINE.workshop_point() if _workshop_site=="meet" else Vector3(-140,0,-943)
 	if car.global_position.distance_to(yard)>55 or car.half_width>1.45 or car.half_length>3.1: return null
 	return car
@@ -290,6 +317,11 @@ func _open_tuning() -> void:
 	session.panel.hide()
 	session.menu_closed = _dismiss_tuning
 	var record := GARAGE.vehicle(session.state.world_state,tuning_car.vehicle_id,tuning_car.archetype)
+	var live: bool = session.state.place_id=="desert_digo" and session.world.driving.occupied and str(tuning_car.get_meta("garage_place",""))=="desert_digo"
+	tuning_panel.set_live_vehicle(tuning_car if live else null)
+	if live and not workshop_drive.open_service_view(tuning_car):
+		session.close_menu()
+		return
 	tuning_panel.show_vehicle(ADAPTER.profile_of(tuning_car),record.parts,record.owned,_race_wins(),session.state.economy.balance,{"archetype":tuning_car.archetype,"paint":tuning_car.paint_color})
 func _race_wins() -> int:
 	return RACE_WINS.count(session.state.world_state,session.state.campaign.snapshot())
@@ -299,13 +331,34 @@ func _close_tuning() -> void:
 	session.menu_closed = Callable()
 	session.close_menu()
 func _dismiss_tuning() -> void:
+	_restore_tuning_preview()
+	if is_instance_valid(workshop_drive): workshop_drive.close_service_view()
 	if is_instance_valid(tuning_panel): tuning_panel.hide()
 	tuning_car = null
+
+func _preview_tuning(parts: Dictionary) -> void:
+	if not is_instance_valid(tuning_car) or not is_instance_valid(workshop_drive) or not session.world.driving.occupied: return
+	preload("res://gameplay/desert_cars/TuningAppearance.gd").preview_vehicle(tuning_car,parts)
+
+func _restore_tuning_preview() -> void:
+	if not is_instance_valid(tuning_car): return
+	var record := GARAGE.vehicle(session.state.world_state,tuning_car.vehicle_id,tuning_car.archetype)
+	preload("res://gameplay/desert_cars/TuningAppearance.gd").preview_vehicle(tuning_car,record.parts)
+
+func _apply_loadout(parts: Dictionary) -> void:
+	if not is_instance_valid(tuning_car) or tuning_car!=_nearby_car() or not DIGO.workshop_unlocked(session.state.world_state): return
+	var result := GARAGE.apply_loadout(session.state.world_state,session.state.economy,tuning_car.vehicle_id,tuning_car.archetype,parts,_race_wins())
+	if not result.ok: tuning_panel.set_message(str(result.reason)); return
+	ADAPTER.attach(tuning_car,result.parts)
+	tuning_panel.confirm_application()
+	session.save_game()
+	_open_tuning()
 func _buy_part(part: String) -> void:
 	if not is_instance_valid(tuning_car) or tuning_car!=_nearby_car() or not DIGO.workshop_unlocked(session.state.world_state): return
 	var result := GARAGE.buy(session.state.world_state,session.state.economy,tuning_car.vehicle_id,tuning_car.archetype,part,_race_wins())
 	if not result.ok: tuning_panel.set_message(str(result.reason)); return
 	ADAPTER.attach(tuning_car,result.parts)
+	tuning_panel.confirm_application()
 	session.save_game()
 	_open_tuning()
 func _remove_part(slot: String) -> void:
@@ -366,6 +419,7 @@ func target_position() -> Vector3:
 	if is_instance_valid(extras) and not extras.objective().is_empty(): return extras.target_position()
 	return contracts.target_position() if not contracts.objective().is_empty() else story.target_position()
 static func validate_world(value: Dictionary, economy: Dictionary) -> bool:
+	if value.has(WORKSHOP_DRIVE.KEY) and not WORKSHOP_DRIVE.valid(value[WORKSHOP_DRIVE.KEY]): return false
 	if not preload("res://runtime/desert/canyon/CanyonState.gd").validate_wallet(value,economy): return false
 	if value.has("desert_secrets") and not preload("res://runtime/desert/DesertSecretState.gd").valid(value.desert_secrets): return false
 	if value.has("desert_bandits") and not preload("res://runtime/desert/DesertBanditEncounter.gd").valid_state(value.desert_bandits): return false

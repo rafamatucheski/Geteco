@@ -242,6 +242,9 @@ static func _upload(chunk: Node3D, state: Build, rect: Rect2, suffix: String) ->
 		node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		node.visibility_range_end = VISIBILITY[kind]
 		if DRAG_CORRIDOR.intersects(rect): configure_drag_visibility(node,kind)
+		# Only non-interactive ground dressing; stones and breakable bushes keep their authored range.
+		if KINDS[kind] in ["gravel","tuft"] and not DRAG_CORRIDOR.intersects(rect):
+			preload("res://runtime/GraphicsOptions.gd").tag_detail(node)
 		if Engine.get_meta("geteco_live_preview_build", false):
 			node.set_meta("preview_instance_transforms", state.preview[kind])
 			var colors: Array = []

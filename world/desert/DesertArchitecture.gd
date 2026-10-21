@@ -50,7 +50,14 @@ static func building(data: Dictionary) -> Node3D:
 		var segment := (size.x-entry_width)*.5
 		_box(root,"FrontWall",Vector3(side*(entry_width*.5+segment*.5),size.y*.5,size.z*.5),Vector3(segment,size.y,.4),wall,true)
 	_box(root,"DoorLintel",Vector3(0,size.y-.45,size.z*.5),Vector3(entry_width,.9,.45),wall)
-	_box(root,"DoorRecess",Vector3(0,1.2,size.z*.5-.35),Vector3(entry_width,2.4,.12),Color("3d4948"),true)
+	# Digo's service bay is an actual opening; other buildings retain their door backstop.
+	if data.kind != "workshop":
+		_box(root,"DoorRecess",Vector3(0,1.2,size.z*.5-.35),Vector3(entry_width,2.4,.12),Color("3d4948"),true)
+	if data.id == "desert_digo":
+		var gate := preload("res://world/desert/DigoVehicleGate.gd").new()
+		gate.name = "VehicleGarageGate"
+		gate.position = Vector3(0,0,size.z*.5+.08)
+		root.add_child(gate)
 	_box(root,"RoofSlab",Vector3(0,size.y+.12,0),Vector3(size.x+.6,.24,size.z+.6),Color("a59176"))
 	for side in [-1.0,1.0]:
 		_box(root,"Parapet",Vector3(side*(size.x*.5+.1),size.y+.35,0),Vector3(.22,.55,size.z+.6),wall)

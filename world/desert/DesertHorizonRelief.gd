@@ -211,7 +211,7 @@ static func _mesh(id: String,data: Dictionary,shadows: bool) -> MeshInstance3D:
 	node.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_ON if shadows else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return node
 
-static func create_outcrop(parent: Node3D,at: Vector3,radius: float,height: float,seed_value: int,solid: bool) -> Node3D:
+static func create_outcrop(parent: Node3D,at: Vector3,radius: float,height: float,seed_value: int,solid: bool,visual := true) -> Node3D:
 	# Three connected convex frusta share every seam; collision is made from the same vertices.
 	# Unlike a cylinder collider, it follows the irregular footprint and each retreating rock face.
 	var root := Node3D.new()
@@ -256,7 +256,7 @@ static func create_outcrop(parent: Node3D,at: Vector3,radius: float,height: floa
 			var high := _stratum_color(row+2)
 			_triangle(data,a,b,c,low,low,high,outward)
 			_triangle(data,a,c,d,low,high,high,outward)
-	root.add_child(_mesh("IrregularSandstone",data,true))
+	if visual: root.add_child(_mesh("IrregularSandstone",data,true))
 	if solid:
 		var body := StaticBody3D.new()
 		body.name="SandstoneVolumes"

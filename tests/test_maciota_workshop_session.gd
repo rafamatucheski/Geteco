@@ -168,11 +168,32 @@ func _press_part(id: String) -> bool:
 	var panel: Node = world.session.maciota_workshop.panel
 	var button: Button = panel.button_for_part(id)
 	if button == null: return _check(false,"part button exists: "+id)
+	var before_balance: int = world.session.state.economy.balance
+	var installed: Dictionary = panel._parts.duplicate(true)
 	if not await _press_button(button): return false
-	if panel._pending == id:
-		button = panel.button_for_part(id)
-		if button == null: return _check(false,"confirmation button exists: "+id)
-		return await _press_button(button)
+	if not _check(world.session.state.economy.balance == before_balance and panel._parts == installed,"selecting "+id+" previews without charging or installing"): return false
+	if not _check(panel._draft_parts.get(TUNING.PARTS[id].slot,"") == id,"selected part enters draft: "+id): return false
+	if id == "ecu_1" and not await _cancel_pending_with_input(panel): return false
+	return await _press_button(panel._apply)
+
+func _cancel_pending_with_input(panel: Node) -> bool:
+	var draft: Dictionary = panel._draft_parts.duplicate(true)
+	var balance: int = world.session.state.economy.balance
+	var navigation_steps: int = 1 if panel._menu_level > 0 else 0
+	if panel._menu_level == 2 and panel._group != "Visual": navigation_steps = 2
+	for step in navigation_steps+2:
+		var cancel := InputEventAction.new()
+		cancel.action = "ui_cancel"
+		cancel.pressed = true
+		Input.parse_input_event(cancel)
+		await process_frame
+		cancel = InputEventAction.new()
+		cancel.action = "ui_cancel"
+		cancel.pressed = false
+		Input.parse_input_event(cancel)
+		await _frames(2)
+		if not _check(world.session.modal and panel.visible and panel._exit_prompt.visible == (step == navigation_steps),"real cancel visits parent menus before exit confirmation"): return false
+		if not _check(panel._draft_parts == draft and world.session.state.economy.balance == balance,"cancel navigation preserves pending draft and wallet"): return false
 	return true
 
 func _press_button(button: Button) -> bool:

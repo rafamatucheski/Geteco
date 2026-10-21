@@ -8,6 +8,8 @@ static var _pebble_material: StandardMaterial3D
 static var _grass_material: ShaderMaterial
 static var _pebble_mesh: SphereMesh
 static var _grass_mesh: ArrayMesh
+static var _drag_materials := {}
+const DRAG_CORRIDOR := Rect2(-1056,-1440,1248,192)
 
 static func build_chunk(chunk: Node3D, rect: Rect2, _roads: Array, clear: Callable, height_at := Callable()) -> void:
 	_prepare_resources()
@@ -28,8 +30,8 @@ static func build_chunk(chunk: Node3D, rect: Rect2, _roads: Array, clear: Callab
 			var scale := rng.randf_range(.65,1.3)
 			var ground: float=height_at.call(p) if height_at.is_valid() else LAYOUT.surface_height(p)
 			grasses.append(Transform3D(Basis(Vector3.UP,rng.randf()*TAU).scaled(Vector3.ONE*scale),Vector3(p.x,ground,p.y)))
-	_batch(chunk,"MineralPebbles",_pebble_mesh,_pebble_material,pebbles)
-	_batch(chunk,"WindDriedGrass",_grass_mesh,_grass_material,grasses)
+	_batch(chunk,"MineralPebbles",_pebble_mesh,_pebble_material,pebbles,DRAG_CORRIDOR.intersects(rect))
+	_batch(chunk,"WindDriedGrass",_grass_mesh,_grass_material,grasses,DRAG_CORRIDOR.intersects(rect))
 
 static func _prepare_resources() -> void:
 	if _shoulder_material!=null: return
@@ -140,7 +142,7 @@ static func _soft_ground(chunk: Node3D, label: String, polygon: PackedVector2Arr
 	node.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	chunk.add_child(node)
 
-static func _batch(parent: Node3D, label: String, mesh: Mesh, material: Material, transforms: Array[Transform3D]) -> void:
+static func _batch(parent: Node3D, label: String, mesh: Mesh, material: Material, transforms: Array[Transform3D], drag_view := false) -> void:
 	if transforms.is_empty(): return
 	var batch := MultiMesh.new()
 	batch.transform_format=MultiMesh.TRANSFORM_3D
@@ -164,6 +166,17 @@ static func _batch(parent: Node3D, label: String, mesh: Mesh, material: Material
 	node.material_override=material
 	node.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	node.visibility_range_end=100.0
+	if drag_view:
+		if not _drag_materials.has(label):
+			var faded := material.duplicate() as Material
+			if faded is StandardMaterial3D:
+				faded.distance_fade_mode=BaseMaterial3D.DISTANCE_FADE_PIXEL_DITHER
+				faded.distance_fade_max_distance=75.0
+				faded.distance_fade_min_distance=115.0
+			elif faded is ShaderMaterial: faded.set_shader_parameter("distance_fade",true)
+			_drag_materials[label]=faded
+		node.material_override=_drag_materials[label]
+		node.visibility_range_end=117.0+node.get_aabb().size.length()*.5
 	parent.add_child(node)
 
 static func _floor_height(point: Vector2) -> float:
