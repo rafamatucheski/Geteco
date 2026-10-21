@@ -80,6 +80,9 @@ const SPOTS := {
 	# A2-12/A2-13: na pista da passagem norte, antes dos operários (z -1786 a -1791) e da área fechada da
 	# obra (DesertNorthPassLayout.restore_point devolve quem salva além de z -1786); a barreira em si fica
 	# colada nas pedras e não deixa lugar livre para conversar.
+	# Santa Lua: a caixa-d'água junto da torre da cooperativa (A2-07) e a praça perto da casa da Helena (A2-11).
+	"water_tower": {"anchor": COMMUNITY.ORIGIN, "points": [Vector3(2.5, 0, 3.0), Vector3(-2.5, 0, 3.0), Vector3(3.5, 0, -2.0)], "face": Vector3(0, 0, 8)},
+	"santa_lua": {"anchor": Vector3(-528, 0, -830), "points": [Vector3(3.0, 0, 2.0), Vector3(-3.0, 0, 2.0), Vector3(0, 0, 5.0)], "face": Vector3(0, 0, -6)},
 	"gate": {"anchor": Vector3(342.5, 0, -1810), "points": [Vector3(0, 0, 35), Vector3(4, 0, 37), Vector3(-4, 0, 37)], "face": Vector3(0, 0, 0)},
 }
 const SPAWN_DISTANCE := 85.0
@@ -119,12 +122,16 @@ static func scene_def(world: Dictionary) -> Dictionary:
 	var current := STATE.stage(world)
 	if current in ["motel", "chapel"]: return {"scene": current, "spot": current, "who": "vicente"}
 	if STATE.track_stage(world) == "grandstand": return {"scene": "grandstand", "spot": "grandstand", "who": "vicente"}
-	if chain_at(world, "order") == "night": return {"scene": "bank_night", "spot": "bank_night", "who": "irene"}
+	# Roteiro de diretor: quem espera na porta do Cobre à noite é a Helena.
+	if chain_at(world, "order") == "night": return {"scene": "bank_night", "spot": "bank_night", "who": "helena"}
 	if chain_at(world, "cave") == "": return {"scene": "cave", "spot": "cave", "who": "vicente"}
+	if chain_at(world, "letters") == "water": return {"scene": "water_tower", "spot": "water_tower", "who": "helena"}
 	if chain_at(world, "bet") in ["cascavel", "keys"]: return {"scene": "cascavel", "spot": "meet_edge", "who": "cascavel"}
 	if chain_at(world, "convoy") == "motel": return {"scene": "convoy_motel", "spot": "motel", "who": "vicente"}
+	if chain_at(world, "salt") == "home": return {"scene": "helena_home", "spot": "santa_lua", "who": "helena"}
 	match chain_at(world, "teodoro"):
 		"": return {"scene": "teodoro_motel", "spot": "motel", "who": "teodoro"}
+		"fight": return {"scene": "brothers_fight", "spot": "motel", "who": "vicente"}
 		"chase": return {"scene": "teodoro_gate", "spot": "gate", "who": "teodoro"}
 	match chain_at(world, "finale"):
 		"": return {"scene": "finale_grandstand", "spot": "grandstand", "who": "vicente"}
@@ -159,6 +166,10 @@ func _process(delta: float) -> void:
 		_release()
 		return
 	if is_instance_valid(actor) and _actor_stage != str(def.scene): _release()
+	# A2-12: o tempo da fuga acabou e o Teodoro já passou pela obra; fica só a pasta no chão.
+	if str(def.scene) == "teodoro_gate" and _chase_lost():
+		_release()
+		return
 	var player: Vector3 = session.world.player.global_position
 	var anchor := _site_point(spot, Vector3.ZERO)
 	var distance := Vector2(player.x, player.z).distance_to(Vector2(anchor.x, anchor.z))
@@ -168,9 +179,11 @@ func _process(delta: float) -> void:
 		return
 	if distance < SPAWN_DISTANCE and _site_ready(spot): _admit(def)
 
-## Avanços sem conversa: o assalto do comboio (A2-10) e o ataque ao encontro (A2-13).
+## Avanços sem conversa: o assalto do comboio (A2-10), a briga dos irmãos (A2-12) e o ataque ao
+## encontro (A2-13).
 func _tick_missions(outside: bool) -> void:
 	var world := _world()
+	if outside: _tick_fight()
 	if chain_at(world, "convoy") == "" and session.desert != null and is_instance_valid(session.desert.heist):
 		if str(session.desert.heist.data.get("phase", "")) == "looted" and STATE.chain_advance(world, "convoy", "motel"):
 			session.show_message("Ato 2 · " + str(CHAIN_TITLES.convoy) + " · Leve o lacre a Vicente, no Motel Oásis.")
@@ -286,7 +299,7 @@ func _admit(def: Dictionary) -> void:
 		if hit.is_empty() or float(hit.normal.y) < .9: continue
 		var point: Vector3 = hit.position + Vector3.UP * .05
 		if not session.position_clear(point): continue
-		actor = CONTACT.new()
+		actor = BrotherFighter.new() if str(def.scene) == "brothers_fight" else CONTACT.new()
 		actor.identity_id = str(def.who)
 		actor.position = point
 		add_child(actor)
@@ -324,6 +337,7 @@ func nearest_action() -> Dictionary:
 	var spot := _mission_point()
 	if not spot.is_empty() and player.distance_to(spot.point) <= float(spot.reach): return {"id": "desert_story", "target": spot.target, "label": spot.label}
 	if not is_instance_valid(actor) or actor.dead: return {}
+	if actor is BrotherFighter and not actor.down: return {}
 	if player.distance_to(actor.global_position) > TALK_DISTANCE: return {}
 	return {"id": "desert_story", "target": "vicente_reunion", "label": "Conversar com " + str(CONTACT.LOOKS[actor.identity_id].name)}
 
@@ -356,6 +370,9 @@ func _mission_point() -> Dictionary:
 		"": return {"target": "act2:fatima", "point": roadside_point("chapel", ROADSIDE.CHAPEL_KEEPER), "reach": 2.4, "label": "Perguntar à Dona Fátima"}
 		"tower": return {"target": "act2:tower", "point": roadside_point("radio_tower", ROADSIDE.TOWER_LADDER), "reach": 2.4, "label": "Subir na torre e ligar para o Maciota"}
 		"coop": return {"target": "act2:coop", "point": coop_point(), "reach": 2.2, "label": "Pedir o malote pelo rádio da cooperativa"}
+	# A2-12: Teodoro escapou antes de Dante chegar (o tempo da fuga acabou): sobra a pasta no chão.
+	if chain_at(world, "teodoro") == "chase" and _chase_lost():
+		return {"target": "act2:folder", "point": folder_point(), "reach": 2.2, "label": "Pegar a pasta largada"}
 	if chain_at(world, "trunk") == "":
 		return {"target": "act2:nonato", "point": roadside_point("scrapyard", ROADSIDE.SCRAP_DEALER), "reach": 2.4, "label": "Perguntar ao Nonato por um carro"}
 	match chain_at(world, "salt"):
@@ -398,9 +415,10 @@ func perform(target: String) -> bool:
 		"act2:phone": _say(phone_lines(), "order:done")
 		"act2:fatima": _say(LINES.fatima(), "letters:tower")
 		"act2:tower": _say(LINES.tower(), "letters:coop")
-		"act2:coop": _say(LINES.coop(), "letters:done")
+		"act2:coop": _say(LINES.coop(), "letters:water")
 		"act2:bento": _say(LINES.bento(), "salt:camp")
-		"act2:ledger": _say(LINES.ledger(), "salt:done")
+		"act2:ledger": _say(LINES.ledger(), "salt:home")
+		"act2:folder": _say(LINES.teodoro_gate(false), "teodoro:done")
 		"act2:nonato": return _nonato_car()
 		"act2:race": return session.desert.drag.start_rival(story_race())
 		"vicente_reunion": return _talk_actor(world)
@@ -415,12 +433,24 @@ func _talk_actor(world: Dictionary) -> bool:
 			var race: Dictionary = RACE.data(world)
 			_say(grandstand_lines("digo" in race.wins, float(race.best.get("digo", 0.0))), "track_done")
 		"bank_night": _say(irene_night_lines(), "order:call")
-		"cave": _say(LINES.cave(LETTERS.complete(session.state.economy.snapshot().collectibles), session.state.economy.has_reward_receipt(LETTERS.CAR_RECEIPT)), "cave:done")
+		"cave":
+			# Conversa, flashback jogável da blitz pelos olhos do Vicente, e o resto da conversa.
+			var before := LINES.cave_before(LETTERS.complete(session.state.economy.snapshot().collectibles), session.state.economy.has_reward_receipt(LETTERS.CAR_RECEIPT))
+			_say_then(before, func(): _flashback("vicente", func(): _say(LINES.cave_after(), "cave:done")))
+		"water_tower": _say(LINES.water_tower(), "letters:done")
+		"helena_home": _say(LINES.helena_home(), "salt:done")
+		"brothers_fight":
+			if actor is BrotherFighter and actor.down: _say(LINES.brothers_fight_after(), "teodoro:chase")
+			else: return false
 		"cascavel":
-			if chain_at(world, "bet") == "cascavel": _say(LINES.cascavel(), "bet:race")
-			else: _say(LINES.cascavel_keys(_bet_won), "bet:done")
+			if chain_at(world, "bet") == "cascavel":
+				_say_then(LINES.cascavel(), func():
+					_finish_step("bet:race")
+					_vicente_shot())
+			else:
+				_say(LINES.cascavel_keys(_bet_won), "bet:done")
 		"convoy_motel": _say(LINES.convoy_motel(), "convoy:done")
-		"teodoro_motel": _say(LINES.teodoro_motel(), "teodoro:chase")
+		"teodoro_motel": _say(LINES.teodoro_motel(), "teodoro:fight")
 		"teodoro_gate": _say(LINES.teodoro_gate(true), "teodoro:done")
 		"finale_grandstand": _say(LINES.finale_grandstand(), "finale:defend")
 		"finale_gate": _say(LINES.finale_gate(), "finale:done")
@@ -535,6 +565,67 @@ func meet() -> bool:
 	_say(meet_lines(), "motel")
 	return true
 
+## Diálogo que termina chamando outra coisa (flashback, plano do Vicente), só com Dante vivo e solto.
+func _say_then(rows: Array, next: Callable) -> void:
+	var lines: Array = []
+	for row in rows: lines.append({"speaker": row[0], "message": row[1]})
+	session.show_dialogue(lines, func():
+		if session.world.gameplay.health > 0 and not session.arrest_pending and not session.rescue_pending and session.state.region_id == "desert": next.call())
+
+## Flashback jogável da blitz (sessão do prólogo, runtime/prologue/BlitzScene.gd). Sem o módulo, a conversa
+## segue direto; o módulo chama `next` quando o flashback termina.
+const BLITZ_PATH := "res://runtime/prologue/BlitzScene.gd"
+func _flashback(point_of_view: String, next: Callable) -> void:
+	if ResourceLoader.exists(BLITZ_PATH):
+		var blitz: Script = load(BLITZ_PATH)
+		if blitz != null and blitz.has_method("start") and blitz.start(session, point_of_view, next): return
+	next.call()
+
+## A2-08: um plano curto no Vicente perto do carro, antes da largada da aposta (o jogador vê antes do Dante).
+func _vicente_shot() -> void:
+	var campaign = get_parent()
+	var vicente = campaign.actors.get("vicente") if campaign != null and "actors" in campaign else null
+	if not is_instance_valid(vicente) or session.modal: return
+	var previous := get_viewport().get_camera_3d()
+	var shot := Camera3D.new()
+	shot.name = "Act2VicenteShot"
+	shot.fov = 40.0
+	add_child(shot)
+	shot.global_position = vicente.global_position + Vector3(2.2, 1.5, 2.2)
+	shot.look_at(vicente.global_position + Vector3.UP * 1.0)
+	shot.make_current()
+	get_tree().create_timer(1.6).timeout.connect(func():
+		if is_instance_valid(previous): previous.make_current()
+		if is_instance_valid(shot): shot.queue_free())
+
+# --- A2-12: briga dos irmãos e fuga do Teodoro -----------------------------------------------------
+## A fuga dura isto: chegou à obra antes, o Teodoro ainda está lá; depois, só a pasta no chão.
+const CHASE_SECONDS := 150.0
+const FIGHT_PUNCH := 6.0
+var _chase_deadline_msec := 0
+var _fight_clock := 0.0
+
+func _chase_lost() -> bool:
+	return _chase_deadline_msec > 0 and Time.get_ticks_msec() > _chase_deadline_msec
+
+static func folder_point() -> Vector3:
+	var point := Vector3(342.5, 0, -1810) + Vector3(0, 0, 33)
+	point.y = HM.surface_height(Vector2(point.x, point.z))
+	return point
+
+## Vicente parte para cima; cada soco que acerta tira um pouco de vida de Dante. Ele cai antes de morrer
+## (BrotherFighter), e aí a conversa abre.
+func _tick_fight() -> void:
+	if not is_instance_valid(actor) or not actor is BrotherFighter or actor.down: return
+	var player: Vector3 = session.world.player.global_position
+	var offset: Vector3 = player - actor.global_position
+	offset.y = 0
+	actor.chase(offset)
+	_fight_clock -= .3
+	if offset.length() < 1.4 and _fight_clock <= 0.0:
+		_fight_clock = 1.2
+		session.world.gameplay.damage_player(FIGHT_PUNCH, actor.global_position)
+
 func _say(rows: Array, next_stage: String, extra := {}) -> void:
 	var lines: Array = []
 	for row in rows: lines.append({"speaker": row[0], "message": row[1]})
@@ -570,6 +661,9 @@ func _finish_step(next_stage: String, extra := {}) -> void:
 				if car == null or not is_instance_valid(car) or not _grant_nonato_car(car): return
 			if not STATE.chain_advance(world, id, parts[1]): return
 			if from == "" and id not in ["brothers", "bet"]: session.show_message("Ato 2 · " + str(CHAIN_TITLES[id]))
+			if id == "teodoro" and parts[1] == "chase":
+				_chase_deadline_msec = Time.get_ticks_msec() + int(CHASE_SECONDS * 1000.0)
+				session.show_message("O Teodoro fugiu de carro para a obra da passagem norte. Corra.")
 		session.save_game()
 		return
 	if next_stage == "race":
@@ -623,7 +717,7 @@ static func objective_for(world: Dictionary) -> String:
 		"raul": return "Volte ao Raul no encontro da arrancada."
 	match chain_at(world, "order"):
 		"": return "Leve o manifesto a Irene, no Cobre."
-		"night": return "Encontre Irene na porta do Cobre depois das 20h (descanse no Horizonte)."
+		"night": return "Vá à porta dos fundos do Cobre depois das 20h (descanse no Horizonte)."
 		"call": return "Ligue para o Maciota do orelhão do Horizonte."
 	match chain_at(world, "brothers"):
 		"": return "Fale com Vicente no encontro da arrancada."
@@ -634,6 +728,7 @@ static func objective_for(world: Dictionary) -> String:
 		"": return "Pergunte à Dona Fátima, na Capela da Estrada."
 		"tower": return "Suba na torre de rádio da Rua Principal e ligue para o Maciota."
 		"coop": return "Peça o malote antigo pelo rádio da cooperativa de Santa Lua."
+		"water": return "Encontre Helena na caixa-d'água de Santa Lua."
 	match chain_at(world, "bet"):
 		"": return "Fale com Jessica no encontro da arrancada." if bool(STORY.data(world).jessica_met) else "Corra contra Jessica pelo quadro da concentração."
 		"cascavel": return "Fale com o Cascavel na concentração."
@@ -648,8 +743,10 @@ static func objective_for(world: Dictionary) -> String:
 	match chain_at(world, "salt"):
 		"": return "Mostre o lacre ao Seu Bento, nas Salinas."
 		"camp": return "Recupere o caderno no acampamento ao sul do leito seco."
+		"home": return "Vá à casa da Helena em Santa Lua."
 	match chain_at(world, "teodoro"):
 		"": return "Dona Lurdes chamou: vá ao Motel Oásis."
+		"fight": return "Vicente partiu pra cima. Derrube seu irmão."
 		"chase": return "Alcance Teodoro na obra da passagem norte."
 	match chain_at(world, "finale"):
 		"": return "Encontre Vicente na Arquibancada da reta."
@@ -664,6 +761,7 @@ func target_position() -> Vector3:
 	if not story_race().is_empty(): return STAGING
 	if chain_at(world, "finale") == "defend": return RAID_CENTER
 	if chain_at(world, "salt") == "camp": return ledger_point()
+	if chain_at(world, "teodoro") == "chase" and not is_instance_valid(actor): return folder_point()
 	if chain_at(world, "trunk") == "car" or (chain_at(world, "trunk") == "" and _car_for_trunk() != null): return BIA_POINT
 	var def := scene_def(world)
 	if not def.is_empty():
@@ -674,191 +772,198 @@ func target_position() -> Vector3:
 	return Vector3.INF
 
 # --- Falas --------------------------------------------------------------------------------------
-# Vicente lê os oito anos como abandono e não sabe da armação; nada aqui conta quem armou. Duas
-# sementes ficam plantadas para as missões seguintes (roteiro, A2-04 e A2-07): as cartas voltaram
-# com "destinatário desconhecido" para um endereço que nunca mudou, e o advogado dizia a Vicente que
-# Dante nunca aparecia.
+# Escritas pela seção "Como escrever as falas" de docs/roteiro-diretor-geteco-20261021.md: fala
+# curta, português falado, subtexto; ninguém explica o que o outro já sabe. Vicente lê os oito anos
+# como abandono e hoje rouba carro para os Cobras (a chave de cliente de Harbor no motel). Sementes
+# para depois: as cartas voltaram com "destinatário desconhecido" para um endereço que nunca mudou, e
+# o advogado mentia para os dois.
 
 static func meet_lines() -> Array:
 	return [
-		["Vicente", "Olha só. A turma inteira parou pra ver. Dante Ferraz no meu encontro."],
+		["Vicente", "Ó. Parou todo mundo. Dante Ferraz no meu encontro."],
 		["Dante", "Vicente."],
-		["Vicente", "Oito anos, Dante. Oito. Agora você aparece?"],
-		["Dante", "Eu tentei reabrir o caso. Pedi o processo de volta. Saí da polícia quando achei os primeiros indícios."],
-		["Vicente", "Indícios. Sabe o que eu tinha lá dentro? Uma parede e um prego pra riscar os dias."],
-		["Dante", "Eu sei que isso não devolve nada."],
-		["Vicente", "Aqui ninguém resolve nada na bala. Nem no distintivo. Essa turma é minha, e você é só mais um carro na fila."],
-		["Vicente", "Não vou fazer isso na frente deles. Motel Oásis, na Estrada do Sal. Quarto 6."],
-		["Vicente", "Se ainda souber chegar sem sirene."],
+		["Vicente", "Oito anos. (ri) Oito anos e cê chega de carro emprestado."],
+		["Dante", "Eu pedi o processo de volta. Saí da polícia por causa dele."],
+		["Vicente", "Que bonito. Lá dentro eu tinha uma parede e um prego. Riscava um dia por vez."],
+		["Dante", "Eu sei."],
+		["Vicente", "Sabe nada."],
+		["Vicente", "Aqui ninguém resolve nada na bala. Nem no distintivo. Essa turma é minha."],
+		["Vicente", "Motel Oásis, na Estrada do Sal. Quarto seis. Não vou fazer isso na frente deles."],
+		["Vicente", "E vem sem sirene, se ainda souber."],
 	]
 
 static func motel_lines(collectibles: Array) -> Array:
 	var found := LETTERS.found(collectibles)
 	var rows: Array = [
-		["Vicente", "Veio sozinho. Pelo menos isso."],
-		["Dante", "Foi aqui que você ficou quando saiu?"],
-		["Vicente", "Primeira noite livre. Luz acesa e porta aberta a noite inteira. A Dona Lurdes achou que eu ia fugir sem pagar."],
+		["Vicente", "Veio sozinho. Já é alguma coisa."],
+		["Dante", "Que chave é essa?"],
+		["Vicente", "(enfia no bolso) De carro. Tem carro no deserto, sabia?"],
+		["Dante", "Com chaveiro de oficina de Harbor."],
+		["Vicente", "Cê vai me revistar também? Senta aí."],
+		["Vicente", "Primeira noite que eu saí, dormi aqui. Luz acesa, porta aberta. A Dona Lurdes achou que eu ia fugir sem pagar."],
 	]
 	if found == 0:
 		rows.append_array([
-			["Vicente", "Eu escrevi pra você. Dez cartas. Voltaram todas com carimbo: destinatário desconhecido."],
-			["Dante", "Nunca chegou carta nenhuma, Vicente. Eu morei no mesmo endereço esses oito anos."],
-			["Vicente", "Então alguém achou que você não devia ler. Ou você está mentindo de novo."],
-			["Vicente", "Eu deixei as cartas pelo caminho que eu fiz. Harbor, a serra, aqui. Se quiser saber o que eu pensei lá dentro, vai ter que buscar."],
+			["Vicente", "Eu te escrevi. Dez vezes. Voltou tudo. Destinatário desconhecido."],
+			["Dante", "Eu morei no mesmo lugar os oito anos."],
+			["Vicente", "Então alguém não queria que cê lesse. Ou cê tá mentindo."],
+			["Vicente", "Deixei as cartas pelo caminho. Harbor, a serra, aqui. Quer saber o que eu pensei lá dentro? Vai buscar."],
 		])
 	elif found < LETTERS.IDS.size():
 		rows.append_array([
-			["Vicente", "O Maciota disse que você anda achando umas cartas minhas por aí."],
-			["Dante", String(TranslationServer.translate("Achei %d. Todas com carimbo de destinatário desconhecido. Eu morei no mesmo endereço esses oito anos.")) % found],
-			["Vicente", "Então alguém fez questão que você não lesse. Ou você está mentindo de novo."],
-			["Vicente", "Continua procurando. O que eu tinha pra dizer está tudo ali."],
+			["Vicente", "O Maciota disse que cê anda catando carta minha por aí."],
+			["Dante", String(TranslationServer.translate("Achei %d. Todas voltaram. Eu nunca mudei de endereço.")) % found],
+			["Vicente", "Então alguém fez questão. Ou cê tá mentindo."],
+			["Vicente", "Continua catando. O que eu tinha pra dizer tá ali."],
 		])
 	else:
 		rows.append_array([
-			["Vicente", "Você achou todas. Até a da mesa de pedra."],
-			["Dante", "Todas com carimbo de destinatário desconhecido. Eu morei no mesmo endereço esses oito anos, Vicente."],
-			["Vicente", "Então alguém fez questão que você não lesse. Isso eu vou querer entender."],
-			["Vicente", "Se você já viu o Coyote, sabe onde a gente vai conversar de verdade. Mas não hoje."],
+			["Vicente", "Achou todas. Até a da mesa de pedra."],
+			["Dante", "Todas voltaram. Eu nunca mudei de endereço, Vicente."],
+			["Vicente", "Então alguém fez questão. Isso eu vou querer saber quem."],
+			["Vicente", "Se cê já viu o Coyote, sabe onde a gente vai conversar de verdade. Hoje não."],
 		])
 	rows.append_array([
-		["Vicente", "A mãe perguntava de você até o fim. Eu dizia que você estava ocupado prendendo gente."],
-		["Dante", "Eu ia toda semana ao fórum. O seu advogado não me deixava chegar perto do processo."],
-		["Vicente", "O Teodoro? Ele jurava que você nunca apareceu."],
-		["Dante", "Então um de nós dois ouviu mentira por oito anos."],
-		["Vicente", "Não começa. Tem uma capela mais pra leste, na mesma estrada. Eu acendo uma vela lá toda semana."],
-		["Vicente", "Vou na frente. Se quiser terminar essa conversa, me encontra lá."],
+		["Vicente", "A mãe perguntava de você até o fim."],
+		["Dante", "E você dizia o quê?"],
+		["Vicente", "Que cê tava ocupado. Prendendo gente."],
+		["Dante", "Eu ia toda semana no fórum. Teu advogado nunca me deixou chegar perto."],
+		["Vicente", "O Teodoro? Ele jurava que cê nunca apareceu."],
+		["Dante", "Então um de nós ouviu mentira oito anos."],
+		["Vicente", "Para. (levanta) Tem uma capela mais pra frente, na mesma estrada. Eu acendo vela lá."],
+		["Vicente", "Vou na frente. Se quiser terminar, me acha lá."],
 	])
 	return rows
 
 static func bia_lines() -> Array:
 	return [
-		["Bia", "Então você é o irmão. O Vicente avisou que você ia aparecer por aqui."],
-		["Dante", "Avisou como?"],
-		["Bia", "\"Se ele vier, mostra a reta pra ele e não deixa ele se matar.\" Palavras dele."],
-		["Bia", "Aqui a prova é de oitocentos metros. Relação curta sai forte e acaba cedo; turbo grande pede giro. O carro tem que durar a reta inteira."],
-		["Bia", "Espaço troca a marcha. Shift é o nitro: guarda pro fim. Queimou a largada, volta pro fim da fila."],
+		["Bia", "Cê que é o irmão. O Vicente avisou."],
+		["Dante", "Avisou o quê?"],
+		["Bia", "\"Se ele aparecer, mostra a reta e não deixa ele se matar.\" Palavra por palavra."],
+		["Bia", "Oitocentos metros. Relação curta sai forte e morre cedo. Turbo grande pede giro."],
+		["Bia", "Espaço é marcha. Shift é nitro, guarda pro fim. Queimou a largada, vai pro fim da fila."],
 		["Dante", "E o Digo?"],
-		["Bia", "O Digo corre com todo mundo que chega. Ganhando ou perdendo, depois dele a oficina fica aberta pra você."],
-		["Bia", "Vai na concentração da largada e olha o quadro. Ele já está esperando."],
+		["Bia", "O Digo corre com todo mundo que chega. Ganhando ou perdendo, a oficina abre pra você depois."],
+		["Bia", "Vai lá no quadro da concentração. Ele já tá te esperando."],
 	]
 
 static func grandstand_lines(won: bool, seconds: float) -> Array:
 	var rows: Array = []
 	if seconds > 0.0:
 		# Vírgula decimal, como o Seu Zé escreve no caderno.
-		rows.append(["Seu Zé do Cronômetro", String(TranslationServer.translate("Oitocentos metros em %s segundos. Anotei no caderno, rapaz.")) % ("%.2f" % seconds).replace(".", ",")])
+		rows.append(["Seu Zé do Cronômetro", String(TranslationServer.translate("Oitocentos em %s. Anotei, rapaz.")) % ("%.2f" % seconds).replace(".", ",")])
 	else:
-		rows.append(["Seu Zé do Cronômetro", "Anotei a tua prova no caderno, rapaz."])
+		rows.append(["Seu Zé do Cronômetro", "Anotei tua prova, rapaz."])
 	rows.append_array([
-		["Vicente", "Ele anota todo mundo. Desde antes de eu ser preso."],
-		["Seu Zé do Cronômetro", "Teu irmão fazia essa reta num Coyote sem nitro. Largava igualzinho a você: segurando o giro até o último segundo."],
-		["Vicente", "Ganhou do Digo. Ele vai passar uma semana falando disso." if won else "Perdeu pro Digo. Pelo menos devolveu a pista inteira."],
-		["Dante", "Você ficou olhando de longe."],
-		["Vicente", "Fiquei. Queria ver se você corria pra ganhar ou pra provar alguma coisa."],
+		["Vicente", "Ele anota todo mundo. Antes de eu ser preso já anotava."],
+		["Seu Zé do Cronômetro", "Teu irmão fazia essa reta num Coyote sem nitro. Largava igualzinho: segurando o giro até doer."],
+		["Vicente", "Ganhou do Digo. Ele vai falar disso uma semana." if won else "Perdeu pro Digo. Pelo menos devolveu o carro inteiro."],
+		["Dante", "Cê ficou olhando de longe."],
+		["Vicente", "Queria ver se cê corria pra ganhar ou pra provar alguma coisa."],
 		["Dante", "E aí?"],
-		["Vicente", "Ainda não sei."],
-		["Vicente", "Eu corria aqui pra pagar o Teodoro. Cada largada era um mês de advogado. Quando me prenderam, o dinheiro já tinha acabado fazia tempo."],
-		["Dante", "Você pagava o advogado com corrida?"],
-		["Vicente", "Com o que mais? Polícia não empresta dinheiro pra irmão de preso."],
-		["Vicente", "Se quer mexer no passado, o Raul tem um papel que não é dele. Pergunta pro velho no posto Miragem."],
+		["Vicente", "Sei lá."],
+		["Vicente", "Eu corria aqui pra pagar o Teodoro. Cada largada, um mês de advogado. Quando me prenderam o dinheiro já tinha acabado."],
+		["Dante", "E agora cê corre pra pagar quem?"],
+		["Vicente", "(olha pra ele um tempo) O Raul tem um papel que não é dele. Pergunta pro velho no Miragem."],
 	])
 	return rows
 
 # A2-03 "Peso morto": Raul, o caixote, a Fiscal Rosa. A carga que passou na balança pesava duas
-# toneladas menos que a apreendida: alguém mexeu na carga depois. Ainda sem nome de ninguém.
+# toneladas menos que a apreendida. Dante já sabe das Salinas pela Vértice (M06-C).
 static func raul_start_lines() -> Array:
 	return [
-		["Raul", "Então o Vicente te mandou. Ele não manda ninguém a lugar nenhum, sabe? Deve gostar de você mais do que diz."],
-		["Dante", "Ele falou de um papel que não é seu."],
-		["Raul", "Semana passada um bitrem dos Cobras parou no Miragem pra abastecer. Saiu com pressa e deixou um caixote no pátio. Ninguém voltou pra buscar."],
-		["Raul", "Trinta anos de estrada, filho. Carga que ninguém volta pra buscar é carga que não devia existir."],
-		["Dante", "Você abriu?"],
-		["Raul", "Eu tenho neto. Deixei do lado das bombas, coberto. Abre você."],
-		["Raul", "Se tiver lacre, leva pra Rosa, na Balança. Ela pesa caminhão nessa estrada desde antes de você usar farda."],
+		["Raul", "O Vicente te mandou? Ele não manda ninguém em lugar nenhum. Deve gostar de você."],
+		["Dante", "Disse que cê tem um papel que não é seu."],
+		["Raul", "Semana passada parou um bitrem dos Cobras pra abastecer. Saiu correndo. Deixou um caixote no pátio."],
+		["Raul", "Ninguém voltou. Trinta anos de estrada, filho: carga que ninguém volta pra buscar não devia existir."],
+		["Dante", "Cê abriu?"],
+		["Raul", "Eu tenho neto. Tá do lado das bombas, coberto. Abre você."],
+		["Raul", "Se tiver lacre, leva pra Rosa, na Balança. Ela pesa caminhão nessa estrada desde antes de cê usar farda."],
 	]
 
 static func crate_lines() -> Array:
 	return [
-		["Dante", "Lacre de chumbo. Numeração da salina, raspada no fim."],
-		["Dante", "Mesmo modelo de lacre da carga da operação. Eu assinei o auto de apreensão com um desses na mão."],
-		["Dante", "Embaixo, um manifesto dobrado: o código da carga dos Cobras e um beneficiário que recebeu pelo Cobre."],
-		["Dante", "Pagamento dois dias antes da apreensão. Alguém sabia da operação antes de mim."],
-		["Dante", "Primeiro a balança. Depois o banco."],
+		["Dante", "Lacre de chumbo. Número da salina, raspado no fim."],
+		["Dante", "Igual ao da apreensão. Eu assinei o auto com um desses na mão."],
+		["Dante", "Manifesto. Código dos Cobras. Pagamento pelo Cobre."],
+		["Dante", "Dois dias antes da operação."],
 	]
 
 static func rosa_lines() -> Array:
 	return [
-		["Fiscal Rosa", "Lacre de chumbo da salina. Não vejo um desses desde aquela confusão de oito anos atrás."],
-		["Dante", "Que confusão?"],
-		["Fiscal Rosa", "A apreensão do rapaz das corridas. O caminhão dele passou por aqui na noite da operação. Eu mesma pesei."],
-		["Fiscal Rosa", "O papel da apreensão dizia vinte e duas toneladas de carga. Na minha balança ele passou com vinte."],
-		["Dante", "Duas toneladas a menos."],
-		["Fiscal Rosa", "Anotei no livro. Ninguém da polícia veio perguntar. Nem o advogado dele."],
-		["Fiscal Rosa", "Se a carga apreendida pesava mais do que a que passou aqui, alguém mexeu no caminhão depois da minha balança."],
-		["Dante", "Ou trocou a carga inteira."],
-		["Fiscal Rosa", "Isso não sou eu quem vai dizer. Mas a página do livro eu copio pra você. Se precisar de mim no fórum, eu vou."],
+		["Fiscal Rosa", "Lacre da salina. Faz tempo que eu não vejo um desses."],
+		["Dante", "Desde quando?"],
+		["Fiscal Rosa", "Desde aquela confusão. O rapaz das corridas. O caminhão dele passou aqui na noite da operação."],
+		["Fiscal Rosa", "Eu mesma pesei. Vinte toneladas."],
+		["Dante", "A apreensão diz vinte e duas."],
+		["Fiscal Rosa", "Eu sei o que a apreensão diz. (abre o livro) E sei o que a minha balança disse."],
+		["Fiscal Rosa", "Ninguém da polícia veio perguntar. Nem o advogado dele."],
+		["Dante", "Alguém mexeu na carga depois daqui."],
+		["Fiscal Rosa", "Isso cê que vai dizer, não eu. A página eu copio. E se precisar de mim no fórum, eu vou."],
 	]
 
 static func raul_end_lines() -> Array:
 	return [
-		["Raul", "Abriu. Pela tua cara, abriu."],
-		["Dante", "A Rosa pesou o caminhão do Vicente naquela noite. Duas toneladas a menos do que diz a apreensão."],
+		["Raul", "Abriu. Tá na tua cara."],
+		["Dante", "O caminhão do Vicente pesou duas toneladas a menos do que diz a apreensão."],
 		["Raul", "Então o menino carregou uma coisa e prenderam ele com outra."],
-		["Raul", "Pega isso. É o que o posto me pagou pra guardar o caixote. Não quero esse dinheiro."],
-		["Raul", "O manifesto tem número de transferência do Cobre. A Irene, do banco, lê esses papéis melhor que eu."],
-		["Raul", "E, Dante: o Vicente não pode saber disso por outra boca. Quando tiver certeza, conta você."],
+		["Raul", "Toma. O posto me pagou pra guardar o caixote. Não quero esse dinheiro."],
+		["Raul", "O manifesto tem número do Cobre. A Irene lê isso melhor que eu."],
+		["Raul", "E, Dante. O Vicente não pode saber disso pela boca de outro. Quando tiver certeza, fala você."],
 	]
 
-# A2-04 "A ordem alterada": a primeira pista de quem armou. A alteração que pôs Vicente na carga foi
-# autorizada por uma matrícula de polícia, 0417. De quem é a matrícula fica para o fim do ato.
+# A2-04 "A ordem alterada": a primeira pista de quem armou. A Irene não pode ir além do balcão; quem lê
+# o registro à noite é a Helena, que voltou para Santa Lua e faz as contas da cooperativa.
 static func irene_bank_lines() -> Array:
 	return [
-		["Irene", "Esse manifesto tem o número de uma transferência nossa. Deixa eu ver."],
-		["Irene", "Paga dois dias antes da data da apreensão. E a ordem de frete foi alterada depois de emitida."],
-		["Dante", "Alterada como?"],
-		["Irene", "A ordem original saiu sem motorista. O nome entrou depois."],
+		["Irene", "Essa transferência é nossa. (vira a tela pra si) Paga dois dias antes da apreensão."],
+		["Dante", "E a ordem de frete?"],
+		["Irene", "Saiu sem motorista. O nome entrou depois."],
 		["Dante", "Vicente Ferraz."],
-		["Irene", "Não posso imprimir registro interno aqui dentro. Tem câmera, tem gerente regional, tem quem pergunte."],
-		["Irene", "Depois das oito da noite eu fecho o caixa. Me espera na porta. Sozinho."],
+		["Irene", "Daqui eu não passo. Tem câmera, tem gerente regional."],
+		["Irene", "Mas tem uma moça de Harbor fazendo as contas da cooperativa. Conhece esse sistema melhor que eu."],
+		["Irene", "Ela busca o extrato da cooperativa depois das oito. Pela porta dos fundos."],
 	]
 
 static func irene_night_lines() -> Array:
 	return [
-		["Irene", "Pontual. O Vicente também era, quando vinha pagar o advogado."],
-		["Irene", "Cópia da ordem original e da alteração. Não fui eu que te dei."],
-		["Dante", "A alteração tem assinatura?"],
-		["Irene", "Nome, não. Tem o campo de autorização com uma matrícula: zero, quatro, um, sete."],
-		["Dante", "Isso não é matrícula de banco."],
-		["Irene", "Não. Quando a carga é apreendida, o sistema aceita matrícula de órgão público. Polícia, fiscalização."],
-		["Dante", "Matrícula de polícia. Do mesmo formato da minha."],
-		["Irene", "Então quem pôs teu irmão naquele caminhão usava a mesma farda que você."],
-		["Irene", "Agora vai, antes que alguém veja a gente aqui."],
+		["Helena", "Você não sabe mesmo ficar quieto."],
+		["Dante", "Helena."],
+		["Helena", "A Irene me ligou. Disse que tinha um homem de Harbor fazendo pergunta errada."],
+		["Helena", "(entrega uma folha) A ordem original e a alteração. Olha o campo de autorização."],
+		["Dante", "Zero, quatro, um, sete."],
+		["Helena", "Eu vi esse número cinco anos seguidos. Na conta dos Cobras, em Harbor."],
+		["Dante", "Isso é matrícula de polícia."],
+		["Helena", "Do mesmo formato da sua?"],
+		["Dante", "(silêncio)"],
+		["Helena", "Vai embora antes que alguém veja a gente. (vira, para) Santa Lua tem um rádio só. Se você aparecer, todo mundo vai saber."],
 	]
 
 static func phone_lines() -> Array:
 	return [
 		["Maciota", "Dante? Essa hora? Aconteceu alguma coisa com o Vicente?"],
-		["Dante", "Ele está bem. Preciso que você descubra de quem é uma matrícula. Zero, quatro, um, sete."],
-		["Maciota", "Matrícula de polícia? Dante, isso vai fazer barulho."],
-		["Dante", "Foi essa matrícula que pôs o Vicente naquele caminhão."],
-		["Maciota", "Eu conheço gente que conhece gente. Vai demorar."],
-		["Maciota", "E ele? Você já contou?"],
-		["Dante", "Ainda não. Primeiro eu preciso ter certeza."],
-		["Maciota", "Não demora demais. Oito anos já foi tempo de sobra pra ele achar que você escondia coisa."],
+		["Dante", "Ele tá bem. Preciso saber de quem é uma matrícula. Zero, quatro, um, sete."],
+		["Maciota", "Matrícula de polícia? Dante, isso faz barulho."],
+		["Dante", "Foi ela que pôs o Vicente no caminhão."],
+		["Maciota", "(suspira) Conheço gente que conhece gente. Vai demorar."],
+		["Maciota", "E a moça do banco? A Helena tá aí?"],
+		["Dante", "Por que?"],
+		["Maciota", "Nada. Cê respondeu rápido demais, só isso."],
+		["Maciota", "E fala com teu irmão logo. Oito anos já foi tempo de sobra pra ele achar que cê escondia coisa."],
 	]
 
 static func chapel_lines() -> Array:
 	return [
-		["Vicente", "Eu não sei mais rezar. Só sento aqui e fico olhando a vela."],
+		["Vicente", "Eu não sei mais rezar. Só sento e fico olhando a vela."],
 		["Dante", "A mãe rezava por nós dois."],
 		["Vicente", "Por você mais. Dizia que quem prende os outros precisa de mais proteção."],
-		["Vicente", "Quando eu estava lá dentro, caía um depósito todo mês na minha conta da cantina. Sem nome. Eu sabia de quem era."],
-		["Vicente", "Não gastei. Mil e quinhentos. Está tudo aqui, no envelope."],
-		["Dante", "Não era dívida, Vicente."],
-		["Vicente", "Pra mim era. Pega. Agora não é mais."],
-		["Vicente", "Quer ficar no deserto? Fica. Mas aqui você é piloto, não policial."],
-		["Vicente", "Corre com o Digo na reta. Ganhando ou perdendo, mostra que respeita a pista. Depois a gente fala daquela noite."],
-		["Dante", "E se eu provar que alguém armou aquilo pra você?"],
+		["Vicente", "Lá dentro caía um depósito todo mês na minha conta da cantina. Sem nome. Eu sabia de quem era."],
+		["Vicente", "Não gastei. Mil e quinhentos. Tá aqui."],
+		["Dante", "Não era dívida."],
+		["Vicente", "Pra mim era. Pega. Pronto, agora não é mais."],
+		["Vicente", "Quer ficar no deserto? Fica. Mas aqui cê é piloto, não polícia."],
+		["Vicente", "Corre com o Digo na reta. Ganha, perde, tanto faz. Mostra que respeita a pista. Depois a gente fala daquela noite."],
+		["Dante", "E se eu provar que armaram pra você?"],
 		["Vicente", "Então prova. Promessa eu já ouvi demais."],
 	]
 
@@ -870,3 +975,28 @@ class Raider extends "res://gameplay/CobraAgent.gd":
 		set_meta("region_id", "desert")
 		set_meta("character_name", "Cobra")
 
+## Vicente na briga do motel (A2-12): apanha, cambaleia e cai sentado antes de morrer; nunca morre.
+## Anda na direção de Dante para trocar socos (a mesma física de chão do DesertCharacter).
+class BrotherFighter extends "res://runtime/desert/DesertCharacter.gd":
+	const DOWN_AT := 35.0
+	const SPEED := 2.4
+	var down := false
+	var _push := Vector3.ZERO
+
+	func chase(offset: Vector3) -> void:
+		if down: return
+		_push = offset.normalized() * SPEED if offset.length() > 1.2 else Vector3.ZERO
+		if is_instance_valid(visual) and offset.length() > .1: visual.rotation.y = atan2(offset.x, offset.z)
+
+	func _physics_process(delta: float) -> void:
+		velocity = Vector3(_push.x, maxf(-20.0, velocity.y - 18.0 * delta), _push.z)
+		move_and_slide()
+
+	func receive_damage(amount: float, _source: Node = null) -> void:
+		if down or not is_finite(amount) or amount <= 0: return
+		health = maxf(DOWN_AT, health - amount)
+		if is_instance_valid(visual) and visual.has_method("take_hit"): visual.take_hit(Vector3.ZERO, clampf(amount / 35.0, .3, 1.0))
+		if health <= DOWN_AT:
+			down = true
+			_push = Vector3.ZERO
+			set_talking(false)

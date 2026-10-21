@@ -8,6 +8,9 @@ extends SceneTree
 ## Sem --no-save de propósito: a recarga precisa de gravação de verdade. O save vai só para o arquivo
 ## isolado do fixture (menu_save_path + V2Launch.selected_path, devolvido no fim), como em
 ## desert_village_homes_session.gd; o save pessoal não é lido nem gravado.
+## Teste leve: `--from=<missão>` monta pelo próprio livro de etapas o estado das missões anteriores (como
+## se tivessem sido jogadas) e começa ali; `--to=<missão>` para depois dela. Missões: order, brothers, cave,
+## letters, bet, trunk, convoy, salt, teodoro, finale. Sem os dois, roda o ato inteiro (~25 min).
 ## Os deslocamentos entre os lugares são teleporte (o teste não prova o caminho dirigido) e as falas
 ## avançam pelo mesmo _advance_dialogue do clique. Capturas na pasta de saída do fixture (evidence/).
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
@@ -62,6 +65,12 @@ func run() -> void:
 	if not await ready_world(): finish(); return
 	var session = world.session
 	check(world.production.store.path == path and not world.production.no_save, "grava só no arquivo isolado do fixture")
+	var from := arg_value("--from")
+	if not from.is_empty():
+		await run_from(from, arg_value("--to"))
+		if arg_value("--to").is_empty(): await final_reload(path)
+		finish()
+		return
 	await wait_until(func(): return STORY.data(session.state.world_state).arrived, 8000)
 	check(STORY.data(session.state.world_state).arrived and STATE.stage(session.state.world_state) == "", "chegada registrada, missão ainda não começou")
 	check(session.desert.objective() == "Encontre Vicente no encontro da arrancada.", "objetivo aponta o encontro (%s; hora %.2f)" % [session.desert.objective(), session.weather.time_of_day * 24.0])
@@ -418,7 +427,7 @@ func order_mission() -> void:
 	var count := await close_dialogue()
 	check(count >= REUNION.irene_bank_lines().size(), "falas da Irene inteiras (%d)" % count)
 	check(STATE.chain_stage(state, "order") == "night", "Irene marca a porta à noite")
-	check(session.desert.objective() == "Encontre Irene na porta do Cobre depois das 20h (descanse no Horizonte).", "objetivo aponta a porta à noite")
+	check(session.desert.objective() == "Vá à porta dos fundos do Cobre depois das 20h (descanse no Horizonte).", "objetivo aponta a porta à noite")
 	check(await session.leave_place(), "sai do Cobre")
 	await frames(30)
 	# De dia ela não está na porta.
@@ -427,6 +436,7 @@ func order_mission() -> void:
 	check(not is_instance_valid(session.desert.story.reunion.actor), "de dia Irene não espera na porta")
 	set_hour(21.0)
 	if not await visit("bank_night"): return
+	check(session.desert.story.reunion.actor.identity_id == "helena", "A2-04: Helena espera na porta do Cobre")
 	await photo("08-irene-noite")
 	if not await talk("bank_night", REUNION.irene_night_lines().size()): return
 	check(STATE.chain_stage(state, "order") == "call", "Irene entrega a matrícula 0417")
@@ -581,7 +591,13 @@ func cave_mission() -> void:
 	check(world.session.desert.objective() == "Encontre Vicente na caverna da mesa de pedra, ao sul do leito seco.", "A2-06: objetivo aponta a caverna")
 	if not await visit("cave"): return
 	await photo("10-caverna")
-	if not await talk("cave", 10): return
+	# Sem o módulo do flashback (sessão do prólogo), a conversa segue direto: antes e depois.
+	var expected: int = ACT2_LINES.cave_before(false, false).size()
+	if not await talk("cave", expected): return
+	await wait_until(func(): return world.session.dialogue_open or REUNION.chain_at(state, "cave") == "done", 20000)
+	if world.session.dialogue_open:
+		var rest := await close_dialogue()
+		check(rest >= ACT2_LINES.cave_after().size(), "A2-06: segunda parte da conversa depois do flashback (%d)" % rest)
 	chain_done("cave", "A2-06")
 
 func letters_mission() -> void:
@@ -594,6 +610,10 @@ func letters_mission() -> void:
 	check(REUNION.chain_at(state, "letters") == "coop", "A2-07: torre manda para Santa Lua")
 	if not await use_point(REUNION.coop_point(), "act2:coop", around, ACT2_LINES.coop().size()): return
 	await photo("11-santa-lua")
+	check(REUNION.chain_at(state, "letters") == "water", "A2-07: rádio manda para a caixa-d'água")
+	if not await visit("water_tower"): return
+	check(world.session.desert.story.reunion.actor.identity_id == "helena", "A2-07: Helena na caixa-d'água")
+	if not await talk("water_tower", ACT2_LINES.water_tower().size()): return
 	chain_done("letters", "A2-07")
 
 func bet_mission() -> void:
@@ -688,6 +708,9 @@ func salt_mission() -> void:
 		if is_instance_valid(outlaw) and not outlaw.dead: world.gameplay._damage(outlaw, 10000.0, world.player)
 	await frames(20)
 	if not await use_point(center, "act2:ledger", [Vector3(0, 0, 2.0), Vector3(2.0, 0, 0), Vector3(-2.0, 0, 0), Vector3(0, 0, -2.0), Vector3(0, 0, 3.5)], ACT2_LINES.ledger().size()): return
+	check(REUNION.chain_at(state, "salt") == "home", "A2-11: caderno leva à casa da Helena")
+	if not await visit("santa_lua"): return
+	if not await talk("santa_lua", ACT2_LINES.helena_home().size()): return
 	chain_done("salt", "A2-11")
 
 func teodoro_mission() -> void:
@@ -697,10 +720,30 @@ func teodoro_mission() -> void:
 	if not await visit("motel"): return
 	check(session.desert.story.reunion.actor.identity_id == "teodoro", "A2-12: Teodoro no motel")
 	if not await talk("motel", ACT2_LINES.teodoro_motel().size()): return
+	check(REUNION.chain_at(state, "teodoro") == "fight", "A2-12: Vicente parte pra cima")
+	var reunion = session.desert.story.reunion
+	await wait_until(func(): return is_instance_valid(reunion.actor) and reunion.actor is REUNION.BrotherFighter, 15000)
+	if not check(is_instance_valid(reunion.actor) and reunion.actor is REUNION.BrotherFighter, "A2-12: Vicente na briga"): return
+	var fighter = reunion.actor
+	check(session.desert.nearest_action().get("target", "") != "vicente_reunion", "A2-12: sem conversa no meio da briga")
+	world.player.teleport(fighter.global_position + Vector3(1.0, .08, 0))
+	var hits := 0
+	while not fighter.down and hits < 20:
+		world.gameplay._damage(fighter, 12.0, world.player)
+		hits += 1
+		await frames(6)
+	check(fighter.down and not fighter.dead and is_instance_valid(fighter), "A2-12: Vicente cai sem morrer (%d golpes)" % hits)
+	await photo("13-briga")
+	if not await talk("motel", ACT2_LINES.brothers_fight_after().size()): return
 	check(REUNION.chain_at(state, "teodoro") == "chase", "A2-12: Teodoro foge para a obra")
 	if not await visit("gate"): return
+	check(reunion.actor.identity_id == "teodoro", "A2-12: chegou a tempo, Teodoro ainda na obra")
 	await photo("13-teodoro-obra")
-	if not await talk("gate", ACT2_LINES.teodoro_gate(true).size()): return
+	# O caminho de quem chega tarde: tempo esgotado, Teodoro some e fica a pasta no chão.
+	reunion._chase_deadline_msec = 1
+	await wait_until(func(): return not is_instance_valid(reunion.actor), 3000)
+	check(not is_instance_valid(reunion.actor), "A2-12: tempo esgotado, Teodoro passou pela obra")
+	if not await use_point(REUNION.folder_point(), "act2:folder", [Vector3(0, 0, 1.2), Vector3(1.2, 0, 0), Vector3(-1.2, 0, 0), Vector3(0, 0, -1.2)], ACT2_LINES.teodoro_gate(false).size()): return
 	chain_done("teodoro", "A2-12")
 	check(not NORTH.completed(state), "A2-12: a obra continua fechada")
 
@@ -779,3 +822,81 @@ func diagnose_save(session) -> void:
 		var copy: Dictionary = snap.duplicate(true)
 		copy.world.erase(key)
 		if GS.new().restore_snapshot(copy): print("ACT2_REUNION INFO diagnóstico: sem world.%s fica válido" % key)
+
+# --- Teste leve: começar no meio do ato ------------------------------------------------------------
+
+const DIGO_PROGRESS := preload("res://systems/campaign/DigoProgress.gd")
+const MISSION_STEPS := ["order", "brothers", "cave", "letters", "bet", "trunk", "convoy", "salt", "teodoro", "finale"]
+
+func arg_value(name: String) -> String:
+	for argument in OS.get_cmdline_user_args():
+		if str(argument).begins_with(name + "="): return str(argument).trim_prefix(name + "=")
+	return ""
+
+func run_from(from: String, to: String) -> void:
+	if not check(from in MISSION_STEPS, "--from conhecido (%s)" % from): return
+	await seed_until(from)
+	world.gameplay.god_mode = true
+	var started := false
+	for id in MISSION_STEPS:
+		if id == from: started = true
+		if not started: continue
+		match id:
+			"order": await order_mission()
+			"brothers": await brothers_mission()
+			"cave": await cave_mission()
+			"letters": await letters_mission()
+			"bet": await bet_mission()
+			"trunk": await trunk_mission()
+			"convoy": await convoy_mission()
+			"salt": await salt_mission()
+			"teodoro": await teodoro_mission()
+			"finale": await finale_mission()
+		if id == to: return
+
+## Marca as missões anteriores como feitas pelo próprio livro de etapas, com os recibos que elas pagam.
+func seed_until(stop: String) -> void:
+	var session = world.session
+	var w: Dictionary = session.state.world_state
+	var e = session.state.economy
+	if STATE.stage(w) != "done":
+		STATE.advance(w, "motel")
+		STATE.advance(w, "chapel")
+		e.grant_world_reward({"id": STATE.ENVELOPE_RECEIPT, "kind": "cash", "amount": STATE.ENVELOPE_AMOUNT})
+		STATE.advance(w, "done")
+		STORY.mark(w, "met_vicente")
+	if not STATE.track_complete(w):
+		STATE.track_advance(w, "race")
+		DIGO_PROGRESS.complete_desert_race(w, DIGO_PROGRESS.DESERT_RACE_ID, true)
+		STATE.track_advance(w, "done")
+	for id in STATE.ORDER:
+		if id == stop: break
+		await seed_chain(id)
+	check(CONTRACT.valid(w, e._data), "estado montado até %s é válido" % stop)
+	session.save_game()
+
+func seed_chain(id: String) -> void:
+	var session = world.session
+	var w: Dictionary = session.state.world_state
+	var e = session.state.economy
+	if STATE.chain_complete(w, id): return
+	if id == "bet": STORY.mark(w, "jessica_met")
+	var path: Array = STATE.CHAIN[id].stages.filter(func(st): return st != "" and st != "done")
+	if id == "brothers": path = ["race", "won"]
+	if id == "trunk": path = ["car"]
+	for st in path: STATE.chain_advance(w, id, st)
+	var extra := {}
+	if id == "trunk":
+		var point: Vector3 = world.player.global_position + Vector3(6, .2, 0)
+		session.controller.region.prepare_collision_at(point)
+		await frames(2)
+		var car = session.controller.spawn_vehicle(STATE.NONATO_CAR_ARCHETYPE, point, 0.0)
+		if check(is_instance_valid(car), "carro do Nonato montado para o estado"):
+			car.vehicle_id = STATE.NONATO_CAR_ID
+			if not w.has("desert_fleet"): w.desert_fleet = {}
+			w.desert_fleet[STATE.NONATO_CAR_ID] = preload("res://runtime/FleetState.gd").capture(car, "desert")
+			e.grant_reward(STATE.NONATO_CAR_RECEIPT, 0)
+			session.desert._track_owned(car)
+			extra = {"trunk_car": STATE.NONATO_CAR_ID}
+	var result: Dictionary = STATE.chain_finish(w, e, id, extra)
+	check(result.ok, "estado: %s marcada como feita" % id)

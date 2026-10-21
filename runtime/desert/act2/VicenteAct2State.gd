@@ -125,7 +125,8 @@ const CHAIN := {
 	# A2-06: Vicente espera na caverna do Coyote; uma conversa só.
 	"cave": {"key": "vicente_act2_cave", "stages": ["", "done"], "flag": "", "receipt": "", "amount": 0},
 	# A2-07: Dona Fátima na capela, torre de rádio, cooperativa de Santa Lua.
-	"letters": {"key": "vicente_act2_letters", "stages": ["", "tower", "coop", "done"], "flag": "",
+	# Roteiro de diretor (21/10): "water" é a caixa-d'água de Santa Lua com a Helena, antes da conclusão.
+	"letters": {"key": "vicente_act2_letters", "stages": ["", "tower", "coop", "water", "done"], "flag": "",
 		"receipt": "desert_act2_coop_radio", "amount": 1200},
 	# A2-08: a prova da Jessica (a que já existe) é pré-requisito; depois Jessica, Cascavel, a aposta e a chave.
 	"bet": {"key": "vicente_act2_bet", "stages": ["", "cascavel", "race", "keys", "done"], "flag": "",
@@ -137,10 +138,12 @@ const CHAIN := {
 	"convoy": {"key": "vicente_act2_convoy", "stages": ["", "motel", "done"], "flag": "",
 		"receipt": "desert_act2_convoy", "amount": 1500},
 	# A2-11: Seu Bento nas Salinas e o caderno no acampamento da serra.
-	"salt": {"key": "vicente_act2_salt", "stages": ["", "camp", "done"], "flag": "",
+	# Roteiro de diretor: "home" é a casa da Helena revirada em Santa Lua, depois do caderno.
+	"salt": {"key": "vicente_act2_salt", "stages": ["", "camp", "home", "done"], "flag": "",
 		"receipt": "desert_act2_salt_ledger", "amount": 2200},
 	# A2-12: Teodoro no Motel Oásis e a pasta largada na obra da passagem norte.
-	"teodoro": {"key": "vicente_act2_teodoro", "stages": ["", "chase", "done"], "flag": "", "receipt": "", "amount": 0},
+	# Roteiro de diretor: "fight" é a briga dos irmãos no estacionamento do motel, antes da fuga.
+	"teodoro": {"key": "vicente_act2_teodoro", "stages": ["", "fight", "chase", "done"], "flag": "", "receipt": "", "amount": 0},
 	# A2-13: Arquibancada, o ataque dos Cobras ao encontro e Vicente na passagem norte (abre o ato 3).
 	"finale": {"key": "vicente_act2_finale", "stages": ["", "defend", "gate", "done"], "flag": "delivered",
 		"receipt": "desert_act2_finale", "amount": 5000},
