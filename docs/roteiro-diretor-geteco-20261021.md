@@ -43,6 +43,29 @@ construído no ato 1 e concretizado no ato 2.
   (corrida, briga, fuga, infiltração).
 - **O motivo da carta.** O jogo abre e fecha com uma carta. É a rima do filme.
 
+## Como escrever as falas
+
+As falas são lidas em legenda e depois gravadas; têm que soar como gente, não como roteiro de tutorial.
+
+- **Ninguém explica o que o outro já sabe.** Nada de "como você sabe, oito anos atrás...". A informação
+  sai na briga, na piada, na pergunta que fica sem resposta.
+- **Fala curta.** Uma ideia por fala. Se a fala tem vírgula, ponto e vírgula e "porque", corte em duas
+  ou corte pela metade.
+- **Português falado.** "Tá", "pra", "cê", "tô", frase que começa com "E" ou "Mas", pergunta respondida
+  com outra pergunta. Gíria só onde o personagem usaria (o Neco fala diferente da Irene).
+- **Cada um tem um jeito.** Dante fala pouco e seco. Vicente provoca e ri na hora errada. Helena é
+  precisa e irônica, nunca derramada. Maciota faz piada para não chorar. O Neco reclama de tudo e ajuda
+  mesmo assim. Prado é calmo e educado, o que é pior.
+- **O subtexto carrega a cena.** O que importa quase nunca é dito: o romance está em "Então cobra",
+  não em "eu gosto de você". A culpa de Dante está no que ele não responde.
+- **Deixe a ação falar.** Se a câmera mostra (o dedo sobre o alarme, a mala com a roda quebrada), a fala
+  não repete. Melhor uma cena sem fala do que uma fala que descreve a imagem.
+- **Objetivo não é fala.** O que o jogador tem que fazer vai no objetivo da tela. O personagem dá o
+  motivo, não as coordenadas ("o gerente saiu, tem dois minutos", não "vá até o cofre e abra a porta").
+- **Teste em voz alta.** Se não dá para falar sem tropeçar, ou ninguém falaria assim num bar, reescreva.
+- **Releitura das falas que já existem:** as falas do ato 2 que estão no jogo (`runtime/desert/act2/`)
+  foram escritas antes deste guia e passam por uma revisão nesse padrão antes da gravação das vozes.
+
 ---
 
 ## Prólogo — A noite da operação (oito anos antes)
@@ -71,7 +94,7 @@ Título: *Oito anos depois.*
 
 ## Ato 1 — Harbor: "O irmão que não veio"
 
-*O que já existe (M00 a M07), com três costuras novas: Helena, Prado e o Vicente culpado.*
+*As oito missões que já existem (M00 a M07), mais quatro novas (M02-B, M04-B, M05-B, M06-B) que constroem a Helena, o Neco e o Vicente culpado.*
 
 ### M00 · Chegada
 A ligação em casa (já existe). Dante de mochila, o barco, Maciota reconhecendo-o pela foto do histórico.
@@ -97,33 +120,160 @@ Plano de saída: Dante olha para trás pela porta de vidro; ela já está atende
 Dez falas no carro, o limpador batendo. Ela conta que a família é de Santa Lua, "no deserto, onde ninguém
 precisa de banco". Ele não conta nada; ela percebe. Desce sem se despedir direito.
 
-### M02 a M04 · Cobras
-Como estão. **Novo em M02:** o carro da cliente que Dante guincha tem o chassi raspado. Ferrugem ri:
-*"Teu irmão é bom nisso."* Primeira pista de que Vicente rouba carros hoje.
+### M02 · Dentro do território
+Como está. **Novo:** o carro da cliente que Dante guincha tem o chassi raspado. Ferrugem passa o dedo
+na marca e ri sozinho:
+
+> **Ferrugem:** Serviço limpo. Conheço a mão.
+> **Dante:** De quem?
+> **Ferrugem:** (dá de ombros) Pergunta pro teu irmão.
+
+### M02-B · Cobrança em dobro — *nova; Helena e Neco*
+*~25 min. Banco North Pier, ruas de Ashbend, baia do Neco.*
+
+**INT. BANCO NORTH PIER — FIM DE EXPEDIENTE.** Portas fechadas, só a luz do caixa acesa. Helena não
+cumprimenta. Vira o monitor para ele.
+
+> **Helena:** Olha a dona Cida. Pagou a parcela do carro dia cinco.
+> **Dante:** Tá.
+> **Helena:** E pagou de novo dia cinco. Pra uma conta sem nome.
+> **Dante:** Erro do banco?
+> **Helena:** Erro do banco eu conserto. Isso aqui eu só posso imprimir.
+
+Ela empurra uma folha dobrada pelo balcão. Três nomes, três endereços.
+
+> **Helena:** Quem não paga a segunda some com o carro. Eles chamam de garantia.
+> **Dante:** E por que você tá me mostrando?
+> **Helena:** Porque o Maciota disse que você não sabe ficar quieto. (pausa) Eu também não, mas eu tenho
+> chefe.
+
+**EXT. BAIA DO NECO — NOITE.** Neco limpa as mãos num pano mais sujo que as mãos.
+
+> **Neco:** Guinchar de volta carro que os Cobras tomaram? (ri) Cê quer morrer de qual jeito?
+> **Dante:** Você paga eles também.
+> **Neco:** Todo mundo paga. (joga o pano no capô) Tá. Mas o diesel é por sua conta.
+
+Os três carros, cada um num canto de Ashbend (o guincho e os reboques que já existem), com os Cobras
+chegando no terceiro. A missão fecha na porta da dona Cida, que sai de chinelo, vê o carro e põe a mão na
+boca. Dante já está engatando a ré.
+
+> **Direção:** a câmera fica em Helena, que veio ver de longe, encostada num poste com o crachá ainda no
+> pescoço. Ela vai embora antes de Dante olhar.
+
+### M03 · Prova de rua e M04 · A conta chega
+Como estão.
+
+### M04-B · O desmanche do Neco — *nova; o Vicente culpado aparece*
+*~20 min. Pátio e prensa do Neco.*
+
+**EXT. PÁTIO DO NECO — NOITE.** Neco tem uma entrega para a prensa e não quer olhar para o carro enquanto
+fala dele. Dante abre o capô: chassi raspado, a mesma mão de M02. No porta-luvas, um recibo da oficina do
+Maciota.
+
+> **Neco:** Não abre isso não, cara.
+> **Dante:** Esse carro é de cliente do Maciota.
+> **Neco:** Era. Agora é ferro.
+> **Dante:** Quem trouxe?
+> **Neco:** Um moleque que corre lá pro deserto. Paga a prensa adiantado, nunca pede nota. (pausa)
+> Falou que o irmão era polícia. Achei que era papo.
+
+Dante fica olhando o recibo tempo demais. Neco percebe.
+
+> **Neco:** Ah, não. Não me diz.
+
+**A escolha** (pequena, sem mudar a história principal):
+- **Prensa:** Dante manda o carro para a prensa (a entrega de sucata que já existe). Neco: *"Tá bom.
+  Esse eu não vi, você não viu."* Ele passa a avisar quando chega carro raspado.
+- **Devolver:** Dante devolve o carro ao cliente do Maciota. Neco: *"Cê vai me arrumar problema, Ferraz."*
+  Ele esfria por um tempo, e o Maciota fica sabendo quem andou roubando os clientes dele.
+
+> **Direção:** fim em plano fechado no recibo com o nome do cliente; corte para o Maciota, na oficina,
+> tirando os óculos devagar.
 
 ### M05 · Serviço com Jessica — *assaltar o banco de Helena*
 O saque real que já existe, agora no banco onde Helena trabalha. Dante de máscara. **Plano-sequência:**
 ele passa pelo caixa, Helena reconhece as mãos, ou a voz, e segura o dedo sobre o alarme. Conta até três
 com os lábios. Aperta só depois que ele sai.
 
-> **Direção:** o jogador não vê o rosto dela reagindo; vê só o dedo parado sobre o botão, e o número
-> do contador de fuga ganhando três segundos.
+> **Direção:** o jogador não vê o rosto dela reagindo; vê só o dedo parado sobre o botão, e o contador de
+> fuga ganhando três segundos. Nenhuma fala.
+
+### M05-B · Posto de lavagem — *nova; Helena é o cérebro*
+*~30 min. Posto de gasolina dos Cobras, à noite.*
+
+**EXT. CAIS — NOITE.** Dias depois do assalto. Helena está encostada na Monaliza, de braços cruzados,
+como se o carro fosse dela.
+
+> **Helena:** Me suspenderam.
+> **Dante:** Eu sei.
+> **Helena:** Disseram que eu demorei pra apertar o alarme.
+> **Dante:** Demorou?
+> **Helena:** Três segundos. (olha pra ele) Você guarda a arma pra entrar no banco e depois volta de
+> máscara pra roubar ele. Eu queria entender esse homem.
+> **Dante:** E entendeu?
+> **Helena:** Não. Mas o dinheiro que vocês levaram era dos Cobras. Eu fazia a conta deles.
+> **Dante:** Então você sabe onde tem mais.
+> **Helena:** (quase ri) Eu não disse isso.
+> **Dante:** Não precisou.
+
+O posto dos Cobras fecha à meia-noite, mas o cofre só esvazia de manhã: o dinheiro das cobranças em dobro
+passa ali antes de virar depósito. Helena não vai. Fica no telefone, vendo pela câmera do posto, que ela
+sabe acessar porque o banco instalou.
+
+Durante o assalto (arrombar, recolher, fugir com estrelas, como no banco, num lugar menor e mais rápido),
+as falas dela são curtas e práticas, nunca explicativas:
+
+> **Helena:** O gerente saiu. Tem dois minutos.
+> **Helena:** Gaveta de baixo. Não, a outra.
+> **Helena:** Viatura. Esquerda. Agora.
+> **Helena:** (respirando) Tá. Tá bom. Você saiu.
+
+Jessica pode ir junto se o jogador ligar para ela; sem ela, a fuga é no carro de Dante. O dinheiro termina
+em envelopes deixados nas portas da lista de M02-B. Dante não assina nenhum.
+
+> **Direção:** a voz de Helena no telefone é o único som além do motor durante a fuga. Ela diz "esquerda"
+> um segundo antes de o jogador ver a viatura.
 
 ### M06 · Cortar o abastecimento
 Como está. **Novo:** nos registros de carga aparece um carimbo de conferência com um número que o jogador
 ainda não entende: **0417**.
 
-### M07 · A última volta — *Helena sabe*
+### M06-B · O que a Helena guardou — *nova; a primeira confiança*
+*~25 min. Banco North Pier, à noite.*
+
+A auditoria do banco começa segunda. Na gaveta trancada do caixa dela estão os documentos pessoais e uma
+cópia, feita escondida, de cinco anos da conta dos Cobras. Se a auditoria achar, ela vai presa. Se os
+Cobras acharem, coisa pior.
+
+> **Helena:** Eu não posso entrar lá.
+> **Dante:** E eu posso?
+> **Helena:** Você já entrou uma vez. (pausa) Pela porta da frente, inclusive.
+
+Infiltração noturna sem disparar o alarme, no interior do banco que já existe: guarda de ronda, câmeras e
+o código da porta dos fundos que ela passa. Dante pega a pasta e, sem querer, vê o carimbo da cópia: o
+mesmo **0417** de M06. Não comenta.
+
+**EXT. RUA DOS FUNDOS DO BANCO — NOITE.** Ela pega a pasta e a aperta contra o peito, como quem segura
+um gato que quer fugir.
+
+> **Helena:** Ninguém nunca fez uma coisa dessas por mim sem cobrar depois.
+> **Dante:** Quem disse que eu não vou cobrar?
+> **Helena:** (quase sorrindo) Então cobra.
+
+Ela vai embora a pé, sem olhar para trás. É o mais perto que os dois chegam no ato 1.
+
+### M07 · A última volta — *a despedida*
 Corrida contra Takeshi e a lista na casa dele (já existem). **Nova cena de fechamento:**
 
-**EXT. CAIS — AMANHECER.** Helena espera Dante encostada na Monaliza.
+**EXT. CAIS — AMANHECER.** Helena com uma mala de rodinha, uma das rodas quebrada, ao lado da Monaliza.
 
-> **Helena:** Me suspenderam. Disseram que eu demorei a apertar o alarme.
-> **Dante:** Por que demorou?
-> **Helena:** Porque eu queria saber por que um homem que guarda a arma pra entrar no banco volta de
-> máscara pra roubar ele.
-> **Dante:** O dinheiro era dos Cobras.
-> **Helena:** Eu sei. Eu fazia a contabilidade da conta deles. (pausa) Vou pra casa. Santa Lua.
+> **Helena:** Vou pra casa. Santa Lua.
+> **Dante:** E a auditoria?
+> **Helena:** Acabou ontem. Não acharam nada. (pausa) Engraçado, né.
+> **Dante:** A lista do Takeshi diz que meu irmão tá no deserto.
+> **Helena:** O deserto é grande.
+> **Dante:** Santa Lua é pequena?
+> **Helena:** (puxa a mala) Duzentas pessoas e um rádio. Se você aparecer, todo mundo vai saber.
 
 Ela não pede nada a ele. Ele não promete nada. A ponte para o deserto abre.
 
@@ -296,6 +446,20 @@ Corte para preto. Fim.
 
 ---
 
+## Tamanho
+
+| Parte | Missões | Tempo de história |
+|---|---|---|
+| Prólogo | 1 | ~5 min |
+| Ato 1 — Harbor | 12 (M00 a M07 e as quatro novas) + a carona opcional | ~5 h |
+| Ato 2 — Deserto | 13 | ~5 h |
+| Ato 3 — Norte | 8 | ~3 h 30 |
+| **Total** | **34** | **~13 h 30** |
+
+Com as atividades paralelas que já existem (serra, contratos do deserto, arrancadas, cartas, guincho,
+cânion), o jogo inteiro fica entre 15 e 16 horas. Tempos de quem joga sem pressa, contando deslocamento;
+ninguém jogou a campanha inteira ainda.
+
 ## O que muda nas missões que já existem
 
 | Missão | O que já tem | O que muda neste roteiro | Tamanho |
@@ -305,9 +469,13 @@ Corte para preto. Fim.
 | M01 | Helena no banco | Diálogo novo com Helena | Pequeno (falas) |
 | (novo) Carona | — | Cena opcional na Monaliza com Helena | Pequeno |
 | M02 | Guincho | Chassi raspado, fala do Ferrugem | Pequeno |
+| **M02-B** (nova) Cobrança em dobro | — | Helena mostra a cobrança dupla; Dante e Neco guincham três carros de volta | Médio: guincho e reboques já existem |
+| **M04-B** (nova) O desmanche do Neco | — | Carro raspado de cliente do Maciota; escolha entre a prensa e devolver | Pequeno: prensa e sucata já existem |
 | M05 | Saque com Jessica | Helena no caixa, alarme atrasado (+3 s de fuga) | Médio |
+| **M05-B** (nova) Posto de lavagem | — | Cena do cais (Helena suspensa) e assalto ao cofre do posto dos Cobras, com Helena no telefone | Grande: Harbor não tem posto de gasolina; o assalto reaproveita o do banco |
 | M06 | Registros | Carimbo 0417 nos registros | Pequeno |
-| M07 | Lista do Takeshi | Cena no cais com Helena | Pequeno |
+| **M06-B** (nova) O que a Helena guardou | — | Infiltração noturna no banco para tirar a pasta de Helena | Médio: interior do banco e alarme já existem |
+| M07 | Lista do Takeshi | Despedida de Helena no cais | Pequeno |
 | A2-01 | Motel | Chave de cliente na cama | Pequeno |
 | A2-04 | Irene | Helena lê a ordem; cena na porta vira dela | Médio (troca de ator e falas) |
 | A2-06 | Conversa na caverna | Flashback jogável de Vicente no caminhão | Grande |
