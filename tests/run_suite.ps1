@@ -29,6 +29,7 @@ foreach ($test in $tests) {
     $godotArgs = @('--path', ('"' + $root + '"'), '--script', "res://$relative", '--', '--no-save', '--skip-arrival', ('"--isolated-save-root=' + $saveRoot + '"'))
     if ($test.BaseName -in @('test_android_controls','test_android_bus_driver')) { $godotArgs += '--touch-controls' }
     $rendered = $test.BaseName -in @('test_android_controls','test_android_bus_driver','test_mountain_downhill_runtime','test_mountain_jeep_integration','test_mountain_shop_occlusion','test_destroyed_cleanup','test_harbor_gameplay_acceptance','test_urban_asset_library','test_vertice_depth','test_vertice_site_depth','test_vertice_undercroft_geometry','test_vertice_packing_depth','test_police_frontage_geometry')
+    $rendered = $rendered -or $test.BaseName -in @('test_world_editor_3d_edit','test_world_editor_all_maps_live','test_world_editor_big_3d','test_world_editor_facades','test_world_editor_garage_preview','test_world_editor_interior_flow','test_world_editor_interior_invalid_preview','test_world_editor_interior_preview','test_world_editor_live_preview','test_world_editor_lod_light_teardown','test_world_editor_snapshot_flow','test_world_editor_units_3d','test_world_editor_units_3d_harbor')
     $effectiveArgs = if ($rendered) { @($godotArgs + '--population=8') } else { @('--headless') + $godotArgs }
     $process = $null
     $problems = @()

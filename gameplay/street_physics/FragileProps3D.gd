@@ -67,7 +67,13 @@ static var cells := {}
 ## Poste com nó próprio (HarborProp3D lamp, StreetLight_*). `pool` é a mancha de
 ## luz do CityLook (MultiMesh + índice) para apagar junto.
 static func register_node(kind: String, root: Node3D, chunk: Node3D, pool: Dictionary = {}, colliders: Array = [], contact_radius := -1.0) -> void:
-	if root.has_meta("street_fragile_registered"): return
+	# O registro vive com o móvel em cache, não com o chunk descartável.
+	# As referências de raiz/colisão são fracas; não mantêm nós liberados vivos.
+	var previous: Dictionary = root.get_meta("street_fragile_item", {})
+	if not previous.is_empty() and previous.root.get_ref() == root:
+		_rebind_node(previous, root, chunk, pool, colliders)
+		return
+	if root.has_meta("street_fragile_registered") and previous.is_empty(): return
 	root.set_meta("street_fragile_registered",true)
 	var radius: float = KINDS.get(kind,KINDS.trash_can).radius
 	if contact_radius > 0.0: radius = contact_radius
@@ -78,7 +84,38 @@ static func register_node(kind: String, root: Node3D, chunk: Node3D, pool: Dicti
 			if not mesh.has_meta("bench_envelope"): continue
 			var size: Vector3 = mesh.get_meta("bench_envelope")
 			radius = maxf(radius,Vector2(size.x*mesh.global_basis.x.length(),size.z*mesh.global_basis.z.length()).length()*.5)
-	_register({"kind": kind, "root": weakref(root), "chunk": weakref(chunk), "point": root.global_position, "radius":radius, "pool": pool, "colliders": colliders.map(func(shape): return weakref(shape)), "state": "standing"})
+	var item := {"kind": kind, "root": weakref(root), "chunk": weakref(chunk), "point": root.global_position, "radius":radius, "pool": pool, "colliders": colliders.map(func(shape): return weakref(shape)), "state": "standing"}
+	root.set_meta("street_fragile_item", item)
+	_register(item)
+
+static func _rebind_node(item: Dictionary, root: Node3D, chunk: Node3D, pool: Dictionary, colliders: Array) -> void:
+	var previous_chunk: Node = item.chunk.get_ref()
+	var old_pool: Dictionary = item.get("pool", {})
+	var old_key := _key(item.point)
+	if cells.has(old_key): cells[old_key].erase(item)
+	if cells.has(old_key) and cells[old_key].is_empty(): cells.erase(old_key)
+	item.chunk = weakref(chunk)
+	# O ponto de um poste derrubado continua sendo a base de sua recuperação.
+	if str(item.state) == "standing": item.point = root.global_position
+	if not colliders.is_empty(): item.colliders = colliders.map(func(shape): return weakref(shape))
+	if not pool.is_empty():
+		if item.has("recovery") and is_instance_valid(pool.get("multimesh")):
+			var saved: Dictionary = item.recovery
+			var replacement: Transform3D = pool.multimesh.get_instance_transform(pool.index)
+			for part in saved.parts:
+				if part[0] == old_pool.get("multimesh") and part[1] == old_pool.get("index", -1):
+					replacement = part[2]
+			saved.parts = saved.parts.filter(func(part): return part[0] != old_pool.get("multimesh"))
+			saved.parts.append([pool.multimesh, pool.index, replacement])
+		item.pool = pool
+		if str(item.state) != "standing" and item.kind == "lamp": _kill_light(item)
+	_register(item)
+	# O timer anterior pertencia ao chunk que saiu. Retomar o prazo sem reviver o poste.
+	if previous_chunk != chunk and item.has("recovery") and item.has("recovery_director"):
+		var director: Node = item.recovery_director.get_ref()
+		if is_instance_valid(director):
+			var remaining := maxf(0.0, float(item.get("recovery_due_msec", Time.get_ticks_msec())) - Time.get_ticks_msec()) / 1000.0
+			preload("res://gameplay/street_physics/LampRecovery3D.gd").schedule(item, director, remaining)
 
 
 ## Mobília em MultiMesh (CityLook): anima a instância.
@@ -178,7 +215,10 @@ static func hit(item: Dictionary, speed: float, direction: Vector3, director: No
 			else: _topple(item, flat, director)
 		"hydrant": _burst_hydrant(item, flat, speed, director)
 		_: _tumble(item, flat, speed, director)
-	if item.kind == "lamp": preload("res://gameplay/street_physics/LampRecovery3D.gd").schedule(item, director)
+	if item.kind == "lamp":
+		item.recovery_director = weakref(director)
+		item.recovery_due_msec = Time.get_ticks_msec() + int(preload("res://gameplay/street_physics/LampRecovery3D.gd").DELAY * 1000.0)
+		preload("res://gameplay/street_physics/LampRecovery3D.gd").schedule(item, director)
 	return true
 
 

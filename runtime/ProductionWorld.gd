@@ -725,8 +725,11 @@ func _prepare_geography(candidate: Node3D) -> bool:
 		await get_tree().process_frame
 	WorkerThreadPool.wait_for_task_completion(_geography_task)
 	_geography_task = -1
-	_geography_candidate = null
 	var usable: bool = is_instance_valid(world) and world.is_inside_tree() and not world.is_queued_for_deletion()
+	if usable and candidate.has_method("prepare_presentation_incremental"):
+		await candidate.prepare_presentation_incremental(get_tree(), world)
+		usable = is_instance_valid(world) and world.is_inside_tree() and not world.is_queued_for_deletion()
+	_geography_candidate = null
 	if not usable and is_instance_valid(candidate): candidate.free()
 	return usable
 

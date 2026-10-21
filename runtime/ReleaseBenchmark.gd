@@ -24,7 +24,7 @@ extends Node
 const ROUTE_WEST := [Vector3(64, 0, 82), Vector3(150, 0, 82), Vector3(143, 0, 60), Vector3(84, 0, 60), Vector3(84, 0, 123), Vector3(65, 0, 113)]
 const ROUTE_PORT := [Vector3(150, 0, 82), Vector3(250, 0, 82), Vector3(250, 0, 30), Vector3(180, 0, 30), Vector3(180, 0, 82)]
 ## Pontos quentes das outras regiões (censo de 14/10). Serra: --play-at=mountain,650,-290; ponte cidade–serra:
-## --play-at=harbor,440,-285; deserto (encontro de arrancada, trechos de 96 m): --play-at=desert,-1040,-1320.
+## --play-at=harbor,440,-285; deserto (encontro de arrancada, trechos de 96 m): --play-at=desert,-900,-800.
 const ROUTES := {
 	"serra": [Vector3(650, 4, -290), Vector3(745, 4, -300), Vector3(745, 4, -425), Vector3(660, 4, -425)],
 	"ponte": [Vector3(440, 0, -285), Vector3(600, 0, -285)],
@@ -32,20 +32,20 @@ const ROUTES := {
 	"ponte_tronco": [Vector3(382.5,0,-130),Vector3(382.5,0,-248),Vector3(386,0,-278),Vector3(405,0,-282),Vector3(382.5,0,-248),Vector3(382.5,0,-130)],
 	# Porto -> ponte -> serra e volta: o streaming entra em trechos novos com o jogo rodando (travadas de 15/10).
 	"travessia": [Vector3(330, 0, -285), Vector3(600, 0, -285), Vector3(700, 4, -300), Vector3(745, 4, -420)],
-	"deserto": [Vector3(-1040, 0, -1320), Vector3(-950, 0, -1320), Vector3(-950, 0, -1260), Vector3(-1040, 0, -1260)],
+	"deserto": [Vector3(-900,0,-800), Vector3(-810,0,-800), Vector3(-810,0,-740), Vector3(-900,0,-740)],
 	# Estrada do sal: câmera e população reais ao lado do trajeto das cargas da madrugada.
-	"carga_deserto": [Vector3(-700, 0, -1542.5), Vector3(-500, 0, -1542.5)],
+	"carga_deserto": [Vector3(-560,0,-902.5), Vector3(-360,0,-902.5)],
 	# Rota 66 do pedágio à estrada do sal (17/10): ~11 trechos novos se vestindo com o jogo rodando
 	# (chão povoado do deserto, A/B com GETECO_DESERT_GROUND_COVER=0). --play-at=desert,342.5,-470.
-	"rota66": [Vector3(347, 0, -470), Vector3(347, 0, -1500), Vector3(347, 0, -470)],
+	"rota66": [Vector3(347, 0, -470), Vector3(347, 0, -860), Vector3(347, 0, -470)],
 	# Cidade do deserto (20/10): rua principal de ponta a ponta, com o acabamento novo (calçadas, pátios,
-	# fachadas) montando e estacionando. A/B com GETECO_DESERT_ROADSIDE=0. --play-at=desert,-360,-893.
-	"cidade_deserto": [Vector3(-360, 0, -893), Vector3(-40, 0, -893), Vector3(-360, 0, -893)],
-	# Estrada do Sal (20/10): motel, balança, capela e salinas ao lado da pista. --play-at=desert,-1150,-1542.5.
-	"estrada_sal": [Vector3(-1150, 0, -1542.5), Vector3(150, 0, -1542.5)],
+	# fachadas) montando e estacionando. A/B com GETECO_DESERT_ROADSIDE=0. --play-at=desert,-360,-553.
+	"cidade_deserto": [Vector3(-360,0,-553), Vector3(-40,0,-553), Vector3(-360,0,-553)],
+	# Estrada do Sal (20/10): motel, balança, capela e salinas ao lado da pista. --play-at=desert,-1010,-902.5.
+	"estrada_sal": [Vector3(-1010, 0, -902.5), Vector3(290, 0, -902.5)],
 	# Cavernas (20/10): passa a ~30 m da caverna do coiote e a ~50 m da do Vicente, cruzando a
-	# estrada do sal; cada morro monta a 110 m. A/B com GETECO_DESERT_WILDS=0. --play-at=desert,-950,-1440.
-	"cavernas": [Vector3(-950, 0, -1440), Vector3(-1260, 0, -1440), Vector3(-1260, 0, -1680), Vector3(-1050, 0, -1680), Vector3(-950, 0, -1440)],
+	# estrada do sal; cada morro monta a 110 m. A/B com GETECO_DESERT_WILDS=0. --play-at=desert,-980,-960.
+	"cavernas": [Vector3(-980,0,-960),Vector3(-1260,0,-960),Vector3(-1260,0,-1120),Vector3(-1050,0,-1120),Vector3(-980,0,-960)],
 	# Northbank e canal concentram 6 dos 15 sobrados/terraços (A/B das janelas pintadas, 15/10).
 	"sobrados": [Vector3(295, 0, 100), Vector3(340, 0, 100), Vector3(340, 0, -60), Vector3(295, 0, -60)],
 }
@@ -58,12 +58,12 @@ const TOGGLES := ["GETECO_OCCLUSION", "GETECO_PROC_LOD", "GETECO_TUNNEL_LIGHT_SH
 	"GETECO_PED_DUMMY", "GETECO_BUILDING_BATCH", "GETECO_PROP_INSTANCING", "GETECO_GROUND_STACK", "GETECO_SHADOW_SHELL",
 	"GETECO_BRIDGE_MERGE", "GETECO_FURNITURE_MERGE", "GETECO_CELL_MERGE", "GETECO_BRIDGE_LOOK", "GETECO_PAINTED_WINDOWS", "GETECO_PAINTED_FACADES",
 	"GETECO_SUN_SPLITS", "GETECO_UNIFIED_BRIDGE", "GETECO_DESERT_CARGO_HEIST", "GETECO_DESERT_ROADSIDE", "GETECO_RAGDOLL"]
-## Distância ao longo da volta da rota66 (ida para o sul de z -470, volta a partir de z -1500) em que cada
-## evento nasce, 240 m antes do ponto, como o jogo faria: a van na mão da ida, o bloqueio na mão da volta
+## Distância ao longo da volta da rota66 (ida para o sul de z -470, volta a partir de z -860) em que cada
+## evento nasce, 100 m antes do ponto, como o jogo faria: a van na mão da ida, o bloqueio na mão da volta
 ## (o carro do benchmark anda na faixa leste nos dois sentidos, então desvia dele pela outra mão).
 const ROAD_EVENT_CUES := [
-	{"at": 290.0, "kind": "breakdown", "point": Vector2(342.5, -1000), "direction": Vector2(0, -1)},
-	{"at": 1300.0, "kind": "roadblock", "point": Vector2(342.5, -990), "direction": Vector2(0, 1)},
+	{"at": 130.0, "kind": "breakdown", "point": Vector2(342.5, -700), "direction": Vector2(0, -1)},
+	{"at": 490.0, "kind": "roadblock", "point": Vector2(342.5, -660), "direction": Vector2(0, 1)},
 ]
 
 const AUTOPILOT := preload("res://runtime/BenchmarkAutopilot.gd")

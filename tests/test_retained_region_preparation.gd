@@ -14,6 +14,9 @@ func check(ok: bool, label: String) -> void:
 	if not ok: failures += 1; push_error(label)
 func run() -> void:
 	var region := RegionProbe.new()
+	# Este fixture testa somente o cache de registros com o processamento parado;
+	# nao fornece geografia nem jobs ativos para aquecer o tunel real do porto.
+	region.region_id = "preparation_probe"
 	region.initial_prewarm_only = true
 	region.records[Vector2i.ZERO] = [{"kind":"ship"},{"kind":"test_disposable"}]
 	region.records[Vector2i.ONE] = [{"kind":"mountain_village"}]

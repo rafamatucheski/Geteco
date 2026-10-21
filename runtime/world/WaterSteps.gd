@@ -36,7 +36,11 @@ func actor_step(actor: CharacterBody3D,sprinting: bool,interior: bool) -> bool:
 		return false
 	var lake: Node3D
 	for candidate in get_tree().get_nodes_in_group("native_water_surface"):
-		if candidate.is_visible_in_tree() and absf(actor.global_position.y-candidate.global_position.y)<.5 and candidate.contains_water(actor.global_position):
+		# O fundo da bacia fica 0,2–0,6 m abaixo do espelho (e o alpino tem deslocamento próprio):
+		# a janela antiga de ±0,5 m no nó perdia o pé de quem caminha dentro d'água, e o passo saía mudo.
+		var surface_y: float = candidate.global_position.y+(float(candidate.ALPINE_WATER_Y) if str(candidate.get("variant"))=="alpine" else .05)
+		var depth: float = surface_y-actor.global_position.y
+		if candidate.is_visible_in_tree() and depth>-.35 and depth<1.3 and candidate.contains_water(actor.global_position):
 			lake = candidate
 			break
 	var water := lake!=null
@@ -55,11 +59,13 @@ func actor_step(actor: CharacterBody3D,sprinting: bool,interior: bool) -> bool:
 	var side := 1.0 if marks.size()%2==0 else -1.0
 	var offset := heading.orthogonal()*side*3.0/16.0
 	var point := actor.global_position+Vector3(offset.x,0,offset.y)
-	point.y = lake.global_position.y+.058 if water else actor.global_position.y+.015
+	point.y = _surface_y(lake)+.008 if water else actor.global_position.y+.015
 	marks.append({"point":point,"age":0.0,"water":water,"heading":heading,"sprint":sprinting,"lake":weakref(lake)})
 	if marks.size()>MAX_MARKS: marks.pop_front()
 	set_process(true)
 	return water
+func _surface_y(lake: Node3D) -> float:
+	return lake.global_position.y+(float(lake.ALPINE_WATER_Y) if str(lake.get("variant"))=="alpine" else .05)
 func _process(delta: float) -> void:
 	for mark in marks: mark.age+=delta
 	marks = marks.filter(func(mark): return mark.age<(0.85 if mark.water else 4.5) and is_instance_valid(mark.lake.get_ref()))

@@ -1,7 +1,8 @@
 extends SceneTree
 ## Regressao de agendamento: exercita o metodo produtivo sem construir o mundo.
 const NATIVE_REGION := preload("res://world/regions/NativeRegion.gd")
-const CITY_STEP_COUNT := 12
+# O acabamento autorado atual inclui telhados, flush e lixo de chão: 15 etapas.
+const CITY_STEP_COUNT := 15
 
 var checks := 0
 var failures: Array[String] = []
@@ -52,9 +53,9 @@ func run() -> void:
 		if completed:
 			break
 	state = job.get("dressing", {})
-	check(completed, "acabamento retoma e conclui em ate doze chamadas")
+	check(completed, "acabamento retoma e conclui em ate quinze chamadas")
 	check(int(job.stage) == 4, "conclusao publica o estagio terminal")
-	check(int(state.get("step", -1)) == CITY_STEP_COUNT, "retomada conclui os doze passos sem reiniciar estado")
+	check(int(state.get("step", -1)) == CITY_STEP_COUNT, "retomada conclui os quinze passos sem reiniciar estado")
 	check(job.chunk == chunk and state.get("chunk") == chunk and int(job.index) == 0 and chunk.get_child_count() == 0, "retomada preserva o chunk vazio original")
 	check(chunk.has_meta("vegetation_ready_frame"), "conclusao publica o marcador do chunk")
 	check(region._run_build_job(job, INF), "job concluido aceita nova consulta")

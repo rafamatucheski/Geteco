@@ -57,6 +57,58 @@ const V1_WALK_APPARENT_SCALE := 46.8863525390625 / 34.3123196752596
 const FRAMING_ZOOM_SCALE := 0.75 * 0.87
 const WALK_SIZE_CLOSE := V1_VIEWPORT_HEIGHT / (V1_WALK_ZOOM_CLOSE * V1_PIXELS_PER_METRE) * EXTERIOR_GROUND_PROJECTION * PITCH_APPARENT_COMPENSATION * V1_WALK_APPARENT_SCALE * FRAMING_ZOOM_SCALE
 const TARGET_TELEPORT_DISTANCE := 8.0
+# Session-only developer framing; normal gameplay framing remains authoritative after reset.
+var developer_zoom := 1.0
+var developer_view := 0
+var _developer_camera_state: Dictionary = {}
+
+func set_developer_zoom(multiplier: float, view: int = 0) -> void:
+	if not is_finite(multiplier): return
+	if _developer_camera_state.is_empty():
+		_developer_camera_state = {"projection": projection, "size": size, "far": far, "near": near, "fov": fov}
+	developer_zoom = clampf(multiplier, 1.0, 1000.0)
+	developer_view = clampi(view, 0, 2)
+
+func reset_developer_zoom() -> void:
+	if _developer_camera_state.is_empty(): return
+	projection = _developer_camera_state.projection
+	size = _developer_camera_state.size
+	far = _developer_camera_state.far
+	near = _developer_camera_state.near
+	fov = _developer_camera_state.fov
+	_developer_camera_state.clear()
+	developer_zoom = 1.0
+	developer_view = 0
+	initialized = false
+
+func developer_ground_rect() -> Rect2:
+	# Project the four viewport corners onto the focus plane, including perspective
+	# and orbit. Height margin prevents terrain at the screen edge loading too late.
+	var screen := get_viewport().get_visible_rect().size
+	var bounds := Rect2(Vector2(focus.x, focus.z), Vector2.ZERO)
+	for corner in [Vector2.ZERO, Vector2(screen.x, 0), screen, Vector2(0, screen.y)]:
+		var origin := project_ray_origin(corner)
+		var direction := project_ray_normal(corner)
+		if direction.y >= -0.001: continue
+		var point := origin + direction * ((focus.y - origin.y) / direction.y)
+		bounds = bounds.expand(Vector2(point.x, point.z))
+	return bounds.grow(96.0)
+
+func _update_developer_camera() -> void:
+	if _exterior_reveal.enabled: _exterior_reveal.release()
+	_tunnel_safety.restore_environment()
+	focus = target.global_position + Vector3.UP
+	var span := WALK_SIZE_CLOSE * developer_zoom
+	var direction := Vector3(0, 1, 0.001) if developer_view == 1 else EXTERIOR_OFFSET.normalized().rotated(Vector3.UP, heading)
+	var distance := maxf(EXTERIOR_OFFSET.length(), span)
+	projection = Camera3D.PROJECTION_PERSPECTIVE if developer_view == 2 else Camera3D.PROJECTION_ORTHOGONAL
+	size = span
+	fov = 60.0
+	near = 0.1
+	far = maxf(EXTERIOR_FAR, distance * 4.0 + span * 2.0)
+	global_position = focus + direction.normalized() * distance
+	look_at(focus)
+
 var target: Node3D
 var heading := 0.0
 var _view_heading := 0.0
@@ -198,6 +250,9 @@ func _process(delta: float) -> void:
 		# Production sights follow the shot; do not overlay a second cross at screen centre.
 		scope_reticle.visible = scoped and not (combat != null and combat.has_method("aim_feedback_active"))
 	if get_tree().paused: return
+	if not _developer_camera_state.is_empty() and is_instance_valid(target):
+		_update_developer_camera()
+		return
 	if _store_focus_active:
 		if _exterior_reveal.enabled: _exterior_reveal.release()
 		_tunnel_safety.restore_environment()

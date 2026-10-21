@@ -35,12 +35,13 @@ static func is_retired(node: Variant) -> bool:
 static var _enabled := OS.get_environment("GETECO_GPU_RELEASE_QUEUE") != "0"
 static var _hold_all := OS.get_environment("GETECO_GPU_HOLD_ALL") == "1"
 static var _gpu_per_frame: int = maxi(1, OS.get_environment("GETECO_GPU_RELEASE_PER_FRAME").to_int()) if OS.get_environment("GETECO_GPU_RELEASE_PER_FRAME").is_valid_int() else DEFAULT_GPU_LEAVES_PER_FRAME
-## Subárvores entregues inteiras, ainda na árvore (escondidas e desligadas), desmontadas folha por folha.
+## Subárvores entregues inteiras, dentro ou fora da árvore, desmontadas folha por folha.
 static var _roots: Array[Node] = []
 static var _stack: Array[Node] = []
 ## Folhas que seguram recurso de vídeo, já fora da árvore: [nó, liberar_a_partir_de_msec].
 static var _orphans: Array = []
 static var _hooked := false
+static var _shutting_down := false
 ## Contadores para diagnóstico (ver debug_snapshot).
 static var released_gpu := 0
 static var released_plain := 0
@@ -52,9 +53,28 @@ static func enabled() -> bool:
 static func retire(node: Node) -> void:
 	if not is_instance_valid(node) or node.is_queued_for_deletion(): return
 	node.set_meta(RETIRED_META, true)
-	if not _enabled or not node.is_inside_tree():
+	if not _enabled or not node.is_inside_tree() or _shutting_down:
 		node.queue_free()
 		return
+	_enqueue_root(node)
+
+## Expulsão de caches: uma subárvore já destacada também precisa do orçamento de
+## desmontagem. Recolocá-la na SceneTree reativaria colisões e sinais de entrada.
+static func retire_detached_subtree(node: Node) -> void:
+	if not is_instance_valid(node) or node.is_queued_for_deletion() or node.has_meta(RETIRED_META): return
+	if node.get_parent() != null:
+		retire(node)
+		return
+	node.set_meta(RETIRED_META, true)
+	if _shutting_down or not (Engine.get_main_loop() is SceneTree):
+		node.free()
+		return
+	if not _enabled:
+		node.queue_free()
+		return
+	_enqueue_root(node)
+
+static func _enqueue_root(node: Node) -> void:
 	if node is Node3D: (node as Node3D).hide()
 	elif node is CanvasItem: (node as CanvasItem).hide()
 	node.process_mode = Node.PROCESS_MODE_DISABLED
@@ -64,7 +84,7 @@ static func retire(node: Node) -> void:
 ## Para quem já desmonta folha por folha (NativeRegion): entrega uma folha recém-tirada da árvore.
 ## Devolve true se a fila ficou com ela (quem chamou não deve liberar); false se é para liberar já.
 static func adopt_detached_leaf(node: Node) -> bool:
-	if not _enabled or not is_instance_valid(node) or not _holds_gpu(node): return false
+	if not _enabled or _shutting_down or not is_instance_valid(node) or not _holds_gpu(node): return false
 	_orphans.append([node, Time.get_ticks_msec() + DELAY_MSEC])
 	_hook()
 	return true
@@ -72,7 +92,9 @@ static func adopt_detached_leaf(node: Node) -> bool:
 ## Libera tudo agora (fim de sessão, testes).
 static func flush() -> void:
 	for node in _roots:
-		if is_instance_valid(node): node.queue_free()
+		if not is_instance_valid(node): continue
+		if node.is_inside_tree(): node.queue_free()
+		else: node.free()
 	_roots.clear()
 	_stack.clear()
 	for entry in _orphans:
@@ -108,6 +130,7 @@ static func _hook() -> void:
 	_hooked = true
 
 static func _shutdown() -> void:
+	_shutting_down = true
 	flush()
 	_hooked = false
 
@@ -138,8 +161,13 @@ static func _drain_roots(began: int) -> void:
 				if last.get_child_count() > 0: _stack.append(last)
 				else: _dispose_leaf(last)
 			if Time.get_ticks_usec() - began >= CPU_BUDGET_USEC: return
-		root.queue_free()
-		released_plain += 1
+		if root.get_parent() == null:
+			if not adopt_detached_leaf(root):
+				root.free()
+				released_plain += 1
+		else:
+			root.queue_free()
+			released_plain += 1
 		_roots.pop_front()
 
 static func _dispose_leaf(node: Node) -> void:
