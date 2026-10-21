@@ -1,4 +1,4 @@
-"""Instala no banco dirigido as falas PT-BR geradas na ElevenLabs.
+"""Instala no banco dirigido as falas (PT-BR e inglês) geradas na ElevenLabs.
 
 Lê o plano e o registro de gerações de evidence/elevenlabs-teste-20261020/, converte cada MP3
 para WAV mono PCM16 24 kHz (o formato que o banco dirigido valida), mede o volume com a mesma
@@ -25,7 +25,10 @@ from voice_direction import ROOT, digest, read_json, write_json  # noqa: E402
 
 EVIDENCE = ROOT / "evidence/elevenlabs-teste-20261020"
 OUTPUT = ROOT / "audio/mission_voices/directed/elevenlabs.json"
-WAV_DIR = ROOT / "audio/mission_voices/directed/elevenlabs/pt_BR"
+WAV_ROOT = ROOT / "audio/mission_voices/directed/elevenlabs"
+# Lotes posteriores (pasta, rótulo de aprovação). O primeiro, de 20/10, tem formato próprio.
+BATCHES = [("evidence/elevenlabs-lote-ab-20261021", "user_batch_approved_20261021"),
+           ("evidence/elevenlabs-maciota-en-20261021", "user_batch_approved_20261021")]
 MODEL = "eleven_v4"
 VOICES = {"dante": ("ycxdm1PRMs962FxyyuJ0", "Otto - Intimidating and Aggressive"),
           "maciota": ("GIuLCSVfgJaUuh7hYOY8", "Lucas - Deep & Profound Narrator")}
@@ -60,13 +63,13 @@ def validate(path: Path) -> tuple[float, list[str]]:
     return frames / 24000.0, ["finite_audio", "non_silent", "mono_pcm16_24khz", "peak_below_full_scale"]
 
 
-def take(row: dict, persona: str, session: str, prompt: str) -> dict:
-    mp3 = EVIDENCE / "mp3" / f"{session}.mp3"
+def take(row: dict, voice: tuple[str, str], session: str, prompt: str, mp3_dir: Path, language: str) -> dict:
+    mp3 = mp3_dir / f"{session}.mp3"
     mp3_sha = hashlib.sha256(mp3.read_bytes()).hexdigest()
-    voice_id, voice_name = VOICES[persona]
+    voice_id, voice_name = voice
     signature = digest({"provider": "elevenlabs", "model": MODEL, "voice_id": voice_id, "prompt": prompt,
                         "session": session, "source_mp3_sha256": mp3_sha, "format": "pcm16_mono_24k"})
-    wav = WAV_DIR / f"{row['key']}_{signature[:16]}.wav"
+    wav = WAV_ROOT / language / f"{row['key']}_{signature[:16]}.wav"
     if not wav.exists():
         convert(mp3, wav)
     duration, checks = validate(wav)
@@ -79,16 +82,16 @@ def take(row: dict, persona: str, session: str, prompt: str) -> dict:
             "mix_method": method}
 
 
-def entry(row: dict, persona: str, recorded: dict) -> dict:
+def entry(row: dict, persona: str, character_id: str, gender: str, language: str, recorded: dict, approval: str) -> dict:
     voice_id = recorded["voice_id"]
-    return {"path": recorded["path"], "spoken_text": row["spoken_pt"], "signature": recorded["signature"],
-            "character_id": persona, "persona": persona, "source": row["source"], "source_key": row["key"],
-            "voice_gender": "male", "language": "pt_BR", "duration_seconds": recorded["duration_seconds"],
-            "audio_sha256": recorded["audio_sha256"],
+    return {"path": recorded["path"], "spoken_text": row["spoken_en" if language == "en" else "spoken_pt"],
+            "signature": recorded["signature"], "character_id": character_id, "persona": persona, "source": row["source"],
+            "source_key": row["key"], "voice_gender": gender, "language": language,
+            "duration_seconds": recorded["duration_seconds"], "audio_sha256": recorded["audio_sha256"],
             "technical_validation": {"passed": True, "checks": recorded["checks"]},
-            # Aprovado em lote pelo usuário no chat (20/10); ninguém ouviu fala por fala aqui.
-            "artistic_review": "user_batch_approved_20261020", "status": "approved",
-            "anchor_id": persona, "anchor_sha256": digest({"provider": "elevenlabs", "voice_id": voice_id}),
+            # Aprovação em lote pelo usuário no chat; ninguém ouviu fala por fala aqui.
+            "artistic_review": approval, "status": "approved",
+            "anchor_id": character_id, "anchor_sha256": digest({"provider": "elevenlabs", "voice_id": voice_id}),
             "model": MODEL, "provider": "elevenlabs", "voice_id": voice_id, "voice_name": recorded["voice_name"],
             "prompt": recorded["prompt"], "gender_validation": "reference_authored_unverified",
             "playback_gain_db": recorded["playback_gain_db"], "input_lufs": recorded["input_lufs"],
@@ -96,28 +99,70 @@ def entry(row: dict, persona: str, recorded: dict) -> dict:
             "mix_policy": digest(POLICY)}
 
 
-def main() -> None:
-    direction = {row["key"]: row for row in read_json(ROOT / "data/dialogue/voice-line-direction.json")["lines"]}
+def with_variants(base: dict, recorded: list[dict]) -> dict:
+    if len(recorded) > 1:
+        base["variants"] = [{field: r[field] for field in ("path", "audio_sha256", "duration_seconds", "playback_gain_db", "prompt")}
+                            for r in recorded]
+    return base
+
+
+def first_batch(direction: dict, lines: dict) -> None:
+    """Teste de 20/10: só PT-BR, plano antigo (índice → sessão) e variações declaradas em VARIANTS."""
     plan = read_json(EVIDENCE / "plan.json")
     ledger = {row["label"]: row["session_id"] for row in read_json(EVIDENCE / "ledger.json")["generations"]}
-    lines: dict[str, dict] = {}
+    approval = "user_batch_approved_20261020"
     for index, item in enumerate(plan):
         row = direction[item["key"]]
-        lines[row["key"]] = entry(row, item["speaker"], take(row, item["speaker"], ledger[str(index)], item["prompt"]))
+        persona = item["speaker"]
+        recorded = take(row, VOICES[persona], ledger[str(index)], item["prompt"], EVIDENCE / "mp3", "pt_BR")
+        lines["pt_BR"][row["key"]] = entry(row, persona, persona, "male", "pt_BR", recorded, approval)
     for key, labels in VARIANTS.items():
         row = direction[key]
         persona = row["speaker"]
-        recorded = [take(row, persona, ledger[label], prompt if persona == "dante" else f"{prompt} {row['spoken_pt']}")
-                    for label, prompt in labels]
-        result = entry(row, persona, recorded[0])
-        result["variants"] = [{field: r[field] for field in ("path", "audio_sha256", "duration_seconds", "playback_gain_db", "prompt")}
-                              for r in recorded]
-        lines[key] = result
-    write_json(OUTPUT, {"version": 1, "provider": "elevenlabs", "model": MODEL, "language": "pt_BR",
+        recorded = [take(row, VOICES[persona], ledger[label], prompt if persona == "dante" else f"{prompt} {row['spoken_pt']}",
+                         EVIDENCE / "mp3", "pt_BR") for label, prompt in labels]
+        lines["pt_BR"][key] = with_variants(entry(row, persona, persona, "male", "pt_BR", recorded[0], approval), recorded)
+
+
+def planned_batch(folder: Path, direction: dict, cast: dict, lines: dict, approval: str) -> None:
+    """Lotes gerados por plan_elevenlabs_batch.py: plan.json + sessions.txt na mesma ordem."""
+    plan = read_json(folder / "plan.json")
+    sessions = (folder / "sessions.txt").read_text(encoding="utf-8").split()
+    if len(plan) != len(sessions):
+        raise ValueError(f"{folder.name}: plano e sessões com tamanhos diferentes")
+    groups: dict[tuple[str, str], list[dict]] = {}
+    for item, session in zip(plan, sessions):
+        row = direction[item["key"]]
+        recorded = take(row, (item["voice_id"], item["voice_name"]), session, item["prompt"], folder / "mp3", item["language"])
+        groups.setdefault((item["key"], item["language"]), []).append((item, recorded))
+    for (key, language), takes in groups.items():
+        item = takes[0][0]
+        gender = gender_of(cast, direction[key])
+        base = entry(direction[key], item["persona"], item["character_id"], gender, language, takes[0][1], approval)
+        lines[language][key] = with_variants(base, [r for _, r in takes])
+
+
+def gender_of(cast: dict, row: dict) -> str:
+    person = cast.get(row["speaker"], {})
+    for variant in person.get("variants", []):
+        if row["key"] in variant.get("line_keys", []):
+            return variant.get("gender", person.get("gender", "male"))
+    return person.get("gender", "male")
+
+
+def main() -> None:
+    direction = {row["key"]: row for row in read_json(ROOT / "data/dialogue/voice-line-direction.json")["lines"]}
+    cast = read_json(ROOT / "data/dialogue/voice-cast.json")["personas"]
+    lines: dict[str, dict] = {"pt_BR": {}, "en": {}}
+    first_batch(direction, lines)
+    for folder, approval in BATCHES:
+        planned_batch(ROOT / folder, direction, cast, lines, approval)
+    write_json(OUTPUT, {"version": 1, "provider": "elevenlabs", "model": MODEL,
                         "voices": {p: {"voice_id": v[0], "name": v[1]} for p, v in VOICES.items()},
-                        "mix_policy": POLICY, "lines": {"pt_BR": lines}})
-    variants = sum(len(v.get("variants", [])) for v in lines.values())
-    print(f"ELEVENLABS_VOICES lines={len(lines)} variant_takes={variants} -> {OUTPUT.relative_to(ROOT).as_posix()}")
+                        "mix_policy": POLICY, "lines": lines})
+    for language, rows in lines.items():
+        variants = sum(len(v.get("variants", [])) for v in rows.values())
+        print(f"ELEVENLABS_VOICES {language} lines={len(rows)} variant_takes={variants}")
 
 
 if __name__ == "__main__":

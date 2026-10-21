@@ -1,50 +1,55 @@
-# Proposta: dublar o resto do jogo na ElevenLabs (PT-BR e inglês)
+# Proposta: dublar o resto do jogo (PT-BR e inglês)
 
-Situação em 20/10: 51 falas de missão do Dante e do Maciota em PT-BR, mais 7 tons de duas falas
-aleatórias (dor do Dante e cumprimento do Maciota), instaladas por cima do banco local
-(`audio/mission_voices/directed/elevenlabs.json`). O resto continua com as vozes geradas localmente (Qwen).
-Lista completa do que falta: [elevenlabs-falas-restantes.md](elevenlabs-falas-restantes.md).
+Decisão de 21/10: **ElevenLabs só para o elenco central** — Dante, Maciota (inclusive a voz ao
+telefone), Helena, Takeshi e Vicente —, porque as falas deles são longas e precisam de contexto e
+emoção. **Todos os outros** (NPCs da rua, mendigos, civis, guardas, aleatórios e o resto do elenco)
+usam o banco local Qwen. Acompanhamento no painel "Dublagem Geteco"; lista completa em
+[elevenlabs-falas-restantes.md](elevenlabs-falas-restantes.md). Os números abaixo saem de
+`tools/build_voice_dashboard_data.py`.
 
-## Quanto falta
+## Situação em 21/10 (lote A/B gerado e instalado)
 
-| | Falas | Caracteres | Créditos estimados (v4, ~1/caractere + ~10% de indicações) |
-|---|---:|---:|---:|
-| PT-BR restante | 512 | 29.344 | ~32.000 |
-| Inglês (tudo) | 565 | 34.327 | ~38.000 |
-| **Total** | **1.077** | **63.671** | **~70.000** |
+| Personagem | Voz PT-BR | Voz inglês | PT-BR | Inglês |
+|---|---|---|---|---|
+| Dante | Otto | Otto | 66/66 | 66/66 |
+| Maciota (e voz ao telefone) | Lucas | Mason | 47/47 | 47/47 |
+| Helena (bancária) | Juliana Gheno | Juliana Gheno | 2/2 | 2/2 |
+| Takeshi | Kei (sotaque japonês, pedido do usuário) | Kei | 7/7 | 7/7 |
+| Vicente | Dantas | Dantas | 6/6 | 6/6 |
 
-São 90 vozes no roteiro: 88 ainda sem escolha (Jessica, Raul, Nelson, Ferrugem, Takeshi, os 6 papéis
-de civis, guardas etc.). No ritmo de hoje (uma geração por fala), o custo é praticamente o número de
-caracteres. Refazer falas ruins custa de novo.
+Elenco ElevenLabs completo nos dois idiomas (inglês do Maciota gerado com o Mason, ~6.300 créditos).
 
-**Plano de US$ 5:** se forem 30 mil créditos por mês (confirmar no painel), já gastamos ~7.800 hoje.
-O total cabe em ~3 meses nesse plano, ou num mês de um plano maior. Conferir preços atuais em
-elevenlabs.io/pricing antes de decidir. Usar o modelo Flash cortaria o custo pela metade, mas ele não
-entende as indicações de emoção; não recomendo para missões.
+## ElevenLabs (estimativa original)
 
-## Como fazer
+| Lote | Quem | Falas | Falta PT-BR | Falta inglês | Créditos estimados |
+|---|---|---:|---:|---:|---:|
+| A | Dante e Maciota (com a voz ao telefone) | 113 | 60 | 113 | ~13.400 |
+| B | Helena, Takeshi e Vicente | 19 | 19 | 19 | ~3.400 |
+| **Total** | | **132** | **79** | **132** | **~16.800** |
 
-1. **Escolher as vozes antes de gastar.** Para cada personagem eu proponho uma voz da biblioteca pelo
-   perfil de `data/dialogue/voice-cast.json` (gênero, idade, temperamento). Você ouve a amostra grátis de
-   cada uma no site e aprova a lista. Nada é gerado antes disso.
-2. **Inglês com a mesma voz.** O v4 é multilíngue: a mesma voz do Dante fala inglês, o que mantém o
-   elenco igual nos dois idiomas. Risco: sotaque brasileiro forte. Teste barato primeiro: 2 falas em
-   inglês (Dante e Maciota, ~100 créditos). Se não ficar bom, escolhemos uma voz americana parecida
-   para cada um.
-3. **Falas aleatórias com vários tons.** Os 6 papéis de civis (amigável, nervoso e reservado, masculino
-   e feminino) e os guardas são as falas que mais se repetem. Proposta: 2 a 3 tons para as reações
-   curtas (custo extra de ~5.000 créditos no total) e 1 take para as falas de diálogo.
-4. **Em lotes por ordem de importância**, cada um terminando instalado no jogo e testado:
-   - **Lote A** (~12.000): Dante e Maciota completos — 56 falas PT restantes e todas as 109 em inglês.
-   - **Lote B** (~16.000): elenco principal das missões — Jessica, Raul, Nelson, Ferrugem, Takeshi,
-     Helena, Vicente, Elias, Joana, Neco — PT e inglês.
-   - **Lote C** (~22.000): civis e guardas, com os tons extras.
-   - **Lote D** (~20.000): os demais personagens secundários (moradores do deserto, da serra, vila).
-5. **Instalação:** `tools/install_elevenlabs_voices.py` passa a ler um plano por lote e grava as falas em
-   inglês em `lines.en` do mesmo arquivo; o jogo já escolhe o idioma pela configuração de voz.
+Estimativa: 1 crédito por caractere mais ~10 por fala de indicação de emoção. Com 30 mil créditos
+por mês (confirmar no painel da ElevenLabs) e ~7.800 já gastos, cabe no plano atual, uma geração
+por fala. Refazer uma fala custa de novo.
 
-## O que preciso de você
+- **Helena, Takeshi e Vicente precisam de voz.** Eu proponho uma voz da biblioteca para cada um pelo
+  perfil de `data/dialogue/voice-cast.json`; você ouve a amostra grátis e aprova antes de gastar.
+- **Inglês com a mesma voz.** O v4 fala inglês com a mesma voz, o que mantém o elenco igual nos
+  dois idiomas. Teste primeiro com 2 falas (~100 créditos) para ver se o sotaque fica aceitável;
+  se não ficar, escolhemos vozes americanas parecidas.
 
-- Confirmar o plano e quantos créditos tem por mês.
-- Aprovar a lista de vozes do lote A/B quando eu mandar (ouvir as amostras é grátis).
-- Dizer se quer ouvir fala por fala antes de instalar ou se aprova em lote como hoje.
+## Banco local Qwen (sem créditos, tempo de GPU)
+
+433 falas de 84 personagens. Faltam **374 gravações em PT-BR e 377 em inglês**: hoje elas não têm
+áudio nenhum. Geram com o fluxo já documentado em `docs/directed-voice-production.md`
+(`tools/build_voice_bank.py render` e `publish`), em lotes retomáveis, no tempo livre da GPU.
+As reações aleatórias (civis, guardas, dor) podem ganhar 2 ou 3 tons cada no mesmo fluxo.
+
+## Ordem sugerida
+
+1. Teste de inglês com Dante e Maciota (~100 créditos).
+2. Lote A completo: PT-BR restante e inglês.
+3. Escolher e aprovar as vozes de Helena, Takeshi e Vicente; lote B.
+4. Em paralelo, quando a GPU estiver livre: lotes do Qwen para quem não tem áudio, começando
+   pelas falas principais (Jessica, Raul, Ferrugem, Neco e o resto do elenco das missões).
+
+Depois de cada lote: instalar no jogo, rodar os testes de voz, gerar de novo os dados do painel.

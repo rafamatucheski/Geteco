@@ -12,23 +12,20 @@ func check(ok: bool, label: String) -> void:
 func run() -> void:
 	OS.set_environment("GETECO_DIRECTED_VOICES", "1")
 	var overlay := BANK._json(BANK.OVERLAY)
-	var lines: Dictionary = overlay.get("lines", {}).get("pt_BR", {})
-	check(lines.size() == 53, "Sobreposição tem as 53 falas instaladas (%d)" % lines.size())
 	var rows := {}
 	for row in BANK._json(BANK.DIRECTION).get("lines", []): rows[str(row.key)] = row
-	for row_key in lines:
-		var row: Dictionary = rows.get(row_key, {})
-		check(not row.is_empty(), "Chave existe no roteiro: " + row_key)
-		if row.is_empty(): continue
-		var canonical := BANK.canonical(str(row.source), str(row.speaker))
-		var take := BANK.resolve(canonical, "pt_BR", str(row.speaker))
-		check(str(take.get("path", "")).contains("/elevenlabs/"), "Fala resolve para a ElevenLabs: " + str(row.spoken_pt))
-		check(BANK.stream(take) != null, "Áudio carrega: " + str(row.spoken_pt))
-	# Inglês continua no banco local: a sobreposição é só PT-BR.
-	for row_key in lines:
-		var en := BANK.resolve(rows[row_key], "en", str(rows[row_key].speaker))
-		check(not str(en.get("path", "")).contains("/elevenlabs/"), "Inglês não usa áudio PT-BR")
-		break
+	# Elenco ElevenLabs: Dante, Maciota (e a voz ao telefone), Helena bancária, Takeshi, Vicente.
+	var expected := {"pt_BR": 128, "en": 128}
+	for language in expected:
+		var lines: Dictionary = overlay.get("lines", {}).get(language, {})
+		check(lines.size() == expected[language], "%s tem %d falas instaladas (%d)" % [language, expected[language], lines.size()])
+		for row_key in lines:
+			var row: Dictionary = rows.get(row_key, {})
+			check(not row.is_empty(), "Chave existe no roteiro: " + row_key)
+			if row.is_empty(): continue
+			var take := BANK.resolve(BANK.canonical(str(row.source), str(row.speaker)), language, str(lines[row_key].character_id))
+			check(str(take.get("path", "")).contains("/elevenlabs/" + language + "/"), "%s resolve para a ElevenLabs: %s" % [language, row_key])
+			check(BANK.stream(take) != null, "Áudio carrega: %s %s" % [language, row_key])
 	var pain: Dictionary = rows.get("80a833fa7c4bf1c457d0ce1d3fbaf3e0fe21b6b6f926b242223d70ce494307ac", {})
 	var seen := {}
 	var previous := ""
