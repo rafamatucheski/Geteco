@@ -14,7 +14,8 @@ var _wake_age := 10.0
 var _last_focus := Vector3.INF
 var _reset_flock := true
 var _drag_view := false
-const DRAG_THERMALS := [Vector3(-820,36,-1470),Vector3(-460,45,-1570),Vector3(-100,32,-1475)]
+const COMPACT := preload("res://world/desert/DesertCompactLayout.gd")
+const DRAG_THERMALS := [Vector3(-820,36,-1470) + COMPACT.DRAG,Vector3(-460,45,-1570) + COMPACT.DRAG,Vector3(-100,32,-1475) + COMPACT.DRAG]
 
 func _ready() -> void:
 	name="DesertAmbientLife"
@@ -25,7 +26,7 @@ func _ready() -> void:
 
 func set_focus(point: Vector3) -> void:
 	_focus=point
-	var in_drag_view := Rect2(-1120,-1450,1400,300).has_point(Vector2(point.x,point.z))
+	var in_drag_view := Rect2(-1120 + COMPACT.DRAG.x,-1450 + COMPACT.DRAG.z,1400,300).has_point(Vector2(point.x,point.z))
 	if in_drag_view!=_drag_view:
 		_drag_view=in_drag_view
 		_reset_flock=true
@@ -86,7 +87,7 @@ func _physics_process(delta: float) -> void:
 	# Breathing gusts, not a permanent screen-wide haze. No new light or fog volume.
 	_wind.emitting=sin(_elapsed*.39)>-.25
 	var at := _focus+Vector3(-9,0,5)
-	if _drag_view: at=Vector3(floorf(_focus.x/96.0)*96.0+48.0,0,-1370.0)
+	if _drag_view: at=Vector3(floorf(_focus.x/96.0)*96.0+48.0,0,-1370.0 + COMPACT.DRAG.z)
 	at.y=LAYOUT.surface_height(Vector2(at.x,at.z))+preload("res://world/desert/DesertTerrainMesh.gd").surface_height(Vector2(at.x,at.z))+.18
 	_wind.global_position=at
 

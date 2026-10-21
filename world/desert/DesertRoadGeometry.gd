@@ -53,13 +53,16 @@ func build_chunk(parent: Node3D, rect: Rect2) -> void:
 	_emit(parent,"WornEdge",white,rect,.035 if UNIFIED_BRIDGE.enabled() else .027,UNIFIED_BRIDGE.material("white") if UNIFIED_BRIDGE.enabled() else G.material(Color("c5bea7")),false)
 	_emit(parent,"LaneDash",yellow,rect,.035 if UNIFIED_BRIDGE.enabled() else .028,UNIFIED_BRIDGE.material("yellow") if UNIFIED_BRIDGE.enabled() else G.material(Color("bbad73")),false)
 	_bank_walk(parent,rect)
+	# A areia e a pista compartilham a cota física. A posse da pista também
+	# precisa valer para colisão, sem depender do desempate entre faces coplanares.
+	preload("res://world/desert/DesertGroundOwnership.gd").compose_collision(parent, rect, corridors)
 
 func _bank_walk(parent: Node3D, rect: Rect2) -> void:
-	var section := Rect2(-211.4,-910.73,2.8,1.13).intersection(rect)
+	var section := Rect2(-211.4,-570.73,2.8,1.13).intersection(rect)
 	if not section.has_area(): return
 	var points := PackedVector3Array()
 	for p: Vector2 in [section.position,Vector2(section.end.x,section.position.y),section.end,Vector2(section.position.x,section.end.y)]:
-		var height := lerpf(.024,.082,clampf(inverse_lerp(-909.6,-910.675,p.y),0.0,1.0))
+		var height := lerpf(.024,.082,clampf(inverse_lerp(-569.6,-570.675,p.y),0.0,1.0))
 		points.append(Vector3(p.x,height,p.y))
 	G.quad(parent,"CobrePedestrianRamp",points,TOWN_MATERIALS.material("stone"),true)
 

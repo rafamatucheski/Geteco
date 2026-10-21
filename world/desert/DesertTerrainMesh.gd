@@ -2,6 +2,7 @@ extends RefCounted
 ## Conforming local refinement. Render, height queries and streamed collision share faces.
 const FIELD := preload("res://world/desert/DesertTerrainRelief.gd")
 const SHADER := preload("res://world/desert/desert_relief.gdshader")
+const LIFETIME := preload("res://world/desert/DesertPreparationLifetime.gd")
 const CELL := 96.0
 const STEP := 2.0
 const CAMERA_SAMPLE_STEP := 1.0
@@ -38,23 +39,57 @@ static func build_visuals() -> Node3D:
 ## Mesma montagem de build_visuals, cedendo o quadro quando passa do orçamento: o horizonte
 ## do mirante costeiro montava o terreno inteiro do deserto num quadro só (~9 s congelando
 ## a janela no carregamento, auditoria de 16/10). Resultado idêntico.
-static func build_visuals_sliced(tree: SceneTree, budget_usec := 12000) -> Node3D:
+static func build_visuals_sliced(tree: SceneTree, budget_usec := 12000, token: Dictionary = {}) -> Node3D:
+	if LIFETIME.cancelled(token): return null
 	var root := Node3D.new()
+	LIFETIME.track(token,root)
 	root.name="DesertCanyonTerrain"
 	var slice := Time.get_ticks_usec()
 	for z in range(floori(FIELD.BOUNDS.position.y/CELL),ceili(FIELD.BOUNDS.end.y/CELL)):
 		for x in range(floori(FIELD.BOUNDS.position.x/CELL),ceili(FIELD.BOUNDS.end.x/CELL)):
 			var key := Vector2i(x,z)
+			var prepared_mesh: ArrayMesh=await mesh_for_sliced(key,tree,budget_usec,token)
+			if LIFETIME.cancelled(token): return null
 			var node := MeshInstance3D.new()
 			node.name="Canyon_%d_%d"%[x,z]
-			node.mesh=mesh_for(key)
+			node.mesh=prepared_mesh
 			node.material_override=material()
 			root.add_child(node)
 			if Time.get_ticks_usec() - slice > budget_usec:
 				await tree.process_frame
+				if LIFETIME.cancelled(token): return null
 				slice = Time.get_ticks_usec()
 	release_generation_scratch()
+	LIFETIME.release(token,root)
 	return root
+
+## A cold cell can itself take hundreds of milliseconds. Yield inside its
+## tile generation; vertex order, normals and physical faces stay identical.
+static func mesh_for_sliced(key: Vector2i, tree: SceneTree, budget_usec: int, token: Dictionary = {}) -> ArrayMesh:
+	if LIFETIME.cancelled(token): return null
+	if _meshes.has(key): return _meshes[key]
+	var rect := cell_rect(key)
+	var vertices := PackedVector3Array()
+	var normals := PackedVector3Array()
+	var slice := Time.get_ticks_usec()
+	for z in range(floori(rect.position.y/STEP),ceili(rect.end.y/STEP)):
+		for x in range(floori(rect.position.x/STEP),ceili(rect.end.x/STEP)):
+			var faces := _tile_faces(Vector2i(x,z))
+			vertices.append_array(faces)
+			for vertex in faces: normals.append(_sample(Vector2(vertex.x,vertex.z)).normal)
+			if Time.get_ticks_usec()-slice>budget_usec:
+				await tree.process_frame
+				if LIFETIME.cancelled(token): return null
+				slice=Time.get_ticks_usec()
+	var arrays: Array=[]
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX]=vertices
+	arrays[Mesh.ARRAY_NORMAL]=normals
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
+	_meshes[key]=mesh
+	_faces[key]=vertices
+	return mesh
 
 static func release_generation_scratch() -> bool:
 	# Only after EVERY visual cell and tile is cached: no later height/collision

@@ -22,45 +22,45 @@ static func records() -> Array[Dictionary]:
 		result.append({"kind":"drag_meet","position":data.position,"type":"car","data":data})
 	result.append_array(strip_records())
 	for data in [
-		{"position":Vector3(-1024,0,-1305),"color":Color("b7613b"),"size":12.0},
-		{"position":Vector3(-992,0,-1304),"color":Color("d0b954"),"size":10.0},
-		{"position":Vector3(-960,0,-1305),"color":Color("bb663b"),"size":12.0},
-		{"position":Vector3(-971,0,-1225),"color":Color("436477"),"size":12.0},
-		{"position":Vector3(-498,0,-1337),"color":Color("68734b"),"size":10.0},
-		{"position":Vector3(-102,0,-1337),"color":Color("a34b3d"),"size":10.0},
-		{"position":Vector3(-899,0,-1336),"color":Color("b16c43"),"size":10.0},
+		{"position":Vector3(-884,0,-785),"color":Color("b7613b"),"size":12.0},
+		{"position":Vector3(-852,0,-784),"color":Color("d0b954"),"size":10.0},
+		{"position":Vector3(-820,0,-785),"color":Color("bb663b"),"size":12.0},
+		{"position":Vector3(-831,0,-705),"color":Color("436477"),"size":12.0},
+		{"position":Vector3(-358,0,-817),"color":Color("68734b"),"size":10.0},
+		{"position":Vector3(38,0,-817),"color":Color("a34b3d"),"size":10.0},
+		{"position":Vector3(-759,0,-816),"color":Color("b16c43"),"size":10.0},
 	]:
 		result.append({"kind":"drag_meet","position":data.position,"type":"tent","data":data})
 	for data in [
-		{"position":Vector3(-972,0,-1223),"type":"tables"},
-		{"position":Vector3(-102,0,-1338),"type":"tables"},
-		{"position":Vector3(-498,0,-1338),"type":"tables"},
-		{"position":Vector3(-1000,0,-1299),"type":"pit_tools"},
-		{"position":Vector3(-970,0,-1301),"type":"pit_tools"},
-		{"position":Vector3(-925,0,-1248),"type":"pit_tools"},
-		{"position":Vector3(-976,0,-1249),"type":"pit_tools"},
-		{"position":Vector3(-934,0,-1265),"type":"tires"},
-		{"position":Vector3(-380,0,-1335),"type":"tires"},
-		{"position":Vector3(-901,0,-1250),"type":"tires"},
-		{"position":Vector3(-922,0,-1306),"type":"speakers"},
-		{"position":Vector3(-1028,0,-1292),"type":"speakers"},
-		{"position":Vector3(-904,0,-1268),"type":"speakers"},
-		{"position":Vector3(-976,0,-1268),"type":"speakers"},
-		{"position":Vector3(-1016,0,-1221),"type":"trailer"},
-		{"position":Vector3(-999,0,-1221),"type":"trailer"},
-		{"position":Vector3(-699,0,-1337),"type":"team_box"},
-		{"position":Vector3(-981,0,-1267),"type":"team_box"},
-		{"position":Vector3(-909,0,-1294),"type":"team_box"},
-		{"position":Vector3(-899,0,-1337),"type":"pit_tools"},
-		{"position":Vector3(-893,0,-1294),"type":"tables"},
-		{"position":Vector3(-899,0,-1311),"type":"barrier"},
+		{"position":Vector3(-832,0,-703),"type":"tables"},
+		{"position":Vector3(38,0,-818),"type":"tables"},
+		{"position":Vector3(-358,0,-818),"type":"tables"},
+		{"position":Vector3(-860,0,-779),"type":"pit_tools"},
+		{"position":Vector3(-830,0,-781),"type":"pit_tools"},
+		{"position":Vector3(-785,0,-728),"type":"pit_tools"},
+		{"position":Vector3(-836,0,-729),"type":"pit_tools"},
+		{"position":Vector3(-794,0,-745),"type":"tires"},
+		{"position":Vector3(-240,0,-815),"type":"tires"},
+		{"position":Vector3(-761,0,-730),"type":"tires"},
+		{"position":Vector3(-782,0,-786),"type":"speakers"},
+		{"position":Vector3(-888,0,-772),"type":"speakers"},
+		{"position":Vector3(-764,0,-748),"type":"speakers"},
+		{"position":Vector3(-836,0,-748),"type":"speakers"},
+		{"position":Vector3(-876,0,-701),"type":"trailer"},
+		{"position":Vector3(-859,0,-701),"type":"trailer"},
+		{"position":Vector3(-559,0,-817),"type":"team_box"},
+		{"position":Vector3(-841,0,-747),"type":"team_box"},
+		{"position":Vector3(-769,0,-774),"type":"team_box"},
+		{"position":Vector3(-759,0,-817),"type":"pit_tools"},
+		{"position":Vector3(-753,0,-774),"type":"tables"},
+		{"position":Vector3(-759,0,-791),"type":"barrier"},
 	]:
 		result.append({"kind":"drag_meet","position":data.position,"type":data.type,"data":data})
 	# Independent barriers leave the access, staging point and braking runoff open.
 	for x in range(-888,-759,9):
-		result.append({"kind":"drag_meet","position":Vector3(x,0,-1311),"type":"barrier","data":{}})
+		result.append({"kind":"drag_meet","position":Vector3((x)+140,0,-791),"type":"barrier","data":{}})
 	for x in range(-916,-759,9):
-		result.append({"kind":"drag_meet","position":Vector3(x,0,-1329),"type":"barrier","data":{}})
+		result.append({"kind":"drag_meet","position":Vector3((x)+140,0,-809),"type":"barrier","data":{}})
 	result.append({"kind":"drag_workshop","position":LAYOUT.drag_workshop_point()})
 	return result
 
@@ -76,15 +76,15 @@ static func strip_records() -> Array[Dictionary]:
 		# One 7.6 m solid barrier protects the three-person group without adding
 		# another row of scenery or blocking the service lane at z=-1350.
 		# The first two pockets already have the continuous starting barrier.
-		if pocket>=2: result.append({"kind":"drag_meet","position":Vector3(x,0,-1328.3),"type":"barrier","data":{}})
+		if pocket>=2: result.append({"kind":"drag_meet","position":Vector3((x)+140,0,-808.3),"type":"barrier","data":{}})
 		for slot in 3:
-			var point := Vector3(x-2.4+float(slot)*2.4,.03,-1331)
-			var data := {"team":"strip","point":point,"walk_end":point,"focus":Vector3(x,0,-1320),
+			var point := Vector3(x+140.0-2.4+float(slot)*2.4,.03,-811)
+			var data := {"team":"strip","point":point,"walk_end":point,"focus":Vector3((x)+140,0,-800),
 				"coat":paints[(pocket+slot)%paints.size()],"roamer":false,"identity":11000+pocket*3+slot}
 			result.append({"kind":"drag_meet","position":point,"type":"strip_spectator","data":data})
 		for slot in (2 if pocket%2==0 else 1):
 			var offset := -10.0 if slot==0 else 10.0
-			var car := _car("strip_%d_%d"%[pocket,slot],Vector3(x+offset,0,-1334.3),models[(pocket+slot)%models.size()],PI*.5)
+			var car := _car("strip_%d_%d"%[pocket,slot],Vector3((x+offset)+140,0,-814.3),models[(pocket+slot)%models.size()],PI*.5)
 			car.paint=paints[(pocket+slot)%paints.size()]
 			result.append({"kind":"drag_meet","position":car.position,"type":"strip_car","data":car})
 	return result
@@ -93,14 +93,14 @@ static func car_spots() -> Array[Dictionary]:
 	# The actual rival models are landmarks for their social islands. Digo's Gol
 	# stays inside his working garage; these four match DesertDrag.RIVALS exactly.
 	var result: Array[Dictionary] = [
-		_car("livia_faisca",Vector3(-964,0,-1296.8),"desert_faisca_rally",.04),
-		_car("raul_coyote",Vector3(-1008,0,-1298),"desert_coyote_drag",PI),
-		_car("jessica_jetta",Vector3(-908.5,0,-1260),"jessica_jetta_gli",PI*.5),
-		_car("nadir_mirage",Vector3(-960.5,0,-1241),"desert_mirage_gt",-.12),
-		_car("vicente_drag",Vector3(-945,0,-1259.5),"desert_coyote_drag",PI),
-		_car("gang_coupe",Vector3(-952,0,-1253),"desert_mirage",PI),
-		_car("gang_sedan",Vector3(-938,0,-1253),"desert_siroco",PI),
-		_car("service_pickup",Vector3(-1032,0,-1268),"desert_bison",PI*.5),
+		_car("livia_faisca",Vector3(-824,0,-776.8),"desert_faisca_rally",.04),
+		_car("raul_coyote",Vector3(-868,0,-778),"desert_coyote_drag",PI),
+		_car("jessica_jetta",Vector3(-768.5,0,-740),"jessica_jetta_gli",PI*.5),
+		_car("nadir_mirage",Vector3(-820.5,0,-721),"desert_mirage_gt",-.12),
+		_car("vicente_drag",Vector3(-805,0,-739.5),"desert_coyote_drag",PI),
+		_car("gang_coupe",Vector3(-812,0,-733),"desert_mirage",PI),
+		_car("gang_sedan",Vector3(-798,0,-733),"desert_siroco",PI),
+		_car("service_pickup",Vector3(-892,0,-748),"desert_bison",PI*.5),
 	]
 	# Closely parked rows leave the 8m access corridor and each conversational
 	# pocket intact. Slight offsets/yaws make separate arriving groups legible.
@@ -115,13 +115,13 @@ static func car_spots() -> Array[Dictionary]:
 	var index := 0
 	for row in rows:
 		for x in row.x:
-			var point := Vector3(float(x),0,float(row.z)+float(index%3-1)*.22)
+			var point := Vector3(float(x)+140.0,0,float(row.z)+520.0+float(index%3-1)*.22)
 			var spot := _car("display_%02d"%index,point,models[index%models.size()],float(index%5-2)*.035+(PI if index%2 else 0.0))
 			spot.paint=colors[index%colors.size()]
 			result.append(spot)
 			index+=1
-	for point in [Vector3(-1033,0,-1259),Vector3(-1033,0,-1243),Vector3(-1033,0,-1227),Vector3(-980,0,-1230),Vector3(-950,0,-1230),Vector3(-925,0,-1230),Vector3(-908,0,-1237),Vector3(-898,0,-1243),Vector3(-898,0,-1257),Vector3(-898,0,-1271)]:
-		var spot := _car("display_%02d"%index,point,models[index%models.size()],PI*.5 if point.x>-900 else -.06)
+	for point in [Vector3(-893,0,-739),Vector3(-893,0,-723),Vector3(-893,0,-707),Vector3(-840,0,-710),Vector3(-810,0,-710),Vector3(-785,0,-710),Vector3(-768,0,-717),Vector3(-758,0,-723),Vector3(-758,0,-737),Vector3(-758,0,-751)]:
+		var spot := _car("display_%02d"%index,point,models[index%models.size()],PI*.5 if point.x>-760 else -.06)
 		spot.paint=colors[index%colors.size()]
 		result.append(spot)
 		index+=1

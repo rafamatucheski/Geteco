@@ -1,7 +1,8 @@
 extends Node3D
 ## The same authored/generated rocks as the playable desert. Their visible
 ## silhouettes live with the region; streamed cells retain the matching solids.
-const AREA := Rect2(-1152,-1920,1536,672)
+const LAYOUT := preload("res://world/desert/DesertLayout.gd")
+const AREA := Rect2(-1012,-1230,1452,502)
 const FORMS=preload("res://world/desert/DesertHorizonRelief.gd")
 const RELIEF=preload("res://world/desert/DesertTerrainRelief.gd")
 var outcrop_cells := {}
@@ -26,9 +27,9 @@ func configure(region: Node3D) -> void:
 		for along in [0.0,-35.0,35.0]:
 			if placed: break
 			for step in 6:
-				var depth: float=[-1460.0,-1490.0,-1610.0,-1660.0,-1740.0,-1830.0][posmod(band*5+step,6)]
-				var center := Vector2(-1030.0+float(band)*160.0+along,depth)
-				if not region._decoration_clear(center,radius+4.0): continue
+				var depth: float=[-940.0,-970.0,-1090.0,-1140.0,-1170.0,-1190.0][posmod(band*5+step,6)]
+				var center := Vector2(-890.0+float(band)*160.0+along,depth)
+				if not LAYOUT.BOUNDS.grow(-radius-4.0).has_point(center) or not region._decoration_clear(center,radius+4.0): continue
 				var low: float=region._ground_height(center)
 				var high := low
 				for corner in 8:

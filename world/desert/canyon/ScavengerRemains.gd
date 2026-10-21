@@ -5,7 +5,7 @@ const E := preload("res://world/desert/expansion/DesertEcologyGeometry.gd")
 const T := preload("res://world/desert/canyon/DesertSmugglerTerrain.gd")
 # Camera/terrain rays select exposed lower benches; the near rim must not hide
 # all scale cues. The last group stays in the deepest basin for later viewpoints.
-const BODY_POINTS := [Vector2(-1357,-701),Vector2(-1365,-707),Vector2(-1371,-657),Vector2(-1336,-590)]
+const BODY_POINTS := [Vector2(-1211.8,-581.3),Vector2(-1216.6,-583.1),Vector2(-1220.2,-568.1),Vector2(-1199.2,-548)]
 const BIRD_OFFSETS := [Vector3(0,-.68,.25),Vector3(0,.76,-.12),Vector3(1,-.73,-.28),Vector3(2,.74,.16),Vector3(3,-.67,.3),Vector3(3,.69,-.21)]
 const OLD_BONE := Color("b9ae8d")
 static var _head_mesh: ArrayMesh

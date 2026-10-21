@@ -3,13 +3,14 @@ extends RefCounted
 ## feeds render vertices, streamed collision and the placement of grounded props.
 ## No scene nodes, noise resources, timers, random seed changes or per-frame work.
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
-const BOUNDS := Rect2(-1140.0,-1936.0,580.0,368.0)
+## Trim empty lips; preserve the full-size plateau and driveable ramp.
+const BOUNDS := Rect2(-1000,-1230,580.0,302.0)
 const GRID_STEP := 4.0
 const ROAD_FLAT_MARGIN := 22.0
 const ROAD_BLEND := 24.0
 const EDGE_BLEND := 32.0
 const PLATEAU_HEIGHT := 22.0
-const PLATEAU_CENTER := Vector2(-1072.0,-1738.0)
+const PLATEAU_CENTER := Vector2(-932,-1058)
 const PLATEAU_RADIUS := Vector2(44.0,48.0)
 const ACCESS_HALF_WIDTH := 8.0
 const ACCESS_BLEND := 14.0
@@ -72,7 +73,7 @@ static func passage_clear(point: Vector2, radius := 0.0) -> bool:
 	var margin := maxf(radius,0.0)
 	if not BOUNDS.grow(40.0+margin).has_point(point): return false
 	if point.y>BOUNDS.end.y:
-		return absf(point.x+860.0)<=40.0+margin and point.y<=-1535.0+margin
+		return absf(point.x+720.0)<=40.0+margin and point.y<=-895.0+margin
 	if point.y<BOUNDS.position.y-margin: return false
 	var t := _depth(point.y)
 	if absf(point.x-_center_x(t))<=_floor_half_width(t)+margin+4.0: return true
@@ -88,7 +89,7 @@ static func canyon_centerline(step := GRID_STEP) -> PackedVector3Array:
 	# Includes the flat connection to the existing salt highway. This path is
 	# guidance/validation data; it does not add an ambient traffic road or barrier.
 	var result := PackedVector3Array()
-	result.append(Vector3(-860.0,0.0,-1540.0))
+	result.append(Vector3(-720,0.0,-900))
 	var count := maxi(2,ceili(BOUNDS.size.y/maxf(step,1.0)))
 	for i in range(count+1):
 		var t := float(i)/float(count)
@@ -111,7 +112,7 @@ static func _depth(z: float) -> float:
 
 static func _center_x(t: float) -> float:
 	var phase := t*t*(3.0-2.0*t)
-	return -860.0+42.0*sin(TAU*phase)+12.0*sin(PI*t)
+	return -720.0+42.0*sin(TAU*phase)+12.0*sin(PI*t)
 
 static func _floor_half_width(t: float) -> float:
 	# Keep both flanks legible in the normal orthographic camera while retaining
@@ -123,8 +124,8 @@ static func _floor_height(t: float) -> float:
 
 static func _access_point(t: float) -> Vector2:
 	var a := Vector2(_center_x(ACCESS_START_T),lerpf(BOUNDS.end.y,BOUNDS.position.y,ACCESS_START_T))
-	var b := Vector2(-944.0,-1846.0)
-	var c := Vector2(-1080.0,-1846.0)
+	var b := Vector2(-804,-1166)
+	var c := Vector2(-940,-1166)
 	var u := 1.0-t
 	return a*u*u*u+b*3.0*u*u*t+c*3.0*u*t*t+PLATEAU_CENTER*t*t*t
 
@@ -180,6 +181,15 @@ static func _prepare() -> void:
 		var size: Vector3 = building.size
 		var rect := Rect2(Vector2(at.x-size.x*.5,at.z-size.z*.5),Vector2(size.x,size.z)).grow(22.0)
 		if rect.grow(ROAD_BLEND).intersects(BOUNDS,true): _building_guards.append(rect)
+	# Flat forecourts follow the relocated roadside buildings at the relief lip.
+	var roadside := preload("res://runtime/desert/roadside/RoadsideLayout.gd")
+	if roadside.enabled():
+		for site in roadside.SITES:
+			var radius := float(site.get("radius",roadside.SITE_RADIUS))+4.0
+			var center: Vector2=site.center
+			var rect := Rect2(center-Vector2.ONE*radius,Vector2.ONE*radius*2.0)
+			if rect.grow(ROAD_BLEND).intersects(BOUNDS,true): _building_guards.append(rect)
+
 	var last := _access_point(0.0)
 	_access_bounds=Rect2(last,Vector2.ZERO)
 	var first_height := _floor_height(ACCESS_START_T)

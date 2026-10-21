@@ -3,9 +3,9 @@ extends RefCounted
 ## authored parts, while collision is admitted before deferred visual dressing.
 const G := preload("res://world/desert/DesertGeometry.gd")
 const MATERIALS := preload("res://world/desert/DesertTownMaterials.gd")
-const CENTER := Vector3(-528,0,-822)
-const BOUNDS := Rect2(-565,-865,75,87)
-const APPROACH := Rect2(-536,-879,16,63)
+const CENTER := Vector3(-528,0,-482)
+const BOUNDS := Rect2(-565,-525,75,87)
+const APPROACH := Rect2(-536,-539,16,63)
 ## Prédios pintados (PaintedFacadeKit) por estilo da vila; torre d'água fica em 3D.
 const PAINTED := {"adobe":"casa-adobe","stone":"casa-pedra-deserto","ranch":"casa-rancho","shed":"galpao-deserto","store":"armazem-santa-lua"}
 static var _parts_cache: Dictionary = {}
@@ -13,12 +13,12 @@ static var _meshes: Dictionary = {}
 
 static func definitions() -> Array[Dictionary]:
 	return [
-		{"id":"santa_lua_home_1","position":Vector3(-550,0,-842),"size":Vector3(11,3.4,8),"yaw":PI*.5,"kind":"home","style":"adobe","finish":"adobe","lamp":true},
-		{"id":"santa_lua_home_2","position":Vector3(-506,0,-842),"size":Vector3(10,3.1,8),"yaw":-PI*.5,"kind":"home","style":"ranch","finish":"wood","lamp":false},
-		{"id":"santa_lua_home_3","position":Vector3(-550,0,-816),"size":Vector3(10,3.15,8),"yaw":PI*.5,"kind":"home","style":"stone","finish":"stone","lamp":false},
-		{"id":"santa_lua_home_4","position":Vector3(-506,0,-816),"size":Vector3(11,3.5,8),"yaw":-PI*.5,"kind":"home","style":"shed","finish":"steel","lamp":true},
-		{"id":"santa_lua_store","position":Vector3(-528,0,-793),"size":Vector3(13,3.9,8),"yaw":PI,"kind":"store","finish":"cream","lamp":true},
-		{"id":"santa_lua_water_tower","position":Vector3(-550,0,-790),"size":Vector3(6,11,6),"yaw":0.0,"kind":"tower"},
+		{"id":"santa_lua_home_1","position":Vector3(-550,0,-502),"size":Vector3(11,3.4,8),"yaw":PI*.5,"kind":"home","style":"adobe","finish":"adobe","lamp":true},
+		{"id":"santa_lua_home_2","position":Vector3(-506,0,-502),"size":Vector3(10,3.1,8),"yaw":-PI*.5,"kind":"home","style":"ranch","finish":"wood","lamp":false},
+		{"id":"santa_lua_home_3","position":Vector3(-550,0,-476),"size":Vector3(10,3.15,8),"yaw":PI*.5,"kind":"home","style":"stone","finish":"stone","lamp":false},
+		{"id":"santa_lua_home_4","position":Vector3(-506,0,-476),"size":Vector3(11,3.5,8),"yaw":-PI*.5,"kind":"home","style":"shed","finish":"steel","lamp":true},
+		{"id":"santa_lua_store","position":Vector3(-528,0,-453),"size":Vector3(13,3.9,8),"yaw":PI,"kind":"store","finish":"cream","lamp":true},
+		{"id":"santa_lua_water_tower","position":Vector3(-550,0,-450),"size":Vector3(6,11,6),"yaw":0.0,"kind":"tower"},
 		{"id":"santa_lua_courtyard","position":CENTER,"size":Vector3(64,2,73),"yaw":0.0,"kind":"courtyard"},
 	]
 
@@ -124,7 +124,7 @@ static func build_ground(parent: Node3D, rect: Rect2) -> void:
 	# Continuous regional terrain owns all support. These thin visual layers sit
 	# above it and stop at the asphalt shoulder, with a broad vehicle turn-in.
 	# Disjoint pieces form one courtyard footprint, without coplanar overlaps.
-	for area in [Rect2(-536,-872,16,20),Rect2(-546,-852,36,49),Rect2(-558,-826,12,9),Rect2(-510,-826,12,9)]:
+	for area in [Rect2(-536,-532,16,20),Rect2(-546,-512,36,49),Rect2(-558,-486,12,9),Rect2(-510,-486,12,9)]:
 		var clipped: Rect2=area.intersection(rect)
 		if not clipped.has_area(): continue
 		var offset := .018

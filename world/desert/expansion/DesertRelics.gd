@@ -4,10 +4,10 @@ extends RefCounted
 const RAIL := preload("res://world/desert/expansion/DesertRelicsRail.gd")
 const SITES := preload("res://world/desert/expansion/DesertRelicsSites.gd")
 const BATCH := preload("res://world/desert/expansion/DesertRelicsBatch.gd")
-const STATION := Vector2(-1100, -585)
-const MINE := Vector2(-1400, -1080)
-const WAGON := Vector2(-872, -550)
-const WRECK := Vector2(-650, -580)
+const STATION := Vector2(-960,-465)
+const MINE := Vector2(-1260,-1080)
+const WAGON := Vector2(-732,-430)
+const WRECK := Vector2(-510,-460)
 
 static func build_chunk(parent: Node3D, rect: Rect2, world_seed: int, height_callable: Callable) -> int:
 	if not height_callable.is_valid(): return 0
@@ -68,32 +68,32 @@ static func station_yard_bounds() -> Rect2:
 
 static func approach_paths() -> Array:
 	return [
-		[Vector2(-1210,-1080), Vector2(-1260,-1100), Vector2(-1340,-1100), Vector2(-1378,-1080)],
-		[Vector2(-1100,-880), Vector2(-1118,-765), Vector2(-1136,-645), Vector2(-1110,-605)],
+		[Vector2(-1060,-860), Vector2(-1120,-980), Vector2(-1200,-1100), Vector2(-1238,-1080)],
+		[Vector2(-960,-540), Vector2(-978,-525), Vector2(-996,-505), Vector2(-970,-485)],
 	]
 
 static func secrets() -> Array[Dictionary]:
 	return [
-		{"id":"desert_relic_station", "position":Vector3(-1097,0,-583), "target":Vector3(-1095.6,.65,-583), "amount":950, "action":"Examinar caixa de passagens", "clue":"O último bilhete foi emitido há décadas. Sob os papéis, Dante encontra o caixa esquecido da estação."},
-		{"id":"desert_relic_mine", "position":Vector3(-1388,0,-1074), "target":Vector3(-1386.8,.5,-1074), "amount":1650, "action":"Abrir caixa de ferramentas", "clue":"Entre ferramentas gastas, há um envelope com o pagamento que um garimpeiro nunca voltou para buscar."},
-		{"id":"desert_relic_wagon", "position":Vector3(-872,0,-546.4), "target":Vector3(-872,.5,-547.9), "amount":1250, "action":"Examinar carga caída", "clue":"Uma caixa se abriu quando o vagão descarrilou. Debaixo da lona ressecada, Dante encontra dinheiro guardado em uma lata."},
-		{"id":"desert_relic_wreck", "position":Vector3(-646.9,0,-577), "target":Vector3(-648.3,.45,-577), "amount":700, "action":"Vasculhar maleta", "clue":"A areia entrou pela cabine da caminhonete. Uma maleta ainda está presa ao lado da carroceria."},
+		{"id":"desert_relic_station", "position":Vector3(-957,0,-463), "target":Vector3(-955.6,.65,-463), "amount":950, "action":"Examinar caixa de passagens", "clue":"O último bilhete foi emitido há décadas. Sob os papéis, Dante encontra o caixa esquecido da estação."},
+		{"id":"desert_relic_mine", "position":Vector3(-1248,0,-1074), "target":Vector3(-1246.8,.5,-1074), "amount":1650, "action":"Abrir caixa de ferramentas", "clue":"Entre ferramentas gastas, há um envelope com o pagamento que um garimpeiro nunca voltou para buscar."},
+		{"id":"desert_relic_wagon", "position":Vector3(-732,0,-426.4), "target":Vector3(-732,.5,-427.9), "amount":1250, "action":"Examinar carga caída", "clue":"Uma caixa se abriu quando o vagão descarrilou. Debaixo da lona ressecada, Dante encontra dinheiro guardado em uma lata."},
+		{"id":"desert_relic_wreck", "position":Vector3(-506.9,0,-457), "target":Vector3(-508.3,.45,-457), "amount":700, "action":"Vasculhar maleta", "clue":"A areia entrou pela cabine da caminhonete. Uma maleta ainda está presa ao lado da carroceria."},
 	]
 
 static func locations() -> Array[Dictionary]:
 	# Local route/solid samples are deliberately authored independently of the
 	# placement builder so a fixture can detect obstructed accesses and clipping.
 	return [
-		{"id":"station", "position":Vector3(STATION.x,0,STATION.y), "camera_target":Vector3(-1104,1,-570), "camera_size":62.0,
+		{"id":"station", "position":Vector3(STATION.x,0,STATION.y), "camera_target":Vector3(-964,1,-450), "camera_size":62.0,
 		 "approach":[Vector3(0,0,10),Vector3(3,0,7),Vector3(3,0,2)],
 		 "solids":[{"id":"station_wall","start":Vector3(0,.04,-7),"motion":Vector3(0,0,6)}, {"id":"ticket_chest","start":Vector3(7,.04,2),"motion":Vector3(-4,0,0)}, {"id":"tower_leg","start":Vector3(-17.65,.04,-11),"motion":Vector3(0,0,4)}]},
-		{"id":"mine", "position":Vector3(MINE.x,0,MINE.y), "camera_target":Vector3(-1400,1,-1080), "camera_size":56.0,
+		{"id":"mine", "position":Vector3(MINE.x,0,MINE.y), "camera_target":Vector3(-1260,1,-1080), "camera_size":56.0,
 		 "approach":[Vector3(24,0,16),Vector3(12,0,16),Vector3(12,0,6)],
 		 "solids":[{"id":"mine_seal","start":Vector3(-5,.04,2),"motion":Vector3(0,0,-8)}, {"id":"mine_cart","start":Vector3(-1.5,.04,5.8),"motion":Vector3(-5,0,0)}, {"id":"tool_chest","start":Vector3(15.5,.04,6),"motion":Vector3(-4,0,0)}]},
-		{"id":"wagon", "position":Vector3(WAGON.x,0,WAGON.y), "camera_target":Vector3(-872,1,-550), "camera_size":25.0,
+		{"id":"wagon", "position":Vector3(WAGON.x,0,WAGON.y), "camera_target":Vector3(-732,1,-430), "camera_size":25.0,
 		 "approach":[Vector3(8,0,7),Vector3(0,0,7),Vector3(0,0,3.6)],
 		 "solids":[{"id":"wagon_end","start":Vector3(-8,.04,0),"motion":Vector3(5,0,0)}, {"id":"spilled_crate","start":Vector3(-3.3,.04,6),"motion":Vector3(0,0,-4)}, {"id":"wagon_cache","start":Vector3(0,.04,3.6),"motion":Vector3(0,0,-2)}]},
-		{"id":"wreck", "position":Vector3(WRECK.x,0,WRECK.y), "camera_target":Vector3(-650,1,-580), "camera_size":17.0,
+		{"id":"wreck", "position":Vector3(WRECK.x,0,WRECK.y), "camera_target":Vector3(-510,1,-460), "camera_size":17.0,
 		 "approach":[Vector3(6,0,6),Vector3(3.1,0,6),Vector3(3.1,0,3)],
 		 "solids":[{"id":"wreck_cab","start":Vector3(3,.04,-.2),"motion":Vector3(-5,0,0)}, {"id":"wreck_cache","start":Vector3(3.1,.04,3),"motion":Vector3(-3,0,0)}]},
 	]

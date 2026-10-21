@@ -2,16 +2,16 @@ extends RefCounted
 const BATCH := preload("res://world/desert/expansion/DesertRelicsBatch.gd")
 const BALLAST := preload("res://world/desert/expansion/DesertRelicsBallast.gd")
 const SMUGGLER := preload("res://world/desert/canyon/DesertSmugglerLayout.gd")
-const START_X := -1370.0
+const START_X := -1230.0
 # The western abandoned branch now ends at the gorge's eastern rock rim.
 # Keep the original curve phase for every retained metre of track.
-const GORGE_TERMINUS := -1200.0
-const END_X := -430.0
+const GORGE_TERMINUS := -1060.0
+const END_X := -290.0
 const STEP := 4.0
 const GAUGE := 1.435
 
 static func center(x: float) -> Vector2:
-	return Vector2(x, -550.0 + sin((x-START_X)/(END_X-START_X)*TAU)*5.0)
+	return Vector2(x, -430.0 + sin((x-START_X)/(END_X-START_X)*TAU)*5.0)
 
 static func reservation_clear(point: Vector2, radius: float = 0.0) -> bool:
 	var start_x := GORGE_TERMINUS if SMUGGLER.enabled() else START_X
@@ -19,7 +19,7 @@ static func reservation_clear(point: Vector2, radius: float = 0.0) -> bool:
 	return absf(point.y-center(clampf(point.x,START_X,END_X)).y) > 6.0+maxf(radius,0.0)
 
 static func build_chunk(parent: Node3D, rect: Rect2, world_seed: int, height: Callable) -> int:
-	if not rect.intersects(Rect2(START_X-9.0,-572.0,END_X-START_X+18.0,44.0)): return 0
+	if not rect.intersects(Rect2(START_X-9.0,-452.0,END_X-START_X+18.0,44.0)): return 0
 	var start_x := GORGE_TERMINUS if SMUGGLER.enabled() else START_X
 	var ballast_count := BALLAST.build_chunk(parent,rect,height,center,start_x,END_X)
 	var start := maxi(ceili((start_x-START_X)/STEP), floori((rect.position.x-START_X)/STEP)-1)

@@ -2,7 +2,7 @@ extends RefCounted
 ## Exterior stop, owned and unloaded by the desert's existing chunk lifecycle.
 const G := preload("res://world/desert/DesertGeometry.gd")
 const M := preload("res://world/desert/DesertTownMaterials.gd")
-const POSITION := Vector3(-185,0,-889)
+const POSITION := Vector3(-185,0,-549)
 
 static func build() -> Node3D:
 	var stop := Node3D.new()

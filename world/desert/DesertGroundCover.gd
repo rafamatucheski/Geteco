@@ -18,7 +18,7 @@ const CONTACT_KINDS := ["desert_shrub", "desert_shrub", "desert_stone", "desert_
 const VISIBILITY := [115.0, 115.0, 105.0, 85.0, 90.0]
 ## Only the retained drag-camera corridor needs a spatial fade. A hard limit on
 ## an entire 96 m batch revealed rectangular holes during the side-on race.
-const DRAG_CORRIDOR := Rect2(-1056,-1440,1248,192)
+const DRAG_CORRIDOR := Rect2(-916,-920,1248,192)
 const DRAG_BATCH_SIZE := 48.0
 static var _meshes: Array[ArrayMesh] = []
 static var _mesh_bounds: Array[AABB] = []

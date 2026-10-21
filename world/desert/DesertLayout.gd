@@ -1,25 +1,26 @@
 extends RefCounted
 ## Authored metre coordinates, north of the final-campaign bridge. No source-pixel offsets.
 const ID := "desert"
-const BOUNDS := Rect2(-1500, -1950, 1940, 1576.5)
+## A real perimeter reduction: 1,524,570 m² versus the original 3,058,410 m².
+const BOUNDS := Rect2(-1340, -1230, 1780, 856.5)
 const BRIDGE_END := Vector3(342.5, 2.4, -373.5)
-const TOWN := Vector3(-180, 0, -900)
+const TOWN := Vector3(-180, 0, -560)
 const DRAG_LENGTH := 800.0
 const DRAG_LANE_SPACING := 4.0
-const DRAG_START := Vector3(-900, 0, -1320)
-const DRAG_STAGING := Vector3(-915, 0, -1304)
-const DRAG_MEET_CENTER := Vector3(-965, 0, -1262)
-const DRAG_VICENTE := Vector3(-945, 0, -1253)
-const DRAG_WORKSHOP := Vector3(-1006, 0, -1242)
+const DRAG_START := Vector3(-760, 0, -800)
+const DRAG_STAGING := Vector3(-775, 0, -784)
+const DRAG_MEET_CENTER := Vector3(-825, 0, -742)
+const DRAG_VICENTE := Vector3(-805, 0, -733)
+const DRAG_WORKSHOP := Vector3(-866, 0, -722)
 const DRAG_OPPONENTS := {
-	"livia":Vector3(-968,0,-1291),"raul":Vector3(-1003,0,-1288),
-	"jessica":Vector3(-915,0,-1260),"nadir":Vector3(-967,0,-1244),
+	"livia":Vector3(-828,0,-771),"raul":Vector3(-863,0,-768),
+	"jessica":Vector3(-775,0,-740),"nadir":Vector3(-827,0,-724),
 }
-const DRAG_MEET_BOUNDS := Rect2(-1040, -1312, 150, 100)
-const DRAG_STRIP_BOUNDS := Rect2(-955, -1358, 1070, 55)
-const BANK := Vector3(-210, 0, -920)
-const WORKSHOP := Vector3(-140, 0, -955)
-const TRUCK_STOP := Vector3(285, 0, -750)
+const DRAG_MEET_BOUNDS := Rect2(-900, -792, 150, 100)
+const DRAG_STRIP_BOUNDS := Rect2(-815, -838, 1070, 55)
+const BANK := Vector3(-210, 0, -580)
+const WORKSHOP := Vector3(-140, 0, -615)
+const TRUCK_STOP := Vector3(285, 0, -490)
 static var _clearance_roads: Array[Dictionary] = []
 
 static func drag_start_point() -> Vector3: return DRAG_START
@@ -39,21 +40,22 @@ static func roads() -> Array[Dictionary]:
 	# Every T/crossing is an explicit vertex, avoiding near-miss graph connections.
 	# The strip has its own access and is excluded from ambient traffic.
 	return [
-		_road("desert_route_66", _rounded([Vector2(342.5,-373.5),Vector2(342.5,-445),Vector2(342.5,-750),Vector2(342.5,-880),Vector2(342.5,-1540),Vector2(302.5,-1540)],40), 10.0),
-		_road("desert_main_street", [Vector2(342.5,-880),Vector2(-110,-880),Vector2(-140,-880),Vector2(-210,-880),Vector2(-370,-880),Vector2(-1160,-880)], 9.0),
-		_road("desert_west_highway", _rounded([Vector2(-1160,-880),Vector2(-1200,-880),Vector2(-1200,-1264),Vector2(-1200,-1540),Vector2(-1160,-1540)],40), 9.0),
-		_road("desert_salt_highway", [Vector2(-1160,-1540),Vector2(302.5,-1540)], 10.0),
-		_road("desert_digo_street", _rounded([Vector2(-110,-880),Vector2(-110,-980),Vector2(-370,-980),Vector2(-370,-880)],16), 7.0),
-		_road("desert_bank_approach", [Vector2(-210,-880),Vector2(-210,-907)], 6.5),
-		_road("desert_truck_stop_entry", _rounded([Vector2(342.5,-750),Vector2(320,-750),Vector2(306,-758),Vector2(290,-758)],6), 12.0),
-		_road("desert_drag_access", _rounded([Vector2(-1200,-1264),Vector2(-1120,-1264),Vector2(-1090,-1280),Vector2(-960,-1280),Vector2(-928,-1280),Vector2(-928,-1320)],12), 8.0, false),
-		_road("desert_drag_strip", [Vector2(-936,-1320),Vector2(-928,-1320),Vector2(-900,-1320),Vector2(-100,-1320),Vector2(90,-1320)], 10.0, false),
+		_road("desert_route_66", _rounded([Vector2(342.5,-373.5),Vector2(342.5,-445),Vector2(342.5,-490),Vector2(342.5,-540),Vector2(342.5,-900),Vector2(302.5,-900)],40), 10.0),
+		_road("desert_main_street", [Vector2(342.5,-540),Vector2(-110,-540),Vector2(-140,-540),Vector2(-210,-540),Vector2(-370,-540),Vector2(-620,-540),Vector2(-1020,-540)], 9.0),
+		_road("desert_west_highway", _rounded([Vector2(-1020,-540),Vector2(-1060,-540),Vector2(-1060,-744),Vector2(-1060,-900),Vector2(-1020,-900)],40), 9.0),
+		_road("desert_salt_highway", [Vector2(-1020,-900),Vector2(-180,-900),Vector2(302.5,-900)], 10.0),
+		_road("desert_digo_street", _rounded([Vector2(-110,-540),Vector2(-110,-640),Vector2(-370,-640),Vector2(-370,-540)],16), 7.0),
+		_road("desert_bank_approach", [Vector2(-210,-540),Vector2(-210,-567)], 6.5),
+		_road("desert_truck_stop_entry", _rounded([Vector2(342.5,-490),Vector2(320,-490),Vector2(306,-498),Vector2(290,-498)],6), 12.0),
+		_road("desert_drag_access", _rounded([Vector2(-1060,-744),Vector2(-980,-744),Vector2(-950,-760),Vector2(-920,-760),Vector2(-820,-760),Vector2(-788,-760),Vector2(-788,-800)],12), 8.0, false),
+		_road("desert_drag_town_link", _rounded([Vector2(-620,-540),Vector2(-920,-690),Vector2(-920,-760)],12), 8.0, false),
+		_road("desert_drag_strip", [Vector2(-796,-800),Vector2(-788,-800),Vector2(-760,-800),Vector2(40,-800),Vector2(230,-800)], 10.0, false),
 		_road("desert_drag_return", drag_return_points(), 6.0, false),
 	]
 
 static func drag_return_points() -> Array:
 	# Dedicated service loop outside spectators/barriers; no opposing races.
-	return _rounded([Vector2(90,-1320),Vector2(105,-1320),Vector2(105,-1350),Vector2(-946,-1350),Vector2(-946,-1320),Vector2(-928,-1320)],10.0)
+	return _rounded([Vector2(230,-800),Vector2(245,-800),Vector2(245,-830),Vector2(-806,-830),Vector2(-806,-800),Vector2(-788,-800)],10.0)
 
 static func _rounded(positions: Array, radius: float) -> Array:
 	# Sample actual circular centre-lines. Render, collision, traffic and clearance
@@ -102,12 +104,12 @@ static func buildings() -> Array[Dictionary]:
 		{"id":"desert_bank","name":"Cobre","position":BANK,"size":Vector3(20,4.4,14),"kind":"bank","color":Color("c4a47a")},
 		{"id":"desert_digo","name":"Digo","position":WORKSHOP,"size":Vector3(25,5.2,18),"kind":"workshop","color":Color("b59e7c")},
 		{"id":"desert_fuel","name":"Miragem","position":TRUCK_STOP+Vector3(-13,0,-30),"size":Vector3(26,3.5,10),"kind":"fuel","color":Color("caba95")},
-		{"id":"desert_motel","name":"Horizonte","position":Vector3(-330,0,-923),"size":Vector3(34,3.4,12),"kind":"motel","color":Color("ceaa87")},
-		{"id":"desert_diner","name":"Solana","position":Vector3(-255,0,-856),"size":Vector3(19,3.7,11),"kind":"diner","color":Color("cab898")},
-		{"id":"desert_market","name":"Alvorada","position":Vector3(-180,0,-856),"size":Vector3(17,3.6,11),"kind":"shop","color":Color("b88869")},
+		{"id":"desert_motel","name":"Horizonte","position":Vector3(-330,0,-583),"size":Vector3(34,3.4,12),"kind":"motel","color":Color("ceaa87")},
+		{"id":"desert_diner","name":"Solana","position":Vector3(-255,0,-516),"size":Vector3(19,3.7,11),"kind":"diner","color":Color("cab898")},
+		{"id":"desert_market","name":"Alvorada","position":Vector3(-180,0,-516),"size":Vector3(17,3.6,11),"kind":"shop","color":Color("b88869")},
 	]
 	for i in 10:
-		result.append({"id":"desert_home_%02d"%i,"name":"","position":Vector3(-300+(i%5)*29,0,-1030-floori(i/5.0)*37),"size":Vector3(14+(i%3)*2,3.0+(i%2)*.5,11),"kind":"home","color":[Color("b39172"),Color("d1b895"),Color("bda58d")][i%3]})
+		result.append({"id":"desert_home_%02d"%i,"name":"","position":Vector3(-300+(i%5)*29,0,-690-floori(i/5.0)*37),"size":Vector3(14+(i%3)*2,3.0+(i%2)*.5,11),"kind":"home","color":[Color("b39172"),Color("d1b895"),Color("bda58d")][i%3]})
 	return result
 
 static func place_definitions() -> Array[Dictionary]:

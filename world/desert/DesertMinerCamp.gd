@@ -6,7 +6,7 @@ extends Node3D
 const GEO := preload("res://world/mountain_detail/forge/ForgeGeometry.gd")
 const RESIDENT := preload("res://world/mountain_detail/forge/ForgeResident.gd")
 const GROUND := preload("res://world/desert/DesertTerrainMesh.gd")
-const CENTER := Vector3(-212,0,-1572)
+const CENTER := Vector3(-212,0,-932)
 const MINER_STAND := Vector3(1.6,.12,1.2)
 var miner: Node3D
 var session

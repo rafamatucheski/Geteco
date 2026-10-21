@@ -3,13 +3,13 @@ extends RefCounted
 ## The region owns streaming and reserves these footprints before dressing sand.
 const G := preload("res://world/desert/DesertGeometry.gd")
 const MATERIALS := preload("res://world/desert/DesertTownMaterials.gd")
-const POSITION := Vector3(-1300.0, 0.0, -1720.0)
-const CABIN_POSITION := Vector3(-1335.0, 0.0, -1714.0)
+const POSITION := Vector3(-1160,0.0,-1080)
+const CABIN_POSITION := Vector3(-1195,0.0,-1074)
 const HOUSE_ID := "desert_abandoned_house"
 const CABIN_ID := "desert_abandoned_cabin"
-const HOUSE_RECT := Rect2(-1306.0, -1725.0, 12.0, 13.0)
-const CABIN_RECT := Rect2(-1339.0, -1718.0, 10.0, 9.0)
-const PATH := [Vector2(-1288,-1700),Vector2(-1298,-1708),Vector2(-1300,-1714),Vector2(-1314,-1710),Vector2(-1325,-1712),Vector2(-1331,-1714)]
+const HOUSE_RECT := Rect2(-1166,-1085,12.0,13.0)
+const CABIN_RECT := Rect2(-1199,-1078,10.0,9.0)
+const PATH := [Vector2(-1148,-1060),Vector2(-1158,-1068),Vector2(-1160,-1074),Vector2(-1174,-1070),Vector2(-1185,-1072),Vector2(-1191,-1074)]
 
 static func reservation_clear(point: Vector2, radius: float = 0.0) -> bool:
 	if HOUSE_RECT.grow(radius + 2.0).has_point(point) or CABIN_RECT.grow(radius + 2.0).has_point(point):

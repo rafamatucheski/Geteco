@@ -12,15 +12,15 @@ static func records() -> Array[Dictionary]:
 	var spans: Array[Dictionary] = []
 	# Deliberate shared endpoints keep town and truck-stop feeds connected.
 	var lines: Array[PackedVector2Array] = [
-		PackedVector2Array([Vector2(354.5,-466),Vector2(354.5,-738),Vector2(354.5,-867),Vector2(354.5,-1500),Vector2(339.27,-1536.77),Vector2(302.5,-1552),Vector2(-1160,-1552),Vector2(-1196.77,-1536.77),Vector2(-1212,-1500),Vector2(-1212,-920),Vector2(-1196.77,-883.23),Vector2(-1160,-867)]),
-		PackedVector2Array([Vector2(-1160,-867),Vector2(-377,-867),Vector2(-97,-867),Vector2(354.5,-867)]),
-		PackedVector2Array([Vector2(-377,-867),Vector2(-377,-992),Vector2(-97,-992),Vector2(-97,-867)]),
-		PackedVector2Array([Vector2(354.5,-738),Vector2(316,-738),Vector2(316,-777)]),
+		PackedVector2Array([Vector2(354.5,-466),Vector2(354.5,-478),Vector2(354.5,-527),Vector2(354.5,-860),Vector2(339.27,-896.77),Vector2(302.5,-912),Vector2(-1020,-912),Vector2(-1020,-888),Vector2(-1039.8,-879.8),Vector2(-1048,-860),Vector2(-1048,-764),Vector2(-1048,-724),Vector2(-1048,-580),Vector2(-1039.8,-560.2),Vector2(-1020,-552),Vector2(-1020,-527)]),
+		PackedVector2Array([Vector2(-1020,-527),Vector2(-377,-527),Vector2(-97,-527),Vector2(354.5,-527)]),
+		PackedVector2Array([Vector2(-377,-527),Vector2(-377,-652),Vector2(-97,-652),Vector2(-97,-527)]),
+		PackedVector2Array([Vector2(354.5,-478),Vector2(316,-478),Vector2(316,-517)]),
 	]
 	if preload("res://world/desert/north_pass/DesertNorthPassLayout.gd").enabled():
 		# Keep both poles and the continuous conductors outside the new north
 		# carriageway. The old rounded-corner pole now stood inside its lane.
-		lines[0][4]=Vector2(354.5,-1552)
+		lines[0][4]=Vector2(354.5,-912)
 	for line in lines:
 		var previous := ""
 		for i in range(1,line.size()):
@@ -44,9 +44,9 @@ static func records() -> Array[Dictionary]:
 		result.append({"kind":"utility_span","position":(a.position+b.position)*.5,"a":a.position,"b":b.position,"axis_a":_crossarm(a.direction),"axis_b":_crossarm(b.direction)})
 	# Secondary feeds end at visible attachment brackets on occupied buildings.
 	for service in [
-		{"pole":"31600:-77700","to":Vector3(284.6,3.2,-774.8)},
-		{"pole":"-9700:-99200","to":Vector3(-127.1,4.6,-961)},
-		{"pole":"-37700:-86700","to":Vector3(-346.7,3.1,-917)},
+		{"pole":"31600:-51700","to":Vector3(284.6,3.2,-514.8)},
+		{"pole":"-9700:-65200","to":Vector3(-127.1,4.6,-621)},
+		{"pole":"-37700:-52700","to":Vector3(-346.7,3.1,-577)},
 	]:
 		var source: Dictionary = poles[service.pole]
 		source.transformer=true

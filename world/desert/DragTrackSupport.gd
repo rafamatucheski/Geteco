@@ -3,7 +3,7 @@ extends RefCounted
 ## triangles can report a horizontal edge contact at 96 m seams to a fast car.
 ## Rendered asphalt, shoulders, obstacles and return road retain their geometry.
 const CUT := preload("res://world/urban_detail/GroundCut.gd")
-const BOUNDS := Rect2(-936,-1325,1026,10)
+const BOUNDS := Rect2(-796,-805,1026,10)
 
 static func install(region: Node3D) -> StaticBody3D:
 	var body := StaticBody3D.new()

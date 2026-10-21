@@ -4,7 +4,7 @@ extends RefCounted
 const TERRAIN := preload("res://world/desert/DesertTerrainMesh.gd")
 const MINING_LAYOUT := preload("res://world/mining/MiningLayout.gd")
 const MINING_TERRAIN := preload("res://world/mining/MiningExterior.gd")
-const BOUNDS := Rect2(-1140.0,-1936.0,580.0,368.0)
+const BOUNDS := preload("res://world/desert/DesertTerrainRelief.gd").BOUNDS
 const INTERVAL := .1
 const MAX_PITCH := deg_to_rad(82.0)
 const SIGHT_MARGIN := .9

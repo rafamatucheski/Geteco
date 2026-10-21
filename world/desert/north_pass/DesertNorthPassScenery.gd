@@ -11,29 +11,29 @@ static func build_chunk(parent: Node3D, rect: Rect2, completed:=false) -> void:
 	for side in [-1,1]:
 		var inner: float=L.LEFT_INNER if side<0 else L.RIGHT_INNER
 		var outer: float=inner+float(side)*22.0
-		var extent:=Rect2(minf(inner,outer),-1950,22,235).intersection(rect)
+		var extent:=Rect2(minf(inner,outer),-1230,22,155).intersection(rect)
 		if extent.has_area(): _cliff(parent,"NorthPassCliff",extent,side)
 	if rect.has_point(Vector2(L.GATE.x,L.GATE.z)):
 		var gate:=Node3D.new()
 		gate.name="NorthPassRoadworks"
 		parent.add_child(gate)
 		gate.add_to_group(L.GROUP)
-		_cliff(gate,"LandslideSolid",Rect2(L.LEFT_INNER-.5,-1819,L.RIGHT_INNER-L.LEFT_INNER+1,16),0)
+		_cliff(gate,"LandslideSolid",Rect2(L.LEFT_INNER-.5,-1179,L.RIGHT_INNER-L.LEFT_INNER+1,16),0)
 		for i in 7:
-			ROCK.rock(gate,"FallenSandstone",Vector3(331.8+float(i)*3.5,.7,-1800.8+sin(float(i)*1.5)),Vector3(4.7,2.8,4.2),Color("ae8c64"),true)
+			ROCK.rock(gate,"FallenSandstone",Vector3(331.8+float(i)*3.5,.7,-1160.8+sin(float(i)*1.5)),Vector3(4.7,2.8,4.2),Color("ae8c64"),true)
 		for i in 6:
 			var x:=332+float(i)*4.2
-			G.box(gate,"ConcreteBarrier",Vector3(x,.62,-1796),Vector3(4.25,1.24,.75),Color("b8ae94"),true)
+			G.box(gate,"ConcreteBarrier",Vector3(x,.62,-1156),Vector3(4.25,1.24,.75),Color("b8ae94"),true)
 			for stripe in 4:
-				var paint:=G.box(gate,"BarrierWarning",Vector3(x-1.65+float(stripe)*.95,.73,-1795.61),Vector3(.36,.62,.025),Color("d48540"))
+				var paint:=G.box(gate,"BarrierWarning",Vector3(x-1.65+float(stripe)*.95,.73,-1155.61),Vector3(.36,.62,.025),Color("d48540"))
 				paint.rotation.z=-.3
 		# Warning triangle is a functional road sign without explanatory text.
 		for x in [334.5,350.5]:
-			G.box(gate,"RoadSignPole",Vector3(x,1.05,-1756),Vector3(.095,2.1,.095),Color("757d72"),true)
-			var warning_sign:=G.box(gate,"FallingRockWarning",Vector3(x,1.93,-1756),Vector3(.95,.95,.07),Color("d9a843"))
+			G.box(gate,"RoadSignPole",Vector3(x,1.05,-1116),Vector3(.095,2.1,.095),Color("757d72"),true)
+			var warning_sign:=G.box(gate,"FallingRockWarning",Vector3(x,1.93,-1116),Vector3(.95,.95,.07),Color("d9a843"))
 			warning_sign.rotation.z=PI*.25
 			for p in [Vector3(-.17,2.15,.047),Vector3(.05,1.92,.047),Vector3(.2,1.71,.047)]:
-				G.box(gate,"FallingRockSymbol",Vector3(x,p.y,-1756+p.z)+Vector3(p.x,0,0),Vector3(.17,.18,.025),Color("393e37"))
+				G.box(gate,"FallingRockSymbol",Vector3(x,p.y,-1116+p.z)+Vector3(p.x,0,0),Vector3(.17,.18,.025),Color("393e37"))
 		set_completed(gate,completed)
 	# A safe terminal within existing map bounds. This is no invented map3.
 	if rect.has_point(Vector2(L.END.x,L.END.z)):

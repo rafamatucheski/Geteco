@@ -5,8 +5,8 @@ const FLORA := preload("res://assets/urban_detail/FloraSurfaces.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const CANYON := preload("res://world/desert/DesertTerrainRelief.gd")
 const CELL := 54.0
-const ANIMAL_PATCHES := [Vector2(-500,-810),Vector2(-1070,-1080),Vector2(-1140,-690),Vector2(-430,-1370),Vector2(100,-1110),Vector2(-550,-450),Vector2(-300,-690),Vector2(100,-1690)]
-const WIND_PATCHES := [Vector2(-955,-1090),Vector2(-980,-700),Vector2(30,-1380)]
+const ANIMAL_PATCHES := [Vector2(-440,-420),Vector2(-930,-560),Vector2(-1000,-690),Vector2(-290,-850),Vector2(100,-600),Vector2(-410,-420),Vector2(-300,-450),Vector2(10,-870)]
+const WIND_PATCHES := [Vector2(-815,-600),Vector2(-840,-450),Vector2(80,-450)]
 static var _buildings: Array[Rect2]=[]
 
 static func build_chunk(parent: Node3D,rect: Rect2,world_seed: int,height_callable: Callable,clearance_callable := Callable()) -> int:
@@ -94,10 +94,10 @@ static func clear(p: Vector2,radius: float) -> bool:
 	if not LAYOUT.BOUNDS.grow(-40.0-radius).has_point(p): return false
 	if CANYON.BOUNDS.grow(18.0+radius).has_point(p): return false
 	if not LAYOUT.road_clear(p,radius+2.0): return false
-	if Rect2(205,-802,135,102).grow(radius).has_point(p): return false
-	if Rect2(-1190,-1300,1060,60).grow(radius).has_point(p): return false
-	if Rect2(-1415,-635,1030,140).grow(radius).has_point(p): return false
-	for reserve in [Vector3(-1400,65,-1080),Vector3(-30,105,-610),Vector3(-650,125,-1080),Vector3(-790,100,-1420),Vector3(-790,55,-690)]:
+	if Rect2(205,-542,135,102).grow(radius).has_point(p): return false
+	if Rect2(-1050,-780,1060,60).grow(radius).has_point(p): return false
+	if Rect2(-1275,-515,1030,140).grow(radius).has_point(p): return false
+	for reserve in [Vector3(-1260,65,-1080),Vector3(-30,105,-448),Vector3(149,125,-1090),Vector3(150,100,-680),Vector3(-650,55,-690)]:
 		if p.distance_to(Vector2(reserve.x,reserve.z))<reserve.y+radius: return false
 	for territory: Vector2 in ANIMAL_PATCHES:
 		if territory.distance_to(p)<9.0+radius: return false

@@ -2,9 +2,9 @@ extends RefCounted
 ## A small occupied desert shelter. Shared terrain remains the only floor.
 const G := preload("res://world/desert/DesertGeometry.gd")
 const HM := preload("res://world/desert/DesertTerrainMesh.gd")
-const CENTER := Vector3(-1250,0,-1640)
+const CENTER := Vector3(-1110,0,-1000)
 const POSITION := CENTER
-const FOOTPRINT := Rect2(-1261,-1651,22,22)
+const FOOTPRINT := Rect2(-1121,-1011,22,22)
 const POSTS := [Vector3(-4,0,3),Vector3(2,0,1),Vector3(5,0,-4)]
 
 static func reserved(point: Vector2, radius := 0.0) -> bool:

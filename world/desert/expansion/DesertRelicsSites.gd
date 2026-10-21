@@ -6,11 +6,11 @@ const ROCKS := preload("res://world/desert/DesertSurfaceRocks.gd")
 const RAIL := preload("res://world/desert/expansion/DesertRelicsRail.gd")
 
 static func station_platform() -> Dictionary:
-	# The station anchor is (-1100,-585); derive the apron from the actual track
+	# The station anchor is (-960,-465); derive the apron from the actual track
 	# centre so a future railway adjustment cannot leave an isolated platform.
-	var track: Vector2 = RAIL.center(-1100.0)
+	var track: Vector2 = RAIL.center(-960.0)
 	var world_center := track + Vector2(0,-3.15)
-	return {"position":Vector3(0,.09,world_center.y+585.0), "size":Vector3(21,.18,3.2),
+	return {"position":Vector3(0,.09,world_center.y+465.0), "size":Vector3(21,.18,3.2),
 		"bounds":Rect2(world_center-Vector2(10.5,1.6),Vector2(21,3.2))}
 
 static func build(parent: Node3D, id: String, at: Vector3, world_seed: int) -> Node3D:

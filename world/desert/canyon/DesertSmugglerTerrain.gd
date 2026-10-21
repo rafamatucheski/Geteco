@@ -1,4 +1,5 @@
 extends RefCounted
+const LIFETIME := preload("res://world/desert/DesertPreparationLifetime.gd")
 ## One shared triangulation for visible geology, physical floor and height queries.
 const L := preload("res://world/desert/canyon/DesertSmugglerLayout.gd")
 const SANDSTONE := preload("res://world/desert/canyon/smuggler_sandstone.gdshader")
@@ -148,8 +149,10 @@ static func build_visuals() -> Node3D:
 
 ## Igual a build_visuals, cedendo o quadro quando a fatia passa do orçamento: montada de uma vez
 ## dentro do mirante costeiro, a geologia do cânion segurava ~2 s num quadro só no carregamento (16/10).
-static func build_visuals_sliced(tree: SceneTree,budget_usec := 12000) -> Node3D:
+static func build_visuals_sliced(tree: SceneTree,budget_usec := 12000, token: Dictionary = {}) -> Node3D:
+	if LIFETIME.cancelled(token): return null
 	var root := Node3D.new()
+	LIFETIME.track(token,root)
 	root.name="SmugglerGorgeGeology"
 	var slice := Time.get_ticks_usec()
 	for z in range(floori(L.BOUNDS.position.y/CELL),ceili(L.BOUNDS.end.y/CELL)):
@@ -161,9 +164,11 @@ static func build_visuals_sliced(tree: SceneTree,budget_usec := 12000) -> Node3D
 			root.add_child(node)
 			if Time.get_ticks_usec()-slice > budget_usec:
 				await tree.process_frame
+				if LIFETIME.cancelled(token): return null
 				slice=Time.get_ticks_usec()
 	_samples.clear()
 	_refined.clear()
+	LIFETIME.release(token,root)
 	return root
 
 static func build_collision(parent: Node3D,rect: Rect2) -> void:

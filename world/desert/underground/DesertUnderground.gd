@@ -5,16 +5,16 @@ extends RefCounted
 ## (anda para dentro, descendo `drop` ao longo de `length`).
 const ROOT := "res://world/desert/underground/"
 const SITES := [
-	{"id": "desert_under_culvert", "name": "Galeria da Rodovia", "exterior": Vector3(-640, 0, -1527), "kind": "culvert",
+	{"id": "desert_under_culvert", "name": "Galeria da Rodovia", "exterior": Vector3(-500,0,-887), "kind": "culvert",
 		"size": Vector2(40, 10), "model": "DesertCulvertGallery", "spawn": Vector3(-17.0, 0, 0),
 		"descent": {"style": "walk", "length": 3.4, "drop": 0.0, "approach": 2.2, "doors": true}},
-	{"id": "desert_under_well", "name": "Poço de Santa Lua", "exterior": Vector3(-470, 0, -800), "kind": "well",
+	{"id": "desert_under_well", "name": "Poço de Santa Lua", "exterior": Vector3(-470,0,-460), "kind": "well",
 		"size": Vector2(20, 20), "model": "DesertMoonWell", "spawn": Vector3(-6.2, 0, -5.8),
 		"descent": {"style": "ladder"}},
-	{"id": "desert_under_cellar", "name": "Adega do Horizonte", "exterior": Vector3(-322, 0, -934), "kind": "cellar",
+	{"id": "desert_under_cellar", "name": "Adega do Horizonte", "exterior": Vector3(-322,0,-594), "kind": "cellar",
 		"size": Vector2(22, 13), "model": "DesertMotelCellar", "spawn": Vector3(-8.2, 0, -3.2),
 		"descent": {"style": "walk", "length": 2.8, "drop": 2.0, "approach": 2.4, "doors": true}},
-	{"id": "desert_under_mine", "name": "Poço 3 da Serra Bruta", "exterior": Vector3(-350, 0, -1700), "kind": "vent",
+	{"id": "desert_under_mine", "name": "Poço 3 da Serra Bruta", "exterior": Vector3(-350,0,-1020), "kind": "vent",
 		"size": Vector2(32, 18), "model": "DesertMineVent", "spawn": Vector3(-13.6, 0, -6.4),
 		"descent": {"style": "ladder"}},
 ]

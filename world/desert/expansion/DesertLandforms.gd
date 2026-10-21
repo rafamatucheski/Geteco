@@ -4,11 +4,11 @@ extends RefCounted
 ## There are no process callbacks, timers, particle systems or new light sources.
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const SURFACE := preload("res://world/desert/expansion/DesertLandformsSurface.gdshader")
-const ARCH := Vector2(-790.0, -690.0)
-const SALT := Vector2(-790.0, -1420.0)
-const WASH_BOUNDS := Rect2(-774.0, -1202.0, 260.0, 256.0)
-const ARCH_BOUNDS := Rect2(-850.0, -746.0, 124.0, 113.0)
-const DUNES_BOUNDS := Rect2(-94.0, -646.0, 135.0, 90.0)
+const ARCH := Vector2(-650,-690)
+const SALT := Vector2(150.0, -680.0)
+const WASH_BOUNDS := Rect2(50.0, -1202.0, 210.0, 230.0)
+const ARCH_BOUNDS := Rect2(-710,-746,124.0,113.0)
+const DUNES_BOUNDS := Rect2(-94,-484,135.0,90.0)
 const RESOURCE_CELL := 96.0
 const MAX_CACHED_PROVIDERS := 2
 const MAX_CACHED_CELLS := 32
@@ -90,13 +90,13 @@ static func _own_descendants(node: Node, owner_root: Node) -> void:
 
 static func locations() -> Array[Dictionary]:
 	return [
-		{"id":"desert_wind_dunes", "kind":"dunes", "position":Vector3(-25, 0, -622), "camera_size":76.0, "collision_probe":Vector3(-25, 0, -622)},
-		{"id":"desert_dry_wash", "kind":"dry_wash", "position":Vector3(-650, 0, -1080), "camera_size":83.0, "collision_probe":Vector3(-650, 0, -1080)},
+		{"id":"desert_wind_dunes", "kind":"dunes", "position":Vector3(-25,0,-460), "camera_size":76.0, "collision_probe":Vector3(-25,0,-460)},
+		{"id":"desert_dry_wash", "kind":"dry_wash", "position":Vector3(149, 0, -1090), "camera_size":83.0, "collision_probe":Vector3(149, 0, -1090)},
 		{"id":"desert_salt_pan", "kind":"salt_flat", "position":Vector3(SALT.x, 0, SALT.y), "camera_size":134.0, "collision_probe":Vector3(SALT.x, 0, SALT.y)},
 		{"id":"desert_natural_arch", "kind":"natural_arch", "position":Vector3(ARCH.x, 0, ARCH.y), "camera_size":43.0, "collision_probe":Vector3(ARCH.x, 10.8, ARCH.y)},
-		{"id":"desert_hoodoo", "kind":"hoodoo", "position":Vector3(-834, 0, -718), "camera_size":26.0, "collision_probe":Vector3(-834, 8.5, -718)},
-		{"id":"desert_basalt_fan", "kind":"basalt", "position":Vector3(-746, 0, -707), "camera_size":26.0, "collision_probe":Vector3(-746, 5.5, -707)},
-		{"id":"desert_balanced_rock", "kind":"balanced_rock", "position":Vector3(-827, 0, -654), "camera_size":24.0, "collision_probe":Vector3(-827, 7.8, -654)},
+		{"id":"desert_hoodoo", "kind":"hoodoo", "position":Vector3(-694,0,-718), "camera_size":26.0, "collision_probe":Vector3(-694,8.5,-718)},
+		{"id":"desert_basalt_fan", "kind":"basalt", "position":Vector3(-606,0,-707), "camera_size":26.0, "collision_probe":Vector3(-606,5.5,-707)},
+		{"id":"desert_balanced_rock", "kind":"balanced_rock", "position":Vector3(-687,0,-654), "camera_size":24.0, "collision_probe":Vector3(-687,7.8,-654)},
 	]
 
 static func manifest() -> Dictionary:
@@ -107,9 +107,9 @@ static func manifest() -> Dictionary:
 
 static func walk_paths() -> Array[Dictionary]:
 	return [
-		{"id":"arch_portal", "points":PackedVector3Array([Vector3(-790,0,-707),Vector3(-790,0,-690),Vector3(-790,0,-673)]), "width":5.0},
-		{"id":"dune_ramp", "points":PackedVector3Array([Vector3(-54,0,-622),Vector3(-25,0,-622),Vector3(4,0,-622)]), "width":3.0},
-		{"id":"wash_floor", "points":PackedVector3Array([Vector3(-714,0,-1000),Vector3(-676,0,-1043.5),Vector3(-642.5,0,-1075),Vector3(-609,0,-1106.5),Vector3(-562,0,-1150)]), "width":3.0},
+		{"id":"arch_portal", "points":PackedVector3Array([Vector3(-650,0,-707),Vector3(-650,0,-690),Vector3(-650,0,-673)]), "width":5.0},
+		{"id":"dune_ramp", "points":PackedVector3Array([Vector3(-54,0,-460),Vector3(-25,0,-460),Vector3(4,0,-460)]), "width":3.0},
+		{"id":"wash_floor", "points":_wash_walk_points(), "width":3.0},
 	]
 
 static func surface_height(point: Vector2, base_callable: Callable) -> float:
@@ -145,17 +145,29 @@ static func surface_height(point: Vector2, base_callable: Callable) -> float:
 
 static func reservation_clear(point: Vector2, radius: float = 0.0) -> bool:
 	# Reserves protect raised support and the open arch portal from legacy scatter.
-	if WASH_BOUNDS.grow(radius).has_point(point): return false
+	# The broad box includes a large empty triangle beside the diagonal wash.
+	# Reserve the generated polygon and its safe shoulder, not that empty land.
+	if WASH_BOUNDS.grow(radius).has_point(point):
+		var polygon := wash_footprint()
+		if Geometry2D.is_point_in_polygon(point,polygon): return false
+		if _border_distance(point,polygon)<=maxf(radius,0.0)+1.5: return false
 	if ARCH_BOUNDS.grow(radius).has_point(point): return false
 	if DUNES_BOUNDS.grow(radius).has_point(point): return false
 	if Rect2(SALT-Vector2(102, 59), Vector2(204, 118)).grow(radius).has_point(point): return false
 	return true
 
+## Same polygon used by the visible/physical banks; pure and cached at preparation.
+static func wash_footprint() -> PackedVector2Array:
+	_prepare()
+	for feature in _features:
+		if int(feature.kind)==1: return feature.polygon
+	return PackedVector2Array()
+
 static func placement_clear(point: Vector2, radius: float = 0.0) -> bool:
 	_prepare()
-	if point.y-radius < -1558.0 or not LAYOUT.BOUNDS.grow(-radius).has_point(point): return false
+	if not LAYOUT.BOUNDS.grow(-radius).has_point(point): return false
 	if not LAYOUT.road_clear(point, radius+1.0): return false
-	if Rect2(210, -797, 125, 92).grow(radius).has_point(point): return false
+	if Rect2(210, -537, 125, 92).grow(radius).has_point(point): return false
 	if not LAYOUT.drag_reservation_clear(point,radius+3.0): return false
 	for bounds in _building_guards:
 		if bounds.grow(radius).has_point(point): return false
@@ -240,10 +252,10 @@ static func _prepare() -> void:
 		var position := Vector2(building.position.x, building.position.z)
 		_building_guards.append(Rect2(position-size*.5, size).grow(9.0))
 	for row in [
-		[Vector2(-72,-614), Vector2(20,11), 1.8, -.18],
-		[Vector2(-25,-622), Vector2(24,14), 2.1, -.20],
-		[Vector2(14,-594), Vector2(18,11), 1.65, -.28],
-		[Vector2(-30,-568), Vector2(22,11), 1.4, -.16],
+		[Vector2(-72,-452), Vector2(20,11), 1.8, -.18],
+		[Vector2(-25,-460), Vector2(24,14), 2.1, -.20],
+		[Vector2(14,-432), Vector2(18,11), 1.65, -.28],
+		[Vector2(-30,-406), Vector2(22,11), 1.4, -.16],
 	]:
 		var polygon := _oval(row[0], row[1], float(row[3]), false)
 		_features.append({"kind":0, "center":row[0], "radius":row[1], "height":row[2], "yaw":row[3], "polygon":polygon, "bounds":_bounds(polygon)})
@@ -279,7 +291,14 @@ static func _include_cells(cells: Dictionary, bounds: Rect2) -> void:
 			cells[Vector2i(x,z)]=true
 
 static func wash_point(t: float) -> Vector2:
-	return Vector2(-750.0+215.0*t+sin(t*TAU)*16.0, -970.0-210.0*t)
+	return Vector2(74.0+150.0*t+sin(t*TAU)*16.0, -1000.0-180.0*t)
+
+static func _wash_walk_points() -> PackedVector3Array:
+	var result := PackedVector3Array()
+	for t in [.14,.35,.5,.65,.86]:
+		var point := wash_point(float(t))
+		result.append(Vector3(point.x,0,point.y))
+	return result
 
 static func _wash_width(t: float) -> float:
 	return (12.5+sin(t*TAU*1.6)*2.2)*(.12+.88*sin(t*PI))
@@ -370,7 +389,7 @@ static func _border_distance(point: Vector2, polygon: PackedVector2Array) -> flo
 	return distance
 
 static func _wash_sample(point: Vector2) -> Vector2:
-	var approximate := clampi(floori((-point.y-970.0)/210.0*44.0),0,43)
+	var approximate := clampi(floori((-point.y-1000.0)/180.0*44.0),0,43)
 	var nearest := INF
 	var sample_t := 0.0
 	for i in range(maxi(0,approximate-5),mini(44,approximate+6)):

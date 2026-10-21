@@ -3,7 +3,8 @@ const L := preload("res://world/desert/canyon/DesertSmugglerLayout.gd")
 const T := preload("res://world/desert/canyon/DesertSmugglerTerrain.gd")
 const G := preload("res://world/desert/DesertGeometry.gd")
 const SITE := preload("res://world/desert/canyon/DesertSmugglerSite.gd")
-const DECK_FROM := -802.0
+const LIFETIME := preload("res://world/desert/DesertPreparationLifetime.gd")
+const DECK_FROM := -611.6
 const DECK_TO := -516.0
 const SEGMENT := 8.0
 
@@ -14,24 +15,30 @@ static func build_visuals() -> Node3D:
 	var structure := Node3D.new()
 	structure.name="ExposedGorgeBridge"
 	root.add_child(structure)
-	_bridge(structure,Rect2(-1500,-850,400,450),false)
+	_bridge(structure,L.BOUNDS.grow(16.0),false)
 	G.batch_repeated_meshes(structure)
 	root.add_child(preload("res://world/desert/canyon/ScavengerRemains.gd").build())
 	return root
 
 ## Versão fatiada de build_visuals para o mirante costeiro (carregamento de 16/10).
-static func build_visuals_sliced(tree: SceneTree) -> Node3D:
+static func build_visuals_sliced(tree: SceneTree, token: Dictionary = {}) -> Node3D:
+	if LIFETIME.cancelled(token): return null
 	if not L.enabled(): return Node3D.new()
-	var root: Node3D = await T.build_visuals_sliced(tree)
+	var root: Node3D = await T.build_visuals_sliced(tree,12000,token)
+	if LIFETIME.cancelled(token): return null
+	LIFETIME.track(token,root)
 	root.name="SmugglerCanyon"
 	await tree.process_frame
+	if LIFETIME.cancelled(token): return null
 	var structure := Node3D.new()
 	structure.name="ExposedGorgeBridge"
 	root.add_child(structure)
-	_bridge(structure,Rect2(-1500,-850,400,450),false)
+	_bridge(structure,L.BOUNDS.grow(16.0),false)
 	G.batch_repeated_meshes(structure)
 	await tree.process_frame
+	if LIFETIME.cancelled(token): return null
 	root.add_child(preload("res://world/desert/canyon/ScavengerRemains.gd").build())
+	LIFETIME.release(token,root)
 	return root
 
 static func build_chunk(parent: Node3D,rect: Rect2) -> Node3D:
@@ -105,7 +112,9 @@ static func _bridge(parent: Node3D,rect: Rect2,physical: bool) -> void:
 			_part(parent,"PedestrianBollard",Vector3(L.CENTER.x+float(x),.92,float(z)),Vector3(.73,1.6,.45),Color("b7a378"),physical,rect)
 	# Cross-ties below deck articulate scale without adding lights or per-frame work.
 	if not physical:
-		for z in range(-784,-528,24): G.box(parent,"BridgeCrossbeam",Vector3(L.CENTER.x,-.8,float(z)),Vector3(4.4,.3,.3),Color("594c40"))
+		for i in ceili((L.BRIDGE_END.z-L.BRIDGE_START.z)/24.0):
+			var z := L.BRIDGE_START.z+8.0+float(i)*24.0
+			if z<L.BRIDGE_END.z: G.box(parent,"BridgeCrossbeam",Vector3(L.CENTER.x,-.8,z),Vector3(4.4,.3,.3),Color("594c40"))
 
 static func _deck_ramp(parent: Node3D,rect: Rect2,from: float,to: float,h0: float,h1: float,physical: bool) -> void:
 	var footprint := Rect2(L.CENTER.x-L.BRIDGE_WIDTH*.5,from,L.BRIDGE_WIDTH,to-from).intersection(rect)
@@ -138,7 +147,7 @@ static func _approach(parent: Node3D,rect: Rect2) -> void:
 		var count := ceili(a.distance_to(b)/4.0)
 		for j in count:
 			var p := a.lerp(b,(float(j)+.5)/float(count))
-			if not rect.has_point(Vector2(p.x,p.z)) or p.z>-802: continue
+			if not rect.has_point(Vector2(p.x,p.z)) or p.z>DECK_FROM: continue
 			for offset in [-.85,.85]:
 				var rut := G.box(parent,"CanyonApproachRut",p+side*float(offset)+Vector3(0,.006,0),Vector3(.38,.01,a.distance_to(b)/float(count)+.03),Color("9b8464"))
 				rut.rotation.y=atan2(direction.x,direction.z)

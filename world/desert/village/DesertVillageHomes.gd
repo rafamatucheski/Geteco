@@ -30,7 +30,7 @@ static func home_data(id: String) -> Dictionary:
 	if index < 0: return {}
 	var data := specification(index)
 	var size: Vector2 = data.size
-	var exterior: Vector3 = [Vector3(-550,0,-842),Vector3(-506,0,-842),Vector3(-550,0,-816),Vector3(-506,0,-816)][index]
+	var exterior: Vector3 = [Vector3(-550,0,-502),Vector3(-506,0,-502),Vector3(-550,0,-476),Vector3(-506,0,-476)][index]
 	var side := 1.0 if index % 2 == 0 else -1.0
 	var rewards: Array[Dictionary] = [
 		{"id":id+"_cash", "kind":"cash", "amount":data.cash, "local_position":data.loot[0]},

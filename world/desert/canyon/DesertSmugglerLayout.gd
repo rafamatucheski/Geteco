@@ -1,16 +1,18 @@
 extends RefCounted
 ## Independent west-side gorge. Heights are metres below the desert datum.
-const BOUNDS := Rect2(-1480,-790,270,360)
-const CENTER := Vector3(-1344,0,-492)
-const CAMP_BOUNDS := Rect2(-1380,-524,72,64)
-const ARMORY_POS := Vector3(-1360,0,-481)
-const APPROACH := Vector3(-1344,0,-805)
-const BRIDGE_START := Vector3(-1344,0,-775)
-const BRIDGE_END := Vector3(-1344,0,-530)
+const DIMENSIONS := preload("res://world/desert/canyon/CanyonDimensions.gd")
+## 29,160 square metres: 30% of the former 270 x 360 m formation.
+const BOUNDS := Rect2(-1285,-610,162,180)
+const CENTER := Vector3(-1204,0,-492)
+const CAMP_BOUNDS := Rect2(-1240,-524,72,64)
+const ARMORY_POS := Vector3(-1220,0,-481)
+const APPROACH := Vector3(-1204,0,-612.5)
+const BRIDGE_START := Vector3(-1204,0,-603.5)
+const BRIDGE_END := Vector3(-1204,0,-530)
 const BRIDGE_WIDTH := 3.8
 const BRIDGE_DECK := .12
 const GATE_Z := -540.0
-const DEPTH := 72.0
+const DEPTH := 21.6
 const STEP := 1.5
 const CAMERA_SIZE := 40.0
 const POSTS := [Vector3(-8,0,-20),Vector3(8,0,-20),Vector3(-20,0,-9),Vector3(20,0,-9),Vector3(-24,0,5),Vector3(22,0,5),Vector3(-6,0,14),Vector3(10,0,17)]
@@ -29,7 +31,7 @@ static func combat_spawn_points() -> PackedVector3Array:
 	return result
 
 static func approach_path() -> PackedVector3Array:
-	return PackedVector3Array([Vector3(-1150,0,-880),Vector3(-1230,0,-850),Vector3(-1315,0,-839),APPROACH,BRIDGE_START])
+	return PackedVector3Array([Vector3(-1060,0,-650),Vector3(-1120,0,-650),Vector3(-1204,0,-633.5),APPROACH,BRIDGE_START])
 
 static func gate_walk_path() -> PackedVector3Array:
 	return PackedVector3Array([Vector3(CENTER.x+.725,BRIDGE_DECK,GATE_Z-4),Vector3(CENTER.x+.725,BRIDGE_DECK,GATE_Z+6),BRIDGE_END+Vector3(.725,BRIDGE_DECK,3)])
@@ -43,40 +45,42 @@ static func reservation_clear(point: Vector2,radius := 0.0) -> bool:
 	return true
 
 static func analytic_height(point: Vector2) -> float:
-	if not enabled(): return 0.0
-	if not BOUNDS.has_point(point): return 0.0
-	# Eroded, asymmetric oval; all four rectangle boundaries return to datum.
-	# A long slot canyon exposes both walls beside the bridge at gameplay zoom;
-	# it opens into a wider basin around the isolated contraband mesa.
-	var opening := smoothstep(-620,-550,point.y)
-	var half_width := lerpf(38+3.0*sin(point.y*.023+1.0),125,opening)
-	var center_x := -1345+(1-opening)*(3.0*sin((point.y+760)*.027)+1.8*sin((point.y+701)*.043))
-	var q := (point-Vector2(center_x,-610))/Vector2(half_width,174)
+	if not enabled() or not BOUNDS.has_point(point): return 0.0
+	# Compress only the empty gorge. Camp furniture, guards and its natural mesa
+	# retain their original metre dimensions and entrance/armory positions.
+	var source := DIMENSIONS.field_to_source(point)
+	if not DIMENSIONS.SOURCE_BOUNDS.has_point(source): return 0.0
+	var opening := smoothstep(-620,-550,source.y)
+	var half_width := lerpf(38+3.0*sin(source.y*.023+1.0),125,opening)
+	var center_x := -1205+(1-opening)*(3.0*sin((source.y+760)*.027)+1.8*sin((source.y+701)*.043))
+	var q := (source-Vector2(center_x,-610))/Vector2(half_width,174)
 	var angle := atan2(q.y,q.x)
 	var erosion := .028*sin(angle*7+.7)+.021*sin(angle*11-1.4)
 	var radial := q.length()+erosion
-	# Three geological scarps and two broad benches replace one featureless
-	# excavated slope. Roughly 20/26/26 m rises occupy 5-6 m horizontally,
-	# leaving 3-4 m shelves between them. Sub-metre rock samples resolve these
-	# transitions rather than stretching 26 m cliffs across two grid vertices;
-	# the uninterrupted floor and upper rim still share the original datum.
+	# Three scarps and their benches keep the sandstone's geological structure.
 	var wall := .28*smoothstep(.36,.52,radial)+.36*smoothstep(.63,.78,radial)+.36*smoothstep(.85,.99,radial)
-	var wash := 1.0-smoothstep(3.0,8.0,absf(point.x-wash_center(point.y)))
-	var floor_height := -DEPTH+2.5*sin(point.y*.027)+1.7*sin(point.x*.041+point.y*.01)-wash*2.2
+	var wash := 1.0-smoothstep(3.0,8.0,absf(source.x-_source_wash_center(source.y)))
+	var variation := 2.5*sin(source.y*.027)+1.7*sin(source.x*.041+source.y*.01)-wash*2.2
+	var floor_height := -DEPTH+variation*DIMENSIONS.DEPTH_FACTOR
 	var height := lerpf(floor_height,0.0,clampf(wall,0,1))
+	# This island stays full size: every existing guard, cover and cache needs
+	# the same solid, level metre-space as before the gorge was shortened.
 	var island := (point-Vector2(CENTER.x,CENTER.z))/Vector2(42,31)
 	var island_r := island.length()+.025*sin(atan2(island.y,island.x)*5)
 	var mesa := 1.0-smoothstep(.88,1.20,island_r)
 	return maxf(height,lerpf(floor_height,0.0,mesa))
 
-static func wash_center(z: float) -> float:
+static func _source_wash_center(z: float) -> float:
 	return CENTER.x+sin(z*.041)*9.0+sin(z*.019)*4.0
 
+static func wash_center(z: float) -> float:
+	var source := DIMENSIONS.field_to_source(Vector2(CENTER.x,z))
+	return DIMENSIONS.source_to_field(Vector2(_source_wash_center(source.y),source.y)).x
+
 static func camera_weight(point: Vector3) -> float:
-	if not enabled(): return 0.0
-	if point.y < -5.0: return 0.0
+	if not enabled() or point.y < -5.0: return 0.0
 	var across := 1.0-smoothstep(6,18,absf(point.x-CENTER.x))
-	var along := smoothstep(-809,-775,point.z)*(1.0-smoothstep(-561,-523,point.z))
+	var along := smoothstep(BRIDGE_START.z-10.2,BRIDGE_START.z,point.z)*(1.0-smoothstep(-539.3,-523,point.z))
 	return across*along
 
 static func ground_remainders(rect: Rect2) -> Array[Rect2]:

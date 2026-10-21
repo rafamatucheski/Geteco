@@ -9,7 +9,7 @@ static var _grass_material: ShaderMaterial
 static var _pebble_mesh: SphereMesh
 static var _grass_mesh: ArrayMesh
 static var _drag_materials := {}
-const DRAG_CORRIDOR := Rect2(-1056,-1440,1248,192)
+const DRAG_CORRIDOR := Rect2(-916,-920,1248,192)
 
 static func build_chunk(chunk: Node3D, rect: Rect2, _roads: Array, clear: Callable, height_at := Callable()) -> void:
 	_prepare_resources()
@@ -94,8 +94,8 @@ static func shoulder_weight(point: Vector2, segments: Array) -> float:
 	return 1.0-smoothstep(.05,width,edge_distance)
 
 static func site_polygons() -> Array[PackedVector2Array]:
-	var truck := PackedVector2Array([Vector2(215,-780),Vector2(224,-790),Vector2(314,-788),Vector2(329,-780),Vector2(330,-724),Vector2(320,-712),Vector2(226,-714),Vector2(214,-724)])
-	var workshop := PackedVector2Array([Vector2(-158,-943),Vector2(-153,-947),Vector2(-121,-947),Vector2(-116,-941),Vector2(-117,-900),Vector2(-124,-893),Vector2(-153,-896),Vector2(-158,-903)])
+	var truck := PackedVector2Array([Vector2(215,-520),Vector2(224,-530),Vector2(314,-528),Vector2(329,-520),Vector2(330,-464),Vector2(320,-452),Vector2(226,-454),Vector2(214,-464)])
+	var workshop := PackedVector2Array([Vector2(-158,-603),Vector2(-153,-607),Vector2(-121,-607),Vector2(-116,-601),Vector2(-117,-560),Vector2(-124,-553),Vector2(-153,-556),Vector2(-158,-563)])
 	return [truck,workshop]
 
 static func build_sites_ground(chunk: Node3D, rect: Rect2) -> void:
