@@ -41,6 +41,13 @@ func _run() -> void:
 		_check(is_instance_valid(body) and String(body.body_source).begins_with(CREATURE.MESHY_FOLDER), "%s usa corpo do Meshy" % creature.name)
 		if not is_instance_valid(body): continue
 		_check(_visible_meshes(creature) == 1, "%s tem uma única malha visível (%d)" % [creature.name, _visible_meshes(creature)])
+	# Sons da ElevenLabs: cada estação toca o susto do monstro, não o rangido sintético; ambiente em loop.
+	for station in room.annex.scares:
+		var stream: AudioStream = station.audio.stream
+		_check(stream != null and stream.resource_path.begins_with("res://audio/umbra/scare_"), "%s tem som de susto (%s)" % [station.rig.name, stream.resource_path if stream != null else "nenhum"])
+	var ambience := room.get_node_or_null("UmbraAmbience") as AudioStreamPlayer
+	_check(ambience != null and ambience.autoplay and (ambience.stream as AudioStreamWAV).loop_mode == AudioStreamWAV.LOOP_FORWARD, "ambiente sombrio toca em loop")
+	_check(room.get_node_or_null("BruteRoar") is AudioStreamPlayer3D, "monstrão tem rugido posicional")
 	var brute: Node3D = room.brute
 	if is_instance_valid(brute.body):
 		var top := -INF
@@ -58,5 +65,6 @@ func _run() -> void:
 		var before := minf(rest[0].distance_to(face), rest[1].distance_to(face))
 		var after := minf(scared[0].distance_to(face), scared[1].distance_to(face))
 		_check(after < before - .25, "no susto as mãos avançam para o visitante (%.2f → %.2f m)" % [before, after])
+		_check(room.brute_voice.playing, "monstrão ruge quando o visitante chega perto")
 	print("UMBRA_MONSTERS ", "OK" if failures.is_empty() else "FALHOU %d" % failures.size())
 	quit(0 if failures.is_empty() else 1)

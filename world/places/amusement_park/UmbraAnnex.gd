@@ -164,6 +164,15 @@ func _station(id: String,type: String,at: Vector3,trigger: Vector3,radius: float
 	sound.max_distance = 13
 	sound.unit_size = 2
 	sound.pitch_scale = .72+scares.size()*.13
+	if creature.scare_sound() != null:
+		# Grito/rugido do monstro: tom natural, mais alto e ouvido mais longe que o rangido.
+		sound.name = "CreatureScare"
+		sound.stream = creature.scare_sound()
+		sound.volume_db = -4
+		sound.max_distance = 18
+		sound.unit_size = 3
+		sound.pitch_scale = 1.0
+	sound.bus = &"SFX" if AudioServer.get_bus_index(&"SFX") >= 0 else &"Master"
 	add_child(sound)
 	scares.append({"rig":creature,"trigger":trigger,"radius":radius,"time":-1.0,"cooldown":0.0,"armed":true,"count":0,"audio":sound})
 
@@ -179,7 +188,7 @@ func update_visitor(point: Vector3,delta: float) -> void:
 			station.time = 0.0
 			station.cooldown = 12.0
 			station.count += 1
-			station.audio.play()
+			station.rig.play_scare(station.audio)
 		var amount := 0.0
 		if station.time>=0:
 			station.time += delta

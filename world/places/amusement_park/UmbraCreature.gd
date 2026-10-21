@@ -9,6 +9,13 @@ const MESHY_FOLDER := "res://assets/civilians/meshy/umbra/"
 const MESHY_BODIES := {"wraith": "wraith.glb", "doll": "doll.glb", "skeleton": "skeleton.glb", "brute": "brute.glb"}
 ## O MeshyBodyRig normaliza todo corpo para a altura de pessoa (1,76 m); a escala do nó dá o tamanho de cada um.
 const MESHY_HEIGHT := 1.76
+## Sustos gerados na ElevenLabs (21/10/2026), mono e normalizados; a boneca sorteia entre duas tomadas.
+const SCARE_SOUNDS := {
+	"wraith": [preload("res://audio/umbra/scare_wraith.wav")],
+	"doll": [preload("res://audio/umbra/scare_doll_a.wav"), preload("res://audio/umbra/scare_doll_b.wav")],
+	"skeleton": [preload("res://audio/umbra/scare_skeleton.wav")],
+	"brute": [preload("res://audio/umbra/scare_brute.wav")],
+}
 const MESHY_HEIGHTS := {"wraith": 2.0, "doll": 1.1, "skeleton": 1.8, "brute": 2.6}
 ## GETECO_UMBRA_CLASSIC=1 volta aos bonecos de caixa e às texturas procedurais (A/B e salvaguarda).
 static var CLASSIC := OS.get_environment("GETECO_UMBRA_CLASSIC") == "1"
@@ -154,3 +161,15 @@ func _animate_meshy(time: float, amount: float, visitor: Vector3) -> void:
 	var reach: Vector3 = (face - chest).normalized() * (.75 * amount * absf(global_basis.get_scale().y))
 	var side := global_basis.x.normalized() * .22
 	body.hand_targets = [chest + reach - side, chest + reach + side]
+
+## Som do susto deste monstro; null (modo clássico ou tipo sem som) mantém o rangido mecânico antigo.
+func scare_sound() -> AudioStream:
+	if CLASSIC or not SCARE_SOUNDS.has(kind): return null
+	var takes: Array = SCARE_SOUNDS[kind]
+	return takes[randi() % takes.size()]
+
+## Toca num AudioStreamPlayer3D já montado; sorteia a tomada a cada susto.
+func play_scare(player: AudioStreamPlayer3D) -> void:
+	var stream := scare_sound()
+	if stream != null: player.stream = stream
+	player.play()

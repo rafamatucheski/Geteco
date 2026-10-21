@@ -3,6 +3,11 @@ extends "res://world/places/amusement_park/ParkGeometry.gd"
 var variant := 0
 var puppet: Node3D
 var brute: Node3D
+var brute_voice: AudioStreamPlayer3D
+var _brute_armed := true
+## Gerado na ElevenLabs (21/10/2026), 20 s em loop (loop no .import).
+const AMBIENCE := preload("res://audio/umbra/ambience_loop.wav")
+const UmbraCreatureScript := preload("res://world/places/amusement_park/UmbraCreature.gd")
 var _scare_amount := 0.0
 var _visited := false
 var annex: Node3D
@@ -82,6 +87,22 @@ func _displays() -> void:
 	brute.kind = "brute"
 	brute.position = Vector3(-.4,.32,-3.1)
 	add_child(brute)
+	brute_voice = AudioStreamPlayer3D.new()
+	brute_voice.name = "BruteRoar"
+	brute_voice.position = brute.position+Vector3.UP*2.2
+	brute_voice.volume_db = -2
+	brute_voice.max_distance = 20
+	brute_voice.unit_size = 3.5
+	brute_voice.bus = &"SFX" if AudioServer.get_bus_index(&"SFX") >= 0 else &"Master"
+	add_child(brute_voice)
+	# Ambiente sombrio em loop enquanto a casa existe (some ao sair: o interior é liberado).
+	var ambience := AudioStreamPlayer.new()
+	ambience.name = "UmbraAmbience"
+	ambience.stream = AMBIENCE
+	ambience.volume_db = -12
+	ambience.bus = &"Ambient" if AudioServer.get_bus_index(&"Ambient") >= 0 else &"Master"
+	ambience.autoplay = not UmbraCreatureScript.CLASSIC
+	add_child(ambience)
 	for side in [-1,1]:
 		box("RearCurtain",Vector3(side*1.85,1.5,-7.13),Vector3(.8,2.9,.11),"603341",false,"cloth")
 		for i in 4: box("CurtainFold",Vector3(side*(1.52+i*.2),1.5,-7.03),Vector3(.10,2.9,.10),"79424e",false,"cloth")
@@ -107,4 +128,9 @@ func update_visitor(local_point: Vector3, delta: float) -> void:
 	_scare_amount = move_toward(_scare_amount,target,maxf(delta,0)*1.4)
 	puppet.animate(_clock,_scare_amount,local_point)
 	if is_instance_valid(brute): brute.animate(_clock,_scare_amount,local_point)
+	# Ruge uma vez por aproximação; rearma quando o visitante se afasta do palco.
+	if near and _brute_armed and is_instance_valid(brute_voice):
+		_brute_armed = false
+		if is_instance_valid(brute): brute.play_scare(brute_voice)
+	elif not near and _scare_amount <= 0.0: _brute_armed = true
 	_visited = _visited or near
