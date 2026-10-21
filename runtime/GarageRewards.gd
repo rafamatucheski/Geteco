@@ -421,6 +421,8 @@ func _finish_scrap(completed: bool) -> void:
 		car.collision_layer = _scrap_layer
 		session.show_message("O Neco não conseguiu pagar agora. O carro ficou na baia.")
 		return
+	# M04-B: o carro raspado na prensa conclui "O desmanche do Neco" (HelenaAct1).
+	if session.get("helena_act1") != null: session.helena_act1.on_scrapped(car)
 	# Remoção deliberada: se era o último carro dirigido, Driving/ProductionWorld
 	# soltam a referência e o snapshot do veículo do jogador.
 	car.queue_free()
