@@ -2,59 +2,271 @@
   "version": 1,
   "voice_status": "captions_only",
   "source": "docs/roteiro-diretor-geteco-20261021.md — Prólogo (A noite da operação) e A2-06 (flashback de Vicente)",
-  "title": {"pt": "Oito anos depois.", "en": ""},
+  "title": {
+    "pt": "Oito anos depois.",
+    "en": ""
+  },
   "objectives": {
-    "signal": {"pt": "Sinalize para o caminhão parar.", "en": ""},
-    "walk": {"pt": "Vá até a cabine.", "en": ""},
-    "cuff": {"pt": "Algeme o motorista.", "en": ""},
-    "drive": {"pt": "Siga pela rodovia.", "en": ""}
+    "signal": {
+      "pt": "Sinalize para o caminhão parar.",
+      "en": ""
+    },
+    "walk": {
+      "pt": "Vá até a cabine com Bastos.",
+      "en": ""
+    },
+    "cuff": {
+      "pt": "Algeme o motorista.",
+      "en": ""
+    },
+    "drive": {
+      "pt": "Siga pela rodovia.",
+      "en": ""
+    },
+    "fight": {
+      "pt": "Derrube o atirador.",
+      "en": ""
+    },
+    "flee": {
+      "pt": "Não deixe o motorista fugir.",
+      "en": ""
+    }
   },
   "prompts": {
-    "signal": {"pt": "Sinalizar", "en": ""},
-    "cuff": {"pt": "Segure para algemar", "en": ""},
-    "skip": {"pt": "Esc de novo para pular", "en": ""}
+    "signal": {
+      "pt": "Sinalizar",
+      "en": ""
+    },
+    "cuff": {
+      "pt": "Segure para algemar",
+      "en": ""
+    },
+    "skip": {
+      "pt": "Esc de novo para pular",
+      "en": ""
+    },
+    "fire": {
+      "pt": "Atirar",
+      "en": ""
+    }
   },
   "dante": {
     "radio_open": [
-      {"id": "prado_terceiro", "speaker": "Prado", "radio": true, "pt": "O caminhão do frete é o terceiro.", "en": ""},
-      {"id": "prado_desarmado", "speaker": "Prado", "radio": true, "pt": "Motorista desarmado.", "en": ""},
-      {"id": "prado_procedimento", "speaker": "Prado", "radio": true, "pt": "Procedimento, Ferraz.", "en": ""},
-      {"id": "dante_copiado", "speaker": "Dante", "pt": "Copiado.", "en": ""}
+      {
+        "id": "prado_terceiro",
+        "speaker": "Prado",
+        "radio": true,
+        "pt": "O caminhão do frete é o terceiro.",
+        "en": ""
+      },
+      {
+        "id": "prado_desarmado",
+        "speaker": "Prado",
+        "radio": true,
+        "pt": "Motorista desarmado.",
+        "en": ""
+      },
+      {
+        "id": "prado_procedimento",
+        "speaker": "Prado",
+        "radio": true,
+        "pt": "Procedimento, Ferraz.",
+        "en": ""
+      },
+      {
+        "id": "dante_copiado",
+        "speaker": "Dante",
+        "pt": "Copiado.",
+        "en": ""
+      }
     ],
     "colleagues": [
-      {"id": "bastos_terceiro", "speaker": "Bastos", "pt": "Ferraz, o terceiro é teu.", "en": ""},
-      {"id": "dante_sei", "speaker": "Dante", "pt": "Eu sei contar, Bastos.", "en": ""}
+      {
+        "id": "bastos_terceiro",
+        "speaker": "Bastos",
+        "pt": "Ferraz, o terceiro é teu.",
+        "en": ""
+      },
+      {
+        "id": "dante_sei",
+        "speaker": "Dante",
+        "pt": "Eu sei contar, Bastos.",
+        "en": ""
+      }
     ],
     "stopped": [
-      {"id": "lima_motor", "speaker": "Lima", "pt": "Deixou o motor ligado. Vai com calma.", "en": ""}
+      {
+        "id": "lima_motor",
+        "speaker": "Lima",
+        "pt": "Deixou o motor ligado. Vai com calma.",
+        "en": ""
+      }
+    ],
+    "approach": [
+      {
+        "id": "bastos_comigo",
+        "speaker": "Bastos",
+        "pt": "Vem comigo, Ferraz.",
+        "en": ""
+      }
+    ],
+    "ask": [
+      {
+        "id": "bastos_boa_noite",
+        "speaker": "Bastos",
+        "pt": "Boa noite. Desliga o motor e desce.",
+        "en": ""
+      }
     ],
     "door": [
-      {"id": "vicente_dante", "speaker": "Vicente", "pt": "Dante?", "en": ""}
+      {
+        "id": "vicente_dante",
+        "speaker": "Vicente",
+        "pt": "Dante?",
+        "en": ""
+      }
+    ],
+    "order_out": [
+      {
+        "id": "bastos_conhece",
+        "speaker": "Bastos",
+        "pt": "Conhece ele?",
+        "en": ""
+      },
+      {
+        "id": "bastos_desce",
+        "speaker": "Bastos",
+        "pt": "Desce devagar. Mão onde eu possa ver.",
+        "en": ""
+      }
+    ],
+    "ambush": [
+      {
+        "id": "dante_arma",
+        "speaker": "Dante",
+        "pt": "Arma!",
+        "en": ""
+      },
+      {
+        "id": "lima_bastos",
+        "speaker": "Lima",
+        "pt": "Bastos!",
+        "en": ""
+      }
+    ],
+    "shooter_down": [
+      {
+        "id": "lima_caiu",
+        "speaker": "Lima",
+        "pt": "Caiu. Caiu!",
+        "en": ""
+      }
+    ],
+    "flee": [
+      {
+        "id": "lima_motorista",
+        "speaker": "Lima",
+        "pt": "O motorista, Ferraz!",
+        "en": ""
+      }
     ],
     "order": [
-      {"id": "prado_ferraz", "speaker": "Prado", "radio": true, "pt": "Ferraz. Procedimento.", "en": ""}
+      {
+        "id": "prado_ferraz",
+        "speaker": "Prado",
+        "radio": true,
+        "pt": "Ferraz. Procedimento.",
+        "en": ""
+      }
     ]
   },
   "vicente": {
     "radio_open": [
-      {"id": "cobre_trevo", "speaker": "Conhecido do Cobre", "radio": true, "pt": "Passou o trevo?", "en": ""},
-      {"id": "vicente_passei", "speaker": "Vicente", "pt": "Agora.", "en": ""},
-      {"id": "cobre_carga", "speaker": "Conhecido do Cobre", "radio": true, "pt": "Não abre a traseira pra ninguém.", "en": ""},
-      {"id": "vicente_que_tem", "speaker": "Vicente", "pt": "Que que tem lá atrás?", "en": ""},
-      {"id": "cobre_frete", "speaker": "Conhecido do Cobre", "radio": true, "pt": "Frete. Cê é pago pra dirigir.", "en": ""}
+      {
+        "id": "cobre_trevo",
+        "speaker": "Conhecido do Cobre",
+        "radio": true,
+        "pt": "Passou o trevo?",
+        "en": ""
+      },
+      {
+        "id": "vicente_passei",
+        "speaker": "Vicente",
+        "pt": "Agora.",
+        "en": ""
+      },
+      {
+        "id": "cobre_carga",
+        "speaker": "Conhecido do Cobre",
+        "radio": true,
+        "pt": "Não abre a traseira pra ninguém.",
+        "en": ""
+      },
+      {
+        "id": "vicente_que_tem",
+        "speaker": "Vicente",
+        "pt": "Que que tem lá atrás?",
+        "en": ""
+      },
+      {
+        "id": "cobre_frete",
+        "speaker": "Conhecido do Cobre",
+        "radio": true,
+        "pt": "Frete. Cê é pago pra dirigir.",
+        "en": ""
+      }
     ],
     "radio_warning": [
-      {"id": "cobre_blitz", "speaker": "Conhecido do Cobre", "radio": true, "pt": "Tem blitz no doze.", "en": ""},
-      {"id": "cobre_nao_para", "speaker": "Conhecido do Cobre", "radio": true, "pt": "Não para.", "en": ""},
-      {"id": "vicente_e_se", "speaker": "Vicente", "pt": "E se mandarem?", "en": ""},
-      {"id": "cobre_nao_para_2", "speaker": "Conhecido do Cobre", "radio": true, "pt": "Cê não para, Vicente.", "en": ""}
+      {
+        "id": "cobre_blitz",
+        "speaker": "Conhecido do Cobre",
+        "radio": true,
+        "pt": "Tem blitz no doze.",
+        "en": ""
+      },
+      {
+        "id": "cobre_nao_para",
+        "speaker": "Conhecido do Cobre",
+        "radio": true,
+        "pt": "Não para.",
+        "en": ""
+      },
+      {
+        "id": "vicente_e_se",
+        "speaker": "Vicente",
+        "pt": "E se mandarem?",
+        "en": ""
+      },
+      {
+        "id": "cobre_nao_para_2",
+        "speaker": "Conhecido do Cobre",
+        "radio": true,
+        "pt": "Cê não para, Vicente.",
+        "en": ""
+      }
     ],
     "lights": [
-      {"id": "vicente_giroflex", "speaker": "Vicente", "pt": "Tô vendo o giroflex.", "en": ""},
-      {"id": "cobre_acelera", "speaker": "Conhecido do Cobre", "radio": true, "pt": "Então acelera.", "en": ""}
+      {
+        "id": "vicente_giroflex",
+        "speaker": "Vicente",
+        "pt": "Tô vendo o giroflex.",
+        "en": ""
+      },
+      {
+        "id": "cobre_acelera",
+        "speaker": "Conhecido do Cobre",
+        "radio": true,
+        "pt": "Então acelera.",
+        "en": ""
+      }
     ],
     "stop": [
-      {"id": "vicente_calma", "speaker": "Vicente", "pt": "Calma. É só documento.", "en": ""}
+      {
+        "id": "vicente_calma",
+        "speaker": "Vicente",
+        "pt": "Calma. É só documento.",
+        "en": ""
+      }
     ]
   }
 }

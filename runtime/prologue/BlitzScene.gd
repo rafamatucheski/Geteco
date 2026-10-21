@@ -31,6 +31,12 @@ const FLEET := preload("res://runtime/FleetCatalog.gd")
 const TRUCK := preload("res://gameplay/desert_heist/DesertCargoTruckVisual.gd")
 const CIVILIAN := preload("res://assets/CivilianModel.gd")
 const POLICE_MODEL := preload("res://gameplay/PoliceModel.gd")
+const OFFICER := preload("res://runtime/prologue/BlitzOfficer.gd")
+const OPEN_TRUCK := preload("res://runtime/prologue/BlitzTruck.gd")
+const CORPSE := preload("res://runtime/prologue/BlitzCorpse.gd")
+const MIXAMO_DEATH := preload("res://gameplay/MixamoDeath.gd")
+const COBRA_MODEL := preload("res://gameplay/CobraModel.gd")
+const FALL := preload("res://gameplay/CharacterFallPresentation3D.gd")
 const EQUIPMENT := preload("res://gameplay/VehicleEquipment.gd")
 const LIGHT_BUDGET := preload("res://gameplay/lights/LightBudget.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
@@ -49,10 +55,19 @@ const POLICE_SPOT := Vector3(4.9, 0, -15.5)
 const TRUCK_PAINT := Color("583d35")
 ## Farda da patrulha: a mesma cor e as mesmas peças de PoliceModel._body_look (escalão 0).
 const UNIFORM := Color(0.11, 0.15, 0.24)
-## Colegas de Dante na blitz: [nome, posição, para onde olha, appearance_index fixo (não gasta o rodízio
-## de PoliceAppearance.next_model)]. Bastos encostado na viatura com o rádio; Lima no cavalete com a lanterna.
-const COLLEAGUES := [["Bastos", Vector3(3.75, 0, -14.9), Vector3(-1, 0, .35), 3], ["Lima", Vector3(2.9, 0, -14.3), Vector3(0, 0, 1), 6]]
 const HOLD_SECONDS := 2.6
+## Bastos para na porta do motorista e Dante fica do lado dele, um passo atrás.
+const BASTOS_PATH := [Vector3(3.0, 0, -12.7), Vector3(.2, 0, -11.7), Vector3(-.7, 0, -9.7), Vector3(-.55, 0, -8.5)]
+const DANTE_BESIDE := Vector3(-1.3, 0, -7.4)
+## Abrigo de Dante no tiroteio (fora da linha da cabine) e os dois pontos do atirador: exposto na frente
+## da grade, escondido atrás do canto direito do caminhão (a cabine fica no meio).
+const DANTE_COVER := Vector3(-2.0, 0, -8.6)
+const SHOOTER_OUT := Vector3(3.3, 0, -10.6)
+const SHOOTER_EXPOSED := Vector3(1.2, 0, -11.8)
+const SHOOTER_HIDDEN := Vector3(3.7, 0, -10.9)
+## "Demora a morrer": tiros que o atirador aguenta.
+const SHOOTER_HEALTH := 8
+const VICENTE_FLEE := [Vector3(-.4, 0, -5.4), Vector3(-3.1, 0, 2.0), Vector3(-3.4, 0, 13.0)]
 const WARM_DRAWS := 4
 signal finished(pov: String, skipped: bool)
 
@@ -105,10 +120,35 @@ var cars: Array[Node3D] = []
 ## PoliceModel dos colegas (calmos: sem ator, sem IA, sem colisão).
 var colleagues: Array[Node3D] = []
 var colleague_lantern: Node3D
+var bastos: Node3D
+var lima: Node3D
+var bastos_radio: Node3D
+## CobraModel: o atirador escondido na cabine, do lado do passageiro.
+var shooter: Node3D
+var shooter_health := SHOOTER_HEALTH
+var shots_fired := 0
+var shooter_hits := 0
+var vicente_hit := false
+var aim_yaw := 0.0
+var aim_pitch := 0.0
+var _crosshair: Label
+var _fire_cooldown := 0.0
+var _want_fire := false
+var _shake := 0.0
+var _shooter_exposed := false
+var _shooter_clock := 0.0
+var _shooter_fire_clock := .4
+var _bastos_leg := 0
+var _flee_leg := 0
+var _previous_mouse := Input.MOUSE_MODE_VISIBLE
+var _mouse_owned := false
 var _car_speed: Array[float] = []
 var _glows: Array[Sprite3D] = []
 var halo: OmniLight3D
-var headlight: SpotLight3D
+## Dois faróis do caminhão (esquerdo, direito): fachos de verdade, no orçamento.
+var headlights: Array[SpotLight3D] = []
+## Luz de teto da cabine: acende quando a porta abre (é o que deixa ver Vicente lá dentro).
+var cab_light: OmniLight3D
 var lantern_light: SpotLight3D
 var rain: GPUParticles3D
 var _rain_audio: AudioStreamPlayer
@@ -220,6 +260,10 @@ func _build_ui() -> void:
 	_title = _label(clampi(roundi(height * .045), 24, 52))
 	_title.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_title.modulate.a = 0.0
+	_crosshair = _label(26)
+	_crosshair.text = "+"
+	_crosshair.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	_crosshair.hide()
 	move_child(_subtitle, -1)
 
 func _label(font_size: int) -> Label:
@@ -371,8 +415,10 @@ func _build_police() -> void:
 		side = -side
 	halo = OmniLight3D.new()
 	halo.name = "BlitzBeaconHalo"
-	halo.omni_range = 12.0
-	halo.omni_attenuation = 1.2
+	halo.omni_range = 9.0
+	halo.omni_attenuation = 1.8
+	# No asfalto molhado o reflexo do giroflex virava uma faixa vermelha no chão.
+	halo.light_specular = .08
 	halo.shadow_enabled = false
 	halo.position = Vector3(0, roof + .3, 0)
 	halo.set_meta("budget_energy", 2.6)
@@ -380,34 +426,92 @@ func _build_police() -> void:
 	police.add_child(halo)
 
 func _build_truck() -> void:
-	truck = TRUCK.create()
+	truck = OPEN_TRUCK.create_open()
 	_set.add_child(truck)
 	# A cabine original é uma peça só: esta porta (chapa e vidro) é a que abre.
 	truck_door = Node3D.new()
 	truck_door.name = "BlitzCabDoor"
 	truck_door.position = Vector3(-1.16, 2.0, -3.96)
 	truck.add_child(truck_door)
-	_box(truck_door, Vector3(0, -.36, .56), Vector3(.05, .8, 1.1), _material("blitz_truck_paint", TRUCK_PAINT, .45, .5))
+	# A chapa desce até o estribo: fechada, cobre o vão inteiro da cabine aberta (BlitzTruck).
+	_box(truck_door, Vector3(0, -.52, .56), Vector3(.05, 1.08, 1.1), _material("blitz_truck_paint", TRUCK_PAINT, .45, .5))
 	_box(truck_door, Vector3(0, .5, .56), Vector3(.03, .72, 1.02), _material("blitz_truck_glass", Color(.32, .4, .45, .35), .05, .9))
 	_box(truck_door, Vector3(-.04, -.1, .95), Vector3(.05, .05, .18), _material("blitz_truck_handle", Color("9a9c9e"), .3, .7))
-	headlight = SpotLight3D.new()
-	headlight.name = "BlitzTruckHeadlight"
-	headlight.position = Vector3(0, 1.35, -5.7)
-	headlight.light_color = Color("ffe6c0")
-	headlight.spot_range = 42.0
-	headlight.spot_angle = 34.0
-	headlight.spot_attenuation = .9
-	headlight.shadow_enabled = false
-	headlight.rotation_degrees = Vector3(-4, 0, 0)
-	headlight.set_meta("budget_energy", 5.0)
-	headlight.light_energy = 5.0
-	truck.add_child(headlight)
+	_light_truck()
+	var wheel := MeshInstance3D.new()
+	var ring := TorusMesh.new()
+	ring.inner_radius = .16
+	ring.outer_radius = .2
+	ring.rings = 24
+	ring.ring_segments = 8
+	wheel.mesh = ring
+	wheel.material_override = _material("blitz_wheel", Color("1b1c1e"), .5, .4)
+	wheel.position = Vector3(-.55, 2.02, -3.9)
+	# Aro inclinado para o motorista, como volante de caminhão.
+	wheel.rotation = Vector3(-1.05, 0, 0)
+	truck.add_child(wheel)
+	cab_light = OmniLight3D.new()
+	cab_light.name = "BlitzCabLight"
+	cab_light.position = Vector3(0, 2.85, -3.25)
+	cab_light.light_color = Color("ffd7a6")
+	cab_light.omni_range = 2.6
+	cab_light.omni_attenuation = 1.2
+	cab_light.shadow_enabled = false
+	cab_light.set_meta("budget_energy", 0.0)
+	cab_light.light_energy = 0.0
+	truck.add_child(cab_light)
 	vicente = _person("vicente")
 	var spec: Dictionary = truck.get_meta("vehicle_interior_spec", {})
 	vicente.position = Vector3(float(spec.get("sx", -.55)), float(spec.get("floor", 1.15)), float(spec.get("sz", -3.35)))
 	vicente.sit_amount = 1.0
 	vicente.rotation.y = PI
 	truck.add_child(vicente)
+
+## Lentes acesas: no jogo quem acende é o VehicleEquipment; aqui o caminhão é só o modelo, então as
+## lentes ganham cópias emissivas próprias (retidas) e brilho de lente como o das viaturas. O material
+## compartilhado do caminhão de carga do deserto não é tocado.
+func _light_truck() -> void:
+	var lenses := {"headlight_left": [Color("fff1d2"), 4.5], "headlight_right": [Color("fff1d2"), 4.5], "tail": [Color("ff2a1c"), 2.4], "amber": [Color("ffa23a"), 1.6]}
+	for finish in lenses:
+		var part := truck.find_child("Freight_" + finish, true, false) as MeshInstance3D
+		if part == null: continue
+		var lit: StandardMaterial3D = null
+		for held in _retained:
+			if held is StandardMaterial3D and held.resource_name == "blitz_lit_" + finish: lit = held
+		if lit == null:
+			lit = (TRUCK.material(finish)).duplicate() as StandardMaterial3D
+			lit.resource_name = "blitz_lit_" + finish
+			lit.emission_enabled = true
+			lit.emission = lenses[finish][0]
+			lit.emission_energy_multiplier = lenses[finish][1]
+			_retained.append(lit)
+		part.material_override = lit
+	# Brilho nas lentes (faróis brancos na frente, lanternas vermelhas atrás): na chuva é o que se vê de longe.
+	for side in [-1.0, 1.0]:
+		for spec in [[Vector3(side * 1.05, 1.34, -5.6), Color(1, .93, .8), 1.1], [Vector3(side * 1.02, 1.06, 5.8), Color(1, .16, .1), .55]]:
+			var glow := Sprite3D.new()
+			glow.texture = EQUIPMENT._lens_glow_texture()
+			glow.pixel_size = float(spec[2]) / 64.0
+			glow.modulate = spec[1]
+			glow.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+			glow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			glow.position = spec[0]
+			truck.add_child(glow)
+		var beam := SpotLight3D.new()
+		beam.name = "BlitzTruckHeadlight"
+		beam.position = Vector3(side * 1.05, 1.34, -5.65)
+		beam.light_color = Color("ffe9c8")
+		beam.spot_range = 60.0
+		beam.spot_angle = 26.0
+		beam.spot_attenuation = .55
+		beam.light_specular = .6
+		beam.shadow_enabled = false
+		# Baixo e um pouco para fora, como farol de verdade: pinta o asfalto molhado à frente.
+		beam.rotation_degrees = Vector3(-3.5, -side * 2.0, 0)
+		beam.set_meta("budget_energy", 9.0)
+		beam.light_energy = 9.0
+		truck.add_child(beam)
+		headlights.append(beam)
 
 ## Os dois oito anos mais novos: sem barba de agora, Dante de capa e farda.
 func _person(identity: String):
@@ -430,61 +534,100 @@ func _person(identity: String):
 		model.wardrobe_overrides = {"female":false, "height":1.04, "build":1, "skin":Color("c38d6e"), "hair_color":Color("25201d"), "hat":0, "beard":0, "glasses":false, "bag":0, "backpack":false, "top":1, "bottom":0, "shoe":0}
 	return model
 
+func _lantern_node(node_name: String, beam: bool) -> Node3D:
+	var item := Node3D.new()
+	item.name = node_name
+	# O tubo segue o antebraço (-Z do objeto = direção dos dedos): a mão fecha no corpo, a lente passa
+	# dos nós dos dedos.
+	_box(item, Vector3(0, 0, -.03), Vector3(.045, .045, .19), _material("blitz_lantern_body", Color("26282b"), .5, .4))
+	_box(item, Vector3(0, 0, -.13), Vector3(.05, .05, .01), _material("blitz_lantern_lens", Color("fff3d8"), .2, .5, Color("fff0cc")))
+	if beam:
+		lantern_light = SpotLight3D.new()
+		lantern_light.name = "BlitzLanternBeam"
+		lantern_light.position = Vector3(0, 0, -.15)
+		lantern_light.light_color = Color("fff1d6")
+		lantern_light.spot_range = 22.0
+		lantern_light.spot_angle = 16.0
+		lantern_light.shadow_enabled = false
+		lantern_light.set_meta("budget_energy", 4.0)
+		lantern_light.light_energy = 4.0
+		item.add_child(lantern_light)
+	return item
+
+func _officer(script: GDScript, node_name: String, appearance: int, point: Vector3, facing: Vector3) -> Node3D:
+	var officer: Node3D = script.new()
+	officer.name = node_name
+	# Índice fixo: não gasta o rodízio de PoliceAppearance.next_model do jogo.
+	officer.appearance_index = appearance
+	officer.position = point
+	_set.add_child(officer)
+	_face(officer, facing)
+	return officer
+
 func _build_cast() -> void:
-	dante = _person("dante")
-	dante.position = DANTE_POST
-	_set.add_child(dante)
-	lantern = Node3D.new()
-	lantern.name = "BlitzLantern"
+	# Dante é o PoliceModel da patrulha com o rosto dele (BlitzOfficer): mesma farda e a pegada de pistola
+	# do jogo, com as duas mãos no lugar.
+	dante = _officer(OFFICER, "DanteYoung", 0, DANTE_POST, Vector3.BACK)
+	dante.equip("pistol")
+	lantern = _lantern_node("BlitzLantern", true)
 	_set.add_child(lantern)
-	_box(lantern, Vector3(0, 0, -.06), Vector3(.05, .05, .2), _material("blitz_lantern_body", Color("26282b"), .5, .4))
-	_box(lantern, Vector3(0, 0, -.165), Vector3(.055, .055, .01), _material("blitz_lantern_lens", Color("fff3d8"), .2, .5, Color("fff0cc")))
-	lantern_light = SpotLight3D.new()
-	lantern_light.name = "BlitzLanternBeam"
-	lantern_light.position = Vector3(0, 0, -.18)
-	lantern_light.light_color = Color("fff1d6")
-	lantern_light.spot_range = 22.0
-	lantern_light.spot_angle = 16.0
-	lantern_light.shadow_enabled = false
-	lantern_light.set_meta("budget_energy", 4.0)
-	lantern_light.light_energy = 4.0
-	lantern.add_child(lantern_light)
 
 func _build_colleagues() -> void:
-	for entry in COLLEAGUES:
-		var officer: Node3D = POLICE_MODEL.new()
-		officer.name = "Blitz" + str(entry[0])
-		officer.appearance_index = int(entry[3])
-		officer.position = entry[1]
-		# PoliceModel olha para -z (o corpo articulado vai girado dentro dele).
-		officer.rotation.y = atan2(-entry[2].x, -entry[2].z)
-		_set.add_child(officer)
-		colleagues.append(officer)
-	colleague_lantern = Node3D.new()
-	colleague_lantern.name = "BlitzColleagueLantern"
+	bastos = _officer(POLICE_MODEL, "BlitzBastos", 3, Vector3(3.75, 0, -14.9), Vector3(-1, 0, .35))
+	lima = _officer(POLICE_MODEL, "BlitzLima", 6, Vector3(2.9, 0, -14.3), Vector3.BACK)
+	colleagues.assign([bastos, lima])
+	colleague_lantern = _lantern_node("BlitzColleagueLantern", false)
 	_set.add_child(colleague_lantern)
-	# Só a lanterna acesa (emissiva): a luz de verdade fica com a de Dante, dentro do orçamento.
-	_box(colleague_lantern, Vector3(0, 0, -.06), Vector3(.05, .05, .2), _material("blitz_lantern_body", Color("26282b"), .5, .4))
-	_box(colleague_lantern, Vector3(0, 0, -.165), Vector3(.055, .055, .01), _material("blitz_lantern_lens", Color("fff3d8"), .2, .5, Color("fff0cc")))
+	bastos_radio = Node3D.new()
+	bastos_radio.name = "BlitzRadio"
+	_box(bastos_radio, Vector3(0, 0, -.02), Vector3(.06, .035, .12), _material("blitz_radio", Color("1b1c1e"), .55, .3))
+	_set.add_child(bastos_radio)
+	if pov == "dante":
+		shooter = COBRA_MODEL.new()
+		shooter.name = "BlitzShooter"
+		shooter.look_seed = 4417
+		shooter.position = SHOOTER_OUT
+		_set.add_child(shooter)
+		# Biblioteca dos clipes de morte, sob a cortina (só o prólogo tem mortes).
+		MIXAMO_DEATH.library()
 
-## Mãos dos colegas: Bastos com o rádio no ombro, Lima com a lanterna baixa para a pista.
+## Prende um objeto na palma: filho do antebraço do rig, na ponta (onde o IK põe a mão). Assim a lanterna,
+## o rádio e a algema andam com a mão de verdade, em vez de flutuar perto dela.
+func _hold(model, index: int, item: Node3D) -> bool:
+	var body = model.get("body") if model is POLICE_MODEL else model
+	if not is_instance_valid(body) or not is_instance_valid(item) or body.forearms.size() <= index: return false
+	var fore: Node3D = body.forearms[index]
+	if item.get_parent() != fore: item.reparent(fore, false)
+	item.position = Vector3(0, -float(body._arm_measure(index).y) + .03, .015)
+	item.rotation = Vector3(-PI * .5, 0, 0)
+	return true
+
+func _body(model):
+	return model.get("body") if model is POLICE_MODEL else model
+
+## Alvos fixos das mãos (null = braço livre). Desliga o provedor de arma do PoliceModel, que reescreveria.
+func _hands(model, right: Variant, left: Variant) -> void:
+	var body = _body(model)
+	if not is_instance_valid(body): return
+	body.hand_provider = Callable()
+	body.hand_targets = [right, left]
+
 func _colleagues_tick() -> void:
-	for index in colleagues.size():
-		var officer := colleagues[index]
-		var body = officer.get("body")
-		if not is_instance_valid(body): continue
-		var forward := -officer.global_basis.z.normalized()
-		var right := forward.cross(Vector3.UP).normalized()
-		var base := officer.global_position
-		if index == 0:
-			body.hand_targets = [base + Vector3.UP * 1.5 + forward * .1 - right * .14, null]
-		else:
-			var hand := base + Vector3.UP * (1.05 + .04 * sin(stage_time * 1.3)) + forward * .32 + right * .18
-			body.hand_targets = [hand, null]
-			colleague_lantern.global_position = hand
-			colleague_lantern.look_at(hand + forward * 3.0 + Vector3.DOWN * 1.2, Vector3.UP)
-		# hand_targets fixos: o provedor de arma do PoliceModel não pode sobrescrever.
-		body.hand_provider = Callable()
+	if not is_instance_valid(lima) or not is_instance_valid(bastos): return
+	_hold(lima, 0, colleague_lantern)
+	_hold(bastos, 1, bastos_radio)
+	_hold(dante, 0, lantern)
+	if stage in ["dante_ambush", "dante_fight", "dante_flee", "dante_wounded", "dante_cuff", "dante_black"]: return
+	# Lima manda os carros para a outra faixa: a lanterna varre da faixa fechada para a aberta.
+	var forward := _forward(lima)
+	var right := forward.cross(Vector3.UP).normalized()
+	var waving := _traffic_near()
+	var sweep := (.5 + .5 * sin(stage_time * 3.4)) if waving else .15
+	_hands(lima, lima.global_position + Vector3.UP * (1.18 + .12 * sweep) + forward * .42 + right * lerpf(.25, -.35, sweep), null)
+	# Bastos no rádio até ir com Dante: a mão esquerda leva o rádio à boca.
+	if stage in ["dante_open", "vicente_drive", "vicente_stop", "vicente_wait", "vicente_face"]:
+		var head: Vector3 = _head(bastos)
+		_hands(bastos, null, head + _forward(bastos) * .1 - _forward(bastos).cross(Vector3.UP).normalized() * .07 - Vector3.UP * .12)
 
 func _build_traffic() -> void:
 	# Os dois carros que passam antes do "terceiro" (só no prólogo).
@@ -593,6 +736,12 @@ func _stage_warm() -> void:
 	truck_door.rotation.y = -1.1
 	for index in cars.size(): cars[index].position = Vector3(-LANE_X, 0, -30.0 - index * 7.0)
 	lantern.global_position = dante.global_position + Vector3(.2, 1.2, .3)
+	# Arma, clarão e atirador entram no desenho coberto (os materiais do clarão compilam aqui).
+	dante.weapon.show()
+	dante.muzzle_flash_3d.show()
+	if is_instance_valid(shooter):
+		shooter.position = Vector3(-1.0, 0, 2.0)
+		shooter.muzzle_flash_3d.show()
 	camera.global_position = Vector3(-2.5, 3.0, 14.0)
 	camera.look_at(Vector3(1.0, 1.4, -10.0))
 	_follow_rain()
@@ -607,6 +756,12 @@ func _warm() -> void:
 	if RenderingServer.frame_post_draw.is_connected(_count_draw): RenderingServer.frame_post_draw.disconnect(_count_draw)
 	truck_door.rotation.y = 0.0
 	for car in cars: car.position = Vector3(LANE_X, 0, 900)
+	dante.weapon.hide()
+	dante.muzzle_flash_3d.hide()
+	if is_instance_valid(shooter):
+		shooter.muzzle_flash_3d.hide()
+		shooter.hide()
+		shooter.position = SHOOTER_OUT
 	if pov == "dante": _dante_begin()
 	else: _vicente_begin()
 	var tween := create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
@@ -673,7 +828,7 @@ func _beacons() -> void:
 		_glows[1].visible = not red and flash
 	if is_instance_valid(halo):
 		halo.light_color = Color(1, .15, .12) if red else Color(.2, .38, 1)
-		halo.set_meta("budget_energy", 2.6 if flash else .7)
+		halo.set_meta("budget_energy", 1.5 if flash else .35)
 		if not LIGHT_BUDGET.enabled: halo.light_energy = halo.get_meta("budget_energy")
 
 func _follow_rain() -> void:
@@ -689,7 +844,7 @@ func _engine(distance: float) -> void:
 func _budget_request() -> Dictionary:
 	var lights: Array[Light3D] = []
 	var wanted: Array[Dictionary] = []
-	for light in [halo, headlight, lantern_light]:
+	for light in [halo, lantern_light, cab_light] + headlights:
 		if not is_instance_valid(light): continue
 		lights.append(light)
 		# Pela visibilidade do dono: a luz escondida pelo próprio orçamento continua pedindo.
@@ -699,27 +854,38 @@ func _budget_request() -> Dictionary:
 
 func _face(model: Node3D, direction: Vector3) -> void:
 	if Vector2(direction.x, direction.z).length() < .001: return
-	# O rig civil olha para +z local (a frente de um Node3D comum é -z).
-	model.rotation.y = atan2(direction.x, direction.z)
+	# PoliceModel olha para -z (o corpo vai girado em PI dentro dele); o rig civil solto olha para +z.
+	if model is POLICE_MODEL: model.rotation.y = atan2(-direction.x, -direction.z)
+	else: model.rotation.y = atan2(direction.x, direction.z)
 
 func _forward(model: Node3D) -> Vector3:
+	if model is POLICE_MODEL: return -model.global_basis.z.normalized()
 	return model.global_basis.z.normalized()
 
 ## Cabeça de verdade do rig (a pose sentada/em pé muda a altura); sem rig, estimativa.
 func _head(model) -> Vector3:
-	var head = model.get("head_node")
+	var body = _body(model)
+	var head = body.get("head_node") if is_instance_valid(body) else null
 	if head is Node3D and is_instance_valid(head): return head.global_position
-	return model.global_position + Vector3.UP * (1.32 if model.sit_amount > .5 else 1.62)
+	return model.global_position + Vector3.UP * 1.62
 
-## Lanterna na mão direita de quem segura; `swing` 0..1 balança para o caminhão parar.
-func _hold_lantern(holder, swing: float) -> void:
-	var forward := _forward(holder)
+## Mão direita de Dante com a lanterna: baixa e livre, ou erguida balançando (`swing` 0..1) para o
+## caminhão parar.
+func _dante_hands(swing: float) -> void:
+	if swing <= .01:
+		_hands(dante, null, null)
+		return
+	var forward := _forward(dante)
 	var right := forward.cross(Vector3.UP).normalized()
-	var wave := sin(stage_time * 7.0) * .38 * swing
-	var hand: Vector3 = holder.global_position + Vector3.UP * (1.18 + .28 * swing) + forward * (.36 + .12 * swing) + right * (.2 + wave)
-	holder.hand_targets = [holder.hand_targets[0], hand]
-	lantern.global_position = hand
-	lantern.look_at(hand + forward * 4.0 + Vector3.DOWN * (1.4 - swing * 1.1) + right * wave * 2.0, Vector3.UP)
+	var wave := sin(stage_time * 7.0) * .34 * swing
+	_hands(dante, dante.global_position + Vector3.UP * (1.2 + .32 * swing) + forward * (.38 + .12 * swing) + right * (.22 + wave), null)
+
+## Vicente ao volante: as duas mãos no aro enquanto está sentado na cabine.
+func _vicente_hands() -> void:
+	if not is_instance_valid(vicente) or vicente.get_parent() != truck: return
+	var center := truck.to_global(Vector3(-.55, 2.02, -3.92))
+	var across := truck.global_basis.x.normalized()
+	vicente.hand_targets = [center - across * .17, center + across * .17]
 
 func _door_point() -> Vector3:
 	return truck.to_global(Vector3(-1.85, 0, -3.4))
@@ -734,6 +900,14 @@ func _cab_lean() -> Vector3:
 
 func _move_truck(step: float) -> void:
 	truck.position.z -= truck_speed * step
+
+## Abre a porta do motorista: chapa girando, som e a luz de teto acendendo.
+func _open_door() -> void:
+	# Escancarada (86°): meio aberta, a chapa ficava entre o asfalto e o rosto de quem está ao volante.
+	create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS).tween_property(truck_door, "rotation:y", -1.5, 1.0 / pace)
+	_play("res://audio/vehicle_fx/door_open_0.wav", -5.0)
+	cab_light.set_meta("budget_energy", 1.4)
+	if not LIGHT_BUDGET.enabled: cab_light.light_energy = 1.4
 
 ## Desacelera para parar exatamente em `stop_z`; devolve true ao parar.
 func _brake_to(stop_z: float, step: float, crawl := 0.0) -> bool:
@@ -755,24 +929,34 @@ func _dante_begin() -> void:
 	_set_stage("dante_open")
 	truck.position = Vector3(LANE_X, 0, 900)
 	truck_speed = 0.0
-	_dante_heading = 0.0
-	dante.rotation.y = _dante_heading
+	_face(dante, Vector3.BACK)
+	_dante_heading = dante.rotation.y
 	_police_audio.play()
 	_police_audio.volume_db = -26.0
 	say("dante", "radio_open", func(): say("dante", "colleagues"))
 
-func _nape_camera(step: float, ahead := 6.0) -> void:
-	# Câmera na nuca de Dante: perto, um pouco acima, olhando para onde ele anda.
+func _nape_camera(step: float, ahead := 6.0, focus_point := Vector3.INF) -> void:
+	# Câmera na nuca de Dante: perto, um pouco acima, olhando para onde ele anda (ou para `look_at`).
 	var forward := _forward(dante)
 	var target: Vector3 = dante.global_position + Vector3.UP * 1.72 - forward * 1.25 + forward.cross(Vector3.UP).normalized() * .32
 	camera.global_position = camera.global_position.lerp(target, 1.0 - exp(-6.0 * step)) if stage_time > .05 else target
-	camera.look_at(dante.global_position + Vector3.UP * 1.45 + forward * ahead, Vector3.UP)
+	var focus: Vector3 = dante.global_position + Vector3.UP * 1.45 + forward * ahead if not focus_point.is_finite() else focus_point
+	_look_smooth(focus, step)
+
+var _focus := Vector3.INF
+## A câmera vira para o alvo sem salto (acompanha quem fala e anda).
+func _look_smooth(point: Vector3, step: float, rate := 5.0) -> void:
+	_focus = point if not _focus.is_finite() else _focus.lerp(point, 1.0 - exp(-rate * step))
+	camera.look_at(_focus, Vector3.UP)
 
 func _dante_tick(step: float) -> void:
+	_fire_cooldown = maxf(0.0, _fire_cooldown - step)
+	_shake = maxf(0.0, _shake - step * 2.5)
+	_vicente_hands()
 	match stage:
 		"dante_open":
 			_traffic(step)
-			_hold_lantern(dante, _swing)
+			_dante_hands(_swing)
 			_nape_camera(step)
 			# O terceiro veículo é o caminhão: entra depois dos dois carros.
 			if stage_time > 10.0 and _beat("truck_enters"):
@@ -791,29 +975,56 @@ func _dante_tick(step: float) -> void:
 					_play("res://audio/vehicle_fx/air_brake.wav", -6.0)
 					_hide_prompt()
 					_set_stage("dante_walk")
-					if not speaking(): say("dante", "stopped")
+					say("dante", "stopped", func(): say("dante", "approach"))
 					_objective_text("walk")
 			_engine(camera.global_position.distance_to(truck.global_position))
 		"dante_walk":
 			_traffic(step)
 			_swing = maxf(0.0, _swing - step * 1.5)
 			_walk_dante(step)
-			_hold_lantern(dante, _swing)
+			_dante_hands(_swing)
+			_walk_bastos(step)
 			_nape_camera(step, 4.0)
 			_engine(camera.global_position.distance_to(truck.global_position))
-			var door := _door_point()
-			if Vector2(dante.global_position.x - door.x, dante.global_position.z - door.z).length() < .45:
+			var beside := Vector2(dante.global_position.x - DANTE_BESIDE.x, dante.global_position.z - DANTE_BESIDE.z).length() < .6
+			if beside and _bastos_leg >= BASTOS_PATH.size():
 				_objective.text = ""
-				_set_stage("dante_door")
-		"dante_door": _dante_door(step)
+				_set_stage("dante_ask")
+		"dante_ask": _dante_ask(step)
+		"dante_ambush": _dante_ambush(step)
+		"dante_fight":
+			_aim_tick(step)
+			_shooter_tick(step)
+			_vicente_crouch()
+			if shooter_health <= 0 and stage_time > 1.4:
+				say("dante", "flee")
+				_objective_text("flee")
+				_set_stage("dante_flee")
+		"dante_flee":
+			_aim_tick(step)
+			_vicente_run(step)
+		"dante_wounded": _dante_wounded(step)
 		"dante_cuff": _dante_cuff(step)
 		"dante_black": _dante_black()
+	if stage != "dante_black": _engine(camera.global_position.distance_to(truck.global_position) if stage == "dante_open" else 4.0)
 
 func _signal() -> void:
 	if signaled or stage != "dante_open": return
 	signaled = true
 	stage_time = 0.0
 	_hide_prompt()
+
+## Faixa de desvio: os carros vêm na faixa da direita, passam para a da esquerda antes dos cavaletes
+## (Lima acenando) e voltam depois da viatura.
+static func detour_x(z: float) -> float:
+	var enter := clampf(inverse_lerp(30.0, 8.0, z), 0.0, 1.0)
+	var leave := clampf(inverse_lerp(-26.0, -46.0, z), 0.0, 1.0)
+	return lerpf(LANE_X, -LANE_X, smoothstep(0.0, 1.0, enter) * (1.0 - smoothstep(0.0, 1.0, leave)))
+
+func _traffic_near() -> bool:
+	for index in cars.size():
+		if _car_speed[index] > 0.0 and cars[index].position.z < 70.0 and cars[index].position.z > -20.0: return true
+	return false
 
 func _traffic(step: float) -> void:
 	for index in cars.size():
@@ -823,19 +1034,38 @@ func _traffic(step: float) -> void:
 			car.position = Vector3(LANE_X, 0, 150.0)
 			_car_speed[index] = 15.0
 		if _car_speed[index] <= 0.0: continue
-		# Passam devagar pela blitz, olhando, e seguem.
-		var near := absf(car.position.z - DANTE_POST.z) < 30.0
-		_car_speed[index] = move_toward(_car_speed[index], 6.0 if near else 15.0, step * 5.0)
-		car.position.z -= _car_speed[index] * step
-		if car.position.z < -320.0:
+		# Reduzem na blitz, desviam dos cavaletes pela faixa da esquerda e seguem.
+		var near := car.position.z < 45.0 and car.position.z > -30.0
+		_car_speed[index] = move_toward(_car_speed[index], 5.5 if near else 15.0, step * 5.0)
+		var z := car.position.z - _car_speed[index] * step
+		var x := detour_x(z)
+		var ahead := Vector3(detour_x(z - 1.0) - x, 0, -1.0)
+		car.position = Vector3(x, 0, z)
+		car.rotation.y = atan2(-ahead.x, -ahead.z)
+		if z < -320.0:
 			_car_speed[index] = 0.0
 			car.hide()
 
+func _walk_bastos(step: float) -> void:
+	if _bastos_leg >= BASTOS_PATH.size():
+		_face(bastos, _door_point() - bastos.global_position)
+		return
+	var goal: Vector3 = BASTOS_PATH[_bastos_leg]
+	var offset := goal - bastos.global_position
+	offset.y = 0.0
+	if offset.length() < .08:
+		_bastos_leg += 1
+		return
+	bastos.global_position += offset.normalized() * minf(offset.length(), 1.45 * step)
+	_face(bastos, offset)
+	_hands(bastos, null, null)
+
 func _walk_dante(step: float) -> void:
 	var input := Vector2.ZERO
-	var door := _door_point()
 	if autoplay:
-		var offset: Vector3 = door - dante.global_position
+		var offset: Vector3 = DANTE_BESIDE - dante.global_position
+		# Contorna a frente do caminhão pela esquerda, como Bastos.
+		if dante.global_position.z < -10.3 and dante.global_position.x > -.6: offset = Vector3(-.9, 0, -10.6) - dante.global_position
 		input = Vector2(offset.x, offset.z).normalized() if offset.length() > .05 else Vector2.ZERO
 	else:
 		var game_input := get_node_or_null("/root/GameInput")
@@ -853,84 +1083,350 @@ func _walk_dante(step: float) -> void:
 	if absf(local.x) < 1.6 and local.z > -6.0 and local.z < 6.0:
 		next = truck.to_global(Vector3(signf(local.x) * 1.6 if local.x != 0.0 else -1.6, 0, local.z))
 	dante.position = next
-	var heading := atan2(velocity.x, velocity.z)
+	var heading := atan2(-velocity.x, -velocity.z)
 	_dante_heading = lerp_angle(_dante_heading, heading, 1.0 - exp(-8.0 * step))
 	dante.rotation.y = _dante_heading
 
-func _dante_door(step: float) -> void:
-	_engine(4.0)
-	if _beat("door_opens"):
-		_face(dante, Vector3.RIGHT)
-		_dante_heading = dante.rotation.y
-		create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS).tween_property(truck_door, "rotation:y", -1.15, .9 / pace)
-		_play("res://audio/vehicle_fx/door_open_0.wav", -5.0)
-	_hold_lantern(dante, 0.0)
-	if stage_time < 1.0:
-		_nape_camera(step, 3.0)
+## Bastos bate no vidro e pede para descer; a câmera, da nuca de Dante, vira acompanhando ele.
+func _dante_ask(step: float) -> void:
+	_face(dante, _door_point() + Vector3(0, 0, -.6) - dante.global_position)
+	_face(bastos, _door_point() - bastos.global_position)
+	var glass := truck.to_global(Vector3(-1.2, 2.35, -3.25))
+	if _beat("ask_line"): say("dante", "ask")
+	# Os nós dos dedos no vidro, três batidas.
+	var knock := stage_time < 1.4
+	var tap := .05 * maxf(0.0, sin(stage_time * 14.0))
+	_hands(bastos, glass + (bastos.global_position - glass).normalized() * (.06 + tap) if knock else null, null)
+	if stage_time < 3.2:
+		_nape_camera(step, 3.0, _head(bastos).lerp(glass, smoothstep(.2, 1.4, stage_time) * .6))
 		return
-	# Close no rosto de Vicente, molhado, olhando para baixo pela porta aberta.
+	if _beat("door_opens"): _open_door()
+	if stage_time < 4.2:
+		_nape_camera(step, 3.0, glass)
+		return
+	# Close no rosto de Vicente: ele vê Dante atrás do policial.
 	var head := _cab_head()
 	if _beat("face_close"):
 		vicente.activity = "talk"
-		camera.fov = 46.0
-		# A porta abre pela frente (dobradiça no para-brisa): o vão e a câmera ficam atrás dela.
-		# No vão aberto, por dentro do vidro lateral da cabine (é uma peça só com a lataria e escura
-		# por fora): de baixo, a lataria ficaria no meio; de fora, o vidro.
-		camera.global_position = truck.to_global(Vector3(-1.0, truck.to_local(head).y - .02, -3.95))
+		camera.fov = 40.0
+		# Do asfalto, pelo vão da porta aberta, um pouco abaixo do rosto: a altura de quem está na pista.
+		camera.global_position = truck.to_global(Vector3(-1.75, truck.to_local(head).y - .28, -3.78))
 		camera.look_at(head, Vector3.UP)
-	if stage_time > 1.6 and _beat("vicente_line"):
-		say("dante", "door")
-	# Silêncio depois do nome: só chuva e o motor parado.
-	if stage_time > 6.4 and _beat("order_line"):
+	if stage_time > 4.8 and _beat("vicente_line"): say("dante", "door")
+	if stage_time > 7.6 and _beat("step_down"):
+		# Bastos olha de um para o outro; Vicente desce com as mãos à vista.
 		vicente.activity = ""
 		camera.fov = 55.0
-		_nape_camera(1.0, 2.0)
-		say("dante", "order")
-	if stage_time > 9.2 and _beat("step_out"):
-		# Vicente desce da cabine; Dante recua um passo.
+		_focus = Vector3.INF
 		vicente.reparent(_set)
 		vicente.sit_amount = 0.0
-		var door := _door_point()
-		vicente.global_position = door + Vector3(.35, 0, 0)
+		vicente.global_position = _door_point() + Vector3(.3, 0, .15)
 		_face(vicente, Vector3.LEFT)
-		dante.global_position = door + Vector3(-.6, 0, 0)
-		_face(dante, Vector3.RIGHT)
-		_dante_heading = dante.rotation.y
-		_cam_from = Transform3D.IDENTITY
+		say("dante", "order_out")
+	if stage_time > 7.6:
+		_nape_camera(step, 3.0, _head(vicente).lerp(_head(bastos), .35))
+		var face := _head(vicente)
+		var side := _forward(vicente).cross(Vector3.UP).normalized()
+		vicente.hand_targets = [face + Vector3.UP * .16 + side * .24, face + Vector3.UP * .16 - side * .24]
+	if stage_time > 10.4: _set_stage("dante_ambush")
+
+## Tiros do lado do passageiro: Bastos cai, Dante saca e vai para o abrigo.
+func _dante_ambush(step: float) -> void:
+	if _beat("first_shot"):
+		shooter.show()
+		shooter.global_position = SHOOTER_OUT
+		_face(shooter, bastos.global_position - shooter.global_position)
+		_enemy_shot()
+		_kill(bastos, (bastos.global_position - shooter.global_position).normalized())
+		_shake = .5
+		say("dante", "ambush")
+		_play("res://audio/weapons_fire/gun_draw_0.wav", -4.0)
+		dante.weapon.show()
+		lantern.hide()
+	# Atirador avança para a frente da grade; Dante recua para fora da linha da cabine.
+	shooter.global_position = shooter.global_position.move_toward(SHOOTER_EXPOSED, 3.0 * step)
+	_face(shooter, dante.global_position - shooter.global_position)
+	shooter.update_pose(step, true, false, 0.0, 0.0)
+	var cover: Vector3 = dante.global_position.move_toward(DANTE_COVER, 2.6 * step)
+	dante.global_position = cover
+	_vicente_crouch()
+	var toward: Vector3 = SHOOTER_EXPOSED + Vector3.UP * 1.3 - (dante.global_position + Vector3.UP * 1.6)
+	aim_yaw = atan2(-toward.x, -toward.z) + .12
+	aim_pitch = asin(clampf(toward.normalized().y, -1.0, 1.0))
+	dante.update_pose(step, true, false, 0.0, 0.0)
+	_aim_camera(step)
+	if stage_time > 1.1:
+		_shooter_exposed = true
+		_shooter_clock = 1.6
+		_objective_text("fight")
+		_show_fire_prompt()
+		_set_stage("dante_fight")
+		_capture_mouse(true)
+
+func _vicente_crouch() -> void:
+	# Agachado atrás da porta aberta, mãos na cabeça.
+	vicente.global_position = vicente.global_position.move_toward(_door_point() + Vector3(.35, 0, .55), .05)
+	vicente.sit_amount = move_toward(vicente.sit_amount, .55, .05)
+	var face := _head(vicente)
+	var side := _forward(vicente).cross(Vector3.UP).normalized()
+	vicente.hand_targets = [face + Vector3.UP * .08 + side * .12 - _forward(vicente) * .05, face + Vector3.UP * .08 - side * .12 - _forward(vicente) * .05]
+
+# --- Tiroteio ----------------------------------------------------------------------------------------
+
+func _aim_dir() -> Vector3:
+	return (Basis(Vector3.UP, aim_yaw) * Basis(Vector3.RIGHT, aim_pitch)) * Vector3.FORWARD
+
+## Por cima do ombro direito; o corpo de Dante gira com a mira e o PoliceModel põe as duas mãos na arma.
+func _aim_camera(step: float) -> void:
+	var direction := _aim_dir()
+	var flat := Vector3(direction.x, 0, direction.z).normalized()
+	var right := flat.cross(Vector3.UP).normalized()
+	var target: Vector3 = dante.global_position + Vector3.UP * 1.68 + right * .55 - flat * 1.55
+	camera.global_position = camera.global_position.lerp(target, 1.0 - exp(-12.0 * step))
+	camera.fov = move_toward(camera.fov, 50.0, step * 20.0)
+	var jitter := Vector3(randf_range(-1, 1), randf_range(-1, 1), 0) * _shake * .03
+	camera.look_at(camera.global_position + direction + jitter, Vector3.UP)
+	dante.rotation.y = aim_yaw
+
+func _aim_tick(step: float) -> void:
+	var target := _current_target()
+	if autoplay and target != null:
+		var toward: Vector3 = target.global_position + Vector3.UP * 1.15 - camera.global_position
+		aim_yaw = lerp_angle(aim_yaw, atan2(-toward.x, -toward.z), 1.0 - exp(-10.0 * step))
+		aim_pitch = lerpf(aim_pitch, asin(clampf(toward.normalized().y, -1.0, 1.0)), 1.0 - exp(-10.0 * step))
+		var exposed: bool = target != shooter or _shooter_visible()
+		_want_fire = exposed and _fire_cooldown <= 0.0 and stage_time > (.4 if target == shooter else 1.8)
+	else:
+		aim_yaw -= Input.get_axis("camera_left", "camera_right") * 2.2 * step if InputMap.has_action("camera_left") else 0.0
+	aim_pitch = clampf(aim_pitch, -.6, .5)
+	dante.update_pose(step, true, false, 0.0, 0.0)
+	_aim_camera(step)
+	if _want_fire or (not autoplay and Input.is_action_pressed("fire") and _fire_cooldown <= 0.0):
+		_want_fire = false
+		_fire()
+
+func _current_target() -> Node3D:
+	if stage == "dante_fight" and shooter_health > 0: return shooter
+	if stage == "dante_flee" and not vicente_hit: return vicente
+	return null
+
+func _shooter_visible() -> bool:
+	return is_instance_valid(shooter) and shooter_health > 0 and _truck_hit(camera.global_position, (shooter.global_position + Vector3.UP * 1.2 - camera.global_position).normalized()) > camera.global_position.distance_to(shooter.global_position + Vector3.UP * 1.2)
+
+func _fire() -> void:
+	if _fire_cooldown > 0.0: return
+	_fire_cooldown = .26
+	shots_fired += 1
+	dante.attack()
+	_shot_audio(-1.0)
+	var origin := camera.global_position
+	var direction := -camera.global_basis.z.normalized()
+	var wall := _truck_hit(origin, direction)
+	var target := _current_target()
+	if target == null: return
+	var distance := capsule_hit(origin, direction, target.global_position, .4 if target == shooter else .36, 1.75 if target == shooter else (1.75 - .7 * vicente.sit_amount))
+	if distance < 0.0 or distance > wall:
+		if wall < INF: _play_at_volume("res://audio/weapons_fire/ricochet_%d.wav" % (shots_fired % 4), -10.0)
+		return
+	_play_at_volume("res://audio/body_impacts/body_hit_%d.wav" % (shots_fired % 3), -6.0)
+	if target == shooter:
+		shooter_hits += 1
+		shooter_health -= 1
+		if shooter_health > 0:
+			FALL.apply_hit(shooter, shooter, direction, 26.0)
+			# Ferido, ele se esconde antes da próxima rajada.
+			if shooter_hits % 3 == 0: _shooter_exposed = false
+		else:
+			_kill(shooter, direction)
+			stage_time = 0.0
+			say("dante", "shooter_down")
+	elif target == vicente:
+		vicente_hit = true
+		_capture_mouse(false)
+		_crosshair.hide()
+		_hide_prompt()
+		_objective.text = ""
+		vicente.take_hit(direction, .9)
+		_set_stage("dante_wounded")
+
+## Morte como a do jogo: solta as mãos, a arma cai da mão até o asfalto e o corpo toca o clipe de morte do
+## Mixamo (o lado sai do empurrão do tiro). Sem a biblioteca, a queda procedural.
+func _kill(model: Node3D, direction: Vector3) -> void:
+	FALL._release_hands(model)
+	_drop_gun(model)
+	var marker := CORPSE.new()
+	model.add_child(marker)
+	if not MIXAMO_DEATH.play(marker, model, direction): FALL.apply_fall(model, model, direction)
+	_play_at_volume("res://audio/body_impacts/body_land_%d.wav" % randi_range(0, 2), -8.0)
+
+## A arma sai da mão: cai girando, quica uma vez e fica deitada no asfalto.
+func _drop_gun(model: Node3D) -> void:
+	var gun = model.get("weapon")
+	if not gun is Node3D or not is_instance_valid(gun) or not gun.visible: return
+	var flash = model.get("muzzle_flash_3d")
+	if flash is Node3D: flash.hide()
+	gun.reparent(_set, true)
+	var start: Transform3D = gun.global_transform
+	var scale_kept := start.basis.get_scale()
+	var land := Vector3(start.origin.x, .03, start.origin.z) + _forward(model) * .3 + Vector3(randf_range(-.15, .15), 0, randf_range(-.15, .15))
+	var rest := Basis(Vector3.UP, randf() * TAU) * Basis(Vector3.FORWARD, PI * .5)
+	var from_rotation := start.basis.orthonormalized().get_rotation_quaternion()
+	var to_rotation := rest.get_rotation_quaternion()
+	var fall := create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS)
+	fall.tween_method(func(t: float):
+		if not is_instance_valid(gun): return
+		# Queda com gravidade até o chão (70% do tempo) e um quique baixo.
+		var drop := clampf(t / .7, 0.0, 1.0)
+		var bounce := sin(clampf((t - .7) / .3, 0.0, 1.0) * PI) * .07 if t > .7 else 0.0
+		var height := lerpf(start.origin.y, land.y, drop * drop) + bounce
+		var flat := start.origin.lerp(land, minf(1.0, t * 1.2))
+		var turn := from_rotation.slerp(to_rotation, smoothstep(0.0, .85, t))
+		gun.global_transform = Transform3D(Basis(turn).scaled(scale_kept), Vector3(flat.x, height, flat.z))
+	, 0.0, 1.0, .55 / pace)
+	fall.tween_callback(func(): _play_at_volume("res://audio/weapons_fire/gun_holster_2.wav", -10.0))
+
+## Raio contra a cápsula de um corpo em pé (base nos pés). Devolve a distância até o acerto ou -1.
+static func capsule_hit(origin: Vector3, direction: Vector3, base: Vector3, radius: float, height: float) -> float:
+	var points := Geometry3D.get_closest_points_between_segments(origin, origin + direction * 90.0, base + Vector3.UP * .3, base + Vector3.UP * maxf(.35, height - .2))
+	if points[0].distance_to(points[1]) > radius: return -1.0
+	return origin.distance_to(points[0])
+
+## O caminhão para bala: distância até a caixa dele ao longo do raio (INF se passa livre).
+func _truck_hit(origin: Vector3, direction: Vector3) -> float:
+	var inverse := truck.global_transform.affine_inverse()
+	var local_origin := inverse * origin
+	var hit: Variant = AABB(Vector3(-1.3, 0, -5.75), Vector3(2.6, 3.9, 11.5)).intersects_ray(local_origin, inverse.basis * direction)
+	return INF if hit == null else local_origin.distance_to(hit)
+
+func _shooter_tick(step: float) -> void:
+	if not is_instance_valid(shooter) or shooter_health <= 0: return
+	_shooter_clock -= step
+	if _shooter_clock <= 0.0:
+		_shooter_exposed = not _shooter_exposed
+		_shooter_clock = 2.2 if _shooter_exposed else 1.3
+	var goal := SHOOTER_EXPOSED if _shooter_exposed else SHOOTER_HIDDEN
+	shooter.global_position = shooter.global_position.move_toward(goal, 2.6 * step)
+	_face(shooter, dante.global_position - shooter.global_position)
+	shooter.update_pose(step, true, false, 0.0, 0.0)
+	if shooter.global_position.distance_to(SHOOTER_EXPOSED) < .35:
+		_shooter_fire_clock -= step
+		if _shooter_fire_clock <= 0.0:
+			_shooter_fire_clock = randf_range(.5, .8)
+			_enemy_shot()
+
+func _enemy_shot() -> void:
+	shooter.attack()
+	_play_at_volume("res://audio/weapons_fire/pistol_%d.wav" % randi_range(0, 3), -3.0)
+	_play_at_volume("res://audio/weapons_fire/bullet_whiz_%d.wav" % randi_range(0, 3), -8.0)
+	_shake = maxf(_shake, .25)
+
+func _shot_audio(volume: float) -> void:
+	_play_at_volume("res://audio/weapons_fire/pistol_%d.wav" % (shots_fired % 4), volume)
+
+## Tiros e impactos se sobrepõem: cada um num tocador próprio que some ao terminar.
+func _play_at_volume(path: String, volume: float) -> void:
+	var stream := _sound(path)
+	if stream == null: return
+	var player := _player("SFX", stream, volume)
+	player.finished.connect(player.queue_free)
+	player.play()
+
+func _show_fire_prompt() -> void:
+	var game_input := get_node_or_null("/root/GameInput")
+	var hint: String = game_input.prompt("fire") if game_input != null else "—"
+	if hint == "—": hint = "Mouse"
+	_prompt.text = "[%s] %s" % [hint, text(lines().get("prompts", {}).get("fire"))]
+	_crosshair.show()
+
+func _capture_mouse(value: bool) -> void:
+	if DisplayServer.get_name() == "headless": return
+	if value and not _mouse_owned:
+		_previous_mouse = Input.mouse_mode
+		_mouse_owned = true
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	elif not value and _mouse_owned:
+		_mouse_owned = false
+		Input.mouse_mode = _previous_mouse
+
+## Vicente corre pela pista escura; se chega ao fim, para e olha para trás (ainda dá para alcançar).
+func _vicente_run(step: float) -> void:
+	vicente.sit_amount = move_toward(vicente.sit_amount, 0.0, step * 3.0)
+	vicente.hand_targets = [null, null]
+	if _flee_leg >= VICENTE_FLEE.size():
+		_face(vicente, dante.global_position - vicente.global_position)
+		return
+	var goal: Vector3 = VICENTE_FLEE[_flee_leg]
+	var offset: Vector3 = goal - vicente.global_position
+	offset.y = 0.0
+	if offset.length() < .1:
+		_flee_leg += 1
+		return
+	vicente.global_position += offset.normalized() * minf(offset.length(), 3.4 * step)
+	_face(vicente, offset)
+
+## Vicente cai sentado segurando a coxa; Prado no rádio; Dante vai até ele, guarda a arma e se agacha.
+func _dante_wounded(step: float) -> void:
+	# As pernas falham primeiro (agacha) e depois ele senta no asfalto.
+	vicente.sit_amount = move_toward(vicente.sit_amount, 1.0, step * 1.3)
+	vicente.seat_height = lerpf(.45, .16, smoothstep(.5, 1.0, vicente.sit_amount))
+	var forward := _forward(vicente)
+	var side := forward.cross(Vector3.UP).normalized()
+	var thigh: Vector3 = vicente.global_position + forward * .3 + Vector3.UP * .3 - side * .1
+	vicente.hand_targets = [thigh + side * .05, thigh - side * .07 + forward * .06]
+	if _beat("procedure"): say("dante", "order")
+	var stand: Vector3 = vicente.global_position + forward * 1.0
+	var offset: Vector3 = stand - dante.global_position
+	offset.y = 0.0
+	if offset.length() > .05:
+		dante.global_position += offset.normalized() * minf(offset.length(), 1.3 * step)
+	_face(dante, vicente.global_position - dante.global_position)
+	dante.update_pose(step, offset.length() > .4, false, 0.0, 0.0)
+	# De lado, os dois no quadro: atrás da nuca, Dante tapava Vicente sentado no chão.
+	var middle: Vector3 = (dante.global_position + vicente.global_position) * .5
+	var across: Vector3 = (vicente.global_position - dante.global_position).cross(Vector3.UP).normalized()
+	var side_view: Vector3 = middle + across * 2.6 + Vector3.UP * 1.25
+	camera.global_position = camera.global_position.lerp(side_view, 1.0 - exp(-3.0 * step)) if stage_time > .05 else side_view
+	_look_smooth(middle + Vector3.UP * .8, step)
+	if offset.length() <= .05 and stage_time > 3.2 and not speaking():
+		_play("res://audio/weapons_fire/gun_holster_1.wav", -6.0)
+		dante.weapon.hide()
 		_set_stage("dante_cuff")
 		_objective_text("cuff")
 		_show_prompt("cuff")
 		_progress.value = 0.0
 		_progress.show()
 
+## Pulsos de Vicente juntos à frente, sobre o colo.
 func _wrists() -> Vector3:
-	return vicente.global_position + _forward(vicente) * .3 + Vector3.UP * .98
+	return vicente.global_position + _forward(vicente) * .34 + Vector3.UP * .42
 
 func _dante_cuff(step: float) -> void:
-	_engine(4.0)
 	var holding := autoplay or Input.is_action_pressed("interact")
 	# Segurar demora; soltar devolve devagar. Não existe outro comando.
 	cuff_progress = clampf(cuff_progress + (step / HOLD_SECONDS if holding else -step * .4), 0.0, 1.0)
 	_progress.value = cuff_progress
 	var wrists := _wrists()
 	var across := _forward(vicente).cross(Vector3.UP).normalized()
-	vicente.hand_targets = [wrists + across * .06, wrists - across * .06]
-	if cuff_progress > .02:
-		var rest: Vector3 = dante.global_position + Vector3.UP * 1.0 + _forward(dante) * .25
-		var reach: Vector3 = rest.lerp(wrists, smoothstep(0.0, .6, cuff_progress))
-		dante.hand_targets = [reach + across * .1, reach - across * .1]
-		lantern.hide()
+	vicente.hand_targets = [wrists - across * .05, wrists + across * .05]
+	# Dante agacha na frente dele; as mãos vão aos pulsos (direita por cima, esquerda segurando).
+	var body = _body(dante)
+	if is_instance_valid(body):
+		body.sit_amount = move_toward(body.sit_amount, .8, step * 2.0)
+	var reach := smoothstep(0.0, .5, cuff_progress)
+	if reach > .01:
+		var rest: Vector3 = dante.global_position + Vector3.UP * .7 + _forward(dante) * .3
+		var grip: Vector3 = rest.lerp(wrists, reach)
+		_hands(dante, grip + Vector3.UP * .05 - across * .04, grip - Vector3.UP * .02 + across * .05)
 	else:
-		_hold_lantern(dante, 0.0)
-		lantern.show()
+		_hands(dante, null, null)
 	# A câmera sai da nuca e fecha nas mãos conforme o botão é segurado.
 	var forward := _forward(dante)
-	var nape: Vector3 = dante.global_position + Vector3.UP * 1.7 - forward * 1.1 + forward.cross(Vector3.UP).normalized() * .35
-	var close := wrists + Vector3(0, .3, 0) + across * .62 - forward * .25
+	var nape: Vector3 = dante.global_position + Vector3.UP * 1.45 - forward * 1.0 + forward.cross(Vector3.UP).normalized() * .35
+	var close := wrists + Vector3.UP * .35 + across * .55 - _forward(vicente) * .35
 	var k := smoothstep(0.0, 1.0, cuff_progress)
 	camera.global_position = nape.lerp(close, k)
-	camera.fov = lerpf(55.0, 38.0, k)
-	camera.look_at(vicente.global_position + Vector3.UP * 1.45 if k < .01 else (vicente.global_position + Vector3.UP * 1.45).lerp(wrists, k), Vector3.UP)
+	camera.fov = lerpf(55.0, 40.0, k)
+	camera.look_at(_head(vicente).lerp(wrists, k), Vector3.UP)
 	if cuff_progress >= 1.0:
 		_play("res://audio/weapons_fire/gun_holster_0.wav", -2.0)
 		_cut_to_black()
@@ -939,6 +1435,7 @@ func _dante_cuff(step: float) -> void:
 func _cut_to_black() -> void:
 	# Corte seco: sem fade, a chuva e o motor somem junto com a imagem.
 	curtain.color.a = 1.0
+	if is_instance_valid(_crosshair): _crosshair.hide()
 	_hide_prompt()
 	_progress.hide()
 	_objective.text = ""
@@ -974,7 +1471,8 @@ func _chase_camera(step: float) -> void:
 	camera.look_at(truck.to_global(Vector3(0, 2.2, -9.0)), Vector3.UP)
 
 func _vicente_tick(step: float) -> void:
-	_hold_lantern(dante, _swing)
+	_dante_hands(_swing)
+	_vicente_hands()
 	match stage:
 		"vicente_drive":
 			var distance := truck.position.z - TRUCK_STOP_Z
@@ -1009,8 +1507,7 @@ func _vicente_tick(step: float) -> void:
 				_face(dante, offset)
 			elif _beat("door_opens"):
 				_face(dante, Vector3.RIGHT)
-				create_tween().set_pause_mode(Tween.TWEEN_PAUSE_PROCESS).tween_property(truck_door, "rotation:y", -1.15, .9 / pace)
-				_play("res://audio/vehicle_fx/door_open_0.wav", -5.0)
+				_open_door()
 				_set_stage("vicente_face")
 		"vicente_face":
 			_engine(3.0)
@@ -1069,6 +1566,12 @@ func _input(event: InputEvent) -> void:
 		request_skip()
 		return
 	if pov == "dante" and stage == "dante_open" and event.is_action_pressed("interact") and not _prompt.text.is_empty(): _signal()
+	if stage in ["dante_fight", "dante_flee"] and not autoplay:
+		if event is InputEventMouseMotion:
+			aim_yaw -= event.relative.x * .0028
+			aim_pitch -= event.relative.y * .0028
+		if (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT) or event.is_action_pressed("fire"):
+			_want_fire = _fire_cooldown <= 0.0
 
 ## Esc uma vez arma o pulo por 3 s; a segunda pula.
 func request_skip() -> void:
@@ -1098,6 +1601,7 @@ func _finish(was_skipped: bool) -> void:
 	queue_free()
 
 func _release_world() -> void:
+	_capture_mouse(false)
 	if LIGHT_BUDGET.enabled: LIGHT_BUDGET.unregister(self)
 	if RenderingServer.frame_post_draw.is_connected(_count_draw): RenderingServer.frame_post_draw.disconnect(_count_draw)
 	if not _owns_world: return
