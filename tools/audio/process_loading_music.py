@@ -1,4 +1,9 @@
-"""Trata a música da tela de carregamento gerada no Gemini (Lyria, 16/10/2026), que substitui o
+"""Trata a música da tela de carregamento. Desde 20/10/2026 é "Rain on the Borderline" (30 s,
+escolhida pelo usuário), que já começa cheia e termina num fade curto a partir de ~28,5 s: o corte
+fica antes desse fade e o loop volta a LOOP_OFFSET_SECONDS com a emenda misturada. O original fica
+em evidence/firefly_originais_20261015/musica/loading_rain_on_the_borderline_raw.mp3, fora do Git.
+
+Antes (16/10) era a faixa gerada no Gemini (Lyria), que substituiu o
 synthwave alegre do Firefly: tema lento (~55-60 BPM) e dramático de cordas, violino, guitarra e
 bateria pesada. Os originais (baixados dos vídeos do Gemini) ficam em
 evidence/firefly_originais_20261015/musica, fora do Git. A primeira tentativa, a ~75 BPM
@@ -17,11 +22,11 @@ import soundfile as sf
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import process_menu_audio as menu
 
-SRC = os.path.join(os.path.dirname(menu.BACKUP), "musica", "loading_gtadark_slow_raw.wav")
+SRC = os.path.join(os.path.dirname(menu.BACKUP), "musica", "loading_rain_on_the_borderline_raw.mp3")
 DST = os.path.join(menu.ROOT, "audio", "menu", "loading_music.ogg")
-KEEP_SECONDS = 138.0          # o fade final do original começa aqui
-XFADE = 6.0
-LOOP_OFFSET_SECONDS = 6.0     # precisa ser >= XFADE
+KEEP_SECONDS = 28.5           # o fade final do original começa aqui
+XFADE = 3.0
+LOOP_OFFSET_SECONDS = 3.0     # precisa ser >= XFADE
 
 if __name__ == "__main__":
     x, rate = sf.read(SRC, always_2d=True, dtype="float32")

@@ -1,18 +1,20 @@
 extends RefCounted
-## Música da tela de carregamento (Gemini/Lyria, 2026-10-16): tema lento (~55-60 BPM) e dramático
-## de cordas, violino e bateria pesada, no lugar do synthwave alegre do Firefly, que destoava do
-## tom do jogo. Toca desde a introdução calma (o arquivo começa limpo nela) e o loop volta para
-## LOOP_OFFSET, onde tools/audio/process_loading_music.py já deixou a emenda misturada.
+## Música da tela de carregamento: "Rain on the Borderline" (2026-10-20), no lugar do tema de cordas
+## do Gemini/Lyria de 16/10. A faixa já começa cheia, então quem dá a entrada suave é o fade daqui;
+## o loop volta para LOOP_OFFSET, onde tools/audio/process_loading_music.py já deixou a emenda
+## misturada.
 ## Entra baixinha com a tela, cresce um pouco e sai em fade quando o jogo aparece. O decodificador
 ## roda na thread de áudio, então segue tocando mesmo quando o carregamento ocupa o quadro.
 ## Sem o arquivo importado a tela fica muda, como antes.
 const PATH := "res://audio/menu/loading_music.ogg"
 const NODE_NAME := "LoadingMusic"
-const LOOP_OFFSET := 6.0
+const LOOP_OFFSET := 3.0
 ## Começa já audível: o carregamento bloqueante da cena Main congela os tweens, e um fade a
 ## partir do silêncio deixaria a tela muda até o fim do bloqueio.
 const START_DB := -24.0
-const LEVEL_DB := -15.0
+## Volume médio de fundo: a faixa nova é densa do começo ao fim (a antiga tinha introdução calma),
+## por isso fica 1 dB abaixo do nível anterior para não disputar atenção com a tela.
+const LEVEL_DB := -16.0
 const SWELL_SECONDS := 8.0
 const OUT_SECONDS := 2.5
 const SILENCE_DB := -60.0
