@@ -24,6 +24,9 @@ static func style_rival(model: Node3D, identity: String) -> void:
 		"nadir":{"hair":2,"top_color":Color("293c4c"),"inner":Color("959ca0"),"accent":Color("4d6674")},
 		"jessica":{"hair":3,"top_color":Color("bbb4a9"),"inner":Color("41464a"),"accent":Color("858b91")},
 	}
+	if identity == "vicente":
+		vicente(model)
+		return
 	if identity.begins_with("open_"):
 		model.wardrobe_overrides["female"] = identity in ["open_celia","open_mara","open_luna"]
 		preload("res://runtime/desert/drag_meet/DragMeetAppearance.gd").apply(model)
@@ -33,7 +36,21 @@ static func style_rival(model: Node3D, identity: String) -> void:
 	model.wardrobe_overrides.merge(looks[identity],true)
 	preload("res://runtime/desert/drag_meet/DragMeetAppearance.gd").apply(model)
 
+## Vicente tem corpo próprio do Meshy (20/10/2026): jaqueta curta da turma com a marca já pintada na
+## textura. Personagem de história visto de perto não sorteia corpo do catálogo de pedestres; sem o
+## catálogo ligado (`GETECO_NO_MESHY_BODIES`) cai na roupa articulada da turma, como antes.
+const VICENTE_BODY := "res://assets/civilians/meshy/vicente/vicente.glb"
+
+static func vicente(model: Node3D) -> void:
+	dress(model)
+	if model.body_source == "": return
+	model.body_source = VICENTE_BODY
+	model.body_tint = {}
+	model.body_accessories = []
+
 static func insignia(model: Node3D) -> void:
+	# O corpo do Meshy já traz a marca bordada; os pontos soltos boiariam fora da jaqueta.
+	if model.get("body_source") != null and model.body_source == VICENTE_BODY: return
 	if not is_instance_valid(model.spine): return
 	if _patch_mesh == null:
 		_patch_mesh = BoxMesh.new()

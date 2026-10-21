@@ -6,6 +6,7 @@ const CATALOG := preload("res://assets/civilians/CivilianBodyCatalog.gd")
 const CIVILIAN := preload("res://assets/CivilianModel.gd")
 const SKIERS := preload("res://assets/civilians/SkierBodyCatalog.gd")
 ## --catalog=skiers: esquiadores do Cume Branco (20/10/2026) em vez dos pedestres.
+## --catalog=vicente: só o corpo próprio do Vicente (20/10/2026).
 var catalog_name := "pedestres"
 var output_dir := "res://evidence/npc-meshy/catalog"
 var rig: Node3D
@@ -60,6 +61,9 @@ func run() -> void:
 	stage.add_child(rig)
 	var entries := SKIERS.available() if catalog_name == "skiers" else CATALOG.available()
 	var folder: String = SKIERS.FOLDER if catalog_name == "skiers" else CATALOG.FOLDER
+	if catalog_name == "vicente":
+		entries = [{"file": "vicente.glb"}]
+		folder = "res://assets/civilians/meshy/vicente/"
 	print("catálogo: ", entries.size(), " entradas")
 	var count := entries.size()
 	for i in count:

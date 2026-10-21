@@ -47,8 +47,8 @@ func _ready() -> void:
 	visual.coat_color = Color(look.coat)
 	visual.pants_color = Color(look.pants)
 	visual.wardrobe_overrides = {"female":look.female,"height":look.height,"build":look.build,"skin":Color(look.skin),"hair_color":Color(look.hair),"hat":look.hat,"beard":look.beard,"glasses":look.glasses,"bag":0,"backpack":false,"top":1,"bottom":0,"shoe":0}
+	# Para "vicente" o style_rival já veste a turma e troca para o corpo próprio do Meshy.
 	CREW_OUTFIT.style_rival(visual,identity_id)
-	if identity_id=="vicente": CREW_OUTFIT.dress(visual)
 	add_child(visual)
 	if identity_id=="vicente": CREW_OUTFIT.insignia(visual)
 func _physics_process(delta: float) -> void:
