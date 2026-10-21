@@ -17,6 +17,7 @@ const ENVELOPE_RECEIPT := "desert_act2_reunion_envelope"
 const ENVELOPE_AMOUNT := 1500
 const STORY := preload("res://runtime/desert/DesertStoryState.gd")
 const DIGO := preload("res://systems/campaign/DigoProgress.gd")
+const RECEIPTS := preload("res://systems/economy/RecurringReceipts.gd")
 ## A2-02: Bia explica a reta, a corrida com o Digo (a prova que já existe) e a conversa com Vicente na
 ## Arquibancada. A corrida é da própria arrancada (DigoProgress): terminar a prova com o Digo, mesmo
 ## sem falar com a Bia antes, já leva para a Arquibancada. Sem recompensa em dinheiro (a oficina do
@@ -106,63 +107,119 @@ static func validate_track(world: Dictionary) -> bool:
 	if value.stage in ["grandstand", "done"] and not DIGO.workshop_unlocked(world): return false
 	return true
 
-# --- A2-03 "Peso morto" e A2-04 "A ordem alterada" ---------------------------------------------------
-# Missões em cadeia: cada uma tem a própria chave de etapas, começa quando a anterior acaba e, na
-# conclusão, marca a flag antiga do esqueleto de DesertStoryState que ela substitui. Save sem a chave e
-# com a flag já marcada passou por ali pelo esqueleto: conta como feita, sem a recompensa nova.
+# --- A2-03 a A2-13: missões em cadeia -----------------------------------------------------------------
+# Cada uma tem a própria chave de etapas, começa quando a anterior acaba (ORDER) e, na conclusão, paga
+# (se houver recibo) e marca a flag antiga do esqueleto de DesertStoryState que ela substitui, tudo de
+# uma vez (chain_finish). Save sem a chave e com a flag já marcada passou por ali pelo esqueleto: conta
+# como feita, sem a recompensa nova; save com o ato antigo terminado (delivered) conta todas como feitas.
+# "next" lista as etapas permitidas a partir de cada uma quando não é só a seguinte da lista.
 ## Valores gravados em recibo: NUNCA mudar (o save valida contra eles).
 const CHAIN := {
 	"cargo": {"key": "vicente_act2_cargo", "stages": ["", "crate", "weigh", "raul", "done"], "flag": "cargo_found",
 		"receipt": "desert_act2_cargo_freight", "amount": 900},
 	"order": {"key": "vicente_act2_order", "stages": ["", "night", "call", "done"], "flag": "bank_proof",
 		"receipt": "", "amount": 0},
+	# A2-05: conversa no encontro, a prova contra Vicente (resultado físico) e a conversa depois.
+	"brothers": {"key": "vicente_act2_brothers", "stages": ["", "race", "won", "lost", "done"], "flag": "",
+		"receipt": "", "amount": 0, "next": {"": ["race"], "race": ["won", "lost"], "won": ["done"], "lost": ["done"]}},
+	# A2-06: Vicente espera na caverna do Coyote; uma conversa só.
+	"cave": {"key": "vicente_act2_cave", "stages": ["", "done"], "flag": "", "receipt": "", "amount": 0},
+	# A2-07: Dona Fátima na capela, torre de rádio, cooperativa de Santa Lua.
+	"letters": {"key": "vicente_act2_letters", "stages": ["", "tower", "coop", "done"], "flag": "",
+		"receipt": "desert_act2_coop_radio", "amount": 1200},
+	# A2-08: a prova da Jessica (a que já existe) é pré-requisito; depois Jessica, Cascavel, a aposta e a chave.
+	"bet": {"key": "vicente_act2_bet", "stages": ["", "cascavel", "race", "keys", "done"], "flag": "",
+		"receipt": "", "amount": 0},
+	# A2-09: carro do Nonato (opcional) e o armazém no porta-malas pela Bia e pelo Digo.
+	"trunk": {"key": "vicente_act2_trunk", "stages": ["", "car", "done"], "flag": "", "receipt": "", "amount": 0,
+		"next": {"": ["car", "done"], "car": ["done"]}},
+	# A2-10: o assalto do comboio (DesertHeist) e a conversa no Motel Oásis.
+	"convoy": {"key": "vicente_act2_convoy", "stages": ["", "motel", "done"], "flag": "",
+		"receipt": "desert_act2_convoy", "amount": 1500},
+	# A2-11: Seu Bento nas Salinas e o caderno no acampamento da serra.
+	"salt": {"key": "vicente_act2_salt", "stages": ["", "camp", "done"], "flag": "",
+		"receipt": "desert_act2_salt_ledger", "amount": 2200},
+	# A2-12: Teodoro no Motel Oásis e a pasta largada na obra da passagem norte.
+	"teodoro": {"key": "vicente_act2_teodoro", "stages": ["", "chase", "done"], "flag": "", "receipt": "", "amount": 0},
+	# A2-13: Arquibancada, o ataque dos Cobras ao encontro e Vicente na passagem norte (abre o ato 3).
+	"finale": {"key": "vicente_act2_finale", "stages": ["", "defend", "gate", "done"], "flag": "delivered",
+		"receipt": "desert_act2_finale", "amount": 5000},
 }
+const ORDER := ["cargo", "order", "brothers", "cave", "letters", "bet", "trunk", "convoy", "salt", "teodoro", "finale"]
+## A Monaliza perdida na aposta (A2-08) e o carro que ganhou o armazém (A2-09). O ato 3 limpa "lost".
+const MONALIZA_KEY := "monaliza_act2"
+## Carro velho do Nonato (A2-09): frota do deserto, recibo de valor zero como prova de que foi dado.
+const NONATO_CAR_ID := "act2_nonato_bison"
+const NONATO_CAR_ARCHETYPE := "desert_bison"
+const NONATO_CAR_RECEIPT := "desert_act2_nonato_car"
 
 ## A missão anterior de cada uma da cadeia.
 static func chain_ready(world: Dictionary, id: String) -> bool:
-	match id:
-		"cargo": return track_complete(world)
-		"order": return chain_complete(world, "cargo")
-	return false
+	var at := ORDER.find(id)
+	if at < 0: return false
+	if at == 0: return track_complete(world)
+	return chain_complete(world, ORDER[at - 1])
 
 static func chain_stage(world: Dictionary, id: String) -> String:
 	var spec: Dictionary = CHAIN[id]
 	if not world.has(spec.key):
-		return "done" if bool(STORY.data(world).get(spec.flag, false)) else ""
+		if not str(spec.flag).is_empty() and bool(STORY.data(world).get(spec.flag, false)): return "done"
+		return "done" if bool(STORY.data(world).delivered) else ""
 	var value: Variant = world[spec.key]
 	return str(value.get("stage", "")) if value is Dictionary else ""
 
 static func chain_complete(world: Dictionary, id: String) -> bool:
 	return chain_stage(world, id) == "done"
 
-## Uma etapa por vez, só com a missão anterior concluída. "done" quem chama faz junto com a recompensa
-## e a flag antiga (chain_finish).
+static func _allowed(spec: Dictionary, from: String) -> Array:
+	if spec.has("next"): return spec.next.get(from, [])
+	var stages: Array = spec.stages
+	var at := stages.find(from)
+	return [stages[at + 1]] if at >= 0 and at + 1 < stages.size() else []
+
+## Etapa seguinte permitida, só com a missão anterior concluída. "done" quem chama faz junto com a
+## recompensa e a flag antiga (chain_finish).
 static func chain_advance(world: Dictionary, id: String, to_stage: String) -> bool:
 	var spec: Dictionary = CHAIN[id]
-	var stages: Array = spec.stages
 	if to_stage == "done" or not chain_ready(world, id): return false
-	if stages.find(to_stage) != stages.find(chain_stage(world, id)) + 1: return false
+	if to_stage not in _allowed(spec, chain_stage(world, id)): return false
+	if id == "bet" and not bool(STORY.data(world).jessica_met): return false
 	world[spec.key] = {"version": 1, "stage": to_stage}
 	return true
 
-## Conclusão: recompensa (se houver), etapa "done" e a flag antiga, tudo ou nada.
-static func chain_finish(world: Dictionary, economy, id: String) -> Dictionary:
+## Conclusão: recompensa (se houver), etapa "done", flag antiga e marcas da Monaliza, tudo ou nada.
+static func chain_finish(world: Dictionary, economy, id: String, extra := {}) -> Dictionary:
 	var spec: Dictionary = CHAIN[id]
-	var stages: Array = spec.stages
-	if chain_stage(world, id) != stages[stages.size() - 2] or not chain_ready(world, id): return {"ok": false, "reason": "stage"}
+	if "done" not in _allowed(spec, chain_stage(world, id)) or not chain_ready(world, id): return {"ok": false, "reason": "stage"}
+	if id == "trunk" and str(extra.get("trunk_car", "")).is_empty(): return {"ok": false, "reason": "stage"}
 	if int(spec.amount) > 0:
 		var paid: Dictionary = economy.grant_world_reward({"id": str(spec.receipt), "kind": "cash", "amount": int(spec.amount)})
 		if not paid.ok: return {"ok": false, "reason": str(paid.get("reason", "wallet_full"))}
 	world[spec.key] = {"version": 1, "stage": "done"}
-	STORY.mark(world, str(spec.flag))
+	if not str(spec.flag).is_empty(): STORY.mark(world, str(spec.flag))
+	if id in ["bet", "trunk"]:
+		var record := monaliza(world)
+		if id == "bet": record.lost = true
+		else: record.trunk_car = str(extra.trunk_car)
+		world[MONALIZA_KEY] = record
 	return {"ok": true}
 
+static func monaliza(world: Dictionary) -> Dictionary:
+	var value: Variant = world.get(MONALIZA_KEY, {})
+	if value is Dictionary and value.get("version") == 1: return value.duplicate(true)
+	return {"version": 1, "lost": false, "trunk_car": ""}
+
+static func monaliza_lost(world: Dictionary) -> bool:
+	return bool(monaliza(world).lost)
+
+static func trunk_car(world: Dictionary) -> String:
+	return str(monaliza(world).trunk_car)
+
 static func validate_chain(world: Dictionary, wallet: Dictionary) -> bool:
-	for id in CHAIN:
+	for id in ORDER:
 		var spec: Dictionary = CHAIN[id]
-		var receipt: Dictionary = {} if str(spec.receipt).is_empty() else preload("res://systems/economy/RecurringReceipts.gd").lookup(wallet, "reward", str(spec.receipt))
+		var receipt: Dictionary = {} if str(spec.receipt).is_empty() else RECEIPTS.lookup(wallet, "reward", str(spec.receipt))
 		if not receipt.is_empty() and int(receipt.get("amount", -1)) != int(spec.amount): return false
-		var flag := bool(STORY.data(world).get(spec.flag, false))
 		if not world.has(spec.key):
 			if not receipt.is_empty(): return false
 			continue
@@ -170,7 +227,23 @@ static func validate_chain(world: Dictionary, wallet: Dictionary) -> bool:
 		if not value is Dictionary or value.get("version") != 1 or value.size() != 2: return false
 		if not value.get("stage") is String or value.stage not in spec.stages: return false
 		var done: bool = value.stage == "done"
-		if done != flag: return false
+		if not str(spec.flag).is_empty() and done != bool(STORY.data(world).get(spec.flag, false)): return false
 		if int(spec.amount) > 0 and done == receipt.is_empty(): return false
 		if value.stage != "" and not chain_ready(world, id): return false
+		if id == "bet" and value.stage != "" and not bool(STORY.data(world).jessica_met): return false
+	# Monaliza: perdida se e só se a aposta terminou pela missão; armazém em outro carro se e só se A2-09
+	# terminou, num carro da frota do deserto. Carro do Nonato só com o recibo dele (e A2-09 começada).
+	var fleet: Variant = world.get("desert_fleet", {})
+	if not fleet is Dictionary: return false
+	var nonato: bool = not RECEIPTS.lookup(wallet, "reward", NONATO_CAR_RECEIPT).is_empty()
+	if fleet.has(NONATO_CAR_ID) and not nonato: return false
+	if nonato and chain_stage(world, "trunk") == "": return false
+	var bet_done: bool = world.has(CHAIN.bet.key) and chain_stage(world, "bet") == "done"
+	var trunk_done: bool = world.has(CHAIN.trunk.key) and chain_stage(world, "trunk") == "done"
+	if not world.has(MONALIZA_KEY): return not bet_done and not trunk_done
+	var m: Variant = world[MONALIZA_KEY]
+	if not m is Dictionary or m.get("version") != 1 or not m.get("lost") is bool or not m.get("trunk_car") is String or m.size() != 3: return false
+	if m.lost != bet_done: return false
+	if trunk_done == str(m.trunk_car).is_empty(): return false
+	if trunk_done and not fleet.has(m.trunk_car): return false
 	return true

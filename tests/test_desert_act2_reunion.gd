@@ -1,7 +1,9 @@
 extends SceneTree
-## Ato 2, missão A2-01 "Oito anos" (runtime/desert/act2) na sessão real (Main + save isolado):
-## encontro da arrancada → Motel Oásis → Capela, com morte no meio da conversa, prisão, recarga do
-## disco, carteira cheia no envelope e o recibo de R$ 1.500 validado pelo contrato do deserto.
+## Ato 2 inteiro (runtime/desert/act2, 13 missões) na sessão real (Main + save isolado): A2-01 com morte no
+## meio da conversa, prisão, recarga do disco e carteira cheia; A2-02 a A2-13 em sequência, com as duas
+## provas de história corridas de verdade (troca de marcha automática; a do Cascavel com o turbo cortado),
+## a Monaliza perdida e o armazém no carro do Nonato, morte durante o ataque dos Cobras, a passagem norte
+## aberta e, no fim, recarga fria do Main para conferir que tudo volta do disco.
 ## Uso (com tela): tools/run_godot_locked.sh --path . --script res://tests/test_desert_act2_reunion.gd -- --isolated-save-root=<pasta temporária> --no-traffic
 ## Sem --no-save de propósito: a recarga precisa de gravação de verdade. O save vai só para o arquivo
 ## isolado do fixture (menu_save_path + V2Launch.selected_path, devolvido no fim), como em
@@ -23,7 +25,7 @@ var output := ""
 var old_launch := ""
 
 func _initialize() -> void:
-	create_timer(900).timeout.connect(func(): failures.append("watchdog 900 s"); finish())
+	create_timer(2400).timeout.connect(func(): failures.append("watchdog 2400 s"); finish())
 	run.call_deferred()
 
 func check(value: bool, label: String) -> bool:
@@ -145,6 +147,18 @@ func run() -> void:
 	await track_mission()
 	await cargo_mission()
 	await order_mission()
+	# Invencível pelo próprio interruptor do jogo: vida acima de 100 deixa o save inválido.
+	world.gameplay.god_mode = true
+	await brothers_mission()
+	await cave_mission()
+	await letters_mission()
+	await bet_mission()
+	await trunk_mission()
+	await convoy_mission()
+	await salt_mission()
+	await teodoro_mission()
+	await finale_mission()
+	await final_reload(path)
 	finish()
 
 ## A2-02 "Respeita a pista": Bia, corrida com o Digo e Arquibancada. A corrida física não é refeita
@@ -266,6 +280,8 @@ func meet_vicente():
 
 func die() -> void:
 	var session = world.session
+	world.gameplay.god_mode = false
+	world.gameplay.health = 100.0
 	# Dano de verdade (a queda para fora do mundo só conta fora de menu, e a conversa é um menu).
 	world.gameplay.damage_environment(100000.0)
 	for i in 3: await physics_frame
@@ -281,10 +297,10 @@ func visit(stage: String) -> bool:
 	await approach(stand)
 	world.production.region.set_focus(stand, true)
 	await wait_until(func(): return is_instance_valid(reunion.actor), 30000)
-	if not check(is_instance_valid(reunion.actor), "%s espera no %s" % [str(REUNION.SPOTS[stage].get("who", "vicente")), stage]): return false
+	if not check(is_instance_valid(reunion.actor), "%s: alguém espera (%s)" % [stage, reunion.scene()]): return false
 	await frames(30)
 	var actor: CharacterBody3D = reunion.actor
-	var spot: Vector3 = reunion._site_point(stage, REUNION.SPOTS[stage].points[0])
+	var spot: Vector3 = reunion._site_point(stage, reunion._points(stage)[0])
 	check(Vector2(actor.global_position.x, actor.global_position.z).distance_to(Vector2(spot.x, spot.z)) < 6.0, "%s: Vicente no ponto autorado" % stage)
 	var hit: Dictionary = world.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(actor.global_position + Vector3.UP * .5, actor.global_position - Vector3.UP * .6, 1))
 	check(not hit.is_empty() and absf(actor.global_position.y - float(hit.position.y)) < .25, "%s: Vicente de pé no chão" % stage)
@@ -296,7 +312,7 @@ func talk(stage: String, expected: int) -> bool:
 	var session = world.session
 	var actor: CharacterBody3D = session.desert.story.reunion.actor
 	if not is_instance_valid(actor): return check(false, "%s: Vicente presente para conversar" % stage)
-	var face: Vector3 = session.desert.story.reunion._site_point(stage, REUNION.SPOTS[stage].face)
+	var face: Vector3 = session.desert.story.reunion._face_point(stage)
 	face.y = actor.global_position.y
 	var toward: Vector3 = (face - actor.global_position).normalized()
 	var found := false
@@ -421,7 +437,7 @@ func order_mission() -> void:
 	phone.y = preload("res://world/desert/DesertTerrainMesh.gd").surface_height(Vector2(phone.x, phone.z))
 	if not await use_point(phone, "act2:phone", [Vector3.ZERO, Vector3(0, 0, 1.0), Vector3(1.0, 0, 0), Vector3(-1.0, 0, 0), Vector3(0, 0, -1.0)], REUNION.phone_lines().size()): return
 	check(STATE.chain_complete(state, "order") and STORY.data(state).bank_proof, "ligação conclui A2-04 e marca bank_proof")
-	check(session.desert.objective() == "Avance nas provas de arrancada e enfrente Jessica.", "objetivo segue para a Jessica (esqueleto)")
+	check(session.desert.objective() == "Fale com Vicente no encontro da arrancada.", "objetivo segue para A2-05 (Vicente)")
 	check(CONTRACT.valid(state, session.state.economy._data), "save do deserto válido com A2-04 concluída")
 	check(preload("res://runtime/GameState.gd").new().restore_snapshot(session.state.snapshot()), "GameState aceita o save com A2-04")
 	await photo("09-orelhao")
@@ -439,6 +455,9 @@ func talk_contact(id: String, expected: int) -> bool:
 	await approach(at + Vector3(0, .08, 3.0))
 	await wait_until(func(): return is_instance_valid(session.desert.story.actors.get(id)), 20000)
 	var contact = session.desert.story.actors.get(id)
+	if not is_instance_valid(contact):
+		var drag = session.desert.drag
+		print("ACT2_REUNION INFO %s ausente: drag.active=%s rival=%s pendente=%s pista=%s retirado=%s longe=%s livre=%s jogador=%s carro=%s" % [id, str(drag.active), drag.rival_id, str(drag.open_meet.pending), str(drag.open_meet.track_busy()), str(session.desert.story.retired.has(id)), str(session.desert.story.reunion.away_from_meet()), str(session.position_clear(at + Vector3.UP * .08)), str(world.player.global_position), str(world.driving.occupied)])
 	if not check(is_instance_valid(contact), "%s presente" % id): return false
 	await approach(contact.global_position + Vector3(0, .08, 1.2))
 	if not check(session.desert.story.perform(id, false) and session.dialogue_open, "conversa de %s abre" % id): return false
@@ -468,3 +487,295 @@ func use_point(point: Vector3, target: String, offsets: Array, expected: int) ->
 	await frames(10)
 	var count := await close_dialogue()
 	return check(count >= expected, "%s: falas inteiras (%d de %d)" % [target, count, expected])
+
+# --- A2-05 a A2-13 ----------------------------------------------------------------------------------
+
+const ACT2_LINES := preload("res://runtime/desert/act2/Act2Lines.gd")
+const NORTH := preload("res://world/desert/north_pass/DesertNorthPassLayout.gd")
+const HEIST := preload("res://gameplay/desert_heist/DesertHeistState.gd")
+
+func chain_done(id: String, label: String) -> void:
+	var session = world.session
+	var state: Dictionary = session.state.world_state
+	check(STATE.chain_complete(state, id), "%s concluída" % label)
+	var spec: Dictionary = STATE.CHAIN[id]
+	if int(spec.amount) > 0:
+		var receipt: Dictionary = preload("res://systems/economy/RecurringReceipts.gd").lookup(session.state.economy._data, "reward", str(spec.receipt))
+		check(int(receipt.get("amount", -1)) == int(spec.amount), "%s: recibo de R$ %d" % [label, int(spec.amount)])
+		var before: int = session.state.economy.balance
+		check(not STATE.chain_finish(state, session.state.economy, id).ok and session.state.economy.balance == before, "%s não paga duas vezes" % label)
+	check(CONTRACT.valid(state, session.state.economy._data), "%s: save do deserto válido" % label)
+
+## Prova de história de verdade: carro na concentração, ação da missão, troca de marcha automática.
+func story_race(identity: String) -> Dictionary:
+	var session = world.session
+	var drag = session.desert.drag
+	set_hour(12.0)
+	var staging: Vector3 = REUNION.STAGING
+	await approach(staging + Vector3(0, .1, 6))
+	world.production.region.set_focus(staging, true)
+	await frames(60)
+	var car: CharacterBody3D = session.controller.spawn_vehicle("desert_faisca", staging + Vector3(0, .15, 0), -PI * .5)
+	if not check(is_instance_valid(car), "%s: carro na concentração" % identity): return {}
+	await frames(30)
+	var entered := false
+	for side in [-1, 1]:
+		world.player.teleport(car.to_global(Vector3(side * (car.half_width + .65), .04, .15)))
+		await frames(4)
+		if world.driving.interact():
+			await wait_until(func(): return world.driving.occupied and not world.driving.is_body_transition_active(), 8000)
+			entered = world.driving.occupied
+			if entered: break
+	if not check(entered, "%s: Dante entra no carro" % identity): return {}
+	await frames(20)
+	var action: Dictionary = session.desert.nearest_action()
+	if not check(action.get("target", "") == "act2:race", "%s: alinhar oferecido (%s)" % [identity, action.get("target", "nenhuma")]): return {}
+	check(session.desert.perform(action), "%s: prova pedida" % identity)
+	await wait_until(func(): return drag.active, 40000)
+	if not check(drag.active and drag.rival_id == identity, "%s: prova começou" % identity): return {}
+	await photo("race-" + identity)
+	# Como test_desert_drag_runtime: giro na faixa de largada, depois acelerador e nitro, troca no giro ideal.
+	var deadline := Time.get_ticks_msec() + 90000
+	while drag.active and Time.get_ticks_msec() < deadline:
+		if drag.phase == "staging": drag._throttle_override = .54
+		else:
+			drag._throttle_override = 1.0
+			drag._nitro_override = true
+			if drag.phase == "racing" and drag.racers.size() == 2:
+				var drive = drag.racers[0].drive
+				if drive.rpm >= drive.ideal_shift_rpm: drag.request_shift()
+		await physics_frame
+	drag._throttle_override = -1.0
+	drag._nitro_override = false
+	var result: Dictionary = drag.last_result
+	print("ACT2_REUNION INFO depois da prova: ativa=%s fase=%s pendente=%s" % [str(drag.active), drag.phase, str(drag.open_meet.pending)])
+	check(result.get("finished", false) and result.get("rival_id", "") == identity, "%s: prova terminou (%s)" % [identity, str(result.get("reason", "ok"))])
+	print("ACT2_REUNION INFO %s: Dante %.2f s, rival %.2f s, venceu %s" % [identity, float(result.get("seconds", -1)), float(result.get("rival_seconds", -1)), str(result.get("won", false))])
+	# Logo depois da frenagem a saída do carro pode ser recusada: espera parar e tenta de novo.
+	var exit_deadline := Time.get_ticks_msec() + 20000
+	while world.driving.occupied and Time.get_ticks_msec() < exit_deadline:
+		# O painel de resultado da arrancada é um menu: o jogador fecha antes de sair do carro.
+		if session.dialogue_open: session._advance_dialogue()
+		elif session.modal: session.close_menu()
+		if not world.driving.is_body_transition_active() and is_instance_valid(world.driving.car) and absf(float(world.driving.car.speed)) < .5: world.driving.leave()
+		await frames(30)
+	check(not world.driving.occupied, "%s: Dante sai do carro depois da prova" % identity)
+	await frames(10)
+	return result
+
+func brothers_mission() -> void:
+	var state: Dictionary = world.session.state.world_state
+	check(REUNION.chain_at(state, "brothers") == "", "A2-05 começa depois de A2-04")
+	check(world.session.desert.objective() == "Fale com Vicente no encontro da arrancada.", "A2-05: objetivo aponta Vicente")
+	if not await talk_contact("vicente", ACT2_LINES.brothers_start().size()): return
+	check(REUNION.chain_at(state, "brothers") == "race", "A2-05: Vicente chama para a prova")
+	var result := await story_race("vicente")
+	if result.is_empty(): return
+	var expected := "won" if result.get("won", false) else "lost"
+	check(REUNION.chain_at(state, "brothers") == expected, "A2-05: resultado físico vira etapa (%s)" % expected)
+	if not await talk_contact("vicente", ACT2_LINES.brothers_after(expected == "won").size()): return
+	chain_done("brothers", "A2-05")
+
+func cave_mission() -> void:
+	var state: Dictionary = world.session.state.world_state
+	check(world.session.desert.objective() == "Encontre Vicente na caverna da mesa de pedra, ao sul do leito seco.", "A2-06: objetivo aponta a caverna")
+	if not await visit("cave"): return
+	await photo("10-caverna")
+	if not await talk("cave", 10): return
+	chain_done("cave", "A2-06")
+
+func letters_mission() -> void:
+	var state: Dictionary = world.session.state.world_state
+	check(world.session.desert.objective() == "Pergunte à Dona Fátima, na Capela da Estrada.", "A2-07: objetivo aponta a Dona Fátima")
+	var around := [Vector3(0, 0, 1.2), Vector3(1.2, 0, 0), Vector3(-1.2, 0, 0), Vector3(0, 0, -1.2), Vector3(1.0, 0, 1.0), Vector3(-1.0, 0, 1.0)]
+	if not await use_point(REUNION.roadside_point("chapel", ROADSIDE.CHAPEL_KEEPER), "act2:fatima", around, ACT2_LINES.fatima().size()): return
+	check(REUNION.chain_at(state, "letters") == "tower", "A2-07: Dona Fátima manda para a torre")
+	if not await use_point(REUNION.roadside_point("radio_tower", ROADSIDE.TOWER_LADDER), "act2:tower", around, ACT2_LINES.tower().size()): return
+	check(REUNION.chain_at(state, "letters") == "coop", "A2-07: torre manda para Santa Lua")
+	if not await use_point(REUNION.coop_point(), "act2:coop", around, ACT2_LINES.coop().size()): return
+	await photo("11-santa-lua")
+	chain_done("letters", "A2-07")
+
+func bet_mission() -> void:
+	var session = world.session
+	var state: Dictionary = session.state.world_state
+	check(session.desert.objective() == "Corra contra Jessica pelo quadro da concentração.", "A2-08: objetivo aponta a prova da Jessica")
+	# A prova da Jessica é a que já existe (test_desert_drag_runtime): aqui o resultado entra pelo mesmo
+	# caminho do fim da arrancada.
+	session.desert.story.race_finished({"finished": true, "rival_id": "jessica", "won": false, "seconds": 18.0})
+	check(STORY.data(state).jessica_met and not session.dialogue_open, "A2-08: prova da Jessica marca jessica_met sem a fala antiga")
+	if not await talk_contact("jessica", ACT2_LINES.jessica_bet().size()): return
+	check(REUNION.chain_at(state, "bet") == "cascavel", "A2-08: Jessica aponta o Cascavel")
+	if not await visit("meet_edge"): return
+	if not await talk("meet_edge", ACT2_LINES.cascavel().size()): return
+	check(REUNION.chain_at(state, "bet") == "race", "A2-08: chave na chave apostada")
+	var result := await story_race("cascavel")
+	if result.is_empty(): return
+	check(not result.get("won", true), "A2-08: com o turbo cortado depois de 400 m, Dante perde a prova de verdade")
+	check(REUNION.chain_at(state, "bet") == "keys", "A2-08: aposta perdida leva à chave")
+	if not await visit("meet_edge"): return
+	if not await talk("meet_edge", ACT2_LINES.cascavel_keys(false).size()): return
+	chain_done("bet", "A2-08")
+	check(STATE.monaliza_lost(state), "A2-08: Monaliza perdida")
+	await frames(60)
+	var monaliza = session.garage_rewards.cars.get("personal_monaliza")
+	check(not is_instance_valid(monaliza) or monaliza.get_meta("garage_suspended", false), "A2-08: a Monaliza não está mais no mundo")
+	check(not session.personal_car._available(), "A2-08: sem armazém até A2-09")
+
+func trunk_mission() -> void:
+	var session = world.session
+	var state: Dictionary = session.state.world_state
+	check(session.desert.objective().begins_with("Arranje outro carro"), "A2-09: objetivo pede outro carro")
+	var dealer := REUNION.roadside_point("scrapyard", ROADSIDE.SCRAP_DEALER)
+	if not await use_point(dealer, "act2:nonato", [Vector3(1.2, 0, 0), Vector3(-1.2, 0, 0), Vector3(0, 0, 1.2), Vector3(0, 0, -1.2), Vector3(1.0, 0, 1.0)], ACT2_LINES.nonato().size()): return
+	check(REUNION.chain_at(state, "trunk") == "car", "A2-09: Nonato dá o carro")
+	check(state.get("desert_fleet", {}).has(STATE.NONATO_CAR_ID) and session.state.economy.has_reward_receipt(STATE.NONATO_CAR_RECEIPT), "A2-09: Bison do Nonato na frota com recibo")
+	var car: CharacterBody3D = null
+	for vehicle in session.controller.vehicles:
+		if is_instance_valid(vehicle) and vehicle.vehicle_id == STATE.NONATO_CAR_ID: car = vehicle
+	if not check(is_instance_valid(car), "A2-09: Bison na baia do ferro-velho"): return
+	await photo("12-ferro-velho")
+	# O caminho até o pátio não é dirigido aqui: o carro é posto ao lado da Bia.
+	var park := REUNION.BIA_POINT + Vector3(7, .15, 5)
+	world.production.region.prepare_collision_at(park)
+	await frames(2)
+	car.place(park, 0.0)
+	await approach(REUNION.BIA_POINT + Vector3(0, .08, 3))
+	await frames(30)
+	if not await talk_contact("bia", ACT2_LINES.trunk_ready(true).size()): return
+	chain_done("trunk", "A2-09")
+	check(STATE.trunk_car(state) == STATE.NONATO_CAR_ID, "A2-09: armazém no Bison")
+	check(session.personal_car._available() and session.personal_car._car() == car, "A2-09: porta-malas do Bison é o armazém")
+	var behind: Vector3 = car.global_position + car.global_basis.z * (car.half_length + 1.0)
+	world.player.teleport(behind + Vector3.UP * .08)
+	await frames(20)
+	check(session.field_inventory == null or session.field_inventory.trunk_access(), "A2-09: atrás do Bison o armazém abre")
+
+func convoy_mission() -> void:
+	var session = world.session
+	var state: Dictionary = session.state.world_state
+	check(session.desert.objective().begins_with("Roube a carga do comboio"), "A2-10: objetivo aponta o comboio")
+	# O assalto em si é o DesertHeist (test_desert_cargo_heist); aqui entra o estado final que ele grava.
+	set_hour(12.0)
+	var heist = session.desert.heist
+	var robbed := HEIST.initial(session.weather.moon_day(), 0)
+	robbed.phase = "looted"
+	check(session.state.economy.grant_reward(HEIST.receipt(robbed), HEIST.reward(robbed)), "A2-10: recibo da carga do comboio")
+	heist.data = robbed
+	heist._store()
+	await wait_until(func(): return REUNION.chain_at(state, "convoy") == "motel", 3000)
+	check(REUNION.chain_at(state, "convoy") == "motel", "A2-10: carga roubada leva ao motel")
+	if not await visit("motel"): return
+	if not await talk("motel", ACT2_LINES.convoy_motel().size()): return
+	chain_done("convoy", "A2-10")
+
+func salt_mission() -> void:
+	var session = world.session
+	var state: Dictionary = session.state.world_state
+	var around := [Vector3(0, 0, -1.2), Vector3(1.2, 0, 0), Vector3(-1.2, 0, 0), Vector3(0, 0, 1.2), Vector3(1.0, 0, -1.0)]
+	if not await use_point(REUNION.roadside_point("salt_works", ROADSIDE.SALT_FOREMAN), "act2:bento", around, ACT2_LINES.bento().size()): return
+	check(REUNION.chain_at(state, "salt") == "camp", "A2-11: Seu Bento manda ao acampamento")
+	var center := REUNION.ledger_point()
+	await approach(center + Vector3(0, .1, 40))
+	world.production.region.set_focus(center, true)
+	var wilds = session.desert.frontier.wilds
+	await wait_until(func(): return wilds.sites.has(REUNION.LEDGER_SITE), 25000)
+	if not check(wilds.sites.has(REUNION.LEDGER_SITE), "A2-11: acampamento montado"): return
+	await frames(30)
+	await approach(center + Vector3(0, .1, 6))
+	check(session.desert.nearest_action().get("target", "") != "act2:ledger", "A2-11: caderno não sai com fora-da-lei de pé")
+	for outlaw in wilds.sites[REUNION.LEDGER_SITE].actors:
+		if is_instance_valid(outlaw) and not outlaw.dead: world.gameplay._damage(outlaw, 10000.0, world.player)
+	await frames(20)
+	if not await use_point(center, "act2:ledger", [Vector3(0, 0, 2.0), Vector3(2.0, 0, 0), Vector3(-2.0, 0, 0), Vector3(0, 0, -2.0), Vector3(0, 0, 3.5)], ACT2_LINES.ledger().size()): return
+	chain_done("salt", "A2-11")
+
+func teodoro_mission() -> void:
+	var session = world.session
+	var state: Dictionary = session.state.world_state
+	check(session.desert.objective() == "Dona Lurdes chamou: vá ao Motel Oásis.", "A2-12: objetivo aponta o motel")
+	if not await visit("motel"): return
+	check(session.desert.story.reunion.actor.identity_id == "teodoro", "A2-12: Teodoro no motel")
+	if not await talk("motel", ACT2_LINES.teodoro_motel().size()): return
+	check(REUNION.chain_at(state, "teodoro") == "chase", "A2-12: Teodoro foge para a obra")
+	if not await visit("gate"): return
+	await photo("13-teodoro-obra")
+	if not await talk("gate", ACT2_LINES.teodoro_gate(true).size()): return
+	chain_done("teodoro", "A2-12")
+	check(not NORTH.completed(state), "A2-12: a obra continua fechada")
+
+func finale_mission() -> void:
+	var session = world.session
+	var state: Dictionary = session.state.world_state
+	var reunion = session.desert.story.reunion
+	check(session.desert.objective() == "Encontre Vicente na Arquibancada da reta.", "A2-13: objetivo aponta a Arquibancada")
+	if not await visit("grandstand"): return
+	if not await talk("grandstand", ACT2_LINES.finale_grandstand().size()): return
+	check(REUNION.chain_at(state, "finale") == "defend", "A2-13: Cobras atacam o encontro")
+	await approach(REUNION.RAID_CENTER + Vector3(0, .1, 12))
+	await wait_until(func(): return reunion.raiders.size() == REUNION.RAID_POINTS.size(), 20000)
+	check(reunion.raiders.size() == REUNION.RAID_POINTS.size(), "A2-13: quatro Cobras no encontro")
+	check(not session.save_block_reason().is_empty(), "A2-13: salvar bloqueado durante o ataque")
+	await photo("14-ataque")
+	await die()
+	check(reunion.raiders.is_empty() and REUNION.chain_at(state, "finale") == "defend", "A2-13: morte desfaz o ataque e mantém a etapa")
+	world.gameplay.god_mode = true
+	await approach(REUNION.RAID_CENTER + Vector3(0, .1, 12))
+	await wait_until(func(): return reunion.raiders.size() == REUNION.RAID_POINTS.size(), 20000)
+	check(reunion.raiders.size() == REUNION.RAID_POINTS.size(), "A2-13: o ataque volta inteiro")
+	for raider in reunion.raiders:
+		if is_instance_valid(raider) and not raider.dead: world.gameplay._damage(raider, 10000.0, world.player)
+	await wait_until(func(): return REUNION.chain_at(state, "finale") == "gate", 5000)
+	check(REUNION.chain_at(state, "finale") == "gate", "A2-13: Cobras derrotados, Vicente vai à passagem norte")
+	if not await visit("gate"): return
+	if not await talk("gate", ACT2_LINES.finale_gate().size()): return
+	chain_done("finale", "A2-13")
+	check(STORY.data(state).delivered and NORTH.completed(state), "A2-13: passagem norte aberta (gatilho do ato 3)")
+	check(preload("res://runtime/desert/DesertCampaign.gd").act_complete(state), "A2-13: ato 2 concluído no diário")
+	check(session.desert.objective() == "Explore o deserto e complete o campeonato de arrancada.", "A2-13: objetivo volta ao deserto livre")
+	await frames(30)
+	await photo("15-passagem-norte")
+
+## Recarga fria do Main com o save final: tudo do ato 2 volta do disco.
+func final_reload(path: String) -> void:
+	var session = world.session
+	var reason: String = session.save_block_reason()
+	print("ACT2_REUNION INFO save final: bloqueio=\"%s\" estrelas=%d" % [reason, int(world.gameplay.stars)])
+	# Matar os Cobras do ataque pode deixar procurado; com estrelas o jogo segura o save na fila até
+	# despistar (como em qualquer crime). Aqui a polícia é despistada à força para gravar.
+	if world.gameplay.stars > 0:
+		world.gameplay.stars = 0
+		await frames(30)
+	var saved_ok: bool = session.save_game()
+	if not saved_ok: diagnose_save(session)
+	check(saved_ok, "save final gravado (%s)" % session.last_save_error)
+	var saved_state: Dictionary = session.state.world_state.duplicate(true)
+	world.queue_free()
+	for i in 4: await process_frame
+	world = load("res://Main.tscn").instantiate()
+	world.set_meta("skip_arrival", true)
+	world.set_meta("menu_save_path", path)
+	root.add_child(world)
+	current_scene = world
+	if not await ready_world(): return
+	var state: Dictionary = world.session.state.world_state
+	for id in STATE.ORDER: check(STATE.chain_complete(state, id), "recarga: %s concluída" % id)
+	check(STATE.monaliza_lost(state) and STATE.trunk_car(state) == STATE.NONATO_CAR_ID, "recarga: Monaliza perdida e armazém no Bison")
+	check(NORTH.completed(state), "recarga: passagem norte aberta")
+	check(CONTRACT.valid(state, world.session.state.economy._data), "recarga: save do deserto válido")
+	check(saved_state.get("desert_fleet", {}).has(STATE.NONATO_CAR_ID) == state.get("desert_fleet", {}).has(STATE.NONATO_CAR_ID), "recarga: Bison na frota")
+
+## Save recusado pela validação completa: tira uma parte por vez e diz qual parte libera o save.
+func diagnose_save(session) -> void:
+	var GS := preload("res://runtime/GameState.gd")
+	var snap: Dictionary = session.state.snapshot()
+	print("ACT2_REUNION INFO diagnóstico: válido=%s chaves=%s" % [str(GS.new().restore_snapshot(snap)), str(snap.keys())])
+	for key in snap.keys():
+		if key == "world": continue
+		var copy: Dictionary = snap.duplicate(true)
+		copy.erase(key)
+		if GS.new().restore_snapshot(copy): print("ACT2_REUNION INFO diagnóstico: sem '%s' fica válido" % key)
+	for key in snap.world.keys():
+		var copy: Dictionary = snap.duplicate(true)
+		copy.world.erase(key)
+		if GS.new().restore_snapshot(copy): print("ACT2_REUNION INFO diagnóstico: sem world.%s fica válido" % key)

@@ -1,4 +1,5 @@
 extends Node
+const ACT2 := preload("res://runtime/desert/act2/VicenteAct2State.gd")
 const STOCK := preload("res://world/places/PortBossStock.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const EXTRA := preload("res://runtime/GarageRewardFleet.gd")
@@ -126,6 +127,11 @@ func _sync() -> void:
 		if id==IRONBACK and not _authorized(): continue
 		if id==PORT_ID and data.port_status=="delivered": continue
 		var record: Dictionary=data.vehicles[id]
+		# A Monaliza perdida na aposta do ato 2 (A2-08) está com os Cobras: não monta nem volta à baia
+		# até o ato 3. O registro fica (identidade, pintura); o armazém do porta-malas mudou de carro.
+		if id=="personal_monaliza" and ACT2.monaliza_lost(session.state.world_state):
+			if cars.has(id) and is_instance_valid(cars[id]): _suspend(cars[id])
+			continue
 		if _residence_owns(id):
 			_bind_existing(id)
 			continue

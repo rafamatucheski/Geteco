@@ -140,9 +140,9 @@ func perform(target: String, offer_jobs := true) -> bool:
 		"vicente":
 			# A conversa única de antes de 20/10 virou a primeira etapa da missão "Oito anos".
 			if not data.met_vicente: return reunion.meet()
-			elif data.bank_proof and data.jessica_met and not data.delivered:
-				_say([["Dante","O manifesto e o registro do Cobre têm a mesma autorização. A carga foi trocada antes da operação."],["Vicente","Você me algemou, Dante. Eu lembro de cada minuto."],["Dante","Eu sei. Aqui está a prova. A operação foi armada."],["Vicente","E o que eu faço com os oito anos que perdi?"]],"delivered")
-			else: _say([["Vicente","Os caminhões param no Miragem. Se ainda quer respostas, comece pela carga."]])
+			# A entrega da prova virou A2-13 "Os oito anos" (Arquibancada, ataque e passagem norte).
+			if reunion.vicente(): return true
+			_say([["Vicente","Os caminhões param no Miragem. Se ainda quer respostas, comece pela carga."]])
 		"irene":
 			# A conferência do manifesto virou A2-04 "A ordem alterada".
 			if reunion.irene(): return true
@@ -153,6 +153,8 @@ func perform(target: String, offer_jobs := true) -> bool:
 			if reunion.raul(): return true
 			_say([["Raul","Meu carro tem mais idade que metade dos pilotos. Não precisa de peça cara para largar direito."],["Raul","Deixei um manifesto no caixote do posto Miragem. Veio junto de uma carga estranha. Confere os números."]])
 		"jessica":
+			# A2-08 "Chave na chave" começa na conversa da Jessica depois da prova dela.
+			if reunion.jessica(): return true
 			if data.jessica_met: _say([["Jessica","Agora você conhece essa reta. E aquela conversa com seu irmão ainda está te esperando."]])
 			else: _say([["Jessica","Olha quem saiu de Harbor. Meu carro está pronto, Dante."],["Dante","Você também corre por aqui?"],["Jessica","Com essa turma desde antes de você chegar. Sobe na tabela e a gente se encontra na largada."]])
 		"nadir": _say([["Nadir","Na minha prova, uma troca ruim custa a corrida inteira. Prepare o carro com o Digo."]])
@@ -175,7 +177,10 @@ func race_finished(result: Dictionary) -> void:
 	if result.rival_id == "digo": DIGO.complete_desert_race(session.state.world_state,DIGO.DESERT_RACE_ID,true)
 	if result.rival_id == "jessica":
 		STATE.mark(session.state.world_state,"jessica_met")
-		_say([["Jessica","Você melhorou. Ainda lembra daquele serviço em Harbor?"],["Dante","Lembro. Agora tenho o que vim buscar."],["Jessica","Então termina essa conversa com seu irmão."]])
+		# Com A2-08 aberta, a conversa da Jessica é a da missão (pelo "Conversar" dela).
+		if not REUNION.STATE.chain_ready(session.state.world_state,"bet"):
+			_say([["Jessica","Você melhorou. Ainda lembra daquele serviço em Harbor?"],["Dante","Lembro. Agora tenho o que vim buscar."],["Jessica","Então termina essa conversa com seu irmão."]])
+	reunion.race_finished(result)
 func objective() -> String:
 	if session.state.region_id != "desert": return ""
 	return objective_for(session.state.world_state)

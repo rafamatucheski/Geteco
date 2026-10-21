@@ -7,8 +7,8 @@ arrancada, Estrada do Sal (Salinas, Balança, Motel Oásis, Capela, Arquibancada
 Horizonte, oficina do Digo), vila Santa Lua, posto Miragem, cânion, cavernas de arenito e a
 passagem norte em obra.
 
-**Estado:** A2-01 a A2-04 estão jogáveis (`runtime/desert/act2/`, teste
-`tests/test_desert_act2_reunion.gd`). As outras nove missões são roteiro. Até serem feitas, o
+**Estado:** as 13 missões estão jogáveis (`runtime/desert/act2/`, teste da sessão real
+`tests/test_desert_act2_reunion.gd`, que percorre o ato inteiro). Até serem feitas, o
 jogo continua completável pelo esqueleto antigo de `DesertCampaign.gd` (Digo → manifesto →
 Irene → Jessica → prova), cujas marcas cada missão nova vai substituir (tabela no fim).
 
@@ -34,8 +34,8 @@ lugares. Uma missão dura 20 a 40 minutos jogando sem pressa.
   beneficiário e o advogado Teodoro sobem a estrada que a obra da passagem norte está fechando.
   Quem armou é o ato 3.
 - Corrida tem resultado físico: perder não trava a história (muda a fala). A única derrota certa do
-  ato é a aposta da Monaliza (A2-08), e ela vem de sabotagem física no carro, não de resultado
-  escrito: a corrida acontece de verdade, com o motor perdendo força no meio da reta.
+  ato é a aposta da Monaliza (A2-08), e ela vem de sabotagem no carro, não de resultado escrito: a
+  corrida acontece de verdade, com o motor perdendo força no meio da reta.
 - Nada de pagamento por abrir diálogo. Cada recompensa é um recibo único com id estável
   (`Economy.grant_world_reward`), validado pelo contrato de save do deserto; valor gravado
   nunca muda.
@@ -143,204 +143,174 @@ Conclusão marca `cargo_found`. Chave `vicente_act2_cargo` (`""` → `crate` →
 Conclusão marca `bank_proof`. Sem dinheiro: a pista é o prêmio. A matrícula fica em aberto até A2-13.
 Chave `vicente_act2_order` (`""` → `night` → `call` → `done`).
 
-### A2-05 · Racha de irmãos
+### A2-05 · Racha de irmãos — *jogável*
 
-~25 min. Encontro, à noite (20h–5h; descansar no Horizonte adianta a hora).
+~20 min. Encontro da arrancada.
 
-1. Lívia anuncia: Vicente aceitou correr com Dante. A turma inteira para.
-2. **Prova de 800 m contra Vicente** (rival novo do `DesertDrag`, carro dele, preparação de arrancada
-   que ele mesmo monta). Resultado físico.
-3. Venceu: "Ainda acelera do mesmo jeito." Perdeu: "Lá dentro eu pensava nessa reta todo dia."
-   Os dois casos seguem.
-4. Vicente chama Dante para a mesa de pedra ao sul do leito seco: "lá eu conto aquela noite".
+1. **Vicente** (objetivo "Fale com Vicente no encontro da arrancada."): Lívia anuncia a prova; "Você e
+   eu, Dante. Oitocentos metros. Sem aposta, sem plateia comprada."
+2. **Prova contra Vicente** ("Alinhar contra Vicente", parado de carro na concentração): rival de
+   história do `DesertDrag`, Coyote de arrancada com a preparação dele. Resultado físico; chegar muito
+   atrás (mais de 8 s depois dele) também conta como derrota, não como prova anulada.
+3. **Vicente de novo:** ganhou — "Ainda acelera do mesmo jeito"; perdeu — "Você tirou o pé no fim. Não
+   precisava." Os dois casos seguem: ele chama para a mesa de pedra.
 
-Recompensa: primeira vitória paga R$ 2.000 (recibo único, como os prêmios de rival).
+Sem dinheiro. Chave `vicente_act2_brothers` (`""` → `race` → `won`/`lost` → `done`).
 
-### A2-06 · Mesa de pedra
+### A2-06 · Mesa de pedra — *jogável*
 
-~30 min. Caverna escondida do Coyote (DesertWilds `cave_brother`, -1170, -1730).
+~15–20 min (mais a ida). Caverna escondida do Coyote (DesertWilds `cave_brother`, -1170, -1730).
 
-1. Dirigir até a caverna (sem as dez cartas a lona continua presa; Vicente tem a chave do cadeado
-   mas não abre: "ainda não").
-2. **A fogueira.** Vicente conta a noite da operação: um "conhecido do Cobre" ofereceu o frete na
-   última hora, pagando o dobro, e mandou não abrir a carga.
-3. Dante conta o lado dele: recebeu a escala da operação com o nome do motorista **já** escrito,
-   na véspera — antes da ordem que Irene mostrou ter sido alterada.
-4. Se Dante já achou as dez cartas e levou o Coyote: Vicente vê o carro e fica quieto um tempo. Se
-   não: Vicente deixa o cadeado e diz que as cartas mostram o caminho.
+1. Vicente espera perto da fogueira da caverna (o ator só monta com a caverna montada).
+2. **A conversa:** o "conhecido do Cobre" que ofereceu o frete pelo dobro; Dante conta que recebeu a
+   escala na véspera com o nome de Vicente **já** escrito, antes de o banco alterar a ordem; a algema;
+   as cartas devolvidas. A fala muda se as dez cartas foram achadas e se o Coyote já foi levado.
 
-Recompensa: nenhuma (o Coyote continua sendo o prêmio das cartas; nada de pagar duas vezes).
+Sem dinheiro (o Coyote continua sendo só o prêmio das cartas). Chave `vicente_act2_cave`.
 
-### A2-07 · Destinatário desconhecido
+### A2-07 · Destinatário desconhecido — *jogável*
 
-~30 min. Capela, torre de rádio, vila Santa Lua.
+~25 min. Capela, torre de rádio da Rua Principal, rádio da cooperativa de Santa Lua.
 
-1. **Dona Fátima** conta que, um mês atrás, um homem de jaqueta de polícia perguntou por Vicente e
-   deixou uma vela "pelo rapaz". Ela anotou a placa do carro.
-2. **Torre de rádio.** Dante sobe e liga para Maciota com a placa. Maciota: registrada no norte.
-3. **Santa Lua.** O correio da cooperativa (Joana) guarda o malote antigo: as cartas de Vicente
-   foram devolvidas pelo setor de correspondência do presídio com o mesmo carimbo da matrícula
-   **0417** no verso.
-4. Vicente ouve pelo rádio da cooperativa. Primeira vez que ele diz "nós" em vez de "você".
+1. **Dona Fátima** ("Perguntar à Dona Fátima", no lugar da vela durante a etapa): um homem de jaqueta
+   de polícia deixou uma vela "pelo rapaz"; ela anotou a placa.
+2. **Torre de rádio** ("Subir na torre e ligar para o Maciota"): placa de uma viatura descaracterizada
+   do norte; o malote do presídio passava pela cooperativa.
+3. **Rádio de Santa Lua:** Joana acha os dez envelopes devolvidos com o carimbo **0417** no verso.
+   Vicente ouve pelo rádio: "Então isso agora é com nós dois."
 
-Recompensa: R$ 1.200 da cooperativa pelo conserto do rádio (recibo novo).
+**R$ 1.200** (recibo `desert_act2_coop_radio`). Chave `vicente_act2_letters`.
 
-### A2-08 · Chave na chave
+### A2-08 · Chave na chave — *jogável; Dante perde a Monaliza*
 
-~40 min. Encontro da arrancada, à noite. A missão em que Dante **perde a Monaliza**.
+~30 min. Encontro da arrancada.
 
-1. **A prova da Jessica** (as provas de arrancada que já existem; resultado físico). Depois, no capô do
-   Jetta, ela conta que fez frete para a transportadora dos Cobras e que o comboio dos papéis originais
-   passa pela Estrada do Sal duas madrugadas por semana. A hora exata, só o piloto deles sabe.
-2. **Cascavel**, o piloto dos Cobras, aparece no encontro com a turma dele. Propõe **chave na chave**:
-   se Dante ganhar, leva o horário e a rota do comboio; se perder, entrega a chave da Monaliza.
-   Vicente chama Dante de lado: "Não aposta o carro com essa gente. Eles não perdem." Dante aposta.
-3. **Antes da largada**, a Monaliza fica parada na concentração enquanto Dante assina o quadro. Na
-   reta, a pressão do turbo cai depois dos 400 m (mangueira cortada): o carro perde força **de verdade**
-   (motor com potência reduzida, sem vitória ou derrota escrita), e o Cascavel passa. Se o jogador
-   abandonar ou queimar a largada, a aposta também está perdida (a regra do chave na chave).
-4. **A chave.** Cascavel leva a Monaliza na hora. Antes de entregar, Bia e Vicente tiram o que estava
-   no porta-malas: "chave na chave é o carro, não o que tem dentro". Vicente acha a mangueira cortada
-   no chão da concentração e não diz nada; só olha para Dante.
-5. Jessica, com culpa, dá o horário do comboio mesmo assim: "Eu te pus nessa. Pelo menos isso."
+1. **A prova da Jessica** (a que já existe; marca `jessica_met`). Com a missão aberta, a fala antiga de
+   fim de prova não aparece: a conversa é a da missão.
+2. **Jessica** ("Conversar"): o comboio dos papéis passa duas madrugadas por semana; a hora exata só o
+   Cascavel sabe.
+3. **Cascavel** na beira da concentração: chave na chave — a hora e a rota do comboio contra a chave da
+   Monaliza. Vicente: "Não aposta o carro com essa gente. Eles não perdem."
+4. **A prova** ("Alinhar contra Cascavel"): depois dos 400 m o acelerador do carro de Dante fica limitado
+   a 20% e sem nitro (mangueira do turbo cortada). O carro anda de verdade, só sem força; Dante chega
+   muito atrás. Se mesmo assim ganhar, o Cascavel não paga: os meninos dele estão do lado da Monaliza.
+5. **A chave:** Bia tira o porta-malas inteiro ("chave na chave é o carro, não o que tem dentro"),
+   Vicente acha a mangueira cortada, Jessica dá a hora do comboio por culpa.
 
-Marca existente `jessica_met`. Recompensa: o prêmio de rival da Jessica que já existe. A Monaliza vai
-para o norte com os Cobras e só volta no ato 3.
+Conclusão marca a Monaliza como perdida (`monaliza_act2.lost`). Sem dinheiro. Chave `vicente_act2_bet`.
 
-### A2-09 · Porta-malas novo
+### A2-09 · Porta-malas novo — *jogável*
 
-~25 min. Ferro-velho do Nonato, oficina do Digo.
+~20 min. Ferro-velho do Nonato, pátio do Digo.
 
-1. Sem a Monaliza, o porta-malas some junto: tudo que estava guardado nele fica com a Bia, numa caixa
-   trancada na oficina do Digo. Objetivo: arranjar outro carro.
-2. **Ferro-velho do Nonato:** ele tem um carro velho no fundo do pátio (sem motor bom, sem placa).
-   "Esse aí não vale nada pra mim. Pra você, vale o que você conseguir fazer andar." Dante leva o
-   carro para o Digo (rebocado pelo guincho ou empurrado no ponto morto, conforme o que o jogo tiver).
-   Quem já tem um carro próprio no deserto (comprado no Digo, o Supra do Takeshi, o Coyote das
-   cartas) pode escolher um desses em vez do carro do Nonato.
-3. **Oficina do Digo:** Digo deixa o carro andando e **transforma o porta-malas no armazém**: fundo
-   falso, travas e o mesmo espaço do porta-malas da Monaliza. Bia devolve a caixa: tudo que estava na
-   Monaliza volta para o porta-malas novo.
-4. Digo, mexendo no motor: "Mangueira de turbo não corta sozinha, Dante. Quem fez isso sabia o que
-   estava fazendo." Primeira vez que alguém fala em voz alta da sabotagem.
+1. **Nonato** ("Perguntar ao Nonato por um carro"): dá o Bison do fundo do pátio, na baia do
+   ferro-velho. Vira carro da frota do deserto (`act2_nonato_bison`, recibo de valor zero
+   `desert_act2_nonato_car`). É opcional: qualquer carro da frota do deserto serve.
+2. **Bia, com o carro estacionado no pátio** (até 18 m dela): Digo acerta o motor e monta o fundo falso;
+   Bia devolve a caixa. O porta-malas desse carro passa a ser o armazém. Digo: "Mangueira de turbo não
+   corta sozinha."
 
-Recompensa: o carro novo, com o armazém. Sem dinheiro.
+Sem dinheiro. Chave `vicente_act2_trunk`; o carro do armazém fica em `monaliza_act2.trunk_car`.
 
-### A2-10 · Comboio da madrugada
+### A2-10 · Comboio da madrugada — *jogável*
 
-~35 min. Estrada do Sal entre a Balança e o Motel Oásis, madrugada.
+~30 min. Estrada do Sal, de madrugada (0h às 5h), e Motel Oásis.
 
-1. Esperar o comboio no horário que a Jessica deu (o assalto de carga existente, `DesertHeist`, em
-   versão de história), já no carro novo.
-2. Parar o caminhão sem destruí-lo; dois guardas. O baú certo é o do arquivo, não o da carga.
-3. Fugir com o **lacre original** e o livro de cargas. Estrelas da polícia possíveis.
-4. Vicente espera no Motel Oásis; os dois conferem: o lacre do livro tem a numeração da Salinas.
+1. **O assalto do comboio** é o `DesertHeist` que já existe (interceptar, tomar o caminhão, a desova,
+   abrir o contêiner). A missão avança quando a carga é recolhida (fase `looted`), pagando o que o
+   assalto já paga.
+2. **Vicente no Motel Oásis:** o lacre original não foi raspado; numeração das Salinas, como o do
+   caixote do Raul. "O Seu Bento manda lá faz vinte anos."
 
-Recompensa: o que o assalto já paga, mais R$ 1.500 (recibo novo).
+**R$ 1.500** (recibo `desert_act2_convoy`). Chave `vicente_act2_convoy`.
 
-### A2-11 · Sal na ferida
+### A2-11 · Sal na ferida — *jogável*
 
-~35 min. Salinas, acampamento dos foras-da-lei da serra (outlaws_ridge).
+~25 min. Salinas, acampamento dos foras-da-lei ao sul do leito seco (DesertWilds `outlaws_ridge`).
 
-1. **Seu Bento** reconhece a numeração: as cargas eram trocadas no pátio da salina, à noite, com o
-   peso completado com sal. Por isso o caminhão de Vicente pesou duas toneladas a menos.
-2. Ele recebeu ordem de queimar o caderno das trocas; deu o caderno a um "rapaz da serra".
-3. **Acampamento.** Três foras-da-lei estão queimando papéis. Combate (os acampamentos existentes).
-4. Sobram páginas: a troca da noite da operação, com a mesma 0417 no campo "autorizado".
+1. **Seu Bento** ("Mostrar o lacre ao Seu Bento"): as cargas eram trocadas no pátio da salina e o peso
+   completado com sal; o caderno foi para "um rapaz da serra".
+2. **Acampamento:** três foras-da-lei (os que já existem). O caderno ("Pegar o caderno meio queimado")
+   só sai com o acampamento sem ninguém de pé: na página da noite da operação, "autorizado: 0417".
 
-Recompensa: R$ 2.200 do Bento (recibo novo).
+**R$ 2.200** (recibo `desert_act2_salt_ledger`). Chave `vicente_act2_salt`.
 
-### A2-12 · Teodoro
+### A2-12 · Teodoro — *jogável*
 
-~30 min. Motel Oásis, Route 66, canteiro da passagem norte.
+~20 min. Motel Oásis, passagem norte.
 
-1. Dona Lurdes liga: um advogado de terno está no quarto 6 perguntando por Vicente.
-2. **Teodoro Salles** oferece "acordo" a Vicente para esquecer o processo. Dante chega no meio.
-   Teodoro se contradiz diante dos dois: o que disse a um, o que disse ao outro.
-3. **Perseguição** pela Route 66 até a passagem norte. Teodoro passa pelos operários da obra a pé e
-   some do outro lado da barreira (a obra continua fechada para carros).
-4. Na pasta que ele largou: um recibo de hotel na cidade do norte e a palavra "0417" num cartão.
+1. **Teodoro no Motel Oásis** (Dona Lurdes chamou pelo rádio): a proposta de "indenização", as mentiras
+   dele para os dois irmãos frente a frente; "Eu preciso ir."
+2. **Na obra da passagem norte** ("Alcance Teodoro"): ele cede ("Pergunta pro teu antigo chefe. Ele
+   assina com número, não com nome."), passa a pé pela barreira e larga a pasta: recibo de hotel no
+   norte e um cartão com 0417. A obra continua fechada para carros.
 
-Recompensa: nenhuma em dinheiro; a pasta.
+Sem dinheiro. Chave `vicente_act2_teodoro`.
 
-### A2-13 · Os oito anos — *final do ato*
+### A2-13 · Os oito anos — *jogável; final do ato*
 
-~40 min. Arquibancada, encontro, passagem norte.
+~25 min. Arquibancada, encontro da arrancada, passagem norte.
 
-1. **Amanhecer na Arquibancada.** Dante leva tudo a Vicente: manifesto, ordem alterada, lacre,
-   caderno da salina, a pasta. Vicente lê em silêncio. "E o que eu faço com os oito anos que eu
-   perdi?" (a fala do registro do ato 2).
-2. **Os Cobras chegam ao encontro** para tomar os papéis. A turma de Vicente e Dante defendem o
-   encontro (combate com cobertura; a turma é protegida, como hoje).
-3. **Os dois irmãos no mesmo carro** — o carro novo de A2-09, com o armazém — até a passagem norte.
-4. **A obra acaba.** Os operários retiram a barreira; a passagem norte abre (marca existente
-   `desert_story.delivered`, que `DesertNorthPassLayout.completed` já consulta).
-5. **Maciota liga:** a matrícula 0417 está ativa, numa delegacia da cidade do norte. E a Monaliza
-   foi vista lá em cima, numa oficina dos Cobras. "Ele está esperando vocês, Dante. Os dois. E a
-   minha Monaliza também."
+1. **Arquibancada:** Dante entrega tudo. "E o que eu faço com os oito anos que eu perdi?" — "Não sei.
+   Mas não vou deixar você fazer isso sozinho." Lívia pelo rádio: os Cobras estão descendo.
+2. **Ataque ao encontro:** quatro Cobras (os mesmos agentes dos foras-da-lei) chegam pelo lado da pista
+   quando Dante se aproxima. Salvar fica bloqueado durante a briga; morrer ou sair de perto desfaz o
+   ataque, que volta inteiro na próxima aproximação.
+3. **Vicente na passagem norte:** os operários tiram a barreira; Maciota liga — a 0417 está ativa numa
+   delegacia do norte, e a Monaliza foi vista numa oficina dos Cobras lá em cima.
 
-Recompensa: R$ 5.000 (recibo `desert_act2_finale`), e a passagem norte aberta. **Gatilho do ato 3.**
+Conclusão marca `desert_story.delivered`, que abre a passagem norte (`DesertNorthPassLayout.completed`)
+— **gatilho do ato 3**. **R$ 5.000** (recibo `desert_act2_finale`). Chave `vicente_act2_finale`.
 
 ## Do esqueleto antigo para as missões
 
-| Marca de `DesertStoryState` | Hoje (esqueleto) | Missão que vai assumir |
-|---|---|---|
-| `arrived` | entrar no deserto | (continua) |
-| `met_vicente` | **A2-01 "Oito anos"** (feito) | A2-01 |
-| oficina do Digo (`DigoProgress`) | **A2-02 "Respeita a pista"** (feito) | A2-02 |
-| `cargo_found` | **A2-03 "Peso morto"** (feito) | A2-03 |
-| `bank_proof` | **A2-04 "A ordem alterada"** (feito) | A2-04 |
-| (novas marcas) | — | A2-05, A2-06, A2-07 |
-| `jessica_met` | vitória/fim da prova da Jessica | A2-08 (com a aposta da Monaliza) |
-| (novas marcas) | — | A2-09, A2-10, A2-11, A2-12 |
-| `delivered` | conversa final com Vicente | A2-13 (abre a passagem norte) |
+| Marca de `DesertStoryState` | Missão que a marca agora |
+|---|---|
+| `arrived` | entrar no deserto (como antes) |
+| `met_vicente` | A2-01 "Oito anos" |
+| oficina do Digo (`DigoProgress`) | A2-02 "Respeita a pista" (a corrida que já existia) |
+| `cargo_found` | A2-03 "Peso morto" |
+| `bank_proof` | A2-04 "A ordem alterada" |
+| `jessica_met` | a prova da Jessica que já existia; pré-requisito de A2-08 |
+| `delivered` | A2-13 "Os oito anos" (abre a passagem norte) |
 
-Cada missão nova guarda as próprias etapas numa chave dela (como `vicente_act2`) e só marca a
-flag antiga na conclusão. Assim saves antigos continuam válidos: quem já passou de uma marca pelo
-esqueleto conta a missão como feita (sem a recompensa nova, como em A2-01).
+Os atalhos do esqueleto (caixote que marcava `cargo_found`, Irene que marcava `bank_proof`, Vicente
+que marcava `delivered`) saíram: só as missões marcam. Saves antigos continuam válidos: quem já passou
+de uma marca pelo esqueleto conta a missão como feita (sem a recompensa nova), e quem terminou o
+esqueleto inteiro (`delivered`) conta o ato todo como feito.
 
 ## A Monaliza no ato 2 e no ato 3
 
-Como funciona hoje (conferido no código em 20/10): a Monaliza é o carro pessoal `personal_monaliza`
-de `GarageRewards`, e o porta-malas dela não guarda nada no carro: é o contêiner `trunk` do inventário
-em grade da carteira (`Economy`), que só abre com Dante a pé atrás da Monaliza
-(`FieldInventoryRuntime.trunk_access` → `PersonalCar._near_trunk`).
+A Monaliza é o carro pessoal `personal_monaliza` de `GarageRewards`, e o porta-malas dela não guarda
+nada no carro: é o contêiner `trunk` do inventário em grade da carteira (`Economy`), que só abre com
+Dante a pé atrás do carro do armazém (`FieldInventoryRuntime.trunk_access` → `PersonalCar._near_trunk`).
 
-Isso deixa a perda segura:
+- **Nada é apagado.** Perder a Monaliza não mexe no contêiner `trunk`; itens e armas continuam no save.
+  Entre A2-08 e A2-09 ele só fica sem acesso (na história, a "caixa da Bia").
+- **Perdida** (`monaliza_act2.lost`): `GarageRewards` não monta mais o carro (suspende se estiver no
+  mundo, menos com Dante ao volante) e o "Recuperar à baia" do Maciota responde que ela está com os
+  Cobras. O registro do carro continua no save (identidade, pintura) para o ato 3.
+- **A2-09** grava o carro do armazém (`monaliza_act2.trunk_car`); `PersonalCar._car()` passa a ser esse
+  carro, onde ele estiver.
+- **Validação:** perdida se e só se A2-08 terminou; armazém em outro carro se e só se A2-09 terminou,
+  num carro da frota do deserto; o Bison do Nonato só com o recibo dele.
+- **Ato 3:** recuperar a Monaliza limpa `lost`. O armazém fica no carro de A2-09 até o jogador pedir
+  para voltar com ele para a Monaliza. Só um carro tem o armazém por vez.
 
-- **Nada é apagado.** Perder a Monaliza não mexe no contêiner `trunk`; os itens e as armas continuam no
-  save (as armas compradas têm recibo e não podem sumir, regra 11/12 do HOW-TO-DEVELOP). Na história,
-  é a "caixa da Bia". No jogo, o contêiner só fica sem acesso até A2-09.
-- **Perder** = uma marca nova (por exemplo `monaliza.lost_to = "cascavel"`) que faz `GarageRewards` não
-  montar o carro e `PersonalCar` não oferecer o porta-malas. Salvar, carregar, morrer e ser preso
-  respeitam a marca; o carro não pode reaparecer na garagem do Maciota.
-- **A2-09** grava qual carro tem o armazém (`trunk_car = <vehicle_id>`). `trunk_access` passa a valer
-  atrás desse carro, onde ele estiver.
-- **Ato 3:** recuperar a Monaliza limpa a marca de perda. O armazém continua no carro de A2-09 até o
-  jogador pedir ao Digo (ou ao Maciota) para voltar com ele para a Monaliza. Só um carro tem o
-  armazém por vez.
-- A sabotagem de A2-08 usa a mesma física de potência do câmbio do deserto (`DesertDrivetrain`):
-  potência reduzida depois dos 400 m, sem mexer na posição nem na velocidade do carro.
+## Por dentro
 
-## A2-01 a A2-04 por dentro
-
-- `runtime/desert/act2/VicenteAct2State.gd`: chave `vicente_act2` (`version`, `stage` ∈ "",
-  "motel", "chapel", "done"), avanço uma etapa por vez, validação contra a carteira (envelope de
-  R$ 1.500 se e só se concluída; concluída implica `met_vicente`; `met_vicente` sem a chave só para
-  save antigo). Entra em `DesertSaveContract.valid`.
-- A mesma chave guarda A2-02 em `vicente_act2_track`; a etapa efetiva olha a oficina do Digo, então
-  a corrida feita por qualquer caminho leva à Arquibancada. Etapa depois de `""` exige A2-01 feita;
-  `grandstand`/`done` exigem a corrida.
-- A2-03 e A2-04 estão na tabela `CHAIN` do mesmo arquivo: chave própria, começa quando a anterior
-  acaba, e `chain_finish` paga (se houver), fecha a etapa e marca a flag antiga de uma vez. Recibo se
-  e só se concluída; flag antiga se e só se concluída (save com a chave); save sem a chave e com a
-  flag passou pelo esqueleto e conta como feito.
-- `runtime/desert/act2/VicenteReunion.gd`: etapas, diálogos, ator do Vicente no motel, na capela e na
-  Arquibancada (monta a até 85 m com o lugar da Estrada do Sal pronto, devolve a 120 m e ao
-  morrer), objetivo e marcador; a conversa da Bia abre A2-02, a do Raul abre e fecha A2-03, a da
-  Irene no balcão abre A2-04. Pontos de ação sem ator (caixote, Fiscal Rosa, orelhão) e a Irene na
-  porta do Cobre, só à noite. `DesertRuntime.nearest_action` pergunta à missão antes da beira de
-  estrada, para a etapa valer no lugar da conversa comum da Fiscal Rosa.
-- `runtime/desert/DesertCampaign.gd`: a conversa única de antes virou a primeira etapa; o Vicente
-  do encontro some enquanto espera no motel ou na capela; objetivo e marcador delegam à missão.
-- Sem luz, shader, malha ou varredura nova: o ator é o mesmo `DesertCharacter` do encontro.
+- `runtime/desert/act2/VicenteAct2State.gd`: A2-01 (`vicente_act2`) e A2-02 (`vicente_act2_track`)
+  com regras próprias; A2-03 a A2-13 na tabela `CHAIN` (ordem em `ORDER`): chave por missão, começa
+  quando a anterior acaba, `chain_finish` paga (se houver), fecha a etapa, marca a flag antiga e a
+  Monaliza de uma vez. Tudo validado em `DesertSaveContract.valid` contra a carteira.
+- `runtime/desert/act2/VicenteReunion.gd`: quem espera onde (`scene_def`), atores próprios (Vicente,
+  Irene, Cascavel, Teodoro) só perto e com o lugar montado, pontos de ação sem ator, as provas de
+  história, o ataque final (com span `desert.act2.raid`), objetivos e marcadores.
+- `runtime/desert/act2/Act2Lines.gd`: falas de A2-05 a A2-13 (A2-01 a A2-04 ficam no próprio
+  `VicenteReunion.gd`).
+- Ganchos: `DesertCampaign` (Vicente, Bia, Raul, Irene, Jessica, fim das provas), `DesertRuntime`
+  (ação da missão antes das outras, rota `act2:`, salvar bloqueado no ataque), `DesertDrag` (rivais
+  de história, turbo cortado, derrota por distância), `DesertCharacter` (Cascavel e Teodoro),
+  `GarageRewards` e `PersonalCar` (Monaliza perdida, armazém em outro carro), `DesertSaveContract`.
+- Nenhuma luz, shader, textura ou malha nova; os atores reaproveitam `DesertCharacter` e os Cobras do
+  ataque reaproveitam `CobraAgent`.
