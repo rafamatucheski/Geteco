@@ -24,6 +24,7 @@ func refresh() -> void:
 	# Keep the pre-existing player_coupe and its save. This is the earned personal car.
 	garage.data.vehicles[ID] = garage._initial_record("monaliza",Vector3(0,.04,0),-PI,"maciota")
 	garage.on_location_changed()
+	session.show_message(String(TranslationServer.translate("Monaliza liberada: teu carro fica na baia da oficina. Porta-malas guarda a maleta; a bancada conserta.")))
 
 func _car():
 	return session.garage_rewards.cars.get(ID) if session != null and session.garage_rewards != null else null

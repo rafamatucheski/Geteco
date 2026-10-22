@@ -16,6 +16,8 @@ func lines(section: String, language: String = "pt") -> Array:
 		"bank_receipt": source = _source.get("interact", []).slice(2)
 		"bank_unavailable": source = _source.get("interact", []).slice(0, 2)
 		"primeiro_giro_finish": source = _source.get("finish_dialogue", [])
+		# Fala nova (22/10): a Monaliza aparecia na baia sem ninguém explicar de quem era.
+		"monaliza_intro": source = _source.get("monaliza_dialogue", [])
 		_: source = _cobra.get(section, [])
 	var result := []
 	for row in source:

@@ -95,5 +95,28 @@
       "source": "world/harbor/campaign/HarborFirstFavors.gd",
       "line": 88
     }
+  ],
+  "monaliza_dialogue": [
+    {
+      "speaker": "MACIOTA",
+      "pt": "Mais uma coisa. A Monaliza azul ali na baia agora é tua. Vai precisar de carro pra rodar atrás do Vicente.",
+      "en": "One more thing. That blue Monaliza in the bay is yours now. You'll need wheels to go after Vicente.",
+      "source": "runtime/MissionWorld.gd",
+      "line": 0
+    },
+    {
+      "speaker": "DANTE",
+      "pt": "Monaliza? Você deu nome pro carro?",
+      "en": "Monaliza? You named your car?",
+      "source": "runtime/MissionWorld.gd",
+      "line": 0
+    },
+    {
+      "speaker": "MACIOTA",
+      "pt": "Carro bom tem nome. No porta-malas tem uma maleta com pistola. Se ela voltar amassada, traz pra bancada.",
+      "en": "A good car earns a name. There's a case with a pistol in the trunk. If she comes back dented, bring her to the bench.",
+      "source": "runtime/MissionWorld.gd",
+      "line": 0
+    }
   ]
 }

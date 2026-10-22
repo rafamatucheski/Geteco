@@ -215,6 +215,9 @@ func perform(id: String) -> bool:
 	var dialogue_key := "bank_receipt" if id == "helena" else ("primeiro_giro_finish" if id == "maciota" else str(step.event))
 	if bank_copy: dialogue_key = "bank_unavailable"
 	var lines: Array = dialogue.lines(dialogue_key,TranslationServer.get_locale())
+	# O carro surge na baia quando este diálogo fecha (PersonalCar.refresh); o Maciota apresenta
+	# antes, senão o jogador encontrava a Monaliza sem saber de quem era nem para que servia.
+	if dialogue_key == "primeiro_giro_finish": lines.append_array(dialogue.lines("monaliza_intro",TranslationServer.get_locale()))
 	if lines.is_empty():
 		lines = [{"speaker":id.capitalize(),"message":str(step.objective)}]
 	session.show_dialogue(lines,func(): _event(step.event,id))

@@ -8893,6 +8893,39 @@
       },
       "publication_blockers": [],
       "previous_channel": "actor-owned spatial voice + short reactive caption"
+    },
+    {
+      "key": "f83e40eb5358ad4dc285e6906b7ca9d222be66d40f89e5834d577fff033e10f2",
+      "speaker": "maciota",
+      "source": "Mais uma coisa. A Monaliza azul ali na baia agora é tua. Vai precisar de carro pra rodar atrás do Vicente.",
+      "source_section": "first-favors-dialogue.json:monaliza_dialogue",
+      "spoken_pt": "Mais uma coisa. A Monaliza azul ali na baia agora é tua. Vai precisar de carro pra rodar atrás do Vicente.",
+      "spoken_en": "One more thing. That blue Monaliza in the bay is yours now. You'll need wheels to go after Vicente.",
+      "intent": "confiar o carro",
+      "performance_prompt": "Hand over something he values with a small proud warmth, practical, not a speech.",
+      "source_status": "new_authored_line_20261022"
+    },
+    {
+      "key": "1ec7008ba26df7dd51ba4733fef249eb75b36867850370d821015e60372f0689",
+      "speaker": "dante",
+      "source": "Monaliza? Você deu nome pro carro?",
+      "source_section": "first-favors-dialogue.json:monaliza_dialogue",
+      "spoken_pt": "Monaliza? Você deu nome pro carro?",
+      "spoken_en": "Monaliza? You named your car?",
+      "intent": "estranhar com humor",
+      "performance_prompt": "Dry surprise with a hint of amusement; a real question, not mockery.",
+      "source_status": "new_authored_line_20261022"
+    },
+    {
+      "key": "9ce37c0db3c02f5b49437d9db914d018e365127c487fb117165eac2f2bab9244",
+      "speaker": "maciota",
+      "source": "Carro bom tem nome. No porta-malas tem uma maleta com pistola. Se ela voltar amassada, traz pra bancada.",
+      "source_section": "first-favors-dialogue.json:monaliza_dialogue",
+      "spoken_pt": "Carro bom tem nome. No porta-malas tem uma maleta com pistola. Se ela voltar amassada, traz pra bancada.",
+      "spoken_en": "A good car earns a name. There's a case with a pistol in the trunk. If she comes back dented, bring her to the bench.",
+      "intent": "brincar e instruir",
+      "performance_prompt": "Playful first clause, then plain practical instructions.",
+      "source_status": "new_authored_line_20261022"
     }
   ]
 }
