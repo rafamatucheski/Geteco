@@ -25,7 +25,10 @@ func run() -> void:
 	world = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival", true)
 	root.add_child(world)
-	for i in 600:
+	# Limite por tempo, não por quadros: 600 quadros de física (~10 s) ficaram curtos para a carga
+	# real (~30 s no release, mais no binário do editor) e o teste parava antes de começar.
+	var deadline := Time.get_ticks_msec() + 240000
+	while Time.get_ticks_msec() < deadline:
 		await physics_frame
 		if world.session != null and world.session.ready_for_play: break
 	if world.session == null or not world.session.ready_for_play:
@@ -41,16 +44,11 @@ func run() -> void:
 	check(not state.can_attack() and not state.equip_weapon("pistol") and state.equipped_weapon == "fists", "Garage weapon restriction")
 	await use_target("mechanic")
 	check(state.intro.stage == "meet_maciota", "Order protected")
+	# Desde 06/10 (48d4a404) a chegada nova substituiu o tutorial da bancada: a conversa com o Maciota
+	# conclui a introdução direto (Progression.complete_meeting); mecânico e peça não fazem mais parte.
 	await use_target("maciota")
-	check(state.intro.stage == "talk_mechanic", "Maciota advances")
-	await use_target("mechanic")
-	check(state.intro.stage == "collect_part", "Mechanic advances")
-	check(world.maciota_place.part_visual.visible, "Part now visible")
-	await use_target("part")
-	check(state.intro.snapshot().inventory.get("garage_part", 0) == 1, "Collect exactly one")
-	check(not world.maciota_place.part_visual.visible, "Part removed")
-	await use_target("maciota")
-	check(state.intro.stage == "complete", "Complete mission")
+	check(state.intro.stage == "complete", "Maciota conversation completes the introduction")
+	check(not world.maciota_place.part_visual.visible, "Obsolete bench part stays hidden")
 	await use_target("maciota")
 	check(state.intro.snapshot().completed_missions.size() == 1, "No duplicate reward")
 	var save_root := ""
