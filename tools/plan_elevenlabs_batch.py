@@ -22,6 +22,16 @@ CAST = {  # character_id -> {idioma: (voice_id, nome)}
     "takeshi": {"pt_BR": ("qjx83Y0UcERgVPICvVpl", "Kei"), "en": ("qjx83Y0UcERgVPICvVpl", "Kei")},
     "vicente": {"pt_BR": ("sNOgqySaECh2Vh5sDQNY", "Dantas | Deep, Warm & Slightly Raspy"),
                 "en": ("sNOgqySaECh2Vh5sDQNY", "Dantas | Deep, Warm & Slightly Raspy")},
+    # 22/10: o usuário estendeu a ElevenLabs às missões principais de Harbor (Ferrugem, Neco,
+    # moradora e Jessica); vozes escolhidas pelo perfil de voice-cast.json, mesma voz nos dois idiomas.
+    "ferrugem": {"pt_BR": ("E9a8LlXPNWtyvvSoZzrb", "Talis - Natural, Descontraído, Real"),
+                 "en": ("E9a8LlXPNWtyvvSoZzrb", "Talis - Natural, Descontraído, Real")},
+    "neco": {"pt_BR": ("75FhDGLofkNSQ8G4Htts", "Francis - Brazil | Minas Gerais"),
+             "en": ("75FhDGLofkNSQ8G4Htts", "Francis - Brazil | Minas Gerais")},
+    "moradora": {"pt_BR": ("k5aKjuBz9NhUMZc7SDpl", "Marilita - Natural & Conversacional"),
+                 "en": ("k5aKjuBz9NhUMZc7SDpl", "Marilita - Natural & Conversacional")},
+    "jessica": {"pt_BR": ("5p4THmLc2S6kXKO1pOM5", "Nayara Técia - PVC"),
+                "en": ("5p4THmLc2S6kXKO1pOM5", "Nayara Técia - PVC")},
 }
 # Lucas soa lento: o prefixo pede ritmo (validado no teste de 20/10).
 PREFIX = {("maciota", "pt_BR"): "ágil, "}
@@ -73,7 +83,23 @@ EN_TAG = {
     "receber com intimidade brincalhona": "playful, teasing", "reconhecer confiança": "warm, proud", "reconhecer entrega": "satisfied",
     "relatar sem condenar": "measured", "resolver e repreender": "urgent, scolding", "revelar confiança conquistada": "quiet, serious",
     "revelar dívida pessoal": "grateful, heavy", "se apresentar e conduzir": "friendly, brisk", "situar investigação": "explaining, low",
+    "confiar o carro": "warm, handing over", "brincar e instruir": "teasing, practical", "estranhar com humor": "amused, incredulous",
+    # Ferrugem, Neco e moradora.
+    "dar serviço e soltar pista": "dry, brisk", "abrir acesso condicionado": "grudging, dry", "ceder respeito e pista": "grudging respect",
+    "conferir prova e pressionar contato": "firm, deliberate", "pedir proteção urgente": "frightened, urgent",
+    "confiar após resgate": "stunned relief",
+    # Jessica.
+    "reconhecer competência": "cool, appraising", "provocar rival": "teasing", "mudar para proposta": "casual, getting to it",
+    "deixar porta aberta": "light, inviting", "dividir operação": "focused, low", "respeitar escolha": "even, honest",
+    "estabelecer fuga": "steady, confident", "assumir controle": "calm, commanding", "baixar tensão com humor": "deadpan",
+    "provocar após alívio": "teasing, relieved", "reafirmar ambição": "confident", "pedir vínculo pessoal": "soft, sincere",
+    "disfarçar expectativa": "casual, hiding relief", "reconhecer cuidado": "warm, brief", "lembrar assunto adiado": "gentle reminder",
+    "reencontrar rival querido": "playful, glad", "lançar desafio pessoal": "competitive, teasing",
+    "retomar história compartilhada": "warm, nostalgic", "encorajar confronto necessário": "firm, encouraging",
+    "adiar operação inviável": "matter-of-fact", "reportar rota bloqueada": "alert",
 }
+# A intenção das falas de dor é uma frase longa: indicação curta para não pagar por ela.
+PAIN_TAG = {"pt_BR": "dor curta", "en": "short pain"}
 PAIN_KEY = "80a833fa7c4bf1c457d0ce1d3fbaf3e0fe21b6b6f926b242223d70ce494307ac"
 PAIN_EN_TONES = ["sharp pain, short", "muffled grunt, teeth clenched", "startled pain", "angry pain"]
 GREETING_KEY = "873a8bd50b524f3b14f0c9c9ecc17d5bb9604f18e4c436e2d15fad6f32108b6b"
@@ -103,7 +129,10 @@ def main() -> None:
             if row["key"] == PAIN_KEY and lang == "en": tones = PAIN_EN_TONES
             if row["key"] == GREETING_KEY and lang == "en": tones = GREETING_EN_TONES
             for tone in tones:
-                tag = tone or (row["intent"] if lang == "pt_BR" else EN_TAG[row["intent"]])
+                if row["source_section"].startswith("combat_pain"):
+                    tag = tone or PAIN_TAG[lang]
+                else:
+                    tag = tone or (row["intent"] if lang == "pt_BR" else EN_TAG[row["intent"]])
                 plan.append({"label": f"{row['key'][:12]}_{lang}" + (f"_{tones.index(tone)}" if tone else ""),
                              "key": row["key"], "persona": row["speaker"], "character_id": who, "language": lang,
                              "voice_id": voice[0], "voice_name": voice[1],

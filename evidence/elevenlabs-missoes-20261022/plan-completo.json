@@ -1,0 +1,662 @@
+[
+ {
+  "label": "22e12dbd1c72_pt_BR",
+  "key": "22e12dbd1c72c87f67988d4857e5a52346e18e11b43c8ea1e10a9b6cecdf2588",
+  "persona": "ferrugem",
+  "character_id": "ferrugem",
+  "language": "pt_BR",
+  "voice_id": "E9a8LlXPNWtyvvSoZzrb",
+  "voice_name": "Talis - Natural, Descontraído, Real",
+  "prompt": "[dar serviço e soltar pista] Trouxe a peça do Maciota? É pra uma cliente. Marquei onde o carro parou. Motor tá ruim: pega o guincho amarelo do Neco e leva pra baia dele. É conserto, ouviu? Nada de vender ou prensar. Descarregou, fala com o Neco e volta aqui. Teu irmão abriu essa ordem de serviço."
+ },
+ {
+  "label": "22e12dbd1c72_en",
+  "key": "22e12dbd1c72c87f67988d4857e5a52346e18e11b43c8ea1e10a9b6cecdf2588",
+  "persona": "ferrugem",
+  "character_id": "ferrugem",
+  "language": "en",
+  "voice_id": "E9a8LlXPNWtyvvSoZzrb",
+  "voice_name": "Talis - Natural, Descontraído, Real",
+  "prompt": "[dry, brisk] Got Maciota's part? It's for a customer. I marked where her car broke down. Bad engine. Take Neco's yellow tow truck and get it to his bay. It's a repair, hear me? No selling it or putting it in the press. Unload, talk to Neco, then come back. Your brother opened the work order."
+ },
+ {
+  "label": "10dc9889a893_pt_BR",
+  "key": "10dc9889a893df2594f034bcac7db658d69a4fd6c32d91be7b3fd47630eefa1b",
+  "persona": "neco",
+  "character_id": "neco",
+  "language": "pt_BR",
+  "voice_id": "75FhDGLofkNSQ8G4Htts",
+  "voice_name": "Francis - Brazil | Minas Gerais",
+  "prompt": "[conferir prova e pressionar contato] Recebido. Esse aqui é reparo; longe da prensa. Deixa na baia, eu cuido até a cliente buscar. Olha a ordem zero dezessete: V. Ferraz. E um pedido de motorista pra serra. Leva essa via pro Ferrugem. Quero ver se agora ele abre a boca."
+ },
+ {
+  "label": "10dc9889a893_en",
+  "key": "10dc9889a893df2594f034bcac7db658d69a4fd6c32d91be7b3fd47630eefa1b",
+  "persona": "neco",
+  "character_id": "neco",
+  "language": "en",
+  "voice_id": "75FhDGLofkNSQ8G4Htts",
+  "voice_name": "Francis - Brazil | Minas Gerais",
+  "prompt": "[firm, deliberate] Got it. This one's a repair. Keep it out of the press. Leave it in the bay; I'll handle it till she picks it up. Look at work order zero one seven. V. Ferraz. And a request for mountain-route drivers. Take this copy to Ferrugem. Maybe he'll finally talk."
+ },
+ {
+  "label": "b06fa9952d33_pt_BR",
+  "key": "b06fa9952d3312e559a041bff55f4cedb568b35dae8e9a3bfaadf373c9df8239",
+  "persona": "ferrugem",
+  "character_id": "ferrugem",
+  "language": "pt_BR",
+  "voice_id": "E9a8LlXPNWtyvvSoZzrb",
+  "voice_name": "Talis - Natural, Descontraído, Real",
+  "prompt": "[abrir acesso condicionado] É dele, a assinatura. O Vicente tava atrás de motorista pra sair de Harbor. Mas o último não dá papo pra estranho. Tem prova hoje à noite. Ganha pelos portões marcados que eu te ponho com a turma. E valeu por não acabar com o carro."
+ },
+ {
+  "label": "b06fa9952d33_en",
+  "key": "b06fa9952d3312e559a041bff55f4cedb568b35dae8e9a3bfaadf373c9df8239",
+  "persona": "ferrugem",
+  "character_id": "ferrugem",
+  "language": "en",
+  "voice_id": "E9a8LlXPNWtyvvSoZzrb",
+  "voice_name": "Talis - Natural, Descontraído, Real",
+  "prompt": "[grudging, dry] That's his signature. Vicente wanted drivers for a route out of Harbor. The last one won't talk to strangers. There's a race tonight. Win through the marked gates and I'll get you in with the crew. And thanks for bringing the car back whole."
+ },
+ {
+  "label": "90bb3b6a8226_pt_BR",
+  "key": "90bb3b6a8226aedec8e81e63c87c556c1fe7fe4841a7fabbd58ea2bf372f9681",
+  "persona": "moradora",
+  "character_id": "moradora",
+  "language": "pt_BR",
+  "voice_id": "k5aKjuBz9NhUMZc7SDpl",
+  "voice_name": "Marilita - Natural & Conversacional",
+  "prompt": "[pedir proteção urgente] Voltaram. Querem cobrar de novo. Meu filho tá aqui... não deixa levarem ele."
+ },
+ {
+  "label": "90bb3b6a8226_en",
+  "key": "90bb3b6a8226aedec8e81e63c87c556c1fe7fe4841a7fabbd58ea2bf372f9681",
+  "persona": "moradora",
+  "character_id": "moradora",
+  "language": "en",
+  "voice_id": "k5aKjuBz9NhUMZc7SDpl",
+  "voice_name": "Marilita - Natural & Conversacional",
+  "prompt": "[frightened, urgent] They're back. They want paying again. My son's here... don't let them take him."
+ },
+ {
+  "label": "f64c4b597112_pt_BR",
+  "key": "f64c4b597112332426e7b075b4677b93c97a35508c2ac509e2c1878566ee4a81",
+  "persona": "moradora",
+  "character_id": "moradora",
+  "language": "pt_BR",
+  "voice_id": "k5aKjuBz9NhUMZc7SDpl",
+  "voice_name": "Marilita - Natural & Conversacional",
+  "prompt": "[confiar após resgate] Você ficou... Os outros vão embora. Os registros deles ficam lá no fundo da quadra."
+ },
+ {
+  "label": "f64c4b597112_en",
+  "key": "f64c4b597112332426e7b075b4677b93c97a35508c2ac509e2c1878566ee4a81",
+  "persona": "moradora",
+  "character_id": "moradora",
+  "language": "en",
+  "voice_id": "k5aKjuBz9NhUMZc7SDpl",
+  "voice_name": "Marilita - Natural & Conversacional",
+  "prompt": "[stunned relief] You stayed... Everyone else leaves. Their records are at the back of the block."
+ },
+ {
+  "label": "0af3ca8b3e2d_pt_BR",
+  "key": "0af3ca8b3e2db960caed8a431db0a823614faaf17fe1a221846637f7f7cce585",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "pt_BR",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[reconhecer competência] Dante, né? Te vi chegando nas docas. Você sabe levar aquele carro."
+ },
+ {
+  "label": "0af3ca8b3e2d_en",
+  "key": "0af3ca8b3e2db960caed8a431db0a823614faaf17fe1a221846637f7f7cce585",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "en",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[cool, appraising] Dante, right? Saw you finish at the docks. You can handle that car."
+ },
+ {
+  "label": "1b9590f7a459_pt_BR",
+  "key": "1b9590f7a4590e7f476aec65f457d3c4970c84fe5519b01e0b0417f4df5e6378",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "pt_BR",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[provocar rival] Tava. Jessica. Na próxima você me vê no retrovisor... até eu passar."
+ },
+ {
+  "label": "1b9590f7a459_en",
+  "key": "1b9590f7a4590e7f476aec65f457d3c4970c84fe5519b01e0b0417f4df5e6378",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "en",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[teasing] I was. Jessica. Next time you'll see me in your mirror... till I pass you."
+ },
+ {
+  "label": "7618a510ddda_pt_BR",
+  "key": "7618a510dddaba0f29d4e950710a222dee7dd570a04fd37c6b431c3bd5c8b5a9",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "pt_BR",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[mudar para proposta] Meu. Tô acertando o turbo ainda. O Maciota falou que você entrega serviço."
+ },
+ {
+  "label": "7618a510ddda_en",
+  "key": "7618a510dddaba0f29d4e950710a222dee7dd570a04fd37c6b431c3bd5c8b5a9",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "en",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[casual, getting to it] Mine. Still dialing in the boost. Maciota says you get a job done."
+ },
+ {
+  "label": "f54d2bcc27cb_pt_BR",
+  "key": "f54d2bcc27cb7f598ae546a008db7b6ab3cbc23f3732515befaa84c530ec0190",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "pt_BR",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[deixar porta aberta] Então passa aqui quando tiver tempo. A gente conversa direito."
+ },
+ {
+  "label": "f54d2bcc27cb_en",
+  "key": "f54d2bcc27cb7f598ae546a008db7b6ab3cbc23f3732515befaa84c530ec0190",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "en",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[light, inviting] Come by when you've got time, then. We'll talk properly."
+ },
+ {
+  "label": "e5f4bba7a8e5_pt_BR",
+  "key": "e5f4bba7a8e5b28c11ec524e0de910af0411a3add5204e07b12cc572c84a951a",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "pt_BR",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[dividir operação] Preciso de alguém lá dentro do North Pier. Eu fico com o carro e garanto a saída. Você abre o cofre, pega o dinheiro e vem."
+ },
+ {
+  "label": "e5f4bba7a8e5_en",
+  "key": "e5f4bba7a8e5b28c11ec524e0de910af0411a3add5204e07b12cc572c84a951a",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "en",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[focused, low] I need someone inside North Pier. I handle the car and the way out. You open the vault, grab the money and come to me."
+ },
+ {
+  "label": "06895e649e84_pt_BR",
+  "key": "06895e649e84fd62023a44c52fedddc243a8617d0e0ea21073840deb5134901f",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "pt_BR",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[respeitar escolha] Sei. E você pode recusar. Maciota me deu teu nome, só isso. Quem decide é você."
+ },
+ {
+  "label": "06895e649e84_en",
+  "key": "06895e649e84fd62023a44c52fedddc243a8617d0e0ea21073840deb5134901f",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "en",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[even, honest] I do. And you can say no. Maciota gave me your name, that's all. You decide."
+ },
+ {
+  "label": "c663aa6f1d44_pt_BR",
+  "key": "c663aa6f1d44ef53880455bf8f0f689164a18917594d7d42b8b661f461779eb4",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "pt_BR",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[estabelecer fuga] Então volta vivo. O Jetta vai estar na rua. Entra pelo lado do passageiro. Daí pra frente, é comigo."
+ },
+ {
+  "label": "c663aa6f1d44_en",
+  "key": "c663aa6f1d44ef53880455bf8f0f689164a18917594d7d42b8b661f461779eb4",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "en",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[steady, confident] Then come back alive. The Jetta'll be outside. Passenger side. From there, I've got it."
+ },
+ {
+  "label": "2f74ccc16ed5_pt_BR",
+  "key": "2f74ccc16ed52b718b42204c49235f59574f5f599fab5aca4763f109dce41430",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "pt_BR",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[assumir controle] Cinto, Dante. Respira. O volante agora é meu."
+ },
+ {
+  "label": "2f74ccc16ed5_en",
+  "key": "2f74ccc16ed52b718b42204c49235f59574f5f599fab5aca4763f109dce41430",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "en",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[calm, commanding] Seat belt, Dante. Breathe. I've got the wheel now."
+ },
+ {
+  "label": "f9405be60ff1_pt_BR",
+  "key": "f9405be60ff100008b644a0b019ebef2b3df8d39d3423effe4c23eab07178331",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "pt_BR",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[baixar tensão com humor] Quer que eu entre em pânico? Porque dá mais trabalho dirigir assim."
+ },
+ {
+  "label": "f9405be60ff1_en",
+  "key": "f9405be60ff100008b644a0b019ebef2b3df8d39d3423effe4c23eab07178331",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "en",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[deadpan] Want me to panic? Makes driving a lot harder."
+ },
+ {
+  "label": "7882dfa2d847_pt_BR",
+  "key": "7882dfa2d847caf9423c2987dfaca80d074570391bae5872206f9e0ae87da886",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "pt_BR",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[provocar após alívio] Chegamos. Pode largar a alça, ela não vai fugir."
+ },
+ {
+  "label": "7882dfa2d847_en",
+  "key": "7882dfa2d847caf9423c2987dfaca80d074570391bae5872206f9e0ae87da886",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "en",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[teasing, relieved] We're here. You can let go of the handle. It's not going anywhere."
+ },
+ {
+  "label": "c4cf6ca89026_pt_BR",
+  "key": "c4cf6ca890264ffa555f1898bee5c99df8740e6b16cbb273b3064e91e211aa94",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "pt_BR",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[reafirmar ambição] Nas corridas eu acelero mais. Tô indo disputar umas fora de Harbor."
+ },
+ {
+  "label": "c4cf6ca89026_en",
+  "key": "c4cf6ca890264ffa555f1898bee5c99df8740e6b16cbb273b3064e91e211aa94",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "en",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[confident] In races I go faster. Got a few lined up outside Harbor."
+ },
+ {
+  "label": "a04f7fc26b89_pt_BR",
+  "key": "a04f7fc26b89114dc38218711d1ec1626a2cbe3a2ac70af468634986cd6b597d",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "pt_BR",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[pedir vínculo pessoal] Eu ia gostar. Mas vem falar comigo antes de ir, tá?"
+ },
+ {
+  "label": "a04f7fc26b89_en",
+  "key": "a04f7fc26b89114dc38218711d1ec1626a2cbe3a2ac70af468634986cd6b597d",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "en",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[soft, sincere] I'd like that. Just come see me before you leave, okay?"
+ },
+ {
+  "label": "d5f78203200b_pt_BR",
+  "key": "d5f78203200b2cebfe35066b6511859bf297dbc569226f56b359339a6cc55db6",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "pt_BR",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[disfarçar expectativa] Olha, você voltou. Achei que ia sumir sem se despedir."
+ },
+ {
+  "label": "d5f78203200b_en",
+  "key": "d5f78203200b2cebfe35066b6511859bf297dbc569226f56b359339a6cc55db6",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "en",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[casual, hiding relief] You came back. Thought you might disappear without saying goodbye."
+ },
+ {
+  "label": "56de131e8f75_pt_BR",
+  "key": "56de131e8f75d9bb211969ef088617e2d001bf73bb6b709d8af94f08a9720126",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "pt_BR",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[reconhecer cuidado] Falou. Gostei de você cumprir."
+ },
+ {
+  "label": "56de131e8f75_en",
+  "key": "56de131e8f75d9bb211969ef088617e2d001bf73bb6b709d8af94f08a9720126",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "en",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[warm, brief] You did. Glad you meant it."
+ },
+ {
+  "label": "9ca76f6e8092_pt_BR",
+  "key": "9ca76f6e8092d1ca8cd0e6f018589d6aea38cc5098323b2d37be4e7c34e748d7",
+  "persona": "ferrugem",
+  "character_id": "ferrugem",
+  "language": "pt_BR",
+  "voice_id": "E9a8LlXPNWtyvvSoZzrb",
+  "voice_name": "Talis - Natural, Descontraído, Real",
+  "prompt": "[ceder respeito e pista] Tá bom, você guia. O motorista vai falar com o Maciota. Teu irmão queria sair de Harbor... mas não tinha jeito de quem tava fugindo."
+ },
+ {
+  "label": "9ca76f6e8092_en",
+  "key": "9ca76f6e8092d1ca8cd0e6f018589d6aea38cc5098323b2d37be4e7c34e748d7",
+  "persona": "ferrugem",
+  "character_id": "ferrugem",
+  "language": "en",
+  "voice_id": "E9a8LlXPNWtyvvSoZzrb",
+  "voice_name": "Talis - Natural, Descontraído, Real",
+  "prompt": "[grudging respect] All right, you can drive. The driver'll talk to Maciota. Your brother wanted out of Harbor... but he didn't look like a man running scared."
+ },
+ {
+  "label": "fc4b288c33b7_pt_BR",
+  "key": "fc4b288c33b763e84f95a3c290e83e73b00436b6f82a14a12e0b923260c169f8",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "pt_BR",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[lembrar assunto adiado] Agora você já conhece a reta. Falta aquela conversa com teu irmão."
+ },
+ {
+  "label": "fc4b288c33b7_en",
+  "key": "fc4b288c33b763e84f95a3c290e83e73b00436b6f82a14a12e0b923260c169f8",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "en",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[gentle reminder] Now you know the straight. Still got that talk with your brother waiting."
+ },
+ {
+  "label": "2c3dc39e21e2_pt_BR",
+  "key": "2c3dc39e21e25cd79ac5beae492f676a18b47f7b1f13b7c55591c88da4a5b515",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "pt_BR",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[reencontrar rival querido] Olha quem conseguiu sair de Harbor. Meu carro tá pronto, Dante."
+ },
+ {
+  "label": "2c3dc39e21e2_en",
+  "key": "2c3dc39e21e25cd79ac5beae492f676a18b47f7b1f13b7c55591c88da4a5b515",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "en",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[playful, glad] Look who made it out of Harbor. My car's ready, Dante."
+ },
+ {
+  "label": "80ba07b84d35_pt_BR",
+  "key": "80ba07b84d35e00fbdfd73d98e3675425653f6206f61f38397ee1424872a3d01",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "pt_BR",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[lançar desafio pessoal] Com essa turma? Desde antes de você aparecer. Sobe na tabela. Te encontro na largada."
+ },
+ {
+  "label": "80ba07b84d35_en",
+  "key": "80ba07b84d35e00fbdfd73d98e3675425653f6206f61f38397ee1424872a3d01",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "en",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[competitive, teasing] With this crew? Since before you showed up. Work your way up the rankings. I'll see you on the line."
+ },
+ {
+  "label": "cd993594491a_pt_BR",
+  "key": "cd993594491a9e988e6c2f6084430a860d7a3f5bf29db8b7a4671c078820bc8b",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "pt_BR",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[retomar história compartilhada] Você melhorou, hein. Ainda lembra daquele serviço em Harbor?"
+ },
+ {
+  "label": "cd993594491a_en",
+  "key": "cd993594491a9e988e6c2f6084430a860d7a3f5bf29db8b7a4671c078820bc8b",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "en",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[warm, nostalgic] You've improved. Still remember that job back in Harbor?"
+ },
+ {
+  "label": "c252b07c99df_pt_BR",
+  "key": "c252b07c99df07634a76d7f0af0b0f4235c7de2015665a41fcb344e05af4b794",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "pt_BR",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[encorajar confronto necessário] Então vai. Termina a conversa com teu irmão."
+ },
+ {
+  "label": "c252b07c99df_en",
+  "key": "c252b07c99df07634a76d7f0af0b0f4235c7de2015665a41fcb344e05af4b794",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "en",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[firm, encouraging] Then go. Finish that conversation with your brother."
+ },
+ {
+  "label": "9cc51183eea1_pt_BR",
+  "key": "9cc51183eea1826add5f7a8a0eb38e822a397f1311ec0befdc9786c56d64d680",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "pt_BR",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[adiar operação inviável] O North Pier ainda tá fechado. Volta quando liberarem as portas."
+ },
+ {
+  "label": "9cc51183eea1_en",
+  "key": "9cc51183eea1826add5f7a8a0eb38e822a397f1311ec0befdc9786c56d64d680",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "en",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[matter-of-fact] North Pier's still closed. Come back when the doors are clear."
+ },
+ {
+  "label": "ab0a259e00ee_pt_BR",
+  "key": "ab0a259e00ee361f64249691a04ce98dae4e13db9e06b06dcd2a4a1968a3114b",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "pt_BR",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[reportar rota bloqueada] A saída até a oficina ainda não tá livre."
+ },
+ {
+  "label": "ab0a259e00ee_en",
+  "key": "ab0a259e00ee361f64249691a04ce98dae4e13db9e06b06dcd2a4a1968a3114b",
+  "persona": "jessica",
+  "character_id": "jessica",
+  "language": "en",
+  "voice_id": "5p4THmLc2S6kXKO1pOM5",
+  "voice_name": "Nayara Técia - PVC",
+  "prompt": "[alert] We still don't have a clear way back to the shop."
+ },
+ {
+  "label": "16bd3c938612_pt_BR",
+  "key": "16bd3c938612da05a0d3a7ce1b72b115094f8f456e98452802894527d26b2d02",
+  "persona": "ferrugem",
+  "character_id": "ferrugem",
+  "language": "pt_BR",
+  "voice_id": "E9a8LlXPNWtyvvSoZzrb",
+  "voice_name": "Talis - Natural, Descontraído, Real",
+  "prompt": "[dor curta] Ai!"
+ },
+ {
+  "label": "16bd3c938612_en",
+  "key": "16bd3c938612da05a0d3a7ce1b72b115094f8f456e98452802894527d26b2d02",
+  "persona": "ferrugem",
+  "character_id": "ferrugem",
+  "language": "en",
+  "voice_id": "E9a8LlXPNWtyvvSoZzrb",
+  "voice_name": "Talis - Natural, Descontraído, Real",
+  "prompt": "[short pain] Ow!"
+ },
+ {
+  "label": "7ccb8a0cf8ec_pt_BR",
+  "key": "7ccb8a0cf8ec24cb9b3538477a524a73b994672ed709405e863087ce3caaaa0e",
+  "persona": "moradora",
+  "character_id": "moradora",
+  "language": "pt_BR",
+  "voice_id": "k5aKjuBz9NhUMZc7SDpl",
+  "voice_name": "Marilita - Natural & Conversacional",
+  "prompt": "[dor curta] Ai!"
+ },
+ {
+  "label": "7ccb8a0cf8ec_en",
+  "key": "7ccb8a0cf8ec24cb9b3538477a524a73b994672ed709405e863087ce3caaaa0e",
+  "persona": "moradora",
+  "character_id": "moradora",
+  "language": "en",
+  "voice_id": "k5aKjuBz9NhUMZc7SDpl",
+  "voice_name": "Marilita - Natural & Conversacional",
+  "prompt": "[short pain] Ow!"
+ },
+ {
+  "label": "455673941f7a_pt_BR",
+  "key": "455673941f7adb9d9cef963c93320b0fe81236c3b6dd16c65f24245eb37be8bd",
+  "persona": "neco",
+  "character_id": "neco",
+  "language": "pt_BR",
+  "voice_id": "75FhDGLofkNSQ8G4Htts",
+  "voice_name": "Francis - Brazil | Minas Gerais",
+  "prompt": "[dor curta] Ai!"
+ },
+ {
+  "label": "455673941f7a_en",
+  "key": "455673941f7adb9d9cef963c93320b0fe81236c3b6dd16c65f24245eb37be8bd",
+  "persona": "neco",
+  "character_id": "neco",
+  "language": "en",
+  "voice_id": "75FhDGLofkNSQ8G4Htts",
+  "voice_name": "Francis - Brazil | Minas Gerais",
+  "prompt": "[short pain] Ow!"
+ },
+ {
+  "label": "f83e40eb5358_pt_BR",
+  "key": "f83e40eb5358ad4dc285e6906b7ca9d222be66d40f89e5834d577fff033e10f2",
+  "persona": "maciota",
+  "character_id": "maciota",
+  "language": "pt_BR",
+  "voice_id": "GIuLCSVfgJaUuh7hYOY8",
+  "voice_name": "Lucas - Deep & Profound Narrator",
+  "prompt": "[ágil, confiar o carro] Mais uma coisa. A Monaliza azul ali na baia agora é tua. Vai precisar de carro pra rodar atrás do Vicente."
+ },
+ {
+  "label": "f83e40eb5358_en",
+  "key": "f83e40eb5358ad4dc285e6906b7ca9d222be66d40f89e5834d577fff033e10f2",
+  "persona": "maciota",
+  "character_id": "maciota",
+  "language": "en",
+  "voice_id": "dxdOayhnd0jLtELGeNtF",
+  "voice_name": "Mason - Southern Georgia, North Florida Southern Accent",
+  "prompt": "[warm, handing over] One more thing. That blue Monaliza in the bay is yours now. You'll need wheels to go after Vicente."
+ },
+ {
+  "label": "1ec7008ba26d_pt_BR",
+  "key": "1ec7008ba26df7dd51ba4733fef249eb75b36867850370d821015e60372f0689",
+  "persona": "dante",
+  "character_id": "dante",
+  "language": "pt_BR",
+  "voice_id": "ycxdm1PRMs962FxyyuJ0",
+  "voice_name": "Otto - Intimidating and Aggressive",
+  "prompt": "[estranhar com humor] Monaliza? Você deu nome pro carro?"
+ },
+ {
+  "label": "1ec7008ba26d_en",
+  "key": "1ec7008ba26df7dd51ba4733fef249eb75b36867850370d821015e60372f0689",
+  "persona": "dante",
+  "character_id": "dante",
+  "language": "en",
+  "voice_id": "ycxdm1PRMs962FxyyuJ0",
+  "voice_name": "Otto - Intimidating and Aggressive",
+  "prompt": "[amused, incredulous] Monaliza? You named your car?"
+ },
+ {
+  "label": "9ce37c0db3c0_pt_BR",
+  "key": "9ce37c0db3c02f5b49437d9db914d018e365127c487fb117165eac2f2bab9244",
+  "persona": "maciota",
+  "character_id": "maciota",
+  "language": "pt_BR",
+  "voice_id": "GIuLCSVfgJaUuh7hYOY8",
+  "voice_name": "Lucas - Deep & Profound Narrator",
+  "prompt": "[ágil, brincar e instruir] Carro bom tem nome. No porta-malas tem uma maleta com pistola. Se ela voltar amassada, traz pra bancada."
+ },
+ {
+  "label": "9ce37c0db3c0_en",
+  "key": "9ce37c0db3c02f5b49437d9db914d018e365127c487fb117165eac2f2bab9244",
+  "persona": "maciota",
+  "character_id": "maciota",
+  "language": "en",
+  "voice_id": "dxdOayhnd0jLtELGeNtF",
+  "voice_name": "Mason - Southern Georgia, North Florida Southern Accent",
+  "prompt": "[teasing, practical] A good car earns a name. There's a case with a pistol in the trunk. If she comes back dented, bring her to the bench."
+ }
+]

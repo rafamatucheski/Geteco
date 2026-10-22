@@ -14,8 +14,9 @@ func run() -> void:
 	var overlay := BANK._json(BANK.OVERLAY)
 	var rows := {}
 	for row in BANK._json(BANK.DIRECTION).get("lines", []): rows[str(row.key)] = row
-	# Elenco ElevenLabs: Dante, Maciota (e a voz ao telefone), Helena bancária, Takeshi, Vicente.
-	var expected := {"pt_BR": 128, "en": 128}
+	# Elenco ElevenLabs: Dante, Maciota (e a voz ao telefone), Helena bancária, Takeshi, Vicente;
+	# desde 22/10 também Ferrugem, Neco e Jessica das missões principais.
+	var expected := {"pt_BR": 155, "en": 155}
 	for language in expected:
 		var lines: Dictionary = overlay.get("lines", {}).get(language, {})
 		check(lines.size() == expected[language], "%s tem %d falas instaladas (%d)" % [language, expected[language], lines.size()])

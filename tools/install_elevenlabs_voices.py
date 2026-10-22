@@ -28,7 +28,9 @@ OUTPUT = ROOT / "audio/mission_voices/directed/elevenlabs.json"
 WAV_ROOT = ROOT / "audio/mission_voices/directed/elevenlabs"
 # Lotes posteriores (pasta, rótulo de aprovação). O primeiro, de 20/10, tem formato próprio.
 BATCHES = [("evidence/elevenlabs-lote-ab-20261021", "user_batch_approved_20261021"),
-           ("evidence/elevenlabs-maciota-en-20261021", "user_batch_approved_20261021")]
+           ("evidence/elevenlabs-maciota-en-20261021", "user_batch_approved_20261021"),
+           # Gerado pelo site (conta Free) e baixado num ZIP: o conector apontava para a conta sem cota.
+           ("evidence/elevenlabs-missoes-20261022", "user_batch_approved_20261022")]
 MODEL = "eleven_v4"
 VOICES = {"dante": ("ycxdm1PRMs962FxyyuJ0", "Otto - Intimidating and Aggressive"),
           "maciota": ("GIuLCSVfgJaUuh7hYOY8", "Lucas - Deep & Profound Narrator")}
