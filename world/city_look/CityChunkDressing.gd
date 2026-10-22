@@ -245,6 +245,13 @@ static func _flush(chunk: Node3D, batches: Dictionary) -> void:
 		else:
 			multimesh.mesh = KIT.mesh(kind)
 			material = KIT.material_for(kind)
+			# Preserve placement identities and trunk physics, including editor saves.
+			if kind in ["street_tree","street_tree_b"]:
+				for placement: Transform3D in transforms:
+					if preload("res://world/places/ResidentialTreeVisual.gd").near_home(placement.origin):
+						multimesh.mesh = preload("res://world/places/ResidentialTreeVisual.gd").mesh()
+						material = null
+						break
 			# Peça de telhado pequena (antena, respiro, antena parabólica) segue sem
 			# sombra: dobrava as primitivas na passada de sombra sem aparecer nesta câmera.
 			shadows = kind in SHADOW_CASTERS

@@ -11,7 +11,7 @@ class SurfacePlayer extends AudioStreamPlayer:
 	var prefix := ""
 	func _ready() -> void:
 		process_mode = Node.PROCESS_MODE_PAUSABLE
-		bus = &"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master"
+		bus = &"Dialogue" if AudioServer.get_bus_index("Dialogue") >= 0 else &"Master"
 		var surface := get_parent()
 		surface.visibility_changed.connect(_visibility_changed)
 		surface.tree_exiting.connect(silence)

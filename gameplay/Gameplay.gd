@@ -423,7 +423,7 @@ func _ready() -> void:
 		add_child(channel)
 		_audio_pool.append(channel)
 	_ui_audio = AudioStreamPlayer.new()
-	_ui_audio.bus = sfx_bus
+	_ui_audio.bus = &"UI" if AudioServer.get_bus_index("UI") >= 0 else sfx_bus
 	add_child(_ui_audio)
 	# Clarão de boca do V1: esfera emissiva + uma OmniLight, sem sombra, reaproveitadas.
 	_muzzle_material = StandardMaterial3D.new()

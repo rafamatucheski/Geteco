@@ -49,6 +49,7 @@ func run() -> void:
 	check(not world.has_meta(AUDIO.META), "rejected impacts do not allocate a pool")
 	check(AUDIO.play_body_impact(context, first, Vector3.ZERO, 3), "low speed body hit is heard")
 	var pool = AUDIO.pool(context)
+	check(AudioServer.get_bus_send(AudioServer.get_bus_index(pool.voices[0].bus)) == &"SFX", "body impact follows Effects independently of vehicle volume")
 	var soft_volume: float = pool.voices[0].volume_db
 	check(AUDIO.play_body_impact(context, second, Vector3.ZERO, 18), "second body may hit in the same frame")
 	check(pool.voices[1].volume_db > soft_volume + 3, "fast hit has a stronger attack")

@@ -43,7 +43,7 @@ func run() -> void:
 	check(hud.weapon_icon.weapon_id==state.equipped_weapon and " | " in hud.ammo_label.text,"current weapon and real magazine/reserve")
 	await wait_seconds(3)
 	check(not hud.objective_card.visible and not hud.weapon.carousel.visible,"objective and weapon switch expire")
-	check(not hud.minimap.caption.visible,"minimap has no permanent distance caption")
+	check(hud.minimap.caption.visible and not hud.minimap.caption.text.is_empty(),"active objective keeps a named destination above the minimap")
 	check(hud.get_node_or_null("GameplayHUDRoot/WeatherReadout")==null,"no clock/weather HUD component")
 	var economy_before: Dictionary=state.economy.snapshot()
 	for dims in [Vector2i(1280,720),Vector2i(1280,800),Vector2i(1680,720)]:

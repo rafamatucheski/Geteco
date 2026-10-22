@@ -396,7 +396,7 @@ func _audio(distance: float, volume: float) -> AudioStreamPlayer3D:
 	var emitter := AudioStreamPlayer3D.new()
 	emitter.max_distance = distance
 	emitter.volume_db = volume
-	if AudioServer.get_bus_index("SFX") >= 0: emitter.bus = "SFX"
+	if AudioServer.get_bus_index("Vehicles") >= 0: emitter.bus = "Vehicles"
 	car.add_child(emitter)
 	return emitter
 

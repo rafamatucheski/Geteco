@@ -1,0 +1,32 @@
+[
+  {
+    "ProcessId": 373004,
+    "ParentProcessId": 364144,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64_console.exe\" --path . --script res://tests/test_npc_conversation_menu.gd -- --no-save"
+  },
+  {
+    "ProcessId": 374180,
+    "ParentProcessId": 373004,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --path . --script res://tests/test_npc_conversation_menu.gd -- --no-save"
+  },
+  {
+    "ProcessId": 379316,
+    "ParentProcessId": 294768,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64_console.exe\" --headless --ignore-error-breaks --path . --script tests/test_garage_vehicle_transfer.gd -- --no-save"
+  },
+  {
+    "ProcessId": 380764,
+    "ParentProcessId": 379316,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --headless --ignore-error-breaks --path . --script tests/test_garage_vehicle_transfer.gd -- --no-save"
+  },
+  {
+    "ProcessId": 381516,
+    "ParentProcessId": 360208,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64_console.exe\" --headless --path \"D:\\geteco\\game\" --script res://tests/test_contact_audio.gd -- --no-save --skip-arrival \"--isolated-save-root=C:\\Users\\rafae\\AppData\\Local\\Temp\\geteco-suite-0b22047025f643548fa21be49bc685bb\""
+  },
+  {
+    "ProcessId": 375840,
+    "ParentProcessId": 381516,
+    "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --headless --path \"D:\\geteco\\game\" --script res://tests/test_contact_audio.gd -- --no-save --skip-arrival \"--isolated-save-root=C:\\Users\\rafae\\AppData\\Local\\Temp\\geteco-suite-0b22047025f643548fa21be49bc685bb\""
+  }
+]

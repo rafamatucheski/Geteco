@@ -12,6 +12,19 @@ func run() -> void:
 	DisplayServer.window_move_to_foreground()
 	Engine.max_fps = 60
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED)
+	# Settings applies the saved fullscreen mode deferred on startup.
+	await process_frame
+	await process_frame
+	DisplayServer.window_move_to_foreground()
+	# Without foreground, the native presenter deliberately does not paint. Zero
+	# frames must never be reported as a successful loading performance sample.
+	var focus_deadline := Time.get_ticks_msec()+30000
+	while not root.has_focus() and Time.get_ticks_msec()<focus_deadline:
+		await process_frame
+	if not root.has_focus():
+		push_error("Loading measurement needs the game window in foreground")
+		quit(3)
+		return
 	var curtain = load("res://runtime/StartupCurtain.gd").new()
 	var presentation := {}
 	curtain.presentation_finished.connect(func(report: Dictionary): presentation.assign(report))
@@ -56,7 +69,8 @@ func run() -> void:
 	report["presentation"] = presentation
 	FileAccess.open(out,FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
 	print("LOADING_SLIDESHOW ",JSON.stringify({"loading_ms":report.loading_ms,"startup":report.startup,"play":report.play}))
-	quit(0 if release > 0 else 3)
+	var presentation_measured := not presentation.is_empty() and int(presentation.get("frames",0)) > 0
+	quit(0 if release > 0 and presentation_measured else 3)
 
 func _process(_delta: float) -> bool:
 	return false

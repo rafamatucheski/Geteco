@@ -162,7 +162,7 @@ func _draw() -> void:
 		elif int(result.get("reward_pending",0))>0: _label(Vector2(478,307),"R$ %d PENDENTES"%int(result.reward_pending),17,ACCENT)
 		_label(Vector2(32,340),note,16,MUTED,false)
 	elif night:
-		_label(Vector2(394,307),"%d / 3 PONTOS"%int(result.get("night_points",0)),23,ACCENT)
+		_label(Vector2(394,307),String(TranslationServer.translate("%d / 3 PONTOS"))%int(result.get("night_points",0)),23,ACCENT)
 		var note := "Mesmo carro. Prepare o próximo trecho no quadro da noite."
 		if int(result.get("night_pass",1))==2: note="Outra passagem de 402 m com o mesmo acerto. Vale seu melhor tempo."
 		elif result.get("night_done",false):

@@ -1,6 +1,6 @@
 extends Control
-## Configurações: Vídeo, Áudio e Controles. Montada em código com a identidade do menu
-## principal (Barlow, laranja #ff914d). Tudo é aplicado na hora para o jogador ver o
+## Configurações: Vídeo, Áudio, Controles e Ajuda. Montada em código com a identidade do menu
+## principal (Barlow, grafite e dourado Harbor). Tudo é aplicado na hora para o jogador ver o
 ## efeito; "Cancelar"/Esc volta ao estado de quando a tela abriu e "Salvar" grava.
 ##
 ## Histórico (25/09/2026): a versão anterior herdada da V1 escondia resolução e idioma,
@@ -9,6 +9,7 @@ extends Control
 signal closed
 
 const STYLE = preload("res://ui/GameStyle.gd")
+const PRESENTATION := preload("res://ui/HarborMenuPresentation.gd")
 const AUDIO = preload("res://ui/MenuAudio.gd")
 const DISPLAY_FONT: FontFile = preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
 const BODY_FONT: FontFile = preload("res://assets/fonts/barlow/BarlowSemiCondensed-Regular.ttf")
@@ -46,9 +47,19 @@ var _status: Label
 var _panel: PanelContainer
 var _controls_list: VBoxContainer
 var _widgets := {}
+var _defaults_button: Button
+var _help_bindings: Label
+var _section_nav: VBoxContainer
+var _video_group := "TELA"
+var _video_choices: Array[Button] = []
+var _save_button: Button
+var _cancel_button: Button
+var _control_mode := 0
+var _control_intro: Array[Control] = []
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	theme = STYLE.create_theme(20)
 	var dimmer := ColorRect.new()
 	dimmer.color = Color(0.01, 0.02, 0.03, 0.78)
 	dimmer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -56,33 +67,34 @@ func _ready() -> void:
 	_panel = PanelContainer.new()
 	_panel.set_meta("preserve_panel_style", true)
 	var panel_style := StyleBoxFlat.new()
-	panel_style.bg_color = STYLE.GLASS
+	panel_style.bg_color = Color("13191e")
 	panel_style.border_color = Color(1, 1, 1, 0.07)
 	panel_style.set_border_width_all(1)
 	panel_style.border_color = STYLE.LINE
 	panel_style.set_corner_radius_all(12)
 	panel_style.shadow_color = Color(0, 0, 0, 0.5)
-	panel_style.shadow_size = 24
+	panel_style.shadow_size = 0
 	for side in ["left", "right"]: panel_style.set("content_margin_" + side, 34)
 	for side in ["top", "bottom"]: panel_style.set("content_margin_" + side, 26)
 	_panel.add_theme_stylebox_override("panel", panel_style)
 	add_child(_panel)
 	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 16)
+	column.add_theme_constant_override("separation", 12)
 	_panel.add_child(column)
+	column.add_child(_label("Harbor", 20, TEXT, DISPLAY_FONT))
 	var header := HBoxContainer.new()
 	header.add_theme_constant_override("separation", 28)
 	column.add_child(header)
-	var title := _label("CONFIGURAÇÕES", 30, TEXT, DISPLAY_FONT)
+	var title := _label("Configurações", 20, TEXT, DISPLAY_FONT)
 	header.add_child(title)
 	var tab_row := HBoxContainer.new()
 	tab_row.add_theme_constant_override("separation", 6)
 	tab_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tab_row.alignment = BoxContainer.ALIGNMENT_END
 	header.add_child(tab_row)
-	for index in 3:
+	for index in 4:
 		var tab := Button.new()
-		tab.text = ["VÍDEO", "ÁUDIO", "CONTROLES"][index]
+		tab.text = ["Vídeo", "Áudio", "Controles", "Ajuda"][index]
 		tab.toggle_mode = true
 		tab.focus_mode = Control.FOCUS_ALL
 		tab.add_theme_font_override("font", DISPLAY_FONT)
@@ -95,11 +107,26 @@ func _ready() -> void:
 	rule.color = Color(1, 1, 1, 0.08)
 	rule.custom_minimum_size.y = 1
 	column.add_child(rule)
+	var body := HBoxContainer.new()
+	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	body.add_theme_constant_override("separation", 28)
+	column.add_child(body)
+	_section_nav = VBoxContainer.new()
+	_section_nav.custom_minimum_size.x = 176
+	_section_nav.add_theme_constant_override("separation", 8)
+	body.add_child(_section_nav)
+	for group in ["TELA", "QUALIDADE", "AVANÇADO", "IDIOMA"]:
+		var choice := _footer_button({"TELA":"Tela", "QUALIDADE":"Qualidade", "AVANÇADO":"Avançado", "IDIOMA":"Idioma"}[group])
+		choice.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		choice.pressed.connect(_choose_video_group.bind(group))
+		_section_nav.add_child(choice)
+		_video_choices.append(choice)
 	var stack := Control.new()
 	stack.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	stack.clip_contents = true
-	column.add_child(stack)
-	for builder in [_build_video, _build_audio, _build_controls]:
+	stack.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	body.add_child(stack)
+	for builder in [_build_video, _build_audio, _build_controls, _build_help]:
 		var scroll := ScrollContainer.new()
 		scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 		scroll.follow_focus = true
@@ -123,34 +150,68 @@ func _ready() -> void:
 	_status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	footer.add_child(_status)
-	var defaults := _footer_button("PADRÕES DA ABA")
+	var defaults := _footer_button("Padrões da aba")
+	_defaults_button = defaults
 	defaults.pressed.connect(_restore_tab_defaults)
 	footer.add_child(defaults)
-	var cancel := _footer_button("CANCELAR")
+	var cancel := _footer_button("Cancelar")
+	_cancel_button = cancel
 	cancel.pressed.connect(close)
 	footer.add_child(cancel)
-	var save := _footer_button("SALVAR", true)
+	var save := _footer_button("Salvar", true)
+	_save_button = save
 	save.pressed.connect(_save)
 	footer.add_child(save)
 	resized.connect(_layout)
 	_layout()
+	PRESENTATION.typography(self)
 	AUDIO.hook_buttons(self)
 	get_node("/root/GameInput").bindings_changed.connect(func(): if is_visible_in_tree(): _refresh_controls())
 	get_node("/root/GameInput").device_changed.connect(_refresh_controller_diagram)
+	get_node("/root/GameInput").bindings_changed.connect(_refresh_help)
+	get_node("/root/GameInput").device_changed.connect(_refresh_help)
+
+func _build_help(page: VBoxContainer) -> void:
+	page.name = "HUDHelp"
+	for entry in [
+		["INTERAGIR", "A indicação perto de um personagem mostra a ação disponível. A conversa começa quando você usa a tecla ou o botão indicado."],
+		["CONVERSAS", "O nome identifica quem está falando. A caixa no rodapé mostra a fala; use Continuar para avançar. Missões da história podem começar ou terminar ao concluir a conversa."],
+		["MISSÕES", "Ver missões abre os trabalhos disponíveis e o objetivo atual. Somente os botões executam ações. Cancelar missão interrompe o trabalho em andamento."],
+		["INFORMAÇÕES", "Informações reúne pistas e registros da história para leitura. Consultar esses textos não inicia nem cancela missões."],
+		["AVISOS E OBJETIVOS", "Avisos breves confirmam ações e resultados. O objetivo atual indica o próximo passo e também pode ser consultado no diário."],
+		["MACIOTA", "Maciota conversa sobre a história quando há uma etapa disponível. Nas outras visitas, escolha Ver missões ou Informações no menu curto."]
+	]:
+		_section(page, str(entry[0]))
+		var body := _label(str(entry[1]), 17, TEXT, BODY_FONT)
+		body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		# Readable focus targets let keyboard/gamepad navigation scroll each topic
+		# into view without presenting it as a clickable action.
+		body.focus_mode = Control.FOCUS_ALL
+		page.add_child(body)
+	_section(page, "ATALHOS ATUAIS")
+	_help_bindings = _label("", 17, TEXT, BODY_FONT)
+	_help_bindings.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	page.add_child(_help_bindings)
+	_refresh_help()
+
+func _refresh_help() -> void:
+	if not is_instance_valid(_help_bindings): return
+	var controls := get_node("/root/GameInput")
+	_help_bindings.text = tr("Conversar / continuar: %s\nDiário de missões: %s\nPausa e configurações: %s") % [controls.prompt("interact"), controls.prompt("journal"), controls.prompt("pause_game")]
 
 func _layout() -> void:
-	var width := clampf(size.x * 0.72, 760.0, 1180.0)
-	var height := clampf(size.y * 0.84, 520.0, 860.0)
-	width = minf(width, size.x - 32.0)
-	height = minf(height, size.y - 32.0)
-	_panel.size = Vector2(width, height)
-	_panel.position = (size - _panel.size) * 0.5
+	var safe_top := 24.0 if has_node("/root/BuildWatermark") else 0.0
+	_panel.size = Vector2(size.x, maxf(100,size.y-safe_top))
+	_panel.position = Vector2(0,safe_top)
+	if is_instance_valid(_section_nav):
+		_section_nav.custom_minimum_size.x = 142 if size.x < 1000 else 176
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_TRANSLATION_CHANGED and is_node_ready():
 		# Dynamic action names and controller hints are assembled by GameInput.
 		# Refresh only when the locale changes, including while the menu is open.
 		_refresh_controls.call_deferred()
+		_refresh_help.call_deferred()
 
 # --- Construção ----------------------------------------------------------------------
 
@@ -165,6 +226,7 @@ func _label(text: String, font_size: int, color: Color, font: Font) -> Label:
 func _style_tab(tab: Button) -> void:
 	var idle := StyleBoxFlat.new()
 	idle.bg_color = Color(0, 0, 0, 0)
+	idle.set_corner_radius_all(12)
 	idle.content_margin_left = 16
 	idle.content_margin_right = 16
 	idle.content_margin_top = 8
@@ -194,7 +256,7 @@ func _field_style(active := false) -> StyleBoxFlat:
 	box.bg_color = Color(ACCENT, 0.16) if active else STYLE.SURFACE
 	box.border_color = ACCENT if active else Color(1, 1, 1, 0.1)
 	box.set_border_width_all(1)
-	box.set_corner_radius_all(3)
+	box.set_corner_radius_all(12)
 	box.content_margin_left = 12
 	box.content_margin_right = 12
 	box.content_margin_top = 6
@@ -208,6 +270,9 @@ func _style_field(control: Control) -> void:
 	control.add_theme_color_override("font_hover_color", ACCENT)
 	control.add_theme_color_override("font_focus_color", ACCENT)
 	control.add_theme_color_override("font_disabled_color", Color(MUTED, 0.5))
+	if control is OptionButton:
+		control.get_popup().add_theme_font_override("font",PRESENTATION.font())
+		control.get_popup().add_theme_font_size_override("font_size",20)
 	if control is BaseButton:
 		control.add_theme_stylebox_override("normal", _field_style())
 		control.add_theme_stylebox_override("hover", _field_style(true))
@@ -227,24 +292,32 @@ func _footer_button(text: String, primary := false) -> Button:
 	_style_field(button)
 	if primary:
 		var hot := _field_style(true)
-		hot.bg_color = Color(ACCENT, 0.3)
-		button.add_theme_stylebox_override("normal", _field_style(true))
+		hot.bg_color = ACCENT.lightened(.10)
+		var primary_style := _field_style(true)
+		primary_style.bg_color = ACCENT
+		button.add_theme_stylebox_override("normal", primary_style)
 		button.add_theme_stylebox_override("hover", hot)
-		button.add_theme_color_override("font_color", Color.WHITE)
+		button.add_theme_color_override("font_color", STYLE.INK)
+		button.add_theme_color_override("font_hover_color", STYLE.INK)
+		button.add_theme_color_override("font_focus_color", STYLE.INK)
 	return button
 
 func _section(page: VBoxContainer, text: String) -> void:
 	var spacer := Control.new()
 	spacer.custom_minimum_size.y = 8 if page.get_child_count() > 0 else 0
+	spacer.set_meta("video_section", text)
+	page.set_meta("current_section",text)
 	page.add_child(spacer)
-	var label := _label(text, 15, ACCENT, DISPLAY_FONT)
+	var label := _label(text.left(1)+text.substr(1).to_lower().replace("3d","3D"), 20, ACCENT, DISPLAY_FONT)
+	label.set_meta("video_section",text)
 	page.add_child(label)
 
 ## Linha: nome e descrição à esquerda, controle à direita.
 func _row(page: VBoxContainer, title: String, description: String, control: Control) -> HBoxContainer:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 20)
-	row.custom_minimum_size.y = 50
+	row.custom_minimum_size.y = 44
+	row.set_meta("video_section",page.get_meta("current_section", ""))
 	var texts := VBoxContainer.new()
 	texts.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	texts.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -255,13 +328,14 @@ func _row(page: VBoxContainer, title: String, description: String, control: Cont
 		hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		texts.add_child(hint)
 	row.add_child(texts)
-	control.custom_minimum_size.x = maxf(control.custom_minimum_size.x, 330)
+	control.custom_minimum_size.x = maxf(control.custom_minimum_size.x, 250)
 	control.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(control)
 	page.add_child(row)
 	var line := ColorRect.new()
 	line.color = Color(1, 1, 1, 0.04)
 	line.custom_minimum_size.y = 1
+	line.set_meta("video_section",page.get_meta("current_section", ""))
 	page.add_child(line)
 	return row
 
@@ -401,7 +475,9 @@ func _build_video(page: VBoxContainer) -> void:
 	_widgets.brightness = _slider(.6, 1.6, .05, _percent, func(value):
 		s.brightness = value
 		s.apply_settings())
-	_row(page, "Brilho", "Ajuda nas noites escuras sem mudar o céu.", _widgets.brightness)
+	var brightness_row := _row(page, "Brilho", "Ajuda nas noites escuras sem mudar o céu.", _widgets.brightness)
+	brightness_row.set_meta("video_section","TELA")
+	page.get_child(-1).set_meta("video_section","TELA")
 
 func _graphics_changed(key: String, value: Variant) -> void:
 	_settings().set(key,value)
@@ -434,14 +510,14 @@ func _build_audio(page: VBoxContainer) -> void:
 		_status.text = "Dublagem alterada. A próxima fala usa o idioma escolhido.")
 	_row(page, "Dublagem", "O idioma dos textos continua o mesmo.", _widgets.voice_language)
 	_section(page, "VOLUME")
-	for entry in [["master_volume", "Master", "Volume geral", ""], ["music_volume", "Music", "Música", "Menu, rádio dos carros e trilha."], ["sfx_volume", "SFX", "Efeitos", "Tiros, motores, batidas e interface."], ["ambient_volume", "Ambient", "Ambiente", "Cidade, mar, chuva, vento e bichos."]]:
+	for entry in [["master_volume", "Master", "Volume geral", ""], ["music_volume", "Music", "Música", "Menu e trilha."], ["radio_volume", "Radio", "Rádio", "Estações dos veículos."], ["vehicle_volume", "Vehicles", "Veículos", "Motores, pneus, buzinas, sirenes e batidas."], ["dialogue_volume", "Dialogue", "Falas", "Diálogos e comunicações por voz."], ["sfx_volume", "SFX", "Efeitos", "Armas, passos e demais efeitos do jogo."], ["ui_volume", "UI", "Interface", "Cliques, menus e avisos."], ["ambient_volume", "Ambient", "Ambiente", "Cidade, mar, chuva, vento e bichos."]]:
 		var key: String = entry[0]
 		var bus: String = entry[1]
 		var box := _slider(0.0, 1.0, .01, _percent, func(value):
 			s.set(key, value)
 			s._apply_bus_volume(bus, value))
-		# Soltar o slider de efeitos toca um clique no volume novo.
-		if key == "sfx_volume":
+		# Soltar o slider da interface toca um clique no volume novo.
+		if key == "ui_volume":
 			(box.get_meta("slider") as HSlider).drag_ended.connect(func(_changed): AUDIO.play_click(self))
 		_widgets[key] = box
 		_row(page, entry[2], entry[3], box)
@@ -451,6 +527,12 @@ func _build_audio(page: VBoxContainer) -> void:
 
 func _build_controls(page: VBoxContainer) -> void:
 	var controls := get_node("/root/GameInput")
+	var mode_row := HBoxContainer.new()
+	page.add_child(mode_row)
+	for index in 2:
+		var mode_button := _footer_button(["Teclado e mouse", "Controle"][index])
+		mode_button.pressed.connect(_choose_control_mode.bind(index))
+		mode_row.add_child(mode_button)
 	_layout_choice = _options(["Automático", "DualSense / PlayStation", "Xbox"],func(index): controls.set_controller_layout(index))
 	_row(page,"Símbolos do controle","Escolha DualSense se o controle aparecer com símbolos Xbox.",_layout_choice)
 	_controller_status = _label("",15,MUTED,BODY_FONT)
@@ -464,7 +546,7 @@ func _build_controls(page: VBoxContainer) -> void:
 	map_toolbar.add_theme_constant_override("separation",12)
 	_context_choice.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	map_toolbar.add_child(_context_choice)
-	var customize := _footer_button("PERSONALIZAR")
+	var customize := _footer_button("Personalizar")
 	customize.pressed.connect(func():
 		for button in _controls_list.find_children("*","Button",true,false):
 			if not button.disabled:
@@ -480,9 +562,12 @@ func _build_controls(page: VBoxContainer) -> void:
 	var hint := _label("Selecione uma tecla ou botão para trocar. Delete limpa; Esc cancela. No controle, Options cancela a captura. Comando repetido sai da outra ação, exceto usos compartilhados por contexto. Salve para manter.", 15, MUTED, BODY_FONT)
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	page.add_child(hint)
+	for intro in page.get_children():
+		if intro != mode_row: _control_intro.append(intro)
 	_controls_list = VBoxContainer.new()
 	_controls_list.add_theme_constant_override("separation", 4)
 	page.add_child(_controls_list)
+	_choose_control_mode(1 if controls.using_gamepad else 0)
 
 func _refresh_controls() -> void:
 	_refresh_controller_diagram()
@@ -500,8 +585,8 @@ func _refresh_controls() -> void:
 		spacer.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		header.add_child(spacer)
 		for text in ["PRINCIPAL", "SECUNDÁRIA", "CONTROLE"]:
-			var column := _label(text, 12, MUTED, DISPLAY_FONT)
-			column.custom_minimum_size.x = 120 if text != "CONTROLE" else 165
+			var column := _label(text.left(1)+text.substr(1).to_lower().replace("3d","3D"), 20, MUTED, DISPLAY_FONT)
+			column.custom_minimum_size.x = 120 if text != "CONTROLE" else 208
 			column.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			header.add_child(column)
 		_controls_list.add_child(header)
@@ -515,6 +600,7 @@ func _refresh_controls() -> void:
 			var events: Array = controls.keyboard_events(action)
 			for slot in 2:
 				var key := Button.new()
+				key.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 				key.custom_minimum_size = Vector2(120, 34)
 				key.focus_mode = Control.FOCUS_ALL
 				key.clip_text = true
@@ -531,8 +617,9 @@ func _refresh_controls() -> void:
 					key.pressed.connect(_begin_remap.bind(action, slot, key))
 				row.add_child(key)
 			var pad := Button.new()
+			pad.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
 			pad.text = controls.gamepad_hint(action)
-			pad.custom_minimum_size = Vector2(127,34)
+			pad.custom_minimum_size = Vector2(168,34)
 			pad.focus_mode = Control.FOCUS_ALL
 			pad.clip_text = true
 			pad.tooltip_text = pad.text
@@ -556,6 +643,7 @@ func _refresh_controls() -> void:
 			pad_cell.add_child(clear)
 			row.add_child(pad_cell)
 			_controls_list.add_child(row)
+	PRESENTATION.typography(_controls_list)
 	AUDIO.hook_buttons(_controls_list, self)
 	if not focus_key.is_empty():
 		_restore_binding_focus.call_deferred(focus_key)
@@ -608,7 +696,7 @@ func _load_widgets() -> void:
 	_widgets.shadow_quality.select(s.shadow_quality)
 	_refresh_graphics_widgets()
 	_set_slider(_widgets.brightness, s.brightness, _percent)
-	for key in ["master_volume", "music_volume", "sfx_volume", "ambient_volume"]:
+	for key in s.AUDIO_CHANNELS:
 		_set_slider(_widgets[key], float(s.get(key)), _percent)
 	_widgets.voice_language.select(s.VOICE_LANGUAGES.find(s.voice_language))
 	_widgets.mute_unfocused.set_pressed_no_signal(s.mute_unfocused)
@@ -618,11 +706,42 @@ func _load_widgets() -> void:
 func _select_tab(index: int) -> void:
 	_cancel_remap()
 	_tab = index
+	_defaults_button.visible = index != 3
+	if index == 3: _refresh_help()
 	for i in _tabs.size():
 		_tabs[i].set_pressed_no_signal(i == index)
 		_pages[i].visible = i == index
+	_section_nav.visible = index == 0
+	_save_button.visible = index != 3
+	_cancel_button.text = "Voltar" if index == 3 else "Cancelar"
+	if index == 0: _choose_video_group(_video_group)
 	_trap_focus()
 	_tabs[index].grab_focus()
+
+func _choose_video_group(group: String) -> void:
+	_video_group = group
+	if _pages.is_empty(): return
+	var page: Node = _pages[0].get_child(0).get_child(0)
+	var sections: Array = {"TELA":["TELA"], "QUALIDADE":["PERFIL GRÁFICO","IMAGEM","SOMBRAS E REFLEXOS"], "AVANÇADO":["DETALHES E EFEITOS"], "IDIOMA":["IDIOMA"]}.get(group,[])
+	for child in page.get_children(): child.visible = str(child.get_meta("video_section","")) in sections
+	for i in _video_choices.size():
+		var selected: bool = ["TELA","QUALIDADE","AVANÇADO","IDIOMA"][i] == group
+		var navigation_style := _field_style()
+		navigation_style.bg_color = Color(ACCENT,.06) if selected else Color.TRANSPARENT
+		navigation_style.set_border_width_all(0)
+		navigation_style.border_width_left = 3 if selected else 0
+		navigation_style.border_color = ACCENT
+		_video_choices[i].add_theme_stylebox_override("normal",navigation_style)
+		_video_choices[i].add_theme_color_override("font_color",ACCENT if selected else MUTED)
+	_pages[0].scroll_vertical = 0
+	_trap_focus()
+
+func _choose_control_mode(index: int) -> void:
+	_control_mode = index
+	for intro in _control_intro: intro.visible = index == 1
+	if is_instance_valid(_controls_list): _controls_list.visible = true
+	if _pages.size() > 2: _pages[2].scroll_vertical = 0
+	_trap_focus()
 
 ## Foco circula entre as abas, a página visível e o rodapé.
 func _trap_focus() -> void:
@@ -700,6 +819,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_select_tab(posmod(_tab + (1 if event.physical_keycode == KEY_E else -1), _tabs.size()))
 
 func _restore_tab_defaults() -> void:
+	if _tab == 3: return
 	var s := _settings()
 	match _tab:
 		0:
@@ -720,6 +840,10 @@ func _restore_tab_defaults() -> void:
 			s.music_volume = .8
 			s.sfx_volume = 1.0
 			s.ambient_volume = 1.0
+			s.vehicle_volume = 1.0
+			s.radio_volume = .8
+			s.dialogue_volume = 1.0
+			s.ui_volume = 1.0
 			s.mute_unfocused = false
 			s.voice_language = "pt_BR"
 		2:
@@ -744,7 +868,7 @@ func close() -> void:
 	hide()
 	closed.emit()
 
-const SNAPSHOT_KEYS := ["master_volume", "music_volume", "sfx_volume", "ambient_volume", "mute_unfocused", "voice_language", "text_language", "window_mode", "resolution", "vsync", "msaa", "render_scale", "fps_limit", "shadow_quality", "brightness", "show_fps", "camera_view", "aa_mode", "upscale_mode", "shadow_distance", "anisotropy", "reflection_quality", "detail_quality", "ssao", "volumetric_fog", "glow", "glow_strength"]
+const SNAPSHOT_KEYS := ["master_volume", "music_volume", "sfx_volume", "ambient_volume", "vehicle_volume", "radio_volume", "dialogue_volume", "ui_volume", "mute_unfocused", "voice_language", "text_language", "window_mode", "resolution", "vsync", "msaa", "render_scale", "fps_limit", "shadow_quality", "brightness", "show_fps", "camera_view", "aa_mode", "upscale_mode", "shadow_distance", "anisotropy", "reflection_quality", "detail_quality", "ssao", "volumetric_fog", "glow", "glow_strength"]
 
 func _capture_snapshot() -> Dictionary:
 	var s := _settings()

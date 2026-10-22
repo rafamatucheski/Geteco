@@ -35,7 +35,12 @@ func run() -> void:
 	for sweep in [
 		[Vector3(0,0,-2.5),Vector3(0,0,-5),true,"rear wall"],
 		[Vector3(4.4,0,-.55),Vector3(0,0,-2.5),true,"desk footprint"],
-		[Vector3(1.2,0,1.5),Vector3(2,0,0),false,"office doorway"]
+		[Vector3(1.2,0,1.5),Vector3(2,0,0),false,"office doorway"],
+		[Vector3(1.2,0,2.5),Vector3(2,0,0),false,"office approach around lift"],
+		[Vector3(3.2,0,2.5),Vector3(-2,0,0),false,"office return around lift"],
+		[Vector3(1.2,0,3.5),Vector3(2,0,0),true,"remaining front partition"],
+		[Vector3(1.2,0,-1.0),Vector3(2,0,0),true,"remaining rear partition"],
+		[Vector3(1.2,0,0),Vector3(1,0,0),true,"lift column remains solid"]
 	]:
 		probe.global_position = place.interior_origin + sweep[0] + Vector3(0,.04,0)
 		var hit := probe.move_and_collide(sweep[1],true)

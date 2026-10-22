@@ -41,7 +41,7 @@ const MESH_COUNTS := {
 	"lumber_pickup_4x4":10,
 	"medic_box":5,
 	"metro_hatch":7,
-	"monaliza":7,
+	"monaliza":9,
 	"muscle_classic":5,
 	"nimbus_minivan":10,
 	"nordic_estate":7,
@@ -75,6 +75,7 @@ static func contains(id: String) -> bool:
 	return enabled and MESH_COUNTS.has(id)
 
 static func scene_path(id: String) -> String:
+	if id == "monaliza": return "res://assets/fleet/interactive/monaliza_redesigned.scn"
 	return "res://assets/fleet/redesigned/"+id+".scn"
 
 static func create(id: String) -> Node3D:

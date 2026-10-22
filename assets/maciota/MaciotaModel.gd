@@ -228,9 +228,25 @@ func _build_jager_model() -> void:
 	cyl_s.height = 0.78
 	stick.mesh = cyl_s
 	stick.material_override = mat_gold
+	# Dark lacquer shaft, gold collars and a rubber ferrule make the cane read
+	# as a crafted walking stick at the normal gameplay distance.
+	stick.material_override = _make_mat(Color("241c2b"), .28)
 	stick.position = Vector3(0.0, -0.38, 0.0)
 	cane_mesh.add_child(stick)
 	cane_shaft = stick
+	for spec in [[-.72,.022,.035],[-.60,.019,.025],[-.12,.022,.035],[-.035,.027,.05]]:
+		var collar := MeshInstance3D.new()
+		var ring := CylinderMesh.new()
+		ring.top_radius = float(spec[1])
+		ring.bottom_radius = float(spec[1])
+		ring.height = float(spec[2])
+		ring.radial_segments = 12
+		collar.mesh = ring
+		collar.position.y = float(spec[0])
+		collar.material_override = mat_gold
+		cane_mesh.add_child(collar)
+	var ferrule := _create_limb(.021,.025,_make_mat(Color("282b29"),.85),Vector3(0,-.757,0))
+	cane_mesh.add_child(ferrule)
 
 	var orb := MeshInstance3D.new()
 	var sph_o := SphereMesh.new()

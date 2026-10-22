@@ -18,7 +18,7 @@ var _memory_bus := ""
 func _ready() -> void:
 	player = AudioStreamPlayer.new()
 	player.name = "DirectedFerryDialogue"
-	player.bus = &"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master"
+	player.bus = &"Dialogue" if AudioServer.get_bus_index("Dialogue") >= 0 else &"Master"
 	player.volume_db = -8.0
 	add_child(player)
 	disconnect = AudioStreamPlayer.new()
@@ -83,7 +83,7 @@ func update_clock(time: float) -> void:
 		player.stop()
 		if chosen >= 0:
 			var take: Dictionary = takes[chosen]
-			player.bus = _phone_bus() if take.memory else (&"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master")
+			player.bus = _phone_bus() if take.memory else (&"Dialogue" if AudioServer.get_bus_index("Dialogue") >= 0 else &"Master")
 			player.stream = take.stream
 			player.volume_db = VOICE.playback_volume(player.stream, -8.0)
 			player.play(maxf(0.0, time - float(take.start)))
@@ -115,7 +115,7 @@ func _phone_bus() -> StringName:
 		AudioServer.add_bus()
 		var index := AudioServer.bus_count - 1
 		AudioServer.set_bus_name(index, _memory_bus)
-		AudioServer.set_bus_send(index, &"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master")
+		AudioServer.set_bus_send(index, &"Dialogue" if AudioServer.get_bus_index("Dialogue") >= 0 else &"Master")
 		var high := AudioEffectHighPassFilter.new()
 		high.cutoff_hz = 300.0
 		var low := AudioEffectLowPassFilter.new()

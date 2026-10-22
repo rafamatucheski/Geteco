@@ -1,5 +1,6 @@
 extends Control
 ## Full-world cartography. All map geometry is a read-only production snapshot.
+const PRESENTATION := preload("res://ui/HarborMenuPresentation.gd")
 const STYLE := preload("res://ui/GameStyle.gd")
 const ART := preload("res://ui/hud/Cartography.gd")
 const DATA := preload("res://ui/hud/WorldMapData.gd")
@@ -68,33 +69,46 @@ var _selection_actions: HBoxContainer
 var _map_title: Label
 var _brand: Label
 var _top_safe := 0.0
+var _city_label_anchor := Vector2.INF
+var _sea: ColorRect
+var _sea_center := Vector2.INF
+var _sea_scale := 0.0
+var _sea_size := Vector2.ZERO
 
 static func _surface(fill := INK, border := Color("41484b"), padding := Vector2(14,10)) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color=fill; style.border_color=border; style.set_border_width_all(1)
-	style.set_corner_radius_all(3)
+	style.set_corner_radius_all(12)
 	style.content_margin_left=padding.x; style.content_margin_right=padding.x
 	style.content_margin_top=padding.y; style.content_margin_bottom=padding.y
 	return style
 
 func _ready() -> void:
-	name="MapUI"; mouse_filter=MOUSE_FILTER_STOP; theme=STYLE.create_theme()
+	name="MapUI"; mouse_filter=MOUSE_FILTER_STOP; theme=STYLE.create_theme(20)
 	set_anchors_and_offsets_preset(PRESET_FULL_RECT)
 	var background := ColorRect.new(); background.color=Color("141d22"); background.mouse_filter=MOUSE_FILTER_IGNORE
 	add_child(background); background.set_anchors_and_offsets_preset(PRESET_FULL_RECT)
 	_area=Control.new(); _area.clip_contents=true; add_child(_area)
+	_sea=ColorRect.new(); _sea.mouse_filter=MOUSE_FILTER_IGNORE
+	var water := ShaderMaterial.new()
+	water.shader=preload("res://ui/hud/map_ocean.gdshader")
+	water.set_shader_parameter("ocean_surface",preload("res://assets/ui/map/ocean-surface.png"))
+	_sea.material=water
+	_area.add_child(_sea)
 	terrain=Terrain.new(); terrain.owner_map=self
 	var ink := ShaderMaterial.new(); ink.shader=preload("res://ui/hud/map_terrain.gdshader"); terrain.material=ink
 	ink.set_shader_parameter("mineral_detail",preload("res://assets/ui/map/mineral-relief.png"))
-	ink.set_shader_parameter("mineral_detail_strength",.85)
+	ink.set_shader_parameter("mineral_detail_strength",.35)
+	var desert_bounds: Rect2 = preload("res://world/desert/DesertLayout.gd").BOUNDS
+	ink.set_shader_parameter("desert_bounds",Vector4(desert_bounds.position.x,desert_bounds.position.y,desert_bounds.end.x,desert_bounds.end.y))
 	ink.set_shader_parameter("mineral_detail_world_size",950.0)
 	_area.add_child(terrain)
 	geography=Geography.new(); geography.owner_map=self; _area.add_child(geography)
 	canvas=Canvas.new(); canvas.owner_map=self; canvas.focus_mode=FOCUS_ALL
 	_area.add_child(canvas); canvas.set_anchors_and_offsets_preset(PRESET_FULL_RECT)
 	_header=Panel.new(); _header.add_theme_stylebox_override("panel",_surface()); add_child(_header)
-	_brand=STYLE.label("HARBOR",26); _header.add_child(_brand)
-	_map_title=STYLE.label("MAPA",17,STYLE.MUTED); _header.add_child(_map_title)
+	_brand=STYLE.label("Harbor",20); _header.add_child(_brand)
+	_map_title=STYLE.label("Mapa",20,STYLE.MUTED); _header.add_child(_map_title)
 	_tab_row=HBoxContainer.new(); _tab_row.add_theme_constant_override("separation",0); _header.add_child(_tab_row)
 	for id in ["harbor","mountain","desert","world"]:
 		var title: String={"world":"Mundo","harbor":"Cidade","mountain":"Montanha","desert":"Deserto"}[id]
@@ -134,11 +148,12 @@ func _ready() -> void:
 	_hints=STYLE.label("",14,STYLE.MUTED); _hints.position=Vector2(24,13); _footer.add_child(_hints)
 	_clear_button=_button(_footer,"Limpar destino",_clear_waypoint); _clear_button.hide()
 	_clear_button.resized.connect(_position_clear)
-	_cache(); _objective_button.disabled=_markers.is_empty() or not _markers[0].objective
+	_cache(); _cache_city_label(); _objective_button.disabled=_markers.is_empty() or not _markers[0].objective
 	get_viewport().size_changed.connect(_layout); resized.connect(_layout)
 	get_node("/root/GameInput").device_changed.connect(_update_hints)
 	get_node("/root/GameInput").bindings_changed.connect(_update_hints)
 	_update_hints(); _layout(); _restore_view(); center=target_center; zoom=target_zoom
+	PRESENTATION.typography(self)
 	_refresh_tabs(); _refresh_focus(); _redraw(); canvas.grab_focus.call_deferred()
 
 func _button(parent: Node, text: String, callback: Callable) -> Button:
@@ -192,12 +207,10 @@ func _cache() -> void:
 	if controller==null: return
 	atlas.collect(controller); _bounds=atlas.bounds
 	for road in atlas.roads: _roads.append(road.points)
-	var target: Vector3=controller.session.mission_world.target_position()
-	var has_mission := str(controller.state.intro.stage)!="complete" or not str(controller.state.campaign.active_id).is_empty()
-	if controller.session.freight_active: target=controller.session.freight_target; has_mission=true
-	if controller.state.region_id=="desert" and controller.session.desert!=null: target=controller.session.desert.target_position(); has_mission=true
-	if has_mission and target.is_finite() and not target.is_zero_approx():
-		_markers.append({"id":"objective","point":Vector2(target.x,target.z),"title":"Objetivo","detail":str(controller.session.objective.text),"objective":true,"kind":"objective","region":str(controller.state.region_id)})
+	if controller.session.has_method("navigation_destination"):
+		var destination: Dictionary=controller.session.navigation_destination()
+		if not destination.is_empty() and destination.source!="waypoint":
+			_markers.append({"id":"objective","point":DATA.planar(destination.point),"title":destination.title,"detail":destination.text,"objective":true,"kind":destination.kind,"region":destination.region})
 	_markers.append_array(atlas.markers)
 	if controller.world is Node and controller.session.desert!=null and is_instance_valid(controller.session.desert.extras):
 		for activity in controller.session.desert.extras.map_markers():
@@ -211,6 +224,20 @@ func _cache() -> void:
 	_clear_button.visible=_waypoint.is_finite()
 	for kind in _legend_buttons:
 		_legend_buttons[kind].visible=_markers.any(func(marker): return marker.kind==kind)
+
+func _cache_city_label() -> void:
+	# Authored services locate the city independently of its long north bridge.
+	var xs: Array[float] = []; var ys: Array[float] = []
+	for marker in _markers:
+		if marker.region == "harbor" and marker.kind not in ["lock","train","bus"]:
+			xs.append(marker.point.x); ys.append(marker.point.y)
+	if xs.is_empty(): return
+	xs.sort(); ys.sort()
+	var southern_edge: float = ys.back()
+	for road in atlas.roads:
+		if road.region == "harbor":
+			for point in road.points: southern_edge = maxf(southern_edge,point.y)
+	_city_label_anchor = Vector2(xs[int(xs.size()/2)],southern_edge+40.0)
 
 func _layout() -> void:
 	if not is_instance_valid(canvas): return
@@ -231,12 +258,12 @@ func _layout() -> void:
 	_zoom_controls.position=Vector2(_area.size.x-66,20)
 	_legend.position=_area.position+Vector2(24,70)
 	_legend.size=Vector2(minf(258,size.x-105),maxf(110,minf(440,_area.size.y-180)))
-	var selection_width := minf(470,size.x-48)
+	var selection_width := minf(780,size.x-48)
 	sidebar.custom_minimum_size=Vector2(selection_width,76)
 	sidebar.size=Vector2(selection_width,0)
 	_selection_icon.visible=size.x>=640
 	_selection_text.custom_minimum_size.x=100 if size.x<640 else 148
-	marker_title.add_theme_font_size_override("font_size",20 if size.x<640 else 23)
+	marker_title.add_theme_font_size_override("font_size",20)
 	sidebar.position=Vector2(24,_footer.position.y-maxf(76,sidebar.size.y)-20)
 	_hints.size.x=maxf(40,size.x-(188 if _clear_button.visible else 48))
 	_hints.clip_text=true
@@ -255,6 +282,7 @@ func _restore_view() -> void:
 	focus_region(str(controller.state.region_id))
 	if not controller.world is Node: return
 	var saved: Dictionary=controller.world.get_meta("map_view",{})
+	if saved.get("layout",0)==1: return # Ignore camera centres from the reverted island layout.
 	if saved.get("actor_region","")!=str(controller.state.region_id): return
 	var saved_center: Vector2=saved.get("center",Vector2.INF)
 	var saved_scale: float=float(saved.get("scale",0))
@@ -272,7 +300,7 @@ func _refresh_tabs() -> void:
 	for key in _tabs:
 		var selected: bool=key==_region
 		var normal := _surface(Color.TRANSPARENT,Color.TRANSPARENT,Vector2(12,8))
-		normal.set_corner_radius_all(0); normal.set_border_width_all(0)
+		normal.set_corner_radius_all(12); normal.set_border_width_all(0)
 		normal.border_width_bottom=3 if selected else 0; normal.border_color=GOLD
 		_tabs[key].add_theme_stylebox_override("normal",normal)
 		_tabs[key].add_theme_color_override("font_color",GOLD if selected else STYLE.MUTED)
@@ -314,9 +342,8 @@ func _update_hints() -> void:
 
 func focus_region(id: String) -> void:
 	_region=id if atlas.region_bounds.has(id) else "world"
-	var extent: Rect2=_bounds if _region=="world" else atlas.region_bounds[_region]
-	# The region tabs frame the region itself; the world tab still includes all
-	# long connecting roads. This keeps Harbor from shrinking below its bridge.
+	var extent: Rect2=_bounds if _region=="world" else _region_extent(_region)
+	# Region focus excludes connecting roads; the world view keeps all links.
 	if _region in ["harbor","mountain"] and atlas.relief.region_visual_bounds.has(_region):
 		var content: Rect2=atlas.relief.region_visual_bounds[_region]
 		if content.has_area():
@@ -324,10 +351,22 @@ func focus_region(id: String) -> void:
 			for marker in _markers:
 				if marker.region==_region and marker.id!="north_gate": extent=extent.expand(marker.point)
 	target_center=extent.get_center()
-	var fit := minf((_area.size.x-70)/maxf(1,extent.size.x),(_area.size.y-70)/maxf(1,extent.size.y))
+	# Regional tabs share one pixels/metre ratio. Only the centre changes;
+	# explicit zoom remains available. Geography and picking stay unwarped.
+	var frame_size := extent.size
+	if _region != "world":
+		frame_size = Vector2.ZERO
+		for region_id in atlas.region_bounds:
+			var regional_extent: Rect2 = _region_extent(str(region_id))
+			frame_size = frame_size.max(regional_extent.size)
+	var fit := minf((_area.size.x-70)/maxf(1,frame_size.x),(_area.size.y-70)/maxf(1,frame_size.y))
 	target_zoom=clampf(fit/maxf(.0001,_base_zoom),.65,50)
 	_refresh_tabs()
 	_redraw()
+
+func _region_extent(id: String) -> Rect2:
+	if id == "desert": return preload("res://world/desert/DesertLayout.gd").BOUNDS
+	return atlas.relief.region_visual_bounds.get(id,atlas.region_bounds.get(id,_bounds))
 
 func _actor_point() -> Vector2:
 	if controller.world is Node and not str(controller.state.place_id).is_empty():
@@ -345,6 +384,12 @@ func change_zoom(factor: float) -> void: target_zoom=clampf(target_zoom*factor,.
 func _redraw() -> void:
 	if not is_instance_valid(canvas): return
 	var factor := _base_zoom*zoom
+	if is_instance_valid(_sea) and (_sea_center!=center or _sea_scale!=factor or _sea_size!=_area.size):
+		_sea.size=_area.size
+		_sea.material.set_shader_parameter("world_center",center)
+		_sea.material.set_shader_parameter("viewport_size",_area.size)
+		_sea.material.set_shader_parameter("pixels_per_metre",factor)
+		_sea_center=center; _sea_scale=factor; _sea_size=_area.size
 	for layer in [terrain,geography]:
 		layer.position=_area.size*.5-center*factor; layer.scale=Vector2.ONE*factor
 	# Retained draw commands: panning never retriangulates land or road strokes.
@@ -459,14 +504,18 @@ func _focus_objective() -> void:
 	if _markers.is_empty() or not _markers[0].objective: return
 	select_marker(0); _locate_selected()
 func _mark_selected() -> void:
-	if _selected>=0 and _markers[_selected].kind!="lock": _set_waypoint(_markers[_selected].point)
-func _set_waypoint(point: Vector2) -> void:
+	if _selected>=0 and _markers[_selected].kind!="lock": _set_waypoint(_markers[_selected].point,_markers[_selected].title,_markers[_selected].region)
+func _set_waypoint(point: Vector2, title := "Destino marcado", region := "") -> void:
 	_waypoint=point
-	if controller.world is Node: controller.world.set_meta("map_waypoint",point)
+	if controller.world is Node:
+		controller.world.set_meta("map_waypoint",point)
+		controller.world.set_meta("map_waypoint_title",title)
+		controller.world.set_meta("map_waypoint_region",region if not region.is_empty() else _region)
 	_clear_button.show(); _layout(); _refresh_focus(); canvas.queue_redraw()
 func _clear_waypoint() -> void:
 	_waypoint=Vector2.INF
-	if controller.world is Node: controller.world.remove_meta("map_waypoint")
+	if controller.world is Node:
+		for key in ["map_waypoint","map_waypoint_title","map_waypoint_region"]: controller.world.remove_meta(key)
 	_clear_button.hide(); _layout(); _refresh_focus(); canvas.queue_redraw()
 func _set_filter(kind: String) -> void:
 	_filter="" if _filter==kind else kind
@@ -508,7 +557,7 @@ func draw_geography(target: CanvasItem) -> void:
 		var edge := polygon.duplicate(); edge.append(edge[0]); target.draw_polyline(edge,Color("7b8380"),.65/scale_value,true)
 	for casing in [true,false]:
 		for road in atlas.roads:
-			var width := maxf(road.width,1.5/scale_value)
+			var width := clampf(road.width,1.8/scale_value,4.0/scale_value)
 			if road.surface=="railway":
 				target.draw_polyline(road.points,Color("172b31") if casing else Color("87bdc9"),(4.5 if casing else 2.0)/scale_value,true)
 				if not casing:
@@ -521,6 +570,7 @@ func draw_geography(target: CanvasItem) -> void:
 			var dirt: bool=road.surface in ["earth","footpath","dirt"]
 			var color := Color("b5a17b") if dirt else Color("d9dad0")
 			target.draw_polyline(road.points,Color("1b2529") if casing else color,width+3.0/scale_value if casing else width,true)
+
 
 func draw_map(target: Control) -> void:
 	_drawn_markers.clear()
@@ -549,7 +599,7 @@ func draw_map(target: Control) -> void:
 	if _hovered in _drawn_markers and _hovered!=_selected: _draw_label(target,project(_markers[_hovered].point),_markers[_hovered].title)
 	var compass := Vector2(_area.size.x-51,_area.size.y-92)
 	target.draw_style_box(_surface(Color(.06,.09,.11,.86),Color.TRANSPARENT,Vector2.ZERO),Rect2(compass-Vector2(18,38),Vector2(36,54)))
-	target.draw_string(STYLE.STRONG,compass-Vector2(5,20),"N",HORIZONTAL_ALIGNMENT_LEFT,-1,15,STYLE.TEXT)
+	target.draw_string(PRESENTATION.font(),compass-Vector2(5,20),"N",HORIZONTAL_ALIGNMENT_LEFT,-1,20,STYLE.TEXT)
 	target.draw_colored_polygon(PackedVector2Array([compass+Vector2(0,-8),compass+Vector2(-6,8),compass+Vector2(0,4),compass+Vector2(6,8)]),STYLE.TEXT)
 	_draw_scale(target)
 
@@ -563,21 +613,23 @@ func _draw_symbol(target: CanvasItem, point: Vector2, kind: String, radius: floa
 func _draw_region_labels(target: Control) -> void:
 	for region in ["harbor","mountain","desert"]:
 		if not atlas.region_bounds.has(region): continue
-		var extent: Rect2=atlas.region_bounds[region]
-		var point := project(Vector2(extent.get_center().x,extent.position.y))-Vector2(0,18)
-		var title := "HARBOR" if region=="harbor" else tr("MONTANHA" if region=="mountain" else "DESERTO")
-		var width := STYLE.STRONG.get_string_size(title,HORIZONTAL_ALIGNMENT_LEFT,-1,15).x
+		var extent: Rect2=_region_extent(region)
+		var anchor := Vector2(extent.get_center().x,extent.position.y + extent.size.y*.12)
+		if region == "harbor" and _city_label_anchor.is_finite(): anchor = _city_label_anchor
+		var point := project(anchor)+Vector2(-80,0) if region=="harbor" else project(anchor)
+		var title := tr({"harbor":"Cidade", "mountain":"Montanha", "desert":"Deserto"}[region])
+		var width := PRESENTATION.font().get_string_size(title,HORIZONTAL_ALIGNMENT_LEFT,-1,20).x
 		if Rect2(Vector2(20,64),_area.size-Vector2(40,84)).has_point(point) and not _pointer_blocked(point):
-			target.draw_string_outline(STYLE.STRONG,point-Vector2(width*.5,0),title,HORIZONTAL_ALIGNMENT_LEFT,-1,15,3,INK)
-			target.draw_string(STYLE.STRONG,point-Vector2(width*.5,0),title,HORIZONTAL_ALIGNMENT_LEFT,-1,15,Color("c4c4bb"))
+			target.draw_string_outline(PRESENTATION.font(),point-Vector2(width*.5,0),title,HORIZONTAL_ALIGNMENT_LEFT,-1,20,1,INK)
+			target.draw_string(PRESENTATION.font(),point-Vector2(width*.5,0),title,HORIZONTAL_ALIGNMENT_LEFT,-1,20,Color("c4c4bb"))
 
 func _draw_label(target: Control, point: Vector2, text: String, selected := false) -> void:
 	text = tr(text)
-	var width := minf(230,STYLE.STRONG.get_string_size(text,HORIZONTAL_ALIGNMENT_LEFT,-1,15).x+20)
+	var width := minf(230,PRESENTATION.font().get_string_size(text,HORIZONTAL_ALIGNMENT_LEFT,-1,20).x+20)
 	var at := Vector2(clampf(point.x+20,8,_area.size.x-width-8),clampf(point.y-16,8,_area.size.y-36))
 	if _pointer_blocked(at+Vector2(width*.5,16)): return
 	target.draw_style_box(_surface(INK,GOLD if selected else Color("41484b")),Rect2(at,Vector2(width,32)))
-	target.draw_string(STYLE.STRONG,at+Vector2(10,22),text,HORIZONTAL_ALIGNMENT_LEFT,width-20,15,GOLD if selected else STYLE.TEXT)
+	target.draw_string(PRESENTATION.font(),at+Vector2(10,22),text,HORIZONTAL_ALIGNMENT_LEFT,width-20,20,GOLD if selected else STYLE.TEXT)
 
 func _draw_scale(target: Control) -> void:
 	var meters := 100.0
@@ -589,4 +641,5 @@ func _draw_scale(target: Control) -> void:
 	target.draw_line(at,at+Vector2(meters*factor,0),STYLE.MUTED,2)
 	target.draw_line(at-Vector2(0,4),at+Vector2(0,2),STYLE.MUTED,1)
 	target.draw_line(at+Vector2(meters*factor,-4),at+Vector2(meters*factor,2),STYLE.MUTED,1)
-	target.draw_string(STYLE.FONT,at-Vector2(0,7),"%d m"%roundi(meters),HORIZONTAL_ALIGNMENT_LEFT,-1,12,STYLE.MUTED)
+	target.draw_string(PRESENTATION.font(),at-Vector2(0,7),"%d m"%roundi(meters),HORIZONTAL_ALIGNMENT_LEFT,-1,20,STYLE.MUTED)
+

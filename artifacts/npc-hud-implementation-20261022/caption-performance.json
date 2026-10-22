@@ -1,0 +1,33 @@
+{
+	"after": {
+		"duration_ms": 30007.375,
+		"fps": 141.865124823481,
+		"frames": 4257,
+		"max_ms": 125.629,
+		"over_33ms": 2,
+		"over_66ms": 2,
+		"p50_ms": 6.967,
+		"p95_ms": 8.734,
+		"p99_ms": 10.09
+	},
+	"before": {
+		"duration_ms": 30001.313,
+		"fps": 71.8635214398783,
+		"frames": 2156,
+		"max_ms": 14757.461,
+		"over_33ms": 2,
+		"over_66ms": 2,
+		"p50_ms": 6.965,
+		"p95_ms": 8.474,
+		"p99_ms": 10.631
+	},
+	"engine": "4.7.2-stable (official)",
+	"fps_limit": 144,
+	"gpu": "NVIDIA GeForce RTX 4060 Laptop GPU",
+	"render_scale": 1.0,
+	"renderer": "forward_plus",
+	"scenario": "rendered production garage, stationary dialogue, isolated fixture; comparison restricted to caption presentation",
+	"shadow_quality": 2,
+	"viewport": "(1280.0, 720.0)",
+	"vsync": 0
+}

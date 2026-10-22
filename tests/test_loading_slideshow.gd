@@ -9,6 +9,12 @@ func check(ok: bool, message: String) -> void:
 	if not ok: failures.append(message)
 
 func run() -> void:
+	# This exercises the portable Godot fallback. The native loop has its own
+	# rendered block/resize/lifecycle test and intentionally suspends this artwork.
+	if OS.get_name() == "Windows" and DisplayServer.get_name() != "headless" and "--loading-presenter=godot" not in OS.get_cmdline_user_args():
+		push_error("Use --loading-presenter=godot for the fallback slideshow test")
+		quit(2)
+		return
 	root.size = Vector2i(1280, 720)
 	var curtain = load("res://runtime/StartupCurtain.gd").new()
 	root.add_child(curtain)

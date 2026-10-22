@@ -197,7 +197,7 @@ func _ready() -> void:
 	var takes := FIREFLY.count("ambience_el", "crowd")
 	if takes > 0: _murmur.stream = FIREFLY.loop("ambience_el", "crowd_%d.wav" % rng.randi_range(0, takes - 1))
 	add_child(_murmur)
-	_chatter = player_relative_voice("StreetChatter", &"SFX")
+	_chatter = player_relative_voice("StreetChatter", &"Dialogue")
 	add_child(_chatter)
 	# Tudo que pode tocar no meio do jogo fica lido e retido agora, sob a cortina: passos (7 KB
 	# cada), gaivota/cão dos detalhes da cidade e as buzinas distantes.

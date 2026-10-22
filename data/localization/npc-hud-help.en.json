@@ -1,0 +1,23 @@
+{
+  "AJUDA": "HELP",
+  "INTERAGIR": "INTERACT",
+  "CONVERSAS": "CONVERSATIONS",
+  "MISSÕES": "MISSIONS",
+  "INFORMAÇÕES": "INFORMATION",
+  "AVISOS E OBJETIVOS": "NOTICES AND OBJECTIVES",
+  "MACIOTA": "MACIOTA",
+  "ATALHOS ATUAIS": "CURRENT SHORTCUTS",
+  "Ver missões": "View missions",
+  "Informações": "Information",
+  "Encerrar conversa": "End conversation",
+  "OBJETIVO ATUAL": "CURRENT OBJECTIVE",
+  "Guia do HUD em Configurações → Ajuda.": "HUD guide in Settings → Help.",
+  "Nenhuma informação registrada ainda.": "No information recorded yet.",
+  "A indicação perto de um personagem mostra a ação disponível. A conversa começa quando você usa a tecla ou o botão indicado.": "The prompt near a character shows the available action. Use the indicated key or button to start talking.",
+  "O nome identifica quem está falando. A caixa no rodapé mostra a fala; use Continuar para avançar. Missões da história podem começar ou terminar ao concluir a conversa.": "The name identifies the speaker. Their words appear at the bottom; use Continue to advance. Story missions may start or finish when the conversation ends.",
+  "Ver missões abre os trabalhos disponíveis e o objetivo atual. Somente os botões executam ações. Cancelar missão interrompe o trabalho em andamento.": "View missions shows available jobs and your current objective. Only buttons perform actions. Cancel mission stops the current job.",
+  "Informações reúne pistas e registros da história para leitura. Consultar esses textos não inicia nem cancela missões.": "Information collects story clues and records for reading. Reading these entries does not start or cancel missions.",
+  "Avisos breves confirmam ações e resultados. O objetivo atual indica o próximo passo e também pode ser consultado no diário.": "Brief notices confirm actions and results. The current objective shows your next step and can also be checked in the journal.",
+  "Maciota conversa sobre a história quando há uma etapa disponível. Nas outras visitas, escolha Ver missões ou Informações no menu curto.": "Maciota talks about the story when a step is available. On other visits, choose View missions or Information from the compact menu.",
+  "Conversar / continuar: %s\nDiário de missões: %s\nPausa e configurações: %s": "Talk / continue: %s\nMission journal: %s\nPause and settings: %s"
+}

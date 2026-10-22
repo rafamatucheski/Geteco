@@ -11,6 +11,7 @@ static func create(archetype: String) -> Node3D:
 	if not supports(archetype): return null
 	if not _scenes.has(archetype):
 		var path := "res://assets/fleet/breakaway/" + archetype + ".scn"
+		if archetype == "monaliza": path = "res://assets/fleet/interactive/monaliza_breakaway.scn"
 		if not ResourceLoader.exists(path): return null
 		_scenes[archetype] = load(path) as PackedScene
 	var scene: PackedScene = _scenes[archetype]

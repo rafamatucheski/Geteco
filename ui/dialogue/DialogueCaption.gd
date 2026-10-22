@@ -7,7 +7,7 @@ const VOICE_ACCENT := Color("dfa96a")
 var speaker_label: Label
 var message: Label
 var content: VBoxContainer
-var max_width := 760.0
+var max_width := 640.0
 var bottom_margin := 28.0
 var text: String:
 	get: return _text
@@ -28,11 +28,11 @@ func _init() -> void:
 	set_meta("preserve_panel_style", true)
 	theme = STYLE.create_theme(23)
 	_surface = STYLE.panel()
-	_surface.bg_color = Color(0.066, 0.078, 0.095, 0.95)
+	_surface.bg_color = Color(0.066, 0.078, 0.095, 0.90)
 	_surface.border_color = Color("42484e")
 	_surface.set_corner_radius_all(9)
 	_surface.shadow_color = Color(0, 0, 0, 0.3)
-	_surface.shadow_size = 8
+	_surface.shadow_size = 3
 	add_theme_stylebox_override("panel", _surface)
 	content = VBoxContainer.new()
 	content.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -98,12 +98,12 @@ func layout_for_viewport(extent: Vector2) -> void:
 
 func _apply_scale(value: float) -> void:
 	speaker_label.add_theme_font_size_override("font_size", roundi(15.0*value))
-	message.add_theme_font_size_override("font_size", roundi(23.0*value))
-	content.add_theme_constant_override("separation", roundi(10.0*value))
-	_surface.content_margin_left = roundf(22.0*value)
-	_surface.content_margin_right = roundf(22.0*value)
-	_surface.content_margin_top = roundf(16.0*value)
-	_surface.content_margin_bottom = roundf(17.0*value)
+	message.add_theme_font_size_override("font_size", roundi(20.0*value))
+	content.add_theme_constant_override("separation", roundi(6.0*value))
+	_surface.content_margin_left = roundf(16.0*value)
+	_surface.content_margin_right = roundf(16.0*value)
+	_surface.content_margin_top = roundf(10.0*value)
+	_surface.content_margin_bottom = roundf(10.0*value)
 
 func _queue_layout() -> void:
 	if _layout_queued or not is_inside_tree(): return

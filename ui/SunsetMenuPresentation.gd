@@ -61,7 +61,7 @@ func install(menu: Control) -> void:
 	brand_accent.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(brand_accent)
 	brand_accent.hide()
-	buttons.assign([menu.btn_continue, menu.btn_new_game, menu.btn_load_game, menu.btn_rachas, menu.btn_settings, menu.btn_quit])
+	buttons.assign([menu.btn_continue, menu.btn_new_game, menu.btn_load_game, menu.btn_settings, menu.btn_quit])
 	var menu_font := FontVariation.new()
 	menu_font.base_font = DISPLAY_FONT
 	menu_font.spacing_glyph = 3

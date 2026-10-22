@@ -24,13 +24,20 @@ var voice_language := "pt_BR":
 		voice_language_changed.emit(language)
 
 var master_volume := .8
-## Barramentos "Música"/"SFX"/"Ambiente" trazidos de volta de `systems/SettingsManager.gd`
-## (V1): antes só existia o bus 0 (Master), então os sliders de música/efeitos/ambiente
-## do menu não tinham o que controlar e foram escondidos em `ui/SettingsMenu.gd`.
 var music_volume := .8
 var sfx_volume := 1.0
 var ambient_volume := 1.0
-## Ganho da mixagem antes do slider: 100% precisa dar presença a motores e efeitos.
+var vehicle_volume := 1.0
+var radio_volume := .8
+var dialogue_volume := 1.0
+var ui_volume := 1.0
+## Categorias independentes enviam ao Master; Efeitos não controla carro nem fala.
+const AUDIO_CHANNELS := {
+	"master_volume": "Master", "music_volume": "Music", "radio_volume": "Radio",
+	"vehicle_volume": "Vehicles", "dialogue_volume": "Dialogue",
+	"sfx_volume": "SFX", "ui_volume": "UI", "ambient_volume": "Ambient",
+}
+## Preserva a presença dos efeitos existentes, sem aplicar +10 dB aos motores.
 const SFX_GAIN_DB := 10.0
 ## Silencia tudo quando a janela perde o foco (alt-tab).
 var mute_unfocused := false
@@ -145,6 +152,11 @@ func load_settings(path := "") -> Error:
 		music_volume = clampf(float(config.get_value("audio","music_volume",.8)),0,1)
 		sfx_volume = clampf(float(config.get_value("audio","sfx_volume",1.0)),0,1)
 		ambient_volume = clampf(float(config.get_value("audio","ambient_volume",1.0)),0,1)
+		# Configs antigos preservam preferências, mas passam a ter categorias independentes.
+		vehicle_volume = clampf(float(config.get_value("audio","vehicle_volume",sfx_volume)),0,1)
+		radio_volume = clampf(float(config.get_value("audio","radio_volume",music_volume)),0,1)
+		dialogue_volume = clampf(float(config.get_value("audio","dialogue_volume",sfx_volume)),0,1)
+		ui_volume = clampf(float(config.get_value("audio","ui_volume",sfx_volume)),0,1)
 		mute_unfocused = bool(config.get_value("audio","mute_unfocused",false))
 		voice_language = str(config.get_value("audio","voice_language","pt_BR"))
 		text_language = str(config.get_value("interface","text_language","pt_BR"))
@@ -173,17 +185,39 @@ func _exit_tree() -> void:
 	# Scripted translations must leave the server before script runtime teardown.
 	if name == "V2Settings": preload("res://runtime/Localization.gd").uninstall()
 
-## Cria "Music", "SFX" e "Ambient" se ainda não existirem (idempotente: chamado tanto no
-## `_enter_tree` do autoload, antes de qualquer outro nó tocar som, quanto no `_ready`).
+## Idempotente. Dialogue fica à direita dos destinos para o sidechain ler a fala
+## deste bloco de áudio; nenhum slider de categoria passa por outra categoria.
 func _setup_audio_buses() -> void:
-	for bus_name in ["Music", "SFX", "Ambient"]:
+	for bus_name in ["Music", "SFX", "Ambient", "Vehicles", "Radio", "UI", "Dialogue"]:
 		if AudioServer.get_bus_index(bus_name) == -1:
 			AudioServer.add_bus()
 			var new_idx := AudioServer.get_bus_count() - 1
 			AudioServer.set_bus_name(new_idx, bus_name)
 			AudioServer.set_bus_send(new_idx, "Master")
 	_setup_audio_limiter("SFX", "SFXPresence", SFX_GAIN_DB, -3.0)
+	_setup_audio_limiter("Dialogue", "VoicePresence", SFX_GAIN_DB, -3.0)
+	_setup_audio_limiter("UI", "UIPresence", SFX_GAIN_DB, -3.0)
 	_setup_audio_limiter("Master", "OutputProtection", 0.0, -1.0)
+	# Compressão paralela limita a redução: o motor mantém corpo mesmo sob fala.
+	_setup_voice_ducking("Vehicles", -24.0, .65)
+	_setup_voice_ducking("Radio", -26.0, .80)
+	_setup_voice_ducking("Music", -26.0, .70)
+	_setup_voice_ducking("Ambient", -24.0, .45)
+
+func _setup_voice_ducking(bus_name: String, threshold_db: float, wet: float) -> void:
+	var idx := AudioServer.get_bus_index(bus_name)
+	for effect_index in AudioServer.get_bus_effect_count(idx):
+		if AudioServer.get_bus_effect(idx, effect_index).resource_name == "VoicePriority": return
+	var compressor := AudioEffectCompressor.new()
+	compressor.resource_name = "VoicePriority"
+	compressor.sidechain = &"Dialogue"
+	compressor.threshold = threshold_db
+	compressor.ratio = 4.0
+	compressor.attack_us = 2000.0
+	compressor.release_ms = 450.0
+	compressor.gain = 0.0
+	compressor.mix = wet
+	AudioServer.add_bus_effect(idx, compressor)
 
 func _setup_audio_limiter(bus_name: String, effect_name: String, gain_db: float, ceiling_db: float) -> void:
 	var idx := AudioServer.get_bus_index(bus_name)
@@ -199,10 +233,7 @@ func _setup_audio_limiter(bus_name: String, effect_name: String, gain_db: float,
 	AudioServer.add_bus_effect(idx, limiter)
 
 func apply_settings() -> void:
-	_apply_bus_volume("Master", master_volume)
-	_apply_bus_volume("Music", music_volume)
-	_apply_bus_volume("SFX", sfx_volume)
-	_apply_bus_volume("Ambient", ambient_volume)
+	for key in AUDIO_CHANNELS: _apply_bus_volume(AUDIO_CHANNELS[key], float(get(key)))
 	var view := root_view()
 	GRAPHICS.apply_viewport(view,self)
 	sync_pipeline_msaa(view.msaa_3d)
@@ -251,6 +282,8 @@ func apply_environment(environment: Environment) -> void:
 func _apply_bus_volume(bus_name: String, linear: float) -> void:
 	var idx := AudioServer.get_bus_index(bus_name)
 	if idx == -1: return
+	# Zero é silêncio real, inclusive para o detector de prioridade das falas.
+	AudioServer.set_bus_mute(idx, linear <= 0.0 or (bus_name == "Master" and _focus_muted))
 	AudioServer.set_bus_volume_db(idx, linear_to_db(maxf(linear, .0001)))
 
 func _notification(what: int) -> void:
@@ -259,7 +292,7 @@ func _notification(what: int) -> void:
 		AudioServer.set_bus_mute(0, true)
 	elif what == NOTIFICATION_APPLICATION_FOCUS_IN and _focus_muted:
 		_focus_muted = false
-		AudioServer.set_bus_mute(0, false)
+		AudioServer.set_bus_mute(0, master_volume <= 0.0)
 
 func _update_fps_overlay() -> void:
 	_fps_previous_usec = 0
@@ -335,6 +368,8 @@ func save_settings(path := "") -> Error:
 	config.set_value("audio","music_volume",music_volume)
 	config.set_value("audio","sfx_volume",sfx_volume)
 	config.set_value("audio","ambient_volume",ambient_volume)
+	for key in ["vehicle_volume", "radio_volume", "dialogue_volume", "ui_volume"]:
+		config.set_value("audio",key,get(key))
 	config.set_value("audio","mute_unfocused",mute_unfocused)
 	config.set_value("audio","voice_language",voice_language)
 	config.set_value("interface","text_language",text_language)

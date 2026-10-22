@@ -1,7 +1,8 @@
 extends RefCounted
 ## Small, cached vector pictograms. No font-dependent emoji or external service.
-const LABELS := {"player":"Jogador","objective":"Missão","waypoint":"Destino","workshop":"Oficina","fuel":"Posto","bank":"Banco","hospital":"Hospital","police":"Polícia","fire":"Bombeiros","shop":"Mercado","clothing":"Roupas","weapons":"Armas","port":"Porto","home":"Casa / chalé","ski":"Esqui","lift":"Teleférico","cave":"Caverna","plane":"Avião","forge":"Forja","fishing":"Pesca","race":"Corrida","jeep":"Jipe","mine":"Mineração","bus":"Ônibus","train":"Estações de trem","food":"Restaurante","lock":"Passagem fechada","sewer":"Bueiro","place":"Local"}
+const LABELS := {"player":"Jogador","objective":"Missão","waypoint":"Destino","tow":"Guincho","workshop":"Oficina","fuel":"Posto","bank":"Banco","hospital":"Hospital","police":"Polícia","fire":"Bombeiros","shop":"Mercado","clothing":"Roupas","weapons":"Armas","port":"Porto","home":"Casa / chalé","ski":"Esqui","lift":"Teleférico","cave":"Caverna","plane":"Avião","forge":"Forja","fishing":"Pesca","race":"Corrida","jeep":"Jipe","mine":"Mineração","bus":"Ônibus","train":"Estações de trem","food":"Restaurante","lock":"Passagem fechada","sewer":"Bueiro","place":"Local"}
 const PATHS := {
+	"tow":'<path d="M2 16V9h8l4 7v5H2ZM3 9V5h6v4M14 16h8M15 16V4h3l4 4v4h-4M18 12v4"/><circle cx="5" cy="21" r="2"/><circle cx="18" cy="21" r="2"/>',
 	"fishing":'<path d="M3 21 11 3l8 1v10a4 4 0 0 1-8 0v-2l3 2M12 3l-1 9"/><path d="m4 6 2 3-2 3-3-3Z"/>',
 	"train":'<rect x="5" y="2" width="14" height="16" rx="3"/><path d="M5 7h14M5 12h14M9 3v8M15 3v8M8 18l-4 5M16 18l4 5M6 21h12"/><circle cx="9" cy="15" r="1"/><circle cx="15" cy="15" r="1"/>',
 	"fire":'<path d="M13 1c5 6-2 7 4 12l3-4c6 16-24 17-16 1l3 4c4-4-2-6 6-13Z"/>',

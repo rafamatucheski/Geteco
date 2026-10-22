@@ -99,3 +99,11 @@ Reforma local implementada com modelos detalhados, materiais de piso/alvenaria/m
 
 
 QA final da oficina: sequência contínua Main Forward+ de dia/noite aprovada no escopo capturado (1.799 frames, duas janelas de aproximadamente 30 s, vistas fixas e órbita). Input externo bloqueado somente na fixture de captura; menus e compras foram validados separadamente no fluxo Main. [Evidência final](artifacts/digo-workshop-refresh-20261019/verified-main/temporal-light-review.json). Sem aprovação de FPS.
+
+
+## Harbor — pausa, configurações e mapa (22/10/2026)
+
+final result: passed
+
+Aprovação restrita à apresentação visual: opção 2 com as correções posteriores de fonte uniforme, capitalização de frase, cantos arredondados e mar. [QA desta revisão](artifacts/harbor-menu-option2-20261022/design-qa.md) e [resultados e limitações](artifacts/harbor-menu-option2-20261022/resultado.md). Performance final do mapa continua pendente; esta seção preserva os relatórios anteriores e não os estende.
+

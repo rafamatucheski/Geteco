@@ -15,7 +15,7 @@ func _ready() -> void:
 	for index in 2:
 		var voice := AudioStreamPlayer.new()
 		voice.name = "ActivityCue%d"%index
-		voice.bus = &"SFX" if AudioServer.get_bus_index(&"SFX")>=0 else &"Master"
+		voice.bus = &"UI" if AudioServer.get_bus_index(&"UI")>=0 else &"Master"
 		voice.volume_db = -8
 		add_child(voice)
 		voices.append(voice)

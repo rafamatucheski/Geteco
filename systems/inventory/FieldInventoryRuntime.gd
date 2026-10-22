@@ -4,6 +4,7 @@ const BAG := preload("res://systems/inventory/BagVisual.gd")
 const PICKUP := preload("res://systems/inventory/PickupPresentation.gd")
 const AUDIO := preload("res://gameplay/CombatAudio.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
+const DISPLAY_SLOTS := preload("res://systems/economy/Economy.gd").PERSONAL_SLOTS
 var session
 var ui
 var carried: Node3D
@@ -42,6 +43,7 @@ func commit_candidate(expected: Dictionary, candidate: Dictionary, persist := tr
 		return false
 	if is_instance_valid(ui): ui.refresh()
 	_update_carried()
+	_refresh_trunk_loadout()
 	return true
 
 func can_receive(id: String) -> bool:
@@ -87,10 +89,30 @@ func open(at_trunk := false) -> void:
 	_update_carried()
 	if is_instance_valid(carried): carried.set_open(true)
 	if at_trunk:
-		session.personal_car._show_trunk_view(economy().personal_loadout())
+		session.personal_car._show_trunk_view(trunk_display_loadout())
 		# O painel fica à direita no porta-malas; a câmera põe a bandeja na área livre.
 		var trunk_view: Variant = session.personal_car.get("_trunk_view")
 		if is_instance_valid(trunk_view) and trunk_view.has_method("focus_for"): trunk_view.screen_focus = ui.trunk_view_focus
+
+## Show stored weapons, never the weapons Dante is still carrying. The four
+## physical mounts show the first stored representative of each weapon class.
+func trunk_display_loadout() -> Dictionary:
+	var slots := {"curta":"", "longa":"", "corpo":"", "granada":""}
+	var snapshot: Dictionary = economy().grid_snapshot()
+	for entry: Dictionary in snapshot.get("trunk", []):
+		var item := str(entry.get("id", ""))
+		if not item.begins_with("weapon:"): continue
+		var weapon := item.trim_prefix("weapon:")
+		for slot: String in DISPLAY_SLOTS:
+			if slots[slot] == "" and weapon in DISPLAY_SLOTS[slot]:
+				slots[slot] = weapon
+				break
+	return slots
+
+func _refresh_trunk_loadout() -> void:
+	if not is_instance_valid(ui) or not ui.visible or not ui.trunk_visible: return
+	var view: Variant = session.personal_car.get("_trunk_view")
+	if is_instance_valid(view): view.update_loadout(trunk_display_loadout())
 
 func close() -> void: session.close_menu()
 
@@ -156,6 +178,7 @@ func _changed(ok: bool,success: String,failure: String) -> void:
 	if ok:
 		session.save_game()
 		ui.refresh(); _update_carried()
+		_refresh_trunk_loadout()
 	_feedback(success if ok else failure)
 
 func _process(delta: float) -> void:

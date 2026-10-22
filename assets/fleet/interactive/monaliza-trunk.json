@@ -1,0 +1,14 @@
+{
+	"breakaway": {
+		"closed_exterior_area_error": 0.0000000660411956232565,
+		"hinge": "(0.0, 0.81, 1.425)",
+		"lid_area": 5.02887355304847,
+		"source": "res://assets/fleet/breakaway/monaliza.scn"
+	},
+	"redesigned": {
+		"closed_exterior_area_error": 0.0000000660411956232565,
+		"hinge": "(0.0, 0.81, 1.425)",
+		"lid_area": 5.02887355304847,
+		"source": "res://assets/fleet/redesigned/monaliza.scn"
+	}
+}

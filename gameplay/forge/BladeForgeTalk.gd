@@ -114,15 +114,15 @@ static func open_menu(session, resident: Node) -> void:
 	session._button("Sair", session.close_menu)
 
 static func _label(customization: Dictionary, id: String, track: String, offer: Dictionary) -> String:
-	var blade: String = FORGE.LABELS[id]
+	var blade := String(TranslationServer.translate(FORGE.LABELS[id]))
 	if track == "legendary":
-		if FORGE.legendary(customization, id): return "%s · Lendária ✓" % blade
-		if not offer.ok: return "%s · Lendária — %s" % [blade, offer.reason]
-		return "%s · Lendária (+25%% dano, golpe mais rápido) · $%d" % [blade, int(offer.price)]
+		if FORGE.legendary(customization, id): return String(TranslationServer.translate("%s · Lendária ✓")) % blade
+		if not offer.ok: return String(TranslationServer.translate("%s · Lendária — %s")) % [blade, TranslationServer.translate(offer.reason)]
+		return String(TranslationServer.translate("%s · Lendária (+25%% dano, golpe mais rápido) · $%d")) % [blade, int(offer.price)]
 	var current := FORGE.level(customization, id, track)
-	var title: String = FORGE.TRACK_LABELS[track]
-	if not offer.ok: return "%s · %s %d/%d — máximo" % [blade, title, current, FORGE.MAX_LEVEL]
-	var effect := "+12% dano" if track == "edge" else "golpe 8% mais rápido"
+	var title := String(TranslationServer.translate(FORGE.TRACK_LABELS[track]))
+	if not offer.ok: return String(TranslationServer.translate("%s · %s %d/%d — máximo")) % [blade, title, current, FORGE.MAX_LEVEL]
+	var effect := String(TranslationServer.translate("+12% dano" if track == "edge" else "golpe 8% mais rápido"))
 	return "%s · %s %d/%d → %d (%s) · $%d" % [blade, title, current, FORGE.MAX_LEVEL, int(offer.level), effect, int(offer.price)]
 
 static func _buy(session, resident: Node, id: String, track: String) -> void:
@@ -131,9 +131,9 @@ static func _buy(session, resident: Node, id: String, track: String) -> void:
 	if not result.ok:
 		session.show_message(str(result.reason))
 	else:
-		var blade: String = FORGE.LABELS[id]
-		if track == "legendary": session.show_message("%s lendária · aço negro com fio aceso" % blade)
-		else: session.show_message("%s · %s nível %d" % [blade, FORGE.TRACK_LABELS[track], int(result.level)])
+		var blade := String(TranslationServer.translate(FORGE.LABELS[id]))
+		if track == "legendary": session.show_message(String(TranslationServer.translate("%s lendária · aço negro com fio aceso")) % blade)
+		else: session.show_message(String(TranslationServer.translate("%s · %s nível %d")) % [blade, TranslationServer.translate(FORGE.TRACK_LABELS[track]), int(result.level)])
 		session.save_game()
 	# O menu aberto deixa a sessão modal (nearest_action fica vazio): confere só o alcance.
 	if is_instance_valid(resident) and resident.in_reach(): open_menu(session, resident)

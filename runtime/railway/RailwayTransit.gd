@@ -579,7 +579,7 @@ func _ensure_train() -> void:
 	_audio = AudioStreamPlayer3D.new()
 	_audio.name = "TrainRollingAudio"
 	_audio.stream = _rolling_audio()
-	_audio.bus = "SFX" if AudioServer.get_bus_index("SFX") >= 0 else "Master"
+	_audio.bus = "Vehicles" if AudioServer.get_bus_index("Vehicles") >= 0 else "Master"
 	_audio.unit_size = 18.0
 	_audio.max_distance = 100.0
 	_audio.volume_db = -20.0

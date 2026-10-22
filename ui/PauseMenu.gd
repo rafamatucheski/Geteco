@@ -8,6 +8,8 @@ var settings: Control
 var collection_button: Button
 var exit_confirmation: ConfirmationDialog
 var developer_panel: CanvasLayer
+var guide: Control
+var guide_button: Button
 
 func _ready() -> void:
 	visible = false
@@ -25,6 +27,16 @@ func _ready() -> void:
 	%BtnSettings.get_parent().move_child(developer_button, %BtnSettings.get_index()+1)
 	developer_button.pressed.connect(developer_panel.open_panel)
 	STYLE.apply(%RootControl)
+	guide = preload("res://ui/GameGuide.gd").new()
+	add_child(guide)
+	guide_button = Button.new()
+	guide_button.text = "Guia do jogo"
+	%BtnSettings.get_parent().add_child(guide_button)
+	%BtnSettings.get_parent().move_child(guide_button, %BtnSettings.get_index())
+	STYLE.apply(guide_button)
+	guide_button.pressed.connect(func(): %RootControl.hide(); guide.open())
+	guide.closed.connect(func(): %RootControl.show(); STYLE.trap_focus(%RootControl, false); guide_button.grab_focus())
+	preload("res://ui/HarborMenuPresentation.gd").pause(self, developer_button, guide_button)
 	%BtnResume.pressed.connect(resume_game)
 	%BtnSaveGame.pressed.connect(func():
 		if world.session.save_game(true): resume_game())
@@ -60,7 +72,8 @@ func toggle() -> void:
 		developer_panel.close_panel(false)
 		return
 	if visible:
-		if settings.visible: settings.close()
+		if guide.visible: guide.close()
+		elif settings.visible: settings.close()
 		elif %AchievementsModal.visible or %CollectiblesModal.visible: _close_collection()
 		else: resume_game()
 	else: pause_game()
@@ -89,6 +102,7 @@ func pause_game() -> void:
 	%BtnResume.grab_focus()
 
 func resume_game() -> void:
+	if guide.visible: guide.close()
 	if settings.visible: settings.close()
 	_close_collection()
 	visible = false

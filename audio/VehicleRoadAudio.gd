@@ -21,7 +21,7 @@ func _ready() -> void:
 			streams[kind] = stream
 		var voice := AudioStreamPlayer.new()
 		voice.name = "Tires_" + kind
-		voice.bus = &"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master"
+		voice.bus = &"Vehicles" if AudioServer.get_bus_index("Vehicles") >= 0 else &"Master"
 		voice.stream = streams[kind]
 		voice.volume_linear = 0.0
 		add_child(voice)

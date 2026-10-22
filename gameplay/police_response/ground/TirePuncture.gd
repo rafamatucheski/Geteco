@@ -80,7 +80,7 @@ func _play_puncture() -> void:
 	var sound := AudioStreamPlayer3D.new()
 	sound.name = "TirePunctureSound"
 	sound.stream = _pop_stream
-	sound.bus = "SFX" if AudioServer.get_bus_index("SFX") >= 0 else "Master"
+	sound.bus = "Vehicles" if AudioServer.get_bus_index("Vehicles") >= 0 else "Master"
 	sound.volume_db = -3.0
 	sound.max_distance = 45.0
 	sound.unit_size = 8.0

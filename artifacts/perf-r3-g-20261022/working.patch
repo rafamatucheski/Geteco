@@ -1,0 +1,1441 @@
+diff --git a/assets/civilians/MeshyBodyPrewarm.gd b/assets/civilians/MeshyBodyPrewarm.gd
+index 82782905..0f10d0b2 100644
+--- a/assets/civilians/MeshyBodyPrewarm.gd
++++ b/assets/civilians/MeshyBodyPrewarm.gd
+@@ -50,6 +50,8 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
+ 	host.add_child(visual)
+ 	var draws: Array[int] = [0]
+ 	var count_draw := func() -> void: draws[0] += 1
++	# Peças escondidas primeiro: os trabalhadores do motor compilam em paralelo (runtime/HiddenCompile.gd).
++	await preload("res://runtime/HiddenCompile.gd").prepare(visual, host.get_tree())
+ 	RenderingServer.frame_post_draw.connect(count_draw)
+ 	for frame in MAX_WAIT_FRAMES:
+ 		if not is_instance_valid(visual) or not GUARDS._current_camera(host, camera): break
+diff --git a/gameplay/emergency/EffectsPrewarm.gd b/gameplay/emergency/EffectsPrewarm.gd
+index a9de00e3..b51c5bea 100644
+--- a/gameplay/emergency/EffectsPrewarm.gd
++++ b/gameplay/emergency/EffectsPrewarm.gd
+@@ -34,6 +34,8 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
+ 	host.add_child(visual)
+ 	var draws: Array[int] = [0]
+ 	var count_draw := func() -> void: draws[0] += 1
++	# Peças escondidas primeiro: os trabalhadores do motor compilam em paralelo (runtime/HiddenCompile.gd).
++	await preload("res://runtime/HiddenCompile.gd").prepare(visual, host.get_tree())
+ 	RenderingServer.frame_post_draw.connect(count_draw)
+ 	# Espera limitada: minimizar a janela não pode deixar o carregamento preso.
+ 	# Só considera preparado quando houve desenho; headless não vale como GPU.
+diff --git a/gameplay/emergency/ReactionVisualPrewarm.gd b/gameplay/emergency/ReactionVisualPrewarm.gd
+index f2df8d49..432d35ef 100644
+--- a/gameplay/emergency/ReactionVisualPrewarm.gd
++++ b/gameplay/emergency/ReactionVisualPrewarm.gd
+@@ -24,6 +24,8 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
+ 	visual.global_transform = Transform3D(Basis.IDENTITY, camera.global_position-camera.global_basis.z*9.0-label.position)
+ 	var draws: Array[int] = [0]
+ 	var count_draw := func() -> void: draws[0] += 1
++	# Peças escondidas primeiro: os trabalhadores do motor compilam em paralelo (runtime/HiddenCompile.gd).
++	await preload("res://runtime/HiddenCompile.gd").prepare(visual, host.get_tree())
+ 	RenderingServer.frame_post_draw.connect(count_draw)
+ 	for frame in MAX_WAIT_FRAMES:
+ 		await tree.process_frame
+diff --git a/gameplay/emergency/SpawnVisualPrewarm.gd b/gameplay/emergency/SpawnVisualPrewarm.gd
+index 00d3a4eb..f863ede0 100644
+--- a/gameplay/emergency/SpawnVisualPrewarm.gd
++++ b/gameplay/emergency/SpawnVisualPrewarm.gd
+@@ -121,6 +121,8 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
+ 		_beacon_presentation(cruiser)
+ 	var draws: Array[int] = [0]
+ 	var count_draw := func() -> void: draws[0] += 1
++	# Peças escondidas primeiro: os trabalhadores do motor compilam em paralelo (runtime/HiddenCompile.gd).
++	await preload("res://runtime/HiddenCompile.gd").prepare(visual, host.get_tree())
+ 	RenderingServer.frame_post_draw.connect(count_draw)
+ 	# 0: espera os corpos da polícia (instalados em call_deferred); 1: opaco; 2: sumindo.
+ 	var stage := 0
+diff --git a/gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd b/gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd
+index 5b287967..aa3fce34 100644
+--- a/gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd
++++ b/gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd
+@@ -33,6 +33,13 @@ static var _retained: Array[StandardMaterial3D] = []
+ static var _retained_effects: Array[Resource] = []
+ static var _drawn := false
+ static var last_summary: Dictionary = {}
++## Formatos de vértice da frota (FormatPrewarm): as variantes acima também são desenhadas num triângulo de
++## cada formato real de carro, porta recortada e acabamento; na caixa só o shader ficava pronto (22/10).
++const FORMAT := preload("res://runtime/FormatPrewarm.gd")
++static var _formats: Dictionary = {}
++## Materiais das peças que a porta da viatura recorta (ProductionWorld._prewarm_dispatch_models): na folha
++## da porta eles vão para um formato novo (posição, normal, UV, às vezes cor).
++static var door_materials: Array[Material] = []
+ 
+ ## Controle A/B de medição: HARBOR_VEHICLE_VARIANT_PREWARM=0 desliga só esta etapa.
+ static func enabled() -> bool:
+@@ -48,25 +55,94 @@ static func collect(model: Node3D, archetype: String) -> void:
+ 	for material in paint.materials:
+ 		var signature := shader_signature(material)
+ 		if not _bases.has(signature): _bases[signature] = material
++	if FORMAT.enabled(): FORMAT.collect(model, _formats)
+ 
+-static func run(host: Node3D, curtain: CanvasLayer) -> void:
+-	if _drawn or not enabled() or DisplayServer.get_name() == "headless" or _bases.is_empty(): return
+-	if not GUARDS._covered_loading(host, curtain): return
+-	var camera := host.get("camera") as Camera3D
+-	if not GUARDS._current_camera(host, camera): return
+-	var began := Time.get_ticks_usec()
+-	var base_count := _bases.size()
++## Variantes de pintura que não são as bases (lattice ou as 9 antigas) e as carcaças, sem repetir shader.
++static func _paint_variants() -> Array[StandardMaterial3D]:
+ 	var known := {}
+ 	for signature in _bases: known[signature] = true
+ 	var variants: Array[StandardMaterial3D] = []
+ 	var candidates: Array = []
+-	for base: StandardMaterial3D in _bases.values(): candidates.append_array(_variants(base))
++	var lattice := OS.get_environment("GETECO_PAINT_LATTICE") != "0"
++	for base: StandardMaterial3D in _bases.values(): candidates.append_array(_lattice(base) if lattice else _variants(base))
+ 	candidates.append_array(DAMAGE.wreck_materials().values())
+ 	for material: StandardMaterial3D in candidates:
+ 		var signature := shader_signature(material)
+ 		if known.has(signature): continue
+ 		known[signature] = true
+ 		variants.append(material)
++	return variants
++
++## Pares [material, formato]: pintura (bases e variantes) nos formatos de carro e de porta, efeitos do
++## carro nos formatos de carro e de SurfaceTool, materiais da porta recortada e do acabamento da porta.
++static func _format_pairs(variants: Array[StandardMaterial3D], effect_materials: Array[Material]) -> Array:
++	var pairs: Array = []
++	var seen := {}
++	var car_formats: Array = _formats.keys()
++	var paint_formats: Array = car_formats + [FORMAT.V | FORMAT.N | FORMAT.UV, FORMAT.V | FORMAT.N | FORMAT.UV | FORMAT.C, FORMAT.V | FORMAT.N | FORMAT.C]
++	FORMAT.cross(_bases.values() + variants, paint_formats, pairs, seen)
++	# Para-brisa molhado, limpador, marcas de pneu e detritos: malhas montadas no jogo a partir do vidro
++	# e da lataria (formatos de carro) ou por SurfaceTool (posição, normal e cor).
++	FORMAT.cross(effect_materials, car_formats + FORMAT.DOOR_FORMATS + [FORMAT.V | FORMAT.N], pairs, seen)
++	FORMAT.cross(door_materials, [FORMAT.V | FORMAT.N | FORMAT.UV, FORMAT.V | FORMAT.N | FORMAT.UV | FORMAT.C], pairs, seen)
++	var door := preload("res://gameplay/VehicleDoorPresentation.gd")
++	FORMAT.cross([door._card_material(), door._liner_dark(), preload("res://world/city_look/CityPropKit.gd").material()], FORMAT.DOOR_FORMATS, pairs, seen)
++	return pairs
++
++## Peças escondidas (22/10, 3ª rodada): o motor compila em segundo plano o pipeline "ubershader" de toda
++## superfície criada, mesmo invisível ou fora da câmera (conferido no editor: instância com visible=false
++## compilou os pipelines `surface` e, ao aparecer, só especializou em segundo plano, sem nenhum `surface`
++## novo). Montadas logo depois da frota, as variantes de pintura × formatos compilam nos trabalhadores do
++## motor enquanto a thread principal segue com a carga, sem quadro esperando por elas; saem antes da
++## cortina (`release_hidden`). GETECO_FORMAT_HIDDEN=0 volta a desenhá-las diante da câmera em `run`.
++static var _hidden: Node3D
++static var _hidden_pieces := 0
++static func hidden_enabled() -> bool:
++	return FORMAT.enabled() and OS.get_environment("GETECO_FORMAT_HIDDEN") != "0"
++
++static func start_hidden(host: Node3D) -> void:
++	if not enabled() or not hidden_enabled() or _drawn or _bases.is_empty() or is_instance_valid(_hidden): return
++	if DisplayServer.get_name() == "headless" or "--no-prewarm" in OS.get_cmdline_user_args(): return
++	var began := Time.get_ticks_usec()
++	var variants := _paint_variants()
++	var effect_materials := _effect_materials()
++	_retained.append_array(variants)
++	for base: StandardMaterial3D in _bases.values(): _retained.append(base)
++	_retained_effects.append_array(effect_materials)
++	_hidden = Node3D.new()
++	_hidden.name = "VehicleFormatPrewarm"
++	_hidden.visible = false
++	host.add_child(_hidden)
++	_hidden_pieces = FORMAT.build_grid(_hidden, _format_pairs(variants, effect_materials))
++	# Carcaça queimada sumindo: os materiais da brasa nos formatos de carro, no passe alfa.
++	# A brasa vai para todas as malhas do carro, inclusive insígnia da Cobra (posição, normal, cor) e
++	# limpador (posição, cor): sonda de pipelines, estresse do oeste a quente (export C).
++	if OS.get_environment("GETECO_WRECK_FADE_PREWARM") != "0":
++		var wreck: Array = DAMAGE.wreck_materials().values()
++		var opaque_pairs: Array = []
++		FORMAT.cross(wreck, FORMAT.DOOR_FORMATS, opaque_pairs, {})
++		_hidden_pieces += FORMAT.build_grid(_hidden, opaque_pairs)
++		var wreck_pairs: Array = []
++		FORMAT.cross(wreck, _formats.keys() + FORMAT.DOOR_FORMATS, wreck_pairs, {})
++		_hidden_pieces += FORMAT.build_grid(_hidden, wreck_pairs, Vector3.ZERO, .5)
++	print("Variantes de pintura em formato real (escondidas): ", JSON.stringify({"bases": _bases.size(), "variants": variants.size(),
++		"formats": _formats.keys(), "pieces": _hidden_pieces, "door_materials": door_materials.size(), "usec": Time.get_ticks_usec() - began}))
++	door_materials.clear()
++
++static func release_hidden() -> void:
++	if is_instance_valid(_hidden): _hidden.free()
++	_hidden = null
++
++static func run(host: Node3D, curtain: CanvasLayer) -> void:
++	if _drawn or not enabled() or DisplayServer.get_name() == "headless" or _bases.is_empty(): return
++	if not GUARDS._covered_loading(host, curtain): return
++	var camera := host.get("camera") as Camera3D
++	if not GUARDS._current_camera(host, camera): return
++	var began := Time.get_ticks_usec()
++	var base_count := _bases.size()
++	# Com as peças escondidas já montadas, a pintura está coberta nos formatos reais: aqui só os efeitos.
++	var hidden := is_instance_valid(_hidden)
++	var variants: Array[StandardMaterial3D] = [] if hidden else _paint_variants()
+ 	var visual := Node3D.new()
+ 	visual.name = "VehicleMaterialVariantPrewarm"
+ 	visual.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+@@ -83,6 +159,8 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
+ 		part.material_override = drawn[index]
+ 		part.position = Vector3((index % columns - (columns - 1) * .5) * SPACING, -floorf(float(index) / columns) * SPACING, 0)
+ 		visual.add_child(part)
++	var format_pieces := _hidden_pieces if hidden else 0
++	if FORMAT.enabled() and not hidden: format_pieces = FORMAT.build_grid(visual, _format_pairs(variants, effect_materials), Vector3(0, 0, -1.5))
+ 	var emitters := _effect_emitters()
+ 	# Os processos ficam retidos depois que os emissores são liberados com `visual`.
+ 	var processes: Array[Resource] = []
+@@ -94,6 +172,8 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
+ 	_position(visual, camera)
+ 	var draws: Array[int] = [0]
+ 	var count_draw := func() -> void: draws[0] += 1
++	# Peças escondidas primeiro: os trabalhadores do motor compilam em paralelo (runtime/HiddenCompile.gd).
++	await preload("res://runtime/HiddenCompile.gd").prepare(visual, host.get_tree())
+ 	RenderingServer.frame_post_draw.connect(count_draw)
+ 	var completed := false
+ 	for frame in MAX_WAIT_FRAMES:
+@@ -109,12 +189,17 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
+ 	if is_instance_valid(visual): visual.free()
+ 	if completed:
+ 		_retained.append_array(variants)
++		# As bases vêm de modelos já liberados; sem referência o shader e os pipelines novos sairiam juntos.
++		if format_pieces > 0 and not hidden:
++			for base: StandardMaterial3D in _bases.values(): _retained.append(base)
+ 		_retained_effects.append_array(effect_materials)
+ 		_retained_effects.append_array(processes)
+ 		_drawn = true
+ 		_bases.clear()
+ 	last_summary = {"bases":base_count, "glass":0, "variants":variants.size(), "effects":effect_materials.size(),
+-		"emitters":processes.size(), "completed":completed, "draws":draws[0], "usec":Time.get_ticks_usec()-began}
++		"emitters":processes.size(), "completed":completed, "draws":draws[0], "usec":Time.get_ticks_usec()-began,
++		"formats":_formats.keys(), "format_pieces":format_pieces, "hidden":hidden, "door_materials":door_materials.size()}
++	if completed: door_materials.clear()
+ 	print("Variantes de material de veículo preparadas: ", JSON.stringify(last_summary))
+ 
+ ## Mesmas mudanças de flags de VehicleUsage.apply e VehicleDamage._stall_apply_wear;
+@@ -153,6 +238,37 @@ static func _variants(base: StandardMaterial3D) -> Array[StandardMaterial3D]:
+ 			result.append(beaded)
+ 	return result
+ 
++## Todas as combinações de flags que VehicleUsage (sujeira), VehicleDamage (verniz, riscos, amassado) e
++## VehicleRain (gotas) alcançam juntos numa pintura (22/10, 3ª rodada). A sonda de pipelines viu no jogo
++## combinações fora das 9 de `_variants`, como sujeira + gotas que o desgaste desligou (normal desligada, mas
++## a textura e o triplanar UV1 ficam): no cache frio esse shader compilava num quadro de 1,16 s ao atirar
++## no trânsito. Estados: detalhe (nenhum / montado e desligado / ligado) × verniz (o da base / tirado) ×
++## normal (limpa / gotas ou amassado / desligada com textura). GETECO_PAINT_LATTICE=0 volta às 9.
++static func _lattice(base: StandardMaterial3D) -> Array[StandardMaterial3D]:
++	var result: Array[StandardMaterial3D] = []
++	# Gotas e amassado só entram em pintura sem textura própria (VehicleRain.beads_ok, VehicleDamage base.dents).
++	var normal_states: Array[String] = ["clean"]
++	if base.albedo_texture == null and base.normal_texture == null: normal_states = ["clean", "on", "off_tex"]
++	var coats: Array[bool] = [base.clearcoat_enabled]
++	if base.clearcoat_enabled: coats.append(false)
++	for detail in ["none", "off", "on"]:
++		for coat in coats:
++			for normal in normal_states:
++				var material := base.duplicate() as StandardMaterial3D
++				if detail != "none":
++					material.detail_albedo = USAGE._texture(1)
++					material.detail_blend_mode = BaseMaterial3D.BLEND_MODE_MIX
++					material.detail_uv_layer = BaseMaterial3D.DETAIL_UV_2
++					material.uv2_triplanar = true
++					material.detail_enabled = detail == "on"
++				material.clearcoat_enabled = coat
++				if normal != "clean":
++					material.normal_texture = RAIN.beads()
++					material.uv1_triplanar = true
++					material.normal_enabled = normal == "on"
++				result.append(material)
++	return result
++
+ ## Materiais desenhados numa caixa: marcas de pneu, para-brisa molhado e limpador, detritos da rua.
+ static func _effect_materials() -> Array[Material]:
+ 	var result: Array[Material] = [TIRES.mark_material()]
+diff --git a/runtime/BridgeLookPrewarm.gd b/runtime/BridgeLookPrewarm.gd
+index e6be7acb..f759fe98 100644
+--- a/runtime/BridgeLookPrewarm.gd
++++ b/runtime/BridgeLookPrewarm.gd
+@@ -59,6 +59,8 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
+ 	host.add_child(visual)
+ 	var draws: Array[int] = [0]
+ 	var count_draw := func() -> void: draws[0] += 1
++	# Peças escondidas primeiro: os trabalhadores do motor compilam em paralelo (runtime/HiddenCompile.gd).
++	await preload("res://runtime/HiddenCompile.gd").prepare(visual, host.get_tree())
+ 	RenderingServer.frame_post_draw.connect(count_draw)
+ 	var completed := false
+ 	for frame in MAX_WAIT_FRAMES:
+diff --git a/runtime/FamilyVariantPrewarm.gd b/runtime/FamilyVariantPrewarm.gd
+index d32fdae4..4f2599fe 100644
+--- a/runtime/FamilyVariantPrewarm.gd
++++ b/runtime/FamilyVariantPrewarm.gd
+@@ -42,6 +42,8 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
+ 	host.add_child(visual)
+ 	var draws: Array[int] = [0]
+ 	var count_draw := func() -> void: draws[0] += 1
++	# Peças escondidas primeiro: os trabalhadores do motor compilam em paralelo (runtime/HiddenCompile.gd).
++	await preload("res://runtime/HiddenCompile.gd").prepare(visual, host.get_tree())
+ 	RenderingServer.frame_post_draw.connect(count_draw)
+ 	var completed := false
+ 	for frame in MAX_WAIT_FRAMES:
+diff --git a/runtime/ForgePrewarm.gd b/runtime/ForgePrewarm.gd
+index 10c7207e..e41f0812 100644
+--- a/runtime/ForgePrewarm.gd
++++ b/runtime/ForgePrewarm.gd
+@@ -34,6 +34,8 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
+ 		VISUALS.legendary(blade, id)
+ 	var draws: Array[int] = [0]
+ 	var count_draw := func() -> void: draws[0] += 1
++	# Peças escondidas primeiro: os trabalhadores do motor compilam em paralelo (runtime/HiddenCompile.gd).
++	await preload("res://runtime/HiddenCompile.gd").prepare(stage, host.get_tree())
+ 	RenderingServer.frame_post_draw.connect(count_draw)
+ 	var completed := false
+ 	for frame in MAX_WAIT_FRAMES:
+diff --git a/runtime/LocalLightShadowPrewarm.gd b/runtime/LocalLightShadowPrewarm.gd
+index 6cfff38d..f7397003 100644
+--- a/runtime/LocalLightShadowPrewarm.gd
++++ b/runtime/LocalLightShadowPrewarm.gd
+@@ -82,6 +82,8 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
+ 	host.add_child(visual)
+ 	var draws: Array[int] = [0]
+ 	var count_draw := func() -> void: draws[0] += 1
++	# Peças escondidas primeiro: os trabalhadores do motor compilam em paralelo (runtime/HiddenCompile.gd).
++	await preload("res://runtime/HiddenCompile.gd").prepare(visual, host.get_tree())
+ 	RenderingServer.frame_post_draw.connect(count_draw)
+ 	var completed := false
+ 	for frame in MAX_WAIT_FRAMES:
+diff --git a/runtime/PaintedFacadePrewarm.gd b/runtime/PaintedFacadePrewarm.gd
+index 15c15333..43975dba 100644
+--- a/runtime/PaintedFacadePrewarm.gd
++++ b/runtime/PaintedFacadePrewarm.gd
+@@ -54,6 +54,8 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
+ 	host.add_child(visual)
+ 	var draws: Array[int] = [0]
+ 	var count_draw := func() -> void: draws[0] += 1
++	# Peças escondidas primeiro: os trabalhadores do motor compilam em paralelo (runtime/HiddenCompile.gd).
++	await preload("res://runtime/HiddenCompile.gd").prepare(visual, host.get_tree())
+ 	RenderingServer.frame_post_draw.connect(count_draw)
+ 	var completed := false
+ 	for frame in MAX_WAIT_FRAMES:
+diff --git a/runtime/ProductionWorld.gd b/runtime/ProductionWorld.gd
+index 3bb7e4e2..3482ec20 100644
+--- a/runtime/ProductionWorld.gd
++++ b/runtime/ProductionWorld.gd
+@@ -77,6 +77,7 @@ const POPULATION_SPAWN_MIN := 45.0
+ const POPULATION_SPAWN_MAX := 95.0
+ const POPULATION_DESPAWN := 120.0
+ const CURTAIN := preload("res://runtime/StartupCurtain.gd")
++const PIPELINE_PROBE := preload("res://runtime/PipelineProbe.gd")
+ ## Trânsito sem progresso por esse tempo (fora de fila de sinal) sai de cena quando
+ ## ninguém está olhando e ele não está perto do jogador.
+ const STUCK_DESPAWN_SECONDS := 15.0
+@@ -185,6 +186,7 @@ func build() -> void:
+ 	curtain.set_stage(.12, "Montando " + ("a serra" if state.region_id == "mountain" else "o deserto" if state.region_id == "desert" else "o porto") + "…")
+ 	if not world.has_meta("menu_preview"): _request_fleet_scenes_early()
+ 	await curtain.prepare_presentation()
++	PIPELINE_PROBE.stage("curtain")
+ 	if world.has_meta("menu_preview"):
+ 		await _hold_fleet_scenes_incremental()
+ 	environment = WorldEnvironment.new()
+@@ -233,6 +235,7 @@ func build() -> void:
+ 	world.street = region
+ 	_refresh_route_consumers()
+ 	await get_tree().process_frame
++	PIPELINE_PROBE.stage("region_mount")
+ 	world.player = ACTOR.new()
+ 	world.player.is_player = true
+ 	world.player.name = "Dante"
+@@ -277,7 +280,9 @@ func build() -> void:
+ 	world.session.controller = self
+ 	world.session.incremental_startup = true
+ 	SESSION_OPS.attach(world, world.session, self, diagnostic_build)
++	PIPELINE_PROBE.stage("gameplay_nodes")
+ 	if not world.session.startup_complete: await world.session.startup_finished
++	PIPELINE_PROBE.stage("session_startup")
+ 	session = world.session
+ 	if "--parking-baseline" not in OS.get_cmdline_user_args():
+ 		roadside_parking = SESSION_OPS.instantiate(preload("res://runtime/RoadsideParking.gd"), self)
+@@ -351,14 +356,24 @@ func build() -> void:
+ 	var grass = SESSION_OPS.instantiate(preload("res://world/mountain_detail/MountainGrass3D.gd"), self)
+ 	grass.controller = self
+ 	SESSION_OPS.attach(world, grass, self, diagnostic_build)
+-	# Warm after CityLook enables the final Mobile framebuffer (including glow).
+-	await preload("res://gameplay/emergency/ReactionVisualPrewarm.gd").run(world, curtain)
+-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+-	await preload("res://gameplay/VehicleInteriorMaterialPrewarm.gd").run(world, curtain)
+-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+-	# Tiros, impactos, explosão e armas na mão desenhados diante da câmera (cache de pipeline frio).
+-	await preload("res://gameplay/CombatEffectsPrewarm.gd").run(world, curtain)
+-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
++	PIPELINE_PROBE.stage("session_systems")
++	# Depois do Weather, do CityLook e da StreetPhysics: chuva (RainPrewarm.late; antes saía sem fazer nada),
++	# efeitos de rua (StreetEffectsPrewarm), reações, interior do carro e combate. Em paralelo como os de
++	# _prewarm_regions (GETECO_PREWARM_PARALLEL=0 volta à série).
++	var late_steps: Array[String] = ["street_fx", "reaction_visuals", "vehicle_interior", "combat_effects"]
++	if preload("res://runtime/RainPrewarm.gd").late: late_steps.push_front("rain")
++	if OS.get_environment("GETECO_PREWARM_PARALLEL") != "0":
++		var pending: Array[int] = [late_steps.size()]
++		for step in late_steps: _prewarm_lane([step], pending, curtain)
++		while pending[0] > 0:
++			await get_tree().process_frame
++			if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
++		PIPELINE_PROBE.stage("late_parallel_draws")
++	else:
++		for step in late_steps:
++			await _draw_prewarm_step(step, curtain)
++			if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
++			PIPELINE_PROBE.stage(step)
+ 	_install_world_edits()
+ 	# Estações de tubo e rodoviária montadas sob a cortina (depois das edições, que as movem): montadas ao
+ 	# chegar perto custavam 84-140 ms num quadro (teleporte de aquecimento do benchmark, 16/10).
+@@ -376,6 +391,7 @@ func build() -> void:
+ 	while is_instance_valid(session) and session.coastal_lookout != null and session.coastal_lookout.is_preparing():
+ 		await get_tree().process_frame
+ 		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
++	PIPELINE_PROBE.stage("world_edits_and_transit")
+ 	ready_for_play = true
+ 	curtain.set_stage(.93, "Levando você ao ponto salvo…")
+ 	await session.restore_location()
+@@ -399,9 +415,11 @@ func build() -> void:
+ 	world.player.controlled_automatically = true
+ 	world.player.automatic_direction = Vector3.ZERO
+ 	restored_car.input_locked = true
++	PIPELINE_PROBE.stage("restore_location")
+ 	startup_streaming_settled = await _settle_startup()
+ 	if not startup_streaming_settled:
+ 		push_warning("Startup streaming still has pending work after its settling budget; runtime streaming will continue.")
++	PIPELINE_PROBE.stage("settle_startup")
+ 	# Antes do terminal: assim o JIT fica neste span em qualquer local de início.
+ 	_prewarm_route_jit()
+ 	# O jogador já está no ponto salvo: estações próximas na árvore ainda sob a cortina (só recolocadas).
+@@ -420,7 +438,10 @@ func build() -> void:
+ 	var prefetch_traced := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
+ 	await preload("res://runtime/BackgroundRegionPreparation.gd").prefetch_collect(get_tree(), Time.get_ticks_msec() + 3000)
+ 	_trace_cost("startup:background_prefetch",prefetch_traced)
++	preload("res://gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd").release_hidden()
++	PIPELINE_PROBE.stage("before_lift")
+ 	if not world.has_meta("menu_preview"): await curtain.lift()
++	PIPELINE_PROBE.stage("curtain_lift")
+ 	session.ready_for_play = restored_session_ready
+ 	world.player.controlled_automatically = restored_player_automatic
+ 	world.player.automatic_direction = restored_player_direction
+@@ -445,8 +466,10 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
+ 	if curtain != null:
+ 		curtain.set_stage(.36, "Carregando veículos…")
+ 		await get_tree().process_frame
++	PIPELINE_PROBE.stage("world_build")
+ 	await _hold_fleet_scenes_incremental()
+ 	_trace_cost("startup:fleet_hold",phase_traced)
++	PIPELINE_PROBE.stage("fleet_hold")
+ 	if "--no-prewarm" in OS.get_cmdline_user_args() or world.get_meta("skip_prewarm",false): return
+ 	var began := Time.get_ticks_msec()
+ 	# Caixa e cilindros unitários lidos da GPU uma vez, sob a cortina: daí em diante toda fusão de
+@@ -462,7 +485,12 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
+ 	phase_traced = Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
+ 	await _prewarm_fleet_shaders(incremental, curtain)
+ 	_trace_cost("startup:fleet_shaders",phase_traced)
++	# Pintura suja/molhada/gasta × formatos reais de carro e porta, escondida: compila nos trabalhadores
++	# do motor durante o resto da carga (VehicleMaterialVariantPrewarm.start_hidden; sai antes da cortina).
++	preload("res://gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd").start_hidden(world)
+ 	phase_traced = Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
++	PIPELINE_PROBE.stage("fleet_shaders")
++	var stage_traced := phase_traced
+ 	# The existing carbonized textures cost ~4.5 ms on first use. Build their
+ 	# shared cache under the loading curtain, without creating fires or wrecks.
+ 	preload("res://gameplay/vehicle_effects/VehicleDamage.gd")._char(false)
+@@ -481,6 +509,7 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
+ 	await get_tree().process_frame
+ 	if is_instance_valid(mark_primer): mark_primer.queue_free()
+ 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
++	stage_traced = _prewarm_mark("damage_marks", stage_traced)
+ 	# Explosion takes and immutable fire presentation were built at detonation.
+ 	# Keep their bounded resources ready, without spawning a live incident.
+ 	var combat_audio = preload("res://gameplay/CombatAudio.gd")
+@@ -490,48 +519,41 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
+ 	await combat_audio.prewarm_reload_banks(get_tree())
+ 	await combat_audio.prewarm_gameplay_banks(get_tree())
+ 	await preload("res://audio/VehicleCrashAudio.gd").prewarm(get_tree())
+-	preload("res://gameplay/emergency/Fire.gd").prewarm_visuals()
+-	await preload("res://gameplay/emergency/EffectsPrewarm.gd").run(world, curtain)
+-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+-	# Garoa e tempestade desenhadas sob a cortina: a 1ª chuva compilava no jogo (1,1 s, 20/10).
+-	await preload("res://runtime/RainPrewarm.gd").run(world, curtain)
+-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+-	await preload("res://gameplay/emergency/PoliceVisualPrewarm.gd").run(world, curtain)
+-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+-	await preload("res://gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd").run(world, curtain)
+-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+-	await preload("res://runtime/BridgeLookPrewarm.gd").run(world, curtain)
+-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+-	# Omni (cubo e paraboloide) e spot com sombra + chão natural opaco e de borda: a feature de
+-	# pipeline de sombra local passa a existir antes do jogo (túnel da ponte, lanterna, faróis).
+-	await preload("res://runtime/LocalLightShadowPrewarm.gd").run(world, curtain)
+-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+-	await preload("res://world/desert/DesertGroundCover.gd").prewarm_draw(world, curtain)
+-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+-	await preload("res://runtime/FamilyVariantPrewarm.gd").run(world, curtain)
+-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+-	await preload("res://runtime/PaintedFacadePrewarm.gd").run(world, curtain)
+-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+-	await preload("res://runtime/WildlifePrewarm.gd").run(world, curtain)
+-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+-	await preload("res://runtime/ForgePrewarm.gd").run(world, curtain)
+-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+-	await preload("res://activities/skate/SkateModel.gd").prewarm_colors(world)
+-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+-	await preload("res://assets/civilians/MeshyBodyPrewarm.gd").run(world, curtain)
+-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+-	# Primeira aparição da Cobra e da polícia no tiroteio (sumiço do morto, itens largados, giroflex):
+-	# quadros de 588-646 ms no desenho no release de 17/10. Depois dos GLBs do Meshy, já carregados acima.
+-	await preload("res://gameplay/emergency/SpawnVisualPrewarm.gd").run(world, curtain)
+-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
++	stage_traced = _prewarm_mark("audio", stage_traced)
++	# Pré-aquecimentos de desenho (22/10, 3ª rodada): em série, com o cache frio, cada um esperava sozinho as
++	# próprias compilações (combat_resources 31 s no frio, 5 s a quente; a sonda viu 2-8 s por etapa com 3-70
++	# pipelines cada). Juntos, todos põem as peças diante da câmera nos mesmos quadros e as compilações correm ao
++	# mesmo tempo nos trabalhadores do motor. A Cobra/polícia do tiroteio continua depois dos corpos do Meshy
++	# (usa os GLBs já carregados). GETECO_PREWARM_PARALLEL=0 volta à série.
++	if OS.get_environment("GETECO_PREWARM_PARALLEL") != "0":
++		var lanes: Array = [["local_light_shadow"], ["fire"], ["police_visual"], ["vehicle_variants"], ["bridge_look"],
++			["desert_ground_cover"], ["family_variants"], ["painted_facades"], ["wildlife"], ["forge"], ["skate"],
++			["meshy_bodies", "spawn_visuals"]]
++		if not preload("res://runtime/RainPrewarm.gd").late: lanes.append(["rain"])
++		var pending: Array[int] = [lanes.size()]
++		for lane in lanes: _prewarm_lane(lane, pending, curtain)
++		while pending[0] > 0:
++			await get_tree().process_frame
++			if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
++		stage_traced = _prewarm_mark("parallel_draws", stage_traced)
++	else:
++		var serial: Array[String] = ["fire", "rain", "police_visual", "vehicle_variants", "bridge_look", "local_light_shadow",
++			"desert_ground_cover", "family_variants", "painted_facades", "wildlife", "forge", "skate", "meshy_bodies", "spawn_visuals"]
++		if preload("res://runtime/RainPrewarm.gd").late: serial.erase("rain")
++		for step in serial:
++			await _draw_prewarm_step(step, curtain)
++			if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
++			stage_traced = _prewarm_mark(step, stage_traced)
+ 	# Capô aberto do Gol da oficina do Digo, sem ler a GPU quando a oficina entra no streaming do deserto.
+ 	preload("res://world/desert/drag_meet/DesertDigoWorkshop.gd").prewarm_hoods()
+ 	# Fonte e nomes do quadro da arrancada (etapa 15 do chão do deserto: 54 ms no estresse de 21/10).
+ 	preload("res://activities/desert_drag/DesertDragBoardProp.gd").prewarm()
++	stage_traced = _prewarm_mark("desert_props", stage_traced)
+ 	# Modelos das armas na mão, prontos antes da primeira troca (Gameplay._weapon_template).
+ 	if OS.get_environment("GETECO_WEAPON_TEMPLATE") != "0":
+ 		await preload("res://gameplay/ArsenalWeapon3D.gd").warm_templates(get_tree(), preload("res://gameplay/WeaponCatalog.gd").WEAPONS.keys())
+ 		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
++	stage_traced = _prewarm_mark("weapon_templates", stage_traced)
+ 	_trace_cost("startup:combat_resources",phase_traced)
+ 	# Um quadro entre as etapas pesadas deixa a tela de carregamento andar; o mundo
+ 	# já está montado e o 'ready_for_play' ainda é falso nesse trecho.
+@@ -553,6 +575,7 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
+ 		await preload("res://runtime/RetainedRegionPreparation.gd").run(neighbour)
+ 		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+ 	_trace_cost("startup:resident_prewarm",phase_traced)
++	PIPELINE_PROBE.stage("resident_prewarm")
+ 	background_preparation = preload("res://runtime/BackgroundRegionPreparation.gd").new()
+ 	background_preparation.controller = self
+ 	add_child(background_preparation)
+@@ -581,6 +604,7 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
+ 		else:
+ 			await preload("res://runtime/RetainedRegionPreparation.gd").run(detached)
+ 		_trace_cost("startup:distant_prewarm:"+id,phase_traced)
++		PIPELINE_PROBE.stage("distant_prewarm:" + id)
+ 		detached.initial_prewarm_only = false
+ 		detached.release_chunks()
+ 		world.remove_child(detached)
+@@ -609,6 +633,7 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
+ 	_configure_routes()
+ 	population_layout.configure(ambient_roads_cache)
+ 	_trace_cost("startup:route_graphs",phase_traced)
++	PIPELINE_PROBE.stage("route_graphs")
+ 	print("Pré-aquecimento das regiões: ", Time.get_ticks_msec()-began, " ms")
+ 
+ func _apply_player_settings() -> void:
+@@ -639,6 +664,23 @@ func _prewarm_dispatch_models() -> void:
+ 		var model_traced := Time.get_ticks_usec() if traced else 0
+ 		var model: Node3D = fleet.create(str(id))
+ 		if model != null:
++			# Materiais que a porta recortada leva para formatos de vértice novos (FormatPrewarm, desenhados
++			# junto com as variantes de pintura). GETECO_FORMAT_PREWARM=0 desliga.
++			if preload("res://runtime/FormatPrewarm.gd").enabled():
++				var door_materials: Array[Material] = preload("res://gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd").door_materials
++				# A viatura do jogo usa o casco de peças soltas (VehiclePanelCatalog): a porta sai dele.
++				var sources: Array[Node3D] = [model]
++				var panels := preload("res://gameplay/vehicle_effects/VehiclePanelCatalog.gd")
++				if panels.supports(str(id)) and OS.get_environment("GETECO_BREAKAWAY_PREWARM") != "0":
++					var panel_model := panels.create(str(id))
++					if panel_model != null: sources.append(panel_model)
++				for source in sources:
++					for part in preload("res://gameplay/VehicleDoorBuilder.gd")._parts(source):
++						for surface in part.mesh.get_surface_count():
++							var material := part.get_active_material(surface)
++							if material != null and not material in door_materials: door_materials.append(material)
++				for source in sources:
++					if source != model: source.free()
+ 			# Arrays da lataria na cópia da CPU (MeshArrayCache), sob a cortina: o preparo da porta da
+ 			# viatura que chega (VehicleDoorBuilder) não lê mais a malha de volta da GPU no jogo.
+ 			if OS.get_environment("GETECO_DOOR_ARRAY_CACHE") != "0":
+@@ -668,13 +710,25 @@ func _prewarm_fleet_shaders(_incremental: bool, curtain: CanvasLayer = null) ->
+ 	# modelo por vez. GETECO_LOADING_TURBO=0 volta a um por vez.
+ 	var batch_size := 4 if preload("res://runtime/LoadingTurbo.gd").active() else 1
+ 	var ids: Array = fleet.all().keys()
++	# Cupê, Monaliza, Metro e viatura rodam no jogo com o casco de peças soltas (VehiclePanelCatalog,
++	# Vehicle._ready): outra cena, outros materiais de pintura. Sem eles aqui, a pintura suja/molhada desses
++	# quatro compilava no jogo (sonda de pipelines, 22/10). GETECO_BREAKAWAY_PREWARM=0 desliga.
++	if OS.get_environment("GETECO_BREAKAWAY_PREWARM") != "0":
++		for panel_id in preload("res://gameplay/vehicle_effects/VehiclePanelCatalog.gd").IDS: ids.append("breakaway:" + str(panel_id))
++	if await _compile_fleet_hidden(ids, curtain):
++		print("startup: dents_rest_prewarm vertices=", preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd").fleet_rest_vertices)
++		return
+ 	var next := 0
+ 	while next < ids.size():
+ 		var batch: Array[Dictionary] = []
+ 		while batch.size() < batch_size and next < ids.size():
+ 			var id := str(ids[next])
+ 			next += 1
+-			var created: Node3D = fleet.create(id)
++			var created: Node3D = null
++			if id.begins_with("breakaway:"):
++				id = id.trim_prefix("breakaway:")
++				created = preload("res://gameplay/vehicle_effects/VehiclePanelCatalog.gd").create(id)
++			else: created = fleet.create(id)
+ 			if created != null: batch.append({"id": id, "model": created})
+ 		if batch.is_empty(): continue
+ 		var camera := world.camera as Camera3D
+@@ -728,6 +782,63 @@ func _prewarm_fleet_shaders(_incremental: bool, curtain: CanvasLayer = null) ->
+ 		await get_tree().process_frame
+ 	print("startup: dents_rest_prewarm vertices=", preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd").fleet_rest_vertices)
+ 
++## A frota inteira (e as cópias de lentes apagadas) escondida de uma vez antes dos lotes desenhados
++## (22/10, 3ª rodada): com o cache frio cada lote de 4 compilava seus shaders na thread principal, um depois
++## do outro (fleet_shaders 7,2 s frio × 2,3 s quente). Escondidas, as pipelines compilam em paralelo nos
++## trabalhadores (runtime/HiddenCompile.gd). Com GETECO_FLEET_HIDDEN_ONLY (padrão) os lotes desenhados diante
++## da câmera nem acontecem: a pipeline que trava (a "ubershader" da superfície) já ficou pronta escondida, e a
++## especialização de cada carro é feita em segundo plano no jogo, sem quadro esperando. Devolve true quando
++## fez tudo o que os lotes faziam (bases de pintura, vidros, lataria em repouso). GETECO_HIDDEN_COMPILE=0 desliga.
++func _compile_fleet_hidden(ids: Array, curtain: CanvasLayer) -> bool:
++	if not preload("res://runtime/HiddenCompile.gd").enabled() or DisplayServer.get_name() == "headless": return false
++	if not preload("res://gameplay/emergency/EffectsPrewarm.gd")._covered_loading(world, curtain): return false
++	var hidden_only := OS.get_environment("GETECO_FLEET_HIDDEN_ONLY") != "0"
++	var primaries: Array[Dictionary] = []
++	var holder := Node3D.new()
++	holder.name = "FleetHiddenCompile"
++	holder.visible = false
++	world.add_child(holder)
++	var lens_dim := OS.get_environment("GETECO_LENS_VARIANT_PREWARM") != "0"
++	var fade_copies := OS.get_environment("GETECO_WRECK_FADE_PREWARM") != "0"
++	for raw_id in ids:
++		var id := str(raw_id)
++		var model: Node3D = null
++		if id.begins_with("breakaway:"): model = preload("res://gameplay/vehicle_effects/VehiclePanelCatalog.gd").create(id.trim_prefix("breakaway:"))
++		else: model = preload("res://runtime/FleetCatalog.gd").create(id)
++		if model == null: continue
++		model.process_mode = Node.PROCESS_MODE_DISABLED
++		holder.add_child(model)
++		primaries.append({"id": id.trim_prefix("breakaway:"), "model": model})
++		if lens_dim:
++			var copy := model.duplicate(0) as Node3D
++			if copy != null:
++				if _dim_emissive_lenses(copy) == 0: copy.free()
++				else:
++					copy.process_mode = Node.PROCESS_MODE_DISABLED
++					holder.add_child(copy)
++		# Carcaça sumindo (Vehicle._tick_wreck põe `transparency` em todas as malhas): os materiais do carro
++		# no passe alfa. No estresse com cache frio o 1º sumiço compilou 5 pipelines `draw` num quadro de
++		# 3,0 s (export D, 22/10). GETECO_WRECK_FADE_PREWARM=0 desliga.
++		if fade_copies:
++			var faded := model.duplicate(0) as Node3D
++			if faded != null:
++				for found in faded.find_children("*", "GeometryInstance3D", true, false): (found as GeometryInstance3D).transparency = .5
++				faded.process_mode = Node.PROCESS_MODE_DISABLED
++				holder.add_child(faded)
++	# Insígnia dos carros da Cobra (CobraAppearance.livery/race_livery), posta no carro ao nascer.
++	holder.add_child(preload("res://gameplay/urban_v1/CobraAppearance.gd").insignia(1.0))
++	await preload("res://runtime/HiddenCompile.gd").settle(get_tree())
++	if hidden_only:
++		for entry in primaries:
++			var model: Node3D = entry.model
++			if not is_instance_valid(model): continue
++			# O mesmo que os lotes desenhados fazem com cada modelo antes de liberá-lo.
++			preload("res://gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd").collect(model, str(entry.id))
++			preload("res://gameplay/VehicleInterior.gd").cache_glass(model)
++			preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd").prewarm_rest(model)
++	if is_instance_valid(holder): holder.free()
++	return hidden_only
++
+ ## Cópia apagada (sem emissão) de cada material emissivo do modelo, retida por chave de variante.
+ static var _retained_lens_variants: Dictionary = {}
+ func _dim_emissive_lenses(model: Node3D) -> int:
+@@ -1942,6 +2053,53 @@ func _prewarm_route_jit() -> void:
+ 	print("startup: route_jit_prewarm native=%s planned=%s ms=%.3f" % [router._native != null, planned, elapsed / 1000.0])
+ 	if world.get_meta("benchmark_trace", false): _trace_cost("startup:route_jit_prewarm", began)
+ 
++## Uma fila de pré-aquecimentos de desenho em série; várias filas correm juntas (GETECO_PREWARM_PARALLEL).
++## Chamada sem await: cada etapa espera os próprios quadros e `pending` cai quando a fila acaba.
++func _prewarm_lane(steps: Array, pending: Array[int], curtain: CanvasLayer) -> void:
++	for step in steps:
++		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): break
++		var traced := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
++		await _draw_prewarm_step(str(step), curtain)
++		_trace_cost("startup:prewarm:" + str(step), traced)
++	pending[0] -= 1
++
++func _draw_prewarm_step(step: String, curtain: CanvasLayer) -> void:
++	match step:
++		"fire":
++			preload("res://gameplay/emergency/Fire.gd").prewarm_visuals()
++			await preload("res://gameplay/emergency/EffectsPrewarm.gd").run(world, curtain)
++		"rain": await preload("res://runtime/RainPrewarm.gd").run(world, curtain)
++		"police_visual": await preload("res://gameplay/emergency/PoliceVisualPrewarm.gd").run(world, curtain)
++		"vehicle_variants": await preload("res://gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd").run(world, curtain)
++		"bridge_look": await preload("res://runtime/BridgeLookPrewarm.gd").run(world, curtain)
++		# Omni (cubo e paraboloide) e spot com sombra + chão natural opaco e de borda: a feature de
++		# pipeline de sombra local passa a existir antes do jogo (túnel da ponte, lanterna, faróis).
++		"local_light_shadow": await preload("res://runtime/LocalLightShadowPrewarm.gd").run(world, curtain)
++		"desert_ground_cover": await preload("res://world/desert/DesertGroundCover.gd").prewarm_draw(world, curtain)
++		"family_variants": await preload("res://runtime/FamilyVariantPrewarm.gd").run(world, curtain)
++		"painted_facades": await preload("res://runtime/PaintedFacadePrewarm.gd").run(world, curtain)
++		"wildlife": await preload("res://runtime/WildlifePrewarm.gd").run(world, curtain)
++		"forge": await preload("res://runtime/ForgePrewarm.gd").run(world, curtain)
++		"skate": await preload("res://activities/skate/SkateModel.gd").prewarm_colors(world)
++		"meshy_bodies": await preload("res://assets/civilians/MeshyBodyPrewarm.gd").run(world, curtain)
++		# Primeira aparição da Cobra e da polícia no tiroteio (sumiço do morto, itens largados, giroflex):
++		# quadros de 588-646 ms no desenho no release de 17/10. Depois dos GLBs do Meshy, já carregados acima.
++		"spawn_visuals": await preload("res://gameplay/emergency/SpawnVisualPrewarm.gd").run(world, curtain)
++		"street_fx": await preload("res://gameplay/street_physics/StreetEffectsPrewarm.gd").run(world, curtain)
++		# Warm after CityLook enables the final Mobile framebuffer (including glow).
++		"reaction_visuals": await preload("res://gameplay/emergency/ReactionVisualPrewarm.gd").run(world, curtain)
++		"vehicle_interior": await preload("res://gameplay/VehicleInteriorMaterialPrewarm.gd").run(world, curtain)
++		# Tiros, impactos, explosão e armas na mão desenhados diante da câmera (cache de pipeline frio).
++		"combat_effects": await preload("res://gameplay/CombatEffectsPrewarm.gd").run(world, curtain)
++
++## Etapas do pré-aquecimento com nome (22/10, 3ª rodada): no cache frio `startup:combat_resources` levava
++## 31 s (5 s a quente) e só o total ia ao registro. Cada etapa vai ao registro da sessão
++## (`startup:prewarm:<nome>`) e fecha a etapa na sonda de pipelines (GETECO_PIPELINE_PROBE=1).
++func _prewarm_mark(label: String, began: int) -> int:
++	_trace_cost("startup:prewarm:" + label, began)
++	PIPELINE_PROBE.stage(label)
++	return Time.get_ticks_usec() if began != 0 else 0
++
+ func _trace_cost(label: String, began: int) -> void:
+ 	if began == 0: return
+ 	SESSION_OPS.completed(self, "world", label, began, {"region":state.region_id})
+diff --git a/runtime/RainPrewarm.gd b/runtime/RainPrewarm.gd
+index e4d7d319..a2e68084 100644
+--- a/runtime/RainPrewarm.gd
++++ b/runtime/RainPrewarm.gd
+@@ -12,6 +12,13 @@ const DRAW_FRAMES := 3
+ const MIN_SECONDS := .45
+ const MAX_WAIT_FRAMES := 90
+ static var enabled := OS.get_environment("GETECO_RAIN_PREWARM") != "0"
++## Chamado depois de o Weather existir (22/10, 3ª rodada). Antes rodava dentro de
++## ProductionWorld._prewarm_regions, mas o Weather só nasce depois dele: `session.weather` era nulo e
++## este passo saía na primeira linha (a sonda de pipelines mediu 0,1 ms e nenhum pipeline; no estresse a
++## poça e o para-brisa molhado compilavam no jogo). GETECO_RAIN_PREWARM_LATE=0 volta ao lugar antigo.
++static var late := OS.get_environment("GETECO_RAIN_PREWARM_LATE") != "0"
++## Desenha também um raio na tempestade (GETECO_RAIN_PREWARM_BOLT=0 desliga).
++static var lightning := OS.get_environment("GETECO_RAIN_PREWARM_BOLT") != "0"
+ static var _drawn := false
+ 
+ static func run(host: Node3D, curtain: CanvasLayer) -> void:
+@@ -39,9 +46,19 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
+ 		var start_draws := draws[0]
+ 		var start_ms := Time.get_ticks_msec()
+ 		var ok := false
++		var bolt_tried := false
+ 		for frame in MAX_WAIT_FRAMES:
+ 			await tree.process_frame
+ 			if not GUARDS._covered_loading(host, curtain) or not GUARDS._current_camera(host, camera): break
++			# Raio da tempestade (ImmediateMesh sem luz e emissivo): no estresse frio de 22/10 o primeiro
++			# compilou no jogo (quadro de 100 ms). Sem trovão: o atraso é zerado logo depois do disparo.
++			if state == 2 and not bolt_tried and draws[0] - start_draws >= 1 and lightning:
++				bolt_tried = true
++				var storm: Variant = weather.get("storm")
++				if storm != null and is_instance_valid(storm) and storm.has_method("trigger_lightning") and storm.trigger_lightning():
++					storm.thunder_delay = -1.0
++					draws[0] = start_draws + 1
++					start_ms = Time.get_ticks_msec()
+ 			if draws[0] - start_draws >= DRAW_FRAMES and Time.get_ticks_msec() - start_ms >= MIN_SECONDS * 1000.0:
+ 				ok = true
+ 				break
+@@ -50,6 +67,9 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
+ 			break
+ 	if RenderingServer.frame_post_draw.is_connected(count_draw):
+ 		RenderingServer.frame_post_draw.disconnect(count_draw)
++	if lightning and is_instance_valid(weather):
++		var storm: Variant = weather.get("storm")
++		if storm != null and is_instance_valid(storm) and storm.has_method("cancel"): storm.cancel()
+ 	# Volta ao clima salvo; a troca externa reajusta rain_level no próximo _process.
+ 	if is_instance_valid(weather):
+ 		for key in saved: weather.set(key, saved[key])
+diff --git a/runtime/Settings.gd b/runtime/Settings.gd
+index 9edcba3d..cd8eb766 100644
+--- a/runtime/Settings.gd
++++ b/runtime/Settings.gd
+@@ -93,6 +93,7 @@ func _enter_tree() -> void:
+ 
+ func _ready() -> void:
+ 	process_mode = Node.PROCESS_MODE_ALWAYS
++	apply_pipeline_cache_policy()
+ 	_setup_audio_buses()
+ 	preload("res://runtime/Localization.gd").install()
+ 	load_settings()
+@@ -309,6 +310,19 @@ func root_view() -> Window: return get_tree().root
+ ## framebuffer e nenhum pipeline pré-compilado serve mais (ver occluded_silhouette.gdshader). Medido no
+ ## editor, chuva no circuito oeste: compilações "draw" 183 sob a cortina + ~100 em jogo -> 0 + 0.
+ ## A/B: HARBOR_PIPELINE_MSAA_SYNC=0 volta ao comportamento antigo (aqui e nas capturas de reflexo).
++## Cache de pipelines do Vulkan gravado só ao sair (22/10, 3ª rodada). O motor regrava o arquivo inteiro a
++## cada 3 MB de pipelines novas (rendering/rendering_device/pipeline_cache/save_chunk_size_mb, lido a cada
++## gravação). Numa sessão com cache frio o arquivo vai de 0 a ~75 MB e cada regravação travava a thread
++## principal: no estresse do oeste (export C, cache frio, mesma build) houve quadros de 1,2 s, 1,5 s e 18 s
++## sem nenhuma pipeline nem shader novo no quadro, e o jogo ficou jogável em 94,8 s; com a gravação só na
++## saída, máximo 1,33 s e jogável em 74,8 s. Com cache quente o arquivo (216 MB aqui) também é regravado
++## inteiro quando a sessão junta 3 MB novos. Se o jogo cair, as pipelines da sessão se perdem (o cache de
++## shader em disco continua, então refazê-las é barato). GETECO_PIPELINE_SAVE_ON_EXIT=0 volta aos 3 MB.
++static func apply_pipeline_cache_policy() -> void:
++	const KEY := "rendering/rendering_device/pipeline_cache/save_chunk_size_mb"
++	if OS.get_environment("GETECO_PIPELINE_SAVE_ON_EXIT") == "0": return
++	if float(ProjectSettings.get_setting(KEY, 3.0)) < 4096.0: ProjectSettings.set_setting(KEY, 4096.0)
++
+ static func sync_pipeline_msaa(samples: int) -> void:
+ 	const KEY := "rendering/anti_aliasing/quality/msaa_3d"
+ 	if OS.get_environment("HARBOR_PIPELINE_MSAA_SYNC") == "0": return
+diff --git a/runtime/StallLog.gd b/runtime/StallLog.gd
+index 56d288a1..ae07751c 100644
+--- a/runtime/StallLog.gd
++++ b/runtime/StallLog.gd
+@@ -75,6 +75,10 @@ func _ready() -> void:
+ 	# a chave era ignorada em silêncio nesse caso (auditoria 19/10, §6).
+ 	var steps_text := OS.get_environment("HARBOR_MAX_PHYSICS_STEPS")
+ 	if steps_text.is_valid_int() and int(steps_text) >= 1: Engine.max_physics_steps_per_frame = int(steps_text)
++	# Sonda de pipelines (diagnóstico, independente do registro): nasce antes do mundo para que tudo o que a carga
++	# desenhar conte como "já visto" (runtime/PipelineProbe.gd).
++	if OS.get_environment("GETECO_PIPELINE_PROBE") == "1" and not "--headless" in OS.get_cmdline_args():
++		get_tree().root.add_child.call_deferred(load("res://runtime/PipelineProbe.gd").new())
+ 	if OS.get_environment("HARBOR_STALL_LOG") != "1" or "--headless" in OS.get_cmdline_args():
+ 		_disable()
+ 		return
+diff --git a/runtime/StartupCurtain.gd b/runtime/StartupCurtain.gd
+index 45a7f698..1f9f5732 100644
+--- a/runtime/StartupCurtain.gd
++++ b/runtime/StartupCurtain.gd
+@@ -58,6 +58,9 @@ func _ready() -> void:
+ 	art.first_index = 3 if variant == 1 else 7 if variant == 2 else -1
+ 	art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+ 	_root.add_child(art)
++	# Keep the first framing still until the independent presenter takes over.
++	# Hidden Godot artwork must not keep animating/rendering behind that window.
++	art.set_process(false)
+ 	var margin := MarginContainer.new()
+ 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+ 	margin.add_theme_constant_override("margin_left", 48)
+@@ -105,10 +108,12 @@ func prepare_presentation() -> void:
+ 		add_child(_presenter)
+ 		var art: Control = _root.get_node("Artwork")
+ 		if _presenter.Begin(_root,art._order,DISPLAY_FONT.data,BODY_FONT.data):
++			_presenter.SetProgress(_target)
+ 			# Stage immutable pixels over separate frames before any world build.
+ 			for index in ARTWORK.ART.size():
+ 				if not _presenter.AddImage(index,ARTWORK.ART[index]): break
+ 				await get_tree().process_frame
++			if not _presenter.HasFailed(): _presenter.StartPresentation()
+ 			var deadline := Time.get_ticks_msec()+5000
+ 			while not _presenter.IsReady() and not _presenter.HasFailed() and Time.get_ticks_msec()<deadline:
+ 				await get_tree().process_frame
+@@ -116,6 +121,7 @@ func prepare_presentation() -> void:
+ 			push_warning("Loading presentation fallback: %s" % _presenter.Snapshot())
+ 			_presenter.queue_free()
+ 			_presenter = null
++	if not is_instance_valid(_presenter): _root.get_node("Artwork").set_process(true)
+ 	_presentation_ready = true
+ 
+ func _label(text: String, font_size: int, color: Color, font: Font) -> Label:
+@@ -137,6 +143,9 @@ func set_stage(value: float, message: String) -> void:
+ 		SESSION_OPS.finish(_diagnostic_stage, "advanced")
+ 		_diagnostic_stage = SESSION_OPS.begin(self, "loading", message, {"progress":value})
+ 	_target = maxf(_target, clampf(value, 0.0, 1.0))
++	# Send the real target, not main-thread interpolation. The presentation loop
++	# smooths the bar independently and then holds it during a slow world stage.
++	if is_instance_valid(_presenter): _presenter.SetProgress(_target)
+ 	stage_message = message
+ 	if not stage_only and _shown < _target: set_process(true)
+ 
+@@ -144,7 +153,6 @@ func _update_progress() -> void:
+ 	if _fill == null or _track == null: return
+ 	_fill.size = Vector2(_track.size.x * _shown, _track.size.y)
+ 	_percent.text = "%d%%" % floori(_shown * 100.0)
+-	if is_instance_valid(_presenter): _presenter.SetProgress(_shown)
+ 
+ func _process(delta: float) -> void:
+ 	_shown = move_toward(_shown, _target, delta * 0.9)
+diff --git a/runtime/WildlifePrewarm.gd b/runtime/WildlifePrewarm.gd
+index bc6434cd..0e950814 100644
+--- a/runtime/WildlifePrewarm.gd
++++ b/runtime/WildlifePrewarm.gd
+@@ -28,6 +28,8 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
+ 	host.add_child(bear)
+ 	var draws: Array[int] = [0]
+ 	var count_draw := func() -> void: draws[0] += 1
++	# Peças escondidas primeiro: os trabalhadores do motor compilam em paralelo (runtime/HiddenCompile.gd).
++	await preload("res://runtime/HiddenCompile.gd").prepare(bear, host.get_tree())
+ 	RenderingServer.frame_post_draw.connect(count_draw)
+ 	var completed := false
+ 	for frame in MAX_WAIT_FRAMES:
+diff --git a/runtime/coastal_lookout/CoastalLookoutRuntime.gd b/runtime/coastal_lookout/CoastalLookoutRuntime.gd
+index cf0f9a94..80577340 100644
+--- a/runtime/coastal_lookout/CoastalLookoutRuntime.gd
++++ b/runtime/coastal_lookout/CoastalLookoutRuntime.gd
+@@ -18,6 +18,7 @@ var _horizon_template: PackedScene
+ var _city_template: PackedScene
+ var _city_sources: Array[Dictionary] = []
+ var _preparing := false
++var _reveal_pending := false
+ var active: bool:
+ 	get: return is_instance_valid(binoculars) and binoculars.active
+ 
+@@ -133,6 +134,20 @@ func _update_residency() -> void:
+ 		add_child(binoculars)
+ 		set_meta("last_residency_install_ms",float(Time.get_ticks_usec()-began)/1000.0)
+ 		set_meta("residency_install_count",int(get_meta("residency_install_count",0))+1)
++		# Escondido no 1º meio segundo (22/10, 3ª rodada): a 190 m o mirante entra com shaders próprios
++		# (arrebentação, farol, mirante) e o 1º desenho compilava 7 pipelines `surface` num quadro de 36 ms
++		# (sonda de pipelines, estresse nos sobrados a quente). Escondido, o motor compila em segundo plano;
++		# aparece no próximo passo da residência, ainda a ~190 m. GETECO_LOOKOUT_HIDDEN_FIRST=0 desliga.
++		if OS.get_environment("GETECO_LOOKOUT_HIDDEN_FIRST") != "0":
++			site.visible = false
++			horizon.visible = false
++			distant_city.visible = false
++			_reveal_pending = true
++			return
++	if _reveal_pending:
++		_reveal_pending = false
++		if is_instance_valid(site): site.visible = true
++		if is_instance_valid(distant_city): distant_city.visible = true
+ 	if is_instance_valid(horizon):
+ 		# A resident desert already supplies these exact world-coordinate meshes.
+ 		horizon.visible = not world.production.regions.has("desert")
+@@ -160,6 +175,7 @@ func _release() -> void:
+ 	site = null
+ 	horizon = null
+ 	distant_city = null
++	_reveal_pending = false
+ 
+ func _exit_tree() -> void:
+ 	_release()
+diff --git a/tests/measure/measure_loading_slideshow.gd b/tests/measure/measure_loading_slideshow.gd
+index 292040fa..5b7d5b24 100644
+--- a/tests/measure/measure_loading_slideshow.gd
++++ b/tests/measure/measure_loading_slideshow.gd
+@@ -12,6 +12,19 @@ func run() -> void:
+ 	DisplayServer.window_move_to_foreground()
+ 	Engine.max_fps = 60
+ 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED)
++	# Settings applies the saved fullscreen mode deferred on startup.
++	await process_frame
++	await process_frame
++	DisplayServer.window_move_to_foreground()
++	# Without foreground, the native presenter deliberately does not paint. Zero
++	# frames must never be reported as a successful loading performance sample.
++	var focus_deadline := Time.get_ticks_msec()+30000
++	while not root.has_focus() and Time.get_ticks_msec()<focus_deadline:
++		await process_frame
++	if not root.has_focus():
++		push_error("Loading measurement needs the game window in foreground")
++		quit(3)
++		return
+ 	var curtain = load("res://runtime/StartupCurtain.gd").new()
+ 	var presentation := {}
+ 	curtain.presentation_finished.connect(func(report: Dictionary): presentation.assign(report))
+@@ -56,7 +69,8 @@ func run() -> void:
+ 	report["presentation"] = presentation
+ 	FileAccess.open(out,FileAccess.WRITE).store_string(JSON.stringify(report,"\t"))
+ 	print("LOADING_SLIDESHOW ",JSON.stringify({"loading_ms":report.loading_ms,"startup":report.startup,"play":report.play}))
+-	quit(0 if release > 0 else 3)
++	var presentation_measured := not presentation.is_empty() and int(presentation.get("frames",0)) > 0
++	quit(0 if release > 0 and presentation_measured else 3)
+ 
+ func _process(_delta: float) -> bool:
+ 	return false
+diff --git a/tests/test_loading_presenter.gd b/tests/test_loading_presenter.gd
+index 3b4c9fe1..b91894b6 100644
+--- a/tests/test_loading_presenter.gd
++++ b/tests/test_loading_presenter.gd
+@@ -18,9 +18,9 @@ func run() -> void:
+ 	DisplayServer.window_move_to_foreground()
+ 	print("NATIVE_LOADING_READY focus=",root.has_focus()," helper_processing=",curtain._presenter.is_processing()," cover_visible=",curtain._root.is_visible_in_tree()," alpha=",curtain._root.modulate.a)
+ 	var focus_deadline := Time.get_ticks_msec()+30000
+-	while not root.has_focus() and Time.get_ticks_msec()<focus_deadline:
++	while not bool(curtain._presenter.Snapshot().visibility.shown) and Time.get_ticks_msec()<focus_deadline:
+ 		await process_frame
+-	if not root.has_focus():
++	if not bool(curtain._presenter.Snapshot().visibility.shown):
+ 		push_error("Loading test requires its game window in foreground")
+ 		quit(3)
+ 		return
+@@ -36,14 +36,24 @@ func run() -> void:
+ 	var after: Dictionary = curtain._presenter.Snapshot()
+ 	var frames := int(after.frames)-int(before.frames)
+ 	var ok: bool = frames >= 140 and after.failure.is_empty()
+-	print("NATIVE_LOADING_BLOCK ","PASS" if ok else "FAIL"," frames_during_3s_main_pause=",frames," p95_ms=",after.p95_ms," max_ms=",after.max_ms," failure=",after.failure)
++	print("NATIVE_LOADING_BLOCK ","PASS" if ok else "FAIL"," frames_during_3s_main_pause=",frames," p95_ms=",after.p95_ms," max_ms=",after.max_ms," failure=",after.failure," visibility=",after.get("visibility",{}))
+ 	root.size = Vector2i(960,540)
+ 	await create_timer(1.0).timeout
+ 	var resized: Dictionary = curtain._presenter.Snapshot()
+ 	ok = ok and int(resized.width) == 960 and int(resized.height) == 540
+ 	root.mode = Window.MODE_FULLSCREEN
+-	await create_timer(3.0).timeout
++	var fullscreen_start: Dictionary = curtain._presenter.Snapshot()
++	await create_timer(30.0).timeout
+ 	var fullscreen: Dictionary = curtain._presenter.Snapshot()
++	var steady: Array = Array(fullscreen.intervals_ms).slice(int(fullscreen_start.frames))
++	var sorted := steady.duplicate()
++	sorted.sort()
++	var p95: float = sorted[int((sorted.size()-1)*.95)] if not sorted.is_empty() else INF
++	var p99: float = sorted[int((sorted.size()-1)*.99)] if not sorted.is_empty() else INF
++	ok = ok and steady.size() >= 1400 and p95 <= 25.0 and p99 <= 33.3
++	ok = ok and is_equal_approx(float(fullscreen.displayed_progress), .25)
++	ok = ok and float(fullscreen.animation_seconds)-float(fullscreen_start.animation_seconds) >= 28.0
++	print("NATIVE_LOADING_FULLSCREEN frames=",steady.size()," p95_ms=",p95," p99_ms=",p99," progress=",fullscreen.displayed_progress)
+ 	var physical := DisplayServer.window_get_size()
+ 	# The Windows fullscreen host has 2 extra client pixels in this engine;
+ 	# coverage must include the entire visible screen, with only that padding.
+@@ -55,10 +65,13 @@ func run() -> void:
+ 	await create_timer(1.5).timeout
+ 	ok = ok and not is_instance_valid(curtain) and not report.is_empty()
+ 	world.queue_free()
+-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://evidence/loading-fluid-20261021"))
++	var output := "res://artifacts/loading-smooth-20261022/presenter-block-test.json"
++	for arg in OS.get_cmdline_user_args():
++		if arg.begins_with("--report="): output = arg.trim_prefix("--report=")
++	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(output.get_base_dir()))
+ 	var hashes := {}
+-	for path in ["ui/LoadingPresenter.cs","runtime/StartupCurtain.gd","ui/SkyMenu.gd","runtime/ProductionWorld.gd","tests/test_loading_presenter.gd",".godot/mono/temp/bin/Debug/Harbor.dll"]:
++	for path in ["ui/LoadingPresenter.cs","ui/LoadingCanvas.cs","runtime/StartupCurtain.gd","ui/MainMenu.gd","ui/SkyMenu.gd","runtime/ProductionWorld.gd","tests/test_loading_presenter.gd",".godot/mono/temp/bin/Debug/Harbor.dll"]:
+ 		hashes[path] = FileAccess.get_sha256("res://"+path)
+-	FileAccess.open("res://evidence/loading-fluid-20261021/presenter-block-test.json",FileAccess.WRITE).store_string(JSON.stringify({"passed":ok,"source_hashes":hashes,"frames_during_3s_main_pause":frames,"presentation":report,"resized":resized,"fullscreen":fullscreen},"\t"))
++	FileAccess.open(output,FileAccess.WRITE).store_string(JSON.stringify({"passed":ok,"source_hashes":hashes,"frames_during_3s_main_pause":frames,"fullscreen_p95_ms":p95,"fullscreen_p99_ms":p99,"presentation":report,"resized":resized,"fullscreen":fullscreen},"\t"))
+ 	print("NATIVE_LOADING_LIFECYCLE ","PASS" if ok else "FAIL")
+ 	quit(0 if ok else 1)
+diff --git a/tests/test_loading_slideshow.gd b/tests/test_loading_slideshow.gd
+index 82924360..29e38f99 100644
+--- a/tests/test_loading_slideshow.gd
++++ b/tests/test_loading_slideshow.gd
+@@ -9,6 +9,12 @@ func check(ok: bool, message: String) -> void:
+ 	if not ok: failures.append(message)
+ 
+ func run() -> void:
++	# This exercises the portable Godot fallback. The native loop has its own
++	# rendered block/resize/lifecycle test and intentionally suspends this artwork.
++	if OS.get_name() == "Windows" and DisplayServer.get_name() != "headless" and "--loading-presenter=godot" not in OS.get_cmdline_user_args():
++		push_error("Use --loading-presenter=godot for the fallback slideshow test")
++		quit(2)
++		return
+ 	root.size = Vector2i(1280, 720)
+ 	var curtain = load("res://runtime/StartupCurtain.gd").new()
+ 	root.add_child(curtain)
+diff --git a/ui/LoadingPresenter.cs b/ui/LoadingPresenter.cs
+index 2bc5ec59..0bd9c90c 100644
+--- a/ui/LoadingPresenter.cs
++++ b/ui/LoadingPresenter.cs
+@@ -26,11 +26,14 @@ public partial class LoadingPresenter : Node
+         var parent = (nint)DisplayServer.WindowGetNativeHandle(DisplayServer.HandleType.WindowHandle);
+         if (parent == 0) return false;
+         presenter = new Presenter(parent, order.ToArray(), titleFont, textFont);
+-        presenter.Start();
+         SetProcess(true);
+         return true;
+     }
+ 
++    // Finish all Vulkan texture readbacks before creating the independent D3D
++    // device. Concurrent driver initialization/readback can lock startup.
++    public void StartPresentation() => presenter?.Start();
++
+     // Called exclusively on Godot's main thread. Transfer owned bytes, never a
+     // Texture/Image/Node reference, to the presenter thread.
+     public bool AddImage(int index, Texture2D texture)
+@@ -51,20 +54,21 @@ public partial class LoadingPresenter : Node
+ 
+     public bool IsReady() => presenter?.Ready == true;
+     public bool HasFailed() => presenter?.Failure != null;
+-    public void SetProgress(double value) { if (presenter != null) presenter.Progress = Math.Clamp(value, 0, 1); }
++    public void SetProgress(double value) { if (presenter != null) Volatile.Write(ref presenter.Progress, Math.Clamp(value, 0, 1)); }
+     public void FadeOut(double seconds) { fading = true; presenter?.Fade(seconds); }
+     public override void _Process(double delta)
+     {
+         if (presenter == null || !IsInstanceValid(cover)) return;
+         if (presenter.Failure != null && !recoveredFailure) {
+             foreach (var child in cover.GetChildren()) if (child is CanvasItem visual) visual.Show();
++            cover.GetNodeOrNull<Control>("Artwork")?.SetProcess(true);
+             GD.PushWarning("Loading presentation fallback: " + presenter.Failure);
+             recoveredFailure = true;
+         }
+         if (presenter.Ready && !fading && !recoveredFailure)
+             foreach (var child in cover.GetChildren())
+                 if (child is CanvasItem visual && visual.Visible == presenter.Shown) visual.Visible = !presenter.Shown;
+-        presenter.Opacity = curtain != null && curtain.Visible && cover.IsVisibleInTree() ? cover.Modulate.A : 0;
++        Volatile.Write(ref presenter.Opacity, curtain != null && curtain.Visible && cover.IsVisibleInTree() ? cover.Modulate.A : 0);
+     }
+     public Godot.Collections.Dictionary Snapshot()
+     {
+@@ -76,8 +80,18 @@ public partial class LoadingPresenter : Node
+         double percentile(double fraction) => sorted.Length == 0 ? 0 : sorted[(int)((sorted.Length - 1) * fraction)];
+         var total = frames.Sum();
+         return new Godot.Collections.Dictionary {
+-            ["backend"] = "Windows owned window / independent presentation thread",
++            ["backend"] = "Direct2D hardware / independent presentation thread",
+             ["width"] = presenter?.Width ?? 0, ["height"] = presenter?.Height ?? 0,
++            ["animation_seconds"] = presenter == null ? 0 : Volatile.Read(ref presenter.AnimationTime),
++            ["displayed_progress"] = presenter == null ? 0 : Volatile.Read(ref presenter.DisplayedProgress),
++            ["target_progress"] = presenter == null ? 0 : Volatile.Read(ref presenter.Progress),
++            ["visibility"] = new Godot.Collections.Dictionary {
++                ["ready"] = presenter?.Ready == true, ["shown"] = presenter?.Shown == true,
++                ["opacity"] = presenter == null ? 0 : Volatile.Read(ref presenter.Opacity),
++                ["parent_visible"] = presenter?.ParentVisible == true,
++                ["parent_foreground"] = presenter?.ParentForeground == true,
++                ["parent_minimized"] = presenter?.ParentMinimized == true
++            },
+             ["godot_window_size"] = DisplayServer.WindowGetSize().ToString(),
+             ["frames"] = frames.Length, ["seconds"] = total / 1000,
+             ["including_fade"] = new Godot.Collections.Dictionary {
+@@ -91,7 +105,7 @@ public partial class LoadingPresenter : Node
+             ["max_ms"] = sorted.Length == 0 ? 0 : sorted[^1],
+             ["over_33_3_ms"] = frames.Count(x => x > 33.3), ["over_66_7_ms"] = frames.Count(x => x > 66.7),
+             ["intervals_ms"] = frames, ["failure"] = presenter?.Failure ?? "",
+-            ["scope"] = "Opaque loading presentation; completed native paints, not gameplay frames or GPU timings"
++            ["scope"] = "Opaque loading presentation; completed Direct2D EndDraw calls, not gameplay frames or GPU/compositor timings"
+         };
+     }
+     // Reparenting the curtain during the menu/world handoff exits the tree
+@@ -103,17 +117,23 @@ public partial class LoadingPresenter : Node
+     {
+         public nint Handle;
+         public int Width, Height;
+-        private GCHandle pinned;
+-        public Bitmap(Pixels pixels)
++        public Bitmap(Pixels pixels, LoadingCanvas canvas)
+         {
+             Width = pixels.Width; Height = pixels.Height;
+             var data = pixels.Bytes;
+-            for (var i = 0; i < data.Length; i += 4) (data[i], data[i + 2]) = (data[i + 2], data[i]);
+-            pinned = GCHandle.Alloc(data, GCHandleType.Pinned);
+-            if (Native.GdipCreateBitmapFromScan0(Width, Height, Width * 4, 0x26200A, pinned.AddrOfPinnedObject(), out Handle) != 0)
+-                { pinned.Free(); throw new InvalidOperationException("Loading bitmap allocation failed"); }
++            // Direct2D expects premultiplied BGRA, including transparent edges.
++            for (var i = 0; i < data.Length; i += 4) {
++                var red = data[i];
++                var alpha = data[i + 3];
++                data[i] = (byte)(data[i + 2] * alpha / 255);
++                data[i + 1] = (byte)(data[i + 1] * alpha / 255);
++                data[i + 2] = (byte)(red * alpha / 255);
++            }
++            var pinned = GCHandle.Alloc(data, GCHandleType.Pinned);
++            try { Handle = canvas.Upload(Width, Height, pinned.AddrOfPinnedObject()); }
++            finally { pinned.Free(); }
+         }
+-        public void Dispose() { if (Handle != 0) Native.GdipDisposeImage(Handle); if (pinned.IsAllocated) pinned.Free(); }
++        public void Dispose() => LoadingCanvas.Release(ref Handle);
+     }
+     private sealed class Presenter
+     {
+@@ -136,15 +156,19 @@ public partial class LoadingPresenter : Node
+         private volatile bool stopped;
+         private long fadeAt;
+         private double fadeSeconds;
+-        private nint window, buffer, graphics, titleFont, textFont, brush, trackBrush, accentBrush, format, alphaAttributes;
+-        private readonly float[] matrix = new float[25];
++        private nint window, buffer, graphics, titleFont, textFont, brush, trackBrush, accentBrush, format, overlay;
++        private LoadingCanvas canvas;
++        private GCHandle overlayPin;
++        private int overlayPercent = -1;
+         private static readonly string[] Percentages = Enumerable.Range(0, 101).Select(x => x + "%").ToArray();
+         private readonly List<nint> fontFamilies = new();
+         private readonly List<nint> fontCollections = new();
+         private readonly List<GCHandle> fontPins = new();
+         private int width, height;
+-        private long began, previousPaint, previousAnyPaint;
++        private long previousTick, previousPaint, previousAnyPaint;
++        public double AnimationTime, DisplayedProgress;
+         public volatile bool Shown;
++        public volatile bool ParentVisible, ParentForeground, ParentMinimized;
+         private int left = int.MinValue, top = int.MinValue;
+         public Presenter(nint parentHandle, int[] sequence, byte[] displayFont, byte[] bodyFont)
+         { parent = parentHandle; order = sequence; titleFontBytes = displayFont; textFontBytes = bodyFont; }
+@@ -178,30 +202,42 @@ public partial class LoadingPresenter : Node
+                 window = Native.CreateWindowExW(0x080800a0, klass.Name, "", 0x80000000, origin.X, origin.Y, rect.Right, rect.Bottom, parent, 0, klass.Instance, 0);
+                 if (window == 0) throw new InvalidOperationException("Loading owned window creation failed: " + Marshal.GetLastWin32Error());
+                 Windows[window] = this;
++                canvas = new LoadingCanvas(window, rect.Right, rect.Bottom);
++                width = rect.Right; height = rect.Bottom;
+                 titleFont = CreateFont(titleFontBytes, 32);
+                 textFont = CreateFont(textFontBytes, 16);
+                 Native.GdipCreateSolidFill(0xffeee9df, out brush);
+                 Native.GdipCreateSolidFill(0xff5a5b58, out trackBrush);
+                 Native.GdipCreateSolidFill(0xffeee0bd, out accentBrush);
+                 Native.GdipStringFormatGetGenericTypographic(out format);
+-                Native.GdipCreateImageAttributes(out alphaAttributes);
++                // Typography is rasterized only when the integer percentage changes,
++                // at a fixed small size. Fullscreen artwork stays on the GPU.
++                overlayPin = GCHandle.Alloc(new byte[1280 * 160 * 4], GCHandleType.Pinned);
++                if (Native.GdipCreateBitmapFromScan0(1280, 160, 1280 * 4, 0xE200B, overlayPin.AddrOfPinnedObject(), out buffer) != 0)
++                    throw new InvalidOperationException("Loading text allocation failed");
++                Native.GdipGetImageGraphicsContext(buffer, out graphics);
++                Native.GdipSetPageUnit(graphics, 2);
++                Native.GdipSetTextRenderingHint(graphics, 4);
++                Native.GdipSetStringFormatAlign(format, 0);
+                 long next = Stopwatch.GetTimestamp();
+                 while (!stopped && Native.IsWindow(parent)) {
+                     while (Native.PeekMessageW(out var message, 0, 0, 0, 1)) {
+                         Native.TranslateMessage(ref message);
+                         Native.DispatchMessageW(ref message);
+                     }
+-                    if (Images.TryDequeue(out var pixels)) bitmaps[pixels.Index] = new Bitmap(pixels);
++                    if (Images.TryDequeue(out var pixels)) bitmaps[pixels.Index] = new Bitmap(pixels, canvas);
+                     var now = Stopwatch.GetTimestamp();
+                     if (now < next) { Thread.Sleep(1); continue; }
+-                    next = now + Stopwatch.Frequency / 60;
++                    next += Stopwatch.Frequency / 60;
++                    if (next < now) next = now + Stopwatch.Frequency / 60;
+                     if (bitmaps.Count != order.Length) continue;
+-                    if (began == 0) began = now;
+-                    Ready = true;
+                     Native.GetClientRect(parent, out rect);
+                     if (rect.Right <= 0 || rect.Bottom <= 0) { previousPaint = previousAnyPaint = 0; continue; }
+                     var resized = width != rect.Right || height != rect.Bottom;
+-                    if (resized) Resize(rect.Right, rect.Bottom);
++                    if (resized) {
++                        canvas.Resize(rect.Right, rect.Bottom);
++                        width = rect.Right; height = rect.Bottom;
++                    }
+                     origin = new Native.Point();
+                     Native.ClientToScreen(parent, ref origin);
+                     if (resized || left != origin.X || top != origin.Y) {
+@@ -217,15 +253,25 @@ public partial class LoadingPresenter : Node
+                     }
+                     // Never put a loading overlay over an unrelated foreground
+                     // application. Godot remains the focus/input owner.
+-                    if (opacity <= 0 || Native.IsIconic(parent) || !Native.IsWindowVisible(parent) || Native.GetForegroundWindow() != Native.GetAncestor(parent, 2)) {
++                    ParentVisible = Native.IsWindowVisible(parent);
++                    ParentMinimized = Native.IsIconic(parent);
++                    ParentForeground = Native.GetForegroundWindow() == Native.GetAncestor(parent, 2);
++                    if (opacity <= 0 || ParentMinimized || !ParentVisible || !ParentForeground) {
+                         if (Shown) Native.ShowWindow(window, 0);
+-                        Shown = false; previousPaint = previousAnyPaint = 0; continue;
++                        Shown = false; previousPaint = previousAnyPaint = previousTick = 0;
++                        // Prepare the first frame even while the menu fades in.
++                        if (!Ready) { Draw(0); Ready = true; }
++                        continue;
+                     }
+-                    Draw(Seconds(now - began));
++                    // A delayed paint must not jump ahead through a crossfade.
++                    var step = previousTick == 0 ? 0 : Math.Min(.05, Seconds(now - previousTick));
++                    previousTick = now;
++                    AnimationTime += step;
++                    DisplayedProgress = Math.Min(Volatile.Read(ref Progress), DisplayedProgress + step * .9);
++                    if (fade != 0) DisplayedProgress = 1;
++                    Draw(AnimationTime);
+                     Native.SetLayeredWindowAttributes(window, 0, (byte)Math.Round(opacity * 255), 2);
+                     if (!Shown) { Native.ShowWindow(window, 4); Shown = true; }
+-                    Native.InvalidateRect(window, 0, false);
+-                    Native.UpdateWindow(window);
+                     Ready = true;
+                     var painted = Stopwatch.GetTimestamp();
+                     if (previousAnyPaint != 0 && PresentationIntervals.Count < 20000)
+@@ -243,7 +289,10 @@ public partial class LoadingPresenter : Node
+                 Native.UnregisterClassW(className, Native.GetModuleHandleW(null));
+                 if (graphics != 0) Native.GdipDeleteGraphics(graphics);
+                 if (buffer != 0) Native.GdipDisposeImage(buffer);
++                if (overlayPin.IsAllocated) overlayPin.Free();
++                LoadingCanvas.Release(ref overlay);
+                 foreach (var bitmap in bitmaps.Values) bitmap.Dispose();
++                canvas?.Dispose();
+                 if (titleFont != 0) Native.GdipDeleteFont(titleFont);
+                 if (textFont != 0) Native.GdipDeleteFont(textFont);
+                 foreach (var family in fontFamilies) Native.GdipDeleteFontFamily(family);
+@@ -253,7 +302,6 @@ public partial class LoadingPresenter : Node
+                 if (trackBrush != 0) Native.GdipDeleteBrush(trackBrush);
+                 if (accentBrush != 0) Native.GdipDeleteBrush(accentBrush);
+                 if (format != 0) Native.GdipDeleteStringFormat(format);
+-                if (alphaAttributes != 0) Native.GdipDisposeImageAttributes(alphaAttributes);
+                 if (token != 0) Native.GdiplusShutdown(token);
+             }
+         }
+@@ -274,22 +322,9 @@ public partial class LoadingPresenter : Node
+                 if (Native.GdipCreateFont(family, size, style, 2, out var font) == 0) return font;
+             throw new InvalidOperationException("Loading font creation failed");
+         }
+-        private void Resize(int w, int h)
+-        {
+-            if (graphics != 0) Native.GdipDeleteGraphics(graphics);
+-            if (buffer != 0) Native.GdipDisposeImage(buffer);
+-            graphics = buffer = 0;
+-            width = w; height = h;
+-            Native.GdipCreateBitmapFromScan0(width, height, 0, 0x26200A, 0, out buffer);
+-            Native.GdipGetImageGraphicsContext(buffer, out graphics);
+-            Native.GdipSetPageUnit(graphics, 2);
+-            Native.GdipSetInterpolationMode(graphics, 6);
+-            Native.GdipSetPixelOffsetMode(graphics, 4);
+-            Native.GdipSetTextRenderingHint(graphics, 4);
+-        }
+         private void Draw(double time)
+         {
+-            Native.GdipGraphicsClear(graphics, 0xff101216);
++            canvas.Begin();
+             const double hold = 6, crossfade = 1.4, cycle = hold + crossfade;
+             var sequence = (int)(time / cycle);
+             var local = time % cycle;
+@@ -300,22 +335,30 @@ public partial class LoadingPresenter : Node
+                 var blend = (local - hold) / crossfade;
+                 DrawImage(bitmaps[incoming], incoming, local - hold, (float)(blend * blend * (3 - 2 * blend)));
+             }
+-            // Same Barlow faces, colours, margins and real progress as StartupCurtain.
++            UpdateOverlay();
+             var scale = Math.Min((float)width / 1280, (float)height / 720);
+-            Native.GdipScaleWorldTransform(graphics, scale, scale, 0);
+-            var logicalHeight = height / scale;
+-            var titleRect = new Native.RectF { X = 48, Y = logicalHeight - 130, Width = 300, Height = 44 };
++            canvas.Draw(overlay, 0, height - 160 * scale, 1280 * scale, 160 * scale);
++            canvas.End();
++        }
++        private void UpdateOverlay()
++        {
++            var percent = (int)Math.Floor(DisplayedProgress * 100);
++            if (overlayPercent == percent) return;
++            overlayPercent = percent;
++            Native.GdipGraphicsClear(graphics, 0);
++            var titleRect = new Native.RectF { X = 48, Y = 30, Width = 300, Height = 44 };
+             Native.GdipDrawString(graphics, "HARBOR", -1, titleFont, ref titleRect, format, brush);
+-            var statusRect = new Native.RectF { X = 48, Y = logicalHeight - 83, Width = 170, Height = 24 };
++            var statusRect = new Native.RectF { X = 48, Y = 77, Width = 170, Height = 24 };
+             Native.GdipDrawString(graphics, "Carregando…", -1, textFont, ref statusRect, format, brush);
+-            var value = Math.Clamp(Volatile.Read(ref Progress), 0, 1);
+-            var percentRect = new Native.RectF { X = 235, Y = logicalHeight - 83, Width = 33, Height = 24 };
++            var percentRect = new Native.RectF { X = 225, Y = 77, Width = 43, Height = 24 };
+             Native.GdipSetStringFormatAlign(format, 2);
+-            Native.GdipDrawString(graphics, Percentages[(int)Math.Floor(value * 100)], -1, textFont, ref percentRect, format, brush);
++            Native.GdipDrawString(graphics, Percentages[percent], -1, textFont, ref percentRect, format, brush);
+             Native.GdipSetStringFormatAlign(format, 0);
+-            Native.GdipFillRectangle(graphics, trackBrush, 48, logicalHeight - 55, 220, 3);
+-            Native.GdipFillRectangle(graphics, accentBrush, 48, logicalHeight - 55, (float)(220 * value), 3);
+-            Native.GdipResetWorldTransform(graphics);
++            Native.GdipFillRectangle(graphics, trackBrush, 48, 105, 220, 3);
++            Native.GdipFillRectangle(graphics, accentBrush, 48, 105, 220 * percent / 100f, 3);
++            Native.GdipFlush(graphics, 1);
++            if (overlay == 0) overlay = canvas.Upload(1280, 160, overlayPin.AddrOfPinnedObject());
++            else canvas.Update(overlay, overlayPin.AddrOfPinnedObject(), 1280);
+         }
+         private void DrawImage(Bitmap bitmap, int index, double age, float opacity)
+         {
+@@ -326,23 +369,14 @@ public partial class LoadingPresenter : Node
+             var h = (float)(bitmap.Height * cover);
+             var x = (float)((width - w) * .5 + (index % 2 == 0 ? 1 : -1) * width * .018 * (progress * 2 - 1));
+             var y = (float)((height - h) * .5 + (index % 3 == 0 ? 1 : -1) * height * .012 * (progress * 2 - 1));
+-            matrix[0] = matrix[6] = matrix[12] = matrix[24] = 1;
+-            matrix[18] = opacity;
+-            Native.GdipSetImageAttributesColorMatrix(alphaAttributes, 1, true, matrix, 0, 0);
+-            Native.GdipDrawImageRectRect(graphics, bitmap.Handle, x, y, w, h, 0, 0, bitmap.Width, bitmap.Height, 2, alphaAttributes, 0, 0);
++            canvas.Draw(bitmap.Handle, x, y, w, h, opacity);
+         }
+         private static nint WindowProcedure(nint hwnd, uint message, nuint wparam, nint lparam)
+         {
+             if (message == 0x84) return -1; // HTTRANSPARENT: input remains with Godot's modal cover.
+             if (message == 0x14) return 1; // Double-buffered; no intermediate erase flash.
+-            if (message == 0x0F && Windows.TryGetValue(hwnd, out var presenter)) {
+-                var dc = Native.BeginPaint(hwnd, out var paint);
+-                if (presenter.buffer != 0 && dc != 0) {
+-                    Native.GdipCreateFromHDC(dc, out var graphics);
+-                    Native.GdipSetPageUnit(graphics, 2);
+-                    Native.GdipDrawImageRectI(graphics, presenter.buffer, 0, 0, presenter.width, presenter.height);
+-                    Native.GdipDeleteGraphics(graphics);
+-                }
++            if (message == 0x0F && Windows.ContainsKey(hwnd)) {
++                Native.BeginPaint(hwnd, out var paint);
+                 Native.EndPaint(hwnd, ref paint);
+                 return 0;
+             }
+@@ -380,8 +414,6 @@ public partial class LoadingPresenter : Node
+         [DllImport("user32")] public static extern bool ShowWindow(nint window, int command);
+         [DllImport("user32")] public static extern bool SetWindowPos(nint window, nint after, int x, int y, int w, int h, uint flags);
+         [DllImport("user32")] public static extern bool SetLayeredWindowAttributes(nint window, uint colour, byte alpha, uint flags);
+-        [DllImport("user32")] public static extern bool InvalidateRect(nint window, nint rect, bool erase);
+-        [DllImport("user32")] public static extern bool UpdateWindow(nint window);
+         [DllImport("user32")] public static extern bool PeekMessageW(out Message message, nint window, uint first, uint last, uint flags);
+         [DllImport("user32")] public static extern bool TranslateMessage(ref Message message);
+         [DllImport("user32")] public static extern nint DispatchMessageW(ref Message message);
+@@ -393,18 +425,11 @@ public partial class LoadingPresenter : Node
+         [DllImport("gdiplus")] public static extern int GdipCreateBitmapFromScan0(int width, int height, int stride, int format, nint data, out nint bitmap);
+         [DllImport("gdiplus")] public static extern int GdipDisposeImage(nint image);
+         [DllImport("gdiplus")] public static extern int GdipGetImageGraphicsContext(nint image, out nint graphics);
+-        [DllImport("gdiplus")] public static extern int GdipCreateFromHDC(nint dc, out nint graphics);
+         [DllImport("gdiplus")] public static extern int GdipDeleteGraphics(nint graphics);
+         [DllImport("gdiplus")] public static extern int GdipGraphicsClear(nint graphics, uint colour);
+-        [DllImport("gdiplus")] public static extern int GdipSetInterpolationMode(nint graphics, int mode);
++        [DllImport("gdiplus")] public static extern int GdipFlush(nint graphics, int intention);
+         [DllImport("gdiplus")] public static extern int GdipSetPageUnit(nint graphics, int unit);
+-        [DllImport("gdiplus")] public static extern int GdipSetPixelOffsetMode(nint graphics, int mode);
+         [DllImport("gdiplus")] public static extern int GdipSetTextRenderingHint(nint graphics, int hint);
+-        [DllImport("gdiplus")] public static extern int GdipDrawImageRectI(nint graphics, nint image, int x, int y, int width, int height);
+-        [DllImport("gdiplus")] public static extern int GdipDrawImageRectRect(nint graphics, nint image, float x, float y, float w, float h, float sx, float sy, float sw, float sh, int unit, nint attributes, nint callback, nint data);
+-        [DllImport("gdiplus")] public static extern int GdipCreateImageAttributes(out nint attributes);
+-        [DllImport("gdiplus")] public static extern int GdipDisposeImageAttributes(nint attributes);
+-        [DllImport("gdiplus")] public static extern int GdipSetImageAttributesColorMatrix(nint attributes, int type, bool enabled, float[] matrix, nint gray, int flags);
+         [DllImport("gdiplus")] public static extern int GdipNewPrivateFontCollection(out nint collection);
+         [DllImport("gdiplus")] public static extern int GdipDeletePrivateFontCollection(ref nint collection);
+         [DllImport("gdiplus")] public static extern int GdipPrivateAddMemoryFont(nint collection, nint memory, int length);
+@@ -420,8 +445,6 @@ public partial class LoadingPresenter : Node
+         [DllImport("gdiplus")] public static extern int GdipDeleteStringFormat(nint format);
+         [DllImport("gdiplus")] public static extern int GdipSetStringFormatAlign(nint format, int align);
+         [DllImport("gdiplus", CharSet = CharSet.Unicode)] public static extern int GdipDrawString(nint graphics, string text, int length, nint font, ref RectF layout, nint format, nint brush);
+-        [DllImport("gdiplus")] public static extern int GdipScaleWorldTransform(nint graphics, float x, float y, int order);
+-        [DllImport("gdiplus")] public static extern int GdipResetWorldTransform(nint graphics);
+         [DllImport("gdiplus")] public static extern int GdipFillRectangle(nint graphics, nint brush, float x, float y, float width, float height);
+     }
+ }
+diff --git a/ui/MainMenu.gd b/ui/MainMenu.gd
+index 449d5b1c..02946f26 100644
+--- a/ui/MainMenu.gd
++++ b/ui/MainMenu.gd
+@@ -306,11 +306,21 @@ func _show_loading(id: String, new_game: bool) -> void:
+ 	if not new_game:
+ 		for row in get_node("/root/V2Launch").list_slots():
+ 			if row.id == id: region = str(row.get("region", "harbor"))
+-	var curtain = CURTAIN.new()
+-	curtain.variant = CURTAIN.variant_for(region)
+-	get_tree().root.add_child(curtain)
++	# New game and failed previews already have an opaque, running presenter.
++	# Transfer that same curtain instead of opening two native windows (and two
++	# independent slideshow clocks) over one another during the scene handoff.
++	var curtain: CanvasLayer
++	if sky != null and is_instance_valid(sky.curtain):
++		curtain = sky.curtain
++		sky.curtain = null
++		curtain.reparent(get_tree().root)
++	else:
++		curtain = CURTAIN.new()
++		curtain.variant = CURTAIN.variant_for(region)
++		get_tree().root.add_child(curtain)
++		curtain._root.modulate.a = 0.0
+ 	curtain.layer = 127
+-	curtain._root.modulate.a = 0.0
++	await curtain.prepare_presentation()
+ 	create_tween().tween_property(curtain._root, "modulate:a", 1.0, .35).set_trans(Tween.TRANS_SINE)
+ 	curtain.set_stage(.04, "Abrindo o save…" if not new_game else "Começando uma nova história…")
+ 	var music := get_node_or_null("MenuMusic")
+diff --git a/ui/SkyMenu.gd b/ui/SkyMenu.gd
+index 027a3922..6eb1983b 100644
+--- a/ui/SkyMenu.gd
++++ b/ui/SkyMenu.gd
+@@ -85,6 +85,7 @@ func begin_continue() -> void:
+ 	curtain.layer = 127
+ 	curtain.set_stage(.04, "Carregando…")
+ 	curtain._root.modulate.a = 0.0
++	await curtain.prepare_presentation()
+ 	reveal = create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE)
+ 	reveal.tween_property(curtain._root, "modulate:a", 1.0, .35)
+ 	var music := menu.get_node_or_null("MenuMusic")
+diff --git a/world/desert/DesertGroundCover.gd b/world/desert/DesertGroundCover.gd
+index 7c6f847d..56c20039 100644
+--- a/world/desert/DesertGroundCover.gd
++++ b/world/desert/DesertGroundCover.gd
+@@ -444,6 +444,8 @@ static func prewarm_draw(host: Node3D, curtain: CanvasLayer) -> void:
+ 	stage.add_child(saguaro)
+ 	var draws: Array[int] = [0]
+ 	var count_draw := func() -> void: draws[0] += 1
++	# Peças escondidas primeiro: os trabalhadores do motor compilam em paralelo (runtime/HiddenCompile.gd).
++	await preload("res://runtime/HiddenCompile.gd").prepare(stage, host.get_tree())
+ 	RenderingServer.frame_post_draw.connect(count_draw)
+ 	var completed := false
+ 	for frame in 24:

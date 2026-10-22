@@ -85,6 +85,7 @@ func begin_continue() -> void:
 	curtain.layer = 127
 	curtain.set_stage(.04, "Carregando…")
 	curtain._root.modulate.a = 0.0
+	await curtain.prepare_presentation()
 	reveal = create_tween().set_parallel(true).set_trans(Tween.TRANS_SINE)
 	reveal.tween_property(curtain._root, "modulate:a", 1.0, .35)
 	var music := menu.get_node_or_null("MenuMusic")

@@ -40,7 +40,7 @@ func _ready() -> void:
 	video.name = "FerryMovie"
 	video.expand = true
 	video.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	video.bus = &"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master"
+	video.bus = &"Dialogue" if AudioServer.get_bus_index("Dialogue") >= 0 else &"Master"
 	video.stream = load(BASE+"arrival.ogv") as VideoStream
 	if voice_language == "en": video.volume_db = -80.0
 	video.finished.connect(func(): _finish(false))
@@ -58,7 +58,7 @@ func _ready() -> void:
 		stems.append(player)
 	_legacy_english = AudioStreamPlayer.new()
 	_legacy_english.name = "EnglishDialogue"
-	_legacy_english.bus = &"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master"
+	_legacy_english.bus = &"Dialogue" if AudioServer.get_bus_index("Dialogue") >= 0 else &"Master"
 	add_child(_legacy_english)
 	voice_track = DIRECTED_TRACK.new()
 	add_child(voice_track)

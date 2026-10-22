@@ -1,0 +1,39 @@
+{
+  "scope": "HUD de conversa, menu curto do Maciota, informacoes de leitura, diario e Ajuda das configuracoes",
+  "validation": {
+    "dotnet_build": "PASS: Harbor.csproj, zero warnings/errors",
+    "dialogue_presentation": "PASS: 22 checks",
+    "settings_menu": "PASS: navigation, read-only Help, scrolling by focus, current shortcuts, cancel rollback",
+    "production_menu_flow": "PASS: 22 checks, Godot 4.7.2 .NET, Forward+, isolated save and --no-save",
+    "visual": "Inspected production captures in Portuguese/English, 1280x720 and 800x600; proximity, compact menu, information, missions, conversation, Help"
+  },
+  "concurrency": "Surgical edits; preserved concurrent NavigationDestination and HUD layout changes. No discard, restore, reset, checkout or cleanup commands.",
+  "performance": {
+    "scope": "rendered production garage, stationary dialogue, isolated fixture; comparison restricted to caption presentation",
+    "method": "Exact saved pre-edit dialogue scripts, with inheritance redirected to the saved parent, versus current UI. Same running Main and scene, 2-second warmup plus at least 30 seconds each. No headless FPS claims.",
+    "before_p95_ms": 8.474,
+    "after_p95_ms": 8.734,
+    "p95_change_percent": 3.07,
+    "limitation": "Before sample contains a 14757 ms stall; after maximum is 125.629 ms. These outliers are retained. No claim of global performance approval or average FPS improvement. Other concurrent sessions were preserved; comparison is restricted to the stationary garage caption."
+  },
+  "remaining_findings": [
+    "Startup reports Array/Array[StandardMaterial3D] assignment at VehicleMaterialVariantPrewarm.gd:146. File was not changed by this task.",
+    "Startup reports invalid world edit path/mountain_zoo_walk. File was not changed by this task.",
+    "Shutdown reports one ObjectDB instance leak; general game lifecycle is not certified by this local HUD validation."
+  ],
+  "evidence": [
+    "dialogue-presentation.log",
+    "settings.log",
+    "integration.log",
+    "caption-performance.json",
+    "01-proximidade.png",
+    "02-menu-maciota.png",
+    "03-informacoes.png",
+    "04-missoes.png",
+    "05-conversa.png",
+    "06-ajuda-16x9.png",
+    "07-help-english.png",
+    "08-ajuda-800x600.png",
+    "09-caption-before.png"
+  ]
+}

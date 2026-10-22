@@ -58,7 +58,7 @@ func configure(owner_session) -> void:
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 	voice = AudioStreamPlayer.new()
 	voice.volume_db = -8
-	if AudioServer.get_bus_index("SFX") >= 0: voice.bus = "SFX"
+	if AudioServer.get_bus_index("Dialogue") >= 0: voice.bus = "Dialogue"
 	add_child(voice)
 	var settings: Node = session.get_node_or_null("/root/V2Settings")
 	if settings != null:

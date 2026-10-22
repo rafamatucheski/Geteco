@@ -136,8 +136,19 @@ func target_position() -> Vector3:
 	if id == "transfer_document" and session.state.place_id == "cobra_leader_house": return session.room.to_global(Vector3(2.4,.08,-.25))
 	if id == "maciota": return session.world.maciota_place.entry_position
 	if id == "helena": return preload("res://world/places/PlaceCatalog.gd").get_definition("harbor_bank").entry_position
-	if id == "story_tow_vehicle" and is_instance_valid(cargo): return cargo.global_position
+	if id == "story_tow_vehicle":
+		if _needs_tow_truck() and is_instance_valid(truck): return truck.global_position
+		if is_instance_valid(cargo): return cargo.global_position
 	return targets.get(id,session.world.maciota_place.entry_position)
+
+func _needs_tow_truck() -> bool:
+	return not session.world.driving.occupied or session.world.driving.car != truck
+
+func objective() -> String:
+	if session.state.campaign.active_id == "cobra_contact" and session.state.campaign.target_id() == "story_tow_vehicle":
+		if _needs_tow_truck(): return "Pegue o guincho do Neco no ponto marcado. A caminhonete da cliente está quebrada."
+		return "Vá até a caminhonete. Aproxime a traseira do guincho e use a interação para carregar."
+	return session.state.campaign.objective()
 
 func nearest_action() -> Dictionary:
 	var local_position: Vector3 = session.world.player.position

@@ -3,7 +3,7 @@ extends RefCounted
 
 ## Gerador Procedural de Áudio para Menus (SFX & Música)
 ## Sintetiza ondas PCM 16-bit diretamente em AudioStreamWAV em tempo de execução.
-## Roteia sons de interface para o bus "SFX" e trilha ambiente para o bus "Music".
+## Roteia sons de interface para o bus "UI" e trilha ambiente para o bus "Music".
 ## Totalmente compatível com execução headless (sem crashes por falta de dispositivo de áudio).
 
 static var _cached_hover: AudioStreamWAV = null
@@ -22,6 +22,8 @@ const BACK_WORDS := ["voltar", "cancelar", "fechar", "sair", "back", "cancel", "
 # ==============================================================================
 
 static func get_sfx_bus_name() -> String:
+	if AudioServer.get_bus_index("UI") != -1:
+		return "UI"
 	if AudioServer.get_bus_index("SFX") != -1:
 		return "SFX"
 	return "Master"

@@ -89,7 +89,7 @@ func _draw() -> void:
 		_label(Vector2(48,y+26),"%02d · %s"%[step+1,str(goal.name).to_upper()],20,AMBER if step==int(state.step) else PAPER)
 		_label(Vector2(465,y+26),"FEITO" if not proofs[step].is_empty() else "%d M"%int(goal.distance),15,MUTED)
 		draw_multiline_string(FONT,Vector2(48,y+53),tr(str(goal.objective)),HORIZONTAL_ALIGNMENT_LEFT,492,18,2,PAPER)
-	_label(Vector2(590,205),"%d / 2 PROVAS"%int(state.stamps),24,AMBER)
+	_label(Vector2(590,205),String(TranslationServer.translate("%d / 2 PROVAS"))%int(state.stamps),24,AMBER)
 	_label(Vector2(590,235),"PEÇA CONQUISTADA" if state.mastered else "PRÓXIMA RECOMPENSA",14,MUTED)
 	draw_multiline_string(BOLD,Vector2(590,267),str(state.reward_label),HORIZONTAL_ALIGNMENT_LEFT,278,24,2,PAPER)
 	draw_multiline_string(FONT,Vector2(590,335),tr(str(state.reward_effect)),HORIZONTAL_ALIGNMENT_LEFT,278,17,4,MUTED)

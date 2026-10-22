@@ -29,6 +29,8 @@ var health_bar: ProgressBar
 var armor_bar: ProgressBar
 var money_label: Label
 var objective_label: Label
+var current_objective: PanelContainer
+var current_objective_label: Label
 var interaction_key: Label
 var interaction_label: Label
 var notice_label: Label
@@ -47,6 +49,7 @@ var _legacy_sources: Array[Node]=[]
 var _lower_right: HBoxContainer
 var _upper_right: VBoxContainer
 var _notifications: VBoxContainer
+var _layout_running := false
 
 func _ready() -> void:
 	name="HUD"; layer=50; process_mode=Node.PROCESS_MODE_ALWAYS; process_priority=1000; add_to_group("hud")
@@ -85,7 +88,14 @@ func _ready() -> void:
 	backpack.pressed.connect(func(): if _bound: _session.show_inventory())
 	backpack_hint=STYLE.label("",12,STYLE.MUTED); backpack_hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; bag_column.add_child(backpack_hint)
 	minimap=preload("res://ui/v1/HarborMinimap3D.gd").new(); minimap.world=world; root_control.add_child(minimap)
+	current_objective=PanelContainer.new(); current_objective.name="CurrentObjective"; current_objective.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	current_objective.add_theme_stylebox_override("panel",STYLE.compact(false,10)); root_control.add_child(current_objective)
+	current_objective_label=STYLE.label("",16); current_objective_label.custom_minimum_size.x=260
+	current_objective_label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; current_objective.add_child(current_objective_label)
+	current_objective.resized.connect(_layout); current_objective.hide()
 	vehicle_name=preload("res://ui/hud/VehicleNameHUD.gd").new(); minimap.add_child(vehicle_name)
+	vehicle_name.visibility_changed.connect(_layout)
+	minimap.caption.visibility_changed.connect(_layout)
 	interaction_row=preload("res://ui/hud/InteractionPrompt.gd").new(); root_control.add_child(interaction_row)
 	interaction_key=interaction_row.key; interaction_label=interaction_row.caption
 	_notifications=VBoxContainer.new(); _notifications.add_theme_constant_override("separation",8); root_control.add_child(_notifications)
@@ -137,6 +147,10 @@ func _sync_channels() -> void:
 	var text := str(_session.hud_objective)
 	if text!=_last_objective:
 		_last_objective=text
+		current_objective_label.text=text
+		current_objective.visible=not text.is_empty()
+		current_objective.size=Vector2.ZERO
+		_layout.call_deferred()
 		if not text.is_empty(): objective_card.present(text,"NOVO OBJETIVO")
 	var feedback := ""
 	if float(_session.notice_time)>0 and not bool(_session.get("speech_active")): feedback=str(_session.notice.text).strip_edges()
@@ -193,23 +207,30 @@ func _anchor(node: Control, preset: Control.LayoutPreset, offsets: Rect2) -> voi
 	node.offset_right=offsets.end.x; node.offset_bottom=offsets.end.y
 
 func _layout() -> void:
-	if not is_instance_valid(root_control): return
+	if not is_instance_valid(root_control) or _layout_running: return
+	_layout_running=true
 	var view := get_viewport().get_visible_rect().size
 	var margin := STYLE.SAFE_MARGIN
 	_anchor(player_status,Control.PRESET_TOP_LEFT,Rect2(margin,margin,200,0))
 	_anchor(_upper_right,Control.PRESET_TOP_RIGHT,Rect2(-224-margin,margin,224,0))
 	_anchor(_lower_right,Control.PRESET_BOTTOM_RIGHT,Rect2(-264-margin,-margin-112,264,112))
 	_anchor(minimap,Control.PRESET_BOTTOM_LEFT,Rect2(margin,-margin-minimap.size.y,minimap.size.x,minimap.size.y))
+	# The boarding introduction gets its own row while the destination stays visible.
+	vehicle_name.position=Vector2(0,-56 if minimap.caption.visible else -40)
+	var navigation_gap := 72 if vehicle_name.visible else 40
+	_anchor(current_objective,Control.PRESET_BOTTOM_LEFT,Rect2(margin,-margin-minimap.size.y-navigation_gap-current_objective.size.y,280,current_objective.size.y))
 	_anchor(_notifications,Control.PRESET_TOP_LEFT,Rect2(margin,150,minf(320,view.x-48),0))
 	_anchor(speed_label,Control.PRESET_BOTTOM_RIGHT,Rect2(-220-margin,-margin-148,220,30))
 	var touch := OS.has_feature("android") or "--touch-controls" in OS.get_cmdline_user_args()
 	if touch:
 		# Reserve both lower corners for thumbs; keep navigation and ammo readable.
 		_anchor(minimap,Control.PRESET_TOP_LEFT,Rect2(margin,110,minimap.size.x,minimap.size.y))
+		_anchor(current_objective,Control.PRESET_TOP_LEFT,Rect2(margin,110+minimap.size.y+12,280,current_objective.size.y))
 		_anchor(_lower_right,Control.PRESET_TOP_RIGHT,Rect2(-264-margin,112,264,112))
 		_anchor(_notifications,Control.PRESET_TOP_LEFT,Rect2(view.x*.5-160,108,minf(320,view.x-48),0))
 		backpack.get_parent().hide()
 	_layout_modal()
+	_layout_running=false
 
 func _style_modal_if_needed() -> void:
 	if not is_instance_valid(_session.get("panel")) or not _session.panel.visible: return

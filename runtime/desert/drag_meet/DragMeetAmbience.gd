@@ -72,7 +72,7 @@ func update(listener: Vector3, suppressed: bool, elapsed: float, workshop_active
 			voice.stream = _stream(source.path,true)
 			voice.position = source.position
 			voice.max_distance = float(source.reach)
-			voice.bus = &"SFX" if source.category=="engine" and AudioServer.get_bus_index("SFX")>=0 else (&"Ambient" if AudioServer.get_bus_index("Ambient")>=0 else &"Master")
+			voice.bus = &"Vehicles" if source.category=="engine" and AudioServer.get_bus_index("Vehicles")>=0 else (&"Ambient" if AudioServer.get_bus_index("Ambient")>=0 else &"Master")
 			voice.unit_size = 6.0 if source.category=="engine" else 15.0
 			voice.max_db = -22.0 if source.category=="engine" else -16.0
 			voice.set_meta("source_id",source.id)

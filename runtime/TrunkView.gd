@@ -8,7 +8,8 @@ extends Node3D
 
 const WEAPON := preload("res://gameplay/ArsenalWeapon3D.gd")
 const PIVOT_NAME := "MonalizaTrunkHinge"
-const OPEN_ANGLE := -2.15
+# Keep the attached GT spoiler above the rear glazing throughout the lift.
+const OPEN_ANGLE := -1.30
 const OPEN_SPEED := 2.6
 # Same model-root-space offsets as V1's TrunkLiveView.SLOT_POSITIONS: both
 # come from the same res://world/harbor/monaliza/MonalizaModel.gd geometry,
@@ -27,24 +28,17 @@ const SLOT_LABELS := {"longa": "LONGA", "curta": "CURTA", "corpo": "CORPO", "gra
 const CLOSE_OFFSET := Vector3(0, 7.0, 3.25)
 const CLOSE_SIZE := 6.4
 const TRAY_CENTER := Vector3(0, 0.648, 1.80)
-# The baked res://assets/fleet/monaliza.scn is a flat, unlabeled mesh dump
-# (277 anonymous MeshInstance3D children, no MonalizaTrunkHinge survives the
-# bake) with no hollow trunk cavity to reveal, so a loadout sitting at deck
-# height renders buried inside solid bodywork. `_safety()` (no_depth_test)
-# already guarantees it draws regardless of that; LIFT_HEIGHT only has to
-# clear the tray off the paint enough to read as "raised into view", not
-# clear the whole car -- a large lift reads as a platform floating in the
-# air disconnected from the car, which is worse than the bug it fixed.
-const LIFT_HEIGHT := 0.2
+# Both current fleet variants contain the offline-partitioned hinged lid and
+# recessed bay. The loadout stays inside it and uses ordinary depth testing.
+const LIFT_HEIGHT := 0.0
 # Geometria do compartimento (espaço do modelo, mesmo das posições dos slots).
 const FLOOR_Y := 0.648
 const WALL_X := 0.76
 const FOAM_THICKNESS := 0.032
 const FOAM_CENTER_X := -0.03
 const FOAM_WIDTH := 1.18
-# As armas assentam em cima da espuma; DROP_HEIGHT é a altura de onde descem.
+# As armas já estão assentadas na espuma quando a tampa começa a abrir.
 const SEAT_LIFT := 0.03
-const DROP_HEIGHT := 0.14
 
 var car: Node3D
 var pivot: Node3D
@@ -150,7 +144,8 @@ func update_loadout(slots: Dictionary) -> void:
 
 func _replace_weapon(slot: String, id: String) -> void:
 	if slot_models.has(slot) and is_instance_valid(slot_models[slot]):
-		slot_models[slot].free()
+		slot_models[slot].hide()
+		slot_models[slot].queue_free()
 	var holder := Node3D.new()
 	holder.name = "Trunk_" + slot
 	weapons.add_child(holder)
@@ -159,15 +154,18 @@ func _replace_weapon(slot: String, id: String) -> void:
 	holder.rotation_degrees = Vector3(0, -90, 90)
 	if slot != "longa": holder.scale = Vector3.ONE * 1.25
 	if not id.is_empty():
-		# A arma desce até a espuma em vez de aparecer já encaixada.
-		holder.position.y += DROP_HEIGHT
-		holder.create_tween().tween_property(holder, "position:y", rest.y, 0.30).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 		WEAPON.build(holder, id)
 		for part in holder.find_children("*", "MeshInstance3D", true, false):
 			if part.mesh == null: continue
 			for surface in part.mesh.get_surface_count():
-				var material: Material = part.mesh.surface_get_material(surface)
-				if material is StandardMaterial3D: _safety(material)
+				var material: Material = part.get_active_material(surface)
+				if material is StandardMaterial3D:
+					# Arsenal meshes/materials are cached and shared by equipped guns.
+					# Never change their depth state globally through a trunk display.
+					var local: StandardMaterial3D = material.duplicate()
+					local.no_depth_test = false
+					local.render_priority = 0
+					part.set_surface_override_material(surface, local)
 	slot_models[slot] = holder
 	displayed[slot] = id
 	_rebuild_cutout(slot, holder, not id.is_empty())
@@ -197,7 +195,9 @@ func close() -> void:
 	if is_instance_valid(focus_anchor): focus_anchor.queue_free()
 	focus_anchor = null
 	if is_instance_valid(pivot): pivot.rotation.x = 0.0
-	if is_instance_valid(weapons): weapons.free()
+	if is_instance_valid(weapons):
+		weapons.hide()
+		weapons.queue_free()
 	weapons = null
 	dressing = null
 	courtesy_light = null
@@ -221,11 +221,8 @@ func close() -> void:
 # same car. Built once per open() and freed with the rest of `weapons`.
 
 func _safety(material: StandardMaterial3D) -> StandardMaterial3D:
-	# The tray floats clear of the car on open (see LIFT_HEIGHT), but a still
-	# mid-rise tray or a stray strut can dip into its own depth range; render
-	# it through minor overlaps rather than risk it vanishing into the body.
-	material.no_depth_test = true
-	material.render_priority = 5
+	material.no_depth_test = false
+	material.render_priority = 0
 	return material
 
 func _detail_mat(color: Color, rough := 0.85, metal := 0.0) -> StandardMaterial3D:
@@ -260,8 +257,7 @@ func _box(parent: Node3D, pos: Vector3, size: Vector3, material: Material) -> Me
 
 ## Material com teste de profundidade normal: o interior do compartimento
 ## precisa que as paredes escondam o que está atrás delas, senão tudo volta a
-## parecer chapado. A bandeja já sobe LIFT_HEIGHT acima da lataria ao abrir, então
-## não precisa mais do no_depth_test que as armas ainda usam.
+## parecer chapado. As armas e a bandeja usam a mesma profundidade real.
 func _solid_mat(color: Color, rough := 0.85, metal := 0.0) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
 	material.albedo_color = color

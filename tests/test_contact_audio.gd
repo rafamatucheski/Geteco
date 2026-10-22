@@ -71,7 +71,7 @@ func run() -> void:
 	var light_volume: float = pool.voices[0].volume_db
 	check(AUDIO.pool(car) == pool, "one pool per world")
 	check(pool.voices.size() == AUDIO.MAX_VOICES, "voice pool bounded")
-	check(AudioServer.get_bus_send(AudioServer.get_bus_index(pool.voices[0].bus)) == &"SFX" and pool.voices[0].unit_size == 32, "SFX bus and isometric attenuation")
+	check(AudioServer.get_bus_send(AudioServer.get_bus_index(pool.voices[0].bus)) == &"Vehicles" and pool.voices[0].unit_size == 32, "independent Vehicles bus and isometric attenuation")
 	check(not AUDIO.play_contact(car,wall,Vector3.ZERO,3), "same contact does not repeat")
 	await frames(8)
 	check(not AUDIO.play_contact(car,wall,Vector3.ZERO,12), "pair cooldown survives short separation")

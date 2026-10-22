@@ -49,16 +49,21 @@ func run() -> void:
 	current_scene=scene
 	var camera := Camera3D.new()
 	scene.add_child(camera)
-	camera.position=Vector3(-922,5,-1306)
+	# Follow the authored encounter after the desert layout moved north.
+	var at: Vector3 = SCORE.SPEAKERS[0] + Vector3(2,-1.3,0)
+	camera.position=at+Vector3.UP*5.0
 	camera.make_current()
 	var score := SCORE.new()
 	scene.add_child(score)
-	var at := Vector3(-922,0,-1306)
 	check(score.players.size()==2 and not score.is_processing(),"score starts silent with two native players")
 	check(score.players.all(func(p): return p.bus==&"Music"),"both stems use the user-controlled Music bus")
 	score.update_context(at,"idle",false,false,false,12.0)
 	settle(score)
 	check(score.players.all(func(p): return p.playing and p.stream is AudioStreamOggVorbis and p.stream.loop),"both original stems play as native looping Ogg")
+	if score.players.any(func(p): return p.stream == null):
+		scene.free()
+		quit(1)
+		return
 	check(score.snapshot().voices==2 and not score.is_processing(),"settled audible score keeps both native voices without a frame callback")
 	check(absf(score.players[0].stream.get_length()-score.players[1].stream.get_length())<.001,"stems have matching duration")
 	check(absf(score.players[0].get_playback_position()-score.players[1].get_playback_position())<.025,"both stems start at the same musical phase")
@@ -124,21 +129,24 @@ func run() -> void:
 	check(score.snapshot().voices==0 and not score.is_processing(),"explicit teardown silences score immediately")
 	var ambience := AMBIENCE.new()
 	scene.add_child(ambience)
-	ambience.update(Vector3(-945,0,-1259),false,10.0,true,"idle")
+	var courtyard: Vector3 = ambience.sources.filter(func(s): return s.id == "livia_engine")[0].position
+	ambience.update(courtyard,false,10.0,true,"idle")
 	settle(ambience)
 	check(ambience.voices.size()==6,"spatial mixer retains five loops and one detail")
 	var routed := true
 	for voice in ambience.voices:
 		if voice.get_meta("source_id","")=="": continue
 		var engine := str(voice.get_meta("source_id","")).ends_with("_engine")
-		if voice.bus!=(&"SFX" if engine else &"Ambient"): routed=false
-	check(routed,"parked engines use SFX while crowd and workshop use Ambient")
+		if voice.bus!=(&"Vehicles" if engine else &"Ambient"): routed=false
+	check(routed,"parked engines use Vehicles while crowd and workshop use Ambient")
 	check(ambience.sources.all(func(s): return s.category!="music"),"spatial mixer cannot start a competing second song")
 	ambience.update(Vector3.ZERO,false,11.0,true,"idle")
 	check(ambience.voices.any(func(v): return v.playing),"leaving a sound island begins a fade instead of abrupt stop")
 	settle(ambience)
-	check(ambience.voices.all(func(v): return not v.playing),"departed spatial loops release after the fade")
-	ambience.update(Vector3(-945,0,-1259),false,12.0,true,"racing")
+	# settle() advances loop fades synchronously, not the native one-shot clock.
+	# A previously emitted workshop detail may finish its tail independently.
+	check(ambience.voices.slice(0,AMBIENCE.LOOP_BUDGET).all(func(v): return not v.playing),"departed spatial loops release after the fade")
+	ambience.update(courtyard,false,12.0,true,"racing")
 	settle(ambience)
 	check(not ambience._detail.playing,"workshop one-shots do not interrupt a race")
 	ambience.stop()

@@ -70,8 +70,8 @@ func run() -> void:
 		tires._update_skid_audio(true, 20.0, 0.0)
 		check(is_instance_valid(tires.skid_audio) and tires.skid_audio.playing, id+": braking retains its tire sound during wheelspin")
 		check(tires.skid_audio.volume_db <= -22.0 and tires.skid_audio.max_db <= -22.0 and tires.skid_audio.unit_size <= 4.0, id+": generic skid has a bounded close-listener mix")
-		var expected_bus: StringName = &"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master"
-		check(sound._tire.bus == expected_bus and tires.skid_audio.bus == expected_bus, id+": tire effects preserve user SFX routing")
+		var expected_bus: StringName = &"Vehicles" if AudioServer.get_bus_index("Vehicles") >= 0 else &"Master"
+		check(sound._tire.bus == expected_bus and tires.skid_audio.bus == expected_bus, id+": engine and tire effects share the independent Vehicles control")
 		car.brake_input = false
 		tires._update_skid_audio(true, 20.0, 10.0)
 		check(tires.skid_audio.playing, id+": lateral drift remains audible during wheelspin")

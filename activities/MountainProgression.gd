@@ -30,6 +30,9 @@ var lift: Node
 var _hud_clock := 0.0
 var _gate_target := Vector3(INF, INF, INF)
 var _ski_pose: Array = []
+var _ski_turn_poses: Array = []
+var _ski_carve := 0.0
+var _ski_poles: Array[MeshInstance3D] = []
 
 func configure(owner_session) -> void:
 	session = owner_session
@@ -192,28 +195,86 @@ func _equip() -> void:
 			var pole := MeshInstance3D.new()
 			var shaft := CylinderMesh.new()
 			shaft.top_radius=.013; shaft.bottom_radius=.013; shaft.height=1.15; shaft.radial_segments=6
-			pole.mesh=shaft; pole.position=Vector3(side*.4,.65,.18)
-			pole.rotation.x=.2; equipment_visual.add_child(pole)
+			pole.mesh=shaft
+			equipment_visual.add_child(pole)
+			_ski_poles.append(pole)
 	equipment_visual.show()
 	_build_ski_pose()
 
 func _build_ski_pose() -> void:
 	var actor = session.world.player
 	if not is_instance_valid(actor.skeleton) or actor.hips < 0: return
+	_ski_turn_poses.clear()
+	_ski_carve = 0.0
+	# Resolve the rig only when equipping. Curves blend these cached poses, rather
+	# than freezing a weapon-arm solution or running arm IK every rendered frame.
+	var weapon_pose: Dictionary = actor.combat_weapon_pose
+	var weapon_id: String = actor.combat_weapon_id
+	var pose_delta: float = actor._pose_delta
+	actor.combat_weapon_id = ""
+	actor.combat_weapon_pose = {"left_pole":Vector3(-.7,-1.0,.45),"right_pole":Vector3(.7,-1.0,.45)}
+	actor._pose_delta = 1.0
+	for carve in [-1.0,0.0,1.0]:
+		_ski_turn_poses.append(_make_ski_pose(carve))
+	actor.combat_weapon_pose = weapon_pose
+	actor.combat_weapon_id = weapon_id
+	actor._pose_delta = pose_delta
+	actor._elbow_previous.clear()
+	actor._twist_previous.clear()
+	_ski_pose = _ski_turn_poses[1]
+	actor._apply_pose(_ski_pose)
+	_update_ski_poles()
+
+func _make_ski_pose(carve: float) -> Array:
+	var actor = session.world.player
 	actor._apply_pose(actor._idle_pose)
+	actor._elbow_previous.clear()
+	actor._twist_previous.clear()
 	var hip: Vector3 = actor.skeleton.get_bone_pose_position(actor.hips)
-	hip.y -= .16
+	hip.y -= .19 + absf(carve)*.025
 	actor.skeleton.set_bone_pose_position(actor.hips,hip)
+	var spine: int = actor._combat_bones.get("Spine",-1)
+	if spine >= 0:
+		# Skeleton faces +Z; the facing-space hands below face -Z.
+		actor._set_combat_bone_rotation(spine,Basis(Vector3.FORWARD,carve*.12)*Basis(Vector3.RIGHT,.20)*actor.skeleton.get_bone_global_pose(spine).basis)
 	for side in ["Left","Right"]:
 		var sign_side := -1.0 if side == "Left" else 1.0
 		actor._solve_leg(side,actor.visual.to_global(Vector3(sign_side*.09,.07,0)))
-		actor._solve_combat_arm(side,Vector3(sign_side*.4,1.02,.06),Basis.IDENTITY,false,sign_side)
-	_ski_pose = actor._capture_pose()
+		# Hands stay ahead of the chest, shoulder-width apart. The inside hand
+		# advances slightly on a turn; lowered/outside elbows keep the arms flexed.
+		var inside := sign_side*carve
+		var hand := Vector3(sign_side*.27+carve*.025,.83-absf(carve)*.02,-.26-inside*.04)
+		var palm := Basis(Vector3.RIGHT,-.30)*Basis(Vector3.UP,sign_side*.12)
+		actor._solve_combat_arm(side,hand,palm,true,sign_side)
+	actor._set_combat_grips(true,true)
+	return actor._capture_pose()
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if not skiing or _ski_pose.is_empty() or session.world.gameplay.health <= 0: return
 	var actor = session.world.player
-	actor._apply_pose(_ski_pose)
+	var controls := get_node("/root/GameInput")
+	var axis: Vector2 = controls.movement()
+	var desired := clampf(axis.x,-1.0,1.0)*clampf(glide.length()/5.0,0.0,1.0)
+	_ski_carve = lerpf(_ski_carve,desired,1.0-exp(-7.0*delta))
+	if _ski_turn_poses.size() == 3:
+		actor._apply_blend(_ski_pose,_ski_turn_poses[0 if _ski_carve < 0.0 else 2],absf(_ski_carve))
+	else:
+		actor._apply_pose(_ski_pose)
+	actor._set_combat_grips(true,true)
+	_update_ski_poles()
+
+func _update_ski_poles() -> void:
+	if not is_instance_valid(equipment_visual): return
+	var actor = session.world.player
+	for index in mini(_ski_poles.size(),2):
+		var side := "Left" if index == 0 else "Right"
+		var sign_side := -1.0 if index == 0 else 1.0
+		var pole := _ski_poles[index]
+		# Cylinder +Y is its handle. Keep the actual palm eight centimetres below
+		# the top, with the tip trailing behind and outside the skis.
+		var down := Vector3(sign_side*.055,-1.0,.90+sign_side*_ski_carve*.04).normalized()
+		pole.basis = Basis(Quaternion(Vector3.UP,-down))
+		pole.position = equipment_visual.to_local(actor.combat_palm_position(side))+down*(1.15*.5-.08)
 
 func _stop() -> void:
 	skiing=false; race.cancel(); glide=Vector3.ZERO; fall_time=0; turn_stress=0

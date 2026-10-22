@@ -6,6 +6,7 @@ const DESERT := preload("res://world/desert/DesertLayout.gd")
 const GATE := preload("res://world/north_gateway/NorthGatewayLayout.gd")
 const SYMBOLS := preload("res://ui/hud/MapSymbols.gd")
 const RELIEF := preload("res://ui/hud/MapRelief.gd")
+const NAV_PLACES := preload("res://ui/hud/NavigationPlaces.gd")
 var roads: Array[Dictionary]=[]
 var lands: Array[Dictionary]=[]
 var buildings: Array[PackedVector2Array]=[]
@@ -45,6 +46,9 @@ func collect(controller) -> void:
 	if "--railway-baseline" not in OS.get_cmdline_user_args(): _railway_markers(controller.state)
 	if controller.world is Node and is_instance_valid(controller.world.get("maciota_place")):
 		add_marker("maciota","Maciota",controller.world.maciota_place.exterior_return,"workshop","harbor")
+	if controller.world is Node and controller.world.get("session") != null and controller.world.session.has_method("navigation_destination"):
+		for place in NAV_PLACES.harbor(controller.world.session):
+			if not markers.any(func(marker): return marker.id==place.id): markers.append(place)
 	if regions.has("harbor"):
 		add_marker("motocross","Motocross",Vector3(-224,0,-37),"race","harbor")
 		add_marker("fishing","Lago Sereno",preload("res://runtime/FishingLocation.gd").ENTRY,"fishing","harbor")
@@ -216,16 +220,4 @@ func _railway_markers(state) -> void:
 		_add_road({"id":"railway_"+str(edge.id),"points":edge.points,"width":1.5,"surface":"railway"},"world")
 
 func _service_icon(service: String) -> String:
-	match service:
-		"bank","hospital","police","clothing","weapons","fuel": return service
-		"fire_station": return "fire"
-		"supermarket", "wine": return "shop"
-		"ski_rental": return "ski"
-		"expedition","bunker": return "cave"
-		"sewer": return "sewer"
-		"desert_underground": return "cave"
-		"cargo_hold": return "port"
-		"restricted_garage","desert_tuning","garage": return "workshop"
-		"shelter","residence","cemetery","exploration": return "home"
-		"restaurant","food": return "food"
-	return "place"
+	return NAV_PLACES.service_icon(service)

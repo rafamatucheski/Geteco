@@ -48,13 +48,13 @@ func live_status() -> String:
 		"digo:1": return "Trocas boas %d / 2 · erros %d"%[_telemetry.good_shifts,_telemetry.bad_shifts]
 		"raul:0": return "Trocas boas %d / 3 · erros %d"%[_telemetry.good_shifts,_telemetry.bad_shifts]
 		"livia:0": return "Patinagem %.0f%% / 25%%"%(_telemetry.spin60_seconds/maxf(.001,_telemetry.first60_seconds)*100.0)
-		"livia:1": return "%s · nitro %.1f s · limite %.1f / 0,5 s"%[launch_note,_telemetry.nitro_seconds,_telemetry.limiter_seconds]
+		"livia:1": return String(TranslationServer.translate("%s · nitro %.1f s · limite %.1f / 0,5 s"))%[launch_note,_telemetry.nitro_seconds,_telemetry.limiter_seconds]
 		"raul:1": return "Limitador final %.2f / 0,35 s"%_telemetry.late_limiter_seconds
 		"jessica:0": return "Complete 402 m para registrar a marca"
 		"jessica:1": return "Repita %.3f s · tolerância ±0,30 s"%float(_reference_seconds)
 		"nadir:0": return "Sem nitro · usado %.1f s"%_telemetry.nitro_seconds
 		"nadir:1": return "Conserve 90%% · atual %.0f%%"%(_telemetry.tail_min_speed/maxf(.001,_telemetry.tail_entry_speed)*100.0) if _telemetry.tail_entry_speed>0.0 else "Conserve velocidade nos 100 m finais"
-		"rauhz:0": return "%s · trocas %d / 2 · erros %d"%[launch_note,_telemetry.good_shifts,_telemetry.bad_shifts]
+		"rauhz:0": return String(TranslationServer.translate("%s · trocas %d / 2 · erros %d"))%[launch_note,_telemetry.good_shifts,_telemetry.bad_shifts]
 		"rauhz:1": return "Trocas %d / 3 · erros %d · limite %.1f / 0,5 s"%[_telemetry.good_shifts,_telemetry.bad_shifts,_telemetry.limiter_seconds]
 	return ""
 

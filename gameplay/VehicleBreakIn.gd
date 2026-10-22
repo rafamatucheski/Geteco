@@ -158,7 +158,7 @@ static func _play(car: CharacterBody3D, stream: AudioStream, label: String, volu
 	sound.max_distance = 45.0
 	sound.unit_size = 6.0
 	sound.position.y = 1.0
-	if AudioServer.get_bus_index("SFX") >= 0: sound.bus = "SFX"
+	if AudioServer.get_bus_index("Vehicles") >= 0: sound.bus = "Vehicles"
 	car.add_child(sound)
 	sound.play()
 	return sound

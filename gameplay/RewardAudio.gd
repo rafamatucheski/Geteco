@@ -39,7 +39,7 @@ static func play(context: Node, kind: String, volume_db: float = -3.0) -> void:
 		host.add_child(pool)
 		for i in VOICES:
 			var voice := AudioStreamPlayer.new()
-			voice.bus = AUDIO.SFX_BUS_NAME
+			voice.bus = &"UI" if AudioServer.get_bus_index("UI") >= 0 else AUDIO.SFX_BUS_NAME
 			pool.add_child(voice)
 	var now := Time.get_ticks_msec()
 	var stamp := "last_" + kind

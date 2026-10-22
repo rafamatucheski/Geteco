@@ -108,7 +108,7 @@ func _draw() -> void:
 	_label(Vector2(500,301),"MELHOR DE 2 × 402 M DECIDE A MARCA",15,MUTED)
 	_label(Vector2(500,328),"CATEGORIA · ACERTO ATUAL R$ %d"%int(state.get("preparation_value",0)),14,MUTED)
 	_label(Vector2(500,382),"APLICAR AJUSTE SALVO",14,MUTED)
-	_label(Vector2(32,479),"%d / 3 PONTOS"%int(state.get("points",0)),25,AMBER)
+	_label(Vector2(32,479),String(TranslationServer.translate("%d / 3 PONTOS"))%int(state.get("points",0)),25,AMBER)
 	_label(Vector2(500,479),"R$ 600 + R$ 300 PELA VITÓRIA",19,PAPER)
 	var footer := "A primeira noite vencida conta como uma prova distinta na oficina."
 	if str(state.get("category","livre"))!="livre": footer="Teto das peças instaladas para ambos. Peças conquistadas têm valor de referência."

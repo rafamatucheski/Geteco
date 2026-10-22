@@ -3,6 +3,7 @@ render_mode unshaded;
 uniform sampler2D mineral_detail : source_color, repeat_enable, filter_linear_mipmap;
 uniform float mineral_detail_strength : hint_range(0.0,1.0) = 0.0;
 uniform float mineral_detail_world_size = 360.0;
+uniform vec4 desert_bounds = vec4(-1340.0,-1230.0,440.0,-373.5);
 varying highp vec2 world_point;
 float hash12(highp vec2 p) {
 	highp vec3 p3=fract(vec3(p.xyx)*.1031);
@@ -38,7 +39,7 @@ void fragment() {
 		base*=1.0+(mineral_value-.45)*mineral_detail_strength;
 	}
 	float alpha=COLOR.a;
-	float desert_edge=min(min(world_point.x+1500.0,440.0-world_point.x),min(world_point.y+1950.0,-373.5-world_point.y));
+	float desert_edge=min(min(world_point.x-desert_bounds.x,desert_bounds.z-world_point.x),min(world_point.y-desert_bounds.y,desert_bounds.w-world_point.y));
 	if(warmth>.1 && world_point.y< -270.0 && world_point.x<900.0) {
 		// Material grades continuously across the runtime basin boundary. Alpha
 		// comes only from the outside edge of the union of basin and escarpments.

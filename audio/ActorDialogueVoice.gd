@@ -16,7 +16,7 @@ class ActorPlayer extends AudioStreamPlayer3D:
 	var _listener: WeakRef
 	func _ready() -> void:
 		process_mode = Node.PROCESS_MODE_PAUSABLE
-		bus = &"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master"
+		bus = &"Dialogue" if AudioServer.get_bus_index("Dialogue") >= 0 else &"Master"
 		# The isometric camera sits ~36m above/behind its focus. It supplies pan,
 		# while audibility belongs to the player's position, as in combat audio.
 		attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED

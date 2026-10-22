@@ -226,7 +226,7 @@ func render(canvas: Control, area: Rect2) -> void:
 			var radius := (1.0-_impact_time/.18)*38.0
 			canvas.draw_line(_impact_point+normal*radius*.35,_impact_point+normal*radius,Color("ffdf78"),3.0,true)
 	if combo > 1:
-		_text(canvas,Vector2(310,115),"%d ACERTOS" % combo,24,Color("ffdf78"))
+		_text(canvas,Vector2(310,115),String(TranslationServer.translate("%d ACERTOS")) % combo,24,Color("ffdf78"))
 	_draw_health(canvas, Rect2(31, 37, 292, 22), player_health, Color("67d4d0"))
 	_draw_health(canvas, Rect2(477, 37, 292, 22), enemy_health, Color("eb888b"))
 	_text(canvas, Vector2(31, 29), "VOCÊ", 18, Color("c8e4ea"))

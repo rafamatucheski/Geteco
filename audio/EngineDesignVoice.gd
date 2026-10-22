@@ -65,7 +65,7 @@ func _player(label: String) -> AudioStreamPlayer3D:
 	p.unit_size = spatial_unit_size
 	p.max_distance = spatial_range
 	p.volume_db = -80.0
-	p.bus = &"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master"
+	p.bus = &"Vehicles" if AudioServer.get_bus_index("Vehicles") >= 0 else &"Master"
 	add_child(p)
 	return p
 

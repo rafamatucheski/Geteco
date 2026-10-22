@@ -85,7 +85,10 @@ func _run() -> void:
 	world.add_child(external_source)
 	var residents: Array = [world.maciota_place.maciota, world.maciota_place.mechanic]
 	for resident in residents:
-		var body: StaticBody3D = resident.get_node("ResidentBody")
+		# The working mechanic is its own swept body; stationary residents keep a child.
+		var body: PhysicsBody3D = resident if resident is PhysicsBody3D else resident.get_node_or_null("ResidentBody")
+		check(is_instance_valid(body) and body.find_children("*","CollisionShape3D",true,false).any(func(shape): return shape.shape != null and not shape.disabled), resident.name+" tem corpo físico ativo")
+		if not is_instance_valid(body): continue
 		check(PROTECTION.is_protected(resident) and PROTECTION.is_protected(body), resident.name+" e corpo herdam proteção")
 		check(not resident.has_method("receive_damage") and not body.has_method("receive_damage"), resident.name+" permanece sem rotina de dano")
 		gameplay._damage(resident, 1000.0, player)

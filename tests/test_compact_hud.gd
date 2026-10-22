@@ -48,7 +48,7 @@ func run() -> void:
 	await frames(30)
 	hud.refresh_from_state()
 	check(hud.minimap.size == Vector2(188,188), "compact cartographic map has no auxiliary readout rows")
-	check(not hud.minimap.caption.visible, "time, temperature and permanent distance stay off the map")
+	check(hud.minimap.caption.visible and "Maciota" in hud.minimap.caption.text, "active introduction names its destination above the map")
 	check(hud.minimap.compass_label.text == "N", "compact north indicator")
 	check(hud.combat_panel.visible and not hud.stars_label.visible, "equipped weapon remains visible; inactive police stars do not")
 	check(hud.money_label.visible, "wallet balance remains visible")

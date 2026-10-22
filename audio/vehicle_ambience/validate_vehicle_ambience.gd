@@ -103,7 +103,7 @@ func run() -> void:
 		var foreground_voices := _foreground_voice_count(audio)
 		_check(foreground_voices > 0 and foreground_voices <= 2, "occupied car uses a bounded foreground engine")
 		for layer in audio.layers:
-			_check(layer is AudioStreamPlayer and layer.bus == &"SFX", "foreground engine uses the SFX bus without camera attenuation")
+			_check(layer is AudioStreamPlayer and layer.bus == &"Vehicles", "foreground engine uses the independent Vehicles bus without camera attenuation")
 		var original_radio := int(audio.radio_index)
 		audio._cycle_radio(1)
 		var next_radio := int(audio.radio_index)

@@ -19,6 +19,7 @@ var voices: Array[AudioStreamPlayer3D] = []
 var contacts: Dictionary = {}
 var sources: Dictionary = {}
 var bus_name := ""
+var body_bus_name := ""
 var rng := RandomNumberGenerator.new()
 var played_count := 0
 var dropped_count := 0
@@ -61,15 +62,17 @@ func _ready() -> void:
 	var stage := STALL_WORK.begin()
 	set_process(false)
 	set_physics_process(false)
-	# Contact-only headroom; follows the existing SFX volume slider.
+	# A mesma pool atende carro e queda de pessoas: volumes independentes.
 	bus_name = "ContactSFX_%d" % get_instance_id()
-	AudioServer.add_bus()
-	var bus_index := AudioServer.get_bus_count() - 1
-	AudioServer.set_bus_name(bus_index, bus_name)
-	AudioServer.set_bus_send(bus_index, "SFX" if AudioServer.get_bus_index("SFX") >= 0 else "Master")
-	var limiter := AudioEffectHardLimiter.new()
-	limiter.ceiling_db = -6.0
-	AudioServer.add_bus_effect(bus_index, limiter)
+	body_bus_name = "BodyContactSFX_%d" % get_instance_id()
+	for entry in [[bus_name, "Vehicles"], [body_bus_name, "SFX"]]:
+		AudioServer.add_bus()
+		var bus_index := AudioServer.get_bus_count() - 1
+		AudioServer.set_bus_name(bus_index, entry[0])
+		AudioServer.set_bus_send(bus_index, entry[1] if AudioServer.get_bus_index(entry[1]) >= 0 else "Master")
+		var limiter := AudioEffectHardLimiter.new()
+		limiter.ceiling_db = -6.0
+		AudioServer.add_bus_effect(bus_index, limiter)
 	STALL_WORK.finish_slow("contact_audio.pool_bus",stage,5000,self)
 	stage = STALL_WORK.begin()
 	for index in MAX_VOICES:
@@ -84,12 +87,13 @@ func _ready() -> void:
 
 func _exit_tree() -> void:
 	for voice in voices: voice.stop()
-	var bus_index := AudioServer.get_bus_index(bus_name)
-	if bus_index >= 0:
-		# Um pool por mundo (meta em `pool`), não por colisão: só some com o mundo.
-		var stage := STALL_WORK.begin()
-		AudioServer.remove_bus(bus_index)
-		STALL_WORK.finish_slow("contact_audio.pool_bus_remove", stage, 1000)
+	for contact_bus in [bus_name, body_bus_name]:
+		var bus_index := AudioServer.get_bus_index(contact_bus)
+		if bus_index >= 0:
+			# Um pool por mundo, não por colisão: só some com o mundo.
+			var stage := STALL_WORK.begin()
+			AudioServer.remove_bus(bus_index)
+			STALL_WORK.finish_slow("contact_audio.pool_bus_remove", stage, 1000)
 	contacts.clear()
 	sources.clear()
 
@@ -203,6 +207,7 @@ func emit_contact(source_id: int, key: String, point: Vector3, speed: float, kin
 	STALL_WORK.finish_slow("contact_audio.stop",stage,5000,self)
 	stage = STALL_WORK.begin()
 	chosen.stream = stream
+	chosen.bus = body_bus_name if kind in BODY_KINDS else bus_name
 	chosen.global_position = point
 	chosen.volume_db = volume
 	chosen.pitch_scale = rng.randf_range(0.96, 1.04)

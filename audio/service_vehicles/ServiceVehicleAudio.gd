@@ -236,8 +236,8 @@ func _assign(id: int) -> void:
 		player.max_polyphony = 1
 		player.max_distance = RANGE
 		player.unit_size = 8.0
-		if AudioServer.get_bus_index("SFX") >= 0:
-			player.bus = &"SFX"
+		if AudioServer.get_bus_index("Vehicles") >= 0:
+			player.bus = &"Vehicles"
 		add_child(player)
 		players.append(player)
 	_slots.append({"id": id, "players": players})
@@ -318,7 +318,7 @@ func _update_beepers(reversing: Array[Dictionary]) -> void:
 			beeper.max_distance = 40.0
 			beeper.unit_size = 6.0
 			beeper.volume_db = -12.0
-			if AudioServer.get_bus_index("SFX") >= 0: beeper.bus = &"SFX"
+			if AudioServer.get_bus_index("Vehicles") >= 0: beeper.bus = &"Vehicles"
 			add_child(beeper)
 			_beepers[id] = beeper
 		beeper.global_position = vehicle.global_position

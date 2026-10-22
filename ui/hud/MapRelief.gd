@@ -14,10 +14,10 @@ const LIGHT := Vector3(-.55,.72,-.42)
 # These are the authored horizon profiles in DesertHorizonRelief.build(). The
 # same production sampler below provides their eroded footprint and normals.
 const RANGES := [
-	{"side":"north","from":-1720.0,"to":680.0,"width":360.0,"seed":73,"profile":[Vector2(0,.05),Vector2(.055,.30),Vector2(.10,.86),Vector2(.20,.89),Vector2(.24,.38),Vector2(.32,.31),Vector2(.36,.73),Vector2(.46,.77),Vector2(.50,.36),Vector2(.58,.40),Vector2(.62,.94),Vector2(.75,.91),Vector2(.80,.51),Vector2(.88,.56),Vector2(.94,.22),Vector2(1,.06)]},
-	{"side":"west","from":-2200.0,"to":-305.0,"width":310.0,"seed":29,"profile":[Vector2(0,.06),Vector2(.10,.44),Vector2(.21,.92),Vector2(.28,.72),Vector2(.42,.33),Vector2(.53,.67),Vector2(.65,.91),Vector2(.78,.36),Vector2(.90,.68),Vector2(1,.04)]},
-	{"side":"east","from":-2180.0,"to":-565.0,"width":225.0,"seed":51,"profile":[Vector2(0,.04),Vector2(.14,.68),Vector2(.26,.43),Vector2(.39,.89),Vector2(.46,.98),Vector2(.60,.39),Vector2(.74,.78),Vector2(.86,.45),Vector2(1,.03)]},
-	{"side":"south","from":-1690.0,"to":90.0,"width":210.0,"seed":97,"profile":[Vector2(0,.03),Vector2(.10,.66),Vector2(.21,.38),Vector2(.35,.89),Vector2(.41,.76),Vector2(.55,.29),Vector2(.69,.68),Vector2(.82,.42),Vector2(.92,.30),Vector2(1,.02)]},
+	{"side":"north","from":DESERT.BOUNDS.position.x-220.0,"to":DESERT.BOUNDS.end.x+240.0,"width":360.0,"seed":73,"profile":[Vector2(0,.05),Vector2(.055,.30),Vector2(.10,.86),Vector2(.20,.89),Vector2(.24,.38),Vector2(.32,.31),Vector2(.36,.73),Vector2(.46,.77),Vector2(.50,.36),Vector2(.58,.40),Vector2(.62,.94),Vector2(.75,.91),Vector2(.80,.51),Vector2(.88,.56),Vector2(.94,.22),Vector2(1,.06)]},
+	{"side":"west","from":DESERT.BOUNDS.position.y-250.0,"to":DESERT.BOUNDS.end.y+68.5,"width":310.0,"seed":29,"profile":[Vector2(0,.06),Vector2(.10,.44),Vector2(.21,.92),Vector2(.28,.72),Vector2(.42,.33),Vector2(.53,.67),Vector2(.65,.91),Vector2(.78,.36),Vector2(.90,.68),Vector2(1,.04)]},
+	{"side":"east","from":DESERT.BOUNDS.position.y-230.0,"to":DESERT.BOUNDS.end.y-191.5,"width":225.0,"seed":51,"profile":[Vector2(0,.04),Vector2(.14,.68),Vector2(.26,.43),Vector2(.39,.89),Vector2(.46,.98),Vector2(.60,.39),Vector2(.74,.78),Vector2(.86,.45),Vector2(1,.03)]},
+	{"side":"south","from":DESERT.BOUNDS.position.x-190.0,"to":90.0,"width":210.0,"seed":97,"profile":[Vector2(0,.03),Vector2(.10,.66),Vector2(.21,.38),Vector2(.35,.89),Vector2(.41,.76),Vector2(.55,.29),Vector2(.69,.68),Vector2(.82,.42),Vector2(.92,.30),Vector2(1,.02)]},
 ]
 var visual_bounds := Rect2()
 var region_visual_bounds := {}
@@ -78,11 +78,13 @@ func draw_terrain(target: CanvasItem) -> void:
 		if command.has("mesh"): target.draw_mesh(command.mesh,null,Transform2D.IDENTITY)
 		else: target.draw_colored_polygon(command.polygon,command.color)
 
+
 func draw_lines(target: CanvasItem, scale_value: float) -> void:
 	var factor := maxf(scale_value,.001)
 	for batch in _line_batches:
 		if factor<float(batch.get("min_scale",0.0)): continue
 		target.draw_multiline(batch.points,batch.color,float(batch.width)/factor,true)
+
 
 func _desert_relief() -> void:
 	# One continuous geological base includes the entire playable basin and the

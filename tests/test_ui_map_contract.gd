@@ -48,6 +48,9 @@ func run() -> void:
 	var map := preload("res://ui/hud/MapUI.gd").new()
 	map.controller={"region":Region.new(),"state":{"region_id":"test","intro":{"stage":"complete"},"campaign":{"active_id":""}},"world":{"player":player},"session":Session.new()}
 	root.add_child(map); await process_frame
+	check(map._sea.mouse_filter==Control.MOUSE_FILTER_IGNORE,"ocean material never intercepts map input")
+	check(map._sea.get_index()<map.terrain.get_index(),"ocean remains behind authoritative land geography")
+	check(is_equal_approx(float(map._sea.material.get_shader_parameter("pixels_per_metre")),map._base_zoom*map.zoom),"water material shares the map's metric scale")
 	check(map._region=="test","opening the map focuses the current available region")
 	check(not map._legend.visible,"filters start collapsed so the map has room")
 	check(map._filter_button.visible,"collapsed filters have a discoverable control")
@@ -55,7 +58,7 @@ func run() -> void:
 	check(map._markers.size()==4 and map._markers[0].title=="Union","map uses authored place names, never internal IDs")
 	var titles: Array[String]=[]
 	for label in map.find_children("*","Label",true,false): titles.append(label.text)
-	check("HARBOR" in titles and "GETECO" not in titles,"the map uses the selected HARBOR identity")
+	check("Harbor" in titles and "GETECO" not in titles,"the map uses the selected HARBOR identity")
 	map.select_marker(0)
 	await redraw(map)
 	check(map.sidebar.visible and map.marker_title.text=="Union","selected marker publishes correct name")

@@ -13,7 +13,7 @@ extends Node3D
 ##    - Armário de ferramentas sobre rodízios, mangueira de ar, tambor de óleo e pneus
 ##    - Iluminação industrial suspensa discreta
 ## 2. Sala Própria do Maciota (Lounge Executivo Privado VIP):
-##    - Acesso a pé fluido através de vão de porta amplo (1.40 m livre, Z entre +0.80m e +2.20m)
+##    - Acesso a pé pelo vão de 2.20 m (Z entre +0.80m e +3.00m)
 ##    - Divisória envidraçada estilo loft industrial voltada para a baía do carro
 ##    - Mesa executiva nobre de mogno com acabamentos em latão polido
 ##    - Poltrona presidencial de couro capitonê do Maciota e poltrona de visitante
@@ -78,7 +78,7 @@ func get_interaction_points() -> Dictionary:
 		"car_trunk": Vector3(0.0, 0.0, -2.40),
 		"workbench": Vector3(-0.95, 0.0, -2.90),
 		"lift_controls": Vector3(2.05, 0.0, 0.45),
-		"office_doorway": Vector3(2.40, 0.0, 1.50),
+		"office_doorway": Vector3(2.40, 0.0, 1.90),
 		"maciota_desk": Vector3(4.50, 0.0, -0.20), # Ponto onde Dante fica em frente à mesa
 		"maciota_seat": Vector3(3.40, 0.0, -1.80), # Ponto de interação ao lado da mesa do Maciota
 	}
@@ -200,8 +200,8 @@ func _build_workshop() -> void:
 	# --------------------------------------------------------------------------
 	# Divisória entre a oficina e o escritório:
 	# - Segmento Traseiro com janela loft (Z: -4.20 m a +0.80 m, comp. 5.00 m)
-	# - Vão de porta aberto (Z: +0.80 m a +2.20 m, larg. 1.40 m)
-	# - Segmento Frontal fechado (Z: +2.20 m a +4.70 m, comp. 2.50 m)
+	# - Vão de porta aberto (Z: +0.80 m a +3.00 m, larg. 2.20 m)
+	# - Segmento Frontal fechado (Z: +3.00 m a +4.70 m, comp. 1.70 m)
 
 	# Segmento Traseiro da divisória (Z: -4.20 m até +0.80 m, centro Z = -1.70 m)
 	_solid(_add_box(Vector3(2.40, 0.50, -1.70), Vector3(0.14, 1.00, 5.00), mat_wall_dark))
@@ -216,18 +216,19 @@ func _build_workshop() -> void:
 	# Viga superior da divisória (Y: 2.60 a 3.80 m)
 	_solid(_add_box(Vector3(2.40, 3.20, -1.70), Vector3(0.14, 1.20, 5.00), mat_wall_dark))
 
-	# Segmento Frontal da divisória (Z: +2.20 m até +4.70 m, centro Z = 3.45 m)
-	_solid(_add_box(Vector3(2.40, 1.90, 3.45), Vector3(0.14, 3.80, 2.50), mat_wall_dark))
-	_register_obstacle(Vector3(2.40, 1.90, 3.45), Vector3(0.16, 3.80, 2.50))
+	# Acesso de 2,20 m: permite contornar o pilar sem prender no canto frontal.
+	# Malha, batentes e volume físico compartilham o mesmo vão (Z .80 a 3.00).
+	_solid(_add_box(Vector3(2.40, 1.90, 3.85), Vector3(0.14, 3.80, 1.70), mat_wall_dark))
+	_register_obstacle(Vector3(2.40, 1.90, 3.85), Vector3(0.16, 3.80, 1.70))
 
-	# Batente da porta de acesso à sala (Z entre +0.80 e +2.20, vão 100% livre no chão)
+	# Batente da porta de acesso à sala (Z entre +0.80 e +3.00).
 	_solid(_add_box(Vector3(2.40, 1.10, 0.80), Vector3(0.16, 2.20, 0.08), mat_steel_dark))
-	_solid(_add_box(Vector3(2.40, 1.10, 2.20), Vector3(0.16, 2.20, 0.08), mat_steel_dark))
-	_add_box(Vector3(2.40, 2.25, 1.50), Vector3(0.16, 0.10, 1.48), mat_steel_dark)
-	_add_box(Vector3(2.40, 3.05, 1.50), Vector3(0.14, 1.50, 1.40), mat_wall_dark) # Overhead: depth only, doorway stays open.
+	_solid(_add_box(Vector3(2.40, 1.10, 3.00), Vector3(0.16, 2.20, 0.08), mat_steel_dark))
+	_add_box(Vector3(2.40, 2.25, 1.90), Vector3(0.16, 0.10, 2.28), mat_steel_dark)
+	_add_box(Vector3(2.40, 3.05, 1.90), Vector3(0.14, 1.50, 2.20), mat_wall_dark) # Overhead: depth only, doorway stays open.
 
 	# Placa metálica discreta em latão ao lado do batente: "JÄGER"
-	_add_box(Vector3(2.32, 1.65, 2.35), Vector3(0.02, 0.12, 0.28), mat_brass)
+	_add_box(Vector3(2.32, 1.65, 3.15), Vector3(0.02, 0.12, 0.28), mat_brass)
 
 	# --------------------------------------------------------------------------
 	# 4. ELEVADOR AUTOMOTIVO HIDRÁULICO DE 2 COLUNAS (TWO-POST CAR LIFT)

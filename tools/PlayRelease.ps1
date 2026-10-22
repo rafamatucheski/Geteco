@@ -66,12 +66,19 @@ if ($needsExport) {
 if ($NoLaunch) { return }
 # Mesmo ajuste do Open.ps1: DirectInput re-enumerado na thread principal travava 80-94 ms.
 if (-not $env:SDL_JOYSTICK_DIRECTINPUT) { $env:SDL_JOYSTICK_DIRECTINPUT = '0' }
+$launchGame = {
+    $gameLog = Join-Path $root 'builds\jogar-session.log'
+    $gameProcess = Start-Process -FilePath $exe -WorkingDirectory $out -WindowStyle Normal -PassThru -ArgumentList @('--log-file', ('"' + $gameLog + '"'))
+    try {
+        $gameProcess.WaitForExit()
+        if ($gameProcess.ExitCode -ne 0) {
+            throw "O jogo encerrou com falha (codigo $($gameProcess.ExitCode)). Consulte $gameLog e o Visualizador de Eventos do Windows."
+        }
+    } finally { $gameProcess.Dispose() }
+}
 if ($PauseUsageMonitor) {
     . (Join-Path $PSScriptRoot 'UsageMonitorPause.ps1')
-    Invoke-WithUsageMonitorPaused {
-        $gameProcess = Start-Process -FilePath $exe -WorkingDirectory $out -WindowStyle Normal -PassThru
-        try { $gameProcess.WaitForExit() } finally { $gameProcess.Dispose() }
-    }
+    Invoke-WithUsageMonitorPaused $launchGame
     return
 }
-Start-Process -FilePath $exe -WorkingDirectory $out -WindowStyle Normal
+& $launchGame

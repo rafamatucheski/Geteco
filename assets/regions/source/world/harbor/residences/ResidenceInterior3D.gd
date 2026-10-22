@@ -51,6 +51,8 @@ func _ready() -> void:
 	_wardrobe(wardrobe,wood)
 	_armory(armory,wood)
 	_lounge(lounge,fabric,wood)
+	_lived_in_details(kitchen,bedroom,lounge,fabric)
+	_finish_soft_furniture()
 	_home_storage([Vector2(.5,-4.2),Vector2(.2,-2.1),Vector2(-.7,-4.2)][variant_index],wood)
 	_backpack()
 	if variant_index == 2:
@@ -85,6 +87,46 @@ func _ready() -> void:
 func _wall(id: String,r: Rect2,height: float,color: String) -> void:
 	box(id,Vector3(r.size.x,height,r.size.y),Vector3(r.get_center().x,height*.5,r.get_center().y),color)
 	solid_rects[id] = r
+
+func _finish_soft_furniture() -> void:
+	for part: MeshInstance3D in find_children("*","MeshInstance3D",true,false):
+		if not part.mesh is BoxMesh: continue
+		var label := str(part.name)
+		if label.begins_with("OakFloorboard") or label in ["BedBase","Headboard","Wardrobe","CoffeeTable","BedsideCabinet"]:
+			part.material_override = preload("res://world/places/ShopInteriorMaterials.gd").material("wood",part.material_override.albedo_color)
+		if not label.begins_with("Pillow") and not label.begins_with("LooseCushion") and not label.begins_with("SeatCushion") and not label.begins_with("Duvet") and not label.begins_with("Sofa"): continue
+		part.mesh = preload("res://world/desert/village/DesertHomeCraft.gd").rounded_box(part.mesh.size,.055)
+		var tone: Color = part.material_override.albedo_color
+		part.material_override = preload("res://assets/urban_detail/FloraSurfaces.gd").material("fabric",tone,1.4,1.3,.97)
+
+func _lived_in_details(kitchen: Vector2, bedroom: Vector2, lounge: Vector2, fabric: String) -> void:
+	# All additions sit on existing furniture or on the rear wall. Their solids
+	# already cover the complete footprint, so station approaches stay clear.
+	var board := kitchen + Vector2(.05,-.31)
+	box("ChoppingBoard",Vector3(.43,.025,.29),Vector3(board.x,1,board.y),"9c7953")
+	for i in 3:
+		cylinder("Fruit",.065,.105,Vector3(board.x-.12+i*.115,1.065,board.y),["a87b42","b4964a","8b9a51"][i])
+	var pot := kitchen + Vector2(.8,-.22)
+	cylinder("Saucepan",.105,.13,Vector3(pot.x,1.09,pot.y),"657775")
+	box("PanHandle",Vector3(.22,.035,.05),Vector3(pot.x+.19,1.13,pot.y),"343e3c")
+	for x in [-.55,.55]:
+		for seam in [-.3,.3]:
+			box("PillowPiping",Vector3(.012,.012,.43),Vector3(bedroom.x+x+seam,.875,bedroom.y-.98),"c8bfab")
+	for i in 6:
+		box("ThrowWeave",Vector3(2.12,.006,.014),Vector3(bedroom.x,.896,bedroom.y+.88+i*.085),"d1c2a0")
+	for side in [-1,1]:
+		var cushion := box("LooseCushion",Vector3(.48,.39,.17),Vector3(lounge.x+side*.97,.95,lounge.y-.21),"c7b590")
+		cushion.rotation.z = side*.13
+		box("CushionSeam",Vector3(.4,.025,.018),Vector3(lounge.x+side*.97,1.02,lounge.y-.116),fabric)
+	var table := lounge + Vector2(0,2.05)
+	box("Magazine",Vector3(.31,.018,.38),Vector3(table.x+.29,.595,table.y),"b7a075")
+	box("MagazineSpine",Vector3(.025,.021,.38),Vector3(table.x+.15,.6,table.y),"6e6050")
+	# Three small framed abstract prints, with a distinct palette per home.
+	for i in 3:
+		var x := -2.6 + i*.65
+		box("HomePictureFrame",Vector3(.5,.59,.055),Vector3(x,2.15,-4.91),"69533f")
+		box("HomePicturePaper",Vector3(.43,.52,.014),Vector3(x,2.15,-4.875),"dfd5be")
+		box("HomePictureColour",Vector3(.24,.3,.009),Vector3(x-.04,2.14,-4.861),["7c8664","718c96","a28667"][variant_index])
 
 func _kitchen(p: Vector2,color: String) -> void:
 	box("KitchenCabinets",Vector3(3.25,.88,1.15),Vector3(p.x,.44,p.y),color)

@@ -10,7 +10,7 @@ var _footer: HBoxContainer
 func _init() -> void:
 	super()
 	name = "DialogueCard"
-	max_width = 700.0
+	max_width = 600.0
 	bottom_margin = 30.0
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_footer = HBoxContainer.new()
@@ -61,9 +61,9 @@ func focus_advance() -> void:
 
 func _apply_scale(value: float) -> void:
 	super._apply_scale(value)
-	advance_button.add_theme_font_size_override("font_size", roundi(17.0*value))
+	advance_button.add_theme_font_size_override("font_size", roundi(15.0*value))
 	binding_label.add_theme_font_size_override("font_size", roundi(14.0*value))
-	advance_button.custom_minimum_size.y = roundf(34.0*value)
+	advance_button.custom_minimum_size.y = roundf(28.0*value)
 
 func _set_controls(controls: Node) -> void:
 	if _controls == controls: return

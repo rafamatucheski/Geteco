@@ -14,17 +14,25 @@ const SCALE := 1.54 # Preserve the previous ground coverage inside a smaller pan
 const NAVIGATION := preload("res://ui/v1/NavigationRoute.gd")
 const POLICE := preload("res://ui/v1/MinimapPolice.gd")
 const FONT := preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
-const WEEKDAYS := ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"]
+const CONDITIONS := preload("res://ui/hud/WorldConditions.gd")
+const PLACES := preload("res://ui/hud/NavigationPlaces.gd")
+const SYMBOLS := preload("res://ui/hud/MapSymbols.gd")
 
 var world: Node
 var canvas: MapCanvas
 var caption: Label
 var compass_label: Label
 var weekday_label: Label
+var weather_icon: Control
 var center := Vector2.ZERO
 var heading := 0.0
 var objective_target := Vector2.ZERO
+var destination: Dictionary = {}
+var _places: Array[Dictionary] = []
+var _harbor_places_cached := false
+var drawn_places: Array[Dictionary] = []
 var _tick := 0.0
+var _conditions_tick := 1.0
 var _cached_regions: Dictionary = {}
 var _cached_connection := false
 var _roads: Array[Dictionary] = []
@@ -75,12 +83,16 @@ func _ready() -> void:
 	canvas.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	clip.add_child(canvas)
 	caption = Label.new()
-	caption.position = Vector2(7, PANEL_SIZE.y)
-	caption.size = Vector2(PANEL_SIZE.x - 14, 22)
-	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	caption.name = "NavigationDestination"
+	caption.position = Vector2(0, -28)
+	caption.size = Vector2(280, 22)
+	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	caption.add_theme_font_override("font", FONT)
-	caption.add_theme_font_size_override("font_size", 12)
+	caption.add_theme_font_size_override("font_size", 14)
 	caption.add_theme_color_override("font_color", Color("eee9e2"))
+	caption.add_theme_color_override("font_outline_color",STYLE.INK)
+	caption.add_theme_constant_override("outline_size",5)
+	caption.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	caption.hide()
 	add_child(caption)
@@ -99,8 +111,8 @@ func _ready() -> void:
 	weekday_label = Label.new()
 	weekday_label.name = "Weekday"
 	weekday_label.position = Vector2(7, PANEL_SIZE.y + 2)
-	weekday_label.size = Vector2(PANEL_SIZE.x - 14, 16)
-	weekday_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	weekday_label.size = Vector2(240, 16)
+	weekday_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	weekday_label.add_theme_font_override("font", FONT)
 	weekday_label.add_theme_font_size_override("font_size", 12)
 	weekday_label.add_theme_color_override("font_color", Color("c3c8cbd9"))
@@ -108,9 +120,15 @@ func _ready() -> void:
 	weekday_label.add_theme_constant_override("shadow_offset_y", 1)
 	weekday_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(weekday_label)
+	weather_icon = preload("res://ui/v1/WeatherIcon.gd").new()
+	weather_icon.name = "Weather"
+	weather_icon.size = Vector2(20,20)
+	weather_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(weather_icon)
 
 func _process(delta: float) -> void:
 	_tick += delta
+	_conditions_tick += delta
 	_route_clock += delta
 	if _tick < 1.0 / 30.0: return
 	_refresh_delta = _tick
@@ -119,6 +137,10 @@ func _process(delta: float) -> void:
 
 func refresh() -> void:
 	if not is_instance_valid(world) or not is_instance_valid(world.player) or not is_instance_valid(world.production) or not is_instance_valid(world.session):
+		hide()
+		return
+	# Session creation spans frames; calendar data becomes available with weather.
+	if not world.session.ready_for_play or not is_instance_valid(world.session.weather):
 		hide()
 		return
 	var was_visible := visible
@@ -132,8 +154,16 @@ func refresh() -> void:
 	visible = not blocked
 	if not visible: return
 	# The existing persisted calendar starts on day 2; its first day is Monday.
-	var weekday: String = WEEKDAYS[posmod(int(world.session.state.world_state.get("moon_day", 2)) - 2, 7)]
-	if weekday_label.text != weekday: weekday_label.text = weekday
+	if _conditions_tick >= 1.0 or weekday_label.text.is_empty() or not was_visible:
+		_conditions_tick = 0.0
+		var weather: Variant = world.session.weather
+		var conditions := CONDITIONS.text(int(world.session.state.world_state.get("moon_day", 2)), float(weather.time_of_day), str(world.session.state.region_id), int(weather.weather_state), weather.mountain_weather)
+		if weekday_label.text != conditions: weekday_label.text = conditions
+		weather_icon.position = weekday_label.position + Vector2(FONT.get_string_size(conditions,HORIZONTAL_ALIGNMENT_LEFT,-1,12).x + 5,-2)
+		var icon := CONDITIONS.icon(float(weather.time_of_day),str(world.session.state.region_id),int(weather.weather_state),weather.mountain_weather)
+		if weather_icon.state != icon:
+			weather_icon.state = icon
+			weather_icon.queue_redraw()
 	var actor: Node3D = world.driving.car if is_instance_valid(world.driving) and bool(world.driving.get("occupied")) else world.player
 	if skating and skate.mounted and is_instance_valid(skate.player_board): actor = skate.player_board
 	if not is_instance_valid(actor): actor = world.player
@@ -148,23 +178,10 @@ func refresh() -> void:
 	elif actor != world.player:
 		var forward := -actor.global_basis.z
 		heading = Vector2(forward.x, forward.z).angle()
-	objective_target = Vector2.ZERO
-	var transit: Variant = world.production.get("urban_transit")
-	var work_target := Vector3.INF
-	if transit!=null and is_instance_valid(transit.urban_service) and is_instance_valid(transit.urban_service.driver_work): work_target=transit.urban_service.driver_work.target_position()
-	var mission_world: Variant = world.session.get("mission_world")
-	var has_mission := str(world.session.state.intro.stage) != "complete" or not str(world.session.state.campaign.active_id).is_empty()
-	if has_mission and mission_world != null and mission_world.has_method("target_position"):
-		var target: Vector3 = mission_world.target_position()
-		if target.is_finite() and not target.is_zero_approx(): objective_target = Vector2(target.x, target.z)
-	if world.session.freight_active and world.session.freight_target.is_finite():
-		var delivery: Vector3 = world.session.freight_target
-		objective_target = Vector2(delivery.x, delivery.z)
-	var fishing: Variant = world.session.get("fishing")
-	if is_instance_valid(fishing) and fishing.active and not fishing.controls_locked():
-		var fishing_target: Vector3 = fishing.target_position()
-		if fishing_target.is_finite(): objective_target = Vector2(fishing_target.x,fishing_target.z)
-	if work_target.is_finite(): objective_target=Vector2(work_target.x,work_target.z)
+	var selected: Dictionary = world.session.navigation_destination()
+	if str(selected.get("title",""))!=str(destination.get("title","")) or str(selected.get("kind",""))!=str(destination.get("kind","")) or str(selected.get("source",""))!=str(destination.get("source","")): _redraw_required=true
+	destination = selected
+	objective_target = Vector2(destination.point.x,destination.point.z) if not destination.is_empty() else Vector2.ZERO
 	_sync_navigation(actor)
 	# Viaturas e cones se movem sozinhos: com polícia em jogo o mapa redesenha a cada atualização (30 Hz).
 	if POLICE.active(world): _redraw_required = true
@@ -177,10 +194,12 @@ func refresh() -> void:
 		canvas.queue_redraw()
 
 func _sync_navigation(actor: Node3D) -> void:
-	var has_target := objective_target != Vector2.ZERO
-	caption.hide()
-	# A quiet weather/clock row always sits below the map; navigation adds one
-	# row only while a destination exists. The actual map remains 156 px wide.
+	var has_target := not destination.is_empty()
+	caption.visible=has_target
+	if has_target:
+		var distance := center.distance_to(objective_target)
+		caption.text = "%s · %s" % [destination.title,"Chegou" if distance < 3 else ("%.1f km" % (distance/1000.0) if distance >= 1000 else "%d m" % roundi(distance))]
+	# Keep destination identity above the map and weather below it without resizing.
 	var extent := PANEL_SIZE
 	if size != extent:
 		custom_minimum_size = extent
@@ -195,7 +214,6 @@ func _sync_navigation(actor: Node3D) -> void:
 		if not route_points.is_empty(): _redraw_required = true
 		navigation.clear()
 		route_points.clear()
-		caption.text = "◇  %d m" % roundi(center.distance_to(objective_target))
 		return
 	if _route_clock >= .75 or not objective_target.is_equal_approx(_drawn_objective):
 		_route_clock = 0.0
@@ -207,15 +225,11 @@ func _sync_navigation(actor: Node3D) -> void:
 	if remaining != route_points:
 		route_points = remaining
 		_redraw_required = true
-	var instruction := NAVIGATION.instruction(route_points, objective_target)
-	if instruction.is_empty():
-		caption.text = "◇  %d m" % roundi(center.distance_to(objective_target))
-	elif instruction.turn_distance >= 0:
-		caption.text = "%s %d m   ◇ %d m" % [instruction.turn, roundi(instruction.turn_distance), roundi(instruction.distance)]
-	else:
-		caption.text = "↑   ◇ %d m" % roundi(instruction.distance)
 
 func _cache_region() -> void:
+	if not _harbor_places_cached:
+		_places.append_array(PLACES.harbor(world.session))
+		_harbor_places_cached=true
 	# Keep lightweight geography after streaming unloads its 3D region. The map
 	# must not replace half the crossing when the logical region changes.
 	for region: Node in world.production.regions.values():
@@ -248,6 +262,8 @@ func _cache_geography(region: Node) -> void:
 	for source in region.entries:
 		var point: Vector3 = source.position
 		_entries.append(Vector2(point.x, point.z))
+		var place: Dictionary=PLACES.entrance(source,str(region.region_id))
+		if not _places.any(func(existing): return existing.region==place.region and existing.id==place.id): _places.append(place)
 
 func project(point: Vector2) -> Vector2:
 	return MAP_SIZE * 0.5 + (point - center) * map_scale
@@ -279,6 +295,35 @@ func draw_map(target: Control) -> void:
 			if not bounds.intersects(Rect2(a, Vector2.ZERO).expand(b).grow(4), true): continue
 			target.draw_line(a, b, STYLE.INK, 4, true)
 			target.draw_line(a, b, STYLE.WAYPOINT, 1.5, true)
+	# Bounded nearby service icons; the selected mission remains on top.
+	drawn_places.clear()
+	var nearby: Array[Dictionary] = []
+	for place in _places:
+		if place.kind=="place" or not map_area.has_point(place.point): continue
+		nearby.append(place)
+	nearby.sort_custom(func(a,b):
+		var named_a: bool=a.id in ["neco","ferrugem","maciota"]
+		var named_b: bool=b.id in ["neco","ferrugem","maciota"]
+		return named_a if named_a!=named_b else center.distance_squared_to(a.point)<center.distance_squared_to(b.point))
+	var occupied: Array[Vector2] = []
+	var labels: Array[Rect2] = []
+	for place in nearby:
+		var icon: Vector2=project(place.point)
+		if icon.distance_to(MAP_SIZE*.5)<12 or occupied.any(func(point): return point.distance_to(icon)<17): continue
+		SYMBOLS.draw(target,icon,place.kind,6.0)
+		occupied.append(icon)
+		drawn_places.append(place)
+		if labels.size()<2:
+			var title: String=place.title
+			if title.length()>20: title=title.left(18)+"…"
+			var text_size := FONT.get_string_size(title,HORIZONTAL_ALIGNMENT_LEFT,-1,10)
+			var at := (icon+Vector2(9,-5)).clamp(Vector2(4,13),Vector2(MAP_SIZE.x-text_size.x-4,MAP_SIZE.y-6))
+			var box := Rect2(at-Vector2(2,11),Vector2(text_size.x+4,14))
+			if not box.intersects(Rect2(MAP_SIZE*.5-Vector2.ONE*13,Vector2.ONE*26)) and not labels.any(func(rect): return rect.intersects(box)):
+				target.draw_rect(box,STYLE.INK)
+				target.draw_string(FONT,at,title,HORIZONTAL_ALIGNMENT_LEFT,-1,10,STYLE.TEXT)
+				labels.append(box)
+		if drawn_places.size()>=8: break
 	for station in _rail_stations:
 		var entry: Vector3 = station.entry
 		var point := Vector2(entry.x,entry.z)
@@ -287,10 +332,11 @@ func draw_map(target: Control) -> void:
 	var fishing_point := Vector2(fishing_entry.x,fishing_entry.z)
 	if map_area.has_point(fishing_point): preload("res://ui/hud/MapSymbols.gd").draw(target,project(fishing_point),"fishing",7.0)
 	if POLICE.active(world): POLICE.draw(target, self, world, map_area, Time.get_ticks_msec() / 1000.0)
-	if objective_target != Vector2.ZERO and center.distance_to(objective_target) >= 3.0:
+	if not destination.is_empty():
 		var marker := edge_marker(objective_target)
-		target.draw_circle(marker, 8, STYLE.INK)
-		CARTOGRAPHY.diamond(target,marker)
+		var direction := (objective_target-center).normalized()
+		if not map_area.has_point(objective_target): target.draw_line(marker,marker+direction*10,STYLE.ACCENT,2,true)
+		SYMBOLS.draw(target,marker,str(destination.kind),8.0,true)
 	var middle := MAP_SIZE * 0.5
 	var pointer := PackedVector2Array()
 	for point in [Vector2(8,0), Vector2(-5,-5), Vector2(-2,0), Vector2(-5,5)]: pointer.append(middle + point.rotated(heading))

@@ -67,7 +67,7 @@ func _build_spray() -> void:
 func _build_audio() -> void:
 	service_audio = AudioStreamPlayer3D.new()
 	service_audio.name = "ServiceSprayAudio"
-	service_audio.bus = &"SFX"
+	service_audio.bus = &"Vehicles"
 	service_audio.stream = _service_stream()
 	service_audio.pitch_scale = 1.8
 	service_audio.volume_db = -24

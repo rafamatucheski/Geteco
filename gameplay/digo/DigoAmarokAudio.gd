@@ -31,7 +31,7 @@ func _player(label: String,stream: AudioStream,db: float) -> AudioStreamPlayer3D
 	player.max_distance = 52.0
 	player.volume_db = db
 	player.max_db = -4.0
-	if AudioServer.get_bus_index("SFX") >= 0: player.bus = "SFX"
+	if AudioServer.get_bus_index("Vehicles") >= 0: player.bus = "Vehicles"
 	car.add_child(player)
 	return player
 func _physics_process(delta: float) -> void:

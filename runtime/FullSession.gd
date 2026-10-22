@@ -913,7 +913,7 @@ func _ready() -> void:
 	SESSION_OPS.finish(diagnostic_mining)
 	dialogue_voice = AudioStreamPlayer.new()
 	dialogue_voice.process_mode = Node.PROCESS_MODE_PAUSABLE
-	dialogue_voice.bus = &"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master"
+	dialogue_voice.bus = &"Dialogue" if AudioServer.get_bus_index("Dialogue") >= 0 else &"Master"
 	await _startup_frame()
 	_timed_add(self, dialogue_voice, "dialogue_voice")
 	speech_voice = AudioStreamPlayer.new()
@@ -1913,7 +1913,7 @@ func interact() -> bool:
 		"maciota":
 			if state.intro.stage != "complete": return _intro_interact("maciota")
 			if mission_world.perform("maciota"): return true
-			show_journal()
+			show_maciota_menu()
 			return true
 		"mechanic":
 			if state.intro.stage != "complete": return _intro_interact("mechanic")
@@ -2181,7 +2181,7 @@ func _process_traced(delta: float) -> void:
 		thermal_status.visible = thermal.visible and not modal and not is_instance_valid(world.hud)
 		thermal_status.text = String(TranslationServer.translate("Calor corporal %d%% · %s"))%[roundi(thermal.temperature),thermal.text]
 	stats.text = String(TranslationServer.translate("R$ %d   Vida %d   Colete %d\n%s   %s   %s")) % [state.economy.balance,roundi(world.gameplay.health),roundi(world.gameplay.armor),str(WEAPONS.WEAPONS.get(state.equipped_weapon,{}).get("label",state.equipped_weapon)),"—" if int(ammo.magazine)<0 else "%d / %d"%[ammo.magazine,ammo.reserve],"★".repeat(world.gameplay.stars)]
-	_set_objective(state.campaign.objective() if state.campaign.active_id != "" else (state.intro.objective() if state.intro.stage != "complete" else "J  Missões · M  Mapa"), state.campaign.active_id == "" and state.intro.stage == "complete")
+	_set_objective(mission_world.objective() if state.campaign.active_id != "" else (state.intro.objective() if state.intro.stage != "complete" else "J  Missões · M  Mapa"), state.campaign.active_id == "" and state.intro.stage == "complete")
 	if arrival.active: _set_objective(arrival.objective_text)
 	var freight: Dictionary = urban_operations.freight_status() if urban_operations != null else {}
 	freight_active = bool(freight.get("active", false)) and state.region_id == "harbor" and state.campaign.active_id.is_empty() and state.intro.stage == "complete" and not arrival.active
@@ -2216,6 +2216,9 @@ func _set_objective(text: String, hint := false) -> void:
 	objective.text = text
 	hud_objective = "" if hint else text.strip_edges()
 
+func navigation_destination() -> Dictionary:
+	return preload("res://runtime/NavigationDestination.gd").resolve(self)
+
 func _update_world_indicator() -> void:
 	if upside_world != null and upside_world.busy():
 		if is_instance_valid(marker): marker.hide()
@@ -2234,17 +2237,15 @@ func _update_world_indicator() -> void:
 		marker.hide()
 		arrow.hide()
 		return
-	var target: Vector3 = desert.target_position() if desert != null and state.region_id == "desert" else mission_world.target_position()
-	if state.intro.stage != "complete": target = world.maciota_place.entry_position
-	if arrival.active: target = arrival.target
-	if freight_active: target = freight_target
-	if arcade != null and state.region_id == "harbor" and state.place_id.is_empty():
+	var destination := navigation_destination()
+	var target: Vector3 = destination.point if not destination.is_empty() else Vector3.INF
+	if destination.is_empty() and arcade != null and state.region_id == "harbor" and state.place_id.is_empty():
 		var arcade_entry := preload("res://world/places/arcade/ArcadePlace.gd").EXTERIOR + Vector3(0,0,6.3)
 		if world.player.global_position.distance_squared_to(arcade_entry) < 144.0: target = arcade_entry
-	if wine != null and state.region_id == "harbor" and state.place_id.is_empty():
+	if destination.is_empty() and wine != null and state.region_id == "harbor" and state.place_id.is_empty():
 		var cellar_entry := preload("res://world/places/curitiba_cellar/CuritibaCellarPlace.gd").EXTERIOR + Vector3(0,0,6.7)
 		if world.player.global_position.distance_squared_to(cellar_entry) < 144.0: target = cellar_entry
-	if mining != null and state.region_id == "desert" and state.place_id.is_empty() and world.player.global_position.distance_to(preload("res://world/mining/MiningLayout.gd").SECRET_ENTRY)<14.0:
+	if destination.is_empty() and mining != null and state.region_id == "desert" and state.place_id.is_empty() and world.player.global_position.distance_to(preload("res://world/mining/MiningLayout.gd").SECRET_ENTRY)<14.0:
 		target = preload("res://world/mining/MiningLayout.gd").SECRET_ENTRY
 	if not state.place_id.is_empty() and is_instance_valid(room):
 		target = room.exit_position
@@ -2295,6 +2296,11 @@ func _menu(title: String) -> void:
 	if world.driving.occupied: world.driving.car.input_locked = true
 	panel.show()
 	panel.custom_minimum_size = Vector2(620,440)
+	# Compact conversation screens release this legacy minimum only for themselves.
+	column.get_parent().custom_minimum_size = Vector2(580,400)
+	column.get_parent().horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	column.get_parent().focus_mode = Control.FOCUS_NONE
+	column.get_parent().follow_focus = false
 	var label := Label.new()
 	label.text = title
 	label.add_theme_font_size_override("font_size",26)
@@ -2399,14 +2405,88 @@ func cancel_mission() -> bool:
 	save_game()
 	return true
 
+func show_maciota_menu() -> void:
+	_menu("Maciota")
+	_compact_menu_size(Vector2(360, 310))
+	_button("Ver missões", show_journal)
+	_button("Informações", show_journal_information)
+	_button("Encerrar conversa", close_menu)
+	_menu_information("Guia do HUD em Configurações → Ajuda.", 13)
+	_fit_compact_menu(column.get_child(0), Vector2(360, 310))
+
+func _compact_menu_size(extent: Vector2) -> void:
+	panel.set_meta("modal_preferred_size", extent)
+	column.get_parent().custom_minimum_size = Vector2.ZERO
+	column.get_parent().horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	column.get_parent().follow_focus = true
+	panel.custom_minimum_size = extent
+	panel.size = extent
+
+func _fit_compact_menu(identity: Node, maximum: Vector2) -> void:
+	# Wait for wrapping at the new width. Bound the result, keeping the existing
+	# scroller for long records; short menus should not reserve empty space.
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if not is_instance_valid(identity) or identity.get_parent() != column or not panel.visible: return
+	# Shared panel/margin chrome is 84 px; allow 16 px for focus and final wrap.
+	var extent := Vector2(maximum.x, minf(maximum.y, column.get_combined_minimum_size().y + 100.0))
+	panel.set_meta("modal_preferred_size", extent)
+	panel.custom_minimum_size = extent
+	panel.size = extent
+	panel.position = ((panel.get_viewport_rect().size - panel.size) * .5).round()
+
+## Read-only text must never look or behave like a mission action.
+func _menu_information(text: String, font_size := 16, parent: Node = null) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", preload("res://ui/GameStyle.gd").TEXT if font_size >= 16 else preload("res://ui/GameStyle.gd").MUTED)
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if parent != null:
+		label.focus_mode = Control.FOCUS_ALL
+		var reading_focus := StyleBoxFlat.new()
+		reading_focus.bg_color = Color.TRANSPARENT
+		reading_focus.border_color = preload("res://ui/GameStyle.gd").ACCENT
+		reading_focus.border_width_left = 2
+		label.add_theme_stylebox_override("focus", reading_focus)
+	(parent if parent != null else column).add_child(label)
+	return label
+
+func show_journal_information() -> void:
+	_menu("Informações")
+	_compact_menu_size(Vector2(480, 360))
+	column.get_parent().follow_focus = true
+	var records := VBoxContainer.new()
+	records.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	records.add_theme_constant_override("separation", 14)
+	column.add_child(records)
+	var village: Dictionary = {}
+	if urban_operations != null and is_instance_valid(urban_operations.village_quest): village = urban_operations.village_quest.data
+	var entries: Array = JOURNAL_ARCS.lines(state.world_state, state.campaign.snapshot(), village)
+	for line in entries: _menu_information(str(line), 16, records)
+	if entries.is_empty(): _menu_information("Nenhuma informação registrada ainda.", 16, records)
+	var secret_file: Variant = urban_operations.get("secret_file") if urban_operations != null else null
+	if is_instance_valid(secret_file) and secret_file.available():
+		_button("Arquivo de Vicente", secret_file.open_from_journal)
+	_button("Ver missões", show_journal)
+	_button("Fechar", close_menu)
+	# Read the first record before navigating the actions below the records.
+	var scroll: ScrollContainer = column.get_parent()
+	if records.get_child_count() > 0: records.get_child(0).grab_focus.call_deferred()
+	scroll.set_deferred("scroll_vertical", 0)
+	_fit_compact_menu(column.get_child(0), Vector2(480, 360))
+
 func show_journal() -> void:
 	if mountain_activities != null and mountain_activities.busy():
 		mountain_activities.show_journal()
 		return
 	_menu("Missões")
+	_compact_menu_size(Vector2(480, 360))
 	if mountain_activities != null: _button("Atividades da montanha", mountain_activities.show_journal)
 	if state.campaign.active_id != "":
-		_button(state.campaign.objective(),close_menu)
+		_menu_information("OBJETIVO ATUAL", 13)
+		_menu_information(mission_world.objective())
 		_button("Cancelar missão",cancel_mission)
 	else:
 		for id in state.campaign.available_missions():
@@ -2416,14 +2496,9 @@ func show_journal() -> void:
 					close_menu()
 					return
 				if not dialogue_open: close_menu())
-	# Histórias fora da campanha do Harbor, de qualquer região (JournalArcs).
-	var village: Dictionary = {}
-	if urban_operations != null and is_instance_valid(urban_operations.village_quest): village = urban_operations.village_quest.data
-	for line in JOURNAL_ARCS.lines(state.world_state, state.campaign.snapshot(), village): _button(line, close_menu)
-	var secret_file: Variant = urban_operations.get("secret_file") if urban_operations != null else null
-	if is_instance_valid(secret_file) and secret_file.available():
-		_button("Arquivo de Vicente",secret_file.open_from_journal)
+	_button("Informações", show_journal_information)
 	_button("Voltar",close_menu)
+	_fit_compact_menu(column.get_child(0), Vector2(480, 360))
 func show_inventory() -> void:
 	if field_inventory != null:
 		field_inventory.open()

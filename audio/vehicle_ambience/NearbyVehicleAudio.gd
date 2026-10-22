@@ -32,8 +32,9 @@ const BANK_SWAP_SECONDS := 0.12
 ## o trânsito chegava perto de -46 dBFS: mudo. Agora, como em `Gameplay._hearing_gain_db`, a
 ## posição só dá o panorama e a perda vem da distância ao JOGADOR: 0 dB até 8 m, inverso da
 ## distância daí em diante e rampa até zero em RANGE. Conta (não medida no ouvido): um carro a
-## 8 m fica ~-22 a -25 dBFS rms (+10 dB do bus SFX), ~8–10 dB abaixo do motor do jogador em
-## cruzeiro; a 20 m, ~-36. Mesmo teto de 6 carros e 12/24 vozes.
+## Na calibração anterior, a 8 m ficava ~-22 a -25 dBFS rms com +10 dB do SFX.
+## Agora acompanha Vehicles sem esse reforço, assim como o motor do jogador.
+## Mesmo teto de 6 carros e 12/24 vozes; valores percebidos dependem da mixagem.
 const CITY_LIFE := preload("res://audio/city_life/CityLifeAudio.gd")
 const HEARING_REFERENCE := 8.0
 const PLAYER_RELATIVE_VOLUME_DB := -20.0
@@ -279,7 +280,7 @@ func _assign(id: int) -> void:
 		player.max_polyphony = 1
 		player.max_distance = RANGE
 		player.unit_size = 8.0
-		player.bus = &"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master"
+		player.bus = &"Vehicles" if AudioServer.get_bus_index("Vehicles") >= 0 else &"Master"
 		if _player_relative: CITY_LIFE.make_player_relative(player)
 		add_child(player)
 		players.append(player)

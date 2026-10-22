@@ -29,7 +29,7 @@ func _ready() -> void:
 	name = "PoliceRadioVoice"
 	_player = AudioStreamPlayer.new()
 	_player.volume_db = VOLUME_DB
-	_player.bus = &"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master"
+	_player.bus = &"Dialogue" if AudioServer.get_bus_index("Dialogue") >= 0 else &"Master"
 	_player.finished.connect(_next)
 	add_child(_player)
 	set_process(false)

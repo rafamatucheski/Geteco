@@ -72,7 +72,7 @@ func _ready() -> void:
 	motor.max_distance = 38
 	motor.unit_size = 5
 	motor.volume_db = -17
-	if AudioServer.get_bus_index("SFX")>=0: motor.bus = "SFX"
+	if AudioServer.get_bus_index("Vehicles")>=0: motor.bus = "Vehicles"
 	ferry.add_child(motor)
 	var static_owners: Array = [art,quay]
 	var lock_layer := CanvasLayer.new()

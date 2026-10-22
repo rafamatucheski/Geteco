@@ -96,7 +96,7 @@ func _apply_profile() -> void:
 		_family = family
 		_bank = BANKS.bank(family)
 		_indices = [-1,-1]
-	var bus: StringName = &"SFX" if AudioServer.get_bus_index("SFX")>=0 else &"Master"
+	var bus: StringName = &"Vehicles" if AudioServer.get_bus_index("Vehicles")>=0 else &"Master"
 	for player in _layers: player.bus = bus
 	_sync_recorded_idle()
 
@@ -290,7 +290,7 @@ func _player(label: String, level: float) -> AudioStreamPlayer3D:
 	p.max_db = 1.0
 	p.unit_size = 12.0
 	p.max_distance = 85.0
-	if AudioServer.get_bus_index("SFX") >= 0: p.bus = "SFX"
+	if AudioServer.get_bus_index("Vehicles") >= 0: p.bus = "Vehicles"
 	add_child(p)
 	return p
 

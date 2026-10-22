@@ -58,6 +58,9 @@ func _ready() -> void:
 	art.first_index = 3 if variant == 1 else 7 if variant == 2 else -1
 	art.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	_root.add_child(art)
+	# Keep the first framing still until the independent presenter takes over.
+	# Hidden Godot artwork must not keep animating/rendering behind that window.
+	art.set_process(false)
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	margin.add_theme_constant_override("margin_left", 48)
@@ -105,10 +108,12 @@ func prepare_presentation() -> void:
 		add_child(_presenter)
 		var art: Control = _root.get_node("Artwork")
 		if _presenter.Begin(_root,art._order,DISPLAY_FONT.data,BODY_FONT.data):
+			_presenter.SetProgress(_target)
 			# Stage immutable pixels over separate frames before any world build.
 			for index in ARTWORK.ART.size():
 				if not _presenter.AddImage(index,ARTWORK.ART[index]): break
 				await get_tree().process_frame
+			if not _presenter.HasFailed(): _presenter.StartPresentation()
 			var deadline := Time.get_ticks_msec()+5000
 			while not _presenter.IsReady() and not _presenter.HasFailed() and Time.get_ticks_msec()<deadline:
 				await get_tree().process_frame
@@ -116,6 +121,7 @@ func prepare_presentation() -> void:
 			push_warning("Loading presentation fallback: %s" % _presenter.Snapshot())
 			_presenter.queue_free()
 			_presenter = null
+	if not is_instance_valid(_presenter): _root.get_node("Artwork").set_process(true)
 	_presentation_ready = true
 
 func _label(text: String, font_size: int, color: Color, font: Font) -> Label:
@@ -137,6 +143,9 @@ func set_stage(value: float, message: String) -> void:
 		SESSION_OPS.finish(_diagnostic_stage, "advanced")
 		_diagnostic_stage = SESSION_OPS.begin(self, "loading", message, {"progress":value})
 	_target = maxf(_target, clampf(value, 0.0, 1.0))
+	# Send the real target, not main-thread interpolation. The presentation loop
+	# smooths the bar independently and then holds it during a slow world stage.
+	if is_instance_valid(_presenter): _presenter.SetProgress(_target)
 	stage_message = message
 	if not stage_only and _shown < _target: set_process(true)
 
@@ -144,7 +153,6 @@ func _update_progress() -> void:
 	if _fill == null or _track == null: return
 	_fill.size = Vector2(_track.size.x * _shown, _track.size.y)
 	_percent.text = "%d%%" % floori(_shown * 100.0)
-	if is_instance_valid(_presenter): _presenter.SetProgress(_shown)
 
 func _process(delta: float) -> void:
 	_shown = move_toward(_shown, _target, delta * 0.9)

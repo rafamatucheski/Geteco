@@ -93,7 +93,7 @@ func _ready() -> void:
 				child.hide()
 	maciota = _resident(MACIOTA, "Maciota", Vector3(3.35,0,-1.7))
 	mechanic = _resident(MECHANIC, "Mechanic", Vector3(-2.9,0,-1.25))
-	mechanic.rotation.y = PI
+	mechanic.model.rotation.y = PI
 	interaction_points = {
 		"maciota": to_global(interior_origin + Vector3(3.4,0,-.55)),
 		"mechanic": to_global(interior_origin + Vector3(-2.9,0,-.15)),
@@ -122,6 +122,17 @@ func _retract_lift_arms() -> void:
 		part.rotation.y = 0
 
 func _resident(model: Script, identity: String, point: Vector3) -> Node3D:
+	if identity == "Mechanic":
+		var worker := preload("res://world/maciota/MechanicWorkRoutine.gd").new()
+		worker.name = identity
+		worker.position = Vector3(-2.65,0,-1.1)
+		worker.place = self
+		worker.set_meta("invulnerable",true)
+		worker.set_meta("persistent_id","mechanic")
+		worker.model = model.new()
+		worker.add_child(worker.model)
+		room.add_child(worker)
+		return worker
 	var actor := model.new() as Node3D
 	actor.name = identity
 	actor.position = point

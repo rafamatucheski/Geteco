@@ -20,13 +20,16 @@ func _draw() -> void:
 			for index in 25:
 				crescent.append(center + Vector2(4, 0) + Vector2.from_angle(-PI * 0.5 - index * PI / 24.0) * Vector2(5, 9))
 			draw_colored_polygon(crescent, INK)
-		"cloud", "rain", "storm":
+		"cloud", "rain", "storm", "hail":
 			draw_circle(Vector2(10, 12), 5, INK)
 			draw_circle(Vector2(16, 9), 6, INK)
 			draw_circle(Vector2(22, 12), 4, INK)
 			draw_line(Vector2(8, 16), Vector2(23, 16), INK, 2, true)
 			if state == "storm":
 				draw_polyline(PackedVector2Array([Vector2(18,17), Vector2(14,22), Vector2(18,22), Vector2(14,28)]), Color("e5cf8e"), 2, true)
+			elif state == "hail":
+				for x in [10, 16, 22]:
+					draw_circle(Vector2(x,22),1.8,INK)
 			elif state == "rain":
 				for x in [10, 16, 22]:
 					draw_line(Vector2(x, 20), Vector2(x - 2, 25), Color("9dc8da"), 1.5, true)

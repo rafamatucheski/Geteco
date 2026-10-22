@@ -1,0 +1,185 @@
+{
+	"checks": 39,
+	"exit_diagnostic": {
+		"attack_allowed": true,
+		"equipped": "fists",
+		"gameplay_enabled": true,
+		"health": 100.0,
+		"input_locked": false,
+		"inventory_after": {
+			"achievements": [
+				"armed_up"
+			],
+			"balance": 100,
+			"collectibles": [],
+			"discoveries": [],
+			"grid_inventory": {
+				"bag": "",
+				"claimed": [],
+				"ground": [],
+				"pockets": [],
+				"serial": 0,
+				"storage": [],
+				"trunk": [],
+				"version": 2
+			},
+			"inventory": {},
+			"outfit": "dante_classic",
+			"outfits": [
+				"dante_classic"
+			],
+			"personal_loadout": {
+				"corpo": "knife",
+				"curta": "pistol",
+				"granada": "grenade",
+				"longa": ""
+			},
+			"personal_loadout_enabled": true,
+			"transactions": {
+				"reward:achievement:armed_up": {
+					"amount": 100,
+					"item": "achievement:armed_up",
+					"kind": "reward"
+				}
+			},
+			"version": 1,
+			"weapons": {
+				"fists": {
+					"magazine": -1,
+					"reserve": -1
+				},
+				"grenade": {
+					"magazine": 1,
+					"reserve": 10
+				},
+				"knife": {
+					"magazine": -1,
+					"reserve": -1
+				},
+				"pistol": {
+					"magazine": 12,
+					"reserve": 60
+				}
+			}
+		},
+		"inventory_before": {
+			"achievements": [
+				"armed_up"
+			],
+			"balance": 100,
+			"collectibles": [],
+			"discoveries": [],
+			"grid_inventory": {
+				"bag": "",
+				"claimed": [],
+				"ground": [],
+				"pockets": [],
+				"serial": 0,
+				"storage": [],
+				"trunk": [],
+				"version": 2
+			},
+			"inventory": {},
+			"outfit": "dante_classic",
+			"outfits": [
+				"dante_classic"
+			],
+			"personal_loadout": {
+				"corpo": "knife",
+				"curta": "pistol",
+				"granada": "grenade",
+				"longa": ""
+			},
+			"personal_loadout_enabled": true,
+			"transactions": {
+				"reward:achievement:armed_up": {
+					"amount": 100,
+					"item": "achievement:armed_up",
+					"kind": "reward"
+				}
+			},
+			"version": 1,
+			"weapons": {
+				"fists": {
+					"magazine": -1,
+					"reserve": -1
+				},
+				"grenade": {
+					"magazine": 1,
+					"reserve": 10
+				},
+				"knife": {
+					"magazine": -1,
+					"reserve": -1
+				},
+				"pistol": {
+					"magazine": 12,
+					"reserve": 60
+				}
+			}
+		},
+		"inventory_immediate": {
+			"achievements": [
+				"armed_up"
+			],
+			"balance": 100,
+			"collectibles": [],
+			"discoveries": [],
+			"grid_inventory": {
+				"bag": "",
+				"claimed": [],
+				"ground": [],
+				"pockets": [],
+				"serial": 0,
+				"storage": [],
+				"trunk": [],
+				"version": 2
+			},
+			"inventory": {},
+			"outfit": "dante_classic",
+			"outfits": [
+				"dante_classic"
+			],
+			"personal_loadout": {
+				"corpo": "knife",
+				"curta": "pistol",
+				"granada": "grenade",
+				"longa": ""
+			},
+			"personal_loadout_enabled": true,
+			"transactions": {
+				"reward:achievement:armed_up": {
+					"amount": 100,
+					"item": "achievement:armed_up",
+					"kind": "reward"
+				}
+			},
+			"version": 1,
+			"weapons": {
+				"fists": {
+					"magazine": -1,
+					"reserve": -1
+				},
+				"grenade": {
+					"magazine": 1,
+					"reserve": 10
+				},
+				"knife": {
+					"magazine": -1,
+					"reserve": -1
+				},
+				"pistol": {
+					"magazine": 12,
+					"reserve": 60
+				}
+			}
+		},
+		"occupied": false,
+		"paused": false,
+		"state_can_attack": true,
+		"surrendering": false,
+		"weapons_allowed": true
+	},
+	"failures": [],
+	"limits": "Maciota real; entrada/saída, APIs e Input, restauração de GameState via SaveStore temporário. Não recarrega Main; não simula atropelamento físico, fogo externo persistente ou todos os eventos de missão. Explosão externa dirigida e dano direto não certificam todas as fontes."
+}

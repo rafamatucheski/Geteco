@@ -12,7 +12,6 @@ const CURTAIN = preload("res://runtime/StartupCurtain.gd")
 @onready var sub_title: Label = %SubTitle
 var btn_continue: Button
 var btn_import: Button
-var btn_rachas: Button
 var latest_save: Dictionary = {}
 var settings: Control
 var presentation: Control
@@ -47,10 +46,6 @@ func _ready() -> void:
 	btn_import.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	btn_new_game.get_parent().add_child(btn_import)
 	btn_new_game.get_parent().move_child(btn_import,btn_load_game.get_index()+1)
-	btn_rachas=Button.new()
-	btn_rachas.text="RACHAS"
-	btn_new_game.get_parent().add_child(btn_rachas)
-	btn_rachas.pressed.connect(_start_rachas)
 	btn_continue.pressed.connect(func(): _start(str(latest_save.id), false))
 	btn_new_game.pressed.connect(func(): _show_slots(true))
 	btn_load_game.pressed.connect(func(): _show_slots(false))
@@ -121,7 +116,7 @@ func _ready() -> void:
 		(btn_continue if btn_continue.visible else btn_new_game).grab_focus()
 
 func _main_enabled(enabled: bool) -> void:
-	for button in [btn_continue, btn_new_game, btn_load_game, btn_import, btn_rachas, btn_settings, btn_quit]: button.disabled = not enabled
+	for button in [btn_continue, btn_new_game, btn_load_game, btn_import, btn_settings, btn_quit]: button.disabled = not enabled
 	presentation.show_main(enabled)
 
 func _show_slots(new_game: bool) -> void:
@@ -306,11 +301,21 @@ func _show_loading(id: String, new_game: bool) -> void:
 	if not new_game:
 		for row in get_node("/root/V2Launch").list_slots():
 			if row.id == id: region = str(row.get("region", "harbor"))
-	var curtain = CURTAIN.new()
-	curtain.variant = CURTAIN.variant_for(region)
-	get_tree().root.add_child(curtain)
+	# New game and failed previews already have an opaque, running presenter.
+	# Transfer that same curtain instead of opening two native windows (and two
+	# independent slideshow clocks) over one another during the scene handoff.
+	var curtain: CanvasLayer
+	if sky != null and is_instance_valid(sky.curtain):
+		curtain = sky.curtain
+		sky.curtain = null
+		curtain.reparent(get_tree().root)
+	else:
+		curtain = CURTAIN.new()
+		curtain.variant = CURTAIN.variant_for(region)
+		get_tree().root.add_child(curtain)
+		curtain._root.modulate.a = 0.0
 	curtain.layer = 127
-	curtain._root.modulate.a = 0.0
+	await curtain.prepare_presentation()
 	create_tween().tween_property(curtain._root, "modulate:a", 1.0, .35).set_trans(Tween.TRANS_SINE)
 	curtain.set_stage(.04, "Abrindo o save…" if not new_game else "Começando uma nova história…")
 	var music := get_node_or_null("MenuMusic")

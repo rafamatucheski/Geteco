@@ -660,7 +660,7 @@ func _card(id: String, compact: bool = false) -> Control:
 		var cost := Label.new()
 		cost.text = "Instalada" if installed else ("Comprada" if id in _owned else "R$ %s" % _money_text(int(part.cost)))
 		if selected: cost.text += "  ✓"
-		if locked: cost.text = "Na oficina" if owned_only and id not in _owned else ("%d vitórias" % int(part.wins) if rival.is_empty() else "Desafio")
+		if locked: cost.text = "Na oficina" if owned_only and id not in _owned else (String(TranslationServer.translate("%d vitórias")) % int(part.wins) if rival.is_empty() else "Desafio")
 		cost.add_theme_color_override("font_color",GOLD if selected else MUTED)
 		row.add_child(cost)
 	button.pressed.connect(_choose_part.bind(slot,id))
@@ -756,7 +756,7 @@ func _preview(change: Dictionary) -> void:
 	_badge.add_theme_stylebox_override("panel",_box(CLASS_COLORS[letter],Color(0,0,0,0),0,10,4))
 	_subtitle.visible = _menu_level == 2 and _group == "Desempenho"
 	_subtitle.text = "Classe "+letter
-	_subtitle.tooltip_text = "%d / %d vitórias" % [_wins,RACE_WINS.maximum()]
+	_subtitle.tooltip_text = String(TranslationServer.translate("%d / %d vitórias")) % [_wins,RACE_WINS.maximum()]
 	_numbers.text = "0–100 km/h: %s\n400 m: %s\nFinal: %d km/h" % [_seconds(shown.zero_to_100),_seconds(shown.quarter),roundi(float(shown.top_kmh))]
 
 func _seconds(value: Variant) -> String:

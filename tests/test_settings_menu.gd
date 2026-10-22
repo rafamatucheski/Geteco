@@ -57,8 +57,22 @@ func run() -> void:
 	await process_frame
 	menu.open()
 	await process_frame
-	check(menu._tabs.size() == 3, "três abas: vídeo, áudio, controles")
-	for key_name in ["window_mode", "resolution", "vsync", "fps_limit", "show_fps", "render_scale", "msaa", "shadow_quality", "brightness", "master_volume", "music_volume", "sfx_volume", "ambient_volume", "mute_unfocused", "voice_language"]:
+	check(menu._tabs.size() == 4, "quatro abas: vídeo, áudio, controles e ajuda")
+	menu._select_tab(3)
+	await process_frame
+	check(menu._pages[3].visible and not menu._defaults_button.visible, "ajuda tem página própria sem restaurar configurações")
+	check(menu._help_bindings.text.contains(controls.prompt("interact")), "ajuda usa o atalho atual de conversa")
+	var help_topics: Array = menu._pages[3].find_children("*", "Label", true, false).filter(func(node): return node.focus_mode == Control.FOCUS_ALL)
+	check(help_topics.size() == 6, "tópicos da ajuda permitem leitura pelo foco do controle")
+	help_topics[-1].grab_focus()
+	for frame in 4: await process_frame
+	var last_topic: Control = help_topics[-1]
+	var help_view: Rect2 = menu._pages[3].get_global_rect()
+	check(help_view.encloses(last_topic.get_global_rect()), "último tópico da ajuda fica inteiramente visível após receber foco")
+	var help_scale: float = settings.render_scale
+	menu._restore_tab_defaults()
+	check(is_equal_approx(settings.render_scale, help_scale), "ajuda não altera opções ao restaurar padrões")
+	for key_name in ["window_mode", "resolution", "vsync", "fps_limit", "show_fps", "render_scale", "msaa", "shadow_quality", "brightness", "master_volume", "music_volume", "sfx_volume", "ambient_volume", "vehicle_volume", "radio_volume", "dialogue_volume", "ui_volume", "mute_unfocused", "voice_language"]:
 		check(menu._widgets.has(key_name), "opção presente: " + key_name)
 	var original_scale: float = settings.render_scale
 	var scale_slider: HSlider = menu._widgets.render_scale.get_meta("slider")
@@ -78,9 +92,13 @@ func run() -> void:
 	menu._context_choice.item_selected.emit(3)
 	check(menu._pad_diagram.context == 3, "seletor abre o guia do skate")
 	menu._unhandled_input(pad(JOY_BUTTON_RIGHT_SHOULDER))
-	check(menu._tab == 0, "R1 circula da última aba para a primeira")
+	check(menu._tab == 3, "R1 abre ajuda depois de controles")
+	menu._unhandled_input(pad(JOY_BUTTON_RIGHT_SHOULDER))
+	check(menu._tab == 0, "R1 circula da ajuda para a primeira aba")
 	menu._unhandled_input(pad(JOY_BUTTON_LEFT_SHOULDER))
-	check(menu._tab == 2, "L1 volta à aba de controles")
+	check(menu._tab == 3, "L1 volta à ajuda")
+	menu._unhandled_input(pad(JOY_BUTTON_LEFT_SHOULDER))
+	check(menu._tab == 2, "L1 volta da ajuda aos controles")
 	menu._begin_remap("skate_flip", 0, binding_button(menu, "skate_flip"), true)
 	menu._input(pad(JOY_BUTTON_RIGHT_SHOULDER))
 	check(menu.remap_action.is_empty() and menu._tab == 2, "ombro durante captura remapeia sem trocar de aba")

@@ -99,7 +99,7 @@ func _play_flyover() -> void:
 	if flyover == null: return
 	var voice := AudioStreamPlayer3D.new()
 	voice.stream = flyover
-	voice.bus = FIREFLY.bus_name()
+	voice.bus = FIREFLY.bus_name(&"Vehicles")
 	voice.volume_db = -7.0
 	voice.unit_size = 20.0
 	voice.max_distance = 170.0

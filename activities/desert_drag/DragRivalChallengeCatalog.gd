@@ -38,13 +38,13 @@ static func evaluate(identity: String, step: int, metrics: Dictionary, seconds: 
 	var detail := ""
 	match identity+":"+str(step):
 		"digo:0": success=good_launch; detail=str(metrics.get("launch","Sem largada registrada"))
-		"digo:1": success=good>=2 and bad==0; detail="%d boas trocas · %d erros"%[good,bad]
-		"raul:0": success=good>=3 and bad==0; detail="%d boas trocas · %d erros"%[good,bad]
+		"digo:1": success=good>=2 and bad==0; detail=String(TranslationServer.translate("%d boas trocas · %d erros"))%[good,bad]
+		"raul:0": success=good>=3 and bad==0; detail=String(TranslationServer.translate("%d boas trocas · %d erros"))%[good,bad]
 		"livia:0":
 			var spin: float=float(metrics.get("spin60_seconds",0.0))/maxf(.001,float(metrics.get("first60_seconds",0.0)))
 			success=spin<=.25 and float(metrics.get("first60_seconds",0.0))>0.0
 			detail="Patinagem média: %.1f%% / 25%%"%(spin*100.0)
-		"livia:1": success=good_launch and nitro==0.0 and limiter<=.5; detail="%s · nitro %.1f s · limitador %.2f s"%[str(metrics.get("launch","")),nitro,limiter]
+		"livia:1": success=good_launch and nitro==0.0 and limiter<=.5; detail=String(TranslationServer.translate("%s · nitro %.1f s · limitador %.2f s"))%[str(metrics.get("launch","")),nitro,limiter]
 		"raul:1": success=float(metrics.get("late_limiter_seconds",0.0))<=.35; detail="Limitador nos 200 m finais: %.2f s / 0,35 s"%float(metrics.get("late_limiter_seconds",0.0))
 		"jessica:0": success=true; detail="Referência registrada: %.3f s"%seconds
 		"jessica:1":
@@ -57,6 +57,6 @@ static func evaluate(identity: String, step: int, metrics: Dictionary, seconds: 
 			var retained: float=float(metrics.get("tail_min_speed",0.0))/maxf(.001,entry)
 			success=entry>0.0 and retained>=.90
 			detail="Velocidade conservada: %.1f%% / 90%%"%(retained*100.0)
-		"rauhz:0": success=good_launch and good>=2 and bad==0; detail="%s · %d boas trocas · %d erros"%[str(metrics.get("launch","")),good,bad]
-		"rauhz:1": success=good_launch and good>=3 and bad==0 and limiter<=.5; detail="%d boas trocas · %d erros · limitador %.2f s"%[good,bad,limiter]
+		"rauhz:0": success=good_launch and good>=2 and bad==0; detail=String(TranslationServer.translate("%s · %d boas trocas · %d erros"))%[str(metrics.get("launch","")),good,bad]
+		"rauhz:1": success=good_launch and good>=3 and bad==0 and limiter<=.5; detail=String(TranslationServer.translate("%d boas trocas · %d erros · limitador %.2f s"))%[good,bad,limiter]
 	return {"success":success,"detail":detail}

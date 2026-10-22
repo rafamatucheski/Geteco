@@ -85,9 +85,8 @@ const FOOTSTEP_VOLUME_DB := -17.0
 const STATIONS := ["porto_fm","porto_noite","porto_groove","porto_brisa","porto_neon","porto_arcade","porto_pesada","porto_reggae","porto_club","porto_estrada","porto_cruise","fronteira_country"]
 const STATION_NAMES := ["PORTO FM · Empty Stretch","PORTO NOITE · Fusion Jazz","PORTO GROOVE · Wednesday Night","PORTO BRISA · Apple Cider","PORTO NEON · Synth Rock","PORTO ARCADE · Chiptune","PORTO PESADA · Metal Fusion","PORTO REGGAE · Sweet Coast","PORTO CLUB · Electronic Outlaw","PORTO ESTRADA · Freeway Fumes","PORTO CRUISE · Midnight Cruiser","FRONTEIRA COUNTRY"]
 const COUNTRY_STATION := 11
-const RADIO_VOLUME_DB := -12.0
+const RADIO_VOLUME_DB := -6.0
 var radio_car: CharacterBody3D
-var radio_focus := 1.0
 ## Exclusive room music pauses only this radio voice; station and playback
 ## position remain owned by the vehicle. Weak ownership also recovers on free.
 var _scoped_music_owner: WeakRef
@@ -113,7 +112,7 @@ func _ready() -> void:
 	add_child(desert_ambience)
 	radio = AudioStreamPlayer.new()
 	radio.name = "VehicleRadio"
-	radio.bus = _bus(&"Music")
+	radio.bus = _bus(&"Radio")
 	radio.volume_db = RADIO_VOLUME_DB
 	add_child(radio)
 	# Leitos gerados no ElevenLabs (2026-10-16): gente falando, trânsito, porto, mata de dia e
@@ -174,13 +173,13 @@ func _ready() -> void:
 		# driver's engine was foreground audio, so it must not fade with that gap.
 		var layer := AudioStreamPlayer.new()
 		layer.name = "PlayerEngineBand%d" % index
-		layer.bus = _bus(&"SFX")
+		layer.bus = _bus(&"Vehicles")
 		layer.max_polyphony = 1
 		add_child(layer)
 		layers.append(layer)
 	road_audio = AudioStreamPlayer.new()
 	road_audio.name = "PlayerRoadNoise"
-	road_audio.bus = _bus(&"SFX")
+	road_audio.bus = _bus(&"Vehicles")
 	var road_stream := ROAD_SOUND.duplicate() as AudioStreamWAV
 	road_stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
 	road_stream.loop_end = maxi(1, roundi(road_stream.get_length() * road_stream.mix_rate) - 8)
@@ -188,11 +187,11 @@ func _ready() -> void:
 	add_child(road_audio)
 	shift_audio = AudioStreamPlayer.new()
 	shift_audio.name = "PlayerTurboRelease"
-	shift_audio.bus = _bus(&"SFX")
+	shift_audio.bus = _bus(&"Vehicles")
 	add_child(shift_audio)
 	air_brake_audio = AudioStreamPlayer.new()
 	air_brake_audio.name = "PlayerAirBrake"
-	air_brake_audio.bus = _bus(&"SFX")
+	air_brake_audio.bus = _bus(&"Vehicles")
 	add_child(air_brake_audio)
 	_ensure_firefly_players()
 
@@ -202,16 +201,16 @@ func _ensure_firefly_players() -> void:
 	if extra_audio != null: return
 	extra_audio = AudioStreamPlayer.new()
 	extra_audio.name = "PlayerEngineExtras"
-	extra_audio.bus = _bus(&"SFX")
+	extra_audio.bus = _bus(&"Vehicles")
 	add_child(extra_audio)
 	blower_audio = AudioStreamPlayer.new()
 	blower_audio.name = "PlayerSupercharger"
-	blower_audio.bus = _bus(&"SFX")
+	blower_audio.bus = _bus(&"Vehicles")
 	blower_audio.stream = FIREFLY.loop("vehicle_fx", "supercharger_loop.wav")
 	add_child(blower_audio)
 	reverse_audio = AudioStreamPlayer.new()
 	reverse_audio.name = "PlayerReverseBeep"
-	reverse_audio.bus = _bus(&"SFX")
+	reverse_audio.bus = _bus(&"Vehicles")
 	reverse_audio.stream = FIREFLY.loop("service_vehicles", "reverse_beep_loop.wav")
 	add_child(reverse_audio)
 
@@ -335,9 +334,9 @@ func _update_radio(delta: float) -> void:
 			if radio_index < -1 or radio_index >= STATIONS.size(): radio_index = -1
 			_play_station(float(car.get_meta(&"radio_position",0.0)))
 	if car != null:
-		var dialogue: bool = world.session != null and world.session.get("dialogue_open") == true
-		radio_focus = move_toward(radio_focus,.2 if dialogue else 1.0,delta*3.0)
-		radio.volume_db = RADIO_VOLUME_DB+linear_to_db(maxf(radio_focus,.001))
+		# A prioridade vem do bus Dialogue: fala audível, incluindo barks e caronas.
+		# Não abaixar duas vezes nem manter a rádio abafada por uma caixa de texto.
+		radio.volume_db = RADIO_VOLUME_DB
 	if _scoped_music_owner != null:
 		if not is_instance_valid(_scoped_music_owner.get_ref()):
 			_scoped_music_owner = null
@@ -748,7 +747,8 @@ func _play_vehicle_fx(sounds: Array, volume: float, cooldown: float = 0.18) -> v
 func _update_ambience(delta: float) -> void:
 	if world.session == null: return
 	ambience_clock += delta
-	var focus := .35 if world.session.dialogue_open else (.62 if world.session.modal else 1.0)
+	# Fala real recebe prioridade no bus; janelas modais mantêm a redução leve.
+	var focus := .62 if world.session.modal else 1.0
 	if ambience_clock >= .25:
 		ambience_clock = 0
 		var state = world.session.state

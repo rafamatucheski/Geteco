@@ -307,7 +307,7 @@ func _stall_update_skid_audio(audible: bool, road_speed: float, lateral_speed: f
 		skid_audio.max_distance = 55.0
 		skid_audio.unit_size = 4.0
 		skid_audio.max_db = -22.0
-		skid_audio.bus = &"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master"
+		skid_audio.bus = &"Vehicles" if AudioServer.get_bus_index("Vehicles") >= 0 else &"Master"
 		vehicle.add_child(skid_audio)
 		STALL_WORK.finish("vehicle_tires.skid_voice",began,{"kind":kind})
 	skid_audio.volume_db = lerpf(-30.0, -22.0, clampf(road_speed / 16.25, 0.0, 1.0))

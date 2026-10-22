@@ -193,7 +193,7 @@ func _process(delta: float) -> void:
 	_refresh()
 
 func _refresh() -> void:
-	score_label.text = "%06d   /   REC %06d" % [game.score,best]
+	score_label.text = String(TranslationServer.translate("%06d   /   REC %06d")) % [game.score,best]
 	start_button.text = "Jogar novamente" if playing and game.finished else "Jogar"
 	start_button.visible = not playing or game.finished
 	pause_button.visible = playing and not game.finished

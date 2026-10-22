@@ -26,10 +26,13 @@ public partial class LoadingPresenter : Node
         var parent = (nint)DisplayServer.WindowGetNativeHandle(DisplayServer.HandleType.WindowHandle);
         if (parent == 0) return false;
         presenter = new Presenter(parent, order.ToArray(), titleFont, textFont);
-        presenter.Start();
         SetProcess(true);
         return true;
     }
+
+    // Finish all Vulkan texture readbacks before creating the independent D3D
+    // device. Concurrent driver initialization/readback can lock startup.
+    public void StartPresentation() => presenter?.Start();
 
     // Called exclusively on Godot's main thread. Transfer owned bytes, never a
     // Texture/Image/Node reference, to the presenter thread.
@@ -51,20 +54,21 @@ public partial class LoadingPresenter : Node
 
     public bool IsReady() => presenter?.Ready == true;
     public bool HasFailed() => presenter?.Failure != null;
-    public void SetProgress(double value) { if (presenter != null) presenter.Progress = Math.Clamp(value, 0, 1); }
+    public void SetProgress(double value) { if (presenter != null) Volatile.Write(ref presenter.Progress, Math.Clamp(value, 0, 1)); }
     public void FadeOut(double seconds) { fading = true; presenter?.Fade(seconds); }
     public override void _Process(double delta)
     {
         if (presenter == null || !IsInstanceValid(cover)) return;
         if (presenter.Failure != null && !recoveredFailure) {
             foreach (var child in cover.GetChildren()) if (child is CanvasItem visual) visual.Show();
+            cover.GetNodeOrNull<Control>("Artwork")?.SetProcess(true);
             GD.PushWarning("Loading presentation fallback: " + presenter.Failure);
             recoveredFailure = true;
         }
         if (presenter.Ready && !fading && !recoveredFailure)
             foreach (var child in cover.GetChildren())
                 if (child is CanvasItem visual && visual.Visible == presenter.Shown) visual.Visible = !presenter.Shown;
-        presenter.Opacity = curtain != null && curtain.Visible && cover.IsVisibleInTree() ? cover.Modulate.A : 0;
+        Volatile.Write(ref presenter.Opacity, curtain != null && curtain.Visible && cover.IsVisibleInTree() ? cover.Modulate.A : 0);
     }
     public Godot.Collections.Dictionary Snapshot()
     {
@@ -76,8 +80,18 @@ public partial class LoadingPresenter : Node
         double percentile(double fraction) => sorted.Length == 0 ? 0 : sorted[(int)((sorted.Length - 1) * fraction)];
         var total = frames.Sum();
         return new Godot.Collections.Dictionary {
-            ["backend"] = "Windows owned window / independent presentation thread",
+            ["backend"] = "Direct2D hardware / independent presentation thread",
             ["width"] = presenter?.Width ?? 0, ["height"] = presenter?.Height ?? 0,
+            ["animation_seconds"] = presenter == null ? 0 : Volatile.Read(ref presenter.AnimationTime),
+            ["displayed_progress"] = presenter == null ? 0 : Volatile.Read(ref presenter.DisplayedProgress),
+            ["target_progress"] = presenter == null ? 0 : Volatile.Read(ref presenter.Progress),
+            ["visibility"] = new Godot.Collections.Dictionary {
+                ["ready"] = presenter?.Ready == true, ["shown"] = presenter?.Shown == true,
+                ["opacity"] = presenter == null ? 0 : Volatile.Read(ref presenter.Opacity),
+                ["parent_visible"] = presenter?.ParentVisible == true,
+                ["parent_foreground"] = presenter?.ParentForeground == true,
+                ["parent_minimized"] = presenter?.ParentMinimized == true
+            },
             ["godot_window_size"] = DisplayServer.WindowGetSize().ToString(),
             ["frames"] = frames.Length, ["seconds"] = total / 1000,
             ["including_fade"] = new Godot.Collections.Dictionary {
@@ -91,7 +105,7 @@ public partial class LoadingPresenter : Node
             ["max_ms"] = sorted.Length == 0 ? 0 : sorted[^1],
             ["over_33_3_ms"] = frames.Count(x => x > 33.3), ["over_66_7_ms"] = frames.Count(x => x > 66.7),
             ["intervals_ms"] = frames, ["failure"] = presenter?.Failure ?? "",
-            ["scope"] = "Opaque loading presentation; completed native paints, not gameplay frames or GPU timings"
+            ["scope"] = "Opaque loading presentation; completed Direct2D EndDraw calls, not gameplay frames or GPU/compositor timings"
         };
     }
     // Reparenting the curtain during the menu/world handoff exits the tree
@@ -103,17 +117,23 @@ public partial class LoadingPresenter : Node
     {
         public nint Handle;
         public int Width, Height;
-        private GCHandle pinned;
-        public Bitmap(Pixels pixels)
+        public Bitmap(Pixels pixels, LoadingCanvas canvas)
         {
             Width = pixels.Width; Height = pixels.Height;
             var data = pixels.Bytes;
-            for (var i = 0; i < data.Length; i += 4) (data[i], data[i + 2]) = (data[i + 2], data[i]);
-            pinned = GCHandle.Alloc(data, GCHandleType.Pinned);
-            if (Native.GdipCreateBitmapFromScan0(Width, Height, Width * 4, 0x26200A, pinned.AddrOfPinnedObject(), out Handle) != 0)
-                { pinned.Free(); throw new InvalidOperationException("Loading bitmap allocation failed"); }
+            // Direct2D expects premultiplied BGRA, including transparent edges.
+            for (var i = 0; i < data.Length; i += 4) {
+                var red = data[i];
+                var alpha = data[i + 3];
+                data[i] = (byte)(data[i + 2] * alpha / 255);
+                data[i + 1] = (byte)(data[i + 1] * alpha / 255);
+                data[i + 2] = (byte)(red * alpha / 255);
+            }
+            var pinned = GCHandle.Alloc(data, GCHandleType.Pinned);
+            try { Handle = canvas.Upload(Width, Height, pinned.AddrOfPinnedObject()); }
+            finally { pinned.Free(); }
         }
-        public void Dispose() { if (Handle != 0) Native.GdipDisposeImage(Handle); if (pinned.IsAllocated) pinned.Free(); }
+        public void Dispose() => LoadingCanvas.Release(ref Handle);
     }
     private sealed class Presenter
     {
@@ -136,15 +156,19 @@ public partial class LoadingPresenter : Node
         private volatile bool stopped;
         private long fadeAt;
         private double fadeSeconds;
-        private nint window, buffer, graphics, titleFont, textFont, brush, trackBrush, accentBrush, format, alphaAttributes;
-        private readonly float[] matrix = new float[25];
+        private nint window, buffer, graphics, titleFont, textFont, brush, trackBrush, accentBrush, format, overlay;
+        private LoadingCanvas canvas;
+        private GCHandle overlayPin;
+        private int overlayPercent = -1;
         private static readonly string[] Percentages = Enumerable.Range(0, 101).Select(x => x + "%").ToArray();
         private readonly List<nint> fontFamilies = new();
         private readonly List<nint> fontCollections = new();
         private readonly List<GCHandle> fontPins = new();
         private int width, height;
-        private long began, previousPaint, previousAnyPaint;
+        private long previousTick, previousPaint, previousAnyPaint;
+        public double AnimationTime, DisplayedProgress;
         public volatile bool Shown;
+        public volatile bool ParentVisible, ParentForeground, ParentMinimized;
         private int left = int.MinValue, top = int.MinValue;
         public Presenter(nint parentHandle, int[] sequence, byte[] displayFont, byte[] bodyFont)
         { parent = parentHandle; order = sequence; titleFontBytes = displayFont; textFontBytes = bodyFont; }
@@ -178,30 +202,42 @@ public partial class LoadingPresenter : Node
                 window = Native.CreateWindowExW(0x080800a0, klass.Name, "", 0x80000000, origin.X, origin.Y, rect.Right, rect.Bottom, parent, 0, klass.Instance, 0);
                 if (window == 0) throw new InvalidOperationException("Loading owned window creation failed: " + Marshal.GetLastWin32Error());
                 Windows[window] = this;
+                canvas = new LoadingCanvas(window, rect.Right, rect.Bottom);
+                width = rect.Right; height = rect.Bottom;
                 titleFont = CreateFont(titleFontBytes, 32);
                 textFont = CreateFont(textFontBytes, 16);
                 Native.GdipCreateSolidFill(0xffeee9df, out brush);
                 Native.GdipCreateSolidFill(0xff5a5b58, out trackBrush);
                 Native.GdipCreateSolidFill(0xffeee0bd, out accentBrush);
                 Native.GdipStringFormatGetGenericTypographic(out format);
-                Native.GdipCreateImageAttributes(out alphaAttributes);
+                // Typography is rasterized only when the integer percentage changes,
+                // at a fixed small size. Fullscreen artwork stays on the GPU.
+                overlayPin = GCHandle.Alloc(new byte[1280 * 160 * 4], GCHandleType.Pinned);
+                if (Native.GdipCreateBitmapFromScan0(1280, 160, 1280 * 4, 0xE200B, overlayPin.AddrOfPinnedObject(), out buffer) != 0)
+                    throw new InvalidOperationException("Loading text allocation failed");
+                Native.GdipGetImageGraphicsContext(buffer, out graphics);
+                Native.GdipSetPageUnit(graphics, 2);
+                Native.GdipSetTextRenderingHint(graphics, 4);
+                Native.GdipSetStringFormatAlign(format, 0);
                 long next = Stopwatch.GetTimestamp();
                 while (!stopped && Native.IsWindow(parent)) {
                     while (Native.PeekMessageW(out var message, 0, 0, 0, 1)) {
                         Native.TranslateMessage(ref message);
                         Native.DispatchMessageW(ref message);
                     }
-                    if (Images.TryDequeue(out var pixels)) bitmaps[pixels.Index] = new Bitmap(pixels);
+                    if (Images.TryDequeue(out var pixels)) bitmaps[pixels.Index] = new Bitmap(pixels, canvas);
                     var now = Stopwatch.GetTimestamp();
                     if (now < next) { Thread.Sleep(1); continue; }
-                    next = now + Stopwatch.Frequency / 60;
+                    next += Stopwatch.Frequency / 60;
+                    if (next < now) next = now + Stopwatch.Frequency / 60;
                     if (bitmaps.Count != order.Length) continue;
-                    if (began == 0) began = now;
-                    Ready = true;
                     Native.GetClientRect(parent, out rect);
                     if (rect.Right <= 0 || rect.Bottom <= 0) { previousPaint = previousAnyPaint = 0; continue; }
                     var resized = width != rect.Right || height != rect.Bottom;
-                    if (resized) Resize(rect.Right, rect.Bottom);
+                    if (resized) {
+                        canvas.Resize(rect.Right, rect.Bottom);
+                        width = rect.Right; height = rect.Bottom;
+                    }
                     origin = new Native.Point();
                     Native.ClientToScreen(parent, ref origin);
                     if (resized || left != origin.X || top != origin.Y) {
@@ -217,15 +253,25 @@ public partial class LoadingPresenter : Node
                     }
                     // Never put a loading overlay over an unrelated foreground
                     // application. Godot remains the focus/input owner.
-                    if (opacity <= 0 || Native.IsIconic(parent) || !Native.IsWindowVisible(parent) || Native.GetForegroundWindow() != Native.GetAncestor(parent, 2)) {
+                    ParentVisible = Native.IsWindowVisible(parent);
+                    ParentMinimized = Native.IsIconic(parent);
+                    ParentForeground = Native.GetForegroundWindow() == Native.GetAncestor(parent, 2);
+                    if (opacity <= 0 || ParentMinimized || !ParentVisible || !ParentForeground) {
                         if (Shown) Native.ShowWindow(window, 0);
-                        Shown = false; previousPaint = previousAnyPaint = 0; continue;
+                        Shown = false; previousPaint = previousAnyPaint = previousTick = 0;
+                        // Prepare the first frame even while the menu fades in.
+                        if (!Ready) { Draw(0); Ready = true; }
+                        continue;
                     }
-                    Draw(Seconds(now - began));
+                    // A delayed paint must not jump ahead through a crossfade.
+                    var step = previousTick == 0 ? 0 : Math.Min(.05, Seconds(now - previousTick));
+                    previousTick = now;
+                    AnimationTime += step;
+                    DisplayedProgress = Math.Min(Volatile.Read(ref Progress), DisplayedProgress + step * .9);
+                    if (fade != 0) DisplayedProgress = 1;
+                    Draw(AnimationTime);
                     Native.SetLayeredWindowAttributes(window, 0, (byte)Math.Round(opacity * 255), 2);
                     if (!Shown) { Native.ShowWindow(window, 4); Shown = true; }
-                    Native.InvalidateRect(window, 0, false);
-                    Native.UpdateWindow(window);
                     Ready = true;
                     var painted = Stopwatch.GetTimestamp();
                     if (previousAnyPaint != 0 && PresentationIntervals.Count < 20000)
@@ -243,7 +289,10 @@ public partial class LoadingPresenter : Node
                 Native.UnregisterClassW(className, Native.GetModuleHandleW(null));
                 if (graphics != 0) Native.GdipDeleteGraphics(graphics);
                 if (buffer != 0) Native.GdipDisposeImage(buffer);
+                if (overlayPin.IsAllocated) overlayPin.Free();
+                LoadingCanvas.Release(ref overlay);
                 foreach (var bitmap in bitmaps.Values) bitmap.Dispose();
+                canvas?.Dispose();
                 if (titleFont != 0) Native.GdipDeleteFont(titleFont);
                 if (textFont != 0) Native.GdipDeleteFont(textFont);
                 foreach (var family in fontFamilies) Native.GdipDeleteFontFamily(family);
@@ -253,7 +302,6 @@ public partial class LoadingPresenter : Node
                 if (trackBrush != 0) Native.GdipDeleteBrush(trackBrush);
                 if (accentBrush != 0) Native.GdipDeleteBrush(accentBrush);
                 if (format != 0) Native.GdipDeleteStringFormat(format);
-                if (alphaAttributes != 0) Native.GdipDisposeImageAttributes(alphaAttributes);
                 if (token != 0) Native.GdiplusShutdown(token);
             }
         }
@@ -274,22 +322,9 @@ public partial class LoadingPresenter : Node
                 if (Native.GdipCreateFont(family, size, style, 2, out var font) == 0) return font;
             throw new InvalidOperationException("Loading font creation failed");
         }
-        private void Resize(int w, int h)
-        {
-            if (graphics != 0) Native.GdipDeleteGraphics(graphics);
-            if (buffer != 0) Native.GdipDisposeImage(buffer);
-            graphics = buffer = 0;
-            width = w; height = h;
-            Native.GdipCreateBitmapFromScan0(width, height, 0, 0x26200A, 0, out buffer);
-            Native.GdipGetImageGraphicsContext(buffer, out graphics);
-            Native.GdipSetPageUnit(graphics, 2);
-            Native.GdipSetInterpolationMode(graphics, 6);
-            Native.GdipSetPixelOffsetMode(graphics, 4);
-            Native.GdipSetTextRenderingHint(graphics, 4);
-        }
         private void Draw(double time)
         {
-            Native.GdipGraphicsClear(graphics, 0xff101216);
+            canvas.Begin();
             const double hold = 6, crossfade = 1.4, cycle = hold + crossfade;
             var sequence = (int)(time / cycle);
             var local = time % cycle;
@@ -300,22 +335,30 @@ public partial class LoadingPresenter : Node
                 var blend = (local - hold) / crossfade;
                 DrawImage(bitmaps[incoming], incoming, local - hold, (float)(blend * blend * (3 - 2 * blend)));
             }
-            // Same Barlow faces, colours, margins and real progress as StartupCurtain.
+            UpdateOverlay();
             var scale = Math.Min((float)width / 1280, (float)height / 720);
-            Native.GdipScaleWorldTransform(graphics, scale, scale, 0);
-            var logicalHeight = height / scale;
-            var titleRect = new Native.RectF { X = 48, Y = logicalHeight - 130, Width = 300, Height = 44 };
+            canvas.Draw(overlay, 0, height - 160 * scale, 1280 * scale, 160 * scale);
+            canvas.End();
+        }
+        private void UpdateOverlay()
+        {
+            var percent = (int)Math.Floor(DisplayedProgress * 100);
+            if (overlayPercent == percent) return;
+            overlayPercent = percent;
+            Native.GdipGraphicsClear(graphics, 0);
+            var titleRect = new Native.RectF { X = 48, Y = 30, Width = 300, Height = 44 };
             Native.GdipDrawString(graphics, "HARBOR", -1, titleFont, ref titleRect, format, brush);
-            var statusRect = new Native.RectF { X = 48, Y = logicalHeight - 83, Width = 170, Height = 24 };
+            var statusRect = new Native.RectF { X = 48, Y = 77, Width = 170, Height = 24 };
             Native.GdipDrawString(graphics, "Carregando…", -1, textFont, ref statusRect, format, brush);
-            var value = Math.Clamp(Volatile.Read(ref Progress), 0, 1);
-            var percentRect = new Native.RectF { X = 235, Y = logicalHeight - 83, Width = 33, Height = 24 };
+            var percentRect = new Native.RectF { X = 225, Y = 77, Width = 43, Height = 24 };
             Native.GdipSetStringFormatAlign(format, 2);
-            Native.GdipDrawString(graphics, Percentages[(int)Math.Floor(value * 100)], -1, textFont, ref percentRect, format, brush);
+            Native.GdipDrawString(graphics, Percentages[percent], -1, textFont, ref percentRect, format, brush);
             Native.GdipSetStringFormatAlign(format, 0);
-            Native.GdipFillRectangle(graphics, trackBrush, 48, logicalHeight - 55, 220, 3);
-            Native.GdipFillRectangle(graphics, accentBrush, 48, logicalHeight - 55, (float)(220 * value), 3);
-            Native.GdipResetWorldTransform(graphics);
+            Native.GdipFillRectangle(graphics, trackBrush, 48, 105, 220, 3);
+            Native.GdipFillRectangle(graphics, accentBrush, 48, 105, 220 * percent / 100f, 3);
+            Native.GdipFlush(graphics, 1);
+            if (overlay == 0) overlay = canvas.Upload(1280, 160, overlayPin.AddrOfPinnedObject());
+            else canvas.Update(overlay, overlayPin.AddrOfPinnedObject(), 1280);
         }
         private void DrawImage(Bitmap bitmap, int index, double age, float opacity)
         {
@@ -326,23 +369,14 @@ public partial class LoadingPresenter : Node
             var h = (float)(bitmap.Height * cover);
             var x = (float)((width - w) * .5 + (index % 2 == 0 ? 1 : -1) * width * .018 * (progress * 2 - 1));
             var y = (float)((height - h) * .5 + (index % 3 == 0 ? 1 : -1) * height * .012 * (progress * 2 - 1));
-            matrix[0] = matrix[6] = matrix[12] = matrix[24] = 1;
-            matrix[18] = opacity;
-            Native.GdipSetImageAttributesColorMatrix(alphaAttributes, 1, true, matrix, 0, 0);
-            Native.GdipDrawImageRectRect(graphics, bitmap.Handle, x, y, w, h, 0, 0, bitmap.Width, bitmap.Height, 2, alphaAttributes, 0, 0);
+            canvas.Draw(bitmap.Handle, x, y, w, h, opacity);
         }
         private static nint WindowProcedure(nint hwnd, uint message, nuint wparam, nint lparam)
         {
             if (message == 0x84) return -1; // HTTRANSPARENT: input remains with Godot's modal cover.
             if (message == 0x14) return 1; // Double-buffered; no intermediate erase flash.
-            if (message == 0x0F && Windows.TryGetValue(hwnd, out var presenter)) {
-                var dc = Native.BeginPaint(hwnd, out var paint);
-                if (presenter.buffer != 0 && dc != 0) {
-                    Native.GdipCreateFromHDC(dc, out var graphics);
-                    Native.GdipSetPageUnit(graphics, 2);
-                    Native.GdipDrawImageRectI(graphics, presenter.buffer, 0, 0, presenter.width, presenter.height);
-                    Native.GdipDeleteGraphics(graphics);
-                }
+            if (message == 0x0F && Windows.ContainsKey(hwnd)) {
+                Native.BeginPaint(hwnd, out var paint);
                 Native.EndPaint(hwnd, ref paint);
                 return 0;
             }
@@ -380,8 +414,6 @@ public partial class LoadingPresenter : Node
         [DllImport("user32")] public static extern bool ShowWindow(nint window, int command);
         [DllImport("user32")] public static extern bool SetWindowPos(nint window, nint after, int x, int y, int w, int h, uint flags);
         [DllImport("user32")] public static extern bool SetLayeredWindowAttributes(nint window, uint colour, byte alpha, uint flags);
-        [DllImport("user32")] public static extern bool InvalidateRect(nint window, nint rect, bool erase);
-        [DllImport("user32")] public static extern bool UpdateWindow(nint window);
         [DllImport("user32")] public static extern bool PeekMessageW(out Message message, nint window, uint first, uint last, uint flags);
         [DllImport("user32")] public static extern bool TranslateMessage(ref Message message);
         [DllImport("user32")] public static extern nint DispatchMessageW(ref Message message);
@@ -393,18 +425,11 @@ public partial class LoadingPresenter : Node
         [DllImport("gdiplus")] public static extern int GdipCreateBitmapFromScan0(int width, int height, int stride, int format, nint data, out nint bitmap);
         [DllImport("gdiplus")] public static extern int GdipDisposeImage(nint image);
         [DllImport("gdiplus")] public static extern int GdipGetImageGraphicsContext(nint image, out nint graphics);
-        [DllImport("gdiplus")] public static extern int GdipCreateFromHDC(nint dc, out nint graphics);
         [DllImport("gdiplus")] public static extern int GdipDeleteGraphics(nint graphics);
         [DllImport("gdiplus")] public static extern int GdipGraphicsClear(nint graphics, uint colour);
-        [DllImport("gdiplus")] public static extern int GdipSetInterpolationMode(nint graphics, int mode);
+        [DllImport("gdiplus")] public static extern int GdipFlush(nint graphics, int intention);
         [DllImport("gdiplus")] public static extern int GdipSetPageUnit(nint graphics, int unit);
-        [DllImport("gdiplus")] public static extern int GdipSetPixelOffsetMode(nint graphics, int mode);
         [DllImport("gdiplus")] public static extern int GdipSetTextRenderingHint(nint graphics, int hint);
-        [DllImport("gdiplus")] public static extern int GdipDrawImageRectI(nint graphics, nint image, int x, int y, int width, int height);
-        [DllImport("gdiplus")] public static extern int GdipDrawImageRectRect(nint graphics, nint image, float x, float y, float w, float h, float sx, float sy, float sw, float sh, int unit, nint attributes, nint callback, nint data);
-        [DllImport("gdiplus")] public static extern int GdipCreateImageAttributes(out nint attributes);
-        [DllImport("gdiplus")] public static extern int GdipDisposeImageAttributes(nint attributes);
-        [DllImport("gdiplus")] public static extern int GdipSetImageAttributesColorMatrix(nint attributes, int type, bool enabled, float[] matrix, nint gray, int flags);
         [DllImport("gdiplus")] public static extern int GdipNewPrivateFontCollection(out nint collection);
         [DllImport("gdiplus")] public static extern int GdipDeletePrivateFontCollection(ref nint collection);
         [DllImport("gdiplus")] public static extern int GdipPrivateAddMemoryFont(nint collection, nint memory, int length);
@@ -420,8 +445,6 @@ public partial class LoadingPresenter : Node
         [DllImport("gdiplus")] public static extern int GdipDeleteStringFormat(nint format);
         [DllImport("gdiplus")] public static extern int GdipSetStringFormatAlign(nint format, int align);
         [DllImport("gdiplus", CharSet = CharSet.Unicode)] public static extern int GdipDrawString(nint graphics, string text, int length, nint font, ref RectF layout, nint format, nint brush);
-        [DllImport("gdiplus")] public static extern int GdipScaleWorldTransform(nint graphics, float x, float y, int order);
-        [DllImport("gdiplus")] public static extern int GdipResetWorldTransform(nint graphics);
         [DllImport("gdiplus")] public static extern int GdipFillRectangle(nint graphics, nint brush, float x, float y, float width, float height);
     }
 }

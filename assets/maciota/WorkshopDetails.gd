@@ -94,6 +94,64 @@ static func build(room: Node3D) -> void:
 		room.add_child(light)
 	for x in [3.0, 6.1]:
 		box(room, "OfficeSconce", Vector3(x, 2.5, -3.9), Vector3(.20, .34, .18), warm)
+	_used_workshop(room, steel, silver, brass, dark_wood)
+
+static func _used_workshop(room: Node3D, steel: Material, silver: Material, brass: Material, wood: Material) -> void:
+	for part in room.get_children():
+		if not part is MeshInstance3D or not part.mesh is BoxMesh or part.material_override == null: continue
+		var identity: String = part.material_override.resource_name
+		if identity in ["boss_leather","visitor_leather","executive_mahogany"]:
+			part.mesh = preload("res://world/desert/village/DesertHomeCraft.gd").rounded_box(part.mesh.size,.035)
+			var finish := preload("res://world/places/ShopInteriorMaterials.gd").material("wood" if identity == "executive_mahogany" else "cloth",part.material_override.albedo_color)
+			part.material_override = finish
+	# Flat, opaque stains: no lights, particles, physics or frame updates.
+	var oil := material("3a403b", .32)
+	for i in 12:
+		var stain := MeshInstance3D.new()
+		stain.name = "OldOilStain"
+		var disc := SurfaceTool.new()
+		disc.begin(Mesh.PRIMITIVE_TRIANGLES)
+		var radius := .12 + float(i % 4) * .065
+		for edge in 13:
+			var a := float(edge)*TAU/13
+			var b := float(edge+1)*TAU/13
+			var ra := radius*(.78+.18*sin(edge*2.1+i))
+			var rb := radius*(.78+.18*sin((edge+1)*2.1+i))
+			disc.set_normal(Vector3.UP)
+			for vertex in [Vector3.ZERO,Vector3(cos(a)*ra,0,sin(a)*ra),Vector3(cos(b)*rb,0,sin(b)*rb)]: disc.add_vertex(vertex)
+		stain.mesh = disc.commit()
+		stain.material_override = oil
+		stain.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		stain.position = Vector3(-.65 + sin(i * 2.4) * .6, .018 + float(i) * .0002, -.6 + cos(i * 1.7) * .85)
+		stain.scale.z = .55 + float(i % 3) * .16
+		room.add_child(stain)
+	# Hand tools and oily rag stay within the existing tool chest footprint.
+	box(room,"GreasyRag",Vector3(-3.46,1.103,-2.02),Vector3(.31,.018,.23),material("716b54",.98))
+	for i in 4:
+		var x := -3.72 + i * .15
+		box(room,"SocketRail",Vector3(x,1.12,-2.22),Vector3(.07,.065,.07),silver)
+	# A small radio on the rear workbench gives the mechanic a lived-in station.
+	box(room,"WorkshopRadio",Vector3(-1.65,1.08,-3.75),Vector3(.33,.26,.17),steel)
+	box(room,"RadioGrille",Vector3(-1.69,1.08,-3.656),Vector3(.2,.17,.014),wood)
+	box(room,"RadioDial",Vector3(-1.52,1.08,-3.65),Vector3(.035,.06,.022),brass)
+	# Personal desk props, inside its existing solid; no new floor obstacles.
+	box(room,"LeatherLedger",Vector3(4.67,.79,-1.65),Vector3(.27,.045,.35),material("633848",.8))
+	box(room,"LedgerPages",Vector3(4.67,.795,-1.65),Vector3(.25,.021,.32),material("d4c5a2",.95))
+	box(room,"DeskPen",Vector3(4.83,.785,-1.62),Vector3(.014,.014,.19),brass)
+	box(room,"TelephoneBase",Vector3(4.9,.81,-2.06),Vector3(.24,.09,.17),steel)
+	box(room,"TelephoneReceiver",Vector3(4.9,.883,-2.06),Vector3(.29,.045,.06),wood)
+	var carpet := material("b39155",.95)
+	for side in [-1,1]:
+		for index in 7:
+			var motif := box(room,"WovenRugMotif",Vector3(3.42+index*.35,.035,-1.8+side*.72),Vector3(.12,.003,.12),carpet)
+			motif.rotation.y = PI*.25
+	for side in [-1,1]:
+		for index in 10:
+			box(room,"TyreWear",Vector3(side*.8,.012,.7+index*.22),Vector3(.17,.002,.035),material("4c5353",.98))
+	# Stitched leather and brass studs enrich the existing chair back.
+	for x in [4.31,4.5,4.69]:
+		for y in [.72,.91,1.1]:
+			box(room,"LeatherButton",Vector3(x,y,-2.875),Vector3(.022,.022,.012),brass)
 
 static func material(hex: String, roughness: float, metallic := 0.0) -> StandardMaterial3D:
 	var result := StandardMaterial3D.new()

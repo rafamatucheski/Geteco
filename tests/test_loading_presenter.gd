@@ -18,9 +18,9 @@ func run() -> void:
 	DisplayServer.window_move_to_foreground()
 	print("NATIVE_LOADING_READY focus=",root.has_focus()," helper_processing=",curtain._presenter.is_processing()," cover_visible=",curtain._root.is_visible_in_tree()," alpha=",curtain._root.modulate.a)
 	var focus_deadline := Time.get_ticks_msec()+30000
-	while not root.has_focus() and Time.get_ticks_msec()<focus_deadline:
+	while not bool(curtain._presenter.Snapshot().visibility.shown) and Time.get_ticks_msec()<focus_deadline:
 		await process_frame
-	if not root.has_focus():
+	if not bool(curtain._presenter.Snapshot().visibility.shown):
 		push_error("Loading test requires its game window in foreground")
 		quit(3)
 		return
@@ -36,14 +36,24 @@ func run() -> void:
 	var after: Dictionary = curtain._presenter.Snapshot()
 	var frames := int(after.frames)-int(before.frames)
 	var ok: bool = frames >= 140 and after.failure.is_empty()
-	print("NATIVE_LOADING_BLOCK ","PASS" if ok else "FAIL"," frames_during_3s_main_pause=",frames," p95_ms=",after.p95_ms," max_ms=",after.max_ms," failure=",after.failure)
+	print("NATIVE_LOADING_BLOCK ","PASS" if ok else "FAIL"," frames_during_3s_main_pause=",frames," p95_ms=",after.p95_ms," max_ms=",after.max_ms," failure=",after.failure," visibility=",after.get("visibility",{}))
 	root.size = Vector2i(960,540)
 	await create_timer(1.0).timeout
 	var resized: Dictionary = curtain._presenter.Snapshot()
 	ok = ok and int(resized.width) == 960 and int(resized.height) == 540
 	root.mode = Window.MODE_FULLSCREEN
-	await create_timer(3.0).timeout
+	var fullscreen_start: Dictionary = curtain._presenter.Snapshot()
+	await create_timer(30.0).timeout
 	var fullscreen: Dictionary = curtain._presenter.Snapshot()
+	var steady: Array = Array(fullscreen.intervals_ms).slice(int(fullscreen_start.frames))
+	var sorted := steady.duplicate()
+	sorted.sort()
+	var p95: float = sorted[int((sorted.size()-1)*.95)] if not sorted.is_empty() else INF
+	var p99: float = sorted[int((sorted.size()-1)*.99)] if not sorted.is_empty() else INF
+	ok = ok and steady.size() >= 1400 and p95 <= 25.0 and p99 <= 33.3
+	ok = ok and is_equal_approx(float(fullscreen.displayed_progress), .25)
+	ok = ok and float(fullscreen.animation_seconds)-float(fullscreen_start.animation_seconds) >= 28.0
+	print("NATIVE_LOADING_FULLSCREEN frames=",steady.size()," p95_ms=",p95," p99_ms=",p99," progress=",fullscreen.displayed_progress)
 	var physical := DisplayServer.window_get_size()
 	# The Windows fullscreen host has 2 extra client pixels in this engine;
 	# coverage must include the entire visible screen, with only that padding.
@@ -55,10 +65,13 @@ func run() -> void:
 	await create_timer(1.5).timeout
 	ok = ok and not is_instance_valid(curtain) and not report.is_empty()
 	world.queue_free()
-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://evidence/loading-fluid-20261021"))
+	var output := "res://artifacts/loading-smooth-20261022/presenter-block-test.json"
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--report="): output = arg.trim_prefix("--report=")
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(output.get_base_dir()))
 	var hashes := {}
-	for path in ["ui/LoadingPresenter.cs","runtime/StartupCurtain.gd","ui/SkyMenu.gd","runtime/ProductionWorld.gd","tests/test_loading_presenter.gd",".godot/mono/temp/bin/Debug/Harbor.dll"]:
+	for path in ["ui/LoadingPresenter.cs","ui/LoadingCanvas.cs","runtime/StartupCurtain.gd","ui/MainMenu.gd","ui/SkyMenu.gd","runtime/ProductionWorld.gd","tests/test_loading_presenter.gd",".godot/mono/temp/bin/Debug/Harbor.dll"]:
 		hashes[path] = FileAccess.get_sha256("res://"+path)
-	FileAccess.open("res://evidence/loading-fluid-20261021/presenter-block-test.json",FileAccess.WRITE).store_string(JSON.stringify({"passed":ok,"source_hashes":hashes,"frames_during_3s_main_pause":frames,"presentation":report,"resized":resized,"fullscreen":fullscreen},"\t"))
+	FileAccess.open(output,FileAccess.WRITE).store_string(JSON.stringify({"passed":ok,"source_hashes":hashes,"frames_during_3s_main_pause":frames,"fullscreen_p95_ms":p95,"fullscreen_p99_ms":p99,"presentation":report,"resized":resized,"fullscreen":fullscreen},"\t"))
 	print("NATIVE_LOADING_LIFECYCLE ","PASS" if ok else "FAIL")
 	quit(0 if ok else 1)
