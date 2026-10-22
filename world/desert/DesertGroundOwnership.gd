@@ -1,9 +1,73 @@
 extends RefCounted
-## Only the three authored forecourts: opaque finishes own their footprint.
-## Collision children stay intact; shader weights remain barycentrically exact.
+## Visual ownership of the authored forecourts, plus physical road/soil ownership.
+## Visual clipping leaves collision intact; compose_collision handles that separately.
 const CUT := preload("res://world/urban_detail/GroundCut.gd")
 const DETAIL := preload("res://world/desert/DesertSurfaceDetail.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
+
+## A estrada já emitiu seu próprio colisor. Só o solo arenoso abaixo de seu
+## footprint perde faces; o chão fora da pista, as alturas e o desenho não mudam.
+## Separado de compose(): o recorte visual dos pátios conserva seu contrato.
+static func compose_collision(chunk: Node3D, rect: Rect2, corridors: Array[Dictionary]) -> void:
+	var cover: Array[PackedVector2Array] = []
+	var cover_bounds: Array[Rect2] = []
+	for row in corridors:
+		if row.bounds.intersects(rect):
+			cover.append(row.polygon)
+			cover_bounds.append(row.bounds)
+	if cover.is_empty(): return
+	for node in chunk.get_children():
+		if not node is MeshInstance3D or not node.get_meta("desert_base_ground", false): continue
+		if node.has_meta("desert_road_collision_owned"): continue
+		for body in node.get_children():
+			if not body is StaticBody3D: continue
+			for collider in body.get_children():
+				if not collider is CollisionShape3D or not collider.shape is ConcavePolygonShape3D: continue
+				var faces: PackedVector3Array = collider.shape.get_faces()
+				var output := _subtract_collision(faces, cover, cover_bounds)
+				if output == faces: continue
+				if output.is_empty():
+					collider.disabled = true
+				else:
+					var shape := ConcavePolygonShape3D.new()
+					shape.backface_collision = collider.shape.backface_collision
+					shape.margin = collider.shape.margin
+					shape.set_faces(output)
+					collider.shape = shape
+		node.set_meta("desert_road_collision_owned", true)
+
+static func _subtract_collision(faces: PackedVector3Array, cover: Array[PackedVector2Array], cover_bounds: Array[Rect2]) -> PackedVector3Array:
+	var output := PackedVector3Array()
+	for offset in range(0, faces.size(), 3):
+		var a := Vector2(faces[offset].x, faces[offset].z)
+		var b := Vector2(faces[offset + 1].x, faces[offset + 1].z)
+		var c := Vector2(faces[offset + 2].x, faces[offset + 2].z)
+		var triangle := PackedVector2Array([a, b, c])
+		var bounds := CUT.bounds(triangle)
+		var local_cover: Array[PackedVector2Array] = []
+		for index in cover.size():
+			if bounds.intersects(cover_bounds[index]): local_cover.append(cover[index])
+		if local_cover.is_empty():
+			for index in 3: output.append(faces[offset + index])
+			continue
+		var denominator := (b - a).cross(c - a)
+		if absf(denominator) < 0.0000001:
+			for index in 3: output.append(faces[offset + index])
+			continue
+		var pieces: Array[PackedVector2Array] = [triangle]
+		for part in CUT.subtract_exact(pieces, local_cover):
+			var indices := Geometry2D.triangulate_polygon(part)
+			for index in range(0, indices.size(), 3):
+				var order := [indices[index], indices[index + 1], indices[index + 2]]
+				if (part[order[1]] - part[order[0]]).cross(part[order[2]] - part[order[0]]) * denominator < 0.0:
+					order = [order[0], order[2], order[1]]
+				for vertex in order:
+					var p: Vector2 = part[vertex]
+					var wb := (p - a).cross(c - a) / denominator
+					var wc := (b - a).cross(p - a) / denominator
+					var wa := 1.0 - wb - wc
+					output.append(faces[offset] * wa + faces[offset + 1] * wb + faces[offset + 2] * wc)
+	return output
 
 static func compose(chunk: Node3D, rect: Rect2, roads: RefCounted) -> void:
 	var sites := DETAIL.site_polygons()
