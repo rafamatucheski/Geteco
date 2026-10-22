@@ -21,9 +21,12 @@ func run() -> void:
 	var font: Font = map.weekday_label.get_theme_font("font")
 	for region in ["harbor","mountain","desert"]:
 		for weather in 4:
-			var line: String = conditions.text(7, .9999, region, weather, {"front":1.0,"state":3})
-			assert(font.get_string_size(line,HORIZONTAL_ALIGNMENT_LEFT,-1,12).x <= map.weekday_label.size.x, line)
-	assert(map.weekday_label.position.y == 190)
+			var line: String = conditions.vertical_text(7, .9999, region, weather, {"front":1.0,"state":3})
+			assert(line.split("\n").size()==3,"day, time and temperature stack vertically")
+			for row in line.split("\n"):
+				assert(font.get_string_size(row,HORIZONTAL_ALIGNMENT_LEFT,-1,12).x <= map.weekday_label.size.x, row)
+	assert(map.weekday_label.position.x > map.size.x,"clock sits beside the map")
+	assert(map.weekday_label.position.y+map.weekday_label.size.y <= map.size.y)
 	assert(map.weather_icon.size == Vector2(20,20))
 	print("WORLD_CONDITIONS_HUD PASS: clock, calendar rollover, regional Celsius, weather and label fit")
 	quit()

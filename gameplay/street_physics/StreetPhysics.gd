@@ -353,6 +353,12 @@ func _stall_crash(vehicle: CharacterBody3D, other: CharacterBody3D, normal: Vect
 	if PROTECTION.is_protected(other): return
 	# Predict the same resolved motion for detached parts before damage presentation.
 	# Applying gameplay velocity stays after damage, in the existing order.
+	var driving: Node = controller.world.get("driving") if controller != null else null
+	if driving != null and driving.has_method("motorcycle_crash") and closing >= 5.0:
+		driving.motorcycle_crash(vehicle, incoming)
+		var other_momentum: Vector3 = other.get("horizontal_velocity")
+		if other_momentum.length() < closing: other_momentum = -normal * closing
+		driving.motorcycle_crash(other, other_momentum)
 	var into := -normal
 	var mine := _vehicle_mass(vehicle)
 	var theirs := _vehicle_mass(other)

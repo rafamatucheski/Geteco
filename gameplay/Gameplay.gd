@@ -1450,6 +1450,7 @@ func _stall_fire_at(target: Vector3) -> bool:
 							if is_instance_valid(damage_look) and damage_look.has_method("ignite"): damage_look.ignite(player)
 				else:
 					_damage_bullet(hit.collider, amount, player)
+					confirm_player_hit(hit.collider, amount)
 					_impact_sound(hit.collider, end, float(amount), hit.normal)
 					if _impact_material(hit.collider) == "flesh":
 						var key: int = hit.collider.get_instance_id()
@@ -2262,6 +2263,41 @@ func pursuit_target() -> Node3D:
 	return player
 
 var _police_rounds: Array[Dictionary] = []
+var hitmarker_until := 0.0
+
+func confirm_player_hit(collider: Object, amount: float) -> void:
+	if amount <= 0.0 or not is_instance_valid(collider) or _is_invulnerable(collider): return
+	if collider.has_method("receive_damage") or collider.has_method("receive_impact"):
+		hitmarker_until = _combat_clock + 0.16
+
+func hitmarker_active() -> bool:
+	return _combat_clock < hitmarker_until
+
+## Passenger fires outside the side window; the owning car is excluded from its own round.
+func police_vehicle_shoot(vehicle: CharacterBody3D, amount: float) -> bool:
+	if police_surrendering() or not police_force_authorized() or _police_rounds.size() >= 128: return false
+	var suspect := pursuit_target()
+	if not is_instance_valid(suspect) or suspect == vehicle or health <= 0 or state == null or not state.weapons_allowed(): return false
+	var side := signf(vehicle.to_local(suspect.global_position).x)
+	if side == 0.0: side = 1.0
+	var width := float(vehicle.get("half_width")) if vehicle.get("half_width") != null else 1.0
+	var origin := vehicle.to_global(Vector3(side * (width + 0.18), 1.25, -0.35))
+	var target := suspect.global_position + Vector3.UP
+	var query := PhysicsRayQueryParameters3D.create(vehicle.global_position + Vector3.UP * 1.25, target, 7, [vehicle.get_rid()])
+	var obstruction := get_world_3d().direct_space_state.intersect_ray(query)
+	if not obstruction.is_empty() and obstruction.collider != suspect: return false
+	var direction := origin.direction_to(target).rotated(Vector3.UP, _rng.randf_range(-0.10, 0.10))
+	var data := CATALOG.get_weapon("pistol")
+	var token: Dictionary = effects.police_tracer(origin, direction, 34.0) if is_instance_valid(effects) else {}
+	if is_instance_valid(effects): effects.muzzle_smoke(origin, direction)
+	var bridge := PhysicsRayQueryParameters3D.create(vehicle.global_position + Vector3.UP * 1.25, origin, 7, [vehicle.get_rid()])
+	var blocked := get_world_3d().direct_space_state.intersect_ray(bridge)
+	_police_rounds.append({"point": origin, "direction": direction, "speed": 34.0, "distance": 0.0,
+		"range": float(data.get("max_range", 420.0)) / 16.0, "damage": amount, "data": data,
+		"source": weakref(vehicle), "rid": vehicle.get_rid(), "visual": token, "blocked": blocked})
+	npc_gunfire.emit(origin, direction, vehicle)
+	_play_stream(AUDIO.gunfire_take("pistol", _rng), origin, NPC_GUNFIRE_DB, 1.0, HEARING_GUNFIRE)
+	return true
 
 func civilian_shoot(shooter: CharacterBody3D, origin: Vector3, amount: float) -> bool:
 	if not is_instance_valid(shooter) or shooter.get("dead") == true or not is_instance_valid(player) or health <= 0:

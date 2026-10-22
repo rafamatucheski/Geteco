@@ -19,7 +19,7 @@ const HARBOR_SHORE_SEGMENTS := [
 static func targets(region: String, place: String, point: Vector3, dark: bool, crowd: float) -> Dictionary:
 	var result := {"city":0.0,"water":0.0,"port":0.0,"birds":0.0,"crickets":0.0,"workshop":0.0}
 	if not place.is_empty():
-		if place in ["maciota","port_boss_garage","desert_digo"]: result.workshop = 1.0
+		if place in ["port_boss_garage","desert_digo"]: result.workshop = 1.0
 		# Sewer rooms own their enclosed flow/drips; coastal water belongs outdoors.
 		return result
 	if region == "desert":
@@ -53,7 +53,8 @@ static func harbor_coast_weight(point: Vector3) -> float:
 	return _harbor_coast_weight(Vector2(point.x,point.z)/SCALE)
 
 static func activity_context(region: String, place: String, point: Vector3) -> String:
-	if place in ["maciota","port_boss_garage","desert_digo"]: return "workshop"
+	if place == "maciota": return ""
+	if place in ["port_boss_garage","desert_digo"]: return "workshop"
 	if not place.is_empty(): return ""
 	if region == "desert": return "workshop" if point.distance_to(Vector3(-140,0,-955))<35 else ""
 	var source := Vector2(point.x,point.z)/SCALE

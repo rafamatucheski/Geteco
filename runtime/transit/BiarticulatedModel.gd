@@ -174,7 +174,7 @@ static func _stall_build(parent: Node3D, length: float, section: int) -> Diction
 	box(model,Vector3(0,2.95,0),Vector3(2.5,.24,length),"roof")
 	box(model,Vector3(0,3.16,.3),Vector3(1.5,.22,2.4),"cream")
 	box(model,Vector3(0,.39,0),Vector3(2.3,.06,length-.15),"floor")
-	var door_z := -length*.5+1.2
+	var door_z := -length * .08 if section == 0 else -length * .28
 	var wheels: Array[Node3D] = []
 	prepare_wheels()
 	for side in [-1,1]:

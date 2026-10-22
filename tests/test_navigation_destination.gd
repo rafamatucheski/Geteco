@@ -54,7 +54,11 @@ func run() -> void:
 	check(DEST.resolve(session).title=="Guincho do Neco","another vehicle cannot count as tow truck")
 	session.world.driving.occupied=false
 	session.world.set_meta("map_waypoint",Vector2.ZERO)
-	check(DEST.resolve(session).source=="mission","manual waypoint never silently replaces mission")
+	check(DEST.resolve(session).source=="waypoint","explicit map destination takes GPS priority during a mission")
+	check(session.state.campaign.active_id=="cobra_contact","GPS selection preserves the active mission")
+	session.world.remove_meta("map_waypoint")
+	check(DEST.resolve(session).source=="mission","clearing a pin restores mission navigation")
+	session.world.set_meta("map_waypoint",Vector2.ZERO)
 	session.state.campaign.restore_snapshot(FIXTURE.prefix(1))
 	session.world.set_meta("map_waypoint_title","Neco")
 	check(DEST.resolve(session).title=="Neco" and DEST.resolve(session).point==Vector3.ZERO,"world-origin waypoint is a valid destination")

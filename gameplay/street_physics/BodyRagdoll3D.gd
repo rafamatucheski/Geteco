@@ -48,7 +48,7 @@ var _cull_margin := 0.0
 var _initial: Array[Transform3D] = []
 var _final: Array[Transform3D] = []
 var _last_audio := -1.0
-var _source_rid := RID()
+
 
 static func find_model(visual: Node) -> Node3D:
 	if visual == null: return null
@@ -197,18 +197,16 @@ func _link(a: RigidBody3D, b: RigidBody3D, at: Vector3, frame: Basis, limits: St
 ## Pernas varridas pelo para-choque e cabeça para trás: o corpo gira por cima do capô. O giro é de corpo
 ## rígido (v = v_pelve + ω × r em cada parte); velocidades soltas por parte puxavam as juntas e, a 24 m/s,
 ## hiperestendiam o joelho (teste de 19/10).
-func _launch(impact: Vector3, source: Node) -> void:
+func _launch(impact: Vector3, _source: Node) -> void:
 	var flat := Vector3(impact.x, 0, impact.z)
 	var speed := minf(flat.length(), 37.5)
-	var heading := flat / speed if speed > .01 else Vector3.BACK
-	var carry := heading * minf(speed * .75, 18.0) + Vector3.UP * clampf(speed * .22, 1.2, 5.5)
+	var heading := flat.normalized() if speed > .01 else Vector3.BACK
+	var carry := heading * minf(speed * .75, 18.0) + Vector3.UP * clampf(speed * .55, 1.2, 9.0)
 	var spin := heading.cross(Vector3.UP) * clampf(speed * .3, 0.0, 8.0) + Vector3.UP * randf_range(-1.2, 1.2)
 	var center: Vector3 = (parts[0].body as Node3D).global_position
-	if source is CollisionObject3D: _source_rid = (source as CollisionObject3D).get_rid()
 	for part in parts:
 		var body: RigidBody3D = part.body
 		part.last = body.global_position
-		if source is CollisionObject3D: body.add_collision_exception_with(source)
 		# Dobra moderada sobre o giro de corpo rígido: pernas varridas pelo para-choque, tronco e cabeça atrasados.
 		var joint_name := String((part.joint as Node).name)
 		var sweep := .3 if joint_name.contains("leg") else (-.12 if part == parts[1] or part == parts[2] else 0.0)
@@ -242,7 +240,6 @@ func step(delta: float, audio: Callable) -> bool:
 func _sweep() -> void:
 	var space := (parts[0].body as Node3D).get_world_3d().direct_space_state
 	var exclude: Array[RID] = []
-	if _source_rid.is_valid(): exclude.append(_source_rid)
 	var correction := Vector3.ZERO
 	var normal := Vector3.ZERO
 	for part in parts:

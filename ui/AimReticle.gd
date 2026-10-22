@@ -3,6 +3,7 @@ extends Control
 var gameplay: Node
 var blocked := false
 var world_point := Vector3.ZERO
+var confirmed := false
 
 func _ready() -> void:
 	name = "AimReticle"
@@ -20,6 +21,10 @@ func _process(_delta: float) -> void:
 		return
 	# FullSession resolves mouse input during render processing. Query after
 	# it (priority 100), so the marker uses this frame's cursor and muzzle.
+	var next_confirmed: bool = gameplay.hitmarker_active()
+	if confirmed != next_confirmed:
+		confirmed = next_confirmed
+		queue_redraw()
 	var feedback: Dictionary = gameplay.aim_feedback()
 	world_point = feedback.point
 	if blocked != bool(feedback.blocked):
@@ -31,6 +36,10 @@ func _process(_delta: float) -> void:
 
 func _draw() -> void:
 	var ink := Color("ffb568") if blocked else Color("f7fbef")
+	if confirmed:
+		for corner in [Vector2(-1,-1),Vector2(1,-1),Vector2(-1,1),Vector2(1,1)]:
+			draw_line(corner * 12.0, corner * 18.0, Color.BLACK, 5.0, true)
+			draw_line(corner * 12.0, corner * 18.0, Color("fff1b2"), 2.5, true)
 	for direction in [Vector2.UP, Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT]:
 		draw_line(direction * 5.0, direction * 10.0, Color(0.03, 0.04, 0.06, 0.95), 4.0, true)
 		draw_line(direction * 5.0, direction * 10.0, ink, 2.0, true)

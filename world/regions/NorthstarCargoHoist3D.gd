@@ -1,5 +1,5 @@
 extends Node3D
-## Small visual cargo cycle under each streamed Northstar jib. The load stays
+## Full-size 40-foot cargo cycle under each streamed Northstar jib. The load stays
 ## above the walkable deck and the authored crane remains the physical object.
 const PAINT := preload("res://world/regions/PortShipMaterials3D.gd")
 var anchor := Vector2.ZERO
@@ -8,7 +8,9 @@ var clock := 0.0
 var trolley: MeshInstance3D
 var cable: MeshInstance3D
 var spreader: MeshInstance3D
-var load_mesh: MeshInstance3D
+const CONTAINERS := preload("res://world/regions/PortContainerBatch.gd")
+const CARGO_SIZE := Vector3(2.44,2.89,12.19)
+var load_mesh: Node3D
 
 func configure(point: Vector2, offset: float) -> void:
 	anchor = point
@@ -18,8 +20,17 @@ func _ready() -> void:
 	name = "NorthstarCargoHoist3D"
 	trolley = _part("Trolley",Vector3(.82,.32,.8),PAINT.material("crane"))
 	cable = _part("HoistCable",Vector3(.045,1,.045),_color("384448"))
-	spreader = _part("Spreader",Vector3(2.7,.16,.34),PAINT.material("crane"))
-	load_mesh = _part("SuspendedCargo",Vector3(2.55,1.0,1.4),_color("a65f4c"))
+	spreader = _part("Spreader",Vector3(2.2,.16,11.9),PAINT.material("crane"))
+	load_mesh = CONTAINERS.create(2,CARGO_SIZE)
+	load_mesh.name = "SuspendedCargo40ft"
+	add_child(load_mesh)
+	# Four corner locks connect the spreader to the ISO corner castings.
+	for x in [-1.1,1.1]:
+		for z in [-5.92,5.92]:
+			var lock := _part("TwistLock",Vector3(.18,.28,.18),_color("384448"))
+			remove_child(lock)
+			spreader.add_child(lock)
+			lock.position = Vector3(x,-.15,z)
 	_update_pose()
 
 func _part(label: String, size: Vector3, material: Material) -> MeshInstance3D:
@@ -61,10 +72,12 @@ func _update_pose() -> void:
 		x = lerpf(anchor.x+6.0,anchor.x+17.0,smoothstep(.85,1.0,cycle))
 		lift = 3.9
 	var boom_y := 5.15
-	var cargo_top := lift+.5
+	# Full-size cargo has a base origin, unlike the former miniature box.
+	lift = lerpf(1.55,3.05,clampf((lift-3.05)/.85,0,1))
+	var cargo_top := lift+1.445
 	var cable_length := boom_y-cargo_top-.16
 	trolley.position = Vector3(x,boom_y,anchor.y)
-	load_mesh.position = Vector3(x,lift,anchor.y)
+	load_mesh.position = Vector3(x,lift-1.445,anchor.y)
 	spreader.position = Vector3(x,cargo_top+.12,anchor.y)
 	cable.position = Vector3(x,cargo_top+.16+cable_length*.5,anchor.y)
 	cable.scale.y = cable_length

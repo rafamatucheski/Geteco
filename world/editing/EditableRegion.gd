@@ -81,7 +81,8 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 	elif record.kind == "editor_light":
 		EDITS.build_light(self, chunk, record)
 	elif record.kind == "tree" and record.has("editor_id"):
-		var tree = preload("res://world/regions/NativePine.gd").create(record.variant, record.snow)
+		var variant: int = [0,1,2,6,7][int(record.variant) % 5] if region_id == "mountain" else int(record.variant)
+		var tree = preload("res://world/regions/NativePine.gd").create(variant, record.snow)
 		tree.position = record.position
 		if terrain != null: tree.position.y = terrain.surface_height_at(Vector2(tree.position.x,tree.position.z))
 		tree.scale = Vector3.ONE*float(record.editor_scale)

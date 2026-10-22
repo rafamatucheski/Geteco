@@ -1,6 +1,7 @@
 extends RefCounted
 ## One gearbox state drives motion, tachometer and audio. No speed bonuses on shift.
 const TUNING := preload("res://gameplay/desert_cars/DesertTuning.gd")
+const SPEED_FACTOR := preload("res://data/catalogs/VehicleSpeedBalance.gd").FACTOR
 const LAUNCH_GOOD_MIN := .38
 const LAUNCH_GOOD_MAX := .70
 const LAUNCH_PERFECT_MIN := .48
@@ -28,6 +29,7 @@ var surface_grip := 1.0
 var launch_blend_seconds := 0.0
 ## Opt in only from the drag activity; ordinary street handling keeps its calibration.
 var race_mode := false
+var _integrating := false
 var shift_torque_factor := 1.0
 var launch_score := 0.0
 var _launch_blend_elapsed := 0.0
@@ -68,6 +70,7 @@ func reset() -> void:
 	_launch_blend_elapsed = 0.0
 	shift_torque_factor = 1.0
 	launch_score = 0.0
+	_integrating = false
 	_shift_duration = 0.0
 	_shift_from_rpm = rpm
 	_shift_target_gear = 1
@@ -143,7 +146,7 @@ func shift_up() -> String:
 
 func shift_down() -> bool:
 	if gear <= 1 or shift_remaining > 0.0: return false
-	var prospective := speed_mps/(TAU*float(spec.wheel_radius))*60.0*float(spec.gears[gear-2])*float(spec.final_drive)
+	var prospective := _mechanical_speed()/(TAU*float(spec.wheel_radius))*60.0*float(spec.gears[gear-2])*float(spec.final_drive)
 	if prospective > redline*.94: return false
 	if race_mode:
 		_begin_race_shift(gear-1,.27)
@@ -177,7 +180,18 @@ func step(delta: float, pedal: float, use_nitro: bool, brake: float = 0.0) -> vo
 	var remaining := clampf(delta,0.0,.25)
 	while remaining > .00001:
 		var dt := minf(remaining,1.0/120.0)
+		# Race motion has its own driver and bypasses the street speed limiter.
+		# Keep the authored engine/gearbox in mechanical units, then convert both
+		# speed and travelled distance together. HUD, collision and finish timing
+		# therefore consume the same reduced world speed, with no second street scale.
+		var scale := SPEED_FACTOR if race_mode else 1.0
+		var prior_distance := distance_m
+		speed_mps /= scale
+		_integrating = true
 		_integrate(dt,pedal,use_nitro,brake)
+		_integrating = false
+		speed_mps *= scale
+		distance_m = prior_distance + (distance_m-prior_distance)*scale
 		remaining -= dt
 
 func _integrate(dt: float, pedal: float, use_nitro: bool, brake: float) -> void:
@@ -228,7 +242,10 @@ func _integrate(dt: float, pedal: float, use_nitro: bool, brake: float) -> void:
 	distance_m += (before+speed_mps)*.5*dt
 
 func _coupled_rpm() -> float:
-	return speed_mps/(TAU*float(spec.wheel_radius))*60.0*float(spec.gears[gear-1])*float(spec.final_drive)
+	return _mechanical_speed()/(TAU*float(spec.wheel_radius))*60.0*float(spec.gears[gear-1])*float(spec.final_drive)
+
+func _mechanical_speed() -> float:
+	return speed_mps / SPEED_FACTOR if race_mode and not _integrating else speed_mps
 
 func synchronize(actual_speed: float, pedal: float, reverse := false) -> void:
 	# Collision/reverse adapter uses real wheel speed, never an estimated shift.
@@ -244,7 +261,8 @@ func follow_external_motion(actual_speed: float, pedal: float, delta: float) -> 
 	# Observe their real wheel speed using this gearbox's ratios, without adding
 	# force, distance, launch bonuses or changing the nitro reserve.
 	if spec.is_empty(): return
-	var wheel_rpm := absf(actual_speed)/(TAU*float(spec.wheel_radius))*60.0*float(spec.final_drive)
+	var mechanical_speed := absf(actual_speed)/(SPEED_FACTOR if race_mode and not _integrating else 1.0)
+	var wheel_rpm := mechanical_speed/(TAU*float(spec.wheel_radius))*60.0*float(spec.final_drive)
 	gear = 1
 	if actual_speed >= 0.0:
 		while gear < spec.gears.size() and wheel_rpm*float(spec.gears[gear-1]) > ideal_shift_rpm:

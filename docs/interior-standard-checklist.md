@@ -1720,3 +1720,11 @@ Escopo: **4 lugares físicos / 4 interiores distintos existentes / 0 novos / 0 a
 - [x] Fotografias reais comparáveis em fixture isolada: [oficina antes](../artifacts/interior-life-20261022/before-maciota.png), [oficina depois](../artifacts/interior-life-20261022/reviewed-maciota.png), [Westgate antes](../artifacts/interior-life-20261022/before-home0.png), [Westgate depois](../artifacts/interior-life-20261022/reviewed-home0.png). Outras duas casas: `before-home1/2.png` e `reviewed-home1/2.png` na mesma pasta. Árvores: `trees-final-tree-previous.png` e `trees-final-tree-new.png`, comparação de malhas produtivas na fixture, não fotografia do jardim integrado.
 - [ ] Oclusão completa com Dante/NPC em movimento nas três casas, entrada/saída/reentrada por suas portas e save/load: pendentes. Fotos sem atores não aprovam esses critérios.
 - [ ] Comparação de frame time antes/depois na Main e evidência temporal das sombras das árvores: pendentes. Baseline interrompido após erros repetidos do minimapa durante o carregamento; várias instâncias externas do Godot presentes e preservadas. Capturas isoladas não aprovam desempenho. Alvo provisório 60 FPS/16,67 ms; aumento acima de 5% em p95/p99 requer confirmação equivalente. Nenhuma aprovação de performance nesta entrega.
+
+## Correções da garagem — 22/10/2026
+
+Escopo: **1 lugar físico existente / 1 interior existente alterado / 0 novos / 0 certificações integrais**. Acesso com batentes e soleira contrastantes, rotina do mecânico até a bancada, ambiente local sem sons de oficina e saída com preparo/sincronização da colisão exterior antes de admitir Dante. Invulnerabilidade e restrições de armas preservadas.
+
+- [x] Contrato dirigido headless `tests/test_mechanic_work_routine.gd`: quatro pontos visitados, 4,872 m percorridos, piso, bloqueio por corpo do jogador, interação e pausa da sala; zero falhas. Não certifica aparência.
+- [ ] Visual, oclusão, circulação e entrada/saída jogando: validação reservada ao usuário, conforme pedido de alterar somente código.
+- [ ] Performance renderizada antes/depois: não medida nesta revisão; sem aprovação de FPS.

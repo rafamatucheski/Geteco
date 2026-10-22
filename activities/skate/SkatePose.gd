@@ -36,7 +36,7 @@ static func apply(actor, board) -> void:
 	var push_weight := sin(clampf(board.push_phase / .18, 0, 1) * PI * .5) if board.pushing else 0.0
 	if board.pushing and board.push_phase > .65: push_weight *= 1 - smoothstep(.65, 1, board.push_phase)
 	var tuck := sin(minf(board.air_time / .6, 1) * PI) if board.airborne else 0.0
-	var compression: float = board.landing_compression + board.terrain_flex
+	var compression: float = board.landing_compression + board.terrain_flex + (.055 if actor.is_player else 0.0)
 	if actor.is_player:
 		actor._apply_pose(actor._idle_pose)
 		if actor.hips >= 0:
@@ -71,22 +71,35 @@ static func apply(actor, board) -> void:
 		var chest: int = actor._combat_bones.get("Spine02", -1)
 		if chest >= 0:
 			var pose: Basis = actor.skeleton.get_bone_global_pose(chest).basis
-			actor._set_combat_bone_rotation(chest, Basis(Vector3.FORWARD, -.09 * push_weight - .12 * tuck) * pose)
+			actor._set_combat_bone_rotation(chest, Basis(Vector3.FORWARD, board.lean * .5) * Basis(Vector3.UP, .28 * (1.0 - push_weight)) * Basis(Vector3.RIGHT, .10 + .12 * push_weight + .16 * tuck) * pose)
+		var swing := sin(board.push_phase * TAU) * push_weight
+		for index in 2:
+			var side := "Left" if index == 0 else "Right"
+			var sign_side := -1.0 if index == 0 else 1.0
+			var arm: int = actor._combat_bones.get(side + "Arm", -1)
+			if arm >= 0:
+				var rest: Basis = actor.skeleton.get_bone_global_pose(arm).basis
+				var balance := sign_side * (.13 + absf(board.lean) * .7 + tuck * .20)
+				actor._set_combat_bone_rotation(arm, Basis(Vector3.FORWARD, balance) * Basis(Vector3.RIGHT, sign_side * swing * .26) * rest)
+			var forearm: int = actor._combat_bones.get(side + "ForeArm", -1)
+			if forearm >= 0:
+				var rest: Basis = actor.skeleton.get_bone_global_pose(forearm).basis
+				actor._set_combat_bone_rotation(forearm, Basis(Vector3.RIGHT, -.14 - push_weight * .14) * rest)
 	else:
 		var model = actor.visual.get_child(0)
 		if model.get("pelvis") == null: return
 		var height: float = model.scale.y
-		var pelvis_position := Vector3(-.035 * push_weight, model.PELVIS_Y + (MODEL.DECK_HEIGHT - .08 - .24 * push_weight - .12 * tuck - compression) / height, 0)
+		var pelvis_position := Vector3(-.035 * push_weight, model.pelvis_y + (MODEL.DECK_HEIGHT - .08 - .24 * push_weight - .12 * tuck - compression) / height, 0)
 		var basis := Basis.from_euler(Vector3(.03 * push_weight, -.4 * (1 - push_weight), board.lean * .3))
 		# Respect authored leg lengths on uneven support beside the board.
 		var ankles: Array[Vector3] = []
-		var reach := (KIT.THIGH + KIT.SHIN) * .995
+		var reach: float = (model.thigh_len + model.shin_len) * .995
 		var drop := 0.0
 		for index in 2:
-			var ankle: Vector3 = targets[index] + Vector3.UP * KIT.ANKLE_HEIGHT * height
+			var ankle: Vector3 = targets[index] + Vector3.UP * model.ankle_height * height
 			var world_ankle: Vector3 = board.visual.to_global(ankle)
 			if index == 1 and board.push_contact:
-				world_ankle = board.visual.to_global(targets[index]) + board.push_normal * KIT.ANKLE_HEIGHT * height
+				world_ankle = board.visual.to_global(targets[index]) + board.push_normal * model.ankle_height * height
 			var target: Vector3 = model.to_local(world_ankle)
 			ankles.append(target)
 			var gap: Vector3 = pelvis_position + basis * model._hip_offsets[index] - target
@@ -119,7 +132,7 @@ static func fall(actor, age: float, heading: float) -> void:
 	var brace := smoothstep(0, .18, age) * (1 - rise)
 	if not actor.is_player:
 		var model = actor.visual.get_child(0)
-		model.pelvis.position = Vector3(0, model.PELVIS_Y, 0)
+		model.pelvis.position = Vector3(0, model.pelvis_y, 0)
 		model.spine.rotation = Vector3(-.22 * weight, 0, 0)
 		for side in 2:
 			model.thighs[side].rotation = Vector3(-(.65 if side == 0 else .4) * weight, 0, 0)

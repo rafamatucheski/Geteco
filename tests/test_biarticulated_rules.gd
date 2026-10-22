@@ -17,6 +17,12 @@ func run() -> void:
 	service.set_physics_process(false)
 	var bus := BUS.new()
 	root.add_child(bus)
+	for section in 3:
+		var length: float = BUS.LENGTHS[section]
+		var door_z: float = bus.presentations[section].door_z
+		var axles: Array = [-length*.3,length*.31] if section == 0 else [length*.26]
+		for axle: float in axles:
+			check(absf(door_z-axle) > .7+.49+.15,"Door opening clears the wheel and tire of section %d" % section)
 	bus.set_active(true)
 	for index in 3: bus.sections[index].global_position=Vector3(0,0,index*8)
 	bus.service_state="exchange"; bus.set_doors(1); bus.service_stop=0

@@ -26,7 +26,7 @@ static func prewarm_skid_audio() -> void:
 		stream.loop_end = maxi(1, roundi(stream.get_length() * stream.mix_rate) - 8)
 		_skid_streams[kind] = stream
 const MAX_MARK_SEGMENTS := 320
-const MARK_LIFETIME_MSEC := 10000
+const MARK_LIFETIME_MSEC := 22000
 # Sulco em chÃ£o macio fica mais tempo que a borracha do asfalto: Ã© o rastro que o
 # carro deixa na grama/terra mesmo andando reto, sem derrapar.
 const RUT_LIFETIME_MSEC := 30000
@@ -100,7 +100,8 @@ func physics_tick(delta: float, active: bool) -> void:
 	for contact in contacts:
 		if not contact.is_empty() and bool(contact.wet): any_wet = true
 	var skid_threshold := 3.125 if any_wet else 5.625
-	var braking_slip: bool = vehicle.controlled and vehicle.brake_input and road_speed > 3.75
+	var service_brake: bool = vehicle.brake_input or (vehicle.throttle_input * vehicle.speed < -.1)
+	var braking_slip: bool = vehicle.controlled and service_brake and road_speed > 3.75
 	if vehicle.has_meta("drag_service_brake_slip"):
 		braking_slip = float(vehicle.get_meta("drag_service_brake_slip"))>.15 and road_speed>8.0
 	var sliding: bool = _burnout > 0.0 or lateral_speed > skid_threshold or braking_slip
@@ -325,7 +326,7 @@ func _append_mark(side: int, contact: Dictionary, kind: String, rut := false) ->
 	if length < .035 or length > 2.2: return
 	var heft := _heft()
 	# Pneu de caminhÃ£o Ã© mais largo e afunda mais: sulco mais largo e mais escuro.
-	var width := lerpf(.10,.22,heft) if rut else .075
+	var width := lerpf(.10,.22,heft) if rut else lerpf(.13,.22,heft)
 	marks.append({"a":previous.point,"b":contact.point,"na":previous.normal,"nb":contact.normal,"kind":kind,
 		"born":Time.get_ticks_msec(),"life":RUT_LIFETIME_MSEC if rut else MARK_LIFETIME_MSEC,"w":width,"depth":lerpf(.75,1.35,heft) if rut else 1.0})
 	if SKID_BUDGET.enabled:

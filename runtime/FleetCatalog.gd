@@ -28,6 +28,9 @@ static func all() -> Dictionary:
 			var motorcycle: Dictionary = _data.bike_urban.duplicate(true)
 			motorcycle.merge({"id":"bike_police", "label":"Moto policial", "colors":["e4e7e4ff"], "durability":145, "max_speed":345.0, "roof_prop":"none"}, true)
 			_data["bike_police"] = motorcycle
+			var snowmobile: Dictionary = _data.bike_urban.duplicate(true)
+			snowmobile.merge({"id":"bike_snow", "label":"Boreal de neve", "bounds_size":[1.25,1.74,2.35], "bounds_center":[0,.87,0], "colors":["c33c30ff","315b77ff","e4e7e4ff"], "max_speed":340.0, "durability":110, "mass":.36, "turn_speed":3.2, "district":"mountain"}, true)
+			_data["bike_snow"] = snowmobile
 			var tank: Dictionary = _data.police_cruiser.duplicate(true)
 			tank.merge({"id":"army_tank", "label":"Blindado do Exército", "colors":["64704eff"], "bounds_size":[3.18,2.85,5.3], "bounds_center":[0,1.425,0], "durability":3000, "damage_resistance":0.4, "mass":30.0, "max_speed":208.0, "acceleration":650.0, "braking":1100.0, "turn_speed":1.1, "drivetrain":"4x4", "engine_family":"tank", "roof_prop":"none"}, true)
 			_data["army_tank"] = tank
@@ -69,6 +72,7 @@ static func create(id: String) -> Node3D:
 	if id in preload("res://gameplay/desert_cars/DesertCarCatalog.gd").IDS: return preload("res://gameplay/desert_cars/DesertCarCatalog.gd").create_model(id)
 	var definition := spec(id)
 	if definition.is_empty(): return null
+	if id == "bike_snow": return preload("res://runtime/SnowmobileModel.gd").create()
 	if id == "army_tank": return preload("res://gameplay/police_response/ground/PoliceGroundModels.gd").tank()
 	if id == "nordic_estate": return preload("res://assets/fleet/nordic_estate_detail.scn").instantiate() as Node3D
 	if id == "metro_hatch" and meshy_cars and ResourceLoader.exists(MESHY_CITYCAR): return (load(MESHY_CITYCAR) as PackedScene).instantiate() as Node3D

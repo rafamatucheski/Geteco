@@ -49,9 +49,12 @@ func run() -> void:
 	check("besouro_1300" in roster.POOLS.city, "popular streets gain rounded compact silhouette")
 	check("aurora_executive" in roster.POOLS.executive, "executive streets use existing luxury sedan")
 	var parking = load("res://runtime/RoadsideParking.gd")
-	for id: String in NEW_IDS:
+	for id: String in NEW_IDS + ["bike_snow"]:
 		check(id in FLEET.all(), "new model is included in the catalog: " + id)
-		check(id in parking.CITY_MODELS, "new model supports ordinary parking: " + id)
+		if id == "bike_snow":
+			check(id not in all_ids, "snowmobile stays out of ordinary asphalt traffic")
+		else:
+			check(id in parking.CITY_MODELS, "new model supports ordinary parking: " + id)
 		var spec: Dictionary = FLEET.spec(id)
 		check(not spec.is_empty() and ResourceLoader.exists(str(spec.get("scene", ""))), "packed scene exists: " + id)
 		var state = STATE.new()

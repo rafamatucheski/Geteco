@@ -262,7 +262,9 @@ func _cleanup() -> void:
 	if is_instance_valid(player_car): player_car.input_locked = _old_lock or (is_instance_valid(session) and session.modal)
 	_clear_rivals()
 	if is_instance_valid(hud): hud.queue_free()
-	if is_instance_valid(props): props.show_checkpoint(0,false)
+	if is_instance_valid(props):
+		props.show_checkpoint(0,false)
+		props.visible = false
 
 func _clear_rivals() -> void:
 	for entry in racers:
@@ -295,7 +297,7 @@ func _process(delta: float) -> void:
 		session.world.add_child(props)
 		props.build(course)
 		props.show_checkpoint(0,active)
-	if is_instance_valid(props): props.visible = outdoors
+	if is_instance_valid(props): props.visible = outdoors and active
 
 func _build_hud() -> void:
 	hud = PanelContainer.new()

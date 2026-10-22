@@ -533,6 +533,8 @@ func _build_controls(page: VBoxContainer) -> void:
 		var mode_button := _footer_button(["Teclado e mouse", "Controle"][index])
 		mode_button.pressed.connect(_choose_control_mode.bind(index))
 		mode_row.add_child(mode_button)
+	_widgets.controller_aim_assist = _toggle(func(value): _settings().controller_aim_assist = value)
+	_row(page,"Assistência de mira no controle","",_widgets.controller_aim_assist)
 	_layout_choice = _options(["Automático", "DualSense / PlayStation", "Xbox"],func(index): controls.set_controller_layout(index))
 	_row(page,"Símbolos do controle","Escolha DualSense se o controle aparecer com símbolos Xbox.",_layout_choice)
 	_controller_status = _label("",15,MUTED,BODY_FONT)
@@ -699,6 +701,8 @@ func _load_widgets() -> void:
 	for key in s.AUDIO_CHANNELS:
 		_set_slider(_widgets[key], float(s.get(key)), _percent)
 	_widgets.voice_language.select(s.VOICE_LANGUAGES.find(s.voice_language))
+	_widgets.controller_aim_assist.set_pressed_no_signal(s.controller_aim_assist)
+	_widgets.controller_aim_assist.text = "Ligado" if s.controller_aim_assist else "Desligado"
 	_widgets.mute_unfocused.set_pressed_no_signal(s.mute_unfocused)
 	_widgets.mute_unfocused.text = "Ligado" if s.mute_unfocused else "Desligado"
 	_refresh_controls()
@@ -847,6 +851,7 @@ func _restore_tab_defaults() -> void:
 			s.mute_unfocused = false
 			s.voice_language = "pt_BR"
 		2:
+			s.controller_aim_assist = false
 			get_node("/root/GameInput").reset_bindings()
 			get_node("/root/GameInput").set_controller_layout(0)
 	s.apply_settings()
@@ -868,7 +873,7 @@ func close() -> void:
 	hide()
 	closed.emit()
 
-const SNAPSHOT_KEYS := ["master_volume", "music_volume", "sfx_volume", "ambient_volume", "vehicle_volume", "radio_volume", "dialogue_volume", "ui_volume", "mute_unfocused", "voice_language", "text_language", "window_mode", "resolution", "vsync", "msaa", "render_scale", "fps_limit", "shadow_quality", "brightness", "show_fps", "camera_view", "aa_mode", "upscale_mode", "shadow_distance", "anisotropy", "reflection_quality", "detail_quality", "ssao", "volumetric_fog", "glow", "glow_strength"]
+const SNAPSHOT_KEYS := ["controller_aim_assist", "master_volume", "music_volume", "sfx_volume", "ambient_volume", "vehicle_volume", "radio_volume", "dialogue_volume", "ui_volume", "mute_unfocused", "voice_language", "text_language", "window_mode", "resolution", "vsync", "msaa", "render_scale", "fps_limit", "shadow_quality", "brightness", "show_fps", "camera_view", "aa_mode", "upscale_mode", "shadow_distance", "anisotropy", "reflection_quality", "detail_quality", "ssao", "volumetric_fog", "glow", "glow_strength"]
 
 func _capture_snapshot() -> Dictionary:
 	var s := _settings()

@@ -552,7 +552,28 @@ func aim_target_3d(actor: Node3D, camera: Camera3D, delta: float, follow_movemen
 	var down := camera.global_basis.z
 	right.y = 0
 	down.y = 0
-	return actor.global_position+(right.normalized()*direction.x+down.normalized()*direction.y).normalized()*25
+	var world_direction := (right.normalized()*direction.x+down.normalized()*direction.y).normalized()
+	var settings := get_node_or_null("/root/V2Settings")
+	# Assistance is opt-in and needs active stick input; releasing the stick never tracks a target.
+	if using_gamepad and settings != null and settings.controller_aim_assist and _read_aim_stick().length() > AIM_STICK_DEADZONE:
+		var best := .10
+		var correction := 0.0
+		for candidate in get_tree().get_nodes_in_group("v2_damageable"):
+			if not candidate is CharacterBody3D or candidate == actor or candidate.get("dead") == true or candidate.get_meta("gameplay_role", "") == "vehicle": continue
+			if preload("res://gameplay/DamageProtection.gd").is_protected(candidate): continue
+			var offset: Vector3 = candidate.global_position - actor.global_position
+			offset.y = 0.0
+			if offset.length_squared() > 625.0 or offset.length_squared() < 1.0: continue
+			var angle := world_direction.signed_angle_to(offset.normalized(),Vector3.UP)
+			if absf(angle) >= best: continue
+			var query := PhysicsRayQueryParameters3D.create(actor.global_position + Vector3.UP,candidate.global_position + Vector3.UP,7,[actor.get_rid()])
+			var hit := actor.get_world_3d().direct_space_state.intersect_ray(query)
+			if not hit.is_empty() and hit.collider != candidate: continue
+			best = absf(angle)
+			correction = angle
+		world_direction = world_direction.rotated(Vector3.UP,clampf(correction,-delta*.65,delta*.65))
+		aim_direction = Vector2(world_direction.dot(right.normalized()),world_direction.dot(down.normalized())).normalized()
+	return actor.global_position+world_direction*25
 
 func _update_gamepad_aim(stick: Vector2,delta: float) -> bool:
 	var strength := minf(stick.length(),1.0)

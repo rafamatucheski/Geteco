@@ -95,7 +95,7 @@ func run() -> void:
 	vehicle.speed = vehicle.max_forward_speed
 	vehicle.velocity = Vector3(0,0,-vehicle.speed)
 	for frame in 180: camera._process(1.0/60.0)
-	check(absf(camera.target_size-CAMERA.size_for_v1_zoom(CAMERA.V1_DRIVE_ZOOM_FAR))<.01,"Driving reaches the V1 apparent far scale at authored top speed")
+	check(absf(camera.target_size-CAMERA.size_for_v1_zoom(CAMERA.V1_DRIVE_ZOOM_FAR)*CAMERA.DRIVE_VIEW_SIZE_SCALE)<.01,"Driving reaches the authored far scale with its existing 12% wider frame")
 	check(camera.focus.z<vehicle.position.z-.25,"Driving adds forward anticipation")
 
 	var room_anchor := Node3D.new()

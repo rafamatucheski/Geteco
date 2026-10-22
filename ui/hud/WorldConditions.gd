@@ -15,3 +15,6 @@ static func icon(time: float, region: String, weather: int, mountain: Dictionary
 	if region != "mountain" and weather != 0:
 		return ["sun","rain","storm","cloud"][clampi(weather,0,3)]
 	return "sun" if fposmod(time,1.0) >= .25 and fposmod(time,1.0) < .75 else "moon"
+
+static func vertical_text(day: int, time: float, region: String, weather: int, mountain: Dictionary = {}) -> String:
+	return text(day,time,region,weather,mountain).replace(" · ","\n")

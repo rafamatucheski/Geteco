@@ -306,8 +306,11 @@ func _scatter_grass() -> void:
 	preload("res://world/urban_detail/CobraVegetation.gd").scatter(self)
 
 func _tree(point: Vector2, scale_factor: float, dry: bool) -> void:
+	var first_mesh := get_child_count()
+	var first_shape := _solid_root.get_child_count()
 	if zone_id == "cobra":
 		_cobra_tree(point,scale_factor,dry)
+		_register_breakable_parts("harbor_tree",point,first_mesh,first_shape)
 		return
 	var trunk_height := 3.0*scale_factor
 	var trunk := _cylinder("TreeTrunk",.24*scale_factor,trunk_height,Vector3(point.x,trunk_height*.5,point.y),Color("66513a"),true)
@@ -328,6 +331,8 @@ func _tree(point: Vector2, scale_factor: float, dry: bool) -> void:
 		crown.position = Vector3(point.x,trunk_height+.7*scale_factor,point.y)+offset*scale_factor
 		crown.material_override = preload("res://assets/urban_detail/FloraSurfaces.gd").material("foliage",foliage.lightened(.07*float(get_child_count()%3)),1.2,.9)
 		add_child(crown)
+
+	_register_breakable_parts("harbor_tree",point,first_mesh,first_shape)
 
 func _cobra_tree(point: Vector2, scale_factor: float, dry: bool) -> void:
 	var variant := posmod(int(point.x*13+point.y*7),3)

@@ -110,8 +110,8 @@ func _ready() -> void:
 	add_child(compass_label)
 	weekday_label = Label.new()
 	weekday_label.name = "Weekday"
-	weekday_label.position = Vector2(7, PANEL_SIZE.y + 2)
-	weekday_label.size = Vector2(240, 16)
+	weekday_label.position = Vector2(PANEL_SIZE.x + 12, 42)
+	weekday_label.size = Vector2(78, 72)
 	weekday_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	weekday_label.add_theme_font_override("font", FONT)
 	weekday_label.add_theme_font_size_override("font_size", 12)
@@ -157,9 +157,9 @@ func refresh() -> void:
 	if _conditions_tick >= 1.0 or weekday_label.text.is_empty() or not was_visible:
 		_conditions_tick = 0.0
 		var weather: Variant = world.session.weather
-		var conditions := CONDITIONS.text(int(world.session.state.world_state.get("moon_day", 2)), float(weather.time_of_day), str(world.session.state.region_id), int(weather.weather_state), weather.mountain_weather)
+		var conditions := CONDITIONS.vertical_text(int(world.session.state.world_state.get("moon_day", 2)), float(weather.time_of_day), str(world.session.state.region_id), int(weather.weather_state), weather.mountain_weather)
 		if weekday_label.text != conditions: weekday_label.text = conditions
-		weather_icon.position = weekday_label.position + Vector2(FONT.get_string_size(conditions,HORIZONTAL_ALIGNMENT_LEFT,-1,12).x + 5,-2)
+		weather_icon.position = weekday_label.position + Vector2(0,74)
 		var icon := CONDITIONS.icon(float(weather.time_of_day),str(world.session.state.region_id),int(weather.weather_state),weather.mountain_weather)
 		if weather_icon.state != icon:
 			weather_icon.state = icon
@@ -217,10 +217,10 @@ func _sync_navigation(actor: Node3D) -> void:
 		return
 	if _route_clock >= .75 or not objective_target.is_equal_approx(_drawn_objective):
 		_route_clock = 0.0
-		var routes: RefCounted = world.production.traffic_routes
-		if routes != null:
-			var goal := Vector3(objective_target.x, actor.global_position.y, objective_target.y)
-			if navigation.update(routes, world.production._route_key(), actor.global_position, goal, actor != world.player, -actor.global_basis.z): _redraw_required = true
+		var source := NAVIGATION.source(world.production)
+		if source.routes != null:
+			var goal := NAVIGATION.goal_on_surface(source.routes,objective_target)
+			if navigation.update(source.routes, source.revision, actor.global_position, goal, actor != world.player, -actor.global_basis.z): _redraw_required = true
 	var remaining := navigation.remaining(center)
 	if remaining != route_points:
 		route_points = remaining

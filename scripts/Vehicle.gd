@@ -15,7 +15,7 @@ const DESERT_GROUND := preload("res://gameplay/desert_cars/DesertVehicleGround.g
 const TRAFFIC_RAILS := preload("res://gameplay/traffic/TrafficRails.gd")
 var traffic_rails: RefCounted
 var _traffic_rail_drive := false
-const MAX_SPEED := 15.0
+const MAX_SPEED := 15.0 * preload("res://data/catalogs/VehicleSpeedBalance.gd").FACTOR
 const REVERSE_SPEED := preload("res://gameplay/v1_handling/V1Handling.gd").REVERSE_SPEED_MPS
 const WHEELBASE := 2.5
 const WALL_DAMAGE_PER_SPEED := 0.65
@@ -185,7 +185,7 @@ func _ready() -> void:
 		max_health = float(specification.get("durability",180))
 		damage_resistance = clampf(float(specification.get("damage_resistance",1.0)), .05, 1.0)
 		health = max_health
-		max_forward_speed = clampf(float(specification.max_speed)/16.0,5,45)
+		max_forward_speed = clampf(float(specification.max_speed)/16.0,5,45) * preload("res://data/catalogs/VehicleSpeedBalance.gd").FACTOR
 		drive_acceleration = clampf(float(specification.acceleration)/160.0,2.0,10.0)
 		if handling != null: handling.configure(specification)
 	half_width = hull.size.x*.5
@@ -986,7 +986,7 @@ func _drive_traffic(delta: float) -> void:
 	# Sinal fechado: freia progressivamente até a faixa, em vez de travar a 12 m/s² a
 	# qualquer distância (o carro parava longe do cruzamento ou em cima da faixa).
 	if junction_wait: desired_speed = minf(desired_speed,sqrt(2.0*3.5*maxf(0.0,junction_gap-.4)))
-	var target_speed := 0.0 if blocked else desired_speed
+	var target_speed := 0.0 if blocked else desired_speed * preload("res://data/catalogs/VehicleSpeedBalance.gd").FACTOR
 	var rate := 12.0 if blocked else (7.0 if target_speed < speed else 2.5)
 	speed = move_toward(speed,target_speed,rate*delta)
 	var lookahead := lerpf(3.5,1.7,clampf(bend,0,1))

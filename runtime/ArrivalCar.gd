@@ -199,7 +199,7 @@ func _ready() -> void:
 	rotation_shape.size = bounds.size - Vector3(0, .15, 0)
 	sensor_shape.size = Vector3(bounds.size.x + .07, 1.2, 1)
 	external_input = true
-	max_forward_speed = 4
+	max_forward_speed = 4 * preload("res://data/catalogs/VehicleSpeedBalance.gd").FACTOR
 
 func _physics_process(delta: float) -> void:
 	super._physics_process(delta)

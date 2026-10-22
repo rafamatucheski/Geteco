@@ -13,7 +13,7 @@ static func stations() -> Array[Dictionary]:
 	if _station_cache.is_empty():
 		_station_cache = [
 			_station("harbor_central", "Harbor Central", Vector3(-12,12,52), "harbor", -1.0),
-			_station("harbor_north", "Northgate", Vector3(386,12,-194), "harbor", -1.0),
+			_station("harbor_north", "Northgate", Vector3(386,12,-194), "harbor", 1.0),
 			_station("mountain_pines", "Pinhais", Vector3(730,12,-402), "mountain", -1.0),
 			_station("desert_copper", "Cobre", Vector3(-72,12,-925), "desert", -1.0),
 		]
@@ -22,8 +22,7 @@ static func stations() -> Array[Dictionary]:
 static func get_stations() -> Array[Dictionary]: return stations()
 
 static func _station(id: String, label: String, point: Vector3, region: String, side: float) -> Dictionary:
-	# Three switchback flights fit the city parcels; the north access stays
-	# wholly in the existing median, clear of both highway carriageways.
+	# Northgate opens east over water; no staircase or platform occupies the highway.
 	var entry := point + Vector3(side * 12.0, -point.y + 0.12, 12.0)
 	return {"id":id, "label":label, "name":label, "position":point,
 		"arrival":point + Vector3(side * PLATFORM_OFFSET, PLATFORM_HEIGHT + 0.12, 0),
@@ -47,9 +46,9 @@ static func restore_harbor_pedestrian(point: Vector3) -> Vector3:
 	if point.y<.5: return point
 	# Only migrate unsupported former surfaces; a save on an overlapping
 	# platform or retained landing keeps its exact position.
-	for old in [Vector3(-12,12,52),Vector3(386,12,-179)]:
+	for old in [Vector3(-12,12,52),Vector3(386,12,-179),Vector3(386,12,-194)]:
 		var target := "harbor_central" if old.x < 0 else "harbor_north"
-		if _on_access_surface(point,old,false) and not _on_access_surface(point,get_station(target).position,true):
+		if (_on_access_surface(point,old,false) or _on_access_surface(point,old,true)) and not _on_access_surface(point,get_station(target).position,true,float(get_station(target).side)):
 			return get_station(target).entry
 	var p := Vector2(point.x-145,point.z-67)
 	var floor_y := TRACK_HEIGHT+PLATFORM_HEIGHT
@@ -69,8 +68,8 @@ static func restore_harbor_pedestrian(point: Vector3) -> Vector3:
 			return get_station("harbor_central").entry
 	return point
 
-static func _on_access_surface(point: Vector3, origin: Vector3, compact: bool) -> bool:
-	var local := Vector2(origin.x-point.x,point.z-origin.z)
+static func _on_access_surface(point: Vector3, origin: Vector3, compact: bool, side := -1.0) -> bool:
+	var local := Vector2((point.x-origin.x)*side,point.z-origin.z)
 	var floor_y := origin.y+PLATFORM_HEIGHT
 	var rise := floor_y/3.0
 	var far_z := 2.0 if compact else -4.0

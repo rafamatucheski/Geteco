@@ -32,7 +32,7 @@ const PLACEMENTS := preload("res://world/editing/WorldPlacements.gd")
 const FILL := preload("res://world/city_look/SidewalkFill.gd")
 const FRAGILE_KINDS := ["signal_pole", "stop_sign", "hydrant", "trash_can", "news_box", "mailbox", "phone_booth", "bench_seat", "dumpster", "trash_bags", "planter",
 	"cafe_set", "cafe_parasol", "cafe_parasol_b", "produce_stand", "a_frame", "beer_crates", "pot_plant", "wheelie_bins", "bike_rack", "pallet_stack", "tire_stack", "drums",
-	"food_cart", "ice_freezer", "clothes_rack", "flower_buckets", "gas_cylinders", "door_bench", "motorcycle"]
+	"food_cart", "ice_freezer", "clothes_rack", "flower_buckets", "gas_cylinders", "door_bench", "motorcycle", "street_tree", "street_tree_b"]
 
 # Fração de janelas acesas à noite. Residência acende menos que vitrine.
 const WINDOW_LIT_RATIO := 0.60
@@ -322,7 +322,7 @@ static func _register_fragile(chunk: Node3D, _batches: Dictionary, built: Dictio
 				extra.append({"multimesh": built.signal_amber, "index": index, "offset": pole.affine_inverse() * lens})
 			var colliders: Array = []
 			if kind == "planter": colliders.append(chunk.get_node("CityPlanterSolids").get_child(index))
-			FRAGILE.register_instance(kind, multimesh, index, chunk, extra, colliders, visual)
+			FRAGILE.register_instance("harbor_tree" if kind in ["street_tree","street_tree_b"] else kind, multimesh, index, chunk, extra, colliders, visual)
 
 
 # ---------------------------------------------------------------------------

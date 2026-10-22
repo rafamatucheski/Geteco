@@ -8,6 +8,47 @@ var _last_start := Vector2.INF
 var _last_goal := Vector2.INF
 var _last_driving := false
 
+class RoadSnapshot extends RefCounted:
+	var vertices: Array[Vector3] = []
+	var edges: Dictionary = {}
+
+## The loading curtain already prepares the complete directed graph. Read that
+## snapshot instead of making GPS depend on the chunks visible to the camera.
+static func source(production: Node) -> Dictionary:
+	var cache: Dictionary = production.get("_route_cache")
+	var key := ""
+	for candidate: String in cache:
+		if candidate.split(",").size() > key.split(",").size() or key.is_empty(): key = candidate
+	if not key.is_empty():
+		var snapshot: Array = cache[key].traffic
+		var retained: Dictionary = production.get_meta("navigation_graph_snapshot", {})
+		if retained.get("key", "") == key and is_same(retained.get("snapshot"), snapshot): return retained
+		var roads := RoadSnapshot.new()
+		roads.vertices = snapshot[1]
+		roads.edges = snapshot[2]
+		retained = {"key":key, "snapshot":snapshot, "routes":roads, "revision":"atlas:%s:%d" % [key, roads.get_instance_id()]}
+		production.set_meta("navigation_graph_snapshot", retained)
+		return retained
+	return {"routes":production.traffic_routes, "revision":production._route_key()}
+
+## A clicked 2D destination has no altitude. Recover the road's authored height,
+## otherwise a destination on the mountain is incorrectly searched at sea level.
+static func goal_on_surface(routes: RefCounted, point: Vector2) -> Vector3:
+	var best := INF
+	var height := 0.0
+	for from in routes.edges:
+		for edge in routes.edges[from]:
+			var a: Vector3 = routes.vertices[from]
+			var b: Vector3 = routes.vertices[edge.to]
+			var direction := Vector2(b.x-a.x,b.z-a.z)
+			if direction.length_squared() < .0001: continue
+			var fraction := clampf((point-Vector2(a.x,a.z)).dot(direction)/direction.length_squared(),0,1)
+			var distance := point.distance_squared_to(Vector2(a.x,a.z)+direction*fraction)
+			if distance < best:
+				best = distance
+				height = lerpf(a.y,b.y,fraction)
+	return Vector3(point.x,height,point.y)
+
 func update(routes: RefCounted, revision: String, start: Vector3, goal: Vector3, driving: bool, facing: Vector3) -> bool:
 	var key := "%s:%d" % [revision, routes.vertices.size()]
 	var changed := signature != key

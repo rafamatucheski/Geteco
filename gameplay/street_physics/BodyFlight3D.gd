@@ -164,7 +164,7 @@ static func launch(p_actor: CharacterBody3D, impact_velocity: Vector3, p_lethal:
 	var speed := minf(flat.length(), 37.5)
 	flight._heading = flat.normalized() if speed > .01 else Vector3.BACK
 	flight.velocity = flight._heading * minf(speed*.65, 16.0)
-	flight.vertical = clampf(speed*.16, 1.0, 4.0)
+	flight.vertical = clampf(speed*.55, 1.0, 9.0)
 	flight._yaw = atan2(flight._heading.x, flight._heading.z)
 	p_actor.add_child(flight)
 	return flight
@@ -201,6 +201,13 @@ func _ready() -> void:
 			return
 		ragdoll.dispose()
 		ragdoll = null
+	# The actor has no collision layer during flight, so the vehicle can keep moving,
+	# while the swept fallback still collides with vehicle hulls instead of passing through.
+	actor.collision_mask = 5
+	var impact_source: Node = source.get_ref() if source != null else null
+	if impact_source is PhysicsBody3D:
+		impact_source.remove_collision_exception_with(actor)
+		actor.remove_collision_exception_with(impact_source)
 	_shape = CollisionShape3D.new()
 	_shape.shape = hull
 	_shape.position = Vector3.UP*.4
@@ -229,7 +236,7 @@ func _ragdoll_audio(point: Vector3, speed: float) -> void:
 func _fly(delta: float) -> void:
 	_age += delta
 	# External fire/explosion damage can clear the actor's mask mid-flight.
-	actor.collision_mask = 1
+	actor.collision_mask = 5
 	vertical -= GRAVITY*delta
 	var motion := velocity + Vector3.UP*vertical
 	var contact := actor.move_and_collide(motion*delta)

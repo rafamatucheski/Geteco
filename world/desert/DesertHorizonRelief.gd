@@ -41,9 +41,8 @@ static func build() -> Node3D:
 	# Endpoint heights taper into buried feet; no vertical rectangular cut at the ends.
 	var north := {"side":"north","from":L.BOUNDS.position.x-220.0,"to":L.BOUNDS.end.x+240.0,"width":360.0,"seed":73,"profile":[Vector2(0,.05),Vector2(.055,.30),Vector2(.10,.86),Vector2(.20,.89),Vector2(.24,.38),Vector2(.32,.31),Vector2(.36,.73),Vector2(.46,.77),Vector2(.50,.36),Vector2(.58,.40),Vector2(.62,.94),Vector2(.75,.91),Vector2(.80,.51),Vector2(.88,.56),Vector2(.94,.22),Vector2(1,.06)]}
 	var west := {"side":"west","from":L.BOUNDS.position.y-250.0,"to":L.BOUNDS.end.y+68.5,"width":310.0,"seed":29,"profile":[Vector2(0,.06),Vector2(.10,.44),Vector2(.21,.92),Vector2(.28,.72),Vector2(.42,.33),Vector2(.53,.67),Vector2(.65,.91),Vector2(.78,.36),Vector2(.90,.68),Vector2(1,.04)]}
-	var east := {"side":"east","from":L.BOUNDS.position.y-230.0,"to":L.BOUNDS.end.y-191.5,"width":225.0,"seed":51,"profile":[Vector2(0,.04),Vector2(.14,.68),Vector2(.26,.43),Vector2(.39,.89),Vector2(.46,.98),Vector2(.60,.39),Vector2(.74,.78),Vector2(.86,.45),Vector2(1,.03)]}
 	var south := {"side":"south","from":L.BOUNDS.position.x-190.0,"to":90.0,"width":210.0,"seed":97,"profile":[Vector2(0,.03),Vector2(.10,.66),Vector2(.21,.38),Vector2(.35,.89),Vector2(.41,.76),Vector2(.55,.29),Vector2(.69,.68),Vector2(.82,.42),Vector2(.92,.30),Vector2(1,.02)]}
-	for range_data in [north,west,east,south]: _ridge(near,range_data,false)
+	for range_data in [north,west,south]: _ridge(near,range_data,false)
 	# A second, less saturated crest rises beyond two ranges; eastern mountain/bridge stay open.
 	_ridge(far,north,true)
 	_ridge(far,west,true)

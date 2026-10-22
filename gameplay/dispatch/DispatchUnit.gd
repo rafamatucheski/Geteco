@@ -890,7 +890,7 @@ func _vehicle_combat(delta: float, target: Node3D) -> void:
 	_burst += 1
 	_shot_cooldown = RULES.SHOT_COOLDOWN if _burst < 2 else RULES.SHOT_BURST_COOLDOWN
 	if _burst >= 2: _burst = 0
-	gameplay.police_shoot(vehicle, RULES.SHOT_DAMAGE)
+	gameplay.police_vehicle_shoot(vehicle, RULES.SHOT_DAMAGE)
 
 ## Parada só concluída com o piloto sem recuperação pendente. Com ultrapassagem
 ## pendente a unidade volta a "enroute", que mantém o freio (`hold`) e espera o

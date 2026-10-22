@@ -102,7 +102,7 @@ func _check_competitive_times() -> void:
 		var legacy := _run(id,{},false)
 		var upgraded := _run(id,prepared,true)
 		var early := _run(id,{},true,.70)
-		check(absf(stock-legacy)<=legacy*.05,"continuous clutch preserves competitive 800 m pace within 5 percent: "+id)
+		check(absf(stock-legacy)<=legacy*.05,"continuous clutch preserves pace against the equally speed-balanced reference within 5 percent: "+id)
 		check(upgraded<stock-.25,"real purchasable preparation still improves 800 m: "+id)
 		check(early>stock+.25,"early shifting still costs measurable time: "+id)
 		print("DRAG_FEEL_TIMING car=",id," legacy=",legacy," stock=",stock," upgraded=",upgraded," early=",early)
@@ -120,7 +120,10 @@ func _run(id: String, parts: Dictionary, improved: bool, shift_ratio := .91, rea
 	drive.launch()
 	const DT := 1.0/120.0
 	var elapsed := 0.0
-	while elapsed<65.0 and drive.distance_m<800.0:
+	# Legacy is a mechanical reference without race world scaling. Compare the
+	# same engine distance: 1066.67 mechanical metres now cover 800 world metres.
+	var engine_distance := 800.0 if improved else 800.0 / .75
+	while elapsed<65.0 and drive.distance_m<engine_distance:
 		if drive.rpm>=drive.redline*shift_ratio: drive.shift_up()
 		drive.step(DT,1.0 if elapsed>=reaction else 0.0,drive.gear>=3 and elapsed>6.0)
 		elapsed += DT

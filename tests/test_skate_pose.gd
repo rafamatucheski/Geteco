@@ -50,7 +50,7 @@ func run():
 					knee = actor.skeleton.to_global(actor.skeleton.get_bone_global_pose(actor._combat_bones[side + "Leg"]).origin)
 					hip = actor.skeleton.to_global(actor.skeleton.get_bone_global_pose(actor._combat_bones[side + "UpLeg"]).origin)
 				else:
-					expected.y += KIT.ANKLE_HEIGHT * model.scale.y
+					expected.y += model.ankle_height * model.scale.y
 					foot = model.feet[index].global_position
 					knee = model.shins[index].global_position
 					hip = model.thighs[index].global_position
@@ -58,7 +58,10 @@ func run():
 				check(board.visual.to_local(foot).x > .02 if index == 0 else board.visual.to_local(foot).x < -.02, label + " foot stays on its anatomical side without crossing legs")
 				var local_knee = board.visual.to_local(knee)
 				check(local_knee.z < maxf(board.visual.to_local(hip).z, board.visual.to_local(foot).z) + .025, label + " knee bends toward forward-facing toes")
-				check(knee.distance_to(hip) > .3 and foot.distance_to(knee) > .3, label + " authored leg lengths")
+				if actor.is_player:
+					check(knee.distance_to(hip) > .3 and foot.distance_to(knee) > .3, label + " authored leg lengths")
+				else:
+					check(absf(knee.distance_to(hip) - model.thigh_len * model.scale.y) < .002 and absf(foot.distance_to(knee) - model.shin_len * model.scale.y) < .002, label + " preserves each imported rig authored leg lengths")
 				check((board.visual.to_local(foot).z < .01) if index == 0 else true, label + " front leg never crosses rear")
 		for sample in 12:
 			board.pushing = false
@@ -74,7 +77,7 @@ func run():
 					expected.y += actor._idle_feet[side].y
 					foot = actor.skeleton.to_global(actor.skeleton.get_bone_global_pose(actor._combat_bones[side + "Foot"]).origin)
 				else:
-					expected.y += KIT.ANKLE_HEIGHT * model.scale.y
+					expected.y += model.ankle_height * model.scale.y
 					foot = model.feet[index].global_position
 				check(foot.distance_to(board.visual.to_global(expected)) < .012, "air tuck keeps ankle reachable")
 			check(actor.visual.basis.get_scale().distance_to(Vector3.ONE) < .001, "air pose keeps unit visual scale")

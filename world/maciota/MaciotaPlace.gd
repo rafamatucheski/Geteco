@@ -59,6 +59,11 @@ func _ready() -> void:
 	room.position = interior_origin
 	add_child(room)
 	_retract_lift_arms()
+	# The room exit repeats the exterior gate frame, without a decorative prompt.
+	var access_metal := DETAILS.material("d6b361",.65,.35)
+	for x in [-2.1,2.1]:
+		DETAILS.box(room,"ExitGateJamb",Vector3(x,1.1,4.61),Vector3(.10,2.2,.10),access_metal)
+	DETAILS.box(room,"ExitThreshold",Vector3(0,.015,4.6),Vector3(4.1,.03,.24),DETAILS.material("b9b4a1",.9))
 	DETAILS.build(room)
 	# Legacy external apron existed to fill a projected viewport. Native V2
 	# keeps only the actual room footprint; collision remains independently intact.

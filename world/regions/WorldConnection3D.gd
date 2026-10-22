@@ -342,10 +342,12 @@ func _add_unified_support(kit: UNIFIED_BRIDGE, point: Vector3, side: Vector3, ha
 	kit.add_box("concrete",point+Vector3.DOWN*1.05,cap_size)
 	for sign_value in [-1.0,1.0]:
 		var center: Vector3 = point+side*float(sign_value)*(half_width-1.1)
-		var bottom := HARBOR_OCEAN.surface_y(Vector2(center.x,center.z))-2.5
+		var water_y := HARBOR_OCEAN.surface_y(Vector2(center.x,center.z))
+		var bottom := water_y-5.0
 		var height := -.75-bottom
 		kit.add_box("concrete",Vector3(center.x,bottom+height*.5,center.z),Vector3(1.35,height,1.35),true)
 		kit.add_box("concrete",Vector3(center.x,bottom+.3,center.z),Vector3(2.1,.6,2.1))
+		_pier_foam(Vector3(center.x,water_y,center.z),1.35)
 
 func _build_bridge() -> void:
 	var concrete := _material("bridge_concrete",Color("707b7a"))

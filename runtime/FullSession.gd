@@ -1500,6 +1500,16 @@ func leave_place() -> bool:
 		if is_instance_valid(sewer_hatch):
 			world.player.input_locked = true
 	var continuous_departure: bool = building_entrance != null and building_entrance.handles_place(state.place_id) and building_entrance.walking_departure
+	# Rebuild exterior support before admitting an actor from a remote room.
+	if not continuous_departure:
+		world.player.input_locked = true
+		controller.region.prepare_collision_at(return_point)
+		controller.region.set_focus(return_point)
+		for i in 3: await get_tree().physics_frame
+		if not _owns_transition(token) or room != leaving_room or world.gameplay.health <= 0:
+			_restore_transition_player_lock(was_player_locked,token)
+			_finish_transition(token)
+			return false
 	var leaving_return: Vector3 = world.player.global_position-Vector3.UP*.08 if continuous_departure else _clear_return_point(state.place_id, return_point)
 	if continuous_departure and not position_clear(world.player.global_position): leaving_return = Vector3.INF
 	world.player.input_locked = true

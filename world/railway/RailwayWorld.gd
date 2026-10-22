@@ -415,6 +415,11 @@ func _build_station(station: Dictionary) -> Node3D:
 			# Columns meet the underside, without a coplanar cap on the walking floor.
 			_station_box(origin,side,Vector3(5.75,floor_y*.5-.52,z),Vector3(.6,floor_y+.16,.6),"concrete",true)
 	_build_access(origin,side,floor_y,accent,station.region == "harbor")
+	if station.id == "harbor_north":
+		# A narrow supported landing joins the east sidewalk to the offshore stairs.
+		_station_box(origin,side,Vector3(4.99,-.13,12.0),Vector3(5.75,.26,2.4),"platform",true)
+		for x in [4.0,9.0,12.0]:
+			_station_box(origin,side,Vector3(x,-2.0,12.0),Vector3(.6,4.0,.6),"concrete",true)
 	_flush_batches()
 	var light := OmniLight3D.new()
 	light.position = Vector3(origin.x+side*4.4,floor_y+2.8,origin.z)

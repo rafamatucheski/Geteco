@@ -264,6 +264,7 @@ func drive(delta: float) -> void:
 	junction_wait = gap<35
 	var bend := absf(angle_difference(_front_pose(route_distance).basis.get_euler().y,_front_pose(route_distance+8).basis.get_euler().y))
 	var desired: float = min(7.0,lerpf(7.0,2.4,clampf(bend,0,1)),sqrt(2*2.4*maxf(0,remaining)),sqrt(2*3*maxf(0,gap)))
+	desired *= preload("res://data/catalogs/VehicleSpeedBalance.gd").FACTOR
 	speed = move_toward(speed,desired,delta*(1.5 if speed<desired else 3.0))
 	var step := minf(speed*delta,remaining)
 	if step < .0001: return

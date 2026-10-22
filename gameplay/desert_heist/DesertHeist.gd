@@ -5,7 +5,7 @@ const TRUCK := preload("res://gameplay/desert_heist/DesertHeistTruck.gd")
 const GUARD := preload("res://gameplay/desert_heist/DesertHeistGuard.gd")
 const ART := preload("res://gameplay/desert_heist/DesertCargoTruckVisual.gd")
 const STALL := preload("res://runtime/StallWorkTrace.gd")
-const SPEED := 12.0
+const SPEED := 12.0 * preload("res://data/catalogs/VehicleSpeedBalance.gd").FACTOR
 var session
 var data: Dictionary = {}
 var truck: CharacterBody3D

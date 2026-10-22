@@ -49,8 +49,8 @@ static func resolve(session) -> Dictionary:
 	if result.is_empty() and transit != null and is_instance_valid(transit.urban_service) and is_instance_valid(transit.urban_service.driver_work):
 		var stop: Vector3 = transit.urban_service.driver_work.target_position()
 		if stop.is_finite(): result = destination(stop,"Próxima parada","bus",state.region_id,"Siga para a próxima parada.","work")
-	# A manually selected place is a fallback. It cannot silently replace a mission.
-	if result.is_empty():
-		var waypoint: Vector2 = session.world.get_meta("map_waypoint",Vector2.INF)
-		if waypoint.is_finite(): result = destination(Vector3(waypoint.x,0,waypoint.y),str(session.world.get_meta("map_waypoint_title","Destino marcado")),"waypoint",str(session.world.get_meta("map_waypoint_region",state.region_id)),"","waypoint")
+	# Explicitly marking a place selects the GPS destination. Campaign objectives
+	# and progression stay intact; clearing the pin restores their navigation.
+	var waypoint: Vector2 = session.world.get_meta("map_waypoint",Vector2.INF)
+	if waypoint.is_finite(): result = destination(Vector3(waypoint.x,0,waypoint.y),str(session.world.get_meta("map_waypoint_title","Destino marcado")),"waypoint",str(session.world.get_meta("map_waypoint_region",state.region_id)),"","waypoint")
 	return result

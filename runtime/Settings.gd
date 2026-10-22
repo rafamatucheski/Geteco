@@ -41,6 +41,8 @@ const AUDIO_CHANNELS := {
 const SFX_GAIN_DB := 10.0
 ## Silencia tudo quando a janela perde o foco (alt-tab).
 var mute_unfocused := false
+## Optional controller correction. Mouse aiming is always fully manual.
+var controller_aim_assist := false
 
 ## 0 janela, 1 tela cheia, 2 tela cheia exclusiva.
 var window_mode := 0
@@ -160,6 +162,7 @@ func load_settings(path := "") -> Error:
 		mute_unfocused = bool(config.get_value("audio","mute_unfocused",false))
 		voice_language = str(config.get_value("audio","voice_language","pt_BR"))
 		text_language = str(config.get_value("interface","text_language","pt_BR"))
+		controller_aim_assist = bool(config.get_value("controls","aim_assist",false))
 		# Arquivo antigo só tinha "fullscreen".
 		var legacy_mode := 1 if bool(config.get_value("display","fullscreen",false)) else 0
 		window_mode = clampi(int(config.get_value("display","window_mode",legacy_mode)),0,2)
@@ -390,4 +393,5 @@ func save_settings(path := "") -> Error:
 	config.set_value("controls","gamepad_bindings",get_node("/root/GameInput").export_gamepad_bindings())
 	config.set_value("controls","gamepad_bindings_version",get_node("/root/GameInput").GAMEPAD_BINDINGS_VERSION)
 	config.set_value("controls","controller_layout",get_node("/root/GameInput").controller_layout)
+	config.set_value("controls","aim_assist",controller_aim_assist)
 	return config.save(path)

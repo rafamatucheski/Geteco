@@ -17,7 +17,7 @@ extends RefCounted
 ## (`external_input`) continuam no controle simples da V2, calibrado para a IA.
 const PX := 16.0
 const FRICTION := 600.0
-const REVERSE_SPEED_MPS := 20.0 / 3.6
+const REVERSE_SPEED_MPS := 20.0 / 3.6 * preload("res://data/catalogs/VehicleSpeedBalance.gd").FACTOR
 
 var max_speed := 600.0
 var acceleration := 1200.0
@@ -43,7 +43,7 @@ var launch_force := 1.0
 var wheelspin := 0.0
 
 func configure(spec: Dictionary) -> void:
-	max_speed = float(spec.get("max_speed", 600.0))
+	max_speed = float(spec.get("max_speed", 600.0)) * preload("res://data/catalogs/VehicleSpeedBalance.gd").FACTOR
 	acceleration = float(spec.get("acceleration", 1200.0))
 	braking = float(spec.get("braking", 1500.0))
 	turn_speed = float(spec.get("turn_speed", 3.5))

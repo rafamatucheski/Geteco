@@ -79,7 +79,7 @@ func _entry_option(allow_transition := false) -> Dictionary:
 		if not is_instance_valid(candidate) or not candidate is CharacterBody3D: continue
 		if not candidate.is_visible_in_tree() or candidate.collision_layer == 0 or candidate.has_meta("awaiting_ground"): continue
 		if candidate.health <= 0 or not _speed_allows_entry(candidate): continue
-		var reach := JACK_DOOR_REACH if absf(candidate.speed) > .5 else 1.8
+		var reach := JACK_DOOR_REACH if absf(candidate.speed) > .5 else 2.4
 		# A haul-truck door can be over five metres from its centre. Keep the
 		# broad phase proportional to the hull, then choose by actual door reach;
 		# a nearby car with an inaccessible door must not hide another car's door.
@@ -589,3 +589,26 @@ func _update_mounted_player() -> void:
 	world.player.visual.global_basis = car.visual.global_basis.orthonormalized()
 	world.player.pose_vehicle(1.0, 0.0, -1, 1.0, car.motorcycle_handholds())
 	world.player.show()
+
+## A collision ejects the exposed rider through the same physical fall used by road impacts.
+func motorcycle_crash(candidate: CharacterBody3D, momentum: Vector3) -> void:
+	if not is_instance_valid(candidate) or not candidate.archetype.begins_with("bike_") or candidate.has_meta("rider_ejected"): return
+	if momentum.length() < 5.0: return
+	if candidate == car and occupied:
+		if is_instance_valid(transition): return
+		var point: Vector3 = candidate.driver_seat_anchor() + Vector3.UP * .35
+		_begin_bailout(point, momentum)
+		return
+	if not candidate.traffic and not candidate.get_meta("crash_was_traffic",false): return
+	candidate.set_meta("rider_ejected",true)
+	var rider := _eject_civilian_driver(candidate,-1)
+	candidate.traffic = false
+	candidate.remove_meta("crash_was_traffic")
+	candidate.speed = 0.0
+	candidate.throttle_input = 0.0
+	candidate.brake_input = true
+	for visual in candidate._motorcycle_rider_parts:
+		if is_instance_valid(visual): visual.hide()
+	if not is_instance_valid(rider): return
+	rider.global_position = candidate.driver_seat_anchor() + Vector3.UP * .2
+	preload("res://gameplay/street_physics/BodyFlight3D.gd").launch(rider,momentum,false,preload("res://gameplay/street_physics/StreetPhysics.gd").instance,candidate,true)

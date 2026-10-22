@@ -95,6 +95,7 @@ func _ready()->void:
 		"lamp": _lamp()
 	if String(definition.kind) == "tree":
 		_tree_built = true
+		preload("res://gameplay/street_physics/FragileProps3D.gd").register_node("harbor_tree",self,get_parent(),{},solids.get_children(),.35*float(definition.scale_factor))
 		INSTANCING.schedule_furniture(self, true)
 
 func furniture_tree_ready() -> void:

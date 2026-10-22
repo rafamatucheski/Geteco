@@ -56,7 +56,7 @@ func measure(id: String) -> Dictionary:
 	car.controlled = true
 	for i in 10: await physics_frame
 	var spec: Dictionary = preload("res://runtime/FleetCatalog.gd").spec(id)
-	var result := {"expected_top": float(spec.max_speed) * 0.8 / 16.0}
+	var result := {"expected_top": float(spec.max_speed) * 0.8 * .75 / 16.0}
 	# Aceleração em linha reta.
 	input.touch_move = Vector2(0, -1)
 	var t := 0.0

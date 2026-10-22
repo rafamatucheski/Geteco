@@ -16,7 +16,9 @@ float ground_mountain_weight(vec2 world_xz) {
 }
 
 float ground_hash(vec2 p) {
-	return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+	highp vec3 h = fract(vec3(p.xyx) * 0.1031);
+	h += dot(h, h.yzx + 33.33);
+	return fract((h.x + h.y) * h.z);
 }
 
 // Ruído de valor periódico em `cells` células; `p` já em células.
@@ -130,7 +132,7 @@ vec3 ground_finish_surface(vec3 color, vec2 p, float mid, float d1, float d2, fl
 	// Chão exposto (capim, terra, rocha): seixos escuros e claros, mais densos na rocha.
 	// Só chão descoberto de fato: na neve rala o seixo virava bolinha cinza no branco.
 	float bare = 1.0 - smoothstep(0.25, 0.55, cover);
-	float pebble_lod = 1.0 - smoothstep(0.03, 0.09, footprint);
+	float pebble_lod = 1.0 - smoothstep(0.04, 0.16, footprint);
 	vec2 pebble = ground_pebbles(p, 2.6, mix(0.10, 0.42, max(cliff, smoothstep(0.4, 0.8, d1))), footprint);
 	vec3 stone = pebble.y < 0.6 ? color * vec3(0.55, 0.55, 0.57) : color * vec3(1.18, 1.16, 1.12);
 	color = mix(color, stone, pebble.x * pebble_lod * bare);

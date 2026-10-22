@@ -75,7 +75,7 @@ var _seat_blend := 1.0
 ## montado. Antes ele sumia no fim do passo, ~30 cm abaixo e de mãos soltas, e reaparecia
 ## montado: o salto lia como teletransporte (relato de 13/10).
 var _motorcycle := false
-const BODY_SECONDS := {"car": 1.45, "tall": 1.7, "truck": 2.1}
+const BODY_SECONDS := {"car": 1.15, "tall": 1.4, "truck": 1.8}
 const CLOSE_SECONDS := .28
 ## Do osso da cabeça ao topo do cabelo (medido no Dante: o osso fica na base do crânio).
 const HEAD_TOP := .26

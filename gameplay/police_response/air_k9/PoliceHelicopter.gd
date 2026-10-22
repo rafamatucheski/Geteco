@@ -32,6 +32,8 @@ var recon_only := false
 var _clock := 0.0
 var _mode_time := 0.0
 var _sensor := 0.0
+var _searchlight_point := Vector3.ZERO
+var _searchlight_ready := false
 
 var _next_drop := 0.0
 var _reserved := 4
@@ -65,7 +67,7 @@ func _ready() -> void:
 	spotlight = SpotLight3D.new()
 	spotlight.position = Vector3(0, -0.9, -1.45)
 	spotlight.rotation.x = -PI * 0.5
-	spotlight.spot_range = 35.0
+	spotlight.spot_range = 72.0
 	spotlight.spot_angle = 24.0
 	spotlight.light_energy = 2.3
 	spotlight.light_color = Color("e9e9d7")
@@ -120,6 +122,7 @@ func _physics_process(delta: float) -> void:
 	if _sensor <= 0.0:
 		_sensor = 0.2
 		_sense()
+	_update_searchlight(delta)
 	if dead:
 		velocity.y = maxf(-14.0, velocity.y - delta * 8.0)
 		move_and_slide()
@@ -200,11 +203,20 @@ func _sense() -> void:
 	var point := target.global_position + Vector3.UP
 	sees_player = director.has_line_of_sight(self, point, target, 72.0)
 	if sees_player: gameplay.report_contact(target.global_position)
-	var time := float(gameplay.state.world_state.get("time", 0.5)) if "world_state" in gameplay.state else 0.5
-	spotlight.visible = (time < 0.26 or time > 0.72) and director.point_on_screen(global_position, 35.0)
-	var ground: Vector3 = target.global_position if sees_player else landing_zone.center
-	if spotlight.global_position.distance_squared_to(ground) > 0.1:
-		spotlight.look_at(ground, Vector3.FORWARD)
+	_searchlight_point = target.global_position if sees_player else gameplay.last_known
+	_searchlight_ready = true
+
+func _update_searchlight(delta: float) -> void:
+	spotlight.visible = not dead and mode != "depart" and _searchlight_ready and director.exterior_active() and director.point_on_screen(global_position, 72.0)
+	if not spotlight.visible: return
+	# Track each physics frame, with a small search sweep after losing visual contact.
+	var point := _searchlight_point
+	var target: Node3D = director.gameplay.pursuit_target()
+	if sees_player and is_instance_valid(target): point = target.global_position
+	else: point += Vector3(cos(_clock * .8),0,sin(_clock * .8)) * 3.0
+	if spotlight.global_position.distance_squared_to(point) < .1: return
+	var desired := spotlight.global_transform.looking_at(point, Vector3.FORWARD).basis
+	spotlight.global_basis = spotlight.global_basis.slerp(desired, minf(1.0, delta * 5.0))
 
 func _spawn_rappeller(index: int) -> void:
 	if director.gameplay.stars < 4:

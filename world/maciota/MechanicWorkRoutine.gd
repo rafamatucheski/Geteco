@@ -6,7 +6,8 @@ var phase := 0
 var elapsed := 0.0
 var working := false
 var tool: Node3D
-const POINTS := [Vector3(-2.65,0,-1.1),Vector3(-2.65,0,-2.65)]
+var blocked_time := 0.0
+const POINTS := [Vector3(-2.65,0,-1.1),Vector3(-1.5,0,-1.45),Vector3(-1.5,0,-2.7),Vector3(-1.5,0,-1.45)]
 
 func _ready() -> void:
 	collision_layer = 2
@@ -30,7 +31,7 @@ func _ready() -> void:
 
 func _hands() -> Array:
 	if not working: return [null,null]
-	var stroke := sin(elapsed*5.0)*.045
+	var stroke := sin(elapsed*5.0)*.12
 	return [model.to_global(Vector3(-.18,1.03,.32)),model.to_global(Vector3(.17,1.03+stroke,.40))]
 
 func _physics_process(delta: float) -> void:
@@ -42,16 +43,26 @@ func _physics_process(delta: float) -> void:
 	working = offset.length() < .06
 	velocity = Vector3.ZERO if working else offset.normalized()*.65
 	velocity.y = -1
+	var before := position
 	move_and_slide()
+	if not working and before.distance_to(position) < delta*.08:
+		blocked_time += delta
+		if blocked_time > 2.0:
+			# Yield to a blocked route without pretending to work inside an obstacle.
+			phase = (phase+1)%POINTS.size()
+			blocked_time = 0.0
+			elapsed = 0.0
+	else: blocked_time = 0.0
 	if not working:
 		model.rotation.y = lerp_angle(model.rotation.y,atan2(offset.x,offset.z),minf(delta*6,1))
 		elapsed = 0
 	else:
 		model.rotation.y = lerp_angle(model.rotation.y,PI,minf(delta*6,1))
-		if elapsed > (7.0 if phase == 1 else 4.0):
-			phase = 1-phase
+		if elapsed > (7.0 if phase == 2 else .25 if phase in [1,3] else 4.0):
+			phase = (phase+1)%POINTS.size()
+			blocked_time = 0.0
 			elapsed = 0
 	tool.visible = working
-	tool.position = Vector3(.17,1.03+sin(elapsed*5)*.045,.40)
+	tool.position = Vector3(.17,1.03+sin(elapsed*5)*.12,.40)
 	tool.rotation.x = sin(elapsed*5)*.2
 	place.interaction_points["mechanic"] = global_position + Vector3(0,0,.8)

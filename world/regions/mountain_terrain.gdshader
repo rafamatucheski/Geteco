@@ -35,7 +35,7 @@ void fragment() {
 	float mid = ground_fbm(p + 91.0, 8.0);
 	float fine = ground_fine(local_xz);
 	// Fine grain fades with footprint instead of sparkling at gameplay zoom.
-	float detail = 1.0 - smoothstep(0.04, 0.22, max(length(dFdx(local_xz)), length(dFdy(local_xz))));
+	float detail = 1.0 - smoothstep(0.06, 0.34, max(length(dFdx(local_xz)), length(dFdy(local_xz))));
 	float d1 = ground_noise(local_xz * 3.0, 192.0);
 	float d2 = ground_noise(local_xz * 8.0, 512.0);
 	float slope = 1.0 - clamp(world_normal.y, 0.0, 1.0);

@@ -5,6 +5,7 @@ const STYLE := preload("res://ui/GameStyle.gd")
 const ART := preload("res://ui/hud/Cartography.gd")
 const DATA := preload("res://ui/hud/WorldMapData.gd")
 const SYMBOLS := preload("res://ui/hud/MapSymbols.gd")
+const NAVIGATION := preload("res://ui/v1/NavigationRoute.gd")
 const INK := Color("11171b")
 const GOLD := Color("d9ae62")
 class Canvas extends Control:
@@ -74,6 +75,9 @@ var _sea: ColorRect
 var _sea_center := Vector2.INF
 var _sea_scale := 0.0
 var _sea_size := Vector2.ZERO
+var navigation := NAVIGATION.new()
+var route_points := PackedVector2Array()
+var _route_clock := 0.0
 
 static func _surface(fill := INK, border := Color("41484b"), padding := Vector2(14,10)) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
@@ -109,7 +113,7 @@ func _ready() -> void:
 	_header=Panel.new(); _header.add_theme_stylebox_override("panel",_surface()); add_child(_header)
 	_brand=STYLE.label("Harbor",20); _header.add_child(_brand)
 	_map_title=STYLE.label("Mapa",20,STYLE.MUTED); _header.add_child(_map_title)
-	_tab_row=HBoxContainer.new(); _tab_row.add_theme_constant_override("separation",0); _header.add_child(_tab_row)
+	_tab_row=HBoxContainer.new(); _tab_row.add_theme_constant_override("separation",0); add_child(_tab_row)
 	for id in ["harbor","mountain","desert","world"]:
 		var title: String={"world":"Mundo","harbor":"Cidade","mountain":"Montanha","desert":"Deserto"}[id]
 		_tabs[id]=_button(_tab_row,title,focus_region.bind(id))
@@ -155,6 +159,7 @@ func _ready() -> void:
 	_update_hints(); _layout(); _restore_view(); center=target_center; zoom=target_zoom
 	PRESENTATION.typography(self)
 	_refresh_tabs(); _refresh_focus(); _redraw(); canvas.grab_focus.call_deferred()
+	_update_route()
 
 func _button(parent: Node, text: String, callback: Callable) -> Button:
 	var button := Button.new(); button.text=text; button.custom_minimum_size=Vector2(42,42)
@@ -242,18 +247,17 @@ func _cache_city_label() -> void:
 func _layout() -> void:
 	if not is_instance_valid(canvas): return
 	var narrow := size.x<900
-	var stacked := size.x<640
 	# Development overlays are always above modal UI. Keep their dedicated line
 	# clear so the build identifier and optional frame counter remain readable.
 	_top_safe=22.0 if has_node("/root/BuildWatermark") else 0.0
-	_header.position=Vector2.ZERO; _header.size=Vector2(size.x,(106 if stacked else 58)+_top_safe)
+	_header.position=Vector2.ZERO; _header.size=Vector2(size.x,58+_top_safe)
 	_brand.position=Vector2(24,12+_top_safe); _map_title.position=Vector2(150,19+_top_safe); _map_title.visible=not narrow
-	_tab_row.position=(Vector2(12,58) if stacked else Vector2(142 if narrow else 234,0))+Vector2(0,_top_safe)
-	for tab in _tabs.values(): tab.custom_minimum_size=Vector2(80 if narrow else 96,48 if stacked else 58)
+	for tab in _tabs.values(): tab.custom_minimum_size=Vector2(80 if narrow else 108,42)
+	_tab_row.position=Vector2(maxf(12,(size.x-(320 if narrow else 432))*.5),size.y-94)
 	_position_close()
 	_footer.position=Vector2(0,size.y-46); _footer.size=Vector2(size.x,46)
 	_clear_button.custom_minimum_size=Vector2(140,34); _position_clear()
-	_area.position=Vector2(0,_header.size.y); _area.size=Vector2(maxf(200,size.x),maxf(150,size.y-_header.size.y-46))
+	_area.position=Vector2(0,_header.size.y); _area.size=Vector2(maxf(200,size.x),maxf(150,size.y-_header.size.y-100))
 	_filter_button.position=Vector2(24,20)
 	_zoom_controls.position=Vector2(_area.size.x-66,20)
 	_legend.position=_area.position+Vector2(24,70)
@@ -264,7 +268,7 @@ func _layout() -> void:
 	_selection_icon.visible=size.x>=640
 	_selection_text.custom_minimum_size.x=100 if size.x<640 else 148
 	marker_title.add_theme_font_size_override("font_size",20)
-	sidebar.position=Vector2(24,_footer.position.y-maxf(76,sidebar.size.y)-20)
+	sidebar.position=Vector2(24,_area.position.y+_area.size.y-maxf(76,sidebar.size.y)-16)
 	_hints.size.x=maxf(40,size.x-(188 if _clear_button.visible else 48))
 	_hints.clip_text=true
 	_base_zoom=minf(maxf(100,_area.size.x-60)/maxf(1,_bounds.size.x),maxf(100,_area.size.y-60)/maxf(1,_bounds.size.y))
@@ -489,7 +493,7 @@ func select_marker(index: int) -> void:
 	_position_selection.call_deferred()
 
 func _position_selection() -> void:
-	if is_instance_valid(sidebar): sidebar.position.y=_footer.position.y-maxf(76,sidebar.size.y)-20
+	if is_instance_valid(sidebar): sidebar.position.y=_area.position.y+_area.size.y-maxf(76,sidebar.size.y)-16
 
 func _fit_selection() -> void:
 	# Word wrapping settles after the HBox assigns the final text width. Shrink
@@ -508,14 +512,17 @@ func _mark_selected() -> void:
 func _set_waypoint(point: Vector2, title := "Destino marcado", region := "") -> void:
 	_waypoint=point
 	if controller.world is Node:
+		if region.is_empty() or region=="world": region=_point_region(point)
 		controller.world.set_meta("map_waypoint",point)
 		controller.world.set_meta("map_waypoint_title",title)
 		controller.world.set_meta("map_waypoint_region",region if not region.is_empty() else _region)
+	_update_route()
 	_clear_button.show(); _layout(); _refresh_focus(); canvas.queue_redraw()
 func _clear_waypoint() -> void:
 	_waypoint=Vector2.INF
 	if controller.world is Node:
 		for key in ["map_waypoint","map_waypoint_title","map_waypoint_region"]: controller.world.remove_meta(key)
+	_update_route()
 	_clear_button.hide(); _layout(); _refresh_focus(); canvas.queue_redraw()
 func _set_filter(kind: String) -> void:
 	_filter="" if _filter==kind else kind
@@ -531,6 +538,10 @@ func _set_filter(kind: String) -> void:
 
 func _process(delta: float) -> void:
 	if not is_visible_in_tree(): return
+	_route_clock+=delta
+	if _route_clock>=.75:
+		_route_clock=0.0
+		_update_route()
 	var controls := get_node("/root/GameInput")
 	if controls.using_gamepad:
 		var motion: Vector2=controls.movement()
@@ -574,6 +585,11 @@ func draw_geography(target: CanvasItem) -> void:
 
 func draw_map(target: Control) -> void:
 	_drawn_markers.clear()
+	if route_points.size()>1:
+		var projected := PackedVector2Array()
+		for point in route_points: projected.append(project(point))
+		target.draw_polyline(projected,INK,7,true)
+		target.draw_polyline(projected,GOLD,3.5,true)
 	if _region=="world": _draw_region_labels(target)
 	var occupied: Array[Vector2]=[]
 	var order: Array[int]=[]
@@ -602,6 +618,36 @@ func draw_map(target: Control) -> void:
 	target.draw_string(PRESENTATION.font(),compass-Vector2(5,20),"N",HORIZONTAL_ALIGNMENT_LEFT,-1,20,STYLE.TEXT)
 	target.draw_colored_polygon(PackedVector2Array([compass+Vector2(0,-8),compass+Vector2(-6,8),compass+Vector2(0,4),compass+Vector2(6,8)]),STYLE.TEXT)
 	_draw_scale(target)
+
+func _point_region(point: Vector2) -> String:
+	var best := INF
+	var result := str(controller.state.region_id)
+	for road in atlas.roads:
+		if road.surface in ["railway","cable","ski"]: continue
+		for i in road.points.size()-1:
+			var closest := Geometry2D.get_closest_point_to_segment(point,road.points[i],road.points[i+1])
+			var distance := closest.distance_squared_to(point)
+			if distance<best:
+				best=distance; result=road.region
+	return result
+
+func _update_route() -> void:
+	if controller==null or not controller.world is Node: return
+	var world: Node=controller.world
+	var destination: Dictionary=controller.session.navigation_destination()
+	if destination.is_empty():
+		navigation.clear(); route_points.clear(); canvas.queue_redraw(); return
+	var source := NAVIGATION.source(world.production)
+	var actor: Node3D=world.driving.car if world.driving.occupied else world.player
+	var start := actor.global_position
+	if not str(controller.state.place_id).is_empty():
+		var exterior := _actor_point()
+		start=NAVIGATION.goal_on_surface(source.routes,exterior)
+	var point := DATA.planar(destination.point)
+	var goal := NAVIGATION.goal_on_surface(source.routes,point)
+	if navigation.update(source.routes,source.revision,start,goal,world.driving.occupied,-actor.global_basis.z):
+		route_points=navigation.points.duplicate()
+		canvas.queue_redraw()
 
 func _draw_symbol(target: CanvasItem, point: Vector2, kind: String, radius: float, selected := false) -> void:
 	target.draw_circle(point+Vector2(0,2),radius+2,Color(0,0,0,.38),true,-1,true)

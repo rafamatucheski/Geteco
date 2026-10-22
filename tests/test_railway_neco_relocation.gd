@@ -20,6 +20,11 @@ func run() -> void:
 		check(NETWORK.restore_harbor_pedestrian(old_point).is_equal_approx(station.entry),"Old elevated station save migrates safely: "+str(old_point))
 	for unrelated in [Vector3(157,.12,79),Vector3(149.4,.12,67),Vector3(155,12.95,44),Vector3(149,5,67),Vector3(386,12.95,-179)]:
 		check(NETWORK.restore_harbor_pedestrian(unrelated).is_equal_approx(unrelated),"Unrelated ground/roof/station save remains untouched: "+str(unrelated))
+	var north := NETWORK.get_station("harbor_north")
+	check(north.entry.x > 388.125,"Northgate staircase is east of the highway over water")
+	check(NETWORK.restore_harbor_pedestrian(Vector3(381.6,12.95,-194)).is_equal_approx(north.entry),"Old north median platform save migrates to offshore entrance")
+	check(NETWORK.restore_harbor_pedestrian(Vector3(374,2.258333,-188)).is_equal_approx(north.entry),"Old north stairs migrate to supported offshore entrance")
+	check(NETWORK.restore_harbor_pedestrian(north.arrival).is_equal_approx(north.arrival),"New offshore platform save preserves exact position")
 	var points := NETWORK.approach_path("harbor_central")
 	check(points[0].is_equal_approx(station.entry) and points[-1].is_equal_approx(station.arrival),"Access uses relocated persistent entry and platform")
 	var yard := Rect2(-62.875,22.875,32,23).grow(1)

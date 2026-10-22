@@ -14,6 +14,11 @@ func _ready() -> void:
  box("",Vector3(-2,3.8,front-.5),Vector3(6,1.2,1.0),"536368")
  box("",Vector3(-2,4.45,center_z),Vector3(w+.3,.18,d+.3),"34464e")
  box("",Vector3(-2,2.8,front-.85),Vector3(5.9,.08,.08),"dfb550")
+ # Recessed open gate, metal jambs and a flush threshold make the access legible.
+ box("",Vector3(-2,1.55,front-.48),Vector3(5.95,3.1,.035),"172226")
+ for x in [-4.98,.98]:
+  box("GateJamb",Vector3(x,1.55,front+.015),Vector3(.10,3.1,.10),"d6b361")
+ box("GateThreshold",Vector3(-2,.015,front+.08),Vector3(5.9,.03,.28),"b9b4a1")
  for x in [-5.45, 1.45]:
   box("",Vector3(x,3.0,front+.06),Vector3(.32,.5,.12),"e6c881")
  # A matching low annex replaces the tall residential neighbour. It belongs

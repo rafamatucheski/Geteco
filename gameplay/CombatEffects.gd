@@ -98,7 +98,7 @@ func _ready() -> void:
 	# Faísca alongada no eixo Y e alinhada à velocidade (`particle_flag_align_y`):
 	# a caixa de 5 cm girando solta parecia confete, não risco de faísca.
 	_spark_mesh = BoxMesh.new()
-	_spark_mesh.size = Vector3(0.012, 0.075, 0.012)
+	_spark_mesh.size = Vector3(0.022, 0.16, 0.022)
 	_spark_mesh.material = streak
 	var chip_material := StandardMaterial3D.new()
 	chip_material.vertex_color_use_as_albedo = true
@@ -448,7 +448,14 @@ func impact(point: Vector3, normal: Vector3, material: String, damage: float) ->
 	emitter.color = _contact_color(material)
 	emitter.initial_velocity_max = (1.3 if soft else 3.4) * clampf(0.7 + damage / 55.0, 0.7, 1.8)
 	emitter.initial_velocity_min = 0.4 if soft else 1.5
-	_fire(emitter, point, normal)
+	_fire(emitter, point + normal * 0.035, normal)
+	# Hard objects throw hot fragments as well as their surface chips. Fixed pool.
+	if not soft and material not in ["metal", "flesh", "glass"]:
+		var sparks := _take("impact_metal", _impact.metal)
+		sparks.mesh = _spark_mesh
+		sparks.particle_flag_align_y = true
+		sparks.color = IMPACT_COLORS.metal
+		_fire(sparks, point + normal * 0.035, normal)
 	if material not in ["metal", "glass", "flesh"]:
 		var dust := _take("dust", _impact_dust)
 		var color := _contact_color(material)

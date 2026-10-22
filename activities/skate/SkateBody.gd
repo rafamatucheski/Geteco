@@ -113,7 +113,8 @@ func _physics_process(delta: float) -> void:
 	var opposing := _throttle * speed < -.1 and not (pushing and absf(speed) < .6 and signf(_throttle) == push_direction)
 	# Finish the stroke even when the AI reaches cruising speed mid-remada.
 	# Braking, takeoff and collisions still release contact immediately.
-	var wants_push := grounded and absf(_throttle) > .1 and not _brake and not opposing
+	var cruise_speed := 8.5 * absf(_throttle) if _throttle > 0 else 3.0 * absf(_throttle)
+	var wants_push := grounded and absf(_throttle) > .1 and not _brake and not opposing and absf(speed) < cruise_speed * .92
 	if not grounded or _brake or opposing:
 		pushing = false
 		push_contact = false

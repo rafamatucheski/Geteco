@@ -932,12 +932,12 @@ func _material(color: Color) -> StandardMaterial3D:
 func _tree_collision(tree: Node3D, chunk: Node3D) -> void:
 	var trunk := _box(tree,"TrunkSolid",Vector3(0,1.4,0),Vector3(.4,2.8,.4),Color("00000000"),true)
 	trunk.visible = false
-	if region_id == "mountain":
+	if region_id in ["mountain","harbor"]:
 		# Keep only the physical trunk: its hidden proxy must not become a visible shard.
 		trunk.get_child(0).reparent(tree)
 		trunk.free()
 		var radius := .4 * maxf(tree.global_basis.x.length(),tree.global_basis.z.length())
-		preload("res://gameplay/street_physics/FragileProps3D.gd").register_node("desert_tree",tree,chunk,{},[],radius)
+		preload("res://gameplay/street_physics/FragileProps3D.gd").register_node("harbor_tree" if region_id == "harbor" else "desert_tree",tree,chunk,{},[],radius)
 
 ## Chão base do porto: colisão em caixa de 0,3 m como antes; o visual é o topo só onde nenhum piso de cima
 ## (`cover`) cobre, mais as quatro laterais (a margem com o mar continua igual).
@@ -1564,7 +1564,8 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 			aircraft.position = record.position
 			chunk.add_child(aircraft)
 		"tree":
-			var tree = preload("res://world/regions/NativePine.gd").create(record.variant,record.snow)
+			var variant: int = [0,1,2,6,7][int(record.variant) % 5] if region_id == "mountain" else int(record.variant)
+			var tree = preload("res://world/regions/NativePine.gd").create(variant,record.snow)
 			tree.position = record.position
 			if terrain != null: tree.position.y = terrain.surface_height_at(Vector2(tree.position.x,tree.position.z))
 			chunk.add_child(tree)

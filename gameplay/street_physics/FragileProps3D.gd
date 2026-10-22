@@ -33,6 +33,7 @@ const KINDS := {
 	"barrel": {"family": "light", "radius": 0.37, "drag": 0.04, "damage": 1.0, "sound": "metal"},
 	"pallet": {"family": "light", "radius": 1.2, "drag": 0.05, "damage": 1.0, "sound": "wood"},
 	"desert_rock": {"family": "light", "radius": 1.1, "drag": 0.20, "damage": 7.0, "sound": "stone"},
+	"harbor_tree": {"family": "post", "radius": 0.4, "drag": 0.18, "damage": 5.0, "sound": "wood", "fall_speed": 3.0, "anchored": true},
 	"desert_tree": {"family": "light", "radius": 0.4, "drag": 0.10, "damage": 3.0, "sound": "wood"},
 	# Chão povoado do deserto (DesertGroundCover): moita grande e pedra solta.
 	"desert_shrub": {"family": "light", "radius": 0.55, "drag": 0.04, "damage": 0.0, "sound": "wood"},
@@ -261,7 +262,7 @@ static func _topple(item: Dictionary, flat: Vector3, director: Node) -> void:
 	tween.set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
 	var rotate := func(a: float): _set_transform(item, Transform3D(Basis(axis, a) * base.basis, base.origin))
 	tween.tween_method(rotate, 0.0, PI * 0.49, 0.7).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tween.tween_callback(func(): director.play_prop_hit(base.origin + flat * 2.5, "metal", 3.0))
+	tween.tween_callback(func(): director.play_prop_hit(base.origin + flat * 2.5, str(spec(item).sound), 3.0))
 	tween.tween_method(rotate, PI * 0.49, PI * 0.46, 0.08)
 	tween.tween_method(rotate, PI * 0.46, PI * 0.49, 0.12)
 	if item.kind == "phone_booth": director.spawn_glass(base.origin + Vector3.UP, flat)

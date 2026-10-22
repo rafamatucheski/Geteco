@@ -15,7 +15,7 @@ const SIM_SECONDS := 60.0
 const EXCLUDED := ["american_dump_truck","american_tanker_truck","boxrunner","cargo_flatbed_truck",
 	"courier_van","dock_delivery_van","medic_box","polar_van","police_cruiser","police_suv","police_transport",
 	"port_forklift","rescue_pumper","route_city","snow_plow_truck","towmaster","army_tank",
-	"bike_cruiser","bike_sport","bike_urban","bike_police"]
+	"bike_cruiser","bike_sport","bike_urban","bike_police","bike_snow"]
 const CLASSES := [["S",85.0],["A",70.0],["B",55.0],["C",40.0],["D",0.0]]
 static var _cache := {}
 
@@ -49,7 +49,7 @@ static func measure(id: String, parts: Dictionary = {}) -> Dictionary:
 
 static func _run_linear(spec: Dictionary) -> Dictionary:
 	# Mesmas contas de Vehicle.gd: aceleração constante até o teto de velocidade.
-	var vmax := clampf(float(spec.max_speed)/16.0,5.0,45.0)
+	var vmax := clampf(float(spec.max_speed)/16.0,5.0,45.0) * preload("res://data/catalogs/VehicleSpeedBalance.gd").FACTOR
 	var a := clampf(float(spec.acceleration)/160.0,2.0,10.0)
 	var quarter: float
 	if vmax*vmax/(2.0*a) >= QUARTER_KM: quarter = sqrt(2.0*QUARTER_KM/a)
@@ -60,7 +60,7 @@ static func _run_linear(spec: Dictionary) -> Dictionary:
 static func _run_motor(id: String, parts: Dictionary) -> Dictionary:
 	var d = DRIVETRAIN.new()
 	d.configure(id,parts)
-	var cap := float(d.spec.street_cap_mps)
+	var cap := float(d.spec.street_cap_mps) * preload("res://data/catalogs/VehicleSpeedBalance.gd").FACTOR
 	d.stage(5.0,.5)
 	d.launch()
 	var t := 0.0

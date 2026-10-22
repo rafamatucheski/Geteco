@@ -16,6 +16,7 @@ signal gave_up(reason: String)
 signal overtake_state_changed(state: String, reason: String)
 signal overtake_unresolved_changed(unresolved: bool, reason: String)
 
+const SPEED_FACTOR := preload("res://data/catalogs/VehicleSpeedBalance.gd").FACTOR
 const WHEELBASE := 2.5
 const MAX_STEER := 0.48
 const BRAKE_DECELERATION := 7.0
@@ -30,7 +31,7 @@ const BLOCK_PATIENCE := 3.0
 
 var vehicle: CharacterBody3D
 var route: Curve3D
-var speed_cap := 14.7
+var speed_cap := 14.7 * SPEED_FACTOR
 var stall_seconds := 2.0
 var holding := false
 var offset := 0.0
@@ -73,7 +74,7 @@ var _base_max_speed := -1.0
 
 func setup(p_vehicle: CharacterBody3D, p_speed_cap: float, p_stall_seconds: float) -> void:
 	vehicle = p_vehicle
-	speed_cap = p_speed_cap
+	speed_cap = p_speed_cap * SPEED_FACTOR
 	stall_seconds = p_stall_seconds
 	vehicle.traffic = false
 	vehicle.set_external_driver(true)
@@ -87,10 +88,10 @@ func setup(p_vehicle: CharacterBody3D, p_speed_cap: float, p_stall_seconds: floa
 func set_boost(value: float) -> void:
 	if not is_instance_valid(vehicle) or _base_acceleration < 0.0: return
 	value = maxf(1.0, value)
-	if is_equal_approx(value, boost) and vehicle.max_forward_speed >= minf(speed_cap * value, 45.0) - 0.01: return
+	if is_equal_approx(value, boost) and vehicle.max_forward_speed >= minf(speed_cap * value, 45.0 * SPEED_FACTOR) - 0.01: return
 	boost = value
 	vehicle.drive_acceleration = _base_acceleration * value
-	vehicle.max_forward_speed = maxf(_base_max_speed, minf(speed_cap * value, 45.0))
+	vehicle.max_forward_speed = maxf(_base_max_speed, minf(speed_cap * value, 45.0 * SPEED_FACTOR))
 
 ## Perseguição de um carro: rota aberta e o alvo fora do sensor. Desligar também solta o guiamento.
 func set_pursuit(active: bool, target: CollisionObject3D = null) -> void:
@@ -278,7 +279,7 @@ func _stall_tick(delta: float) -> void:
 	leg.y = 0.0
 	if leg.length_squared() > 0.25:
 		bend = absf(to_target.normalized().signed_angle_to(leg.normalized(), Vector3.UP))
-	var desired := lerpf(speed_cap, 4.0, clampf(bend / 0.9, 0.0, 1.0))
+	var desired := lerpf(speed_cap, 4.0 * SPEED_FACTOR, clampf(bend / 0.9, 0.0, 1.0))
 	# Perseguição: a curva limita pela curvatura medida à frente (v = √(a·R)), não pelo piso de 4 m/s.
 	if curvature_limit: desired = minf(speed_cap * boost, _corner_cap)
 	# Frenagem até o fim da rota: v² = 2·a·d, com folga de 0,8 m. Com rota aberta a unidade

@@ -99,7 +99,11 @@ static func _furniture_eligible(source: MeshInstance3D, owner: Node3D, chunk: No
 	while current != null and current != chunk:
 		if current is CharacterBody3D or current is RigidBody3D or current is AnimatableBody3D: return false
 		if current != owner and current.get_script() != null: return false
-		if current.has_meta("street_fragile_registered") or not str(current.get_meta("place_id", "")).is_empty(): return false
+		if current.has_meta("street_fragile_registered"):
+			# A tree restores its own MultiMesh parts on the first impact transform.
+			var fragile: Dictionary = current.get_meta("street_fragile_item",{})
+			if current != owner or fragile.get("kind","") != "harbor_tree": return false
+		if not str(current.get_meta("place_id", "")).is_empty(): return false
 		for group in ["exterior_reveal_building", "v2_walkin_facade", "harbor_building_facade", "canal_tunnel"]:
 			if current.is_in_group(group): return false
 		var label := str(current.name).to_lower()

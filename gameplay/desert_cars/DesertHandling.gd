@@ -54,7 +54,7 @@ func step(car: CharacterBody3D, delta: float, throttle: float, turn: float, hand
 	elif drive.rpm < drive.redline*.35 and drive.gear > 1: drive.shift_down()
 	var boost := Input.is_physical_key_pressed(KEY_SHIFT) or Input.is_joy_button_pressed(0,JOY_BUTTON_A)
 	# Limitador de rua: tira a força nos últimos 8% e não deixa passar do teto.
-	var cap := float(drive.spec.street_cap_mps)
+	var cap := float(drive.spec.street_cap_mps) * preload("res://data/catalogs/VehicleSpeedBalance.gd").FACTOR
 	drive.step(delta,throttle*clampf((cap-drive.speed_mps)/(cap*.08),0.0,1.0),boost,1.0 if handbrake else 0.0)
 	# Use the driver's pedal, not the limiter's reduced throttle. Rolling/air
 	# resistance alone lets street cars coast almost indefinitely. Keep this

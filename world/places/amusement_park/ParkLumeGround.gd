@@ -72,6 +72,19 @@ static func _finish_parts(streams: Dictionary,kind: String,polygon: PackedVector
 	for part in CLIP.uncovered(polygon,masks): _polygon(streams,kind,part)
 
 static func build(park: Node3D) -> void:
+	# The fairground owns its foundation independently of editable city ground.
+	# A removed underlying tile must not leave the rides over water or empty space.
+	var foundation := MeshInstance3D.new()
+	foundation.name = "ParkFoundation"
+	var foundation_faces := _faces(LAYOUT.outline(),-.035)
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for i in range(0,foundation_faces.size(),3):
+		_triangle(surface,PackedVector3Array([foundation_faces[i],foundation_faces[i+1],foundation_faces[i+2]]))
+	foundation.mesh = surface.commit()
+	foundation.material_override = _material("mineral")
+	park.add_child(foundation)
+	foundation.create_trimesh_collision()
 	var streams := {}
 	var outline := LAYOUT.outline()
 	var inner: PackedVector2Array = Geometry2D.offset_polygon(outline,-.34,Geometry2D.JOIN_MITER)[0]

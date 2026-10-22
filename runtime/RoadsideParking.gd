@@ -9,7 +9,7 @@ const MAX_CARS := 6
 const MAX_PEOPLE := 4
 const ACTIVE_RADIUS := 112.0
 const RETIRE_RADIUS := 135.0
-const CITY_MODELS := ["metro_hatch", "union_sedan", "sedan_classic", "station_wagon", "ranch_pickup", "ranch_single", "besouro_1300", "mare_microvan", "toco_minitruck"]
+const CITY_MODELS := ["metro_hatch", "union_sedan", "sedan_classic", "station_wagon", "ranch_pickup", "ranch_single", "atlas_crew_pickup", "sertao_trail_pickup", "lumber_pickup_4x4", "besouro_1300", "mare_microvan", "toco_minitruck"]
 const MOUNTAIN_MODELS := ["arctic_jeep", "desert_jeep_4x4", "summit_suv", "winter_suv_heavy"]
 const SPECIAL_MODELS := ["muscle_classic", "sport_coupe", "aurora_executive"]
 var world: Node3D
@@ -147,6 +147,8 @@ func _spawn_parked(record: Dictionary) -> bool:
 		last_spawn_failure = {"reason":"backoff","seconds":seconds,"next_visit":record.next_visit}
 		return false
 	var point: Vector3 = record.slot.position + Vector3.UP * .10
+	if record.site.region == "mountain" and point.z < (-1350.0-4960.0)/16.0 and str(record.slot.id).ends_with("_0"):
+		record.profile.model = "bike_snow"
 	if _car_count() >= MAX_CARS:
 		last_spawn_failure = {"reason":"population_cap","cars":_car_count()}
 		_defer_spawn(record)
