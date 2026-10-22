@@ -82,6 +82,7 @@ const ROAD_EVENT_CUES := [
 ]
 
 const AUTOPILOT := preload("res://runtime/BenchmarkAutopilot.gd")
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const RUNOVER_SECONDS := 1.5
 const RUNOVER_POOL := 6
 
@@ -207,6 +208,10 @@ func _run() -> void:
 	# Do início do processo até jogável e visível (carregamento, pré-aquecimentos e
 	# filme pulado pela espera acima): mede o custo de loading na mesma rodada.
 	var playable_ms := stable_since
+	# De novo aqui (22/10): a bancada nasce antes de a cortina sair, e o LoadingTurbo devolve o teto do
+	# jogador (144) no lift; no A/B o lado "depois" mediu com teto e o p50 do deserto ficou preso em 6,96 ms.
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+	Engine.max_fps = 0
 	var weather: Variant = world.session.weather
 	weather.time_of_day = bench_hour / 24.0
 	if "weather_state" in weather: weather.weather_state = bench_rain
@@ -255,22 +260,41 @@ func _run() -> void:
 	var draws: Array[float] = []
 	var previous := Time.get_ticks_usec()
 	var measured_clock := 0.0
+	# Intervalo entre desenhos (22/10): o tempo do laço abaixo é medido no retorno do await, e corrotinas
+	# que esperam process_frame (fusões por trecho, fila de vídeo) mudam de lugar dentro do quadro e
+	# empurram trabalho de um intervalo para o seguinte. Na 1ª rodada a bancada viu 6 quadros > 33 ms nos
+	# sobrados e o registro da sessão, 2. frame_post_draw marca o fim de cada desenho: é o que vai à tela.
+	var present_stamps: Array[int] = []
+	var measuring_present := [false]
+	var on_present := func() -> void:
+		if measuring_present[0]: present_stamps.append(Time.get_ticks_usec())
+	RenderingServer.frame_post_draw.connect(on_present)
 	while _keep_measuring(distance, total, measured_clock):
 		var sample := _route_point(distance)
 		if autopilot == null:
 			car.global_position = sample.point + Vector3.UP * .1
 			car.rotation = Vector3(0, sample.yaw, 0)
 		world.player.global_position = sample.point if autopilot == null else car.global_position
+		var chaos_span := STALL_WORK.begin()
 		if chaos_stars > 0: _sustain_chaos(sample.point)
+		STALL_WORK.finish_slow("bench.chaos", chaos_span, 2000)
 		if route_name == "carga_deserto" and distance >= total * WARMUP_LOOPS: _observe_cargo()
 		if road_events and distance >= total * WARMUP_LOOPS: _road_events(distance, total)
 		if runover and distance >= total * WARMUP_LOOPS: _runover(sample.point, sample.yaw)
 		if distance >= total * WARMUP_LOOPS:
 			var heading: float = sample.yaw if autopilot == null else car.rotation.y
 			var at: Vector3 = sample.point if autopilot == null else car.global_position
+			# Spans (22/10): este laço roda no sinal process_frame, antes de qualquer _process; o custo de tiro,
+			# troca de arma e explosão (caminhos do jogo) aparece aqui com nome.
+			var bench_span := STALL_WORK.begin()
 			if weapon_cycle > 0.0: _cycle_weapon(measured_clock)
+			STALL_WORK.finish_slow("bench.weapon_cycle", bench_span, 2000)
+			bench_span = STALL_WORK.begin()
 			if shoot: _shoot(at, heading)
+			STALL_WORK.finish_slow("bench.shoot", bench_span, 2000)
+			bench_span = STALL_WORK.begin()
 			if explode_every > 0.0: _explode_near(at, heading, measured_clock)
+			STALL_WORK.finish_slow("bench.explode", bench_span, 2000)
 		await get_tree().process_frame
 		var now := Time.get_ticks_usec()
 		var frame_ms := (now - previous) / 1000.0
@@ -278,6 +302,7 @@ func _run() -> void:
 		if autopilot != null: distance = autopilot.drive(minf(frame_ms, 100.0) / 1000.0)
 		else: distance += speed * minf(frame_ms, 100.0) / 1000.0
 		if distance < total * WARMUP_LOOPS: continue
+		measuring_present[0] = true
 		measured_clock += frame_ms / 1000.0
 		frames.append(frame_ms)
 		gpu.append(RenderingServer.viewport_get_measured_render_time_gpu(viewport))
@@ -288,6 +313,10 @@ func _run() -> void:
 				_save_clock = 0.0
 				_probe_save()
 	if autopilot != null: autopilot.finish()
+	measuring_present[0] = false
+	RenderingServer.frame_post_draw.disconnect(on_present)
+	var present: Array[float] = []
+	for index in range(1, present_stamps.size()): present.append((present_stamps[index] - present_stamps[index - 1]) / 1000.0)
 	var toggles := {}
 	for name in TOGGLES: toggles[name] = OS.get_environment(name)
 	var measured_ms := 0.0
@@ -314,6 +343,10 @@ func _run() -> void:
 		first_clock += frame_ms
 	report.first_60s = _stats(first_minute)
 	report.first_60s_over_33ms = first_minute.filter(func(ms): return ms > 33.3).size()
+	report.present_ms = _stats(present)
+	report.present_over_33ms = present.filter(func(ms): return ms > 33.3).size()
+	report.present_over_16_7ms = present.filter(func(ms): return ms > 16.7).size()
+	report.present_samples_ms = present
 	report.cold_start = cold
 	report.speed_mps = speed
 	if shoot or explode_every > 0.0 or "--benchmark-stress" in OS.get_cmdline_user_args():
@@ -485,7 +518,6 @@ func _explode_near(point: Vector3, yaw: float, measured_clock: float) -> void:
 ## Salvamento automático real, desviado para um arquivo da bancada: --no-save desliga a gravação no
 ## controlador, então liga só durante a chamada e devolve o caminho e o estado logo depois.
 func _probe_save() -> void:
-	const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 	var controller: Object = world.session.controller
 	var store: Object = controller.store
 	var was_no_save: bool = controller.no_save

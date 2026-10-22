@@ -47,7 +47,8 @@ static func end(label: String, began: int, detail: Dictionary = {}) -> void:
 	if began == 0: return
 	var elapsed := Time.get_ticks_usec() - began
 	# O buffer perf_costs pode saturar antes da poda; manter picos no canal por quadro.
-	if elapsed >= 20000: STALL_WORK.finish_slow("dispatch." + label, began, 20000)
+	# Desde 22/10 a partir de 2 ms: no estresse havia quadros de 17 ms de despacho sem trecho nomeado.
+	if elapsed >= SLOW_USEC: STALL_WORK.finish_slow("dispatch." + label, began, SLOW_USEC)
 	var span: Variant = _spans.get(label)
 	if span == null:
 		_spans[label] = [1, elapsed, elapsed]

@@ -13,6 +13,9 @@ carregamento 1,3–4 s mais curto (frota em lote, orçamento maior só sob a cor
 25 m/s) o p50 ficou entre 6,8 e 9,8 ms em todas as rotas e os quadros > 33 ms caíram de 49 para 19 nas 5 rotas
 (S5, uma rodada por lado); porto sem nenhum; deserto ainda tem um início de 170 ms. **A meta "nada > 33 ms" não
 foi cumprida em 4 de 5 rotas** (seção 6). Para jogar: usar um export release (seção 4).
+**2ª rodada (22/10, seção 7):** quadros > 33 ms no estresse 37 → 19 em 6 rotas × 2 rodadas (deserto 178 → 49 ms de
+máximo), p50 igual; a meta ainda não foi cumprida, o cache frio ainda tem quadros de 0,6–1,1 s no primeiro tiro e
+a carga a quente ficou só 0,5 s mais curta.
 
 ## 1. Como o jogo rodou na partida
 
@@ -337,3 +340,338 @@ abri o jogo pelo `Jogar.cmd` depois das mudanças (as rodadas de release carrega
 tipo (`fleet.all()` devolve Dictionary); todo teste que carrega `World.gd` nesse intervalo falhou por isso
 (inclusive de outras sessões: `test_native_driving`, `test_regions`, `test_door_audit`, núcleo de outra sessão
 às 00:57–01:04). Corrigido às 01:09; repetir esses testes se tiverem falhado nesse horário.
+
+## 7. 2ª rodada (22/10): quadros > 33 ms no estresse, deserto, cache frio e carregamento
+
+Pedido: pior caso liso (3440x1440 com as opções do jogador, chuva forte, tiro, 3 estrelas, alta velocidade,
+explosões, qualquer região), p50 ≤ 16,7 ms e **nenhum quadro > 33 ms depois de jogável**, e carga mais curta.
+
+**Resumo.** No export final medido (E) contra o mesmo export com os interruptores novos em 0, estresse completo,
+6 rotas × 2 rodadas por lado: quadros > 33 ms **37 → 19** pelo laço da bancada e **20 → 9** pelo intervalo de
+desenho; quadros > 45 ms **11 → 2**; o deserto saiu de 178/171 ms de máximo para 49/45. Média e p50 não mudaram
+além do ruído (5,6–10 ms nos dois lados; p50 sempre ≤ 16,7). **A meta "nada > 33 ms" continua não cumprida:**
+sobram (2 rodadas somadas) 1 quadro em oeste, serra e travessia, 4 no porto, 8 nos sobrados e 4 no deserto, de
+34–49 ms, e a travessia ainda tem 2–3 intervalos de desenho de ~45 ms por rodada nos dois lados. O que
+sobra está em 7.5 (pipelines de carro novo e do início do estresse, desenho sem pipeline, física nativa, sinal
+`process_frame`). Carga a quente 31,4 → 30,9 s (média das 12 rodadas): **não ficou "bem mais curta"**. Com cache
+frio de verdade ainda há 2–5 quadros de 0,1–1,3 s por rodada: o pré-aquecimento de combate novo não pegou as
+pipelines que compilam (7.3).
+
+### 7.1 Como foi medido (e dois defeitos da medida)
+
+- Exports, todos pela fila (`GODOT_RUN_TIMEOUT=300 tools/run_godot_locked.sh --headless --path . --export-release
+  "Geteco V2 Windows" ...`), cada um com o `working.patch` exato: `artifacts/perf-r2-base-20261022/` (HEAD
+  b68ce51d, linha de base com logs), `perf-r2-a/b/c/d` (correções em andamento e diagnóstico),
+  **`perf-r2-e-20261022/` (export final medido: A/B completo, noite e cache frio)**, `perf-r2-f-20261022/`
+  (E + topo da cabine sem leitura da GPU + guarda do `prewarm_rest`) e `perf-r2-g-20261022/` (F + span
+  `vehicle.dents.rest_miss` + leitura antecipada do documento do editor de mundo, depois revertida). F e G só
+  rodaram com logs, para atribuição.
+- Estresse igual ao da 1ª rodada: `BENCH_DISPATCH=1 BENCH_SETTINGS=tools/bench/settings-jogador-3440.cfg
+  BENCH_EXTRA="--benchmark-stress --benchmark-cold --benchmark-weapon-cycle=5 --skip-arrival"`, 90 s medidos,
+  tela cheia 3440x1440. A/B no mesmo export e no mesmo dia: "antes" = os interruptores novos em 0 (lista em 7.7),
+  alternando antes/depois por rota, 2 rodadas por lado, sem logs. A bancada mede a partir de jogável + 3 s; os
+  quadros "t+0,x s" das tabelas de atribuição ficam fora da amostra dela, mas o jogador os vê.
+- **A medida da bancada não é o intervalo de quadro do jogo.** O laço do `ReleaseBenchmark` mede entre retornos
+  de `await process_frame`; corrotinas que esperam o mesmo sinal mudam de posição dentro do quadro e empurram
+  trabalho de um intervalo para o seguinte. Nos sobrados a bancada viu 6 quadros > 33 ms e o registro da sessão
+  (intervalo exato entre dois `_process` de prioridade fixa), 2. O JSON grava agora também `present_ms` /
+  `present_over_33ms` (intervalo entre dois `frame_post_draw`). As tabelas trazem os dois.
+- **Defeito encontrado no meio do A/B (export D):** a bancada nasce antes de a cortina sair e o `LoadingTurbo`
+  devolvia o teto do jogador (144 fps) no `lift`, depois de a bancada ter tirado o teto. O lado "depois" do D
+  mediu preso em 144 fps (p50 do deserto 6,96 = 1/144 s): média e p50 do A/B do D não valem. Corrigido nos dois
+  lados (`ReleaseBenchmark` tira o teto de novo depois da janela estável; `LoadingTurbo` devolve o teto no `lift`
+  e limpa as coberturas) e conferido em todos os JSON do E. O D também teve, uma vez, um quadro de 975 ms em
+  oeste que não se repetiu no E e não foi atribuído (rodada sem logs).
+- Com logs (`HARBOR_SESSION_LOG/PROFILE/STALL_LOG=1`, `HARBOR_STALL_MS=25`) o p50 sobe 1–2 ms e quadros de
+  31–33 ms passam de 33; as rodadas com logs servem para atribuir, não para contar.
+- Atribuição: `tools/perf_spikes.py` (novo) cruza `frame_spike` do registro da sessão (spans, fases,
+  `operation_timing`) com o StallLog (`pipelines_delta`, memória de vídeo). Fases novas no `SessionSystemProfile`
+  (só com `HARBOR_SESSION_PROFILE=1`): `late_to_deferred_tail_ms` (fila de `call_deferred`),
+  `deferred_tail_to_render_pre_ms` (remoções, sync do RenderingServer), `post_render_to_process_signal_ms`
+  (física e entrada) e `process_signal_to_callback_ms` (corrotinas e temporizadores do sinal `process_frame`).
+- Spans novos e permanentes: `sys.<sistema>.process/physics` em 20 sistemas grandes (sessão, clima, CityLook,
+  poças, beira da serra, fauna, transporte urbano, áudio do mundo, rotinas, estacionamento, reações civis,
+  cedência, grama, despacho, ProductionWorld, NativeRegion, câmera, direção, World), `stream.desert.process`,
+  `stream.desert.dress_stage.N/expansion_stage.N/mining/workshop_stage`, `routes.*`, `mount.add_child/set_focus`,
+  `vehicle.dents.*` (inclusive `rest_miss` com modelo e peça), `vehicle.pre_tick/rails_*/ground_support`,
+  `traffic_yield.begin/tick`, `gpu_release.drain/orphans`, `body.install`, `mining.exterior.*`,
+  `drag_meet.ground.*`, `bench.*`, marcadores `marker.fire_ignite/fire_free/vehicle_despawn`; `DispatchTrace`
+  manda trechos ≥ 2 ms (antes 20). Para achar o mecânico do Digo foram envolvidos temporariamente ~120 `_process`
+  (desfeito e conferido contra o HEAD antes do export D).
+- Cache frio: `tools/bench/cold_cache_run.sh` (novo) afasta (não apaga) `%APPDATA%/GetecoV2/vulkan` e
+  `shader_cache`, roda com `__GL_SHADER_DISK_CACHE_PATH` numa pasta vazia (o driver NVIDIA respeita: o cache dele
+  aparece lá) e devolve os caches quentes no fim, mesmo se a rodada cair. Saves e `settings.cfg` não são tocados;
+  o cache frio de cada rodada fica em `%APPDATA%/GetecoV2/cache-cold-<rótulo>/` (~90 MB cada; pode ser apagado).
+
+### 7.2 Resultado a quente, export E (antes = interruptores em 0, mesmo export, mesmo dia)
+
+Por rota, 2 rodadas (média/p50/p95/p99 = média das 2; máx = maior das 2; contagens somadas; "desenho" = intervalo
+entre dois `frame_post_draw`; jogável = do início do processo até 3 s seguidos de mundo jogável, média das 2):
+
+| rota | lado | média | p50 | p95 | p99 | máx | > 33 ms | > 45 ms | desenho > 33 / máx | jogável (s) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| oeste | antes | 9,33 | 9,68 | 13,44 | 16,34 | 50,17 | 5 | 1 | 4 / 52,14 | 31,15 |
+| oeste | depois | 9,39 | 9,95 | 13,31 | 15,35 | 33,95 | 1 | 0 | 1 / 35,19 | 30,09 |
+| porto | antes | 8,63 | 8,81 | 13,43 | 15,68 | 48,47 | 7 | 1 | 2 / 49,92 | 30,71 |
+| porto | depois | 8,26 | 8,36 | 12,70 | 14,77 | 43,82 | 4 | 0 | 1 / 38,91 | 30,41 |
+| sobrados | antes | 7,84 | 7,08 | 12,48 | 17,20 | 47,49 | 14 | 1 | 3 / 45,54 | 30,34 |
+| sobrados | depois | 7,71 | 7,04 | 12,41 | 17,04 | 41,25 | 8 | 0 | 2 / 53,52 | 30,29 |
+| serra | antes | 7,38 | 6,60 | 12,04 | 14,30 | 32,43 | 0 | 0 | 0 / 31,45 | 31,95 |
+| serra | depois | 7,33 | 6,54 | 12,02 | 14,22 | 34,77 | 1 | 0 | 0 / 32,62 | 31,40 |
+| deserto | antes | 6,85 | 6,48 | 10,12 | 14,11 | 177,70 | 10 | 8 | 7 / 169,93 | 32,53 |
+| deserto | depois | 6,62 | 6,31 | 9,87 | 13,69 | 49,31 | 4 | 2 | 0 / 32,80 | 31,77 |
+| travessia | antes | 6,33 | 5,63 | 10,88 | 14,16 | 34,30 | 1 | 0 | 4 / 50,55 | 31,79 |
+| travessia | depois | 6,56 | 5,96 | 11,03 | 14,19 | 33,73 | 1 | 0 | 5 / 44,98 | 31,29 |
+| **total** | antes | | | | | | **37** | **11** | **20** | 31,41 |
+| **total** | depois | | | | | | **19** | **2** | **9** | 30,87 |
+
+Cada rodada (laço da bancada; desenho = p99 / máx / quadros > 33):
+
+| rota | lado | rodada | média | p50 | p95 | p99 | máx | > 33 ms | > 100 ms | desenho: p99 / máx / > 33 | jogável (s) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| oeste | antes | 1 | 9,36 | 9,61 | 13,55 | 16,23 | 50,17 | 2 | 0 | 16,27 / 52,14 / 2 | 32,23 |
+| oeste | antes | 2 | 9,30 | 9,76 | 13,33 | 16,46 | 41,48 | 3 | 0 | 16,30 / 44,57 / 2 | 30,07 |
+| oeste | depois | 1 | 9,91 | 10,57 | 14,12 | 16,20 | 30,55 | 0 | 0 | 15,81 / 35,19 / 1 | 30,36 |
+| oeste | depois | 2 | 8,87 | 9,32 | 12,50 | 14,50 | 33,95 | 1 | 0 | 14,36 / 30,51 / 0 | 29,81 |
+| porto | antes | 1 | 8,61 | 8,93 | 13,02 | 15,66 | 48,47 | 4 | 0 | 15,23 / 49,92 / 2 | 29,89 |
+| porto | antes | 2 | 8,65 | 8,69 | 13,83 | 15,69 | 43,66 | 3 | 0 | 15,50 / 29,88 / 0 | 31,54 |
+| porto | depois | 1 | 7,93 | 7,73 | 12,30 | 14,26 | 36,80 | 2 | 0 | 14,04 / 27,92 / 0 | 31,32 |
+| porto | depois | 2 | 8,59 | 8,99 | 13,10 | 15,28 | 43,82 | 2 | 0 | 15,00 / 38,91 / 1 | 29,49 |
+| sobrados | antes | 1 | 7,77 | 7,00 | 12,31 | 17,29 | 47,49 | 6 | 0 | 15,71 / 45,54 / 2 | 30,21 |
+| sobrados | antes | 2 | 7,92 | 7,16 | 12,64 | 17,10 | 44,41 | 8 | 0 | 16,09 / 33,63 / 1 | 30,46 |
+| sobrados | depois | 1 | 7,42 | 6,38 | 11,89 | 16,71 | 40,88 | 4 | 0 | 15,48 / 31,62 / 0 | 31,21 |
+| sobrados | depois | 2 | 8,00 | 7,70 | 12,92 | 17,36 | 41,25 | 4 | 0 | 16,38 / 53,52 / 2 | 29,36 |
+| serra | antes | 1 | 7,18 | 6,26 | 11,86 | 13,96 | 31,64 | 0 | 0 | 12,82 / 31,45 / 0 | 32,76 |
+| serra | antes | 2 | 7,59 | 6,94 | 12,22 | 14,63 | 32,43 | 0 | 0 | 13,13 / 29,67 / 0 | 31,14 |
+| serra | depois | 1 | 7,07 | 6,20 | 11,74 | 13,26 | 30,40 | 0 | 0 | 12,29 / 27,45 / 0 | 32,49 |
+| serra | depois | 2 | 7,59 | 6,88 | 12,29 | 15,19 | 34,77 | 1 | 0 | 13,54 / 32,62 / 0 | 30,31 |
+| deserto | antes | 1 | 6,96 | 6,60 | 10,26 | 14,14 | 177,70 | 5 | 2 | 12,48 / 169,93 / 3 | 32,62 |
+| deserto | antes | 2 | 6,74 | 6,36 | 9,97 | 14,07 | 170,71 | 5 | 2 | 12,41 / 161,54 / 4 | 32,44 |
+| deserto | depois | 1 | 6,67 | 6,34 | 9,89 | 13,95 | 49,31 | 3 | 0 | 12,24 / 32,80 / 0 | 32,01 |
+| deserto | depois | 2 | 6,58 | 6,29 | 9,85 | 13,43 | 45,33 | 1 | 0 | 11,89 / 30,18 / 0 | 31,54 |
+| travessia | antes | 1 | 6,31 | 5,60 | 10,82 | 14,16 | 34,30 | 1 | 0 | 12,91 / 50,55 / 2 | 31,82 |
+| travessia | antes | 2 | 6,36 | 5,67 | 10,95 | 14,15 | 27,42 | 0 | 0 | 12,89 / 41,41 / 2 | 31,76 |
+| travessia | depois | 1 | 6,76 | 6,23 | 11,24 | 14,57 | 30,52 | 0 | 0 | 13,21 / 44,98 / 2 | 30,24 |
+| travessia | depois | 2 | 6,37 | 5,69 | 10,82 | 13,81 | 33,73 | 1 | 0 | 12,65 / 44,37 / 3 | 32,34 |
+
+Noite (porto, 22 h, 1 rodada por lado, mesmo estresse): antes média 8,44, p50 8,51, p95 13,44, p99 15,98, máx
+36,45, 1 quadro > 33 (desenho máx 34,66, 1 > 33), jogável 31,7 s; depois 8,01 / 8,00 / 12,54 / 14,58 / máx 35,02,
+2 > 33 (desenho máx 27,71, 0 > 33), jogável 31,0 s. A noite não trouxe pico novo.
+
+Leitura honesta: entre rodadas iguais a média varia ±0,5 ms e a contagem > 33 ms, 1–4 quadros; as diferenças de
+média/p50 estão dentro disso. O que mudou de verdade foram os picos grandes (deserto 170 → 49, quadros > 45 ms
+11 → 2) e a contagem de 34–50 ms em oeste, porto e sobrados. A travessia não melhorou no desenho.
+
+### 7.3 Cache frio (primeira sessão de uma instalação nova ou depois de atualizar o driver)
+
+`tools/bench/cold_cache_run.sh` (cache do Vulkan do jogo e do driver vazios), export E, 1 rodada por lado, sem
+logs; oeste 90 s medidos, serra e deserto 20 s:
+
+| rota | lado | média | p50 | p95 | p99 | máx | > 33 ms | > 100 ms | > 250 ms | desenho > 33 / máx | jogável (s) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| oeste | antes | 13,63 | 13,27 | 17,83 | 22,76 | 2244,72 | 15 | 6 | 4 | 17 / 2243,73 | 76,6 |
+| oeste | depois | 13,26 | 13,50 | 17,49 | 21,11 | 1268,15 | 12 | 5 | 2 | 15 / 1214,56 | 78,5 |
+| serra | antes | 9,36 | 8,41 | 14,49 | 22,89 | 891,64 | 11 | 4 | 2 | 9 / 880,00 | 87,2 |
+| serra | depois | 9,09 | 7,84 | 13,82 | 20,31 | 871,58 | 8 | 5 | 2 | 10 / 861,69 | 88,3 |
+| deserto | antes | 8,72 | 7,27 | 14,01 | 26,33 | 1245,70 | 10 | 6 | 1 | 8 / 188,65 | 83,5 |
+| deserto | depois | 7,78 | 6,78 | 13,12 | 15,63 | 1038,45 | 6 | 2 | 1 | 4 / 134,62 | 78,8 |
+
+Com logs (export E, oeste, frio, 1 rodada; jogável 75,2 s) os quadros grandes caem nos mesmos momentos da linha
+de base fria (653 ms submetralhadora, 1 057 ms fuzil com polícia atirando, 107 ms pistola): **604 ms** com
+submetralhadora dirigindo (1 pipeline `surface` + 1 `specialization`, 3 efeitos emitindo), **1 072 ms** com AK-47 e
+fogo no chão (2 + 2), **110 ms** com pistola (1 + 1), todos dentro do desenho (`render_bracket`) e sem span de
+script. O `CombatEffectsPrewarm` (cada pool do `CombatEffects`, todas as armas com clarão, 3 desenhos diante da
+câmera) **não cobre a variante que compila**. Candidatas, não testadas: a passada de sombra/profundidade dos
+efeitos ou a luz do clarão (o pré-aquecimento desenha perto da câmera, sem as mesmas luzes), o fogo do
+`EmergencyManager` (`Fire.gd`, fora dos pools do `CombatEffects`) e o tiro de dentro do carro. Achar exige saber
+qual material criou a pipeline (o StallLog só conta por tipo). Também no frio: `native.ready.rewards` 32 ms +
+`building.ready.floor_add_child` 37 ms com 4 pipelines `specialization` logo depois da cortina (quadro de 78 ms) e
+`stream.harbor.prepare_collision` 11–15 ms em três quadros de 61–131 ms (no quente ~7 ms).
+
+Carga fria, oeste com logs: linha de base 74,9 s até jogável (`startup:prepared` 65,6 s), E 75,2 s (65,6 s). Nos
+dois o maior bloco é `startup:combat_resources`, 30,6 / 31,1 s (5,0 s a quente): o pré-aquecimento de recursos de
+combate que já existia compila centenas de pipelines e mesmo assim o tiro compila mais no jogo. A frota pedida
+cedo tirou 7,2 s de `fleet_hold` (7,5 → 0,3 s), que voltaram em `fleet_shaders` (1,1 → 5,9 s) e nos
+pré-aquecimentos novos. Sem logs, 1 rodada por lado: oeste +1,9 s, serra +1,1 s, deserto −4,7 s, sem como separar
+do ruído.
+
+### 7.4 Carregamento (do início do processo até 3 s seguidos de mundo jogável; a bancada pula o menu)
+
+| começa em | quente, E, antes / depois (média de 2, sem logs) | frio, E, antes / depois (1 rodada, sem logs) |
+|---|---|---|
+| Harbor (oeste) | 31,15 / 30,09 s | 76,6 / 78,5 s |
+| Harbor (porto) | 30,71 / 30,41 s | — |
+| Harbor (sobrados) | 30,34 / 30,29 s | — |
+| Harbor (travessia) | 31,79 / 31,29 s | — |
+| serra | 31,95 / 31,40 s | 87,2 / 88,3 s |
+| deserto | 32,53 / 31,77 s | 83,5 / 78,8 s |
+
+Etapas da carga a quente em oeste, com logs (ms; linha de base = 2 rodadas no export base, F = 1 rodada):
+
+| etapa | base r1 | base r2 | F |
+|---|---|---|---|
+| `startup:fleet_hold` | 1 965 | 2 003 | 87 |
+| `startup:dispatch_models` | 97 | 95 | 262 |
+| `startup:fleet_shaders` | 931 | 930 | 2 138 |
+| `startup:combat_resources` | 4 971 | 4 984 | 5 100 |
+| `startup:resident_prewarm` | 4 689 | 4 895 | 4 925 |
+| `startup:distant_prewarm:mountain` | 800 | 799 | 1 859 (porto F: 922 / 1 360) |
+| `startup:route_graphs` | 293 | 300 | 370 |
+| `startup:prepared` | 23 010 | 22 737 | 23 821 |
+| jogável | 30 681 | 30 457 | 31 719 |
+
+A frota pedida em thread no começo da carga tirou ~1,9 s de `fleet_hold`, mas o tempo voltou nos
+pré-aquecimentos novos que tiram trabalho do jogo: lentes apagadas desenhadas junto com cada lote da frota e
+arrays em repouso da frota para o amassado (`fleet_shaders` +1,2 s), viaturas (+0,2 s), grafo serra+deserto
+(+0,1 s), combate, oficina e mecânico do Digo. Saldo a quente sem logs: −0,5 s em média (31,41 → 30,87 s), dentro
+da variação de ±1 s entre rodadas iguais. **Não feito nesta rodada:** os blocos grandes do pedido continuam como
+estavam — túnel `prime_corridor` ~2,2 s, `resident_prewarm` ~4,9 s, `combat_resources` ~5,0 s (31 s no frio),
+"Montando o porto" ~5,7 s com `urban_operations` ~1,7 s num quadro só. São montagem de nós no thread principal;
+encurtar exige montar subárvores fora da árvore em `WorkerThreadPool`, sistema por sistema, e provar que nada
+disso escorrega para depois da cortina. A prioridade ficou com os quadros do jogo.
+
+### 7.5 Atribuição: cada quadro > 33 ms da linha de base, e o que sobrou
+
+Linha de base = export do HEAD b68ce51d, estresse com logs, 2 rodadas por rota (oeste, porto, sobrados, serra,
+deserto, travessia). Intervalo exato do registro da sessão; "t+" = segundos depois de jogável.
+
+| rota | quando | quadro | causa (span) | rodadas |
+|---|---|---|---|---|
+| deserto | t+3,1 | 90–99 | desmontagem do porto 46 ms, quase toda em `routes.configure` 40 ms (a combinação serra+deserto não estava entre os grafos de rota pré-calculados) + chão síncrono do trecho do carro 22 ms (`surface_stage.12` 18) | 2/2 |
+| deserto | t+3,4 | 55–64 | quadro da arrancada (`surface_stage.15`) 49–57 ms: `DesertTownMaterials.batch_visuals` lia cada BoxMesh da GPU (~140 leituras) | 2/2 |
+| deserto | t+5,1 | 161–172 | oficina do Digo (`record.drag_workshop`) 142–154 ms: pátio 64–73, lote 26–28, mesmas leituras + montagem inteira | 2/2 |
+| deserto | t+7,9 | 54–61 | mecânico Digo nascendo a 75 m (`DesertDigoRoutine._process` 29 ms + 14 ms de trabalho do RenderingServer no fim do quadro); achado só com spans em ~120 `_process` | 2/2 |
+| deserto | t+17 | 34–38 | `record.building` 17–20 ms, `painted.build` 6–7, etapa da mina 22–24 ms (`stream.desert.mining`) | 2/2 |
+| oeste, sobrados, porto, travessia | 1ª batida de cada modelo | 35–42 | `vehicle.impact.dents` 16–21 ms: leitura das arrays em repouso da GPU 6–14 ms (até 8 superfícies) + reconstrução da lataria 8–10 ms em GDScript, no quadro de física da batida | 5 de 8 rodadas |
+| sobrados | viatura chegando | 49 | `dispatch.doors.prewarm` 19 ms: recorte da porta trocava a malha e o amassado relia 5 superfícies da GPU e refazia tudo no mesmo quadro | 1 |
+| oeste | t+0,5 | 38–40 | rodoviária montada no 1º tique jogável (`terminal.build` 13 ms) | 2/2 |
+| oeste | t+0,2 | 39 | `native.ready.rewards` 21 ms no 1º lugar com interior (`harbor_building_patrol_court_north`): `WorldInteriorEdits.apply_saved` + `_install_reward`. **Não é** a leitura do documento do editor: com o documento em cache e lido sob a cortina continuou 18–21 ms (cache revertido) | 2/2 |
+| sobrados, porto | carro novo no trânsito | 34–40 | `population_job:equipment` 4–10 ms + 13,6 ms depois das chamadas diferidas (sync do RenderingServer) com 2 pipelines `surface` novas | 4 |
+| serra | a cada volta perto da ponte | 35–40 | remontar o porto guardado 13–17 ms: `mount.add_child` 7,8 (2.400 nós de trechos em descarte que a região levava junto), foco 1,9, conexão da ponte remontada 3,2, consumidores de rota 3–5 | 4/4 |
+| travessia | entrando no porto | 33–35 | `stream.harbor.prepare_collision` 7 + 7 ms (dois trechos de apoio síncronos) | 2 |
+| porto, oeste, travessia | raro | 34–48 | desenho de 19–35 ms (`render_bracket`) sem pipeline nova, CPU da viewport 1–2 ms, GPU 5–7 ms | 1–2 por rodada |
+| sobrados, porto | raro | 35–50 | 25–36 ms entre o fim do desenho e o 1º `_process` sem span de script (física do motor ou entrada) ou 18,7 ms no sinal `process_frame` (corrotinas/temporizadores) | 1 por rodada |
+
+**O que sobrou** (exports E/F/G com logs: deserto 2 rodadas, sobrados 3, porto 2, oeste 2; logs somam 1–2 ms):
+
+| classe | onde | quadro | evidência |
+|---|---|---|---|
+| carro novo no trânsito: 2 pipelines `surface` (cache quente) + 14–17 ms de sync do RenderingServer depois das diferidas | sobrados 3, oeste 1 | 33–38 | `population_job:equipment` só 1–4 ms no quadro; as cópias de lente apagada pré-aquecidas não pegaram essa variante; o StallLog conta pipelines por tipo, não diz o material |
+| início do estresse: a bancada liga chuva forte, 3 estrelas e perseguição e teleporta o carro no mesmo quadro | todas as rotas rodadas com logs (oeste, porto, sobrados, deserto), t+3 s | 37–50 | 1–10 pipelines `specialization` + 1–2 `surface`/`canvas`, desenho 21–25 ms. Parte é artefato (tudo de uma vez), mas as pipelines são as da 1ª chuva/1ª perseguição de uma partida |
+| deserto, mesmo quadro t+3 s | deserto | 50 | idem + desmontagem do porto 5,9 ms (era 46) e chão do trecho para onde a bancada teleporta |
+| viatura nascendo logo depois da cortina | oeste G, t+0,4 | 56 | `spawn_vehicle_add_child:police_cruiser` 25 ms + 2 pipelines `mesh` (fora da amostra da bancada) |
+| desenho de 28 ms sem pipeline | porto F t+77, oeste G t+76 | 44–49 | `render_bracket` 28 ms, CPU da viewport 2–3 ms |
+| física/entrada sem script | sobrados F t+81 (batida: `vehicle.physics` 7,0, `street.crash` 6,7, amassado 5,5), sobrados G t+82 (36 ms sem span) | 34–41 | fase `post_render_to_process_signal` |
+| sinal `process_frame` 22 ms | sobrados F, 2 vezes | 33–35 | corrotinas/temporizadores sem span |
+| trânsito: `population_job:traffic` / `traffic_spawn` 7 ms | porto F | 35 | |
+| 1ª batida: `vehicle.impact.dents` 4–10 ms (era 16–21) | todas | sozinho não passa de 33 | reconstrução saiu do quadro; sobra `prepare` com leitura da GPU de 2–6,5 ms (`vehicle.dents.rest_miss`): porta recortada `DriverDoorPresentation/DriverDoorL/Skin` e capô solto `Breakaway_hood` da viatura, `Body` do `metro_hatch` — malhas únicas de cada carro, fora do cache da frota e além das 48 do cache limitado |
+| deserto, mina | — | — | etapa da mina 24,9 ms apareceu numa rodada com logs de um export intermediário e não na do E final (1 rodada cada): não dá para dizer que acabou |
+| travessia, desenho ~45 ms | travessia, 2–3 por rodada nos dois lados | 44–45 (desenho) | não atribuído nesta rodada (sem rodada da travessia com logs depois das correções) |
+
+### 7.6 O que foi feito (cada item atrás de um interruptor, padrão ligado; `=0` desliga)
+
+| # | causa | correção | interruptor | efeito medido |
+|---|---|---|---|---|
+| 1 | caixas/cilindros de `G.box`/`G.cylinder` lidos da GPU um por um nas fusões do deserto | `MeshArrayCache.arrays_of`: BoxMesh sem subdivisão e CylinderMesh reto saem da forma unitária escalada na CPU (lida uma vez por tipo, `prewarm_unit_shapes` sob a cortina); `DesertTownMaterials.batch_visuals` e `MiningBatch` (rocha) passam por ela | `GETECO_PRIMITIVE_CPU_ARRAYS` | quadro da arrancada 49–57 ms → não aparece |
+| 2 | oficina do Digo montada a cada visita | montada uma vez sob a cortina (`DesertRegion.prebuild_workshop`), estacionada fora da árvore quando o trecho sai e devolvida no próximo (`ChunkCellMerge.restore_sources`); pátio e Gol voltam um por quadro (`stream.desert.workshop_stage`) | `GETECO_DIGO_WORKSHOP_PARK` | 142–154 ms → não aparece |
+| 3 | mecânico Digo criado/liberado a cada aproximação | montado sob a cortina e estacionado (`DesertDigoRoutine`) | `GETECO_DIGO_WORKER_PARK` | 54–61 ms → não aparece |
+| 4 | grafo de rota serra+deserto refeito no jogo | combinação pré-calculada sob a cortina | `GETECO_ROUTE_COMBO_MD` | desmontagem do porto 46 → 5,9 ms |
+| 5 | 1ª batida de cada modelo: leitura + reconstrução no quadro | arrays em repouso da frota lidas sob a cortina (`VehicleBodyDents.prewarm_rest`, ~285 mil vértices, fora do limite de 48 do cache), porta recortada entra com as arrays da CPU (`prime_rest`), reconstrução (posições, normais, tangentes) no `WorkerThreadPool` com o mesmo código do síncrono (diferença 0,0 no teste); troca de malha da porta também assíncrona | `GETECO_DENTS_FLEET_PREWARM`, `GETECO_DENTS_DOOR_PRIME`, `GETECO_DENTS_ASYNC` | `vehicle.impact.dents` 16–21 → 4–10 ms; resto em 7.5 |
+| 6 | rodoviária montada no 1º tique jogável | sob a cortina quando o jogo começa perto dela (`TerminalOperations.prepare_startup_build`) | `GETECO_TERMINAL_STARTUP_BUILD` | `terminal.build` 13–16 ms agora ~1,1 s antes de a cortina sair (F e G com logs) |
+| 7 | lentes apagadas compilando no jogo | cada lote da frota sob a cortina é desenhado também com as lentes emissivas apagadas (cópias retidas) | `GETECO_LENS_VARIANT_PREWARM` | **não resolveu** o carro novo com 2 pipelines (7.5) |
+| 8 | porto remontado na serra com os trechos velhos e a conexão da ponte refeita | trechos em descarte vão para a `GpuReleaseQueue` antes de a região sair da árvore (`NativeRegion.hand_off_retiring`); conexão da ponte estacionada; consumidores de rota refeitos no quadro seguinte (só jogando) | `GETECO_RETIRE_HANDOFF`, `GETECO_CONNECTION_PARK`, `GETECO_ROUTE_REFRESH_DEFER` | export D com logs: serra sem quadro > 30 ms; no A/B do E a serra já era a melhor rota (0 / 1 quadro > 33) |
+| 9 | cache de pipeline frio: tiros, impactos, explosão | `gameplay/CombatEffectsPrewarm.gd` (novo): cada pool do `CombatEffects` (faíscas/poeira de 9 materiais, sangue, fumaça, explosão, chama, sopro, cápsulas, traçante, mancha, queimado) e todas as armas do catálogo com o clarão, 3 desenhos diante da câmera sob a cortina, depois `clear()` | `GETECO_COMBAT_PREWARM` | **insuficiente**: no frio os quadros de 0,6–1,1 s do tiro continuam (7.3) |
+| 10 | destroço de prop derrubada lia a malha da GPU a cada choque | `PropFracture3D` lê pela `MeshArrayCache` (1 leitura por tipo) | `GETECO_PROP_FRACTURE_CACHE` | não isolado |
+| 11 | recursos da preparação em segundo plano (46 shaders) carregados no jogo | pedidos em thread no começo da carga e recolhidos antes de a cortina sair (`BackgroundRegionPreparation.prefetch_start/collect`, prazo 3 s) | `GETECO_BG_PREFETCH` | não isolado (carga, 7.4) |
+| 12 | carregamento esperando quadros no teto de 144 fps / v-sync | `LoadingTurbo`: sem teto nem v-sync enquanto a cortina cobre; volta no `lift` | `GETECO_LOADING_UNCAP` | não isolado (carga, 7.4) |
+| 13 | corpo de colisão da mina somando formas já no espaço | `MiningBatch`: corpo entra na árvore só no `finish()` | `GETECO_MINING_BODY_LATE` | não provado (7.5) |
+| 14 | cenas da frota pedidas 2 por vez depois de montar o porto | todas pedidas em thread no começo da carga (`_request_fleet_scenes_early`) | `GETECO_FLEET_EARLY` | `fleet_hold` 2,0 → 0,1 s a quente (o tempo voltou em outras etapas, 7.4) |
+| 15 | chão do paddock do encontro de arrancada (material criado no streaming, `drag_meet.ground.quad` 17 ms) | material criado e desenhado uma vez sob a cortina (quad escondido a −500 m) | `GETECO_PADDOCK_PREWARM` | não apareceu na rodada com logs do E (1 rodada) |
+| 16 | topo da cabine do 1º caminhão de cada modelo lia a malha da GPU (`VehicleEquipment._car_points`) | usa as arrays da frota já lidas pelo amassado (`VehicleBodyDents.cached_rest`) e as primitivas da `MeshArrayCache`; leitura direta só para peça fora da frota (só nos exports F/G) | `GETECO_CAB_REST_ARRAYS` | sem efeito visível: `population_job:equipment` máx 9–11,5 ms no F (10,5 na base); o custo do equipamento é outro |
+| — | documento do editor de mundo relido a cada lugar com interior (suspeita) | cache por md5 + leitura sob a cortina | — | **revertido**: `native.ready.rewards` ficou em 18–21 ms; a causa é outra (7.5) |
+
+### 7.7 Arquivos e interruptores
+
+Código (sem commit):
+- Novos: `gameplay/CombatEffectsPrewarm.gd` (+ `.uid`), `tests/test_vehicle_body_dents_async.gd` (+ `.uid`),
+  `tools/perf_spikes.py`, `tools/bench/cold_cache_run.sh`.
+- Correções: `world/chunk_bake/MeshArrayCache.gd`, `world/desert/DesertTownMaterials.gd`,
+  `world/desert/DesertRegion.gd`, `runtime/desert/DesertDigoRoutine.gd`, `gameplay/vehicle_effects/VehicleBodyDents.gd`,
+  `gameplay/VehicleDoorBuilder.gd`, `gameplay/VehicleEquipment.gd`, `runtime/ProductionWorld.gd`,
+  `runtime/BackgroundRegionPreparation.gd`, `runtime/LoadingTurbo.gd`, `runtime/terminal/TerminalOperations.gd`,
+  `world/regions/NativeRegion.gd`, `world/mining/MiningBatch.gd`, `gameplay/street_physics/PropFracture3D.gd`.
+- Bancada e perfil: `runtime/ReleaseBenchmark.gd` (intervalo de desenho, spans `bench.*`, teto tirado de novo),
+  `runtime/SessionSystemProfile.gd` (fases novas).
+- Só spans/marcadores: `runtime/GpuReleaseQueue.gd`, `world/mining/MiningExterior.gd`,
+  `world/desert/drag_meet/DesertDragMeet.gd`, `gameplay/emergency/Fire.gd`, `gameplay/emergency/EmergencyManager.gd`,
+  `assets/civilians/RigBodySwap.gd`, `gameplay/dispatch/DispatchTrace.gd`, `scripts/Vehicle.gd` e os `sys.*` em
+  `runtime/FullSession.gd`, `runtime/Weather.gd`, `world/city_look/CityLook.gd`, `world/rain/RainPuddles3D.gd`,
+  `world/mountain_detail/MountainRoadside3D.gd`, `gameplay/wildlife/MountainWildlife.gd`,
+  `runtime/UrbanTransitPresentation.gd`, `audio/WorldAudio.gd`, `gameplay/routines_v1/RoutineDirector.gd`,
+  `runtime/RoadsideParking.gd`, `gameplay/civilian_reactions/CivilianReactionDirector.gd`,
+  `gameplay/traffic_yield/TrafficYieldController.gd`, `world/mountain_detail/MountainGrass3D.gd`,
+  `gameplay/dispatch/DispatchController.gd`, `scripts/CameraRig.gd`, `scripts/Driving.gd`, `scripts/World.gd`
+  (e `ProductionWorld`, `NativeRegion`).
+- Teste alterado: `tests/test_cab_top_exact.gd` (confere também o caminho com a lataria da frota já lida).
+
+Interruptores novos (`=0` desliga, padrão ligado): `GETECO_PRIMITIVE_CPU_ARRAYS`, `GETECO_DIGO_WORKSHOP_PARK`,
+`GETECO_DIGO_WORKER_PARK`, `GETECO_ROUTE_COMBO_MD`, `GETECO_DENTS_FLEET_PREWARM`, `GETECO_DENTS_DOOR_PRIME`,
+`GETECO_DENTS_ASYNC`, `GETECO_TERMINAL_STARTUP_BUILD`, `GETECO_LENS_VARIANT_PREWARM`, `GETECO_RETIRE_HANDOFF`,
+`GETECO_CONNECTION_PARK`, `GETECO_ROUTE_REFRESH_DEFER`, `GETECO_COMBAT_PREWARM`, `GETECO_PROP_FRACTURE_CACHE`,
+`GETECO_BG_PREFETCH`, `GETECO_LOADING_UNCAP`, `GETECO_MINING_BODY_LATE`, `GETECO_FLEET_EARLY`,
+`GETECO_PADDOCK_PREWARM`, `GETECO_CAB_REST_ARRAYS`. Diagnóstico (`=1` liga): `GETECO_MOUNT_CENSUS` (nós por
+filho ao montar região), `GETECO_LOADING_TRACE` (etapas do `LoadingTurbo`).
+
+### 7.8 Verificação
+
+Sobre o código final (o do export G sem a leitura antecipada do documento e com o cache do editor revertido):
+- `tools/run_core_suite.sh` (22/10 08:28): 9 passaram, 1 falhou — `test_core_contracts`, as mesmas 13 falhas de
+  posição de lugares do deserto e eventos da Route 66 de antes desta rodada.
+- Verificação estrutural e os testes que a suíte `full` das 06:15 marcou: `test_regions`,
+  `test_bridge_approach_terrain`, `test_native_driving`, `cold/test_admission`, `test_save_indicator`,
+  `test_recovery_penalty_session`, `test_desert_wilds`, `test_desert_roadside_session`, `test_dialogue_flow`,
+  `test_video_vehicle_lifecycle` — todos com saída 0 e nenhum erro novo no log. A suíte `full` das 06:15 tinha
+  marcado 7 deles por "erro no log": era o `prewarm_rest` chamando `surface_get_array_len` em BoxMesh/CylinderMesh
+  (corrigido: só ArrayMesh) mais o erro antigo "Editor de mundo: alteração inválida ou origem ausente:
+  path/mountain_zoo_walk", que já aparece na suíte de 19/10 e continua (não é desta rodada).
+- Sistemas tocados: `test_vehicle_body_dents`, `test_vehicle_body_dents_incremental`,
+  `test_vehicle_body_dents_async` (novo: assíncrono = síncrono, diferença 0,0, reparo no meio do cálculo),
+  `test_cab_top_exact` (55 modelos, também pelo caminho da frota), `test_vehicle_equipment` (57),
+  `test_desert_digo_routine`, `test_terminal_mesh_preparation`, `test_terminal_route_preparation`,
+  `test_background_region_preparation`, `test_world_editor_interiors`, `test_dispatch_ground_owners`,
+  `test_gpu_release_detached_subtree`, `test_unified_bridge_physics`, `test_chunk_cell_merge`,
+  `test_vehicle_door_builder_equivalence`, `test_vehicle_crash_damage`, `test_vehicle_breakaway`: passaram.
+  Falham igual com os interruptores desta rodada em 0 (antigos): `test_desert_chunk_reuse` (1 caso),
+  `test_drag_ground_cover_batches` (2), `test_desert_ground_ownership` (3). `test_combat_fx_0922` falha em "explosão dispara a bola
+  de fogo" e na camada de áudio da Magnum (erro de script e não sai sozinho); nem o teste nem `CombatEffects.gd`
+  foram mexidos e o teste monta o `CombatEffects` direto, sem o pré-aquecimento novo. Não conferi no HEAD.
+- `python -I tools/check_frame_rules.py`: ok (`mesh_readback` 67, igual).
+- O jogo carregou e jogou as 6 rotas em release (E, F, G); não abri pelo `Jogar.cmd` nem joguei à mão.
+
+### 7.9 O que ainda não fica liso, e por quê
+
+- **Carro novo no trânsito (sobrados, oeste): 33–38 ms.** Duas pipelines `surface` criadas no quadro (mesmo com
+  cache quente) e 14–17 ms de sync do RenderingServer. O pré-aquecimento da frota e das lentes apagadas não pega
+  essa variante; falta saber qual material é (o StallLog conta por tipo). Próximo passo: registrar o material
+  novo no primeiro desenho de cada carro (ou desenhar sob a cortina cada combinação pintura × lente × sujeira).
+- **Primeira chuva / primeira perseguição: 1–10 pipelines `specialization`, desenho 21–25 ms.** Na bancada cai
+  tudo no mesmo quadro (t+3 s); numa partida aparece na primeira vez que cada coisa liga. Pré-aquecer exige
+  desenhar, sob a cortina, a cena com chuva forte e com as luzes da perseguição ligadas.
+- **Desenho de 19–35 ms sem pipeline nova** (porto, oeste, travessia; a travessia tem 2–3 por rodada nos dois
+  lados): CPU da viewport 1–3 ms, GPU 5–7 ms; o tempo está dentro de `RenderingServer.draw` mas fora do desenho da
+  viewport. Hipótese da 1ª rodada (driver liberando memória de vídeo) não testada: `GETECO_GPU_HOLD_ALL=1` e
+  estacionar os emissores do fogo em vez de liberá-los.
+- **25–36 ms entre o fim do desenho e o 1º `_process`** (física do motor ou entrada; uma vez numa batida com
+  `vehicle.physics` 7 + `street.crash` 6,7 + amassado 5,5) e **22 ms no sinal `process_frame`** (corrotinas e
+  temporizadores sem span): o perfil de script não vê o passo nativo.
+- **Primeira batida:** amassado ainda 4–10 ms, com 2–6,5 ms de leitura da GPU de malhas únicas de cada carro
+  (porta recortada e capô solto da viatura, carroceria recortada do `metro_hatch`); caberia reaproveitar a malha
+  recortada por modelo ou guardar as arrays de quem recorta sem o limite de 48.
+- **Cache frio:** 0,6–1,1 s no primeiro tiro de submetralhadora/fuzil com fogo; o pré-aquecimento novo não pegou
+  (7.3). Sem saber o material, o caminho é o mesmo do item do carro novo.
+- **Carregamento:** ~30–32 s a quente, 75–88 s no frio; os blocos grandes não foram mexidos (7.4).
+- **Logo depois da cortina** (fora da amostra da bancada): viatura nascendo com `spawn_vehicle_add_child` 25 ms,
+  `native.ready.rewards` 18–21 ms no 1º lugar com interior (causa dentro de `apply_saved`/`_install_reward`, não
+  isolada), `stream.harbor.prepare_collision` 7–8 ms.
+- **Não medido:** rota 66, cidade do deserto, cavernas, chuva + noite juntas, 1080, D3D12, partida real pelo
+  `Jogar.cmd` (clique no menu → jogável), travessia com logs depois das correções, mais de 1 rodada no frio.

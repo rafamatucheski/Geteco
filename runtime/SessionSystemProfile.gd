@@ -40,6 +40,17 @@ class EndProbe:
 	func _process(_delta: float) -> void:
 		recorder._late_process_usec = Time.get_ticks_usec()
 		recorder._late_process_frame = Engine.get_process_frames()
+		# Marca no fim da fila de chamadas diferidas (22/10): divide late_to_render_pre em diferidas
+		# (call_deferred da partida, corpos de NPC) e o resto (remoções, sync do RenderingServer).
+		recorder._deferred_tail.call_deferred()
+
+var _process_signal_usec := 0
+func _on_process_frame_signal() -> void:
+	_process_signal_usec = Time.get_ticks_usec()
+
+var _deferred_tail_usec := 0
+func _deferred_tail() -> void:
+	_deferred_tail_usec = Time.get_ticks_usec()
 
 var _render_pre_usec := 0
 var _render_post_usec := 0
@@ -154,6 +165,12 @@ func _phases(now: int) -> Dictionary:
 		phases["late_to_render_pre_ms"] = float(_render_pre_usec-_late_process_usec)/1000.0
 		phases["render_bracket_ms"] = float(_render_post_usec-_render_pre_usec)/1000.0
 		phases["post_render_to_next_callback_ms"] = float(now-_render_post_usec)/1000.0
+		if _process_signal_usec >= _render_post_usec and _process_signal_usec <= now:
+			phases["post_render_to_process_signal_ms"] = float(_process_signal_usec-_render_post_usec)/1000.0
+			phases["process_signal_to_callback_ms"] = float(now-_process_signal_usec)/1000.0
+		if _deferred_tail_usec >= _late_process_usec and _deferred_tail_usec <= _render_pre_usec:
+			phases["late_to_deferred_tail_ms"] = float(_deferred_tail_usec-_late_process_usec)/1000.0
+			phases["deferred_tail_to_render_pre_ms"] = float(_render_pre_usec-_deferred_tail_usec)/1000.0
 	phases["render_sample_age_ms"] = float(now-_render_post_usec)/1000.0 if _render_post_usec > 0 else -1.0
 	return phases
 
@@ -239,6 +256,9 @@ func _ready() -> void:
 		probe.process_mode = Node.PROCESS_MODE_ALWAYS
 		probe.process_physics_priority = -100000 if index == 0 else 100000
 		add_child(probe)
+	# Início do sinal process_frame (22/10): conexão fixa feita cedo vem antes das corrotinas que esperam o
+	# sinal a cada quadro. Divide post_render_to_next_callback em física/entrada e corrotinas do sinal.
+	get_tree().process_frame.connect(_on_process_frame_signal)
 	WORK.take_session()
 	WORK.session_enabled = true
 	_rich_sink = get_parent().has_method("HoldRuntimeSnapshot") and get_parent().has_method("RecordProfileWithSnapshot")
