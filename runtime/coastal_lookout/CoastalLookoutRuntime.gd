@@ -18,6 +18,7 @@ var _horizon_template: PackedScene
 var _city_template: PackedScene
 var _city_sources: Array[Dictionary] = []
 var _preparing := false
+var _reveal_pending := false
 var active: bool:
 	get: return is_instance_valid(binoculars) and binoculars.active
 
@@ -133,6 +134,21 @@ func _update_residency() -> void:
 		add_child(binoculars)
 		set_meta("last_residency_install_ms",float(Time.get_ticks_usec()-began)/1000.0)
 		set_meta("residency_install_count",int(get_meta("residency_install_count",0))+1)
+		# Escondido no 1º meio segundo (22/10, 3ª rodada): a 190 m o mirante entra com shaders próprios
+		# (arrebentação, farol, mirante) e o 1º desenho compilava 7 pipelines `surface` num quadro de 36 ms
+		# (sonda de pipelines, estresse nos sobrados a quente). Escondido, o motor compila em segundo plano;
+		# aparece no próximo passo da residência, ainda a ~190 m. Desligado por padrão (GETECO_LOOKOUT_HIDDEN_FIRST=1):
+		# o quadro menor (36 → 24 ms) só foi visto em rodadas com a sonda ligada, não em medição limpa.
+		if OS.get_environment("GETECO_LOOKOUT_HIDDEN_FIRST") == "1":
+			site.visible = false
+			horizon.visible = false
+			distant_city.visible = false
+			_reveal_pending = true
+			return
+	if _reveal_pending:
+		_reveal_pending = false
+		if is_instance_valid(site): site.visible = true
+		if is_instance_valid(distant_city): distant_city.visible = true
 	if is_instance_valid(horizon):
 		# A resident desert already supplies these exact world-coordinate meshes.
 		horizon.visible = not world.production.regions.has("desert")
@@ -160,6 +176,7 @@ func _release() -> void:
 	site = null
 	horizon = null
 	distant_city = null
+	_reveal_pending = false
 
 func _exit_tree() -> void:
 	_release()

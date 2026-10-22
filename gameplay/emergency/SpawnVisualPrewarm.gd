@@ -121,6 +121,8 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 		_beacon_presentation(cruiser)
 	var draws: Array[int] = [0]
 	var count_draw := func() -> void: draws[0] += 1
+	# Peças escondidas primeiro: os trabalhadores do motor compilam em paralelo (runtime/HiddenCompile.gd).
+	await preload("res://runtime/HiddenCompile.gd").prepare(visual, host.get_tree())
 	RenderingServer.frame_post_draw.connect(count_draw)
 	# 0: espera os corpos da polícia (instalados em call_deferred); 1: opaco; 2: sumindo.
 	var stage := 0

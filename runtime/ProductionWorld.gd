@@ -77,6 +77,7 @@ const POPULATION_SPAWN_MIN := 45.0
 const POPULATION_SPAWN_MAX := 95.0
 const POPULATION_DESPAWN := 120.0
 const CURTAIN := preload("res://runtime/StartupCurtain.gd")
+const PIPELINE_PROBE := preload("res://runtime/PipelineProbe.gd")
 ## Trânsito sem progresso por esse tempo (fora de fila de sinal) sai de cena quando
 ## ninguém está olhando e ele não está perto do jogador.
 const STUCK_DESPAWN_SECONDS := 15.0
@@ -185,6 +186,7 @@ func build() -> void:
 	curtain.set_stage(.12, "Montando " + ("a serra" if state.region_id == "mountain" else "o deserto" if state.region_id == "desert" else "o porto") + "…")
 	if not world.has_meta("menu_preview"): _request_fleet_scenes_early()
 	await curtain.prepare_presentation()
+	PIPELINE_PROBE.stage("curtain")
 	if world.has_meta("menu_preview"):
 		await _hold_fleet_scenes_incremental()
 	environment = WorldEnvironment.new()
@@ -233,6 +235,7 @@ func build() -> void:
 	world.street = region
 	_refresh_route_consumers()
 	await get_tree().process_frame
+	PIPELINE_PROBE.stage("region_mount")
 	world.player = ACTOR.new()
 	world.player.is_player = true
 	world.player.name = "Dante"
@@ -277,7 +280,9 @@ func build() -> void:
 	world.session.controller = self
 	world.session.incremental_startup = true
 	SESSION_OPS.attach(world, world.session, self, diagnostic_build)
+	PIPELINE_PROBE.stage("gameplay_nodes")
 	if not world.session.startup_complete: await world.session.startup_finished
+	PIPELINE_PROBE.stage("session_startup")
 	session = world.session
 	if "--parking-baseline" not in OS.get_cmdline_user_args():
 		roadside_parking = SESSION_OPS.instantiate(preload("res://runtime/RoadsideParking.gd"), self)
@@ -351,14 +356,22 @@ func build() -> void:
 	var grass = SESSION_OPS.instantiate(preload("res://world/mountain_detail/MountainGrass3D.gd"), self)
 	grass.controller = self
 	SESSION_OPS.attach(world, grass, self, diagnostic_build)
-	# Warm after CityLook enables the final Mobile framebuffer (including glow).
-	await preload("res://gameplay/emergency/ReactionVisualPrewarm.gd").run(world, curtain)
-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
-	await preload("res://gameplay/VehicleInteriorMaterialPrewarm.gd").run(world, curtain)
-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
-	# Tiros, impactos, explosão e armas na mão desenhados diante da câmera (cache de pipeline frio).
-	await preload("res://gameplay/CombatEffectsPrewarm.gd").run(world, curtain)
-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+	PIPELINE_PROBE.stage("session_systems")
+	# Depois do Weather, do CityLook e da StreetPhysics: chuva (RainPrewarm.late; antes saía sem fazer nada),
+	# efeitos de rua (StreetEffectsPrewarm), reações, interior do carro e combate. Em paralelo como os de
+	# _prewarm_regions (GETECO_PREWARM_PARALLEL=1; desligado por padrão, sem ganho medido limpo).
+	var late_steps: Array[String] = ["street_fx", "reaction_visuals", "vehicle_interior", "combat_effects"]
+	if preload("res://runtime/RainPrewarm.gd").late: late_steps.push_front("rain")
+	if OS.get_environment("GETECO_PREWARM_PARALLEL") == "1":
+		var pending: Array[int] = [late_steps.size()]
+		for step in late_steps: _prewarm_lane([step], pending, curtain)
+		if not await _await_lanes(pending): return
+		PIPELINE_PROBE.stage("late_parallel_draws")
+	else:
+		for step in late_steps:
+			await _draw_prewarm_step(step, curtain)
+			if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+			PIPELINE_PROBE.stage(step)
 	_install_world_edits()
 	# Estações de tubo e rodoviária montadas sob a cortina (depois das edições, que as movem): montadas ao
 	# chegar perto custavam 84-140 ms num quadro (teleporte de aquecimento do benchmark, 16/10).
@@ -376,6 +389,7 @@ func build() -> void:
 	while is_instance_valid(session) and session.coastal_lookout != null and session.coastal_lookout.is_preparing():
 		await get_tree().process_frame
 		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+	PIPELINE_PROBE.stage("world_edits_and_transit")
 	ready_for_play = true
 	curtain.set_stage(.93, "Levando você ao ponto salvo…")
 	await session.restore_location()
@@ -399,9 +413,11 @@ func build() -> void:
 	world.player.controlled_automatically = true
 	world.player.automatic_direction = Vector3.ZERO
 	restored_car.input_locked = true
+	PIPELINE_PROBE.stage("restore_location")
 	startup_streaming_settled = await _settle_startup()
 	if not startup_streaming_settled:
 		push_warning("Startup streaming still has pending work after its settling budget; runtime streaming will continue.")
+	PIPELINE_PROBE.stage("settle_startup")
 	# Antes do terminal: assim o JIT fica neste span em qualquer local de início.
 	_prewarm_route_jit()
 	# O jogador já está no ponto salvo: estações próximas na árvore ainda sob a cortina (só recolocadas).
@@ -420,7 +436,10 @@ func build() -> void:
 	var prefetch_traced := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
 	await preload("res://runtime/BackgroundRegionPreparation.gd").prefetch_collect(get_tree(), Time.get_ticks_msec() + 3000)
 	_trace_cost("startup:background_prefetch",prefetch_traced)
+	preload("res://gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd").release_hidden()
+	PIPELINE_PROBE.stage("before_lift")
 	if not world.has_meta("menu_preview"): await curtain.lift()
+	PIPELINE_PROBE.stage("curtain_lift")
 	session.ready_for_play = restored_session_ready
 	world.player.controlled_automatically = restored_player_automatic
 	world.player.automatic_direction = restored_player_direction
@@ -445,8 +464,10 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	if curtain != null:
 		curtain.set_stage(.36, "Carregando veículos…")
 		await get_tree().process_frame
+	PIPELINE_PROBE.stage("world_build")
 	await _hold_fleet_scenes_incremental()
 	_trace_cost("startup:fleet_hold",phase_traced)
+	PIPELINE_PROBE.stage("fleet_hold")
 	if "--no-prewarm" in OS.get_cmdline_user_args() or world.get_meta("skip_prewarm",false): return
 	var began := Time.get_ticks_msec()
 	# Caixa e cilindros unitários lidos da GPU uma vez, sob a cortina: daí em diante toda fusão de
@@ -462,7 +483,12 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	phase_traced = Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
 	await _prewarm_fleet_shaders(incremental, curtain)
 	_trace_cost("startup:fleet_shaders",phase_traced)
+	# Pintura suja/molhada/gasta × formatos reais de carro e porta, escondida: compila nos trabalhadores
+	# do motor durante o resto da carga (VehicleMaterialVariantPrewarm.start_hidden; sai antes da cortina).
+	preload("res://gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd").start_hidden(world)
 	phase_traced = Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
+	PIPELINE_PROBE.stage("fleet_shaders")
+	var stage_traced := phase_traced
 	# The existing carbonized textures cost ~4.5 ms on first use. Build their
 	# shared cache under the loading curtain, without creating fires or wrecks.
 	preload("res://gameplay/vehicle_effects/VehicleDamage.gd")._char(false)
@@ -481,6 +507,7 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	await get_tree().process_frame
 	if is_instance_valid(mark_primer): mark_primer.queue_free()
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+	stage_traced = _prewarm_mark("damage_marks", stage_traced)
 	# Explosion takes and immutable fire presentation were built at detonation.
 	# Keep their bounded resources ready, without spawning a live incident.
 	var combat_audio = preload("res://gameplay/CombatAudio.gd")
@@ -490,48 +517,40 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	await combat_audio.prewarm_reload_banks(get_tree())
 	await combat_audio.prewarm_gameplay_banks(get_tree())
 	await preload("res://audio/VehicleCrashAudio.gd").prewarm(get_tree())
-	preload("res://gameplay/emergency/Fire.gd").prewarm_visuals()
-	await preload("res://gameplay/emergency/EffectsPrewarm.gd").run(world, curtain)
-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
-	# Garoa e tempestade desenhadas sob a cortina: a 1ª chuva compilava no jogo (1,1 s, 20/10).
-	await preload("res://runtime/RainPrewarm.gd").run(world, curtain)
-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
-	await preload("res://gameplay/emergency/PoliceVisualPrewarm.gd").run(world, curtain)
-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
-	await preload("res://gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd").run(world, curtain)
-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
-	await preload("res://runtime/BridgeLookPrewarm.gd").run(world, curtain)
-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
-	# Omni (cubo e paraboloide) e spot com sombra + chão natural opaco e de borda: a feature de
-	# pipeline de sombra local passa a existir antes do jogo (túnel da ponte, lanterna, faróis).
-	await preload("res://runtime/LocalLightShadowPrewarm.gd").run(world, curtain)
-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
-	await preload("res://world/desert/DesertGroundCover.gd").prewarm_draw(world, curtain)
-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
-	await preload("res://runtime/FamilyVariantPrewarm.gd").run(world, curtain)
-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
-	await preload("res://runtime/PaintedFacadePrewarm.gd").run(world, curtain)
-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
-	await preload("res://runtime/WildlifePrewarm.gd").run(world, curtain)
-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
-	await preload("res://runtime/ForgePrewarm.gd").run(world, curtain)
-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
-	await preload("res://activities/skate/SkateModel.gd").prewarm_colors(world)
-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
-	await preload("res://assets/civilians/MeshyBodyPrewarm.gd").run(world, curtain)
-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
-	# Primeira aparição da Cobra e da polícia no tiroteio (sumiço do morto, itens largados, giroflex):
-	# quadros de 588-646 ms no desenho no release de 17/10. Depois dos GLBs do Meshy, já carregados acima.
-	await preload("res://gameplay/emergency/SpawnVisualPrewarm.gd").run(world, curtain)
-	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+	stage_traced = _prewarm_mark("audio", stage_traced)
+	# Pré-aquecimentos de desenho (22/10, 3ª rodada): em série, com o cache frio, cada um esperava sozinho as
+	# próprias compilações (combat_resources 31 s no frio, 5 s a quente; a sonda viu 2-8 s por etapa com 3-70
+	# pipelines cada). Juntos, todos põem as peças diante da câmera nos mesmos quadros e as compilações correm ao
+	# mesmo tempo nos trabalhadores do motor. A Cobra/polícia do tiroteio continua depois dos corpos do Meshy
+	# (usa os GLBs já carregados). DESLIGADO por padrão (GETECO_PREWARM_PARALLEL=1 liga): no frio a thread
+	# principal ainda compila um shader por vez e a carga não ficou mais curta em medição limpa (§8).
+	if OS.get_environment("GETECO_PREWARM_PARALLEL") == "1":
+		var lanes: Array = [["local_light_shadow"], ["fire"], ["police_visual"], ["vehicle_variants"], ["bridge_look"],
+			["desert_ground_cover"], ["family_variants"], ["painted_facades"], ["wildlife"], ["forge"], ["skate"],
+			["meshy_bodies", "spawn_visuals"]]
+		if not preload("res://runtime/RainPrewarm.gd").late: lanes.append(["rain"])
+		var pending: Array[int] = [lanes.size()]
+		for lane in lanes: _prewarm_lane(lane, pending, curtain)
+		if not await _await_lanes(pending): return
+		stage_traced = _prewarm_mark("parallel_draws", stage_traced)
+	else:
+		var serial: Array[String] = ["fire", "rain", "police_visual", "vehicle_variants", "bridge_look", "local_light_shadow",
+			"desert_ground_cover", "family_variants", "painted_facades", "wildlife", "forge", "skate", "meshy_bodies", "spawn_visuals"]
+		if preload("res://runtime/RainPrewarm.gd").late: serial.erase("rain")
+		for step in serial:
+			await _draw_prewarm_step(step, curtain)
+			if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+			stage_traced = _prewarm_mark(step, stage_traced)
 	# Capô aberto do Gol da oficina do Digo, sem ler a GPU quando a oficina entra no streaming do deserto.
 	preload("res://world/desert/drag_meet/DesertDigoWorkshop.gd").prewarm_hoods()
 	# Fonte e nomes do quadro da arrancada (etapa 15 do chão do deserto: 54 ms no estresse de 21/10).
 	preload("res://activities/desert_drag/DesertDragBoardProp.gd").prewarm()
+	stage_traced = _prewarm_mark("desert_props", stage_traced)
 	# Modelos das armas na mão, prontos antes da primeira troca (Gameplay._weapon_template).
 	if OS.get_environment("GETECO_WEAPON_TEMPLATE") != "0":
 		await preload("res://gameplay/ArsenalWeapon3D.gd").warm_templates(get_tree(), preload("res://gameplay/WeaponCatalog.gd").WEAPONS.keys())
 		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+	stage_traced = _prewarm_mark("weapon_templates", stage_traced)
 	_trace_cost("startup:combat_resources",phase_traced)
 	# Um quadro entre as etapas pesadas deixa a tela de carregamento andar; o mundo
 	# já está montado e o 'ready_for_play' ainda é falso nesse trecho.
@@ -553,6 +572,7 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 		await preload("res://runtime/RetainedRegionPreparation.gd").run(neighbour)
 		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	_trace_cost("startup:resident_prewarm",phase_traced)
+	PIPELINE_PROBE.stage("resident_prewarm")
 	background_preparation = preload("res://runtime/BackgroundRegionPreparation.gd").new()
 	background_preparation.controller = self
 	add_child(background_preparation)
@@ -581,6 +601,7 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 		else:
 			await preload("res://runtime/RetainedRegionPreparation.gd").run(detached)
 		_trace_cost("startup:distant_prewarm:"+id,phase_traced)
+		PIPELINE_PROBE.stage("distant_prewarm:" + id)
 		detached.initial_prewarm_only = false
 		detached.release_chunks()
 		world.remove_child(detached)
@@ -609,6 +630,7 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	_configure_routes()
 	population_layout.configure(ambient_roads_cache)
 	_trace_cost("startup:route_graphs",phase_traced)
+	PIPELINE_PROBE.stage("route_graphs")
 	print("Pré-aquecimento das regiões: ", Time.get_ticks_msec()-began, " ms")
 
 func _apply_player_settings() -> void:
@@ -639,6 +661,23 @@ func _prewarm_dispatch_models() -> void:
 		var model_traced := Time.get_ticks_usec() if traced else 0
 		var model: Node3D = fleet.create(str(id))
 		if model != null:
+			# Materiais que a porta recortada leva para formatos de vértice novos (FormatPrewarm, desenhados
+			# junto com as variantes de pintura). GETECO_FORMAT_PREWARM=0 desliga.
+			if preload("res://runtime/FormatPrewarm.gd").enabled():
+				var door_materials: Array[Material] = preload("res://gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd").door_materials
+				# A viatura do jogo usa o casco de peças soltas (VehiclePanelCatalog): a porta sai dele.
+				var sources: Array[Node3D] = [model]
+				var panels := preload("res://gameplay/vehicle_effects/VehiclePanelCatalog.gd")
+				if panels.supports(str(id)) and OS.get_environment("GETECO_BREAKAWAY_PREWARM") != "0":
+					var panel_model := panels.create(str(id))
+					if panel_model != null: sources.append(panel_model)
+				for source in sources:
+					for part in preload("res://gameplay/VehicleDoorBuilder.gd")._parts(source):
+						for surface in part.mesh.get_surface_count():
+							var material := part.get_active_material(surface)
+							if material != null and not material in door_materials: door_materials.append(material)
+				for source in sources:
+					if source != model: source.free()
 			# Arrays da lataria na cópia da CPU (MeshArrayCache), sob a cortina: o preparo da porta da
 			# viatura que chega (VehicleDoorBuilder) não lê mais a malha de volta da GPU no jogo.
 			if OS.get_environment("GETECO_DOOR_ARRAY_CACHE") != "0":
@@ -668,13 +707,25 @@ func _prewarm_fleet_shaders(_incremental: bool, curtain: CanvasLayer = null) -> 
 	# modelo por vez. GETECO_LOADING_TURBO=0 volta a um por vez.
 	var batch_size := 4 if preload("res://runtime/LoadingTurbo.gd").active() else 1
 	var ids: Array = fleet.all().keys()
+	# Cupê, Monaliza, Metro e viatura rodam no jogo com o casco de peças soltas (VehiclePanelCatalog,
+	# Vehicle._ready): outra cena, outros materiais de pintura. Sem eles aqui, a pintura suja/molhada desses
+	# quatro compilava no jogo (sonda de pipelines, 22/10). GETECO_BREAKAWAY_PREWARM=0 desliga.
+	if OS.get_environment("GETECO_BREAKAWAY_PREWARM") != "0":
+		for panel_id in preload("res://gameplay/vehicle_effects/VehiclePanelCatalog.gd").IDS: ids.append("breakaway:" + str(panel_id))
+	if await _compile_fleet_hidden(ids, curtain):
+		print("startup: dents_rest_prewarm vertices=", preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd").fleet_rest_vertices)
+		return
 	var next := 0
 	while next < ids.size():
 		var batch: Array[Dictionary] = []
 		while batch.size() < batch_size and next < ids.size():
 			var id := str(ids[next])
 			next += 1
-			var created: Node3D = fleet.create(id)
+			var created: Node3D = null
+			if id.begins_with("breakaway:"):
+				id = id.trim_prefix("breakaway:")
+				created = preload("res://gameplay/vehicle_effects/VehiclePanelCatalog.gd").create(id)
+			else: created = fleet.create(id)
 			if created != null: batch.append({"id": id, "model": created})
 		if batch.is_empty(): continue
 		var camera := world.camera as Camera3D
@@ -727,6 +778,63 @@ func _prewarm_fleet_shaders(_incremental: bool, curtain: CanvasLayer = null) -> 
 			model.free()
 		await get_tree().process_frame
 	print("startup: dents_rest_prewarm vertices=", preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd").fleet_rest_vertices)
+
+## A frota inteira (e as cópias de lentes apagadas) escondida de uma vez antes dos lotes desenhados
+## (22/10, 3ª rodada): com o cache frio cada lote de 4 compilava seus shaders na thread principal, um depois
+## do outro (fleet_shaders 7,2 s frio × 2,3 s quente). Escondidas, as pipelines compilam em paralelo nos
+## trabalhadores (runtime/HiddenCompile.gd). Com GETECO_FLEET_HIDDEN_ONLY (padrão) os lotes desenhados diante
+## da câmera nem acontecem: a pipeline que trava (a "ubershader" da superfície) já ficou pronta escondida, e a
+## especialização de cada carro é feita em segundo plano no jogo, sem quadro esperando. Devolve true quando
+## fez tudo o que os lotes faziam (bases de pintura, vidros, lataria em repouso). Só com GETECO_HIDDEN_COMPILE=1.
+func _compile_fleet_hidden(ids: Array, curtain: CanvasLayer) -> bool:
+	if not preload("res://runtime/HiddenCompile.gd").enabled() or DisplayServer.get_name() == "headless": return false
+	if not preload("res://gameplay/emergency/EffectsPrewarm.gd")._covered_loading(world, curtain): return false
+	var hidden_only := OS.get_environment("GETECO_FLEET_HIDDEN_ONLY") != "0"
+	var primaries: Array[Dictionary] = []
+	var holder := Node3D.new()
+	holder.name = "FleetHiddenCompile"
+	holder.visible = false
+	world.add_child(holder)
+	var lens_dim := OS.get_environment("GETECO_LENS_VARIANT_PREWARM") != "0"
+	var fade_copies := OS.get_environment("GETECO_WRECK_FADE_PREWARM") == "1"
+	for raw_id in ids:
+		var id := str(raw_id)
+		var model: Node3D = null
+		if id.begins_with("breakaway:"): model = preload("res://gameplay/vehicle_effects/VehiclePanelCatalog.gd").create(id.trim_prefix("breakaway:"))
+		else: model = preload("res://runtime/FleetCatalog.gd").create(id)
+		if model == null: continue
+		model.process_mode = Node.PROCESS_MODE_DISABLED
+		holder.add_child(model)
+		primaries.append({"id": id.trim_prefix("breakaway:"), "model": model})
+		if lens_dim:
+			var copy := model.duplicate(0) as Node3D
+			if copy != null:
+				if _dim_emissive_lenses(copy) == 0: copy.free()
+				else:
+					copy.process_mode = Node.PROCESS_MODE_DISABLED
+					holder.add_child(copy)
+		# Carcaça sumindo (Vehicle._tick_wreck põe `transparency` em todas as malhas): os materiais do carro
+		# no passe alfa. No estresse com cache frio o 1º sumiço compilou 5 pipelines `draw` num quadro de
+		# 3,0 s (export D, 22/10). Desligado por padrão (GETECO_WRECK_FADE_PREWARM=1): ganho não medido limpo.
+		if fade_copies:
+			var faded := model.duplicate(0) as Node3D
+			if faded != null:
+				for found in faded.find_children("*", "GeometryInstance3D", true, false): (found as GeometryInstance3D).transparency = .5
+				faded.process_mode = Node.PROCESS_MODE_DISABLED
+				holder.add_child(faded)
+	# Insígnia dos carros da Cobra (CobraAppearance.livery/race_livery), posta no carro ao nascer.
+	holder.add_child(preload("res://gameplay/urban_v1/CobraAppearance.gd").insignia(1.0))
+	await preload("res://runtime/HiddenCompile.gd").settle(get_tree())
+	if hidden_only:
+		for entry in primaries:
+			var model: Node3D = entry.model
+			if not is_instance_valid(model): continue
+			# O mesmo que os lotes desenhados fazem com cada modelo antes de liberá-lo.
+			preload("res://gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd").collect(model, str(entry.id))
+			preload("res://gameplay/VehicleInterior.gd").cache_glass(model)
+			preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd").prewarm_rest(model)
+	if is_instance_valid(holder): holder.free()
+	return hidden_only
 
 ## Cópia apagada (sem emissão) de cada material emissivo do modelo, retida por chave de variante.
 static var _retained_lens_variants: Dictionary = {}
@@ -1941,6 +2049,67 @@ func _prewarm_route_jit() -> void:
 	var elapsed := Time.get_ticks_usec() - began
 	print("startup: route_jit_prewarm native=%s planned=%s ms=%.3f" % [router._native != null, planned, elapsed / 1000.0])
 	if world.get_meta("benchmark_trace", false): _trace_cost("startup:route_jit_prewarm", began)
+
+## Espera as filas paralelas. Uma etapa que pare com erro de script nunca devolveria a vez e a cortina ficaria
+## presa: depois de LANE_DEADLINE_MSEC a carga segue com aviso (o pré-aquecimento que faltou compila no jogo).
+## Devolve false se o mundo saiu da árvore no meio.
+const LANE_DEADLINE_MSEC := 180000
+func _await_lanes(pending: Array[int]) -> bool:
+	var deadline := Time.get_ticks_msec() + LANE_DEADLINE_MSEC
+	while pending[0] > 0:
+		await get_tree().process_frame
+		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return false
+		if Time.get_ticks_msec() > deadline:
+			push_warning("Pré-aquecimento em paralelo: %d fila(s) não terminaram em %d s; a carga segue." % [pending[0], int(LANE_DEADLINE_MSEC / 1000.0)])
+			break
+	return true
+
+## Uma fila de pré-aquecimentos de desenho em série; várias filas correm juntas (GETECO_PREWARM_PARALLEL).
+## Chamada sem await: cada etapa espera os próprios quadros e `pending` cai quando a fila acaba.
+func _prewarm_lane(steps: Array, pending: Array[int], curtain: CanvasLayer) -> void:
+	for step in steps:
+		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): break
+		var traced := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
+		await _draw_prewarm_step(str(step), curtain)
+		_trace_cost("startup:prewarm:" + str(step), traced)
+	pending[0] -= 1
+
+func _draw_prewarm_step(step: String, curtain: CanvasLayer) -> void:
+	match step:
+		"fire":
+			preload("res://gameplay/emergency/Fire.gd").prewarm_visuals()
+			await preload("res://gameplay/emergency/EffectsPrewarm.gd").run(world, curtain)
+		"rain": await preload("res://runtime/RainPrewarm.gd").run(world, curtain)
+		"police_visual": await preload("res://gameplay/emergency/PoliceVisualPrewarm.gd").run(world, curtain)
+		"vehicle_variants": await preload("res://gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd").run(world, curtain)
+		"bridge_look": await preload("res://runtime/BridgeLookPrewarm.gd").run(world, curtain)
+		# Omni (cubo e paraboloide) e spot com sombra + chão natural opaco e de borda: a feature de
+		# pipeline de sombra local passa a existir antes do jogo (túnel da ponte, lanterna, faróis).
+		"local_light_shadow": await preload("res://runtime/LocalLightShadowPrewarm.gd").run(world, curtain)
+		"desert_ground_cover": await preload("res://world/desert/DesertGroundCover.gd").prewarm_draw(world, curtain)
+		"family_variants": await preload("res://runtime/FamilyVariantPrewarm.gd").run(world, curtain)
+		"painted_facades": await preload("res://runtime/PaintedFacadePrewarm.gd").run(world, curtain)
+		"wildlife": await preload("res://runtime/WildlifePrewarm.gd").run(world, curtain)
+		"forge": await preload("res://runtime/ForgePrewarm.gd").run(world, curtain)
+		"skate": await preload("res://activities/skate/SkateModel.gd").prewarm_colors(world)
+		"meshy_bodies": await preload("res://assets/civilians/MeshyBodyPrewarm.gd").run(world, curtain)
+		# Primeira aparição da Cobra e da polícia no tiroteio (sumiço do morto, itens largados, giroflex):
+		# quadros de 588-646 ms no desenho no release de 17/10. Depois dos GLBs do Meshy, já carregados acima.
+		"spawn_visuals": await preload("res://gameplay/emergency/SpawnVisualPrewarm.gd").run(world, curtain)
+		"street_fx": await preload("res://gameplay/street_physics/StreetEffectsPrewarm.gd").run(world, curtain)
+		# Warm after CityLook enables the final Mobile framebuffer (including glow).
+		"reaction_visuals": await preload("res://gameplay/emergency/ReactionVisualPrewarm.gd").run(world, curtain)
+		"vehicle_interior": await preload("res://gameplay/VehicleInteriorMaterialPrewarm.gd").run(world, curtain)
+		# Tiros, impactos, explosão e armas na mão desenhados diante da câmera (cache de pipeline frio).
+		"combat_effects": await preload("res://gameplay/CombatEffectsPrewarm.gd").run(world, curtain)
+
+## Etapas do pré-aquecimento com nome (22/10, 3ª rodada): no cache frio `startup:combat_resources` levava
+## 31 s (5 s a quente) e só o total ia ao registro. Cada etapa vai ao registro da sessão
+## (`startup:prewarm:<nome>`) e fecha a etapa na sonda de pipelines (GETECO_PIPELINE_PROBE=1).
+func _prewarm_mark(label: String, began: int) -> int:
+	_trace_cost("startup:prewarm:" + label, began)
+	PIPELINE_PROBE.stage(label)
+	return Time.get_ticks_usec() if began != 0 else 0
 
 func _trace_cost(label: String, began: int) -> void:
 	if began == 0: return

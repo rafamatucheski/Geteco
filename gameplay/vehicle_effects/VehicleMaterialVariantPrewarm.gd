@@ -33,6 +33,13 @@ static var _retained: Array[StandardMaterial3D] = []
 static var _retained_effects: Array[Resource] = []
 static var _drawn := false
 static var last_summary: Dictionary = {}
+## Formatos de vértice da frota (FormatPrewarm): as variantes acima também são desenhadas num triângulo de
+## cada formato real de carro, porta recortada e acabamento; na caixa só o shader ficava pronto (22/10).
+const FORMAT := preload("res://runtime/FormatPrewarm.gd")
+static var _formats: Dictionary = {}
+## Materiais das peças que a porta da viatura recorta (ProductionWorld._prewarm_dispatch_models): na folha
+## da porta eles vão para um formato novo (posição, normal, UV, às vezes cor).
+static var door_materials: Array[Material] = []
 
 ## Controle A/B de medição: HARBOR_VEHICLE_VARIANT_PREWARM=0 desliga só esta etapa.
 static func enabled() -> bool:
@@ -48,6 +55,84 @@ static func collect(model: Node3D, archetype: String) -> void:
 	for material in paint.materials:
 		var signature := shader_signature(material)
 		if not _bases.has(signature): _bases[signature] = material
+	if FORMAT.enabled(): FORMAT.collect(model, _formats)
+
+## Variantes de pintura que não são as bases (lattice ou as 9 antigas) e as carcaças, sem repetir shader.
+static func _paint_variants() -> Array[StandardMaterial3D]:
+	var known := {}
+	for signature in _bases: known[signature] = true
+	var variants: Array[StandardMaterial3D] = []
+	var candidates: Array = []
+	var lattice := OS.get_environment("GETECO_PAINT_LATTICE") != "0"
+	for base: StandardMaterial3D in _bases.values(): candidates.append_array(_lattice(base) if lattice else _variants(base))
+	candidates.append_array(DAMAGE.wreck_materials().values())
+	for material: StandardMaterial3D in candidates:
+		var signature := shader_signature(material)
+		if known.has(signature): continue
+		known[signature] = true
+		variants.append(material)
+	return variants
+
+## Pares [material, formato]: pintura (bases e variantes) nos formatos de carro e de porta, efeitos do
+## carro nos formatos de carro e de SurfaceTool, materiais da porta recortada e do acabamento da porta.
+static func _format_pairs(variants: Array[StandardMaterial3D], effect_materials: Array[Material]) -> Array:
+	var pairs: Array = []
+	var seen := {}
+	var car_formats: Array = _formats.keys()
+	var paint_formats: Array = car_formats + [FORMAT.V | FORMAT.N | FORMAT.UV, FORMAT.V | FORMAT.N | FORMAT.UV | FORMAT.C, FORMAT.V | FORMAT.N | FORMAT.C]
+	FORMAT.cross(_bases.values() + variants, paint_formats, pairs, seen)
+	# Para-brisa molhado, limpador, marcas de pneu e detritos: malhas montadas no jogo a partir do vidro
+	# e da lataria (formatos de carro) ou por SurfaceTool (posição, normal e cor).
+	FORMAT.cross(effect_materials, car_formats + FORMAT.DOOR_FORMATS + [FORMAT.V | FORMAT.N], pairs, seen)
+	FORMAT.cross(door_materials, [FORMAT.V | FORMAT.N | FORMAT.UV, FORMAT.V | FORMAT.N | FORMAT.UV | FORMAT.C], pairs, seen)
+	var door := preload("res://gameplay/VehicleDoorPresentation.gd")
+	FORMAT.cross([door._card_material(), door._liner_dark(), preload("res://world/city_look/CityPropKit.gd").material()], FORMAT.DOOR_FORMATS, pairs, seen)
+	return pairs
+
+## Peças escondidas (22/10, 3ª rodada): o motor compila em segundo plano o pipeline "ubershader" de toda
+## superfície criada, mesmo invisível ou fora da câmera (conferido no editor: instância com visible=false
+## compilou os pipelines `surface` e, ao aparecer, só especializou em segundo plano, sem nenhum `surface`
+## novo). Montadas logo depois da frota, as variantes de pintura × formatos compilam nos trabalhadores do
+## motor enquanto a thread principal segue com a carga, sem quadro esperando por elas; saem antes da
+## cortina (`release_hidden`). GETECO_FORMAT_HIDDEN=0 volta a desenhá-las diante da câmera em `run`.
+static var _hidden: Node3D
+static var _hidden_pieces := 0
+static func hidden_enabled() -> bool:
+	return FORMAT.enabled() and OS.get_environment("GETECO_FORMAT_HIDDEN") != "0"
+
+static func start_hidden(host: Node3D) -> void:
+	if not enabled() or not hidden_enabled() or _drawn or _bases.is_empty() or is_instance_valid(_hidden): return
+	if DisplayServer.get_name() == "headless" or "--no-prewarm" in OS.get_cmdline_user_args(): return
+	var began := Time.get_ticks_usec()
+	var variants := _paint_variants()
+	var effect_materials := _effect_materials()
+	_retained.append_array(variants)
+	for base: StandardMaterial3D in _bases.values(): _retained.append(base)
+	_retained_effects.append_array(effect_materials)
+	_hidden = Node3D.new()
+	_hidden.name = "VehicleFormatPrewarm"
+	_hidden.visible = false
+	host.add_child(_hidden)
+	_hidden_pieces = FORMAT.build_grid(_hidden, _format_pairs(variants, effect_materials))
+	# Carcaça queimada sumindo: os materiais da brasa nos formatos de carro, no passe alfa.
+	# A brasa vai para todas as malhas do carro, inclusive insígnia da Cobra (posição, normal, cor) e
+	# limpador (posição, cor): sonda de pipelines, estresse do oeste a quente (export C).
+	# Desligado por padrão (GETECO_WRECK_FADE_PREWARM=1): ganho não medido limpo.
+	if OS.get_environment("GETECO_WRECK_FADE_PREWARM") == "1":
+		var wreck: Array = DAMAGE.wreck_materials().values()
+		var opaque_pairs: Array = []
+		FORMAT.cross(wreck, FORMAT.DOOR_FORMATS, opaque_pairs, {})
+		_hidden_pieces += FORMAT.build_grid(_hidden, opaque_pairs)
+		var wreck_pairs: Array = []
+		FORMAT.cross(wreck, _formats.keys() + FORMAT.DOOR_FORMATS, wreck_pairs, {})
+		_hidden_pieces += FORMAT.build_grid(_hidden, wreck_pairs, Vector3.ZERO, .5)
+	print("Variantes de pintura em formato real (escondidas): ", JSON.stringify({"bases": _bases.size(), "variants": variants.size(),
+		"formats": _formats.keys(), "pieces": _hidden_pieces, "door_materials": door_materials.size(), "usec": Time.get_ticks_usec() - began}))
+	door_materials.clear()
+
+static func release_hidden() -> void:
+	if is_instance_valid(_hidden): _hidden.free()
+	_hidden = null
 
 static func run(host: Node3D, curtain: CanvasLayer) -> void:
 	if _drawn or not enabled() or DisplayServer.get_name() == "headless" or _bases.is_empty(): return
@@ -56,17 +141,9 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 	if not GUARDS._current_camera(host, camera): return
 	var began := Time.get_ticks_usec()
 	var base_count := _bases.size()
-	var known := {}
-	for signature in _bases: known[signature] = true
-	var variants: Array[StandardMaterial3D] = []
-	var candidates: Array = []
-	for base: StandardMaterial3D in _bases.values(): candidates.append_array(_variants(base))
-	candidates.append_array(DAMAGE.wreck_materials().values())
-	for material: StandardMaterial3D in candidates:
-		var signature := shader_signature(material)
-		if known.has(signature): continue
-		known[signature] = true
-		variants.append(material)
+	# Com as peças escondidas já montadas, a pintura está coberta nos formatos reais: aqui só os efeitos.
+	var hidden := is_instance_valid(_hidden)
+	var variants: Array[StandardMaterial3D] = [] if hidden else _paint_variants()
 	var visual := Node3D.new()
 	visual.name = "VehicleMaterialVariantPrewarm"
 	visual.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
@@ -83,6 +160,8 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 		part.material_override = drawn[index]
 		part.position = Vector3((index % columns - (columns - 1) * .5) * SPACING, -floorf(float(index) / columns) * SPACING, 0)
 		visual.add_child(part)
+	var format_pieces := _hidden_pieces if hidden else 0
+	if FORMAT.enabled() and not hidden: format_pieces = FORMAT.build_grid(visual, _format_pairs(variants, effect_materials), Vector3(0, 0, -1.5))
 	var emitters := _effect_emitters()
 	# Os processos ficam retidos depois que os emissores são liberados com `visual`.
 	var processes: Array[Resource] = []
@@ -94,6 +173,8 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 	_position(visual, camera)
 	var draws: Array[int] = [0]
 	var count_draw := func() -> void: draws[0] += 1
+	# Peças escondidas primeiro: os trabalhadores do motor compilam em paralelo (runtime/HiddenCompile.gd).
+	await preload("res://runtime/HiddenCompile.gd").prepare(visual, host.get_tree())
 	RenderingServer.frame_post_draw.connect(count_draw)
 	var completed := false
 	for frame in MAX_WAIT_FRAMES:
@@ -109,12 +190,17 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 	if is_instance_valid(visual): visual.free()
 	if completed:
 		_retained.append_array(variants)
+		# As bases vêm de modelos já liberados; sem referência o shader e os pipelines novos sairiam juntos.
+		if format_pieces > 0 and not hidden:
+			for base: StandardMaterial3D in _bases.values(): _retained.append(base)
 		_retained_effects.append_array(effect_materials)
 		_retained_effects.append_array(processes)
 		_drawn = true
 		_bases.clear()
 	last_summary = {"bases":base_count, "glass":0, "variants":variants.size(), "effects":effect_materials.size(),
-		"emitters":processes.size(), "completed":completed, "draws":draws[0], "usec":Time.get_ticks_usec()-began}
+		"emitters":processes.size(), "completed":completed, "draws":draws[0], "usec":Time.get_ticks_usec()-began,
+		"formats":_formats.keys(), "format_pieces":format_pieces, "hidden":hidden, "door_materials":door_materials.size()}
+	if completed: door_materials.clear()
 	print("Variantes de material de veículo preparadas: ", JSON.stringify(last_summary))
 
 ## Mesmas mudanças de flags de VehicleUsage.apply e VehicleDamage._stall_apply_wear;
@@ -151,6 +237,37 @@ static func _variants(base: StandardMaterial3D) -> Array[StandardMaterial3D]:
 			beaded.normal_texture = RAIN.beads()
 			beaded.uv1_triplanar = true
 			result.append(beaded)
+	return result
+
+## Todas as combinações de flags que VehicleUsage (sujeira), VehicleDamage (verniz, riscos, amassado) e
+## VehicleRain (gotas) alcançam juntos numa pintura (22/10, 3ª rodada). A sonda de pipelines viu no jogo
+## combinações fora das 9 de `_variants`, como sujeira + gotas que o desgaste desligou (normal desligada, mas
+## a textura e o triplanar UV1 ficam): no cache frio esse shader compilava num quadro de 1,16 s ao atirar
+## no trânsito. Estados: detalhe (nenhum / montado e desligado / ligado) × verniz (o da base / tirado) ×
+## normal (limpa / gotas ou amassado / desligada com textura). GETECO_PAINT_LATTICE=0 volta às 9.
+static func _lattice(base: StandardMaterial3D) -> Array[StandardMaterial3D]:
+	var result: Array[StandardMaterial3D] = []
+	# Gotas e amassado só entram em pintura sem textura própria (VehicleRain.beads_ok, VehicleDamage base.dents).
+	var normal_states: Array[String] = ["clean"]
+	if base.albedo_texture == null and base.normal_texture == null: normal_states = ["clean", "on", "off_tex"]
+	var coats: Array[bool] = [base.clearcoat_enabled]
+	if base.clearcoat_enabled: coats.append(false)
+	for detail in ["none", "off", "on"]:
+		for coat in coats:
+			for normal in normal_states:
+				var material := base.duplicate() as StandardMaterial3D
+				if detail != "none":
+					material.detail_albedo = USAGE._texture(1)
+					material.detail_blend_mode = BaseMaterial3D.BLEND_MODE_MIX
+					material.detail_uv_layer = BaseMaterial3D.DETAIL_UV_2
+					material.uv2_triplanar = true
+					material.detail_enabled = detail == "on"
+				material.clearcoat_enabled = coat
+				if normal != "clean":
+					material.normal_texture = RAIN.beads()
+					material.uv1_triplanar = true
+					material.normal_enabled = normal == "on"
+				result.append(material)
 	return result
 
 ## Materiais desenhados numa caixa: marcas de pneu, para-brisa molhado e limpador, detritos da rua.

@@ -75,6 +75,10 @@ func _ready() -> void:
 	# a chave era ignorada em silêncio nesse caso (auditoria 19/10, §6).
 	var steps_text := OS.get_environment("HARBOR_MAX_PHYSICS_STEPS")
 	if steps_text.is_valid_int() and int(steps_text) >= 1: Engine.max_physics_steps_per_frame = int(steps_text)
+	# Sonda de pipelines (diagnóstico, independente do registro): nasce antes do mundo para que tudo o que a carga
+	# desenhar conte como "já visto" (runtime/PipelineProbe.gd).
+	if OS.get_environment("GETECO_PIPELINE_PROBE") == "1" and not "--headless" in OS.get_cmdline_args():
+		get_tree().root.add_child.call_deferred(load("res://runtime/PipelineProbe.gd").new())
 	if OS.get_environment("HARBOR_STALL_LOG") != "1" or "--headless" in OS.get_cmdline_args():
 		_disable()
 		return

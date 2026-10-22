@@ -16,6 +16,10 @@ foi cumprida em 4 de 5 rotas** (seção 6). Para jogar: usar um export release (
 **2ª rodada (22/10, seção 7):** quadros > 33 ms no estresse 37 → 19 em 6 rotas × 2 rodadas (deserto 178 → 49 ms de
 máximo), p50 igual; a meta ainda não foi cumprida, o cache frio ainda tem quadros de 0,6–1,1 s no primeiro tiro e
 a carga a quente ficou só 0,5 s mais curta.
+**3ª rodada (22/10, seção 8):** no frio do oeste, jogável 118,3 → 76,7 s e maior quadro 2 069 → 1 115 ms (o motor
+regravava o cache de pipelines inteiro a cada 3 MB; agora só ao sair); pipelines novas no jogo a quente 58 → 4; tempo
+de quadro a quente sem mudança mensurável nas rotas medidas limpas; oeste, porto e travessia sem A/B limpo a quente
+(outra sessão rodou Godot fora da fila).
 
 ## 1. Como o jogo rodou na partida
 
@@ -675,3 +679,190 @@ Sobre o código final (o do export G sem a leitura antecipada do documento e com
   isolada), `stream.harbor.prepare_collision` 7–8 ms.
 - **Não medido:** rota 66, cidade do deserto, cavernas, chuva + noite juntas, 1080, D3D12, partida real pelo
   `Jogar.cmd` (clique no menu → jogável), travessia com logs depois das correções, mais de 1 rodada no frio.
+
+## 8. 3ª rodada (22/10): pipelines com nome, cache frio e a gravação do cache de pipelines
+
+Pedido: o mesmo pior caso (3440x1440 com as opções do jogador, chuva forte, tiro, 3 estrelas com perseguição,
+25 m/s, explosões) liso em qualquer região, e carga rápida — principalmente a **primeira sessão com cache frio**.
+
+**Resumo.** Uma sonda nova (`GETECO_PIPELINE_PROBE=1`) deu nome a cada pipeline criada no jogo. Com ela e com o
+cache frio de verdade apareceram as causas: (1) o motor **regrava o arquivo inteiro do cache de pipelines a cada
+3 MB novos** e isso trava a thread principal por 1–18 s na sessão fria; (2) o `RainPrewarm` **nunca tinha rodado**
+(o `Weather` nascia depois dele); (3) o pipeline é por **formato de vértice**, e as variantes de pintura eram
+aquecidas numa caixa; (4) faltavam combinações de pintura, o casco de peças soltas de 4 modelos, a porta da viatura
+e efeitos de rua. Medido limpo, no frio do oeste (mesmo export, mesmo dia): **jogável em 118,3 → 76,7 s, maior
+quadro 2 069 → 1 115 ms, quadros > 250 ms 5 → 1**. No jogo a quente as pipelines novas caíram de **58 para 4** no
+oeste, mas o tempo de quadro a quente **não mudou de forma mensurável** nas rotas que ficaram limpas, e **oeste,
+porto e travessia ficaram sem A/B limpo a quente**: outra sessão rodou Godot fora da fila durante quase toda a
+bancada (8.1). O que não provou ganho em medição limpa ficou **desligado por padrão** (8.3).
+
+### 8.1 Como foi medido (e o que contaminou)
+
+- Exports pela fila (`GODOT_RUN_TIMEOUT=240 tools/run_godot_locked.sh --headless ... --export-release`), cada um
+  com `working.patch` e `status.txt`: `artifacts/perf-r3-a-20261022/` (HEAD c4287f45 + sonda e marcas de etapa, sem
+  mudança de comportamento) até `perf-r3-g-20261022/` (export do A/B). B–F foram passos intermediários (8.4).
+- Estresse igual ao da 2ª rodada (`BENCH_DISPATCH=1`, `settings-jogador-3440.cfg`, `--benchmark-stress
+  --benchmark-cold --benchmark-weapon-cycle=5 --skip-arrival`, 90 s). "Antes" = os interruptores desta rodada em 0
+  no mesmo export (volta ao HEAD, que já tem os da 1ª e 2ª rodadas); "depois" = todos ligados (no export G,
+  inclusive os que depois ficaram desligados por padrão, 8.3). Sem logs. Frio: `tools/bench/cold_cache_run.sh`.
+- **Outra sessão rodou Godot fora da fila** (`--path D:/geteco/game --script C:/Users/rafae/Documents/Codex/...`,
+  renderizado 1920x1080, ~1–4 min por vez) em 11:52–11:56, 11:58–12:04, 12:24–12:40 e várias vezes depois de 12:50.
+  Um registro dos processos a cada 10 s separou as rodadas; **toda rodada com sobreposição foi descartada** (nenhuma
+  aceita "marcada"), e a partir de 12:42 o executor esperava a outra sessão sair e repetia a rodada se ela
+  aparecesse no meio. A mesma sessão também mexia no apresentador de loading (`ui/LoadingPresenter.cs`,
+  `ui/LoadingCanvas.cs`, `runtime/StartupCurtain.gd`, `ui/MainMenu.gd`, `ui/SkyMenu.gd`); os exports E–G incluem esse
+  trabalho em andamento, nos dois lados do A/B. Às 13:35 a bancada parou porque o usuário passou a usar o PC.
+- Descartadas: oeste (as 4 rodadas a quente), porto (4), sobrados D1 e A2, travessia D1, deserto da 2ª volta (5
+  tentativas, todas com sobreposição), travessia D2 (o frio seguinte afastou as pastas de cache com ela aberta) e o
+  1º frio "antes" do oeste (13:19; a travessia D2 ainda rodava e, ao sair, gravou o cache quente na pasta afastada:
+  deu 70,1 s / 915 ms, não era frio). O frio "antes" válido é o de 13:31.
+- Rodadas com a sonda servem para atribuir, não para medir (ela descreve cada nó novo e revarre ~10 mil nós a cada
+  quadro com pipeline nova).
+
+### 8.2 Sonda de pipelines (`runtime/PipelineProbe.gd`, novo; diagnóstico, desligada)
+
+`GETECO_PIPELINE_PROBE=1` cria a sonda antes do mundo (pelo `StallLog`). A cada `frame_post_draw` ela lê os 5
+contadores de pipeline do motor; quando sobem, grava em `<pasta do exe>/evidence/pipeline-probe/probe-*.jsonl` as
+chaves novas das `GeometryInstance3D` que entraram desde o desenho anterior: shader (ShaderMaterial pelo arquivo,
+BaseMaterial3D pelas flags e texturas que mudam o código, com os nomes em `desc`), formato de vértice, primitiva,
+sombra, transparência, multimesh/partícula, nó, malha e material. Com a partida jogável, o quadro com pipeline
+nova também revarre os nós já vistos (material trocado em nó existente). `ProductionWorld` marca as etapas da
+carga (`PipelineProbe.stage`), com duração e pipelines de cada uma. Limites: o "novo" é por quadro (não aponta a
+pipeline exata dentro do quadro) e ela não vê compute de partícula nem a gravação do cache.
+
+Dois achados laterais: **no frio o caro é o driver**, não o SPIR-V — com o Shader Baker (export sem `--headless`,
++13 MB de shaders assados) a carga fria não mudou (80,0 × 85,0 s, mesmo código, rodadas com sonda) — e **mais
+trabalhadores pioraram** (`threading/worker_pool/low_priority_thread_ratio=0.9` por `override.cfg`: carga fria de
+164,6 s, contra ~76–85 s). O Baker não foi adotado: só assa com o editor aberto em Vulkan, e esse export regravou o
+`project.godot` (tirou a linha do driver Vulkan; devolvida, `project.godot` e `export_presets.cfg` iguais ao HEAD).
+Medido no editor (12 shaders de código único): desenhados direto travam 4,3–4,8 s num quadro, um shader depois do
+outro na thread principal; com `visible=false` ficam prontos em 0,6 s (os trabalhadores compilam a "ubershader" de
+toda superfície criada, mesmo invisível) e ao aparecer não criam nenhuma pipeline `surface` nova.
+
+### 8.3 Causas, correções e o que ficou ligado
+
+"Ganho" diz como a correção foi provada. Desligado por padrão = não provou ganho em medição limpa; `=1` liga.
+
+| # | causa | evidência | correção | ganho | padrão |
+|---|---|---|---|---|---|
+| 1 | **Cache de pipelines regravado inteiro a cada 3 MB novos** (`rendering/rendering_device/pipeline_cache/save_chunk_size_mb`=3) | frio, oeste, export C: padrão → quadros de 1,2 s, 1,5 s e 18,0 s sem pipeline nem shader novo no quadro, jogável em 94,8 s; com 4096 por `override.cfg` → máximo 1,33 s, 74,8 s (rodadas de 10:26–10:35, antes do registro de processos). Uma sessão fria leva o arquivo de 0 a ~75 MB; o do jogador tem 230 MB e também é regravado inteiro a cada 3 MB que a sessão junta | `Settings.apply_pipeline_cache_policy()` no autoload: 4096 MB, grava só ao sair (se o jogo cair, as pipelines da sessão se perdem; o cache de shader fica) | **medido limpo** (frio G, 8.6) | ligado, `GETECO_PIPELINE_SAVE_ON_EXIT` |
+| 2 | **`RainPrewarm` nunca rodou**: chamado antes de o `Weather` existir | sonda: etapa "rain" 0,1 ms e 0 pipelines; frio (A): poça `RainPuddle.gdshader` compilando a t+4 s num quadro de 842 ms; nos exports C, D e G a poça não aparece mais no jogo | chamado depois do Weather/CityLook | sonda (contagem), sem A/B de tempo isolado | ligado, `GETECO_RAIN_PREWARM_LATE` |
+| 3 | **Pipeline é por formato de vértice**; variantes de pintura aquecidas numa BoxMesh | sonda a quente, oeste: 58 pipelines `surface` no jogo (A), quase todas pintura suja/molhada/limpa e porta da viatura em formatos de carro; no editor, triângulo com o mesmo formato cobre a malha real | `runtime/FormatPrewarm.gd`: triângulo de cada formato real da frota e da porta recortada; pintura, para-brisa molhado, limpador, marca de pneu, detritos, materiais da porta da viatura (também do casco de peças soltas), cartão/poço da porta; montado **escondido** logo depois da frota (compila nos trabalhadores) e retirado antes da cortina | sonda: 58 → 16 (B) → 6 (C) → 4 (G) a quente; carga a quente igual (26,4 × 26,8 s na soma das etapas) | ligado, `GETECO_FORMAT_PREWARM`, `GETECO_FORMAT_HIDDEN` |
+| 4 | **Combinações de pintura que faltavam** | frio (A): shader novo num quadro de 1 157 ms ao atirar no trânsito (sujeira + gotas que o desgaste desligou) | `_lattice`: detalhe × verniz × normal, até 18 por base | sonda (a combinação some do jogo) | ligado, `GETECO_PAINT_LATTICE` |
+| 5 | **Casco de peças soltas** (cupê, Monaliza, Metro, viatura) fora do aquecimento da frota | sonda: pintura e vidro desses quatro compilando no jogo | entram no aquecimento da frota e nas bases de pintura | sonda (C: 6 no jogo) | ligado, `GETECO_BREAKAWAY_PREWARM` |
+| 6 | **Efeitos de rua só no jogo** | frio (A): estouro de vidro 48 ms, gêiser 132 ms; poça de sangue | `gameplay/street_physics/StreetEffectsPrewarm.gd` com as peças do jogo | sonda (não aparecem mais em C/D/G) | ligado, `GETECO_STREET_FX_PREWARM` |
+| 7 | Pré-aquecimentos em série; shader desenhado compila um por vez | soma das 13 etapas 28,8 s no frio (A) | filas paralelas de corrotina (`_prewarm_lane`, prazo de 180 s) e peças escondidas antes do desenho (`runtime/HiddenCompile.gd`; frota só escondida, `GETECO_FLEET_HIDDEN_ONLY`) | **não provado**: a carga fria com sonda não encurtou (A 78,6 s × D 76,0 s de soma das etapas) e a carga a quente limpa ficou igual | **desligado**, `GETECO_PREWARM_PARALLEL=1`, `GETECO_HIDDEN_COMPILE=1` |
+| 8 | Carcaça sumindo (`transparency` em todas as malhas) | frio (D, sonda): 5 pipelines `draw` num quadro de 3 029 ms | cópia escondida de cada modelo com `transparency` 0,5 e a brasa em todos os formatos | **não provado** (não houve frio com sonda depois) | **desligado**, `GETECO_WRECK_FADE_PREWARM=1` |
+| 9 | Mirante costeiro com shaders próprios a 190 m | sobrados a quente (sonda): 7 `surface` num quadro de 36 ms | entra escondido e aparece 0,5 s depois | só em rodada com sonda (36 → 24 ms) | **desligado**, `GETECO_LOOKOUT_HIDDEN_FIRST=1` |
+| 10 | Raio da tempestade | frio (A): 100 ms | raio disparado (sem trovão) no aquecimento da chuva | **não**: a sonda ainda viu o raio compilar no jogo | **desligado**, `GETECO_RAIN_PREWARM_BOLT=1` |
+
+Nada foi medido como pior em rodada limpa. A configuração padrão final (1–6 ligados, 7–10 desligados) não foi medida
+inteira: o A/B do G tinha todos ligados (o frio de 8.6 inclui 7–10), e o export C (1–6 sem HiddenCompile, com as
+filas paralelas) é o mais parecido medido (frio com sonda 79,2 s; a quente soma das etapas 26,1 s).
+
+### 8.4 Pipelines criadas com a partida jogável (sonda, estresse no oeste, 90 s)
+
+| export | o que tem | a quente: `surface` / `draw` / `specialization` | frio: `surface` / `draw` | maior quadro do jogo ligado a compilação, frio |
+|---|---|---|---|---|
+| A | HEAD (só a sonda) | 58 / 0 / 132 | 60 / 0 | 1 157 ms (pintura), 842 ms (poça); 7,9 s sem pipeline (gravação do cache) |
+| B | + chuva depois do Weather, formatos, lattice, rua, filas paralelas | 16 / 0 / 133 | — | — |
+| C | + casco de peças soltas, pintura escondida | 6 / 0 / 125 | 7 / 0 | 1 356 ms (pintura numa porta) |
+| D | + HiddenCompile, gravação do cache só ao sair | — | 6 / 5 | 3 029 ms (carcaça sumindo) |
+| G | + carcaça, porta da viatura do casco, insígnia, mirante, frota só escondida | **4** / 0 / 131 | — | (8.6, sem sonda) |
+
+Nos sobrados (E/F, a quente) sobraram 20–24 `surface`, a maioria o mirante e a porta de outra viatura, e o 1º quadro
+depois da cortina. As `specialization` (~130 por rodada) compilam em segundo plano enquanto o motor desenha com a
+"ubershader": não esperam no quadro.
+
+### 8.5 Resultado a quente (export G, só rodadas sem Godot externo)
+
+| rota | lado | rodadas limpas | média | p50 | p95 | p99 | máx | > 33 ms | > 45 ms | desenho > 33 / máx | jogável (s) |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| sobrados | antes | 1 | 7,08 | 5,91 | 11,48 | 15,83 | 47,46 | 5 | 1 | 2 / 48,71 | 30,81 |
+| sobrados | depois | 1 | 6,81 | 5,58 | 11,07 | 15,23 | 36,53 | 2 | 0 | 0 / 26,92 | 31,78 |
+| serra | antes | 2 | 6,88 | 6,08 | 11,35 | 12,95 | 32,36 | 0 | 0 | 0 / 26,12 | 31,38 |
+| serra | depois | 2 | 7,04 | 6,12 | 11,65 | 13,80 | 43,71 | 5 | 0 | 2 / 37,82 | 32,44 |
+| deserto | antes | 1 | 5,98 | 5,55 | 9,00 | 12,68 | 53,03 | 4 | 2 | 1 / 49,46 | 33,00 |
+| deserto | depois | 1 | 6,24 | 5,89 | 9,34 | 12,83 | 51,53 | 1 | 1 | 0 / 28,25 | 31,85 |
+| travessia | antes | 1 | 6,21 | 5,62 | 10,63 | 13,29 | 30,37 | 0 | 0 | 2 / 38,89 | 30,64 |
+| oeste, porto | — | 0 | sem rodada limpa | | | | | | | | |
+
+Por rodada: serra antes 6,80/6,97 de média, 0/0 quadros > 33; depois 6,82/7,26, 0/5 (máx 31,3 e 43,7). Leitura:
+as diferenças de média, p50 e quadros > 33 ms estão dentro da variação entre rodadas iguais (±0,5 ms, ±1–5 quadros,
+7.2) — **a 3ª rodada não mudou o tempo de quadro a quente de forma mensurável** nessas rotas; ela mudou o número de
+pipelines criadas no jogo (8.4), que a quente custam 5–15 ms cada no sync do RenderingServer.
+
+### 8.6 Cache frio (primeira sessão), oeste, 90 s, export G, sem Godot externo
+
+| lado | média | p50 | p95 | p99 | máx | > 33 ms | > 100 ms | > 250 ms | desenho > 33 / máx | jogável (s) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| antes (13:31) | 10,01 | 9,68 | 14,28 | 17,25 | 2 069,21 | 15 | 7 | 5 | 16 / 939,82 | 118,3 |
+| depois (13:24) | 10,08 | 10,05 | 15,13 | 17,90 | 1 115,23 | 5 | 2 | 1 | 5 / 1 093,45 | 76,7 |
+| ref.: só a gravação do cache, export C, padrão | 21,34 | 15,34 | 28,35 | 38,55 | 17 997,33 | 82 | 13 | 5 | 76 / 17 966,21 | 94,8 |
+| ref.: só a gravação do cache, export C, 4096 MB | 10,71 | 10,62 | 16,23 | 20,57 | 1 329,85 | 20 | 2 | 2 | 15 / 1 270,92 | 74,8 |
+
+Uma rodada por lado; o "depois" tem todos os interruptores ligados (inclusive 7–10 de 8.3, hoje desligados). As
+duas linhas do export C foram rodadas antes do registro de processos (10:26–10:35): não dá para garantir que estavam
+sem Godot externo. Na 2ª rodada (7.3, export E) o frio do oeste era 76,6 / 78,5 s e 2 245 / 1 268 ms. O "depois"
+ainda tem **um quadro de 1,1 s a t+32 s, não atribuído** (rodada sem sonda); serra e deserto frios não foram medidos
+nesta rodada.
+
+### 8.7 Carregamento
+
+A quente, nas rodadas limpas: antes 30,8 / 31,4 / 33,0 s (sobrados, serra, deserto), depois 31,8 / 32,4 / 31,9 s —
+igual dentro de ±1 s. Soma das etapas da carga na sonda (oeste, a quente): A 26,4 s, C 26,1 s, G 26,8 s. Os blocos
+grandes do pedido (túnel ~2,2 s, `resident_prewarm` ~4,7 s, `urban_operations`) **não foram mexidos**. No frio, o
+ganho de 118 → 77 s é quase todo a gravação do cache (8.3 #1); as etapas que mais pesam no frio continuam sendo a
+compilação de pipeline pelo driver: `session_startup` (o mundo, 143 pipelines) ~12 s, a frota ~7–8 s, os
+pré-aquecimentos ~17–28 s.
+
+### 8.8 Arquivos e interruptores
+
+Meus (sem commit):
+- Novos: `runtime/PipelineProbe.gd`, `runtime/FormatPrewarm.gd`, `runtime/HiddenCompile.gd`,
+  `gameplay/street_physics/StreetEffectsPrewarm.gd` (cada um com o `.uid` que o Godot gerou).
+- `runtime/ProductionWorld.gd` (marcas de etapa, filas paralelas, chuva e efeitos depois do Weather, frota escondida,
+  casco de peças soltas, materiais da porta da viatura, pintura escondida), `runtime/Settings.gd`
+  (`apply_pipeline_cache_policy`), `runtime/RainPrewarm.gd`, `runtime/StallLog.gd` (cria a sonda),
+  `gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd`, `runtime/coastal_lookout/CoastalLookoutRuntime.gd`.
+- Uma linha (`HiddenCompile.prepare`, sem efeito com o padrão desligado) em `gameplay/emergency/EffectsPrewarm.gd`,
+  `ReactionVisualPrewarm.gd`, `SpawnVisualPrewarm.gd`, `runtime/BridgeLookPrewarm.gd`, `LocalLightShadowPrewarm.gd`,
+  `FamilyVariantPrewarm.gd`, `PaintedFacadePrewarm.gd`, `WildlifePrewarm.gd`, `ForgePrewarm.gd`,
+  `assets/civilians/MeshyBodyPrewarm.gd`, `world/desert/DesertGroundCover.gd`; este documento.
+- **Não são meus** (outra sessão, no mesmo checkout): `ui/LoadingCanvas.cs`, `ui/LoadingPresenter.cs`,
+  `ui/MainMenu.gd`, `ui/SkyMenu.gd`, `runtime/StartupCurtain.gd`, `tests/test_loading_presenter.gd`,
+  `tests/test_loading_slideshow.gd`, `tests/test_loading_menu_handoff.gd`, `tests/measure/measure_loading_slideshow.gd`,
+  `docs/loading-smooth-20261022.md`.
+
+Ligados por padrão (`=0` desliga): `GETECO_PIPELINE_SAVE_ON_EXIT`, `GETECO_RAIN_PREWARM_LATE`,
+`GETECO_FORMAT_PREWARM`, `GETECO_FORMAT_HIDDEN`, `GETECO_PAINT_LATTICE`, `GETECO_BREAKAWAY_PREWARM`,
+`GETECO_STREET_FX_PREWARM`. Desligados por padrão (`=1` liga): `GETECO_PREWARM_PARALLEL`, `GETECO_HIDDEN_COMPILE`
+(com ele, `GETECO_FLEET_HIDDEN_ONLY`, padrão ligado), `GETECO_WRECK_FADE_PREWARM`, `GETECO_LOOKOUT_HIDDEN_FIRST`,
+`GETECO_RAIN_PREWARM_BOLT`, `GETECO_PIPELINE_PROBE` (diagnóstico).
+
+### 8.9 Verificação
+
+- `tools/run_core_suite.sh --no-build` (fast, 22/10 11:58–12:25, com as mudanças daquela hora): **10 passaram, 0
+  falharam** (inclusive `test_core_contracts`). Depois de desligar os interruptores 7–10: `test_core_contracts` 418
+  checks, 0 falhas; `test_reaction_visual_prewarm` 32 checks, 0 falhas; antes, `test_coastal_binoculars` 36, 0.
+- `--check-only` de todos os arquivos tocados e `python -I tools/check_frame_rules.py`: ok (`dynamic_light` 73,
+  `mesh_readback` 67, iguais).
+- O jogo carregou e jogou em release em todos os exports (A–G). **Não rodei** `run_core_suite.sh full`, os testes de
+  sessão inteira, nem `tools/PlayRelease.ps1 -NoLaunch -ForceExport` (ele exporta fora da fila e o usuário estava
+  usando o PC; o `Jogar.cmd` exporta sozinho na próxima vez porque há arquivos mais novos que o pacote).
+
+### 8.10 O que ainda não fica liso, e por quê
+
+- **A quente:** quadros > 33 ms continuam (sobrados 2, serra 5 em 2 rodadas, deserto 1); as causas da 2ª rodada
+  (desenho de 19–35 ms sem pipeline, física nativa, batida) não foram reatribuídas nesta rodada. Hipótese nova, não
+  provada: parte dos "picos isolados de 220–250 ms" antigos (§7 do HOW-TO-DEVELOP) pode ser a regravação do cache de
+  230 MB a cada 3 MB novos, que agora não acontece mais durante o jogo.
+- **Frio:** 76,7 s até jogável e um quadro de 1,1 s não atribuído; o custo é a compilação de pipeline pelo driver
+  (não o SPIR-V, e mais threads pioram). Encurtar exige menos pipelines distintas (ex.: pintura com todas as
+  features fixas e variando só uniform, em vez de ligar/desligar flags do StandardMaterial3D).
+- **Coberto mas desligado** (sem prova limpa): carcaça sumindo (3 s no frio), raio (a cobertura não pegou), mirante.
+- **1º quadro depois da cortina** (oeste): mobília do pátio da delegacia norte (2 pipelines, 37–48 ms), fora da
+  amostra da bancada.
+- **Sem medição limpa:** oeste, porto e travessia a quente; serra e deserto no frio; rota 66, cidade do deserto,
+  estrada do sal, cavernas e chuva + noite (as rodadas foram descartadas ou não chegaram a rodar); a configuração
+  padrão final inteira (8.3).

@@ -12,6 +12,14 @@ const DRAW_FRAMES := 3
 const MIN_SECONDS := .45
 const MAX_WAIT_FRAMES := 90
 static var enabled := OS.get_environment("GETECO_RAIN_PREWARM") != "0"
+## Chamado depois de o Weather existir (22/10, 3ª rodada). Antes rodava dentro de
+## ProductionWorld._prewarm_regions, mas o Weather só nasce depois dele: `session.weather` era nulo e
+## este passo saía na primeira linha (a sonda de pipelines mediu 0,1 ms e nenhum pipeline; no estresse a
+## poça e o para-brisa molhado compilavam no jogo). GETECO_RAIN_PREWARM_LATE=0 volta ao lugar antigo.
+static var late := OS.get_environment("GETECO_RAIN_PREWARM_LATE") != "0"
+## Desenha também um raio na tempestade: desligado por padrão (GETECO_RAIN_PREWARM_BOLT=1 liga); a sonda ainda viu
+## o raio compilar no jogo com ele ligado, então o ganho não foi provado.
+static var lightning := OS.get_environment("GETECO_RAIN_PREWARM_BOLT") == "1"
 static var _drawn := false
 
 static func run(host: Node3D, curtain: CanvasLayer) -> void:
@@ -39,9 +47,19 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 		var start_draws := draws[0]
 		var start_ms := Time.get_ticks_msec()
 		var ok := false
+		var bolt_tried := false
 		for frame in MAX_WAIT_FRAMES:
 			await tree.process_frame
 			if not GUARDS._covered_loading(host, curtain) or not GUARDS._current_camera(host, camera): break
+			# Raio da tempestade (ImmediateMesh sem luz e emissivo): no estresse frio de 22/10 o primeiro
+			# compilou no jogo (quadro de 100 ms). Sem trovão: o atraso é zerado logo depois do disparo.
+			if state == 2 and not bolt_tried and draws[0] - start_draws >= 1 and lightning:
+				bolt_tried = true
+				var storm: Variant = weather.get("storm")
+				if storm != null and is_instance_valid(storm) and storm.has_method("trigger_lightning") and storm.trigger_lightning():
+					storm.thunder_delay = -1.0
+					draws[0] = start_draws + 1
+					start_ms = Time.get_ticks_msec()
 			if draws[0] - start_draws >= DRAW_FRAMES and Time.get_ticks_msec() - start_ms >= MIN_SECONDS * 1000.0:
 				ok = true
 				break
@@ -50,6 +68,9 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 			break
 	if RenderingServer.frame_post_draw.is_connected(count_draw):
 		RenderingServer.frame_post_draw.disconnect(count_draw)
+	if lightning and is_instance_valid(weather):
+		var storm: Variant = weather.get("storm")
+		if storm != null and is_instance_valid(storm) and storm.has_method("cancel"): storm.cancel()
 	# Volta ao clima salvo; a troca externa reajusta rain_level no próximo _process.
 	if is_instance_valid(weather):
 		for key in saved: weather.set(key, saved[key])

@@ -50,6 +50,8 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 	host.add_child(visual)
 	var draws: Array[int] = [0]
 	var count_draw := func() -> void: draws[0] += 1
+	# Peças escondidas primeiro: os trabalhadores do motor compilam em paralelo (runtime/HiddenCompile.gd).
+	await preload("res://runtime/HiddenCompile.gd").prepare(visual, host.get_tree())
 	RenderingServer.frame_post_draw.connect(count_draw)
 	for frame in MAX_WAIT_FRAMES:
 		if not is_instance_valid(visual) or not GUARDS._current_camera(host, camera): break
