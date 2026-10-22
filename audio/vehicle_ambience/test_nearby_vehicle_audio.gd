@@ -71,8 +71,11 @@ func run() -> void:
 	var first: Dictionary = mixer.snapshot()
 	print("NearbyVehicleAudio initial snapshot: ", first)
 	_check(first.audible == 6, "six-nearest audible ceiling")
-	_check(first.playing_voices > 0 and first.playing_voices <= 12, "voice ceiling is active")
-	_check(first.voice_limit == 12 and is_equal_approx(first.range, 45.0), "published voice and range budget")
+	# Com os bancos de motor desenhados prontos o teto sobe para 4 vozes por carro (MAX_DESIGN_VOICES);
+	# sem eles, 2 por carro (MAX_VOICES). O teto publicado tem de bater com o modo ativo.
+	var expected_limit: int = mixer.MAX_DESIGN_VOICES if int(first.design_slots) > 0 else mixer.MAX_VOICES
+	_check(first.playing_voices > 0 and first.playing_voices <= expected_limit, "voice ceiling is active")
+	_check(first.voice_limit == expected_limit and is_equal_approx(first.range, 45.0), "published voice and range budget")
 	_check(service_car.get_instance_id() in first.audible_ids, "dispatch vehicle is discovered outside drivable group")
 
 	driving.occupied = true
