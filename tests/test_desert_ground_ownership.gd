@@ -79,8 +79,11 @@ func run() -> void:
 		for offset: Vector2 in [Vector2(7,7),Vector2(48,48),Vector2(87,87)]:
 			var p := rect.position+offset
 			var point := Vector3(p.x,0,p.y)
-			var hit := chunk.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(point+Vector3.UP*.2,point-Vector3.UP,1))
-			if not hit.is_empty(): hits+=1
+			# O mapa compacto (21/10) tem relevo acima de y 0,2 nessas células: o raio desce do alto e só
+			# conta se bater na colisão de um piso do próprio chunk (não num telhado ou objeto).
+			var hit := chunk.get_world_3d().direct_space_state.intersect_ray(PhysicsRayQueryParameters3D.create(point+Vector3.UP*60.0,point-Vector3.UP*20.0,1))
+			var floor_mesh: Node = hit.collider.get_parent() if not hit.is_empty() and is_instance_valid(hit.collider) else null
+			if floor_mesh is MeshInstance3D and chunk.is_ancestor_of(floor_mesh) and (floor_mesh.get_meta("desert_base_ground",false) or floor_mesh.name in [&"GravelShoulder",&"WeatheredAsphalt",&"TruckApron",&"DigoApron",&"DragMeetPaddock"]): hits+=1
 		if hits!=3: failures.append("%s physical support %d/3"%[cell,hits])
 		report.append({"cell":str(cell),"sample_spacing_m":4,"duplicate_samples":duplicate,"missing_samples":missing,"removed_hidden_m2":removed,"removed_by_surface":removed_by_surface,"changed_meshes":changed_meshes,"retired_meshes":retired_meshes,"triangles":triangle_count,"support_hits":hits})
 		chunk.free()
