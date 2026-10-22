@@ -99,6 +99,26 @@ static func play_at(parent: Node, audio: AudioStream, world_point: Vector3, volu
 	voice.max_distance = max_distance
 	parent.add_child(voice)
 	voice.global_position = world_point
+	# O ouvinte do Godot é a câmera (~36 m acima/atrás, CameraRig.EXTERIOR_OFFSET): com max_distance
+	# de 24-35 m, porta, ignição e freio de mão do próprio carro saíam cortados ou quase. Com a cidade
+	# viva (GETECO_CITY_LIFE_AUDIO, mesma regra de CityLifeAudio) a perda vem da distância ao alvo
+	# da câmera; a posição fica só para o panorama.
+	var camera := parent.get_viewport().get_camera_3d()
+	var hearing: Variant = camera.get("target") if camera != null else null
+	if hearing is Node3D and is_instance_valid(hearing) and OS.get_environment("GETECO_CITY_LIFE_AUDIO").to_lower() not in ["0", "false", "off", "no"]:
+		var flat: Vector3 = world_point - (hearing as Node3D).global_position
+		flat.y = 0.0
+		var distance := flat.length()
+		if distance >= max_distance:
+			voice.queue_free()
+			return null
+		voice.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED
+		voice.max_distance = 0.0
+		voice.panning_strength = 0.6
+		voice.attenuation_filter_db = 0.0
+		voice.area_mask = 0
+		var near := minf(unit_size, max_distance * 0.5)
+		voice.volume_db = volume_db + (0.0 if distance <= near else linear_to_db(near / distance)) + linear_to_db(1.0 - distance / max_distance)
 	voice.finished.connect(voice.queue_free)
 	voice.play()
 	return voice
