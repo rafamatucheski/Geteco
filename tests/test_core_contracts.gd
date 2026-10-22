@@ -299,21 +299,27 @@ func desert_roadside() -> void:
 	for stretch in ROADSIDE.EVENT_STRETCHES:
 		check(road_distance(stretch.a).distance < 1.0 and road_distance(stretch.b).distance < 1.0, "trecho %s em cima da estrada" % stretch.id)
 	# Ponto de evento: à frente de quem dirige no trecho; nada fora dele nem colado na ponta.
-	var south := ROADSIDE.event_point(Vector2(342.5, -905), Vector2(0, -1), 120.0)
-	check(not south.is_empty() and south.stretch == "route66_north" and absf(south.point.y - -1025.0) < .5 and south.direction.dot(Vector2(0, -1)) > .99, "evento nasce 120 m à frente na Route 66 (%s)" % [south])
-	check(ROADSIDE.event_point(Vector2(342.5, -905), Vector2(0, 1), 120.0).is_empty(), "dirigindo para fora do trecho: sem evento")
-	check(ROADSIDE.event_point(Vector2(380, -950), Vector2(0, -1), 60.0).is_empty(), "fora da pista: sem evento")
-	check(ROADSIDE.event_point(Vector2(342.5, -950), Vector2.ZERO).is_empty(), "parado: sem evento")
-	check(ROADSIDE.event_point(Vector2(342.5, -1000), Vector2(1, 0), 60.0).is_empty(), "cruzando a estrada de lado: sem evento")
-	# Todo trecho recebe evento na distância padrão (240 m) para quem chega pela mesma estrada, nos
-	# dois sentidos. Antes os trechos de 180 m (as duas pontas da Route 66) nunca recebiam.
+	# Relativo ao próprio trecho: o mapa compacto de 21/10 moveu e encurtou os trechos.
+	var r66: Dictionary = ROADSIDE.EVENT_STRETCHES.filter(func(s): return s.id == "route66_north")[0]
+	var r66_dir: Vector2 = (r66.b - r66.a).normalized()
+	var r66_mid: Vector2 = (r66.a + r66.b) * .5
+	var r66_side := Vector2(-r66_dir.y, r66_dir.x)
+	var r66_reach: float = 5.0 + (r66.b - r66.a).length() * .5
+	var south := ROADSIDE.event_point(r66.a - r66_dir * 5.0, r66_dir, r66_reach)
+	check(not south.is_empty() and south.stretch == "route66_north" and (south.point as Vector2).distance_to(r66_mid) < .5 and south.direction.dot(r66_dir) > .99, "evento nasce à frente na Route 66 (%s)" % [south])
+	check(ROADSIDE.event_point(r66.a - r66_dir * 5.0, -r66_dir, r66_reach).is_empty(), "dirigindo para fora do trecho: sem evento")
+	check(ROADSIDE.event_point(r66_mid + r66_side * 40.0 - r66_dir * 20.0, r66_dir, 20.0).is_empty(), "fora da pista: sem evento")
+	check(ROADSIDE.event_point(r66_mid, Vector2.ZERO).is_empty(), "parado: sem evento")
+	check(ROADSIDE.event_point(r66_mid, r66_side, 20.0).is_empty(), "cruzando a estrada de lado: sem evento")
+	# Todo trecho recebe evento na distância padrão (EVENT_AHEAD) para quem chega pela mesma estrada,
+	# nos dois sentidos.
 	for stretch in ROADSIDE.EVENT_STRETCHES:
 		var a: Vector2 = stretch.a
 		var b: Vector2 = stretch.b
 		var direction: Vector2 = (b - a).normalized()
 		var middle: Vector2 = (a + b) * .5
-		var forward := ROADSIDE.event_point(middle - direction * 240.0, direction)
-		var backward := ROADSIDE.event_point(middle + direction * 240.0, -direction)
+		var forward := ROADSIDE.event_point(middle - direction * ROADSIDE.EVENT_AHEAD, direction)
+		var backward := ROADSIDE.event_point(middle + direction * ROADSIDE.EVENT_AHEAD, -direction)
 		check(forward.get("stretch", "") == stretch.id and (forward.point as Vector2).distance_to(middle) < .5 and backward.get("stretch", "") == stretch.id and (backward.point as Vector2).distance_to(middle) < .5, "trecho %s recebe evento nos dois sentidos" % stretch.id)
 	for route in ROADSIDE.COURIER_ROUTES:
 		check(int(BALANCE.ROADSIDE_COURIER.get(str(route.id), 0)) > 0, "entrega %s tem pagamento na tabela" % route.id)

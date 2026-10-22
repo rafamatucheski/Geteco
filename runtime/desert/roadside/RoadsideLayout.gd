@@ -13,12 +13,13 @@ const PARK_DISTANCE := 220.0
 ## "yaw" vira a frente local (+z) para a estrada (ver DesertWilds._build).
 const SITES := [
 	{"id": "sol_poente", "kind": "station", "center": Vector2(366, -680), "yaw": -PI * .5, "name": "Posto Sol Poente", "marker": "fuel"},
-	# Entre dois postes da linha de luz da Rua Principal (x = -812 e -768,5; DesertUtilityLines).
-	{"id": "radio_tower", "kind": "tower", "center": Vector2(-790, -518), "yaw": PI, "name": "Torre de rádio", "marker": "place"},
+	# Mapa compacto (22/10): posições finais saídas de tests/measure/find_roadside_spots.gd, o ponto mais
+	# perto do anterior que respeita postes (> 16 m), casas, prédios, estrada e reserva da arrancada.
+	{"id": "radio_tower", "kind": "tower", "center": Vector2(-804, -518), "yaw": PI, "name": "Torre de rádio", "marker": "place"},
 	# Lado leste da rodovia oeste: o lado oeste tem a trilha da mina velha (DesertRelics.approach_paths).
-	{"id": "scrapyard", "kind": "scrapyard", "center": Vector2(-1036, -650), "yaw": -PI * .5, "name": "Ferro-velho do Nonato", "marker": "workshop"},
+	{"id": "scrapyard", "kind": "scrapyard", "center": Vector2(-1036, -640), "yaw": -PI * .5, "name": "Ferro-velho do Nonato", "marker": "workshop"},
 	# Meio da pista de arrancada, longe do encontro (que já tem baterias de fundo, DragOpenMeet).
-	{"id": "food_truck", "kind": "food_truck", "center": Vector2(-340, -770), "yaw": PI, "name": "Lanche da Reta", "marker": "food"},
+	{"id": "food_truck", "kind": "food_truck", "center": Vector2(-342, -770), "yaw": PI, "name": "Lanche da Reta", "marker": "food"},
 	# Estrada do Sal compacta: os lugares acompanham a nova via; manter livres
 	# as entradas da mineradora, do cânion e da galeria subterrânea.
 	{"id": "salt_works", "kind": "salt_works", "center": Vector2(240, -960), "yaw": 0.0, "name": "Salinas Estrada do Sal", "marker": "place", "radius": 62.0},
@@ -27,7 +28,7 @@ const SITES := [
 	# Fase 3 (20/10): capela na beira da Estrada do Sal e arquibancada no lado sul da reta, de frente
 	# para a pista (fora da reserva de 55 m da arrancada).
 	{"id": "chapel", "kind": "chapel", "center": Vector2(-210, -876), "yaw": PI, "name": "Capela de Nossa Senhora da Estrada", "marker": "place", "radius": 14.0},
-	{"id": "grandstand", "kind": "grandstand", "center": Vector2(-160, -762), "yaw": PI, "name": "Arquibancada da reta", "marker": "place", "radius": 24.0},
+	{"id": "grandstand", "kind": "grandstand", "center": Vector2(-134, -762), "yaw": PI, "name": "Arquibancada da reta", "marker": "place", "radius": 24.0},
 ]
 ## Acabamento dos lugares antigos (20/10): cidade, casas, vila e pátio da oficina. Mesmo coordenador
 ## (monta perto, estaciona longe), sem marcador no mapa; âncora com giro 0 (ponto local = mundo − âncora).
@@ -150,7 +151,11 @@ static func _dressing_clear(dressing: Dictionary) -> Array:
 ## O jogador pode estar antes do trecho (na mesma reta): com a exigência antiga de já estar
 ## dentro dele, os trechos de 180 m nunca tinham um ponto 240 m à frente, e a Route 66 inteira
 ## ficava sem evento (A/B em release de 19/10). Puro: o teste de contrato usa sem mundo.
-static func event_point(position: Vector2, heading: Vector2, ahead := 100.0, max_offset := 14.0) -> Dictionary:
+## Quanto à frente de quem dirige o evento nasce. Era 240 m; o mapa compacto de 21/10 encurtou os
+## trechos (o da Route 66 norte tem 55 m) e a distância caiu junto.
+const EVENT_AHEAD := 100.0
+
+static func event_point(position: Vector2, heading: Vector2, ahead := EVENT_AHEAD, max_offset := 14.0) -> Dictionary:
 	if heading.length() < .01: return {}
 	for stretch in EVENT_STRETCHES:
 		var a: Vector2 = stretch.a
