@@ -531,7 +531,14 @@ func _message(text: String) -> void:
 	status = text
 	status_time = 2.5
 
+const _SYS_SPAN := preload("res://runtime/StallWorkTrace.gd")
+## Span do sistema inteiro (22/10): quadros de 30–60 ms com o tempo em _process sem nenhum span.
 func _process(delta: float) -> void:
+	var span := _SYS_SPAN.begin()
+	_process_traced(delta)
+	_SYS_SPAN.finish_slow("sys.driving.process", span, 3000)
+
+func _process_traced(delta: float) -> void:
 	if is_body_transition_active():
 		if (not is_instance_valid(car) or car.is_queued_for_deletion()) and not transition is BAILOUT: cancel_transition("vehicle_removed")
 		elif not _player_alive(): cancel_transition("death")
@@ -560,7 +567,13 @@ func _process(delta: float) -> void:
 	speed_label.text = ""
 	instructions.text = "W / S  acelerar / ré    A / D  virar    Espaço  frear    F  sair    Esc  pausa" if occupied else "WASD  mover    Shift  correr    E  interagir    F  carro    Z / C  girar    Esc  pausa"
 
+## Span do sistema inteiro (22/10): quadros de 30–60 ms com o tempo em _process sem nenhum span.
 func _physics_process(_delta: float) -> void:
+	var span := _SYS_SPAN.begin()
+	_physics_process_traced(_delta)
+	_SYS_SPAN.finish_slow("sys.driving.physics", span, 3000)
+
+func _physics_process_traced(_delta: float) -> void:
 	if is_instance_valid(_door_warm_car) and not occupied and not is_body_transition_active():
 		if _door_warm_car.warm_doors(2500): _door_warm_car = null
 	if occupied and not is_body_transition_active() and is_instance_valid(car):

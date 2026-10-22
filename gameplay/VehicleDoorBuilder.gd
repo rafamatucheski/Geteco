@@ -238,10 +238,15 @@ static func _advance_part(work: Dictionary, job: Job = null) -> bool:
 		var surface := int(work.upload_surface)
 		var arrays: Array = work.rebuilt[surface] if work.rebuilt[surface] != null else _arrays(mesh, surface)
 		work.replacement.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+		if not work.has("uploaded"): work.uploaded = []
+		(work.uploaded as Array).append(arrays)
 		work.replacement.surface_set_material(surface, mesh.surface_get_material(surface))
 		preload("res://gameplay/VehicleInterior.gd").inherit_glass(mesh, work.replacement, surface, arrays)
 		work.upload_surface = surface + 1
 		if int(work.upload_surface) >= mesh.get_surface_count():
+			# A lataria recortada nasce aqui com as arrays na CPU: o amassado a usa sem ler a GPU (22/10, a
+			# viatura batida que chegava refazia o amassado sobre as portas novas e lia 5 superfícies, 7–10 ms).
+			preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd").prime_rest(work.replacement, work.uploaded)
 			work.result.swaps.append([work.part, work.expected_mesh, work.replacement,mesh])
 			_merge_part(work)
 			return true

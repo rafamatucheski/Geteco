@@ -93,7 +93,14 @@ func _weather_raining() -> bool:
 	if weather.has_method("rain_strength_at"): return weather.rain_strength_at(focus)>.001
 	return float(weather.atmosphere.weights_at(focus).mountain) < 0.999
 
+const _SYS_SPAN := preload("res://runtime/StallWorkTrace.gd")
+## Span do sistema inteiro (22/10): quadros de 30–60 ms com o tempo em _process sem nenhum span.
 func _process(delta: float) -> void:
+	var span := _SYS_SPAN.begin()
+	_process_traced(delta)
+	_SYS_SPAN.finish_slow("sys.rain_puddles.process", span, 3000)
+
+func _process_traced(delta: float) -> void:
 	var now_raining := _weather_raining()
 	if now_raining and not raining and wetness <= 0.05:
 		# Chuva nova depois de a rua secar: novo desenho, como _begin_rain() da V1.

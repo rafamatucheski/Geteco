@@ -358,7 +358,14 @@ func _begin(person: CharacterBody3D, phase: String) -> Dictionary:
 
 # ── Movimento ────────────────────────────────────────────────────────────────
 
+const _SYS_SPAN := preload("res://runtime/StallWorkTrace.gd")
+## Span do sistema inteiro (22/10): quadros de 30–60 ms com o tempo em _process sem nenhum span.
 func _physics_process(delta: float) -> void:
+	var span := _SYS_SPAN.begin()
+	_physics_process_traced(delta)
+	_SYS_SPAN.finish_slow("sys.civilian_reactions.physics", span, 3000)
+
+func _physics_process_traced(delta: float) -> void:
 	clock += delta
 	poll_clock += delta
 	if poll_clock >= DAMAGE_POLL:

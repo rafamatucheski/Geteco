@@ -164,7 +164,14 @@ func witness_call(point: Vector3) -> void:
 
 # --- Laço --------------------------------------------------------------------
 
+const _SYS_SPAN := preload("res://runtime/StallWorkTrace.gd")
+## Span do sistema inteiro (22/10): quadros de 30–60 ms com o tempo em _process sem nenhum span.
 func _physics_process(delta: float) -> void:
+	var span := _SYS_SPAN.begin()
+	_physics_process_traced(delta)
+	_SYS_SPAN.finish_slow("sys.dispatch.physics", span, 3000)
+
+func _physics_process_traced(delta: float) -> void:
 	if not enabled or gameplay == null or world == null or not _ensure_bridge(): return
 	TRACE.refresh(world)
 	var traced := TRACE.begin()

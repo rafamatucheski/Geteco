@@ -53,7 +53,14 @@ func _ready() -> void:
 	CONNECTION.configure_ground_material(_material)
 	_mesh = _tuft_mesh()
 
+const _SYS_SPAN := preload("res://runtime/StallWorkTrace.gd")
+## Span do sistema inteiro (22/10): quadros de 30–60 ms com o tempo em _process sem nenhum span.
 func _physics_process(delta: float) -> void:
+	var span := _SYS_SPAN.begin()
+	_physics_process_traced(delta)
+	_SYS_SPAN.finish_slow("sys.mountain_grass.physics", span, 3000)
+
+func _physics_process_traced(delta: float) -> void:
 	var region = controller.regions.get("mountain") if controller != null else null
 	var outdoors: bool = controller != null and controller.state.place_id.is_empty()
 	visible = outdoors

@@ -53,7 +53,14 @@ static func eligible_traffic(car: Variant) -> bool:
 	if str(car.get_meta("traffic_yield_state", "")) != "" or car.has_meta("crash_stun"): return false
 	return car._held_junction == null and car._clearing_junctions.is_empty()
 
+const _SYS_SPAN := preload("res://runtime/StallWorkTrace.gd")
+## Span do sistema inteiro (22/10): quadros de 30–60 ms com o tempo em _process sem nenhum span.
 func _physics_process(delta: float) -> void:
+	var span := _SYS_SPAN.begin()
+	_physics_process_traced(delta)
+	_SYS_SPAN.finish_slow("sys.roadside_parking.physics", span, 3000)
+
+func _physics_process_traced(delta: float) -> void:
 	if not enabled or not is_instance_valid(world) or controller.session == null: return
 	var session = controller.session
 	if not session.ready_for_play or session.has_position_transition() or not controller.state.place_id.is_empty(): return

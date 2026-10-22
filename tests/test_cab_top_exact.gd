@@ -4,8 +4,14 @@ extends SceneTree
 const VEHICLE = preload("res://scripts/Vehicle.gd")
 const CATALOG = preload("res://runtime/FleetCatalog.gd")
 const EQUIPMENT = preload("res://gameplay/VehicleEquipment.gd")
+const DENTS = preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd")
 var failures: Array[String] = []
 func _initialize() -> void: run.call_deferred()
+
+func _same(a: Dictionary, b: Dictionary) -> bool:
+	if a.size() != b.size(): return false
+	for key in a: if not is_equal_approx(float(a[key]), float(b[key])): return false
+	return true
 
 ## Cópia literal do algoritmo anterior, usada só como referência.
 func reference(car: CharacterBody3D) -> Dictionary:
@@ -54,11 +60,18 @@ func run() -> void:
 		var fast: Dictionary = equipment._cab_top()
 		var slow: Dictionary = reference(car)
 		checked += 1
-		var same := fast.size() == slow.size()
-		if same:
-			for key in fast: if not is_equal_approx(float(fast[key]), float(slow[key])): same = false
+		var same := _same(fast, slow)
 		print("CABTOP %s %-26s fast=%s" % ["PASS" if same else "FAIL", id, str(fast)])
 		if not same: failures.append("%s fast=%s slow=%s" % [id, fast, slow])
+		# Caminho do jogo (22/10): lataria lida sob a cortina pelo amassado; o topo tem de ser o mesmo.
+		DENTS.prewarm_rest(car.visual)
+		var fleet_equipment = EQUIPMENT.new()
+		fleet_equipment.car = car
+		var fleet: Dictionary = fleet_equipment._cab_top()
+		if not _same(fleet, slow):
+			print("CABTOP FAIL %-26s frota=%s" % [id, str(fleet)])
+			failures.append("%s frota=%s slow=%s" % [id, fleet, slow])
+		fleet_equipment.free()
 		equipment.free()
 		car.queue_free()
 	print("CABTOP checked=%d failures=%d" % [checked, failures.size()])

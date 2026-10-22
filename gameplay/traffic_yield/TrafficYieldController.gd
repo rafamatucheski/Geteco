@@ -125,13 +125,22 @@ func _yieldable(vehicle: Variant) -> bool:
 
 # --- Laço --------------------------------------------------------------------
 
+const _SYS_SPAN := preload("res://runtime/StallWorkTrace.gd")
+## Span do sistema inteiro (22/10): quadros de 30–60 ms com o tempo em _process sem nenhum span.
 func _physics_process(delta: float) -> void:
+	var span := _SYS_SPAN.begin()
+	_physics_process_traced(delta)
+	_SYS_SPAN.finish_slow("sys.traffic_yield.physics", span, 3000)
+
+func _physics_process_traced(delta: float) -> void:
 	if not enabled or world == null or not model.has_graph(): return
 	_clock += delta
 	var hazards := _hazards()
 	for id in agents.keys():
 		var agent: RefCounted = agents[id]
+		var tick_span := _SYS_SPAN.begin()
 		agent.tick(delta, hazards)
+		_SYS_SPAN.finish_slow("traffic_yield.tick", tick_span, 2000)
 		if agent.finished:
 			_cooldown[id] = _clock + RULES.COOLDOWN
 			agents.erase(id)
@@ -161,7 +170,11 @@ func _physics_process(delta: float) -> void:
 				if not model.in_junction(vehicle.global_position):
 					vehicle.backoff_time = maxf(vehicle.backoff_time,1.6)
 			var agent := AGENT.new()
-			if agent.begin(vehicle, model):
+			# Span (22/10): o controlador chegou a 10 ms num quadro de física no estresse do porto.
+			var begin_span := _SYS_SPAN.begin()
+			var began_ok: bool = agent.begin(vehicle, model)
+			_SYS_SPAN.finish_slow("traffic_yield.begin", begin_span, 2000)
+			if began_ok:
 				agents[id] = agent
 				started += 1
 				_emit("started", {"vehicle": vehicle, "mode": agent.mode, "emergency": hazard.vehicle})

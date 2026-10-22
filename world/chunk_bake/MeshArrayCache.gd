@@ -23,8 +23,25 @@ static var _meshes := {}
 static var _mesh_vertices := 0
 static var reads := 0
 static var hits := 0
+## Caixa e cilindro reto por escala (22/10): a geometria de um BoxMesh sem subdivisão é a da caixa
+## unitária multiplicada pelo tamanho, e a de um CylinderMesh de raio igual em cima e embaixo é a do
+## cilindro unitário (raio 1, altura 1) escalado em x/z pelo raio e em y pela altura; normais, UV,
+## tangentes e índices não dependem do tamanho. Cada peça de G.box tem tamanho próprio, então a
+## chave por parâmetros quase nunca acertava: o quadro da arrancada (~140 caixas) custava 49–54 ms
+## e o pátio do Digo 64–70 ms num quadro só, uma leitura da GPU por caixa (estresse de 21–22/10).
+## Agora só a forma unitária é lida, uma vez por tipo (prewarm_unit_shapes sob a cortina).
+## GETECO_PRIMITIVE_CPU_ARRAYS=0 volta à leitura por parâmetros (A/B).
+static var scaled_enabled := OS.get_environment("GETECO_PRIMITIVE_CPU_ARRAYS") != "0"
+static var _units := {}
+static var scaled := 0
 
 static func arrays_of(mesh: Mesh, surface: int) -> Array:
+	if scaled_enabled and surface == 0 and (mesh is BoxMesh or mesh is CylinderMesh):
+		var from_unit := _scaled_arrays(mesh as PrimitiveMesh)
+		if not from_unit.is_empty(): return from_unit
+	return _cached_arrays(mesh, surface)
+
+static func _cached_arrays(mesh: Mesh, surface: int) -> Array:
 	if mesh is PrimitiveMesh and mesh.get_class() in PRIMITIVE_CLASSES:
 		var key := _primitive_key(mesh as PrimitiveMesh)
 		var cached: Variant = _primitives.get(key)
@@ -72,6 +89,69 @@ static func _primitive_key(mesh: PrimitiveMesh) -> String:
 	var forget := Callable(_script(), "_forget_primitive").bind(id)
 	if not mesh.changed.is_connected(forget): mesh.changed.connect(forget, CONNECT_ONE_SHOT)
 	return key
+
+## Arrays da forma unitária escaladas para esta malha; vazio quando a forma não é coberta (subdivisão,
+## UV2, faces invertidas, cilindro cônico) e o chamador segue pelo caminho por parâmetros.
+static func _scaled_arrays(mesh: PrimitiveMesh) -> Array:
+	if mesh.flip_faces or mesh.add_uv2: return []
+	var unit_key := ""
+	var scale := Vector3.ONE
+	if mesh is BoxMesh:
+		var box := mesh as BoxMesh
+		if box.subdivide_width != 0 or box.subdivide_height != 0 or box.subdivide_depth != 0: return []
+		unit_key = "box"
+		scale = box.size
+	else:
+		var cylinder := mesh as CylinderMesh
+		if not is_equal_approx(cylinder.top_radius, cylinder.bottom_radius): return []
+		unit_key = "cylinder|%d|%d|%s|%s" % [cylinder.radial_segments, cylinder.rings, cylinder.cap_top, cylinder.cap_bottom]
+		scale = Vector3(cylinder.top_radius, cylinder.height, cylinder.top_radius)
+	var unit: Array = _unit_arrays(unit_key, mesh)
+	if unit.is_empty(): return []
+	var source: PackedVector3Array = unit[Mesh.ARRAY_VERTEX]
+	var vertices := PackedVector3Array()
+	vertices.resize(source.size())
+	for index in source.size(): vertices[index] = source[index] * scale
+	# Cópia rasa: só a posição é nova; normais, UV, tangentes e índices são os da forma unitária.
+	var arrays := unit.duplicate()
+	arrays[Mesh.ARRAY_VERTEX] = vertices
+	scaled += 1
+	hits += 1
+	return arrays
+
+static func _unit_arrays(unit_key: String, like: PrimitiveMesh) -> Array:
+	var cached: Variant = _units.get(unit_key)
+	if cached != null: return cached
+	var unit: PrimitiveMesh
+	if like is BoxMesh:
+		var box := BoxMesh.new()
+		box.size = Vector3.ONE
+		unit = box
+	else:
+		var source := like as CylinderMesh
+		var cylinder := CylinderMesh.new()
+		cylinder.top_radius = 1.0
+		cylinder.bottom_radius = 1.0
+		cylinder.height = 1.0
+		cylinder.radial_segments = source.radial_segments
+		cylinder.rings = source.rings
+		cylinder.cap_top = source.cap_top
+		cylinder.cap_bottom = source.cap_bottom
+		unit = cylinder
+	var arrays := _cached_arrays(unit, 0)
+	# Renderizador sem malha (headless antigo) devolve vazio: não guarda, cai no caminho por parâmetros.
+	if arrays.size() <= Mesh.ARRAY_VERTEX or not arrays[Mesh.ARRAY_VERTEX] is PackedVector3Array or (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).is_empty(): return []
+	_units[unit_key] = arrays
+	return arrays
+
+## Formas unitárias mais usadas (G.box, G.cylinder de 10 lados, cilindro padrão) lidas sob a cortina.
+static func prewarm_unit_shapes() -> void:
+	if not scaled_enabled: return
+	_unit_arrays("box", BoxMesh.new())
+	for segments in [10, 64]:
+		var cylinder := CylinderMesh.new()
+		cylinder.radial_segments = segments
+		_unit_arrays("cylinder|%d|%d|%s|%s" % [cylinder.radial_segments, cylinder.rings, cylinder.cap_top, cylinder.cap_bottom], cylinder)
 
 static var _self_script: Script
 static func _script() -> Script:

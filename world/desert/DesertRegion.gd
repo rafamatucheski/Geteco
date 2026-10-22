@@ -340,6 +340,18 @@ func _process(_delta: float) -> void:
 		_lamp_cleanup_after_frame=-1
 	# Um lugar do DesertWilds montou neste quadro: o enfeite fatiado fica para o próximo, sem somar.
 	if _dressing_yield_frame==Engine.get_process_frames(): return
+	var process_span := STALL_WORK.begin()
+	_stream_process()
+	STALL_WORK.finish_slow("stream.desert.process",process_span,2000)
+
+func _stream_process() -> void:
+	if not _workshop_staged.is_empty():
+		var staged: Array = _workshop_staged.pop_front()
+		if is_instance_valid(staged[0]) and is_instance_valid(staged[1]) and (staged[1] as Node).get_parent() == null:
+			var stage_span := STALL_WORK.begin()
+			(staged[0] as Node).add_child(staged[1])
+			STALL_WORK.finish_slow("stream.desert.workshop_stage", stage_span, 2000)
+		return
 	var began := Time.get_ticks_usec()
 	var budget := 4000 if _drag_preparing else BUILD_BUDGET_USEC
 	if _surface_jobs.is_empty():
@@ -368,7 +380,10 @@ func _run_build_job(job: Dictionary, _budget: float) -> void:
 		job.index=int(job.index)+1
 	elif not bool(job.dressed):
 		var stage:=int(job.get("dress_stage",0))
+		# Spans das etapas sem nome (22/10): quadros de 38–61 ms no deserto com 30–59 ms sem span.
+		var dress_began := STALL_WORK.begin()
 		_dress_stage(chunk,job.rect,job.key,stage)
+		STALL_WORK.finish_slow("stream.desert.dress_stage.%d"%stage,dress_began,2000)
 		job.dress_stage=stage+1
 		job.dressed=stage>=3
 	elif not bool(job.get("ground_cover_done",false)):
@@ -377,12 +392,16 @@ func _run_build_job(job: Dictionary, _budget: float) -> void:
 		job.ground_cover_done=GROUND_COVER.step(chunk,job.rect,job.ground_cover,_ground_height,_decoration_clear,_budget)
 	elif int(job.get("expansion_stage",0))<EXPANSION.STAGES:
 		var stage:=int(job.get("expansion_stage",0))
+		var expansion_began := STALL_WORK.begin()
 		EXPANSION.build_stage(chunk,job.rect,stage,_ground_height,_decoration_clear)
+		STALL_WORK.finish_slow("stream.desert.expansion_stage.%d"%stage,expansion_began,2000)
 		job.expansion_stage=stage+1
 	elif not bool(job.get("mining_built",false)):
+		var mining_began := STALL_WORK.begin()
 		for lamp in MINING_ART.build_chunk(chunk,job.rect):
 			lamp.light_energy=float(lamp.get_meta("mining_light_energy",1.8))*_night_level
 			_lamps.append(lamp)
+		STALL_WORK.finish_slow("stream.desert.mining",mining_began,2000)
 		job.mining_built=true
 	else:
 		build_jobs.erase(job)
@@ -447,6 +466,16 @@ func prewarm() -> void:
 	G.material(Color("b9a079"),true)
 	G.material(Color("706d61"),false,true)
 	expansion_prewarm=EXPANSION.prewarm(_ground_height)
+	prebuild_workshop()
+	# Chão do paddock da arrancada (22/10): o 1º trecho dele criava o material e a malha com o shader próprio
+	# no quadro (drag_meet.ground.quad 17 ms, 2 pipelines surface). Uma peça escondida sob a cortina basta.
+	if is_inside_tree() and OS.get_environment("GETECO_PADDOCK_PREWARM") != "0":
+		var paddock := MeshInstance3D.new()
+		paddock.mesh = QuadMesh.new()
+		paddock.material_override = DRAG_MEET._ground_material()
+		paddock.position = Vector3(0, -500, 0)
+		add_child(paddock)
+		paddock.queue_free()
 func prewarm_incremental() -> void:
 	prewarm()
 	while not is_streaming_idle(): await get_tree().process_frame
@@ -520,10 +549,53 @@ func _retire_or_cache_chunk(key: Vector2i, chunk: Node3D) -> void:
 				reusable=false
 				break
 	if not reusable:
+		_park_workshop_from(chunk)
 		GPU_RELEASE.retire(chunk)
 		return
 	if chunk.get_parent()!=null: chunk.get_parent().remove_child(chunk)
-	for retired in _chunk_cache.put(key,entry): GPU_RELEASE.retire_detached_subtree(retired)
+	for retired in _chunk_cache.put(key,entry):
+		_park_workshop_from(retired)
+		GPU_RELEASE.retire_detached_subtree(retired)
+
+## Oficina do Digo montada uma vez e estacionada (22/10): o registro inteiro custava 141–147 ms num
+## quadro a cada visita (stream.desert.record.drag_workshop; pátio 64–70, lote 25), e o trecho dela
+## quase nunca volta do cache (Digo, música e portão o tornam não reaproveitável). Só peças estáticas
+## (malhas, colisões, placa): sai da árvore com o trecho e volta pronta no próximo. O pré-aquecimento
+## monta a primeira sob a cortina. GETECO_DIGO_WORKSHOP_PARK=0 volta a montar a cada visita (A/B).
+static var _workshop_park_enabled := OS.get_environment("GETECO_DIGO_WORKSHOP_PARK") != "0"
+var _parked_workshop: Node3D
+var _workshop_staged: Array = []
+
+func _park_workshop_from(chunk: Node3D) -> void:
+	if not _workshop_park_enabled or not is_instance_valid(chunk) or is_instance_valid(_parked_workshop): return
+	var workshop := chunk.get_node_or_null("DigoWorkshop") as Node3D
+	if workshop == null or not workshop.has_meta("desert_drag_workshop") or workshop.is_queued_for_deletion(): return
+	chunk.remove_child(workshop)
+	_parked_workshop = workshop
+
+func _take_parked_workshop() -> Node3D:
+	if not _workshop_park_enabled or not is_instance_valid(_parked_workshop): return null
+	var workshop := _parked_workshop
+	_parked_workshop = null
+	workshop.visible = true
+	# A fusão por célula do trecho velho escondeu as malhas dela (o lote ficou lá): voltam a aparecer e o
+	# trecho novo funde de novo, como os registros guardados do NativeRegion.
+	preload("res://world/chunk_bake/ChunkCellMerge.gd").restore_sources(workshop)
+	return workshop
+
+## Sob a cortina: monta a oficina fora de vista (o _ready dela roda ao entrar na árvore) e a estaciona.
+func prebuild_workshop() -> void:
+	if not _workshop_park_enabled or is_instance_valid(_parked_workshop) or not is_inside_tree(): return
+	for chunk: Node3D in chunks.values():
+		if is_instance_valid(chunk) and chunk.get_node_or_null("DigoWorkshop") != null: return
+	var began := STALL_WORK.begin()
+	var workshop := load("res://world/desert/drag_meet/DesertDigoWorkshop.gd").new() as Node3D
+	workshop.name="DigoWorkshop"
+	workshop.visible = false
+	add_child(workshop)
+	remove_child(workshop)
+	_parked_workshop = workshop
+	STALL_WORK.finish_slow("desert.prebuild_workshop",began,2000)
 
 func _restore_cached_chunk(key: Vector2i, entry: Dictionary) -> void:
 	var chunk: Node3D=entry.chunk
@@ -547,6 +619,9 @@ func _notification(what: int) -> void:
 	if what==NOTIFICATION_PREDELETE:
 		preload("res://world/desert/DesertPreparationLifetime.gd").cancel(_presentation_lifetime)
 		if is_instance_valid(_horizon) and _horizon.get_parent()==null: _horizon.free()
+		if is_instance_valid(_parked_workshop) and _parked_workshop.get_parent()==null: _parked_workshop.free()
+		for staged: Array in _workshop_staged:
+			if is_instance_valid(staged[1]) and (staged[1] as Node).get_parent()==null: (staged[1] as Node).free()
 		for retained in _chunk_cache.clear():
 			if is_instance_valid(retained) and retained.get_parent()==null: retained.free()
 
@@ -666,10 +741,22 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 		"entrance_toll": chunk.add_child(preload("res://world/desert/entrance/DesertTollPlaza.gd").new())
 		"drag_meet": DRAG_MEET.build_record(chunk,record)
 		"drag_workshop":
-			var workshop := load("res://world/desert/drag_meet/DesertDigoWorkshop.gd").new() as Node3D
-			workshop.name="DigoWorkshop"
+			var workshop := _take_parked_workshop()
+			var staged: Array = []
+			if workshop == null:
+				workshop = load("res://world/desert/drag_meet/DesertDigoWorkshop.gd").new() as Node3D
+				workshop.name="DigoWorkshop"
+			else:
+				# Pátio e Gol (126 de 192 nós) voltam nos quadros seguintes: no jogo a volta inteira custou
+				# 20 ms num quadro (estresse do deserto de 22/10). Só peças estáticas; nada depende da ordem.
+				for part_name in ["DigoYardDetails","GolUnderRepair"]:
+					var part := workshop.get_node_or_null(part_name)
+					if part == null: continue
+					workshop.remove_child(part)
+					staged.append([workshop,part])
 			workshop.position=record.position
 			chunk.add_child(workshop)
+			_workshop_staged.append_array(staged)
 		"moon_village":
 			for lamp in MOON_VILLAGE.build_record(chunk,record.data):
 				lamp.light_energy=1.8*_night_level

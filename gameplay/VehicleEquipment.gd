@@ -6,6 +6,13 @@ const SURFACES := preload("res://runtime/VehicleSurfaceRoles.gd")
 const ENGINE_PROFILE := preload("res://audio/VehicleEngineProfile.gd")
 const LIGHT_BUDGET := preload("res://gameplay/lights/LightBudget.gd")
 const RENDER_POLICY := preload("res://runtime/RenderPolicy.gd")
+const DENTS := preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd")
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
+## Topo da cabine sem ler a GPU (22/10): a lataria da frota já foi lida sob a cortina
+## (VehicleBodyDents.prewarm_rest) e as primitivas saem da forma unitária escalada (MeshArrayCache).
+## A leitura direta caía no quadro em que o 1º caminhão de cada modelo nascia no trânsito
+## (population_job:equipment 4–10 ms nos sobrados e no porto). GETECO_CAB_REST_ARRAYS=0 volta à leitura direta.
+static var _cab_rest_arrays := OS.get_environment("GETECO_CAB_REST_ARRAYS") != "0"
 ## Política de sombra dos faróis (auditoria Godot 4.7 de 19/10, §4 "luzes com sombra"):
 ## - nas sombras Baixa/Média só os projetores do carro do jogador projetam sombra; rival de racha,
 ##   alarme piscando e carro roubado por NPC acendem sem sombra (na Alta, como antes);
@@ -238,8 +245,12 @@ func _car_points(entry: Dictionary) -> PackedVector3Array:
 	if entry.points != null: return entry.points
 	var result := PackedVector3Array()
 	var mesh: Mesh = (entry.part as MeshInstance3D).mesh
+	var rest: Array = DENTS.cached_rest(mesh) if _cab_rest_arrays and mesh is ArrayMesh else []
 	for surface in mesh.get_surface_count():
-		var arrays := mesh.surface_get_arrays(surface)
+		var arrays: Array
+		if not rest.is_empty(): arrays = rest[surface]
+		elif _cab_rest_arrays and mesh is PrimitiveMesh: arrays = MESH_ARRAYS.arrays_of(mesh, surface)
+		else: arrays = mesh.surface_get_arrays(surface)
 		if arrays.is_empty() or arrays[Mesh.ARRAY_VERTEX] == null: continue
 		result.append_array((entry.xf as Transform3D) * (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array))
 	entry.points = result

@@ -226,7 +226,14 @@ func _exterior_view_offset() -> Vector3:
 	# Tiny Z offset keeps look_at's up vector non-collinear at the overhead view.
 	return exterior.lerp(Vector3(0,35,.15),_container_blend)
 
+const _SYS_SPAN := preload("res://runtime/StallWorkTrace.gd")
+## Span do sistema inteiro (22/10): quadros de 30–60 ms com o tempo em _process sem nenhum span.
 func _process(delta: float) -> void:
+	var span := _SYS_SPAN.begin()
+	_process_traced(delta)
+	_SYS_SPAN.finish_slow("sys.camera.process", span, 3000)
+
+func _process_traced(delta: float) -> void:
 	if _mouse_orbit and (_camera_input_blocked() or not Input.is_action_pressed("camera_drag")):
 		_end_mouse_orbit()
 	# Dante moves in real time during his katana ability. Follow/orbit must share

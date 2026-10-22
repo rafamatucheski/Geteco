@@ -1,4 +1,5 @@
 extends RefCounted
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 ## Chunk-owned paddock. Parked cars admit a full driving controller on theft or
 ## damage; untouched displays have no audio, lamps or per-frame work.
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
@@ -136,7 +137,11 @@ static func build_ground(parent: Node3D, rect: Rect2) -> void:
 	var corners := PackedVector3Array()
 	for point: Vector2 in [area.position,Vector2(area.end.x,area.position.y),area.end,Vector2(area.position.x,area.end.y)]:
 		corners.append(Vector3(point.x,.012,point.y))
+	# Spans (22/10): a etapa 12 do chão do deserto custou 18 ms num quadro sem dizer onde.
+	var span := STALL_WORK.begin()
 	var ground := G.quad(parent,"DragMeetPaddock",corners,_ground_material(),true)
+	STALL_WORK.finish_slow("drag_meet.ground.quad", span, 2000)
+	span = STALL_WORK.begin()
 	ground.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	ground.set_meta("vehicle_surface","hard")
 	for child in ground.get_children():
@@ -150,6 +155,8 @@ static func build_ground(parent: Node3D, rect: Rect2) -> void:
 			for index in faces.size():
 				faces[index].y = LAYOUT.surface_height(Vector2(faces[index].x,faces[index].z))
 			collider.shape.set_faces(faces)
+	STALL_WORK.finish_slow("drag_meet.ground.faces", span, 2000)
+	span = STALL_WORK.begin()
 	# Concrete expansion joints and individual parking outlines read at driving
 	# scale without descriptive signs or a second surface over the access road.
 	for data in car_spots():
@@ -166,6 +173,7 @@ static func build_ground(parent: Node3D, rect: Rect2) -> void:
 		paint.material_override=_parking_paint()
 		paint.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		bay.add_child(paint)
+	STALL_WORK.finish_slow("drag_meet.ground.bays", span, 2000)
 
 static func _parking_mesh() -> ArrayMesh:
 	if _bay_paint_mesh!=null: return _bay_paint_mesh

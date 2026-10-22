@@ -79,7 +79,7 @@ func _step() -> void:
 		return
 	if pending.is_empty(): set_process(false); return
 	var task: Dictionary = pending.pop_front()
-	if ResourceLoader.has_cached(task.path):
+	if ResourceLoader.has_cached(task.path) or _prefetched.has(task.path) or _prefetch_draining.has(task.path):
 		# Existing consumers already hold this resource; don't inflate ownership.
 		cached += 1
 		return
@@ -98,6 +98,61 @@ func _exit_tree() -> void:
 		script.drain_request(get_tree(),active_path)
 	pending.clear()
 	held.clear()
+
+## Busca antecipada sob a cortina (22/10). O manifesto é quase todo shader (46 de 59): carregado em
+## thread, o shader_set_code e a compilação/leitura das variantes caem no thread principal no próximo
+## RenderingServer.sync, já com o jogo rodando. No estresse de 22/10 apareciam quadros de 34–61 ms com
+## 14 ms entre o último _process e o desenho, sem span e sem nó removido. Pedidos todos de uma vez no
+## começo da carga, em paralelo com o resto, e recolhidos antes de a cortina sair; o que não chegar no
+## prazo fica para a fila de sempre. GETECO_BG_PREFETCH=0 volta a carregar só depois de jogável.
+static var _prefetched: Dictionary = {}
+static var _prefetch_requested: Array[String] = []
+static var _prefetch_draining: Dictionary = {}
+
+static func prefetch_enabled() -> bool:
+	return OS.get_environment("GETECO_BG_PREFETCH") != "0"
+
+static func prefetch_start() -> void:
+	if not prefetch_enabled() or not _prefetch_requested.is_empty(): return
+	for id in MANIFEST.RESOURCES:
+		for entry in MANIFEST.RESOURCES[id]:
+			var path := str(entry)
+			if _prefetched.has(path) or path in _prefetch_requested or ResourceLoader.has_cached(path): continue
+			if ResourceLoader.load_threaded_request(path,"",false,ResourceLoader.CACHE_MODE_REUSE) == OK:
+				_prefetch_requested.append(path)
+
+## Espera os pedidos terminarem (até o prazo) e guarda os recursos pela sessão. Devolve quantos chegaram.
+static func prefetch_collect(tree: SceneTree, deadline_msec: int) -> int:
+	var collected := 0
+	while not _prefetch_requested.is_empty():
+		var still: Array[String] = []
+		for path in _prefetch_requested:
+			var state := ResourceLoader.load_threaded_get_status(path)
+			if state == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+				still.append(path)
+			elif state == ResourceLoader.THREAD_LOAD_LOADED:
+				var resource := ResourceLoader.load_threaded_get(path)
+				if resource != null:
+					_prefetched[path] = resource
+					collected += 1
+		_prefetch_requested = still
+		if still.is_empty() or Time.get_ticks_msec() >= deadline_msec: break
+		await tree.process_frame
+	# Pedidos atrasados: drain_request recolhe sem travar e a fila do jogo não os pede de novo
+	# (dois load_threaded_get do mesmo caminho dão erro).
+	for path in _prefetch_requested:
+		_prefetch_draining[path] = true
+		_drain_prefetch(tree, path)
+	_prefetch_requested.clear()
+	return collected
+
+static func _drain_prefetch(tree: SceneTree, path: String) -> void:
+	while ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+		await tree.process_frame
+	if ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_LOADED:
+		var resource := ResourceLoader.load_threaded_get(path)
+		if resource != null: _prefetched[path] = resource
+	_prefetch_draining.erase(path)
 
 static func drain_request(tree: SceneTree, path: String) -> void:
 	while ResourceLoader.load_threaded_get_status(path) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:

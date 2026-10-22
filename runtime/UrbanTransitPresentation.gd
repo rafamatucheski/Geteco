@@ -108,7 +108,14 @@ func on_region_changed() -> void:
 	refresh()
 	if is_instance_valid(urban_service): urban_service.refresh_presence()
 
+const _SYS_SPAN := preload("res://runtime/StallWorkTrace.gd")
+## Span do sistema inteiro (22/10): quadros de 30–60 ms com o tempo em _process sem nenhum span.
 func _process(delta: float) -> void:
+	var span := _SYS_SPAN.begin()
+	_process_traced(delta)
+	_SYS_SPAN.finish_slow("sys.urban_transit.process", span, 3000)
+
+func _process_traced(delta: float) -> void:
 	_elapsed += delta
 	if _elapsed < INTERVAL and not _refresh_soon: return
 	_elapsed = 0.0

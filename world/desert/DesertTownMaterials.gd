@@ -2,6 +2,7 @@ extends RefCounted
 ## Shared metre-scale finishes. No generated texture or material work after prewarm.
 const URBAN := preload("res://assets/urban_detail/UrbanMaterials.gd")
 const SHOP := preload("res://world/places/ShopInteriorMaterials.gd")
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 static var _cache: Dictionary={}
 
 static func prewarm() -> void:
@@ -54,7 +55,9 @@ static func batch_visuals(root: Node3D) -> void:
 		var normals := PackedVector3Array()
 		var uv := PackedVector2Array()
 		for node: MeshInstance3D in items:
-			var source: Array=node.mesh.surface_get_arrays(0)
+			# Caixas e cilindros vêm da forma unitária escalada na CPU (MeshArrayCache), sem ler a GPU por
+			# peça: era 49–70 ms num quadro no quadro da arrancada e no pátio do Digo (22/10).
+			var source: Array=MESH_ARRAYS.arrays_of(node.mesh,0) if MESH_ARRAYS.scaled_enabled else node.mesh.surface_get_arrays(0)
 			var positions: PackedVector3Array=source[Mesh.ARRAY_VERTEX]
 			var source_normals: PackedVector3Array=source[Mesh.ARRAY_NORMAL]
 			var indices: PackedInt32Array=source[Mesh.ARRAY_INDEX] if source[Mesh.ARRAY_INDEX]!=null else PackedInt32Array()

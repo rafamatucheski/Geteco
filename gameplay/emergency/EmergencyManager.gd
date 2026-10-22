@@ -4,6 +4,7 @@ const RESPONDER = preload("res://gameplay/emergency/Responder.gd")
 const FIRE = preload("res://gameplay/emergency/Fire.gd")
 const VEHICLE = preload("res://scripts/Vehicle.gd")
 const RULES = preload("res://gameplay/dispatch/DispatchRules.gd")
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const MAX_INCIDENTS := 24
 const RESPONSE_RADIUS := 68.75
 var world: Node3D
@@ -74,11 +75,13 @@ func ignite(point: Vector3, source: Node = null, intensity: float = 1.0) -> Node
 	var floor_ray := PhysicsRayQueryParameters3D.create(point + Vector3.UP * 2, point - Vector3.UP * 3, 1)
 	var floor_hit := get_world_3d().direct_space_state.intersect_ray(floor_ray)
 	if floor_hit.is_empty(): return null
+	var ignite_began := STALL_WORK.begin()
 	var fire := FIRE.new()
 	fire.manager = self
 	fire.source = source
 	fire.intensity = clampf(intensity, 0.1, 2.0)
 	add_child(fire)
+	STALL_WORK.finish("marker.fire_ignite", ignite_began)
 	fire.global_position = floor_hit.position + Vector3.UP * 0.03
 	fires.append(fire)
 	serial += 1

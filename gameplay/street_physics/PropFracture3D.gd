@@ -1,6 +1,8 @@
 extends RefCounted
 ## Split authored mesh surfaces into three spatial shards, retaining their materials.
 ## Runs only at impact; debris lifetime and body count belong to FragileProps3D.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
+static var _cached_arrays := OS.get_environment("GETECO_PROP_FRACTURE_CACHE") != "0"
 static func split(root: Node3D, axis: int) -> Array[MeshInstance3D]:
 	var meshes: Array[MeshInstance3D]=[]
 	if root is MeshInstance3D: meshes.append(root)
@@ -25,7 +27,9 @@ static func split(root: Node3D, axis: int) -> Array[MeshInstance3D]:
 		var normal_basis:=pose.basis.inverse().transposed()
 		for surface in source.mesh.get_surface_count():
 			if source.mesh is ArrayMesh and source.mesh.surface_get_primitive_type(surface)!=Mesh.PRIMITIVE_TRIANGLES: continue
-			var arrays: Array=source.mesh.surface_get_arrays(surface)
+			# Cópia na CPU por malha (22/10): props do mesmo tipo dividem a malha, então só o 1º choque de
+			# cada tipo lê a GPU. As arrays são só lidas aqui. GETECO_PROP_FRACTURE_CACHE=0 lê direto (A/B).
+			var arrays: Array=MESH_ARRAYS.arrays_of(source.mesh,surface) if _cached_arrays else source.mesh.surface_get_arrays(surface)
 			var vertices: PackedVector3Array=arrays[Mesh.ARRAY_VERTEX]
 			var indices: PackedInt32Array=arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX]!=null else PackedInt32Array()
 			# Três listas locais: mexer num PackedInt32Array guardado dentro de Array não é garantido.

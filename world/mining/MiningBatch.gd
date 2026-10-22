@@ -1,7 +1,9 @@
 extends RefCounted
 ## Spatially bounded static batches. One material/primitive draw per chunk;
 ## explicit colliders remain independent from ornament and visual batching.
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 static var _meshes: Dictionary={}
+static var _late_body := OS.get_environment("GETECO_MINING_BODY_LATE") != "0"
 static var _materials: Dictionary={}
 var root: Node3D
 var body: StaticBody3D
@@ -18,7 +20,10 @@ func _init(parent: Node3D, label: String, at := Vector3.ZERO) -> void:
 	body.collision_layer=1
 	body.collision_mask=0
 	body.set_meta("vehicle_surface","hard")
-	root.add_child(body)
+	# Corpo entra na árvore só no finish(), já com todas as formas (22/10): cada CollisionShape3D somada a
+	# um corpo que já está no espaço refaz a forma composta dele; a mina (centenas de rochas, cercas e
+	# cabos sólidos) custava 22–24 ms num quadro (stream.desert.mining). GETECO_MINING_BODY_LATE=0 volta.
+	if not _late_body: root.add_child(body)
 
 func box(label: String, at: Vector3, size: Vector3, material_key: String, solid := false, rotation := Vector3.ZERO) -> void:
 	_add("box",material_key,Transform3D(Basis.from_euler(rotation)*Basis.from_scale(size),at))
@@ -43,7 +48,9 @@ func rock(label: String, at: Vector3, size: Vector3, material_key := "ore", soli
 	_add("rock",material_key,Transform3D(Basis(Vector3.UP,yaw)*Basis.from_scale(size),at))
 	if solid:
 		var shape := ConvexPolygonShape3D.new()
-		var vertices: PackedVector3Array=mesh("rock").surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+		# Malha da rocha é única e fixa: vértices pela cópia na CPU (22/10). A leitura da GPU por rocha sólida
+		# fazia a etapa da mina custar 22 ms num quadro (stream.desert.mining, estresse do deserto).
+		var vertices: PackedVector3Array=(MESH_ARRAYS.arrays_of(mesh("rock"),0) if MESH_ARRAYS.scaled_enabled else mesh("rock").surface_get_arrays(0))[Mesh.ARRAY_VERTEX]
 		var points := PackedVector3Array()
 		for vertex in vertices: points.append(vertex*size)
 		shape.points=points
@@ -80,6 +87,7 @@ func finish() -> Node3D:
 		if group.kind == "rock": visual.material_override = mineral_material(group.finish)
 		root.add_child(visual)
 	if body.get_child_count()==0: body.free()
+	elif body.get_parent()==null: root.add_child(body)
 	root.set_meta("mining_static_pieces",piece_count)
 	return root
 

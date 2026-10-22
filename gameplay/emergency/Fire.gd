@@ -8,6 +8,7 @@ extends Node3D
 ## tremula. Tudo escala com `intensity`. Dano e duração não mudaram.
 const MAX_LIT_FIRES := 6
 const RESOURCES := preload("res://gameplay/vehicle_effects/VehicleEffectResources.gd")
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 static var _visual_template: PackedScene
 
 var manager: Node3D
@@ -187,6 +188,8 @@ func _physics_process(delta: float) -> void:
 		if _fade_from < 0.0: _fade_from = intensity
 		intensity -= delta * _fade_from / FADE_SECONDS
 	if intensity <= 0:
+		# Marcador (22/10): quadros de 19–31 ms no desenho com fogo em cena e sem pipeline novo.
+		STALL_WORK.finish("marker.fire_free", STALL_WORK.begin())
 		queue_free()
 		return
 	_apply_intensity()

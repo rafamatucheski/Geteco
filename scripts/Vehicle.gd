@@ -435,11 +435,14 @@ func _physics_process(delta: float) -> void:
 	STALL_WORK.finish_slow("vehicle.physics", began, 10000, self)
 
 func _stall_physics_tick(delta: float) -> void:
+	# Spans (22/10): quadros com vehicle.physics de 8–11 ms num carro só e nenhum trecho interno nomeado.
+	var stage := STALL_WORK.begin()
 	if controlled and not external_input and not _traffic_retirement_meshes.is_empty(): fade_traffic_retirement(0)
 	if traffic_escape!=null and (controlled or not traffic): traffic_escape.tick(self,delta)
 	# Also clean during backoff, player control and resting; no geometry work when empty.
 	if not _clearing_junctions.is_empty(): _clear_departed_junctions()
-	var stage := STALL_WORK.begin()
+	STALL_WORK.finish_slow("vehicle.pre_tick", stage, 2000, self)
+	stage = STALL_WORK.begin()
 	var removed := health <= 0.0 and _tick_wreck(delta)
 	STALL_WORK.finish_slow("vehicle.wreck_lifetime", stage, 5000, self)
 	if removed: return
@@ -467,8 +470,10 @@ func _stall_physics_tick(delta: float) -> void:
 	if lod == 0.0: return
 	delta *= lod
 	if traffic_rails != null:
+		stage = STALL_WORK.begin()
 		rail_drive = traffic_rails.prepare(self,delta)
 		rail_wake = traffic_rails.force_physics
+		STALL_WORK.finish_slow("vehicle.rails_prepare", stage, 2000, self)
 	if health <= 0:
 		controlled = false
 		traffic = false
@@ -484,7 +489,10 @@ func _stall_physics_tick(delta: float) -> void:
 	STALL_WORK.finish_slow("vehicle.drive", stage, 5000, self)
 	if rail_drive:
 		var rail_previous := global_position
-		if traffic_rails.advance(self,delta):
+		stage = STALL_WORK.begin()
+		var advanced: bool = traffic_rails.advance(self,delta)
+		STALL_WORK.finish_slow("vehicle.rails_advance", stage, 2000, self)
+		if advanced:
 			var rail_motion := global_position-rail_previous
 			rail_motion.y = 0.0
 			distance_travelled += rail_motion.length()
@@ -522,7 +530,9 @@ func _stall_physics_tick(delta: float) -> void:
 	var terrain_supported := false
 	# Exact upright-box support on the authored canyon and quarry. The helper verifies
 	# the physical floor, including frames whose support was established by snap.
+	stage = STALL_WORK.begin()
 	var support_y := DESERT_GROUND.vertical_velocity(self,velocity,get_physics_process_delta_time())
+	STALL_WORK.finish_slow("vehicle.ground_support", stage, 2000, self)
 	if is_finite(support_y):
 		velocity.y=support_y
 		terrain_supported=true

@@ -18,6 +18,7 @@ extends RefCounted
 ##   se a travada da ponte sumir assim, a causa é a liberação.
 ## - GETECO_GPU_RELEASE_PER_FRAME=N: folhas com recurso de vídeo liberadas por quadro (padrão 4).
 
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const CPU_BUDGET_USEC := 800
 const DEFAULT_GPU_LEAVES_PER_FRAME := 4
 ## Espera antes de soltar a memória de vídeo: no instante da troca de trechos a placa já recebe o que
@@ -136,8 +137,14 @@ static func _shutdown() -> void:
 
 static func _tick() -> void:
 	var began := Time.get_ticks_usec()
+	# Spans (22/10): roda no sinal process_frame, antes de qualquer _process; quadros de 25 ms nessa
+	# faixa (depois do desenho, antes do 1º _process) não tinham nome.
+	var span := STALL_WORK.begin()
 	_drain_roots(began)
+	STALL_WORK.finish_slow("gpu_release.drain", span, 2000)
+	span = STALL_WORK.begin()
 	_release_orphans()
+	STALL_WORK.finish_slow("gpu_release.orphans", span, 2000)
 
 static func _drain_roots(began: int) -> void:
 	while not _roots.is_empty():

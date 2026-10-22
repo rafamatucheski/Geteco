@@ -2,6 +2,7 @@ extends Node
 ## Event-only mesh deformation. Pristine meshes stay shared until the first dent.
 ## Records use vehicle-local metres; rebuilding from rest makes save/load exact.
 const ROLES := preload("res://runtime/VehicleSurfaceRoles.gd")
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const MAX_DENTS := 12
 const MAX_DEPTH := .34
 const MAX_VERTICES := 60000
@@ -81,9 +82,15 @@ func impact(amount: float, point: Vector3, contact_inward := Vector3.ZERO) -> vo
 	row.depth=minf(MAX_DEPTH,prior+depth)
 	if row.depth>prior:
 		var fresh:=not prepared
+		# Spans (22/10): a 1ª batida custa 19–21 ms (vehicle.impact.dents) sem dizer se é leitura ou cálculo.
+		var stage := STALL_WORK.begin()
 		_prepare()
+		STALL_WORK.finish_slow("vehicle.dents.prepare", stage, 2000)
+		stage = STALL_WORK.begin()
 		# Só este amassado mudou: o resto da lataria continua exatamente como estava.
-		_rebuild({} if fresh else row)
+		if _async_active(): _request_rebuild({} if fresh else row)
+		else: _rebuild({} if fresh else row)
+		STALL_WORK.finish_slow("vehicle.dents.rebuild_full" if fresh else "vehicle.dents.rebuild_partial", stage, 2000)
 	# Short damped body recoil. No permanent processing on damaged vehicles.
 	if vehicle.controlled and vehicle.health>0:
 		_kick=Vector3(direction.z,0,-direction.x)*clampf(amount*.002,.012,.045)
@@ -115,12 +122,61 @@ func _prepare() -> void:
 		var count:=0
 		for surface in part.mesh.get_surface_count(): count+=part.mesh.surface_get_array_len(surface)
 		if total+count>MAX_VERTICES: continue
+		var read_began := STALL_WORK.begin()
 		var arrays:=_rest_arrays(part.mesh)
+		# Qual peça ainda cai fora dos caches (22/10: 3–5 ms de leitura da GPU por 1ª batida nos sobrados e no
+		# porto mesmo com a frota pré-lida); o span diz o modelo e a peça.
+		if read_began != 0 and Time.get_ticks_usec() - read_began >= 1000:
+			STALL_WORK.finish("vehicle.dents.rest_miss", read_began, {"archetype": vehicle.archetype,
+				"part": str(vehicle.visual.get_path_to(part)), "mesh": part.mesh.resource_name})
 		total+=count
 		parts.append({"node":part,"mesh":part.mesh,"arrays":arrays,"eligible":eligible,"transform":inverse*part.global_transform})
 		part.set_meta(REST_MESH_META,part.mesh)
 
+## Arrays em repouso da frota inteira lidas sob a cortina (22/10): o cache acima guarda 48 malhas e a
+## frota passa disso, então a 1ª batida de cada modelo ainda lia a GPU no quadro do choque
+## (vehicle.dents.readback 6–14 ms, até 8 superfícies). Só malhas dos modelos da frota (compartilhadas
+## por todos os carros do modelo); portas recortadas, únicas de cada carro, seguem no cache limitado.
+## GETECO_DENTS_FLEET_PREWARM=0 desliga.
+static var _fleet_rest: Dictionary = {}
+static var fleet_rest_vertices := 0
+
+static func prewarm_rest(model: Node3D) -> void:
+	if OS.get_environment("GETECO_DENTS_FLEET_PREWARM") == "0" or model == null: return
+	for part: MeshInstance3D in model.find_children("*","MeshInstance3D",true,false):
+		# Só ArrayMesh (a lataria da frota): primitivas (barra de luz, faróis em caixa) não têm
+		# surface_get_array_len e nunca entram no amassado como peça pintada da frota.
+		if not part.mesh is ArrayMesh or part.skeleton!=NodePath("") or _fleet_rest.has(part.mesh): continue
+		var path:=str(model.get_path_to(part)).to_lower()
+		if "wheel" in path or "interior" in path or "rider" in path: continue
+		# Mesma leitura do caminho do jogo; a cópia sai do cache limitado para o da frota.
+		var arrays: Array=_rest_arrays(part.mesh)
+		_rest_cache.erase(part.mesh)
+		for surface in part.mesh.get_surface_count(): fleet_rest_vertices += part.mesh.surface_get_array_len(surface)
+		_fleet_rest[part.mesh]=arrays
+
+## Malha montada na CPU por outro módulo (porta recortada, VehicleDoorBuilder): as arrays de origem
+## entram no cache limitado e o 1º amassado depois do recorte não lê a GPU. GETECO_DENTS_DOOR_PRIME=0 desliga.
+static func prime_rest(mesh: Mesh, arrays: Array) -> void:
+	if OS.get_environment("GETECO_DENTS_DOOR_PRIME") == "0" or mesh == null or arrays.size() != mesh.get_surface_count(): return
+	_rest_cache.erase(mesh)
+	while _rest_cache.size()>=REST_CACHE_LIMIT: _rest_cache.erase(_rest_cache.keys()[0])
+	_rest_cache[mesh]=arrays
+
+## Arrays em repouso da frota já lidas, para quem só precisa ler vértices (VehicleEquipment._car_points).
+static func cached_rest(mesh: Mesh) -> Array:
+	var fleet: Array=_fleet_rest.get(mesh,[])
+	return fleet if _valid_rest(fleet, mesh) else []
+
+static func _valid_rest(cached: Array, mesh: Mesh) -> bool:
+	if cached.is_empty() or cached.size()!=mesh.get_surface_count(): return false
+	for surface in cached.size():
+		if (cached[surface][Mesh.ARRAY_VERTEX] as PackedVector3Array).size()!=mesh.surface_get_array_len(surface): return false
+	return true
+
 static func _rest_arrays(mesh: Mesh) -> Array:
+	var fleet: Array=_fleet_rest.get(mesh,[])
+	if _valid_rest(fleet, mesh): return fleet
 	var cached: Array=_rest_cache.get(mesh,[])
 	# Alguém reescreveu as superfícies da malha no lugar: a cópia não vale mais.
 	var valid:=cached.size()==mesh.get_surface_count()
@@ -128,8 +184,10 @@ static func _rest_arrays(mesh: Mesh) -> Array:
 		if not valid: break
 		valid=(cached[surface][Mesh.ARRAY_VERTEX] as PackedVector3Array).size()==mesh.surface_get_array_len(surface)
 	if valid and not cached.is_empty(): return cached
+	var read_began := STALL_WORK.begin()
 	var arrays: Array=[]
 	for surface in mesh.get_surface_count(): arrays.append(mesh.surface_get_arrays(surface))
+	STALL_WORK.finish_slow("vehicle.dents.readback", read_began, 1000)
 	_rest_cache.erase(mesh)
 	while _rest_cache.size()>=REST_CACHE_LIMIT: _rest_cache.erase(_rest_cache.keys()[0])
 	_rest_cache[mesh]=arrays
@@ -146,7 +204,65 @@ static func _outside(entry: Dictionary, point: Vector3, radius: float) -> bool:
 ## de cada vértice só depende dos amassados que o alcançam (peso zero fora do raio). Os demais
 ## reaproveitam a posição já aplicada, então o resultado é o mesmo da reconstrução completa.
 func _rebuild(changed: Dictionary = {}) -> void:
+	# Caminho síncrono (carga do save, troca de malha, testes): um cálculo em voo deixa de valer.
+	_generation += 1
+	_pending = null
 	var started:=Time.get_ticks_usec()
+	var job:=_make_job(changed)
+	_compute(job)
+	_apply_job(job)
+	rebuild_usec=Time.get_ticks_usec()-started
+
+## Amassado calculado fora do thread principal (22/10). Na 1ª batida de cada carro a reconstrução da
+## lataria inteira custava 8–10 ms de GDScript (vehicle.dents.rebuild_full), no mesmo quadro de física
+## da batida; com a leitura das arrays, 19–25 ms (estresse de 22/10, oeste/porto/sobrados). O cálculo
+## (posições, normais, tangentes) é o mesmo de antes, sobre cópias; só a malha nova entra no thread
+## principal, um ou dois quadros depois do choque. Outra batida no meio espera e refaz, parcial se for
+## o mesmo registro. Headless (testes) continua síncrono. GETECO_DENTS_ASYNC=0 volta ao síncrono.
+static var async_enabled := OS.get_environment("GETECO_DENTS_ASYNC") != "0"
+static var async_in_headless := false
+var _task := -1
+var _job: Dictionary = {}
+var _job_started := 0
+var _pending: Variant = null
+var _generation := 0
+
+func _async_active() -> bool:
+	return async_enabled and (async_in_headless or DisplayServer.get_name() != "headless")
+
+func _request_rebuild(changed: Dictionary) -> void:
+	if _task >= 0:
+		# Dois registros diferentes (ou uma completa) no meio: a próxima é completa, sempre correta.
+		if _pending == null: _pending = changed
+		elif changed.is_empty() or (_pending as Dictionary).is_empty() or _pending != changed: _pending = {}
+		set_process(true)
+		return
+	_job = _make_job(changed)
+	_job_started = Time.get_ticks_usec()
+	_task = _launch(_job)
+	set_process(true)
+
+static func _launch(job: Dictionary) -> int:
+	return WorkerThreadPool.add_task(func() -> void: _compute(job), false, "VehicleBodyDents")
+
+func _poll_rebuild() -> void:
+	if _task < 0 or not WorkerThreadPool.is_task_completed(_task): return
+	WorkerThreadPool.wait_for_task_completion(_task)
+	_task = -1
+	var job := _job
+	_job = {}
+	if int(job.get("generation", -1)) == _generation:
+		var stage := STALL_WORK.begin()
+		_apply_job(job)
+		STALL_WORK.finish_slow("vehicle.dents.apply", stage, 2000)
+		rebuild_usec = Time.get_ticks_usec() - _job_started
+	if _pending != null and is_instance_valid(vehicle):
+		var next: Dictionary = _pending
+		_pending = null
+		_request_rebuild(next)
+
+## Tudo que o cálculo lê, copiado ou compartilhado só para leitura (arrays em repouso do cache).
+func _make_job(changed: Dictionary) -> Dictionary:
 	var partial:=not changed.is_empty()
 	var changed_point:=Vector3(changed.point[0],changed.point[1],changed.point[2]) if partial else Vector3.ZERO
 	var changed_radius:=float(changed.radius) if partial else 0.0
@@ -158,37 +274,56 @@ func _rebuild(changed: Dictionary = {}) -> void:
 		dent_points.append(Vector3(row.point[0],row.point[1],row.point[2]))
 		dent_offsets.append(Vector3(row.direction[0],row.direction[1],row.direction[2])*float(row.depth))
 		dent_radii.append(float(row.radius))
+	var work: Array[Dictionary]=[]
 	for entry in parts:
 		var part: MeshInstance3D=entry.node
 		if not is_instance_valid(part) or not part.visible: continue
 		if partial and entry.has("applied_mesh") and part.mesh==entry.applied_mesh and _outside(entry,changed_point,changed_radius): continue
 		var reuse: bool=partial and entry.has("applied_mesh") and part.mesh==entry.applied_mesh
-		var mesh:=ArrayMesh.new()
-		var transform: Transform3D=entry.transform
+		var primitives: Array[int]=[]
+		for surface in entry.arrays.size(): primitives.append(entry.mesh.surface_get_primitive_type(surface))
+		work.append({"entry":entry,"arrays":entry.arrays,"eligible":entry.eligible,"transform":entry.transform,
+			"hood":part.get_meta("breakaway_part_id","")=="hood","reuse":reuse,"primitives":primitives,
+			"rest_points":(entry.get("rest_points",[]) as Array).duplicate(),"applied_vertices":(entry.get("applied_vertices",[]) as Array).duplicate()})
+	return {"generation":_generation,"partial":partial,"changed_point":changed_point,"changed_radius":changed_radius,
+		"dent_points":dent_points,"dent_offsets":dent_offsets,"dent_radii":dent_radii,"body_height":float(vehicle.body_height),"work":work}
+
+## Só dados: roda no thread principal (síncrono) ou num trabalhador do WorkerThreadPool.
+static func _compute(job: Dictionary) -> void:
+	var changed_point: Vector3=job.changed_point
+	var changed_radius: float=job.changed_radius
+	var dent_points: Array[Vector3]=job.dent_points
+	var dent_offsets: Array[Vector3]=job.dent_offsets
+	var dent_radii: Array[float]=job.dent_radii
+	var body_height: float=job.body_height
+	for item: Dictionary in job.work:
+		var transform: Transform3D=item.transform
 		var inverse:=transform.affine_inverse()
-		var hood: bool=part.get_meta("breakaway_part_id","")=="hood"
-		if not entry.has("rest_points"): entry["rest_points"]=[]
-		if not entry.has("applied_vertices"): entry["applied_vertices"]=[]
-		for surface in entry.arrays.size():
-			var arrays: Array=entry.arrays[surface].duplicate()
-			if entry.eligible[surface]:
+		var hood: bool=item.hood
+		var reuse: bool=item.reuse
+		var rest_list: Array=item.rest_points
+		var applied_list: Array=item.applied_vertices
+		var surfaces: Array=[]
+		for surface in (item.arrays as Array).size():
+			var arrays: Array=(item.arrays[surface] as Array).duplicate()
+			if item.eligible[surface]:
 				var source: PackedVector3Array=arrays[Mesh.ARRAY_VERTEX]
-				while entry.rest_points.size()<=surface: entry.rest_points.append(null)
-				while entry.applied_vertices.size()<=surface: entry.applied_vertices.append(null)
-				if entry.rest_points[surface]==null:
+				while rest_list.size()<=surface: rest_list.append(null)
+				while applied_list.size()<=surface: applied_list.append(null)
+				if rest_list[surface]==null:
 					var points:=PackedVector3Array()
 					points.resize(source.size())
 					for index in source.size(): points[index]=transform*source[index]
-					entry.rest_points[surface]=points
-				var rest_points: PackedVector3Array=entry.rest_points[surface]
-				var applied: Variant=entry.applied_vertices[surface] if reuse else null
+					rest_list[surface]=points
+				var rest_points: PackedVector3Array=rest_list[surface]
+				var applied: Variant=applied_list[surface] if reuse else null
 				var vertices: PackedVector3Array=(applied as PackedVector3Array).duplicate() if applied!=null else source.duplicate()
 				var radius_squared:=changed_radius*changed_radius
 				for index in vertices.size():
 					var rest:=rest_points[index]
 					if applied!=null and rest.distance_squared_to(changed_point)>=radius_squared: continue
 					# Beltline/roof and cabin remain stable, including upper door frames.
-					var belt:=1.0 if hood else 1.0-smoothstep(vehicle.body_height*.58,vehicle.body_height*.82,rest.y)
+					var belt:=1.0 if hood else 1.0-smoothstep(body_height*.58,body_height*.82,rest.y)
 					var displacement:=Vector3.ZERO
 					for dent in dent_points.size():
 						var distance:=rest.distance_to(dent_points[dent])/dent_radii[dent]
@@ -201,18 +336,30 @@ func _rebuild(changed: Dictionary = {}) -> void:
 					if displacement.length()>MAX_DEPTH: displacement=displacement.normalized()*MAX_DEPTH
 					vertices[index]=inverse*(rest+displacement)
 				arrays[Mesh.ARRAY_VERTEX]=vertices
-				entry.applied_vertices[surface]=vertices
+				applied_list[surface]=vertices
 				# Keep the authored topology, UVs and split seams. SurfaceTool reindexes
 				# exported meshes, which can merge vertices at hard panel boundaries.
 				_update_normals(arrays)
-				mesh.add_surface_from_arrays(entry.mesh.surface_get_primitive_type(surface),arrays)
-			else: mesh.add_surface_from_arrays(entry.mesh.surface_get_primitive_type(surface),arrays)
+			surfaces.append(arrays)
+		item["surfaces"]=surfaces
+
+## Thread principal: malhas novas a partir do cálculo pronto.
+func _apply_job(job: Dictionary) -> void:
+	for item: Dictionary in job.work:
+		var entry: Dictionary=item.entry
+		var part: MeshInstance3D=entry.node
+		if not is_instance_valid(part) or not item.has("surfaces"): continue
+		var mesh:=ArrayMesh.new()
+		var surfaces: Array=item.surfaces
+		for surface in surfaces.size():
+			mesh.add_surface_from_arrays(item.primitives[surface],surfaces[surface])
 			mesh.surface_set_material(surface,entry.mesh.surface_get_material(surface))
+		entry["rest_points"]=item.rest_points
+		entry["applied_vertices"]=item.applied_vertices
 		part.mesh=mesh
 		entry["applied_mesh"]=mesh
-	rebuild_usec=Time.get_ticks_usec()-started
 
-func _update_normals(arrays: Array) -> void:
+static func _update_normals(arrays: Array) -> void:
 	var vertices: PackedVector3Array=arrays[Mesh.ARRAY_VERTEX]
 	var indices: PackedInt32Array=arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX]!=null else PackedInt32Array()
 	var normals:=PackedVector3Array()
@@ -237,6 +384,8 @@ func _update_normals(arrays: Array) -> void:
 		arrays[Mesh.ARRAY_TANGENT]=tangents
 
 func clear() -> void:
+	_generation += 1
+	_pending = null
 	_stop_recoil()
 	for entry in parts:
 		if is_instance_valid(entry.node):
@@ -252,17 +401,41 @@ func clear() -> void:
 func geometry_changed() -> void:
 	if dents.is_empty(): return
 	_stop_recoil()
+	var keep: Dictionary = {}
 	for entry in parts:
 		var part: MeshInstance3D=entry.node
 		if not is_instance_valid(part): continue
-		if part.mesh==entry.get("applied_mesh"): part.mesh=entry.mesh
+		if part.mesh==entry.get("applied_mesh"):
+			keep[part]=part.mesh
+			part.mesh=entry.mesh
 		if part.has_meta(REST_MESH_META): part.remove_meta(REST_MESH_META)
 	parts.clear()
 	prepared=false
 	_prepare()
-	_rebuild()
+	if not _async_active():
+		_rebuild()
+		return
+	# Assíncrono (22/10): a viatura que chega batida trocava as portas e refazia a lataria inteira no
+	# mesmo quadro (dispatch.doors.prewarm 19 ms). As peças só amassadas seguem com a malha amassada
+	# até a nova chegar; o repouso já foi lido acima, com a malha inteira no lugar.
+	_generation += 1
+	_pending = null
+	for part: MeshInstance3D in keep:
+		if is_instance_valid(part): part.mesh=keep[part]
+	_request_rebuild({})
 
 func _process(delta: float) -> void:
+	if _task >= 0: _poll_rebuild()
+	if _remaining > 0.0: _recoil(delta)
+	if _task < 0 and _remaining <= 0.0: set_process(false)
+
+func _notification(what: int) -> void:
+	# O trabalhador só lê dados copiados, mas a tarefa precisa ser recolhida antes de o nó sumir.
+	if what == NOTIFICATION_PREDELETE and _task >= 0:
+		WorkerThreadPool.wait_for_task_completion(_task)
+		_task = -1
+
+func _recoil(delta: float) -> void:
 	if not is_instance_valid(vehicle.visual) or vehicle.health<=0: _stop_recoil(); return
 	vehicle.visual.rotation-=_last_rotation
 	vehicle.visual.position-=_last_position
@@ -282,4 +455,5 @@ func _stop_recoil() -> void:
 	_last_rotation=Vector3.ZERO
 	_last_position=Vector3.ZERO
 	_remaining=0
-	set_process(false)
+	# Uma malha ainda sendo calculada mantém o _process (recolhe e aplica no quadro em que ficar pronta).
+	set_process(_task >= 0)

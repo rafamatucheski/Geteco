@@ -2126,7 +2126,14 @@ func _toggle_weapon_flashlight() -> void:
 	if not preload("res://gameplay/WeaponCustomization.gd").installed(world.gameplay.customization, id):
 		show_message("Instale uma lanterna nesta arma na Ammu-Nation.")
 
+const _SYS_SPAN := preload("res://runtime/StallWorkTrace.gd")
+## Span do sistema inteiro (22/10): quadros de 30–60 ms com o tempo em _process sem nenhum span.
 func _process(delta: float) -> void:
+	var span := _SYS_SPAN.begin()
+	_process_traced(delta)
+	_SYS_SPAN.finish_slow("sys.session.process", span, 3000)
+
+func _process_traced(delta: float) -> void:
 	if world.player != null and world.player.get_meta("developer_free_flight",false): return
 	if not get_tree().paused: notice_time = maxf(0.0,notice_time-delta)
 	if speech_active:

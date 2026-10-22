@@ -668,7 +668,15 @@ func _apply_night_lights(chunk: Node3D) -> void:
 	for light in chunk.find_children("*","OmniLight3D",true,false):
 		if light.is_in_group("mountain_night_light") and not light.get_meta("street_destroyed",false):
 			light.light_energy = float(light.get_meta("night_energy",1.0))*mountain_night_level
+
+const _SYS_SPAN := preload("res://runtime/StallWorkTrace.gd")
+## Span do sistema inteiro (22/10): quadros de 30–60 ms com o tempo em _process sem nenhum span.
 func _process(_delta: float) -> void:
+	var span := _SYS_SPAN.begin()
+	_process_traced(_delta)
+	_SYS_SPAN.finish_slow("sys.native_region.process", span, 3000)
+
+func _process_traced(_delta: float) -> void:
 	var drain_began := Time.get_ticks_usec()
 	_drain_retired()
 	_note_slow("liberação", drain_began, 100000)
@@ -884,6 +892,26 @@ func _drain_retired_slice() -> void:
 			if Time.get_ticks_usec()-began >= RETIRE_BUDGET_USEC: return
 		chunk.queue_free()
 		_retiring.pop_front()
+
+## Desmontagem da região (22/10): os trechos em descarte ficavam como filhos escondidos da região, que sai
+## da árvore e para de rodar o _process que os liberava. Na volta (a serra perto da ponte remonta o porto a
+## cada aproximação) ~2.400 nós de trechos velhos reentravam com ela: mount.add_child 7,8 ms. Antes de a
+## região sair, cada um vai inteiro para a fila de vídeo (GpuReleaseQueue), que libera aos poucos fora da
+## árvore. Os trechos do túnel guardados de propósito ficam. GETECO_RETIRE_HANDOFF=0 desliga.
+func hand_off_retiring() -> int:
+	if OS.get_environment("GETECO_RETIRE_HANDOFF") == "0": return 0
+	var handed := 0
+	for chunk in _retiring:
+		if not is_instance_valid(chunk) or chunk.is_queued_for_deletion(): continue
+		if chunk.get_parent() == self: remove_child(chunk)
+		# A fila recusa subárvore já marcada; a marca volta na mesma chamada.
+		chunk.remove_meta(GPU_RELEASE.RETIRED_META)
+		GPU_RELEASE.retire_detached_subtree(chunk)
+		handed += 1
+	_retiring.clear()
+	_retire_stack.clear()
+	_cleanup_retired_chairlifts_if_idle()
+	return handed
 
 func _cleanup_retired_chairlifts_if_idle() -> void:
 	if _retiring.is_empty() and _chairlift_cleanup_pending:

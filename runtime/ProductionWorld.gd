@@ -183,6 +183,7 @@ func build() -> void:
 		curtain.variant = CURTAIN.variant_for(state.region_id)
 		SESSION_OPS.attach(world, curtain, self, diagnostic_build)
 	curtain.set_stage(.12, "Montando " + ("a serra" if state.region_id == "mountain" else "o deserto" if state.region_id == "desert" else "o porto") + "…")
+	if not world.has_meta("menu_preview"): _request_fleet_scenes_early()
 	await curtain.prepare_presentation()
 	if world.has_meta("menu_preview"):
 		await _hold_fleet_scenes_incremental()
@@ -355,6 +356,9 @@ func build() -> void:
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	await preload("res://gameplay/VehicleInteriorMaterialPrewarm.gd").run(world, curtain)
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+	# Tiros, impactos, explosão e armas na mão desenhados diante da câmera (cache de pipeline frio).
+	await preload("res://gameplay/CombatEffectsPrewarm.gd").run(world, curtain)
+	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	_install_world_edits()
 	# Estações de tubo e rodoviária montadas sob a cortina (depois das edições, que as movem): montadas ao
 	# chegar perto custavam 84-140 ms num quadro (teleporte de aquecimento do benchmark, 16/10).
@@ -407,10 +411,15 @@ func build() -> void:
 	if is_instance_valid(urban_transit) and is_instance_valid(urban_transit.terminal_operations):
 		urban_transit.terminal_operations.prepare_startup_route()
 		await urban_transit.terminal_operations.prepare_startup_passenger_meshes()
+		urban_transit.terminal_operations.prepare_startup_build()
 		await get_tree().process_frame
 	if is_instance_valid(roadside_parking) and not world.has_meta("menu_preview"):
 		roadside_parking.initialize_nearby()
 		await get_tree().physics_frame
+	# Pedidos da busca antecipada já vêm prontos do começo da carga; espera no máximo mais 3 s.
+	var prefetch_traced := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
+	await preload("res://runtime/BackgroundRegionPreparation.gd").prefetch_collect(get_tree(), Time.get_ticks_msec() + 3000)
+	_trace_cost("startup:background_prefetch",prefetch_traced)
 	if not world.has_meta("menu_preview"): await curtain.lift()
 	session.ready_for_play = restored_session_ready
 	world.player.controlled_automatically = restored_player_automatic
@@ -440,7 +449,13 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	_trace_cost("startup:fleet_hold",phase_traced)
 	if "--no-prewarm" in OS.get_cmdline_user_args() or world.get_meta("skip_prewarm",false): return
 	var began := Time.get_ticks_msec()
-	
+	# Caixa e cilindros unitários lidos da GPU uma vez, sob a cortina: daí em diante toda fusão de
+	# G.box/G.cylinder escala na CPU (MeshArrayCache, GETECO_PRIMITIVE_CPU_ARRAYS).
+	preload("res://world/chunk_bake/MeshArrayCache.gd").prewarm_unit_shapes()
+	# Recursos da preparação em segundo plano (quase todos shaders) pedidos já, em thread, junto com o
+	# resto da carga; recolhidos antes de a cortina sair (BackgroundRegionPreparation.prefetch_collect).
+	preload("res://runtime/BackgroundRegionPreparation.gd").prefetch_start()
+
 	if curtain != null:
 		curtain.set_stage(.40, "Compilando shaders do tráfego…")
 		await get_tree().process_frame
@@ -579,7 +594,12 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	var all := live.duplicate()
 	for id in _region_cache: all[id] = _region_cache[id]
 	phase_traced = Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
-	for combo in [["harbor"],["mountain"],["desert"],["harbor","mountain"],["harbor","desert"],["harbor","mountain","desert"]]:
+	# Serra + deserto (carro deixado na serra, jogador no deserto) faltava: a desmontagem do porto caía nela
+	# e refazia o grafo no jogo (routes.configure 40 ms, estresse do deserto de 22/10).
+	# GETECO_ROUTE_COMBO_MD=0 volta à lista antiga (A/B).
+	var combos: Array = [["harbor"],["mountain"],["desert"],["harbor","mountain"],["harbor","desert"],["mountain","desert"],["harbor","mountain","desert"]]
+	if OS.get_environment("GETECO_ROUTE_COMBO_MD") == "0": combos.erase(["mountain","desert"])
+	for combo in combos:
 		regions = {}
 		for id in combo:
 			if all.has(id): regions[id] = all[id]
@@ -666,6 +686,25 @@ func _prewarm_fleet_shaders(_incremental: bool, curtain: CanvasLayer = null) -> 
 				var row := float(slot / 2)
 				var side := 0.0 if batch.size() == 1 else (-2.2 if slot % 2 == 0 else 2.2)
 				model.global_position = camera.global_position - camera.global_basis.z * (9.0 + row * 4.0) + camera.global_basis.x * side
+			# Lentes apagadas (22/10): VehicleEquipment liga e desliga `emission_enabled` das lentes, outra
+			# variante de shader por material de lente; no jogo o equipamento do carro novo compilava duas
+			# pipelines no sync do RenderingServer (13–15 ms entre o _process e o desenho, estresse no porto e
+			# nos sobrados). Uma cópia de cada modelo com as lentes emissivas apagadas entra no mesmo lote, duas
+			# fileiras mais atrás, e passa pelos mesmos dois desenhos; os materiais apagados ficam retidos.
+			var dim_copies: Array[Node3D] = []
+			if OS.get_environment("GETECO_LENS_VARIANT_PREWARM") != "0":
+				for slot in batch.size():
+					var copy := (batch[slot].model as Node3D).duplicate(0) as Node3D
+					if copy == null: continue
+					if _dim_emissive_lenses(copy) == 0:
+						copy.free()
+						continue
+					copy.process_mode = Node.PROCESS_MODE_DISABLED
+					world.add_child(copy)
+					var row := float(slot / 2) + 2.0
+					var side := 0.0 if batch.size() == 1 else (-2.2 if slot % 2 == 0 else 2.2)
+					copy.global_position = camera.global_position - camera.global_basis.z * (9.0 + row * 4.0) + camera.global_basis.x * side
+					dim_copies.append(copy)
 			# Two actual draws, with a finite wait when the window is minimized.
 			var draws: Array[int] = [0]
 			var count_draw := func() -> void: draws[0] += 1
@@ -675,14 +714,40 @@ func _prewarm_fleet_shaders(_incremental: bool, curtain: CanvasLayer = null) -> 
 				if not effects._covered_loading(world, curtain): break
 				if draws[0] >= 2: break
 			RenderingServer.frame_post_draw.disconnect(count_draw)
+			for copy in dim_copies:
+				if is_instance_valid(copy): copy.free()
 		for entry in batch:
 			var model: Node3D = entry.model
 			# Bases de pintura para as variantes de uso/desgaste (desenhadas depois).
 			preload("res://gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd").collect(model, str(entry.id))
 			# Vidros na CPU para medir a cabine em jogo sem ler a malha da GPU (VehicleInterior.spec).
 			preload("res://gameplay/VehicleInterior.gd").cache_glass(model)
+			# Lataria em repouso de cada modelo para o 1º amassado (VehicleBodyDents.prewarm_rest).
+			preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd").prewarm_rest(model)
 			model.free()
 		await get_tree().process_frame
+	print("startup: dents_rest_prewarm vertices=", preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd").fleet_rest_vertices)
+
+## Cópia apagada (sem emissão) de cada material emissivo do modelo, retida por chave de variante.
+static var _retained_lens_variants: Dictionary = {}
+func _dim_emissive_lenses(model: Node3D) -> int:
+	var count := 0
+	for node in model.find_children("*", "MeshInstance3D", true, false):
+		var part := node as MeshInstance3D
+		if part.mesh == null: continue
+		var surfaces: int = 1 if part.material_override != null else part.mesh.get_surface_count()
+		for surface in surfaces:
+			var original := part.get_active_material(surface) as StandardMaterial3D
+			if original == null or not original.emission_enabled: continue
+			var dark := original.duplicate() as StandardMaterial3D
+			dark.emission_enabled = false
+			dark.emission_energy_multiplier = 0.0
+			if part.material_override != null: part.material_override = dark
+			else: part.set_surface_override_material(surface, dark)
+			var key := str(original.get_instance_id())
+			if not _retained_lens_variants.has(key): _retained_lens_variants[key] = dark
+			count += 1
+	return count
 
 func _hold_fleet_scenes_incremental() -> void:
 	if not _fleet_scenes.is_empty(): return
@@ -706,6 +771,19 @@ func _hold_fleet_scenes_incremental() -> void:
 	await _retain_fleet_paths(paths, _fleet_scenes)
 	await _request_remaining_fleet_scenes(paths)
 
+## Cenas da frota pedidas em thread logo no começo da carga (22/10): "Carregando veículos…" esperava
+## 2 cenas por vez, com um quadro entre os pares (2,0 s no oeste a 3440x1440), depois de "Montando o
+## porto" (5,7 s de trabalho no thread principal). Pedidas no início, a leitura e a montagem dos recursos
+## correm nos trabalhadores durante a montagem do porto; a etapa só recolhe. GETECO_FLEET_EARLY=0 desliga.
+var _early_fleet_paths: Dictionary = {}
+func _request_fleet_scenes_early() -> void:
+	if OS.get_environment("GETECO_FLEET_EARLY") == "0" or DisplayServer.get_name() == "headless": return
+	var fleet := preload("res://runtime/FleetCatalog.gd")
+	for id in fleet.all().keys():
+		var path := str(fleet.spec(str(id)).get("scene", ""))
+		if path.is_empty() or _early_fleet_paths.has(path) or ResourceLoader.has_cached(path): continue
+		if ResourceLoader.load_threaded_request(path) == OK: _early_fleet_paths[path] = true
+
 func _retain_fleet_paths(paths: Array[String], retained: Array[Resource]) -> void:
 	# The headless dummy renderer cannot concurrently allocate these mesh RIDs.
 	# It still loads/retains the real resources, sequentially, for contract tests.
@@ -721,14 +799,21 @@ func _retain_fleet_paths(paths: Array[String], retained: Array[Resource]) -> voi
 	for path in paths:
 		requested.append(path)
 		if requested.size() < 2 and path != paths.back(): continue
+		var early_pair := true
 		for pending_path in requested:
+			# Já pedida no começo (_request_fleet_scenes_early): só recolhe, sem segundo pedido.
+			if _early_fleet_paths.has(pending_path): continue
+			early_pair = false
 			ResourceLoader.load_threaded_request(pending_path)
 		for pending_path in requested:
 			while ResourceLoader.load_threaded_get_status(pending_path) == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
 				await get_tree().process_frame
 			if ResourceLoader.load_threaded_get_status(pending_path) == ResourceLoader.THREAD_LOAD_LOADED:
 				retained.append(ResourceLoader.load_threaded_get(pending_path))
+			_early_fleet_paths.erase(pending_path)
 		requested.clear()
+		# Pedidas no começo já carregaram com o porto: sem o quadro de folga entre pares.
+		if early_pair: continue
 		await get_tree().process_frame
 
 func _startup_driver_pending() -> bool:
@@ -781,6 +866,8 @@ func _exit_tree() -> void:
 	for cached in _region_cache.values():
 		if is_instance_valid(cached): cached.free()
 	_region_cache.clear()
+	if is_instance_valid(_parked_connection) and _parked_connection.get_parent() == null: _parked_connection.free()
+	_parked_connection = null
 
 ## Lugares montados pela sessão (Vértice, Torque...) só recebem as edições do editor de mundo
 ## por observação da árvore; sem linhas desses lugares no documento nada é instalado.
@@ -918,11 +1005,36 @@ func _mount_region_now(id: String, requested_focus: Vector3) -> Node3D:
 	if mounted == null: return null
 	if id=="desert": mounted.set_north_pass_completed(preload("res://world/desert/north_pass/DesertNorthPassLayout.gd").completed(state.world_state))
 	regions[id] = mounted
+	# Spans (22/10): remontar o porto guardado custava 13 ms num quadro na serra, perto da ponte.
+	var stage := STALL_WORK.begin()
 	world.add_child(mounted)
+	STALL_WORK.finish_slow("mount.add_child", stage, 2000)
+	if stage != 0 and OS.get_environment("GETECO_MOUNT_CENSUS") == "1": _mount_census(mounted)
 	if chairlift_schedule_initialized and mounted.has_method("set_chairlift_operating"): mounted.set_chairlift_operating(chairlift_operating)
+	stage = STALL_WORK.begin()
 	if first_focus.is_finite(): mounted.set_focus(first_focus)
-	_refresh_route_consumers()
+	STALL_WORK.finish_slow("mount.set_focus", stage, 2000)
+	_request_route_refresh()
 	return mounted
+
+## Rotas refeitas no quadro seguinte à montagem/desmontagem, já jogando (22/10): remontar o porto na serra
+## somava montagem (8 ms), foco, conexão da ponte e os consumidores de rota (dispatch, cruzamentos,
+## população, 3–5 ms) num quadro de 35–38 ms. Montagem e desmontagem no mesmo quadro refazem uma vez só.
+## Sob a cortina e em teste continua no ato. GETECO_ROUTE_REFRESH_DEFER=0 volta ao ato sempre.
+var _route_refresh_pending := false
+func _request_route_refresh() -> void:
+	if OS.get_environment("GETECO_ROUTE_REFRESH_DEFER") != "0" and ready_for_play and DisplayServer.get_name() != "headless":
+		_route_refresh_pending = true
+	else:
+		_refresh_route_consumers()
+
+## Diagnóstico (GETECO_MOUNT_CENSUS=1 com o log ligado): quantos nós cada filho direto da região remontada traz.
+func _mount_census(mounted: Node) -> void:
+	var rows: Array = []
+	for child in mounted.get_children():
+		rows.append([str(child.name), child.get_class(), child.get_child_count(), child.find_children("*", "", true, false).size()])
+	rows.sort_custom(func(a, b): return a[3] > b[3])
+	print("MOUNT_CENSUS ", mounted.name, " ", JSON.stringify(rows.slice(0, 20)))
 
 func _unmount_region(id: String) -> void:
 	if id == state.region_id or not regions.has(id): return
@@ -931,11 +1043,12 @@ func _unmount_region(id: String) -> void:
 	regions.erase(id)
 	if is_instance_valid(mounted):
 		mounted.release_chunks()
+		if mounted.has_method("hand_off_retiring"): mounted.hand_off_retiring()
 		var detach_began := STALL_WORK.begin()
 		world.remove_child(mounted)
 		STALL_WORK.finish("unmount.remove_child", detach_began, {"region": id})
 		_region_cache[id] = mounted
-	_refresh_route_consumers()
+	_request_route_refresh()
 	STALL_WORK.finish("world.unmount_region", stall_began, {"region": id})
 
 func _resident_roads() -> Array:
@@ -989,15 +1102,26 @@ func _configure_routes() -> void:
 func _refresh_route_consumers() -> void:
 	if traffic_routes == null: return
 	var traced := Time.get_ticks_usec() if is_instance_valid(world) and (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
+	# Spans por etapa (22/10): a desmontagem do porto custava 46 ms no deserto e só 6 eram remove_child.
+	var stage := STALL_WORK.begin()
 	_configure_routes()
+	STALL_WORK.finish_slow("routes.configure", stage, 2000)
+	stage = STALL_WORK.begin()
 	population_layout.configure(ambient_roads_cache)
+	STALL_WORK.finish_slow("routes.population_layout", stage, 2000)
 	var layouts: Array = []
 	if regions.has("harbor") and regions.harbor.harbor_road_geometry != null:
 		layouts = regions.harbor.harbor_road_geometry.crossing_layout
+	stage = STALL_WORK.begin()
 	preload("res://gameplay/traffic_junctions/TrafficJunctions.gd").configure(ambient_traffic_routes,layouts)
+	STALL_WORK.finish_slow("routes.junctions", stage, 2000)
 	_trace_cost("route_graphs",traced)
+	stage = STALL_WORK.begin()
 	if is_instance_valid(world) and is_instance_valid(world.dispatch): world.dispatch.refresh_roads()
+	STALL_WORK.finish_slow("routes.dispatch", stage, 2000)
+	stage = STALL_WORK.begin()
 	if is_instance_valid(world) and is_instance_valid(world.traffic_yield): world.traffic_yield.refresh_roads(traffic_routes)
+	STALL_WORK.finish_slow("routes.traffic_yield", stage, 2000)
 
 func _persistent_vehicle_support() -> Dictionary:
 	var support := {"harbor":[],"mountain":[],"desert":[]}
@@ -1124,8 +1248,13 @@ func _update_physical_residency(point: Vector3) -> void:
 		for id in ["harbor","mountain","desert"]:
 			if id != physical_region and support[id].is_empty(): _unmount_region(id)
 		if is_instance_valid(connection):
-			# Conexão da ponte (dezenas de malhas e colisões) sai pela fila de vídeo, aos poucos (16/10).
-			GPU_RELEASE.retire(connection)
+			if _connection_park_enabled and not is_instance_valid(_parked_connection):
+				# Estacionada (22/10): a mesma conexão volta na próxima aproximação da ponte, sem remontar.
+				world.remove_child(connection)
+				_parked_connection = connection
+			else:
+				# Conexão da ponte (dezenas de malhas e colisões) sai pela fila de vídeo, aos poucos (16/10).
+				GPU_RELEASE.retire(connection)
 			connection = null
 	var dispatch_support := _active_dispatch_support()
 	for id in regions:
@@ -1140,10 +1269,20 @@ func _update_physical_residency(point: Vector3) -> void:
 			elif seam_preload: region_focus = seam_anchor
 		mounted.set_focus(region_focus)
 
+## Conexão da ponte estacionada fora da árvore entre aproximações (22/10): era montada de novo a cada
+## entrada na faixa de 240 m (world_connection 3 ms) no mesmo quadro em que o porto voltava (13 ms).
+## GETECO_CONNECTION_PARK=0 volta a montar e liberar.
+static var _connection_park_enabled := OS.get_environment("GETECO_CONNECTION_PARK") != "0"
+var _parked_connection: Node3D
+
 func _mount_connection() -> void:
 	if is_instance_valid(connection): return
 	var traced := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
-	connection = WORLD_CONNECTION.new()
+	if is_instance_valid(_parked_connection):
+		connection = _parked_connection
+		_parked_connection = null
+	else:
+		connection = WORLD_CONNECTION.new()
 	world.add_child(connection)
 	_trace_cost("world_connection",traced)
 
@@ -1315,8 +1454,22 @@ func set_population(count: int) -> void:
 		if is_instance_valid(actor): actor.queue_free()
 	world.population = world.people.size()
 
+const _SYS_SPAN := preload("res://runtime/StallWorkTrace.gd")
+## Span do sistema inteiro (22/10): quadros de 30–60 ms com o tempo em _process sem nenhum span.
 func _process(delta: float) -> void:
+	var span := _SYS_SPAN.begin()
+	_process_traced(delta)
+	_SYS_SPAN.finish_slow("sys.production.process", span, 3000)
+
+func _process_traced(delta: float) -> void:
 	if not ready_for_play: return
+	if _route_refresh_pending:
+		_route_refresh_pending = false
+		var refresh_span := STALL_WORK.begin()
+		_refresh_route_consumers()
+		STALL_WORK.finish_slow("routes.deferred_refresh", refresh_span, 2000)
+		# Um quadro só para isto: a residência física (montagem/desmontagem) volta no próximo.
+		return
 	_update_chairlift_schedule()
 	if travel_busy: return
 	# Admission routines own focus while awaiting collision synchronization.
@@ -1365,20 +1518,24 @@ func _process(delta: float) -> void:
 		if not is_instance_valid(car): vehicles.remove_at(index)
 		elif _is_ambient_traffic(car) and car.traffic and car != world.driving.car and PORT_POLICY.contains_private_area(car.global_position):
 			vehicles.remove_at(index)
+			STALL_WORK.finish("marker.vehicle_despawn", STALL_WORK.begin())
 			car.queue_free()
 		elif _is_ambient_traffic(car) and car.health <= 0.0 and car != world.driving.car and _wreck_expired(car) and car.global_position.distance_to(world.player.global_position) > 20.0 and not _on_screen(car.global_position,3.0):
 			# Carcaça de trânsito (traffic=false ao ser destruída) nunca saía de cena e
 			# travava cruzamentos. Some fora do quadro, depois de alguns segundos.
 			vehicles.remove_at(index)
+			STALL_WORK.finish("marker.vehicle_despawn", STALL_WORK.begin())
 			car.queue_free()
 		elif _is_ambient_traffic(car) and car.traffic and car != world.driving.car and car.stuck_time > STUCK_DESPAWN_SECONDS and car.global_position.distance_to(world.player.global_position) > STUCK_DESPAWN_DISTANCE and not _on_screen(car.global_position,3.0):
 			# Travado sem saída (desvio impossível, impasse): some fora do quadro e o
 			# spawner repõe outro em ponto livre. Antes a fila ficava parada para sempre.
 			vehicles.remove_at(index)
+			STALL_WORK.finish("marker.vehicle_despawn", STALL_WORK.begin())
 			car.queue_free()
 		elif _is_ambient_traffic(car) and car.traffic and car.global_position.distance_to(world.player.global_position) > POPULATION_DESPAWN and not _on_screen(car.global_position,3.0):
 			# Trânsito ambiente sai de cena só longe e fora do quadro, como entra.
 			vehicles.remove_at(index)
+			STALL_WORK.finish("marker.vehicle_despawn", STALL_WORK.begin())
 			car.queue_free()
 		elif car.get_meta("region_id",state.region_id) != state.region_id: continue
 		elif car.has_meta("awaiting_ground"):
@@ -1393,6 +1550,7 @@ func _process(delta: float) -> void:
 			# Owners of a parked snapshot can distinguish streaming cleanup from
 			# an explicit removal without keeping a distant physical body alive.
 			car.set_meta("distance_despawn", true)
+			STALL_WORK.finish("marker.vehicle_despawn", STALL_WORK.begin())
 			car.queue_free()
 	_rescue_fallen_vehicles()
 	world.population = world.people.size()

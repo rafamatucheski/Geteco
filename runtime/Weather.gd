@@ -185,7 +185,15 @@ func _ready() -> void:
 	add_child(wind_audio)
 	wind_audio.finished.connect(func(): if atmosphere.weights.get("mountain",0.0)>0.001: wind_audio.play())
 	_update()
+
+const _SYS_SPAN := preload("res://runtime/StallWorkTrace.gd")
+## Span do sistema inteiro (22/10): quadros de 30–60 ms com o tempo em _process sem nenhum span.
 func _process(delta: float) -> void:
+	var span := _SYS_SPAN.begin()
+	_process_traced(delta)
+	_SYS_SPAN.finish_slow("sys.weather.process", span, 3000)
+
+func _process_traced(delta: float) -> void:
 	# Harbor moisture continues while visiting shelters/other regions; snow does
 	# not fill the coastal streets and entering a room cannot dry them instantly.
 	_sync_external_state()

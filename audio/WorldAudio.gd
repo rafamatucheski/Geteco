@@ -401,7 +401,14 @@ func _on_npc_gunfire(origin: Vector3, _direction: Vector3, _shooter: Node) -> vo
 	_distant_gunfire_msec = now
 	FIREFLY.play_at(self, shot, origin, -7.0, rng.randf_range(0.92, 1.08), DISTANT_GUNFIRE_MAX + 40.0, 30.0)
 
+const _SYS_SPAN := preload("res://runtime/StallWorkTrace.gd")
+## Span do sistema inteiro (22/10): quadros de 30–60 ms com o tempo em _process sem nenhum span.
 func _process(delta: float) -> void:
+	var span := _SYS_SPAN.begin()
+	_process_traced(delta)
+	_SYS_SPAN.finish_slow("sys.world_audio.process", span, 3000)
+
+func _process_traced(delta: float) -> void:
 	_link_gunfire()
 	_update_ambience(delta)
 	_update_radio(delta)

@@ -3,6 +3,7 @@ extends RefCounted
 ## Access/floor and benches are admitted before actors; props have no frame loops.
 const LAYOUT := preload("res://world/mining/MiningLayout.gd")
 const BATCH := preload("res://world/mining/MiningBatch.gd")
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const GROUND_SHADER := preload("res://world/mining/mining_ground.gdshader")
 const DESERT_GEOMETRY := preload("res://world/desert/DesertGeometry.gd")
 const GRID := 3.0
@@ -304,14 +305,24 @@ static func build_chunk(parent: Node3D, rect: Rect2) -> Array[OmniLight3D]:
 	if not rect.intersects(LAYOUT.BOUNDS):
 		_build_access_markers(parent,rect)
 		return lights
+	# Spans (22/10): a etapa da mina custou 22–25 ms num quadro no deserto sem dizer onde.
+	var span := STALL_WORK.begin()
 	var batch := BATCH.new(parent,"MiningIndustrialExterior",LAYOUT.CENTER)
 	if local_rect.has_point(Vector2(12,126)): _guardhouse(batch)
+	STALL_WORK.finish_slow("mining.exterior.guardhouse", span, 2000)
+	span = STALL_WORK.begin()
 	if local_rect.has_point(Vector2(-45,100)): _parking(batch)
 	if local_rect.has_point(Vector2(13,0)): _crusher(batch)
 	if local_rect.has_point(Vector2(63,89)): _service_corner(batch)
 	if local_rect.has_point(Vector2(LAYOUT.SECRET_EXTERIOR.x-LAYOUT.CENTER.x,LAYOUT.SECRET_EXTERIOR.z-LAYOUT.CENTER.z)): _hidden_adit(batch)
+	STALL_WORK.finish_slow("mining.exterior.sites", span, 2000)
+	span = STALL_WORK.begin()
 	_dress_ore(batch,local_rect)
+	STALL_WORK.finish_slow("mining.exterior.ore", span, 2000)
+	span = STALL_WORK.begin()
 	_fence(batch,local_rect)
+	STALL_WORK.finish_slow("mining.exterior.fence", span, 2000)
+	span = STALL_WORK.begin()
 	for record in LAYOUT.light_stations():
 		var p: Vector3=record.point
 		if local_rect.has_point(Vector2(p.x,p.z)):
@@ -327,8 +338,13 @@ static func build_chunk(parent: Node3D, rect: Rect2) -> Array[OmniLight3D]:
 			light.set_meta("mining_light_energy",float(record.energy))
 			parent.add_child(light)
 			lights.append(light)
+	STALL_WORK.finish_slow("mining.exterior.towers", span, 2000)
+	span = STALL_WORK.begin()
 	batch.finish()
+	STALL_WORK.finish_slow("mining.exterior.finish", span, 2000)
+	span = STALL_WORK.begin()
 	preload("res://world/mining/MiningRouteDressing.gd").build(parent, local_rect, surface_height)
+	STALL_WORK.finish_slow("mining.exterior.route", span, 2000)
 	if local_rect.has_point(Vector2(13, 0)):
 		var ambience := preload("res://audio/mining/MiningAmbience.gd").new()
 		ambience.position = LAYOUT.CENTER + Vector3(13, -26, 0)

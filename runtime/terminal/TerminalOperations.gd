@@ -66,6 +66,17 @@ func prepare_startup_passenger_meshes(budget_usec: int = 4000) -> void:
 	if slice_probe != 0: TRANSIT_WORK.finish("terminal.passenger.mesh_prewarm_slice",slice_probe,{"active_usec":slice_active,"last_identity":95,"yielding":false,"budget_usec":budget_usec,"total_active_usec":active_usec,"yielded_frames":yielded})
 	_passenger_meshes_prepared = true
 
+## Começando perto da rodoviária, portões, ônibus e passageiros montam sob a cortina: no 1º tique
+## jogável (0,5 s depois de liberar) custavam 13 ms num quadro de 40 ms (terminal.build, estresse de
+## 22/10 no oeste). GETECO_TERMINAL_STARTUP_BUILD=0 volta a montar no jogo.
+func prepare_startup_build() -> void:
+	if resident or OS.get_environment("GETECO_TERMINAL_STARTUP_BUILD") == "0": return
+	if controller == null or controller.session == null or controller.session.ready_for_play: return
+	var focus: Vector3 = controller.world.player.global_position
+	if controller.state.region_id != "harbor" or not controller.state.place_id.is_empty() or focus.distance_to(ROUTES.point(0,0)) >= 100: return
+	if not controller.urban_transit.instances.has("harbor_coach_terminal"): return
+	build()
+
 func prepare_road() -> void:
 	var graph: RefCounted = controller.traffic_routes
 	# Same graph invalidation contract as DispatchRoadRouter._native_graph().

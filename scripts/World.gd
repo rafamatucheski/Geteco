@@ -65,7 +65,14 @@ func _toggle_pause() -> void:
 	if session != null and session.get("modal") == true: return
 	pause_panel.toggle()
 
+const _SYS_SPAN := preload("res://runtime/StallWorkTrace.gd")
+## Span do sistema inteiro (22/10): quadros de 30–60 ms com o tempo em _process sem nenhum span.
 func _process(delta: float) -> void:
+	var span := _SYS_SPAN.begin()
+	_process_traced(delta)
+	_SYS_SPAN.finish_slow("sys.world.process", span, 3000)
+
+func _process_traced(delta: float) -> void:
 	if diagnostic_label == null: return
 	stats_clock += delta
 	if stats_clock < 0.5: return

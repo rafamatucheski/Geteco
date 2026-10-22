@@ -13,9 +13,19 @@ extends RefCounted
 const BODY := preload("res://assets/CivilianModel.gd")
 const ROLE_BODIES := preload("res://assets/civilians/RoleBodyCatalog.gd")
 
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+
 ## `look.body_source` (caminho de GLB do Meshy) troca o corpo procedural do kit pelo corpo importado
 ## (`CivilianModel.body_source`); `look.body_tint`/`look.height` ajustam cor das roupas e altura.
+## Span (22/10): no estresse com 3 estrelas apareciam 14–17 ms entre o último _process e o desenho, a fila
+## de chamadas diferidas onde PoliceModel instala o corpo (_install_body.call_deferred).
 static func install(model: Node3D, look: Dictionary, keep: Array = [], faces_positive_z := false) -> Node3D:
+	var began := STALL_WORK.begin()
+	var installed := _install(model, look, keep, faces_positive_z)
+	STALL_WORK.finish_slow("body.install", began, 2000, model)
+	return installed
+
+static func _install(model: Node3D, look: Dictionary, keep: Array, faces_positive_z: bool) -> Node3D:
 	_hide_old(model, keep)
 	var holder := Node3D.new()
 	holder.name = "RigBody"
