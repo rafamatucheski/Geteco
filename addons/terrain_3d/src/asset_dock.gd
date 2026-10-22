@@ -141,7 +141,17 @@ func _gui_input(p_event: InputEvent) -> void:
 
 
 func remove_dock(p_force: bool = false) -> void:
+	if not is_instance_valid(_dock):
+		return
 	plugin.remove_dock(_dock)
+	if p_force:
+		# remove_dock unregisters the wrapper but does not delete it. The plugin
+		# frees this panel separately, so detach it before freeing its wrapper.
+		_initialized = false
+		if get_parent() == _dock:
+			_dock.remove_child(self)
+		_dock.free()
+		_dock = null
 
 
 func update_dock() -> void:

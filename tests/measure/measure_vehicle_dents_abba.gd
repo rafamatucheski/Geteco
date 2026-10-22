@@ -4,8 +4,8 @@ extends "res://tests/measure/measure_desert.gd"
 ## then a fresh real receive_impact: geometry rebuilds never saturate the sample.
 class ToggleDents extends "res://gameplay/vehicle_effects/VehicleBodyDents.gd":
 	var enabled := false
-	func impact(amount: float, point: Vector3) -> void:
-		if enabled: super.impact(amount,point)
+	func impact(amount: float, point: Vector3, contact_inward := Vector3.ZERO) -> void:
+		if enabled: super.impact(amount,point,contact_inward)
 func run() -> void:
 	if DisplayServer.get_name()=="headless" or "--no-save" not in OS.get_cmdline_user_args(): quit(2); return
 	seed(12102026)
