@@ -6,6 +6,39 @@ const MAX_BYTES := 2097152
 var path := PATH
 var recovered_backup := false
 var recovered_temp := false
+## Verificação por bytes (21/10): cada gravação validava o estado na memória e depois relia,
+## interpretava e validava o temporário, o principal e o backup (GameState.restore_snapshot 4 vezes e
+## JSON 3 vezes por save). Release, bancada --benchmark-save, preset Média: 22,8 ms por salvamento
+## automático (p50, 15 chamadas); na partida de 21/10 (binário do editor) 32–36 ms, até 4 no mesmo quadro.
+## Agora:
+##  - o JSON exato é interpretado e validado UMA vez na memória, antes de tocar em arquivo: é o mesmo
+##    teste que read_valid(temp) fazia depois (o que será carregado) e cobre a validação do dicionário;
+##  - o temporário é conferido byte a byte pelo MESMO handle da escrita. Reabrir um arquivo recém-gravado
+##    é o que custava (6,4 ms no release; 17 ms medidos em Python): o antivírus examina o arquivo na
+##    primeira abertura de dados depois da escrita; a data de modificação vem de stat e não abre o arquivo;
+##  - principal e backup que esta store gravou e não mudaram desde então (mesma data de modificação E
+##    mesmo tamanho; os dois vêm de stat, 0,3 ms cada, sem disparar o exame) valem sem reabrir; mudou por
+##    fora, primeiro save da sessão ou depois de qualquer load_into(): read_valid() como antes.
+##    A data tem resolução de 1 s: o tamanho cobre a corrupção típica (gravação interrompida, truncada).
+## GETECO_SAVE_VERIFY=0 volta ao caminho antigo para A/B no mesmo export.
+var _primary_mark := PackedInt64Array()
+var _backup_mark := PackedInt64Array()
+static func _mark(source: String) -> PackedInt64Array:
+	var mtime := int(FileAccess.get_modified_time(source))
+	var size := int(FileAccess.get_size(source))
+	return PackedInt64Array([mtime, size]) if mtime > 0 and size > 0 else PackedInt64Array()
+static func byte_verify_enabled() -> bool:
+	return OS.get_environment("GETECO_SAVE_VERIFY") != "0"
+## Mesmo critério de read_valid(), sobre o buffer em memória.
+static func bytes_valid(encoded: PackedByteArray) -> bool:
+	if encoded.size() > MAX_BYTES: return false
+	var parser := JSON.new()
+	if parser.parse(encoded.get_string_from_utf8()) != OK or not parser.data is Dictionary: return false
+	return STATE.new().restore_snapshot(parser.data)
+## Arquivo que esta store gravou e conferiu, intocado desde então (stat, sem abrir), ou válido por read_valid().
+static func _still_valid(source: String, mark: PackedInt64Array) -> bool:
+	if not mark.is_empty() and _mark(source) == mark: return true
+	return not read_valid(source).is_empty()
 static func read_valid(source: String) -> Dictionary:
 	var file := FileAccess.open(source,FileAccess.READ)
 	if file == null or file.get_length() > MAX_BYTES: return {}
@@ -14,6 +47,9 @@ static func read_valid(source: String) -> Dictionary:
 	var probe = STATE.new()
 	return parser.data if probe.restore_snapshot(parser.data) else {}
 func load_into(state) -> Dictionary:
+	# Quem recarrega pode ter mexido nos arquivos (recuperação, teste): o próximo save confere de novo.
+	_primary_mark = PackedInt64Array()
+	_backup_mark = PackedInt64Array()
 	for candidate in [{"path":path,"source":"primary"},{"path":path+".bak","source":"backup"},{"path":path+".tmp","source":"temporary"}]:
 		var data := read_valid(candidate.path)
 		if not data.is_empty():
@@ -24,12 +60,27 @@ func load_into(state) -> Dictionary:
 				"migrated":int(data.schema_version) < STATE.SCHEMA_VERSION}
 	return {"ok":false,"invalid":FileAccess.file_exists(path) or FileAccess.file_exists(path+".bak") or FileAccess.file_exists(path+".tmp")}
 func save(state) -> Error:
+	var by_bytes := byte_verify_enabled()
+	var trace := STALL_WORK.begin()
 	var data: Dictionary = state.snapshot()
-	if not STATE.new().restore_snapshot(data): return ERR_INVALID_DATA
+	STALL_WORK.finish("save.snapshot", trace)
+	var accepted := true
+	if not by_bytes:
+		trace = STALL_WORK.begin()
+		accepted = STATE.new().restore_snapshot(data)
+		STALL_WORK.finish("save.validate", trace)
+		if not accepted: return ERR_INVALID_DATA
 	# Check the exact UTF-8 payload before changing recovery files or creating a
 	# temporary that read_valid() could never accept. Reuse these same bytes.
+	trace = STALL_WORK.begin()
 	var encoded := JSON.stringify(data,"\t").to_utf8_buffer()
+	STALL_WORK.finish("save.encode", trace)
 	if encoded.size() > MAX_BYTES: return ERR_INVALID_DATA
+	if by_bytes:
+		trace = STALL_WORK.begin()
+		accepted = bytes_valid(encoded)
+		STALL_WORK.finish("save.validate_bytes", trace)
+		if not accepted: return ERR_INVALID_DATA
 	var result := DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(path.get_base_dir()))
 	if result != OK: return result
 	var temp := path+".tmp"
@@ -42,13 +93,23 @@ func save(state) -> Error:
 		var suffix := "preserved" if not read_valid(temp).is_empty() else "corrupt"
 		result = _preserve(temp,suffix)
 		if result != OK: return result
-	var file := FileAccess.open(temp,FileAccess.WRITE)
+	var file := FileAccess.open(temp,FileAccess.WRITE_READ if by_bytes else FileAccess.WRITE)
 	if not file: return FileAccess.get_open_error()
+	trace = STALL_WORK.begin()
 	file.store_buffer(encoded)
 	file.flush()
 	result = file.get_error()
+	STALL_WORK.finish("save.write", trace)
+	var written := true
+	if by_bytes and result == OK:
+		# Conferência pelo mesmo handle (comentário no topo): sem reabrir o arquivo recém-gravado.
+		trace = STALL_WORK.begin()
+		file.seek(0)
+		written = file.get_length() == encoded.size() and file.get_buffer(encoded.size()) == encoded
+		STALL_WORK.finish("save.verify_temp", trace)
 	file.close()
 	if result != OK: return result
+	if by_bytes: return _commit_by_bytes(temp) if written else ERR_FILE_CORRUPT
 	if read_valid(temp).is_empty(): return ERR_FILE_CORRUPT
 	if FileAccess.file_exists(path):
 		if read_valid(path).is_empty():
@@ -68,6 +129,49 @@ func save(state) -> Error:
 	if result == OK:
 		recovered_backup = false
 		recovered_temp = false
+	return result
+
+## Final de save() com a verificação por bytes (comentário no topo). Mesma ordem de renomeações e
+## mesmos códigos de erro do caminho antigo; só muda como temporário, principal e backup são conferidos.
+func _commit_by_bytes(temp: String) -> Error:
+	var primary_mark := _primary_mark
+	var backup_mark := _backup_mark
+	# Até a última renomeação dar certo, nenhuma marca vale: o próximo save reinterpreta os arquivos.
+	_primary_mark = PackedInt64Array()
+	_backup_mark = PackedInt64Array()
+	var result := OK
+	var backup_after := PackedInt64Array()
+	var trace := STALL_WORK.begin()
+	if FileAccess.file_exists(path):
+		var primary_ok := _still_valid(path, primary_mark)
+		STALL_WORK.finish("save.verify_primary", trace)
+		if not primary_ok:
+			if not recovered_backup or not _still_valid(path+".bak", backup_mark): return ERR_FILE_CORRUPT
+			var preserved := path+".corrupt."+str(Time.get_ticks_usec())
+			result = DirAccess.rename_absolute(ProjectSettings.globalize_path(path),ProjectSettings.globalize_path(preserved))
+			if result != OK: return result
+			backup_after = _mark(path+".bak")
+		else:
+			if FileAccess.file_exists(path+".bak"):
+				# A malformed backup is evidence, not disposable scratch data.
+				trace = STALL_WORK.begin()
+				var backup_ok := _still_valid(path+".bak", backup_mark)
+				STALL_WORK.finish("save.verify_backup", trace)
+				if not backup_ok: result = _preserve(path+".bak","corrupt")
+				else: result = DirAccess.remove_absolute(ProjectSettings.globalize_path(path+".bak"))
+				if result != OK: return result
+			result = DirAccess.rename_absolute(ProjectSettings.globalize_path(path),ProjectSettings.globalize_path(path+".bak"))
+			if result != OK: return result
+			# O principal conferido virou o backup (renomear mantém data e tamanho).
+			backup_after = _mark(path+".bak")
+	trace = STALL_WORK.begin()
+	result = DirAccess.rename_absolute(ProjectSettings.globalize_path(temp),ProjectSettings.globalize_path(path))
+	STALL_WORK.finish("save.rotate", trace)
+	if result == OK:
+		recovered_backup = false
+		recovered_temp = false
+		_primary_mark = _mark(path)
+		_backup_mark = backup_after
 	return result
 
 func publish_import_snapshot(data: Dictionary) -> Error:
