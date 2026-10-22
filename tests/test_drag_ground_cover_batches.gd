@@ -23,7 +23,8 @@ func run() -> void:
 			await compare_cell(rect,column==4 and row==0,column==12 and row==1)
 	var outside:=Node3D.new()
 	world.add_child(outside)
-	var outside_rect:=Rect2(-480,-864,96,96)
+	# Uma célula ao norte do corredor (mapa compacto de 21/10): a antiga (-480,-864) caiu dentro dele.
+	var outside_rect:=Rect2(Vector2(-480,COVER.DRAG_CORRIDOR.end.y+96.0),Vector2.ONE*96.0)
 	var outside_state:=COVER.begin(outside_rect)
 	check(outside_state.parts.is_empty(),"outside corridor retains original batching")
 	COVER.step(outside,outside_rect,outside_state,flat,open,INF)
@@ -33,7 +34,9 @@ func run() -> void:
 		unchanged=unchanged and node.material_override==COVER.material() and is_equal_approx(node.visibility_range_end,COVER.VISIBILITY[kind])
 	check(unchanged,"outside corridor retains original materials and ranges")
 	outside.free()
-	FRAGILE.query(Vector3(-432,0,-816),80)
+	# A consulta limpa as entradas mortas em volta do ponto: o centro da célula de fora descartada.
+	var outside_center:=outside_rect.get_center()
+	FRAGILE.query(Vector3(outside_center.x,0,outside_center.y),80)
 	check(FRAGILE.cells.is_empty(),"all discarded chunks leave no stale breakable entries after query")
 	Engine.remove_meta("geteco_live_preview_build")
 	# Let the real debris collision-grace timers expire before their scene exits.
