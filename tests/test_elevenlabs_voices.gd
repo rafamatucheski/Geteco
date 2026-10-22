@@ -15,8 +15,9 @@ func run() -> void:
 	var rows := {}
 	for row in BANK._json(BANK.DIRECTION).get("lines", []): rows[str(row.key)] = row
 	# Elenco ElevenLabs: Dante, Maciota (e a voz ao telefone), Helena bancária, Takeshi, Vicente;
-	# desde 22/10 também Ferrugem, Neco e Jessica das missões principais.
-	var expected := {"pt_BR": 155, "en": 155}
+	# desde 22/10 também Ferrugem, Neco, Jessica, moradora e a cena da Monaliza. O inglês tem duas
+	# a menos: as falas do Maciota na Monaliza (voz Mason) não estão disponíveis na conta Free.
+	var expected := {"pt_BR": 161, "en": 159}
 	for language in expected:
 		var lines: Dictionary = overlay.get("lines", {}).get(language, {})
 		check(lines.size() == expected[language], "%s tem %d falas instaladas (%d)" % [language, expected[language], lines.size()])

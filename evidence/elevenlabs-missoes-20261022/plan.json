@@ -538,5 +538,105 @@
   "voice_id": "5p4THmLc2S6kXKO1pOM5",
   "voice_name": "Nayara Técia - PVC",
   "prompt": "[alert] We still don't have a clear way back to the shop."
+ },
+ {
+  "label": "1ec7008ba26d_pt_BR",
+  "key": "1ec7008ba26df7dd51ba4733fef249eb75b36867850370d821015e60372f0689",
+  "persona": "dante",
+  "character_id": "dante",
+  "language": "pt_BR",
+  "voice_id": "ycxdm1PRMs962FxyyuJ0",
+  "voice_name": "Otto - Intimidating and Aggressive",
+  "prompt": "[estranhar com humor] Monaliza? Você deu nome pro carro?"
+ },
+ {
+  "label": "9ce37c0db3c0_pt_BR",
+  "key": "9ce37c0db3c02f5b49437d9db914d018e365127c487fb117165eac2f2bab9244",
+  "persona": "maciota",
+  "character_id": "maciota",
+  "language": "pt_BR",
+  "voice_id": "GIuLCSVfgJaUuh7hYOY8",
+  "voice_name": "Lucas - Deep & Profound Narrator",
+  "prompt": "[ágil, brincar e instruir] Carro bom tem nome. No porta-malas tem uma maleta com pistola. Se ela voltar amassada, traz pra bancada."
+ },
+ {
+  "label": "f83e40eb5358_pt_BR",
+  "key": "f83e40eb5358ad4dc285e6906b7ca9d222be66d40f89e5834d577fff033e10f2",
+  "persona": "maciota",
+  "character_id": "maciota",
+  "language": "pt_BR",
+  "voice_id": "GIuLCSVfgJaUuh7hYOY8",
+  "voice_name": "Lucas - Deep & Profound Narrator",
+  "prompt": "[ágil, confiar o carro] Mais uma coisa. A Monaliza azul ali na baia agora é tua. Vai precisar de carro pra rodar atrás do Vicente."
+ },
+ {
+  "label": "7ccb8a0cf8ec_en",
+  "key": "7ccb8a0cf8ec24cb9b3538477a524a73b994672ed709405e863087ce3caaaa0e",
+  "persona": "moradora",
+  "character_id": "moradora",
+  "language": "en",
+  "voice_id": "mmTLZX6tO1YdiYVoUVN5",
+  "voice_name": "Adriane - Warm, Friendly",
+  "prompt": "[short pain] Ow!"
+ },
+ {
+  "label": "7ccb8a0cf8ec_pt_BR",
+  "key": "7ccb8a0cf8ec24cb9b3538477a524a73b994672ed709405e863087ce3caaaa0e",
+  "persona": "moradora",
+  "character_id": "moradora",
+  "language": "pt_BR",
+  "voice_id": "mmTLZX6tO1YdiYVoUVN5",
+  "voice_name": "Adriane - Warm, Friendly",
+  "prompt": "[dor curta] Ai!"
+ },
+ {
+  "label": "f64c4b597112_en",
+  "key": "f64c4b597112332426e7b075b4677b93c97a35508c2ac509e2c1878566ee4a81",
+  "persona": "moradora",
+  "character_id": "moradora",
+  "language": "en",
+  "voice_id": "mmTLZX6tO1YdiYVoUVN5",
+  "voice_name": "Adriane - Warm, Friendly",
+  "prompt": "[stunned relief] You stayed... Everyone else leaves. Their records are at the back of the block."
+ },
+ {
+  "label": "f64c4b597112_pt_BR",
+  "key": "f64c4b597112332426e7b075b4677b93c97a35508c2ac509e2c1878566ee4a81",
+  "persona": "moradora",
+  "character_id": "moradora",
+  "language": "pt_BR",
+  "voice_id": "mmTLZX6tO1YdiYVoUVN5",
+  "voice_name": "Adriane - Warm, Friendly",
+  "prompt": "[confiar após resgate] Você ficou... Os outros vão embora. Os registros deles ficam lá no fundo da quadra."
+ },
+ {
+  "label": "90bb3b6a8226_en",
+  "key": "90bb3b6a8226aedec8e81e63c87c556c1fe7fe4841a7fabbd58ea2bf372f9681",
+  "persona": "moradora",
+  "character_id": "moradora",
+  "language": "en",
+  "voice_id": "mmTLZX6tO1YdiYVoUVN5",
+  "voice_name": "Adriane - Warm, Friendly",
+  "prompt": "[frightened, urgent] They're back. They want paying again. My son's here... don't let them take him."
+ },
+ {
+  "label": "90bb3b6a8226_pt_BR",
+  "key": "90bb3b6a8226aedec8e81e63c87c556c1fe7fe4841a7fabbd58ea2bf372f9681",
+  "persona": "moradora",
+  "character_id": "moradora",
+  "language": "pt_BR",
+  "voice_id": "mmTLZX6tO1YdiYVoUVN5",
+  "voice_name": "Adriane - Warm, Friendly",
+  "prompt": "[pedir proteção urgente] Voltaram. Querem cobrar de novo. Meu filho tá aqui... não deixa levarem ele."
+ },
+ {
+  "label": "1ec7008ba26d_en",
+  "key": "1ec7008ba26df7dd51ba4733fef249eb75b36867850370d821015e60372f0689",
+  "persona": "dante",
+  "character_id": "dante",
+  "language": "en",
+  "voice_id": "ycxdm1PRMs962FxyyuJ0",
+  "voice_name": "Otto - Intimidating and Aggressive",
+  "prompt": "[amused, incredulous] Monaliza? You named your car?"
  }
 ]

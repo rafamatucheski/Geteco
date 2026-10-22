@@ -28,8 +28,9 @@ CAST = {  # character_id -> {idioma: (voice_id, nome)}
                  "en": ("E9a8LlXPNWtyvvSoZzrb", "Talis - Natural, Descontraído, Real")},
     "neco": {"pt_BR": ("75FhDGLofkNSQ8G4Htts", "Francis - Brazil | Minas Gerais"),
              "en": ("75FhDGLofkNSQ8G4Htts", "Francis - Brazil | Minas Gerais")},
-    "moradora": {"pt_BR": ("k5aKjuBz9NhUMZc7SDpl", "Marilita - Natural & Conversacional"),
-                 "en": ("k5aKjuBz9NhUMZc7SDpl", "Marilita - Natural & Conversacional")},
+    # Marilita (primeira escolha) é premium e a conta Free não libera; Adriane serve nas duas contas.
+    "moradora": {"pt_BR": ("mmTLZX6tO1YdiYVoUVN5", "Adriane - Warm, Friendly"),
+                 "en": ("mmTLZX6tO1YdiYVoUVN5", "Adriane - Warm, Friendly")},
     "jessica": {"pt_BR": ("5p4THmLc2S6kXKO1pOM5", "Nayara Técia - PVC"),
                 "en": ("5p4THmLc2S6kXKO1pOM5", "Nayara Técia - PVC")},
 }
