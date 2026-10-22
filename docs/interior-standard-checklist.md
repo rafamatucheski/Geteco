@@ -1,5 +1,16 @@
 # Migração de interiores — checklist
 
+## Garagem do Maciota: ampliação, câmera e escada da cobertura — 21/10/2026
+
+Escopo: **1 lugar físico existente / 1 interior existente alterado / 0 novos / 0 certificações integrais**. Pedido de jogo em 3440x1440: escada "mal posicionada" e garagem pequena na tela. A oficina ganhou 4 m à esquerda (área de peças: estante, pilhas de pneus, motor no cavalete; carretel e pneu acompanharam a parede). Baia/origem, portão, escritório, spawn, saída, moradores e pontos de interação não mudaram. A câmera alinhada `(0,18,15)` agora mira o centro projetado da sala com size 10,2 (antes 13; mais largo em telas < 1,57). A escada da cobertura, que caía em pé no piso atravessando a divisória do escritório, é autorada na parede dos fundos (`WorkshopProps.roof_access_point`/rota).
+
+- [x] Fotos reais na Main (fixture, `--no-save`), 16:9 e 21:9: [antes](../evidence/maciota-garagem-portamalas-20261021/antes-garagem-21x9.png), [depois](../evidence/maciota-garagem-portamalas-20261021/depois-garagem-21x9.png), [escada antes](../evidence/maciota-garagem-portamalas-20261021/antes-escada-16x9.png), [escada depois](../evidence/maciota-garagem-portamalas-20261021/depois-escada-16x9.png). Sala: ~49%→~84% da largura em 16:9, ~36%→~63% em 21:9.
+- [x] Colisão dirigida: `tests/test_maciota_world.gd` (parede nova bloqueia, linha da parede antiga aberta, ponto/rota/caixa da escada livres, sala inteira no quadro em 4:3/16:9/21:9) e `test_harbor_service_roofs.gd -- --roof=maciota` na Main renderizada: 53 verificações, zero falhas (rota autorada andando, subida, telhado, save, restauração fria, descida, regras sem armas).
+- [x] Garagem/transferências: `test_garage_vehicle_transfer` (11), `test_garage_driver_restore` (34), `test_maciota_transition_safety` (37), `test_maciota_exterior_access` passaram.
+- [ ] Oclusão de Dante/NPC atrás dos móveis novos (estante, motor, pilhas de pneus) sem teste dedicado; só inspeção visual das fotos.
+- [ ] Desempenho: ~50 malhas novas na sala, sem luz nova; sem comparativo em export release. Pendente.
+- [ ] `test_v2_session.gd` não conclusivo: parou em "Integrated session becomes playable" (limite de 600 quadros de física para iniciar), antes de entrar na garagem.
+
 ## Ferramentas de interiores no editor — 21/10/2026
 
 Escopo aditivo: **0 lugares físicos novos / 0 interiores novos / 0 migrações de ambiente / 0 certificações integrais**. Foram acrescentadas ferramentas para escolher salas/andares e editar seu conteúdo em um rascunho. O mundo oficial não foi reformado como demonstração; as contagens e pendências das revisões abaixo permanecem intactas.

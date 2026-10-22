@@ -30,10 +30,11 @@ static func build(room: Node3D) -> void:
 	for z in range(5, 18, 2):
 		box(room, "ApronJoint", Vector3(1, -.073, z), Vector3(48, .012, .025), grout)
 	# Service floor has slab seams, an inset drain and a robust gate threshold.
-	for x in [-3.3, -1.1, 1.1]:
+	# A oficina vai de X -8.2 a 2.3 desde a ampliação de 21/10/2026 (WorkshopProps.EXTENSION_X).
+	for x in [-7.7, -5.5, -3.3, -1.1, 1.1]:
 		box(room, "SlabJoint", Vector3(x, .005, .25), Vector3(.018, .01, 8.7), grout)
 	for z in [-2.3, .0, 2.3]:
-		box(room, "SlabJoint", Vector3(-.95, .005, z), Vector3(6.5, .01, .018), grout)
+		box(room, "SlabJoint", Vector3(-2.95, .005, z), Vector3(10.5, .01, .018), grout)
 	box(room, "GateThreshold", Vector3(0, .018, 4.58), Vector3(4.2, .035, .24), silver)
 	box(room, "DrainRecess", Vector3(0, .01, 3.78), Vector3(3.5, .025, .18), steel)
 	for i in 48:
@@ -48,23 +49,26 @@ static func build(room: Node3D) -> void:
 	for x in [2.47, 6.47]:
 		box(room, "OfficeSkirting", Vector3(x, .06, -1.7), Vector3(.045, .12, 4.8), brass)
 	# Rear wall: ivory service tiles, green office panels and pilasters.
-	box(room, "ServiceWallTiles", Vector3(-.95, .8, -4.075), Vector3(6.5, 1.6, .035), ivory)
-	for x in range(13):
-		box(room, "TileJoint", Vector3(-4.1 + x * .5, .8, -4.05), Vector3(.012, 1.6, .012), grout)
+	box(room, "ServiceWallTiles", Vector3(-2.95, .8, -4.075), Vector3(10.5, 1.6, .035), ivory)
+	for x in range(21):
+		box(room, "TileJoint", Vector3(-8.1 + x * .5, .8, -4.05), Vector3(.012, 1.6, .012), grout)
 	for y in [.4, .8, 1.2]:
-		box(room, "TileJoint", Vector3(-.95, y, -4.045), Vector3(6.5, .012, .012), grout)
+		box(room, "TileJoint", Vector3(-2.95, y, -4.045), Vector3(10.5, .012, .012), grout)
 	box(room, "OfficePanelWall", Vector3(4.5, 1.8, -4.065), Vector3(4.1, 3.5, .06), teal)
 	for x in [2.6, 3.55, 4.5, 5.45, 6.4]:
 		box(room, "PanelMoulding", Vector3(x, 1.6, -4.015), Vector3(.045, 3.1, .04), brass)
 	box(room, "PictureRail", Vector3(4.5, 2.92, -4.005), Vector3(4.12, .055, .055), brass)
-	for x in [-4.14, 2.33, 6.45]:
+	# -4.14 marca onde ficava a parede esquerda antes da ampliação: vira pilar da nova vão.
+	for x in [-8.14, -4.14, 2.33, 6.45]:
 		box(room, "SteelColumn", Vector3(x, 1.88, -4.02), Vector3(.13, 3.76, .16), steel)
 	# High clerestory windows illuminate the workshop without obscuring the bay.
-	box(room, "WindowFrame", Vector3(-1.0, 2.75, -4.045), Vector3(5.2, 1.02, .14), silver)
-	box(room, "WindowGlass", Vector3(-1.0, 2.75, -3.96), Vector3(5.0, .84, .025), cool)
-	for x in [-2.65, -1, .65]:
-		box(room, "WindowMullion", Vector3(x, 2.75, -3.93), Vector3(.035, .88, .04), steel)
-	box(room, "WindowMullion", Vector3(-1, 2.75, -3.93), Vector3(5.0, .035, .04), steel)
+	# A segunda janela fica sobre a estante de peças, à direita da escada da cobertura.
+	for window in [[-1.0, 5.2, [-2.65, -1, .65]], [-5.4, 1.8, [-5.4]]]:
+		box(room, "WindowFrame", Vector3(window[0], 2.75, -4.045), Vector3(window[1], 1.02, .14), silver)
+		box(room, "WindowGlass", Vector3(window[0], 2.75, -3.96), Vector3(window[1] - .2, .84, .025), cool)
+		for x in window[2]:
+			box(room, "WindowMullion", Vector3(x, 2.75, -3.93), Vector3(.035, .88, .04), steel)
+		box(room, "WindowMullion", Vector3(window[0], 2.75, -3.93), Vector3(window[1] - .2, .035, .04), steel)
 	# Shelves on the existing office safe wall: books, trophies and record sleeves.
 	for y in [1.15, 1.65, 2.15]:
 		box(room, "OfficeShelf", Vector3(5.77, y, -3.73), Vector3(1.22, .065, .46), wood)
@@ -78,8 +82,8 @@ static func build(room: Node3D) -> void:
 		box(room, "HangingTool", Vector3(x, 1.64, -3.91), Vector3(.035, .32, .03), silver)
 		box(room, "ToolHead", Vector3(x, 1.8, -3.90), Vector3(.10, .075, .05), silver)
 	# Low foreground returns reveal wall thickness without masking feet or the door.
-	for x in [-3.2, 4.5]:
-		box(room, "CutawayWallCap", Vector3(x, .25, 4.7), Vector3(1.98 if x < 0 else 4.18, .05, .24), silver)
+	for x in [-5.2, 4.5]:
+		box(room, "CutawayWallCap", Vector3(x, .25, 4.7), Vector3(5.98 if x < 0 else 4.18, .05, .24), silver)
 	# Dedicated task lighting, cached with the rest of the furniture.
 	for point in [Vector3(-1, 3.0, -1), Vector3(4.5, 2.8, -1.4)]:
 		var light := OmniLight3D.new()

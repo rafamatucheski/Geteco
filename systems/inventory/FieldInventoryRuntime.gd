@@ -86,7 +86,11 @@ func open(at_trunk := false) -> void:
 	ui.show(); ui.refresh()
 	_update_carried()
 	if is_instance_valid(carried): carried.set_open(true)
-	if at_trunk: session.personal_car._show_trunk_view(economy().personal_loadout())
+	if at_trunk:
+		session.personal_car._show_trunk_view(economy().personal_loadout())
+		# O painel fica à direita no porta-malas; a câmera põe a bandeja na área livre.
+		var trunk_view: Variant = session.personal_car.get("_trunk_view")
+		if is_instance_valid(trunk_view) and trunk_view.has_method("focus_for"): trunk_view.screen_focus = ui.trunk_view_focus
 
 func close() -> void: session.close_menu()
 

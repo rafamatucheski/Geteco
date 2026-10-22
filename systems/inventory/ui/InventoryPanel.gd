@@ -4,6 +4,7 @@ const GLYPH := preload("res://ui/hud/HUDGlyph.gd")
 const OUTFITS := preload("res://data/catalogs/OutfitCatalog.gd")
 const THERMAL := preload("res://runtime/cold/ThermalState.gd")
 const GOLD=STYLE.ACCENT
+const TRUNK_MARGIN_RATIO := .025
 var wardrobe_visible := false
 var selected_outfit := ""
 var device_hint: Label
@@ -37,7 +38,22 @@ func _layout() -> void:
 		var overflow:=body_size.y>body_height
 		screen_scroll.custom_minimum_size=Vector2(body_size.x+(14 if overflow else 0),body_height)
 	card.reset_size()
-	card.position=((view-card.size)*.5).max(Vector2(16,16))
+	if trunk_visible:
+		# Porta-malas (pedido de jogo, 21/10/2026): no centro o painel cobria o carro. Encosta à
+		# direita com margem e deixa a esquerda livre; TrunkView põe a bandeja no meio dessa área
+		# (trunk_view_focus). Em canvas_items 1280x720, 1920x1080 e 3440x1440 (1720x720 lógico).
+		var margin:=maxf(16.0,view.x*TRUNK_MARGIN_RATIO)
+		card.position=Vector2(view.x-card.size.x-margin,(view.y-card.size.y)*.5).max(Vector2(16,16))
+	else:
+		card.position=((view-card.size)*.5).max(Vector2(16,16))
+
+## Onde a câmera do porta-malas deve pôr a bandeja: centro da área livre à esquerda do
+## painel, em fração do viewport. `null` enquanto o painel ainda não tem tamanho.
+func trunk_view_focus() -> Variant:
+	if not visible or not trunk_visible or not is_instance_valid(card) or card.size.x<=0.0: return null
+	var view:=get_viewport_rect().size
+	if view.x<=0.0 or view.y<=0.0: return null
+	return Vector2(clampf(card.position.x*.5/view.x,.15,.5),.5)
 func refresh() -> void:
 	if not visible: return
 	if is_instance_valid(card): remove_child(card); card.queue_free()

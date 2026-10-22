@@ -20,7 +20,11 @@ const SLOT_POSITIONS := {
 	"granada": Vector3(-0.02, 0.70, 1.96),
 }
 const SLOT_LABELS := {"longa": "LONGA", "curta": "CURTA", "corpo": "CORPO", "granada": "GRANADA"}
-const CLOSE_OFFSET := Vector3(0, 6.2, 4.6)
+# ~65° de inclinação, mesma distância de antes ((0,6.2,4.6) = 7,72 m). A 53° a travessa do
+# elevador da baia do Maciota (y 3,25 sobre o centro do carro) caía exatamente em cima da
+# bandeja na tela (tanθ = 2,4/1,8, captura de 21/10/2026); mais de cima ela passa abaixo da
+# bandeja e o compartimento aparece por inteiro, na garagem ou na rua.
+const CLOSE_OFFSET := Vector3(0, 7.0, 3.25)
 const CLOSE_SIZE := 6.4
 const TRAY_CENTER := Vector3(0, 0.648, 1.80)
 # The baked res://assets/fleet/monaliza.scn is a flat, unlabeled mesh dump
@@ -58,6 +62,20 @@ var accent_light: SpotLight3D
 var _camera: Camera3D
 var _saved: Dictionary = {}
 var _open_amount := 0.0
+# Pedido de jogo (21/10/2026): com o inventário no meio da tela o porta-malas sumia atrás
+# dele. A câmera agora mira um ponto que segue a bandeja (não o centro do carro) e, quando
+# quem abriu informa a área livre da tela (InventoryPanel.trunk_view_focus, painel à
+# direita), desloca o enquadramento para a bandeja aparecer no meio dessa área.
+## Callable sem argumentos que devolve a fração do viewport (Vector2) onde a bandeja deve
+## aparecer, ou null enquanto o painel não tem tamanho. Sem ele, centro da tela.
+var screen_focus: Callable:
+	set(value):
+		screen_focus = value
+		# O primeiro valor do novo provedor entra direto, sem deslizar a partir do centro.
+		_focus_settled = false
+var focus_anchor: Node3D
+const FOCUS_FOLLOW_RATE := 10.0
+var _focus_settled := false
 
 func open(active_car: Node3D, camera: Camera3D) -> void:
 	car = active_car
@@ -74,11 +92,55 @@ func open(active_car: Node3D, camera: Camera3D) -> void:
 			"target": _camera.target, "locked": _camera.locked,
 			"offset": _camera.offset, "target_size": _camera.target_size,
 		}
-		_camera.target = car
+		if not is_instance_valid(focus_anchor):
+			focus_anchor = Node3D.new()
+			focus_anchor.name = "TrunkCameraFocus"
+			add_child(focus_anchor)
+		# Antes da câmera no mesmo quadro: ela lê o alvo já posicionado, sem um quadro torto.
+		process_priority = mini(process_priority, int(_camera.process_priority) - 1)
+		_focus_settled = false
 		_camera.locked = true
 		_camera.offset = CLOSE_OFFSET
 		_camera.target_size = CLOSE_SIZE
+		_update_focus(0.0)
+		_camera.target = focus_anchor
 	set_process(true)
+
+## Ponto da bandeja já erguida, no mundo (o lado do porta-malas, não o centro do carro).
+func tray_point() -> Vector3:
+	var visual: Node3D = car.get("visual") if is_instance_valid(car) else null
+	if not is_instance_valid(visual): return car.global_position if is_instance_valid(car) else Vector3.ZERO
+	return visual.to_global(TRAY_CENTER + Vector3(0, LIFT_HEIGHT, 0))
+
+## Foco da câmera que põe a bandeja na fração `fraction` da tela. A câmera é ortográfica
+## (KEEP_HEIGHT): deslocar o foco no plano da imagem só translada a imagem.
+func focus_for(fraction: Vector2) -> Vector3:
+	var tray := tray_point()
+	if not is_instance_valid(_camera): return tray
+	var view := _camera.get_viewport().get_visible_rect().size if _camera.is_inside_tree() else Vector2(16, 9)
+	var height: float = CLOSE_SIZE
+	var width := height * (view.x / maxf(view.y, 1.0))
+	var heading: Variant = _camera.get("heading")
+	var back := CLOSE_OFFSET.rotated(Vector3.UP, float(heading) if heading != null else 0.0).normalized()
+	var right := Vector3.UP.cross(back).normalized()
+	var up := back.cross(right)
+	return tray + right * (0.5 - fraction.x) * width + up * (fraction.y - 0.5) * height
+
+func _update_focus(delta: float) -> void:
+	if not is_instance_valid(focus_anchor) or not is_instance_valid(car): return
+	var fraction: Variant = screen_focus.call() if screen_focus.is_valid() else Vector2(0.5, 0.5)
+	var has_area := fraction is Vector2
+	var wanted := focus_for(fraction if has_area else Vector2(0.5, 0.5))
+	if not focus_anchor.is_inside_tree():
+		focus_anchor.position = wanted
+		return
+	# Primeiro enquadramento válido entra direto; depois (painel mudou de tamanho, janela
+	# redimensionada) a câmera desliza até o novo ponto.
+	if not _focus_settled or delta <= 0.0:
+		focus_anchor.global_position = wanted
+		_focus_settled = has_area
+	else:
+		focus_anchor.global_position = focus_anchor.global_position.lerp(wanted, 1.0 - exp(-FOCUS_FOLLOW_RATE * delta))
 
 func update_loadout(slots: Dictionary) -> void:
 	for slot in SLOT_POSITIONS:
@@ -112,6 +174,7 @@ func _replace_weapon(slot: String, id: String) -> void:
 
 func _process(delta: float) -> void:
 	if not is_instance_valid(weapons): return
+	_update_focus(delta)
 	_open_amount = move_toward(_open_amount, 1.0, delta * OPEN_SPEED)
 	# Ease-out: fast off the latch, settling gently at the top of the rise.
 	var eased := 1.0 - pow(1.0 - _open_amount, 3.0)
@@ -130,6 +193,9 @@ func close() -> void:
 		_camera.offset = _saved.get("offset", _camera.offset)
 		_camera.target_size = _saved.get("target_size", _camera.target_size)
 	_saved.clear()
+	screen_focus = Callable()
+	if is_instance_valid(focus_anchor): focus_anchor.queue_free()
+	focus_anchor = null
 	if is_instance_valid(pivot): pivot.rotation.x = 0.0
 	if is_instance_valid(weapons): weapons.free()
 	weapons = null

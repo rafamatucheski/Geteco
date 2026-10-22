@@ -78,6 +78,11 @@ func _update_ground_access() -> void:
 	if is_instance_valid(access_visual) and access_definition.get("id","")==wanted.id and access_owner==building_owner: return
 	_release_access()
 	var model: Node3D = room_owner.get("model") if is_instance_valid(room_owner) else null
+	# A garagem do Maciota guarda a sala em `room` (WorkshopProps), que autora a escada na
+	# parede dos fundos. Pelo spawn ela caía no meio do piso, atravessando a divisória.
+	if not is_instance_valid(model) and wanted.get("id","")=="maciota" and is_instance_valid(room_owner):
+		var workshop: Variant = room_owner.get("room")
+		if workshop is Node3D: model = workshop
 	var authored_point: Variant = model.get("roof_access_point") if is_instance_valid(model) else null
 	if authored_point is Vector3 and authored_point.is_finite():
 		# Architecture owns the placement. Never fall back around the spawn if

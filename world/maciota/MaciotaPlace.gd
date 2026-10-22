@@ -21,11 +21,22 @@ var interior_spawn: Vector3:
 	get: return to_global(interior_origin + Vector3(0, 0, 3.2))
 var exit_position: Vector3:
 	get: return to_global(interior_origin + Vector3(0, 0, 4.3))
+# Enquadramento da garagem (pedido de jogo, 21/10/2026, jogando em 3440x1440: "na tela fica
+# muito pequeno"). Antes: alvo (1.1,.55,.2) e size 13 deixavam a sala em ~49% da largura em
+# 16:9 e ~36% em 21:9, com faixa vazia em cima e embaixo (capturas em
+# evidence/maciota-garagem-portamalas-20261021/antes-*). Agora a sala tem 15,2 m de largura
+# (WorkshopProps.EXTENSION_X) e a câmera, com a mesma inclinação (0,18,15), mira o centro
+# projetado dela: na vertical ela ocupa ~9,75 m (topo da parede dos fundos até a frente da
+# fundação), então CAMERA_FIT_HEIGHT dá ~0,2 m de folga em cima e embaixo. Em telas mais
+# estreitas que ~1,57 a largura (sala + folga) passa a mandar, para não cortar as paredes.
+const CAMERA_FIT_HEIGHT := 10.2
+const CAMERA_FIT_WIDTH := 16.0
 var camera_target: Vector3:
-	get: return to_global(interior_origin + Vector3(1.1, .55, .2))
-var camera_size := 13.0
+	get: return to_global(interior_origin + Vector3(-.8, .55, -.66))
+var camera_size: float:
+	get: return camera_size_for_aspect(_view_aspect())
 var camera_offset := Vector3(0,18,15)
-var room_bounds := AABB(Vector3(-4.4, 0, -4.3), Vector3(11.2,3.8,9.2))
+var room_bounds := AABB(Vector3(-8.4, 0, -4.3), Vector3(15.2,3.8,9.2))
 var exterior_bounds := AABB(Vector3(-6.4,0,1.56), Vector3(14.8,7.1,6.5))
 var courtyard_bounds := AABB(Vector3(-15.75,-.1,-4.4),Vector3(26.75,6.8,15.5))
 var solid_bodies: Array[StaticBody3D] = []
@@ -57,8 +68,8 @@ func _ready() -> void:
 				detail.hide()
 			elif detail.name == "BuildingFoundation":
 				detail.mesh = detail.mesh.duplicate()
-				detail.mesh.size = Vector3(11.3,.32,9.3)
-				detail.position = Vector3(1.15,-.24,.25)
+				detail.mesh.size = Vector3(room_bounds.size.x+.1,.32,9.3)
+				detail.position = Vector3(room_bounds.get_center().x,-.24,.25)
 	# Bounds from original authoring plus tagged meshes cover furniture tops,
 	# legs, lift arms and structural corners. Raised overhead details stay overhead.
 	var index := 0
@@ -168,3 +179,13 @@ func set_interior_active(active: bool) -> void:
 
 func set_part_available(available: bool) -> void:
 	if is_instance_valid(part_visual): part_visual.visible = available
+
+## Altura ortográfica (Camera3D.size, KEEP_HEIGHT) que mostra a sala inteira nessa proporção.
+static func camera_size_for_aspect(aspect: float) -> float:
+	if not is_finite(aspect) or aspect <= 0.0: aspect = 16.0 / 9.0
+	return maxf(CAMERA_FIT_HEIGHT, CAMERA_FIT_WIDTH / aspect)
+
+func _view_aspect() -> float:
+	if not is_inside_tree(): return 16.0 / 9.0
+	var view := get_viewport().get_visible_rect().size
+	return view.x / view.y if view.y > 0.0 else 16.0 / 9.0

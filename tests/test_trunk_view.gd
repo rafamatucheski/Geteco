@@ -32,10 +32,24 @@ func run() -> void:
 	root.add_child(view)
 	view.open(car, camera)
 	check(view.pivot == pivot, "Trunk view did not find the MonalizaTrunkHinge pivot")
-	check(camera.locked and camera.target == car, "Camera did not lock onto the car for the trunk shot")
+	# A câmera trava num foco que acompanha a bandeja do porta-malas, não o centro do carro.
+	check(camera.locked and is_instance_valid(view.focus_anchor) and camera.target == view.focus_anchor, "Camera did not lock onto the trunk focus")
 	for frame in 30: await process_frame
 	check(pivot.rotation.x < -1.5, "Trunk lid never opened (rotation.x=%s)" % pivot.rotation.x)
 	check(view.weapons.position.y > 0.15, "Loadout tray never rose (y=%s)" % view.weapons.position.y)
+	var rect := root.get_visible_rect().size
+	var centre := camera.unproject_position(view.tray_point())
+	check(absf(centre.x / rect.x - 0.5) < 0.01 and absf(centre.y / rect.y - 0.5) < 0.01, "Without a side panel the tray should be at screen centre (screen=%s)" % centre)
+	# Inventário ancorado à direita: a bandeja vai para o meio da área livre à esquerda.
+	view.screen_focus = func(): return Vector2(0.25, 0.5)
+	for frame in 2: await process_frame
+	var left := camera.unproject_position(view.tray_point())
+	check(absf(left.x / rect.x - 0.25) < 0.01 and absf(left.y / rect.y - 0.5) < 0.01, "Tray not framed in the free area left of the panel (screen=%s)" % left)
+	# Painel ainda sem tamanho: não desloca para um ponto inválido.
+	view.screen_focus = func(): return null
+	for frame in 2: await process_frame
+	var pending := camera.unproject_position(view.tray_point())
+	check(absf(pending.x / rect.x - 0.5) < 0.01, "Pending panel should keep the tray centred (screen=%s)" % pending)
 
 	view.update_loadout({"curta": "pistol", "longa": "", "corpo": "", "granada": ""})
 	await process_frame

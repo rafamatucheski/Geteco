@@ -21,6 +21,9 @@ extends Node3D
 ##    - Luminária clássica de banqueiro com cúpula verde esmeralda e luz suave
 ##    - Tapete persa ornamental sob a mesa executiva
 ##    - Cofre pesado de aço e disco de vinil dourado "King of the Night" na parede
+## 3. Área de Peças (ampliação de 21/10/2026, X -8.20 a -4.30):
+##    - Escada da cobertura na parede dos fundos, estante de peças, pilhas de pneus
+##    - Motor no cavalete; corredor livre do portão até a escada
 ##
 ## Contratos fundamentais de integração com Astra:
 ## - Origem no centro da vaga do carro: Vector3(0, 0, 0)
@@ -34,7 +37,21 @@ extends Node3D
 # Dimensões de referência
 var stall_size: Vector2 = Vector2(3.50, 6.00)
 var car_reference_size: Vector3 = Vector3(1.86, 1.25, 4.46)
-var room_bounds: AABB = AABB(Vector3(-4.40, 0.0, -4.30), Vector3(11.20, 3.80, 9.20))
+# Pedido de jogo (21/10/2026, jogando em 3440x1440): "na tela fica muito pequeno; dá pra
+# expandir a garagem". A oficina ganhou 4 m à esquerda (parede de X = -4.30 para -8.30),
+# com uma área de peças. Baia (origem), portão, escritório, spawn, saída e pontos de
+# interação não mudaram, então saves e a entrada dos carros continuam valendo.
+const EXTENSION_X := 4.0
+const LEFT_WALL_X := -4.30 - EXTENSION_X
+var room_bounds: AABB = AABB(Vector3(-8.40, 0.0, -4.30), Vector3(15.20, 3.80, 9.20))
+# Escada da cobertura (lida por HarborServiceRoofRuntime): encostada na parede dos fundos
+# da área de peças, de frente para a câmera e longe da baia, da bancada e do porta-malas.
+# Antes ela era procurada em volta do spawn e caía em pé no meio do piso, na diagonal,
+# atravessando a divisória do escritório. O ponto é onde Dante fica; a escada fica 0,74 m
+# atrás dele (yaw PI = parede -Z). A rota sai do spawn pela frente da baia, sem cruzar o carro.
+var roof_access_point := Vector3(-7.20, 0.0, -3.18)
+var roof_access_yaw := PI
+var roof_access_route: Array[Vector3] = [Vector3(-3.20, 0.0, 3.30), Vector3(-6.80, 0.0, 0.90)]
 
 # Lista interna de obstáculos rígidos (caixas AABB em coordenadas locais em metros)
 var _obstacle_bounds: Array[AABB] = []
@@ -123,8 +140,8 @@ func _build_workshop() -> void:
 	# --------------------------------------------------------------------------
 	# 1. PISOS (ÁREA DE SERVIÇO EM CONCRETO + ESCRITÓRIO EM MADEIRA NOBRE)
 	# --------------------------------------------------------------------------
-	# Piso de concreto da oficina mecânica (X: -4.30 a +2.40, Z: -4.20 a +4.70)
-	_add_box(Vector3(-0.95, -0.05, 0.25), Vector3(6.70, 0.10, 8.90), mat_concrete)
+	# Piso de concreto da oficina mecânica (X: -8.30 a +2.40, Z: -4.20 a +4.70)
+	_add_box(Vector3((LEFT_WALL_X + 2.40) * 0.5, -0.05, 0.25), Vector3(2.40 - LEFT_WALL_X, 0.10, 8.90), mat_concrete)
 	# Piso de madeira nobre encerada do escritório do Maciota (X: +2.40 a +6.60, Z: -4.20 a +4.70)
 	_add_box(Vector3(4.50, -0.05, 0.25), Vector3(4.20, 0.10, 8.90), mat_office_floor)
 	# Soleira de latão polido no vão da porta (Z: 0.80 a 2.20)
@@ -151,22 +168,26 @@ func _build_workshop() -> void:
 	# --------------------------------------------------------------------------
 	var mat_wall_dark := _mat("outer_wall", Color("#20252b"), 0.10, 0.85)
 
-	# Parede traseira completa (Z = -4.20 m, de X = -4.30 a +6.60, altura 3.80 m)
-	_solid(_add_box(Vector3(1.15, 1.90, -4.20), Vector3(10.90, 3.80, 0.20), mat_wall_dark))
-	_register_obstacle(Vector3(1.15, 1.90, -4.20), Vector3(10.90, 3.80, 0.20))
+	# Parede traseira completa (Z = -4.20 m, de X = -8.30 a +6.60, altura 3.80 m)
+	var rear_center := Vector3((LEFT_WALL_X + 6.60) * 0.5, 1.90, -4.20)
+	var rear_size := Vector3(6.60 - LEFT_WALL_X, 3.80, 0.20)
+	_solid(_add_box(rear_center, rear_size, mat_wall_dark))
+	_register_obstacle(rear_center, rear_size)
 
-	# Parede lateral esquerda da oficina (X = -4.30 m, Z: -4.20 a +4.70)
-	_solid(_add_box(Vector3(-4.30, 1.90, 0.25), Vector3(0.20, 3.80, 8.90), mat_wall_dark))
-	_register_obstacle(Vector3(-4.30, 1.90, 0.25), Vector3(0.20, 3.80, 8.90))
+	# Parede lateral esquerda da oficina (X = -8.30 m, Z: -4.20 a +4.70)
+	_solid(_add_box(Vector3(LEFT_WALL_X, 1.90, 0.25), Vector3(0.20, 3.80, 8.90), mat_wall_dark))
+	_register_obstacle(Vector3(LEFT_WALL_X, 1.90, 0.25), Vector3(0.20, 3.80, 8.90))
 
 	# Parede lateral direita do escritório (X = +6.60 m, Z: -4.20 a +4.70)
 	_solid(_add_box(Vector3(6.60, 1.90, 0.25), Vector3(0.20, 3.80, 8.90), mat_wall_dark))
 	_register_obstacle(Vector3(6.60, 1.90, 0.25), Vector3(0.20, 3.80, 8.90))
 
 	# Parede frontal (+Z = +4.70 m) com portal industrial aberto de 4.20 m para o carro
-	# Painel frontal esquerdo
-	_solid(_add_box(Vector3(-3.20, 1.90, 4.70), Vector3(2.00, 3.80, 0.20), mat_wall_dark))
-	_register_obstacle(Vector3(-3.20, 1.90, 4.70), Vector3(2.00, 3.80, 0.20))
+	# Painel frontal esquerdo (X: -8.20 a -2.20; o portão continua de -2.10 a +2.10)
+	var front_left_center := Vector3((LEFT_WALL_X + 0.10 - 2.20) * 0.5, 1.90, 4.70)
+	var front_left_size := Vector3(-2.20 - LEFT_WALL_X - 0.10, 3.80, 0.20)
+	_solid(_add_box(front_left_center, front_left_size, mat_wall_dark))
+	_register_obstacle(front_left_center, front_left_size)
 	# Painel frontal direito (frente do escritório)
 	_solid(_add_box(Vector3(4.50, 1.90, 4.70), Vector3(4.20, 3.80, 0.20), mat_wall_dark))
 	_register_obstacle(Vector3(4.50, 1.90, 4.70), Vector3(4.20, 3.80, 0.20))
@@ -330,12 +351,14 @@ func _build_workshop() -> void:
 		_add_box(Vector3(-2.85, gy + 0.03, -1.815), Vector3(0.68, 0.018, 0.015), mat_aluminum)
 	_add_box(Vector3(-2.85, 1.08, -2.10), Vector3(0.84, 0.02, 0.54), mat_rubber)
 
-	_layout_offset = Vector3.ZERO
-	# Carretel de mangueira de ar na parede esquerda (X = -4.18 m, Y = 1.70 m, Z = -1.20 m)
+	# Carretel de mangueira de ar na parede esquerda (X = -4.18 m, Y = 1.70 m, Z = -1.20 m).
+	# A parede andou EXTENSION_X para a esquerda; o carretel vai junto com ela.
+	_layout_offset = Vector3(-EXTENSION_X, 0, 0)
 	_add_box(Vector3(-4.22, 1.70, -1.20), Vector3(0.08, 0.24, 0.18), mat_steel_dark)
 	_add_cyl(Vector3(-4.08, 1.70, -1.20), 0.19, 0.18, mat_tool_red, Vector3(0, 0, 90))
 	_add_cyl(Vector3(-3.95, 1.35, -1.15), 0.014, 0.50, mat_rubber, Vector3(15.0, 0, 0))
 	_add_cyl(Vector3(-3.95, 1.10, -1.08), 0.018, 0.06, mat_brass, Vector3(15.0, 0, 0))
+	_layout_offset = Vector3.ZERO
 
 	# Tambor de óleo industrial 200L azul Monaliza (X = -3.50 m, Z = -3.50 m)
 	var drum_pos := Vector3(-3.50, 0.45, -3.50)
@@ -344,11 +367,14 @@ func _build_workshop() -> void:
 	_add_cyl(Vector3(-3.50, 0.65, -3.50), 0.305, 0.03, mat_steel_dark)
 	_register_obstacle(drum_pos, Vector3(0.65, 0.92, 0.65))
 
-	# Roda com pneu slick de corrida encostada na parede esquerda (X = -3.85 m, Z = 0.80 m)
+	# Roda com pneu slick de corrida encostada na parede esquerda (X = -3.85 m, Z = 0.80 m),
+	# acompanhando a parede deslocada como o carretel.
+	_layout_offset = Vector3(-EXTENSION_X, 0, 0)
 	var tire_pos := Vector3(-3.85, 0.33, 0.80)
 	_solid(_add_cyl(tire_pos, 0.33, 0.24, mat_rubber, Vector3(0, 0, 80.0)))
 	_add_cyl(tire_pos + Vector3(0.02, 0, 0), 0.21, 0.06, mat_aluminum, Vector3(0, 0, 80.0))
 	_register_obstacle(tire_pos, Vector3(0.40, 0.66, 0.50))
+	_layout_offset = Vector3.ZERO
 
 	# Dois cavaletes de sustentação (Jack Stands) recolhidos (X = -2.30 m, Z = -3.65 m)
 	for jx in [-2.30, -2.62]:
@@ -476,6 +502,55 @@ func _build_workshop() -> void:
 	for d in [-0.30, 0.30]:
 		_solid(_add_box(Vector3(5.98, 0.45, -1.20 + d), Vector3(0.03, 0.80, 0.50), mat_wood_bench))
 		_add_box(Vector3(5.95, 0.45, -1.20 + d), Vector3(0.02, 0.12, 0.02), mat_brass)
+
+	# --------------------------------------------------------------------------
+	# 7B. ÁREA DE PEÇAS (AMPLIAÇÃO À ESQUERDA, X: -8.20 a -4.30)
+	# --------------------------------------------------------------------------
+	# Fundo: escada da cobertura (montada por HarborServiceRoofRuntime em roof_access_point,
+	# X -7.65 a -6.75) e estante de peças. Parede esquerda: carretel, pneu encostado e pilhas
+	# de pneus. Centro: motor no cavalete. O corredor X -7.1 a -6.3 fica livre do portão até
+	# a escada (roof_access_route), longe da baia, do mecânico e do porta-malas.
+	var mat_cardboard := _mat("parts_cardboard", Color("#9c7a4f"), 0.0, 0.88)
+	var rack_center := Vector3(-5.40, 1.00, -3.80)
+	_register_obstacle(rack_center, Vector3(1.70, 2.00, 0.60))
+	for post_x in [-6.15, -4.65]:
+		for post_z in [-4.02, -3.58]:
+			_add_box(Vector3(post_x, 1.00, post_z), Vector3(0.05, 2.00, 0.05), mat_steel_dark)
+	for shelf_y in [0.14, 0.72, 1.30, 1.88]:
+		_solid(_add_box(Vector3(-5.40, shelf_y, -3.80), Vector3(1.55, 0.04, 0.50), mat_cast_iron))
+	# Caixas de peças, filtros e latas de óleo sobre as prateleiras.
+	for crate in [[Vector3(-5.85, 0.33, -3.82), Vector3(0.48, 0.34, 0.40)], [Vector3(-5.25, 0.30, -3.84), Vector3(0.40, 0.28, 0.36)],
+			[Vector3(-4.95, 1.48, -3.82), Vector3(0.44, 0.32, 0.40)], [Vector3(-5.80, 2.05, -3.84), Vector3(0.52, 0.30, 0.38)]]:
+		_add_box(crate[0], crate[1], mat_cardboard)
+	for can_x in [-5.95, -5.75, -5.55]:
+		_add_cyl(Vector3(can_x, 0.87, -3.80), 0.07, 0.26, mat_racing_blue)
+	for filter_x in [-5.05, -4.88]:
+		_add_cyl(Vector3(filter_x, 0.84, -3.78), 0.06, 0.20, mat_tool_red)
+	_add_cyl(Vector3(-5.60, 1.57, -3.80), 0.25, 0.10, mat_rubber, Vector3(90, 0, 0))
+
+	# Pilhas de pneus novos no canto da frente, longe do pneu encostado (juntos viravam um bloco
+	# escuro só). A faixa clara da lateral de cada pneu e o furo no topo leem como pneus.
+	var mat_sidewall := _mat("tire_sidewall", Color("#6c737a"), 0.0, 0.8)
+	for stack_z in [2.75, 3.55]:
+		var stack := Vector3(LEFT_WALL_X + 0.58, 0.0, stack_z)
+		_register_obstacle(stack + Vector3(0, 0.36, 0), Vector3(0.72, 0.72, 0.72))
+		for level in 3:
+			_solid(_add_cyl(stack + Vector3(0, 0.12 + level * 0.24, 0), 0.33, 0.22, mat_rubber))
+			_add_cyl(stack + Vector3(0, 0.12 + level * 0.24, 0), 0.336, 0.03, mat_sidewall)
+		_add_cyl(stack + Vector3(0, 0.722, 0), 0.17, 0.008, mat_black_stripe)
+
+	# Motor no cavalete giratório: base em T, coluna, bloco, cabeçote e tampa de válvulas.
+	var engine := Vector3(-5.70, 0.0, -0.50)
+	_register_obstacle(engine + Vector3(0, 0.56, 0), Vector3(0.95, 1.12, 0.80))
+	_solid(_add_box(engine + Vector3(0, 0.03, 0), Vector3(0.90, 0.06, 0.12), mat_lift_blue))
+	_solid(_add_box(engine + Vector3(0.38, 0.03, 0), Vector3(0.12, 0.06, 0.70), mat_lift_blue))
+	_solid(_add_box(engine + Vector3(0.38, 0.45, 0), Vector3(0.10, 0.80, 0.10), mat_lift_blue))
+	_add_box(engine + Vector3(0.30, 0.70, 0), Vector3(0.16, 0.20, 0.20), mat_steel_dark)
+	_solid(_add_box(engine + Vector3(-0.05, 0.70, 0), Vector3(0.62, 0.42, 0.50), mat_cast_iron))
+	_add_box(engine + Vector3(-0.05, 0.97, 0), Vector3(0.56, 0.12, 0.44), mat_aluminum)
+	_add_box(engine + Vector3(-0.05, 1.06, 0), Vector3(0.50, 0.05, 0.36), mat_racing_orange)
+	for port in 3:
+		_add_cyl(engine + Vector3(-0.25 + port * 0.20, 0.86, 0.27), 0.04, 0.10, mat_steel_dark, Vector3(90, 0, 0))
 
 	# --------------------------------------------------------------------------
 	# 8. LUMINÁRIAS SUSPENSAS INDUSTRIAIS (ÁREA DE SERVIÇO & SALA)

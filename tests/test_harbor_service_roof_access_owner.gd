@@ -9,6 +9,11 @@ class Room extends Node3D:
 	var interior_spawn := Vector3.ZERO
 	var model: Node3D
 
+class GarageRoom extends Node3D:
+	var spawn_position := Vector3.ZERO
+	var interior_spawn := Vector3.ZERO
+	var room: Node3D
+
 class AuthoredAccess extends Node3D:
 	var roof_access_point := Vector3(4.86,0,2.0)
 	var roof_access_yaw := PI*.5
@@ -90,6 +95,20 @@ func run() -> void:
 	runtime._update_ground_access()
 	var expected_garage := room_a.interior_spawn + room_a.global_basis * offset + Vector3.UP * .04
 	check(runtime.access_owner == room_a and runtime.access_point.is_equal_approx(expected_garage), "garage uses its interior spawn with current room owner")
+	# MaciotaPlace real guarda a sala em `room` (WorkshopProps), que autora a escada na parede
+	# dos fundos; o spawn deixa de decidir onde ela fica.
+	var garage := GarageRoom.new()
+	fixture.add_child(garage)
+	garage.rotation.y = PI * .5
+	garage.interior_spawn = Vector3(30, 1, 12)
+	var workshop := AuthoredAccess.new()
+	garage.add_child(workshop)
+	garage.room = workshop
+	session.room = garage
+	runtime._update_ground_access()
+	check(runtime.access_owner == garage and runtime.access_point.is_equal_approx(workshop.to_global(workshop.roof_access_point)+Vector3.UP*.04), "garage uses the workshop's authored wall access")
+	check(runtime.access_route.size()==2, "garage keeps the authored approach route")
+	session.room = room_a
 	# A furnished house or shop owns its architectural access, independently of
 	# the spawn. A blocked authored route must never fall back into the room.
 	session.state.place_id = "cobra_leader_house"

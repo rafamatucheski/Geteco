@@ -96,8 +96,16 @@ func run() -> void:
 	var right:=InputEventMouseButton.new(); right.button_index=MOUSE_BUTTON_RIGHT; right.pressed=true
 	entry._gui_input(right); await frames()
 	check(GRID.count(e.grid_snapshot(),"water")==1,"right-click consumes one selected item")
+	var centred_x: float=ui.card.get_rect().get_center().x
+	check(absf(centred_x-640.0)<2.0,"field inventory stays centred outside the trunk")
+	check(ui.trunk_view_focus()==null,"no trunk camera area outside the trunk")
 	ui.trunk_visible=true; ui.refresh(); await frames()
 	check(ui.card.size.x<900 and ui.card.get_rect().end.y<=720,"trunk panel remains inside screen")
+	# Porta-malas: painel encostado à direita com margem; a área livre à esquerda é da bandeja.
+	var trunk_rect: Rect2=ui.card.get_rect()
+	check(trunk_rect.end.x<=1280.0-16.0 and trunk_rect.end.x>=1280.0-48.0 and trunk_rect.position.x>=16.0,"trunk panel anchored right with margin at 720p")
+	var focus: Variant=ui.trunk_view_focus()
+	check(focus is Vector2 and absf(focus.x-trunk_rect.position.x*.5/1280.0)<.001 and focus.x<.5,"trunk camera area is the free space left of the panel")
 	await shot("monaliza-remota")
 	check(labels_contain(ui.card,"Armas e munição") and labels_contain(ui.card,"6 pilhas"),"trunk restrictions remain visible without a tooltip")
 	var trunk
@@ -138,8 +146,16 @@ func run() -> void:
 	check(ui.card.get_rect().end.y<=720 and ui.card.size.x<900,"handbag and trunk remain bounded at 720p")
 	await shot("mala-720p")
 	root.size=Vector2i(1920,1080); await frames()
-	check(ui.card.position.x>=0 and ui.card.position.y>=0 and ui.card.get_rect().end.x<=1920 and ui.card.get_rect().end.y<=1080,"inventory remains inside 1080p viewport")
+	var view_1080: Vector2=ui.get_viewport_rect().size
+	check(ui.card.position.x>=0 and ui.card.position.y>=0 and ui.card.get_rect().end.x<=view_1080.x and ui.card.get_rect().end.y<=view_1080.y,"inventory remains inside 1080p viewport")
+	check(ui.card.get_rect().end.x>=view_1080.x-view_1080.x*.05,"trunk panel stays right-anchored at 1080p")
 	await shot("mala-1080p")
+	# 3440x1440 (21:9): canvas_items reduz para 1720x720 lógicos; o painel vai à borda direita.
+	root.size=Vector2i(3440,1440); await frames()
+	var view_wide: Vector2=ui.get_viewport_rect().size
+	check(ui.card.get_rect().end.x<=view_wide.x and ui.card.get_rect().end.x>=view_wide.x-view_wide.x*.05 and ui.card.get_rect().end.y<=view_wide.y,"trunk panel right-anchored and inside 21:9 viewport")
+	var wide_focus: Variant=ui.trunk_view_focus()
+	check(wide_focus is Vector2 and wide_focus.x>.25 and wide_focus.x<.5,"21:9 trunk camera area sits left of the panel")
 	print("PANEL_RESULT checks=",checks," failures=",failures)
 	ui.free(); backdrop.free(); ad.ui=null
 	quit(1 if failures else 0)
