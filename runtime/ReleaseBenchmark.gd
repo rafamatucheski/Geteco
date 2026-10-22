@@ -21,6 +21,20 @@ extends Node
 ## de uma reserva montada no aquecimento, logo à frente do carro e com o impacto do jogo (BodyFlight3D a
 ## 10 m/s, não letal, com o diretor de rua). Quem cai é levantado depois de 3 s e volta à reserva. A/B do
 ## ragdoll com GETECO_RAGDOLL=0 (voo varrido antigo) na mesma rota e no mesmo export.
+## Gravação (21/10): --benchmark-save=S chama o salvamento automático real (FullSession.save_game) a cada S
+## segundos da parte medida, num arquivo da bancada (user://benchmark-west/save-probe/<label>.json), nunca no
+## slot do jogador. Na partida de 21/10 (binário do editor) foram 29 salvamentos de ~33 ms. O JSON ganha
+## save_probe com o tempo de cada chamada e as etapas de SaveStore (spans save.*); A/B da verificação por
+## bytes com GETECO_SAVE_VERIFY=0 no mesmo export.
+## Estresse (21/10, pedido do jogador: "liso com chuva, nessa resolução, tiro, alta velocidade"): opções que
+## se somam às de cima. --benchmark-speed=V anda a rota a V m/s (padrão 12; também o alvo do piloto
+## automático); --benchmark-shoot dá um fuzil com munição e atira à frente do carro sempre que a arma
+## deixa (Gameplay.fire_at, o caminho do jogo, com recarga); --benchmark-explode=S destrói a cada S s um
+## carro do trânsito a 10–50 m (explosão, fogo e carcaça do jogo); --benchmark-measure-seconds=N mede N s
+## (em voltas quantas couberem) em vez de 2 voltas; --benchmark-cold mede desde o primeiro quadro jogável
+## (sem volta de aquecimento) e o JSON ganha first_60s. --benchmark-stress liga o pacote: chuva forte,
+## 3 estrelas (despacho LIGADO: rodar sem --no-dispatch), carro como alvo, tiro, explosão a cada 8 s,
+## 25 m/s e 90 s medidos. Cada parte continua desligável pelo seu interruptor do jogo (GETECO_*).
 const ROUTE_WEST := [Vector3(64, 0, 82), Vector3(150, 0, 82), Vector3(143, 0, 60), Vector3(84, 0, 60), Vector3(84, 0, 123), Vector3(65, 0, 113)]
 const ROUTE_PORT := [Vector3(150, 0, 82), Vector3(250, 0, 82), Vector3(250, 0, 30), Vector3(180, 0, 30), Vector3(180, 0, 82)]
 ## Pontos quentes das outras regiões (censo de 14/10). Serra: --play-at=mountain,650,-290; ponte cidade–serra:
@@ -57,7 +71,8 @@ const TOGGLES := ["GETECO_OCCLUSION", "GETECO_PROC_LOD", "GETECO_TUNNEL_LIGHT_SH
 	"GETECO_DETAIL_RANGE", "GETECO_BAKED_BUILDINGS", "GETECO_SKID_BUDGET", "GETECO_DASH_BATCH", "GETECO_DISPATCH_FAST",
 	"GETECO_PED_DUMMY", "GETECO_BUILDING_BATCH", "GETECO_PROP_INSTANCING", "GETECO_GROUND_STACK", "GETECO_SHADOW_SHELL",
 	"GETECO_BRIDGE_MERGE", "GETECO_FURNITURE_MERGE", "GETECO_CELL_MERGE", "GETECO_BRIDGE_LOOK", "GETECO_PAINTED_WINDOWS", "GETECO_PAINTED_FACADES",
-	"GETECO_SUN_SPLITS", "GETECO_UNIFIED_BRIDGE", "GETECO_DESERT_CARGO_HEIST", "GETECO_DESERT_ROADSIDE", "GETECO_RAGDOLL"]
+	"GETECO_SUN_SPLITS", "GETECO_UNIFIED_BRIDGE", "GETECO_DESERT_CARGO_HEIST", "GETECO_DESERT_ROADSIDE", "GETECO_RAGDOLL",
+	"GETECO_SAVE_VERIFY", "GETECO_CITY_LIFE_AUDIO", "GETECO_GTA_CHASE", "GETECO_RAIN_PREWARM"]
 ## Distância ao longo da volta da rota66 (ida para o sul de z -470, volta a partir de z -860) em que cada
 ## evento nasce, 100 m antes do ponto, como o jogo faria: a van na mão da ida, o bloqueio na mão da volta
 ## (o carro do benchmark anda na faixa leste nos dois sentidos, então desvia dele pela outra mão).
@@ -94,6 +109,30 @@ var _runover_due := 0
 var _runover_launch_ms: Array[float] = []
 var _runover_ragdolls := 0
 var _runover_director: Node
+var save_every := 0.0
+var _save_clock := 0.0
+var _save_ms: Array[float] = []
+var _save_failures := 0
+var _save_stages := {}
+var speed := SPEED
+var measure_seconds := 0.0
+var shoot := false
+var _shots := 0
+var _shot_attempts := 0
+var _shots_by_weapon := {}
+var explode_every := 0.0
+var _explode_clock := 0.0
+var _explosions := 0
+var _explode_misses := 0
+var cold := false
+## --benchmark-weapon-cycle=S: troca de arma a cada S s (pistola, submetralhadora, escopeta, fuzil) e
+## segue atirando com a da vez; mede a montagem do modelo na mão (span gameplay.weapon_visual).
+const CYCLE_WEAPONS := ["pistol", "smg", "shotgun", "ak47"]
+var weapon_cycle := 0.0
+var _weapon_clock := 0.0
+var _weapon_index := 0
+var _weapon_switches := 0
+var _weapon_switch_ms: Array[float] = []
 
 static func requested() -> bool:
 	for argument in OS.get_cmdline_user_args():
@@ -116,6 +155,24 @@ func _ready() -> void:
 		if argument.begins_with("--benchmark-chaos="): chaos_stars = clampi(int(argument.trim_prefix("--benchmark-chaos=")), 0, 6)
 		if argument == "--benchmark-road-events": road_events = true
 		if argument == "--benchmark-runover": runover = true
+		if argument.begins_with("--benchmark-save="): save_every = maxf(0.0, float(argument.trim_prefix("--benchmark-save=")))
+	var args := OS.get_cmdline_user_args()
+	if "--benchmark-stress" in args:
+		bench_rain = 2
+		chaos_stars = maxi(chaos_stars, 3)
+		shoot = true
+		explode_every = 8.0
+		speed = 25.0
+		measure_seconds = 90.0
+	for argument in args:
+		if argument.begins_with("--benchmark-speed="): speed = clampf(float(argument.trim_prefix("--benchmark-speed=")), 1.0, 80.0)
+		if argument.begins_with("--benchmark-measure-seconds="): measure_seconds = maxf(0.0, float(argument.trim_prefix("--benchmark-measure-seconds=")))
+		if argument == "--benchmark-shoot": shoot = true
+		if argument.begins_with("--benchmark-explode="): explode_every = maxf(0.0, float(argument.trim_prefix("--benchmark-explode=")))
+		if argument == "--benchmark-cold": cold = true
+		if argument.begins_with("--benchmark-weapon-cycle="): weapon_cycle = maxf(0.0, float(argument.trim_prefix("--benchmark-weapon-cycle=")))
+	if weapon_cycle > 0.0: shoot = true
+	if cold: WARMUP_LOOPS = 0
 	_run.call_deferred()
 
 func _route_point(distance: float) -> Dictionary:
@@ -158,7 +215,7 @@ func _run() -> void:
 	if bench_rain > 0 and "coastal_wetness" in weather: weather.coastal_wetness = 1.0
 	if "weather_timer" in weather: weather.weather_timer = 1.0e9
 	var car: CharacterBody3D = world.driving.car
-	var autopilot: RefCounted = AUTOPILOT.new(self, car, route, SPEED) if AUTOPILOT.requested() else null
+	var autopilot: RefCounted = AUTOPILOT.new(self, car, route, speed) if AUTOPILOT.requested() else null
 	if autopilot != null: autopilot.begin()
 	else: car.set_physics_process(false)
 	car.visible = true
@@ -174,10 +231,11 @@ func _run() -> void:
 	# Perseguição (21/10): --benchmark-chase põe o carro como alvo (jogador "ao volante"), como os eventos
 	# de estrada; com --benchmark-chaos e --benchmark-drive a polícia persegue o carro andando. A/B da
 	# perseguição estilo GTA com GETECO_GTA_CHASE=0 no mesmo export. Carro protegido: sem PIT nem batida.
-	if "--benchmark-chase" in OS.get_cmdline_user_args():
+	if _chase_requested():
 		world.driving.occupied = true
 		if not world.gameplay.god_mode: world.gameplay.toggle_god_mode()
 		car.set_meta(preload("res://gameplay/DamageProtection.gd").META, true)
+	if shoot: _shoot_prepare()
 	road_events = road_events and route_name == "rota66"
 	if road_events:
 		# O carro passa a ser o alvo, como ao volante no jogo: com o jogador escondido e dentro da
@@ -196,7 +254,8 @@ func _run() -> void:
 	var gpu: Array[float] = []
 	var draws: Array[float] = []
 	var previous := Time.get_ticks_usec()
-	while distance < total * (WARMUP_LOOPS + MEASURE_LOOPS):
+	var measured_clock := 0.0
+	while _keep_measuring(distance, total, measured_clock):
 		var sample := _route_point(distance)
 		if autopilot == null:
 			car.global_position = sample.point + Vector3.UP * .1
@@ -206,16 +265,28 @@ func _run() -> void:
 		if route_name == "carga_deserto" and distance >= total * WARMUP_LOOPS: _observe_cargo()
 		if road_events and distance >= total * WARMUP_LOOPS: _road_events(distance, total)
 		if runover and distance >= total * WARMUP_LOOPS: _runover(sample.point, sample.yaw)
+		if distance >= total * WARMUP_LOOPS:
+			var heading: float = sample.yaw if autopilot == null else car.rotation.y
+			var at: Vector3 = sample.point if autopilot == null else car.global_position
+			if weapon_cycle > 0.0: _cycle_weapon(measured_clock)
+			if shoot: _shoot(at, heading)
+			if explode_every > 0.0: _explode_near(at, heading, measured_clock)
 		await get_tree().process_frame
 		var now := Time.get_ticks_usec()
 		var frame_ms := (now - previous) / 1000.0
 		previous = now
 		if autopilot != null: distance = autopilot.drive(minf(frame_ms, 100.0) / 1000.0)
-		else: distance += SPEED * minf(frame_ms, 100.0) / 1000.0
+		else: distance += speed * minf(frame_ms, 100.0) / 1000.0
 		if distance < total * WARMUP_LOOPS: continue
+		measured_clock += frame_ms / 1000.0
 		frames.append(frame_ms)
 		gpu.append(RenderingServer.viewport_get_measured_render_time_gpu(viewport))
 		draws.append(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
+		if save_every > 0.0:
+			_save_clock += frame_ms / 1000.0
+			if _save_clock >= save_every:
+				_save_clock = 0.0
+				_probe_save()
 	if autopilot != null: autopilot.finish()
 	var toggles := {}
 	for name in TOGGLES: toggles[name] = OS.get_environment(name)
@@ -233,7 +304,26 @@ func _run() -> void:
 		"hour": bench_hour, "rain": bench_rain, "vehicles": world.production.vehicles.size(), "people": world.people.size(),
 		"requested_population": world.production.requested_population, "vsync_mode": DisplayServer.window_get_vsync_mode(), "max_fps": Engine.max_fps,
 		"engine": Engine.get_version_info().string, "cpu": OS.get_processor_name(), "graphics": _graphics_report()}
-	if "--benchmark-chase" in OS.get_cmdline_user_args() and is_instance_valid(world.get("dispatch")):
+	# Primeiro minuto medido: com --benchmark-cold é o minuto logo depois de jogável (p99 de 197 ms na
+	# partida de 21/10, ainda no binário do editor e com parte sob a cortina).
+	var first_minute: Array[float] = []
+	var first_clock := 0.0
+	for frame_ms in frames:
+		if first_clock >= 60000.0: break
+		first_minute.append(frame_ms)
+		first_clock += frame_ms
+	report.first_60s = _stats(first_minute)
+	report.first_60s_over_33ms = first_minute.filter(func(ms): return ms > 33.3).size()
+	report.cold_start = cold
+	report.speed_mps = speed
+	if shoot or explode_every > 0.0 or "--benchmark-stress" in OS.get_cmdline_user_args():
+		report.stress = {"shots": _shots, "shot_attempts": _shot_attempts, "shots_by_weapon": _shots_by_weapon, "explosions": _explosions, "explosion_misses": _explode_misses,
+			"explode_every_s": explode_every, "chase": _chase_requested(), "dispatch": is_instance_valid(world.get("dispatch")),
+			"stars_final": int(world.gameplay.stars), "city_life_audio": OS.get_environment("GETECO_CITY_LIFE_AUDIO") != "0",
+			"weapon_cycle_s": weapon_cycle, "weapon_switches": _weapon_switches, "weapon_switch_call_ms": _stats(_weapon_switch_ms),
+			"weapon_template": OS.get_environment("GETECO_WEAPON_TEMPLATE") != "0",
+			"scope": "Tiro do jogador por Gameplay.fire_at (fuzil, recarga do jogo) com o carro como alvo da polícia; explosão = carro do trânsito destruído pelo dano do jogo."}
+	if _chase_requested() and is_instance_valid(world.get("dispatch")):
 		var radio_voice: Variant = world.dispatch.get("radio_voice")
 		report.chase = {"gta_chase": OS.get_environment("GETECO_GTA_CHASE") != "0", "stats": world.dispatch.pursuit_stats.duplicate(),
 			"radio_voice_played": int(radio_voice.played) if radio_voice != null and is_instance_valid(radio_voice) else -1}
@@ -241,6 +331,11 @@ func _run() -> void:
 		report.chaos = {"stars_requested": chaos_stars, "stars_final": int(world.gameplay.stars), "dispatch_units_peak": _chaos_peak_units,
 			"dispatch_units_final": world.dispatch.units.size() if is_instance_valid(world.get("dispatch")) else -1}
 	if autopilot != null: report.drive = autopilot.summary()
+	if save_every > 0.0:
+		report.save_probe = {"every_s": save_every, "calls": _save_ms.size(), "failures": _save_failures,
+			"save_game_ms": _stats(_save_ms), "save_game_samples_ms": _save_ms, "stages": _save_stages,
+			"byte_verify": OS.get_environment("GETECO_SAVE_VERIFY") != "0",
+			"scope": "FullSession.save_game() inteiro (snapshots da sessão + SaveStore.save) num arquivo da bancada; stages = spans save.* somados (usec)."}
 	if runover:
 		report.runover = {"launches": _runover_launch_ms.size(), "ragdolls": _runover_ragdolls, "launch_ms": _stats(_runover_launch_ms),
 			"scope": "Impacto disparado direto (BodyFlight3D.launch a 10 m/s, não letal) à frente do carro teleportado; não mede a varredura do para-choque."}
@@ -309,6 +404,109 @@ func _graphics_report() -> Dictionary:
 			"sdfgi": environment.sdfgi_enabled, "volumetric_fog": environment.volumetric_fog_enabled,
 			"glow": environment.glow_enabled, "glow_intensity": environment.glow_intensity, "fog": environment.fog_enabled})
 	return report
+
+func _chase_requested() -> bool:
+	var args := OS.get_cmdline_user_args()
+	return "--benchmark-chase" in args or "--benchmark-stress" in args
+
+## Sem --benchmark-measure-seconds: aquecimento + 2 voltas, como sempre. Com ele: aquecimento e então
+## N segundos medidos, em quantas voltas couberem (a 25 m/s a rota oeste dá uma volta em ~17 s).
+func _keep_measuring(distance: float, total: float, measured_clock: float) -> bool:
+	if measure_seconds <= 0.0: return distance < total * (WARMUP_LOOPS + MEASURE_LOOPS)
+	return distance < total * WARMUP_LOOPS or measured_clock < measure_seconds
+
+func _shoot_prepare() -> void:
+	# Arsenal de depuração do jogo (Economy.activate_arsenal_cheat: todas as armas, 9999 de reserva, fora do
+	# inventário e do save). Com grant_weapon/add_ammo o inventário em grade de um jogo novo recusava fuzil e
+	# munição: em 22/10 só pistola e escopeta entravam, 31 tiros em 90 s.
+	world.session.state.economy.activate_arsenal_cheat()
+	_equip("ak47")
+
+## Com o carro como alvo da polícia (driving.occupied) o jogo não deixa empunhar nem atirar: até 22/10
+## a troca falhava calada e os "tiros" do estresse eram socos (fire_at com os punhos). Libera só durante
+## a chamada, como no disparo.
+func _equip(id: String) -> bool:
+	var occupied: bool = world.driving.occupied
+	world.driving.occupied = false
+	var ok: bool = world.gameplay.equip_slot(id)
+	world.driving.occupied = occupied
+	return ok
+
+## Troca para a próxima arma da lista; a montagem do modelo acontece no quadro seguinte (visual da
+## Gameplay), então o tempo aqui é só o da troca e o custo do modelo aparece no quadro medido.
+func _cycle_weapon(measured_clock: float) -> void:
+	if measured_clock < _weapon_clock: return
+	_weapon_clock = measured_clock + weapon_cycle
+	_weapon_index = (_weapon_index + 1) % CYCLE_WEAPONS.size()
+	var began := Time.get_ticks_usec()
+	if _equip(CYCLE_WEAPONS[_weapon_index]): _weapon_switches += 1
+	_weapon_switch_ms.append((Time.get_ticks_usec() - began) / 1000.0)
+
+## Atira à frente do carro, alternando os lados, sempre que a arma deixa. Com o carro como alvo da
+## polícia (driving.occupied), o jogo não deixa atirar de dentro; libera só durante o disparo.
+func _shoot(point: Vector3, yaw: float) -> void:
+	var gameplay = world.gameplay
+	if gameplay.cooldown > 0 or gameplay.reload_timer > 0: return
+	_shot_attempts += 1
+	if weapon_cycle <= 0.0 and world.session.state.equipped_weapon != "ak47": _equip("ak47")
+	var forward := Vector3(-sin(yaw), 0, -cos(yaw))
+	var side := forward.cross(Vector3.UP) * (6.0 if _shot_attempts % 2 == 0 else -6.0)
+	var occupied: bool = world.driving.occupied
+	world.driving.occupied = false
+	if gameplay.fire_at(point + forward * 18.0 + side + Vector3.UP):
+		_shots += 1
+		var weapon := str(gameplay.equipped())
+		_shots_by_weapon[weapon] = int(_shots_by_weapon.get(weapon, 0)) + 1
+	world.driving.occupied = occupied
+
+## Destrói um carro do trânsito a 10–50 m à frente (o mais perto), com o dano e a explosão do jogo.
+func _explode_near(point: Vector3, yaw: float, measured_clock: float) -> void:
+	if measured_clock < _explode_clock: return
+	_explode_clock = measured_clock + explode_every
+	var forward := Vector3(-sin(yaw), 0, -cos(yaw))
+	var best: Node3D = null
+	var best_distance := INF
+	for vehicle in world.production.vehicles:
+		if not is_instance_valid(vehicle) or vehicle == world.driving.car or not vehicle.is_inside_tree() or not vehicle.visible: continue
+		if not vehicle.has_method("receive_damage") or float(vehicle.get("health")) <= 0.0: continue
+		var offset: Vector3 = vehicle.global_position - point
+		var flat := Vector2(offset.x, offset.z).length()
+		if flat < 10.0 or flat > 50.0 or offset.normalized().dot(forward) < 0.2: continue
+		if flat < best_distance:
+			best_distance = flat
+			best = vehicle
+	if best == null:
+		_explode_misses += 1
+		return
+	best.receive_damage(float(best.get("health")) + 1.0, null)
+	if float(best.get("health")) <= 0.0: _explosions += 1
+	else: _explode_misses += 1
+
+## Salvamento automático real, desviado para um arquivo da bancada: --no-save desliga a gravação no
+## controlador, então liga só durante a chamada e devolve o caminho e o estado logo depois.
+func _probe_save() -> void:
+	const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+	var controller: Object = world.session.controller
+	var store: Object = controller.store
+	var was_no_save: bool = controller.no_save
+	var old_path: String = store.path
+	store.path = "user://benchmark-west/save-probe/%s.json" % label
+	controller.no_save = false
+	STALL_WORK.start_aggregate()
+	var began := Time.get_ticks_usec()
+	var ok: bool = world.session.save_game()
+	_save_ms.append((Time.get_ticks_usec() - began) / 1000.0)
+	var stages: Dictionary = STALL_WORK.stop_aggregate().labels
+	controller.no_save = was_no_save
+	store.path = old_path
+	if not ok: _save_failures += 1
+	for stage in stages:
+		if not str(stage).begins_with("save."): continue
+		var row: Dictionary = _save_stages.get(stage, {"calls": 0, "total_usec": 0, "max_usec": 0})
+		row.calls += int(stages[stage].calls)
+		row.total_usec += int(stages[stage].total_usec)
+		row.max_usec = maxi(int(row.max_usec), int(stages[stage].max_usec))
+		_save_stages[stage] = row
 
 func _road_events(distance: float, total: float) -> void:
 	var session = world.session

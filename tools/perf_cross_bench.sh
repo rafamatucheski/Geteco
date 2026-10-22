@@ -10,7 +10,12 @@
 # ENGINE_EXTRA="--rendering-driver d3d12" acrescenta argumentos do MOTOR (antes do `--`).
 # Opções gráficas fixas: cada rodada usa --isolated-save-root com uma cópia nova de
 # tools/bench/settings.cfg (BENCH_SETTINGS troca o arquivo; ver tools/bench/bench_common.sh).
+# BENCH_DISPATCH=1 tira o --no-dispatch (polícia/despacho ligados), para o estresse de 21/10:
+#   BENCH_DISPATCH=1 BENCH_SETTINGS=tools/bench/settings-jogador-3440.cfg BENCH_EXTRA="--benchmark-stress" \
+#   tools/perf_cross_bench.sh <export> estresse 1 oeste porto sobrados ponte serra deserto
 set -u
+NO_DISPATCH="--no-dispatch"
+[ "${BENCH_DISPATCH:-0}" = "1" ] && NO_DISPATCH=""
 DIR="$1"; LABEL="$2"; RUNS="${3:-2}"; shift; shift; [ $# -gt 0 ] && shift
 ROUTES="${*:-oeste porto sobrados serra ponte travessia deserto}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -30,7 +35,7 @@ for run in $(seq 1 "$RUNS"); do
 	for route in $ROUTES; do
 		SAVE_ROOT="$(bench_prepare_root "$ROOT/$DIR")" || { echo "bancada: não consegui preparar a pasta isolada"; exit 1; }
 		# ENGINE_EXTRA sem aspas de propósito: "--rendering-driver d3d12" são dois argumentos.
-		GODOT_BIN="$ROOT/$DIR/GetecoV2.exe" "$ROOT/tools/run_godot_locked.sh" ${ENGINE_EXTRA:-} -- --no-save --benchmark --no-dispatch \
+		GODOT_BIN="$ROOT/$DIR/GetecoV2.exe" "$ROOT/tools/run_godot_locked.sh" ${ENGINE_EXTRA:-} -- --no-save --benchmark $NO_DISPATCH \
 			--isolated-save-root="$SAVE_ROOT" \
 			--benchmark-route="$route" --play-at="$(start_for "$route")" --label="${LABEL}_${route}_${run}" ${BENCH_EXTRA:-} 2>&1 | grep -E "BENCH_RELEASE" \
 			| sed "s/^/$route $run /" | tee -a "$OUT/$LABEL.log"
