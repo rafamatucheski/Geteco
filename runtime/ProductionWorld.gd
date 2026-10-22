@@ -509,6 +509,14 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	# quadros de 588-646 ms no desenho no release de 17/10. Depois dos GLBs do Meshy, já carregados acima.
 	await preload("res://gameplay/emergency/SpawnVisualPrewarm.gd").run(world, curtain)
 	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+	# Capô aberto do Gol da oficina do Digo, sem ler a GPU quando a oficina entra no streaming do deserto.
+	preload("res://world/desert/drag_meet/DesertDigoWorkshop.gd").prewarm_hoods()
+	# Fonte e nomes do quadro da arrancada (etapa 15 do chão do deserto: 54 ms no estresse de 21/10).
+	preload("res://activities/desert_drag/DesertDragBoardProp.gd").prewarm()
+	# Modelos das armas na mão, prontos antes da primeira troca (Gameplay._weapon_template).
+	if OS.get_environment("GETECO_WEAPON_TEMPLATE") != "0":
+		await preload("res://gameplay/ArsenalWeapon3D.gd").warm_templates(get_tree(), preload("res://gameplay/WeaponCatalog.gd").WEAPONS.keys())
+		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	_trace_cost("startup:combat_resources",phase_traced)
 	# Um quadro entre as etapas pesadas deixa a tela de carregamento andar; o mundo
 	# já está montado e o 'ready_for_play' ainda é falso nesse trecho.
@@ -610,7 +618,20 @@ func _prewarm_dispatch_models() -> void:
 	for id in rules.ARCHETYPES.values():
 		var model_traced := Time.get_ticks_usec() if traced else 0
 		var model: Node3D = fleet.create(str(id))
-		if model != null: model.free()
+		if model != null:
+			# Arrays da lataria na cópia da CPU (MeshArrayCache), sob a cortina: o preparo da porta da
+			# viatura que chega (VehicleDoorBuilder) não lê mais a malha de volta da GPU no jogo.
+			if OS.get_environment("GETECO_DOOR_ARRAY_CACHE") != "0":
+				for part in preload("res://gameplay/VehicleDoorBuilder.gd")._parts(model):
+					for surface in part.mesh.get_surface_count():
+						preload("res://world/chunk_bake/MeshArrayCache.gd").arrays_of(part.mesh, surface)
+				# A primeira batida de cada viatura lia também as arrays em repouso do amassado (mesma
+				# regra de VehicleBodyDents._prepare: sem rodas, interior e corpos com esqueleto).
+				for part: MeshInstance3D in model.find_children("*", "MeshInstance3D", true, false):
+					var path := str(model.get_path_to(part)).to_lower()
+					if part.mesh == null or part.skeleton != NodePath("") or "wheel" in path or "interior" in path or "rider" in path: continue
+					preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd")._rest_arrays(part.mesh)
+			model.free()
 		_trace_cost("prewarm_dispatch_model:"+str(id),model_traced)
 		await get_tree().process_frame
 	_trace_cost("startup:dispatch_models",traced)
@@ -621,14 +642,30 @@ func _prewarm_fleet_shaders(_incremental: bool, curtain: CanvasLayer = null) -> 
 	var effects := preload("res://gameplay/emergency/EffectsPrewarm.gd")
 	# Warm the decorated production models as well as their retained source scenes.
 	# A spare, non-current camera at the origin never exercised their GPU passes.
-	for id in fleet.all():
-		var model: Node3D = fleet.create(str(id))
-		if model == null: continue
+	# Sob a cortina (runtime/LoadingTurbo.gd) vão 4 modelos por vez, numa grade 2x2 bem dentro do
+	# quadro (10 e 13 m à frente, ±2,2 m de lado): as mesmas duas passagens de desenho para cada um,
+	# um quarto dos quadros. Era 2,9 s de "Compilando shaders do tráfego" no release de 21/10, um
+	# modelo por vez. GETECO_LOADING_TURBO=0 volta a um por vez.
+	var batch_size := 4 if preload("res://runtime/LoadingTurbo.gd").active() else 1
+	var ids: Array = fleet.all().keys()
+	var next := 0
+	while next < ids.size():
+		var batch: Array[Dictionary] = []
+		while batch.size() < batch_size and next < ids.size():
+			var id := str(ids[next])
+			next += 1
+			var created: Node3D = fleet.create(id)
+			if created != null: batch.append({"id": id, "model": created})
+		if batch.is_empty(): continue
 		var camera := world.camera as Camera3D
 		if DisplayServer.get_name() != "headless" and effects._covered_loading(world, curtain) and effects._current_camera(world, camera):
-			model.process_mode = Node.PROCESS_MODE_DISABLED
-			world.add_child(model)
-			model.global_position = camera.global_position - camera.global_basis.z * 9.0
+			for slot in batch.size():
+				var model: Node3D = batch[slot].model
+				model.process_mode = Node.PROCESS_MODE_DISABLED
+				world.add_child(model)
+				var row := float(slot / 2)
+				var side := 0.0 if batch.size() == 1 else (-2.2 if slot % 2 == 0 else 2.2)
+				model.global_position = camera.global_position - camera.global_basis.z * (9.0 + row * 4.0) + camera.global_basis.x * side
 			# Two actual draws, with a finite wait when the window is minimized.
 			var draws: Array[int] = [0]
 			var count_draw := func() -> void: draws[0] += 1
@@ -638,11 +675,13 @@ func _prewarm_fleet_shaders(_incremental: bool, curtain: CanvasLayer = null) -> 
 				if not effects._covered_loading(world, curtain): break
 				if draws[0] >= 2: break
 			RenderingServer.frame_post_draw.disconnect(count_draw)
-		# Bases de pintura para as variantes de uso/desgaste (desenhadas depois).
-		preload("res://gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd").collect(model, str(id))
-		# Vidros na CPU para medir a cabine em jogo sem ler a malha da GPU (VehicleInterior.spec).
-		preload("res://gameplay/VehicleInterior.gd").cache_glass(model)
-		model.free()
+		for entry in batch:
+			var model: Node3D = entry.model
+			# Bases de pintura para as variantes de uso/desgaste (desenhadas depois).
+			preload("res://gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd").collect(model, str(entry.id))
+			# Vidros na CPU para medir a cabine em jogo sem ler a malha da GPU (VehicleInterior.spec).
+			preload("res://gameplay/VehicleInterior.gd").cache_glass(model)
+			model.free()
 		await get_tree().process_frame
 
 func _hold_fleet_scenes_incremental() -> void:

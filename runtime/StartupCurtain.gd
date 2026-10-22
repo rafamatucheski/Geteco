@@ -6,6 +6,7 @@ const ARTWORK := preload("res://ui/LoadingArtwork.gd")
 const SESSION_OPS := preload("res://runtime/SessionOperations.gd")
 const LOADING_MUSIC := preload("res://ui/LoadingMusic.gd")
 const PRESENTER := preload("res://ui/LoadingPresenter.cs")
+const LOADING_TURBO := preload("res://runtime/LoadingTurbo.gd")
 ## Duração do fade final da cobertura (imagem e música).
 const LIFT_SECONDS := 1.0
 var _diagnostic_stage := 0
@@ -150,9 +151,16 @@ func _process(delta: float) -> void:
 	_update_progress()
 	if _shown >= _target: set_process(false)
 
+## Cobrindo a tela: o carregamento usa orçamentos maiores (LoadingTurbo). A prévia do menu não cobre.
+## Também ao reentrar: o menu abre a cortina na raiz e o mundo a reparenta (sai e volta à árvore).
+func _enter_tree() -> void:
+	if not stage_only and not _lifting: LOADING_TURBO.cover(self)
+
 func lift(settle_frames := 8) -> void:
 	if _lifting: return
 	_lifting = true
+	# A partir daqui o jogador começa a ver o mundo: orçamentos do jogo.
+	LOADING_TURBO.uncover(self)
 	set_stage(1.0, "Pronto")
 	for i in settle_frames: await get_tree().process_frame
 	_shown = 1.0
@@ -167,6 +175,7 @@ func lift(settle_frames := 8) -> void:
 	queue_free()
 
 func _exit_tree() -> void:
+	LOADING_TURBO.uncover(self)
 	SESSION_OPS.finish(_diagnostic_stage, "removed")
 
 func _notification(what: int) -> void:

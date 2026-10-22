@@ -13,6 +13,17 @@ extends RefCounted
 
 const ROLES := preload("res://runtime/VehicleSurfaceRoles.gd")
 const SPECS := preload("res://data/catalogs/VehicleDoorSpecs.gd")
+## Leitura das arrays pela cópia na CPU (21/10): `surface_get_arrays` lê o buffer de volta da placa e
+## espera os quadros em voo. No estresse de 21/10 (release, viaturas chegando) o preparo da porta da
+## viatura (`dispatch.doors.prewarm`) custou 6–22 ms por chamada, num quadro de física. As viaturas da
+## mesma frota compartilham a malha, e ProductionWorld lê as delas sob a cortina. O recorte só lê as
+## arrays (duplica antes de acrescentar), então a cópia compartilhada não é alterada.
+## GETECO_DOOR_ARRAY_CACHE=0 volta à leitura direta da GPU (A/B no mesmo export).
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
+static var _array_cache := OS.get_environment("GETECO_DOOR_ARRAY_CACHE") != "0"
+
+static func _arrays(mesh: Mesh, surface: int) -> Array:
+	return MESH_ARRAYS.arrays_of(mesh, surface) if _array_cache else mesh.surface_get_arrays(surface)
 
 const X := 0
 const Y := 1
@@ -128,7 +139,7 @@ static func _measure_skin(parts: Array[MeshInstance3D], transforms: Array[Transf
 		var box: AABB = xf * part.mesh.get_aabb()
 		if box.end.z < spec.zf or box.position.z > spec.zr or box.end.y < spec.sill or box.position.y > spec.top: continue
 		for surface in part.mesh.get_surface_count():
-			var arrays := part.mesh.surface_get_arrays(surface)
+			var arrays := _arrays(part.mesh, surface)
 			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 			var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
 
@@ -225,7 +236,7 @@ static func _advance_part(work: Dictionary, job: Job = null) -> bool:
 		work.stage = "upload"
 	elif work.stage == "upload":
 		var surface := int(work.upload_surface)
-		var arrays: Array = work.rebuilt[surface] if work.rebuilt[surface] != null else mesh.surface_get_arrays(surface)
+		var arrays: Array = work.rebuilt[surface] if work.rebuilt[surface] != null else _arrays(mesh, surface)
 		work.replacement.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 		work.replacement.surface_set_material(surface, mesh.surface_get_material(surface))
 		preload("res://gameplay/VehicleInterior.gd").inherit_glass(mesh, work.replacement, surface, arrays)
@@ -238,7 +249,7 @@ static func _advance_part(work: Dictionary, job: Job = null) -> bool:
 
 static func _begin_surface(work: Dictionary) -> void:
 	var mesh: Mesh = work.mesh
-	var arrays := mesh.surface_get_arrays(int(work.surface))
+	var arrays := _arrays(mesh, int(work.surface))
 	work.vertices = arrays[Mesh.ARRAY_VERTEX]
 	work.indices = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
 	work.normals = arrays[Mesh.ARRAY_NORMAL] if arrays[Mesh.ARRAY_NORMAL] != null else PackedVector3Array()

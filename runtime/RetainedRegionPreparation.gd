@@ -3,6 +3,8 @@ extends RefCounted
 ## Reaproveita caches prontos sem remontar/percorre-los, e agrupa trabalho curto
 ## no mesmo quadro. O streamer continua dono da geometria descartavel.
 const PREPARE_BUDGET_USEC := 2000.0
+## Sob a cortina de carregamento o orçamento cresce (runtime/LoadingTurbo.gd, GETECO_LOADING_TURBO=0 desliga).
+const LOADING_TURBO := preload("res://runtime/LoadingTurbo.gd")
 
 static func run(region: Node3D) -> void:
 	var slice_started := Time.get_ticks_usec()
@@ -11,7 +13,7 @@ static func run(region: Node3D) -> void:
 		var warm_chunks: Variant = region.get("_warm_tunnel_chunks")
 		if warm_chunks is Dictionary and is_instance_valid(warm_chunks.get(key)): continue
 		for record in region.records[key]:
-			if Time.get_ticks_usec() - slice_started >= PREPARE_BUDGET_USEC:
+			if Time.get_ticks_usec() - slice_started >= LOADING_TURBO.budget(PREPARE_BUDGET_USEC):
 				await region.get_tree().process_frame
 				if not _live(region): return
 				slice_started = Time.get_ticks_usec()
@@ -22,7 +24,7 @@ static func run(region: Node3D) -> void:
 			temporary.name = "RetainedModelPreparation"
 			region.add_child(temporary)
 			var job := {}
-			while not region._step_record_build(temporary, record, job, maxf(1.0, PREPARE_BUDGET_USEC - (Time.get_ticks_usec() - slice_started))):
+			while not region._step_record_build(temporary, record, job, maxf(1.0, LOADING_TURBO.budget(PREPARE_BUDGET_USEC) - (Time.get_ticks_usec() - slice_started))):
 				await region.get_tree().process_frame
 				if not _live(region) or not is_instance_valid(temporary):
 					_cancel_record_job(region, job)

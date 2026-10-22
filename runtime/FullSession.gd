@@ -679,7 +679,8 @@ func _timed_add(parent: Node, child: Node, label: String) -> void:
 
 func _startup_frame() -> void:
 	if not incremental_startup: return
-	if Time.get_ticks_usec() - _startup_slice_usec < 4000: return
+	# Sob a cortina, fatias maiores (runtime/LoadingTurbo.gd; GETECO_LOADING_TURBO=0 volta a 4 ms).
+	if Time.get_ticks_usec() - _startup_slice_usec < preload("res://runtime/LoadingTurbo.gd").budget(4000.0): return
 	await get_tree().process_frame
 	_startup_slice_usec = Time.get_ticks_usec()
 

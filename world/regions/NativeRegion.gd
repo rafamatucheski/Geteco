@@ -1,6 +1,7 @@
 extends Node3D
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const GPU_RELEASE := preload("res://runtime/GpuReleaseQueue.gd")
+const LOADING_TURBO := preload("res://runtime/LoadingTurbo.gd")
 ## Native production geography. Geometry/physics load only near the player.
 const MOUNTAIN_FACTORY := preload("res://world/mountain_detail/MountainDetailFactory.gd")
 const MOUNTAIN_FORGE := preload("res://world/mountain_detail/forge/MountainForge.gd")
@@ -676,6 +677,8 @@ func _process(_delta: float) -> void:
 	# Com fila grande (dirigindo rápido) a construção ganha mais tempo por quadro, senão
 	# o chunk em que o carro entra ainda não existe e `set_focus` o constrói inteiro de uma vez.
 	var budget := BUILD_BUDGET_USEC if pending.size()+build_jobs.size() < 4 else BUILD_BUDGET_USEC*2.0
+	# Sob a cortina de carregamento o quadro pode ser longo: orçamento maior (runtime/LoadingTurbo.gd).
+	budget = LOADING_TURBO.budget(budget)
 	while true:
 		if build_jobs.is_empty():
 			if pending.is_empty(): return
