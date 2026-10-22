@@ -1349,15 +1349,25 @@ func receive_impact(amount: float, local_point: Vector3, source: Node = null, cl
 	receive_damage(amount, source)
 	STALL_WORK.finish_slow("vehicle.impact.damage", stage, 2000, self)
 
+func snapshot_glass() -> Array:
+	var owner := preload("res://gameplay/vehicle_effects/VehicleGlassDamage.gd").owner_for(self)
+	return owner.snapshot() if owner != null else []
+
+func restore_glass(records: Array) -> void:
+	if not preload("res://gameplay/vehicle_effects/VehicleGlassDamage.gd").valid_records(records): return
+	var owner := preload("res://gameplay/vehicle_effects/VehicleGlassDamage.gd").owner_for(self,not records.is_empty())
+	if owner != null: owner.restore_records(records)
+
 func restore_blood_stains(mask: int) -> void:
 	preload("res://gameplay/vehicle_effects/VehicleBlood.gd").apply(self, mask)
 
-func restore_body_dents(records: Array, panel_state: Dictionary = {}) -> void:
-	if not preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd").valid_records(records) or not preload("res://gameplay/vehicle_effects/VehicleBreakawayParts.gd").valid_state(panel_state): return
+func restore_body_dents(records: Array, panel_state: Dictionary = {}, broken_glass: Array = []) -> void:
+	if not preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd").valid_records(records) or not preload("res://gameplay/vehicle_effects/VehicleBreakawayParts.gd").valid_state(panel_state) or not preload("res://gameplay/vehicle_effects/VehicleGlassDamage.gd").valid_records(broken_glass): return
 	# Restore geometry first, then hide absent panels. No debris or collision event is replayed.
 	if is_instance_valid(breakaway_parts): breakaway_parts.repair()
 	if is_instance_valid(body_dents): body_dents.restore_records(records)
 	if is_instance_valid(breakaway_parts): breakaway_parts.restore_state(panel_state)
+	restore_glass(broken_glass)
 
 func receive_damage(amount: float, _source: Node = null) -> void:
 	if not is_finite(amount) or amount <= 0 or health <= 0 or PROTECTION.is_protected(self): return
@@ -1417,6 +1427,7 @@ func repair() -> void:
 		if has_meta(marker): remove_meta(marker)
 	preload("res://gameplay/police_response/ground/TirePuncture.gd").repair_vehicle(self)
 	health = max_health
+	restore_glass([])
 	if is_instance_valid(body_dents): body_dents.clear()
 	if is_instance_valid(damage_look): damage_look.restore()
 	if is_instance_valid(breakaway_parts): breakaway_parts.repair()

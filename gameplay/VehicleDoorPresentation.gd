@@ -52,6 +52,7 @@ func configure(owner_vehicle: CharacterBody3D, deferred := false) -> void:
 			angle = 1.05
 			_layout(float(spec.get("x", .90)))
 			if is_instance_valid(vehicle.body_dents): vehicle.body_dents.geometry_changed()
+			preload("res://gameplay/vehicle_effects/VehicleGlassDamage.gd").geometry_changed(vehicle)
 			return
 		coupe_doors.queue_free()
 	_job = BUILDER.begin(vehicle.visual, spec, float(spec.get("x", -1.0)))  # x da tabela evita a varredura de medição
@@ -84,6 +85,7 @@ func _configure_authored_civilian() -> bool:
 	_layout(float(spec.x))
 	seat_z = float(spec.get("seat_z", seat_z)) * vehicle.visual.scale.z
 	if is_instance_valid(vehicle.body_dents): vehicle.body_dents.geometry_changed()
+	preload("res://gameplay/vehicle_effects/VehicleGlassDamage.gd").geometry_changed(vehicle)
 	return true
 
 ## Prepara mais um pedaço da porta dentro do orçamento (µs). Devolve true quando está pronta.
@@ -113,6 +115,7 @@ func _finish() -> void:
 	_static_details(skin)
 	_layout(skin)
 	if is_instance_valid(vehicle.body_dents): vehicle.body_dents.geometry_changed()
+	preload("res://gameplay/vehicle_effects/VehicleGlassDamage.gd").geometry_changed(vehicle)
 
 ## Deriva tudo o que o embarque precisa (ponto de espera, portão, ponto de agarrar) e
 ## converte para coordenadas do veículo, que é onde Vehicle e Boarding trabalham.

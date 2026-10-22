@@ -162,7 +162,7 @@ func _sync() -> void:
 			if not session.controller.vehicles.has(car): session.controller.vehicles.append(car)
 
 func _restore_damage(car: CharacterBody3D, record: Dictionary) -> void:
-	car.restore_body_dents(record.get("body_dents",[]),record.get("breakaway_parts",{}))
+	car.restore_body_dents(record.get("body_dents",[]),record.get("breakaway_parts",{}),record.get("broken_glass",[]))
 	car.restore_blood_stains(int(record.get("blood_stains",0)))
 	car.health=float(record.health)
 	var ratio := float(record.get("heavy_crush_ratio",1.0))
@@ -213,6 +213,7 @@ func _capture_all() -> void:
 		data.vehicles[id]["heavy_crush_ratio"]=float(car.get_meta("heavy_crush_ratio",1.0))
 		data.vehicles[id]["blood_stains"]=int(car.get_meta("blood_stains",0))
 		data.vehicles[id]["body_dents"]=car.body_dents.snapshot() if is_instance_valid(car.body_dents) else []
+		data.vehicles[id]["broken_glass"]=car.snapshot_glass()
 		data.vehicles[id]["breakaway_parts"]=car.breakaway_parts.snapshot() if is_instance_valid(car.breakaway_parts) else {}
 
 func nearest_action() -> Dictionary:
@@ -519,6 +520,7 @@ static func validate_snapshot(saved: Dictionary) -> bool:
 		if record.health<0 or record.health>float(_spec(record.archetype).get("durability",100)): return false
 		if not preload("res://gameplay/vehicle_effects/VehicleBlood.gd").valid(record.get("blood_stains",0)): return false
 		if not preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd").valid_records(record.get("body_dents",[])): return false
+		if not preload("res://gameplay/vehicle_effects/VehicleGlassDamage.gd").valid_records(record.get("broken_glass",[])): return false
 		if not preload("res://gameplay/vehicle_effects/VehicleBreakawayParts.gd").valid_state(record.get("breakaway_parts",{})): return false
 		if record.has("heavy_crush_ratio"):
 			var ratio: Variant=record.heavy_crush_ratio

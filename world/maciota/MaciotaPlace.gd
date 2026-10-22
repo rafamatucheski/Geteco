@@ -43,6 +43,8 @@ var solid_bodies: Array[StaticBody3D] = []
 var interaction_points: Dictionary = {}
 var maciota: Node3D
 var mechanic: Node3D
+var mechanic_workpiece: MeshInstance3D
+var mechanic_work_contact: Node3D
 var room: Node3D
 var facade: Node3D
 var part_visual: Node3D
@@ -60,11 +62,21 @@ func _ready() -> void:
 	add_child(room)
 	_retract_lift_arms()
 	# The room exit repeats the exterior gate frame, without a decorative prompt.
-	var access_metal := DETAILS.material("d6b361",.65,.35)
+	var access_metal := DETAILS.material("e4b94c",.65,.35)
 	for x in [-2.1,2.1]:
-		DETAILS.box(room,"ExitGateJamb",Vector3(x,1.1,4.61),Vector3(.10,2.2,.10),access_metal)
+		DETAILS.box(room,"ExitGateJamb",Vector3(x,1.1,4.61),Vector3(.20,2.2,.24),access_metal)
+	DETAILS.box(room,"ExitGateHeader",Vector3(0,2.5,4.61),Vector3(4.4,.18,.25),access_metal)
 	DETAILS.box(room,"ExitThreshold",Vector3(0,.015,4.6),Vector3(4.1,.03,.24),DETAILS.material("b9b4a1",.9))
 	DETAILS.build(room)
+	# A supported engine component gives the mechanic a real, fixed work target.
+	mechanic_workpiece = DETAILS.box(room,"MechanicEnginePart",Vector3(-1.25,1.04,-3.45),Vector3(.46,.28,.34),DETAILS.material("687b80",.48,.6))
+	mechanic_workpiece.set_meta("interior_solid_id",&"MechanicEnginePart")
+	DETAILS.box(mechanic_workpiece,"EngineTopPlate",Vector3(0,.15,0),Vector3(.38,.035,.28),DETAILS.material("b7bfc0",.38,.65))
+	DETAILS.box(mechanic_workpiece,"EngineServiceNut",Vector3(0,.19,.14),Vector3(.075,.055,.075),DETAILS.material("d4d8d2",.3,.75))
+	mechanic_work_contact = Node3D.new()
+	mechanic_work_contact.name = "ServiceNutContact"
+	mechanic_work_contact.position = Vector3(0,.20,.14)
+	mechanic_workpiece.add_child(mechanic_work_contact)
 	# Legacy external apron existed to fill a projected viewport. Native V2
 	# keeps only the actual room footprint; collision remains independently intact.
 	for detail in room.get_children():
@@ -132,6 +144,8 @@ func _resident(model: Script, identity: String, point: Vector3) -> Node3D:
 		worker.name = identity
 		worker.position = Vector3(-2.65,0,-1.1)
 		worker.place = self
+		worker.workpiece = mechanic_workpiece
+		worker.work_contact = mechanic_work_contact
 		worker.set_meta("invulnerable",true)
 		worker.set_meta("persistent_id","mechanic")
 		worker.model = model.new()

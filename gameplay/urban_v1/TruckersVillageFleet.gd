@@ -64,7 +64,7 @@ func _process(delta: float) -> void:
 		car.brake_input=true
 		car.paint_color=Color.html(str(record.get("paint",SPOTS[i][3])))
 		car.health=float(record.get("health",car.max_health))
-		car.restore_body_dents(record.get("body_dents",[]),record.get("breakaway_parts",{}))
+		car.restore_body_dents(record.get("body_dents",[]),record.get("breakaway_parts",{}),record.get("broken_glass",[]))
 		car.set_meta("secret_discovery_vehicle",true)
 		car.equipment_state=record.get("equipment",{}).duplicate(true)
 		cars[id]=car

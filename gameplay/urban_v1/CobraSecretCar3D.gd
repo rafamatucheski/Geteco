@@ -60,6 +60,7 @@ func _process(delta: float) -> void:
 	car.vehicle_id = VEHICLE_ID
 	car.paint_color = Color.html(str(saved.get("paint","9f673f")))
 	car.health = float(saved.get("health",car.max_health))
+	car.restore_glass(saved.get("broken_glass",[]))
 	car.traffic = false
 	car.brake_input = true
 	car.set_meta("secret_discovery_vehicle",true)
@@ -81,10 +82,12 @@ func _capture_car(destroyed := false) -> void:
 		"health":0.0 if destroyed else maxf(0.0,car.health),
 		"region":str(car.get_meta("region_id","harbor")),
 		"destroyed":destroyed,
+		"broken_glass":car.snapshot_glass(),
 	}
 
 static func validate_record(data: Dictionary) -> bool:
 	if data.is_empty(): return true
+	if not preload("res://gameplay/vehicle_effects/VehicleGlassDamage.gd").valid_records(data.get("broken_glass",[])): return false
 	if not data.get("position",[]) is Array or data.position.size() != 3: return false
 	for value in data.position:
 		if typeof(value) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(value)) or absf(float(value)) > 100000.0: return false

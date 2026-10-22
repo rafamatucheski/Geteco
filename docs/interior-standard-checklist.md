@@ -1725,6 +1725,6 @@ Escopo: **4 lugares físicos / 4 interiores distintos existentes / 0 novos / 0 a
 
 Escopo: **1 lugar físico existente / 1 interior existente alterado / 0 novos / 0 certificações integrais**. Acesso com batentes e soleira contrastantes, rotina do mecânico até a bancada, ambiente local sem sons de oficina e saída com preparo/sincronização da colisão exterior antes de admitir Dante. Invulnerabilidade e restrições de armas preservadas.
 
-- [x] Contrato dirigido headless `tests/test_mechanic_work_routine.gd`: quatro pontos visitados, 4,872 m percorridos, piso, bloqueio por corpo do jogador, interação e pausa da sala; zero falhas. Não certifica aparência.
+- [x] Revisão de contato do mecânico: `tests/test_mechanic_work_routine.gd`, 51 verificações, quatro pontos visitados e 5,286 m percorridos. Trabalho apenas na bancada, componente físico, chave presa à porca, mãos reais a até 5,47 cm e 0,41 cm dos alvos, sem gesto/ferramenta nos pontos de passagem nem após ocultar a peça. Piso, bloqueio por Dante, interação e pausa da sala passaram. `test_maciota_exterior_access.gd` passou: moldura visível depois da pintura e vão transitável por cápsula completa. Não certifica aparência.
 - [ ] Visual, oclusão, circulação e entrada/saída jogando: validação reservada ao usuário, conforme pedido de alterar somente código.
 - [ ] Performance renderizada antes/depois: não medida nesta revisão; sem aprovação de FPS.

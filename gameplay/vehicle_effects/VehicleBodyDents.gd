@@ -123,15 +123,16 @@ func _prepare() -> void:
 		for surface in part.mesh.get_surface_count(): count+=part.mesh.surface_get_array_len(surface)
 		if total+count>MAX_VERTICES: continue
 		var read_began := STALL_WORK.begin()
-		var arrays:=_rest_arrays(part.mesh)
+		var rest_mesh := preload("res://gameplay/vehicle_effects/VehicleGlassDamage.gd").pristine_part(vehicle,part)
+		var arrays:=_rest_arrays(rest_mesh)
 		# Qual peça ainda cai fora dos caches (22/10: 3–5 ms de leitura da GPU por 1ª batida nos sobrados e no
 		# porto mesmo com a frota pré-lida); o span diz o modelo e a peça.
 		if read_began != 0 and Time.get_ticks_usec() - read_began >= 1000:
 			STALL_WORK.finish("vehicle.dents.rest_miss", read_began, {"archetype": vehicle.archetype,
 				"part": str(vehicle.visual.get_path_to(part)), "mesh": part.mesh.resource_name})
 		total+=count
-		parts.append({"node":part,"mesh":part.mesh,"arrays":arrays,"eligible":eligible,"transform":inverse*part.global_transform})
-		part.set_meta(REST_MESH_META,part.mesh)
+		parts.append({"node":part,"mesh":rest_mesh,"arrays":arrays,"eligible":eligible,"transform":inverse*part.global_transform})
+		part.set_meta(REST_MESH_META,rest_mesh)
 
 ## Arrays em repouso da frota inteira lidas sob a cortina (22/10): o cache acima guarda 48 malhas e a
 ## frota passa disso, então a 1ª batida de cada modelo ainda lia a GPU no quadro do choque
@@ -354,10 +355,12 @@ func _apply_job(job: Dictionary) -> void:
 		for surface in surfaces.size():
 			mesh.add_surface_from_arrays(item.primitives[surface],surfaces[surface])
 			mesh.surface_set_material(surface,entry.mesh.surface_get_material(surface))
+			preload("res://gameplay/VehicleInterior.gd").remember_contact(mesh,surface,surfaces[surface])
 		entry["rest_points"]=item.rest_points
 		entry["applied_vertices"]=item.applied_vertices
 		part.mesh=mesh
 		entry["applied_mesh"]=mesh
+	preload("res://gameplay/vehicle_effects/VehicleGlassDamage.gd").geometry_changed(vehicle)
 
 static func _update_normals(arrays: Array) -> void:
 	var vertices: PackedVector3Array=arrays[Mesh.ARRAY_VERTEX]

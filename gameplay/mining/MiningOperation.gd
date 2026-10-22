@@ -64,7 +64,7 @@ func spawn_equipment() -> void:
 		_watch_equipment(car)
 		if not record.is_empty():
 			car.restore_health(float(record.health))
-			car.restore_body_dents(record.get("body_dents",[]),record.get("breakaway_parts",{}))
+			car.restore_body_dents(record.get("body_dents",[]),record.get("breakaway_parts",{}),record.get("broken_glass",[]))
 			car.restore_blood_stains(int(record.get("blood_stains",0)))
 			car.paint_color = Color.html(str(record.get("paint",car.paint_color.to_html())))
 			car.equipment_state = record.get("equipment",{}).duplicate(true)

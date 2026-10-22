@@ -106,6 +106,7 @@ static func warm_materials() -> Array[ShaderMaterial]:
 
 ## Malhas (vidro e limpador) de um arquétipo já na árvore; vazio sem vidro. Exposto para testes.
 static func geometry_for(car: Node3D) -> Dictionary:
+	if car.has_method("snapshot_glass") and not car.snapshot_glass().is_empty(): return _build(car)
 	var id := str(car.get("archetype"))
 	if _meshes.has(id): return _meshes[id]
 	var built := _build(car)
@@ -179,11 +180,12 @@ static func _build(car: Node3D) -> Dictionary:
 	var sum := Vector3.ZERO
 	for part in (visual as Node3D).find_children("*", "MeshInstance3D", true, false):
 		var mesh: Mesh = part.mesh
-		if mesh == null or part.has_meta("wheel_center") or part.name in ["Interior", "WarmUp", "RoofCut", NODE_NAME, "Glass", "Wiper"]: continue
+		if mesh == null or part.has_meta("wheel_center") or part.name in ["Interior", "WarmUp", "RoofCut", NODE_NAME] or "/WindshieldRain/" in str(part.get_path()): continue
 		for surface in mesh.get_surface_count():
 			var material: Material = part.get_active_material(surface)
 			if material == null or not INTERIOR._is_glass(part, surface, material): continue
-			var arrays := mesh.surface_get_arrays(surface)
+			if material is BaseMaterial3D and material.transparency != BaseMaterial3D.TRANSPARENCY_DISABLED and material.albedo_color.a < .01: continue
+			var arrays := INTERIOR.contact_arrays(mesh,surface)
 			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 			var index: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
 			var xf: Transform3D = to_car * part.global_transform

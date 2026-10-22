@@ -99,6 +99,8 @@ static var _material: StandardMaterial3D
 ## volta à leitura direta, para A/B.
 static var spec_cache := OS.get_environment("GETECO_INTERIOR_SPEC_CACHE") != "0"
 static var _glass_vertices: Dictionary = {}
+## CPU contact arrays shared by models; populated together with glazing under the loading curtain.
+static var _contact_arrays: Dictionary = {}
 const GLASS_CACHE_PRUNE := 512
 
 # --- API ----------------------------------------------------------------------------------
@@ -150,12 +152,15 @@ static func cache_glass(model: Node3D) -> void:
 		if mesh == null or part.has_meta("wheel_center"): continue
 		for surface in mesh.get_surface_count():
 			var material: Material = part.get_active_material(surface)
+			contact_arrays(mesh, surface)
 			if material != null and _is_glass(part, surface, material): _glass_points(mesh, surface)
 
 ## O recorte da porta troca a malha da peça por uma nova montada na CPU: se a original já estava
 ## no cache, a nova herda os vértices que o recorte acabou de usar, sem leitura de GPU.
 static func inherit_glass(original: Mesh, replacement: Mesh, surface: int, arrays: Array) -> void:
-	if not spec_cache or original == null or replacement == null: return
+	if original == null or replacement == null: return
+	remember_contact(replacement, surface, arrays)
+	if not spec_cache: return
 	if not _glass_vertices.has("%d:%d" % [original.get_instance_id(), surface]): return
 	if arrays.size() <= Mesh.ARRAY_VERTEX or not arrays[Mesh.ARRAY_VERTEX] is PackedVector3Array: return
 	_remember_glass(replacement, surface, arrays[Mesh.ARRAY_VERTEX])
@@ -164,9 +169,23 @@ static func _glass_points(mesh: Mesh, surface: int) -> PackedVector3Array:
 	if not spec_cache: return mesh.surface_get_arrays(surface)[Mesh.ARRAY_VERTEX]
 	var entry: Variant = _glass_vertices.get("%d:%d" % [mesh.get_instance_id(), surface])
 	if entry != null and entry.ref.get_ref() == mesh: return entry.vertices
-	var vertices: PackedVector3Array = mesh.surface_get_arrays(surface)[Mesh.ARRAY_VERTEX]
+	var vertices: PackedVector3Array = contact_arrays(mesh, surface)[Mesh.ARRAY_VERTEX]
 	_remember_glass(mesh, surface, vertices)
 	return vertices
+
+static func contact_arrays(mesh: Mesh, surface: int) -> Array:
+	var key := "%d:%d" % [mesh.get_instance_id(),surface]
+	var entry: Variant = _contact_arrays.get(key)
+	if entry != null and entry.ref.get_ref() == mesh: return entry.arrays
+	var arrays := mesh.surface_get_arrays(surface)
+	remember_contact(mesh,surface,arrays)
+	return arrays
+
+static func remember_contact(mesh: Mesh, surface: int, arrays: Array) -> void:
+	if _contact_arrays.size() >= GLASS_CACHE_PRUNE:
+		for key in _contact_arrays.keys():
+			if _contact_arrays[key].ref.get_ref() == null: _contact_arrays.erase(key)
+	_contact_arrays["%d:%d" % [mesh.get_instance_id(),surface]] = {"ref":weakref(mesh),"arrays":arrays}
 
 static func _remember_glass(mesh: Mesh, surface: int, vertices: PackedVector3Array) -> void:
 	if _glass_vertices.size() >= GLASS_CACHE_PRUNE:
@@ -178,7 +197,7 @@ static func _remember_glass(mesh: Mesh, surface: int, vertices: PackedVector3Arr
 # --- Especificação ------------------------------------------------------------------------
 
 static func _is_glass(part: MeshInstance3D, surface: int, material: Material) -> bool:
-	var key := ROLES.key(part, surface)
+	var key := ROLES.key(part, surface).get_slice("#",0)
 	if key in ["glass", "tinted_glass", "windshield", "window"]: return true
 	if key in ["smoked_lens", "headlight", "tail", "lens", "brake_light", "paint"]: return false
 	var standard := material as StandardMaterial3D

@@ -655,6 +655,7 @@ func snapshot() -> Dictionary:
 func _tow_vehicle_snapshot(car) -> Dictionary:
 	if not is_instance_valid(car): return {}
 	var result := {"archetype":car.archetype,"position":[car.position.x,car.position.y,car.position.z],"yaw":car.rotation.y,"health":car.health,"paint":car.paint_color.to_html(true)}
+	result["broken_glass"]=car.snapshot_glass() if car.has_method("snapshot_glass") else []
 	if car.has_meta("tow_pending"):
 		result.pending = true
 		result.pending_alternatives = car.get_meta("tow_pending_alternatives",false)
@@ -679,6 +680,7 @@ static func validate_snapshot(data: Dictionary) -> bool:
 			if typeof(car.get(number)) not in [TYPE_FLOAT,TYPE_INT] or not is_finite(float(car[number])): return false
 		if car.health < 0 or car.health > float(spec.get("durability",180)): return false
 		if not car.get("paint") is String or not Color.html_is_valid(car.paint): return false
+		if not preload("res://gameplay/vehicle_effects/VehicleGlassDamage.gd").valid_records(car.get("broken_glass",[])): return false
 	if not data.truck.is_empty() and data.truck.archetype != "towmaster": return false
 	if data.job.is_empty(): return data.cargo.is_empty() and not data.loaded and not data.unloaded_at_bay
 	if _tow_identity(data.job).is_empty() or data.cargo.is_empty() or data.truck.is_empty(): return false
@@ -746,6 +748,7 @@ func _restore_tow_vehicle(data: Dictionary, id: String, carried: bool):
 	if session.state.region_id != "harbor": car.hide(); car.set_physics_process(false)
 	car.health = float(data.health)
 	car.paint_color = Color.html(data.paint)
+	car.restore_glass(data.get("broken_glass",[]))
 	if data.get("pending",false) or car.has_meta("awaiting_ground"):
 		# Old saves defer at the exact saved position; only never-materialized
 		# reservations may select an alternative pickup slot.

@@ -1449,7 +1449,7 @@ func _stall_fire_at(target: Vector3) -> bool:
 							var damage_look: Variant = hit.collider.get("damage_look")
 							if is_instance_valid(damage_look) and damage_look.has_method("ignite"): damage_look.ignite(player)
 				else:
-					_damage_bullet(hit.collider, amount, player)
+					_damage_bullet(hit.collider, amount, player, origin, query.to)
 					confirm_player_hit(hit.collider, amount)
 					_impact_sound(hit.collider, end, float(amount), hit.normal)
 					if _impact_material(hit.collider) == "flesh":
@@ -1719,10 +1719,16 @@ func _clear_combat_registers() -> void:
 	_pain_next.clear()
 	_flame_crime_clock = 0.0
 
-func _damage_bullet(actor: Object, amount: float, source: Node) -> void:
+func _damage_bullet(actor: Object, amount: float, source: Node, shot_from := Vector3.INF, shot_to := Vector3.INF) -> void:
 	# Lataria absorve 85% dos tiros, inclusive cada chumbo de escopeta.
 	# Mantém durabilidade, blindagem, colisões, fogo e explosões independentes.
 	if is_instance_valid(actor) and actor is Node and actor.get_meta("gameplay_role", "") == "vehicle":
+		if actor is Node3D and shot_from.is_finite() and shot_to.is_finite():
+			var glass := preload("res://gameplay/vehicle_effects/VehicleGlassDamage.gd").owner_for(actor,true)
+			var broken: Dictionary = glass.shoot(shot_from,shot_to)
+			if not broken.is_empty():
+				if is_instance_valid(effects): effects.impact(broken.point,broken.normal,"glass",amount)
+				_play_stream(preload("res://gameplay/VehicleBreakIn.gd")._glass_stream(),broken.point,-3.0,1.0,30.0)
 		amount *= 0.15
 	_damage(actor, amount, source)
 
@@ -2349,6 +2355,8 @@ func _advance_police_rounds(delta: float) -> void:
 	for index in range(_police_rounds.size() - 1, -1, -1):
 		var round_index: Dictionary = _police_rounds[index]
 		_bullet_whiz(round_index)
+		var shot_from: Vector3 = round_index.point
+		var glass_limit: Vector3 = shot_from + round_index.direction * minf(16.0,maxf(0.0,float(round_index.range)-float(round_index.distance)))
 		var step := minf(float(round_index.speed) * delta, float(round_index.range) - float(round_index.distance))
 		var end: Vector3 = round_index.point + round_index.direction * step
 		var query := PhysicsRayQueryParameters3D.create(round_index.point, end, 7, [round_index.rid])
@@ -2361,7 +2369,7 @@ func _advance_police_rounds(delta: float) -> void:
 		if not hit.is_empty():
 			var data: Dictionary = round_index.data
 			var damage := CATALOG.distance_damage(int(round_index.damage), float(round_index.distance) * 16.0, float(data.get("falloff_start", 170.0)), float(data.get("max_range", 420.0)), float(data.get("min_damage_ratio", 0.25)))
-			_damage_bullet(hit.collider, damage, round_index.source.get_ref())
+			_damage_bullet(hit.collider, damage, round_index.source.get_ref(), shot_from, glass_limit)
 			_impact_sound(hit.collider, end, damage, hit.normal)
 			_hit_effect(hit, damage, round_index.direction)
 		if finished: _police_rounds.remove_at(index)

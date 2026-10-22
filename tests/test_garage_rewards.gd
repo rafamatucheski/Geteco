@@ -16,7 +16,8 @@ class Car extends CharacterBody3D:
 	var visual: Node3D
 	var body_dents: Node
 	var breakaway_parts: Node
-	func restore_body_dents(_records: Array, _panel_state: Dictionary = {}): pass
+	func restore_body_dents(_records: Array, _panel_state: Dictionary = {}, _broken_glass: Array = []): pass
+	func snapshot_glass() -> Array: return []
 	func restore_blood_stains(mask: int): preload("res://gameplay/vehicle_effects/VehicleBlood.gd").apply(self,mask)
 	var archetype := ""
 	var vehicle_id := ""

@@ -170,7 +170,7 @@ func _reconcile_owned_cars() -> void:
 		var tuning: Dictionary = GARAGE.vehicle(session.state.world_state,id,car.archetype)
 		ADAPTER.attach(car,tuning.parts)
 		car.restore_health(float(record.health))
-		car.restore_body_dents(record.get("body_dents",[]),record.get("breakaway_parts",{}))
+		car.restore_body_dents(record.get("body_dents",[]),record.get("breakaway_parts",{}),record.get("broken_glass",[]))
 		car.restore_blood_stains(int(record.get("blood_stains",0)))
 		if int(record.get("punctured_tires",0))>0: preload("res://gameplay/police_response/ground/TirePuncture.gd").puncture(car,int(record.punctured_tires))
 		_track_owned(car)
