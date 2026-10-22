@@ -77,7 +77,11 @@ func _initialize() -> void:
 	fx.flame(Vector3.ZERO, Vector3.FORWARD, 4.0)
 	_check(fx._flame_light.visible, "jato de chamas acende a luz tremulante")
 	fx.explosion(Vector3.ZERO, 7.5)
-	_check(fx._blast_fire.emitting, "explosão dispara a bola de fogo")
+	# Desde 24/09 cada explosão emite uma CÓPIA do modelo no ponto certo (CombatEffects._burst); o
+	# modelo `_blast_fire` não emite mais. A cópia herda a textura/material do modelo.
+	var fireball := fx.get_children().any(func(child): return child is CPUParticles3D and child != fx._blast_fire \
+		and child.emitting and child.mesh == fx._blast_fire.mesh)
+	_check(fireball, "explosão dispara a bola de fogo")
 	fx.clear()
 	_check(not fx._flame_light.visible and not fx._blast_fire.emitting, "clear() apaga luz e bola de fogo")
 
@@ -89,9 +93,16 @@ func _initialize() -> void:
 	var first := bytes.decode_s16(0)
 	_check(absi(last - first) < 6000, "emenda do laço sem salto (|Δ| = %d)" % absi(last - first))
 	_check(AUDIO.grenade_bounce() != null, "quique da granada gerado")
-	var magnum_body := AUDIO.gun_body("magnum")
-	_check(magnum_body != null and magnum_body.get_length() > 0.8, "Magnum tem camada de corpo com cauda longa")
-	_check(AUDIO.gun_body("smg").get_length() < magnum_body.get_length(), "SMG tem corpo mais curto que a Magnum (pistola usa só o tiro gravado)")
+	# Desde 15/10 (929a0352) a arma com tiro gravado do Firefly usa só o gravado, que já tem corpo e
+	# cauda; a camada sintética fica para as que ainda usam os takes do V1.
+	for kind in ["magnum", "smg"]:
+		var recorded: bool = AUDIO.FIREFLY_GUNFIRE.has(kind) and AUDIO.FIREFLY.count("weapons_fire", AUDIO.FIREFLY_GUNFIRE[kind]) > 0
+		var body := AUDIO.gun_body(kind)
+		if recorded: _check(body == null, "%s usa só o tiro gravado (sem camada sintética)" % kind)
+		else: _check(body != null and body.get_length() > 0.2, "%s sem gravação tem camada de corpo" % kind)
+	var synthetic := AUDIO.GUN_BODY.keys().filter(func(kind): return AUDIO.gun_body(kind) != null)
+	if synthetic.has("magnum") and synthetic.has("smg"):
+		_check(AUDIO.gun_body("smg").get_length() < AUDIO.gun_body("magnum").get_length(), "SMG tem corpo mais curto que a Magnum")
 
 	print("RESULT: %s (%d falhas)" % ["OK" if _failures == 0 else "FALHOU", _failures])
 	quit(0 if _failures == 0 else 1)
