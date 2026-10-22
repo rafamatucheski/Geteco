@@ -20,6 +20,9 @@ const BACKFIRE_FAMILIES := ["muscle", "sport", "vq35", "m8_v8", "rosso_v12"]
 const REVERSE_BEEP_FAMILIES := ["truck", "bus", "fire_diesel"]
 const NEARBY_VEHICLE_AUDIO := preload("res://audio/vehicle_ambience/NearbyVehicleAudio.gd")
 const FOOTSTEP_CADENCE := preload("res://audio/FootstepCadence.gd")
+## Cidade viva em Harbor: passos e falas dos pedestres, burburinho, leitos de rua e brisa e a
+## mixagem nova dos leitos/detalhes. GETECO_CITY_LIFE_AUDIO=0 desliga (A/B) e volta ao anterior.
+const CITY_LIFE := preload("res://audio/city_life/CityLifeAudio.gd")
 const BED_OFFSETS := {"dockside":-12.0,"swell":-9.0,"rocks":-11.0,"traffic":-12.0,"city":-10.0,"water":-6.0,"port":-15.0,"birds":-9.0,"crickets":-10.0,"workshop":-20.0}
 var world
 var layers: Array[AudioStreamPlayer] = []
@@ -37,6 +40,10 @@ var bed_targets := bed_gains.duplicate()
 var detail: AudioStreamPlayer3D
 var activity_audio
 var vehicle_ambience
+var city_life: Node3D
+var _city_life_mix := false
+## Região usada na última atualização dos leitos (a mixagem nova vale só em CITY_LIFE.REGIONS).
+var _bed_region := ""
 var radio_index := -1
 var step_distance := 0.0
 var previous := Vector3.ZERO
@@ -121,6 +128,12 @@ func _ready() -> void:
 	_make_bed("birds",_recorded_bed("forest_day",V1_AUDIO.bed("birds",1)))
 	_make_bed("crickets",_recorded_bed("forest_night",V1_AUDIO.bed("crickets",0)))
 	_make_bed("workshop",V1_AUDIO.bed("workshop",0))
+	_city_life_mix = CITY_LIFE.enabled()
+	if _city_life_mix:
+		# "Rua" é o leito original da V1 (29–37 s: repete menos que os de 5,7 s do ElevenLabs);
+		# a brisa do litoral usa o vento regional, que em Harbor não tocava.
+		_make_bed("street",V1_AUDIO.bed("street",rng.randi_range(0,1)))
+		_make_bed("breeze",V1_AUDIO.regional("wind",1))
 	ambience = beds.city
 	detail = AudioStreamPlayer3D.new()
 	detail.name = "NearbyV1Detail"
@@ -151,6 +164,11 @@ func _ready() -> void:
 		push_warning("WorldAudio: nearby vehicle engine mixer could not be configured")
 		vehicle_ambience.queue_free()
 		vehicle_ambience = null
+	if _city_life_mix:
+		city_life = CITY_LIFE.new()
+		city_life.name = "CityLifeAudio"
+		city_life.world = world
+		add_child(city_life)
 	for index in 7:
 		# The listener camera sits about 36 m above the occupied car. In V1 the
 		# driver's engine was foreground audio, so it must not fade with that gap.
@@ -219,6 +237,12 @@ func _make_bed(id: String, stream: AudioStream) -> void:
 	player.volume_db = -80
 	add_child(player)
 	beds[id] = player
+	if not bed_gains.has(id): bed_gains[id] = 0.0
+
+func _bed_offset(id: String) -> float:
+	if _city_life_mix and _bed_region in CITY_LIFE.REGIONS and CITY_LIFE.BED_OFFSETS.has(id):
+		return float(CITY_LIFE.BED_OFFSETS[id])
+	return float(BED_OFFSETS.get(id, -80.0))
 ## V1 `VehicleRadioReceiver`: dirigindo, roda do mouse e R/LB/RB sintonizam. A pé a roda é da
 ## troca de arma (`Gameplay`), que `can_attack` já barra dentro do carro.
 func _unhandled_input(event: InputEvent) -> void:
@@ -726,11 +750,16 @@ func _update_ambience(delta: float) -> void:
 		bed_targets["dockside"] = float(bed_targets.get("port",0.0))*.7
 		bed_targets["swell"] = float(bed_targets.get("water",0.0))*.7
 		bed_targets["rocks"] = float(bed_targets.get("port",0.0))*.5+float(bed_targets.get("water",0.0))*.25
+		_bed_region = str(state.region_id)
+		if _city_life_mix:
+			var traffic_presence := 0.5
+			if is_instance_valid(vehicle_ambience): traffic_presence = clampf(float(vehicle_ambience.nearby_traffic)/6.0,0.0,1.0)
+			CITY_LIFE.shape_beds(bed_targets,_bed_region,str(state.place_id),world.player.global_position,_dark(),traffic_presence)
 		detail_context = PROFILES.activity_context(str(state.region_id),str(state.place_id),world.player.global_position)
 	for id in beds:
 		var target := float(bed_targets.get(id,0.0))*focus
 		bed_gains[id] = lerpf(float(bed_gains[id]),target,1.0-exp(-delta/.7))
-		var offset: float = BED_OFFSETS[id]
+		var offset: float = _bed_offset(id)
 		var player: AudioStreamPlayer = beds[id]
 		player.volume_db = offset+linear_to_db(maxf(float(bed_gains[id]),.0001))
 		if bed_gains[id]>.005 and player.stream != null and not player.playing: player.play(rng.randf_range(0,maxf(0,player.stream.get_length()-1)))
@@ -752,7 +781,12 @@ func _play_context_detail() -> void:
 			var roll := rng.randf()
 			kind = "ship_horn" if roll<.25 else ("clang" if roll<.55 else ("buoy" if roll<.7 else ("gull" if not _dark() else "ship_horn")))
 		"nature": kind = "dog" if _dark() else "birds"
-		"city": kind = "dog" if _dark() else ""
+		"city":
+			kind = "dog" if _dark() else ""
+			# Cidade viva: de dia a rua também tem buzina ao longe e gaivota de cidade portuária.
+			if _city_life_mix and not _dark():
+				var city_roll := rng.randf()
+				kind = "car_horn" if city_roll<.35 else ("gull" if city_roll<.55 else "")
 	if kind.is_empty():
 		detail_clock = rng.randf_range(12,24)
 		return
@@ -760,19 +794,29 @@ func _play_context_detail() -> void:
 	if not recorded_key.is_empty() and FIREFLY.count("ambience_el",recorded_key)>0: detail.stream = FIREFLY.take("ambience_el",recorded_key,rng)
 	elif kind=="clang" or kind=="buoy": detail.stream = null
 	elif kind=="scrap": detail.stream = V1_AUDIO.regional("scrap",detail_variant)
+	elif kind=="car_horn": detail.stream = FIREFLY.take("vehicle_fx","car_horn",rng)
 	else: detail.stream = V1_AUDIO.detail(kind,detail_variant)
 	detail_variant = (detail_variant+1)%6
 	if detail.stream == null:
 		detail_clock = 20
 		return
 	var angle := rng.randf_range(-PI,PI)
-	var distance := rng.randf_range(5,14)
+	var distance := rng.randf_range(16,30) if kind=="car_horn" else rng.randf_range(5,14)
 	detail.global_position = source+Vector3(cos(angle)*distance,1.2,sin(angle)*distance)
-	detail.max_distance = 90 if kind=="ship_horn" else 48
+	detail.max_distance = 90 if kind=="ship_horn" else (60 if kind=="car_horn" else 48)
 	detail.volume_db = -6 if kind=="ship_horn" else (-14 if kind=="workshop" else -10)
+	if _city_life_mix:
+		# No exterior de Harbor o detalhe é ouvido do jogador, não da câmera (~36 m acima): antes a
+		# câmera cortava boa parte deles pelo max_distance e o resto chegava ~24 dB abaixo do
+		# nominal. Interiores e outras regiões seguem com a atenuação nativa de sempre.
+		var relative: bool = str(world.session.state.place_id).is_empty() and str(world.session.state.region_id) in CITY_LIFE.REGIONS
+		CITY_LIFE.configure_detail(detail,relative)
+		if relative:
+			detail.volume_db = CITY_LIFE.detail_volume_db(kind,detail.volume_db)+CITY_LIFE.hearing_db(distance,6.0,detail.max_distance)
+			detail.max_distance = 0.0
 	detail.pitch_scale = rng.randf_range(.94,1.04)
 	detail.play()
-	detail_clock = rng.randf_range(18,34) if kind in ["gull","ship_horn"] else rng.randf_range(8,18)
+	detail_clock = rng.randf_range(18,34) if kind in ["gull","ship_horn","car_horn"] else rng.randf_range(8,18)
 
 func _nearby_crowd_gain() -> float:
 	var count := 0

@@ -44,6 +44,14 @@ static func targets(region: String, place: String, point: Vector3, dark: bool, c
 	result.crickets = nature*.22 if dark else 0.0
 	return result
 
+## Cidade viva (`audio/city_life/CityLifeAudio.gd`): peso urbano do exterior de Harbor (1 nas
+## ruas, 0 dentro do porto sul) e proximidade do litoral, nas mesmas zonas de `targets`.
+static func harbor_urban_weight(point: Vector3) -> float:
+	return 1.0-_rect_weight(Vector2(point.x,point.z)/SCALE,SOUTH_PORT,350.0)
+
+static func harbor_coast_weight(point: Vector3) -> float:
+	return _harbor_coast_weight(Vector2(point.x,point.z)/SCALE)
+
 static func activity_context(region: String, place: String, point: Vector3) -> String:
 	if place in ["maciota","port_boss_garage","desert_digo"]: return "workshop"
 	if not place.is_empty(): return ""

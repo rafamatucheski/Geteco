@@ -23,6 +23,20 @@ const BASE_VOLUME_DB := -24.0
 ## Troca da ponte (`street`) para a família certa quando ela termina de carregar: desce até o
 ## silêncio, troca o fluxo e sobe. Trocar o stream com a voz tocando corta a onda e estala.
 const BANK_SWAP_SECONDS := 0.12
+## Cidade viva (GETECO_CITY_LIFE_AUDIO, padrão ligado; =0 volta ao modo antigo para A/B).
+## O ouvinte do Godot é a câmera, ~36 m acima/atrás do jogador. Erguer o emissor à altura dela
+## não bastava: um carro colado no jogador ainda ficava ~25–29 m do ouvinte na horizontal, e a
+## atenuação nativa dava -11 dB (inverso, unit_size 8) + ~-9 dB da rampa linear do max_distance
+## (1 - d/45) + o filtro de -24 dB acima de 5 kHz; quem passava ~16 m à frente (longe da câmera)
+## saía do max_distance e sumia. Com BASE_VOLUME_DB -24 sobre bancos de -12 a -15 dBFS rms,
+## o trânsito chegava perto de -46 dBFS: mudo. Agora, como em `Gameplay._hearing_gain_db`, a
+## posição só dá o panorama e a perda vem da distância ao JOGADOR: 0 dB até 8 m, inverso da
+## distância daí em diante e rampa até zero em RANGE. Conta (não medida no ouvido): um carro a
+## 8 m fica ~-22 a -25 dBFS rms (+10 dB do bus SFX), ~8–10 dB abaixo do motor do jogador em
+## cruzeiro; a 20 m, ~-36. Mesmo teto de 6 carros e 12/24 vozes.
+const CITY_LIFE := preload("res://audio/city_life/CityLifeAudio.gd")
+const HEARING_REFERENCE := 8.0
+const PLAYER_RELATIVE_VOLUME_DB := -20.0
 
 var _world: Node
 var _listener: Node3D
@@ -33,6 +47,9 @@ var _family_by_archetype: Dictionary = {}
 var _service_mixer: Node
 var _selection_clock := 0.0
 var _enabled := true
+var _player_relative := false
+## Veículos elegíveis dentro de RANGE na última seleção (o leito de trânsito de WorldAudio segue).
+var nearby_traffic := 0
 
 
 func _ready() -> void:
@@ -54,6 +71,8 @@ func configure(world: Node, listener: Node3D) -> bool:
 	_world = world
 	_listener = listener
 	_selection_clock = 0.0
+	# Antes de qualquer voz: o modo vale para todas as que este mixer criar.
+	if _slots.is_empty(): _player_relative = CITY_LIFE.enabled()
 	BANKS.prewarm.call_deferred(get_tree())
 	DESIGN_BANKS.prewarm.call_deferred(get_tree())
 	set_process(_enabled)
@@ -67,6 +86,7 @@ func set_enabled(enabled: bool) -> void:
 		for slot in _slots:
 			_release(slot)
 		_states.clear()
+		nearby_traffic = 0
 	set_process(enabled and is_instance_valid(_world) and is_instance_valid(_listener))
 
 
@@ -85,6 +105,7 @@ func shutdown() -> void:
 	_service_mixer = null
 	_world = null
 	_listener = null
+	nearby_traffic = 0
 
 
 func _exit_tree() -> void:
@@ -123,6 +144,7 @@ func _select_nearby() -> void:
 		var priority_distance := distance_squared + (0.0 if absf(float(vehicle.speed)) > 0.35 else 36.0)
 		candidates.append({"id": id, "vehicle": vehicle, "distance": distance_squared,
 			"priority_distance": priority_distance})
+	nearby_traffic = candidates.size()
 	candidates.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		if a.priority_distance == b.priority_distance:
 			return a.id < b.id
@@ -258,6 +280,7 @@ func _assign(id: int) -> void:
 		player.max_distance = RANGE
 		player.unit_size = 8.0
 		player.bus = &"SFX" if AudioServer.get_bus_index("SFX") >= 0 else &"Master"
+		if _player_relative: CITY_LIFE.make_player_relative(player)
 		add_child(player)
 		players.append(player)
 	var slot := {"id": 0, "players": players, "gain": 0.0, "target_gain": 0.0}
@@ -327,10 +350,11 @@ func _mix(slot: Dictionary, state: Dictionary, vehicle: CharacterBody3D, delta :
 	var camera := get_viewport().get_camera_3d()
 	var audio_height := camera.global_position.y - _listener.global_position.y if camera != null else 0.0
 	var at := vehicle.global_position + Vector3.UP * (audio_height + 0.7)
-	if _mix_design(slot, state, vehicle, delta, at): return
+	var base_db := _base_volume_db(vehicle)
+	if _mix_design(slot, state, vehicle, delta, at, base_db): return
 	if state.family == "tank":
 		TANK_AUDIO.mix_spatial(slot.players, vehicle, clampf((float(state.rpm) - 0.6) / 5.4, 0.0, 1.0),
-			float(slot.gain), BASE_VOLUME_DB, vehicle.global_position + Vector3.UP * (audio_height + 0.7))
+			float(slot.gain), base_db, vehicle.global_position + Vector3.UP * (audio_height + 0.7))
 		return
 	for layer in [lower, lower + 1]:
 		var player: AudioStreamPlayer3D = slot.players[layer % 2]
@@ -344,20 +368,21 @@ func _mix(slot: Dictionary, state: Dictionary, vehicle: CharacterBody3D, delta :
 		if player.stream != stream:
 			player.stop()
 			player.stream = stream
-		player.volume_db = BASE_VOLUME_DB + (-13.0 if state.family == "electric" else 0.0) + linear_to_db(amplitude)
+		player.volume_db = base_db + (-13.0 if state.family == "electric" else 0.0) + linear_to_db(amplitude)
 		var acceleration_pitch := clampf(float(state.acceleration) * 0.01, -0.05, 0.08)
 		player.pitch_scale = clampf(float(state.engine_pitch) * (1.0 + acceleration_pitch), 0.55, 1.5)
 		if not player.playing:
 			player.play()
 
 
-func _mix_design(slot: Dictionary, state: Dictionary, vehicle: CharacterBody3D, delta: float, at: Vector3) -> bool:
+func _mix_design(slot: Dictionary, state: Dictionary, vehicle: CharacterBody3D, delta: float, at: Vector3, base_db := BASE_VOLUME_DB) -> bool:
 	var voice: Variant = slot.get("design_voice")
 	var profile := DESIGN_CATALOG.profile(str(vehicle.archetype))
 	if not is_instance_valid(voice):
 		if not DESIGN_BANKS.enabled() or not DESIGN_BANKS.is_ready(profile): return false
 		voice = DESIGN_VOICE.new()
 		voice.name = "NearbyEngineDesign%d" % _slots.find(slot)
+		voice.player_relative = _player_relative
 		add_child(voice)
 		slot.design_voice = voice
 	# Rebinding also silences a reused slot when its next car is dedicated/legacy.
@@ -375,8 +400,23 @@ func _mix_design(slot: Dictionary, state: Dictionary, vehicle: CharacterBody3D, 
 	state.design_profile = profile
 	state.design_rpm = lerpf(current_rpm, target_rpm, 1.0 - exp(-maxf(delta, 0.0) * response))
 	voice.update_mix(float(state.design_rpm), float(state.get("design_load", 0.0)), delta,
-		BASE_VOLUME_DB + linear_to_db(float(slot.gain)), at, false, false)
+		base_db + linear_to_db(float(slot.gain)), at, false, false)
 	return true
+
+
+## Nível de referência do veículo. No modo antigo, a atenuação nativa (da câmera) cuida da
+## distância; com a cidade viva, a perda vem daqui, medida do jogador no plano do chão.
+func _base_volume_db(vehicle: Node3D) -> float:
+	if not _player_relative or not is_instance_valid(_listener): return BASE_VOLUME_DB
+	var offset := vehicle.global_position - _listener.global_position
+	offset.y = 0.0
+	return PLAYER_RELATIVE_VOLUME_DB + engine_hearing_db(offset.length())
+
+
+## 0 dB até HEARING_REFERENCE, inverso da distância depois, vezes a rampa linear até RANGE.
+static func engine_hearing_db(distance: float) -> float:
+	var gain := HEARING_REFERENCE / maxf(distance, HEARING_REFERENCE) * clampf(1.0 - distance / RANGE, 0.0, 1.0)
+	return linear_to_db(gain) if gain > 0.0001 else -80.0
 
 
 func _slot_has_id(id: int) -> bool:
@@ -414,4 +454,5 @@ func snapshot() -> Dictionary:
 	return {"audible": audible_ids.size(), "audible_ids": audible_ids,
 		"playing_voices": playing_voices, "voice_limit": MAX_DESIGN_VOICES if design_slots > 0 else MAX_VOICES,
 		"design_slots": design_slots, "design_voice_limit": MAX_DESIGN_VOICES,
-		"range": RANGE, "families_loaded": _banks.size()}
+		"range": RANGE, "families_loaded": _banks.size(), "player_relative": _player_relative,
+		"nearby_traffic": nearby_traffic}

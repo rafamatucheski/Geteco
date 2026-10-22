@@ -8,6 +8,11 @@ const MOTOR_VOICE_LIMIT := 4
 var profile := ""
 var spatial_range := 45.0
 var spatial_unit_size := 8.0
+## Ligado por NearbyVehicleAudio com a cidade viva (GETECO_CITY_LIFE_AUDIO): quem chama já mede
+## a distância do JOGADOR e põe a perda em `volume_db`; a voz fica só com o panorama, sem a
+## atenuação nativa medida da câmera (~36 m acima/atrás). Padrão desligado: os outros donos
+## (deserto, viaturas) seguem iguais.
+var player_relative := false
 var _loaded: Array[AudioStreamWAV] = []
 var _coast: Array[AudioStreamWAV] = []
 var _rpm_bands: Array = []
@@ -110,6 +115,12 @@ func update_mix(rpm: float, load_value: float, delta: float, volume_db: float, a
 	_last_load = _load
 
 func _spatial(p: AudioStreamPlayer3D) -> void:
+	if player_relative and not _foreground:
+		p.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED
+		p.max_distance = 0.0
+		p.panning_strength = 0.6
+		p.attenuation_filter_db = 0.0
+		return
 	p.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED if _foreground else AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
 	p.max_distance = 0.0 if _foreground else spatial_range
 	p.panning_strength = 0.0 if _foreground else 1.0

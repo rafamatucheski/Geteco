@@ -37,6 +37,25 @@ No V1 produtivo, `project.godot` abre `ui/MainMenu.tscn`, `ui/MainMenu.gd` selec
 
 Nenhum arquivo de combate, áudio de arma ou arquivo mantido pelo Claude foi alterado.
 
+## Cidade viva em Harbor (21/10/2026)
+
+Queixa de playtest: sem ambiente, sem gente falando, sem ouvir os outros carros nem os passos.
+Causa medida: (1) o ouvinte do Godot é a câmera, ~36 m acima/atrás do jogador, e o motor do
+trânsito (`NearbyVehicleAudio`) e os detalhes (`NearbyV1Detail`) usavam atenuação nativa medida
+dela — um carro colado no jogador chegava ~-20 dB pela distância e pela rampa do `max_distance`,
+mais -24 dB de base, e quem passava ~16 m à frente saía do alcance; (2) os leitos do ElevenLabs
+(-26 dBFS rms) com os deslocamentos antigos ficavam em -55 a -60 dBFS; (3) pedestre não tinha
+passo nem fala ambiente nenhuma.
+
+`audio/city_life/CityLifeAudio.gd` (criado por `WorldAudio`) acrescenta passos de pedestre (≤ 6
+seguidos, 4 vozes), burburinho espacial (1 voz) e falas neutras já gravadas do banco dirigido
+(1 voz, a cada 9–20 s), e define a mixagem nova dos leitos (trânsito pela presença de carros,
+rua da V1, brisa do litoral) e dos detalhes (buzina ao longe, gaivota). O trânsito passa a ser
+medido do jogador (como `Gameplay._hearing_gain_db`). **`GETECO_CITY_LIFE_AUDIO=0`** volta tudo
+ao modo anterior para A/B. Teste: `tests/test_city_life_audio.gd -- --no-save --skip-arrival`
+(contagem/estado e volume estimado; não julga o som). Pendentes: ouvido humano e medição em
+release com o interruptor. `ServiceVehicleAudio` (viaturas) ainda usa a atenuação da câmera.
+
 ## Integrações ainda necessárias
 
 - Atualização de 07/10/2026: `MissionWorld.tow_event` publica `loaded`, `unloaded` e `delivered` somente após operações bem-sucedidas. `ActivityAudioBridge` conecta o sinal ao iniciar e reutiliza os cues funcionais `mission_start`, `checkpoint` e `complete`, nas duas vozes existentes. São confirmações de atividade, não gravações mecânicas exclusivas do guincho. Recusas, restauração e cancelamento não reproduzem essas confirmações; não foi acrescentado polling de carga. O teste dirigido é `tests/test_tow_audio_events.gd`.
