@@ -1325,12 +1325,19 @@ func receive_impact(amount: float, local_point: Vector3, source: Node = null, cl
 	if damage_prototype_enabled and closing_speed>=0:
 		# HP remains balanced for long chases; the sheet metal responds to actual closing speed.
 		visual_amount = maxf(visual_amount,maxf(0.0,closing_speed-3.0)*1.2*damage_resistance)
+	# Spans por etapa (21/10): no estresse de release a batida custou 8–19 ms por carro sem dizer onde.
+	var stage := STALL_WORK.begin()
 	if is_instance_valid(body_dents): body_dents.impact(visual_amount,local_point,inward if damage_prototype_enabled and closing_speed>=0 else Vector3.ZERO)
+	STALL_WORK.finish_slow("vehicle.impact.dents", stage, 2000, self)
+	stage = STALL_WORK.begin()
 	if damage_prototype_enabled and closing_speed>=0 and is_instance_valid(breakaway_parts):
 		breakaway_parts.impact(local_point,closing_speed,inward,presentation_velocity)
+	STALL_WORK.finish_slow("vehicle.impact.breakaway", stage, 2000, self)
 	if is_instance_valid(equipment) and equipment.has_method('receive_impact'):
 		equipment.receive_impact(local_point, amount)
+	stage = STALL_WORK.begin()
 	receive_damage(amount, source)
+	STALL_WORK.finish_slow("vehicle.impact.damage", stage, 2000, self)
 
 func restore_blood_stains(mask: int) -> void:
 	preload("res://gameplay/vehicle_effects/VehicleBlood.gd").apply(self, mask)

@@ -8,6 +8,15 @@ const FINISH := preload("res://world/places/ShopInteriorMaterials.gd")
 const MATERIALS := preload("res://world/desert/DesertTownMaterials.gd")
 const YARD := preload("res://world/desert/drag_meet/DesertDigoYardDetails.gd")
 const PARKING := Vector3(6,.08,-5.8)
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+## Capô sem a tampa fechada, uma vez por malha do Gol (21/10): a oficina monta no streaming do deserto
+## e cada montagem lia as malhas de volta da GPU (surface_get_arrays) e refazia a malha. No estresse
+## de release o registro inteiro custou 265 ms num quadro (stream.desert.record.drag_workshop).
+## Agora a leitura vem da cópia na CPU (MeshArrayCache) e a malha limpa fica guardada por malha-fonte.
+## GETECO_DIGO_HOOD_CACHE=0 volta ao caminho antigo (A/B).
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
+static var _hood_cache_enabled := OS.get_environment("GETECO_DIGO_HOOD_CACHE") != "0"
+static var _cleaned_hoods: Dictionary = {}
 static var _finishes: Dictionary = {}
 var solid_inventory: Array[Dictionary] = []
 
@@ -44,17 +53,25 @@ func _ready() -> void:
 	back_sign.rotation.y=0
 	add_child(back_sign)
 	_bench()
+	var stage := STALL_WORK.begin()
 	_car()
+	STALL_WORK.finish_slow("desert.digo_workshop.car", stage, 2000)
+	stage = STALL_WORK.begin()
 	_tools()
 	var yard := YARD.new()
 	add_child(yard)
+	STALL_WORK.finish_slow("desert.digo_workshop.yard", stage, 2000)
+	stage = STALL_WORK.begin()
 	_surface_wear()
+	STALL_WORK.finish_slow("desert.digo_workshop.wear", stage, 2000)
 	# Both service and customer bays are readable through paint alone.
 	for x in [-1.6,1.6]: G.box(self,"ServiceBayPaint",Vector3(x,.033,-.2),Vector3(.055,.008,5.4),Color("c6b783"))
 	for x in [3.8,8.2]: G.box(self,"CustomerBayPaint",Vector3(x,.033,-5.8),Vector3(.065,.008,5.5),Color("c6b783"))
 	G.box(self,"CustomerBayEnd",Vector3(6,.033,-3.05),Vector3(4.4,.008,.065),Color("c6b783"))
+	stage = STALL_WORK.begin()
 	_apply_finishes(self)
 	MATERIALS.batch_visuals(self)
+	STALL_WORK.finish_slow("desert.digo_workshop.batch", stage, 2000)
 
 func _bench() -> void:
 	# One complete solid reserves the tabletop footprint, including its legs.
@@ -126,7 +143,28 @@ func _car() -> void:
 	# High hood geometry stays inside the car's reserved footprint.
 
 func _without_closed_hood(source: ArrayMesh) -> ArrayMesh:
-	var arrays: Array=source.surface_get_arrays(0)
+	if not _hood_cache_enabled: return _build_without_closed_hood(source, source.surface_get_arrays(0).duplicate())
+	if _cleaned_hoods.has(source):
+		var cached: Variant = _cleaned_hoods[source]
+		return cached as ArrayMesh
+	# A cópia compartilhada do MeshArrayCache não pode ser alterada: o índice novo vai numa cópia rasa.
+	var cleaned := _build_without_closed_hood(source, MESH_ARRAYS.arrays_of(source, 0).duplicate())
+	_cleaned_hoods[source] = cleaned
+	return cleaned
+
+## Sob a cortina (ProductionWorld._prewarm_regions): as malhas limpas do Gol ficam prontas antes de a
+## oficina entrar no streaming, e as leituras da GPU acontecem no carregamento.
+static func prewarm_hoods() -> void:
+	if not _hood_cache_enabled: return
+	var model := GOL.new()
+	for panel in model.get_children():
+		if not panel is MeshInstance3D or not (panel as MeshInstance3D).mesh is ArrayMesh: continue
+		var source: ArrayMesh = (panel as MeshInstance3D).mesh
+		if _cleaned_hoods.has(source): continue
+		_cleaned_hoods[source] = _build_without_closed_hood(source, MESH_ARRAYS.arrays_of(source, 0).duplicate())
+	model.free()
+
+static func _build_without_closed_hood(_source: ArrayMesh, arrays: Array) -> ArrayMesh:
 	var vertices: PackedVector3Array=arrays[Mesh.ARRAY_VERTEX]
 	var indices: PackedInt32Array=arrays[Mesh.ARRAY_INDEX]
 	var kept := PackedInt32Array()

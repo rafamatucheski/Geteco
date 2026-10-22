@@ -42,6 +42,18 @@ static func _release_templates() -> void:
 		if is_instance_valid(node) and node.get_parent() == null: node.free()
 	_templates.clear()
 
+## Modelos-padrão de todas as armas montados sob a cortina (21/10): com GETECO_WEAPON_TEMPLATE a mão
+## usa build_cached, e a primeira vez que o jogador puxa cada arma deixava de montar no quadro só se o
+## modelo já existisse. Um quadro entre armas para a tela de carregamento andar. Katana tem modelo próprio.
+static func warm_templates(tree: SceneTree, ids: Array) -> void:
+	for id in ids:
+		var key := str(id)
+		if key == "katana" or key == "fists" or _templates.has(key): continue
+		var template := Node3D.new()
+		_templates[key] = {"node": template, "tip": build(template, key)}
+		_watch_template_shutdown()
+		await tree.process_frame
+
 static func build_cached(root: Node3D, id: String) -> Vector3:
 	if not _templates.has(id):
 		var template := Node3D.new()

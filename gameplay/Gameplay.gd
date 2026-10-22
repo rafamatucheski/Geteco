@@ -21,6 +21,12 @@ const KATANA_MODEL := preload("res://gameplay/KatanaModel.gd")
 const KATANA_AUDIO := preload("res://gameplay/KatanaAudio.gd")
 const RAGE := preload("res://gameplay/KatanaRage.gd")
 const ARSENAL = preload("res://gameplay/ArsenalWeapon3D.gd")
+## Arma na mão a partir de modelo pronto (21/10): cada troca de arma montava de novo o modelo procedural
+## inteiro (malhas primitivas novas e dezenas de nós). ArsenalWeapon3D.build_cached monta uma vez por arma
+## e depois só duplica os nós, com malhas e materiais compartilhados; acessórios e pintura continuam
+## criando cópias próprias (WeaponAttachmentVisuals duplica antes de recolorir). Span gameplay.weapon_visual.
+## GETECO_WEAPON_TEMPLATE=0 volta a montar do zero a cada troca, para A/B no mesmo export.
+static var _weapon_template := OS.get_environment("GETECO_WEAPON_TEMPLATE") != "0"
 const POSE = preload("res://gameplay/WeaponPoseData.gd")
 const OFFICER = preload("res://gameplay/PoliceAgent.gd")
 const POLICE_CASE = preload("res://gameplay/police_response/PoliceCaseDirector.gd")
@@ -598,10 +604,12 @@ func _update_visual() -> void:
 		_muzzle_light = null
 		_muzzle_timer = 0.0
 		if id != "" and id != "fists" and CATALOG.WEAPONS.has(id):
-			var muzzle := KATANA_MODEL.build(gun, blade_style.saber, blade_style.color) if id == "katana" else ARSENAL.build(gun, id)
+			var visual_began := STALL_WORK.begin()
+			var muzzle := KATANA_MODEL.build(gun, blade_style.saber, blade_style.color) if id == "katana" else (ARSENAL.build_cached(gun, id) if _weapon_template else ARSENAL.build(gun, id))
 			CUSTOM.fit(gun, id, customization, muzzle)
 			_build_muzzle_flash(id, muzzle)
 			_mount_flashlight()
+			STALL_WORK.finish_slow("gameplay.weapon_visual", visual_began, 2000, self)
 		if player.has_method("set_combat_weapon_mount"):
 			player.set_combat_weapon_mount(gun, POSE.GRIPS.get(id, Vector3.ZERO))
 	gun.visible = attack_allowed() and id != "" and id != "fists" and bool(_pose_frame.get("visible", true)) and _sheath_clip == ""

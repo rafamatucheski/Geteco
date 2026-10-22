@@ -9,6 +9,27 @@ static func position() -> Vector3:
 	# Outside the driving/staging lane and parked-car bays; reached from the south.
 	return LAYOUT.drag_staging_point()+Vector3(8,0,5)
 
+const BOARD_NAMES := "Digo\nLívia\nRaul\nJessica\nNadir"
+const BOARD_FONT_SIZE := 38
+## Fonte do quadro carregada uma vez e com os nomes já rasterizados (21/10): o trecho do quadro
+## carregava a fonte (load síncrono) e gerava os glifos no streaming do deserto; no estresse de
+## release a etapa custou 54 ms num quadro (stream.desert.surface_stage.15). ProductionWorld chama
+## prewarm() sob a cortina. GETECO_DRAG_BOARD_FONT=0 volta a carregar a cada montagem (A/B).
+static var _font: Font
+static func board_font() -> Font:
+	if _font != null and OS.get_environment("GETECO_DRAG_BOARD_FONT") != "0": return _font
+	var font: Font
+	if ResourceLoader.exists("res://assets/fonts/caveat/Caveat.ttf"): font=load("res://assets/fonts/caveat/Caveat.ttf")
+	else:
+		font=FontFile.new()
+		font.load_dynamic_font("res://assets/fonts/caveat/Caveat.ttf")
+	_font=font
+	return font
+
+static func prewarm() -> void:
+	if OS.get_environment("GETECO_DRAG_BOARD_FONT") == "0": return
+	board_font().get_multiline_string_size(BOARD_NAMES, HORIZONTAL_ALIGNMENT_CENTER, -1, BOARD_FONT_SIZE)
+
 static func build_chunk(parent: Node3D, rect: Rect2) -> void:
 	var at := position()
 	if not rect.has_point(Vector2(at.x,at.z)): return
@@ -21,14 +42,10 @@ static func build_chunk(parent: Node3D, rect: Rect2) -> void:
 	G.box(board,"WoodenFrame",Vector3(0,1.65,0),Vector3(2.3,1.7,.16),Color("624936"),true)
 	G.box(board,"ChalkFace",Vector3(0,1.65,.087),Vector3(2.14,1.54,.02),Color("243a33"))
 	for x in [-.85,.85]: G.box(board,"Leg",Vector3(x,.45,0),Vector3(.10,.9,.14),Color("624936"),true)
-	var font: Font
-	if ResourceLoader.exists("res://assets/fonts/caveat/Caveat.ttf"): font=load("res://assets/fonts/caveat/Caveat.ttf")
-	else:
-		font=FontFile.new()
-		font.load_dynamic_font("res://assets/fonts/caveat/Caveat.ttf")
+	var font := board_font()
 	var text := Label3D.new()
 	text.name="Names"
-	text.text="Digo\nLívia\nRaul\nJessica\nNadir"
+	text.text=BOARD_NAMES
 	text.font=font
 	text.font_size=38
 	text.pixel_size=.006
