@@ -93,6 +93,7 @@ func _enter_tree() -> void:
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	apply_pipeline_cache_policy()
 	_setup_audio_buses()
 	preload("res://runtime/Localization.gd").install()
 	load_settings()
@@ -309,6 +310,19 @@ func root_view() -> Window: return get_tree().root
 ## framebuffer e nenhum pipeline pré-compilado serve mais (ver occluded_silhouette.gdshader). Medido no
 ## editor, chuva no circuito oeste: compilações "draw" 183 sob a cortina + ~100 em jogo -> 0 + 0.
 ## A/B: HARBOR_PIPELINE_MSAA_SYNC=0 volta ao comportamento antigo (aqui e nas capturas de reflexo).
+## Cache de pipelines do Vulkan gravado só ao sair (22/10, 3ª rodada). O motor regrava o arquivo inteiro a
+## cada 3 MB de pipelines novas (rendering/rendering_device/pipeline_cache/save_chunk_size_mb, lido a cada
+## gravação). Numa sessão com cache frio o arquivo vai de 0 a ~75 MB e cada regravação travava a thread
+## principal: no estresse do oeste (export C, cache frio, mesma build) houve quadros de 1,2 s, 1,5 s e 18 s
+## sem nenhuma pipeline nem shader novo no quadro, e o jogo ficou jogável em 94,8 s; com a gravação só na
+## saída, máximo 1,33 s e jogável em 74,8 s. Com cache quente o arquivo (216 MB aqui) também é regravado
+## inteiro quando a sessão junta 3 MB novos. Se o jogo cair, as pipelines da sessão se perdem (o cache de
+## shader em disco continua, então refazê-las é barato). GETECO_PIPELINE_SAVE_ON_EXIT=0 volta aos 3 MB.
+static func apply_pipeline_cache_policy() -> void:
+	const KEY := "rendering/rendering_device/pipeline_cache/save_chunk_size_mb"
+	if OS.get_environment("GETECO_PIPELINE_SAVE_ON_EXIT") == "0": return
+	if float(ProjectSettings.get_setting(KEY, 3.0)) < 4096.0: ProjectSettings.set_setting(KEY, 4096.0)
+
 static func sync_pipeline_msaa(samples: int) -> void:
 	const KEY := "rendering/anti_aliasing/quality/msaa_3d"
 	if OS.get_environment("HARBOR_PIPELINE_MSAA_SYNC") == "0": return
