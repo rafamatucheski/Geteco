@@ -157,9 +157,11 @@ func run() -> void:
 	while Time.get_ticks_msec() < finish:
 		await process_frame
 		if current_scene != menu and current_scene != null and current_scene.get("session") != null:
-			if current_scene.session.arrival.phase == "opening": break
+			# A chegada nasce no meio da montagem fatiada da sessão (FullSession, depois de assaltos);
+			# antes dela a sessão já existe e `arrival` ainda é nulo.
+			if current_scene.session.arrival != null and current_scene.session.arrival.phase == "opening": break
 	check(discarded.get_ref() == null, "New Game disposes preview world")
-	check(current_scene != null and current_scene.get("session") != null and current_scene.session.arrival.phase == "opening", "New Game starts original CGI")
+	check(current_scene != null and current_scene.get("session") != null and current_scene.session.arrival != null and current_scene.session.arrival.phase == "opening", "New Game starts original CGI")
 	check(not FileAccess.file_exists(launch.slot_path("slot_02")), "Test New Game writes no save")
 	await capture("new-game-opening")
 	if is_instance_valid(current_scene): current_scene.queue_free()

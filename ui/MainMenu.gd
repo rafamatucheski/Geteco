@@ -145,19 +145,20 @@ func _show_slots(new_game: bool) -> void:
 		button.disabled = (row.exists and not row.reusable) if new_game else not row.valid
 		if not button.disabled: enabled_options += 1
 		button.pressed.connect(func(): _start(str(row.id), new_game))
-		button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		if row.id == "progress" or not row.exists:
-			%SlotListContainer.add_child(button)
-		else:
-			# Slot numerado ocupado ganha "APAGAR", com confirmação, para liberar espaço.
-			var line := HBoxContainer.new()
-			line.add_child(button)
+		%SlotListContainer.add_child(button)
+		if row.id != "progress" and row.exists:
+			# Slot numerado ocupado ganha "APAGAR", com confirmação, para liberar espaço. Fica dentro do
+			# botão do slot (canto direito) para a lista continuar sendo só de botões de slot.
 			var erase := Button.new()
+			erase.name = "Apagar"
 			erase.text = "APAGAR"
-			erase.custom_minimum_size = Vector2(120, 58)
+			button.add_child(erase)
+			erase.set_anchors_and_offsets_preset(Control.PRESET_RIGHT_WIDE)
+			erase.offset_left = -124
+			erase.offset_right = -8
+			erase.offset_top = 8
+			erase.offset_bottom = -8
 			erase.pressed.connect(func(): _confirm_delete(str(row.id), new_game))
-			line.add_child(erase)
-			%SlotListContainer.add_child(line)
 			AUDIO.hook_button(erase, self)
 		AUDIO.hook_button(button, self)
 	if enabled_options == 0:
