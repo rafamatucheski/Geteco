@@ -86,7 +86,9 @@ static func mesh_for_sliced(key: Vector2i, tree: SceneTree, budget_usec: int, to
 	arrays[Mesh.ARRAY_VERTEX]=vertices
 	arrays[Mesh.ARRAY_NORMAL]=normals
 	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
+	# Célula fora do campo de relevo (mapa compacto de 21/10) não tem faces: superfície vazia dava erro
+	# do RenderingServer (array_len == 0); a malha sem superfície continua valendo como "pronta".
+	if not vertices.is_empty(): mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
 	_meshes[key]=mesh
 	_faces[key]=vertices
 	return mesh
@@ -221,7 +223,9 @@ static func mesh_for(key: Vector2i) -> ArrayMesh:
 	arrays[Mesh.ARRAY_VERTEX]=vertices
 	arrays[Mesh.ARRAY_NORMAL]=normals
 	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
+	# Célula fora do campo de relevo (mapa compacto de 21/10) não tem faces: superfície vazia dava erro
+	# do RenderingServer (array_len == 0); a malha sem superfície continua valendo como "pronta".
+	if not vertices.is_empty(): mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES,arrays)
 	_meshes[key]=mesh
 	_faces[key]=vertices
 	return mesh

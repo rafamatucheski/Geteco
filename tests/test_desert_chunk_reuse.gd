@@ -114,8 +114,15 @@ func _surface_contract() -> void:
 	region.free()
 	await process_frame
 
+## Células dentro do campo de relevo do mapa compacto (21/10); as antigas (-10,-18)/(-11,-18) ficaram
+## fora e o terreno saía sem faces. Duas células distintas: o contrato de cancelamento exige uma que o
+## de fatiamento não deixou em cache.
+static func _relief_cell(offset_cells: int) -> Vector2i:
+	var center: Vector2 = TERRAIN.FIELD.BOUNDS.get_center()
+	return Vector2i(floori(center.x/TERRAIN.CELL)+offset_cells,floori(center.y/TERRAIN.CELL))
+
 func _terrain_slice_contract() -> void:
-	var key:=Vector2i(-10,-18)
+	var key:=_relief_cell(0)
 	var original: ArrayMesh=TERRAIN.mesh_for(key)
 	var expected: Array=original.surface_get_arrays(0)
 	var expected_faces: PackedVector3Array=TERRAIN._faces[key]
@@ -145,7 +152,7 @@ func _cancellation_contract() -> void:
 	check(result.done and result.value==null, "Cancelled horizon resumes without publishing a partial world")
 	var terrain_token := {"cancelled":false,"roots":[]}
 	var terrain_result := {"done":false,"value":null}
-	var key:=Vector2i(-11,-18)
+	var key := _relief_cell(1)
 	var build_mesh := func() -> void:
 		terrain_result.value=await TERRAIN.mesh_for_sliced(key,self,1,terrain_token)
 		terrain_result.done=true
