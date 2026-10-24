@@ -911,3 +911,37 @@ p50/p95/p99 são a média das rodadas. Leitura:
 
 **Não medido nesta rodada:** 3440x1440; rota 66, cidade do deserto, estrada do sal, cavernas, chuva + noite;
 atribuição (StallLog) do pico da serra e do quadro de 0,6–1,0 s do frio.
+
+## 10. 5ª rodada (24/10): `GETECO_PREWARM_PARALLEL` sozinho, carcaça sumindo e o quadro de ~0,9 s do frio
+
+Export `artifacts/perf-r5-20261024/` (HEAD `fa090217`), mesmo estresse e viewport 1920x1200 da §9; vigia sem Godot
+externo em nenhuma das três matrizes (`matrix.sh`, `matrix_hot.sh`, `matrix_wreck.sh`; `resumo.tsv`).
+
+**Frio, jogável (s), A = padrão, P = `GETECO_PREWARM_PARALLEL=1`, ordem A P P A:**
+
+| rota | A | P | máx A (ms) | máx P (ms) |
+|---|---|---|---|---|
+| oeste | 69,5 / 73,3 | 64,6 / 68,1 | 897 / 1 856 | 102 / 114 |
+| serra | 72,5 / 73,2 | 69,6 / 69,4 | 596 / 648 | 612 / 637 |
+| deserto | 75,9 / 75,2 | 72,2 / 71,7 | 1 017 / 965 | 968 / 977 |
+| oeste (matriz da carcaça) | 81,5 / 72,7 | 70,2 / 69,9 (com WRECK_FADE) | 1 000 / 1 706 | 883 / 861 |
+
+P carrega 3–5 s antes nas 8 rodadas. Os máximos de 102/114 ms do oeste P **não se repetiram** na outra matriz
+(861–883 ms): o quadro de ~0,9 s não depende do P.
+
+**A quente, P × A (2 rodadas cada, A P P A), p50 médio (ms):** oeste 7,59 → 7,34; porto 5,75 → 5,72; sobrados
+4,88 → 4,77; serra 3,54 → 3,56; deserto 3,21 → 3,20; travessia 3,37 → 3,33. Máximos e quadros > 33 ms dentro da
+variação entre rodadas iguais (sobrados 32/65 A × 44/85 P; travessia 32/37 × 53/29). **Decisão: P ligado por
+padrão** (`!= "0"` em `ProductionWorld`); `=0` volta à série. Os outros quatro (HIDDEN_COMPILE, WRECK_FADE,
+LOOKOUT_HIDDEN_FIRST, RAIN_PREWARM_BOLT) seguem desligados: na §9 eles pioraram os máximos a quente.
+
+**Carcaça sumindo não é o quadro de ~0,9 s:** com `GETECO_WRECK_FADE_PREWARM=1` o frio do oeste ainda tem 864 /
+886 ms (e 944 / 898 com StallLog). No StallLog esses quadros têm processo 10–15 ms, física 5–10 ms, GPU ~3 ms e
+**1–6 pipelines `draw` novas**, com carcaças e fogo na cena e nenhum nó novo. Com a sonda de pipelines
+(`GETECO_PIPELINE_PROBE=1`, 2 frios) o quadro some (máx 255–261 ms) e as **7 pipelines `draw` da sessão aparecem
+na carga, logo depois da etapa `meshy_bodies`**: a hipótese, **não provada**, é que sem a sonda essas pipelines
+dos corpos do Meshy terminam depois da cortina. Próximo passo: medir a etapa `meshy_bodies` esperando as
+pipelines dela (ou deixando os corpos escondidos mais tempo) e repetir o frio do oeste.
+
+**Pico isolado da serra** (501 ms na §9): não voltou em 4 rodadas a quente com StallLog (máx 31–51 ms) nem nas 8
+quentes desta rodada.

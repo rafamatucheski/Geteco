@@ -359,10 +359,10 @@ func build() -> void:
 	PIPELINE_PROBE.stage("session_systems")
 	# Depois do Weather, do CityLook e da StreetPhysics: chuva (RainPrewarm.late; antes saía sem fazer nada),
 	# efeitos de rua (StreetEffectsPrewarm), reações, interior do carro e combate. Em paralelo como os de
-	# _prewarm_regions (GETECO_PREWARM_PARALLEL=1; desligado por padrão, sem ganho medido limpo).
+	# _prewarm_regions (GETECO_PREWARM_PARALLEL, ligado por padrão desde 24/10; =0 volta à série).
 	var late_steps: Array[String] = ["street_fx", "reaction_visuals", "vehicle_interior", "combat_effects"]
 	if preload("res://runtime/RainPrewarm.gd").late: late_steps.push_front("rain")
-	if OS.get_environment("GETECO_PREWARM_PARALLEL") == "1":
+	if OS.get_environment("GETECO_PREWARM_PARALLEL") != "0":
 		var pending: Array[int] = [late_steps.size()]
 		for step in late_steps: _prewarm_lane([step], pending, curtain)
 		if not await _await_lanes(pending): return
@@ -522,9 +522,10 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	# próprias compilações (combat_resources 31 s no frio, 5 s a quente; a sonda viu 2-8 s por etapa com 3-70
 	# pipelines cada). Juntos, todos põem as peças diante da câmera nos mesmos quadros e as compilações correm ao
 	# mesmo tempo nos trabalhadores do motor. A Cobra/polícia do tiroteio continua depois dos corpos do Meshy
-	# (usa os GLBs já carregados). DESLIGADO por padrão (GETECO_PREWARM_PARALLEL=1 liga): no frio a thread
-	# principal ainda compila um shader por vez e a carga não ficou mais curta em medição limpa (§8).
-	if OS.get_environment("GETECO_PREWARM_PARALLEL") == "1":
+	# (usa os GLBs já carregados). LIGADO por padrão desde 24/10 (=0 volta à série): na 3ª rodada não houve
+	# medição limpa; na 5ª (PC livre, sem Godot externo) o frio ficou 3–5 s mais curto nas 8 rodadas de
+	# oeste, serra e deserto e a quente ficou igual em 6 rotas (docs/perf-playthrough-20261021.md §10).
+	if OS.get_environment("GETECO_PREWARM_PARALLEL") != "0":
 		var lanes: Array = [["local_light_shadow"], ["fire"], ["police_visual"], ["vehicle_variants"], ["bridge_look"],
 			["desert_ground_cover"], ["family_variants"], ["painted_facades"], ["wildlife"], ["forge"], ["skate"],
 			["meshy_bodies", "spawn_visuals"]]
