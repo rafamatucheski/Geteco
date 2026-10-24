@@ -360,7 +360,8 @@ static func _night_pass(chunk: Node3D, context: Dictionary) -> void:
 ## Postes novos nas calçadas: haste+braço e cabeça em duas MultiMesh (a
 ## cabeça usa o material emissivo compartilhado que CityLook acende à noite),
 ## mais mancha de luz no chão como nos postes autorados. Nenhuma Light3D: o
-## custo é o de três MultiMesh por chunk. O carro derruba o poste (FragileProps
+## custo é o de cinco MultiMesh por chunk, incluindo gaiola/difusor do acabamento
+## inspirado na arte do porto. O carro derruba o poste (FragileProps
 ## tipo "lamp") e a mancha daquele poste apaga.
 static func _sidewalk_lamps(chunk: Node3D, context: Dictionary) -> void:
 	var transforms: Array[Transform3D] = []
@@ -402,6 +403,8 @@ static func _sidewalk_lamps(chunk: Node3D, context: Dictionary) -> void:
 	var to_local := chunk.global_transform.affine_inverse()
 	var poles := _lamp_multimesh("pole", transforms.size())
 	var heads := _lamp_multimesh("head", transforms.size())
+	var lantern_frames := _lamp_multimesh("lantern_frame", transforms.size())
+	var lantern_glass := _lamp_multimesh("lantern_glass", transforms.size())
 	var pools := PackedVector3Array()
 	var pool_sizes := PackedFloat32Array()
 	var pool_heights := PackedFloat32Array()
@@ -409,6 +412,8 @@ static func _sidewalk_lamps(chunk: Node3D, context: Dictionary) -> void:
 		var local := to_local * transforms[index]
 		poles.set_instance_transform(index, local)
 		heads.set_instance_transform(index, local)
+		lantern_frames.set_instance_transform(index, local)
+		lantern_glass.set_instance_transform(index, local)
 		var head := local * Vector3(0, LAMP_HEIGHT, LAMP_ARM)
 		pools.append(Vector3(head.x, local.origin.y + 0.05, head.z))
 		pool_sizes.append(clampf(LAMP_HEIGHT * 2.3, 6.0, 11.0))
@@ -424,6 +429,23 @@ static func _sidewalk_lamps(chunk: Node3D, context: Dictionary) -> void:
 	head_instance.material_override = MATERIALS.lamp_head()
 	head_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	chunk.add_child(head_instance)
+	# A small caged diffuser hangs below the existing canopy. Unlike the flat
+	# underside, its warm glass reads from the elevated gameplay camera, matching
+	# the port/garage splash art without more poles, light pools or real lights.
+	var frame_instance := MultiMeshInstance3D.new()
+	frame_instance.name = "CityLook_street_lantern_frames"
+	frame_instance.multimesh = lantern_frames
+	frame_instance.material_override = MATERIALS.flat(Color("4a5054"), .6)
+	frame_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	chunk.add_child(frame_instance)
+	var glass_instance := MultiMeshInstance3D.new()
+	glass_instance.name = "CityLook_street_lantern_diffusers"
+	glass_instance.multimesh = lantern_glass
+	# Shared time-of-day material: the new glass follows the same gradual
+	# transition and warm-white palette, without an additional update loop.
+	glass_instance.material_override = MATERIALS.lamp_head()
+	glass_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	chunk.add_child(glass_instance)
 	var pool_instance := _light_pools(pools, pool_sizes, pool_heights)
 	pool_instance.name = "CitySidewalkLampPools"
 	chunk.add_child(pool_instance)
@@ -433,7 +455,9 @@ static func _sidewalk_lamps(chunk: Node3D, context: Dictionary) -> void:
 		# formato, com "pool" como register_node usa para apagar a luz.
 		FRAGILE._register({"kind": "lamp", "multimesh": poles, "index": index,
 			"visual": weakref(pole_instance),
-			"extra": [{"multimesh": heads, "index": index, "offset": Transform3D.IDENTITY}],
+			"extra": [{"multimesh": heads, "index": index, "offset": Transform3D.IDENTITY},
+				{"multimesh": lantern_frames, "index": index, "offset": Transform3D.IDENTITY},
+				{"multimesh": lantern_glass, "index": index, "offset": Transform3D.IDENTITY}],
 			"pool": {"multimesh": pool_instance.multimesh, "index": index},
 			"chunk": weakref(chunk), "base": base, "point": transforms[index].origin, "state": "standing"})
 
@@ -451,7 +475,7 @@ static func _lamp_multimesh(part: String, count: int) -> MultiMesh:
 static func _lamp_mesh(part: String) -> ArrayMesh:
 	if _lamp_meshes.has(part): return _lamp_meshes[part]
 	# Poste do Blender: a lente fica no mesmo lugar (a mancha de luz sai das constantes).
-	if KIT.blender_props_enabled:
+	if KIT.blender_props_enabled and part in ["pole", "head"]:
 		_lamp_meshes[part] = KIT.blender_mesh("sidewalk_lamp", "LampPole" if part == "pole" else "LampHead")
 		return _lamp_meshes[part]
 	var tool := SurfaceTool.new()
@@ -461,8 +485,22 @@ static func _lamp_mesh(part: String) -> ArrayMesh:
 		_lamp_box(tool, Vector3(0, LAMP_HEIGHT * 0.5, 0), Vector3(0.13, LAMP_HEIGHT, 0.13))
 		_lamp_box(tool, Vector3(0, LAMP_HEIGHT - 0.05, LAMP_ARM * 0.5), Vector3(0.09, 0.09, LAMP_ARM))
 		_lamp_box(tool, Vector3(0, LAMP_HEIGHT + 0.03, LAMP_ARM + 0.02), Vector3(0.36, 0.1, 0.62))
-	else:
+	elif part == "head":
 		_lamp_box(tool, Vector3(0, LAMP_HEIGHT - 0.04, LAMP_ARM + 0.02), Vector3(0.3, 0.05, 0.54))
+	elif part == "lantern_frame":
+		# The existing shoebox head is the rain canopy. A restrained four-rod
+		# guard and lower tray give the point of light an industrial port shape.
+		var center_z := LAMP_ARM + .02
+		_lamp_box(tool, Vector3(0, LAMP_HEIGHT - .48, center_z), Vector3(.38, .055, .44))
+		for x in [-.16, .16]:
+			for z in [-.19, .19]:
+				_lamp_box(tool, Vector3(x, LAMP_HEIGHT - .265, center_z + z), Vector3(.035, .43, .035))
+		# Base ferrule and two shaft collars are grounded metal details, never
+		# decorative lights. They preserve the existing silhouette/footprint.
+		_lamp_box(tool, Vector3(0, .52, 0), Vector3(.19, .045, .19))
+		_lamp_box(tool, Vector3(0, 1.06, 0), Vector3(.14, .05, .14))
+	elif part == "lantern_glass":
+		_lamp_box(tool, Vector3(0, LAMP_HEIGHT - .26, LAMP_ARM + .02), Vector3(.25, .37, .29))
 	tool.generate_normals()
 	var mesh := tool.commit()
 	_lamp_meshes[part] = mesh

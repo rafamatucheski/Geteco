@@ -137,6 +137,49 @@ func _build(region) -> void:
 	_paths.visible = region.terrain == null
 	add_child(_paths)
 	_build_lamps()
+	_build_delineators(region)
+
+## The splash-art rhythm comes from low passive amber panels between existing
+## lamps. Markers sit beyond the 1.65 m walking band; branches remain open.
+func _build_delineators(region) -> void:
+	var poses: Array[Transform3D] = []
+	for road: Dictionary in region.roads:
+		if str(road.get("surface", "asphalt")) != "asphalt": continue
+		var points: PackedVector3Array = road.points
+		var half := float(road.width) * 0.5
+		var travelled := 0.0
+		for i in range(points.size() - 1):
+			var a := points[i]
+			var b := points[i + 1]
+			var length := a.distance_to(b)
+			if length < 0.01: continue
+			var direction := a.direction_to(b)
+			var normal := Vector3(direction.z, 0, -direction.x).normalized()
+			# Main-route samples are only ~4 m apart: use continuous road phase,
+			# rather than trimming both ends of each tiny geometry segment.
+			var step := fposmod(12.0 - travelled, 24.0)
+			while step < length - 0.001:
+				for side: float in [-1.0, 1.0]:
+					var point: Vector3 = a + direction * step + normal * side * (half + 1.95)
+					if _in_crossing(point) or region.route_geometry.contains(point, 1.8): continue
+					var near_entry := false
+					for entry: Dictionary in region.entries:
+						var entry_point: Vector3 = entry.get("entry_position", entry.get("position", Vector3.INF))
+						if Vector2(point.x, point.z).distance_to(Vector2(entry_point.x, entry_point.z)) < 6.0:
+							near_entry = true
+							break
+					if near_entry: continue
+					var near_lamp := false
+					for lamp_point in _lamp_points:
+						if point.distance_squared_to(lamp_point) < 4.0:
+							near_lamp = true
+							break
+					if near_lamp: continue
+					if region.terrain != null: point.y = region.terrain.surface_height_at(Vector2(point.x, point.z))
+					poses.append(Transform3D(Basis(Vector3.UP, atan2(direction.x, direction.z)), point))
+				step += 24.0
+			travelled += length
+	preload("res://world/shared/roads/RoadDelineatorBatches.gd").build(self, poses, "MountainDelineator")
 
 func _build_lamps() -> void:
 	# Giro calculado uma vez: nearest_road percorre todas as estradas residentes.

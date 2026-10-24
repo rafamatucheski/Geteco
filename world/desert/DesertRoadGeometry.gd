@@ -12,6 +12,7 @@ var corridors: Array[Dictionary] = []
 var shoulders: Array[Dictionary] = []
 var paint: Array[Dictionary] = []
 var junctions: Array[Dictionary] = []
+var _delineators := preload("res://world/desert/DesertRoadDelineators.gd").new()
 const EDGE_BLEND := .35
 
 func configure(roads: Array[Dictionary]) -> void:
@@ -37,6 +38,7 @@ func configure(roads: Array[Dictionary]) -> void:
 	_build_junctions(roads)
 	for road in roads: _build_paint(road)
 	_build_stop_lines()
+	_delineators.configure(roads, self)
 
 func build_chunk(parent: Node3D, rect: Rect2) -> void:
 	# Avoid coincident triangles at T/crossings instead of relying on depth ties.
@@ -53,6 +55,7 @@ func build_chunk(parent: Node3D, rect: Rect2) -> void:
 	_emit(parent,"WornEdge",white,rect,.035 if UNIFIED_BRIDGE.enabled() else .027,UNIFIED_BRIDGE.material("white") if UNIFIED_BRIDGE.enabled() else G.material(Color("c5bea7")),false)
 	_emit(parent,"LaneDash",yellow,rect,.035 if UNIFIED_BRIDGE.enabled() else .028,UNIFIED_BRIDGE.material("yellow") if UNIFIED_BRIDGE.enabled() else G.material(Color("bbad73")),false)
 	_bank_walk(parent,rect)
+	_delineators.build_chunk(parent,rect)
 	# A areia e a pista compartilham a cota física. A posse da pista também
 	# precisa valer para colisão, sem depender do desempate entre faces coplanares.
 	preload("res://world/desert/DesertGroundOwnership.gd").compose_collision(parent, rect, corridors)

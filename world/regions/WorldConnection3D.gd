@@ -331,10 +331,12 @@ func _build_unified_bridge() -> void:
 				best_distance = delta
 				section_distance = row.distance
 		_add_unified_support(kit,Vector3(x,0,CENTER_Z),Vector3.BACK,UNIFIED_BRIDGE.east_deck_half_width(x),section_distance)
+	preload("res://world/regions/unified_bridge/BridgeWalkSafety.gd").add_geometry(kit)
 	kit.commit(self,"UnifiedEastBridge")
 	set_meta("unified_bridge",true)
 	set_meta("bridge_surface_owner","UnifiedBridgeKit")
 	_build_bridge_lamps(UNIFIED_BRIDGE.material("steel") as StandardMaterial3D)
+	preload("res://world/regions/unified_bridge/BridgeWalkSafety.gd").add_lamps(self)
 
 func _add_unified_support(kit: UNIFIED_BRIDGE, point: Vector3, side: Vector3, half_width: float, distance: float) -> void:
 	kit.section_at(distance)
@@ -786,8 +788,8 @@ func _polygon_mesh(label: String, polygon: PackedVector2Array, y: float, materia
 	return result
 
 func _build_tunnel() -> void:
-	var rock := UNIFIED_BRIDGE.material("concrete") as StandardMaterial3D if UNIFIED_BRIDGE.enabled() else _material("tunnel_rock",Color("454b47"))
-	var lining := UNIFIED_BRIDGE.material("concrete") as StandardMaterial3D if UNIFIED_BRIDGE.enabled() else _material("tunnel_lining",Color("777b72"))
+	var rock := preload("res://world/regions/unified_bridge/BridgeSurfaceMaterials.gd").covered_concrete() if UNIFIED_BRIDGE.enabled() else _material("tunnel_rock",Color("454b47"))
+	var lining := preload("res://world/regions/unified_bridge/BridgeSurfaceMaterials.gd").covered_concrete() if UNIFIED_BRIDGE.enabled() else _material("tunnel_lining",Color("777b72"))
 	var steel := UNIFIED_BRIDGE.material("steel") as StandardMaterial3D if UNIFIED_BRIDGE.enabled() else _material("tunnel_steel",Color("a4afa8"),.62,.18)
 	var paving: StandardMaterial3D
 	if not UNIFIED_BRIDGE.enabled():

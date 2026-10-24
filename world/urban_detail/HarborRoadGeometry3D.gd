@@ -64,6 +64,8 @@ var _earth_verge_bounds: Array[Rect2] = []
 var _crosswalk_white_bounds: Array[Rect2] = []
 var _crosswalk_tactile_bounds: Array[Rect2] = []
 var _crosswalk_stop_bounds: Array[Rect2] = []
+var _sidewalk_details := preload("res://world/urban_detail/HarborSidewalkDetails.gd").new()
+var _traffic_signs := preload("res://world/urban_detail/HarborTrafficSigns.gd").new()
 
 
 func configure(source_roads: Array[Dictionary], surfaces := true) -> void:
@@ -103,6 +105,7 @@ func configure(source_roads: Array[Dictionary], surfaces := true) -> void:
 	if not surfaces:
 		_prepare_crosswalks()
 		_prepare_clipping_bounds()
+		_traffic_signs.configure(source_roads, crossing_layout)
 		return
 	_layers = [
 		_layer(SIDEWALK_COLOR, SIDEWALK_MARGIN * 2.0, 0.008),
@@ -126,6 +129,8 @@ func configure(source_roads: Array[Dictionary], surfaces := true) -> void:
 	_earth_verge_triangles = preload("res://world/urban_detail/RuralRoadVerge.gd").prepare(_earth_polygons)
 	_prepare_crosswalks()
 	_prepare_clipping_bounds()
+	_sidewalk_details.configure(source_roads, crossing_layout)
+	_traffic_signs.configure(source_roads, crossing_layout)
 
 
 func _prepare_clipping_bounds() -> void:
@@ -212,6 +217,8 @@ func build_chunk(parent: Node3D, rect: Rect2) -> void:
 	_add_clipped_surface(parent,"HarborTactile",_crosswalk_tactile,clip,0.039,_material(TACTILE_COLOR),_crosswalk_tactile_bounds)
 	_add_clipped_surface(parent,"HarborStopLine",_crosswalk_stop,clip,0.040,_material(STOP_LINE_COLOR),_crosswalk_stop_bounds)
 	_build_markings(parent, rect)
+	_sidewalk_details.build_chunk(parent, rect)
+	_traffic_signs.build_chunk(parent, rect)
 
 
 ## `outer` menos a união de `inner`, já recortados ao chunk (GroundCut cuida do sentido dos polígonos e
@@ -496,6 +503,8 @@ func _build_markings(parent: Node3D, rect: Rect2) -> void:
 			if (cut as Rect2).intersects(rect.grow(1.0)): tunnel_cuts.append(cut)
 	for road in _roads:
 		if String(road.id).begins_with("mountain_bridge_"): continue
+		var styles := _marking_styles(road)
+		if styles.is_empty(): continue
 		var points := road.points as PackedVector2Array
 		var travelled := 0.0
 		for index in range(points.size() - 1):
@@ -510,27 +519,56 @@ func _build_markings(parent: Node3D, rect: Rect2) -> void:
 				var drawing := phase < DASH_LENGTH
 				var remaining := (DASH_LENGTH - phase) if drawing else (DASH_LENGTH + DASH_GAP - phase)
 				var step := minf(remaining, segment_length - walked)
-				if drawing and step > 0.03:
+				if step > 0.03:
 					var from := a + direction * walked
 					var to := a + direction * (walked + step)
-					var midpoint := (from + to) * 0.5
-					# Half-open chunk ownership: padding duplicated coplanar paint
-					# in adjacent chunks while streaming across their border.
-					if rect.has_point(midpoint) and not UNIFIED_BRIDGE.owns_surface_point(midpoint) and not _marking_hits_junction(midpoint) and not _marking_hits_junction(from) and not _marking_hits_junction(to):
-						if dash_batch_enabled and not _mark_touches(tunnel_cuts, from, to): _queue_mark(batches, from, to)
-						else: _add_mark(mark_parent, from, to, count)
-						count += 1
-						if int(road.get("lanes_per_direction",1)) == 2:
-							for side in [-1,1]:
-								var offset: Vector2 = Vector2(-direction.y,direction.x)*float(road.width)*.25*side
-								if dash_batch_enabled and not _mark_touches(tunnel_cuts,from+offset,to+offset): _queue_mark(batches,from+offset,to+offset,true)
-								else: _add_mark(mark_parent,from+offset,to+offset,count,true)
-								count += 1
+					for style in styles:
+						if not drawing and not bool(style.solid): continue
+						var offset := direction.orthogonal() * float(style.offset)
+						count += _emit_mark(mark_parent, batches, rect, tunnel_cuts, from + offset, to + offset, count, bool(style.white))
 				walked += maxf(step, 0.03)
 			travelled += segment_length
 	for color_key in batches: _add_mark_batch(mark_parent, Color(color_key), batches[color_key])
 	if count > 0: parent.add_child(mark_parent)
 	else: mark_parent.free()
+
+
+## Brazilian longitudinal paint: yellow separates opposing traffic, white separates
+## lanes of one direction. Follow the same inbound/outbound convention as the graph.
+## Curbed urban streets have no artificial shoulder line or parking prohibition.
+func _marking_styles(road: Dictionary) -> Array[Dictionary]:
+	var styles: Array[Dictionary] = []
+	var road_id := String(road.id)
+	var one_way := road_id.contains("inbound") or road_id.contains("outbound")
+	var lanes := int(road.get("lanes_per_direction", 1))
+	var width := float(road.width)
+	if width < 5.0 and not one_way: return styles
+	if one_way:
+		if lanes >= 2: styles.append({"offset": 0.0, "white": true, "solid": false})
+	elif lanes >= 2:
+		# Double continuous centre line on four-lane undivided avenues. The
+		# parallel white broken lines retain the adjacent overtaking lanes.
+		for side in [-1.0, 1.0]:
+			styles.append({"offset": side * 0.20, "white": false, "solid": true})
+			styles.append({"offset": side * width * 0.25, "white": true, "solid": false})
+	else:
+		styles.append({"offset": 0.0, "white": false, "solid": false})
+	if width >= 6.5 and float(road.sidewalk_width) <= 0.1:
+		for side in [-1.0, 1.0]:
+			styles.append({"offset": side * (width * 0.5 - 0.35), "white": true, "solid": true})
+	return styles
+
+
+func _emit_mark(parent: Node3D, batches: Dictionary, rect: Rect2, tunnel_cuts: Array[Rect2], from: Vector2, to: Vector2, index: int, white: bool) -> int:
+	var midpoint := (from + to) * 0.5
+	# Test the actual offset lane, not only the road centre. Keep half-open
+	# chunk ownership and the bridge/tunnel surface owners from the old paint.
+	if not rect.has_point(midpoint): return 0
+	for point in [from, midpoint, to]:
+		if UNIFIED_BRIDGE.owns_surface_point(point) or _marking_hits_junction(point): return 0
+	if dash_batch_enabled and not _mark_touches(tunnel_cuts, from, to): _queue_mark(batches, from, to, white)
+	else: _add_mark(parent, from, to, index, white)
+	return 1
 
 
 func _marking_hits_junction(point: Vector2) -> bool:
