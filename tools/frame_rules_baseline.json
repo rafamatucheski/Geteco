@@ -57,7 +57,8 @@
     "world/places/supermarket/SupermarketInterior.gd": 1,
     "world/places/upside_world/UpsideWorld.gd": 1,
     "world/railway/RailwayWorld.gd": 2,
-    "world/regions/WorldConnection3D.gd": 3
+    "world/regions/WorldConnection3D.gd": 3,
+    "world/regions/unified_bridge/BridgeWalkSafety.gd": 1
   },
   "group_scan_per_frame": {
     "activities/motocross/Motocross.gd": 1,

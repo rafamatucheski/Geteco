@@ -1968,6 +1968,9 @@ func _carriageway_cells() -> Dictionary:
 	return _carriageway_grid
 
 func _on_carriageway(point: Vector3) -> bool:
+	var bridge = preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd")
+	if bridge.owns_east_point(Vector2(point.x,point.z)) and Geometry2D.is_point_in_polygon(Vector2(point.x,point.z),bridge.east_asphalt_footprint()):
+		return true
 	return grid_on_carriageway(_carriageway_cells(), point)
 
 static func carriageway_grid(roads: Array) -> Dictionary:

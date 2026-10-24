@@ -15,6 +15,9 @@ func configure(roads: Array) -> void:
 			var count := maxi(1,ceili(length/22.0))
 			for n in count:
 				slots.append({"a":a,"b":b,"point":a.lerp(b,(n+.5)/count),"width":road.width,"road":road})
+	# The traffic graph is narrower than the authored bridge carriageway.
+	# Sample its actual sidewalks rather than offsetting a vehicle lane.
+	slots.append_array(preload("res://world/regions/unified_bridge/BridgeWalkSafety.gd").population_slots())
 
 func select(production, vehicle := false) -> Dictionary:
 	if slots.is_empty(): return {}
@@ -25,6 +28,8 @@ func select(production, vehicle := false) -> Dictionary:
 	for attempt in mini(slots.size(),32):
 		var index := posmod(start+int(float(attempt)*slots.size()/mini(slots.size(),32)),slots.size())
 		var slot: Dictionary = slots[index]
+		if vehicle and slot.get("bridge_walk",false): continue
+		if not vehicle and not slot.get("bridge_walk",false) and preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd").owns_east_point(Vector2(slot.point.x,slot.point.z)): continue
 		if vehicle and (slot.width<5 or slot.a.distance_to(slot.b)<16): continue
 		var direction: Vector3 = slot.a.direction_to(slot.b)
 		var point: Vector3 = slot.point
@@ -35,7 +40,7 @@ func select(production, vehicle := false) -> Dictionary:
 			if not one_way and side<0: direction = -direction
 			lane_index = randi_range(0,maxi(1,int(slot.road.get("lanes_per_direction",1)))-1)
 			point += production.ambient_traffic_routes._lane_offset(direction,{"width":slot.width,"one_way":one_way,"lanes":slot.road.get("lanes_per_direction",1)},lane_index)
-		else: point += direction.cross(Vector3.UP)*(slot.width*.5+.85)*side
+		elif not slot.get("bridge_walk",false): point += direction.cross(Vector3.UP)*(slot.width*.5+.85)*side
 		if not production._spawn_point_allowed(point,3.0 if vehicle else 1.0,45.0 if vehicle else 18.0): continue
 		var nearby := 0
 		var too_close := false

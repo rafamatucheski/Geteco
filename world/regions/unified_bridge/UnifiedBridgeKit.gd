@@ -163,7 +163,11 @@ static func material(id: String) -> Material:
 	if key == "asphalt":
 		result = preload("res://world/regions/unified_bridge/UnifiedRoadAsphalt.gd").material()
 	elif key == "concrete":
-		result = Paving.material()
+		result = preload("res://world/regions/unified_bridge/BridgeSurfaceMaterials.gd").concrete()
+	elif key == "sidewalk":
+		result = preload("res://world/regions/unified_bridge/BridgeSurfaceMaterials.gd").sidewalk()
+	elif key == "steel":
+		result = preload("res://world/regions/unified_bridge/BridgeSurfaceMaterials.gd").steel()
 	else:
 		var finish := StandardMaterial3D.new()
 		finish.albedo_color = Color({"steel":"53676c","white":"d9dedb","yellow":"d4b85b"}.get(key,"979f9f"))
@@ -174,11 +178,12 @@ static func material(id: String) -> Material:
 	return result
 
 static func materials() -> Array:
-	for id in ["asphalt","concrete","steel","white","yellow"]: material(id)
+	for id in ["asphalt","concrete","sidewalk","steel","white","yellow"]: material(id)
 	return _materials.values()
 
 static func set_wetness(value: float) -> void:
 	(material("asphalt") as ShaderMaterial).set_shader_parameter("wetness",clampf(value,0.0,1.0))
+	preload("res://world/regions/unified_bridge/BridgeSurfaceMaterials.gd").set_wetness(value)
 
 func add_segment(a: Vector3, b: Vector3, sa: Vector3, sb: Vector3, ra: float, rb: float, wa: float, wb: float, guards := true, options: Dictionary = {}) -> void:
 	if a.distance_squared_to(b) < .000001: return
@@ -206,8 +211,8 @@ func add_segment(a: Vector3, b: Vector3, sa: Vector3, sb: Vector3, ra: float, rb
 		var outer_a := a+edge_a*wa+Vector3.UP*side_walk_a
 		var outer_b := b+edge_b*wb+Vector3.UP*side_walk_b
 		_surface_exclusions.assign(walk_exclusions)
-		_face("concrete",PackedVector3Array([inner_a,inner_b,bevel_b,bevel_a]),Vector3.UP,solid)
-		_face("concrete",PackedVector3Array([bevel_a,bevel_b,outer_b,outer_a]),Vector3.UP,solid)
+		_face("sidewalk",PackedVector3Array([inner_a,inner_b,bevel_b,bevel_a]),Vector3.UP,solid)
+		_face("sidewalk",PackedVector3Array([bevel_a,bevel_b,outer_b,outer_a]),Vector3.UP,solid)
 		_surface_exclusions.assign(structural_exclusions)
 		if bool(options.get("structure",true)):
 			_face("concrete",PackedVector3Array([outer_a,outer_b,b+edge_b*wb-Vector3.UP*THICKNESS,a+edge_a*wa-Vector3.UP*THICKNESS]),(edge_a+edge_b).normalized(),solid)
@@ -322,8 +327,8 @@ func _beam(id: String, a: Vector3, b: Vector3, width: float, height: float, soli
 
 func commit(parent: Node3D, label: String) -> Array[MeshInstance3D]:
 	var settings := {}
-	for id in ["asphalt","concrete","steel","white","yellow"]:
-		settings[id] = [material(id),id in ["concrete","steel"]]
+	for id in ["asphalt","concrete","sidewalk","steel","white","yellow"]:
+		settings[id] = [material(id),id in ["concrete","sidewalk","steel"]]
 	var result: Array[MeshInstance3D] = _mesh.commit(parent,label,settings)
 	var body := StaticBody3D.new()
 	body.name = label+"Solid"
