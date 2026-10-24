@@ -112,14 +112,17 @@ func _drive_until(action: String, place: String) -> bool:
 	return crossed
 
 func _seed() -> Dictionary:
+	# Na frente do portão, a partir da posição atual da oficina (o layout compacto de 21/10 a moveu
+	# de z -955 para -615; o teste ficou 330 m longe e o trecho dela nem carregava).
+	var front: Vector3 = preload("res://world/desert/DesertLayout.gd").WORKSHOP+Vector3(0,0,13)
 	var state := STATE.new()
-	if not state.restore_snapshot(FIXTURE.full_snapshot(Vector3(-137.8,.08,-942),true)): return {}
+	if not state.restore_snapshot(FIXTURE.full_snapshot(front+Vector3(2.2,.08,0),true)): return {}
 	state.set_location("desert")
 	state.checkpoint_id = "desert_digo"
-	state.world_state.pedestrian = {"region":"desert","position":[-137.8,.08,-942]}
+	state.world_state.pedestrian = {"region":"desert","position":[front.x+2.2,.08,front.z]}
 	DIGO.complete_desert_race(state.world_state,DIGO.DESERT_RACE_ID,true)
 	state.economy.grant_reward("test_digo_drive_funds",100000)
-	state.world_state.vehicles = [{"archetype":"desert_coyote","vehicle_id":ID,"was_driven":true,"paint":"ccae50ff","position":[-140,.12,-942],"yaw":0.0,"health":float(preload("res://runtime/FleetCatalog.gd").spec("desert_coyote").durability)*.75,"region":"desert","equipment":{}}]
+	state.world_state.vehicles = [{"archetype":"desert_coyote","vehicle_id":ID,"was_driven":true,"paint":"ccae50ff","position":[front.x,.12,front.z],"yaw":0.0,"health":float(preload("res://runtime/FleetCatalog.gd").spec("desert_coyote").durability)*.75,"region":"desert","equipment":{}}]
 	return state.snapshot()
 
 func _run() -> void:
@@ -147,8 +150,13 @@ func _run() -> void:
 	if not _check(world.driving.occupied and car.vehicle_id == ID,"saved driver starts in own car"): _finish(1); return
 	var helper = session.desert.workshop_drive
 	var exterior_gate: Node3D
-	for candidate in get_nodes_in_group("digo_vehicle_gate"):
-		if world.is_ancestor_of(candidate): exterior_gate = candidate; break
+	# O prédio do Digo é um registro do trecho, montado em fatias depois da cortina (streaming conta
+	# quadros, 22/10): o portão pode chegar alguns segundos depois de jogável.
+	var gate_deadline := Time.get_ticks_msec()+30000
+	while not is_instance_valid(exterior_gate) and Time.get_ticks_msec() < gate_deadline:
+		for candidate in get_nodes_in_group("digo_vehicle_gate"):
+			if world.is_ancestor_of(candidate): exterior_gate = candidate; break
+		if not is_instance_valid(exterior_gate): await process_frame
 	if not _check(is_instance_valid(exterior_gate) and not exterior_gate.is_open(),"exterior garage has a real closed shutter before admission"): _finish(1); return
 	var gate_events: Array[Dictionary] = []
 	exterior_gate.access_changed.connect(func(opened: bool): gate_events.append({"opened":opened,"transition":session.transition_kind,"car_locked":car.input_locked,"player_locked":world.player.input_locked}))

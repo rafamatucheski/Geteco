@@ -30,7 +30,7 @@ func _initialize() -> void:
 
 func _seed() -> Dictionary:
 	var state := STATE.new()
-	if not state.restore_snapshot(FIXTURE.full_snapshot(Vector3(-137.8,.08,-942),true)): return {}
+	if not state.restore_snapshot(FIXTURE.full_snapshot(preload("res://world/desert/DesertLayout.gd").WORKSHOP+Vector3(2.2,.08,13),true)): return {}
 	state.set_location("desert",DRIVE.PLACE)
 	state.checkpoint_id = DRIVE.PLACE
 	state.world_state.erase("pedestrian")

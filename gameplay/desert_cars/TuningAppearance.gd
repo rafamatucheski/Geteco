@@ -38,6 +38,9 @@ func _is_rim(material: StandardMaterial3D) -> bool:
 	for excluded in ["brake","rotor","caliper","rubber","tire","wheel_fixed"]:
 		if excluded in role: return false
 	if role in ["wheel_alloy","alloy","rim","wheel_rim","rim_metal","wheel_metal"]: return true
+	# A frota refeita em 21/10 chama o aro de "detail" dentro da malha da roda (só malhas com
+	# wheel_center chegam aqui, então o "detail" da carroceria não entra). A cópia é por instância.
+	if role == "detail": return true
 	# Only unlabelled legacy exports need the material-property fallback.
 	return role.is_empty() and material.metallic > .35 and material.roughness < .6 and material.albedo_color.v > .30
 
