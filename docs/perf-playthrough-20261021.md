@@ -945,3 +945,45 @@ pipelines dela (ou deixando os corpos escondidos mais tempo) e repetir o frio do
 
 **Pico isolado da serra** (501 ms na §9): não voltou em 4 rodadas a quente com StallLog (máx 31–51 ms) nem nas 8
 quentes desta rodada.
+
+## 11. 6ª rodada (24/10): atribuição do quadro de ~1 s do frio e dos picos a quente
+
+Export `artifacts/perf-r6-20261024/` com `GETECO_PIPELINE_PROBE=lite` (novo) + `HARBOR_STALL_LOG=1`; 3 frios do
+oeste e 3 quentes de porto e sobrados. Rodadas de diagnóstico, fora das médias (a revarredura da sonda põe
+~200 ms nos quadros com pipeline nova a quente).
+
+**Sonda leve.** A completa descreve cada nó novo na carga e atrasava o frio a ponto de o quadro de ~1 s sumir
+(2 de 2 rodadas; um quadro de 2,9 s aparecia sob a cortina). A leve só guarda ids na carga, monta o "já visto"
+uma vez no 1º quadro jogável (165 ms, 25 mil nós) e só descreve em quadro com pipeline nova. Com ela o quadro
+de ~1 s **continua aparecendo** (1 114 / 1 166 / 1 145 ms em t = 127 / 154 / 142 s), então ela não perturba.
+Limite: peças de pré-aquecimento já apagadas não entram no "já visto", e a lista de candidatos sai larga.
+
+**Quadro de ~1 s do frio — continua sem causa provada.** Sempre 1 pipeline nova no quadro (`surface` em 2,
+`draw` em 1), 50–80 s depois de jogável, processo 10–15 ms, GPU ~3 ms. Os candidatos mudam de rodada para
+rodada (pintura suja de picape, carroceria amassada, placa `wave3_sinal.glb`) e a pintura suja já está no
+pré-aquecimento. Descartados: carcaça sumindo (§10), as 7 pipelines `draw` da carga (saem nas duas sondas,
+depois de `audio`/`meshy_bodies`). A pilha nativa não foi gravada. Hipótese em aberto: um evento único por
+sessão fria (driver ou motor) que, com a carga mais lenta, cai sob a cortina.
+
+**Picos a quente: trechos da thread principal ≥ 5 ms** (só aparecem em quadros > 40 ms, então subcontam):
+
+| trecho | vezes | ms | o que é |
+|---|---|---|---|
+| `stream.harbor.prepare_collision` (= `stream.harbor.surfaces`) | 8 | 13–27 | ator físico (despacho, ônibus) entra numa célula sem chão: `NativeRegion.prepare_collision_at` monta as superfícies da célula inteira no quadro |
+| `vehicle.dents.apply` | 9 | 8–20 | malha nova do amassado + reaplicação do vidro furado |
+| `gameplay.fire_at` / `bench.shoot` | 1 | 33,6 | um tiro |
+| `vehicle.doors.prepare` | 1 | 19,7 | portas do carro |
+
+**Feito: vidro em lote** (`VehicleGlassDamage._reapply_part`, `GETECO_GLASS_BATCH_REAPPLY=0` volta). O
+`reapply` depois do amassado chamava `_remove_panel` por registro, cada um remontando o mapa de vizinhança e a
+malha inteira da peça. Agora cada superfície monta o mapa uma vez e a malha é remontada uma vez, com o mesmo
+resultado (`tests/measure/measure_glass_reapply.gd`, 6 carros: vidro idêntico; 1,6 → 0,5 ms no union_sedan,
+2,8 → 1,4 ms na monaliza). **Não explica os 8–20 ms do `dents.apply`:** com os painéis acabando, o reapply
+fica ≤ 3 ms; o resto do trecho (malha nova no RenderingServer com a GPU ocupada?) não foi isolado — no editor,
+fora do jogo, o `_apply_job` inteiro custa 0,2–0,7 ms.
+
+**Próximos passos:** (1) `prepare_collision_at` antecipado e fatiado para atores do despacho/ônibus (pedir a
+célula seguinte pela fila do streaming antes de precisar); (2) span por parte dentro de `vehicle.dents.apply`
+(malha × vidro × chuva do para-brisa) numa rodada a quente; (3) `gameplay.fire_at` e `vehicle.doors.prepare`
+com span interno; (4) quadro de ~1 s do frio: gravar a pilha nativa ou testar com o cache do driver já quente e
+o do Godot frio (e vice-versa) para separar driver de motor.

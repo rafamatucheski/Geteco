@@ -180,23 +180,120 @@ func reapply() -> void:
 	for part: MeshInstance3D in vehicle.visual.find_children("*","MeshInstance3D",true,false):
 		if part.mesh == null or not part.is_visible_in_tree(): continue
 		if _parts.has(part) and part.mesh == _parts[part].applied: continue
-		var inverse := _canonical(part,vehicle).affine_inverse()
-		for row in records:
-			var point := Vector3(row.point[0],row.point[1],row.point[2])
-			var direction := Vector3(row.direction[0],row.direction[1],row.direction[2])
-			var start := inverse * (point-direction*.08)
-			var end := inverse * (point+direction*.08)
-			for surface in part.mesh.get_surface_count():
-				if _hidden(part,surface) or not INTERIOR._is_glass(part,surface,part.get_active_material(surface)): continue
-				var arrays := INTERIOR.contact_arrays(part.mesh,surface)
-				var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
-				var indices := _indices(arrays)
-				for i in range(0,indices.size()-2,3):
-					if Geometry3D.segment_intersects_triangle(start,end,vertices[indices[i]],vertices[indices[i+1]],vertices[indices[i+2]]) != null:
-						_remove_panel(part,surface,i)
-						break
+		if batch_reapply: _reapply_part(part)
+		else: _reapply_part_per_record(part)
 	_applying = false
 	_refresh_rain()
+
+## GETECO_GLASS_BATCH_REAPPLY=0 volta ao caminho antigo, um _remove_panel por registro (A/B).
+static var batch_reapply := OS.get_environment("GETECO_GLASS_BATCH_REAPPLY") != "0"
+
+func _reapply_part_per_record(part: MeshInstance3D) -> void:
+	var inverse := _canonical(part,vehicle).affine_inverse()
+	for row in records:
+		var point := Vector3(row.point[0],row.point[1],row.point[2])
+		var direction := Vector3(row.direction[0],row.direction[1],row.direction[2])
+		var start := inverse * (point-direction*.08)
+		var end := inverse * (point+direction*.08)
+		for surface in part.mesh.get_surface_count():
+			if _hidden(part,surface) or not INTERIOR._is_glass(part,surface,part.get_active_material(surface)): continue
+			var arrays := INTERIOR.contact_arrays(part.mesh,surface)
+			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+			var indices := _indices(arrays)
+			for i in range(0,indices.size()-2,3):
+				if Geometry3D.segment_intersects_triangle(start,end,vertices[indices[i]],vertices[indices[i+1]],vertices[indices[i+2]]) != null:
+					_remove_panel(part,surface,i)
+					break
+
+## Todos os registros de uma vez numa peça (24/10). Antes cada registro que acertava vidro chamava
+## _remove_panel, que remontava o mapa de vizinhança do vidro e a malha INTEIRA da peça: depois de um
+## amassado (malha nova, geometry_changed) um carro com 10 tiros remontava a lataria 10 vezes no mesmo
+## quadro (vehicle.dents.apply 8–20 ms no estresse a quente, 6ª rodada). Mesmo resultado: cada registro, em
+## ordem, tira o painel do 1º triângulo ainda presente que ele cruza em cada superfície de vidro; o mapa de
+## vizinhança sai uma vez por superfície e a malha é remontada uma vez no fim.
+func _reapply_part(part: MeshInstance3D) -> void:
+	var original := part.mesh
+	var inverse := _canonical(part,vehicle).affine_inverse()
+	var segments: Array = []
+	for row in records:
+		var point := Vector3(row.point[0],row.point[1],row.point[2])
+		var direction := Vector3(row.direction[0],row.direction[1],row.direction[2])
+		segments.append([inverse * (point-direction*.08), inverse * (point+direction*.08)])
+	var removed_by_surface: Dictionary = {}
+	for surface in original.get_surface_count():
+		if _hidden(part,surface) or not INTERIOR._is_glass(part,surface,part.get_active_material(surface)): continue
+		var arrays := INTERIOR.contact_arrays(original,surface)
+		var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+		if vertices.is_empty(): continue
+		var indices := _indices(arrays)
+		var bounds := AABB(vertices[0],Vector3.ZERO)
+		for vertex in vertices: bounds = bounds.expand(vertex)
+		bounds = bounds.grow(.002)
+		var removed: Dictionary = {}
+		var welded: Dictionary = {}
+		for segment in segments:
+			if bounds.intersects_segment(segment[0],segment[1]) == null: continue
+			for i in range(0,indices.size()-2,3):
+				if removed.has(i): continue
+				if Geometry3D.segment_intersects_triangle(segment[0],segment[1],vertices[indices[i]],vertices[indices[i+1]],vertices[indices[i+2]]) == null: continue
+				if welded.is_empty(): welded = _welded(vertices,indices)
+				_flood(i,vertices,indices,welded,removed)
+				break
+		if not removed.is_empty(): removed_by_surface[surface] = removed
+	if removed_by_surface.is_empty(): return
+	var entry: Dictionary = _parts.get(part,{"base":original,"applied":original,"overrides":{}})
+	if part.mesh != entry.applied: entry.base = original
+	var kept_by_surface: Dictionary = {}
+	for surface in removed_by_surface:
+		if not entry.overrides.has(surface): entry.overrides[surface] = part.get_surface_override_material(surface)
+		var indices := _indices(INTERIOR.contact_arrays(original,surface))
+		var removed: Dictionary = removed_by_surface[surface]
+		var kept := PackedInt32Array()
+		for i in range(0,indices.size()-2,3):
+			if not removed.has(i):
+				kept.append(indices[i]); kept.append(indices[i+1]); kept.append(indices[i+2])
+		if kept.is_empty():
+			if _missing == null:
+				_missing = StandardMaterial3D.new()
+				_missing.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+				_missing.albedo_color = Color(0,0,0,0)
+			part.set_surface_override_material(surface,_missing)
+		else: kept_by_surface[surface] = kept
+	if not kept_by_surface.is_empty():
+		var replacement := ArrayMesh.new()
+		for other in original.get_surface_count():
+			var changed := INTERIOR.contact_arrays(original,other).duplicate()
+			if kept_by_surface.has(other): changed[Mesh.ARRAY_INDEX] = kept_by_surface[other]
+			replacement.add_surface_from_arrays(original.surface_get_primitive_type(other),changed)
+			replacement.surface_set_material(other,original.surface_get_material(other))
+			INTERIOR.inherit_glass(original,replacement,other,changed)
+		part.mesh = replacement
+	entry.applied = part.mesh
+	_parts[part] = entry
+
+static func _weld_key(point: Vector3) -> Vector3i:
+	return Vector3i(roundi(point.x*1000.0),roundi(point.y*1000.0),roundi(point.z*1000.0))
+
+static func _welded(vertices: PackedVector3Array, indices: PackedInt32Array) -> Dictionary:
+	var triangles: Dictionary = {}
+	for i in range(0,indices.size()-2,3):
+		for j in 3:
+			var key := _weld_key(vertices[indices[i+j]])
+			if not triangles.has(key): triangles[key] = []
+			triangles[key].append(i)
+	return triangles
+
+## Painel = triângulos ligados por vértice soldado, a partir de `seed`, somados a `removed`.
+static func _flood(seed: int, vertices: PackedVector3Array, indices: PackedInt32Array, welded: Dictionary, removed: Dictionary) -> void:
+	removed[seed] = true
+	var queue: Array[int] = [seed]
+	while not queue.is_empty():
+		var i: int = queue.pop_back()
+		for j in 3:
+			for neighbor in welded[_weld_key(vertices[indices[i+j]])]:
+				if removed.has(neighbor): continue
+				removed[neighbor] = true
+				queue.append(neighbor)
 
 func clear() -> void:
 	records.clear()

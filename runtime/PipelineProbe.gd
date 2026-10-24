@@ -38,9 +38,15 @@ var _records := 0
 var _game_pipelines: Dictionary = {}
 var _mat_cache: Dictionary = {}
 var _material_defaults: Dictionary = {}
+## Modo leve (GETECO_PIPELINE_PROBE=lite, 24/10): a sonda completa descreve cada nó novo durante a carga e
+## atrasava a carga fria o bastante para o quadro de ~0,9 s sumir (5ª rodada). No leve, a carga só guarda os ids;
+## o conjunto "já visto" é montado uma vez no 1º quadro jogável e, dali em diante, só quadro com pipeline nova
+## descreve (nós novos e revarredura).
+var _lite := false
+var _seeded := false
 
 static func enabled() -> bool:
-	return OS.get_environment("GETECO_PIPELINE_PROBE") == "1" and not "--headless" in OS.get_cmdline_args()
+	return OS.get_environment("GETECO_PIPELINE_PROBE") in ["1", "lite"] and not "--headless" in OS.get_cmdline_args()
 
 ## Fecha a etapa `label` da carga, que começou na marca anterior (não faz nada com a sonda desligada).
 static func stage(label: String) -> void:
@@ -48,6 +54,7 @@ static func stage(label: String) -> void:
 
 func _ready() -> void:
 	_instance = self
+	_lite = OS.get_environment("GETECO_PIPELINE_PROBE") == "lite"
 	name = "PipelineProbe"
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	var folder := ProjectSettings.globalize_path("res://evidence/pipeline-probe")
@@ -99,6 +106,26 @@ func _on_post_draw() -> void:
 	var playing := _playing()
 	var fresh: Array = []
 	var described := 0
+	if _lite and not (playing and _seeded):
+		for id in _pending: _known[id] = true
+		_pending.clear()
+		if playing:
+			# Uma vez: tudo o que existe ao ficar jogável conta como visto (sem gravar).
+			var seed_began := Time.get_ticks_usec()
+			_mat_cache.clear()
+			var scratch: Array = []
+			for id in _known.keys():
+				var node: Object = instance_from_id(id)
+				if is_instance_valid(node) and (node as Node).is_inside_tree(): _collect(node as Node, scratch, "seed")
+			_seeded = true
+			_write({"type": "seed", "t": snappedf(float(now - _started_usec) / 1000000.0, 0.001), "nodes": _known.size(),
+				"keys": _seen.size(), "ms": snappedf(float(Time.get_ticks_usec() - seed_began) / 1000.0, 0.01)})
+		if changed and not playing:
+			_write({"type": "compile", "t": snappedf(float(now - _started_usec) / 1000000.0, 0.001), "playing": false,
+				"stage": _stage_label, "delta": delta, "lite": true})
+		_last = counts
+		_last_draw_usec = Time.get_ticks_usec()
+		return
 	# Um material é descrito uma vez por desenho (dezenas de milhares de nós repartem poucos materiais).
 	_mat_cache.clear()
 	for id in _pending:
