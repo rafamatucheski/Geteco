@@ -56,6 +56,7 @@ func _ready() -> void:
 	root_control=Control.new(); root_control.name="GameplayHUDRoot"; root_control.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	root_control.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); root_control.theme=STYLE.create_theme(); add_child(root_control)
 	root_margin=root_control
+	root_control.add_child(preload("res://ui/hud/PoliceVitalsHUD.gd").new())
 	player_status=preload("res://ui/hud/PlayerStatusHUD.gd").new(); root_control.add_child(player_status)
 	player_status.rage_requested.connect(func():
 		if is_instance_valid(world) and world.gameplay != null: world.gameplay.request_rage()

@@ -41,6 +41,8 @@ var officers: Array = []
 ## Policiais ainda a bordo. A dupla é fixa: quem morreu fora da viatura não é reposto.
 var crew_remaining := RULES.OFFICERS_PER_CAR
 var crew_capacity := RULES.OFFICERS_PER_CAR
+## Returned crew retain their wounds and spent armor across node recreation.
+var _seated_durability: Array[Dictionary] = []
 var target_still := 0.0
 var resume_pursuit := false
 var _aim := 0.0
@@ -225,6 +227,7 @@ func surrender_vehicle(exits: Array[Dictionary]) -> void:
 	_release_incident()
 	for exit in exits:
 		var officer: CharacterBody3D = controller.spawn_officer(self, exit.point, float(exit.side))
+		_restore_seated_durability(officer)
 		officers.append(officer)
 		crew_remaining -= 1
 	for officer in officers:
@@ -1006,6 +1009,7 @@ func _deploy_police_crew() -> bool:
 		_exit_points.append(vehicle.to_local(exit.point))
 		taken.append(exit.point)
 		var officer: CharacterBody3D = controller.spawn_officer(self, exit.point, float(exit.side))
+		_restore_seated_durability(officer)
 		officers.append(officer)
 		crew_remaining -= 1
 		deployed = true
@@ -1077,10 +1081,19 @@ func _police_recall(delta: float) -> void:
 			_begin_departure()
 
 func on_officer_boarded(officer: CharacterBody3D) -> void:
+	if not is_instance_valid(officer) or officer.dead or not officers.has(officer): return
+	_seated_durability.append({"health":officer.health,"armor":officer.armor})
 	officers.erase(officer)
 	crew_remaining = mini(crew_capacity, crew_remaining + 1)
 	if is_instance_valid(officer): officer.queue_free()
 	controller.emit_dispatch_event("officer_boarded", {"unit": self})
+
+func _restore_seated_durability(officer: CharacterBody3D) -> void:
+	if _seated_durability.is_empty(): return
+	var saved: Dictionary = _seated_durability.pop_front()
+	officer.health = clampf(float(saved.health), 0.0, officer.max_health)
+	officer.armor = clampf(float(saved.armor), 0.0, officer.max_armor)
+	officer.durability_changed.emit(officer.health,officer.max_health,officer.armor,officer.max_armor)
 
 # --- Serviços de emergência ---------------------------------------------------
 

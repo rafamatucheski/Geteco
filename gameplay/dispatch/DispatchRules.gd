@@ -178,6 +178,7 @@ static func speed_cap(variant: String) -> float:
 ## remains a full patrol/tactical crew; motorcycles and armor support that crew.
 static func response_variant(level: int, active: Array) -> String:
 	var tactical := 0
+	var vans := tactical_van_count(active)
 	var motorcycles := 0
 	var tanks := 0
 	for unit in active:
@@ -185,8 +186,21 @@ static func response_variant(level: int, active: Array) -> String:
 		elif unit.variant == "motorcycle": motorcycles += 1
 		elif unit.variant == "tank": tanks += 1
 	if level in [2,3] and not active.is_empty() and motorcycles < MAX_MOTORCYCLES: return "motorcycle"
-	if level >= 6 and tactical >= 1 and tanks < MAX_TANKS: return "tank"
-	return variant_for(level,tactical < (2 if level >= 6 else 1))
+	if level >= 6 and vans >= 1 and tanks < MAX_TANKS: return "tank"
+	# Four-star tactical cruisers must not occupy the transport-van quota
+	# after escalation. A real van carries six officers; its variant alone is
+	# shared with those earlier two-officer cruisers.
+	var elite := vans < tactical_van_limit(level) if level >= 5 else tactical < 1
+	return variant_for(level,elite)
+
+static func tactical_van_limit(level: int) -> int:
+	return 2 if level >= 6 else (1 if level >= 5 else 0)
+
+static func tactical_van_count(active: Array) -> int:
+	var count := 0
+	for unit in active:
+		if unit.variant == "tactical" and unit.vehicle != null and unit.vehicle.archetype == "police_transport": count += 1
+	return count
 
 static func response_archetype(level: int, variant: String) -> String:
 	if variant == "motorcycle": return "bike_police"

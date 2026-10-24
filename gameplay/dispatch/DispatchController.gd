@@ -686,7 +686,7 @@ func _dispatch_police(delta: float) -> void:
 	# High-alert reinforcements continue while the pursuit is active. Live-unit
 	# and foot-agent caps still apply; clearing the first wave must not empty 6 stars.
 	if (stars < 5 and deployed_this_pursuit >= RULES.DEPLOYMENT[stars]) or not gameplay.last_known_valid: return
-	if _active_police().size() >= RULES.MAX_ACTIVE[stars] or units.size() >= RULES.MAX_UNITS: return
+	if units.size() >= RULES.MAX_UNITS: return
 	var anchor: Vector3 = gameplay.last_known
 	if player_position_override != Vector3.INF:
 		anchor = player_position_override
@@ -695,13 +695,44 @@ func _dispatch_police(delta: float) -> void:
 		if is_instance_valid(target) and gameplay.contact_age <= 1.0: anchor = target.global_position
 	dispatch_police_to(anchor)
 
+## Select one ordinary crew for a missing high-alert van or, once the van
+## quota is met, missing six-star armor support. Active caps remain unchanged.
+func _tactical_van_replacement(level: int, active: Array, responding: Array, armor_support := false) -> RefCounted:
+	var vans := RULES.tactical_van_count(responding)
+	if armor_support:
+		if level < 6 or vans < RULES.tactical_van_limit(level): return null
+		if responding.filter(func(u): return u.variant == "tank").size() >= RULES.MAX_TANKS: return null
+	elif vans >= RULES.tactical_van_limit(level): return null
+	var candidate: RefCounted
+	for unit in active:
+		if unit.wrecked or unit.suspended or unit.state in ["recall","departing"] or unit.variant == "tank": continue
+		if unit.vehicle == null or unit.vehicle.archetype == "police_transport": continue
+		if candidate == null or unit.level < candidate.level or (unit.level == candidate.level and unit.serial < candidate.serial): candidate = unit
+	return candidate
+
 ## Despacha uma viatura que nasce em faixa, fora da vista, a 32,5–112,5 m de `anchor`.
 func dispatch_police_to(anchor: Vector3, investigation: bool = false) -> RefCounted:
 	var level: int = 1 if investigation else gameplay.stars
-	if level <= 0 or units.size() >= RULES.MAX_UNITS or _active_police().size() >= RULES.MAX_ACTIVE[clampi(level,0,6)]: return null
-	var dispatch_began := TRACE.begin()
-	var variant := "patrol" if investigation else RULES.response_variant(level, units.filter(func(u): return u.is_police() and not u.finished))
+	if level <= 0 or units.size() >= RULES.MAX_UNITS: return null
+	var active := _active_police()
+	# A crew returning to its car or leaving the scene cannot satisfy the
+	# next response's van/tank quota. Wrecked or suspended teams cannot either.
+	var responding := active.filter(func(u): return not u.wrecked and not u.suspended and u.state not in ["recall","departing"])
+	var variant := "patrol" if investigation else RULES.response_variant(level, responding)
 	var archetype := RULES.response_archetype(level,variant)
+	var replacement: RefCounted
+	var active_limit: int = RULES.MAX_ACTIVE[clampi(level,0,6)]
+	if active.size() >= active_limit:
+		# A direct four-to-six escalation may fill the last slot with its
+		# first van. Tank priority must not starve the second van forever.
+		if variant == "tank" and RULES.tactical_van_count(responding) < RULES.tactical_van_limit(level):
+			variant = "tactical"
+			archetype = RULES.response_archetype(level,variant)
+		var armor_support := level >= 6 and variant == "tank"
+		if investigation or active.size() > active_limit or (archetype != "police_transport" and not armor_support): return null
+		replacement = _tactical_van_replacement(level,active,responding,armor_support)
+		if replacement == null: return null
+	var dispatch_began := TRACE.begin()
 	var size := _archetype_size(archetype)
 	var checked := 0
 	var planned := 0
@@ -739,6 +770,14 @@ func dispatch_police_to(anchor: Vector3, investigation: bool = false) -> RefCoun
 		var plan: Dictionary = router.plan(point, anchor, heading)
 		TRACE.end("police.plan", step)
 		if not plan.ok: continue
+		# Composition changes use normal recall/departure, preserving the
+		# crew and its physical return. Only release a slot after a valid spawn
+		# and route exist; a blocked road must not dismiss the current response.
+		if replacement != null:
+			replacement.abort_response()
+			if _active_police().size() >= active_limit: return null
+			var replacement_event := "armored_support_replacement" if variant == "tank" else "tactical_van_replacement"
+			emit_dispatch_event(replacement_event, {"unit":replacement,"level":level})
 		_serial += 1
 		deployed_this_pursuit += 1
 		var car := _create_vehicle("police", point, candidate.yaw, archetype)

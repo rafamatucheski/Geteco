@@ -7,13 +7,21 @@ const ARSENAL = preload("res://gameplay/ArsenalWeapon3D.gd")
 const CATALOG = preload("res://gameplay/WeaponCatalog.gd")
 const AUDIO = preload("res://gameplay/CombatAudio.gd")
 const TIER_HEALTH := [50.0, 75.0, 95.0, 110.0, 130.0]
+## Placas balísticas das unidades pesadas: SWAT e Exército. O FBI de terno
+## e os policiais de farda (inclusive os de biotipo robusto) não usam essas placas.
+const TIER_ARMOR := [0.0, 0.0, 80.0, 0.0, 110.0]
 const TIER_WEAPONS := ["pistol", "smg", "m4a1", "m4a1", "m4a1"]
 const TIER_DAMAGE := [6.0, 6.0, 8.0, 8.0, 8.0]
 const TIER_INTERVAL := [0.85, 0.40, 0.32, 0.32, 0.32]
 const TIER_BURST := [2, 3, 3, 3, 3]
 const BURST_PAUSE := Vector2(1.7, 2.5)
 var controller: Node3D
+signal durability_changed(health: float, max_health: float, armor: float, max_armor: float)
 var health := 50.0
+var max_health := 50.0
+var armor := 0.0
+var max_armor := 0.0
+var last_damage_time := -INF
 var tier := 0
 var motorcycle_officer := false
 var visual: Node3D
@@ -81,12 +89,25 @@ func _ready() -> void:
 	visual.motorcycle_officer = motorcycle_officer
 	add_child(visual)
 	var safe_tier := clampi(tier, 0, TIER_WEAPONS.size() - 1)
-	health = TIER_HEALTH[safe_tier]
+	initialize_durability()
 	weapon_id = TIER_WEAPONS[safe_tier]
 	magazine = _magazine_size()
 	_rng.randomize()
 	visual.equip(weapon_id)
 	add_child(preload("res://gameplay/PoliceOcclusionSilhouette.gd").new())
+
+## Chamado somente na criação do policial. Reentrada de área e retorno à
+## viatura preservam as reservas; não há recarga automática da armadura.
+func initialize_durability() -> void:
+	var safe_tier := clampi(tier, 0, TIER_HEALTH.size() - 1)
+	max_health = TIER_HEALTH[safe_tier]
+	max_armor = 0.0 if motorcycle_officer else TIER_ARMOR[safe_tier]
+	health = max_health
+	armor = max_armor
+
+func get_durability_state() -> Dictionary:
+	return {"health": health, "max_health": max_health, "armor": armor,
+		"max_armor": max_armor, "dead": dead, "heavy_armor": max_armor > 0.0}
 
 func _exit_tree() -> void:
 	_cancel_navigation()
@@ -407,6 +428,7 @@ func _try_fire() -> bool:
 
 func receive_damage(amount: float, source: Node = null) -> void:
 	if dead or not is_finite(amount) or amount <= 0: return
+	last_damage_time = float(Time.get_ticks_msec()) * 0.001
 	var vehicle_source: bool = is_instance_valid(source) and source.has_method("is_player_damage_source") and source.is_player_damage_source()
 	if is_instance_valid(controller) and is_instance_valid(source):
 		var target := _pursuit_target()
@@ -415,7 +437,11 @@ func receive_damage(amount: float, source: Node = null) -> void:
 			last_known = (source as Node3D).global_position
 			controller.report_contact(last_known)
 			cooldown = minf(cooldown, 0.4)
-	health = maxf(0, health - amount)
+	# Uma única absorção para qualquer fonte (bala, explosão, fogo, impacto):
+	# esgotar as placas não mata; somente o excesso chega à vida, sem redução dupla.
+	var absorbed := minf(armor, amount)
+	armor = maxf(0.0, armor - absorbed)
+	health = maxf(0.0, health - (amount - absorbed))
 	if health <= 0:
 		dead = true
 		_cancel_navigation()
@@ -432,6 +458,7 @@ func receive_damage(amount: float, source: Node = null) -> void:
 	else:
 		var hit_dir: Vector3 = (global_position - (source as Node3D).global_position).normalized() if source is Node3D else Vector3.ZERO
 		preload("res://gameplay/CharacterFallPresentation3D.gd").apply_hit(self, visual, hit_dir, amount)
+	durability_changed.emit(health, max_health, armor, max_armor)
 	# O veículo é a fonte real. Gameplay confirma se ele está sob controle do
 	# jogador; tráfego, viatura e autoria desconhecida não são convertidos em crime.
 	if vehicle_source and is_instance_valid(controller) and controller.has_method("report_vehicle_assault"):
