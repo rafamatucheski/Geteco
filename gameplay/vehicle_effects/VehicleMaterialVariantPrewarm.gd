@@ -143,7 +143,9 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 	var base_count := _bases.size()
 	# Com as peças escondidas já montadas, a pintura está coberta nos formatos reais: aqui só os efeitos.
 	var hidden := is_instance_valid(_hidden)
-	var variants: Array[StandardMaterial3D] = [] if hidden else _paint_variants()
+	# O ternário com `[]` sai sem tipo e o GDScript recusa a atribuição: o aquecimento dos efeitos parava aqui.
+	var variants: Array[StandardMaterial3D] = []
+	if not hidden: variants = _paint_variants()
 	var visual := Node3D.new()
 	visual.name = "VehicleMaterialVariantPrewarm"
 	visual.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
