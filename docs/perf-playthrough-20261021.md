@@ -866,3 +866,48 @@ Ligados por padrão (`=0` desliga): `GETECO_PIPELINE_SAVE_ON_EXIT`, `GETECO_RAIN
 - **Sem medição limpa:** oeste, porto e travessia a quente; serra e deserto no frio; rota 66, cidade do deserto,
   estrada do sal, cavernas e chuva + noite (as rodadas foram descartadas ou não chegaram a rodar); a configuração
   padrão final inteira (8.3).
+
+## 9. 4ª rodada (24/10, PC livre): os interruptores 7–10 da 3ª rodada a limpo
+
+**Como.** Export release do HEAD `4dd79486` (`artifacts/perf-r4-20261024/`, `matrix.sh`, `matrix.log`, `resumo.tsv`).
+Estresse igual ao da 2ª/3ª rodada (`BENCH_DISPATCH=1`, `settings-jogador-3440.cfg`, `--benchmark-stress
+--benchmark-cold --benchmark-weapon-cycle=5 --skip-arrival`, 90 s). A = padrão de hoje; B = A +
+`GETECO_PREWARM_PARALLEL=1 GETECO_HIDDEN_COMPILE=1 GETECO_WRECK_FADE_PREWARM=1 GETECO_LOOKOUT_HIDDEN_FIRST=1
+GETECO_RAIN_PREWARM_BOLT=1`. A quente: ordem A B B A por cenário; frio (`cold_cache_run.sh`): 1 por lado.
+Vigia a cada 10 s (`watch.ps1`): **nenhum Godot externo** em 00:37–01:55. **Limite:** o viewport saiu
+**1920x1200** (o monitor de 3440x1440 não estava ligado); o A/B vale, os absolutos ficam abaixo do pior caso.
+
+| cenário | lado | p50 | p95 | p99 | máx por rodada | > 33 ms por rodada | jogável (s) |
+|---|---|---|---|---|---|---|---|
+| oeste | A | 7,38 | 12,54 | 14,44 | 40,6 / 41,0 | 3 / 1 | 31,7 / 29,9 |
+| oeste | B | 6,88 | 12,39 | 14,29 | 62,5 / 47,3 | 5 / 2 | 31,5 / 29,9 |
+| porto | A | 5,42 | 11,59 | 13,75 | 57,6 / 42,7 | 4 / 2 | 29,8 / 30,1 |
+| porto | B | 5,40 | 11,66 | 13,94 | 72,3 / 60,4 | 4 / 6 | 29,7 / 30,0 |
+| sobrados | A | 4,43 | 9,79 | 13,41 | 33,3 / 43,6 | 1 / 1 | 30,1 / 30,1 |
+| sobrados | B | 4,32 | 9,61 | 12,91 | 38,7 / 69,3 | 2 / 1 | 29,8 / 29,7 |
+| serra | A | 3,46 | 8,35 | 10,03 | **501,2** / 28,7 | 3 / 0 | 32,6 / 31,3 |
+| serra | B | 3,45 | 8,30 | 10,20 | 36,6 / 78,2 | 2 / 1 | 31,1 / 30,7 |
+| deserto | A | 3,12 | 5,86 | 7,92 | 38,5 / 40,1 | 1 / 1 | 31,8 / 32,0 |
+| deserto | B | 3,12 | 5,89 | 8,02 | 38,0 / 38,3 | 2 / 1 | 31,3 / 31,3 |
+| travessia | A | 3,28 | 7,15 | 9,36 | 28,7 / 28,8 | 0 / 0 | 30,8 / 30,4 |
+| travessia | B | 3,29 | 7,24 | 9,41 | 52,5 / 29,1 | 2 / 0 | 30,9 / 30,0 |
+| noite (oeste, 22 h) | A | 6,46 | 11,80 | 13,79 | 37,7 / 44,2 | 1 / 3 | 30,0 / 33,7 |
+| noite (oeste, 22 h) | B | 6,92 | 12,29 | 14,24 | 28,1 / 37,1 | 0 / 2 | 29,8 / 29,6 |
+| frio oeste | A | 7,26 | 12,80 | 14,87 | 867,2 | 6 | 70,4 |
+| frio oeste | B | 6,97 | 12,41 | 14,19 | 866,8 | 3 | 68,7 |
+| frio serra | A | 3,45 | 8,20 | 9,92 | 596,1 | 5 | 71,2 |
+| frio serra | B | 3,45 | 8,24 | 10,32 | 588,9 | 5 | 67,9 |
+| frio deserto | A | 3,12 | 5,96 | 8,05 | 922,9 | 4 | 73,7 |
+| frio deserto | B | 3,09 | 5,94 | 8,05 | 981,0 | 5 | 70,7 |
+
+p50/p95/p99 são a média das rodadas. Leitura:
+- **A quente, B não ganha:** p50/p95 iguais dentro de ±0,5 ms; o máximo piora em oeste, porto, sobrados e
+  travessia (47–72 ms contra 29–58 ms). **Os interruptores 7–10 continuam desligados.**
+- **Frio, B carrega 1,7–3,3 s antes nas três rotas** (uma rodada por lado, a mesma direção nas três), com os
+  mesmos picos (um quadro de 0,6–1,0 s por sessão fria). Ganho pequeno e sem separar qual dos cinco o dá; não
+  justifica pagar os máximos piores a quente. Candidato a medir sozinho: `GETECO_PREWARM_PARALLEL=1`.
+- **Pico isolado da serra** voltou numa rodada A (501 ms, > 250 ms: 1), sem estar ligado a interruptor.
+- Frio de hoje ~70 s até jogável (8.6: 76,7 s); quente ~30 s; p50 a quente ≤ 7,4 ms em todas as rotas a 1920x1200.
+
+**Não medido nesta rodada:** 3440x1440; rota 66, cidade do deserto, estrada do sal, cavernas, chuva + noite;
+atribuição (StallLog) do pico da serra e do quadro de 0,6–1,0 s do frio.
