@@ -12,7 +12,10 @@ func run() -> void:
 	world = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival",true)
 	root.add_child(world)
-	for i in 2400:
+	# Por tempo, não por quadros (24/10): a carga passou de 40 s a 60 fps e 2400 quadros não bastavam
+	# (mesma correção do test_v2_session, 80dec037).
+	var ready_deadline := Time.get_ticks_msec()+180000
+	while Time.get_ticks_msec() < ready_deadline:
 		await process_frame
 		if world.session != null and world.session.ready_for_play: break
 	if world.session == null or not world.session.ready_for_play: quit(2); return

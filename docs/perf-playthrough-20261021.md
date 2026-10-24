@@ -987,3 +987,48 @@ célula seguinte pela fila do streaming antes de precisar); (2) span por parte d
 (malha × vidro × chuva do para-brisa) numa rodada a quente; (3) `gameplay.fire_at` e `vehicle.doors.prepare`
 com span interno; (4) quadro de ~1 s do frio: gravar a pilha nativa ou testar com o cache do driver já quente e
 o do Godot frio (e vice-versa) para separar driver de motor.
+
+## 12. 7ª rodada (24/10): chão do porto por célula — a pintura das faixas andava o mapa inteiro
+
+**Quem chamava.** Os 8 quadros de `stream.harbor.prepare_collision` (13–27 ms, §11) eram todos no oeste, logo
+depois da cortina: os caminhões do cais (`PortLogistics`, nascimento e `_ground_ready`) pedem chão nas células
+(3,3) e (5,3), a 2–4 células do jogador. Congelar os caminhões longe do jogador (tentado e desfeito) quebra o
+ciclo do cais (`test_port_real_loading_3d`: guindaste e portão).
+
+**Onde o chão gastava** (editor, oeste, 28 células): `HarborRoadGeometry3D.build_chunk` era o grosso, e dentro
+dele `_build_markings` (4,9 ms em média, até 10 ms). Cada célula andava **todos os tracinhos de todas as ruas**
+do mapa e, para cada candidato, **todos os cruzamentos e faixas de pedestre** do mapa.
+
+**Correção** (`GETECO_MARKING_CULL=0` volta): rua e trecho fora da célula (com a folga do deslocamento da faixa)
+são pulados, somando o comprimento ao `travelled` (a fase do tracejado não muda); o teste de cruzamento usa só
+os que alcançam a célula. `tests/test_harbor_marking_cull.gd`: **as 60 células com registro saem com os mesmos
+925 tracinhos** (posição, rumo, comprimento, cor) e a pintura de todas custa 184 → 32 ms (headless, com a
+criação dos nós).
+
+**Release** (`artifacts/perf-r7-20261024/`, N = padrão, O = corte desligado, A/B alternado, StallLog nos dois,
+vigia sem Godot externo; **o OneDrive.Sync estava ocupando CPU**: carga a quente 45–52 s e fria ~86 s nos dois
+lados, contra ~30 / ~70 s nas rodadas anteriores — os absolutos desta rodada não valem):
+
+| cenário | lado | p50 | p95 | máx por rodada | > 33 ms | `stream.harbor.surfaces` > 40 ms no StallLog |
+|---|---|---|---|---|---|---|
+| frio oeste | N | 6,97 | 12,13 | 883 / 891 | 7 / 3 | nenhum |
+| frio oeste | O | 7,46 | 12,47 | 974 / 880 | 4 / 8 | 24,9 ms e 17,9 ms |
+| quente oeste | N | 7,54 | 12,77 | 38 / 46 | 2 / 3 | — |
+| quente oeste | O | 7,48 | 12,73 | 26 / 37 | 0 / 2 | — |
+| quente porto | N | 6,09 | 12,15 | 42 / **921** | 3 / 5 | — |
+| quente porto | O | 6,08 | 12,14 | 48 / 43 | 2 / 2 | — |
+
+Leitura: o p50 não muda (a pintura é só no streaming); os quadros com o chão lento do porto somem do StallLog
+com o corte (0 de 2 frios contra 2 de 2). Os demais quadros > 33 ms ficam dentro da variação entre rodadas.
+
+**O quadro de ~0,9 s também acontece a quente:** porto N2, t = 102 s, 921 ms, 4 pipelines `draw` + 5
+`specialization`, processo 13 ms, GPU 3 ms, 2 carcaças na cena. Junto com §10–11 (sempre carcaça e fogo; a sonda
+leve aponta carroceria com `transparency=1` e material com brasa `emission_operator`), a pista mais forte é a
+**carcaça queimando/sumindo** em combinações que `GETECO_WRECK_FADE_PREWARM` não cobre — o pipeline `draw` é
+compilado na hora do desenho. Próximo passo: na sonda leve, gravar os materiais e formatos das carcaças no
+quadro do pico e cobrir essas combinações no pré-aquecimento.
+
+Também: `test_port_logistics` e `test_port_real_loading_3d` esperavam 2400 quadros pela carga (~40 s a 60 fps)
+e não chegavam ao porto; agora esperam por tempo (até 180 s). O `real_loading` volta a ter só as 2 falhas antigas
+(save pessoal e estivador com caixa), iguais com o corte desligado; `test_bridge_approach_terrain` tem 2 falhas
+antigas, iguais com e sem o corte.

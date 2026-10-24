@@ -71,6 +71,8 @@ var _traffic_signs := preload("res://world/urban_detail/HarborTrafficSigns.gd").
 func configure(source_roads: Array[Dictionary], surfaces := true) -> void:
 	context_revision += 1
 	_roads.clear()
+	_mark_bounds.clear()
+	_widest_road = 0.0
 	_junctions.clear()
 	_layers.clear()
 	_crosswalk_white.clear()
@@ -501,17 +503,31 @@ func _build_markings(parent: Node3D, rect: Rect2) -> void:
 	if dash_batch_enabled:
 		for cut in load("res://world/urban_detail/CanalTunnel3D.gd").open_cuts():
 			if (cut as Rect2).intersects(rect.grow(1.0)): tunnel_cuts.append(cut)
-	for road in _roads:
+	# Folga da célula: o tracinho conta pelo ponto do meio, mas início e fim são testados (meio tracinho) e
+	# o deslocamento da faixa vai até meia largura da rua mais larga.
+	if marking_cull_enabled:
+		if _widest_road <= 0.0:
+			for road in _roads: _widest_road = maxf(_widest_road, float(road.width))
+		_filter_junctions(rect.grow(DASH_LENGTH + _widest_road * 0.5 + 1.0))
+	for road_index in _roads.size():
+		var road: Dictionary = _roads[road_index]
 		if String(road.id).begins_with("mountain_bridge_"): continue
 		var styles := _marking_styles(road)
 		if styles.is_empty(): continue
 		var points := road.points as PackedVector2Array
+		# Folga = maior deslocamento lateral das faixas (meia largura) + o tracinho; fora dela nada é emitido.
+		var reach := float(road.width) * 0.5 + 1.0
+		if marking_cull_enabled and not _road_mark_bounds(road_index, points, reach).intersects(rect): continue
 		var travelled := 0.0
 		for index in range(points.size() - 1):
 			var a := points[index]
 			var b := points[index + 1]
 			var segment_length := a.distance_to(b)
 			if segment_length < MIN_SEGMENT: continue
+			# Trecho longe da célula: só soma o comprimento, para a fase do tracejado seguir igual.
+			if marking_cull_enabled and not Rect2(a, Vector2.ZERO).expand(b).grow(reach).intersects(rect):
+				travelled += segment_length
+				continue
 			var direction := a.direction_to(b)
 			var walked := 0.0
 			while walked < segment_length - 0.001:
@@ -528,9 +544,27 @@ func _build_markings(parent: Node3D, rect: Rect2) -> void:
 						count += _emit_mark(mark_parent, batches, rect, tunnel_cuts, from + offset, to + offset, count, bool(style.white))
 				walked += maxf(step, 0.03)
 			travelled += segment_length
+	_cell_filter_active = false
 	for color_key in batches: _add_mark_batch(mark_parent, Color(color_key), batches[color_key])
 	if count > 0: parent.add_child(mark_parent)
 	else: mark_parent.free()
+
+
+## Pintura por célula (24/10): cada célula andava todos os tracinhos de TODAS as ruas do mapa e só descartava
+## no fim (`rect.has_point`), 4,9 ms em média e até 10 ms por célula do porto (oeste, editor; o chão de uma
+## célula, stream.harbor.surfaces, custava 13–27 ms no release). Ruas e trechos fora da célula (com a folga do
+## deslocamento das faixas) são pulados; o trecho pulado ainda soma ao `travelled`, então a fase e o
+## resultado são os mesmos. GETECO_MARKING_CULL=0 volta a andar tudo (A/B).
+static var marking_cull_enabled := OS.get_environment("GETECO_MARKING_CULL") != "0"
+var _mark_bounds: Dictionary = {}
+
+var _widest_road := 0.0
+func _road_mark_bounds(key: int, points: PackedVector2Array, reach: float) -> Rect2:
+	if not _mark_bounds.has(key):
+		var bounds := Rect2(points[0], Vector2.ZERO)
+		for point in points: bounds = bounds.expand(point)
+		_mark_bounds[key] = bounds.grow(reach)
+	return _mark_bounds[key]
 
 
 ## Brazilian longitudinal paint: yellow separates opposing traffic, white separates
@@ -572,15 +606,39 @@ func _emit_mark(parent: Node3D, batches: Dictionary, rect: Rect2, tunnel_cuts: A
 
 
 func _marking_hits_junction(point: Vector2) -> bool:
-	for mask in _crossing_masks:
+	var masks: Array = _cell_masks if _cell_filter_active else _crossing_masks
+	for mask in masks:
 		if Geometry2D.is_point_in_polygon(point,mask): return true
+	if _cell_filter_active:
+		for junction in _cell_junctions:
+			if point.distance_to(junction[0]) < junction[1]: return true
+		return false
 	for junction in _junctions:
-		var widest := 0.0
-		for road_index_value in junction.roads:
-			widest = maxf(widest, float(_roads[int(road_index_value)].width))
-		if point.distance_to(junction.position) < widest * 0.68 + 14.0 * SOURCE_SCALE:
-			return true
+		if point.distance_to(junction.position) < _junction_reach(junction): return true
 	return false
+
+func _junction_reach(junction: Dictionary) -> float:
+	var widest := 0.0
+	for road_index_value in junction.roads:
+		widest = maxf(widest, float(_roads[int(road_index_value)].width))
+	return widest * 0.68 + 14.0 * SOURCE_SCALE
+
+## Só cruzamentos e faixas de pedestre que alcançam `area` (a célula com a folga dos tracinhos): o teste
+## por ponto percorria os do mapa inteiro para cada tracinho. Mesma decisão: quem fica fora de `area`
+## não pode conter nem estar perto de um ponto dentro dela.
+var _cell_filter_active := false
+var _cell_masks: Array = []
+var _cell_junctions: Array = []
+func _filter_junctions(area: Rect2) -> void:
+	_cell_masks.clear()
+	_cell_junctions.clear()
+	for mask in _crossing_masks:
+		if _polygon_bounds(mask).intersects(area, true): _cell_masks.append(mask)
+	for junction in _junctions:
+		var reach := _junction_reach(junction)
+		var position: Vector2 = junction.position
+		if area.grow(reach).has_point(position): _cell_junctions.append([position, reach])
+	_cell_filter_active = true
 
 
 func _add_mark(parent: Node3D, from: Vector2, to: Vector2, index: int, same_direction := false) -> void:
