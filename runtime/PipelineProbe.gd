@@ -44,9 +44,14 @@ var _material_defaults: Dictionary = {}
 ## descreve (nós novos e revarredura).
 var _lite := false
 var _seeded := false
+## Modo assinatura (GETECO_PIPELINE_PROBE=sig, 25/10): como a completa (todo nó novo da carga entra no "já
+## visto", inclusive as peças dos pré-aquecimentos), mas barata: o caminho do nó só é montado quando a chave é
+## nova e a chave de cada material fica guardada a sessão inteira (a completa refazia a lista de propriedades
+## de cada material a cada desenho).
+var _sig := false
 
 static func enabled() -> bool:
-	return OS.get_environment("GETECO_PIPELINE_PROBE") in ["1", "lite"] and not "--headless" in OS.get_cmdline_args()
+	return OS.get_environment("GETECO_PIPELINE_PROBE") in ["1", "lite", "sig"] and not "--headless" in OS.get_cmdline_args()
 
 ## Fecha a etapa `label` da carga, que começou na marca anterior (não faz nada com a sonda desligada).
 static func stage(label: String) -> void:
@@ -55,6 +60,7 @@ static func stage(label: String) -> void:
 func _ready() -> void:
 	_instance = self
 	_lite = OS.get_environment("GETECO_PIPELINE_PROBE") == "lite"
+	_sig = OS.get_environment("GETECO_PIPELINE_PROBE") == "sig"
 	name = "PipelineProbe"
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	var folder := ProjectSettings.globalize_path("res://evidence/pipeline-probe")
@@ -127,7 +133,7 @@ func _on_post_draw() -> void:
 		_last_draw_usec = Time.get_ticks_usec()
 		return
 	# Um material é descrito uma vez por desenho (dezenas de milhares de nós repartem poucos materiais).
-	_mat_cache.clear()
+	if not _sig: _mat_cache.clear()
 	for id in _pending:
 		var node: Object = instance_from_id(id)
 		if not is_instance_valid(node) or not (node as Node).is_inside_tree(): continue
@@ -166,6 +172,7 @@ func _collect(node: Node, out: Array, how: String) -> void:
 		if _seen.has(key): continue
 		_seen[key] = true
 		entry["how"] = how
+		if entry.get("node") is Node: entry["node"] = _path_of(entry.node)
 		if entry.has("material_ref"):
 			entry["desc"] = _material_desc(entry.material_ref)
 		entry.erase("material_ref")
@@ -187,10 +194,15 @@ func _material_desc(material: Variant) -> String:
 	if (material as Material).next_pass != null: parts.append("next_pass=" + _material_desc((material as Material).next_pass))
 	return " ".join(parts)
 
-func _keys(node: Node) -> Array:
-	var out: Array = []
+static func _path_of(node: Node) -> String:
 	var path := str(node.get_path()) if node.is_inside_tree() else str(node.name)
 	if path.length() > 160: path = "…" + path.right(159)
+	return path
+
+func _keys(node: Node) -> Array:
+	var out: Array = []
+	# No modo assinatura o caminho só vira texto em _collect, quando a chave é nova.
+	var path: Variant = node if _sig else _path_of(node)
 	if node is Light3D:
 		var light := node as Light3D
 		var mode := ""
@@ -240,7 +252,7 @@ func _keys(node: Node) -> Array:
 		out.append({"key": "O|" + "|".join(parts), "node": path})
 	return out
 
-func _mesh_keys(mesh: Mesh, material_of: Callable, flags: String, overlay: String, path: String, out: Array) -> void:
+func _mesh_keys(mesh: Mesh, material_of: Callable, flags: String, overlay: String, path: Variant, out: Array) -> void:
 	if mesh == null: return
 	for index in mesh.get_surface_count():
 		var material: Material = material_of.call(index)

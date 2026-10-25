@@ -1053,3 +1053,29 @@ erro em `FragileProps3D._fade_post`). O que se sabe do quadro: **uma** pipeline 
 0,87–1,17 s, sempre com 1–3 carcaças na cena, 20–80 s depois de jogável; aconteceu também a quente (§12). Para
 dar nome a ela a sonda precisa de um "já visto" que inclua as peças dos pré-aquecimentos sem atrasar a carga
 (a completa atrasa e o quadro some; a leve não sabe o que os pré-aquecimentos já desenharam).
+
+## 14. 9ª e 10ª rodadas (25/10): sonda de assinatura, destroço que encolhe — o quadro de ~0,9 s segue sem dono
+
+**OneDrive encerrado** antes destas rodadas (processo `OneDrive.Sync.Service`; o vigia não o viu voltar). A carga
+continuou lenta (quente 45–48 s, frio 82–95 s, contra ~30 / ~70 s até a 6ª rodada): **o OneDrive não era a
+causa**; isso continua sem explicação e os absolutos de carga destas rodadas não valem (o A/B alternado vale).
+
+**Sonda de assinatura** (`GETECO_PIPELINE_PROBE=sig`, nova): como a completa (tudo que a carga desenha, inclusive
+os pré-aquecimentos, entra no "já visto"), mas o caminho do nó só vira texto quando a chave é nova e a chave de
+cada material fica guardada a sessão inteira. **Não esconde o pico** (949 e 970 ms em 2 de 3 frios). No quadro
+de 864 ms (t = 97 s) a única combinação nova foi a placa `wave3_sinal.glb` derrubada, com `transparency` > 0
+(`DestroyedFade3D`); no outro (t = 84 s, 834 ms) **nenhuma** combinação nova.
+
+**Destroço que encolhe** (`GETECO_DEBRIS_SHRINK=1`): os destroços de adereço (`FragileProps3D`) encolhem em vez
+de ficar transparentes. A/B (`artifacts/perf-r10-20261025/`, K = encolhe, J = transparência, frio oeste K J J K,
+quente porto K J J K): frio K 902 / 117 ms, J 900 / 122 ms (o quadro de ~0,9 s em 1 de 2 dos dois lados, t = 117
+e 119 s); quente igual (41–56 ms). **Sem ganho: desligado por padrão.** Fica a correção de `_fade_post` (lia
+`item.kind` de registro sem `kind`), que tirava uma falha do `test_destroyed_cleanup` (sobram 2, do sumiço de
+corpos, antigas).
+
+**Resumo do quadro de ~0,9 s até aqui:** 1 pipeline `draw` (compilada na hora do desenho), 0,83–1,17 s, com 1–3
+carcaças e fogo na cena, 20–80 s depois de jogável, no frio quase sempre e às vezes a quente. Descartados com A/B:
+carcaça sumindo (§13) e destroço sumindo (aqui). A sonda de assinatura não vê a combinação em parte dos casos, então
+a pipeline vem de algo fora da chave dela (formato de framebuffer/SubViewport, partícula, passe interno). Próximo
+passo sugerido: captura com RenderDoc ou um build do motor com log de criação de pipeline (nome do shader e do
+framebuffer) num frio do oeste.

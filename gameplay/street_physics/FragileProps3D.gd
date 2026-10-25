@@ -457,14 +457,14 @@ static func _debris_body(director: Node, origin: Vector3, mass: float) -> RigidB
 	# Depois de se afastar, carro que passar por cima empurra o destroço.
 	tree.create_timer(0.35, false, true).timeout.connect(func():
 		if is_instance_valid(body): body.collision_mask = 1 | 4 | DEBRIS_LAYER)
-	preload("res://gameplay/DestroyedFade3D.gd").schedule(body, DEBRIS_LIFETIME)
+	preload("res://gameplay/DestroyedFade3D.gd").schedule(body, DEBRIS_LIFETIME, true)
 	var alive := []
 	for ref in _debris:
 		if is_instance_valid(ref.get_ref()): alive.append(ref)
 	alive.append(weakref(body))
 	while alive.size() > MAX_DEBRIS:
 		var oldest = alive.pop_front().get_ref()
-		if is_instance_valid(oldest): preload("res://gameplay/DestroyedFade3D.gd").fade(oldest)
+		if is_instance_valid(oldest): preload("res://gameplay/DestroyedFade3D.gd").fade(oldest, true)
 	_debris = alive
 	return body
 
@@ -584,7 +584,7 @@ static func _kill_light(item: Dictionary) -> void:
 
 static func _fade_post(item: Dictionary) -> void:
 	# Preserve the original lamp and its registration for delayed recovery.
-	if item.kind == "lamp":
+	if item.get("kind", "") == "lamp":
 		if item.has("multimesh"):
 			var hidden := Transform3D(Basis.IDENTITY.scaled(Vector3.ZERO), Vector3.ZERO)
 			item.multimesh.set_instance_transform(item.index, hidden)
@@ -595,7 +595,7 @@ static func _fade_post(item: Dictionary) -> void:
 		return
 	if not item.has("multimesh"):
 		var root = item.root.get_ref()
-		if is_instance_valid(root): preload("res://gameplay/DestroyedFade3D.gd").fade(root)
+		if is_instance_valid(root): preload("res://gameplay/DestroyedFade3D.gd").fade(root, true)
 		return
 	var chunk = item.chunk.get_ref()
 	if not is_instance_valid(chunk): return
@@ -611,4 +611,4 @@ static func _fade_post(item: Dictionary) -> void:
 		mesh.transform = batch.get_instance_transform(part.index)
 		remains.add_child(mesh)
 		batch.set_instance_transform(part.index, Transform3D(Basis.IDENTITY.scaled(Vector3.ZERO), Vector3.ZERO))
-	preload("res://gameplay/DestroyedFade3D.gd").fade(remains)
+	preload("res://gameplay/DestroyedFade3D.gd").fade(remains, true)

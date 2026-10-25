@@ -77,7 +77,7 @@ func _ready() -> void:
 	if steps_text.is_valid_int() and int(steps_text) >= 1: Engine.max_physics_steps_per_frame = int(steps_text)
 	# Sonda de pipelines (diagnóstico, independente do registro): nasce antes do mundo para que tudo o que a carga
 	# desenhar conte como "já visto" (runtime/PipelineProbe.gd).
-	if OS.get_environment("GETECO_PIPELINE_PROBE") in ["1", "lite"] and not "--headless" in OS.get_cmdline_args():
+	if OS.get_environment("GETECO_PIPELINE_PROBE") in ["1", "lite", "sig"] and not "--headless" in OS.get_cmdline_args():
 		get_tree().root.add_child.call_deferred(load("res://runtime/PipelineProbe.gd").new())
 	if OS.get_environment("HARBOR_STALL_LOG") != "1" or "--headless" in OS.get_cmdline_args():
 		_disable()
