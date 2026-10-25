@@ -63,9 +63,16 @@ func run() -> void:
 	check(car._wreck_fade < 0.0, "Car remains before ten seconds")
 	car._tick_wreck(0.1)
 	car._tick_wreck(1.0)
-	check(car._wreck_fade > 0.0 and car._wreck_meshes[0].transparency > 0.0, "Owned wreck fades despite dispatch hold")
+	# GETECO_WRECK_SINK=1: a carcaça afunda (sem passe alfa) em vez de ficar transparente (24/10, desligado).
+	var sinking: bool = car.WRECK_SINK_ENABLED
+	var fading: bool = car._wreck_sunk > 0.0 if sinking else car._wreck_meshes[0].transparency > 0.0
+	check(car._wreck_fade > 0.0 and fading, "Owned wreck fades despite dispatch hold")
+	if sinking: check(car._wreck_meshes.all(func(mesh): return mesh.transparency == 0.0), "Sinking wreck keeps every material out of the alpha pass")
+	var sunk_y: float = car.global_position.y
+	var sunk_by: float = car._wreck_sunk
 	car.repair()
 	check(car._wreck_fade < 0 and car.collision_layer == 4, "Repair cancels fade and restores collisions")
+	check(is_equal_approx(car.global_position.y, sunk_y + sunk_by), "Repair lifts a sunken wreck back to its ground height")
 	car.health = 0
 	car._tick_wreck(10.0)
 	car._tick_wreck(1.0)

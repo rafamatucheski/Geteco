@@ -389,6 +389,15 @@ var _wreck_fade := -1.0
 var _wreck_meshes: Array[MeshInstance3D] = []
 var _wreck_collision_state: Array[Dictionary] = []
 var _wreck_lights: Array[Dictionary] = []
+## Carcaça que afunda em vez de ficar transparente (24/10, hipótese descartada). `transparency` > 0 em cada malha do carro põe cada
+## material × formato no passe alfa: pipelines `draw` compiladas na hora do desenho, um quadro de 0,9–1,2 s
+## 10 s depois de cada explosão no estresse (frio e quente; 5ª–7ª rodadas, doc §10–12), que o pré-aquecimento
+## da carcaça sumindo (GETECO_WRECK_FADE_PREWARM) não cobria. Afundar não muda material nenhum.
+## DESLIGADO por padrão (GETECO_WRECK_SINK=1 liga): no A/B da 8ª rodada o quadro de ~0,9 s continuou igual
+## com a carcaça afundando (896/896 ms × 884/867 ms), então a causa não é o sumiço (doc §13).
+static var WRECK_SINK_ENABLED := OS.get_environment("GETECO_WRECK_SINK") == "1"
+const WRECK_SINK_DEPTH := 2.2
+var _wreck_sunk := 0.0
 
 func _wreck_expires() -> bool:
 	return not controlled
@@ -406,8 +415,14 @@ func _tick_wreck(delta: float) -> bool:
 		return false
 	_wreck_fade += delta
 	var amount := clampf(_wreck_fade / WRECK_FADE, 0.0, 1.0)
-	for mesh in _wreck_meshes:
-		if is_instance_valid(mesh): mesh.transparency = amount
+	if WRECK_SINK_ENABLED:
+		# Desce sem colisão (desligada em _begin_wreck_fade); o fogo e a fumaça filhos descem junto.
+		var sunk := WRECK_SINK_DEPTH * amount * amount
+		global_position.y += _wreck_sunk - sunk
+		_wreck_sunk = sunk
+	else:
+		for mesh in _wreck_meshes:
+			if is_instance_valid(mesh): mesh.transparency = amount
 	if amount >= 1.0:
 		queue_free()
 		return true
@@ -1418,6 +1433,8 @@ func repair() -> void:
 			if is_instance_valid(entry.node): entry.node.visible = entry.visible
 		for mesh in _wreck_meshes:
 			if is_instance_valid(mesh): mesh.transparency = 0.0
+		global_position.y += _wreck_sunk
+	_wreck_sunk = 0.0
 	_wreck_fade = -1.0
 	_wreck_meshes.clear()
 	_wreck_collision_state.clear()

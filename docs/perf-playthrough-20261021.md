@@ -1032,3 +1032,24 @@ Também: `test_port_logistics` e `test_port_real_loading_3d` esperavam 2400 quad
 e não chegavam ao porto; agora esperam por tempo (até 180 s). O `real_loading` volta a ter só as 2 falhas antigas
 (save pessoal e estivador com caixa), iguais com o corte desligado; `test_bridge_approach_terrain` tem 2 falhas
 antigas, iguais com e sem o corte.
+
+## 13. 8ª rodada (24/10): a carcaça sumindo NÃO é o quadro de ~0,9 s
+
+Hipótese (§12): `Vehicle._begin_wreck_fade` põe `transparency` em todas as malhas da carcaça 10 s depois da
+explosão, o que leva cada material ao passe alfa (pipelines `draw`). Teste: a carcaça afunda 2,2 m em vez de
+ficar transparente (`GETECO_WRECK_SINK=1`), A/B no mesmo export (`artifacts/perf-r8-20261024/`, S = afunda,
+T = transparência), StallLog, vigia sem Godot externo (OneDrive ainda ativo: absolutos de carga não valem).
+
+| cenário | lado | p50 | máx por rodada | quadros > 150 ms no StallLog (t, ms, pipelines novas) |
+|---|---|---|---|---|
+| frio oeste | S | 7,41 / 6,97 | 897 / 896 | (102,6 s, 897, `draw` 1) · (123,5 s, 896, `draw` 1) |
+| frio oeste | T | 8,08 / 7,39 | 884 / 867 | (85,8 s, 877, `draw` 1), (131,4 s, 884, `draw` 1) · (101,3 s, 870, `draw` 1) |
+| quente porto | S | 5,57 / 5,79 | 40 / 47 | nenhum |
+| quente porto | T | 5,92 / 5,86 | 48 / 48 | nenhum |
+
+**Igual nos dois lados: hipótese descartada.** O afundamento ficou no código, desligado por padrão
+(`GETECO_WRECK_SINK=1` liga), e `test_destroyed_cleanup` cobre os dois modos (as 3 falhas que restam já existiam:
+erro em `FragileProps3D._fade_post`). O que se sabe do quadro: **uma** pipeline `draw` (compilada no desenho),
+0,87–1,17 s, sempre com 1–3 carcaças na cena, 20–80 s depois de jogável; aconteceu também a quente (§12). Para
+dar nome a ela a sonda precisa de um "já visto" que inclua as peças dos pré-aquecimentos sem atrasar a carga
+(a completa atrasa e o quadro some; a leve não sabe o que os pré-aquecimentos já desenharam).
