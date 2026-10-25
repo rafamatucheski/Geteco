@@ -1079,3 +1079,28 @@ carcaça sumindo (§13) e destroço sumindo (aqui). A sonda de assinatura não v
 a pipeline vem de algo fora da chave dela (formato de framebuffer/SubViewport, partícula, passe interno). Próximo
 passo sugerido: captura com RenderDoc ou um build do motor com log de criação de pipeline (nome do shader e do
 framebuffer) num frio do oeste.
+
+## 15. 11ª–12ª rodadas (25/10, PC reiniciado): eliminação — o quadro de ~0,9 s não é explosão, chama nem driver
+
+**Máquina:** depois do reinício o export da 5ª rodada voltou a carregar a quente em 33–38 s (53–55 s antes do
+reinício); a lentidão de 24–25/10 era da máquina. OneDrive encerrado de novo (voltou com o reinício).
+
+Cada linha é uma rodada fria do oeste com o estresse, no export `artifacts/perf-r12-20261025/`:
+
+| experimento | quadro de ~0,9 s | leitura |
+|---|---|---|
+| sem explosões (`--benchmark-explode=0`), 3 | 0 de 3 (máx 107–113 ms) | parecia a causa… |
+| explosões registradas (`stress.explosion_log`, novo), 4 | 4 de 4, sempre 10–13 s depois de alguma explosão | …mas com explosão a cada 8 s sempre há uma 8–16 s antes: coincidência |
+| carcaça vivendo 60 s em vez de 10, 3 | 3 de 3 | não é o sumiço da carcaça |
+| chama da carcaça 40 s em vez de 11, 3 | 2 de 3 | não é o fim da chama |
+| uma explosão a cada 60 s, 3 | 2 de 3; **um pico 11 s ANTES da única explosão** | **explosão não é necessária** |
+| `__GL_SHADER_DISK_CACHE=0`, 3 | 2 de 3 | o driver ignora a variável no Vulkan do Windows (o `.bin` foi gravado) |
+| vigia da data do cache do driver a cada 50 ms, 2 | 1 de 2 | o driver gravou 1 vez no meio do jogo (t = 141 / 145 s), longe do pico (t = 100 s) |
+
+As 3 rodadas limpas sem explosão foram sorte (o pico sai em ~70 % das rodadas frias). Os dois ajustes de
+diagnóstico (vida da carcaça e da chama) foram desfeitos; fica o `explosion_log` no JSON da bancada.
+
+**O que se sabe, firme:** 1 pipeline `draw` (compilada no desenho) por pico, 0,88–1,86 s, 30–90 s depois de
+jogável, ~70 % das sessões frias e às vezes a quente, sem nó novo no quadro, fora da chave das sondas. O que
+falta é uma ferramenta que dê nome à pipeline no motor ou no driver: RenderDoc, NVIDIA Nsight Graphics ou PIX
+(nenhum instalado) numa sessão fria do oeste, ou um build do Godot com log em `RenderingDevice::render_pipeline_create`.

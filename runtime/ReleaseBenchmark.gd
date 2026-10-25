@@ -350,7 +350,7 @@ func _run() -> void:
 	report.cold_start = cold
 	report.speed_mps = speed
 	if shoot or explode_every > 0.0 or "--benchmark-stress" in OS.get_cmdline_user_args():
-		report.stress = {"shots": _shots, "shot_attempts": _shot_attempts, "shots_by_weapon": _shots_by_weapon, "explosions": _explosions, "explosion_misses": _explode_misses,
+		report.stress = {"explosion_log": _explosion_log, "shots": _shots, "shot_attempts": _shot_attempts, "shots_by_weapon": _shots_by_weapon, "explosions": _explosions, "explosion_misses": _explode_misses,
 			"explode_every_s": explode_every, "chase": _chase_requested(), "dispatch": is_instance_valid(world.get("dispatch")),
 			"stars_final": int(world.gameplay.stars), "city_life_audio": OS.get_environment("GETECO_CITY_LIFE_AUDIO") != "0",
 			"weapon_cycle_s": weapon_cycle, "weapon_switches": _weapon_switches, "weapon_switch_call_ms": _stats(_weapon_switch_ms),
@@ -493,6 +493,7 @@ func _shoot(point: Vector3, yaw: float) -> void:
 	world.driving.occupied = occupied
 
 ## Destrói um carro do trânsito a 10–50 m à frente (o mais perto), com o dano e a explosão do jogo.
+var _explosion_log: Array = []
 func _explode_near(point: Vector3, yaw: float, measured_clock: float) -> void:
 	if measured_clock < _explode_clock: return
 	_explode_clock = measured_clock + explode_every
@@ -512,6 +513,9 @@ func _explode_near(point: Vector3, yaw: float, measured_clock: float) -> void:
 		_explode_misses += 1
 		return
 	best.receive_damage(float(best.get("health")) + 1.0, null)
+	# Quem explodiu e quando (25/10): o quadro de ~0,9 s some sem explosões; cruzar com o StallLog (mesmo relógio).
+	_explosion_log.append({"t": snappedf(Time.get_ticks_msec() / 1000.0, 0.01), "archetype": str(best.get("archetype")),
+		"draw": int(Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_DRAW)), "surface": int(Performance.get_monitor(Performance.PIPELINE_COMPILATIONS_SURFACE))})
 	if float(best.get("health")) <= 0.0: _explosions += 1
 	else: _explode_misses += 1
 
