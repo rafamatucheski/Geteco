@@ -3218,11 +3218,15 @@
 				"type": "road",
 				"width": 2.2
 			},
-			"path/mountain_zoo_walk": {
-				"id": "path/mountain_zoo_walk",
-				"label": "Mountain Zoo Walk",
+			"path/mountain_forge_walk": {
+				"id": "path/mountain_forge_walk",
+				"label": "Mountain Forge Walk",
 				"pathway": true,
 				"points": [
+					[
+						716.0,
+						-330.0
+					],
 					[
 						716.0,
 						-334.0
@@ -3234,6 +3238,10 @@
 					[
 						716.0,
 						-343.0
+					],
+					[
+						716.0,
+						-356.0
 					]
 				],
 				"surface": "earth",

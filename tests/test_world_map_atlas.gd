@@ -24,6 +24,15 @@ func run() -> void:
 		region.prepare_data()
 		world.production._region_cache[id]=region
 	var source=world.production._region_cache.harbor
+	var mountain=world.production._region_cache.mountain
+	var forge_paths: Array=mountain.walkways.filter(func(path): return path.id=="mountain_forge_walk")
+	check(forge_paths.size()==1,"retired zoo edit resolves to exactly one current forge approach")
+	check(not mountain.walkways.any(func(path): return path.id=="mountain_zoo_walk"),"obsolete zoo path cannot return as a duplicate map road")
+	if forge_paths.size()==1:
+		var approach: Dictionary=preload("res://world/mountain_detail/forge/MountainForge.gd").approach()
+		check(forge_paths[0].points[0].is_equal_approx(approach.points[0]) and forge_paths[0].points[-1].is_equal_approx(approach.points[-1]),"edited forge path joins the real road and forge gate")
+		check(forge_paths[0].points.has(Vector3(716,0,-334)) and forge_paths[0].points.has(Vector3(716,0,-338)),"updating the path identity preserves authored control points")
+	check(not mountain.roads.any(func(road): return str(road.id).contains("forge_walk")),"forge pedestrian approach must not become a traffic lane")
 	var controller := {"state":state,"world":world,"region":source}
 	var atlas := ATLAS.new(); atlas.collect(controller)
 	check(atlas.region_bounds.size()==3,"all prepared regions visible without mounting")
