@@ -7,6 +7,7 @@ const PAPER := preload("res://ui/hud/PaperAtlas.gd")
 const DATA := preload("res://ui/hud/WorldMapData.gd")
 const SYMBOLS := preload("res://ui/hud/MapSymbols.gd")
 const NAVIGATION := preload("res://ui/v1/NavigationRoute.gd")
+const MAP3D := preload("res://ui/hud/MapView3D.gd")
 const INK := Color("11171b")
 const GOLD := Color("d9ae62")
 class Canvas extends Control:
@@ -78,6 +79,13 @@ var _sea: ColorRect
 var navigation := NAVIGATION.new()
 var route_points := PackedVector2Array()
 var _route_clock := 0.0
+## Maquete 3D (mundo orgânico, etapa 5): por baixo dos ícones; project()/unproject() passam pela câmera.
+var view3d: SubViewportContainer
+var map_3d := true
+var _yaw := 0.0
+var _rotating := false
+var _mode_2d: Button
+var _mode_3d: Button
 
 static func _surface(fill := INK, border := Color("41484b"), padding := Vector2(14,10)) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
@@ -110,6 +118,8 @@ func _ready() -> void:
 		_tabs[id]=_button(_tab_row,title,focus_region.bind(id))
 		_tabs[id].custom_minimum_size=Vector2(92,58)
 	_close=_button(_header,"Fechar",controller.session.close_menu)
+	_mode_2d=_button(_header,"2D",_set_3d.bind(false)); _mode_2d.custom_minimum_size=Vector2(48,42); _mode_2d.tooltip_text="Vista de cima"
+	_mode_3d=_button(_header,"3D",_set_3d.bind(true)); _mode_3d.custom_minimum_size=Vector2(48,42); _mode_3d.tooltip_text="Maquete 3D"
 	_close.resized.connect(_position_close)
 	_zoom_controls=VBoxContainer.new(); _zoom_controls.add_theme_constant_override("separation",6); _area.add_child(_zoom_controls)
 	_button(_zoom_controls,"+",change_zoom.bind(1.25)).tooltip_text="Aproximar"
@@ -144,6 +154,10 @@ func _ready() -> void:
 	_clear_button=_button(_footer,"Limpar destino",_clear_waypoint); _clear_button.hide()
 	_clear_button.resized.connect(_position_clear)
 	_cache(); _cache_city_label(); _objective_button.disabled=_markers.is_empty() or not _markers[0].objective
+	if controller.world is Node: map_3d=bool(controller.world.get_meta("map_3d",true))
+	view3d=MAP3D.new(); view3d.configure(controller,atlas)
+	_area.add_child(view3d); _area.move_child(view3d,_sea.get_index()+1)
+	_apply_mode()
 	get_viewport().size_changed.connect(_layout); resized.connect(_layout)
 	get_node("/root/GameInput").device_changed.connect(_update_hints)
 	get_node("/root/GameInput").bindings_changed.connect(_update_hints)
@@ -272,6 +286,24 @@ func _layout() -> void:
 
 func _position_close() -> void:
 	if is_instance_valid(_close): _close.position=Vector2(_header.size.x-maxf(84,_close.size.x)-20,8+_top_safe)
+	if is_instance_valid(_close) and is_instance_valid(_mode_3d):
+		_mode_3d.position=_close.position-Vector2(_mode_3d.size.x+16,0)
+		_mode_2d.position=_mode_3d.position-Vector2(_mode_2d.size.x+4,0)
+
+func _set_3d(on: bool) -> void:
+	map_3d=on
+	if controller.world is Node: controller.world.set_meta("map_3d",on)
+	_apply_mode(); _update_hints(); _redraw()
+
+func _apply_mode() -> void:
+	var three: bool=map_3d and is_instance_valid(view3d)
+	if is_instance_valid(view3d): view3d.visible=three
+	for layer in [terrain,geography,_sea]:
+		if is_instance_valid(layer): layer.visible=not three
+	for pair in [[_mode_2d,not three],[_mode_3d,three]]:
+		if not is_instance_valid(pair[0]): continue
+		pair[0].add_theme_stylebox_override("normal",_surface(GOLD,GOLD) if pair[1] else _surface())
+		pair[0].add_theme_color_override("font_color",INK if pair[1] else STYLE.TEXT)
 
 func _position_clear() -> void:
 	if is_instance_valid(_clear_button):
@@ -335,6 +367,7 @@ func _update_hints() -> void:
 	var controls := get_node("/root/GameInput")
 	_close.text=controls.prompt("world_map")+"  "+tr("Fechar")
 	_hints.text="Arrastar  Mover    ·    Roda  Zoom    ·    Clique  Selecionar    ·    Duplo clique  Marcar"
+	if map_3d: _hints.text="Arrastar  Mover    ·    Botão direito  Girar    ·    Roda  Zoom    ·    Clique  Selecionar    ·    Duplo clique  Marcar"
 	if size.x<1000: _hints.text="Arrastar  Mover   ·   Roda  Zoom   ·   Clique  Selecionar"
 	if controls.using_gamepad: _hints.text=String(TranslationServer.translate("%s  Mover    ·    %s / %s  Zoom    ·    %s  Selecionar    ·    %s  Marcar"))%[controls.prompt("move_up"),controls.prompt("weapon_previous"),controls.prompt("weapon_next"),controls.prompt("ui_accept"),controls.prompt("interact")]
 	if controls.get_meta("touch_controls_active",false): _hints.text="Arraste  Mover    ·    + / −  Zoom    ·    Toque  Selecionar"
@@ -377,13 +410,24 @@ func _actor_point() -> Vector2:
 func recenter() -> void:
 	focus_region(str(controller.state.region_id)); target_center=_actor_point()
 
-func project(point: Vector2) -> Vector2: return _area.size*.5+(point-center)*_base_zoom*zoom
-func unproject(point: Vector2) -> Vector2: return center+(point-_area.size*.5)/(_base_zoom*zoom)
+func project(point: Vector2) -> Vector2:
+	if map_3d and is_instance_valid(view3d): return view3d.project(point)
+	return _area.size*.5+(point-center)*_base_zoom*zoom
+func unproject(point: Vector2) -> Vector2:
+	if map_3d and is_instance_valid(view3d): return view3d.unproject(point)
+	return center+(point-_area.size*.5)/(_base_zoom*zoom)
+## Arrasto na tela em metros do chão (no 3D segue a rotação da câmera).
+func _pan(relative: Vector2) -> Vector2:
+	if map_3d and is_instance_valid(view3d): return view3d.pan_delta(relative,_base_zoom*zoom)
+	return relative/(_base_zoom*zoom)
 func change_zoom(factor: float) -> void: target_zoom=clampf(target_zoom*factor,.65,50)
 func _redraw() -> void:
 	if not is_instance_valid(canvas): return
 	var factor := _base_zoom*zoom
 	if is_instance_valid(_sea): _sea.size=_area.size
+	if map_3d and is_instance_valid(view3d):
+		view3d.position=Vector2.ZERO; view3d.size=_area.size
+		view3d.sync(center,factor,_yaw)
 	for layer in [terrain,geography]:
 		layer.position=_area.size*.5-center*factor; layer.scale=Vector2.ONE*factor
 	# Retained draw commands: panning never retriangulates land or road strokes.
@@ -399,13 +443,15 @@ func map_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if event.button_index==MOUSE_BUTTON_WHEEL_UP and event.pressed: change_zoom(1.2)
 		elif event.button_index==MOUSE_BUTTON_WHEEL_DOWN and event.pressed: change_zoom(1/1.2)
+		elif event.button_index==MOUSE_BUTTON_RIGHT and map_3d: _rotating=event.pressed
 		elif event.button_index==MOUSE_BUTTON_LEFT:
 			_dragging=event.pressed
 			if event.double_click and event.pressed: _set_waypoint(unproject(event.position))
 			if event.pressed: _press=event.position; _hovered=-1; canvas.grab_focus()
 			elif _press.distance_to(event.position)<6: _pick(event.position)
 	elif event is InputEventMouseMotion:
-		if _dragging: target_center-=event.relative/(_base_zoom*zoom); _clamp_center()
+		if _rotating: _yaw=wrapf(_yaw+event.relative.x*.008,-PI,PI); _redraw()
+		elif _dragging: target_center-=_pan(event.relative); _clamp_center()
 		else:
 			var hovered := -1 if _pointer_blocked(event.position) else _nearest(event.position)
 			if hovered!=_hovered: _hovered=hovered; canvas.queue_redraw()
@@ -414,7 +460,7 @@ func map_input(event: InputEvent) -> void:
 		if event.pressed: _press=event.position; canvas.grab_focus()
 		elif _press.distance_to(event.position)<12: _pick(event.position)
 	elif event is InputEventScreenDrag:
-		target_center-=event.relative/(_base_zoom*zoom); _clamp_center()
+		target_center-=_pan(event.relative); _clamp_center()
 	canvas.accept_event()
 
 func _pointer_blocked(point: Vector2) -> bool:
@@ -536,7 +582,7 @@ func _process(delta: float) -> void:
 	if controls.using_gamepad:
 		var motion: Vector2=controls.movement()
 		if motion.length()>.1:
-			canvas.grab_focus(); target_center+=motion*300*delta/(_base_zoom*zoom); _clamp_center()
+			canvas.grab_focus(); target_center+=_pan(motion*300*delta); _clamp_center()
 	var moved := center.distance_to(target_center)>.02 or absf(zoom-target_zoom)>.001
 	if moved:
 		center=center.lerp(target_center,1-exp(-14*delta)); zoom=lerpf(zoom,target_zoom,1-exp(-14*delta)); _redraw()
@@ -606,7 +652,11 @@ func draw_map(target: Control) -> void:
 	var compass := Vector2(_area.size.x-51,_area.size.y-92)
 	target.draw_style_box(_surface(Color(.06,.09,.11,.86),Color.TRANSPARENT,Vector2.ZERO),Rect2(compass-Vector2(18,38),Vector2(36,54)))
 	target.draw_string(PRESENTATION.font(),compass-Vector2(5,20),"N",HORIZONTAL_ALIGNMENT_LEFT,-1,20,STYLE.TEXT)
-	target.draw_colored_polygon(PackedVector2Array([compass+Vector2(0,-8),compass+Vector2(-6,8),compass+Vector2(0,4),compass+Vector2(6,8)]),STYLE.TEXT)
+	# No 3D a seta gira com a câmera: aponta para onde fica o norte na tela.
+	var turn := _yaw if map_3d else 0.0
+	var arrow := PackedVector2Array()
+	for p in [Vector2(0,-8),Vector2(-6,8),Vector2(0,4),Vector2(6,8)]: arrow.append(compass+p.rotated(turn))
+	target.draw_colored_polygon(arrow,STYLE.TEXT)
 	_draw_scale(target)
 
 func _point_region(point: Vector2) -> String:

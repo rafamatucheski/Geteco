@@ -59,7 +59,8 @@ func run() -> void:
 		check(Rect2(Vector2.ZERO,map.size).encloses(map._header.get_rect()) and Rect2(Vector2.ZERO,map.size).encloses(map._footer.get_rect()),"map header and footer fit the current viewport")
 		check(is_equal_approx(map._header.position.x,(map.size.x-map._header.size.x)*.5),"map frame stays horizontally centered")
 		var destination := Vector2(32,74)
-		check(map.unproject(map.project(destination)).distance_to(destination)<.001,"resizing the printed map cannot move navigation destinations")
+		# No 3D a conta passa pela câmera em ponto flutuante: 5 cm ainda é bem menos que um pixel.
+		check(map.unproject(map.project(destination)).distance_to(destination)<(.05 if map.map_3d else .001),"resizing the printed map cannot move navigation destinations")
 	root.content_scale_size=Vector2i(1280,720); root.size=Vector2i(1280,720)
 	await redraw(map)
 	check(map._sea.size==map._area.size,"printed water background fills the resized map without cropping or stretching geography")
@@ -149,7 +150,7 @@ func run() -> void:
 	map.change_zoom(.00001)
 	check(map.target_zoom==.65,"zoom has a finite lower bound")
 	var original := Vector2(24,31)
-	check(map.unproject(map.project(original)).distance_to(original)<.001,"screen picking inverts projection")
+	check(map.unproject(map.project(original)).distance_to(original)<(.05 if map.map_3d else .001),"screen picking inverts projection")
 	map._drawn_markers.clear()
 	check(map._nearest(map.project(Vector2(10,10)))==-1,"suppressed symbols cannot steal a click")
 	var open_point: Vector2=map.canvas.size*.5
@@ -157,6 +158,18 @@ func run() -> void:
 	map.map_input(double_click(open_point))
 	check(map._waypoint.distance_to(map.unproject(open_point))<.001,"double-clicking the map marks its world coordinate")
 	map._clear_waypoint()
+	# Maquete 3D (mundo orgânico, etapa 5): girar muda a projeção, o 2D volta com a precisão de antes.
+	check(map.map_3d and map.view3d.visible and not map.terrain.visible, "map opens as the 3D model with the printed layers hidden")
+	var probe: Vector2 = map.center + Vector2(150, 0)
+	var before: Vector2 = map.project(probe)
+	map._yaw = .9; map._redraw()
+	check(map.project(probe).distance_to(before) > 1.0, "rotating the 3D map moves projected symbols")
+	check(map._pan(Vector2(100,0)).normalized().distance_to(Vector2(cos(.9), -sin(.9))) < .01, "dragging pans along the rotated screen axes")
+	map._yaw = 0.0
+	map._set_3d(false)
+	check(not map.view3d.visible and map.terrain.visible and map.geography.visible, "2D toggle restores the printed map layers")
+	check(map.unproject(map.project(original)).distance_to(original)<.001, "2D picking keeps exact inversion")
+	map._set_3d(true)
 	map.queue_free(); player.queue_free(); await process_frame
 	if failures.is_empty(): print("MAP_UI_CONTRACT PASS ",checks," checks")
 	else: print("MAP_UI_CONTRACT FAIL ",failures.size()," of ",checks," checks")

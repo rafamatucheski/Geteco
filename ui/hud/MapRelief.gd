@@ -46,14 +46,15 @@ func prepare(lands: Array, regions: Dictionary, navigation_bounds: Dictionary) -
 			region_visual_bounds[region_id]=land_extents[region_id]
 		visual_bounds=extent if first else visual_bounds.merge(extent); first=false
 	if regions.has("desert") and regions.desert is Node:
-		_desert_relief()
+		_desert_relief(lands)
 	# Contextual exterior ridges sit behind the authored playable footprints of
 	# Harbor and the mountain. Their silhouette cannot occlude another region.
 	for land in _presentation_lands(lands):
 		var polygon: PackedVector2Array=land.polygon
 		if polygon.size()<3 or land.biome in ["water","desert"]: continue
 		var extent := _bounds(polygon)
-		_context_envelope(polygon,str(land.biome))
+		# A ilha da forma do mundo já é costa de verdade: sem o envoltório que disfarçava o corte das células.
+		if not land.get("shape",false): _context_envelope(polygon,str(land.biome))
 		if land.biome=="mountain" and regions.has("mountain") and regions.mountain is Node:
 			var terrain: Variant=regions.mountain.get("terrain")
 			if terrain!=null:
@@ -85,7 +86,15 @@ func draw_lines(target: CanvasItem, scale_value: float) -> void:
 		target.draw_multiline(batch.points,batch.color,float(batch.width)/factor,true)
 
 
-func _desert_relief() -> void:
+func _desert_relief(lands: Array = []) -> void:
+	# Mundo orgânico (etapa 5): com a ilha da forma do mundo, a terra é ela, com borda curta de costa.
+	for land in lands:
+		if land.biome == "desert" and land.get("shape", false):
+			_soft_polygon(land.polygon, PALETTE.desert, 6.0)
+			_desert_visual_bounds = _bounds(land.polygon).grow(36.0)
+			visual_bounds = visual_bounds.merge(_desert_visual_bounds)
+			_desert_detail()
+			return
 	# One continuous geological base includes the entire playable basin and the
 	# authored exterior ranges. Only the OUTSIDE of this union dissolves to ink.
 	# There is no transparency boundary at the rectangular runtime extent.
@@ -97,6 +106,10 @@ func _desert_relief() -> void:
 	_soft_polygon(outline,PALETTE.desert,105.0)
 	_desert_visual_bounds=_bounds(outline).grow(105.0)
 	visual_bounds=visual_bounds.merge(_desert_visual_bounds)
+	_desert_detail()
+
+## Cordilheiras, cânion, cava e formações: o mesmo com o retângulo antigo ou com a ilha.
+func _desert_detail() -> void:
 	for distant in [true,false]:
 		for definition in RANGES:
 			if distant and definition.side not in ["north","west"]: continue

@@ -10,6 +10,7 @@ const REGIONS := ["world","harbor","mountain","desert"]
 class Production extends RefCounted:
 	var regions := {}
 	var _region_cache := {}
+	var world_sea: Node3D
 
 class World extends Node3D:
 	var production := Production.new()
@@ -25,6 +26,7 @@ class Session extends RefCounted:
 	var desert = null
 	var mission_world := Mission.new()
 	func close_menu() -> void: modal=false
+	func navigation_destination() -> Dictionary: return {}
 
 var output := ""
 var report := {}
@@ -84,9 +86,25 @@ func run() -> void:
 			fail("WORLD_MAP_DESIGN unexpectedly mounted a region"); return
 		world.production._region_cache[id]=region
 		report.regions[id]={"roads":region.map_routes().size(),"entries":region.entries.size(),"mounted":false}
+	# Mar do mundo (mundo orgânico, etapa 1): o mapa 3D reaproveita as malhas dele.
+	var sea := preload("res://world/shape/WorldSea.gd").new()
+	sea.configure(world.production)
+	world.add_child(sea)
+	await sea.build_sliced(self)
+	world.production.world_sea = sea
 	var map := MAP.new()
 	map.controller={"state":state,"world":world,"region":world.production._region_cache.harbor,"session":Session.new()}
+	var opened := Time.get_ticks_usec()
 	root.add_child(map)
+	# Primeira abertura monta o cache das malhas do 3D; as seguintes só recriam os nós.
+	report.map_open_first_usec=Time.get_ticks_usec()-opened
+	var again := MAP.new()
+	again.controller=map.controller
+	opened=Time.get_ticks_usec()
+	root.add_child(again)
+	report.map_open_cached_usec=Time.get_ticks_usec()-opened
+	again.queue_free()
+	print("WORLD_MAP_OPEN primeira %.1f ms, com cache %.1f ms" % [report.map_open_first_usec/1000.0, report.map_open_cached_usec/1000.0])
 	report.relief={"preparation_usec":map.atlas.relief.preparation_usec,"triangle_count":map.atlas.relief.triangle_count}
 	save_report()
 	print("WORLD_MAP_DESIGN_READY ",output)
@@ -116,6 +134,14 @@ func run() -> void:
 			if not map._legend.visible: map._toggle_filters()
 			await capture(region+"-filters-open"+suffix)
 			map._toggle_filters(); map._set_filter(kind)
+	# Maquete 3D girada e a vista 2D de antes, no mundo inteiro.
+	root.content_scale_size=Vector2i(1280,720); root.size=Vector2i(1280,720)
+	map.select_marker(-1); focus_region(map,"world")
+	map._yaw=.55; map._redraw()
+	await capture("world-3d-girado")
+	map._yaw=0.0; map._set_3d(false); focus_region(map,"world")
+	await capture("world-2d")
+	map._set_3d(true)
 	report.status="complete"; save_report()
 	print("WORLD_MAP_DESIGN_DONE ",output)
 	map.free()

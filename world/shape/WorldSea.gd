@@ -57,12 +57,12 @@ var coast_edges: Array = []
 var base_tiles: Dictionary = {}
 var water_material: ShaderMaterial
 var base_material: StandardMaterial3D
-var production: Node
+var production
 var _dry_bounds := Rect2()
 var _clock := 0.0
 var build_usec := 0
 
-func configure(owner_production: Node) -> void:
+func configure(owner_production) -> void:
 	production = owner_production
 	name = "WorldSea"
 

@@ -169,7 +169,29 @@ Verificação:
 
 ### 5. Mapa
 
-- O mapa 2D e o 3D da tecla M passam a ler a forma; a maquete deixa de ser desenho e vira o mapa.
+**Feita em 26/10.** O que entrou:
+
+- **Mapa 2D (`WorldMapData`, `MapRelief`, `PaperAtlas`):** a terra do deserto e da serra é a ilha da
+  forma (a serra, só com `GETECO_MOUNTAIN_ISLAND` ligado), sem o envoltório convexo de antes. O papel
+  ganhou duas faixas de água rasa em volta da costa. Harbor continua com os retângulos até a etapa 3.
+- **Mapa 3D (`ui/hud/MapView3D.gd`):** maquete inclinada embaixo da camada de ícones; abre em 3D e os
+  botões 2D/3D do cabeçalho trocam (escolha guardada no mundo). Botão direito gira. Mar, chão-base e anel
+  são as malhas do `WorldSea`, as cordilheiras são as do `DesertHorizonRelief`, o relevo da serra vem do
+  terreno (altura ×6) e estradas e prédios do `WorldMapData`. Só materiais que o jogo já usa.
+- **Ícones, clique e destino** continuam no `MapUI`, que troca `project`/`unproject` pelos do 3D.
+- **Maquete publicada** (`docs/design/mapa-3d-tecla-m-20261026.html`) lê a costa do `world_shape.json`
+  no lugar das curvas desenhadas à mão.
+
+Verificação: `test_ui_map_contract` 62/62 (abre em 3D, girar move a projeção, arrasto segue a rotação,
+2D restaura as camadas), `test_world_map_atlas` 285/285, fotos em `capture_world_map_design.gd`.
+
+Pendente:
+
+- **Primeira abertura do mapa:** monta o cache das malhas do 3D num quadro só. Na captura de debug,
+  183 ms na primeira abertura contra 33 ms com o cache montado. O jogo está pausado com o mapa aberto,
+  mas ainda falta medir em release e, se pesar, montar o cache sob a cortina.
+- **Arenito:** em sessão que começa em Harbor, o material das cordilheiras pode compilar na primeira
+  abertura do 3D se o deserto ainda não apareceu.
 
 ## Riscos
 

@@ -7,6 +7,7 @@ const GATE := preload("res://world/north_gateway/NorthGatewayLayout.gd")
 const SYMBOLS := preload("res://ui/hud/MapSymbols.gd")
 const RELIEF := preload("res://ui/hud/MapRelief.gd")
 const NAV_PLACES := preload("res://ui/hud/NavigationPlaces.gd")
+const SHAPE := preload("res://world/shape/WorldShape.gd")
 var roads: Array[Dictionary]=[]
 var lands: Array[Dictionary]=[]
 var buildings: Array[PackedVector2Array]=[]
@@ -109,7 +110,10 @@ func _read_region(id: String, region) -> void:
 			var fishing_forest: bool = polygon==preload("res://world/places/fishing/FishingRuralLayout.gd").outline()
 			lands.append({"polygon":polygon,"biome":"forest" if fishing_forest else "city"})
 	elif id=="desert":
-		lands.append({"polygon":rectangle(DESERT.BOUNDS),"biome":"desert"})
+		# Mundo orgânico (etapa 5): a terra do deserto é a ilha da forma do mundo, não o retângulo jogável.
+		var island := _shape_island("desert")
+		if island.is_empty(): lands.append({"polygon":rectangle(DESERT.BOUNDS),"biome":"desert"})
+		else: lands.append({"polygon":island,"biome":"desert","shape":true})
 	elif id=="mountain":
 		# The terrain is continuous east of the bridge. Its cartographic extent
 		# follows authored records, excluding the sea-spanning entry road.
@@ -122,7 +126,10 @@ func _read_region(id: String, region) -> void:
 			for point in road.points:
 				if point.x>456.25 and (point.y< -320 or point.x>559.375):
 					points.append_array(rectangle(Rect2(point-Vector2.ONE*18,Vector2.ONE*36)))
-		if points.size()>2: lands.append({"polygon":Geometry2D.convex_hull(points),"biome":"mountain"})
+		# Mundo orgânico (etapa 5): com a serra ilha, a terra é a ilha da forma do mundo (costa curva).
+		var island := _shape_island("mountain") if preload("res://world/regions/MountainTerrain3D.gd").island_enabled() else PackedVector2Array()
+		if not island.is_empty(): lands.append({"polygon":island,"biome":"mountain","shape":true})
+		elif points.size()>2: lands.append({"polygon":Geometry2D.convex_hull(points),"biome":"mountain"})
 		for definition in _definitions.values():
 			if definition.region!="mountain" or definition.get("hidden_access",false): continue
 			buildings.append(rectangle(Rect2(planar(definition.exterior_position)-definition.size*.5,definition.size)))
@@ -170,7 +177,8 @@ func _mountain_markers(region) -> void:
 	# Ski terrain extends beyond the road/forest record cells. Include its real
 	# activity corridors in the land footprint instead of painting them at sea.
 	for land in lands:
-		if land.biome!="mountain": continue
+		# A ilha da forma do mundo já cobre as pistas e o teleférico: o envoltório convexo apagaria a curva.
+		if land.biome!="mountain" or land.get("shape",false): continue
 		var coverage: PackedVector2Array=land.polygon.duplicate()
 		for road in roads:
 			if road.region!="mountain" or (road.surface not in ["ski","cable"] and road.id!="forge_hermit_trail"): continue
@@ -224,3 +232,9 @@ func _railway_markers(state) -> void:
 
 func _service_icon(service: String) -> String:
 	return NAV_PLACES.service_icon(service)
+
+## Contorno da ilha `id` da forma do mundo (vazio se não houver).
+static func _shape_island(id: String) -> PackedVector2Array:
+	for island in SHAPE.islands():
+		if str(island.id) == id: return island.polygon
+	return PackedVector2Array()
