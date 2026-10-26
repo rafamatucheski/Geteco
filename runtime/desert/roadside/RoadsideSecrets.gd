@@ -21,7 +21,7 @@ static func missing(world_state: Dictionary, economy) -> Array:
 		var secret := bool(site.get("secret", false))
 		if secret and not preload("res://data/catalogs/VicenteLetters.gd").complete(economy._data.get("collectibles", [])): continue
 		var center: Vector2 = site.center
-		result.append({"id": "cave:" + str(site.id), "name": "Caverna do Vicente" if secret else "Caverna", "point": Vector3(center.x, 0, center.y)})
+		result.append({"id": "cave:" + str(site.id), "name": "Caverna do Vicente" if secret else str(site.get("title", "Caverna")), "point": Vector3(center.x, 0, center.y)})
 	for relic in RELICS.secrets():
 		var id := str(relic.id)
 		if DISCOVERY.collected(world_state, id): continue

@@ -68,7 +68,7 @@ func run() -> void:
 	ids(HOMES.definitions(), ["santa_lua_home_1", "santa_lua_home_2", "santa_lua_home_3", "santa_lua_home_4"], "Santa Lua interiors")
 	ids(UNDERGROUND.definitions(), ["desert_under_culvert", "desert_under_well", "desert_under_cellar", "desert_under_mine"], "Underground interiors")
 	ids(ROAD.SITES, ["sol_poente", "radio_tower", "scrapyard", "food_truck", "salt_works", "weigh_station", "motel", "chapel", "grandstand"], "Roadside sites")
-	ids(WILDS.SITES, ["homestead_salt", "homestead_mesa", "homestead_dry", "homestead_well", "outlaws_ridge", "outlaws_wash", "outlaws_flats", "outlaws_dunes", "cave_coyote", "cave_vulture", "cave_whisper", "cave_sun", "cave_brother"], "Wilds sites")
+	ids(WILDS.SITES, ["homestead_salt", "homestead_mesa", "homestead_dry", "homestead_well", "outlaws_ridge", "outlaws_wash", "outlaws_flats", "outlaws_dunes", "cave_coyote", "cave_vulture", "cave_whisper", "cave_sun", "cave_brother", "cave_crater"], "Wilds sites")
 	ids(RELICS.sites(), ["station", "mine", "wagon", "wreck"], "Relic discoveries")
 	ids(LAND.locations(), ["desert_wind_dunes", "desert_dry_wash", "desert_salt_pan", "desert_natural_arch", "desert_hoodoo", "desert_basalt_fan", "desert_balanced_rock"], "Natural landmarks")
 	ids(RUINS.definitions(), ["desert_abandoned_house", "desert_abandoned_cabin"], "Open ruins")
@@ -79,7 +79,7 @@ func run() -> void:
 	for collection in [ROAD.SITES, WILDS.SITES]:
 		for site in collection: inside(Vector3(site.center.x, 0, site.center.y), str(site.id))
 	for site in WILDS.SITES:
-		var radius: float = WILDS.CAVE_RADIUS if str(site.kind) == "cave" else WILDS.SITE_RADIUS
+		var radius: float = WILDS.site_radius(site)
 		var center: Vector2 = site.center
 		check(L.BOUNDS.encloses(Rect2(center-Vector2.ONE*radius,Vector2.ONE*radius*2)), "Entire wilds site fits compact boundary: " + str(site.id))
 		check(L.road_clear(center,radius), "Wilds site clears actual driving lanes: " + str(site.id))

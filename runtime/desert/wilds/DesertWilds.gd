@@ -52,6 +52,11 @@ const SITES := [
 		"note": "Marcas de giz contam dias. Alguém morou aqui por muito tempo."},
 	{"id": "cave_sun", "kind": "cave", "center": Vector2(-280, -470), "yaw": 0.2, "loot": "weapon", "weapon": "smg",
 		"note": "Uma caixa de munição militar, sem número de série."},
+	# Cratera do meteoro (26/10, carta do mundo 2.0): a caverna fica no meio de um anel de rocha
+	# queimada (CaveBuild._crater), que pede uma reserva maior. Ponto achado por
+	# tests/tools/sweep_desert_wilds_site.gd no oeste vazio; boca virada para a arrancada.
+	{"id": "cave_crater", "kind": "cave", "center": Vector2(-980, -790), "yaw": 1.3, "loot": "cash", "amount": 650, "radius": 27.0, "title": "Cratera",
+		"note": "Você solta da rocha queimada um punhado de cristais azuis. Valem R$ 650."},
 	# A caverna do Vicente (20/10): fora do mapa e da torre até a décima carta; dentro, sob a lona,
 	# o Coyote 440 dos irmãos. "Ao sul do leito seco", como diz o risco na caverna do coiote.
 	{"id": "cave_brother", "kind": "cave", "center": Vector2(-1030, -1050), "yaw": 0.3, "loot": "car", "secret": true,
@@ -72,9 +77,11 @@ static func reserved(point: Vector2, radius := 0.0) -> bool:
 	if preload("res://runtime/desert/roadside/RoadsideLayout.gd").reserved(point, radius): return true
 	if not enabled(): return false
 	for site in SITES:
-		var reach := CAVE_RADIUS if str(site.kind) == "cave" else SITE_RADIUS
-		if (site.center as Vector2).distance_to(point) < reach + radius: return true
+		if (site.center as Vector2).distance_to(point) < site_radius(site) + radius: return true
 	return false
+
+static func site_radius(site: Dictionary) -> float:
+	return float(site.get("radius", CAVE_RADIUS if str(site.kind) == "cave" else SITE_RADIUS))
 
 static func ground(point: Vector2) -> Vector3:
 	return Vector3(point.x, HM.surface_height(point), point.y)

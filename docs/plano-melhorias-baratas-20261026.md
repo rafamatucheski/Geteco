@@ -22,6 +22,10 @@ código. Nada foi implementado. As estimativas vêm de leitura do código, não 
 
 ## 1. Cratera do meteoro com caverna de cristais (Deserto)
 
+**Feita em 26/10.** `cave_crater` em (−980, −790), ponto achado por
+`tests/tools/sweep_desert_wilds_site.gd`; cristais pagam R$ 650; `tests/test_desert_wilds.gd` passou
+108/108 (11 da cratera). Falta o A/B no export release.
+
 **O que é.** Um anel de rocha queimada no deserto, com uma caverna no meio. Dentro, cristais (o achado)
 e um bilhete. Responde ao pedido de mais cavernas no deserto.
 

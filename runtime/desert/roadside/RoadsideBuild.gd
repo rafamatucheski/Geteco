@@ -28,7 +28,7 @@ const KINDS := ["station", "tower", "scrapyard", "food_truck", "salt_works", "we
 	"town_street", "homes_yards", "village_square", "workshop_yard",
 	"facade_bank", "facade_diner", "facade_market", "facade_motel", "facade_digo",
 	# Cavernas do DesertWilds (CaveBuild): "cave:<id do lugar>", morro no lote roofs.
-	"cave:cave_coyote", "cave:cave_vulture", "cave:cave_whisper", "cave:cave_sun", "cave:cave_brother"]
+	"cave:cave_coyote", "cave:cave_vulture", "cave:cave_whisper", "cave:cave_sun", "cave:cave_brother", "cave:cave_crater"]
 ## Carcaças: só modelos da frota comum (cena retida e desenhada no pré-aquecimento da frota),
 ## de carroceria em 3 superfícies (~8 desenhos por carcaça; o sedã tem 15 só na carroceria).
 const WRECK_MODELS := ["ranch_single", "courier_van"]

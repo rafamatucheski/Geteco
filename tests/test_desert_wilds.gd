@@ -54,7 +54,7 @@ func run() -> void:
 	# Nenhum lugar em cima de estrada, prédio ou reserva de outro sistema.
 	WILDS._enabled = 0
 	for site in WILDS.SITES:
-		check(region._decoration_clear(site.center, WILDS.CAVE_RADIUS if str(site.kind) == "cave" else WILDS.SITE_RADIUS), "%s em chão livre" % site.id)
+		check(region._decoration_clear(site.center, WILDS.site_radius(site)), "%s em chão livre" % site.id)
 	WILDS._enabled = 1
 	world.player.controlled_automatically = true
 	world.player.automatic_direction = Vector3.ZERO
@@ -85,6 +85,7 @@ func run() -> void:
 			"cave" when bool(site.get("secret", false)):
 				await brother(wilds, site, record)
 			"cave":
+				if CAVE.crater(str(site.id)): crater(site, record)
 				var economy = world.session.state.economy
 				var balance_before: int = economy.balance
 				var inside: Vector3 = record.loot_point
@@ -116,6 +117,12 @@ func run() -> void:
 		for i in 40: await process_frame
 		await RenderingServer.frame_post_draw
 		root.get_texture().get_image().save_png(ProjectSettings.globalize_path("%s/%s.png" % [FOLDER, site.id]))
+		if CAVE.crater(str(site.id)):
+			world.player.teleport(record.root.global_transform * Vector3(0, .1, CAVE.CRATER_OUTER + 8.0))
+			world.camera.initialized = false
+			for i in 40: await process_frame
+			await RenderingServer.frame_post_draw
+			root.get_texture().get_image().save_png(ProjectSettings.globalize_path("%s/%s_fora.png" % [FOLDER, site.id]))
 	# Longe de tudo, nada fica montado.
 	var far := WILDS.ground(Vector2(DESERT_LAYOUT.BRIDGE_END.x, DESERT_LAYOUT.BRIDGE_END.z-12)) + Vector3(0, .1, 0)
 	world.player.teleport(far)
@@ -131,6 +138,25 @@ func approach(center: Vector3, distance: float) -> Vector3:
 	# approach distance on its southern side instead of spawning beyond the map.
 	var offset := distance if center.z+distance < DESERT_LAYOUT.BOUNDS.end.y-3 else -distance
 	return center+Vector3(0,.1,offset)
+
+## Cratera: o anel de rocha tem colisão dos lados e fica aberto na frente da boca (por onde se
+## entra a pé ou de carro).
+func crater(site: Dictionary, record: Dictionary) -> void:
+	var xf: Transform3D = record.root.global_transform
+	var space := world.get_world_3d().direct_space_state
+	var c := CAVE.CRATER_CENTER
+	var blocked := 0
+	for angle in [0.0, PI, -PI * .5, PI * .25, PI * .75]:
+		var dir := Vector2(cos(angle), sin(angle))
+		var from := c + dir * (CAVE.CRATER_INNER - 3.0)
+		var to := c + dir * (CAVE.CRATER_OUTER + 2.0)
+		var ray := PhysicsRayQueryParameters3D.create(xf * Vector3(from.x, 1.0, from.y), xf * Vector3(to.x, 1.0, to.y), 1)
+		if not space.intersect_ray(ray).is_empty(): blocked += 1
+	check(blocked == 5, "%s: anel da cratera tem colisão (%d/5 direções)" % [site.id, blocked])
+	var gap := PhysicsRayQueryParameters3D.create(xf * Vector3(0, 1.0, CAVE.FRONT_Z + 1.5), xf * Vector3(0, 1.0, c.y + CAVE.CRATER_OUTER + 3.0), 1)
+	check(space.intersect_ray(gap).is_empty(), "%s: abertura na frente da boca livre" % site.id)
+	var secrets := preload("res://runtime/desert/roadside/RoadsideSecrets.gd").missing(world.session.state.world_state, world.session.state.economy)
+	check(secrets.any(func(entry): return str(entry.id) == "cave:" + str(site.id) and str(entry.name) == "Cratera"), "%s: torre de rádio aponta a cratera" % site.id)
 
 ## Caixa de munição: oferecida perto da pilha de caixotes, repõe as armas de fogo do jogador e
 ## fica vazia até o próximo dia de jogo.

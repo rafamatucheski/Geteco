@@ -334,7 +334,8 @@ func desert_roadside() -> void:
 	world = {}
 	var wallet := ECONOMY.new()
 	var all := ROADSIDE_SECRETS.missing(world, wallet)
-	check(all.size() == 10, "torre conhece 10 achados (%d)" % all.size())
+	# 11 desde a cratera do meteoro (26/10): cinco cavernas visíveis, relíquias e ruínas.
+	check(all.size() == 11, "torre conhece 11 achados (%d)" % all.size())
 	var tower: Dictionary = ROADSIDE.site("radio_tower")
 	var origin := Vector3(tower.center.x, 0, tower.center.y)
 	var seen := ROADSIDE_SECRETS.nearest(world, wallet, origin, 3)

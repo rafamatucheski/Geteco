@@ -19,6 +19,17 @@ const GARAGE_IDS := ["cave_brother"]
 const CAR_POINT := Vector3(0, 0, -1.2)
 ## Godot anda para −z: PI deixa o capô virado para a boca (+z), para sair de frente pelo túnel.
 const CAR_YAW := PI
+## Cratera do meteoro (26/10, carta do mundo 2.0): a mesma caverna no meio de um anel de rocha
+## queimada, com cristais azuis no salão dos fundos e lascas do meteoro no chão escuro em volta.
+## Sem mexer no relevo: o anel é de lajes inclinadas e matacões, com abertura na frente da boca
+## (largura de um carro). O anel chega a CRATER_OUTER + ~2 m do centro do lugar; a reserva do lugar
+## (DesertWilds, "radius") cobre isso.
+const CRATER_IDS := ["cave_crater"]
+const CRATER_CENTER := Vector2(0, -1)
+const CRATER_INNER := 17.0
+const CRATER_OUTER := 23.0
+## Meia abertura do anel, em radianos, centrada na boca (+z): ~18 m de vão no raio médio.
+const CRATER_GAP := .45
 ## Cantos do morro (células de 2 m); fora disso só pedras soltas.
 const HALF_X := 11.0
 const BACK_Z := -11.0
@@ -26,6 +37,23 @@ const FRONT_Z := 9.0
 
 static func garage(id: String) -> bool:
 	return id in GARAGE_IDS
+
+static func crater(id: String) -> bool:
+	return id in CRATER_IDS
+
+## Cristal com brilho próprio fraco (emissão no material, sem luz): aparece à noite sem gastar
+## LightBudget. Uma instância só, que entra no pré-aquecimento com as outras malhas da caverna.
+static var _crystal: StandardMaterial3D
+static func crystal() -> Material:
+	if _crystal == null:
+		_crystal = StandardMaterial3D.new()
+		_crystal.albedo_color = Color("7fc4e8")
+		_crystal.roughness = .18
+		_crystal.metallic = .1
+		_crystal.emission_enabled = true
+		_crystal.emission = Color("4aa8e0")
+		_crystal.emission_energy_multiplier = .7
+	return _crystal
 
 ## Onde fica a pilha de caixotes do acampamento (a caixa de munição).
 static func ammo_point(id: String) -> Vector3:
@@ -79,6 +107,7 @@ static func compose(b, roofs, id: String) -> void:
 	if garage(id): _garage(b, id, rects, dark_rock, rng)
 	else: _interior(b, id, rects, dark_rock, rng)
 	_outside(b, rock, rng)
+	if crater(id): _crater(b, id, rects, rng)
 
 # --- Morro ---------------------------------------------------------------------------------------
 
@@ -290,3 +319,61 @@ static func _outside(b, rock: Array, rng: RandomNumberGenerator) -> void:
 		var at := Vector3(s * 3.4, .4, FRONT_Z + .6)
 		b.box(rock[0], SR._t(at.x, at.y, at.z, s * .5, 0.0, s * .25), Vector3(2.4, .8, 1.6), {"-y": null}, Vector2(4, 4))
 		b.solid(SR._t(at.x, at.y, at.z, s * .5), Vector3(2.0, .8, 1.4))
+
+# --- Cratera -------------------------------------------------------------------------------------
+
+## Anel de lajes inclinadas para fora (a face de dentro desce para o meio, como a borda de uma
+## cratera) com matacões queimados por cima; chão escuro entre o morro e o anel; lascas do meteoro
+## com cristais espetados; e, no salão dos fundos, cristais grandes em volta do achado.
+static func _crater(b, id: String, rects: Array, rng: RandomNumberGenerator) -> void:
+	var burnt := [ART.detail("sandstone", Color("4f3a2c")), ART.detail("sandstone", Color("5e4433")), ART.detail("sandstone", Color("3c2d24"))]
+	var ash := ART.detail("gravel", Color("4a3a2e"))
+	var middle := (CRATER_INNER + CRATER_OUTER) * .5
+	# Chão queimado: disco fino abaixo do piso da caverna (0,04), por cima do terreno plano.
+	b.cylinder(ash, SR._t(CRATER_CENTER.x, .01, CRATER_CENTER.y), CRATER_INNER + 1.0, .02, 28)
+	var segments := 30
+	for k in segments:
+		var angle := float(k) / float(segments) * TAU
+		if absf(angle_difference(angle, PI * .5)) < CRATER_GAP: continue
+		var radius := middle + rng.randf_range(-.8, .8)
+		var at := CRATER_CENTER + Vector2(cos(angle), sin(angle)) * radius
+		# Eixo x da laje na tangente; +z local aponta para o centro (ver yaw).
+		var yaw := -angle - PI * .5
+		var height := rng.randf_range(1.6, 3.2)
+		var length := TAU * radius / float(segments) * 1.25
+		var depth := CRATER_OUTER - CRATER_INNER
+		b.box(burnt[k % burnt.size()], SR._t(at.x, height * .4, at.y, yaw, -.35 + rng.randf_range(-.08, .08)), Vector3(length, height, depth * .8), {"-y": null}, Vector2(6, 6))
+		b.solid(SR._t(at.x, height * .4, at.y, yaw), Vector3(length * .9, height * .8, depth * .6))
+		for j in rng.randi_range(1, 2):
+			var spot := at + Vector2(cos(angle), sin(angle)) * rng.randf_range(-1.5, 1.8) + Vector2(-sin(angle), cos(angle)) * rng.randf_range(-1.8, 1.8)
+			var size := Vector3(rng.randf_range(1.2, 2.4), rng.randf_range(.9, 1.8), rng.randf_range(1.0, 2.0))
+			b.box(burnt[rng.randi() % burnt.size()], SR._t(spot.x, height * .7 + size.y * .3, spot.y, rng.randf() * TAU, rng.randf_range(-.25, .25), rng.randf_range(-.2, .2)), size, {"-y": null}, Vector2(4, 4))
+	# Lascas do meteoro no chão queimado, longe da boca e do morro.
+	for k in 7:
+		var angle := rng.randf() * TAU
+		if absf(angle_difference(angle, PI * .5)) < CRATER_GAP + .1: continue
+		var at := CRATER_CENTER + Vector2(cos(angle), sin(angle)) * rng.randf_range(13.5, CRATER_INNER - 1.0)
+		var size := Vector3(rng.randf_range(.9, 1.6), rng.randf_range(.5, .9), rng.randf_range(.8, 1.4))
+		b.box(burnt[2], SR._t(at.x, size.y * .4, at.y, rng.randf() * TAU, rng.randf_range(-.2, .2)), size, {"-y": null}, Vector2(3, 3))
+		b.solid(SR._t(at.x, size.y * .4, at.y), size * .8)
+		_crystals(b, Vector3(at.x, size.y * .6, at.y), 3, .5, rng)
+	# Salão dos fundos: cristais grandes junto às paredes, em volta do caixote do achado.
+	var hall: Rect2 = rects[3]
+	var loot := loot_point(id)
+	for k in 5:
+		var u := rng.randf_range(.1, .9)
+		var at := Vector3(lerpf(hall.position.x, hall.end.x, u), 0, hall.position.y + .45)
+		if Vector2(at.x, at.z).distance_to(Vector2(loot.x, loot.z - .6)) < .9: at.x += 1.2 * signf(at.x - loot.x + .01)
+		_crystals(b, at, rng.randi_range(4, 6), 1.0, rng)
+	for x in [hall.position.x + .45, hall.end.x - .45]:
+		_crystals(b, Vector3(x, 0, hall.get_center().y), 4, .8, rng)
+
+## Feixe de prismas sextavados afinando na ponta, inclinados para fora do pé.
+static func _crystals(b, base: Vector3, count: int, scale: float, rng: RandomNumberGenerator) -> void:
+	for k in count:
+		var tall := rng.randf_range(.5, 1.3) * scale
+		var lean := rng.randf_range(.15, .55)
+		var turn := rng.randf() * TAU
+		var basis := Basis.from_euler(Vector3(lean * cos(turn), 0, lean * sin(turn)))
+		var center := base + basis * Vector3(0, tall * .5, 0)
+		b.cylinder(crystal(), Transform3D(basis, center), rng.randf_range(.07, .14) * scale, tall, 6, .015 * scale)
