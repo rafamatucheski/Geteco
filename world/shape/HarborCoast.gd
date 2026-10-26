@@ -19,10 +19,16 @@ const BRIDGE := preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd"
 ## Baía norte: ao norte da cidade, da mata até o lado oeste da cabeceira da ponte norte (x = 356). Segue as
 ## bordas norte dos quarteirões (z = 0,6 e −6,2; z = −150 depois da bacia). A bacia do navio
 ## (x 200–273,8) fecha ao norte num cais reto em z = −6,2 e continua aberta para o mar pelo sul.
+##
+## Leste e parque: da ponte norte para leste (cabeceira x = 394, quarteirão x = 422,5), com o lado leste do
+## parque e o sul dele a partir de x = 480, onde a faixa até a costa é mais estreita (~50 m de divisa com a
+## frente sul, que ainda não entrou).
 const DISTRICTS := {
 	"west_woods": [Vector2(-2000, -2000), Vector2(-80, -2000), Vector2(-80, 2000), Vector2(-2000, 2000)],
 	"north_bay": [Vector2(-80, -2000), Vector2(356, -2000), Vector2(356, -150), Vector2(273.8, -150), Vector2(273.8, -6.2),
 		Vector2(-6.2, -6.2), Vector2(-6.2, 0.6), Vector2(-80, 0.6)],
+	"east_park": [Vector2(365.3, -2000), Vector2(2000, -2000), Vector2(2000, 2000), Vector2(480, 2000), Vector2(480, 150.6),
+		Vector2(422.5, 150.6), Vector2(422.5, -147), Vector2(394, -147), Vector2(394, -279), Vector2(365.3, -279)],
 }
 ## Água em volta da ponte norte, da cabeceira (z = −248) para o norte.
 const NORTH_BRIDGE_CLEAR := Rect2(328.75, -600, 36.55, 352)

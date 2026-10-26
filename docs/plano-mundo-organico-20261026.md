@@ -163,7 +163,12 @@ volta à terra de antes. Contratos: `tests/test_harbor_coast.gd`; fotos:
   corte de 23 m ao norte da mata sumiu. Fica a borda leste da cabeceira da ponte e, ao sul da mata, os
   ~50 m de antes. A costa curva nova ganha muro de pedra em vez do concreto de rodovia e da alvenaria
   urbana (`CoastalProtection`).
-- **Próximos:** leste da ponte norte e parque a leste, frente sul e porto (com cais).
+- **Feito: leste e parque** (da ponte norte para leste: cabeceira x = 394, quarteirão x = 422,5). A
+  zona pega o lado leste do parque e o sul dele a partir de x = 480, onde a faixa até a costa é mais
+  estreita. A pegada da ponte leste sai do chão natural, como a da norte. Fica uma divisa reta de ~50 m
+  em x = 480, ao sul do parque, até a frente sul entrar.
+- **Próximo:** frente sul e porto, com cais reto e a bacia recortada no gerador. É o último bairro e
+  fecha as divisas que sobraram (sul da mata, sul do parque).
 
 ### 4. Serra ilha
 
