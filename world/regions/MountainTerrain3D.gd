@@ -4,6 +4,25 @@ const CATALOG = preload("res://world/places/PlaceCatalog.gd")
 const LAKE_BASINS := preload("res://world/regions/LakeBasins.gd")
 const TRAIL_BLEND := preload("res://world/regions/MountainTrailBlend.gd")
 const EDITOR_TERRAIN := preload("res://world/editing/WorldTerrainEdits.gd")
+const SHAPE := preload("res://world/shape/WorldShape.gd")
+## Serra ilha (etapa 4 do mundo orgânico, 26/10/2026): nos últimos 10 m antes da costa da forma do mundo o
+## chão baixa até −0,8 m (pouco acima da água, −1,14 m) e, passada a costa, afunda até −12 m, onde o mar do
+## mundo (WorldSea) aparece. Assim a linha d'água fica na costa, sem degrau seco abaixo do mar.
+## Antes o terreno seguia sem fim para leste e norte, por cima de onde a forma diz que é mar.
+## GETECO_MOUNTAIN_ISLAND=0 volta ao terreno antigo.
+static var _island := -1
+
+static func island_enabled() -> bool:
+	if _island < 0: _island = 0 if OS.get_environment("GETECO_MOUNTAIN_ISLAND") == "0" else 1
+	return _island == 1
+
+## Altura com a costa: terra inteira a 10 m da costa para dentro, fundo do mar para fora.
+static func shore_height(point: Vector2, land_height: float) -> float:
+	if not island_enabled(): return land_height
+	var coast := SHAPE.field_distance("mountain", point)
+	if coast >= 10.0: return land_height
+	if coast >= 0.0: return lerpf(-.8, land_height, smoothstep(0.0, 10.0, coast))
+	return maxf(-12.0, -.8 + .6 * coast)
 const STEP := 4.0
 const CELL := 64.0
 const BLEND := 28.0
@@ -28,6 +47,8 @@ var _lake_shore := PackedVector2Array()
 var _lake_bounds := Rect2()
 
 func configure(roads: Array, entries: Array, clearings: Array) -> void:
+	# A grade de distância da costa é lida nos trabalhadores (chunk_data): carrega aqui, no thread principal.
+	SHAPE.islands()
 	_editor_terrain = EDITOR_TERRAIN.from_engine("mountain","mountain")
 	_trail_blend.configure(roads)
 	_segments.clear()
@@ -129,7 +150,8 @@ func _calculate_height(point: Vector2) -> float:
 	# The flat road reservation meets the physical road top at y=0. Lowering
 	# this terrain made a one-way curb at every narrow track edge.
 	var original := weight*(broad*6.0+detail*1.5)-LAKE_BASINS.depth_in(_lake_shore,_lake_bounds,point)
-	return _editor_terrain.height_at(point,original) if _editor_terrain != null and not _editor_terrain.brushes.is_empty() else original
+	var height: float = _editor_terrain.height_at(point,original) if _editor_terrain != null and not _editor_terrain.brushes.is_empty() else original
+	return shore_height(point,height)
 
 func surface_height_at(point: Vector2) -> float:
 	# Same diagonal and interpolation as build_chunk, for trees/rocks without floating.

@@ -41,9 +41,26 @@ const STRAITS = [
 ];
 // Folga mínima de terra em volta do que é jogável (metros). A maquete usava 10/−18/−55; os contratos
 // (tests/test_world_shape.gd) é que decidem estes valores.
-const PROTECT = {harbor:10, mountain:0, desert:12};
+// Serra (etapa 4): o contorno do terreno jogável pode recuar até 40 m onde não há nada, para o canal até o
+// deserto fazer curva; trilhas, estradas e lugares da serra ficam a MOUNTAIN_CLEAR m da costa, onde
+// cabe o muro de pedra que acompanha a costa (ScenarioBoundary3D.build_mountain_coast).
+const PROTECT = {harbor:10, mountain:-40, desert:12};
+const MOUNTAIN_CLEAR = 18; // 14 m do contrato + simplificação da trilha exportada e da costa (até 1,2 m cada)
+const MOUNTAIN_BRIDGES = ["mountain_bridge_outbound","mountain_bridge_inbound","mountain_pass"];
+const mountainSegs = [];
+for (const r of DATA.roads) {
+  if (r.region !== "mountain" || MOUNTAIN_BRIDGES.includes(r.id)) continue;
+  for (let i = 2; i < r.points.length; i += 2) mountainSegs.push([r.points[i-2], r.points[i-1], r.points[i], r.points[i+1]]);
+}
+for (const m of DATA.markers) if (m.region === "mountain") mountainSegs.push([m.x, m.z, m.x + .1, m.z + .1]);
+function mountainContentSD(x, z) {
+  let d = 1e9;
+  for (const s of mountainSegs) d = Math.min(d, segDist(x, z, s[0], s[1], s[2], s[3]));
+  return MOUNTAIN_CLEAR - d;
+}
 // Cabeceiras de ponte em terra firme: a ponte norte chega ao deserto em DesertLayout.BRIDGE_END.
-const ABUTMENTS = [{x:342.5,z:-378,r:16}];
+// A leste, a cabeceira da ponte da serra (as árvores editadas à mão ali ficam em terra firme, longe do muro).
+const ABUTMENTS = [{x:342.5,z:-378,r:16},{x:600,z:-284,r:36}];
 const harborBoxes = harborLands.map(l=>bbox(l.points));
 const cityBoxes = cityLands.map(l=>bbox(l.points));
 function unionSD(x,z,lands,boxes,reach){let best=-1e9;for(let k=0;k<lands.length;k++){const b=boxes[k];if(x<b[0]-reach||x>b[1]+reach||z<b[2]-reach||z>b[3]+reach)continue;best=Math.max(best,sdPoly(x,z,lands[k].points));}return best;}
@@ -62,6 +79,7 @@ function rawField(x,z){
 function protect(x,z,f){
   f=Math.max(f,harborSD(x,z)+PROTECT.harbor,mountainSD(x,z)+PROTECT.mountain,sdRoundRect(x,z,D.x0,D.z0,D.x1,D.z1,6)+PROTECT.desert);
   for(const a of ABUTMENTS)f=Math.max(f,a.r-Math.hypot(x-a.x,z-a.z));
+  if(x>420&&z<-100)f=Math.max(f,mountainContentSD(x,z));
   return f;}
 function owner(x,z){const hs=harborSD(x,z)+34, ds=desertSD(x,z), ms=mountainSD(x,z)+50;return hs>=ds&&hs>=ms?"harbor":(ds>=ms?"desert":"mountain");}
 function ridgeStrength(x,z){const wx=x+(fbm(x*.003,z*.003+9,3)-.5)*240, wz=z+(fbm(x*.003+4,z*.003,3)-.5)*240;
@@ -145,8 +163,20 @@ for(const o of outers){
 }
 islands.sort((a,b)=>b.area_m2-a.area_m2);
 const names={};for(const isl of islands){names[isl.id]=(names[isl.id]||0)+1;if(names[isl.id]>1)isl.id=isl.id+"_islet_"+(names[isl.id]-1);}
+// Distância com sinal até a costa da serra numa grade de 4 m (decímetros, presa em ±80 m): o terreno da
+// serra lê em trabalhador, sem percorrer polígono (MountainTerrain3D._calculate_height).
+const fields={};
+for(const isl of islands){
+  if(isl.id!=="mountain")continue;
+  const pts=isl.points, poly=pts;
+  let a=1e9,b=-1e9,c=1e9,d=-1e9;for(let i=0;i<pts.length;i+=2){a=Math.min(a,pts[i]);b=Math.max(b,pts[i]);c=Math.min(c,pts[i+1]);d=Math.max(d,pts[i+1]);}
+  const step=4, x0=Math.floor((a-80)/step)*step, z0=Math.floor((c-80)/step)*step, nx=Math.ceil((b+80-x0)/step)+1, nz=Math.ceil((d+80-z0)/step)+1;
+  const values=[];
+  for(let iz=0;iz<nz;iz++)for(let ix=0;ix<nx;ix++){const v=sdPoly(x0+ix*step,z0+iz*step,poly);values.push(Math.round(Math.max(-80,Math.min(80,v))*10));}
+  fields[isl.id]={origin:[x0,z0],step,size:[nx,nz],decimetres:values};
+}
 const out={version:1,generated:"2026-10-26",source:"docs/design/mapa-3d-tecla-m-20261026.html",generator:"tools/world_shape/generate_world_shape.mjs",
-  cell_m:CELL,protect_m:PROTECT,abutments:ABUTMENTS,straits:STRAITS,islands};
+  cell_m:CELL,protect_m:PROTECT,abutments:ABUTMENTS,straits:STRAITS,islands,distance_fields:fields};
 fs.mkdirSync(output.substring(0,output.lastIndexOf("/")),{recursive:true});
 fs.writeFileSync(output,JSON.stringify(out));
 console.log("WORLD_SHAPE ilhas=%d", islands.length, islands.map(i=>`${i.id}:${i.points.length/2} vértices, ${(i.area_m2/1e6).toFixed(2)} km², costa ${i.coast.map(c=>c[1]).join("/")}`).join(" | "));

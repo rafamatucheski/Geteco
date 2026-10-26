@@ -144,6 +144,27 @@ Limites:
 
 ### 4. Serra ilha
 
+**Feita em 26/10.** O que entrou:
+
+- **Forma:** a serra pode recuar até 40 m onde não há nada, então o canal até o deserto faz curva
+  (mínimo de 43 m). Trilhas, estradas e lugares da serra ficam a 14 m ou mais da costa (contrato
+  novo), o que garante espaço para o muro.
+- **Distância até a costa:** o gerador grava uma grade de 4 m (`distance_fields` no `world_shape.json`),
+  lida por `WorldShape.field_distance`. O terreno, que roda em trabalhadores, consulta sem percorrer
+  polígono.
+- **Terreno (`MountainTerrain3D.shore_height`):** baixa a −0,8 m nos últimos 10 m antes da costa e
+  afunda até −12 m depois dela. Célula inteira mar adentro não tem terreno; antes ele seguia sem fim
+  para leste e norte.
+- **Muro de pedra (`ScenarioBoundary3D.build_mountain_coast`):** acompanha a costa 5 m para dentro, com
+  colisão, e abre onde passa via. Na costa só a ponte leste passa; as duas retas antigas saíram.
+- **Árvores:** nenhuma a menos de 10 m da costa.
+- **Comparação:** `GETECO_MOUNTAIN_ISLAND=0` volta ao terreno e aos muros antigos.
+
+Verificação:
+
+- `tests/test_mountain_island.gd`: 9/9.
+- Foto de cima: `tests/capture/capture_mountain_island.gd`.
+
 - Costa com pedras e penhascos em volta do terreno da serra, mais a margem da ponte leste.
 
 ### 5. Mapa

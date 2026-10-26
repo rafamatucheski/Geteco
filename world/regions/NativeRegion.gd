@@ -1496,7 +1496,8 @@ func _build_surfaces(chunk: Node3D, rect: Rect2, key: Vector2i) -> void:
 		if _mountain_owns_terrain(key):
 			var shore_edges := preload("res://world/regions/MountainBridgeShore.gd").frontiers(key,MOUNTAIN_BRIDGE_VOID_CELLS,_mountain_owns_terrain)
 			terrain.build_chunk(chunk,rect,shore_edges,_surface_terrain_data)
-			preload("res://world/regions/ScenarioBoundary3D.gd").build_mountain(chunk,rect,terrain.surface_height_at)
+			# Serra ilha: o muro abre onde passa estrada ou trilha (na costa, só a ponte leste).
+			preload("res://world/regions/ScenarioBoundary3D.gd").build_mountain(chunk,rect,terrain.surface_height_at,func(point: Vector2) -> bool: return route_geometry.contains(Vector3(point.x,0,point.y),8.0))
 
 func _build_record(chunk: Node3D, record: Dictionary) -> void:
 	match record.kind:
@@ -1686,6 +1687,9 @@ func _mountain_owns_terrain(key: Vector2i) -> bool:
 	# Harbor authors no ground, road or sidewalk (tests/test_bridge_approach_terrain.gd).
 	if key in MOUNTAIN_BRIDGE_VOID_CELLS: return false
 	var center := (Vector2(key)+Vector2.ONE*.5)*CELL
+	# Serra ilha: célula inteira a mais de 20 m mar adentro não tem terreno (antes ia sem fim para leste
+	# e norte). Meia diagonal da célula = 45 m.
+	if TERRAIN.island_enabled() and preload("res://world/shape/WorldShape.gd").field_distance("mountain", center) < -(CELL*.71+20.0): return false
 	return WORLD_CONNECTION.logical_region(Vector3(center.x,0,center.y)) == "mountain"
 
 ## Scripts de arte carregados sob demanda ficam presos aqui. O pré-aquecimento os
@@ -1912,6 +1916,9 @@ func _prepare_forest() -> void:
 	for key in records:
 		records[key] = records[key].filter(func(record):
 			if record.kind != "tree": return true
+			# Serra ilha: nada de árvore na encosta da costa nem no mar.
+			# As células da ponte leste ficam fora: lá a margem é a da ponte (MountainBridgeShore), não a costa.
+			if TERRAIN.island_enabled() and _cell(record.position) not in MOUNTAIN_BRIDGE_VOID_CELLS and preload("res://world/shape/WorldShape.gd").field_distance("mountain", Vector2(record.position.x,record.position.z)) < 10.0: return false
 			var original := Vector2(record.position.x,record.position.z)/SCALE-CATALOG.MOUNTAIN_OFFSET
 			var planar := Vector2(record.position.x,record.position.z)
 			if MOUNTAIN_FORGE.FOOTPRINT.grow(2.0).has_point(planar) or FORGE_HERMIT.FOOTPRINT.grow(2.0).has_point(planar) or MOUNTAIN_REFUGE.FOOTPRINT.grow(2.0).has_point(planar): return false

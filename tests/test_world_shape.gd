@@ -21,6 +21,7 @@ const HARBOR_LAND_MARGIN := 2.0
 ## (ScenarioBoundary3D) e o chão retangular do deserto não ficarem por cima do mar.
 const DESERT_SEAL_MARGIN := 6.0
 const MIN_STRAIT := 40.0
+const MOUNTAIN_CLEAR := 14.0
 ## Estradas que podem passar sobre a água: as pontes. Ferrovia é elevada e cruza os canais.
 const SPAN_SURFACES := ["railway", "cable"]
 
@@ -139,6 +140,22 @@ func run() -> void:
 	check(gate_wet, "ponte norte cruza o canal")
 	var east := Vector2((CONNECTION.HARBOR_CONNECTOR_X + CONNECTION.SEAM.x) * .5, CONNECTION.CENTER_Z)
 	check(not SHAPE.is_land(east), "ponte leste cruza o canal em %s" % east)
+
+	# Serra (etapa 4): o muro de pedra acompanha a costa 5 m para dentro, com 10 m de largura; trilhas,
+	# estradas e lugares da serra (fora a ponte) ficam a MOUNTAIN_CLEAR m da costa para ele caber.
+	var close_mountain := 0
+	for road in atlas.roads:
+		if str(road.region) != "mountain" or _is_bridge(road): continue
+		for p in road.points:
+			if SHAPE.signed_distance(p) < MOUNTAIN_CLEAR: close_mountain += 1; violate(p, "serra: trilha perto do muro")
+	for marker in atlas.markers:
+		if str(marker.region) == "mountain" and SHAPE.signed_distance(marker.point) < MOUNTAIN_CLEAR: close_mountain += 1; violate(marker.point, "serra: lugar perto do muro")
+	check(close_mountain == 0, "trilhas, estradas e lugares da serra a %.0f m da costa (%d pontos perto)" % [MOUNTAIN_CLEAR, close_mountain])
+	# Grade de distância da serra (lida pelo terreno em trabalhador) bate com a distância exata.
+	var worst_field := 0.0
+	for p in [Vector2(650, -500), Vector2(700, -800), Vector2(500, -400), Vector2(800, -300), Vector2(600, -200)]:
+		worst_field = maxf(worst_field, absf(SHAPE.field_distance("mountain", p) - clampf(SHAPE.signed_distance(p), -80.0, 80.0)))
+	check(worst_field < 3.0, "grade de distância da serra bate com a distância exata (erro máximo %.2f m)" % worst_field)
 
 	# Lugares e prédios em terra com folga.
 	var bad_markers: Array = []

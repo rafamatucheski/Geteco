@@ -112,7 +112,11 @@ func _check_border_cells() -> void:
 		pair = await _mount_pair(focus)
 		harbor = pair[0]
 		mountain = pair[1]
-		check(_terrain_meshes(mountain, key) == 1, "border %s: Mountain side keeps terrain" % str(key))
+		# Serra ilha (mundo orgânico, etapa 4): célula inteira mar adentro não tem terreno; lá aparece o mar.
+		var center := Vector2((key.x + .5) * 64.0, (key.y + .5) * 64.0)
+		var sea_cell: bool = preload("res://world/regions/MountainTerrain3D.gd").island_enabled() and preload("res://world/shape/WorldShape.gd").field_distance("mountain", center) < -(64.0 * .71 + 20.0)
+		if sea_cell: check(_terrain_meshes(mountain, key) == 0, "border %s: sea cell of the organic world has no Mountain terrain" % str(key))
+		else: check(_terrain_meshes(mountain, key) == 1, "border %s: Mountain side keeps terrain" % str(key))
 		for x in [448.5, 452.0, 455.5]:
 			for step in 8:
 				var point := Vector3(x, 0.0, row * 64.0 + 4.0 + step * 8.0)

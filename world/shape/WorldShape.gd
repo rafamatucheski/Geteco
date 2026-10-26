@@ -7,12 +7,18 @@ extends RefCounted
 const PATH := "res://world/shape/world_shape.json"
 const KINDS := ["quay", "beach", "cliff", "rock"]
 static var _islands: Array[Dictionary] = []
+static var _fields: Dictionary = {}
 
 ## [{id, polygon: PackedVector2Array (x, z), bounds: Rect2, coast: [[índice inicial, tipo], ...]}]
 static func islands() -> Array[Dictionary]:
 	if not _islands.is_empty(): return _islands
 	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(PATH))
 	if not data is Dictionary: return _islands
+	for id in data.get("distance_fields", {}):
+		var field: Dictionary = data.distance_fields[id]
+		var values := PackedFloat32Array()
+		for v in field.decimetres: values.append(float(v) / 10.0)
+		_fields[id] = {"origin": Vector2(field.origin[0], field.origin[1]), "step": float(field.step), "size": Vector2i(field.size[0], field.size[1]), "values": values}
 	for row in data.get("islands", []):
 		var flat: Array = row.points
 		var polygon := PackedVector2Array()
@@ -61,3 +67,23 @@ static func kind_at(island: Dictionary, index: int) -> String:
 		if int(run[0]) > index: break
 		kind = str(run[1])
 	return kind
+
+## Distância com sinal até a costa da ilha `id` lida na grade de 4 m gravada pelo gerador (bilinear,
+## presa em ±80 m; fora da grade, −80). Só leitura de arrays: serve em trabalhador (terreno da serra).
+static func field_distance(id: String, point: Vector2) -> float:
+	if _islands.is_empty(): islands()
+	if not _fields.has(id): return -80.0
+	var field: Dictionary = _fields[id]
+	var size: Vector2i = field.size
+	var f: Vector2 = (point - field.origin) / float(field.step)
+	if f.x < 0.0 or f.y < 0.0 or f.x > size.x - 1.001 or f.y > size.y - 1.001: return -80.0
+	var ix := int(f.x)
+	var iz := int(f.y)
+	var u := f.x - ix
+	var w := f.y - iz
+	var values: PackedFloat32Array = field.values
+	var a := values[iz * size.x + ix]
+	var b := values[iz * size.x + ix + 1]
+	var c := values[(iz + 1) * size.x + ix]
+	var d := values[(iz + 1) * size.x + ix + 1]
+	return lerpf(lerpf(a, b, u), lerpf(c, d, u), w)

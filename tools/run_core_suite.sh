@@ -48,6 +48,7 @@ WORLD=(
 	"headless|tests/test_world_shape.gd|--no-save"
 	"headless|tests/test_world_sea.gd|"
 	"headless|tests/test_desert_island.gd|"
+	"headless|tests/test_mountain_island.gd|"
 	"headless|tests/test_save_indicator.gd|--no-save --skip-arrival|Could not create directory: .*/missing-parent-"
 	"headless|tests/test_recovery_penalty_session.gd|--no-save --skip-arrival"
 	"rendered|tests/test_desert_wilds.gd|--no-save --no-traffic"

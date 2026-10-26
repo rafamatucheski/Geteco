@@ -25,7 +25,10 @@ static func build_desert(parent: Node3D, rect: Rect2, height: Callable) -> void:
 	# terminal also stops a pedestrian jumping over the existing low guardrail.
 	_strip(parent, rect, Vector2(west,north), Vector2(east,north), height, false, 2.0)
 
-static func build_mountain(parent: Node3D, rect: Rect2, height: Callable) -> void:
+static func build_mountain(parent: Node3D, rect: Rect2, height: Callable, blocked: Callable = Callable()) -> void:
+	if preload("res://world/regions/MountainTerrain3D.gd").island_enabled():
+		build_mountain_coast(parent, rect, height, blocked)
+		return
 	# Stay on the supported side of the logical seam. The bridge void row
 	# (-320..-256) already has its authored shore, rails and tunnel opening.
 	var west := CONNECTION.SEAM.x + INSET
@@ -101,3 +104,119 @@ static func _section(fixed: float, along: float, vertical: bool, height: Callabl
 static func _color(point: Vector3, snow: bool) -> Color:
 	var variation := .06*sin(point.y*.8+point.x*.07+point.z*.04)
 	return (Color("939e9f") if snow else Color("ad8c64")).lightened(variation)
+
+# --- Serra ilha (etapa 4 do mundo orgânico, 26/10/2026) ------------------------------------------------
+
+## O muro da serra acompanha a costa da forma do mundo COAST_INSET m para dentro, em vez das duas retas
+## (emenda a oeste e limite norte de Harbor ao sul). Abre onde há estrada ou trilha (`blocked`): pelos
+## contratos de test_world_shape só a ponte leste chega à costa; o resto fica a 14 m ou mais dela.
+const COAST_INSET := 5.0
+const COAST_STEP := 8.0
+static var _coast_line := PackedVector2Array()
+
+static func mountain_coast_line() -> PackedVector2Array:
+	if not _coast_line.is_empty(): return _coast_line
+	var best := 0.0
+	for island in preload("res://world/shape/WorldShape.gd").islands():
+		if str(island.id) != "mountain": continue
+		for polygon in Geometry2D.offset_polygon(island.polygon, -COAST_INSET):
+			var area := absf(_area(polygon))
+			if area > best:
+				best = area
+				_coast_line = polygon
+	return _coast_line
+
+static func _area(polygon: PackedVector2Array) -> float:
+	var total := 0.0
+	for i in polygon.size():
+		var a := polygon[i]
+		var b := polygon[(i + 1) % polygon.size()]
+		total += a.x * b.y - b.x * a.y
+	return total * .5
+
+static func build_mountain_coast(parent: Node3D, rect: Rect2, height: Callable, blocked: Callable = Callable()) -> void:
+	var line := mountain_coast_line()
+	if line.size() < 3: return
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var emitted := false
+	var center := GROUND_CUT_CENTER(line)
+	for i in line.size():
+		var a := line[i]
+		var b := line[(i + 1) % line.size()]
+		if not rect.grow(COAST_STEP).intersects(Rect2(a, Vector2.ZERO).expand(b), true): continue
+		var length := a.distance_to(b)
+		var steps := maxi(1, ceili(length / COAST_STEP))
+		var direction := (b - a) / maxf(length, .001)
+		var across := Vector2(-direction.y, direction.x)
+		# Para fora da ilha: o lado oposto ao centro do contorno.
+		if across.dot((a + b) * .5 - center) < 0.0: across = -across
+		for k in steps:
+			var p := a.lerp(b, float(k) / steps)
+			var q := a.lerp(b, float(k + 1) / steps)
+			var mid := (p + q) * .5
+			# Cada pedaço tem um dono: o trecho que contém o meio dele.
+			if not rect.has_point(mid): continue
+			if blocked.is_valid() and blocked.call(mid): continue
+			_emit_piece(surface, _section_at(p, across, height, WIDTH), _section_at(q, across, height, WIDTH), mid, direction)
+			emitted = true
+	if not emitted: return
+	surface.generate_normals()
+	var built: Array = COLLISION_FACES.commit_with_shape(surface, true)
+	var ridge := MeshInstance3D.new()
+	ridge.name = "ScenarioBoundaryRidge"
+	ridge.mesh = built[0]
+	ridge.material_override = preload("res://world/desert/DesertHorizonRelief.gd").material()
+	parent.add_child(ridge)
+	var body := StaticBody3D.new()
+	body.collision_layer = 1
+	body.collision_mask = 0
+	body.add_to_group(GROUP)
+	var collider := CollisionShape3D.new()
+	collider.shape = built[1]
+	body.add_child(collider)
+	ridge.add_child(body)
+
+static func GROUND_CUT_CENTER(polygon: PackedVector2Array) -> Vector2:
+	var sum := Vector2.ZERO
+	for point in polygon: sum += point
+	return sum / float(polygon.size())
+
+## Mesmo perfil de _section, atravessado ao longo de `across` (normal do trecho da costa).
+static func _section_at(center: Vector2, across: Vector2, height: Callable, width: float) -> PackedVector3Array:
+	var floor_y: float = height.call(center)
+	var along := center.x * .7 + center.y * .3
+	var crest := floor_y + 9.0 + 1.2 * sin(along * .037) + .6 * sin(along * .113)
+	var profile := [Vector2(-width*.5,floor_y-18),Vector2(-width*.5,floor_y+.6),Vector2(-width*.43,crest-3),Vector2(-width*.2,crest-.4),Vector2(width*.07,crest),Vector2(width*.43,crest-2.5),Vector2(width*.5,floor_y+.6),Vector2(width*.5,floor_y-18)]
+	var points := PackedVector3Array()
+	for point: Vector2 in profile:
+		var plan := center + across * point.x
+		points.append(Vector3(plan.x, point.y, plan.y))
+	return points
+
+## Faces laterais entre duas seções e tampas nas pontas, sempre viradas para fora (o material corta o verso).
+static func _emit_piece(surface: SurfaceTool, first: PackedVector3Array, last: PackedVector3Array, mid: Vector2, direction: Vector2) -> void:
+	var axis := Vector3(mid.x, 0, mid.y)
+	for side in first.size():
+		var next := (side + 1) % first.size()
+		_face(surface, [first[side], first[next], last[next]], axis)
+		_face(surface, [first[side], last[next], last[side]], axis)
+	for side in range(1, first.size() - 1):
+		_face(surface, [first[0], first[side + 1], first[side]], axis - Vector3(direction.x, 0, direction.y) * 1000.0)
+		_face(surface, [last[0], last[side], last[side + 1]], axis + Vector3(direction.x, 0, direction.y) * 1000.0)
+
+static func _face(surface: SurfaceTool, triangle: Array, inside: Vector3) -> void:
+	var a: Vector3 = triangle[0]
+	var b: Vector3 = triangle[1]
+	var c: Vector3 = triangle[2]
+	var normal := (b - a).cross(c - a)
+	var center := (a + b + c) / 3.0
+	var outward := center - Vector3(inside.x, center.y - 4.0, inside.z)
+	# Godot desenha a frente no sentido horário: a normal (b-a)×(c-a) aponta para trás da frente.
+	if normal.dot(outward) > 0.0:
+		var swap := b
+		b = c
+		c = swap
+	for vertex in [a, b, c]:
+		surface.set_color(_color(vertex, true))
+		surface.add_vertex(vertex)
