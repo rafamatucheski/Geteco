@@ -52,7 +52,8 @@ func run() -> void:
 	for frame in 15:
 		await process_frame
 	await RenderingServer.frame_post_draw
-	var path := "res://isolated-maciota-after.png"
+	# Captura é evidência de mídia: vai para evidence/ (fora do Git e do import), não para a raiz.
+	var path := "res://evidence/isolated-maciota-after.png"
 	for argument in OS.get_cmdline_user_args():
 		if argument.begins_with("--output="):
 			path = argument.trim_prefix("--output=")
