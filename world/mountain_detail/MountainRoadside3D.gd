@@ -28,6 +28,7 @@ const LAMP_VISIBLE_RANGE := 420.0
 
 var controller
 var _region: Node3D
+var _traffic_signs: Node3D
 var _paths: MeshInstance3D
 var _lamp_points: Array[Vector3] = []
 var _lamp_transforms: Array[Transform3D] = []
@@ -67,6 +68,9 @@ func _process_traced(delta: float) -> void:
 	var region = controller.regions.get("mountain") if controller != null else null
 	if not is_instance_valid(region):
 		visible = false
+		if is_instance_valid(_traffic_signs):
+			_traffic_signs.queue_free()
+			_traffic_signs = null
 		return
 	if region != _region:
 		_region = region
@@ -138,6 +142,15 @@ func _build(region) -> void:
 	add_child(_paths)
 	_build_lamps()
 	_build_delineators(region)
+	_build_traffic_signs(region)
+
+func _build_traffic_signs(region) -> void:
+	_traffic_signs = Node3D.new()
+	_traffic_signs.name = "MountainTrafficSigns"
+	add_child(_traffic_signs)
+	var signs := preload("res://world/mountain_detail/MountainTrafficSigns.gd").new()
+	signs.configure(region, _lamp_points)
+	signs.build(_traffic_signs)
 
 ## The splash-art rhythm comes from low passive amber panels between existing
 ## lamps. Markers sit beyond the 1.65 m walking band; branches remain open.
