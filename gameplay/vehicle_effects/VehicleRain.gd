@@ -1,38 +1,23 @@
 extends Node
-## Carros molhados pela chuva: a pintura fica mais escura e brilhante e ganha gotas
-## (normal triplanar). Cada carro tem a própria umidade: molha com a chuva, seca devagar
-## e não molha sob teto (túnel, garagem, marquise). Só toca nos materiais de pintura que
-## VehiclePaint já copiou por carro; o vidro e os materiais compartilhados ficam intactos.
-##
-## Custo: um passo a 4 Hz sobre o grupo "drivable"; só carros perto do foco recebem
-## material novo e só quando a umidade muda de degrau. Seco, nada é tocado.
-## As flags do StandardMaterial3D que surgem aqui (normal_enabled + uv1_triplanar) geram
-## variantes de shader: VehicleMaterialVariantPrewarm as compila sob a cortina.
+## Wet paint and millimetre-scale beads. Beads use an independent pass so damage
+## normals, paint textures and door/body mesh changes cannot erase them.
 const ATMOSPHERE := preload("res://runtime/atmosphere/RegionalAtmosphere3D.gd")
+const DROP_SHADER := preload("res://gameplay/vehicle_effects/VehicleBodyRain.gdshader")
 const STEP := .25
-const NEAR := 160.0             # além disso o carro não aparece: só a umidade é atualizada
-const RAY_NEAR := 90.0          # teto só é medido perto do foco
-const WET_RISE_SECONDS := 14.0  # chuva forte molha a lataria inteira nesse tempo
-const DRY_SECONDS := 120.0      # parado ao sol, leva ~2 min para secar
-const LEVELS := 20.0            # degraus de umidade que viram material novo
-## 2026-10-18: gotas de 1-3 cm (escala 1,5), relevo 0,9 e rugosidade mínima 0,05 faziam a
-## lataria cintilar quadro a quadro vista de cima, na tempestade: o usuário via a traseira
-## "meio transparente, meio amarela (poste), piscando". Gotas maiores, relevo e brilho contidos.
-const BEAD_SCALE := .7
-const BEAD_STRENGTH := .4
+const NEAR := 160.0
+const RAY_NEAR := 90.0
+const WET_RISE_SECONDS := 14.0
+const DRY_SECONDS := 120.0
+const LEVELS := 20.0
 const WET_MIN_ROUGHNESS := .2
-static var _beads: Texture2D
 var weather: Node
 var _clock := 0.0
 var _query := PhysicsRayQueryParameters3D.new()
 
-## Controle A/B de medição: HARBOR_VEHICLE_RAIN=0 desliga o efeito.
 static func enabled() -> bool:
 	return OS.get_environment("HARBOR_VEHICLE_RAIN") != "0" and "--no-vehicle-rain" not in OS.get_cmdline_user_args()
 
 func _physics_process(delta: float) -> void:
-	# Relógio primeiro: enabled() lê o ambiente e copia os argumentos da linha de comando,
-	# e isso não precisa acontecer a cada passo de física, só a 4 Hz.
 	_clock += delta
 	if _clock < STEP: return
 	var dt := _clock
@@ -54,15 +39,17 @@ func _step(vehicle: Node3D, focus: Vector3, dt: float) -> void:
 	if exposed: wet = minf(1.0, wet + dt / WET_RISE_SECONDS * (.35 + .65 * rain))
 	elif wet > 0.0: wet = maxf(0.0, wet - dt / DRY_SECONDS)
 	vehicle.set_meta("rain_wet", wet)
+	# Rainfall controls new beads; accumulated wetness controls the lasting film.
+	var falling := roundf((rain if exposed else 0.0) * LEVELS) / LEVELS
+	var changed := not is_equal_approx(float(vehicle.get_meta("rain_falling", -1.0)), falling)
+	vehicle.set_meta("rain_falling", falling)
 	if not near: return
 	var level := roundf(wet * LEVELS)
-	var applied: float = float(vehicle.get_meta("rain_level", 0.0))
-	if level == applied and not (level > 0.0 and _lost_beads(vehicle)): return
+	var applied := float(vehicle.get_meta("rain_level", 0.0))
+	if level == applied and not changed and not (level > 0.0 and _needs_refresh(vehicle)): return
 	vehicle.set_meta("rain_level", level)
 	apply(vehicle, level / LEVELS)
 
-## Um raio para cima: só construção/estrutura estática conta como teto (carro, pessoa
-## e chão não). Fica de fora com a chuva parada, então seco o custo é zero.
 func _covered(vehicle: Node3D, point: Vector3) -> bool:
 	var space := vehicle.get_world_3d().direct_space_state
 	_query.from = point + Vector3.UP * 1.4
@@ -78,102 +65,92 @@ static func apply(vehicle: Node3D, wet: float) -> void:
 	var visual = vehicle.get("visual")
 	var dirt := 0
 	if is_instance_valid(visual): dirt = (visual.get_meta("usage_profile", Vector2i.ZERO) as Vector2i).x
-	# Sujeira cobre o verniz: carro empoeirado molha mais fosco e com menos gota.
-	var gloss := wet * (1.0 - .3 * dirt)
+	var falling := float(vehicle.get_meta("rain_falling", wet))
+	var identity := str(vehicle.get("vehicle_id"))
+	var pattern := float(absi(identity.hash() if not identity.is_empty() else vehicle.get_instance_id()) % 8191)
 	for material: StandardMaterial3D in paint.materials:
-		_apply_material(material, wet, gloss, 1.0 - .25 * dirt)
+		_apply_material(material, wet, wet * (1.0 - .3 * dirt), 1.0 - .25 * dirt, falling, pattern)
 
 static func apply_material_for_test(material: StandardMaterial3D, wet: float, gloss: float, bead: float) -> void:
-	_apply_material(material, wet, gloss, bead)
+	_apply_material(material, wet, gloss, bead, wet, 0.0)
 
-static func _apply_material(material: StandardMaterial3D, wet: float, gloss: float, bead: float) -> void:
+## Restore only fields still owned by rain. A new paint colour or finish written
+## by another system is retained independently, never used as a reason to darken
+## the already-wet colour a second time.
+static func remove_weather_for_edit(material: StandardMaterial3D) -> Dictionary:
 	var record: Dictionary = material.get_meta("rain_base", {})
-	# Outro sistema repintou/gastou o material: o que está nele agora é a nova base.
-	if not record.is_empty() and not _matches(material, record): record = {}
-	if record.is_empty():
-		if wet <= 0.0: return
-		record = {"base": [material.roughness, material.clearcoat, material.albedo_color], "beaded": false}
+	if record.is_empty(): return {}
 	var base: Array = record.base
+	var output: Array = record.out
+	if is_equal_approx(material.roughness, float(output[0])): material.roughness = base[0]
+	if is_equal_approx(material.clearcoat, float(output[1])): material.clearcoat = base[1]
+	if material.albedo_color.is_equal_approx(output[2]): material.albedo_color = base[2]
+	material.remove_meta("rain_base")
+	return record
+
+static func reapply_after_edit(material: StandardMaterial3D, record: Dictionary) -> void:
+	if record.is_empty(): return
+	_apply_material(material, record.wet, record.gloss, record.bead, record.falling, record.pattern)
+
+static func _apply_material(material: StandardMaterial3D, wet: float, gloss: float, bead: float, falling: float, pattern: float) -> void:
+	remove_weather_for_edit(material)
 	if wet <= 0.0:
-		_restore(material, base, record)
-		material.remove_meta("rain_base")
+		_remove_beads(material)
 		return
+	var base := [material.roughness, material.clearcoat, material.albedo_color]
 	material.roughness = maxf(minf(WET_MIN_ROUGHNESS, float(base[0])), float(base[0]) * (1.0 - .6 * gloss))
 	if material.clearcoat_enabled: material.clearcoat = lerpf(float(base[1]), 1.0, gloss * .75)
 	var albedo: Color = base[2]
 	material.albedo_color = Color(albedo.r * (1.0 - .24 * wet), albedo.g * (1.0 - .24 * wet), albedo.b * (1.0 - .24 * wet), albedo.a)
-	var beads_ok := material.albedo_texture == null and (material.normal_texture == null or material.normal_texture == beads())
-	if beads_ok and wet > .04:
-		if not record.beaded:
-			material.normal_enabled = true
-			material.normal_texture = beads()
-			material.uv1_triplanar = true
-			material.uv1_scale = Vector3.ONE * BEAD_SCALE
-			record.beaded = true
-		material.normal_scale = clampf(wet * bead, 0.0, 1.0) * BEAD_STRENGTH
-	elif record.beaded:
-		_strip_beads(material)
-		record.beaded = false
-	record["out"] = [material.roughness, material.clearcoat, material.albedo_color]
-	material.set_meta("rain_base", record)
+	var drops: ShaderMaterial = material.get_meta("rain_drops") if material.has_meta("rain_drops") else null
+	if drops == null:
+		drops = ShaderMaterial.new()
+		drops.shader = DROP_SHADER
+		material.set_meta("rain_drops", drops)
+	if not has_beads(material):
+		# Preserve an existing extra finish instead of overwriting its chain.
+		drops.next_pass = material.next_pass
+		material.next_pass = drops
+	drops.set_shader_parameter("wet", wet)
+	drops.set_shader_parameter("falling", falling)
+	drops.set_shader_parameter("pattern_seed", pattern)
+	drops.set_shader_parameter("bead_visibility", bead)
+	drops.set_shader_parameter("paint_color", material.albedo_color)
+	material.set_meta("rain_base", {"base":base,"out":[material.roughness,material.clearcoat,material.albedo_color],"wet":wet,"gloss":gloss,"bead":bead,"falling":falling,"pattern":pattern})
 
-static func _matches(material: StandardMaterial3D, record: Dictionary) -> bool:
-	if not record.has("out"): return true
-	var out: Array = record.out
-	return is_equal_approx(material.roughness, float(out[0])) and is_equal_approx(material.clearcoat, float(out[1])) \
-		and material.albedo_color.is_equal_approx(out[2])
+static func _remove_beads(material: StandardMaterial3D) -> void:
+	var drops: ShaderMaterial = material.get_meta("rain_drops") if material.has_meta("rain_drops") else null
+	if drops == null: return
+	if material.next_pass == drops: material.next_pass = drops.next_pass
+	else:
+		var cursor := material.next_pass
+		while cursor != null and cursor.next_pass != drops: cursor = cursor.next_pass
+		if cursor != null: cursor.next_pass = drops.next_pass
+	material.remove_meta("rain_drops")
 
-static func _restore(material: StandardMaterial3D, base: Array, record: Dictionary) -> void:
-	material.roughness = float(base[0])
-	material.clearcoat = float(base[1])
-	material.albedo_color = base[2]
-	if record.get("beaded", false): _strip_beads(material)
+static func has_beads(material: StandardMaterial3D) -> bool:
+	var drops: ShaderMaterial = material.get_meta("rain_drops") if material.has_meta("rain_drops") else null
+	if drops == null: return false
+	var cursor := material.next_pass
+	while cursor != null:
+		if cursor == drops: return true
+		cursor = cursor.next_pass
+	return false
 
-static func _strip_beads(material: StandardMaterial3D) -> void:
-	# Se o amassado assumiu a normal no meio da chuva, ele fica como está.
-	if material.normal_texture != beads(): return
-	material.normal_enabled = false
-	material.normal_texture = null
-	material.normal_scale = 1.0
-	material.uv1_triplanar = false
-	material.uv1_scale = Vector3.ONE
-
-## A carcaça trocou a normal (amassado/estágio de dano) e levou as gotas junto.
-static func _lost_beads(vehicle: Node3D) -> bool:
+static func _needs_refresh(vehicle: Node3D) -> bool:
 	var paint = vehicle.get("_paint")
-	if paint == null or paint.materials.is_empty(): return false
-	var material: StandardMaterial3D = paint.materials[0]
-	return material.albedo_texture == null and material.normal_texture == null
+	if paint == null: return false
+	for material: StandardMaterial3D in paint.materials:
+		var record: Dictionary = material.get_meta("rain_base", {})
+		if record.is_empty() or not has_beads(material): return true
+		if not is_equal_approx(float(record.falling), float(vehicle.get_meta("rain_falling", record.falling))): return true
+		var output: Array = record.out
+		if not is_equal_approx(material.roughness, float(output[0])) or not is_equal_approx(material.clearcoat, float(output[1])) or not material.albedo_color.is_equal_approx(output[2]): return true
+	return false
 
-## Gotas redondas e pequenas, tileáveis: altura = calota esférica; normal por diferença finita.
-static func beads() -> Texture2D:
-	if _beads != null: return _beads
-	const SIZE := 128
-	var height := PackedFloat32Array()
-	height.resize(SIZE * SIZE)
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 4417
-	for drop in 70:
-		var cx := rng.randf() * SIZE
-		var cy := rng.randf() * SIZE
-		var radius := rng.randf_range(2.0, 6.5)
-		var stretch := rng.randf_range(1.0, 1.5) # gota que escorre fica um pouco mais longa em y
-		var reach := int(ceil(radius * stretch)) + 1
-		for dy in range(-reach, reach + 1):
-			for dx in range(-reach, reach + 1):
-				var u := float(dx) / radius
-				var v := float(dy) / (radius * stretch)
-				var r2 := u * u + v * v
-				if r2 >= 1.0: continue
-				var index := posmod(int(cy) + dy, SIZE) * SIZE + posmod(int(cx) + dx, SIZE)
-				height[index] = maxf(height[index], sqrt(1.0 - r2) * radius * .5)
-	var image := Image.create_empty(SIZE, SIZE, true, Image.FORMAT_RGB8)
-	for y in SIZE:
-		for x in SIZE:
-			var dx := height[y * SIZE + posmod(x + 1, SIZE)] - height[y * SIZE + posmod(x - 1, SIZE)]
-			var dy := height[posmod(y + 1, SIZE) * SIZE + x] - height[posmod(y - 1, SIZE) * SIZE + x]
-			var normal := Vector3(-dx, -dy, 1.0).normalized()
-			image.set_pixel(x, y, Color(normal.x * .5 + .5, normal.y * .5 + .5, normal.z * .5 + .5))
-	image.generate_mipmaps()
-	_beads = ImageTexture.create_from_image(image)
-	return _beads
+static func warm_material() -> ShaderMaterial:
+	var material := ShaderMaterial.new()
+	material.shader = DROP_SHADER
+	material.set_shader_parameter("wet", 1.0)
+	material.set_shader_parameter("falling", 1.0)
+	return material

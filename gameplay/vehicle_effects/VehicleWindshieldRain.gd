@@ -8,7 +8,8 @@ extends RefCounted
 ##   - uma malha de vidro copiada, em cache por arquétipo, 1,2 cm para fora do vidro original,
 ##     com `VehicleWindshieldRain.gdshader` (mistura alfa, sem escrita de profundidade);
 ##   - duas tiras (braço e palheta) com `VehicleWiper.gdshader`, no plano do para-brisa.
-## Gotas e varrido são animados por TIME no shader: sem script por quadro. Seco, ou em veículo
+## Gotas são animadas por TIME. O tick integra a fase do limpador para variar a cadência
+## sem saltos quando a chuva muda. Seco, ou em veículo
 ## que ninguém conduz, `tick` só decrementa um relógio e retorna; a malha só existe enquanto
 ## chove (ou enquanto as gotas ainda secam) e é liberada depois.
 ##
@@ -47,6 +48,8 @@ var _glass_material: ShaderMaterial
 var _wiper_material: ShaderMaterial
 var _pushed_level := -1.0
 var _pushed_amp := -1.0
+var _pushed_strength := -1.0
+var _wiper_phase := 0.0
 
 func _init(car: Node3D = null) -> void:
 	vehicle = car
@@ -57,6 +60,15 @@ func is_active() -> bool:
 
 func level() -> float: return _level
 func wiper_amplitude() -> float: return _amp
+
+## Atualizar um painel não seca os outros nem reinicia o limpador.
+func refresh_geometry() -> void:
+	if not is_active(): return
+	var geometry := geometry_for(vehicle)
+	if geometry.is_empty():
+		dispose()
+		return
+	_set_geometry(geometry)
 
 func tick(delta: float) -> void:
 	_clock -= delta
@@ -71,13 +83,20 @@ func tick(delta: float) -> void:
 	if _wiper_on and (_strength < WIPER_OFF or _sheltered): _wiper_on = false
 	elif not _wiper_on and _strength > WIPER_ON and not _sheltered: _wiper_on = true
 	_amp = move_toward(_amp, 1.0 if _wiper_on else 0.0, delta * .8)
+	if _amp > .001:
+		_wiper_phase = fposmod(_wiper_phase + delta / lerpf(2.6, .7, _strength), 1.0)
+		_glass_material.set_shader_parameter("wiper_phase", _wiper_phase)
+		_wiper_material.set_shader_parameter("wiper_phase", _wiper_phase)
 	if _level <= .001 and _amp <= .001 and _target <= DROP_MIN:
 		dispose()
 		return
-	if not is_equal_approx(_pushed_level, _level) or not is_equal_approx(_pushed_amp, _amp):
+	var falling := 0.0 if _sheltered else _strength
+	if not is_equal_approx(_pushed_level, _level) or not is_equal_approx(_pushed_amp, _amp) or not is_equal_approx(_pushed_strength, falling):
 		_pushed_level = _level
 		_pushed_amp = _amp
+		_pushed_strength = falling
 		_glass_material.set_shader_parameter("rain", _level)
+		_glass_material.set_shader_parameter("falling", falling)
 		_glass_material.set_shader_parameter("wiper_amp", _amp)
 		_wiper_material.set_shader_parameter("wiper_amp", _amp)
 
@@ -94,12 +113,15 @@ func dispose() -> void:
 	_wiper_on = false
 	_pushed_level = -1.0
 	_pushed_amp = -1.0
+	_pushed_strength = -1.0
+	_wiper_phase = 0.0
 
 ## Materiais de shader que o jogo usa, para o pré-aquecimento desenhá-los uma vez às escondidas.
 static func warm_materials() -> Array[ShaderMaterial]:
 	var glass := ShaderMaterial.new()
 	glass.shader = GLASS_SHADER
 	glass.set_shader_parameter("rain", .5)
+	glass.set_shader_parameter("falling", .5)
 	var wiper := ShaderMaterial.new()
 	wiper.shader = WIPER_SHADER
 	return [glass, wiper]
@@ -142,33 +164,44 @@ func _create() -> bool:
 	_node.scale = Vector3.ONE / (visual as Node3D).scale
 	_glass_material = ShaderMaterial.new()
 	_glass_material.shader = GLASS_SHADER
+	var identity := str(vehicle.get("vehicle_id"))
+	var seed_value: int = identity.hash() if not identity.is_empty() else vehicle.get_instance_id()
+	_glass_material.set_shader_parameter("pattern_seed", float(posmod(seed_value, 8191)) * .17)
 	_wiper_material = ShaderMaterial.new()
 	_wiper_material.shader = WIPER_SHADER
 	var glass := MeshInstance3D.new()
 	glass.name = "Glass"
-	glass.mesh = g.glass
 	glass.material_override = _glass_material
 	glass.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_node.add_child(glass)
-	if g.wiper != null:
-		var params: Dictionary = g.params
-		# O período só é escolhido aqui: mudar `wiper_period` com o TIME correndo pularia a fase.
-		var period := lerpf(2.0, .85, clampf(_strength, 0.0, 1.0))
-		_glass_material.set_shader_parameter("pivots", params.pivots)
-		_glass_material.set_shader_parameter("wiper_length", params.length)
-		for material in [_glass_material, _wiper_material]: material.set_shader_parameter("wiper_period", period)
-		_wiper_material.set_shader_parameter("plane", params.plane)
-		_wiper_material.set_shader_parameter("plane_normal", params.plane_normal)
-		var arm := MeshInstance3D.new()
-		arm.name = "Wiper"
-		arm.mesh = g.wiper
-		arm.material_override = _wiper_material
-		arm.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		_node.add_child(arm)
+	_set_geometry(g)
 	(visual as Node3D).add_child(_node)
 	_pushed_level = -1.0
 	_pushed_amp = -1.0
+	_pushed_strength = -1.0
 	return true
+
+func _set_geometry(geometry: Dictionary) -> void:
+	var glass := _node.get_node("Glass") as MeshInstance3D
+	glass.mesh = geometry.glass
+	var arm := _node.get_node_or_null("Wiper") as MeshInstance3D
+	if geometry.wiper == null:
+		if arm != null:
+			_node.remove_child(arm)
+			arm.queue_free()
+		return
+	var params: Dictionary = geometry.params
+	_glass_material.set_shader_parameter("pivots", params.pivots)
+	_glass_material.set_shader_parameter("wiper_length", params.length)
+	_wiper_material.set_shader_parameter("plane", params.plane)
+	_wiper_material.set_shader_parameter("plane_normal", params.plane_normal)
+	if arm == null:
+		arm = MeshInstance3D.new()
+		arm.name = "Wiper"
+		arm.material_override = _wiper_material
+		arm.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		_node.add_child(arm)
+	arm.mesh = geometry.wiper
 
 # --- Geometria ------------------------------------------------------------------------------
 
@@ -180,7 +213,7 @@ static func _build(car: Node3D) -> Dictionary:
 	var sum := Vector3.ZERO
 	for part in (visual as Node3D).find_children("*", "MeshInstance3D", true, false):
 		var mesh: Mesh = part.mesh
-		if mesh == null or part.has_meta("wheel_center") or part.name in ["Interior", "WarmUp", "RoofCut", NODE_NAME] or "/WindshieldRain/" in str(part.get_path()): continue
+		if mesh == null or not part.is_visible_in_tree() or part.has_meta("wheel_center") or part.name in ["Interior", "WarmUp", "RoofCut", NODE_NAME] or "/WindshieldRain/" in str(part.get_path()): continue
 		for surface in mesh.get_surface_count():
 			var material: Material = part.get_active_material(surface)
 			if material == null or not INTERIOR._is_glass(part, surface, material): continue
@@ -190,13 +223,14 @@ static func _build(car: Node3D) -> Dictionary:
 			var index: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
 			var xf: Transform3D = to_car * part.global_transform
 			var count := index.size() if not index.is_empty() else vertices.size()
+			var remnant_start: int = mesh.get_meta("glass_remnant_starts", {}).get(surface, count)
 			for i in range(0, count - 2, 3):
 				var a: Vector3 = xf * vertices[index[i] if not index.is_empty() else i]
 				var b: Vector3 = xf * vertices[index[i + 1] if not index.is_empty() else i + 1]
 				var c: Vector3 = xf * vertices[index[i + 2] if not index.is_empty() else i + 2]
 				var normal := (b - a).cross(c - a)
 				if normal.length_squared() < 1e-8: continue
-				tris.append([a, b, c, normal.normalized()])
+				tris.append([a, b, c, normal.normalized(), i >= remnant_start])
 				sum += (a + b + c) / 3.0
 	if tris.is_empty(): return {}
 	var centre := sum / tris.size()
@@ -214,7 +248,7 @@ static func _build(car: Node3D) -> Dictionary:
 			positions.append(t[k] + normal * OFFSET)
 			normals.append(normal)
 			colors.append(Color(1.0 if front else 0.0, 0, 0, 1))
-			if front: front_points.append(t[k])
+			if front and not t[4]: front_points.append(t[k])
 	var arrays: Array = []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = positions

@@ -2,6 +2,7 @@ extends Node
 ## Event-only, instance-local glazing damage. Body/paint surfaces are never hidden or edited.
 ## Tiros racham o vidro (marca projetada) e só o BREAK_HITS-ésimo no mesmo painel o derruba.
 const INTERIOR := preload("res://gameplay/VehicleInterior.gd")
+const REMNANTS := preload("res://gameplay/vehicle_effects/VehicleGlassRemnants.gd")
 const NODE_NAME := "GlassDamage"
 const MAX_RECORDS := 32
 var vehicle: Node3D
@@ -114,6 +115,9 @@ func contact(from: Vector3, to: Vector3) -> Dictionary:
 ## primeiro tiro já tirava o vidro todo e a janela sumia de uma vez. Cada registro conta para o painel
 ## que ele cruza na malha intacta da peça, então salvar e carregar refaz o mesmo estado.
 const BREAK_HITS := 3
+## A janela da viatura tem faces externa/interna separadas por 2 cm.
+## São um painel físico; outra janela além desta espessura fica intacta.
+const PANE_LAYER_THICKNESS := .03
 const CRACK_SIZE := .42
 const CRACK_NAME := "GlassCrack"
 static var _crack_texture: ImageTexture
@@ -134,7 +138,7 @@ func shoot(from: Vector3, to: Vector3) -> Dictionary:
 	# Painel que caiu neste tiro: o mesmo raio não acha mais esse vidro no ponto do impacto.
 	var after := contact(from,to)
 	var shattered: bool = after.is_empty() or after.part != part or not after.glass or after.point.distance_to(hit.point) > .05
-	_refresh_rain()
+	if shattered: _refresh_rain()
 	return {"point":hit.point,"normal":-from.direction_to(to),"material":"glass","shattered":shattered}
 
 ## Refaz uma peça a partir da malha intacta com todos os registros (rachaduras e painéis caídos).
@@ -244,6 +248,8 @@ func _reapply_part(part: MeshInstance3D) -> void:
 		segments.append([inverse * (point-direction*.08), inverse * (point+direction*.08)])
 	var removed_by_surface: Dictionary = {}
 	var cracks: Array = []
+	var crack_records: Dictionary = {}
+	var scale_basis := part.global_basis
 	for surface in original.get_surface_count():
 		if _hidden(part,surface) or not INTERIOR._is_glass(part,surface,part.get_active_material(surface)): continue
 		var arrays := INTERIOR.contact_arrays(original,surface)
@@ -257,14 +263,36 @@ func _reapply_part(part: MeshInstance3D) -> void:
 		var pane_of: Dictionary = {}
 		var panes: Dictionary = {}
 		var hits: Dictionary = {}
-		for segment in segments:
+		for record_index in segments.size():
+			var segment: Array = segments[record_index]
 			if bounds.intersects_segment(segment[0],segment[1]) == null: continue
+			var contacts: Array = []
+			var nearest := INF
+			var contact_point := Vector3.ZERO
+			var contact_normal := Vector3.ZERO
 			for i in range(0,indices.size()-2,3):
 				var a := vertices[indices[i]]
 				var b := vertices[indices[i+1]]
 				var c := vertices[indices[i+2]]
 				var at: Variant = Geometry3D.segment_intersects_triangle(segment[0],segment[1],a,b,c)
 				if at == null: continue
+				contacts.append([i,at])
+				var distance: float = (scale_basis * (at - (segment[0] + segment[1]) * .5)).length_squared()
+				if distance < nearest:
+					nearest = distance
+					contact_point = at
+					contact_normal = _authored_normal(arrays,indices,i)
+			# Alguns modelos têm lâminas próximas e desconectadas na mesma janela.
+			# Elas quebram juntas; a janela oposta não recebe o mesmo tiro salvo.
+			var hit_panes: Dictionary = {}
+			for contact_hit in contacts:
+				var i: int = contact_hit[0]
+				var at: Vector3 = contact_hit[1]
+				if (scale_basis * (at - contact_point)).length_squared() > PANE_LAYER_THICKNESS * PANE_LAYER_THICKNESS: continue
+				var layer_normal := _authored_normal(arrays,indices,i)
+				if layer_normal.length_squared() > .5 and contact_normal.length_squared() > .5:
+					var normal_basis := scale_basis.inverse().transposed()
+					if absf((normal_basis * layer_normal).normalized().dot((normal_basis * contact_normal).normalized())) < .95: continue
 				if welded.is_empty(): welded = _welded(vertices,indices)
 				if not pane_of.has(i):
 					var pane: Dictionary = {}
@@ -273,22 +301,36 @@ func _reapply_part(part: MeshInstance3D) -> void:
 					for triangle in pane: pane_of[triangle] = seed
 					panes[seed] = pane
 				var key: int = pane_of[i]
+				if hit_panes.has(key): continue
+				hit_panes[key] = true
 				if not hits.has(key): hits[key] = []
 				# A marca olha para o lado do atirador: o Decal some numa face virada contra ele.
+				var a := vertices[indices[i]]
+				var b := vertices[indices[i+1]]
+				var c := vertices[indices[i+2]]
 				var normal := (b-a).cross(c-a).normalized()
 				if normal.dot(segment[1]-segment[0]) > 0.0: normal = -normal
-				hits[key].append([at,normal])
-				break
+				# O winding horário da frota não define a normal usada na iluminação.
+				# Havendo normal autorada, a projeção acompanha a face renderizada.
+				var authored := layer_normal
+				if authored.length_squared() > .5: normal = authored
+				hits[key].append([at,normal,record_index])
 		var removed: Dictionary = {}
 		for key in hits:
 			if hits[key].size() >= BREAK_HITS: removed.merge(panes[key])
-			else: cracks.append_array(hits[key])
+			else:
+				for hit in hits[key]:
+					if not crack_records.has(hit[2]):
+						cracks.append(hit)
+						crack_records[hit[2]] = true
 		if not removed.is_empty(): removed_by_surface[surface] = removed
 	_set_cracks(part,cracks)
 	if removed_by_surface.is_empty(): return
 	var entry: Dictionary = _parts.get(part,{"base":original,"applied":original,"overrides":{}})
 	if part.mesh != entry.applied: entry.base = original
 	var kept_by_surface: Dictionary = {}
+	var arrays_by_surface: Dictionary = {}
+	var remnant_starts: Dictionary = {}
 	for surface in removed_by_surface:
 		if not entry.overrides.has(surface): entry.overrides[surface] = part.get_surface_override_material(surface)
 		var indices := _indices(INTERIOR.contact_arrays(original,surface))
@@ -297,27 +339,41 @@ func _reapply_part(part: MeshInstance3D) -> void:
 		for i in range(0,indices.size()-2,3):
 			if not removed.has(i):
 				kept.append(indices[i]); kept.append(indices[i+1]); kept.append(indices[i+2])
+		var remnant_start := kept.size()
+		var changed := REMNANTS.build(INTERIOR.contact_arrays(original,surface),kept,removed,part.global_basis,segments)
+		kept = changed[Mesh.ARRAY_INDEX]
+		if kept.size() > remnant_start: remnant_starts[surface] = remnant_start
 		if kept.is_empty():
 			if _missing == null:
 				_missing = StandardMaterial3D.new()
 				_missing.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 				_missing.albedo_color = Color(0,0,0,0)
 			part.set_surface_override_material(surface,_missing)
-		else: kept_by_surface[surface] = kept
+		else:
+			kept_by_surface[surface] = kept
+			arrays_by_surface[surface] = changed
 	if not kept_by_surface.is_empty():
 		var replacement := ArrayMesh.new()
 		for other in original.get_surface_count():
-			var changed := INTERIOR.contact_arrays(original,other).duplicate()
+			var changed: Array = arrays_by_surface.get(other,INTERIOR.contact_arrays(original,other).duplicate())
 			if kept_by_surface.has(other): changed[Mesh.ARRAY_INDEX] = kept_by_surface[other]
 			replacement.add_surface_from_arrays(original.surface_get_primitive_type(other),changed)
 			replacement.surface_set_material(other,original.surface_get_material(other))
 			INTERIOR.inherit_glass(original,replacement,other,changed)
+		replacement.set_meta("glass_remnant_starts",remnant_starts)
 		part.mesh = replacement
 	entry.applied = part.mesh
 	_parts[part] = entry
 
 static func _weld_key(point: Vector3) -> Vector3i:
 	return Vector3i(roundi(point.x*1000.0),roundi(point.y*1000.0),roundi(point.z*1000.0))
+
+static func _authored_normal(arrays: Array, indices: PackedInt32Array, triangle: int) -> Vector3:
+	var normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL] if arrays[Mesh.ARRAY_NORMAL] != null else PackedVector3Array()
+	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	if normals.size() != vertices.size(): return Vector3.ZERO
+	var normal := normals[indices[triangle]] + normals[indices[triangle + 1]] + normals[indices[triangle + 2]]
+	return normal.normalized() if normal.is_finite() and normal.length_squared() > .00000001 else Vector3.ZERO
 
 static func _welded(vertices: PackedVector3Array, indices: PackedInt32Array) -> Dictionary:
 	var triangles: Dictionary = {}
@@ -354,7 +410,7 @@ func _set_cracks(part: MeshInstance3D, cracks: Array) -> void:
 		return
 	var nodes: Array = []
 	for index in cracks.size():
-		var normal: Vector3 = (part.global_basis * (cracks[index][1] as Vector3)).normalized()
+		var normal: Vector3 = (part.global_basis.inverse().transposed() * (cracks[index][1] as Vector3)).normalized()
 		if not normal.is_finite() or normal.length_squared() < .5: continue
 		var side := normal.cross(Vector3.UP if absf(normal.y) < .9 else Vector3.RIGHT).normalized()
 		side = side.rotated(normal,float(index) * 2.39996)
@@ -438,4 +494,4 @@ func clear() -> void:
 func _refresh_rain() -> void:
 	var effects: Node = vehicle.get("effects")
 	if is_instance_valid(effects) and effects.get("windshield_rain") != null:
-		effects.windshield_rain.dispose()
+		effects.windshield_rain.refresh_geometry()

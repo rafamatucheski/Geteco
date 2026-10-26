@@ -236,12 +236,12 @@ static func _variants(base: StandardMaterial3D) -> Array[StandardMaterial3D]:
 		dented.normal_texture = DAMAGE._dents()
 		dented.uv1_triplanar = true
 		result.append(dented)
-		# Chuva (VehicleRain): gotas triplanares em UV1, em pintura limpa, suja, repintada e gasta
-		# (sem verniz): o amassado tira as gotas, mas o desgaste antes dele não.
+		# Amassados em pintura limpa, suja, repintada e gasta. As gotas usam um
+		# shader separado, preparado em _effect_materials, e preservam essas normais.
 		for source: StandardMaterial3D in [base, detailed, reset, worn]:
 			var beaded := source.duplicate() as StandardMaterial3D
 			beaded.normal_enabled = true
-			beaded.normal_texture = RAIN.beads()
+			beaded.normal_texture = DAMAGE._dents()
 			beaded.uv1_triplanar = true
 			result.append(beaded)
 	return result
@@ -251,10 +251,11 @@ static func _variants(base: StandardMaterial3D) -> Array[StandardMaterial3D]:
 ## combinações fora das 9 de `_variants`, como sujeira + gotas que o desgaste desligou (normal desligada, mas
 ## a textura e o triplanar UV1 ficam): no cache frio esse shader compilava num quadro de 1,16 s ao atirar
 ## no trânsito. Estados: detalhe (nenhum / montado e desligado / ligado) × verniz (o da base / tirado) ×
-## normal (limpa / gotas ou amassado / desligada com textura). GETECO_PAINT_LATTICE=0 volta às 9.
+## normal (limpa / amassado / desligada com textura). As gotas atuais têm passe próprio.
+## GETECO_PAINT_LATTICE=0 volta às 9 variantes de acabamento.
 static func _lattice(base: StandardMaterial3D) -> Array[StandardMaterial3D]:
 	var result: Array[StandardMaterial3D] = []
-	# Gotas e amassado só entram em pintura sem textura própria (VehicleRain.beads_ok, VehicleDamage base.dents).
+	# O mapa de amassados mantém a restrição a pintura sem textura própria.
 	var normal_states: Array[String] = ["clean"]
 	if base.albedo_texture == null and base.normal_texture == null: normal_states = ["clean", "on", "off_tex"]
 	var coats: Array[bool] = [base.clearcoat_enabled]
@@ -271,7 +272,7 @@ static func _lattice(base: StandardMaterial3D) -> Array[StandardMaterial3D]:
 					material.detail_enabled = detail == "on"
 				material.clearcoat_enabled = coat
 				if normal != "clean":
-					material.normal_texture = RAIN.beads()
+					material.normal_texture = DAMAGE._dents()
 					material.uv1_triplanar = true
 					material.normal_enabled = normal == "on"
 				result.append(material)
@@ -280,6 +281,7 @@ static func _lattice(base: StandardMaterial3D) -> Array[StandardMaterial3D]:
 ## Materiais desenhados numa caixa: marcas de pneu, para-brisa molhado e limpador, detritos da rua.
 static func _effect_materials() -> Array[Material]:
 	var result: Array[Material] = [TIRES.mark_material()]
+	result.append(RAIN.warm_material())
 	for material in WINDSHIELD.warm_materials(): result.append(material)
 	result.append_array(STREET.warm_materials())
 	return result

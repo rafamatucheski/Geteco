@@ -64,6 +64,42 @@ func ray_for(car: Node3D, axis: int) -> Array:
 func rain_count(car: Node3D) -> int:
 	var geometry: Dictionary = preload("res://gameplay/vehicle_effects/VehicleWindshieldRain.gd").geometry_for(car)
 	return geometry.glass.surface_get_array_len(0) if not geometry.is_empty() else 0
+func glass_area(car: Node3D) -> float:
+	var area := 0.0
+	for part: MeshInstance3D in car.visual.find_children("*","MeshInstance3D",true,false):
+		if part.mesh == null: continue
+		for surface in part.mesh.get_surface_count():
+			if not GLASS._hidden(part,surface) and INTERIOR._is_glass(part,surface,part.get_active_material(surface)):
+				area += surface_area(INTERIOR.contact_arrays(part.mesh,surface),part.global_transform)
+	return area
+func surface_area(arrays: Array, transform := Transform3D.IDENTITY) -> float:
+	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var indices := GLASS._indices(arrays)
+	var area := 0.0
+	for i in range(0,indices.size()-2,3):
+		var a: Vector3 = transform * vertices[indices[i]]
+		var b: Vector3 = transform * vertices[indices[i+1]]
+		var c: Vector3 = transform * vertices[indices[i+2]]
+		area += (b-a).cross(c-a).length()*.5
+	return area
+func rain_area(car: Node3D) -> float:
+	var geometry: Dictionary = preload("res://gameplay/vehicle_effects/VehicleWindshieldRain.gd").geometry_for(car)
+	return surface_area(geometry.glass.surface_get_arrays(0)) if not geometry.is_empty() else 0.0
+func opening_at(car: Node3D, point: Vector3, direction: Vector3, rain := false) -> bool:
+	if not point.is_finite(): return false
+	var from := point-direction*.08
+	var to := point+direction*.08
+	if not rain: return GLASS.owner_for(car).contact(from,to).is_empty()
+	var geometry: Dictionary = preload("res://gameplay/vehicle_effects/VehicleWindshieldRain.gd").geometry_for(car)
+	if geometry.is_empty(): return true
+	var arrays: Array = geometry.glass.surface_get_arrays(0)
+	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var indices := GLASS._indices(arrays)
+	from = car.to_local(from)
+	to = car.to_local(to)
+	for i in range(0,indices.size()-2,3):
+		if Geometry3D.segment_intersects_triangle(from,to,vertices[indices[i]],vertices[indices[i+1]],vertices[indices[i+2]]) != null: return false
+	return true
 func run() -> void:
 	var combat := Combat.new()
 	root.add_child(combat)
@@ -86,12 +122,14 @@ func run() -> void:
 		check(car.door_presentation.ready_for_boarding or car.door_presentation.coupe_ready,id+" resolves pending door topology before breaking glass")
 		# Rachadura (26/10): os primeiros tiros só marcam o vidro; o BREAK_HITS-ésimo derruba o painel.
 		check(glass_count(car) == original and not car.find_children(GLASS.CRACK_NAME,"Decal",true,false).is_empty(),id+" first shot cracks the pane without removing glazing")
+		var side_point: Vector3 = GLASS.owner_for(car).contact(ray[0],ray[1]).get("point",Vector3.INF)
 		for i in GLASS.BREAK_HITS - 1: combat._damage_bullet(car,25.0,null,ray[0],ray[1])
 		var broken := glass_count(car)
-		check(broken < original and broken > 0,id+" removes struck pane while preserving other glazing")
+		# Fragmentos de borda acrescentam triângulos: a remoção se mede por área e passagem do tiro.
+		check(glass_area(car) < glass_area(twin) and glass_area(car) > 0 and opening_at(car,side_point,(ray[1]-ray[0]).normalized()),id+" opens struck pane while preserving other glazing and edge fragments")
 		check(is_equal_approx(paint_area(car),paint),id+" preserves all painted geometry")
 		check(glass_count(twin) == original and twin.snapshot_glass().is_empty(),id+" does not modify shared twin")
-		check(rain_count(car) < original_rain and rain_count(twin) == original_rain,id+" rain overlay removes only damaged vehicle pane")
+		check(rain_area(car) < rain_area(twin) and rain_count(twin) == original_rain and opening_at(car,side_point,(ray[1]-ray[0]).normalized(),true),id+" rain overlay leaves the opening empty and preserves the shared twin")
 		car.animate_driver_door(-1,true,.01)
 		await create_timer(.03).timeout
 		check(glass_count(car) == broken,id+" opening a door preserves its broken window")
@@ -110,8 +148,9 @@ func run() -> void:
 		var front := ray_for(car,2)
 		check(not front.is_empty(),id+" exposes reachable windshield")
 		if not front.is_empty():
+			var front_point: Vector3 = GLASS.owner_for(car).contact(front[0],front[1]).get("point",Vector3.INF)
 			for i in GLASS.BREAK_HITS: combat._damage_bullet(car,25.0,null,front[0],front[1])
-			check(glass_count(car) < original,id+" windshield is destructible")
+			check(glass_area(car) < glass_area(twin) and opening_at(car,front_point,(front[1]-front[0]).normalized()),id+" windshield opens after repeated hits")
 			car.repair()
 			combat._police_rounds.append({"point":front[0],"direction":(front[1]-front[0]).normalized(),"speed":1200.0,"distance":0.0,"range":20.0,
 				"damage":25.0,"data":preload("res://gameplay/WeaponCatalog.gd").get_weapon("pistol"),"source":weakref(twin),"rid":twin.get_rid(),"visual":{},"blocked":{}})

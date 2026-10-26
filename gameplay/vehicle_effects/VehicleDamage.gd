@@ -1,5 +1,6 @@
 extends Node
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+const RAIN := preload("res://gameplay/vehicle_effects/VehicleRain.gd")
 ## Aparência do dano no veículo: desgaste progressivo, incêndio no motor e carcaça carbonizada.
 ##
 ## Antes a destruição trocava TODAS as peças (vidro, farol, pneu, lataria) por um único
@@ -148,6 +149,9 @@ func _apply_wear(wear: float) -> void:
 func _stall_apply_wear(wear: float) -> void:
 	var stage: int = clampi(int(ceil(wear * WEAR_STAGES - .35)), 0, WEAR_STAGES)
 	for material: StandardMaterial3D in vehicle._paint.materials if vehicle._paint != null else []:
+		# Compose wear on the dry finish, then restore the same water immediately.
+		# Otherwise a hit replaces wet roughness and the next rain tick rebases wet paint.
+		var water := RAIN.remove_weather_for_edit(material)
 		if not _paint_base.has(material):
 			_paint_base[material] = {"roughness": material.roughness, "metallic": material.metallic,
 				"clearcoat": material.clearcoat_enabled, "dents": material.albedo_texture == null and material.normal_texture == null}
@@ -159,7 +163,9 @@ func _stall_apply_wear(wear: float) -> void:
 		# e a pintura metalizada mudava de cor depois da batida. O brilho cai só pela rugosidade.
 		material.metallic = base.metallic
 		material.clearcoat_enabled = base.clearcoat and wear < .4
-		if stage == _stage: continue
+		if stage == _stage:
+			RAIN.reapply_after_edit(material, water)
+			continue
 		material.detail_enabled = stage > 0
 		if stage > 0:
 			material.detail_albedo = _scratches(stage - 1)
@@ -179,6 +185,7 @@ func _stall_apply_wear(wear: float) -> void:
 			material.normal_texture = null
 			material.uv1_triplanar = false
 			material.uv1_scale = Vector3.ONE
+		RAIN.reapply_after_edit(material, water)
 	_stage = stage
 
 ## Materiais novos da carcaça, um conjunto por destroço (a brasa esfria por carro).
