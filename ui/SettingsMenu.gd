@@ -74,8 +74,8 @@ func _ready() -> void:
 	panel_style.set_corner_radius_all(12)
 	panel_style.shadow_color = Color(0, 0, 0, 0.5)
 	panel_style.shadow_size = 0
-	for side in ["left", "right"]: panel_style.set("content_margin_" + side, 34)
-	for side in ["top", "bottom"]: panel_style.set("content_margin_" + side, 26)
+	for side in ["left", "right"]: panel_style.set("content_margin_" + side, 22)
+	for side in ["top", "bottom"]: panel_style.set("content_margin_" + side, 18)
 	_panel.add_theme_stylebox_override("panel", panel_style)
 	add_child(_panel)
 	var column := VBoxContainer.new()
@@ -109,7 +109,7 @@ func _ready() -> void:
 	column.add_child(rule)
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	body.add_theme_constant_override("separation", 28)
+	body.add_theme_constant_override("separation", 18)
 	column.add_child(body)
 	_section_nav = VBoxContainer.new()
 	_section_nav.custom_minimum_size.x = 176
@@ -201,10 +201,12 @@ func _refresh_help() -> void:
 
 func _layout() -> void:
 	var safe_top := 24.0 if has_node("/root/BuildWatermark") else 0.0
-	_panel.size = Vector2(size.x, maxf(100,size.y-safe_top))
-	_panel.position = Vector2(0,safe_top)
+	var margin := 12.0 if size.x < 1000 else 24.0
+	var available := Vector2(maxf(320,size.x-margin*2),maxf(240,size.y-safe_top-margin*2))
+	_panel.size = Vector2(minf(1040,available.x),minf(740,available.y))
+	_panel.position = Vector2((size.x-_panel.size.x)*.5,safe_top+(size.y-safe_top-_panel.size.y)*.5)
 	if is_instance_valid(_section_nav):
-		_section_nav.custom_minimum_size.x = 142 if size.x < 1000 else 176
+		_section_nav.custom_minimum_size.x = 126 if size.x < 1000 else 148
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_TRANSLATION_CHANGED and is_node_ready():
@@ -322,13 +324,15 @@ func _row(page: VBoxContainer, title: String, description: String, control: Cont
 	texts.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	texts.alignment = BoxContainer.ALIGNMENT_CENTER
 	texts.add_theme_constant_override("separation", 0)
-	texts.add_child(_label(title, 19, TEXT, BODY_FONT))
+	var title_label := _label(title, 19, TEXT, BODY_FONT)
+	title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	texts.add_child(title_label)
 	if not description.is_empty():
 		var hint := _label(description, 14, MUTED, BODY_FONT)
 		hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		texts.add_child(hint)
 	row.add_child(texts)
-	control.custom_minimum_size.x = maxf(control.custom_minimum_size.x, 250)
+	control.custom_minimum_size.x = maxf(control.custom_minimum_size.x, 220)
 	control.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	row.add_child(control)
 	page.add_child(row)
@@ -510,7 +514,7 @@ func _build_audio(page: VBoxContainer) -> void:
 		_status.text = "Dublagem alterada. A próxima fala usa o idioma escolhido.")
 	_row(page, "Dublagem", "O idioma dos textos continua o mesmo.", _widgets.voice_language)
 	_section(page, "VOLUME")
-	for entry in [["master_volume", "Master", "Volume geral", ""], ["music_volume", "Music", "Música", "Menu e trilha."], ["radio_volume", "Radio", "Rádio", "Estações dos veículos."], ["vehicle_volume", "Vehicles", "Veículos", "Motores, pneus, buzinas, sirenes e batidas."], ["dialogue_volume", "Dialogue", "Falas", "Diálogos e comunicações por voz."], ["sfx_volume", "SFX", "Efeitos", "Armas, passos e demais efeitos do jogo."], ["ui_volume", "UI", "Interface", "Cliques, menus e avisos."], ["ambient_volume", "Ambient", "Ambiente", "Cidade, mar, chuva, vento e bichos."]]:
+	for entry in [["master_volume", "Master", "Volume geral", ""], ["music_volume", "Music", "Música", "Menu e trilha."], ["radio_volume", "Radio", "Rádio", "Estações dos veículos."], ["vehicle_volume", "Vehicles", "Veículos", "Motores, pneus, buzinas, sirenes e batidas."], ["dialogue_volume", "Dialogue", "Falas", "Diálogos e comunicações por voz."], ["weapon_volume", "Weapons", "Armas", "Disparos, recarga e mecanismos."], ["sfx_volume", "SFX", "Efeitos", "Passos, impactos e demais efeitos do jogo."], ["ui_volume", "UI", "Interface", "Cliques, menus e avisos."], ["ambient_volume", "Ambient", "Ambiente", "Cidade, mar, chuva, vento e bichos."]]:
 		var key: String = entry[0]
 		var bus: String = entry[1]
 		var box := _slider(0.0, 1.0, .01, _percent, func(value):
@@ -534,7 +538,8 @@ func _build_controls(page: VBoxContainer) -> void:
 		mode_button.pressed.connect(_choose_control_mode.bind(index))
 		mode_row.add_child(mode_button)
 	_widgets.controller_aim_assist = _toggle(func(value): _settings().controller_aim_assist = value)
-	_row(page,"Assistência de mira no controle","",_widgets.controller_aim_assist)
+	var aim_assist_row := _row(page,"Assistência de mira no controle","Desligada por padrão. O mouse permanece livre.",_widgets.controller_aim_assist)
+	aim_assist_row.set_meta("always_visible_controls",true)
 	_layout_choice = _options(["Automático", "DualSense / PlayStation", "Xbox"],func(index): controls.set_controller_layout(index))
 	_row(page,"Símbolos do controle","Escolha DualSense se o controle aparecer com símbolos Xbox.",_layout_choice)
 	_controller_status = _label("",15,MUTED,BODY_FONT)
@@ -565,7 +570,7 @@ func _build_controls(page: VBoxContainer) -> void:
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	page.add_child(hint)
 	for intro in page.get_children():
-		if intro != mode_row: _control_intro.append(intro)
+		if intro != mode_row and not intro.get_meta("always_visible_controls",false): _control_intro.append(intro)
 	_controls_list = VBoxContainer.new()
 	_controls_list.add_theme_constant_override("separation", 4)
 	page.add_child(_controls_list)
@@ -588,6 +593,7 @@ func _refresh_controls() -> void:
 		header.add_child(spacer)
 		for text in ["PRINCIPAL", "SECUNDÁRIA", "CONTROLE"]:
 			var column := _label(text.left(1)+text.substr(1).to_lower().replace("3d","3D"), 20, MUTED, DISPLAY_FONT)
+			column.visible = (_control_mode == 1) == (text == "CONTROLE")
 			column.custom_minimum_size.x = 120 if text != "CONTROLE" else 208
 			column.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			header.add_child(column)
@@ -617,6 +623,7 @@ func _refresh_controls() -> void:
 					if slot >= events.size(): key.add_theme_color_override("font_color", MUTED)
 					key.set_meta("binding_key", "%s:%d" % [action, slot])
 					key.pressed.connect(_begin_remap.bind(action, slot, key))
+				key.visible = _control_mode == 0
 				row.add_child(key)
 			var pad := Button.new()
 			pad.auto_translate_mode = Node.AUTO_TRANSLATE_MODE_DISABLED
@@ -643,6 +650,7 @@ func _refresh_controls() -> void:
 				controls.clear_gamepad(action)
 				_status.text = tr("Botão removido de \"%s\". Salve para manter.") % controls.label(action))
 			pad_cell.add_child(clear)
+			pad_cell.visible = _control_mode == 1
 			row.add_child(pad_cell)
 			_controls_list.add_child(row)
 	PRESENTATION.typography(_controls_list)
@@ -743,6 +751,7 @@ func _choose_video_group(group: String) -> void:
 func _choose_control_mode(index: int) -> void:
 	_control_mode = index
 	for intro in _control_intro: intro.visible = index == 1
+	if is_instance_valid(_controls_list): _refresh_controls()
 	if is_instance_valid(_controls_list): _controls_list.visible = true
 	if _pages.size() > 2: _pages[2].scroll_vertical = 0
 	_trap_focus()
@@ -843,6 +852,7 @@ func _restore_tab_defaults() -> void:
 			s.master_volume = .8
 			s.music_volume = .8
 			s.sfx_volume = 1.0
+			s.weapon_volume = .7
 			s.ambient_volume = 1.0
 			s.vehicle_volume = 1.0
 			s.radio_volume = .8
@@ -873,7 +883,7 @@ func close() -> void:
 	hide()
 	closed.emit()
 
-const SNAPSHOT_KEYS := ["controller_aim_assist", "master_volume", "music_volume", "sfx_volume", "ambient_volume", "vehicle_volume", "radio_volume", "dialogue_volume", "ui_volume", "mute_unfocused", "voice_language", "text_language", "window_mode", "resolution", "vsync", "msaa", "render_scale", "fps_limit", "shadow_quality", "brightness", "show_fps", "camera_view", "aa_mode", "upscale_mode", "shadow_distance", "anisotropy", "reflection_quality", "detail_quality", "ssao", "volumetric_fog", "glow", "glow_strength"]
+const SNAPSHOT_KEYS := ["controller_aim_assist", "master_volume", "music_volume", "sfx_volume", "weapon_volume", "ambient_volume", "vehicle_volume", "radio_volume", "dialogue_volume", "ui_volume", "mute_unfocused", "voice_language", "text_language", "window_mode", "resolution", "vsync", "msaa", "render_scale", "fps_limit", "shadow_quality", "brightness", "show_fps", "camera_view", "aa_mode", "upscale_mode", "shadow_distance", "anisotropy", "reflection_quality", "detail_quality", "ssao", "volumetric_fog", "glow", "glow_strength"]
 
 func _capture_snapshot() -> Dictionary:
 	var s := _settings()

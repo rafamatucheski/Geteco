@@ -56,5 +56,10 @@
   "Atalhos atuais": "Current shortcuts",
   "Principal": "Primary",
   "Secundária": "Secondary",
-  "Mundo": "World"
+  "Mundo": "World",
+  "Assistência de mira no controle": "Controller aim assistance",
+  "Desligada por padrão. O mouse permanece livre.": "Off by default. Mouse aiming stays free.",
+  "Armas": "Weapons",
+  "Disparos, recarga e mecanismos.": "Gunshots, reloads and weapon mechanisms.",
+  "Passos, impactos e demais efeitos do jogo.": "Footsteps, impacts and other game effects."
 }

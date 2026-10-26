@@ -75,7 +75,7 @@ func run() -> void:
 		slider.value = .37
 		var bus: String = SETTINGS.AUDIO_CHANNELS[key]
 		var idx := AudioServer.get_bus_index(bus)
-		check(is_equal_approx(float(settings.get(key)), .37) and is_equal_approx(AudioServer.get_bus_volume_db(idx), linear_to_db(.37)), "live slider applies: " + key)
+		check(is_equal_approx(float(settings.get(key)), .37) and is_equal_approx(AudioServer.get_bus_volume_db(idx), linear_to_db(.37)+(preload("res://gameplay/CombatAudio.gd").WEAPON_TRIM_DB if bus == "Weapons" else 0.0)), "live slider applies: " + key)
 		for other in before:
 			if other != bus: check(levels()[other] == before[other], key + " preserves " + other)
 		slider.value = 0.0
@@ -92,6 +92,7 @@ func run() -> void:
 	for key in ["vehicle_volume", "dialogue_volume", "ui_volume"]:
 		check(is_equal_approx(float(settings.get(key)), 1.0), "defaults restore: " + key)
 	check(is_equal_approx(settings.radio_volume, .8), "radio default is independent of music")
+	check(is_equal_approx(settings.weapon_volume,.7),"weapons default is independent and quieter")
 	for key in SETTINGS.AUDIO_CHANNELS:
 		(menu._widgets[key].get_meta("slider") as HSlider).value = .41 + SETTINGS.AUDIO_CHANNELS.keys().find(key) * .05
 	var committed := {}

@@ -30,9 +30,12 @@ func _process(_delta: float) -> void:
 	if blocked != bool(feedback.blocked):
 		blocked = feedback.blocked
 		queue_redraw()
-	visible = not camera.is_position_behind(world_point)
+	var controls := get_node_or_null("/root/GameInput")
+	var pointer_aim: bool = controls == null or (not controls.using_gamepad and not controls.get_meta("touch_controls_active",false) and controls.touch_aim.is_zero_approx())
+	visible = pointer_aim or not camera.is_position_behind(world_point)
 	if not visible: return
-	position = camera.unproject_position(world_point)
+	# Obstruction changes feedback colour, never the mouse cursor position.
+	position = get_viewport().get_mouse_position() if pointer_aim else camera.unproject_position(world_point)
 
 func _draw() -> void:
 	var ink := Color("ffb568") if blocked else Color("f7fbef")

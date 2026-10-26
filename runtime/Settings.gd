@@ -26,6 +26,7 @@ var voice_language := "pt_BR":
 var master_volume := .8
 var music_volume := .8
 var sfx_volume := 1.0
+var weapon_volume := .7
 var ambient_volume := 1.0
 var vehicle_volume := 1.0
 var radio_volume := .8
@@ -35,7 +36,7 @@ var ui_volume := 1.0
 const AUDIO_CHANNELS := {
 	"master_volume": "Master", "music_volume": "Music", "radio_volume": "Radio",
 	"vehicle_volume": "Vehicles", "dialogue_volume": "Dialogue",
-	"sfx_volume": "SFX", "ui_volume": "UI", "ambient_volume": "Ambient",
+	"sfx_volume": "SFX", "weapon_volume": "Weapons", "ui_volume": "UI", "ambient_volume": "Ambient",
 }
 ## Preserva a presença dos efeitos existentes, sem aplicar +10 dB aos motores.
 const SFX_GAIN_DB := 10.0
@@ -153,6 +154,7 @@ func load_settings(path := "") -> Error:
 		master_volume = clampf(float(config.get_value("audio","master_volume",.8)),0,1)
 		music_volume = clampf(float(config.get_value("audio","music_volume",.8)),0,1)
 		sfx_volume = clampf(float(config.get_value("audio","sfx_volume",1.0)),0,1)
+		weapon_volume = clampf(float(config.get_value("audio","weapon_volume",.7)),0,1)
 		ambient_volume = clampf(float(config.get_value("audio","ambient_volume",1.0)),0,1)
 		# Configs antigos preservam preferências, mas passam a ter categorias independentes.
 		vehicle_volume = clampf(float(config.get_value("audio","vehicle_volume",sfx_volume)),0,1)
@@ -191,6 +193,7 @@ func _exit_tree() -> void:
 ## Idempotente. Dialogue fica à direita dos destinos para o sidechain ler a fala
 ## deste bloco de áudio; nenhum slider de categoria passa por outra categoria.
 func _setup_audio_buses() -> void:
+	preload("res://gameplay/CombatAudio.gd").ensure_weapon_bus()
 	for bus_name in ["Music", "SFX", "Ambient", "Vehicles", "Radio", "UI", "Dialogue"]:
 		if AudioServer.get_bus_index(bus_name) == -1:
 			AudioServer.add_bus()
@@ -287,7 +290,8 @@ func _apply_bus_volume(bus_name: String, linear: float) -> void:
 	if idx == -1: return
 	# Zero é silêncio real, inclusive para o detector de prioridade das falas.
 	AudioServer.set_bus_mute(idx, linear <= 0.0 or (bus_name == "Master" and _focus_muted))
-	AudioServer.set_bus_volume_db(idx, linear_to_db(maxf(linear, .0001)))
+	var trim: float = preload("res://gameplay/CombatAudio.gd").WEAPON_TRIM_DB if bus_name == "Weapons" else 0.0
+	AudioServer.set_bus_volume_db(idx, linear_to_db(maxf(linear, .0001))+trim)
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT and mute_unfocused:
@@ -371,7 +375,7 @@ func save_settings(path := "") -> Error:
 	config.set_value("audio","music_volume",music_volume)
 	config.set_value("audio","sfx_volume",sfx_volume)
 	config.set_value("audio","ambient_volume",ambient_volume)
-	for key in ["vehicle_volume", "radio_volume", "dialogue_volume", "ui_volume"]:
+	for key in ["vehicle_volume", "radio_volume", "dialogue_volume", "ui_volume", "weapon_volume"]:
 		config.set_value("audio",key,get(key))
 	config.set_value("audio","mute_unfocused",mute_unfocused)
 	config.set_value("audio","voice_language",voice_language)

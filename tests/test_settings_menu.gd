@@ -127,6 +127,8 @@ func run() -> void:
 	menu._input(key(KEY_DELETE))
 	check(codes("horn").is_empty(), "Delete limpa a posição")
 	check(controls.rebind_slot("fire", 0, key(KEY_ENTER)).ok == false, "Enter recusado")
+	menu._choose_control_mode(1)
+	check(binding_button(menu,"horn").is_visible_in_tree(),"foco de remapeamento do controle usa a coluna visível")
 	binding_button(menu, "horn").grab_focus()
 	controls.set_controller_layout(1)
 	controls.set_controller_layout(2)

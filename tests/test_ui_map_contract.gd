@@ -50,7 +50,19 @@ func run() -> void:
 	root.add_child(map); await process_frame
 	check(map._sea.mouse_filter==Control.MOUSE_FILTER_IGNORE,"ocean material never intercepts map input")
 	check(map._sea.get_index()<map.terrain.get_index(),"ocean remains behind authoritative land geography")
-	check(is_equal_approx(float(map._sea.material.get_shader_parameter("pixels_per_metre")),map._base_zoom*map.zoom),"water material shares the map's metric scale")
+	# A destination must keep the same world coordinate after desktop resizing;
+	# the bounded map surface must leave its controls on-screen on ultrawide too.
+	for viewport in [Vector2i(800,600),Vector2i(1920,1080),Vector2i(2560,1080)]:
+		root.content_scale_size=viewport; root.size=viewport
+		await redraw(map)
+		check(map._header.size.x<=1180 and map._footer.size.x==map._header.size.x,"map controls stay together instead of stretching across the display")
+		check(Rect2(Vector2.ZERO,map.size).encloses(map._header.get_rect()) and Rect2(Vector2.ZERO,map.size).encloses(map._footer.get_rect()),"map header and footer fit the current viewport")
+		check(is_equal_approx(map._header.position.x,(map.size.x-map._header.size.x)*.5),"map frame stays horizontally centered")
+		var destination := Vector2(32,74)
+		check(map.unproject(map.project(destination)).distance_to(destination)<.001,"resizing the printed map cannot move navigation destinations")
+	root.content_scale_size=Vector2i(1280,720); root.size=Vector2i(1280,720)
+	await redraw(map)
+	check(map._sea.size==map._area.size,"printed water background fills the resized map without cropping or stretching geography")
 	check(map._region=="test","opening the map focuses the current available region")
 	check(not map._legend.visible,"filters start collapsed so the map has room")
 	check(map._filter_button.visible,"collapsed filters have a discoverable control")

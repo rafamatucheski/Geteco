@@ -22,7 +22,7 @@ static func planar(point: Vector3) -> Vector2: return Vector2(point.x,point.z)
 static func rectangle(rect: Rect2) -> PackedVector2Array:
 	return PackedVector2Array([rect.position,Vector2(rect.end.x,rect.position.y),rect.end,Vector2(rect.position.x,rect.end.y)])
 
-func collect(controller) -> void:
+func collect(controller, prepare_relief := true) -> void:
 	for definition in CATALOG.definitions(): _definitions[definition.id]=definition
 	var regions := {}
 	if controller.world is Node and is_instance_valid(controller.world.get("production")):
@@ -65,6 +65,7 @@ func collect(controller) -> void:
 	# the authoritative land/road/marker arrays remain independent of the relief.
 	# Only the immutable presentation package is reused. Roads and markers above
 	# are still collected afresh, including editor geometry and quest discovery.
+	if not prepare_relief: return
 	var signature_parts: Array=[lands,roads,region_bounds]
 	for id in regions:
 		var region: Variant=regions[id]

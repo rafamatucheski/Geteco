@@ -74,7 +74,7 @@ func fire(gameplay: Node3D, police_control: bool = false) -> bool:
 	_recoil_left = .30
 	recoil.position.z = .22
 	set_physics_process(true)
-	gameplay._play_stream(AUDIO.fire_stream(),origin,0.0,1.0,180.0)
+	gameplay._play_weapon_stream(AUDIO.fire_stream(),origin,0.0,1.0,180.0)
 	if is_instance_valid(gameplay.effects): gameplay.effects.backblast(origin,direction)
 	if not police_control:
 		gameplay._kick_camera(.16)

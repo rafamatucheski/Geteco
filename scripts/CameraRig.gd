@@ -592,6 +592,8 @@ func _notification(what: int) -> void:
 
 func _input(event: InputEvent) -> void:
 	# Release must work even when GUI controls consume the corresponding event.
+	if _mouse_orbit and (event.is_action_pressed("aim") or event.is_action_pressed("fire")):
+		_end_mouse_orbit()
 	if _mouse_orbit and event.is_action_released("camera_drag"):
 		_end_mouse_orbit()
 
@@ -692,7 +694,7 @@ func _update_gamepad_rotation(delta: float) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	if _camera_input_blocked(): return
-	if event.is_action_pressed("camera_drag") and not event.is_echo():
+	if event.is_action_pressed("camera_drag") and not event.is_echo() and not Input.is_action_pressed("aim") and not Input.is_action_pressed("fire"):
 		if not _mouse_orbit:
 			_mouse_orbit_screen = get_viewport().get_mouse_position()
 			_mouse_orbit_previous_mode = Input.mouse_mode

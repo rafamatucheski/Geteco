@@ -118,9 +118,12 @@ static func row(id: String, entry: Dictionary, completed: bool, achievements: bo
 
 static func setup(panel: Control, achievements: bool, switch_tab: Callable) -> void:
 	panel.custom_minimum_size = Vector2.ZERO
-	panel.anchor_left = .06; panel.anchor_right = .94
-	panel.anchor_top = .06; panel.anchor_bottom = .94
-	panel.offset_left = 0; panel.offset_right = 0; panel.offset_top = 0; panel.offset_bottom = 0
+	var parent: Control = panel.get_parent()
+	var arrange := func(): preload("res://ui/HarborMenuPresentation.gd").fit_panel(panel,parent.size)
+	parent.resized.connect(arrange)
+	panel.visibility_changed.connect(arrange)
+	panel.minimum_size_changed.connect(func(): arrange.call_deferred())
+	arrange.call_deferred()
 	var box := panel.get_node("Margin/VBox")
 	var margin := panel.get_node("Margin")
 	for side in ["left","right"]: margin.add_theme_constant_override("margin_"+side,6)
@@ -136,6 +139,7 @@ static func setup(panel: Control, achievements: bool, switch_tab: Callable) -> v
 	box.move_child(header,0)
 	title.text = "MEDALHAS E OBJETIVOS" if achievements else "COLECIONÁVEIS"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title.add_theme_font_size_override("font_size",30)
 	title.add_theme_font_override("font",STYLE.STRONG)

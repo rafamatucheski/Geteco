@@ -42,6 +42,7 @@ const BLOOD_COLOR := Color(0.55, 0.02, 0.015)
 
 var _impact: Dictionary = {}
 var _impact_dust: Array[CPUParticles3D] = []
+var _glass_shards: Array[CPUParticles3D] = []
 var _blood: Array[CPUParticles3D] = []
 var _blood_mist: Array[CPUParticles3D] = []
 var _next_burst: Dictionary = {}
@@ -158,6 +159,15 @@ func _ready() -> void:
 			spark.particle_flag_align_y = true
 			sparks.append(spark)
 		_impact[material_name] = sparks
+	# Reuse the street glass resources/pipeline, with a fixed four-burst budget.
+	for slot in BURST_POOL:
+		var shards := _emitter(26, .95, preload("res://gameplay/street_physics/StreetPhysics.gd").glass_shard_mesh(), Color(.82,.94,1.0,1.0),2.0,5.0,65.0,-12.0,.8,1.35)
+		shards.material_override = preload("res://gameplay/street_physics/StreetPhysics.gd").glass_shard_material()
+		shards.angular_velocity_min = -720.0
+		shards.angular_velocity_max = 720.0
+		shards.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+		shards.emission_sphere_radius = .12
+		_glass_shards.append(shards)
 	for slot in BURST_POOL:
 		_impact_dust.append(_emitter(5, 0.5, _smoke_mesh, Color(0.72, 0.70, 0.64, 0.35), 0.5, 1.6, 45.0, 0.3, 0.5, 1.2, 1.9))
 		var drops := _emitter(14, 0.55, drop_mesh, BLOOD_COLOR, 2.2, 5.5, 26.0, -9.8, 0.7, 1.5)
@@ -461,6 +471,11 @@ func impact(point: Vector3, normal: Vector3, material: String, damage: float) ->
 		var color := _contact_color(material)
 		dust.color = Color(color.r, color.g, color.b, 0.35)
 		_fire(dust, point, normal)
+
+## A pane breaking is a falling shower of glass, not the tiny bullet-impact chips.
+func glass_shatter(point: Vector3, normal: Vector3) -> void:
+	var emitter := _take("glass_shatter",_glass_shards)
+	_fire(emitter,point + normal*.04,(normal + Vector3.UP*.4).normalized())
 
 static func _contact_color(material: String) -> Color:
 	match material:
@@ -807,7 +822,7 @@ func shutdown() -> void:
 func _all_emitters() -> Array:
 	var list: Array = []
 	for pool in _impact.values(): list.append_array(pool)
-	list.append_array(_blood + _blood_mist + _impact_dust + _flame_packets)
+	list.append_array(_blood + _blood_mist + _impact_dust + _flame_packets + _glass_shards)
 	list.append_array([_muzzle_smoke, _blast_sparks, _blast_fire, _blast_debris, _blast_smoke, _backblast])
 	return list
 

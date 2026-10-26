@@ -18,6 +18,7 @@ const DISEMBARK_SPEED := 2.4
 const DOOR_CLOSE_TIME := 0.45
 var _disembark_target := Vector3.INF
 var _door_close_elapsed := -1.0
+var _return_after_disembark := false
 
 func begin_disembark(p_vehicle: CharacterBody3D, exit_point: Vector3, side: float) -> void:
 	_cancel_navigation()
@@ -25,6 +26,7 @@ func begin_disembark(p_vehicle: CharacterBody3D, exit_point: Vector3, side: floa
 	door_side = side
 	_disembark_target = exit_point
 	_door_close_elapsed = -1.0
+	_return_after_disembark = false
 	mode = "disembark"
 	if is_instance_valid(vehicle) and vehicle.has_method("animate_driver_door"):
 		vehicle.animate_driver_door(int(signf(side)), true)
@@ -39,12 +41,23 @@ static func inside_point(car: CharacterBody3D, exit_point: Vector3, side: float)
 
 func begin_return(p_vehicle: CharacterBody3D) -> void:
 	if dead: return
+	# Finish crossing the open doorway before changing the pedestrian's goal.
+	# Otherwise a player entering a car mid-disembark redirected the officer
+	# from inside the vehicle, skipping the physical exit and door closure.
+	if mode == "disembark":
+		_return_after_disembark = true
+		return
 	_cancel_navigation()
 	vehicle = p_vehicle
 	mode = "return"
 	navigation = PackedVector3Array()
 	nav_index = 0
 	_path_clock = 0.0
+
+func resume_combat() -> void:
+	_return_after_disembark = false
+	_cancel_navigation()
+	if mode != "disembark": mode = "combat"
 
 ## Ponto ao lado da porta que a equipe usa para entrar e sair.
 static func door_point(car: CharacterBody3D, side: float = 1.0) -> Vector3:
@@ -125,3 +138,6 @@ func _disembark(delta: float) -> void:
 	if _door_close_elapsed >= DOOR_CLOSE_TIME:
 		_disembark_target = Vector3.INF
 		mode = "combat"
+		if _return_after_disembark:
+			_return_after_disembark = false
+			begin_return(vehicle)

@@ -23,9 +23,11 @@ func _ready() -> void:
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(shade)
 	var margin := MarginContainer.new()
-	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	margin.name = "GuidePanelFrame"
+	var arrange := func(): preload("res://ui/HarborMenuPresentation.gd").fit_panel(margin,size)
+	resized.connect(arrange)
 	for side in ["left", "right", "top", "bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 24)
+		margin.add_theme_constant_override("margin_" + side, 0)
 	add_child(margin)
 	var panel := PanelContainer.new()
 	margin.add_child(panel)
@@ -57,6 +59,7 @@ func _ready() -> void:
 	back.pressed.connect(close)
 	topics.item_selected.connect(show_topic)
 	STYLE.apply(self)
+	arrange.call_deferred()
 	hide()
 
 func open() -> void:

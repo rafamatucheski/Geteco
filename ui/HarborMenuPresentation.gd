@@ -70,16 +70,16 @@ static func pause(menu: CanvasLayer, developer: Button, guide: Button) -> void:
 	for name in ["BtnResume","BtnSaveGame","BtnLoadGame","BtnAchievements","BtnCollectibles","BtnSettings","BtnMainMenu","BtnQuit"]:
 		actions[name] = menu.find_child(name,true,false)
 	center.custom_minimum_size = Vector2.ZERO
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	center.add_theme_stylebox_override("panel", surface(Color.TRANSPARENT))
+	center.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)
+	center.add_theme_stylebox_override("panel", surface(Color("13191e"),STYLE.LINE))
 	var margin := MarginContainer.new()
 	margin.name = "HarborPauseLayout"
 	margin.theme = STYLE.create_theme(TEXT_SIZE)
-	for side in ["left","right"]: margin.add_theme_constant_override("margin_"+side, 40)
+	for side in ["left","right"]: margin.add_theme_constant_override("margin_"+side, 20)
 	for side in ["top","bottom"]: margin.add_theme_constant_override("margin_"+side, 20)
 	center.add_child(margin)
 	var column := VBoxContainer.new()
-	column.add_theme_constant_override("separation", 24)
+	column.add_theme_constant_override("separation", 14)
 	margin.add_child(column)
 	column.add_child(STYLE.label("Harbor",TEXT_SIZE))
 	var scroll := ScrollContainer.new()
@@ -88,10 +88,10 @@ static func pause(menu: CanvasLayer, developer: Button, guide: Button) -> void:
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	column.add_child(scroll)
 	var columns := HBoxContainer.new()
-	columns.add_theme_constant_override("separation", 44)
+	columns.add_theme_constant_override("separation", 24)
 	scroll.add_child(columns)
 	var left := VBoxContainer.new()
-	left.custom_minimum_size.x = 270
+	left.custom_minimum_size.x = 250
 	left.add_theme_constant_override("separation",14)
 	columns.add_child(left)
 	left.add_child(STYLE.label("Pausa",TEXT_SIZE))
@@ -101,7 +101,7 @@ static func pause(menu: CanvasLayer, developer: Button, guide: Button) -> void:
 		button(action,entry[0]=="BtnResume",entry[1])
 	columns.add_child(VSeparator.new())
 	var right := VBoxContainer.new()
-	right.custom_minimum_size.x = 290
+	right.custom_minimum_size.x = 270
 	right.add_theme_constant_override("separation",10)
 	columns.add_child(right)
 	right.add_child(STYLE.label("Progresso",TEXT_SIZE,STYLE.ACCENT))
@@ -130,3 +130,15 @@ static func pause(menu: CanvasLayer, developer: Button, guide: Button) -> void:
 	for key in captions: actions[key].text = captions[key]
 	typography(margin)
 	old.hide()
+	var root_control: Control = menu.get_node("RootControl")
+	root_control.resized.connect(func(): _fit_pause(center,root_control.size))
+	_fit_pause(center,root_control.size)
+
+static func _fit_pause(panel: Control, viewport_size: Vector2) -> void:
+	fit_panel(panel,viewport_size,Vector2(760,680))
+
+static func fit_panel(panel: Control, viewport_size: Vector2, maximum := Vector2(1040,740)) -> void:
+	var margin := 12.0 if viewport_size.x < 1000 else 24.0
+	panel.set_anchors_preset(Control.PRESET_TOP_LEFT,true)
+	panel.size = Vector2(minf(maximum.x,viewport_size.x-margin*2),minf(maximum.y,viewport_size.y-margin*2))
+	panel.position = (viewport_size-panel.size)*.5

@@ -47,6 +47,8 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 	for material in EFFECTS.IMPACT_COLORS.keys() + ["dirt", "sand", "snow"]:
 		effects.impact(_spot(origin, right, up, slot), toward, str(material), 30.0)
 		slot += 1
+	effects.glass_shatter(_spot(origin,right,up,slot),toward)
+	slot += 1
 	effects.blood(_spot(origin, right, up, slot), toward, 30.0)
 	slot += 1
 	effects.muzzle_smoke(_spot(origin, right, up, slot), toward)

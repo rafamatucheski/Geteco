@@ -108,23 +108,27 @@ func install(menu: Control) -> void:
 		intro.tween_property(child, "modulate:a", 1.0, .45)
 
 func arrange() -> void:
-	wordmark.position = Vector2(size.x * .29, size.y * .235)
-	wordmark.size = Vector2(size.x * .42, size.y * .17)
-	source_menu.game_title.position = Vector2(size.x * .20, size.y * .22)
-	source_menu.game_title.size = Vector2(size.x * .60, size.y * .19)
-	source_menu.game_title.add_theme_font_size_override("font_size", maxi(42, int(minf(size.y * .18, size.x * .12))))
-	var menu_top := size.y * .47
+	# Fixed upper bounds prevent ultrawide/4K displays from stretching menu actions.
+	var width := minf(620,size.x-48)
+	var height := minf(580,size.y-48)
+	var origin := (size-Vector2(width,height))*.5
+	wordmark.position = origin+Vector2(0,24)
+	wordmark.size = Vector2(width,112)
+	source_menu.game_title.position = wordmark.position
+	source_menu.game_title.size = wordmark.size
+	source_menu.game_title.add_theme_font_size_override("font_size",64)
+	var menu_top := origin.y+height*.38
 	var row := 0
 	for button in buttons:
 		if not button.visible: continue
-		var width := minf(size.x * .48, size.y * .36)
-		button.position = Vector2((size.x - width) * .5, menu_top + size.y * row * .058)
-		button.size = Vector2(width, size.y * .047)
-		button.add_theme_font_size_override("font_size", maxi(15, int(size.y * .026)))
+		var button_width := minf(330,width)
+		button.position = Vector2((size.x-button_width)*.5,menu_top+row*44)
+		button.size = Vector2(button_width,40)
+		button.add_theme_font_size_override("font_size",20)
 		row += 1
-	footer.position = Vector2(0, size.y * .90)
-	footer.size = Vector2(size.x, size.y * .04)
-	footer.add_theme_font_size_override("font_size", maxi(12, int(size.y * .018)))
+	footer.position = Vector2(origin.x,origin.y+height-28)
+	footer.size = Vector2(width,24)
+	footer.add_theme_font_size_override("font_size",14)
 
 func show_main(value: bool) -> void:
 	main_content.visible = value

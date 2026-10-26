@@ -546,6 +546,13 @@ func _stall_police_enroute(delta: float) -> void:
 	# no último ponto conhecido (a pé, como antes).
 	var car_search: bool = PURSUIT.enabled and searching and controller.pursuit_in_car and target != null
 	var may_stop := not car_search and ((not in_car) or target_still >= RULES.TARGET_STOPPED_SECONDS)
+	# A stop belongs to the foot pursuit. Once the target drives away, discard
+	# its old parking route before it can strand the pursuing crew behind.
+	if not may_stop and stop_planner.curve != null:
+		stop_planner.reset()
+		_park_reset()
+		_plan_clock = 0.0
+		_since_plan = PURSUIT.REPLAN_MAX
 	_door_warm_near = RULES.door_warm_near(flat, stop_distance, in_car, velocity.length(), stop_planner.curve != null)
 	if stop_planner.curve != null or (may_stop and flat <= stop_distance+10.0):
 		# Parar exige a frenagem até o fim da rota de parada: sai do modo perseguição.
@@ -554,8 +561,14 @@ func _stall_police_enroute(delta: float) -> void:
 		driver.hold(driver.pending_recovery())
 		# Sem curva de parada (cruzamento, rua estreita) a viatura já parada perto do alvo
 		# estaciona onde está: antes ela ficava em rota para sempre e a equipe às vezes nunca descia.
-		var parked_here: bool = _park_wait > 3.0 and driver.is_stopped() and not driver.pending_recovery() and flat <= stop_distance + 12.0
-		if stop_planner.tick(self,anchor,delta) or parked_here:
+		var arrived := stop_planner.tick(self,anchor,delta)
+		# No usable shoulder curve: brake on the current physical trajectory.
+		# Continuing the previous pursuit route made the stationary fallback
+		# unreachable, leaving both cars and motorcycles circling the pedestrian.
+		if stop_planner.curve == null: driver.hold(true)
+		var unused_exits: Array[Vector3] = []
+		var parked_here: bool = _park_wait > 3.0 and driver.settled() and flat <= stop_distance + 12.0 and not controller.exit_point(vehicle, unused_exits, false).is_empty()
+		if arrived or parked_here:
 			_park_reset()
 			vehicle.set_meta("dispatch_needs_room",false)
 			_set_state("parked")
@@ -967,6 +980,14 @@ func on_overtake_state(next: String, reason: String) -> void:
 func _police_parked(delta: float) -> void:
 	driver.hold(true)
 	driver.tick(delta)
+	var moving_target := _target()
+	if variant != "tank" and _target_in_car(moving_target) and _target_velocity(moving_target).length() > 3.0 and controller.gameplay.contact_age < 1.0:
+		stop_planner.reset()
+		_park_reset()
+		_plan_clock = 0.0
+		_since_plan = PURSUIT.REPLAN_MAX
+		_set_state("enroute")
+		return
 	if variant == "tank" and controller.gameplay.stars > 0:
 		var target := _target()
 		var surrendering: bool = controller.gameplay.has_method("police_surrendering") and controller.gameplay.police_surrendering()
@@ -1056,6 +1077,14 @@ func _begin_recall(resume: bool) -> void:
 	_set_state("recall")
 
 func _police_recall(delta: float) -> void:
+	# A foot target returning during recall is still confronted by this same
+	# crew; do not finish boarding and immediately recreate the officers.
+	var target := _target()
+	if resume_pursuit and controller.gameplay.stars > 0 and target != null and not _target_in_car(target) and controller.gameplay.contact_age < 1.0:
+		for officer in officers:
+			if is_instance_valid(officer) and not officer.dead: officer.resume_combat()
+		_set_state("working")
+		return
 	_recall_age += delta
 	driver.hold(true)
 	driver.tick(delta)

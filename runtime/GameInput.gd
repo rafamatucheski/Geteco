@@ -604,7 +604,7 @@ func observe_event(event: InputEvent) -> void:
 	if ((event is InputEventJoypadButton and event.pressed) or (event is InputEventJoypadMotion and absf(event.axis_value)>0.3)) and not _mouse_gesture_active():
 		using_gamepad = true
 		active_joypad = event.device
-	elif (event is InputEventKey and event.pressed) or (event is InputEventMouseButton and event.pressed) or (event is InputEventMouseMotion and event.relative.length()>2):
+	elif (event is InputEventKey and event.pressed) or (event is InputEventMouseButton and event.pressed) or (event is InputEventMouseMotion and not event.relative.is_zero_approx()):
 		using_gamepad = false
 	if old_joypad != active_joypad:
 		_camera_motion = Vector2.ZERO

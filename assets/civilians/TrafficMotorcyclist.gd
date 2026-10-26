@@ -52,6 +52,17 @@ static func create(vehicle: Node3D, identity: int) -> Node3D:
 	model.name = "TrafficRider"
 	model.appearance_locked = true
 	model.appearance_variant = identity
+	if str(vehicle.get("archetype")) == "bike_police":
+		# The mounted officer uses the same procedural uniform recipe as the
+		# dismounted motorcycle PoliceModel, never the civilian body catalogue.
+		model.coat_color = Color(.11,.15,.24)
+		model.pants_color = model.coat_color.darkened(.25)
+		model.wardrobe_overrides = {"female":false,"build":1,"top":6,"bottom":0,"shoe":2,"hat":3,"bag":0,"backpack":false,"glasses":false,"accent":Color("dce2df"),"inner":Color("d9d6cc"),"shoe_color":Color("141416")}
+		model.set_meta("police_motorcycle_rider",true)
+		model.rotation.y = PI
+		model.set_meta("motorcycle_rider",true)
+		model.ready.connect(func(): _police_badge(model))
+		return model
 	preload("res://assets/civilians/CivilianBodyCatalog.gd").apply(model, identity)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = identity * 7919 + 47
@@ -61,3 +72,15 @@ static func create(vehicle: Node3D, identity: int) -> Node3D:
 	model.rotation.y = PI
 	model.set_meta("motorcycle_rider",true)
 	return model
+
+static func _police_badge(model: Node3D) -> void:
+	var badge := MeshInstance3D.new()
+	badge.name = "OfficerBadge"
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(.048,.067,.012)
+	badge.mesh = mesh
+	var material := StandardMaterial3D.new()
+	material.albedo_color = Color("c4b568")
+	badge.material_override = material
+	badge.position = Vector3(-.095,.22,.145)
+	model.spine.add_child(badge)

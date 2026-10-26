@@ -14,11 +14,31 @@ const FIREFLY_GUNFIRE := {"pistol": "pistol", "shotgun": "shotgun", "ak47": "rif
 ## no editor porque enxerga o arquivo-fonte, mas não é válido como contrato de
 ## exportação: no PCK o áudio é um recurso importado. O preset inclui o banco.
 const AUDIO_DIR := "res://assets/gameplay/audio/"
-## Nome do bus para onde vai todo som de combate. `V2Settings` (`runtime/Settings.gd`)
+## Bus dos impactos e vozes de combate; armas têm canal independente. `V2Settings` (`runtime/Settings.gd`)
 ## cria esse bus no `_enter_tree`, mas testes que instanciam `Gameplay.gd` sem
 ## autoloads (`Gameplay.new()` isolado) não o têm — cai em "Master" nesse caso.
 static var SFX_BUS_NAME: String:
 	get: return "SFX" if AudioServer.get_bus_index("SFX") != -1 else "Master"
+const WEAPON_BUS_NAME := &"Weapons"
+const WEAPON_TRIM_DB := -6.0
+
+## Independent firearms mix, without SFX's +10 dB presence boost.
+static func ensure_weapon_bus() -> void:
+	var index := AudioServer.get_bus_index(WEAPON_BUS_NAME)
+	if index < 0:
+		AudioServer.add_bus()
+		index = AudioServer.get_bus_count()-1
+		AudioServer.set_bus_name(index,WEAPON_BUS_NAME)
+		AudioServer.set_bus_send(index,&"Master")
+		AudioServer.set_bus_volume_db(index,WEAPON_TRIM_DB)
+	for slot in AudioServer.get_bus_effect_count(index):
+		if AudioServer.get_bus_effect(index,slot).resource_name == "WeaponsPresence": return
+	var limiter := AudioEffectHardLimiter.new()
+	limiter.resource_name = "WeaponsPresence"
+	limiter.ceiling_db = -3.0
+	limiter.pre_gain_db = 0.0
+	AudioServer.add_bus_effect(index,limiter)
+
 const RELOAD_WEAPONS := ["pistol", "magnum", "smg", "shotgun", "sawed_off", "ak47", "m4a1", "hunting_rifle", "rpg", "flamethrower", "grenade"]
 const RELOAD_TAKES := 3
 ## Tiro/explosão: 5 takes por som, como `audio/acoustic/<arma>_0..4.wav` da V1.
@@ -64,7 +84,8 @@ static func prewarm_gameplay_banks(tree: SceneTree) -> void:
 	for family in GUN_BODY:
 		gun_body(family)
 		await tree.process_frame
-	shotgun_pump()
+	# Recorded pumps were loaded by FIREFLY.prewarm; selecting a take here would advance gameplay RNG.
+	if FIREFLY.count("weapons_fire","shotgun_pump") == 0: shotgun_pump()
 	punch_swing()
 	bat_swing()
 	for kind in WHOOSH_SPEC: melee_whoosh(kind)

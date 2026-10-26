@@ -64,6 +64,17 @@ func run() -> void:
 		check(from_region.relief_cache_hit and from_region.relief==unlocked.relief,"changing the active region reuses the same session relief: "+active)
 	for region in world.production._region_cache.values():
 		check(not region.is_inside_tree() and region.chunks.is_empty(),"repeated map collection never mounts regions or chunks")
+	# The printed street map uses the same navigation snapshot without sampling
+	# the terrain into a low-resolution relief or mounting any scene.
+	var printed := ATLAS.new(); printed.collect(controller,false)
+	check(printed.roads==unlocked.roads and printed.region_bounds==unlocked.region_bounds,"printed atlas preserves road and navigation coordinates")
+	check(not printed.relief_cache_hit and printed.relief.triangle_count==0,"printed atlas skips unused height raster/relief preparation")
+	var before_lands: Array=printed.lands.duplicate(true)
+	var paper := preload("res://ui/hud/PaperAtlas.gd").new()
+	paper.prepare(printed.lands)
+	check(paper.regions.size()==3 and not paper.polygons.is_empty(),"printed atlas covers all three prepared regions")
+	check(printed.lands==before_lands,"joining cartographic coastlines never edits world footprints")
+	for region in world.production._region_cache.values():
 		region.free()
 	world.free()
 	if failures.is_empty(): print("WORLD_MAP_ATLAS PASS ",checks," checks")

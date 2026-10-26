@@ -223,6 +223,10 @@ var _flash_material: StandardMaterial3D
 var enabled := true
 var _dead_notified := false
 var _audio_pool: Array[AudioStreamPlayer3D] = []
+var _weapon_pool: Array[AudioStreamPlayer3D] = []
+var _glass_audio_pool: Array[AudioStreamPlayer3D] = []
+var _glass_audio_next := 0
+var _weapon_audio_next := 0
 var _ui_audio: AudioStreamPlayer
 var customization: Dictionary = {}
 var belt_flashlight
@@ -318,11 +322,13 @@ func _exit_tree() -> void:
 	_clear_chain_explosions()
 	# Stop active playbacks before releasing their cached streams. AudioServer
 	# may otherwise still own the mixer playback during scene teardown.
-	for channel in _audio_pool:
+	for channel in _audio_pool + _weapon_pool + _glass_audio_pool:
 		if not is_instance_valid(channel): continue
 		channel.stop()
 		channel.stream = null
 	_audio_pool.clear()
+	_weapon_pool.clear()
+	_glass_audio_pool.clear()
 	# Descarga: solta a camada de combate do ator, apaga luzes e limpa os emissores.
 	if is_instance_valid(player) and "combat_clip" in player: _present(NAN, "", 0.0)
 	if is_instance_valid(player) and player.has_method("clear_combat_weapon_pose"): player.clear_combat_weapon_pose()
@@ -408,9 +414,7 @@ func _ready() -> void:
 	laser.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(laser)
 	laser.hide()
-	# V1 roteava todo som de combate para o bus "SFX" (ver `.bus = "SFX"` em
-	# `police/PoliceVehicleCombat.gd` etc.); sem isso o slider de SFX do menu de
-	# configurações não tinha efeito nenhum sobre tiro/recarga/impacto.
+	# Impacts and voices keep SFX; firearms/reloads use their independent Weapons bus.
 	var sfx_bus := AUDIO.SFX_BUS_NAME
 	# O ouvinte do Godot é a câmera ortogonal, ~36 m acima/atrás do jogador
 	# (`CameraRig.EXTERIOR_OFFSET`). Com atenuação 3D por distância, até o tiro do
@@ -418,10 +422,7 @@ func _ready() -> void:
 	# ouvia do ponto do jogador (AudioStreamPlayer2D, câmera centrada nele). Os
 	# canais aqui só usam a posição para o panorama; o volume por distância é
 	# calculado em `_hearing_gain_db`, a partir do jogador, com a curva da V1.
-	for index in COMBAT_VOICES:
-		var channel := _combat_voice(sfx_bus)
-		add_child(channel)
-		_audio_pool.append(channel)
+	_setup_combat_audio()
 	_ui_audio = AudioStreamPlayer.new()
 	_ui_audio.bus = &"UI" if AudioServer.get_bus_index("UI") >= 0 else sfx_bus
 	add_child(_ui_audio)
@@ -444,10 +445,10 @@ func _ready() -> void:
 		add_child(voice)
 		_pain_pool.append(voice)
 	# Lança-chamas e recarga são sempre do jogador: volume da V1 sem perda por distância.
-	_flame_audio = _combat_voice(sfx_bus)
+	_flame_audio = _combat_voice(String(AUDIO.WEAPON_BUS_NAME))
 	_flame_audio.volume_db = FLAME_VOLUME_DB
 	add_child(_flame_audio)
-	_reload_audio = _combat_voice(sfx_bus)
+	_reload_audio = _combat_voice(String(AUDIO.WEAPON_BUS_NAME))
 	_reload_audio.volume_db = RELOAD_VOLUME_DB
 	add_child(_reload_audio)
 
@@ -708,7 +709,7 @@ func _update_weapon_pose(delta: float) -> void:
 	_pose_frame = _rig_pose.update(id, delta, aiming, reload_timer > 0.0, progress, moving, sprinting, float(player.phase), rig)
 	if id == "shotgun" and reload_timer <= 0.0 and float(_pose_frame.get("pump", 0.0)) > 0.02 and _shotgun_pump_sound_serial != _attack_serial:
 		_shotgun_pump_sound_serial = _attack_serial
-		_play_stream(AUDIO.shotgun_pump(), player.global_position, -8.0 + _rng.randf_range(-1.0, 1.0), _rng.randf_range(0.97, 1.03), 12.0)
+		_play_weapon_stream(AUDIO.shotgun_pump(), player.global_position, -8.0 + _rng.randf_range(-1.0, 1.0), _rng.randf_range(0.97, 1.03), 12.0)
 	var sword_clips := id == "katana" and _sword_locomotion_clips()
 	if "sword_locomotion" in player: player.sword_locomotion = sword_clips
 	if id == "katana":
@@ -1727,8 +1728,8 @@ func _damage_bullet(actor: Object, amount: float, source: Node, shot_from := Vec
 			var glass := preload("res://gameplay/vehicle_effects/VehicleGlassDamage.gd").owner_for(actor,true)
 			var broken: Dictionary = glass.shoot(shot_from,shot_to)
 			if not broken.is_empty():
-				if is_instance_valid(effects): effects.impact(broken.point,broken.normal,"glass",amount)
-				_play_stream(preload("res://gameplay/VehicleBreakIn.gd")._glass_stream(),broken.point,-3.0,1.0,30.0)
+				if is_instance_valid(effects): effects.glass_shatter(broken.point,broken.normal)
+				_play_glass_break(broken.point)
 		amount *= 0.15
 	_damage(actor, amount, source)
 
@@ -2302,7 +2303,7 @@ func police_vehicle_shoot(vehicle: CharacterBody3D, amount: float) -> bool:
 		"range": float(data.get("max_range", 420.0)) / 16.0, "damage": amount, "data": data,
 		"source": weakref(vehicle), "rid": vehicle.get_rid(), "visual": token, "blocked": blocked})
 	npc_gunfire.emit(origin, direction, vehicle)
-	_play_stream(AUDIO.gunfire_take("pistol", _rng), origin, NPC_GUNFIRE_DB, 1.0, HEARING_GUNFIRE)
+	_play_weapon_stream(AUDIO.gunfire_take("pistol", _rng), origin, NPC_GUNFIRE_DB, 1.0, HEARING_GUNFIRE)
 	return true
 
 func civilian_shoot(shooter: CharacterBody3D, origin: Vector3, amount: float) -> bool:
@@ -2319,7 +2320,7 @@ func civilian_shoot(shooter: CharacterBody3D, origin: Vector3, amount: float) ->
 	_police_rounds.append({"point": origin, "direction": direction, "speed": 32.0,
 		"distance": 0.0, "range": float(data.get("max_range", 420.0)) / 16.0,
 		"damage": amount, "data": data, "source": weakref(shooter), "rid": shooter.get_rid(), "visual": token, "blocked": blocked})
-	_play_stream(AUDIO.gunfire_take("pistol", _rng), origin, NPC_GUNFIRE_DB, _rng.randf_range(0.95, 1.05), HEARING_GUNFIRE)
+	_play_weapon_stream(AUDIO.gunfire_take("pistol", _rng), origin, NPC_GUNFIRE_DB, _rng.randf_range(0.95, 1.05), HEARING_GUNFIRE)
 	npc_gunfire.emit(origin, direction, shooter)
 	STALL_WORK.finish("shot.npc", STALL_WORK.begin())
 	return true
@@ -2349,7 +2350,7 @@ func police_shoot(officer: CharacterBody3D, amount: float, weapon_id: String = "
 	npc_gunfire.emit(origin, direction, officer)
 	STALL_WORK.finish("shot.police", STALL_WORK.begin())
 	# Match the weapon carried and fired by this dispatched officer.
-	_play_stream(AUDIO.gunfire_take(weapon_id, _rng), origin, NPC_GUNFIRE_DB, _rng.randf_range(0.95, 1.05), HEARING_GUNFIRE)
+	_play_weapon_stream(AUDIO.gunfire_take(weapon_id, _rng), origin, NPC_GUNFIRE_DB, _rng.randf_range(0.95, 1.05), HEARING_GUNFIRE)
 
 func _advance_police_rounds(delta: float) -> void:
 	for index in range(_police_rounds.size() - 1, -1, -1):
@@ -2390,7 +2391,7 @@ func police_reload(officer: Node3D, weapon_id: String) -> void:
 	if not is_instance_valid(officer): return
 	var sample := AUDIO.reload_take(weapon_id, _rng)
 	if sample != null:
-		_play_stream(sample, officer.global_position, 0.0, sample.get_length() / maxf(AUDIO.MIN_RELOAD, AUDIO.reload_seconds(weapon_id)))
+		_play_weapon_stream(sample, officer.global_position, 0.0, sample.get_length() / maxf(AUDIO.MIN_RELOAD, AUDIO.reload_seconds(weapon_id)))
 
 ## Tiro/explosão: 5 takes sem repetir o anterior + variação de tom e volume por disparo,
 ## como o `AudioStreamRandomizer` da V1 (`audio/combat/CombatAudioBank.gd`: random_pitch=1.035,
@@ -2406,10 +2407,61 @@ func _stall_sound(kind: String, point: Vector3, base_volume_db: float = NPC_GUNF
 	if stream == null: return
 	var reach := HEARING_EXPLOSION if kind == "explosion" else HEARING_GUNFIRE
 	var pitch := AUDIO.gunfire_pitch(_rng)
-	_play_stream(stream, point, base_volume_db + AUDIO.gunfire_volume_jitter(_rng), pitch, reach)
+	if kind == "explosion": _play_stream(stream, point, base_volume_db + AUDIO.gunfire_volume_jitter(_rng), pitch, reach)
+	else: _play_weapon_stream(stream, point, base_volume_db + AUDIO.gunfire_volume_jitter(_rng), pitch, reach)
 	# Camada de corpo (baque + cauda) no mesmo tom: o estalo gravado sozinho soava fraco.
 	var body := AUDIO.gun_body(kind)
-	if body != null: _play_stream(body, point, base_volume_db + float(AUDIO.GUN_BODY[kind][3]), pitch, reach * 1.3)
+	if body != null: _play_weapon_stream(body, point, base_volume_db + float(AUDIO.GUN_BODY[kind][3]), pitch, reach * 1.3)
+
+## Fixed pools keep gunfire from consuming the glass-break voice or other effects.
+func _setup_combat_audio() -> void:
+	AUDIO.ensure_weapon_bus()
+	for index in COMBAT_VOICES:
+		var effect := _combat_voice(AUDIO.SFX_BUS_NAME)
+		add_child(effect)
+		_audio_pool.append(effect)
+		var weapon := _combat_voice(String(AUDIO.WEAPON_BUS_NAME))
+		add_child(weapon)
+		_weapon_pool.append(weapon)
+	for index in 4:
+		var glass := _combat_voice(AUDIO.SFX_BUS_NAME)
+		add_child(glass)
+		_glass_audio_pool.append(glass)
+
+func _play_weapon_stream(stream: AudioStream, point: Vector3, volume_db: float, pitch: float = 1.0, reach: float = HEARING_DEFAULT) -> void:
+	if stream == null or _weapon_pool.is_empty(): return
+	var gain := _hearing_gain_db(point,reach)
+	if gain <= -60.0: return
+	var index := _weapon_audio_next
+	for offset in _weapon_pool.size():
+		var candidate := (_weapon_audio_next + offset) % _weapon_pool.size()
+		if not _weapon_pool[candidate].playing:
+			index = candidate
+			break
+	var channel := _weapon_pool[index]
+	_weapon_audio_next = (index + 1) % _weapon_pool.size()
+	# At the ceiling replace an old tail, keeping the current shot audible.
+	channel.stop()
+	channel.global_position = point
+	channel.stream = stream
+	channel.volume_db = volume_db + gain
+	channel.pitch_scale = pitch
+	channel.play()
+
+func _play_glass_break(point: Vector3) -> void:
+	if _glass_audio_pool.is_empty(): return
+	var gain := _hearing_gain_db(point,32.0)
+	if gain <= -60.0: return
+	var voice := _glass_audio_pool[_glass_audio_next]
+	_glass_audio_next = (_glass_audio_next + 1) % _glass_audio_pool.size()
+	# Replace only an earlier glass shower at the fixed ceiling, never a new shot.
+	voice.stop()
+	voice.global_position = point
+	voice.stream = AUDIO.impact_take("glass",_rng)
+	if voice.stream == null: voice.stream = preload("res://gameplay/VehicleBreakIn.gd")._glass_stream()
+	voice.volume_db = -9.0 + gain
+	voice.pitch_scale = _rng.randf_range(.94,1.06)
+	voice.play()
 
 ## Toca um stream já carregado no primeiro canal livre do pool posicional.
 func _play_stream(stream: AudioStream, point: Vector3, volume_db: float, pitch: float = 1.0, reach: float = HEARING_DEFAULT) -> void:
@@ -2461,7 +2513,7 @@ func _shot_sound(id: String, data: Dictionary) -> void:
 	if data.get("suppressed", false) and id in SUPPRESSED_WEAPONS:
 		var muffled := AUDIO.gunfire_take("suppressed_" + id, _rng)
 		if muffled != null:
-			_play_stream(muffled, player.global_position, base_volume - 9.0 + AUDIO.gunfire_volume_jitter(_rng), AUDIO.gunfire_pitch(_rng), HEARING_SUPPRESSED)
+			_play_weapon_stream(muffled, player.global_position, base_volume - 9.0 + AUDIO.gunfire_volume_jitter(_rng), AUDIO.gunfire_pitch(_rng), HEARING_SUPPRESSED)
 			return
 	_sound(String(data.get("sound_type", id)), player.global_position, base_volume)
 	_kick_camera(float(CAMERA_KICK.get(id, 0.0)))
@@ -2566,7 +2618,7 @@ func _casing_contact(point: Vector3, material: String, speed: float, shotgun: bo
 	if family in ["soft", "snow"]: volume -= 11.0
 	# Polymer shotgun hulls have less ring than a small brass case.
 	if shotgun: volume -= 3.0
-	_play_stream(AUDIO.contact_take("casing_" + family, _rng), point, volume, _rng.randf_range(0.96, 1.04) * (0.8 if shotgun else 1.0), 9.0)
+	_play_weapon_stream(AUDIO.contact_take("casing_" + family, _rng), point, volume, _rng.randf_range(0.96, 1.04) * (0.8 if shotgun else 1.0), 9.0)
 
 ## Som de contato. Impactos do mesmo material no mesmo instante (chumbo) compartilham uma voz, como no V1.
 func _impact_sound(collider: Object, point: Vector3, amount: float, normal := Vector3.ZERO) -> void:
@@ -2584,7 +2636,9 @@ func _impact_sound(collider: Object, point: Vector3, amount: float, normal := Ve
 func _firefly_sound(folder: String, key: String, point: Vector3, volume_db: float, reach: float, pitch_jitter := 0.04) -> void:
 	var take: AudioStream = AUDIO.FIREFLY.take(folder, key, _rng)
 	if take == null: return
-	_play_stream(take, point, volume_db, _rng.randf_range(1.0 - pitch_jitter, 1.0 + pitch_jitter), reach)
+	if folder == "weapons_fire" and key != "explosion_tail":
+		_play_weapon_stream(take, point, volume_db, _rng.randf_range(1.0 - pitch_jitter, 1.0 + pitch_jitter), reach)
+	else: _play_stream(take, point, volume_db, _rng.randf_range(1.0 - pitch_jitter, 1.0 + pitch_jitter), reach)
 
 func _is_firearm(id: String) -> bool:
 	var data: Dictionary = CATALOG.WEAPONS.get(id, {})
