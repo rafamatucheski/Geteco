@@ -78,6 +78,26 @@ costa pela fórmula antiga, um pouco diferente das curvas finais.
 
 ### 1. Oceano do mundo
 
+**Feita em 26/10.** O que entrou:
+
+- **`world/shape/WorldSea.gd`**, montado uma vez sob a cortina e retido (`ProductionWorld`, logo antes de
+  `ready_for_play`, com pré-aquecimento do material). `GETECO_WORLD_SEA=0` desliga.
+- **Água:** um mar em volta de tudo, 0,2 m abaixo da água de Harbor, com a mesma faixa rasa perto da costa.
+- **Chão-base:** cobre as ilhas para a vista de longe. Perto do jogador ele se esconde nas células que a
+  região já montou.
+- **Trechos rebaixados:** a cava, o cânion, os lagos e o canal viram fundo rebaixado ou água parada, em
+  vez de buraco.
+- **Harbor** continua com a terra de hoje até a etapa 3.
+
+Verificação:
+
+- `tests/test_world_sea.gd`: 19/19, já na suíte completa.
+- Fotos de cima com `tests/capture/capture_world_sea_overview.gd`.
+- Montagem em ~1,5 s, fatiada em pedaços de 5 ms.
+
+Ficou para a etapa 2: a cordilheira sul do deserto (`DesertHorizonRelief`) passa por cima do canal entre o
+deserto e Harbor, e as bordas oeste e sul das cordilheiras são retas e saem um pouco da costa.
+
 - O mar passa a cercar as três ilhas, inclusive o deserto. Margens e espuma vêm das curvas.
 - Testes: os de `test_harbor_ocean.gd` e `test_ocean_edge_equivalence.gd` adaptados à nova forma;
   save parado perto da costa carrega em terra.

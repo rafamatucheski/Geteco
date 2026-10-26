@@ -16,6 +16,7 @@ var ambient_journeys := preload("res://gameplay/AmbientJourney.gd").new()
 const VEHICLE := preload("res://scripts/Vehicle.gd")
 const PORT_POLICY := preload("res://gameplay/urban_v1/HarborPortPolicy.gd")
 const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
+const WORLD_SEA := preload("res://world/shape/WorldSea.gd")
 # Orçamento medido em 2026-09-23 (RTX 4060 Laptop, 1280x720): 100 pedestres + 100 carros
 # + 3 estrelas custavam 25,8 ms de física/scripts por quadro e derrubavam para 34,5 FPS;
 # 40 pedestres mantiveram 59,8 FPS no mesmo cenário.
@@ -122,6 +123,8 @@ var _population_jobs: Array[String] = []
 var requested_population := MAX_POPULATION
 var session
 var urban_transit: Node3D
+## Mar do mundo orgânico (etapa 1 do plano de 26/10): montado uma vez sob a cortina e retido.
+var world_sea: Node3D
 var roadside_parking: Node
 var world_audio: Node
 var civilian_reactions: Node
@@ -384,6 +387,19 @@ func build() -> void:
 	if is_instance_valid(urban_transit) and is_instance_valid(urban_transit.urban_service):
 		await urban_transit.urban_service.prepare_startup()
 		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+	# Mar em volta das ilhas e chão-base para a vista de longe (world/shape/WorldSea.gd): ~1,5 s de
+	# montagem em fatias de 5 ms, sempre sob a cortina; GETECO_WORLD_SEA=0 desliga.
+	if WORLD_SEA.enabled() and not is_instance_valid(world_sea):
+		var sea_began := STALL_WORK.begin()
+		world_sea = WORLD_SEA.new()
+		world_sea.configure(self)
+		world.add_child(world_sea)
+		await world_sea.build_sliced(get_tree())
+		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+		STALL_WORK.finish("startup.world_sea", sea_began)
+		await world_sea.prewarm(world, curtain)
+		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+		PIPELINE_PROBE.stage("world_sea")
 	# O mirante costeiro monta seus modelos em fatias desde o _ready da sessão (antes, ~11 s num quadro
 	# só, 16/10); num carregamento rápido elas ainda podem estar correndo, e cairiam no jogo.
 	while is_instance_valid(session) and session.coastal_lookout != null and session.coastal_lookout.is_preparing():

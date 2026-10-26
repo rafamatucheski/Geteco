@@ -46,6 +46,7 @@ WORLD=(
 	"headless|tests/cold/test_admission.gd|"
 	# Forma do mundo orgânico (etapa 0): estrada, lugar ou prédio novo tem que caber dentro das ilhas.
 	"headless|tests/test_world_shape.gd|--no-save"
+	"headless|tests/test_world_sea.gd|"
 	"headless|tests/test_save_indicator.gd|--no-save --skip-arrival|Could not create directory: .*/missing-parent-"
 	"headless|tests/test_recovery_penalty_session.gd|--no-save --skip-arrival"
 	"rendered|tests/test_desert_wilds.gd|--no-save --no-traffic"
