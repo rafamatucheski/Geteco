@@ -63,6 +63,7 @@ func _build_hud() -> void:
 
 func _toggle_pause() -> void:
 	if session != null and session.get("modal") == true: return
+	if session != null and is_instance_valid(session.get("equipment_wheel")): session.equipment_wheel.cancel()
 	pause_panel.toggle()
 
 const _SYS_SPAN := preload("res://runtime/StallWorkTrace.gd")

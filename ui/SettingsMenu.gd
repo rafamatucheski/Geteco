@@ -24,7 +24,7 @@ const CONTROL_GROUPS := [
 	["CÂMERA 3D", ["camera_left", "camera_right", "camera_drag"]],
 	["VEÍCULO / ESPORTES", ["accelerate", "brake", "vehicle_interact", "exit_vehicle", "handbrake", "motorcycle_wheelie", "horn", "headlights", "siren_toggle", "radio_next", "radio_previous", "radio_toggle", "trunk", "tank_fire"]],
 	["SKATE", ["skate_ollie", "skate_flip", "skate_shove"]],
-	["COMBATE", ["fire", "aim", "reload", "weapon_next", "weapon_previous", "unarmed", "weapon_flashlight", "surrender"]],
+	["COMBATE", ["fire", "aim", "reload", "weapon_wheel", "weapon_next", "weapon_previous", "unarmed", "weapon_flashlight", "surrender"]],
 	["ARMAS RÁPIDAS", ["weapon_slot_1", "weapon_slot_2", "weapon_slot_3", "weapon_slot_4", "weapon_slot_5", "weapon_slot_6", "weapon_slot_7", "weapon_slot_8", "weapon_slot_9", "weapon_slot_10"]],
 	["GERAL", ["journal", "world_map", "inventory", "pause_game"]],
 ]
@@ -198,6 +198,8 @@ func _refresh_help() -> void:
 	if not is_instance_valid(_help_bindings): return
 	var controls := get_node("/root/GameInput")
 	_help_bindings.text = tr("Conversar / continuar: %s\nDiário de missões: %s\nPausa e configurações: %s") % [controls.prompt("interact"), controls.prompt("journal"), controls.prompt("pause_game")]
+	var wheel_help := "Hold %s: weapon wheel\nWith the wheel open, %s: weapons / consumables" if TranslationServer.get_locale().begins_with("en") else "Segurar %s: roda de armas\nCom a roda aberta, %s: armas / consumíveis"
+	_help_bindings.text += "\n" + wheel_help % [controls.hint("weapon_wheel", true), controls.hint("interact", true)]
 
 func _layout() -> void:
 	var safe_top := 24.0 if has_node("/root/BuildWatermark") else 0.0

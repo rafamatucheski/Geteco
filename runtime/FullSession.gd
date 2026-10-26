@@ -95,6 +95,7 @@ var urban_operations
 var port_container_loot
 var armored_transport
 var field_inventory
+var equipment_wheel
 var action_serial := 0
 var rebinding_action := ""
 var vehicle_transition_busy := false
@@ -282,6 +283,7 @@ const CANCEL_STEPS := {
 
 ## Roda uma etapa de CANCEL_STEPS. Devolve false só quando um passo abort_if_active recusou.
 func _cancel_for(stage: StringName) -> bool:
+	if is_instance_valid(equipment_wheel): equipment_wheel.cancel()
 	if not CANCEL_STEPS.has(stage):
 		push_error("Etapa de limpeza desconhecida: %s" % stage)
 		return true
@@ -956,6 +958,9 @@ func _ready() -> void:
 	_timed_add(world, field_inventory, "field_inventory")
 	field_inventory.configure(self)
 	SESSION_OPS.finish(diagnostic_field_inventory)
+	equipment_wheel = preload("res://runtime/EquipmentWheel.gd").new()
+	world.add_child(equipment_wheel)
+	equipment_wheel.configure(self)
 	if not Engine.get_meta("fishing_baseline",false):
 		var diagnostic_fishing := SESSION_OPS.begin(self, "fishing", "create_and_configure")
 		fishing = preload("res://activities/fishing/Fishing.gd").new()
@@ -1969,6 +1974,10 @@ func _intro_interact(id: String) -> bool:
 func _input(event: InputEvent) -> void:
 	if world.player != null and world.player.get_meta("developer_free_flight",false): return
 	get_node("/root/GameInput").observe_event(event)
+	if is_instance_valid(equipment_wheel) and equipment_wheel.active:
+		equipment_wheel.handle_input(event)
+		get_viewport().set_input_as_handled()
+		return
 	# The opening owns input while the world is paused. Leave clicks and Esc
 	# available to its skip button/dialog and _unhandled_input handler.
 	if arrival != null and arrival.phase == "opening" and is_instance_valid(arrival.presentation): return
@@ -2093,6 +2102,9 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 	var wants_interact := false
+	if is_instance_valid(equipment_wheel) and equipment_wheel.handle_input(event):
+		get_viewport().set_input_as_handled()
+		return
 	if event.is_action_pressed("jump") and not event.is_echo() and not world.driving.occupied:
 		if world.player.air_movement != null and world.player.air_movement.request_jump(): get_viewport().set_input_as_handled()
 		return
@@ -2284,6 +2296,7 @@ func _update_world_indicator() -> void:
 	arrow.rotation = (screen-Vector2(640,360)).angle()+PI/2
 
 func _menu(title: String) -> void:
+	if is_instance_valid(equipment_wheel): equipment_wheel.cancel()
 	if building_social != null and building_social.active: building_social.close()
 	if arcade != null and arcade.active: arcade.close()
 	clear_speech()

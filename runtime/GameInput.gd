@@ -47,7 +47,7 @@ const KEYS := {
 	"handbrake": [KEY_SPACE], "horn": [KEY_H], "headlights": [KEY_L],
 	"bus_driver_shift": [KEY_B], "bus_doors": [KEY_O],
 	"radio_next": [KEY_R], "radio_previous": [], "radio_toggle": [], "reload": [KEY_R], "journal": [KEY_J], "trunk": [KEY_T],
-	"weapon_next": [KEY_Q], "weapon_previous": [], "unarmed": [KEY_X],
+	"weapon_wheel": [KEY_Q], "weapon_next": [], "weapon_previous": [], "unarmed": [KEY_X],
 	"fire": [], "aim": [], "accelerate": [], "brake": [], "pause_game": [KEY_ESCAPE], "world_map": [KEY_M],
 	"siren_toggle": [],
 	"weapon_slot_1": [KEY_1],
@@ -87,6 +87,7 @@ const LABELS := {
 	"reload": ["Recarregar","Reload"], "radio_next": ["Próxima rádio","Next radio"],
 	"radio_previous": ["Rádio anterior","Previous radio"], "radio_toggle": ["Ligar/desligar rádio","Toggle radio"], "journal": ["Diário","Journal"],
 	"trunk": ["Porta-malas","Trunk"], "weapon_next": ["Próxima arma","Next weapon"],
+	"weapon_wheel": ["Roda de armas (segurar)", "Weapon wheel (hold)"],
 	"weapon_previous": ["Arma anterior","Previous weapon"], "unarmed": ["Mãos livres","Unarmed"],
 	"fire": ["Atacar / Disparar","Attack / Fire"], "aim": ["Mirar","Aim"],
 	"accelerate": ["Acelerar", "Accelerate"], "brake": ["Frear / Ré", "Brake / Reverse"],
@@ -140,6 +141,7 @@ const CONTEXTUAL_BINDING_PAIRS := [
 	["weapon_flashlight", "headlights"],
 	["skate_ollie", "handbrake"],
 	["skate_flip", "weapon_next"],
+	["skate_flip", "weapon_wheel"],
 	["skate_flip", "weapon_previous"],
 	["skate_flip", "radio_next"],
 	["skate_flip", "radio_previous"],
@@ -241,6 +243,34 @@ func export_bindings() -> Dictionary:
 	return saved
 
 func import_bindings(saved: Dictionary) -> void:
+	# Old settings put Q on the immediate next-weapon action. Move only that
+	# binding to the new hold action; retain scrolling and custom alternatives.
+	# An explicit wheel binding (including an empty one) is already migrated.
+	if not saved.has("weapon_wheel"):
+		var migrated := saved.duplicate(true)
+		var custom_q := false
+		for action in saved:
+			if not KEYS.has(action) or action == "weapon_next" or _binding_context_is_exclusive("weapon_wheel", str(action)): continue
+			if not saved[action] is Array: continue
+			for binding in saved[action]:
+				if binding is Dictionary and binding.get("key", 0) == KEY_Q: custom_q = true
+		if custom_q:
+			# A player may already have reassigned Q to an on-foot action. Do not
+			# shadow that action with the new default; the wheel stays remappable.
+			migrated.weapon_wheel = []
+			saved = migrated
+		elif saved.get("weapon_next") is Array:
+			var remaining: Array = []
+			var legacy_q := false
+			for binding in saved.weapon_next:
+				if binding is Dictionary and binding.get("key", 0) == KEY_Q:
+					legacy_q = true
+				else:
+					remaining.append(binding)
+			if legacy_q:
+				migrated.weapon_next = remaining
+				migrated.weapon_wheel = [{"key": KEY_Q}]
+				saved = migrated
 	for action in saved:
 		if not KEYS.has(action) or action == "pause_game": continue
 		_clear_keyboard(action)

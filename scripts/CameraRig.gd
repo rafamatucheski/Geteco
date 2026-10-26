@@ -676,6 +676,8 @@ func _camera_input_blocked() -> bool:
 	var session: Variant = world.get("session") if world != null and &"session" in world else null
 	if session != null:
 		if session.get("modal") == true or session.get("ready_for_play") == false: return true
+		var wheel: Variant = session.get("equipment_wheel")
+		if is_instance_valid(wheel) and wheel.active: return true
 		if session.has_method("is_transition_blocked") and session.is_transition_blocked(): return true
 	var focused := get_viewport().gui_get_focus_owner()
 	return focused is LineEdit or focused is TextEdit
