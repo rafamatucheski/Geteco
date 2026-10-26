@@ -181,6 +181,15 @@ func _collect(node: Node, out: Array, how: String) -> void:
 ## Só para o registro: o que difere de um StandardMaterial3D novo, com nome (a chave é posicional).
 func _material_desc(material: Variant) -> String:
 	if not material is Material: return ""
+	if material is ParticleProcessMaterial:
+		var ppm := material as ParticleProcessMaterial
+		var parts := PackedStringArray(["PPM shape=%d" % ppm.emission_shape])
+		for prop in ["color_ramp", "color_initial_ramp", "scale_curve", "alpha_curve", "emission_curve", "angle_curve", "velocity_limit_curve", "orbit_velocity_curve", "radial_velocity_curve", "directional_velocity_curve", "hue_variation_curve", "anim_speed_curve", "anim_offset_curve", "damping_curve", "linear_accel_curve", "radial_accel_curve", "tangential_accel_curve", "scale_over_velocity_curve"]:
+			if ppm.get(prop) != null: parts.append(prop)
+		for flag in ["turbulence_enabled", "collision_mode", "attractor_interaction_enabled", "particle_flag_align_y", "particle_flag_rotate_y", "particle_flag_disable_z", "sub_emitter_mode"]:
+			var value: Variant = ppm.get(flag)
+			if value != null and value != false and value != 0: parts.append("%s=%s" % [flag, str(value)])
+		return " ".join(parts)
 	if material is ShaderMaterial:
 		var shader: Shader = (material as ShaderMaterial).shader
 		return "shader=" + (shader.resource_path if shader != null else "null")
@@ -288,6 +297,10 @@ func _material_key(material: Material) -> String:
 		for prop_name in _texture_props: textures += "1" if material.get(prop_name) != null else "0"
 		parts.append(textures)
 		key = "BM:" + ",".join(parts)
+	elif material is ParticleProcessMaterial:
+		# O motor gera um shader de partícula por combinação de recursos (curvas, rampa, forma de emissão...),
+		# compartilhado entre materiais iguais: o RID dele separa as combinações (só a classe juntava todas).
+		key = "PPM:%d" % material.get_shader_rid().get_id()
 	else:
 		key = material.get_class()
 	if material.next_pass != null: key += ">" + _material_key(material.next_pass)

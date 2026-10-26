@@ -452,7 +452,7 @@ func _physics_process(delta: float) -> void:
 func _stall_physics_tick(delta: float) -> void:
 	# Spans (22/10): quadros com vehicle.physics de 8–11 ms num carro só e nenhum trecho interno nomeado.
 	var stage := STALL_WORK.begin()
-	if controlled and not external_input and not _traffic_retirement_meshes.is_empty(): fade_traffic_retirement(0)
+	if controlled and not external_input and (not _traffic_retirement_meshes.is_empty() or _retire_sunk > 0.0): fade_traffic_retirement(0)
 	if traffic_escape!=null and (controlled or not traffic): traffic_escape.tick(self,delta)
 	# Also clean during backoff, player control and resting; no geometry work when empty.
 	if not _clearing_junctions.is_empty(): _clear_departed_junctions()
@@ -1193,7 +1193,20 @@ func obstacle_ahead() -> bool:
 		break
 	return blocker != null
 
+## Retirada sem passe alfa (25/10, GETECO_RETIRE_SINK=1): só o visual afunda; a colisão fica até o fim,
+## como na transparência. Junto com a carcaça (GETECO_WRECK_SINK) e o destroço (GETECO_DEBRIS_SHRINK) são as
+## três fontes de `transparency` > 0 que a sonda de assinatura viu nos quadros de ~0,9 s (13ª rodada, doc §16).
+static var RETIRE_SINK_ENABLED := OS.get_environment("GETECO_RETIRE_SINK") == "1"
+const RETIRE_SINK_DEPTH := 2.4
+var _retire_sunk := 0.0
+
 func fade_traffic_retirement(alpha: float) -> void:
+	if RETIRE_SINK_ENABLED:
+		if not is_instance_valid(visual): return
+		var sunk := RETIRE_SINK_DEPTH * clampf(alpha, 0.0, 1.0)
+		visual.position.y += _retire_sunk - sunk
+		_retire_sunk = sunk
+		return
 	if alpha<=0:
 		for record in _traffic_retirement_meshes:
 			if is_instance_valid(record.node): record.node.transparency=record.original
