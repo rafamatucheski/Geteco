@@ -156,8 +156,14 @@ volta à terra de antes. Contratos: `tests/test_harbor_coast.gd`; fotos:
 - **Atenção para o porto:** a curva da forma passa por cima da bacia entre os quarteirões, onde fica o
   navio (x 200–274), e cobre a frente de cais do porto sul. Antes do bairro do porto, o gerador precisa
   recortar a bacia e seguir os retângulos como cais reto onde rua e porto encostam no mar.
-- **Próximos:** costa norte da cidade (a baía entre a mata e a ponte norte), parque a leste, frente sul
-  e porto (com cais).
+- **Feito: baía norte** (do lado leste da mata até o lado oeste da cabeceira da ponte norte, x = 356).
+  A zona segue as bordas norte dos quarteirões. A bacia do navio fecha ao norte num cais reto em
+  z = −6,2 (estilo industrial) e continua aberta para o mar pelo sul. A coluna da ponte norte depois da
+  cabeceira fica livre (`NORTH_BRIDGE_CLEAR`), e as pegadas das pontes nunca recebem chão natural. O
+  corte de 23 m ao norte da mata sumiu. Fica a borda leste da cabeceira da ponte e, ao sul da mata, os
+  ~50 m de antes. A costa curva nova ganha muro de pedra em vez do concreto de rodovia e da alvenaria
+  urbana (`CoastalProtection`).
+- **Próximos:** leste da ponte norte e parque a leste, frente sul e porto (com cais).
 
 ### 4. Serra ilha
 

@@ -40,15 +40,16 @@ func run() -> void:
 	sea.configure(production)
 	stage.add_child(sea)
 	await sea.build_sliced(self)
-	# Área fixa (mata a oeste) para a foto com GETECO_HARBOR_COAST=0 sair no mesmo enquadramento.
+	# Áreas fixas para a foto com GETECO_HARBOR_COAST=0 sair no mesmo enquadramento: mata a oeste e baía norte.
 	var area := Rect2(-615, -295, 535, 510)
+	var north := Rect2(-90, -300, 460, 310)
 	var region = EDITABLE.build_region("harbor")
 	region.initial_focus = Vector3(area.get_center().x, 0, area.get_center().y)
 	stage.add_child(region)
 	production.regions["harbor"] = region
 	# A vista de desenvolvedor para nos registros da região (x ≈ −512); a ponta oeste da costa nova fica
 	# além. No jogo o streaming monta as 3 × 3 células em volta do jogador, sem limite.
-	var cells := area.grow(32.0)
+	var cells := area.merge(north).grow(32.0)
 	region.set_developer_view(cells, true, false)
 	region.set_process(false)
 	for x in range(floori(cells.position.x / 64.0), ceili(cells.end.x / 64.0)):
@@ -84,6 +85,26 @@ func run() -> void:
 	camera.position = Vector3(-660, 18, -20)
 	camera.look_at(Vector3(-560, 0, -20))
 	await _shot(output.path_join("oeste-ponta.png"))
+	# Baía norte de cima.
+	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+	camera.size = north.size.y + 120.0
+	center = Vector3(north.get_center().x, 0, north.get_center().y)
+	camera.position = center + Vector3(0, 900, 360)
+	camera.look_at(center)
+	await _shot(output.path_join("norte-cima.png"))
+	camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+	# Da água ao norte olhando a baía e a cidade.
+	camera.position = Vector3(100, 22, -330)
+	camera.look_at(Vector3(100, 0, -60))
+	await _shot(output.path_join("norte-baia.png"))
+	# Cabeça da bacia do navio: o cais novo em z = −6,2.
+	camera.position = Vector3(237, 12, 70)
+	camera.look_at(Vector3(237, 0, -10))
+	await _shot(output.path_join("norte-bacia.png"))
+	# Começo da ponte norte.
+	camera.position = Vector3(300, 16, -330)
+	camera.look_at(Vector3(360, 0, -240))
+	await _shot(output.path_join("norte-ponte.png"))
 	print("HARBOR_COAST_CAPTURE ", output, " células ", region.chunks.size())
 	quit()
 

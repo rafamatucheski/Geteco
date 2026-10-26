@@ -30,11 +30,27 @@ func run() -> void:
 	var outside_island := 0
 	for polygon in natural:
 		for point in polygon:
-			if point.x > -80.0 + .01: outside_zone += 1
+			if not COAST.in_district(point) and not _near_zone(point): outside_zone += 1
 			if SHAPE.signed_distance(point) < -.05: outside_island += 1
-	check(outside_zone == 0, "chão natural só na mata a oeste (%d pontos a leste de x = −80)" % outside_zone)
+	check(outside_zone == 0, "chão natural só nas zonas dos bairros prontos (%d pontos fora)" % outside_zone)
 	check(outside_island == 0, "chão natural dentro da ilha da forma (%d pontos fora)" % outside_island)
 
+	# Baía norte: a bacia do navio continua água (fecha ao norte em z = −6,2) e a ponte norte fica sem chão
+	# natural por baixo.
+	var basin_dry := 0
+	for p in [Vector2(237, -3), Vector2(237, 40), Vector2(260, 100), Vector2(205, -4)]:
+		if _on(p, natural): basin_dry += 1
+	check(basin_dry == 0, "bacia do navio sem chão natural (%d pontos com terra)" % basin_dry)
+	var bridge := preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd")
+	if bridge.enabled():
+		var under := 0
+		var footprint := bridge.north_footprint()
+		var area := GROUND_CUT.bounds(footprint)
+		for ix in 24:
+			for iz in 24:
+				var p := area.position + area.size * Vector2((ix + .5) / 24.0, (iz + .5) / 24.0)
+				if Geometry2D.is_point_in_polygon(p, footprint) and _on(p, natural): under += 1
+		check(under == 0, "ponte norte sem chão natural por baixo (%d amostras)" % under)
 	var region = EDITABLE.build_region("harbor")
 	region.prepare_data()
 	var land: Array[PackedVector2Array] = []
@@ -87,6 +103,10 @@ func run() -> void:
 	# da zona (bairros ainda sem costa curva) a terra da forma continua sendo água no jogo, de propósito.
 	var trapped := 0
 	var stub := 0
+	var bridges: Array[PackedVector2Array] = []
+	var kit := preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd")
+	bridges.append(GROUND_CUT.rect_polygon(COAST.NORTH_BRIDGE_CLEAR))
+	if kit.enabled(): bridges.append_array([kit.east_footprint(), kit.north_footprint()])
 	for polygon in natural:
 		for i in polygon.size():
 			var a := polygon[i]
@@ -98,7 +118,9 @@ func run() -> void:
 				for side in [normal, -normal]:
 					var probe: Vector2 = p + side * 1.5
 					if _on(probe, land): continue
-					if probe.x > -80.0:
+					# Água por baixo das pontes é da ponte, não fica presa.
+					if bridges.any(func(f: PackedVector2Array) -> bool: return Geometry2D.is_point_in_polygon(probe, f)): continue
+					if not COAST.in_district(probe):
 						# Só conta o corte novo: onde do outro lado é terra que não existia antes.
 						if not _on(p - side * 1.5, land.slice(0, land.size() - natural.size())): stub += 1
 						continue
@@ -119,6 +141,14 @@ func run() -> void:
 	region.free()
 	print("HARBOR_COAST checks=%d failures=%s" % [checks, failures])
 	quit(0 if failures.is_empty() else 1)
+
+## Vértice na borda da zona (o recorte deixa pontos exatamente nela).
+static func _near_zone(point: Vector2) -> bool:
+	for id in COAST.DISTRICTS:
+		var zone := PackedVector2Array(COAST.DISTRICTS[id])
+		for i in zone.size():
+			if point.distance_to(Geometry2D.get_closest_point_to_segment(point, zone[i], zone[(i + 1) % zone.size()])) < .05: return true
+	return false
 
 static func _on(point: Vector2, polygons: Array) -> bool:
 	for polygon in polygons:

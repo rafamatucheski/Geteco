@@ -7,6 +7,7 @@ const NORTH_GATEWAY_LAYOUT := preload("res://world/north_gateway/NorthGatewayLay
 const NORTH_GATEWAY_POLICY := preload("res://world/north_gateway/NorthGatewayPolicy.gd")
 const UNIFIED_BRIDGE := preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd")
 const GROUND_CUT := preload("res://world/urban_detail/GroundCut.gd")
+const HARBOR_COAST := preload("res://world/shape/HarborCoast.gd")
 var polygons: Array[PackedVector2Array] = []
 var boundaries: Array[Dictionary] = []
 var cells: Dictionary = {}
@@ -111,11 +112,12 @@ static func _nearby_edges(index: Dictionary, bounds: Rect2) -> Array[int]:
 func _extract() -> void:
 	var edges: Array[Dictionary] = []
 	for polygon in polygons:
+		var natural := HARBOR_COAST.is_natural(polygon)
 		for i in polygon.size():
 			var a := polygon[i]
 			var b := polygon[(i+1)%polygon.size()]
 			if a.distance_to(b)<0.01: continue
-			edges.append({"a":a,"b":b,"bounds":Rect2(a,Vector2.ZERO).expand(b).grow(0.02)})
+			edges.append({"a":a,"b":b,"bounds":Rect2(a,Vector2.ZERO).expand(b).grow(0.02),"natural":natural})
 	var edge_cells := {}
 	for index in edges.size(): _put_bounds(edge_cells,edges[index].bounds,index)
 	var seen := {}
@@ -152,7 +154,10 @@ func _extract() -> void:
 			var key := str(midpoint.snapped(Vector2.ONE*0.01))
 			if seen.has(key): continue
 			seen[key] = true
-			var record := {"a":start,"b":end,"outward":normal,"style":_style(midpoint)}
+			var style := _style(midpoint)
+			# Costa curva (mundo orgânico, etapa 3): muro de pedra; o cais da bacia segue industrial.
+			if edge.natural and style != "industrial": style = "stone"
+			var record := {"a":start,"b":end,"outward":normal,"style":style}
 			boundaries.append(record)
 			_index(record)
 

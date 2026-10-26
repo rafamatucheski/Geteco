@@ -10,6 +10,8 @@ const CELL := 64.0
 const SPACING := 9.0
 const COAST_CLEAR := 7.0
 const ROAD_CLEAR := 4.0
+## Folga até a terra de antes: a calçada da beira da cidade fica livre.
+const OLD_CLEAR := 3.0
 ## Célula Vector2i -> {"trees": [...], "shrubs": [...]}.
 static var _cells: Dictionary = {}
 
@@ -93,14 +95,17 @@ static func build_chunk(parent: Node3D, rect: Rect2) -> void:
 static func _free(point: Vector2, polygon: PackedVector2Array, old_land: Array, roads: Array) -> bool:
 	if not Geometry2D.is_point_in_polygon(point, polygon): return false
 	for p in old_land:
-		if Geometry2D.is_point_in_polygon(point, p): return false
+		for offset in [Vector2.ZERO, Vector2(OLD_CLEAR, 0), Vector2(-OLD_CLEAR, 0), Vector2(0, OLD_CLEAR), Vector2(0, -OLD_CLEAR)]:
+			if Geometry2D.is_point_in_polygon(point + offset, p): return false
 	# Folga até a costa nova (o muro de pedra fica na beira).
 	for i in polygon.size():
 		if point.distance_to(Geometry2D.get_closest_point_to_segment(point, polygon[i], polygon[(i + 1) % polygon.size()])) < COAST_CLEAR:
 			# Borda que encosta na terra de antes não é costa: só conta se do lado de fora for água.
 			var closest := Geometry2D.get_closest_point_to_segment(point, polygon[i], polygon[(i + 1) % polygon.size()])
 			var outside := closest + (closest - point).normalized() * 1.0
-			if not old_land.any(func(p: PackedVector2Array) -> bool: return Geometry2D.is_point_in_polygon(outside, p)): return false
+			var dry := func(p: PackedVector2Array) -> bool: return Geometry2D.is_point_in_polygon(outside, p)
+			# A divisa entre dois bairros prontos também não é costa.
+			if not old_land.any(dry) and not COAST.natural_land().any(func(p: PackedVector2Array) -> bool: return p != polygon and dry.call(p)): return false
 	for road in roads:
 		for offset in [Vector2.ZERO, Vector2(ROAD_CLEAR, 0), Vector2(-ROAD_CLEAR, 0), Vector2(0, ROAD_CLEAR), Vector2(0, -ROAD_CLEAR)]:
 			if Geometry2D.is_point_in_polygon(point + offset, road): return false
