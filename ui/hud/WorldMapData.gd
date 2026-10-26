@@ -150,6 +150,8 @@ func add_marker(id: String, title: String, point: Vector3, kind: String, region:
 func _mountain_markers(region) -> void:
 	add_marker("forge","Forja da Serra",preload("res://world/mountain_detail/forge/MountainForge.gd").CENTER,"forge","mountain")
 	add_marker("jeep","Trilha de jipe",preload("res://world/mountain_jeep/MountainJeepCourse.gd").start(),"jeep","mountain")
+	if preload("res://world/mountain_detail/MountainRefuge.gd").enabled():
+		add_marker("refuge","Refúgio da Serra",preload("res://world/mountain_detail/MountainRefuge.gd").CENTER,"home","mountain")
 	for records in region.records.values():
 		for record in records:
 			if record.kind=="cargo_plane": add_marker("plane","Avião dos Cobras",record.position,"plane","mountain")

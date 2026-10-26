@@ -62,6 +62,12 @@ o span existente e abaixo de ~2 ms.
 
 ## 2. Refúgio da Serra (Serra Gelada)
 
+**Feito em 26/10.** `world/mountain_detail/MountainRefuge.gd` em (766, −502), a leste da largada da
+Pista da Sombra, ponto achado por `tests/tools/sweep_mountain_site.gd`. Descanso de graça até as 7h,
+curado. O ajudante `runtime/RestUntil.gd` agora serve também ao Motel Oásis e ao Horizonte.
+`tests/test_mountain_refuge.gd` passou 16/16. `GETECO_MOUNTAIN_REFUGE=0` tira o abrigo e o catre; a
+fogueira fica, porque a lista de calor é fixa. Falta o A/B no export release.
+
 **O que é.** Uma cabana de madeira sem interior, com fogueira, banco e um catre. A fogueira esquenta
 (o sistema de frio da serra) e o catre deixa dormir até as 7h, curar e salvar, de graça. A avalanche
 que aparecia junto na carta fica de fora: é outro custo.

@@ -4,6 +4,7 @@ extends Node3D
 ## cuida da entrega do orelhão. Os eventos de estrada ficam em DesertRoadEvents.
 const LAYOUT := preload("res://runtime/desert/roadside/RoadsideLayout.gd")
 const STATE := preload("res://runtime/desert/roadside/RoadsideState.gd")
+const REST := preload("res://runtime/RestUntil.gd")
 const BUILD := preload("res://runtime/desert/roadside/RoadsideBuild.gd")
 const SECRETS := preload("res://runtime/desert/roadside/RoadsideSecrets.gd")
 const EVENTS := preload("res://runtime/desert/roadside/DesertRoadEvents.gd")
@@ -294,22 +295,14 @@ func _start_salt_run() -> bool:
 
 ## Quarto do Motel Oásis: dorme até as 7h, levanta curado e o jogo salva (como o descanso do Horizonte).
 func _rent_room() -> bool:
-	if session.world.gameplay.stars > 0 or not session.save_block_reason().is_empty():
+	if REST.blocked(session):
 		session.show_message("Dona Lurdes: com confusão atrás de você eu não alugo quarto. Resolva isso primeiro.")
 		return true
 	if not session.state.economy.spend(BALANCE.ROADSIDE_MOTEL_ROOM, STATE.next_receipt(session.state.world_state, "motel")):
 		session.show_message("Dinheiro insuficiente para o quarto.")
 		return true
-	var weather = session.weather
-	var hours := fposmod(7.0 / 24.0 - weather.time_of_day, 1.0)
-	session.activities.advance_time(hours * 600.0)
-	if weather.time_of_day + hours >= 1.0: session.state.world_state.moon_day = weather.moon_day() + 1
-	weather.time_of_day = 7.0 / 24.0
-	session.state.world_state.time = weather.time_of_day
-	weather._update()
-	session.world.gameplay.heal(100.0)
+	REST.until(session, 7.0, true)
 	session.show_message("Você dorme no Motel Oásis e acorda às 7h, descansado.")
-	session.save_game()
 	return true
 
 func _light_candle() -> bool:

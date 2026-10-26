@@ -8,6 +8,7 @@ const ADAPTER := preload("res://gameplay/desert_cars/DesertCarAdapter.gd")
 const CARS := preload("res://gameplay/desert_cars/DesertCarCatalog.gd")
 const PANEL := preload("res://gameplay/desert_cars/DesertTuningPanel.gd")
 const DIGO := preload("res://systems/campaign/DigoProgress.gd")
+const REST := preload("res://runtime/RestUntil.gd")
 const RACE_WINS := preload("res://systems/campaign/RaceWins.gd")
 const RESIDENT := preload("res://runtime/desert/DesertCharacter.gd")
 const FRONTIER := preload("res://runtime/desert/DesertFrontierRuntime.gd")
@@ -260,14 +261,8 @@ func perform(action: Dictionary) -> bool:
 			if _at_workshop() and session.world.gameplay.health>0: _workshop())
 		return true
 	if action.target=="rest":
-		if session.world.gameplay.stars>0 or not session.save_block_reason().is_empty(): session.show_message("Encerre a atividade e despiste a polícia antes de descansar."); return false
-		var hours := fposmod(20.0/24.0-session.weather.time_of_day,1.0)
-		session.activities.advance_time(hours*600.0)
-		if session.weather.time_of_day+hours>=1.0: session.state.world_state.moon_day = session.weather.moon_day()+1
-		session.weather.time_of_day = 20.0/24.0
-		session.state.world_state.time = session.weather.time_of_day
-		session.weather._update()
-		session.save_game()
+		if REST.blocked(session): session.show_message("Encerre a atividade e despiste a polícia antes de descansar."); return false
+		REST.until(session,20.0)
 		return true
 	return false
 func _race_completed(result: Dictionary) -> void:

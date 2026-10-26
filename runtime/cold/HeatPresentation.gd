@@ -1,7 +1,7 @@
 extends Node3D
 ## Source braziers, streamed only near the actor. No Light3D or viewport added.
 const SOURCES = preload("res://runtime/cold/OriginalHeatSources.gd")
-const CAMPFIRES := ["logging_camp","summit_camp","smuggler_camp","hermit_camp"]
+const CAMPFIRES := ["logging_camp","summit_camp","smuggler_camp","hermit_camp","mountain_refuge"]
 var visuals: Dictionary = {}
 var provider_ids: Dictionary = {}
 var elapsed := 1.0

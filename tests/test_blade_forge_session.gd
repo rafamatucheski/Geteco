@@ -72,9 +72,12 @@ func run() -> void:
 	world = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival", true)
 	root.add_child(world)
-	for i in 3000:
+	# Espera por tempo, não por quadros: os quadros da cortina de carga são rápidos e 3000 deles
+	# acabavam antes da sessão ficar pronta (26/10).
+	var deadline := Time.get_ticks_msec() + 120000
+	while Time.get_ticks_msec() < deadline:
 		await process_frame
-		if world.session != null and world.session.ready_for_play: break
+		if world.get("session") != null and world.session.ready_for_play: break
 	session = world.session
 	check(session != null and session.ready_for_play, "Main session starts")
 	if failures: await finish(); return

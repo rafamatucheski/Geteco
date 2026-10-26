@@ -13,12 +13,14 @@ const SOURCES := [
 	# Pista da Forja da Serra (V2, 17/10/2026): brasa da fornalha e fogueira do Mestre Aurélio.
 	{"id":"blade_forge","point":Vector2(7100,-982.4),"source":"MountainForge.gd:HEARTH"},
 	{"id":"hermit_camp","point":Vector2(6941.6,-8505.6),"source":"ForgeHermitCabin.gd:FIRE"},
+	# Refúgio da Serra (26/10): fogueira em frente ao abrigo; MountainRefuge.world_point(FIRE) × 16 − OFFSET.
+	{"id":"mountain_refuge","point":Vector2(7901.6,-3030.4),"source":"MountainRefuge.gd:FIRE"},
 ]
 static func to_world(point: Vector2) -> Vector3:
 	point = (point+OFFSET)/16.0
 	return Vector3(point.x,0,point.y)
 static func nearest(point: Vector3) -> Dictionary:
-	# Nine immutable positions: no scene-tree traversal or resources per frame.
+	# Ten immutable positions: no scene-tree traversal or resources per frame.
 	var best := RADIUS*RADIUS
 	var found: Dictionary = {}
 	for source in SOURCES:

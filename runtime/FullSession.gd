@@ -1775,6 +1775,9 @@ func nearest() -> Dictionary:
 	for site in get_tree().get_nodes_in_group("blade_forge_site"):
 		var forge_action: Dictionary = site.nearest_action()
 		if not forge_action.is_empty(): return forge_action
+	for site in get_tree().get_nodes_in_group("mountain_refuge_site"):
+		var refuge_action: Dictionary = site.nearest_action()
+		if not refuge_action.is_empty(): return refuge_action
 	if skate != null:
 		var skate_action: Dictionary = skate.nearest_action()
 		if not skate_action.is_empty(): return skate_action
@@ -1880,6 +1883,7 @@ func interact() -> bool:
 	if action.get("id","") == "building_stairs": return await action.provider.use_stairs()
 	if action.get("id","") == "building_lockpick": return await action.provider.perform(action)
 	if action.get("id","") == "desert_roadside" and is_instance_valid(action.get("provider")): return action.provider.perform(action)
+	if action.get("id","") == "mountain_refuge" and is_instance_valid(action.get("provider")): return action.provider.perform(action)
 	if action.get("id","") == "service_roof_stairs": return await service_roofs.use_stairs()
 	if mining != null and action.get("id","") == "mining": return mining.perform(action)
 	if desert != null and action.get("id","") in ["desert","desert_story","desert_drag"]: return desert.perform(action)
