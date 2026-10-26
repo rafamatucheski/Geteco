@@ -1,0 +1,316 @@
+{
+  "date": "2026-10-26",
+  "period": "revisão geral de 26/10/2026",
+  "scope": "Revisão geral dos 231 cartões contra o código de main em 26/10: 54 atualizados (status, números e texto) e 6 movidos para o backlog de cancelados/removidos, com o motivo. Os demais foram reconfirmados como estão. Revisão por leitura de código e git log, sem jogar.",
+  "cards": [],
+  "updates": {
+    "coastal-lighthouse-validation-20261007": {
+      "status": "partial",
+      "description": "Checks de circulação, profundidade, binóculo (36), panorama e reentrada passaram em 07/10. Desde então o mirante é montado em fatias no carregamento (f8019943, 16/10) e entrou no pré-aquecimento da 3ª rodada (46821db4, 22/10). Na medição de 22/10 a primeira aparição a 190 m ainda gera 7 pipelines 'surface' num quadro de 36 ms; a opção GETECO_LOOKOUT_HIDDEN_FIRST (36→24 ms só com sonda) ficou desligada por piorar máximos a quente (docs/perf-playthrough-20261021.md, item 9).",
+      "next": "Resolver o quadro de ~36 ms da primeira aparição sem piorar máximos; benchmark noturno e com chuva/tempestade no export release."
+    },
+    "inv-005": {
+      "status": "implemented",
+      "description": "Relevo, neve, trilhas, árvores, rochas e fauna (ursos em gameplay/wildlife/MountainBear3D.gd e MountainWildlife.gd) compõem a montanha. O antigo zoológico da serra (Serra Viva, docs/reviews/mountain-zoo-20261003.md) virou a Forja da Serra em 17/10 (0cef08a0, world/mountain_detail/forge/MountainForge.gd). Revisões locais não certificam todo o bioma.",
+      "next": ""
+    },
+    "inv-009": {
+      "status": "partial",
+      "description": "Túnel do canal está em produção: CanalTunnel3D é usado por ProductionWorld, CameraRig, Gameplay, rotas de trânsito e caminho da polícia (PolicePathJob), com recorte de câmera (TunnelCutaway) e testes de túnel, trânsito, combate e perseguição (tests/test_canal_tunnel*.gd, test_tunnel_chase_safety.gd). Elevado e viaduto rodoviários do plano de 27/09 não existem no código; só a ferrovia tem vias elevadas.",
+      "next": "Decidir se elevado/viaduto rodoviário ainda serão feitos; se não, encerrar o plano."
+    },
+    "inv-010": {
+      "status": "implemented",
+      "description": "Editor de mundo virou o addon addons/geteco_world_editor: edita os três mapas em 2D e 3D, com prévia ao vivo e LOD, peças automáticas, mobiliário em lote, lugares da sessão e 'Jogar aqui' (4cf017b2, 10/10; 7a9686af e 8ca02540, 13/10). Em 21/10 ganhou terreno, snapshots estáticos e índice de unidades (7accbd23). world/editing/WorldEditRuntime.gd segue como lado do jogo.",
+      "next": ""
+    },
+    "inv-026": {
+      "status": "implemented",
+      "description": "Casa do líder Cobra com edifício e entrada próprios (CobraLeaderHouse.gd, CobraLeaderEntrance.gd), integrada ao bairro Cobra e ao teste tests/test_cobra_leader_walkup.gd. As mudanças locais citadas antes foram commitadas em 9deba30e (08/10); último ajuste em 5868eacf (21/10).",
+      "next": ""
+    },
+    "inv-035": {
+      "status": "implemented",
+      "description": "assets/fleet/catalog.json mantém 49 entradas base (civis, esportivos, vans, picapes, táxi, ônibus, ambulância, bombeiro, guincho, caminhões, limpa-neve, empilhadeira). Desde 21/10 há três civis novos fora desse catálogo (Besouro 1300, Maré microvan, Toco minitruck em runtime/NewCivilianFleet.gd, 22b180ed) e carrocerias redesenhadas em assets/fleet/redesigned via runtime/RedesignedFleet.gd (ajuste refeito em 19de67cc, 24/10).",
+      "next": ""
+    },
+    "inv-047": {
+      "status": "implemented",
+      "description": "Pinturas, duas cores, acabamento e desempenho têm dados próprios (VehiclePerformance.gd). Desde 21/10 a oficina do Digo oferece tuning com kits de carroceria, rodas e teto solar, com leituras de malha via MeshArrayCache (8d472430; testes do aro corrigidos em fa090217). Detalhes de pesados não comprovam desgaste/carga.",
+      "next": ""
+    },
+    "inv-050": {
+      "status": "partial",
+      "description": "Dois biarticulados, filas, embarque/desembarque, 18 identidades, capacidade 36 por ônibus e horário 05h–02h (docs/biarticulated-transit.md). Desde 16/10 os ônibus são montados sob a cortina, um por quadro (12a83278), e as estações de tubo e a rodoviária montam sob a cortina e são guardadas ao se afastar (f07ba554).",
+      "next": "Comparativo isolado de desempenho da linha no export release."
+    },
+    "inv-052": {
+      "status": "partial",
+      "description": "Dois carros-fortes, dois veículos de escolta, tripulação finita, carga/descarga e horários (gameplay/armored/ArmoredTransport.gd). Desde 18/10 cada carro paga R$ 20 mil (até R$ 40 mil por comboio), pela tabela data/catalogs/EconomyBalance.gd (76453082); salvar fica bloqueado com saque pendente. Vidros atingidos por tiro corrigidos em cdf3e3ab (22/10).",
+      "next": "Chuva, streaming e desempenho comparativo ainda pendentes."
+    },
+    "inv-056": {
+      "status": "implemented",
+      "description": "Rig, superfície, acabamento e apresentação da escopeta serrada foram commitados em 9deba30e (08/10), com tests/test_sawed_off_presentation.gd. A pose das armas foi revista em 19/10 (924d8898, 95feaaf4: guarda no soco, taco, RPG, soqueira correndo, coronha da M4A1) e o vidro/áudio das armas corrigido em 51e465f1 (26/10).",
+      "next": ""
+    },
+    "inv-057": {
+      "status": "implemented",
+      "description": "Polícia, despacho, agentes, variantes terrestres e resposta por nível (docs/police-response.md, gameplay/police_response, gameplay/dispatch). De 21 a 26/10: perseguição de carro estilo GTA com rádio da central em voz (b91644a5), policiais descem do carro e investigação de 1 min (34cc42ff), colete, painel de vida e despacho da van tática (7b89a582), abordagem corrigida (51e465f1) e cargas do rádio liberadas (d6debe3e).",
+      "next": "Cobrir prisão, morte, transições e recuperação; rádio ainda sem os grupos de voz que faltam."
+    },
+    "inv-065": {
+      "status": "partial",
+      "description": "Mapa M redesenhado em 19/10 (baa7e900, HUD moderno e relevo das regiões) e ajustado até 26/10 (51e465f1). Atlas reúne Harbor, serra e deserto com símbolos (inclui Forja), filtros e zoom. Destino fica em meta do mundo (map_waypoint): dura na sessão, não é salvo e não há rota GPS.",
+      "next": "Medir o mapa M no export release com a bancada; decidir se o destino deve ser salvo."
+    },
+    "inv-066": {
+      "status": "partial",
+      "description": "Preparação e controles móveis documentados até a versão 0.3.3 (5e7d0360, docs/android-033-validation.md, APK debug ARM64). Desde 12/10 o jogo mudou muito (Forward+ no PC em d8969407, fachadas BC7, dublagem) sem nova rodada Android documentada.",
+      "next": "Nova rodada no aparelho com a build atual; não equivale a publicação final."
+    },
+    "inv-067": {
+      "status": "partial",
+      "description": "O export release do EXE Windows .NET virou rotina: Jogar.cmd abre o jogo pelo export (b68ce51d) e toda medição usa o export (tools/perf_cross_bench.sh). EXPORT_READINESS.md registra em 19/10 que o bug dos WAVs e o versionamento do preset estão superados (e5b977fa). Falta pacote de distribuição final verificado em máquina limpa.",
+      "next": "Montar e testar o pacote de distribuição (EXE+PCK) numa máquina sem o projeto."
+    },
+    "inv-068": {
+      "status": "cancelled",
+      "cancel_reason": "Pausa medida em 05/10 fora do export release, regime que o HOW-TO-DEVELOP agora invalida; os picos grandes em aberto são acompanhados no release (quadro-09s-primeira-sessao-20261026, docs/perf-playthrough-20261021.md).",
+      "cancelled_on": "26/10/2026",
+      "next": ""
+    },
+    "inv-090": {
+      "status": "cancelled",
+      "cancel_reason": "O zoológico Serra Viva foi removido em 17/10 (0cef08a0): a clareira virou a Forja da Serra (gameplay/forge/BladeForge.gd); saves antigos descartam o ingresso.",
+      "cancelled_on": "26/10/2026",
+      "next": ""
+    },
+    "inv-091": {
+      "status": "cancelled",
+      "cancel_reason": "O zoológico não existe mais (0cef08a0, substituído pela Forja da Serra); o custo e os avisos medidos deixaram de se aplicar.",
+      "cancelled_on": "26/10/2026",
+      "next": ""
+    },
+    "inv-092": {
+      "status": "issue",
+      "description": "Os números de 06/10 (ponte p95 6,6 ms, picos na rodovia) foram medidos antes do export release e do layout compacto (8beab762) e não valem mais. No export release, a 2ª rodada (166ded1d) levou o máximo do deserto no estresse de 178 para 49 ms com p50 ~6,8 ms, mas ainda há quadros > 33 ms (início com até ~170 ms, oficina do Digo 147 ms, etapa 15 da superfície 54 ms) em docs/perf-playthrough-20261021.md.",
+      "next": "Fatiar o restante da oficina do Digo e a etapa 15 do streaming do deserto; refazer a rota do deserto na bancada."
+    },
+    "inv-093": {
+      "status": "implemented",
+      "description": "DesertTuning.gd tem hoje 60 opções em 18 slots: mecânicas (ECU, motor, turbo, nitro, câmbio, suspensão, pneus, peso, escape), visuais (10 pinturas, acabamento, cor e modelo e tamanho de aro, aerofólio, teto solar, lanternas) e 5 neons. Ampliado em 19/10 (7e337eb9) e 21/10 (8d472430).",
+      "next": ""
+    },
+    "primeiro_giro": {
+      "status": "implemented",
+      "description": "Helena no North Pier → comprovante → peça no porto → Maciota; Monaliza apresentada no fim (88ede823). Paga R$ 1.000: R$ 150 de recompensa base e R$ 850 de bônus de conclusão (EconomyBalance.STORY_BONUS, 76453082). Libera a 2ª faixa do guincho.",
+      "next": ""
+    },
+    "cobra_contact": {
+      "status": "implemented",
+      "description": "Ferrugem → guincho real/carregar cliente → baia de Neco → ordem de serviço. Paga R$ 1.500: R$ 120 base + R$ 1.380 de bônus (EconomyBalance.STORY_BONUS, 76453082).",
+      "next": ""
+    },
+    "cobra_race": {
+      "status": "implemented",
+      "description": "Corrida até as docas, quatro checkpoints, largada às 21h. Paga R$ 2.000: R$ 200 base + R$ 1.800 de bônus (EconomyBalance.STORY_BONUS, 76453082).",
+      "next": ""
+    },
+    "cobra_collection": {
+      "status": "implemented",
+      "description": "Conversa e proteção da moradora contra cobradores dos Cobras (dublada em aa064bdc). Paga R$ 2.500: R$ 250 base + R$ 2.250 de bônus (76453082). Libera a 3ª faixa do guincho.",
+      "next": ""
+    },
+    "jessica_bank": {
+      "status": "implemented",
+      "description": "Saque bancário real separado da recompensa, passageiro no Jetta branco, fuga física, desembarque e conversa. Fluxo Main documentado 65/65. Paga R$ 3.000 (R$ 500 base + R$ 2.500 de bônus, 76453082) além do cofre. Libera a 4ª faixa do guincho.",
+      "next": "Medir a fuga no export release."
+    },
+    "cobra_supply": {
+      "status": "implemented",
+      "description": "Encontro de combate e recuperação dos registros de carga dos Cobras. Paga R$ 3.500: R$ 350 base + R$ 3.150 de bônus (EconomyBalance.STORY_BONUS, 76453082).",
+      "next": ""
+    },
+    "cobra_finale": {
+      "status": "implemented",
+      "description": "Vitória contra Takeshi, entrada na casa e lista que aponta Vicente; Ironback. A conclusão autoriza abrir a ponte norte e a última faixa do guincho. Paga R$ 8.000: R$ 600 base + R$ 7.400 de bônus (76453082).",
+      "next": ""
+    },
+    "historia-jessica-canon": {
+      "status": "cancelled",
+      "cancel_reason": "Registro de uma correção só de texto feita em 07/10; o fato vigente (disputa com resultado físico) já está no cartão historia-deserto.",
+      "cancelled_on": "26/10/2026",
+      "next": ""
+    },
+    "historia-continuacao": {
+      "status": "planned",
+      "description": "Main não tem campanha das cidades posteriores nem desfecho de Dante/Vicente. A campanha nova do roteiro de diretor (prólogo, ato 1 Helena/Neco, ato 2 Vicente, M06-C) está só nos ramos claude/prologo-blitz-b2bf6f, claude/ato1-helena-7bd234, claude/ato2-vicente-4eb8d9 e claude/vertice-noite-f29e22 (21/10). Cidade 4 tem só a direção visual em AGENTS.md.",
+      "next": "Revisar e integrar os ramos da campanha nova em main; depois definir continuidade e fechamento após o deserto."
+    },
+    "mountain-jeep": {
+      "status": "partial",
+      "description": "Trilha própria de ~300 m com portões, desert_jeep_4x4 persistente, limite de 110 s e R$ 700 únicos (MountainJeepProgress.PRIZE). Em 21/10 (72f06b23) as duas cristas elevadas saíram: a volta usa o chão reservado do terreno e os portões ficam apoiados nele (test_mountain_jeep_course atualizado). Volta física inteira, solo visual/colisão no jogo e desempenho ainda não confirmados.",
+      "next": "Dar uma volta completa no jogo depois da troca das cristas pelo chão e medir no export release."
+    },
+    "desert-drag": {
+      "status": "implemented",
+      "description": "Campeonato com Digo, Lívia, Raul, Jessica, Nadir e final contra Rauhz (Focus MK1, R$ 9.000), 800 m, troca de marcha, nitro, queimada, revanche e recordes; a oficina do Digo é liberada. Em 19/10 (7e337eb9) entraram a Noite de Acerto (201/402/800 m), os desafios técnicos dos seis rivais com peças exclusivas, os carros emprestados e o perfil RACHAS. Em 21/10 (8d472430) vieram o preparo e a volta da arrancada, a oficina do Digo renovada e kits de carroceria, rodas e teto solar.",
+      "next": "FPS da final e da Noite de Acerto no export release e escuta da mixagem ainda pendentes. Takeshi continua sendo desafio separado."
+    },
+    "voice-english": {
+      "status": "implemented",
+      "description": "en/catalog.json e en/production.json têm 345 falas geradas (75 perfis, complete=true); en/recordings.json tem 718 vínculos/aliases apontando para 345 arquivos, todos presentes. Em 21/10 (acbd9459) entraram as primeiras falas em inglês da ElevenLabs. Idioma de voz independente das legendas. Sem revisão auditiva.",
+      "next": "Concluir as falas EN que faltam na ElevenLabs (cerca de 565, segundo docs/elevenlabs-falas-restantes.md)."
+    },
+    "voice-portuguese": {
+      "status": "partial",
+      "description": "Banco geral (recordings.json): 352 vínculos; banco do Maciota barítono: 48 vínculos; todos os arquivos existem. Dublagem ElevenLabs em PT: Dante e Maciota nas primeiras missões (70ba02f4), lote A/B (acbd9459), Ferrugem, Neco e Jessica (239353f7), moradora e cena da Monaliza (aa064bdc). Histórico Harbor PT (Qwen): 70 tomadas, 68 utilizáveis, 19 ausentes. Os bancos se sobrepõem, então os números não somam.",
+      "next": "Regerar em conta paga o lote de 22/10 feito na conta Free e concluir as falas PT que faltam (docs/elevenlabs-falas-restantes.md)."
+    },
+    "voice-coverage": {
+      "status": "partial",
+      "description": "A cobertura cresceu com os lotes ElevenLabs de 20 a 22/10 (Dante, Maciota, Ferrugem, Neco, Jessica, moradora, Monaliza) e o banco EN chegou a 345 falas. Falas de Bia/Raul, Joana e das atividades do deserto ainda precisam ser conferidas contra os manifestos. As quatro fitas de Vicente seguem sem gravação (SecretFileRuntime). Ter WAV ou passar no ASR não aprova interpretação.",
+      "next": "Cruzar os diálogos autorados com os manifestos e gravar as fitas de Vicente."
+    },
+    "parque-lume-20261008": {
+      "status": "partial",
+      "description": "Montanha-russa com embarque, câmera e recuperação; Umbra em primeira pessoa; seis segredos persistentes e cabine de roupas; exterior com mobiliário, palhaços e máquinas. Em 21/10 a casa da Umbra ganhou monstros Meshy e texturas de 1024 px (0d27a4cf; a aranha saiu, ficaram quatro estações) e sons próprios com ambiente sombrio da ElevenLabs (924ff5b7). A música do parque vem do Gemini/Lyria (a9ddf32f), e b8aeffda corrigiu a fundação do parque.",
+      "next": "Medir em release com e sem GETECO_UMBRA_CLASSIC. test_umbra_expansion_session falha em 'walk to exit' (falha anterior aos monstros, não investigada)."
+    },
+    "moradores-social-20261008": {
+      "status": "partial",
+      "description": "Conversar, brincar, acalmar e intimidar; personalidades, reação à mira, denúncia e cancelamento em perigo. Em 15/10 (f2539fd9) os moradores dos prédios ganharam atividades variadas por visita e reações sorteadas a ameaças. Maciota e o mecânico ficam fora da inscrição social.",
+      "next": "Comparação de frame time em release e cobertura além do Customs ainda pendentes."
+    },
+    "katana-20261008": {
+      "status": "partial",
+      "description": "Katana com 45 de dano e intervalo de 0,78 s (WeaponCatalog), RAGE e câmera lenta pelo V/R3, sabre a R$ 150.000 (TakeshiHonor). Em 17/10 a Forja da Serra (0cef08a0) acrescentou afiação, têmpera e lâmina lendária; em 19/10 (7bb1a365, af21af4c) a katana ganhou carregamento para cima e andar/correr/guarda da greatsword do Mixamo.",
+      "next": "O desempenho medido em 08/10 (p95 29 ms com aço, 32 ms com sabre/RAGE) nunca foi refeito no export release; medir com a versão atual."
+    },
+    "ual-mixamo-20261008": {
+      "status": "cancelled",
+      "cancel_reason": "Duplicado de katana-mixamo-20261017, que já cobre mortes Mixamo, socos, soqueira e tiro/recarga da pistola pela UAL, na versão mais nova (924d8898, 95feaaf4).",
+      "cancelled_on": "26/10/2026",
+      "next": ""
+    },
+    "esgoto-editor-20261008": {
+      "status": "partial",
+      "description": "Rede de bueiros com salas, moradores e segredos, tampa e escada, Cano Entupido, Cisterna Velha e entradas subterrâneas do deserto (SewerNetwork.gd, WorldManholes.gd). A edição de bueiros e o mapa 2D agora fazem parte do editor de mundo (809d00b8 de 10/10 e a reforma de 21/10, ver cartão world-editor-20261017).",
+      "next": "Validar a circulação na rede no jogo e medir em release."
+    },
+    "audio-acabamento-20261008": {
+      "status": "cancelled",
+      "cancel_reason": "Era um registro de alterações locais de 08/10, já commitadas (9deba30e, 5e7d0360); o áudio de armas, veículos e clima foi refeito depois (sounds-20261017: Firefly e ElevenLabs; 51e465f1).",
+      "cancelled_on": "26/10/2026",
+      "next": ""
+    },
+    "bug-colisores-invisiveis-deserto-20261012": {
+      "status": "issue",
+      "description": "Relato: em pontos do chão do deserto o jogador ou o carro bate numa parede invisível. Desde então o deserto foi compactado (8beab762, 21/10), houve ajustes no apoio físico do piso (2d2eb692) e a vegetação e as pedras passaram a reagir ao carro (2f27129e). Nenhum commit trata o problema, e o local exato não foi achado.",
+      "next": "Rodar tests/probe_invisible_walls.gd no layout compacto atual. Suspeitos: casca de colisão das casas pintadas e degraus de poucos mm (DesertDigoYardDetails, DesertTollPlaza, DesertTownDetails)."
+    },
+    "bug-pedreira-mineradora-nao-entra-20261012": {
+      "status": "unverified",
+      "description": "Relato: a pedreira mineradora não entrava. Em 21/10 (72f06b23) a mina foi movida com o deserto compacto (CENTER de z -1760 para -1080), o acesso foi refeito alinhado ao portão para o caminhão de 8 m e test_mining_access passou a conferir o caminho autorado e a entrada. A causa original nunca foi confirmada.",
+      "next": "Entrar no jogo pelo portão da estrada, pela galeria SECRET_ENTRY e pelo pátio do trabalho para confirmar se o relato ainda acontece."
+    },
+    "meshy-npcs-20261017": {
+      "status": "partial",
+      "description": "Mecânico, Neco, Nelson, Maciota, Luísa, palhaços, serviços, moradores e 7 corpos policiais usam corpos do Meshy. Depois disso: moradores de interiores, visitantes do porto e funcionários da Vértice (5169cfd8), sete corpos novos de pedestres (a7bac7ea), Vicente (7b375bd9), esquiadores com quatro trajes (1a380c3d), moradores da serra na rotina V2 (b20a5f8f) e monstros da Umbra. MeshyBodyPrewarm carrega sob a cortina. O carro do Meshy continua desligado.",
+      "next": "Medir no export release o custo das famílias inteiras de corpos."
+    },
+    "world-editor-20261017": {
+      "status": "implemented",
+      "description": "Peças automáticas, cópias, mobiliário em lote, lugares da sessão, deserto e todos os mapas, prévia 3D sem reconstruir, vias editáveis e Jogar aqui. Em 21/10 (7accbd23, 6b14f3c9, f27aab23) entraram ferramenta de terreno, snapshots estáticos, índice de unidades, prévia com LOD, interiores editáveis por andar e posse do chão do deserto (docs/world-editor.md).",
+      "next": ""
+    },
+    "painted-facades-20261017": {
+      "status": "partial",
+      "description": "Os prédios pintados (PaintedFacadeKit) cobrem porto, delegacia, bombeiros, banco, Piston & Co, Vértice, Bay Medical, torre cívica, Patrol Court (3003e324), escritórios A/B/C e prédios altos (e78c64e0, 2ed282a7), pacotes baixos do porto (acfad2c5), deserto e cidade antiga do deserto (a8dd5b45), serra e oeste. Texturas BC7 com mipmaps e PaintedFacadePrewarm. As portas pintadas foram corrigidas em 19/10 (d016c4f2, cc38516f, 44049834). A/B no release: à noite p50 de 5,6 a 5,8 ms com pintura contra 8,27 ms sem.",
+      "next": "Riscos ainda não reconferidos de 16/10: casa 3 esbranquiçada, telhado da clínica 0,35 m acima e nome da torre cívica."
+    },
+    "intro-v2-20261017": {
+      "status": "partial",
+      "description": "A abertura de barco foi refeita no porto atual (e486538f, 5a3a2ccf): planos novos, vozes do elenco sem trilha sintética, Vicente com o celular e saída para o terminal. FerryFilm e FerryVoiceTrack foram ajustados em 22/10 (78d8d9fe).",
+      "next": "Defeito conhecido registrado. Atenção: cutscenes/opening/ferry/arrival.ogv tem 99,7 MB no Git, quase no limite de 100 MB do GitHub — reduzir ou tirar do Git antes do próximo push."
+    },
+    "issue-serra-physics-20261017": {
+      "status": "partial",
+      "description": "Na 3ª volta da serra, 1 passo de física de 40-50 ms em 3 de 5 rodadas (17/10). Ursos descartados (1ba3e377). O motor é GodotPhysics3D (project.godot), não Jolt. Em 22/10 entraram spans permanentes sys.<sistema>.physics em 20 sistemas (inclui fauna, grama e beira da serra); nas rodadas de estresse de 22–25/10 a serra ficou com 0–5 quadros > 33 ms (máx 31–51 ms) e o passo de 40-50 ms não foi mais atribuído.",
+      "next": "Se reaparecer, cruzar o quadro com os spans sys.*.physics (tools/perf_spikes.py); se nenhum span explicar, é o passo nativo do GodotPhysics3D."
+    },
+    "issue-serra-lumber-20261017": {
+      "status": "unverified",
+      "description": "Em 17/10, a cada volta, pico de 64-75 ms ao entrar no trecho da madeireira (cabana do lenhador montada caixa a caixa). Não há commit que fatie a cabana, mas desde 18/10 a serra não repete o pico por volta: 1 quadro de 57 ms em 18/10 (docs/perf-exe-20261018.md) e máx 31–51 ms nas rodadas de estresse de 22–25/10.",
+      "next": "Confirmar no log de sessão de uma volta da serra se a montagem da cabana ainda aparece como span lento; se não, encerrar."
+    },
+    "issue-travessia-noite-20261017": {
+      "status": "partial",
+      "description": "Travessia: os 4-7 quadros > 33 ms (até 166 ms) de 17/10 sumiram em 18/10 (0 > 33 ms, docs/perf-exe-20261018.md). Noite: 811c7647 mediu que empata com o dia; no estresse noturno do porto (22/10) sem pico novo. Sobram na travessia, sob estresse, 2–3 intervalos de desenho de ~45 ms por rodada sem atribuição (docs/perf-playthrough-20261021.md §7).",
+      "next": "Rodada da travessia com logs para atribuir os desenhos de ~45 ms."
+    },
+    "issue-benchmark-drive-20261017": {
+      "status": "partial",
+      "description": "A rota dirigindo ainda registrava 27 quedas sob a passarela e em z~60 (17/10), sem nova medição. O caos agora existe na bancada de estresse (--benchmark-stress, 25bbd0a0): 3 estrelas com polícia atirando, tiro do jogador e um carro do trânsito explodido a cada 8 s com fogo e carcaça; ainda não mata pedestres, então o sumiço de corpos não é exercitado.",
+      "next": "Remedir as quedas da rota dirigindo; incluir morte de pedestre/policial no estresse se o sumiço de corpos voltar a ser suspeito."
+    },
+    "pending-git-20261017": {
+      "status": "issue",
+      "description": "origin/main parou em 17/10 (commit do board). main está 171 commits à frente sem push (26/10). Push só quando o usuário pedir. Continuam fora do Git de propósito: artifacts/, mídia de evidence/ e temporários. Risco: cutscenes/opening/ferry/arrival.ogv tem 99,7 MB no Git, no limite de 100 MB por arquivo do GitHub.",
+      "next": "Antes do push, reduzir o arrival.ogv ou movê-lo para Git LFS; depois enviar quando o usuário pedir.",
+      "title": "GitHub atrasado: 171 commits sem push desde 17/10"
+    },
+    "deserto-achados-encontros-20261018": {
+      "status": "implemented",
+      "description": "Cavernas do DesertWilds pagam pelo contrato de recompensa (a lata de R$ 420 passava do teto de dinheiro solto; o já pegou se perdia ao reabrir). Foras-da-lei, bandidos, moradores, o caminhão do assalto e, desde 5ba989d9, o Takeshi e o Supra da arrancada esperam só o chão (surfaces_idle), não o enfeite do deserto.",
+      "next": ""
+    },
+    "renderizador-forward-plus-20261019": {
+      "status": "implemented",
+      "description": "Forward+ no PC (d8969407; project.godot sem rendering_method, Forward Plus por padrão). Na mesma build, o Forward+ iguala ou supera o Mobile (oeste 5,14 contra 5,47 ms; serra 3,04 contra 3,42). Driver no Windows: Vulkan (fa0ee469), porque o D3D12 do 4.7.2 não guarda cache de pipeline. Noite empata com o dia e a chuva forte custa +28% (811c7647).",
+      "next": "Revalidar sync_pipeline_msaa (runtime/Settings.gd) no Forward+; foi escrito para o Mobile."
+    },
+    "bancada-fixa-20261019": {
+      "status": "implemented",
+      "description": "perf_cross_bench/phase2 usam --isolated-save-root com tools/bench/settings.cfg; ENGINE_EXTRA para argumentos do motor; o JSON grava renderizador, driver e opções aplicadas. A sonda de picos monta o JSON fatiado nos quadros seguintes. StallLog não libera o próprio autoload. A fila de Godot confere o pid do Windows. Usada nas 8 rodadas de A/B de 21–25/10 (2 rodadas por rota, mesmo export).",
+      "next": ""
+    },
+    "luz-sombra-chao-20261019": {
+      "status": "implemented",
+      "description": "Túnel da ponte, faróis, cascatas do sol, chão opaco e MSAA dos SubViewports atrás de interruptores GETECO_* (ligados). Desligados um por vez no oeste e no porto, nenhum muda a média além de ±3%. Sem o pré-aquecimento de luz com sombra o porto teve 2 quadros de 48 ms. Noite medida em 811c7647 (empata com o dia) e no estresse noturno do porto de 22/10 (sem pico novo).",
+      "next": "Conferir em captura as cascatas novas do sol."
+    },
+    "estrada-do-sal-20261020": {
+      "status": "implemented",
+      "description": "Três lugares de beira de estrada no padrão do RoadsideBuild: Salinas Estrada do Sal, Balança rodoviária e Motel Oásis, com cômodos que entram a pé, placas no atlas pintado e acabamento (texturas com normais, molduras, carros da frota). No deserto compacto (8beab762, 21/10) ficam em (240, -960), (-610, -872) e (-960, -927), afastados de postes e casas (36bcfea1). Interações (frete, quarto, balança) e medição em release em 23f7df09.",
+      "next": "Cofre da salina; jogar com controle."
+    },
+    "capela-arquibancada-20261020": {
+      "status": "implemented",
+      "description": "Capela de Nossa Senhora da Estrada (entra a pé: bancos, altar, ex-votos) e Arquibancada da reta com torre de cronometragem, no padrão da Estrada do Sal. No deserto compacto (8beab762) ficam em (-210, -876) e (-134, -762). Vela com a Dona Fátima e os tempos com o Seu Zé do Cronômetro entraram em 23f7df09, com medição em release da Estrada do Sal.",
+      "next": "Jogar com controle."
+    },
+    "cidade-vila-oficina-acabamento-20261020": {
+      "status": "implemented",
+      "description": "Acabamento da cidade do deserto, das 10 casas, da praça da vila Santa Lua e do pátio da oficina do Digo (RoadsideTown, montado pelo coordenador da beira de estrada): calçadas com meio-fio, pátios com vagas, mobiliário, quintais e adereços; o enfeite do deserto não nasce mais sobre esses pisos. Fachadas e telhados dos prédios antigos vieram em a8dd5b45; medição em release na rota cidade_deserto em 23f7df09 (~0,2 ms de p50).",
+      "next": "Jogar com controle."
+    },
+    "fachadas-cidade-deserto-20261020": {
+      "status": "implemented",
+      "description": "Os cinco prédios antigos da cidade do deserto (banco, Solana, Alvorada, Motel Horizonte, Digo) ganharam cornija, escorridos, calhas, letreiros, toldos e equipamentos de telhado (RoadsideFacades), com sete painéis novos no atlas da beira de estrada. Medição em release da beira de estrada ligada na cidade (23f7df09): ~0,2 ms de p50, máximos iguais desligada.",
+      "next": "Jogar com controle; toldos da lanchonete e do mercado ficam na frente para a rua, que a câmera fixa não mostra."
+    },
+    "cavernas-cartas-vicente-20261020": {
+      "status": "implemented",
+      "description": "As cavernas do deserto viraram morros de arenito (CaveBuild) com túnel, salão e achado; o morro some com o jogador dentro. Cada caverna tem caixa de munição uma vez por dia de jogo. 10 cartas de Vicente (VicenteLetters) em Harbor, ponte, serra e deserto liberam a mala do Maciota e revelam a quinta caverna (cave_brother), que no deserto compacto (8beab762) fica em (-1030, -1050): sem as cartas só a lona com cadeado; com elas, o Coyote 440 do Vicente vira carro do jogador.",
+      "next": "Jogar com controle; medir em release a montagem das cavernas; dublagem das cartas se o elenco de voz for usado."
+    },
+    "campanha-ramos-20261021": {
+      "status": "partial",
+      "description": "Roteiro de diretor (prólogo, três atos, romance com Helena e três finais) e quatro ramos de 21/10 que NÃO estão em main: claude/prologo-blitz (14 commits), claude/ato1-helena (9), claude/vertice-noite (9, M06-C) e claude/ato2-vicente (25, junta o prólogo). Cada ramo está 74 commits atrás de main.",
+      "next": "Decidir a ordem de junção em main e jogar o prólogo."
+    }
+  },
+  "remove": []
+}

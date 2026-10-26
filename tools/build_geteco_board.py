@@ -86,8 +86,8 @@ TEMPLATE='''<!doctype html>
 </main><script id="board-data" type="application/json">__DATA__</script><script>
 'use strict';
 const data=JSON.parse(document.getElementById('board-data').textContent);
-const states={implemented:'Implementado',partial:'Parcial / validação pendente',issue:'Problema documentado',planned:'Planejado / não implementado',unverified:'A reconfirmar'};
-const colors={implemented:'#65d795',partial:'#e8bc62',issue:'#ed8080',planned:'#92b9fc',unverified:'#b7a1d6'};
+const states={implemented:'Implementado',partial:'Parcial / validação pendente',issue:'Problema documentado',planned:'Planejado / não implementado',unverified:'A reconfirmar',cancelled:'Backlog: cancelado / removido'};
+const colors={implemented:'#65d795',partial:'#e8bc62',issue:'#ed8080',planned:'#92b9fc',unverified:'#b7a1d6',cancelled:'#8b949e'};
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const norm=s=>String(s).normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase();
 const link=p=>'<a href="../'+esc(p)+'">'+esc(p)+'</a>';
@@ -101,7 +101,7 @@ function render(){
  const q=norm(search.value);const matches=x=>!q||norm(JSON.stringify(x)).includes(q);
  const cards=data.cards.filter(c=>(area.value==='all'||c.area===area.value)&&(status.value==='all'||c.status===status.value)&&matches(c));
  document.getElementById('result').textContent=cards.length+' de '+data.cards.length+' cards exibidos';
- document.getElementById('board').innerHTML=Object.entries(states).filter(([k])=>status.value==='all'||status.value===k).map(([k,v])=>{const rows=cards.filter(c=>c.status===k);return '<div class="column" style="--stripe:'+colors[k]+'"><h2>'+v+' · '+rows.length+'</h2>'+rows.map(c=>'<article class="card" id="'+esc(c.id)+'"><div class="tag">'+esc(c.area)+'</div><h3>'+esc(c.title)+'</h3><p>'+esc(c.description)+'</p>'+(c.next?'<div class="next">Próximo passo: '+esc(c.next)+'</div>':'')+'<div class="sources">'+c.sources.map(link).join('')+'</div></article>').join('')+(rows.length?'':'<p class="empty">Nenhum card neste filtro.</p>')+'</div>'}).join('');
+ document.getElementById('board').innerHTML=Object.entries(states).filter(([k])=>status.value==='all'||status.value===k).map(([k,v])=>{const rows=cards.filter(c=>c.status===k);return '<div class="column" style="--stripe:'+colors[k]+'"><h2>'+v+' · '+rows.length+'</h2>'+rows.map(c=>'<article class="card" id="'+esc(c.id)+'"><div class="tag">'+esc(c.area)+'</div><h3>'+esc(c.title)+'</h3><p>'+esc(c.description)+'</p>'+(c.cancel_reason?'<div class="next">Por que saiu: '+esc(c.cancel_reason)+(c.cancelled_on?' ('+esc(c.cancelled_on)+')':'')+'</div>':'')+(c.next?'<div class="next">Próximo passo: '+esc(c.next)+'</div>':'')+'<div class="sources">'+c.sources.map(link).join('')+'</div></article>').join('')+(rows.length?'':'<p class="empty">Nenhum card neste filtro.</p>')+'</div>'}).join('');
  document.getElementById('catalog-content').innerHTML=data.source_catalogs.map(c=>{const rows=c.rows.filter(matches);if(!rows.length)return '';return '<details'+(q?' open':'')+'><summary>'+esc(c.title)+' · '+rows.length+'</summary><p class="muted">'+esc(c.note)+'</p><div class="tablewrap"><table><thead><tr><th>ID</th><th>Nome / tipo</th><th>Fonte</th></tr></thead><tbody>'+rows.map(r=>'<tr><td>'+esc(r.id)+'</td><td>'+esc(r.name)+'</td><td>'+link(r.source)+'</td></tr>').join('')+'</tbody></table></div></details>'}).join('');
  document.getElementById('story-catalogs').innerHTML=Object.entries(data.catalogs).filter(([k,v])=>matches([k,v])).map(([k,v])=>'<details'+(q?' open':'')+'><summary>'+esc(k)+'</summary><pre>'+esc(typeof v==='string'?v:JSON.stringify(v,null,2))+'</pre></details>').join('');
  const files=data.file_index.filter(f=>(group.value==='all'||group.value===f.group)&&matches(f));
