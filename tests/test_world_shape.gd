@@ -90,7 +90,9 @@ func run() -> void:
 	for row in harbor.source_data.harbor_land:
 		var rect := Rect2(row[0] / 16.0, row[1] / 16.0, row[2] / 16.0, row[3] / 16.0)
 		for corner in [rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]:
-			if not _clear(corner, HARBOR_LAND_MARGIN): lost += 1; violate(corner, "terra de Harbor")
+			# Desde a etapa 3 a terra de Harbor encosta na costa no cais, na bacia e na enseada dos barcos (a
+			# beira da mata é a margem oeste dela): basta o canto estar em terra, com a tolerância do contorno.
+			if SHAPE.signed_distance(corner) <= -QUAY_TOLERANCE: lost += 1; violate(corner, "terra de Harbor")
 	for polygon in harbor.extra_land:
 		# O chão natural da costa curva (etapa 3) é a própria costa: os vértices dele ficam nela.
 		if preload("res://world/shape/HarborCoast.gd").is_natural(polygon): continue
@@ -150,6 +152,12 @@ func run() -> void:
 	check(gate_wet, "ponte norte cruza o canal")
 	var east := Vector2((CONNECTION.HARBOR_CONNECTOR_X + CONNECTION.SEAM.x) * .5, CONNECTION.CENTER_Z)
 	check(not SHAPE.is_land(east), "ponte leste cruza o canal em %s" % east)
+	# As pontes ligam as ilhas: começam numa, passam pela água e chegam na outra.
+	var gate := PackedVector2Array()
+	for p in GATE.centerline(): gate.append(Vector2(p.x, p.z))
+	check(_links(gate, "harbor", "desert"), "ponte norte liga Harbor ao deserto (%s → %s)" % [SHAPE.island_at(gate[0]), SHAPE.island_at(gate[gate.size() - 1])])
+	var east_line := PackedVector2Array([Vector2(370, CONNECTION.CENTER_Z), Vector2(640, CONNECTION.CENTER_Z)])
+	check(_links(east_line, "harbor", "mountain"), "ponte leste liga Harbor à serra (%s → %s)" % [SHAPE.island_at(east_line[0]), SHAPE.island_at(east_line[1])])
 
 	# Serra (etapa 4): o muro de pedra acompanha a costa 5 m para dentro, com 10 m de largura; trilhas,
 	# estradas e lugares da serra (fora a ponte) ficam a MOUNTAIN_CLEAR m da costa para ele caber.
@@ -178,6 +186,15 @@ func run() -> void:
 			if not _clear(corner, BUILDING_MARGIN): bad_buildings += 1; violate(corner, "prédio")
 	check(bad_buildings == 0, "%d prédios em terra (%d cantos fora)" % [atlas.buildings.size(), bad_buildings])
 	finish()
+
+## Linha que sai da ilha `from`, passa por água e chega na ilha `to` (as pontas em qualquer ordem).
+func _links(line: PackedVector2Array, from: String, to: String) -> bool:
+	var ends := [SHAPE.island_at(line[0]), SHAPE.island_at(line[line.size() - 1])]
+	if not (from in ends and to in ends): return false
+	for i in line.size() - 1:
+		for s in 20:
+			if not SHAPE.is_land(line[i].lerp(line[i + 1], s / 20.0)): return true
+	return false
 
 ## Folga até a costa; no cais basta estar em terra (com a tolerância do contorno).
 func _clear(point: Vector2, margin: float) -> bool:

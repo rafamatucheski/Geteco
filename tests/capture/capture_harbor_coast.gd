@@ -139,6 +139,10 @@ func run() -> void:
 	camera.position = Vector3(470, 16, 330)
 	camera.look_at(Vector3(440, 0, 180))
 	await _shot(output.path_join("sul-parque.png"))
+	# Enseada dos barcos do motocross, na beira leste da mata.
+	camera.position = Vector3(-30, 20, -200)
+	camera.look_at(Vector3(-72, 0, -95))
+	await _shot(output.path_join("enseada.png"))
 	print("HARBOR_COAST_CAPTURE ", output, " células ", region.chunks.size())
 	quit()
 

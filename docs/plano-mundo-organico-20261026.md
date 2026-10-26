@@ -176,6 +176,10 @@ volta à terra de antes. Contratos: `tests/test_harbor_coast.gd`; fotos:
   fora dos bairros é o cais da bacia (74 m, de propósito). Contratos de `test_world_shape`: no cais
   basta estar em terra (tolerância de 3 m do contorno). As passarelas de 4 m sobre o canal ficam fora (mais
   finas que a grade). `foundry_avenue` conta como ponte (cruza a bacia na ponte da fundição).
+- **Barcos do motocross (27/10):** os três barcos da arquibancada (`MotocrossScenery`, x = −74) ficaram em
+  terra com a baía norte. O gerador recorta a água deles (`CARVES`): a baía chega até a beira leste da mata,
+  com a margem sul curva. `test_harbor_coast` confere os cascos na água, e `test_world_shape` confere que
+  as duas pontes saem de uma ilha, passam pela água e chegam na outra.
 - **Etapa 3 concluída.** Achado de passagem: um chão movido no editor de mundo
   (`EditorPiece_unit_harbor_-3_1_Land`, deslocado para x −173…−109, z 160…224) fica no mar ao sul da
   mata, chapado e sem muro. Existia antes da etapa 3 e está no documento do editor, não no código.

@@ -51,6 +51,13 @@ func run() -> void:
 				var p := area.position + area.size * Vector2((ix + .5) / 24.0, (iz + .5) / 24.0)
 				if Geometry2D.is_point_in_polygon(p, footprint) and _on(p, natural): under += 1
 		check(under == 0, "ponte norte sem chão natural por baixo (%d amostras)" % under)
+	# Barcos da arquibancada do motocross (MotocrossScenery._shore_boat) boiando na enseada, não no chão novo.
+	var beached := 0
+	for i in 3:
+		var hull := Vector2(-74, -113 + i * 23.0)
+		for corner in [Vector2(-1.4, -2.8), Vector2(1.4, -2.8), Vector2(1.4, 2.8), Vector2(-1.4, 2.8)]:
+			if _on(hull + corner, natural) or SHAPE.is_land(hull + corner): beached += 1
+	check(beached == 0, "barcos do motocross na água da enseada (%d cantos em terra)" % beached)
 	var region = EDITABLE.build_region("harbor")
 	region.prepare_data()
 	var land: Array[PackedVector2Array] = []

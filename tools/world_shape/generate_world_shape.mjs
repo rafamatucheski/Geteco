@@ -86,7 +86,11 @@ const QUAY_RAMP = 50;
 const QUAY_SLACK = 0.6;
 // Bacia do navio entre os quarteirões (x 200–273,8): água, sem a folga de terra em volta (ela fechava a
 // bacia). Ao norte o jogo fecha a bacia num cais em z = −6,2; ao sul ela segue no canal, dentro do cais.
-const CARVES = [[200,-6.2, 273.8,-6.2, 273.8,150, 200,150]];
+// Barcos da arquibancada do motocross (MotocrossScenery: x = −74, z −113…−67, amarrados na beira leste da
+// mata): a baía norte cobria a água deles. A baía chega até a beira da mata, com a margem sul curva até a
+// costa de antes em x ≈ −25. Uma enseada estreita deixava um espeto de terra entre ela e a baía.
+const CARVES = [[200,-6.2, 273.8,-6.2, 273.8,150, 200,150],
+  [-80,-215, -10,-215, -10,-120, -22,-70, -32,-58, -45,-52, -60,-47, -70,-44, -80,-42]];
 const zoneDepth=(x,z,zones)=>{let best=-1e9;for(const p of zones)best=Math.max(best,sdPoly(x,z,p));return best;};
 function quayWeight(x,z){const d=zoneDepth(x,z,QUAY_ZONES);return d>=0?1:1-ss(0,QUAY_RAMP,-d);}
 const carved=(x,z)=>zoneDepth(x,z,CARVES);
