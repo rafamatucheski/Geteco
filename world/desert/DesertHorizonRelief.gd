@@ -1,7 +1,45 @@
 extends RefCounted
 ## Static sandstone escarpments. All horizon vertices stay outside the playable basin.
 ## build() returns relief only: DesertHorizon retains its existing DistantBasin quad.
+## Ilha do deserto (etapa 2 do mundo orgânico, 26/10/2026): cada fileira só vai até BEACH metros antes
+## da costa da forma do mundo (WorldShape) e baixa onde sobra pouco espaço; onde não cabe, some debaixo
+## d'água. Antes a largura era fixa e as cordilheiras saíam pela costa e passavam sobre o canal até
+## Harbor. GETECO_DESERT_ISLAND=0 volta às cordilheiras antigas.
 const L := preload("res://world/desert/DesertLayout.gd")
+const SHAPE := preload("res://world/shape/WorldShape.gd")
+const BEACH := 18.0
+static var _island := -1
+static var _room_cache := {}
+
+static func island_enabled() -> bool:
+	if _island < 0: _island = 0 if OS.get_environment("GETECO_DESERT_ISLAND") == "0" else 1
+	return _island == 1
+
+## Distância da borda da área jogável até a costa, na direção do lado. 0 se o ponto de partida já é mar.
+static func coast_room(side: String, along: float) -> float:
+	if not island_enabled(): return INF
+	var key := "%s:%d" % [side, roundi(along)]
+	if _room_cache.has(key): return _room_cache[key]
+	var start: Vector2
+	var outward: Vector2
+	match side:
+		"north": start = Vector2(along, L.BOUNDS.position.y); outward = Vector2(0, -1)
+		"west": start = Vector2(L.BOUNDS.position.x, along); outward = Vector2(-1, 0)
+		"east": start = Vector2(L.BOUNDS.end.x, along); outward = Vector2(1, 0)
+		_: start = Vector2(along, L.BOUNDS.end.y); outward = Vector2(0, 1)
+	var room := 0.0
+	for island in SHAPE.islands():
+		if not str(island.id).begins_with("desert"): continue
+		var polygon: PackedVector2Array = island.polygon
+		if not Geometry2D.is_point_in_polygon(start, polygon): break
+		var far := start + outward * 4000.0
+		room = 4000.0
+		for i in polygon.size():
+			var hit: Variant = Geometry2D.segment_intersects_segment(start, far, polygon[i], polygon[(i + 1) % polygon.size()])
+			if hit != null: room = minf(room, start.distance_to(hit))
+		break
+	_room_cache[key] = room
+	return room
 const BASE := Color("9f7d56")
 const ROCK := Color("b99771")
 const PALE := Color("cbb18a")
@@ -67,6 +105,12 @@ static func _ridge(data: Dictionary, definition: Dictionary, distant: bool) -> v
 		var crest := _profile(definition.profile,t)
 		if distant: crest=_profile(definition.profile,clampf(t*.91+.067,0,1))*.82+.13*sin(t*11+phase)+.12
 		var end_blend := smoothstep(0,.055,t)*smoothstep(0,.065,1-t)
+		# Espaço até a costa (menos a praia): define até onde a fileira vai e quanto ela pode subir.
+		# O menor de três raios (24 m para cada lado): numa baía a costa chega pelo lado, não pela frente.
+		var room := minf(coast_room(str(definition.side),along),minf(coast_room(str(definition.side),along-24.0),coast_room(str(definition.side),along+24.0)))-BEACH
+		var front_estimate := MARGIN+17.0+(175.0 if distant else 0.0)
+		var fit := smoothstep(25.0,110.0,room-front_estimate)
+		end_blend*=fit
 		var height := (29.0+crest*(138.0 if distant else 102.0))*end_blend
 		# Unequal drainage cuts break the skyline and recess the wall all the way into the talus.
 		var gullies := 0.0
@@ -85,6 +129,10 @@ static func _ridge(data: Dictionary, definition: Dictionary, distant: bool) -> v
 		if distant: front+=175.0
 		var depth := float(definition.width)*(1.0+.13*sin(t*8+phase))
 		if distant: depth*=.92
+		var full_depth := depth
+		depth=clampf(room-front,0.0,depth)
+		# Fileira estreitada perto da costa baixa junto, para não virar paredão.
+		height*=lerpf(.55,1.0,clampf(depth/maxf(full_depth,1.0),0.0,1.0))
 		var ring := PackedVector3Array()
 		var tones := PackedColorArray()
 		var previous_depth := MARGIN-.5
@@ -93,18 +141,23 @@ static func _ridge(data: Dictionary, definition: Dictionary, distant: bool) -> v
 			var erosion := gullies*sin(section.y*PI)*height*.23
 			var shoulder := sin(along*.021+phase+section.x*4.1)*height*.06*sin(section.y*PI)
 			var y := maxf(-.7,section.y*height-erosion+shoulder-.7)
+			# Sem espaço até a costa: a fileira some debaixo d'água em vez de ficar uma faixa chata no mar.
+			if fit<.01: y=-3.0
 			# Large vertical buttresses replace parallel shelves. Channels retreat, ribs project.
 			var d := front+section.x*depth
 			var wall_weight := sin(section.y*PI)*smoothstep(.07,.27,section.y)
 			d+=(sin(along*.028+phase)*19.0+sin(along*.061+phase*.7)*6.0+gullies*39.0)*wall_weight
 			d+=fracture*21.0*wall_weight
 			d=maxf(MARGIN,d)
+			if room>MARGIN: d=minf(d,room)
 			if definition.side=="north":
 				# Keep a single visible rock face. Deep drainage displacement used
 				# to fold adjacent wall rows backwards, exposing triangular holes
 				# from the low race camera when back-face culling removed the fold.
 				d=maxf(previous_depth+.5,d)
 				previous_depth=d
+				# A face única do norte não pode empurrar o pé para dentro da praia.
+				if room>MARGIN: d=minf(d,room)
 			var point := _position(str(definition.side),along,d,y)
 			ring.append(point)
 			# Mineral variation follows eroded faces; no full-width pale bands around each hill.

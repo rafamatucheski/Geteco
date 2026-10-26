@@ -73,7 +73,8 @@ func run() -> void:
 	check(far[0] and absf(float(far[1]) - (-0.94 - 0.2)) < .01, "água 0,2 m abaixo da água de Harbor (%.2f)" % far[1])
 	# Chão-base: faixa nova do deserto (fora da área jogável), serra e Harbor; nunca sobre a cava.
 	var ring := Vector2(DESERT.BOUNDS.position.x - 120, DESERT.BOUNDS.get_center().y)
-	check(SHAPE.island_at(ring) == "desert" and sample(base, ring)[0], "chão-base na faixa nova do deserto %s" % ring)
+	var ring_meshes: Array = sea.get_children().filter(func(n): return n.name.begins_with("Ring"))
+	check(SHAPE.island_at(ring) == "desert" and sample(ring_meshes, ring)[0], "chão-base na faixa nova do deserto %s" % ring)
 	check(sample(base, Vector2(650, -500))[0], "chão-base na serra")
 	check(sample(base, Vector2(100, 60))[0], "chão-base em Harbor")
 	# Cava e lagos: fundo rebaixado ou água parada, não buraco (de longe aparecia retângulo preto).
@@ -88,6 +89,15 @@ func run() -> void:
 	var hidden := sea.base_tiles.values().filter(func(t): return not t.visible).size()
 	var key := Vector2i(floori(100.0 / SEA.BLOCK), floori(60.0 / SEA.BLOCK))
 	check(hidden > 0 and sea.base_tiles.has(key) and not sea.base_tiles[key].visible, "chão-base escondido onde a região montou chão (%d blocos)" % hidden)
+	# Faixa nova do deserto (fora do retângulo jogável) não tem chão de região: fica à vista mesmo com o
+	# deserto montado ali perto.
+	var rings: Array = sea.get_children().filter(func(n): return n.name.begins_with("Ring"))
+	region.focus = Vector3(ring.x + 60.0, 0, ring.y)
+	sea.refresh_residency()
+	var ring_hit := false
+	for mesh in rings:
+		if sample([mesh], ring)[0]: ring_hit = mesh.visible
+	check(ring_hit, "faixa nova do deserto continua à vista com o deserto montado perto")
 	region.focus = Vector3(-6000, 0, 6000)
 	sea.refresh_residency()
 	check(sea.base_tiles.values().all(func(t): return t.visible), "chão-base volta quando o jogador se afasta")

@@ -105,6 +105,31 @@ deserto e Harbor, e as bordas oeste e sul das cordilheiras são retas e saem um 
 
 ### 2. Deserto ilha
 
+**Feita em 26/10.** O que entrou:
+
+- **Forma:** a ilha cobre todo o retângulo jogável mais 12 m. O chão do deserto e o selo de pedra são
+  retangulares e continuam iguais; com a costa entrando no retângulo, o chão ficaria por cima do mar. A
+  folga da serra foi para 0 para o canal entre as duas manter 40 m ou mais.
+- **Cordilheiras:** as do `DesertHorizonRelief` só vão até 18 m antes da costa (menor de três raios por
+  ponto, por causa das baías) e baixam onde sobra pouco espaço. A crista norte segue com ~115 m para o
+  horizonte da arrancada. A sul some, porque entre o selo e o canal até Harbor não sobra espaço.
+  `GETECO_DESERT_ISLAND=0` volta às antigas.
+- **Faixa de praia:** o chão-base dela fica sempre à vista. Perto do jogador ela não tem chão de região
+  e sem isso apareceria o vazio.
+
+Verificação:
+
+- `tests/test_desert_island.gd`: 4/4, já na suíte completa. Nenhum vértice fora da ilha, na praia ou
+  dentro da área jogável.
+- Fotos de cima e no jogo (`tests/capture/capture_desert_coast.gd`).
+
+Limites:
+
+- A leste a costa acompanha o selo num canal estreito até a serra. Fica reto até a etapa 4 mexer no lado
+  da serra.
+- Com a câmera normal a costa quase nunca entra na tela: o selo de pedra e as cordilheiras ficam na
+  frente.
+
 - Entre a área jogável e a costa: as cordilheiras viram serras de verdade dentro da ilha, com praia e
   pedra na costa. O selo (`_boundary_ridge`, `ScenarioBoundary3D`) continua segurando o jogador na
   área jogável; muda o que se vê além dele.

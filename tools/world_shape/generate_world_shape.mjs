@@ -41,7 +41,7 @@ const STRAITS = [
 ];
 // Folga mínima de terra em volta do que é jogável (metros). A maquete usava 10/−18/−55; os contratos
 // (tests/test_world_shape.gd) é que decidem estes valores.
-const PROTECT = {harbor:10, mountain:12, desert:-30};
+const PROTECT = {harbor:10, mountain:0, desert:12};
 // Cabeceiras de ponte em terra firme: a ponte norte chega ao deserto em DesertLayout.BRIDGE_END.
 const ABUTMENTS = [{x:342.5,z:-378,r:16}];
 const harborBoxes = harborLands.map(l=>bbox(l.points));
@@ -60,7 +60,7 @@ function rawField(x,z){
   return f;}
 // O que é jogável nunca vira mar; vem depois da suavização para ela não comer essas folgas.
 function protect(x,z,f){
-  f=Math.max(f,harborSD(x,z)+PROTECT.harbor,mountainSD(x,z)+PROTECT.mountain,sdRoundRect(x,z,D.x0,D.z0,D.x1,D.z1,40)+PROTECT.desert);
+  f=Math.max(f,harborSD(x,z)+PROTECT.harbor,mountainSD(x,z)+PROTECT.mountain,sdRoundRect(x,z,D.x0,D.z0,D.x1,D.z1,6)+PROTECT.desert);
   for(const a of ABUTMENTS)f=Math.max(f,a.r-Math.hypot(x-a.x,z-a.z));
   return f;}
 function owner(x,z){const hs=harborSD(x,z)+34, ds=desertSD(x,z), ms=mountainSD(x,z)+50;return hs>=ds&&hs>=ms?"harbor":(ds>=ms?"desert":"mountain");}

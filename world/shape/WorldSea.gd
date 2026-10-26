@@ -7,9 +7,10 @@ extends Node3D
 ##   nada, aparece esta. A faixa rasa perto da costa usa a mesma distância até a margem (COLOR.r).
 ## - O deserto e a serra usam as curvas da forma. Harbor continua com a terra de hoje (retângulos da V1 e
 ##   terra extra) até a etapa 3: com a curva, longe veria praia onde perto ainda é água.
-## - O chão-base (a −0,3 m) cobre as ilhas para a vista de longe. Nas células que a região já montou em
-##   volta do jogador ele se esconde, para não aparecer piso falso em bueiro, túnel ou cava. A cava da
-##   mineração, o cânion e os lagos da serra ficam de fora também de longe.
+## - O chão-base (a −0,3 m) cobre as ilhas para a vista de longe. Onde alguma região tem chão próprio
+##   (o retângulo jogável do deserto, a terra de Harbor, a serra) ele se esconde nas células que a região
+##   já montou em volta do jogador, para não aparecer piso falso em bueiro, túnel ou cava. A faixa nova
+##   entre o retângulo do deserto e a costa não tem chão de região: fica sempre à vista (etapa 2).
 ## GETECO_WORLD_SEA=0 desliga (A/B no mesmo export).
 const SHAPE := preload("res://world/shape/WorldShape.gd")
 const OCEAN := preload("res://world/regions/HarborOcean.gd")
@@ -20,6 +21,7 @@ const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const MINING := preload("res://world/mining/MiningExterior.gd")
 const SMUGGLER := preload("res://world/desert/canyon/DesertSmugglerLayout.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+const DESERT_LAYOUT := preload("res://world/desert/DesertLayout.gd")
 ## Mesmo alcance do mar do mirante: passa do plano de corte em todas as direções.
 const EXTENT := 8192.0
 ## Células do chão-base (escondidas por residência) e blocos da água.
@@ -222,6 +224,7 @@ func _block(rect: Rect2, water: Dictionary) -> void:
 	var edges := _edges_near(rect.grow(OCEAN.DEPTH_RANGE + COAST_BAND))
 	var crossing := _edges_near(rect)
 	var base := _buffer()
+	var ring := _buffer()
 	var steps := int(BLOCK / FINE)
 	for z in steps:
 		for x in steps:
@@ -230,12 +233,14 @@ func _block(rect: Rect2, water: Dictionary) -> void:
 			_water_cell(cell, near_dry, edges, crossed, water)
 			var cell_sunk: Array[Dictionary] = near_sunk.filter(func(k: Dictionary) -> bool: return (k.bounds as Rect2).intersects(cell))
 			for land in near_lands:
-				if (land.bounds as Rect2).intersects(cell): _base_cell(cell, land, edges, crossed, cell_sunk, base)
+				if (land.bounds as Rect2).intersects(cell): _base_cell(cell, land, edges, crossed, cell_sunk, base, ring)
 			for k in cell_sunk:
 				for piece in Geometry2D.intersect_polygons(GROUND_CUT.rect_polygon(cell), k.polygon):
 					if not Geometry2D.is_polygon_clockwise(piece): _flat(base, piece, k.y, k.color)
+	var key := Vector2i(floori(rect.position.x / BLOCK), floori(rect.position.y / BLOCK))
+	var ring_mesh := _commit(ring, base_material, "Ring_%d_%d" % [key.x, key.y])
+	if ring_mesh != null: add_child(ring_mesh)
 	if not base.indices.is_empty():
-		var key := Vector2i(floori(rect.position.x / BLOCK), floori(rect.position.y / BLOCK))
 		var mesh := _commit(base, base_material, "Base_%d_%d" % [key.x, key.y])
 		if mesh != null:
 			add_child(mesh)
@@ -260,7 +265,7 @@ func _water_cell(cell: Rect2, near_dry: Array[Dictionary], edges: Array, crossed
 	for piece in _subtract(GROUND_CUT.rect_polygon(cell), cover, cell.size.x):
 		_polygon(water, piece, true, edges, "")
 
-func _base_cell(cell: Rect2, land: Dictionary, edges: Array, crossed: bool, cell_sunk: Array[Dictionary], base: Dictionary) -> void:
+func _base_cell(cell: Rect2, land: Dictionary, edges: Array, crossed: bool, cell_sunk: Array[Dictionary], base: Dictionary, ring: Dictionary) -> void:
 	var cuts: Array[PackedVector2Array] = []
 	for k in cell_sunk: cuts.append(k.polygon)
 	var pieces: Array[PackedVector2Array] = []
@@ -274,7 +279,16 @@ func _base_cell(cell: Rect2, land: Dictionary, edges: Array, crossed: bool, cell
 		var parts: Array[PackedVector2Array] = []
 		if cuts.is_empty(): parts.append(piece)
 		else: parts = _subtract(piece, cuts, cell.size.x)
-		for part in parts: _polygon(base, part, false, edges, str(land.interior))
+		for part in parts:
+			if str(land.interior) != "desert":
+				_polygon(base, part, false, edges, str(land.interior))
+				continue
+			# Deserto: dentro do retângulo jogável há chão de região (esconde por residência); fora, não.
+			var play := GROUND_CUT.rect_polygon(DESERT_LAYOUT.BOUNDS)
+			for inside in Geometry2D.intersect_polygons(part, play):
+				if not Geometry2D.is_polygon_clockwise(inside): _polygon(base, inside, false, edges, "desert")
+			for outside in Geometry2D.clip_polygons(part, play):
+				if not Geometry2D.is_polygon_clockwise(outside): _polygon(ring, outside, false, edges, "desert")
 
 ## Peça plana de cor única (trechos rebaixados).
 func _flat(buffer: Dictionary, polygon: PackedVector2Array, y: float, color: Color) -> void:

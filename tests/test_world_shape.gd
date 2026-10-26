@@ -17,9 +17,9 @@ const ROAD_MARGIN := 3.0
 const MARKER_MARGIN := 8.0
 const BUILDING_MARGIN := 2.0
 const HARBOR_LAND_MARGIN := 2.0
-## Faixa da borda do deserto que a costa pode ocupar: o selo de pedra fica na borda e na etapa 2 passa a
-## seguir a costa. O resto da área jogável tem que ser terra.
-const DESERT_EDGE_BAND := 40.0
+## Desde a etapa 2 a área jogável do deserto inteira é terra, com folga para o selo de pedra da borda
+## (ScenarioBoundary3D) e o chão retangular do deserto não ficarem por cima do mar.
+const DESERT_SEAL_MARGIN := 6.0
 const MIN_STRAIT := 40.0
 ## Estradas que podem passar sobre a água: as pontes. Ferrovia é elevada e cruza os canais.
 const SPAN_SURFACES := ["railway", "cable"]
@@ -92,20 +92,20 @@ func run() -> void:
 			if SHAPE.signed_distance(point) < HARBOR_LAND_MARGIN: lost += 1; violate(point, "terra extra de Harbor")
 	check(lost == 0, "toda a terra de Harbor de hoje fica em terra (%d cantos fora)" % lost)
 
-	# Deserto: a área jogável menos a faixa da borda é terra.
-	var inner: Rect2 = DESERT.BOUNDS.grow(-DESERT_EDGE_BAND)
+	# Deserto: a borda inteira da área jogável fica em terra, com folga para o selo.
+	var inner: Rect2 = DESERT.BOUNDS
 	var desert_wet := 0
 	var x := inner.position.x
 	while x <= inner.end.x:
 		for z in [inner.position.y, inner.end.y]:
-			if SHAPE.island_at(Vector2(x, z)) != "desert": desert_wet += 1; violate(Vector2(x, z), "área jogável do deserto")
+			if SHAPE.island_at(Vector2(x, z)) != "desert" or SHAPE.signed_distance(Vector2(x, z)) < DESERT_SEAL_MARGIN: desert_wet += 1; violate(Vector2(x, z), "área jogável do deserto")
 		x += 40.0
 	var z2 := inner.position.y
 	while z2 <= inner.end.y:
 		for x2 in [inner.position.x, inner.end.x]:
-			if SHAPE.island_at(Vector2(x2, z2)) != "desert": desert_wet += 1; violate(Vector2(x2, z2), "área jogável do deserto")
+			if SHAPE.island_at(Vector2(x2, z2)) != "desert" or SHAPE.signed_distance(Vector2(x2, z2)) < DESERT_SEAL_MARGIN: desert_wet += 1; violate(Vector2(x2, z2), "área jogável do deserto")
 		z2 += 40.0
-	check(desert_wet == 0, "área jogável do deserto (menos %.0f m de borda) é toda da ilha do deserto (%d pontos fora)" % [DESERT_EDGE_BAND, desert_wet])
+	check(desert_wet == 0, "borda da área jogável do deserto a %.0f m da costa (%d pontos fora)" % [DESERT_SEAL_MARGIN, desert_wet])
 
 	# Estradas: em terra com folga, a não ser as pontes, que precisam mesmo passar sobre a água.
 	var wet_roads := {}
