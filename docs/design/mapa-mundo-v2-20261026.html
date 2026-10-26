@@ -1,0 +1,649 @@
+<title>Carta do Mundo Geteco 2.0</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&family=IM+Fell+English:ital@0;1&family=Alegreya:ital,wght@0,400;0,600;1,400&display=swap">
+<style>
+/* Layout: a carta inteira em pergaminho sobre a mesa escura; ficha do lugar ao lado (empilha no celular), depois as folhas com capítulos e melhorias. Visual único (pergaminho), escolhido de propósito. */
+:root{
+  --desk:#231e18;
+  --paper:#ecdcb4;
+  --paper-hi:#f4e8c8;
+  --paper-lo:#dcc794;
+  --ink:#38281a;
+  --ink-soft:#6a5237;
+  --sea:#b3c6bb;
+  --sea-ink:#4c6b66;
+  --wax:#8a1d2b;
+  --amber:#a8711c;
+  --desert:#d8ae62;
+  --snow:#c4d0d4;
+  --green:#8f9f63;
+  --mangrove:#6f8a4e;
+  --slate:#7f858a;
+  --f-display:"IM Fell English SC","IM Fell English",Georgia,"Times New Roman",serif;
+  --f-hand:"IM Fell English",Georgia,"Times New Roman",serif;
+  --f-body:"Alegreya",Georgia,"Times New Roman",serif;
+  color-scheme:light;
+}
+body{background:var(--desk);color:var(--ink);font-family:var(--f-body);font-size:17px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1500px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+.atlas{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+@media (min-width:1100px){.atlas{grid-template-columns:minmax(0,1fr) 340px}}
+.sheet{background:var(--paper);border-radius:3px;box-shadow:0 1px 0 #00000040,0 14px 40px #0000006b;position:relative}
+.sheet::after{content:"";position:absolute;inset:7px;border:1px solid var(--ink-soft);opacity:.45;pointer-events:none}
+.mapsheet{padding:10px}
+#map{display:block;width:100%;height:auto;max-width:100%;background:var(--sea)}
+.side{padding:24px 22px;display:flex;flex-direction:column;gap:18px;min-width:0}
+.side h2,.text h2{font-family:var(--f-display);font-weight:400;font-size:1.55rem;line-height:1.15;margin:0;text-wrap:balance;letter-spacing:.02em}
+.eyebrow{font-family:var(--f-display);font-size:.82rem;letter-spacing:.16em;color:var(--ink-soft)}
+.toggle{display:flex;border:1px solid var(--ink);border-radius:2px;overflow:hidden}
+.toggle button{flex:1;font:inherit;font-family:var(--f-display);font-size:.95rem;letter-spacing:.05em;background:transparent;color:var(--ink);border:0;padding:8px 6px;cursor:pointer}
+.toggle button[aria-pressed="true"]{background:var(--ink);color:var(--paper-hi)}
+.toggle button:focus-visible,.chk input:focus-visible,.chap:focus-visible{outline:2px solid var(--wax);outline-offset:2px}
+.chk{display:flex;gap:8px;align-items:center;font-size:.95rem;cursor:pointer}
+.chk input{accent-color:var(--wax);width:16px;height:16px}
+.legend{display:grid;grid-template-columns:22px minmax(0,1fr);gap:7px 10px;align-items:center;font-size:.92rem;margin:0}
+.legend svg{display:block}
+.card{border-top:1px solid var(--ink-soft);padding-top:16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.card h3{font-family:var(--f-display);font-weight:400;font-size:1.45rem;line-height:1.15;margin:0;text-wrap:balance}
+.card p{margin:0}
+.chip{align-self:flex-start;font-family:var(--f-display);font-size:.78rem;letter-spacing:.12em;padding:2px 8px;border:1px solid currentColor;border-radius:2px}
+.chip.h{color:var(--ink)} .chip.m{color:var(--amber)} .chip.n,.chip.f{color:var(--wax)}
+.chip.f{background:var(--wax);color:var(--paper-hi);border-color:var(--wax)}
+.region{font-style:italic;color:var(--ink-soft);font-size:.95rem}
+.hint{font-size:.88rem;color:var(--ink-soft);font-style:italic;margin:0}
+.text{padding:30px max(22px,4vw) 34px;display:flex;flex-direction:column;gap:20px}
+.text > p{max-width:68ch;margin:0}
+.chapters{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:14px}
+.chap{display:flex;flex-direction:column;gap:6px;padding:16px 16px 18px;border:1px solid var(--ink-soft);background:var(--paper-hi);cursor:pointer;min-width:0;text-align:left;font:inherit;color:inherit}
+.chap:hover{border-color:var(--ink)}
+.chap .num{font-family:var(--f-display);font-size:2rem;line-height:1;color:var(--wax)}
+.chap.h .num{color:var(--ink)}
+.chap h3{font-family:var(--f-display);font-weight:400;font-size:1.2rem;margin:0}
+.chap p{margin:0;font-size:.96rem}
+.chap .st{font-family:var(--f-display);font-size:.75rem;letter-spacing:.14em;color:var(--ink-soft)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:22px 30px}
+.cols h3{font-family:var(--f-display);font-weight:400;font-size:1.25rem;margin:0 0 6px}
+.cols ul{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:7px}
+.cols li{font-size:.97rem}
+.cols li b{font-weight:600}
+.places{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:12px 26px;margin:0}
+.places div{min-width:0}
+.places dt{font-family:var(--f-display);font-size:1.08rem}
+.places dd{margin:0;font-size:.96rem}
+.final dt{color:var(--wax)}
+.note{font-size:.92rem;color:var(--ink-soft);max-width:80ch}
+/* SVG */
+#map text{font-family:var(--f-hand)}
+.lbl{font-style:italic;font-size:15px;fill:var(--ink);paint-order:stroke;stroke:var(--paper-hi);stroke-width:3.4px;stroke-linejoin:round;pointer-events:none}
+.lbl.sm{font-size:12.5px}
+.rname{font-family:var(--f-display)!important;fill:var(--ink-soft);paint-order:stroke;stroke:var(--paper);stroke-opacity:.6;stroke-width:3px}
+.sname{font-style:italic;fill:var(--sea-ink);letter-spacing:.3em}
+.mk{cursor:pointer;outline:none}
+.mk .ring{fill:none;stroke:var(--wax);stroke-width:1.6;stroke-dasharray:3 3;opacity:0}
+.mk:hover .ring,.mk:focus-visible .ring{opacity:.7}
+.mk.sel .ring{opacity:1;animation:spin 7s linear infinite;transform-box:fill-box;transform-origin:center}
+@keyframes spin{to{transform:rotate(360deg)}}
+.p,.incog{transition:opacity .6s ease}
+.hoje .p{opacity:0;pointer-events:none}
+.incog{opacity:0;pointer-events:none}
+.hoje .incog{opacity:1}
+.sem-rota .rota{display:none}
+.fog{animation:drift 26s ease-in-out infinite alternate}
+.fog:nth-child(2n){animation-duration:34s;animation-direction:alternate-reverse}
+@keyframes drift{from{transform:translateX(-22px)}to{transform:translateX(26px)}}
+.beam{animation:beam 3.2s ease-in-out infinite}
+@keyframes beam{0%,100%{opacity:.25}50%{opacity:.85}}
+@media (prefers-reduced-motion:reduce){.fog,.beam,.mk.sel .ring{animation:none}}
+</style>
+
+<div class="wrap">
+  <div class="atlas">
+    <div class="sheet mapsheet">
+      <svg id="map" viewBox="0 0 1600 1100" role="img" aria-label="Mapa desenhado do mundo de Geteco, versão 2.0: Harbor ao sul, Serra Gelada a leste, Deserto ao norte, Delta das Garças a sudoeste e Brumal com o Cabo do Fim no extremo nordeste."></svg>
+    </div>
+    <aside class="sheet side">
+      <div>
+        <div class="eyebrow">Edição 2.0 · 26 de outubro de 2026</div>
+        <h2>Carta do Mundo</h2>
+      </div>
+      <div class="toggle" role="group" aria-label="O que mostrar">
+        <button id="b-v2" type="button" aria-pressed="true">Mundo 2.0</button>
+        <button id="b-hoje" type="button" aria-pressed="false">Como é hoje</button>
+      </div>
+      <label class="chk"><input id="c-rota" type="checkbox" checked> Rota da história</label>
+      <dl class="legend">
+        <svg width="22" height="16" viewBox="0 0 22 16"><circle cx="11" cy="8" r="5" fill="#38281a" stroke="#f4e8c8" stroke-width="2"/></svg><dd style="margin:0">Já existe no jogo</dd>
+        <svg width="22" height="16" viewBox="0 0 22 16"><rect x="6" y="3" width="9" height="9" transform="rotate(45 11 8)" fill="#a8711c" stroke="#38281a"/></svg><dd style="margin:0">Melhoria proposta numa região atual</dd>
+        <svg width="22" height="16" viewBox="0 0 22 16"><circle cx="11" cy="8" r="7" fill="none" stroke="#8a1d2b"/><circle cx="11" cy="8" r="4.5" fill="#8a1d2b"/></svg><dd style="margin:0">Lugar novo da edição 2.0</dd>
+        <svg width="22" height="16" viewBox="0 0 22 16"><path d="M11 1l2.1 4.6 5 .5-3.8 3.3 1.1 4.9L11 11.8 6.6 14.3l1.1-4.9L3.9 6.1l5-.5z" fill="#8a1d2b" stroke="#38281a" stroke-width=".8"/></svg><dd style="margin:0">Último capítulo</dd>
+        <svg width="22" height="16" viewBox="0 0 22 16"><path d="M1 8h20" stroke="#38281a" stroke-width="1.3"/><path d="M1 8h20" stroke="#38281a" stroke-width="5" stroke-dasharray="1.2 4"/></svg><dd style="margin:0">Ferrovia (vermelha quando nova)</dd>
+        <svg width="22" height="16" viewBox="0 0 22 16"><path d="M1 8h20" stroke="#8a1d2b" stroke-width="2.4" stroke-dasharray="5 3"/></svg><dd style="margin:0">Estrada ou rota marítima nova</dd>
+      </dl>
+      <div class="card" id="card" aria-live="polite"></div>
+      <p class="hint">Toque num símbolo do mapa para ler a ficha do lugar.</p>
+    </aside>
+  </div>
+
+  <section class="sheet text">
+    <div class="eyebrow">A ordem da viagem</div>
+    <h2>Os quatro capítulos e o interlúdio</h2>
+    <p>A geografia segue a história. Cada região nova só abre quando o capítulo anterior termina, do mesmo jeito que a obra da ponte norte segura o deserto até a última missão de Harbor.</p>
+    <div class="chapters" id="chapters"></div>
+  </section>
+
+  <section class="sheet text">
+    <div class="eyebrow">Capítulo IV · o fim do mundo</div>
+    <h2>Brumal e o Cabo do Fim</h2>
+    <p>Brumal é a cidade 4, a última do jogo, desenhada na direção que o projeto já definiu: mais escura, com neblina e paleta acinzentada, na linha da cidade de GTA IV. Fica do outro lado do Estreito Cinzento, no canto nordeste da carta. Do Observatório da serra dá para vê-la como uma mancha de névoa no horizonte desde o começo do jogo.</p>
+    <p>Chega-se de duas formas: pela Ponte de Ferro, saindo da estrada norte do deserto, ou de trem pelo Túnel do Norte, que parte da Estação do Cume e passa por baixo do estreito. Acima da cidade, uma ponta de rocha avança para o mar gelado. É o Cabo do Fim, o último lugar do planeta, com um farol que só acende no epílogo.</p>
+    <dl class="places" id="brumal-places"></dl>
+  </section>
+
+  <section class="sheet text">
+    <div class="eyebrow">O que acrescentar ao que já existe</div>
+    <h2>Melhorias nas regiões de hoje</h2>
+    <div class="cols" id="improvements"></div>
+  </section>
+
+  <section class="sheet text">
+    <div class="eyebrow">Para quem for construir</div>
+    <h2>Notas de construção</h2>
+    <div class="cols">
+      <div>
+        <h3>Como as regiões entram</h3>
+        <ul>
+          <li>Delta e Brumal entram como regiões em streaming no molde de <b>NativeRegion</b>, cada uma atrás de uma condição de campanha salva, como a passagem norte.</li>
+          <li>A ferrovia cresce em <b>RailwayNetwork</b>: Cume, Delta e Brumal Central. O Túnel do Norte serve de cortina para a troca de região.</li>
+          <li>A água do Delta reaproveita o oceano de Harbor e os lagos da serra. As lanchas começam como um veículo físico simples.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Neblina sem travar</h3>
+        <ul>
+          <li>Neblina, luz de sódio e materiais molhados de Brumal entram num pré-aquecimento e ficam retidos. Nenhum shader compila no jogo.</li>
+          <li>Cada poste e janela acesa passa pelo <b>LightBudget</b>. A neblina densa ajuda: esconde o que está longe e reduz o que precisa ser desenhado.</li>
+          <li>Medir só no export release: p50 até 16,7 ms e nenhum quadro acima de 33 ms depois de jogável.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Sobre esta carta</h3>
+        <ul>
+          <li>As regiões existentes seguem o mapa do jogo capturado em 22/10 (Harbor ao sul, ponte ao norte para o deserto, saída lateral a leste para a serra).</li>
+          <li>O desenho é esquemático. A escala vale só aproximadamente para a parte que já existe; Delta e Brumal ainda não têm medidas.</li>
+          <li>Nada da edição 2.0 está implementado. Nomes, personagens e trama dos capítulos III e IV são proposta.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function(){
+const NS="http://www.w3.org/2000/svg";
+const svg=document.getElementById("map");
+const C={ink:"#38281a",soft:"#6a5237",paper:"#ecdcb4",hi:"#f4e8c8",lo:"#dcc794",sea:"#b3c6bb",seaInk:"#4c6b66",wax:"#8a1d2b",amber:"#a8711c",desert:"#d8ae62",snow:"#c4d0d4",green:"#8f9f63",mangrove:"#6f8a4e",slate:"#7f858a"};
+function E(tag,a,p){const e=document.createElementNS(NS,tag);for(const k in a){e.setAttribute(k,a[k]);}(p||svg).appendChild(e);return e;}
+function G(a,p){return E("g",a||{},p);}
+function rng(seed){let t=seed>>>0;return function(){t+=0x6D2B79F5;let r=Math.imul(t^t>>>15,1|t);r^=r+Math.imul(r^r>>>7,61|r);return((r^r>>>14)>>>0)/4294967296;};}
+function rough(pts,closed,amp,seg,rnd){const out=[],n=pts.length,lim=closed?n:n-1;for(let i=0;i<lim;i++){const a=pts[i],b=pts[(i+1)%n];out.push(a);const dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1,k=Math.max(1,Math.round(L/seg)),nx=-dy/L,ny=dx/L;for(let j=1;j<k;j++){const t=j/k,o=(rnd()-.5)*2*amp;out.push([a[0]+dx*t+nx*o,a[1]+dy*t+ny*o]);}}if(!closed)out.push(pts[n-1]);return out;}
+function smooth(pts,closed){const n=pts.length,f=v=>v.toFixed(1);const P=i=>closed?pts[(i+n)%n]:pts[Math.max(0,Math.min(n-1,i))];let d="M"+f(pts[0][0])+","+f(pts[0][1]);const lim=closed?n:n-1;for(let i=0;i<lim;i++){const p0=P(i-1),p1=P(i),p2=P(i+1),p3=P(i+2);d+="C"+f(p1[0]+(p2[0]-p0[0])/6)+","+f(p1[1]+(p2[1]-p0[1])/6)+" "+f(p2[0]-(p3[0]-p1[0])/6)+","+f(p2[1]-(p3[1]-p1[1])/6)+" "+f(p2[0])+","+f(p2[1]);}return d+(closed?"Z":"");}
+function pip(pt,poly){let c=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if((a[1]>pt[1])!==(b[1]>pt[1])&&pt[0]<(b[0]-a[0])*(pt[1]-a[1])/(b[1]-a[1])+a[0])c=!c;}return c;}
+function scatter(rnd,n,poly,minD,avoid,fn){const xs=poly.map(p=>p[0]),ys=poly.map(p=>p[1]);const x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);const placed=[];let tries=0;while(placed.length<n&&tries<n*40){tries++;const p=[x0+rnd()*(x1-x0),y0+rnd()*(y1-y0)];if(!pip(p,poly))continue;if(avoid.some(a=>Math.hypot(p[0]-a[0],p[1]-a[1])<a[2]))continue;if(placed.some(q=>Math.hypot(p[0]-q[0],p[1]-q[1])<minD))continue;placed.push(p);fn(p[0],p[1],rnd);}return placed;}
+
+/* ---------- geografia ---------- */
+const MAIN=[[150,330],[230,240],[340,195],[470,175],[600,185],[720,165],[860,195],[960,240],[1040,320],[1130,385],[1230,420],[1330,465],[1405,560],[1400,690],[1330,770],[1230,800],[1130,790],[1060,800],[1000,850],[965,905],[930,960],[895,990],[850,965],[800,935],[750,920],[690,915],[620,930],[540,955],[460,985],[380,1000],[290,1005],[200,975],[140,915],[115,820],[130,720],[105,620],[120,500],[125,410]];
+const BRUMAL=[[1085,75],[1180,48],[1290,55],[1380,62],[1452,74],[1488,44],[1516,20],[1538,28],[1520,64],[1552,118],[1566,210],[1522,286],[1440,330],[1340,345],[1240,326],[1150,300],[1100,256],[1066,170]];
+const ISL_CONTRA=[[1150,935],[1190,924],[1216,950],[1186,976],[1150,966]];
+const ISL_PRISON=[[1484,380],[1526,371],[1546,400],[1516,421],[1478,410]];
+const INLET=[[1078,788],[1000,771],[920,774],[840,784],[790,791],[768,800],[795,809],[850,807],[925,801],[1000,801],[1052,818]];
+const W_DESERT=[[170,330],[250,250],[400,200],[600,200],[760,185],[900,230],[985,300],[975,480],[900,650],[800,720],[600,705],[470,690],[380,600],[300,520],[190,470]];
+const W_SERRA=[[1030,360],[1180,400],[1330,460],[1410,560],[1400,700],[1320,780],[1140,790],[1070,765],[1035,640],[1005,500]];
+const W_HARBOR=[[760,812],[1000,812],[990,900],[900,1000],[760,935],[640,935],[600,850],[700,815]];
+const W_DELTA=[[110,650],[300,615],[420,650],[480,760],[470,900],[420,1010],[160,1000],[100,840]];
+const LAND_POLYS=[MAIN,BRUMAL,ISL_CONTRA,ISL_PRISON];
+const inLand=p=>LAND_POLYS.some(l=>pip(p,l));
+
+const r0=rng(7);
+const landD={main:smooth(rough(MAIN,true,7,26,r0),true),brumal:smooth(rough(BRUMAL,true,5,22,r0),true),contra:smooth(rough(ISL_CONTRA,true,3,12,r0),true),prison:smooth(rough(ISL_PRISON,true,3,12,r0),true)};
+
+/* defs */
+const defs=E("defs",{});
+defs.innerHTML=`
+<filter id="rough" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="4" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3.6" xChannelSelector="R" yChannelSelector="G"/></filter>
+<filter id="wash" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.018" numOctaves="3" seed="9" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="34" xChannelSelector="R" yChannelSelector="G" result="d"/><feGaussianBlur in="d" stdDeviation="7"/></filter>
+<filter id="grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="3" seed="2"/><feColorMatrix type="matrix" values="0 0 0 0 0.30  0 0 0 0 0.21  0 0 0 0 0.11  0 0 0 0.11 0"/></filter>
+<filter id="blotch" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.005" numOctaves="3" seed="11"/><feColorMatrix type="matrix" values="0 0 0 0 0.42  0 0 0 0 0.30  0 0 0 0 0.14  0 0 0 0.55 -0.18"/></filter>
+<filter id="fogblur" x="-30%" y="-60%" width="160%" height="220%"><feGaussianBlur stdDeviation="13"/></filter>
+<radialGradient id="vign" cx="50%" cy="50%" r="72%"><stop offset="62%" stop-color="#5a3e1e" stop-opacity="0"/><stop offset="100%" stop-color="#5a3e1e" stop-opacity=".42"/></radialGradient>
+<pattern id="hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(35)"><path d="M0 0v7" stroke="${C.soft}" stroke-width="1" opacity=".5"/></pattern>
+<marker id="arr" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,1 L9,5 L0,9 L2.5,5z" fill="${C.wax}"/></marker>
+<clipPath id="landclip"><path d="${landD.main}"/><path d="${landD.brumal}"/></clipPath>
+<clipPath id="mainclip"><path d="${landD.main}"/></clipPath>`;
+
+/* mar */
+E("rect",{x:0,y:0,width:1600,height:1100,fill:C.sea});
+const gWaves=G({opacity:.55});
+{const r=rng(21);const avoid=[[280,90,250],[1525,1025,70],[1495,840,75]];
+ for(let i=0;i<520;i++){const x=20+r()*1560,y=20+r()*1060;if(avoid.some(a=>Math.hypot(x-a[0],y-a[1])<a[2]))continue;
+  if([[0,0],[18,0],[-18,0],[0,14],[0,-14]].some(o=>inLand([x+o[0],y+o[1]])))continue;
+  E("path",{d:`M${x.toFixed(1)},${y.toFixed(1)}q4,-4 8,0q4,-4 8,0`,fill:"none",stroke:C.seaInk,"stroke-width":.9},gWaves);}}
+
+/* faixas de costa */
+const gBands=G({filter:"url(#rough)"});
+for(const d of Object.values(landD)){for(const [w,o] of [[40,.08],[24,.1],[11,.14]])E("path",{d,fill:"none",stroke:C.seaInk,"stroke-width":w,opacity:o,"stroke-linejoin":"round"},gBands);
+  E("path",{d,fill:"none",stroke:C.seaInk,"stroke-width":7,"stroke-dasharray":"1 4",opacity:.45},gBands);}
+
+/* terra */
+const gLand=G({filter:"url(#rough)"});
+E("path",{d:landD.main,fill:C.paper},gLand);
+const brLand=E("path",{d:landD.brumal,fill:C.paper,class:"p"},gLand);
+E("path",{d:landD.contra,fill:C.paper},gLand);
+E("path",{d:landD.prison,fill:C.paper,class:"p"},gLand);
+
+/* aquarelas por região */
+const gWash=G({"clip-path":"url(#landclip)"});
+const washIn=G({filter:"url(#wash)"},gWash);
+const W=(poly,fill,op,cls)=>E("path",{d:smooth(poly,true),fill,opacity:op,class:cls||""},washIn);
+W(W_DESERT,C.desert,.62);W(W_SERRA,C.snow,.85);W(W_HARBOR,C.green,.5);W(W_DELTA,C.mangrove,.5,"p");W(BRUMAL,C.slate,.62,"p");
+W([[600,850],[760,830],[760,915],[640,930]],"#6f8045",.42);
+
+/* contornos */
+const gCoast=G({filter:"url(#rough)",fill:"none",stroke:C.ink,"stroke-linejoin":"round"});
+E("path",{d:landD.main,"stroke-width":1.7},gCoast);E("path",{d:landD.contra,"stroke-width":1.4},gCoast);
+E("path",{d:landD.brumal,"stroke-width":1.7,class:"p"},gCoast);E("path",{d:landD.prison,"stroke-width":1.4,class:"p"},gCoast);
+E("path",{d:landD.main,"stroke-width":.6,transform:"translate(2,1.5)",opacity:.5},gCoast);
+E("path",{d:landD.brumal,"stroke-width":.6,transform:"translate(2,1.5)",opacity:.5,class:"p"},gCoast);
+
+/* água interna */
+const gWater=G({filter:"url(#rough)"});
+const r1=rng(33);
+E("path",{d:smooth(rough(INLET,true,2,14,r1),true),fill:C.sea,stroke:C.ink,"stroke-width":1.2},gWater);
+function lake(cx,cy,rx,ry,fill,cls){const pts=[];for(let i=0;i<12;i++){const a=i/12*Math.PI*2,k=.85+r1()*.3;pts.push([cx+Math.cos(a)*rx*k,cy+Math.sin(a)*ry*k]);}return E("path",{d:smooth(pts,true),fill,stroke:C.ink,"stroke-width":1.1,class:cls||""},gWater);}
+lake(670,866,27,16,C.sea);
+lake(1110,612,24,14,"#e4ecec","p");
+lake(745,505,26,13,"#f2ecdc");
+lake(522,278,12,8,C.sea,"p");
+const gIce=G({class:"p",stroke:C.seaInk,"stroke-width":.7,fill:"none"},gWater);
+E("path",{d:"M1096,606l9,4l6,-5M1112,615l10,3M1104,617l4,-6"},gIce);
+/* rio do cânion ao delta */
+const gRiver=G({class:"p",fill:"none","stroke-linecap":"round","stroke-linejoin":"round"},gWater);
+const RIVER=[[338,458],[300,522],[318,592],[282,662],[302,732],[262,800],[280,852]];
+const BR=[[[280,852],[236,902],[200,972]],[[280,852],[276,922],[276,1006]],[[280,852],[332,912],[356,996]]];
+const rv=smooth(rough(RIVER,false,4,20,r1),false);
+E("path",{d:rv,stroke:C.ink,"stroke-width":7.4},gRiver);
+BR.forEach(b=>E("path",{d:smooth(rough(b,false,3,16,r1),false),stroke:C.ink,"stroke-width":6.2},gRiver));
+E("path",{d:rv,stroke:C.sea,"stroke-width":5},gRiver);
+BR.forEach((b,i)=>E("path",{d:smooth(rough(b,false,0.01,999,rng(90+i)),false),stroke:C.sea,"stroke-width":4},gRiver));
+/* rio seco (existe) até o cânion */
+E("path",{d:smooth([[338,458],[380,420],[440,405],[520,395]],false),fill:"none",stroke:C.soft,"stroke-width":1.2,"stroke-dasharray":"2 3",opacity:.7},gWater);
+
+/* ---------- ornamentos de terreno ---------- */
+const gDeco=G({filter:"url(#rough)"});
+function mountain(g,x,y,s,snow,tint){const px=x-s*.12,py=y-s*1.5;
+  E("path",{d:`M${x-s},${y}L${px},${py}L${x+s},${y}`,fill:tint||C.hi,stroke:C.ink,"stroke-width":1.05,"stroke-linejoin":"round"},g);
+  E("path",{d:`M${px},${py}L${x+s},${y}L${x+s*.15},${y}Z`,fill:C.ink,opacity:.17},g);
+  for(let i=1;i<=3;i++){const t=i/4.2;E("path",{d:`M${px+(x+s-px)*t},${py+(y-py)*t}l${-s*.22},${s*.42}`,stroke:C.ink,"stroke-width":.7,opacity:.6},g);}
+  if(snow){const k=.36;E("path",{d:`M${px},${py}L${px+(x-s-px)*k},${py+(y-py)*k}l${s*.18},${-s*.1}l${s*.16},${s*.14}l${s*.2},${-s*.12}L${px+(x+s-px)*k},${py+(y-py)*k}Z`,fill:"#fbfaf4",stroke:C.ink,"stroke-width":.6},g);}}
+function dune(g,x,y,s){E("path",{d:`M${x-s},${y}q${s*.6},${-s*.55} ${s*1.25},${-s*.12}q${s*.35},${s*.08} ${s*.75},${s*.12}`,fill:"none",stroke:C.soft,"stroke-width":.9,opacity:.75},g);
+  E("path",{d:`M${x-s*.4},${y+3}q${s*.4},${-s*.3} ${s*.8},${-s*.06}`,fill:"none",stroke:C.soft,"stroke-width":.6,opacity:.5},g);}
+function cactus(g,x,y){E("path",{d:`M${x},${y}v-8M${x},${y-4}h-3v-3M${x},${y-3}h3v-3.5`,fill:"none",stroke:"#55613a","stroke-width":1.3,"stroke-linecap":"round"},g);}
+function pine(g,x,y,s){s=s||1;E("path",{d:`M${x},${y-10*s}l${-4*s},${6.5*s}h${8*s}zM${x},${y-6.5*s}l${-5*s},${7.5*s}h${10*s}z`,fill:"#56633f",stroke:C.ink,"stroke-width":.6},g);E("path",{d:`M${x},${y+1*s}v${2.5*s}`,stroke:C.ink,"stroke-width":.8},g);}
+function tree(g,x,y,s,fill){s=s||1;E("path",{d:`M${x},${y}v4`,stroke:C.ink,"stroke-width":.8},g);E("circle",{cx:x,cy:y-1,r:4.2*s,fill:fill||C.green,stroke:C.ink,"stroke-width":.7},g);E("path",{d:`M${x+1},${y-4*s}a${3*s},${3*s} 0 0 1 ${2.4*s},${3.6*s}`,fill:"none",stroke:C.ink,"stroke-width":.5,opacity:.6},g);}
+function palm(g,x,y){E("path",{d:`M${x},${y}q2,-6 1,-12`,fill:"none",stroke:C.ink,"stroke-width":1},g);E("path",{d:`M${x+1},${y-12}q-5,-2 -8,2M${x+1},${y-12}q5,-2 8,2M${x+1},${y-12}q-2,-4 -6,-5M${x+1},${y-12}q3,-4 6,-4`,fill:"none",stroke:"#4f6b35","stroke-width":1.2},g);}
+function tuft(g,x,y){E("path",{d:`M${x-5},${y}q2,-6 4,0q2,-7 4,0q2,-5 3,0`,fill:"none",stroke:"#465f30","stroke-width":1},g);}
+function mesa(g,x,y,s){E("path",{d:`M${x-s*1.4},${y}L${x-s},${y-s*.8}H${x+s}L${x+s*1.4},${y}Z`,fill:"#e0b876",stroke:C.ink,"stroke-width":1},g);E("path",{d:`M${x+s},${y-s*.8}L${x+s*1.4},${y}H${x+s*.6}Z`,fill:C.ink,opacity:.18},g);E("path",{d:`M${x-s*.6},${y-s*.4}h${s*1.1}`,stroke:C.ink,"stroke-width":.5,opacity:.6},g);}
+function blocks(g,cx,cy,rx,ry,cell,ang,dens,seed,fill,tall){const r=rng(seed);const gg=G({transform:`rotate(${ang} ${cx} ${cy})`},g);
+  for(let x=cx-rx;x<=cx+rx;x+=cell)for(let y=cy-ry;y<=cy+ry;y+=cell){const dx=(x-cx)/rx,dy=(y-cy)/ry;if(dx*dx+dy*dy>1||r()>dens)continue;const w=cell*(.45+r()*.35),h=cell*(.45+r()*.35);
+    E("rect",{x:x+(cell-w)/2,y:y+(cell-h)/2,width:w,height:h,fill:fill||C.lo,stroke:C.ink,"stroke-width":.6},gg);
+    if(tall&&r()<.18)E("path",{d:`M${x+(cell-w)/2},${y+(cell-h)/2}l2,-2h${w}l-2,2`,fill:C.ink,opacity:.35},gg);}}
+
+/* exclusões em torno dos lugares (preenchidas depois de definir P) */
+const P=[
+/* Harbor */
+{id:"harbor_central",n:"Estação Harbor Central",x:848,y:870,r:"Harbor",s:"h",t:"Ponta sul da ferrovia. Daqui o trem sobe a ponte até Northgate e segue para Pinhais e para o Cobre."},
+{id:"maciota",n:"Oficina do Maciota",x:906,y:904,r:"Harbor",s:"h",t:"A garagem onde a história começa. Maciota e o mecânico dele nunca morrem, em nenhuma circunstância."},
+{id:"hospital",n:"Hospital",x:928,y:866,r:"Harbor",s:"h",t:"Hospital da cidade, com a ala leste pintada no acabamento de 18/10."},
+{id:"qg",n:"QG secreto",x:848,y:926,r:"Harbor",s:"h",t:"Casa, porão e túnel do Arquivo de Vicente, código 1951. Os ramais do Porto Sul e da serra continuam fechados, e o setor selado segue sem cânone decidido."},
+{id:"porto_sul",n:"Porto Sul",x:904,y:964,r:"Harbor",s:"h",t:"Guindastes, contêineres saqueáveis e o cais da balsa da abertura.",l:[12,4]},
+{id:"parque",n:"Parque Lume",x:812,y:842,r:"Harbor",s:"h",t:"Parque de diversões da cidade, com música própria.",l:[-11,4,"end"]},
+{id:"lago",n:"Lago Sereno",x:670,y:866,r:"Harbor",s:"h",t:"Pesca e mata rural a oeste da cidade.",l:[0,-22,"middle"]},
+{id:"motocross",n:"Motocross",x:732,y:890,r:"Harbor",s:"h",t:"Pista de terra a oeste do centro."},
+{id:"balsas",n:"Terminal de Balsas",x:866,y:984,r:"Harbor",s:"m",t:"A balsa do filme de abertura vira transporte: sai do Porto Sul e contorna a costa até o Delta das Garças. É o caminho mais bonito para o capítulo III.",l:[-12,4,"end"]},
+{id:"northgate",n:"Northgate na beira d'água",x:900,y:772,r:"Harbor",s:"m",t:"Hoje a estação fica no canteiro central da ponte. A proposta desce a plataforma para perto da água, com escada até o cais, como pedido no playtest de 18/10."},
+{id:"antigo",n:"Harbor Antigo",x:786,y:902,r:"Harbor",s:"m",t:"Bairro histórico de ladeiras, casario colorido e bondinho. É o lado antigo da cidade que o playtest pediu.",l:[-11,16,"end"]},
+{id:"tunel_canal",n:"Túnel, elevado e viaduto",x:946,y:890,r:"Harbor",s:"m",t:"As três obras em níveis que faltam no plano de 27/09: túnel do canal, elevado da rodovia e viaduto sobre o trilho do porto."},
+{id:"assalto",n:"Assalto à ponte",x:866,y:828,r:"Harbor",s:"m",t:"Missão de roubo no canteiro da ponte norte, antes da obra terminar. Sugestão que veio do playtest."},
+/* Mar */
+{id:"contrabando",n:"Ilha do Contrabando",x:1183,y:950,r:"Mar do Sul",s:"m",t:"Ilha rochosa onde os Cobras escondiam carga antes do avião cair na serra. Chega-se de lancha pelo Porto Sul.",l:[0,36,"middle"]},
+{id:"naufragio",n:"Naufrágio do Netuno",x:1300,y:1004,r:"Mar do Sul",s:"m",t:"Cargueiro afundado no recife. Mergulho curto, colecionáveis e uma página perdida do manifesto.",l:[0,22,"middle"]},
+/* Serra */
+{id:"pinhais",n:"Estação Pinhais",x:1164,y:652,r:"Serra Gelada",s:"h",t:"Estação da serra na linha férrea.",l:[-11,16,"end"]},
+{id:"vila",n:"Vila da montanha",x:1214,y:716,r:"Serra Gelada",s:"h",t:"Vila com ponto de ônibus, moradores e acesso às pistas."},
+{id:"forja",n:"Forja da Serra",x:1300,y:612,r:"Serra Gelada",s:"h",t:"O ferreiro, a pista do eremita e o minério negro para a lâmina lendária.",l:[11,4]},
+{id:"aurelio",n:"Cabana do Mestre Aurélio",x:1356,y:556,r:"Serra Gelada",s:"h",t:"Só aparece no mapa depois que o Seu Bento conta onde fica."},
+{id:"teleferico",n:"Teleférico",x:1286,y:546,r:"Serra Gelada",s:"h",t:"Cabo do vale até o alto das pistas de esqui."},
+{id:"descida",n:"Descida da Meia-Noite",x:1200,y:586,r:"Serra Gelada",s:"h",t:"Corrida noturna de descida contra seis adversários, sete carros no total."},
+{id:"esqui",n:"Pistas de esqui",x:1246,y:642,r:"Serra Gelada",s:"h",t:"Provas de esqui e colecionáveis."},
+{id:"aviao",n:"Avião dos Cobras",x:1334,y:692,r:"Serra Gelada",s:"h",t:"Destroços do avião de carga dos Cobras: duas descobertas da investigação.",l:[0,22,"middle"]},
+{id:"caverna",n:"Caverna de Vicente",x:1366,y:642,r:"Serra Gelada",s:"h",t:"A anotação e a arruela no cordão. Vicente passou por aqui, e Dante chegou perto."},
+{id:"jipe",n:"Trilha de jipe",x:1266,y:756,r:"Serra Gelada",s:"h",t:"Percurso por checkpoints nas encostas."},
+{id:"cume",n:"Estação do Cume",x:1250,y:500,r:"Serra Gelada",s:"m",t:"Nova estação no alto da serra. Dali o trem entra no Túnel do Norte, passa por baixo do Estreito Cinzento e chega a Brumal.",l:[-11,4,"end"]},
+{id:"lago_gelo",n:"Lago congelado",x:1110,y:612,r:"Serra Gelada",s:"m",t:"Pesca no gelo de dia e um racha sobre o gelo à noite, com o carro deslizando de verdade.",l:[0,-18,"middle"]},
+{id:"observatorio",n:"Observatório",x:1326,y:490,r:"Serra Gelada",s:"m",t:"Mirante no cume. Num dia limpo dá para ver a neblina de Brumal no horizonte: o jogador enxerga o fim muito antes de chegar lá.",l:[11,4]},
+{id:"refugio",n:"Refúgio da Serra",x:1148,y:546,r:"Serra Gelada",s:"m",t:"Abrigo com fogueira e cama para pular a noite. Junto com ele, a avalanche vira um evento possível na Descida da Meia-Noite."},
+/* Deserto */
+{id:"cobre",n:"Cobre",x:700,y:506,r:"Deserto",s:"h",t:"Banco próprio e estação de trem. É onde Irene ajuda a provar a armação contra Vicente.",l:[0,20,"middle"]},
+{id:"santa_lua",n:"Santa Lua",x:604,y:404,r:"Deserto",s:"h",t:"A vila do deserto.",l:[-11,4,"end"]},
+{id:"miragem",n:"Posto Miragem",x:862,y:524,r:"Deserto",s:"h",t:"Posto com quatro bitrens. Raul, o manifesto da carga dos Cobras e o começo do Último Ramal.",l:[11,4]},
+{id:"digo",n:"Oficina do Digo",x:560,y:526,r:"Deserto",s:"h",t:"Preparação de carros, compra e três conjuntos de ajuste guardados."},
+{id:"horizonte",n:"Motel Horizonte",x:796,y:584,r:"Deserto",s:"h",t:"Encontro com Vicente e descanso até a noite."},
+{id:"arrancada",n:"Arrancada",x:524,y:456,r:"Deserto",s:"h",t:"Pista de 800 m. Provas entre 20h e 5h contra Digo, Lívia, Raul, Jessica e Nadir."},
+{id:"mineracao",n:"Mineração",x:630,y:346,r:"Deserto",s:"h",t:"Cava de mineração ao norte da cidade.",l:[13,4]},
+{id:"leito",n:"Leito seco",x:760,y:362,r:"Deserto",s:"h",t:"Percurso de jipe pelo leito de um rio seco."},
+{id:"canion",n:"Cânion e platô",x:342,y:462,r:"Deserto",s:"h",t:"Estrada de terra até o platô de 22 m, com cobras e escorpiões nas margens. Na edição 2.0 é aqui que nasce o rio do Delta.",l:[-12,4,"end"]},
+{id:"casa",n:"Casa abandonada",x:284,y:352,r:"Deserto",s:"h",t:"Casa e cabana com objetos e uma pista que liga a exploração a Vicente."},
+{id:"tiao",n:"Acampamento do Tião",x:452,y:372,r:"Deserto",s:"h",t:"O minerador que guarda o minério negro da Forja."},
+{id:"estacao_antiga",n:"Estação antiga e vagão",x:430,y:572,r:"Deserto",s:"h",t:"O livro de despachos e o lacre do vagão descarrilado, da missão O Último Ramal. Na edição 2.0 o ramal é restaurado até o Delta."},
+{id:"torre_radio",n:"Torre de rádio e ferro-velho",x:920,y:468,r:"Deserto",s:"h",t:"Beira de estrada: posto, torre, ferro-velho, lanche e o que a torre de rádio avistou."},
+{id:"oasis",n:"Oásis das Palmeiras",x:522,y:278,r:"Deserto",s:"m",t:"Água, sombra e uma vila pequena para quebrar o vazio do norte do deserto.",l:[0,-20,"middle"]},
+{id:"boneyard",n:"Cemitério de Aviões",x:822,y:282,r:"Deserto",s:"m",t:"Fileiras de aviões aposentados. Peças raras para o Digo e a origem do avião que caiu na serra.",l:[0,24,"middle"]},
+{id:"cratera",n:"Cratera do meteoro",x:362,y:266,r:"Deserto",s:"m",t:"Cratera com uma caverna de cristais por baixo. Responde ao pedido de mais cavernas no deserto.",l:[0,26,"middle"]},
+{id:"drivein",n:"Drive-in Estrela",x:700,y:622,r:"Deserto",s:"m",t:"Cinema ao ar livre na beira da rodovia. Ponto de encontro dos rachas de sexta à noite.",l:[0,20,"middle"]},
+{id:"tempestade",n:"Tempestade de areia",x:212,y:522,r:"Deserto",s:"m",t:"Evento de clima que fecha a visão, apaga o minimapa por um tempo e muda o tráfego da Rodovia do Sal."},
+/* Delta */
+{id:"delta_centro",n:"Delta das Garças",x:348,y:866,r:"Delta das Garças",s:"n",t:"Cidade 3. Cidade baixa e úmida na foz do rio que nasce no cânion: palafitas, barcos, mangue, chuva no fim da tarde e calor.",l:[12,4]},
+{id:"estacao_delta",n:"Estação do Delta",x:384,y:818,r:"Delta das Garças",s:"n",t:"Fim do Último Ramal, restaurado. Liga o Delta ao Cobre."},
+{id:"palafitas",n:"Palafitas",x:212,y:906,r:"Delta das Garças",s:"n",t:"Bairro sobre estacas, ligado por passarelas de madeira. Perseguições a pé e de barco.",l:[-11,4,"end"]},
+{id:"mercado",n:"Mercado Flutuante",x:280,y:880,r:"Delta das Garças",s:"n",t:"Feira em barcos na bifurcação do rio. Comida, contatos e informação."},
+{id:"porto_cobras",n:"Porto Fluvial dos Cobras",x:398,y:946,r:"Delta das Garças",s:"n",t:"O destino real da carga. Galpões, lanchas e a contabilidade que aponta para Brumal.",l:[12,4]},
+{id:"fabrica_gelo",n:"Fábrica de Gelo",x:446,y:788,r:"Delta das Garças",s:"n",t:"Fábrica abandonada usada como depósito. Lugar bom para uma missão de infiltração."},
+{id:"lanchas",n:"Corrida de lanchas",x:252,y:762,r:"Delta das Garças",s:"n",t:"Racha de lanchas pelos canais do mangue, o equivalente aquático das arrancadas.",l:[-11,4,"end"]},
+/* Brumal */
+{id:"ponte_ferro",n:"Ponte de Ferro",x:1024,y:232,r:"Brumal",s:"n",t:"Ponte suspensa sobre o Estreito Cinzento, a estrada para a capital. Fica fechada até o fim do capítulo III, como a ponte norte fica até o fim de Harbor.",l:[-10,22,"end"]},
+{id:"brumal_central",n:"Estação Central",x:1236,y:246,r:"Brumal",s:"n",t:"Fim da linha do Túnel do Norte. Saguão de ferro e vidro, relógio parado e viagem rápida."},
+{id:"torre",n:"Torre Lacerda",x:1290,y:168,r:"Brumal",s:"f",t:"Sede do Grupo Lacerda e cenário da última missão: um apagão na cidade, a subida andar por andar numa noite de neblina e o acerto de contas com quem pagou a armação.",l:[0,24,"middle"]},
+{id:"docas",n:"Docas Negras",x:1160,y:286,r:"Brumal",s:"n",t:"Guindastes, contêineres da Lacerda e névoa sobre a água. A carga dos Cobras termina aqui.",l:[-11,4,"end"]},
+{id:"elevado",n:"Elevado",x:1344,y:212,r:"Brumal",s:"n",t:"Metrô de ferro sobre ruas de paralelepípedo. Perseguição de carro por baixo dos trilhos."},
+{id:"bairro_velho",n:"Bairro Velho",x:1396,y:258,r:"Brumal",s:"n",t:"Prédios de tijolo, escadas de incêndio, vapor saindo dos bueiros e luz de sódio."},
+{id:"usina",n:"Usina de Carvão",x:1474,y:214,r:"Brumal",s:"n",t:"As chaminés que engrossam a neblina. A missão de apagão para entrar na torre começa aqui.",l:[0,22,"middle"]},
+{id:"cemiterio",n:"Cemitério da Colina",x:1124,y:142,r:"Brumal",s:"n",t:"O ponto mais alto da cidade. Encontro com a testemunha no meio dos túmulos.",l:[0,-14,"middle"]},
+{id:"presidio",n:"Ilha-Presídio de São Lázaro",x:1512,y:397,r:"Brumal",s:"n",t:"Onde Vicente cumpriu os oito anos. Missão de resgate da testemunha que viu a armação acontecer.",l:[0,40,"middle"]},
+{id:"cabo",n:"Cabo do Fim",x:1522,y:26,r:"Brumal",s:"f",t:"O último lugar do planeta: uma ponta de rocha ao norte de Brumal com um farol. Epílogo da história e, depois dela, um mirante de onde se olha o mundo inteiro de volta.",l:[-14,6,"end"]}
+];
+const AV=P.map(p=>[p.x,p.y,16]);
+
+/* deserto */
+const gD=G({},gDeco);
+{const r=rng(41);
+ const avoid=AV.concat([[690,500,40],[745,505,34],[600,640,70],[860,500,22]]);
+ scatter(r,30,[[190,300],[300,230],[470,210],[900,235],[930,300],[880,330],[700,320],[470,320],[300,420],[200,420]],30,avoid,(x,y,rr)=>dune(gD,x,y,9+rr*6));
+ scatter(r,12,[[450,600],[880,600],[860,690],[500,690]],32,avoid,(x,y,rr)=>dune(gD,x,y,8+rr*5));
+ scatter(r,22,W_DESERT,34,avoid.concat([[520,495,90]]),(x,y)=>cactus(gD,x,y));
+ [[300,410,11],[372,404,9],[262,446,8],[392,498,10]].forEach(m=>mesa(gD,...m));
+ const ridge=[];for(let i=0;i<9;i++)ridge.push([948+r()*58,300+i*21+r()*8]);ridge.sort((a,b)=>a[1]-b[1]).forEach(p=>{if(AV.some(a=>Math.hypot(p[0]-a[0],p[1]-a[1])<22))return;mountain(gD,p[0],p[1],10+r()*5,false,"#e2c48a");});
+ for(let i=0;i<8;i++){const p=[140+r()*60,410+i*28+r()*6];if(AV.some(a=>Math.hypot(p[0]-a[0],p[1]-a[1])<22))continue;mountain(gD,p[0],p[1],9+r()*4,false,"#e2c48a");}
+ /* cava da mineração */
+ for(let i=0;i<4;i++)E("ellipse",{cx:630,cy:346,rx:26-i*6,ry:15-i*3.5,fill:"none",stroke:C.soft,"stroke-width":.9},gD);
+}
+/* palmeiras do oásis e aviões do cemitério */
+const gDp=G({class:"p"},gDeco);
+[[506,272],[538,270],[514,290],[534,288]].forEach(p=>palm(gDp,...p));
+for(let i=0;i<3;i++)for(let j=0;j<4;j++){const x=790+j*20,y=262+i*14;E("path",{d:`M${x},${y}h14M${x+7},${y-5}v10M${x+11},${y-2}v4`,stroke:C.ink,"stroke-width":1.1,fill:"none"},gDp);}
+/* cratera */
+E("ellipse",{cx:362,cy:266,rx:22,ry:13,fill:"#cfa25a",stroke:C.ink,"stroke-width":1.1,class:"p"},gDeco);
+E("ellipse",{cx:363,cy:268,rx:13,ry:7,fill:"#b88b48",stroke:C.ink,"stroke-width":.6,class:"p"},gDeco);
+
+/* serra */
+const gS=G({},gDeco);
+{const r=rng(55);const avoid=AV.map(a=>[a[0],a[1]+4,20]).concat([[1250,560,0]]);
+ const inner=[[1060,420],[1180,430],[1320,480],[1390,570],[1385,680],[1310,745],[1160,760],[1080,700],[1050,560]];
+ const pts=[];scatter(r,48,inner,24,avoid,(x,y,rr)=>pts.push([x,y,11+rr*9]));
+ pts.sort((a,b)=>a[1]-b[1]).forEach(p=>mountain(gS,p[0],p[1],p[2],p[1]<700,C.hi));
+ scatter(r,26,[[1040,700],[1140,720],[1240,770],[1150,790],[1060,780]],13,avoid,(x,y)=>pine(gS,x,y,.9));
+ scatter(r,10,[[1010,420],[1060,430],[1060,620],[1020,600]],16,avoid,(x,y)=>pine(gS,x,y,.85));
+}
+/* avião caído */
+E("path",{d:"M1320,682l26,6M1330,676l4,16M1342,684l-2,6",stroke:C.ink,"stroke-width":1.6,fill:"none"},gDeco);
+
+/* Harbor */
+const gH=G({},gDeco);
+blocks(gH,878,888,56,42,10,-4,.82,61,C.lo);
+{const r=rng(66);scatter(r,30,[[600,840],[760,825],[770,915],[700,915],[620,930]],13,AV.concat([[670,866,34]]).concat([[732,890,18]]),(x,y,rr)=>tree(gH,x,y,.9+rr*.25));}
+/* docas do porto sul */
+for(let i=0;i<5;i++)E("path",{d:`M${880+i*9},${948}v-10`,stroke:C.ink,"stroke-width":1.2},gH);
+/* roda-gigante do Parque Lume */
+E("circle",{cx:812,cy:842,r:9,fill:"none",stroke:C.ink,"stroke-width":.8},gH);
+for(let i=0;i<6;i++){const a=i*Math.PI/3;E("path",{d:`M812,842l${(Math.cos(a)*9).toFixed(1)},${(Math.sin(a)*9).toFixed(1)}`,stroke:C.ink,"stroke-width":.5},gH);}
+/* ilha do contrabando */
+mountain(gDeco,1176,948,8,false,"#d7c79c");tree(gDeco,1198,958,.8);
+
+/* Delta (novo) */
+const gL=G({class:"p"},gDeco);
+{const r=rng(77);const avoid=AV.map(a=>[a[0],a[1],14]);
+ scatter(r,46,[[130,880],[220,870],[300,900],[460,900],[420,1000],[160,990]],11,avoid,(x,y)=>tuft(gL,x,y));
+ scatter(r,26,[[120,660],[300,630],[420,660],[470,760],[420,820],[300,840],[160,840]],15,avoid.concat([[446,788,22]]),(x,y,rr)=>tree(gL,x,y,.8+rr*.3,"#6f8a4e"));
+ for(let i=0;i<9;i++){const x=196+(i%3)*12+r()*3,y=896+Math.floor(i/3)*10;E("rect",{x,y,width:6,height:5,fill:C.lo,stroke:C.ink,"stroke-width":.6},gL);E("path",{d:`M${x+1},${y+5}v3M${x+5},${y+5}v3`,stroke:C.ink,"stroke-width":.5},gL);}
+}
+blocks(gL,352,858,30,20,8,8,.75,79,C.lo);
+/* barcos do mercado */
+[[272,874],[287,884],[276,890]].forEach(b=>E("path",{d:`M${b[0]-5},${b[1]}q5,4 10,0z`,fill:C.soft,stroke:C.ink,"stroke-width":.6},gL));
+
+/* Brumal (novo) */
+const gB=G({class:"p"},gDeco);
+blocks(gB,1290,212,170,68,11,-6,.78,88,"#c9c5bb",true);
+{const r=rng(91);
+ [[1100,150,9],[1132,128,10],[1152,158,8],[1092,118,7]].forEach(m=>mountain(gB,...m,false,"#cfcdc4"));
+ for(let i=0;i<8;i++){const x=1104+r()*44,y=138+r()*24;E("path",{d:`M${x},${y}v-5M${x-2},${y-3.5}h4`,stroke:C.ink,"stroke-width":.8},gB);}
+ scatter(r,14,[[1462,80],[1520,70],[1550,130],[1556,190],[1500,170],[1480,120]],12,AV.map(a=>[a[0],a[1],16]),(x,y)=>pine(gB,x,y,.85));
+ /* falésias do cabo */
+ for(let i=0;i<7;i++){const x=1494+i*6,y=44-i*3.2;E("path",{d:`M${x},${y}l3,7`,stroke:C.ink,"stroke-width":.8},gB);}
+}
+/* presídio: muralha */
+E("rect",{x:1499,y:386,width:26,height:20,fill:"#bdb8ad",stroke:C.ink,"stroke-width":1.1,class:"p"},gDeco);
+E("rect",{x:1507,y:392,width:10,height:8,fill:"none",stroke:C.ink,"stroke-width":.7,class:"p"},gDeco);
+
+/* ---------- vias ---------- */
+const gRoads=G({filter:"url(#rough)",fill:"none","stroke-linecap":"round","stroke-linejoin":"round"});
+function road(pts,width,closed){const d=smooth(pts,!!closed);E("path",{d,stroke:C.ink,"stroke-width":width||4.2},gRoads);E("path",{d,stroke:C.hi,"stroke-width":(width||4.2)-2.3},gRoads);}
+function newRoad(pts){const d=smooth(pts,false);const g=G({class:"p"},gRoads);E("path",{d,stroke:C.hi,"stroke-width":5,opacity:.8},g);E("path",{d,stroke:C.wax,"stroke-width":2.4,"stroke-dasharray":"7 5"},g);}
+function track(pts,col,cls,dash){const d=smooth(pts,false);const g=G({class:cls||""},gRoads);E("path",{d,stroke:col,"stroke-width":1.4,"stroke-dasharray":dash||"none"},g);if(!dash)E("path",{d,stroke:col,"stroke-width":5.5,"stroke-dasharray":"1.2 6"},g);return g;}
+/* Harbor */
+road([[836,856],[920,852],[924,920],[838,922],[836,856]],3.6,false);
+road([[878,854],[880,922]],3);road([[836,888],[922,886]],3);
+road([[902,920],[904,962]],3.4);
+road([[836,884],[770,882],[700,870]],3.6);
+/* pontes */
+road([[884,852],[886,800],[883,745],[872,700],[862,560]],4.6);
+road([[884,758],[960,744],[1060,722],[1164,652]],4.2);
+for(let y=776;y<=806;y+=8)E("path",{d:`M879,${y}h12`,stroke:C.ink,"stroke-width":1},gRoads);
+/* deserto */
+road([[520,432],[862,430],[862,560],[520,560],[520,432]],4.4,false);
+road([[600,500],[790,500]],3.4);
+road([[520,456],[810,456]],2.8);
+road([[520,520],[420,532],[346,470]],3.6);
+road([[630,432],[630,362]],2.8);
+road([[862,560],[800,584]],2.6);
+/* serra */
+road([[1164,652],[1200,612],[1164,592],[1214,566],[1190,540]],3);
+G({},gRoads);
+E("path",{d:smooth([[1214,716],[1250,740],[1290,760],[1262,778],[1222,760]],false),stroke:C.soft,"stroke-width":1.4,"stroke-dasharray":"3 3"},gRoads);
+E("path",{d:"M1192,690L1286,546",stroke:C.ink,"stroke-width":.9},gRoads);
+for(let t=0;t<=1;t+=.2)E("rect",{x:1192+94*t-1.6,y:690-144*t-1.6,width:3.2,height:3.2,fill:C.ink},gRoads);
+[[1246,642,1232,690],[1260,606,1276,660]].forEach(s=>E("path",{d:`M${s[0]},${s[1]}Q${s[0]+18},${(s[1]+s[3])/2} ${s[2]},${s[3]}`,stroke:"#5d7a86","stroke-width":1.2,"stroke-dasharray":"2 2"},gRoads));
+/* novas estradas */
+newRoad([[862,430],[905,335],[962,262]]);
+newRoad([[1080,214],[1170,214],[1236,246]]);
+newRoad([[520,560],[470,640],[424,742],[364,836]]);
+/* ponte de ferro */
+const gBridge=G({class:"p"},gRoads);
+E("path",{d:"M962,262L1080,214",stroke:C.ink,"stroke-width":4.6},gBridge);E("path",{d:"M962,262L1080,214",stroke:C.hi,"stroke-width":2.2},gBridge);
+E("path",{d:"M970,252Q1021,248 1072,206M970,252L967,244M1072,206L1069,198",stroke:C.ink,"stroke-width":1},gBridge);
+E("path",{d:"M967,244l0,14M1069,198l0,14",stroke:C.ink,"stroke-width":2},gBridge);
+for(let i=1;i<8;i++){const t=i/8;const x=970+102*t,y=252-46*t,cy=(1-t)*(1-t)*252+2*(1-t)*t*248+t*t*206;E("path",{d:`M${x.toFixed(1)},${(y+2).toFixed(1)}L${x.toFixed(1)},${(cy).toFixed(1)}`,stroke:C.ink,"stroke-width":.5},gBridge);}
+/* ferrovia existente */
+track([[848,870],[886,816],[900,772],[1000,734],[1164,652]],C.ink);
+track([[900,772],[868,640],[790,540],[700,506]],C.ink);
+/* ferrovia nova */
+track([[700,506],[560,568],[430,572],[398,690],[384,818]],C.wax,"p");
+track([[1164,652],[1220,590],[1250,500]],C.wax,"p");
+const tun=track([[1250,500],[1262,430],[1250,350],[1236,246]],C.wax,"p","2 5");
+E("path",{d:"M1243,496a7,7 0 0 1 14,0",stroke:C.wax,"stroke-width":2,fill:"none"},tun);
+track([[1120,226],[1236,246],[1344,212],[1430,228]],"#4d5054","p");
+/* rotas de barco */
+const gBoat=G({class:"p",fill:"none"});
+E("path",{d:smooth([[866,996],[760,1050],[560,1062],[400,1012]],false),stroke:C.wax,"stroke-width":1.8,"stroke-dasharray":"2 5"},gBoat);
+E("path",{d:smooth([[930,982],[1060,982],[1160,958]],false),stroke:C.wax,"stroke-width":1.5,"stroke-dasharray":"2 5"},gBoat);
+E("path",{d:smooth([[1460,312],[1484,350],[1500,382]],false),stroke:C.wax,"stroke-width":1.5,"stroke-dasharray":"2 5"},gBoat);
+E("path",{d:"M640,1058q12,8 24,0l-3,-1h-18zM652,1057v-12l8,9",fill:C.hi,stroke:C.ink,"stroke-width":1},gBoat);
+
+/* ---------- pictogramas especiais ---------- */
+const gPic=G({class:"p",filter:"url(#rough)"});
+/* Torre Lacerda */
+E("path",{d:"M1283,160V108L1290,96L1297,108V160Z",fill:"#9a9a96",stroke:C.ink,"stroke-width":1.2},gPic);
+E("path",{d:"M1290,96V82",stroke:C.ink,"stroke-width":1},gPic);
+for(let y=114;y<156;y+=7)E("path",{d:`M1286,${y}h8`,stroke:C.wax,"stroke-width":1.4,opacity:.85},gPic);
+/* usina */
+[[1466,206],[1478,202]].forEach(c=>{E("path",{d:`M${c[0]},${c[1]}v-26h6v26`,fill:"#8e8c86",stroke:C.ink,"stroke-width":1},gPic);});
+/* farol do cabo */
+E("path",{d:"M1518,22l2,-16h4l2,16z",fill:C.hi,stroke:C.ink,"stroke-width":1},gPic);
+E("path",{d:"M1519.5,14h5M1519,18h6",stroke:C.wax,"stroke-width":1.4},gPic);
+const beams=G({class:"p beam"});
+E("path",{d:"M1522,6L1470,-4L1474,14ZM1522,6L1586,-6L1584,14Z",fill:"#f3d27a",opacity:.6},beams);
+
+/* fumaça e neblina de Brumal */
+const gFog=G({class:"p","pointer-events":"none"});
+const fogIn=G({filter:"url(#fogblur)"},gFog);
+[[1470,170,12,8],[1484,160,14,9],[1496,146,16,10]].forEach(c=>E("ellipse",{cx:c[0],cy:c[1],rx:c[2],ry:c[3],fill:"#6f6f6c",opacity:.35},fogIn));
+[[1150,150,150,44],[1310,222,190,52],[1440,150,140,46],[1236,302,170,36],[1500,96,90,34],[1060,232,90,30],[1380,330,120,26]].forEach(f=>E("ellipse",{class:"fog",cx:f[0],cy:f[1],rx:f[2],ry:f[3],fill:"#f2f2ee",opacity:.5},fogIn));
+
+/* ---------- rota da história ---------- */
+const gRoute=G({class:"rota",fill:"none","pointer-events":"none"});
+const seg=(pts,w,dash)=>E("path",{d:smooth(pts,false),stroke:C.wax,"stroke-width":w,"stroke-dasharray":dash,"marker-end":"url(#arr)",opacity:.9,"stroke-linecap":"round"},gRoute);
+seg([[870,872],[870,800],[858,700],[790,600],[712,520]],2.6,"1 6");
+seg([[884,770],[1000,744],[1150,664]],1.8,"1 6");
+const s2=seg([[690,512],[560,585],[452,620],[396,720],[356,840]],2.6,"1 6");s2.setAttribute("class","p");
+const s3=seg([[372,846],[452,700],[560,600],[700,470],[850,380],[930,300],[1020,240],[1120,218],[1230,200]],2.6,"1 6");s3.setAttribute("class","p");
+const s4=seg([[1260,190],[1380,120],[1500,40]],2.6,"1 6");s4.setAttribute("class","p");
+
+/* ---------- terra incógnita (modo hoje) ---------- */
+const gInc=G({class:"incog","pointer-events":"none"});
+E("path",{d:landD.brumal,fill:"url(#hatch)",stroke:C.soft,"stroke-width":1.2,"stroke-dasharray":"4 4"},gInc);
+E("path",{d:smooth(W_DELTA,true),fill:"url(#hatch)",stroke:C.soft,"stroke-width":1.2,"stroke-dasharray":"4 4","clip-path":"url(#mainclip)"},gInc);
+E("text",{x:1300,y:205,"text-anchor":"middle",class:"lbl","font-size":22},gInc).textContent="Terra incógnita";
+E("text",{x:290,y:830,"text-anchor":"middle",class:"lbl","font-size":20},gInc).textContent="Terra incógnita";
+
+/* ---------- nomes de regiões e mares ---------- */
+const gNames=G({"pointer-events":"none"});
+let pid=0;
+function curved(pts,text,size,spacing,cls,opts){const id="tp"+(pid++);E("path",{id,d:smooth(pts,false),fill:"none"},defs);const t=E("text",{class:cls,"font-size":size,"letter-spacing":spacing,...(opts||{})},gNames);const tp=E("textPath",{href:"#"+id,startOffset:"50%","text-anchor":"middle"},t);tp.textContent=text;return t;}
+curved([[410,694],[600,702],[800,690]],"DESERTO",46,22,"rname");
+curved([[1080,800],[1220,786],[1370,744]],"SERRA GELADA",24,9,"rname");
+curved([[700,1004],[790,1010],[880,1012]],"HARBOR",24,10,"rname");
+curved([[150,1060],[270,1068],[390,1060]],"DELTA DAS GARÇAS",20,3,"rname p");
+curved([[1220,104],[1340,96],[1460,104]],"BRUMAL",40,24,"rname p");
+curved([[960,1062],[1080,1066],[1200,1060]],"Mar do Sul",22,0,"sname");
+curved([[600,96],[720,88],[860,100]],"Mar Gelado",22,0,"sname");
+curved([[1152,348],[1210,362],[1278,386]],"Estreito Cinzento",13,0,"sname p");
+curved([[1420,600],[1460,660],[1470,740]],"Mar das Cobras",17,0,"sname");
+E("text",{x:930,y:796,"font-size":10.5,class:"sname","letter-spacing":"1"},gNames).textContent="canal da ponte";
+E("text",{x:745,y:526,"font-size":10.5,"text-anchor":"middle",class:"sname","letter-spacing":"1"},gNames).textContent="salina";
+
+/* selos dos capítulos */
+function seal(x,y,txt,cls,size){const g=G({class:cls||"","pointer-events":"none"},gNames);const r=rng(x*7+y);const pts=[];for(let i=0;i<14;i++){const a=i/14*Math.PI*2,k=1+(r()-.5)*.16;pts.push([x+Math.cos(a)*19*k,y+Math.sin(a)*19*k]);}
+  E("path",{d:smooth(pts,true),fill:C.wax,stroke:"#5e121c","stroke-width":1.2},g);E("circle",{cx:x,cy:y,r:13.5,fill:"none",stroke:"#f0d9b5","stroke-width":.8,opacity:.6},g);
+  E("text",{x,y:y+(size?4:6),"text-anchor":"middle",fill:"#f6e7c8","font-size":size||17,"font-family":"IM Fell English SC, Georgia, serif"},g).textContent=txt;}
+seal(676,1000,"I");seal(1032,816,"Int.","",10.5);seal(350,690,"II");seal(108,1058,"III","p");seal(1158,92,"IV","p");
+
+/* ---------- ornamentos: cartela, rosa dos ventos, escala, serpente ---------- */
+const gOrn=G({"pointer-events":"none"});
+E("rect",{x:34,y:26,width:470,height:126,fill:C.hi,stroke:C.ink,"stroke-width":1.6},gOrn);
+E("rect",{x:41,y:33,width:456,height:112,fill:"none",stroke:C.ink,"stroke-width":.7},gOrn);
+[[41,33],[497,33],[41,145],[497,145]].forEach(c=>E("circle",{cx:c[0],cy:c[1],r:3,fill:C.wax},gOrn));
+E("text",{x:269,y:80,"text-anchor":"middle","font-size":44,"letter-spacing":10,fill:C.ink,"font-family":"IM Fell English SC, Georgia, serif"},gOrn).textContent="GETECO";
+E("path",{d:"M110,94h318",stroke:C.ink,"stroke-width":.7},gOrn);
+E("text",{x:269,y:116,"text-anchor":"middle","font-size":19,fill:C.ink,"font-family":"IM Fell English SC, Georgia, serif","letter-spacing":2},gOrn).textContent="Carta do Mundo · Edição 2.0";
+E("text",{x:269,y:136,"text-anchor":"middle","font-size":13,"font-style":"italic",fill:C.soft},gOrn).textContent="levantada em 26 de outubro de 2026 a partir do mapa do jogo";
+/* escala: 1 unidade ≈ 3,5 m na parte que já existe */
+const sb=G({transform:"translate(60,182)"},gOrn);
+for(let i=0;i<4;i++)E("rect",{x:i*35.7,y:0,width:35.7,height:6,fill:i%2?C.hi:C.ink,stroke:C.ink,"stroke-width":.8},sb);
+["0","250","500 m"].forEach((t,i)=>E("text",{x:i*71.4,y:20,"text-anchor":"middle","font-size":11,fill:C.ink},sb).textContent=t);
+E("text",{x:0,y:-6,"font-size":10.5,"font-style":"italic",fill:C.soft},sb).textContent="escala aproximada da parte que já existe";
+/* rosa dos ventos */
+const cr=G({transform:"translate(1525,1022)"},gOrn);
+E("circle",{r:44,fill:"none",stroke:C.ink,"stroke-width":.8},cr);E("circle",{r:38,fill:"none",stroke:C.ink,"stroke-width":.5,"stroke-dasharray":"1 3"},cr);
+for(let i=0;i<8;i++){const a=i*45,L=i%2?24:40;E("path",{d:`M0,${-L}L5,-5L0,0Z`,fill:C.ink,transform:`rotate(${a})`},cr);E("path",{d:`M0,${-L}L-5,-5L0,0Z`,fill:C.hi,stroke:C.ink,"stroke-width":.6,transform:`rotate(${a})`},cr);}
+E("circle",{r:3,fill:C.wax},cr);
+E("text",{x:0,y:-48,"text-anchor":"middle","font-size":14,fill:C.ink,"font-family":"IM Fell English SC, Georgia, serif"},cr).textContent="N";
+/* serpente do Mar das Cobras */
+const sp=G({transform:"translate(1450,846)",fill:"none",stroke:C.ink,"stroke-width":1.3,"stroke-linecap":"round"},gOrn);
+[[0,0],[34,4],[66,-2]].forEach((h,i)=>{E("path",{d:`M${h[0]},${h[1]+6}q12,-26 24,0`,fill:"#7c8a6a"},sp);E("path",{d:`M${h[0]+5},${h[1]}q7,-9 14,0`,"stroke-width":.6},sp);});
+E("path",{d:"M92,4q8,-30 22,-24q8,4 2,10l-8,2",fill:"#7c8a6a"},sp);E("circle",{cx:111,cy:-17,r:1.2,fill:C.ink},sp);E("path",{d:"M116,-15l7,1l-3,3",stroke:C.wax,"stroke-width":1},sp);
+[[-6,8],[28,10],[60,6],[90,8]].forEach(w=>E("path",{d:`M${w[0]},${w[1]}q4,-3 8,0q4,-3 8,0`,stroke:C.seaInk,"stroke-width":.9},sp));
+/* vinheta e textura do papel */
+E("rect",{x:0,y:0,width:1600,height:1100,filter:"url(#blotch)","pointer-events":"none",opacity:.5});
+E("rect",{x:0,y:0,width:1600,height:1100,filter:"url(#grain)","pointer-events":"none"});
+E("rect",{x:0,y:0,width:1600,height:1100,fill:"url(#vign)","pointer-events":"none"});
+E("rect",{x:5,y:5,width:1590,height:1090,fill:"none",stroke:C.ink,"stroke-width":2,"pointer-events":"none"});
+E("rect",{x:12,y:12,width:1576,height:1076,fill:"none",stroke:C.ink,"stroke-width":.7,"pointer-events":"none"});
+
+/* ---------- lugares ---------- */
+const gMk=G({});
+const STATUS={h:"Já existe",m:"Melhoria proposta",n:"Novo · edição 2.0",f:"Último capítulo"};
+const SHOW=new Set(["porto_sul","lago","parque","pinhais","forja","aviao","cume","observatorio","lago_gelo","cobre","santa_lua","miragem","mineracao","canion","oasis","boneyard","cratera","drivein","delta_centro","palafitas","porto_cobras","lanchas","ponte_ferro","torre","docas","usina","cemiterio","presidio","cabo","contrabando","naufragio","balsas","antigo"]);
+const els={};
+P.forEach(p=>{
+  const prop=p.s!=="h";
+  const g=G({class:"mk"+(prop?" p":""),tabindex:"0",role:"button","aria-label":p.n+", "+STATUS[p.s],transform:`translate(${p.x},${p.y})`},gMk);
+  E("circle",{r:13,class:"ring"},g);
+  if(p.s==="h"){E("circle",{r:5.4,fill:C.ink,stroke:C.hi,"stroke-width":2},g);}
+  else if(p.s==="m"){E("rect",{x:-4.6,y:-4.6,width:9.2,height:9.2,transform:"rotate(45)",fill:C.amber,stroke:C.ink,"stroke-width":1.1},g);}
+  else if(p.s==="n"){E("circle",{r:7.6,fill:"none",stroke:C.wax,"stroke-width":1.2},g);E("circle",{r:4.8,fill:C.wax,stroke:C.hi,"stroke-width":1},g);}
+  else{E("path",{d:"M0,-11L3.1,-3.8L10.5,-3.4L4.8,1.5L6.6,8.9L0,4.9L-6.6,8.9L-4.8,1.5L-10.5,-3.4L-3.1,-3.8Z",fill:C.wax,stroke:C.hi,"stroke-width":1.2},g);}
+  E("circle",{r:13,fill:"transparent"},g);
+  const tt=E("title",{},g);tt.textContent=p.n;
+  if(SHOW.has(p.id)){const l=p.l||[10,4,"start"];const t=E("text",{x:l[0],y:l[1],"text-anchor":l[2]||"start",class:"lbl"+(p.s==="f"?"":" sm")},g);t.textContent=p.n;if(p.s==="f"){t.setAttribute("font-size","17");t.style.fill=C.wax;}}
+  g.addEventListener("click",()=>select(p.id));
+  g.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();select(p.id);}});
+  els[p.id]=g;
+});
+
+/* ---------- ficha ---------- */
+const card=document.getElementById("card");
+let current=null;
+function select(id){const p=P.find(q=>q.id===id);if(!p)return;if(current)els[current].classList.remove("sel");current=id;els[id].classList.add("sel");
+  card.innerHTML="";const chip=document.createElement("span");chip.className="chip "+p.s;chip.textContent=STATUS[p.s];
+  const h=document.createElement("h3");h.textContent=p.n;const rg=document.createElement("div");rg.className="region";rg.textContent=p.r;const tx=document.createElement("p");tx.textContent=p.t;
+  card.append(chip,h,rg,tx);}
+select("cabo");
+
+/* ---------- modo e rota ---------- */
+const bV2=document.getElementById("b-v2"),bH=document.getElementById("b-hoje");
+function mode(hoje){svg.classList.toggle("hoje",hoje);bV2.setAttribute("aria-pressed",String(!hoje));bH.setAttribute("aria-pressed",String(hoje));
+  if(hoje&&current&&P.find(p=>p.id===current).s!=="h")select("harbor_central");}
+bV2.addEventListener("click",()=>mode(false));bH.addEventListener("click",()=>mode(true));
+document.getElementById("c-rota").addEventListener("change",e=>svg.classList.toggle("sem-rota",!e.target.checked));
+
+/* ---------- capítulos ---------- */
+const CH=[
+ {n:"I",t:"Harbor",s:"h",st:"Já existe",go:"maciota",x:"Dante chega de balsa, entra no território dos Cobras, vence Takeshi e sai com a lista que aponta para Vicente. A obra termina e a ponte norte abre."},
+ {n:"Int.",t:"Serra Gelada",s:"h",st:"Já existe · interlúdio",go:"caverna",x:"Aberta antes da ponte. O avião dos Cobras e a caverna mostram que Vicente passou por ali, sem entregar o passado dele."},
+ {n:"II",t:"Deserto",s:"h",st:"Já existe",go:"cobre",x:"Vicente e os oito anos perdidos. O manifesto no Miragem, a prova da armação no Cobre com Irene e as provas noturnas com Jessica."},
+ {n:"III",t:"Delta das Garças",s:"n",st:"Novo · cidade 3",go:"porto_cobras",x:"O Último Ramal restaurado leva os irmãos rio abaixo atrás da carga. Lanchas, palafitas e o porto fluvial dos Cobras. Termina com o nome de quem pagou a armação: o Grupo Lacerda, de Brumal."},
+ {n:"IV",t:"Brumal",s:"n",st:"Novo · cidade 4 · final",go:"torre",x:"A capital cinzenta do norte. Resgate da testemunha em São Lázaro, apagão na usina, subida da Torre Lacerda. Epílogo no farol do Cabo do Fim."}
+];
+const chWrap=document.getElementById("chapters");
+CH.forEach(c=>{const b=document.createElement("button");b.type="button";b.className="chap "+c.s;b.innerHTML=`<span class="num"></span><h3></h3><span class="st"></span><p></p>`;
+  b.querySelector(".num").textContent=c.n;b.querySelector("h3").textContent=c.t;b.querySelector(".st").textContent=c.st;b.querySelector("p").textContent=c.x;
+  b.addEventListener("click",()=>{mode(false);select(c.go);document.getElementById("map").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"center"});});chWrap.appendChild(b);});
+
+/* ---------- listas ---------- */
+const bp=document.getElementById("brumal-places");
+["ponte_ferro","brumal_central","docas","elevado","bairro_velho","usina","cemiterio","presidio","torre","cabo"].forEach(id=>{const p=P.find(q=>q.id===id);const d=document.createElement("div");if(p.s==="f")d.className="final";const dt=document.createElement("dt");dt.textContent=p.n;const dd=document.createElement("dd");dd.textContent=p.t;d.append(dt,dd);bp.appendChild(d);});
+const imp=document.getElementById("improvements");
+[["Harbor","Harbor"],["Mar do Sul","Mar do Sul"],["Serra Gelada","Serra Gelada"],["Deserto","Deserto"]].forEach(([r,title])=>{
+  const items=P.filter(p=>p.r===r&&p.s==="m");if(!items.length)return;const d=document.createElement("div");const h=document.createElement("h3");h.textContent=title;const ul=document.createElement("ul");
+  items.forEach(p=>{const li=document.createElement("li");const b=document.createElement("b");b.textContent=p.n+". ";li.append(b,document.createTextNode(p.t));ul.appendChild(li);});d.append(h,ul);imp.appendChild(d);});
+})();
+</script>
