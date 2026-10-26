@@ -5,14 +5,16 @@ extends Node3D
 ## - A água fica 0,2 m abaixo da água de Harbor e do mar do mirante (mesmo shader, sem onda nos
 ##   vértices), então perto do jogador quem aparece é a água de sempre; longe, onde nenhuma região montou
 ##   nada, aparece esta. A faixa rasa perto da costa usa a mesma distância até a margem (COLOR.r).
-## - O deserto e a serra usam as curvas da forma. Harbor continua com a terra de hoje (retângulos da V1 e
-##   terra extra) até a etapa 3: com a curva, longe veria praia onde perto ainda é água.
+## - O deserto e a serra usam as curvas da forma. Harbor usa a mesma terra da região: retângulos da V1,
+##   terra extra e os bairros de HarborCoast (etapa 3). Com a curva inteira, longe veria praia onde perto
+##   ainda é água.
 ## - O chão-base (a −0,3 m) cobre as ilhas para a vista de longe. Onde alguma região tem chão próprio
 ##   (o retângulo jogável do deserto, a terra de Harbor, a serra) ele se esconde nas células que a região
 ##   já montou em volta do jogador, para não aparecer piso falso em bueiro, túnel ou cava. A faixa nova
 ##   entre o retângulo do deserto e a costa não tem chão de região: fica sempre à vista (etapa 2).
 ## GETECO_WORLD_SEA=0 desliga (A/B no mesmo export).
 const SHAPE := preload("res://world/shape/WorldShape.gd")
+const HARBOR_COAST := preload("res://world/shape/HarborCoast.gd")
 const OCEAN := preload("res://world/regions/HarborOcean.gd")
 const GROUND_CUT := preload("res://world/urban_detail/GroundCut.gd")
 const CANAL := preload("res://world/urban_detail/CanalTunnel3D.gd")
@@ -155,12 +157,19 @@ func _collect_geography() -> void:
 		lands.append({"id": island.id, "polygon": island.polygon, "bounds": island.bounds, "interior": region})
 		var polygon: PackedVector2Array = island.polygon
 		for i in polygon.size(): coast_edges.append([polygon[i], polygon[(i + 1) % polygon.size()], SHAPE.kind_at(island, i)])
-	for polygon in _harbor_land():
-		var woodland: bool = polygon == preload("res://world/places/fishing/FishingRuralLayout.gd").outline()
+	var harbor := _harbor_land()
+	var built: Array[PackedVector2Array] = []
+	for polygon in harbor:
+		var natural := HARBOR_COAST.is_natural(polygon)
+		var woodland: bool = natural or polygon == preload("res://world/places/fishing/FishingRuralLayout.gd").outline()
 		var bounds := GROUND_CUT.bounds(polygon)
 		dry.append({"id": "harbor", "polygon": polygon, "bounds": bounds})
-		lands.append({"id": "harbor", "polygon": polygon, "bounds": bounds, "interior": "woodland" if woodland else "harbor"})
-		for i in polygon.size(): coast_edges.append([polygon[i], polygon[(i + 1) % polygon.size()], "quay"])
+		for i in polygon.size(): coast_edges.append([polygon[i], polygon[(i + 1) % polygon.size()], "beach" if natural else "quay"])
+		# A costa curva cobre a mata inteira: o chão-base dela é só a faixa nova, sem dois pisos no mesmo lugar.
+		var pieces: Array[PackedVector2Array] = [polygon]
+		if natural: pieces = GROUND_CUT.subtract_exact(pieces, built)
+		for piece in pieces: lands.append({"id": "harbor", "polygon": piece, "bounds": GROUND_CUT.bounds(piece), "interior": "woodland" if woodland else "harbor"})
+		built.append(polygon)
 	# Mesmos recortes do mar de Harbor e do mar do mirante: nenhuma água por cima do túnel, da pista de
 	# skate, do porão secreto ou das bocas de bueiro.
 	var cuts: Array[Rect2] = [CANAL.WATER_CUT, Rect2(-413.25, 85.35, 6.10, 3.30)]
@@ -180,7 +189,8 @@ func _collect_geography() -> void:
 func _sink(polygon: PackedVector2Array, y: float, color: Color) -> void:
 	sunk.append({"polygon": polygon, "bounds": GROUND_CUT.bounds(polygon), "y": y, "color": color})
 
-## Terra de Harbor de hoje, igual à do HarborOcean: retângulos da V1 e terra extra (porto sul e mata).
+## Terra de Harbor de hoje, igual à do HarborOcean: retângulos da V1, terra extra (porto sul e mata) e os
+## bairros que já ganharam costa curva (HarborCoast, etapa 3).
 static func _harbor_land() -> Array[PackedVector2Array]:
 	var result: Array[PackedVector2Array] = []
 	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://world/regions/OriginalWorldData.json"))
@@ -192,6 +202,7 @@ static func _harbor_land() -> Array[PackedVector2Array]:
 		for point in polygon: metric.append(point / 16.0)
 		result.append(metric)
 	result.append_array(preload("res://world/places/fishing/FishingRuralLayout.gd").extra_surfaces())
+	result.append_array(HARBOR_COAST.natural_land())
 	return result
 
 ## Margens dos lagos da serra (mesma leitura do WorldMapData).

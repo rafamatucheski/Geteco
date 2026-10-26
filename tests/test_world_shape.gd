@@ -89,6 +89,8 @@ func run() -> void:
 		for corner in [rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]:
 			if SHAPE.signed_distance(corner) < HARBOR_LAND_MARGIN: lost += 1; violate(corner, "terra de Harbor")
 	for polygon in harbor.extra_land:
+		# O chão natural da costa curva (etapa 3) é a própria costa: os vértices dele ficam nela.
+		if preload("res://world/shape/HarborCoast.gd").is_natural(polygon): continue
 		for point in polygon:
 			if SHAPE.signed_distance(point) < HARBOR_LAND_MARGIN: lost += 1; violate(point, "terra extra de Harbor")
 	check(lost == 0, "toda a terra de Harbor de hoje fica em terra (%d cantos fora)" % lost)

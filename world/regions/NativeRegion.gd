@@ -19,6 +19,8 @@ const HARBOR_BRIDGE := preload("res://world/urban_detail/HarborBridge3D.gd")
 const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
 const HARBOR_PROP := preload("res://world/urban_detail/HarborProp3D.gd")
 const SOUTH_PORT := preload("res://world/regions/OriginalSouthPort.gd")
+const HARBOR_COAST := preload("res://world/shape/HarborCoast.gd")
+const HARBOR_COAST_WOODLAND := preload("res://world/shape/HarborCoastWoodland.gd")
 const SOUTH_PORT_LAYOUT := preload("res://world/regions/OriginalSouthPortLayout.gd")
 const PORT_SHIP_DRESSING := preload("res://world/regions/PortShipDressing3D.gd")
 const PORT_SHIP_PAINT := preload("res://world/regions/PortShipMaterials3D.gd")
@@ -303,6 +305,9 @@ func _prepare() -> void:
 			for point in polygon: metric.append(point*SCALE)
 			extra_land.append(metric)
 		extra_land.append_array(preload("res://world/places/fishing/FishingRuralLayout.gd").extra_surfaces())
+		# Mundo orgânico (etapa 3): a faixa entre os retângulos e a costa curva, por último para o chão
+		# subtrair a terra de antes.
+		extra_land.append_array(HARBOR_COAST.natural_land())
 		for record in SOUTH_PORT.records(): _record(record.position,record)
 		var south_ship_center: Vector2 = SOUTH_PORT_LAYOUT.SHIP.get_center()*SCALE
 		_record(Vector3(south_ship_center.x,0,south_ship_center.y),{"kind":"south_port_ship_detail"})
@@ -445,6 +450,14 @@ func _prepare() -> void:
 		geometry_started = STALL_WORK.begin()
 		coastal_protection.configure(source_data,extra_land,harbor_road_geometry._layers[0].polygons)
 		STALL_WORK.finish("region.prepare.coast", geometry_started, {})
+		if not HARBOR_COAST.natural_land().is_empty():
+			geometry_started = STALL_WORK.begin()
+			var old_land: Array[PackedVector2Array] = []
+			for row in source_data.harbor_land: old_land.append(GROUND_CUT.rect_polygon(Rect2(row[0]*SCALE,row[1]*SCALE,row[2]*SCALE,row[3]*SCALE)))
+			for polygon in extra_land:
+				if not HARBOR_COAST.is_natural(polygon): old_land.append(polygon)
+			HARBOR_COAST_WOODLAND.prepare(old_land,harbor_road_geometry._layers[0].polygons)
+			STALL_WORK.finish("region.prepare.coast_woodland", geometry_started, {})
 	if region_id == "mountain":
 		terrain = TERRAIN.new()
 		var reservations: Array = CATALOG.definitions().duplicate()
@@ -1469,11 +1482,12 @@ func _build_surfaces(chunk: Node3D, rect: Rect2, key: Vector2i) -> void:
 		var extra_support: Array[PackedVector2Array] = []
 		for land_rect in owned_land: extra_support.append(GROUND_CUT.rect_polygon(land_rect))
 		for polygon in extra_land:
-			var woodland: bool = polygon==preload("res://world/places/fishing/FishingRuralLayout.gd").outline()
+			var woodland: bool = polygon==preload("res://world/places/fishing/FishingRuralLayout.gd").outline() or HARBOR_COAST.is_natural(polygon)
 			var pieces: Array[PackedVector2Array] = Geometry2D.intersect_polygons(polygon,clip)
 			for piece in GROUND_CUT.subtract_exact(pieces,extra_support): _authored_surface(chunk,piece,woodland,ground_cover)
 			extra_support.append(polygon)
 		preload("res://world/places/fishing/FishingWoodland.gd").build_chunk(chunk,rect)
+		HARBOR_COAST_WOODLAND.build_chunk(chunk,rect)
 		if port_surface.has_area():
 			# Visual finish only: OriginalSouthPort/land already own physical support.
 			# Keep the apron below every road finish. Its former .014 top was

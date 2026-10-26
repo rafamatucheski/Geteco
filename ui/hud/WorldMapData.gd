@@ -107,7 +107,7 @@ func _read_region(id: String, region) -> void:
 			var rect := Rect2(row[0]/16.0,row[1]/16.0,row[2]/16.0,row[3]/16.0)
 			lands.append({"polygon":rectangle(rect),"biome":"forest" if rect.position.x< -90 else "city"})
 		for polygon in region.extra_land:
-			var fishing_forest: bool = polygon==preload("res://world/places/fishing/FishingRuralLayout.gd").outline()
+			var fishing_forest: bool = polygon==preload("res://world/places/fishing/FishingRuralLayout.gd").outline() or preload("res://world/shape/HarborCoast.gd").is_natural(polygon)
 			lands.append({"polygon":polygon,"biome":"forest" if fishing_forest else "city"})
 	elif id=="desert":
 		# Mundo orgânico (etapa 5): a terra do deserto é a ilha da forma do mundo, não o retângulo jogável.

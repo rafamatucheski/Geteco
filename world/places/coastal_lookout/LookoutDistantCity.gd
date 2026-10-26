@@ -9,6 +9,8 @@ const SEA := preload("res://world/places/coastal_lookout/LookoutDistantSea.gd")
 const CANAL := preload("res://world/urban_detail/CanalTunnel3D.gd")
 const SKATE := preload("res://activities/skate/SkateParkLayout.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
+const GROUND_CUT := preload("res://world/urban_detail/GroundCut.gd")
+const HARBOR_COAST := preload("res://world/shape/HarborCoast.gd")
 var _geometry: Dictionary = {}
 var _cells: Array[Dictionary] = []
 var _cube := BoxMesh.new()
@@ -145,6 +147,23 @@ func _harbor_land(region) -> void:
 				for piece in pieces:
 					var key := _key("harbor",Vector3(piece.get_center().x,0,piece.get_center().y),64.0)
 					_quad(key,[Vector3(piece.position.x,-.035,piece.position.y),Vector3(piece.end.x,-.035,piece.position.y),Vector3(piece.end.x,-.035,piece.end.y),Vector3(piece.position.x,-.035,piece.end.y)],Color("737b69"))
+	# Mundo orgânico (etapa 3): o chão natural dos bairros com costa curva, sem repetir os retângulos.
+	var rects: Array[PackedVector2Array] = []
+	for row: Array in region.source_data.harbor_land: rects.append(GROUND_CUT.rect_polygon(Rect2(float(row[0])/16.0,float(row[1])/16.0,float(row[2])/16.0,float(row[3])/16.0)))
+	for polygon in GROUND_CUT.subtract_exact(HARBOR_COAST.natural_land(),rects):
+		var bounds := GROUND_CUT.bounds(polygon)
+		for x in range(floori(bounds.position.x/64.0),ceili(bounds.end.x/64.0)):
+			for z in range(floori(bounds.position.y/64.0),ceili(bounds.end.y/64.0)):
+				for piece in Geometry2D.intersect_polygons(polygon,GROUND_CUT.rect_polygon(Rect2(x*64,z*64,64,64))):
+					# Mesmo sentido dos quadrados acima, para a face ficar para cima.
+					if Geometry2D.is_polygon_clockwise(piece) != Geometry2D.is_polygon_clockwise(GROUND_CUT.rect_polygon(Rect2(0,0,1,1))): piece.reverse()
+					var triangles := Geometry2D.triangulate_polygon(piece)
+					if triangles.is_empty(): continue
+					var batch: Dictionary = _geometry[_key("harbor",Vector3(x*64+32,0,z*64+32),64.0)]
+					for index in triangles:
+						batch.vertices.append(Vector3(piece[index].x,-.035,piece[index].y))
+						batch.normals.append(Vector3.UP)
+						batch.colors.append(Color("52683f"))
 
 func _box(key: String, point: Vector3, size: Vector3, color: Color, box_basis := Basis.IDENTITY) -> void:
 	_mesh(key,_cube,Transform3D(box_basis*Basis.from_scale(size),point),color)

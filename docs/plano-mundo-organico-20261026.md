@@ -142,6 +142,23 @@ Limites:
 - É a etapa de maior risco: chão, calçadas, `HarborFacadeGround`, túnel do canal e porto leem a terra.
   Fazer bairro por bairro.
 
+**Como entra (26/10):** `world/shape/HarborCoast.gd` lista os bairros prontos, cada um com uma zona. A
+parte da ilha da forma dentro da zona vira chão natural, que entra no fim de `NativeRegion.extra_land`.
+Com isso o chão físico (com colisão), o mar de Harbor, os muros da costa, a espuma, o mapa, o mar do
+mundo e a cidade vista do mirante seguem juntos, sem mexer nos retângulos da V1. A faixa ganha mata
+(`HarborCoastWoodland`), com as malhas e os materiais da mata do Lago Sereno. `GETECO_HARBOR_COAST=0`
+volta à terra de antes. Contratos: `tests/test_harbor_coast.gd`; fotos:
+`tests/capture/capture_harbor_coast.gd`.
+
+- **Feito: mata a oeste e Lago Sereno** (zona a oeste de x = −80, o lado leste da mata). Fica um corte
+  reto de 74 m na divisa com a cidade (23 m ao norte e ~50 m ao sul da mata), que some quando os
+  bairros vizinhos entrarem.
+- **Atenção para o porto:** a curva da forma passa por cima da bacia entre os quarteirões, onde fica o
+  navio (x 200–274), e cobre a frente de cais do porto sul. Antes do bairro do porto, o gerador precisa
+  recortar a bacia e seguir os retângulos como cais reto onde rua e porto encostam no mar.
+- **Próximos:** costa norte da cidade (a baía entre a mata e a ponte norte), parque a leste, frente sul
+  e porto (com cais).
+
 ### 4. Serra ilha
 
 **Feita em 26/10.** O que entrou:
