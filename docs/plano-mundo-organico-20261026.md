@@ -48,6 +48,25 @@ export release e testes de contrato. Uma etapa só começa com a anterior aprova
 
 ### 0. A forma, a ferramenta e os contratos
 
+**Feita em 26/10.** Como ficou:
+
+- **Curvas:** `world/shape/world_shape.json`, geradas por `node tools/world_shape/generate_world_shape.mjs`
+  a partir de `tools/world_shape/world_geography.json` (exportado por `tests/tools/export_world_map_data.gd`).
+- **Consultas:** `world/shape/WorldShape.gd` (ilha, terra ou mar, distância à costa, tipo de costa).
+- **Contratos:** `tests/test_world_shape.gd`, 18/18, agora na lista completa da `tools/run_core_suite.sh`.
+- **Prévia:** `python tools/world_shape/preview_world_shape.py` grava `evidence/world-shape/preview.png`,
+  com as violações em vermelho.
+
+Ajustes que os contratos pediram em relação à maquete:
+
+- suavização que tira penínsulas finas;
+- folga do deserto de −40 para −30 m;
+- terra garantida na cabeceira norte da ponte;
+- um terceiro canal entre Harbor e a serra (o mais estreito tinha 29 m; agora 89 m).
+
+A prévia saiu num PNG gerado por script, não no editor de mundo. Por isso a maquete ainda desenha a
+costa pela fórmula antiga, um pouco diferente das curvas finais.
+
 - Gerar as curvas a partir da própria maquete: o campo de distância que desenha a costa dela já
   respeita as áreas jogáveis e os canais das pontes. Extrair o contorno em polígonos suaves e gravar
   em dados.
