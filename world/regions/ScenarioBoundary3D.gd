@@ -112,6 +112,15 @@ static func _color(point: Vector3, snow: bool) -> Color:
 ## contratos de test_world_shape só a ponte leste chega à costa; o resto fica a 14 m ou mais dela.
 const COAST_INSET := 5.0
 const COAST_STEP := 8.0
+## Borda de pedra baixa (26/10/2026): o muro usava o perfil dos limites antigos (9 m de altura, 10 m de
+## largura) com o material de arenito do deserto e virava uma "montanha de areia" na beira da serra, tapando
+## a vista do mar. Agora a pedra fica em COAST_WALL_HEIGHT m; a colisão continua alta (COAST_BLOCK_HEIGHT,
+## invisível) para ninguém cair no mar.
+const COAST_WALL_WIDTH := 1.8
+const COAST_WALL_HEIGHT := 1.1
+const COAST_BLOCK_HEIGHT := 3.0
+const COAST_ROCK := Color("8a9293")
+static var _coast_material: StandardMaterial3D
 static var _coast_line := PackedVector2Array()
 
 static func mountain_coast_line() -> PackedVector2Array:
@@ -139,6 +148,8 @@ static func build_mountain_coast(parent: Node3D, rect: Rect2, height: Callable, 
 	if line.size() < 3: return
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var block := SurfaceTool.new()
+	block.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var emitted := false
 	var center := GROUND_CUT_CENTER(line)
 	for i in line.size():
@@ -158,16 +169,17 @@ static func build_mountain_coast(parent: Node3D, rect: Rect2, height: Callable, 
 			# Cada pedaço tem um dono: o trecho que contém o meio dele.
 			if not rect.has_point(mid): continue
 			if blocked.is_valid() and blocked.call(mid): continue
-			_emit_piece(surface, _section_at(p, across, height, WIDTH), _section_at(q, across, height, WIDTH), mid, direction)
+			_emit_piece(surface, _section_at(p, across, height, COAST_WALL_WIDTH, COAST_WALL_HEIGHT), _section_at(q, across, height, COAST_WALL_WIDTH, COAST_WALL_HEIGHT), mid, direction)
+			_emit_piece(block, _section_at(p, across, height, COAST_WALL_WIDTH, COAST_BLOCK_HEIGHT), _section_at(q, across, height, COAST_WALL_WIDTH, COAST_BLOCK_HEIGHT), mid, direction)
 			emitted = true
 	if not emitted: return
 	surface.generate_normals()
-	var built: Array = COLLISION_FACES.commit_with_shape(surface, true)
 	var ridge := MeshInstance3D.new()
 	ridge.name = "ScenarioBoundaryRidge"
-	ridge.mesh = built[0]
-	ridge.material_override = preload("res://world/desert/DesertHorizonRelief.gd").material()
+	ridge.mesh = surface.commit()
+	ridge.material_override = coast_material()
 	parent.add_child(ridge)
+	var built: Array = COLLISION_FACES.commit_with_shape(block, true)
 	var body := StaticBody3D.new()
 	body.collision_layer = 1
 	body.collision_mask = 0
@@ -177,17 +189,27 @@ static func build_mountain_coast(parent: Node3D, rect: Rect2, height: Callable, 
 	body.add_child(collider)
 	ridge.add_child(body)
 
+## Cor por vértice, opaco e fosco: as mesmas opções do chão-base do WorldSea (pré-aquecido sob a cortina),
+## então o motor reaproveita aquele shader e nada compila no jogo.
+static func coast_material() -> StandardMaterial3D:
+	if _coast_material == null:
+		_coast_material = StandardMaterial3D.new()
+		_coast_material.vertex_color_use_as_albedo = true
+		_coast_material.vertex_color_is_srgb = true
+		_coast_material.roughness = 1.0
+	return _coast_material
+
 static func GROUND_CUT_CENTER(polygon: PackedVector2Array) -> Vector2:
 	var sum := Vector2.ZERO
 	for point in polygon: sum += point
 	return sum / float(polygon.size())
 
-## Mesmo perfil de _section, atravessado ao longo de `across` (normal do trecho da costa).
-static func _section_at(center: Vector2, across: Vector2, height: Callable, width: float) -> PackedVector3Array:
+## Pedra baixa e irregular atravessada ao longo de `across` (normal do trecho da costa), `rise` m acima do chão.
+static func _section_at(center: Vector2, across: Vector2, height: Callable, width: float, rise: float) -> PackedVector3Array:
 	var floor_y: float = height.call(center)
 	var along := center.x * .7 + center.y * .3
-	var crest := floor_y + 9.0 + 1.2 * sin(along * .037) + .6 * sin(along * .113)
-	var profile := [Vector2(-width*.5,floor_y-18),Vector2(-width*.5,floor_y+.6),Vector2(-width*.43,crest-3),Vector2(-width*.2,crest-.4),Vector2(width*.07,crest),Vector2(width*.43,crest-2.5),Vector2(width*.5,floor_y+.6),Vector2(width*.5,floor_y-18)]
+	var crest := floor_y + rise + .12 * sin(along * .37) + .08 * sin(along * 1.13)
+	var profile := [Vector2(-width*.5,floor_y-3),Vector2(-width*.5,floor_y+.15),Vector2(-width*.32,crest-.18),Vector2(width*.08,crest),Vector2(width*.38,crest-.28),Vector2(width*.5,floor_y+.15),Vector2(width*.5,floor_y-3)]
 	var points := PackedVector3Array()
 	for point: Vector2 in profile:
 		var plan := center + across * point.x
@@ -218,5 +240,5 @@ static func _face(surface: SurfaceTool, triangle: Array, inside: Vector3) -> voi
 		b = c
 		c = swap
 	for vertex in [a, b, c]:
-		surface.set_color(_color(vertex, true))
+		surface.set_color(COAST_ROCK.lightened(.08 * sin(vertex.x * .9 + vertex.z * .7)))
 		surface.add_vertex(vertex)

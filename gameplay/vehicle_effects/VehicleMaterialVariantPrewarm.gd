@@ -164,6 +164,11 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 		visual.add_child(part)
 	var format_pieces := _hidden_pieces if hidden else 0
 	if FORMAT.enabled() and not hidden: format_pieces = FORMAT.build_grid(visual, _format_pairs(variants, effect_materials), Vector3(0, 0, -1.5))
+	# Rachadura do vidro (26/10): a textura é desenhada aqui e o atlas de decals já sobe com ela.
+	var crack := Decal.new()
+	crack.texture_albedo = preload("res://gameplay/vehicle_effects/VehicleGlassDamage.gd").crack_texture()
+	crack.size = Vector3(.5, .5, .5)
+	visual.add_child(crack)
 	var emitters := _effect_emitters()
 	# Os processos ficam retidos depois que os emissores são liberados com `visual`.
 	var processes: Array[Resource] = []

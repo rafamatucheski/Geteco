@@ -185,6 +185,7 @@ var _cutaway := TUNNEL_CUTAWAY.new()
 var _desert_terrain_camera := preload("res://world/desert/DesertTerrainCamera.gd").new()
 var _exterior_reveal := preload("res://scripts/camera/ExteriorReveal.gd").new()
 var _railway_clearance := preload("res://scripts/camera/RailwayCameraClearance.gd").new()
+var _building_clearance := preload("res://scripts/camera/BuildingCameraClearance.gd").new()
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -337,7 +338,9 @@ func _process_traced(delta: float) -> void:
 	_update_tunnel_chase(actual, delta, snap)
 	if not locked and projection==Camera3D.PROJECTION_ORTHOGONAL and _tunnel_chase_blend<=.001:
 		var nominal := global_position-focus
-		var safe := _railway_clearance.offset_for(focus,nominal,Vector2(size*get_viewport().get_visible_rect().size.aspect(),size),near,delta)
+		var view := Vector2(size*get_viewport().get_visible_rect().size.aspect(),size)
+		var safe := _railway_clearance.offset_for(focus,nominal,view,near,delta)
+		safe = _building_clearance.offset_for(get_world_3d().direct_space_state,focus,safe,view,near,delta)
 		# Moving on the orthographic axis changes depth only. Keep the original
 		# distant plane in world space while making room for foreground bridges.
 		global_position=focus+safe

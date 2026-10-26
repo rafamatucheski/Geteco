@@ -1,5 +1,6 @@
 extends Node
 ## Event-only, instance-local glazing damage. Body/paint surfaces are never hidden or edited.
+## Tiros racham o vidro (marca projetada) e só o BREAK_HITS-ésimo no mesmo painel o derruba.
 const INTERIOR := preload("res://gameplay/VehicleInterior.gd")
 const NODE_NAME := "GlassDamage"
 const MAX_RECORDS := 32
@@ -108,6 +109,16 @@ func contact(from: Vector3, to: Vector3) -> Dictionary:
 					"glass":INTERIOR._is_glass(part,surface,part.get_active_material(surface))}
 	return result
 
+## Vidro atingido (26/10/2026): os primeiros tiros num painel só racham (marca projetada, Decal, sem
+## mexer na malha nem criar shader); no BREAK_HITS-ésimo o painel cai inteiro, como antes. Antes o
+## primeiro tiro já tirava o vidro todo e a janela sumia de uma vez. Cada registro conta para o painel
+## que ele cruza na malha intacta da peça, então salvar e carregar refaz o mesmo estado.
+const BREAK_HITS := 3
+const CRACK_SIZE := .42
+const CRACK_NAME := "GlassCrack"
+static var _crack_texture: ImageTexture
+var _cracks: Dictionary = {}
+
 func shoot(from: Vector3, to: Vector3) -> Dictionary:
 	if records.size() >= MAX_RECORDS or not from.is_finite() or not to.is_finite() or from.distance_squared_to(to) < .0001: return {}
 	_prepare_topology()
@@ -118,12 +129,24 @@ func shoot(from: Vector3, to: Vector3) -> Dictionary:
 	var point := canonical * part.to_local(hit.point)
 	var direction := (canonical.basis * (part.global_basis.inverse() * from.direction_to(to))).normalized()
 	var row := {"point":[point.x,point.y,point.z],"direction":[direction.x,direction.y,direction.z]}
-	# Repeated bullets through an existing hole cannot break the opposite window in
-	# the same call; the next physical shot may hit that second pane normally.
 	records.append(row)
-	_remove_panel(part,int(hit.surface),int(hit.triangle))
+	_rebuild(part)
+	# Painel que caiu neste tiro: o mesmo raio não acha mais esse vidro no ponto do impacto.
+	var after := contact(from,to)
+	var shattered: bool = after.is_empty() or after.part != part or not after.glass or after.point.distance_to(hit.point) > .05
 	_refresh_rain()
-	return {"point":hit.point,"normal":-from.direction_to(to),"material":"glass"}
+	return {"point":hit.point,"normal":-from.direction_to(to),"material":"glass","shattered":shattered}
+
+## Refaz uma peça a partir da malha intacta com todos os registros (rachaduras e painéis caídos).
+func _rebuild(part: MeshInstance3D) -> void:
+	if _parts.has(part):
+		var entry: Dictionary = _parts[part]
+		if part.mesh == entry.applied: part.mesh = entry.base
+		for surface in entry.overrides:
+			if int(surface) < part.mesh.get_surface_count(): part.set_surface_override_material(surface,entry.overrides[surface])
+		_parts.erase(part)
+	if batch_reapply: _reapply_part(part)
+	else: _reapply_part_per_record(part)
 
 ## Connected triangles, welded by position, identify one pane even on combined surfaces.
 func _remove_panel(part: MeshInstance3D, surface: int, triangle: int) -> void:
@@ -220,6 +243,7 @@ func _reapply_part(part: MeshInstance3D) -> void:
 		var direction := Vector3(row.direction[0],row.direction[1],row.direction[2])
 		segments.append([inverse * (point-direction*.08), inverse * (point+direction*.08)])
 	var removed_by_surface: Dictionary = {}
+	var cracks: Array = []
 	for surface in original.get_surface_count():
 		if _hidden(part,surface) or not INTERIOR._is_glass(part,surface,part.get_active_material(surface)): continue
 		var arrays := INTERIOR.contact_arrays(original,surface)
@@ -229,17 +253,38 @@ func _reapply_part(part: MeshInstance3D) -> void:
 		var bounds := AABB(vertices[0],Vector3.ZERO)
 		for vertex in vertices: bounds = bounds.expand(vertex)
 		bounds = bounds.grow(.002)
-		var removed: Dictionary = {}
 		var welded: Dictionary = {}
+		var pane_of: Dictionary = {}
+		var panes: Dictionary = {}
+		var hits: Dictionary = {}
 		for segment in segments:
 			if bounds.intersects_segment(segment[0],segment[1]) == null: continue
 			for i in range(0,indices.size()-2,3):
-				if removed.has(i): continue
-				if Geometry3D.segment_intersects_triangle(segment[0],segment[1],vertices[indices[i]],vertices[indices[i+1]],vertices[indices[i+2]]) == null: continue
+				var a := vertices[indices[i]]
+				var b := vertices[indices[i+1]]
+				var c := vertices[indices[i+2]]
+				var at: Variant = Geometry3D.segment_intersects_triangle(segment[0],segment[1],a,b,c)
+				if at == null: continue
 				if welded.is_empty(): welded = _welded(vertices,indices)
-				_flood(i,vertices,indices,welded,removed)
+				if not pane_of.has(i):
+					var pane: Dictionary = {}
+					_flood(i,vertices,indices,welded,pane)
+					var seed: int = pane.keys().min()
+					for triangle in pane: pane_of[triangle] = seed
+					panes[seed] = pane
+				var key: int = pane_of[i]
+				if not hits.has(key): hits[key] = []
+				# A marca olha para o lado do atirador: o Decal some numa face virada contra ele.
+				var normal := (b-a).cross(c-a).normalized()
+				if normal.dot(segment[1]-segment[0]) > 0.0: normal = -normal
+				hits[key].append([at,normal])
 				break
+		var removed: Dictionary = {}
+		for key in hits:
+			if hits[key].size() >= BREAK_HITS: removed.merge(panes[key])
+			else: cracks.append_array(hits[key])
 		if not removed.is_empty(): removed_by_surface[surface] = removed
+	_set_cracks(part,cracks)
 	if removed_by_surface.is_empty(): return
 	var entry: Dictionary = _parts.get(part,{"base":original,"applied":original,"overrides":{}})
 	if part.mesh != entry.applied: entry.base = original
@@ -295,8 +340,92 @@ static func _flood(seed: int, vertices: PackedVector3Array, indices: PackedInt32
 				removed[neighbor] = true
 				queue.append(neighbor)
 
+## Uma marca de rachadura por tiro que não derrubou o painel: Decal filho da peça (acompanha a porta),
+## em metros no mundo (a base ortonormal tira a escala da peça). Não é malha, então quem percorre as
+## malhas do carro (amassado, chuva, cabine, sangue) não a enxerga.
+func _set_cracks(part: MeshInstance3D, cracks: Array) -> void:
+	for old in _cracks.get(part,[]):
+		if is_instance_valid(old): old.queue_free()
+	_cracks.erase(part)
+	if cracks.is_empty(): return
+	# Carro restaurado do save antes de entrar na árvore: as marcas entram junto com ele.
+	if not part.is_inside_tree():
+		part.tree_entered.connect(_set_cracks.bind(part,cracks),CONNECT_ONE_SHOT)
+		return
+	var nodes: Array = []
+	for index in cracks.size():
+		var normal: Vector3 = (part.global_basis * (cracks[index][1] as Vector3)).normalized()
+		if not normal.is_finite() or normal.length_squared() < .5: continue
+		var side := normal.cross(Vector3.UP if absf(normal.y) < .9 else Vector3.RIGHT).normalized()
+		side = side.rotated(normal,float(index) * 2.39996)
+		var decal := Decal.new()
+		decal.name = CRACK_NAME
+		decal.texture_albedo = crack_texture()
+		decal.size = Vector3(CRACK_SIZE,.08,CRACK_SIZE)
+		decal.normal_fade = .4
+		decal.upper_fade = .15
+		decal.lower_fade = .15
+		part.add_child(decal)
+		decal.global_transform = Transform3D(Basis(side,normal,side.cross(normal)).orthonormalized(),part.to_global(cracks[index][0]))
+		nodes.append(decal)
+	_cracks[part] = nodes
+
+## Estrela de trincas branca com furo escuro no meio, desenhada uma vez (sob a cortina pelo
+## pré-aquecimento dos materiais de veículo; o primeiro tiro não paga isso).
+static func crack_texture() -> ImageTexture:
+	if _crack_texture != null: return _crack_texture
+	const SIZE := 256
+	var image := Image.create(SIZE,SIZE,false,Image.FORMAT_RGBA8)
+	image.fill(Color(1,1,1,0))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 26102026
+	var center := Vector2(SIZE,SIZE) * .5
+	var spokes: Array = []
+	var count := 11
+	for i in count:
+		var heading := TAU * (float(i) + rng.randf_range(-.3,.3)) / count
+		var reach := SIZE * rng.randf_range(.36,.49)
+		var points: Array = [center]
+		var length := 0.0
+		while length < reach:
+			heading += rng.randf_range(-.18,.18)
+			length += rng.randf_range(10,18)
+			points.append(center + Vector2.from_angle(heading) * length)
+		spokes.append(points)
+		for k in points.size() - 1:
+			_crack_line(image,points[k],points[k + 1],lerpf(.95,.35,float(k) / points.size()),1.6 if k < 2 else 1.0)
+	# Anéis ligando os raios, como no vidro laminado.
+	for ring in [.32,.62]:
+		for i in count:
+			var a: Array = spokes[i]
+			var b: Array = spokes[(i + 1) % count]
+			var ia := mini(int(a.size() * ring),a.size() - 1)
+			var ib := mini(int(b.size() * ring),b.size() - 1)
+			_crack_line(image,a[ia],b[ib],.55 if ring < .5 else .35,1.0)
+	for y in range(-7,8):
+		for x in range(-7,8):
+			var d := Vector2(x,y).length()
+			if d <= 7.0: image.set_pixel(int(center.x) + x,int(center.y) + y,Color(.08,.09,.1,clampf(1.6 - d / 5.0,0,1)))
+	image.generate_mipmaps()
+	_crack_texture = ImageTexture.create_from_image(image)
+	return _crack_texture
+
+static func _crack_line(image: Image, a: Vector2, b: Vector2, alpha: float, width: float) -> void:
+	var steps := maxi(1,ceili(a.distance_to(b)))
+	for s in steps + 1:
+		var p := a.lerp(b,float(s) / steps)
+		for dy in range(-1,2):
+			for dx in range(-1,2):
+				var q := Vector2i(int(p.x) + dx,int(p.y) + dy)
+				if q.x < 0 or q.y < 0 or q.x >= image.get_width() or q.y >= image.get_height(): continue
+				var cover := clampf(width - Vector2(q).distance_to(p) + .5,0,1) * alpha
+				if cover <= 0.0: continue
+				var old := image.get_pixelv(q)
+				image.set_pixelv(q,Color(.94,.97,1.0,maxf(old.a,cover)))
+
 func clear() -> void:
 	records.clear()
+	for part in _cracks.keys(): _set_cracks(part,[])
 	for part: MeshInstance3D in _parts:
 		if not is_instance_valid(part): continue
 		var entry: Dictionary = _parts[part]

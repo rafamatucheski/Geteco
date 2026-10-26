@@ -84,6 +84,9 @@ func run() -> void:
 		check(not hit.is_empty() and hit.collider == car,id+" shot hits production vehicle collider")
 		combat._damage_bullet(car,25.0,null,ray[0],ray[1])
 		check(car.door_presentation.ready_for_boarding or car.door_presentation.coupe_ready,id+" resolves pending door topology before breaking glass")
+		# Rachadura (26/10): os primeiros tiros só marcam o vidro; o BREAK_HITS-ésimo derruba o painel.
+		check(glass_count(car) == original and not car.find_children(GLASS.CRACK_NAME,"Decal",true,false).is_empty(),id+" first shot cracks the pane without removing glazing")
+		for i in GLASS.BREAK_HITS - 1: combat._damage_bullet(car,25.0,null,ray[0],ray[1])
 		var broken := glass_count(car)
 		check(broken < original and broken > 0,id+" removes struck pane while preserving other glazing")
 		check(is_equal_approx(paint_area(car),paint),id+" preserves all painted geometry")
@@ -93,9 +96,9 @@ func run() -> void:
 		await create_timer(.03).timeout
 		check(glass_count(car) == broken,id+" opening a door preserves its broken window")
 		var saved: Array = car.snapshot_glass()
-		check(saved.size() == 1 and GLASS.valid_records(saved),id+" snapshots one valid glass strike")
+		check(saved.size() == GLASS.BREAK_HITS and GLASS.valid_records(saved),id+" snapshots each valid glass strike")
 		combat._damage_bullet(car,25.0,null,Vector3(0,.4,-8),Vector3(0,.4,8))
-		check(car.snapshot_glass().size() == 1,id+" hood or tire shot cannot shatter a window")
+		check(car.snapshot_glass().size() == GLASS.BREAK_HITS,id+" hood or tire shot cannot shatter a window")
 		car.body_dents.impact(18.0,Vector3(.6,.6,-car.half_length))
 		car.body_dents._rebuild()
 		car.finish_doors()
@@ -107,13 +110,13 @@ func run() -> void:
 		var front := ray_for(car,2)
 		check(not front.is_empty(),id+" exposes reachable windshield")
 		if not front.is_empty():
-			combat._damage_bullet(car,25.0,null,front[0],front[1])
+			for i in GLASS.BREAK_HITS: combat._damage_bullet(car,25.0,null,front[0],front[1])
 			check(glass_count(car) < original,id+" windshield is destructible")
 			car.repair()
 			combat._police_rounds.append({"point":front[0],"direction":(front[1]-front[0]).normalized(),"speed":1200.0,"distance":0.0,"range":20.0,
 				"damage":25.0,"data":preload("res://gameplay/WeaponCatalog.gd").get_weapon("pistol"),"source":weakref(twin),"rid":twin.get_rid(),"visual":{},"blocked":{}})
 			combat._advance_police_rounds(1.0/60.0)
-			check(car.snapshot_glass().size() == 1 and combat._police_rounds.is_empty(),id+" swept police projectile breaks glass beyond hull entry")
+			check(car.snapshot_glass().size() == 1 and combat._police_rounds.is_empty(),id+" swept police projectile strikes glass beyond hull entry")
 		car.free()
 		twin.free()
 	combat.free()

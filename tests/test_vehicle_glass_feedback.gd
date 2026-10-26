@@ -45,10 +45,13 @@ func run() -> void:
 	var count := combat.get_child_count()
 	var effect_count: int = combat.effects.get_child_count()
 	combat._damage_bullet(car,25.0,actor,ray[0],ray[1])
-	check(car.snapshot_glass().size() == 1,"real bullet broke one pane")
-	check(combat._glass_audio_pool.any(func(voice): return voice.playing and voice.bus == &"SFX" and voice.stream.get_length() >= .8),"glass break plays despite saturated gunfire and effects")
+	check(car.snapshot_glass().size() == 1,"real bullet struck one pane")
+	check(combat._glass_audio_pool.any(func(voice): return voice.playing and voice.bus == &"SFX" and voice.stream.get_length() >= .8),"glass crack plays despite saturated gunfire and effects")
+	check(not combat.effects._glass_shards.any(func(emitter): return emitter.emitting),"first bullet only cracks: no shower of glass yet")
+	# Rachadura (26/10): o painel só cai no BREAK_HITS-ésimo tiro.
+	for i in GLASS.BREAK_HITS - 1: combat._damage_bullet(car,25.0,actor,ray[0],ray[1])
 	check(combat.effects._glass_shards.size() == 4,"four reusable glass showers bound simultaneous work")
-	check(combat.effects._glass_shards.any(func(emitter): return emitter.emitting),"bullet emits actual glass fragments")
+	check(combat.effects._glass_shards.any(func(emitter): return emitter.emitting),"breaking bullet emits actual glass fragments")
 	var burst: CPUParticles3D = combat.effects._glass_shards[0]
 	check(burst.amount >= 20 and burst.lifetime >= .8 and burst.gravity.y < -9.0 and not burst.local_coords,"glass fragments tumble and fall in world space")
 	check(burst.mesh.size.x >= .04 and burst.mesh.size.z >= .06,"fragments have readable glass size rather than tiny impact chips")

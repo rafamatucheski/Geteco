@@ -1728,8 +1728,14 @@ func _damage_bullet(actor: Object, amount: float, source: Node, shot_from := Vec
 			var glass := preload("res://gameplay/vehicle_effects/VehicleGlassDamage.gd").owner_for(actor,true)
 			var broken: Dictionary = glass.shoot(shot_from,shot_to)
 			if not broken.is_empty():
-				if is_instance_valid(effects): effects.glass_shatter(broken.point,broken.normal)
-				_play_glass_break(broken.point)
+				# Rachadura (26/10): lascas de impacto e um estalo baixo; a chuva de cacos e o som cheio só
+				# quando o painel cai.
+				if broken.get("shattered",true):
+					if is_instance_valid(effects): effects.glass_shatter(broken.point,broken.normal)
+					_play_glass_break(broken.point)
+				else:
+					if is_instance_valid(effects): effects.impact(broken.point,broken.normal,"glass",amount)
+					_play_glass_break(broken.point,-9.0,1.25)
 		amount *= 0.15
 	_damage(actor, amount, source)
 
@@ -2448,7 +2454,7 @@ func _play_weapon_stream(stream: AudioStream, point: Vector3, volume_db: float, 
 	channel.pitch_scale = pitch
 	channel.play()
 
-func _play_glass_break(point: Vector3) -> void:
+func _play_glass_break(point: Vector3, volume_offset := 0.0, pitch := 1.0) -> void:
 	if _glass_audio_pool.is_empty(): return
 	var gain := _hearing_gain_db(point,32.0)
 	if gain <= -60.0: return
@@ -2459,8 +2465,8 @@ func _play_glass_break(point: Vector3) -> void:
 	voice.global_position = point
 	voice.stream = AUDIO.impact_take("glass",_rng)
 	if voice.stream == null: voice.stream = preload("res://gameplay/VehicleBreakIn.gd")._glass_stream()
-	voice.volume_db = -9.0 + gain
-	voice.pitch_scale = _rng.randf_range(.94,1.06)
+	voice.volume_db = -9.0 + gain + volume_offset
+	voice.pitch_scale = _rng.randf_range(.94,1.06) * pitch
 	voice.play()
 
 ## Toca um stream já carregado no primeiro canal livre do pool posicional.
