@@ -1,0 +1,235 @@
+{
+  "date": "2026-10-26",
+  "period": "2026-10-21 a 2026-10-26",
+  "scope": "Tudo o que entrou em main de 21/10 (tarde) a 26/10: desempenho (8 rodadas de bancada em release), som da cidade, dublagem das missões, polícia, garagem do Maciota, frota, deserto compacto, ponte, ruas, menus e mapa; mais a campanha que está em ramos fora de main. Números de desempenho medidos no export release com a bancada de estresse; jogabilidade verificada por testes, quase nada jogado com controle.",
+  "cards": [
+    {
+      "id": "desempenho-rodadas-20261026",
+      "title": "Desempenho: release, Vulkan, salvamento e primeira sessão 42% mais curta",
+      "status": "implemented",
+      "area": "performance",
+      "description": "Oito rodadas de bancada em release (estresse: chuva forte, tiro, explosões, 3 estrelas, 25 m/s), cada ganho medido em A/B no mesmo export. Jogar.cmd abre o export release (o binário do editor era +38% no tempo de quadro: −28%). Vulkan no Windows (D3D12 do 4.7.2 não guarda cache de pipeline). Salvar: 22 → 7,5 ms (−66%). Estresse a quente: quadros > 45 ms 11 → 2 (−82%), > 33 ms 37 → 19 (−49%); deserto 178 → 49 ms de pico. Primeira sessão (cache frio): 118 → 77 s até jogável com o cache de pipelines gravado só ao sair, e ~69 s com os pré-aquecimentos em paralelo (ligados em 24/10): −42%. Pior travada da primeira sessão 2.069 → ~900 ms (−56%). Shaders compilados no meio do jogo a quente: 58 → 4 (−93%). O tempo de quadro normal (p50 3–10 ms) não mudou: já estava abaixo da meta de 16,7 ms. Relatório completo em docs/perf-playthrough-20261021.md (§1–15) e gráfico em docs/perf-resumo-20261025.svg.",
+      "sources": [
+        "docs/perf-playthrough-20261021.md",
+        "docs/perf-resumo-20261025.svg",
+        "tools/PlayRelease.ps1",
+        "runtime/Settings.gd",
+        "runtime/ProductionWorld.gd",
+        "runtime/FormatPrewarm.gd",
+        "runtime/ReleaseBenchmark.gd",
+        "tools/bench/cold_cache_run.sh"
+      ],
+      "next": "Medir em 3440x1440 (todas as rodadas de 24–25/10 foram em 1920x1200, monitor grande desligado); resolver o quadro de ~0,9 s da primeira sessão (cartão próprio)."
+    },
+    {
+      "id": "chao-porto-faixas-20261024",
+      "title": "Chão do porto: pintura das faixas por célula (−83%)",
+      "status": "implemented",
+      "area": "performance",
+      "description": "Os caminhões do cais pediam o chão de células a 2–4 células do jogador e cada uma custava 13–27 ms num quadro. A maior parte era a pintura das faixas: cada célula percorria os tracinhos de todas as ruas do mapa e cada tracinho testava todos os cruzamentos. Agora só o que toca a célula. As 60 células saem com os mesmos 925 tracinhos (teste novo) e a pintura de todas caiu de 184 para 32 ms. No release os quadros de chão lento sumiram do registro no frio do oeste. GETECO_MARKING_CULL=0 volta.",
+      "sources": [
+        "world/urban_detail/HarborRoadGeometry3D.gd",
+        "tests/test_harbor_marking_cull.gd"
+      ],
+      "next": "O mar e o túnel do canal ainda custam 25–41 ms em algumas células do porto."
+    },
+    {
+      "id": "vidro-lote-20261024",
+      "title": "Vidro furado refeito de uma vez depois do amassado",
+      "status": "implemented",
+      "area": "performance",
+      "description": "Ao amassar um carro já baleado, o vidro era refeito com uma reconstrução da lataria por tiro. Agora um mapa por superfície e uma malha por peça, com o mesmo vidro nos 6 carros medidos e 2–3x mais rápido (até 2,8 → 1,4 ms). Não explica sozinho os 8–20 ms do amassado no jogo. GETECO_GLASS_BATCH_REAPPLY=0 volta.",
+      "sources": [
+        "gameplay/vehicle_effects/VehicleGlassDamage.gd",
+        "tests/measure/measure_glass_reapply.gd"
+      ],
+      "next": "Isolar o resto de vehicle.dents.apply (8–20 ms) no jogo."
+    },
+    {
+      "id": "quadro-09s-primeira-sessao-20261026",
+      "title": "Travada de ~0,9 s em ~70% das primeiras sessões",
+      "status": "issue",
+      "area": "performance",
+      "description": "Um quadro de 0,9–1,9 s, 30–90 s depois de jogável, em ~70% das sessões com cache frio e às vezes a quente: o motor compila 1 shader no meio do desenho. Descartados com A/B: explosões (apareceu antes da única explosão), carcaça sumindo, fim da chama, destroço sumindo, cache em disco do driver NVIDIA (vigiado a cada 50 ms) e a variável __GL_SHADER_DISK_CACHE=0 (o driver ignora). Pista atual: o jogo tem três formas de sumir com objetos por transparência (carcaça, destroço de adereço e carro retirado do trânsito) e cada combinação de material obriga uma compilação; testadas uma de cada vez, as outras duas continuavam causando o pico. As três versões sem transparência estão prontas mas sem commit; nas 3 sessões limpas da medição o lado corrigido não travou (máx 110 ms) e o padrão travou uma vez (1,2 s). A medição foi contaminada por outra sessão que abriu o jogo no meio dela.",
+      "sources": [
+        "scripts/Vehicle.gd",
+        "gameplay/DestroyedFade3D.gd",
+        "runtime/PipelineProbe.gd",
+        "docs/perf-playthrough-20261021.md"
+      ],
+      "next": "Rodar a bancada de 8 sessões frias (X D D X X D D X) com o PC sozinho; se o lado sem transparência não travar, ligar as três e commitar."
+    },
+    {
+      "id": "bancada-sondas-20261025",
+      "title": "Bancada: sondas de pipeline, registro de explosões e vigia",
+      "status": "implemented",
+      "area": "ferramentas",
+      "description": "GETECO_PIPELINE_PROBE=lite e =sig registram as combinações de material, formato e passe desenhadas, sem atrasar a carga (a sonda completa atrasava a ponto de esconder o pico); materiais de partícula passam a ser separados pelo shader gerado. A bancada grava cada explosão (instante, modelo e contadores de pipeline) em stress.explosion_log. As matrizes ficam em artifacts/perf-r*-<data>/ com vigia que registra Godot externo e OneDrive.",
+      "sources": [
+        "runtime/PipelineProbe.gd",
+        "runtime/StallLog.gd",
+        "runtime/ReleaseBenchmark.gd"
+      ],
+      "next": "Medir sempre com o PC sozinho: sem jogo aberto por outra sessão, sem acesso remoto conectado e sem OneDrive."
+    },
+    {
+      "id": "audio-cidade-viva-20261021",
+      "title": "Harbor com som de cidade",
+      "status": "implemented",
+      "area": "audio",
+      "description": "O ouvinte do Godot é a câmera, ~36 m acima e atrás do jogador; o trânsito colado no jogador saía a −20 dB e pedestre não tinha som. Agora a perda é medida pela distância ao jogador: trânsito audível, passos de até 6 pedestres, burburinho e falas curtas de quem está calmo por perto, leitos ElevenLabs no volume certo. Porta, ignição e freio de mão do próprio carro também ficaram audíveis. GETECO_CITY_LIFE_AUDIO=0 volta.",
+      "sources": [
+        "audio/WorldAudio.gd",
+        "audio/vehicle_ambience/NearbyVehicleAudio.gd"
+      ],
+      "next": "Ouvir jogando; o motor das viaturas ainda mede a distância a partir da câmera."
+    },
+    {
+      "id": "dublagem-missoes-20261022",
+      "title": "Dublagem ElevenLabs: Ferrugem, Neco, Jessica, moradora e Monaliza",
+      "status": "partial",
+      "area": "audio",
+      "description": "27 falas por idioma para Ferrugem, Neco e Jessica nas missões principais e mais 10 da moradora e da cena da Monaliza: 161 falas em PT-BR e 159 em inglês no elenco ElevenLabs. Todo esse lote foi gerado pela conta Free (sem licença comercial) e precisa ser regerado numa conta paga. As 3 falas da apresentação da Monaliza no fim da M01 ficaram só com legenda (sem cota).",
+      "sources": [
+        "tools/plan_elevenlabs_batch.py",
+        "tools/install_elevenlabs_voices.py",
+        "tests/test_elevenlabs_voices.gd"
+      ],
+      "next": "Regerar o lote numa conta paga; faltam ~512 falas PT e ~565 EN no total."
+    },
+    {
+      "id": "maciota-garagem-monaliza-20261021",
+      "title": "Garagem do Maciota maior e Monaliza apresentada",
+      "status": "implemented",
+      "area": "lugares",
+      "description": "Playtest de 21/10: a garagem ganhou 4 m (peças, pneus e motor), a câmera enquadra a sala (16:9 de 49% para 84% da largura), a escada encosta na parede do fundo e o inventário do porta-malas fica à direita. No fim da M01 o Maciota entrega a Monaliza em três falas e o HUD avisa quando o carro é liberado. Também corrigidos contato do mecânico, saída e rotina do Maciota e acesso da garagem.",
+      "sources": [
+        "runtime/HarborServiceRoofRuntime.gd",
+        "runtime/MaciotaWorkshop.gd"
+      ],
+      "next": "Gerar a voz das falas da Monaliza."
+    },
+    {
+      "id": "policia-20261021-26",
+      "title": "Polícia: descida regular, camburão, colete, van tática e abordagem a pé",
+      "status": "implemented",
+      "area": "policia",
+      "description": "A equipe desce do carro com regularidade (viatura parada há 3 s perto do alvo estaciona onde está); o camburão espalha os agentes e usa as portas de trás; a investigação local caiu de 5 min para 1 min com o tempo no HUD. Colete no policial, painel de vida dos policiais e despacho da van tática (Codex, 22–23/10). Em 26/10: abordagem a pé e cargas do rádio da central liberadas sem vazar.",
+      "sources": [
+        "gameplay/dispatch/DispatchUnit.gd",
+        "gameplay/PoliceAgent.gd",
+        "ui/hud/PoliceVitalsHUD.gd",
+        "gameplay/dispatch/PursuitRadioAudio.gd",
+        "tests/dispatch/test_police_foot_stop.gd"
+      ],
+      "next": "Jogar uma fuga completa e calibrar números."
+    },
+    {
+      "id": "frota-motos-20261023",
+      "title": "Frota: 3 carros civis, motos refeitas, sangue e desmonte",
+      "status": "partial",
+      "area": "veiculos",
+      "description": "Besouro 1300, Maré microvan e Toco minitruck no trânsito; acabamento das motos e ajuste da frota redesenhada (vehicle_fit de 23/10); sangue na lataria e ragdoll no atropelamento. O desmonte de painéis (breakaway) ainda é protótipo.",
+      "sources": [
+        "runtime/RedesignedFleet.gd",
+        "runtime/NewCivilianFleet.gd",
+        "gameplay/vehicle_effects/VehiclePanelDebris.gd",
+        "tools/vehicle_fit_20261023/"
+      ],
+      "next": "Fechar o desmonte de painéis; test_supra_a80 quebra com o modelo refeito (material_override nulo)."
+    },
+    {
+      "id": "deserto-arrancada-digo-20261021",
+      "title": "Deserto compacto, arrancada, oficina do Digo e tuning",
+      "status": "implemented",
+      "area": "mundo",
+      "description": "Layout compacto do deserto com cache de trechos, relevo, estradas e acampamentos; preparo e volta da arrancada; oficina do Digo com materiais, adereços, música e portão; kits de carroceria, rodas e teto solar no tuning; Ammunation e armeiro Vance. Lugares da beira de estrada afastados de postes e casas no mapa novo. Em 24/10: o aro voltou a ser pintável em 3 carros (a frota refeita mudou o nome do material) e os testes da garagem do Digo usam a posição nova da oficina.",
+      "sources": [
+        "world/desert/DesertLayout.gd",
+        "activities/desert_drag/DragPreparation.gd",
+        "world/desert/DigoWorkshopProps.gd",
+        "gameplay/desert_cars/TuningAppearance.gd"
+      ],
+      "next": "Jogar a arrancada e a oficina."
+    },
+    {
+      "id": "ponte-ruas-20261024",
+      "title": "Ponte com calçada segura e ruas com balizadores e placas",
+      "status": "implemented",
+      "area": "mundo",
+      "description": "Pedestres andam na calçada real da ponte, a curva ganhou postes e o tabuleiro concreto próprio; balizadores de estrada em lotes, placas de travessia e detalhes de calçada no porto e no deserto (Codex, 22–23/10).",
+      "sources": [
+        "world/regions/unified_bridge/BridgeWalkSafety.gd",
+        "world/shared/roads/RoadDelineatorBatches.gd",
+        "world/urban_detail/HarborTrafficSigns.gd"
+      ],
+      "next": "Custo noturno dos postes da curva a medir (estão fora do LightBudget, como os do tronco)."
+    },
+    {
+      "id": "serra-moradores-meshy-20261021",
+      "title": "Moradores da serra na rotina V2 com corpo Meshy",
+      "status": "implemented",
+      "area": "personagens",
+      "description": "Os 23 moradores fora da serra saíram do catálogo V1 e do modelo antigo: rotina V2, corpo Meshy de inverno e fim do lenhador golpeando o nada. Os 3 do chalé de esqui seguem no modelo antigo.",
+      "sources": [
+        "gameplay/routines_v2/MountainVillagerCatalog.gd"
+      ],
+      "next": "Migrar os 3 do chalé de esqui."
+    },
+    {
+      "id": "menus-mapa-20261026",
+      "title": "Menus compactos, cursor livre, mapa em atlas e coleções",
+      "status": "implemented",
+      "area": "interface",
+      "description": "Menus mais compactos com cursor livre, mapa do mundo em atlas de papel com rota, apresentação de coleções com medalha e ícones, menu de pausa e apagar slot de save (vai para saves/apagados). Em 26/10 também vidro e áudio das armas corrigidos.",
+      "sources": [
+        "ui/hud/MapUI.gd",
+        "ui/hud/PaperAtlas.gd",
+        "ui/SettingsMenu.gd",
+        "ui/CollectionPresentation.gd",
+        "tests/test_compact_menus_and_free_cursor.gd"
+      ],
+      "next": "Validar jogando."
+    },
+    {
+      "id": "campanha-ramos-20261021",
+      "title": "Campanha nova em ramos fora de main (prólogo, atos 1 e 2, M06-C)",
+      "status": "partial",
+      "area": "historia",
+      "description": "Roteiro de diretor (prólogo, três atos, romance com Helena e três finais) e quatro ramos de 21/10 que NÃO estão em main: claude/prologo-blitz (prólogo jogável com tiroteio na blitz, 14 commits), claude/ato1-helena (cadeia da Helena e do Neco em Harbor, 9 commits), claude/vertice-noite (M06-C, invasão noturna da Vértice, 9 commits) e claude/ato2-vicente (ato 2 com Vicente no deserto, junta o prólogo, 25 commits).",
+      "sources": [
+        "refs/heads/claude/prologo-blitz-b2bf6f",
+        "refs/heads/claude/ato1-helena-7bd234",
+        "refs/heads/claude/vertice-noite-f29e22",
+        "refs/heads/claude/ato2-vicente-4eb8d9"
+      ],
+      "next": "Decidir a ordem de junção em main (os ramos são de 21/10 e main andou 60 commits) e jogar o prólogo."
+    },
+    {
+      "id": "testes-consertados-20261024",
+      "title": "Testes consertados: Digo, aro, porto e destroços",
+      "status": "implemented",
+      "area": "qualidade",
+      "description": "test_digo_drive_workshop (oficina movida 340 m no mapa compacto), test_tuning_appearance (aro renomeado), test_port_logistics e test_port_real_loading_3d (esperavam 2400 quadros pela carga; agora por tempo) e test_destroyed_cleanup (erro de script em FragileProps3D). Suíte core 10/10 em todos os commits de desempenho.",
+      "sources": [
+        "tests/test_digo_drive_workshop.gd",
+        "tests/test_tuning_appearance.gd",
+        "tests/test_port_logistics.gd",
+        "gameplay/street_physics/FragileProps3D.gd"
+      ],
+      "next": "Falhas antigas que restam: real_loading (save pessoal, estivador), bridge_approach_terrain (2), destroyed_cleanup (sumiço de corpos), supra_a80."
+    }
+  ],
+  "updates": {
+    "perf-release-20261017": {
+      "next": "Continuado em desempenho-rodadas-20261026 (8 rodadas de 21–25/10)."
+    },
+    "picos-abertos-20261019": {
+      "next": "O pico de 501 ms da serra não voltou em 12 rodadas (24/10); o de ~0,9 s virou o cartão quadro-09s-primeira-sessao-20261026."
+    },
+    "voice-portuguese": {
+      "next": "Lote de 22/10 (Ferrugem, Neco, Jessica, moradora, Monaliza) gerado na conta Free: regerar em conta paga (dublagem-missoes-20261022)."
+    }
+  },
+  "remove": []
+}

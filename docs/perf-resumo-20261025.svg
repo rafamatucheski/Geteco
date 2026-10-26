@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="980" height="688" viewBox="0 0 980 688" font-family="Segoe UI, Arial, sans-serif">
+<rect width="980" height="688" fill="#ffffff"/>
+<text x="24" y="38" font-size="22" font-weight="700" fill="#1b1f24">Geteco — desempenho: antes × depois (21–25/10)</text>
+<text x="24" y="64" font-size="13" fill="#57606a">Barra cinza = antes (100%). Barra verde = depois, na mesma escala. Cada linha compara as duas versões medidas na mesma rodada da bancada.</text>
+<text x="24" y="120" font-size="14" fill="#1b1f24">Primeira sessão até jogável</text>
+<rect x="290" y="104" width="520" height="16" rx="3" fill="#d0d7de"/>
+<text x="818" y="117" font-size="12" fill="#57606a">antes 118 s</text>
+<rect x="290" y="124" width="304.1" height="16" rx="3" fill="#2da44e"/>
+<text x="602.1" y="137" font-size="12" fill="#1a7f37">depois 69 s</text>
+<text x="956" y="129" font-size="20" font-weight="700" fill="#1a7f37" text-anchor="end">−42%</text>
+<text x="24" y="178" font-size="14" fill="#1b1f24">Pior travada na 1ª sessão</text>
+<rect x="290" y="162" width="520" height="16" rx="3" fill="#d0d7de"/>
+<text x="818" y="175" font-size="12" fill="#57606a">antes 2.069 ms</text>
+<rect x="290" y="182" width="226.2" height="16" rx="3" fill="#2da44e"/>
+<text x="524.2" y="195" font-size="12" fill="#1a7f37">depois ~900 ms</text>
+<text x="956" y="187" font-size="20" font-weight="700" fill="#1a7f37" text-anchor="end">−57%</text>
+<text x="24" y="236" font-size="14" fill="#1b1f24">Travadas > 45 ms (estresse)</text>
+<rect x="290" y="220" width="520" height="16" rx="3" fill="#d0d7de"/>
+<text x="818" y="233" font-size="12" fill="#57606a">antes 11</text>
+<rect x="290" y="240" width="94.5" height="16" rx="3" fill="#2da44e"/>
+<text x="392.5" y="253" font-size="12" fill="#1a7f37">depois 2</text>
+<text x="956" y="245" font-size="20" font-weight="700" fill="#1a7f37" text-anchor="end">−82%</text>
+<text x="24" y="294" font-size="14" fill="#1b1f24">Travadas > 33 ms (estresse)</text>
+<rect x="290" y="278" width="520" height="16" rx="3" fill="#d0d7de"/>
+<text x="818" y="291" font-size="12" fill="#57606a">antes 37</text>
+<rect x="290" y="298" width="267.0" height="16" rx="3" fill="#2da44e"/>
+<text x="565.0" y="311" font-size="12" fill="#1a7f37">depois 19</text>
+<text x="956" y="303" font-size="20" font-weight="700" fill="#1a7f37" text-anchor="end">−49%</text>
+<text x="24" y="352" font-size="14" fill="#1b1f24">Shaders compilados no jogo</text>
+<rect x="290" y="336" width="520" height="16" rx="3" fill="#d0d7de"/>
+<text x="818" y="349" font-size="12" fill="#57606a">antes 58</text>
+<rect x="290" y="356" width="35.9" height="16" rx="3" fill="#2da44e"/>
+<text x="333.9" y="369" font-size="12" fill="#1a7f37">depois 4</text>
+<text x="956" y="361" font-size="20" font-weight="700" fill="#1a7f37" text-anchor="end">−93%</text>
+<text x="24" y="410" font-size="14" fill="#1b1f24">Salvar o jogo</text>
+<rect x="290" y="394" width="520" height="16" rx="3" fill="#d0d7de"/>
+<text x="818" y="407" font-size="12" fill="#57606a">antes 22 ms</text>
+<rect x="290" y="414" width="177.3" height="16" rx="3" fill="#2da44e"/>
+<text x="475.3" y="427" font-size="12" fill="#1a7f37">depois 7,5 ms</text>
+<text x="956" y="419" font-size="20" font-weight="700" fill="#1a7f37" text-anchor="end">−66%</text>
+<text x="24" y="468" font-size="14" fill="#1b1f24">Pintura do chão do porto</text>
+<rect x="290" y="452" width="520" height="16" rx="3" fill="#d0d7de"/>
+<text x="818" y="465" font-size="12" fill="#57606a">antes 184 ms</text>
+<rect x="290" y="472" width="90.4" height="16" rx="3" fill="#2da44e"/>
+<text x="388.4" y="485" font-size="12" fill="#1a7f37">depois 32 ms</text>
+<text x="956" y="477" font-size="20" font-weight="700" fill="#1a7f37" text-anchor="end">−83%</text>
+<text x="24" y="526" font-size="14" fill="#1b1f24">Vidro furado após amassado</text>
+<rect x="290" y="510" width="520" height="16" rx="3" fill="#d0d7de"/>
+<text x="818" y="523" font-size="12" fill="#57606a">antes 2,8 ms</text>
+<rect x="290" y="530" width="260.0" height="16" rx="3" fill="#2da44e"/>
+<text x="558.0" y="543" font-size="12" fill="#1a7f37">depois 1,4 ms</text>
+<text x="956" y="535" font-size="20" font-weight="700" fill="#1a7f37" text-anchor="end">−50%</text>
+<text x="24" y="584" font-size="14" fill="#1b1f24">Tempo de quadro (release × editor)</text>
+<rect x="290" y="568" width="520" height="16" rx="3" fill="#d0d7de"/>
+<text x="818" y="581" font-size="12" fill="#57606a">antes 138 %</text>
+<rect x="290" y="588" width="376.8" height="16" rx="3" fill="#2da44e"/>
+<text x="674.8" y="601" font-size="12" fill="#1a7f37">depois 100 %</text>
+<text x="956" y="593" font-size="20" font-weight="700" fill="#1a7f37" text-anchor="end">−28%</text>
+<text x="24" y="638" font-size="13" fill="#57606a">Fluidez normal a quente (p50, 3–10 ms) não mudou: já estava abaixo da meta de 16,7 ms. Medido em 1920x1200; 3440x1440 ainda não medido.</text>
+<text x="24" y="658" font-size="13" fill="#cf222e">Em aberto: travada de ~0,9 s em ~70% das primeiras sessões (correção pronta, sem medição limpa ainda).</text>
+</svg>
