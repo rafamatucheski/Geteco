@@ -126,7 +126,7 @@ func run() -> void:
 						continue
 					if SHAPE.is_land(probe) and SHAPE.signed_distance(probe) > 1.5: trapped += 1
 	check(trapped == 0, "costa nova encosta no mar de verdade, sem água presa na terra da forma (%d pontos)" % trapped)
-	print("HARBOR_COAST corte na divisa com os bairros sem costa curva: %d m" % (stub * 2))
+	print("HARBOR_COAST beira reta fora dos bairros (cais da bacia do navio): %d m" % (stub * 2))
 	# Mata da faixa nova: árvores fora da terra de antes e longe da costa (o muro fica na beira).
 	var woods := preload("res://world/shape/HarborCoastWoodland.gd")
 	var old_land := land.slice(0, land.size() - natural.size())

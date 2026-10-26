@@ -1,13 +1,14 @@
 extends RefCounted
 ## Forma do mundo orgânico (plano de 26/10/2026, etapa 0): contorno curvo de cada ilha e o tipo de costa
 ## em cada trecho (cais, praia, penhasco, pedra). Gerada por tools/world_shape/generate_world_shape.mjs a
-## partir da maquete aprovada do mapa da tecla M. Só dados e consultas: nada no jogo lê isto ainda. Os
+## partir da maquete aprovada do mapa da tecla M. Só dados e consultas. Os
 ## contratos (tudo que é jogável fica em terra, as pontes passam sobre água) estão em
 ## tests/test_world_shape.gd; a prévia de cima sai de tools/world_shape/preview_world_shape.py.
 const PATH := "res://world/shape/world_shape.json"
 const KINDS := ["quay", "beach", "cliff", "rock"]
 static var _islands: Array[Dictionary] = []
 static var _fields: Dictionary = {}
+static var _quay_zones: Array[PackedVector2Array] = []
 
 ## [{id, polygon: PackedVector2Array (x, z), bounds: Rect2, coast: [[índice inicial, tipo], ...]}]
 static func islands() -> Array[Dictionary]:
@@ -19,6 +20,10 @@ static func islands() -> Array[Dictionary]:
 		var values := PackedFloat32Array()
 		for v in field.decimetres: values.append(float(v) / 10.0)
 		_fields[id] = {"origin": Vector2(field.origin[0], field.origin[1]), "step": float(field.step), "size": Vector2i(field.size[0], field.size[1]), "values": values}
+	for zone in data.get("quay_zones", []):
+		var polygon := PackedVector2Array()
+		for i in range(0, zone.size(), 2): polygon.append(Vector2(float(zone[i]), float(zone[i + 1])))
+		_quay_zones.append(polygon)
 	for row in data.get("islands", []):
 		var flat: Array = row.points
 		var polygon := PackedVector2Array()
@@ -27,6 +32,11 @@ static func islands() -> Array[Dictionary]:
 		for point in polygon: bounds = bounds.expand(point)
 		_islands.append({"id": str(row.id), "polygon": polygon, "bounds": bounds, "coast": row.coast})
 	return _islands
+
+## Zonas de cais de Harbor (etapa 3): ali a costa é a borda da terra jogável, sem folga.
+static func quay_zones() -> Array[PackedVector2Array]:
+	if _islands.is_empty(): islands()
+	return _quay_zones
 
 ## Id da ilha que contém o ponto, ou "" no mar.
 static func island_at(point: Vector2) -> String:

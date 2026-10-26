@@ -75,9 +75,31 @@ function rawField(x,z){
   const sx=x+(fbm(x*.004,z*.0055+7,3)-.5)*110, sz=z+(fbm(x*.0055+3,z*.004,3)-.5)*70;
   for(const s of STRAITS)f=Math.min(f,polyline(sx,sz,s.pts)-s.half-(fbm(x*.009+1,z*.009,3)-.5)*46);
   return f;}
-// O que é jogável nunca vira mar; vem depois da suavização para ela não comer essas folgas.
+// Etapa 3 (frente sul e porto): cais reto. Dentro de QUAY_ZONES a costa é a borda da terra jogável de
+// Harbor (retângulos e terra extra), sem folga; a QUAY_RAMP m da zona a curva natural volta aos poucos, e é
+// assim que a costa da mata e a do parque descem até os cantos do cais. O jogo lê as mesmas zonas
+// (HarborCoast) para não pôr chão natural na frente do cais.
+const QUAY_ZONES = [[-100,150, 440,150, 440,1200, -100,1200]];
+const QUAY_RAMP = 50;
+// Folga mínima no cais: onde dois pedaços de terra dividem uma borda (a passarela e o porto em z = 200), o
+// máximo das distâncias dá zero exato na borda, e o contorno separava o porto da cidade ali.
+const QUAY_SLACK = 0.6;
+// Bacia do navio entre os quarteirões (x 200–273,8): água, sem a folga de terra em volta (ela fechava a
+// bacia). Ao norte o jogo fecha a bacia num cais em z = −6,2; ao sul ela segue no canal, dentro do cais.
+const CARVES = [[200,-6.2, 273.8,-6.2, 273.8,150, 200,150]];
+const zoneDepth=(x,z,zones)=>{let best=-1e9;for(const p of zones)best=Math.max(best,sdPoly(x,z,p));return best;};
+function quayWeight(x,z){const d=zoneDepth(x,z,QUAY_ZONES);return d>=0?1:1-ss(0,QUAY_RAMP,-d);}
+const carved=(x,z)=>zoneDepth(x,z,CARVES);
+// Puxa a costa para a borda exata da terra nas zonas de cais e abre a bacia.
+function quays(x,z,f){
+  const w=quayWeight(x,z);
+  if(w>0)f+=(Math.min(f,harborSD(x,z)+QUAY_SLACK)-f)*w;
+  return Math.min(f,-carved(x,z));}
+// O que é jogável nunca vira mar; vem depois da suavização para ela não comer essas folgas. A folga de
+// Harbor some no cais e na beira da bacia.
 function protect(x,z,f){
-  f=Math.max(f,harborSD(x,z)+PROTECT.harbor,mountainSD(x,z)+PROTECT.mountain,sdRoundRect(x,z,D.x0,D.z0,D.x1,D.z1,6)+PROTECT.desert);
+  const slack=Math.max(QUAY_SLACK,PROTECT.harbor*(1-quayWeight(x,z))*ss(0,12,-carved(x,z)));
+  f=Math.max(f,harborSD(x,z)+slack,mountainSD(x,z)+PROTECT.mountain,sdRoundRect(x,z,D.x0,D.z0,D.x1,D.z1,6)+PROTECT.desert);
   for(const a of ABUTMENTS)f=Math.max(f,a.r-Math.hypot(x-a.x,z-a.z));
   if(x>420&&z<-100)f=Math.max(f,mountainContentSD(x,z));
   return f;}
@@ -101,7 +123,7 @@ function boxBlur(src,r){const tmp=new Float32Array(src.length),out=new Float32Ar
 const SMOOTH=boxBlur(boxBlur(F,4),4);
 for(let iz=0;iz<NZ;iz++)for(let ix=0;ix<NX;ix++){
   const i=iz*NX+ix,edge=ix===0||iz===0||ix===NX-1||iz===NZ-1;
-  F[i]=edge?-1:protect(X0+ix*CELL,Z0+iz*CELL,SMOOTH[i]);}
+  F[i]=edge?-1:protect(X0+ix*CELL,Z0+iz*CELL,quays(X0+ix*CELL,Z0+iz*CELL,SMOOTH[i]));}
 function field(x,z){const fx=Math.min(NX-2,Math.max(0,(x-X0)/CELL)),fz=Math.min(NZ-2,Math.max(0,(z-Z0)/CELL));const ix=Math.floor(fx),iz=Math.floor(fz),u=fx-ix,w=fz-iz;
   const a=F[iz*NX+ix],b=F[iz*NX+ix+1],c=F[(iz+1)*NX+ix],d=F[(iz+1)*NX+ix+1];return a*(1-u)*(1-w)+b*u*(1-w)+c*(1-u)*w+d*u*w;}
 const v=(ix,iz)=>F[iz*NX+ix];
@@ -146,7 +168,8 @@ const flat=l=>l.flatMap(p=>[p[0],p[1]]);
 const outers=big.filter(o=>!big.some(other=>other!==o&&Math.abs(other.a)>Math.abs(o.a)&&pip(o.l[0][0],o.l[0][1],flat(other.l))));
 function inward(x,z){const e=2,gx=field(x+e,z)-field(x-e,z),gz=field(x,z+e)-field(x,z-e),L=Math.hypot(gx,gz)||1;return [gx/L,gz/L];}
 function coastKind(x,z,island){
-  if(citySD(x,z)>-30)return "quay";
+  // Cais: a costa encosta na terra jogável de Harbor (zonas de cais, bacia e o começo das rampas).
+  if(island==="harbor")return Math.abs(harborSD(x,z))<2.5?"quay":"beach";
   if(island==="mountain")return "rock";
   const n=inward(x,z);const ix=x+n[0]*40,iz=z+n[1]*40;
   if(island==="desert"&&ridgeStrength(ix,iz)>.3)return "cliff";
@@ -176,7 +199,7 @@ for(const isl of islands){
   fields[isl.id]={origin:[x0,z0],step,size:[nx,nz],decimetres:values};
 }
 const out={version:1,generated:"2026-10-26",source:"docs/design/mapa-3d-tecla-m-20261026.html",generator:"tools/world_shape/generate_world_shape.mjs",
-  cell_m:CELL,protect_m:PROTECT,abutments:ABUTMENTS,straits:STRAITS,islands,distance_fields:fields};
+  cell_m:CELL,protect_m:PROTECT,abutments:ABUTMENTS,straits:STRAITS,quay_zones:QUAY_ZONES,quay_ramp_m:QUAY_RAMP,carves:CARVES,islands,distance_fields:fields};
 fs.mkdirSync(output.substring(0,output.lastIndexOf("/")),{recursive:true});
 fs.writeFileSync(output,JSON.stringify(out));
 console.log("WORLD_SHAPE ilhas=%d", islands.length, islands.map(i=>`${i.id}:${i.points.length/2} vértices, ${(i.area_m2/1e6).toFixed(2)} km², costa ${i.coast.map(c=>c[1]).join("/")}`).join(" | "));

@@ -44,13 +44,14 @@ func run() -> void:
 	var area := Rect2(-615, -295, 535, 510)
 	var north := Rect2(-90, -300, 460, 310)
 	var east := Rect2(350, -310, 260, 520)
+	var south := Rect2(-160, 100, 700, 300)
 	var region = EDITABLE.build_region("harbor")
 	region.initial_focus = Vector3(area.get_center().x, 0, area.get_center().y)
 	stage.add_child(region)
 	production.regions["harbor"] = region
 	# A vista de desenvolvedor para nos registros da região (x ≈ −512); a ponta oeste da costa nova fica
 	# além. No jogo o streaming monta as 3 × 3 células em volta do jogador, sem limite.
-	var cells := area.merge(north).merge(east).grow(32.0)
+	var cells := area.merge(north).merge(east).merge(south).grow(32.0)
 	region.set_developer_view(cells, true, false)
 	region.set_process(false)
 	for x in range(floori(cells.position.x / 64.0), ceili(cells.end.x / 64.0)):
@@ -122,6 +123,22 @@ func run() -> void:
 	camera.position = Vector3(680, 16, 100)
 	camera.look_at(Vector3(520, 0, 100))
 	await _shot(output.path_join("leste-parque.png"))
+	# Frente sul e porto de cima.
+	camera.projection = Camera3D.PROJECTION_ORTHOGONAL
+	camera.size = south.size.y + 120.0
+	center = Vector3(south.get_center().x, 0, south.get_center().y)
+	camera.position = center + Vector3(0, 900, 360)
+	camera.look_at(center)
+	await _shot(output.path_join("sul-cima.png"))
+	camera.projection = Camera3D.PROJECTION_PERSPECTIVE
+	# Costa da mata descendo até o cais da frente sul.
+	camera.position = Vector3(-60, 16, 300)
+	camera.look_at(Vector3(-130, 0, 190))
+	await _shot(output.path_join("sul-mata.png"))
+	# Costa do parque descendo até o cais, com a boca do canal do porto.
+	camera.position = Vector3(470, 16, 330)
+	camera.look_at(Vector3(440, 0, 180))
+	await _shot(output.path_join("sul-parque.png"))
 	print("HARBOR_COAST_CAPTURE ", output, " células ", region.chunks.size())
 	quit()
 

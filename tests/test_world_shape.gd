@@ -21,6 +21,9 @@ const HARBOR_LAND_MARGIN := 2.0
 ## (ScenarioBoundary3D) e o chão retangular do deserto não ficarem por cima do mar.
 const DESERT_SEAL_MARGIN := 6.0
 const MIN_STRAIT := 40.0
+## Etapa 3: no cais a costa é a borda da terra jogável. Ali vale só estar em terra, com a tolerância do
+## contorno (grade de 4 m e simplificação de 1,2 m arredondam os cantos).
+const QUAY_TOLERANCE := 3.0
 const MOUNTAIN_CLEAR := 14.0
 ## Estradas que podem passar sobre a água: as pontes. Ferrovia é elevada e cruza os canais.
 const SPAN_SURFACES := ["railway", "cable"]
@@ -87,12 +90,16 @@ func run() -> void:
 	for row in harbor.source_data.harbor_land:
 		var rect := Rect2(row[0] / 16.0, row[1] / 16.0, row[2] / 16.0, row[3] / 16.0)
 		for corner in [rect.position, Vector2(rect.end.x, rect.position.y), rect.end, Vector2(rect.position.x, rect.end.y)]:
-			if SHAPE.signed_distance(corner) < HARBOR_LAND_MARGIN: lost += 1; violate(corner, "terra de Harbor")
+			if not _clear(corner, HARBOR_LAND_MARGIN): lost += 1; violate(corner, "terra de Harbor")
 	for polygon in harbor.extra_land:
 		# O chão natural da costa curva (etapa 3) é a própria costa: os vértices dele ficam nela.
 		if preload("res://world/shape/HarborCoast.gd").is_natural(polygon): continue
+		# Passarelas de 4 m sobre o canal do porto são mais finas que a grade da forma: ficam de fora.
+		var size := Rect2(polygon[0], Vector2.ZERO)
+		for point in polygon: size = size.expand(point)
+		if minf(size.size.x, size.size.y) < 8.0: continue
 		for point in polygon:
-			if SHAPE.signed_distance(point) < HARBOR_LAND_MARGIN: lost += 1; violate(point, "terra extra de Harbor")
+			if not _clear(point, HARBOR_LAND_MARGIN): lost += 1; violate(point, "terra extra de Harbor")
 	check(lost == 0, "toda a terra de Harbor de hoje fica em terra (%d cantos fora)" % lost)
 
 	# Deserto: a borda inteira da área jogável fica em terra, com folga para o selo.
@@ -123,8 +130,9 @@ func run() -> void:
 			for s in steps:
 				var p := points[i].lerp(points[i + 1], float(s) / steps)
 				var d := SHAPE.signed_distance(p)
-				if d < 0.0: wet += 1
-				elif d < ROAD_MARGIN and not _is_bridge(road): tight += 1; violate(p, "estrada colada na costa")
+				var quay := d < ROAD_MARGIN and SHAPE.coast_kind(p) == "quay"
+				if d < (-QUAY_TOLERANCE if quay else 0.0): wet += 1
+				elif d < ROAD_MARGIN and not quay and not _is_bridge(road): tight += 1; violate(p, "estrada colada na costa")
 		if wet > 0: wet_roads[str(road.id) if not str(road.id).is_empty() else "%s:%s" % [road.region, road.surface]] = wet
 	print("WORLD_SHAPE estradas sobre a água: ", wet_roads)
 	check(tight == 0, "estradas em terra ficam a %.0f m da costa (%d pontos colados)" % [ROAD_MARGIN, tight])
@@ -162,19 +170,27 @@ func run() -> void:
 	# Lugares e prédios em terra com folga.
 	var bad_markers: Array = []
 	for marker in atlas.markers:
-		if SHAPE.signed_distance(marker.point) < MARKER_MARGIN: bad_markers.append(marker.title); violate(marker.point, "marcador: " + str(marker.title))
+		if not _clear(marker.point, MARKER_MARGIN): bad_markers.append(marker.title); violate(marker.point, "marcador: " + str(marker.title))
 	check(bad_markers.is_empty(), "%d marcadores a %.0f m da costa (fora: %s)" % [atlas.markers.size(), MARKER_MARGIN, bad_markers])
 	var bad_buildings := 0
 	for building in atlas.buildings:
 		for corner in building:
-			if SHAPE.signed_distance(corner) < BUILDING_MARGIN: bad_buildings += 1; violate(corner, "prédio")
+			if not _clear(corner, BUILDING_MARGIN): bad_buildings += 1; violate(corner, "prédio")
 	check(bad_buildings == 0, "%d prédios em terra (%d cantos fora)" % [atlas.buildings.size(), bad_buildings])
 	finish()
+
+## Folga até a costa; no cais basta estar em terra (com a tolerância do contorno).
+func _clear(point: Vector2, margin: float) -> bool:
+	var d := SHAPE.signed_distance(point)
+	if d >= margin: return true
+	return SHAPE.coast_kind(point) == "quay" and d > -QUAY_TOLERANCE
 
 ## Ids das estradas que são ponte. Ponte leste: as duas pistas de Harbor e a metade da serra
 ## (mountain_pass sai da cabeceira sobre o mar). Ponte norte: entra no mapa sem id (WorldMapData.collect).
 func _bridge_ids() -> Array:
-	var ids: Array = ["mountain_bridge_outbound", "mountain_bridge_inbound", "mountain_pass", "harbor:asphalt"]
+	# foundry_avenue cruza a bacia do navio na ponte da fundição (FoundryBridge3D); a bacia é água na forma
+	# desde a etapa 3.
+	var ids: Array = ["mountain_bridge_outbound", "mountain_bridge_inbound", "mountain_pass", "harbor:asphalt", "foundry_avenue"]
 	for source in CONNECTION.traffic_connectors(): ids.append(str(source.id))
 	return ids
 

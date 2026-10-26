@@ -167,8 +167,18 @@ volta à terra de antes. Contratos: `tests/test_harbor_coast.gd`; fotos:
   zona pega o lado leste do parque e o sul dele a partir de x = 480, onde a faixa até a costa é mais
   estreita. A pegada da ponte leste sai do chão natural, como a da norte. Fica uma divisa reta de ~50 m
   em x = 480, ao sul do parque, até a frente sul entrar.
-- **Próximo:** frente sul e porto, com cais reto e a bacia recortada no gerador. É o último bairro e
-  fecha as divisas que sobraram (sul da mata, sul do parque).
+- **Feito: frente sul e porto (cais reto).** O gerador ganhou zonas de cais (`QUAY_ZONES`: a frente sul
+  da cidade, o porto, o canal e a boca dele). Dentro delas a costa é a borda da terra jogável (mais 0,6 m
+  de folga, para duas terras com borda em comum não virarem água na emenda). A `QUAY_RAMP` (50 m) da
+  zona, a curva natural volta aos poucos. A bacia do navio (x 200–273,8) é recortada (`CARVES`). O jogo lê as
+  mesmas zonas (`WorldShape.quay_zones`) e não põe chão natural na frente do cais. Com isso a costa da
+  mata e a do parque descem até os cantos do cais, e as divisas retas de ~50 m sumiram. A única beira reta
+  fora dos bairros é o cais da bacia (74 m, de propósito). Contratos de `test_world_shape`: no cais
+  basta estar em terra (tolerância de 3 m do contorno). As passarelas de 4 m sobre o canal ficam fora (mais
+  finas que a grade). `foundry_avenue` conta como ponte (cruza a bacia na ponte da fundição).
+- **Etapa 3 concluída.** Achado de passagem: um chão movido no editor de mundo
+  (`EditorPiece_unit_harbor_-3_1_Land`, deslocado para x −173…−109, z 160…224) fica no mar ao sul da
+  mata, chapado e sem muro. Existia antes da etapa 3 e está no documento do editor, não no código.
 
 ### 4. Serra ilha
 
