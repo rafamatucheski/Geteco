@@ -1,0 +1,70 @@
+{
+  "date": "2026-10-27",
+  "period": "madrugada de 2026-10-27",
+  "scope": "Tarefas do board feitas de madrugada por um agente, com o PC sozinho: testes quebrados conhecidos, colisões invisíveis do deserto, entrada da pedreira (por testes) e o A/B frio do quadro de ~0,9 s. Nada jogado com controle.",
+  "cards": [
+    {
+      "id": "testes-atrasados-frota-redesenhada-20261027",
+      "title": "Testes atrasados pela frota redesenhada",
+      "status": "issue",
+      "area": "quality",
+      "description": "Achados ao rodar os testes de pintura e acabamento em 27/10, todos de antes das mudanças da madrugada. Postos em dia: test_fleet_redesign (as motos entraram na frota redesenhada em 23/10 e eram cobradas como carro de 4 rodas e 2 faróis; passa), test_fleet_finish (a frota redesenhada não ganha a SculptedCabin) e test_destroyed_cleanup (as 2 leituras de MultiMesh do poste só valem com janela; com janela passam). Seguem falhando: test_fleet_finish (1: o snowmobile bike_snow não tem material de pintura), test_desert_car_livery (os carros de corrida do deserto redesenhados não têm o adesivo DesertRaceLivery: falta saber se a perda foi intencional), test_destroyed_cleanup (2 antigas, sumiço de corpos) e test_mining_raid (1: tiro do jogador não derruba o guarda 2).",
+      "sources": [
+        "tests/test_fleet_redesign.gd",
+        "tests/test_fleet_finish.gd",
+        "tests/test_destroyed_cleanup.gd",
+        "tests/test_desert_car_livery.gd",
+        "runtime/RedesignedFleet.gd"
+      ],
+      "next": "Decidir se o adesivo de corrida volta aos carros do deserto redesenhados e se o snowmobile deve ser repintável."
+    }
+  ],
+  "updates": {
+    "issue-tests-20261017": {
+      "status": "implemented",
+      "description": "Todos os testes da lista rodados e resolvidos em 27/10 (9d0ba203). Três eram defeito de jogo: o teto em duas cores da frota redesenhada ficava na cor de fábrica (VehiclePaint não reconhecia a superfície roof_paint assada), o reparo desfazia o assento dos pneus no chão e, ao entrar num lugar, os prêmios já coletados apareciam por 0,34 s antes de sumir (esconderijo do Vértice). Os outros estavam atrasados em relação ao jogo: dublê do carro-forte sem os campos novos, porta fora do centro nas casas da Vila dos Caminhoneiros, barreira entre pista e calçada na ponte da serra, espera de carga e vida do jogador nos ursos, posição antiga do ponto Cobre. test_harbor_service_roofs já passava. Suíte central completa 24/24.",
+      "sources": [
+        "runtime/VehiclePaint.gd",
+        "scripts/Vehicle.gd",
+        "gameplay/vehicle_effects/VehicleDamage.gd",
+        "runtime/FullSession.gd",
+        "tests/test_vehicle_twotone.gd",
+        "tests/test_vehicle_damage_look.gd",
+        "tests/test_vertice_hideout.gd"
+      ],
+      "next": "Testes que a frota redesenhada deixou para trás estão no cartão testes-atrasados-frota-redesenhada-20261027."
+    },
+    "bug-colisores-invisiveis-deserto-20261012": {
+      "status": "partial",
+      "description": "Sonda nova (tests/probe_desert_invisible_walls.gd) varreu as 171 células do deserto comparando colisão com visual (~30 milhões de raios). Único degrau invisível no chão aberto: o pátio do ponto de ônibus Cobre era sólido com o tampo a +1,5 cm, e a quina segurava o casco do carro (caixa sem subida de degrau). Agora é só visual (63379289), com test_desert_flush_slabs. O resto que a sonda acusa está explicado em docs/deserto-paredes-invisiveis-20261027.md (cascos convexos de rocha, caixas de carro estacionado, a grade da ponte do cânion).",
+      "sources": [
+        "docs/deserto-paredes-invisiveis-20261027.md",
+        "tests/probe_desert_invisible_walls.gd",
+        "tests/test_desert_flush_slabs.gd",
+        "world/desert/DesertCoachStop.gd"
+      ],
+      "next": "Dirigir no deserto (rodovia perto do ponto Cobre e chão aberto) para confirmar que o relato sumiu; a sonda não cobre o que a sessão põe no deserto em tempo de jogo."
+    },
+    "bug-pedreira-mineradora-nao-entra-20261012": {
+      "status": "partial",
+      "description": "Conferido por testes em 27/10, sem jogar: test_mining_access 20/20 (carro comum e caminhão gigante entram e saem pelo portão da estrada, varredura do corpo inteiro a cada 0,5 m), test_mining_session 68/68 (entrada pela galeria SECRET_ENTRY), test_mining_raid 146/147 (a falha é o tiro no guarda 2, não a entrada). A sonda de paredes invisíveis não achou colisor sem visual no acesso.",
+      "sources": [
+        "tests/test_mining_access.gd",
+        "tests/test_mining_session.gd",
+        "tests/test_mining_raid.gd"
+      ],
+      "next": "Entrar uma vez no jogo pelo portão da estrada para fechar o cartão."
+    },
+    "quadro-09s-primeira-sessao-20261026": {
+      "description": "Quadro de 1,0–2,4 s em ~50 % das sessões com cache frio, 30–110 s depois de jogável. Em 27/10 de madrugada, com o PC sozinho e em 3440×1440 real, 36 sessões frias (doc §16): as três versões sem transparência juntas não acabam com ele (padrão 3 de 4, sem transparência 1 de 4); a sonda de assinatura apontou a carga da caçamba com a brasa da carcaça num pico, mas carga intacta, carga pré-aquecida e carga que some deram 0/4, 1/4 e 3/4 contra 1/4–4/4 do padrão: não provado, tudo desfeito. Há duas famílias: `draw` (pipelines compiladas no desenho, sempre com carcaças na cena) e `surface` (superfície nova com 17–25 nós novos no quadro). Ferramentas novas: tools/bench/cold_ab.sh, cold_ab_summary.py e cold_ab_spikes.py.",
+      "sources": [
+        "docs/perf-playthrough-20261021.md",
+        "docs/perf-quadro09-ab-20261027.md",
+        "tools/bench/cold_ab.sh",
+        "tools/bench/cold_ab_spikes.py"
+      ],
+      "next": "Com o pico em ~50 % das sessões, 4 por lado não separam nada menor que 0 contra 4: o próximo A/B precisa de ~15–20 sessões frias por lado (uma noite inteira por hipótese), ou de um log de criação de pipeline no motor (RenderDoc/Nsight/PIX ou build do Godot) para dar nome às pipelines."
+    }
+  },
+  "remove": []
+}

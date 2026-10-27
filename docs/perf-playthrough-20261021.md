@@ -1104,3 +1104,57 @@ diagnóstico (vida da carcaça e da chama) foram desfeitos; fica o `explosion_lo
 jogável, ~70 % das sessões frias e às vezes a quente, sem nó novo no quadro, fora da chave das sondas. O que
 falta é uma ferramenta que dê nome à pipeline no motor ou no driver: RenderDoc, NVIDIA Nsight Graphics ou PIX
 (nenhum instalado) numa sessão fria do oeste, ou um build do Godot com log em `RenderingDevice::render_pipeline_create`.
+
+## 16. 13ª–17ª rodadas (27/10, madrugada, PC sozinho): sem transparência e carga da caçamba — as duas pistas caem
+
+**Máquina e base:** export release de main (`artifacts/perf-q09*-20261027/`), rota oeste com estresse e despacho,
+`settings-jogador-3440.cfg`, **3440×1440 real** (o monitor grande estava ligado; p50 11,4–13,4 ms, acima dos ~7 ms
+das rodadas em 1920×1200), cache de shader/pipeline frio em toda sessão (`tools/bench/cold_cache_run.sh`),
+StallLog ligado. Tabelas de todas as rodadas, picos por tipo e a lista da sonda em
+`docs/perf-quadro09-ab-20261027.md`; logs e JSON no disco (`evidence/claude-quadro09-20261027/`, `%APPDATA%/GetecoV2/benchmark-west/q09*`).
+
+**13ª — as três versões sem transparência juntas** (X = padrão; D = `GETECO_WRECK_SINK=1 GETECO_DEBRIS_SHRINK=1
+GETECO_RETIRE_SINK=1`; X D D X X D D X): o quadro de ~1 s em X 3 de 4 (1 019 / 1 161 / 1 093 ms) e em **D 1 de 4
+(1 233 ms)**. O lado sem transparência também trava: **as três ficam desligadas**.
+
+**14ª — sonda de assinatura** (`GETECO_PIPELINE_PROBE=sig`, 4 frias): o pico apareceu em 1 de 4 (a sonda atrasa a
+carga e às vezes esconde o pico, como em §14). No quadro de 1 130 ms (t = 171 s) as três combinações novas foram a
+**`BedLoad` (carga da caçamba, `VehicleUsage`) com a brasa da carcaça** (emissão + triplanar, opaca), a placa
+`wave3_sinal.glb` caída e uma esfera, as duas com `transparency`. A placa já tinha aparecido em §14, e o destroço que
+encolhe não mudou nada; a brasa é opaca, então nenhuma das três versões sem transparência a tirava.
+
+**15ª — carga intacta na carcaça** (K = a carga fica com o próprio material na carcaça, interruptor só desta rodada, já removido; K X X K K X X K):
+
+| lado | sessões | pico `draw` com carcaça na cena | outros picos |
+|---|---|---|---|
+| X (padrão, 13ª e 15ª) | 8 | 6 (1 019–1 420 ms) | 1 (`surface`, t = 98 s, sem carcaça) |
+| D (13ª) | 4 | 1 | 0 |
+| sonda (14ª) | 4 | 1 | 0 |
+| **K** | 4 | **0** | 1 (`surface`, t = 99 s, sem carcaça) |
+
+Todo pico `draw` destas rodadas tem 1–5 carcaças na cena e 1–3 pipelines `draw` novas. Com a carga fora da troca de
+material, 0 de 4 (contra 8 de 16 nos outros lados). O pico `surface` perto de t = 98–99 s é outro, aparece nos dois
+lados e fica para depois.
+
+**16ª — pré-aquecimento da carga queimada** (as três malhas reais de carga × os materiais da carcaça desenhadas
+diante da câmera sob a cortina, em `VehicleMaterialVariantPrewarm.run`; C = com, N = sem; C N N C C N N C): pico em
+**C 1 de 4** (2 416 ms com 4 pipelines `draw` e 4 carcaças) e **N 4 de 4** (1 078–1 278 ms). Parecia ajudar; a 17ª mostrou que
+não. O pré-aquecimento saiu do código.
+
+**17ª — confirmação, que derrubou a hipótese** (`tools/bench/cold_ab.sh`; A = a carga some na carcaça, B =
+queima como antes; ABBAABBA): pico em **A 3 de 4** (1 `draw` de 1 050 ms, 2 `surface` de 1 102 e 1 233 ms) e em
+**B 1 de 4**. Os 0 de 4 da 15ª foram sorte. Somando a noite, pico `draw` em 13 de 24 sessões com a carga queimando
+e em 3 de 12 sem ela (K, C, A): diferença que 4 sessões por lado não provam. **A mudança foi desfeita**; nenhum
+interruptor novo ficou no código.
+
+**O que fica desta noite:**
+- As três versões sem transparência, a carga da caçamba e o pré-aquecimento dela não acabam com o quadro de ~1 s.
+- Há duas famílias de pico, separadas por `tools/bench/cold_ab_spikes.py`: `draw` (1–4 pipelines compiladas no
+  desenho, sempre com 1–5 carcaças na cena) e `surface` (superfície nova, muitas vezes com 17–25 nós novos no mesmo
+  quadro, t = 98–121 s), cada uma em ~25–50 % das sessões frias.
+- Em 3440×1440 o pico continua igual em tamanho (1,0–2,4 s).
+- **Medição:** com o pico em ~50 % das sessões, 4 por lado só separam diferença de 0 contra 4. Para uma redução
+  pela metade são precisas ~15–20 sessões por lado (~1,5 h por lado); ou um log de criação de pipeline no motor.
+
+Combinações novas que a sonda viu em jogo (lista para o próximo pré-aquecimento): fim de
+`docs/perf-quadro09-ab-20261027.md`.
