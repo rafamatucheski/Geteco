@@ -43,9 +43,9 @@ func _init() -> void:
 	identity.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	identity.add_theme_constant_override("separation", 12)
 	content.add_child(identity)
-	speaker_label = STYLE.label("", 15, VOICE_ACCENT)
+	speaker_label = STYLE.label("", 13, VOICE_ACCENT)
 	speaker_label.name = "Speaker"
-	speaker_label.uppercase = true
+	speaker_label.add_theme_font_override("font", STYLE.STRONG)
 	identity.add_child(speaker_label)
 	var rule := HSeparator.new()
 	rule.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -97,8 +97,8 @@ func layout_for_viewport(extent: Vector2) -> void:
 	position = Vector2((extent.x-size.x)*0.5, maxf(margin, extent.y-size.y-bottom_margin*_scale)).round()
 
 func _apply_scale(value: float) -> void:
-	speaker_label.add_theme_font_size_override("font_size", roundi(15.0*value))
-	message.add_theme_font_size_override("font_size", roundi(20.0*value))
+	speaker_label.add_theme_font_size_override("font_size", roundi(13.0*value))
+	message.add_theme_font_size_override("font_size", roundi(18.0*value))
 	content.add_theme_constant_override("separation", roundi(6.0*value))
 	_surface.content_margin_left = roundf(16.0*value)
 	_surface.content_margin_right = roundf(16.0*value)

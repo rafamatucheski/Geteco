@@ -62,7 +62,7 @@ func refresh() -> void:
 	card.add_theme_stylebox_override("panel",_style(STYLE.INK,STYLE.LINE.darkened(.25),3)); card.resized.connect(_layout)
 	var outer:=_column(card,10); content_column=outer
 	var header:=_row(outer)
-	_label(header,"INVENTÁRIO",20).size_flags_horizontal=SIZE_EXPAND_FILL
+	_label(header,"Inventário",18).size_flags_horizontal=SIZE_EXPAND_FILL
 	_button(header,"Roupas",func(): wardrobe_visible=not wardrobe_visible; selected_outfit=""; refresh())
 	if adapter.session.get("wine") != null:
 		_button(header,"Vinhos",func(): adapter.close(); adapter.session.wine.open_bag())
@@ -73,7 +73,7 @@ func refresh() -> void:
 	var left:=_column(body,8); left.custom_minimum_size.x=296
 	var snapshot: Dictionary=adapter.economy().grid_snapshot()
 	var loadout: Dictionary=adapter.economy().personal_loadout()
-	_label(left,"EQUIPAMENTO",12).modulate=STYLE.MUTED
+	_label(left,"Equipamento",12).modulate=STYLE.MUTED
 	var equipment:=_row(left,6)
 	for slot in ["curta","longa","corpo","granada"]:
 		var id:=str(loadout.get(slot,""))
@@ -83,7 +83,7 @@ func refresh() -> void:
 		weapon.icon=ICONS.get_icon(id) if not id.is_empty() else null
 		weapon.text="—" if id.is_empty() else ""; weapon.disabled=id.is_empty()
 		weapon.tooltip_text=str(GRID.spec("weapon:"+id).get("label",slot)) if not id.is_empty() else "Sem arma • "+slot
-	_label(left,"BAGAGEM",12).modulate=STYLE.MUTED
+	_label(left,"Bagagem",12).modulate=STYLE.MUTED
 	var pockets:=_row(left)
 	var pocket_labels:=_column(pockets,2)
 	pocket_labels.size_flags_horizontal=SIZE_EXPAND_FILL
@@ -112,9 +112,9 @@ func refresh() -> void:
 	if trunk_visible:
 		var right:=_column(body,8); right.custom_minimum_size.x=240
 		var trunk_header:=_row(right)
-		_label(trunk_header,"PORTA-MALAS",18).size_flags_horizontal=SIZE_EXPAND_FILL
+		_label(trunk_header,"Porta-malas",18).size_flags_horizontal=SIZE_EXPAND_FILL
 		_label(trunk_header,"%d / 24 espaços"%_used(snapshot.trunk),12).modulate=STYLE.MUTED
-		_label(right,"MONALIZA",12).modulate=STYLE.MUTED
+		_label(right,"Monaliza",12).modulate=STYLE.MUTED
 		var access: bool=adapter.trunk_access()
 		var lock_label:=_label(right,"●  Transferência disponível" if access else "Aproxime-se do porta-malas",12)
 		lock_label.modulate=STYLE.MUTED if access else STYLE.TEXT

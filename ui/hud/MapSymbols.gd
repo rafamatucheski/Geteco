@@ -40,7 +40,9 @@ static func texture(kind: String) -> Texture2D:
 	if not _textures.has(kind):
 		var svg := '<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="-2 -2 28 28"><g fill="none" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">'+str(PATHS[kind])+'</g></svg>'
 		var image := Image.new()
-		if image.load_svg_from_string(svg)!=OK: return null
+		if image.load_svg_from_string(svg,2.0)!=OK: return null
+		image.fix_alpha_edges()
+		image.generate_mipmaps()
 		_textures[kind]=ImageTexture.create_from_image(image)
 	return _textures[kind]
 

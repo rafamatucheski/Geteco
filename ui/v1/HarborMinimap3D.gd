@@ -13,7 +13,8 @@ const PANEL_SIZE := MAP_SIZE + Vector2(8, 8)
 const SCALE := 1.54 # Preserve the previous ground coverage inside a smaller panel.
 const NAVIGATION := preload("res://ui/v1/NavigationRoute.gd")
 const POLICE := preload("res://ui/v1/MinimapPolice.gd")
-const FONT := preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
+const FONT := STYLE.STRONG
+const GLYPHS := preload("res://ui/hud/VectorGlyphs.gd")
 const CONDITIONS := preload("res://ui/hud/WorldConditions.gd")
 const PLACES := preload("res://ui/hud/NavigationPlaces.gd")
 const SYMBOLS := preload("res://ui/hud/MapSymbols.gd")
@@ -56,6 +57,7 @@ func _ready() -> void:
 		_rail_stations = preload("res://world/railway/RailwayNetwork.gd").stations()
 	name = "Minimap"
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	custom_minimum_size = PANEL_SIZE
 	size = custom_minimum_size
 	background = Panel.new()
@@ -64,6 +66,8 @@ func _ready() -> void:
 	frame.border_color = STYLE.ACCENT
 	frame.set_border_width_all(1)
 	frame.set_corner_radius_all(44)
+	frame.corner_detail = 16
+	frame.anti_aliasing = true
 	frame.shadow_size = 4
 	frame.shadow_color = Color(0, 0, 0, .45)
 	background.add_theme_stylebox_override("panel", frame)
@@ -91,7 +95,9 @@ func _ready() -> void:
 	caption.add_theme_font_size_override("font_size", 14)
 	caption.add_theme_color_override("font_color", Color("eee9e2"))
 	caption.add_theme_color_override("font_outline_color",STYLE.INK)
-	caption.add_theme_constant_override("outline_size",5)
+	caption.add_theme_constant_override("outline_size",1)
+	caption.add_theme_color_override("font_shadow_color",Color(0,0,0,.7))
+	caption.add_theme_constant_override("shadow_offset_y",1)
 	caption.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	caption.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	caption.hide()
@@ -369,9 +375,5 @@ func draw_map(target: Control) -> void:
 		if not map_area.has_point(objective_target): target.draw_line(marker,marker+direction*10,STYLE.ACCENT,2,true)
 		SYMBOLS.draw(target,marker,str(destination.kind),8.0,true)
 	var middle := MAP_SIZE * 0.5
-	var pointer := PackedVector2Array()
-	for point in [Vector2(8,0), Vector2(-5,-5), Vector2(-2,0), Vector2(-5,5)]: pointer.append(middle + point.rotated(heading))
-	var outline := PackedVector2Array()
-	for point in pointer: outline.append(middle + (point-middle) * 1.3)
-	target.draw_colored_polygon(outline, STYLE.INK)
-	target.draw_colored_polygon(pointer, STYLE.COLD)
+	GLYPHS.draw_rotated(target,"player",middle,25.0,heading,STYLE.INK)
+	GLYPHS.draw_rotated(target,"player",middle,19.2,heading,STYLE.COLD)

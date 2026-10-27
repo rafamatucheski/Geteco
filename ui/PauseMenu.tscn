@@ -96,7 +96,7 @@ theme_override_colors/font_shadow_color = Color(0, 0, 0, 0.8)
 theme_override_constants/shadow_offset_x = 2
 theme_override_constants/shadow_offset_y = 2
 theme_override_font_sizes/font_size = 28
-text = "PAUSA"
+text = "Pausa"
 horizontal_alignment = 1
 
 [node name="Sep" type="HSeparator" parent="RootControl/CenterPanel/Margin/VBox"]
@@ -110,7 +110,7 @@ theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
 theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-text = "CONTINUAR"
+text = "Continuar"
 alignment = 0
 
 [node name="BtnSaveGame" type="Button" parent="RootControl/CenterPanel/Margin/VBox"]
@@ -121,7 +121,7 @@ theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
 theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-text = "SALVAR JOGO"
+text = "Salvar jogo"
 alignment = 0
 
 [node name="BtnLoadGame" type="Button" parent="RootControl/CenterPanel/Margin/VBox"]
@@ -132,7 +132,7 @@ theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
 theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-text = "CARREGAR JOGO"
+text = "Carregar jogo"
 alignment = 0
 
 [node name="BtnAchievements" type="Button" parent="RootControl/CenterPanel/Margin/VBox"]
@@ -143,7 +143,7 @@ theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
 theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-text = "CONQUISTAS"
+text = "Conquistas"
 alignment = 0
 
 [node name="BtnCollectibles" type="Button" parent="RootControl/CenterPanel/Margin/VBox"]
@@ -154,7 +154,7 @@ theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
 theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-text = "COLECIONÁVEIS"
+text = "Colecionáveis"
 alignment = 0
 
 [node name="BtnSettings" type="Button" parent="RootControl/CenterPanel/Margin/VBox"]
@@ -165,7 +165,7 @@ theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
 theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-text = "CONFIGURAÇÕES"
+text = "Configurações"
 alignment = 0
 
 [node name="BtnMainMenu" type="Button" parent="RootControl/CenterPanel/Margin/VBox"]
@@ -176,7 +176,7 @@ theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
 theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-text = "MENU PRINCIPAL"
+text = "Menu principal"
 alignment = 0
 
 [node name="BtnQuit" type="Button" parent="RootControl/CenterPanel/Margin/VBox"]
@@ -187,7 +187,7 @@ theme_override_colors/font_color = Color(0.95, 0.95, 0.95, 1)
 theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-text = "SAIR DO JOGO"
+text = "Sair do jogo"
 alignment = 0
 
 [node name="SlotsModal" type="PanelContainer" parent="RootControl"]
@@ -224,7 +224,7 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.945, 0.768, 0.059, 1)
 theme_override_font_sizes/font_size = 20
-text = "SELECIONAR SLOT"
+text = "Selecionar slot"
 horizontal_alignment = 1
 
 [node name="SlotsStatusLabel" type="Label" parent="RootControl/SlotsModal/Margin/VBox"]
@@ -253,7 +253,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(110, 36)
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
-text = "VOLTAR"
+text = "Voltar"
 
 [node name="AchievementsModal" type="PanelContainer" parent="RootControl"]
 unique_name_in_owner = true
@@ -289,7 +289,7 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.945, 0.768, 0.059, 1)
 theme_override_font_sizes/font_size = 20
-text = "CONQUISTAS"
+text = "Conquistas"
 horizontal_alignment = 1
 
 [node name="AchievementsProgressLabel" type="Label" parent="RootControl/AchievementsModal/Margin/VBox"]
@@ -319,7 +319,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(110, 36)
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
-text = "VOLTAR"
+text = "Voltar"
 
 [node name="CollectiblesModal" type="PanelContainer" parent="RootControl"]
 unique_name_in_owner = true
@@ -355,7 +355,7 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_colors/font_color = Color(0.945, 0.768, 0.059, 1)
 theme_override_font_sizes/font_size = 20
-text = "COLECIONÁVEIS"
+text = "Colecionáveis"
 horizontal_alignment = 1
 
 [node name="CollectiblesProgressLabel" type="Label" parent="RootControl/CollectiblesModal/Margin/VBox"]
@@ -385,6 +385,6 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(110, 36)
 layout_mode = 2
 theme_override_font_sizes/font_size = 14
-text = "VOLTAR"
+text = "Voltar"
 
 

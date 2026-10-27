@@ -53,7 +53,7 @@ enabled=PackedStringArray("res://addons/geteco_copy_all_errors/plugin.cfg", "res
 
 [gui]
 
-theme/custom_font="res://assets/Barlow.ttf"
+theme/custom_font="res://assets/fonts/manrope/Manrope-Regular.ttf"
 
 [physics]
 

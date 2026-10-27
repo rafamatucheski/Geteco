@@ -19,7 +19,7 @@ func _ready() -> void:
 	add_theme_font_override("font", STYLE.STRONG)
 	add_theme_color_override("font_color", STYLE.TEXT)
 	add_theme_color_override("font_outline_color", Color(0.04, .05, .06, .7))
-	add_theme_constant_override("outline_size", 3)
+	add_theme_constant_override("outline_size", 1)
 	add_theme_color_override("font_shadow_color", Color(0, 0, 0, .65))
 	add_theme_constant_override("shadow_offset_y", 2)
 	visibility_changed.connect(_sync_animation_visibility)
@@ -39,7 +39,7 @@ func sync(driving: Node) -> void:
 	text = str(FLEET.spec(str(vehicle.archetype)).get("label", "")).strip_edges()
 	if text.is_empty(): return
 	# Keep long authored names within the map width without abbreviating them.
-	var font_size := 18
+	var font_size := 15
 	while font_size > 12 and STYLE.STRONG.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x > size.x:
 		font_size -= 1
 	add_theme_font_size_override("font_size", font_size)

@@ -16,6 +16,7 @@ var hover_size:=Vector2i.ONE
 var hover_valid:=false
 
 func configure(owner_adapter, container: String, data: Dictionary, cell_size := 64.0) -> void:
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	adapter=owner_adapter; container_id=container; cell=cell_size
 	var bounds := GRID.dimensions(data,container)
 	columns=bounds.x; rows=bounds.y

@@ -10,8 +10,8 @@ signal route_selected(id: String)
 
 const CANVAS := preload("res://ui/SecretFileCanvas.gd")
 const STYLE := preload("res://ui/GameStyle.gd")
-const FONT_REGULAR := preload("res://assets/fonts/barlow/BarlowSemiCondensed-Regular.ttf")
-const FONT_SEMIBOLD := preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
+const FONT_REGULAR := preload("res://assets/fonts/manrope/Manrope-Regular.ttf")
+const FONT_SEMIBOLD := preload("res://assets/fonts/manrope/Manrope-SemiBold.ttf")
 
 const TEXT := Color("eee4ce")
 const MUTED := Color("a99c82")

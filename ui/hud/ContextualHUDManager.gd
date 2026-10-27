@@ -65,9 +65,9 @@ func _ready() -> void:
 	_upper_right=VBoxContainer.new(); _upper_right.add_theme_constant_override("separation",8); root_control.add_child(_upper_right)
 	money=preload("res://ui/hud/MoneyHUD.gd").new(); _upper_right.add_child(money); money_label=money.amount
 	stars_label=RichTextLabel.new(); stars_label.bbcode_enabled=true; stars_label.fit_content=true; stars_label.scroll_active=false
-	stars_label.add_theme_font_override("normal_font",STYLE.STRONG); stars_label.add_theme_font_size_override("normal_font_size",15)
+	stars_label.add_theme_font_override("normal_font",STYLE.FONT); stars_label.add_theme_font_size_override("normal_font_size",13)
 	stars_label.add_theme_color_override("default_color",STYLE.ACCENT); stars_label.mouse_filter=Control.MOUSE_FILTER_IGNORE
-	stars_label.add_theme_color_override("font_outline_color",Color("20272b")); stars_label.add_theme_constant_override("outline_size",3)
+	stars_label.add_theme_color_override("font_outline_color",Color("20272b")); stars_label.add_theme_constant_override("outline_size",1)
 	_upper_right.add_child(stars_label)
 	search_progress=ProgressBar.new(); search_progress.max_value=1.0; search_progress.show_percentage=false; search_progress.custom_minimum_size=Vector2(0,4)
 	search_progress.mouse_filter=Control.MOUSE_FILTER_IGNORE; _upper_right.add_child(search_progress); search_progress.hide()
@@ -76,22 +76,22 @@ func _ready() -> void:
 	search_progress.add_theme_stylebox_override("background",search_track); search_progress.add_theme_stylebox_override("fill",search_fill)
 	radio_label=STYLE.label("",13,Color("cfe0ff")); radio_label.name="PoliceRadio"; radio_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT
 	radio_label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; radio_label.mouse_filter=Control.MOUSE_FILTER_IGNORE
-	radio_label.add_theme_color_override("font_outline_color",Color("20272b")); radio_label.add_theme_constant_override("outline_size",3)
+	radio_label.add_theme_color_override("font_outline_color",Color("20272b")); radio_label.add_theme_constant_override("outline_size",1)
 	_upper_right.add_child(radio_label); radio_label.hide()
 	top_right_panel=_upper_right
 	_lower_right=HBoxContainer.new(); _lower_right.alignment=BoxContainer.ALIGNMENT_END; _lower_right.add_theme_constant_override("separation",10); root_control.add_child(_lower_right)
 	weapon=preload("res://ui/hud/WeaponHUD.gd").new(); weapon.size_flags_vertical=Control.SIZE_SHRINK_END; _lower_right.add_child(weapon)
 	weapon_icon=weapon.weapon_icon; ammo_label=weapon.ammo_label; combat_panel=weapon.equipped
 	var bag_column := VBoxContainer.new(); bag_column.size_flags_vertical=Control.SIZE_SHRINK_END; _lower_right.add_child(bag_column)
-	backpack=Button.new(); backpack.name="BackpackButton"; backpack.tooltip_text="Mochila"; backpack.custom_minimum_size=Vector2(44,44); backpack.focus_mode=Control.FOCUS_NONE
+	backpack=Button.new(); backpack.name="BackpackButton"; backpack.tooltip_text="Mochila"; backpack.custom_minimum_size=Vector2(36,36); backpack.focus_mode=Control.FOCUS_NONE
 	backpack.add_theme_stylebox_override("normal",STYLE.compact(false,10)); bag_column.add_child(backpack)
-	var glyph := GLYPH.new("bag"); backpack.add_child(glyph); glyph.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); glyph.offset_left=11; glyph.offset_right=-11; glyph.offset_top=9; glyph.offset_bottom=-9
+	var glyph := GLYPH.new("bag"); backpack.add_child(glyph); glyph.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT); glyph.offset_left=9; glyph.offset_right=-9; glyph.offset_top=8; glyph.offset_bottom=-8
 	backpack.pressed.connect(func(): if _bound: _session.show_inventory())
-	backpack_hint=STYLE.label("",12,STYLE.MUTED); backpack_hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; bag_column.add_child(backpack_hint)
+	backpack_hint=STYLE.label("",11,STYLE.MUTED); backpack_hint.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; bag_column.add_child(backpack_hint)
 	minimap=preload("res://ui/v1/HarborMinimap3D.gd").new(); minimap.world=world; root_control.add_child(minimap)
 	current_objective=PanelContainer.new(); current_objective.name="CurrentObjective"; current_objective.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	current_objective.add_theme_stylebox_override("panel",STYLE.compact(false,10)); root_control.add_child(current_objective)
-	current_objective_label=STYLE.label("",16); current_objective_label.custom_minimum_size.x=260
+	current_objective_label=STYLE.label("",13); current_objective_label.custom_minimum_size.x=168
 	current_objective_label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; current_objective.add_child(current_objective_label)
 	current_objective.resized.connect(_layout); current_objective.hide()
 	vehicle_name=preload("res://ui/hud/VehicleNameHUD.gd").new(); minimap.add_child(vehicle_name)
@@ -102,7 +102,7 @@ func _ready() -> void:
 	_notifications=VBoxContainer.new(); _notifications.add_theme_constant_override("separation",8); root_control.add_child(_notifications)
 	objective_card=preload("res://ui/hud/NotificationUI.gd").new(); objective_card.name="ObjectiveUpdate"; _notifications.add_child(objective_card); objective_label=objective_card.message
 	feedback_card=preload("res://ui/hud/NotificationUI.gd").new(); feedback_card.name="Feedback"; _notifications.add_child(feedback_card); notice_label=feedback_card.message
-	speed_label=STYLE.label("",20); speed_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT; root_control.add_child(speed_label)
+	speed_label=STYLE.label("",16); speed_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT; root_control.add_child(speed_label)
 	var help := Label.new(); help.name="Help"; help.hide(); add_child(help)
 	get_viewport().size_changed.connect(_layout); _layout()
 
@@ -212,21 +212,21 @@ func _layout() -> void:
 	_layout_running=true
 	var view := get_viewport().get_visible_rect().size
 	var margin := STYLE.SAFE_MARGIN
-	_anchor(player_status,Control.PRESET_TOP_LEFT,Rect2(margin,margin,200,0))
+	_anchor(player_status,Control.PRESET_TOP_LEFT,Rect2(margin,margin,160,0))
 	_anchor(_upper_right,Control.PRESET_TOP_RIGHT,Rect2(-224-margin,margin,224,0))
 	_anchor(_lower_right,Control.PRESET_BOTTOM_RIGHT,Rect2(-264-margin,-margin-112,264,112))
 	_anchor(minimap,Control.PRESET_BOTTOM_LEFT,Rect2(margin,-margin-minimap.size.y,minimap.size.x,minimap.size.y))
 	# The boarding introduction gets its own row while the destination stays visible.
 	vehicle_name.position=Vector2(0,-56 if minimap.caption.visible else -40)
 	var navigation_gap := 72 if vehicle_name.visible else 40
-	_anchor(current_objective,Control.PRESET_BOTTOM_LEFT,Rect2(margin,-margin-minimap.size.y-navigation_gap-current_objective.size.y,280,current_objective.size.y))
+	_anchor(current_objective,Control.PRESET_BOTTOM_LEFT,Rect2(margin,-margin-minimap.size.y-navigation_gap-current_objective.size.y,minimap.size.x,current_objective.size.y))
 	_anchor(_notifications,Control.PRESET_TOP_LEFT,Rect2(margin,150,minf(320,view.x-48),0))
 	_anchor(speed_label,Control.PRESET_BOTTOM_RIGHT,Rect2(-220-margin,-margin-148,220,30))
 	var touch := OS.has_feature("android") or "--touch-controls" in OS.get_cmdline_user_args()
 	if touch:
 		# Reserve both lower corners for thumbs; keep navigation and ammo readable.
 		_anchor(minimap,Control.PRESET_TOP_LEFT,Rect2(margin,110,minimap.size.x,minimap.size.y))
-		_anchor(current_objective,Control.PRESET_TOP_LEFT,Rect2(margin,110+minimap.size.y+12,280,current_objective.size.y))
+		_anchor(current_objective,Control.PRESET_TOP_LEFT,Rect2(margin,110+minimap.size.y+12,minimap.size.x,current_objective.size.y))
 		_anchor(_lower_right,Control.PRESET_TOP_RIGHT,Rect2(-264-margin,112,264,112))
 		_anchor(_notifications,Control.PRESET_TOP_LEFT,Rect2(view.x*.5-160,108,minf(320,view.x-48),0))
 		backpack.get_parent().hide()

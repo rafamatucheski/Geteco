@@ -1,5 +1,6 @@
 extends RefCounted
 const STYLE := preload("res://ui/GameStyle.gd")
+const GLYPHS := preload("res://ui/hud/VectorGlyphs.gd")
 ## Cartographic texture, deliberately unlabeled: not surveyed elevation data.
 ## World anchored contours, capped at 28 x 38 samples, shared by both maps.
 static func contours(canvas: Control, extent: Vector2, center: Vector2, zoom: float) -> void:
@@ -14,8 +15,6 @@ static func contours(canvas: Control, extent: Vector2, center: Vector2, zoom: fl
 			points.append(Vector2(x,y))
 		canvas.draw_polyline(points,STYLE.MAP_CONTOUR,1,true)
 static func diamond(canvas: Control, point: Vector2, radius := 6.0, color := STYLE.WAYPOINT) -> void:
-	canvas.draw_colored_polygon(PackedVector2Array([point+Vector2(0,-radius),point+Vector2(radius,0),point+Vector2(0,radius),point+Vector2(-radius,0)]),color)
+	canvas.draw_texture_rect(GLYPHS.texture("diamond"),Rect2(point-Vector2.ONE*radius*1.2,Vector2.ONE*radius*2.4),false,color)
 static func player(canvas: Control, point: Vector2, heading: float) -> void:
-	var shape := PackedVector2Array()
-	for p in [Vector2(10,0),Vector2(-6,-6),Vector2(-3,0),Vector2(-6,6)]: shape.append(point+p.rotated(heading))
-	canvas.draw_colored_polygon(shape,STYLE.COLD)
+	GLYPHS.draw_rotated(canvas,"player",point,24.0,heading,STYLE.COLD)

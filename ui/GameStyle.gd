@@ -15,17 +15,18 @@ const WAYPOINT := Color("e6a84b")
 const DISABLED := Color("62676d")
 const MAP_ROAD := Color("999a94")
 const MAP_CONTOUR := Color("303e40")
-const FONT := preload("res://assets/fonts/barlow/BarlowSemiCondensed-Regular.ttf")
-const STRONG := preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
+const FONT := preload("res://assets/fonts/manrope/Manrope-Regular.ttf")
+const STRONG := preload("res://assets/fonts/manrope/Manrope-SemiBold.ttf")
 const FADE := .18
 const SAFE_MARGIN := 24.0
 
-static func compact(accent := false, radius := 10, padding := Vector2(12,8)) -> StyleBoxFlat:
+static func compact(accent := false, radius := 10, padding := Vector2(10,6)) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
 	s.bg_color = GLASS
 	s.border_color = ACCENT if accent else LINE
 	s.set_border_width_all(1)
 	s.set_corner_radius_all(radius)
+	s.corner_detail = 12
 	s.content_margin_left = padding.x
 	s.content_margin_right = padding.x
 	s.content_margin_top = padding.y
@@ -34,10 +35,12 @@ static func compact(accent := false, radius := 10, padding := Vector2(12,8)) -> 
 	s.shadow_size = 4
 	return s
 
-static func create_theme(font_size := 16) -> Theme:
+static func create_theme(font_size := 14) -> Theme:
 	var result := Theme.new()
 	result.default_font = FONT
 	result.default_font_size = font_size
+	for type in ["Button", "OptionButton", "CheckButton"]:
+		result.set_font("font", type, STRONG)
 	for type in ["Label", "Button", "OptionButton", "CheckButton", "RichTextLabel"]:
 		result.set_color("font_color", type, TEXT)
 		result.set_color("font_disabled_color", type, DISABLED)
@@ -61,11 +64,11 @@ static func create_theme(font_size := 16) -> Theme:
 		result.set_stylebox("grabber_pressed",type,active)
 	return result
 
-static func label(text := "", font_size := 16, color := TEXT) -> Label:
+static func label(text := "", font_size := 14, color := TEXT) -> Label:
 	var result := Label.new()
 	result.text = text
 	result.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	result.add_theme_font_override("font", STRONG)
+	result.add_theme_font_override("font", FONT)
 	result.add_theme_font_size_override("font_size",font_size)
 	result.add_theme_color_override("font_color",color)
 	return result
@@ -95,6 +98,7 @@ static func panel(accent := false) -> StyleBoxFlat:
 	s.border_color = ACCENT if accent else LINE
 	s.set_border_width_all(1)
 	s.set_corner_radius_all(12)
+	s.corner_detail = 12
 	s.content_margin_left = 22
 	s.content_margin_right = 22
 	s.content_margin_top = 18
@@ -114,6 +118,7 @@ static func button(primary := false) -> StyleBoxFlat:
 
 static func apply(node: Node, text_scale := 1.0, root := true) -> void:
 	if node is Control:
+		node.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		if root: node.theme = create_theme()
 		if node is PanelContainer and not node.get_meta("preserve_panel_style", false):
 			node.add_theme_stylebox_override("panel", panel())

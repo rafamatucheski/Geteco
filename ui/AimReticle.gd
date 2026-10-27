@@ -51,5 +51,5 @@ func _draw() -> void:
 			draw_line(Vector2(-3, -3 * slope), Vector2(3, 3 * slope), Color.BLACK, 4.0, true)
 			draw_line(Vector2(-3, -3 * slope), Vector2(3, 3 * slope), ink, 2.0, true)
 	else:
-		draw_circle(Vector2.ZERO, 2.5, Color.BLACK)
-		draw_circle(Vector2.ZERO, 1.3, ink)
+		draw_circle(Vector2.ZERO, 2.5, Color.BLACK, true, -1.0, true)
+		draw_circle(Vector2.ZERO, 1.3, ink, true, -1.0, true)

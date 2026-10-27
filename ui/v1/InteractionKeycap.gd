@@ -31,9 +31,11 @@ func _ready() -> void:
 		_face.border_color = Color("b4b8af")
 		_face.set_border_width_all(1)
 		_face.set_corner_radius_all(5)
+		_face.corner_detail = 12
 		_base = StyleBoxFlat.new()
 		_base.bg_color = Color("080e14")
 		_base.set_corner_radius_all(5)
+		_base.corner_detail = 12
 		_base.shadow_color = Color(0, 0, 0, 0.42)
 		_base.shadow_size = 3
 		_base.shadow_offset = Vector2(0, 2)

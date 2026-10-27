@@ -289,12 +289,13 @@ func _style(held: bool) -> StyleBoxFlat:
 	style.border_color = Color(1,1,1,.45)
 	style.set_border_width_all(1)
 	style.set_corner_radius_all(int(14 * unit))
+	style.corner_detail = 12
 	return style
 
 func _stick(center: Vector2, vector: Vector2, label: String, font: Font, font_size: int) -> void:
 	label = tr(label)
-	draw_circle(center, radius, Color(.03,.05,.07,.5))
+	draw_circle(center, radius, Color(.03,.05,.07,.5), true, -1, true)
 	draw_arc(center, radius, 0, TAU, 48, Color(1,1,1,.45), 2 * unit, true)
-	draw_circle(center + vector * radius * .65, 27 * unit, Color(1,1,1,.45))
+	draw_circle(center + vector * radius * .65, 27 * unit, Color(1,1,1,.45), true, -1, true)
 	var text_size := font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)
 	draw_string(font, center + Vector2(-text_size.x * .5, radius + 24 * unit), label, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size)

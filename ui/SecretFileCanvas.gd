@@ -148,7 +148,7 @@ func _draw_fragment(rect: Rect2, index: int) -> void:
 	draw_line(a + Vector2(0, 16), b + Vector2(-18, 22), Color("9a7654"), 1.4, true)
 	if index in [1, 3, 5]:
 		draw_circle(rect.get_center() + Vector2(index * 2 - 8, 0), 8.0, Color(0, 0, 0, 0), false, 2.0, true)
-		draw_circle(rect.get_center() + Vector2(index * 2 - 8, 0), 3.0, RED)
+		draw_circle(rect.get_center() + Vector2(index * 2 - 8, 0), 3.0, RED, true, -1.0, true)
 
 
 func _draw_missing_fragment(rect: Rect2) -> void:
@@ -171,7 +171,7 @@ func _draw_map_notes(rect: Rect2) -> void:
 	]
 	for fact in facts:
 		var active: bool = fact[0]
-		draw_circle(Vector2(rect.position.x + 13, y + 9), 6, GREEN if active else Color("887d68"), active, 2.0)
+		draw_circle(Vector2(rect.position.x + 13, y + 9), 6, GREEN if active else Color("887d68"), active, 2.0, true)
 		_text_at(Vector2(rect.position.x + 30, y + 15), str(fact[1]), 15, GRAPHITE if active else MUTED)
 		y += 42
 	if bool(summary.get("sealed_sector_discovered", false)):
@@ -215,10 +215,10 @@ func _draw_evidence_art(rect: Rect2, id: String) -> void:
 func _draw_audio_record(rect: Rect2, id: String) -> void:
 	var tape := Rect2(rect.position + Vector2(24, 34), Vector2(rect.size.x - 48, 126))
 	_box(tape, Color("302d27"), Color("736955"), 8)
-	draw_circle(tape.position + Vector2(74, 63), 31, Color("161614"))
-	draw_circle(tape.position + Vector2(74, 63), 10, Color("9d8d70"))
-	draw_circle(tape.end - Vector2(74, 63), 31, Color("161614"))
-	draw_circle(tape.end - Vector2(74, 63), 10, Color("9d8d70"))
+	draw_circle(tape.position + Vector2(74, 63), 31, Color("161614"), true, -1.0, true)
+	draw_circle(tape.position + Vector2(74, 63), 10, Color("9d8d70"), true, -1.0, true)
+	draw_circle(tape.end - Vector2(74, 63), 31, Color("161614"), true, -1.0, true)
+	draw_circle(tape.end - Vector2(74, 63), 10, Color("9d8d70"), true, -1.0, true)
 	var wave := Rect2(rect.position + Vector2(12, 196), Vector2(rect.size.x - 24, 116))
 	_box(wave, Color("292c27"), Color("5d665a"), 4)
 	var points := PackedVector2Array()
@@ -253,7 +253,7 @@ func _draw_badge(rect: Rect2) -> void:
 	var badge := Rect2(rect.get_center() - Vector2(104, 150), Vector2(208, 300))
 	_box(badge, Color("c7c3b3"), Color("706b5c"), 12)
 	draw_rect(Rect2(badge.position + Vector2(22, 28), Vector2(badge.size.x - 44, 82)), Color("343b3a"))
-	draw_circle(badge.position + Vector2(58, 69), 27, Color("1c211f"))
+	draw_circle(badge.position + Vector2(58, 69), 27, Color("1c211f"), true, -1.0, true)
 	draw_line(badge.position + Vector2(34, 145), badge.position + Vector2(174, 145), GRAPHITE, 4)
 	draw_line(badge.position + Vector2(34, 177), badge.position + Vector2(138, 177), MUTED, 3)
 	_draw_alert_mark(Rect2(badge.position + Vector2(30, 214), Vector2(badge.size.x - 60, 52)))
@@ -266,7 +266,7 @@ func _draw_power_report(rect: Rect2) -> void:
 		draw_line(Vector2(page.position.x + 12, y), Vector2(page.end.x - 12, y), Color(0.22, 0.20, 0.16, 0.34), 1.0)
 	for index in 5:
 		var p := page.position + Vector2(46 + index * 64, 78 + (index % 2) * 82)
-		draw_circle(p, 10, GREEN if index < 3 else RED, index < 3, 2.0)
+		draw_circle(p, 10, GREEN if index < 3 else RED, index < 3, 2.0, true)
 		if index > 0: draw_line(p - Vector2(64, (index % 2 - (index - 1) % 2) * 82), p, GRAPHITE, 2.0)
 
 
@@ -274,7 +274,7 @@ func _draw_plaque(rect: Rect2) -> void:
 	var plaque := Rect2(rect.get_center() - Vector2(168, 88), Vector2(336, 176))
 	_box(plaque, Color("56534b"), Color("8e8879"), 5)
 	for corner in [Vector2(18, 18), Vector2(plaque.size.x - 18, 18), Vector2(18, plaque.size.y - 18), plaque.size - Vector2(18, 18)]:
-		draw_circle(plaque.position + corner, 6, Color("252521"))
+		draw_circle(plaque.position + corner, 6, Color("252521"), true, -1.0, true)
 	_text_center(plaque, "19  •  7", 38, Color("d3c7a9"))
 
 
@@ -329,9 +329,9 @@ func _draw_network(left: Rect2, right: Rect2) -> void:
 	for id in ROUTE_IDS:
 		var point: Vector2 = board.position + nodes[id] * board.size
 		var on := active.has(id)
-		draw_circle(point, 17, Color("e6d6ae"))
+		draw_circle(point, 17, Color("e6d6ae"), true, -1.0, true)
 		if on:
-			draw_circle(point, 12, GREEN)
+			draw_circle(point, 12, GREEN, true, -1.0, true)
 		else:
 			draw_circle(point, 12, Color("6f685a"), false, 3.0, true)
 		if id == selected_id: draw_arc(point, 23, 0, TAU, 36, RED, 2.0, true)

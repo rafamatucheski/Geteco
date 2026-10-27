@@ -8,8 +8,8 @@ func _ready() -> void:
 	name="InteractionPrompt"; mouse_filter=MOUSE_FILTER_IGNORE
 	add_theme_stylebox_override("panel",STYLE.compact(false,6,Vector2(10,6)))
 	var row := HBoxContainer.new(); row.add_theme_constant_override("separation",8); add_child(row)
-	key=STYLE.label("",15); key.add_theme_stylebox_override("normal",STYLE.compact(true,4,Vector2(5,1))); row.add_child(key)
-	caption=STYLE.label("",15); caption.autowrap_mode=TextServer.AUTOWRAP_OFF; row.add_child(caption); hide()
+	key=STYLE.label("",13); key.add_theme_stylebox_override("normal",STYLE.compact(true,4,Vector2(5,1))); row.add_child(key)
+	caption=STYLE.label("",13); caption.autowrap_mode=TextServer.AUTOWRAP_OFF; row.add_child(caption); hide()
 ## `text` é só a legenda; a tecla vem da ação (GameInput.prompt), sem cortar prefixo de frase.
 func update_prompt(text: String, action: String, controls: Node) -> void:
 	var hint := str(controls.prompt(action))

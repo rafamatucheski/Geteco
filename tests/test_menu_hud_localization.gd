@@ -23,6 +23,7 @@ func _run() -> void:
 		var script: GDScript = load(path)
 		check(script != null and script.can_instantiate(), "Production script loads: " + path)
 	var pairs: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/localization/menu-hud-completion.en.json"))
+	pairs.merge(JSON.parse_string(FileAccess.get_file_as_string("res://data/localization/hud-quality.en.json")), true)
 	for language in ["en", "pt_BR"]:
 		settings.text_language = language
 		for source in pairs:

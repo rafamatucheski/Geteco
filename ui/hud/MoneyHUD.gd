@@ -10,8 +10,8 @@ func _ready() -> void:
 	var panel := PanelContainer.new(); panel.size_flags_horizontal=SIZE_SHRINK_END; panel.add_theme_stylebox_override("panel",STYLE.compact(true,10)); add_child(panel)
 	var row := HBoxContainer.new(); row.add_theme_constant_override("separation",8); panel.add_child(row)
 	row.add_child(GLYPH.new("money",STYLE.MONEY))
-	amount=STYLE.label("",20,STYLE.MONEY); row.add_child(amount)
-	change=STYLE.label("",15,STYLE.MONEY); change.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT; add_child(change); change.hide()
+	amount=STYLE.label("",16,STYLE.MONEY); row.add_child(amount)
+	change=STYLE.label("",12,STYLE.MONEY); change.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT; add_child(change); change.hide()
 func update_balance(balance: int, infinite: bool = false) -> void:
 	if infinite:
 		amount.text="$ ∞"

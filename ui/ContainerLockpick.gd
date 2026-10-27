@@ -123,15 +123,15 @@ func _draw_lock() -> void:
 	for x in [-1,1]:
 		for y in [-1,1]:
 			var screw := center+Vector2(x*99,y*94)
-			view.draw_circle(screw,6,Color("86908d"))
+			view.draw_circle(screw,6,Color("86908d"), true, -1.0, true)
 			view.draw_line(screw-Vector2(3,0),screw+Vector2(3,0),Color("303a3b"),2,true)
-	view.draw_circle(center,84,Color("0a1013"))
-	view.draw_circle(center,77,Color("ad925e"))
+	view.draw_circle(center,84,Color("0a1013"), true, -1.0, true)
+	view.draw_circle(center,77,Color("ad925e"), true, -1.0, true)
 	view.draw_arc(center,73,0,TAU,80,Color("dfc38a"),3,true)
-	view.draw_circle(center,58,Color("786643"))
+	view.draw_circle(center,58,Color("786643"), true, -1.0, true)
 	var axis := Vector2.DOWN.rotated(-turn*PI*.5)
 	view.draw_line(center-axis*24,center+axis*28,Color("131a1b"),12,true)
-	view.draw_circle(center-axis*23,9,Color("111819"))
+	view.draw_circle(center-axis*23,9,Color("111819"), true, -1.0, true)
 	var shake := sin(pulse*65)*wear*3 if turn > .01 else 0.0
 	var pick := Vector2.UP.rotated(deg_to_rad(angle+shake))
 	view.draw_line(center-pick*9,center+pick*126,Color("c8ced0"),4,true)

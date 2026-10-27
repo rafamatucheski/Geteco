@@ -8,7 +8,7 @@ func _ready() -> void:
 	add_theme_stylebox_override("panel",STYLE.compact(false,10))
 	var column := VBoxContainer.new(); column.add_theme_constant_override("separation",3); add_child(column)
 	heading=STYLE.label("",11,STYLE.ACCENT); column.add_child(heading)
-	message=STYLE.label("",16); message.custom_minimum_size.x=260; message.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; column.add_child(message)
+	message=STYLE.label("",14); message.custom_minimum_size.x=220; message.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; column.add_child(message)
 	hide()
 func present(text: String, title := "", duration := 2.6) -> void:
 	if _tween: _tween.kill()

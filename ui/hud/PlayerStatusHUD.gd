@@ -20,7 +20,7 @@ var _pulse: Tween
 func _ready() -> void:
 	name = "PlayerStatusHUD"
 	mouse_filter = MOUSE_FILTER_IGNORE
-	add_theme_stylebox_override("panel",STYLE.compact(false,10,Vector2(12,10)))
+	add_theme_stylebox_override("panel",STYLE.compact(false,8,Vector2(10,8)))
 	var column := VBoxContainer.new(); column.add_theme_constant_override("separation",5); add_child(column)
 	health_bar = _row(column,"heart",STYLE.HEALTH)
 	armor_bar = _row(column,"shield",STYLE.ARMOR)
@@ -29,10 +29,15 @@ func _ready() -> void:
 	cold_label = STYLE.label("",14,STYLE.TEXT); cold_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT; column.add_child(cold_label); cold_label.hide()
 	rage_bar = _row(column,"rage",Color("e35469"))
 	rage_row = rage_bar.get_parent(); rage_row.hide()
-	rage_action = Button.new(); rage_action.name="ActivateRage"; rage_action.text="RAGE"; rage_action.flat=true
-	rage_action.focus_mode=Control.FOCUS_NONE; rage_action.add_theme_font_size_override("font_size",12)
+	# The bar is the activation target; no extra label or empty row in the HUD.
+	rage_action = Button.new(); rage_action.name="ActivateRage"; rage_action.flat=true
+	rage_action.focus_mode=Control.FOCUS_NONE
+	for state in ["normal","hover","pressed","focus","disabled"]:
+		rage_action.add_theme_stylebox_override(state,StyleBoxEmpty.new())
 	rage_action.pressed.connect(func(): rage_requested.emit())
-	column.add_child(rage_action); rage_action.hide()
+	rage_bar.add_child(rage_action)
+	rage_action.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	rage_action.hide()
 
 func update_rage(status: Dictionary, input_hint: String) -> void:
 	var unlocked := bool(status.get("unlocked", false))
@@ -43,11 +48,11 @@ func update_rage(status: Dictionary, input_hint: String) -> void:
 	rage_bar.value = float(status.get("seconds_left", 0.0)) / 15.0 * 100.0 if active else float(status.get("charge", 0.0))
 	var rage_ready := bool(status.get("ready", false))
 	rage_action.disabled = not rage_ready
-	rage_action.text = "RAGE · %.1fs" % float(status.get("seconds_left", 0.0)) if active else ((input_hint + " · RAGE") if rage_ready else "RAGE · %d%%" % roundi(float(status.get("charge", 0.0))))
+	rage_action.tooltip_text = input_hint + " · " + tr("Fúria") if rage_ready else ""
 func _row(column: VBoxContainer, symbol: String, color: Color) -> ProgressBar:
-	var row := HBoxContainer.new(); row.add_theme_constant_override("separation",10); column.add_child(row)
-	row.add_child(GLYPH.new(symbol,color))
-	var bar := ProgressBar.new(); bar.show_percentage=false; bar.custom_minimum_size=Vector2(120,6)
+	var row := HBoxContainer.new(); row.add_theme_constant_override("separation",8); column.add_child(row)
+	var glyph := GLYPH.new(symbol,color); glyph.custom_minimum_size=Vector2(18,18); row.add_child(glyph)
+	var bar := ProgressBar.new(); bar.show_percentage=false; bar.custom_minimum_size=Vector2(112,5)
 	bar.size_flags_vertical=SIZE_SHRINK_CENTER; bar.mouse_filter=MOUSE_FILTER_IGNORE
 	var bg := STYLE.compact(false,3,Vector2.ZERO); bg.bg_color=STYLE.SURFACE; bg.shadow_size=0
 	var fill := bg.duplicate(); fill.bg_color=color; fill.set_border_width_all(0)

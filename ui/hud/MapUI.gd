@@ -6,6 +6,7 @@ const ART := preload("res://ui/hud/Cartography.gd")
 const PAPER := preload("res://ui/hud/PaperAtlas.gd")
 const DATA := preload("res://ui/hud/WorldMapData.gd")
 const SYMBOLS := preload("res://ui/hud/MapSymbols.gd")
+const GLYPHS := preload("res://ui/hud/VectorGlyphs.gd")
 const NAVIGATION := preload("res://ui/v1/NavigationRoute.gd")
 const MAP3D := preload("res://ui/hud/MapView3D.gd")
 const INK := Color("11171b")
@@ -91,12 +92,14 @@ static func _surface(fill := INK, border := Color("41484b"), padding := Vector2(
 	var style := StyleBoxFlat.new()
 	style.bg_color=fill; style.border_color=border; style.set_border_width_all(1)
 	style.set_corner_radius_all(12)
+	style.corner_detail=12
 	style.content_margin_left=padding.x; style.content_margin_right=padding.x
 	style.content_margin_top=padding.y; style.content_margin_bottom=padding.y
 	return style
 
 func _ready() -> void:
 	name="MapUI"; mouse_filter=MOUSE_FILTER_STOP; theme=STYLE.create_theme(20)
+	texture_filter=CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	set_anchors_and_offsets_preset(PRESET_FULL_RECT)
 	var background := ColorRect.new(); background.color=Color(0.025,0.035,0.04,.94); background.mouse_filter=MOUSE_FILTER_IGNORE
 	add_child(background); background.set_anchors_and_offsets_preset(PRESET_FULL_RECT)
@@ -256,17 +259,20 @@ func _layout() -> void:
 	var panel_size := Vector2(minf(1180,size.x-margin*2),minf(800,size.y-margin*2))
 	_frame=Rect2((size-panel_size)*.5,panel_size)
 	var narrow := panel_size.x<900
+	_clear_button.custom_minimum_size=Vector2(140,34)
+	var footer_height := maxf(46.0, _clear_button.get_combined_minimum_size().y + 8.0)
 	# Development overlays are always above modal UI. Keep their dedicated line
 	# clear so the build identifier and optional frame counter remain readable.
 	_top_safe=22.0 if has_node("/root/BuildWatermark") else 0.0
 	_header.position=_frame.position; _header.size=Vector2(panel_size.x,58+_top_safe)
 	_brand.position=Vector2(24,12+_top_safe); _map_title.position=Vector2(150,19+_top_safe); _map_title.visible=not narrow
 	for tab in _tabs.values(): tab.custom_minimum_size=Vector2(80 if narrow else 108,42)
-	_tab_row.position=_frame.position+Vector2(maxf(12,(panel_size.x-(320 if narrow else 432))*.5),panel_size.y-94)
+	_tab_row.position=_frame.position+Vector2(maxf(12,(panel_size.x-(320 if narrow else 432))*.5),panel_size.y-footer_height-48)
 	_position_close()
-	_footer.position=_frame.position+Vector2(0,panel_size.y-46); _footer.size=Vector2(panel_size.x,46)
-	_clear_button.custom_minimum_size=Vector2(140,34); _position_clear()
-	_area.position=_frame.position+Vector2(0,_header.size.y); _area.size=Vector2(maxf(200,panel_size.x),maxf(150,panel_size.y-_header.size.y-100))
+	_footer.position=_frame.position+Vector2(0,panel_size.y-footer_height); _footer.size=Vector2(panel_size.x,footer_height)
+	_position_clear()
+	_hints.position.y=(footer_height-_hints.get_combined_minimum_size().y)*.5
+	_area.position=_frame.position+Vector2(0,_header.size.y); _area.size=Vector2(maxf(200,panel_size.x),maxf(150,panel_size.y-_header.size.y-footer_height-54))
 	_filter_button.position=Vector2(24,20)
 	_zoom_controls.position=Vector2(_area.size.x-66,20)
 	_legend.position=_area.position+Vector2(24,70)
@@ -654,9 +660,7 @@ func draw_map(target: Control) -> void:
 	target.draw_string(PRESENTATION.font(),compass-Vector2(5,20),"N",HORIZONTAL_ALIGNMENT_LEFT,-1,20,STYLE.TEXT)
 	# No 3D a seta gira com a câmera: aponta para onde fica o norte na tela.
 	var turn := _yaw if map_3d else 0.0
-	var arrow := PackedVector2Array()
-	for p in [Vector2(0,-8),Vector2(-6,8),Vector2(0,4),Vector2(6,8)]: arrow.append(compass+p.rotated(turn))
-	target.draw_colored_polygon(arrow,STYLE.TEXT)
+	GLYPHS.draw_rotated(target,"player",compass,22.0,turn-PI*.5,STYLE.TEXT)
 	_draw_scale(target)
 
 func _point_region(point: Vector2) -> String:

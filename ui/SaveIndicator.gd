@@ -81,11 +81,11 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	var center := size * 0.5
-	draw_circle(center, 17.0, Color(0.02, 0.03, 0.04, 0.65))
+	draw_circle(center, 17.0, Color(0.02, 0.03, 0.04, 0.65), true, -1.0, true)
 	if failed:
 		draw_arc(center, 10.0, 0.0, TAU, 32, Color("ee8c72"), 2.5, true)
 		draw_line(center + Vector2(0, -5), center + Vector2(0, 1), Color("ee8c72"), 2.5, true)
-		draw_circle(center + Vector2(0, 5), 1.3, Color("ee8c72"))
+		draw_circle(center + Vector2(0, 5), 1.3, Color("ee8c72"), true, -1.0, true)
 		return
 	draw_arc(center, 10.0, 0.0, TAU, 32, Color(1, 1, 1, 0.18), 2.5, true)
 	draw_arc(center, 10.0, angle, angle + TAU * 0.7, 24, Color(0.95, 0.97, 1.0), 2.5, true)

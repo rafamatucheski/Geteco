@@ -137,7 +137,7 @@ static func setup(panel: Control, achievements: bool, switch_tab: Callable) -> v
 	header.add_theme_constant_override("separation",18)
 	box.add_child(header)
 	box.move_child(header,0)
-	title.text = "MEDALHAS E OBJETIVOS" if achievements else "COLECIONÁVEIS"
+	title.text = "Medalhas e objetivos" if achievements else "Colecionáveis"
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -149,7 +149,7 @@ static func setup(panel: Control, achievements: bool, switch_tab: Callable) -> v
 	for tab in [true,false]:
 		var button := Button.new()
 		button.name = "AchievementsTab" if tab else "CollectiblesTab"
-		button.text = "CONQUISTAS" if tab else "COLECIONÁVEIS"
+		button.text = "Conquistas" if tab else "Colecionáveis"
 		button.add_theme_font_override("font",STYLE.STRONG)
 		button.add_theme_font_size_override("font_size",17)
 		button.set_meta("primary_action",tab == achievements)

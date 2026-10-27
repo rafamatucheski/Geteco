@@ -7,6 +7,9 @@ var _silhouette_material: ShaderMaterial
 @export var frameless := false
 
 const FRAMELESS_SHADER = preload("res://ui/v1/WeaponSilhouette.gdshader")
+const VARIANTS := preload("res://ui/v1/WeaponVariantIcons.gd")
+const SVG_SCALE := 2.0
+const PISTOL_SVG := '<svg xmlns="http://www.w3.org/2000/svg" width="180" height="100" viewBox="0 0 180 100"><path d="M35 23H157L163 28V43H36Z" fill="#8b9ba5" stroke="#c2ccd0" stroke-width="2"/><path d="M38 26H152V31H38Z" fill="#b8c1c5"/><path d="M39 43H153V51H117L112 66H78L66 88H33L44 52H36Z" fill="#465961" stroke="#829197" stroke-width="2"/><path d="M44 52H75L61 86H35Z" fill="#293a40"/><path d="M80 51H108L103 61H79Z" fill="#182722"/><path d="M88 51Q86 57 92 59" fill="none" stroke="#9ca9af" stroke-width="2"/><path d="M42 59L65 62M39 66L62 69M36 74L59 77" stroke="#586a70" stroke-width="2"/><path d="M42 32V40M48 32V40M54 32V40M60 32V40" stroke="#465b65" stroke-width="3"/><path d="M99 32H116V39H99Z" fill="#394d58"/><path d="M29 87H63V93H29Z" fill="#81919a"/><path d="M38 19H47V24H38ZM144 19H151V24H144Z" fill="#344951"/><path d="M162 30H168V40H162Z" fill="#2f434d"/></svg>'
 const ICON_DATA := {
 	"ak47": {"ext": "png", "data": "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"},
 	"axe": {"ext": "svg", "data": "PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNjAiIGhlaWdodD0iMTAwIiB2aWV3Qm94PSIwIDAgMTYwIDEwMCI+PHBhdGggZD0iTTMwIDkwTDEwNCAxN2w4IDhMMzggOTh6IiBmaWxsPSIjOTY2MzNkIi8+PHBhdGggZD0iTTg2IDEybDI2LTggMjcgMjQtOSAyNS0yOC0yMC0xMSA1LTEyLTEyeiIgZmlsbD0iI2FlYmFjMyIvPjxwYXRoIGQ9Ik0xMzkgMjhsLTkgMjUtOC02IDEwLTI2eiIgZmlsbD0iI2U1ZWRmMSIvPjwvc3ZnPg=="},
@@ -28,6 +31,7 @@ const ICON_DATA := {
 
 func _ready() -> void:
 	_texture_users += 1
+	texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	_load_textures()
 	if frameless:
 		var silhouette := ShaderMaterial.new()
@@ -43,15 +47,54 @@ func _exit_tree() -> void:
 
 func _load_textures() -> void:
 	if not icon_textures.is_empty(): return
-	for id in ICON_DATA:
+	var ids: Array = ICON_DATA.keys()
+	ids.append("katana")
+	ids.append_array(VARIANTS.SVG.keys())
+	for id: String in ids:
+		var image := artwork_image(id)
+		if image.is_empty(): continue
+		image.fix_alpha_edges()
+		image.generate_mipmaps()
+		icon_textures[id] = ImageTexture.create_from_image(image)
+
+static func artwork_image(id: String) -> Image:
+	# Clean the legacy backing before filtering. Removing it in a shader after
+	# texture sampling turned partially covered edge pixels into hard cutouts.
+	var image := Image.new()
+	var sword_svg := '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="64" viewBox="0 0 160 64"><path d="M44 42 Q97 28 151 7 Q116 39 48 48 Z" fill="#d5e3ed"/><path d="M8 50 L40 41 L44 49 L12 59 Z" fill="#303943"/><path d="M38 34 L46 32 L53 56 L45 58 Z" fill="#c3a469"/><path d="M15 48 L19 57 M25 46 L29 54 M34 43 L38 52" stroke="#b9a88b" stroke-width="2"/></svg>'
+	if id == "katana": image.load_svg_from_string(sword_svg, SVG_SCALE)
+	elif id == "pistol": image.load_svg_from_string(PISTOL_SVG, SVG_SCALE)
+	elif VARIANTS.SVG.has(id): image.load_svg_from_string(VARIANTS.SVG[id], SVG_SCALE)
+	elif ICON_DATA.has(id):
 		var source: Dictionary = ICON_DATA[id]
 		var bytes := Marshalls.base64_to_raw(str(source.data))
-		var image := Image.new()
-		var error := image.load_svg_from_buffer(bytes) if source.ext == "svg" else image.load_png_from_buffer(bytes)
-		if error == OK: icon_textures[id] = ImageTexture.create_from_image(image)
-	var sword := Image.new()
-	var sword_svg := '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="64" viewBox="0 0 160 64"><path d="M44 42 Q97 28 151 7 Q116 39 48 48 Z" fill="#d5e3ed"/><path d="M8 50 L40 41 L44 49 L12 59 Z" fill="#303943"/><path d="M38 34 L46 32 L53 56 L45 58 Z" fill="#c3a469"/><path d="M15 48 L19 57 M25 46 L29 54 M34 43 L38 52" stroke="#b9a88b" stroke-width="2"/></svg>'
-	if sword.load_svg_from_string(sword_svg) == OK: icon_textures["katana"] = ImageTexture.create_from_image(sword)
+		if source.ext == "svg":
+			var artwork := bytes.get_string_from_utf8()
+			if id == "knife":
+				artwork = ""
+				for line in bytes.get_string_from_utf8().split("\n"):
+					if line.strip_edges().begins_with('<rect x="9"') or line.strip_edges().begins_with('<rect x="11"'): continue
+					artwork += line + "\n"
+			elif id == "knuckles":
+				var mask := '<defs><mask id="grip-holes"><rect width="160" height="100" fill="white"/>'
+				for center_x in [46, 70, 94, 118]:
+					mask += '<circle cx="%d" cy="46" r="10" fill="black"/>' % center_x
+				mask += '</mask></defs><g mask="url(#grip-holes)">'
+				var opening := artwork.find(">") + 1
+				artwork = artwork.left(opening) + mask + artwork.substr(opening).replace("</svg>", "</g></svg>")
+			image.load_svg_from_string(artwork, SVG_SCALE)
+		else:
+			image.load_png_from_buffer(bytes)
+			# The old 256x128 exports encode the card with alpha 80/220/230,
+			# while every weapon pixel is opaque. Strip only those known card
+			# layers; preserve any other partial coverage and the complete canvas.
+			if image.get_size() == Vector2i(256, 128):
+				image.convert(Image.FORMAT_RGBA8)
+				var pixels := image.get_data()
+				for alpha_index in range(3, pixels.size(), 4):
+					if pixels[alpha_index] in [80, 220, 230]: pixels[alpha_index] = 0
+				image.set_data(256, 128, false, Image.FORMAT_RGBA8, pixels)
+	return image
 
 func set_weapon(id: String) -> void:
 	weapon_id = id

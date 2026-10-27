@@ -9,7 +9,7 @@ const BLUE := Color("3f7fe6")
 const CONE := Color(0.88, 0.28, 0.24, 0.20)
 const SEARCH_FILL := Color(0.25, 0.5, 0.9, 0.10)
 const SEARCH_LINE := Color(0.35, 0.6, 1.0, 0.55)
-const CONE_SEGMENTS := 6
+static var _vision_cone: Texture2D
 
 ## Algo a desenhar? (o minimapa redesenha a cada atualização enquanto houver).
 static func active(world: Node) -> bool:
@@ -31,7 +31,7 @@ static func draw(target: Control, minimap: Control, world: Node, map_area: Rect2
 		var center := Vector2(gameplay.last_known.x, gameplay.last_known.z)
 		var radius: float = gameplay.police_search_radius() if gameplay.has_method("police_search_radius") else 0.0
 		if radius > 0.0 and map_area.grow(radius).has_point(center):
-			target.draw_circle(minimap.project(center), radius * scale, SEARCH_FILL)
+			target.draw_circle(minimap.project(center), radius * scale, SEARCH_FILL, true, -1.0, true)
 			target.draw_arc(minimap.project(center), radius * scale, 0.0, TAU, 48, SEARCH_LINE, 1.5, true)
 	var flash := fposmod(clock * 2.5, 1.0) < 0.5
 	if dispatch != null and is_instance_valid(dispatch):
@@ -53,13 +53,13 @@ static func draw(target: Control, minimap: Control, world: Node, map_area: Rect2
 		var heli_point := Vector2(heli.global_position.x, heli.global_position.z)
 		if map_area.has_point(heli_point):
 			var at: Vector2 = minimap.project(heli_point)
-			target.draw_circle(at, 6.0, Color(0, 0, 0, 0.55))
+			target.draw_circle(at, 6.0, Color(0, 0, 0, 0.55), true, -1.0, true)
 			target.draw_arc(at, 4.5, 0.0, TAU, 16, BLUE if flash else RED, 1.6, true)
-			target.draw_line(at - Vector2(4, 0), at + Vector2(4, 0), Color.WHITE, 1.2)
+			target.draw_line(at - Vector2(4, 0), at + Vector2(4, 0), Color.WHITE, 1.2, true)
 
 static func _blip(target: Control, at: Vector2, radius: float, flash: bool) -> void:
-	target.draw_circle(at, radius + 1.4, Color(0, 0, 0, 0.6))
-	target.draw_circle(at, radius, RED if flash else BLUE)
+	target.draw_circle(at, radius + 1.4, Color(0, 0, 0, 0.6), true, -1.0, true)
+	target.draw_circle(at, radius, RED if flash else BLUE, true, -1.0, true)
 
 static func _person(target: Control, minimap: Control, map_area: Rect2, officer: Node3D, flash: bool) -> void:
 	var point := Vector2(officer.global_position.x, officer.global_position.z)
@@ -70,9 +70,20 @@ static func _cone(target: Control, minimap: Control, point: Vector2, forward: Ve
 	if forward.length_squared() < 0.0001: return
 	var at: Vector2 = minimap.project(point)
 	var heading := forward.angle()
-	var polygon := PackedVector2Array([at])
-	for index in CONE_SEGMENTS + 1:
-		var angle := heading - PURSUIT.VISION_HALF_ANGLE + 2.0 * PURSUIT.VISION_HALF_ANGLE * float(index) / CONE_SEGMENTS
-		polygon.append(at + Vector2.from_angle(angle) * PURSUIT.VISION_FRONT * scale)
-	target.draw_colored_polygon(polygon, CONE)
-	target.draw_circle(at, PURSUIT.VISION_NEAR * scale, Color(CONE, CONE.a * 0.6))
+	var radius := PURSUIT.VISION_FRONT * scale * 1.01
+	target.draw_set_transform(at, heading)
+	target.draw_texture_rect(_cone_texture(), Rect2(-Vector2.ONE * radius, Vector2.ONE * radius * 2.0), false, CONE)
+	target.draw_set_transform(Vector2.ZERO)
+	target.draw_circle(at, PURSUIT.VISION_NEAR * scale, Color(CONE, CONE.a * 0.6), true, -1.0, true)
+
+static func _cone_texture() -> Texture2D:
+	if _vision_cone == null:
+		# Cache only the presentation; the angle still comes from pursuit rules.
+		var edge := Vector2.from_angle(PURSUIT.VISION_HALF_ANGLE)
+		var svg := '<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="-1.01 -1.01 2.02 2.02"><path fill="white" d="M0 0L%f %fA1 1 0 0 1 %f %fZ"/></svg>' % [edge.x,-edge.y,edge.x,edge.y]
+		var image := Image.new()
+		if image.load_svg_from_string(svg) != OK: return null
+		image.fix_alpha_edges()
+		image.generate_mipmaps()
+		_vision_cone = ImageTexture.create_from_image(image)
+	return _vision_cone

@@ -52,6 +52,8 @@ func run() -> void:
 	check(hud.minimap.compass_label.text == "N", "compact north indicator")
 	check(hud.combat_panel.visible and not hud.stars_label.visible, "equipped weapon remains visible; inactive police stars do not")
 	check(hud.money_label.visible, "wallet balance remains visible")
+	check(hud.current_objective.size.x <= hud.minimap.size.x, "objective card stays within the minimap width")
+	check(hud.player_status.rage_action.text.is_empty() and hud.player_status.rage_action.get_parent() == hud.player_status.rage_bar, "rage uses its bar without an extra text row")
 	await shot("01-exploration")
 	var intro_snapshot: Dictionary = state.intro.snapshot()
 	var completed_intro := intro_snapshot.duplicate(true)
@@ -88,14 +90,14 @@ func run() -> void:
 	gameplay.set_physics_process(false)
 	gameplay.register_crime(70, world.player.global_position)
 	# Explicit police contact selects pursuit; without it the existing case
-	# director enters search and intentionally adds the functional BUSCA label.
+	# director enters search and intentionally adds the functional Busca label.
 	gameplay.report_contact(world.player.global_position)
 	hud.refresh_from_state()
 	await frames(20)
-	check(gameplay.stars > 0 and hud.stars_label.get_parsed_text() == "★".repeat(gameplay.stars)+"  PERSEGUIÇÃO", "active wanted stars explicitly show police contact")
+	check(gameplay.stars > 0 and hud.stars_label.get_parsed_text() == "★".repeat(gameplay.stars)+"  Perseguição", "active wanted stars explicitly show police contact")
 	gameplay.contact_age = 2.0
 	hud.refresh_from_state()
-	check(hud.stars_label.get_parsed_text() == "★".repeat(gameplay.stars)+"  BUSCA" and hud.search_progress.visible, "lost police contact shows search and escape progress")
+	check(hud.stars_label.get_parsed_text() == "★".repeat(gameplay.stars)+"  Busca" and hud.search_progress.visible, "lost police contact shows search and escape progress")
 	check(hud.stars_label.get_global_rect().position.y < 140, "active wanted state stays in upper right")
 	await shot("03-wanted")
 	hud.refresh_from_state()

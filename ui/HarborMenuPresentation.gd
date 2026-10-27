@@ -1,7 +1,7 @@
 extends RefCounted
 ## Presentation only. Existing buttons retain their owners, signals and rules.
 const STYLE := preload("res://ui/GameStyle.gd")
-const TEXT_SIZE := 20
+const TEXT_SIZE := 18
 static var _font: FontFile
 static var _icons := {}
 
@@ -20,7 +20,7 @@ static func font() -> FontFile:
 
 static func typography(node: Node) -> void:
 	if node is Control:
-		node.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		node.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	if node is Label or node is Button or node is LineEdit:
 		node.add_theme_font_override("font",font())
 		node.add_theme_font_size_override("font_size",TEXT_SIZE)
@@ -35,6 +35,7 @@ static func surface(fill: Color, border := Color.TRANSPARENT) -> StyleBoxFlat:
 	box.border_color = border
 	box.set_border_width_all(1)
 	box.set_corner_radius_all(12)
+	box.corner_detail = 12
 	box.content_margin_left = 20
 	box.content_margin_right = 20
 	box.content_margin_top = 12
@@ -42,7 +43,7 @@ static func surface(fill: Color, border := Color.TRANSPARENT) -> StyleBoxFlat:
 	return box
 
 static func button(control: Button, primary := false, icon := "") -> void:
-	control.custom_minimum_size = Vector2(0, 48)
+	control.custom_minimum_size = Vector2(0, 44)
 	control.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	control.add_theme_font_override("font", font())
 	control.add_theme_font_size_override("font_size", TEXT_SIZE)

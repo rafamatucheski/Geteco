@@ -37,11 +37,11 @@ func _ready() -> void:
 	%LoadPanel.hide()
 	latest_save = get_node("/root/V2Launch").latest_slot()
 	btn_continue = Button.new()
-	btn_continue.text = "CONTINUAR"
+	btn_continue.text = "Continuar"
 	btn_new_game.get_parent().add_child(btn_continue)
 	btn_continue.visible = not latest_save.is_empty()
 	btn_import = Button.new()
-	btn_import.text = "IMPORTAR SAVE DA V1"
+	btn_import.text = "Importar save da V1"
 	btn_import.custom_minimum_size = btn_new_game.custom_minimum_size
 	btn_import.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	btn_new_game.get_parent().add_child(btn_import)
@@ -127,7 +127,7 @@ func _show_slots(new_game: bool) -> void:
 	for child in %SlotListContainer.get_children():
 		%SlotListContainer.remove_child(child)
 		child.queue_free()
-	%Title.text = "NOVO JOGO" if new_game else "CARREGAR JOGO"
+	%Title.text = "Novo jogo" if new_game else "Carregar jogo"
 	%LabelLoadStatus.text = "Escolha um slot vazio. Os jogos existentes serão preservados." if new_game else "Escolha o progresso para continuar."
 	var enabled_options := 0
 	for row in get_node("/root/V2Launch").list_slots():
@@ -142,11 +142,11 @@ func _show_slots(new_game: bool) -> void:
 		button.pressed.connect(func(): _start(str(row.id), new_game))
 		%SlotListContainer.add_child(button)
 		if row.id != "progress" and row.exists:
-			# Slot numerado ocupado ganha "APAGAR", com confirmação, para liberar espaço. Fica dentro do
+			# Slot numerado ocupado ganha "Apagar", com confirmação, para liberar espaço. Fica dentro do
 			# botão do slot (canto direito) para a lista continuar sendo só de botões de slot.
 			var erase := Button.new()
 			erase.name = "Apagar"
-			erase.text = "APAGAR"
+			erase.text = "Apagar"
 			button.add_child(erase)
 			erase.set_anchors_and_offsets_preset(Control.PRESET_RIGHT_WIDE)
 			erase.offset_left = -124
@@ -209,7 +209,7 @@ func _inspect_v1_save(path: String) -> void:
 		child.queue_free()
 	shade.show()
 	%LoadPanel.show()
-	%Title.text = "IMPORTAR SAVE DA V1"
+	%Title.text = "Importar save da V1"
 	if int(pending_import.get("read_error",OK)) != OK:
 		%LabelLoadStatus.text = "O arquivo não pôde ser lido ou não contém um save V1 válido. Nenhum arquivo foi alterado."
 		STYLE.trap_focus(%LoadPanel)
@@ -222,7 +222,7 @@ func _inspect_v1_save(path: String) -> void:
 	for row in get_node("/root/V2Launch").list_slots():
 		if row.id == "progress" or row.exists: continue
 		var button := Button.new()
-		button.text = "IMPORTAR PARA " + row.label.to_upper()
+		button.text = "Importar para " + row.label
 		button.custom_minimum_size.y = 58
 		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		button.pressed.connect(func(): _publish_v1_import(str(row.id)))
@@ -239,11 +239,11 @@ func _publish_v1_import(slot_id: String) -> void:
 	if error == OK:
 		latest_save = get_node("/root/V2Launch").latest_slot()
 		btn_continue.visible = not latest_save.is_empty()
-		%Title.text = "IMPORTAÇÃO CONCLUÍDA"
+		%Title.text = "Importação concluída"
 		%LabelLoadStatus.text = "A cópia V2 foi criada no slot escolhido. O arquivo V1 original não foi modificado."
 		pending_import = {}
 	else:
-		%Title.text = "IMPORTAÇÃO NÃO REALIZADA"
+		%Title.text = "Importação não realizada"
 		%LabelLoadStatus.text = String(TranslationServer.translate("O slot deixou de estar vazio ou a publicação falhou (%d). Nenhum save existente foi sobrescrito.")) % error
 	STYLE.trap_focus(%LoadPanel)
 
@@ -274,7 +274,7 @@ func _start_rachas() -> void:
 	var error := preload("res://runtime/desert/DragStandaloneProfile.gd").prepare(get_node("/root/V2Launch"))
 	if error!=OK:
 		_show_slots(false)
-		%Title.text="RACHAS"
+		%Title.text="Rachas"
 		%LabelLoadStatus.text="Não foi possível abrir o perfil dos rachas (%d). O progresso existente foi preservado."%error
 		return
 	starting=true

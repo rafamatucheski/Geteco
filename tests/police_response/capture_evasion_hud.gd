@@ -29,7 +29,7 @@ func run() -> void:
 	var hud = world.hud
 	world.gameplay.report_contact(world.player.global_position)
 	hud.refresh_from_state()
-	check("PERSEGUIÇÃO" in hud.stars_label.get_parsed_text() and not hud.search_progress.visible,"contact shows steady pursuit")
+	check("Perseguição" in hud.stars_label.get_parsed_text() and not hud.search_progress.visible,"contact shows steady pursuit")
 	world.gameplay.contact_age=2.0
 	world.gameplay.hidden_time=world.gameplay.police_evasion_seconds()*.85
 	hud.refresh_from_state()
@@ -47,7 +47,7 @@ func run() -> void:
 	check(not hud.search_progress.visible and world.gameplay.police_evasion_progress()==0,"rediscovery clears progress without adding stars")
 	world.gameplay.clear_wanted(true)
 	hud.refresh_from_state()
-	check(hud.stars_label.get_parsed_text()=="INVESTIGAÇÃO LOCAL","escape distinguishes local investigation")
+	check(hud.stars_label.get_parsed_text()=="Investigação local","escape distinguishes local investigation")
 	world.gameplay.clear_wanted()
 	hud.refresh_from_state()
 	check(not hud.stars_label.visible and not hud.search_progress.visible,"case cleanup removes all indicators")

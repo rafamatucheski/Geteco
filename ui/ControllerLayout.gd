@@ -1,6 +1,6 @@
 extends Control
 ## Static diagram: redraw only when bindings, layout or size change.
-const FONT: Font = preload("res://assets/fonts/barlow/BarlowSemiCondensed-Regular.ttf")
+const FONT: Font = preload("res://assets/fonts/manrope/Manrope-Regular.ttf")
 const INK := Color("e9e5dc")
 const MUTED := Color("a6b0b8")
 const ACCENT := Color("ff914d")
@@ -26,7 +26,7 @@ func _draw() -> void:
 		draw_style_box(_box(Color("18232b")),Rect2(x,29,34,29))
 		draw_style_box(_box(Color("3c4751")),Rect2(x-8,58,49,17))
 	for point in [Vector2(442,178),Vector2(558,178)]:
-		draw_circle(point,24,Color("101923"))
+		draw_circle(point,24,Color("101923"),true,-1,true)
 		draw_arc(point,20,0,TAU,36,Color("5b6871"),2,true)
 	var ps: bool = controls.is_playstation_controller()
 	_center("L2" if ps else "LT",Vector2(392,49),INK,15)
@@ -39,10 +39,10 @@ func _draw() -> void:
 	_center("Create" if ps else "View",Vector2(397,93),Color("26323b"),12)
 	_center("Options" if ps else "Menu",Vector2(604,93),Color("26323b"),12)
 	for entry in [[Vector2(393,117),"↑"],[Vector2(393,151),"↓"],[Vector2(376,134),"←"],[Vector2(410,134),"→"]]:
-		draw_circle(entry[0],12,Color("28343d"))
+		draw_circle(entry[0],12,Color("28343d"),true,-1,true)
 		_center(entry[1],entry[0]+Vector2(0,5),INK,15)
 	for entry in [[Vector2(610,115),3,Color("76c4aa")],[Vector2(610,155),0,Color("8fb7ef")],[Vector2(590,135),2,Color("ddb1d6")],[Vector2(630,135),1,Color("eea39c")]]:
-		draw_circle(entry[0],13,Color("28343d"))
+		draw_circle(entry[0],13,Color("28343d"),true,-1,true)
 		_center(controls._pad_button_hint(entry[1],ps),entry[0]+Vector2(0,6),entry[2],18)
 	var profile := _profile()
 	for index in profile.left.size():
@@ -116,4 +116,5 @@ func _box(color: Color) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	style.bg_color = color
 	style.set_corner_radius_all(8)
+	style.corner_detail = 12
 	return style

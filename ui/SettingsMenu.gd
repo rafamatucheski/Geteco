@@ -1,6 +1,6 @@
 extends Control
 ## Configurações: Vídeo, Áudio, Controles e Ajuda. Montada em código com a identidade do menu
-## principal (Barlow, grafite e dourado Harbor). Tudo é aplicado na hora para o jogador ver o
+## principal (Manrope, grafite e dourado Harbor). Tudo é aplicado na hora para o jogador ver o
 ## efeito; "Cancelar"/Esc volta ao estado de quando a tela abriu e "Salvar" grava.
 ##
 ## Histórico (25/09/2026): a versão anterior herdada da V1 escondia resolução e idioma,
@@ -11,8 +11,8 @@ signal closed
 const STYLE = preload("res://ui/GameStyle.gd")
 const PRESENTATION := preload("res://ui/HarborMenuPresentation.gd")
 const AUDIO = preload("res://ui/MenuAudio.gd")
-const DISPLAY_FONT: FontFile = preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
-const BODY_FONT: FontFile = preload("res://assets/fonts/barlow/BarlowSemiCondensed-Regular.ttf")
+const DISPLAY_FONT: FontFile = preload("res://assets/fonts/manrope/Manrope-SemiBold.ttf")
+const BODY_FONT: FontFile = preload("res://assets/fonts/manrope/Manrope-Regular.ttf")
 const ACCENT := STYLE.ACCENT
 const TEXT := STYLE.TEXT
 const MUTED := STYLE.MUTED
@@ -72,6 +72,7 @@ func _ready() -> void:
 	panel_style.set_border_width_all(1)
 	panel_style.border_color = STYLE.LINE
 	panel_style.set_corner_radius_all(12)
+	panel_style.corner_detail = 12
 	panel_style.shadow_color = Color(0, 0, 0, 0.5)
 	panel_style.shadow_size = 0
 	for side in ["left", "right"]: panel_style.set("content_margin_" + side, 22)
@@ -231,6 +232,7 @@ func _style_tab(tab: Button) -> void:
 	var idle := StyleBoxFlat.new()
 	idle.bg_color = Color(0, 0, 0, 0)
 	idle.set_corner_radius_all(12)
+	idle.corner_detail = 12
 	idle.content_margin_left = 16
 	idle.content_margin_right = 16
 	idle.content_margin_top = 8
@@ -261,6 +263,7 @@ func _field_style(active := false) -> StyleBoxFlat:
 	box.border_color = ACCENT if active else Color(1, 1, 1, 0.1)
 	box.set_border_width_all(1)
 	box.set_corner_radius_all(12)
+	box.corner_detail = 12
 	box.content_margin_left = 12
 	box.content_margin_right = 12
 	box.content_margin_top = 6
@@ -380,6 +383,7 @@ func _slider(minimum: float, maximum: float, step: float, format: Callable, on_c
 	track.content_margin_top = 2
 	track.content_margin_bottom = 2
 	track.set_corner_radius_all(2)
+	track.corner_detail = 12
 	var fill := track.duplicate() as StyleBoxFlat
 	fill.bg_color = ACCENT
 	slider.add_theme_stylebox_override("slider", track)

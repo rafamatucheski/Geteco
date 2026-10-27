@@ -14,8 +14,8 @@ func _ready() -> void:
 	carousel=HBoxContainer.new(); carousel.name="WeaponSwitch"; carousel.size_flags_horizontal=SIZE_SHRINK_END; add_child(carousel); carousel.hide()
 	equipped=PanelContainer.new(); equipped.size_flags_horizontal=SIZE_SHRINK_END; equipped.add_theme_stylebox_override("panel",STYLE.compact(false,10)); add_child(equipped)
 	var column := VBoxContainer.new(); column.add_theme_constant_override("separation",0); equipped.add_child(column)
-	weapon_icon=ICON.new(); weapon_icon.frameless=true; weapon_icon.custom_minimum_size=Vector2(112,38); column.add_child(weapon_icon)
-	ammo_label=STYLE.label("",18); ammo_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; column.add_child(ammo_label)
+	weapon_icon=ICON.new(); weapon_icon.frameless=true; weapon_icon.custom_minimum_size=Vector2(96,30); column.add_child(weapon_icon)
+	ammo_label=STYLE.label("",15); ammo_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER; column.add_child(ammo_label)
 func update_weapon(state, allow_switch := true) -> void:
 	var id := str(state.equipped_weapon)
 	var ammo: Dictionary=state.get_ammo(id)

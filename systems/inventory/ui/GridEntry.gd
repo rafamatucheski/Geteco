@@ -14,6 +14,7 @@ func _get_drag_data(_at: Vector2) -> Variant:
 	if not board.adapter.can_edit(board.container_id): return null
 	var data := {"container":board.container_id,"index":index,"owner":board.adapter}
 	var preview := TextureRect.new()
+	preview.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 	preview.texture=item_texture; preview.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
 	preview.custom_minimum_size=size
 	preview.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_CENTERED

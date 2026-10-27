@@ -1,8 +1,8 @@
 extends Control
 ## Static presentation; MainMenu owns save routing, settings and scene changes.
 const STYLE := preload("res://ui/GameStyle.gd")
-const DISPLAY_FONT: FontFile = preload("res://assets/fonts/barlow/BarlowSemiCondensed-SemiBold.ttf")
-const BODY_FONT: FontFile = preload("res://assets/fonts/barlow/BarlowSemiCondensed-Regular.ttf")
+const DISPLAY_FONT: FontFile = preload("res://assets/fonts/manrope/Manrope-SemiBold.ttf")
+const BODY_FONT: FontFile = preload("res://assets/fonts/manrope/Manrope-Regular.ttf")
 var buttons: Array[Button] = []
 var background: ColorRect
 var brand_accent: ColorRect
@@ -64,7 +64,7 @@ func install(menu: Control) -> void:
 	buttons.assign([menu.btn_continue, menu.btn_new_game, menu.btn_load_game, menu.btn_settings, menu.btn_quit])
 	var menu_font := FontVariation.new()
 	menu_font.base_font = DISPLAY_FONT
-	menu_font.spacing_glyph = 3
+	menu_font.spacing_glyph = 0
 	for button in buttons:
 		button.reparent(main_content)
 		button.custom_minimum_size = Vector2.ZERO
