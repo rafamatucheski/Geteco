@@ -433,6 +433,7 @@ func _tick_wreck(delta: float) -> bool:
 
 func _begin_wreck_fade() -> void:
 	_wreck_fade = 0.0
+	preload("res://runtime/PipelineProbe.gd").note("wreck_sink" if WRECK_SINK_ENABLED else "wreck_fade", self)
 	# Já não bloqueia ninguém enquanto some.
 	var pending: Array[Node] = [self]
 	while not pending.is_empty():

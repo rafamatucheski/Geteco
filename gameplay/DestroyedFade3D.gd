@@ -21,6 +21,7 @@ static func schedule(body: Node3D, delay := DELAY, by_scale := false) -> void:
 static func fade(body: Node3D, by_scale := false) -> void:
 	if not is_instance_valid(body) or body.has_meta("destroyed_fading"): return
 	body.set_meta("destroyed_fading", true)
+	preload("res://runtime/PipelineProbe.gd").note("fade_scale" if by_scale and shrink_enabled else "fade_transparency", body)
 	var meshes: Array[GeometryInstance3D] = []
 	var initial: Array[float] = []
 	var pending: Array[Node] = [body]

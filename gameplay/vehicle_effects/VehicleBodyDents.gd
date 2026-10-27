@@ -232,7 +232,8 @@ func _async_active() -> bool:
 	return async_enabled and (async_in_headless or DisplayServer.get_name() != "headless")
 
 func _request_rebuild(changed: Dictionary) -> void:
-	if _task >= 0:
+	# Aplicação fatiada ainda no meio conta como cálculo em andamento: a próxima espera.
+	if _task >= 0 or not _apply_items.is_empty():
 		# Dois registros diferentes (ou uma completa) no meio: a próxima é completa, sempre correta.
 		if _pending == null: _pending = changed
 		elif changed.is_empty() or (_pending as Dictionary).is_empty() or _pending != changed: _pending = {}
@@ -253,14 +254,46 @@ func _poll_rebuild() -> void:
 	var job := _job
 	_job = {}
 	if int(job.get("generation", -1)) == _generation:
+		# Sem janela (testes de contrato) aplica no ato, como antes.
+		if sliced_apply and DisplayServer.get_name() != "headless":
+			_apply_items = (job.work as Array).duplicate()
+			_step_apply()
+			return
 		var stage := STALL_WORK.begin()
 		_apply_job(job)
 		STALL_WORK.finish_slow("vehicle.dents.apply", stage, 2000)
 		rebuild_usec = Time.get_ticks_usec() - _job_started
+	_request_pending()
+
+func _request_pending() -> void:
 	if _pending != null and is_instance_valid(vehicle):
 		var next: Dictionary = _pending
 		_pending = null
 		_request_rebuild(next)
+
+## Aplicação fatiada (27/10): `vehicle.dents.apply` levava 8–20 ms num quadro (rodada de 24/10), com o
+## cálculo já no trabalhador; o que sobrava no thread principal era montar a malha nova de cada peça
+## (envio à GPU) e refazer o vidro. Agora vai uma peça por vez até ~2 ms por quadro, e o vidro sozinho
+## no fim, cada um com span. O amassado aparece em 2–3 quadros. GETECO_DENTS_SLICED_APPLY=0 volta ao ato.
+static var sliced_apply := OS.get_environment("GETECO_DENTS_SLICED_APPLY") != "0"
+const APPLY_SLICE_USEC := 2000
+var _apply_items: Array = []
+
+func _step_apply() -> void:
+	var began := Time.get_ticks_usec()
+	var stage := STALL_WORK.begin()
+	while not _apply_items.is_empty():
+		_apply_item(_apply_items.pop_front())
+		if Time.get_ticks_usec() - began >= APPLY_SLICE_USEC: break
+	STALL_WORK.finish_slow("vehicle.dents.apply.mesh", stage, 2000)
+	if not _apply_items.is_empty():
+		set_process(true)
+		return
+	stage = STALL_WORK.begin()
+	preload("res://gameplay/vehicle_effects/VehicleGlassDamage.gd").geometry_changed(vehicle)
+	STALL_WORK.finish_slow("vehicle.dents.apply.glass", stage, 2000)
+	rebuild_usec = Time.get_ticks_usec() - _job_started
+	_request_pending()
 
 ## Tudo que o cálculo lê, copiado ou compartilhado só para leitura (arrays em repouso do cache).
 func _make_job(changed: Dictionary) -> Dictionary:
@@ -346,21 +379,23 @@ static func _compute(job: Dictionary) -> void:
 
 ## Thread principal: malhas novas a partir do cálculo pronto.
 func _apply_job(job: Dictionary) -> void:
-	for item: Dictionary in job.work:
-		var entry: Dictionary=item.entry
-		var part: MeshInstance3D=entry.node
-		if not is_instance_valid(part) or not item.has("surfaces"): continue
-		var mesh:=ArrayMesh.new()
-		var surfaces: Array=item.surfaces
-		for surface in surfaces.size():
-			mesh.add_surface_from_arrays(item.primitives[surface],surfaces[surface])
-			mesh.surface_set_material(surface,entry.mesh.surface_get_material(surface))
-			preload("res://gameplay/VehicleInterior.gd").remember_contact(mesh,surface,surfaces[surface])
-		entry["rest_points"]=item.rest_points
-		entry["applied_vertices"]=item.applied_vertices
-		part.mesh=mesh
-		entry["applied_mesh"]=mesh
+	for item: Dictionary in job.work: _apply_item(item)
 	preload("res://gameplay/vehicle_effects/VehicleGlassDamage.gd").geometry_changed(vehicle)
+
+func _apply_item(item: Dictionary) -> void:
+	var entry: Dictionary=item.entry
+	var part: MeshInstance3D=entry.node
+	if not is_instance_valid(part) or not item.has("surfaces"): return
+	var mesh:=ArrayMesh.new()
+	var surfaces: Array=item.surfaces
+	for surface in surfaces.size():
+		mesh.add_surface_from_arrays(item.primitives[surface],surfaces[surface])
+		mesh.surface_set_material(surface,entry.mesh.surface_get_material(surface))
+		preload("res://gameplay/VehicleInterior.gd").remember_contact(mesh,surface,surfaces[surface])
+	entry["rest_points"]=item.rest_points
+	entry["applied_vertices"]=item.applied_vertices
+	part.mesh=mesh
+	entry["applied_mesh"]=mesh
 
 static func _update_normals(arrays: Array) -> void:
 	var vertices: PackedVector3Array=arrays[Mesh.ARRAY_VERTEX]
@@ -389,6 +424,7 @@ static func _update_normals(arrays: Array) -> void:
 func clear() -> void:
 	_generation += 1
 	_pending = null
+	_apply_items.clear()
 	_stop_recoil()
 	for entry in parts:
 		if is_instance_valid(entry.node):
@@ -402,6 +438,8 @@ func clear() -> void:
 ## atomic swap, adopt that new topology and reapply the same damage records.
 ## This prevents repair or another impact from resurrecting a closed door panel.
 func geometry_changed() -> void:
+	# Topologia nova: o resto de uma aplicação fatiada é de peças antigas.
+	_apply_items.clear()
 	if dents.is_empty(): return
 	_stop_recoil()
 	var keep: Dictionary = {}
@@ -428,9 +466,10 @@ func geometry_changed() -> void:
 	_request_rebuild({})
 
 func _process(delta: float) -> void:
-	if _task >= 0: _poll_rebuild()
+	if not _apply_items.is_empty(): _step_apply()
+	elif _task >= 0: _poll_rebuild()
 	if _remaining > 0.0: _recoil(delta)
-	if _task < 0 and _remaining <= 0.0: set_process(false)
+	if _task < 0 and _remaining <= 0.0 and _apply_items.is_empty(): set_process(false)
 
 func _notification(what: int) -> void:
 	# O trabalhador só lê dados copiados, mas a tarefa precisa ser recolhida antes de o nó sumir.

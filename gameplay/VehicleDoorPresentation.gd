@@ -9,6 +9,7 @@ extends Node3D
 ## cartão interno, batentes, maçaneta e o poço escuro atrás; a lataria ganha frestas.
 ## O cupê esportivo tem o recorte manual próprio (VehicleCoupeDoors).
 
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const BUILDER := preload("res://gameplay/VehicleDoorBuilder.gd")
 const SPECS := preload("res://data/catalogs/VehicleDoorSpecs.gd")
 const KIT := preload("res://world/city_look/CityPropKit.gd")
@@ -92,30 +93,46 @@ func _configure_authored_civilian() -> bool:
 func advance(budget_usec: int) -> bool:
 	if ready_for_boarding: return true
 	if _job == null: return false
-	if BUILDER.step(_job, budget_usec): _finish()
+	# Recorte pronto: a montagem da folha fica para a próxima chamada, sem somar ao último passo do recorte.
+	if _cut_done:
+		_finish()
+		return ready_for_boarding
+	_cut_done = BUILDER.step(_job, budget_usec)
 	return ready_for_boarding
+var _cut_done := false
 
 ## Termina agora o que faltar (quem precisa da porta neste quadro: embarque, animação).
 func finish_now() -> void:
 	if ready_for_boarding or _job == null: return
-	BUILDER.step(_job, 1 << 40)
+	var stage := STALL_WORK.begin()
+	if not _cut_done: BUILDER.step(_job, 1 << 40)
+	STALL_WORK.finish_slow("vehicle.doors.cut", stage, 2000, vehicle)
 	_finish()
 
+## Spans por parte (27/10): `vehicle.doors.prepare` chegou a 20 ms num quadro (rodada de 24/10) sem dizer onde.
 func _finish() -> void:
 	var result = _job.result
 	_job = null
+	var stage := STALL_WORK.begin()
 	result.apply()
+	STALL_WORK.finish_slow("vehicle.doors.apply", stage, 2000, vehicle)
 	var skin: float = result.skin
 	if skin <= 0.0:
 		# Nenhuma lataria lateral no vão medido: a folha sai vazia e só as peças de acabamento
 		# aparecem. O aviso é para quem cadastrar um modelo novo na tabela.
 		skin = maxf(vehicle.half_width / maxf(vehicle.visual.scale.x, .01) - .17, .5)
 		push_warning("Porta sem lataria no vão medido: " + vehicle.archetype)
+	stage = STALL_WORK.begin()
 	for side in [-1, 1]: _build_side(side, result, skin)
+	STALL_WORK.finish_slow("vehicle.doors.sides", stage, 2000, vehicle)
+	stage = STALL_WORK.begin()
 	_static_details(skin)
 	_layout(skin)
+	STALL_WORK.finish_slow("vehicle.doors.details", stage, 2000, vehicle)
+	stage = STALL_WORK.begin()
 	if is_instance_valid(vehicle.body_dents): vehicle.body_dents.geometry_changed()
 	preload("res://gameplay/vehicle_effects/VehicleGlassDamage.gd").geometry_changed(vehicle)
+	STALL_WORK.finish_slow("vehicle.doors.dents_glass", stage, 2000, vehicle)
 
 ## Deriva tudo o que o embarque precisa (ponto de espera, portão, ponto de agarrar) e
 ## converte para coordenadas do veículo, que é onde Vehicle e Boarding trabalham.

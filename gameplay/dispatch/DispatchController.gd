@@ -18,6 +18,8 @@ const VEHICLE := preload("res://gameplay/dispatch/DispatchVehicle.gd")
 const ROADBLOCKS := preload("res://gameplay/police_response/ground/PoliceRoadblocks.gd")
 const TRACE := preload("res://gameplay/dispatch/DispatchTrace.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+## Mesmo interruptor de NativeRegion.request_collision_soon (GETECO_COLLISION_LOOKAHEAD=0 desliga).
+static var _collision_lookahead := OS.get_environment("GETECO_COLLISION_LOOKAHEAD") != "0"
 const WORLD_CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
 const PURSUIT := preload("res://gameplay/dispatch/PursuitRules.gd")
 const RADIO := preload("res://gameplay/dispatch/PursuitRadio.gd")
@@ -252,6 +254,12 @@ func _stall_prepare_unit_ground(unit: RefCounted) -> void:
 	var residents: Dictionary = residents_value
 	var car: CharacterBody3D = unit.vehicle
 	var ahead := car.global_position-car.global_basis.z*12.0
+	if _collision_lookahead:
+		# Chão bem à frente pela fila fatiada (~2,5 s de estrada, mínimo 36 m): quando os 12 m chegam lá,
+		# a célula já está pronta e prepare_collision_at abaixo não monta nada no quadro.
+		var lookahead := car.global_position-car.global_basis.z*maxf(36.0,absf(float(car.get("speed")))*2.5)
+		var far_region: Node3D = residents.get(WORLD_CONNECTION.logical_region(lookahead)) as Node3D
+		if is_instance_valid(far_region) and far_region.has_method("request_collision_soon"): far_region.request_collision_soon(lookahead)
 	var unit_id := unit.get_instance_id()
 	var previous: Dictionary = _prepared_ground_cells.get(unit_id,{})
 	var prepared: Dictionary = {}

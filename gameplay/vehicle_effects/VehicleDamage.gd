@@ -393,6 +393,7 @@ func ignite(source: Node = null) -> void:
 ## lanternas apagadas, e o corpo pula com a explosão e assenta sobre os aros.
 func wreck() -> void:
 	var began := STALL_WORK.begin()
+	if not wrecked: preload("res://runtime/PipelineProbe.gd").note("wreck", vehicle)
 	_stall_wreck()
 	STALL_WORK.finish_slow("vehicle_damage.wreck",began,5000,self)
 

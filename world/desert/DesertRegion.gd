@@ -30,6 +30,8 @@ const SMUGGLER_SCENERY := preload("res://world/desert/canyon/DesertSmugglerScene
 const CELL := 96.0
 const BUILD_BUDGET_USEC := 1000
 const SURFACE_STAGES := 18
+## Etapa de _build_surface_stage que monta as estradas (fatiada em _advance_surface_job).
+const ROAD_SURFACE_STAGE := 4
 const CHUNK_CACHE := preload("res://world/desert/DesertChunkCache.gd")
 var region_id := "desert"
 var initial_focus := Vector3.INF
@@ -95,6 +97,7 @@ static func get_definition(_id := "desert") -> Dictionary:
 ## Montar o deserto custou 9,4 s num quadro só ao começar perto da passagem norte (travessia do release de
 ## 15/10, "world.mount_region:desert"), sem nenhum span dentro. Cada etapa vai para o log da sessão.
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+const HEAVY_FRAME := preload("res://runtime/HeavyFrameClaim.gd")
 func _ready() -> void:
 	name="DesertNativeRegion"
 	var began := STALL_WORK.begin()
@@ -318,10 +321,21 @@ func _begin_surface_job(key: Vector2i) -> void:
 	add_child(chunk)
 	_surface_jobs[key]={"chunk":chunk,"rect":rect,"stage":0}
 
+## Etapa 4 (estradas) em partes, uma por passo: GETECO_DESERT_ROAD_SLICES=0 volta à etapa inteira.
+static var road_slices := OS.get_environment("GETECO_DESERT_ROAD_SLICES") != "0"
+
 func _advance_surface_job(key: Vector2i) -> void:
 	if not _surface_jobs.has(key): return
 	var job: Dictionary=_surface_jobs[key]
 	var began := STALL_WORK.begin()
+	if int(job.stage)==ROAD_SURFACE_STAGE and road_slices:
+		var part:=int(job.get("road_part",0))
+		road_geometry.build_chunk_part(job.chunk,job.rect,part)
+		STALL_WORK.finish_slow("stream.desert.surface_stage.4.%d"%part,began,2000)
+		job.road_part=part+1
+		if int(job.road_part)<road_geometry.PARTS: return
+		job.stage=int(job.stage)+1
+		return
 	_build_surface_stage(job.chunk,job.rect,int(job.stage))
 	STALL_WORK.finish_slow("stream.desert.surface_stage.%d"%int(job.stage),began,2000)
 	job.stage=int(job.stage)+1
@@ -358,7 +372,8 @@ func _stream_process() -> void:
 		if _drag_preparing and not drag_view_pending.is_empty(): _begin_surface_job(drag_view_pending.pop_front())
 		elif not pending.is_empty(): _begin_surface_job(pending.pop_front())
 		elif not drag_view_pending.is_empty(): _begin_surface_job(drag_view_pending.pop_front())
-	while not _surface_jobs.is_empty() and Time.get_ticks_usec()-began<budget:
+	# A desmontagem de outra região (ProductionWorld) já levou este quadro: o chão espera o próximo.
+	while not _surface_jobs.is_empty() and Time.get_ticks_usec()-began<budget and HEAVY_FRAME.claim("desert.surface"):
 		_advance_surface_job(_surface_jobs.keys()[0])
 	while not build_jobs.is_empty() and Time.get_ticks_usec()-began<budget:
 		var next_job: Dictionary=build_jobs[0]

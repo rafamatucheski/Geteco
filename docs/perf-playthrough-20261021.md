@@ -1181,3 +1181,46 @@ somada à desmontagem da região anterior (~5,5 ms) e a ~20–23 ms de desenho c
 Com janela, o primeiro acostamento e o primeiro asfalto custam 33 e 40 ms para criar num processo novo, mas
 pré-aquecê-los não mudou o quadro (R 67,7 / 48,3 ms contra S 50,3 / 55,4 ms; etapa 4 ~7 ms nos dois lados): no
 jogo eles já nascem sob a cortina. Desfeito. Fica para fatiar a etapa 4 ou adiar a desmontagem.
+
+## 18. Consertos de código dos picos com causa conhecida e investigação do quadro de ~1 s (27/10, NÃO medido)
+
+Pedido do usuário: "faça tudo, não teste ainda". Tudo abaixo está no código, atrás de interruptor `GETECO_*`
+(padrão ligado, `=0` desliga, para o A/B no mesmo export), mas **nada foi medido nem rodado**: nem testes, nem
+export, nem jogo. Os números citados são das rodadas anteriores, que motivaram cada mudança.
+
+| # | pico (rodada que mediu) | mudança | interruptor |
+|---|---|---|---|
+| 1 | deserto aos 3 s, ~58 ms: estradas (~7 ms) + desmontagem da região anterior (~5,5 ms) no mesmo quadro (§17) | etapa 4 do chão em 4 partes (acostamento, asfalto, pintura, resto), uma por passo (`DesertRoadGeometry.build_chunk_part`); `HeavyFrameClaim` (novo): um trabalho pesado adiável por quadro — a desmontagem da residência física (`ProductionWorld._queue_unmount`) e o refazer de rotas esperam um quadro em que o chão do deserto não montou nada, e vice-versa | `GETECO_DESERT_ROAD_SLICES`, `GETECO_HEAVY_FRAME_CLAIM`, `GETECO_UNMOUNT_DEFER` |
+| 2 | viatura/ônibus entrando em célula sem chão: `prepare_collision_at` montava as superfícies da célula no quadro, 13–27 ms (§11) | `NativeRegion.request_collision_soon`: a viatura do despacho pede pela fila fatiada o chão ~2,5 s à frente (mínimo 36 m) e o ônibus 40 m à frente; quando os 12/8 m chegam lá a célula já existe | `GETECO_COLLISION_LOOKAHEAD` |
+| 3 | 1º quadro depois da cortina no oeste, 32–37 ms: mobília do pátio da delegacia norte (sonda, perf-r3/r5/r6/r9/r13) | etapa nova `late_surfaces` (`runtime/LateSurfacePrewarm.gd`): MultiMesh de cilindro e caixa de cada família de material do `HarborBuildingDressing` (a luz com emissão era a que faltava) e o envelope sem material | `GETECO_LATE_SURFACE_PREWARM` |
+| 3b | silhueta de oclusão: 84–101 ms no oeste quando o casco do carro do jogador ganhava o overlay (`PlayerCoupe/Shell`, `occluded_silhouette`), e a do Dante no 1º quadro jogável | na mesma etapa: overlay da silhueta num triângulo de cada formato de lataria/porta e emprestado ao corpo do jogador por 3 desenhos | idem |
+| 3c | porta animada dos carros comuns redesenhados: 7 pipelines `surface` em quadros de 25–37 ms (atlas_crew_pickup, ranch_single, ranch_pickup; sonda) | `door_materials` só tinha as viaturas do despacho: agora entra um material por assinatura de shader de cada carro redesenhado do trânsito (`_collect_traffic_door_materials`), cruzado com todos os formatos da porta (as ferragens saem com posição e cor) | `GETECO_DOOR_TRAFFIC_PREWARM` |
+| 4 | `vehicle.dents.apply` 8–20 ms (§11) | aplicação fatiada: uma peça por vez até ~2 ms por quadro, vidro sozinho no fim; spans `vehicle.dents.apply.mesh` / `.glass`; batida nova durante a aplicação espera, como espera o cálculo | `GETECO_DENTS_SLICED_APPLY` |
+| 4b | `gameplay.fire_at` ~33 ms e `vehicle.doors.prepare` ~20 ms sem dizer onde (§11) | spans por parte: `gameplay.fire_at.{sound,muzzle,weapon_shot,damage,impact_sound,hit_effect,tracer,flesh_effect,crime,clip_changed}`, `vehicle.doors.{cut,apply,sides,details,dents_glass}`; no preparo antecipado (`warm_doors`) a montagem da folha cai num quadro depois do último passo do recorte | — (só diagnóstico) |
+| 6 | carga quente ~30 s: `combat_resources` ~5 s e `resident_prewarm` ~4,9 s esperando quadros em série (§7.4) | áudio, modelos das armas e a preparação das regiões residentes viram filas junto com as de desenho (que passam a maior parte do tempo esperando a GPU) | `GETECO_LOAD_LANES` (só com `GETECO_PREWARM_PARALLEL`) |
+
+**Investigação do quadro de ~1 s do frio (sem rodar nada, só os 18 arquivos da sonda que sobraram em
+`artifacts/perf-r*/evidence/pipeline-probe/`, `tools/bench/probe_spike_events.py`).** Os quadros grandes
+jogáveis são sempre 1 pipeline de ~0,83–1,0 s (ou 6 de uma vez, 3,6 s), e os "novos" que a sonda lista no
+quadro caem em dois casos:
+- **pipelines `draw` com transparência de instância** (`tr1`): a placa da 3ª onda (`wave3_sinal.glb`) e uma esfera
+  de material padrão sumindo (destroço do `FragileProps3D` via `DestroyedFade3D`), em perf-r6 (975 ms),
+  perf-r9 (864 ms) e perf-r13 (871 ms); o resto do "sempre com carcaças" também é sumiço por transparência.
+  `transparency` > 0 num material opaco pede a variante do passe alfa, que não nasce com a superfície;
+- **material trocado num nó que já existe** ("rescan"): pintura molhada/suja, libré com emissão e chuva no
+  para-brisa num carro já desenhado (perf-r13, 3 559 ms com 6 `draw`), carcaça e carga queimando (perf-r6).
+O mecanismo comum é **mudança de material ou de passe num objeto já desenhado**, que compila no desenho e não
+na criação. Na 10ª rodada o destroço que encolhe pareceu igual nos dois lados, mas com 1 sessão fria de pico
+por lado; e cada teste tirou uma fonte só, deixando as outras.
+
+O que entrou para fechar isto: (a) os adereços do kit no passe alfa, com malha e material reais, sob a cortina
+(`GETECO_PROP_ALPHA_PREWARM`, parte do `late_surfaces`); (b) **registro de eventos na sonda**
+(`PipelineProbe.note`): carcaça, carcaça sumindo/afundando, destroço sumindo, carro novo e pintura molhada vão
+ao arquivo com tempo e quadro; `tools/bench/probe_spike_events.py` lista os eventos dos 3 s antes de cada
+quadro grande e conta, por tipo, quantas vezes o evento precedeu um pico contra quantas aconteceu sem pico.
+
+**Próximo passo (quando o usuário liberar o teste):** compilar e rodar a suíte; export; frio com
+`GETECO_PIPELINE_PROBE=sig` em 15–20 sessões (o pico sai em ~50 %), ler `probe_spike_events.py`; A/B de cada
+interruptor acima no mesmo export (quente para 1–4 e 6, frio para 3/3b/3c e o adereço). Combinar com
+`GETECO_DEBRIS_SHRINK=1` + `GETECO_WRECK_SINK=1` + `GETECO_WRECK_FADE_PREWARM=1` juntos num lado (todas as
+fontes de transparência fechadas ao mesmo tempo), que ainda não foi feito com sessões suficientes.

@@ -599,6 +599,28 @@ func prepare_collision_at(point: Vector3) -> bool:
 	if not had_chunk and chunks.has(key): _residency_dirty = true
 	return chunks.has(key)
 
+## Antecipação para ator físico (viatura do despacho, ônibus): pede o chão da célula à frente pela fila
+## fatiada, sem montar nada agora. Quando o ator chega, prepare_collision_at já encontra o chão pronto;
+## antes ele montava as superfícies da célula inteira no quadro (13–27 ms, `stream.harbor.prepare_collision`,
+## rodada de 24/10). GETECO_COLLISION_LOOKAHEAD=0 desliga (quem chama checa `collision_lookahead`).
+static var collision_lookahead := OS.get_environment("GETECO_COLLISION_LOOKAHEAD") != "0"
+func request_collision_soon(point: Vector3) -> void:
+	if not prepared: return
+	var key := _cell(point)
+	if chunks.has(key):
+		# Já existe mas talvez só com o pedido: o estágio do chão vai para a frente da fila.
+		for index in range(1, build_jobs.size()):
+			if build_jobs[index].key == key and int(build_jobs[index].stage) == 0:
+				var job: Dictionary = build_jobs[index]
+				build_jobs.remove_at(index)
+				build_jobs.push_front(job)
+				return
+		return
+	var at := pending.find(key)
+	if at == 0: return
+	if at > 0: pending.remove_at(at)
+	pending.push_front(key)
+
 func set_developer_view(view: Rect2, enabled: bool, full_map := false) -> void:
 	if enabled and not _developer_bounds.has_area():
 		_developer_bounds = preload("res://world/regions/DeveloperViewCells.gd").record_bounds(records, CELL)

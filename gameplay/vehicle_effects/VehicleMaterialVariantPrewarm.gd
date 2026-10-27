@@ -84,7 +84,9 @@ static func _format_pairs(variants: Array[StandardMaterial3D], effect_materials:
 	# Para-brisa molhado, limpador, marcas de pneu e detritos: malhas montadas no jogo a partir do vidro
 	# e da lataria (formatos de carro) ou por SurfaceTool (posição, normal e cor).
 	FORMAT.cross(effect_materials, car_formats + FORMAT.DOOR_FORMATS + [FORMAT.V | FORMAT.N], pairs, seen)
-	FORMAT.cross(door_materials, [FORMAT.V | FORMAT.N | FORMAT.UV, FORMAT.V | FORMAT.N | FORMAT.UV | FORMAT.C], pairs, seen)
+	# Todos os formatos da porta: as ferragens da folha (`DriverDoorPresentation/.../Fittings`) saem só com
+	# posição e cor e compilavam no jogo (sonda de 25/10).
+	FORMAT.cross(door_materials, FORMAT.DOOR_FORMATS, pairs, seen)
 	var door := preload("res://gameplay/VehicleDoorPresentation.gd")
 	FORMAT.cross([door._card_material(), door._liner_dark(), preload("res://world/city_look/CityPropKit.gd").material()], FORMAT.DOOR_FORMATS, pairs, seen)
 	return pairs

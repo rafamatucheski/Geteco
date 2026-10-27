@@ -62,6 +62,10 @@ func _covered(vehicle: Node3D, point: Vector3) -> bool:
 static func apply(vehicle: Node3D, wet: float) -> void:
 	var paint = vehicle.get("_paint")
 	if paint == null: return
+	# Primeira vez molhado: a pintura troca de variante num carro já desenhado (sonda, 27/10).
+	if wet > 0.0 and is_instance_valid(preload("res://runtime/PipelineProbe.gd")._instance) and not vehicle.has_meta("probe_wet_noted"):
+		vehicle.set_meta("probe_wet_noted", true)
+		preload("res://runtime/PipelineProbe.gd").note("paint_wet", vehicle)
 	var visual = vehicle.get("visual")
 	var dirt := 0
 	if is_instance_valid(visual): dirt = (visual.get_meta("usage_profile", Vector2i.ZERO) as Vector2i).x

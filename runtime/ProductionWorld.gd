@@ -1,6 +1,7 @@
 extends Node
 const SESSION_OPS := preload("res://runtime/SessionOperations.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+const HEAVY_FRAME := preload("res://runtime/HeavyFrameClaim.gd")
 const GPU_RELEASE := preload("res://runtime/GpuReleaseQueue.gd")
 const REGION := preload("res://world/editing/EditableRegion.gd")
 const WORLD_CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
@@ -363,7 +364,7 @@ func build() -> void:
 	# Depois do Weather, do CityLook e da StreetPhysics: chuva (RainPrewarm.late; antes saía sem fazer nada),
 	# efeitos de rua (StreetEffectsPrewarm), reações, interior do carro e combate. Em paralelo como os de
 	# _prewarm_regions (GETECO_PREWARM_PARALLEL, ligado por padrão desde 24/10; =0 volta à série).
-	var late_steps: Array[String] = ["street_fx", "reaction_visuals", "vehicle_interior", "combat_effects"]
+	var late_steps: Array[String] = ["street_fx", "reaction_visuals", "vehicle_interior", "combat_effects", "late_surfaces"]
 	if preload("res://runtime/RainPrewarm.gd").late: late_steps.push_front("rain")
 	if OS.get_environment("GETECO_PREWARM_PARALLEL") != "0":
 		var pending: Array[int] = [late_steps.size()]
@@ -526,14 +527,24 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	stage_traced = _prewarm_mark("damage_marks", stage_traced)
 	# Explosion takes and immutable fire presentation were built at detonation.
 	# Keep their bounded resources ready, without spawning a live incident.
-	var combat_audio = preload("res://gameplay/CombatAudio.gd")
 	if curtain != null:
 		curtain.set_stage(.44,"Carregando áudio…")
 		await get_tree().process_frame
-	await combat_audio.prewarm_reload_banks(get_tree())
-	await combat_audio.prewarm_gameplay_banks(get_tree())
-	await preload("res://audio/VehicleCrashAudio.gd").prewarm(get_tree())
-	stage_traced = _prewarm_mark("audio", stage_traced)
+	# Capô aberto do Gol da oficina do Digo, sem ler a GPU quando a oficina entra no streaming do deserto.
+	preload("res://world/desert/drag_meet/DesertDigoWorkshop.gd").prewarm_hoods()
+	# Fonte e nomes do quadro da arrancada (etapa 15 do chão do deserto: 54 ms no estresse de 21/10).
+	preload("res://activities/desert_drag/DesertDragBoardProp.gd").prewarm()
+	# Antes das filas: a preparação do deserto (fila resident_regions) monta a oficina com estes prontos.
+	stage_traced = _prewarm_mark("desert_props", stage_traced)
+	# Filas da carga (27/10): áudio, modelos das armas e a preparação das regiões residentes esperavam quadros
+	# em série (`combat_resources` ~5 s e `resident_prewarm` ~4,9 s a quente, §7.4), enquanto as filas de
+	# desenho passam a maior parte do tempo esperando a GPU com o thread principal parado. Agora correm como
+	# filas junto com elas. GETECO_LOAD_LANES=0 volta à série. Só com GETECO_PREWARM_PARALLEL ligado.
+	_prewarm_incremental = incremental
+	var load_lanes := OS.get_environment("GETECO_LOAD_LANES") != "0" and OS.get_environment("GETECO_PREWARM_PARALLEL") != "0"
+	if not load_lanes:
+		await _prewarm_audio_banks()
+		stage_traced = _prewarm_mark("audio", stage_traced)
 	# Pré-aquecimentos de desenho (22/10, 3ª rodada): em série, com o cache frio, cada um esperava sozinho as
 	# próprias compilações (combat_resources 31 s no frio, 5 s a quente; a sonda viu 2-8 s por etapa com 3-70
 	# pipelines cada). Juntos, todos põem as peças diante da câmera nos mesmos quadros e as compilações correm ao
@@ -546,6 +557,7 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 			["desert_ground_cover"], ["family_variants"], ["painted_facades"], ["wildlife"], ["forge"], ["skate"],
 			["meshy_bodies", "spawn_visuals"]]
 		if not preload("res://runtime/RainPrewarm.gd").late: lanes.append(["rain"])
+		if load_lanes: lanes.append_array([["audio_banks"], ["weapon_templates"], ["resident_regions"]])
 		var pending: Array[int] = [lanes.size()]
 		for lane in lanes: _prewarm_lane(lane, pending, curtain)
 		if not await _await_lanes(pending): return
@@ -558,14 +570,8 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 			await _draw_prewarm_step(step, curtain)
 			if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 			stage_traced = _prewarm_mark(step, stage_traced)
-	# Capô aberto do Gol da oficina do Digo, sem ler a GPU quando a oficina entra no streaming do deserto.
-	preload("res://world/desert/drag_meet/DesertDigoWorkshop.gd").prewarm_hoods()
-	# Fonte e nomes do quadro da arrancada (etapa 15 do chão do deserto: 54 ms no estresse de 21/10).
-	preload("res://activities/desert_drag/DesertDragBoardProp.gd").prewarm()
-	stage_traced = _prewarm_mark("desert_props", stage_traced)
-	# Modelos das armas na mão, prontos antes da primeira troca (Gameplay._weapon_template).
-	if OS.get_environment("GETECO_WEAPON_TEMPLATE") != "0":
-		await preload("res://gameplay/ArsenalWeapon3D.gd").warm_templates(get_tree(), preload("res://gameplay/WeaponCatalog.gd").WEAPONS.keys())
+	if not load_lanes:
+		await _prewarm_weapon_templates()
 		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	stage_traced = _prewarm_mark("weapon_templates", stage_traced)
 	_trace_cost("startup:combat_resources",phase_traced)
@@ -575,19 +581,8 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 		curtain.set_stage(.46, "Preparando texturas e prédios…")
 		await get_tree().process_frame
 	phase_traced = Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
-	if is_instance_valid(region) and (state.region_id == "desert" or _eager_preparation_for_benchmark()):
-		if incremental: await region.prewarm_incremental()
-		else: region.prewarm()
-	elif is_instance_valid(region):
-		await preload("res://runtime/RetainedRegionPreparation.gd").run(region)
-	# Vizinhas já montadas (começar na serra monta o porto junto) não passam pelo laço das distantes
-	# abaixo: sem isto o porto nunca era preparado e a carga do navio, os prédios e o túnel pesavam
-	# ao vivo (release de 2026-10-13, começo na serra).
-	for neighbour_id in regions.keys():
-		var neighbour: Variant = regions[neighbour_id]
-		if neighbour == region or not is_instance_valid(neighbour) or neighbour_id == "desert" or _eager_preparation_for_benchmark(): continue
-		await preload("res://runtime/RetainedRegionPreparation.gd").run(neighbour)
-		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+	if not load_lanes: await _prewarm_resident_regions()
+	if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
 	_trace_cost("startup:resident_prewarm",phase_traced)
 	PIPELINE_PROBE.stage("resident_prewarm")
 	background_preparation = preload("res://runtime/BackgroundRegionPreparation.gd").new()
@@ -650,6 +645,34 @@ func _prewarm_regions(curtain: CanvasLayer = null) -> void:
 	PIPELINE_PROBE.stage("route_graphs")
 	print("Pré-aquecimento das regiões: ", Time.get_ticks_msec()-began, " ms")
 
+var _prewarm_incremental := false
+
+func _prewarm_audio_banks() -> void:
+	var combat_audio = preload("res://gameplay/CombatAudio.gd")
+	await combat_audio.prewarm_reload_banks(get_tree())
+	await combat_audio.prewarm_gameplay_banks(get_tree())
+	await preload("res://audio/VehicleCrashAudio.gd").prewarm(get_tree())
+
+## Modelos das armas na mão, prontos antes da primeira troca (Gameplay._weapon_template).
+func _prewarm_weapon_templates() -> void:
+	if OS.get_environment("GETECO_WEAPON_TEMPLATE") == "0": return
+	await preload("res://gameplay/ArsenalWeapon3D.gd").warm_templates(get_tree(), preload("res://gameplay/WeaponCatalog.gd").WEAPONS.keys())
+
+func _prewarm_resident_regions() -> void:
+	if is_instance_valid(region) and (state.region_id == "desert" or _eager_preparation_for_benchmark()):
+		if _prewarm_incremental: await region.prewarm_incremental()
+		else: region.prewarm()
+	elif is_instance_valid(region):
+		await preload("res://runtime/RetainedRegionPreparation.gd").run(region)
+	# Vizinhas já montadas (começar na serra monta o porto junto) não passam pelo laço das distantes
+	# abaixo: sem isto o porto nunca era preparado e a carga do navio, os prédios e o túnel pesavam
+	# ao vivo (release de 2026-10-13, começo na serra).
+	for neighbour_id in regions.keys():
+		var neighbour: Variant = regions[neighbour_id]
+		if neighbour == region or not is_instance_valid(neighbour) or neighbour_id == "desert" or _eager_preparation_for_benchmark(): continue
+		await preload("res://runtime/RetainedRegionPreparation.gd").run(neighbour)
+		if not is_instance_valid(world) or world.is_queued_for_deletion() or not world.is_inside_tree(): return
+
 func _apply_player_settings() -> void:
 	if is_instance_valid(environment): get_node("/root/V2Settings").apply_environment(environment.environment)
 	if is_instance_valid(sun) and sun_shadow_near_enabled:
@@ -710,7 +733,37 @@ func _prewarm_dispatch_models() -> void:
 			model.free()
 		_trace_cost("prewarm_dispatch_model:"+str(id),model_traced)
 		await get_tree().process_frame
+	await _collect_traffic_door_materials()
 	_trace_cost("startup:dispatch_models",traced)
+
+## Portas dos carros comuns da frota redesenhada (27/10): a folha da porta animada (DriverDoorPresentation)
+## leva o material da lataria para o formato da porta e compilava 7 pipelines `surface` num quadro de
+## 25–37 ms no oeste e nos sobrados (atlas_crew_pickup, ranch_single, ranch_pickup; sonda de 24–25/10).
+## Só as viaturas do despacho entravam em `door_materials`. Um material por assinatura de shader basta:
+## o pipeline é por shader × formato, não por instância. GETECO_DOOR_TRAFFIC_PREWARM=0 desliga.
+func _collect_traffic_door_materials() -> void:
+	if not preload("res://runtime/FormatPrewarm.gd").enabled() or OS.get_environment("GETECO_DOOR_TRAFFIC_PREWARM") == "0": return
+	var fleet := preload("res://runtime/FleetCatalog.gd")
+	var variants := preload("res://gameplay/vehicle_effects/VehicleMaterialVariantPrewarm.gd")
+	var door_materials: Array[Material] = variants.door_materials
+	var seen := {}
+	for material in door_materials: seen[variants.shader_signature(material)] = true
+	for id in TRAFFIC_CAR_TYPES:
+		if not preload("res://runtime/RedesignedFleet.gd").contains(id): continue
+		var began := STALL_WORK.begin()
+		var model: Node3D = fleet.create(id)
+		if model == null: continue
+		for part in preload("res://gameplay/VehicleDoorBuilder.gd")._parts(model):
+			for surface in part.mesh.get_surface_count():
+				var material := part.get_active_material(surface)
+				if material == null: continue
+				var signature: String = variants.shader_signature(material)
+				if seen.has(signature): continue
+				seen[signature] = true
+				door_materials.append(material)
+		model.free()
+		STALL_WORK.finish_slow("startup.traffic_door_materials", began, 4000)
+		await get_tree().process_frame
 
 func _prewarm_fleet_shaders(_incremental: bool, curtain: CanvasLayer = null) -> void:
 	await _prewarm_dispatch_models()
@@ -1105,6 +1158,8 @@ func _physical_focus() -> Vector3:
 	return world.player.global_position if is_instance_valid(world.player) else Vector3.ZERO
 
 func _mount_region(id: String, requested_focus: Vector3 = Vector3.INF) -> Node3D:
+	# Voltou a ser preciso antes da desmontagem adiada: fica montada.
+	_pending_unmounts.erase(id)
 	if regions.has(id) and is_instance_valid(regions[id]): return regions[id]
 	var traced := Time.get_ticks_usec() if is_instance_valid(world) and (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
 	var mount_token := SESSION_OPS.begin(self, "streaming", "mount_region", {"region":id, "cached":_region_cache.has(id)})
@@ -1161,7 +1216,24 @@ func _mount_census(mounted: Node) -> void:
 	rows.sort_custom(func(a, b): return a[3] > b[3])
 	print("MOUNT_CENSUS ", mounted.name, " ", JSON.stringify(rows.slice(0, 20)))
 
+## Desmontagem pela residência física, já jogando, espera um quadro sem outro trabalho pesado
+## (HeavyFrameClaim): aos 3 s no deserto ela caía junto da etapa de estradas do chão (27/10).
+## Sob a cortina, em teste e com GETECO_UNMOUNT_DEFER=0, desmonta no ato.
+var _pending_unmounts: Dictionary = {}
+func _queue_unmount(id: String) -> void:
+	if OS.get_environment("GETECO_UNMOUNT_DEFER") != "0" and ready_for_play and DisplayServer.get_name() != "headless":
+		if regions.has(id): _pending_unmounts[id] = true
+	else:
+		_unmount_region(id)
+
+func _drain_pending_unmount() -> void:
+	if _pending_unmounts.is_empty() or not HEAVY_FRAME.claim("world.unmount"): return
+	var id: String = _pending_unmounts.keys()[0]
+	_pending_unmounts.erase(id)
+	_unmount_region(id)
+
 func _unmount_region(id: String) -> void:
+	_pending_unmounts.erase(id)
 	if id == state.region_id or not regions.has(id): return
 	var stall_began := STALL_WORK.begin()
 	var mounted: Node3D = regions[id]
@@ -1371,7 +1443,7 @@ func _update_physical_residency(point: Vector3) -> void:
 	if seam_preload or north_preload: _mount_connection()
 	elif not seam_keep and not north_keep:
 		for id in ["harbor","mountain","desert"]:
-			if id != physical_region and support[id].is_empty(): _unmount_region(id)
+			if id != physical_region and support[id].is_empty(): _queue_unmount(id)
 		if is_instance_valid(connection):
 			if _connection_park_enabled and not is_instance_valid(_parked_connection):
 				# Estacionada (22/10): a mesma conexão volta na próxima aproximação da ponte, sem remontar.
@@ -1588,13 +1660,15 @@ func _process(delta: float) -> void:
 
 func _process_traced(delta: float) -> void:
 	if not ready_for_play: return
-	if _route_refresh_pending:
+	# Refazer rotas (3–5 ms) também pede o quadro: se o chão do deserto já o levou, fica para o próximo.
+	if _route_refresh_pending and HEAVY_FRAME.claim("routes.refresh"):
 		_route_refresh_pending = false
 		var refresh_span := STALL_WORK.begin()
 		_refresh_route_consumers()
 		STALL_WORK.finish_slow("routes.deferred_refresh", refresh_span, 2000)
 		# Um quadro só para isto: a residência física (montagem/desmontagem) volta no próximo.
 		return
+	_drain_pending_unmount()
 	_update_chairlift_schedule()
 	if travel_busy: return
 	# Admission routines own focus while awaiting collision synchronization.
@@ -1901,6 +1975,7 @@ func spawn_vehicle(id: String, point: Vector3, yaw: float = 0.0, crush_ratio: fl
 	car.rotation.y = yaw
 	var traced := Time.get_ticks_usec() if (world.get_meta("benchmark_trace",false) or STALL_WORK.session_enabled) else 0
 	world.add_child(car)
+	PIPELINE_PROBE.note("spawn_vehicle", car)
 	if id=="biarticulated_510":
 		car.place(point,yaw)
 		if is_instance_valid(urban_transit) and is_instance_valid(urban_transit.urban_service) and not urban_transit.urban_service.fleet.has(car): urban_transit.urban_service.fleet.append(car)
@@ -2122,6 +2197,12 @@ func _draw_prewarm_step(step: String, curtain: CanvasLayer) -> void:
 		"vehicle_interior": await preload("res://gameplay/VehicleInteriorMaterialPrewarm.gd").run(world, curtain)
 		# Tiros, impactos, explosão e armas na mão desenhados diante da câmera (cache de pipeline frio).
 		"combat_effects": await preload("res://gameplay/CombatEffectsPrewarm.gd").run(world, curtain)
+		# Filas de carga sem desenho (GETECO_LOAD_LANES): correm junto com as de desenho.
+		"audio_banks": await _prewarm_audio_banks()
+		"weapon_templates": await _prewarm_weapon_templates()
+		"resident_regions": await _prewarm_resident_regions()
+		# Silhueta de oclusão nos formatos de carro e no jogador, mobília dos prédios do porto (sonda de 22–25/10).
+		"late_surfaces": await preload("res://runtime/LateSurfacePrewarm.gd").run(world, curtain)
 
 ## Etapas do pré-aquecimento com nome (22/10, 3ª rodada): no cache frio `startup:combat_resources` levava
 ## 31 s (5 s a quente) e só o total ia ao registro. Cada etapa vai ao registro da sessão

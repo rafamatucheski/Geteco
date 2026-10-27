@@ -40,25 +40,39 @@ func configure(roads: Array[Dictionary]) -> void:
 	_build_stop_lines()
 	_delineators.configure(roads, self)
 
+## Partes de build_chunk_part. Inteira, a montagem custava ~7 ms num quadro só (etapa 4 do chão do deserto,
+## quadro de ~58 ms aos 3 s, 27/10); em partes cada quadro leva uma (acostamento, asfalto, pintura, resto).
+const PARTS := 4
+
 func build_chunk(parent: Node3D, rect: Rect2) -> void:
-	# Avoid coincident triangles at T/crossings instead of relying on depth ties.
-	var shoulder_segments := DETAIL.prepare_shoulder_segments(rect,_roads)
-	_emit(parent,"GravelShoulder",_unique(shoulders,rect),rect,.008,DETAIL.shoulder_material(),false,shoulder_segments)
-	var asphalt: Material = UNIFIED_BRIDGE.material("asphalt") if UNIFIED_BRIDGE.enabled() else G.material(Color("706d61"),false,true)
-	_emit(parent,"WeatheredAsphalt",_unique(corridors,rect),rect,.026 if UNIFIED_BRIDGE.enabled() else .018,asphalt,true)
-	var white: Array[PackedVector2Array] = []
-	var yellow: Array[PackedVector2Array] = []
-	for row in paint:
-		if not row.bounds.intersects(rect,true): continue
-		if row.id=="white": white.append(row.polygon)
-		else: yellow.append(row.polygon)
-	_emit(parent,"WornEdge",white,rect,.035 if UNIFIED_BRIDGE.enabled() else .027,UNIFIED_BRIDGE.material("white") if UNIFIED_BRIDGE.enabled() else G.material(Color("c5bea7")),false)
-	_emit(parent,"LaneDash",yellow,rect,.035 if UNIFIED_BRIDGE.enabled() else .028,UNIFIED_BRIDGE.material("yellow") if UNIFIED_BRIDGE.enabled() else G.material(Color("bbad73")),false)
-	_bank_walk(parent,rect)
-	_delineators.build_chunk(parent,rect)
-	# A areia e a pista compartilham a cota física. A posse da pista também
-	# precisa valer para colisão, sem depender do desempate entre faces coplanares.
-	preload("res://world/desert/DesertGroundOwnership.gd").compose_collision(parent, rect, corridors)
+	for part in PARTS: build_chunk_part(parent, rect, part)
+
+## Mesma montagem de build_chunk, uma parte por chamada, na mesma ordem. O trecho fica escondido e fora
+## da física até a última etapa do chão, então nada aparece pela metade.
+func build_chunk_part(parent: Node3D, rect: Rect2, part: int) -> void:
+	match part:
+		0:
+			# Avoid coincident triangles at T/crossings instead of relying on depth ties.
+			var shoulder_segments := DETAIL.prepare_shoulder_segments(rect,_roads)
+			_emit(parent,"GravelShoulder",_unique(shoulders,rect),rect,.008,DETAIL.shoulder_material(),false,shoulder_segments)
+		1:
+			var asphalt: Material = UNIFIED_BRIDGE.material("asphalt") if UNIFIED_BRIDGE.enabled() else G.material(Color("706d61"),false,true)
+			_emit(parent,"WeatheredAsphalt",_unique(corridors,rect),rect,.026 if UNIFIED_BRIDGE.enabled() else .018,asphalt,true)
+		2:
+			var white: Array[PackedVector2Array] = []
+			var yellow: Array[PackedVector2Array] = []
+			for row in paint:
+				if not row.bounds.intersects(rect,true): continue
+				if row.id=="white": white.append(row.polygon)
+				else: yellow.append(row.polygon)
+			_emit(parent,"WornEdge",white,rect,.035 if UNIFIED_BRIDGE.enabled() else .027,UNIFIED_BRIDGE.material("white") if UNIFIED_BRIDGE.enabled() else G.material(Color("c5bea7")),false)
+			_emit(parent,"LaneDash",yellow,rect,.035 if UNIFIED_BRIDGE.enabled() else .028,UNIFIED_BRIDGE.material("yellow") if UNIFIED_BRIDGE.enabled() else G.material(Color("bbad73")),false)
+		3:
+			_bank_walk(parent,rect)
+			_delineators.build_chunk(parent,rect)
+			# A areia e a pista compartilham a cota física. A posse da pista também
+			# precisa valer para colisão, sem depender do desempate entre faces coplanares.
+			preload("res://world/desert/DesertGroundOwnership.gd").compose_collision(parent, rect, corridors)
 
 func _bank_walk(parent: Node3D, rect: Rect2) -> void:
 	var section := Rect2(-211.4,-570.73,2.8,1.13).intersection(rect)

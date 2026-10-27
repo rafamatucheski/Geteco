@@ -1,4 +1,6 @@
 extends Node3D
+## GETECO_COLLISION_LOOKAHEAD=0 desliga a antecipação do chão do ônibus (NativeRegion.request_collision_soon).
+static var _collision_lookahead := OS.get_environment("GETECO_COLLISION_LOOKAHEAD") != "0"
 const TRANSIT_WORK := preload("res://runtime/StallWorkTrace.gd")
 ## Line 510 operates independently of the player. Identities and trips survive
 ## distance culling; only nearby actors and vehicles participate in physics.
@@ -347,6 +349,8 @@ func tick_bus(bus, delta: float) -> void:
 		return
 	if bus.service_state=="approach":
 		if bus.active:
+			# Antecipação pela fila fatiada (ver NativeRegion.request_collision_soon): o ônibus chega com o chão pronto.
+			if _collision_lookahead: controller.regions.harbor.request_collision_soon(bus.global_position-bus.global_basis.z*40)
 			controller.regions.harbor.prepare_collision_at(bus.global_position-bus.global_basis.z*8)
 			bus.drive(delta)
 		else:

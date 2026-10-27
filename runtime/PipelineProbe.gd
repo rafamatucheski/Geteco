@@ -57,6 +57,21 @@ static func enabled() -> bool:
 static func stage(label: String) -> void:
 	if is_instance_valid(_instance): _instance._stage(label)
 
+## Registro de eventos (27/10) para atribuir o quadro de ~1 s do frio sem a revarredura: material trocado num
+## nó que já existe (carcaça, pintura molhada) e transparência de instância (destroço, carcaça sumindo) pedem
+## pipelines no desenho (`draw`), que a chave dos nós novos não vê. Cada evento vai ao arquivo com tempo e
+## quadro; tools/bench/probe_spike_events.py junta cada quadro grande aos eventos dos 3 s anteriores.
+## Sem sonda ligada não custa nada além do teste.
+static func note(kind: String, node: Node, extra: Dictionary = {}) -> void:
+	if is_instance_valid(_instance): _instance._note(kind, node, extra)
+
+func _note(kind: String, node: Node, extra: Dictionary) -> void:
+	var record := {"type": "event", "t": snappedf(float(Time.get_ticks_usec() - _started_usec) / 1000000.0, 0.001),
+		"frame": Engine.get_process_frames(), "kind": kind, "node": _path_of(node) if is_instance_valid(node) else ""}
+	if is_instance_valid(node) and node.get("archetype") != null: record["archetype"] = str(node.get("archetype"))
+	if not extra.is_empty(): record["extra"] = extra
+	_write(record)
+
 func _ready() -> void:
 	_instance = self
 	_lite = OS.get_environment("GETECO_PIPELINE_PROBE") == "lite"
