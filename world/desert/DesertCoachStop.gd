@@ -9,7 +9,10 @@ static func build() -> Node3D:
 	stop.name="CobreCoachStop"
 	stop.position=POSITION
 	# Flush foundation; the clear front apron contains the authored arrival.
-	_part(stop,"Apron",Vector3(0,-.045,1),Vector3(8,.12,6),"stone")
+	# Só visual: o tampo fica 1,5 cm acima do chão e, sólido, a quina vertical segurava o casco do carro
+	# (caixa sem subida de degrau) na beira do ponto (sonda probe_desert_invisible_walls, 27/10). O chão
+	# do deserto já apoia carro e jogador aqui.
+	_part(stop,"Apron",Vector3(0,-.045,1),Vector3(8,.12,6),"stone",false)
 	for x in [-3.25,3.25]:
 		for z in [-1.25,1.25]:
 			_part(stop,"Post",Vector3(x,1.45,z),Vector3(.14,2.9,.14),"steel")
@@ -28,6 +31,6 @@ static func build() -> Node3D:
 	M.batch_visuals(stop)
 	return stop
 
-static func _part(parent: Node3D, label: String, point: Vector3, size: Vector3, material: String) -> void:
-	var mesh := G.box(parent,label,point,size,Color.WHITE,true)
+static func _part(parent: Node3D, label: String, point: Vector3, size: Vector3, material: String, solid := true) -> void:
+	var mesh := G.box(parent,label,point,size,Color.WHITE,solid)
 	mesh.material_override=M.material(material)
