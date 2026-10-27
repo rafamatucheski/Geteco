@@ -39,10 +39,12 @@ func run() -> void:
 	check(not visual.body.is_processing(), "Fall owns body pose")
 	check(absf(visual.body.upper_arms[0].rotation.x) < 0.8, "Resting arm is no longer aiming")
 	var mesh: GeometryInstance3D = visual.body.find_children("*", "MeshInstance3D", true, false)[0]
-	await create_timer(8.0).timeout
-	check(is_instance_valid(actor) and mesh.transparency == 0.0, "Corpse remains before ten seconds")
-	await create_timer(1.5).timeout
-	check(is_instance_valid(actor) and mesh.transparency > 0.0 and mesh.transparency < 1.0, "Corpse fades gradually after ten seconds")
+	# O corpo some com o atraso de DestroyedFade3D (10 s até 08/10, 4 s desde 9deba30e): o teste segue a constante.
+	var fade := preload("res://gameplay/DestroyedFade3D.gd")
+	await create_timer(fade.DELAY - 1.3 - 0.4).timeout
+	check(is_instance_valid(actor) and mesh.transparency == 0.0, "Corpse remains until the cleanup delay")
+	await create_timer(0.4 + fade.DURATION * 0.5).timeout
+	check(is_instance_valid(actor) and mesh.transparency > 0.0 and mesh.transparency < 1.0, "Corpse fades gradually after the cleanup delay")
 	await create_timer(1.5).timeout
 	check(not is_instance_valid(actor), "Corpse and gun are freed after fade")
 	var alive := Victim.new()

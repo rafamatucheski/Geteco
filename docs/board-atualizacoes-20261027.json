@@ -8,7 +8,7 @@
       "title": "Testes atrasados pela frota redesenhada",
       "status": "issue",
       "area": "quality",
-      "description": "Achados ao rodar os testes de pintura e acabamento em 27/10, todos de antes das mudanças da madrugada. Postos em dia: test_fleet_redesign (as motos entraram na frota redesenhada em 23/10 e eram cobradas como carro de 4 rodas e 2 faróis; passa), test_fleet_finish (a frota redesenhada não ganha a SculptedCabin) e test_destroyed_cleanup (as 2 leituras de MultiMesh do poste só valem com janela; com janela passam). Seguem falhando: test_fleet_finish (1: o snowmobile bike_snow não tem material de pintura), test_desert_car_livery (os carros de corrida do deserto redesenhados não têm o adesivo DesertRaceLivery: falta saber se a perda foi intencional), test_destroyed_cleanup (2 antigas, sumiço de corpos). test_mining_raid posto em dia (165/165): o reforço ficava a 28 m, no limite de 29,4 m da M4A1, e a conquista armed_up não entrava na conta do pagamento.",
+      "description": "Achados ao rodar os testes de pintura e acabamento em 27/10, todos de antes das mudanças da madrugada. Postos em dia: test_fleet_redesign (as motos entraram na frota redesenhada em 23/10 e eram cobradas como carro de 4 rodas e 2 faróis; passa), test_fleet_finish (a frota redesenhada não ganha a SculptedCabin) e test_destroyed_cleanup (as 2 leituras de MultiMesh do poste só valem com janela, e o corpo some em 4 s desde 08/10, não mais 10 s: 18/18 com janela). Seguem falhando: test_fleet_finish (1: o snowmobile bike_snow não tem material de pintura), test_desert_car_livery (os carros de corrida do deserto redesenhados não têm o adesivo DesertRaceLivery: falta saber se a perda foi intencional), test_mining_raid posto em dia (165/165): o reforço ficava a 28 m, no limite de 29,4 m da M4A1, e a conquista armed_up não entrava na conta do pagamento.",
       "sources": [
         "tests/test_fleet_redesign.gd",
         "tests/test_fleet_finish.gd",
@@ -16,7 +16,7 @@
         "tests/test_desert_car_livery.gd",
         "runtime/RedesignedFleet.gd"
       ],
-      "next": "Decidir se o adesivo de corrida volta aos carros do deserto redesenhados e se o snowmobile deve ser repintável."
+      "next": "Decidir se o adesivo de corrida volta aos carros do deserto redesenhados e se o snowmobile deve ser repintável. Confirmar que corpos sumindo 4 s depois da queda (9deba30e) é o desejado."
     }
   ],
   "updates": {
