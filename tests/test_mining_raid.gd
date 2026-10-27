@@ -59,6 +59,12 @@ func _enter_gallery() -> bool:
 func _shoot_guard(index: int) -> bool:
 	var guard: CharacterBody3D = raid.actors.get(index)
 	if not check(is_instance_valid(guard), "target guard exists " + str(index)): return false
+	# A M4A1 alcança 470/16 = 29,4 m e perde dano depois de 17 m: um reforço admitido a 28 m ficava no limite e
+	# a dispersão deixava quase todo tiro curto (1 acerto em 17, 27/10). Chega a ~18 m pelo chão real antes.
+	var gap: Vector3 = guard.global_position - world.player.global_position
+	gap.y = 0.0
+	if gap.length() > 20.0:
+		await walk(world.player.global_position + gap.normalized() * (gap.length() - 18.0))
 	var accepted := 0
 	var deadline := Time.get_ticks_msec() + 8000
 	while is_instance_valid(guard) and not guard.dead and Time.get_ticks_msec() < deadline:
@@ -66,7 +72,9 @@ func _shoot_guard(index: int) -> bool:
 		if world.gameplay.fire_at(guard.global_position + Vector3.UP): accepted += 1
 		await physics_frame
 	if is_instance_valid(guard) and not guard.dead:
-		print("MINING_RAID_FIRE_BLOCKED guard=", index, " player=", world.player.global_position, " target=", guard.global_position, " accepted=", accepted, " health=", guard.health)
+		var sight := PhysicsRayQueryParameters3D.create(world.player.global_position + Vector3.UP * 1.3, guard.global_position + Vector3.UP, 1, [world.player.get_rid()])
+		var blocker: Dictionary = world.get_world_3d().direct_space_state.intersect_ray(sight)
+		print("MINING_RAID_FIRE_BLOCKED guard=", index, " player=", world.player.global_position, " target=", guard.global_position, " accepted=", accepted, " health=", guard.health, " sight=", (str(blocker.collider.get_path()) + " em " + str(blocker.position)) if not blocker.is_empty() else "livre")
 	var defeated: bool = (guard.dead and guard.collision_layer == 0) if is_instance_valid(guard) else raid.completed()
 	return check(defeated and accepted > 0, "real player gunfire defeats guard " + str(index))
 
@@ -296,12 +304,18 @@ func run() -> void:
 	if world.gameplay.god_mode: world.gameplay.toggle_god_mode()
 	var escaped_wallet: Dictionary = world.session.state.economy.snapshot()
 	var haul_receipt: Dictionary = escaped_wallet.transactions.get("reward:"+RAID_STATE.RECEIPT,{})
+	# Qualquer conquista nova paga o próprio bônus (armed_up, first_grand, shark...): conta todas pelo recibo.
 	var earned_bonus := 0
-	for achievement in ["first_grand","shark"]:
-		var receipt_key: String = "reward:achievement:"+achievement
-		if not before_escape_wallet.transactions.has(receipt_key) and escaped_wallet.transactions.has(receipt_key):
-			earned_bonus += int(preload("res://data/catalogs/AchievementCatalog.gd").CASH_REWARDS[achievement])
-	check(raid.completed() and haul_receipt.get("amount",0)==RAID_STATE.CASH and world.session.state.economy.balance==before_escape+RAID_STATE.CASH+earned_bonus,"surviving exterior ambush credits one R$12000 receipt plus independently earned achievement bonuses")
+	for receipt_key: String in escaped_wallet.transactions:
+		if not receipt_key.begins_with("reward:achievement:") or before_escape_wallet.transactions.has(receipt_key): continue
+		earned_bonus += int(preload("res://data/catalogs/AchievementCatalog.gd").CASH_REWARDS.get(receipt_key.trim_prefix("reward:achievement:"), 0))
+	var balance_now: int = world.session.state.economy.balance
+	if not (raid.completed() and haul_receipt.get("amount",0)==RAID_STATE.CASH and balance_now==before_escape+RAID_STATE.CASH+earned_bonus):
+		var new_keys: Array = []
+		for key in escaped_wallet.transactions:
+			if not before_escape_wallet.transactions.has(key): new_keys.append("%s=%s" % [key, escaped_wallet.transactions[key].get("amount", "?")])
+		print("MINING_RAID_WALLET completed=", raid.completed(), " receipt=", haul_receipt.get("amount", 0), " balance=", balance_now, " expected=", before_escape+RAID_STATE.CASH+earned_bonus, " new=", new_keys)
+	check(raid.completed() and haul_receipt.get("amount",0)==RAID_STATE.CASH and balance_now==before_escape+RAID_STATE.CASH+earned_bonus,"surviving exterior ambush credits one R$12000 receipt plus independently earned achievement bonuses")
 	check(is_instance_valid(world.driving.car) and world.driving.car.global_position.y > -1 and preload("res://runtime/FleetState.gd").validate(preload("res://runtime/FleetState.gd").capture(world.driving.car,"desert")),"remote on-foot startup preserves the highway starter car and valid save coordinates")
 	check(world.session.state.world_state[RAID_STATE.KEY].escaped, "successful escape publishes persistent raid state")
 	await _assert_released("successful departure frees all owned guards and corpses")
