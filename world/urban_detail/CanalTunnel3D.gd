@@ -25,14 +25,14 @@ const CENTER_Z := 63.0
 const HALF := 3.75 # meia largura interna (2 faixas de 3,15 m + passeios de 0,6 m)
 const WALL := 0.6
 const KERB := 0.6
-const W_STUB := 140.75
+const W_STUB := 140.5 # sobrepõe a borda oblíqua da warehouse_way em toda a boca
 const W_TOP := 143.5
 const W_PORTAL := 178.0
 const SHORE_W := 200.0
 const SHORE_E := 273.75
 const E_PORTAL := 296.7
 const E_TOP := 333.4
-const E_STUB := 343.25
+const E_STUB := 343.5
 const DEPTH := 6.0
 const GRADE := 0.125
 const CURVE := 6.0
@@ -223,6 +223,14 @@ static func open_cuts() -> Array[Rect2]:
 	var depth := outer_south() - outer_north()
 	return [Rect2(W_TOP, outer_north(), W_PORTAL - W_TOP, depth), Rect2(E_PORTAL, outer_north(), E_TOP - E_PORTAL, depth)]
 
+## A calçada e a linha lateral da rua também precisam abrir nos acessos em nível.
+## As valas conservam sua largura externa; nas bocas recorta só a pista reposta.
+static func surface_cuts() -> Array[Rect2]:
+	var cuts := open_cuts()
+	cuts.append(Rect2(W_STUB, inner_north(), W_TOP - W_STUB, HALF * 2.0))
+	cuts.append(Rect2(E_TOP, inner_north(), E_STUB - E_TOP, HALF * 2.0))
+	return cuts
+
 ## Área que o mobiliário automático e os objetos do mapa não podem ocupar: rampas
 ## abertas, acessos em nível e os pórticos.
 static func reserves(point: Vector2, margin := 0.0) -> bool:
@@ -263,7 +271,7 @@ static func _rect_outside(surface: Rect2, hole: Rect2) -> Array[Rect2]:
 ## HarborUrbanSurface, WorldGroundFactory, CityLook) e só o túnel sabe onde abriu a vala.
 static func carve_chunk(chunk: Node3D, rect: Rect2) -> void:
 	var cuts: Array[Rect2] = []
-	for cut in open_cuts():
+	for cut in surface_cuts():
 		if cut.intersects(rect): cuts.append(cut)
 	if cuts.is_empty(): return
 	var done := {}
@@ -767,10 +775,10 @@ static func material(id: String) -> Material:
 	var result: Material
 	match id:
 		"asphalt":
-			# Mesmo acabamento da rua; _quad_flat usa os mesmos UVs mundiais / 4.
-			# A textura continua alinhada ao atravessar a boca e os chunks da rampa.
+			# Mesmo material efetivo das ruas (inclui agregado, chuva e UVs mundiais).
+			# _material(ROAD_COLOR) é o acabamento antigo usado antes da unificação.
 			var road := preload("res://world/urban_detail/HarborRoadGeometry3D.gd").new()
-			result = road._material(road.ROAD_COLOR)
+			result = road._coastal_asphalt_material()
 		"water_depth":
 			var water_shader := ShaderMaterial.new()
 			water_shader.shader = WATER_DEPTH_SHADER

@@ -24,7 +24,8 @@ static func drifts(region: String) -> Dictionary:
 	if region != "harbor": return {}
 	return {
 		"harbor_westgate": {"id":"harbor_westgate","name":"PÁTIO WESTGATE","pos":Vector2(750,1900),"radius":120.0,"reward_per_1000":150},
-		"harbor_cold_storage": {"id":"harbor_cold_storage","name":"PÁTIO DOS ARMAZÉNS","pos":Vector2(2600,1050),"radius":130.0,"reward_per_1000":200}}
+		# Pátio a oeste da warehouse_way: a posição antiga ficou sobre a rampa do túnel.
+		"harbor_cold_storage": {"id":"harbor_cold_storage","name":"PÁTIO DOS ARMAZÉNS","pos":Vector2(1984,952),"radius":130.0,"reward_per_1000":200}}
 static func at(point: Vector2, region: String = "harbor") -> Vector3:
 	if region == "mountain": point += MOUNTAIN_OFFSET
 	return Vector3(point.x*SCALE,0,point.y*SCALE)

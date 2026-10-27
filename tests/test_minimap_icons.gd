@@ -24,6 +24,7 @@ func _initialize() -> void:
 	var old := {"name": "antiga", "shown": {}, "changed": {}, "blinks": 0}
 	var labels := {"name": "etiqueta", "shown": {}, "changed": {}, "blinks": 0}
 	var step := 0
+	var label_count := 0
 	var x := -160.0
 	while x <= 160.0:
 		# Zigue-zague de quem anda e zoom que muda com a velocidade.
@@ -39,6 +40,7 @@ func _initialize() -> void:
 			nearby.append(place)
 			icons.append(MINIMAP.MAP_SIZE * .5 + (place.point - center) * scale)
 		var picked: Dictionary = MINIMAP.choose_places(nearby, icons, center, fresh.shown, labels.shown)
+		label_count += picked.labels.size()
 		var now := {}
 		var now_labels := {}
 		for index: int in picked.shown: now[MINIMAP.place_key(nearby[index])] = true
@@ -51,7 +53,7 @@ func _initialize() -> void:
 	print("MINIMAP_ICONS piscadas: regra nova %d, regra antiga %d, etiquetas %d" % [fresh.blinks, old.blinks, labels.blinks])
 	check(old.blinks > 0, "a regra antiga pisca neste percurso (%d), então o teste reproduz o defeito" % old.blinks)
 	check(fresh.blinks == 0, "regra nova não pisca nenhum ícone (%d)" % fresh.blinks)
-	check(labels.blinks <= 2, "etiquetas não ficam pulando (%d)" % labels.blinks)
+	check(label_count == 0, "minimapa mostra somente ícones, sem nomes de lugares")
 	print("MINIMAP_ICONS checks=%d failures=%s" % [checks, failures])
 	quit(0 if failures.is_empty() else 1)
 

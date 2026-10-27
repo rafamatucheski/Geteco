@@ -268,7 +268,7 @@ func _cache_geography(region: Node) -> void:
 static func place_key(place: Dictionary) -> String:
 	return "%s:%s" % [place.get("region",""), place.get("id","")]
 
-## Quais ícones de lugar desenhar (até MAX_ICONS) e quais dois ganham etiqueta. Antes a ordem era só
+## Quais ícones de lugar desenhar (até MAX_ICONS), sem nomes. Antes a ordem era só
 ## pela distância, refeita 30 vezes por segundo: andando, dois ícones a menos de 17 px trocavam de
 ## lugar na fila e piscavam um no lugar do outro, e as etiquetas pulavam (playtest de 26/10). Agora
 ## quem já estava na tela tem a vez: só sai quando deixa o mapa, encosta na seta do jogador ou perde a
@@ -282,9 +282,8 @@ const PLAYER_CLEAR_ENTER := 14.0
 const PLAYER_CLEAR_LEAVE := 10.0
 const NAMED_PLACES := ["neco","ferrugem","maciota"]
 var _shown_places: Dictionary = {}
-var _labeled_places: Dictionary = {}
 
-static func choose_places(nearby: Array[Dictionary], icons: Array[Vector2], focus: Vector2, shown: Dictionary, labeled: Dictionary) -> Dictionary:
+static func choose_places(nearby: Array[Dictionary], icons: Array[Vector2], focus: Vector2, shown: Dictionary, _labeled: Dictionary) -> Dictionary:
 	var order: Array = range(nearby.size())
 	order.sort_custom(func(a: int, b: int) -> bool:
 		var named_a: bool = nearby[a].id in NAMED_PLACES
@@ -305,14 +304,7 @@ static func choose_places(nearby: Array[Dictionary], icons: Array[Vector2], focu
 		if chosen.any(func(other: int) -> bool: return icons[other].distance_to(icon) < ICON_SPACING): continue
 		chosen.append(index)
 		if chosen.size() >= MAX_ICONS: break
-	# Etiquetas: as que já estavam ficam; as vagas que sobram vão para os mais perto.
-	var labels: Array[int] = []
-	for index in chosen:
-		if labeled.has(place_key(nearby[index])) and labels.size() < 2: labels.append(index)
-	for index in chosen:
-		if labels.size() >= 2: break
-		if index not in labels: labels.append(index)
-	return {"shown": chosen, "labels": labels}
+	return {"shown": chosen, "labels": []}
 
 func project(point: Vector2) -> Vector2:
 	return MAP_SIZE * 0.5 + (point - center) * map_scale
@@ -355,27 +347,14 @@ func draw_map(target: Control) -> void:
 		if not map_area.has_point(place.point) and not (_shown_places.has(place_key(place)) and keep_area.has_point(place.point)): continue
 		nearby.append(place)
 		icons.append(project(place.point))
-	var picked := choose_places(nearby, icons, center, _shown_places, _labeled_places)
+	var picked := choose_places(nearby, icons, center, _shown_places, {})
 	_shown_places = {}
-	_labeled_places = {}
-	var labels: Array[Rect2] = []
 	for index: int in picked.shown:
 		var place: Dictionary = nearby[index]
 		var icon: Vector2 = icons[index]
 		SYMBOLS.draw(target,icon,place.kind,6.0)
 		drawn_places.append(place)
 		_shown_places[place_key(place)] = true
-		if index not in picked.labels: continue
-		var title: String=place.title
-		if title.length()>20: title=title.left(18)+"…"
-		var text_size := FONT.get_string_size(title,HORIZONTAL_ALIGNMENT_LEFT,-1,10)
-		var at := (icon+Vector2(9,-5)).clamp(Vector2(4,13),Vector2(MAP_SIZE.x-text_size.x-4,MAP_SIZE.y-6))
-		var box := Rect2(at-Vector2(2,11),Vector2(text_size.x+4,14))
-		if not box.intersects(Rect2(MAP_SIZE*.5-Vector2.ONE*13,Vector2.ONE*26)) and not labels.any(func(rect): return rect.intersects(box)):
-			target.draw_rect(box,STYLE.INK)
-			target.draw_string(FONT,at,title,HORIZONTAL_ALIGNMENT_LEFT,-1,10,STYLE.TEXT)
-			labels.append(box)
-			_labeled_places[place_key(place)] = true
 	for station in _rail_stations:
 		var entry: Vector3 = station.entry
 		var point := Vector2(entry.x,entry.z)

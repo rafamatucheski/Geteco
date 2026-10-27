@@ -1,0 +1,8 @@
+Godot Engine v4.7.2.stable.mono.official.ed1daf0bf - https://godotengine.org
+
+MINIMAP_ICONS piscadas: regra nova 0, regra antiga 67, etiquetas 0
+MINIMAP_ICONS PASS a regra antiga pisca neste percurso (67), então o teste reproduz o defeito
+MINIMAP_ICONS PASS regra nova não pisca nenhum ícone (0)
+MINIMAP_ICONS PASS minimapa mostra somente ícones, sem nomes de lugares
+MINIMAP_ICONS checks=3 failures=[]
+SessionDiagnostics: C:/Users/rafae/AppData/Roaming/GetecoV2/session-logs\20261027-143543-039-242832-c0379eca
