@@ -15,7 +15,13 @@ static func build_desert(parent: Node3D, rect: Rect2, height: Callable) -> void:
 	var north := bounds.position.y + 1.0
 	var south := bounds.end.y - INSET
 	_strip(parent, rect, Vector2(west,north), Vector2(west,south), height, false)
-	_strip(parent, rect, Vector2(east,north), Vector2(east,south), height, false)
+	# Ilha do deserto (27/10/2026): o lado leste dá para o canal e a serra. O paredão de 9 m (e a fileira de
+	# rochedos de DesertRegion._boundary_ridge) era a "montanha de areia" vista do gelo; fica a borda baixa
+	# da costa da serra, com a mesma colisão alta invisível.
+	if preload("res://world/desert/DesertHorizonRelief.gd").island_enabled():
+		_low_strip(parent, rect, Vector2(east,north), Vector2(east,south), Vector2.RIGHT, height)
+	else:
+		_strip(parent, rect, Vector2(east,north), Vector2(east,south), height, false)
 	# The only southern route is the campaign bridge. Its physical deck and
 	# shoulders fit inside this opening; the old scattered rocks left 156 m open.
 	var bridge_x := DESERT.BRIDGE_END.x
@@ -39,16 +45,8 @@ static func build_mountain(parent: Node3D, rect: Rect2, height: Callable, blocke
 static func _strip(parent: Node3D, rect: Rect2, a: Vector2, b: Vector2, height: Callable, snow: bool, width := WIDTH) -> void:
 	var vertical := is_equal_approx(a.x,b.x)
 	var fixed := a.x if vertical else a.y
-	var low := maxf(a.y if vertical else a.x, rect.position.y if vertical else rect.position.x)
-	var high := minf(b.y if vertical else b.x, rect.end.y if vertical else rect.end.x)
-	# The wall has one owner, including when a boundary aligns to the grid.
-	if high <= low or fixed < (rect.position.x if vertical else rect.position.y) or fixed >= (rect.end.x if vertical else rect.end.y): return
-	var cuts: Array[float] = [low]
-	var cut := (floorf(low/8.0)+1)*8.0
-	while cut < high:
-		cuts.append(cut)
-		cut += 8.0
-	cuts.append(high)
+	var cuts := _cuts(rect, a, b)
+	if cuts.is_empty(): return
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	surface.set_color(Color("939e9f") if snow else Color("ad8c64"))
@@ -89,6 +87,24 @@ static func _strip(parent: Node3D, rect: Rect2, a: Vector2, b: Vector2, height: 
 	collider.shape = built[1]
 	body.add_child(collider)
 	ridge.add_child(body)
+
+## Cortes a cada 8 m ao longo da reta (horizontal ou vertical) de `a` a `b`, recortada no retângulo do
+## trecho: cada trecho monta a sua parte inteira. Vazio se a reta não passa por ele.
+static func _cuts(rect: Rect2, a: Vector2, b: Vector2) -> Array[float]:
+	var vertical := is_equal_approx(a.x,b.x)
+	var fixed := a.x if vertical else a.y
+	var low := maxf(a.y if vertical else a.x, rect.position.y if vertical else rect.position.x)
+	var high := minf(b.y if vertical else b.x, rect.end.y if vertical else rect.end.x)
+	var cuts: Array[float] = []
+	# The wall has one owner, including when a boundary aligns to the grid.
+	if high <= low or fixed < (rect.position.x if vertical else rect.position.y) or fixed >= (rect.end.x if vertical else rect.end.y): return cuts
+	cuts.append(low)
+	var cut := (floorf(low/8.0)+1)*8.0
+	while cut < high:
+		cuts.append(cut)
+		cut += 8.0
+	cuts.append(high)
+	return cuts
 
 static func _section(fixed: float, along: float, vertical: bool, height: Callable, width: float) -> PackedVector3Array:
 	var center := Vector2(fixed,along) if vertical else Vector2(along,fixed)
@@ -169,10 +185,34 @@ static func build_mountain_coast(parent: Node3D, rect: Rect2, height: Callable, 
 			# Cada pedaço tem um dono: o trecho que contém o meio dele.
 			if not rect.has_point(mid): continue
 			if blocked.is_valid() and blocked.call(mid): continue
-			_emit_piece(surface, _section_at(p, across, height, COAST_WALL_WIDTH, COAST_WALL_HEIGHT), _section_at(q, across, height, COAST_WALL_WIDTH, COAST_WALL_HEIGHT), mid, direction)
-			_emit_piece(block, _section_at(p, across, height, COAST_WALL_WIDTH, COAST_BLOCK_HEIGHT), _section_at(q, across, height, COAST_WALL_WIDTH, COAST_BLOCK_HEIGHT), mid, direction)
+			_emit_low_piece(surface, block, p, q, across, height)
 			emitted = true
-	if not emitted: return
+	if emitted: _commit_low_wall(parent, surface, block)
+
+## Borda baixa reta de `a` a `b` (deserto ilha, lado leste), com `across` apontando para fora. Mesmo perfil
+## do muro da costa da serra, mas recortada no trecho como _strip: com dono pelo meio do pedaço, o pedaço
+## que cruzava a divisa só aparecia com o trecho vizinho montado.
+static func _low_strip(parent: Node3D, rect: Rect2, a: Vector2, b: Vector2, across: Vector2, height: Callable) -> void:
+	var cuts := _cuts(rect, a, b)
+	if cuts.is_empty(): return
+	var vertical := is_equal_approx(a.x, b.x)
+	var surface := SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var block := SurfaceTool.new()
+	block.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for index in range(cuts.size() - 1):
+		var p := Vector2(a.x, cuts[index]) if vertical else Vector2(cuts[index], a.y)
+		var q := Vector2(a.x, cuts[index + 1]) if vertical else Vector2(cuts[index + 1], a.y)
+		_emit_low_piece(surface, block, p, q, across, height)
+	_commit_low_wall(parent, surface, block)
+
+static func _emit_low_piece(surface: SurfaceTool, block: SurfaceTool, p: Vector2, q: Vector2, across: Vector2, height: Callable) -> void:
+	var mid := (p + q) * .5
+	var direction := (q - p).normalized()
+	_emit_piece(surface, _section_at(p, across, height, COAST_WALL_WIDTH, COAST_WALL_HEIGHT), _section_at(q, across, height, COAST_WALL_WIDTH, COAST_WALL_HEIGHT), mid, direction)
+	_emit_piece(block, _section_at(p, across, height, COAST_WALL_WIDTH, COAST_BLOCK_HEIGHT), _section_at(q, across, height, COAST_WALL_WIDTH, COAST_BLOCK_HEIGHT), mid, direction)
+
+static func _commit_low_wall(parent: Node3D, surface: SurfaceTool, block: SurfaceTool) -> void:
 	surface.generate_normals()
 	var ridge := MeshInstance3D.new()
 	ridge.name = "ScenarioBoundaryRidge"

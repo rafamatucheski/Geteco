@@ -4,7 +4,7 @@ extends RefCounted
 ## Ilha do deserto (etapa 2 do mundo orgânico, 26/10/2026): cada fileira só vai até BEACH metros antes
 ## da costa da forma do mundo (WorldShape) e baixa onde sobra pouco espaço; onde não cabe, some debaixo
 ## d'água. Antes a largura era fixa e as cordilheiras saíam pela costa e passavam sobre o canal até
-## Harbor. GETECO_DESERT_ISLAND=0 volta às cordilheiras antigas.
+## Harbor. GETECO_DESERT_ISLAND=0 volta às cordilheiras antigas (e ao selo alto do lado leste, 27/10/2026).
 const L := preload("res://world/desert/DesertLayout.gd")
 const SHAPE := preload("res://world/shape/WorldShape.gd")
 const BEACH := 18.0

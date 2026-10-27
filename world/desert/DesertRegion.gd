@@ -28,6 +28,8 @@ const DRAG_SUPPORT := preload("res://world/desert/DragTrackSupport.gd")
 const SMUGGLER_LAYOUT := preload("res://world/desert/canyon/DesertSmugglerLayout.gd")
 const SMUGGLER_SCENERY := preload("res://world/desert/canyon/DesertSmugglerScenery.gd")
 const CELL := 96.0
+## Maior raio do contorno de um rochedo do selo (raio 55 × 0,91 em DesertHorizonRelief.create_outcrop).
+const SEAL_OUTCROP_REACH := 50.0
 const BUILD_BUDGET_USEC := 1000
 const SURFACE_STAGES := 18
 ## Etapa de _build_surface_stage que monta as estradas (fatiada em _advance_surface_job).
@@ -724,6 +726,12 @@ func set_north_pass_completed(completed: bool) -> void:
 func _boundary_ridge(chunk: Node3D, rect: Rect2) -> void:
 	var bounds := LAYOUT.BOUNDS
 	var sites: Array[Vector2]=[]
+	# Ilha do deserto (27/10/2026): o lado leste dá para o canal e a serra. A fileira leste ficava no canal,
+	# centrada 26 m fora da borda, e passava por cima da costa oeste da serra: era a "montanha de areia" vista
+	# do gelo. O rochedo da quina nordeste saía no mar na boca do canal. Nenhum rochedo do selo passa da borda
+	# leste; desse lado o limite é a borda baixa de ScenarioBoundary3D.build_desert, e ao norte o paredão.
+	# GETECO_DESERT_ISLAND=0 volta os rochedos.
+	var east_open := ROCK_FORMS.island_enabled()
 	for z in range(floori(rect.position.y/44),ceili(rect.end.y/44)):
 		for x in [bounds.position.x+12,bounds.end.x-12]: sites.append(Vector2(x,float(z)*44+22))
 	for x in range(floori(rect.position.x/44),ceili(rect.end.x/44)):
@@ -750,6 +758,7 @@ func _boundary_ridge(chunk: Node3D, rect: Rect2) -> void:
 		if is_equal_approx(point.x,bounds.end.x-12): ridge_point.x=bounds.end.x+26.0
 		if is_equal_approx(point.y,bounds.position.y+12): ridge_point.y=bounds.position.y-26.0
 		if is_equal_approx(point.y,bounds.end.y-12): ridge_point.y=bounds.end.y+26.0
+		if east_open and ridge_point.x+SEAL_OUTCROP_REACH>bounds.end.x: continue
 		var height := 16+sin(point.x*.015+point.y*.027)*4
 		ROCK_FORMS.create_outcrop(chunk,Vector3(ridge_point.x,_ground_height(ridge_point),ridge_point.y),55.0,height+5.0,absi(int(point.x*71+point.y*133)),true)
 
