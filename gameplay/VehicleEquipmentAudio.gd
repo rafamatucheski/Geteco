@@ -26,6 +26,7 @@ const HORN_PROFILES := {
 	"bike_urban": {"tones": [740.0, 930.0], "length": .22, "attack": .015, "release": .04, "harmonics": .10, "drive": 0.0},
 	"bike_sport": {"tones": [820.0, 1030.0], "length": .20, "attack": .015, "release": .04, "harmonics": .10, "drive": 0.0},
 	"bike_cruiser": {"tones": [560.0, 700.0], "length": .30, "attack": .02, "release": .05, "harmonics": .15, "drive": 0.0},
+	"snowmobile": {"tones": [690.0, 870.0], "length": .24, "attack": .015, "release": .04, "harmonics": .12, "drive": 0.0},
 }
 ## Famílias de buzina de ar: mais alta e com alcance maior que a de carro.
 const HEAVY_HORNS := ["truck", "bus", "fire_diesel", "tank"]
@@ -38,7 +39,8 @@ const FIREFLY := preload("res://audio/FireflyBank.gd")
 ## A gravação vem da família (cada família cai numa das tomadas, sempre a mesma); o modelo
 ## só desafina (mix_rate), como o oscilador fazia, então dois carros da mesma família não soam idênticos.
 static func _recorded_horn(family: String) -> AudioStreamWAV:
-	if family.begins_with("bike"): return null
+	# Moto e snowmobile ficam no oscilador: a buzina gravada de carro não combina com eles.
+	if family.begins_with("bike") or family == "snowmobile": return null
 	var heavy := family in HEAVY_HORNS
 	var folder := "service_vehicles" if heavy else "vehicle_fx"
 	var key := "horn" if heavy else "car_horn"

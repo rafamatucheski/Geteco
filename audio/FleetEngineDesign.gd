@@ -83,6 +83,7 @@ const DEDICATED_PROFILES := {
 	"bike_cruiser": "bike_cruiser",
 	"bike_urban": "bike_urban",
 	"bike_police": "bike_urban",
+	"bike_snow": "snowmobile",
 	"army_tank": "tank",
 	"port_forklift": "electric",
 }

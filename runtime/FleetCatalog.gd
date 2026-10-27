@@ -61,7 +61,13 @@ static func spec(id: String) -> Dictionary:
 	return all().get(id,preload("res://runtime/GarageRewardFleet.gd").spec(id))
 static func create(id: String) -> Node3D:
 	if id == "desert_cargo_truck": return preload("res://gameplay/desert_heist/DesertCargoTruckVisual.gd").create()
-	if REDESIGNED.contains(id): return REDESIGNED.create(id)
+	if REDESIGNED.contains(id):
+		var redesigned := REDESIGNED.create(id)
+		# O modelo assado da frota redesenhada não traz o adesivo de corrida que o DesertCarModel aplicava:
+		# sem isto os carros de corrida do deserto saíam lisos desde a troca de frota.
+		if redesigned != null and id in preload("res://gameplay/desert_cars/DesertCarCatalog.gd").IDS:
+			preload("res://gameplay/desert_cars/DesertCarLivery.gd").apply(redesigned, preload("res://gameplay/desert_cars/DesertCarCatalog.gd").spec(id))
+		return redesigned
 	if id == "biarticulated_510":
 		var bus := Node3D.new()
 		preload("res://runtime/transit/BiarticulatedModel.gd").build(bus,7.8,0)

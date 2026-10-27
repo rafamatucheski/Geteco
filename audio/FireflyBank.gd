@@ -145,7 +145,7 @@ static func ignition(vehicle: Node3D) -> void:
 	var family := _family(vehicle)
 	if family in NO_CRANK: return
 	if bool(vehicle.get("engine_disabled")): return
-	var pitch := 0.88 if family in HEAVY else (1.06 if family.begins_with("bike") or family in ["sport", "vq35", "rosso_v12"] else 1.0)
+	var pitch := 0.88 if family in HEAVY else (1.06 if family.begins_with("bike") or family in ["snowmobile", "sport", "vq35", "rosso_v12"] else 1.0)
 	play_at(vehicle, take("vehicle_fx", "ignition"), vehicle.global_position, -7.0, pitch * randf_range(0.98, 1.02), 35.0, 8.0, &"Vehicles")
 
 ## Motor morrendo quando o jogador começa a descer.

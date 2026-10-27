@@ -2,6 +2,7 @@ extends SceneTree
 const BANKS := preload("res://audio/EngineBankCache.gd")
 const PROFILE := preload("res://audio/VehicleEngineProfile.gd")
 const FLEET := preload("res://runtime/FleetCatalog.gd")
+const SNOW_AUDIO := preload("res://audio/snowmobile/SnowmobileAudio.gd")
 class AudioCar extends CharacterBody3D:
 	var archetype := "union_sedan"
 	var speed := 0.0
@@ -38,8 +39,8 @@ func run() -> void:
 	var selected: Dictionary = {}
 	for archetype in FLEET.all():
 		var family := PROFILE.bank_family(archetype)
-		if family in ["street", "police", "electric", "tank"] and not selected.has(family): selected[family] = archetype
-	check(selected.size() == 4, "real catalogue supplies street, police, electric and tank cases")
+		if family in ["street", "police", "electric", "tank", "snowmobile"] and not selected.has(family): selected[family] = archetype
+	check(selected.size() == 5, "real catalogue supplies street, police, electric, tank and snowmobile cases")
 	for family: String in selected:
 		car.archetype = selected[family]
 		var bank := BANKS.bank(family)
@@ -62,6 +63,21 @@ func run() -> void:
 		check(is_equal_approx(first.layers[0].pitch_scale, .8) and is_equal_approx(second.layers[0].pitch_scale, 1.2) and is_equal_approx(first.layers[0].volume_db, -18) and is_equal_approx(second.layers[0].volume_db, -6), "shared resources preserve independent voice controls: " + family)
 		first._sync_engine_family(car)
 		check(is_same(first.layers[0].stream, bank[0]), "repeated selection preserves prepared stream: " + family)
+		if family == "snowmobile":
+			# Esteira no canal de estrada: toca andando, cala parado.
+			check(is_same(first.road_audio.stream, SNOW_AUDIO.track_stream()), "snowmobile troca a estrada pela esteira")
+			car.speed = 10.0
+			first._update_vehicle_foley(car, {}, .3, .5, 1)
+			check(first.road_audio.playing and first.road_audio.pitch_scale > 1.0, "esteira toca andando")
+			car.speed = 0.0
+			first._update_vehicle_foley(car, {}, 0.0, 0.0, 1)
+			check(not first.road_audio.playing, "esteira cala parada")
+	# Saindo do snowmobile para um carro comum a estrada volta a ser a de pneu.
+	car.archetype = selected.snowmobile
+	first._sync_engine_family(car)
+	car.archetype = selected.street
+	first._sync_engine_family(car)
+	check(first.road_audio.stream != null and not is_same(first.road_audio.stream, SNOW_AUDIO.track_stream()), "carro comum depois do snowmobile volta ao som de estrada")
 	host.free()
 	await process_frame
 	await create_timer(.1).timeout

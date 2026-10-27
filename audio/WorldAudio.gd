@@ -10,6 +10,7 @@ const DESIGN_BANKS := preload("res://audio/EngineDesignBanks.gd")
 const DESIGN_VOICE := preload("res://audio/EngineDesignVoice.gd")
 const DESIGN_CATALOG := preload("res://audio/FleetEngineDesign.gd")
 const TANK_AUDIO := preload("res://audio/tank/TankAudio.gd")
+const SNOWMOBILE_AUDIO := preload("res://audio/snowmobile/SnowmobileAudio.gd")
 const ROAD_SOUND := preload("res://audio/vehicle_fx/road.wav")
 const AIR_BRAKE_SOUND := preload("res://audio/vehicle_fx/air_brake.wav")
 const TURBO_SHIFT_SOUNDS := [preload("res://audio/vehicle_fx/turbo_shift_0.wav"), preload("res://audio/vehicle_fx/turbo_shift_1.wav"), preload("res://audio/vehicle_fx/turbo_shift_2.wav")]
@@ -477,7 +478,11 @@ func _process_traced(delta: float) -> void:
 	var top_fraction := lerpf(0.86, 1.0, float(engine_gear - 1) / maxf(float(tops.size() - 1), 1.0))
 	if engine_gear == tops.size(): top_fraction = 0.87
 	var target := maxf(idle, clampf(ratio / maxf(gear_top, 0.01) * top_fraction, 0.0, 1.0))
-	if family != "tank" and family != "electric":
+	if family == "snowmobile":
+		# Câmbio CVT: com o acelerador o motor sobe logo para a rotação de engate e vai subindo com
+		# a velocidade, sem trocas de marcha.
+		target = maxf(ENGINE_PROFILE.loaded_rpm(target, idle, engine_load, ratio), lerpf(idle, .62, engine_load))
+	elif family != "tank" and family != "electric":
 		target = ENGINE_PROFILE.loaded_rpm(target, idle, engine_load, ratio)
 	elif ratio < 0.03:
 		target = maxf(target, idle + engine_load * (1.0 - idle) * 0.62)
@@ -598,7 +603,9 @@ func _sync_engine_family(car: CharacterBody3D) -> void:
 			shift_audio.volume_db = -13.0
 			shift_audio.play()
 			tank_start_remaining = TANK_AUDIO.START_SECONDS
-	elif family == "tank":
+	elif next_family == "snowmobile":
+		road_audio.stream = SNOWMOBILE_AUDIO.track_stream()
+	elif family in ["tank", "snowmobile"]:
 		var road_stream := ROAD_SOUND.duplicate() as AudioStreamWAV
 		road_stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
 		road_stream.loop_end = maxi(1, roundi(road_stream.get_length() * road_stream.mix_rate) - 8)
@@ -638,6 +645,17 @@ func _update_engine_bank(delta: float) -> void:
 		if not bridge.is_empty(): _bind_engine_layers(bridge)
 
 func _update_vehicle_foley(car: CharacterBody3D, spec: Dictionary, _ratio: float, throttle: float, previous_gear: int) -> void:
+	if family == "snowmobile":
+		# Esteira de borracha por cima do rolamento por superfície (neve, terra) do VehicleRoadAudio.
+		var track_gain := SNOWMOBILE_AUDIO.track_gain(float(car.speed))
+		if track_gain <= 0.001:
+			road_audio.stop()
+		else:
+			road_audio.pitch_scale = SNOWMOBILE_AUDIO.track_pitch(float(car.speed))
+			road_audio.volume_db = -19.0 + linear_to_db(track_gain)
+			if not road_audio.playing: road_audio.play()
+		engine_last_throttle = throttle
+		return
 	if family == "tank":
 		var gain := TANK_AUDIO.tracks_gain(float(car.speed))
 		if gain <= 0.001:

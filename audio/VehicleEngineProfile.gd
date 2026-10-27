@@ -5,6 +5,8 @@ const GEAR_TOPS := {
 	"bike_sport": [0.22, 0.37, 0.53, 0.69, 0.85, 1.0],
 	"bike_cruiser": [0.25, 0.43, 0.63, 0.82, 1.0],
 	"bike_urban": [0.22, 0.40, 0.61, 0.81, 1.0],
+	# CVT: uma marcha só; WorldAudio segura a rotação de engate com o acelerador.
+	"snowmobile": [1.0],
 	"vq35": [0.24, 0.40, 0.57, 0.73, 0.87, 0.935, 1.0],
 	"m8_v8": [0.13, 0.25, 0.38, 0.52, 0.65, 0.77, 0.88, 0.94, 1.0],
 	"rosso_v12": [0.12, 0.23, 0.36, 0.51, 0.68, 0.84, 0.92, 1.0],
@@ -26,6 +28,8 @@ const NOMINAL := {
 	"bike_cruiser": [8, 10, 14, 19, 25, 34, 46],
 	"bike_sport": [10, 16, 23, 34, 50, 74, 110],
 	"bike_urban": [12, 16, 21, 28, 38, 52, 70],
+	# Dois tempos bicilíndrico: voltas por segundo (1500–8400 rpm), as do generate_snowmobile_audio.py.
+	"snowmobile": [25, 35, 48, 65, 88, 115, 140],
 	"bus": [3, 4, 6, 8, 10, 14, 18],
 	"diesel": [5, 7, 9, 12, 16, 21, 28],
 	"electric": [8, 13, 20, 30, 42, 56, 72],
@@ -48,6 +52,7 @@ static func family(archetype: String) -> String:
 	if archetype == "maciota_m8": return "m8_v8"
 	if archetype == "maciota_350z": return "vq35"
 	if archetype == "porto_rosso": return "rosso_v12"
+	if archetype == "bike_snow": return "snowmobile"
 	var spec: Dictionary = FLEET.spec(archetype)
 	var declared := str(spec.get("engine_family", "")).strip_edges().to_lower()
 	if GEAR_TOPS.has(declared): return declared

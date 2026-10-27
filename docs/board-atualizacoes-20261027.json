@@ -6,17 +6,20 @@
     {
       "id": "testes-atrasados-frota-redesenhada-20261027",
       "title": "Testes atrasados pela frota redesenhada",
-      "status": "issue",
+      "status": "partial",
       "area": "quality",
-      "description": "Achados ao rodar os testes de pintura e acabamento em 27/10, todos de antes das mudanças da madrugada. Postos em dia: test_fleet_redesign (as motos entraram na frota redesenhada em 23/10 e eram cobradas como carro de 4 rodas e 2 faróis; passa), test_fleet_finish (a frota redesenhada não ganha a SculptedCabin) e test_destroyed_cleanup (as 2 leituras de MultiMesh do poste só valem com janela, e o corpo some em 4 s desde 08/10, não mais 10 s: 18/18 com janela). Seguem falhando: test_fleet_finish (1: o snowmobile bike_snow não tem material de pintura), test_desert_car_livery (os carros de corrida do deserto redesenhados não têm o adesivo DesertRaceLivery: falta saber se a perda foi intencional), test_mining_raid posto em dia (165/165): o reforço ficava a 28 m, no limite de 29,4 m da M4A1, e a conquista armed_up não entrava na conta do pagamento.",
+      "description": "Achados ao rodar os testes de pintura e acabamento em 27/10, todos de antes das mudanças da madrugada. Postos em dia: test_fleet_redesign (as motos entraram na frota redesenhada em 23/10 e eram cobradas como carro de 4 rodas e 2 faróis; passa), test_fleet_finish (a frota redesenhada não ganha a SculptedCabin) e test_destroyed_cleanup (as 2 leituras de MultiMesh do poste só valem com janela, e o corpo some em 4 s desde 08/10, não mais 10 s: 18/18 com janela). Resolvidos depois da decisão do usuário (27/10, manhã): o adesivo de corrida volta aos três carros de corrida do deserto (FleetCatalog aplica o DesertCarLivery no modelo redesenhado; test_desert_car_livery 69/69) e o snowmobile ganhou modelo próprio, repintável, com adesivo de corrida e som próprio (motor de dois tempos e esteira; test_snowmobile 15/15, test_fleet_finish 597 checks sem falha). test_mining_raid posto em dia (165/165): o reforço ficava a 28 m, no limite de 29,4 m da M4A1, e a conquista armed_up não entrava na conta do pagamento.",
       "sources": [
         "tests/test_fleet_redesign.gd",
         "tests/test_fleet_finish.gd",
         "tests/test_destroyed_cleanup.gd",
         "tests/test_desert_car_livery.gd",
-        "runtime/RedesignedFleet.gd"
+        "runtime/RedesignedFleet.gd",
+        "runtime/SnowmobileModel.gd",
+        "audio/snowmobile/SnowmobileAudio.gd",
+        "tests/test_snowmobile.gd"
       ],
-      "next": "Decidir se o adesivo de corrida volta aos carros do deserto redesenhados e se o snowmobile deve ser repintável. Confirmar que corpos sumindo 4 s depois da queda (9deba30e) é o desejado."
+      "next": "Confirmar que corpos sumindo 4 s depois da queda (9deba30e) é o desejado. Ouvir o snowmobile no jogo (prévia em evidence/snowmobile/previa-snowmobile.wav)."
     }
   ],
   "updates": {
