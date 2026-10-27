@@ -1,6 +1,6 @@
 {
   "date": "2026-10-27",
-  "period": "manhã de 2026-10-27",
+  "period": "manhã e tarde de 2026-10-27",
   "scope": "Oito esportivos novos para cobrir as trações que faltavam (AWD, FWD, RWD e 4x4 esportivos), desenhados pelo gerador procedural 2.0 e assados offline.",
   "cards": [
     {
@@ -9,8 +9,26 @@
       "status": "partial",
       "area": "quality",
       "description": "Levantamento: a frota tinha 18 carros de pegada esportiva (10 RWD, 5 FWD, 3 AWD, nenhum 4x4). Entraram Tauro V10 e Raijin GT (AWD), Kite Type S e Lince RS (FWD), Brisa S Roadster e Sakura S15 (RWD), Rapina R e Bastião 63 (4x4). Gerador novo tools/fleet_fixups/build_sport_fleet_v2.gd: carroceria em loft com curvas cúbicas monótonas, arco de roda recortado na seção, estufa que nasce na curva do capô, remendos (faróis, tomadas, venezianas) amostrados na superfície, portas como folhas completas, pneus de perfil arredondado e aros de sete desenhos. 9,6 a 13 mil triângulos por carro, 10 peças, só materiais já usados pela frota. Motor completo com torque calibrado e aderência por tração; entram raros no trânsito (cidade, trabalho, executivo, serra e deserto). Verificado: test_sport_fleet_models 204/204, fotos com janela de frente, traseira, lado e portas abertas. Não verificado: dirigir com controle, noite, desempenho em release.",
-      "next": "Dirigir cada um no jogo; medir no export release com vários deles no trânsito; decidir se a tração passa a dividir a força por eixo no DesertDrivetrain (hoje só a aderência autorada diferencia AWD, RWD e FWD).",
-      "sources": ["docs/esportivos-2-0-20261027.md", "runtime/SportFleet.gd", "tools/fleet_fixups/build_sport_fleet_v2.gd", "tests/test_sport_fleet_models.gd"]
+      "next": "Dirigir cada um no jogo; medir no export release com vários deles no trânsito; decidir se a tração por eixo entra nas arrancadas (GETECO_AXLE_TRACTION=2) com rebalanço dos rivais.",
+      "sources": [
+        "docs/esportivos-2-0-20261027.md",
+        "runtime/SportFleet.gd",
+        "tools/fleet_fixups/build_sport_fleet_v2.gd",
+        "tests/test_sport_fleet_models.gd"
+      ]
+    },
+    {
+      "id": "tracao-por-eixo-20261027",
+      "title": "Tração por eixo no motor completo (AWD, FWD, RWD e 4x4 andam diferente)",
+      "status": "partial",
+      "area": "quality",
+      "description": "gameplay/desert_cars/AxleTraction.gd: só o eixo que traciona segura a força, com transferência de peso pela aceleração; na curva o pedal volta a entrar no V1Handling (RWD sai de traseira, FWD de frente); em piso solto 4x4 e AWD perdem menos. Recalibrado com axle_grip (calibrate_street_powertrain -- --axle) para a largada piorar no máximo ×1,02 AWD, ×1,05 4x4, ×1,10 RWD, ×1,15 FWD. A/B no mesmo processo (measure_axle_traction): largada AWD ×1,01, 4x4 ×1,03, RWD ×1,10, FWD ×1,17; na terra 2WD ×1,26 e 4x4/AWD ×0,92–0,93; curva com acelerador cheio RWD +21°, FWD −24,5°. GETECO_AXLE_TRACTION=0 desliga, 1 (padrão) rua, 2 também arrancadas. Não verificado: dirigir com controle.",
+      "next": "Dirigir RWD, FWD, AWD e 4x4 na rua e na terra para afinar REALISM e os ganhos do V1Handling; avaliar o modo 2 com os rivais das arrancadas.",
+      "sources": [
+        "gameplay/desert_cars/AxleTraction.gd",
+        "tests/measure/measure_axle_traction.gd",
+        "docs/esportivos-2-0-20261027.md"
+      ]
     }
   ]
 }

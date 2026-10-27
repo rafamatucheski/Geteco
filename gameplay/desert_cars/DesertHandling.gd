@@ -2,6 +2,7 @@ extends "res://gameplay/v1_handling/V1Handling.gd"
 ## Retains the existing collision-safe steering and lateral grip. Longitudinal
 ## force, gear state and nitro are shared with drag instead of a parallel gearbox.
 const DRIVETRAIN := preload("res://gameplay/desert_cars/DesertDrivetrain.gd")
+const AXLE := preload("res://gameplay/desert_cars/AxleTraction.gd")
 var drive := DRIVETRAIN.new()
 var _configured := false
 var _coast_deceleration := 1.8
@@ -22,7 +23,11 @@ func step(car: CharacterBody3D, delta: float, throttle: float, turn: float, hand
 	var prior_speed := maxf(0.0,float(car.speed))
 	# Stock handling supplies safe yaw/cornering only. Its friction is replaced by
 	# drivetrain coast/rolling resistance along the new heading below.
+	# Tração por eixo: o pedal, pesado pela fração da aderência que o motor pede, volta a
+	# entrar no volante e no escorregamento (RWD sai de traseira, FWD de frente) sem somar força.
+	if AXLE.applies(drive.race_mode): drive_power = clampf(throttle,0.0,1.0)*clampf(drive.grip_usage,0.0,1.0)
 	super.step(car,delta,0.0,turn,handbrake,wetness)
+	drive_power = -1.0
 	# Brakes hold the chassis while the driven tires spin. Keep this street-only;
 	# drag staging and its shared force/gear calibration remain independent.
 	if handbrake and throttle > .2:
@@ -49,7 +54,9 @@ func step(car: CharacterBody3D, delta: float, throttle: float, turn: float, hand
 		for contact in contacts:
 			if not contact.is_empty(): surface = str(contact.get("kind",surface)); break
 	drive.surface_grip = lerpf(1.0,.67,clampf(wetness,0.0,1.0))
-	if surface in ["dirt","sand","grass","snow"]: drive.surface_grip *= float(drive.spec.dirt_grip)*.70
+	if surface in ["dirt","sand","grass","snow"]:
+		var loose := AXLE.loose_surface(drivetrain) if AXLE.applies(drive.race_mode) else 1.0
+		drive.surface_grip *= minf(1.0,float(drive.spec.dirt_grip)*.70*loose)
 	if drive.rpm >= drive.ideal_shift_rpm: drive.shift_up()
 	elif drive.rpm < drive.redline*.35 and drive.gear > 1: drive.shift_down()
 	var boost := Input.is_physical_key_pressed(KEY_SHIFT) or Input.is_joy_button_pressed(0,JOY_BUTTON_A)

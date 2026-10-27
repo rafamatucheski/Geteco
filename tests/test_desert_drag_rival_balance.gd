@@ -9,6 +9,9 @@ class ProfileVehicle extends Node:
 	var archetype := ""
 
 func _initialize() -> void:
+	# O run_car abaixo usa o motor fora do race_mode, mas modela a arrancada: segue a regra
+	# das provas para a tração por eixo (desligada, salvo GETECO_AXLE_TRACTION=2).
+	if not preload("res://gameplay/desert_cars/AxleTraction.gd").applies(true): preload("res://gameplay/desert_cars/AxleTraction.gd").mode = 0
 	for identity in ["porto_rosso","monaliza","desert_mirage_gt"]:
 		var car := ProfileVehicle.new()
 		car.archetype=identity

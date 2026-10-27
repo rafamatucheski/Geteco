@@ -1,6 +1,7 @@
 extends RefCounted
 ## One gearbox state drives motion, tachometer and audio. No speed bonuses on shift.
 const TUNING := preload("res://gameplay/desert_cars/DesertTuning.gd")
+const AXLE := preload("res://gameplay/desert_cars/AxleTraction.gd")
 const SPEED_FACTOR := preload("res://data/catalogs/VehicleSpeedBalance.gd").FACTOR
 const LAUNCH_GOOD_MIN := .38
 const LAUNCH_GOOD_MAX := .70
@@ -39,6 +40,12 @@ var _idle := 900.0
 var _shift_duration := 0.0
 var _shift_from_rpm := 0.0
 var _shift_target_gear := 1
+## Tração por eixo (AxleTraction): layout do carro, aceleração suavizada que move o peso entre
+## os eixos e quanto da aderência o pedal pede (>1 = patinando). DesertHandling usa o último
+## para o carro sair de traseira ou de frente na curva conforme a tração.
+var axle: Dictionary = {}
+var grip_usage := 0.0
+var _accel := 0.0
 
 func configure(id: String, parts: Dictionary = {}) -> void:
 	car_id = id
@@ -46,6 +53,7 @@ func configure(id: String, parts: Dictionary = {}) -> void:
 	redline = float(spec.redline)
 	_idle = 750.0 if str(spec.engine_family) == "diesel" else 900.0
 	ideal_shift_rpm = redline*.91
+	axle = AXLE.layout(id,spec)
 	reset()
 
 func reset() -> void:
@@ -74,6 +82,8 @@ func reset() -> void:
 	_shift_duration = 0.0
 	_shift_from_rpm = rpm
 	_shift_target_gear = 1
+	grip_usage = 0.0
+	_accel = 0.0
 
 func stage(delta: float, pedal: float, digital_input := false) -> void:
 	if launched: return
@@ -231,7 +241,11 @@ func _integrate(dt: float, pedal: float, use_nitro: bool, brake: float) -> void:
 	elif shift_remaining>0.0: force=0.0
 	var mass_kg := float(spec.mass)*1000.0
 	var grip_force := mass_kg*9.81*float(spec.traction)*surface_grip
+	# `axle_grip` (StreetPowertrainCatalog) é a recalibração do pneu para a tração por eixo:
+	# só vale com ela ligada, então o A/B pelo interruptor continua comparando o mesmo carro.
+	if AXLE.applies(race_mode): grip_force *= AXLE.share(axle,_accel)*float(spec.get("axle_grip",1.0))
 	if _launch_remaining > 0.0: grip_force *= lerpf(1.0,_launch_factor,_launch_remaining/1.5)
+	grip_usage = clampf(force/maxf(grip_force,1.0),0.0,2.0)
 	wheelspin = move_toward(wheelspin,clampf((force-grip_force)/maxf(force,1.0),0.0,1.0),dt*3.0)
 	force = minf(force,grip_force)
 	if launch_blend_seconds > 0.0:
@@ -240,6 +254,7 @@ func _integrate(dt: float, pedal: float, use_nitro: bool, brake: float) -> void:
 	var before := speed_mps
 	speed_mps = maxf(0.0,speed_mps+(force-resistance)/mass_kg*dt-clampf(brake,0.0,1.0)*10.5*dt)
 	distance_m += (before+speed_mps)*.5*dt
+	_accel = lerpf(_accel,(speed_mps-before)/maxf(dt,.0001),1.0-exp(-dt/.12))
 
 func _coupled_rpm() -> float:
 	return _mechanical_speed()/(TAU*float(spec.wheel_radius))*60.0*float(spec.gears[gear-1])*float(spec.final_drive)

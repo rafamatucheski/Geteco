@@ -5,6 +5,10 @@ extends SceneTree
 const STREET := preload("res://gameplay/desert_cars/StreetPowertrainCatalog.gd")
 const DRIVE := preload("res://gameplay/desert_cars/DesertDrivetrain.gd")
 const STEP := 1.0/60.0
+const AXLE := preload("res://gameplay/desert_cars/AxleTraction.gd")
+## Tração por eixo: quanto a largada pode piorar em relação à aderência inteira antiga.
+## Acima disso o pneu ganha `axle_grip`; a diferença entre trações continua, só não aleija.
+const AXLE_BANDS := {"awd":1.02, "4x4":1.05, "rwd":1.10, "fwd":1.15}
 
 func _initialize() -> void: run.call_deferred()
 
@@ -29,7 +33,44 @@ func _sim(id: String, torque: float, target_speed: float, full := true) -> Dicti
 		if not full and reach != INF: break
 	return {"reach":reach,"quarter":quarter,"top":d.speed_mps}
 
+func _reach_with_axle(id: String, mode: int, grip: float, v_ref: float) -> float:
+	AXLE.mode = mode
+	var d = DRIVE.new()
+	d.configure(id,{})
+	d.spec["axle_grip"] = grip
+	d.stage(5.0,.5)
+	d.launch()
+	var cap := float(d.spec.street_cap_mps)
+	var t := 0.0
+	while t < 60.0:
+		d.step(STEP,clampf((cap-d.speed_mps)/(cap*.08),0.0,1.0),false)
+		d.speed_mps = minf(d.speed_mps,cap)
+		if d.rpm >= d.ideal_shift_rpm and d.gear < d.spec.gears.size(): d.shift_up()
+		t += STEP
+		if d.speed_mps >= v_ref: return t
+	return INF
+
+## Menor `axle_grip` que deixa a largada dentro da faixa da tração (passo de 0,01).
+func _calibrate_axle(id: String, spec: Dictionary, v_ref: float) -> void:
+	var drive := str(spec.get("drivetrain","rwd"))
+	var base := _reach_with_axle(id,0,1.0,v_ref)
+	var now := _reach_with_axle(id,1,1.0,v_ref)
+	var band := float(AXLE_BANDS.get(drive,1.10))
+	var grip := 1.0
+	while now > base*band and grip < 2.0:
+		grip += .01
+		now = _reach_with_axle(id,1,grip,v_ref)
+	AXLE.mode = 1
+	print("AXLE_CAL %s %s %.2f (largada %.2fs → %.2fs, faixa ×%.2f)" % [id,drive,grip,base,now,band])
+
 func run() -> void:
+	if "--axle" in OS.get_cmdline_user_args():
+		for id in STREET.ids():
+			var spec := STREET.spec(id)
+			spec.erase("axle_grip")
+			_calibrate_axle(id,spec,minf(100.0/3.6,float(spec.street_cap_mps)*.85))
+		quit(0)
+		return
 	for id in STREET.ids():
 		var spec := STREET.spec(id)
 		var a := clampf(float(spec.acceleration)/160.0,2.0,10.0)

@@ -34,6 +34,10 @@ var lateral_speed := 0.0
 var force_scale := 1.0
 var steer_scale := 1.0
 var drift_bias := 0.0
+## Quem tem motor próprio (DesertHandling) chama o passo com acelerador zero para não somar
+## força; aqui ele informa o pedal efetivo (0–1) só para o efeito da tração na curva.
+## Negativo = usar o acelerador do próprio passo, como sempre.
+var drive_power := -1.0
 # Largada (VehicleLaunchControl): freio de mão + acelerador parado, soltar o freio.
 var launch_holding := false
 var launch_charge := 0.0
@@ -144,7 +148,7 @@ func _update_drivetrain(longitudinal: float, throttle: float, steering: float, w
 	force_scale = 1.0
 	steer_scale = 1.0
 	drift_bias = 0.0
-	var power := absf(throttle) if throttle * longitudinal >= -8.0 else 0.0
+	var power := (absf(throttle) if throttle * longitudinal >= -8.0 else 0.0) if drive_power < 0.0 else clampf(drive_power, 0.0, 1.0)
 	var wet := clampf(wetness, 0.0, 1.0)
 	var corner := absf(steering) * clampf(absf(longitudinal) / 160.0, 0.0, 1.0)
 	var launch := 1.0 - clampf(absf(longitudinal) / 260.0, 0.0, 1.0)
