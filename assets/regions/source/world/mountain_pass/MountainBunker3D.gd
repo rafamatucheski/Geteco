@@ -1,5 +1,11 @@
 extends Node3D
 ## Shared floor-space measurements drive the model and projected 2D collision.
+const FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
+## Superfície com textura de cada material autorado (27/10: o interior era só cor lisa e lia
+## como maquete). Os que brilham (tela, lâmpada, grelha) e os pequenos de cor pura ficam lisos.
+const SURFACES := {"concrete": "cast", "plinth": "cast", "floor": "slab", "steel": "painted", "edge": "painted",
+	"yellow": "painted", "cover": "painted", "flag": "fabric", "blanket": "fabric", "pillow": "fabric", "rug": "fabric",
+	"mat": "fabric", "crate": "wood", "board": "wood"}
 var footprints: Array[Dictionary] = []
 var materials: Dictionary = {}
 var radio_light: OmniLight3D
@@ -12,6 +18,7 @@ func _ready() -> void:
 	_build_radio()
 	_build_supplies()
 	_build_lived_in_details()
+	_build_finish_details()
 	_build_lighting()
 	var fire := preload("res://assets/regions/source/world/mountain_pass/MountainHearthEffects3D.gd").new()
 	fire.name = "HeaterFlame"
@@ -30,6 +37,9 @@ func _ready() -> void:
 
 func material(id: String, color: String, metal: float = 0.0, emission: float = 0.0) -> StandardMaterial3D:
 	if materials.has(id):
+		return materials[id]
+	if emission == 0.0 and SURFACES.has(id):
+		materials[id] = FINISH.material(SURFACES[id], Color(color), 0.82 if metal == 0.0 else 0.55, metal)
 		return materials[id]
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = Color(color)
@@ -83,8 +93,9 @@ func label(text: String, pos: Vector3, size: int, color: Color, floor_text: bool
 
 func _build_shell() -> void:
 	var concrete := material("concrete", "657079")
-	var floor_mat := material("floor", "363f46")
-	var dark := material("steel", "253139", 0.6)
+	var floor_mat := material("floor", "4a5456")
+	# Chapa pintada verde-acinzentada: o azul quase preto com textura lia como bloco preto.
+	var dark := material("steel", "3d4846", 0.35)
 	var edge := material("edge", "a5b1b2", 0.35)
 	var yellow := material("yellow", "d1a955")
 	box("Foundation", Vector3(0, -0.23, 0), Vector3(18.5, 0.3, 12.5), dark)
@@ -127,6 +138,12 @@ func _build_command() -> void:
 		stripe.rotation.z = -0.4
 	box("CommandDesk", Vector3(0, 0.55, -4.2), Vector3(3.4, 1.1, 1.1), steel, true)
 	box("DeskTop", Vector3(0, 1.13, -4.2), Vector3(3.55, 0.1, 1.2), brass)
+	# Frente da mesa: gaveteiros nas pontas com puxadores e rodapé recuado.
+	for x in [-1.25, 1.25]:
+		for row in 3:
+			box("DeskDrawer", Vector3(x, 0.28 + row * 0.27, -3.64), Vector3(0.78, 0.23, 0.02), materials["edge"])
+			box("DrawerPull", Vector3(x, 0.32 + row * 0.27, -3.625), Vector3(0.24, 0.03, 0.02), steel)
+	box("DeskKick", Vector3(0, 0.05, -3.66), Vector3(3.4, 0.1, 0.02), material("cable", "15191b"))
 	box("RouteMap", Vector3(-0.3, 1.19, -4.1), Vector3(1.7, 0.015, 0.65), paper)
 	for i in 5:
 		box("MapRoute", Vector3(-0.9 + i * 0.28, 1.205, -4.2 + sin(i) * 0.17), Vector3(0.22, 0.01, 0.025), red)
@@ -135,9 +152,18 @@ func _build_command() -> void:
 	box("BossChair", Vector3(0, 0.5, -5.15), Vector3(0.85, 1.0, 0.55), red, true)
 	box("BossChairBack", Vector3(0, 1.05, -5.4), Vector3(0.85, 1.3, 0.12), steel)
 	# Cover stays outside the central movement corridor.
+	# Caixas de equipamento de aço (cobertura no tiroteio) com nervuras, alças e estêncil.
+	var cover_mat := material("cover", "4f5a3c", 0.25)
 	for side in [-1.0, 1.0]:
-		box("HallCover", Vector3(side * 2.9, 0.45, -0.25), Vector3(1.25, 0.9, 0.95), steel, true)
-		box("CoverStripe", Vector3(side * 2.9, 0.91, -0.25), Vector3(1.26, 0.035, 0.15), brass)
+		var at := Vector3(side * 2.9, 0, -0.25)
+		box("HallCover", at + Vector3(0, 0.45, 0), Vector3(1.25, 0.9, 0.95), cover_mat, true)
+		box("CoverStripe", at + Vector3(0, 0.91, 0), Vector3(1.26, 0.035, 0.15), brass)
+		for dx in [-0.45, 0.45]:
+			for dz in [-0.485, 0.485]:
+				box("CoverRib", at + Vector3(dx, 0.45, dz), Vector3(0.06, 0.86, 0.025), steel)
+		for dx in [-0.637, 0.637]:
+			box("CoverHandle", at + Vector3(dx, 0.66, 0), Vector3(0.03, 0.05, 0.32), steel)
+		label("ZERO-0%d" % (1 if side < 0 else 2), at + Vector3(0, 0.5, 0.49), 22, Color("d8d2b0"))
 
 func _build_barracks() -> void:
 	var steel: Material = materials["steel"]
@@ -211,6 +237,52 @@ func _build_lived_in_details() -> void:
 	cylinder("EnamelMug",Vector3(.68,1.28,-3.95),.085,.17,edge)
 	for x in [-8.25,-7.5,-6.75,-6.0]:
 		box("LockerBase",Vector3(x,.07,4.8),Vector3(.71,.14,.76),edge)
+
+func _build_finish_details() -> void:
+	var steel: Material = materials["steel"]
+	var edge: Material = materials["edge"]
+	var paper: Material = materials["paper"]
+	var red: Material = materials["flag"]
+	var plinth := material("plinth", "3f474d")
+	var board := material("board", "8a6b47")
+	# Rodapé de concreto e furos de tirante da fôrma: a parede longa ganha base e escala.
+	box("WallPlinth", Vector3(0, 0.14, -5.985), Vector3(18, 0.28, 0.04), plinth)
+	for x in range(-8, 9, 2):
+		for y in [0.75, 1.55, 2.35]:
+			if absf(x) == 2 or absf(x) == 4 or (x == 0 and y > 1.5): continue
+			var hole := cylinder("FormTieHole", Vector3(x, y, -5.997), 0.035, 0.012, steel)
+			hole.rotation.x = PI / 2
+	# Arremate de chapa no topo das paredes recortadas e das divisórias.
+	for side in [-1.0, 1.0]:
+		box("CutawayCap", Vector3(side * 9.15, 1.32, 0), Vector3(0.38, 0.05, 12.0), edge)
+		box("CutawayCap", Vector3(side * 5.1, 0.58, 6.15), Vector3(8.4, 0.05, 0.38), edge)
+		box("PartitionCap", Vector3(side * 4.4, 1.52, -3.1), Vector3(0.28, 0.04, 5.8), edge)
+		box("PartitionCap", Vector3(side * 4.4, 1.12, 4.3), Vector3(0.28, 0.04, 3.4), edge)
+	# Quadro de escala dos turnos sobre os beliches e mapa da rota sobre o rádio.
+	box("DutyBoard", Vector3(-6.6, 2.25, -5.975), Vector3(1.5, 0.7, 0.04), board)
+	for i in 6:
+		box("DutySheet", Vector3(-7.15 + (i % 3) * 0.55, 2.38 - floorf(i / 3.0) * 0.3, -5.95), Vector3(0.36, 0.24, 0.01), paper)
+	box("RouteChart", Vector3(6.65, 2.12, -5.975), Vector3(2.0, 0.75, 0.03), paper)
+	for i in 6:
+		var seg := box("RouteLine", Vector3(5.9 + i * 0.3, 2.12 + sin(i * 1.3) * 0.16, -5.955), Vector3(0.34, 0.025, 0.01), red)
+		seg.rotation.z = cos(i * 1.3) * 0.5
+	# Caixa de primeiros socorros e extintor junto à divisória do corredor.
+	box("FirstAidBox", Vector3(3.6, 1.55, -5.93), Vector3(0.5, 0.42, 0.14), material("first_aid", "d8d6cc"))
+	box("FirstAidCross", Vector3(3.6, 1.55, -5.855), Vector3(0.22, 0.06, 0.01), red)
+	box("FirstAidCross", Vector3(3.6, 1.55, -5.855), Vector3(0.06, 0.22, 0.01), red)
+	cylinder("Extinguisher", Vector3(4.2, 0.33, 2.95), 0.09, 0.56, material("extinguisher", "a3302a"))
+	cylinder("ExtinguisherHead", Vector3(4.2, 0.66, 2.95), 0.035, 0.12, steel)
+	# Capacho de borracha na entrada e tapete gasto no alojamento.
+	box("EntryMat", Vector3(0, 0.012, 5.3), Vector3(1.7, 0.02, 1.1), material("mat", "2b3133"))
+	box("BarracksRug", Vector3(-6.9, 0.01, 1.3), Vector3(2.4, 0.015, 1.7), material("rug", "6a4636"))
+	for z in [0.55, 2.05]:
+		box("RugStripe", Vector3(-6.9, 0.019, z), Vector3(2.4, 0.004, 0.08), material("pillow", "b8bbaa"))
+	# Ralo no piso ao lado do aquecedor e feixe de cabos do console até os servidores.
+	box("FloorDrain", Vector3(6.6, 0.006, 2.6), Vector3(0.45, 0.01, 0.45), steel)
+	for i in 5:
+		box("DrainSlot", Vector3(6.44 + i * 0.08, 0.012, 2.6), Vector3(0.025, 0.006, 0.36), material("drain_gap", "0b0e10"))
+	for dy in [0.0, 0.05]:
+		box("CableRun", Vector3(7.95, 0.03 + dy, -3.5), Vector3(0.07, 0.04, 0.9), material("cable", "15191b"))
 
 func _build_lighting() -> void:
 	var env := WorldEnvironment.new()

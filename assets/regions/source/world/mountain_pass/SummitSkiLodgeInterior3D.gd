@@ -1,13 +1,25 @@
 extends Node3D
 ## Cutaway alpine lodge. Mesh groups are the source of physical footprints.
+const FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
 var materials: Dictionary = {}
 var _solid_id: StringName = &""
 
 func _ready() -> void:
 	_build_room()
 
+## Tábua, pedra, lã e ferro com textura (27/10: o salão era só cor lisa). Brilho e latão ficam lisos.
+static func _surface(id: String) -> String:
+	if id in ["oak", "endgrain"] or id.begins_with("plank"): return "wood"
+	if id == "mortar" or id.begins_with("stone"): return "cast"
+	if id in ["petrol_wool", "oxblood", "linen"]: return "fabric"
+	if id == "iron": return "painted"
+	return ""
+
 func _mat(id: String, color: Color, roughness := 0.82, metallic := 0.0, emission := 0.0) -> StandardMaterial3D:
 	if materials.has(id): return materials[id]
+	if emission == 0.0 and not _surface(id).is_empty():
+		materials[id] = FINISH.material(_surface(id), color, roughness, metallic)
+		return materials[id]
 	var material := StandardMaterial3D.new()
 	material.albedo_color = color
 	material.roughness = roughness

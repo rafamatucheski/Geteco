@@ -1,6 +1,9 @@
 extends Node3D
 ## Workers' bunkhouse, deliberately distinct from the hunting chalet.
-func mat(color: String, metal := 0.0) -> StandardMaterial3D:
+const FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
+## `kind` põe textura (tábua, chapa, tecido...; 27/10: o alojamento era só cor lisa).
+func mat(color: String, metal := 0.0, kind := "") -> StandardMaterial3D:
+	if not kind.is_empty(): return FINISH.material(kind, Color(color), 0.85, metal)
 	var material := StandardMaterial3D.new()
 	material.albedo_color = Color(color)
 	material.roughness = 0.85
@@ -29,13 +32,13 @@ func cylinder(parent: Node3D,pos: Vector3,radius: float,height: float,material: 
 	parent.add_child(part)
 	return part
 func _ready() -> void:
-	var timber := mat("61442f")
-	var pale := mat("987955")
-	var dark := mat("2d241d")
-	var steel := mat("363d3e",0.65)
+	var timber := mat("61442f",0.0,"wood")
+	var pale := mat("987955",0.0,"wood")
+	var dark := mat("2d241d",0.0,"wood")
+	var steel := mat("363d3e",0.65,"painted")
 	var silver := mat("9badae",0.70)
-	var cream := mat("d3c7ae")
-	var floor := mat("665441")
+	var cream := mat("d3c7ae",0.0,"fabric")
+	var floor := mat("665441",0.0,"wood")
 	var warm_glow := mat("ffd2a0")
 	warm_glow.emission_enabled = true
 	warm_glow.emission = Color("ffad61")
@@ -72,7 +75,7 @@ func _ready() -> void:
 			bunk.name = "WorkerBunk_%s_%d" % [str(side),row]
 			bunk.position = Vector3(side*3.75,0,-2.5+row*2.8)
 			add_child(bunk)
-			var blanket := mat("4b655b" if row==0 else "6e4950")
+			var blanket := mat("4b655b" if row==0 else "6e4950",0.0,"fabric")
 			for x in [-0.55,0.55]:
 				for z in [-1.12,1.12]: box(bunk,Vector3(x,1.15,z),Vector3(0.065,2.3,0.065),steel)
 			for level in [0.5,1.75]:
@@ -107,7 +110,7 @@ func _ready() -> void:
 	cylinder(self,Vector3(-0.7,1.1,0.12),0.09,0.40,steel)
 	# Cast-iron stove with open fire window, copper kettle, small smoke wisps.
 	var stove := Vector3(-3.75,0,3.0)
-	box(self,stove+Vector3(0,0.1,0),Vector3(1.2,0.08,1.3),mat("74706a"),"StoveHearth")
+	box(self,stove+Vector3(0,0.1,0),Vector3(1.2,0.08,1.3),mat("74706a",0.0,"cast"),"StoveHearth")
 	for x in [-0.4,0.4]: box(self,stove+Vector3(x,0.52,0),Vector3(0.09,0.75,0.75),steel)
 	box(self,stove+Vector3(0,0.9,0),Vector3(0.9,0.09,0.85),steel)
 	box(self,stove+Vector3(0,0.5,-0.36),Vector3(0.9,0.8,0.07),steel)

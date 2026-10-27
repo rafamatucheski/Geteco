@@ -73,6 +73,17 @@ static func solid(parent: Node3D, id: String, at: Vector3, size: Vector3) -> Sta
 	body.add_child(collider)
 	parent.add_child(body)
 	return body
+## Pátio de chão pisado sobre a neve: trechos locais [a, b, largura] viram trilhas de terra em
+## coordenadas de mundo, para a máscara do terreno da serra (MountainTerrain3D). O terreno desenha
+## lama, cascalho e a neve amontoada na borda irregular; uma placa por cima nunca casa com a neve.
+static func yard_trails(id: String, segments: Array, origin: Vector3, yaw: float) -> Array[Dictionary]:
+	var result: Array[Dictionary] = []
+	var basis := Basis(Vector3.UP, yaw)
+	for i in segments.size():
+		var segment: Array = segments[i]
+		result.append({"id":"%s_%d" % [id, i], "width":float(segment[2]), "surface":"earth",
+			"points":PackedVector3Array([origin + basis * Vector3(segment[0]), origin + basis * Vector3(segment[1])])})
+	return result
 static func polygon(parent: Node3D, outline: PackedVector2Array, y: float, color: Color) -> MeshInstance3D:
 	var surface:=SurfaceTool.new(); surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var indices:=Geometry2D.triangulate_polygon(outline)

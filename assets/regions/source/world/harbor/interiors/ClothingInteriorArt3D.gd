@@ -1,5 +1,6 @@
 extends "res://assets/regions/source/world/harbor/cemetery/CemeteryPropBuilder.gd"
 
+const MOUNTAIN_FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
 var variant := 0
 var counter := Vector2.ZERO
 var _wood := "654833"
@@ -171,7 +172,6 @@ func _hanging_coat(parent: Node3D, id: String, x: float, color: String) -> void:
 	box("CoatFastener", Vector3(.015, .60, .012), Vector3(x, 1.32, .098), "c3ad79", parent)
 
 func _finish_mountain_surfaces() -> void:
-	var palette := preload("res://world/places/ShopInteriorMaterials.gd")
 	# Raised panels stay inside existing wall volumes, leaving the floor aisle intact.
 	for side in [-1.0, 1.0]:
 		box("WallSkirting", Vector3(.035, .18, 8.8), Vector3(side * 6.39, .12, 0), _wood)
@@ -199,4 +199,5 @@ func _finish_mountain_surfaces() -> void:
 			var tint: Color = mesh.material_override.albedo_color
 			if tint.is_equal_approx(Color(_wood)): kind = "wood"
 			elif tint.is_equal_approx(Color(_cloth)): kind = "cloth"
-		if not kind.is_empty(): mesh.material_override = palette.material(kind, mesh.material_override.albedo_color)
+		# Textura real (tábua, reboco, tecido) só nas lojas da serra; a do porto (variante 0) não passa aqui.
+		if not kind.is_empty(): mesh.material_override = MOUNTAIN_FINISH.material({"wood": "wood", "plaster": "plaster", "cloth": "fabric"}[kind], mesh.material_override.albedo_color)

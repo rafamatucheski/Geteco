@@ -29,21 +29,47 @@ static func world_point(local: Vector3) -> Vector3:
 static func approach() -> Dictionary:
 	return {"id":"mountain_refuge_trail","width":1.8,"points":PackedVector3Array([Vector3(734,0,-498),Vector3(743,0,-500),Vector3(751,0,-501),Vector3(757,0,-502)])}
 
+## Chão pisado do pátio, desenhado pelo próprio terreno como trilha de terra (lama, cascalho e neve
+## amontoada na borda irregular). Antes era uma placa verde-oliva de 17 m pousada sobre a neve,
+## sem ligação com o chão (pedido de 27/10). Só entra na máscara do terreno, não no mapa.
+static func yard_trails() -> Array[Dictionary]:
+	if not enabled(): return []
+	return GEO.yard_trails("mountain_refuge_yard", [
+		[Vector3(0,0,9), Vector3(1.2,0,5.2), 2.4],     # da trilha de acesso até a roda da fogueira
+		[Vector3(.6,0,3.6), Vector3(4.4,0,3.6), 4.6],  # roda dos troncos-banco
+		[Vector3(1.2,0,2.6), Vector3(-1.0,0,.9), 3.4], # da fogueira até a frente do abrigo
+		[Vector3(2.8,0,1.4), Vector3(2.6,0,-2.4), 1.6], # até a lenha
+	], CENTER, YAW)
+
 func _ready() -> void:
 	name = "MountainRefuge"
 	rotation.y = YAW
 	add_to_group("mountain_refuge_site")
 	var g := GEO.new()
-	GEO.polygon(self, PackedVector2Array([Vector2(-8,-7),Vector2(7,-8),Vector2(9,0),Vector2(8,8),Vector2(-1,9),Vector2(-9,5)]), .035, Color("8d8a5a"))
 	_shelter(g)
 	_yard(g)
 	g.flush(self)
 
 func _shelter(g: RefCounted) -> void:
-	# Abrigo de toras 5 × 4 m sobre base de pedra: fundo e lados fechados, frente aberta para o fogo,
-	# telhado de uma água descendo para trás, coberto de neve.
+	# Abrigo de toras 5 × 4 m: fundo e lados fechados sobre soleira de pedra, frente aberta para o
+	# fogo, telhado de uma água descendo para trás, coberto de neve. O piso é um assoalho rente ao
+	# chão (6 cm): o bloco de pedra de 30 cm de antes engolia o catre e os pés de quem entrava.
 	var c := Vector3(-1.0,0,-1.8)
-	g.part("box", c+Vector3(0,.15,0), Vector3(5.4,.3,4.4), "6f6f65")
+	g.part("box", c+Vector3(0,.15,-2.0), Vector3(5.7,.3,.55), "6f6f65")
+	for side in [-1.0,1.0]:
+		g.part("box", c+Vector3(side*2.5,.15,-.2), Vector3(.55,.3,3.9), "6f6f65")
+		# Pedras soltas na quina da soleira quebram a aresta reta.
+		g.part("round", c+Vector3(side*2.85,.12,1.45), Vector3(.5,.28,.45), "77776c")
+	for row in 10:
+		var z := -1.72+float(row)*.4
+		g.part("box", c+Vector3(0,.03,z), Vector3(4.5,.06,.38), "7a5a3a" if row%3 else "6b4f33")
+	# Viga de borda na frente do assoalho e pedra chata de degrau até o chão pisado.
+	g.part("pole", c+Vector3(0,.09,2.2), Vector3(.2,4.9,.2), "5f432b", Vector3(0,0,PI*.5))
+	g.part("round", c+Vector3(.3,.06,2.95), Vector3(1.3,.16,.8), "8d8c84")
+	# Neve acumulada contra o fundo e as quinas de trás.
+	g.part("round", c+Vector3(0,.12,-2.6), Vector3(5.8,.45,.9), "e8ecef")
+	for side in [-1.0,1.0]:
+		g.part("round", c+Vector3(side*3.0,.16,-2.5), Vector3(1.1,.5,1.0), "e8ecef")
 	for row in 6:
 		var y := .45+float(row)*.38
 		g.part("pole", c+Vector3(0,y,-2.0), Vector3(.38,5.4,.38), "6a4b30" if row%2==0 else "5f432b", Vector3(0,0,PI*.5))
@@ -85,9 +111,16 @@ func _yard(g: RefCounted) -> void:
 	GEO.solid(self, "RefugeWoodpile", Vector3(2.4,.4,-3.1), Vector3(1.7,.8,1.6))
 	g.part("box", Vector3(3.6,.35,-2.8), Vector3(.6,.08,1.4), "806044", Vector3(.5,0,0))
 	for x in [3.35,3.85]: g.part("box", Vector3(x,.2,-2.8), Vector3(.05,.08,1.5), "3a3634", Vector3(.5,0,0))
+	# Pedras da clareira com neve em cima, soltas em volta (o anel de bolas verdes lia como cerca
+	# de arbusto); nenhuma no rumo da trilha de acesso (+Z local).
 	for i in 8:
-		var angle := float(i)/8.0*TAU
-		g.part("round", Vector3(cos(angle)*11.0,.25,sin(angle)*10.5), Vector3(1.3,.8,1.0), "62704b" if i%3 else "77776c")
+		var angle := float(i)/8.0*TAU+sin(i*2.3)*.3
+		if absf(wrapf(angle-PI*.5, -PI, PI)) < .55: continue
+		var reach := 10.5+sin(i*1.7)*1.6
+		var at := Vector3(cos(angle)*reach, 0, sin(angle)*reach)
+		var size := Vector3(1.3,.8,1.0)*(.8+.3*sin(i*3.1))
+		g.part("round", at+Vector3(0,.25,0), size, "6e716c" if i%3 else "77776c")
+		g.part("round", at+Vector3(0,.25+size.y*.3,0), Vector3(size.x*.85,size.y*.4,size.z*.85), "e8ecef")
 
 ## Catre: dormir até as 7h (curado e salvo), a pé, fora do carro.
 func nearest_action() -> Dictionary:

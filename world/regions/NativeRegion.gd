@@ -463,6 +463,7 @@ func _prepare() -> void:
 		var reservations: Array = CATALOG.definitions().duplicate()
 		reservations.append_array(entries)
 		var terrain_roads: Array[Dictionary] = roads + walkways
+		var site_clearings := _mountain_site_terrain(terrain_roads)
 		# These Harbor routes enter Mountain's resident terrain at the northbank
 		# gateway. Reserve the authored roadway so its hillside mesh/collider
 		# cannot rise into the approach while both regions are loaded.
@@ -472,7 +473,16 @@ func _prepare() -> void:
 			for point in avenue.points:
 				avenue_points.append(CATALOG._at(Vector2(point[0],point[1]),"harbor"))
 			terrain_roads.append({"id":avenue.id,"points":avenue_points,"width":float(avenue.width)*SCALE})
-		terrain.configure(terrain_roads,reservations,[MOUNTAIN_FORGE.FOOTPRINT,FORGE_HERMIT.FOOTPRINT,MOUNTAIN_REFUGE.FOOTPRINT])
+		terrain.configure(terrain_roads,reservations,site_clearings)
+
+## Clareiras dos lugares da serra que não vêm do catálogo (forja, eremita, refúgio) e os pátios
+## pisados do refúgio e do eremita, que entram só na máscara do terreno (fora do mapa). Uma lista
+## só para o gerador e para o EditableRegion: a cópia do editor tinha esquecido o refúgio.
+func _mountain_site_terrain(terrain_roads: Array[Dictionary]) -> Array:
+	terrain_roads.append_array(MOUNTAIN_REFUGE.yard_trails())
+	if _blade_forge_enabled: terrain_roads.append_array(FORGE_HERMIT.yard_trails())
+	return [MOUNTAIN_FORGE.FOOTPRINT,FORGE_HERMIT.FOOTPRINT,MOUNTAIN_REFUGE.FOOTPRINT]
+
 func map_routes() -> Array[Dictionary]:
 	return roads + walkways
 

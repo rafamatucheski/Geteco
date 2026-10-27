@@ -12,6 +12,7 @@ extends Node3D
 ## - Mesa de rádio com luminária verde, diário e caixas de munição
 ## - Suporte de rifles decorativos; as armas coletáveis ficam no piso livre
 
+const FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
 var materials: Dictionary = {}
 # Set while building each physical object; collision is derived from its meshes.
 var _solid_id: StringName = &""
@@ -45,6 +46,11 @@ func _ready() -> void:
 
 func _mat(key: String, color: Color, metallic: float = 0.0, roughness: float = 0.6, glow: float = 0.0) -> StandardMaterial3D:
 	if materials.has(key):
+		return materials[key]
+	# Tora, tábua, pedra, tecido e ferro com textura (27/10: o chalé era só marrom liso).
+	var surface := FINISH.kind_for(key) if glow == 0.0 else ""
+	if not surface.is_empty():
+		materials[key] = FINISH.material(surface, color, maxf(roughness, 0.7), metallic)
 		return materials[key]
 	var m := StandardMaterial3D.new()
 	m.albedo_color = color
