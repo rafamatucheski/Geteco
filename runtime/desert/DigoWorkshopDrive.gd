@@ -277,7 +277,7 @@ func close_service_view() -> void:
 
 func focus_slot(slot: String) -> void:
 	_focus = Vector3(0,.65,0)
-	_rear_inspection = slot in ["spoiler","taillights"]
+	_rear_inspection = slot in ["spoiler","taillights","diffuser"]
 	_tail_inspection = slot == "taillights"
 	_set_tail_preview(_car,_tail_inspection)
 	match slot:
@@ -285,6 +285,9 @@ func focus_slot(slot: String) -> void:
 		"sunroof", "roof": _focus = Vector3(0,.65,0); _yaw = .65
 		"headlights", "taillights", "lamp_color": _focus = Vector3(0,.65,0); _yaw = .35
 		"wheels", "wheel_size", "wheel_model", "rims": _focus = Vector3(0,.65,0); _yaw = .95
+		"skirts": _focus = Vector3(0,.45,0); _yaw = .95
+		"front_lip": _focus = Vector3(0,.4,0); _yaw = .25
+		"diffuser": _yaw = -.65
 	if _rear_inspection: _focus.y = .1
 	_update_camera()
 

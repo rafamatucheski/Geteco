@@ -1,12 +1,14 @@
 extends RefCounted
-const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 ## Per-instance, event-driven geometry. Shared fleet meshes are never mutated.
 const WHEEL := preload("res://gameplay/desert_cars/TuningWheelKit.gd")
 const ROOF := preload("res://gameplay/desert_cars/TuningSunroof.gd")
+const AERO := preload("res://gameplay/desert_cars/TuningAeroKit.gd")
+const AERO_STYLE_KEYS := {"skirts":"skirt_style","front_lip":"lip_style","diffuser":"diffuser_style"}
 var model: Node3D
 var wheels: Array = []
 var tails: Array = []
 var roof: RefCounted
+var aero: RefCounted
 var spoiler: Node3D
 var _wheel_signature := ""
 var _spoiler_style := ""
@@ -53,6 +55,8 @@ func bind(source: Node3D, painter: RefCounted) -> void:
 					if tail_index >= 0: default_color = equipment._tail_colors[tail_index]
 				tails.append({"material":instance,"part":part,"surface":surface,"color":default_color,"emission":instance.emission})
 	for group in groups.values(): wheels.append(group)
+	aero = AERO.new()
+	aero.bind(source,wheels,tails,painter)
 
 func apply(parts: Dictionary, catalog: Dictionary, paint: Color) -> void:
 	var wheel_part: Dictionary = catalog.get(parts.get("wheel_model",""),{})
@@ -78,6 +82,8 @@ func apply(parts: Dictionary, catalog: Dictionary, paint: Color) -> void:
 	_apply_tails(catalog.get(parts.get("taillights",""),{}))
 	roof.apply(str(catalog.get(parts.get("sunroof",""),{}).get("sunroof_style","")))
 	_apply_spoiler(str(catalog.get(parts.get("spoiler",""),{}).get("spoiler_style","")),paint)
+	for slot in AERO_STYLE_KEYS:
+		aero.apply(slot,str(catalog.get(parts.get(slot,""),{}).get(AERO_STYLE_KEYS[slot],"")),paint)
 
 func _apply_tails(part: Dictionary) -> void:
 	var signature := str(part.get("tail_color",""))
@@ -112,60 +118,61 @@ func _apply_spoiler(style: String, paint: Color) -> void:
 	if is_instance_valid(spoiler): spoiler.free()
 	spoiler = null
 	if style.is_empty(): return
-	var bounds := AABB()
-	var first := true
-	for part: MeshInstance3D in model.find_children("*","MeshInstance3D",true,false):
-		if part.mesh == null or part.has_meta("wheel_center"): continue
-		var box: AABB = ROOF.relative_transform(part,model)*part.mesh.get_aabb()
-		bounds = box if first else bounds.merge(box)
-		first = false
-	var cabin: Dictionary = model.get_meta("vehicle_interior_spec",{})
-	var z := bounds.end.z-.15
-	var y := float(cabin.get("belt",bounds.size.y*.60))+.06
-	# A hatch carries its spoiler along the rear roof edge, a saloon on its boot.
-	var rear := float(cabin.get("rear_top",0.0))
-	if rear > bounds.end.z*.53:
-		z = rear-.04
-		y = float(cabin.get("roof",bounds.end.y))+.04
-	var measured := _mount_height(z)
-	if measured > -INF: y = measured+.006
+	# Posição lida no perfil real da lata: tampa do porta-malas ou borda do teto.
+	var mount: Dictionary = aero.spoiler_mount()
+	if mount.is_empty(): return
+	var z := float(mount.z)
+	var y := float(mount.y)+.006
+	var hatch := bool(mount.hatch)
 	spoiler = Node3D.new()
 	spoiler.name = "TuningSpoiler"
+	if float(mount.rear) < 0.0: spoiler.rotation.y = PI
 	model.add_child(spoiler)
 	var material := WHEEL.material(paint,.30,.42)
 	spoiler.set_meta("paint_material",material)
-	var width := bounds.size.x*.78
-	var height := .19 if style == "sport" else .035
+	var width := float(mount.half_width)*2.0*(.92 if hatch else .88)
+	if style == "ducktail":
+		_ducktail(spoiler,width*1.04,y,z,material)
+		return
+	if style == "gt":
+		# Asa de pista: pescoço alto, perfil mais fundo e placas laterais grandes.
+		# Na borda do teto o pescoço é mais curto, como nos hatches de rali.
+		var lift := .18 if hatch else .30
+		for side in [-1.0,1.0]:
+			_box(spoiler,Vector3(side*width*.28,y+lift*.5,z-.02),Vector3(.04,lift,.14),material)
+		var wing := _box(spoiler,Vector3(0,y+lift+.02,z+.02),Vector3(width*1.06,.04,.30),material)
+		wing.rotation.x = -.10
+		for side in [-1.0,1.0]: _box(spoiler,Vector3(side*width*.53,y+lift+.01,z+.02),Vector3(.018,.20,.36),material)
+		return
+	var height := (.09 if hatch else .19) if style == "sport" else .035
 	for side in [-1.0,1.0]: _box(spoiler,Vector3(side*width*.30,y+height*.5,z),Vector3(.055,maxf(.03,height),.10),material)
 	_box(spoiler,Vector3(0,y+height,z),Vector3(width,.045,.21 if style == "sport" else .12),material)
 	if style == "sport":
 		for side in [-1.0,1.0]: _box(spoiler,Vector3(side*width*.5,y+height+.025,z),Vector3(.025,.11,.24),material)
 
-func _mount_height(z: float) -> float:
-	var highest := -INF
-	for part: MeshInstance3D in model.find_children("*","MeshInstance3D",true,false):
-		if part.mesh == null or part.has_meta("wheel_center"): continue
-		var xf := ROOF.relative_transform(part,model)
-		for surface in part.mesh.get_surface_count():
-			var material := part.get_active_material(surface) as StandardMaterial3D
-			if material == null or material.resource_name not in ["paint","roof_paint"]: continue
-			var arrays := MESH_ARRAYS.arrays_of(part.mesh,surface)
-			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
-			var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
-			var count := indices.size() if not indices.is_empty() else vertices.size()
-			for i in range(0,count,3):
-				var a: Vector3 = xf*vertices[indices[i] if not indices.is_empty() else i]
-				var b: Vector3 = xf*vertices[indices[i+1] if not indices.is_empty() else i+1]
-				var c: Vector3 = xf*vertices[indices[i+2] if not indices.is_empty() else i+2]
-				var denom := (b.z-c.z)*(a.x-c.x)+(c.x-b.x)*(a.z-c.z)
-				if absf(denom) < .00001: continue
-				var u := ((b.z-c.z)*(-c.x)+(c.x-b.x)*(z-c.z))/denom
-				var v := ((c.z-a.z)*(-c.x)+(a.x-c.x)*(z-c.z))/denom
-				if u >= 0 and v >= 0 and u+v <= 1:
-					highest = maxf(highest,u*a.y+v*b.y+(1.0-u-v)*c.y)
-	return highest
+## Rabo de pato: cunha contínua sobre a borda da tampa, levantando na ponta de trás.
+static func _ducktail(parent: Node3D, width: float, y: float, z: float, material: Material) -> void:
+	var profile := [Vector2(z-.20,y-.004),Vector2(z+.03,y-.004),Vector2(z+.045,y+.075),Vector2(z+.01,y+.06)]
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var half := width*.5
+	var stations := [[-half,.55],[-half+.08,1.0],[half-.08,1.0],[half,.55]]
+	var inside := Vector3(0,y+.02,z-.05)
+	var rings: Array = []
+	for station in stations:
+		var ring: Array = []
+		# As pontas baixam a lâmina sem mexer na base, que segue na tampa.
+		for p: Vector2 in profile: ring.append(Vector3(float(station[0]),y+(p.y-y)*float(station[1]),p.x))
+		rings.append(ring)
+	for s in rings.size()-1:
+		for i in profile.size():
+			var j := (i+1)%profile.size()
+			AERO._quad(st,rings[s][i],rings[s][j],rings[s+1][j],rings[s+1][i],inside,0)
+	for ring in [rings[0],rings[rings.size()-1]]:
+		for i in range(1,ring.size()-1): AERO._triangle(st,ring[0],ring[i],ring[i+1],inside)
+	AERO._commit(parent,st,material)
 
-static func _box(parent: Node3D, at: Vector3, size: Vector3, material: Material) -> void:
+static func _box(parent: Node3D, at: Vector3, size: Vector3, material: Material) -> MeshInstance3D:
 	var part := MeshInstance3D.new()
 	var mesh := BoxMesh.new()
 	mesh.size = size
@@ -173,3 +180,4 @@ static func _box(parent: Node3D, at: Vector3, size: Vector3, material: Material)
 	part.position = at
 	part.material_override = material
 	parent.add_child(part)
+	return part

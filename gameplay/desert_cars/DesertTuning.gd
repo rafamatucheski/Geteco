@@ -62,24 +62,62 @@ const PARTS := {
 	"neon_magenta":{"label":"Neon magenta", "slot":"neon", "cost":900, "wins":1, "effect":"Iluminação sob o carro, só visual", "neon":"ff3fa8"},
 	"neon_amber":{"label":"Neon âmbar", "slot":"neon", "cost":900, "wins":1, "effect":"Iluminação sob o carro, só visual", "neon":"ff9a2e"},
 	"neon_violet":{"label":"Neon violeta", "slot":"neon", "cost":900, "wins":1, "effect":"Iluminação sob o carro, só visual", "neon":"9a63ff"},
-	"neon_white":{"label":"Neon branco", "slot":"neon", "cost":900, "wins":1, "effect":"Iluminação sob o carro, só visual", "neon":"e8f1ff"}
+	"neon_white":{"label":"Neon branco", "slot":"neon", "cost":900, "wins":1, "effect":"Iluminação sob o carro, só visual", "neon":"e8f1ff"},
+	"spoiler_ducktail":{"label":"Rabo de pato", "slot":"spoiler", "cost":2300, "wins":0, "effect":"Aerofólio da carroceria", "spoiler_style":"ducktail"},
+	"spoiler_gt":{"label":"Asa GT", "slot":"spoiler", "cost":4800, "wins":0, "effect":"Aerofólio alto de pista", "spoiler_style":"gt"},
+	"skirt_slim":{"label":"Reta", "slot":"skirts", "cost":1400, "wins":0, "effect":"Saia lateral discreta na cor do carro", "skirt_style":"slim"},
+	"skirt_sport":{"label":"Esportiva", "slot":"skirts", "cost":2100, "wins":0, "effect":"Saia lateral com lábio, na cor do carro", "skirt_style":"sport"},
+	"skirt_vented":{"label":"Com entradas", "slot":"skirts", "cost":2600, "wins":0, "effect":"Saia esportiva com entradas de ar", "skirt_style":"vented"},
+	"skirt_carbon":{"label":"Carbono", "slot":"skirts", "cost":3400, "wins":0, "effect":"Saia esportiva em fibra de carbono", "skirt_style":"carbon"},
+	"skirt_step":{"label":"Estribo", "slot":"skirts", "cost":1900, "wins":0, "effect":"Estribo lateral de utilitário", "skirt_style":"step"},
+	"lip_sport":{"label":"Lábio esportivo", "slot":"front_lip", "cost":1300, "wins":0, "effect":"Lábio sob o para-choque, na cor do carro", "lip_style":"sport"},
+	"lip_splitter":{"label":"Splitter de carbono", "slot":"front_lip", "cost":2400, "wins":0, "effect":"Lâmina dianteira larga com defletores", "lip_style":"splitter"},
+	"diffuser_street":{"label":"Difusor de rua", "slot":"diffuser", "cost":1500, "wins":0, "effect":"Difusor traseiro com quatro aletas", "diffuser_style":"street"},
+	"diffuser_race":{"label":"Difusor de pista", "slot":"diffuser", "cost":2900, "wins":0, "effect":"Difusor de carbono com seis aletas e luz de chuva", "diffuser_style":"race"},
+	"paint_royal":{"label":"Azul royal", "slot":"paint", "cost":1200, "wins":0, "effect":"Pintura da carroceria", "body_color":"1f3f9a"},
+	"paint_wine":{"label":"Vinho", "slot":"paint", "cost":1200, "wins":0, "effect":"Pintura da carroceria", "body_color":"5e1a26"},
+	"paint_lime":{"label":"Verde limão", "slot":"paint", "cost":1200, "wins":0, "effect":"Pintura da carroceria", "body_color":"9bc53d"},
+	"paint_pink":{"label":"Rosa", "slot":"paint", "cost":1200, "wins":0, "effect":"Pintura da carroceria", "body_color":"d9628f"},
+	"wheels_black":{"label":"Preto", "slot":"wheels", "cost":700, "wins":0, "effect":"Acabamento dos aros; mantém o modelo da roda", "wheel_color":"1c1f22"},
+	"wheels_gold":{"label":"Dourado", "slot":"wheels", "cost":700, "wins":0, "effect":"Acabamento dos aros; mantém o modelo da roda", "wheel_color":"c9a24a"},
+	"wheels_white":{"label":"Branco", "slot":"wheels", "cost":700, "wins":0, "effect":"Acabamento dos aros; mantém o modelo da roda", "wheel_color":"e6e6e1"},
+	"wheel_six_spoke":{"label":"Seis raios", "slot":"wheel_model", "cost":2400, "wins":0, "effect":"Modelo dos aros", "wheel_design":"six_spoke"},
+	"wheel_multi_spoke":{"label":"Raios finos", "slot":"wheel_model", "cost":3300, "wins":0, "effect":"Modelo dos aros", "wheel_design":"multi_spoke"}
 }
 
 ## Ordem e nome dos espaços na oficina; peças de potência somam no teto de rua até este limite.
-const SLOTS := ["ecu","engine","turbo","nitro","gearbox","suspension","tires","weight","exhaust","paint","finish","wheels","neon","spoiler","sunroof","taillights","wheel_model","wheel_size"]
-const SLOT_LABELS := {"ecu":"ECU","engine":"Motor","turbo":"Turbo","nitro":"Nitro","gearbox":"Câmbio","suspension":"Suspensão","tires":"Pneus","weight":"Peso","exhaust":"Escape","paint":"Pintura","finish":"Acabamento","wheels":"Cor dos aros","neon":"Neon","spoiler":"Aerofólio","sunroof":"Teto solar","taillights":"Lanternas","wheel_model":"Modelo de roda","wheel_size":"Tamanho do aro"}
+const SLOTS := ["ecu","engine","turbo","nitro","gearbox","suspension","tires","weight","exhaust","paint","finish","wheels","neon","spoiler","sunroof","taillights","wheel_model","wheel_size","skirts","front_lip","diffuser"]
+const SLOT_LABELS := {"ecu":"ECU","engine":"Motor","turbo":"Turbo","nitro":"Nitro","gearbox":"Câmbio","suspension":"Suspensão","tires":"Pneus","weight":"Peso","exhaust":"Escape","paint":"Pintura","finish":"Acabamento","wheels":"Cor dos aros","neon":"Neon","spoiler":"Aerofólio","sunroof":"Teto solar","taillights":"Lanternas","wheel_model":"Modelo de roda","wheel_size":"Tamanho do aro","skirts":"Saias laterais","front_lip":"Lábio dianteiro","diffuser":"Difusor"}
 const SUNROOF_MODELS := ["desert_faisca","desert_coyote","desert_siroco","desert_bison","desert_mirage","desert_faisca_rally","desert_coyote_drag","desert_mirage_gt","rauhz_focus_mk1","supra_a80","digo_gol_1993","digo_amarok_2014","jessica_jetta_gli"]
 const MAX_STREET_CAP_GAIN := .20
+## Peças que o carro já traz de fábrica fundidas na malha da carroceria: a versão de
+## oficina ficaria duplicada por cima (auditoria visual de 27/10). Asas e aerofólios de teto,
+## splitter das edições GT/Drag/Rally, aletas do Mirage GT e escapamento lateral do Drag.
+const FACTORY_KIT := {
+	"spoiler":["sport_coupe","monaliza","supra_a80","desert_siroco","desert_mirage","desert_mirage_gt","desert_faisca","desert_faisca_rally","desert_coyote_drag","metro_hatch","rauhz_focus_mk1","orbita_micro","lince_rs","raijin_gt","kite_type_s"],
+	"front_lip":["desert_faisca_rally","desert_coyote_drag","desert_mirage_gt"],
+	"diffuser":["desert_mirage_gt"],
+	"skirts":["desert_coyote_drag"]}
 
 static func compatible(part_id: String, car_id: String) -> bool:
 	if not PARTS.has(part_id): return false
 	var slot := str(PARTS[part_id].slot)
 	if slot == "sunroof": return car_id in SUNROOF_MODELS
-	if slot in ["spoiler","wheel_model","wheel_size","taillights"]:
+	if slot in ["spoiler","wheel_model","wheel_size","taillights","skirts","front_lip","diffuser"]:
 		if not STREET.has(car_id) and car_id not in SUNROOF_MODELS: return false
 		if car_id.begins_with("bike_") or car_id in ["beach_buggy","dune_buggy","beach_cabriolet"]: return false
-		if slot == "spoiler" and (str(STREET.PROFILES.get(car_id,{}).get("kind","")) == "utility" or car_id.contains("pickup") or car_id in ["desert_bison","digo_amarok_2014"]): return false
+		var utility := is_utility(car_id)
+		if slot in ["spoiler","front_lip","diffuser"] and utility: return false
+		if car_id in FACTORY_KIT.get(slot,[]): return false
+		# Utilitário leva só o estribo; carro baixo leva só as saias de verdade.
+		if slot == "skirts" and utility != (str(PARTS[part_id].get("skirt_style","")) == "step"): return false
 	return true
+
+## Picapes e SUVs altos: levam estribo, não aerofólio, lábio nem difusor.
+const UTILITY := ["desert_bison","digo_amarok_2014","rapina_r","bastiao_63"]
+
+static func is_utility(car_id: String) -> bool:
+	return str(STREET.PROFILES.get(car_id,{}).get("kind","")) == "utility" or car_id.contains("pickup") or car_id in UTILITY
 
 static func clean_parts(parts: Dictionary) -> Dictionary:
 	var result := {}

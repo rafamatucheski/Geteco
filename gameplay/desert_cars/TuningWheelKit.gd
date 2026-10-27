@@ -24,13 +24,13 @@ static func build(design: String, radius: float, color: Color, width: float = .2
 			quad(tyre,point(x,rim,a),point(x,radius,a),point(x,radius,b),point(x,rim,b))
 			quad(alloy,point(x,rim*.91,a),point(x,rim,a),point(x,rim,b),point(x,rim*.91,b))
 			triangle(recess,Vector3(side*width*.38,0,0),point(side*width*.38,rim*.95,a),point(side*width*.38,rim*.95,b))
-	var spokes := 5 if design == "five_spoke" else (10 if design == "mesh" else 8)
+	var spokes: int = {"five_spoke":5,"six_spoke":6,"mesh":10,"multi_spoke":15}.get(design,8)
 	for side in [-1.0,1.0]:
 		var x: float = side*(width*.5+.003)
 		for i in spokes:
 			var angle := TAU*float(i)/float(spokes)
 			var sweep := .24 if design == "turbine" else 0.0
-			var spread := .11 if design == "five_spoke" else .055
+			var spread: float = {"five_spoke":.11,"six_spoke":.085,"multi_spoke":.03}.get(design,.055)
 			quad(alloy,point(x,rim*.16,angle-spread),point(x,rim*.94,angle+sweep-spread),point(x,rim*.94,angle+sweep+spread),point(x,rim*.16,angle+spread))
 			if design == "mesh":
 				quad(alloy,point(x,rim*.25,angle-.08),point(x,rim*.94,angle+.40),point(x,rim*.94,angle+.46),point(x,rim*.25,angle))

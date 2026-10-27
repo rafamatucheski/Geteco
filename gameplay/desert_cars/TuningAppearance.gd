@@ -3,6 +3,7 @@ const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
 ## Per-instance material finishes and bounded mesh kits; no frame processing. The saved
 ## parts own the override, while Vehicle.paint_color retains its original colour.
 const TUNING := preload("res://gameplay/desert_cars/DesertTuning.gd")
+const VISUAL_KIT_SLOTS := ["spoiler","skirts","front_lip","diffuser"]
 # Exact PassengerDesign / sport-coupe alloy palettes. Rotor greys #667177 and
 # #53585a deliberately remain in the fixed surface of the mixed wheel batch.
 const VERTEX_ALLOY_COLORS := [Color("aab6bc"),Color("9eaeb7"),Color("ba9865"),Color("bdad87"),Color("d9e2df"),Color("a47c51"),Color("abb6be"),Color("c1a36d"),Color("c4c8c9"),Color("b9c4c3"),Color("dfd5b2"),Color("b4b6b7"),Color("9caeb9"),Color("bebcb0"),Color("c7ac77"),Color("b8c2c6"),Color("adb9c1"),Color("b5b8a7"),Color("b7babc")]
@@ -140,7 +141,14 @@ func damage_base(material: StandardMaterial3D, fallback: Dictionary) -> Dictiona
 	return fallback
 
 static func apply_vehicle(car: CharacterBody3D, parts: Dictionary) -> void:
-	var has_style := parts.has("paint") or parts.has("finish") or parts.has("wheels") or parts.has("spoiler") or parts.has("sunroof") or parts.has("taillights") or parts.has("wheel_model") or parts.has("wheel_size")
+	# Peça visual comprada antes de o carro perder a compatibilidade (ex.: aerofólio sobre
+	# asa de fábrica) continua no inventário, mas não é montada.
+	var archetype := str(car.get("archetype"))
+	if not archetype.is_empty():
+		parts = parts.duplicate()
+		for slot in parts.keys():
+			if slot in VISUAL_KIT_SLOTS and not TUNING.compatible(str(parts[slot]),archetype): parts.erase(slot)
+	var has_style := parts.has("paint") or parts.has("finish") or parts.has("wheels") or parts.has("spoiler") or parts.has("sunroof") or parts.has("taillights") or parts.has("wheel_model") or parts.has("wheel_size") or parts.has("skirts") or parts.has("front_lip") or parts.has("diffuser")
 	if not has_style and not car.has_meta("tuning_appearance"): return
 	var appearance: RefCounted = car.get_meta("tuning_appearance") if car.has_meta("tuning_appearance") else null
 	if appearance == null:

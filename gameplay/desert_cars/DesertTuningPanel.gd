@@ -54,7 +54,7 @@ var _rotation_button: Button
 ## Quem prepara o carro: o Digo no deserto, o mecânico na Maciota.
 var mechanic_name := "Digo"
 var owned_only := false
-const GROUPS := {"Visual":["paint","finish","spoiler","sunroof","taillights","neon"],"Rodas":["wheel_model","wheel_size","wheels"],"Desempenho":["ecu","engine","turbo","nitro","gearbox","suspension","tires","weight","exhaust"]}
+const GROUPS := {"Visual":["paint","finish","sunroof","taillights","neon"],"Carroceria":["spoiler","skirts","front_lip","diffuser"],"Rodas":["wheel_model","wheel_size","wheels"],"Desempenho":["ecu","engine","turbo","nitro","gearbox","suspension","tires","weight","exhaust"]}
 var _group := "Visual"
 var _menu_level := 0
 var _draft_parts: Dictionary = {}
@@ -552,6 +552,7 @@ func _rebuild_cards() -> void:
 			if not _slot_available(str(slot)): continue
 			_menu_button(_slot_title(str(slot)),_open_slot.bind(str(slot)),str(slot))
 		if _menu_level == 0:
+			if GROUPS["Carroceria"].any(func(slot): return _slot_available(str(slot))): _menu_button("Carroceria",_open_category.bind("Carroceria"),"Carroceria")
 			_menu_button("Rodas",_open_category.bind("Rodas"),"Rodas")
 			_menu_button("Desempenho",_open_category.bind("Desempenho"),"Desempenho")
 		return
