@@ -93,13 +93,14 @@ const MAX_STREET_CAP_GAIN := .20
 ## Peças que o carro já traz de fábrica fundidas na malha da carroceria: a versão de
 ## oficina ficaria duplicada por cima (auditoria visual de 27/10). Splitter das edições
 ## GT/Drag/Rally, aletas do Mirage GT, escapamento lateral do Drag e as asas que não
-## dá para separar (no Faísca o lábio do teto é soldado no teto; os esportivos 2.0 ainda
-## não foram medidos). As outras asas saem pela FACTORY_WING_BOX.
+## dá para separar (no Faísca o lábio do teto é soldado no teto). As outras asas saem
+## pela FACTORY_WING_BOX. Os esportivos 2.0 (runtime/SportFleet.gd) já saem do gerador com
+## splitter, difusor e saias assados: a peça de oficina ficaria por cima da de fábrica.
 const FACTORY_KIT := {
-	"spoiler":["desert_faisca","desert_faisca_rally","lince_rs","raijin_gt","kite_type_s"],
-	"front_lip":["desert_faisca_rally","desert_coyote_drag","desert_mirage_gt"],
-	"diffuser":["desert_mirage_gt"],
-	"skirts":["desert_coyote_drag"]}
+	"spoiler":["desert_faisca","desert_faisca_rally"],
+	"front_lip":["desert_faisca_rally","desert_coyote_drag","desert_mirage_gt","tauro_v10","raijin_gt","kite_type_s","lince_rs","brisa_s","sakura_s15"],
+	"diffuser":["desert_mirage_gt","tauro_v10","raijin_gt","lince_rs","brisa_s"],
+	"skirts":["desert_coyote_drag","tauro_v10","raijin_gt","kite_type_s","lince_rs","sakura_s15"]}
 ## Asa de fábrica que some quando entra o aerofólio de oficina: caixa no espaço do modelo
 ## [mínimo, máximo] e a altura que a peça precisa alcançar (a tampa e os frisos dela ficam).
 ## Medido nos componentes soltos de cada malha assada em 27/10 (TuningFactoryWing).
@@ -113,7 +114,15 @@ const FACTORY_WING_BOX := {
 	"desert_coyote_drag":[Vector3(-.88,.76,2.02),Vector3(.88,.88,2.20),.84],
 	"metro_hatch":[Vector3(-.66,1.33,1.29),Vector3(.66,1.43,1.57),1.40],
 	"rauhz_focus_mk1":[Vector3(-.66,1.27,1.02),Vector3(.66,1.33,1.22),1.30],
-	"orbita_micro":[Vector3(-.60,1.47,.98),Vector3(.60,1.53,1.19),1.50]}
+	"orbita_micro":[Vector3(-.60,1.47,.98),Vector3(.60,1.53,1.19),1.50],
+	# Esportivos 2.0, medidos com tools/fleet_fixups/probe_factory_wings.gd (27/10): asa em
+	# colunas (Raijin, Kite), aerofólio de teto (Lince), lábio da tampa do motor (Tauro) e
+	# rabo de pato (Sakura). Lanternas, placa e o vidro da tampa passam da caixa e ficam.
+	"raijin_gt":[Vector3(-.83,.96,2.02),Vector3(.83,1.16,2.32),1.05],
+	"kite_type_s":[Vector3(-.74,.89,1.96),Vector3(.74,1.10,2.195),1.0],
+	"lince_rs":[Vector3(-.64,1.37,1.13),Vector3(.64,1.46,1.41),1.44],
+	"tauro_v10":[Vector3(-.77,.82,2.18),Vector3(.77,.87,2.30),.845],
+	"sakura_s15":[Vector3(-.71,.90,2.08),Vector3(.71,.96,2.225),.94]}
 
 static func compatible(part_id: String, car_id: String) -> bool:
 	if not PARTS.has(part_id): return false
