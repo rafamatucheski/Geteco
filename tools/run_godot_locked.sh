@@ -31,6 +31,9 @@
 # o encerramento mata a ÁRVORE de processos (o `_console.exe` é só o lançador do filho).
 # Se este script receber INT/TERM (ex.: `timeout` externo), também mata a árvore do Godot.
 set -u
+# Teste não assiste ao filme da abertura (nem ao prólogo): Arrival.skip_opening. Quem testa a
+# própria abertura roda com GETECO_SKIP_OPENING=0.
+export GETECO_SKIP_OPENING="${GETECO_SKIP_OPENING:-1}"
 DEFAULT_DIR="${TEMP:-/tmp}"
 LOCK_DIR="${GODOT_LOCK_DIR:-$DEFAULT_DIR}"
 if [ "$LOCK_DIR" = "$DEFAULT_DIR" ]; then wait_others="${GODOT_WAIT_OTHERS:-1}"; else wait_others="${GODOT_WAIT_OTHERS:-0}"; fi

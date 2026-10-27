@@ -111,6 +111,7 @@ func save_block_reason() -> String:
 	var reason: String = drag.save_block_reason() if is_instance_valid(drag) else ""
 	if not reason.is_empty(): return reason
 	if is_instance_valid(canyon) and not canyon.save_block_reason().is_empty(): return canyon.save_block_reason()
+	if is_instance_valid(story) and is_instance_valid(story.reunion) and not story.reunion.save_block_reason().is_empty(): return story.reunion.save_block_reason()
 	return frontier.save_block_reason() if is_instance_valid(frontier) else ""
 func cancel_attempt() -> void:
 	if is_instance_valid(heist): heist.cancel_attempt()
@@ -214,6 +215,12 @@ func nearest_action() -> Dictionary:
 		var toll_action: Dictionary=entrance_toll.nearest_action()
 		if not toll_action.is_empty(): return toll_action
 	if is_instance_valid(drag) and drag.active: return drag.nearest_action()
+	# Etapa de missão do ato 2 num ponto que já tem outra ação (Fiscal Rosa, orelhão do Horizonte, Dona
+	# Fátima, torre, rádio de Santa Lua, Nonato, Seu Bento) ou a prova de história na concentração: a
+	# missão vem antes enquanto a etapa estiver aberta.
+	if session.state.region_id=="desert" and is_instance_valid(story) and is_instance_valid(story.reunion):
+		var mission_action: Dictionary=story.reunion.nearest_action()
+		if not mission_action.is_empty(): return mission_action
 	if is_instance_valid(extras):
 		var extra_action: Dictionary=extras.nearest_action()
 		if not extra_action.is_empty(): return extra_action
@@ -248,6 +255,7 @@ func perform(action: Dictionary) -> bool:
 	if str(action.get("target","")).begins_with("secret:"): return frontier.perform(action)
 	if str(action.get("target","")).begins_with("discovery:"): return discoveries.perform(action)
 	if action.get("id","")=="desert_drag": return drag.perform(str(action.get("target","")))
+	if action.get("id","")=="desert_story" and str(action.get("target","")).begins_with("act2:"): return story.reunion.perform(str(action.target))
 	if action.get("id","")=="desert_story": return story.perform(str(action.get("target","")))
 	if action.get("id","")!="desert" or nearest_action().get("target","")!=action.get("target",""): return false
 	if action.target=="workshop":

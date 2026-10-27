@@ -1,0 +1,119 @@
+extends SceneTree
+## Prólogo jogável curto, sem Main.tscn: a chegada de um jogo novo abre a blitz antes do filme da
+## balsa, a cena joga sozinha (autoplay, relógio x4) até a algema e devolve para o filme com a marca
+## gravada; depois o ponto de vista "vicente" (flashback do ato 2) é chamado pela API e devolve o
+## on_done. Não mede desempenho nem confere a imagem.
+const ARRIVAL := preload("res://runtime/Arrival.gd")
+const BLITZ := preload("res://runtime/prologue/BlitzScene.gd")
+var failures: Array[String] = []
+var checks := 0
+
+## O mínimo que Arrival._lock e _set_phase leem da sessão.
+class FakeSession extends Node:
+	var modal := false
+	var world := FakeWorld.new()
+class FakeWorld extends RefCounted:
+	var player := FakePlayer.new()
+	var gameplay := FakeGameplay.new()
+class FakePlayer extends RefCounted:
+	var input_locked := false
+class FakeGameplay extends RefCounted:
+	var health := 100.0
+
+func _initialize() -> void:
+	# Este teste confere o prólogo: o runner pula a abertura por padrão (Arrival.skip_opening).
+	OS.set_environment("GETECO_SKIP_OPENING", "0")
+	OS.set_environment("GETECO_SKIP_PROLOGUE", "")
+	run.call_deferred()
+
+func check(value: bool, label: String) -> void:
+	checks += 1
+	if not value: failures.append(label); push_error(label)
+
+func wait_until(condition: Callable, seconds: float) -> bool:
+	var deadline := Time.get_ticks_msec() + int(seconds * 1000.0)
+	while Time.get_ticks_msec() < deadline:
+		if condition.call(): return true
+		await process_frame
+	return condition.call()
+
+func run() -> void:
+	var previous_3d := root.disable_3d
+	var session := FakeSession.new()
+	root.add_child(session)
+	var arrival := ARRIVAL.new()
+	arrival.configure(session)
+	session.add_child(arrival)
+	var saves: Array[Dictionary] = []
+	arrival.changed.connect(func(): saves.append(arrival.snapshot()))
+	arrival._begin_opening()
+	var blitz = arrival.presentation
+	check(blitz != null and blitz.get_script() == BLITZ and blitz.pov == "dante", "jogo novo abre o prólogo (Dante) antes do filme da balsa")
+	check(arrival.phase == "opening" and arrival.controls_locked, "a chegada fica travada na fase da abertura")
+	check(not saves.is_empty() and saves[-1].prologue_seen == false, "checkpoint do começo grava o prólogo pendente")
+	blitz.autoplay = true
+	blitz.pace = 4.0
+	await process_frame
+	check(paused and root.disable_3d, "a blitz pausa o mundo e desliga o 3D do viewport principal")
+	await wait_until(func(): return blitz.stage.begins_with("dante_"), 20.0)
+	check(blitz.colleagues.size() == 2 and blitz.colleagues.all(func(officer): return officer.get_script() == preload("res://runtime/prologue/BlitzColleague.gd") and is_instance_valid(officer.get("body")) and "_hands" in str(officer.body.body_source)), "dois colegas fardados (PoliceModel) com as mãos do Dante")
+	var brother := preload("res://runtime/prologue/BlitzBrother.gd")
+	check(blitz.dante.get_script() == brother and blitz.dante.identity_id == "dante" and blitz.dante.outfit_material != null, "Dante jovem é o dante.glb do jogo, de farda")
+	var seated: bool = await wait_until(func(): return blitz.vicente.sitting(), 5.0)
+	check(blitz.vicente.get_script() == brother and blitz.vicente.identity_id == "vicente" and seated, "Vicente é o mesmo dante.glb com a roupa dele, ao volante")
+	check(absf(BLITZ.detour_x(60.0) - BLITZ.LANE_X) < .01 and absf(BLITZ.detour_x(-14.0) + BLITZ.LANE_X) < .01 and absf(BLITZ.detour_x(-80.0) - BLITZ.LANE_X) < .01, "carros desviam dos cavaletes pela outra faixa e voltam")
+	var fought: bool = await wait_until(func(): return blitz.stage in ["dante_fight", "dante_flee", "dante_wounded", "dante_cuff"], 90.0)
+	check(fought and is_instance_valid(blitz.shooter) and blitz.shooter.visible, "alguém atira da cabine e começa o tiroteio (stage=%s)" % str(blitz.stage))
+	var shooter_down: bool = await wait_until(func(): return blitz.shooter_health <= 0, 60.0)
+	check(shooter_down and blitz.shooter_hits == blitz.SHOOTER_HEALTH, "o atirador demora a cair: %d acertos" % blitz.shooter_hits)
+	var wounded: bool = await wait_until(func(): return blitz.vicente_hit, 60.0)
+	check(wounded, "Dante atira em Vicente, que fugia")
+	var reached_cuff: bool = await wait_until(func(): return blitz.stage == "dante_cuff", 90.0)
+	check(reached_cuff, "o prólogo chega à algema (stage=%s)" % str(blitz.stage))
+	check(blitz.signaled and blitz.truck_speed == 0.0, "o caminhão parou depois da lanterna")
+	var escorted: bool = await wait_until(func(): return blitz.stage == "dante_escort", 20.0)
+	check(escorted and blitz.cuff_progress >= 1.0, "algemado, ele vai para a viatura")
+	var opened: bool = await wait_until(func(): return bool(blitz.truck.get_meta("cargo_open", false)), 30.0)
+	check(opened and blitz.truck.get_node("CargoLoot").visible, "Lima abre o baú: a carga é legal, está à vista")
+	var prison: bool = await wait_until(func(): return blitz.stage == "dante_prison", 40.0)
+	check(prison and blitz._prison.visible, "a viatura leva Vicente para a prisão")
+	var after: bool = await wait_until(func(): return blitz.stage == "dante_after", 40.0)
+	check(after and blitz._room.visible and blitz.dante.sitting(), "oito anos depois: Dante sentado, arrependido")
+	var returned: bool = await wait_until(func(): return arrival.prologue_seen, 30.0)
+	check(returned and is_instance_valid(arrival.presentation) and arrival.presentation.get("film") != null, "fim do prólogo segue para o filme da balsa")
+	check(saves[-1].prologue_seen == true, "o prólogo visto é gravado antes do filme")
+	await process_frame
+	check(not is_instance_valid(blitz), "a cena da blitz sai da árvore")
+	# Sem chegar ao desembarque: tirar a chegada encerra o filme e devolve pausa e 3D.
+	arrival.queue_free()
+	await process_frame
+	await process_frame
+	check(not paused and root.disable_3d == previous_3d, "pausa e 3D voltam ao que eram")
+	# Ato 2: a missão chama o flashback de Vicente e recebe o retorno.
+	var results: Array = []
+	var flashback = BLITZ.start(session, "vicente", func(was_skipped: bool): results.append(was_skipped))
+	flashback.autoplay = true
+	flashback.pace = 4.0
+	await process_frame
+	check(paused and flashback.pov == "vicente", "o flashback pausa o mundo de quem chamou")
+	var stopped: bool = await wait_until(func(): return not is_instance_valid(flashback) or flashback.stage in ["vicente_wait", "vicente_face", "vicente_black"], 60.0)
+	check(stopped, "Vicente para o caminhão na blitz")
+	var faced: bool = await wait_until(func(): return not is_instance_valid(flashback) or flashback.stage in ["vicente_face", "vicente_black"], 30.0)
+	check(faced, "a porta abre no rosto de Dante")
+	var done: bool = await wait_until(func(): return not results.is_empty(), 30.0)
+	check(done and results == [false], "on_done chamado uma vez, sem pulo: %s" % str(results))
+	await process_frame
+	check(not paused and root.disable_3d == previous_3d, "flashback devolve pausa e 3D")
+	# Pulo (Esc duas vezes) também devolve, com skipped = true.
+	var skipped_results: Array = []
+	var skipped_scene = BLITZ.start(null, "vicente", func(was_skipped: bool): skipped_results.append(was_skipped))
+	await wait_until(func(): return skipped_scene.stage.begins_with("vicente_"), 20.0)
+	skipped_scene.request_skip()
+	skipped_scene.request_skip()
+	await process_frame
+	check(skipped_results == [true] and not paused, "pular devolve on_done(true) e solta o mundo")
+	session.queue_free()
+	await process_frame
+	print("PROLOGUE BLITZ checks=%d failures=%d" % [checks, failures.size()])
+	for failure in failures: print("FAIL ", failure)
+	quit(0 if failures.is_empty() else 1)

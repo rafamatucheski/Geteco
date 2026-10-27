@@ -4,6 +4,7 @@ extends Node
 const DIALOGUE := preload("res://runtime/ArrivalDialogue.gd")
 const VOICE := preload("res://audio/ExpressiveVoice.gd")
 const STORY := preload("res://systems/campaign/HarborStory.gd")
+const BLITZ := preload("res://runtime/prologue/BlitzScene.gd")
 const VERSION := 2
 const PARK := Vector3(210, 0, 151)
 const ARRIVAL := Vector3(233,.18,194)
@@ -20,6 +21,9 @@ var flags: Dictionary = {}
 var active := false
 var controls_locked := false
 var opening_completed := false
+## Prólogo jogável (a blitz, oito anos antes) já visto. Jogo novo começa sem ele; save que não tem
+## a marca é anterior ao prólogo e segue sem repetir nada (restore_state assume visto).
+var prologue_seen := false
 var presentation: CanvasLayer
 var objective_text := ""
 var target := Vector3.ZERO
@@ -164,10 +168,37 @@ func start_or_resume(loaded: bool = false) -> void:
 		_begin_opening()
 	if story_repaired: changed.emit()
 
+## GETECO_SKIP_OPENING=1 pula o filme da abertura (e o prólogo jogável, quando houver) e cai direto no
+## desembarque. tools/run_godot_locked.sh liga por padrão: quem roda teste não precisa assistir ao filme
+## toda vez. O jogo normal (Jogar.cmd, export) não define a variável e mostra a abertura.
+static func skip_opening() -> bool:
+	return OS.get_environment("GETECO_SKIP_OPENING") == "1"
+
+## Só o prólogo. Testes do filme da balsa (GETECO_SKIP_OPENING=0) ligam isto para cair direto no filme.
+static func skip_prologue() -> bool:
+	return skip_opening() or OS.get_environment("GETECO_SKIP_PROLOGUE") == "1"
+
 func _begin_opening() -> void:
 	if is_instance_valid(presentation): return
+	if skip_opening():
+		prologue_seen = true
+		opening_completed = true
+		STORY.mark_opening(session.state.world_state)
+		changed.emit()
+		_begin_disembark.call_deferred()
+		return
 	_set_phase("opening", "", Vector3.ZERO)
 	_lock(true)
+	if skip_prologue(): prologue_seen = true
+	if not prologue_seen:
+		# A blitz vem antes do filme da balsa. A fase continua "opening" (a sessão já trava entrada
+		# e checkpoint nela); a marca só vira depois da algema, então fechar no meio repete o prólogo.
+		presentation = BLITZ.start(session, "dante", func(_skipped: bool):
+			presentation = null
+			prologue_seen = true
+			changed.emit()
+			_begin_opening())
+		return
 	presentation = preload("res://runtime/OpeningPresentation.gd").new()
 	presentation.completed.connect(func(_skipped: bool):
 		opening_completed = true
@@ -638,7 +669,7 @@ func notify_maciota_met() -> void:
 	finished.emit()
 
 func snapshot() -> Dictionary:
-	return {"version":VERSION, "phase":phase, "flags":flags.duplicate(), "caption":_caption, "opening_completed":opening_completed}
+	return {"version":VERSION, "phase":phase, "flags":flags.duplicate(), "caption":_caption, "opening_completed":opening_completed, "prologue_seen":prologue_seen}
 
 static func validate_snapshot(data: Dictionary) -> bool:
 	var version: Variant = data.get("version")
@@ -650,6 +681,7 @@ static func validate_snapshot(data: Dictionary) -> bool:
 	var valid_flags: Array = LEGACY_FLAGS if version == 1 else FLAGS
 	if data.get("phase") not in valid_phases: return false
 	if not data.get("opening_completed", false) is bool: return false
+	if not data.get("prologue_seen", true) is bool: return false
 	var caption: Variant = data.get("caption")
 	if typeof(caption) not in [TYPE_INT, TYPE_FLOAT] or not is_finite(float(caption)) or caption != floorf(caption) or caption < -1 or caption > 3: return false
 	var gap := false
@@ -671,6 +703,7 @@ func restore_state(data: Dictionary) -> bool:
 	flags = data.flags.duplicate()
 	_caption = int(data.caption)
 	opening_completed = data.get("opening_completed", false)
+	prologue_seen = data.get("prologue_seen", true)
 	if data.version == 1: _migrate_legacy_checkpoint()
 	return true
 

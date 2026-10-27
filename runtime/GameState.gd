@@ -108,6 +108,8 @@ func restore_snapshot(data: Dictionary) -> bool:
 	if data.world.has("remote_coal_secret_revealed") and not data.world.remote_coal_secret_revealed is bool: return false
 	if data.world.has("mining_raid"):
 		if not preload("res://gameplay/mining/MiningRaidState.gd").valid_wallet(data.world.mining_raid,data.economy): return false
+	var campaign_progress: Array = next_campaign.snapshot().completed + next_campaign.snapshot().get("legacy_skipped", [])
+	if not preload("res://gameplay/urban_v1/vertice_night/VerticeNightState.gd").valid_world(data.world, data.economy, campaign_progress): return false
 	if data.world.has("mining_equipment") and not preload("res://gameplay/mining/MiningOperation.gd").validate_snapshot(data.world.mining_equipment): return false
 	if data.world.has("ashbend_secret_car") and (not data.world.ashbend_secret_car is Dictionary or not preload("res://gameplay/urban_v1/CobraSecretCar3D.gd").validate_record(data.world.ashbend_secret_car)): return false
 	if data.world.get("vehicles",[]).size() > 64: return false
@@ -150,7 +152,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 	if data.world.has("mission_world"):
 		if not data.world.mission_world is Dictionary: return false
 		var contract: Dictionary = data.world.get("activities",{}).get("tow_contract",{})
-		if not preload("res://runtime/MissionWorld.gd").validate_ownership(data.world.mission_world,next_campaign.active_id,contract): return false
+		if not preload("res://runtime/MissionWorld.gd").validate_ownership(data.world.mission_world,next_campaign.active_id,contract,preload("res://systems/campaign/HelenaAct1State.gd").debt_tow_index(data.world)): return false
 	if data.world.has("services"):
 		if not data.world.services is Dictionary or not preload("res://runtime/Services.gd").validate_snapshot(data.world.services): return false
 	if data.world.has("robberies"):
@@ -175,6 +177,8 @@ func restore_snapshot(data: Dictionary) -> bool:
 	if not _validate_cross_contracts(next_economy,next_campaign,next_canonical_campaign,data.world): return false
 	if not preload("res://runtime/desert/DesertSaveContract.gd").valid(data.world,data.economy): return false
 	if data.world.has("desert_drag_return") and not preload("res://activities/desert_drag/DragReturnCourse.gd").validate_snapshot(data.world.desert_drag_return): return false
+	# Ato 1, cadeia da Helena: etapas coerentes com a campanha e recibo se e só se a missão terminou.
+	if not preload("res://systems/campaign/HelenaAct1State.gd").validate(data.world,data.economy,next_campaign.snapshot()): return false
 	# The dedicated Rachas profile starts at the meet without completing story
 	# missions. This save mode does not change the bridge's campaign-only policy.
 	if data.world.has("drag_standalone"):

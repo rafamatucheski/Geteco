@@ -26,6 +26,16 @@ const RIVALS := {
 	"nadir":{"name":"Nadir","car":"desert_mirage_gt","distance":800.0,"reaction":.11,"mistake":.01,"parts":{}},
 	"rauhz":{"name":"Rauhz","car":"rauhz_focus_mk1","distance":800.0,"reaction":.085,"mistake":.005,"parts":{}},
 }
+## Provas de história do ato 2 (runtime/desert/act2): A2-05 contra Vicente e A2-08 contra o Cascavel.
+## Abertas só na etapa da missão; não entram no progresso das arrancadas (resultado vai para a missão).
+const STORY_RIVALS := {
+	"vicente":{"name":"Vicente","car":"desert_coyote_drag","distance":800.0,"reaction":.12,"mistake":.012,"parts":{}},
+	"cascavel":{"name":"Cascavel","car":"desert_mirage_gt","distance":800.0,"reaction":.1,"mistake":0.0,"parts":{}},
+}
+## A2-08: a mangueira do turbo do carro de Dante foi cortada antes da largada. Depois desta distância o
+## motor perde força de verdade (acelerador limitado e sem nitro); posição e velocidade não são tocadas.
+const SABOTAGE_FROM := 400.0
+const SABOTAGE_THROTTLE := .2
 signal race_completed(result: Dictionary)
 signal return_completed(result: Dictionary)
 var return_course: Node3D
@@ -244,10 +254,12 @@ func cancel_waiting_context(reason: String = "cancelled") -> void:
 func can_race(identity: String) -> bool:
 	if _challenge_pending and is_instance_valid(challenge_controller) and challenge_controller.can_start(identity): return true
 	if OPEN_ROSTER.CARS.has(identity): return true
+	if STORY_RIVALS.has(identity): return is_instance_valid(session.desert) and is_instance_valid(session.desert.story) and session.desert.story.reunion.story_race_open(identity)
 	return HONOR.can_race(session.state.world_state) if identity=="takeshi" else PROGRESS.can_race(session.state.world_state,identity)
 
 static func rival_config(identity: String) -> Dictionary:
 	if OPEN_ROSTER.CARS.has(identity): return OPEN_ROSTER.CARS[identity]
+	if STORY_RIVALS.has(identity): return STORY_RIVALS[identity]
 	return TAKESHI if identity=="takeshi" else RIVALS.get(identity,{})
 
 func _start(identity: String = "") -> bool:
@@ -428,6 +440,8 @@ static func rival_parts(identity: String) -> Dictionary:
 		"nadir": return {"ecu":"ecu_1","engine":"race_cam","turbo":"turbo_mid","nitro":"nitro_street","tires":"drag_tires","weight":"lightweight","suspension":"drag_suspension"}
 		"rauhz": return {"ecu":"ecu_2","engine":"race_cam","turbo":"turbo_large","nitro":"nitro_race","tires":"drag_tires","weight":"lightweight","suspension":"drag_suspension","exhaust":"race_exhaust"}
 		"takeshi": return preload("res://data/TakeshiRewardSpec.gd").PARTS.duplicate()
+		"vicente": return {"ecu":"ecu_2","engine":"race_cam","turbo":"turbo_large","nitro":"nitro_race","tires":"drag_tires","weight":"lightweight","suspension":"drag_suspension"}
+		"cascavel": return {"ecu":"ecu_2","engine":"race_cam","turbo":"turbo_large","nitro":"nitro_race","tires":"drag_tires","weight":"lightweight","suspension":"drag_suspension","exhaust":"race_exhaust"}
 	return {}
 
 func _input(event: InputEvent) -> void:
@@ -500,6 +514,9 @@ func _physics_process(delta: float) -> void:
 			var drive = entry.drive
 			var throttle_value: float = throttle if i==0 else (1.0 if elapsed>=_rival_wait else 0.0)
 			var nitro_value: bool = _nitro() if i==0 else (drive.gear>=3 and elapsed>6.0)
+			if i==0 and rival_id=="cascavel" and _offset(entry.car.global_position)>=SABOTAGE_FROM:
+				throttle_value = minf(throttle_value,SABOTAGE_THROTTLE)
+				nitro_value = false
 			var crossed := is_finite(float(entry.finish))
 			if crossed:
 				if _return_attempt: return_course.runoff(entry,delta)
@@ -529,6 +546,9 @@ func _physics_process(delta: float) -> void:
 		# already finished. Keep the absolute timeout and rival-DNF recovery.
 		elif elapsed > (120.0 if _return_attempt else 60.0) or ((not _challenge_attempt or is_finite(float(racers[0].finish))) and elapsed > minf(float(racers[0].finish),float(racers[1].finish))+8.0):
 			if is_finite(float(racers[0].finish)): phase = "braking"
+			# Prova de história: o rival cruzou e Dante ficou muito para trás (o turbo cortado da aposta
+			# do Cascavel faz isso). É derrota de verdade, não prova anulada, senão a missão não anda.
+			elif STORY_RIVALS.has(rival_id) and is_finite(float(racers[1].finish)) and elapsed <= 60: phase = "braking"
 			else: cancel_attempt("timeout"); return
 	elif phase == "braking":
 		_runoff += delta
@@ -732,6 +752,8 @@ func _finish() -> void:
 		result=challenge_controller.record_finish(player_time,other_time,player_car)
 	elif night:
 		result = night_controller.record_finish(player_time,other_time,player_car)
+	elif STORY_RIVALS.has(rival_id):
+		result = {"finished":true,"story":true,"first_win":false,"rival_id":rival_id,"won":player_time<other_time,"seconds":player_time}
 	elif casual:
 		result = {"finished":true,"casual":true,"first_win":false,"rival_id":rival_id,"won":player_time<other_time,"seconds":player_time,"number":27}
 	else:

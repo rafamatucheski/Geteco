@@ -5,6 +5,7 @@ const DIGO := preload("res://systems/campaign/DigoProgress.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const ROSTER := preload("res://runtime/desert/drag_meet/DragMeetRoster.gd")
+const REUNION := preload("res://runtime/desert/act2/VicenteReunion.gd")
 const LOCATIONS := {
 	"vicente":LAYOUT.DRAG_VICENTE+Vector3(0,.05,0),
 	"livia":ROSTER.LEADERS.livia+Vector3(0,.05,0),
@@ -22,10 +23,16 @@ var _clock := 0.0
 var _elapsed := 0.0
 var _talking_to := ""
 var _manifest_visual: Node3D
+## Ato 2, A2-01 "Oito anos" (encontro, Motel Oásis, Capela) e A2-02 "Respeita a pista" (Bia, Digo,
+## Arquibancada): runtime/desert/act2.
+var reunion: Node3D
 func configure(owner_session) -> void:
 	session = owner_session
 	name = "DesertCampaign"
 	session.world.gameplay.player_died.connect(_reset_visit)
+	reunion = REUNION.new()
+	add_child(reunion)
+	reunion.configure(session)
 
 func _reset_visit() -> void:
 	for actor in actors.values():
@@ -49,6 +56,8 @@ func _process(delta: float) -> void:
 		var nearby: bool = active and session.world.player.global_position.distance_to(LOCATIONS[id]) < 85.0
 		if not nearby: retired.erase(id)
 		if is_instance_valid(session.desert.drag) and session.desert.drag.active and session.desert.drag.rival_id==id: nearby=false
+		# Durante o reencontro, Vicente espera no motel ou na capela, não no encontro.
+		if id=="vicente" and reunion.away_from_meet(): nearby=false
 		if actors.has(id) and is_instance_valid(actors[id]):
 			if not nearby:
 				actors[id].queue_free()
@@ -114,8 +123,9 @@ func nearest_action() -> Dictionary:
 		if point.distance_to(service)<1.8: return {"id":"desert_story","target":"irene","label":"Conversar com Irene"}
 		return {}
 	if not session.state.place_id.is_empty(): return {}
-	if data.met_vicente and not data.cargo_found and point.distance_to(MANIFEST)<1.6:
-		return {"id":"desert_story","target":"manifest","label":"Conferir manifesto de carga"}
+	var reunion_action: Dictionary = reunion.nearest_action()
+	if not reunion_action.is_empty(): return reunion_action
+	# O caixote do Miragem virou etapa de A2-03 "Peso morto" (ação da missão, acima).
 	for id in actors:
 		if is_instance_valid(actors[id]) and not actors[id].dead and point.distance_to(actors[id].global_position)<1.7:
 			return {"id":"desert_story","target":id,"label":"Conversar com "+str(CONTACT.LOOKS[id].name)}
@@ -123,29 +133,36 @@ func nearest_action() -> Dictionary:
 func perform(target: String, offer_jobs := true) -> bool:
 	if nearest_action().get("target","") != target: return false
 	_talking_to = target
+	if target == "vicente_reunion" or target.begins_with("act2:"): return reunion.perform(target)
 	if offer_jobs and session.desert.contracts.open_contact(target): return true
 	var data := STATE.data(session.state.world_state)
 	match target:
 		"vicente":
-			if not data.met_vicente:
-				_say([["Vicente","Oito anos, Dante. Agora você aparece?"],["Dante","Eu tentei reabrir o caso. Saí da polícia quando encontrei os primeiros indícios."],["Vicente","Indícios não devolvem nada. Essa turma está comigo. Aqui, ninguém resolve nada na bala."],["Vicente","Quer ficar? Conheça as pistas. E pare de prometer."]],"met_vicente")
-			elif data.bank_proof and data.jessica_met and not data.delivered:
-				_say([["Dante","O manifesto e o registro do Cobre têm a mesma autorização. A carga foi trocada antes da operação."],["Vicente","Você me algemou, Dante. Eu lembro de cada minuto."],["Dante","Eu sei. Aqui está a prova. A operação foi armada."],["Vicente","E o que eu faço com os oito anos que perdi?"]],"delivered")
-			else: _say([["Vicente","Os caminhões param no Miragem. Se ainda quer respostas, comece pela carga."]])
-		"manifest":
-			_say([["Dante","Mesmo código da carga dos Cobras. O beneficiário recebeu pelo Cobre antes da apreensão."],["Dante","Preciso comparar a data com o registro do banco."]],"cargo_found")
+			# A conversa única de antes de 20/10 virou a primeira etapa da missão "Oito anos".
+			if not data.met_vicente: return reunion.meet()
+			# A entrega da prova virou A2-13 "Os oito anos" (Arquibancada, ataque e passagem norte).
+			if reunion.vicente(): return true
+			_say([["Vicente","Os caminhões param no Miragem. Se ainda quer respostas, comece pela carga."]])
 		"irene":
-			if data.cargo_found and not data.bank_proof:
-				_say([["Irene","Esse manifesto tem o número da transferência. Posso conferir o comprovante que você trouxe."],["Irene","A ordem foi alterada antes da operação. O nome do motorista foi incluído depois."],["Dante","Vicente. Foi assim que o colocaram naquela carga."]],"bank_proof")
-			else: _say([["Irene","Guarde os comprovantes das corridas. Aqui, uma assinatura errada custa caro."]])
+			# A conferência do manifesto virou A2-04 "A ordem alterada".
+			if reunion.irene(): return true
+			_say([["Irene","Guarde os comprovantes das corridas. Aqui, uma assinatura errada custa caro."]])
 		"livia": _say([["Lívia","Tem largada de manhã, de tarde e de noite. Chegue com o carro inteiro e respeite a pista."],["Dante","E o Vicente?"],["Lívia","Ali com a turma dele. Cuida das apostas e dos contatos. Primeiro, mostre que sabe trocar uma marcha."]])
-		"raul": _say([["Raul","Meu carro tem mais idade que metade dos pilotos. Não precisa de peça cara para largar direito."],["Raul","Deixei um manifesto no caixote do posto Miragem. Veio junto de uma carga estranha. Confere os números."]])
+		"raul":
+			# A2-03 "Peso morto" começa e termina na conversa do Raul.
+			if reunion.raul(): return true
+			_say([["Raul","Meu carro tem mais idade que metade dos pilotos. Não precisa de peça cara para largar direito."],["Raul","Deixei um manifesto no caixote do posto Miragem. Veio junto de uma carga estranha. Confere os números."]])
 		"jessica":
+			# A2-08 "Chave na chave" começa na conversa da Jessica depois da prova dela.
+			if reunion.jessica(): return true
 			if data.jessica_met: _say([["Jessica","Agora você conhece essa reta. E aquela conversa com seu irmão ainda está te esperando."]])
 			else: _say([["Jessica","Olha quem saiu de Harbor. Meu carro está pronto, Dante."],["Dante","Você também corre por aqui?"],["Jessica","Com essa turma desde antes de você chegar. Sobe na tabela e a gente se encontra na largada."]])
 		"nadir": _say([["Nadir","Na minha prova, uma troca ruim custa a corrida inteira. Prepare o carro com o Digo."]])
 		"rauhz": _say([["Rauhz","Passou pelo Nadir? Então falta nós dois. Meu Focus já está pronto."],["Dante","O preto?"],["Rauhz","MK1, 2002. Na última largada, cada troca conta."]])
-		"bia": _say([["Bia","Relação curta sai forte e acaba cedo. Turbo grande pede giro. Escolha a preparação para a pista."],["Bia","Digo atende lá dentro. Depois de correr com ele, a oficina fica à sua disposição."]])
+		"bia":
+			# A2-02 começa pela conversa da Bia.
+			if reunion.bia(): return true
+			_say([["Bia","Relação curta sai forte e acaba cedo. Turbo grande pede giro. Escolha a preparação para a pista."],["Bia","Digo atende lá dentro. Depois de correr com ele, a oficina fica à sua disposição."]])
 		_: return false
 	return true
 func _say(rows: Array, flag := "") -> void:
@@ -160,7 +177,10 @@ func race_finished(result: Dictionary) -> void:
 	if result.rival_id == "digo": DIGO.complete_desert_race(session.state.world_state,DIGO.DESERT_RACE_ID,true)
 	if result.rival_id == "jessica":
 		STATE.mark(session.state.world_state,"jessica_met")
-		_say([["Jessica","Você melhorou. Ainda lembra daquele serviço em Harbor?"],["Dante","Lembro. Agora tenho o que vim buscar."],["Jessica","Então termina essa conversa com seu irmão."]])
+		# Com A2-08 aberta, a conversa da Jessica é a da missão (pelo "Conversar" dela).
+		if not REUNION.STATE.chain_ready(session.state.world_state,"bet"):
+			_say([["Jessica","Você melhorou. Ainda lembra daquele serviço em Harbor?"],["Dante","Lembro. Agora tenho o que vim buscar."],["Jessica","Então termina essa conversa com seu irmão."]])
+	reunion.race_finished(result)
 func objective() -> String:
 	if session.state.region_id != "desert": return ""
 	return objective_for(session.state.world_state)
@@ -168,7 +188,11 @@ func objective() -> String:
 ## Mesmo texto do objetivo, sem depender da região (diário, JournalArcs).
 static func objective_for(world_state: Dictionary) -> String:
 	var data := STATE.data(world_state)
-	if not data.met_vicente: return "Encontre Vicente no encontro da arrancada."
+	if not data.met_vicente:
+		var reunion_step := REUNION.objective_for(world_state)
+		return reunion_step if not reunion_step.is_empty() else "Encontre Vicente no encontro da arrancada."
+	var track_step := REUNION.objective_for(world_state)
+	if not track_step.is_empty(): return track_step
 	if not DIGO.workshop_unlocked(world_state): return "Corra contra Digo na reta."
 	if not data.cargo_found: return "Confira a carga dos Cobras no posto Miragem."
 	if not data.bank_proof: return "Leve o manifesto a Irene no Cobre."
@@ -181,6 +205,13 @@ static func act_complete(world_state: Dictionary) -> bool:
 	return bool(STATE.data(world_state).delivered)
 func target_position() -> Vector3:
 	var data := STATE.data(session.state.world_state)
+	var mission_point: Vector3 = reunion.target_position()
+	if mission_point != Vector3.INF: return mission_point
+	var world: Dictionary = session.state.world_state
+	match REUNION.STATE.track_stage(world) if data.met_vicente else "-":
+		"": return LOCATIONS.bia
+		"race": return LAYOUT.drag_staging_point()
+	if REUNION.STATE.chain_ready(world, "cargo") and REUNION.STATE.chain_stage(world, "cargo") in ["", "raul"]: return LOCATIONS.raul
 	if not data.met_vicente or (data.bank_proof and data.jessica_met and not data.delivered): return LOCATIONS.vicente
 	if not DIGO.workshop_unlocked(session.state.world_state): return LAYOUT.drag_staging_point()
 	if not data.cargo_found: return MANIFEST

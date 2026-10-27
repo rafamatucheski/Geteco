@@ -28,6 +28,7 @@ cd "$(dirname "$0")/.."
 
 FAST=(
 	"headless|tests/test_core_contracts.gd|"
+	"headless|tests/test_prologue_save_contract.gd|"
 	"headless|tests/test_session_cleanup_registry.gd|"
 	"headless|tests/test_orphan_save_slots.gd|"
 	"headless|tests/test_full_save.gd|"
@@ -37,6 +38,7 @@ FAST=(
 	"headless|tests/test_garage_rewards.gd|"
 	"headless|tests/test_police_crime_contract.gd|"
 	"headless|tests/test_private_security_crime.gd|"
+	"headless|tests/test_gpu_release_scene_swap.gd|"
 )
 # As quatro primeiras são a verificação mínima do CLAUDE.md depois de mudança estrutural.
 WORLD=(

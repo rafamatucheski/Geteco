@@ -8,6 +8,7 @@ const TRAVEL_BAG_CLAIM := "monaliza_travel_bag"
 const WEAPONS := preload("res://gameplay/WeaponCatalog.gd")
 const TRUNK_VIEW := preload("res://runtime/TrunkView.gd")
 const POLICE_TRUNK := preload("res://runtime/PoliceTrunk.gd")
+const ACT2 := preload("res://runtime/desert/act2/VicenteAct2State.gd")
 var session
 var _menu_health := 0.0
 var _trunk_view: Node3D
@@ -26,11 +27,25 @@ func refresh() -> void:
 	garage.on_location_changed()
 	session.show_message(String(TranslationServer.translate("Monaliza liberada: teu carro fica na baia da oficina. Porta-malas guarda a maleta; a bancada conserta.")))
 
+## Carro que tem o armazém: a Monaliza ou, depois que ela foi perdida na aposta do ato 2 (A2-08), o carro
+## que a Bia e o Digo prepararam (A2-09). O contêiner "trunk" da carteira é o mesmo; só muda o carro.
+func _lost() -> bool:
+	return session != null and ACT2.monaliza_lost(session.state.world_state)
+
 func _car():
-	return session.garage_rewards.cars.get(ID) if session != null and session.garage_rewards != null else null
+	if session == null: return null
+	if _lost():
+		var id := ACT2.trunk_car(session.state.world_state)
+		if id.is_empty(): return null
+		for car in session.controller.vehicles:
+			if is_instance_valid(car) and not car.is_queued_for_deletion() and car.vehicle_id == id: return car
+		return null
+	return session.garage_rewards.cars.get(ID) if session.garage_rewards != null else null
 
 func _available() -> bool:
-	return session != null and session.ready_for_play and not session.controller.save_invalid and session.garage_rewards != null and session.garage_rewards.data.vehicles.has(ID)
+	if session == null or not session.ready_for_play or session.controller.save_invalid: return false
+	if _lost(): return not ACT2.trunk_car(session.state.world_state).is_empty()
+	return session.garage_rewards != null and session.garage_rewards.data.vehicles.has(ID)
 
 func _rear() -> Vector3:
 	var car = _car()
@@ -45,6 +60,7 @@ func _near_trunk() -> bool:
 	return session.world.get_world_3d().direct_space_state.intersect_ray(ray).is_empty()
 
 func _near_service() -> bool:
+	if _lost(): return false
 	return session.state.place_id=="maciota" and session.world.player.position.distance_to(session.world.maciota_place.interaction_points.workbench)<2.0
 
 func nearest_action() -> Dictionary:
@@ -196,6 +212,9 @@ func _notice(text: String) -> void:
 	session.show_message(text)
 
 func _service(recover: bool) -> void:
+	if _lost():
+		_notice("A Monaliza está com os Cobras, lá no norte.")
+		return
 	if not _available() or not _near_service() or session.world.driving.occupied or session.world.gameplay.health<=0 or session.world.gameplay.health<_menu_health:
 		session.close_menu()
 		return

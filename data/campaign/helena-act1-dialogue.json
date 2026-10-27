@@ -1,0 +1,134 @@
+{
+  "version": 1,
+  "voice_status": "subtitles_only",
+  "source": "docs/roteiro-diretor-geteco-20261021.md (Ato 1 — Harbor)",
+  "m01_armed": [
+    {"speaker": "Helena", "pt": "Aqui dentro, só caneta.", "en": ""}
+  ],
+  "m01_name": [
+    {"speaker": "Helena", "pt": "Ferraz. Você é irmão do Vicente.", "en": ""},
+    {"speaker": "Dante", "pt": "Você conhece?", "en": ""},
+    {"speaker": "Helena", "pt": "Ele sacava aqui. Sempre em dinheiro vivo. Sempre com pressa.", "en": ""}
+  ],
+  "m02_chassis": [
+    {"speaker": "Ferrugem", "pt": "Serviço limpo. Conheço a mão.", "en": ""},
+    {"speaker": "Dante", "pt": "De quem?", "en": ""},
+    {"speaker": "Ferrugem", "pt": "Pergunta pro teu irmão.", "en": ""}
+  ],
+  "ride": [
+    {"speaker": "Helena", "pt": "Só até o canal. Se não for desvio.", "en": ""},
+    {"speaker": "Dante", "pt": "Não é.", "en": ""},
+    {"speaker": "Helena", "pt": "É, sim. Mas obrigada.", "en": ""},
+    {"speaker": "Helena", "pt": "Esse carro é do Maciota.", "en": ""},
+    {"speaker": "Dante", "pt": "Ele emprestou.", "en": ""},
+    {"speaker": "Helena", "pt": "O Maciota não empresta nem caneta.", "en": ""},
+    {"speaker": "Helena", "pt": "Minha família é de Santa Lua.", "en": ""},
+    {"speaker": "Helena", "pt": "No deserto. Onde ninguém precisa de banco.", "en": ""},
+    {"speaker": "Dante", "pt": "E você veio trabalhar num.", "en": ""},
+    {"speaker": "Helena", "pt": "Alguém tem que contar o dinheiro dos outros.", "en": ""},
+    {"speaker": "Helena", "pt": "Sua vez. Conta uma coisa sua.", "en": ""},
+    {"speaker": "Helena", "pt": "Tá. Eu também não contaria.", "en": ""}
+  ],
+  "ride_drop": [
+    {"speaker": "Helena", "pt": "Aqui tá bom.", "en": ""}
+  ],
+  "ride_abort": [
+    {"speaker": "Helena", "pt": "Eu desço aqui. Obrigada.", "en": ""}
+  ],
+  "debt_bank": [
+    {"speaker": "Helena", "pt": "Olha a dona Cida. Pagou a parcela do carro dia cinco.", "en": ""},
+    {"speaker": "Dante", "pt": "Tá.", "en": ""},
+    {"speaker": "Helena", "pt": "E pagou de novo dia cinco. Pra uma conta sem nome.", "en": ""},
+    {"speaker": "Dante", "pt": "Erro do banco?", "en": ""},
+    {"speaker": "Helena", "pt": "Erro do banco eu conserto. Isso aqui eu só posso imprimir.", "en": ""},
+    {"speaker": "Helena", "pt": "Quem não paga a segunda some com o carro. Eles chamam de garantia.", "en": ""},
+    {"speaker": "Dante", "pt": "E por que você tá me mostrando?", "en": ""},
+    {"speaker": "Helena", "pt": "Porque o Maciota disse que você não sabe ficar quieto.", "en": ""},
+    {"speaker": "Helena", "pt": "Eu também não. Mas eu tenho chefe.", "en": ""}
+  ],
+  "debt_neco": [
+    {"speaker": "Neco", "pt": "Guinchar de volta carro que os Cobras tomaram?", "en": ""},
+    {"speaker": "Neco", "pt": "Cê quer morrer de qual jeito?", "en": ""},
+    {"speaker": "Dante", "pt": "Você paga eles também.", "en": ""},
+    {"speaker": "Neco", "pt": "Todo mundo paga.", "en": ""},
+    {"speaker": "Neco", "pt": "Tá. Mas o diesel é por sua conta.", "en": ""}
+  ],
+  "debt_cobras": [
+    {"speaker": "Neco", "pt": "Tem Cobra chegando aí. Engata e some.", "en": ""}
+  ],
+  "press_yard": [
+    {"speaker": "Neco", "pt": "Não abre isso não, cara.", "en": ""},
+    {"speaker": "Dante", "pt": "Esse carro é de cliente do Maciota.", "en": ""},
+    {"speaker": "Neco", "pt": "Era. Agora é ferro.", "en": ""},
+    {"speaker": "Dante", "pt": "Quem trouxe?", "en": ""},
+    {"speaker": "Neco", "pt": "Um moleque que corre lá pro deserto. Paga a prensa adiantado, nunca pede nota.", "en": ""},
+    {"speaker": "Neco", "pt": "Falou que o irmão era polícia. Achei que era papo.", "en": ""},
+    {"speaker": "Neco", "pt": "Ah, não. Não me diz.", "en": ""}
+  ],
+  "press_chose_press": [
+    {"speaker": "Neco", "pt": "Tá bom. Esse eu não vi, você não viu.", "en": ""}
+  ],
+  "press_chose_return": [
+    {"speaker": "Neco", "pt": "Cê vai me arrumar problema, Ferraz.", "en": ""}
+  ],
+  "wash_dock": [
+    {"speaker": "Helena", "pt": "Me suspenderam.", "en": ""},
+    {"speaker": "Dante", "pt": "Eu sei.", "en": ""},
+    {"speaker": "Helena", "pt": "Disseram que eu demorei pra apertar o alarme.", "en": ""},
+    {"speaker": "Dante", "pt": "Demorou?", "en": ""},
+    {"speaker": "Helena", "pt": "Três segundos.", "en": ""},
+    {"speaker": "Helena", "pt": "Você guarda a arma pra entrar no banco e depois volta de máscara pra roubar ele. Eu queria entender esse homem.", "en": ""},
+    {"speaker": "Dante", "pt": "E entendeu?", "en": ""},
+    {"speaker": "Helena", "pt": "Não. Mas o dinheiro que vocês levaram era dos Cobras. Eu fazia a conta deles.", "en": ""},
+    {"speaker": "Dante", "pt": "Então você sabe onde tem mais.", "en": ""},
+    {"speaker": "Helena", "pt": "Eu não disse isso.", "en": ""},
+    {"speaker": "Dante", "pt": "Não precisou.", "en": ""},
+    {"speaker": "Helena", "pt": "O posto deles fecha à meia-noite. O cofre só esvazia de manhã.", "en": ""},
+    {"speaker": "Helena", "pt": "Eu não vou. Mas eu vejo a câmera. Foi o banco que instalou.", "en": ""}
+  ],
+  "wash_manager": [
+    {"speaker": "Helena · telefone", "pt": "O gerente saiu. Tem dois minutos.", "en": ""}
+  ],
+  "wash_drawer": [
+    {"speaker": "Helena · telefone", "pt": "Gaveta de baixo. Não, a outra.", "en": ""}
+  ],
+  "wash_police": [
+    {"speaker": "Helena · telefone", "pt": "Viatura. Esquerda. Agora.", "en": ""}
+  ],
+  "wash_clear": [
+    {"speaker": "Helena · telefone", "pt": "Tá. Tá bom. Você saiu.", "en": ""}
+  ],
+  "wash_late": [
+    {"speaker": "Helena · telefone", "pt": "Ele voltou. Sai daí.", "en": ""}
+  ],
+  "folder_dock": [
+    {"speaker": "Helena", "pt": "A auditoria começa segunda.", "en": ""},
+    {"speaker": "Dante", "pt": "E?", "en": ""},
+    {"speaker": "Helena", "pt": "Tem uma pasta trancada na minha gaveta. Meus documentos. E cinco anos da conta dos Cobras.", "en": ""},
+    {"speaker": "Dante", "pt": "Você copiou.", "en": ""},
+    {"speaker": "Helena", "pt": "Alguém tinha que guardar.", "en": ""},
+    {"speaker": "Helena", "pt": "Eu não posso entrar lá.", "en": ""},
+    {"speaker": "Dante", "pt": "E eu posso?", "en": ""},
+    {"speaker": "Helena", "pt": "Você já entrou uma vez.", "en": ""},
+    {"speaker": "Helena", "pt": "Pela porta da frente, inclusive.", "en": ""},
+    {"speaker": "Helena", "pt": "Porta dos fundos. Dois, nove, zero, seis. O vigia da noite gosta de olhar o cofre.", "en": ""}
+  ],
+  "folder_seen": [
+    {"speaker": "Helena · telefone", "pt": "Deixa. Outra noite.", "en": ""}
+  ],
+  "folder_handoff": [
+    {"speaker": "Helena", "pt": "Ninguém nunca fez uma coisa dessas por mim sem cobrar depois.", "en": ""},
+    {"speaker": "Dante", "pt": "Quem disse que eu não vou cobrar?", "en": ""},
+    {"speaker": "Helena", "pt": "Então cobra.", "en": ""}
+  ],
+  "farewell": [
+    {"speaker": "Helena", "pt": "Vou pra casa. Santa Lua.", "en": ""},
+    {"speaker": "Dante", "pt": "E a auditoria?", "en": ""},
+    {"speaker": "Helena", "pt": "Acabou ontem. Não acharam nada.", "en": ""},
+    {"speaker": "Helena", "pt": "Engraçado, né.", "en": ""},
+    {"speaker": "Dante", "pt": "A lista do Takeshi diz que meu irmão tá no deserto.", "en": ""},
+    {"speaker": "Helena", "pt": "O deserto é grande.", "en": ""},
+    {"speaker": "Dante", "pt": "Santa Lua é pequena?", "en": ""},
+    {"speaker": "Helena", "pt": "Duzentas pessoas e um rádio. Se você aparecer, todo mundo vai saber.", "en": ""}
+  ]
+}

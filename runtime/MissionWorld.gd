@@ -23,6 +23,8 @@ var street_race: Node3D
 var pending_clue := ""
 const STREET_COURSE := preload("res://gameplay/urban_v1/CobraRaceCourse.gd")
 const STORY_PAY := preload("res://systems/campaign/StoryPay.gd")
+const ACT1 := preload("res://systems/campaign/HelenaAct1State.gd")
+const ACT1_LINES := preload("res://systems/campaign/HelenaAct1Lines.gd")
 
 func _ready() -> void:
 	targets.neco = Vector3(-750,0,550)*UNIT+Vector3(-6,0,8.7)
@@ -132,6 +134,10 @@ func _update_aftermath() -> void:
 
 func target_position() -> Vector3:
 	var id: String = session.state.campaign.target_id()
+	# Sem missão principal ativa, o marcador segue a cadeia da Helena (HelenaAct1), se houver etapa aberta.
+	if id.is_empty() and session.get("helena_act1") != null:
+		var side: Vector3 = session.helena_act1.target_position()
+		if side.is_finite(): return side
 	if session.state.campaign.active_id == "jessica_bank" and session.jessica != null: return session.jessica.target_position()
 	if id == "transfer_document" and session.state.place_id == "cobra_leader_house": return session.room.to_global(Vector3(2.4,.08,-.25))
 	if id == "maciota": return session.world.maciota_place.entry_position
@@ -231,6 +237,16 @@ func perform(id: String) -> bool:
 	if dialogue_key == "primeiro_giro_finish": lines.append_array(dialogue.lines("monaliza_intro",TranslationServer.get_locale()))
 	if lines.is_empty():
 		lines = [{"speaker":id.capitalize(),"message":str(step.objective)}]
+	# Roteiro de diretor (21/10): Helena barra a arma no balcão ("Aqui dentro, só caneta") e reconhece
+	# o sobrenome; Ferrugem passa o dedo no chassi raspado; o carimbo 0417 aparece nos registros.
+	if id == "helena" and not bank_copy:
+		if session.state.equipped_weapon not in ["","fists"]:
+			session.show_dialogue(ACT1_LINES.lines("m01_armed"))
+			return true
+		lines.append_array(ACT1_LINES.lines("m01_name"))
+	elif step.event == "ferrugem_work_order_received": lines.append_array(ACT1_LINES.lines("m02_chassis"))
+	elif step.event == "supply_records_collected":
+		lines.append({"speaker":_text("Registro de carga","Cargo record"),"message":_text("Carimbo de conferência: 0417.","Inspection stamp: 0417.")})
 	session.show_dialogue(lines,func(): _event(step.event,id))
 	return true
 
@@ -434,7 +450,7 @@ func begin_tow_job(job: Dictionary) -> bool:
 	var identity := _tow_identity(job)
 	if identity.is_empty(): return false
 	if job.get("story") != true and session.state.campaign.active_id == "cobra_contact": return false
-	if job.get("story") == true and not session.activities.snapshot().get("tow_contract",{}).is_empty(): return false
+	if (job.get("story") == true or job.has("chain")) and not session.activities.snapshot().get("tow_contract",{}).is_empty(): return false
 	if is_instance_valid(truck) and truck.health <= 0: return false
 	if not tow_job.is_empty(): return identity == _tow_identity(tow_job) and is_instance_valid(truck) and is_instance_valid(cargo)
 	if loaded: return false
@@ -451,11 +467,18 @@ func begin_tow_job(job: Dictionary) -> bool:
 		var model: String = {"local":"ranch_single","special":"sport_coupe","rare":"cobra_v8","police":"police_cruiser"}.get(kind,"ranch_single")
 		# Original parked slots: HarborSouthPort pickup / CobraNeighborhood workshop.
 		var point := Vector3(3480,0,4160)*UNIT if kind == "local" else Vector3(8340,0,1750)*UNIT
+		var yaw := PI*.5 if kind == "local" else PI
+		if job.has("chain"):
+			# M02-B: carro tomado pelos Cobras, parado num canto de Ashbend.
+			var debt: Dictionary = ACT1.DEBT_CARS[int(job.index)]
+			model = debt.model
+			point = debt.pickup
+			yaw = float(debt.yaw)
 		# A cancelled service leaves its car in the world. Reclaim only that
 		# service's nearby, matching body; never delete an unrelated obstruction.
 		cargo = _reusable_tow_cargo(model,point)
 		if cargo == null:
-			cargo = _spawn_tow_vehicle(model,point+Vector3.UP*.12,PI*.5 if kind == "local" else PI)
+			cargo = _spawn_tow_vehicle(model,point+Vector3.UP*.12,yaw)
 		if cargo == null: return false
 		cargo.vehicle_id = "story_tow_vehicle"
 		cargo.engine_disabled = true
@@ -469,7 +492,7 @@ func _reusable_tow_cargo(model: String, point: Vector3) -> CharacterBody3D:
 		if car.controlled or car.archetype != model or car.get_meta("region_id","") != "harbor": continue
 		if car.has_meta("awaiting_ground") or car.position.distance_to(point) > 12 or car.horizontal_velocity.length() > .3: continue
 		var previous: String = str(car.vehicle_id).trim_prefix("cancelled_")
-		var cancelled_service: bool = str(car.vehicle_id).begins_with("cancelled_") and (previous == "story:cobra_contact" or (previous.begins_with("tow_") and previous.trim_prefix("tow_").is_valid_int()))
+		var cancelled_service: bool = str(car.vehicle_id).begins_with("cancelled_") and (previous == "story:cobra_contact" or previous.begins_with("chain:debt:") or (previous.begins_with("tow_") and previous.trim_prefix("tow_").is_valid_int()))
 		if cancelled_service: return car
 	return null
 
@@ -591,7 +614,7 @@ func _tow_toggle() -> bool:
 		cargo.collision_mask = 7
 		cargo.set_physics_process(true)
 		loaded = false
-		unloaded_at_bay = cargo.position.distance_to(targets.neco_bay)<8
+		unloaded_at_bay = _at_tow_drop()
 		if unloaded_at_bay and session.state.campaign.target_id()=="neco_bay": _event("story_vehicle_unloaded","neco_bay")
 	session.save_game()
 	tow_event.emit("loaded" if loaded else "unloaded")
@@ -599,7 +622,13 @@ func _tow_toggle() -> bool:
 func tow_snapshot() -> Dictionary:
 	return {"token":_tow_identity(tow_job),"cargo_id":cargo.archetype if is_instance_valid(cargo) else "","loaded":loaded,"unloaded_at_bay":unloaded_at_bay,"alive":is_instance_valid(cargo) and cargo.health>0,"service_position":targets.neco}
 func can_finish_tow_job() -> bool:
-	return not tow_job.is_empty() and not loaded and unloaded_at_bay and is_instance_valid(cargo) and not cargo.has_meta("tow_pending") and cargo.health > 0 and not cargo.controlled and cargo.position.distance_to(targets.neco_bay) < 8 and cargo.horizontal_velocity.length() < .3
+	return not tow_job.is_empty() and not loaded and unloaded_at_bay and is_instance_valid(cargo) and not cargo.has_meta("tow_pending") and cargo.health > 0 and not cargo.controlled and _at_tow_drop() and cargo.horizontal_velocity.length() < .3
+
+## Onde o reboque é entregue: a baia do Neco, ou a porta do dono num serviço de M02-B.
+func _at_tow_drop() -> bool:
+	if not is_instance_valid(cargo): return false
+	if tow_job.has("chain"): return cargo.position.distance_to(ACT1.DEBT_CARS[int(tow_job.index)].drop) < ACT1.DEBT_DROP_RADIUS
+	return cargo.position.distance_to(targets.neco_bay) < 8
 
 func finish_tow_job() -> bool:
 	if not can_finish_tow_job(): return false
@@ -637,6 +666,11 @@ func cancel_tow_job() -> bool:
 	return true
 
 static func _tow_identity(job: Dictionary) -> String:
+	if job.has("chain"):
+		# M02-B (HelenaAct1): {"chain": "debt", "index": 0..2}, nada além disso.
+		var at: Variant = job.get("index")
+		if job.size() != 2 or job.chain != "debt" or typeof(at) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(at)) or float(at) != floorf(float(at)) or int(at) not in range(ACT1.DEBT_CARS.size()): return ""
+		return "chain:debt:%d" % int(at)
 	if job.get("story") == true: return "story:cobra_contact"
 	var token: Variant = job.get("token","")
 	if not token is String or not token.begins_with("tow_") or not token.trim_prefix("tow_").is_valid_int(): return ""
@@ -688,9 +722,11 @@ static func validate_snapshot(data: Dictionary) -> bool:
 	if (data.loaded or data.unloaded_at_bay) and data.cargo.get("pending",false): return false
 	return true
 
-static func validate_ownership(data: Dictionary, active_mission: String, activity_contract: Dictionary) -> bool:
+static func validate_ownership(data: Dictionary, active_mission: String, activity_contract: Dictionary, debt_index := -1) -> bool:
 	if not validate_snapshot(data): return false
 	if data.job.is_empty(): return activity_contract.is_empty()
+	# Serviço de M02-B: só na etapa do mesmo carro e sem outro serviço de guincho junto.
+	if data.job.has("chain"): return activity_contract.is_empty() and active_mission != "cobra_contact" and debt_index >= 0 and _tow_identity(data.job) == "chain:debt:%d" % debt_index
 	if data.job.get("story") == true: return active_mission == "cobra_contact" and activity_contract.is_empty()
 	return _tow_identity(data.job) == _tow_identity(activity_contract)
 

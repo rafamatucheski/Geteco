@@ -104,7 +104,12 @@ func car_diagnostic(car, curve: Curve3D, label: String) -> void:
 		if node is Node3D: details.position = node.global_position
 		print("ARRIVAL_BLOCKER_CHAIN ",details)
 		cursor = node.get("blocker")
-func _initialize() -> void: run.call_deferred()
+func _initialize() -> void:
+	# Este teste confere a abertura: o runner a pula por padrão (Arrival.skip_opening).
+	OS.set_environment("GETECO_SKIP_OPENING", "0")
+	# O prólogo jogável (BlitzScene) tem teste próprio: aqui cai direto no filme da balsa.
+	OS.set_environment("GETECO_SKIP_PROLOGUE", "1")
+	run.call_deferred()
 func check(value: bool, label: String) -> void:
 	if not value: failures.append(label); push_error(label)
 func run() -> void:

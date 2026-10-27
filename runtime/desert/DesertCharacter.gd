@@ -10,6 +10,10 @@ const LOOKS := {
 	"nadir":{"name":"Nadir","variant":9514,"coat":"374f66","pants":"343434","skin":"a56f4b","hair":"171718","height":1.0,"build":1,"female":false,"hat":0,"beard":1,"glasses":true},
 	"bia":{"name":"Bia","variant":9515,"coat":"446973","pants":"36464a","skin":"d5a57c","hair":"613b25","height":.96,"build":1,"female":true,"hat":1,"beard":0,"glasses":false},
 	"irene":{"name":"Irene","variant":9516,"coat":"897961","pants":"3b3635","skin":"c5a484","hair":"9b9289","height":.98,"build":0,"female":true,"hat":0,"beard":0,"glasses":true},
+	# Ato 2 (runtime/desert/act2): o piloto dos Cobras e o advogado de Vicente.
+	"cascavel":{"name":"Cascavel","variant":9518,"coat":"2b2f24","pants":"1d1f1c","skin":"b98a66","hair":"151515","height":1.03,"build":2,"female":false,"hat":0,"beard":1,"glasses":true},
+	"helena":{"name":"Helena","variant":9520,"coat":"5b6b7c","pants":"2f3640","skin":"c99a7a","hair":"2a1d17","height":.97,"build":0,"female":true,"hat":0,"beard":0,"glasses":false},
+	"teodoro":{"name":"Teodoro","variant":9519,"coat":"3a3f4a","pants":"2c3038","skin":"d7b49a","hair":"6b6b6b","height":.98,"build":1,"female":false,"hat":0,"beard":0,"glasses":true},
 	"jessica":{"name":"Jessica","variant":9301,"coat":"d8d0c6","pants":"27323b","skin":"efc5a5","hair":"d7b969","height":1.0,"build":0,"female":true,"hat":0,"beard":0,"glasses":false},
 }
 var identity_id := "vicente"
