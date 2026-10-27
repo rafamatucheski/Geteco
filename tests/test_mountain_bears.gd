@@ -28,9 +28,15 @@ func run() -> void:
 	world.set_meta("skip_arrival", true)
 	root.add_child(world)
 	current_scene = world
-	for i in 1200:
+	# Espera por tempo, não por quadros: com janela e cache frio a carga passa de 1200 quadros (27/10).
+	var deadline := Time.get_ticks_msec() + 180000
+	while Time.get_ticks_msec() < deadline:
 		await process_frame
 		if world.session != null and world.session.ready_for_play: break
+	if world.session == null or not world.session.ready_for_play:
+		print("FAIL test_mountain_bears: sessão não ficou pronta em 180 s")
+		quit(1)
+		return
 	var controller = world.session.controller
 	# A viagem recusa enquanto a sessão ainda bloqueia transições (abertura/chegada): tentar até aceitar.
 	for i in 1800:
@@ -48,6 +54,13 @@ func run() -> void:
 		return
 	var stand := den + Vector3(9, 0, 0)
 	stand.y = region.terrain.surface_height_at(Vector2(stand.x, stand.z)) + .2
+	# A vida conta desde antes de chegar: a ursa ataca já nos 90 quadros de espera do streaming e, medida
+	# depois deles, o jogador já estava morto (vida 0 → falha falsa, 27/10).
+	var gameplay = world.gameplay
+	# O --play-at já nasce perto da toca e a ursa morde antes: vida de sobra para o jogador seguir vivo
+	# até o fim (o teste mede se ela fere e se morre, não o equilíbrio do dano).
+	gameplay.health = 100000.0
+	var start_health: float = gameplay.health
 	world.player.teleport(stand)
 	region.set_focus(stand)
 	await frames(90)
@@ -55,9 +68,7 @@ func run() -> void:
 	var cubs := root.get_tree().get_nodes_in_group("bear_cub")
 	check(adults.size() >= 1, "a toca da ursa deveria ter uma adulta perto do jogador")
 	check(cubs.size() == 2, "a ursa deveria ter dois filhotes (tem %d)" % cubs.size())
-	var gameplay = world.gameplay
-	var start_health: float = gameplay.health
-	var engaged := false
+	var engaged: bool = gameplay.health < start_health
 	for i in 600:
 		await physics_frame
 		for bear in adults:
@@ -67,6 +78,7 @@ func run() -> void:
 			# Perseguir também conta: na V1 a caçada acontece no estado padrão.
 			if bear.state != bear.State.WANDER or gap < 2.5: engaged = true
 		if gameplay.health < start_health: break
+	print("BEAR vida no início %.0f, agora %.0f" % [start_health, gameplay.health])
 	check(engaged, "a ursa deveria avisar/perseguir/investir com o jogador a 9 m da toca")
 	check(gameplay.health < start_health, "a ursa deveria ferir o jogador em até 10 s (vida %.0f → %.0f)" % [start_health, gameplay.health])
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUTPUT))

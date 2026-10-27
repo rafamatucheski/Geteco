@@ -1410,6 +1410,9 @@ func enter_place(id: String, autosave := true, requested_access_id := "") -> boo
 		_close_sewer_hatch_for_transition(token)
 		sewer_hatch = null
 		sewer_entry_origin = Vector3.ZERO
+	# Recibos antes de a tela clarear: depois do fade, a arma e o dinheiro já coletados apareciam na sala
+	# por 0,34 s e só então sumiam (reentrada no esconderijo do Vértice, test_vertice_hideout).
+	if id != "maciota": _update_reward()
 	if animated: await door_transition.fade_to(0.0, 0.34)
 	_restore_transition_player_lock(was_player_locked,token)
 	if id != "maciota":

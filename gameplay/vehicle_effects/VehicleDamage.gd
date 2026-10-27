@@ -586,7 +586,8 @@ func restore() -> void:
 	wrecked = false
 	_flame_ignited = false
 	if is_instance_valid(vehicle.visual):
-		vehicle.visual.position = Vector3.ZERO
+		# Volta ao assento dos pneus, não à origem: zerar deixava o carro reparado flutuando ou afundado até 3 cm.
+		vehicle.visual.position = Vector3(0, float(vehicle.get("visual_rest_y") if vehicle.get("visual_rest_y") != null else 0.0), 0)
 		vehicle.visual.rotation = Vector3(0, vehicle.visual.rotation.y, 0)
 	refresh()
 

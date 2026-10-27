@@ -35,6 +35,13 @@ func bind(root: Node3D, archetype: String) -> void:
 		for index in part.mesh.get_surface_count():
 			var original := part.get_active_material(index) as StandardMaterial3D
 			var surface_key: String = str(surface_keys[index]) if index < surface_keys.size() else key
+			# A frota redesenhada assa o teto numa superfície da carroceria, sem peça separada:
+			# sem isto o teto ficava na cor de fábrica qualquer que fosse a pintura.
+			if surface_key == "roof_paint" and original != null:
+				var roof := _local(original,copies)
+				part.set_surface_override_material(index,roof)
+				if roof not in roof_materials: roof_materials.append(roof)
+				continue
 			if _is_paint(original,surface_key,source): part.set_surface_override_material(index,_local(original,copies))
 	for material in materials:
 		if material not in roof_materials:

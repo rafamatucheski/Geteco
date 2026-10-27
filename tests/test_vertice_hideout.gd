@@ -110,7 +110,15 @@ func run() -> void:
 	company = session.urban_operations.cargo_handling.depot
 	check(company.occupied and company.interior_camera.current and not world.player.input_locked,"Return restores warehouse camera and controls")
 	check(company.perform("vertice_hatch"),"Hatch supports reentry")
-	await frames(25)
+	# A sala já existe no meio da transição; os recibos precisam valer antes da tela clarear.
+	for i in 120:
+		await physics_frame
+		if session.state.place_id=="vertice_undercroft" and is_instance_valid(session.room) and session.room.definition.id=="vertice_undercroft": break
+	check(session.room.reward_points.all(func(p): return not p.visual.visible),"Collected secrets are already hidden while the reentry fades in")
+	for i in 120:
+		await physics_frame
+		if not session.is_transition_blocked(): break
+	await frames(5)
 	check(session.state.place_id=="vertice_undercroft" and session.room.reward_points.all(func(p): return not p.visual.visible),"Reentry cannot respawn collected secrets")
 	finish()
 func finish() -> void:

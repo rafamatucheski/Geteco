@@ -72,13 +72,15 @@ func run() -> void:
 				if warm_dark(material.albedo_color): warm += 1
 				check(not material.albedo_color.is_equal_approx(Color("292728")), label + ": material chapado antigo não volta")
 		check(parts > 0 and warm == 0, label + ": nenhuma superfície da carcaça é marrom (%d/%d)" % [warm, parts])
-		check(car.visual.position == Vector3.ZERO and is_instance_valid(car.damage_look._wreck_body),
-			label + ": carcaça acompanha a colisão física sem afundar o visual")
+		var seated := Vector3(0, car.visual_rest_y, 0)
+		# A visual fica no assento dos pneus (_seat_wheels_on_ground, até 6 cm), não na origem.
+		check(car.visual.position.is_equal_approx(seated) and is_instance_valid(car.damage_look._wreck_body),
+			label + ": carcaça acompanha a colisão física sem afundar o visual (visual=%s, carcaça=%s)" % [car.visual.position, is_instance_valid(car.damage_look._wreck_body)])
 
 		car.repair()
 		check(car.health == car.max_health and not car.damage_look.wrecked, label + ": reparo zera o dano")
 		check(paint.roughness == gloss and not paint.detail_enabled, label + ": reparo devolve a pintura")
-		check(car.visual.position == Vector3.ZERO, label + ": reparo endireita a lataria")
+		check(car.visual.position.is_equal_approx(seated), label + ": reparo endireita a lataria e mantém o assento dos pneus")
 		# Baked fleet meshes contain multiple semantic surfaces; paint need not be
 		# surface zero. Every paint material must reconnect after a repair.
 		var restored: bool = car._paint.materials.all(func(original):

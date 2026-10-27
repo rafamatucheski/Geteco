@@ -19,6 +19,15 @@ class Car extends CharacterBody3D:
 	var opened := false
 	var empty := false
 	var player_authored := false
+	# Campos que o Vehicle real ganhou depois deste dublê (fuga no trânsito, amassados, peças soltas, vidro):
+	# vazios aqui, o comboio só os lê para ceder à sirene e para salvar a lataria.
+	var traffic_escape = null
+	var body_dents = null
+	var breakaway_parts = null
+	func snapshot_glass() -> Array: return []
+	func restore_health(value: float) -> void: health = value
+	func restore_body_dents(_dents: Array, _parts: Dictionary, _glass: Array) -> void: pass
+	func restore_blood_stains(_count: int) -> void: pass
 	func door_point() -> Vector3: return global_position + Vector3(0, .4, 3.6)
 	func set_vault(value: bool, taken := false) -> void:
 		opened = value

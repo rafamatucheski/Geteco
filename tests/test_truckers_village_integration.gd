@@ -131,10 +131,12 @@ func run() -> void:
 		var room: Dictionary = homes.homes[index]
 		quest.commerce.data.hostility=0
 		urban.village_residents.set_hostile(false)
-		world.player.teleport(room.root.to_global(Vector3(0,.04,6)))
+		# Com a casca pintada o vão fica onde a imagem desenhou a porta, não no meio da frente.
+		var door_x: float = float(room.door_layout.x)
+		world.player.teleport(room.root.to_global(Vector3(door_x,.04,6)))
 		world.production.region.set_focus(world.player.position)
 		for frame in 55: await physics_frame
-		var inside: Vector3 = room.root.to_global(Vector3(0,.04,2))
+		var inside: Vector3 = room.root.to_global(Vector3(door_x,.04,2))
 		var motion: Vector3 = inside-world.player.global_position
 		check(not world.player.test_move(world.player.global_transform,motion),"Real house %d opens a walkable physical doorway"%index)
 		world.player.move_and_collide(motion)

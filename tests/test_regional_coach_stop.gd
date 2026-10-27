@@ -76,7 +76,9 @@ func run() -> void:
 		world.player.automatic_direction=Vector3.FORWARD
 		for frame in 150: await physics_frame
 		world.player.automatic_direction=Vector3.ZERO
-		check(world.player.position.z<-887.2 and world.player.position.z>-889.4,"walk enters shelter and stops against solid bench")
+		# Relativo ao ponto: o layout compacto (8beab762) levou o ponto de z -889 para -549.
+		var stop_z: float = preload("res://world/desert/DesertCoachStop.gd").POSITION.z
+		check(world.player.position.z<stop_z+1.8 and world.player.position.z>stop_z-.4,"walk enters shelter and stops against solid bench (z=%.2f, ponto %.0f)" % [world.player.position.z, stop_z])
 		check(absf(world.player.position.y)<.15 and world.player.is_on_floor(),"walking retains ground support")
 		await photo("bench-collision")
 		world.player.teleport(point+Vector3.UP*.10)

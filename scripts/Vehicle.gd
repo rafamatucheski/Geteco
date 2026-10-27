@@ -82,6 +82,8 @@ var _motorcycle_seat := Vector3(0, -.05, .30)
 var _motorcycle_grips: Dictionary = {}
 var manual_wheelie: RefCounted
 var _motorcycle_visual_rest := Transform3D.IDENTITY
+## Altura em que a visual assenta os pneus no chão (ver _seat_wheels_on_ground); reparo volta para ela.
+var visual_rest_y := 0.0
 var _motorcycle_rear_contact := Vector3.ZERO
 var speed := 0.0
 var steering := 0.0
@@ -316,6 +318,7 @@ func _seat_wheels_on_ground(pivots: Dictionary) -> void:
 				lowest = minf(lowest,center.y+(part as MeshInstance3D).get_aabb().position.y*part.scale.y+part.position.y)
 	if lowest == INF or absf(lowest) > .06: return
 	visual.position.y -= lowest*visual.scale.y
+	visual_rest_y = visual.position.y
 
 func _is_resting() -> bool:
 	return not traffic and health > 0 and not controlled and absf(speed) < 0.05 and absf(throttle_input) < 0.01 		and horizontal_velocity.length_squared() < 0.0025 and velocity.length_squared() < 0.0025 and is_on_floor() 		and not has_meta("crash_stun") and not has_meta("awaiting_ground") and not has_meta("mining_released_load") and (manual_wheelie == null or manual_wheelie.pitch == 0)

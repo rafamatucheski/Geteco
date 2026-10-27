@@ -212,13 +212,23 @@ func _check_bridge_seam() -> void:
 	for x in [470.0, 520.0]:
 		check(_terrain_cover(mountain, Vector3(x, 0.0, -285.0)) == 0, "deck [visual]: no MountainTerrain mesh over the deck at x=%s" % x)
 	for side in [-1.0, 1.0]:
+		# Desde cb19c87d (calçada segura) uma barreira sólida separa pista e calçada (~4,6 m do eixo) no mesmo
+		# corpo da ponte; o raio segue além dela até o guarda-corpo externo, na meia-largura do tabuleiro.
 		var rail_hit := false
-		var query := PhysicsRayQueryParameters3D.create(Vector3(500.0, 0.68, -285.0), Vector3(500.0, 0.68, -285.0 + side * 9.0), 1)
-		var hit: Dictionary = root.world_3d.direct_space_state.intersect_ray(query)
-		# O segundo guarda-corpo recebe nome automático (mesmo nome no mesmo pai): vale a posição.
-		if not hit.is_empty() and str(hit.collider.get_path()).contains("HarborMountainConnection") \
-				and absf(absf(float(hit.position.z) - CONNECTION.CENTER_Z) - CONNECTION.BRIDGE_HALF_WIDTH) <= 0.3:
-			rail_hit = true
+		var walkway_barrier := false
+		var from := Vector3(500.0, 0.68, -285.0)
+		var to := Vector3(500.0, 0.68, -285.0 + side * 9.0)
+		for attempt in 4:
+			var query := PhysicsRayQueryParameters3D.create(from, to, 1)
+			var hit: Dictionary = root.world_3d.direct_space_state.intersect_ray(query)
+			if hit.is_empty() or not str(hit.collider.get_path()).contains("HarborMountainConnection"): break
+			var offset := absf(float(hit.position.z) - CONNECTION.CENTER_Z)
+			if absf(offset - CONNECTION.BRIDGE_HALF_WIDTH) <= 0.3:
+				rail_hit = true
+				break
+			if offset < CONNECTION.BRIDGE_HALF_WIDTH - 1.0: walkway_barrier = true
+			from = Vector3(hit.position.x, hit.position.y, hit.position.z + side * 0.4)
+		check(walkway_barrier, "deck [físico]: barrier separates lane and walkway on side %s" % side)
 		check(rail_hit, "deck [físico]: guard rail stops lateral exit on side %s" % side)
 	await _free_pair(pair)
 
