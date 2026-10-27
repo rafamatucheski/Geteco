@@ -344,6 +344,15 @@ var body: Node3D
 ## Corpo importado cuja malha já traz capacete, colete e joelheiras: o equipamento procedural não é anexado
 ## (ficaria duplicado por cima do mesmo desenho).
 var _body_equipment_baked := false
+## Ferido (PoliceAgent._sync_wound_pose): a mão livre segura o ferimento quando ele não está mirando.
+var wound_hold := 0.0
+
+## `limp` 0..1 (manca), `bend` 0..1 (curvado de dor). O corpo interpola; aqui só repassa.
+func set_wound_pose(limp: float, bend: float) -> void:
+	wound_hold = 1.0 if limp > 0.0 or bend > 0.0 else 0.0
+	if not is_instance_valid(body): return
+	if "limp" in body and not is_equal_approx(float(body.limp), limp): body.limp = limp
+	if "hurt_bend" in body and not is_equal_approx(float(body.hurt_bend), bend): body.hurt_bend = bend
 
 func _install_body() -> void:
 	if is_instance_valid(body) or not is_inside_tree(): return
@@ -455,6 +464,11 @@ func _body_weapon_targets() -> Array:
 		service = service.lerp(grip + desired_basis * Vector3(.065 if palm_pose else .03, .10, -.055) * weapon_scale, rack)
 		left_target = (grip + support_offset).lerp(service, weight)
 		left_target = left_shoulder + left_offset + ((left_target as Vector3) - left_offset - left_shoulder).limit_length(left_reach)
+	elif wound_hold > 0.0 and _body_aim_weight < .35:
+		# Mão livre na barriga, do lado esquerdo e na frente do tronco; mirando, ela volta à arma.
+		var hold: Vector3 = spine_model * Vector3(.07, -.08, .17)
+		left_target = left_shoulder + left_offset + (hold - left_offset - left_shoulder).limit_length(left_reach)
+		body.hand_grip_weights.y = .35
 	# O corpo não muda de transformação durante esta função: uma consulta substitui cinco chamadas nativas.
 	var body_world := body.global_transform if optimize_weapon_targets else Transform3D.IDENTITY
 	var world_basis := (body_world.basis if optimize_weapon_targets else body.global_basis) * desired_basis

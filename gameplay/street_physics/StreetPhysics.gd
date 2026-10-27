@@ -174,7 +174,10 @@ func _hit_people(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> 
 		if is_instance_valid(blood): blood.spawn_splatter(person.global_position, planar, clampf(planar.length() / LETHAL_SPEED, 0.2, 1.0))
 		if is_instance_valid(tracks): tracks.soak(vehicle, TRACKS.TIRE_DISTANCE)
 		CONTACT_AUDIO.play_body_impact(vehicle, person, point, closing)
-		if not lethal: play("panic", point, -4.0)
+		# 27/10: o grito do atropelado é o da própria pessoa (PainVoiceBank); o "panic" antigo era a
+		# mesma voz masculina para todo mundo e fica só para corpo sem voz gravada.
+		var voiced: bool = gameplay != null and gameplay.has_method("person_voice") and gameplay.person_voice(person, "death" if lethal else "heavy")
+		if not lethal and not voiced: play("panic", point, -4.0)
 		if response > 0.01: _shake_if_player(vehicle, (0.18 if lethal else 0.1) * response)
 
 

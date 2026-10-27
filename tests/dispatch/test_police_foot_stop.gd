@@ -74,15 +74,33 @@ func approach(id: String, real_shoulder := false) -> void:
 	var worst_step := 0.0
 	var previous: Vector3 = car.position
 	var stopped := false
+	var still_frame := -1
+	var frame := 0
 	for _i in 600:
 		u.tick(DT)
 		await physics_frame
+		frame += 1
 		worst_step = maxf(worst_step,previous.distance_to(car.position))
 		previous = car.position
+		if still_frame < 0 and absf(car.speed) < .35: still_frame = frame
 		if not u.officers.is_empty():
 			stopped = true
 			break
+	# 27/10: entre a viatura parar e a equipe descer havia até 3 s + 0,6 s de espera fixa.
+	var exit_seconds := float(frame - still_frame) * DT if still_frame >= 0 else INF
+	print("POLICE_FOOT_STOP %s parada->desce %.2f s" % [id + (" (acostamento)" if real_shoulder else ""), exit_seconds])
 	check(stopped,id + " brakes and deploys its finite crew without a shoulder route")
+	if stopped: check(exit_seconds <= 2.0,id + " crew starts leaving within 2 s of the stop (%.2f s)" % exit_seconds)
+	if stopped:
+		var acting := -1
+		for _i in 120:
+			u.tick(DT)
+			await physics_frame
+			if u.officers.any(func(o): return o.mode == "combat"):
+				acting = _i + 1
+				break
+		print("POLICE_FOOT_STOP %s desce->age %.2f s" % [id, float(acting) * DT])
+		check(acting > 0 and float(acting) * DT <= 1.0,id + " officer is acting within 1 s of leaving the vehicle")
 	check(absf(car.speed) < .35,id + " disembark occurs only after physical stop")
 	check(worst_step < .5,id + " braking never teleports the vehicle")
 	check(u.crew_remaining < u.crew_capacity,id + " deployed officer consumes the seated crew slot")

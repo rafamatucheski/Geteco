@@ -1,5 +1,16 @@
 # Sons das variantes de armas
 
+> **27/10/2026 (tarde) — tiros refeitos.** As tomadas de tiro geradas no site da ElevenLabs
+> (conta grátis, sem licença comercial) saíram ruins: tiro duplo dentro da tomada, tiro que só
+> começa 0,2 s depois do gatilho, blocos de ruído com envelope retangular e corte seco, e cliques de
+> 20-40 ms sem nada abaixo de 150 Hz. `tools/audio/rebuild_weapon_banks.py` remonta os quatro bancos
+> (`shot_0..4`) só com gravações licenciadas que o jogo já usa (Firefly e V1): estalo de uma tomada
+> sobre o corpo grave de outra, cauda aparada, estalo de ferrolho sintético na silenciada e na
+> semiautomática, nível casado pela energia dos primeiros 120 ms. O mesmo script nivelou as tomadas
+> antigas que destoavam (pistola, magnum, SMG, escopeta, serrada, rifle de caça, bombeada e as
+> silenciadas do V1). Originais e prévias antes/depois em `evidence/weapon-audio-20261027/` (fora
+> do Git). As recargas das variantes continuam as da conta grátis (não refeitas; licença pendente).
+
 As quatro armas novas já têm áudio jogável temporário: gravações existentes com timbre ajustado e camadas sintéticas curtas, preparadas durante o carregamento. A versão silenciada usa o banco de tiros abafados existente. A escopeta semiautomática tem recarga sintética própria, sem bombeamento manual. Para identidade sonora definitiva, produzir os 32 arquivos abaixo. O jogo detecta os arquivos importados automaticamente, substitui os temporários e mantém o tom original das gravações novas.
 
 ## Entrega para Claude

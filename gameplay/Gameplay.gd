@@ -78,12 +78,24 @@ const CHEAT_GAP := 3.0
 ## Serve para segurar o jogador vivo sob seis estrelas ao medir o custo da resposta policial.
 const CHEAT_GODMODE := "godmode"
 const CHEAT_MONEY := "grana"
-## Gemido de dor (V1 `PainReaction`): chance 65% se o dano ≥ 25, senão 42%; no máximo 6 vozes e um gemido por
-## vítima a cada 1,8 s. Aqui a chance é sorteada uma vez por golpe.
-const PAIN_CHANCE_HEAVY := 0.65
-const PAIN_CHANCE_LIGHT := 0.42
+## Gemido de dor (V1 `PainReaction`): no máximo 6 vozes e um gemido por vítima a cada 1,8 s; a chance é
+## sorteada uma vez por golpe. A V1 usava 65% (dano ≥ 25) e 42%; com o banco gravado por pessoa (27/10) o
+## gemido deixou de soar repetido e subiu para 85% e 60%, porque a falta de reação era a queixa.
+const PAIN_CHANCE_HEAVY := 0.85
+const PAIN_CHANCE_LIGHT := 0.6
 const PAIN_COOLDOWN := 1.8
 const PAIN_VOICES := 6
+## Volume dos gritos gravados (PainVoiceBank) no barramento SFX, que soma +10 dB e limita.
+const PAIN_VOICE_DB := {"light": -9.0, "heavy": -6.0, "death": -5.0}
+const HEARING_PAIN := 40.0
+const DEATH_VOICE_CHANCE := 0.8
+const DEATH_VOICES_PER_SECOND := 2
+var _death_voice_window := -10.0
+var _death_voices_in_window := 0
+## Bala no corpo: mais alto e de mais longe que os outros impactos, porque é a confirmação do
+## acerto para quem atira (o jogador fica a 10-30 m do alvo).
+const BODY_HIT_DB := -8.0
+const HEARING_BODY_HIT := 45.0
 ## Golpe corpo a corpo (V1 `MELEE_SWING_DURATION` = 0,22 s; um pouco mais para o balanço da arma se ler).
 const SWING_DURATION := 0.26
 ## Mira (V1 `Player._physics_process`): `is_aiming` = fire OU aim OU lanterna; `weapon_aim_active` = aim com arma
@@ -1200,7 +1212,12 @@ func _pain_voice(victim: Node3D, amount: float) -> void:
 	if victim.get("dead") == true or (victim.get("health") != null and float(victim.get("health")) <= 0.0): return
 	var id := victim.get_instance_id()
 	if float(_pain_next.get(id, -1.0)) > _combat_clock: return
-	if _rng.randf() >= (PAIN_CHANCE_HEAVY if amount >= 25.0 else PAIN_CHANCE_LIGHT): return
+	var heavy := amount >= 25.0 or _badly_hurt(victim)
+	if _rng.randf() >= (PAIN_CHANCE_HEAVY if heavy else PAIN_CHANCE_LIGHT): return
+	# Quem não é o Dante grita com a voz gravada do próprio corpo, sem legenda "Ai!" no ar.
+	if victim != player and _body_voice(victim, "heavy" if heavy else "light"):
+		_pain_next[id] = _combat_clock + PAIN_COOLDOWN
+		return
 	if preload("res://audio/DirectedVoiceBank.gd").enabled():
 		var binding := preload("res://audio/VoiceActorBinding.gd").pain(victim)
 		if binding.is_empty(): return
@@ -1232,6 +1249,50 @@ func _pain_voice(victim: Node3D, amount: float) -> void:
 		voice.pitch_scale = 1.0 if victim == player else 0.97
 		voice.play()
 		return
+
+## Abaixo de 40% da vida o grito já sai forte, mesmo de tiro fraco.
+func _badly_hurt(victim: Node3D) -> bool:
+	var health_value: Variant = victim.get("health")
+	var max_value: Variant = victim.get("max_health")
+	return (health_value is float or health_value is int) and (max_value is float or max_value is int) and float(max_value) > 0.0 \
+		and float(health_value) / float(max_value) < 0.4
+
+## Grito gravado do corpo (PainVoiceBank): timbre fixo da pessoa, perda por distância do jogador.
+func _body_voice(actor: Node3D, kind: String) -> bool:
+	var choice: Dictionary = AUDIO.PAIN_BANK.pick(actor, kind, _rng)
+	if choice.is_empty(): return false
+	var gain := _hearing_gain_db(actor.global_position, HEARING_PAIN)
+	if gain <= -60.0: return true
+	for voice in _pain_pool:
+		if voice.playing: continue
+		voice.stream = choice.stream
+		voice.global_position = actor.global_position + Vector3.UP * 1.5
+		voice.volume_db = float(PAIN_VOICE_DB.get(kind, -8.0)) + gain
+		voice.pitch_scale = float(choice.pitch)
+		voice.play()
+		return true
+	return true
+
+## Para quem fere por fora do tiro (atropelamento em StreetPhysics): "light", "heavy" ou "death".
+## false = corpo sem voz gravada (gênero desconhecido); quem chama segue com o som que já tinha.
+func person_voice(actor: Node3D, kind: String) -> bool:
+	if kind == "death":
+		if not is_instance_valid(actor) or actor.has_meta("death_voiced"): return true
+		if AUDIO.PAIN_BANK.pick(actor, "death", _rng).is_empty(): return false
+		_death_voice(actor)
+		return true
+	return _body_voice(actor, kind)
+
+## Grito de quem acabou de morrer (tiro, golpe, explosão, fogo). Uma vez por corpo e no
+## máximo DEATH_VOICES_PER_SECOND por segundo: a explosão que derruba cinco não vira coro.
+func _death_voice(actor: Node3D) -> void:
+	if not is_instance_valid(actor) or actor == player or actor.has_meta("death_voiced"): return
+	actor.set_meta("death_voiced", true)
+	if _combat_clock - _death_voice_window >= 1.0:
+		_death_voice_window = _combat_clock
+		_death_voices_in_window = 0
+	if _death_voices_in_window >= DEATH_VOICES_PER_SECOND or _rng.randf() >= DEATH_VOICE_CHANCE: return
+	if _body_voice(actor, "death"): _death_voices_in_window += 1
 
 func _finish_pain_caption(reference: WeakRef, generation: int) -> void:
 	var label := reference.get_ref() as Label3D
@@ -1801,6 +1862,7 @@ func _stall_damage(actor: Object, amount: float, source: Node, continuous: bool 
 		actor.receive_damage(amount, source)
 		var role := String(actor.get_meta("gameplay_role", "")) if actor is Node else ""
 		var killed: bool = not was_dead and actor.get("dead") == true
+		if killed and actor is Node3D: _death_voice(actor as Node3D)
 		if actor is Node3D and role == "civilian" and not killed and source is Node3D:
 			var reactions: Node = world.get_node_or_null("CivilianReactionDirector") if is_instance_valid(world) else null
 			if is_instance_valid(reactions): reactions.report_assault(actor, source)
@@ -2184,6 +2246,7 @@ func _apply_player_damage(amount: float, use_armor: bool, from := Vector3.INF) -
 	if not is_finite(amount) or amount <= 0 or health <= 0 or state == null or not state.weapons_allowed(): return
 	var absorbed := minf(armor, amount * 0.65) if use_armor else 0.0
 	armor -= absorbed
+	if absorbed > 0.0 and is_instance_valid(player): player.set_meta("armor_hit_frame", Engine.get_physics_frames())
 	var prior_health := health
 	health = maxf(0, health - (amount - absorbed))
 	if use_armor and is_instance_valid(rage): rage.add_damage(prior_health - health + absorbed)
@@ -2686,6 +2749,13 @@ func _impact_sound(collider: Object, point: Vector3, amount: float, normal := Ve
 	for entry in _recent_impacts:
 		if entry.material == material: return
 	_recent_impacts.append({"time": _combat_clock, "material": material})
+	if material == "flesh":
+		# A placa do colete segurou este tiro neste mesmo quadro físico (PoliceAgent/_apply_player_damage).
+		var vest := collider is Node and int((collider as Node).get_meta("armor_hit_frame", -1)) == Engine.get_physics_frames()
+		var body_hit := AUDIO.body_hit_take("vest" if vest else "flesh", _rng)
+		if body_hit != null:
+			_play_stream(body_hit, point, BODY_HIT_DB + clampf((amount - 15.0) / 15.0, -1.5, 2.0), _rng.randf_range(0.94, 1.06), HEARING_BODY_HIT)
+			return
 	_play_stream(AUDIO.impact_take(material, _rng), point, -14.0 + clampf((amount - 15.0) / 15.0, -0.8, 2.0))
 	# Bala em metal às vezes ricocheteia: assobio por cima do toc, em um terço dos impactos.
 	if material == "metal" and _rng.randf() < 0.35: _firefly_sound("weapons_fire", "ricochet", point, -13.0, 40.0, 0.08)

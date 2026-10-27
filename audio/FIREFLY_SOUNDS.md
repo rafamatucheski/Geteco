@@ -7,6 +7,12 @@ estéreo) ficam em `evidence/firefly_originais_20261015/` (fora do Git); o que e
 de ruído, fade, volume casado com os sons que o jogo já tinha, loops sem emenda).
 O tratamento é repetível: rodar o script de novo parte sempre dos originais.
 
+> **27/10/2026:** `weapons_fire/pistol_*`, `shotgun_*` (Firefly) e `magnum_*`, `smg_*`, `sawed_off_*`,
+> `hunting_rifle_*`, `shotgun_pump_*` (ElevenLabs 16/10) foram remontados/nivelados por
+> `tools/audio/rebuild_weapon_banks.py` (tomadas fracas ganharam corpo, segundo disparo e saturação
+> saíram, bombeada no tempo da animação). O script parte sempre dos originais guardados em
+> `evidence/weapon-audio-20261027/originals/`.
+
 ## Onde cada som entra
 
 Tudo passa por `audio/FireflyBank.gd` (carrega sob demanda, escolhe a tomada sem repetir,

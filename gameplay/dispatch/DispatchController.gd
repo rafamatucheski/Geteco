@@ -219,9 +219,18 @@ func _warm_approaching_doors() -> void:
 	if _door_warm_frame == frame: return
 	_door_warm_frame = frame
 	if units.is_empty(): return
+	# Viatura já estacionada com a equipe a bordo vem primeiro: a descida espera a porta pronta
+	# (DispatchUnit._doors_ready) e o rodízio entre várias viaturas a atrasava.
+	var first := -1
+	for index in (units.size() if UNIT.quick_exit else 0):
+		var parked: RefCounted = units[index]
+		if parked.state == "parked" and not parked.finished and not parked.wrecked and parked.crew_remaining > 0 \
+				and is_instance_valid(parked.vehicle) and not parked.vehicle.get_meta("dispatch_doors_warmed", false):
+			first = index
+			break
 	for attempt in units.size():
-		var unit: RefCounted = units[_door_warm_cursor % units.size()]
-		_door_warm_cursor += 1
+		var unit: RefCounted = units[(first if attempt == 0 and first >= 0 else _door_warm_cursor) % units.size()]
+		if attempt > 0 or first < 0: _door_warm_cursor += 1
 		if unit.finished or unit.wrecked or unit.suspended or unit.crew_remaining <= 0 or unit.state not in ["enroute", "parked"]: continue
 		# Sem o método (dublês de teste), mantém a regra de antes.
 		if fast and unit.has_method("door_warm_wanted") and not unit.door_warm_wanted(): continue

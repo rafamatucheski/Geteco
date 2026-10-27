@@ -84,6 +84,15 @@ const CONTACT_DIR := "res://audio/weapon_contacts/"
 const CONTACT_FAMILIES := ["casing_hard", "casing_metal", "casing_wood", "casing_soft", "casing_snow", "impact_soil", "impact_snow"]
 static var _contacts: Dictionary = {}
 static var _last_contact_take: Dictionary = {}
+## Bala no corpo (ElevenLabs, 27/10): estalo úmido com médios. O `impact_flesh` do V1 é um soco
+## de ~155 Hz que a rajada do próprio tiro cobria; em caixinha de notebook nem chegava a tocar.
+## "vest" é a placa do colete absorvendo (SWAT, Exército, jogador com colete).
+const BODY_HIT_DIR := "res://audio/body_impacts/"
+const BODY_HIT_KINDS := ["flesh", "vest"]
+const BODY_HIT_MAX := 8
+const PAIN_BANK := preload("res://audio/PainVoiceBank.gd")
+static var _body_hits: Dictionary = {}
+static var _last_body_hit: Dictionary = {}
 
 ## Load every authored take under the loading curtain, without choosing a take,
 ## advancing gameplay RNG, starting a voice or changing the no-repeat history.
@@ -100,6 +109,10 @@ static func prewarm_gameplay_banks(tree: SceneTree) -> void:
 	for family in CONTACT_FAMILIES:
 		for index in RELOAD_TAKES: _contact_sample(family, index)
 		await tree.process_frame
+	for kind in BODY_HIT_KINDS:
+		_body_hit_bank(kind)
+		await tree.process_frame
+	await PAIN_BANK.prewarm(tree)
 	for family in GUNFIRE_FAMILIES:
 		await _prewarm_family(family,GUNFIRE_TAKES,tree)
 	for family in SUPPRESSED_FAMILIES:
@@ -188,6 +201,26 @@ static func contact_take(family: String, rng: RandomNumberGenerator) -> AudioStr
 	if int(_last_contact_take.get(family, -1)) == index: index = (index + 1) % RELOAD_TAKES
 	_last_contact_take[family] = index
 	return _contact_sample(family, index)
+
+static func _body_hit_bank(kind: String) -> Array:
+	if _body_hits.has(kind): return _body_hits[kind]
+	var bank: Array = []
+	for index in BODY_HIT_MAX:
+		var path := "%sbullet_%s_%d.wav" % [BODY_HIT_DIR, kind, index]
+		if not ResourceLoader.exists(path): break
+		var stream := load(path) as AudioStream
+		if stream != null: bank.append(stream)
+	_body_hits[kind] = bank
+	return bank
+
+## Tomada de bala no corpo ("flesh" ou "vest") sem repetir a anterior; nulo sem gravação.
+static func body_hit_take(kind: String, rng: RandomNumberGenerator) -> AudioStream:
+	var bank := _body_hit_bank(kind)
+	if bank.is_empty(): return null
+	var index := rng.randi_range(0, bank.size() - 1)
+	if bank.size() > 1 and int(_last_body_hit.get(kind, -1)) == index: index = (index + 1) % bank.size()
+	_last_body_hit[kind] = index
+	return bank[index]
 
 static func impact_take(material: String, rng: RandomNumberGenerator) -> AudioStream:
 	if material == "snow": return contact_take("impact_snow", rng)

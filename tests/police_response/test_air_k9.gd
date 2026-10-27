@@ -171,16 +171,23 @@ func run() -> void:
 		await physics_frame
 		# Freeze delivered real officers only in the fixture to inspect landings.
 		for officer in gameplay.police: officer.set_physics_process(false)
-		if heli.mode == "depart": break
+		if heli.dropped: break
 	check(airborne_seen, "officers descend physically with ground AI suspended")
 	check(rope_moved, "segmented rope geometry changes while officers descend")
 	check(glove_contacts_seen, "rappel rope passes through actual upper glove, harness descender and braking glove")
 	check(landing_pose_seen, "officers absorb landing before releasing rope and resuming combat")
 	check(not is_equal_approx(rotor_start, heli.rotor.rotation.y), "main rotor keeps rotating throughout the full insertion")
 	check(gameplay.police.size() == 4 and heli.deployed_count == 4, "exactly four real PoliceAgents land")
-	check(heli.mode == "depart" and int(gameplay.get_meta("police_air_reserved_slots", -1)) == 0, "transport departs and releases all reserved ground slots")
+	# 27/10: depois da inserção ele não some: devolve as vagas e volta a circular por um tempo.
+	check(heli.mode == "track" and int(gameplay.get_meta("police_air_reserved_slots", -1)) == 0, "transport releases all reserved ground slots and keeps patrolling after the insertion")
+	check(is_equal_approx(heli._stay_limit, HELICOPTER.STAY_AFTER_DROP), "aircraft stays over the scene before leaving")
 	for officer in gameplay.police:
 		check(officer.global_position.y < 0.16 and officer.collision_mask == 7 and not officer.get_meta("police_rappelling", false), "landed officer retains collision and combat lifecycle")
+	for index in 150:
+		heli._physics_process(1.0 / 60.0)
+		await physics_frame
+	check(not heli.rope_mesh.visible and heli._door_open < 0.9, "ropes are recovered and cabin doors close before patrolling again")
+	heli.begin_departure()
 	var departure_start := heli.global_position
 	for index in 120:
 		heli._physics_process(1.0 / 60.0)

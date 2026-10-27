@@ -16,6 +16,14 @@ const PROTECTION := preload("res://gameplay/DamageProtection.gd")
 const TANK_WEAPON := preload("res://gameplay/police_response/ground/PoliceTankWeapon.gd")
 const TRACE := preload("res://gameplay/dispatch/DispatchTrace.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+## Viatura parada sem acostamento planejado: estaciona depois disto no ramo de parada (era 3 s).
+const PARK_SETTLE_SECONDS := 1.0
+## Estacionada e parada: a equipe começa a descer depois disto (era 0,6 s).
+const CREW_EXIT_DELAY := 0.25
+const DOOR_WARM_WAIT := 1.2
+## GETECO_POLICE_QUICK_EXIT=0 volta às esperas antigas (3 s e 0,6 s, sem esperar a porta), para A/B
+## no mesmo build (DispatchOfficer e DispatchController leem o mesmo interruptor).
+static var quick_exit := OS.get_environment("GETECO_POLICE_QUICK_EXIT") != "0"
 
 var controller: Node3D
 var service := ""
@@ -567,7 +575,9 @@ func _stall_police_enroute(delta: float) -> void:
 		# unreachable, leaving both cars and motorcycles circling the pedestrian.
 		if stop_planner.curve == null: driver.hold(true)
 		var unused_exits: Array[Vector3] = []
-		var parked_here: bool = _park_wait > 3.0 and driver.settled() and flat <= stop_distance + 12.0 and not controller.exit_point(vehicle, unused_exits, false).is_empty()
+		# 27/10: eram 3 s de espera fixa com a viatura já parada ao lado do alvo, e a equipe "demorava
+		# a sair do carro". A parada física (`settled`) continua sendo a condição de verdade.
+		var parked_here: bool = _park_wait > (PARK_SETTLE_SECONDS if quick_exit else 3.0) and driver.settled() and flat <= stop_distance + 12.0 and not controller.exit_point(vehicle, unused_exits, false).is_empty()
 		if arrived or parked_here:
 			_park_reset()
 			vehicle.set_meta("dispatch_needs_room",false)
@@ -998,7 +1008,10 @@ func _police_parked(delta: float) -> void:
 	if driver.pending_recovery():
 		_set_state("enroute")
 		return
-	if state_age < 0.6 or not driver.settled(): return
+	if state_age < (CREW_EXIT_DELAY if quick_exit else 0.6) or not driver.settled(): return
+	# Porta ainda em preparo fatiado: descer agora terminaria o recorte (dezenas de ms) num quadro só.
+	# O controlador prioriza esta viatura; passado DOOR_WARM_WAIT desce mesmo assim (reserva antiga).
+	if quick_exit and not _doors_ready() and state_age < DOOR_WARM_WAIT: return
 	if crew_remaining <= 0 and officers.is_empty():
 		_police_crew_depleted()
 		return
@@ -1012,6 +1025,11 @@ func _police_parked(delta: float) -> void:
 		_set_state("enroute")
 	elif state_age > 8.0:
 		_set_state("enroute")
+
+func _doors_ready() -> bool:
+	if not is_instance_valid(vehicle) or vehicle.get_meta("dispatch_doors_warmed", false): return true
+	# Moto, buggy e afins não têm folha para recortar.
+	return vehicle.has_method("boarding_class") and vehicle.boarding_class() in ["open", "bus"]
 
 func _deploy_police_crew() -> bool:
 	# Com 0 estrelas a averiguação usa o limite de 1 estrela (FOOT_LIMIT[0] é 0: a equipe nunca descia).

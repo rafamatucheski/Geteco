@@ -11,11 +11,15 @@ var dispatch_controller: Node3D
 var _path_clock := 0.0
 var door_side := 1.0
 ## Desembarque (V1 `PoliceOfficer.service_disembark_active` +
-## `EmergencyCrewTransition`): nasce dentro da carroceria, a porta abre, anda até
-## o ponto livre ao lado e espera a porta fechar antes de agir. Assim ninguém
-## "aparece" do lado da viatura nem atravessa a lataria para um alvo do outro lado.
-const DISEMBARK_SPEED := 2.4
-const DOOR_CLOSE_TIME := 0.45
+## `EmergencyCrewTransition`): nasce dentro da carroceria, a porta abre e ele sai pelo
+## vão até o ponto livre ao lado. Assim ninguém "aparece" do lado da viatura.
+## 27/10: saía a 2,4 m/s e ficava 0,45 s parado esperando a folha fechar antes de agir ("a
+## polícia demora a sair do carro"); agora sai em passo apressado e age logo, e a porta
+## termina de fechar sozinha atrás dele.
+const DISEMBARK_SPEED := 3.6
+const DOOR_CLOSE_TIME := 0.1
+## GETECO_POLICE_QUICK_EXIT=0: valores antigos (2,4 m/s e 0,45 s), para A/B.
+static var _quick_exit := OS.get_environment("GETECO_POLICE_QUICK_EXIT") != "0"
 var _disembark_target := Vector3.INF
 var _door_close_elapsed := -1.0
 var _return_after_disembark := false
@@ -119,8 +123,9 @@ func _disembark(delta: float) -> void:
 	if _door_close_elapsed < 0.0 and offset.length() > 0.12:
 		var direction := offset.normalized()
 		visual.rotation.y = lerp_angle(visual.rotation.y, atan2(-direction.x, -direction.z) - global_rotation.y, minf(1.0, 14.0 * delta))
-		velocity.x = direction.x * DISEMBARK_SPEED
-		velocity.z = direction.z * DISEMBARK_SPEED
+		var exit_speed := DISEMBARK_SPEED if _quick_exit else 2.4
+		velocity.x = direction.x * exit_speed
+		velocity.z = direction.z * exit_speed
 		velocity.y = -1.0 if is_on_floor() else velocity.y - 20.0 * delta
 		move_and_slide()
 		gait += Vector2(velocity.x, velocity.z).length() * delta * 3.4
@@ -135,7 +140,7 @@ func _disembark(delta: float) -> void:
 		_door_close_elapsed = 0.0
 		if vehicle.has_method("animate_driver_door"): vehicle.animate_driver_door(int(signf(door_side)), false)
 	_door_close_elapsed += delta
-	if _door_close_elapsed >= DOOR_CLOSE_TIME:
+	if _door_close_elapsed >= (DOOR_CLOSE_TIME if _quick_exit else 0.45):
 		_disembark_target = Vector3.INF
 		mode = "combat"
 		if _return_after_disembark:

@@ -32,6 +32,14 @@ var magazine := 0
 var look_seed := -1
 var uniform_tones: Array = []
 var reload_timer := 0.0
+## Tranco do tiro (27/10/2026), como o PoliceAgent: recua no sentido da bala e só volta a atirar
+## depois de se recompor; entre um tranco e outro aguenta HURT_RECOVERY s para a rajada não travá-lo.
+const HURT_STAGGER := Vector2(0.2, 0.5)
+const HURT_PUSH := 2.6
+const HURT_RECOVERY := 0.9
+var hurt_time := 0.0
+var _hurt_push := Vector3.ZERO
+var _hurt_ready_at := -INF
 
 func configure(p_gameplay: Node3D, p_tier: int = 0) -> void:
 	gameplay = p_gameplay
@@ -77,6 +85,16 @@ func _physics_process(delta: float) -> void:
 	if reload_timer > 0.0:
 		reload_timer = maxf(0.0, reload_timer - delta)
 		if reload_timer <= 0.0: magazine = int(CATALOG.get_weapon(weapon_id).magazine_size)
+	if hurt_time > 0.0:
+		hurt_time = maxf(0.0, hurt_time - delta)
+		_hurt_push = _hurt_push.move_toward(Vector3.ZERO, delta * 9.0)
+		velocity.x = _hurt_push.x
+		velocity.z = _hurt_push.z
+		velocity.y = -1.0 if is_on_floor() else velocity.y - 20 * delta
+		move_and_slide()
+		gait += Vector2(velocity.x, velocity.z).length() * delta * 3.4
+		visual.update_pose(delta, false, reload_timer > 0.0, 1.0 - reload_timer / maxf(weapon_reload_duration(), 0.01), gait)
+		return
 	sensor -= delta
 	repath -= delta
 	if sensor <= 0:
@@ -161,6 +179,15 @@ func receive_damage(amount: float, _source: Node = null) -> void:
 	if health > 0:
 		var hit_direction: Vector3 = (global_position - (_source as Node3D).global_position).normalized() if _source is Node3D else Vector3.ZERO
 		preload("res://gameplay/CharacterFallPresentation3D.gd").apply_hit(self, visual, hit_direction, amount)
+		var now := float(Time.get_ticks_msec()) * 0.001
+		if hurt_time <= 0.0 and now >= _hurt_ready_at:
+			var severity := clampf(amount / 30.0, 0.0, 1.0)
+			hurt_time = lerpf(HURT_STAGGER.x, HURT_STAGGER.y, severity)
+			_hurt_ready_at = now + hurt_time + HURT_RECOVERY
+			var flat := Vector3(hit_direction.x, 0.0, hit_direction.z)
+			if flat.length_squared() > 0.0001: _hurt_push = flat.normalized() * HURT_PUSH * lerpf(0.6, 1.0, severity)
+			# O revide continua rápido (0,4 s), só que contado depois do tranco.
+			cooldown = hurt_time + 0.4
 		return
 	dead = true
 	collision_layer = 0

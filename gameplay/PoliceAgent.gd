@@ -67,6 +67,24 @@ const AIM_SECONDS := 0.65
 const ATTACK_RANGE := 360.0 / 16.0
 const HOLD_RANGE := 112.0 / 16.0
 const ARREST_RANGE := 34.0 / 16.0
+## Ferimento (27/10/2026). Antes o tiro só inclinava o tronco 0,36 s e o policial seguia andando
+## e atirando como se nada fosse ("atira no policial e ele nem sente"). Agora o tiro tira ele do
+## eixo: recua no sentido da bala e perde a mira por 0,22-0,6 s (sem atirar). Abaixo de metade da
+## vida manca (mais lento, passo curto de um lado) e segura o ferimento com a mão livre; com a
+## vida no fim, um tiro forte o faz curvar de dor por pouco mais de 1 s.
+const HURT_STAGGER := Vector2(0.22, 0.6)
+const HURT_PUSH := 2.6
+const HURT_DOUBLE_OVER := 1.2
+const WOUNDED_RATIO := 0.5
+const CRITICAL_RATIO := 0.3
+const WOUNDED_SPEED := 0.62
+const HURT_RECOVERY := 0.9
+## GETECO_POLICE_HURT=0 desliga tranco, mancar e curvar (só a inclinação antiga do tronco), para A/B.
+static var hurt_reactions := OS.get_environment("GETECO_POLICE_HURT") != "0"
+var hurt_time := 0.0
+var _double_over := 0.0
+var _hurt_push := Vector3.ZERO
+var _hurt_ready_at := -INF
 
 func _ready() -> void:
 	collision_layer = 2
@@ -128,6 +146,9 @@ func _stall_physics_tick(delta: float) -> void:
 	sensor -= delta
 	repath -= delta
 	_tactic_clock -= delta
+	if hurt_time > 0.0:
+		_tick_hurt(delta)
+		return
 	var target := _pursuit_target()
 	var wanted: bool = controller.stars > 0
 	if not _shares_player_context():
@@ -200,7 +221,7 @@ func _stall_physics_tick(delta: float) -> void:
 	else:
 		visible_aim_time = 0.0
 		if direction.length_squared() > 0.1: visual.rotation.y = lerp_angle(visual.rotation.y, atan2(-direction.x, -direction.z) - global_rotation.y, 1.0 - exp(-10.0 * delta))
-	var move := direction.normalized() * _tactic_speed
+	var move := direction.normalized() * _tactic_speed * (WOUNDED_SPEED if hurt_reactions and wounded() else 1.0)
 	# Tactical units may move laterally or retreat at close range; a global
 	# seven-metre hold would erase flanking and containment behavior.
 	if _tactic_hold or direction.length() < .45 or (sees_player and not hostile and distance <= ARREST_RANGE): move = Vector3.ZERO
@@ -426,6 +447,56 @@ func _try_fire() -> bool:
 		burst_pause = _rng.randf_range(BURST_PAUSE.x, BURST_PAUSE.y)
 	return true
 
+func wounded() -> bool:
+	return not dead and max_health > 0.0 and health / max_health < WOUNDED_RATIO
+
+## `direction`: sentido da bala no plano. `wound`: o que passou da placa; `absorbed`: o que ela segurou.
+func _react_to_wound(direction: Vector3, wound: float, absorbed: float) -> void:
+	if not hurt_reactions: return
+	_sync_wound_pose()
+	var now := float(Time.get_ticks_msec()) * 0.001
+	# Depois de um tranco ele aguenta os tiros seguintes por HURT_RECOVERY s (só o tronco balança):
+	# uma rajada de SMG não pode deixar o policial travado sem nunca atirar de volta.
+	if hurt_time > 0.0 or now < _hurt_ready_at: return
+	# A placa segura o furo, não o tranco: tiro no colete ainda tira a mira, por menos tempo.
+	var severity := clampf(wound / 30.0, 0.2 if absorbed > 0.0 else 0.0, 1.0)
+	var seconds := lerpf(HURT_STAGGER.x, HURT_STAGGER.y, severity)
+	if health / maxf(max_health, 1.0) < CRITICAL_RATIO and wound >= 15.0 and _double_over <= 0.0 and _rng.randf() < 0.55:
+		_double_over = HURT_DOUBLE_OVER
+		seconds = HURT_DOUBLE_OVER
+	hurt_time = seconds
+	_hurt_ready_at = now + seconds + HURT_RECOVERY
+	# Recuo de ~13 cm (tiro fraco) a ~37 cm (forte): o passo para trás aparece na câmera alta.
+	var flat := Vector3(direction.x, 0.0, direction.z)
+	if flat.length_squared() > 0.0001: _hurt_push = flat.normalized() * HURT_PUSH * lerpf(0.6, 1.0, severity)
+	# A mira volta pela metade: o próximo tiro dele sai um pouco depois de se recompor.
+	visible_aim_time = minf(visible_aim_time, AIM_SECONDS * 0.5)
+	burst_shots = 0
+	_sync_wound_pose()
+
+func _tick_hurt(delta: float) -> void:
+	hurt_time = maxf(0.0, hurt_time - delta)
+	_double_over = maxf(0.0, _double_over - delta)
+	_reset_arrest()
+	# O recuo morre em ~0,25 s; o resto do tempo ele fica no lugar se recompondo.
+	_hurt_push = _hurt_push.move_toward(Vector3.ZERO, delta * 9.0)
+	velocity.x = _hurt_push.x
+	velocity.z = _hurt_push.z
+	velocity.y = -1.0 if is_on_floor() else velocity.y - 20 * delta
+	move_and_slide()
+	gait += Vector2(velocity.x, velocity.z).length() * delta * 3.4
+	_sync_wound_pose()
+	visual.update_pose(delta, false, reload_timer > 0.0,
+		1.0 - reload_timer / maxf(AUDIO.MIN_RELOAD, AUDIO.reload_seconds(weapon_id)), gait)
+
+## Pose de ferido no corpo visível: mancar e segurar o ferimento (vida abaixo da metade) e curvar
+## de dor (`_double_over`). Só escreve quando muda; o corpo interpola.
+func _sync_wound_pose() -> void:
+	if not is_instance_valid(visual): return
+	var bend := 1.0 if _double_over > 0.0 else 0.0
+	var limp := clampf((WOUNDED_RATIO - health / maxf(max_health, 1.0)) / WOUNDED_RATIO * 1.6, 0.0, 1.0) if not dead else 0.0
+	if visual.has_method("set_wound_pose"): visual.set_wound_pose(limp, bend)
+
 func receive_damage(amount: float, source: Node = null) -> void:
 	if dead or not is_finite(amount) or amount <= 0: return
 	last_damage_time = float(Time.get_ticks_msec()) * 0.001
@@ -442,6 +513,8 @@ func receive_damage(amount: float, source: Node = null) -> void:
 	var absorbed := minf(armor, amount)
 	armor = maxf(0.0, armor - absorbed)
 	health = maxf(0.0, health - (amount - absorbed))
+	# Gameplay._impact_sound troca o estalo de carne pelo baque da placa neste quadro.
+	if absorbed > 0.0: set_meta("armor_hit_frame", Engine.get_physics_frames())
 	if health <= 0:
 		dead = true
 		_cancel_navigation()
@@ -458,6 +531,7 @@ func receive_damage(amount: float, source: Node = null) -> void:
 	else:
 		var hit_dir: Vector3 = (global_position - (source as Node3D).global_position).normalized() if source is Node3D else Vector3.ZERO
 		preload("res://gameplay/CharacterFallPresentation3D.gd").apply_hit(self, visual, hit_dir, amount)
+		_react_to_wound(hit_dir, amount - absorbed, absorbed)
 	durability_changed.emit(health, max_health, armor, max_armor)
 	# O veículo é a fonte real. Gameplay confirma se ele está sob controle do
 	# jogador; tráfego, viatura e autoria desconhecida não são convertidos em crime.

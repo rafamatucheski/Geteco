@@ -1,0 +1,73 @@
+{
+  "date": "2026-10-27",
+  "period": "tarde de 2026-10-27",
+  "scope": "Retorno de jogo: sons de arma ruins (variantes novas e tomadas antigas), falta de impacto e de reação no corpo, o mesmo \"Ai!\" para todo mundo, polícia demorando para descer da viatura e da moto, helicóptero estranho.",
+  "cards": [
+    {
+      "id": "tiros-refeitos-20261027",
+      "title": "Tiros das variantes refeitos e tomadas antigas niveladas",
+      "status": "partial",
+      "area": "quality",
+      "description": "Medido nas formas de onda: as variantes (silenciada, SMG compacta e tática, escopeta semi) tinham tiro duplo na tomada, tiro atrasado 0,2 s, blocos de ruído com corte seco e cliques sem grave; pistola com 2 de 4 tomadas 13 dB mais fracas, magnum com segundo disparo, SMG e rifle de caça saturados, escopeta com cauda mais alta que o tiro, bombeada fora do tempo da animação. tools/audio/rebuild_weapon_banks.py remonta tudo só com gravações licenciadas (Firefly e V1): estalo + corpo grave alinhados, cauda aparada, nível pela energia dos primeiros 120 ms. Não verificado: audição no jogo e no exportado.",
+      "next": "Ouvir no jogo (prévias em evidence/weapon-audio-20261027) e refazer as recargas das variantes, que ainda são da conta grátis da ElevenLabs.",
+      "sources": [
+        "tools/audio/rebuild_weapon_banks.py",
+        "docs/weapon-variant-audio-brief.md"
+      ]
+    },
+    {
+      "id": "dor-e-impacto-20261027",
+      "title": "Gemido por pessoa, grito de morte e bala acertando o corpo",
+      "status": "partial",
+      "area": "quality",
+      "description": "35 gritos gravados na ElevenLabs (homem e mulher; leve em grupos jovem/maduro/mais velho, forte e morte) em audio/PainVoiceBank.gd: cada corpo sorteia uma vez grupo e tom, sem voz masculina por padrão quando o gênero é desconhecido e sem legenda \"Ai!\". Grito de morte (80%, até 2 por segundo). Bala no corpo com 6 tomadas de carne e 3 de colete (SWAT, Exército e jogador com colete), mais alta e de mais longe que o soco de 155 Hz do V1. Conta grátis da ElevenLabs: sem licença comercial.",
+      "next": "Ouvir no jogo; regerar na conta paga antes de publicar.",
+      "sources": [
+        "audio/PainVoiceBank.gd",
+        "tools/audio/install_pain_voices.py",
+        "tests/test_pain_voice_bank.gd"
+      ]
+    },
+    {
+      "id": "policial-ferido-20261027",
+      "title": "Policial sente o tiro: recua, perde a mira, manca e curva de dor",
+      "status": "partial",
+      "area": "quality",
+      "description": "PoliceAgent: tiro tira o policial do eixo por 0,22-0,6 s (recua 13-37 cm, não atira, mira volta pela metade), com 0,9 s de recuperação entre trancos para a rajada não travá-lo. Abaixo de metade da vida manca (62% da velocidade, passo curto e quadril afundando) e segura o ferimento com a mão livre; com 30% da vida um tiro forte pode curvá-lo de dor por 1,2 s. GETECO_POLICE_HURT=0 desliga para A/B.",
+      "next": "Ver no jogo com SMG, escopeta e contra SWAT; ajustar tempos se a polícia ficar fácil demais.",
+      "sources": [
+        "gameplay/PoliceAgent.gd",
+        "gameplay/PoliceModel.gd",
+        "assets/CivilianModel.gd",
+        "tests/police_response/test_police_wound_reaction.gd"
+      ]
+    },
+    {
+      "id": "policia-desce-rapido-20261027",
+      "title": "Polícia desce da viatura e da moto sem enrolar",
+      "status": "partial",
+      "area": "quality",
+      "description": "Sem acostamento a viatura parada estacionava só depois de 3 s; mais 0,6 s parada, saída a 2,4 m/s e 0,45 s esperando a porta fechar. Agora 1 s, 0,25 s, 3,6 m/s e 0,1 s; a porta segue preparada em fatias (a viatura estacionada vem primeiro no rodízio e a descida espera a porta pronta por até 1,2 s, para o recorte não cair num quadro só). GETECO_POLICE_QUICK_EXIT=0 volta às esperas antigas para A/B. Medido no teste da parada: viatura para → desce em 1,2 s (porta sem pré-aquecimento no teste) e age 0,47 s depois; moto 0,73 s e 0,35 s. test_dispatch_police falha 2 de 59 com e sem a mudança (onde a viatura para; estacionar com a rua bloqueada): falha anterior, a investigar.",
+      "next": "Ver no jogo e medir no export release uma perseguição a pé com várias viaturas chegando juntas.",
+      "sources": [
+        "gameplay/dispatch/DispatchUnit.gd",
+        "gameplay/dispatch/DispatchOfficer.gd",
+        "gameplay/dispatch/DispatchController.gd",
+        "tests/dispatch/test_police_foot_stop.gd"
+      ]
+    },
+    {
+      "id": "helicoptero-patrulha-20261027",
+      "title": "Helicóptero chega, circula, solta a equipe e só depois vai embora",
+      "status": "partial",
+      "area": "quality",
+      "description": "Antes: 3 estrelas = 13 m de altura girando num raio de 9 m em cima do jogador por 60 s; 4+ = soltava os quatro e partia no mesmo instante. Agora circula a 22 m num raio de 18 m com o holofote no alvo; com 4+ estrelas desce para o rapel depois de 9 s, recolhe as cordas, circula mais 30 s e vai embora; caindo para 3 estrelas para de soltar gente mas continua observando.",
+      "next": "Ver no jogo em rua estreita e com prédios altos (desvio por cima do obstáculo).",
+      "sources": [
+        "gameplay/police_response/air_k9/PoliceHelicopter.gd",
+        "gameplay/police_response/air_k9/PoliceAirK9Director.gd",
+        "tests/police_response/test_air_k9.gd"
+      ]
+    }
+  ]
+}

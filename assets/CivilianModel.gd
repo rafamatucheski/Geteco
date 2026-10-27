@@ -43,6 +43,11 @@ var lod_enabled := true
 ## `WinterResidentModel.set_seat_pose` dos moradores da montanha.
 var sit_amount := 0.0
 var seat_height := 0.45
+## Ferido (PoliceModel.set_wound_pose), 0..1. `limp`: a perna 0 dá passo curto e o quadril afunda
+## quando ela apoia. `hurt_bend`: curva o tronco e dobra os joelhos de dor. 0 = pose normal.
+var limp := 0.0
+var hurt_bend := 0.0
+var _bend_w := 0.0
 ## Alternativa a escrever `hand_targets`: chamado a cada pose, devolve [alvo0, alvo1].
 var hand_provider: Callable
 
@@ -400,6 +405,7 @@ func should_sync_pose() -> bool:
 ## Estados em que pular quadro aparece ou quebra: jogador, impacto, queda, morte e combate.
 func _pose_strictly_live() -> bool:
 	if _hit != Vector2.ZERO or _hit_target != Vector2.ZERO or _hit_velocity != Vector2.ZERO: return true
+	if hurt_bend > 0.0 or _bend_w > 0.0 or limp > 0.0: return true
 	if not is_instance_valid(_owner_actor): return false
 	if _owner_actor.get("is_player") == true or _owner_actor.get("dead") == true: return true
 	if _owner_actor.has_meta("street_down") or _owner_actor.has_meta("street_flying"): return true
@@ -468,6 +474,8 @@ func _pose(dt: float) -> void:
 	_run_w = move_toward(_run_w, smoothstep(2.2, 3.3, v), dt * 3.0)
 	_carry_w = move_toward(_carry_w, 1.0 if activity == "carry" else 0.0, dt * 4.0)
 	_talk_w = move_toward(_talk_w, 1.0 if activity == "talk" else 0.0, dt * 3.0)
+	_bend_w = move_toward(_bend_w, clampf(hurt_bend, 0.0, 1.0), dt * 5.0)
+	var bend := smoothstep(0.0, 1.0, _bend_w)
 	var mw := smoothstep(0.0, 1.0, _move_w)
 	var rw := _run_w
 	var idle := 1.0 - mw
@@ -487,7 +495,9 @@ func _pose(dt: float) -> void:
 	var pitches: Array[float] = []
 	for i in 2:
 		var side := -1.0 if i == 0 else 1.0
-		var f := _foot(fposmod(_phase + 0.5 * i, 1.0), duty, reach, behind, lift, strike, push, rw * mw)
+		# Mancando, a perna 0 (a ferida) pisa mais curto e levanta menos.
+		var hurt_leg := clampf(limp, 0.0, 1.0) if i == 0 else 0.0
+		var f := _foot(fposmod(_phase + 0.5 * i, 1.0), duty, reach * (1.0 - 0.4 * hurt_leg), behind, lift * (1.0 - 0.5 * hurt_leg), strike, push, rw * mw)
 		# De lado os pés abrem um pouco para não cruzarem a canela no passo.
 		var width := side * (lerpf(0.098, 0.078, rw * mw) + 0.045 * absf(_step_dir.x) * mw)
 		ankles.append((Vector3(width + _step_dir.x * f.x, f.y, _step_dir.y * f.x) + _idle_stance[i] * idle).lerp(Vector3(side * 0.13, ankle_height, 0.4), _sit()))
@@ -506,9 +516,14 @@ func _pose(dt: float) -> void:
 	shift += 0.022 * weight * idle
 	roll -= 0.03 * weight * idle
 	var tilt := lerpf(0.02, 0.09, rw) * mw
+	# Mancando: o quadril afunda e pende para a perna ferida enquanto ela sustenta o peso.
+	var injured_phase := fposmod(_phase, 1.0)
+	var limp_dip := sin(PI * injured_phase / duty) * clampf(limp, 0.0, 1.0) * mw if injured_phase < duty else 0.0
+	roll += 0.07 * limp_dip
+	tilt += 0.28 * bend
 	var pelvis_basis := Basis.from_euler(Vector3(tilt + _hit.x * 0.3, yaw, roll + _hit.y * 0.3))
-	# Joelho cede um pouco com o impacto.
-	var pelvis_position := Vector3(shift, pelvis_y - (0.008 + 0.015 * rw) * mw + bob - _hit.length() * 0.06, 0.0)
+	# Joelho cede um pouco com o impacto; curvado de dor, os joelhos dobram de vez (o IK dobra sozinho).
+	var pelvis_position := Vector3(shift, pelvis_y - (0.008 + 0.015 * rw) * mw + bob - _hit.length() * 0.06 - 0.045 * limp_dip - 0.24 * bend, 0.0)
 	# Só a perna de apoio limita a altura da pelve: a do balanço está no ar e
 	# pode encolher. Incluí-la agachava o corredor no começo do balanço.
 	var leg_reach := (thigh_len + shin_len) * 0.998
@@ -533,7 +548,7 @@ func _pose(dt: float) -> void:
 	var breathe := sin(clock * 1.7 + _seed) * 0.012 * (1.0 + rw * 1.5)
 	var chest_yaw := -yaw * 1.7
 	var chest_roll := -roll * 0.85
-	var chest_lean := lerpf(0.03, 0.22, rw) * mw - tilt * 0.5 + breathe - 0.05 * _carry_w + 0.1 * _sit()
+	var chest_lean := lerpf(0.03, 0.22, rw) * mw - tilt * 0.5 + breathe - 0.05 * _carry_w + 0.1 * _sit() + 0.42 * bend + 0.06 * clampf(limp, 0.0, 1.0)
 	spine.transform = Transform3D(Basis.from_euler(Vector3(chest_lean + _hit.x, chest_yaw, chest_roll + _hit.y)), SPINE_OFFSET)
 	var spine_model := pelvis.transform * spine.transform
 

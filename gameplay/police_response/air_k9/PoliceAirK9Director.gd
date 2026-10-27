@@ -67,7 +67,8 @@ func _physics_process(delta: float) -> void:
 	dogs = dogs.filter(func(dog): return is_instance_valid(dog) and not dog.is_queued_for_deletion())
 	if gameplay.stars < 4:
 		for dog in dogs: dog.begin_withdrawal()
-		if is_instance_valid(helicopter) and not helicopter.recon_only: helicopter.begin_departure()
+		# Com 3 estrelas ele não solta mais ninguém, mas continua circulando até o fim da patrulha.
+		if is_instance_valid(helicopter) and not helicopter.recon_only: helicopter.cancel_drop()
 	# Interior coordinates belong to a different physical room; never use them outdoors.
 	if not exterior_active():
 		if is_instance_valid(helicopter): helicopter.begin_departure()

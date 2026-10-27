@@ -8,6 +8,20 @@ const FIREFLY := preload("res://audio/FireflyBank.gd")
 const HOVER_HEIGHT := 13.0
 const ROPE_SEGMENTS := 10
 const DESCENT_SPEED := 2.3
+## Patrulha aérea (27/10/2026). Antes, com 3 estrelas ele ficava a 13 m girando num raio de 9 m
+## em cima do jogador (tampando a tela) e ia embora em 60 s; com 4+ chegava, soltava a equipe e
+## partia no mesmo instante. Agora ele chega, circula mais alto e mais largo com o holofote no
+## alvo, com 4+ estrelas desce para soltar a equipe depois de DROP_AFTER s circulando, volta a
+## circular por STAY_AFTER_DROP s e só então vai embora.
+const TRACK_HEIGHT := 22.0
+const ORBIT_RADIUS := 18.0
+const ORBIT_SPEED := 0.2
+const RECON_STAY := 45.0
+const DROP_AFTER := 9.0
+const STAY_AFTER_DROP := 30.0
+## Sem zona de pouso livre perto do alvo, tenta de novo a cada tanto; depois disto desiste de soltar.
+const DROP_RETRY := 2.0
+const DROP_GIVE_UP := 20.0
 static var _rotor_audio: AudioStreamWAV
 var director: Node3D
 var landing_zone: Dictionary
@@ -42,6 +56,12 @@ var _depart_target := Vector3.ZERO
 var _rope_retract := 0.0
 var _door_open := 0.0
 var _depart_origin := Vector3.ZERO
+var dropped := false
+var _track_time := 0.0
+var _stay_limit := RECON_STAY
+var _orbit_angle := 0.0
+var _drop_retry := 0.0
+var _stop_drop := false
 
 func _ready() -> void:
 	name = "PoliceRappelHelicopter"
@@ -84,6 +104,10 @@ func _ready() -> void:
 	add_child(sound)
 	sound.play()
 	_play_flyover()
+	# A primeira volta começa do lado de onde ele vem, sem cruzar por cima do alvo.
+	if is_instance_valid(director) and is_instance_valid(director.gameplay):
+		var from: Vector3 = global_position - director.gameplay.last_known
+		_orbit_angle = atan2(from.z, from.x)
 
 ## Rotor gravado (Firefly, 2026-10-15) em loop; sem o arquivo importado fica o sintetizado.
 func _recorded_rotor() -> AudioStreamWAV:
@@ -131,19 +155,32 @@ func _physics_process(delta: float) -> void:
 	if not director.exterior_active() and mode != "depart": begin_departure()
 	match mode:
 		"approach":
-			var destination: Vector3 = landing_zone.center + Vector3.UP * HOVER_HEIGHT
-			if recon_only: destination = director.gameplay.last_known + Vector3.UP * HOVER_HEIGHT
-			_fly_to(destination, 15.0, delta)
-			if global_position.distance_to(destination) < 0.22 and velocity.length() < 0.8:
-				mode = "recon" if recon_only else "hover"
+			var destination := _orbit_point()
+			_fly_to(destination, 16.0, delta)
+			if global_position.distance_to(destination) < 4.0:
+				mode = "recon" if recon_only else "track"
 				_mode_time = 0.0
 			elif _mode_time > 35.0: begin_departure()
-		"recon":
-			# Follow only shared, witnessed information. Roofs still block _sense.
-			var anchor: Vector3 = director.gameplay.last_known
-			var orbit := Vector3(cos(_mode_time * 0.18), 0, sin(_mode_time * 0.18)) * 9.0
-			_fly_to(anchor + orbit + Vector3.UP * HOVER_HEIGHT, 18.0, delta)
-			if _mode_time > 60.0: begin_departure()
+		"recon", "track":
+			if rope_mesh.visible:
+				# Recolhe as cordas parado sobre a zona antes de voltar a circular.
+				_rope_retract = minf(1.0, _rope_retract + delta * 0.7)
+				_fly_to(landing_zone.center + Vector3.UP * HOVER_HEIGHT, 2.0, delta)
+				if _rope_retract >= 1.0: rope_mesh.visible = false
+			else:
+				# Follow only shared, witnessed information. Roofs still block _sense.
+				# 24 m/s acompanha a fuga de carro pela cidade; perto do ponto `_fly_to` desacelera sozinho.
+				_orbit_angle = fposmod(_orbit_angle + delta * ORBIT_SPEED, TAU)
+				_fly_to(_orbit_point(), 24.0, delta)
+			_track_time += delta
+			if not _try_begin_drop(delta) and _track_time >= _stay_limit: begin_departure()
+		"descend":
+			var hover_point: Vector3 = landing_zone.center + Vector3.UP * HOVER_HEIGHT
+			_fly_to(hover_point, 12.0, delta)
+			if global_position.distance_to(hover_point) < 0.22 and velocity.length() < 0.8:
+				mode = "hover"
+				_mode_time = 0.0
+			elif _mode_time > 25.0: _after_drop()
 		"hover":
 			_fly_to(landing_zone.center + Vector3.UP * HOVER_HEIGHT, 3.0, delta)
 			if _mode_time >= 1.8 and absf(wrapf(rotation.y, -PI, PI)) < 0.04:
@@ -154,7 +191,7 @@ func _physics_process(delta: float) -> void:
 					mode = "rappel"
 					_mode_time = 0.0
 					rope_mesh.visible = true
-				elif _mode_time > 6.0: begin_departure()
+				elif _mode_time > 6.0: _after_drop()
 		"rappel":
 			_fly_to(landing_zone.center + Vector3.UP * HOVER_HEIGHT, 2.0, delta)
 			_update_rappel(delta)
@@ -219,13 +256,14 @@ func _update_searchlight(delta: float) -> void:
 	spotlight.global_basis = spotlight.global_basis.slerp(desired, minf(1.0, delta * 5.0))
 
 func _spawn_rappeller(index: int) -> void:
+	# Sem mais gente para soltar: quem já desceu fica, a aeronave volta a só observar.
 	if director.gameplay.stars < 4:
-		_depart_requested = true
+		_stop_drop = true
 		return
 	if director.officer_count() + _reserved > director.officer_limit():
 		# Legacy callers may add officers without consulting DispatchController.
 		# Do not compound their allocation with another person on a rope.
-		_depart_requested = true
+		_stop_drop = true
 		return
 	var point: Vector3 = landing_zone.points[index]
 	if not director.capsule_clear(point): return
@@ -250,7 +288,7 @@ func _spawn_rappeller(index: int) -> void:
 
 func _update_rappel(delta: float) -> void:
 	_next_drop -= delta
-	if deployed_count < 4 and _next_drop <= 0.0 and not _depart_requested:
+	if deployed_count < 4 and _next_drop <= 0.0 and not _depart_requested and not _stop_drop:
 		_next_drop = 0.85
 		_spawn_rappeller(deployed_count)
 	for index in range(rappellers.size() - 1, -1, -1):
@@ -301,15 +339,17 @@ func _update_rappel(delta: float) -> void:
 		var phase_progress := float(entry.phase_time) / (0.55 if entry.phase == "release" else 0.65)
 		if entry.phase == "descend": phase_progress = 1.0 - (officer.global_position.y - point.y) / maxf(0.1, float(entry.start_height) - point.y)
 		entry.contacts = entry.pose.update(delta, entry.phase, phase_progress, rope_anchor(int(entry.index)))
-	if (deployed_count == 4 or _depart_requested) and rappellers.is_empty() and _mode_time > 6.0:
-		_start_departure()
+	if (deployed_count == 4 or _depart_requested or _stop_drop) and rappellers.is_empty() and _mode_time > 6.0:
+		if _depart_requested: _start_departure()
+		else: _after_drop()
 	elif _mode_time > 25.0:
 		# Abort safely: all remaining live bodies recover their normal collision
 		# and gravity. There is no forced placement through an occupied column.
 		for entry in rappellers:
 			if is_instance_valid(entry.officer): _release_officer(entry.officer)
 		rappellers.clear()
-		_start_departure()
+		if _depart_requested: _start_departure()
+		else: _after_drop()
 
 func _release_officer(officer: CharacterBody3D) -> void:
 	for entry in rappellers:
@@ -328,6 +368,55 @@ func _release_slot() -> void:
 	if _reserved <= 0: return
 	_reserved -= 1
 	director.release_air_slot()
+
+## Ponto da volta atual: em torno do alvo visto (ou da última posição conhecida), alto e largo o
+## bastante para não tampar o jogador na câmera isométrica.
+func _orbit_point() -> Vector3:
+	var gameplay: Node3D = director.gameplay
+	var anchor: Vector3 = gameplay.last_known
+	var target: Node3D = gameplay.pursuit_target()
+	if sees_player and is_instance_valid(target): anchor = target.global_position
+	return anchor + Vector3(cos(_orbit_angle), 0.0, sin(_orbit_angle)) * ORBIT_RADIUS + Vector3.UP * TRACK_HEIGHT
+
+## Transporte (4+ estrelas) circulando há DROP_AFTER s: procura zona livre perto do alvo e desce.
+## Sem zona, tenta a cada DROP_RETRY s; passado DROP_GIVE_UP desiste e segue só observando.
+func _try_begin_drop(delta: float) -> bool:
+	if recon_only or dropped or _stop_drop or _track_time < DROP_AFTER: return false
+	if director.gameplay.stars < 4:
+		cancel_drop()
+		return false
+	_drop_retry -= delta
+	if _drop_retry > 0.0: return false
+	_drop_retry = DROP_RETRY
+	var zone: Dictionary = director.find_landing_zone(director.gameplay.last_known)
+	if zone.is_empty():
+		if _track_time >= DROP_AFTER + DROP_GIVE_UP: cancel_drop()
+		return false
+	landing_zone = zone
+	mode = "descend"
+	_mode_time = 0.0
+	return true
+
+## Para de soltar gente (estrelas caíram para 3, sem zona de pouso) e segue observando;
+## quem já está na corda termina de descer.
+func cancel_drop() -> void:
+	if recon_only or _stop_drop or dead: return
+	_stop_drop = true
+	if mode in ["descend", "hover"]: _after_drop()
+	elif mode != "rappel":
+		while _reserved > 0: _release_slot()
+
+## Equipe no chão (ou inserção abortada): devolve as vagas reservadas, sobe de volta e circula
+## mais STAY_AFTER_DROP s antes de ir embora.
+func _after_drop() -> void:
+	while _reserved > 0: _release_slot()
+	dropped = true
+	_stop_drop = true
+	_rope_retract = 0.0
+	mode = "track"
+	_mode_time = 0.0
+	_track_time = 0.0
+	_stay_limit = STAY_AFTER_DROP
 
 func begin_departure() -> void:
 	if mode == "depart" or dead: return
