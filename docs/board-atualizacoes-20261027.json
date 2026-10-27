@@ -64,6 +64,16 @@
         "tools/bench/cold_ab_spikes.py"
       ],
       "next": "Com o pico em ~50 % das sessões, 4 por lado não separam nada menor que 0 contra 4: o próximo A/B precisa de ~15–20 sessões frias por lado (uma noite inteira por hipótese), ou de um log de criação de pipeline no motor (RenderDoc/Nsight/PIX ou build do Godot) para dar nome às pipelines."
+    },
+    "bug-veiculos-cor-ao-bater-20261012": {
+      "status": "implemented",
+      "description": "Conferido em 27/10 com tests/capture/capture_crash_paint_color.gd (Main de dia, câmera travada, 3 batidas pelo caminho real Vehicle.receive_impact → VehicleBodyDents, sem chegar ao fogo): o metallic fica igual (0,30 no sport_coupe, 0,65 no Monaliza e no Porto Rosso) e a cor média dos pixels de pintura muda 1,3 % (sport_coupe) e 1,6 % (Monaliza), mesma matiz; aparecem riscos claros e facetas de luz no capô amassado. Com a vida a zero a carcaça queimada escurece de propósito. Não foi jogado com controle.",
+      "sources": [
+        "tests/capture/capture_crash_paint_color.gd",
+        "gameplay/vehicle_effects/VehicleDamage.gd",
+        "gameplay/vehicle_effects/VehicleBodyDents.gd"
+      ],
+      "next": ""
     }
   },
   "remove": []
