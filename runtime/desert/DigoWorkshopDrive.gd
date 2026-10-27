@@ -371,7 +371,9 @@ func _update_camera(allow_fallback := true) -> bool:
 func _fit_car_in_preview(minimum_fov: float) -> bool:
 	# The scene camera serves a preview beside a sidebar and above a footer.
 	# Fit the full volume on every orbit pose instead of trusting the centre ray.
-	for angle in range(int(minimum_fov),51,2):
+	# A vista traseira fica presa entre as colunas do elevador: perua e minivan (~5,5 m) só
+	# cabem abrindo até 60°; sem isso a câmera ficava na frente ao olhar aerofólio/difusor.
+	for angle in range(int(minimum_fov),61 if _rear_inspection else 51,2):
 		_camera.fov = float(angle)
 		if car_fits_preview(): return true
 	return false
