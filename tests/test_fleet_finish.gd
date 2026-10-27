@@ -47,7 +47,9 @@ func run() -> void:
 		for material in equipment.tail_materials: check(not material.emission_enabled,id+": wreck lamps off")
 		# Moto da polícia tem libré fixa (sem material "paint"); não é repintável na garagem.
 		if id != "bike_police": check(not car._paint.materials.is_empty(),id+": paint remains customizable")
-		if id in FINISH.CABINS:
+		# A frota redesenhada (RedesignedFleet) vem assada com vidro próprio e não passa por VehicleFinish.decorate:
+		# só os modelos antigos ganham a SculptedCabin.
+		if id in FINISH.CABINS and not preload("res://runtime/RedesignedFleet.gd").contains(id):
 			var cabin := car.visual.get_node("SculptedCabin") as MeshInstance3D
 			var glass := cabin.get_active_material(0) as StandardMaterial3D
 			check(glass != null and glass.roughness <= .15,id+": separate polished glazing")

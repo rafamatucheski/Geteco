@@ -87,8 +87,13 @@ func run() -> void:
 	var intact := Transform3D(Basis.IDENTITY, Vector3(5, 0, 0))
 	batch.set_instance_transform(1, intact)
 	PROPS._fade_post({"multimesh": batch, "index": 0, "extra": [], "chunk": weakref(world)})
-	check(batch.get_instance_transform(0).basis.get_scale().is_zero_approx(), "Fallen post transferred to fade geometry")
-	check(batch.get_instance_transform(1) == intact, "Intact neighboring post preserved")
+	# Em --headless o servidor de render falso não guarda o buffer da MultiMesh (toda instância volta
+	# identidade): as duas leituras só valem com janela.
+	if DisplayServer.get_name() == "headless":
+		print("DESTROYED_CLEANUP SKIP poste derrubado/vizinho: precisa de janela (MultiMesh no headless)")
+	else:
+		check(batch.get_instance_transform(0).basis.get_scale().is_zero_approx(), "Fallen post transferred to fade geometry")
+		check(batch.get_instance_transform(1) == intact, "Intact neighboring post preserved")
 	var dispatch := DispatchFixture.new()
 	world.add_child(dispatch)
 	dispatch.add_child(dispatch.gameplay)

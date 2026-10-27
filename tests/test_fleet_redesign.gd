@@ -81,7 +81,10 @@ func inspect(id: String) -> void:
 	if source==null: return
 	var raw:=geometry(source)
 	check(raw.meshes>0 and raw.triangles>0 and raw.invalid_vertices==0,"nonempty geometry contains only finite vertices")
-	check(raw.centers.size()>=4,"at least four independent rolling wheel centers")
+	# Motos entraram na frota redesenhada em 23/10 (19de67cc): duas rodas em linha, um farol.
+	var bike: bool = id.begins_with("bike_")
+	if bike: check(raw.centers.size()>=2,"at least two independent rolling wheel centers")
+	else: check(raw.centers.size()>=4,"at least four independent rolling wheel centers")
 	var left:=0
 	var right:=0
 	var front:=0
@@ -91,7 +94,8 @@ func inspect(id: String) -> void:
 		else: right+=1
 		if center.z<0: front+=1
 		else: rear+=1
-	check(left>=2 and right>=2 and front>=2 and rear>=2,"wheel anchors occupy both sides and both axles")
+	if bike: check(front>=1 and rear>=1,"wheel anchors occupy both axles")
+	else: check(left>=2 and right>=2 and front>=2 and rear>=2,"wheel anchors occupy both sides and both axles")
 	if not legacy:
 		for part: MeshInstance3D in source.find_children("*","MeshInstance3D",true,false):
 			if part.mesh==null: continue
@@ -109,9 +113,14 @@ func inspect(id: String) -> void:
 	var lens_sides: Array=[]
 	for item: Dictionary in equipment.lens_materials:
 		if item.side not in lens_sides: lens_sides.append(item.side)
-	check(lens_sides.has(-1) and lens_sides.has(1),"front lens surfaces retain independent left/right bindings")
-	check(not equipment.tail_materials.is_empty(),"rear lens surfaces remain bound to brake/tail behaviour")
-	check(equipment.lamps.size()==2,"headlight binding creates both projectors")
+	if bike:
+		check(not equipment.lens_materials.is_empty(),"front lens surface is bound to the headlight")
+		check(not equipment.tail_materials.is_empty(),"rear lens surfaces remain bound to brake/tail behaviour")
+		check(equipment.lamps.size()>=1,"headlight binding creates the projector")
+	else:
+		check(lens_sides.has(-1) and lens_sides.has(1),"front lens surfaces retain independent left/right bindings")
+		check(not equipment.tail_materials.is_empty(),"rear lens surfaces remain bound to brake/tail behaviour")
+		check(equipment.lamps.size()==2,"headlight binding creates both projectors")
 	a.controlled=true
 	equipment.toggle_headlights()
 	var lenses_lit: bool=not equipment.lens_materials.is_empty()
