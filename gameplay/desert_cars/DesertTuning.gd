@@ -91,13 +91,29 @@ const SLOT_LABELS := {"ecu":"ECU","engine":"Motor","turbo":"Turbo","nitro":"Nitr
 const SUNROOF_MODELS := ["desert_faisca","desert_coyote","desert_siroco","desert_bison","desert_mirage","desert_faisca_rally","desert_coyote_drag","desert_mirage_gt","rauhz_focus_mk1","supra_a80","digo_gol_1993","digo_amarok_2014","jessica_jetta_gli"]
 const MAX_STREET_CAP_GAIN := .20
 ## Peças que o carro já traz de fábrica fundidas na malha da carroceria: a versão de
-## oficina ficaria duplicada por cima (auditoria visual de 27/10). Asas e aerofólios de teto,
-## splitter das edições GT/Drag/Rally, aletas do Mirage GT e escapamento lateral do Drag.
+## oficina ficaria duplicada por cima (auditoria visual de 27/10). Splitter das edições
+## GT/Drag/Rally, aletas do Mirage GT, escapamento lateral do Drag e as asas que não
+## dá para separar (no Faísca o lábio do teto é soldado no teto; os esportivos 2.0 ainda
+## não foram medidos). As outras asas saem pela FACTORY_WING_BOX.
 const FACTORY_KIT := {
-	"spoiler":["sport_coupe","monaliza","supra_a80","desert_siroco","desert_mirage","desert_mirage_gt","desert_faisca","desert_faisca_rally","desert_coyote_drag","metro_hatch","rauhz_focus_mk1","orbita_micro","lince_rs","raijin_gt","kite_type_s"],
+	"spoiler":["desert_faisca","desert_faisca_rally","lince_rs","raijin_gt","kite_type_s"],
 	"front_lip":["desert_faisca_rally","desert_coyote_drag","desert_mirage_gt"],
 	"diffuser":["desert_mirage_gt"],
 	"skirts":["desert_coyote_drag"]}
+## Asa de fábrica que some quando entra o aerofólio de oficina: caixa no espaço do modelo
+## [mínimo, máximo] e a altura que a peça precisa alcançar (a tampa e os frisos dela ficam).
+## Medido nos componentes soltos de cada malha assada em 27/10 (TuningFactoryWing).
+const FACTORY_WING_BOX := {
+	"sport_coupe":[Vector3(-.93,.82,1.90),Vector3(.93,1.13,2.24),.98],
+	"monaliza":[Vector3(-1.02,.826,1.82),Vector3(1.02,1.38,2.22),1.0],
+	"supra_a80":[Vector3(-.80,.77,1.68),Vector3(.80,1.30,2.04),1.0],
+	"desert_siroco":[Vector3(-.75,.80,1.73),Vector3(.75,1.07,1.95),.95],
+	"desert_mirage":[Vector3(-.91,.75,1.72),Vector3(.91,.90,1.89),.83],
+	"desert_mirage_gt":[Vector3(-.91,.75,1.63),Vector3(.91,1.12,1.99),.90],
+	"desert_coyote_drag":[Vector3(-.88,.76,2.02),Vector3(.88,.88,2.20),.84],
+	"metro_hatch":[Vector3(-.66,1.33,1.29),Vector3(.66,1.43,1.57),1.40],
+	"rauhz_focus_mk1":[Vector3(-.66,1.27,1.02),Vector3(.66,1.33,1.22),1.30],
+	"orbita_micro":[Vector3(-.60,1.47,.98),Vector3(.60,1.53,1.19),1.50]}
 
 static func compatible(part_id: String, car_id: String) -> bool:
 	if not PARTS.has(part_id): return false

@@ -4,6 +4,8 @@ static var _sources: Dictionary = {}
 var materials: Array[StandardMaterial3D] = []
 var original_color := Color.WHITE
 var roof_materials: Array[StandardMaterial3D] = []
+## Carro pintado; o tuning usa para achar peças de fábrica do modelo (asa) também na vitrine.
+var paint_archetype := ""
 
 static func source_for(archetype: String) -> Dictionary:
 	if archetype == "police_transport": archetype = "courier_van"
@@ -13,6 +15,7 @@ static func source_for(archetype: String) -> Dictionary:
 	return _sources.get(archetype,{})
 
 func bind(root: Node3D, archetype: String) -> void:
+	paint_archetype = archetype
 	materials.clear()
 	roof_materials.clear()
 	var source := source_for(archetype)

@@ -3,12 +3,14 @@ extends RefCounted
 const WHEEL := preload("res://gameplay/desert_cars/TuningWheelKit.gd")
 const ROOF := preload("res://gameplay/desert_cars/TuningSunroof.gd")
 const AERO := preload("res://gameplay/desert_cars/TuningAeroKit.gd")
+const FACTORY_WING := preload("res://gameplay/desert_cars/TuningFactoryWing.gd")
 const AERO_STYLE_KEYS := {"skirts":"skirt_style","front_lip":"lip_style","diffuser":"diffuser_style"}
 var model: Node3D
 var wheels: Array = []
 var tails: Array = []
 var roof: RefCounted
 var aero: RefCounted
+var factory_wing: RefCounted
 var spoiler: Node3D
 var _wheel_signature := ""
 var _spoiler_style := ""
@@ -55,8 +57,10 @@ func bind(source: Node3D, painter: RefCounted) -> void:
 					if tail_index >= 0: default_color = equipment._tail_colors[tail_index]
 				tails.append({"material":instance,"part":part,"surface":surface,"color":default_color,"emission":instance.emission})
 	for group in groups.values(): wheels.append(group)
+	factory_wing = FACTORY_WING.new()
+	factory_wing.bind(source,str(painter.get("paint_archetype")) if painter != null and painter.get("paint_archetype") != null else "")
 	aero = AERO.new()
-	aero.bind(source,wheels,tails,painter)
+	aero.bind(source,wheels,tails,painter,factory_wing.box)
 
 func apply(parts: Dictionary, catalog: Dictionary, paint: Color) -> void:
 	var wheel_part: Dictionary = catalog.get(parts.get("wheel_model",""),{})
@@ -80,8 +84,14 @@ func apply(parts: Dictionary, catalog: Dictionary, paint: Color) -> void:
 	for group in wheels:
 		if is_instance_valid(group.kit): group.kit.get_meta("alloy_material").albedo_color = Color(str(color_part.get("wheel_color","bfc7c8")))
 	_apply_tails(catalog.get(parts.get("taillights",""),{}))
-	roof.apply(str(catalog.get(parts.get("sunroof",""),{}).get("sunroof_style","")))
-	_apply_spoiler(str(catalog.get(parts.get("spoiler",""),{}).get("spoiler_style","")),paint)
+	var roof_style := str(catalog.get(parts.get("sunroof",""),{}).get("sunroof_style",""))
+	var spoiler_style := str(catalog.get(parts.get("spoiler",""),{}).get("spoiler_style",""))
+	# O teto solar recorta a malha inteira: devolve a asa antes, senão a asa ficaria
+	# perdida dentro do recorte do teto ao tirar o aerofólio depois.
+	if roof_style != roof._style: factory_wing.set_hidden(false)
+	roof.apply(roof_style)
+	factory_wing.set_hidden(not spoiler_style.is_empty())
+	_apply_spoiler(spoiler_style,paint)
 	for slot in AERO_STYLE_KEYS:
 		aero.apply(slot,str(catalog.get(parts.get(slot,""),{}).get(AERO_STYLE_KEYS[slot],"")),paint)
 

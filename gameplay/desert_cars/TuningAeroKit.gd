@@ -25,9 +25,12 @@ var nodes := {}
 var _styles := {}
 var _paint_materials := {}
 var _body := {}
+## Asa de fábrica: fica fora das medidas, porque o aerofólio de oficina a substitui.
+var wing_box := AABB()
 
-func bind(source: Node3D, wheel_groups: Array, tail_rows: Array, painter: RefCounted) -> void:
+func bind(source: Node3D, wheel_groups: Array, tail_rows: Array, painter: RefCounted, factory_wing := AABB()) -> void:
 	model = source
+	wing_box = factory_wing
 	wheels = wheel_groups
 	tails = tail_rows
 	if painter != null and painter.get("materials") != null: body_materials = painter.materials
@@ -84,7 +87,7 @@ func body() -> Dictionary:
 	var profile := {}
 	for part: MeshInstance3D in model.find_children("*","MeshInstance3D",true,false):
 		if part.mesh == null or part.has_meta("wheel_center") or not part.visible: continue
-		if part.name.begins_with("Tuning") or part.name in ["Interior","InteriorAlpha"]: continue
+		if part.name in ["Interior","InteriorAlpha"] or preload("res://gameplay/desert_cars/TuningFactoryWing.gd").in_kit(part,model): continue
 		var xf := ROOF.relative_transform(part,model)
 		var original: Mesh = part.get_meta("body_dents_rest_mesh",part.mesh)
 		for surface in original.get_surface_count():
@@ -94,8 +97,10 @@ func body() -> Dictionary:
 			var painted: bool = material in body_materials or material.resource_name in ["paint","roof_paint"]
 			var arrays := MESH_ARRAYS.arrays_of(original,surface)
 			var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+			var skip_wing := wing_box.size != Vector3.ZERO
 			for v in vertices:
 				var p: Vector3 = xf*v
+				if skip_wing and wing_box.has_point(p): continue
 				var q := Vector3(absf(p.x),p.y,p.z*rear)
 				solid.append(q)
 				if painted: points.append(q)
@@ -144,6 +149,7 @@ func _centreline(profile: Dictionary, vertices: PackedVector3Array, indices: Var
 	for i in range(0,count,3):
 		var tri: Array[Vector3] = []
 		for j in 3: tri.append(xf*vertices[index[i+j] if not index.is_empty() else i+j])
+		if wing_box.size != Vector3.ZERO and tri.all(func(p: Vector3): return wing_box.has_point(p)): continue
 		var cut: Array[Vector3] = []
 		for j in 3:
 			var a: Vector3 = tri[j]
@@ -181,8 +187,9 @@ func spoiler_mount() -> Dictionary:
 	for bin in bins:
 		var z: float = bin*PROFILE_STEP
 		var y := float(profile[bin])
-		# Acima da metade da altura do teto: o topo do para-choque de um hatch não é tampa.
-		var deck_height: bool = z > roof_end+.05 and y < roof_y-.18 and y > lerpf(float(b.ground),roof_y,.55)
+		# Acima da metade da altura do teto: o topo do para-choque de um hatch (~0,6 m) não é
+		# tampa; a tampa do Siroco fica a 0,80 m com o teto a 1,46 m.
+		var deck_height: bool = z > roof_end+.05 and y < roof_y-.18 and y > lerpf(float(b.ground),roof_y,.50)
 		if deck_height and run_start != INF and bin == previous+1 and absf(y-float(profile[previous])) < .02:
 			if (bin+1)*PROFILE_STEP-run_start >= DECK_MIN: deck_end = (bin+1)*PROFILE_STEP
 		elif deck_height: run_start = z

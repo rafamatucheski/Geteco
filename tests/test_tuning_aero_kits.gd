@@ -5,8 +5,8 @@ const VEHICLE := preload("res://scripts/Vehicle.gd")
 const APPEARANCE := preload("res://gameplay/desert_cars/TuningAppearance.gd")
 const TUNING := preload("res://gameplay/desert_cars/DesertTuning.gd")
 const ROOF := preload("res://gameplay/desert_cars/TuningSunroof.gd")
-const HATCHES := ["orbita_micro","station_wagon","nordic_estate","nimbus_minivan","surf_woody_wagon","sport_estate","digo_gol_1993"]
-const BOOTS := ["desert_coyote","sedan_classic","union_sedan","cobra_v8","taxi_yellow","muscle_classic","aurora_executive","porto_rosso","vertice_midengine","jessica_jetta_gli"]
+const HATCHES := ["metro_hatch","rauhz_focus_mk1","orbita_micro","station_wagon","nordic_estate","nimbus_minivan","surf_woody_wagon","sport_estate","digo_gol_1993"]
+const BOOTS := ["supra_a80","desert_siroco","desert_mirage","desert_mirage_gt","desert_coyote_drag","sport_coupe","monaliza","desert_coyote","sedan_classic","union_sedan","cobra_v8","taxi_yellow","muscle_classic","aurora_executive","porto_rosso","vertice_midengine","jessica_jetta_gli"]
 var failures: Array[String] = []
 var checks := 0
 
@@ -28,6 +28,7 @@ func run() -> void:
 		for id in TUNING.FACTORY_KIT[slot]: check(not TUNING.compatible(part,id),id+" factory "+slot+" is not doubled by a workshop part")
 	for id in ["desert_faisca","desert_coyote","desert_mirage","desert_siroco","supra_a80","rauhz_focus_mk1","sedan_classic","sport_coupe","metro_hatch","desert_bison","orbita_micro","station_wagon","nordic_estate","nimbus_minivan","cobra_v8","monaliza","taxi_yellow","surf_woody_wagon","sport_estate","digo_gol_1993","desert_coyote_drag","union_sedan","muscle_classic","aurora_executive","porto_rosso","vertice_midengine","jessica_jetta_gli"]:
 		_car_cycle(id)
+	for id in TUNING.FACTORY_WING_BOX: _factory_wing_cycle(id)
 	print("TUNING_AERO_KITS checks=",checks," failures=",failures)
 	quit(0 if failures.is_empty() else 1)
 
@@ -105,6 +106,80 @@ func _car_cycle(id: String) -> void:
 	for part in sibling.visual.find_children("*","MeshInstance3D",true,false): sibling_after.append(part.mesh)
 	check(sibling_after==sibling_meshes,id+" sibling keeps shared fleet meshes")
 	car.free(); sibling.free()
+
+## Asa de fábrica: some com o aerofólio de oficina, volta sem ele, e o teto solar e o
+## amassado não ressuscitam nem perdem a asa no caminho.
+func _factory_wing_cycle(id: String) -> void:
+	check(TUNING.compatible("spoiler_sport",id),id+" offers a workshop spoiler that replaces the factory wing")
+	var car := VEHICLE.new()
+	car.archetype = id
+	root.add_child(car)
+	car.set_physics_process(false)
+	# Portas e rodas já trocam de malha por conta própria (folha da porta, aro separado).
+	car.finish_doors()
+	APPEARANCE.apply_vehicle(car,{"paint":"paint_black"})
+	var shared := {}
+	for part in car.visual.find_children("*","MeshInstance3D",true,false):
+		if not part.has_meta("wheel_center"): shared[part] = part.mesh
+	var roof_ok := TUNING.compatible("sunroof_glass",id)
+	APPEARANCE.apply_vehicle(car,{"spoiler":"spoiler_sport"})
+	var kits: RefCounted = car.get_meta("tuning_appearance")._kits
+	var wing: RefCounted = kits.factory_wing
+	check(wing.has_wing() and wing.hidden and wing.removed_triangles > 0,id+" factory wing triangles removed ("+str(wing.removed_triangles)+")")
+	check(_wing_left(car,wing) == 0,id+" no wing piece left inside its box")
+	check(is_instance_valid(kits.spoiler),id+" workshop spoiler mounted in its place")
+	APPEARANCE.apply_vehicle(car,{})
+	check(not wing.hidden and _wing_left(car,wing) > 0,id+" removing the workshop spoiler brings the factory wing back")
+	var restored := true
+	for part in shared: if is_instance_valid(part) and part.mesh != shared[part]: restored = false
+	check(restored,id+" factory meshes restored to the shared fleet resources")
+	if roof_ok:
+		for order in [["sunroof","spoiler"],["spoiler","sunroof"]]:
+			var parts := {}
+			for slot in order:
+				parts[slot] = {"sunroof":"sunroof_glass","spoiler":"spoiler_sport"}[slot]
+				APPEARANCE.apply_vehicle(car,parts.duplicate())
+			check(_wing_left(car,wing) == 0 and kits.roof.cut_triangles > 0,id+" sunroof and workshop spoiler coexist ("+",".join(order)+")")
+			APPEARANCE.apply_vehicle(car,{"sunroof":"sunroof_glass"})
+			check(_wing_left(car,wing) > 0,id+" taking the spoiler off with the sunroof on restores the wing ("+",".join(order)+")")
+			APPEARANCE.apply_vehicle(car,{})
+	# Rabo de pato e asa GT ficam dentro da caixa da asa: o recorte não pode comê-los
+	# numa segunda passada com o mesmo pedido.
+	for style in ["spoiler_ducktail","spoiler_gt"]:
+		APPEARANCE.apply_vehicle(car,{"spoiler":style})
+		var kit_meshes: Array = kits.spoiler.find_children("*","MeshInstance3D",true,false).map(func(m): return m.mesh)
+		APPEARANCE.apply_vehicle(car,{"spoiler":style,"paint":"paint_royal"})
+		check(kits.spoiler.find_children("*","MeshInstance3D",true,false).map(func(m): return m.mesh) == kit_meshes,id+" "+style+" survives a repeated apply untouched")
+	APPEARANCE.apply_vehicle(car,{})
+	# Amassado com a asa tirada e depois devolvida.
+	APPEARANCE.apply_vehicle(car,{"spoiler":"spoiler_sport"})
+	car.body_dents.impact(10.0,Vector3(.1,.8,car.half_length))
+	check(_wing_left(car,wing) == 0,id+" a dent does not bring the factory wing back")
+	APPEARANCE.apply_vehicle(car,{})
+	check(_wing_left(car,wing) > 0,id+" dented car gets its factory wing back")
+	car.free()
+
+## Triângulos visíveis da asa que ainda estão na caixa (mesma regra do recorte).
+func _wing_left(car: Node3D, wing: RefCounted) -> int:
+	var count := 0
+	for part: MeshInstance3D in car.visual.find_children("*","MeshInstance3D",true,false):
+		if part.mesh == null or part.has_meta("wheel_center") or not part.visible or _in_kit(part,car.visual): continue
+		var mesh: Mesh = part.get_meta("body_dents_rest_mesh",part.mesh)
+		var xf := ROOF.relative_transform(part,car.visual)
+		for surface in mesh.get_surface_count():
+			var arrays: Array = mesh.surface_get_arrays(surface)
+			var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
+			if indices.is_empty():
+				for i in (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size(): indices.append(i)
+			count += wing._wing_triangles(arrays[Mesh.ARRAY_VERTEX],indices,xf).size()
+	return count
+
+## Peça montada pelo próprio tuning (aerofólio, saias...), não da carroceria.
+func _in_kit(node: Node, ancestor: Node) -> bool:
+	while node != null and node != ancestor:
+		if str(node.name).begins_with("Tuning"): return true
+		node = node.get_parent()
+	return false
 
 func _bounds(node: Node3D, ancestor: Node3D) -> AABB:
 	var result := AABB()
