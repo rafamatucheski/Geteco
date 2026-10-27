@@ -21,7 +21,11 @@ func prepare(owner_session) -> bool:
 	_old_lock=player_car.input_locked
 	var sports: Array[String]=["sport_coupe","monaliza","porto_rosso","vertice_midengine"]
 	var guest: String=["muscle_classic","cobra_v8"].pick_random()
-	var models: Array[String]=["cobra_v8","muscle_classic","ranch_pickup",player_car.archetype,sports.pick_random(),guest]
+	# O líder segue no Cobra V8 da gangue; os outros dois vêm da garagem nova (um muscle e um
+	# lowrider, que ocupa o lugar lento da picape antiga).
+	var muscle: String=["potro_68","carcara_ss","caiman_454"].pick_random()
+	var low: String=["imperador_64","monte_rei_84"].pick_random()
+	var models: Array[String]=["cobra_v8",muscle,low,player_car.archetype,sports.pick_random(),guest]
 	var names := ["Takeshi · Cobras" if session.state.campaign.active_id == "cobra_finale" else "Ren · Cobras","Haruka · Cobras","Daichi · Cobras","Você","Maya","Ícaro"]
 	var paints := [Color("202d26"),Color("17211d"),Color("29372b"),player_car.paint_color,Color("c64c31"),Color("b8a245")]
 	# A largada é transacional: não remove trânsito para forçar espaço.

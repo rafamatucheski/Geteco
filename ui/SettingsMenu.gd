@@ -22,7 +22,7 @@ const CONTROLLER_LAYOUT := preload("res://ui/ControllerLayout.gd")
 const CONTROL_GROUPS := [
 	["A PÉ", ["move_up", "move_down", "move_left", "move_right", "sprint", "interact"]],
 	["CÂMERA 3D", ["camera_left", "camera_right", "camera_drag"]],
-	["VEÍCULO / ESPORTES", ["accelerate", "brake", "vehicle_interact", "exit_vehicle", "handbrake", "motorcycle_wheelie", "horn", "headlights", "siren_toggle", "radio_next", "radio_previous", "radio_toggle", "trunk", "tank_fire"]],
+	["VEÍCULO / ESPORTES", ["accelerate", "brake", "vehicle_interact", "exit_vehicle", "handbrake", "motorcycle_wheelie", "hydraulics", "horn", "headlights", "siren_toggle", "radio_next", "radio_previous", "radio_toggle", "trunk", "tank_fire"]],
 	["SKATE", ["skate_ollie", "skate_flip", "skate_shove"]],
 	["COMBATE", ["fire", "aim", "reload", "weapon_wheel", "weapon_next", "weapon_previous", "unarmed", "weapon_flashlight", "surrender"]],
 	["ARMAS RÁPIDAS", ["weapon_slot_1", "weapon_slot_2", "weapon_slot_3", "weapon_slot_4", "weapon_slot_5", "weapon_slot_6", "weapon_slot_7", "weapon_slot_8", "weapon_slot_9", "weapon_slot_10"]],

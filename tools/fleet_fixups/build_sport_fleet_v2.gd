@@ -115,6 +115,11 @@ const DESIGNS := {
 
 func _initialize() -> void: run.call_deferred()
 
+## Outras frotas (muscle e lowrider) herdam o gerador e trocam só a ficha, os desenhos e o relatório.
+func catalog() -> GDScript: return CATALOG
+func designs() -> Dictionary: return DESIGNS
+func report_path() -> String: return REPORT
+
 ## Contagem de triângulos por etapa do desenho (só para o relatório).
 var phase := ""
 var phase_tris := {}
@@ -280,9 +285,9 @@ func setup(id: String) -> void:
 	car_id = id
 	groups = {}
 	materials = {}
-	D = DESIGNS[id]
-	door = CATALOG.door_spec(id)
-	paint_color = Color.html(str(CATALOG.spec(id).colors[0]))
+	D = designs()[id]
+	door = catalog().door_spec(id)
+	paint_color = Color.html(str(catalog().spec(id).colors[0]))
 	zf = float(D.zf)
 	zr = float(D.zr)
 	roof_keys = [[zA(), gh_base(zA()).y]]
@@ -1225,8 +1230,9 @@ func run() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--id="): only = arg.trim_prefix("--id=")
 	var metrics := {}
-	if FileAccess.file_exists(REPORT): metrics = JSON.parse_string(FileAccess.get_file_as_string(REPORT))
-	for id: String in CATALOG.IDS:
+	var report := report_path()
+	if FileAccess.file_exists(report): metrics = JSON.parse_string(FileAccess.get_file_as_string(report))
+	for id: String in catalog().IDS:
 		if not only.is_empty() and id != only: continue
 		setup(id)
 		phase_tris = {}
@@ -1237,6 +1243,6 @@ func run() -> void:
 		metrics[id]["phases"] = phase_tris.duplicate()
 		metrics[id]["stations"] = stations.size()
 		print("SPORT_V2_BAKED ",id," ",JSON.stringify(metrics[id]))
-	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(REPORT.get_base_dir()))
-	FileAccess.open(REPORT,FileAccess.WRITE).store_string(JSON.stringify(metrics,"\t"))
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(report.get_base_dir()))
+	FileAccess.open(report,FileAccess.WRITE).store_string(JSON.stringify(metrics,"\t"))
 	quit()

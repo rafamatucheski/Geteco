@@ -2355,7 +2355,8 @@ func _create_traffic_vehicle() -> void:
 		var id: String = TRAFFIC_ROSTER.select(spawn_region, str(slot.road.id))
 		if spawn_region != "desert" and randi_range(0,9)==0: id=TRAFFIC_MOTORCYCLE_TYPES.pick_random()
 		var cobra := preload("res://gameplay/urban_v1/CobraPatrol.gd").select_car(session,point)
-		if cobra: id="cobra_v8"
+		# Os Cobras rodam com a garagem própria (muscle cars e lowriders), não mais todos no mesmo cupê.
+		if cobra: id=preload("res://runtime/MuscleFleet.gd").cobra_pick(randf())
 		var car = spawn_vehicle(id,point+Vector3.UP*.12,atan2(-ahead.x,-ahead.z))
 		if car==null: continue
 		car.vehicle_id="street_"+str(Time.get_ticks_usec())

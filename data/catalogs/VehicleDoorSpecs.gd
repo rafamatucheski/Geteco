@@ -80,6 +80,7 @@ const OPEN_ANGLE := {"car": 1.05, "tall": 1.10, "truck": 1.20}
 static func row(archetype: String) -> Dictionary:
 	if archetype in preload("res://runtime/NewCivilianFleet.gd").IDS: return preload("res://runtime/NewCivilianFleet.gd").door_spec(archetype)
 	if archetype in preload("res://runtime/SportFleet.gd").IDS: return preload("res://runtime/SportFleet.gd").door_spec(archetype)
+	if archetype in preload("res://runtime/MuscleFleet.gd").IDS: return preload("res://runtime/MuscleFleet.gd").door_spec(archetype)
 	if archetype in preload("res://gameplay/mining/MiningFleet.gd").IDS: return preload("res://gameplay/mining/MiningFleet.gd").door_spec(archetype)
 	if archetype in preload("res://gameplay/desert_cars/DesertCarCatalog.gd").IDS: return preload("res://gameplay/desert_cars/DesertCarCatalog.gd").door_spec(archetype)
 	var entry: Dictionary = DOORS.get(archetype, {})

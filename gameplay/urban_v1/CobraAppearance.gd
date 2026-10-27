@@ -83,14 +83,23 @@ static func livery(car) -> void:
 	var root := Node3D.new()
 	root.name = "CobraLivery"
 	car.visual.add_child(root)
-	# O capô do Cobra V8 recebe a marca; preserva a carroceria e portas originais.
+	# O capô recebe a marca; preserva a carroceria e portas originais. A frota muscle traz o ponto
+	# do capô medido no gerador (meta hood_badge); o Cobra V8 antigo usa a medida fixa de sempre.
 	var badge := insignia(.85)
-	badge.position = Vector3(0,.907,-1.5)
+	badge.position = car.visual.get_meta("hood_badge",Vector3(0,.907,-1.5))
 	root.add_child(badge)
 
 static var _hood_heights: Dictionary = {}
 static func race_livery(car) -> void:
 	if car.visual.has_node("CobraLivery"): return
+	if car.visual.has_meta("hood_badge"):
+		var marked:=Node3D.new()
+		marked.name="CobraLivery"
+		car.visual.add_child(marked)
+		var emblem:=insignia(.85)
+		emblem.position=car.visual.get_meta("hood_badge")
+		marked.add_child(emblem)
+		return
 	var z: float=-car.half_length*.57
 	if not _hood_heights.has(car.archetype):
 		var height:=0.0

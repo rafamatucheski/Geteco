@@ -12,6 +12,7 @@ const DOOR_SPECS := preload("res://data/catalogs/VehicleDoorSpecs.gd")
 const FIREFLY := preload("res://audio/FireflyBank.gd")
 const WHEELIE := preload("res://gameplay/MotorcycleWheelie.gd")
 const DESERT_GROUND := preload("res://gameplay/desert_cars/DesertVehicleGround.gd")
+const HYDRAULICS := preload("res://gameplay/lowrider/LowriderHydraulics.gd")
 const TRAFFIC_RAILS := preload("res://gameplay/traffic/TrafficRails.gd")
 var traffic_rails: RefCounted
 var _traffic_rail_drive := false
@@ -108,6 +109,8 @@ var steer_pivots: Dictionary = {}
 var wheel_spin := 0.0
 var _burnout_wheel_spin := 0.0
 var tail_material: StandardMaterial3D
+## Lowrider (MuscleFleet): carroceria sobe/desce por canto e pula. Nulo nos outros carros.
+var hydraulics: Node
 var route: Curve3D
 var _projection_route: Curve3D
 var _projection_position := Vector3.ZERO
@@ -289,6 +292,10 @@ func _ready() -> void:
 	preload("res://gameplay/mining/MiningFleet.gd").attach(self)
 	if archetype in preload("res://gameplay/desert_cars/DesertCarCatalog.gd").IDS or preload("res://gameplay/desert_cars/StreetPowertrainCatalog.gd").has(archetype):
 		preload("res://gameplay/desert_cars/DesertCarAdapter.gd").attach(self)
+	if bool(specification.get("lowrider", false)):
+		hydraulics = HYDRAULICS.new()
+		hydraulics.configure(self)
+		add_child(hydraulics)
 
 func set_external_driver(active: bool) -> void:
 	external_input = active
@@ -744,6 +751,10 @@ func _drive_player(delta: float) -> void:
 		var axis: Vector2 = game_input.vehicle_input()
 		if manual_wheelie != null: axis.x *= manual_wheelie.steering_scale()
 		var handbrake := Input.is_action_pressed("handbrake")
+		# Segurando a hidráulica, direção e pulo vão para a carroceria; o carro fica parado.
+		if hydraulics != null and hydraulics.captures_input():
+			axis = Vector2.ZERO
+			handbrake = true
 		# Só a puxada pelo botão faz barulho de alavanca; o burnout abaixo não é o freio de mão.
 		if handbrake != _handbrake_held:
 			_handbrake_held = handbrake
@@ -767,6 +778,7 @@ func _drive_player(delta: float) -> void:
 		brake_input = input_locked
 		if controlled and not input_locked:
 			var axis: Vector2 = get_node("/root/GameInput").vehicle_input()
+			if hydraulics != null and hydraulics.captures_input(): axis = Vector2.ZERO
 			throttle_input = axis.y
 			steer_input = -axis.x
 			brake_input = Input.is_action_pressed("handbrake")
@@ -1298,7 +1310,10 @@ func driver_seat_anchor() -> Vector3:
 	if boarding_class() in ["truck", "tall"]:
 		return to_global(Vector3(-minf(.45, half_width * .3), .08 + boarding_step_height(), _door_seat_z()))
 	var seat_z := _door_seat_z() if DOOR_SPECS.has_row(archetype) else -clampf(half_length * .16, .26, .55)
-	return to_global(Vector3(-minf(.28, half_width * .24), .08, seat_z))
+	var seat := Vector3(-minf(.28, half_width * .24), .08, seat_z)
+	# O motorista sobe e pula junto com a carroceria do lowrider.
+	if hydraulics != null: seat = hydraulics.body_transform() * seat
+	return to_global(seat)
 
 ## Geometria de embarque deste lado (ponto de espera fora do arco da folha, portão no
 ## vão, ponto de agarrar, ponta da folha aberta), em coordenadas do veículo. Vazio para

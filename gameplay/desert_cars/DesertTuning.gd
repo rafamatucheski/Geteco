@@ -96,11 +96,14 @@ const MAX_STREET_CAP_GAIN := .20
 ## dá para separar (no Faísca o lábio do teto é soldado no teto). As outras asas saem
 ## pela FACTORY_WING_BOX. Os esportivos 2.0 (runtime/SportFleet.gd) já saem do gerador com
 ## splitter, difusor e saias assados: a peça de oficina ficaria por cima da de fábrica.
+## Muscle cars (runtime/MuscleFleet.gd): o rabo de pato vem soldado na tampa (sem caixa medida
+## para escondê-lo), então a oficina não oferece aerofólio neles; Jararaca e Brasa trazem lábio e
+## difusor, e o Brasa as saias.
 const FACTORY_KIT := {
-	"spoiler":["desert_faisca","desert_faisca_rally"],
-	"front_lip":["desert_faisca_rally","desert_coyote_drag","desert_mirage_gt","tauro_v10","raijin_gt","kite_type_s","lince_rs","brisa_s","sakura_s15"],
-	"diffuser":["desert_mirage_gt","tauro_v10","raijin_gt","lince_rs","brisa_s"],
-	"skirts":["desert_coyote_drag","tauro_v10","raijin_gt","kite_type_s","lince_rs","sakura_s15"]}
+	"spoiler":["desert_faisca","desert_faisca_rally","potro_68","carcara_ss","jararaca_v10","brasa_hc","monte_rei_84"],
+	"front_lip":["desert_faisca_rally","desert_coyote_drag","desert_mirage_gt","tauro_v10","raijin_gt","kite_type_s","lince_rs","brisa_s","sakura_s15","jararaca_v10","brasa_hc"],
+	"diffuser":["desert_mirage_gt","tauro_v10","raijin_gt","lince_rs","brisa_s","jararaca_v10","brasa_hc"],
+	"skirts":["desert_coyote_drag","tauro_v10","raijin_gt","kite_type_s","lince_rs","sakura_s15","brasa_hc"]}
 ## Asa de fábrica que some quando entra o aerofólio de oficina: caixa no espaço do modelo
 ## [mínimo, máximo] e a altura que a peça precisa alcançar (a tampa e os frisos dela ficam).
 ## Medido nos componentes soltos de cada malha assada em 27/10 (TuningFactoryWing).

@@ -61,7 +61,19 @@ const PROFILES := {
 	"brisa_s": {"torque_nm":300.0, "redline":7500.0, "gears":[3.76,2.27,1.65,1.26,1.00,.84], "final_drive":4.10, "wheel_radius":.31, "traction":1.0, "drag_area":.64, "engine_family":"sport", "axle_grip":1.02},
 	"sakura_s15": {"torque_nm":362.0, "redline":7200.0, "gears":[3.32,1.90,1.31,1.00,.76], "final_drive":4.08, "wheel_radius":.32, "traction":.98, "drag_area":.62, "engine_family":"sport", "factory_turbo":true, "axle_grip":1.07},
 	"rapina_r": {"torque_nm":805.0, "redline":6000.0, "gears":[4.17,2.34,1.52,1.14,.87,.69], "final_drive":3.73, "wheel_radius":.43, "traction":1.05, "drag_area":1.05, "engine_family":"m8_v8", "factory_turbo":true},
-	"bastiao_63": {"torque_nm":763.0, "redline":6500.0, "gears":[4.38,2.86,1.92,1.37,1.00,.82,.73], "final_drive":3.27, "wheel_radius":.40, "traction":1.08, "drag_area":1.05, "engine_family":"m8_v8", "factory_turbo":true}
+	"bastiao_63": {"torque_nm":763.0, "redline":6500.0, "gears":[4.38,2.86,1.92,1.37,1.00,.82,.73], "final_drive":3.27, "wheel_radius":.40, "traction":1.08, "drag_area":1.05, "engine_family":"m8_v8", "factory_turbo":true},
+	# Muscle cars e lowriders (runtime/MuscleFleet.gd), todos RWD. Os lowriders têm câmbio de três
+	# marchas, roda pequena e aderência de pneu fino de faixa branca.
+	"potro_68": {"kind":"muscle", "torque_nm":720.0, "redline":6200.0, "traction":.95, "drag_area":.74},
+	"jararaca_v10": {"kind":"muscle", "torque_nm":790.0, "redline":6200.0, "gears":[2.66,1.78,1.30,1.00,.74,.50], "final_drive":3.07, "wheel_radius":.345, "traction":1.0, "drag_area":.66},
+	"carcara_ss": {"kind":"muscle", "torque_nm":750.0, "traction":.95, "drag_area":.74},
+	"trovao_440": {"kind":"muscle", "torque_nm":850.0, "traction":.95, "drag_area":.80},
+	"caiman_454": {"kind":"muscle", "torque_nm":820.0, "traction":.95, "drag_area":.78},
+	"brasa_hc": {"kind":"muscle", "torque_nm":1000.0, "redline":6200.0, "gears":[4.71,3.14,2.10,1.67,1.29,1.00,.84,.67], "final_drive":2.62, "wheel_radius":.36, "traction":1.0, "drag_area":.72, "factory_turbo":true},
+	"imperador_64": {"kind":"muscle", "torque_nm":700.0, "redline":5200.0, "gears":[2.52,1.52,1.00], "final_drive":3.08, "wheel_radius":.295, "traction":.80, "drag_area":.84},
+	"imperador_64_conv": {"kind":"muscle", "torque_nm":710.0, "redline":5200.0, "gears":[2.52,1.52,1.00], "final_drive":3.08, "wheel_radius":.295, "traction":.80, "drag_area":.86},
+	"monte_rei_84": {"kind":"muscle", "torque_nm":650.0, "redline":5200.0, "gears":[2.74,1.57,1.00], "final_drive":3.08, "wheel_radius":.30, "traction":.80, "drag_area":.82},
+	"duque_76": {"kind":"muscle", "torque_nm":790.0, "redline":4800.0, "gears":[2.48,1.48,1.00], "final_drive":2.73, "wheel_radius":.31, "traction":.80, "drag_area":.90}
 }
 
 static func ids() -> Array:

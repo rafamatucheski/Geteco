@@ -776,7 +776,11 @@ static func follow(actor: CharacterBody3D, vehicle: Node3D, delta: float) -> voi
 		if k >= 1.0:
 			state.erase("from_pose")
 			state.erase("to_pose")
-	actor.global_transform = vehicle.global_transform
+	var frame: Transform3D = vehicle.global_transform
+	# Lowrider: o motorista sobe, inclina e pula com a carroceria (LowriderHydraulics).
+	var lift: Node = vehicle.get("hydraulics")
+	if lift != null: frame = frame * lift.body_transform()
+	actor.global_transform = frame
 	actor.visual.position = origin
 
 ## Alvos de pé e mão no espaço do Actor, que coincide com o do veículo (mesma origem e base).

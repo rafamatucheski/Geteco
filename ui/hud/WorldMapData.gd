@@ -56,6 +56,7 @@ func collect(controller, prepare_relief := true) -> void:
 		if preload("res://world/places/amusement_park/AmusementParkLayout.gd").enabled():
 			add_marker("amusement_park","Parque Lume",preload("res://world/places/amusement_park/AmusementParkLayout.gd").ENTRY,"place","harbor")
 		add_marker("south_port","Porto",Vector3(296,0,288),"port","harbor")
+		add_marker("lowrider_meet","Encontro Lowrider (noite)",preload("res://gameplay/lowrider/LowriderMeet.gd").CENTER,"race","harbor")
 	for marker in markers:
 		if region_bounds.has(marker.region): region_bounds[marker.region]=region_bounds[marker.region].expand(marker.point).grow(1)
 	for id in region_bounds:

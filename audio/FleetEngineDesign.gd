@@ -80,6 +80,17 @@ const VEHICLE_PROFILES := {
 	"sakura_s15": "ap_i4_turbo",
 	"rapina_r": "v8_crossplane",
 	"bastiao_63": "v8_twin_turbo",
+	# Muscle cars e lowriders (runtime/MuscleFleet.gd): V8 de câmbio longo; o V10 usa a classe GT.
+	"potro_68": "v8_crossplane",
+	"jararaca_v10": "v12_gt",
+	"carcara_ss": "v8_crossplane",
+	"trovao_440": "v8_crossplane",
+	"caiman_454": "v8_crossplane",
+	"brasa_hc": "v8_twin_turbo",
+	"imperador_64": "v8_crossplane",
+	"imperador_64_conv": "v8_crossplane",
+	"monte_rei_84": "v8_crossplane",
+	"duque_76": "v8_crossplane",
 	"desert_cargo_truck": "truck_i6_diesel",
 	# Compatibility IDs referenced by saved personal cars / existing audio code.
 	"personal_monaliza": "rb26_i6_turbo",

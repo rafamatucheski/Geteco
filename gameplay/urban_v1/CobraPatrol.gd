@@ -36,7 +36,7 @@ func _ready() -> void:
 	name = "CobraPatrol"
 	add_to_group("cobra_patrol")
 	car.vehicle_id = "cobra_patrol_"+str(Time.get_ticks_usec())
-	car.paint_color = Color("202d26")
+	car.paint_color = Color(preload("res://runtime/MuscleFleet.gd").COBRA_PAINTS.pick_random()) if car.archetype in preload("res://runtime/MuscleFleet.gd").IDS else Color("202d26")
 	car.set_meta("gang_damage_handler",Callable(self,"provoke"))
 	car.set_meta("gang_theft_handler",Callable(self,"vehicle_stolen"))
 	var cabin: Dictionary = preload("res://gameplay/VehicleInterior.gd").spec(car)
@@ -50,6 +50,8 @@ func _ready() -> void:
 		car.add_child(model)
 		model.fit_seat(car, cabin, index == 0)
 		passengers.append(model)
+		# No lowrider os dois sobem e descem com a carroceria quando a hidráulica dança no sinal.
+		if car.get("hydraulics") != null: car.hydraulics.add_rider(model)
 
 func provoke(source: Node) -> void:
 	if car.health<=0 and not deployed: return

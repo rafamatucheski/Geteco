@@ -1,0 +1,36 @@
+{
+  "date": "2026-10-27",
+  "period": "noite de 2026-10-27",
+  "scope": "Carros próprios para os Cobras (muscle cars e lowriders), hidráulica de lowrider com controle por canto e pulo, e o encontro noturno de lowriders na Vila Cobra.",
+  "cards": [
+    {
+      "id": "muscle-lowrider-frota-20261027",
+      "title": "Muscle cars e lowriders: dez carros novos e a garagem dos Cobras",
+      "status": "partial",
+      "area": "quality",
+      "description": "runtime/MuscleFleet.gd: Potro 68 Fastback, Jararaca V10, Carcará SS, Trovão 440, Caimã 454 e Brasa HC (muscle) e Imperador 64, Imperador 64 Conversível, Monte Rei 84 e Duque 76 (lowriders rebaixados, roda raiada e pneu de faixa branca). Gerador tools/fleet_fixups/build_muscle_fleet.gd herda o loft dos esportivos 2.0 e acrescenta para-choque cromado envolvente, faixas, teto de vinil, saia de para-lama, estepe continental e cabine de banco inteiriço. Os Cobras do trânsito sorteiam carro da garagem nova com pintura de gangue; o emblema do capô usa ponto medido no gerador; no racha dos Cobras dois dos três rivais vêm da garagem nova. Motor completo RWD, som V8/V10, peças de fábrica no FACTORY_KIT. Verificado: test_muscle_fleet_models 212/212, fotos com janela de frente, lado e traseira, Cobra do trânsito num lowrider no mundo de verdade; sem regressão nos esportivos 2.0, frota civil, tuning, Cobras e suíte core. Não verificado: dirigir, desempenho em release.",
+      "next": "Dirigir cada um; afinar a estufa dos muscle clássicos (ainda parecida entre eles); medir no export release com Cobras de lowrider no trânsito.",
+      "sources": [
+        "docs/muscle-lowrider-20261027.md",
+        "runtime/MuscleFleet.gd",
+        "tools/fleet_fixups/build_muscle_fleet.gd",
+        "tests/test_muscle_fleet_models.gd"
+      ]
+    },
+    {
+      "id": "lowrider-hidraulica-encontro-20261027",
+      "title": "Hidráulica de lowrider e encontro noturno na Vila Cobra",
+      "status": "partial",
+      "area": "quality",
+      "description": "gameplay/lowrider/LowriderHydraulics.gd: cada canto sobe 34 cm, a carroceria pula até 0,95 m e tira as rodas do chão no alto; motorista e ocupantes acompanham; segure Ctrl (L3) com W/S/A/D para frente, traseira e lados, Espaço (A) pula, pulo no tempo depois de cair encadeia mais alto, toque em Ctrl alterna carro alto. gameplay/lowrider/LowriderMeet.gd: toda noite das 18 h às 3 h, cinco lowriders no acostamento norte da rua de acesso da Vila Cobra, nove manos na calçada (três balançando no ritmo, os outros comemorando os pulos), som do porta-malas com as faixas CC0 das rádios PORTO CRUISE e PORTO GROOVE e desafio do pulo (recorde da noite, R$ 600 uma vez por noite). Marcador no mapa. GETECO_LOWRIDER_MEET=always força o encontro. Verificado: test_lowrider_hydraulics 25/25, test_lowrider_meet 101/101 e captura no mundo de verdade (5 carros, 9 convidados, som, pulo de 0,91 m; pior quadro 29 ms em build de editor). Não verificado: jogar com teclado e controle, release.",
+      "next": "Gravar sons próprios da hidráulica e uma trilha G-funk própria para o encontro; jogar o desafio com teclado e controle; medir no export release com o encontro e o de clássicos da Torque na mesma noite.",
+      "sources": [
+        "gameplay/lowrider/LowriderHydraulics.gd",
+        "gameplay/lowrider/LowriderMeet.gd",
+        "tests/test_lowrider_hydraulics.gd",
+        "tests/test_lowrider_meet.gd",
+        "tests/capture/capture_lowrider_meet.gd"
+      ]
+    }
+  ]
+}

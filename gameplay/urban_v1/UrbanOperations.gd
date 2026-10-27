@@ -10,6 +10,7 @@ var cargo_handling
 var secret_car
 var cobra_neighborhood
 var classic_meet
+var lowrider_meet
 var freight
 var passenger_terminal
 var village
@@ -62,6 +63,9 @@ func _ready() -> void:
 	classic_meet = preload("res://gameplay/classic_meet/ClassicMeetController.gd").new()
 	classic_meet.configure(session,classic_site)
 	_timed_add(classic_site, classic_meet, "classic_meet")
+	lowrider_meet = preload("res://gameplay/lowrider/LowriderMeet.gd").new()
+	lowrider_meet.configure(session)
+	_timed_add(self, lowrider_meet, "lowrider_meet")
 	passenger_terminal = preload("res://gameplay/urban_v1/HarborPassengerTerminal.gd").new()
 	passenger_terminal.configure(session)
 	_timed_add(self, passenger_terminal, "passenger_terminal")
