@@ -1158,3 +1158,20 @@ interruptor novo ficou no código.
 
 Combinações novas que a sonda viu em jogo (lista para o próximo pré-aquecimento): fim de
 `docs/perf-quadro09-ab-20261027.md`.
+
+## 17. Deserto a quente (27/10, madrugada): a mina criava o shader mineral no quadro
+
+Rota deserto com estresse, 3440×1440, cache quente, registro da sessão (`HARBOR_SESSION_PROFILE=1`). Estado de
+main: p50 6,1–8,0 ms, máximo 39,7–47,7 ms, 1–2 quadros > 33 ms por rodada (o cartão inv-092 ainda citava 170 /
+147 / 54 ms de antes das rodadas de 21–25/10). O pico com nome era `stream.desert.mining` 21–27 ms, quase todo em
+`MiningBatch.finish` (spans novos `mining.batch.multimesh` / `mining.batch.body`): 16,5 ms num grupo de **4 rochas**.
+Medido com janela: o primeiro `ShaderMaterial` com `mineral_surface.gdshader` custa 15,4 ms para criar; os
+seguintes, 0,01 ms. Montar o MultiMesh por buffer em vez de uma chamada por peça não mudou nada (16,2–18,6 ms nos
+dois lados, desfeito).
+
+**Conserto:** `MiningBatch.prewarm_minerals` cria as quatro rochas minerais sob a cortina (com uma peça escondida
+de cada) no `DesertRegion.prewarm`, que roda tanto ao começar no deserto quanto na preparação distante.
+`GETECO_MINERAL_PREWARM=0` desliga. A/B no mesmo export (P = com, Q = sem, P Q Q P): etapa da mina **P 8,6 / 4,2 ms**
+contra **Q 21,0 / 21,3 ms**; máximo do quadro P 40,2 / 19,8 ms (o de 40 ms é desenho, sem pipeline nova), Q 29,5 /
+42,2 ms. Sobram o quadro de ~58 ms aos 3 s (desmontagem da região anterior + etapa 4 do chão do deserto) e picos de
+desenho de 40–48 ms sem pipeline nova.

@@ -74,6 +74,16 @@
         "gameplay/vehicle_effects/VehicleBodyDents.gd"
       ],
       "next": ""
+    },
+    "inv-092": {
+      "status": "partial",
+      "description": "Refeito em 27/10 no export release (rota deserto com estresse, 3440×1440, cache quente): p50 6,1–8,0 ms, máximo 40–48 ms, 1–2 quadros > 33 ms. Os números antigos (170 / 147 / 54 ms) já tinham caído nas rodadas de 21–25/10. O pico com nome era a mina (stream.desert.mining 21–27 ms): o primeiro material mineral criava o shader no quadro (15 ms). Agora é criado sob a cortina (MiningBatch.prewarm_minerals): a etapa caiu para 4–9 ms (A/B no mesmo export, doc §17).",
+      "sources": [
+        "docs/perf-playthrough-20261021.md",
+        "world/mining/MiningBatch.gd",
+        "world/desert/DesertRegion.gd"
+      ],
+      "next": "Quadro de ~58 ms aos 3 s depois de jogável (desmontagem da região anterior + etapa 4 do chão do deserto) e picos de desenho de 40–48 ms sem pipeline nova."
     }
   },
   "remove": []

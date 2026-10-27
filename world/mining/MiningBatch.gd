@@ -2,6 +2,7 @@ extends RefCounted
 ## Spatially bounded static batches. One material/primitive draw per chunk;
 ## explicit colliders remain independent from ornament and visual batching.
 const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 static var _meshes: Dictionary={}
 static var _late_body := OS.get_environment("GETECO_MINING_BODY_LATE") != "0"
 static var _materials: Dictionary={}
@@ -72,6 +73,9 @@ func _add(kind: String, material_key: String, transform: Transform3D) -> void:
 	piece_count+=1
 
 func finish() -> Node3D:
+	# Spans (27/10): a etapa inteira custava 17–20 ms num quadro no estresse do deserto; separa a montagem das
+	# MultiMesh da entrada do corpo com todas as formas no espaço físico.
+	var span := STALL_WORK.begin()
 	for key in groups:
 		var group: Dictionary=groups[key]
 		var batch := MultiMesh.new()
@@ -86,8 +90,11 @@ func finish() -> Node3D:
 		visual.material_override=material(group.finish)
 		if group.kind == "rock": visual.material_override = mineral_material(group.finish)
 		root.add_child(visual)
+	STALL_WORK.finish_slow("mining.batch.multimesh", span, 1000)
+	span = STALL_WORK.begin()
 	if body.get_child_count()==0: body.free()
 	elif body.get_parent()==null: root.add_child(body)
+	STALL_WORK.finish_slow("mining.batch.body", span, 1000)
 	root.set_meta("mining_static_pieces",piece_count)
 	return root
 
@@ -108,6 +115,20 @@ static func material(id: String) -> StandardMaterial3D:
 		result.emission_energy_multiplier=.65
 	_materials[id]=result
 	return result
+
+## Sob a cortina (27/10): o primeiro ShaderMaterial com mineral_surface.gdshader custava 15 ms para criar (medido
+## com janela; os seguintes, 0,01 ms) e caía no quadro em que a mina entra no streaming (mining.batch.multimesh
+## 16,5 ms, estresse do deserto). Cria as rochas minerais de todas as cores e uma peça escondida de cada, para a
+## pipeline também ficar pronta. Os materiais ficam retidos no cache estático.
+const MINERAL_KEYS := ["ore", "ore_dark", "ore_light", "coal"]
+static func prewarm_minerals(host: Node3D) -> void:
+	for id: String in MINERAL_KEYS:
+		var piece := MeshInstance3D.new()
+		piece.mesh = mesh("rock")
+		piece.material_override = mineral_material(id)
+		piece.position = Vector3(0, -500, 0)
+		host.add_child(piece)
+		piece.queue_free()
 
 static func mineral_material(id: String) -> ShaderMaterial:
 	var key := "mineral_"+id

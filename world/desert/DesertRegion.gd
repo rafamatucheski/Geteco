@@ -476,6 +476,8 @@ func prewarm() -> void:
 		paddock.position = Vector3(0, -500, 0)
 		add_child(paddock)
 		paddock.queue_free()
+	if is_inside_tree() and MINING_LAYOUT.enabled() and OS.get_environment("GETECO_MINERAL_PREWARM") != "0":
+		preload("res://world/mining/MiningBatch.gd").prewarm_minerals(self)
 func prewarm_incremental() -> void:
 	prewarm()
 	while not is_streaming_idle(): await get_tree().process_frame
