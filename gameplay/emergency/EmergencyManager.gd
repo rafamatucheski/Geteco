@@ -85,6 +85,7 @@ func ignite(point: Vector3, source: Node = null, intensity: float = 1.0) -> Node
 	fire.global_position = floor_hit.position + Vector3.UP * 0.03
 	fires.append(fire)
 	serial += 1
+	fire.incident_key = serial
 	incidents[serial] = {"actor":fire, "role":"fire", "age":0.0, "assigned":false, "point":fire.global_position}
 	return fire
 

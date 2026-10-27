@@ -120,7 +120,8 @@ var _park_wait := 0.0
 var _exit_points: Array[Vector3] = []
 var _park_notified := false
 var _park_stalled := false
-var stop_planner := preload("res://gameplay/dispatch/DispatchStopPlanner.gd").new()
+const STOP_PLANNER := preload("res://gameplay/dispatch/DispatchStopPlanner.gd")
+var stop_planner := STOP_PLANNER.new()
 ## Segundos acumulados em recuperação física de ultrapassagem durante ESTE atendimento
 ## (a vida da unidade). Não zera com troca de rota, de estado intermediário, de
 ## episódio, nem por voltar ao eixo; pausa fora de recuperação e com a unidade suspensa.
@@ -1469,6 +1470,15 @@ func on_gave_up(_reason: String) -> void:
 	if flat <= reach:
 		# Route failure does not authorise unloading in a live traffic lane.
 		stop_planner.tick(self,anchor,.8)
+		# 27/10: sem nenhum acostamento possível (parede ou obra fechando a rua) a viatura ficava
+		# presa replanejando para sempre e a equipe nunca descia (regressão de 12/10; em setembro ela
+		# estacionava). Rua que o piloto desistiu de atravessar não é faixa viva: parada e com porta
+		# livre, estaciona ali e a dupla segue a pé.
+		if STOP_PLANNER.stop_fix and stop_planner.curve == null and driver.settled():
+			var exits: Array[Vector3] = []
+			if not controller.exit_point(vehicle, exits, false).is_empty():
+				driver.hold(true)
+				_set_state("parked")
 		return
 	controller.emit_dispatch_event("route_blocked", {"unit": self})
 	_begin_departure()

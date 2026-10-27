@@ -79,6 +79,7 @@ const WOUNDED_RATIO := 0.5
 const CRITICAL_RATIO := 0.3
 const WOUNDED_SPEED := 0.62
 const HURT_RECOVERY := 0.9
+const HURT_MIN_DAMAGE := 4.0
 ## GETECO_POLICE_HURT=0 desliga tranco, mancar e curvar (só a inclinação antiga do tronco), para A/B.
 static var hurt_reactions := OS.get_environment("GETECO_POLICE_HURT") != "0"
 var hurt_time := 0.0
@@ -456,8 +457,9 @@ func _react_to_wound(direction: Vector3, wound: float, absorbed: float) -> void:
 	_sync_wound_pose()
 	var now := float(Time.get_ticks_msec()) * 0.001
 	# Depois de um tranco ele aguenta os tiros seguintes por HURT_RECOVERY s (só o tronco balança):
-	# uma rajada de SMG não pode deixar o policial travado sem nunca atirar de volta.
-	if hurt_time > 0.0 or now < _hurt_ready_at: return
+	# uma rajada de SMG não pode deixar o policial travado sem nunca atirar de volta. Arranhão (estilhaço,
+	# chumbo de longe) também só balança o tronco.
+	if hurt_time > 0.0 or now < _hurt_ready_at or wound + absorbed < HURT_MIN_DAMAGE: return
 	# A placa segura o furo, não o tranco: tiro no colete ainda tira a mira, por menos tempo.
 	var severity := clampf(wound / 30.0, 0.2 if absorbed > 0.0 else 0.0, 1.0)
 	var seconds := lerpf(HURT_STAGGER.x, HURT_STAGGER.y, severity)

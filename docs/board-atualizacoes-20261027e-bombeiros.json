@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-27",
+  "period": "noite de 2026-10-27",
+  "scope": "Retorno de jogo: não aparece mais bombeiro nem caminhão de bombeiro, e o quartel parecia sem a textura do GPT.",
+  "cards": [
+    {
+      "id": "fogo-espera-bombeiro-20261027",
+      "title": "Fogo espera o caminhão chamado: bombeiro volta a aparecer",
+      "status": "partial",
+      "area": "quality",
+      "description": "Desde 01/10 o caminhão só era chamado com 10-15 s de fogo (DispatchRules.fire_response_delay) e nascia fora da vista, mas o fogo solto apaga sozinho aos 15-20 s (Fire.BURN_SECONDS + FADE_SECONDS, desde 24/09). O fogo sumia antes, a viatura voltava (incident_invalid) e ninguém via bombeiro. Agora o fogo com caminhão designado não míngua até a equipe apagar com o jato, com teto de 100 s; sem chamado, apaga como antes. GETECO_FIRE_HOLD=0 volta ao comportamento antigo.",
+      "next": "Ver no jogo: explosão ou lança-chamas perto de rua, esperar o caminhão chegar e a equipe apagar.",
+      "sources": [
+        "gameplay/emergency/Fire.gd",
+        "gameplay/emergency/EmergencyManager.gd",
+        "tests/test_fire_waits_for_crew.gd"
+      ]
+    },
+    {
+      "id": "quartel-interior-20261027",
+      "title": "Quartel por dentro: textura real, dois caminhões e equipe de plantão",
+      "status": "partial",
+      "area": "quality",
+      "description": "A fachada já era a pintada do GPT (estilo bombeiros, 16/10); o interior ainda era o de caixas de cor lisa. Agora usa o acabamento dos interiores da serra (MountainInteriorFinish: piso epóxi, bloco, chapa pintada, tábua, tecido), dois rescue_pumper parados nas baias laterais (só visual, com colisão por solid_rects), dois bombeiros de plantão, cabideiro de roupa de combate e carretéis de mangueira. A baia do meio continua livre para a entrada e o Capitão Rocha.",
+      "next": "Olhar de perto no jogo; se quiser, gerar textura de parede própria no GPT para o salão.",
+      "sources": [
+        "assets/regions/source/world/harbor/interiors/FireStationArt3D.gd",
+        "tests/capture/capture_fire_station_interior.gd"
+      ]
+    }
+  ]
+}

@@ -20,6 +20,21 @@ func check(ok: bool, label: String) -> void:
 func hand_position(model: Node3D, index: int) -> Vector3:
 	return model.body.forearms[index].to_global(Vector3(0, -KIT.FOREARM - .06, 0))
 
+## Palma mostrada na tela. Desde 11/10 o corpo da polícia é do Meshy com a palma calibrada da pega do
+## Dante (7b0102e1): o antebraço procedural mira o pulso em "pega − deslocamento da palma" girado pela
+## orientação da mão, então antebraço + 6 cm deixou de cair na pega e o teste acusava 59 falhas sem a
+## mão ter saído da arma. Mesma medida de tests/test_meshy_weapon_contact_phases.gd; o `sync` é o que o
+## PoseDriver do jogo faz no quadro seguinte. Corpo procedural (sem Meshy) segue com a medida antiga.
+func palm_position(model: Node3D, index: int) -> Vector3:
+	var meshy: Variant = model.body.get("_meshy")
+	if meshy == null: return hand_position(model, index)
+	meshy.sync(1.0 / 60.0)
+	return meshy.palm_position(index)
+
+func grip_check(model: Node3D, index: int, target: Vector3, label: String) -> void:
+	var distance := palm_position(model, index).distance_to(target)
+	check(distance < .035, "%s (%.1f mm)" % [label, distance * 1000.0])
+
 func capture(label: String) -> void:
 	if DisplayServer.get_name() == "headless" or "--capture" not in OS.get_cmdline_user_args(): return
 	await RenderingServer.frame_post_draw
@@ -60,12 +75,12 @@ func run() -> void:
 				model.update_pose(1.0 / 60.0, aiming, reload, progress, 0.0)
 				model.body._pose(1.0 / 60.0)
 			var right := model.weapon.to_global(POSES.GRIPS[model.weapon_id])
-			check(hand_position(model, 0).distance_to(right) < .035, "tier%d %s right glove on actual weapon grip" % [tier, mode])
+			grip_check(model, 0, right, "tier%d %s right glove on actual weapon grip" % [tier, mode])
 			var targets: Array = model.weapon_hand_contacts()
 			if targets[1] is Vector3:
-				check(hand_position(model, 1).distance_to(targets[1]) < .035, "tier%d %s support/reload hand reaches its physical target" % [tier, mode])
+				grip_check(model, 1, targets[1], "tier%d %s support/reload hand reaches its physical target" % [tier, mode])
 			if not reload and (tier > 0 or aiming):
-				check(hand_position(model, 1).distance_to(model.weapon.to_global(POSES.SUPPORT_GRIPS[model.weapon_id])) < .035, "tier%d %s left glove on actual foregrip" % [tier, mode])
+				grip_check(model, 1, model.weapon.to_global(POSES.SUPPORT_GRIPS[model.weapon_id]), "tier%d %s left glove on actual foregrip" % [tier, mode])
 			if aiming:
 				check((-model.weapon.global_basis.z).normalized().dot((-model.global_basis.z).normalized()) > .97, "tier%d muzzle points forward, away from head" % tier)
 			check(model.body.to_local(right).y < 1.46, "tier%d %s grip remains below eyes" % [tier, mode])
@@ -109,7 +124,7 @@ func run() -> void:
 	officer.visual.update_pose(1.0, true, false, 0.0, 0.0)
 	officer.visual.body._pose(.016)
 	check(not officer.visual.rappel_pose_active and officer.visual.weapon.get_parent() == officer.visual, "rappel cleanup restores weapon parent and pose ownership once")
-	check(hand_position(officer.visual, 0).distance_to(officer.visual.weapon.to_global(POSES.GRIPS["m4a1"])) < .035, "post-landing weapon stays in anatomical hand")
+	grip_check(officer.visual, 0, officer.visual.weapon.to_global(POSES.GRIPS["m4a1"]), "post-landing weapon stays in anatomical hand")
 	await capture("04-landed-ready")
 	print("OFFICER_POSE checks=%d failures=%s" % [checks, failures])
 	scene.queue_free()

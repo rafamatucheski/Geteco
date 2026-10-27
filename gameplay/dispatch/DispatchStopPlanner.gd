@@ -7,6 +7,9 @@ var curve: Curve3D
 var goal := Vector3.INF
 var _retry := 0.0
 var _model: RefCounted
+## GETECO_STOP_FIX=0 volta à parada de antes de 27/10 (avanço pela frente do carro; ao desistir da
+## rota sem acostamento, fica tentando), para A/B no mesmo build. DispatchUnit.on_gave_up lê o mesmo.
+static var stop_fix := OS.get_environment("GETECO_STOP_FIX") != "0"
 
 func reset() -> void:
 	curve = null
@@ -53,6 +56,10 @@ func tick(unit, anchor: Vector3, delta: float) -> bool:
 	var info: Dictionary = _model.lateral(vehicle.global_position,forward,vehicle.half_width)
 	if not info.valid: return false
 	var foot_reach: float = unit.RULES.SPAWN_MAX if unit.is_police() else unit.RULES.FOOT_RANGE
+	# A folga lateral (`room`) é medida no eixo da rua; o avanço também tem de ser. Com o avanço na
+	# frente do carro, a viatura que chegava inclinada (cortando para o lado do alvo) somava 16 m × seno
+	# do ângulo ao desvio e parava inteira na calçada (z = 6,8 numa rua de 8 m, 27/10).
+	var along: Vector3 = Vector3.UP.cross(info.right).normalized() if stop_fix else forward
 	for distance in [16.0,10.0,22.0]:
 		for shoulder in [2.2,1.1,0.0]:
 			var shift: float = info.room+shoulder
@@ -62,7 +69,7 @@ func tick(unit, anchor: Vector3, delta: float) -> bool:
 			for i in 17:
 				var t := float(i)/16
 				var lateral := smoothstep(0.0,.8,t)*shift
-				candidate.add_point(vehicle.global_position+forward*distance*t+info.right*lateral)
+				candidate.add_point(vehicle.global_position+along*distance*t+info.right*lateral)
 			var finish := candidate.get_point_position(16)
 			if finish.distance_to(anchor)>foot_reach: continue
 			if _model.in_junction(finish,vehicle.half_length): continue

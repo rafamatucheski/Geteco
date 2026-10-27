@@ -25,6 +25,13 @@ var _shown_intensity := -1.0
 var _fade_from := -1.0
 const BURN_SECONDS := 15.0
 const FADE_SECONDS := 5.0
+## Com caminhão chamado o fogo espera a equipe (27/10): o despacho só sai com 10–15 s de fogo e a
+## viatura nasce fora da vista, então o fogo de 20 s apagava antes e o caminhão voltava sem ninguém
+## ver bombeiro desde 01/10. Até este teto o jato é que apaga; GETECO_FIRE_HOLD=0 volta ao de antes.
+const RESPONSE_HOLD_SECONDS := 100.0
+static var hold_for_response := OS.get_environment("GETECO_FIRE_HOLD") != "0"
+## Chave da ocorrência no EmergencyManager (-1 = fora dele).
+var incident_key := -1
 
 func _ready() -> void:
 	_ensure_visuals()
@@ -180,11 +187,16 @@ func _apply_intensity() -> void:
 	smoke.amount_ratio = clampf(0.4 + strength * 0.6, 0.0, 1.0)
 	glow.scale = Vector3.ONE * size
 
+func _awaiting_crew() -> bool:
+	if not hold_for_response or age > RESPONSE_HOLD_SECONDS or not is_instance_valid(manager): return false
+	var record: Dictionary = manager.incidents.get(incident_key, {})
+	return bool(record.get("assigned", false))
+
 func _physics_process(delta: float) -> void:
 	age += delta
 	# Fogo solto (arma, explosão) apaga sozinho: a partir de BURN_SECONDS mingua até
 	# sumir em FADE_SECONDS (pedido do jogador em 2026-09-24; antes queimava 45 s).
-	if age > BURN_SECONDS:
+	if age > BURN_SECONDS and not _awaiting_crew():
 		if _fade_from < 0.0: _fade_from = intensity
 		intensity -= delta * _fade_from / FADE_SECONDS
 	if intensity <= 0:

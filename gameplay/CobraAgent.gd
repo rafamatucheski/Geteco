@@ -37,6 +37,8 @@ var reload_timer := 0.0
 const HURT_STAGGER := Vector2(0.2, 0.5)
 const HURT_PUSH := 2.6
 const HURT_RECOVERY := 0.9
+## Arranhão (estilhaço, chumbo de longe) só balança o tronco, sem tranco.
+const HURT_MIN_DAMAGE := 4.0
 var hurt_time := 0.0
 var _hurt_push := Vector3.ZERO
 var _hurt_ready_at := -INF
@@ -180,7 +182,7 @@ func receive_damage(amount: float, _source: Node = null) -> void:
 		var hit_direction: Vector3 = (global_position - (_source as Node3D).global_position).normalized() if _source is Node3D else Vector3.ZERO
 		preload("res://gameplay/CharacterFallPresentation3D.gd").apply_hit(self, visual, hit_direction, amount)
 		var now := float(Time.get_ticks_msec()) * 0.001
-		if hurt_time <= 0.0 and now >= _hurt_ready_at:
+		if hurt_time <= 0.0 and now >= _hurt_ready_at and amount >= HURT_MIN_DAMAGE:
 			var severity := clampf(amount / 30.0, 0.0, 1.0)
 			hurt_time = lerpf(HURT_STAGGER.x, HURT_STAGGER.y, severity)
 			_hurt_ready_at = now + hurt_time + HURT_RECOVERY
