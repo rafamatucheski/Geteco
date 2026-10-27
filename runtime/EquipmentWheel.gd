@@ -6,7 +6,7 @@ const GRID := preload("res://systems/inventory/GridInventory.gd")
 const ICONS := preload("res://systems/inventory/InventoryIcons.gd")
 const WORLD_SCALE := 0.2
 const WEAPON_GROUPS := [
-	["fists"], ["pistol", "magnum"], ["smg"], ["shotgun", "sawed_off"],
+	["fists"], ["pistol", "magnum", "pistol_suppressed"], ["smg", "smg_compact", "smg_tactical"], ["shotgun", "sawed_off", "shotgun_auto"],
 	["ak47", "m4a1"], ["hunting_rifle"], ["rpg", "flamethrower", "grenade"],
 	["knuckles", "knife", "bat", "axe", "katana"],
 ]
@@ -145,10 +145,18 @@ func handle_input(event: InputEvent) -> bool:
 		return true
 	if event.is_action_released("weapon_wheel"):
 		close(true)
+	elif event.is_action_pressed("weapon_wheel"):
+		# The controller hold button also navigates older menus. Repeated presses
+		# must not cycle the weapon while this component owns that button.
+		pass
 	elif event.is_action_pressed("pause_game") or event.is_action_pressed("ui_cancel"):
 		cancel()
 	elif event.is_action_pressed("interact") and not event.is_echo():
 		toggle_page()
+	elif not event.is_echo() and (event.is_action_pressed("weapon_next") or event.is_action_pressed("ui_right")):
+		cycle_variant(1)
+	elif not event.is_echo() and (event.is_action_pressed("weapon_previous") or event.is_action_pressed("ui_left")):
+		cycle_variant(-1)
 	elif event is InputEventMouseMotion:
 		_select_at(event.position)
 	elif event is InputEventMouseButton and event.pressed:
@@ -158,10 +166,10 @@ func handle_input(event: InputEvent) -> bool:
 		if event.axis == JOY_AXIS_RIGHT_X: _stick.x = event.axis_value
 		elif event.axis == JOY_AXIS_RIGHT_Y: _stick.y = event.axis_value
 		if _stick.length() > 0.35: _select_at(view.size * 0.5 + _stick.normalized() * minf(view.size.x, view.size.y) * 0.3)
-	elif event.is_action_pressed("ui_right") or event.is_action_pressed("ui_down"):
+	elif event.is_action_pressed("ui_down") and not event.is_echo():
 		selected = posmod(selected + 1, entries.size())
 		view.select(selected)
-	elif event.is_action_pressed("ui_left") or event.is_action_pressed("ui_up"):
+	elif event.is_action_pressed("ui_up") and not event.is_echo():
 		selected = posmod(selected - 1, entries.size())
 		view.select(selected)
 	return true
@@ -184,9 +192,10 @@ func toggle_page() -> void:
 	view.select(selected)
 
 func cycle_variant(step: int) -> void:
-	if selected < 0 or selected >= _groups.size() or _groups[selected].size() < 2: return
+	if not active or selected < 0 or selected >= _groups.size() or _groups[selected].size() < 2: return
 	var key := "%d:%d" % [page, selected]
-	_choices[key] = posmod(int(_choices.get(key, 0)) + step, _groups[selected].size())
+	var cursor := _groups[selected].find(str(_choices.get(key, "")))
+	_choices[key] = _groups[selected][posmod(maxi(0, cursor) + step, _groups[selected].size())]
 	_rebuild()
 
 func _carried_source(id: String, data: Dictionary) -> Dictionary:
@@ -209,22 +218,30 @@ func _rebuild() -> void:
 			elif not _carried_source(id, data).is_empty(): available.append(id)
 		_groups.append(available)
 		var key := "%d:%d" % [page, i]
-		if not _choices.has(key) and page == 0 and available.has(session.state.equipped_weapon): _choices[key] = available.find(session.state.equipped_weapon)
-		var cursor := posmod(int(_choices.get(key, 0)), maxi(1, available.size()))
-		_choices[key] = cursor
+		# Remember identity, not array position: a pickup or removal must not
+		# silently change a still-carried choice during the periodic refresh.
+		var preferred := str(_choices.get(key, session.state.equipped_weapon if page == 0 else ""))
+		var cursor := maxi(0, available.find(preferred))
 		var id: String = available[cursor] if not available.is_empty() else definitions[i][0]
+		_choices[key] = id
 		var enabled := not available.is_empty()
 		var detail := ""
 		var count_label := ""
 		var label := ""
 		var icon_id := id
+		var role := ""
+		var stats: Array[String] = []
 		if page == 0:
-			label = str(CATALOG.WEAPONS[id].label)
+			label = String(TranslationServer.translate(str(CATALOG.WEAPONS[id].label)))
 			enabled = enabled and session.state.weapons_allowed() and not (economy.grid_handbag() and id in GRID.LONG)
 			var ammo: Dictionary = session.state.get_ammo(id)
 			detail = "%d / %d" % [maxi(0, int(ammo.get("magazine", 0))), maxi(0, int(ammo.get("reserve", 0)))] if int(ammo.get("magazine", -1)) >= 0 else _text("Corpo a corpo", "Melee")
 			if not session.state.weapons_allowed(): detail = _text("Armas guardadas nesta área", "Weapons restricted in this area")
 			elif economy.grid_handbag() and id in GRID.LONG: detail = _text("Solte a mala para equipar", "Drop the bag to equip")
+			if enabled:
+				var weapon: Dictionary = session.world.gameplay.weapon_data(id)
+				role = str(weapon.get("role_en" if TranslationServer.get_locale().begins_with("en") else "role", ""))
+				stats = _weapon_stats(weapon)
 		else:
 			var spec: Dictionary = GRID.spec(id)
 			label = String(TranslationServer.translate(str(spec.label)))
@@ -240,10 +257,23 @@ func _rebuild() -> void:
 				detail = _text("Vida cheia", "Health full")
 		if available.is_empty(): detail = _text("Não está com você", "Not carried")
 		elif available.size() > 1: count_label += ("  " if not count_label.is_empty() else "") + "%d/%d" % [cursor + 1, available.size()]
-		var slot_label: String = str(CATALOG.WEAPONS[id].short_label) if page == 0 else label
-		entries.append({"id": id, "label": label, "slot_label": slot_label, "detail": detail, "icon": ICONS.get_icon(icon_id), "enabled": enabled, "count_label": count_label})
+		var slot_label: String = String(TranslationServer.translate(str(CATALOG.WEAPONS[id].short_label))) if page == 0 else label
+		# "Punho" also names a weapon attachment in the translation table.
+		if page == 0 and id == "fists": slot_label = _text("PUNHO", "FISTS")
+		entries.append({"id": id, "label": label, "slot_label": slot_label, "detail": detail, "role": role, "stats": stats, "variant_index": cursor, "variant_count": available.size(), "icon": ICONS.get_icon(icon_id), "enabled": enabled, "count_label": count_label})
 	var controls := get_node("/root/GameInput")
-	view.configure_view(entries, selected, page, {"hold": controls.hint("weapon_wheel"), "switch": controls.hint("interact"), "cancel": controls.hint("pause_game"), "subcycle": _text("Rolagem: variar item", "Scroll: cycle item")})
+	var subcycle := _text("Rolagem / ← →: variar item · ↑ ↓: categoria", "Scroll / ← →: cycle item · ↑ ↓: category")
+	if controls.using_gamepad: subcycle = _text("← →: variar item · Analógico direito / ↑ ↓: categoria", "← →: cycle item · Right stick / ↑ ↓: category")
+	view.configure_view(entries, selected, page, {"hold": controls.hint("weapon_wheel"), "switch": controls.hint("interact"), "cancel": controls.hint("pause_game"), "subcycle": subcycle})
+
+func _weapon_stats(data: Dictionary) -> Array[String]:
+	if not data.has("reload_duration"): return []
+	var pellets := int(data.get("pellets", 1))
+	var damage := str(int(data.get("damage", 0)))
+	if pellets > 1: damage += " × %d" % pellets
+	var reload := float(data.reload_duration) * float(data.get("reload_multiplier", 1.0))
+	return [_text("Dano ", "Damage ") + damage,
+		_text("%.1f/s · Rec. %.1f s", "%.1f/s · Reload %.1f s") % [1.0 / maxf(.01, float(data.get("fire_interval", 1.0))), reload]]
 
 func _commit(id: String) -> void:
 	if not _context_valid() or session.world.player.input_locked: return

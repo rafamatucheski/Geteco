@@ -61,6 +61,12 @@ func _ready() -> void:
 		visual.look_seed = look_seed if look_seed >= 0 else randi() % 100000
 		visual.uniform_tones = uniform_tones
 		add_child(visual)
+	# Authored encounters may override the tier's default loadout. The gun in
+	# the hands, its projectiles and the collectible drop must be the same ID.
+	if visual.weapon_id != weapon_id:
+		var previous: Node3D = visual.weapon
+		visual.equip(weapon_id)
+		if is_instance_valid(previous): previous.queue_free()
 	magazine = int(CATALOG.get_weapon(weapon_id).magazine_size)
 	last_known = global_position
 
@@ -95,7 +101,7 @@ func _physics_process(delta: float) -> void:
 				break
 	# Gira o tronco para o alvo em vez de estalar; o tiro espera o peito alinhar (CobraGunfire).
 	if direction.length_squared() > 0.01: visual.rotation.y = lerp_angle(visual.rotation.y, atan2(-direction.x, -direction.z), 1.0 - exp(-12.0 * delta))
-	var reload_seconds := preload("res://gameplay/CombatAudio.gd").reload_seconds(weapon_id)
+	var reload_seconds := weapon_reload_duration()
 	visual.update_pose(delta, sees_target, reload_timer > 0.0, 1.0 - reload_timer / maxf(reload_seconds, 0.01), gait)
 	if sees_target and distance < float(CATALOG.get_weapon(weapon_id).max_range) / 16.0 and cooldown <= 0 and reload_timer <= 0:
 		_shoot(target)
@@ -126,16 +132,25 @@ func _shoot(target: Node3D) -> void:
 	var data: Dictionary = CATALOG.get_weapon(weapon_id)
 	if reload_timer > 0.0: return
 	if magazine <= 0:
-		reload_timer = preload("res://gameplay/CombatAudio.gd").reload_seconds(weapon_id)
+		reload_timer = weapon_reload_duration()
 		gameplay.police_reload(self, weapon_id)
 		return
 	if not preload("res://gameplay/CobraGunfire.gd").fire(gameplay, self, visual, target, weapon_id): return
 	magazine -= 1
-	if weapon_id == "smg":
+	if data.get("automatic", false):
 		burst = (burst + 1) % 3
 		cooldown = float(data.fire_interval) if burst != 0 else 1.35
+	elif weapon_id == "shotgun_auto":
+		# Two quick follow-up shots distinguish the semiauto while preserving a
+		# readable pause for the player to move between NPC volleys.
+		burst = (burst + 1) % 2
+		cooldown = float(data.fire_interval) if burst != 0 else 1.1
 	else:
 		cooldown = maxf(0.8, float(data.fire_interval))
+
+func weapon_reload_duration() -> float:
+	var data: Dictionary = CATALOG.get_weapon(weapon_id)
+	return float(data.get("reload_duration", preload("res://gameplay/CombatAudio.gd").reload_seconds(weapon_id)))
 
 func receive_damage(amount: float, _source: Node = null) -> void:
 	if dead or amount <= 0: return

@@ -43,6 +43,28 @@ const RELOAD_WEAPONS := ["pistol", "magnum", "smg", "shotgun", "sawed_off", "ak4
 const RELOAD_TAKES := 3
 ## Tiro/explosão: 5 takes por som, como `audio/acoustic/<arma>_0..4.wav` da V1.
 const GUNFIRE_TAKES := 5
+## Dedicated deliveries override these playable temporary layers without code changes.
+const VARIANT_DIR := "res://audio/weapon_variants/"
+const VARIANT_BASE := {"pistol_suppressed":"suppressed_pistol", "smg_compact":"smg", "smg_tactical":"smg", "shotgun_auto":"shotgun"}
+const VARIANT_RELOAD := {"pistol_suppressed":"pistol", "smg_compact":"smg", "smg_tactical":"smg", "shotgun_auto":"shotgun"}
+const VARIANT_PITCH := {"pistol_suppressed":0.94, "smg_compact":1.14, "smg_tactical":0.88, "shotgun_auto":1.06}
+static var _variant_samples: Dictionary = {}
+
+static func _variant_bank(id: String, kind: String, count: int) -> Array:
+	var key := id+":"+kind
+	if _variant_samples.has(key): return _variant_samples[key]
+	var bank: Array = []
+	for index in count:
+		var path := "%s%s/%s_%d.wav" % [VARIANT_DIR,id,kind,index]
+		if ResourceLoader.exists(path,"AudioStream"):
+			var stream := load(path) as AudioStream
+			if stream != null: bank.append(stream)
+	_variant_samples[key] = bank
+	return bank
+
+static func variant_pitch(id: String) -> float:
+	# Authored deliveries already have their final character and must play at native pitch.
+	return 1.0 if not _variant_bank(id,"shot",GUNFIRE_TAKES).is_empty() else float(VARIANT_PITCH.get(id,1.0))
 ## Mesma faixa do `AudioStreamRandomizer` da V1 (`audio/combat/CombatAudioBank.gd`):
 ## `random_pitch = 1.035` (multiplicador, tom varia entre 1/1.035 e 1.035) e
 ## `random_volume_offset_db = 0.65` (±0,65 dB por tiro).
@@ -68,6 +90,13 @@ static var _last_contact_take: Dictionary = {}
 ## Batches are bounded to one family; filesystem work runs on loader threads.
 static func prewarm_gameplay_banks(tree: SceneTree) -> void:
 	await FIREFLY.prewarm(tree)
+	for id in VARIANT_BASE:
+		_variant_bank(id,"shot",GUNFIRE_TAKES)
+		_variant_bank(id,"reload",RELOAD_TAKES)
+		await tree.process_frame
+	for index in RELOAD_TAKES:
+		_semiauto_reload(index)
+		await tree.process_frame
 	for family in CONTACT_FAMILIES:
 		for index in RELOAD_TAKES: _contact_sample(family, index)
 		await tree.process_frame
@@ -168,6 +197,14 @@ static func impact_take(material: String, rng: RandomNumberGenerator) -> AudioSt
 ## Take de tiro/explosão entre os 5 disponíveis, sem repetir o take anterior da mesma
 ## família — replica `AudioStreamRandomizer.PLAYBACK_RANDOM_NO_REPEATS` da V1.
 static func gunfire_take(prefix: String, rng: RandomNumberGenerator) -> AudioStream:
+	if VARIANT_BASE.has(prefix):
+		var bank := _variant_bank(prefix,"shot",GUNFIRE_TAKES)
+		if not bank.is_empty():
+			var pick := rng.randi_range(0,bank.size()-1)
+			if bank.size()>1 and _last_gunfire_take.get(prefix,-1)==pick: pick=(pick+1)%bank.size()
+			_last_gunfire_take[prefix]=pick
+			return bank[pick]
+		return gunfire_take(str(VARIANT_BASE[prefix]),rng)
 	# Famílias com tiros gravados no Firefly usam só eles; os takes do V1 ficam de reserva.
 	var recorded_total: int = FIREFLY.count("weapons_fire", FIREFLY_GUNFIRE[prefix]) if FIREFLY_GUNFIRE.has(prefix) else 0
 	if recorded_total > 0:
@@ -197,12 +234,25 @@ static func reward(kind: String, rng: RandomNumberGenerator) -> AudioStream:
 	return wav("reward_pickup_%d.wav" % rng.randi_range(0, 2))
 
 static func reload_take(weapon_id: String, rng: RandomNumberGenerator) -> AudioStream:
+	if VARIANT_RELOAD.has(weapon_id):
+		var bank := _variant_bank(weapon_id,"reload",RELOAD_TAKES)
+		if not bank.is_empty(): return bank[rng.randi_range(0,bank.size()-1)]
+		if weapon_id == "shotgun_auto": return _semiauto_reload(rng.randi_range(0,RELOAD_TAKES-1))
+		weapon_id = VARIANT_RELOAD[weapon_id]
 	if weapon_id not in RELOAD_WEAPONS: return null
 	return wav("reload/%s_%d.wav" % [weapon_id, rng.randi_range(0, RELOAD_TAKES - 1)])
 
 ## Duração de recarga como no V1: o take mais longo do banco da arma (mínimo 0,5 s).
 ## 0 = sem banco (o chamador usa o tempo padrão).
 static func reload_seconds(weapon_id: String) -> float:
+	if VARIANT_RELOAD.has(weapon_id):
+		var bank := _variant_bank(weapon_id,"reload",RELOAD_TAKES)
+		if not bank.is_empty():
+			var longest := MIN_RELOAD
+			for stream: AudioStream in bank: longest = maxf(longest,stream.get_length())
+			return longest
+		if weapon_id == "shotgun_auto": return 3.3
+		weapon_id = VARIANT_RELOAD[weapon_id]
 	if weapon_id not in RELOAD_WEAPONS: return 0.0
 	if _reload_seconds.has(weapon_id): return _reload_seconds[weapon_id]
 	var seconds := 0.0
@@ -214,6 +264,33 @@ static func reload_seconds(weapon_id: String) -> float:
 	return result
 
 # --- Geradores procedurais (cópia das fórmulas V1) ------------------------------
+
+## Temporary tube-loading Foley: two hand-to-belt gestures and a final bolt click.
+## No pump stroke. Deterministic takes are generated only under the loading curtain.
+static func _semiauto_reload(index: int) -> AudioStreamWAV:
+	var key := "semiauto_reload_"+str(index)
+	if _generated.has(key): return _generated[key]
+	var rate := 22050
+	var samples := PackedByteArray()
+	var count := int(3.3*rate)
+	samples.resize(count*2)
+	var random := RandomNumberGenerator.new()
+	random.seed = 271000+index
+	var low := 0.0
+	var events := [Vector3(.22,.11,.16),Vector3(.88,.055,.68),Vector3(1.26,.10,.15),Vector3(1.93,.055,.65),Vector3(2.82,.045,.82),Vector3(3.03,.035,.42)]
+	for i in count:
+		var t := float(i)/rate
+		var noise := random.randf_range(-1.0,1.0)
+		low += (noise-low)*.21
+		var value := 0.0
+		for event: Vector3 in events:
+			var age := t-event.x
+			if age < 0.0 or age > event.y*5: continue
+			value += (low*.65+sin(age*TAU*(1050+index*37))*.20)*event.z*exp(-age/event.y)*minf(age/.002,1.0)
+		samples.encode_s16(i*2,clampi(int(tanh(value)*19000),-32768,32767))
+	var stream := _make(samples,rate)
+	_generated[key]=stream
+	return stream
 
 static func _make(samples: PackedByteArray, rate: int) -> AudioStreamWAV:
 	var stream := AudioStreamWAV.new()
@@ -449,6 +526,9 @@ static func flamethrower() -> AudioStream:
 ## sozinhas soavam fracas, principalmente Magnum e escopeta. Esta camada soma
 ## o soco grave e a cauda difusa de rua. Não há reflexões discretas (eco repetido).
 const GUN_BODY := {
+	"smg_compact": [132.0, 58.0, 0.16, -19.0],
+	"smg_tactical": [88.0, 38.0, 0.28, -17.0],
+	"shotgun_auto": [68.0, 28.0, 0.44, -15.0],
 	"pistol": [96.0, 40.0, 0.35, -9.0], "magnum": [60.0, 20.0, 0.95, -2.5],
 	"smg": [104.0, 46.0, 0.25, -11.0], "shotgun": [56.0, 18.0, 0.85, -2.5],
 	"sawed_off": [52.0, 16.0, 0.85, -1.5], "ak47": [78.0, 30.0, 0.55, -6.0],
@@ -457,6 +537,7 @@ const GUN_BODY := {
 
 static func gun_body(kind: String) -> AudioStream:
 	if not GUN_BODY.has(kind): return null
+	if VARIANT_BASE.has(kind) and not _variant_bank(kind,"shot",GUNFIRE_TAKES).is_empty(): return null
 	# Os tiros gravados já têm corpo e cauda; a camada sintética só complementa os takes do V1.
 	if FIREFLY_GUNFIRE.has(kind) and FIREFLY.count("weapons_fire", FIREFLY_GUNFIRE[kind]) > 0: return null
 	var key := "body_" + kind

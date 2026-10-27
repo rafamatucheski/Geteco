@@ -40,7 +40,7 @@ func run() -> void:
 	check(bound("interact", key(KEY_E)), "E remains the interaction reused to change wheel page")
 	check(bound("weapon_next", wheel(MOUSE_BUTTON_WHEEL_UP)) and bound("weapon_previous", wheel(MOUSE_BUTTON_WHEEL_DOWN)), "mouse wheel retains both immediate weapon directions")
 	check(bound("weapon_next", pad(JOY_BUTTON_RIGHT_SHOULDER)) and bound("weapon_previous", pad(JOY_BUTTON_LEFT_SHOULDER)), "controller shoulder buttons retain immediate weapon cycling")
-	check(controls.gamepad_events("weapon_wheel").is_empty(), "wheel adds no conflicting default controller binding")
+	check(bound("weapon_wheel", pad(JOY_BUTTON_LEFT_SHOULDER)), "L1/LB opens the wheel while its older navigation contexts stay available")
 
 	# Q belongs to separate on-foot and mounted-skate contexts in either remap order.
 	check(controls.rebind_slot("weapon_wheel", 0, key(KEY_Q)).ok and bound("skate_flip", key(KEY_Q)), "rebinding the wheel preserves kickflip")
@@ -86,6 +86,31 @@ func run() -> void:
 	controls.reset_bindings()
 	controls.import_bindings(customized)
 	check(controls.keyboard_events("weapon_wheel").is_empty() and bound("weapon_next", key(KEY_Q)), "an explicitly unbound wheel is not restored during import")
+	controls.reset_bindings()
+	var legacy_pad: Dictionary = controls.export_gamepad_bindings()
+	legacy_pad.weapon_wheel = []
+	controls.import_gamepad_bindings(legacy_pad, 2)
+	check(bound("weapon_wheel", pad(JOY_BUTTON_LEFT_SHOULDER)) and bound("weapon_previous", pad(JOY_BUTTON_LEFT_SHOULDER)), "old standard controller gains wheel without losing menu previous action")
+	check(controls.rebind_gamepad("radio_previous", pad(JOY_BUTTON_LEFT_SHOULDER)).ok and bound("weapon_wheel", pad(JOY_BUTTON_LEFT_SHOULDER)), "radio customization preserves contextual wheel hold")
+	check(controls.rebind_gamepad("weapon_wheel", pad(JOY_BUTTON_LEFT_SHOULDER)).ok and bound("skate_shove", pad(JOY_BUTTON_LEFT_SHOULDER)) and bound("weapon_previous", pad(JOY_BUTTON_LEFT_SHOULDER)), "rebinding wheel preserves skate and older menu controls")
+	controls.reset_bindings()
+	legacy_pad.weapon_previous = [{"button": JOY_BUTTON_PADDLE1}]
+	controls.import_gamepad_bindings(legacy_pad, 2)
+	check(controls.gamepad_events("weapon_wheel").is_empty() and bound("weapon_previous", pad(JOY_BUTTON_PADDLE1)), "custom older previous-weapon control is not reinterpreted")
+	legacy_pad.weapon_previous = [{"button": JOY_BUTTON_LEFT_SHOULDER}]
+	legacy_pad.interact = [{"button": JOY_BUTTON_LEFT_SHOULDER}]
+	controls.reset_bindings()
+	controls.import_gamepad_bindings(legacy_pad, 2)
+	check(controls.gamepad_events("weapon_wheel").is_empty() and bound("interact", pad(JOY_BUTTON_LEFT_SHOULDER)), "migration does not steal a custom interaction button")
+	legacy_pad.weapon_wheel = [{"button": JOY_BUTTON_PADDLE2}]
+	controls.reset_bindings()
+	controls.import_gamepad_bindings(legacy_pad, 2)
+	check(bound("weapon_wheel", pad(JOY_BUTTON_PADDLE2)), "an older explicit wheel binding is preserved")
+	controls.reset_bindings()
+	var modern_pad: Dictionary = controls.export_gamepad_bindings()
+	modern_pad.weapon_wheel = []
+	controls.import_gamepad_bindings(modern_pad, 3)
+	check(controls.gamepad_events("weapon_wheel").is_empty(), "current explicit wheel unbinding remains empty")
 	controls.reset_bindings()
 	for failure in failures: push_error(failure)
 	print("EQUIPMENT_WHEEL_BINDINGS_RESULT checks=", checks, " failures=", failures.size())

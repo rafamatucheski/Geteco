@@ -6,6 +6,7 @@ const FINISHES := {"matte":Color("282d32"), "sand":Color("b9a175"), "olive":Colo
 const LONG_BARREL := .075
 
 static func apply(root: Node3D, id: String, entry: Dictionary, muzzle: Vector3) -> void:
+	id = str(preload("res://gameplay/WeaponCatalog.gd").WEAPONS.get(id,{}).get("model_base",id))
 	var forge: Variant = entry.get("forge", {})
 	if forge is Dictionary and forge.get("legendary", false) == true: legendary(root, id)
 	var parts: Dictionary = entry.get("parts",{})

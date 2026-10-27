@@ -8,10 +8,10 @@ extends RefCounted
 ## Armas brancas têm slots próprios (lâmina/cabeça, cabo, acabamento do material
 ## certo): pintura de fuzil não vai mais para faca.
 const PRICE := 350
-const COMPATIBLE := ["pistol", "magnum", "smg", "shotgun", "sawed_off", "ak47", "m4a1", "hunting_rifle", "flamethrower"]
-const FIREARMS := ["pistol", "magnum", "smg", "shotgun", "sawed_off", "ak47", "m4a1", "hunting_rifle"]
+const COMPATIBLE := ["pistol", "magnum", "pistol_suppressed", "smg", "smg_compact", "smg_tactical", "shotgun", "sawed_off", "shotgun_auto", "ak47", "m4a1", "hunting_rifle", "flamethrower"]
+const FIREARMS := ["pistol", "magnum", "pistol_suppressed", "smg", "smg_compact", "smg_tactical", "shotgun", "sawed_off", "shotgun_auto", "ak47", "m4a1", "hunting_rifle"]
 const MELEE := ["knuckles", "knife", "bat", "axe"]
-const CUSTOMIZABLE := ["knuckles", "knife", "bat", "axe", "pistol", "magnum", "smg", "shotgun", "sawed_off", "ak47", "m4a1", "hunting_rifle", "flamethrower"]
+const CUSTOMIZABLE := ["knuckles", "knife", "bat", "axe", "pistol", "magnum", "pistol_suppressed", "smg", "smg_compact", "smg_tactical", "shotgun", "sawed_off", "shotgun_auto", "ak47", "m4a1", "hunting_rifle", "flamethrower"]
 ## Ordem de aplicação e de exibição das abas.
 const SLOTS := {"flashlight":"LANTERNA", "laser":"LASER", "muzzle":"BOCAL", "barrel":"CANO", "magazine":"CARREGADOR", "ammo":"MUNIÇÃO", "trigger":"GATILHO", "grip":"EMPUNHADURA", "stock":"CORONHA", "scope":"MIRA", "edge":"LÂMINA", "handle":"CABO", "finish":"ACABAMENTO"}
 const _GUN_FINISH := ["pistol", "magnum", "smg", "shotgun", "sawed_off", "ak47", "m4a1", "hunting_rifle", "flamethrower"]
@@ -200,7 +200,11 @@ const _RELOAD_SLOW := ["rpg", "shotgun", "hunting_rifle"]
 
 static func supports(id: String, part: String) -> bool:
 	if id not in CUSTOMIZABLE or not PARTS.has(part): return false
-	return id in PARTS[part].get("for", [])
+	var base := String(preload("res://gameplay/WeaponCatalog.gd").get_weapon(id).get("model_base", id))
+	# The quiet pistol's suppressor/barrel are integral, not a removable second kit.
+	if id == "pistol_suppressed" and String(PARTS[part].slot) in ["muzzle", "barrel"]: return false
+	if id == "shotgun_auto" and part == "slick_pump": return false
+	return id in PARTS[part].get("for", []) or base in PARTS[part].get("for", [])
 
 static func slot_label(id: String, slot: String) -> String:
 	if slot == "edge": return {"bat":"CABEÇA", "knuckles":"PUNHO"}.get(id, "LÂMINA")
@@ -220,8 +224,8 @@ static func owns(state: Dictionary, id: String, part: String) -> bool:
 static func effective_data(id: String, state: Dictionary) -> Dictionary:
 	var data: Dictionary = preload("res://gameplay/WeaponCatalog.gd").get_weapon(id).duplicate(true)
 	var base_magazine := int(data.get("magazine_size", 0))
-	data["reload_multiplier"] = 1.0
-	data["recoil_multiplier"] = 1.0
+	data["reload_multiplier"] = float(data.get("reload_multiplier", 1.0))
+	data["recoil_multiplier"] = float(data.get("recoil_multiplier", 1.0))
 	for slot in SLOTS:
 		var part := selected(state, id, slot)
 		if part == "none" or part == "flashlight" or not supports(id, part): continue
@@ -232,7 +236,7 @@ static func effective_data(id: String, state: Dictionary) -> Dictionary:
 	if data.has("fire_interval"): data["fire_interval"] = maxf(0.05, float(data.fire_interval))
 	if data.has("min_damage_ratio"): data["min_damage_ratio"] = minf(0.95, float(data.min_damage_ratio))
 	if data.has("damage"): data["damage"] = maxi(1, roundi(float(data.damage)))
-	data["suppressed"] = selected(state,id,"muzzle") == "suppressor"
+	data["suppressed"] = bool(data.get("suppressed", false)) or (selected(state,id,"muzzle") == "suppressor" and supports(id,"suppressor"))
 	data["hearing_radius"] = 80.0 if data.suppressed else 240.0
 	return data
 
@@ -254,8 +258,9 @@ static func _apply(data: Dictionary, id: String, part: Dictionary, base_magazine
 	match str(part.get("special", "")):
 		"extended":
 			# Magazine capacity counts whole rounds; preserve truncation.
+			var base := String(data.get("model_base", id))
 			@warning_ignore("integer_division")
-			data["magazine_size"] = int(data.get("magazine_size",0)) + (2 if id == "shotgun" else (3 if id == "hunting_rifle" else base_magazine/2))
+			data["magazine_size"] = int(data.get("magazine_size",0)) + (2 if base == "shotgun" else (3 if base == "hunting_rifle" else base_magazine/2))
 		"slug":
 			# Um projétil com ~72% do dano somado do leque, reto e de alcance longo.
 			data["damage"] = float(data.damage) * int(data.get("pellets", 1)) * 0.72
@@ -308,7 +313,7 @@ static func stats(id: String, state: Dictionary) -> Array:
 	var magazine := int(data.get("magazine_size", -1))
 	if magazine > 0:
 		rows.append(["Capacidade", float(magazine), str(magazine), true])
-		var reload := (2.2 if id in _RELOAD_SLOW else 1.35) * float(data.reload_multiplier)
+		var reload := float(data.get("reload_duration", 2.2 if id in _RELOAD_SLOW else 1.35)) * float(data.reload_multiplier)
 		rows.append(["Recarga", reload, "%.1f s" % reload, false])
 	rows.append(["Recuo", float(data.recoil_multiplier), "%d%%" % roundi(float(data.recoil_multiplier) * 100.0), false])
 	if float(data.get("spread", 0.0)) > 0.0:
@@ -343,17 +348,18 @@ static func installed(state: Dictionary, id: String) -> bool:
 static func fit(root: Node3D, id: String, state: Dictionary, muzzle: Vector3) -> void:
 	preload("res://gameplay/WeaponAttachmentVisuals.gd").apply(root,id,state.get(id,{}),muzzle)
 	if not installed(state, id): return
+	var base := String(preload("res://gameplay/WeaponCatalog.gd").get_weapon(id).get("model_base", id))
 	var mount := Node3D.new()
 	mount.name = "TacticalFlashlight"
 	root.add_child(mount)
 	# Side clamp clears shotgun pumps and the supporting hand.
 	mount.position = Vector3(0.049, muzzle.y - 0.018, muzzle.z + 0.09)
-	if id == "pistol": mount.position = Vector3(0.0, 0.006, muzzle.z + 0.04)
+	if base == "pistol": mount.position = Vector3(0.0, 0.006, -0.11 if id == "pistol_suppressed" else muzzle.z + 0.04)
 	var metal := StandardMaterial3D.new()
 	metal.albedo_color = Color("242b30")
 	metal.metallic = 0.65
 	metal.roughness = 0.4
-	GEO._box(mount, "Clamp", Vector3(0,0.019,0.018) if id == "pistol" else Vector3(-0.024,0,0.018), Vector3(0.04,0.025,0.028), metal)
+	GEO._box(mount, "Clamp", Vector3(0,0.019,0.018) if base == "pistol" else Vector3(-0.024,0,0.018), Vector3(0.04,0.025,0.028), metal)
 	GEO._cylinder(mount, "Body", Vector3.ZERO, 0.019, 0.085, metal, Vector3(90,0,0))
 	var lens := StandardMaterial3D.new()
 	lens.albedo_color = Color("d9e6df")

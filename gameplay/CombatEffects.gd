@@ -546,7 +546,8 @@ func weapon_shot(id: String, origin: Vector3, aim: Vector3, magazine_after: int)
 	if id in ["shotgun", "hunting_rifle"]:
 		_pending_ejections.append({"id": id, "remaining": 0.27 if id == "shotgun" else 0.35})
 		return
-	if id in ["pistol", "smg", "ak47", "m4a1"]: shell(origin, aim, 0.0)
+	if id == "shotgun_auto": shell(origin, aim, 0.0, true)
+	elif id in ["pistol", "pistol_suppressed", "smg", "smg_compact", "smg_tactical", "ak47", "m4a1"]: shell(origin, aim, 0.0)
 
 func update_weapon_feedback(controller: Node3D, delta: float) -> void:
 	var id: String = controller.equipped()

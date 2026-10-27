@@ -436,10 +436,22 @@ func _start_encounter(id: String, center: Vector3) -> void:
 		if not session.position_clear(point+Vector3.UP*.05): continue
 		var enemy = load("res://gameplay/CobraAgent.gd").new()
 		enemy.configure(session.world.gameplay,2 if id == "boss_encounter" and index==1 else 0)
+		enemy.weapon_id = encounter_weapon(id, index)
 		enemy.position = point+Vector3.UP*.05
 		add_child(enemy)
 		enemies.append(enemy)
 	if enemies.is_empty(): session.show_message("Área do encontro ocupada. Afaste-se para liberar a passagem."); encounter_id=""
+
+## Fixed loadouts make variants discoverable through play. Every drop is the
+## actual gun carried by its owner; no extra actors or random rare rerolls.
+static func encounter_weapon(id: String, index: int) -> String:
+	var loadout: Array = {
+		"resident_encounter":["pistol", "smg_compact"],
+		"supply_encounter":["pistol_suppressed", "shotgun_auto"],
+		"boss_encounter":["magnum", "smg", "smg_tactical"],
+	}.get(id, ["pistol"])
+	return loadout[posmod(index, loadout.size())]
+
 func _encounter_cleared() -> bool:
 	if enemies.is_empty(): return false
 	for enemy in enemies:

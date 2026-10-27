@@ -4,6 +4,10 @@ extends RefCounted
 ## Arms use the existing rig lengths. Gun orientation is independent of the
 ## forearm so raising the elbow never points the barrel into the sky.
 const PROFILES := {
+	"pistol_suppressed": [Vector3(0.19, 0.96, -0.27), Vector3.ZERO, 0.09, 16.0],
+	"smg_compact": [Vector3(0.07, 0.94, -0.16), Vector3(-0.05, 0.0, -0.12), 0.07, 19.0],
+	"smg_tactical": [Vector3(0.07, 0.94, -0.16), Vector3(-0.05, 0.0, -0.12), 0.05, 22.0],
+	"shotgun_auto": [Vector3(0.05, 0.98, -0.10), Vector3(-0.04, 0.0, -0.20), 0.17, 11.0],
 	"katana": [Vector3(0.18, 0.95, -0.25), Vector3.ZERO, 0.0, 16.0],
 	"pistol": [Vector3(0.19, 0.96, -0.27), Vector3.ZERO, 0.11, 15.0],
 	"magnum": [Vector3(0.17, 0.99, -0.26), Vector3(-0.10, -0.04, 0.01), 0.22, 9.0],
@@ -25,6 +29,9 @@ const PROFILES := {
 
 # Mesh-space centres of the actual handles, not the receiver or barrel.
 const GRIPS := {
+	"pistol_suppressed": Vector3(0, -0.03, 0.02),
+	"smg_compact": Vector3(0, -0.05, 0.03), "smg_tactical": Vector3(0, -0.05, 0.03),
+	"shotgun_auto": Vector3(0, -0.04, 0.07),
 	"katana": Vector3(0, 0, 0.04),
 	"pistol": Vector3(0, -0.03, 0.02), "magnum": Vector3(0, -0.05, 0.03),
 	"smg": Vector3(0, -0.05, 0.03), "shotgun": Vector3(0, -0.04, 0.07),
@@ -45,6 +52,9 @@ const GRIPS := {
 	"fists": Vector3.ZERO,
 }
 const SUPPORT_GRIPS := {
+	"pistol_suppressed": Vector3(-0.038, -0.033, 0.02),
+	"smg_compact": Vector3(-0.02, -0.02, -0.15), "smg_tactical": Vector3(-0.02, -0.02, -0.15),
+	"shotgun_auto": Vector3(-0.02, -0.025, -0.16),
 	"pistol": Vector3(-0.038, -0.033, 0.02),
 	# Compact pistol grip: the support palm wraps the firing hand, not the barrels.
 	"sawed_off": Vector3(-0.038, -0.053, 0.05),
@@ -58,4 +68,4 @@ const SUPPORT_GRIPS := {
 	"bat": Vector3(0, 0, 0.10),
 }
 # Rear faces of the stocks, including the compact SMG wire stock.
-const STOCK_ENDS := {"smg": Vector3(0, 0.03, 0.19), "shotgun": Vector3(0, -0.04, 0.27), "ak47": Vector3(0, -0.02, 0.29), "m4a1": Vector3(0, 0, 0.25), "hunting_rifle": Vector3(0, -0.02, 0.19)}
+const STOCK_ENDS := {"smg_compact": Vector3(0, 0.03, 0.19), "smg_tactical": Vector3(0, 0.03, 0.19), "shotgun_auto": Vector3(0, -0.04, 0.27), "smg": Vector3(0, 0.03, 0.19), "shotgun": Vector3(0, -0.04, 0.27), "ak47": Vector3(0, -0.02, 0.29), "m4a1": Vector3(0, 0, 0.25), "hunting_rifle": Vector3(0, -0.02, 0.19)}

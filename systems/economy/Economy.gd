@@ -15,8 +15,8 @@ const SUPPLIES := {"lockpick":{"price":75}, "apple":{"price":8}, "water":{"price
 	"sandwich":{"price":25}, "first_aid":{"price":90}, "juice":{"price":14},
 	"yogurt":{"price":12}, "bread":{"price":16}, "cereal_bar":{"price":10}}
 const PERSONAL_SLOTS := {
-	"curta":["pistol","magnum","smg"],
-	"longa":["shotgun","sawed_off","ak47","m4a1","hunting_rifle","rpg","flamethrower"],
+	"curta":["pistol","magnum","pistol_suppressed","smg","smg_compact","smg_tactical"],
+	"longa":["shotgun","sawed_off","shotgun_auto","ak47","m4a1","hunting_rifle","rpg","flamethrower"],
 	"corpo":["knife","axe","knuckles","bat","katana"], "granada":["grenade"]}
 var _data := {"version": 1, "balance": 0, "weapons": {"fists": {"magazine": -1, "reserve": -1}},
 	"equipped_weapon": "fists", "outfits": ["dante_classic"], "outfit": "dante_classic",
@@ -68,6 +68,25 @@ func grant_weapon(id: String) -> bool:
 	if grid_enabled() and not _grid_register_weapon(id): _data=before; return false
 	var discovery := str(spec.get("discovery_pickup", ""))
 	if discovery != "": discover(discovery)
+	return true
+
+## Floor weapons carry only the ammunition in the pickup. Store starter packs
+## are deliberately reserved for purchases and authored rewards.
+## A full bag rejects the whole pickup, including its discovery and ammo.
+func collect_weapon_drop(id: String, rounds: int) -> bool:
+	if not Weapons.WEAPONS.has(id) or id == "fists" or rounds <= 0 or rounds > MAX_AMMO: return false
+	if _data.weapons.has(id): return add_ammo(id, rounds)
+	var before := _data.duplicate(true)
+	var spec: Dictionary = Weapons.WEAPONS[id]
+	var capacity := int(spec.magazine_size)
+	var loaded := mini(capacity, rounds) if capacity >= 0 else -1
+	_data.weapons[id] = {"magazine":loaded,"reserve":rounds-loaded if capacity >= 0 else -1}
+	_assign_personal_slot(id)
+	if grid_enabled() and not _grid_register_weapon(id):
+		_data = before
+		return false
+	var discovery := str(spec.get("discovery_pickup", ""))
+	if not discovery.is_empty(): discover(discovery)
 	return true
 
 func spend(amount: int, receipt_id: String) -> bool:
@@ -188,11 +207,14 @@ func reload_weapon(id: String, capacity: int = -1) -> bool:
 
 static func _max_capacity(id: String) -> int:
 	var base := int(Weapons.WEAPONS[id].magazine_size)
-	if id == "shotgun": return base + 2
-	if id == "hunting_rifle": return base + 3
+	var family := str(Weapons.WEAPONS[id].get("model_base", id))
+	if family == "shotgun": return base + 2
+	if family == "hunting_rifle": return base + 3
+	# The workbench exposes its 75-round drum on every compatible SMG and AK.
+	if family in ["smg", "ak47"]: return 75
 	# Magazine capacity counts whole rounds; preserve truncation.
 	@warning_ignore("integer_division")
-	if id in ["pistol", "smg", "ak47", "m4a1"]: return base + int(base / 2)
+	if family in ["pistol", "m4a1"]: return base + int(base / 2)
 	return base
 
 ## Ephemeral pickups own their single-use flag; only the wallet survives a save.
@@ -635,7 +657,8 @@ func _grid_register_weapon(id: String, migration := false) -> bool:
 	ammo.reserve-=reserve_excess
 	ammo.magazine-=excess-reserve_excess
 	# Legacy/starter ammo is never destroyed if the initial two pockets are full.
-	var left := GRID.add_carried(grid,"ammo:"+id,excess) if can_carry_weapon(id) else excess
+	var carried := can_carry_weapon(id) or GRID.count(grid,"weapon:"+id) > 0
+	var left := GRID.add_carried(grid,"ammo:"+id,excess) if carried else excess
 	if left>0:
 		if not migration: return false
 		INVENTORY_MIGRATION.store_remainder(grid,"ammo:"+id,left)

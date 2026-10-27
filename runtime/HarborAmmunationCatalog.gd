@@ -28,7 +28,7 @@ var workbench: PanelContainer
 var saber_panel: PanelContainer
 var category_buttons: Array[Button] = []
 var selection := 0
-var stock := ["pistol", "magnum", "shotgun", "sawed_off", "smg", "ak47", "m4a1", "hunting_rifle", "knife", "knuckles", "bat", "axe", "grenade", "rpg", "flamethrower", "armor"]
+var stock := ["pistol", "magnum", "pistol_suppressed", "shotgun", "sawed_off", "shotgun_auto", "smg", "smg_compact", "smg_tactical", "ak47", "m4a1", "hunting_rifle", "knife", "knuckles", "bat", "axe", "grenade", "rpg", "flamethrower", "armor"]
 var active := false
 const SHOP_FOCUS := preload("res://ui/ShopFocus.gd")
 const MENU_AUDIO := preload("res://ui/MenuAudio.gd")
@@ -474,7 +474,7 @@ func refresh(notice := "") -> void:
 	customize_button.disabled = not attachment_owned or (not CUSTOM.owns(customization, attachment_id, "flashlight") and session.state.economy.balance < CUSTOM.PRICE)
 	customize_button.text = "Remover" if CUSTOM.installed(customization, attachment_id) else ("Instalar" if CUSTOM.owns(customization, attachment_id, "flashlight") else String(TranslationServer.translate("Comprar e instalar · R$ %d")) % CUSTOM.PRICE)
 	tactical_flashlight_status.text = "Arma não adquirida" if not attachment_owned else ("Instalada" if CUSTOM.installed(customization, attachment_id) else ("Comprada" if CUSTOM.owns(customization, attachment_id, "flashlight") else "Não instalada"))
-	var category := 4 if armor else (3 if id in ["grenade", "rpg"] else (2 if id in ["knife", "knuckles", "bat", "axe", "katana"] else (0 if id in ["pistol", "magnum"] else 1)))
+	var category := _category(id)
 	if utilities_active: category = 5
 	weapon_body.visible = not utilities_active
 	utilities_body.visible = utilities_active
@@ -497,7 +497,7 @@ func _category(id: String) -> int:
 	if id == "armor": return 4
 	if id in ["grenade", "rpg"]: return 3
 	if id in ["knife", "knuckles", "bat", "axe", "katana"]: return 2
-	return 0 if id in ["pistol", "magnum"] else 1
+	return 0 if id in ["pistol", "magnum", "pistol_suppressed"] else 1
 
 func _select_item(index: int) -> void:
 	utilities_active = false
@@ -549,6 +549,13 @@ func _refresh_comparison(id: String) -> void:
 		armor_label.text = "%d / 100 → 100 / 100" % session.world.gameplay.armor
 		comparison.add_child(armor_label)
 		return
+	var selected_data: Dictionary = session.world.gameplay.weapon_data(id)
+	if not str(selected_data.get("role", "")).is_empty():
+		var role := Label.new()
+		role.text = str(selected_data.role)
+		role.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		role.add_theme_color_override("font_color", Color("b8bec4"))
+		comparison.add_child(role)
 	var equipped_id: String = session.state.equipped_weapon
 	var equipped: Dictionary = session.world.gameplay.weapon_data(equipped_id)
 	var equipped_label := Label.new()

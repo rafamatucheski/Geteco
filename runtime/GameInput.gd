@@ -24,7 +24,7 @@ var _menu_cursor: ImageTexture
 var touch_move := Vector2.ZERO
 var touch_sprint := false
 var touch_aim := Vector2.ZERO
-const GAMEPAD_BINDINGS_VERSION := 2
+const GAMEPAD_BINDINGS_VERSION := 3
 var _camera_motion := Vector2.ZERO
 var _aim_stick := Vector2.ZERO
 const AIM_STICK_DEADZONE := 0.20
@@ -104,6 +104,7 @@ const PAD := {
 	"exit_vehicle": JOY_BUTTON_Y, "handbrake": JOY_BUTTON_A,
 	"trunk": JOY_BUTTON_DPAD_DOWN,
 	"weapon_next": JOY_BUTTON_RIGHT_SHOULDER, "weapon_previous": JOY_BUTTON_LEFT_SHOULDER,
+	"weapon_wheel": JOY_BUTTON_LEFT_SHOULDER,
 	"journal": JOY_BUTTON_BACK, "pause_game": JOY_BUTTON_START,
 	"sprint": JOY_BUTTON_LEFT_STICK, "horn": JOY_BUTTON_RIGHT_STICK,
 	"motorcycle_wheelie": JOY_BUTTON_LEFT_STICK,
@@ -135,6 +136,11 @@ const CONTEXTUAL_BINDING_PAIRS := [
 	["bus_doors", "interact"], ["bus_doors", "reload"],
 	["weapon_next", "radio_next"],
 	["weapon_previous", "radio_previous"],
+	# On foot the wheel consumes L1/LB before immediate cycling. In menus,
+	# vehicles and mounted activities it declines input, preserving navigation.
+	["weapon_wheel", "weapon_previous"],
+	["weapon_wheel", "radio_previous"],
+	["weapon_wheel", "skate_shove"],
 	["fire", "accelerate"],
 	["aim", "brake"],
 	["surrender", "tank_fire"],
@@ -325,7 +331,7 @@ func export_gamepad_bindings() -> Dictionary:
 
 func import_gamepad_bindings(saved: Dictionary, version := GAMEPAD_BINDINGS_VERSION) -> void:
 	var migrated := saved.duplicate(true)
-	if version < GAMEPAD_BINDINGS_VERSION:
+	if version < 2:
 		# Old exports recorded empty arrays for commands which had no pad default.
 		# Only migrate those old defaults; a current explicit clear stays empty.
 		for action in ["camera_left", "camera_right", "surrender", "radio_toggle"]:
@@ -333,6 +339,14 @@ func import_gamepad_bindings(saved: Dictionary, version := GAMEPAD_BINDINGS_VERS
 				migrated[action] = _legacy_default(action, saved)
 		if migrated.get("weapon_flashlight",[]) == [{"button":JOY_BUTTON_MISC1}]:
 			migrated.weapon_flashlight = _legacy_default("weapon_flashlight", saved)
+	if version < 3 and (not migrated.has("weapon_wheel") or migrated.weapon_wheel == []):
+		# Version 2 exported an empty wheel binding by default. Add the shared
+		# shoulder only while previous-weapon is still the historical default;
+		# do not reinterpret an explicitly customized controller layout.
+		if not migrated.has("weapon_previous") or migrated.weapon_previous == [{"button":JOY_BUTTON_LEFT_SHOULDER}]:
+			migrated.weapon_wheel = _legacy_default("weapon_wheel", migrated)
+		else:
+			migrated.weapon_wheel = []
 	saved = migrated
 	for action in saved:
 		if not KEYS.has(action) or action == "pause_game" or not saved[action] is Array: continue

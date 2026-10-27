@@ -20,12 +20,12 @@ const MOVES = preload("res://gameplay/MeleeMoveset.gd")
 ## não era escalada junto com o corpo, então relativamente ao Dante ela era esse
 ## tanto maior do que o modelo cru na V2.
 const V1_TO_V2 := 1.03 / 0.82
-const HANDGUNS := ["pistol", "magnum", "sawed_off"]
-const LONG_GUNS := ["smg", "shotgun", "ak47", "m4a1", "hunting_rifle"]
-const FIREARMS := ["pistol", "magnum", "smg", "shotgun", "sawed_off", "ak47", "m4a1", "hunting_rifle", "rpg", "flamethrower"]
+const HANDGUNS := ["pistol", "pistol_suppressed", "magnum", "sawed_off"]
+const LONG_GUNS := ["smg", "smg_compact", "smg_tactical", "shotgun", "shotgun_auto", "ak47", "m4a1", "hunting_rifle"]
+const FIREARMS := ["pistol", "pistol_suppressed", "magnum", "smg", "smg_compact", "smg_tactical", "shotgun", "shotgun_auto", "sawed_off", "ak47", "m4a1", "hunting_rifle", "rpg", "flamethrower"]
 ## V1 `_cross_grip`: o cabo atravessa a palma em vez de ficar na vertical.
 const CROSS_GRIP := ["axe", "knife", "bat"]
-const CROSS_GRIP_LEFT := ["smg", "shotgun", "ak47", "m4a1", "hunting_rifle"]
+const CROSS_GRIP_LEFT := ["smg", "smg_compact", "smg_tactical", "shotgun", "shotgun_auto", "ak47", "m4a1", "hunting_rifle"]
 ## Ombro de referência do `MeshyMeleePose` (espaço V1) para o balanço do cabo ao andar.
 const MELEE_SHOULDER := Vector3(0.23, 1.18, -0.015)
 const GRENADE_RELEASE := 0.20
@@ -247,7 +247,7 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 		if action_age != 0.0 or _attacked_id != id: action_age = 10.0
 		_carry_yaw = 0.0
 		if id in HANDGUNS: _right = Vector3(0.035, 0.96, -0.365)
-		elif id == "smg": _right = Vector3(0.02, 0.93, -0.28)
+		elif id in ["smg", "smg_compact", "smg_tactical"]: _right = Vector3(0.02, 0.93, -0.28)
 	var p: Array = DATA.PROFILES.get(id, DATA.PROFILES.pistol)
 	equip_blend = move_toward(equip_blend, 1.0, delta * 4.5)
 	# Hit-stop: o golpe para no impacto; o resto do corpo (passo, respiração) segue.
@@ -347,7 +347,7 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 		hand.z += 0.07
 		if id == "hunting_rifle": hand.z -= 0.10
 		pitch -= 0.30 if not sprinting else 0.65
-	var long_gun := id in ["smg", "shotgun", "ak47", "m4a1", "rpg", "flamethrower", "hunting_rifle"]
+	var long_gun := id in LONG_GUNS or id in ["rpg", "flamethrower"]
 	var carry_yaw := 0.0
 	if long_gun:
 		if not engaged:
@@ -708,7 +708,7 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 		"forearm_twist_share": FOREARM_SHARE if id in ["axe", "bat"] else 0.0,
 		"grip_solver": id in ["axe", "bat"],
 		"pump": pump_stroke,
-		"slide": _rack(reload_progress, 0.66, 0.81) if id == "pistol" and reloading else clampf(recoil / maxf(float(p[2]), 0.001), 0.0, 1.0),
+		"slide": (_rack(reload_progress, 0.77, 0.94) if id == "shotgun_auto" else _rack(reload_progress, 0.66, 0.81)) if id in ["pistol", "pistol_suppressed", "smg_compact", "smg_tactical", "shotgun_auto"] and reloading else clampf(recoil / maxf(float(p[2]), 0.001), 0.0, 1.0),
 	}
 
 ## Palma esquerda com a mala: braço quase reto ao lado da coxa, com pouquíssimo vaivém
@@ -943,7 +943,7 @@ func reload_targets(id: String, progress: float) -> Dictionary:
 	var pump := 0.0
 	var accents := {"roll": 0.0, "pitch": 0.0, "kick": Vector3.ZERO, "left": Vector3.ZERO}
 	match id:
-		"pistol":
+		"pistol", "pistol_suppressed":
 			var magazine_well := Vector3(-0.01, 0.89, -0.22)
 			var waist_magazine := Vector3(-0.16, 0.78, -0.02)
 			var fetch := smoothstep(0.09, 0.22, t) * (1.0 - smoothstep(0.30, 0.47, t))
@@ -951,7 +951,7 @@ func reload_targets(id: String, progress: float) -> Dictionary:
 			var rack := smoothstep(0.56, 0.65, t) * (1.0 - smoothstep(0.80, 0.89, t))
 			left = left.lerp(Vector3(0.06, 0.98, -0.25 + _rack(t, 0.66, 0.81) * 0.07), rack)
 			accents = _magazine_accents(t, 0.09, 0.45, 0.66 + 0.15 * RACK_PULL)
-		"smg", "ak47", "m4a1":
+		"smg", "smg_compact", "smg_tactical", "ak47", "m4a1":
 			var fetch := smoothstep(0.09, 0.22, t) * (1.0 - smoothstep(0.30, 0.47, t))
 			left = insert.lerp(belt, fetch)
 			var rack := smoothstep(0.56, 0.65, t) * (1.0 - smoothstep(0.80, 0.89, t))
@@ -960,7 +960,7 @@ func reload_targets(id: String, progress: float) -> Dictionary:
 			if id in ["ak47", "m4a1"]:
 				hand.x = 0.09
 				tilt.z = -0.52
-			if id == "smg": tilt.z = SMG_RELOAD_ROLL
+			if id in ["smg", "smg_compact", "smg_tactical"]: tilt.z = SMG_RELOAD_ROLL
 		"magnum":
 			# Revólver, não escopeta: antes caía no caso da 12 e ia duas vezes ao cinto
 			# como quem enfia cartucho no tubo. Aqui: tambor para a esquerda, cano para
@@ -980,7 +980,7 @@ func reload_targets(id: String, progress: float) -> Dictionary:
 			# instante em que `Gameplay._update_weapon_parts` recolhe o tambor.
 			var flick := _pulse(t, 0.80, 0.08)
 			accents = {"roll": 0.30 * flick, "pitch": 0.06 * flick, "kick": Vector3(0.012, 0.01, 0) * flick, "left": Vector3.ZERO}
-		"shotgun", "hunting_rifle":
+		"shotgun", "shotgun_auto", "hunting_rifle":
 			hand = Vector3(0.10, 0.87, -0.15)
 			tilt = Vector3(0.05, -0.12, -0.62)
 			insert = Vector3(-0.035, 0.84, -0.20)

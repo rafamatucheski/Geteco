@@ -51,6 +51,7 @@ func equip(id: String) -> void:
 	var tip := preload("res://gameplay/ArsenalWeapon3D.gd").build_cached(weapon, id)
 	muzzle_flash_3d.reparent(weapon)
 	muzzle_flash_3d.position = tip
+	muzzle_flash_3d.scale = Vector3.ONE * (0.22 if id == "pistol_suppressed" else 1.0)
 	update_pose(1.0, false, false, 0.0, 0.0)
 
 func muzzle_position() -> Vector3:
@@ -77,7 +78,7 @@ func update_pose(delta: float, aiming: bool, reloading: bool, progress: float, g
 		body.hand_provider = _body_weapon_targets
 		body.hand_targets = _body_weapon_targets()
 		return
-	var pistol := weapon_id == "pistol"
+	var pistol := weapon_id in ["pistol", "pistol_suppressed", "magnum", "sawed_off"]
 	var target := Vector3(0.035, 1.09, -0.32) if aiming else Vector3(0.19, 0.84, -0.20)
 	var pitch := 0.0 if aiming else -0.75
 	var yaw := 0.0
@@ -366,7 +367,7 @@ func _install_body() -> void:
 
 func _body_weapon_targets() -> Array:
 	if not is_instance_valid(body) or not is_instance_valid(weapon) or rappel_pose_active: return [null, null]
-	var pistol := weapon_id == "pistol"
+	var pistol := weapon_id in ["pistol", "pistol_suppressed", "magnum", "sawed_off"]
 	var spine_model: Transform3D = body.pelvis.transform * body.spine.transform
 	var right_shoulder: Vector3 = spine_model * body._shoulders[0]
 	var left_shoulder: Vector3 = spine_model * body._shoulders[1]

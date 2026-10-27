@@ -164,7 +164,7 @@ func collect() -> void:
 func halo_color() -> Color:
 	if kind == "cash": return Color(0.25, 0.95, 0.4, 0.30)
 	if kind == "armor": return Color(0.2, 0.85, 1.0, 0.30)
-	match weapon_id:
+	match str(preload("res://gameplay/WeaponCatalog.gd").WEAPONS.get(weapon_id,{}).get("model_base",weapon_id)):
 		"magnum", "pistol": return Color(1.0, 0.8, 0.2, 0.28)
 		"smg", "m4a1": return Color(0.2, 0.8, 1.0, 0.28)
 		"shotgun", "sawed_off", "hunting_rifle": return Color(1.0, 0.55, 0.15, 0.28)

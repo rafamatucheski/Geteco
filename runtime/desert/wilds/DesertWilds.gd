@@ -19,7 +19,7 @@ const GARAGE_STATE := preload("res://runtime/desert/DesertGarageState.gd")
 const ADAPTER := preload("res://gameplay/desert_cars/DesertCarAdapter.gd")
 ## Caixa de munição de cada caverna (20/10): repõe uma vez por dia de jogo, para cada arma de fogo
 ## que o jogador tem. Explosivos e lança-chamas ficam de fora (são achados de outro tipo).
-const AMMO_REFILL := {"pistol": 24, "magnum": 12, "smg": 60, "shotgun": 12, "sawed_off": 8, "ak47": 60, "m4a1": 60, "hunting_rifle": 10}
+const AMMO_REFILL := {"pistol": 24, "magnum": 12, "pistol_suppressed": 30, "smg": 60, "smg_compact": 48, "smg_tactical": 48, "shotgun": 12, "sawed_off": 8, "shotgun_auto": 16, "ak47": 60, "m4a1": 60, "hunting_rifle": 10}
 const AMMO_REACH := 2.0
 const CAVE_AMMO := 24
 const CLAIM_FAILURES := {"inventory_full": "Inventário cheio.", "ammo_full": "Munição no limite.", "wallet_full": "Carteira cheia."}

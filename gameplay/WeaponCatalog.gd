@@ -11,9 +11,13 @@ const ORDER = [
 	"katana",
 	"pistol",
 	"magnum",
+	"pistol_suppressed",
 	"smg",
+	"smg_compact",
+	"smg_tactical",
 	"shotgun",
 	"sawed_off",
+	"shotgun_auto",
 	"ak47",
 	"m4a1",
 	"rpg",
@@ -76,6 +80,8 @@ const WEAPONS = {
 		"sound_type": "knife", "audio_volume_db": -1.0, "pitch_variance": 0.05
 	},
 	"pistol": {
+		"category": "pistol", "ammo_family": "9mm", "role": "Equilibrada", "role_en": "Balanced",
+		"reload_duration": 1.691875, "move_spread": 0.018,
 		"falloff_start": 145.0, "max_range": 300.0, "min_damage_ratio": 0.5,
 		"label": "PISTOLA 9MM", "short_label": "9MM", "price": 0,
 		"damage": 34, "fire_interval": 0.26, "projectile_speed": 620.0,
@@ -84,6 +90,8 @@ const WEAPONS = {
 		"sound_type": "pistol", "audio_volume_db": 6, "pitch_variance": 0.06
 	},
 	"magnum": {
+		"category": "pistol", "ammo_family": "44", "role": "Impacto", "role_en": "Stopping power",
+		"reload_duration": 2.52590625, "move_spread": 0.040,
 		"falloff_start": 180.0, "max_range": 380.0, "min_damage_ratio": 0.6,
 		"label": "REVÓLVER .44 MAGNUM", "short_label": "MAGNUM", "price": 800,
 		"damage": 70, "fire_interval": 0.58, "projectile_speed": 720.0,
@@ -91,7 +99,21 @@ const WEAPONS = {
 		"automatic": false, "tracer_color": Color("ffb940"), "stance": "pistol",
 		"sound_type": "magnum", "audio_volume_db": 7, "pitch_variance": 0.04
 	},
+	"pistol_suppressed": {
+		"category": "pistol", "model_base": "pistol", "ammo_family": "9mm",
+		"role": "Discreta", "role_en": "Quiet", "suppressed": true,
+		"label": "PISTOLA 9MM SILENCIADA", "short_label": "SILENCIADA", "price": 2200,
+		"damage": 28, "fire_interval": 0.30, "projectile_speed": 560.0,
+		"falloff_start": 120.0, "max_range": 250.0, "min_damage_ratio": 0.45,
+		"pellets": 1, "spread": 0.008, "magazine_size": 15, "starting_reserve": 48,
+		"reload_duration": 1.5, "recoil_multiplier": 0.70, "camera_kick": 0.012, "move_spread": 0.020,
+		"automatic": false, "tracer_color": Color("c7d6c2"), "stance": "pistol",
+		"sound_type": "pistol_suppressed", "audio_volume_db": 4.0, "pitch_variance": 0.04
+	},
 	"smg": {
+		"category": "smg", "ammo_family": "9mm", "role": "Versátil", "role_en": "Versatile",
+		"reload_duration": 1.48096875, "move_spread": 0.024,
+		"spread_growth": 0.010, "spread_limit": 0.070, "spread_recovery": 0.060,
 		"falloff_start": 120.0, "max_range": 260.0, "min_damage_ratio": 0.45,
 		"discovery_pickup": "mountain_cargo_plane_smg_01", "discovery_hint": "Encontre a SMG dentro do avião no lago.",
 		"label": "SUBMETRALHADORA MP5", "short_label": "SMG", "price": 1200,
@@ -100,7 +122,33 @@ const WEAPONS = {
 		"automatic": true, "tracer_color": Color("78dcff"), "stance": "rifle",
 		"sound_type": "smg", "audio_volume_db": 4, "pitch_variance": 0.08
 	},
+	"smg_compact": {
+		"category": "smg", "model_base": "smg", "ammo_family": "9mm",
+		"role": "Rajada curta", "role_en": "Short bursts",
+		"label": "SUBMETRALHADORA COMPACTA", "short_label": "COMPACTA", "price": 1400,
+		"damage": 19, "fire_interval": 0.075, "projectile_speed": 600.0,
+		"falloff_start": 85.0, "max_range": 210.0, "min_damage_ratio": 0.35,
+		"pellets": 1, "spread": 0.050, "magazine_size": 24, "starting_reserve": 96,
+		"reload_duration": 1.3, "recoil_multiplier": 1.30, "camera_kick": 0.025, "move_spread": 0.015,
+		"spread_growth": 0.018, "spread_limit": 0.120, "spread_recovery": 0.100,
+		"automatic": true, "tracer_color": Color("e8cf81"), "stance": "rifle",
+		"sound_type": "smg_compact", "audio_volume_db": 3.0, "pitch_variance": 0.08
+	},
+	"smg_tactical": {
+		"category": "smg", "model_base": "smg", "ammo_family": "9mm",
+		"role": "Controle", "role_en": "Control",
+		"label": "SUBMETRALHADORA TÁTICA", "short_label": "TÁTICA", "price": 2600,
+		"damage": 29, "fire_interval": 0.135, "projectile_speed": 690.0,
+		"falloff_start": 155.0, "max_range": 310.0, "min_damage_ratio": 0.50,
+		"pellets": 1, "spread": 0.018, "magazine_size": 24, "starting_reserve": 96,
+		"reload_duration": 2.0, "recoil_multiplier": 0.65, "camera_kick": 0.015, "move_spread": 0.030,
+		"spread_growth": 0.006, "spread_limit": 0.035, "spread_recovery": 0.035,
+		"automatic": true, "tracer_color": Color("a6d9d6"), "stance": "rifle",
+		"sound_type": "smg_tactical", "audio_volume_db": 4.5, "pitch_variance": 0.05
+	},
 	"shotgun": {
+		"category": "shotgun", "ammo_family": "12g", "role": "Potência", "role_en": "Power",
+		"reload_duration": 2.83028125, "move_spread": 0.030,
 		"falloff_start": 50.0, "max_range": 145.0, "min_damage_ratio": 0.15,
 		"label": "ESCOPETA 12G PUMP", "short_label": "12G", "price": 1800,
 		"damage": 18, "fire_interval": 0.78, "projectile_speed": 480.0,
@@ -109,12 +157,25 @@ const WEAPONS = {
 		"sound_type": "shotgun", "audio_volume_db": 6, "pitch_variance": 0.05
 	},
 	"sawed_off": {
+		"category": "shotgun", "ammo_family": "12g", "role": "Curto alcance", "role_en": "Close range",
+		"reload_duration": 2.62565625, "move_spread": 0.020,
 		"falloff_start": 35.0, "max_range": 110.0, "min_damage_ratio": 0.1,
 		"label": "CANO SERRADO DUPLO", "short_label": "SERRADA", "price": 1600,
 		"damage": 18, "fire_interval": 0.44, "projectile_speed": 480.0,
 		"pellets": 10, "spread": 0.34, "magazine_size": 2, "starting_reserve": 24,
 		"automatic": false, "tracer_color": Color("ff793f"), "stance": "pistol",
 		"sound_type": "sawed_off", "audio_volume_db": 6.5, "pitch_variance": 0.05
+	},
+	"shotgun_auto": {
+		"category": "shotgun", "model_base": "shotgun", "ammo_family": "12g",
+		"role": "Disparos rápidos", "role_en": "Rapid follow-up",
+		"label": "ESCOPETA 12G SEMIAUTOMÁTICA", "short_label": "12G SEMI", "price": 2800,
+		"damage": 13, "fire_interval": 0.38, "projectile_speed": 510.0,
+		"falloff_start": 45.0, "max_range": 135.0, "min_damage_ratio": 0.12,
+		"pellets": 7, "spread": 0.22, "magazine_size": 8, "starting_reserve": 32,
+		"reload_duration": 3.3, "recoil_multiplier": 0.78, "camera_kick": 0.055, "move_spread": 0.040,
+		"automatic": false, "tracer_color": Color("efbd79"), "stance": "rifle",
+		"sound_type": "shotgun_auto", "audio_volume_db": 5.5, "pitch_variance": 0.05
 	},
 	"ak47": {
 		"falloff_start": 250.0, "max_range": 440.0, "min_damage_ratio": 0.6,

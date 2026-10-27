@@ -1,6 +1,9 @@
 extends RefCounted
 const GRID:=preload("res://systems/inventory/GridInventory.gd")
 const WEAPONS:=preload("res://gameplay/WeaponCatalog.gd")
+## Frozen inventory of the old persistent arsenal cheat. Adding new store
+## weapons must not prevent recognition of a save produced by that version.
+const LEGACY_ARSENAL := ["fists","knuckles","knife","bat","axe","katana","pistol","magnum","smg","shotgun","sawed_off","ak47","m4a1","rpg","flamethrower","grenade","hunting_rifle"]
 
 static func upgrade(wallet: Dictionary) -> Dictionary:
 	var data:=wallet.duplicate(true)
@@ -11,7 +14,7 @@ static func upgrade(wallet: Dictionary) -> Dictionary:
 	# is not evidence of a cheat. Preserve weapon ownership and paid ammo.
 	var massive:=0
 	var full_arsenal:=true
-	for id in WEAPONS.ORDER:
+	for id in LEGACY_ARSENAL:
 		if not data.weapons.has(id): full_arsenal=false; continue
 		var ammo: Dictionary=data.weapons[id]
 		var total:=int(ammo.reserve)+int(ammo.magazine)
