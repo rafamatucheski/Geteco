@@ -1845,11 +1845,19 @@ func _building(chunk: Node3D, data: Dictionary) -> void:
 		if facade.get("place_id", "") == "canal_north": WALKUP_DOOR.install(art, CATALOG.get_definition("canal_north"))
 
 func _mountain_place(chunk: Node3D, data: Dictionary) -> void:
-	if PAINTED_MOUNTAIN.handles(str(data.id)):
-		# Chalés e loja da vila pintados; a porta de acesso continua a do WalkupFacadeDoor.
+	var painted_place := PAINTED_MOUNTAIN.handles(str(data.id))
+	if painted_place:
+		# Prédios pintados da serra; a porta de acesso continua a do WalkupFacadeDoor (a loja de
+		# armas abre pela WeaponShopEntrance, que acha a frente pelo grupo e pelo place_id).
 		var painted: Node3D = PAINTED_MOUNTAIN.build(chunk, data)
 		painted.add_to_group("exterior_reveal_building")
+		if data.id == "mountain_gunshop":
+			painted.set_meta("place_id", data.id)
+			painted.add_to_group("v2_weapon_shop_facade")
+			painted.add_to_group("v2_walkin_facade")
 		WALKUP_DOOR.install(painted, data)
+		var painted_size: Vector3 = PAINTED_MOUNTAIN.size_for(str(data.id))
+		MOUNTAIN_SHADOW.attach(chunk, Vector2(painted_size.x, painted_size.z), data.exterior_position + PAINTED_MOUNTAIN.building_center(str(data.id)))
 	elif str(data.id).begins_with("mountain_cabin") or data.id == "lumberjack_shelter":
 		var art = _held_load("res://assets/regions/source/world/mountain_pass/art/winter_props/LumberjackCabin3D.gd").new()
 		art.add_to_group("exterior_reveal_building")
@@ -1879,7 +1887,8 @@ func _mountain_place(chunk: Node3D, data: Dictionary) -> void:
 	# Pegada da construção exterior, derivada dos modelos existentes. Esses
 	# planos visuais não participam da colisão nem bloqueiam as entradas.
 	var contact_size := Vector2.ZERO
-	if str(data.id).begins_with("mountain_cabin") or data.id == "lumberjack_shelter": contact_size = Vector2(3.6, 4.2)
+	if painted_place: pass
+	elif str(data.id).begins_with("mountain_cabin") or data.id == "lumberjack_shelter": contact_size = Vector2(3.6, 4.2)
 	elif data.id == "ski_lodge": contact_size = Vector2(13.8, 8.4)
 	elif data.id == "mountain_bunker": contact_size = Vector2(18.0, 12.0)
 	elif data.id in ["mountain_outfitters", "mountain_boutique", "mountain_village_outfitters"]: contact_size = Vector2(6.7, 4.0)

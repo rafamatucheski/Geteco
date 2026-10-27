@@ -76,3 +76,30 @@ LISTA:
 
 Ao terminar, liste os arquivos salvos por pasta e aponte qualquer imagem com perspectiva, sombra, texto errado ou fora da proporção, para gerar de novo.
 ```
+
+---
+
+## Importação (27/10, noite)
+
+Os 95 PNGs voltaram e os oito estilos estão em `assets/facades/`. Vãos de porta medidos à mão
+até o batente e a soleira (a detecção automática parava no miolo escuro) em
+`tools/painted_facades_serra.json`, com `margin` 0,004.
+
+As frentes da Estação Zero e do Cume Branco vieram em 2,7:1 em vez de 3,5:1 e 4:1. Não foi
+preciso gerar de novo: o kit tira a altura do prédio da proporção da imagem, então a largura do
+módulo foi escolhida pelo tamanho da porta, e o prédio fica um pouco mais alto e estreito que o
+pedido. Os fundos do Cume Branco (2,5:1) esticam ~9% na horizontal para casar com a frente.
+
+| Estilo | Módulo (m) | Fundo (m) | Porta da frente | Lugares |
+|---|---|---|---|---|
+| estacao-zero | 11,6 × 4,24 (laje) | 7,4 | 1,4 m | Estação Zero |
+| cume-branco | 12,4 × 4,53 | 8,4 | dupla, 1,9 m | Cume Branco (Summit) |
+| boutique-alpina | 7,0 × 3,2 | 4,0 | 1,1 m | Boutique Alpina |
+| ultimo-abrigo | 7,0 × 3,2 | 4,0 | 1,1 m | Último Abrigo |
+| ammunation-serra | 9,0 × 3,94 | 5,0 | 1,2 m | Ammu-Nation da serra |
+| cabana-toras | 5,6 × 3,93 | 4,6 | 0,85 m | Chalé dos Pinhais, Chalé da Encosta, Abrigo dos Lenhadores (3 acessos) |
+| posto-florestal | 5,4 × 3,78 | 4,6 | 0,9 m | Posto Florestal |
+| terminal-serra-8m | 8,0 × 5,0 | 5,0 | 1,4 m | Terminal da Serra |
+
+Ligação: `world/mountain_detail/PaintedMountainPlaces.gd` (tabela `PLACE_STYLES`), terminal em
+`OriginalVillageArchitecture.gd`. Os modelos 3D antigos continuam para `GETECO_PAINTED_FACADES=0`.

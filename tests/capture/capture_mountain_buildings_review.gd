@@ -4,7 +4,7 @@ extends SceneTree
 ## cada lugar com porta. Save de teste isolado com a campanha concluída. Imagens em
 ## evidence/serra-predios-20261027/ (fora do Git). Não é medição de desempenho.
 ## Rodar com `-- --no-save`; `--only=refugio,eremita,fachadas,sitios,interiores,loja` limita os
-## grupos e `--label=<pasta>` grava numa subpasta (antes/depois).
+## grupos, `--label=<pasta>` grava numa subpasta (antes/depois) e `--hour=21` muda a hora.
 const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 const REFUGE := preload("res://world/mountain_detail/MountainRefuge.gd")
@@ -16,6 +16,7 @@ var world
 var folder := ""
 var shots: Array[String] = []
 var only: PackedStringArray = []
+var day_time := .45
 
 func _initialize() -> void:
 	create_timer(900.0, true, false, true).timeout.connect(func():
@@ -32,12 +33,13 @@ func run() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--only="): only = arg.trim_prefix("--only=").split(",")
 		if arg.begins_with("--label="): folder = arg.trim_prefix("--label=")
+		if arg.begins_with("--hour="): day_time = float(arg.trim_prefix("--hour=")) / 24.0
 	root.size = Vector2i(1600, 900)
 	folder = ProjectSettings.globalize_path("res://evidence/serra-predios-20261027" + ("" if folder.is_empty() else "/" + folder))
 	DirAccess.make_dir_recursive_absolute(folder)
 	var start: Vector3 = PLACES.get_definition("ski_lodge").exterior_position
 	var snapshot := FIXTURE.full_snapshot(start + Vector3(0,0,14), true)
-	snapshot.world.time = .45
+	snapshot.world.time = day_time
 	snapshot.world.weather = 0
 	var save_path := FIXTURE.write_fixture(FIXTURE.output_dir("mountain-buildings-capture"), "fixture.json", snapshot)
 	world = load("res://Main.tscn").instantiate()
@@ -52,7 +54,7 @@ func run() -> void:
 	if session.modal: session.close_menu()
 	world.player.controlled_automatically = true
 	world.player.automatic_direction = Vector3.ZERO
-	session.weather.time_of_day = .45
+	session.weather.time_of_day = day_time
 	session.weather.weather_state = 0
 	session.weather.weather_timer = 99999
 	session.weather._update()

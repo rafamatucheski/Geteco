@@ -7,9 +7,10 @@ const GROUND := preload("res://assets/regions/source/world/mountain_pass/Mountai
 const FINISH := preload("res://assets/regions/source/world/mountain_pass/MountainSurfaceFinish.gd")
 const SHADOW_FINISH := preload("res://world/mountain_detail/MountainShadowFinish.gd")
 const PAINTED_KIT := preload("res://world/urban_detail/PaintedFacadeKit.gd")
-## Desligado: a pintura do terminal tem 14 m e só cabem 8,3 m entre a encosta e o
-## caminho do ônibus; esticada, a porta ficava com 1,4 m. Liga com uma pintura de 8 m.
-const PAINTED_TERMINAL := false
+## A pintura de 14 m ("terminal-serra") não cabia nos 8,3 m entre a encosta e o caminho do
+## ônibus; desde 27/10 o terminal usa a de 8 m feita para o lugar.
+const PAINTED_TERMINAL := true
+const TERMINAL_STYLE := "terminal-serra-8m"
 var materials: Dictionary = {}
 var solids: Array[Dictionary] = []
 
@@ -64,18 +65,21 @@ func _station() -> void:
 	_slab(Rect2(7387,-1713,141,93), 0.09, 0.18, "stone")
 	var mesh_start := get_child_count()
 	var office_bounds := Rect2(LAYOUT.STATION_BOUNDS.position-LAYOUT.STATION_SHIFT,LAYOUT.STATION_BOUNDS.size)
-	if PAINTED_TERMINAL and PAINTED_KIT.enabled():
+	var painted := PAINTED_TERMINAL and PAINTED_KIT.enabled() and FileAccess.file_exists(PAINTED_KIT.ROOT + TERMINAL_STYLE + "/style.json")
+	if painted:
 		_painted_office(office_bounds)
 	else:
 		_procedural_office(office_bounds, mesh_start)
-	var canopy := _box(Vector2(7457.5,-1635),2.70,Vector3(7.6,0.14,2.30),"roof")
-	canopy.rotation.x = 0.08
-	var cap := _box(Vector2(7457.5,-1635),2.81,Vector3(7.62,0.07,2.32),"snow")
-	cap.rotation.x = 0.08
-	for x in [7396.0,7519.0]:
-		_box(Vector2(x,-1624),1.3,Vector3(0.16,2.6,0.16),"wood")
-		_solid(Rect2(x-3,-1627,6,6),"TerminalPorchPost")
-	_sign("TERMINAL DA SERRA",Vector2(7457,-1617),2.49,Vector2(7.35,0.64),64)
+	# A pintura traz marquise, letreiro e postes; os 3D ficariam por cima dela.
+	if not painted:
+		var canopy := _box(Vector2(7457.5,-1635),2.70,Vector3(7.6,0.14,2.30),"roof")
+		canopy.rotation.x = 0.08
+		var cap := _box(Vector2(7457.5,-1635),2.81,Vector3(7.62,0.07,2.32),"snow")
+		cap.rotation.x = 0.08
+		for x in [7396.0,7519.0]:
+			_box(Vector2(x,-1624),1.3,Vector3(0.16,2.6,0.16),"wood")
+			_solid(Rect2(x-3,-1627,6,6),"TerminalPorchPost")
+		_sign("TERMINAL DA SERRA",Vector2(7457,-1617),2.49,Vector2(7.35,0.64),64)
 	_bench(Vector2(7418,-1631),1.7)
 	_bench(Vector2(7498,-1631),1.5)
 	_box(Vector2(7380,-1725),1.36,Vector3(0.10,2.72,0.1),"trim")
@@ -98,18 +102,18 @@ func _procedural_office(office_bounds: Rect2, mesh_start: int) -> void:
 	_roof(Vector2(7457.5,-1677),7.4,5.4,2.95,0.27)
 	_record_volume(solid_index,mesh_start)
 
-## Escritório/bilheteria pintado ("Terminal da Serra"). A pintura é de 14 m, mas o
-## terreno só tem ~8,3 m entre a encosta oeste e o caminho do ônibus (x=7550): fica
-## mais estreito e um pouco esticado na vertical para a porta não ficar anã. A frente
-## continua na linha da antiga; marquise, postes e bancos de verdade ficam na frente.
+## Escritório/bilheteria pintado ("Terminal da Serra"), na largura natural da pintura de 8 m
+## (o terreno tem ~8,3 m entre a encosta oeste e o caminho do ônibus, x=7550). A frente
+## continua na linha da antiga; os bancos de verdade ficam na frente.
 func _painted_office(office_bounds: Rect2) -> void:
-	var size := Vector3(8.3, 3.8, 5.0)
+	var natural := PAINTED_KIT.natural_size(TERMINAL_STYLE)
+	var size := Vector3(natural.x, natural.y, 5.0)
 	var front := floor_from_local(Vector2(7457.5, office_bounds.end.y) - LAYOUT.ORIGIN)
 	var holder := Node3D.new()
 	holder.name = "PaintedTerminalOffice"
 	holder.position = front - Vector3(0, 0, size.z * 0.5)
 	add_child(holder)
-	PAINTED_KIT.build(holder, "terminal-serra", size, holder, NAN, {"snow": true})
+	PAINTED_KIT.build(holder, TERMINAL_STYLE, size, holder, NAN, {"snow": true})
 	var footprint := Rect2(Vector2(7457.5 - size.x * PPM * 0.5, office_bounds.end.y - size.z * PPM * FLOOR_Y), Vector2(size.x * PPM, size.z * PPM * FLOOR_Y))
 	_solid(footprint, "MiniTerminalOffice")
 
