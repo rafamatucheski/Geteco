@@ -71,6 +71,15 @@ const VEHICLE_PROFILES := {
 	"digo_amarok_2014": "tdi_i4_diesel",
 	"digo_gol_1993": "ap_i4_turbo",
 	"cobra_boss_ironback": "v8_crossplane",
+	# Esportivos 2.0 (runtime/SportFleet.gd): classe acústica mais próxima entre os bancos gravados.
+	"tauro_v10": "v12_gt",
+	"raijin_gt": "rb26_i6_turbo",
+	"kite_type_s": "sport_i4_na",
+	"lince_rs": "ea888_i4_turbo",
+	"brisa_s": "sport_i4_na",
+	"sakura_s15": "ap_i4_turbo",
+	"rapina_r": "v8_crossplane",
+	"bastiao_63": "v8_twin_turbo",
 	"desert_cargo_truck": "truck_i6_diesel",
 	# Compatibility IDs referenced by saved personal cars / existing audio code.
 	"personal_monaliza": "rb26_i6_turbo",

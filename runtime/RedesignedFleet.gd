@@ -5,6 +5,14 @@ static var enabled := true
 static var _scenes: Dictionary = {}
 const MESH_COUNTS := {
 	"besouro_1300":10,
+	"tauro_v10":10,
+	"raijin_gt":10,
+	"kite_type_s":10,
+	"lince_rs":10,
+	"brisa_s":10,
+	"sakura_s15":10,
+	"rapina_r":10,
+	"bastiao_63":10,
 	"mare_microvan":10,
 	"toco_minitruck":10,
 	"american_dump_truck":7,

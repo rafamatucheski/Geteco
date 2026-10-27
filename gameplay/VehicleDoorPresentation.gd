@@ -61,7 +61,7 @@ func configure(owner_vehicle: CharacterBody3D, deferred := false) -> void:
 ## The new civilian models ship complete two-sided leaves. Reuse the shared
 ## geometry and instance-local paint instead of cutting the body at boarding.
 func _configure_authored_civilian() -> bool:
-	if vehicle.archetype not in preload("res://runtime/NewCivilianFleet.gd").IDS: return false
+	if vehicle.archetype not in preload("res://runtime/NewCivilianFleet.gd").IDS and vehicle.archetype not in preload("res://runtime/SportFleet.gd").IDS: return false
 	var leaves := {}
 	for child in vehicle.visual.get_children():
 		if not child is MeshInstance3D or not child.has_meta("new_civilian_door_side"): continue

@@ -1,0 +1,16 @@
+{
+  "date": "2026-10-27",
+  "period": "manhã de 2026-10-27",
+  "scope": "Oito esportivos novos para cobrir as trações que faltavam (AWD, FWD, RWD e 4x4 esportivos), desenhados pelo gerador procedural 2.0 e assados offline.",
+  "cards": [
+    {
+      "id": "esportivos-2-0-20261027",
+      "title": "Esportivos 2.0: oito carros novos, duas de cada tração",
+      "status": "partial",
+      "area": "quality",
+      "description": "Levantamento: a frota tinha 18 carros de pegada esportiva (10 RWD, 5 FWD, 3 AWD, nenhum 4x4). Entraram Tauro V10 e Raijin GT (AWD), Kite Type S e Lince RS (FWD), Brisa S Roadster e Sakura S15 (RWD), Rapina R e Bastião 63 (4x4). Gerador novo tools/fleet_fixups/build_sport_fleet_v2.gd: carroceria em loft com curvas cúbicas monótonas, arco de roda recortado na seção, estufa que nasce na curva do capô, remendos (faróis, tomadas, venezianas) amostrados na superfície, portas como folhas completas, pneus de perfil arredondado e aros de sete desenhos. 9,6 a 13 mil triângulos por carro, 10 peças, só materiais já usados pela frota. Motor completo com torque calibrado e aderência por tração; entram raros no trânsito (cidade, trabalho, executivo, serra e deserto). Verificado: test_sport_fleet_models 204/204, fotos com janela de frente, traseira, lado e portas abertas. Não verificado: dirigir com controle, noite, desempenho em release.",
+      "next": "Dirigir cada um no jogo; medir no export release com vários deles no trânsito; decidir se a tração passa a dividir a força por eixo no DesertDrivetrain (hoje só a aderência autorada diferencia AWD, RWD e FWD).",
+      "sources": ["docs/esportivos-2-0-20261027.md", "runtime/SportFleet.gd", "tools/fleet_fixups/build_sport_fleet_v2.gd", "tests/test_sport_fleet_models.gd"]
+    }
+  ]
+}
