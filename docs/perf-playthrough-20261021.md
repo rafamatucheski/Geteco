@@ -1175,3 +1175,9 @@ de cada) no `DesertRegion.prewarm`, que roda tanto ao começar no deserto quanto
 contra **Q 21,0 / 21,3 ms**; máximo do quadro P 40,2 / 19,8 ms (o de 40 ms é desenho, sem pipeline nova), Q 29,5 /
 42,2 ms. Sobram o quadro de ~58 ms aos 3 s (desmontagem da região anterior + etapa 4 do chão do deserto) e picos de
 desenho de 40–48 ms sem pipeline nova.
+
+O quadro de ~58 ms aos 3 s: a etapa 4 do chão é a montagem das estradas (`road_geometry.build_chunk`, ~7 ms),
+somada à desmontagem da região anterior (~5,5 ms) e a ~20–23 ms de desenho com 2 pipelines `surface` novas.
+Com janela, o primeiro acostamento e o primeiro asfalto custam 33 e 40 ms para criar num processo novo, mas
+pré-aquecê-los não mudou o quadro (R 67,7 / 48,3 ms contra S 50,3 / 55,4 ms; etapa 4 ~7 ms nos dois lados): no
+jogo eles já nascem sob a cortina. Desfeito. Fica para fatiar a etapa 4 ou adiar a desmontagem.
