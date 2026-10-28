@@ -188,6 +188,7 @@ func _physics_process(delta: float) -> void:
 		var alive: bool = is_instance_valid(car) and not car.is_queued_for_deletion() and car.health>0
 		if not entry.player and alive:
 			entry.pilot.tick(delta,hold or not str(entry.run.failure).is_empty(),int(entry.run.checkpoint))
+			if not hold: _rescue_if_stuck(entry)
 		RUN.tick(entry.run,delta,car.global_position if alive else Vector3.ZERO,str(car.vehicle_id) if alive else "",alive,hold,course)
 	var player: Dictionary = racers[6]
 	if not str(player.run.failure).is_empty(): cancel_attempt(str(player.run.failure)); return
@@ -266,6 +267,46 @@ func _cleanup() -> void:
 	if is_instance_valid(props):
 		props.show_checkpoint(0,false)
 		props.visible = false
+
+## Rival engavetado volta para a pista (28/10, "ele só tem que chegar"): os carros são cinemáticos e um
+## grampo com quatro carros encostados ficava parado até o fim da prova. Fora da vista da câmera basta
+## RESCUE_HIDDEN s sem avançar; à vista, só depois de RESCUE_VISIBLE s. Nunca passa do próximo portão
+## (a prova exige cruzar cada um) e o jogador nunca é movido.
+const RESCUE_HIDDEN := 5.0
+const RESCUE_VISIBLE := 15.0
+static var rescue_enabled := OS.get_environment("GETECO_DOWNHILL_RESCUE") != "0"
+var rescues := 0
+
+func _rescue_if_stuck(entry: Dictionary) -> void:
+	var pilot = entry.pilot
+	if not rescue_enabled or float(pilot.stuck_time) < RESCUE_HIDDEN: return
+	# Quem já chegou para depois da faixa: não é engavetamento.
+	if is_finite(float(entry.run.finish)) or not str(entry.run.failure).is_empty(): return
+	var car = entry.car
+	var camera := get_viewport().get_camera_3d()
+	var seen: bool = camera != null and camera.is_position_in_frustum(car.global_position) and camera.global_position.distance_to(car.global_position) < 90.0
+	if seen and float(pilot.stuck_time) < RESCUE_VISIBLE: return
+	var from: float = course.nearest_offset(car.global_position)
+	var limit: float = float(course.length)-10.0
+	var next := int(entry.run.checkpoint)
+	if next < course.gate_offsets.size(): limit = minf(limit,float(course.gate_offsets[next])-3.0)
+	for step in 6:
+		var at := minf(from+float(step)*4.0,limit)
+		var forward: Vector3 = course.direction(at)
+		var right := forward.cross(Vector3.UP).normalized()
+		var yaw := atan2(-forward.x,-forward.z)
+		for lane in [1.8,-1.8]:
+			var point: Vector3 = course.point(at)+right*lane+Vector3.UP*.08
+			if not session.world.production.vehicle_position_clear(car,point,yaw): continue
+			car.place(point,yaw)
+			pilot.reset_after_rescue(lane)
+			# A volta à pista não é "interrupção": o próximo quadro mede a partir daqui.
+			entry.run.previous = car.global_position
+			entry.run.outside = 0.0
+			rescues += 1
+			return
+	# Sem vaga agora: tenta de novo daqui a pouco, sem gastar consulta todo quadro.
+	pilot.stuck_time = RESCUE_HIDDEN-1.0
 
 ## Cada piloto enxerga os outros para ceder vaga a quem ficou diante de um carro contrário.
 func _link_pilots() -> void:

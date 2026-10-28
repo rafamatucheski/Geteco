@@ -24,6 +24,16 @@ var course_offset := 0.0
 var merge_request := false
 var lane_rate := 1.8
 var stop_gap := 2.4
+## Piloto brigão (28/10, pedido do usuário: "ele só tem que chegar"): carro na frente é para empurrar,
+## não para esperar. Só obstáculo fixo (guard-rail, muro) ainda faz parar. GETECO_DOWNHILL_PUSH=0 volta
+## ao piloto educado, para o A/B no mesmo jogo.
+static var push_enabled := OS.get_environment("GETECO_DOWNHILL_PUSH") != "0"
+var leader_vehicle := false
+var oncoming_wait := 0.0
+## Tempo sem avançar 8 m no percurso: a prova usa para devolver à pista quem ficou engavetado
+## (os carros são cinemáticos, encostar não empurra ninguém).
+var best_offset := -INF
+var stuck_time := 0.0
 
 func setup(vehicle, authored_course, index: int) -> void:
 	car = vehicle
@@ -55,6 +65,11 @@ func tick(delta: float, hold: bool, next_checkpoint: int) -> void:
 		return
 	var offset: float = course.nearest_offset(car.global_position)
 	course_offset = offset
+	# Rastejar também é estar preso: menos de 8 m em 5 s (engavetamento lento da 28/10, rivais nos portões 8–11).
+	if offset > best_offset+8.0:
+		best_offset = offset
+		stuck_time = 0.0
+	else: stuck_time += delta
 	var look := clampf(4.0+absf(float(car.speed))*.27,4.0,12.0)
 	var target_at := minf(offset+look,float(course.length)-.5)
 	# A missed checkpoint must be approached from its upstream side. Driving
@@ -90,6 +105,12 @@ func tick(delta: float, hold: bool, next_checkpoint: int) -> void:
 	var bend := absf(toward.normalized().signed_angle_to(direction,Vector3.UP))
 	desired = minf(desired,lerpf(cap,4.5,clampf(bend/.85,0.0,1.0)))
 	if is_finite(gap): desired = minf(desired,leader_speed+maxf(0.0,(gap-stop_gap)*.9))
+	if push_enabled and leader_vehicle and is_finite(gap):
+		# Encosta e empurra a ~4 m/s a mais que o da frente. Diante de contrário, espera 1,5 s pelo desvio
+		# e depois mete o carro também.
+		oncoming_wait = oncoming_wait+delta if stop_gap > 2.4 else 0.0
+		if stop_gap <= 2.4 or oncoming_wait > 1.5: desired = maxf(desired,minf(course.speed_at(offset,cap),leader_speed+4.0))
+	else: oncoming_wait = 0.0
 	# Desviando de um contrário parado a poucos metros: o limite pela distância daria zero e o carro não
 	# andaria para o lado. Anda devagar enquanto a faixa muda.
 	if lane_rate > 1.8 and absf(lane-desired_lane) > .4 and gap > 3.0: desired = maxf(desired,2.5)
@@ -106,7 +127,8 @@ func tick(delta: float, hold: bool, next_checkpoint: int) -> void:
 		stalled = 0.0
 	else: stalled += delta
 	if stalled > 3.0 and offset < float(course.length)-8.0:
-		if _rear_clear():
+		# Brigão: preso, dá ré mesmo com carro atrás (empurra quem está lá) em vez de ficar parado.
+		if _rear_clear() or push_enabled:
 			reverse_left = 1.1
 			recoveries += 1
 		stalled = 0.0
@@ -131,6 +153,7 @@ func _sense(offset: float, look: float) -> void:
 			leader_is_vehicle = hit.collider is Node and hit.collider.is_in_group("drivable")
 			leader_oncoming = leader_is_vehicle and (-car.global_basis.z).dot(-hit.collider.global_basis.z)<-.4
 			leader_rid = hit.rid
+	leader_vehicle = leader_is_vehicle
 	# Contrário na própria faixa: para mais longe (sobra espaço para desviar), pede vaga aos rivais da direita
 	# e aceita um desvio curto, de baixa velocidade, em vez da troca de dois segundos que o próprio carro
 	# contrário bloqueava (07/10: a van ocupava o primeiro volume do corredor).
@@ -158,6 +181,17 @@ func _sense(offset: float, look: float) -> void:
 		if _lane_clear(offset,look,alternative,false,leader_rid):
 			desired_lane = alternative
 			pass_cooldown = 2.0
+
+func reset_after_rescue(rescue_lane: float) -> void:
+	lane = rescue_lane
+	desired_lane = rescue_lane
+	reverse_left = 0.0
+	stalled = 0.0
+	stuck_time = 0.0
+	best_offset = course.nearest_offset(car.global_position)
+	anchor = car.global_position
+	pass_cooldown = 1.0
+	oncoming_wait = 0.0
 
 func _passing_straight(offset: float) -> bool:
 	var ahead := maxf(18.0,absf(float(car.speed))*2.5)
