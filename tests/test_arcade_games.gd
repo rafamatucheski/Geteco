@@ -20,6 +20,8 @@ func ticks(game: RefCounted, count: int, controls: Dictionary = {}) -> void:
 		game.step(1.0 / 60.0, controls)
 
 func _run() -> void:
+	# Contract strings must not depend on the developer's saved language.
+	TranslationServer.set_locale("pt_BR")
 	_test_pinball()
 	_test_blocks()
 	_test_racer()
@@ -42,11 +44,18 @@ func _test_pinball() -> void:
 	game.velocity = Vector2(0, 300)
 	game.step(0.025, {})
 	check(game.score == 100 and game.velocity.y < 0.0, "A bumper reflects the ball and awards points once")
-	game.ball = Vector2(350, 381)
+	# Meet the moving paddle at its current height, below the bumper field.
+	game.ball = Vector2(350, 406)
 	game.velocity = Vector2(0, 180)
 	game.step(0.025, {"left": true})
 	check(game.left_flipper and game.velocity.y < 0, "The powered left paddle sends the ball back upward")
+	game.ball = Vector2(400,479)
+	game.velocity = Vector2.DOWN*100
+	game.step(.016,{})
+	check(game.lives == 3 and game.velocity.y < 0, "Launch protection returns an early drain without consuming a ball")
 	for lost in range(3):
+		# Exercise a real drain after the existing five-second ball saver.
+		game._save_time = 0.0
 		game.waiting = false
 		game.ball = Vector2(400, 479)
 		game.velocity = Vector2.DOWN * 100
@@ -121,6 +130,12 @@ func _test_blocks() -> void:
 func _test_racer() -> void:
 	var game := Racer.new()
 	game.reset(17)
+	game.step(.1,{"steering":.5})
+	var half_lane: float = game.lane
+	game.reset(17)
+	game.step(.1,{"steering":1.0})
+	check(is_equal_approx(game.lane,half_lane*2), "Half analog steering produces half the lateral movement")
+	game.reset(17)
 	check(game.rivals.size() == 6 and game.rank == 7, "Race begins with six rivals plus the player")
 	ticks(game, 120, {"up": true})
 	check(game.speed > 100 and game.distance > 100, "Acceleration increases speed and advances the race")
@@ -162,6 +177,9 @@ func _test_racer() -> void:
 func _test_fighter() -> void:
 	var game := Fighter.new()
 	game.reset(11)
+	game.step(.1,{"steering":.5})
+	check(is_equal_approx(game.player_x,233.5), "Analog walking preserves partial stick movement")
+	game.reset(11)
 	check(game.player_health == 100 and game.enemy_health == 100, "Fighters start with full health")
 	game.player_x = 320
 	game.enemy_x = 400
@@ -189,7 +207,7 @@ func _test_fighter() -> void:
 	game.enemy_x = 400
 	game.enemy_windup = 0.01
 	game.step(0.02, {})
-	check(game.player_health == 86, "An undefended enemy strike removes full damage")
+	check(game.player_health == 89, "An undefended enemy punch removes eleven health")
 	game.reset(11)
 	game.step(0.016, {"up_pressed": true})
 	ticks(game, 8)

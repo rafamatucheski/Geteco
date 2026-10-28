@@ -71,7 +71,8 @@ func step(delta: float, controls: Dictionary) -> void:
 		speed = move_toward(speed, top_speed, (150.0 if boosting else 95.0) * dt)
 	else:
 		speed = move_toward(speed, 0.0, 42.0 * dt)
-	var steering := float(bool(controls.get("right", false))) - float(bool(controls.get("left", false)))
+	var digital := float(bool(controls.get("right", false))) - float(bool(controls.get("left", false)))
+	var steering := clampf(float(controls.get("steering",digital)),-1.0,1.0)
 	lane += steering * dt * (0.7 + speed / 200.0)
 	lane -= sin(distance / 760.0) * speed / 320.0 * dt * 0.45
 	lane = clampf(lane, -1.4, 1.4)
@@ -121,6 +122,8 @@ func _road_center(t: float) -> float:
 func render(canvas: Control, area: Rect2) -> void:
 	canvas.draw_set_transform(area.position, 0.0, area.size / Vector2(800, 480))
 	canvas.draw_rect(Rect2(0, 0, 800, 480), Color("11152b"))
+	for band in range(9):
+		canvas.draw_rect(Rect2(0,band*20,800,20),Color("11152b").lerp(Color("533855"),float(band)/9.0))
 	canvas.draw_rect(Rect2(0, 108, 800, 100), Color("393052"))
 	canvas.draw_circle(Vector2(591, 112), 48.0, Color("f79d83"))
 	for y in range(92, 156, 10):
@@ -146,6 +149,13 @@ func render(canvas: Control, area: Rect2) -> void:
 		if stripe:
 			for side in [-1.0, 1.0]:
 				canvas.draw_line(Vector2(center0 + side * width0 / 3.0, y0), Vector2(center1 + side * width1 / 3.0, y1), Color("d9d4c4"), maxf(1.0, t1 * 4.0))
+		for side in [-1.0,1.0]:
+			canvas.draw_line(Vector2(center0+side*(width0+12*t0),y0),Vector2(center1+side*(width1+12*t1),y1),Color("58d9df"),maxf(1,t1*3))
+		if strip%6 == 0:
+			for side in [-1.0,1.0]:
+				var base := Vector2(center1+side*(width1+38*t1),y1)
+				canvas.draw_line(base,base-Vector2(0,65*t1),Color("8792ae"),maxf(1,t1*4))
+				canvas.draw_line(base-Vector2(0,65*t1),base+Vector2(-side*26*t1,-65*t1),Color("ffceab"),maxf(1,t1*4))
 	# Sort only six references, far to near, for correct car overlap.
 	var ordered: Array[Dictionary] = rivals.duplicate()
 	ordered.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return float(a["distance"]) > float(b["distance"]))
@@ -178,6 +188,11 @@ func _draw_car(canvas: Control, point: Vector2, scale: float, color: Color, flam
 	canvas.draw_rect(Rect2(point + Vector2(20, -36) * scale, Vector2(12, 36) * scale), Color("10131d"))
 	canvas.draw_colored_polygon(PackedVector2Array([point + Vector2(-27, 0) * scale, point + Vector2(-25, -30) * scale, point + Vector2(-15, -51) * scale, point + Vector2(15, -51) * scale, point + Vector2(25, -30) * scale, point + Vector2(27, 0) * scale]), color)
 	canvas.draw_rect(Rect2(point + Vector2(-16, -42) * scale, Vector2(32, 15) * scale), Color("193847"))
+	canvas.draw_line(point+Vector2(-13,-40)*scale,point+Vector2(6,-40)*scale,Color("91c9da"),2*scale,true)
+	canvas.draw_line(point+Vector2(-23,-24)*scale,point+Vector2(-18,-44)*scale,color.lightened(.45),2*scale,true)
+	canvas.draw_rect(Rect2(point+Vector2(-25,-24)*scale,Vector2(50,5)*scale),color.darkened(.28))
+	canvas.draw_rect(Rect2(point+Vector2(-29,-27)*scale,Vector2(58,3)*scale),color.lightened(.25))
+	canvas.draw_rect(Rect2(point+Vector2(-8,-9)*scale,Vector2(16,5)*scale),Color("dbe4ed"))
 	canvas.draw_line(point + Vector2(-23, -10) * scale, point + Vector2(23, -10) * scale, color.darkened(0.3), 5.0 * scale)
 	canvas.draw_rect(Rect2(point + Vector2(-23, -9) * scale, Vector2(11, 4) * scale), Color("f68391"))
 	canvas.draw_rect(Rect2(point + Vector2(12, -9) * scale, Vector2(11, 4) * scale), Color("f68391"))

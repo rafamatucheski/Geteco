@@ -186,7 +186,16 @@ func render(canvas: Control, area: Rect2) -> void:
 	for y in range(0, 480, 32):
 		canvas.draw_line(Vector2(0, y), Vector2(800, y), Color("101e35"))
 	canvas.draw_rect(Rect2(221, 31, 358, 445), Color("12233b"))
+	canvas.draw_rect(Rect2(214,24,372,454),Color("35536a"),false,3.0)
+	canvas.draw_rect(Rect2(20,35,178,195),Color("101e31"))
+	canvas.draw_rect(Rect2(20,35,3,195),Color("f8d575"))
+	canvas.draw_rect(Rect2(597,45,181,186),Color("101e31"))
 	canvas.draw_rect(Rect2(229, 39, 342, 430), Color("091824"))
+	for side in [-1,1]:
+		for lamp in range(9):
+			var p := Vector2(400+side*163,106+lamp*32)
+			canvas.draw_circle(p,5,Color("1c4051"))
+			canvas.draw_circle(p,2,Color("63e6d4") if lamp%2 == 0 else Color("f8d575"))
 	canvas.draw_polyline(PackedVector2Array([Vector2(231, 464), Vector2(231, 90), Vector2(278, 44), Vector2(522, 44), Vector2(569, 90), Vector2(569, 464)]), Color("45decd"), 4.0, true)
 	canvas.draw_arc(Vector2(400, 226), 122.0, 0.0, TAU, 60, Color("164b59"), 2.0, true)
 	canvas.draw_arc(Vector2(400, 226), 114.0, 0.0, TAU, 60, Color("164b59"), 1.0, true)
@@ -194,6 +203,7 @@ func render(canvas: Control, area: Rect2) -> void:
 		var color := Color("ffda6c") if _glow[i] > 0.0 else Color("f45f86")
 		canvas.draw_circle(BUMPERS[i], 34.0, Color(color, 0.12))
 		canvas.draw_circle(BUMPERS[i], 27.0, color)
+		canvas.draw_arc(BUMPERS[i],28,-PI*.9,-PI*.1,24,color.lightened(.5),2,true)
 		canvas.draw_circle(BUMPERS[i], 20.0, Color("263052"))
 		canvas.draw_arc(BUMPERS[i], 14.0, 0.0, TAU, 24, color, 2.0, true)
 		_text(canvas, BUMPERS[i] + Vector2(-13, 5), "100", 13, Color.WHITE)
@@ -213,6 +223,8 @@ func render(canvas: Control, area: Rect2) -> void:
 	var right_end := Vector2(412, lerpf(434,377,_right_raise))
 	canvas.draw_line(Vector2(309, 410), left_end, Color("fcca68"), 13.0, true)
 	canvas.draw_line(Vector2(491, 410), right_end, Color("fcca68"), 13.0, true)
+	canvas.draw_line(Vector2(309,407),left_end-Vector2(0,3),Color("fff0b3"),3,true)
+	canvas.draw_line(Vector2(491,407),right_end-Vector2(0,3),Color("fff0b3"),3,true)
 	canvas.draw_circle(Vector2(309, 410), 8.0, Color("e87752"))
 	canvas.draw_circle(Vector2(491, 410), 8.0, Color("e87752"))
 	if not finished:

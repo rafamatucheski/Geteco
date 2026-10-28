@@ -77,6 +77,7 @@ func _fresh_blocks() -> void:
 	ui._process(1.0 / 60.0)
 
 func _run() -> void:
+	TranslationServer.set_locale("pt_BR")
 	# Match the shared default accept/handbrake binding that caused the bug,
 	# while moving WASD to IJKL to verify that gameplay follows InputMap.
 	_binding("interact", [KEY_E], JOY_BUTTON_X)
@@ -188,6 +189,27 @@ func _run() -> void:
 	await _key(KEY_J, true)
 	check(ui.game.origin.x == pause_origin.x - 1, "A new direction press works after resume")
 	await _key(KEY_J, false)
+	await _pad(JOY_BUTTON_START, true)
+	check(ui.suspended, "Gamepad Start pauses instead of closing the cabinet")
+	await _pad(JOY_BUTTON_START, false)
+	await _pad(JOY_BUTTON_START, true)
+	check(not ui.suspended and adapter.close_calls == 0, "Gamepad Start resumes without closing")
+	await _pad(JOY_BUTTON_START, false)
+	ui._notification(Node.NOTIFICATION_APPLICATION_FOCUS_OUT)
+	check(ui.suspended, "Losing application focus pauses the active round")
+	ui.toggle_pause()
+	ui.open_game("blocks", 500)
+	ui.start_game()
+	ui.game.score = 501
+	ui._refresh()
+	check(ui.round_best == 500 and "501" in ui.record_label.text and "NOVO" in ui.record_label.text, "Crossing the saved personal best highlights the new record during play")
+	ui.game.finished = true
+	ui.best = 501
+	ui._refresh()
+	check("NOVO" in ui.record_label.text, "Recording the result does not erase the personal-best celebration")
+	ui.start_game()
+	check(ui.round_best == 501 and not "NOVO" in ui.record_label.text, "Replay uses the new personal best as its target")
+	if DisplayServer.get_name() != "headless": await capture_layouts()
 	await _key(KEY_ESCAPE, true)
 	check(adapter.close_calls == 1 and not ui.visible and not ui.playing, "Escape closes the screen exactly once through the adapter")
 	await _key(KEY_ESCAPE, false)
@@ -201,3 +223,26 @@ func _run() -> void:
 		push_error(failure)
 	print("ARCADE CONTROLS: %d checks, %d failures" % [checks, failures.size()])
 	quit(0 if failures.is_empty() else 1)
+
+func capture_layouts() -> void:
+	var folder := "res://artifacts/arcade-upgrade-20261027/layout"
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(folder))
+	for dimensions in [Vector2i(1280,720),Vector2i(800,600)]:
+		root.size = dimensions
+		ui.touch_row.visible = dimensions.x == 800
+		ui.game.score = 750
+		ui.game.finished = true
+		ui.game.status = "FIM DE JOGO"
+		ui._refresh()
+		await process_frame
+		await process_frame
+		await RenderingServer.frame_post_draw
+		check(ui.frame.position.x >= 0 and ui.frame.position.y >= 0 and ui.frame.get_rect().end.x <= ui.root_control.size.x+1 and ui.frame.get_rect().end.y <= ui.root_control.size.y+1, "Cabinet stays inside viewport at "+str(dimensions))
+		root.get_texture().get_image().save_png(folder.path_join("result-%dx%d.png" % [dimensions.x,dimensions.y]))
+	TranslationServer.set_locale("en")
+	ui.touch_row.visible = false
+	ui._refresh()
+	await process_frame
+	await RenderingServer.frame_post_draw
+	check("PERSONAL BEST" in ui.record_label.text and not "Alternativa" in ui.instruction_label.text, "English record and action guidance use the selected language")
+	root.get_texture().get_image().save_png(folder.path_join("result-english.png"))

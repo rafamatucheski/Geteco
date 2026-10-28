@@ -114,7 +114,10 @@ func run() -> void:
 	check(session.state.economy.balance == starting_cash,"arcades do not charge or mint money")
 	check(not session.arcade.perform("unknown"),"invalid cabinet rejected")
 	check(await walk(session.room.to_global(Vector3(0,0,.1))),"walk back to aisle")
-	check(await walk(session.room.exit_position),"walk to exit")
+	# Stop in the interaction zone, before the walk-up door's transition
+	# threshold (exit.z - .55). This scenario explicitly tests pressing E.
+	check(await walk(session.room.exit_position+Vector3.FORWARD*.8),"walk to exit interaction zone")
+	check(session.nearest().get("id","") == "exit","exit action available at approach")
 	check(await session.interact(),"actual exit interaction")
 	check(session.state.place_id.is_empty() and not session.modal,"exit restores exterior context")
 	check(world.player.global_position.distance_to(definition.return_position) < 2.5,"return to same storefront")

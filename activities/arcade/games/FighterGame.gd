@@ -102,7 +102,8 @@ func step(delta: float, controls: Dictionary) -> void:
 	_enemy_flash = maxf(0.0, _enemy_flash - dt)
 	_enemy_attack_pose = maxf(0.0, _enemy_attack_pose - dt)
 	blocking = bool(controls.get("down", false)) and player_height <= 0.0 and _attack_timer <= 0.0
-	var direction := float(bool(controls.get("right", false))) - float(bool(controls.get("left", false)))
+	var digital := float(bool(controls.get("right", false))) - float(bool(controls.get("left", false)))
+	var direction := clampf(float(controls.get("steering",digital)),-1.0,1.0)
 	player_x = clampf(player_x + direction * dt * (0.0 if _player_stun > 0.0 else 65.0 if blocking else 190.0), 62.0, 738.0)
 	if bool(controls.get("up_pressed", false)) and player_height <= 0.0 and not blocking:
 		_jump_velocity = 620.0
@@ -218,6 +219,16 @@ func render(canvas: Control, area: Rect2) -> void:
 		canvas.draw_line(Vector2(400 + (i - 5) * 59, 343), Vector2(400 + (i - 5) * 130, 480), Color("494151"), 2.0)
 	for y in [364, 401, 452]:
 		canvas.draw_line(Vector2(0, y), Vector2(800, y), Color("494151"), 2.0)
+	# Arena depth: raised pavement, shutter panels and fixed neon trim.
+	canvas.draw_rect(Rect2(0,334,800,8),Color("141c2c"))
+	canvas.draw_line(Vector2(0,343),Vector2(800,343),Color("647087"),3)
+	for side in [0,1]:
+		var x: float = 84.0+side*510.0
+		canvas.draw_rect(Rect2(x-6,137,134,133),Color("405467"),false,3)
+		canvas.draw_rect(Rect2(x+5,148,112,4),Color("8de2dd") if side == 0 else Color("f6a2b2"))
+		canvas.draw_rect(Rect2(x+5,269,112,3),Color("263344"))
+	for i in range(5):
+		canvas.draw_line(Vector2(295+i*48,400),Vector2(305+i*48,400),Color("807183"),3)
 	_draw_fighter(canvas, Vector2(player_x, 377 - player_height), signf(enemy_x - player_x), Color("65c9dc"), blocking, attack_kind, _player_flash, false)
 	_draw_fighter(canvas, Vector2(enemy_x, 377), signf(player_x - enemy_x), Color("e88883"), enemy_blocking, _enemy_kind if _enemy_attack_pose > 0 else 0, _enemy_flash, enemy_windup > 0)
 	if _impact_time > 0.0:
@@ -265,11 +276,16 @@ func _draw_fighter(canvas: Control, point: Vector2, facing: float, color: Color,
 		front_foot = point + Vector2(facing * lerpf(27,112,extension),-63*extension)
 	canvas.draw_line(hip, rear_foot, ink, 18.0, true)
 	canvas.draw_line(hip, front_foot, ink, 18.0, true)
+	canvas.draw_line(hip+Vector2(-facing*5,0),rear_foot+Vector2(0,-7),color.darkened(.6),5,true)
+	canvas.draw_line(hip+Vector2(facing*4,0),front_foot+Vector2(0,-7),color.darkened(.5),5,true)
 	canvas.draw_line(rear_foot - Vector2(5, 0), rear_foot + Vector2(12, 0), Color("9db5c6"), 10.0)
 	canvas.draw_line(front_foot - Vector2(5, 0), front_foot + Vector2(12, 0), Color("9db5c6"), 10.0)
 	canvas.draw_line(hip, chest, color, 35.0, true)
+	canvas.draw_line(hip+Vector2(-facing*9,-4),chest+Vector2(-facing*9,0),color.darkened(.3),7,true)
+	canvas.draw_line(chest+Vector2(-10,7),chest+Vector2(10,7),color.lightened(.4),3,true)
 	canvas.draw_line(hip + Vector2(-15, -1), hip + Vector2(15, -1), ink, 7.0)
 	canvas.draw_circle(chest + Vector2(0, -30), 18, skin)
+	canvas.draw_arc(chest+Vector2(0,-30),17,-PI*.1,PI*.7,12,skin.darkened(.28),3,true)
 	canvas.draw_rect(Rect2(chest + Vector2(-18, -48), Vector2(36, 12)), ink)
 	canvas.draw_rect(Rect2(chest + Vector2(facing * 8 - 2, -34), Vector2(4, 4)), ink)
 	var hand := chest + Vector2(facing * 30, -7)

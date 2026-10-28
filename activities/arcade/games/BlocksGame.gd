@@ -176,7 +176,14 @@ func step(delta: float, controls: Dictionary) -> void:
 func render(canvas: Control, area: Rect2) -> void:
 	canvas.draw_set_transform(area.position, 0.0, area.size / Vector2(800, 480))
 	canvas.draw_rect(Rect2(0, 0, 800, 480), Color("0d1529"))
-	canvas.draw_rect(Rect2(274, 34, 232, 408), Color("4b6682"))
+	for i in range(12):
+		var x := float(i*76-40)
+		canvas.draw_line(Vector2(x,0),Vector2(x+210,480),Color("152238"),1.0)
+	canvas.draw_rect(Rect2(24,48,212,246),Color("111f33"))
+	canvas.draw_rect(Rect2(24,48,3,246),Color("73d9d0"))
+	canvas.draw_rect(Rect2(530,48,222,280),Color("111f33"))
+	canvas.draw_rect(Rect2(270, 30, 240, 416), Color("1e354c"))
+	canvas.draw_rect(Rect2(274, 34, 232, 408), Color("73d9d0"))
 	canvas.draw_rect(Rect2(278, 38, 224, 400), Color("090f1e"))
 	for y in range(HEIGHT):
 		for x in range(WIDTH):
@@ -210,9 +217,11 @@ func render(canvas: Control, area: Rect2) -> void:
 	canvas.draw_set_transform(Vector2.ZERO)
 
 func _draw_cell(canvas: Control, position: Vector2, color: Color) -> void:
-	canvas.draw_rect(Rect2(position + Vector2.ONE, Vector2(20, 20)), color.darkened(0.2))
-	canvas.draw_rect(Rect2(position + Vector2(3, 3), Vector2(16, 15)), color)
+	canvas.draw_rect(Rect2(position + Vector2.ONE, Vector2(20, 20)), color.darkened(0.5))
+	canvas.draw_rect(Rect2(position + Vector2(3, 3), Vector2(16, 15)), color.darkened(.08))
+	canvas.draw_rect(Rect2(position + Vector2(5, 5), Vector2(12, 9)), color.lightened(.12))
 	canvas.draw_line(position + Vector2(3, 3), position + Vector2(18, 3), color.lightened(0.4), 2.0)
+	canvas.draw_line(position + Vector2(18, 5), position + Vector2(18, 18), color.darkened(.3), 2.0)
 
 func _text(canvas: Control, point: Vector2, text: String, size: int, color: Color) -> void:
 	canvas.draw_string(ThemeDB.fallback_font, point, String(TranslationServer.translate(text)), HORIZONTAL_ALIGNMENT_LEFT, -1, size, color)
