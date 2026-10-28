@@ -355,6 +355,7 @@ func _exit_tree() -> void:
 		voice.stream = null
 
 func _ready() -> void:
+	preload("res://gameplay/police_response/ground/TirePuncture.gd").prewarm()
 	belt_flashlight = preload("res://gameplay/BeltFlashlight.gd").new()
 	belt_flashlight.gameplay = self
 	add_child(belt_flashlight)
@@ -1544,7 +1545,7 @@ func _stall_fire_at(target: Vector3) -> bool:
 							if is_instance_valid(damage_look) and damage_look.has_method("ignite"): damage_look.ignite(player)
 				else:
 					part_span = STALL_WORK.begin()
-					_damage_bullet(hit.collider, amount, player, shot_from, shot_to)
+					_damage_bullet(hit.collider, amount, player, shot_from, shot_to, end)
 					STALL_WORK.finish_slow("gameplay.fire_at.damage", part_span, 2000, hit.collider as Node)
 					confirm_player_hit(hit.collider, amount)
 					part_span = STALL_WORK.begin()
@@ -1828,7 +1829,7 @@ func _clear_combat_registers() -> void:
 	_pain_next.clear()
 	_flame_crime_clock = 0.0
 
-func _damage_bullet(actor: Object, amount: float, source: Node, shot_from := Vector3.INF, shot_to := Vector3.INF) -> void:
+func _damage_bullet(actor: Object, amount: float, source: Node, shot_from := Vector3.INF, shot_to := Vector3.INF, hit_point := Vector3.INF) -> void:
 	# Lataria absorve 85% dos tiros, inclusive cada chumbo de escopeta.
 	# Mantém durabilidade, blindagem, colisões, fogo e explosões independentes.
 	if is_instance_valid(actor) and actor is Node and actor.get_meta("gameplay_role", "") == "vehicle":
@@ -1844,6 +1845,10 @@ func _damage_bullet(actor: Object, amount: float, source: Node, shot_from := Vec
 				else:
 					if is_instance_valid(effects): effects.impact(broken.point,broken.normal,"glass",amount)
 					_play_glass_break(broken.point,-9.0,1.25)
+			# Bala que passa rente ao centro de uma roda fura aquele pneu (com o estouro dele). O teste vai
+			# só 0,9 m além do impacto: tiro na porta não atravessa o carro e fura a roda do outro lado.
+			var tire_to := shot_to if not hit_point.is_finite() else hit_point + (shot_to - shot_from).normalized() * .9
+			preload("res://gameplay/police_response/ground/TirePuncture.gd").shoot(actor,shot_from,tire_to)
 		amount *= 0.15
 	_damage(actor, amount, source)
 
@@ -2487,7 +2492,7 @@ func _advance_police_rounds(delta: float) -> void:
 		if not hit.is_empty():
 			var data: Dictionary = round_index.data
 			var damage := CATALOG.distance_damage(int(round_index.damage), float(round_index.distance) * 16.0, float(data.get("falloff_start", 170.0)), float(data.get("max_range", 420.0)), float(data.get("min_damage_ratio", 0.25)))
-			_damage_bullet(hit.collider, damage, round_index.source.get_ref(), shot_from, glass_limit)
+			_damage_bullet(hit.collider, damage, round_index.source.get_ref(), shot_from, glass_limit, end)
 			_impact_sound(hit.collider, end, damage, hit.normal)
 			_hit_effect(hit, damage, round_index.direction)
 		if finished: _police_rounds.remove_at(index)

@@ -1607,7 +1607,7 @@ func _restore_player_vehicle() -> void:
 	car.restore_body_dents(saved.get("body_dents",[]),saved.get("breakaway_parts",{}),saved.get("broken_glass",[]))
 	car.restore_blood_stains(int(saved.get("blood_stains",0)))
 	if int(saved.get("punctured_tires",0)) > 0:
-		preload("res://gameplay/police_response/ground/TirePuncture.gd").puncture(car,int(saved.punctured_tires))
+		preload("res://gameplay/police_response/ground/TirePuncture.gd").puncture(car,int(saved.punctured_tires),false)
 
 func capture_player_vehicle() -> void:
 	# A missing selection must not erase another valid stored vehicle or cast a

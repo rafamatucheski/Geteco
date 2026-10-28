@@ -174,7 +174,7 @@ func _reconcile_owned_cars() -> void:
 		car.restore_health(float(record.health))
 		car.restore_body_dents(record.get("body_dents",[]),record.get("breakaway_parts",{}),record.get("broken_glass",[]))
 		car.restore_blood_stains(int(record.get("blood_stains",0)))
-		if int(record.get("punctured_tires",0))>0: preload("res://gameplay/police_response/ground/TirePuncture.gd").puncture(car,int(record.punctured_tires))
+		if int(record.get("punctured_tires",0))>0: preload("res://gameplay/police_response/ground/TirePuncture.gd").puncture(car,int(record.punctured_tires),false)
 		_track_owned(car)
 func _track_owned(car: CharacterBody3D) -> void:
 	if owned_cars.get(car.vehicle_id)==car: return
