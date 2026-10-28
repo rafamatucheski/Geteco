@@ -350,24 +350,30 @@ func _update_radio(delta: float) -> void:
 
 func _show_station() -> void:
 	if not is_instance_valid(radio_notice):
-		var layer := CanvasLayer.new()
-		layer.layer = 8
-		add_child(layer)
 		radio_notice = Label.new()
-		radio_notice.set_anchors_and_offsets_preset(Control.PRESET_TOP_RIGHT)
-		radio_notice.offset_left = -264
-		radio_notice.offset_right = -24
-		radio_notice.offset_top = 100
-		radio_notice.offset_bottom = 138
+		radio_notice.name = "StationNotice"
 		radio_notice.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		radio_notice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		radio_notice.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var ui_style = preload("res://ui/GameStyle.gd")
-		radio_notice.add_theme_font_override("font",ui_style.STRONG)
-		radio_notice.add_theme_font_size_override("font_size",16)
+		radio_notice.add_theme_font_override("font",ui_style.FONT)
+		radio_notice.add_theme_font_size_override("font_size",13)
 		radio_notice.add_theme_color_override("font_color",ui_style.TEXT)
 		radio_notice.add_theme_stylebox_override("normal",ui_style.compact(false,8))
-		layer.add_child(radio_notice)
-	radio_notice.text = STATION_NAMES[radio_index] if radio_index >= 0 else "RÁDIO DESLIGADO"
+		var hud: Node = world.get("hud") if is_instance_valid(world) else null
+		if is_instance_valid(hud) and hud.has_method("attach_station_notice"):
+			hud.attach_station_notice(radio_notice)
+		else:
+			var layer := CanvasLayer.new()
+			layer.layer = 8
+			add_child(layer)
+			layer.add_child(radio_notice)
+			radio_notice.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
+			radio_notice.offset_left = -120
+			radio_notice.offset_right = 120
+			radio_notice.offset_top = 32
+			radio_notice.offset_bottom = 70
+	radio_notice.text = STATION_NAMES[radio_index] if radio_index >= 0 else "Rádio desligado"
 	radio_notice_time = 2.0
 	radio_notice.show()
 	radio_notice.modulate.a=0

@@ -35,11 +35,15 @@ func configure(owner_session) -> void:
 		owned = bool(saved.get("owned", false))
 		best = int(saved.get("best", 0))
 	hud = Label.new()
-	hud.position = Vector2(230, 620)
-	hud.add_theme_font_size_override("font_size", 18)
-	hud.add_theme_color_override("font_outline_color", Color.BLACK)
-	hud.add_theme_constant_override("outline_size", 5)
-	session.world.hud.add_child(hud)
+	hud.hide()
+	if session.world.hud.has_method("attach_activity_notice"):
+		session.world.hud.attach_activity_notice(hud)
+	else:
+		hud.position = Vector2(230, 620)
+		hud.add_theme_font_size_override("font_size", 18)
+		hud.add_theme_color_override("font_outline_color", Color.BLACK)
+		hud.add_theme_constant_override("outline_size", 5)
+		session.world.hud.add_child(hud)
 
 static func validate_snapshot(data: Dictionary) -> bool:
 	return data.get("owned") is bool and (data.get("best") is int or data.get("best") is float) and is_finite(float(data.best)) and float(data.best) >= 0 and float(data.best) <= 100000000 and float(data.best) == floorf(float(data.best))
@@ -187,6 +191,7 @@ func _player_bailed(damage: float) -> void:
 	_release_board()
 	recovering = true
 	hud.text = ""
+	hud.hide()
 	_recovery_time = 0
 	player.input_locked = true
 	score = 0
@@ -201,6 +206,7 @@ func _finish_recovery() -> void:
 	session.world.player.set_physics_process(session.world.gameplay.health > 0 and not session.is_transition_blocked())
 	session.world.player.input_locked = session.modal or session.is_transition_blocked() or session.world.gameplay.health <= 0
 	hud.text = ""
+	hud.hide()
 
 func _physics_process(delta: float) -> void:
 	if not LAYOUT.enabled(): return
@@ -238,6 +244,7 @@ func _physics_process(delta: float) -> void:
 		session.world.player.position = player_board.position
 		POSE.apply(session.world.player, player_board)
 		hud.text = String(TranslationServer.translate("%d km/h · %d pts · recorde %d\nW remar · S frear/ré · Espaço ollie · Q flip · R shove-it · E descer")) % [roundi(absf(player_board.speed) * 3.6), score, best]
+		hud.visible = not hud.text.is_empty()
 	_clock += delta
 	if _clock >= 1:
 		_clock = 0

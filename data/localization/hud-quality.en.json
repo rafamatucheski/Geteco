@@ -1,4 +1,6 @@
 {
+  "Rádio": "Radio",
+  "Novo objetivo": "New objective",
   "Novo jogo": "New game",
   "Carregar jogo": "Load game",
   "Configurações": "Settings",
@@ -28,5 +30,6 @@
   "Investigação local": "Local investigation",
   "Investigação local  %d:%02d": "Local investigation  %d:%02d",
   "  Busca": "  Search",
-  "  Perseguição": "  Pursuit"
+  "  Perseguição": "  Pursuit",
+  "Rádio desligado": "Radio off"
 }

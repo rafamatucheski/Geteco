@@ -29,7 +29,7 @@ func configure(owner_session) -> void:
 	process_physics_priority=5
 
 func _process(delta: float) -> void:
-	if is_instance_valid(_label): _label.visible=not session.modal and not get_tree().paused
+	if is_instance_valid(_label): _label.visible=active and not _label.text.is_empty() and not session.modal and not get_tree().paused
 	_proximity_clock-=delta
 	if _proximity_clock>0 or session==null: return
 	_proximity_clock=.5
@@ -98,12 +98,16 @@ func perform(target: String) -> bool:
 	_layer.layer=22
 	add_child(_layer)
 	_label=Label.new()
-	_label.position=Vector2(24,112)
-	_label.add_theme_font_size_override("font_size",23)
-	_label.add_theme_color_override("font_shadow_color",Color.BLACK)
-	_label.add_theme_constant_override("shadow_offset_x",2)
-	_label.add_theme_constant_override("shadow_offset_y",2)
-	_layer.add_child(_label)
+	_label.hide()
+	if session.world.hud.has_method("attach_activity_notice"):
+		session.world.hud.attach_activity_notice(_label)
+	else:
+		_label.position=Vector2(24,112)
+		_label.add_theme_font_size_override("font_size",23)
+		_label.add_theme_color_override("font_shadow_color",Color.BLACK)
+		_label.add_theme_constant_override("shadow_offset_x",2)
+		_label.add_theme_constant_override("shadow_offset_y",2)
+		_layer.add_child(_label)
 	_update_hud()
 	if is_instance_valid(markers): markers.show_gate(next_gate)
 	set_physics_process(true)
@@ -148,6 +152,7 @@ func _update_hud() -> void:
 	if not is_instance_valid(_label): return
 	_label.text=String(TranslationServer.translate("Leito seco · %d")) %maxi(1,ceili(countdown)) if phase=="countdown" else String(TranslationServer.translate("Leito seco · %.1f s / 45 s · %d/%d")) %[elapsed,next_gate,COURSE.GATES-1]
 	_label.text+="\n"+get_node("/root/GameInput").hint("interact")+" · Abandonar prova"
+	_label.visible=active and not session.modal and not get_tree().paused
 
 func _finish() -> void:
 	if not STATE.record(session.state.world_state,elapsed): cancel_attempt("invalid"); return
@@ -172,6 +177,11 @@ func _release() -> void:
 	if is_instance_valid(session) and is_instance_valid(session.world.player): session.world.player.input_locked=_player_was_locked or keep_locked
 	active=false; phase=""
 	set_physics_process(false)
+	# The shared HUD can own this label now; freeing the old layer alone would
+	# leave an orphaned result on screen after finishing or cancelling the race.
+	if is_instance_valid(_label):
+		_label.hide()
+		_label.queue_free()
 	if is_instance_valid(_layer): _layer.queue_free()
 	_layer=null; _label=null
 	if is_instance_valid(markers): markers.show_gate(-1)

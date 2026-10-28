@@ -1069,6 +1069,7 @@ func show_speech(speaker: String, message: String, duration := 5.0, play_voice :
 	notice_time = duration
 	speech_active = true
 	speech_caption.set_line(speaker, message)
+	speech_caption.visible = not get_tree().paused and not (is_instance_valid(equipment_wheel) and equipment_wheel.active)
 	if play_voice and is_instance_valid(speech_voice):
 		speech_voice.stream = shown.get("stream") as AudioStream
 		speech_voice.volume_db = VOICE.playback_volume(speech_voice.stream, -8.0 if actor in ["maciota", "caller"] else 0.0)
@@ -2188,7 +2189,7 @@ func _process_traced(delta: float) -> void:
 	if not get_tree().paused: notice_time = maxf(0.0,notice_time-delta)
 	if speech_active:
 		if notice_time <= 0.0: clear_speech()
-		elif is_instance_valid(speech_caption): speech_caption.visible = not get_tree().paused
+		elif is_instance_valid(speech_caption): speech_caption.visible = not get_tree().paused and not (is_instance_valid(equipment_wheel) and equipment_wheel.active)
 	if not ready_for_play or get_tree().paused: return
 	# Aviso fixo enquanto o salvamento estiver desligado (antes o autosave só parava).
 	if controller.save_invalid != _save_block_shown:

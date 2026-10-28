@@ -22,11 +22,15 @@ func configure(owner_session) -> void:
 		session.controller.save_invalid=true
 		session.show_message("Dados da trilha inválidos; save original preservado.")
 	_status=Label.new()
-	_status.position=Vector2(24,184)
-	_status.add_theme_font_size_override("font_size",20)
-	_status.add_theme_color_override("font_outline_color",Color("101820"))
-	_status.add_theme_constant_override("outline_size",5)
-	session.world.hud.add_child(_status)
+	_status.hide()
+	if session.world.hud.has_method("attach_activity_notice"):
+		session.world.hud.attach_activity_notice(_status)
+	else:
+		_status.position=Vector2(24,184)
+		_status.add_theme_font_size_override("font_size",20)
+		_status.add_theme_color_override("font_outline_color",Color("101820"))
+		_status.add_theme_constant_override("outline_size",5)
+		session.world.hud.add_child(_status)
 	process_physics_priority=25
 
 func snapshot() -> Dictionary:
@@ -110,12 +114,15 @@ func _start_attempt() -> bool:
 	if not run.begin(car.get_instance_id(),car.archetype,car.global_position): return false
 	driver=car
 	_status.text=objective()
+	_status.show()
 	return true
 
 func cancel_attempt() -> void:
 	run.cancel()
 	driver=null
-	if is_instance_valid(_status): _status.text=""
+	if is_instance_valid(_status):
+		_status.text=""
+		_status.hide()
 	# The physical jeep remains parked or under the existing driver's control.
 	_capture_loan()
 
@@ -145,6 +152,7 @@ func _physics_process(delta: float) -> void:
 					session.save_game(true)
 				driver=null
 				_status.text=""
+				_status.hide()
 			elif not run.active:
 				var message := "Trilha interrompida. Volte à largada."
 				match run.failure:
@@ -154,10 +162,12 @@ func _physics_process(delta: float) -> void:
 				session.show_message(message)
 				driver=null
 				_status.text=""
+				_status.hide()
 		_hud_clock+=delta
 		if _hud_clock>=.1 and run.active:
 			_hud_clock=0.0
 			_status.text=objective()
+			_status.visible=not _status.text.is_empty()
 	if not session.ready_for_play or session.modal or session.controller.save_invalid: return
 	_loan_clock+=delta
 	if _loan_clock<.5: return

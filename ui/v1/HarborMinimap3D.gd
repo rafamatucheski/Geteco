@@ -89,10 +89,10 @@ func _ready() -> void:
 	caption = Label.new()
 	caption.name = "NavigationDestination"
 	caption.position = Vector2(0, -28)
-	caption.size = Vector2(280, 22)
+	caption.size = Vector2(PANEL_SIZE.x, 22)
 	caption.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 	caption.add_theme_font_override("font", FONT)
-	caption.add_theme_font_size_override("font_size", 14)
+	caption.add_theme_font_size_override("font_size", 13)
 	caption.add_theme_color_override("font_color", Color("eee9e2"))
 	caption.add_theme_color_override("font_outline_color",STYLE.INK)
 	caption.add_theme_constant_override("outline_size",1)
@@ -165,7 +165,7 @@ func refresh() -> void:
 		var weather: Variant = world.session.weather
 		var conditions := CONDITIONS.vertical_text(int(world.session.state.world_state.get("moon_day", 2)), float(weather.time_of_day), str(world.session.state.region_id), int(weather.weather_state), weather.mountain_weather)
 		if weekday_label.text != conditions: weekday_label.text = conditions
-		weather_icon.position = weekday_label.position + Vector2(0,74)
+		weather_icon.position = weekday_label.position + Vector2(0,maxf(74,weekday_label.get_combined_minimum_size().y+4))
 		var icon := CONDITIONS.icon(float(weather.time_of_day),str(world.session.state.region_id),int(weather.weather_state),weather.mountain_weather)
 		if weather_icon.state != icon:
 			weather_icon.state = icon

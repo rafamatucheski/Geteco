@@ -9,6 +9,7 @@ func _ready() -> void:
 	var column := VBoxContainer.new(); column.add_theme_constant_override("separation",3); add_child(column)
 	heading=STYLE.label("",11,STYLE.ACCENT); column.add_child(heading)
 	message=STYLE.label("",14); message.custom_minimum_size.x=220; message.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART; column.add_child(message)
+	visibility_changed.connect(_sync_tween_visibility)
 	hide()
 func present(text: String, title := "", duration := 2.6) -> void:
 	if _tween: _tween.kill()
@@ -20,3 +21,9 @@ func present(text: String, title := "", duration := 2.6) -> void:
 	_tween.chain().tween_interval(duration)
 	_tween.chain().tween_property(self,"modulate:a",0.0,STYLE.FADE)
 	_tween.chain().tween_callback(hide)
+	_sync_tween_visibility()
+
+func _sync_tween_visibility() -> void:
+	if _tween==null or not _tween.is_valid(): return
+	if is_visible_in_tree(): _tween.play()
+	else: _tween.pause()

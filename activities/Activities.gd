@@ -35,10 +35,14 @@ func configure(owner_session) -> void:
 		session.controller.save_invalid = true
 		session.show_message("Estado de atividades inválido; save original preservado.")
 	_status = Label.new()
-	_status.position = Vector2(430,82)
-	_status.add_theme_font_size_override("font_size",20)
-	_status.add_theme_color_override("font_shadow_color",Color.BLACK)
-	session.world.hud.add_child(_status)
+	_status.hide()
+	if session.world.hud.has_method("attach_activity_notice"):
+		session.world.hud.attach_activity_notice(_status)
+	else:
+		_status.position = Vector2(430,82)
+		_status.add_theme_font_size_override("font_size",20)
+		_status.add_theme_color_override("font_shadow_color",Color.BLACK)
+		session.world.hud.add_child(_status)
 	_gate = _beacon(Vector3.ZERO,Color("74d9ff"),true)
 	_gate.hide()
 	if not session.world.gameplay.changed.is_connected(refresh_achievements):
@@ -51,6 +55,8 @@ func _physics_process(delta: float) -> void:
 	var world = session.world
 	if world.gameplay.health <= 0:
 		motorsport.cancel()
+		_status.text = ""
+		_status.hide()
 		return
 	if motorsport.mode != "":
 		var mode: String = motorsport.mode
@@ -62,6 +68,7 @@ func _physics_process(delta: float) -> void:
 		if _gate.visible: _gate.position = motorsport.target_position()+Vector3.UP*.05
 		_status.text = (String(TranslationServer.translate("Largada em %d")) %ceili(motorsport.countdown)) if motorsport.countdown > 0 else (String(TranslationServer.translate("%.1f s · Portão %d/%d")) %[motorsport.elapsed,motorsport.gate+1,motorsport.points.size()] if mode == "race" else "Drift · %d pts · %.0f s"%[int(motorsport.score),maxf(0,25-motorsport.elapsed)])
 	else: _status.text = ""
+	_status.visible = not motorsport.mode.is_empty() and not _status.text.is_empty()
 	_tick_tow(delta)
 	_clock += delta
 	if _clock < .25: return
@@ -466,7 +473,9 @@ func cancel_attempt() -> void:
 	motorsport.cancel()
 	_driver = null
 	if is_instance_valid(_gate): _gate.hide()
-	if is_instance_valid(_status): _status.text = ""
+	if is_instance_valid(_status):
+		_status.text = ""
+		_status.hide()
 
 func can_rest() -> bool:
 	return motorsport.mode.is_empty() and _data.tow_contract.is_empty()

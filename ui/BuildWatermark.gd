@@ -16,10 +16,10 @@ func _ready() -> void:
 	]
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	label.position = Vector2(12, 8)
-	label.add_theme_font_size_override("font_size", 14)
+	label.add_theme_font_size_override("font_size", 11)
 	label.add_theme_color_override("font_color", Color(1, 1, 1, 0.45))
 	label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.35))
-	label.add_theme_constant_override("outline_size", 3)
+	label.add_theme_constant_override("outline_size", 1)
 	add_child(label)
 
 
