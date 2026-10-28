@@ -337,6 +337,25 @@ func set_open(side: int, opened: bool, duration := .28) -> void:
 	if is_instance_valid(liner) and not opened: tween.tween_callback(liner.hide)
 	motions[side] = tween
 
+## Folha num ângulo escolhido quadro a quadro (rad, 0 = fechada) por quem a puxa ou empurra
+## (VehicleBoardingMocap): a mão na maçaneta e o corpo no caminho mandam, não um tempo fixo.
+## `limit` > 0 permite abrir além do ângulo de tabela (o mocap abre a porta inteira, ~70°).
+func set_angle(side: int, radians: float, limit := 0.0) -> void:
+	finish_now()
+	if not hinges.has(side): return
+	var previous: Tween = motions.get(side)
+	if is_instance_valid(previous): previous.kill()
+	motions.erase(side)
+	var opened := clampf(radians, 0.0, maxf(angle, limit))
+	(hinges[side] as Node3D).rotation.y = float(side) * opened
+	var liner: Node3D = _liners.get(side)
+	if is_instance_valid(liner): liner.visible = opened > .001
+
+## Ângulo atual da folha (rad, 0 = fechada).
+func current_angle(side: int) -> float:
+	var hinge: Node3D = hinges.get(side)
+	return absf(hinge.rotation.y) if is_instance_valid(hinge) else 0.0
+
 func close_all(duration := .18) -> void:
 	for side in hinges: set_open(side, false, duration)
 

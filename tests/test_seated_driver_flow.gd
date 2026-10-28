@@ -35,9 +35,16 @@ func run() -> void:
 	world.set_meta("skip_arrival", true)
 	root.add_child(world)
 	current_scene = world
-	for i in 1500:
+	# Prazo em tempo, não em quadros: sob a cortina os quadros são curtos e 1500 deles acabavam antes de o
+	# mundo ficar jogável (28/10: `world.session` ainda nulo na linha seguinte).
+	var ready_deadline := Time.get_ticks_msec() + 180000
+	while Time.get_ticks_msec() < ready_deadline:
 		await process_frame
 		if world.session != null and world.session.ready_for_play: break
+	check(world.session != null and world.session.ready_for_play, "mundo jogável em até 180 s")
+	if world.session == null:
+		quit(1)
+		return
 	var controller = world.session.controller
 	controller.set_population(0)
 	var driving = world.driving

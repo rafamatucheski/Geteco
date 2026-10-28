@@ -1,6 +1,8 @@
 extends SceneTree
 const FLIGHT := preload("res://gameplay/street_physics/BodyFlight3D.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
+## Quadros de física para quem foi socorrido (ou largado) terminar de levantar com o mocap.
+const GET_UP_TICKS := 900
 class Stage extends Node3D:
 	var gameplay: Node
 class Street extends "res://gameplay/street_physics/StreetPhysics.gd":
@@ -73,12 +75,14 @@ func run() -> void:
 			for tick in 12: await physics_frame
 			check(model.thighs[0].transform.is_equal_approx(resting),"injured body does not keep walking on ground")
 			body.recover_from_injury()
-			for tick in 100:
+			# Levantar com mocap (BodyGetUp3D, 28/10): 3–10 s, às vezes com uma tentativa que desaba antes.
+			for tick in GET_UP_TICKS:
 				await physics_frame
 				if not body.has_meta("street_down"): break
 			check(not body.has_meta("street_down") and body.is_physics_processing() and model.is_processing(),"help restores locomotion and visual owner")
 			check(body.collision_layer==2 and body.collision_mask==7,"help restores walking collisions")
-			check(body.visual.transform.is_equal_approx(Transform3D.IDENTITY),"help restores upright body")
+			# De pé e no lugar; a guinada é a do fim do clipe (para onde a pessoa ficou virada ao levantar).
+			check(body.visual.transform.basis.y.normalized().is_equal_approx(Vector3.UP) and body.visual.transform.origin.is_equal_approx(Vector3.ZERO),"help restores upright body")
 		source.queue_free()
 		body.queue_free()
 		await process_frame
@@ -91,7 +95,9 @@ func run() -> void:
 	check(not body.has_meta("street_flying"),"wall collision still reaches ground and settles")
 	if is_instance_valid(flight):
 		flight.down_time = FLIGHT.SELF_RECOVERY_SECONDS
-		for tick in 100: await physics_frame
+		for tick in GET_UP_TICKS:
+			await physics_frame
+			if not body.has_meta("street_down"): break
 	check(not body.has_meta("street_down"),"abandoned survivor can recover without ambulance")
 	wall.queue_free()
 	body.queue_free()

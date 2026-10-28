@@ -65,7 +65,8 @@ static func available(visual: Node) -> bool:
 		and is_instance_valid(found.head_node) and found.thighs.size() == 2 and found.forearms.size() == 2
 
 ## `owner` recebe os corpos (um nó que some junto com o voo). `impact` é a velocidade do carro no plano.
-func build(owner: Node, visual: Node, impact: Vector3, source: Node) -> bool:
+## `shove`: empurrão/arremesso de alguém (roubo de carro, moto), não para-choque: ver `_launch`.
+func build(owner: Node, visual: Node, impact: Vector3, source: Node, shove := false) -> bool:
 	var began := STALL_WORK.begin()
 	model = find_model(visual)
 	if model == null: return false
@@ -104,7 +105,8 @@ func build(owner: Node, visual: Node, impact: Vector3, source: Node) -> bool:
 		var fore_length: float = (model.arm_lengths[i].y if model.arm_lengths.size() == 2 else model.forearm_len) * s + .08 * s
 		_add(fore, fore.global_position, fore.global_position - fore.global_basis.y.normalized() * fore_length, upper_part, _capsule(.045 * s), 1.6, "elbow")
 	for part in parts: _initial.append((part.joint as Node3D).transform)
-	_launch(impact, source)
+	if shove: _launch_shove(impact)
+	else: _launch(impact, source)
 	if "mesh_node" in model and model.mesh_node is MeshInstance3D:
 		# O voo afasta o corpo da origem do ator, que só acompanha ao assentar.
 		_mesh = model.mesh_node
@@ -211,6 +213,27 @@ func _launch(impact: Vector3, _source: Node) -> void:
 		var joint_name := String((part.joint as Node).name)
 		var sweep := .3 if joint_name.contains("leg") else (-.12 if part == parts[1] or part == parts[2] else 0.0)
 		body.linear_velocity = carry + spin.cross(body.global_position - center) + heading * speed * sweep
+		body.angular_velocity = spin
+
+## Arremesso pela gola (roubo): o tronco vai na frente e as pernas ficam para trás, então a pessoa
+## tropeça e cai de frente ou de lado, em vez de girar por cima de um capô. Velocidade baixa e quase
+## sem subida: é um puxão de braço, não uma batida (vídeos de roubo de carro: a vítima dá 1–2 passos
+## tropeçando e cai a ~1,5–2,5 m da porta).
+func _launch_shove(impact: Vector3) -> void:
+	var flat := Vector3(impact.x, 0, impact.z)
+	var speed := minf(flat.length(), 6.0)
+	var heading := flat.normalized() if speed > .01 else Vector3.BACK
+	var carry := heading * speed + Vector3.UP * .5
+	# UP × rumo: a cabeça anda no rumo mais rápido que os pés (queda para a frente); um pouco de giro
+	# em torno do eixo vertical deixa cada queda diferente (de lado, de frente, meio de costas).
+	var spin := Vector3.UP.cross(heading) * speed * .55 + Vector3.UP * randf_range(-1.6, 1.6)
+	var center: Vector3 = (parts[0].body as Node3D).global_position
+	for part in parts:
+		var body: RigidBody3D = part.body
+		part.last = body.global_position
+		var joint_name := String((part.joint as Node).name)
+		var trail := -.35 if joint_name.contains("lower_leg") or joint_name.contains("Foot") else (-.18 if joint_name.contains("leg") else 0.0)
+		body.linear_velocity = carry + spin.cross(body.global_position - center) + heading * speed * trail
 		body.angular_velocity = spin
 
 func set_frozen(frozen: bool) -> void:

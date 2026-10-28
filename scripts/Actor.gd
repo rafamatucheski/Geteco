@@ -13,6 +13,9 @@ const MIXAMO_DEATH_LIBRARY := "res://assets/dante/mixamo/dante_mixamo_death.res"
 ## Sacar e guardar a espada (`tools/retarget_mixamo_sword_to_dante.gd`): biblioteca "mixsword" com
 ## withdraw_katana, sheathe_katana e sheathe_greatsword.
 const MIXAMO_SWORD_LIBRARY := "res://assets/dante/mixamo/dante_mixamo_sword.res"
+## Entrar/sair do carro, puxar o motorista e levantar do chão (`tools/retarget_mixamo_vehicle_clips.gd`):
+## biblioteca "mixveh" com enter_car, exit_car, pull_from_seat, getup_* e driving.
+const MIXAMO_VEHICLE_LIBRARY := "res://assets/dante/mixamo/dante_mixamo_vehicle.res"
 const LADDER_CLIPS := ["Fast_Ladder_Climb", "ladder/Ladder_Descend"]
 const CIVILIAN := preload("res://assets/CivilianModel.gd")
 const BODY_CATALOG := preload("res://assets/civilians/CivilianBodyCatalog.gd")
@@ -195,6 +198,8 @@ func _ready() -> void:
 			animation.add_animation_library("mixamo", load(MIXAMO_DEATH_LIBRARY))
 		if animation and not animation.has_animation_library("mixsword") and ResourceLoader.exists(MIXAMO_SWORD_LIBRARY):
 			animation.add_animation_library("mixsword", load(MIXAMO_SWORD_LIBRARY))
+		if animation and not animation.has_animation_library("mixveh") and ResourceLoader.exists(MIXAMO_VEHICLE_LIBRARY):
+			animation.add_animation_library("mixveh", load(MIXAMO_VEHICLE_LIBRARY))
 		skeleton = model.find_child("Skeleton3D", true, false) as Skeleton3D
 		if skeleton:
 			hips = skeleton.find_bone("Hips")
@@ -759,6 +764,35 @@ func pose_seated_limbs(feet: Dictionary, hands: Dictionary) -> void:
 		_combat_skin.set_blend_shape_value(0, 1.0 if hands.has("Right") else 0.18)
 		_combat_skin.set_blend_shape_value(1, 1.0 if hands.has("Left") else 0.18)
 	_pose_delta = 1.0 / 60.0
+
+## Moto parada: o pé esquerdo sai da pedaleira e apoia no chão ao lado (`weight` 0–1), como o piloto faz
+## ao parar no sinal; `ground_y` é a altura do chão no mundo. Depois de `pose_vehicle` com o guidão.
+func pose_motorcycle_foot(weight: float, ground_y: float) -> void:
+	if weight <= .01 or not is_instance_valid(skeleton) or not _combat_bones.has("LeftFoot"): return
+	var foot: int = _combat_bones["LeftFoot"]
+	var current := skeleton.to_global(skeleton.get_bone_global_pose(foot).origin)
+	var planted := visual.to_global(Vector3(-.36, 0.0, -.10))
+	planted.y = ground_y + .09
+	_solve_leg("Left", current.lerp(planted, smoothstep(0.0, 1.0, weight)))
+
+## Motorista: tronco inclinado de lado (rad; positivo = para a direita do corpo), aplicado entre a base
+## reclinada e o IK dos braços, para as mãos continuarem no volante.
+func pose_driver_lean(lean: float) -> void:
+	if not is_instance_valid(skeleton) or absf(lean) < .0005: return
+	var to_skeleton := skeleton.global_basis.orthonormalized().inverse() * visual.global_basis.orthonormalized()
+	var axis := (to_skeleton * Vector3.BACK).normalized()
+	for entry in [["Spine01", .6], ["Spine02", .4]]:
+		var bone: int = _combat_bones.get(entry[0], -1)
+		if bone >= 0: _set_combat_bone_rotation(bone, Basis(axis, -lean * float(entry[1])) * skeleton.get_bone_global_pose(bone).basis)
+
+## Motorista: cabeça girada (rad; positivo = para a esquerda), depois do IK dos braços.
+func pose_driver_look(look: float) -> void:
+	if not is_instance_valid(skeleton) or absf(look) < .001: return
+	var to_skeleton := skeleton.global_basis.orthonormalized().inverse() * visual.global_basis.orthonormalized()
+	var axis := (to_skeleton * Vector3.UP).normalized()
+	for entry in [["neck", .4], ["Head", .6]]:
+		var bone: int = _combat_bones.get(entry[0], -1)
+		if bone >= 0: _set_combat_bone_rotation(bone, Basis(axis, look * float(entry[1])) * skeleton.get_bone_global_pose(bone).basis)
 
 ## Volta o corpo ao mundo de pé. Chamado por `teleport`: todo caminho de saída do veículo
 ## (porta, salto, resgate, morte) passa por lá.

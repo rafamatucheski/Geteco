@@ -6,6 +6,7 @@ const GET_UP_SECONDS := 0.9
 const POSE := preload("res://gameplay/street_physics/BodyImpactPose3D.gd")
 const AUDIO := preload("res://audio/VehicleCrashAudio.gd")
 const RAGDOLL := preload("res://gameplay/street_physics/BodyRagdoll3D.gd")
+const GET_UP := preload("res://gameplay/street_physics/BodyGetUp3D.gd")
 var actor: CharacterBody3D
 var director: Node
 var velocity := Vector3.ZERO
@@ -21,6 +22,7 @@ var impact_speed := 0.0
 var min_down := 0.0
 ## Pedido de ragdoll (atropelamento). Sem corpo compatível ou acima do teto de ragdolls, segue o voo varrido.
 var ragdoll_requested := false
+var shove := false
 var ragdoll: RefCounted
 var _impact := Vector3.ZERO
 var _visual_base := Transform3D.IDENTITY
@@ -42,6 +44,10 @@ var _recovery_tween: Tween
 var _suspension: Dictionary = {}
 var _impact_hull: CapsuleShape3D
 var _ground_contact: Dictionary = {}
+## Levantar com mocap (`BodyGetUp3D`); null = levantar antigo (desgira o corpo em GET_UP_SECONDS).
+var _mocap: RefCounted
+## `down_time` da próxima tentativa frustrada de quem está machucado demais para levantar.
+var _next_attempt := -1.0
 
 static func actor_visual(body: Object) -> Node3D:
 	var presentation := preload("res://gameplay/CharacterFallPresentation3D.gd")
@@ -147,7 +153,9 @@ static func _capsule_minimum(hull: CapsuleShape3D, pose: Transform3D, axis: Vect
 	return pose.origin.dot(axis)-hull.radius*(pose.basis.transposed()*axis).length() \
 		-maxf(0.0,hull.height*.5-hull.radius)*absf(pose.basis.y.dot(axis))
 
-static func launch(p_actor: CharacterBody3D, impact_velocity: Vector3, p_lethal: bool, p_director: Node, p_source: Node, p_ragdoll := false) -> Node:
+## `p_shove`: arremesso por uma pessoa (roubo de carro/moto): o ragdoll tropeça para a frente em vez de
+## girar por cima de um capô (`BodyRagdoll3D._launch_shove`).
+static func launch(p_actor: CharacterBody3D, impact_velocity: Vector3, p_lethal: bool, p_director: Node, p_source: Node, p_ragdoll := false, p_shove := false) -> Node:
 	if not is_instance_valid(p_actor) or not impact_velocity.is_finite(): return null
 	if preload("res://gameplay/DamageProtection.gd").is_protected(p_actor): return null
 	if p_actor.has_meta("street_down") or p_actor.get("dead") == true: return null
@@ -159,6 +167,7 @@ static func launch(p_actor: CharacterBody3D, impact_velocity: Vector3, p_lethal:
 	flight.source = weakref(p_source) if is_instance_valid(p_source) else null
 	flight.impact_speed = impact_velocity.length()
 	flight.ragdoll_requested = p_ragdoll
+	flight.shove = p_shove
 	flight._impact = impact_velocity
 	var flat := Vector3(impact_velocity.x, 0, impact_velocity.z)
 	var speed := minf(flat.length(), 37.5)
@@ -195,7 +204,7 @@ func _ready() -> void:
 	_impact_hull = hull
 	if ragdoll_requested and is_instance_valid(visual) and RAGDOLL.available(visual):
 		ragdoll = RAGDOLL.new()
-		if ragdoll.build(self,visual,_impact,source.get_ref() if source != null else null):
+		if ragdoll.build(self,visual,_impact,source.get_ref() if source != null else null,shove):
 			# Antes do PoseDriver do Meshy (prioridade 0): o esqueleto copia as juntas no mesmo quadro.
 			process_priority = -1
 			return
@@ -219,8 +228,9 @@ func _physics_process(delta: float) -> void:
 	if flying: _ragdoll_step(delta) if ragdoll != null else _fly(delta)
 	elif not lethal: _wait_for_help(delta)
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if ragdoll != null and flying: ragdoll.present()
+	if _mocap != null and _suspension.is_empty(): _step_mocap(delta)
 
 func _ragdoll_step(delta: float) -> void:
 	_age += delta
@@ -297,14 +307,32 @@ func _wait_for_help(delta: float) -> void:
 		_restored = true
 		queue_free()
 		return
-	if _getting_up: return
+	if _getting_up or _mocap != null: return
 	down_time += delta
 	if down_time < min_down: return
 	var health: Variant = actor.get("health")
-	if (health != null and float(health) >= 60.0) or down_time >= (SELF_RECOVERY_SECONDS if health != null else 8.0): _get_up()
+	if (health != null and float(health) >= 60.0) or down_time >= (SELF_RECOVERY_SECONDS if health != null else 8.0):
+		_get_up()
+		return
+	# Machucado demais para levantar (até 45 s no chão): de tempos em tempos tenta sentar ou fazer a
+	# flexão e desaba de volta, em vez de ficar imóvel até se erguer de uma vez.
+	if health != null and GET_UP.enabled:
+		if _next_attempt < 0.0: _next_attempt = min_down + randf_range(4.0, 8.0)
+		if down_time >= _next_attempt:
+			_next_attempt = down_time + randf_range(8.0, 13.0)
+			var visual := actor_visual(actor)
+			var attempt = GET_UP.new()
+			if is_instance_valid(visual) and attempt.begin(actor, visual, float(health), true): _mocap = attempt
 
 func _get_up() -> void:
 	_getting_up = true
+	var visual := actor_visual(actor)
+	if GET_UP.enabled and is_instance_valid(visual):
+		var mocap = GET_UP.new()
+		var health: Variant = actor.get("health")
+		if mocap.begin(actor, visual, float(health) if health != null else 100.0):
+			_mocap = mocap
+			return
 	_recovery_tween = create_tween()
 	_recovery_tween.tween_method(func(t: float): _present(smoothstep(0,1,t)),0.0,1.0,GET_UP_SECONDS)
 	_recovery_tween.tween_callback(func():
@@ -312,6 +340,37 @@ func _get_up() -> void:
 		if actor.get("health") != null: actor.set("health", maxf(float(actor.get("health")),35.0))
 		_restore()
 		queue_free())
+
+## Um quadro do levantar com mocap. Morte no meio larga o corpo na pose em que estava (a queda da morte
+## assume as juntas); de pé, a origem vai para baixo da pelve e o corpo olha para onde o clipe terminou.
+func _step_mocap(delta: float) -> void:
+	if not is_instance_valid(actor): return
+	if actor.get("dead") == true:
+		_mocap.release()
+		_mocap = null
+		_restored = true
+		queue_free()
+		return
+	if not _mocap.step(delta): return
+	if _mocap.attempt_only:
+		# Desabou de volta: continua no chão (o modelo segue parado; o levantar de verdade parte daqui).
+		_mocap = null
+		return
+	var yaw: float = _mocap.finish(_visual_base)
+	_visual_base.basis = Basis(Vector3.UP, yaw - actor.global_rotation.y).scaled(_visual_base.basis.get_scale())
+	_mocap.release()
+	_mocap = null
+	# De pé no fim do clipe: a pose de antes do voo (sentado, no roubo) não volta nem por um quadro;
+	# o modelo do civil retoma a partir desta.
+	_pose.keep_current()
+	if ragdoll != null:
+		ragdoll.dispose()
+		ragdoll = null
+	if actor.get("health") != null: actor.set("health", maxf(float(actor.get("health")), 35.0))
+	if "last_position" in actor: actor.set("last_position", actor.global_position)
+	actor.reset_physics_interpolation()
+	_restore()
+	queue_free()
 
 func _restore_shapes() -> void:
 	if is_instance_valid(_shape):
@@ -324,6 +383,9 @@ func _restore_shapes() -> void:
 func _restore() -> void:
 	if _restored or not is_instance_valid(actor): return
 	_restored = true
+	if _mocap != null:
+		_mocap.release()
+		_mocap = null
 	if actor.is_queued_for_deletion():
 		if not _suspension.is_empty(): _suspension.owner = null
 		_suspension = {}

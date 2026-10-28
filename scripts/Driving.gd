@@ -97,6 +97,9 @@ func _entry_option(allow_transition := false) -> Dictionary:
 ## Roubo em movimento, como no GTA: carro ou moto do trânsito andando até
 ## JACK_MAX_SPEED pode ser agarrado pela porta. Carro parado continua igual; viatura
 ## em serviço e carro do jogador só parados.
+## Pé esquerdo no chão com a moto parada (0 = na pedaleira, 1 = apoiado).
+var _bike_foot := 0.0
+static var bike_foot_enabled := OS.get_environment("GETECO_BIKE_FOOT") != "0"
 const JACK_MAX_SPEED := 11.0 # ~40 km/h
 const JACK_DOOR_REACH := 2.8 # a porta passa rápido: alcance maior que o 1,8 m parado
 const JACK_STOP_SECONDS := .4
@@ -588,6 +591,10 @@ func _update_mounted_player() -> void:
 	world.player.global_position = car.driver_seat_anchor()
 	world.player.visual.global_basis = car.visual.global_basis.orthonormalized()
 	world.player.pose_vehicle(1.0, 0.0, -1, 1.0, car.motorcycle_handholds())
+	# Parando, o pé esquerdo desce ao chão; saindo, volta à pedaleira. GETECO_BIKE_FOOT=0 desliga.
+	var stopped := 1.0 - smoothstep(.8, 2.2, absf(float(car.speed)))
+	_bike_foot = move_toward(_bike_foot, stopped if bike_foot_enabled else 0.0, get_physics_process_delta_time() * 3.5)
+	world.player.pose_motorcycle_foot(_bike_foot, car.global_position.y)
 	world.player.show()
 
 ## A collision ejects the exposed rider through the same physical fall used by road impacts.

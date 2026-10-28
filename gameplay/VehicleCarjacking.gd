@@ -10,6 +10,8 @@ static var throw_enabled := OS.get_environment("GETECO_CARJACK_THROW") != "0"
 const DRAG_END := .62
 const THROW_AT := .72
 const THROW_SPEED := 7.5
+## Empurrão do ragdoll: um puxão de braço joga a pessoa a 1,5–2,5 m (o voo varrido usava 7,5).
+const SHOVE_SPEED := 3.4
 const THROW_DOWN_SECONDS := 1.3
 var thrown := false
 var flight: Node
@@ -107,6 +109,21 @@ func prepare(owner_world: Node3D, car: CharacterBody3D, person: CharacterBody3D,
 		if is_instance_valid(_body):
 			_body.sit_amount = 1.0
 			_body.seat_height = .38
+			if not motorcycle and car.has_method("door_layout"):
+				# Pelve no banco medido do interior (o mesmo do Dante), não 0,38 m acima da âncora: a cabeça
+				# (e o chapéu) da vítima saía pelo teto do sedã enquanto ela esperava ser puxada (captura de 28/10).
+				var hip: Vector3 = preload("res://gameplay/VehicleBoardingMocap.gd").seat_pelvis(car)
+				# Cabine baixa: o corpo encolhe como o do Dante ao volante (VehicleInterior._fit), senão a cabeça,
+				# o chapéu e as mãos erguidas atravessam o teto e o para-brisa. Volta ao tamanho ao ser arrancado.
+				var cabin := preload("res://gameplay/VehicleInterior.gd").spec(car)
+				if not cabin.is_empty():
+					var room := float(cabin.roof) - .06 - (float(cabin.floor) + float(cabin.hip))
+					var crown := .84 * _body.global_basis.get_scale().y + .08
+					_seat_fit = clampf(room / crown, .78, 1.0)
+					victim.visual.scale = _visual_transform.basis.get_scale() * _seat_fit
+				var lift: float = .08 * _body.global_basis.get_scale().y
+				victim.global_position = Vector3(hip.x, hip.y - .45, hip.z)
+				_body.seat_height = maxf(.05, .45 - lift)
 			if motorcycle and _body.get("motorcycle_helmet_color") != null: _body.motorcycle_helmet_color = Color("dce2df")
 	_seat_root = car.global_transform.affine_inverse() * victim.global_transform
 	_seat_visual = victim.visual.transform
@@ -193,16 +210,129 @@ func _throw(thief: CharacterBody3D) -> void:
 	landing = Vector3(from.x, target.y, from.z)
 	release()
 	if not is_instance_valid(victim) or not victim.is_inside_tree() or victim.get("dead") == true: return
-	flight = BODY_FLIGHT.launch(victim, direction.normalized() * THROW_SPEED, false, null, thief)
+	# Ragdoll de empurrão (28/10): o corpo tropeça e cai de verdade no chão; o voo varrido antigo (corpo
+	# girando como tábua) só fica quando não há ragdoll disponível (corpo sem juntas ou acima do teto).
+	flight = BODY_FLIGHT.launch(victim, direction.normalized() * SHOVE_SPEED, false, null, thief, true, true)
 	if is_instance_valid(flight):
 		flight.min_down = THROW_DOWN_SECONDS
-		# O voo tomba a partir da pose de pé em 0,38 s; começar no meio da queda continua a inclinação do
-		# puxão em vez de mostrar a vítima de pé por um instante (captura de 14/10, quadro de 80%).
-		flight._age = .16
+		# Sem ragdoll: o voo tomba a partir da pose de pé em 0,38 s; começar no meio da queda continua a
+		# inclinação do puxão em vez de mostrar a vítima de pé por um instante (captura de 14/10, quadro de 80%).
+		if flight.ragdoll == null: flight._age = .16
+
+# --- Roubo de carro com mocap ----------------------------------------------------------
+# A vítima toca "Pulled From Seat" (espelhado para a porta esquerda) sincronizada ao "Pull Pilot From
+# Seat" do Dante (VehicleBoardingPresentation): fica sentada, ergue as mãos quando é agarrada, é
+# arrancada pelo vão e, já no ar fora da porta, vira ragdoll com a velocidade do clipe; o chão de
+# verdade decide como ela cai, e o levantar é o do mocap (BodyGetUp3D).
+const GET_UP := preload("res://gameplay/street_physics/BodyGetUp3D.gd")
+const MIXAMO_DEATH := preload("res://gameplay/MixamoDeath.gd")
+const PULLED := "pulled_from_seat_m"
+## s do clipe da vítima: arrancada (2,0–2,5 s), no ar a ~1 m da porta em 2,9 s, no chão em 3,5 s.
+const MOCAP_THROW_AT := 2.9
+## Da pose sentada do modelo para o clipe.
+const MOCAP_BLEND := 0.3
+var mocap_active := false
+var _mocap_clip: Animation
+var _mocap_joints: Dictionary = {}
+var _mocap_tracks: Dictionary = {}
+var _mocap_position_track := -1
+var _mocap_start: Dictionary = {}
+var _mocap_start_position := Vector3.ZERO
+var _mocap_root := Vector3.ZERO
+var _mocap_ground := 0.0
+var _mocap_first := -1.0
+var _mocap_last := Vector3.INF
+var _mocap_velocity := Vector3.ZERO
+## Escala do corpo sentado na cabine baixa (1 = tamanho normal), desfeita ao ser arrancado.
+var _seat_fit := 1.0
+
+static var mocap_enabled := OS.get_environment("GETECO_MOCAP_CARJACK") != "0"
+
+## Juntas da vítima que a porta não pode atravessar enquanto ela é arrancada pelo vão.
+func door_obstacles() -> Array[Node3D]:
+	var result: Array[Node3D] = []
+	if not is_instance_valid(victim): return result
+	var joints := MIXAMO_DEATH.joints_of(victim.visual)
+	for joint_name in ["Pelvis", "Spine", "Head", "left_lower_leg", "right_lower_leg"]:
+		if joints.has(joint_name): result.append(joints[joint_name])
+	return result
+
+func mocap_available() -> bool:
+	if not mocap_enabled or motorcycle or released or not is_instance_valid(victim) or not is_instance_valid(_body): return false
+	var lib := GET_UP.library()
+	return lib != null and lib.has_animation(PULLED) and not MIXAMO_DEATH.joints_of(victim.visual).is_empty()
+
+## Prende o clipe ao corpo sentado: a pelve do primeiro quadro (sentado) fica sobre a pelve atual.
+func mocap_begin(victim_time: float) -> bool:
+	if not mocap_available(): return false
+	_mocap_clip = GET_UP.library().get_animation(PULLED)
+	_mocap_joints = MIXAMO_DEATH.joints_of(victim.visual)
+	_mocap_tracks.clear()
+	_mocap_position_track = -1
+	for track in _mocap_clip.get_track_count():
+		if _mocap_clip.track_get_type(track) == Animation.TYPE_ROTATION_3D: _mocap_tracks[String(_mocap_clip.track_get_path(track))] = track
+		elif _mocap_clip.track_get_type(track) == Animation.TYPE_POSITION_3D: _mocap_position_track = track
+	if _mocap_position_track < 0: return false
+	var pelvis: Node3D = _mocap_joints["Pelvis"]
+	var frame := pelvis.get_parent() as Node3D
+	var seated := pelvis.global_position
+	for joint_name in _mocap_joints: _mocap_start[joint_name] = (_mocap_joints[joint_name] as Node3D).quaternion
+	_mocap_start_position = pelvis.position
+	_body.set_process(false)
+	var clip_pelvis := frame.to_global(_mocap_clip.position_track_interpolate(_mocap_position_track, victim_time))
+	_mocap_root = victim.global_position + (seated - clip_pelvis)
+	_mocap_ground = landing.y if landing.is_finite() else vehicle.global_position.y
+	_mocap_first = victim_time
+	_mocap_last = Vector3.INF
+	mocap_active = true
+	return true
+
+## Pose da vítima no instante `victim_time` do clipe; arremessa ao passar de MOCAP_THROW_AT.
+func mocap_pose(thief: CharacterBody3D, victim_time: float, delta: float) -> void:
+	if not mocap_active or released or not is_instance_valid(victim): return
+	var blend := smoothstep(0.0, MOCAP_BLEND, victim_time - _mocap_first)
+	for joint_name in _mocap_tracks:
+		var node: Node3D = _mocap_joints.get(joint_name)
+		if not is_instance_valid(node): continue
+		var target: Quaternion = _mocap_clip.rotation_track_interpolate(_mocap_tracks[joint_name], victim_time)
+		node.quaternion = (_mocap_start.get(joint_name, target) as Quaternion).slerp(target, blend)
+	var pelvis: Node3D = _mocap_joints["Pelvis"]
+	pelvis.position = _mocap_start_position.lerp(_mocap_clip.position_track_interpolate(_mocap_position_track, victim_time), blend)
+	# O chão do clipe fica na altura do banco ajustado; ao ser arrancada a vítima pisa no chão de verdade.
+	var standing := smoothstep(1.8, 2.6, victim_time)
+	var to_ground := (_mocap_ground - _mocap_root.y) * standing
+	victim.global_position = _mocap_root + Vector3.UP * to_ground
+	if _seat_fit < 1.0: victim.visual.scale = _visual_transform.basis.get_scale() * lerpf(_seat_fit, 1.0, standing)
+	if victim_time >= 1.6 and not hit:
+		hit = true
+		if victim.has_method("present_hit"): victim.present_hit()
+	var now := pelvis.global_position
+	if _mocap_last.is_finite() and delta > 0.0:
+		_mocap_velocity = _mocap_velocity.lerp((now - _mocap_last) / delta, .5)
+	_mocap_last = now
+	if victim_time >= MOCAP_THROW_AT: _mocap_throw(thief)
+
+func _mocap_throw(thief: CharacterBody3D) -> void:
+	mocap_active = false
+	thrown = true
+	var push := Vector3(_mocap_velocity.x, 0.0, _mocap_velocity.z)
+	if push.length() < 2.0: push = (push.normalized() if push.length_squared() > .01 else vehicle.global_basis.x * float(side)) * 2.0
+	landing = Vector3(victim.global_position.x, _mocap_ground, victim.global_position.z)
+	release()
+	if not is_instance_valid(victim) or not victim.is_inside_tree() or victim.get("dead") == true: return
+	# O ragdoll registra quem anima o corpo e para o modelo durante o voo; ele precisa estar ligado agora
+	# para voltar a andar quando a vítima levantar.
+	if is_instance_valid(_body): _body.set_process(true)
+	flight = BODY_FLIGHT.launch(victim, push.limit_length(4.5), false, null, thief, true, true)
+	if is_instance_valid(flight): flight.min_down = THROW_DOWN_SECONDS
 
 func release() -> void:
 	if released: return
 	released = true
+	if mocap_active:
+		# Interrompido no meio do clipe (desistiu, carro sumiu): o modelo volta a se animar sozinho.
+		mocap_active = false
+		if is_instance_valid(_body): _body.set_process(true)
 	if not is_instance_valid(victim): return
 	if not victim.is_inside_tree() or not is_instance_valid(world) or not world.is_inside_tree(): return
 	victim.global_position = landing

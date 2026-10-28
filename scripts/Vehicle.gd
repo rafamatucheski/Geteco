@@ -1323,6 +1323,14 @@ func door_layout(side: int) -> Dictionary:
 	if not is_instance_valid(door_presentation) or not door_presentation.ready_for_boarding: return {}
 	return door_presentation.layouts.get(side, {})
 
+## Porta do motorista num ângulo (rad) dado quadro a quadro pela mão e pelo corpo de quem entra
+## (VehicleBoardingMocap). `sound`: 1 = destravou ao abrir, -1 = bateu ao fechar, 0 = sem som.
+func pose_driver_door(side: int, radians: float, limit := 0.0, sound := 0) -> void:
+	_ensure_door_presentation()
+	if not is_instance_valid(door_presentation): return
+	door_presentation.set_angle(side, radians, limit)
+	if sound != 0: FIREFLY.door(self, side, sound > 0)
+
 func animate_driver_door(side: int, opened: bool, duration := .28) -> void:
 	_ensure_door_presentation()
 	if is_instance_valid(door_presentation):

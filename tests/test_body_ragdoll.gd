@@ -132,7 +132,8 @@ func run() -> void:
 				check(model.spine.global_transform.is_equal_approx(lying),"%s: corpo morto mantém a pose do ragdoll" % label)
 			else:
 				body.recover_from_injury()
-				for tick in 120:
+				# Levantar com mocap (BodyGetUp3D, 28/10): 3–10 s, às vezes com uma tentativa que desaba antes.
+				for tick in 900:
 					await physics_frame
 					if not body.has_meta("street_down"): break
 				check(not body.has_meta("street_down") and body.is_physics_processing() and model.is_processing(),"%s: levanta e volta a andar" % label)

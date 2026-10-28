@@ -1,0 +1,62 @@
+{
+  "date": "2026-10-28",
+  "period": "28 de outubro de 2026",
+  "scope": "Movimentos de veículo e de queda com mocap do Mixamo: levantar do chão, entrar/sair do carro, roubo de carro, volante e moto (Claude, 28/10).",
+  "cards": [
+    {
+      "id": "mocap-levantar-do-chao-20261028",
+      "title": "Quem cai levanta como gente (mocap), e tenta antes de conseguir",
+      "status": "done",
+      "area": "animation",
+      "description": "O levantar depois de atropelamento, empurrão e roubo era o corpo desgirando de volta em 0,9 s pelo quadril (lia como içado por guindaste). Agora BodyGetUp3D toca os clipes do Mixamo 'Getting Up' (de costas, machucado; de costas, num impulso; de bruços: flexão, quatro apoios, joelho, de pé), alinhados ao corpo caído (cabeça para onde caiu, pelve sobre a pelve). Machucado (< 75 de vida) às vezes sobe e desaba antes de conseguir; quem não consegue levantar (< 60 de vida, até 45 s no chão) tenta sentar ou fazer a flexão a cada 8–13 s e desaba de volta. GETECO_MOCAP_GETUP=0 volta ao levantar antigo.",
+      "sources": [
+        "gameplay/street_physics/BodyGetUp3D.gd",
+        "gameplay/street_physics/BodyFlight3D.gd",
+        "tools/retarget_mixamo_vehicle_clips.gd",
+        "assets/dante/mixamo/npc_vehicle.res",
+        "tests/test_body_getup_mocap.gd"
+      ],
+      "next": "Ver no jogo um atropelamento e um roubo; o clipe de costas machucado tem ~8 s."
+    },
+    {
+      "id": "mocap-roubo-carro-20261028",
+      "title": "Roubo de carro: puxão pela gola, queda no chão de verdade, levantar",
+      "status": "review",
+      "area": "animation",
+      "description": "Na porta do motorista do carro baixo: Dante anda até a porta e abre ('Entering Car'), agarra e arranca o motorista ('Pull Pilot From Seat' espelhado) enquanto a vítima toca o par dela ('Pulled From Seat' espelhado, 2,5 s atrás), que vira ragdoll já no ar fora da porta com a velocidade do clipe; Dante senta, fecha a porta e pega o volante. Moto e corpo sem juntas seguem o puxão antigo, mas o arremesso agora é ragdoll de empurrão (tropeça e cai) em vez da tábua girando. GETECO_MOCAP_CARJACK=0 volta ao puxão antigo.",
+      "sources": [
+        "gameplay/VehicleCarjacking.gd",
+        "gameplay/VehicleBoardingPresentation.gd",
+        "gameplay/street_physics/BodyRagdoll3D.gd",
+        "tests/capture/capture_vehicle_mocap.gd"
+      ],
+      "next": "A vítima sentada agora fica com a pelve no banco medido do interior (antes ficava 0,38 m acima da âncora e o chapéu saía pelo teto); conferir em outros modelos de carro baixo."
+    },
+    {
+      "id": "mocap-entrar-sair-carro-20261028",
+      "title": "Entrar e sair do carro com mocap: maçaneta, passo para trás, perna, porta",
+      "status": "review",
+      "area": "animation",
+      "description": "Antes o corpo deslizava em linha reta até o banco e a porta abria/fechava sozinha. Agora, na porta esquerda do carro baixo, VehicleBoardingMocap toca 'Entering Car' (mão na maçaneta, passo para trás enquanto a folha abre, perna direita, senta, recolhe a esquerda, fecha a porta com a mão, volante) e 'Exiting Car' (abre, pé no chão, levanta, sai, vira e empurra a porta). O alinhamento é medido no jogo: pelve do clipe sobre o banco, mão sobre a maçaneta desta porta. A folha não abre mais por tempo: segue a mão (puxar a maçaneta, empurrar de dentro, fechar) e nunca atravessa o corpo (relato do usuário: o vidro atravessava o Dante). O recuo de quem está no arco da folha é planejado uma vez nas poses do clipe (um recuo reativo tirava o corpo ~1 m do banco); com a porta aberta o tronco fica no vão e a cabeça a 22 cm da coluna da dobradiça; cruzando o vão o corpo se curva (e, sentado, encolhe como o motorista no banco) para a cabeça passar sob o teto. test_vehicle_doors passou a medir o caminho mocap pelo tronco e pelo ângulo real da folha. Picape, caminhão, ônibus, porta direita e saída sem espaço seguem o embarque antigo. GETECO_MOCAP_BOARDING=0 desliga.",
+      "sources": [
+        "gameplay/VehicleBoardingMocap.gd",
+        "gameplay/VehicleBoardingPresentation.gd",
+        "scripts/Actor.gd"
+      ],
+      "next": "Rodar tests/test_seated_driver_flow.gd e test_vehicle_doors.gd; ajustar marcos se a mão não cair na maçaneta em algum modelo."
+    },
+    {
+      "id": "volante-moto-20261028",
+      "title": "Volante gira com a direção; tronco e cabeça reagem à curva; pé no chão na moto parada",
+      "status": "review",
+      "area": "animation",
+      "description": "O volante virou malha própria e gira ~110° no batente; as mãos acompanham o aro; o tronco vai para fora da curva pela aceleração lateral e a cabeça olha para dentro dela. Na moto, abaixo de ~2 m/s o pé esquerdo desce ao chão e volta à pedaleira ao sair. GETECO_DRIVER_STEER=0 e GETECO_BIKE_FOOT=0 desligam.",
+      "sources": [
+        "gameplay/VehicleInterior.gd",
+        "scripts/Actor.gd",
+        "scripts/Driving.gd"
+      ],
+      "next": "Medir em release o custo do IK por tique ao dirigir (só o jogador)."
+    }
+  ]
+}

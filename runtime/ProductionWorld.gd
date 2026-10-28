@@ -936,6 +936,8 @@ func _hold_fleet_scenes_incremental() -> void:
 	preload("res://runtime/VehicleUsage.gd").prewarm()
 	# A 1ª morte fazia load() síncrono da biblioteca Mixamo (auditoria de 19/10, §5).
 	preload("res://gameplay/MixamoDeath.gd").prewarm()
+	# Mesma regra para o levantar do chão (atropelado, tirado do carro): nada de load() no 1º tombo.
+	preload("res://gameplay/street_physics/BodyGetUp3D.gd").prewarm()
 	var ids: Array = TRAFFIC_CAR_TYPES + TRAFFIC_MOTORCYCLE_TYPES + ["police_cruiser", "medic_box", "rescue_pumper", "station_wagon"]
 	ids.append(str(starting_vehicle().get("archetype", "sport_coupe")))
 	for record in state.world_state.get("garage_rewards", {}).get("vehicles", {}).values():

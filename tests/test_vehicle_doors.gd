@@ -16,6 +16,8 @@ const BUILDER := preload("res://gameplay/VehicleDoorBuilder.gd")
 
 ## Raio do corpo (cápsula do Dante) e folga aceitável junto da folha e do casco.
 const BODY_RADIUS := .27
+## Mocap: centro dos ossos do tronco contra a folha (o raio do corpo em volta do osso é ~.15 m).
+const MOCAP_TORSO_CLEARANCE := .12
 const SAMPLES := 90
 const HEAD_TOP := .26
 ## Conversíveis: não há teto para a cabeça atravessar.
@@ -171,7 +173,8 @@ func test_vehicle(id: String) -> void:
 					min_hand = minf(min_hand, result.hand)
 					finish_error = maxf(finish_error, result.finish)
 					var label := "%s%s lado %d de %s yaw %.1f" % [tag, "saída" if exiting else "entrada", side, start_kind, yaw]
-					check(result.leaf >= BODY_RADIUS, label + ": corpo a %.2f m da folha (mínimo %.2f)" % [result.leaf, BODY_RADIUS])
+					var leaf_needed: float = MOCAP_TORSO_CLEARANCE if result.mocap else BODY_RADIUS
+					check(result.leaf >= leaf_needed, label + ": corpo a %.2f m da folha (mínimo %.2f)" % [result.leaf, leaf_needed])
 					check(int(result.plane) == 0, label + ": %d quadros cruzando a lataria fora do vão" % result.plane)
 					check(int(result.hull) == 0, label + ": %d quadros dentro do casco na aproximação" % result.hull)
 					check(int(result.head) == 0, label + ": cabeça atravessa o teto em %d quadros (até %.2f m acima do vão)" % [result.head, result.head_over])
@@ -205,6 +208,9 @@ func run_boarding(car: CharacterBody3D, side: int, start: Vector3, exiting: bool
 	else: transition.begin_entry(stage, car, actor, side)
 	if is_instance_valid(transition._motion): transition._motion.kill()
 	transition.set_process(false)
+	# Mocap (VehicleBoardingMocap, porta do motorista de carro baixo): a folha segue a mão e o corpo,
+	# então mede-se o ângulo real dela contra o tronco; a saída anda de 0 a 1 e termina onde o clipe pousa.
+	var mocap: bool = transition._mocap != null
 	var leaf_min := INF
 	var plane_hits := 0
 	var hull_hits := 0
@@ -224,7 +230,7 @@ func run_boarding(car: CharacterBody3D, side: int, start: Vector3, exiting: bool
 	var door_start := 0.0 if exiting else -1.0
 	for step in range(SAMPLES + 1):
 		var t := float(step) / SAMPLES
-		transition.progress = 1.0 - t if exiting else t
+		transition.progress = 1.0 - t if exiting and not mocap else t
 		transition._apply()
 		if door_start < 0.0 and transition._door_started: door_start = t
 		await process_frame
@@ -237,13 +243,24 @@ func run_boarding(car: CharacterBody3D, side: int, start: Vector3, exiting: bool
 		var opened := float(side) * angle * (.5 - .5 * cos(PI * clampf(elapsed / .28, 0.0, 1.0))) if elapsed >= 0.0 else 0.0
 		var tip := hinge + Vector2(sin(absf(opened)) * float(side), cos(opened)) * length
 		var leaf_distance := distance_to_segment(point, hinge, tip)
+		if mocap:
+			leaf_distance = mocap_leaf_distance(car, side, layout)
+			var hips_local: Vector3 = car.to_local(actor.skeleton.to_global(actor.skeleton.get_bone_global_pose(actor.hips).origin))
+			point = Vector2(hips_local.x, hips_local.z)
+			local = Vector3(hips_local.x, 0.0, hips_local.z)
+		if mocap and leaf_distance < MOCAP_TORSO_CLEARANCE and "verbose" in OS.get_cmdline_user_args():
+			var parts := []
+			for bone_name in ["Hips", "Spine02", "Head"]:
+				var bp: Vector3 = car.to_local(actor.skeleton.to_global(actor.skeleton.get_bone_global_pose(actor._combat_bones[bone_name]).origin))
+				parts.append("%s(%.2f,%.2f,%.2f)=%.2f" % [bone_name, bp.x, bp.y, bp.z, distance_to_segment(Vector2(bp.x, bp.z), hinge, leaf_tip(car, side, layout))])
+			print("   DEBUG mocap ", "exit" if exiting else "entry", " t=%.2f phase=%s dist=%.2f door=%.2f " % [t, transition.phase, leaf_distance, car.door_presentation.current_angle(side)], " ".join(parts), " hinge=", hinge, " len=", layout.length)
 		if leaf_distance < leaf_min and leaf_distance < BODY_RADIUS and "verbose" in OS.get_cmdline_user_args():
 			print("   DEBUG ", "exit" if exiting else "entry", " side ", side, " t=%.2f phase=%s dist=%.2f opened=%.2f local=%s door_start=%.2f approach=%.2f" % [t, transition.phase, leaf_distance, opened, point.snappedf(.01), door_start, transition._approach])
 		leaf_min = minf(leaf_min, leaf_distance)
 		# Cruzar o plano da lataria só pelo vão da porta.
 		if absf(local.x) < skin + .12 and (local.z < float(spec.zf) + .10 or local.z > float(spec.zr) + .02) and absf(local.x) > skin - .55:
 			# Dentro do casco fora do vão só vale a partir do banco: ali o corpo está sentado.
-			if car.to_local(actor.global_position).distance_to(car.to_local(car.driver_seat_anchor())) > .9: plane_hits += 1
+			if local.distance_to(car.to_local(car.driver_seat_anchor())) > .9: plane_hits += 1
 		if transition.phase == "approach":
 			if absf(local.x) < car.half_width + .05 and absf(local.z) < car.half_length + .05: hull_hits += 1
 		# Cabeça dentro do casco: o topo dela (a junta mais uns 13 cm) não passa do teto do vão.
@@ -251,14 +268,21 @@ func run_boarding(car: CharacterBody3D, side: int, start: Vector3, exiting: bool
 			var head: Vector3 = car.to_local(actor.skeleton.to_global(actor.skeleton.get_bone_global_pose(head_bone).origin))
 			var roof: float = float(spec.top) * car.visual.scale.y
 			head_max = maxf(head_max, head.y + HEAD_TOP - roof)
-			if head.y + HEAD_TOP > roof + .02: head_hits += 1
-		if transition.phase in ["reach", "step"]:
+			if head.y + HEAD_TOP > roof + .02:
+				head_hits += 1
+				if mocap and "verbose" in OS.get_cmdline_user_args():
+					print("   DEBUG head ", "exit" if exiting else "entry", " t=%.2f phase=%s over=%.3f head=%s hips=%s" % [t, transition.phase, head.y + HEAD_TOP - roof, head.snappedf(.01), local.snappedf(.01)])
+		if transition.phase in ["reach", "step"] or (mocap and transition.phase in ["open", "closing"]):
 			var hand: Vector3 = actor.skeleton.to_global(actor.skeleton.get_bone_global_pose(gripping_hand).origin)
 			var grip: Vector3 = car.to_global(layout.grip)
 			var distance := hand.distance_to(Vector3(grip.x, hand.y, grip.z))
+			if mocap:
+				# A mão do clipe pega a maçaneta da folha (abrir, fechar), não o batente.
+				var hand_local: Vector3 = car.to_local(actor.skeleton.to_global(actor.skeleton.get_bone_global_pose(actor._combat_bones["LeftHand"]).origin))
+				distance = distance_to_segment(Vector2(hand_local.x, hand_local.z), hinge, leaf_tip(car, side, layout))
 			hand_min = minf(hand_min, distance)
 			if distance <= .32: grip_frames += 1
-	if exiting:
+	if exiting and not mocap:
 		# Porta fechando com o corpo parado no destino: nada pode estar no arco.
 		var landing_local: Vector3 = car.to_local(start)
 		for close_step in range(0, 21):
@@ -270,10 +294,44 @@ func run_boarding(car: CharacterBody3D, side: int, start: Vector3, exiting: bool
 	if exiting:
 		# Terminada a saída, o corpo está no destino pedido.
 		final_error = Vector2(actor.global_position.x - start.x, actor.global_position.z - start.z).length()
+	if mocap:
+		# Mocap: o Actor fica parado na origem do clipe e o quadril anda; a entrada termina com a pelve no
+		# banco e a saída com a pelve no pouso que o próprio clipe escolheu (conferido livre ao começar).
+		var pelvis: Vector3 = preload("res://gameplay/VehicleInterior.gd").pelvis_world(actor)
+		if exiting:
+			# Saída: não há destino pedido; o corpo tem que terminar fora do arco que a folha varre ao
+			# fechar (senão a porta bate nele). Erro = quanto falta para sair do arco.
+			var local_pelvis: Vector3 = car.to_local(pelvis)
+			var offset := Vector2(float(side) * (local_pelvis.x - float(layout.hinge.x)), local_pelvis.z - float(layout.hinge.z))
+			var opened: float = car.door_presentation.current_angle(side)
+			var at := atan2(offset.x, offset.y)
+			# Porta já fechada pela mão do clipe: o fechamento foi medido quadro a quadro (folha × tronco).
+			var in_sweep := opened > .01 and at >= -.1 and at <= opened + .2
+			final_error = maxf(0.0, float(layout.length) + MOCAP_TORSO_CLEARANCE - offset.length()) if in_sweep else 0.0
+		else:
+			var goal: Vector3 = preload("res://gameplay/VehicleBoardingMocap.gd").seat_pelvis(car)
+			final_error = Vector2(pelvis.x - goal.x, pelvis.z - goal.z).length()
 	transition.abort("test_done")
 	await process_frame
 	car.animate_driver_door(side, false, 0.0)
-	return {"head": head_hits, "head_over": head_max, "leaf": leaf_min, "plane": plane_hits, "hull": hull_hits, "hand": hand_min, "finish": final_error, "grip_frames": grip_frames}
+	return {"head": head_hits, "head_over": head_max, "leaf": leaf_min, "plane": plane_hits, "hull": hull_hits, "hand": hand_min, "finish": final_error, "grip_frames": grip_frames, "mocap": mocap}
+
+## Ponta da folha no ângulo em que ela está agora (plano do veículo).
+static func leaf_tip(car: CharacterBody3D, side: int, layout: Dictionary) -> Vector2:
+	var opened: float = car.door_presentation.current_angle(side)
+	return Vector2(layout.hinge.x, layout.hinge.z) + Vector2(sin(opened) * float(side), cos(opened)) * float(layout.length)
+
+## Menor distância do tronco (quadril, peito, cabeça) à folha no ângulo real dela; só pontos na altura
+## da folha (pé e corpo deitado passam por baixo dela).
+func mocap_leaf_distance(car: CharacterBody3D, side: int, layout: Dictionary) -> float:
+	var hinge := Vector2(layout.hinge.x, layout.hinge.z)
+	var tip := leaf_tip(car, side, layout)
+	var nearest := INF
+	for bone_name in ["Hips", "Spine02", "Head"]:
+		var point: Vector3 = car.to_local(actor.skeleton.to_global(actor.skeleton.get_bone_global_pose(actor._combat_bones[bone_name]).origin))
+		if point.y < .28: continue
+		nearest = minf(nearest, distance_to_segment(Vector2(point.x, point.z), hinge, tip))
+	return nearest
 
 static func distance_to_segment(point: Vector2, a: Vector2, b: Vector2) -> float:
 	var ab := b - a

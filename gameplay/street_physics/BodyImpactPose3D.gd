@@ -43,6 +43,11 @@ func apply(age: float, grounded: bool, recovery := 0.0) -> void:
 		var to_rotation := Quaternion.from_euler(rotation)
 		node.basis = Basis(from_rotation.slerp(to_rotation,weight)) * Basis.from_scale(initial.basis.get_scale())
 
+## A pose atual vira a de restauração (o levantar com mocap termina de pé e não volta à pose de antes).
+func keep_current() -> void:
+	for pose in joints:
+		if is_instance_valid(pose.node): pose.initial = pose.node.transform
+
 func restore() -> void:
 	for pose in joints:
 		if is_instance_valid(pose.node): pose.node.transform = pose.initial

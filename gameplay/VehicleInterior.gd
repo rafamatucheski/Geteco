@@ -367,6 +367,15 @@ static func attach(vehicle: Node3D) -> void:
 		# O visual pode vir escalado por variante; o interior é medido em coordenadas do veículo.
 		node.scale = Vector3.ONE / visual.scale
 		visual.add_child(node)
+		var id := str(vehicle.get("archetype"))
+		if _wheel_meshes.has(id):
+			var wheel := MeshInstance3D.new()
+			wheel.name = "SteeringWheel"
+			wheel.mesh = _wheel_meshes[id]
+			wheel.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			wheel.transform = _wheel_frames[id]
+			wheel.set_meta("frame", _wheel_frames[id])
+			node.add_child(wheel)
 		if str(vehicle.get("archetype")) == "port_forklift": _hide_forklift_console(visual)
 	open_view(vehicle)
 
@@ -660,6 +669,15 @@ static func _interior_material() -> StandardMaterial3D:
 	return _material
 
 static var _alpha_tool: SurfaceTool
+## Volante em malha própria (ver `_steering_wheel`): ferramenta durante `mesh_for`, malha e quadro do cubo
+## (no espaço do interior) por arquétipo.
+static var _wheel_tool: SurfaceTool
+static var _wheel_frame := Transform3D.IDENTITY
+static var _wheel_meshes: Dictionary = {}
+static var _wheel_frames: Dictionary = {}
+## Giro do volante com a direção no batente (±0,48 rad nas rodas): ~110°, como em jogo de carro; mais que
+## isso as mãos cruzariam sem o gesto de trocar a pegada.
+const WHEEL_TURN := 1.9
 static var _alpha_material: StandardMaterial3D
 
 static func _interior_alpha_material() -> StandardMaterial3D:
@@ -685,6 +703,11 @@ static func mesh_for(id: String, s: Dictionary) -> ArrayMesh:
 	_alpha_tool = SurfaceTool.new()
 	_alpha_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
 	_alpha_tool.set_smooth_group(-1)
+	_wheel_tool = SurfaceTool.new()
+	_wheel_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+	_wheel_tool.set_smooth_group(-1)
+	_wheel_frame = Transform3D.IDENTITY
+	var wheel_tool := _wheel_tool
 	match str(s.kind):
 		"forklift": _forklift(t, s)
 		"buggy": _buggy(t, s)
@@ -699,6 +722,14 @@ static func mesh_for(id: String, s: Dictionary) -> ArrayMesh:
 		if mesh.get_surface_count() > 1:
 			mesh.surface_set_material(1, _interior_alpha_material())
 	_alpha_tool = null
+	_wheel_tool = null
+	if _wheel_frame != Transform3D.IDENTITY:
+		wheel_tool.generate_normals()
+		var wheel := wheel_tool.commit()
+		if wheel.get_surface_count() > 0:
+			wheel.surface_set_material(0, _interior_material())
+			_wheel_meshes[id] = wheel
+			_wheel_frames[id] = _wheel_frame
 	_meshes[id] = mesh
 	return mesh
 
@@ -782,9 +813,50 @@ static func follow(actor: CharacterBody3D, vehicle: Node3D, delta: float) -> voi
 	if lift != null: frame = frame * lift.body_transform()
 	actor.global_transform = frame
 	actor.visual.position = origin
+	if steering_enabled and not state.has("from_pose"): _steer_pose(actor, vehicle, state, delta)
+
+## Volante girando, mãos no aro, tronco jogado para fora da curva e cabeça olhando para dentro dela.
+## GETECO_DRIVER_STEER=0 volta ao motorista parado (pose resolvida uma vez em `seat_driver`).
+static var steering_enabled := OS.get_environment("GETECO_DRIVER_STEER") != "0"
+
+## Um tique: gira o volante e, se a direção ou a inclinação mudaram o bastante, refaz a pose (base
+## reclinada → inclinação do tronco → pernas e braços por IK → cabeça), ~0,1 ms só para o jogador.
+static func _steer_pose(actor: CharacterBody3D, vehicle: Node3D, state: Dictionary, delta: float) -> void:
+	var s := spec(vehicle)
+	if s.is_empty() or delta <= 0.0: return
+	var steer := clampf(float(vehicle.get("steering")) / .48, -1.0, 1.0)
+	var wheel: Node3D = state.get("wheel")
+	if not is_instance_valid(wheel):
+		var visual: Node3D = vehicle.get("visual")
+		wheel = visual.get_node_or_null("Interior/SteeringWheel") if visual != null else null
+		state["wheel"] = wheel
+	# Sem volante próprio (ônibus) as mãos ficam onde a malha única desenhou o aro.
+	var angle := steer * WHEEL_TURN if is_instance_valid(wheel) else 0.0
+	if is_instance_valid(wheel): wheel.transform = (wheel.get_meta("frame") as Transform3D) * Transform3D(Basis(Vector3.BACK, angle), Vector3.ZERO)
+	# Aceleração lateral = velocidade × giro da carroceria: o tronco vai para fora da curva (inércia).
+	var yaw := vehicle.global_rotation.y
+	var rate := angle_difference(float(state.get("yaw", yaw)), yaw) / delta
+	state["yaw"] = yaw
+	var lateral := float(vehicle.get("speed")) * rate
+	var lean := lerpf(float(state.get("lean", 0.0)), clampf(lateral * .012, -.14, .14), 1.0 - exp(-5.0 * delta))
+	state["lean"] = lean
+	# Olha para dentro da curva antes de girar o volante todo, e um pouco pela velocidade de giro.
+	var look := lerpf(float(state.get("look", 0.0)), clampf(steer * .38 + rate * .12, -.5, .5), 1.0 - exp(-4.0 * delta))
+	state["look"] = look
+	if absf(angle - float(state.get("posed_angle", 99.0))) < .015 and absf(lean - float(state.get("posed_lean", 99.0))) < .005 \
+		and absf(look - float(state.get("posed_look", 99.0))) < .01: return
+	state["posed_angle"] = angle
+	state["posed_lean"] = lean
+	state["posed_look"] = look
+	actor.pose_seated_base(float(s.rec))
+	actor.pose_driver_lean(lean)
+	var targets := _limb_targets(s, angle)
+	actor.pose_seated_limbs(targets.feet, targets.hands)
+	actor.pose_driver_look(look)
 
 ## Alvos de pé e mão no espaço do Actor, que coincide com o do veículo (mesma origem e base).
-static func _limb_targets(s: Dictionary) -> Dictionary:
+## `wheel_angle`: giro do volante (rad, anti-horário visto pelo motorista); as mãos andam com o aro.
+static func _limb_targets(s: Dictionary, wheel_angle := 0.0) -> Dictionary:
 	var feet := {}
 	var hands := {}
 	var sx := float(s.sx)
@@ -804,7 +876,7 @@ static func _limb_targets(s: Dictionary) -> Dictionary:
 	var r := float(s.r)
 	var grip := deg_to_rad(float(s.grip))
 	for side in ["Left", "Right"]:
-		var angle := grip if side == "Left" else PI - grip
+		var angle := (grip if side == "Left" else PI - grip) + wheel_angle
 		var radial := u * cos(angle) + v * sin(angle)
 		var tangent := -u * sin(angle) + v * cos(angle)
 		# Y ao longo do aro, apontando para fora do corpo (mesma convenção do guidão); Z volta ao motorista.
@@ -864,20 +936,27 @@ static func _tube(t: SurfaceTool, from: Vector3, to: Vector3, radius: float, col
 static func _wheel_basis(tilt: float) -> Basis:
 	return Basis(Vector3.RIGHT, Vector3(0, cos(tilt), -sin(tilt)), Vector3(0, sin(tilt), cos(tilt)))
 
+## O aro, o miolo e os raios vão para uma malha própria (`_wheel_tool`, em volta do cubo e no plano do
+## volante) que gira com a direção (`_steer_pose`); a coluna fica no interior. Antes o volante era parte da
+## malha única e ficava parado com as mãos presas nele enquanto as rodas viravam.
 static func _steering_wheel(t: SurfaceTool, hub: Vector3, radius: float, tilt: float, rim: Color, column_to: Vector3) -> void:
 	var b := _wheel_basis(tilt)
+	var w := _wheel_tool if _wheel_tool != null else t
+	var center := Vector3.ZERO if _wheel_tool != null else hub
+	var frame := Basis.IDENTITY if _wheel_tool != null else b
+	if _wheel_tool != null: _wheel_frame = Transform3D(b, hub)
 	var segments := 14
 	var arc := TAU * radius / segments * 1.12
 	var thickness := .036 if radius < .22 else .046
 	for i in segments:
 		var a := TAU * (i + .5) / segments
-		var local_basis := b * Basis(Vector3.BACK, a)
-		_box(t, hub + b * Vector3(cos(a), sin(a), 0) * radius, Vector3(thickness, arc, thickness), rim, local_basis)
+		var local_basis := frame * Basis(Vector3.BACK, a)
+		_box(w, center + frame * Vector3(cos(a), sin(a), 0) * radius, Vector3(thickness, arc, thickness), rim, local_basis)
 	# Miolo e três raios (T): esquerdo, direito e inferior.
-	_box(t, hub, Vector3(radius * .5, radius * .5, .05), C_TRIM, b)
-	_box(t, hub + b * Vector3(0, 0, .032), Vector3(radius * .26, radius * .26, .02), C_CHROME, b)
+	_box(w, center, Vector3(radius * .5, radius * .5, .05), C_TRIM, frame)
+	_box(w, center + frame * Vector3(0, 0, .032), Vector3(radius * .26, radius * .26, .02), C_CHROME, frame)
 	for a in [0.0, PI, PI * 1.5]:
-		_box(t, hub + b * Vector3(cos(a), sin(a), 0) * radius * .5, Vector3(radius * .9, .04, .03), C_TRIM, b * Basis(Vector3.BACK, a))
+		_box(w, center + frame * Vector3(cos(a), sin(a), 0) * radius * .5, Vector3(radius * .9, .04, .03), C_TRIM, frame * Basis(Vector3.BACK, a))
 	_tube(t, hub - b.z * .04, column_to, .034, C_TRIM, 6)
 
 ## Banco com encosto inclinado, apoio de cabeça e laterais.
