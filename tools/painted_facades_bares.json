@@ -1,0 +1,8 @@
+{
+	"bar-lastro": {"module_w": 13.4, "side_w": 12.0, "margin": 0.004,
+		"front": [{"rect": [0.432, 0.418, 0.568, 0.985], "leaf": true}],
+		"back": [{"rect": [0.462, 0.315, 0.565, 0.92], "leaf": true}]},
+	"bar-sede": {"module_w": 12.0, "side_w": 12.0, "margin": 0.004,
+		"front": [{"rect": [0.418, 0.42, 0.582, 0.985], "leaf": true}],
+		"back": [{"rect": [0.451, 0.29, 0.551, 0.92], "leaf": true}]}
+}

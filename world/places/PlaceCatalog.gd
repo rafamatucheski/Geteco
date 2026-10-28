@@ -156,6 +156,7 @@ static func definitions(include_deleted := false) -> Array[Dictionary]:
 		result.append(preload("res://world/places/curitiba_cellar/CuritibaCellarPlace.gd").definition_data())
 	if not Engine.get_meta("arcade_baseline",false):
 		result.append(preload("res://world/places/arcade/ArcadePlace.gd").definition_data())
+	result.append_array(preload("res://world/places/bars/BarCatalog.gd").definitions())
 	result.append(preload("res://world/places/cobra_house/CobraLeaderHouse.gd").definition_data())
 	result.append_array(preload("res://world/desert/DesertLayout.gd").place_definitions())
 	result.append_array(preload("res://world/desert/underground/DesertUnderground.gd").definitions())
@@ -174,6 +175,10 @@ static func get_definition(id: String) -> Dictionary:
 static func create_place(id: String) -> Node3D:
 	var definition := get_definition(id)
 	if definition.is_empty() or definition.get("editor_deleted",false): return null
+	if id in preload("res://world/places/bars/BarCatalog.gd").IDS:
+		var bar = preload("res://world/places/bars/BarPlace.gd").new()
+		bar.definition = definition
+		return bar
 	if id == "desert_under_culvert":
 		var culvert = preload("res://world/desert/underground/DesertCulvertPlace.gd").new()
 		culvert.definition = definition

@@ -1,0 +1,26 @@
+{
+  "foreign": true,
+  "processes": [
+    {
+      "ProcessId": 198856,
+      "ParentProcessId": 178864,
+      "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64_console.exe\" --path \"D:\\geteco\\game\" --script res://tests/measure/measure_bars.gd -- --bar=harbor_bar --measure-bars --isolated-save-root=\"D:\\geteco\\game\\artifacts\\bars-20261027/saves\" --bars-before"
+    },
+    {
+      "ProcessId": 198512,
+      "ParentProcessId": 198856,
+      "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --path \"D:\\geteco\\game\" --script res://tests/measure/measure_bars.gd -- --bar=harbor_bar --measure-bars --isolated-save-root=\"D:\\geteco\\game\\artifacts\\bars-20261027/saves\" --bars-before"
+    },
+    {
+      "ProcessId": 200212,
+      "ParentProcessId": 198360,
+      "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64_console.exe\" --headless --path . --script res://tests/test_session_cleanup_registry.gd -- --isolated-save-root=C:/Users/rafae/AppData/Local/Temp/geteco-core-amqq4g"
+    },
+    {
+      "ProcessId": 190956,
+      "ParentProcessId": 200212,
+      "CommandLine": "\"D:\\Downloads Chrome\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64\\Godot_v4.7.2-stable_mono_win64.exe\" --headless --path . --script res://tests/test_session_cleanup_registry.gd -- --isolated-save-root=C:/Users/rafae/AppData/Local/Temp/geteco-core-amqq4g"
+    }
+  ],
+  "utc": "2026-10-27T19:52:34.2512276Z"
+}

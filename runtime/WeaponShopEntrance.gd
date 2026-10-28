@@ -9,7 +9,7 @@ const IDS := ["harbor_supermarket", "harbor_ammunation", "mountain_gunshop", "ha
 	# Umbra (parque): porta dupla de empurrar; antes só a ação "Entrar" e a porta não abria.
 	"harbor_haunted_house",
 	# Fagulha e Curitiba Cellar: folhas de correr que ninguém abria (só a ação silenciosa "Entrar").
-	"harbor_arcade", "harbor_curitiba_cellar"]
+	"harbor_arcade", "harbor_curitiba_cellar", "harbor_bar", "desert_bar"]
 const CAMERA_SECONDS := 0.55
 const POLICE_DOOR_Z := 250.0 / 32.0 + 0.35
 ## Porta de vidro 0,72 m recuada das lojas 3D da North Frontage (UrbanLandmarkFrontage3D
@@ -357,7 +357,7 @@ func _half_width(id: String) -> float:
 		"harbor_bank": return _painted_half_width(id, PaintedBankBranch.opening_half_width(_bank_footprint().x)) if _painted(id) else .48
 		"harbor_clothing", "harbor_fuel": return .48
 		"cobra_leader_house": return .23
-		"harbor_haunted_house", "harbor_arcade", "harbor_curitiba_cellar": return .9
+		"harbor_haunted_house", "harbor_arcade", "harbor_curitiba_cellar", "harbor_bar", "desert_bar": return .9
 	return .62
 
 ## Até onde, para o lado, empurrar e atravessar valem: o vão pintado na pegada que o
@@ -411,6 +411,7 @@ func _original_door_position(id: String, definition: Dictionary) -> Vector3:
 	# Plano da fachada da Umbra (ParkLume._house): folhas da UmbraDoor.
 	if id == "harbor_haunted_house": return definition.exterior_position + Vector3(0,0,7.5)
 	# Plano das folhas de correr (ArcadeFacade / CuritibaCellarFacade).
+	if id in ["harbor_bar", "desert_bar"]: return definition.exterior_position + Vector3(0,0,5.88)
 	if id == "harbor_arcade": return definition.exterior_position + Vector3(0,0,4.91)
 	if id == "harbor_curitiba_cellar": return definition.exterior_position + Vector3(0,0,5.39)
 	var family := PLACES.walkup_family(id)

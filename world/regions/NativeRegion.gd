@@ -344,6 +344,11 @@ func _prepare() -> void:
 			var arcade_building := {"id":"Fagulha","position":arcade.exterior_position,"size":arcade.size,"height":3.9,"name":"Fagulha","kind":"shop"}
 			buildings.append(arcade_building)
 			_record(arcade.exterior_position,{"kind":"building","data":arcade_building})
+		if not Engine.get_meta("bars_baseline",false):
+			var bar := preload("res://world/places/bars/BarCatalog.gd").definition("harbor_bar")
+			var bar_building := {"id":"LastroBar","position":bar.exterior_position,"size":bar.size,"height":3.9,"name":"Lastro","kind":"shop"}
+			buildings.append(bar_building)
+			_record(bar.exterior_position,{"kind":"building","data":bar_building})
 		_record(CATALOG._at(Vector2(-750,550),region_id),{"kind":"salvage","position":CATALOG._at(Vector2(-750,550),region_id)})
 		_record(CATALOG._at(Vector2(-750,550),region_id),{"kind":"harbor_dressing","zone_id":"salvage","position":CATALOG._at(Vector2(-750,550),region_id)})
 		_record(CATALOG._at(Vector2(7700,1700),region_id),{"kind":"harbor_dressing","zone_id":"cobra","position":CATALOG._at(Vector2(7700,1700),region_id)})
@@ -1798,6 +1803,12 @@ func _authored_surface(chunk: Node3D, polygon: PackedVector2Array, woodland := f
 		if exposed == null: mesh.visible = false
 		else: mesh.mesh = exposed
 func _building(chunk: Node3D, data: Dictionary) -> void:
+	if data.id == "LastroBar":
+		var bar := preload("res://world/places/bars/HarborBarFacade.gd").new()
+		bar.add_to_group("exterior_reveal_building")
+		bar.position = data.position
+		chunk.add_child(bar)
+		return
 	if data.id == "Fagulha":
 		var arcade := preload("res://world/places/arcade/ArcadeFacade.gd").new()
 		arcade.add_to_group("exterior_reveal_building")

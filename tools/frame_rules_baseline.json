@@ -49,6 +49,8 @@
     "world/places/SewerModel.gd": 1,
     "world/places/amusement_park/ParkGeometry.gd": 1,
     "world/places/arcade/ArcadeInterior.gd": 1,
+    "world/places/bars/DesertBarModel.gd": 1,
+    "world/places/bars/HarborBarModel.gd": 1,
     "world/places/classic_meet/ClassicMeetSite.gd": 1,
     "world/places/coastal_lookout/LighthouseGeometry.gd": 1,
     "world/places/cobra_house/CobraLeaderHouse.gd": 1,

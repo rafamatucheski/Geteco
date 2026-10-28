@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-28",
+  "period": "27 e 28 de outubro de 2026",
+  "scope": "Dois bares novos com dardos, bilhar, clientes e música (Codex, 27/10); revisão e consertos, prompt e importação das pinturas do Codex (Claude, 28/10).",
+  "cards": [
+    {
+      "id": "bares-lastro-sede-20261028",
+      "title": "Bares Lastro (Harbor) e Sede (deserto): dardos, bilhar, clientes e pinturas",
+      "status": "partial",
+      "area": "lugares",
+      "description": "Lastro em Harbor (3,0,52) e Sede no deserto (-420,0,-583): sala de 16 x 12 m, quatro clientes por bar, música da sala (porto_groove no Lastro, digo_blues no Sede), dardos (nove lançamentos) e bilhar (seis bolas, dez tacadas), sem apostas. Revisão de 28/10: clientes do Sede viravam de costas para o balcão; os dois bares tinham as mesmas quatro pessoas (agora Tião, Cida, Bento e Nara no Sede, outro corpo, pele, boné); quem fica atrás do balcão passa pano; os do balcão conversam com gesto da mão livre; alvo do Lastro de 1,12 m virou 45 cm e a linha de lançamento estava girada 90° (agora a 2,37 m); placa do Sede na beira da varanda; bilhar com falta de 50 pontos, triângulo encostado, mira fina, linha até a primeira bola e taco desenhado. Pinturas do Codex (50 PNGs): fachadas pelo PaintedFacadeKit (Lastro 13,4 x 4,57 m, Sede 12 x 4,40 m, porta dupla aberta pela WeaponShopEntrance), piso, paredes, balcão, estante, quadros, neon, alvo e feltro no interior, mesa, bolas, taco e dardos na tela dos jogos. Verificado sem janela: test_bar_games, test_bar_interiors 143/143, test_bar_exterior_clearance 390/390 e montagem das fachadas, interiores e telas. Não verificado: entrar pela porta pintada no jogo, ver os clientes e os quadros na câmera, ouvir a música, desempenho em release, estabilidade das cinco luzes novas.",
+      "next": "Abrir o jogo, entrar nos dois bares pela porta e jogar as duas partidas; medir no export release (tests/measure/measure_bars.gd --measure-bars); se quiser, pedir ao Codex as imagens apontadas na revisão dele (emendas, faixa de chão nos fundos, reflexo da porta, caixilhos do Sede).",
+      "files": [
+        "world/places/bars/",
+        "docs/bars-20261027.md",
+        "docs/prompts/bares-gpt-20261028.md",
+        "tools/build_bar_textures.py",
+        "tools/painted_facades_bares.json",
+        "tests/test_bar_games.gd",
+        "tests/test_bar_interiors.gd"
+      ]
+    }
+  ]
+}

@@ -1750,6 +1750,9 @@ func _clear_service_npcs() -> void:
 func nearest() -> Dictionary:
 	if upside_world != null and upside_world.busy(): return {}
 	if rescue_pending or arrest_pending or world.gameplay.health <= 0: return {}
+	if is_instance_valid(room) and room.has_method("start_game") and room.has_method("nearest_action"):
+		var bar_action: Dictionary = room.nearest_action(self)
+		if not bar_action.is_empty(): return bar_action
 	if arcade != null:
 		var arcade_action: Dictionary = arcade.nearest_action()
 		if not arcade_action.is_empty(): return arcade_action
@@ -1810,7 +1813,7 @@ func nearest() -> Dictionary:
 		var jessica_action: Dictionary = jessica.nearest_action()
 		if not jessica_action.is_empty(): return jessica_action
 	var arrival_action: Dictionary = arrival.nearest_action()
-	if is_instance_valid(room) and room.has_method("nearest_action"):
+	if is_instance_valid(room) and room.has_method("nearest_action") and not room.has_method("start_game"):
 		var rooftop_action: Dictionary = building_entrance.nearest_action() if building_entrance != null else {}
 		if not rooftop_action.is_empty(): return rooftop_action
 		var room_action: Dictionary = room.nearest_action()
@@ -1918,6 +1921,7 @@ func interact() -> bool:
 		"cat_adopt": return cats.perform(str(action.target))
 		"fishing": return fishing.perform(str(action.target))
 		"wine": return wine.perform(str(action.target))
+		"bar_game": return room.start_game(str(action.target),self) if is_instance_valid(room) and room.has_method("start_game") else false
 		"arcade": return arcade.perform(str(action.target))
 		"coastal_binoculars": return coastal_lookout.perform(str(action.target))
 		"amusement_park": return amusement_park.perform(str(action.target))
@@ -2002,6 +2006,9 @@ func _input(event: InputEvent) -> void:
 		if upside_world.handle_input(event): get_viewport().set_input_as_handled()
 		return
 	if building_social != null and building_social.handle_input(event):
+		get_viewport().set_input_as_handled()
+		return
+	if is_instance_valid(room) and room.has_method("handle_game_input") and room.handle_game_input(event):
 		get_viewport().set_input_as_handled()
 		return
 	if arcade != null and arcade.handle_input(event):
@@ -2323,6 +2330,9 @@ func _update_world_indicator() -> void:
 	arrow.rotation = (screen-Vector2(640,360)).angle()+PI/2
 
 func _menu(title: String) -> void:
+	if is_instance_valid(room) and room.has_method("dismiss_game") and room.get("game_active") == true:
+		room.dismiss_game()
+		if menu_closed == Callable(room,"dismiss_game"): menu_closed = Callable()
 	if is_instance_valid(equipment_wheel): equipment_wheel.cancel()
 	if building_social != null and building_social.active: building_social.close()
 	if arcade != null and arcade.active: arcade.close()
@@ -2811,6 +2821,7 @@ func save_block_reason() -> String:
 		if not night_reason.is_empty(): return night_reason
 	if skate != null and skate.controls_locked(): return "Desça do skate e se recupere para salvar."
 	if controller.save_invalid: return controller.save_block_text()
+	if is_instance_valid(room) and room.has_method("start_game") and room.get("game_active") == true: return "Encerre a partida para salvar."
 	if motocross != null and motocross.mounted: return "Termine a corrida ou desça da moto para salvar."
 	if world.gameplay.health <= 0: return "Salvar indisponível enquanto o jogador estiver morto."
 	if world.gameplay.stars > 0: return "Perca todas as estrelas da polícia para salvar."

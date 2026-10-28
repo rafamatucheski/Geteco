@@ -180,6 +180,11 @@ func prepare_data() -> void:
 		_record(building.position,{"kind":"building","data":building})
 	for definition in LAYOUT.place_definitions():
 		entries.append({"id":definition.id,"place_id":definition.id,"position":definition.entry_position,"return_position":definition.return_position,"label":definition.original_name})
+	if not Engine.get_meta("bars_baseline",false):
+		var bar := preload("res://world/places/bars/BarCatalog.gd").definition("desert_bar")
+		buildings.append({"id":bar.id,"name":bar.original_name,"position":bar.exterior_position,"size":bar.size,"height":4.4})
+		entries.append({"id":bar.id,"place_id":bar.id,"position":bar.entry_position,"return_position":bar.return_position,"label":bar.original_name})
+		_record(bar.exterior_position,{"kind":"desert_bar","position":bar.exterior_position})
 	for definition in UNDERGROUND.definitions():
 		entries.append({"id":definition.id,"place_id":definition.id,"position":definition.entry_position,"return_position":definition.return_position,"label":definition.original_name})
 	for record in UNDERGROUND.records(): _record(record.position,record)
@@ -793,6 +798,10 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 			chunk.add_child(abandoned_site)
 		"utility_pole", "utility_span", "utility_service": UTILITY.build_record(chunk,record)
 		"building": chunk.add_child(ART.building(record.data))
+		"desert_bar":
+			var bar := preload("res://world/places/bars/DesertBarFacade.gd").new()
+			bar.position=record.position
+			chunk.add_child(bar)
 		"desert_underground": UNDERGROUND.build_record(chunk,record)
 		"truck_stop":
 			var stop := ART.truck_stop(false)
