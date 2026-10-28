@@ -313,6 +313,11 @@ func _update() -> void:
 	var clear_sky := HARBOR_SKY_NIGHT.lerp(HARBOR_SKY_FULL_MOON,moon).lerp(HARBOR_SKY_DAY,daylight)
 	# Isolated interiors are cutaway rooms, not floating platforms in the sky.
 	controller.environment.environment.background_color = Color("10151a") if inside else clear_sky.lerp(HARBOR_SKY_OVERCAST,clouds*.78)
+	# The persistent sea also covers the off-map room staging area. Use the
+	# same presentation boundary as the background, including save restoration.
+	# Embedded street buildings and rooftops retain their exterior sea view.
+	if controller.world.production != null and is_instance_valid(controller.world.production.world_sea):
+		controller.world.production.world_sea.visible = not inside
 	atmosphere.apply(controller,time_of_day,local_clouds,front,inside,atmosphere_step)
 	if not inside:
 		DESERT_MOON.apply(controller.sun,controller.environment.environment,daylight,clouds,moon,REGIONAL_ATMOSPHERE.desert_weight(focus))

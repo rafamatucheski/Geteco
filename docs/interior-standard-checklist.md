@@ -1,5 +1,15 @@
 # Migração de interiores — checklist
 
+## Mar ao redor dos interiores — 27/10/2026
+
+Correção compartilhada de apresentação em `runtime/Weather.gd`: o mar persistente acompanha o fundo escuro das salas isoladas. Prédios integrados à rua e coberturas mantêm a vista exterior. Sem reforma de salas, alterações físicas, câmera ou iluminação; **0 lugares novos / 0 interiores novos / 0 novas certificações integrais**. O inventário de migração não muda.
+
+- [x] `dotnet build Harbor.csproj --no-restore -v quiet`: zero erros/avisos, Godot 4.7.2 .NET.
+- [x] Reprodução renderizada antes da correção: garagem restaurada de save isolado, Westgate Garden, Bay Medical e reentrada na garagem exibiam o mar. [Log](../artifacts/interior-sea-before.log), [casa antes](../evidence/interior-sea-before-245392-11882981/03-westgate_garden.png). A fixture usa admissão direta; não certifica percurso pelas portas. Aviso de uma instância ObjectDB retida no encerramento já presente nesse baseline.
+- [x] Conferência renderizada após a correção: **24 verificações / zero falhas**, entrada/saída/reentrada, spawn livre nos três interiores, restauração inicial da garagem e manutenção da visibilidade após atualização periódica do clima. [Log](../artifacts/interior-sea-after.log), [resultado](../evidence/interior-sea-after-244464-11439705/results.json), [casa depois](../evidence/interior-sea-after-244464-11439705/03-westgate_garden.png), [garagem restaurada](../evidence/interior-sea-after-244464-11439705/01-restored-garage.png), [hospital](../evidence/interior-sea-after-244464-11439705/03-harbor_hospital.png). Sem água ao redor nas três fotos; mar visível novamente em todas as saídas. Mesmo aviso ObjectDB do baseline ao encerrar. Admissão direta produtiva, sem certificar travessia física das portas nem vistas das coberturas.
+- [ ] Desempenho: sem baseline de frame time comparável; outro jogo renderizado estava ativo no início da coleta. Não há aprovação de FPS/regressão. As capturas posteriores usam `--no-prewarm` para limitar o preparo inicial e não servem como benchmark.
+- [ ] Colisão/oclusão completa dos móveis e NPCs: não recertificada nesta correção de visibilidade do mar; nenhum sólido, ator ou material da sala foi alterado.
+
 ## Lastro e Sede — 27/10/2026
 
 Escopo aditivo: **2 lugares físicos novos / 2 interiores distintos novos / 0 aprovações integrais / 2 em andamento / 2 restantes para aprovação**. IDs `harbor_bar` (Lastro, Harbor/cidade 1) e `desert_bar` (Sede). Somar somente esses dois lugares ao inventário anterior; não recontar lojas ou oficinas. Plantas próprias: balcão norte e jogos a leste no Lastro; balcão oeste, bilhar central, mesas ao sul no Sede. Câmera ortográfica, escala humana, quatro moradores com copo/animação de beber, música local e duas atividades em cada sala.
