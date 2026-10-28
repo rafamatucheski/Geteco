@@ -143,6 +143,15 @@ func find_store_button(fragment: String) -> Button:
 		if fragment.to_lower() in child.text.to_lower(): return child
 	return null
 
+func preview_has(actor, accessory_id: String) -> bool:
+	if not is_instance_valid(actor) or not is_instance_valid(actor.skeleton): return false
+	for mount in actor.skeleton.get_children():
+		if not String(mount.name).begins_with("WardrobeAccessory"): continue
+		for space in mount.get_children():
+			for piece in space.get_children():
+				if piece.get_meta("wardrobe_accessory", "") == accessory_id: return true
+	return false
+
 func activate(button: Button, label: String) -> bool:
 	if not check(is_instance_valid(button), label): return false
 	button.grab_focus()
@@ -311,6 +320,18 @@ func _run() -> void:
 		var blocked := find_store_button("Faltam")
 		await activate(blocked, "compra bloqueada da Union localizável")
 		check(is_instance_valid(blocked) and blocked.disabled and not state.economy.owns_outfit("dante_arctic") and state.economy.outfit == "dante_suit" and state.economy.balance == 0, "Union não cobra nem equipa com saldo insuficiente", "%s outfit=%s balance=%d" % [blocked.text if is_instance_valid(blocked) else "sem botão", state.economy.outfit, state.economy.balance])
+		# Acessórios avulsos (28/10): compra, provador e tirar, sem mexer na roupa.
+		const ACCESSORY_STATE := preload("res://systems/wardrobe/AccessoryState.gd")
+		state.economy.grant_reward("harbor_store_accessories", 1000)
+		await activate(find_store_button("Acessórios"), "aba de acessórios da Union localizável")
+		await activate(find_store_button("Óculos"), "categoria de óculos localizável")
+		await activate(find_store_button("Aviador Dourado"), "aviador localizável")
+		check(session.storefronts.selected_accessory == "aviator_gold" and preview_has(session.storefronts.preview_actor, "aviator_gold"), "provador mostra o aviador antes de comprar")
+		await activate(find_store_button("Comprar e usar"), "compra de acessório localizável")
+		check(ACCESSORY_STATE.equipped(state.world_state).get("eyes") == "aviator_gold" and state.economy.balance == 450 and state.economy.outfit == "dante_suit", "Union vende e põe o aviador sem trocar a roupa", "balance=%d" % state.economy.balance)
+		check(preview_has(session.world.player, "aviator_gold"), "Dante sai usando o aviador")
+		await activate(find_store_button("Tirar óculos"), "tirar óculos localizável")
+		check(not ACCESSORY_STATE.equipped(state.world_state).has("eyes") and ACCESSORY_STATE.owns(state.world_state, "aviator_gold") and not preview_has(session.world.player, "aviator_gold"), "tirar guarda o aviador sem perder a posse")
 		await leave_place("harbor_clothing")
 
 	# Fuel is a robbery consumer, never a generic convenience-store menu.

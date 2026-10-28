@@ -95,6 +95,9 @@ func _show_wardrobe() -> void:
 func _equip(id: String) -> void:
 	if not _wardrobe_alive(): return
 	if not STATE.equip(session.state.world_state, session.state.economy, id): return
+	# Óculos ou máscara do parque tiram o da Union do mesmo lugar do rosto.
+	if STATE.ENTRIES[id].slot != "outfit":
+		preload("res://systems/wardrobe/AccessoryState.gd").yield_to_park(session.state.world_state, STATE.ENTRIES[id].slot)
 	session.apply_outfit()
 	_save()
 	_show_wardrobe()
@@ -109,7 +112,8 @@ func _classic() -> void:
 func _remove(slot: String) -> void:
 	if not _wardrobe_alive(): return
 	if STATE.remove(session.state.world_state, slot):
-		COSMETICS.apply(session.world.player, session.state.world_state)
+		# Remonta a roupa inteira: os óculos da roupa e os da Union dependem dessa ordem.
+		session.apply_outfit()
 		_save()
 	_show_wardrobe()
 

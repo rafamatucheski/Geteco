@@ -7,17 +7,27 @@ const STYLE := preload("res://ui/GameStyle.gd")
 const OUTFITS := preload("res://data/catalogs/OutfitCatalog.gd")
 const ACTOR := preload("res://scripts/Actor.gd")
 const AMMUNATION := preload("res://runtime/HarborAmmunationCatalog.gd")
+const ACCESSORIES := preload("res://data/catalogs/AccessoryCatalog.gd")
+const ACCESSORY_STATE := preload("res://systems/wardrobe/AccessoryState.gd")
+const ACCESSORY_LOOK := preload("res://assets/outfits/DanteAccessories.gd")
 const OUTFIT_NAMES := {
 	"dante_classic":"Dante clássico", "dante_suit":"Terno", "dante_arctic":"Parka ártica",
 	"dante_ski":"Conjunto de ski", "dante_trench":"Sobretudo de lã", "dante_cowboy":"Pistoleiro",
 	"dante_madmax":"Sobrevivente", "dante_lumberjack":"Lenhador", "dante_ghillie":"Camuflado",
-	"dante_hawaii":"Havaiana", "dante_badboy":"Regata",
+	"dante_hawaii":"Havaiana", "dante_badboy":"Regata", "dante_biker":"Motoqueiro",
+	"dante_hoodie":"Moletom", "dante_tracksuit":"Agasalho", "dante_varsity":"Jaqueta college",
+	"dante_mechanic":"Macacão de mecânico", "dante_urban_camo":"Camuflagem urbana",
+	"dante_tuxedo":"Smoking branco", "dante_puffer":"Jaqueta puffer",
 }
 
 var session
 var active_kind := ""
 var selected_outfit := "dante_classic"
 var filter := "Todos"
+## "outfits" ou "accessories": a mesma vitrine e o mesmo provador para os dois.
+var clothing_mode := "outfits"
+var accessory_slot := "head"
+var selected_accessory := ""
 var content: VBoxContainer
 var status_label: Label
 var wallet_label: Label
@@ -56,6 +66,8 @@ func open_clothing() -> bool:
 	if not _can_open("harbor_clothing"): return false
 	active_kind = "clothing"
 	filter = "Todos"
+	clothing_mode = "outfits"
+	selected_accessory = ""
 	selected_outfit = session.state.economy.outfit
 	_open_shell("UNION")
 	_build_clothing()
@@ -202,6 +214,17 @@ func _build_clothing() -> void:
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	right.add_theme_constant_override("separation", 10)
 	body.add_child(right)
+	var modes := HBoxContainer.new()
+	right.add_child(modes)
+	for entry in [["Roupas", "outfits"], ["Acessórios", "accessories"]]:
+		var tab := _button(entry[0], _set_clothing_mode.bind(entry[1]))
+		tab.toggle_mode = true
+		tab.button_pressed = clothing_mode == entry[1]
+		tab.set_meta("primary_action", clothing_mode == entry[1])
+		modes.add_child(tab)
+	if clothing_mode == "accessories":
+		_build_accessories(right)
+		return
 	var filters := HBoxContainer.new()
 	right.add_child(filters)
 	for entry in [["Todas", "Todos"], ["Inverno", "Distrito do Gelo"]]:
@@ -280,6 +303,8 @@ func _build_outfit_preview() -> Control:
 	preview_actor.collision_layer = 0
 	preview_actor.collision_mask = 0
 	preview_actor.rotation.y = PI
+	# Esqueleto só existe depois do _ready, quando o provador entra na árvore.
+	preview_actor.ready.connect(_dress_preview, CONNECT_ONE_SHOT)
 	preview_viewport.add_child(preview_actor)
 	preview_actor.set_physics_process(false)
 	preview_actor.set_process(false)
@@ -287,6 +312,14 @@ func _build_outfit_preview() -> Control:
 	container.resized.connect(func(): _fit_outfit_camera.call_deferred(camera, container))
 	_fit_outfit_camera.call_deferred(camera, container)
 	return container
+
+## Provador: o que já está em uso mais o acessório selecionado, sem cobrar nada.
+func _dress_preview() -> void:
+	if not is_instance_valid(preview_actor): return
+	var worn := ACCESSORY_STATE.equipped(session.state.world_state)
+	if clothing_mode == "accessories" and ACCESSORIES.ITEMS.has(selected_accessory):
+		worn[ACCESSORIES.ITEMS[selected_accessory].slot] = selected_accessory
+	ACCESSORY_LOOK.apply(preview_actor, worn)
 
 func _fit_outfit_camera(camera: Camera3D, container: SubViewportContainer) -> void:
 	if not is_instance_valid(camera) or not is_instance_valid(preview_actor) or not is_instance_valid(container): return
@@ -326,6 +359,111 @@ func _set_filter(value: String) -> void:
 	if filter != "Todos" and OUTFITS.OUTFITS[selected_outfit].district != filter: selected_outfit = "dante_arctic"
 	_rebuild_current()
 
+func _set_clothing_mode(value: String) -> void:
+	if not _valid_action("harbor_clothing"): return
+	clothing_mode = value
+	if value == "accessories" and selected_accessory.is_empty(): _pick_accessory_in_slot()
+	_rebuild_current()
+
+func _set_accessory_slot(slot: String) -> void:
+	if not _valid_action("harbor_clothing"): return
+	accessory_slot = slot
+	_pick_accessory_in_slot()
+	_rebuild_current()
+
+## Abre a categoria no item em uso; sem nenhum, no primeiro da vitrine.
+func _pick_accessory_in_slot() -> void:
+	var worn := ACCESSORY_STATE.equipped(session.state.world_state)
+	selected_accessory = str(worn.get(accessory_slot, ""))
+	if not selected_accessory.is_empty(): return
+	for id in ACCESSORIES.ORDER:
+		if ACCESSORIES.ITEMS[id].slot == accessory_slot:
+			selected_accessory = id
+			return
+
+func _select_accessory(id: String) -> void:
+	if not _valid_action("harbor_clothing"): return
+	selected_accessory = id
+	_rebuild_current()
+
+func _build_accessories(right: VBoxContainer) -> void:
+	var slots := HBoxContainer.new()
+	right.add_child(slots)
+	for slot in ACCESSORIES.SLOTS:
+		var tab := _button(ACCESSORIES.SLOT_NAMES[slot], _set_accessory_slot.bind(slot))
+		tab.toggle_mode = true
+		tab.button_pressed = accessory_slot == slot
+		tab.set_meta("primary_action", accessory_slot == slot)
+		slots.add_child(tab)
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.follow_focus = true
+	right.add_child(scroll)
+	var list := VBoxContainer.new()
+	list.name = "AccessoryList"
+	list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(list)
+	var world: Dictionary = session.state.world_state
+	var worn := ACCESSORY_STATE.equipped(world)
+	for id in ACCESSORIES.ORDER:
+		var spec: Dictionary = ACCESSORIES.ITEMS[id]
+		if spec.slot != accessory_slot: continue
+		var state_text := " · Em uso" if worn.get(accessory_slot, "") == id else " · Comprado" if ACCESSORY_STATE.owns(world, id) else " · R$ %d" % int(spec.price)
+		var option := _button(str(spec.name) + state_text, _select_accessory.bind(id))
+		option.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		option.toggle_mode = true
+		option.button_pressed = id == selected_accessory
+		option.set_meta("primary_action", id == selected_accessory)
+		list.add_child(option)
+	var detail := VBoxContainer.new()
+	detail.name = "AccessoryDetail"
+	right.add_child(detail)
+	if not ACCESSORIES.ITEMS.has(selected_accessory): return
+	var chosen: Dictionary = ACCESSORIES.ITEMS[selected_accessory]
+	detail.add_child(_label(str(chosen.name), 19, STYLE.TEXT))
+	var about := _label(str(chosen.description), 14, STYLE.MUTED)
+	about.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	detail.add_child(about)
+	var owned := ACCESSORY_STATE.owns(world, selected_accessory)
+	var in_use: bool = worn.get(accessory_slot, "") == selected_accessory
+	var actions := HBoxContainer.new()
+	actions.add_theme_constant_override("separation", 10)
+	detail.add_child(actions)
+	var action := _button("Em uso" if in_use else ("Usar" if owned else String(TranslationServer.translate("Comprar e usar · R$ %d")) % int(chosen.price)), _wear_accessory)
+	action.set_meta("primary_action", not in_use)
+	var missing := maxi(0, int(chosen.price) - session.state.economy.balance)
+	if not owned and missing > 0:
+		action.text = String(TranslationServer.translate("Faltam R$ %d")) % missing
+	action.disabled = in_use or (not owned and missing > 0)
+	actions.add_child(action)
+	if worn.has(accessory_slot):
+		actions.add_child(_button(String(TranslationServer.translate("Tirar %s")) % str(ACCESSORIES.SLOT_NAMES[accessory_slot]).to_lower(), _remove_accessory))
+
+func _wear_accessory() -> void:
+	if not _valid_action("harbor_clothing") or not ACCESSORIES.ITEMS.has(selected_accessory): return
+	var world: Dictionary = session.state.world_state
+	if not ACCESSORY_STATE.owns(world, selected_accessory):
+		var reason := ACCESSORY_STATE.purchase(world, session.state.economy, selected_accessory)
+		if reason != "purchased":
+			if reason == "insufficient_funds":
+				_set_status(String(TranslationServer.translate("Faltam R$ %d.")) % maxi(0, int(ACCESSORIES.ITEMS[selected_accessory].price) - session.state.economy.balance))
+			else: _set_status(_reason(reason))
+			return
+	if not ACCESSORY_STATE.equip(world, selected_accessory): _set_status("Acessório indisponível."); return
+	session.apply_outfit()
+	session.save_game()
+	_set_status("Acessório em uso.")
+	_rebuild_current()
+
+func _remove_accessory() -> void:
+	if not _valid_action("harbor_clothing"): return
+	if ACCESSORY_STATE.remove(session.state.world_state, accessory_slot):
+		session.apply_outfit()
+		session.save_game()
+		_set_status("Acessório guardado.")
+	_rebuild_current()
+
 func _select_outfit(id: String) -> void:
 	if not _valid_action("harbor_clothing"): return
 	selected_outfit = id
@@ -347,7 +485,8 @@ func _refresh_outfit_detail(detail: VBoxContainer) -> void:
 	detail.add_child(action)
 
 func _cold_protection(id: String) -> float:
-	return float({"dante_arctic":.78, "dante_ski":.82, "dante_trench":.62, "dante_lumberjack":.35, "dante_ghillie":.28}.get(id, 0.0))
+	return float({"dante_arctic":.78, "dante_ski":.82, "dante_trench":.62, "dante_lumberjack":.35, "dante_ghillie":.28,
+		"dante_puffer":.68, "dante_biker":.3, "dante_urban_camo":.25}.get(id, 0.0))
 
 func _outfit_name(id: String) -> String:
 	return str(OUTFIT_NAMES.get(id, OUTFITS.OUTFITS[id].name))

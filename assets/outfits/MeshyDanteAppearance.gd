@@ -117,6 +117,45 @@ const OUTFITS := {
 		"zones": {UPPER_ARM: [SKIN_TONE, 1.0, [JACKET, SHIRT]], FOREARM: [SKIN_TONE, 1.0, [JACKET, SHIRT]], SHIN: [SKIN_TONE, 1.0, [PANTS]]},
 		"accessories": [["cap_backwards", Color("eb4d4b")], ["shades", Color("1b1b1f")]],
 	},
+	# Roupas de 28/10/2026. Só recolorem o modelo: a silhueta continua a do Dante.
+	"dante_biker": {
+		# Couro preto quase liso; o padrão xadrez sumiria sob o brilho do couro.
+		"regions": {JACKET: [Color("19191c"), 0.06], SHIRT: [Color("5b5f66"), 0.2], PANTS: [Color("25303d"), 0.6], BELT: [Color("0f0f10"), 0.5], BOOTS: [Color("161616"), 0.5]},
+		"zones": {HAND: [Color("141414"), 0.9, [SKIN, JACKET]]},
+		"accessories": [["watch", Color("9aa0a8")]],
+	},
+	"dante_hoodie": {
+		"regions": {JACKET: [Color("6f747b"), 0.1], SHIRT: [Color("d4a52b"), 0.2], PANTS: [Color("4d6a8a"), 0.6], BOOTS: [Color("d8d2c4"), 0.3]},
+		"zones": {FOREARM: [Color("62676e"), 0.6, [JACKET]]},
+	},
+	"dante_tracksuit": {
+		# Calça igual à jaqueta; antebraço claro faz as vezes das listras.
+		"regions": {JACKET: [Color("1f6b45"), 0.06], SHIRT: [Color("f2f2f2"), 0.2], PANTS: [Color("1f6b45"), 0.08], BELT: [Color("1f6b45"), 0.2], BOOTS: [Color("f2f2f2"), 0.3]},
+		"zones": {FOREARM: [Color("e8e8e8"), 0.45, [JACKET]], SHIN: [Color("e8e8e8"), 0.35, [PANTS]]},
+	},
+	"dante_varsity": {
+		"regions": {JACKET: [Color("7a1d2a"), 0.08], SHIRT: [Color("f0ede6"), 0.2], PANTS: [Color("2d4a6e"), 0.65], BOOTS: [Color("f2f2f2"), 0.3]},
+		"zones": {UPPER_ARM: [Color("e8dcc0"), 1.0, [JACKET]], FOREARM: [Color("e8dcc0"), 1.0, [JACKET]], HAND: [Color("7a1d2a"), 0.3, [JACKET]]},
+	},
+	"dante_mechanic": {
+		"regions": {JACKET: [Color("22406a"), 0.1], SHIRT: [Color("22406a"), 0.2], PANTS: [Color("22406a"), 0.1], BELT: [Color("e07b2a"), 0.4], BOOTS: [Color("2a2420"), 0.5]},
+		"zones": {HAND: [Color("121212"), 1.0, [SKIN, JACKET]], FOREARM: [Color("1a2333"), 0.5, [JACKET]]},
+	},
+	"dante_urban_camo": {
+		"regions": {JACKET: [Color("5f646b"), 0.15], SHIRT: [Color("2b2e33"), 0.3], PANTS: [Color("5f646b"), 0.15], BELT: [Color("1c1d20"), 0.5], BOOTS: [Color("1c1d20"), 0.5]},
+		"zones": {HAND: [Color("1c1d20"), 0.9, [SKIN, JACKET]]},
+		"print": {"style": 2, "regions": [JACKET, PANTS], "a": Color("9a9ea4"), "b": Color("33363b"), "scale": 22.0},
+		"accessories": [["vest", Color("2b2e33")]],
+	},
+	"dante_tuxedo": {
+		"regions": {JACKET: [Color("ece8de"), 0.08], SHIRT: [Color("f7f6f2"), 0.2], PANTS: [Color("121216"), 0.2], BELT: [Color("0d0d10"), 0.5], BOOTS: [Color("0b0b0e"), 0.3]},
+		"accessories": [["bowtie", Color("121216")], ["watch", Color("d4a64a")]],
+	},
+	"dante_puffer": {
+		"regions": {JACKET: [Color("d0652a"), 0.06], SHIRT: [Color("1b1d21"), 0.3], PANTS: [Color("22262c"), 0.3], BOOTS: [Color("3a3029"), 0.6]},
+		"zones": {HAND: [Color("1b1d21"), 1.0, [SKIN, JACKET]]},
+		"accessories": [["beanie", Color("1b1d21")], ["fur_collar", Color("1b1d21")]],
+	},
 }
 
 static func apply(mesh: MeshInstance3D, skeleton: Skeleton3D, outfit_id: String) -> ShaderMaterial:
@@ -170,6 +209,12 @@ static func apply(mesh: MeshInstance3D, skeleton: Skeleton3D, outfit_id: String)
 	_dress(skeleton, data.get("accessories", []))
 	return material
 
+const BONE := {
+	"beanie":"Head", "cowboy_hat":"Head", "cap_backwards":"Head", "tactical_helmet":"Head", "goggles":"Head", "shades":"Head",
+	"tie":"Spine", "watch":"LeftHand", "scarf":"neck", "bandana":"neck", "fur_collar":"neck", "necklace":"neck", "bowtie":"neck",
+	"suspenders":"Spine01", "vest":"Spine01", "shoulder_pad":"LeftArm",
+}
+
 static func _bits(list: Array) -> int:
 	var mask := 0
 	for region in list: mask |= 1 << int(region)
@@ -182,29 +227,29 @@ static func _dress(skeleton: Skeleton3D, accessories: Array) -> void:
 	for item in accessories:
 		var kind: String = item[0]
 		var color: Color = item[1]
-		var previous_head_count := 0
-		if kind in ["shades", "goggles"]:
-			previous_head_count = _space(skeleton, spaces, "Head").get_child_count()
+		if not BONE.has(kind): continue
+		var space := _space(skeleton, spaces, BONE[kind])
+		var before := space.get_child_count()
 		match kind:
-			"beanie": _beanie(_space(skeleton, spaces, "Head"), color)
-			"cowboy_hat": _cowboy_hat(_space(skeleton, spaces, "Head"), color)
-			"cap_backwards": _cap_backwards(_space(skeleton, spaces, "Head"), color)
-			"tactical_helmet": _tactical_helmet(_space(skeleton, spaces, "Head"), color)
-			"goggles": _goggles(_space(skeleton, spaces, "Head"), color)
-			"shades": _shades(_space(skeleton, spaces, "Head"), color)
-			"tie": _tie(_space(skeleton, spaces, "Spine"), color)
-			"watch": _watch(_space(skeleton, spaces, "LeftHand"), color)
-			"scarf": _scarf(_space(skeleton, spaces, "neck"), color)
-			"bandana": _bandana(_space(skeleton, spaces, "neck"), color)
-			"fur_collar": _fur_collar(_space(skeleton, spaces, "neck"), color)
-			"necklace": _necklace(_space(skeleton, spaces, "neck"), color)
-			"suspenders": _suspenders(_space(skeleton, spaces, "Spine01"), color)
-			"vest": _vest(_space(skeleton, spaces, "Spine01"), color)
-			"shoulder_pad": _shoulder_pad(_space(skeleton, spaces, "LeftArm"), color)
-		if kind in ["shades", "goggles"]:
-			var head_space: Node3D = spaces["Head"]
-			for index in range(previous_head_count, head_space.get_child_count()):
-				head_space.get_child(index).set_meta("outfit_accessory_kind", kind)
+			"beanie": _beanie(space, color)
+			"cowboy_hat": _cowboy_hat(space, color)
+			"cap_backwards": _cap_backwards(space, color)
+			"tactical_helmet": _tactical_helmet(space, color)
+			"goggles": _goggles(space, color)
+			"shades": _shades(space, color)
+			"tie": _tie(space, color)
+			"watch": _watch(space, color)
+			"scarf": _scarf(space, color)
+			"bandana": _bandana(space, color)
+			"fur_collar": _fur_collar(space, color)
+			"necklace": _necklace(space, color)
+			"suspenders": _suspenders(space, color)
+			"vest": _vest(space, color)
+			"shoulder_pad": _shoulder_pad(space, color)
+			"bowtie": _bowtie(space, color)
+		# Marca cada peça: óculos do parque e acessórios da Union escondem a peça que substituem.
+		for index in range(before, space.get_child_count()):
+			space.get_child(index).set_meta("outfit_accessory_kind", kind)
 
 ## Nó que acompanha o osso, com filhos escritos no espaço de repouso do modelo
 ## (em pé, olhando para +Z). Assim as medidas vêm direto da malha importada.
@@ -294,6 +339,14 @@ static func _tie(space: Node3D, color: Color) -> void:
 	var blade := ADAPTER._make_box(Vector3(0.05, 0.24, 0.01), silk, Vector3(0.004, 1.19, 0.112))
 	blade.rotation.x = -0.05
 	space.add_child(blade)
+
+static func _bowtie(space: Node3D, color: Color) -> void:
+	var satin := ADAPTER._make_mat(color, 0.35)
+	for side in [-1.0, 1.0]:
+		var wing := ADAPTER._make_box(Vector3(0.034, 0.028, 0.012), satin, Vector3(side * 0.02 + 0.004, 1.352, 0.108))
+		wing.rotation.z = side * 0.25
+		space.add_child(wing)
+	space.add_child(ADAPTER._make_box(Vector3(0.012, 0.016, 0.014), satin, Vector3(0.004, 1.352, 0.112)))
 
 static func _watch(space: Node3D, color: Color) -> void:
 	var band := ADAPTER._make_tapered_limb(0.03, 0.03, 0.022, ADAPTER._make_mat(color, 0.25, 0.9), Vector3(0.60, 1.27, -0.052))

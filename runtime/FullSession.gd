@@ -2695,6 +2695,7 @@ func apply_outfit() -> void:
 	if mountain_progression != null and mountain_progression.data.rental: outfit = mountain_progression.suit_outfit()
 	if world.player.has_method("set_outfit"): world.player.set_outfit(outfit)
 	preload("res://activities/amusement_park/AmusementParkCosmetics.gd").apply(world.player,state.world_state)
+	preload("res://assets/outfits/DanteAccessories.gd").apply(world.player,preload("res://systems/wardrobe/AccessoryState.gd").equipped(state.world_state))
 
 func advance_residence_time(target: float) -> bool:
 	if target not in [.36,.84] or not can_rest_at_residence(): return false
