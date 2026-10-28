@@ -161,6 +161,7 @@ func _start() -> bool:
 	var equipment = player_car.ensure_equipment(session.world)
 	if is_instance_valid(equipment): equipment.headlights_on = true
 	racers.append({"car":player_car,"index":6,"name":NAMES[6],"player":true,"pilot":null,"run":{}})
+	_link_pilots()
 	for entry in racers: entry.run = RUN.start(entry.car.vehicle_id,entry.car.global_position,course)
 	countdown = course.COUNTDOWN
 	active = true
@@ -265,6 +266,13 @@ func _cleanup() -> void:
 	if is_instance_valid(props):
 		props.show_checkpoint(0,false)
 		props.visible = false
+
+## Cada piloto enxerga os outros para ceder vaga a quem ficou diante de um carro contrário.
+func _link_pilots() -> void:
+	var pilots: Array = []
+	for entry in racers:
+		if entry.pilot != null: pilots.append(entry.pilot)
+	for pilot in pilots: pilot.peers = pilots
 
 func _clear_rivals() -> void:
 	for entry in racers:

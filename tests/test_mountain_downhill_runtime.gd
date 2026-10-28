@@ -118,6 +118,7 @@ func run() -> void:
 			if entry.player: continue
 			entry.pilot = driving_script.new()
 			entry.pilot.setup(entry.car,race.course,int(entry.index))
+		if "peers" in race.racers[0].pilot: race._link_pilots()
 	check(race.racers.size()==7 and race.racers.filter(func(e): return not e.player).size()==6,"exactly six competitive rivals plus Dante")
 	check(not race.save_block_reason().is_empty(),"active attempt blocks saving")
 	for entry in race.racers:
@@ -162,7 +163,7 @@ func drive_race(race,car) -> void:
 		if "--diagnose-contacts" in OS.get_cmdline_user_args() and Time.get_ticks_msec()>=next_contact_report:
 			next_contact_report = Time.get_ticks_msec()+250
 			for entry in rivals:
-				if entry.player or not is_instance_valid(entry.car) or int(entry.run.checkpoint) not in [7,8]: continue
+				if entry.player or not is_instance_valid(entry.car) or int(entry.run.checkpoint) not in [7,8,9,10,11,12,13]: continue
 				var body = entry.car
 				var offset: float = race.course.nearest_offset(body.global_position)
 				var contacts: Array = []
@@ -172,6 +173,15 @@ func drive_race(race,car) -> void:
 						var blocked: Array = body.get_world_3d().direct_space_state.intersect_shape(entry.pilot.lane_query,1)
 						if not blocked.is_empty():
 							merge_blocker = {"body":str(blocked[0].collider.get_path()),"query_point":str(entry.pilot.lane_query.transform.origin)}
+				# Ultrapassagem recusada atrás de carro lento: o que fecha o corredor da esquerda (28/10).
+				var pass_blocker: Dictionary = {}
+				if entry.pilot.desired_lane>0.0 and absf(float(body.speed))<6.0 and is_finite(float(entry.pilot.gap)):
+					var straight: bool = entry.pilot._passing_straight(offset)
+					var clear: bool = entry.pilot._lane_clear(offset,clampf(4.0+absf(float(body.speed))*.27,4.0,12.0),-1.8)
+					pass_blocker = {"straight":straight,"clear":clear,"cooldown":entry.pilot.pass_cooldown}
+					if not clear:
+						var blocked: Array = body.get_world_3d().direct_space_state.intersect_shape(entry.pilot.lane_query,1)
+						if not blocked.is_empty(): pass_blocker["body"] = str(blocked[0].collider.get_path())
 				var sensor: Dictionary = {}
 				var nearest := INF
 				var reach := minf(55.0,5.0+float(body.speed)*float(body.speed)/10.0)
@@ -188,7 +198,7 @@ func drive_race(race,car) -> void:
 				for j in body.get_slide_collision_count():
 					var contact = body.get_slide_collision(j)
 					contacts.append({"body":str(contact.get_collider().get_path()),"normal":str(contact.get_normal())})
-				print("DOWNHILL_CONTACT ",{"name":entry.name,"time":entry.run.elapsed,"gate":entry.run.checkpoint,"offset":offset,"point":str(body.global_position),"yaw":body.rotation.y,"lane":entry.pilot.lane,"actual_lane":(body.global_position-race.course.point(offset)).dot(race.course.direction(offset).cross(Vector3.UP).normalized()),"speed":body.speed,"steer":body.steer_input,"gap":entry.pilot.gap,"reverse":entry.pilot.reverse_left,"contacts":contacts,"sensor":sensor,"merge_blocker":merge_blocker})
+				print("DOWNHILL_CONTACT ",{"name":entry.name,"time":entry.run.elapsed,"gate":entry.run.checkpoint,"offset":offset,"point":str(body.global_position),"yaw":body.rotation.y,"lane":entry.pilot.lane,"actual_lane":(body.global_position-race.course.point(offset)).dot(race.course.direction(offset).cross(Vector3.UP).normalized()),"speed":body.speed,"steer":body.steer_input,"gap":entry.pilot.gap,"reverse":entry.pilot.reverse_left,"contacts":contacts,"sensor":sensor,"merge_blocker":merge_blocker,"pass_blocker":pass_blocker})
 		if Time.get_ticks_msec()>=next_report:
 			next_report = Time.get_ticks_msec()+10000
 			print("DOWNHILL_RACERS ",rivals.map(func(e): return {"name":e.name,"gate":e.run.checkpoint,"finish":e.run.finish,"failure":e.run.failure,"point":str(e.car.global_position) if is_instance_valid(e.car) else "freed","speed":e.car.speed if is_instance_valid(e.car) else 0,"recoveries":e.pilot.recoveries if e.pilot != null else driver.recoveries,"gap":e.pilot.gap if e.pilot != null else driver.gap}))

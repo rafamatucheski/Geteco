@@ -36,6 +36,56 @@ func obstacle(point: Vector3, yaw: float, size: Vector3) -> StaticBody3D:
 	space.add_child(body)
 	return body
 
+## Impasse de 07/10: rival na faixa da esquerda com um carro contrário parado a ~8 m e o pelotão na direita.
+func oncoming_encounter() -> void:
+	for child in space.get_children():
+		if child is StaticBody3D: child.free()
+	var at := course.length-85.0
+	var forward: Vector3 = course.direction(at)
+	var right := forward.cross(Vector3.UP).normalized()
+	var yaw := atan2(-forward.x,-forward.z)
+	car.position = course.point(at)-right*1.8
+	car.rotation.y = yaw
+	car.speed = 1.0
+	var pilot := DRIVER.new()
+	pilot.setup(car,course,0)
+	pilot.lane = -1.8
+	pilot.desired_lane = -1.8
+	pilot.pass_cooldown = 5.0
+	# Contrário: um "carro" virado para nós na mesma faixa.
+	var van := obstacle(course.point(at+8.5)-right*1.8+Vector3.UP*.65,yaw+PI,Vector3(2,.8,4.6))
+	van.add_to_group("drivable")
+	var blocker := obstacle(course.point(at+1.0)+right*1.8+Vector3.UP*.65,yaw,Vector3(2,.8,4.6))
+	blocker.add_to_group("drivable")
+	await physics_frame
+	await physics_frame
+	pilot._sense(at,8.0)
+	check(pilot.merge_request and pilot.desired_lane == -1.8,"oncoming car with a rival alongside asks for room instead of cutting in")
+	check(is_equal_approx(pilot.stop_gap,6.5),"oncoming car makes the driver stop with room left to swerve")
+	# O rival que estava ao lado seguiu; o que vem atrás parou com folga: sobra o desvio curto.
+	blocker.position = course.point(at-10.0)+course.direction(at-10.0).cross(Vector3.UP).normalized()*1.8+Vector3.UP*.65
+	await physics_frame
+	await physics_frame
+	check(not pilot._lane_clear(at,8.0,1.8),"the long two-second merge is still blocked by the oncoming car itself")
+	pilot._sense(at,8.0)
+	check(pilot.desired_lane == 1.8 and pilot.lane_rate > 1.8,"short low-speed swerve takes the gap the rival behind left")
+	# Quem está na direita atrás de um pedido para antes dele; quem está à frente segue.
+	var follower := DRIVER.new()
+	var follower_car := SensorCar.new()
+	follower_car.position = course.point(at-30.0)+right*1.8
+	space.add_child(follower_car)
+	follower.setup(follower_car,course,1)
+	follower.lane = 1.8
+	pilot.merge_request = true
+	pilot.course_offset = at
+	follower.peers = [pilot,follower]
+	check(follower._yield_speed(at-14.0) < 5.0,"right-lane rival behind the request slows to open the gap")
+	check(follower._yield_speed(at-8.0) == 0.0,"right-lane rival stops with room for the swerve")
+	check(follower._yield_speed(at+3.0) == INF,"right-lane rival ahead keeps going so the gap opens behind it")
+	follower.car.free()
+	van.free()
+	blocker.free()
+
 func run() -> void:
 	space = Node3D.new()
 	root.add_child(space)
@@ -59,6 +109,14 @@ func run() -> void:
 	wall.add_to_group("drivable")
 	pilot._sense(at,8.0)
 	check(pilot.desired_lane == -1.8,"clear straight allows a real detected vehicle to be passed")
+	# Fila de 28/10: colado no carro lento (2–4 m) o corredor da troca tocava nele e ninguém ultrapassava.
+	wall.position = car.position+forward*5.8+Vector3.UP*.65
+	pilot.desired_lane = 1.8
+	pilot.pass_cooldown = 0.0
+	await physics_frame
+	await physics_frame
+	pilot._sense(at,8.0)
+	check(pilot.gap < 4.0 and pilot.desired_lane == -1.8,"a slow car right ahead does not block its own overtaking corridor")
 	wall.queue_free()
 	await physics_frame
 	await physics_frame
@@ -107,5 +165,6 @@ func run() -> void:
 	pilot.setup(car,course,0)
 	pilot._sense(at,8.0)
 	check(pilot.desired_lane == -1.8,"preventive return cannot merge into an occupied right lane")
+	await oncoming_encounter()
 	print("DOWNHILL_DRIVER checks=%d failures=%d"%[checks,failures])
 	quit(0 if failures == 0 else 1)
