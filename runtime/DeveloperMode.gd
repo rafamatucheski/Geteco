@@ -50,6 +50,7 @@ func set_active(value: bool) -> bool:
 		if flying and not land(): return false
 		overview.stop()
 		world.camera.reset_developer_zoom()
+		world.camera.developer_chase = false
 		clear_civilians()
 		world.player.remove_meta("developer_speed_multiplier")
 		world.remove_meta("developer_mode_active")
@@ -63,6 +64,7 @@ func set_active(value: bool) -> bool:
 
 func set_camera_zoom(value: float, view: int = 0) -> void:
 	if not active: return
+	world.camera.developer_chase = false
 	world.camera.set_developer_zoom(value, view)
 	if is_finite(value): overview.start()
 	report("Zoom out: %.1f×." % world.camera.developer_zoom, "zoom")
@@ -70,7 +72,16 @@ func set_camera_zoom(value: float, view: int = 0) -> void:
 func reset_camera_zoom() -> void:
 	overview.stop()
 	world.camera.reset_developer_zoom()
+	world.camera.developer_chase = false
 	report("Câmera normal restaurada.", "zoom_reset")
+
+func set_camera_chase(value: bool) -> void:
+	if not active: return
+	if value:
+		overview.stop()
+		world.camera.reset_developer_zoom()
+	world.camera.developer_chase = value
+	report("Câmera nas costas " + ("ligada." if value else "desligada."), "camera_chase")
 
 func set_speed(value: float) -> void:
 	if not active: return
@@ -250,7 +261,9 @@ func clear_civilians() -> void:
 func _exit_tree() -> void:
 	if is_instance_valid(world) and is_instance_valid(world.player) and is_instance_valid(world.gameplay):
 		_restore_flight()
-		if is_instance_valid(world.camera): world.camera.reset_developer_zoom()
+		if is_instance_valid(world.camera):
+			world.camera.reset_developer_zoom()
+			world.camera.developer_chase = false
 		if active:
 			world.player.remove_meta("developer_speed_multiplier")
 			world.gameplay.god_mode = _original_god

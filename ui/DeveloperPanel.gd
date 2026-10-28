@@ -9,6 +9,7 @@ var status: Label
 var position_label: Label
 var enabled_toggle: CheckButton
 var god_toggle: CheckButton
+var chase_toggle: CheckButton
 var flight_button: Button
 var speed: OptionButton
 var destinations: OptionButton
@@ -207,6 +208,8 @@ func _refresh() -> void:
 	enabled_toggle.disabled = tools.busy
 	god_toggle.set_pressed_no_signal(tools.invincible)
 	god_toggle.disabled = not tools.active
+	chase_toggle.set_pressed_no_signal(world.camera.developer_chase)
+	chase_toggle.disabled = not tools.active
 	speed.disabled = not tools.active
 	for index in speed.item_count:
 		if speed.get_item_id(index) == int(tools.speed_multiplier): speed.select(index)
@@ -292,6 +295,12 @@ func _apply_zoom() -> void:
 	tools.set_camera_zoom(_zoom_amount.value, _zoom_view.selected)
 
 func _build_camera(column: VBoxContainer) -> void:
+	_section(column, "CÂMERA")
+	chase_toggle = CheckButton.new()
+	chase_toggle.text = "Câmera nas costas · igual ao túnel"
+	column.add_child(chase_toggle)
+	chase_toggle.toggled.connect(func(value):
+		if not _syncing: tools.set_camera_chase(value))
 	_section(column, "CÂMERA · ZOOM OUT · MAPA INTEIRO")
 	var presets := HFlowContainer.new()
 	column.add_child(presets)

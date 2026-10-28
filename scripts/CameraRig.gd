@@ -60,6 +60,7 @@ const TARGET_TELEPORT_DISTANCE := 8.0
 # Session-only developer framing; normal gameplay framing remains authoritative after reset.
 var developer_zoom := 1.0
 var developer_view := 0
+var developer_chase := false
 var _developer_camera_state: Dictionary = {}
 
 func set_developer_zoom(multiplier: float, view: int = 0) -> void:
@@ -362,6 +363,7 @@ func _update_tunnel_chase(actual: Vector3, delta: float, snap: bool) -> void:
 	var pedestrian := is_instance_valid(actor_visual) and not locked and _container_blend < 0.001
 	var mountain_weight := MOUNTAIN_CONNECTION.tunnel_camera_weight(actual)
 	var desired := maxf(_tunnel_blend,mountain_weight) if vehicle or pedestrian else 0.0
+	if developer_chase and (vehicle or pedestrian): desired = 1.0
 	_tunnel_chase_blend = move_toward(_tunnel_chase_blend, desired, delta * 2.4)
 	if snap: _tunnel_chase_blend = desired
 	# A solid roof cannot tolerate an overhead camera after a fast entry.
@@ -396,9 +398,10 @@ func _update_tunnel_chase(actual: Vector3, delta: float, snap: bool) -> void:
 	if snap: base = actual
 	var chase := base + rear * _tunnel_chase_distance + Vector3.UP * (TUNNEL_CHASE_HEIGHT if vehicle else 2.2)
 	# A rampa sobe atrás do carro. Não deixar a lente abaixo do piso nem no teto.
-	chase.y = maxf(chase.y, CANAL_TUNNEL.floor_y(chase.x) + 1.6)
-	var ceiling := CANAL_TUNNEL.ceiling_y(chase.x)
-	if is_finite(ceiling): chase.y = minf(chase.y, ceiling - 0.4)
+	if not developer_chase or CANAL_TUNNEL.in_roadway(actual):
+		chase.y = maxf(chase.y, CANAL_TUNNEL.floor_y(chase.x) + 1.6)
+		var ceiling := CANAL_TUNNEL.ceiling_y(chase.x)
+		if is_finite(ceiling): chase.y = minf(chase.y, ceiling - 0.4)
 	var eye := base + Vector3.UP * 1.3
 	var street_position := global_position
 	var street_fov := rad_to_deg(2.0 * atan(size * 0.5 / maxf(0.1, street_position.distance_to(focus))))
