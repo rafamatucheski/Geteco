@@ -56,6 +56,11 @@ deserto e serra. Os interruptores `GETECO_*` servem para comparar com o comporta
 
 - [ ] Abrir o jogo frio (primeira sessão do dia) e anotar se trava ~1 s nos primeiros segundos.
 
+## Testes que só rodam com janela (o Claude roda, ~5 min, antes da bancada)
+
+- `tests/test_umbra_expansion_session.gd -- --no-save`: atualizado para a porta de empurrar (13a084e4);
+  a falha antiga em "walk to exit" era do teste.
+
 ## Depois de jogar: liberar o PC para a bancada fria (~1 h)
 
 Export já pronto em `artifacts/perf-q10-20261028`. Antes: fechar o jogo e o editor, pausar o OneDrive,
