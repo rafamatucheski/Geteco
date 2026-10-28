@@ -163,7 +163,7 @@ func drive_race(race,car) -> void:
 		if "--diagnose-contacts" in OS.get_cmdline_user_args() and Time.get_ticks_msec()>=next_contact_report:
 			next_contact_report = Time.get_ticks_msec()+250
 			for entry in rivals:
-				if entry.player or not is_instance_valid(entry.car) or int(entry.run.checkpoint) not in [7,8,9,10,11,12,13]: continue
+				if entry.player or not is_instance_valid(entry.car) or int(entry.run.checkpoint) > 13: continue
 				var body = entry.car
 				var offset: float = race.course.nearest_offset(body.global_position)
 				var contacts: Array = []
@@ -198,6 +198,9 @@ func drive_race(race,car) -> void:
 				for j in body.get_slide_collision_count():
 					var contact = body.get_slide_collision(j)
 					contacts.append({"body":str(contact.get_collider().get_path()),"normal":str(contact.get_normal())})
+				# Só o que explica perda de tempo: lento ou encostado em outro carro.
+				var touching := contacts.any(func(c): return "CharacterBody3D" in str(c.body))
+				if absf(float(body.speed)) >= 6.0 and not touching: continue
 				print("DOWNHILL_CONTACT ",{"name":entry.name,"time":entry.run.elapsed,"gate":entry.run.checkpoint,"offset":offset,"point":str(body.global_position),"yaw":body.rotation.y,"lane":entry.pilot.lane,"actual_lane":(body.global_position-race.course.point(offset)).dot(race.course.direction(offset).cross(Vector3.UP).normalized()),"speed":body.speed,"steer":body.steer_input,"gap":entry.pilot.gap,"reverse":entry.pilot.reverse_left,"contacts":contacts,"sensor":sensor,"merge_blocker":merge_blocker,"pass_blocker":pass_blocker})
 		if Time.get_ticks_msec()>=next_report:
 			next_report = Time.get_ticks_msec()+10000
