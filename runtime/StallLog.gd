@@ -66,6 +66,16 @@ var _census_ready: Dictionary = {}
 ## Guarda até 24 raízes marcadas com queue_free; não prova causa nem liberação de objetos.
 var _removed_roots: Array[Dictionary] = []
 var _removed_total := 0
+## Quadro de ~1 s do frio (28/10): o contador de pipelines diz "1 draw", mas não diz se o tempo foi do driver
+## (pipeline nativa) ou do Godot compilando o código de um material novo para SPIR-V, que não aparece em
+## contador nenhum. O Godot grava cada versão de shader nova em user://shader_cache na hora em que compila;
+## o driver NVIDIA grava no __GL_SHADER_DISK_CACHE_PATH. Depois de um quadro grande, listar o que nasceu
+## nesses dois lugares separa as duas causas sem tocar no desenho (só lê diretório, 2 quadros depois).
+const CACHE_SCAN_MS := 250.0
+var _cache_scan_pending: Array[Dictionary] = []
+var _cache_scans := 0
+var _cache_root_override := ""
+var _cache_scan_running := false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -164,6 +174,10 @@ func _process(delta: float) -> void:
 	_last_chunks = _chunk_total()
 	_last_pipelines = _pipeline_counts()
 	if not _after_pending.is_empty(): _flush_after()
+	if not _cache_scan_running and not _cache_scan_pending.is_empty() and Engine.get_process_frames() >= int(_cache_scan_pending[0].due):
+		# Na thread principal a varredura levou 0,7–0,8 s com o cache real (28/10): vira tarefa de fundo.
+		_cache_scan_running = true
+		WorkerThreadPool.add_task(_scan_compile_caches_task.bind(_cache_scan_pending.pop_front()), false, "StallLog.compile_cache")
 	_last_render = _render_sample()
 	_last_sample_usec = Time.get_ticks_usec()
 	if _profile_self: _self_ms.append(float(_last_sample_usec - now) / 1000.0)
@@ -394,12 +408,70 @@ func _record_slow(ms: float, now: int, physics_steps: int, work: Array[Dictionar
 	for offset in AFTER_FRAMES:
 		if _after_pending.size() < 32:
 			_after_pending.append({"due": int(render.frame) + offset, "slow_t": record.t, "slow_frame": int(render.frame)})
+	if ms >= CACHE_SCAN_MS and _cache_scans < 24:
+		_cache_scans += 1
+		# A janela cobre o próprio quadro e a folga da resolução de 1 s do mtime.
+		_cache_scan_pending.append({"due": int(render.frame) + 2, "slow_t": record.t, "slow_frame": int(render.frame),
+			"since": int(Time.get_unix_time_from_system() - ms / 1000.0) - 2})
 	if not work.is_empty(): record["work"] = work
 	record["removed_nodes"] = _removed_total
 	if not _removed_roots.is_empty(): record["removed_roots"] = _removed_roots.duplicate(true)
 	var spans := _spans_in_frame(now - int(ms * 1000.0), now)
 	if not spans.is_empty(): record["spans"] = spans
 	_write(record)
+
+func _scan_compile_caches_task(pending: Dictionary) -> void:
+	_finish_compile_scan.call_deferred(_scan_compile_caches(pending))
+
+func _finish_compile_scan(record: Dictionary) -> void:
+	_cache_scan_running = false
+	_write(record)
+
+## Só lê o disco (DirAccess/FileAccess estáticos): roda fora da thread principal.
+func _scan_compile_caches(pending: Dictionary) -> Dictionary:
+	var started := Time.get_ticks_usec()
+	var since := int(pending.since)
+	var record := {"type": "slow_compile_cache", "slow_t": pending.slow_t, "slow_frame": pending.slow_frame, "since_unix": since}
+	# Godot: shader_cache/<ShaderRD>/<hash das definições>/<hash do código>.<driver>.cache.
+	var godot: Array = []
+	var root := _cache_root_override if not _cache_root_override.is_empty() else ProjectSettings.globalize_path("user://shader_cache")
+	for shader_dir in DirAccess.get_directories_at(root):
+		var shader_path := root.path_join(shader_dir)
+		for version_dir in DirAccess.get_directories_at(shader_path):
+			# Sem filtrar pelo mtime da pasta: um falso "godot=0" levaria a atribuição para o lado errado,
+			# e olhar os ~650 arquivos custa poucos ms só depois de um quadro de 250 ms ou mais.
+			var version_path := shader_path.path_join(version_dir)
+			for file in DirAccess.get_files_at(version_path):
+				var file_path := version_path.path_join(file)
+				var modified := FileAccess.get_modified_time(file_path)
+				if modified >= since:
+					godot.append({"shader": shader_dir, "version": version_dir.left(12), "file": file.get_basename().get_basename(),
+						"bytes": _file_bytes(file_path), "unix": modified})
+	record["godot_shaders"] = godot
+	var driver_root := OS.get_environment("__GL_SHADER_DISK_CACHE_PATH")
+	if not driver_root.is_empty() and DirAccess.dir_exists_absolute(driver_root):
+		record["driver_files"] = _new_files_below(driver_root, since, 3)
+	var pipelines_root := ProjectSettings.globalize_path("user://vulkan")
+	if DirAccess.dir_exists_absolute(pipelines_root): record["pipeline_cache_files"] = _new_files_below(pipelines_root, since, 1)
+	record["scan_ms"] = snappedf(float(Time.get_ticks_usec() - started) / 1000.0, 0.01)
+	return record
+
+func _new_files_below(path: String, since: int, depth: int) -> Array:
+	var found: Array = []
+	for file in DirAccess.get_files_at(path):
+		var file_path := path.path_join(file)
+		var modified := FileAccess.get_modified_time(file_path)
+		if modified >= since: found.append({"file": file, "bytes": _file_bytes(file_path), "unix": modified})
+	if depth > 0:
+		for child in DirAccess.get_directories_at(path):
+			for entry in _new_files_below(path.path_join(child), since, depth - 1):
+				entry.file = child.path_join(str(entry.file))
+				found.append(entry)
+	return found
+
+func _file_bytes(path: String) -> int:
+	var file := FileAccess.open(path, FileAccess.READ)
+	return file.get_length() if file != null else -1
 
 ## Quadro a quadro os contadores abaixo só entram nos registros lentos e nas janelas; nada roda por quadro.
 func _game_state(with_deltas: bool) -> Dictionary:

@@ -1224,3 +1224,35 @@ quadro grande e conta, por tipo, quantas vezes o evento precedeu um pico contra 
 interruptor acima no mesmo export (quente para 1–4 e 6, frio para 3/3b/3c e o adereço). Combinar com
 `GETECO_DEBRIS_SHRINK=1` + `GETECO_WRECK_SINK=1` + `GETECO_WRECK_FADE_PREWARM=1` juntos num lado (todas as
 fontes de transparência fechadas ao mesmo tempo), que ainda não foi feito com sessões suficientes.
+
+## 19. Quadro de ~1 s do frio: separar compilação de shader (Godot) de pipeline nativa (driver) (28/10, NÃO medido)
+
+Feito só no código, sem abrir o jogo. **Por que as 17 rodadas não acharam o dono:** o contador do motor só diz
+"1 pipeline `draw`". O tempo pode estar em dois lugares que ele não separa:
+- **(S) código de material novo**: o Godot compila GLSL → SPIR-V e grava em `user://shader_cache`. Um material
+  StandardMaterial3D com combinação nova de recursos (transparência, emissão, triplanar...) é shader novo, e nenhum
+  contador de pipeline mostra essa compilação.
+- **(P) pipeline nativa**: o driver compila o SPIR-V para a GPU (cache em `user://vulkan` e no cache do driver).
+
+As duas pistas batem com o que se sabe: o pico só aparece frio, tem o mesmo tamanho em 1920 e em 3440 (é CPU) e
+vem depois de material trocado num objeto já desenhado (§18). No cache de hoje, cada versão de material do
+`SceneForwardClusteredShaderRD` tem ~115–130 KB de SPIR-V, então compilar uma delas não é barato.
+
+**O que entrou:**
+- `StallLog`: depois de um quadro de **≥ 250 ms**, uma tarefa de fundo lista o que nasceu desde o início do quadro
+  em `user://shader_cache` (ShaderRD, versão, arquivo, bytes), no cache do driver (`__GL_SHADER_DISK_CACHE_PATH`)
+  e em `user://vulkan`. O resultado vai para o registro `slow_compile_cache`. Na thread principal essa varredura
+  levou 0,7–0,8 s com o cache real; na tarefa de fundo ela não pesa no quadro. Teste:
+  `tests/test_stall_log_compile_cache.gd`.
+- `tools/bench/cold_cache_run.sh`: `COLD_PART=all|shader|pipeline` escolhe o que esfria.
+  `tools/bench/cold_ab.sh`: `COLD_PART_A` e `COLD_PART_B`, um por lado.
+- `tools/bench/cold_ab_spikes.py`: cada pico mostra `godot=N driver=N [ShaderRDs]`.
+
+**Como ler, numa noite com o PC sozinho:** export novo, e depois
+`COLD_PART_A=shader COLD_PART_B=pipeline tools/bench/cold_ab.sh artifacts/<export> q10 ABBAABBAABBA`.
+- Pico com `godot=1+` (SceneForwardClustered) e o lado `pipeline` (shader_cache quente) sem pico: é **(S)**. O
+  conserto é pôr a combinação de material no pré-aquecimento ou reaproveitar o material em vez de duplicar.
+- Pico com `godot=0` e o lado `shader` (pipeline quente) sem pico: é **(P)**. O conserto é desenhar aquela
+  pipeline sob a cortina.
+
+Uma sessão fria com pico e o registro `slow_compile_cache` já separa (S) de (P). O A/B só confirma.
