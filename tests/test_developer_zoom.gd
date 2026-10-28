@@ -86,7 +86,9 @@ func run() -> void:
 	tools.reset_camera_zoom()
 	camera._process(1.0 / 60.0)
 	check(not tools.overview.is_processing() and tools.overview._instances.is_empty(), "reset releases range overrides and loop")
-	check(camera.developer_zoom == 1 and is_equal_approx(camera.far, normal_far), "reset restores normal camera")
+	# O far normal é EXTERIOR_FAR mais o recuo suave diante de prédio/trilho (CameraRig, 26/10), que
+	# muda alguns metros de um quadro para outro; o que o reset precisa desfazer é o far do mapa inteiro.
+	check(camera.developer_zoom == 1 and camera.far >= CAMERA.EXTERIOR_FAR and camera.far < normal_far + 20.0, "reset restores normal camera (far %.2f, normal %.2f)" % [camera.far, normal_far])
 	tools.set_camera_zoom(100, 2)
 	check(tools.set_active(false), "developer mode disables safely")
 	camera._process(1.0 / 60.0)
