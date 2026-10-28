@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-28",
+  "period": "28 de outubro de 2026",
+  "scope": "Quadro de ~1 s do frio: instrumentação para separar shader novo de pipeline do driver; bancada fria pendente (Claude, 28/10).",
+  "cards": [
+    {
+      "id": "quadro-09s-primeira-sessao-20261026",
+      "title": "Travada de ~1 s em ~50% das primeiras sessões (bancada fria pendente)",
+      "status": "issue",
+      "area": "performance",
+      "description": "Em ~50% das sessões frias aparece um quadro de 0,9–2,4 s, 80–170 s depois de jogável, com 1–4 pipelines compiladas no desenho; o tamanho é igual em 1920 e em 3440 (é CPU). Em 17 rodadas caíram explosão, carcaça sumindo, chama, destroço, carga da caçamba, as três versões sem transparência e o cache do driver. Hipótese de 28/10 (6286c29a, doc §19): o contador não separa (S) o Godot compilando para SPIR-V o código de um material novo, que nenhum contador mostra, de (P) o driver compilando a pipeline nativa. Agora o StallLog grava slow_compile_cache depois de cada quadro de 250 ms ou mais (o que nasceu no shader_cache, no cache do driver e em vulkan/, lido numa thread de fundo), e a bancada esfria um lado de cada vez (COLD_PART_A/B).",
+      "sources": [
+        "runtime/StallLog.gd",
+        "tools/bench/cold_cache_run.sh",
+        "tools/bench/cold_ab.sh",
+        "tools/bench/cold_ab_spikes.py",
+        "tests/test_stall_log_compile_cache.gd",
+        "docs/perf-playthrough-20261021.md"
+      ],
+      "next": "Com o PC livre: COLD_PART_A=shader COLD_PART_B=pipeline tools/bench/cold_ab.sh artifacts/perf-q10-20261028 q10 ABBAABBAABBA (~1 h; o export já está pronto) e ler com cold_ab_spikes.py. Se der (S), o material entra no pré-aquecimento; se der (P), a pipeline passa a ser desenhada sob a cortina."
+    }
+  ]
+}
