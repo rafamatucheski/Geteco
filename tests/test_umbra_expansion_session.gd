@@ -64,8 +64,11 @@ func run() -> void:
 	await check_house_pause()
 	await actor_depth()
 	await record("house",true)
-	check(await walk(room.exit_position),"walk to exit")
-	check(await world.session.interact() and world.session.state.place_id.is_empty(),"exit returns to park")
+	# Desde a porta de empurrar (8537bd0c) andar até a saída já tira o jogador (WeaponShopEntrance._update_exit):
+	# o "walk to exit" antigo saía no meio do caminho e depois media a distância a uma sala que não existia mais.
+	var exit_point: Vector3 = room.exit_position
+	check(await walk_out(exit_point + Vector3(0,0,1.2)),"walking through the door leaves the house")
+	check(world.session.state.place_id.is_empty(),"exit returns to park")
 	await create_timer(.4).timeout
 	check(not park.house_view and world.player.visual.visible,"first-person state restored")
 	check(await world.session.enter_place(LAYOUT.HAUNTED_ID,false),"reentry recreates house")
@@ -89,6 +92,19 @@ func walk(point: Vector3) -> bool:
 		await physics_frame
 	world.player.automatic_direction = Vector3.ZERO
 	return Vector2(point.x-world.player.global_position.x,point.z-world.player.global_position.z).length()<.35
+
+func walk_out(point: Vector3) -> bool:
+	world.player.speed = 3.5
+	var deadline := Time.get_ticks_msec()+8000
+	while Time.get_ticks_msec()<deadline and not world.session.state.place_id.is_empty():
+		var offset: Vector3 = point-world.player.global_position
+		offset.y = 0
+		world.player.automatic_direction = offset.normalized() if offset.length()>.05 else Vector3.ZERO
+		await physics_frame
+	world.player.automatic_direction = Vector3.ZERO
+	# A câmera volta do zoom da porta antes de liberar o jogador (CAMERA_SECONDS).
+	while Time.get_ticks_msec()<deadline and world.player.input_locked: await physics_frame
+	return world.session.state.place_id.is_empty()
 
 func actor_depth() -> void:
 	var room = world.session.room
