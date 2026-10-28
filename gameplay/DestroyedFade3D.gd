@@ -13,6 +13,10 @@ static var shrink_enabled := OS.get_environment("GETECO_DEBRIS_SHRINK") == "1"
 
 static func schedule(body: Node3D, delay := DELAY, by_scale := false) -> void:
 	if not is_instance_valid(body) or body.has_meta("destroyed_cleanup"): return
+	# Paciente que morre com a equipe já a caminho ou atendendo fica para o legista recolher:
+	# com 4 s o corpo sumia antes do carro do IML (20-35 s) e o fluxo do legista nunca acontecia.
+	# Quem tira o corpo é EmergencyManager.complete (legista) ou _cleanup (ocorrência expirada, 120 s).
+	if body.get_meta("emergency_attended", false): return
 	body.set_meta("destroyed_cleanup", true)
 	var timer := body.create_tween()
 	timer.tween_interval(delay)

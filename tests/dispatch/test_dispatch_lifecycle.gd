@@ -75,7 +75,9 @@ func _medic_world(depot: Vector3 = Vector3(4, 0, 2)) -> Dictionary:
 	bundle["key"] = bundle.gameplay.emergency.serial
 	return bundle
 
-func _wait_unit(bundle: Dictionary, limit: int = 300) -> RefCounted:
+## O socorro só sai 12-22 s depois do ferimento desde 2026-10-17 (DispatchRules.medic_response_delay);
+## os 300 quadros (5 s) de antes nunca viam a viatura e as 15 verificações seguintes caíam juntas.
+func _wait_unit(bundle: Dictionary, limit: int = 1800) -> RefCounted:
 	for tick in limit:
 		await physics_frame
 		if not bundle.controller.units.is_empty(): return bundle.controller.units[0]
@@ -247,7 +249,8 @@ func _no_road_access() -> void:
 	var patient := KIT.add_patient(bundle.scene, Vector3(30, 0, 29))
 	emergency.report_injury(patient, false)
 	var key: int = emergency.serial
-	await _frames(300)
+	# Passa do atraso do socorro (12-22 s): antes disso nem há tentativa de despacho para falhar.
+	await _frames(1800)
 	check(controller.units.is_empty(), "sem rua a menos de %.0f m do paciente, nenhuma viatura sai" % RULES.FOOT_RANGE)
 	check(not controller.events_named("spawn_failed").is_empty(), "a falha de despacho é registrada")
 	check(not emergency.incidents[key].assigned, "ocorrência continua livre para expirar pelo prazo do gerente")

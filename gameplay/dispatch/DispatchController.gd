@@ -1072,6 +1072,7 @@ func dispatch_service_to(key: int, budget: int = -1) -> RefCounted:
 		unit.set_siren_on()
 		record.assigned = true
 		record.crew = car
+		if service != "fire" and is_instance_valid(actor): actor.set_meta("emergency_attended", true)
 		if service == "mortician": emergency.mortician_clock = RULES.MORTICIAN_COOLDOWN
 		emit_dispatch_event("dispatched", {"unit": unit, "distance": candidate.distance, "end_gap": plan.end_gap})
 		return unit

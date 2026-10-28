@@ -166,6 +166,7 @@ func _dispatch(key: int) -> bool:
 			continue
 		crews.append(crew)
 		record.assigned = true
+		if record.role != "fire" and is_instance_valid(record.actor): record.actor.set_meta("emergency_attended", true)
 		record.crew = crew
 		if record.role == "mortician": mortician_clock = RULES.MORTICIAN_COOLDOWN
 		return true
@@ -179,6 +180,8 @@ func complete(key: int) -> void:
 		if record.role == "mortician":
 			actor.queue_free()
 		elif record.role == "medic":
+			# Recuperado volta a ser pedestre comum: se morrer depois, some em 4 s como os outros.
+			actor.remove_meta("emergency_attended")
 			if actor.has_method("recover_from_injury"):
 				actor.recover_from_injury()
 			else:
