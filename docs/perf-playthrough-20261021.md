@@ -1256,3 +1256,37 @@ vem depois de material trocado num objeto já desenhado (§18). No cache de hoje
   pipeline sob a cortina.
 
 Uma sessão fria com pico e o registro `slow_compile_cache` já separa (S) de (P). O A/B só confirma.
+
+## 20. Bancada fria de 28/10 (noite, PC sozinho, 3440×1440): o que caiu e o que sobrou
+
+Export `artifacts/perf-q10-20261028` (main de 28/10 com `slow_compile_cache`), rota oeste com estresse e despacho,
+`settings-jogador-3440.cfg`. Total de 18 sessões frias.
+
+**Shader frio × pipeline fria** (`COLD_PART_A=shader COLD_PART_B=pipeline`, ABBAABBAABBA):
+
+| lado | frio | sessões com quadro ≥ 1 s | `slow_compile_cache` no pico |
+|---|---|---|---|
+| A | só `shader_cache` | 3 de 6 (1,24 / 1,31+1,25 / 3,52 s) | `draw`: godot=0 nos 3 picos; `surface` (98,7 s): godot=1, SceneForwardClustered |
+| B | `vulkan/` + driver | 2 de 6 (1,11 / 2,38 s) | o driver gravou no `.bin` do GLCache (um arquivo único de ~78 MB, que só cresce: prova pouco) |
+
+**Sem explosão** (`--benchmark-explode=0`, frio total, 6 sessões): pico em **4 de 6** (1,21 / 2,24 / 2,28 / 3,36 s),
+com **zero carcaças**, mais tarde (t = 166–182 s; com explosões era 92–104 s) e um `surface` de 1,15 s com godot=1.
+
+**Conclusões:**
+- **Família `surface` = código de material novo (S).** Nas duas sessões com o shader frio que tiveram esse pico, um
+  `SceneForwardClustered` novo foi gravado no quadro. Falta saber qual material. Os arquivos ficaram em
+  `%APPDATA%/GetecoV2/cache-cold-q10A8/` e `cache-cold-q10X1/`: mapear o hash para o material é o próximo passo.
+- **Família `draw` não é (S)**: godot=0 em todos os picos `draw` com o shader frio.
+- **Carcaça e explosão caem de vez**: sem explosão, o pico vem em 4 de 6, com zero carcaças. A ligação com
+  carcaça das rodadas de 27/10 era coincidência de horário: explosão a cada 8 s.
+- **O cache não salva o `draw`**: com `vulkan/` e o cache do driver quentes (lado A), o pico se repete em sessões
+  seguidas (A4, A8, A9). Ou a pipeline não fica no cache, ou o tempo não é de compilar. Em todo pico `draw` há
+  também 3–6 compilações `specialization` no mesmo quadro, e `render_cpu_ms` fica em ~2 ms. O tempo está numa
+  espera fora do desenho medido, o que é compatível com a thread de render esperando compilação nos workers.
+- **Nada nasce no quadro do pico** (nodes_delta 0, objects_delta −2…5): é algo que já existia, desenhado de um
+  jeito novo (entrando na tela, passe novo, luz nova).
+- Também descartadas: ambulância (há picos sem nenhuma) e troca de arma (só as quatro de sempre).
+
+**Próximo passo:** (1) identificar o material do `surface` pelo arquivo do cache frio; (2) para o `draw`, testar a
+espera nos workers, isto é, se `WorkerThreadPool` está ocupado no quadro do pico (StallLog pode contar tarefas
+pendentes), e depois trace do motor (Tracy/Nsight). O pico em ~50 % das sessões frias continua.
