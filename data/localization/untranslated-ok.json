@@ -1,0 +1,31 @@
+{
+  "_comment": "Lido por tests/test_localization_coverage.gd (não é carregado pelo jogo). Textos em português que ficam iguais em inglês, e arquivos que não mostram texto ao jogador ou que já escolhem o idioma sozinhos.",
+  "files": [
+    "gameplay/dispatch/PursuitRadio.gd",
+    "gameplay/dispatch/overtaking/OvertakeRules.gd",
+    "gameplay/routines_v1/RoutineValidation.gd",
+    "runtime/ReleaseBenchmark.gd",
+    "runtime/SessionSystemProfile.gd",
+    "audio/export_compat/ImportedAudioLoader.gd",
+    "audio/VoiceActorBinding.gd",
+    "world/city_look/CityBrands.gd",
+    "world/regions/NativeRegion.gd",
+    "runtime/desert/drag_meet/DragMeetBarks.gd",
+    "assets/regions/source/characters/pedestrians/CitizenAppearance.gd",
+    "gameplay/routines_v2/MountainVillagerCatalog.gd",
+    "gameplay/routines_v1/V1RoutineActor.gd"
+  ],
+  "texts": [
+    "Lívia", "Célia", "Luísa", "Lúcia", "Tânia", "André", "Tião", "Seu Tião", "Otávio", "Sérgio", "Ícaro",
+    "Pança", "Seu Bento", "Dona Fátima", "Seu Abel", "seu Arlindo", "Dente de Ouro",
+    "Motel Oásis", "Estação Zero", "ESTAÇÃO ZERO", "Vértice", "VÉRTICE", "VÉRTICE MX", "Vértice MR",
+    "Boa Praça", "BOA PRAÇA", "VIAÇÃO SERRA", "CASA DO COVEIRO",
+    "Órbita City 1.0", "Sertão Trail 4x4", "Cobra V8 Custom (Cobras de Ferro)",
+    "Carcará SS", "Trovão 440", "Caimã 454", "Imperador 64 Conversível", "Bastião 63", "Maré",
+    "Faísca", "Faísca 250", "Faísca GT", "Faísca RX", "Víbora 125",
+    "Medeiros Regional Rosé", "Rosé",
+    "Digo\nLívia\nRaul\nJessica\nNadir",
+    "Estouro de pneu",
+    "%s nº %d · %d de 10"
+  ]
+}

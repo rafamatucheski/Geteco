@@ -4,50 +4,50 @@
   "source": "docs/roteiro-diretor-geteco-20261021.md — Prólogo (A noite da operação) e A2-06 (flashback de Vicente)",
   "title": {
     "pt": "Oito anos depois.",
-    "en": ""
+    "en": "Eight years later."
   },
   "objectives": {
     "signal": {
       "pt": "Sinalize para o caminhão parar.",
-      "en": ""
+      "en": "Signal the truck to stop."
     },
     "walk": {
       "pt": "Vá até a cabine com Bastos.",
-      "en": ""
+      "en": "Walk to the cab with Bastos."
     },
     "cuff": {
       "pt": "Algeme o motorista.",
-      "en": ""
+      "en": "Cuff the driver."
     },
     "drive": {
       "pt": "Siga pela rodovia.",
-      "en": ""
+      "en": "Follow the highway."
     },
     "fight": {
       "pt": "Derrube o atirador.",
-      "en": ""
+      "en": "Take down the shooter."
     },
     "flee": {
       "pt": "Não deixe o motorista fugir.",
-      "en": ""
+      "en": "Don't let the driver get away."
     }
   },
   "prompts": {
     "signal": {
       "pt": "Sinalizar",
-      "en": ""
+      "en": "Signal"
     },
     "cuff": {
       "pt": "Segure para algemar",
-      "en": ""
+      "en": "Hold to cuff"
     },
     "skip": {
       "pt": "Esc de novo para pular",
-      "en": ""
+      "en": "Esc again to skip"
     },
     "fire": {
       "pt": "Atirar",
-      "en": ""
+      "en": "Shoot"
     }
   },
   "dante": {
@@ -57,27 +57,27 @@
         "speaker": "Prado",
         "radio": true,
         "pt": "O caminhão do frete é o terceiro.",
-        "en": ""
+        "en": "The freight truck is the third one."
       },
       {
         "id": "prado_desarmado",
         "speaker": "Prado",
         "radio": true,
         "pt": "Motorista desarmado.",
-        "en": ""
+        "en": "Driver's unarmed."
       },
       {
         "id": "prado_procedimento",
         "speaker": "Prado",
         "radio": true,
         "pt": "Procedimento, Ferraz.",
-        "en": ""
+        "en": "Procedure, Ferraz."
       },
       {
         "id": "dante_copiado",
         "speaker": "Dante",
         "pt": "Copiado.",
-        "en": ""
+        "en": "Copy."
       }
     ],
     "colleagues": [
@@ -85,13 +85,13 @@
         "id": "bastos_terceiro",
         "speaker": "Bastos",
         "pt": "Ferraz, o terceiro é teu.",
-        "en": ""
+        "en": "Ferraz, the third one's yours."
       },
       {
         "id": "dante_sei",
         "speaker": "Dante",
         "pt": "Eu sei contar, Bastos.",
-        "en": ""
+        "en": "I can count, Bastos."
       }
     ],
     "stopped": [
@@ -99,7 +99,7 @@
         "id": "lima_motor",
         "speaker": "Lima",
         "pt": "Deixou o motor ligado. Vai com calma.",
-        "en": ""
+        "en": "He left the engine running. Easy does it."
       }
     ],
     "approach": [
@@ -107,7 +107,7 @@
         "id": "bastos_comigo",
         "speaker": "Bastos",
         "pt": "Vem comigo, Ferraz.",
-        "en": ""
+        "en": "With me, Ferraz."
       }
     ],
     "ask": [
@@ -115,7 +115,7 @@
         "id": "bastos_boa_noite",
         "speaker": "Bastos",
         "pt": "Boa noite. Desliga o motor e desce.",
-        "en": ""
+        "en": "Good evening. Turn off the engine and step out."
       }
     ],
     "door": [
@@ -123,13 +123,13 @@
         "id": "vicente_dante",
         "speaker": "Vicente",
         "pt": "Dante?",
-        "en": ""
+        "en": "Dante?"
       },
       {
         "id": "vicente_farda",
         "speaker": "Vicente",
         "pt": "Cê tá de farda.",
-        "en": ""
+        "en": "You're in uniform."
       }
     ],
     "order_out": [
@@ -137,37 +137,37 @@
         "id": "bastos_conhece",
         "speaker": "Bastos",
         "pt": "Conhece ele?",
-        "en": ""
+        "en": "You know him?"
       },
       {
         "id": "vicente_irmao",
         "speaker": "Vicente",
         "pt": "Ele é meu irmão.",
-        "en": ""
+        "en": "He's my brother."
       },
       {
         "id": "bastos_desce",
         "speaker": "Bastos",
         "pt": "Desce devagar. Mão onde eu possa ver.",
-        "en": ""
+        "en": "Step out slowly. Hands where I can see them."
       },
       {
         "id": "vicente_frete",
         "speaker": "Vicente",
         "pt": "É frete. Geladeira e fogão pra Santa Lua.",
-        "en": ""
+        "en": "It's freight. Fridges and stoves for Santa Lua."
       },
       {
         "id": "bastos_bau",
         "speaker": "Bastos",
         "pt": "Então abre o baú.",
-        "en": ""
+        "en": "Then open the back."
       },
       {
         "id": "vicente_nota",
         "speaker": "Vicente",
         "pt": "Abro. Tá tudo com nota.",
-        "en": ""
+        "en": "Sure. It's all got paperwork."
       }
     ],
     "ambush": [
@@ -175,13 +175,13 @@
         "id": "vicente_rato",
         "speaker": "Vicente",
         "pt": "Rato, não!",
-        "en": ""
+        "en": "Rato, no!"
       },
       {
         "id": "dante_arma",
         "speaker": "Dante",
         "pt": "Arma!",
-        "en": ""
+        "en": "Gun!"
       }
     ],
     "man_down": [
@@ -189,7 +189,7 @@
         "id": "lima_bastos",
         "speaker": "Lima",
         "pt": "Bastos!",
-        "en": ""
+        "en": "Bastos!"
       }
     ],
     "lima_cover": [
@@ -197,7 +197,7 @@
         "id": "lima_viatura",
         "speaker": "Lima",
         "pt": "Tô na viatura! Segura a esquerda!",
-        "en": ""
+        "en": "I'm at the car! Cover the left!"
       }
     ],
     "shooter_down": [
@@ -205,7 +205,7 @@
         "id": "lima_caiu",
         "speaker": "Lima",
         "pt": "Caiu. Caiu!",
-        "en": ""
+        "en": "He's down. He's down!"
       }
     ],
     "flee": [
@@ -213,13 +213,13 @@
         "id": "lima_motorista",
         "speaker": "Lima",
         "pt": "O motorista, Ferraz!",
-        "en": ""
+        "en": "The driver, Ferraz!"
       },
       {
         "id": "vicente_nao_sabia",
         "speaker": "Vicente",
         "pt": "Eu não sabia que ele tava armado!",
-        "en": ""
+        "en": "I didn't know he was armed!"
       }
     ],
     "lima_radio": [
@@ -228,7 +228,7 @@
         "speaker": "Lima",
         "radio": true,
         "pt": "Policial baleado na doze. Manda apoio.",
-        "en": ""
+        "en": "Officer shot on the twelve. Send backup."
       }
     ],
     "wounded": [
@@ -236,7 +236,7 @@
         "id": "vicente_nada",
         "speaker": "Vicente",
         "pt": "Dante... eu não fiz nada.",
-        "en": ""
+        "en": "Dante... I didn't do anything."
       }
     ],
     "order": [
@@ -245,7 +245,7 @@
         "speaker": "Prado",
         "radio": true,
         "pt": "Ferraz. Procedimento.",
-        "en": ""
+        "en": "Ferraz. Procedure."
       }
     ],
     "escort": [
@@ -253,7 +253,7 @@
         "id": "vicente_abre",
         "speaker": "Vicente",
         "pt": "Abre o baú. Olha lá dentro.",
-        "en": ""
+        "en": "Open the back. Look inside."
       }
     ],
     "cargo": [
@@ -261,13 +261,13 @@
         "id": "lima_eletro",
         "speaker": "Lima",
         "pt": "É eletrodoméstico, Ferraz. Tudo com nota.",
-        "en": ""
+        "en": "It's appliances, Ferraz. All with paperwork."
       },
       {
         "id": "vicente_viu",
         "speaker": "Vicente",
         "pt": "Viu? Viu?!",
-        "en": ""
+        "en": "See? See?!"
       }
     ]
   },
@@ -278,33 +278,33 @@
         "speaker": "Conhecido do Cobre",
         "radio": true,
         "pt": "Passou o trevo?",
-        "en": ""
+        "en": "Past the interchange?"
       },
       {
         "id": "vicente_passei",
         "speaker": "Vicente",
         "pt": "Agora.",
-        "en": ""
+        "en": "Just now."
       },
       {
         "id": "cobre_carga",
         "speaker": "Conhecido do Cobre",
         "radio": true,
         "pt": "Não abre a traseira pra ninguém.",
-        "en": ""
+        "en": "Don't open the back for anyone."
       },
       {
         "id": "vicente_que_tem",
         "speaker": "Vicente",
         "pt": "Que que tem lá atrás?",
-        "en": ""
+        "en": "What's back there?"
       },
       {
         "id": "cobre_frete",
         "speaker": "Conhecido do Cobre",
         "radio": true,
         "pt": "Frete. Cê é pago pra dirigir.",
-        "en": ""
+        "en": "Freight. You're paid to drive."
       }
     ],
     "radio_warning": [
@@ -313,27 +313,27 @@
         "speaker": "Conhecido do Cobre",
         "radio": true,
         "pt": "Tem blitz no doze.",
-        "en": ""
+        "en": "There's a checkpoint on the twelve."
       },
       {
         "id": "cobre_nao_para",
         "speaker": "Conhecido do Cobre",
         "radio": true,
         "pt": "Não para.",
-        "en": ""
+        "en": "Don't stop."
       },
       {
         "id": "vicente_e_se",
         "speaker": "Vicente",
         "pt": "E se mandarem?",
-        "en": ""
+        "en": "And if they tell me to?"
       },
       {
         "id": "cobre_nao_para_2",
         "speaker": "Conhecido do Cobre",
         "radio": true,
         "pt": "Cê não para, Vicente.",
-        "en": ""
+        "en": "You don't stop, Vicente."
       }
     ],
     "lights": [
@@ -341,14 +341,14 @@
         "id": "vicente_giroflex",
         "speaker": "Vicente",
         "pt": "Tô vendo o giroflex.",
-        "en": ""
+        "en": "I can see the lights."
       },
       {
         "id": "cobre_acelera",
         "speaker": "Conhecido do Cobre",
         "radio": true,
         "pt": "Então acelera.",
-        "en": ""
+        "en": "Then floor it."
       }
     ],
     "stop": [
@@ -356,7 +356,7 @@
         "id": "vicente_calma",
         "speaker": "Vicente",
         "pt": "Calma. É só documento.",
-        "en": ""
+        "en": "Relax. It's just a document check."
       }
     ]
   }

@@ -3,33 +3,33 @@
   "voice_status": "subtitles_only",
   "source": "docs/roteiro-diretor-geteco-20261021.md, M06-C Turno da noite (a conversa da baia virou ligação: aqui o Neco só aparece por telefone)",
   "neco_call": [
-    {"speaker": "Neco", "pt": "Tá acordado? Tô embaixo de um caminhão da Vértice.", "en": ""},
-    {"speaker": "Dante", "pt": "Você guincha caminhão da Vértice.", "en": ""},
-    {"speaker": "Neco", "pt": "Guincho. Eles pagam em dia, coisa rara.", "en": ""},
-    {"speaker": "Dante", "pt": "E de noite?", "en": ""},
-    {"speaker": "Neco", "pt": "De noite eles não chamam guincho. Chamam outra coisa.", "en": ""},
-    {"speaker": "Dante", "pt": "Quantos?", "en": ""},
-    {"speaker": "Neco", "pt": "Dois na ronda, um na guarita. Depois das dez.", "en": ""},
-    {"speaker": "Neco", "pt": "Se der barulho, chega uma van com mais três. Gente dos Cobras, não é vigia de firma.", "en": ""},
-    {"speaker": "Neco", "pt": "Tem um bueiro na calçada do portão. Dá no porão deles, e o porão sobe no galpão.", "en": ""},
-    {"speaker": "Neco", "pt": "Eu sei porque já tirei carro de lá que não devia estar lá.", "en": ""},
-    {"speaker": "Dante", "pt": "Você vai comigo?", "en": ""},
-    {"speaker": "Neco", "pt": "Nem morto.", "en": ""},
-    {"speaker": "Neco", "pt": "Mas se precisar de um guincho às três da manhã, eu tô acordado.", "en": ""}
+    {"speaker": "Neco", "pt": "Tá acordado? Tô embaixo de um caminhão da Vértice.", "en": "You awake? I'm under one of Vértice's trucks."},
+    {"speaker": "Dante", "pt": "Você guincha caminhão da Vértice.", "en": "You tow Vértice trucks."},
+    {"speaker": "Neco", "pt": "Guincho. Eles pagam em dia, coisa rara.", "en": "I tow. They pay on time, which is rare."},
+    {"speaker": "Dante", "pt": "E de noite?", "en": "And at night?"},
+    {"speaker": "Neco", "pt": "De noite eles não chamam guincho. Chamam outra coisa.", "en": "At night they don't call a tow truck. They call something else."},
+    {"speaker": "Dante", "pt": "Quantos?", "en": "How many?"},
+    {"speaker": "Neco", "pt": "Dois na ronda, um na guarita. Depois das dez.", "en": "Two on patrol, one in the guardhouse. After ten."},
+    {"speaker": "Neco", "pt": "Se der barulho, chega uma van com mais três. Gente dos Cobras, não é vigia de firma.", "en": "If it gets loud, a van shows up with three more. Cobras, not security guards."},
+    {"speaker": "Neco", "pt": "Tem um bueiro na calçada do portão. Dá no porão deles, e o porão sobe no galpão.", "en": "There's a manhole on the sidewalk by the gate. It leads into their basement, and the basement goes up into the warehouse."},
+    {"speaker": "Neco", "pt": "Eu sei porque já tirei carro de lá que não devia estar lá.", "en": "I know because I've hauled cars out of there that shouldn't have been there."},
+    {"speaker": "Dante", "pt": "Você vai comigo?", "en": "You coming with me?"},
+    {"speaker": "Neco", "pt": "Nem morto.", "en": "Not a chance."},
+    {"speaker": "Neco", "pt": "Mas se precisar de um guincho às três da manhã, eu tô acordado.", "en": "But if you need a tow at three in the morning, I'm awake."}
   ],
   "dispatch_book": [
-    {"speaker": "Dante", "pt": "Dia catorze. Carreta três. Saída 22h10. Destino: Estrada do Sal.", "en": ""},
-    {"speaker": "Dante", "pt": "Salinas.", "en": ""},
-    {"speaker": "Dante", "pt": "Retorno...", "en": ""},
-    {"speaker": "Dante", "pt": "Não tem retorno.", "en": ""},
-    {"speaker": "Livro de despachos", "pt": "motorista substituído — aut. 0417", "en": ""}
+    {"speaker": "Dante", "pt": "Dia catorze. Carreta três. Saída 22h10. Destino: Estrada do Sal.", "en": "The fourteenth. Trailer three. Out at 10:10 p.m. Destination: Salt Road."},
+    {"speaker": "Dante", "pt": "Salinas.", "en": "Salinas."},
+    {"speaker": "Dante", "pt": "Retorno...", "en": "Return..."},
+    {"speaker": "Dante", "pt": "Não tem retorno.", "en": "There's no return."},
+    {"speaker": "Livro de despachos", "pt": "motorista substituído — aut. 0417", "en": "driver replaced — auth. 0417"}
   ],
   "maciota_call": [
-    {"speaker": "Maciota", "pt": "São três e meia, Dante.", "en": ""},
-    {"speaker": "Dante", "pt": "A carga do Vicente passou pelas Salinas. No deserto.", "en": ""},
-    {"speaker": "Maciota", "pt": "...", "en": ""},
-    {"speaker": "Maciota", "pt": "A lista do Takeshi também fala do deserto.", "en": ""},
-    {"speaker": "Dante", "pt": "Eu sei.", "en": ""},
-    {"speaker": "Maciota", "pt": "Então dorme. Amanhã você tem corrida.", "en": ""}
+    {"speaker": "Maciota", "pt": "São três e meia, Dante.", "en": "It's three thirty, Dante."},
+    {"speaker": "Dante", "pt": "A carga do Vicente passou pelas Salinas. No deserto.", "en": "Vicente's cargo went through Salinas. In the desert."},
+    {"speaker": "Maciota", "pt": "...", "en": "..."},
+    {"speaker": "Maciota", "pt": "A lista do Takeshi também fala do deserto.", "en": "Takeshi's list mentions the desert too."},
+    {"speaker": "Dante", "pt": "Eu sei.", "en": "I know."},
+    {"speaker": "Maciota", "pt": "Então dorme. Amanhã você tem corrida.", "en": "Then get some sleep. You've got a race tomorrow."}
   ]
 }

@@ -39,6 +39,7 @@ FAST=(
 	"headless|tests/test_police_crime_contract.gd|"
 	"headless|tests/test_private_security_crime.gd|"
 	"headless|tests/test_gpu_release_scene_swap.gd|"
+	"headless|tests/test_localization_coverage.gd|"
 )
 # As quatro primeiras são a verificação mínima do CLAUDE.md depois de mudança estrutural.
 WORLD=(

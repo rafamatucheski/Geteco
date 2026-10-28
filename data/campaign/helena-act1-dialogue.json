@@ -3,132 +3,132 @@
   "voice_status": "subtitles_only",
   "source": "docs/roteiro-diretor-geteco-20261021.md (Ato 1 — Harbor)",
   "m01_armed": [
-    {"speaker": "Helena", "pt": "Aqui dentro, só caneta.", "en": ""}
+    {"speaker": "Helena", "pt": "Aqui dentro, só caneta.", "en": "In here, pens only."}
   ],
   "m01_name": [
-    {"speaker": "Helena", "pt": "Ferraz. Você é irmão do Vicente.", "en": ""},
-    {"speaker": "Dante", "pt": "Você conhece?", "en": ""},
-    {"speaker": "Helena", "pt": "Ele sacava aqui. Sempre em dinheiro vivo. Sempre com pressa.", "en": ""}
+    {"speaker": "Helena", "pt": "Ferraz. Você é irmão do Vicente.", "en": "Ferraz. You're Vicente's brother."},
+    {"speaker": "Dante", "pt": "Você conhece?", "en": "You know him?"},
+    {"speaker": "Helena", "pt": "Ele sacava aqui. Sempre em dinheiro vivo. Sempre com pressa.", "en": "He used to withdraw here. Always cash. Always in a hurry."}
   ],
   "m02_chassis": [
-    {"speaker": "Ferrugem", "pt": "Serviço limpo. Conheço a mão.", "en": ""},
-    {"speaker": "Dante", "pt": "De quem?", "en": ""},
-    {"speaker": "Ferrugem", "pt": "Pergunta pro teu irmão.", "en": ""}
+    {"speaker": "Ferrugem", "pt": "Serviço limpo. Conheço a mão.", "en": "Clean job. I know whose hands did it."},
+    {"speaker": "Dante", "pt": "De quem?", "en": "Whose?"},
+    {"speaker": "Ferrugem", "pt": "Pergunta pro teu irmão.", "en": "Ask your brother."}
   ],
   "ride": [
-    {"speaker": "Helena", "pt": "Só até o canal. Se não for desvio.", "en": ""},
-    {"speaker": "Dante", "pt": "Não é.", "en": ""},
-    {"speaker": "Helena", "pt": "É, sim. Mas obrigada.", "en": ""},
-    {"speaker": "Helena", "pt": "Esse carro é do Maciota.", "en": ""},
-    {"speaker": "Dante", "pt": "Ele emprestou.", "en": ""},
-    {"speaker": "Helena", "pt": "O Maciota não empresta nem caneta.", "en": ""},
-    {"speaker": "Helena", "pt": "Minha família é de Santa Lua.", "en": ""},
-    {"speaker": "Helena", "pt": "No deserto. Onde ninguém precisa de banco.", "en": ""},
-    {"speaker": "Dante", "pt": "E você veio trabalhar num.", "en": ""},
-    {"speaker": "Helena", "pt": "Alguém tem que contar o dinheiro dos outros.", "en": ""},
-    {"speaker": "Helena", "pt": "Sua vez. Conta uma coisa sua.", "en": ""},
-    {"speaker": "Helena", "pt": "Tá. Eu também não contaria.", "en": ""}
+    {"speaker": "Helena", "pt": "Só até o canal. Se não for desvio.", "en": "Just to the canal. If it's not out of your way."},
+    {"speaker": "Dante", "pt": "Não é.", "en": "It's not."},
+    {"speaker": "Helena", "pt": "É, sim. Mas obrigada.", "en": "Yes, it is. But thanks."},
+    {"speaker": "Helena", "pt": "Esse carro é do Maciota.", "en": "This is Maciota's car."},
+    {"speaker": "Dante", "pt": "Ele emprestou.", "en": "He lent it to me."},
+    {"speaker": "Helena", "pt": "O Maciota não empresta nem caneta.", "en": "Maciota won't even lend a pen."},
+    {"speaker": "Helena", "pt": "Minha família é de Santa Lua.", "en": "My family is from Santa Lua."},
+    {"speaker": "Helena", "pt": "No deserto. Onde ninguém precisa de banco.", "en": "In the desert. Where nobody needs a bank."},
+    {"speaker": "Dante", "pt": "E você veio trabalhar num.", "en": "And you came to work in one."},
+    {"speaker": "Helena", "pt": "Alguém tem que contar o dinheiro dos outros.", "en": "Someone has to count other people's money."},
+    {"speaker": "Helena", "pt": "Sua vez. Conta uma coisa sua.", "en": "Your turn. Tell me something about you."},
+    {"speaker": "Helena", "pt": "Tá. Eu também não contaria.", "en": "Fine. I wouldn't tell either."}
   ],
   "ride_drop": [
-    {"speaker": "Helena", "pt": "Aqui tá bom.", "en": ""}
+    {"speaker": "Helena", "pt": "Aqui tá bom.", "en": "Here's fine."}
   ],
   "ride_abort": [
-    {"speaker": "Helena", "pt": "Eu desço aqui. Obrigada.", "en": ""}
+    {"speaker": "Helena", "pt": "Eu desço aqui. Obrigada.", "en": "I'll get out here. Thanks."}
   ],
   "debt_bank": [
-    {"speaker": "Helena", "pt": "Olha a dona Cida. Pagou a parcela do carro dia cinco.", "en": ""},
-    {"speaker": "Dante", "pt": "Tá.", "en": ""},
-    {"speaker": "Helena", "pt": "E pagou de novo dia cinco. Pra uma conta sem nome.", "en": ""},
-    {"speaker": "Dante", "pt": "Erro do banco?", "en": ""},
-    {"speaker": "Helena", "pt": "Erro do banco eu conserto. Isso aqui eu só posso imprimir.", "en": ""},
-    {"speaker": "Helena", "pt": "Quem não paga a segunda some com o carro. Eles chamam de garantia.", "en": ""},
-    {"speaker": "Dante", "pt": "E por que você tá me mostrando?", "en": ""},
-    {"speaker": "Helena", "pt": "Porque o Maciota disse que você não sabe ficar quieto.", "en": ""},
-    {"speaker": "Helena", "pt": "Eu também não. Mas eu tenho chefe.", "en": ""}
+    {"speaker": "Helena", "pt": "Olha a dona Cida. Pagou a parcela do carro dia cinco.", "en": "Look at Dona Cida. She paid her car installment on the fifth."},
+    {"speaker": "Dante", "pt": "Tá.", "en": "Okay."},
+    {"speaker": "Helena", "pt": "E pagou de novo dia cinco. Pra uma conta sem nome.", "en": "And paid again on the fifth. To an account with no name."},
+    {"speaker": "Dante", "pt": "Erro do banco?", "en": "Bank error?"},
+    {"speaker": "Helena", "pt": "Erro do banco eu conserto. Isso aqui eu só posso imprimir.", "en": "Bank errors I can fix. This I can only print."},
+    {"speaker": "Helena", "pt": "Quem não paga a segunda some com o carro. Eles chamam de garantia.", "en": "Whoever skips the second payment loses the car. They call it collateral."},
+    {"speaker": "Dante", "pt": "E por que você tá me mostrando?", "en": "And why are you showing me?"},
+    {"speaker": "Helena", "pt": "Porque o Maciota disse que você não sabe ficar quieto.", "en": "Because Maciota said you don't know how to keep quiet."},
+    {"speaker": "Helena", "pt": "Eu também não. Mas eu tenho chefe.", "en": "Neither do I. But I have a boss."}
   ],
   "debt_neco": [
-    {"speaker": "Neco", "pt": "Guinchar de volta carro que os Cobras tomaram?", "en": ""},
-    {"speaker": "Neco", "pt": "Cê quer morrer de qual jeito?", "en": ""},
-    {"speaker": "Dante", "pt": "Você paga eles também.", "en": ""},
-    {"speaker": "Neco", "pt": "Todo mundo paga.", "en": ""},
-    {"speaker": "Neco", "pt": "Tá. Mas o diesel é por sua conta.", "en": ""}
+    {"speaker": "Neco", "pt": "Guinchar de volta carro que os Cobras tomaram?", "en": "Tow back cars the Cobras took?"},
+    {"speaker": "Neco", "pt": "Cê quer morrer de qual jeito?", "en": "How exactly do you want to die?"},
+    {"speaker": "Dante", "pt": "Você paga eles também.", "en": "You pay them too."},
+    {"speaker": "Neco", "pt": "Todo mundo paga.", "en": "Everybody pays."},
+    {"speaker": "Neco", "pt": "Tá. Mas o diesel é por sua conta.", "en": "Fine. But the diesel's on you."}
   ],
   "debt_cobras": [
-    {"speaker": "Neco", "pt": "Tem Cobra chegando aí. Engata e some.", "en": ""}
+    {"speaker": "Neco", "pt": "Tem Cobra chegando aí. Engata e some.", "en": "Cobras coming your way. Hook it up and vanish."}
   ],
   "press_yard": [
-    {"speaker": "Neco", "pt": "Não abre isso não, cara.", "en": ""},
-    {"speaker": "Dante", "pt": "Esse carro é de cliente do Maciota.", "en": ""},
-    {"speaker": "Neco", "pt": "Era. Agora é ferro.", "en": ""},
-    {"speaker": "Dante", "pt": "Quem trouxe?", "en": ""},
-    {"speaker": "Neco", "pt": "Um moleque que corre lá pro deserto. Paga a prensa adiantado, nunca pede nota.", "en": ""},
-    {"speaker": "Neco", "pt": "Falou que o irmão era polícia. Achei que era papo.", "en": ""},
-    {"speaker": "Neco", "pt": "Ah, não. Não me diz.", "en": ""}
+    {"speaker": "Neco", "pt": "Não abre isso não, cara.", "en": "Don't open that, man."},
+    {"speaker": "Dante", "pt": "Esse carro é de cliente do Maciota.", "en": "This car belongs to one of Maciota's customers."},
+    {"speaker": "Neco", "pt": "Era. Agora é ferro.", "en": "It did. Now it's scrap."},
+    {"speaker": "Dante", "pt": "Quem trouxe?", "en": "Who brought it?"},
+    {"speaker": "Neco", "pt": "Um moleque que corre lá pro deserto. Paga a prensa adiantado, nunca pede nota.", "en": "A kid who races out in the desert. Pays for the press up front, never asks for a receipt."},
+    {"speaker": "Neco", "pt": "Falou que o irmão era polícia. Achei que era papo.", "en": "Said his brother was a cop. I thought it was talk."},
+    {"speaker": "Neco", "pt": "Ah, não. Não me diz.", "en": "Oh, no. Don't tell me."}
   ],
   "press_chose_press": [
-    {"speaker": "Neco", "pt": "Tá bom. Esse eu não vi, você não viu.", "en": ""}
+    {"speaker": "Neco", "pt": "Tá bom. Esse eu não vi, você não viu.", "en": "All right. I didn't see this one, and neither did you."}
   ],
   "press_chose_return": [
-    {"speaker": "Neco", "pt": "Cê vai me arrumar problema, Ferraz.", "en": ""}
+    {"speaker": "Neco", "pt": "Cê vai me arrumar problema, Ferraz.", "en": "You're going to get me in trouble, Ferraz."}
   ],
   "wash_dock": [
-    {"speaker": "Helena", "pt": "Me suspenderam.", "en": ""},
-    {"speaker": "Dante", "pt": "Eu sei.", "en": ""},
-    {"speaker": "Helena", "pt": "Disseram que eu demorei pra apertar o alarme.", "en": ""},
-    {"speaker": "Dante", "pt": "Demorou?", "en": ""},
-    {"speaker": "Helena", "pt": "Três segundos.", "en": ""},
-    {"speaker": "Helena", "pt": "Você guarda a arma pra entrar no banco e depois volta de máscara pra roubar ele. Eu queria entender esse homem.", "en": ""},
-    {"speaker": "Dante", "pt": "E entendeu?", "en": ""},
-    {"speaker": "Helena", "pt": "Não. Mas o dinheiro que vocês levaram era dos Cobras. Eu fazia a conta deles.", "en": ""},
-    {"speaker": "Dante", "pt": "Então você sabe onde tem mais.", "en": ""},
-    {"speaker": "Helena", "pt": "Eu não disse isso.", "en": ""},
-    {"speaker": "Dante", "pt": "Não precisou.", "en": ""},
-    {"speaker": "Helena", "pt": "O posto deles fecha à meia-noite. O cofre só esvazia de manhã.", "en": ""},
-    {"speaker": "Helena", "pt": "Eu não vou. Mas eu vejo a câmera. Foi o banco que instalou.", "en": ""}
+    {"speaker": "Helena", "pt": "Me suspenderam.", "en": "They suspended me."},
+    {"speaker": "Dante", "pt": "Eu sei.", "en": "I know."},
+    {"speaker": "Helena", "pt": "Disseram que eu demorei pra apertar o alarme.", "en": "They said I took too long to hit the alarm."},
+    {"speaker": "Dante", "pt": "Demorou?", "en": "Did you?"},
+    {"speaker": "Helena", "pt": "Três segundos.", "en": "Three seconds."},
+    {"speaker": "Helena", "pt": "Você guarda a arma pra entrar no banco e depois volta de máscara pra roubar ele. Eu queria entender esse homem.", "en": "You put your gun away to walk into the bank, then come back in a mask to rob it. I wanted to understand that man."},
+    {"speaker": "Dante", "pt": "E entendeu?", "en": "And did you?"},
+    {"speaker": "Helena", "pt": "Não. Mas o dinheiro que vocês levaram era dos Cobras. Eu fazia a conta deles.", "en": "No. But the money you took was the Cobras'. I kept their account."},
+    {"speaker": "Dante", "pt": "Então você sabe onde tem mais.", "en": "So you know where there's more."},
+    {"speaker": "Helena", "pt": "Eu não disse isso.", "en": "I didn't say that."},
+    {"speaker": "Dante", "pt": "Não precisou.", "en": "You didn't have to."},
+    {"speaker": "Helena", "pt": "O posto deles fecha à meia-noite. O cofre só esvazia de manhã.", "en": "Their gas station closes at midnight. The safe only gets emptied in the morning."},
+    {"speaker": "Helena", "pt": "Eu não vou. Mas eu vejo a câmera. Foi o banco que instalou.", "en": "I'm not going. But I can see the camera. The bank installed it."}
   ],
   "wash_manager": [
-    {"speaker": "Helena · telefone", "pt": "O gerente saiu. Tem dois minutos.", "en": ""}
+    {"speaker": "Helena · telefone", "pt": "O gerente saiu. Tem dois minutos.", "en": "The manager stepped out. You have two minutes."}
   ],
   "wash_drawer": [
-    {"speaker": "Helena · telefone", "pt": "Gaveta de baixo. Não, a outra.", "en": ""}
+    {"speaker": "Helena · telefone", "pt": "Gaveta de baixo. Não, a outra.", "en": "Bottom drawer. No, the other one."}
   ],
   "wash_police": [
-    {"speaker": "Helena · telefone", "pt": "Viatura. Esquerda. Agora.", "en": ""}
+    {"speaker": "Helena · telefone", "pt": "Viatura. Esquerda. Agora.", "en": "Patrol car. Left. Now."}
   ],
   "wash_clear": [
-    {"speaker": "Helena · telefone", "pt": "Tá. Tá bom. Você saiu.", "en": ""}
+    {"speaker": "Helena · telefone", "pt": "Tá. Tá bom. Você saiu.", "en": "Okay. Okay. You're out."}
   ],
   "wash_late": [
-    {"speaker": "Helena · telefone", "pt": "Ele voltou. Sai daí.", "en": ""}
+    {"speaker": "Helena · telefone", "pt": "Ele voltou. Sai daí.", "en": "He's back. Get out of there."}
   ],
   "folder_dock": [
-    {"speaker": "Helena", "pt": "A auditoria começa segunda.", "en": ""},
-    {"speaker": "Dante", "pt": "E?", "en": ""},
-    {"speaker": "Helena", "pt": "Tem uma pasta trancada na minha gaveta. Meus documentos. E cinco anos da conta dos Cobras.", "en": ""},
-    {"speaker": "Dante", "pt": "Você copiou.", "en": ""},
-    {"speaker": "Helena", "pt": "Alguém tinha que guardar.", "en": ""},
-    {"speaker": "Helena", "pt": "Eu não posso entrar lá.", "en": ""},
-    {"speaker": "Dante", "pt": "E eu posso?", "en": ""},
-    {"speaker": "Helena", "pt": "Você já entrou uma vez.", "en": ""},
-    {"speaker": "Helena", "pt": "Pela porta da frente, inclusive.", "en": ""},
-    {"speaker": "Helena", "pt": "Porta dos fundos. Dois, nove, zero, seis. O vigia da noite gosta de olhar o cofre.", "en": ""}
+    {"speaker": "Helena", "pt": "A auditoria começa segunda.", "en": "The audit starts Monday."},
+    {"speaker": "Dante", "pt": "E?", "en": "And?"},
+    {"speaker": "Helena", "pt": "Tem uma pasta trancada na minha gaveta. Meus documentos. E cinco anos da conta dos Cobras.", "en": "There's a folder locked in my drawer. My papers. And five years of the Cobras' account."},
+    {"speaker": "Dante", "pt": "Você copiou.", "en": "You copied it."},
+    {"speaker": "Helena", "pt": "Alguém tinha que guardar.", "en": "Someone had to keep it."},
+    {"speaker": "Helena", "pt": "Eu não posso entrar lá.", "en": "I can't go in there."},
+    {"speaker": "Dante", "pt": "E eu posso?", "en": "And I can?"},
+    {"speaker": "Helena", "pt": "Você já entrou uma vez.", "en": "You've gone in once before."},
+    {"speaker": "Helena", "pt": "Pela porta da frente, inclusive.", "en": "Through the front door, even."},
+    {"speaker": "Helena", "pt": "Porta dos fundos. Dois, nove, zero, seis. O vigia da noite gosta de olhar o cofre.", "en": "Back door. Two, nine, zero, six. The night guard likes to watch the safe."}
   ],
   "folder_seen": [
-    {"speaker": "Helena · telefone", "pt": "Deixa. Outra noite.", "en": ""}
+    {"speaker": "Helena · telefone", "pt": "Deixa. Outra noite.", "en": "Forget it. Another night."}
   ],
   "folder_handoff": [
-    {"speaker": "Helena", "pt": "Ninguém nunca fez uma coisa dessas por mim sem cobrar depois.", "en": ""},
-    {"speaker": "Dante", "pt": "Quem disse que eu não vou cobrar?", "en": ""},
-    {"speaker": "Helena", "pt": "Então cobra.", "en": ""}
+    {"speaker": "Helena", "pt": "Ninguém nunca fez uma coisa dessas por mim sem cobrar depois.", "en": "Nobody's ever done something like this for me without collecting later."},
+    {"speaker": "Dante", "pt": "Quem disse que eu não vou cobrar?", "en": "Who said I won't collect?"},
+    {"speaker": "Helena", "pt": "Então cobra.", "en": "Then collect."}
   ],
   "farewell": [
-    {"speaker": "Helena", "pt": "Vou pra casa. Santa Lua.", "en": ""},
-    {"speaker": "Dante", "pt": "E a auditoria?", "en": ""},
-    {"speaker": "Helena", "pt": "Acabou ontem. Não acharam nada.", "en": ""},
-    {"speaker": "Helena", "pt": "Engraçado, né.", "en": ""},
-    {"speaker": "Dante", "pt": "A lista do Takeshi diz que meu irmão tá no deserto.", "en": ""},
-    {"speaker": "Helena", "pt": "O deserto é grande.", "en": ""},
-    {"speaker": "Dante", "pt": "Santa Lua é pequena?", "en": ""},
-    {"speaker": "Helena", "pt": "Duzentas pessoas e um rádio. Se você aparecer, todo mundo vai saber.", "en": ""}
+    {"speaker": "Helena", "pt": "Vou pra casa. Santa Lua.", "en": "I'm going home. Santa Lua."},
+    {"speaker": "Dante", "pt": "E a auditoria?", "en": "And the audit?"},
+    {"speaker": "Helena", "pt": "Acabou ontem. Não acharam nada.", "en": "It ended yesterday. They found nothing."},
+    {"speaker": "Helena", "pt": "Engraçado, né.", "en": "Funny, huh."},
+    {"speaker": "Dante", "pt": "A lista do Takeshi diz que meu irmão tá no deserto.", "en": "Takeshi's list says my brother's in the desert."},
+    {"speaker": "Helena", "pt": "O deserto é grande.", "en": "The desert is big."},
+    {"speaker": "Dante", "pt": "Santa Lua é pequena?", "en": "Is Santa Lua small?"},
+    {"speaker": "Helena", "pt": "Duzentas pessoas e um rádio. Se você aparecer, todo mundo vai saber.", "en": "Two hundred people and one radio. If you show up, everyone will know."}
   ]
 }
