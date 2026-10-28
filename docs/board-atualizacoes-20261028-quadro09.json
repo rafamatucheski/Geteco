@@ -1,7 +1,7 @@
 {
   "date": "2026-10-28",
   "period": "28 de outubro de 2026",
-  "scope": "Quadro de ~1 s do frio: instrumentação para separar shader novo de pipeline do driver; bancada fria pendente (Claude, 28/10).",
+  "scope": "Quadro de ~1 s do frio: instrumentação para separar shader novo de pipeline do driver; bancada fria pendente (Claude, 28/10). Descida da Meia Noite: ultrapassagem e carro contrário (Claude, 28/10).",
   "cards": [
     {
       "id": "quadro-09s-primeira-sessao-20261026",
@@ -18,6 +18,21 @@
         "docs/perf-playthrough-20261021.md"
       ],
       "next": "Com o PC livre: COLD_PART_A=shader COLD_PART_B=pipeline tools/bench/cold_ab.sh artifacts/perf-q10-20261028 q10 ABBAABBAABBA (~1 h; o export já está pronto) e ler com cold_ab_spikes.py. Se der (S), o material entra no pré-aquecimento; se der (P), a pipeline passa a ser desenhada sob a cortina."
+    },
+    {
+      "id": "mountain-downhill",
+      "title": "Descida da Meia Noite: sete carros",
+      "status": "partial",
+      "area": "atividades",
+      "description": "28/10 (abcbddee): consertadas duas causas achadas na corrida física sem janela. (1) Fila a 4 m/s atrás de um caminhãozinho do trânsito: o corredor da ultrapassagem esbarrava no próprio carro a ser ultrapassado. (2) Impasse com carro contrário: o rival agora para com folga, pede vaga e faz um desvio curto, e os rivais da direita cedem espaço. Comparação no mesmo jogo (piloto antigo por --driver-reference): fila em 2 de 3 corridas no antigo (Dante 84–85 s) e em 0 de 4 no novo (Dante 46–60 s); 'seis competitivos' em 2 de 4 corridas no novo; retardatários nos portões 8–11 contra 5–8 no antigo.",
+      "sources": [
+        "activities/mountain_downhill/MountainDownhillDriver.gd",
+        "activities/mountain_downhill/MountainDownhill.gd",
+        "tests/test_mountain_downhill_driver.gd",
+        "tests/test_mountain_downhill_runtime.gd",
+        "docs/downhill-20261028.md"
+      ],
+      "next": "Batidas no primeiro grampo depois da largada (portões 1–3) e espera atrás do trânsito manobrando no grampo do portão 7; correr com janela e medir o desempenho."
     }
   ]
 }
