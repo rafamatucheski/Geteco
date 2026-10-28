@@ -37,7 +37,9 @@ const GUEST_SPOTS := [
 	{"position":Vector3(442.0, .06, 98.8), "focus":Vector3(443.6, 0, 101.5), "coat":"e9e6dc"},
 ]
 ## Faixas CC0 que já estão no jogo (rádios PORTO CRUISE e PORTO GROOVE): sem trilha sintetizada.
-const TRACKS := ["res://audio/living_city/porto_cruise.ogg", "res://audio/living_city/porto_groove.ogg"]
+## G-funk próprio do encontro (Gemini, tools/audio/process_lowrider_music.py) toca uma vez sim, outra
+## não, entre as faixas funk/cruise das rádios.
+const TRACKS := ["res://audio/lowrider/gfunk_meet.ogg", "res://audio/living_city/porto_groove.ogg", "res://audio/lowrider/gfunk_meet.ogg", "res://audio/living_city/porto_cruise.ogg"]
 const MUSIC_DB := -7.0
 const MUSIC_NEAR := 9.0
 const MUSIC_RANGE := 60.0

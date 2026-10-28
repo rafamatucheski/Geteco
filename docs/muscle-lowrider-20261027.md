@@ -64,8 +64,10 @@ Controles (ação nova `hydraulics`, remapeável):
 - Controle: segure **L3** e use o analógico esquerdo; **A** pula.
 - Pular de novo logo depois de aterrissar (0,35 s) encadeia e sobe mais, até 1,15 do pulo cheio.
 
-Sons provisórios do banco existente (freio de mão grave, freio a ar, porta) até gravar os da
-hidráulica.
+Bomba (28/10): `audio/lowrider/pump_0..2.wav`, trechos de 0,9 s do mastro hidráulico da
+empilhadeira gerado no Firefly (`tools/audio/process_lowrider_sfx.py`). Alívio (freio a ar) e
+batente (porta) seguem provisórios: a conta grátis da ElevenLabs tem 83 créditos (3 sons curtos
+custam 80) e a paga está zerada até 20/11.
 
 ## Encontro de lowriders (`gameplay/lowrider/LowriderMeet.gd`)
 
@@ -74,9 +76,11 @@ hidráulica.
 - Quando: toda noite, das 18 h às 3 h. De dia ficam dois lowriders estacionados.
   `GETECO_LOWRIDER_MEET=always` liga a noite toda hora (para testar).
 - O quê: cinco lowriders fazendo hidráulica (um pulando), nove manos na calçada (três balançando
-  no ritmo, o resto conversando e comemorando os pulos), som saindo do conversível com as faixas
-  CC0 das rádios PORTO CRUISE ("Midnight Cruiser") e PORTO GROOVE ("Wednesday Night"). Perto do
-  som o rádio do carro do jogador pausa.
+  no ritmo, o resto conversando e comemorando os pulos), som saindo do conversível. Trilha
+  (28/10): G-funk instrumental próprio gerado no Gemini ("Sunday Chrome", pedido a 92 BPM, o tempo
+  da dança), cortado antes do fade e em loop de 152 s (`tools/audio/process_lowrider_music.py`,
+  original em `evidence/muscle-lowrider-20261027/audio`), alternando com as faixas CC0 das rádios
+  PORTO GROOVE e PORTO CRUISE. Perto do som o rádio do carro do jogador pausa.
 - Desafio do pulo: chegando num lowrider, bata o recorde da noite (0,70–0,92 m) e ganhe R$ 600
   (uma vez por noite).
 - Carros são Vehicle de verdade (dá para entrar e roubar); convidados são civis do encontro do
@@ -100,7 +104,6 @@ hidráulica.
 ## Limites conhecidos
 
 - Ninguém dirigiu, ouviu ou viu o encontro no jogo aberto; desempenho em release não medido.
-- Música: são faixas funk/cruise já do jogo, não G-funk de verdade. Para a "música dos manos",
-  gerar faixas próprias (ElevenLabs Music ou Gemini Lyria no navegador) e trocar `TRACKS`.
-- Sons da hidráulica são provisórios.
+- A trilha G-funk não foi ouvida por ninguém além de medida (volume, fade); BPM real não conferido.
+- Alívio e batente da hidráulica são provisórios; a bomba é o mastro da empilhadeira.
 - Muscle clássicos ainda têm estufa parecida entre si (loft esportivo); dá para afinar por carro.

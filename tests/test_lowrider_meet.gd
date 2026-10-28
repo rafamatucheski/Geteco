@@ -51,6 +51,8 @@ func run() -> void:
 		if bool(spot.get("dancer", false)): dancers += 1
 	check(dancers >= 2, "gente dançando perto do som")
 	for path: String in MEET.TRACKS: check(ResourceLoader.exists(path), "faixa existe: " + path)
+	check(MEET.TRACKS.any(func(p): return "lowrider/" in str(p)), "G-funk próprio na lista do encontro")
+	check(preload("res://audio/FireflyBank.gd").count("lowrider", "pump") >= 2, "bomba da hidráulica tem tomadas gravadas")
 
 	# A pose de balanço reescreve o tronco a partir da pose do quadro: mesma hora, mesma pose.
 	var model := DANCER.new()

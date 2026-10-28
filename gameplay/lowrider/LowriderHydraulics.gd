@@ -342,14 +342,19 @@ func _exit_tree() -> void:
 	_restore()
 
 # ---------------------------------------------------------------- som
-# Placeholders do banco existente (freio de mão grave = bomba, freio a ar = alívio, porta = batente)
-# até a hidráulica ganhar sons próprios.
+# Bomba: trechos do mastro hidráulico da empilhadeira (audio/lowrider/pump_*.wav,
+# tools/audio/process_lowrider_sfx.py). Alívio (freio a ar) e batente (porta) seguem do banco
+# existente até a hidráulica ganhar sons próprios; sem a bomba importada cai no freio de mão grave.
 
 func _sound_pump(level: float) -> void:
 	if not vehicle.is_inside_tree(): return
 	var now := Time.get_ticks_msec()
 	if now-int(get_meta("pump_msec", -10000)) < 220: return
 	set_meta("pump_msec", now)
+	var pump := FIREFLY.take("lowrider", "pump", _rng)
+	if pump != null:
+		FIREFLY.play_at(vehicle, pump, vehicle.global_position, -11.0+level*3.0, _rng.randf_range(.94, 1.08), 30.0, 8.0, &"Vehicles")
+		return
 	FIREFLY.play_at(vehicle, FIREFLY.take("vehicle_fx", "handbrake"), vehicle.global_position, -10.0+level*3.0, _rng.randf_range(.62, .72), 30.0, 8.0, &"Vehicles")
 
 func _sound_dump() -> void:
