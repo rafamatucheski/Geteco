@@ -82,6 +82,8 @@ func _process(delta: float) -> void:
 	rewards.set_location(site,haunted)
 	if not active and _eligible(): rewards.collect_nearby()
 
+var _site_outdoors := true
+
 func _update_residency() -> void:
 	var outdoors: bool = session.state.region_id == "harbor" and session.state.place_id.is_empty()
 	var at: Vector3 = world.player.global_position if outdoors else session.return_point
@@ -91,8 +93,17 @@ func _update_residency() -> void:
 		site = _prepared if is_instance_valid(_prepared) else SITE.new()
 		_prepared = null
 		world.add_child(site)
+		# Parque montado com o jogador já dentro da casa (save no Umbra): também passa pela troca abaixo.
+		_site_outdoors = true
 	if is_instance_valid(site):
 		site.visible = outdoors
+		# PROCESS_MODE_DISABLED tira da física os corpos do parque, inclusive o chão. Dentro do Umbra a
+		# volta (FullSession._clear_return_point) não achava piso no ponto de saída e recusava ("Passagem
+		# ocupada"): o jogador ficava preso na casa (teste com janela, 28/10). Chão e paredes ficam na física.
+		if not outdoors and _site_outdoors:
+			for body in site.find_children("*","StaticBody3D",true,false):
+				(body as StaticBody3D).disable_mode = CollisionObject3D.DISABLE_MODE_KEEP_ACTIVE
+		_site_outdoors = outdoors
 		site.process_mode = Node.PROCESS_MODE_INHERIT if outdoors else Node.PROCESS_MODE_DISABLED
 		if not active and (session.state.region_id != "harbor" or distance > 220.0):
 			rewards.set_location(null,null)

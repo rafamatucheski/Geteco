@@ -66,6 +66,8 @@ func run() -> void:
 	await record("house",true)
 	# Desde a porta de empurrar (8537bd0c) andar até a saída já tira o jogador (WeaponShopEntrance._update_exit):
 	# o "walk to exit" antigo saía no meio do caminho e depois media a distância a uma sala que não existia mais.
+	# Se a saída for recusada, UMBRA_EXIT_DEBUG diz por quê (28/10: o chão do parque saía da física com o
+	# jogador dentro, e a volta não achava piso).
 	var exit_point: Vector3 = room.exit_position
 	check(await walk_out(exit_point + Vector3(0,0,1.2)),"walking through the door leaves the house")
 	check(world.session.state.place_id.is_empty(),"exit returns to park")
@@ -100,11 +102,46 @@ func walk_out(point: Vector3) -> bool:
 		var offset: Vector3 = point-world.player.global_position
 		offset.y = 0
 		world.player.automatic_direction = offset.normalized() if offset.length()>.05 else Vector3.ZERO
+		# Em primeira pessoa o movimento segue a câmera da casa, como em walk().
+		if offset.length()>.05: world.session.amusement_park.yaw = atan2(-offset.x,-offset.z)
 		await physics_frame
 	world.player.automatic_direction = Vector3.ZERO
+	# Sair recarrega o exterior do parque: a casa fecha em segundos, não no mesmo quadro.
+	var leaving_deadline := Time.get_ticks_msec()+40000
+	while Time.get_ticks_msec()<leaving_deadline and not world.session.state.place_id.is_empty() and bool(world.session.weapon_shop_entrance.get("_leaving")): await physics_frame
+	if not world.session.state.place_id.is_empty():
+		print("UMBRA_EXIT_DEBUG ",{"player":world.player.global_position,"target":point,"velocity":world.player.velocity,"exit":world.session.room.exit_position if is_instance_valid(world.session.room) else null,
+			"entrance":str(world.session.get("weapon_shop_entrance")),"handles":world.session.weapon_shop_entrance.handles_place(world.session.state.place_id) if world.session.get("weapon_shop_entrance") != null else null,
+			"blocked":world.session.weapon_shop_entrance._blocked() if world.session.get("weapon_shop_entrance") != null else null,
+			"leaving":world.session.weapon_shop_entrance.get("_leaving") if world.session.get("weapon_shop_entrance") != null else null,
+			"entering":world.session.weapon_shop_entrance.get("_entering") if world.session.get("weapon_shop_entrance") != null else null,
+			"input_locked":world.player.input_locked,"modal":world.session.modal,"transition":world.session.is_transition_blocked(),"paused":paused,"place":world.session.state.place_id,
+			"return_point":world.session.get("return_point"),"return_clear":world.session.position_clear(world.session.return_point+Vector3.UP*.08),
+			"clear_return":world.session._clear_return_point(world.session.state.place_id,world.session.return_point),
+			"return_probe":_probe_point(world.session.return_point),
+			"upside_busy":world.session.upside_world.busy() if world.session.get("upside_world") != null else null})
 	# A câmera volta do zoom da porta antes de liberar o jogador (CAMERA_SECONDS).
-	while Time.get_ticks_msec()<deadline and world.player.input_locked: await physics_frame
+	while Time.get_ticks_msec()<leaving_deadline and world.player.input_locked: await physics_frame
 	return world.session.state.place_id.is_empty()
+
+func _probe_point(point: Vector3) -> Dictionary:
+	var space: PhysicsDirectSpaceState3D = world.get_world_3d().direct_space_state
+	var query := PhysicsShapeQueryParameters3D.new()
+	var shape := CapsuleShape3D.new()
+	shape.radius = .32
+	shape.height = 1.7
+	query.shape = shape
+	query.collision_mask = 7
+	query.transform = Transform3D(Basis.IDENTITY,point+Vector3.UP*.98)
+	query.exclude = [world.player.get_rid()]
+	var hits: Array = []
+	for hit in space.intersect_shape(query,6): hits.append(str(hit.collider.get_path()) if hit.collider is Node else str(hit.collider))
+	var ground: Dictionary = space.intersect_ray(PhysicsRayQueryParameters3D.create(point+Vector3.UP*.38,point-Vector3.UP*.42,1))
+	var deep: Dictionary = space.intersect_ray(PhysicsRayQueryParameters3D.create(point+Vector3.UP*6.0,point-Vector3.UP*6.0,0xFFFFFFFF))
+	var deep_info := {}
+	if not deep.is_empty():
+		deep_info = {"y":deep.position.y,"collider":str(deep.collider.get_path()) if deep.collider is Node else str(deep.collider),"layer":deep.collider.collision_layer if deep.collider is CollisionObject3D else -1}
+	return {"deep":deep_info,"overlaps":hits,"ground":str(ground.get("collider").get_path()) if not ground.is_empty() and ground.collider is Node else ground.is_empty()}
 
 func actor_depth() -> void:
 	var room = world.session.room
