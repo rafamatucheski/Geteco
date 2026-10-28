@@ -55,3 +55,10 @@ deserto e serra. Os interruptores `GETECO_*` servem para comparar com o comporta
 ## Se der tempo
 
 - [ ] Abrir o jogo frio (primeira sessão do dia) e anotar se trava ~1 s nos primeiros segundos.
+
+## Depois de jogar: liberar o PC para a bancada fria (~1 h)
+
+Export já pronto em `artifacts/perf-q10-20261028`. Antes: fechar o jogo e o editor, pausar o OneDrive,
+monitor de 3440 ligado, nenhuma outra sessão rodando Godot. Aí é só avisar o Claude, que roda
+`COLD_PART_A=shader COLD_PART_B=pipeline tools/bench/cold_ab.sh artifacts/perf-q10-20261028 q10 ABBAABBAABBA`
+e lê o resultado com `tools/bench/cold_ab_spikes.py` (doc de desempenho §19).
