@@ -24,6 +24,7 @@ const OUTFIT_APPEARANCE := preload("res://assets/outfits/MeshyDanteAppearance.gd
 const PROTECTION := preload("res://gameplay/DamageProtection.gd")
 const STEERING := preload("res://gameplay/crowd/PedestrianSteering.gd")
 const STEP := preload("res://gameplay/crowd/PedestrianStep3D.gd")
+const UMBRELLA := preload("res://gameplay/crowd/PedestrianUmbrella.gd")
 ## Civis longe da câmera, na rota própria ou em fuga/recuperação explicitamente
 ## autorizada pelo diretor, andam em passo de LOD: física a cada LOD_STRIDE quadros com o
 ## delta acumulado. Mantém rota e posição coerentes e corta ~2/3 do custo de move_and_slide + pose de quem não se vê.
@@ -38,6 +39,8 @@ static var _dummy_camera: Camera3D
 static var _dummy_planes: Array[Plane] = []
 var _steering: RefCounted
 var _lod_delta := 0.0
+## Consulta de chuva do guarda-chuva, uma vez por segundo (escalonada pela identidade).
+var _umbrella_clock := 0.0
 var outfit_id := "dante_classic"
 var outfit_material: ShaderMaterial
 var is_player := false
@@ -291,6 +294,11 @@ func _physics_process(delta: float) -> void:
 	STALL_WORK.finish_slow("actor.physics", began, 10000, self)
 
 func _stall_physics_tick(delta: float) -> void:
+	if not is_player:
+		_umbrella_clock -= delta
+		if _umbrella_clock <= 0.0:
+			_umbrella_clock = 1.0 + 0.1 * float(posmod(identity, 7))
+			if is_instance_valid(visual) and visual.get_child_count() > 0: UMBRELLA.update(self, visual.get_child(0), identity)
 	var rage_speed := float(get_meta("katana_rage_speed", 1.0)) if is_player else 1.0
 	delta *= rage_speed
 	var lod_scale := 1.0
@@ -1552,6 +1560,7 @@ func receive_damage(amount: float, source: Node = null) -> void:
 ## Queda com articulação de membros, rotação direcional e quique suave no solo (V1).
 func _fall_over(impact := Vector3.ZERO) -> void:
 	if not is_instance_valid(visual): return
+	if not is_player: UMBRELLA.drop(self, impact)
 	if _reaction_tween != null: _reaction_tween.kill()
 	preload("res://gameplay/CharacterFallPresentation3D.gd").apply_fall(self, visual, impact)
 

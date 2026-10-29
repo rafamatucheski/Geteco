@@ -159,6 +159,8 @@ static func launch(p_actor: CharacterBody3D, impact_velocity: Vector3, p_lethal:
 	if not is_instance_valid(p_actor) or not impact_velocity.is_finite(): return null
 	if preload("res://gameplay/DamageProtection.gd").is_protected(p_actor): return null
 	if p_actor.has_meta("street_down") or p_actor.get("dead") == true: return null
+	# Atropelado larga o guarda-chuva da chuva, que sai voando com o impacto.
+	preload("res://gameplay/crowd/PedestrianUmbrella.gd").drop(p_actor, impact_velocity)
 	var flight = load("res://gameplay/street_physics/BodyFlight3D.gd").new()
 	flight.name = "BodyFlight3D"
 	flight.actor = p_actor

@@ -48,6 +48,13 @@ var seat_height := 0.45
 var limp := 0.0
 var hurt_bend := 0.0
 var _bend_w := 0.0
+## Guarda-chuva da chuva (`PedestrianUmbrella`, filho deste modelo): com `umbrella_raised` o braço
+## direito sobe até o cabo e o guarda-chuva acompanha a palma, sempre em pé.
+var umbrella: Node3D
+var umbrella_raised := false
+var _umbrella_w := 0.0
+## Palma na altura do peito, à direita e à frente: o eixo inclinado leva a copa para cima da cabeça.
+const UMBRELLA_GRIP := Vector3(0.17, 1.12, 0.24)
 ## Alternativa a escrever `hand_targets`: chamado a cada pose, devolve [alvo0, alvo1].
 var hand_provider: Callable
 
@@ -477,6 +484,7 @@ func _pose(dt: float) -> void:
 	_run_w = move_toward(_run_w, smoothstep(2.2, 3.3, v), dt * 3.0)
 	_carry_w = move_toward(_carry_w, 1.0 if activity == "carry" else 0.0, dt * 4.0)
 	_talk_w = move_toward(_talk_w, 1.0 if activity == "talk" else 0.0, dt * 3.0)
+	_umbrella_w = move_toward(_umbrella_w, 1.0 if umbrella_raised else 0.0, dt * 2.5)
 	_bend_w = move_toward(_bend_w, clampf(hurt_bend, 0.0, 1.0), dt * 5.0)
 	var bend := smoothstep(0.0, 1.0, _bend_w)
 	var mw := smoothstep(0.0, 1.0, _move_w)
@@ -595,8 +603,23 @@ func _pose(dt: float) -> void:
 			var carried := _carry_arm(i, spine_model)
 			arm_basis = arm_basis.slerp(carried[0], _carry_w)
 			fore_basis = fore_basis.slerp(carried[1], _carry_w)
+		elif i == 1 and _umbrella_w > 0.0:
+			var grip := Vector3(UMBRELLA_GRIP.x, UMBRELLA_GRIP.y / maxf(scale.y, 0.01), UMBRELLA_GRIP.z)
+			var held := _reach_arm(i, spine_model, grip, Vector3(0.9, -0.7, -0.35))
+			var raise := smoothstep(0.0, 1.0, _umbrella_w)
+			arm_basis = arm_basis.slerp(held[0], raise)
+			fore_basis = fore_basis.slerp(held[1], raise)
 		upper_arms[i].transform = Transform3D(arm_basis, _shoulders[i])
 		forearms[i].transform = Transform3D(fore_basis, Vector3(0, -_arm_measure(i).x, 0))
+	if is_instance_valid(umbrella):
+		# Segue a palma calculada acima (mesma cadeia que o corpo Meshy copia); a orientação é fixa no corpo.
+		umbrella.visible = _umbrella_w > 0.05
+		if umbrella.visible:
+			umbrella.position = spine_model * upper_arms[1].transform * forearms[1].transform * Vector3(0, -_arm_measure(1).y, 0)
+
+## Quanto o braço do guarda-chuva já subiu (0..1).
+func umbrella_arm_weight() -> float:
+	return _umbrella_w
 
 func _sit() -> float:
 	return smoothstep(0.0, 1.0, clampf(sit_amount, 0.0, 1.0))
