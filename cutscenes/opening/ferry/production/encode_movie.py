@@ -13,13 +13,15 @@ args=parser.parse_args()
 ART=args.art
 MOVIE=args.movie_output
 FFMPEG=imageio_ffmpeg.get_ffmpeg_exe()
+# Theora q6, não q7 (28/10): o filme de 16/10 saiu com 99,7 MB em q7, colado no limite de 100 MB por arquivo
+# do GitHub; q6 deu 64,5 MB com PSNR médio de 44 dB (mínimo 41) contra o q7.
 render=json.loads((ART/"render.json").read_text(encoding="utf-8"))
 duration=render["duration"]
 start=render["start_frame"]/render["fps"]
 common=[FFMPEG,"-hide_banner","-loglevel","warning","-y","-ss",str(start),"-i",str(ART/"source1080.avi")]
 video_filter=f"setpts=PTS-STARTPTS,fade=t=in:st=0:d=0.7,fade=t=out:st={duration-.6}:d=0.6"
 subprocess.run(common+["-i",str(ROOT/"production/voice.wav"),"-map","0:v:0","-map","1:a:0","-t",str(duration),"-vf",video_filter,"-af","asetpts=N/SR/TB",
-    "-c:v","libtheora","-q:v","7","-pix_fmt","yuv420p","-r","30","-c:a","libvorbis","-q:a","5",str(MOVIE)],check=True)
+    "-c:v","libtheora","-q:v","6","-pix_fmt","yuv420p","-r","30","-c:a","libvorbis","-q:a","5",str(MOVIE)],check=True)
 if "--movie-only" in sys.argv:
     print(json.dumps({"movie_bytes":MOVIE.stat().st_size}))
     sys.exit(0)
