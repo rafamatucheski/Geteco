@@ -57,7 +57,7 @@ func run() -> void:
 	for i in 90: await physics_frame
 	Input.action_release("handbrake")
 	check(machine.global_position.z>before.origin.z+3,"ordinary reverse physically withdraws bucket from released ore")
-	check(rock.global_position.y>.35 and rock.global_position.y<.9,"released ore settles on real ground after ordinary reverse")
+	check(rock.global_position.y>.35 and rock.global_position.y<.9,"released ore settles on real ground after ordinary reverse (y %.2f)" % rock.global_position.y)
 	machine.receive_damage(machine.max_health*3)
 	check(controls._bucket_body.collision_layer==0 and controls._bucket_body.collision_mask==0,"native machine death immediately removes live scoop collision")
 	print("MINING_BUCKET_LIFECYCLE ","PASS" if failures.is_empty() else "FAIL"," checks=",checks," failures=",failures.size())

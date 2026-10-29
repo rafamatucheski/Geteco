@@ -21,6 +21,7 @@ var _hud_panel: PanelContainer
 var _bucket_shape: CollisionShape3D
 var _bucket_body: AnimatableBody3D
 var rear: Node
+var bed_load: Node
 var _released_load: WeakRef
 
 func _ready() -> void:
@@ -46,6 +47,10 @@ func _ready() -> void:
 		_bucket_body.add_collision_exception_with(vehicle)
 		vehicle.add_collision_exception_with(_bucket_body)
 	_bed = vehicle.visual.get_node_or_null("DumpBed")
+	if _bed != null:
+		bed_load = preload("res://gameplay/mining/HaulBedLoad.gd").new()
+		add_child(bed_load)
+		bed_load.configure(vehicle,_bed)
 	if vehicle.archetype == "mining_backhoe":
 		rear = preload("res://gameplay/mining/BackhoeHydraulics.gd").new()
 		rear.name = "RearHydraulics"
@@ -80,6 +85,11 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	_sync_bucket_collision()
 	var enabled := active()
+	# A carga segue a caçamba também com o caminhão parado e sem motorista.
+	if bed_load != null:
+		if not enabled: dump = move_toward(dump,0.0,delta*.42)
+		_bed.rotation.x = -dump*.72
+		bed_load.step(delta,dump)
 	if not enabled and is_instance_valid(cargo): release_cargo()
 	_was_active = enabled
 	if not enabled:
@@ -102,8 +112,8 @@ func _physics_process(delta: float) -> void:
 			float(Input.is_physical_key_pressed(KEY_PERIOD))-float(Input.is_physical_key_pressed(KEY_COMMA))),delta)
 	if _bed != null:
 		dump = move_toward(dump, 1.0 if Input.is_physical_key_pressed(KEY_N) else 0.0, delta*.42)
-		_bed.rotation.x = -dump*.72
 	_label.text = "PgUp / PgDn  Erguer / baixar pá     B  Prender / soltar carga" if _anchor != null else "N (segurar)  Inclinar caçamba"
+	if bed_load != null and bed_load.loaded() > 0: _label.text += "     Carga: %d" % bed_load.loaded()
 	if is_instance_valid(cargo): _label.text += "     Carga presa"
 	if rear != null:
 		_label.text += "\nU / O  Girar traseira    Home / End  Braço    Ins / Del  Antebraço    , / .  Caçamba"

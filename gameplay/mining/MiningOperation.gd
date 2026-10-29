@@ -136,7 +136,8 @@ static func create_rock(index: int) -> RigidBody3D:
 	rock.add_child(visual)
 	var shape := CollisionShape3D.new()
 	var convex := ConvexPolygonShape3D.new()
-	var vertices: PackedVector3Array = mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	# Cópia na CPU (MeshArrayCache): surface_get_arrays lê da GPU e trava o quadro (HOW-TO-DEVELOP).
+	var vertices: PackedVector3Array = preload("res://world/chunk_bake/MeshArrayCache.gd").arrays_of(mesh,0)[Mesh.ARRAY_VERTEX]
 	var points := PackedVector3Array()
 	for vertex in vertices: points.append(vertex*rock_scale)
 	convex.points = points
@@ -149,6 +150,7 @@ func perform(_id: String) -> bool: return false
 func save_block_reason() -> String:
 	for machine in get_tree().get_nodes_in_group("mining_machine"):
 		if is_instance_valid(machine.cargo): return "Solte a carga da máquina antes de salvar."
+		if machine.bed_load != null and machine.bed_load.loaded() > 0: return "Despeje a caçamba antes de salvar."
 	return ""
 func write_snapshot(data: Dictionary) -> void:
 	for car in world.production.vehicles:
