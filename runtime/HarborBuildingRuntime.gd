@@ -4,6 +4,8 @@ extends Node
 const CATALOG := preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd")
 const PLACE := preload("res://world/places/harbor_buildings/HarborBuildingPlace.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+## Teto de espera pela preparação fatiada da fachada (~5 s a 120 fps); depois termina síncrona.
+const PREPARE_ACCESS_MAX_FRAMES := 600
 var session
 var staged: Node3D
 var facade: Node3D
@@ -74,6 +76,15 @@ func prepare_room(id: String, new_entry: bool) -> Node3D:
 	if not is_instance_valid(facade):
 		preparing = false
 		return null
+	# Corte da fachada fatiado (~2 ms por quadro + recorte no WorkerThreadPool): síncrono a 8 m
+	# da porta, custou 127 ms num quadro na Torque (release 29/10). Se não terminar a tempo,
+	# set_open_amount abaixo termina síncrono como antes.
+	if facade.has_method("begin_prepare_access"):
+		facade.begin_prepare_access()
+		for frame in PREPARE_ACCESS_MAX_FRAMES:
+			if facade.is_access_prepared(): break
+			await get_tree().process_frame
+			if not _preparation_owned(generation,region) or not is_instance_valid(facade): return _abort_preparation()
 	if new_entry and not preload("res://runtime/ShopSafety.gd").admission_allowed(id, session.world.gameplay.stars): return _abort_preparation()
 	facade.set_open_amount(1.0)
 	for frame in 4:

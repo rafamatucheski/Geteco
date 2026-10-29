@@ -35,7 +35,7 @@ func _run() -> void:
 	_accent.compile("[áàâãéêíóôõúçÁÀÂÃÉÊÍÓÔÕÚÇ]")
 	_words.compile("\\b(Sem|Não|Você|Para|Com|de|da|das|dos|para|pra|com|não|você|um|uma|na|no|em|ao|aos|está|os|que|pela|pelo|até|depois|antes|aqui|agora|ainda|seu|sua|Aperte|Segure|Saia|Volte|Leve|Siga|Fale|Pegue|Compre|Encontre|Corra|Pegar|Abrir|Falar|Fechar|Voltar|Continuar|Sair|Comprar|Vender)\\b")
 	_identifier.compile("^[a-z0-9_.:\\-/]+$")
-	_skip_line.compile("(print|push_warning|push_error|printerr|_warn\\(|StallWorkTrace|STALL_WORK|assert\\(|_note_slow|has_method|get_node|load\\(|preload\\(|add_task\\(|\"en\"|english)")
+	_skip_line.compile("(print|push_warning|push_error|printerr|_warn\\(|StallWorkTrace|STALL_WORK|assert\\(|_note_slow|has_method|get_node|load\\(|preload\\(|add_task\\(|add_group_task\\(|\"en\"|english)")
 	var allow: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/localization/untranslated-ok.json"))
 	for text in allow.get("texts", []): _ok_texts[str(text)] = true
 	for path in allow.get("files", []): _ok_files[str(path)] = true

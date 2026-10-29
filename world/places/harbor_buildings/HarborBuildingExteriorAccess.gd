@@ -29,6 +29,22 @@ var _view_rooftop := false
 var _scanned_batches := {}
 var _rejected_meshes := {}
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+const MESH_ARRAYS := preload("res://world/chunk_bake/MeshArrayCache.gd")
+## Preparação fatiada (29/10): na partida release de 29/10 o corte da Torque (lote inteiro
+## agrupado por material, todo capturado por _relevant_visual) custou 127 ms num quadro só,
+## síncrono a 8 m da porta. Agora o laço do thread principal cede o quadro a cada ~2 ms e o
+## recorte de triângulos (GDScript puro) roda no WorkerThreadPool; só a leitura das arrays
+## (MeshArrayCache), o ArrayMesh e as colisões ficam no thread principal.
+const PREP_SLICE_USEC := 2000
+## Ticket da preparação fatiada em curso: a síncrona (set_open_amount antes do fim) o
+## invalida e a fatiada descarta o que montou, sem mexer no estado já publicado.
+var _prep_ticket := 0
+var _prep_running := false
+## Estatística da última preparação fatiada (testes e diagnóstico).
+var last_prepare_stats := {}
+## Meta opcional numa malha montada em código: Array com as arrays de cada superfície já na
+## CPU (quem monta a malha as tem). O corte usa estas antes de pedir ao MeshArrayCache.
+const CPU_ARRAYS_META := &"cpu_surface_arrays"
 
 func _ready() -> void:
 	set_process(false)
@@ -198,39 +214,73 @@ func _interior_cut() -> AABB:
 	var ceiling: float = float(definition.storey_height)*int(definition.floor_count)-.12
 	return AABB(Vector3(-size.x*.5+.22,-.16,-size.y*.5+.22),Vector3(size.x-.44,ceiling+.14,size.y-.44))
 
+## Começa a preparação fatiada (HarborBuildingRuntime a 8 m da porta). Nada fica visível
+## antes do fim: o corte só é aplicado por set_open_amount, que espera is_access_prepared()
+## ou, se vier antes, termina a preparação síncrona como sempre foi.
+func begin_prepare_access(budget_usec: int = PREP_SLICE_USEC) -> void:
+	if _prepared or _prep_running: return
+	if not is_inside_tree() or facade == null:
+		_prepare_access()
+		return
+	_prep_ticket += 1
+	_prep_running = true
+	_run_prepare(_prep_ticket, maxi(1, budget_usec))
+
+func is_access_prepared() -> bool:
+	return _prepared
+
+func is_access_preparing() -> bool:
+	return _prep_running and not _prepared
+
 func _prepare_access() -> void:
 	if _prepared: return
-	# Roda síncrono quando a sala é preparada a 8 m da porta (jogo andando, sem
-	# cortina): o span deixa a fase 2 medir o corte da fachada e das colisões.
+	# Caminho síncrono (teste, restauração de save ou set_open_amount antes de a fatiada
+	# terminar): invalida a fatiada em curso e faz tudo neste quadro, como antes.
+	_prep_ticket += 1
+	_prep_running = false
 	var began := STALL_WORK.begin()
-	_prepare_access_now()
+	_run_prepare(_prep_ticket, 0)
 	STALL_WORK.finish("building.access.prepare", began, {"place":str(definition.get("id",""))})
 
-func _prepare_access_now() -> void:
+## Mesma preparação nos dois modos. budget_usec 0 = síncrono (nunca cede o quadro, recorta
+## no próprio thread); > 0 = cede a cada budget_usec e recorta no WorkerThreadPool. Tudo é
+## montado em `state` e só publicado em _prep_commit, para a síncrona poder tomar o lugar.
+func _run_prepare(ticket: int, budget_usec: int) -> bool:
 	_sync_transform()
-	_prepared = true
+	var sliced := budget_usec > 0
+	if not sliced: _prepared = true
+	var body := StaticBody3D.new()
+	body.name = "OpenedFacadeSolids"
+	body.collision_layer = 0
+	body.collision_mask = 0
+	var state := {"ticket":ticket, "budget":budget_usec, "tree":get_tree() if sliced else null,
+		"slice_began":Time.get_ticks_usec(), "span":STALL_WORK.begin(), "slices":1, "max_slice_usec":0,
+		"started_frame":Engine.get_process_frames(), "labels":[], "effects":[], "meshes":[],
+		"multimeshes":[], "scanned":{}, "shapes":[], "body":body, "details":[], "jobs":[]}
 	var cuts: Array[AABB] = [_interior_cut(),_door_cut()]
-	_replacement_body = StaticBody3D.new()
-	_replacement_body.name = "OpenedFacadeSolids"
-	_replacement_body.collision_layer = 0
-	_replacement_body.collision_mask = 0
 	for label in _presentation_nodes("Label3D"):
 		if _owns_architecture(label) or _access_bounds().has_point(to_local(label.global_position)):
-			_labels.append({"node":label,"visible":label.visible})
-	_capture_effects()
+			state.labels.append({"node":label,"visible":label.visible})
+	if not await _prep_slice(state, "labels"): return _prep_discard(state)
+	_capture_effects_into(state.effects)
+	if not await _prep_slice(state, "effects"): return _prep_discard(state)
 	# Snapshot before creating adapter-owned meshes and collisions.
-	for node in _presentation_nodes("MeshInstance3D"):
-		if node.mesh == null or node.skin != null or node.is_queued_for_deletion(): continue
+	var mesh_nodes := _presentation_nodes("MeshInstance3D")
+	if not await _prep_slice(state, "mesh_scan"): return _prep_discard(state)
+	for node in mesh_nodes:
+		if not is_instance_valid(node) or node.mesh == null or node.skin != null or node.is_queued_for_deletion(): continue
 		var relative: Transform3D = global_transform.affine_inverse()*node.global_transform
 		var original: Mesh = node.mesh
 		var owned: bool = _owns_architecture(node) or _belongs_to_native_roof(relative*original.get_aabb())
 		var canopy: bool = _is_venue_canopy(node)
 		if not _relevant_visual(relative*original.get_aabb(),owned or canopy): continue
+		var record := {"node":node,"original":original,"open_mesh":original,"transform":relative,"visible":node.visible,"owned_architecture":owned,"hide_inside":canopy}
 		# Fachada pintada já tem o vão aberto no lugar da porta desenhada; o corte
 		# de 2,1 m abria um buraco largo no meio das janelas pintadas.
-		var opened: Mesh = original if _painted_part(node) else _cut_mesh(original,relative,[_door_cut()])
-		_meshes.append({"node":node,"original":original,"open_mesh":opened,"transform":relative,"visible":node.visible,"owned_architecture":owned,"hide_inside":canopy})
-	_prepare_multimeshes()
+		if not _painted_part(node): _open_cut_into(state, record, original, relative)
+		state.meshes.append(record)
+		if not await _prep_slice(state, "meshes"): return _prep_discard(state)
+	if not await _scan_multimesh_batches(state): return _prep_discard(state)
 	for node in facade.find_children("*","CollisionShape3D",true,false):
 		if node.shape == null or node.is_queued_for_deletion(): continue
 		# A folha pintada da entrada tem colisão própria que gira com ela. Área de
@@ -239,7 +289,7 @@ func _prepare_access_now() -> void:
 		if node.get_parent().has_meta("painted_door_leaf") or node.get_parent() is Area3D: continue
 		var relative: Transform3D = global_transform.affine_inverse()*node.global_transform
 		if node.shape is BoxShape3D and not _access_bounds().intersects(relative*AABB(-node.shape.size*.5,node.shape.size)): continue
-		_original_shapes.append({"node":node,"disabled":node.disabled})
+		state.shapes.append({"node":node,"disabled":node.disabled})
 		if node.disabled: continue
 		if node.shape is BoxShape3D:
 			var source: AABB = relative*AABB(-node.shape.size*.5,node.shape.size)
@@ -248,31 +298,113 @@ func _prepare_access_now() -> void:
 				var next: Array[AABB] = []
 				for piece in pieces: next.append_array(_subtract_box(piece,cut))
 				pieces = next
-			for piece in pieces: _add_box_shape(piece)
+			for piece in pieces: _add_box_shape_to(body, piece)
 		elif node.shape is ConcavePolygonShape3D:
-			var faces: PackedVector3Array = node.shape.get_faces()
-			var remaining := PackedVector3Array()
-			for index in range(0,faces.size(),3):
-				var polygon: Array = [relative*faces[index],relative*faces[index+1],relative*faces[index+2]]
-				var polygons: Array = [polygon]
-				for cut in cuts: polygons = _subtract_polygons(polygons,cut)
-				for piece in polygons:
-					for corner in range(1,piece.size()-1): remaining.append_array(PackedVector3Array([piece[0],piece[corner],piece[corner+1]]))
-			if not remaining.is_empty():
-				var shape := ConcavePolygonShape3D.new()
-				shape.set_faces(remaining)
-				var collider := CollisionShape3D.new()
-				collider.shape = shape
-				_replacement_body.add_child(collider)
+			var job := {"kind":"faces", "faces":node.shape.get_faces(), "relative":relative, "cuts":cuts}
+			if sliced: state.jobs.append(job)
+			else:
+				_run_job(job)
+				_add_faces_collider(body, job)
 		else:
 			# Non-box authored details retain their exact physical shape.
 			var collider := CollisionShape3D.new()
 			collider.shape = node.shape
 			collider.transform = relative
-			_replacement_body.add_child(collider)
+			body.add_child(collider)
+		if not await _prep_slice(state, "shapes"): return _prep_discard(state)
+	if not state.jobs.is_empty():
+		# Recorte de triângulos fora do thread principal; ele só espera o grupo terminar
+		# (sem wait_for_* antes de is_group_task_completed, regra do HOW-TO-DEVELOP).
+		var jobs: Array = state.jobs
+		var group := WorkerThreadPool.add_group_task(Callable(get_script(), "_run_job_at").bind(jobs), jobs.size(), -1, false, "Corte da fachada do prédio")
+		while not WorkerThreadPool.is_group_task_completed(group):
+			await _prep_yield(state, "worker")
+		WorkerThreadPool.wait_for_group_task_completion(group)
+		if not _prep_alive(state): return _prep_discard(state)
+		for job in jobs:
+			if job.kind == "faces": _add_faces_collider(body, job)
+			else: job.record[job.field] = _mesh_from_job(job)
+			if not await _prep_slice(state, "commit_cut"): return _prep_discard(state)
+	_prep_commit(state)
+	return true
+
+## Corte da porta para a versão aberta de uma malha: na hora (síncrono) ou como tarefa.
+func _open_cut_into(state: Dictionary, record: Dictionary, mesh: Mesh, relative: Transform3D) -> void:
+	var plan := _plan_cut(mesh, relative, [_door_cut()])
+	if not plan.has("job"):
+		record.open_mesh = plan.mesh
+		return
+	var job: Dictionary = plan.job
+	if int(state.budget) <= 0:
+		_run_job(job)
+		record.open_mesh = _mesh_from_job(job)
+		return
+	job.record = record
+	job.field = "open_mesh"
+	state.jobs.append(job)
+
+func _prep_alive(state: Dictionary) -> bool:
+	return int(state.ticket) == _prep_ticket and is_inside_tree()
+
+## Fecha a fatia quando passou do orçamento e espera o próximo quadro. Devolve false se a
+## preparação deixou de valer (síncrona tomou o lugar ou o prédio saiu da árvore).
+func _prep_slice(state: Dictionary, phase: String) -> bool:
+	if int(state.budget) <= 0: return true
+	if Time.get_ticks_usec() - int(state.slice_began) < int(state.budget): return true
+	await _prep_yield(state, phase)
+	return _prep_alive(state)
+
+func _prep_yield(state: Dictionary, phase: String) -> void:
+	_note_slice(state, phase)
+	STALL_WORK.finish("building.access.prepare.slice", int(state.span), {"place":str(definition.get("id","")), "phase":phase})
+	await (state.tree as SceneTree).process_frame
+	state.slice_began = Time.get_ticks_usec()
+	state.span = STALL_WORK.begin()
+	state.slices = int(state.slices) + 1
+
+func _note_slice(state: Dictionary, phase: String) -> void:
+	var elapsed := Time.get_ticks_usec() - int(state.slice_began)
+	if elapsed > int(state.max_slice_usec):
+		state.max_slice_usec = elapsed
+		state.max_phase = phase
+
+func _prep_discard(state: Dictionary) -> bool:
+	# Nada disto foi publicado: as peças derivadas estão ocultas e o corpo nem entrou na árvore.
+	for node in state.details:
+		if is_instance_valid(node): node.queue_free()
+	if is_instance_valid(state.body): state.body.free()
+	if int(state.ticket) == _prep_ticket: _prep_running = false
+	if int(state.budget) > 0: STALL_WORK.finish("building.access.prepare.slice", int(state.span), {"place":str(definition.get("id","")), "phase":"discard"})
+	return false
+
+func _prep_commit(state: Dictionary) -> void:
+	_prepared = true
+	_prep_running = false
+	_labels.append_array(state.labels)
+	_effects.append_array(state.effects)
+	_meshes.append_array(state.meshes)
+	_multimeshes.append_array(state.multimeshes)
+	_scanned_batches.merge(state.scanned, true)
+	_original_shapes.append_array(state.shapes)
+	_replacement_body = state.body
 	_add_roof_prop_solids()
 	add_child(_replacement_body)
 	_make_open_door()
+	if int(state.budget) > 0:
+		_note_slice(state, "commit")
+		STALL_WORK.finish("building.access.prepare.slice", int(state.span), {"place":str(definition.get("id","")), "phase":"commit"})
+		last_prepare_stats = {"slices":state.slices, "max_slice_ms":float(state.max_slice_usec)/1000.0, "max_phase":str(state.get("max_phase","")),
+			"frames":Engine.get_process_frames()-int(state.started_frame), "jobs":(state.jobs as Array).size(),
+			"meshes":(state.meshes as Array).size(), "shapes":(state.shapes as Array).size()}
+
+static func _add_faces_collider(body: StaticBody3D, job: Dictionary) -> void:
+	var remaining: PackedVector3Array = job.get("remaining", PackedVector3Array())
+	if remaining.is_empty(): return
+	var shape := ConcavePolygonShape3D.new()
+	shape.set_faces(remaining)
+	var collider := CollisionShape3D.new()
+	collider.shape = shape
+	body.add_child(collider)
 
 func _access_bounds() -> AABB:
 	var size: Vector2 = definition.size
@@ -350,36 +482,58 @@ func _presentation_nodes(type: String) -> Array[Node]:
 	return result
 
 func _capture_effects() -> bool:
+	return _capture_effects_into(_effects)
+
+func _capture_effects_into(target: Array) -> bool:
 	var changed := false
 	for type in ["CPUParticles3D","GPUParticles3D"]:
 		for node in _presentation_nodes(type):
 			if not _owns_architecture(node) and not _access_bounds().has_point(to_local(node.global_position)): continue
 			var known := false
-			for item in _effects:
+			for item in target:
 				if item.node==node: known=true; break
 			if known: continue
-			_effects.append({"node":node,"visible":node.visible})
+			target.append({"node":node,"visible":node.visible})
 			changed = true
 	return changed
 
 func _prepare_multimeshes() -> void:
+	# Varredura síncrona (0,5 s com o jogador dentro): grava direto nas listas publicadas.
+	_scan_multimesh_batches({"budget":0, "multimeshes":_multimeshes, "meshes":_meshes, "scanned":_scanned_batches, "details":[], "jobs":[]})
+
+## Lotes MultiMesh da parcela. Com orçamento, cede o quadro entre instâncias e deixa o corte
+## da porta como tarefa; devolve false se a preparação fatiada deixou de valer.
+func _scan_multimesh_batches(state: Dictionary) -> bool:
 	# The village/meet owners batch their whole sites. Split only instances in
 	# this parcel, leaving their neighbors, actors and materials in the batch.
-	for batch in _presentation_nodes("MultiMeshInstance3D"):
-		if batch.multimesh == null or batch.multimesh.mesh == null: continue
+	var batches := _presentation_nodes("MultiMeshInstance3D")
+	if not await _prep_slice(state, "multimesh_scan"): return false
+	for batch in batches:
+		if not is_instance_valid(batch) or batch.multimesh == null or batch.multimesh.mesh == null: continue
 		var captured := false
-		for item in _multimeshes:
+		for item in state.multimeshes:
 			if item.node == batch: captured = true; break
 		if captured: continue
 		var source: MultiMesh = batch.multimesh
 		# Mesmo recurso já varrido sem nada nesta parcela: não repete o laço por instância.
 		var batch_id: int = batch.get_instance_id()
-		if _scanned_batches.get(batch_id) == source: continue
-		_scanned_batches[batch_id] = source
+		if state.scanned.get(batch_id) == source: continue
+		state.scanned[batch_id] = source
 		var owned: bool = _owns_architecture(batch)
 		var opened: MultiMesh = null
 		var frame: Transform3D = global_transform.affine_inverse()*batch.global_transform
+		var first_record: int = state.meshes.size()
+		var first_detail: int = state.details.size()
 		for index in source.instance_count:
+			if not await _prep_slice(state, "multimesh"): return false
+			# O lote pode ter sido trocado ou apagado enquanto o quadro foi cedido: as peças
+			# já tiradas dele apareceriam em dobro (o lote não esconderia as instâncias).
+			if not is_instance_valid(batch) or batch.multimesh != source:
+				for detail_index in range(first_detail, state.details.size()): state.details[detail_index].queue_free()
+				state.details.resize(first_detail)
+				state.meshes.resize(first_record)
+				opened = null
+				break
 			var relative: Transform3D = frame*source.get_instance_transform(index)
 			var bounds: AABB = relative*source.mesh.get_aabb()
 			var attachment: bool = _is_attached_fire_escape(batch,bounds) or _belongs_to_native_roof(bounds)
@@ -397,8 +551,12 @@ func _prepare_multimeshes() -> void:
 			single.transform = relative
 			single.visible = false
 			add_child(single)
-			_meshes.append({"node":single,"original":source.mesh,"open_mesh":_cut_mesh(source.mesh,relative,[_door_cut()]),"transform":relative,"visible":batch.visible,"derived":true,"owned_architecture":owned or attachment})
-		if opened != null: _multimeshes.append({"node":batch,"original":source,"opened":opened})
+			state.details.append(single)
+			var record := {"node":single,"original":source.mesh,"open_mesh":source.mesh,"transform":relative,"visible":batch.visible,"derived":true,"owned_architecture":owned or attachment}
+			_open_cut_into(state, record, source.mesh, relative)
+			state.meshes.append(record)
+		if opened != null and is_instance_valid(batch) and batch.multimesh == source: state.multimeshes.append({"node":batch,"original":source,"opened":opened})
+	return true
 
 static func _copy_multimesh(source: MultiMesh) -> MultiMesh:
 	# Resource.duplicate can replay the buffer before instance_count on Godot
@@ -433,13 +591,16 @@ func _add_roof_prop_solids() -> void:
 		_add_box_shape(bounds)
 
 func _add_box_shape(bounds: AABB) -> void:
+	_add_box_shape_to(_replacement_body, bounds)
+
+static func _add_box_shape_to(body: StaticBody3D, bounds: AABB) -> void:
 	if minf(bounds.size.x,minf(bounds.size.y,bounds.size.z)) < .003: return
 	var shape := BoxShape3D.new()
 	shape.size = bounds.size
 	var node := CollisionShape3D.new()
 	node.shape = shape
 	node.position = bounds.get_center()
-	_replacement_body.add_child(node)
+	body.add_child(node)
 
 func _hold_painted_doors(open: bool) -> void:
 	if facade == null: return
@@ -489,16 +650,55 @@ static func _subtract_box(source: AABB, cut: AABB) -> Array[AABB]:
 	return result
 
 static func _cut_mesh(source: Mesh, relative: Transform3D, cuts: Array[AABB]) -> Mesh:
+	var plan := _plan_cut(source, relative, cuts)
+	if not plan.has("job"): return plan.mesh
+	_run_job(plan.job)
+	return _mesh_from_job(plan.job)
+
+## Parte do thread principal antes do corte: resposta imediata (malha inteira, nada ou a
+## original) ou uma tarefa com as arrays de cada superfície. As arrays vêm do MeshArrayCache
+## (surface_get_arrays lia a GPU e esperava os quadros em voo; HOW-TO-DEVELOP §3.2).
+static func _plan_cut(source: Mesh, relative: Transform3D, cuts: Array[AABB]) -> Dictionary:
 	var bounds := relative*source.get_aabb()
 	var touches := false
 	for cut in cuts:
-		if cut.encloses(bounds): return null
+		if cut.encloses(bounds): return {"mesh":null}
 		if bounds.intersects(cut): touches = true
-	if not touches: return source
-	var output := ArrayMesh.new()
-	var inverse := relative.affine_inverse()
+	if not touches: return {"mesh":source}
+	var surfaces: Array = []
 	for surface_index in source.get_surface_count():
-		var arrays := source.surface_get_arrays(surface_index)
+		surfaces.append({"arrays":_surface_arrays(source, surface_index), "material":source.surface_get_material(surface_index)})
+	return {"job":{"kind":"mesh", "surfaces":surfaces, "relative":relative, "cuts":cuts}}
+
+static func _surface_arrays(source: Mesh, surface: int) -> Array:
+	# get_meta com padrão null reclama da chave ausente: pergunta antes.
+	var kept: Variant = source.get_meta(CPU_ARRAYS_META) if source.has_meta(CPU_ARRAYS_META) else null
+	if kept is Array and surface < (kept as Array).size(): return kept[surface]
+	return MESH_ARRAYS.arrays_of(source, surface)
+
+static func _run_job_at(index: int, jobs: Array) -> void:
+	_run_job(jobs[index])
+
+## Cálculo puro (pode rodar no WorkerThreadPool): não toca nó, árvore nem RenderingServer.
+## SurfaceTool só monta arrays na CPU; o ArrayMesh é criado depois, no thread principal.
+static func _run_job(job: Dictionary) -> void:
+	var relative: Transform3D = job.relative
+	var cuts: Array[AABB] = job.cuts
+	if job.kind == "faces":
+		var faces: PackedVector3Array = job.faces
+		var remaining := PackedVector3Array()
+		for index in range(0,faces.size(),3):
+			var polygon: Array = [relative*faces[index],relative*faces[index+1],relative*faces[index+2]]
+			var polygons: Array = [polygon]
+			for cut in cuts: polygons = _subtract_polygons(polygons,cut)
+			for piece in polygons:
+				for corner in range(1,piece.size()-1): remaining.append_array(PackedVector3Array([piece[0],piece[corner],piece[corner+1]]))
+		job.remaining = remaining
+		return
+	var inverse := relative.affine_inverse()
+	var results: Array = []
+	for surface in job.surfaces:
+		var arrays: Array = surface.arrays
 		var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 		var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX] if arrays[Mesh.ARRAY_INDEX] != null else PackedInt32Array()
 		var texcoords: PackedVector2Array = arrays[Mesh.ARRAY_TEX_UV] if arrays[Mesh.ARRAY_TEX_UV] != null else PackedVector2Array()
@@ -529,8 +729,15 @@ static func _cut_mesh(source: Mesh, relative: Transform3D, cuts: Array[AABB]) ->
 						emitted += 1
 		if emitted > 0:
 			tool.generate_normals()
-			tool.set_material(source.surface_get_material(surface_index))
-			tool.commit(output)
+			# Equivale a tool.commit(output): commit_to_arrays + add_surface_from_arrays + material.
+			results.append({"arrays":tool.commit_to_arrays(), "material":surface.material})
+	job.results = results
+
+static func _mesh_from_job(job: Dictionary) -> Mesh:
+	var output := ArrayMesh.new()
+	for result in job.get("results", []):
+		output.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, result.arrays)
+		if result.material != null: output.surface_set_material(output.get_surface_count()-1, result.material)
 	return output if output.get_surface_count()>0 else null
 
 static func _triangle_uv(point: Vector3, vertices: Array[Vector3], uv: Array[Vector2]) -> Vector2:

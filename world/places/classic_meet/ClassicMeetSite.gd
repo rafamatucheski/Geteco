@@ -326,7 +326,13 @@ func _flush_meshes() -> void:
 	for key in _surfaces:
 		var node := MeshInstance3D.new()
 		node.name = "Torque_"+str(key)
-		node.mesh = _surfaces[key].commit()
+		# Mesmo que commit(), mas guarda as arrays na CPU: o acesso da Torque recorta estas malhas
+		# a 8 m da porta e, sem a cópia, surface_get_arrays lia a GPU (7–10 ms por malha, 29/10).
+		var arrays: Array = _surfaces[key].commit_to_arrays()
+		var mesh := ArrayMesh.new()
+		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+		mesh.set_meta(preload("res://world/places/harbor_buildings/HarborBuildingExteriorAccess.gd").CPU_ARRAYS_META, [arrays])
+		node.mesh = mesh
 		node.material_override = _materials[key]
 		add_child(node)
 	_surfaces.clear()
