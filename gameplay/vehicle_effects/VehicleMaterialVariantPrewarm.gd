@@ -286,6 +286,7 @@ static func _effect_materials() -> Array[Material]:
 	result.append(RAIN.warm_material())
 	for material in WINDSHIELD.warm_materials(): result.append(material)
 	result.append_array(STREET.warm_materials())
+	result.append(preload("res://gameplay/vehicle_effects/VehicleBlood.gd").warm_material())
 	return result
 
 ## Emissores com as mesmas receitas de VehicleTireEffects/PowertrainEffects/ImpactEffects/Damage:

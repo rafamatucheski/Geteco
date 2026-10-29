@@ -9,6 +9,7 @@ extends SceneTree
 ## Assinatura e quad aproximam o motor: a mesma assinatura com outro nó pode cair em outro arquivo, por isso o
 ## alvo achado vale como pista para confirmar no export, não como prova.
 const PROBE := preload("res://tests/measure/ShaderFirstUseProbe.gd")
+const FIXTURE := preload("res://tests/fixtures/NorthGatewayFixtures.gd")
 const CACHE_DIR := "user://shader_cache/SceneForwardClusteredShaderRD"
 
 var world: Node
@@ -26,8 +27,19 @@ func run() -> void:
 	var target := ""
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--target="): target = arg.trim_prefix("--target=")
+	# Porto, perto da rota "oeste" da bancada fria onde o pico apareceu.
+	var folder_fixture := FIXTURE.output_dir("shader-map-save")
+	var save_path := FIXTURE.write_fixture(folder_fixture, "save.json", FIXTURE.full_snapshot(Vector3(300,.08,-742), true))
+	# --watch (com os argumentos --benchmark... da bancada fria): a sonda acompanha o jogo rodando e, a cada arquivo
+	# novo, imprime os materiais vistos pela primeira vez nos 3 quadros anteriores (SHADER_PROBE).
+	if "--watch" in OS.get_cmdline_user_args():
+		var watcher := PROBE.new()
+		watcher.cache_dir = CACHE_DIR
+		watcher.name = "ShaderFirstUseProbe"
+		root.add_child(watcher)
 	world = load("res://Main.tscn").instantiate()
 	world.set_meta("skip_arrival", true)
+	world.set_meta("menu_save_path", save_path)
 	root.add_child(world)
 	current_scene = world
 	var deadline := Time.get_ticks_msec() + 180000
@@ -38,6 +50,8 @@ func run() -> void:
 		node.set_process_input(false)
 		node.set_process_unhandled_input(false)
 	for frame in 30: await process_frame
+	# A bancada sai sozinha quando acaba; o mapa por quad fica para a rodada sem --watch.
+	if "--watch" in OS.get_cmdline_user_args(): return
 	probe = PROBE.new()
 	for key in _keys(): known[key] = "carga"
 	var during_load := known.size()

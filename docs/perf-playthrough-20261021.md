@@ -1290,3 +1290,15 @@ com **zero carcaças**, mais tarde (t = 166–182 s; com explosões era 92–104
 **Próximo passo:** (1) identificar o material do `surface` pelo arquivo do cache frio; (2) para o `draw`, testar a
 espera nos workers, isto é, se `WorkerThreadPool` está ocupado no quadro do pico (StallLog pode contar tarefas
 pendentes), e depois trace do motor (Tracy/Nsight). O pico em ~50 % das sessões frias continua.
+
+### §20.1 — o pico "surface" era o shader do sangue no veículo (29/10)
+
+`tests/measure/map_shader_cache_files.gd --watch` (editor com janela, cache frio numa pasta separada, bancada de
+estresse oeste com troca de arma) pegou o arquivo do pico (`SceneForwardClustered cdfe2a8d…/1605d394…`, o mesmo das
+sessões A8 e X1) na 2.ª rodada. Nos 3 quadros anteriores, só um material de shader novo apareceu pela primeira
+vez: `VehicleBlood.gdshader`, no para-choque dianteiro de viatura que se solta (`VehiclePanelDebris` copia o
+overlay de sangue do carro). Por isso é raro (2 de 18): precisa de viatura com sangue e peça arrancada.
+
+Conserto: `VehicleBlood.warm_material()` entra nos materiais de efeito de `VehicleMaterialVariantPrewarm`.
+Confirmado com cache frio: o arquivo `1605d394…` agora nasce na carga, sob a cortina (antes, 162 arquivos na carga
+sem ele). **Não medido:** bancada fria no export release depois do conserto; o pico "draw" continua sem dono.

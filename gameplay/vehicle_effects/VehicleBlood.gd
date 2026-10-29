@@ -2,6 +2,17 @@ extends RefCounted
 ## Permanent, bounded stains: one overlay per exterior mesh, no frame callback.
 const SHADER := preload("res://gameplay/vehicle_effects/VehicleBlood.gdshader")
 
+## Material de aquecimento (VehicleMaterialVariantPrewarm). Sem ele o shader do sangue compilava no primeiro
+## desenho: na bancada fria de 28/10 era o pico "surface" de ~1,1 s, no para-choque de viatura que se solta
+## (VehiclePanelDebris copia o overlay de sangue do carro). Achado com tests/measure/map_shader_cache_files.gd.
+static func warm_material() -> ShaderMaterial:
+	var material := ShaderMaterial.new()
+	material.shader = SHADER
+	material.set_shader_parameter("stains", 1)
+	material.set_shader_parameter("half_length", 2.2)
+	material.set_shader_parameter("half_width", .9)
+	return material
+
 static func valid(value: Variant) -> bool:
 	return typeof(value) in [TYPE_INT, TYPE_FLOAT] and is_finite(float(value)) and float(value) == floorf(float(value)) and value >= 0 and value <= 15
 

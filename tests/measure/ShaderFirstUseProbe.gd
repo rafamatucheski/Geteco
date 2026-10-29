@@ -6,6 +6,8 @@ extends Node
 ## Só para medição: percorre a árvore inteira quando há chave nova (custa ms).
 const CACHE_DIR := "user://shader_cache/SceneForwardMobileShaderRD"
 const RECENT_FRAMES := 3
+## Forward+ grava em SceneForwardClusteredShaderRD (map_shader_cache_files.gd troca).
+var cache_dir := CACHE_DIR
 
 var keys := {}
 var seen := {}            # assinatura -> {frame, sample}
@@ -137,9 +139,9 @@ func _describe(node: Node, material: Object) -> Dictionary:
 
 func _keys() -> PackedStringArray:
 	var result: PackedStringArray = []
-	if not DirAccess.dir_exists_absolute(CACHE_DIR): return result
-	for group in DirAccess.get_directories_at(CACHE_DIR):
-		for file in DirAccess.get_files_at(CACHE_DIR.path_join(group)):
+	if not DirAccess.dir_exists_absolute(cache_dir): return result
+	for group in DirAccess.get_directories_at(cache_dir):
+		for file in DirAccess.get_files_at(cache_dir.path_join(group)):
 			result.append(group.left(8) + "/" + file.get_basename().get_basename())
 	return result
 
