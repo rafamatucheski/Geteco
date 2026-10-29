@@ -8,6 +8,7 @@ extends RefCounted
 const POLICE := "res://assets/civilians/meshy/police/"
 const PEDESTRIANS := "res://assets/civilians/meshy/pedestrians/"
 const ELDER := "res://assets/civilians/meshy/elder/"
+const SKIERS := "res://assets/civilians/meshy/skiers/"
 const ROLES := {
 	"mortician": [
 		{"file": POLICE + "suit_m.glb", "female": false, "tint": {"tone": Color(0.30, 0.30, 0.34)}},
@@ -101,32 +102,19 @@ const ROLES := {
 	"elder": [
 		{"file": ELDER + "elder_m.glb", "female": false},
 	],
-	# Moradores de fora da serra (rotina V2): pedestres comuns com roupa um pouco fria e gorro/boné de inverno.
+	# Moradores de fora da serra (rotina V2): só roupa de neve. Até 29/10 usavam os corpos de pedestre da cidade
+	# com gorro e tom azulado, e o playtest viu gente de bermuda e camiseta na neve. Os corpos de esquiador
+	# (conjunto, botas e gorro na malha) variam pelo matiz/brilho; ski_f_a segue fora (ver SkierBodyCatalog).
 	"mountain_villager": [
-		{"file": PEDESTRIANS + "m_medium_a.glb", "female": false, "tint": {"tone": Color(0.85, 0.9, 1.0)}, "accessories": [{"kind": "beanie", "color": Color("5a2f2a"), "band": Color("1c1d1e")}]},
-		{"file": PEDESTRIANS + "m_medium_a.glb", "female": false, "tint": {"tone": Color(0.85, 0.9, 1.0)}, "accessories": [{"kind": "beanie", "color": Color("2f4a55"), "band": Color("1c1d1e")}]},
-		{"file": PEDESTRIANS + "m_medium_a.glb", "female": false, "tint": {"tone": Color(0.85, 0.9, 1.0)}, "accessories": [{"kind": "cap", "color": Color("4a5a3a"), "band": Color("1c1d1e")}]},
-		{"file": PEDESTRIANS + "m_medium_b.glb", "female": false, "tint": {"tone": Color(0.85, 0.9, 1.0)}, "accessories": [{"kind": "beanie", "color": Color("5a2f2a"), "band": Color("1c1d1e")}]},
-		{"file": PEDESTRIANS + "m_medium_b.glb", "female": false, "tint": {"tone": Color(0.85, 0.9, 1.0)}, "accessories": [{"kind": "beanie", "color": Color("2f4a55"), "band": Color("1c1d1e")}]},
-		{"file": PEDESTRIANS + "m_medium_b.glb", "female": false, "tint": {"tone": Color(0.85, 0.9, 1.0)}, "accessories": [{"kind": "cap", "color": Color("4a5a3a"), "band": Color("1c1d1e")}]},
-		{"file": PEDESTRIANS + "m_heavy_a.glb", "female": false, "tint": {"tone": Color(0.85, 0.9, 1.0)}, "accessories": [{"kind": "beanie", "color": Color("5a2f2a"), "band": Color("1c1d1e")}]},
-		{"file": PEDESTRIANS + "m_heavy_a.glb", "female": false, "tint": {"tone": Color(0.85, 0.9, 1.0)}, "accessories": [{"kind": "beanie", "color": Color("2f4a55"), "band": Color("1c1d1e")}]},
-		{"file": PEDESTRIANS + "m_heavy_a.glb", "female": false, "tint": {"tone": Color(0.85, 0.9, 1.0)}, "accessories": [{"kind": "cap", "color": Color("4a5a3a"), "band": Color("1c1d1e")}]},
-		{"file": PEDESTRIANS + "m_heavy_b.glb", "female": false, "tint": {"tone": Color(0.85, 0.9, 1.0)}, "accessories": [{"kind": "beanie", "color": Color("5a2f2a"), "band": Color("1c1d1e")}]},
-		{"file": PEDESTRIANS + "m_heavy_b.glb", "female": false, "tint": {"tone": Color(0.85, 0.9, 1.0)}, "accessories": [{"kind": "beanie", "color": Color("2f4a55"), "band": Color("1c1d1e")}]},
-		{"file": PEDESTRIANS + "m_heavy_b.glb", "female": false, "tint": {"tone": Color(0.85, 0.9, 1.0)}, "accessories": [{"kind": "cap", "color": Color("4a5a3a"), "band": Color("1c1d1e")}]},
-		{"file": PEDESTRIANS + "f_medium_a.glb", "female": true, "tint": {"tone": Color(0.85, 0.9, 1.0)}, "accessories": [{"kind": "beanie", "color": Color("5a2f2a"), "band": Color("1c1d1e")}]},
-		{"file": PEDESTRIANS + "f_medium_a.glb", "female": true, "tint": {"tone": Color(0.85, 0.9, 1.0)}, "accessories": [{"kind": "beanie", "color": Color("2f4a55"), "band": Color("1c1d1e")}]},
-		{"file": PEDESTRIANS + "f_medium_a.glb", "female": true, "tint": {"tone": Color(0.85, 0.9, 1.0)}, "accessories": [{"kind": "cap", "color": Color("4a5a3a"), "band": Color("1c1d1e")}]},
-		{"file": PEDESTRIANS + "f_medium_b.glb", "female": true, "tint": {"tone": Color(0.85, 0.9, 1.0)}, "accessories": [{"kind": "beanie", "color": Color("5a2f2a"), "band": Color("1c1d1e")}]},
-		{"file": PEDESTRIANS + "f_medium_b.glb", "female": true, "tint": {"tone": Color(0.85, 0.9, 1.0)}, "accessories": [{"kind": "beanie", "color": Color("2f4a55"), "band": Color("1c1d1e")}]},
-		{"file": PEDESTRIANS + "f_medium_b.glb", "female": true, "tint": {"tone": Color(0.85, 0.9, 1.0)}, "accessories": [{"kind": "cap", "color": Color("4a5a3a"), "band": Color("1c1d1e")}]},
-		{"file": PEDESTRIANS + "f_slim_a.glb", "female": true, "tint": {"tone": Color(0.85, 0.9, 1.0)}, "accessories": [{"kind": "beanie", "color": Color("5a2f2a"), "band": Color("1c1d1e")}]},
-		{"file": PEDESTRIANS + "f_slim_a.glb", "female": true, "tint": {"tone": Color(0.85, 0.9, 1.0)}, "accessories": [{"kind": "beanie", "color": Color("2f4a55"), "band": Color("1c1d1e")}]},
-		{"file": PEDESTRIANS + "f_slim_a.glb", "female": true, "tint": {"tone": Color(0.85, 0.9, 1.0)}, "accessories": [{"kind": "cap", "color": Color("4a5a3a"), "band": Color("1c1d1e")}]},
-		{"file": PEDESTRIANS + "f_slim_b.glb", "female": true, "tint": {"tone": Color(0.85, 0.9, 1.0)}, "accessories": [{"kind": "beanie", "color": Color("5a2f2a"), "band": Color("1c1d1e")}]},
-		{"file": PEDESTRIANS + "f_slim_b.glb", "female": true, "tint": {"tone": Color(0.85, 0.9, 1.0)}, "accessories": [{"kind": "beanie", "color": Color("2f4a55"), "band": Color("1c1d1e")}]},
-		{"file": PEDESTRIANS + "f_slim_b.glb", "female": true, "tint": {"tone": Color(0.85, 0.9, 1.0)}, "accessories": [{"kind": "cap", "color": Color("4a5a3a"), "band": Color("1c1d1e")}]},
+		{"file": SKIERS + "ski_m_a.glb", "female": false, "tint": {"hue": 0.0, "brightness": 1.0}},
+		{"file": SKIERS + "ski_m_a.glb", "female": false, "tint": {"hue": -0.05, "brightness": 0.9}, "accessories": [{"kind": "sunglasses"}]},
+		{"file": SKIERS + "ski_m_a.glb", "female": false, "tint": {"hue": 0.05, "brightness": 1.06}},
+		{"file": SKIERS + "ski_m_b.glb", "female": false, "tint": {"hue": 0.0, "brightness": 1.0}},
+		{"file": SKIERS + "ski_m_b.glb", "female": false, "tint": {"hue": 0.05, "brightness": 0.92}},
+		{"file": SKIERS + "ski_m_b.glb", "female": false, "tint": {"hue": -0.05, "brightness": 1.08}, "accessories": [{"kind": "sunglasses"}]},
+		{"file": SKIERS + "ski_f_b.glb", "female": true, "tint": {"hue": 0.0, "brightness": 1.0}},
+		{"file": SKIERS + "ski_f_b.glb", "female": true, "tint": {"hue": -0.05, "brightness": 0.92}},
+		{"file": SKIERS + "ski_f_b.glb", "female": true, "tint": {"hue": 0.05, "brightness": 1.06}, "accessories": [{"kind": "sunglasses"}]},
 	],
 	"pedestrian": [
 		{"file": PEDESTRIANS + "m_medium_a.glb", "female": false},

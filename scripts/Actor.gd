@@ -19,6 +19,7 @@ const MIXAMO_VEHICLE_LIBRARY := "res://assets/dante/mixamo/dante_mixamo_vehicle.
 const LADDER_CLIPS := ["Fast_Ladder_Climb", "ladder/Ladder_Descend"]
 const CIVILIAN := preload("res://assets/CivilianModel.gd")
 const BODY_CATALOG := preload("res://assets/civilians/CivilianBodyCatalog.gd")
+const WORLD_CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
 const OUTFIT_APPEARANCE := preload("res://assets/outfits/MeshyDanteAppearance.gd")
 const PROTECTION := preload("res://gameplay/DamageProtection.gd")
 const STEERING := preload("res://gameplay/crowd/PedestrianSteering.gd")
@@ -222,7 +223,9 @@ func _ready() -> void:
 		model.appearance_variant = identity
 		model.coat_color = [Color("426c70"), Color("a35d42"), Color("d3c3a1"), Color("42556f"), Color("8e5362"), Color("70835d")][identity % 6]
 		model.pants_color = [Color("293849"), Color("484644"), Color("615342")][identity % 3]
-		if get_meta("region_id", "") == "mountain":
+		# Pela posição também: quem desce de um carro herda o `region_id` do carro, que pode estar defasado.
+		if get_meta("region_id", "") == "mountain" or (get_meta("region_id", "") != "desert" \
+				and WORLD_CONNECTION.logical_region(global_position) == "mountain"):
 			model.wardrobe_overrides = {"top":3, "bottom":0, "shoe":1, "hat":2, "bag":0}
 		model.rotation.y = PI
 		# Corpo importado do Meshy para o pedestre genérico; sem entrada compatível (ou com guarda-roupa fixo, como
