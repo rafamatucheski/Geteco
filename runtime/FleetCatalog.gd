@@ -73,6 +73,7 @@ static func create(id: String) -> Node3D:
 		# sem isto os carros de corrida do deserto saíam lisos desde a troca de frota.
 		if redesigned != null and id in preload("res://gameplay/desert_cars/DesertCarCatalog.gd").IDS:
 			preload("res://gameplay/desert_cars/DesertCarLivery.gd").apply(redesigned, preload("res://gameplay/desert_cars/DesertCarCatalog.gd").spec(id))
+		if redesigned != null and id == "police_transport": preload("res://gameplay/dispatch/PoliceTransportModel.gd").fit_marks(redesigned)
 		return redesigned
 	if id == "biarticulated_510":
 		var bus := Node3D.new()
