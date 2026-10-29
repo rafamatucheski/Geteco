@@ -1697,7 +1697,11 @@ func _melee(origin: Vector3, direction: Vector3, data: Dictionary, id: String = 
 		if not obstruction.is_empty() and obstruction.collider != actor: continue
 		var was_living: bool = actor.get("dead") != true
 		_damage(actor, float(data.damage), player)
-		if id == "katana" and was_living and actor.get("dead") == true and is_instance_valid(katana_wounds): katana_wounds.sever_defeated(actor, direction, _katana_combo)
+		# Golpe letal forte de katana/machado separa o membro mais perto do ponto do golpe (`KatanaWounds`).
+		if was_living and actor.get("dead") == true and is_instance_valid(katana_wounds):
+			var combo := _katana_combo if id == "katana" else int(_rig_pose.combo_step)
+			var heavy_cut: bool = _rig_pose.heavy_attack() or (id == "katana" and is_instance_valid(rage) and rage.active)
+			katana_wounds.try_sever(actor, id, float(data.damage), heavy_cut, preload("res://gameplay/KatanaWounds.gd").cut_point(actor, id, combo, direction), direction)
 		_melee_hit_sound(id if id != "" else String(data.get("stance", "")), actor, target, float(data.damage))
 		_hit_effect({"collider": actor, "position": target, "normal": -direction}, float(data.damage), direction)
 		_melee_impact(actor, direction, id)

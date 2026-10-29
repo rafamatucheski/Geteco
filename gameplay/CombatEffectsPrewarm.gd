@@ -98,6 +98,11 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 			flash.position = tip
 			holder.add_child(flash)
 		index += 1
+	# Disco do corte de membro (KatanaWounds): material estático único, desenhado aqui uma vez para o
+	# primeiro corte no jogo não compilar o pipeline.
+	var cut_cap := preload("res://gameplay/KatanaWounds.gd").prewarm_cap()
+	cut_cap.position = Vector3((float(index % 8) - 3.5) * .55, -float(index / 8) * .45, 0.0)
+	weapons.add_child(cut_cap)
 	var draws: Array[int] = [0]
 	var count_draw := func() -> void: draws[0] += 1
 	RenderingServer.frame_post_draw.connect(count_draw)
