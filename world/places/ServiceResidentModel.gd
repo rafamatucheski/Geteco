@@ -8,6 +8,10 @@ extends Node3D
 @export var has_hat: bool = false
 @export var is_female: bool = false
 @export var resting_facing_y: float = 0.0
+## Corpo do Meshy: "pedestrian" sorteia um civil com estas cores; "firefighter" veste a
+## farda do quartel (mesmo corpo de função do FirefighterModel). Playtest 29/10: o Capitão
+## Rocha saía como civil qualquer e o quartel parecia ter só NPC aleatório dentro.
+@export var body_role: String = "pedestrian"
 
 var model_root: Node3D
 var torso_node: Node3D
@@ -35,6 +39,10 @@ func _install_body() -> void:
 	body = preload("res://assets/civilians/RigBodySwap.gd").install(self, _body_look(), [], true)
 
 func _body_look() -> Dictionary:
+	if body_role == "firefighter":
+		return {"role": "firefighter", "variant": 6100 + hash(character_name) % 97, "top": 7, "bottom": 3, "shoe": 1, "hat": 5,
+			"backpack": false, "bag": 0, "glasses": false, "beard": 0, "top_color": Color(0.80, 0.64, 0.14),
+			"bottom_color": Color(0.74, 0.59, 0.13), "inner": Color("e6eac9"), "accent": Color(0.82, 0.14, 0.12), "shoe_color": Color("141416")}
 	return {"role": "pedestrian", "variant": 7000 + hash(character_name) % 997, "female": is_female, "top": 5, "bottom": 0, "shoe": 2,
 		"hat": 1 if has_hat else 0, "backpack": false, "bag": 0,
 		"top_color": shirt_color, "bottom_color": pants_color, "skin": skin_color, "accent": hat_color}

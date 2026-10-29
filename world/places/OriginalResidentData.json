@@ -139,7 +139,8 @@
       "shirt_color": "#b91c1c",
       "pants_color": "#1c1917",
       "hat_color": "#fbbf24",
-      "has_hat": true
+      "has_hat": true,
+      "body_role": "firefighter"
     },
     "source": "world/harbor/interiors/HarborFireStationInterior.gd"
   },
