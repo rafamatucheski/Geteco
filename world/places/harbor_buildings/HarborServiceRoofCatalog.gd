@@ -27,6 +27,7 @@ static func definitions(include_deleted := false) -> Array[Dictionary]:
 		var size: Vector2 = Vector2(9,6.2)
 		var height := 4.35
 		var yaw := float(source.get("editor_rotation",0.0))
+		var ladder_fraction := NAN
 		match id:
 			"harbor_bank":
 				size=Vector2(14.375,11.25); height=4.93
@@ -45,6 +46,10 @@ static func definitions(include_deleted := false) -> Array[Dictionary]:
 				height=load("res://world/urban_detail/UrbanBuildingFactory.gd").resolved_height(record)+.14
 				# Delegacia pintada: a parede tem a altura da pintura, menos o que afunda até a soleira.
 				if id=="harbor_police" and not PaintedHarborHouses.style_for("Police","police_precinct").is_empty(): height=PaintedPoliceStation.roof_height()
+				# Quartel pintado: a escada de marinheiro da lateral leste chega ao telhado;
+				# a saída (casinha) fica no topo dela, não no canto oeste (playtest 29/10).
+				if id=="harbor_fire_station" and not PaintedHarborHouses.style_for("NorthFireStation","fire_station").is_empty():
+					ladder_fraction = PaintedFacadeKit.side_ladder_z(PaintedFireStation.STYLE,size.y)/size.y
 			"harbor_hospital": center+=Vector3(-50.0/18.0,0,0); size=Vector2(151.0/18.0,221.0/(18*.76822128)); height=5.35
 			"canal_north": size=Vector2(9.3,6.65); height=5.34
 			"cobra_leader_house":
@@ -66,6 +71,9 @@ static func definitions(include_deleted := false) -> Array[Dictionary]:
 			size *= Vector2(stretch.x,stretch.z)
 			height *= stretch.y
 		_append(id,id,center,size,height,yaw)
+		if is_finite(ladder_fraction):
+			# Patamar alinhado ao topo da escada, casinha logo atrás (para o norte).
+			_set_stair(_cache[-1],Vector3(size.x*.5-1.45,0,ladder_fraction*size.y))
 	var village = preload("res://gameplay/urban_v1/TruckersVillageVisuals.gd")
 	for index in village.HOME_LAYOUT.size():
 		var home: Array = village.HOME_LAYOUT[index]
@@ -91,6 +99,14 @@ static func _append(id: String, place: String, center: Vector3, size: Vector2, h
 	# The fire station's authored emergency siren owns the southeast corner.
 	# Its roof exit is a separate bay to the left, preserving that solid detail.
 	if id=="harbor_fire_station": _cache[-1].jump_x = maxf(.7,size.x*.5-3.8)
+
+## Saída do telhado fora do canto oeste padrão: patamar em `stair`, chegada (spawn) 1,35 m
+## para dentro do telhado, nunca para fora da platibanda.
+static func _set_stair(definition: Dictionary, stair: Vector3) -> void:
+	var inward := Vector3.RIGHT if stair.x < 0.0 else Vector3.LEFT
+	definition["stair"] = stair
+	definition["exit"] = stair
+	definition["spawn"] = stair+inward*1.35
 
 static func find(id: String, include_deleted := false) -> Dictionary:
 	for definition in definitions(include_deleted):

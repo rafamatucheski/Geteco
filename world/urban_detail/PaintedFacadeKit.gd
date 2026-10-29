@@ -222,11 +222,21 @@ static func _build(parent: Node3D, style: String, size: Vector3, collision_paren
 	else:
 		var side_modules := maxi(1, roundi(size.z / natural_size(style).z))
 		var side_w := size.z / float(side_modules)
+		var ladder: Array = data.get("side_ladder", [])
 		for index in side_modules:
 			var z0 := -half.z + side_w * float(index)
 			# Lateral direita olha +X, começando do fundo; a esquerda é o espelho.
-			_quad(sides, Transform3D(Basis(Vector3.UP, PI * 0.5), Vector3(half.x, 0, z0 + side_w)), side_w, size.y, Rect2(0, 0, 1, 1))
-			_quad(sides, Transform3D(Basis(Vector3.UP, -PI * 0.5), Vector3(-half.x, 0, z0)), side_w, size.y, Rect2(0, 0, 1, 1))
+			# Escada de marinheiro pintada (playtest 29/10): repetida em cada módulo, o
+			# quartel tinha duas na lateral e nenhuma chegava à saída do telhado. Fica só
+			# no módulo da frente da lateral direita (a que a câmera vê), onde a saída do
+			# telhado é posta (side_ladder_z); nos outros a faixa vira tijolo da mesma pintura.
+			var right := Transform3D(Basis(Vector3.UP, PI * 0.5), Vector3(half.x, 0, z0 + side_w))
+			var left := Transform3D(Basis(Vector3.UP, -PI * 0.5), Vector3(-half.x, 0, z0))
+			if ladder.size() >= 3 and index == side_modules - 1:
+				_quad(sides, right, side_w, size.y, Rect2(0, 0, 1, 1))
+			else:
+				_side_quad(sides, right, side_w, size.y, ladder)
+			_side_quad(sides, left, side_w, size.y, ladder)
 	_add_mesh(root, "Sides", sides, material(style, "side"))
 	var roof_part := "roof"
 	if not bool(options.get("snow", true)) and bool(data.get("snow_roof", false)): roof_part = "roof_clear"
@@ -392,6 +402,34 @@ static func _cornice(size: Vector3) -> MeshInstance3D:
 
 ## Quad de largura w e altura h com canto inferior esquerdo na origem de `xform`,
 ## olhando para +Z local; `uv` é o recorte da imagem (origem no topo).
+## Módulo lateral sem a escada pintada: `ladder` = [u0, u1, fill_u0] (style.json
+## "side_ladder"). A faixa [u0, u1] da escada é trocada pela faixa da mesma largura que
+## começa em fill_u0 (parede lisa da mesma pintura, com as mesmas cintas), sem esticar.
+static func _side_quad(st: SurfaceTool, xform: Transform3D, w: float, h: float, ladder: Array) -> void:
+	if ladder.size() < 3:
+		_quad(st, xform, w, h, Rect2(0, 0, 1, 1))
+		return
+	var u0 := float(ladder[0])
+	var u1 := float(ladder[1])
+	var fill := float(ladder[2])
+	_quad(st, xform, u0 * w, h, Rect2(0, 0, u0, 1))
+	_quad(st, xform.translated_local(Vector3(u0 * w, 0, 0)), (u1 - u0) * w, h, Rect2(fill, 0, u1 - u0, 1))
+	_quad(st, xform.translated_local(Vector3(u1 * w, 0, 0)), (1.0 - u1) * w, h, Rect2(u1, 0, 1.0 - u1, 1))
+
+
+## Z local (frente em +Z) da escada pintada que sobra na lateral direita (+X) de um
+## prédio de profundidade `depth`, ou NAN se o estilo não tem escada. É o mesmo módulo
+## que `_build` mantém com a escada; o telhado põe a saída (casinha) no topo dela.
+static func side_ladder_z(style: String, depth: float) -> float:
+	var ladder: Array = style_data(style).get("side_ladder", [])
+	if ladder.size() < 3 or float(style_data(style).get("eave", 0.0)) > 0.0 or is_tall(style): return NAN
+	var modules := maxi(1, roundi(depth / natural_size(style).z))
+	var side_w := depth / float(modules)
+	var z0 := -depth * 0.5 + side_w * float(modules - 1)
+	# A lateral direita começa no fundo do módulo (z0 + side_w) e anda para -Z com u.
+	return z0 + side_w * (1.0 - (float(ladder[0]) + float(ladder[1])) * 0.5)
+
+
 static func _quad(st: SurfaceTool, xform: Transform3D, w: float, h: float, uv: Rect2) -> void:
 	_quad_points(st, [xform * Vector3(0, 0, 0), xform * Vector3(w, 0, 0), xform * Vector3(w, h, 0), xform * Vector3(0, h, 0)],
 		[Vector2(uv.position.x, uv.end.y), Vector2(uv.end.x, uv.end.y), Vector2(uv.end.x, uv.position.y), uv.position])

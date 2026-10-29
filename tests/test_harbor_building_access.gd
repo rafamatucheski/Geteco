@@ -92,7 +92,7 @@ func _check_rooftops(parent: Node3D, definitions: Array[Dictionary]) -> void:
 		roof.definition.rewards = preload("res://world/places/harbor_buildings/HarborBuildingContent.gd").floor_rewards(definition,int(definition.floor_count))
 		roof.position = Vector3(0,float(definition.roof_height),0)
 		parent.add_child(roof)
-		check(roof.is_floor_clear(roof.stair_point()+Vector3.RIGHT*1.35,.32),"Roof landing is clear "+str(definition.id))
+		check(roof.is_floor_clear(roof.landing_point(),.32),"Roof landing is clear "+str(definition.id))
 		check(roof.is_floor_clear(roof.jump_point,.32),"Jump approach is clear "+str(definition.id))
 		check(roof.reward_points.size()==1,"Roof cache has a reachable location "+str(definition.id))
 		for reward in roof.reward_points: check(roof.is_floor_clear(roof.to_local(reward.position),.32),"Roof cache clear "+str(definition.id))

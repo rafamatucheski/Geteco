@@ -4,13 +4,21 @@ const MATERIALS = preload("res://world/places/ShopInteriorMaterials.gd")
 class RoofModel extends Node3D:
 	func create_reward_art(reward: Dictionary) -> Node3D:
 		return preload("res://world/places/harbor_buildings/HarborBuildingRewardArt.gd").build(reward)
+const CIRCULATION = preload("res://world/places/harbor_buildings/HarborRoofCirculation.gd")
+const HOUSE_OFFSET := CIRCULATION.HOUSE_OFFSET
+const HOUSE_SIZE := CIRCULATION.HOUSE_SIZE
 var jump_point := Vector3.ZERO
 var jump_outward := Vector3.BACK
 var _jump_gate: StaticBody3D
 var _jump_gate_art: Node3D
 
 func stair_point() -> Vector3:
-	return Vector3(-definition.size.x*.5+1.45,0,1.45)
+	return CIRCULATION.stair(definition)
+
+## Chegada de quem sobe: ao lado do patamar, para dentro do telhado.
+func landing_point() -> Vector3:
+	var stair := stair_point()
+	return stair+(Vector3.RIGHT if stair.x<0.0 else Vector3.LEFT)*1.35
 
 func _ready() -> void:
 	name = "Rooftop"
@@ -47,15 +55,18 @@ func _ready() -> void:
 		if height>.9: rail.set_meta("functional_jump_gate",true)
 	_box_solid("RoofJumpGate",AABB(Vector3(gap_left,0,half_d-.24),Vector3(1.90,1.06,.24)))
 	_jump_gate = solid_bodies[-1]
-	# The stair exit shares its landing with every authored floor. Side walls
-	# and canopy are physical, with a clear 1.5m opening facing that landing.
+	# The stair exit shares its landing with every authored floor. Playtest de
+	# 29/10: o telhado visto da rua tinha casinhas sorteadas pelo enfeite (até três)
+	# e esta saída de pedra aparecia em outro lugar. Agora a saída é UMA casinha
+	# fechada, no mesmo lugar e com as cores da casinha que o CityChunkDressing põe
+	# no telhado (HarborRoofCirculation.stair_house), um pouco maior para cobri-la
+	# sem brigar de profundidade; o patamar fica em frente à porta.
 	var stair := stair_point()
-	_piece("StairRear",stair+Vector3(0,1.1,-2.35),Vector3(1.90,2.2,.18),"stone","858574",true)
-	for side in [-1,1]:
-		_piece("StairJamb",stair+Vector3(side*.91,1.1,-1.62),Vector3(.16,2.2,1.64),"stone","858574",true)
-	_piece("StairCap",stair+Vector3(0,2.24,-1.62),Vector3(2.05,.16,1.86),"metal","525b55",false)
-	_box_solid("StairOverhead",AABB(stair+Vector3(-1.025,2.16,-2.55),Vector3(2.05,.16,1.86)),false)
-	_piece("StairDoorOpen",stair+Vector3(-.77,1.03,-.65),Vector3(.075,2.05,.9),"metal","394741",true)
+	var house: Vector3 = stair+HOUSE_OFFSET
+	_piece("StairHouse",house+Vector3(0,HOUSE_SIZE.y*.5,0),HOUSE_SIZE,"stone","a39b8c",true)
+	_piece("StairHouseCap",house+Vector3(0,HOUSE_SIZE.y+.08,.05),Vector3(HOUSE_SIZE.x+.2,.16,HOUSE_SIZE.z+.2),"metal","6e7577",false)
+	_piece("StairHouseDoor",house+Vector3(.4,.87,HOUSE_SIZE.z*.5+.012),Vector3(.82,1.74,.02),"wood","5a4a3c",false)
+	_piece("StairHouseWindow",house+Vector3(-.55,1.4,HOUSE_SIZE.z*.5+.012),Vector3(.52,.42,.02),"metal","2e3a40",false)
 	# A few useful roof objects, deliberately outside the landing and pickup.
 	if width>=8.0 and depth>=8.0:
 		_piece("Planter",Vector3(half_w-1.0,.29,-half_d+1.25),Vector3(1.15,.58,1.4),"stone","817961",true)

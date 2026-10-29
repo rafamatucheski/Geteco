@@ -319,6 +319,9 @@ def main() -> None:
             "openings": openings,
             "doors": doors,
         }
+        # Escada pintada na lateral: [u0, u1, fill_u0] — o kit a mantém num módulo só.
+        if "side_ladder" in entry:
+            data["side_ladder"] = entry["side_ladder"]
         for texture in target.glob("*.jpg"):
             write_import_params(texture)
         (target / "style.json").write_text(json.dumps(data, indent="\t"), encoding="utf-8")

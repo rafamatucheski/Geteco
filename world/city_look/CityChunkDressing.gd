@@ -965,6 +965,10 @@ const ROOF_TINTS := [
 const ROOF_PROPS := [["ac_unit", 0.2], ["vent", 0.14], ["roof_hatch", 0.06], ["antenna", 0.06], ["dish", 0.07], ["pipe_run", 0.06], ["roof_shed", 0.06], ["roof_garden", 0.06], ["roof_chairs", 0.04], ["water_tank", 0.06], ["skylight", 0.07], ["solar_row", 0.05], ["cooling_tower", 0.04]]
 
 
+## Adereços que leem como saída do telhado (casinha da escada, alçapão): um por prédio.
+const ROOF_EXITS := ["roof_shed", "roof_hatch"]
+
+
 static func _rooftops(chunk: Node3D, _roof_context: Dictionary, batches: Dictionary) -> void:
 	_other_roofs(chunk, batches)
 	var billboards := 0
@@ -981,6 +985,17 @@ static func _rooftops(chunk: Node3D, _roof_context: Dictionary, batches: Diction
 		if slabs.is_empty(): continue
 		var main_roof: AABB = slabs[0]
 		var main_occupied := []
+		# Saída do telhado: UMA por prédio (playtest 29/10: o quartel tinha três casinhas
+		# sorteadas em fila e a escada pintada chegava a nenhuma). Prédio com telhado
+		# caminhável recebe a casinha onde a escada de verdade sai (HarborRoofCirculation);
+		# os outros aceitam no máximo uma casinha ou alçapão do sorteio.
+		var roof_exit_placed := false
+		var stair_house: Variant = preload("res://world/places/harbor_buildings/HarborRoofCirculation.gd").stair_house(building)
+		if stair_house is Transform3D:
+			var house: Transform3D = stair_house
+			house.origin.y = main_roof.end.y + 0.012
+			_push(batches, "roof_shed", building.global_transform * house)
+			roof_exit_placed = true
 		for slab_index in slabs.size():
 			var roof: AABB = slabs[slab_index]
 			var unit_key := key if slab_index == 0 else "%s|u%d" % [key, slab_index]
@@ -1005,6 +1020,7 @@ static func _rooftops(chunk: Node3D, _roof_context: Dictionary, batches: Diction
 				var akey := unit_key + "|roof|" + str(attempt)
 				var kind := _pick(ROOF_PROPS, _roll(akey) * 1.0)
 				if kind.is_empty(): continue
+				if kind in ROOF_EXITS and roof_exit_placed: continue
 				# "vent" cai no 0.5 padrão. BuildingLife._roof_life empurra outro vent (com
 				# vapor) fora deste sorteio, com STEAM_VENT_RADIUS 0.6; mantenha os dois coerentes.
 				var radius := 0.9 if kind in ["ac_unit", "roof_hatch"] else 0.5
@@ -1025,6 +1041,7 @@ static func _rooftops(chunk: Node3D, _roof_context: Dictionary, batches: Diction
 				var yaw := floorf(_roll(akey + "r") * 4.0) * PI * 0.5
 				_push(batches, kind, xform * Transform3D(Basis(Vector3.UP, yaw), Vector3(local.x, branch_roof_y, local.y)))
 				placed += 1
+				if kind in ROOF_EXITS: roof_exit_placed = true
 			if slab_index == 0: main_occupied = branch_occupied
 		var roof_y := main_roof.end.y + 0.012
 		var roof_center := Vector2(main_roof.get_center().x, main_roof.get_center().z)

@@ -271,7 +271,7 @@ func _ascend(target: Dictionary, back: Vector3, autosave: bool) -> bool:
 		next.queue_free()
 		await _abort_transition(token,was_locked,context)
 		return false
-	var destination: Vector3 = next.to_global(next.stair_point()+Vector3.RIGHT*1.35+Vector3.UP*.04)
+	var destination: Vector3 = next.to_global(next.landing_point()+Vector3.UP*.04)
 	if not session.position_clear(destination):
 		next.queue_free()
 		await _abort_transition(token,was_locked,context)
