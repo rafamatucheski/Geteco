@@ -72,7 +72,32 @@ func _shell() -> void:
 		if floor_index == 0:
 			span = width*.5+float(side)*(-entry_x)-1.2
 			center_x = (float(side)*width*.5+entry_x+float(side)*1.2)*.5
-		box(Vector3(center_x-float(side)*EXTERIOR_CLEARANCE*.5,.52,depth*.5-.12-EXTERIOR_CLEARANCE*.5),Vector3(span-EXTERIOR_CLEARANCE,1.04,.24-EXTERIOR_CLEARANCE),plaster,"FrontWall%d"%side,"stone")
+		# Playtest 29/10: esta parede baixa aparecia pelos vãos da fachada pintada
+		# (garagem, porta de vizinho) como uma "mureta" de azulejo na frente da porta.
+		# No térreo ela não é desenhada atrás de vão nenhum; os pedaços mantêm o mesmo
+		# interior_solid_id e o NativePlace junta a colisão no mesmo bloco de antes.
+		var x0: float = center_x-span*.5
+		var x1: float = center_x+span*.5
+		var pieces: Array = [Vector2(x0,x1)]
+		if floor_index == 0:
+			for gap in _front_openings():
+				var next: Array = []
+				for piece: Vector2 in pieces:
+					if gap.y <= piece.x or gap.x >= piece.y:
+						next.append(piece)
+						continue
+					if gap.x > piece.x: next.append(Vector2(piece.x,gap.x))
+					if gap.y < piece.y: next.append(Vector2(gap.y,piece.y))
+				pieces = next
+			# Pontas mínimas nas extremidades garantem que a colisão junta cubra o trecho todo.
+			if pieces.is_empty() or pieces[0].x > x0+.01: pieces.push_front(Vector2(x0,x0+.02))
+			if pieces[-1].y < x1-.01: pieces.append(Vector2(x1-.02,x1))
+		for piece: Vector2 in pieces:
+			var piece_w: float = piece.y-piece.x
+			if piece_w <= .005: continue
+			var wall := box(Vector3((piece.x+piece.y)*.5-float(side)*EXTERIOR_CLEARANCE*.5,.52,depth*.5-.12-EXTERIOR_CLEARANCE*.5),Vector3(maxf(.01,piece_w-EXTERIOR_CLEARANCE),1.04,.24-EXTERIOR_CLEARANCE),plaster,"FrontWall%d"%side,"stone")
+			# Ponta só de colisão: sem desenho.
+			if piece_w < .05: wall.visible = false
 		var window_x: float = float(side)*width*.27
 		var window_width := minf(1.8,width*.24)
 		box(Vector3(window_x,1.85,-depth*.5+.25),Vector3(window_width,1.1,.06),"364b50","","metal")
@@ -85,6 +110,28 @@ func _shell() -> void:
 	box(Vector3(entry_x,.005,depth*.5-1.2),Vector3(1.75,.016,.8),"494e45","","cloth")
 	for side in [-1,1]:
 		box(Vector3(side*.97,-.012,0),Vector3(.035,.025,depth-.5),"b5a384","","stone")
+
+## Vãos da frente pintada (x0, x1 em metros, frente em +Z) que chegam ao chão: garagem,
+## portas com e sem folha. Vazio quando o prédio não tem fachada pintada.
+func _front_openings() -> Array[Vector2]:
+	var result: Array[Vector2] = []
+	var source := str(definition.get("source_id",""))
+	var kind := str(definition.get("building_kind",""))
+	if source.is_empty() or not PaintedFacadeKit.enabled(): return result
+	var style := PaintedHarborHouses.style_for(source,kind)
+	if style.is_empty() and kind in ["brownstone","rowhouse_terrace"]: style = PaintedFacadeKit.residential_style(source)
+	if style.is_empty(): return result
+	var module_w := PaintedFacadeKit.natural_size(style).x
+	var modules := maxi(1,roundi(width/module_w))
+	module_w = width/float(modules)
+	for index in modules:
+		for opening in PaintedFacadeKit.openings(style,"front"):
+			var rect: Array = opening.rect
+			if rect.size() != 4 or float(rect[3]) < .8: continue
+			var left := -width*.5+module_w*(float(index)+float(rect[0]))
+			var right := -width*.5+module_w*(float(index)+float(rect[2]))
+			result.append(Vector2(left-.05,right+.05))
+	return result
 
 func _stairs() -> void:
 	var x := -width*.5+1.45
