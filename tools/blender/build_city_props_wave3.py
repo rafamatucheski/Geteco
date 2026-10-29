@@ -295,7 +295,8 @@ def ice_freezer() -> list:
     p.box(at(0, .42, 0), (1.1, .78, .62), hex_color("e8ebe9"), bevel=.04)
     p.box(at(0, .82, 0), (1.04, .03, .56), hex_color("3a5566"), bevel=.01)
     for x in (-.26, .26):
-        p.box(at(x, .825, .02), (.48, .02, .5), hex_color("9fb6c2"), bevel=.006)
+        # Tampa 6 mm acima da moldura (topo 0,835): coplanar, piscava em listras no jogo.
+        p.box(at(x, .846, .02), (.48, .01, .5), hex_color("9fb6c2"), bevel=.003)
     p.box(at(0, .55, .315), (1.0, .22, .01), PAINT, bevel=.004)
     for x in (-.45, .45):
         for z in (-.24, .24):

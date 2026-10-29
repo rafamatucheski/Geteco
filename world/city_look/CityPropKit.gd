@@ -230,8 +230,15 @@ static func variation_for(kind: String) -> Dictionary:
 
 
 ## Tipo da terceira onda que sai do .glb (e não da procedural) com os interruptores atuais.
+## Tipos da terceira onda que voltaram à procedural até o .glb ser regerado. O freezer do
+## wave3_calcada.glb tem as tampas de vidro com o topo coplanar ao da moldura (y=0,835):
+## as duas faces brigavam pela profundidade e a tampa tremia em listras diagonais
+## (playtest de 29/10, calçada do porto). A procedural (SidewalkFillKit) já tem as
+## tampas com folga; build_city_props_wave3.py também foi corrigido.
+const WAVE3_PROCEDURAL := ["ice_freezer"]
+
 static func wave3_modeled(kind: String) -> bool:
-	if not WAVE3_KINDS.has(kind) or not blender_wave3_enabled: return false
+	if not WAVE3_KINDS.has(kind) or not blender_wave3_enabled or kind in WAVE3_PROCEDURAL: return false
 	return blender_trees_enabled or not kind in TREE_KINDS
 
 

@@ -335,6 +335,9 @@ static func _food_cart(t: SurfaceTool) -> void:
 static func _ice_freezer(t: SurfaceTool) -> void:
 	KIT.box(t, Vector3(0, .42, 0), Vector3(1.1, .78, .62), Color("e8ebe9"))
 	KIT.box(t, Vector3(0, .82, 0), Vector3(1.04, .03, .56), Color("3a5566"))
+	# Duas tampas de vidro 6 mm ACIMA da moldura (topo em 0,835): com o topo no mesmo
+	# plano as faces disputavam a profundidade e piscavam em listras.
+	for x in [-.26, .26]: KIT.box(t, Vector3(x, .846, .02), Vector3(.48, .01, .5), Color("9fb6c2"))
 	KIT.box(t, Vector3(0, .55, .315), Vector3(1.0, .22, .01), Color("2e6fb0"))
 	for x in [-.45, .45]:
 		for z in [-.24, .24]: KIT.box(t, Vector3(x, .02, z), Vector3(.06, .04, .06), Color("2a2e30"))
