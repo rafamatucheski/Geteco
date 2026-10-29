@@ -48,12 +48,19 @@ const WATER_CUT := Rect2(140.0, 56.0, 196.0, 20.0)
 const CANAL_SHEET := Rect2(SHORE_W, 56.0, SHORE_E - SHORE_W, 20.0)
 
 static var _materials: Dictionary = {}
+## Lâmina de água sobre o tubo com a câmera fora dele. Com 0,4 (até 29/10) via-se o
+## túnel inteiro pela água, pista verde-clara e faixas, como se ali não houvesse canal,
+## e o volume claro "water_depth" ao sul do vidro aparecia como um quadrado azul mais
+## claro no meio do canal (playtest de 29/10). Quase opaca, na cor do mar raso do
+## HarborOcean, o canal fica contínuo; o corte da câmera (set_camera_reveal) continua
+## abrindo a janela quando o jogador está lá embaixo.
+const WATER_REST_ALPHA := 0.9
 
 ## A lâmina de água e a armação ficam entre a câmera e o veículo no fundo do
 ## túnel. O corte acompanha a câmera; fora dele a superfície conserva a cor.
 static func set_camera_reveal(strength: float) -> void:
 	strength = clampf(strength, 0.0, 1.0)
-	for entry in [["water", 0.4, 0.025], ["glass", 0.1, 0.015], ["canopy_steel", 1.0, 0.07]]:
+	for entry in [["water", WATER_REST_ALPHA, 0.025], ["glass", 0.1, 0.015], ["canopy_steel", 1.0, 0.07]]:
 		var mat := material(entry[0]) as StandardMaterial3D
 		var color := mat.albedo_color
 		color.a = lerpf(float(entry[1]), float(entry[2]), strength)
@@ -836,7 +843,7 @@ static func material(id: String) -> Material:
 					# Janela de água limpa sobre o tubo: o mar opaco fica recortado aqui.
 					# Fosca e sem especular: o farol do carro (e o sol) viravam um clarão que
 					# escondia o carro; sem luz nenhuma ela brilhava turquesa à noite.
-					mat.albedo_color = Color(0.03, 0.24, 0.28, 0.4)
+					mat.albedo_color = Color(0.045, 0.27, 0.30, WATER_REST_ALPHA)
 					mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 					mat.roughness = 1.0
 					mat.metallic_specular = 0.0
