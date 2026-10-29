@@ -1849,6 +1849,8 @@ func _damage_bullet(actor: Object, amount: float, source: Node, shot_from := Vec
 			# só 0,9 m além do impacto: tiro na porta não atravessa o carro e fura a roda do outro lado.
 			var tire_to := shot_to if not hit_point.is_finite() else hit_point + (shot_to - shot_from).normalized() * .9
 			preload("res://gameplay/police_response/ground/TirePuncture.gd").shoot(actor,shot_from,tire_to)
+			# Motorista do trânsito sentado: ferido, morto ou sai e foge (TrafficDriverPool).
+			preload("res://gameplay/traffic/TrafficDriverPool.gd").bullet_hit(world,actor,shot_from,shot_to,source)
 		amount *= 0.15
 	_damage(actor, amount, source)
 

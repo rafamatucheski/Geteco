@@ -264,7 +264,10 @@ func _eject_civilian_driver(candidate: CharacterBody3D, thief_side: int) -> Char
 		var crew: Array = owner.get("crew") if is_instance_valid(owner) else []
 		return crew[0] if not crew.is_empty() else null
 	var civilian = preload("res://scripts/Actor.gd").new()
-	civilian.identity = randi_range(0,10000)
+	# O motorista que já estava visível no banco (TrafficDriverPool) sai do pool e vira este civil:
+	# mesma identidade, mesma pessoa. Sem ele (carro longe, pool cheio), um civil novo como antes.
+	var seated_identity: int = preload("res://gameplay/traffic/TrafficDriverPool.gd").take_driver(world,candidate)
+	civilian.identity = seated_identity if seated_identity >= 0 else randi_range(0,10000)
 	civilian.speed = randf_range(1.2,1.6)
 	civilian.position = candidate.driver_seat_anchor()
 	civilian.set_meta("region_id",candidate.get_meta("region_id",""))

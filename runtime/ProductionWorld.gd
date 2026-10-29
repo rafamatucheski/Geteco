@@ -129,6 +129,8 @@ var world_sea: Node3D
 var roadside_parking: Node
 var world_audio: Node
 var civilian_reactions: Node
+## Motoristas visíveis nos carros do trânsito perto da câmera (pool; GETECO_TRAFFIC_DRIVERS=0 desliga).
+var traffic_drivers: Node
 var traffic_routes = preload("res://gameplay/NativeTrafficRoutes.gd").new()
 var ambient_traffic_routes = preload("res://gameplay/NativeTrafficRoutes.gd").new()
 var ambient_roads_cache: Array[Dictionary] = []
@@ -268,6 +270,11 @@ func build() -> void:
 	civilian_reactions.name = "CivilianReactionDirector"
 	civilian_reactions.configure(world,world.gameplay)
 	SESSION_OPS.attach(world, civilian_reactions, self, diagnostic_build)
+	if preload("res://gameplay/traffic/TrafficDriverPool.gd").enabled():
+		traffic_drivers = SESSION_OPS.instantiate(preload("res://gameplay/traffic/TrafficDriverPool.gd"), self)
+		traffic_drivers.name = "TrafficDriverPool"
+		traffic_drivers.configure(world)
+		SESSION_OPS.attach(world, traffic_drivers, self, diagnostic_build)
 	if not world.get_meta("skip_dispatch",false) and not "--no-dispatch" in OS.get_cmdline_user_args():
 		world.dispatch = SESSION_OPS.instantiate(preload("res://gameplay/dispatch/DispatchController.gd"), self)
 		world.dispatch.configure(world,world.gameplay,traffic_routes)
