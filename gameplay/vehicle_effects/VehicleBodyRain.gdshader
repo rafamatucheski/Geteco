@@ -31,9 +31,10 @@ void fragment() {
 		p = surface_position.xy; ax = vec3(1.0, 0.0, 0.0); ay = vec3(0.0, 1.0, 0.0);
 	}
 	float slope = 1.0 - abs(n.y);
+	// Escala visível na câmera do jogo (ver VehicleRainDrops.gdshaderinc, playtest 29/10).
 	float density = wet * mix(0.22, 0.88, falling);
-	vec3 fine = rain_beads(p, 65.0, density, falling, slope, TIME, pattern_seed);
-	vec3 large = rain_beads(p + vec2(0.17, 0.31), 33.0, density * smoothstep(0.25, 0.95, falling) * 0.65, falling, slope, TIME, pattern_seed + 7.0);
+	vec3 fine = rain_beads(p, 20.0, density, falling, slope, TIME, pattern_seed);
+	vec3 large = rain_beads(p + vec2(0.17, 0.31), 9.0, density * smoothstep(0.25, 0.95, falling) * 0.65, falling, slope, TIME, pattern_seed + 7.0);
 	float mask = max(fine.x, large.x) * smoothstep(-0.25, 0.2, n.y);
 	vec2 gradient = fine.yz + large.yz;
 	vec3 pn = normalize(n + (ax * gradient.x + ay * gradient.y) * 0.35);

@@ -39,8 +39,8 @@ void fragment() {
 	else { p = mpos.xy; ax = vec3(1.0, 0.0, 0.0); ay = vec3(0.0, 1.0, 0.0); }
 	float t = TIME;
 	float density = rain * mix(0.24, 0.90, falling);
-	vec3 a = rain_beads(p, 65.0, density, falling, 1.0 - abs(n.y), t, pattern_seed);
-	vec3 b = rain_beads(p + vec2(0.37, 0.19), 33.0, density * smoothstep(0.25, 0.95, falling) * 0.65, falling, 1.0 - abs(n.y), t, pattern_seed + 5.0);
+	vec3 a = rain_beads(p, 17.0, density, falling, 1.0 - abs(n.y), t, pattern_seed);
+	vec3 b = rain_beads(p + vec2(0.37, 0.19), 7.5, density * smoothstep(0.25, 0.95, falling) * 0.65, falling, 1.0 - abs(n.y), t, pattern_seed + 5.0);
 	float mask = max(a.x, b.x);
 	vec2 grad = a.yz * a.x + b.yz * b.x;
 	// Garoa deixa só as gotas miúdas; a camada grande entra com chuva forte.

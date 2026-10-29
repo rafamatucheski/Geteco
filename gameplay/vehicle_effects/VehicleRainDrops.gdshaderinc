@@ -1,5 +1,12 @@
-// Millimetre-scale beads in surface metres. Each cell renews independently;
-// the surface coordinates never scroll with TIME or with the vehicle.
+// Gotas em metros da superfície. Cada célula renova sozinha; a coordenada nunca rola com TIME
+// nem com o veículo.
+//
+// Playtest 29/10: "gotas não caem mais sobre os carros". Desde 1688d3dd (26/10) as gotas eram
+// milimétricas (65 e 33 células/m, raio 1-3 mm) e o corte de subpixel abaixo apagava todas: na
+// câmera do jogo um pixel cobre 2-3 cm, ou seja 1,5-2 células, mais que 5x o raio. A lataria só
+// escurecia; nenhuma gota aparecia. Voltam ao tamanho que se via antes (para-brisa 17/7,5
+// células/m como até 26/10, raio 0,10-0,30 da célula) e o corte só some com a gota bem abaixo
+// do pixel.
 float drop_hash(vec2 p) {
 	p = fract(p * vec2(123.34, 456.21));
 	p += dot(p, p + 45.32);
@@ -23,11 +30,11 @@ vec3 rain_beads(vec2 p, float cells, float density, float rainfall, float slope,
 	centre.y -= run * 0.27;
 	vec2 d = fract(q) - 0.5 - centre;
 	d.y /= 1.0 + run * 0.75;
-	float radius = mix(0.075, 0.21, h2 * h2) * mix(0.55, 1.0, smoothstep(0.0, 0.65, life));
+	float radius = mix(0.10, 0.30, h2 * h2) * mix(0.55, 1.0, smoothstep(0.0, 0.65, life));
 	float distance_to_drop = length(d);
 	float pixel = max(length(fwidth(q)), 0.001);
 	float mask = (1.0 - smoothstep(radius - pixel * 0.5, radius + pixel * 0.5, distance_to_drop)) * alive;
 	// Subpixel beads merge into the wet finish instead of sparkling/aliasing.
-	mask *= 1.0 - smoothstep(radius * 1.5, radius * 5.0, pixel);
+	mask *= 1.0 - smoothstep(radius * 3.0, radius * 8.0, pixel);
 	return vec3(mask, d / max(radius, 0.01) * mask);
 }
