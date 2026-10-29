@@ -11,6 +11,9 @@ const WRAP_METRES := 18.0*64.0
 const RADIUS := 70.0
 ## Altura sobre o pé do foco e opacidade máxima de cada camada. Juntas chegam a ~65%
 ## só onde os três bancos se somam (com ~45% a névoa sumia na cor do ar: 3/255 na captura); paredes cortam cada uma num ponto diferente.
+## Pedido do jogador (29/10): névoa 30% mais fraca. Mesmo fator da névoa de profundidade
+## (RegionalAtmosphere3D.HARBOR_FOG_SCALE); multiplica só a opacidade, não a cobertura.
+const OPACITY_SCALE := .7
 const LAYERS := [Vector2(.45,.34),Vector2(1.5,.28),Vector2(2.9,.22)]
 ## A névoa é ar parado sendo levado: anda um pouco mais devagar que a rajada.
 const DRIFT := .75
@@ -98,4 +101,4 @@ func advance(delta: float, wind: Vector3, focus: Vector3) -> void:
 		material.set_shader_parameter("coverage",amount)
 		var fade := smoothstep(0.0,.35,amount)
 		for i in planes.size():
-			planes[i].set_instance_shader_parameter("opacity",LAYERS[i].y*fade)
+			planes[i].set_instance_shader_parameter("opacity",LAYERS[i].y*fade*OPACITY_SCALE)

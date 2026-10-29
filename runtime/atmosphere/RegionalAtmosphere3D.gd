@@ -11,6 +11,10 @@ const FINISH := preload("res://world/regions/MountainGroundFinish.gd")
 # a transição em terra, depois da ponte e de sua entrada no deserto.
 const DESERT_CLIMATE_START := -NORTH_GATEWAY.END_Z + 12.0
 const DESERT_CLIMATE_END := 470.0
+## Pedido do jogador (29/10): "a neblina é muito intensa, uns 30% a menos". Fator único da
+## névoa de profundidade no porto/litoral; serra e deserto têm densidade própria (perfis
+## winter/desert e a serra lavada abaixo) e ficam fora, ponderados por peso regional.
+const HARBOR_FOG_SCALE := .7
 var current: Dictionary = {}
 var weights: Dictionary = {}
 
@@ -108,6 +112,7 @@ func apply(controller, hour: float, clouds: float, snow: float, inside: bool, de
 		env.adjustment_contrast += .05*serra
 		env.adjustment_saturation *= 1.0 + .10*serra
 	var desert := desert_weight(point)
+	env.fog_density *= lerpf(HARBOR_FOG_SCALE,1.0,maxf(desert,weights.mountain))
 	env.fog_depth_begin = lerpf(18.0,90.0,desert)
 	env.fog_depth_end = lerpf(75.0,1400.0,desert)
 	env.fog_depth_curve = 1.25
