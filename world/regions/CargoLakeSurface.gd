@@ -108,7 +108,9 @@ func _shore_height(point: Vector2) -> float:
 	if _height_cache.has(point):
 		return _height_cache[point]
 	var weight := _shore_weight(point)
-	var drift := 0.07 + 0.035 * sin(point.x * 0.37 + point.y * 0.15)
+	# Relevo da margem baixo (era 7–10,5 cm): sem colisão própria (ver _shore_mesh), a
+	# roda do carro afunda no máximo isso no capim da margem.
+	var drift := 0.025 + 0.012 * sin(point.x * 0.37 + point.y * 0.15)
 	# The ramp approach and both sides of the original camp route stay low.
 	var ramp := smoothstep(2.8, 5.2, absf(point.x)) if point.y > 8.0 else 1.0
 	var result := lerpf(WATER_Y + 0.004, _terrain_height(point) + 0.004, weight)
@@ -211,7 +213,12 @@ func _shore_mesh() -> void:
 					var b := piece[indices[triangle + 1]]
 					var c := piece[indices[triangle + 2]]
 					_triangle(surface, Vector3(a.x, _shore_height(a), a.y), Vector3(b.x, _shore_height(b), b.y), Vector3(c.x, _shore_height(c), c.y), 1)
-	_finish_mesh("GlacialShore", surface, 1, true)
+	# Margem só visual: quem apoia é o terreno da serra (plano em 0 na clareira do lago).
+	# Sólida, a borda de dentro ficava em WATER_Y + 0,004 = 4,6 cm ACIMA do terreno sob a
+	# água, e a de fora 4 mm acima do capim: degraus que a caixa do carro não sobe (o
+	# casco não tem subida de degrau). O carro que entrava na água perto do avião dos
+	# Cobras não saía mais pela margem (playtest de 29/10).
+	_finish_mesh("GlacialShore", surface, 1, false)
 
 func _material(kind: int) -> ShaderMaterial:
 	if not _materials.has(kind):
