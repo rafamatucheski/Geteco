@@ -11,6 +11,12 @@ var spreader: MeshInstance3D
 const CONTAINERS := preload("res://world/regions/PortContainerBatch.gd")
 const CARGO_SIZE := Vector3(2.44,2.89,12.19)
 var load_mesh: Node3D
+## Pintura do guindaste e do contêiner é triplanar em espaço de MUNDO (PortShipMaterials3D,
+## PortArtMaterials via UrbanSurfaces.detail): na peça que anda, a textura ficava parada no
+## mundo e "escorria" sobre a carga e o spreader (playtest de 29/10, vídeo do canal).
+## Cada peça móvel ganha cópias desses materiais (mesmo shader: nada compila) e o
+## uv1_offset desconta o deslocamento da peça, então a textura anda junto com ela.
+var _texture_anchors: Array[Dictionary] = []
 
 func configure(point: Vector2, offset: float) -> void:
 	anchor = point
@@ -31,7 +37,32 @@ func _ready() -> void:
 			remove_child(lock)
 			spreader.add_child(lock)
 			lock.position = Vector3(x,-.15,z)
+	for moving in [trolley, spreader, load_mesh]:
+		_anchor_texture(moving)
 	_update_pose()
+
+func _anchor_texture(node: Node3D) -> void:
+	var copies := {}
+	var parts: Array = [node]
+	parts.append_array(node.find_children("*", "MeshInstance3D", true, false))
+	for part in parts:
+		if not part is MeshInstance3D: continue
+		var source := (part as MeshInstance3D).material_override as StandardMaterial3D
+		if source == null or not (source.uv1_triplanar and source.uv1_world_triplanar): continue
+		if not copies.has(source):
+			var copy := source.duplicate() as StandardMaterial3D
+			copies[source] = copy
+			_texture_anchors.append({"node": node, "material": copy, "offset": source.uv1_offset, "scale": source.uv1_scale, "last": Vector3.INF})
+		(part as MeshInstance3D).material_override = copies[source]
+
+## Triplanar de mundo: posição × uv1_scale + uv1_offset. A peça só translada em
+## relação ao guindaste (parado), então descontar posição × escala fixa a textura nela.
+func _follow_textures() -> void:
+	for follow in _texture_anchors:
+		var at: Vector3 = (follow.node as Node3D).position
+		if at == follow.last: continue
+		follow.last = at
+		(follow.material as StandardMaterial3D).uv1_offset = (follow.offset as Vector3) - at * (follow.scale as Vector3)
 
 func _part(label: String, size: Vector3, material: Material) -> MeshInstance3D:
 	var instance := MeshInstance3D.new()
@@ -81,3 +112,4 @@ func _update_pose() -> void:
 	spreader.position = Vector3(x,cargo_top+.12,anchor.y)
 	cable.position = Vector3(x,cargo_top+.16+cable_length*.5,anchor.y)
 	cable.scale.y = cable_length
+	_follow_textures()
