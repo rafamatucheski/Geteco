@@ -11,7 +11,7 @@ set "HARBOR_STALL_LOG=1"
 set "HARBOR_STALL_STACKS=1"
 if not exist "%~dp0evidence\crash-dumps" mkdir "%~dp0evidence\crash-dumps"
 set "DOTNET_DbgEnableMiniDump=1"
-set "DOTNET_DbgMiniDumpType=1"
+set "DOTNET_DbgMiniDumpType=2"
 set "DOTNET_DbgMiniDumpName=%~dp0evidence\crash-dumps\GetecoV2-%%p.dmp"
 call "%~dp0Jogar.cmd"
 exit /b %errorlevel%
