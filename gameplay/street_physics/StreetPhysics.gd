@@ -18,6 +18,7 @@ const CONTACT_AUDIO := preload("res://audio/VehicleCrashAudio.gd")
 const PROTECTION := preload("res://gameplay/DamageProtection.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const DEBRIS_GROUND := preload("res://gameplay/street_physics/DebrisGroundProjection.gd")
+const SQUISH := preload("res://gameplay/street_physics/RunOverSquish.gd")
 
 # Even a bumper-start acceleration displaces people; lethal speed stays at 200 px/s.
 const PERSON_MIN_SPEED := 0.05
@@ -33,6 +34,15 @@ const WOUND_SECONDS := 6.0
 const WOUND_INTERVAL := 1.15
 const WOUND_STEP := 28.0 / 16.0
 const WATCH_INTERVAL := 0.2
+# Carro por cima de corpo caído (playtest 29/10): abaixo de ~7 km/h o pneu só encosta e não
+# espirra nada; quem manobra devagar ao lado do corpo não deve ouvir esmagamento.
+const RUNOVER_MIN_SPEED := 2.0
+# Folga além da carroceria: o corpo deitado se estende ~0,65 m do ponto do ator (queda da V2).
+const RUNOVER_BODY_REACH := 0.6
+# Um esmagamento por passada: o contato precisa sumir por este tempo para contar outra entrada,
+# e o mesmo corpo não repete em menos de RUNOVER_COOLDOWN_MS (dois carros em fila, ré e frente).
+const RUNOVER_REENTRY_MS := 250
+const RUNOVER_COOLDOWN_MS := 900
 
 static var instance: Node3D
 
@@ -52,6 +62,16 @@ var _litter: Array[Node3D] = []
 var _player_wound_pending := false
 var _player_wound_lethal := false
 var _people_cache: Array = []
+## GETECO_RUNOVER_GORE=0 desliga sangue/som/rastro de passar por cima de corpo (A/B e comparação).
+var runover_gore := OS.get_environment("GETECO_RUNOVER_GORE").strip_edges() != "0"
+## Corpos caídos (mortos ou derrubados, já fora do voo), renovados junto com o cache de pessoas a
+## cada WATCH_INTERVAL: o teste por carro só percorre esta lista, normalmente vazia.
+var _downed: Array = []
+var _runover_seen := {}
+var _runover_last := {}
+## Contadores para testes e diagnóstico.
+var runover_hits := 0
+var runover_sounds := 0
 
 
 func _ready() -> void:
@@ -63,6 +83,11 @@ func _ready() -> void:
 	tracks = TRACKS.new()
 	tracks.director = self
 	add_child(tracks)
+	_setup_audio()
+	if runover_gore: SQUISH.prewarm()
+
+
+func _setup_audio() -> void:
 	var bus := StringName(preload("res://gameplay/CombatAudio.gd").SFX_BUS_NAME)
 	for index in 8:
 		var player := AudioStreamPlayer3D.new()
@@ -106,6 +131,10 @@ func _pre_move(vehicle: CharacterBody3D, delta: float) -> void:
 	var stage := STALL_WORK.begin()
 	_hit_people(vehicle, planar, motion)
 	STALL_WORK.finish_slow("street.pre.people", stage, 5000, vehicle)
+	if runover_gore and not _downed.is_empty() and speed >= RUNOVER_MIN_SPEED:
+		stage = STALL_WORK.begin()
+		run_over_downed(vehicle, planar)
+		STALL_WORK.finish_slow("street.pre.runover", stage, 5000, vehicle)
 	stage = STALL_WORK.begin()
 	_hit_props(vehicle, planar, motion)
 	STALL_WORK.finish_slow("street.pre.props", stage, 5000, vehicle)
@@ -498,9 +527,14 @@ func play_prop_hit(point: Vector3, family: String, speed: float) -> void:
 func play(family: String, point: Vector3, volume_db := 0.0, pitch := 1.0) -> void:
 	var list: Array = _streams.get(family, [])
 	if list.is_empty(): return
+	_play_stream(list.pick_random(), point, volume_db, pitch)
+
+
+func _play_stream(stream: AudioStream, point: Vector3, volume_db: float, pitch: float) -> void:
+	if _audio.is_empty() or stream == null: return
 	var player := _audio[_audio_next]
 	_audio_next = (_audio_next + 1) % _audio.size()
-	player.stream = list.pick_random()
+	player.stream = stream
 	player.volume_db = volume_db
 	player.pitch_scale = pitch * randf_range(0.95, 1.05)
 	player.global_position = point
@@ -522,6 +556,77 @@ func _shake_if_player(vehicle: Node, strength: float) -> void:
 		tween.parallel().tween_property(camera, "v_offset", randf_range(-1, 1) * amount, 0.04)
 	tween.tween_property(camera, "h_offset", 0.0, 0.05)
 	tween.parallel().tween_property(camera, "v_offset", 0.0, 0.05)
+
+
+# ---------------------------------------------------------------------------
+# Carro passando por cima de corpo caído. Antes (até 29/10) o corpo já estava fora da colisão
+# (layer 0) e _hit_people só criava a exceção: nada de sangue, som nem rastro.
+
+func refresh_downed(people_list: Array) -> void:
+	_downed.clear()
+	var now := Time.get_ticks_msec()
+	for key in _runover_seen.keys():
+		if now - int(_runover_seen[key]) > 2000: _runover_seen.erase(key)
+	for key in _runover_last.keys():
+		if now - int(_runover_last[key]) > 5000: _runover_last.erase(key)
+	if not runover_gore: return
+	var player = controller.world.get("player") if controller != null and controller.get("world") != null else null
+	for person in people_list:
+		if not is_instance_valid(person) or not person is Node3D or person == player: continue
+		if person.has_meta("street_flying") or person.get_meta("interior_actor", false) or person.get_meta("is_player_body", false): continue
+		# Corpo escondido (vigia de NaN, desvanecimento) não espirra sangue invisível.
+		if person.has_meta("non_finite_hidden") or not person.is_visible_in_tree(): continue
+		if person.get("dead") == true or person.has_meta("street_down"): _downed.append(person)
+
+
+## Testa a planta do carro (retângulo + folga do corpo deitado) contra os corpos caídos da lista;
+## cada entrada nova dispara sangue, som e rastro. Devolve quantos corpos esmagou neste passo.
+func run_over_downed(vehicle: CharacterBody3D, planar: Vector3) -> int:
+	if not runover_gore or _downed.is_empty() or not is_instance_valid(vehicle): return 0
+	if not planar.is_finite() or planar.length() < RUNOVER_MIN_SPEED: return 0
+	var origin := vehicle.global_position
+	if not origin.is_finite(): return 0
+	var half_width := float(vehicle.get("half_width")) if vehicle.get("half_width") != null else 1.0
+	var half_length := float(vehicle.get("half_length")) if vehicle.get("half_length") != null else 2.3
+	var reach := half_length + half_width + RUNOVER_BODY_REACH
+	var inverse := Transform3D(vehicle.global_basis.orthonormalized(), origin).affine_inverse()
+	var now := Time.get_ticks_msec()
+	var hits := 0
+	for body in _downed:
+		if not is_instance_valid(body): continue
+		var point: Vector3 = body.global_position
+		if not point.is_finite() or point.distance_squared_to(origin) > reach * reach: continue
+		var local := inverse * point
+		if absf(local.y) > 1.6 or absf(local.x) > half_width + RUNOVER_BODY_REACH or absf(local.z) > half_length + RUNOVER_BODY_REACH: continue
+		var key := "%d|%d" % [body.get_instance_id(), vehicle.get_instance_id()]
+		var fresh := now - int(_runover_seen.get(key, -100000)) > RUNOVER_REENTRY_MS
+		_runover_seen[key] = now
+		if not fresh: continue
+		var id: int = body.get_instance_id()
+		if now - int(_runover_last.get(id, -100000)) < RUNOVER_COOLDOWN_MS: continue
+		_runover_last[id] = now
+		_run_over_effects(vehicle, body, point, planar)
+		hits += 1
+	return hits
+
+
+func _run_over_effects(vehicle: CharacterBody3D, body: Node3D, point: Vector3, planar: Vector3) -> void:
+	runover_hits += 1
+	var strength := clampf(planar.length() / LETHAL_SPEED, 0.2, 1.0)
+	if is_instance_valid(blood) and blood.has_method("spawn_splatter"):
+		# Respingo esticado no rumo do carro e poça curta sob o tronco, sem registrar outro
+		# cadáver: a poça de morte já existe e o orçamento de corpos não muda.
+		blood.spawn_splatter(point, planar, strength * 0.75)
+		blood.spawn_pool(point, false)
+	var gameplay = controller.world.get("gameplay") if controller != null and controller.get("world") != null else null
+	if gameplay != null and is_instance_valid(gameplay.get("effects")):
+		gameplay.effects.blood(point + Vector3.UP * 0.25, planar.normalized(), 12.0 + 10.0 * strength)
+	if is_instance_valid(tracks): tracks.soak(vehicle, TRACKS.TIRE_DISTANCE)
+	runover_sounds += 1
+	_play_stream(SQUISH.take(), point + Vector3.UP * 0.2, lerpf(-7.0, -2.0, strength), randf_range(0.92, 1.06))
+	# Solavanco leve só na câmera do motorista; a velocidade do carro continua com Vehicle.gd.
+	_shake_if_player(vehicle, 0.05 + 0.06 * strength)
+	body.set_meta("street_runover_count", int(body.get_meta("street_runover_count", 0)) + 1)
 
 
 # ---------------------------------------------------------------------------
@@ -577,6 +682,7 @@ func _collect_people() -> Array:
 func _watch_people() -> void:
 	var seen := {}
 	_people_cache = _collect_people()
+	refresh_downed(_people_cache)
 	for person in _people_cache:
 		if person.get("health") == null or person.get("dead") == null: continue
 		var id: int = person.get_instance_id()
