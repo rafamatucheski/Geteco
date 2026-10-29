@@ -297,13 +297,12 @@ static func _tumble(item: Dictionary, flat: Vector3, speed: float, director: Nod
 			node_copy.set_script(null)
 			for body in node_copy.find_children("*", "CollisionObject3D", true, false): body.free()
 			root.visible = false
-	# Carro pesa ~100x o objeto: sai a ~(1+e) vezes a velocidade do carro no
-	# sentido do choque (e≈0,3 para metal amassando), um pouco para cima porque
-	# o para-choque pega abaixo do centro de massa.
+	# Impulso pela massa do objeto (launch_velocity): antes todo objeto saía a
+	# 0,95–1,3x a velocidade do carro e até 4 m/s para cima, a caçamba de 100 kg
+	# igual à lata, e voava como papel (playtest de 29/10).
 	var side := Vector3.UP.cross(flat).normalized()
-	var launch := flat * speed * randf_range(0.95, 1.3) + side * speed * randf_range(-0.15, 0.15) + Vector3.UP * clampf(speed * 0.18, 0.5, 4.0)
-	launch = launch.limit_length(26.0)
-	var spin := side * clampf(speed * 1.6, 2.0, 22.0) + Vector3.UP * randf_range(-4.0, 4.0)
+	var launch := launch_velocity(str(item.kind), speed, flat, randf_range(0.85, 1.05), randf_range(-0.12, 0.12))
+	var spin := launch_spin(str(item.kind), launch, side, randf_range(-1.0, 1.0))
 	var is_rock: bool = item.kind in ["desert_rock", "desert_stone", "desert_gravel"]
 	if is_rock:
 		# Pedra solta recebe impulso do para-choque; a subida deixa a quebra legível.
@@ -403,7 +402,7 @@ static func _break_trash_can(base: Transform3D, launch: Vector3, spin: Vector3, 
 	_add_cylinder_shape(can, 0.27, 0.82, Vector3.UP * 0.41)
 	can.linear_velocity = launch
 	can.angular_velocity = spin
-	var lid := _debris_body(director, base.origin + Vector3.UP * 0.88, 1.2)
+	var lid := _debris_body(director, base.origin + Vector3.UP * 0.88, LID_MASS)
 	var lid_visual := MeshInstance3D.new()
 	if modeled:
 		lid_visual.mesh = kit.blender_mesh("trash_can", "TrashCanLid")
@@ -418,9 +417,10 @@ static func _break_trash_can(base: Transform3D, launch: Vector3, spin: Vector3, 
 		lid_visual.mesh = lid_mesh
 	lid.add_child(lid_visual)
 	_add_cylinder_shape(lid, 0.3, 0.08, Vector3.ZERO)
-	# Tampa é leve e está no alto: sobe mais e gira solta.
-	lid.linear_velocity = launch * randf_range(0.8, 1.15) + Vector3(randf_range(-1, 1), randf_range(1.5, 3.5), randf_range(-1, 1))
-	lid.angular_velocity = Vector3(randf_range(-15, 15), randf_range(-10, 10), randf_range(-15, 15))
+	# Tampa solta do alto: sai um pouco à frente e salta pouco (subia até 3,5 m/s e
+	# girava a 15 rad/s, como folha de papel).
+	lid.linear_velocity = launch * randf_range(0.8, 1.0) + Vector3(randf_range(-0.6, 0.6), randf_range(0.4, 1.2), randf_range(-0.6, 0.6))
+	lid.angular_velocity = Vector3(randf_range(-6, 6), randf_range(-4, 4), randf_range(-6, 6))
 	# Parte cai no choque (boca aberta); o resto onde a lata parar.
 	director.spawn_litter(base.origin, dent)
 	_spill_later(director, can, dent, 0.8)
@@ -429,11 +429,49 @@ static func _break_trash_can(base: Transform3D, launch: Vector3, spin: Vector3, 
 const DEBRIS_LAYER := 8
 const MAX_DEBRIS := 18
 const DEBRIS_LIFETIME := 10.0
-## kg; o carro leva ~1200 kg.
-const MASSES := {"trash_can": 11.0, "news_box": 28.0, "mailbox": 45.0, "hydrant": 60.0, "bench_seat": 55.0, "dumpster": 100.0, "trash_bags": 5.0, "planter": 90.0, "desert_rock": 180.0, "desert_tree": 35.0, "desert_shrub": 8.0, "desert_stone": 60.0, "lamp": 90.0, "signal_pole": 120.0, "stop_sign": 18.0, "phone_booth": 200.0,
-	"cafe_set": 14.0, "cafe_parasol": 18.0, "produce_stand": 30.0, "a_frame": 6.0, "beer_crates": 16.0, "pot_plant": 25.0, "wheelie_bins": 22.0, "bike_rack": 40.0, "pallet_stack": 60.0, "tire_stack": 45.0, "drums": 50.0,
-	"cafe_parasol_b": 18.0, "food_cart": 60.0, "ice_freezer": 70.0, "clothes_rack": 12.0, "flower_buckets": 15.0, "gas_cylinders": 45.0, "door_bench": 15.0, "motorcycle": 150.0}
+## kg, com o conteúdo (lata com lixo, caçamba de aço, vaso com terra). O carro leva ~1200 kg.
+## 29/10: lata 11→28, caçamba 100→320, sacos 5→9, vaso 90→300 e afins; leves demais
+## somavam ao lançamento antigo e tudo voava como papel.
+const MASSES := {"trash_can": 28.0, "news_box": 45.0, "mailbox": 60.0, "hydrant": 60.0, "bench_seat": 70.0, "dumpster": 320.0, "trash_bags": 9.0, "planter": 300.0, "desert_rock": 180.0, "desert_tree": 35.0, "desert_shrub": 8.0, "desert_stone": 60.0, "lamp": 90.0, "signal_pole": 120.0, "stop_sign": 18.0, "phone_booth": 200.0,
+	"cafe_set": 14.0, "cafe_parasol": 18.0, "produce_stand": 40.0, "a_frame": 8.0, "beer_crates": 25.0, "pot_plant": 40.0, "wheelie_bins": 35.0, "bike_rack": 40.0, "pallet_stack": 90.0, "tire_stack": 50.0, "drums": 80.0,
+	"cafe_parasol_b": 18.0, "food_cart": 90.0, "ice_freezer": 90.0, "clothes_rack": 15.0, "flower_buckets": 20.0, "gas_cylinders": 60.0, "door_bench": 20.0, "motorcycle": 180.0, "barrel": 40.0, "pallet": 22.0}
+const LID_MASS := 2.5
+## Choque carro × objeto: conservação de momento com coeficiente de restituição baixo
+## (lata amassando quase não devolve energia), contato de raspão (o para-choque não
+## pega o centro de massa em cheio) e teto de impulso: o carro empurra no máximo
+## IMPULSE_CAP N·s antes de o objeto escorregar de lado ou o carro passar por cima.
+const CAR_MASS := 1200.0
+const RESTITUTION := 0.15
+const GLANCE := 0.8
+const IMPULSE_CAP := 2400.0
+const MAX_LAUNCH := 12.0
+## Subida máxima (m/s): o para-choque pega abaixo do centro de massa, mas um objeto de
+## rua não decola; com a gravidade do destroço o pulo fica em poucos centímetros.
+const MAX_LIFT := 1.4
+## Gravidade extra só do destroço: com 1 g a queda de um objeto de 30 kg em tela lia
+## lenta, como coisa leve flutuando. 1,5 g encurta o arco sem mudar o alcance no chão.
+const DEBRIS_GRAVITY := 1.5
 static var _debris: Array = []
+
+
+## Velocidade de saída do objeto `kind` acertado a `speed` m/s no sentido `flat`.
+## `jitter` (≈0,85–1,05) e `lateral` (≈±0,12) vêm do chamador para o teste ser determinístico.
+static func launch_velocity(kind: String, speed: float, flat: Vector3, jitter := 1.0, lateral := 0.0) -> Vector3:
+	var mass := float(MASSES.get(kind, 15.0))
+	var transfer := (1.0 + RESTITUTION) * CAR_MASS / (CAR_MASS + mass) * GLANCE
+	var horizontal := minf(speed * transfer * jitter, minf(IMPULSE_CAP / mass, MAX_LAUNCH))
+	var side := Vector3.UP.cross(flat).normalized()
+	var lift := clampf(horizontal * 0.08, 0.2, MAX_LIFT)
+	return flat * horizontal + side * horizontal * lateral + Vector3.UP * lift
+
+
+## Giro de tombo: proporcional ao que o objeto andou e menor quanto mais pesado
+## (antes até 22 rad/s em qualquer objeto, a lata rodopiava como folha).
+static func launch_spin(kind: String, launch: Vector3, side: Vector3, yaw := 0.0) -> Vector3:
+	var mass := float(MASSES.get(kind, 15.0))
+	var horizontal := Vector2(launch.x, launch.z).length()
+	var weight := clampf(sqrt(30.0 / mass), 0.35, 1.0)
+	return side * clampf(horizontal * 0.5, 0.4, 7.0) * weight + Vector3.UP * yaw * 2.0 * weight
 
 
 static func _debris_body(director: Node, origin: Vector3, mass: float) -> RigidBody3D:
@@ -445,11 +483,14 @@ static func _debris_body(director: Node, origin: Vector3, mass: float) -> RigidB
 	# colidir com ele no primeiro quadro o expulsaria com impulso absurdo.
 	body.collision_mask = 1
 	body.continuous_cd = true
-	body.linear_damp = 0.05
-	body.angular_damp = 0.4
+	# Amortecimento de objeto pesado arrastando no chão: com 0,05/0,4 deslizava e
+	# girava longe depois do choque. Quique quase nulo (metal e madeira amassam).
+	body.gravity_scale = DEBRIS_GRAVITY
+	body.linear_damp = 0.3
+	body.angular_damp = 1.5
 	var material := PhysicsMaterial.new()
-	material.friction = 0.8
-	material.bounce = 0.2
+	material.friction = 0.9
+	material.bounce = 0.06
 	body.physics_material_override = material
 	director.add_child(body)
 	body.global_position = origin
