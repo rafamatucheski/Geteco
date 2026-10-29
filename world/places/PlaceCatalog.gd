@@ -161,6 +161,8 @@ static func definitions(include_deleted := false) -> Array[Dictionary]:
 	result.append_array(preload("res://world/desert/DesertLayout.gd").place_definitions())
 	result.append_array(preload("res://world/desert/underground/DesertUnderground.gd").definitions())
 	result.append(preload("res://world/mining/coal/CoalMinePlace.gd").definition_data())
+	var mining_office := preload("res://world/mining/MiningOffice.gd").definition_data()
+	if not mining_office.is_empty(): result.append(mining_office)
 	result.append_array(preload("res://world/desert/village/DesertVillageHomes.gd").definitions())
 	result.append_array(preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").definitions())
 	if preload("res://world/places/amusement_park/AmusementParkLayout.gd").enabled():

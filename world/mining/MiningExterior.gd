@@ -358,6 +358,14 @@ static func build_chunk(parent: Node3D, rect: Rect2) -> Array[OmniLight3D]:
 static func _painted_office(b: RefCounted, at: Vector3) -> bool:
 	const STYLE := "escritorio-mina"
 	if not PaintedFacadeKit.enabled() or not FileAccess.file_exists(PaintedFacadeKit.ROOT+STYLE+"/style.json"): return false
+	const OFFICE := preload("res://world/mining/MiningOffice.gd")
+	if OFFICE.available():
+		# Escritório acessível (29/10): porta de empurrar e sala `mining_office`.
+		var office := preload("res://world/mining/MiningOfficeFacade.gd").new()
+		office.position=OFFICE.AT
+		office.rotation.y=OFFICE.YAW
+		b.root.add_child(office)
+		return true
 	var holder := Node3D.new()
 	holder.name="MiningOffice"
 	holder.position=at

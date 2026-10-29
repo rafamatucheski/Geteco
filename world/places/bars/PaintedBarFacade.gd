@@ -17,15 +17,16 @@ static func available(style: String) -> bool:
 	return KIT.enabled() and FileAccess.file_exists(KIT.ROOT + style + "/style.json")
 
 
-static func size_for(style: String) -> Vector3:
+static func size_for(style: String, depth := DEPTH) -> Vector3:
 	var natural := KIT.natural_size(style)
-	return Vector3(natural.x, natural.y, DEPTH)
+	return Vector3(natural.x, natural.y, depth)
 
 
 ## Monta a fachada em `owner` (frente em +Z, centro na origem do lugar) e devolve as folhas da
-## entrada de verdade, que `owner.set_open_amount` gira.
-static func build(owner: Node3D, style: String) -> Array[Node3D]:
-	var size := size_for(style)
+## entrada de verdade, que `owner.set_open_amount` gira. `depth`: o escritório da mina
+## (MiningOfficeFacade) tem 5 m de fundo, não os 12 m dos bares.
+static func build(owner: Node3D, style: String, depth := DEPTH) -> Array[Node3D]:
+	var size := size_for(style, depth)
 	var scratch := Node3D.new()
 	scratch.name = "PaintedSolidScratch"
 	owner.add_child(scratch)

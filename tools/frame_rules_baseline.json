@@ -38,6 +38,7 @@
     "world/editing/WorldEditRuntime.gd": 1,
     "world/editing/WorldInteriorEdits.gd": 1,
     "world/mining/MiningExterior.gd": 1,
+    "world/mining/MiningOfficeInterior.gd": 1,
     "world/mining/coal/CoalMineModel.gd": 2,
     "world/mountain_detail/MountainRoadLamp3D.gd": 1,
     "world/mountain_detail/MountainRoadside3D.gd": 1,

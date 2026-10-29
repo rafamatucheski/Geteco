@@ -9,7 +9,9 @@ const IDS := ["harbor_supermarket", "harbor_ammunation", "mountain_gunshop", "ha
 	# Umbra (parque): porta dupla de empurrar; antes só a ação "Entrar" e a porta não abria.
 	"harbor_haunted_house",
 	# Fagulha e Curitiba Cellar: folhas de correr que ninguém abria (só a ação silenciosa "Entrar").
-	"harbor_arcade", "harbor_curitiba_cellar", "harbor_bar", "desert_bar"]
+	"harbor_arcade", "harbor_curitiba_cellar", "harbor_bar", "desert_bar",
+	# Escritório da Serra Bruta: folha pintada da frente, que olha a estrada (-X).
+	"mining_office"]
 const CAMERA_SECONDS := 0.55
 const POLICE_DOOR_Z := 250.0 / 32.0 + 0.35
 ## Porta de vidro 0,72 m recuada das lojas 3D da North Frontage (UrbanLandmarkFrontage3D
@@ -333,7 +335,7 @@ func player_near_police(player: CharacterBody3D, definition: Dictionary) -> bool
 	return player.global_position.distance_to(_door_position("harbor_police", definition)) < 12.0
 
 func _inward(id: String) -> Vector3:
-	if id in preload("res://world/desert/village/DesertVillageHomes.gd").IDS:
+	if id in preload("res://world/desert/village/DesertVillageHomes.gd").IDS or id == "mining_office":
 		return Vector3.FORWARD.rotated(Vector3.UP, float(_definition_for(id).exterior_rotation))
 	var direction := Vector3.LEFT if id == "port_boss_garage" else Vector3.FORWARD
 	return direction.rotated(Vector3.UP,float(_definition_for(id).get("editor_rotation",0)))
@@ -358,6 +360,8 @@ func _half_width(id: String) -> float:
 		"harbor_clothing", "harbor_fuel": return .48
 		"cobra_leader_house": return .23
 		"harbor_haunted_house", "harbor_arcade", "harbor_curitiba_cellar", "harbor_bar", "desert_bar": return .9
+		# Vão pintado de ~1,46 m: meia abertura menos a cápsula.
+		"mining_office": return .4
 	return .62
 
 ## Até onde, para o lado, empurrar e atravessar valem: o vão pintado na pegada que o
@@ -405,7 +409,7 @@ func _door_position(id: String, definition: Dictionary) -> Vector3:
 	return _original_door_position(id,definition)
 
 func _original_door_position(id: String, definition: Dictionary) -> Vector3:
-	if id in preload("res://world/desert/village/DesertVillageHomes.gd").IDS: return definition.walkup_door_position
+	if id in preload("res://world/desert/village/DesertVillageHomes.gd").IDS or id == "mining_office": return definition.walkup_door_position
 	if id == "cobra_leader_house": return definition.walkup_door_position
 	if id == "harbor_supermarket": return definition.exterior_position + Vector3(0,0,5.5)
 	# Plano da fachada da Umbra (ParkLume._house): folhas da UmbraDoor.
