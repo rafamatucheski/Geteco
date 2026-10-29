@@ -21,6 +21,11 @@ var _old_lock := false
 var _ui_clock := 0.0
 var _scene_clock := 0.0
 var _modal_motion: Array[Dictionary] = []
+## Grampo dos portões 7–9 sem trânsito durante a prova (ProductionWorld.set_traffic_hold), do portão 5 ao 10
+## para o carro que estiver chegando também sair. GETECO_DOWNHILL_TRAFFIC_HOLD=0 desliga para comparar.
+const HOLD_ID := &"mountain_downhill"
+const HOLD_GATES := Vector2i(5,10)
+const HOLD_RADIUS := 14.0
 
 func configure(owner_session) -> void:
 	session = owner_session
@@ -165,12 +170,23 @@ func _start() -> bool:
 	for entry in racers: entry.run = RUN.start(entry.car.vehicle_id,entry.car.global_position,course)
 	countdown = course.COUNTDOWN
 	active = true
+	if OS.get_environment("GETECO_DOWNHILL_TRAFFIC_HOLD") != "0": production.set_traffic_hold(HOLD_ID,_hold_points(),HOLD_RADIUS)
 	last_result = {}
 	_ui_clock = 0
 	_modal_motion.clear()
 	_build_hud()
 	set_physics_process(true)
 	return true
+
+func _hold_points() -> PackedVector3Array:
+	var points := PackedVector3Array()
+	var last := course.gate_offsets.size()-1
+	var at: float = course.gate_offsets[clampi(HOLD_GATES.x,0,last)]-16.0
+	var end: float = course.gate_offsets[clampi(HOLD_GATES.y,0,last)]+16.0
+	while at <= end:
+		points.append(course.point(at))
+		at += 6.0
+	return points
 
 func _physics_process(delta: float) -> void:
 	if not active: return
@@ -259,6 +275,7 @@ func cancel_attempt(reason: String = "cancelled") -> void:
 
 func _cleanup() -> void:
 	active = false
+	if is_instance_valid(session) and is_instance_valid(session.world) and is_instance_valid(session.world.production): session.world.production.clear_traffic_hold(HOLD_ID)
 	set_physics_process(false)
 	_modal_motion.clear()
 	if is_instance_valid(player_car): player_car.input_locked = _old_lock or (is_instance_valid(session) and session.modal)

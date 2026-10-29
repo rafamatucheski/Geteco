@@ -1733,6 +1733,12 @@ func _process_traced(delta: float) -> void:
 			vehicles.remove_at(index)
 			STALL_WORK.finish("marker.vehicle_despawn", STALL_WORK.begin())
 			car.queue_free()
+		elif not traffic_holds.is_empty() and _is_ambient_traffic(car) and car.traffic and car != world.driving.car and in_traffic_hold(car.global_position) and not _on_screen(car.global_position,3.0):
+			# Trecho reservado (set_traffic_hold): o carro sai antes de chegar à vista.
+			traffic_hold_removed += 1
+			vehicles.remove_at(index)
+			STALL_WORK.finish("marker.vehicle_despawn", STALL_WORK.begin())
+			car.queue_free()
 		elif _is_ambient_traffic(car) and car.traffic and car.global_position.distance_to(world.player.global_position) > POPULATION_DESPAWN and not _on_screen(car.global_position,3.0):
 			# Trânsito ambiente sai de cena só longe e fora do quadro, como entra.
 			vehicles.remove_at(index)
@@ -2098,6 +2104,25 @@ func _wreck_expired(car: Node) -> bool:
 	return Time.get_ticks_msec()-int(car.get_meta("wrecked_msec")) > WRECK_LINGER_MSEC
 
 ## Anel de entrada/saída: longe o bastante e fora do quadro.
+## Trechos onde o trânsito ambiente não nasce e, fora do quadro, sai de cena (29/10). A Descida da Meia
+## Noite marca o grampo dos portões 7–9 enquanto a prova corre: um carro do trânsito descendo ali a 4–6 m/s
+## enfileirava os rivais, sem reta para ultrapassar (docs/downhill-20261028.md). id -> [pontos, raio].
+var traffic_holds: Dictionary = {}
+var traffic_hold_removed := 0
+
+func set_traffic_hold(id: StringName, points: PackedVector3Array, radius: float) -> void:
+	traffic_holds[id] = [points, radius]
+
+func clear_traffic_hold(id: StringName) -> void:
+	traffic_holds.erase(id)
+
+func in_traffic_hold(point: Vector3) -> bool:
+	for hold: Array in traffic_holds.values():
+		var limit: float = hold[1]*hold[1]
+		for p: Vector3 in hold[0]:
+			if Vector2(point.x-p.x,point.z-p.z).length_squared() <= limit: return true
+	return false
+
 func _spawn_point_allowed(point: Vector3, radius: float, minimum := POPULATION_SPAWN_MIN) -> bool:
 	var distance := Vector2(point.x-world.player.global_position.x,point.z-world.player.global_position.z).length()
 	# Pedestres comuns usam raio 1; carros mantêm o anel original de admissão.
@@ -2350,7 +2375,7 @@ func _create_traffic_vehicle() -> void:
 		var offset := route.get_closest_offset(point)
 		if route.get_meta("traffic_open",false) and route.get_baked_length()-offset<14: continue
 		point = route.sample_baked(offset,true)
-		if not _spawn_point_allowed(point,3.0): continue
+		if not _spawn_point_allowed(point,3.0) or (not traffic_holds.is_empty() and in_traffic_hold(point)): continue
 		var ahead := route.sample_baked(minf(offset+.5,route.get_baked_length()),true)-route.sample_baked(maxf(offset-.5,0),true)
 		# The admitted road owns the context, including when two regions are resident.
 		var spawn_region := str(slot.road.get("region", WORLD_CONNECTION.logical_region(point)))

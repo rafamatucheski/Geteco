@@ -209,6 +209,7 @@ func drive_race(race,car) -> void:
 	for e in rivals: if e.player: dante = {"gate":e.run.checkpoint,"finish":e.run.finish,"failure":e.run.failure,"elapsed":e.run.elapsed,"speed":e.car.speed if is_instance_valid(e.car) else -1,"health":e.car.health if is_instance_valid(e.car) else -1}
 	print("DOWNHILL_DANTE_END ",dante," last=",race.last_result," active=",race.active)
 	print("DOWNHILL_RESCUES ",race.rescues)
+	print("DOWNHILL_HOLD removed=",int(world.production.traffic_hold_removed)," active=",not world.production.traffic_holds.is_empty())
 	var yielder = world.get("traffic_yield")
 	if is_instance_valid(yielder):
 		var names := {}
