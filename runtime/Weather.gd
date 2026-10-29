@@ -8,6 +8,7 @@ const COASTAL_LOOK := preload("res://runtime/atmosphere/CoastalWeatherLook.gd")
 const COASTAL_RAIN := preload("res://runtime/atmosphere/CoastalRainPresentation.gd")
 const WIND_FIELD := preload("res://runtime/atmosphere/WindField.gd")
 const FOG_BANKS := preload("res://runtime/atmosphere/FogBanks.gd")
+const WIND_DEBRIS := preload("res://runtime/atmosphere/WindDebris.gd")
 # Productive V1 HarborGame and MountainPass both override the manager to 24 min.
 const DAY_LENGTH_SECONDS := 1440.0
 var controller
@@ -41,6 +42,7 @@ var _weather_rng := RandomNumberGenerator.new()
 ## Vento compartilhado (WindField): outros sistemas leem `weather.wind.velocity` e `.gust`.
 var wind := WIND_FIELD.new()
 var fog_banks: Node3D
+var wind_debris: Node3D
 var _profile_wind := Vector2.ZERO
 var _wind_storm := 0.0
 # Pesos do som do vento, refeitos em _update (0,2 s); o volume segue a rajada a cada quadro.
@@ -99,6 +101,8 @@ func _exit_tree() -> void:
 	if is_instance_valid(surface_effects): surface_effects.queue_free()
 	if is_instance_valid(rain_ground): rain_ground.queue_free()
 	if is_instance_valid(fog_banks): fog_banks.queue_free()
+	if is_instance_valid(wind_debris): wind_debris.queue_free()
+	if WIND_FIELD.current == wind: WIND_FIELD.current = null
 	PARTICLE_TEXTURES.release_cache()
 func _ready() -> void:
 	# Follow after the gameplay camera has applied its lead, zoom and orbit.
@@ -195,6 +199,11 @@ func _ready() -> void:
 	if FOG_BANKS.enabled:
 		fog_banks = FOG_BANKS.new()
 		controller.world.add_child(fog_banks)
+	# Detritos só existem com o vento compartilhado: sem rajada não há o que os levante.
+	if WIND_DEBRIS.enabled and WIND_FIELD.enabled:
+		wind_debris = WIND_DEBRIS.new()
+		controller.world.add_child(wind_debris)
+	WIND_FIELD.current = wind
 	wind_audio = AudioStreamPlayer.new()
 	wind_audio.stream = preload("res://audio/regional/wind_0.ogg")
 	if AudioServer.get_bus_index("Ambient")>=0: wind_audio.bus = &"Ambient"
@@ -234,6 +243,7 @@ func _process_traced(delta: float) -> void:
 	snow.global_position = hail.global_position
 	if WIND_FIELD.enabled: _blow(delta,camera)
 	if fog_banks != null: fog_banks.advance(delta,_air(),focus)
+	if wind_debris != null: wind_debris.advance(wind.velocity,wind.gust,focus)
 	drag_rain.apply(precipitation,camera,delta,weather_state==2)
 	drag_sky.update_lightning(storm.envelope(storm.flash_age) if weather_state==2 and not _covered else 0.0,storm.flashes)
 	clock += delta
@@ -404,6 +414,7 @@ func _update() -> void:
 	if fog_banks != null:
 		fog_banks.set_conditions(FOG_BANKS.amount_for(time_of_day,rain_level,_visual_clouds,rain_exposure,regional_weight,front),
 			controller.environment.environment.fog_light_color,inside or _inside_shelter())
+	if wind_debris != null: wind_debris.set_conditions(desert,inside or covered)
 	if WIND_FIELD.enabled:
 		# Serra como antes; no litoral o vento só aparece na chuva forte, e nas rajadas.
 		_wind_mountain = regional_weight

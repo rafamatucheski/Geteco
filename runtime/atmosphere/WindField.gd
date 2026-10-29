@@ -8,6 +8,9 @@ extends RefCounted
 ## GETECO_WIND_GUSTS=0 volta à chuva quase reta, à neve fixa e ao som antigo (A/B).
 static var enabled := OS.get_environment("GETECO_WIND_GUSTS") != "0"
 const KMH := 1.0/3.6
+## Vento vivo do Weather da sessão (nulo fora do jogo). Efeitos sem referência ao clima, como a
+## poeira do deserto (DesertAmbientLife), leem por aqui em vez de manter a própria senoide.
+static var current: RefCounted
 ## Perfil com vento quase nulo (transição porto→costa cruza o zero): mantém a direção anterior.
 const MIN_DIRECTION_KMH := 1.5
 ## Rajada sobe rápido e morre devagar; constantes de tempo em segundos.

@@ -41,6 +41,9 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 	# Bancos de névoa (FogBanks, 29/10): o shader novo desenha junto com a chuva e fica retido no nó.
 	var fog: Variant = weather.get("fog_banks")
 	if fog != null and is_instance_valid(fog): fog.force = true
+	# Papel e folhas do vento (WindDebris, 29/10): processo e material de partícula novos.
+	var debris: Variant = weather.get("wind_debris")
+	if debris != null and is_instance_valid(debris): debris.force = true
 	# Garoa (1) e tempestade (2): materiais, partículas e o céu de cada intensidade.
 	for state in [1, 2]:
 		weather.weather_state = state
@@ -75,6 +78,7 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 		var storm: Variant = weather.get("storm")
 		if storm != null and is_instance_valid(storm) and storm.has_method("cancel"): storm.cancel()
 	if fog != null and is_instance_valid(fog): fog.force = false
+	if debris != null and is_instance_valid(debris): debris.force = false
 	# Volta ao clima salvo; a troca externa reajusta rain_level no próximo _process.
 	if is_instance_valid(weather):
 		for key in saved: weather.set(key, saved[key])

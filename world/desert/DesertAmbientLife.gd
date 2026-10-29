@@ -2,6 +2,9 @@ extends Node3D
 ## One bounded emitter pair and one distant flock per resident desert.
 ## Caller must suspend when the resident region becomes quiet or releases chunks.
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
+const WIND := preload("res://runtime/atmosphere/WindField.gd")
+const WIND_DUST_MAX := 32
+const WIND_DUST_CALM := 20.0/32.0
 var _wind: GPUParticles3D
 var _wake: GPUParticles3D
 var _birds: MultiMeshInstance3D
@@ -19,7 +22,9 @@ const DRAG_THERMALS := [Vector3(-820,36,-1470) + COMPACT.DRAG,Vector3(-460,45,-1
 
 func _ready() -> void:
 	name="DesertAmbientLife"
-	_wind=_dust("LowWindDust",20,4.0,Vector3(8,.02,4),.12)
+	# 32 grãos, mas só 20 fora da rajada (o desenho antigo); a rajada solta o resto.
+	_wind=_dust("LowWindDust",WIND_DUST_MAX,4.0,Vector3(8,.02,4),.12)
+	_wind.amount_ratio=WIND_DUST_CALM
 	_wake=_dust("VehicleSandWake",14,1.6,Vector3(.55,.06,.55),.18)
 	_make_birds()
 	set_active(_active)
@@ -85,8 +90,28 @@ func _physics_process(delta: float) -> void:
 	_wake.speed_scale=1.0
 	if _wake_age>.35: _wake.emitting=false
 	# Breathing gusts, not a permanent screen-wide haze. No new light or fog volume.
-	_wind.emitting=sin(_elapsed*.39)>-.25
-	var at := _focus+Vector3(-9,0,5)
+	var breathing := sin(_elapsed*.39)>-.25
+	var upwind := Vector3(-9,0,5)
+	# Vento do clima (29/10): a areia sopra para onde a chuva e o som sopram, corre mais na
+	# rajada e a rajada levanta areia também no "expirar" da respiração antiga. A velocidade
+	# de base do deserto (22 km/h → ~4,6 m/s) dá os mesmos 1,4–2,8 m/s de antes.
+	var air: RefCounted = WIND.current if WIND.enabled else null
+	if air != null and air.velocity.length() > .5:
+		var speed: float = air.velocity.length()
+		var direction: Vector3 = air.velocity/speed
+		var process := _wind.process_material as ParticleProcessMaterial
+		process.direction = Vector3(direction.x,.03,direction.z).normalized()
+		process.initial_velocity_min = speed*.3
+		process.initial_velocity_max = speed*.6
+		upwind = -direction*10.0
+		breathing = breathing or air.gust > .12
+		# Na captura de 29/10 a areia com 12% de opacidade sumia no chão; a rajada (até ~0,35
+		# no deserto limpo) dobra a densidade e mais que dobra a opacidade.
+		var blast := clampf(air.gust/.3,0.0,1.0)
+		_wind.amount_ratio = lerpf(WIND_DUST_CALM,1.0,blast)
+		(_wind.draw_pass_1.material as ShaderMaterial).set_shader_parameter("strength",lerpf(1.0,2.6,blast))
+	_wind.emitting=breathing
+	var at := _focus+upwind
 	if _drag_view: at=Vector3(floorf(_focus.x/96.0)*96.0+48.0,0,-1370.0 + COMPACT.DRAG.z)
 	at.y=LAYOUT.surface_height(Vector2(at.x,at.z))+preload("res://world/desert/DesertTerrainMesh.gd").surface_height(Vector2(at.x,at.z))+.18
 	_wind.global_position=at
