@@ -61,6 +61,11 @@ static func restore(item: Dictionary) -> void:
 	for part in saved.parts:
 		if is_instance_valid(part[0]) and part[1] < part[0].instance_count:
 			part[0].set_instance_transform(part[1], part[2])
+	# Colisor fora da raiz (poste da Cobra: caixa no corpo comum da vizinhança) não entra na
+	# captura dos nós; o tombo o desligou em FragileProps3D._disable_collision.
+	for reference in item.get("colliders", []):
+		var shape = reference.get_ref()
+		if is_instance_valid(shape): shape.disabled = false
 	if item.has("root"):
 		var source = item.root.get_ref()
 		if not is_instance_valid(source): return

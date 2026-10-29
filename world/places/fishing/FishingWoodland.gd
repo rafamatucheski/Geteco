@@ -65,12 +65,14 @@ static func build_chunk(parent: Node3D, rect: Rect2) -> void:
 	body.collision_mask = 0
 	node.add_child(body)
 	var batches := {}
+	var fragile: Array[Dictionary] = []
 	for tree in _trees:
 		var point: Vector3 = tree.point
 		if not rect.has_point(Vector2(point.x,point.z)): continue
 		_put(batches,"trunk",point,Vector3(tree.radius/.04,tree.height,tree.radius/.04),tree.yaw)
 		_put(batches,"crown_%d"%tree.variant,point+Vector3.UP*tree.height*.70,Vector3(tree.crown,tree.height*.54,tree.crown*.94),tree.yaw)
 		var collision := CollisionShape3D.new()
+		fragile.append(tree_entry(batches,tree,collision))
 		var shape := CylinderShape3D.new()
 		shape.radius = tree.radius
 		shape.height = tree.height*.67
@@ -82,6 +84,7 @@ static func build_chunk(parent: Node3D, rect: Rect2) -> void:
 		var point: Vector3 = shrub.point
 		if rect.has_point(Vector2(point.x,point.z)):
 			_put(batches,"shrub",point,Vector3(1.2,.65,1.0)*shrub.size,shrub.yaw)
+	var displays := {}
 	for key in batches:
 		var transforms: Array = batches[key]
 		var multimesh := MultiMesh.new()
@@ -95,6 +98,36 @@ static func build_chunk(parent: Node3D, rect: Rect2) -> void:
 		display.material_override = _materials[key]
 		if key=="shrub": display.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		node.add_child(display)
+		displays[key] = display
+	register_fragile_trees(node,fragile,displays)
+
+## Índices da árvore recém-posta (tronco e copa) e o seu colisor, para o registro de quebráveis.
+static func tree_entry(batches: Dictionary, tree: Dictionary, collision: CollisionShape3D) -> Dictionary:
+	var crown_key := "crown_%d"%int(tree.variant)
+	var trunks: Array = batches.trunk
+	var crowns: Array = batches[crown_key]
+	# Offset da copa a partir dos lotes: sem janela a MultiMesh devolve instâncias na origem.
+	return {"trunk":trunks.size()-1,"crown_key":crown_key,"crown":crowns.size()-1,
+		"offset":(trunks[-1] as Transform3D).affine_inverse()*(crowns[-1] as Transform3D),
+		"collision":collision,"radius":float(tree.radius)}
+
+## Playtest 29/10 ("algumas árvores não derrubam"): as árvores da mata (Lago Sereno e a faixa nova
+## da costa de Harbor) só tinham tronco sólido, fora do FragileProps3D; o carro parava nelas a
+## qualquer velocidade. Viram "woodland_tree": tombam na base com a copa junto (peça irmã) e o
+## tronco solta o carro. O raio de contato passa o do colisor em 12 cm para a varredura do carro
+## pegar a árvore antes da física nativa pará-lo no tronco.
+static func register_fragile_trees(node: Node3D, entries: Array[Dictionary], displays: Dictionary) -> void:
+	if entries.is_empty() or not displays.has("trunk"): return
+	# O registro precisa da posição global; chunk montado fora da árvore registra ao entrar.
+	if not node.is_inside_tree():
+		node.tree_entered.connect(register_fragile_trees.bind(node,entries,displays),CONNECT_ONE_SHOT)
+		return
+	var fragile := preload("res://gameplay/street_physics/FragileProps3D.gd")
+	var trunk: MultiMeshInstance3D = displays.trunk
+	for entry in entries:
+		var crown: MultiMeshInstance3D = displays[entry.crown_key]
+		fragile.register_instance("woodland_tree",trunk.multimesh,entry.trunk,node,
+			[{"multimesh":crown.multimesh,"index":entry.crown,"offset":entry.offset}],[entry.collision],trunk,float(entry.radius)+.12)
 
 static func _put(batches: Dictionary, kind: String, point: Vector3, size: Vector3, yaw: float) -> void:
 	if not batches.has(kind): batches[kind] = []

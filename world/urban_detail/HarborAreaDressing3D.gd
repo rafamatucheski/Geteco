@@ -388,8 +388,18 @@ func _rock(point: Vector2, scale_factor: float) -> void:
 	rock.rotation.y = point.angle()
 
 func _lamp(point: Vector2) -> void:
+	# Playtest 29/10: o poste cinza da Vila Cobra era o único poste do porto que o carro não
+	# derrubava. Haste e cabeça ficavam soltas neste nó, com a caixa sólida no corpo comum
+	# AuthoredDressingSolids e sem registro em FragileProps (o CityChunkDressing._lamp_root
+	# recusa a Cobra porque todos os postes dividiam este nó). Cada poste ganha agora a própria
+	# raiz "HarborLamp..." com o seu colisor: o carro o derruba como o HarborLamp3D, e a passada
+	# noturna do chunk liga a mancha de luz a ele pelo mesmo prefixo.
+	var first_mesh := get_child_count()
+	var first_shape := _solid_root.get_child_count()
 	_cylinder("CobraLampPost",.08,2.8,Vector3(point.x,1.4,point.y),Color("3f4745"),true)
 	_box("CobraLampHead",Vector3(point.x,2.87,point.y),Vector3(.42,.18,.42),Color("d3b487"))
+	# Nome único: irmão repetido viraria "@HarborLampCobra@n" e perderia o prefixo.
+	_register_breakable_parts("lamp",point,first_mesh,first_shape,"HarborLampCobra_%d"%first_mesh)
 
 func _barrel(point: Vector2) -> void:
 	var first_mesh := get_child_count()
@@ -421,9 +431,9 @@ func _bench(point: Vector2) -> void:
 			_box("BenchArm",Vector3(point.x+x,.68,point.y),Vector3(.09,.07,.55),Color("282e29"))
 	_register_breakable_parts("bench_seat",point,first_mesh,first_shape)
 
-func _register_breakable_parts(kind: String, point: Vector2, first_mesh: int, first_shape: int) -> void:
+func _register_breakable_parts(kind: String, point: Vector2, first_mesh: int, first_shape: int, label := "") -> void:
 	var bench := Node3D.new()
-	bench.name = "Breakable_"+kind
+	bench.name = label if not label.is_empty() else "Breakable_"+kind
 	bench.position = Vector3(point.x,0,point.y)
 	var pieces: Array = get_children().slice(first_mesh)
 	var colliders: Array = _solid_root.get_children().slice(first_shape)

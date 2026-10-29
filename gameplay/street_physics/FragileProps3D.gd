@@ -17,9 +17,15 @@ const WOBBLE_SPEED := 15.0 / 16.0
 const FALL_SPEED := 35.0 / 16.0
 
 ## raio de contato, perda de velocidade do carro ao atravessar, dano no carro.
+## fall_speed é a velocidade de APROXIMAÇÃO (componente na direção do poste, StreetPhysics._hit_props),
+## não a do velocímetro: num choque a 45° do centro o carro precisa de ~1,4× esse valor.
+## Playtest 29/10 ("tudo tá bem difícil de derrubar"): poste 6 → 4,5 m/s (16 km/h) e semáforo
+## 8 → 6 m/s (22 km/h). Abaixo de ~4 m/s continua manobra de estacionar: o poste balança e segura
+## o carro (test_slow_post_block cobre 0,4/2/4 m/s). Ambos seguem ancorados (16/10): tombam na
+## base em qualquer velocidade, nunca saem voando.
 const KINDS := {
-	"lamp": {"family": "post", "radius": 0.22, "drag": 0.30, "damage": 8.0, "sound": "metal", "anchored": true, "fall_speed": 6.0},
-	"signal_pole": {"family": "post", "radius": 0.25, "drag": 0.35, "damage": 10.0, "sound": "metal", "anchored": true, "fall_speed": 8.0},
+	"lamp": {"family": "post", "radius": 0.22, "drag": 0.30, "damage": 8.0, "sound": "metal", "anchored": true, "fall_speed": 4.5},
+	"signal_pole": {"family": "post", "radius": 0.25, "drag": 0.35, "damage": 10.0, "sound": "metal", "anchored": true, "fall_speed": 6.0},
 	"stop_sign": {"family": "post", "radius": 0.12, "drag": 0.06, "damage": 2.0, "sound": "metal"},
 	"hydrant": {"family": "hydrant", "radius": 0.2, "drag": 0.18, "damage": 5.0, "sound": "metal"},
 	"trash_can": {"family": "light", "radius": 0.3, "drag": 0.03, "damage": 0.0, "sound": "metal"},
@@ -35,6 +41,10 @@ const KINDS := {
 	"desert_rock": {"family": "light", "radius": 1.1, "drag": 0.20, "damage": 7.0, "sound": "stone"},
 	"harbor_tree": {"family": "post", "radius": 0.4, "drag": 0.18, "damage": 5.0, "sound": "wood", "fall_speed": 3.0, "anchored": true},
 	"desert_tree": {"family": "light", "radius": 0.4, "drag": 0.10, "damage": 3.0, "sound": "wood"},
+	# Pinheiro de 8-13 m da mata (FishingWoodland/HarborCoastWoodland): tronco de 25-39 cm pede mais
+	# que a árvore de calçada. Caído fica no chão (keep_fallen): sumir por transparência levaria
+	# o material da mata ao passe alfa, pipeline que nenhum pré-aquecimento cobre.
+	"woodland_tree": {"family": "post", "radius": 0.45, "drag": 0.25, "damage": 6.0, "sound": "wood", "fall_speed": 5.0, "anchored": true, "keep_fallen": true},
 	# Chão povoado do deserto (DesertGroundCover): moita grande e pedra solta.
 	"desert_shrub": {"family": "light", "radius": 0.55, "drag": 0.04, "damage": 0.0, "sound": "wood"},
 	"desert_stone": {"family": "light", "radius": 0.45, "drag": 0.18, "damage": 2.0, "sound": "stone"},
@@ -624,6 +634,7 @@ static func _kill_light(item: Dictionary) -> void:
 
 
 static func _fade_post(item: Dictionary) -> void:
+	if spec(item).get("keep_fallen", false): return
 	# Preserve the original lamp and its registration for delayed recovery.
 	if item.get("kind", "") == "lamp":
 		if item.has("multimesh"):

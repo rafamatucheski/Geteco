@@ -305,7 +305,17 @@ static func _flush(chunk: Node3D, batches: Dictionary) -> void:
 
 ## Mobília e semáforo viram quebráveis (StreetPhysics). A lente do semáforo é
 ## outra MultiMesh; vai junto como peça irmã, com o mesmo índice de criação.
-static func _register_fragile(chunk: Node3D, _batches: Dictionary, built: Dictionary) -> void:
+static func _register_fragile(chunk: Node3D, batches: Dictionary, built: Dictionary) -> void:
+	# Tronco sólido de cada árvore (SidewalkFill.add_trunk_collision): um filho por árvore,
+	# na ordem de FILL.TREE_KINDS e dos lotes. Playtest 29/10: sem passar esse colisor ao
+	# registro, a árvore tombava mas o tronco invisível continuava de pé e o carro parava
+	# nele como num muro ("algumas árvores não derrubam").
+	var trunks := chunk.get_node_or_null("CityStreetTreeTrunks")
+	var trunk_offset := {}
+	var trunk_total := 0
+	for tree_kind in FILL.TREE_KINDS:
+		trunk_offset[tree_kind] = trunk_total
+		trunk_total += (batches.get(tree_kind, []) as Array).size()
 	for kind in FRAGILE_KINDS:
 		if not built.has(kind): continue
 		var multimesh: MultiMesh = built[kind]
@@ -322,6 +332,8 @@ static func _register_fragile(chunk: Node3D, _batches: Dictionary, built: Dictio
 				extra.append({"multimesh": built.signal_amber, "index": index, "offset": pole.affine_inverse() * lens})
 			var colliders: Array = []
 			if kind == "planter": colliders.append(chunk.get_node("CityPlanterSolids").get_child(index))
+			elif trunk_offset.has(kind) and trunks != null and trunks.get_child_count() == trunk_total:
+				colliders.append(trunks.get_child(int(trunk_offset[kind]) + index))
 			FRAGILE.register_instance("harbor_tree" if kind in ["street_tree","street_tree_b"] else kind, multimesh, index, chunk, extra, colliders, visual)
 
 
@@ -537,8 +549,9 @@ static func _lamp_height(mesh: MeshInstance3D) -> float:
 
 
 ## Raiz que gira quando o poste tomba: o nó do poste inteiro, com origem no
-## chão. Postes da Cobra e da ponte ficam de fora (várias luminárias no mesmo
-## nó; tombar um derrubaria o bairro inteiro).
+## chão. Postes da ponte ficam de fora (várias luminárias no mesmo nó; tombar um
+## derrubaria a ponte inteira). Os da Cobra tinham o mesmo problema até 29/10;
+## agora cada um tem raiz própria "HarborLampCobra_n" (HarborAreaDressing3D._lamp).
 static func _lamp_root(head: MeshInstance3D) -> Node3D:
 	var parent := head.get_parent() as Node3D
 	if parent == null: return null

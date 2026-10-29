@@ -65,11 +65,14 @@ static func build_chunk(parent: Node3D, rect: Rect2) -> void:
 	body.collision_mask = 0
 	node.add_child(body)
 	var batches := {}
+	# Mesmas árvores da mata do Sereno: tombam com o carro pelo mesmo registro (FishingWoodland).
+	var fragile: Array[Dictionary] = []
 	for tree in data.trees:
 		var point: Vector3 = tree.point
 		WOODLAND._put(batches, "trunk", point, Vector3(tree.radius / .04, tree.height, tree.radius / .04), tree.yaw)
 		WOODLAND._put(batches, "crown_%d" % tree.variant, point + Vector3.UP * tree.height * .70, Vector3(tree.crown, tree.height * .54, tree.crown * .94), tree.yaw)
 		var collision := CollisionShape3D.new()
+		fragile.append(WOODLAND.tree_entry(batches, tree, collision))
 		var shape := CylinderShape3D.new()
 		shape.radius = tree.radius
 		shape.height = tree.height * .67
@@ -78,6 +81,7 @@ static func build_chunk(parent: Node3D, rect: Rect2) -> void:
 		body.add_child(collision)
 	for shrub in data.shrubs:
 		WOODLAND._put(batches, "shrub", shrub.point, Vector3(1.2, .65, 1.0) * shrub.size, shrub.yaw)
+	var displays := {}
 	for key in batches:
 		var transforms: Array = batches[key]
 		var multimesh := MultiMesh.new()
@@ -91,6 +95,8 @@ static func build_chunk(parent: Node3D, rect: Rect2) -> void:
 		display.material_override = WOODLAND._materials[key]
 		if key == "shrub": display.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		node.add_child(display)
+		displays[key] = display
+	WOODLAND.register_fragile_trees(node, fragile, displays)
 
 static func _free(point: Vector2, polygon: PackedVector2Array, old_land: Array, roads: Array) -> bool:
 	if not Geometry2D.is_point_in_polygon(point, polygon): return false
