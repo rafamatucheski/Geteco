@@ -399,6 +399,8 @@ func _take(key: String, pool: Array) -> CPUParticles3D:
 
 ## Coloca o emissor em `point` com o eixo +Y apontando para `direction` e o dispara.
 func _fire(emitter: CPUParticles3D, point: Vector3, direction: Vector3) -> void:
+	# Efeito transparente em NaN derruba a ordenação da lista alfa do release (29/10, runtime/NonFiniteGuard.gd).
+	if not point.is_finite() or not direction.is_finite(): return
 	var up := direction.normalized() if direction.length_squared() > 0.0001 else Vector3.UP
 	var side := up.cross(Vector3.FORWARD if absf(up.dot(Vector3.FORWARD)) < 0.9 else Vector3.RIGHT).normalized()
 	emitter.global_transform = Transform3D(Basis(side, up, side.cross(up)), point)
@@ -503,6 +505,7 @@ func muzzle_smoke(origin: Vector3, direction: Vector3) -> void:
 
 ## Mancha orgânica expansiva no chão sob `foot` (anel de MAX_STAINS; pooling gradual de 2,4s e fade final).
 func stain(foot: Vector3, radius: float) -> void:
+	if not foot.is_finite() or not is_finite(radius): return
 	var space := get_world_3d().direct_space_state
 	var ray := PhysicsRayQueryParameters3D.create(foot + Vector3.UP * 0.6, foot - Vector3.UP * 1.5, 1)
 	var hit := space.intersect_ray(ray)
@@ -586,6 +589,7 @@ func update_weapon_feedback(controller: Node3D, delta: float) -> void:
 ## Fixed pool; actual swept collision against floors and walls, never a plane
 ## at the shooter's height. The third argument remains for existing callers.
 func shell(origin: Vector3, aim: Vector3, _floor_y: float, shotgun := false, dropped := false) -> void:
+	if not origin.is_finite() or not aim.is_finite(): return
 	var side := aim.cross(Vector3.UP).normalized()
 	if side.length_squared() < 0.1: side = Vector3.RIGHT
 	var seed_value := randf() * 2.0 - 1.0
@@ -606,6 +610,7 @@ func shell(origin: Vector3, aim: Vector3, _floor_y: float, shotgun := false, dro
 ## Cauda compacta que viaja à velocidade autorada da arma. O dano continua
 ## hitscan e é aplicado uma única vez por Gameplay; este nó é só apresentação.
 func tracer(origin: Vector3, destination: Vector3, speed: float, color: Color, damage: float) -> void:
+	if not origin.is_finite() or not destination.is_finite(): return
 	var distance := origin.distance_to(destination)
 	if distance < 0.05: return
 	var index := _next_tracer
@@ -642,6 +647,7 @@ func police_tracer(origin: Vector3, direction: Vector3, speed := 55.0, color := 
 func move_police_tracer(token: Dictionary, point: Vector3, finished := false) -> void:
 	var index := int(token.index)
 	if not is_same(_tracer_state[index], token.state): return
+	if not point.is_finite(): finished = true; point = _tracers[index].global_position
 	_tracers[index].global_position = point - (token.state.direction as Vector3) * float(token.state.tail) * 0.5
 	if finished:
 		_tracers[index].hide()
@@ -650,6 +656,7 @@ func move_police_tracer(token: Dictionary, point: Vector3, finished := false) ->
 ## Pacote de chama com núcleo, expansão e borda irregular, usando o mesmo
 ## alcance do raio de dano. O anel evita cortar o pacote anterior a 20 Hz.
 func flame(origin: Vector3, direction: Vector3, distance: float) -> void:
+	if not origin.is_finite() or not direction.is_finite() or not is_finite(distance): return
 	var index := _next_flame
 	var packet := _flame_packets[index]
 	var tongue := _flame_tongues[index]
@@ -690,6 +697,7 @@ func backblast(muzzle: Vector3, aim: Vector3) -> void:
 ## Bola de fogo aditiva, fagulhas, detritos escuros, fumaça que sobe e se abre, clarão e marca de queimado.
 ## Antes só havia fagulhas e fumaça: `Gameplay.explode` não criava a esfera que o comentário prometia.
 func explosion(point: Vector3, radius: float) -> void:
+	if not point.is_finite() or not is_finite(radius): return
 	# Bola de fogo do tamanho do raio: a de 6 m (granada) saía menor que um carro.
 	var size := clampf(radius / 7.0, 0.7, 1.6)
 	_blast_fire.scale_amount_min = 1.2 * size
@@ -714,6 +722,7 @@ func explosion(point: Vector3, radius: float) -> void:
 ## ANTERIOR tinha sido: o carro explodia e a bola de fogo aparecia metros ao lado
 ## (capturas de 2026-09-24). Explosão é rara; a cópia se apaga sozinha.
 func _burst(template: CPUParticles3D, point: Vector3) -> void:
+	if not point.is_finite(): return
 	if not is_inside_tree(): return
 	var copy := template.duplicate() as CPUParticles3D
 	copy.transform = Transform3D(Basis.IDENTITY, point)

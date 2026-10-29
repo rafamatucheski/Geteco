@@ -8,6 +8,7 @@ extends RefCounted
 ## rígido só existe enquanto voa e rola: ao assentar, a pose fica nas juntas e os corpos são liberados.
 ## GETECO_RAGDOLL=0 volta ao voo antigo.
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+const NON_FINITE := preload("res://runtime/NonFiniteGuard.gd")
 ## Camada própria (bit 10): o carro não colide com o corpo no move_and_slide (máscara 7), mas o corpo rígido
 ## colide com o carro (camada 4) e com o mundo (camada 1). Assim outro carro ainda empurra o corpo caído.
 const LAYER := 1 << 9
@@ -248,6 +249,13 @@ func step(delta: float, audio: Callable) -> bool:
 	for part in parts:
 		var body: RigidBody3D = part.body
 		if not is_instance_valid(body): continue
+		# Parte em NaN (crash de 29/10, runtime/NonFiniteGuard.gd): o solver não volta dela, o resto do corpo e o
+		# que é transparente nele herdam o NaN e a ordenação da lista alfa do release cai. Encerra já; settle
+		# mantém o ator onde estava.
+		if not body.global_position.is_finite() or not body.linear_velocity.is_finite():
+			NON_FINITE.report("ragdoll", body.global_position, body)
+			_broken = true
+			return true
 		fastest = maxf(fastest, body.linear_velocity.length())
 	_still = _still + delta if fastest < SETTLE_SPEED and age > .5 else 0.0
 	if fastest > 3.0: _sweep()
@@ -308,6 +316,7 @@ func present(interpolated := true) -> void:
 		var joint: Node3D = part.joint
 		if not is_instance_valid(body) or not is_instance_valid(joint): continue
 		var pose: Transform3D = body.get_global_transform_interpolated() if interpolated else body.global_transform
+		if not pose.origin.is_finite() or not NON_FINITE.finite_basis(pose.basis): continue
 		joint.global_transform = pose * (part.offset as Transform3D)
 		if part.hinge != 0.0: _clamp_hinge(joint, part.hinge)
 
@@ -322,12 +331,20 @@ static func _clamp_hinge(joint: Node3D, hinge_sign: float) -> void:
 	var corrected := Quaternion(bone, allowed.normalized()) * rotation
 	joint.transform = Transform3D(Basis(corrected) * Basis.from_scale(local.basis.get_scale()), local.origin)
 
+var _broken := false
+
 ## Corpo parado: a origem do ator vai para o chão sob a pelve, a pose fica nas juntas e os corpos somem.
 func settle(actor: Node3D) -> void:
 	if settled: return
 	settled = true
 	var pelvis: RigidBody3D = parts[0].body
 	var point := pelvis.global_position
+	if _broken or not point.is_finite():
+		# Ragdoll em NaN: o ator fica onde caiu e a pose de juntas não é escrita a partir dos corpos.
+		_final.clear()
+		for part in parts: _final.append((part.joint as Node3D).transform)
+		dispose()
+		return
 	var lowest := point.y
 	for part in parts:
 		if is_instance_valid(part.body): lowest = minf(lowest, (part.body as Node3D).global_position.y)
