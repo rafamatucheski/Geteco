@@ -209,6 +209,12 @@ func drive_race(race,car) -> void:
 	for e in rivals: if e.player: dante = {"gate":e.run.checkpoint,"finish":e.run.finish,"failure":e.run.failure,"elapsed":e.run.elapsed,"speed":e.car.speed if is_instance_valid(e.car) else -1,"health":e.car.health if is_instance_valid(e.car) else -1}
 	print("DOWNHILL_DANTE_END ",dante," last=",race.last_result," active=",race.active)
 	print("DOWNHILL_RESCUES ",race.rescues)
+	var yielder = world.get("traffic_yield")
+	if is_instance_valid(yielder):
+		var names := {}
+		for event in yielder.events: names[event.name] = int(names.get(event.name,0))+1
+		print("DOWNHILL_YIELD ",{"enabled":yielder.enabled,"graph":yielder.model.has_graph(),"physics":yielder.is_physics_processing(),"events":names,"status":yielder.status()})
+	else: print("DOWNHILL_YIELD none")
 	print("DOWNHILL_RESULTS ",rivals.map(func(e): return {"name":e.name,"gate":e.run.checkpoint,"progress":e.run.progress,"finish":e.run.finish,"failure":e.run.failure}))
 	sample_frames = false
 	if not frame_samples.is_empty():
