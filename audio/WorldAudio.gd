@@ -546,7 +546,12 @@ func _mix_designed_engine(car: CharacterBody3D, throttle: float, previous_gear: 
 	var drive: RefCounted = car.get_meta("desert_powertrain") if car.has_meta("desert_powertrain") else null
 	if drive != null:
 		rpm = float(drive.rpm)
-		load_value = float(drive.throttle)
+		# O pedal que chega ao câmbio (DesertHandling) é afinado nos últimos 8% da velocidade
+		# máxima da rua: com o acelerador cheio a carga caía a ~0,09 no teto, o motor trocava
+		# para a camada de desaceleração e o som sustentado ficava ~5 dB abaixo da arrancada
+		# (playtest 29/10). O som segue o pedal do jogador; o câmbio mantém o afinamento.
+		# GETECO_ENGINE_TAPERED_LOAD=1 devolve o comportamento anterior (A/B).
+		load_value = float(drive.throttle) if OS.get_environment("GETECO_ENGINE_TAPERED_LOAD") == "1" else maxf(float(drive.throttle), throttle)
 		shifted = int(drive.shift_serial) != design_last_shift
 		design_last_shift = int(drive.shift_serial)
 		cut = -8.0 if float(drive.shift_remaining) > 0.0 else 0.0

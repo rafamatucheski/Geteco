@@ -157,7 +157,15 @@ func _process(delta: float) -> void:
 	var continuous_shift := bool(drivetrain.race_mode)
 	var clutch := float(drivetrain.shift_torque_factor) if continuous_shift else (0.0 if float(drivetrain.shift_remaining)>0.0 else 1.0)
 	_audible_rpm = target_rpm if continuous_shift else lerpf(_audible_rpm,target_rpm,1.0-exp(-maxf(delta,0.0)*response))
-	var target_load := float(drivetrain.throttle)*(lerpf(.18,1.0,clutch) if continuous_shift else 1.0)
+	var pedal := float(drivetrain.throttle)
+	if not continuous_shift:
+		# Na rua o DesertHandling afina o pedal nos últimos 8% do teto de velocidade, e a carga do
+		# som caía a ~0 com o acelerador cheio (motor trocava para a camada de desaceleração, ~5 dB
+		# mais baixa que a arrancada). O som segue o pedal real do jogador; a corrida segue o câmbio.
+		var raw: Variant = vehicle.get("throttle_input")
+		if raw != null and not bool(vehicle.get("brake_input")) and float(raw) > 0.0:
+			pedal = maxf(pedal, clampf(float(raw), 0.0, 1.0))
+	var target_load := pedal*(lerpf(.18,1.0,clutch) if continuous_shift else 1.0)
 	_audible_load = lerpf(_audible_load,target_load,1.0-exp(-maxf(delta,0.0)*(20.0 if continuous_shift else 7.0)))
 	# Each nominal value is complete four-stroke cycles per second: RPM / 120.
 	# Align both bands to that SAME rate, otherwise the crossfade plays two
