@@ -156,6 +156,7 @@ func update(delta: float) -> void:
 	# A locked home's physical door already blocks the body. Do not latch a
 	# failed crossing here: buying at the threshold must immediately allow entry.
 	if session.activities != null and not session.activities.can_enter_home(id): return
+	if not _door_allows(id): return
 	if id == "cobra_leader_house" and not _leader_accessible(): return
 	# Pushing opens the door; only an intentional inward crossing transfers.
 	# Union/posto: quem já está atrás da folha (cápsula + meia espessura dela) atravessou; a
@@ -206,6 +207,9 @@ func _entry_available(id: String) -> bool:
 	if session.activities != null and not session.activities.can_enter_home(id):
 		session.show_message("Esta casa ainda não é sua.")
 		return false
+	if not _door_allows(id):
+		session.show_message("Porta trancada. É necessário um lockpick.")
+		return false
 	if session.garage_rewards != null and not session.garage_rewards.can_enter(id):
 		session.show_message("A garagem abre entre 1h e 5h.")
 		return false
@@ -213,6 +217,9 @@ func _entry_available(id: String) -> bool:
 		session.show_message("O banco está fechado para investigação.")
 		return false
 	return true
+
+func _door_allows(id: String) -> bool:
+	return session.get("door_lockpick") == null or session.door_lockpick.allows(id)
 
 func _leader_accessible() -> bool:
 	return session.state.campaign.has_progress("cobra_finale") or (session.state.campaign.active_id == "cobra_finale" and session.state.campaign.step >= 6)
@@ -250,6 +257,8 @@ func _update_facade(id: String, near: bool, delta: float) -> void:
 	owned = owned and preload("res://runtime/ShopSafety.gd").admission_allowed(id, session.world.gameplay.stars)
 	if id == "harbor_bank" and not session.robberies.can_enter_bank(): owned = false
 	if id == "cobra_leader_house" and not _leader_accessible(): owned = false
+	# Casa trancada (DoorLockpick): a folha não cede ao empurrão até arrombar.
+	if not _door_allows(id): owned = false
 	var player: CharacterBody3D = session.world.player
 	var inward := _inward(id)
 	var pushing := near and owned and not _blocked() and _push_requested(player.global_position - _door_position(id, _definition_for(id)), inward, _half_width(id), _movement_intent(player))

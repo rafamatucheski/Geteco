@@ -41,6 +41,10 @@ const DOUBLE_DOOR_MIN := 1.8
 const LEAF_INSET := 0.04
 
 static var _materials := {}
+## Consulta da porta trancada (runtime/DoorLockpick): recebe a folha, devolve true se a casa
+## está trancada. A folha da entrada de verdade não abre sozinha por proximidade enquanto
+## a casa não for arrombada (playtest 29/10). Vazio = nenhuma trava.
+static var door_locked: Callable
 static var _styles := {}
 
 
@@ -704,6 +708,7 @@ class PaintedDoor extends Node3D:
 		_syncing = false
 
 	func _on_enter(_body: Node3D) -> void:
+		if PaintedFacadeKit.door_locked.is_valid() and PaintedFacadeKit.door_locked.call(self): return
 		swing(true)
 
 	func _on_exit(_body: Node3D) -> void:

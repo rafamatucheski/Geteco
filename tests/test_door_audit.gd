@@ -76,6 +76,13 @@ func run() -> void:
 	world.driving.set_process_unhandled_input(false)
 	inventory = _inventory()
 	_print_inventory()
+	# Casas trancadas (DoorLockpick, 29/10): a auditoria confere a geometria de abre/entra/sai,
+	# então arromba tudo antes; o contrato da trava está em test_door_lockpick_rule.gd.
+	var picked := {}
+	for door in inventory:
+		var id := str(door.get("id", "")) if door is Dictionary else ""
+		if not id.is_empty() and preload("res://runtime/DoorLockpick.gd").requires_lockpick(id): picked[id] = true
+	world.session.state.world_state["door_lockpicks"] = picked
 	for region in ["harbor", "mountain", "desert"]:
 		if not region_filter.is_empty() and region != region_filter: continue
 		var pending := inventory.filter(func(e): return e.region == region and _selected(e))

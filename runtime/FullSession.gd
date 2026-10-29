@@ -119,6 +119,8 @@ var weapon_shop_entrance: Node
 var special_place_entrance: Node
 var building_entrance: Node
 var building_social: Node
+## Portas trancadas das casas (lockpick); ver runtime/DoorLockpick.gd.
+var door_lockpick: Node
 var service_roofs: Node
 var coastal_lookout: Node
 var amusement_park: Node
@@ -714,6 +716,9 @@ func _ready() -> void:
 	building_social.session = self
 	await _startup_frame()
 	_timed_add(self, building_social, "building_social")
+	door_lockpick = preload("res://runtime/DoorLockpick.gd").new()
+	door_lockpick.session = self
+	_timed_add(self, door_lockpick, "door_lockpick")
 	service_roofs = preload("res://runtime/HarborServiceRoofRuntime.gd").new()
 	service_roofs.session = self
 	await _startup_frame()
@@ -1878,6 +1883,9 @@ func nearest() -> Dictionary:
 	# Antes das atividades: o Neco da cadeia da Helena fica no mesmo ponto do serviço de guincho.
 	var act1_action: Dictionary = helena_act1.nearest_action() if helena_act1 != null else {}
 	if not act1_action.is_empty(): return act1_action
+	# Porta trancada antes das atividades: na soleira, a ação é arrombar.
+	var lock_action: Dictionary = door_lockpick.nearest_action() if door_lockpick != null else {}
+	if not lock_action.is_empty(): return lock_action
 	var activity_action: Dictionary = activities.nearest_action()
 	if not activity_action.is_empty(): return activity_action
 	var urban_action: Dictionary = urban_operations.nearest_action() if urban_operations != null else {}
@@ -1907,6 +1915,7 @@ func interact() -> bool:
 	if action.get("id", "") == "building_social": return building_social.open(action.target)
 	if action.get("id","") == "building_stairs": return await action.provider.use_stairs()
 	if action.get("id","") == "building_lockpick": return await action.provider.perform(action)
+	if action.get("id","") == "door_lockpick": return action.provider.perform(action)
 	if action.get("id","") == "desert_roadside" and is_instance_valid(action.get("provider")): return action.provider.perform(action)
 	if action.get("id","") == "mountain_refuge" and is_instance_valid(action.get("provider")): return action.provider.perform(action)
 	if action.get("id","") == "service_roof_stairs": return await service_roofs.use_stairs()

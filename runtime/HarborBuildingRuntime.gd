@@ -42,8 +42,15 @@ func _find_facade(id: String) -> Node3D:
 			return candidate
 	return null
 
+func _door_allows(id: String) -> bool:
+	var locks: Variant = session.get("door_lockpick")
+	return locks == null or locks.allows(id)
+
 func prepare_room(id: String, new_entry: bool) -> Node3D:
 	if new_entry and not preload("res://runtime/ShopSafety.gd").admission_allowed(id, session.world.gameplay.stars): return null
+	# Casa trancada (DoorLockpick): a fachada não é recortada nem o cômodo montado; a
+	# porta continua sólida até o arrombamento. Restauração de save (new_entry=false) passa.
+	if new_entry and not _door_allows(id): return null
 	if is_instance_valid(staged) and not staged.is_queued_for_deletion() and staged.definition.id == id: return staged
 	if preparing: return null
 	preparing = true
@@ -169,6 +176,8 @@ func update(delta: float) -> void:
 			_clear_approach()
 		if nearest.is_empty():
 			if is_instance_valid(staged) and session.world.player.global_position.distance_to(staged.definition.entry_position) > 15.0: _release_staged()
+		elif not _door_allows(nearest):
+			if is_instance_valid(staged): _release_staged()
 		elif not is_instance_valid(staged) or staged.definition.id != nearest:
 			prepare_room(nearest, true)
 			return

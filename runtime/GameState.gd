@@ -89,6 +89,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 	if not preload("res://systems/wardrobe/AccessoryState.gd").validate_world(data.world): return false
 	if data.world.has("harbor_building_floors") and not preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").valid_floors(data.world.harbor_building_floors): return false
 	if data.world.has("harbor_building_unlocks") and not preload("res://world/places/harbor_buildings/HarborBuildingContent.gd").valid_unlocks(data.world.harbor_building_unlocks,preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").definitions()): return false
+	if data.world.has("door_lockpicks") and not preload("res://runtime/DoorLockpick.gd").valid_saved(data.world.door_lockpicks): return false
 	if data.world.has("harbor_service_roof"):
 		if not preload("res://world/places/harbor_buildings/HarborServiceRoofCatalog.gd").valid_snapshot(data.world.harbor_service_roof): return false
 		if not data.world.harbor_service_roof.is_empty() and (data.region_id != "harbor" or data.place_id != data.world.harbor_service_roof.place): return false
