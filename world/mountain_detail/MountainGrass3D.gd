@@ -45,6 +45,8 @@ var _mesh: ArrayMesh
 var _material: ShaderMaterial
 var _region
 var _clock := 0.0
+const WIND := preload("res://runtime/atmosphere/WindField.gd")
+var _wind_strength := 1.0
 
 func _ready() -> void:
 	name = "MountainGrass"
@@ -59,6 +61,18 @@ func _physics_process(delta: float) -> void:
 	var span := _SYS_SPAN.begin()
 	_physics_process_traced(delta)
 	_SYS_SPAN.finish_slow("sys.mountain_grass.physics", span, 3000)
+
+## A rajada do clima (WindField) aumenta o balanço; só a amplitude muda. Mexer na direção da
+## onda com coordenadas de mundo na casa dos milhares de metros pularia a fase do capim inteiro.
+func _apply_wind() -> void:
+	if not WIND.enabled: return
+	var session: Variant = controller.get("session")
+	var weather: Variant = session.get("weather") if session != null else null
+	if weather == null or not is_instance_valid(weather): return
+	var strength := lerpf(.85, 2.2, float(weather.wind.gust))
+	if absf(strength - _wind_strength) < .02: return
+	_wind_strength = strength
+	_material.set_shader_parameter(&"wind_strength", strength)
 
 func _physics_process_traced(delta: float) -> void:
 	var region = controller.regions.get("mountain") if controller != null else null
@@ -90,6 +104,7 @@ func _physics_process_traced(delta: float) -> void:
 			built += 1
 		_queue = remaining
 	STALL_WORK.finish_slow("mountain.grass.build", traced, 2000)
+	_apply_wind()
 	_clock += delta
 	if _clock < 0.3: return
 	_clock = 0.0

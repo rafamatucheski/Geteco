@@ -6,6 +6,7 @@ const PARTICLE_TEXTURES := preload("res://runtime/atmosphere/WeatherParticleText
 const COVERAGE := preload("res://runtime/atmosphere/PrecipitationCoverage.gd")
 const COASTAL_LOOK := preload("res://runtime/atmosphere/CoastalWeatherLook.gd")
 const COASTAL_RAIN := preload("res://runtime/atmosphere/CoastalRainPresentation.gd")
+const WIND_FIELD := preload("res://runtime/atmosphere/WindField.gd")
 # Productive V1 HarborGame and MountainPass both override the manager to 24 min.
 const DAY_LENGTH_SECONDS := 1440.0
 var controller
@@ -36,6 +37,15 @@ var coastal_wetness := 0.0
 var _visual_clouds := -1.0
 var _covered := false
 var _weather_rng := RandomNumberGenerator.new()
+## Vento compartilhado (WindField): outros sistemas leem `weather.wind.velocity` e `.gust`.
+var wind := WIND_FIELD.new()
+var _profile_wind := Vector2.ZERO
+var _wind_storm := 0.0
+# Pesos do som do vento, refeitos em _update (0,2 s); o volume segue a rajada a cada quadro.
+var _wind_mountain := 0.0
+var _wind_coast := 0.0
+var _wind_intensity := 0.0
+var _wind_gain := 0.0
 # Chuva apresentada (0..1). O ciclo natural muda `weather_state` e a chuva
 # engrossa/afina até o alvo; troca feita de fora (teste, chegada, save) é
 # instantânea, porque quem força um clima espera vê-lo no mesmo quadro.
@@ -183,7 +193,7 @@ func _ready() -> void:
 	wind_audio.stream = preload("res://audio/regional/wind_0.ogg")
 	if AudioServer.get_bus_index("Ambient")>=0: wind_audio.bus = &"Ambient"
 	add_child(wind_audio)
-	wind_audio.finished.connect(func(): if atmosphere.weights.get("mountain",0.0)>0.001: wind_audio.play())
+	wind_audio.finished.connect(func(): if _wind_audible(): wind_audio.play())
 	_update()
 
 const _SYS_SPAN := preload("res://runtime/StallWorkTrace.gd")
@@ -212,10 +222,12 @@ func _process_traced(delta: float) -> void:
 		if weather_timer <= 0 and not weather_locked:
 			_advance_natural_weather()
 	var focus: Vector3 = REGIONAL_ATMOSPHERE.focus_position(controller)
-	COVERAGE.follow(precipitation,get_viewport().get_camera_3d(),focus)
+	var camera := get_viewport().get_camera_3d()
+	COVERAGE.follow(precipitation,camera,focus)
 	hail.global_position = focus+Vector3.UP*10
 	snow.global_position = hail.global_position
-	drag_rain.apply(precipitation,get_viewport().get_camera_3d(),delta,weather_state==2)
+	if WIND_FIELD.enabled: _blow(delta,camera)
+	drag_rain.apply(precipitation,camera,delta,weather_state==2)
 	drag_sky.update_lightning(storm.envelope(storm.flash_age) if weather_state==2 and not _covered else 0.0,storm.flashes)
 	clock += delta
 	var covered: bool = _inside_shelter() or atmosphere.SHELTER.sheltered(focus) or controller.world.player.get_meta("mountain_shelter",false) or controller.world.player.get_meta("port_container_shelter",false)
@@ -365,7 +377,8 @@ func _update() -> void:
 	# Preserve drizzle density; reserve the additional drops for heavy rain.
 	precipitation.amount_ratio = rain_strength*lerpf(1000.0/COASTAL_RAIN.MAX_DROPS,1.0,smoothstep(.35,1.0,rain_strength))
 	precipitation.speed_scale = lerpf(.65,1.0,rain_strength)
-	COASTAL_RAIN.apply(precipitation,rain_strength,daylight,get_viewport().get_camera_3d())
+	_wind_storm = maxf(rain_strength,front*regional_weight)
+	COASTAL_RAIN.apply(precipitation,rain_strength,daylight,get_viewport().get_camera_3d(),wind.velocity)
 	rain_ground.set_conditions(focus,rain_strength,daylight,covered)
 	precipitation.emitting = not covered and rain_strength>.001
 	snow.emitting = not covered and storm_state>0 and regional_weight>.001
@@ -381,9 +394,44 @@ func _update() -> void:
 	storm.sync(rain_exposure*smoothstep(.55,.9,rain_level),covered)
 	var palette: Dictionary = atmosphere.current
 	surface_effects.set_conditions(focus,hail.amount_ratio if hail.emitting else 0.0,float(palette.get("haze",0)),palette.get("fog_color",Color.WHITE),covered,desert,_harbor_overcast())
+	if WIND_FIELD.enabled:
+		# Serra como antes; no litoral o vento só aparece na chuva forte, e nas rajadas.
+		_wind_mountain = regional_weight
+		_wind_coast = rain_exposure*smoothstep(.3,1.0,rain_level)
+		_wind_intensity = float(mountain_weather.get("intensity",0.0))
+		_wind_volume()
+		return
 	wind_audio.volume_db = lerpf(-30,-17,float(mountain_weather.get("intensity",0.0)))-(14.0 if covered else 0.0)+linear_to_db(maxf(.001,regional_weight))
 	if regional_weight>.001 and not wind_audio.playing: wind_audio.play()
 	elif regional_weight<=.001: wind_audio.stop()
+
+func _blow(delta: float, camera: Camera3D) -> void:
+	# Abrigo/interior limpa `current`; o vento segue o último perfil de fora.
+	if atmosphere.current.has("wind"): _profile_wind = atmosphere.current.wind
+	wind.advance(delta,_profile_wind,_wind_storm)
+	COASTAL_RAIN.blow(precipitation,wind.velocity,camera)
+	if snow.visible or hail.visible:
+		# Neve e granizo autorados soprando para -x; a direção passa a ser a do vento
+		# e a rajada empurra mais. Com rajada zero e vento em -x é o desenho antigo.
+		var push := 1.0+.9*wind.gust
+		var drift := wind.direction*push
+		var snow_process := snow.process_material as ParticleProcessMaterial
+		snow_process.direction = Vector3(drift.x*.8,-.6,drift.y*.8).normalized()
+		snow_process.gravity = Vector3(drift.x*200.0/16.0,-150.0/16.0,drift.y*200.0/16.0)
+		(hail.process_material as ParticleProcessMaterial).direction = Vector3(drift.x*.65,-1,drift.y*.65).normalized()
+	_wind_volume()
+
+func _wind_volume() -> void:
+	var mountain := _wind_mountain*db_to_linear(lerpf(-30,-17,_wind_intensity)+6.0*wind.gust)
+	var coast := _wind_coast*db_to_linear(lerpf(-34,-22,wind.gust))
+	_wind_gain = mountain+coast
+	wind_audio.volume_db = linear_to_db(maxf(_wind_gain,.00001))-(14.0 if _covered else 0.0)
+	if _wind_audible() and not wind_audio.playing: wind_audio.play()
+	elif not _wind_audible() and wind_audio.playing: wind_audio.stop()
+
+func _wind_audible() -> bool:
+	if WIND_FIELD.enabled: return _wind_gain>.0001
+	return atmosphere.weights.get("mountain",0.0)>0.001
 
 ## Regional precipitation also drives wheel spray and puddles. The saved Harbor
 ## weather remains intact while the desert presents dry wind instead.

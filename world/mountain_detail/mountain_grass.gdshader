@@ -11,6 +11,8 @@ instance uniform vec2 origin = vec2(0.0);
 uniform vec3 root_color : source_color = vec3(0.09, 0.12, 0.05);
 uniform vec3 tip_color : source_color = vec3(0.28, 0.35, 0.20);
 uniform vec3 dry_tip : source_color = vec3(0.37, 0.36, 0.24);
+// Força da rajada do clima (WindField via MountainGrass3D); 1.0 é o balanço antigo.
+uniform float wind_strength = 1.0;
 varying float tip;
 varying float tint;
 
@@ -25,7 +27,7 @@ void vertex() {
 	tint = ground_hash(floor(local * 3.0));
 	// Vento: balança mais na ponta, em rajadas que atravessam o campo.
 	float gust = sin(TIME * 1.3 + instance_world.x * 0.21 + instance_world.z * 0.17) * 0.5 + 0.5;
-	float sway = sin(TIME * 2.7 + instance_world.x * 0.9 + instance_world.z * 0.7) * (0.04 + gust * 0.08);
+	float sway = sin(TIME * 2.7 + instance_world.x * 0.9 + instance_world.z * 0.7) * (0.04 + gust * 0.08) * wind_strength;
 	VERTEX.x += sway * UV.y * UV.y;
 	VERTEX.z += sway * 0.6 * UV.y * UV.y;
 	VERTEX *= keep;
