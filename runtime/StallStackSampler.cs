@@ -15,6 +15,9 @@ using System.Threading;
 // pilha, retoma e só depois traduz endereços em módulo+deslocamento (sem alocar com a thread
 // principal suspensa, para não travar em lock de heap ou do GC).
 // Saída: linhas "STALL_STACK {json}" no stdout (o SessionDiagnostics também as guarda).
+// Congelamento (29/10): a partida terminou em 12 s sem quadro e depois c0000005, e não sobrou pilha
+// nenhuma, porque o STALL_STACK só sai pelo _Process da thread principal, que nunca voltou. Passados
+// HANG_MS sem ponto, a própria thread de fundo grava "HANG {json}" num arquivo a cada HANG_EVERY_MS.
 public partial class StallStackSampler : Node
 {
     private const uint THREAD_SUSPEND_RESUME = 0x0002, THREAD_GET_CONTEXT = 0x0008, THREAD_QUERY_INFORMATION = 0x0040;
@@ -22,6 +25,8 @@ public partial class StallStackSampler : Node
     private const int CONTEXT_SIZE = 1232, OFFSET_FLAGS = 0x30, OFFSET_RSP = 0x98, OFFSET_RIP = 0xF8;
     private const int STACK_BYTES = 65536;
     private const double TRIGGER_MS = 30.0;
+    private const double HANG_MS = 2000.0, HANG_EVERY_MS = 3000.0, HANG_SAMPLE_EVERY_MS = 20.0;
+    private const int HANG_SAMPLES = 128;
 
     [DllImport("kernel32.dll")] private static extern uint GetCurrentThreadId();
     [DllImport("kernel32.dll", SetLastError = true)] private static extern IntPtr OpenThread(uint access, bool inherit, uint id);
@@ -43,6 +48,7 @@ public partial class StallStackSampler : Node
     private long heartbeat;
     private volatile int phase; // 0 = process/física, 1 = desenho (entre frame_pre_draw e frame_post_draw)
     private readonly ConcurrentQueue<string> output = new();
+    private string hangPath;
     private readonly byte[] stack = new byte[STACK_BYTES];
     private (ulong Base, ulong End, string Name)[] modules = Array.Empty<(ulong, ulong, string)>();
 
@@ -56,6 +62,7 @@ public partial class StallStackSampler : Node
         contextRaw = Marshal.AllocHGlobal(CONTEXT_SIZE + 16);
         context = new IntPtr((contextRaw.ToInt64() + 15) & ~15L);
         RefreshModules();
+        hangPath = HangPath();
         RenderingServer.FramePreDraw += OnPreDraw;
         RenderingServer.FramePostDraw += OnPostDraw;
         Interlocked.Exchange(ref heartbeat, Stopwatch.GetTimestamp());
@@ -82,6 +89,20 @@ public partial class StallStackSampler : Node
         worker?.Join(200);
         RenderingServer.FramePreDraw -= OnPreDraw;
         RenderingServer.FramePostDraw -= OnPostDraw;
+    }
+
+    // Mesma pasta do StallLog; resolvido aqui porque a thread de fundo não deve chamar ProjectSettings.
+    private static string HangPath()
+    {
+        foreach (string root in new[] { "res://evidence/stall-logs", "user://stall-logs" })
+        {
+            string folder = ProjectSettings.GlobalizePath(root);
+            try { System.IO.Directory.CreateDirectory(folder); }
+            catch (Exception) { continue; }
+            string stamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+            return System.IO.Path.Combine(folder, $"hang-{stamp}-{System.Environment.ProcessId}.log");
+        }
+        return null;
     }
 
     private void RefreshModules()
@@ -129,6 +150,8 @@ public partial class StallStackSampler : Node
     private void Loop()
     {
         var frames = new List<(double Ms, string Stack)>(256);
+        var hangFrames = new List<(double Ms, string Stack)>(HANG_SAMPLES);
+        double nextHangMs = HANG_MS, lastHangSampleMs = 0.0;
         long stallStart = 0;
         int stallPhase = 0;
         double ticksPerMs = Stopwatch.Frequency / 1000.0;
@@ -141,30 +164,69 @@ public partial class StallStackSampler : Node
             if (stuckMs < TRIGGER_MS)
             {
                 if (frames.Count > 0) { Emit(frames, (beat - stallStart) / ticksPerMs, stallPhase); frames.Clear(); }
+                hangFrames.Clear();
+                nextHangMs = HANG_MS;
+                lastHangSampleMs = 0.0;
                 continue;
             }
             if (frames.Count == 0) { stallStart = beat; stallPhase = phase; othersTaken = false; others = null; }
-            if (frames.Count >= 256) continue;
+            if (frames.Count >= 256)
+            {
+                // Travada longa: as 256 amostras do começo já estão guardadas; daqui em diante amostra devagar
+                // para o arquivo de congelamento, que não depende da thread principal voltar.
+                if (hangPath == null || stuckMs - lastHangSampleMs < HANG_SAMPLE_EVERY_MS) continue;
+                lastHangSampleMs = stuckMs;
+                string hangStack = SampleMain();
+                if (hangStack != null && hangFrames.Count < HANG_SAMPLES) hangFrames.Add((stuckMs, hangStack));
+                if (stuckMs >= nextHangMs)
+                {
+                    WriteHang(hangFrames.Count > 0 ? hangFrames : frames, stuckMs, stallPhase);
+                    hangFrames.Clear();
+                    nextHangMs = stuckMs + HANG_EVERY_MS;
+                }
+                continue;
+            }
+            string stack = SampleMain();
+            if (stack == null) continue;
+            frames.Add(((now - beat) / ticksPerMs, stack));
+            // Uma vez por travada longa (~80 ms dentro dela): retrato das outras threads, para ver quem
+            // segura o lock que a thread principal espera (compilador do driver, gravação de cache...).
+            if (snapshotOthers && !othersTaken && (now - beat) / ticksPerMs > 80.0) { othersTaken = true; others = SnapshotOthers(); }
+        }
+    }
+
+    // Suspende a thread principal, copia RIP e o topo da pilha, retoma e só então traduz (null se falhou).
+    private string SampleMain()
+    {
+        {
             ulong rip, rsp;
             IntPtr read = IntPtr.Zero;
             bool copied;
             // Nada de alocação gerenciada entre Suspend e Resume.
-            if (SuspendThread(mainThread) == uint.MaxValue) continue;
+            if (SuspendThread(mainThread) == uint.MaxValue) return null;
             try
             {
                 Marshal.WriteInt32(context, OFFSET_FLAGS, unchecked((int)(CONTEXT_CONTROL | CONTEXT_INTEGER)));
-                if (!GetThreadContext(mainThread, context)) continue;
+                if (!GetThreadContext(mainThread, context)) return null;
                 rip = (ulong)Marshal.ReadInt64(context, OFFSET_RIP);
                 rsp = (ulong)Marshal.ReadInt64(context, OFFSET_RSP);
                 copied = ReadProcessMemory(GetCurrentProcess(), new IntPtr((long)rsp), stack, new IntPtr(STACK_BYTES), out read)
                     || ReadProcessMemory(GetCurrentProcess(), new IntPtr((long)rsp), stack, new IntPtr(2048), out read);
             }
             finally { ResumeThread(mainThread); }
-            frames.Add(((now - beat) / ticksPerMs, Describe(rip, copied ? (int)read.ToInt64() : 0)));
-            // Uma vez por travada longa (~80 ms dentro dela): retrato das outras threads, para ver quem
-            // segura o lock que a thread principal espera (compilador do driver, gravação de cache...).
-            if (!othersTaken && (now - beat) / ticksPerMs > 80.0) { othersTaken = true; others = SnapshotOthers(); }
+            return Describe(rip, copied ? (int)read.ToInt64() : 0);
         }
+    }
+
+    // Gravado pela thread de fundo; sem retratar as outras threads de novo (ver snapshotOthers).
+    private void WriteHang(List<(double Ms, string Stack)> frames, double stuckMs, int stallPhase)
+    {
+        try
+        {
+            string json = BuildJson(frames, stuckMs, stallPhase, others, true);
+            System.IO.File.AppendAllText(hangPath, "HANG " + json + "\n");
+        }
+        catch (Exception) { }
     }
 
     private string Describe(ulong rip, int bytes)
@@ -200,6 +262,10 @@ public partial class StallStackSampler : Node
         return GlobalMemoryStatusEx(ref status) ? status.AvailPhys / 1048576 : 0;
     }
 
+    // Retrato das outras threads só com HARBOR_STALL_OTHERS=1 (29/10). Suspender thread do .NET (escritor do
+    // SessionDiagnostics, finalizador) no meio de uma coleta deixa este amostrador preso no retorno da chamada
+    // nativa; no congelamento de 11 s antes do crash de 29/10 ele não gravou nada. A pilha da principal fica.
+    private static readonly bool snapshotOthers = System.Environment.GetEnvironmentVariable("HARBOR_STALL_OTHERS") == "1";
     private bool othersTaken;
     private List<string> others;
 
@@ -245,7 +311,10 @@ public partial class StallStackSampler : Node
         return result;
     }
 
-    private void Emit(List<(double Ms, string Stack)> frames, double stallMs, int stallPhase)
+    private void Emit(List<(double Ms, string Stack)> frames, double stallMs, int stallPhase) =>
+        output.Enqueue(BuildJson(frames, stallMs, stallPhase, others, false));
+
+    private string BuildJson(List<(double Ms, string Stack)> frames, double stallMs, int stallPhase, List<string> otherThreads, bool hang)
     {
         var counts = new Dictionary<string, int>();
         var tops = new Dictionary<string, int>();
@@ -277,6 +346,7 @@ public partial class StallStackSampler : Node
         json.Append("{\"t_ms\":").Append(Time.GetTicksMsec()).Append(",\"stall_ms\":").Append(stallMs.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture))
             .Append(",\"avail_phys_mb\":").Append(AvailPhysMb())
             .Append(",\"phase\":\"").Append(stallPhase == 1 ? "render" : "process").Append("\",\"samples\":").Append(frames.Count)
+            .Append(",\"hang\":").Append(hang ? "true" : "false")
             .Append(",\"top_modules\":{");
         bool first = true;
         foreach (var pair in tops) { if (!first) json.Append(','); first = false; json.Append('"').Append(pair.Key).Append("\":").Append(pair.Value); }
@@ -290,13 +360,13 @@ public partial class StallStackSampler : Node
             json.Append("{\"n\":").Append(stacks[i].Value).Append(",\"s\":\"").Append(stacks[i].Key).Append("\"}");
         }
         json.Append(']');
-        if (others != null)
+        if (otherThreads != null)
         {
             json.Append(",\"others\":[");
-            for (int i = 0; i < others.Count; i++) { if (i > 0) json.Append(','); json.Append('"').Append(others[i]).Append('"'); }
+            for (int i = 0; i < otherThreads.Count; i++) { if (i > 0) json.Append(','); json.Append('"').Append(otherThreads[i]).Append('"'); }
             json.Append(']');
         }
         json.Append('}');
-        output.Enqueue(json.ToString());
+        return json.ToString();
     }
 }
