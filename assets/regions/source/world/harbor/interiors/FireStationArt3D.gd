@@ -3,6 +3,7 @@ extends "res://assets/regions/source/world/harbor/cemetery/CemeteryPropBuilder.g
 const MOUNTAIN_FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
 const FLEET := preload("res://runtime/FleetCatalog.gd")
 const FIREFIGHTER := preload("res://gameplay/emergency/FirefighterModel.gd")
+const EQUIPMENT := preload("res://gameplay/VehicleEquipment.gd")
 ## Baias laterais com caminhão estacionado; a do meio fica livre porque é por ela que o jogador
 ## entra (FIRE_STATION_DOOR_OFFSET) e é ali que o Capitão Rocha atende.
 const TRUCK_LANES := [-6.875, 6.875]
@@ -88,6 +89,9 @@ func _trucks() -> void:
 		truck.position = Vector3(lane,0,TRUCK_Z)
 		truck.rotation.y = PI
 		add_child(truck)
+		# Sem VehicleEquipment aqui, as faixas amarelas da traseira ficavam no plano da porta
+		# e picotavam na tela (relato de 29/10); mesma separação do caminhão do despacho.
+		EQUIPMENT.separate_pumper_rear_layers(truck)
 		solid_rects["ParkedPumper%d" % i] = Rect2(lane-TRUCK_SIZE.x*.5,TRUCK_Z-TRUCK_SIZE.y*.5,TRUCK_SIZE.x,TRUCK_SIZE.y)
 
 func _crew() -> void:

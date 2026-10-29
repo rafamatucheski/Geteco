@@ -687,12 +687,37 @@ func _exit_tree() -> void:
 	_npc_beams.erase(get_instance_id())
 
 ## Caminhão de bombeiro (rescue_pumper.scn):
-## - As faixas amarelas em V da traseira ficavam no mesmo plano da porta (z 3,32)
-##   e brigavam no buffer de profundidade: pareciam riscos picotados. Saem 2 cm.
+## - Faixas amarelas da traseira e lanternas: ver separate_pumper_rear_layers.
 ## - O canhão do teto (base vermelha, cano, bico) era peça fixa. Cano e bico vão
 ##   para um pivô sobre a base, que o bombeiro gira para mirar no fogo; a água sai
 ##   do bico (meta "fire_monitor" / "fire_monitor_tip" no carro).
+## Camadas da porta traseira do rescue_pumper.scn, em metros no espaço do carro (+Z = traseira):
+##   porta vermelha z 3,30..3,34; chevrons amarelos f1c40f z 3,32..3,34; lanternas z 3,32..3,36.
+## Os chevrons terminavam no MESMO plano da porta (3,34) e brigavam no buffer de profundidade.
+## A correção de 24/09 empurrava só os chevrons 2 cm (3,36), o que os punha no MESMO plano da
+## face das lanternas (3,36), e os quadrados giram 45° sobre elas: o amarelo picotava com o
+## vermelho/âmbar (o âmbar ainda pisca como giroflex). E os caminhões parados do quartel
+## (FireStationArt3D, 27/10) nem passam por aqui: ficavam com o empate original.
+## Agora chevrons e lanternas saem 2 cm juntos: chevrons 3,34..3,36 (2 cm fora da porta) e
+## lanternas 3,34..3,38 (encostadas na porta, face 2 cm à frente da faixa) — a mesma ordem de
+## camadas do modelo, lanterna por cima da faixa, sem nenhuma face visível coplanar. Chamar uma
+## vez por instância, antes de ler a posição das lentes.
+static func separate_pumper_rear_layers(root: Node3D) -> void:
+	if root.has_meta("pumper_rear_separated"): return
+	root.set_meta("pumper_rear_separated", true)
+	var to_root := root.global_transform.affine_inverse()
+	var back := root.global_basis.z.normalized()
+	for part: MeshInstance3D in root.find_children("*", "MeshInstance3D", true, false):
+		var material := part.get_active_material(0) as StandardMaterial3D
+		if material == null or part.mesh == null: continue
+		var box: AABB = to_root * part.global_transform * part.get_aabb()
+		# Só a porta traseira abaixo do teto (a barra do giroflex fica em y 2,4 e z 3,16).
+		if box.position.z <= 3.2 or box.end.y >= 2.0: continue
+		if material.albedo_color.is_equal_approx(Color("f1c40f")) or material.emission_enabled:
+			part.global_position += back * 0.02
+
 func _rig_pumper() -> void:
+	separate_pumper_rear_layers(car)
 	var pivot := Node3D.new()
 	pivot.name = "FireMonitorPivot"
 	var parts: Array[MeshInstance3D] = []
@@ -702,8 +727,8 @@ func _rig_pumper() -> void:
 		if material == null: continue
 		var box: AABB = car.global_transform.affine_inverse() * part.global_transform * part.get_aabb()
 		var color := material.albedo_color
-		if color.is_equal_approx(Color("f1c40f")) and box.position.z > 3.2:
-			part.global_position += car.global_basis.z * 0.02
+		# Faixas e lanternas da traseira já saíram do plano em separate_pumper_rear_layers.
+		if box.position.z > 3.2 and box.end.y < 2.0: continue
 		# Cano e bico: finos, no teto, à frente da base (z < -1.4).
 		elif box.position.y > 2.3 and box.end.z < -1.4 and box.size.x < 0.3:
 			if color.is_equal_approx(Color("a82020")): continue
