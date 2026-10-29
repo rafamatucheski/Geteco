@@ -25,6 +25,16 @@ static func prewarm_skid_audio() -> void:
 		stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
 		stream.loop_end = maxi(1, roundi(stream.get_length() * stream.mix_rate) - 8)
 		_skid_streams[kind] = stream
+# Voz de derrapagem, em dB relativos ao motor (camada do motor: -20 dB parado, ~-12 em cruzeiro, ~-5 a fundo):
+#  - drift pleno: -8 dB, no nível do motor em cruzeiro (é o som principal da cena quando acontece);
+#  - início do drift: -24 dB, 12 dB abaixo do motor, para a entrada não estalar;
+#  - freio de serviço travando: -13 dB; freio de mão: -17 dB (era -10, "ainda muito alto"), curto e de fundo.
+const SKID_DRIFT_MIN_SPEED := 6.0
+const SKID_SLIP_ON := .08
+const SKID_SLIP_FULL := .30
+const SKID_DRIFT_DB := Vector2(-24.0, -8.0)
+const SKID_SERVICE_BRAKE_DB := Vector2(-26.0, -13.0)
+const SKID_HANDBRAKE_DB := Vector2(-26.0, -17.0)
 const MAX_MARK_SEGMENTS := 320
 const MARK_LIFETIME_MSEC := 22000
 # Sulco em chÃ£o macio fica mais tempo que a borracha do asfalto: Ã© o rastro que o
@@ -42,6 +52,7 @@ var last_modes: Array[String] = ["",""]
 var mark_mesh: MeshInstance3D
 var geometry := ArrayMesh.new()
 var skid_audio: AudioStreamPlayer3D
+var _car_pitch := 1.0
 var road_mixer: Node
 var _probe_clock := 0.0
 var _mark_timer: Timer
@@ -105,13 +116,19 @@ func physics_tick(delta: float, active: bool) -> void:
 	if vehicle.has_meta("drag_service_brake_slip"):
 		braking_slip = float(vehicle.get_meta("drag_service_brake_slip"))>.15 and road_speed>8.0
 	var sliding: bool = _burnout > 0.0 or lateral_speed > skid_threshold or braking_slip
+	# Só a voz: o limiar absoluto de 5,6 m/s de velocidade lateral quase nunca é atingido em curva
+	# (polícia a 19 m/s no limite chegava a 4 m/s, caminhão a 2), então o drift ficava mudo.
+	# O que o ouvido percebe é o ângulo de deriva (lateral/velocidade), por isso a voz também abre por ele.
+	var slip_ratio := lateral_speed / maxf(road_speed, 4.0)
+	var drifting := road_speed > SKID_DRIFT_MIN_SPEED and slip_ratio > SKID_SLIP_ON
 	var hard_contact := false
 	for contact in contacts:
 		if not contact.is_empty() and contact.kind == "hard": hard_contact = true
-	# Freio de mão puxado em movimento trava as rodas de trás: o chiado acompanha a
-	# velocidade (quanto mais rápido, mais trava) mesmo sem escorregar de lado ainda.
-	var lock_slip := road_speed * .35 if (vehicle.controlled and bool(vehicle.get("_handbrake_held")) and road_speed > 3.75) else 0.0
-	_update_skid_audio(sliding and hard_contact and tire_speed > 2.5, tire_speed, maxf(maxf(lateral_speed, _burnout*8.0), lock_slip))
+	# Freio de mão puxado em movimento trava as rodas de trás mesmo sem escorregar de lado ainda:
+	# a voz entra como "trava" (teto próprio, mais baixo que o drift), não mais como falso slip lateral.
+	var handbrake_lock: bool = vehicle.controlled and bool(vehicle.get("_handbrake_held")) and road_speed > 3.75
+	var lock_kind := 2 if handbrake_lock else (1 if braking_slip else 0)
+	_update_skid_audio((sliding or drifting) and hard_contact and tire_speed > 2.5, tire_speed, maxf(lateral_speed, _burnout*8.0), lock_kind)
 	if vehicle.controlled and ENGINE_PROFILE.family(str(vehicle.archetype)) != "tank":
 		if not is_instance_valid(road_mixer):
 			road_mixer = ROAD_AUDIO.new()
@@ -283,15 +300,16 @@ func _stop_emitters() -> void:
 	if is_instance_valid(skid_audio) and skid_audio.playing: skid_audio.stop()
 	if is_instance_valid(road_mixer): road_mixer.stop()
 
-func _update_skid_audio(audible: bool, road_speed: float, lateral_speed: float) -> void:
+func _update_skid_audio(audible: bool, road_speed: float, lateral_speed: float, lock_kind := 0) -> void:
 	var began := STALL_WORK.begin()
-	_stall_update_skid_audio(audible,road_speed,lateral_speed)
+	_stall_update_skid_audio(audible,road_speed,lateral_speed,lock_kind)
 	STALL_WORK.finish_slow("vehicle_tires.skid_audio",began,5000,vehicle)
 
-func _stall_update_skid_audio(audible: bool, road_speed: float, lateral_speed: float) -> void:
+## lock_kind: 0 = só deriva lateral, 1 = freio de serviço travando, 2 = freio de mão.
+func _stall_update_skid_audio(audible: bool, road_speed: float, lateral_speed: float, lock_kind := 0) -> void:
 	# A burnout already has its own voice in the shared powertrain mixer. Avoid
 	# summing the same tire recording twice, while preserving braking and drift.
-	if audible and vehicle.get("brake_input") != true and lateral_speed <= maxf(0.0, road_speed) * .15:
+	if audible and lock_kind == 0 and vehicle.get("brake_input") != true and lateral_speed <= maxf(0.0, road_speed) * .15:
 		var powertrain_audio := vehicle.get_node_or_null("DesertCarAudio")
 		if is_instance_valid(powertrain_audio) and powertrain_audio.has_method("has_wheelspin_voice") and powertrain_audio.has_wheelspin_voice():
 			audible = false
@@ -307,6 +325,9 @@ func _stall_update_skid_audio(audible: bool, road_speed: float, lateral_speed: f
 		var stream: AudioStreamWAV = _skid_streams[kind]
 		skid_audio = AudioStreamPlayer3D.new()
 		skid_audio.name = "VehicleSkid"
+		# Variação por carro além do take (cinco WAVs): leve guincha mais agudo, pesado mais grave
+		# (±~12% pelo peso) e ±4% fixo pelo modelo, para dois carros do mesmo take não soarem iguais.
+		_car_pitch = lerpf(1.12, .86, _heft()) * (1.0 + float(hash(str(vehicle.archetype)) % 9 - 4) * .01)
 		skid_audio.stream = stream
 		skid_audio.max_distance = 55.0
 		skid_audio.unit_size = 4.0
@@ -317,8 +338,17 @@ func _stall_update_skid_audio(audible: bool, road_speed: float, lateral_speed: f
 		skid_audio.bus = &"Vehicles" if AudioServer.get_bus_index("Vehicles") >= 0 else &"Master"
 		vehicle.add_child(skid_audio)
 		STALL_WORK.finish("vehicle_tires.skid_voice",began,{"kind":kind})
-	skid_audio.volume_db = lerpf(-24.0, -9.0, clampf(road_speed / 16.25, 0.0, 1.0))
-	skid_audio.pitch_scale = lerpf(0.88, 1.12, clampf(lateral_speed / 11.25, 0.0, 1.0))
+	# Deriva: o volume cresce com o ângulo de deriva (lateral/velocidade), não só com a velocidade, e
+	# carro parado de lado quase não chia. Trava (freio): cresce com a velocidade, com teto mais baixo.
+	var slip := smoothstep(SKID_SLIP_ON, SKID_SLIP_FULL, lateral_speed / maxf(road_speed, 4.0))
+	var speed_gain := clampf(road_speed / 16.25, 0.0, 1.0)
+	var drift_db := lerpf(SKID_DRIFT_DB.x, SKID_DRIFT_DB.y, slip * (.55 + .45 * speed_gain)) if slip > 0.0 else -80.0
+	var lock_range := SKID_HANDBRAKE_DB if lock_kind == 2 else SKID_SERVICE_BRAKE_DB
+	var lock_db := lerpf(lock_range.x, lock_range.y, speed_gain) if lock_kind > 0 else -80.0
+	skid_audio.volume_db = maxf(drift_db, lock_db)
+	# Tom: sobe com a deriva; o tom do carro (leve agudo, pesado grave) é fixo por veículo.
+	var drive := maxf(slip, speed_gain * .5) if lock_kind > 0 else slip
+	skid_audio.pitch_scale = lerpf(0.88, 1.12, drive) * _car_pitch
 	if not skid_audio.playing: skid_audio.play()
 
 func _heft() -> float:

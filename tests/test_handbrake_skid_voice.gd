@@ -50,10 +50,13 @@ func _case(stage: Node3D, id: String) -> void:
 	Input.action_press("handbrake")
 	var played := 0
 	var max_voices := 0
+	var peak_db := -99.0
 	for i in 60:
 		await physics_frame
 		var audio = tires.skid_audio
-		if is_instance_valid(audio) and audio.playing: played += 1
+		if is_instance_valid(audio) and audio.playing:
+			played += 1
+			peak_db = maxf(peak_db, audio.volume_db)
 		max_voices = maxi(max_voices, _voices(car))
 	Input.action_release("handbrake")
 	# Parado, com o freio puxado, não pode chiar.
@@ -63,9 +66,11 @@ func _case(stage: Node3D, id: String) -> void:
 	var idle_audio = tires.skid_audio
 	var idle_playing: bool = is_instance_valid(idle_audio) and idle_audio.playing
 	Input.action_release("handbrake")
-	var audible_cap: bool = is_instance_valid(tires.skid_audio) and tires.skid_audio.max_db >= -8.0
+	# Playtest 29/10 (2): o freio de mão ficava em -10 dB, no nível do motor. Agora fica audível
+	# (>= -22) mas bem abaixo do motor em cruzeiro (<= -15, ~3 dB ou mais abaixo dele).
+	var audible_cap: bool = peak_db >= -22.0 and peak_db <= -15.0
 	var ok := played >= 12 and max_voices <= 1 and not idle_playing and audible_cap
-	print(("CASE PASS " if ok else "CASE FAIL ") + "%s v=%.1f m/s quadros_com_chiado=%d/60 vozes=%d parado_chia=%s teto_ok=%s" % [id, speed_at_pull, played, max_voices, idle_playing, audible_cap])
+	print(("CASE PASS " if ok else "CASE FAIL ") + "%s v=%.1f m/s quadros_com_chiado=%d/60 vozes=%d parado_chia=%s pico=%.1f dB faixa_ok=%s" % [id, speed_at_pull, played, max_voices, idle_playing, peak_db, audible_cap])
 	if not ok: failures += 1
 	car.queue_free()
 	await physics_frame
