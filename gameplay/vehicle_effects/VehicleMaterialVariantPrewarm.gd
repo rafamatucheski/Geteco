@@ -286,7 +286,9 @@ static func _effect_materials() -> Array[Material]:
 	result.append(RAIN.warm_material())
 	for material in WINDSHIELD.warm_materials(): result.append(material)
 	result.append_array(STREET.warm_materials())
-	result.append(preload("res://gameplay/vehicle_effects/VehicleBlood.gd").warm_material())
+	# A/B do pico "surface" do frio (29/10): GETECO_BLOOD_PREWARM=0 deixa o sangue compilar no primeiro uso.
+	if OS.get_environment("GETECO_BLOOD_PREWARM") != "0":
+		result.append(preload("res://gameplay/vehicle_effects/VehicleBlood.gd").warm_material())
 	return result
 
 ## Emissores com as mesmas receitas de VehicleTireEffects/PowertrainEffects/ImpactEffects/Damage:

@@ -1302,3 +1302,23 @@ overlay de sangue do carro). Por isso é raro (2 de 18): precisa de viatura com 
 Conserto: `VehicleBlood.warm_material()` entra nos materiais de efeito de `VehicleMaterialVariantPrewarm`.
 Confirmado com cache frio: o arquivo `1605d394…` agora nasce na carga, sob a cortina (antes, 162 arquivos na carga
 sem ele). **Não medido:** bancada fria no export release depois do conserto; o pico "draw" continua sem dono.
+
+### §20.2 — A/B frio do sangue no export release (29/10)
+
+Export `artifacts/perf-blood-20261029/` (HEAD `ddcc3337` + interruptor `GETECO_BLOOD_PREWARM=0`), rota oeste com
+estresse, despacho e troca de arma, 3440x1440, cache frio em toda sessão, ordem ABBA. A = sangue pré-aquecido (o
+padrão), B = `GETECO_BLOOD_PREWARM=0` (como antes de `077dd913`). 30 de 32 sessões (parado para o PC reiniciar).
+
+| lado | sessões | com quadro > 700 ms | `surface` | `draw` |
+|---|---|---|---|---|
+| A, pré-aquecido | 15 | 1 | 0 | 1 (2341 ms) |
+| B, sem | 15 | 6 | 2 | 5 |
+
+- O `surface` sumiu do lado A (0 de 15 contra 2 de 15), como esperado pelo §20.1.
+- O `draw` também caiu (1 contra 5). Não era esperado: o `draw` tem godot=0 (nenhum shader novo no quadro). Uma
+  leitura possível é que o sangue sem pré-aquecimento compila o shader num quadro curto e a pipeline de outra
+  passagem dele (sombra, profundidade) só é montada quando aparece de outro jeito. **Não provado**: 15 por lado
+  separa 1 de 5 com folga razoável, mas não diz a causa do `draw` que sobrou no A.
+- A sessão 30 (B) saiu anômala (p50 68 ms, carga 187 s; provável máquina ocupada perto do reinício) e conta como B com pico;
+  sem ela o B fica 5 de 14.
+- p50 e carga iguais entre os lados (p50 11–13 ms, carga ~84–87 s).
