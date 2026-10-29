@@ -21,6 +21,7 @@ func step(car: CharacterBody3D, delta: float, throttle: float, turn: float, hand
 		if _configured: drive.synchronize(float(car.speed),absf(throttle) if float(car.speed)*throttle>0.0 else 0.0,float(car.speed)<0.0)
 		return
 	var prior_speed := maxf(0.0,float(car.speed))
+	var entry_speed: float = car.horizontal_velocity.length()
 	# Stock handling supplies safe yaw/cornering only. Its friction is replaced by
 	# drivetrain coast/rolling resistance along the new heading below.
 	# Tração por eixo: o pedal, pesado pela fração da aderência que o motor pede, volta a
@@ -74,6 +75,14 @@ func step(car: CharacterBody3D, delta: float, throttle: float, turn: float, hand
 	forward = forward.normalized()
 	var lateral: Vector3 = car.horizontal_velocity-forward*car.horizontal_velocity.dot(forward)
 	car.horizontal_velocity = lateral+forward*drive.speed_mps
+	# A frente volta ao motor depois que o giro já passou parte dela para o lado; derrapando
+	# (freio de mão segura o lado) isso somaria velocidade. Com o freio puxado nunca passa da
+	# de entrada: o que sobra do lado fica e a frente encolhe (playtest 29/10).
+	if handbrake and car.horizontal_velocity.length() > entry_speed:
+		var side := lateral.length()
+		var along := sqrt(maxf(0.0,entry_speed*entry_speed-side*side))
+		drive.speed_mps = minf(drive.speed_mps,along)
+		car.horizontal_velocity = lateral.limit_length(entry_speed)+forward*drive.speed_mps
 	car.speed = drive.speed_mps
 	wheelspin = drive.wheelspin
 

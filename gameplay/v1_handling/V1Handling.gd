@@ -74,6 +74,7 @@ func step(car: CharacterBody3D, delta: float, throttle: float, turn: float, hand
 	var velocity := Vector2(hv.x, hv.z) * PX
 	var forward := Vector2.from_angle(heading)
 	var longitudinal := velocity.dot(forward)
+	var entry_speed := velocity.length()
 
 	_update_launch(delta, velocity.length(), throttle, handbrake)
 	handbrake_slide = 0.7 if handbrake and velocity.length() > 55.0 else maxf(0.0, handbrake_slide - delta)
@@ -108,6 +109,12 @@ func step(car: CharacterBody3D, delta: float, throttle: float, turn: float, hand
 		if reverse_speed < -reverse_limit:
 			velocity += forward * (-reverse_limit - reverse_speed)
 
+	# Freio de mão nunca acelera (playtest 29/10: segurar Espaço com o pedal fazia o carro
+	# ganhar velocidade). O acelerador seguia empurrando com força cheia enquanto o freio de
+	# mão só tirava braking × 0,10: abaixo de ~15 m/s a força do motor (maior em baixa) vencia
+	# e o carro acelerava derrapando. Com o freio puxado o pedal só gira a traseira (largada e
+	# burnout continuam pelo launch_holding acima); a velocidade no plano não passa da de entrada.
+	if handbrake: velocity = velocity.limit_length(entry_speed)
 	car.horizontal_velocity = Vector3(velocity.x, 0.0, velocity.y) / PX
 	car.speed = velocity.dot(forward) / PX
 
