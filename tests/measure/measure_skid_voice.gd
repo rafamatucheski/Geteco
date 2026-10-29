@@ -1,6 +1,6 @@
 extends SceneTree
 ## Sonda (não é contrato): mede volume_db/pitch da voz de derrapagem em cenários reais.
-## Uso: run_godot_locked.sh --path . --script res://tests/measure_skid_voice.gd -- id1,id2
+## Uso: run_godot_locked.sh --path . --script res://tests/measure/measure_skid_voice.gd -- id1,id2
 const STREET = preload("res://gameplay/desert_cars/StreetPowertrainCatalog.gd")
 
 func _initialize() -> void: run.call_deferred()
