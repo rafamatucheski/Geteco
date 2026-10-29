@@ -108,7 +108,10 @@ func physics_tick(delta: float, active: bool) -> void:
 	var hard_contact := false
 	for contact in contacts:
 		if not contact.is_empty() and contact.kind == "hard": hard_contact = true
-	_update_skid_audio(sliding and hard_contact and tire_speed > 2.5, tire_speed, maxf(lateral_speed, _burnout*8.0))
+	# Freio de mão puxado em movimento trava as rodas de trás: o chiado acompanha a
+	# velocidade (quanto mais rápido, mais trava) mesmo sem escorregar de lado ainda.
+	var lock_slip := road_speed * .35 if (vehicle.controlled and bool(vehicle.get("_handbrake_held")) and road_speed > 3.75) else 0.0
+	_update_skid_audio(sliding and hard_contact and tire_speed > 2.5, tire_speed, maxf(maxf(lateral_speed, _burnout*8.0), lock_slip))
 	if vehicle.controlled and ENGINE_PROFILE.family(str(vehicle.archetype)) != "tank":
 		if not is_instance_valid(road_mixer):
 			road_mixer = ROAD_AUDIO.new()
@@ -307,11 +310,14 @@ func _stall_update_skid_audio(audible: bool, road_speed: float, lateral_speed: f
 		skid_audio.stream = stream
 		skid_audio.max_distance = 55.0
 		skid_audio.unit_size = 4.0
-		skid_audio.max_db = -22.0
+		# Playtest 29/10 ("freio de mão sem barulho de pneu"): o teto de -22 dB deixava o chiado
+		# ~23 dB abaixo do motor (max_db +1) e inaudível. O volume por velocidade abaixo já
+		# dosa a intensidade; o teto só impede estouro de perto.
+		skid_audio.max_db = -4.0
 		skid_audio.bus = &"Vehicles" if AudioServer.get_bus_index("Vehicles") >= 0 else &"Master"
 		vehicle.add_child(skid_audio)
 		STALL_WORK.finish("vehicle_tires.skid_voice",began,{"kind":kind})
-	skid_audio.volume_db = lerpf(-30.0, -22.0, clampf(road_speed / 16.25, 0.0, 1.0))
+	skid_audio.volume_db = lerpf(-24.0, -9.0, clampf(road_speed / 16.25, 0.0, 1.0))
 	skid_audio.pitch_scale = lerpf(0.88, 1.12, clampf(lateral_speed / 11.25, 0.0, 1.0))
 	if not skid_audio.playing: skid_audio.play()
 
