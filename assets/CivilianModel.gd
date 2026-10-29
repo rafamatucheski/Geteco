@@ -173,6 +173,9 @@ const INNERS := [Color("ecebe4"), Color("c9ccd0"), Color("26272b"), Color("2f3d5
 const SNEAKERS := [Color("e9e7e1"), Color("26272b"), Color("7d8187"), Color("2c3a5a"), Color("a13b32"), Color("d5c7a4")]
 const BOOTS := [Color("5a3b26"), Color("3a2a20"), Color("24211f"), Color("7a5a3a")]
 const DRESS_SHOES := [Color("1d1b1a"), Color("3b2619"), Color("4a3a30")]
+## Roupa da serra para o corpo do kit: casaco (top 3), calça, bota e gorro. Override fixo também tira o
+## corpo Meshy de pedestre da cidade (`CivilianBodyCatalog.apply`).
+const WINTER_WARDROBE := {"top": 3, "bottom": 0, "shoe": 1, "hat": 2, "bag": 0}
 const ACCENTS := [Color("222326"), Color("8b5a33"), Color("2c3d5e"), Color("9c3129"), Color("56603b"), Color("6f7174"), Color("c49a3a"), Color("5b3a5e")]
 
 func _ready() -> void:

@@ -13,7 +13,7 @@ static func for_place(id: String) -> Array[Dictionary]:
 		var shop: Array = shops[id]
 		result.append({"id": id + "_attendant", "name": shop[0], "place_id": id,
 			"model": "res://world/places/MountainShopResidentModel.gd",
-			"appearance": {"coat_color": shop[2], "pants_color": Color("303b42"), "is_female": shop[3]},
+			"appearance": {"coat_color": shop[2], "pants_color": Color("303b42"), "is_female": shop[3], "winter": true},
 			"local_position": Vector3(shop[1], 0, -3.85), "dialogue_id": id + "_attendant"})
 		return result
 	if _source.is_empty():

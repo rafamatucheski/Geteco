@@ -226,7 +226,7 @@ func _ready() -> void:
 		# Pela posição também: quem desce de um carro herda o `region_id` do carro, que pode estar defasado.
 		if get_meta("region_id", "") == "mountain" or (get_meta("region_id", "") != "desert" \
 				and WORLD_CONNECTION.logical_region(global_position) == "mountain"):
-			model.wardrobe_overrides = {"top":3, "bottom":0, "shoe":1, "hat":2, "bag":0}
+			model.wardrobe_overrides = CIVILIAN.WINTER_WARDROBE.duplicate()
 		model.rotation.y = PI
 		# Corpo importado do Meshy para o pedestre genérico; sem entrada compatível (ou com guarda-roupa fixo, como
 		# na montanha) continua o corpo procedural do kit.

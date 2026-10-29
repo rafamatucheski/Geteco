@@ -18,6 +18,7 @@ const INTERIOR := preload("res://gameplay/VehicleInterior.gd")
 const MOCAP := preload("res://gameplay/VehicleBoardingMocap.gd")
 const MODEL := preload("res://gameplay/traffic/TrafficDriverModel.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+const WORLD_CONNECTION := preload("res://world/regions/WorldConnection3D.gd")
 const STEP := .25
 const RADIUS := 45.0
 ## Corpo do motorista (tronco) a esta distância da linha do tiro conta como acertado.
@@ -111,16 +112,33 @@ func _refresh() -> void:
 	var built := false
 	for car in wanted:
 		if _assigned.has(car.get_instance_id()): continue
-		var body: Node3D = null
-		if not _parked.is_empty(): body = _parked.pop_back()
-		elif _bodies.size() < _max and not built:
+		var winter := _winter(car)
+		var body: Node3D = _take_parked(winter)
+		if body == null and not built and (_bodies.size() < _max or not _parked.is_empty()):
+			# Pool cheio só com corpos do outro clima: troca um estacionado (acontece ao cruzar a ponte).
+			if _bodies.size() >= _max:
+				var stale: Node3D = _parked.pop_back()
+				_bodies.erase(stale)
+				stale.free()
 			built = true
 			var stage := STALL_WORK.begin()
-			body = MODEL.create(_identity(car))
+			body = MODEL.create(_identity(car), winter)
 			_bodies.append(body)
 			STALL_WORK.finish_slow("traffic_driver.build", stage, 1000, self)
 		if body == null: continue
 		_attach(car, body)
+
+## Na serra ninguém dirige de camiseta: o corpo reaproveitado precisa ser do mesmo clima do carro.
+func _winter(car: Node) -> bool:
+	return str(car.get_meta("region_id", "")) == "mountain" or WORLD_CONNECTION.logical_region((car as Node3D).global_position) == "mountain"
+
+func _take_parked(winter: bool) -> Node3D:
+	for i in range(_parked.size() - 1, -1, -1):
+		if bool(_parked[i].get_meta("traffic_driver_winter", false)) == winter:
+			var body: Node3D = _parked[i]
+			_parked.remove_at(i)
+			return body
+	return null
 
 func _identity(car: Node) -> int:
 	# Aparência não consome o RNG do jogo (pintura, rotas, encontros), como o motoqueiro do trânsito.

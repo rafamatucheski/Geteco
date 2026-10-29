@@ -14,8 +14,9 @@ var wheel_hands: Array = []
 var slump := 0.0
 var _posed_once := false
 
-## Mesma receita do Actor civil (scripts/Actor.gd, ramo `else` do corpo).
-static func create(identity: int) -> Node3D:
+## Mesma receita do Actor civil (scripts/Actor.gd, ramo `else` do corpo). `winter`: roupa da serra, como o
+## Actor que nasce lá, para o roubo tirar do banco a mesma pessoa.
+static func create(identity: int, winter := false) -> Node3D:
 	var model = load("res://gameplay/traffic/TrafficDriverModel.gd").new()
 	model.name = "TrafficDriver"
 	model.appearance_locked = true
@@ -24,6 +25,8 @@ static func create(identity: int) -> Node3D:
 	model.pants_color = [Color("293849"), Color("484644"), Color("615342")][identity % 3]
 	model.sit_amount = 1.0
 	model.set_meta("traffic_driver", true)
+	model.set_meta("traffic_driver_winter", winter)
+	if winter: model.wardrobe_overrides = WINTER_WARDROBE.duplicate()
 	preload("res://assets/civilians/CivilianBodyCatalog.gd").apply(model, identity)
 	return model
 
