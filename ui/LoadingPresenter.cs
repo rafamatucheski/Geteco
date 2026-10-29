@@ -159,7 +159,7 @@ public partial class LoadingPresenter : Node
         private nint window, buffer, graphics, titleFont, textFont, brush, trackBrush, accentBrush, format, overlay;
         private LoadingCanvas canvas;
         private GCHandle overlayPin;
-        private int overlayPercent = -1;
+        private int overlayPercent = -1, overlayWidth, overlayHeight;
         private static readonly string[] Percentages = Enumerable.Range(0, 101).Select(x => x + "%").ToArray();
         private readonly List<nint> fontFamilies = new();
         private readonly List<nint> fontCollections = new();
@@ -210,14 +210,6 @@ public partial class LoadingPresenter : Node
                 Native.GdipCreateSolidFill(0xff5a5b58, out trackBrush);
                 Native.GdipCreateSolidFill(0xffeee0bd, out accentBrush);
                 Native.GdipStringFormatGetGenericTypographic(out format);
-                // Typography is rasterized only when the integer percentage changes,
-                // at a fixed small size. Fullscreen artwork stays on the GPU.
-                overlayPin = GCHandle.Alloc(new byte[1280 * 160 * 4], GCHandleType.Pinned);
-                if (Native.GdipCreateBitmapFromScan0(1280, 160, 1280 * 4, 0xE200B, overlayPin.AddrOfPinnedObject(), out buffer) != 0)
-                    throw new InvalidOperationException("Loading text allocation failed");
-                Native.GdipGetImageGraphicsContext(buffer, out graphics);
-                Native.GdipSetPageUnit(graphics, 2);
-                Native.GdipSetTextRenderingHint(graphics, 4);
                 Native.GdipSetStringFormatAlign(format, 0);
                 long next = Stopwatch.GetTimestamp();
                 while (!stopped && Native.IsWindow(parent)) {
@@ -335,10 +327,35 @@ public partial class LoadingPresenter : Node
                 var blend = (local - hold) / crossfade;
                 DrawImage(bitmaps[incoming], incoming, local - hold, (float)(blend * blend * (3 - 2 * blend)));
             }
-            UpdateOverlay();
             var scale = Math.Min((float)width / 1280, (float)height / 720);
-            canvas.Draw(overlay, 0, height - 160 * scale, 1280 * scale, 160 * scale);
+            EnsureOverlay(scale);
+            UpdateOverlay();
+            canvas.Draw(overlay, 0, height - overlayHeight, overlayWidth, overlayHeight);
             canvas.End();
+        }
+        // O texto era rasterizado em 1280x160 e esticado: em tela cheia 1080p/1440p
+        // "HARBOR" ficava borrado. Agora o bitmap tem o tamanho real na tela (1:1) e
+        // só é refeito quando a janela muda de escala; o custo continua sendo só
+        // redesenhar quando o percentual inteiro muda.
+        private void EnsureOverlay(float scale)
+        {
+            var w = Math.Max(1, (int)Math.Round(1280 * scale));
+            var h = Math.Max(1, (int)Math.Round(160 * scale));
+            if (buffer != 0 && w == overlayWidth && h == overlayHeight) return;
+            if (graphics != 0) { Native.GdipDeleteGraphics(graphics); graphics = 0; }
+            if (buffer != 0) { Native.GdipDisposeImage(buffer); buffer = 0; }
+            if (overlayPin.IsAllocated) overlayPin.Free();
+            LoadingCanvas.Release(ref overlay);
+            overlayPin = GCHandle.Alloc(new byte[w * h * 4], GCHandleType.Pinned);
+            if (Native.GdipCreateBitmapFromScan0(w, h, w * 4, 0xE200B, overlayPin.AddrOfPinnedObject(), out buffer) != 0)
+                throw new InvalidOperationException("Loading text allocation failed");
+            Native.GdipGetImageGraphicsContext(buffer, out graphics);
+            Native.GdipSetPageUnit(graphics, 2);
+            Native.GdipSetTextRenderingHint(graphics, 4);
+            // O layout continua em unidades de 1280x720; a transformação leva ao pixel real.
+            Native.GdipScaleWorldTransform(graphics, (float)w / 1280, (float)h / 160, 0);
+            overlayWidth = w; overlayHeight = h;
+            overlayPercent = -1;
         }
         private void UpdateOverlay()
         {
@@ -357,8 +374,8 @@ public partial class LoadingPresenter : Node
             Native.GdipFillRectangle(graphics, trackBrush, 48, 105, 220, 3);
             Native.GdipFillRectangle(graphics, accentBrush, 48, 105, 220 * percent / 100f, 3);
             Native.GdipFlush(graphics, 1);
-            if (overlay == 0) overlay = canvas.Upload(1280, 160, overlayPin.AddrOfPinnedObject());
-            else canvas.Update(overlay, overlayPin.AddrOfPinnedObject(), 1280);
+            if (overlay == 0) overlay = canvas.Upload(overlayWidth, overlayHeight, overlayPin.AddrOfPinnedObject());
+            else canvas.Update(overlay, overlayPin.AddrOfPinnedObject(), overlayWidth);
         }
         private void DrawImage(Bitmap bitmap, int index, double age, float opacity)
         {
@@ -429,6 +446,7 @@ public partial class LoadingPresenter : Node
         [DllImport("gdiplus")] public static extern int GdipGraphicsClear(nint graphics, uint colour);
         [DllImport("gdiplus")] public static extern int GdipFlush(nint graphics, int intention);
         [DllImport("gdiplus")] public static extern int GdipSetPageUnit(nint graphics, int unit);
+        [DllImport("gdiplus")] public static extern int GdipScaleWorldTransform(nint graphics, float sx, float sy, int order);
         [DllImport("gdiplus")] public static extern int GdipSetTextRenderingHint(nint graphics, int hint);
         [DllImport("gdiplus")] public static extern int GdipNewPrivateFontCollection(out nint collection);
         [DllImport("gdiplus")] public static extern int GdipDeletePrivateFontCollection(ref nint collection);
