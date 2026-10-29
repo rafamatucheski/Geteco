@@ -7,6 +7,7 @@ extends Node3D
 ## anel (as mais antigas são reaproveitadas), com cor por instância: um draw
 ## call para todo o rastro da cidade.
 
+const NON_FINITE := preload("res://runtime/NonFiniteGuard.gd")
 const TIRE_DISTANCE := 210.0 / 16.0
 const FOOT_DISTANCE := 85.0 / 16.0
 const MARK_LIFETIME := 14.0
@@ -26,6 +27,7 @@ var _next := 0
 var _clock := 0.0
 var _sample := 0.0
 var _fade_clock := 0.0
+var _guard_clock := 0.0
 
 
 func _ready() -> void:
@@ -80,6 +82,10 @@ func _physics_process(delta: float) -> void:
 	if _fade_clock >= 0.25:
 		_fade_clock = 0.0
 		_fade()
+	_guard_clock += delta
+	if _guard_clock >= 1.0:
+		_guard_clock = 0.0
+		_guard_bodies()
 	if _sample < SAMPLE_INTERVAL: return
 	_sample = 0.0
 	var blood: Node3D = director.blood
@@ -101,6 +107,12 @@ func _physics_process(delta: float) -> void:
 		if not is_instance_valid(body) or float(track.residue) <= 0.0:
 			_tracks.erase(id)
 			continue
+		# Corpo em NaN: a marca entraria no MultiMesh transparente (prioridade -1) e a caixa NaN derruba a
+		# ordenação da lista alfa no release (29/10, runtime/NonFiniteGuard.gd). O rastro dele acaba aqui.
+		if not body.global_position.is_finite() or not NON_FINITE.finite_basis(body.global_basis):
+			NON_FINITE.report("blood_track", body.global_position, body)
+			_tracks.erase(id)
+			continue
 		var moved: float = Vector2(body.global_position.x - track.last.x, body.global_position.z - track.last.z).length()
 		if moved > 6.0:
 			# Teleporte/streaming: não desenha rastro atravessando a cidade.
@@ -118,6 +130,23 @@ func _physics_process(delta: float) -> void:
 		else:
 			_foot_mark(body, int(track.foot), strength)
 			track.foot = 1 - int(track.foot)
+
+
+## Vigia de NaN (29/10): carro ou pessoa com posição não finita leva junto o que é transparente nele (vidro,
+## silhueta, fumaça, clarão) e a profundidade NaN derruba a ordenação da lista alfa no release
+## (runtime/NonFiniteGuard.gd). Escondido sai das listas de desenho; o registro diz quem foi. Uma vez por
+## segundo sobre o grupo `drivable` e as pessoas da rua; o jogador só é registrado.
+func _guard_bodies() -> void:
+	var bodies: Array = get_tree().get_nodes_in_group("drivable")
+	bodies.append_array(director.people())
+	for body in bodies:
+		if not body is Node3D or not body.is_inside_tree() or body.has_meta("non_finite_hidden"): continue
+		var spatial := body as Node3D
+		if spatial.global_position.is_finite() and NON_FINITE.finite_basis(spatial.global_basis): continue
+		NON_FINITE.report("body", spatial.global_position, spatial)
+		if body.get("controlled") == true or body.get_meta("is_player_body", false) or body.is_in_group("player"): continue
+		body.set_meta("non_finite_hidden", true)
+		spatial.hide()
 
 
 ## Cada marca cobre o trecho andado desde a anterior (com sobreposição), então
@@ -145,6 +174,10 @@ func _foot_mark(person: Node3D, foot: int, strength: float) -> void:
 
 
 func _emit(point: Vector3, yaw: float, size: Vector2, alpha: float) -> void:
+	# Pé com o visual em NaN, ou trecho andado NaN, passaria pela checagem do corpo.
+	if not point.is_finite() or not is_finite(yaw) or not size.is_finite():
+		NON_FINITE.report("blood_mark", point)
+		return
 	var index := _next
 	_next = (_next + 1) % MAX_MARKS
 	_multimesh.visible_instance_count = mini(MAX_MARKS, maxi(_multimesh.visible_instance_count, index + 1))

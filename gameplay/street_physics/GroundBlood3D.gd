@@ -13,6 +13,7 @@ extends Node3D
 ## V1) e cada mancha registra raio para o rastro de pneu/sapato (BloodTracks3D).
 
 const WORK := preload("res://runtime/StallWorkTrace.gd")
+const NON_FINITE := preload("res://runtime/NonFiniteGuard.gd")
 
 const LIFETIME := 10.0
 const FADE_DURATION := 3.0
@@ -47,7 +48,8 @@ func spawn_pool(point: Vector3, lethal: bool, body: Node3D = null, stretch_dir :
 	# Morte: ~1,1–1,6 m (V1 17 px = 1,06 m era lido de cima a 2D; em 3D o corpo
 	# deitado cobre o centro, então a poça precisa passar da silhueta).
 	var radius := _rng.randf_range(1.1, 1.6) if lethal else _rng.randf_range(0.3, 0.46)
-	var stain := _allocate(point, radius, 2.2 if lethal else 0.5, stretch_dir)
+	var stain := _allocate(point, radius, 2.2 if lethal else 0.5, stretch_dir, body)
+	if stain.is_empty(): return stain
 	stain.lethal = lethal
 	stain.lifetime = CORPSE_LIFETIME if lethal else LIFETIME
 	if lethal and is_instance_valid(body) and not body.get_meta("is_player_body", false):
@@ -58,7 +60,7 @@ func spawn_pool(point: Vector3, lethal: bool, body: Node3D = null, stretch_dir :
 ## Gota de quem está sangrando e andando.
 func spawn_drip(point: Vector3, strength: float) -> Dictionary:
 	var stain := _allocate(point, lerpf(0.08, 0.16, strength) * _rng.randf_range(0.88, 1.12), 0.2)
-	stain.lifetime = LIFETIME
+	if not stain.is_empty(): stain.lifetime = LIFETIME
 	return stain
 
 
@@ -73,6 +75,7 @@ func spawn_splatter(point: Vector3, direction: Vector3, strength: float) -> void
 		var side := _rng.randf_range(-0.35, 0.35) * (0.5 + along * 0.3)
 		var spot := point + flat * along + flat.cross(Vector3.UP) * side
 		var stain := _allocate(spot, _rng.randf_range(0.14, 0.34) * (1.0 + strength * 0.5), 0.15, flat)
+		if stain.is_empty(): return
 		stain.lifetime = LIFETIME * 1.5
 
 
@@ -95,7 +98,12 @@ func has_stain_near(point: Vector3, radius: float) -> bool:
 	return false
 
 
-func _allocate(point: Vector3, radius: float, grow_time: float, stretch_dir := Vector3.ZERO) -> Dictionary:
+func _allocate(point: Vector3, radius: float, grow_time: float, stretch_dir := Vector3.ZERO, source: Node = null) -> Dictionary:
+	# Mancha com posição NaN entra na lista alfa com profundidade NaN e o release crasha na ordenação
+	# (29/10, runtime/NonFiniteGuard.gd). Vazio = nenhuma mancha; quem chama confere.
+	if not point.is_finite() or not is_finite(radius) or not stretch_dir.is_finite():
+		NON_FINITE.report("ground_blood", point, source)
+		return {}
 	var allocation_began := WORK.begin()
 	var stains_before := stains.size()
 	while stains.size() >= MAX_STAINS:
