@@ -4,6 +4,20 @@ const B = preload("res://assets/regions/source/characters/pedestrians/CitizenDet
 const WHITE = Color("e5ece8")
 const TEAL = Color("438c91")
 const STEEL = Color("a7b7bc")
+const SURFACE_FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
+
+static func painted_interior_enabled() -> bool:
+	return OS.get_environment("GETECO_PAINTED_HOSPITAL_INTERIOR") != "0"
+
+static func prewarm_materials() -> Array:
+	if not painted_interior_enabled(): return []
+	return [SURFACE_FINISH.material("epoxy",Color("c7d5d4")),SURFACE_FINISH.material("plaster",WHITE),SURFACE_FINISH.material("painted",TEAL)]
+
+func _surface_box(size: Vector3, at: Vector3, color: Color, kind: String) -> MeshInstance3D:
+	var mesh := box(size,at,color)
+	if painted_interior_enabled(): mesh.material_override=SURFACE_FINISH.material(kind,color)
+	return mesh
+
 var door_leaves: Array[MeshInstance3D] = []
 var door_handles: Array[MeshInstance3D] = []
 var solids: Array[Rect2] = []
@@ -11,25 +25,25 @@ func box(size: Vector3, at: Vector3, color: Color) -> MeshInstance3D:
 	return B.piece(self,size,at,color)
 func solid(at: Vector2, size: Vector2) -> void: solids.append(Rect2(at-size*.5,size))
 func _ready() -> void:
-	box(Vector3(20,.18,14),Vector3(0,-.12,0),Color("c7d5d4"))
+	_surface_box(Vector3(20,.18,14),Vector3(0,-.12,0),Color("c7d5d4"),"epoxy")
 	for x in range(-10,11): box(Vector3(.016,.008,14),Vector3(x,0,0),Color("9aafaf"))
 	for z in range(-7,8): box(Vector3(20,.008,.016),Vector3(0,0,z),Color("9aafaf"))
 	# Cutaway walls keep all treatment and waiting areas legible.
 	for x in [-10,10]:
-		box(Vector3(.18,2.8,14),Vector3(x,1.4,0),WHITE)
-		box(Vector3(.035,.65,14),Vector3(x-sign(x)*.11,.7,0),TEAL)
+		_surface_box(Vector3(.18,2.8,14),Vector3(x,1.4,0),WHITE,"plaster")
+		_surface_box(Vector3(.035,.65,14),Vector3(x-sign(x)*.11,.7,0),TEAL,"painted")
 		solid(Vector2(x,0),Vector2(.3,14))
 	for x in [-5.8,5.8]:
-		box(Vector3(8.4,2.8,.18),Vector3(x,1.4,-7),WHITE)
-		box(Vector3(8.4,.65,.06),Vector3(x,.7,-6.88),TEAL)
+		_surface_box(Vector3(8.4,2.8,.18),Vector3(x,1.4,-7),WHITE,"plaster")
+		_surface_box(Vector3(8.4,.65,.06),Vector3(x,.7,-6.88),TEAL,"painted")
 		solid(Vector2(x,-7),Vector2(8.4,.3))
 	# Street frontage is south in both scenes. Close the former north opening,
 	# and keep the southern cutaway split around the actual entrance.
-	box(Vector3(3.2,2.8,.18),Vector3(0,1.4,-7),WHITE)
-	box(Vector3(3.2,.65,.06),Vector3(0,.7,-6.88),TEAL)
+	_surface_box(Vector3(3.2,2.8,.18),Vector3(0,1.4,-7),WHITE,"plaster")
+	_surface_box(Vector3(3.2,.65,.06),Vector3(0,.7,-6.88),TEAL,"painted")
 	solid(Vector2(0,-7),Vector2(3.2,.3))
 	for x in [-5.8,5.8]:
-		box(Vector3(8.4,.45,.18),Vector3(x,.225,7),WHITE)
+		_surface_box(Vector3(8.4,.45,.18),Vector3(x,.225,7),WHITE,"plaster")
 		solid(Vector2(x,7),Vector2(8.4,.3))
 	solid(Vector2(0,7.2),Vector2(3.2,.2))
 	# Double glass entrance, metal frame and entry mat.
