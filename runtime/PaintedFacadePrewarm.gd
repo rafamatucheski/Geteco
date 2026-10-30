@@ -33,6 +33,8 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 	# Beira de estrada do deserto: compõe os quatro lugares (malha por material) e desenha o atlas
 	# das placas e as cópias de pintura das carcaças aqui, não na primeira visita a cada lugar.
 	materials.append_array(preload("res://runtime/desert/roadside/RoadsideBuild.gd").prewarm())
+	# Atlas de desgaste da rua do Harbor (adesivo, cartaz, ferrugem): poste de luz, de energia e placa.
+	materials.append_array(preload("res://world/city_look/HarborStreetWear.gd").prewarm())
 	# Recorte do trem na frente do prédio ocupado (HarborBuildingMovingSightline):
 	# o ShaderMaterial nasce ao entrar no prédio, sem cortina, e o shader só era
 	# compilado quando o trem aparecia na tela com o jogador lá dentro.
