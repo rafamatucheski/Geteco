@@ -80,6 +80,7 @@ func build_chunk(parent: Node3D, rect: Rect2) -> void:
 	var parts: Array[Transform3D] = [Transform3D(Basis.IDENTITY, Vector3(0, POST_HEIGHT * .5, 0)),
 		Transform3D(Basis(Vector3.BACK, PI * .25), Vector3(0, FACE_CENTER, 0)), Transform3D(Basis.IDENTITY, Vector3(0, FACE_CENTER, .025))]
 	# Three shared batches per chunk, no frame callbacks or extra light sources.
+	var batches: Array[MultiMesh] = []
 	for part in _meshes.size():
 		var multi := MultiMesh.new()
 		multi.transform_format = MultiMesh.TRANSFORM_3D
@@ -92,12 +93,22 @@ func build_chunk(parent: Node3D, rect: Rect2) -> void:
 		visual.multimesh = multi
 		visual.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		owner.add_child(visual)
+		batches.append(multi)
 	var worn: Array = []
+	# Índice de cada placa no lote de desgaste (-1 = placa limpa), para os adesivos tombarem junto.
+	var worn_index: Array[int] = []
 	if WEAR.available():
 		for i in selected.size():
 			var at: Vector2 = selected[i].position
-			if WEAR.roll("a32b|wear|%d|%d" % [roundi(at.x * 10.0), roundi(at.y * 10.0)]) < float(WEAR.WEAR_CHANCE.get(str(selected[i].get("district", "")), 0.0)): worn.append(bases[i])
-	if not worn.is_empty(): owner.add_child(WEAR.batch("SignWear", WEAR.sign_mesh(), worn))
+			worn_index.append(-1)
+			if WEAR.roll("a32b|wear|%d|%d" % [roundi(at.x * 10.0), roundi(at.y * 10.0)]) < float(WEAR.WEAR_CHANCE.get(str(selected[i].get("district", "")), 0.0)):
+				worn_index[i] = worn.size()
+				worn.append(bases[i])
+	var wear_batch: MultiMesh = null
+	if not worn.is_empty():
+		var wear_visual := WEAR.batch("SignWear", WEAR.sign_mesh(), worn)
+		owner.add_child(wear_visual)
+		wear_batch = wear_visual.multimesh
 	var solids := StaticBody3D.new()
 	solids.name = "SignpostSolids"
 	solids.collision_layer = 1
@@ -106,11 +117,38 @@ func build_chunk(parent: Node3D, rect: Rect2) -> void:
 	var shape := CylinderShape3D.new()
 	shape.height = POST_HEIGHT
 	shape.radius = .045
+	var colliders: Array[CollisionShape3D] = []
 	for i in selected.size():
 		var collider := CollisionShape3D.new()
 		collider.shape = shape
 		collider.transform = bases[i] * parts[0]
 		solids.add_child(collider)
+		colliders.append(collider)
+	if Engine.is_editor_hint(): return
+	_register_fragile(owner, bases, parts, batches, wear_batch, worn_index, colliders)
+
+## Playtest 30/10 ("as placas de sinalização não são derrubadas"): a A-32b do Harbor era só
+## MultiMesh com um cilindro no SignpostSolids e nunca entrou no FragileProps3D; o poste de 9 cm
+## parava o carro como parede a qualquer velocidade. Mesmo arranjo da placa da serra
+## (MountainTrafficSigns._register_fragile): um lote-pivô invisível na base de cada placa é a
+## instância principal, poste, chapa, face e desgaste vão como peças irmãs, e o colisor da placa vai
+## ao registro (o tombo desliga só o dela). Nenhum nó novo por placa.
+static func _register_fragile(owner: Node3D, bases: Array[Transform3D], parts: Array[Transform3D], batches: Array[MultiMesh], wear_batch: MultiMesh, worn_index: Array[int], colliders: Array[CollisionShape3D]) -> void:
+	if bases.is_empty(): return
+	# O registro precisa da posição global; trecho montado fora da árvore registra ao entrar.
+	if not owner.is_inside_tree():
+		owner.tree_entered.connect(_register_fragile.bind(owner, bases, parts, batches, wear_batch, worn_index, colliders), CONNECT_ONE_SHOT)
+		return
+	var fragile := preload("res://gameplay/street_physics/FragileProps3D.gd")
+	var pivots := fragile.pivot_batch(bases)
+	for i in bases.size():
+		var extra := []
+		for part in batches.size():
+			extra.append({"multimesh": batches[part], "index": i, "offset": parts[part]})
+		# O lote de desgaste já está no espaço da base da placa: deslocamento nulo.
+		if wear_batch != null and i < worn_index.size() and worn_index[i] >= 0:
+			extra.append({"multimesh": wear_batch, "index": worn_index[i], "offset": Transform3D.IDENTITY})
+		fragile.register_instance("road_sign", pivots, i, owner, extra, [colliders[i]])
 
 func _prepare_meshes() -> void:
 	if not _meshes.is_empty(): return

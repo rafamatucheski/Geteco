@@ -51,6 +51,11 @@ const KINDS := {
 	# pré-aquecimento cobre (placa da 3ª onda num quadro de 864 ms, DestroyedFade3D). Volta de pé
 	# quando a beira de estrada da serra é remontada.
 	"mountain_sign": {"family": "post", "radius": 0.12, "drag": 0.06, "damage": 2.0, "sound": "metal", "anchored": true, "keep_fallen": true},
+	# Placa de trânsito de beira de rua fora do CityLook (A-32b do Harbor em HarborTrafficSigns, aviso
+	# de queda de pedras da passagem norte do deserto). Mesmos números e razões da mountain_sign: a face
+	# é alpha scissor, então nada de destroço rígido nem sumiço por transparência; volta de pé quando o
+	# trecho é remontado.
+	"road_sign": {"family": "post", "radius": 0.12, "drag": 0.06, "damage": 2.0, "sound": "metal", "anchored": true, "keep_fallen": true},
 	# Chão povoado do deserto (DesertGroundCover): moita grande e pedra solta.
 	"desert_shrub": {"family": "light", "radius": 0.55, "drag": 0.04, "damage": 0.0, "sound": "wood"},
 	"desert_stone": {"family": "light", "radius": 0.45, "drag": 0.18, "damage": 2.0, "sound": "stone"},

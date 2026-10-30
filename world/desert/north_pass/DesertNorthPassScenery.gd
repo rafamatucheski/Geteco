@@ -28,23 +28,42 @@ static func build_chunk(parent: Node3D, rect: Rect2, completed:=false) -> void:
 				var paint:=G.box(gate,"BarrierWarning",Vector3(x-1.65+float(stripe)*.95,.73,-1155.61),Vector3(.36,.62,.025),Color("d48540"))
 				paint.rotation.z=-.3
 		# Warning triangle is a functional road sign without explanatory text.
+		# Playtest 30/10 ("as placas não são derrubadas"): cada placa tem raiz própria na base, com
+		# poste, chapa e símbolo dentro, e entra no FragileProps3D como road_sign; o tombo gira a raiz
+		# na base e zera o corpo do poste. Antes o poste sólido parava o carro como parede.
 		for x in [334.5,350.5]:
-			G.box(gate,"RoadSignPole",Vector3(x,1.05,-1116),Vector3(.095,2.1,.095),Color("757d72"),true)
-			var warning_sign:=G.box(gate,"FallingRockWarning",Vector3(x,1.93,-1116),Vector3(.95,.95,.07),Color("d9a843"))
+			var sign_root:=Node3D.new()
+			sign_root.name="RoadSignFallingRock"
+			sign_root.position=Vector3(x,0,-1116)
+			gate.add_child(sign_root)
+			G.box(sign_root,"RoadSignPole",Vector3(0,1.05,0),Vector3(.095,2.1,.095),Color("757d72"),true)
+			var warning_sign:=G.box(sign_root,"FallingRockWarning",Vector3(0,1.93,0),Vector3(.95,.95,.07),Color("d9a843"))
 			warning_sign.rotation.z=PI*.25
 			for p in [Vector3(-.17,2.15,.047),Vector3(.05,1.92,.047),Vector3(.2,1.71,.047)]:
-				G.box(gate,"FallingRockSymbol",Vector3(x,p.y,-1116+p.z)+Vector3(p.x,0,0),Vector3(.17,.18,.025),Color("393e37"))
+				G.box(sign_root,"FallingRockSymbol",p,Vector3(.17,.18,.025),Color("393e37"))
+			_register_sign(sign_root,gate)
 		set_completed(gate,completed)
 	# A safe terminal within existing map bounds. This is no invented map3.
 	if rect.has_point(Vector2(L.END.x,L.END.z)):
 		G.box(parent,"NorthMapEndGuardrail",L.END+Vector3(0,.73,0),Vector3(26,.44,.25),Color("929b92"),true)
 		for x in [-12,-8,-4,0,4,8,12]: G.box(parent,"GuardrailPost",L.END+Vector3(x,.52,0),Vector3(.18,1.04,.18),Color("737b71"),true)
 
+## O registro precisa da posição global; trecho montado fora da árvore registra ao entrar.
+static func _register_sign(sign_root: Node3D, gate: Node3D) -> void:
+	if not sign_root.is_inside_tree():
+		sign_root.tree_entered.connect(_register_sign.bind(sign_root,gate),CONNECT_ONE_SHOT)
+		return
+	preload("res://gameplay/street_physics/FragileProps3D.gd").register_node("road_sign",sign_root,gate)
+
 static func set_completed(gate: Node3D, completed: bool) -> void:
 	if gate.has_meta("pass_completed") and gate.get_meta("pass_completed")==completed: return
 	gate.set_meta("pass_completed",completed)
 	gate.visible=not completed
-	for body in gate.find_children("*","StaticBody3D",true,false): body.collision_layer=0 if completed else 1
+	for body in gate.find_children("*","StaticBody3D",true,false):
+		# Placa que o carro derrubou continua sem colisão (FragileProps3D._disable_collision).
+		var sign_root:=body.get_parent().get_parent() if body.get_parent()!=null else null
+		if sign_root!=null and str((sign_root.get_meta("street_fragile_item",{}) as Dictionary).get("state","standing"))=="down": continue
+		body.collision_layer=0 if completed else 1
 
 static func _cliff(parent: Node3D, label: String, area: Rect2, side: int) -> void:
 	# Global cut lines and functions keep height/silhouette exact at chunk seams.
