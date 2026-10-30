@@ -1,6 +1,7 @@
 extends "res://world/urban_detail/UrbanBuildingBase.gd"
 ## Solid exterior assets. Details are batched per material; no frame callbacks,
 ## lights, viewports or invented interior entrances.
+const PAINTED_SKINS := preload("res://world/urban_detail/PaintedTallBuildings.gd")
 var _batches: Dictionary = {}
 # Portas e persianas reservam o trecho da fachada antes das janelas serem
 # distribuídas; sem isso a grade do térreo nascia por cima da entrada.
@@ -23,12 +24,17 @@ func build() -> void:
 	_flush_details()
 
 func _block(label: String, center: Vector3, size: Vector3, color: Color, style: String = "regular", floor_count: int = 0) -> void:
-	add_solid_box(visuals_root,label,center,size,wall_material(color))
+	var body_visual := add_solid_box(visuals_root,label,center,size,wall_material(color))
+	var skin := PAINTED_SKINS.editor_skin_for(building_id)
+	if not skin.is_empty():
+		body_visual.hide()
+		PAINTED_SKINS.add_skin_box(visuals_root,label,center,size,skin)
 	var top := center.y+size.y*.5
 	var bottom := center.y-size.y*.5
 	var trim := UrbanMaterials.trim_stone()
 	_detail(Vector3(center.x,top-.10,center.z),Vector3(size.x+.12,.20,size.z+.12),trim)
 	_detail(Vector3(center.x,top+.015,center.z),Vector3(maxf(.1,size.x-.24),.03,maxf(.1,size.z-.24)),UrbanMaterials.roof_tar())
+	if not skin.is_empty(): return
 	var floors := floor_count if floor_count > 0 else maxi(1,floori(size.y/2.8))
 	var pitch := size.y/float(floors)
 	for floor_index in floors:

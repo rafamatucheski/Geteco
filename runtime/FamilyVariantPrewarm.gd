@@ -13,6 +13,7 @@ const AUTHORED_OWNERS := [
 	"res://gameplay/urban_v1/VerticeCompany.gd",
 	"res://assets/regions/source/world/harbor/residences/ResidenceExterior3D.gd",
 	"res://world/places/ResidenceParking.gd",
+	"res://world/urban_detail/PaintedTallBuildings.gd",
 ]
 static var _retained: Array[Material] = []
 static var _done := false

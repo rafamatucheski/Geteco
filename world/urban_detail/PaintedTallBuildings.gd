@@ -88,3 +88,68 @@ static func build_into(building: Node3D) -> bool:
 	building.collision_root.add_child(solid)
 	PaintedFacadeKit.build(visual, style, Vector3(size.x, height_for(building.building_id, 0.0), size.y), solid, walk_in_x)
 	return true
+
+# Cadastro só de revestimento: não entra em style_for/height_for/footprint_width.
+# Os quatro interiores, suas portas e o cache de NativeRegion conservam os envelopes.
+const EDITOR_SKINS := {
+	"new_1790426066_503_97028106":"lofts-fundicao",
+	"new_1790426877_636_2342363314":"predio-misto",
+	"new_1790432139_406_2568146191":"predio-misto",
+	"new_1790432236_682_2325181222":"torre-civica",
+}
+const SKIN_FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
+const SKIN_ART := preload("res://runtime/desert/roadside/RoadsideArt.gd")
+
+static func editor_skin_for(building_id: String) -> String:
+	if not enabled() or OS.get_environment("GETECO_PAINTED_EDITOR_SKINS") == "0": return ""
+	return EDITOR_SKINS.get(building_id,"")
+
+static func skin_base_material(style: String) -> Material:
+	if style == "lofts-fundicao": return SKIN_FINISH.material("block",Color("805442"))
+	if style == "predio-misto": return SKIN_FINISH.material("plaster",Color("aaa28f"))
+	return SKIN_FINISH.material("cast",Color("a9aaa3"))
+
+static func prewarm_materials() -> Array:
+	return [skin_base_material("lofts-fundicao"),skin_base_material("predio-misto"),skin_base_material("torre-civica")]
+
+## Reveste um volume existente, sem corpo, porta, sinalização ou alteração de tamanho.
+## Térreo mineral mantém a entrada autorada; só andares acima dela usam janelas pintadas.
+static func add_skin_box(parent: Node3D, label: String, center: Vector3, size: Vector3, style: String) -> void:
+	var batch := SKIN_ART.batch()
+	var bottom := center.y-size.y*.5
+	var base_h := clampf(2.8-bottom,0.0,size.y)
+	if size.y-base_h < 1.8: base_h=size.y
+	var upper_h := size.y-base_h
+	var floors := maxi(1,roundi(upper_h/3.0))
+	for side in [-1.0,1.0]:
+		for along_x in [true,false]:
+			var width := size.x if along_x else size.z
+			var normal := Vector3(0,0,side) if along_x else Vector3(side,0,0)
+			var right := Vector3(side*width*.5,0,0) if along_x else Vector3(0,0,-side*width*.5)
+			var face := center+normal*((size.z if along_x else size.x)*.5)
+			if base_h > 0.0:
+				batch.quad(skin_base_material(style),Vector3(face.x,bottom+base_h*.5,face.z),right,Vector3(0,base_h*.5,0),Rect2(0,0,1,1))
+			if upper_h > 0.0:
+				var part := "front_floor" if along_x else "side_floor"
+				var module := PaintedFacadeKit.natural_size(style).x if along_x else float(PaintedFacadeKit.style_data(style).side[0])
+				batch.quad(PaintedFacadeKit.material(style,part),Vector3(face.x,bottom+base_h+upper_h*.5,face.z),right,Vector3(0,upper_h*.5,0),Rect2(0,0,width/module,float(floors)))
+	var root := Node3D.new()
+	root.name=label+"PaintedSkin"
+	parent.add_child(root)
+	var baked := batch.bake()
+	# O acesso contínuo recorta estas faces: retém os dados já compostos na CPU
+	# para nunca ler os vértices de volta da GPU ao abrir a porta.
+	var index := 0
+	for key in batch.order:
+		var group: Dictionary = batch.groups[key]
+		if group.v.is_empty(): continue
+		var arrays: Array = []
+		arrays.resize(Mesh.ARRAY_MAX)
+		arrays[Mesh.ARRAY_VERTEX]=group.v
+		arrays[Mesh.ARRAY_NORMAL]=group.n
+		arrays[Mesh.ARRAY_TEX_UV]=group.t
+		arrays[Mesh.ARRAY_INDEX]=group.i
+		var mesh: ArrayMesh = baked.meshes[index][0]
+		mesh.set_meta("cpu_surface_arrays",[arrays])
+		index+=1
+	SKIN_ART.instantiate(root,baked)
