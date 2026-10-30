@@ -25,7 +25,8 @@ const MUSCLE_DESIGNS := {
 		"fplate":[.40,.065], "rplate":[.42,0.0],
 		"gh":{"zA":-.80, "zH":-.12, "zR":.32, "zC":1.95, "roof":[[-.46,1.10],[-.12,1.29],[.15,1.31],[.32,1.30],[.80,1.19],[1.30,1.06],[1.70,.98]],
 			"tumble":.40, "rc":.04, "edge":3.5, "bow":.04, "side":[[-.70,.28]], "glass_end":1.20, "black_pillars":false}},
-	"jararaca_v10": {"front":-2.245, "rear":2.245, "zf":-1.17, "zr":1.27, "wheel_r":.345, "track":.82, "wheel_w":.29, "rim":.70,
+	# Bitola .82 → .80 (30/10): pneu rente ao para-lama da frente (folga zero), saindo ao esterçar.
+	"jararaca_v10": {"front":-2.245, "rear":2.245, "zf":-1.17, "zr":1.27, "wheel_r":.345, "track":.80, "wheel_w":.29, "rim":.70,
 		"rim_style":"five", "rim_color":"c9ced2", "caliper":"c23030", "tire":"sport", "arch":.39,
 		"sill":[[-2.245,.26],[-1.95,.20],[1.95,.20],[2.245,.27]],
 		"hw":[[-2.245,.60],[-2.17,.74],[-2.0,.84],[-1.5,.92],[-1.17,.94],[-.6,.915],[0.0,.90],[.7,.925],[1.27,.95],[1.9,.925],[2.245,.84]],
@@ -68,7 +69,9 @@ const MUSCLE_DESIGNS := {
 		"fplate":[.41,.07], "rplate":[.66,0.0],
 		"gh":{"zA":-.92, "zH":-.22, "zR":.42, "zC":1.72, "roof":[[-.56,1.13],[-.22,1.33],[.10,1.35],[.42,1.335],[.95,1.17],[1.40,1.03]],
 			"tumble":.38, "rc":.03, "edge":4.5, "bow":.03, "side":[[-.80,.38],[.46,.95]], "black_pillars":false}},
-	"brasa_hc": {"front":-2.515, "rear":2.515, "zf":-1.44, "zr":1.51, "wheel_r":.36, "track":.86, "wheel_w":.30, "rim":.72,
+	# Bitola .86 → .82 (30/10): o pneu ia até 1,01 m e a carroceria tem .975 + .03 de para-lama no eixo
+	# da frente; esterçando, a roda saía para fora como espaçador ("a roda dianteira sai do carro").
+	"brasa_hc": {"front":-2.515, "rear":2.515, "zf":-1.44, "zr":1.51, "wheel_r":.36, "track":.82, "wheel_w":.30, "rim":.72,
 		"rim_style":"y_spoke", "rim_color":"1d2024", "caliper":"e2672c", "tire":"sport", "arch":.40,
 		"sill":[[-2.515,.30],[-2.25,.24],[2.25,.24],[2.515,.31]],
 		"hw":[[-2.515,.80],[-2.45,.90],[-2.25,.955],[-1.44,.975],[0.0,.96],[1.51,.985],[2.25,.97],[2.515,.92]],

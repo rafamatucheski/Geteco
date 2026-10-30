@@ -34,6 +34,12 @@ var _body: StaticBody3D
 const CORRIDOR_CELL := 8.0
 var _corridor_cells: Dictionary = {}
 
+const STATION_COLUMN_X := 6.45
+## Folga das colunas de estação até a rua. A rodovia da serra é desenhada ~6 m mais larga que a largura
+## cadastrada (map2_highway_outbound); com a folga comum de 2,8 m a coluna da Northgate caía na última
+## faixa. Sem folga, a plataforma fica só no viaduto, em balanço.
+const STATION_ROAD_MARGIN := 9.0
+
 func configure(owner_controller) -> void:
 	controller = owner_controller
 	name = "RailwayWorld"
@@ -234,7 +240,7 @@ func _record_support(point: Vector3) -> void:
 	points.append(point)
 	_batch_parent.set_meta("support_points", points)
 
-func _pillar_clear(point: Vector3) -> bool:
+func _pillar_clear(point: Vector3, road_margin := 2.8) -> bool:
 	_prepare_clearance_roads()
 	var planar := Vector2(point.x,point.z)
 	# The elevated rail may pass over the forge yard, but a bridge pier must never
@@ -245,7 +251,7 @@ func _pillar_clear(point: Vector3) -> bool:
 	if preload("res://world/urban_detail/CanalTunnel3D.gd").reserves(planar,2.0): return false
 	for road in _source_roads:
 		var points: PackedVector3Array = road.points
-		var radius := float(road.width)*.5+2.8
+		var radius := float(road.width)*.5+road_margin
 		for index in range(1,points.size()):
 			var a := Vector2(points[index-1].x,points[index-1].z)
 			var b := Vector2(points[index].x,points[index].z)
@@ -408,12 +414,14 @@ func _build_station(station: Dictionary) -> Node3D:
 	label.no_depth_test = false
 	group.add_child(label)
 	# Full-column support is only placed outside the street reservation.
+	# Colunas na borda de fora da plataforma (6,45 m; ela vai até 6,8 m). Em 5,75 m a da Northgate descia
+	# rente à última faixa da rodovia da serra e o carro dessa faixa passava por dentro dela (30/10).
 	for z in [-15.0,15.0]:
-		var foot := Vector3(origin.x+side*5.75,0,origin.z+z)
-		if _pillar_clear(foot):
+		var foot := Vector3(origin.x+side*STATION_COLUMN_X,0,origin.z+z)
+		if _pillar_clear(foot, STATION_ROAD_MARGIN):
 			_record_support(foot)
 			# Columns meet the underside, without a coplanar cap on the walking floor.
-			_station_box(origin,side,Vector3(5.75,floor_y*.5-.52,z),Vector3(.6,floor_y+.16,.6),"concrete",true)
+			_station_box(origin,side,Vector3(STATION_COLUMN_X,floor_y*.5-.52,z),Vector3(.6,floor_y+.16,.6),"concrete",true)
 	_build_access(origin,side,floor_y,accent,station.region == "harbor")
 	if station.id == "harbor_north":
 		# A narrow supported landing joins the east sidewalk to the offshore stairs.
