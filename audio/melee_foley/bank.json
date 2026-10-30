@@ -1,0 +1,362 @@
+[
+  {
+    "file": "knife_swing_0.wav",
+    "seconds": 0.16,
+    "peak_dbfs": -6.0,
+    "sha256": "0b0e2afa02a43bccb2637828b478599fb8dc0088662ccd44e069bab07e452930"
+  },
+  {
+    "file": "knife_hit_0.wav",
+    "seconds": 0.22,
+    "peak_dbfs": -5.0,
+    "sha256": "1d9b875c6947a9f61eb9a11617c9db061e326253d65ad93d6d91e53c1cd9c070"
+  },
+  {
+    "file": "knife_heavy_0.wav",
+    "seconds": 0.22,
+    "peak_dbfs": -5.0,
+    "sha256": "01c5e03413fd0f7a1a96d63cce70ac7ed81f176d711424cf946b1927763eb152"
+  },
+  {
+    "file": "bat_swing_0.wav",
+    "seconds": 0.26,
+    "peak_dbfs": -6.0,
+    "sha256": "20f72e7f227bc71b3100813fa5ce343cd5c075d805722b0037f9a7f5ff6085a9"
+  },
+  {
+    "file": "bat_hit_0.wav",
+    "seconds": 0.34,
+    "peak_dbfs": -5.0,
+    "sha256": "535608ca2dd4d3f5b60fb54dde9445c7053fd6305c363676a9e50ed5b908b554"
+  },
+  {
+    "file": "bat_heavy_0.wav",
+    "seconds": 0.34,
+    "peak_dbfs": -5.0,
+    "sha256": "5ca9cebfbde3791d918221e8cede982bc62fa015514d99d9ff93cc2dc219dd05"
+  },
+  {
+    "file": "katana_swing_0.wav",
+    "seconds": 0.22,
+    "peak_dbfs": -6.0,
+    "sha256": "c0a12aa56058fafb40722ee5ad617c3458d4581f5b04630b423074e5fddd1f44"
+  },
+  {
+    "file": "katana_hit_0.wav",
+    "seconds": 0.29,
+    "peak_dbfs": -5.0,
+    "sha256": "ad77b5dc6aa6245c87fcaa1cbd9ea140df9e4437240d9a47de736ae8dcbf9990"
+  },
+  {
+    "file": "katana_heavy_0.wav",
+    "seconds": 0.29,
+    "peak_dbfs": -5.0,
+    "sha256": "59302a98f5b16f217f901cd562c06200a31c787bee654170a523cec809711f66"
+  },
+  {
+    "file": "axe_swing_0.wav",
+    "seconds": 0.29,
+    "peak_dbfs": -6.0,
+    "sha256": "ddfae75553c6a29050cce88feb59c883f759cfac228a9a91d02670009c9eab47"
+  },
+  {
+    "file": "axe_hit_0.wav",
+    "seconds": 0.39,
+    "peak_dbfs": -5.0,
+    "sha256": "b0cfae1246e19daa97d5c90db126a04f520eb6a6a4fd2029f0b91c1b2542621e"
+  },
+  {
+    "file": "axe_heavy_0.wav",
+    "seconds": 0.39,
+    "peak_dbfs": -5.0,
+    "sha256": "8eef565994cc001a2abf1e8d878a5633ccf927211519ceaaf335fa8d988fc472"
+  },
+  {
+    "file": "katana_sever_0.wav",
+    "seconds": 0.46,
+    "peak_dbfs": -5.0,
+    "sha256": "56c7fb56b12fc56cd0d6e7bb37ab02eaea0b2d08d5eb0fba26b4e9347c72e0f0"
+  },
+  {
+    "file": "axe_sever_0.wav",
+    "seconds": 0.46,
+    "peak_dbfs": -5.0,
+    "sha256": "cf9678eb930f09e8534087b3971c09f7212d3a47e20bb6e5cc8a76ec72253be7"
+  },
+  {
+    "file": "landing_0.wav",
+    "seconds": 0.3,
+    "peak_dbfs": -7.0,
+    "sha256": "685336d88a056609e2b572550023be64fcd894fafc12afb2887007587144901a"
+  },
+  {
+    "file": "knife_swing_1.wav",
+    "seconds": 0.16,
+    "peak_dbfs": -6.0,
+    "sha256": "f6186a207b8c35b59e299138ec31a96fd1bc42c0c8af520f23cd64edda209e5f"
+  },
+  {
+    "file": "knife_hit_1.wav",
+    "seconds": 0.22,
+    "peak_dbfs": -5.0,
+    "sha256": "54ab51746a9f879bad7f69a88d8f5e110fe206598d4282de5b629f5de76671b5"
+  },
+  {
+    "file": "knife_heavy_1.wav",
+    "seconds": 0.22,
+    "peak_dbfs": -5.0,
+    "sha256": "c5a1683080862ce7ed489e9575437576d34988b141dadb7d46b1cbe664e3cb63"
+  },
+  {
+    "file": "bat_swing_1.wav",
+    "seconds": 0.26,
+    "peak_dbfs": -6.0,
+    "sha256": "f68b8edbb30fd8e04d72a340dfebcfef595e5739134cfe4165df56d0a5430745"
+  },
+  {
+    "file": "bat_hit_1.wav",
+    "seconds": 0.34,
+    "peak_dbfs": -5.0,
+    "sha256": "8d9a8b24175b57a00a00b9bd30a3bfd4561207615f63763d55e6cd3394bd6540"
+  },
+  {
+    "file": "bat_heavy_1.wav",
+    "seconds": 0.34,
+    "peak_dbfs": -5.0,
+    "sha256": "885e8600844adf94b90206e19cf35811fae2d4bf9c040231f85554659bc443b0"
+  },
+  {
+    "file": "katana_swing_1.wav",
+    "seconds": 0.22,
+    "peak_dbfs": -6.0,
+    "sha256": "fff94d52fa83cedab282d2a5b6f1825a54f3ee89138d976d5baafd017d9b9c94"
+  },
+  {
+    "file": "katana_hit_1.wav",
+    "seconds": 0.29,
+    "peak_dbfs": -5.0,
+    "sha256": "90fbb97ca744fde12f17c114132660eaca40f6143c0d5e46cbb17d8c57147b7e"
+  },
+  {
+    "file": "katana_heavy_1.wav",
+    "seconds": 0.29,
+    "peak_dbfs": -5.0,
+    "sha256": "6f85d3a875c291cf6e4b74263d1994c53ea4c985bb0a0f208b3a27b60627d337"
+  },
+  {
+    "file": "axe_swing_1.wav",
+    "seconds": 0.29,
+    "peak_dbfs": -6.0,
+    "sha256": "d3fd68c2813e28a89e70dc55acdf755129b79cb3d4e3e03b2b5d3c44926a36af"
+  },
+  {
+    "file": "axe_hit_1.wav",
+    "seconds": 0.39,
+    "peak_dbfs": -5.0,
+    "sha256": "345e65368f7f2a397aced00dd261a1145296863e45b0efb4a384c8065bbb3d2c"
+  },
+  {
+    "file": "axe_heavy_1.wav",
+    "seconds": 0.39,
+    "peak_dbfs": -5.0,
+    "sha256": "e73892d97d3336df94cd8c28e75146acc60f31cd846b4ed39c0d9439e342b11b"
+  },
+  {
+    "file": "katana_sever_1.wav",
+    "seconds": 0.46,
+    "peak_dbfs": -5.0,
+    "sha256": "001af07df629e1c3e3f5bcaaa9037a3ecc2d7f1785e666524b291ab0cd6fe4d4"
+  },
+  {
+    "file": "axe_sever_1.wav",
+    "seconds": 0.46,
+    "peak_dbfs": -5.0,
+    "sha256": "3c0dc0c1e5519c5abf12dcfa6f499712049532621c8d95e2614df1904cc4e0f4"
+  },
+  {
+    "file": "landing_1.wav",
+    "seconds": 0.3,
+    "peak_dbfs": -7.0,
+    "sha256": "5cfb0a86daa57d9b7322b2650648321b716fa830a75e76f4773900d0096df6b2"
+  },
+  {
+    "file": "knife_swing_2.wav",
+    "seconds": 0.16,
+    "peak_dbfs": -6.0,
+    "sha256": "c888d3062b80ecfde2665ab5352de8f9ccb349417ab2a728b6931fcf5d7f5346"
+  },
+  {
+    "file": "knife_hit_2.wav",
+    "seconds": 0.22,
+    "peak_dbfs": -5.0,
+    "sha256": "2e4e5b8e465f4d60cd552d38c6999ad420dbc2cf14e6883edfc0cd4e364e2c82"
+  },
+  {
+    "file": "knife_heavy_2.wav",
+    "seconds": 0.22,
+    "peak_dbfs": -5.0,
+    "sha256": "d54a3f450ba6f506c2873a412e6ebccb127731f5b137540fe9ab6c88fc25dfb0"
+  },
+  {
+    "file": "bat_swing_2.wav",
+    "seconds": 0.26,
+    "peak_dbfs": -6.0,
+    "sha256": "30af44c80edb795af63c1e8cc528e80dedaf910de4028d6009c191c548fb6090"
+  },
+  {
+    "file": "bat_hit_2.wav",
+    "seconds": 0.34,
+    "peak_dbfs": -5.0,
+    "sha256": "eda40ba3d6c0f49961748dc921cfc80193f77ae3962dd47a232275b1f88e7620"
+  },
+  {
+    "file": "bat_heavy_2.wav",
+    "seconds": 0.34,
+    "peak_dbfs": -5.0,
+    "sha256": "3785c2004a368034d3c2971059fdc530e289943f29840af72b6a61c8b8bee02b"
+  },
+  {
+    "file": "katana_swing_2.wav",
+    "seconds": 0.22,
+    "peak_dbfs": -6.0,
+    "sha256": "efeb1561608e7a205eac019cf728ad49715c8fccd86e4e1c55074c1ac046d73c"
+  },
+  {
+    "file": "katana_hit_2.wav",
+    "seconds": 0.29,
+    "peak_dbfs": -5.0,
+    "sha256": "030ff9eeaca3e582c3b2ce718f1b9a0e3405fe0919b03f5f0622991a25ffbfdc"
+  },
+  {
+    "file": "katana_heavy_2.wav",
+    "seconds": 0.29,
+    "peak_dbfs": -5.0,
+    "sha256": "db6290e36b4de162a570ac0a237cb16f50f2f06fc27329690ea62f8ef73e6baf"
+  },
+  {
+    "file": "axe_swing_2.wav",
+    "seconds": 0.29,
+    "peak_dbfs": -6.0,
+    "sha256": "a7fd1a71589960f89c2f9a18d5d2745866e742d5856de9d57cd89ec55aae0583"
+  },
+  {
+    "file": "axe_hit_2.wav",
+    "seconds": 0.39,
+    "peak_dbfs": -5.0,
+    "sha256": "e5b213b87ae6f70d265d4d13a2cfe118d3808706afbdeb8ff0bd86cef40bf31d"
+  },
+  {
+    "file": "axe_heavy_2.wav",
+    "seconds": 0.39,
+    "peak_dbfs": -5.0,
+    "sha256": "b928e2ba196f6919d66be8fa7284d37fd3ed809eb74b475dcdb25a241a20af1c"
+  },
+  {
+    "file": "katana_sever_2.wav",
+    "seconds": 0.46,
+    "peak_dbfs": -5.0,
+    "sha256": "5b777f42697835ecb9d40f63eb39059931f43ed8759ff73a099286c2f58d02ae"
+  },
+  {
+    "file": "axe_sever_2.wav",
+    "seconds": 0.46,
+    "peak_dbfs": -5.0,
+    "sha256": "60166ffb4c105d5a4d9dbc4990eedbb500e438caff42331e2356372ad129d4e8"
+  },
+  {
+    "file": "landing_2.wav",
+    "seconds": 0.3,
+    "peak_dbfs": -7.0,
+    "sha256": "c9ba062b44cb09f2c5031c7d10c1d6ea3644617f7566bfd1b70561f3301787ce"
+  },
+  {
+    "file": "knife_swing_3.wav",
+    "seconds": 0.16,
+    "peak_dbfs": -6.0,
+    "sha256": "84dc75070ef54e3d85309fabf348d1749ea0a2be5def419c364ebe6582b746cc"
+  },
+  {
+    "file": "knife_hit_3.wav",
+    "seconds": 0.22,
+    "peak_dbfs": -5.0,
+    "sha256": "721bc2a58739f40253ac31e536f1d223ec9cf330e5c6fdcf805b1fa87717c9f4"
+  },
+  {
+    "file": "knife_heavy_3.wav",
+    "seconds": 0.22,
+    "peak_dbfs": -5.0,
+    "sha256": "3b30954901705ae29523865fafb8f6f1b8b5c025102efe308034fc1befce1af6"
+  },
+  {
+    "file": "bat_swing_3.wav",
+    "seconds": 0.26,
+    "peak_dbfs": -6.0,
+    "sha256": "f9e6c35466df7a10f087d058e236f4a8bf1e16bbf1e30131b8b9e1a4376ab9e6"
+  },
+  {
+    "file": "bat_hit_3.wav",
+    "seconds": 0.34,
+    "peak_dbfs": -5.0,
+    "sha256": "0c13f343f3c2b1ad3ec8c3394f33d0003f6471b7747ad44040fb65faceb37fc0"
+  },
+  {
+    "file": "bat_heavy_3.wav",
+    "seconds": 0.34,
+    "peak_dbfs": -5.0,
+    "sha256": "7de8765cae464a22a2f2ab6b35c01e539a7c7f558e76f4a4485224fbd3e83ddb"
+  },
+  {
+    "file": "katana_swing_3.wav",
+    "seconds": 0.22,
+    "peak_dbfs": -6.0,
+    "sha256": "b05f356cd554459fc7e84f48a4e713a017977d675ad5b1b5048487eaacf6126b"
+  },
+  {
+    "file": "katana_hit_3.wav",
+    "seconds": 0.29,
+    "peak_dbfs": -5.0,
+    "sha256": "36d86d124fb17638fbbd5b2d50bafdc0c60e794608e74a56f6290ba8d93ee5f4"
+  },
+  {
+    "file": "katana_heavy_3.wav",
+    "seconds": 0.29,
+    "peak_dbfs": -5.0,
+    "sha256": "93262d0a3a61088869503e9975da27e0d1a8f85742c8f6429fed0c1bb5d94700"
+  },
+  {
+    "file": "axe_swing_3.wav",
+    "seconds": 0.29,
+    "peak_dbfs": -6.0,
+    "sha256": "517535c99ed1fca0695d8a18d148e5995892ac44edf3532c3bc17563b4df8723"
+  },
+  {
+    "file": "axe_hit_3.wav",
+    "seconds": 0.39,
+    "peak_dbfs": -5.0,
+    "sha256": "a658389e5e7dea059333ff83bd20b01e09b49492dc0462dda8ec75009f861078"
+  },
+  {
+    "file": "axe_heavy_3.wav",
+    "seconds": 0.39,
+    "peak_dbfs": -5.0,
+    "sha256": "04eadf9bd0607314841be8e7a47dc099088a1c326eda2e2b2210d6327801cd9b"
+  },
+  {
+    "file": "katana_sever_3.wav",
+    "seconds": 0.46,
+    "peak_dbfs": -5.0,
+    "sha256": "7f248a92becb9218b6fdd9b2d7b8b2241e05dcf5bc92eeb38a55d04bda874334"
+  },
+  {
+    "file": "axe_sever_3.wav",
+    "seconds": 0.46,
+    "peak_dbfs": -5.0,
+    "sha256": "5907af04db0aeef450a00d8839b2840a8fd95096ab99b3b2c1f6c32ed0e9d486"
+  },
+  {
+    "file": "landing_3.wav",
+    "seconds": 0.3,
+    "peak_dbfs": -7.0,
+    "sha256": "f58f8822c024a3a280dc983c831c89d71aa4258fa044b4da8e66f76fe48d3a7d"
+  }
+]
