@@ -65,8 +65,8 @@ static func opening_half_width(width: float) -> float:
 	return (float(rect[2]) - float(rect[0])) * width * 0.5
 
 
-## Mesma colisão que _build_police_precinct fazia: corpo raso, alas finas dos dois lados
-## da porta, laterais do vestíbulo e verga acima dele.
+## Corpo raso, alas cheias dos dois lados da porta (fazem as laterais do vestíbulo) e verga
+## acima dele. _build_police_precinct usava alas finas e deixava o bolsão lateral aberto.
 static func _add_hull(building: UrbanBuildingBase, size: Vector2, wall_h: float, half_opening: float) -> void:
 	var half_w := size.x * 0.5
 	var front_z := size.y * 0.5
@@ -78,8 +78,9 @@ static func _add_hull(building: UrbanBuildingBase, size: Vector2, wall_h: float,
 	_box(body, Vector3(0, wall_h * 0.5, -VESTIBULE_DEPTH * 0.5), Vector3(size.x, wall_h, size.y - VESTIBULE_DEPTH))
 	var wing := half_w - half_opening
 	for side in [-1.0, 1.0]:
-		_box(body, Vector3(side * (half_opening + wing * 0.5), wall_h * 0.5, front_z - 0.12), Vector3(wing, wall_h, 0.24))
-		_box(body, Vector3(side * (half_opening + 0.1), 1.5, front_z - VESTIBULE_DEPTH * 0.5 - 0.05), Vector3(0.2, 3.0, VESTIBULE_DEPTH - 0.1))
+		# Ala cheia na profundidade do vestíbulo (mesmo buraco do banco, playtest 30/10): fina,
+		# ela deixava um bolsão oco aberto nas laterais entre a frente e o corpo raso.
+		_box(body, Vector3(side * (half_opening + wing * 0.5), wall_h * 0.5, front_z - VESTIBULE_DEPTH * 0.5), Vector3(wing, wall_h, VESTIBULE_DEPTH))
 	# Verga: fecha o vão acima da porta (a folha tem ~2,7 m; a parede pintada segue até o telhado).
 	_box(body, Vector3(0, (wall_h + 3.0) * 0.5, front_z - VESTIBULE_DEPTH * 0.5), Vector3(half_opening * 2.0 + 0.4, wall_h - 3.0, VESTIBULE_DEPTH))
 

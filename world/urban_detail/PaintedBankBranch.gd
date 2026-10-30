@@ -83,7 +83,7 @@ static func _opening_height(wall_h: float) -> float:
 	return (float(rect[3]) - float(rect[1])) * wall_h
 
 
-## Corpo raso, alas finas dos dois lados da porta, laterais do vestíbulo e verga acima dele.
+## Corpo raso, alas cheias dos dois lados da porta (fazem as laterais do vestíbulo) e verga acima dele.
 static func _add_hull(building: UrbanBuildingBase, size: Vector2, wall_h: float, half_opening: float, opening_h: float) -> void:
 	var half_w := size.x * 0.5
 	var front_z := size.y * 0.5
@@ -95,8 +95,11 @@ static func _add_hull(building: UrbanBuildingBase, size: Vector2, wall_h: float,
 	_box(body, Vector3(0, wall_h * 0.5, -VESTIBULE_DEPTH * 0.5), Vector3(size.x, wall_h, size.y - VESTIBULE_DEPTH))
 	var wing := half_w - half_opening
 	for side in [-1.0, 1.0]:
-		_box(body, Vector3(side * (half_opening + wing * 0.5), wall_h * 0.5, front_z - 0.12), Vector3(wing, wall_h, 0.24))
-		_box(body, Vector3(side * (half_opening + 0.1), opening_h * 0.5, front_z - VESTIBULE_DEPTH * 0.5 - 0.05), Vector3(0.2, opening_h, VESTIBULE_DEPTH - 0.1))
+		# Ala cheia na profundidade do vestíbulo: com 0,24 m de espessura ela deixava entre si
+		# e o corpo (que só começa 1,5 m atrás da frente) um bolsão oco de ~1,26 m aberto nas
+		# laterais do prédio, e o jogador entrava pelo lado no volume, fora do interior
+		# (playtest 30/10). A face interna dela é a lateral do vestíbulo.
+		_box(body, Vector3(side * (half_opening + wing * 0.5), wall_h * 0.5, front_z - VESTIBULE_DEPTH * 0.5), Vector3(wing, wall_h, VESTIBULE_DEPTH))
 	# Verga: fecha o vão acima da folha (a parede pintada segue até o telhado).
 	_box(body, Vector3(0, (wall_h + opening_h) * 0.5, front_z - VESTIBULE_DEPTH * 0.5), Vector3(half_opening * 2.0 + 0.4, wall_h - opening_h, VESTIBULE_DEPTH))
 
