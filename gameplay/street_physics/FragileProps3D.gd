@@ -394,7 +394,7 @@ static func _topple(item: Dictionary, flat: Vector3, director: Node) -> void:
 	var tween: Tween = director.create_tween()
 	tween.set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
 	# Referência fraca: o tween guarda este passo; o passo guardar o tween seria um ciclo.
-	var tween_ref := weakref(tween)
+	var tween_ref: WeakRef = weakref(tween)
 	var step := func(_v: float) -> void:
 		if bool(fall.get("done", false)): return
 		if not _step_fall(fall, director, director.get_physics_process_delta_time()):

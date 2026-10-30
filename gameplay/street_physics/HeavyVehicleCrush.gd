@@ -12,7 +12,7 @@ const MAX_MASS := 30.0
 const HEAVY_MASS := 3.0
 # Subida explícita do casco (ver _step_onto_hull).
 const STEP_SLOPE := 0.5          # um pouco mais íngreme que a face (≥ 0,4) para sair à frente dela
-const STEP_MAX_PER_FRAME := 0.18 # abaixo do limite de 0,24 m de "trajetória contínua" do teste
+const STEP_MAX_PER_FRAME := 0.18 # abaixo do limite de 0,24 m por quadro do teste de trajetória sem teleporte
 const STEP_MAX_HEIGHT := 0.58    # mesmo teto de subida aceito por prepare()
 
 
