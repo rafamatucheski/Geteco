@@ -12,6 +12,34 @@ const STATION_PIVOT := Vector3(-28,0,-16)
 const STATION_BASIS := Basis(Vector3(.78,0,0),Vector3(0,.8,0),Vector3(0,0,.74))
 const STATION_TRANSFORM := Transform3D(STATION_BASIS,STATION_PIVOT-STATION_BASIS*STATION_PIVOT)
 const STATION_ART := preload("res://runtime/desert/roadside/RoadsideArt.gd")
+const DETAIL_FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
+const DETAIL_RECIPES := {
+	"tire":{"8c7960":"painted","62533e":"wood","73674f":"wood","595b4b":"painted","795b48":"painted"},
+	"cart":{"403c2f":"wood","88704a":"wood","79613f":"wood","87704d":"wood","635941":"wood","796b49":"wood","9c8d62":"wood"},
+	"scrap":{"775640":"wood","8b7556":"painted","786c50":"wood","817456":"wood"},
+}
+var _detail_context := ""
+
+static func painted_details_enabled() -> bool:
+	return OS.get_environment("GETECO_PAINTED_TRUCKERS_DETAILS") != "0"
+
+static func prewarm_materials() -> Array[Material]:
+	var result: Array[Material] = []
+	if painted_details_enabled():
+		result.append(STATION_ART.rust_sheet())
+		var cutaway := STATION_ART.rust_sheet().duplicate() as StandardMaterial3D
+		cutaway.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		cutaway.albedo_color.a = .09
+		result.append(cutaway)
+		for palette in DETAIL_RECIPES.values():
+			for color_key in palette:
+				var finish := _detail_material(str(palette[color_key]),str(color_key))
+				if finish not in result: result.append(finish)
+	return result
+
+static func _detail_material(kind: String, color_key: String) -> StandardMaterial3D:
+	return DETAIL_FINISH.material(kind,Color(color_key),.91,.2 if kind=="painted" else 0.0)
+
 const COMPACT_CANOPY := Rect2(-36.68,-19.5,14,9)
 
 static func compact_station_enabled() -> bool:
@@ -298,6 +326,7 @@ func _homes() -> void:
 	_current_home_roof=null
 
 func _tire_shop() -> void:
+	_detail_context = "tire"
 	var at := Vector3(61,0,-4)
 	_box(at+Vector3(0,1.7,-5),Vector3(15,3.4,.25),"8c7960")
 	_solid("TireShopRear",at+Vector3(0,1.7,-5),Vector3(15,3.4,.25))
@@ -316,7 +345,7 @@ func _tire_shop() -> void:
 	var roof_material := StandardMaterial3D.new()
 	roof_material.albedo_color = Color("6c6854")
 	roof_material.roughness = .91
-	_tire_roof.material_override = roof_material
+	_tire_roof.material_override = STATION_ART.rust_sheet() if painted_details_enabled() else roof_material
 	add_child(_tire_roof)
 	_box(at+Vector3(0,3.27,5.0),Vector3(4.5,.65,.18),"62533e")
 	_label("Zeca",at+Vector3(0,3.27,5.11),.035)
@@ -329,8 +358,11 @@ func _tire_shop() -> void:
 	_cylinder(at+Vector3(4,.7,-3.5),.5,1.8,"795b48",Vector3(0,0,PI*.5))
 	_solid("Compressor",at+Vector3(4,.65,-3.5),Vector3(2,1.3,1.1))
 	_lamp(at+Vector3(0,3.1,-4.6))
+	_detail_context = ""
+
 
 func _farm_cart(at: Vector3) -> void:
+	_detail_context = "cart"
 	# A retired hand cart keeps the east scavenging corner pedestrian.
 	for x in [-1.1,1.1]:
 		for z in [-1.6,1.6]:
@@ -344,8 +376,11 @@ func _farm_cart(at: Vector3) -> void:
 	for p in [Vector3(-.5,1.12,-1.4),Vector3(.4,1.05,.8)]:
 		_box(at+p,Vector3(.8,.55,1.1),"9c8d62",Vector3(0,.2,0))
 	_solid("FarmCart",at+Vector3(0,.83,0),Vector3(2.5,1.66,4.9))
+	_detail_context = ""
+
 
 func _scrap_corner() -> void:
+	_detail_context = "scrap"
 	for p in [Vector3(-78,0,26),Vector3(-74,0,31),Vector3(-64,0,31)]:
 		_box(p+Vector3(0,.65,0),Vector3(2.7,1.3,1.9),"775640")
 		_box(p+Vector3(.3,1.32,0),Vector3(1.4,.1,1.5),"8b7556",Vector3(.07,0,.16))
@@ -356,6 +391,8 @@ func _scrap_corner() -> void:
 	for x in [-79.5,-59.5]:
 		for y in [.5,1.1]: _box(Vector3(x,y,36),Vector3(5,.12,.12),"817456")
 		_solid("FencePanel",Vector3(x,.8,36),Vector3(5,1.6,.15))
+	_detail_context = ""
+
 
 func _part(id: String,at: Vector3) -> void:
 	var holder := Node3D.new()
@@ -427,8 +464,10 @@ func _put(kind: String,at: Vector3,size: Vector3,color: String,angles: Vector3,r
 	# Authored paint is material albedo: MultiMesh instance-color readback and
 	# some renderer paths cannot reliably preserve that channel for this scene.
 	var source_owner: Node3D = (_current_home_roof if is_instance_valid(_current_home_roof) else _roof) if roof else _fixed
+	var finish: String = DETAIL_RECIPES.get(_detail_context,{}).get(color,"") if painted_details_enabled() else ""
 	var key := "%s_%s_%s_%s"%[kind,cell,source_owner.get_instance_id(),color]
-	if not _batches.has(key): _batches[key] = {"kind":kind,"owner":source_owner,"paint":color,"transforms":[],"colors":[]}
+	if not finish.is_empty(): key += "_"+finish
+	if not _batches.has(key): _batches[key] = {"kind":kind,"owner":source_owner,"paint":color,"finish":finish,"transforms":[],"colors":[]}
 	_batches[key].transforms.append(authored)
 	_batches[key].colors.append(Color(color))
 
@@ -466,7 +505,7 @@ func _flush() -> void:
 			paint.albedo_color = Color(batch.paint)
 			paint.roughness = .91
 			_paint_materials[batch.paint] = paint
-		mesh.material = _paint_materials[batch.paint]
+		mesh.material = _detail_material(str(batch.finish),str(batch.paint)) if not str(batch.finish).is_empty() else _paint_materials[batch.paint]
 		var multi := MultiMesh.new()
 		multi.transform_format = MultiMesh.TRANSFORM_3D
 		multi.mesh = mesh

@@ -14,6 +14,7 @@ const AUTHORED_OWNERS := [
 	"res://assets/regions/source/world/harbor/residences/ResidenceExterior3D.gd",
 	"res://world/places/ResidenceParking.gd",
 	"res://world/urban_detail/PaintedTallBuildings.gd",
+	"res://gameplay/urban_v1/TruckersVillageVisuals.gd",
 ]
 static var _retained: Array[Material] = []
 static var _done := false
@@ -48,6 +49,11 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 	var surface_quad := _quad(false, false)
 	var surface_box := BoxMesh.new()
 	surface_box.size = Vector3.ONE * .3
+	var surface_multi := MultiMesh.new()
+	surface_multi.transform_format = MultiMesh.TRANSFORM_3D
+	surface_multi.mesh = surface_box
+	surface_multi.instance_count = 1
+	surface_multi.set_instance_transform(0, Transform3D.IDENTITY)
 	var columns := maxi(1, ceili(sqrt(float(materials.size()))))
 	for index in materials.size():
 		var part := MeshInstance3D.new()
@@ -64,6 +70,12 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 			floor_part.material_override = materials[index]
 			floor_part.position = part.position + Vector3(0, .18, .2)
 			visual.add_child(floor_part)
+			# A vila e os detalhes usam o mesmo acabamento em lotes instanciados.
+			var instanced := MultiMeshInstance3D.new()
+			instanced.multimesh = surface_multi
+			instanced.material_override = materials[index]
+			instanced.position = part.position + Vector3(.18, -.18, .2)
+			visual.add_child(instanced)
 	host.add_child(visual)
 	var draws: Array[int] = [0]
 	var count_draw := func() -> void: draws[0] += 1
