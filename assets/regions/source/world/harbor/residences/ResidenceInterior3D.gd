@@ -1,6 +1,18 @@
 extends "res://assets/regions/source/world/harbor/cemetery/CemeteryPropBuilder.gd"
 const WEAPON_MODEL := preload("res://gameplay/ArsenalWeapon3D.gd")
 const FINISH := preload("res://gameplay/WeaponFinish3D.gd")
+const SURFACE_FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
+
+static func painted_interior_enabled() -> bool:
+	return OS.get_environment("GETECO_PAINTED_RESIDENCE_INTERIORS") != "0"
+
+static func prewarm_materials() -> Array:
+	if not painted_interior_enabled(): return []
+	var result: Array = []
+	for color in ["947354","857566","615749"]: result.append(SURFACE_FINISH.material("wood",Color(color)))
+	for color in ["d4c9b4","c4d4d2","dfddd1"]: result.append(SURFACE_FINISH.material("plaster",Color(color)))
+	return result
+
 
 var variant_index := 0
 var solid_rects: Dictionary = {}
@@ -85,14 +97,17 @@ func _ready() -> void:
 		add_child(light)
 
 func _wall(id: String,r: Rect2,height: float,color: String) -> void:
-	box(id,Vector3(r.size.x,height,r.size.y),Vector3(r.get_center().x,height*.5,r.get_center().y),color)
+	var mesh := box(id,Vector3(r.size.x,height,r.size.y),Vector3(r.get_center().x,height*.5,r.get_center().y),color)
+	if painted_interior_enabled(): mesh.material_override = SURFACE_FINISH.material("plaster",Color(color))
 	solid_rects[id] = r
 
 func _finish_soft_furniture() -> void:
 	for part: MeshInstance3D in find_children("*","MeshInstance3D",true,false):
 		if not part.mesh is BoxMesh: continue
 		var label := str(part.name)
-		if label.begins_with("OakFloorboard") or label in ["BedBase","Headboard","Wardrobe","CoffeeTable","BedsideCabinet"]:
+		if label.begins_with("OakFloorboard") and painted_interior_enabled():
+			part.material_override = SURFACE_FINISH.material("wood",part.material_override.albedo_color)
+		elif label.begins_with("OakFloorboard") or label in ["BedBase","Headboard","Wardrobe","CoffeeTable","BedsideCabinet"]:
 			part.material_override = preload("res://world/places/ShopInteriorMaterials.gd").material("wood",part.material_override.albedo_color)
 		if not label.begins_with("Pillow") and not label.begins_with("LooseCushion") and not label.begins_with("SeatCushion") and not label.begins_with("Duvet") and not label.begins_with("Sofa"): continue
 		part.mesh = preload("res://world/desert/village/DesertHomeCraft.gd").rounded_box(part.mesh.size,.055)

@@ -9,6 +9,7 @@ const GUARDS := preload("res://gameplay/emergency/EffectsPrewarm.gd")
 const DRAW_FRAMES := 3
 const MAX_WAIT_FRAMES := 30
 const AUTHORED_OWNERS := [
+	"res://assets/regions/source/world/harbor/residences/ResidenceInterior3D.gd",
 	"res://assets/regions/source/world/harbor/interiors/HarborPoliceStation3D.gd",
 	"res://assets/regions/source/world/harbor/interiors/HospitalRoom3D.gd",
 	"res://assets/regions/source/world/harbor/interiors/FuelStoreArt3D.gd",
