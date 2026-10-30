@@ -27,6 +27,9 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 	var family_count := materials.size()
 	# Pisos autorados compartilham este aquecimento de superfícies, inclusive sem fusão.
 	materials.append_array(preload("res://world/editing/WorldGroundFactory.gd").prewarm_materials())
+	# Resolve o dono sob a cortina, sem dependência circular entre cena, ator e prewarm.
+	var yard_owner: Script = load("res://gameplay/urban_v1/VerticeCompany.gd")
+	materials.append_array(yard_owner.prewarm_materials())
 	if materials.is_empty(): return
 	var visual := Node3D.new()
 	visual.name = "FamilyVariantPrewarm"

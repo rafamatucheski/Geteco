@@ -3,6 +3,15 @@ extends Node3D
 const ORIGIN := Vector3(-340,0,-80)
 const FOOTPRINT := Rect2(-392,-112,108,112)
 const ACTOR := preload("res://scripts/Actor.gd")
+const YARD_PAVING := preload("res://world/urban_detail/HarborPaving.gd")
+
+static func painted_yard_enabled() -> bool:
+	return OS.get_environment("GETECO_PAINTED_VERTICE_YARD") != "0"
+
+static func prewarm_materials() -> Array:
+	if not painted_yard_enabled(): return []
+	return [YARD_PAVING.material(Color("92968b"),"concrete")]
+
 var session
 var building: Node3D
 var solids: Array[StaticBody3D] = []
@@ -90,8 +99,14 @@ func inside(point: Vector3) -> bool:
 	return Rect2(-27.7,-19.7,55.9,37.5).has_point(Vector2(p.x,p.z)) or Rect2(27.8,0,13.9,29.8).has_point(Vector2(p.x,p.z))
 
 func _build_yard() -> void:
-	box("YardSurface",Vector3(0,-.10,24),Vector3(100,.20,108),"656b65")
-	box("YardFinish",Vector3(0,.014,24),Vector3(100,.022,108),"656b65")
+	var base := box("YardSurface",Vector3(0,-.10,24),Vector3(100,.20,108),"656b65")
+	var finish := box("YardFinish",Vector3(0,.014,24),Vector3(100,.022,108),"656b65")
+	if painted_yard_enabled():
+		# Projeção em metros mantém as placas de concreto na escala das juntas
+		# existentes. Mesmos volumes/alturas: não altera a circulação do pátio.
+		var paving: Material = prewarm_materials()[0]
+		base.material_override = paving
+		finish.material_override = paving
 	# Solid fence panels use thin bars, with one simple collision each.
 	_fence(Vector3(-50,0,-30),Vector3(50,0,-30))
 	_fence(Vector3(-50,0,-30),Vector3(-50,0,78))
