@@ -4,6 +4,8 @@ const RUN := preload("res://activities/mountain_jeep/MountainJeepRun.gd")
 const PROGRESS := preload("res://systems/campaign/MountainJeepProgress.gd")
 const FLEET_STATE := preload("res://runtime/FleetState.gd")
 const VEHICLE := preload("res://scripts/Vehicle.gd")
+## Mesmos cues de atividade das corridas (ActivityAudioBridge): contagem, portão e chegada.
+const CUES := preload("res://audio/v1_ambience/V1AudioCatalog.gd")
 var session
 var progress := PROGRESS.new()
 var run := RUN.new()
@@ -12,6 +14,10 @@ var loan: CharacterBody3D
 var _status: Label
 var _loan_clock := 0.0
 var _hud_clock := 0.0
+var _cue_voice: AudioStreamPlayer
+var _cue_gate := 0
+## Registro dos cues tocados (kind), para o teste conferir sem ouvir.
+var played_cues: Array[String] = []
 var active: bool:
 	get: return run.active
 
@@ -32,6 +38,23 @@ func configure(owner_session) -> void:
 		_status.add_theme_constant_override("outline_size",5)
 		session.world.hud.add_child(_status)
 	process_physics_priority=25
+	_setup_cues()
+
+func _setup_cues() -> void:
+	# Carrega os WAVs agora (cache do catálogo) para não ler disco no quadro da largada.
+	for kind in ["countdown","checkpoint","complete"]: CUES.activity(kind)
+	_cue_voice=AudioStreamPlayer.new()
+	_cue_voice.name="JeepCue"
+	_cue_voice.bus=&"UI" if AudioServer.get_bus_index(&"UI")>=0 else &"Master"
+	_cue_voice.volume_db=-8
+	add_child(_cue_voice)
+
+func _cue(kind: String) -> void:
+	played_cues.append(kind)
+	var stream := CUES.activity(kind)
+	if stream==null or _cue_voice==null: return
+	_cue_voice.stream=stream
+	_cue_voice.play()
 
 func snapshot() -> Dictionary:
 	_capture_loan()
@@ -113,6 +136,8 @@ func _start_attempt() -> bool:
 	if not session.save_game(true): return false
 	if not run.begin(car.get_instance_id(),car.archetype,car.global_position): return false
 	driver=car
+	_cue_gate=0
+	_cue("countdown")
 	_status.text=objective()
 	_status.show()
 	return true
@@ -141,7 +166,11 @@ func _physics_process(delta: float) -> void:
 			run.tick(delta,driver.global_position,driver.get_instance_id(),true)
 			if counting_down and run.countdown<=0.0 and run.active:
 				session.show_message("VAI! Siga o marcador e passe entre os postes do primeiro portão.")
+			if run.active and run.gate>_cue_gate:
+				_cue_gate=run.gate
+				_cue("checkpoint")
 			if run.finished:
+				_cue("complete")
 				var result := progress.settle(run,session.state.economy)
 				if result.is_empty():
 					session.show_message("Prova concluída; não foi possível registrar o prêmio.")

@@ -18,6 +18,9 @@ const PERSONAL_SLOTS := {
 	"curta":["pistol","magnum","pistol_suppressed","smg","smg_compact","smg_tactical"],
 	"longa":["shotgun","sawed_off","shotgun_auto","ak47","m4a1","hunting_rifle","rpg","flamethrower"],
 	"corpo":["knife","axe","knuckles","bat","katana"], "granada":["grenade"]}
+## Avisa cada crédito de dinheiro (dinheiro solto e recompensas com recibo). É o ponto único
+## para o som de dinheiro: quem ouve não precisa saber de onde veio o pagamento.
+signal money_gained(amount: int)
 var _data := {"version": 1, "balance": 0, "weapons": {"fists": {"magazine": -1, "reserve": -1}},
 	"equipped_weapon": "fists", "outfits": ["dante_classic"], "outfit": "dante_classic",
 	"inventory": {}, "discoveries": [], "collectibles": [], "achievements": [], "transactions": {}}
@@ -222,6 +225,7 @@ static func _max_capacity(id: String) -> int:
 func collect_loose_cash(amount: int) -> bool:
 	if amount < 5 or amount > 300 or int(_data.balance) > LIMIT - amount: return false
 	_data.balance += amount
+	money_gained.emit(amount)
 	return true
 
 ## Perda sem recibo (conta do hospital, multa da prisão): acontece uma vez, no fim do resgate,
@@ -267,6 +271,7 @@ func grant_reward(receipt_id: String, amount: int) -> bool:
 	_data.balance += amount
 	if not compact:
 		_data.transactions[key] = {"kind": "reward", "item": receipt_id, "amount": amount}
+	if amount > 0: money_gained.emit(amount)
 	return true
 
 func grant_world_reward(definition: Dictionary) -> Dictionary:

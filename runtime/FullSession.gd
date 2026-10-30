@@ -2193,7 +2193,22 @@ func _process(delta: float) -> void:
 	_process_traced(delta)
 	_SYS_SPAN.finish_slow("sys.session.process", span, 3000)
 
+## A carteira é trocada ao carregar um save; religa o som de dinheiro quando isso acontece.
+## Comparar a referência custa nada e evita depender de cada ponto que paga o jogador.
+var _money_wired_economy
+func _wire_money_audio() -> void:
+	if state.economy == _money_wired_economy: return
+	_money_wired_economy = state.economy
+	if not state.economy.money_gained.is_connected(_on_money_gained):
+		state.economy.money_gained.connect(_on_money_gained)
+
+## Sempre que entra dinheiro toca o "cash" do RewardAudio; rajadas e sites que já tocam o mesmo
+## som na sequência caem na janela de coalescência dele, então ninguém toca duas vezes.
+func _on_money_gained(_amount: int) -> void:
+	REWARD_AUDIO.play(self, "cash")
+
 func _process_traced(delta: float) -> void:
+	_wire_money_audio()
 	if world.player != null and world.player.get_meta("developer_free_flight",false): return
 	if not get_tree().paused: notice_time = maxf(0.0,notice_time-delta)
 	if speech_active:
