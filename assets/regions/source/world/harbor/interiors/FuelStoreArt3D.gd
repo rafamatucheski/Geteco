@@ -1,10 +1,28 @@
 extends "res://assets/regions/source/world/harbor/cemetery/CemeteryPropBuilder.gd"
 
+const SURFACE_FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
+
+static func painted_interior_enabled() -> bool:
+	return OS.get_environment("GETECO_PAINTED_FUEL_INTERIOR") != "0"
+
+static func prewarm_materials() -> Array:
+	if not painted_interior_enabled(): return []
+	var result: Array = []
+	for color in ["9b9d89","8a9283"]: result.append(SURFACE_FINISH.material("epoxy",Color(color)))
+	for color in ["b6b69b","788e83"]: result.append(SURFACE_FINISH.material("plaster",Color(color)))
+	result.append(SURFACE_FINISH.material("painted",Color("394f45")))
+	return result
+
+func _finish_surface(mesh: MeshInstance3D, kind: String, color: String) -> MeshInstance3D:
+	if painted_interior_enabled(): mesh.material_override=SURFACE_FINISH.material(kind,Color(color))
+	return mesh
+
 func _ready() -> void:
 	box("Foundation", Vector3(14,.18,10), Vector3(0,-.12,0), "303a36")
 	for x in 14:
 		for z in 10:
-			box("FloorTile",Vector3(.985,.035,.985),Vector3(-6.5+x,0,-4.5+z),"9b9d89" if (x+z)%2 else "8a9283")
+			var color := "9b9d89" if (x+z)%2 else "8a9283"
+			_finish_surface(box("FloorTile",Vector3(.985,.035,.985),Vector3(-6.5+x,0,-4.5+z),color),"epoxy",color)
 	_solid("BackWall",Vector3(14,3,.2),Vector3(0,1.5,-5),"b6b69b")
 	for side in [-1.0,1.0]:
 		_solid("SideWall%d"%int(side),Vector3(.2,3,10),Vector3(side*7,1.5,0),"788e83")
@@ -47,5 +65,9 @@ func _ready() -> void:
 
 func _solid(id: String, size: Vector3, point: Vector3, color: String) -> MeshInstance3D:
 	var mesh := box(id,size,point,color)
+	if id == "BackWall" or id.begins_with("SideWall"):
+		_finish_surface(mesh,"plaster",color)
+	elif id.begins_with("FrontWall"):
+		_finish_surface(mesh,"painted",color)
 	mesh.set_meta("interior_solid_id",StringName(id))
 	return mesh
