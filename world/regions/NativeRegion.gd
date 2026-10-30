@@ -789,12 +789,23 @@ func _is_cached_record(record: Dictionary) -> bool:
 	var kind := str(record.kind)
 	if kind in CACHED_RECORDS or kind in CACHED_KINDS_MEASURED: return true
 	if kind == "building" and record.get("data") is Dictionary:
-		return str(record.data.get("id","")) in CACHED_BUILDING_IDS
+		return str(record.data.get("id","")) in CACHED_BUILDING_IDS or _is_static_editor_skyline(record.data)
 	if kind == "harbor_prop" and record.get("position") is Vector3:
 		var at := Vector2(record.position.x, record.position.z)
 		return CACHED_PROP_POINTS.any(func(point: Vector2): return point.distance_to(at) < 0.5)
 	return str(record.kind) == "south_port_model" and str(record.get("model_kind","")) in CACHED_PORT_MODELS
 var _record_cache: Dictionary = {}
+
+## Prédios urbanos do editor de mundo (urban_infill/slab/deco...): 28-31 ms cada num quadro no release de
+## 30/10 dirigindo no Harbor (new_1790426877_636_2342363314 31 ms, new_1790432139_406_2568146191 29 ms,
+## new_1790426066_503_97028106 28 ms). O custo é a geometria procedural do UrbanSkylineBuilding.build()
+## (janela por janela, andar por andar, juntadas por material) dentro do _ready, inteira no quadro.
+## São estáticos (sem porta, placa de venda, luz ou processo), como new_1790432236_682_2325181222 já em
+## CACHED_BUILDING_IDS: montados uma vez sob a cortina (RetainedRegionPreparation) e reaproveitados.
+## Fica de fora quem o editor transforma em prédio de serviço (editor_service: porta/entrada própria).
+func _is_static_editor_skyline(data: Dictionary) -> bool:
+	if not data.has("editor_id") or data.has("editor_service"): return false
+	return str(data.get("kind","")) in preload("res://world/urban_detail/UrbanSkylineCatalog.gd").TYPES
 
 func _record_cache_key(record: Dictionary) -> String:
 	var key := "%s|%s|%s"%[region_id,str(record.kind),str(record.get("position",Vector3.ZERO))]
@@ -1308,10 +1319,18 @@ func _run_build_job(job: Dictionary, budget_usec: float) -> bool:
 				var stage_began := STALL_WORK.begin()
 				# Pelo membro, não por parâmetro: testes sobrescrevem _build_surfaces com a assinatura de 3 argumentos.
 				_surface_terrain_data = job.get("terrain_data",{})
+				# O Harbor retoma o estágio pelo cursor em job.harbor_surfaces (ver _harbor_surfaces_step).
+				# Orçamento 0 ou INF (chão para veículo já, chunk imediato) termina o estágio aqui.
+				_surface_slice_job = job
+				_surface_slice_budget = budget_usec
+				_surface_slice_began = began
 				_build_surfaces(chunk,rect,key)
+				_surface_slice_job = {}
+				_surface_slice_budget = INF
 				_surface_terrain_data = {}
-				job.erase("terrain_data")
 				STALL_WORK.finish_slow("stream.%s.surfaces"%region_id,stage_began,2000)
+				if job.has("harbor_surfaces"): return false
+				job.erase("terrain_data")
 				job.stage = 1
 			1:
 				# Vegetação/pedras do terreno: passo próprio, o terreno sozinho já custa 40–95 ms.
@@ -1463,84 +1482,25 @@ func _collect_terrain_tasks() -> void:
 			WorkerThreadPool.wait_for_task_completion(task)
 			_terrain_tasks.erase(task)
 
+## Estágio 0 fatiado do Harbor (30/10): `stream.harbor.surfaces` saía inteiro num quadro, 12–34 ms
+## dirigindo a 110–120 km/h no export release. Agora cada passo (ruas, lotes, um pedaço de Land, mar,
+## túnel, costa, um polígono de extra_land, matas, concreto do porto) roda e o cursor fica no job.
+## Mesma ordem, mesmos argumentos, mesmos filhos do chunk: o resultado final é o de antes.
+## Pelos membros, como `_surface_terrain_data`: testes sobrescrevem _build_surfaces com 3 argumentos.
+## Sem job (chamada direta) ou com orçamento 0/INF (_ensure_chunk_surfaces, chunk imediato) termina tudo.
+var _surface_slice_job: Dictionary = {}
+var _surface_slice_budget := INF
+var _surface_slice_began := 0
+
 func _build_surfaces(chunk: Node3D, rect: Rect2, key: Vector2i) -> void:
 	if region_id == "harbor":
-		# Uma camada de chão só (2026-10-13): quem está por cima é montado primeiro e quem fica por baixo
-		# perde a área coberta. Ruas > lotes e concreto do porto > chão base (Land).
-		var ground_cover: Array[PackedVector2Array] = []
-		if harbor_road_geometry != null:
-			harbor_road_geometry.build_chunk(chunk,rect)
-			ground_cover.append_array(harbor_road_geometry.chunk_cover)
-			# The opaque earth-to-grass strip already supplies its own finish.
-			# Reserve only the actual clipped triangles, never their bounding box.
-			var chunk_outline := GROUND_CUT.rect_polygon(rect)
-			for triangle in harbor_road_geometry._earth_verge_triangles:
-				if not GROUND_CUT.bounds(triangle.points).intersects(rect): continue
-				ground_cover.append_array(Geometry2D.intersect_polygons(triangle.points,chunk_outline))
-		for footprint in harbor_facade_ground:
-			if GROUND_CUT.bounds(footprint).intersects(rect): ground_cover.append(footprint)
-		for footprint in harbor_dressing_ground:
-			if GROUND_CUT.bounds(footprint).intersects(rect): ground_cover.append(footprint)
-		# Santa Mare owns the visible deck. Land and authored surfaces keep their
-		# colliders, but must not render a second floor underneath the ship.
-		var santa_deck := PackedVector2Array()
-		for point in SOUTH_PORT_LAYOUT.ship_hull(): santa_deck.append(point*SCALE)
-		if GROUND_CUT.bounds(santa_deck).intersects(rect): ground_cover.append(santa_deck)
-		for footprint in CEMETERY.path_footprints(CEMETERY.SOURCE_CENTER*SCALE):
-			if GROUND_CUT.bounds(footprint).intersects(rect): ground_cover.append(footprint)
-		if harbor_urban_surface != null:
-			for lot in harbor_urban_surface.build_chunk(chunk,rect,ground_cover): ground_cover.append(GROUND_CUT.rect_polygon(lot))
-		var port_land := Rect2(SOUTH_PORT_LAYOUT.LAND.position*SCALE,SOUTH_PORT_LAYOUT.LAND.size*SCALE)
-		var port_surface := rect.intersection(port_land)
-		var port_cover := ground_cover.duplicate()
-		if port_surface.has_area(): ground_cover.append(GROUND_CUT.rect_polygon(port_surface))
-		var cemetery_half: Vector2 = CEMETERY.LOT_SIZE * SCALE * 0.5
-		var cemetery_floor := Rect2(CEMETERY.SOURCE_CENTER * SCALE - cemetery_half, cemetery_half * 2.0)
-		var sewer_openings: Array[Rect2] = []
-		for opening in CATALOG.sewer_openings(): sewer_openings.append(Rect2(opening.position * SCALE, opening.size * SCALE))
-		var secret_cellar_opening := Rect2(-413.25,85.35,6.10,3.30)
-		var owned_land: Array[Rect2] = []
-		for land in source_data.harbor_land:
-			var surface := rect.intersection(Rect2(land[0]*SCALE,land[1]*SCALE,land[2]*SCALE,land[3]*SCALE))
-			var land_holes: Array[Rect2] = owned_land.duplicate()
-			land_holes.append(cemetery_floor)
-			for piece in _rects_outside_all(surface,land_holes):
-				for sewer_piece in _rects_outside_all(piece, sewer_openings):
-					for cellar_piece in _rect_outside(sewer_piece, secret_cellar_opening):
-						# Rampas e trechos cobertos do Túnel do canal têm piso e laje próprios.
-						for land_piece in CANAL_TUNNEL.outside_land(cellar_piece):
-							for skate_piece in preload("res://activities/skate/SkateParkLayout.gd").outside(land_piece):
-								_land_piece(chunk,skate_piece,ground_cover)
-			if surface.has_area(): owned_land.append(surface)
-		harbor_ocean.build_chunk(chunk,rect)
-		CANAL_TUNNEL.build_chunk(chunk,rect)
-		var skate_center := preload("res://activities/skate/SkateParkLayout.gd").CENTER
-		if preload("res://activities/skate/SkateParkLayout.gd").enabled() and rect.has_point(Vector2(skate_center.x, skate_center.z)):
-			chunk.add_child(preload("res://activities/skate/SkatePark.gd").new())
-		coastal_protection.build_chunk(chunk,rect)
-		var clip := PackedVector2Array([rect.position,Vector2(rect.end.x,rect.position.y),rect.end,Vector2(rect.position.x,rect.end.y)])
-		var extra_support: Array[PackedVector2Array] = []
-		for land_rect in owned_land: extra_support.append(GROUND_CUT.rect_polygon(land_rect))
-		for polygon in extra_land:
-			var woodland: bool = polygon==preload("res://world/places/fishing/FishingRuralLayout.gd").outline() or HARBOR_COAST.is_natural(polygon)
-			var pieces: Array[PackedVector2Array] = Geometry2D.intersect_polygons(polygon,clip)
-			for piece in GROUND_CUT.subtract_exact(pieces,extra_support): _authored_surface(chunk,piece,woodland,ground_cover)
-			extra_support.append(polygon)
-		preload("res://world/places/fishing/FishingWoodland.gd").build_chunk(chunk,rect)
-		HARBOR_COAST_WOODLAND.build_chunk(chunk,rect)
-		if port_surface.has_area():
-			# Visual finish only: OriginalSouthPort/land already own physical support.
-			# Keep the apron below every road finish. Its former .014 top was
-			# exactly coplanar with CURB_COLOR, causing flickering along the roads.
-			# Sem a área das ruas: antes o concreto inteiro ficava por baixo delas.
-			var apron_mesh := GROUND_CUT.flat_mesh(GROUND_CUT.subtract([GROUND_CUT.rect_polygon(port_surface)],port_cover),.004,1.0)
-			if apron_mesh != null:
-				var apron := MeshInstance3D.new()
-				apron.name = "SouthPortConcrete"
-				apron.mesh = apron_mesh
-				apron.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-				apron.material_override = preload("res://world/regions/PortYardMaterials3D.gd").concrete()
-				chunk.add_child(apron)
+		var job: Dictionary = _surface_slice_job
+		var state: Dictionary = job.get("harbor_surfaces", {})
+		if state.is_empty(): state = {"step": 0, "chunk": chunk, "rect": rect}
+		var done := _harbor_surfaces_step(state, _surface_slice_budget, _surface_slice_began)
+		if job.is_empty(): return
+		if done: job.erase("harbor_surfaces")
+		else: job["harbor_surfaces"] = state
 	else:
 		# These authored cells are the water spans of HarborMountainConnector and
 		# HarborBridgeCrossing.
@@ -1552,6 +1512,149 @@ func _build_surfaces(chunk: Node3D, rect: Rect2, key: Vector2i) -> void:
 			terrain.build_chunk(chunk,rect,shore_edges,_surface_terrain_data)
 			# Serra ilha: o muro abre onde passa estrada ou trilha (na costa, só a ponte leste).
 			preload("res://world/regions/ScenarioBoundary3D.gd").build_mountain(chunk,rect,terrain.surface_height_at,func(point: Vector2) -> bool: return route_geometry.contains(Vector3(point.x,0,point.y),8.0))
+
+const HARBOR_SURFACE_STEP_NAMES := ["roads","cover","land","ocean","tunnel","coast","extra_land","woodland","coast_woodland","port_apron"]
+const HARBOR_SURFACE_STEPS := 10
+
+## Um passo por vez até o orçamento (pelo menos um por chamada). Devolve true ao terminar o estágio.
+## Cada passo tem span próprio (`stream.harbor.surfaces.<passo>`): se um passo sozinho passar de ~2 ms,
+## o próximo log diz qual.
+func _harbor_surfaces_step(state: Dictionary, budget_usec: float, began: int) -> bool:
+	var unbounded := budget_usec <= 0.0 or is_inf(budget_usec)
+	while int(state.step) < HARBOR_SURFACE_STEPS:
+		var step := int(state.step)
+		var step_began := STALL_WORK.begin()
+		var advanced := _harbor_surface_substep(state)
+		STALL_WORK.finish_slow("stream.harbor.surfaces.%s"%HARBOR_SURFACE_STEP_NAMES[step],step_began,2000)
+		if advanced: state.step = step+1
+		if not unbounded and Time.get_ticks_usec()-began >= budget_usec: break
+	return int(state.step) >= HARBOR_SURFACE_STEPS
+
+## Corpo do antigo _build_surfaces do Harbor, cortado nos mesmos pontos. Devolve true quando o passo
+## atual acabou; "land" e "extra_land" devolvem false enquanto ainda há pedaço/polígono na fila.
+func _harbor_surface_substep(state: Dictionary) -> bool:
+	var chunk: Node3D = state.chunk
+	var rect: Rect2 = state.rect
+	match int(state.step):
+		0:
+			# Uma camada de chão só (2026-10-13): quem está por cima é montado primeiro e quem fica por baixo
+			# perde a área coberta. Ruas > lotes e concreto do porto > chão base (Land).
+			var ground_cover: Array[PackedVector2Array] = []
+			if harbor_road_geometry != null:
+				harbor_road_geometry.build_chunk(chunk,rect)
+				ground_cover.append_array(harbor_road_geometry.chunk_cover)
+				# The opaque earth-to-grass strip already supplies its own finish.
+				# Reserve only the actual clipped triangles, never their bounding box.
+				var chunk_outline := GROUND_CUT.rect_polygon(rect)
+				for triangle in harbor_road_geometry._earth_verge_triangles:
+					if not GROUND_CUT.bounds(triangle.points).intersects(rect): continue
+					ground_cover.append_array(Geometry2D.intersect_polygons(triangle.points,chunk_outline))
+			state.ground_cover = ground_cover
+		1:
+			var ground_cover: Array[PackedVector2Array] = state.ground_cover
+			for footprint in harbor_facade_ground:
+				if GROUND_CUT.bounds(footprint).intersects(rect): ground_cover.append(footprint)
+			for footprint in harbor_dressing_ground:
+				if GROUND_CUT.bounds(footprint).intersects(rect): ground_cover.append(footprint)
+			# Santa Mare owns the visible deck. Land and authored surfaces keep their
+			# colliders, but must not render a second floor underneath the ship.
+			var santa_deck := PackedVector2Array()
+			for point in SOUTH_PORT_LAYOUT.ship_hull(): santa_deck.append(point*SCALE)
+			if GROUND_CUT.bounds(santa_deck).intersects(rect): ground_cover.append(santa_deck)
+			for footprint in CEMETERY.path_footprints(CEMETERY.SOURCE_CENTER*SCALE):
+				if GROUND_CUT.bounds(footprint).intersects(rect): ground_cover.append(footprint)
+			if harbor_urban_surface != null:
+				for lot in harbor_urban_surface.build_chunk(chunk,rect,ground_cover): ground_cover.append(GROUND_CUT.rect_polygon(lot))
+			var port_land := Rect2(SOUTH_PORT_LAYOUT.LAND.position*SCALE,SOUTH_PORT_LAYOUT.LAND.size*SCALE)
+			var port_surface := rect.intersection(port_land)
+			state.port_surface = port_surface
+			state.port_cover = ground_cover.duplicate()
+			if port_surface.has_area(): ground_cover.append(GROUND_CUT.rect_polygon(port_surface))
+			var cemetery_half: Vector2 = CEMETERY.LOT_SIZE * SCALE * 0.5
+			state.cemetery_floor = Rect2(CEMETERY.SOURCE_CENTER * SCALE - cemetery_half, cemetery_half * 2.0)
+			var sewer_openings: Array[Rect2] = []
+			for opening in CATALOG.sewer_openings(): sewer_openings.append(Rect2(opening.position * SCALE, opening.size * SCALE))
+			state.sewer_openings = sewer_openings
+			var owned_land: Array[Rect2] = []
+			state.owned_land = owned_land
+			state.land_index = 0
+			var land_queue: Array[Rect2] = []
+			state.land_queue = land_queue
+		2:
+			# Um pedaço de Land por vez (trimesh + recorte visual em _land_piece). Os pedaços de cada
+			# retângulo saem da mesma conta de antes; owned_land só cresce depois de enfileirá-los.
+			var ground_cover: Array[PackedVector2Array] = state.ground_cover
+			var land_queue: Array[Rect2] = state.land_queue
+			if not land_queue.is_empty():
+				_land_piece(chunk,land_queue.pop_front(),ground_cover)
+				return false
+			var land_index := int(state.land_index)
+			if land_index >= source_data.harbor_land.size(): return true
+			state.land_index = land_index+1
+			var owned_land: Array[Rect2] = state.owned_land
+			var sewer_openings: Array[Rect2] = state.sewer_openings
+			var secret_cellar_opening := Rect2(-413.25,85.35,6.10,3.30)
+			var land = source_data.harbor_land[land_index]
+			var surface := rect.intersection(Rect2(land[0]*SCALE,land[1]*SCALE,land[2]*SCALE,land[3]*SCALE))
+			var land_holes: Array[Rect2] = owned_land.duplicate()
+			land_holes.append(state.cemetery_floor)
+			for piece in _rects_outside_all(surface,land_holes):
+				for sewer_piece in _rects_outside_all(piece, sewer_openings):
+					for cellar_piece in _rect_outside(sewer_piece, secret_cellar_opening):
+						# Rampas e trechos cobertos do Túnel do canal têm piso e laje próprios.
+						for land_piece in CANAL_TUNNEL.outside_land(cellar_piece):
+							for skate_piece in preload("res://activities/skate/SkateParkLayout.gd").outside(land_piece):
+								land_queue.append(skate_piece)
+			if surface.has_area(): owned_land.append(surface)
+			return false
+		3:
+			harbor_ocean.build_chunk(chunk,rect)
+		4:
+			CANAL_TUNNEL.build_chunk(chunk,rect)
+			var skate_center := preload("res://activities/skate/SkateParkLayout.gd").CENTER
+			if preload("res://activities/skate/SkateParkLayout.gd").enabled() and rect.has_point(Vector2(skate_center.x, skate_center.z)):
+				chunk.add_child(preload("res://activities/skate/SkatePark.gd").new())
+		5:
+			coastal_protection.build_chunk(chunk,rect)
+		6:
+			# Um polígono de extra_land por vez; extra_support cresce na mesma ordem de antes.
+			if not state.has("extra_support"):
+				var extra_support: Array[PackedVector2Array] = []
+				for land_rect in state.owned_land: extra_support.append(GROUND_CUT.rect_polygon(land_rect))
+				state.extra_support = extra_support
+				state.extra_index = 0
+			var extra_index := int(state.extra_index)
+			if extra_index >= extra_land.size(): return true
+			state.extra_index = extra_index+1
+			var support: Array[PackedVector2Array] = state.extra_support
+			var ground_cover: Array[PackedVector2Array] = state.ground_cover
+			var clip := PackedVector2Array([rect.position,Vector2(rect.end.x,rect.position.y),rect.end,Vector2(rect.position.x,rect.end.y)])
+			var polygon: PackedVector2Array = extra_land[extra_index]
+			var woodland: bool = polygon==preload("res://world/places/fishing/FishingRuralLayout.gd").outline() or HARBOR_COAST.is_natural(polygon)
+			var pieces: Array[PackedVector2Array] = Geometry2D.intersect_polygons(polygon,clip)
+			for piece in GROUND_CUT.subtract_exact(pieces,support): _authored_surface(chunk,piece,woodland,ground_cover)
+			support.append(polygon)
+			return extra_index+1 >= extra_land.size()
+		7:
+			preload("res://world/places/fishing/FishingWoodland.gd").build_chunk(chunk,rect)
+		8:
+			HARBOR_COAST_WOODLAND.build_chunk(chunk,rect)
+		9:
+			var port_surface: Rect2 = state.port_surface
+			if port_surface.has_area():
+				# Visual finish only: OriginalSouthPort/land already own physical support.
+				# Keep the apron below every road finish. Its former .014 top was
+				# exactly coplanar with CURB_COLOR, causing flickering along the roads.
+				# Sem a área das ruas: antes o concreto inteiro ficava por baixo delas.
+				var apron_mesh := GROUND_CUT.flat_mesh(GROUND_CUT.subtract([GROUND_CUT.rect_polygon(port_surface)],state.port_cover),.004,1.0)
+				if apron_mesh != null:
+					var apron := MeshInstance3D.new()
+					apron.name = "SouthPortConcrete"
+					apron.mesh = apron_mesh
+					apron.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+					apron.material_override = preload("res://world/regions/PortYardMaterials3D.gd").concrete()
+					chunk.add_child(apron)
+	return true
 
 func _build_record(chunk: Node3D, record: Dictionary) -> void:
 	match record.kind:

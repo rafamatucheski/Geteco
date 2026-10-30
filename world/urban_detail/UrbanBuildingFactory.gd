@@ -18,6 +18,7 @@ const SKYLINE_BUILDING := preload("res://world/urban_detail/UrbanSkylineBuilding
 const LOWRISE_BUILDING := preload("res://world/urban_detail/UrbanLowriseBuilding.gd")
 const BUILDING_BATCH := preload("res://world/urban_detail/HarborBuildingBatch.gd")
 const BUILDING_BAKE := preload("res://assets/buildings/baked/BuildingBakeCatalog.gd")
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 static var baked_enabled := OS.get_environment("GETECO_BAKED_BUILDINGS") != "0"
 ## Cenas assadas (~1,35 MB cada) eram lidas com load() síncrono na primeira vez que
 ## o prédio entrava no streaming: base release de 15/10, rota sobrados, quadros de
@@ -209,10 +210,18 @@ static func build_building(data: Dictionary) -> Node3D:
 	return building
 
 ## Synchronously mounts building into the chunk and performs post-tree-entry finalization.
+## Spans por sub-passo (30/10): `stream.harbor.record.building` de 20-31 ms (Clinic, CanalHomesWest,
+## prédios do editor de mundo) e `record.original_facade` de 18-25 ms (quayside_house, sewer_market)
+## não diziam se o custo era montar o nó, a geometria do _ready ou a colisão do acabamento.
+## "mount" inclui _ready e o finalize que o sinal ready dispara; "finalize"/"collision" são as partes dele.
 static func populate_chunk(chunk: Node3D, data: Dictionary) -> Node3D:
+	var span := STALL_WORK.begin()
 	var building := build_building(data)
+	STALL_WORK.finish_slow("stream.building.setup", span, 2000)
 	if building != null:
+		span = STALL_WORK.begin()
 		chunk.add_child(building)
+		STALL_WORK.finish_slow("stream.building.mount", span, 2000, building if building.is_inside_tree() else null)
 		finalize_building(building, data)
 	return building
 
@@ -228,6 +237,8 @@ static func finalize_building(building: Node3D, data: Dictionary = {}) -> void:
 		data = building.get_meta("_urban_data")
 	
 	building.set_meta("_urban_finalized", true)
+	var finalize_span := STALL_WORK.begin()
+	var trace_source: Node = building if building.is_inside_tree() else null
 	
 	# 1. Door opening adjustments on authored models
 	if building.has_method("set_public_door_amount"):
@@ -244,14 +255,17 @@ static func finalize_building(building: Node3D, data: Dictionary = {}) -> void:
 		door_node.rotation.y = -1.3
 	
 	# 2. Collision and layer setup for authored meshes created in _ready()
+	var collision_span := STALL_WORK.begin()
 	for mesh: MeshInstance3D in building.find_children("*", "MeshInstance3D", true, false):
 		mesh.layers = 1
 		# Procedural exteriors already own native box solids in their Collision root.
 		if not building is UrbanBuildingBase: _create_mesh_collision_safe(mesh)
+	STALL_WORK.finish_slow("stream.building.collision", collision_span, 2000, trace_source)
 	
 	# 3. Clean facade signage (proper name only)
 	_apply_proper_name_to_labels(building, data)
 	BUILDING_BATCH.schedule(building)
+	STALL_WORK.finish_slow("stream.building.finalize", finalize_span, 2000, trace_source)
 
 # --- Helpers for Reused 3D Models ---
 

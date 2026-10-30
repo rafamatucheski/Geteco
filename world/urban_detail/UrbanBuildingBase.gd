@@ -100,8 +100,11 @@ func _ready() -> void:
 		collision_root.name = "Collision"
 		add_child(collision_root)
 	
+	# Só a geometria procedural do arquétipo (30/10: prédios do editor de 28-31 ms sem dizer onde).
+	var build_span := preload("res://runtime/StallWorkTrace.gd").begin()
 	build()
-	
+	preload("res://runtime/StallWorkTrace.gd").finish_slow("stream.building.build", build_span, 2000, self)
+
 	if entrance_north:
 		# Mirror/rotate visuals and entrance layout if entrance is on North
 		visuals_root.rotation.y = PI
