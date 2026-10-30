@@ -13,6 +13,16 @@ const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const VEHICLE_KINDS := ["bumper", "heavy", "metal", "motorcycle", "solid"]
 const MATERIAL_KINDS := ["glass", "wood", "flesh"]
 const BODY_KINDS := ["body_hit", "body_land"]
+## Objetos de rua por material (playtest 30/10): poste/placa com o clang de chapa do banco de
+## impactos (impact_metal), vaso/pedra/entulho com o concreto, e os materiais sem WAV (saco,
+## lata, plástico duro) sintetizados no carregamento por PropImpactSounds.
+const PROP_FILE_KINDS := {"pole": "impact_metal", "concrete": "impact_concrete"}
+const PROP_SYNTH_KINDS := ["bag", "can", "plastic"]
+const PROP_SOUNDS := preload("res://gameplay/street_physics/PropImpactSounds.gd")
+## Variação por material (antes ±4% para tudo): saco e plástico mudam bastante de tamanho e de
+## enchimento, poste quase não muda. [tom mín., tom máx., ganho em dB sobre a curva por velocidade].
+const PROP_VOICE := {"pole": [.82, 1.08, 0.0], "concrete": [.85, 1.1, -1.0], "bag": [.8, 1.25, -3.0],
+	"can": [.85, 1.2, -1.5], "plastic": [.82, 1.22, -2.0], "wood": [.85, 1.15, 0.0], "glass": [.9, 1.12, 0.0]}
 static var _last_take: Dictionary = {}
 static var _streams: Dictionary = {}
 var voices: Array[AudioStreamPlayer3D] = []
@@ -27,7 +37,8 @@ var dropped_count := 0
 ## Hold all contact takes before playable collisions. No voices, bus or RNG
 ## are touched, and loader results are fetched only after their work ends.
 static func prewarm(tree: SceneTree) -> void:
-	for kind in VEHICLE_KINDS + MATERIAL_KINDS + BODY_KINDS:
+	PROP_SOUNDS.prewarm()
+	for kind in VEHICLE_KINDS + MATERIAL_KINDS + BODY_KINDS + PROP_FILE_KINDS.keys():
 		var pending: Array[String] = []
 		for take in (4 if kind in VEHICLE_KINDS else 3):
 			var path := _sample_path(kind, take)
@@ -49,9 +60,16 @@ static func prewarm(tree: SceneTree) -> void:
 
 static func _sample_path(kind: String, take: int) -> String:
 	if kind in BODY_KINDS: return "res://audio/body_impacts/%s_%d.wav" % [kind, take]
+	if PROP_FILE_KINDS.has(kind): return "res://assets/gameplay/audio/%s_%d.wav" % [PROP_FILE_KINDS[kind], take]
+	if kind in PROP_SYNTH_KINDS: return "synth://%s_%d" % [kind, take]
 	return "res://assets/gameplay/audio/impact_%s_%d.wav" % [kind, take] if kind in MATERIAL_KINDS else "%s%s_%d.wav" % [DIR, kind, take]
 
 static func _stream(path: String) -> AudioStream:
+	if not _streams.has(path) and path.begins_with("synth://"):
+		# Tomada sintetizada (já pronta desde o carregamento): só a referência.
+		var label := path.trim_prefix("synth://")
+		var cut := label.rfind("_")
+		_streams[path] = PROP_SOUNDS.take(label.substr(0, cut), int(label.substr(cut + 1)))
 	if not _streams.has(path):
 		var load_began := STALL_WORK.begin()
 		_streams[path] = ResourceLoader.load(path, "AudioStream", ResourceLoader.CACHE_MODE_REUSE) as AudioStream if ResourceLoader.exists(path, "AudioStream") else null
@@ -195,7 +213,7 @@ func emit_contact(source_id: int, key: String, point: Vector3, speed: float, kin
 	if chosen == null:
 		dropped_count += 1
 		return false
-	var count := 3 if kind in MATERIAL_KINDS or kind in BODY_KINDS else 4
+	var count := 3 if kind in MATERIAL_KINDS or kind in BODY_KINDS or PROP_VOICE.has(kind) else 4
 	var take := (int(_last_take.get(kind, -1)) + rng.randi_range(1, count - 1)) % count
 	var stream := _stream(_sample_path(kind, take))
 	if stream == null: return false
@@ -209,8 +227,9 @@ func emit_contact(source_id: int, key: String, point: Vector3, speed: float, kin
 	chosen.stream = stream
 	chosen.bus = body_bus_name if kind in BODY_KINDS else bus_name
 	chosen.global_position = point
-	chosen.volume_db = volume
-	chosen.pitch_scale = rng.randf_range(0.96, 1.04)
+	var voicing: Array = PROP_VOICE.get(kind, [0.96, 1.04, 0.0])
+	chosen.volume_db = volume + float(voicing[2]) + rng.randf_range(-1.5, 1.0) * (1.0 if PROP_VOICE.has(kind) else 0.0)
+	chosen.pitch_scale = rng.randf_range(float(voicing[0]), float(voicing[1]))
 	STALL_WORK.finish_slow("contact_audio.configure_voice",stage,5000,self)
 	stage = STALL_WORK.begin()
 	chosen.play()

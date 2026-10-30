@@ -307,14 +307,45 @@ static func _bag_single(t: SurfaceTool) -> void:
 ## Pilha de saída do lixo: dois pretos, um azul, um verde, um transparente com o lixo
 ## aparecendo, um deitado por cima e sacolinhas de mercado.
 static func _bag_pile(t: SurfaceTool) -> void:
-	_bag(t, Vector3(-0.25, 0, -0.1), Vector2(0.3, 0.27), 0.55, Color("2c2e31"), 2)
-	_bag(t, Vector3(0.2, 0, -0.15), Vector2(0.28, 0.25), 0.5, Color("37393d"), 5)
-	_bag(t, Vector3(0.05, 0, 0.25), Vector2(0.26, 0.24), 0.46, Color("2f5f9e"), 7)
-	_bag(t, Vector3(0.46, 0, 0.18), Vector2(0.24, 0.22), 0.42, Color("3a6a3e"), 3)
-	_bag(t, Vector3(-0.46, 0, 0.24), Vector2(0.22, 0.2), 0.4, Color("ffffff"), 4, "bag_clear")
-	blob(t, Vector3(-0.02, 0.36, -0.05), Vector2(0.32, 0.2), 0.24, Color("2c2e31"), "bag", 8, 9, 0.0, 0.2)
-	_bag(t, Vector3(0.62, 0, -0.22), Vector2(0.12, 0.11), 0.2, Color("e8e6de"), 6)
-	_bag(t, Vector3(-0.6, 0, -0.26), Vector2(0.11, 0.1), 0.18, Color("4a7ac0"), 8)
+	for part in 8: _bag_pile_part(t, part)
+
+
+## Peças da pilha na ordem de sempre (a malha inteira continua idêntica).
+static func _bag_pile_part(t: SurfaceTool, part: int) -> void:
+	match part:
+		0: _bag(t, Vector3(-0.25, 0, -0.1), Vector2(0.3, 0.27), 0.55, Color("2c2e31"), 2)
+		1: _bag(t, Vector3(0.2, 0, -0.15), Vector2(0.28, 0.25), 0.5, Color("37393d"), 5)
+		2: _bag(t, Vector3(0.05, 0, 0.25), Vector2(0.26, 0.24), 0.46, Color("2f5f9e"), 7)
+		3: _bag(t, Vector3(0.46, 0, 0.18), Vector2(0.24, 0.22), 0.42, Color("3a6a3e"), 3)
+		4: _bag(t, Vector3(-0.46, 0, 0.24), Vector2(0.22, 0.2), 0.4, Color("ffffff"), 4, "bag_clear")
+		5: blob(t, Vector3(-0.02, 0.36, -0.05), Vector2(0.32, 0.2), 0.24, Color("2c2e31"), "bag", 8, 9, 0.0, 0.2)
+		6: _bag(t, Vector3(0.62, 0, -0.22), Vector2(0.12, 0.11), 0.2, Color("e8e6de"), 6)
+		7: _bag(t, Vector3(-0.6, 0, -0.26), Vector2(0.11, 0.1), 0.18, Color("4a7ac0"), 8)
+
+
+## Sacos soltos da pilha atropelada (playtest 30/10: "tem 4-5 sacolas, elas ficam coladas"): uma
+## malha por saco, no mesmo lugar e com o mesmo material da pilha inteira, para cada uma virar um
+## destroço próprio. O saco deitado por cima vai com o de baixo; as sacolinhas, com o vizinho.
+## Montado uma vez (StreetPhysics._ready) e retido; o quadro do choque só reaproveita.
+const PILE_PIECES := {"bag_pile": [[0, 5], [1], [2], [3, 6], [4, 7]]}
+static var _pieces := {}
+
+static func pieces(kind: String) -> Array:
+	if _pieces.has(kind): return _pieces[kind]
+	var result := []
+	for group in PILE_PIECES.get(kind, []):
+		var t := SurfaceTool.new()
+		t.begin(Mesh.PRIMITIVE_TRIANGLES)
+		# Mesmas opções de CityPropKit.mesh: mesma variante de shader da pilha inteira.
+		t.set_material(material())
+		t.set_smooth_group(-1)
+		for part in group:
+			match kind:
+				"bag_pile": _bag_pile_part(t, part)
+		t.generate_normals()
+		result.append(t.commit())
+	_pieces[kind] = result
+	return result
 
 
 ## Saco rasgado (cachorro, catador): murcho, boca aberta mostrando o lixo, e o que caiu espalhado

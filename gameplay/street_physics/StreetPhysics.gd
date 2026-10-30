@@ -85,6 +85,8 @@ func _ready() -> void:
 	add_child(tracks)
 	_setup_audio()
 	if runover_gore: SQUISH.prewarm()
+	# Sacos soltos da pilha e sons sintetizados de saco/lata/plástico: prontos antes do 1º choque.
+	FRAGILE.prewarm()
 
 
 func _setup_audio() -> void:
@@ -259,12 +261,16 @@ func _hit_props(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> v
 			_hold_at_post(vehicle, item, toward)
 			continue
 		var hit_began := STALL_WORK.begin()
-		var yielded := FRAGILE.hit(item, closing, planar, self)
+		var yielded := FRAGILE.hit(item, closing, planar, self, vehicle)
 		STALL_WORK.finish_slow("street.pre.props.hit", hit_began, 5000, vehicle)
 		if not yielded:
 			_hold_at_post(vehicle, item, toward)
 		if yielded:
 			var spec: Dictionary = FRAGILE.spec(item)
+			# O objeto toca o material dele (poste: chapa; saco: plástico); o que é pesado também
+			# amassa o carro, com a fonte no próprio carro para não disputar a fila do objeto.
+			if float(spec.damage) >= 4.0:
+				CONTACT_AUDIO.play_contact(vehicle, null, item.point + Vector3.UP * 0.6, closing * 0.6, "bumper", "propcar|%d" % vehicle.get_instance_id())
 			var response := CRUSH.light_impact_response(vehicle, planar.length())
 			_scale_vehicle_speed(vehicle, 1.0 - float(spec.drag) * response)
 			if response > 0.01 and float(spec.damage) > 0 and vehicle.has_method("receive_damage"):
