@@ -69,3 +69,49 @@ func _window(x: float,y: float,z: float,timber: String) -> void:
 	box("Mullion",Vector3(.07,1.15,.07),Vector3(x,y,z+.18),timber)
 	box("Transom",Vector3(1.38,.07,.07),Vector3(x,y,z+.18),timber)
 	box("Sill",Vector3(1.8,.12,.35),Vector3(x,y-.71,z+.08),"d5d0bd")
+
+
+const FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
+const PAINTED_RECIPES := {
+	"d3c4a5":"plaster",
+	"b6c8c6":"plaster",
+	"d8d9cd":"plaster",
+	"e4dfd0":"plaster",
+	"684a36":"wood",
+	"455d68":"wood",
+	"423d36":"wood",
+	"e2d9c3":"wood",
+	"7c7060":"wood",
+	"e0dbcb":"wood",
+	"807e73":"cast",
+	"8b8c7d":"cast",
+	"9a6a51":"cast",
+	"bd8a68":"cast",
+	"555e60":"cast",
+	"d4d1c1":"cast",
+	"797d76":"cast",
+	"c9c4b4":"cast",
+	"d5d0bd":"cast",
+	"805748":"painted",
+	"4d5856":"painted",
+	"596563":"painted",
+	"414947":"painted",
+}
+
+static func painted_enabled() -> bool:
+	return OS.get_environment("GETECO_PAINTED_RESIDENCES") != "0"
+
+static func prewarm_materials() -> Array[Material]:
+	var result: Array[Material] = []
+	if painted_enabled():
+		for color_key in PAINTED_RECIPES: result.append(_finish(color_key))
+	return result
+
+static func _finish(color_key: String) -> StandardMaterial3D:
+	var kind: String = PAINTED_RECIPES[color_key]
+	return FINISH.material(kind,Color(color_key),.83,.25 if kind=="painted" else 0.0)
+
+## Só material: a colisão da fachada e os acessos continuam seguindo os meshes originais.
+func material(color: String, metal := 0.0) -> StandardMaterial3D:
+	if painted_enabled() and PAINTED_RECIPES.has(color): return _finish(color)
+	return super.material(color,metal)

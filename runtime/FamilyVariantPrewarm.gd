@@ -8,6 +8,12 @@ const CUTAWAY := preload("res://world/urban_detail/TunnelCutaway.gd")
 const GUARDS := preload("res://gameplay/emergency/EffectsPrewarm.gd")
 const DRAW_FRAMES := 3
 const MAX_WAIT_FRAMES := 30
+const AUTHORED_OWNERS := [
+	"res://world/editing/WorldGroundFactory.gd",
+	"res://gameplay/urban_v1/VerticeCompany.gd",
+	"res://assets/regions/source/world/harbor/residences/ResidenceExterior3D.gd",
+	"res://world/places/ResidenceParking.gd",
+]
 static var _retained: Array[Material] = []
 static var _done := false
 static var last_summary: Dictionary = {}
@@ -26,10 +32,10 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 			materials.append(CUTAWAY.make_alpha_copy(material))
 	var family_count := materials.size()
 	# Pisos autorados compartilham este aquecimento de superfícies, inclusive sem fusão.
-	materials.append_array(preload("res://world/editing/WorldGroundFactory.gd").prewarm_materials())
 	# Resolve o dono sob a cortina, sem dependência circular entre cena, ator e prewarm.
-	var yard_owner: Script = load("res://gameplay/urban_v1/VerticeCompany.gd")
-	materials.append_array(yard_owner.prewarm_materials())
+	for path in AUTHORED_OWNERS:
+		var owner: Script = load(path)
+		materials.append_array(owner.prewarm_materials())
 	if materials.is_empty(): return
 	var visual := Node3D.new()
 	visual.name = "FamilyVariantPrewarm"

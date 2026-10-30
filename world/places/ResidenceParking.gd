@@ -33,3 +33,33 @@ func _ready() -> void:
 	box("GarageFascia",Vector3(5.95,.24,.12),Vector3(7.8,2.89,3.88),"c7c8bb")
 	# Bike-sized wheel guide makes the narrow bay legible without decorative text.
 	box("MotorcycleGuide",Vector3(.16,.04,1.4),Vector3(9,.035,-.35),"47524e")
+
+
+const FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
+const PAINTED_RECIPES := {
+	"8a8d88":"slab",
+	"59645f":"painted",
+	"5b6765":"painted",
+	"74817c":"painted",
+	"c7c8bb":"painted",
+	"414b46":"painted",
+	"47524e":"painted",
+}
+
+static func painted_enabled() -> bool:
+	return OS.get_environment("GETECO_PAINTED_RESIDENCE_PARKING") != "0"
+
+static func prewarm_materials() -> Array[Material]:
+	var result: Array[Material] = []
+	if painted_enabled():
+		for color_key in PAINTED_RECIPES: result.append(_finish(color_key))
+	return result
+
+static func _finish(color_key: String) -> StandardMaterial3D:
+	var kind: String = PAINTED_RECIPES[color_key]
+	return FINISH.material(kind,Color(color_key),.83,.25 if kind=="painted" else 0.0)
+
+## Só material: a colisão da fachada e os acessos continuam seguindo os meshes originais.
+func material(color: String, metal := 0.0) -> StandardMaterial3D:
+	if painted_enabled() and PAINTED_RECIPES.has(color): return _finish(color)
+	return super.material(color,metal)
