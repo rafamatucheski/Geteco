@@ -20,6 +20,9 @@ const BRANDS := preload("res://world/city_look/CityBrands.gd")
 const LIFE := preload("res://world/city_look/BuildingLife.gd")
 const STAIRS := preload("res://world/city_look/WalkableStairs.gd")
 const ROOFS := preload("res://world/city_look/RoofSurfaces.gd")
+const ROOF_CIRCULATION := preload("res://world/places/harbor_buildings/HarborRoofCirculation.gd")
+## Meia planta da casinha da escada (x, z), para prendê-la dentro da laje de cima.
+const HOUSE_HALF := Vector2(1.04, 0.84)
 const GROUND_LITTER := preload("res://world/city_look/CityGroundLitter.gd")
 const POLICE := preload("res://world/city_look/PoliceStationDressing.gd")
 const NIGHT_GROUP := &"city_look_night"
@@ -1126,6 +1129,8 @@ const ROOF_PROPS := [["ac_unit", 0.2], ["vent", 0.14], ["roof_hatch", 0.06], ["a
 
 ## Adereços que leem como saída do telhado (casinha da escada, alçapão): um por prédio.
 const ROOF_EXITS := ["roof_shed", "roof_hatch"]
+## Laje abaixo disto é de prédio de um andar: sem casinha de escada no sorteio.
+const SHED_MIN_ROOF_Y := ROOF_CIRCULATION.HATCH_MAX_ROOF_HEIGHT
 
 
 static func _rooftops(chunk: Node3D, _roof_context: Dictionary, batches: Dictionary) -> void:
@@ -1223,13 +1228,57 @@ static func _rooftop_building_begin(building: UrbanBuildingBase, batches: Dictio
 	# caminhável recebe a casinha onde a escada de verdade sai (HarborRoofCirculation);
 	# os outros aceitam no máximo uma casinha ou alçapão do sorteio.
 	var roof_exit_placed := false
-	var stair_house: Variant = preload("res://world/places/harbor_buildings/HarborRoofCirculation.gd").stair_house(building)
+	var cover := _pitched_cover(building, main_roof)
+	var stair_house: Variant = ROOF_CIRCULATION.stair_house(building)
 	if stair_house is Transform3D:
 		var house: Transform3D = stair_house
 		house.origin.y = main_roof.end.y + 0.012
-		_push(batches, "roof_shed", building.global_transform * house)
+		# Prédio escalonado: a laje de cima é menor que o terreno e a saída no canto do terreno ficava
+		# metade para fora dela (30/10: "objeto tá para fora do prédio"). Prende dentro da laje de cima.
+		var margin := Vector2(HOUSE_HALF.x + 0.25, HOUSE_HALF.y + 0.25)
+		if main_roof.size.x > margin.x * 2.0: house.origin.x = clampf(house.origin.x, main_roof.position.x + margin.x, main_roof.end.x - margin.x)
+		else: house.origin.x = main_roof.get_center().x
+		if main_roof.size.z > margin.y * 2.0: house.origin.z = clampf(house.origin.z, main_roof.position.z + margin.y, main_roof.end.z - margin.y)
+		else: house.origin.z = main_roof.get_center().z
+		# Playtest 30/10: casa térrea com casinha de escada de 2 m lia como escada para um
+		# segundo andar que não existe, e na casa de duas águas ela furava a telha. Térreo
+		# e telhado inclinado saem por alçapão rente ao telhado (deitado na água).
+		if cover.size != Vector3.ZERO:
+			_push(batches, "roof_hatch", building.global_transform * _hatch_on_slope(house, cover))
+		elif ROOF_CIRCULATION.uses_hatch(ROOF_CIRCULATION.definition_for(building)):
+			_push(batches, "roof_hatch", building.global_transform * house)
+		else:
+			ROOF_CIRCULATION.build_house(building, house)
 		roof_exit_placed = true
-	return {"building": building, "key": key, "slabs": slabs, "slab_index": 0, "main_occupied": [], "roof_exit_placed": roof_exit_placed}
+	return {"building": building, "key": key, "slabs": slabs, "slab_index": 0, "main_occupied": [], "roof_exit_placed": roof_exit_placed, "pitched": cover.size != Vector3.ZERO}
+
+
+## Telhado de duas águas por cima da laje (casa pintada com beiral, PaintedFacadeKit):
+## a malha "Roof" do kit. AABB vazio quando a laje é o próprio telhado. A laje lida por
+## _roof_slabs fica no topo da parede, embaixo da telha: adereço posto nela fura a água.
+static func _pitched_cover(building: UrbanBuildingBase, slab: AABB) -> AABB:
+	var inverse := building.global_transform.affine_inverse()
+	for node in building.find_children("Roof", "MeshInstance3D", true, false):
+		var mesh := node as MeshInstance3D
+		if not String(mesh.get_parent().name).begins_with("PaintedFacade_"): continue
+		var box := inverse * (mesh.global_transform * mesh.get_aabb())
+		if box.size.y > 0.5 and box.end.y > slab.end.y + 0.5: return box
+	return AABB()
+
+
+## Alçapão deitado na água do telhado (cumeeira no centro em z, paralela a X, como o
+## _pitched_roof do kit), na água do lado em que a escada sai, longe da cumeeira e do beiral.
+static func _hatch_on_slope(house: Transform3D, cover: AABB) -> Transform3D:
+	var center_z := cover.get_center().z
+	var half_z := cover.size.z * 0.5
+	var slope := cover.size.y / maxf(0.01, half_z)
+	var side := 1.0 if house.origin.z >= center_z else -1.0
+	var low := minf(0.9, half_z * 0.5)
+	var run := clampf(absf(house.origin.z - center_z), low, maxf(half_z - 0.8, low))
+	var x := clampf(house.origin.x, cover.position.x + 0.9, maxf(cover.end.x - 0.9, cover.position.x + 0.9))
+	var tilt := Basis(Vector3.RIGHT, side * atan(slope))
+	var surface := Vector3(x, cover.end.y - slope * run, center_z + side * run)
+	return Transform3D(tilt * house.basis, surface + tilt * Vector3.UP * 0.01)
 
 
 ## Uma laje do prédio com seus adereços (um item do cursor por laje: as casas geminadas
@@ -1246,6 +1295,8 @@ static func _rooftop_slab(chunk: Node3D, item: Dictionary, batches: Dictionary) 
 	var branch_roof_center := Vector2(roof.get_center().x, roof.get_center().z)
 	var branch_size := Vector2(roof.size.x, roof.size.z)
 	if branch_size.x < 2.8 or branch_size.y < 2.8: return
+	# Laje embaixo da telha de duas águas: só o alçapão (posto no começo do prédio).
+	if bool(item.get("pitched", false)): return
 	var xform := building.global_transform
 	var branch_occupied := _roof_obstacles(building, branch_roof_y)
 	branch_occupied.append_array(preload("res://world/places/harbor_buildings/HarborRoofCirculation.gd").occupied(building))
@@ -1267,6 +1318,8 @@ static func _rooftop_slab(chunk: Node3D, item: Dictionary, batches: Dictionary) 
 		var kind := _pick(ROOF_PROPS, _roll(akey) * 1.0)
 		if kind.is_empty(): continue
 		if kind in ROOF_EXITS and roof_exit_placed: continue
+		# Casinha de escada em prédio térreo lê como escada para um andar que não existe.
+		if kind == "roof_shed" and roof.end.y < SHED_MIN_ROOF_Y: continue
 		# "vent" cai no 0.5 padrão. BuildingLife._roof_life empurra outro vent (com
 		# vapor) fora deste sorteio, com STEAM_VENT_RADIUS 0.6; mantenha os dois coerentes.
 		var radius := 0.9 if kind in ["ac_unit", "roof_hatch"] else 0.5

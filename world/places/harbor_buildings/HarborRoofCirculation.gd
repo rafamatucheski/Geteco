@@ -5,6 +5,15 @@ extends RefCounted
 ## (a do enfeite, BuildingLifeKit._roof_shed, tem 2,0 × 2,0 × 1,6 e cabe dentro dela).
 const HOUSE_OFFSET := Vector3(0,0,-1.65)
 const HOUSE_SIZE := Vector3(2.08,2.08,1.68)
+## Prédio com laje abaixo disto é térreo: sai por alçapão no lugar da casinha (playtest
+## 30/10: casinha de escada em casa de um andar só lia como andar que não existe).
+const HATCH_MAX_ROOF_HEIGHT := 5.5
+## Moldura do alçapão aberto que se monta ao subir; cobre o alçapão fechado do enfeite
+## (CityPropKit roof_hatch, 1,0 × 0,46 × 1,0).
+const HATCH_SIZE := Vector3(1.12,.5,1.12)
+
+static func uses_hatch(definition: Dictionary) -> bool:
+	return float(definition.get("roof_height",INF)) < HATCH_MAX_ROOF_HEIGHT
 
 ## Definição do telhado caminhável do prédio (interior do catálogo ou telhado de serviço).
 static func definition_for(building: Node3D) -> Dictionary:
@@ -30,6 +39,32 @@ static func stair_house(building: Node3D) -> Variant:
 	if definition.is_empty(): return null
 	var local_to_building: Transform3D = building.global_transform.affine_inverse()*Transform3D(Basis(Vector3.UP,float(definition.exterior_rotation)),definition.exterior_position)
 	return local_to_building*Transform3D(Basis.IDENTITY,stair(definition)+HOUSE_OFFSET)
+
+## Casinha da escada vista da rua: as mesmas peças e materiais com textura (pedra, metal, madeira de
+## HarborBuildingMaterials) da que se monta ao subir no telhado (HarborBuildingRooftop). Era a caixa lisa
+## de cor por vértice do kit de adereços (30/10: "melhorar com texturas já prontas para ficar condizente").
+## `at` = centro da base, no espaço de `parent`; porta para +Z.
+static func build_house(parent: Node3D, at: Transform3D) -> Node3D:
+	var materials := preload("res://world/places/harbor_buildings/HarborBuildingMaterials.gd")
+	var house := Node3D.new()
+	house.name = "RoofStairHouse"
+	house.transform = at
+	parent.add_child(house)
+	for spec in [
+		["Walls", Vector3(0, HOUSE_SIZE.y * .5, 0), HOUSE_SIZE, "stone", "a39b8c"],
+		["Cap", Vector3(0, HOUSE_SIZE.y + .08, .05), Vector3(HOUSE_SIZE.x + .2, .16, HOUSE_SIZE.z + .2), "metal", "6e7577"],
+		["Door", Vector3(.4, .87, HOUSE_SIZE.z * .5 + .012), Vector3(.82, 1.74, .02), "wood", "5a4a3c"],
+		["Window", Vector3(-.55, 1.4, HOUSE_SIZE.z * .5 + .012), Vector3(.52, .42, .02), "metal", "2e3a40"],
+	]:
+		var piece := MeshInstance3D.new()
+		piece.name = spec[0]
+		var box := BoxMesh.new()
+		box.size = spec[2]
+		piece.mesh = box
+		piece.position = spec[1]
+		piece.material_override = materials.material(spec[3], Color(spec[4]))
+		house.add_child(piece)
+	return house
 
 static func occupied(building: Node3D) -> Array:
 	var definition := definition_for(building)

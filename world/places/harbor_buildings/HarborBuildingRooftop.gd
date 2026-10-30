@@ -63,10 +63,13 @@ func _ready() -> void:
 	# sem brigar de profundidade; o patamar fica em frente à porta.
 	var stair := stair_point()
 	var house: Vector3 = stair+HOUSE_OFFSET
-	_piece("StairHouse",house+Vector3(0,HOUSE_SIZE.y*.5,0),HOUSE_SIZE,"stone","a39b8c",true)
-	_piece("StairHouseCap",house+Vector3(0,HOUSE_SIZE.y+.08,.05),Vector3(HOUSE_SIZE.x+.2,.16,HOUSE_SIZE.z+.2),"metal","6e7577",false)
-	_piece("StairHouseDoor",house+Vector3(.4,.87,HOUSE_SIZE.z*.5+.012),Vector3(.82,1.74,.02),"wood","5a4a3c",false)
-	_piece("StairHouseWindow",house+Vector3(-.55,1.4,HOUSE_SIZE.z*.5+.012),Vector3(.52,.42,.02),"metal","2e3a40",false)
+	if CIRCULATION.uses_hatch(definition):
+		_build_open_hatch(house)
+	else:
+		_piece("StairHouse",house+Vector3(0,HOUSE_SIZE.y*.5,0),HOUSE_SIZE,"stone","a39b8c",true)
+		_piece("StairHouseCap",house+Vector3(0,HOUSE_SIZE.y+.08,.05),Vector3(HOUSE_SIZE.x+.2,.16,HOUSE_SIZE.z+.2),"metal","6e7577",false)
+		_piece("StairHouseDoor",house+Vector3(.4,.87,HOUSE_SIZE.z*.5+.012),Vector3(.82,1.74,.02),"wood","5a4a3c",false)
+		_piece("StairHouseWindow",house+Vector3(-.55,1.4,HOUSE_SIZE.z*.5+.012),Vector3(.52,.42,.02),"metal","2e3a40",false)
 	# A few useful roof objects, deliberately outside the landing and pickup.
 	if width>=8.0 and depth>=8.0:
 		_piece("Planter",Vector3(half_w-1.0,.29,-half_d+1.25),Vector3(1.15,.58,1.4),"stone","817961",true)
@@ -78,6 +81,25 @@ func _ready() -> void:
 	_install_reward()
 	set_process(false)
 	set_physics_process(false)
+
+## Alçapão de prédio térreo, aberto (quem sobe acabou de passar por ele): moldura sólida
+## que cobre o alçapão fechado do enfeite, boca escura, tampa erguida para trás e os
+## montantes da escada passando da boca, como escada de telhado de verdade.
+func _build_open_hatch(at: Vector3) -> void:
+	var size := CIRCULATION.HATCH_SIZE
+	_piece("RoofHatchCurb",at+Vector3(0,size.y*.5,0),size,"metal","7d8284",true)
+	_piece("RoofHatchOpening",at+Vector3(0,size.y+.006,0),Vector3(size.x-.2,.012,size.z-.2),"metal","15181a",false)
+	var hinge := Node3D.new()
+	hinge.name = "RoofHatchHinge"
+	hinge.position = at+Vector3(0,size.y,-size.z*.5+.04)
+	# Passa um pouco da vertical para trás: fica de pé sozinha, como tampa escorada.
+	hinge.rotation.x = deg_to_rad(-105.0)
+	model.add_child(hinge)
+	_piece("RoofHatchLid",Vector3(0,.03,size.z*.5-.06),Vector3(size.x-.08,.06,size.z-.12),"metal","4b5052",false,hinge)
+	_piece("RoofHatchHandle",Vector3(0,.08,size.z-.22),Vector3(.3,.03,.04),"metal","2b2f31",false,hinge)
+	for x in [-.3,.3]:
+		_piece("RoofHatchLadderRail",at+Vector3(x,size.y+.45,.12),Vector3(.05,.9,.05),"metal","8a8f90",false)
+	_piece("RoofHatchLadderTop",at+Vector3(0,size.y+.88,.12),Vector3(.65,.05,.05),"metal","8a8f90",false)
 
 func jump_access() -> Dictionary:
 	return {"point":jump_point,"outward":jump_outward}
