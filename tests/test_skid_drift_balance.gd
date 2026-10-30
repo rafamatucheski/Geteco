@@ -26,7 +26,8 @@ func run() -> void:
 		voices[id] = await _voice(stage, id)
 	var light: Dictionary = voices["sport_coupe"]
 	var heavy: Dictionary = voices["american_dump_truck"]
-	var ok: bool = light.pitch > heavy.pitch * 1.15 and light.stream != heavy.stream and light.hb < light.drift - 6.0
+	# 30/10: freio de mão travado subiu para -10 dB (drift pleno -5); segue abaixo do drift, por 3 dB ou mais.
+	var ok: bool = light.pitch > heavy.pitch * 1.15 and light.stream != heavy.stream and light.hb < light.drift - 3.0
 	print(("CASE PASS " if ok else "CASE FAIL ") + "variação leve=%s heavy=%s" % [light, heavy])
 	if not ok: failures += 1
 	print("SKID_DRIFT_BALANCE failures=%d" % failures)

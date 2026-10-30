@@ -26,15 +26,21 @@ static func prewarm_skid_audio() -> void:
 		stream.loop_end = maxi(1, roundi(stream.get_length() * stream.mix_rate) - 8)
 		_skid_streams[kind] = stream
 # Voz de derrapagem, em dB relativos ao motor (camada do motor: -20 dB parado, ~-12 em cruzeiro, ~-5 a fundo):
-#  - drift pleno: -8 dB, no nível do motor em cruzeiro (é o som principal da cena quando acontece);
-#  - início do drift: -24 dB, 12 dB abaixo do motor, para a entrada não estalar;
-#  - freio de serviço travando: -13 dB; freio de mão: -17 dB (era -10, "ainda muito alto"), curto e de fundo.
+#  - drift pleno: -5 dB, no nível do motor a fundo (é o som principal da cena quando acontece);
+#  - início do drift: -20 dB, abaixo do motor, para a entrada não estalar;
+#  - freio de serviço travando: -11 dB; freio de mão (rodas travadas, antes de virar drift): -10 dB.
+# Playtest 30/10 ("a derrapagem ainda não dá para ouvir"): estes números nunca chegaram ao ouvido.
+# A voz era posicional (inversa, unit_size 4, max_distance 55, filtro de -24 dB) e o ouvinte é a
+# câmera a ~36 m (CameraRig.EXTERIOR_OFFSET): -19 dB da distância, -9 dB do fade do max_distance e o
+# agudo do pneu cortado, enquanto o motor do jogador toca sem atenuação. O "freio de mão muito alto"
+# de 19b7f8f4 (que baixou -10 para -17) era a alavanca do FireflyBank (-11 dB sem atenuação), não o pneu.
+# Agora a voz do carro do jogador segue a regra do motor (sem atenuação) e o freio de mão volta a chiar.
 const SKID_DRIFT_MIN_SPEED := 6.0
 const SKID_SLIP_ON := .08
 const SKID_SLIP_FULL := .30
-const SKID_DRIFT_DB := Vector2(-24.0, -8.0)
-const SKID_SERVICE_BRAKE_DB := Vector2(-26.0, -13.0)
-const SKID_HANDBRAKE_DB := Vector2(-26.0, -17.0)
+const SKID_DRIFT_DB := Vector2(-20.0, -5.0)
+const SKID_SERVICE_BRAKE_DB := Vector2(-24.0, -11.0)
+const SKID_HANDBRAKE_DB := Vector2(-22.0, -10.0)
 const MAX_MARK_SEGMENTS := 320
 const MARK_LIFETIME_MSEC := 22000
 # Sulco em chÃ£o macio fica mais tempo que a borracha do asfalto: Ã© o rastro que o
@@ -52,6 +58,7 @@ var last_modes: Array[String] = ["",""]
 var mark_mesh: MeshInstance3D
 var geometry := ArrayMesh.new()
 var skid_audio: AudioStreamPlayer3D
+var _skid_foreground := false
 var _car_pitch := 1.0
 var road_mixer: Node
 var _probe_clock := 0.0
@@ -337,7 +344,9 @@ func _stall_update_skid_audio(audible: bool, road_speed: float, lateral_speed: f
 		skid_audio.max_db = -4.0
 		skid_audio.bus = &"Vehicles" if AudioServer.get_bus_index("Vehicles") >= 0 else &"Master"
 		vehicle.add_child(skid_audio)
+		_skid_foreground = false
 		STALL_WORK.finish("vehicle_tires.skid_voice",began,{"kind":kind})
+	_apply_skid_spatial()
 	# Deriva: o volume cresce com o ângulo de deriva (lateral/velocidade), não só com a velocidade, e
 	# carro parado de lado quase não chia. Trava (freio): cresce com a velocidade, com teto mais baixo.
 	var slip := smoothstep(SKID_SLIP_ON, SKID_SLIP_FULL, lateral_speed / maxf(road_speed, 4.0))
@@ -350,6 +359,17 @@ func _stall_update_skid_audio(audible: bool, road_speed: float, lateral_speed: f
 	var drive := maxf(slip, speed_gain * .5) if lock_kind > 0 else slip
 	skid_audio.pitch_scale = lerpf(0.88, 1.12, drive) * _car_pitch
 	if not skid_audio.playing: skid_audio.play()
+
+## Mesma regra de primeiro plano de DesertCarAudio/EngineDesignVoice: o carro do jogador não perde
+## volume pela distância até a câmera; tráfego e NPCs mantêm queda e filtro posicionais.
+func _apply_skid_spatial() -> void:
+	var foreground := bool(vehicle.get("controlled")) and not bool(vehicle.get("traffic")) and not bool(vehicle.get("external_input"))
+	if foreground == _skid_foreground and skid_audio.attenuation_model == (AudioStreamPlayer3D.ATTENUATION_DISABLED if foreground else AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE): return
+	_skid_foreground = foreground
+	skid_audio.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED if foreground else AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
+	skid_audio.max_distance = 0.0 if foreground else 55.0
+	skid_audio.panning_strength = 0.0 if foreground else 1.0
+	skid_audio.attenuation_filter_db = 0.0 if foreground else -24.0
 
 func _heft() -> float:
 	return clampf((STREET_PHYSICS._vehicle_mass(vehicle)-.6)/4.0,0.0,1.0)

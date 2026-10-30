@@ -62,7 +62,7 @@ func run() -> void:
 		# The same listener used by drag must hear the motor above tire squeal.
 		sound.drivetrain.wheelspin = 1.0
 		for i in 20: sound._process(.05)
-		check(sound._tire.playing and sound._tire.volume_db <= -27.9 and sound._tire.max_db <= -24.0 and sound._tire.unit_size <= 4.0, id+": wheelspin remains below the engine with bounded near-listener gain")
+		check(sound._tire.playing and sound._tire.volume_db <= -13.9 and sound._tire.volume_db >= -16.0 and sound._tire.max_db <= -10.0 and sound._tire.unit_size <= 4.0, id+": wheelspin remains below the engine with bounded near-listener gain")
 		var tires: Node = car.effects.tire_effects
 		tires._update_skid_audio(true, 20.0, 0.0)
 		check(not is_instance_valid(tires.skid_audio) or not tires.skid_audio.playing, id+": powertrain wheelspin does not stack a second longitudinal squeal")

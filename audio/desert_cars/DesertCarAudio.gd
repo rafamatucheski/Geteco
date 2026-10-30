@@ -14,6 +14,12 @@ var _layers: Array[AudioStreamPlayer3D] = []
 var _indices := [-1,-1]
 var _shift: AudioStreamPlayer3D
 var _tire: AudioStreamPlayer3D
+# Pneu patinando na arrancada (burnout/largada). Era -28 dB com teto -24, ~20 dB abaixo do motor
+# (-16..-5): inaudível, e por ser esta a voz do burnout o chiado de VehicleTireEffects fica calado
+# enquanto ela toca (has_wheelspin_voice). Playtest 30/10 ("derrapagem não dá para ouvir"): sobe
+# para -14 com teto -10, presente mas ainda abaixo do motor a fundo, que é o que o drag precisa ouvir.
+const WHEELSPIN_DB := -14.0
+const WHEELSPIN_MAX_DB := -10.0
 var _last_shift := 0
 var _range_clock := 0.0
 var _in_range := true
@@ -50,7 +56,7 @@ func _apply_spatial_role() -> void:
 		player.panning_strength=0.0 if _foreground else 1.0
 		player.attenuation_filter_db=0.0 if _foreground else -24.0
 		player.unit_size=4.0 if player==_tire else (3.0 if race_role=="rival" else 12.0)
-		player.max_db=-24.0 if player==_tire else (-18.0 if race_role=="rival" else 1.0)
+		player.max_db=WHEELSPIN_MAX_DB if player==_tire else (-18.0 if race_role=="rival" else 1.0)
 	_spatial_dirty=false
 
 func _apply_design_role() -> void:
@@ -86,7 +92,7 @@ func _ready() -> void:
 	_shift.stream = load("res://audio/vehicle_fx/sport_blowoff_1.wav")
 	_tire = _player("Wheelspin",-80.0)
 	# The driver's close race listener must not amplify rubber above the motor.
-	_tire.max_db = -24.0
+	_tire.max_db = WHEELSPIN_MAX_DB
 	_tire.unit_size = 4.0
 	_tire.stream = _loop("res://audio/acoustic/skid_muscle.wav" if str(drivetrain.spec.engine_family)=="muscle" else "res://audio/acoustic/skid_street.wav")
 
@@ -189,7 +195,7 @@ func _process(delta: float) -> void:
 		_shift.stop()
 		_last_shift = int(drivetrain.shift_serial)
 		_last_throttle = float(drivetrain.throttle)
-		_loop_level(_tire,float(drivetrain.wheelspin),-28.0+role_gain,delta)
+		_loop_level(_tire,float(drivetrain.wheelspin),WHEELSPIN_DB+role_gain,delta)
 		return
 	# Real idle recordings supply low-speed character for these two families.
 	# Do not stretch an idle recording across the entire rev range: fade it out
@@ -225,7 +231,7 @@ func _process(delta: float) -> void:
 	elif _last_throttle > .65 and float(drivetrain.throttle) < .25 and float(drivetrain.turbo_pressure) > .5:
 		_play_shift()
 	_last_throttle = float(drivetrain.throttle)
-	_loop_level(_tire,float(drivetrain.wheelspin),-28.0+role_gain,delta)
+	_loop_level(_tire,float(drivetrain.wheelspin),WHEELSPIN_DB+role_gain,delta)
 
 func _mix_designed_engine(delta: float, level: float) -> bool:
 	var archetype := str(vehicle.get("archetype"))

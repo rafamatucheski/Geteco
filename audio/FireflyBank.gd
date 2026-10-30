@@ -157,9 +157,19 @@ static func engine_off(vehicle: Node3D) -> void:
 	play_at(vehicle, take("vehicle_fx", "engine_off"), vehicle.global_position, -9.0, pitch * randf_range(0.98, 1.02), 30.0, 8.0, &"Vehicles")
 
 ## Puxada do freio de mão; no máximo uma por 0,45 s por veículo.
+## Playtest 30/10: a catraca a -11 dB sem atenuação (play_at com a cidade viva) soava como carro
+## velho e, no esportivo, alta demais. Num esportivo o que se ouve é o pneu (VehicleTireEffects),
+## não a alavanca: esportivo, muscle, elétrico, moto e tanque ficam mudos; carro comum só um
+## clique curto bem baixo; pesado (caminhão, ônibus, diesel) mantém um pouco mais.
+const HANDBRAKE_SILENT := ["sport", "vq35", "m8_v8", "rosso_v12", "muscle", "electric", "tank", "bike_urban", "bike_sport", "bike_cruiser", "snowmobile"]
+const HANDBRAKE_HEAVY := ["truck", "bus", "fire_diesel", "diesel"]
 static func handbrake(vehicle: Node3D) -> void:
 	if not is_instance_valid(vehicle) or not vehicle.is_inside_tree(): return
+	var family := _family(vehicle)
+	if family in HANDBRAKE_SILENT: return
 	var now := Time.get_ticks_msec()
 	if now - int(vehicle.get_meta("firefly_handbrake_msec", -10000)) < 450: return
 	vehicle.set_meta("firefly_handbrake_msec", now)
-	play_at(vehicle, take("vehicle_fx", "handbrake"), vehicle.global_position, -11.0, randf_range(0.97, 1.04), 24.0, 8.0, &"Vehicles")
+	# Pitch acima de 1 encurta a tomada e tira o rangido grave da catraca.
+	var heavy := family in HANDBRAKE_HEAVY
+	play_at(vehicle, take("vehicle_fx", "handbrake"), vehicle.global_position, -18.0 if heavy else -26.0, randf_range(0.95, 1.02) if heavy else randf_range(1.18, 1.26), 24.0, 8.0, &"Vehicles")

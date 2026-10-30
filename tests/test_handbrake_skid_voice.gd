@@ -66,9 +66,10 @@ func _case(stage: Node3D, id: String) -> void:
 	var idle_audio = tires.skid_audio
 	var idle_playing: bool = is_instance_valid(idle_audio) and idle_audio.playing
 	Input.action_release("handbrake")
-	# Playtest 29/10 (2): o freio de mão ficava em -10 dB, no nível do motor. Agora fica audível
-	# (>= -22) mas bem abaixo do motor em cruzeiro (<= -15, ~3 dB ou mais abaixo dele).
-	var audible_cap: bool = peak_db >= -22.0 and peak_db <= -15.0
+	# Playtest 30/10: o "alto demais" de 29/10 era a catraca do FireflyBank, não o pneu; com a voz
+	# do jogador sem atenuação da câmera o chiado do freio de mão volta a ser presente (-22..-10 dB
+	# pela velocidade, até -5 se já virou drift), mas nunca acima do teto do drift pleno.
+	var audible_cap: bool = peak_db >= -18.0 and peak_db <= -5.0
 	var ok := played >= 12 and max_voices <= 1 and not idle_playing and audible_cap
 	print(("CASE PASS " if ok else "CASE FAIL ") + "%s v=%.1f m/s quadros_com_chiado=%d/60 vozes=%d parado_chia=%s pico=%.1f dB faixa_ok=%s" % [id, speed_at_pull, played, max_voices, idle_playing, peak_db, audible_cap])
 	if not ok: failures += 1
