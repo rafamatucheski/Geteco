@@ -43,7 +43,8 @@ static func _detail_material(kind: String, color_key: String) -> StandardMateria
 const COMPACT_CANOPY := Rect2(-36.68,-19.5,14,9)
 
 static func compact_station_enabled() -> bool:
-	return PaintedFacadeKit.enabled() and OS.get_environment("GETECO_PAINTED_TONICO") != "0" and OS.get_environment("GETECO_PAINTED_TONICO_STATION") != "0"
+	# Mesma chave da loja compacta: cobertura, pátio e loja trocam juntos.
+	return PaintedTonicoShop.compact_enabled()
 
 const HOME_LAYOUT := [
 	[Vector3(-73,0,-21),"a49673",PI*.5],
@@ -238,11 +239,14 @@ func _station() -> void:
 	_author_transform=Transform3D.IDENTITY
 
 func _compact_station() -> void:
-	# O interior contínuo ocupa 18,72 x 7,4 m: reduzir este casco exigiria alterar
-	# o ambiente jogável. A porta, o catálogo e o retângulo da loja ficam preservados.
+	# Loja compacta (11,2 x 7,4 x 3,6 m) centrada na cobertura. O interior contínuo é
+	# gerado do retângulo do catálogo, que lê o mesmo PaintedTonicoShop.footprint().
 	preload("res://gameplay/urban_v1/PaintedTonicoShop.gd").build(self,STATION_TRANSFORM)
 	_author_transform=Transform3D.IDENTITY
-	_solid("TonicoShop",Vector3(-29.56,1.45,-29.32),Vector3(18.72,2.9,7.4))
+	var shop: Dictionary = PaintedTonicoShop.footprint()
+	var shop_at: Vector3 = shop.position-ORIGIN
+	var shop_h: float = PaintedFacadeKit.natural_size(PaintedTonicoShop.style()).y
+	_solid("TonicoShop",Vector3(shop_at.x,shop_h*.5,shop_at.z),Vector3(shop.size.x,shop_h,shop.size.y))
 	var art := STATION_ART.batch()
 	var canopy := STATION_ART.batch()
 	var white := STATION_ART.white_sheet()
@@ -296,8 +300,10 @@ func _compact_station() -> void:
 	_solid("AirCompressor",Vector3(-9,.7,-7),Vector3(1.8,1.4,1))
 	for x in [-10.0,-10.8]: _box(Vector3(x,.09,-7),Vector3(.065,.06,1.5),"32392d")
 	_box(Vector3(-10.4,.09,-6.25),Vector3(.8,.06,.065),"32392d")
-	for p in [Vector3(-37,2.7,-28.5),Vector3(-23,2.7,-28.5)]: _lamp(p)
 	_author_transform=Transform3D.IDENTITY
+	# Arandelas sobre as duas janelas pintadas (centros a ±3,42 m), encostadas na frente.
+	var front_z: float = shop_at.z+float(shop.size.y)*.5+.12
+	for side in [-1.0,1.0]: _lamp(Vector3(shop_at.x+side*3.42,2.55,front_z))
 
 func _pump(at: Vector3) -> void:
 	_box(at+Vector3(0,.10,0),Vector3(1.4,.2,1.2),"79796a")

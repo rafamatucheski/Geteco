@@ -52,7 +52,10 @@ static func definitions() -> Array[Dictionary]:
 		var height := (7.5 if size.x/1.25 > 20.0 else 4.5) if record.model_kind == "warehouse" else (4.8 if int(record.variant) == 2 else 3.2)
 		_append({"id":record.id,"name":"","kind":record.model_kind,"position":record.position,"size":size,"height_override":height,"port_building":true,"variant_seed":int(record.variant)})
 	_append({"id":"TorqueStore","name":"Torque","kind":"shop","position":Vector3(419.5,0,134),"size":Vector2(19,8),"height_override":4.26,"editor_rotation":PI,"entrance_x":-.5})
-	_append({"id":"TruckersStationStore","name":"Tonico","kind":"shop","position":Vector3(-359.56,0,78.68),"size":Vector2(18.72,7.4),"height_override":2.91})
+	# Loja do Tonico: o retângulo vem da loja pintada (compacta 11,2 x 7,4 m por padrão),
+	# para casco, colisão, porta e interior gerado andarem juntos.
+	var tonico: Dictionary = PaintedTonicoShop.footprint()
+	_append({"id":"TruckersStationStore","name":"Tonico","kind":"shop","position":tonico.position,"size":tonico.size,"height_override":tonico.height})
 	return _cache
 
 static func _apply_edit(row: Dictionary, edit: Dictionary) -> void:

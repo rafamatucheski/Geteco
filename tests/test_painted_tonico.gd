@@ -6,7 +6,8 @@ extends SceneTree
 ## GETECO_PAINTED_TONICO=0 devolve a caixa antiga.
 
 const VILLAGE := preload("res://gameplay/urban_v1/TruckersVillageVisuals.gd")
-const STYLE := "loja-tonico"
+## Estilo em uso: loja compacta do posto compacto (padrão) ou a larga.
+var STYLE: String = PaintedTonicoShop.style()
 var failures: Array = []
 var checks := 0
 
@@ -30,9 +31,12 @@ func run() -> void:
 	scene.add_child(village)
 	village.tonico.set_physics_process(false)
 	for frame in 3: await physics_frame
+	STYLE = PaintedTonicoShop.style()
 	var kits := village.find_children("PaintedFacade_" + STYLE, "Node3D", true, false)
 	check(kits.size() == 1, "um kit PaintedFacade_%s (achou %d)" % [STYLE, kits.size()])
-	check(_tonico_labels(village) == 1, "só o letreiro do poste (achou %d Label3D Tonico)" % _tonico_labels(village))
+	# No posto compacto o letreiro do poste é a faixa pintada, sem Label3D.
+	var labels_expected := 0 if PaintedTonicoShop.compact_enabled() else 1
+	check(_tonico_labels(village) == labels_expected, "letreiros Label3D Tonico: %d (esperado %d)" % [_tonico_labels(village), labels_expected])
 	if kits.size() != 1:
 		print("PAINTED_TONICO checks=%d failures=%s" % [checks, failures])
 		quit(1)

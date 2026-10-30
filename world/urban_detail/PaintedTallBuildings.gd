@@ -36,6 +36,12 @@ const TALL := {
 	"BridgeCourtEast": {"style": "escritorio-a", "height": 10.0, "switch": "GETECO_PAINTED_OFFICES", "max_stretch": 1.15},
 	"NorthFrontage5": {"style": "escritorio-b", "height": 10.0, "switch": "GETECO_PAINTED_OFFICES", "max_stretch": 1.15},
 	"NorthbankFront2": {"style": "escritorio-c", "height": 10.0, "switch": "GETECO_PAINTED_OFFICES", "max_stretch": 1.15},
+	# Eastgate Hotel (30/10): era o único da fileira Northbank ainda na cena assada antiga.
+	# Art déco com marquise (escritorio-b) lê como hotel e não tem nome pintado; a cópia
+	# mais próxima é a Customs House, a ~214 m. 13 m (térreo + 2 andares + topo) o separa
+	# da Design Works vizinha (10 m). Estar no TALL já faz a fábrica pular a cena assada
+	# (PaintedHarborHouses.style_for não vazio). GETECO_PAINTED_EASTGATE=0 volta ao assado.
+	"NorthbankFront3": {"style": "escritorio-b", "height": 13.0, "switch": "GETECO_PAINTED_EASTGATE", "max_stretch": 1.15},
 }
 
 

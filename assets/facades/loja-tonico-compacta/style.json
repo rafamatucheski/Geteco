@@ -1,0 +1,35 @@
+{
+	"style": "loja-tonico-compacta",
+	"module": [
+		11.2,
+		3.6
+	],
+	"side": [
+		7.4,
+		3.6
+	],
+	"eave": 0.0,
+	"snow_roof": false,
+	"openings": {
+		"front": [
+			{
+				"rect": [
+					0.422,
+					0.4081,
+					0.578,
+					1.0
+				],
+				"leaf": true
+			}
+		],
+		"back": []
+	},
+	"doors": {
+		"front": [
+			0.422,
+			0.4081,
+			0.578,
+			1.0
+		]
+	}
+}
