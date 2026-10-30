@@ -57,7 +57,7 @@ theme/custom_font="res://assets/fonts/manrope/Manrope-Regular.ttf"
 
 [physics]
 
-3d/physics_engine="GodotPhysics3D"
+3d/physics_engine="Jolt Physics"
 common/physics_interpolation=true
 
 [rendering]

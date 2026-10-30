@@ -22,6 +22,13 @@ const GRAVITY_SCALE := 1.8
 static var enabled := OS.get_environment("GETECO_RAGDOLL") != "0"
 static var active := 0
 static var _material: PhysicsMaterial
+## Motor de física do projeto, lido uma vez. No Jolt, o ERP angular do Generic6DOFJoint3D, o amortecimento e a
+## maciez de limite e o bias/softness/relaxation da HingeJoint3D não existem: o Jolt avisa "not supported, will be
+## ignored" a CADA junta (22 avisos por ragdoll, delta funcional de 30/10). Lá os limites são restrições duras,
+## corrigidas pelos passos de posição do solver (configuração global do projeto, não por junta), então o que
+## esses parâmetros compravam no GodotPhysics (limite que não cede, sem quique) já vem de fábrica. "DEFAULT"
+## conta como GodotPhysics, que é o que o Godot usa quando o projeto não escolhe.
+static var _jolt := String(ProjectSettings.get_setting("physics/3d/physics_engine", "")).to_lower().contains("jolt")
 
 ## Limites angulares (radianos) no referencial do osso filho: X lateral (dobra), Y ao longo do osso (torção),
 ## Z para a frente (abertura), como rotação do filho em relação ao pai. O Godot mede o ângulo com o sinal
@@ -179,7 +186,8 @@ func _link(a: RigidBody3D, b: RigidBody3D, at: Vector3, frame: Basis, limits: St
 		hinge.set_param(HingeJoint3D.PARAM_LIMIT_LOWER, -bend.y)
 		hinge.set_param(HingeJoint3D.PARAM_LIMIT_UPPER, -bend.x)
 		# Correção mais rápida do limite (padrão 0,3): a 24 m/s o joelho do Meshy cedia ~44° no impacto.
-		hinge.set_param(HingeJoint3D.PARAM_LIMIT_BIAS, .6)
+		# No Jolt o limite da dobradiça já é duro e o bias é ignorado (com aviso): não escreve.
+		if not _jolt: hinge.set_param(HingeJoint3D.PARAM_LIMIT_BIAS, .6)
 		hinge.node_a = hinge.get_path_to(a)
 		hinge.node_b = hinge.get_path_to(b)
 		return
@@ -192,6 +200,9 @@ func _link(a: RigidBody3D, b: RigidBody3D, at: Vector3, frame: Basis, limits: St
 		var key: String = ["x", "y", "z"][i]
 		link.set("angular_limit_%s/lower_angle" % key, -range_axis.y)
 		link.set("angular_limit_%s/upper_angle" % key, -range_axis.x)
+		# Amortecimento e ERP do limite: só o GodotPhysics lê. No Jolt o limite angular é duro e sem
+		# restituição, que é o efeito que damping 1 + ERP 0,8 buscavam aqui; escrever só gera aviso.
+		if _jolt: continue
 		link.set("angular_limit_%s/damping" % key, 1.0)
 		link.set("angular_limit_%s/erp" % key, .8)
 	link.node_a = link.get_path_to(a)

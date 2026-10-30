@@ -10,6 +10,10 @@ const RIDE_META := "heavy_crush_ride"
 const MAX_TARGET_HEIGHT := 2.35
 const MAX_MASS := 30.0
 const HEAVY_MASS := 3.0
+# Subida explícita do casco (ver _step_onto_hull).
+const STEP_SLOPE := 0.5          # um pouco mais íngreme que a face (≥ 0,4) para sair à frente dela
+const STEP_MAX_PER_FRAME := 0.18 # abaixo do limite de 0,24 m de "trajetória contínua" do teste
+const STEP_MAX_HEIGHT := 0.58    # mesmo teto de subida aceito por prepare()
 
 
 static func mass(vehicle: Node) -> float:
@@ -131,13 +135,56 @@ static func finish_move(vehicle: CharacterBody3D, incoming: Vector3, delta: floa
 		_end_ride(vehicle)
 		return
 	var touching := false
+	var walled := false
 	for index in vehicle.get_slide_collision_count():
 		var contact := vehicle.get_slide_collision(index)
 		if contact.get_collider() == target:
 			touching = true
+			if contact.get_normal().angle_to(vehicle.up_direction) > vehicle.floor_max_angle + 0.001:
+				walled = true
 		elif contact.get_normal().y < 0.65:
 			return
-	if touching: set_planar(vehicle, incoming)
+	if not touching: return
+	set_planar(vehicle, incoming)
+	if walled: _step_onto_hull(vehicle, target, incoming, delta)
+
+
+## Subida explícita da rampa do casco quando o motor trata o contato como parede.
+## O GodotPhysics3D devolve a normal da face da rampa (21,8°, vira piso e o
+## move_and_slide sobe sozinho). O Jolt devolve a normal do bordo inferior,
+## onde a rampa encontra a base do casco no nível do chão: 48,7°, acima do
+## floor_max_angle de 45°. O contato vira parede, o deslocamento para e o carro
+## rápido ficava parado 106 de 115 passos. Nenhuma forma convexa evita esse bordo
+## (o fundo do casco precisa encostar no chão sem penetrá-lo), e aumentar o
+## floor_max_angle globalmente deixaria o carro subir rampas íngremes de verdade.
+## Por isso só aqui, contra o casco esmagado que já está sendo atravessado,
+## repõe-se o avanço perdido subindo na inclinação de uma rampa, limitado por
+## quadro: não depende da normal exata de nenhum dos dois solvers.
+static func _step_onto_hull(vehicle: CharacterBody3D, target: CharacterBody3D, incoming: Vector3, delta: float) -> void:
+	if not target.has_meta(RATIO_META): return
+	var planar := Vector3(incoming.x, 0.0, incoming.z)
+	var expected := planar.length() * delta
+	if expected < 0.005: return
+	var direction := planar.normalized()
+	var travelled := vehicle.get_position_delta()
+	var missing := expected - maxf(0.0, travelled.dot(direction))
+	if missing < 0.01: return
+	var top := target.global_position.y + float(target.get("body_height"))
+	var remaining := top - vehicle.global_position.y + 0.02
+	if remaining <= 0.0 or remaining > STEP_MAX_HEIGHT: return
+	var budget := STEP_MAX_PER_FRAME - maxf(0.0, travelled.y)
+	var rise := minf(minf(remaining, missing * STEP_SLOPE + 0.02), budget)
+	if rise <= 0.0: return
+	# Teto baixo ou qualquer outro corpo acima cancela a subida.
+	if vehicle.test_move(vehicle.global_transform, Vector3.UP * rise): return
+	var raised := vehicle.global_transform.translated(Vector3.UP * rise)
+	var forward := direction * missing
+	var hit := KinematicCollision3D.new()
+	if vehicle.test_move(raised, forward, hit):
+		# Só o próprio casco pode limitar o avanço; parede de verdade continua parede.
+		if hit.get_collider() != target: return
+		forward = hit.get_travel()
+	vehicle.global_position += Vector3.UP * rise + forward
 
 
 static func is_riding(vehicle: CharacterBody3D, target: CharacterBody3D) -> bool:

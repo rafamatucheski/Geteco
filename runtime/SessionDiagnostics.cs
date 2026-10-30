@@ -136,6 +136,8 @@ public partial class SessionDiagnostics : Node
                 dotnet = System.Environment.Version.ToString(), max_fps = Engine.MaxFps,
                 resolution = GetTree().Root.Size.ToString(), vsync = DisplayServer.WindowGetVsyncMode().ToString(),
                 debugger = EngineDebugger.IsActive(), schema = 5,
+                // Ramo jolt: o motor pode vir do project.godot ou de um override.cfg; sem isto não dá para separar as sessões.
+                physics_engine = ProjectSettings.GetSetting("physics/3d/physics_engine").AsString(),
                 debug_build = OS.IsDebugBuild(),
                 // Separa editor, export de debug e export release: os números só se comparam entre o mesmo tipo.
                 build_kind = OS.HasFeature("editor") ? "editor" : OS.HasFeature("release") ? "export_release" : "export_debug",
