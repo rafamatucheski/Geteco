@@ -35,6 +35,10 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 	materials.append_array(preload("res://runtime/desert/roadside/RoadsideBuild.gd").prewarm())
 	# Atlas de desgaste da rua do Harbor (adesivo, cartaz, ferrugem): poste de luz, de energia e placa.
 	materials.append_array(preload("res://world/city_look/HarborStreetWear.gd").prewarm())
+	# Lajes dos telhados (RoofSurfaces): cada uma gera uma textura de 256 px pixel a pixel em GDScript na
+	# primeira aparição, dentro do passo de telhados do streaming (35-53 ms a 120 km/h no log de 30/10).
+	var roofs := preload("res://world/city_look/RoofSurfaces.gd")
+	for surface in roofs.COUNT: materials.append(roofs.material(surface))
 	# Recorte do trem na frente do prédio ocupado (HarborBuildingMovingSightline):
 	# o ShaderMaterial nasce ao entrar no prédio, sem cortina, e o shader só era
 	# compilado quando o trem aparecia na tela com o jogador lá dentro.

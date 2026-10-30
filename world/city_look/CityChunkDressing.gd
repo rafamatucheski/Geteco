@@ -41,6 +41,11 @@ const FRAGILE_KINDS := ["signal_pole", "stop_sign", "hydrant", "trash_can", "new
 	"bag_single", "bag_pile", "bag_torn", "cardboard", "refuse_heap", "wood_crates", "fish_crates", "rusty_barrels", "rope_coil",
 	"fishing_net", "loose_tires", "rubble", "rubble_skip", "beach_parasol", "beach_parasol_b", "beach_chairs", "plastic_chairs", "bar_table"]
 const JUNK := preload("res://world/city_look/StreetJunk.gd")
+const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
+## Fatia dos passos 12 (telhados) e 13 (lotes) no streaming. Cada chamada processa itens
+## inteiros até passar disto; um item caro sozinho ainda estoura, mas aparece com nome
+## no log (spans stream.harbor.rooftops.* / dressing_flush.*).
+const DRESSING_SLICE_USEC := 2000
 
 # Fração de janelas acesas à noite. Residência acende menos que vitrine.
 const WINDOW_LIT_RATIO := 0.60
@@ -150,8 +155,18 @@ static func build_chunk_step(state: Dictionary) -> bool:
 				# O sorteio antigo já gastou a fatia: o desgaste começa na próxima chamada.
 				if not (state.road_wear as Dictionary).is_empty(): return false
 			if not ROAD_WEAR.step(state.road_wear): return false
-		12: _rooftops(state.chunk, state.context, state.batches)
-		13: _flush(state.chunk, state.batches)
+		12:
+			# Telhados em fatias de ~2 ms (playtest 30/10, export release a 110-120 km/h: o
+			# passo inteiro num quadro deu 35, 44 e 53 ms). Mesmo número de passo no log.
+			if not state.has("rooftops"): state.rooftops = _rooftops_begin(state.chunk)
+			if not _rooftops_step(state.rooftops, state.batches, DRESSING_SLICE_USEC): return false
+		13:
+			# Montagem dos lotes (MultiMesh) um tipo por vez, com o mesmo orçamento do passo 12:
+			# antes era um chunk inteiro de tipos num quadro só, logo depois dos telhados.
+			if not state.has("flush"):
+				state.flush = _flush_begin(state.chunk, state.batches)
+				return false
+			if not _flush_step(state.flush, DRESSING_SLICE_USEC): return false
 		14:
 			if not state.has("ground_litter"): state.ground_litter = GROUND_LITTER.begin(state.chunk, state.context, state.batches, WORKSHOP_VEHICLE_ACCESS)
 			if not GROUND_LITTER.step(state.ground_litter): return false
@@ -237,88 +252,124 @@ static func _add(batches: Dictionary, kind: String, point: Vector3, forward: Vec
 
 
 static func _flush(chunk: Node3D, batches: Dictionary) -> void:
+	var cursor := _flush_begin(chunk, batches)
+	while not _flush_step(cursor, 0): pass
+
+
+static func _flush_begin(chunk: Node3D, batches: Dictionary) -> Dictionary:
 	# Editor de mundo: cada posição do mobiliário é uma peça editável (sem custo se não há edição).
 	PLACEMENTS.edit_batches(chunk.get_parent(), chunk, batches)
-	var built := {}
-	for kind in batches:
-		var transforms: Array = batches[kind]
-		if transforms.is_empty(): continue
-		var multimesh := MultiMesh.new()
-		multimesh.transform_format = MultiMesh.TRANSFORM_3D
-		var material: Material
-		var shadows := true
-		if kind.begins_with("decal:"):
-			var spec: Dictionary = _decal_spec(kind.trim_prefix("decal:"))
-			multimesh.mesh = _flat_quad()
-			material = spec.material
-			shadows = false
-		elif kind == "signal_amber":
-			multimesh.use_colors = true
-			multimesh.mesh = _lens_mesh()
-			material = MATERIALS.signal_lens()
-			shadows = false
-		elif kind.begins_with("roofmat:"):
-			multimesh.mesh = _flat_quad()
-			material = ROOFS.material(kind.trim_prefix("roofmat:").to_int())
-			shadows = false
-		elif kind == "wall_ao":
-			var quad := QuadMesh.new()
-			quad.size = Vector2.ONE
-			multimesh.mesh = quad
-			material = MATERIALS.wall_ao()
-			shadows = false
-		elif kind == "beacon_lens":
-			multimesh.mesh = _lens_mesh()
-			material = MATERIALS.beacon()
-			shadows = false
-		elif kind.begins_with("graffiti:"):
-			var quad := QuadMesh.new()
-			quad.size = Vector2.ONE
-			multimesh.mesh = quad
-			material = LIFE.graffiti_material(kind.trim_prefix("graffiti:").to_int())
-			shadows = false
+	# A ordem dos tipos é a do dicionário (inserção), igual ao laço antigo: os nós
+	# CityLook_* entram no chunk na mesma ordem e _register_fragile vê o mesmo `built`.
+	return {"chunk": chunk, "batches": batches, "kinds": batches.keys(), "index": 0, "built": {}}
+
+
+## Um tipo de lote por item, até `budget_usec` (<= 0: sem limite, para build_chunk e
+## testes). Devolve true quando montou tudo, inclusive colisões e quebráveis.
+static func _flush_step(cursor: Dictionary, budget_usec: int) -> bool:
+	var chunk: Node3D = cursor.chunk
+	var batches: Dictionary = cursor.batches
+	var kinds: Array = cursor.kinds
+	var began := Time.get_ticks_usec()
+	while int(cursor.index) < kinds.size():
+		var kind: String = kinds[int(cursor.index)]
+		cursor.index = int(cursor.index) + 1
+		var span := STALL_WORK.begin()
+		_flush_kind(chunk, kind, batches[kind], cursor.built)
+		# Rótulo único (o resumo da sessão guarda no máximo 128 rótulos); o tipo vai no detalhe
+		# só quando o item passou de 2 ms.
+		if span != 0 and Time.get_ticks_usec() - span >= 2000:
+			STALL_WORK.finish("stream.harbor.dressing_flush.kind", span, {"kind": kind, "count": (batches[kind] as Array).size()})
 		else:
-			multimesh.mesh = KIT.mesh(kind)
-			material = KIT.material_for(kind)
-			# Preserve placement identities and trunk physics, including editor saves.
-			if kind in ["street_tree","street_tree_b"]:
-				for placement: Transform3D in transforms:
-					if preload("res://world/places/ResidentialTreeVisual.gd").near_home(placement.origin):
-						multimesh.mesh = preload("res://world/places/ResidentialTreeVisual.gd").mesh()
-						material = null
-						break
-			# Peça de telhado pequena (antena, respiro, antena parabólica) segue sem
-			# sombra: dobrava as primitivas na passada de sombra sem aparecer nesta câmera.
-			shadows = kind in SHADOW_CASTERS
-		# Cor e proporção por cópia (KIT.VARIATION); precisa de use_colors antes da contagem.
-		var variation := KIT.variation_for(kind)
-		if not variation.is_empty(): multimesh.use_colors = true
-		multimesh.instance_count = transforms.size()
-		for index in transforms.size():
-			var placement: Transform3D = transforms[index]
-			if not variation.is_empty():
-				var varied: Array = KIT.vary(kind, placement)
-				placement = varied[0]
-				multimesh.set_instance_color(index, varied[1])
-			multimesh.set_instance_transform(index, chunk.global_transform.affine_inverse() * placement)
-		var instance := MultiMeshInstance3D.new()
-		instance.name = "CityLook_" + kind.replace(":", "_")
-		instance.multimesh = multimesh
-		instance.material_override = material
-		if not shadows: instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		if ROOF_SMALL_RANGE.has(kind):
-			# Meia diagonal da AABB: sem ela a peça no canto do chunk sumiria a ~25 m.
-			instance.visibility_range_end = float(ROOF_SMALL_RANGE[kind]) + multimesh.get_aabb().size.length() * 0.5
-			# Margem só como histerese (sem fade), para não piscar na borda do corte.
-			instance.visibility_range_end_margin = 4.0
-			preload("res://runtime/GraphicsOptions.gd").tag_detail(instance)
-		chunk.add_child(instance)
-		built[kind] = multimesh
-		if kind == "signal_amber":
-			var lenses: Array = chunk.get_meta("signal_lenses", [])
-			for index in mini(lenses.size(), multimesh.instance_count):
-				JUNCTIONS.register_lens(multimesh, index, lenses[index][0], lenses[index][1])
-			chunk.remove_meta("signal_lenses")
+			STALL_WORK.finish_slow("stream.harbor.dressing_flush.kind", span, 2000, chunk)
+		if budget_usec > 0 and Time.get_ticks_usec() - began >= budget_usec: return false
+	var tail_span := STALL_WORK.begin()
+	_flush_tail(chunk, batches, cursor.built)
+	STALL_WORK.finish_slow("stream.harbor.dressing_flush.tail", tail_span, 2000, chunk)
+	return true
+
+
+static func _flush_kind(chunk: Node3D, kind: String, transforms: Array, built: Dictionary) -> void:
+	if transforms.is_empty(): return
+	var multimesh := MultiMesh.new()
+	multimesh.transform_format = MultiMesh.TRANSFORM_3D
+	var material: Material
+	var shadows := true
+	if kind.begins_with("decal:"):
+		var spec: Dictionary = _decal_spec(kind.trim_prefix("decal:"))
+		multimesh.mesh = _flat_quad()
+		material = spec.material
+		shadows = false
+	elif kind == "signal_amber":
+		multimesh.use_colors = true
+		multimesh.mesh = _lens_mesh()
+		material = MATERIALS.signal_lens()
+		shadows = false
+	elif kind.begins_with("roofmat:"):
+		multimesh.mesh = _flat_quad()
+		material = ROOFS.material(kind.trim_prefix("roofmat:").to_int())
+		shadows = false
+	elif kind == "wall_ao":
+		var quad := QuadMesh.new()
+		quad.size = Vector2.ONE
+		multimesh.mesh = quad
+		material = MATERIALS.wall_ao()
+		shadows = false
+	elif kind == "beacon_lens":
+		multimesh.mesh = _lens_mesh()
+		material = MATERIALS.beacon()
+		shadows = false
+	elif kind.begins_with("graffiti:"):
+		var quad := QuadMesh.new()
+		quad.size = Vector2.ONE
+		multimesh.mesh = quad
+		material = LIFE.graffiti_material(kind.trim_prefix("graffiti:").to_int())
+		shadows = false
+	else:
+		multimesh.mesh = KIT.mesh(kind)
+		material = KIT.material_for(kind)
+		# Preserve placement identities and trunk physics, including editor saves.
+		if kind in ["street_tree","street_tree_b"]:
+			for placement: Transform3D in transforms:
+				if preload("res://world/places/ResidentialTreeVisual.gd").near_home(placement.origin):
+					multimesh.mesh = preload("res://world/places/ResidentialTreeVisual.gd").mesh()
+					material = null
+					break
+		# Peça de telhado pequena (antena, respiro, antena parabólica) segue sem
+		# sombra: dobrava as primitivas na passada de sombra sem aparecer nesta câmera.
+		shadows = kind in SHADOW_CASTERS
+	# Cor e proporção por cópia (KIT.VARIATION); precisa de use_colors antes da contagem.
+	var variation := KIT.variation_for(kind)
+	if not variation.is_empty(): multimesh.use_colors = true
+	multimesh.instance_count = transforms.size()
+	for index in transforms.size():
+		var placement: Transform3D = transforms[index]
+		if not variation.is_empty():
+			var varied: Array = KIT.vary(kind, placement)
+			placement = varied[0]
+			multimesh.set_instance_color(index, varied[1])
+		multimesh.set_instance_transform(index, chunk.global_transform.affine_inverse() * placement)
+	var instance := MultiMeshInstance3D.new()
+	instance.name = "CityLook_" + kind.replace(":", "_")
+	instance.multimesh = multimesh
+	instance.material_override = material
+	if not shadows: instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	if ROOF_SMALL_RANGE.has(kind):
+		# Meia diagonal da AABB: sem ela a peça no canto do chunk sumiria a ~25 m.
+		instance.visibility_range_end = float(ROOF_SMALL_RANGE[kind]) + multimesh.get_aabb().size.length() * 0.5
+		# Margem só como histerese (sem fade), para não piscar na borda do corte.
+		instance.visibility_range_end_margin = 4.0
+		preload("res://runtime/GraphicsOptions.gd").tag_detail(instance)
+	chunk.add_child(instance)
+	built[kind] = multimesh
+	if kind == "signal_amber":
+		var lenses: Array = chunk.get_meta("signal_lenses", [])
+		for index in mini(lenses.size(), multimesh.instance_count):
+			JUNCTIONS.register_lens(multimesh, index, lenses[index][0], lenses[index][1])
+		chunk.remove_meta("signal_lenses")
+
+
+static func _flush_tail(chunk: Node3D, batches: Dictionary, built: Dictionary) -> void:
 	# Planters keep their batched mesh; one static compound body per chunk
 	# provides the exact stone footprint, removed with the streamed chunk.
 	if batches.has("planter"):
@@ -1078,91 +1129,186 @@ const ROOF_EXITS := ["roof_shed", "roof_hatch"]
 
 
 static func _rooftops(chunk: Node3D, _roof_context: Dictionary, batches: Dictionary) -> void:
-	_other_roofs(chunk, batches)
-	var billboards := 0
+	var cursor := _rooftops_begin(chunk)
+	while not _rooftops_step(cursor, batches, 0): pass
+
+
+## Passo 12 retomável. No playtest de 30/10 (export release, 110-120 km/h no Harbor)
+## `stream.harbor.dressing_step.12` custou 35, 44 e 53 ms num quadro só: o passo varria
+## todos os telhados do chunk de uma vez, e cada prédio pede vários find_children
+## (acabamento, lajes, obstáculos por laje, fachada) mais os nós de BuildingLife. Agora o
+## cursor anda em itens pequenos — um telhado avulso, a leitura das lajes de um prédio,
+## uma laje com seus adereços, a vida da fachada — e devolve o controle ao passar do
+## orçamento. A ordem dos itens é a do laço antigo, então os lotes recebem as mesmas
+## transformações na mesma ordem (mesmas malhas, materiais e MultiMesh no fim).
+static func _rooftops_begin(chunk: Node3D) -> Dictionary:
+	return {"chunk": chunk, "phase": 0, "others": chunk.get_children(), "index": 0, "buildings": [], "billboards": 0, "item": {}}
+
+
+## Devolve true quando terminou. budget_usec <= 0: sem limite (build_chunk síncrono e testes).
+static func _rooftops_step(cursor: Dictionary, batches: Dictionary, budget_usec: int) -> bool:
+	var chunk: Node3D = cursor.chunk
+	var began := Time.get_ticks_usec()
+	# Pelo menos um item por chamada (began acabou de ser lido), então sempre avança.
+	while budget_usec <= 0 or Time.get_ticks_usec() - began < budget_usec:
+		if int(cursor.phase) == 0:
+			var others: Array = cursor.others
+			if int(cursor.index) >= others.size():
+				# Mesma lista do laço antigo: tirada depois dos telhados avulsos.
+				var span := STALL_WORK.begin()
+				cursor.buildings = _rooftop_buildings(chunk)
+				STALL_WORK.finish_slow("stream.harbor.rooftops.collect", span, 2000, chunk)
+				cursor.index = 0
+				cursor.phase = 1
+			else:
+				var child: Variant = others[int(cursor.index)]
+				cursor.index = int(cursor.index) + 1
+				if is_instance_valid(child) and (child as Node).get_parent() == chunk:
+					var span := STALL_WORK.begin()
+					_other_roof(child)
+					STALL_WORK.finish_slow("stream.harbor.rooftops.other_roof", span, 2000, child)
+		elif (cursor.item as Dictionary).is_empty():
+			var buildings: Array = cursor.buildings
+			if int(cursor.index) >= buildings.size(): return true
+			var node: Variant = buildings[int(cursor.index)]
+			cursor.index = int(cursor.index) + 1
+			# Entre um quadro e outro o prédio pode ter saído do trecho.
+			if is_instance_valid(node) and chunk.is_ancestor_of(node):
+				var span := STALL_WORK.begin()
+				cursor.item = _rooftop_building_begin(node, batches)
+				STALL_WORK.finish_slow("stream.harbor.rooftops.building_slabs", span, 2000, node)
+		else:
+			var item: Dictionary = cursor.item
+			if not is_instance_valid(item.building) or not chunk.is_ancestor_of(item.building):
+				cursor.item = {}
+			elif int(item.slab_index) < (item.slabs as Array).size():
+				var span := STALL_WORK.begin()
+				_rooftop_slab(chunk, item, batches)
+				STALL_WORK.finish_slow("stream.harbor.rooftops.slab_props", span, 2000, item.building)
+			else:
+				var span := STALL_WORK.begin()
+				_rooftop_building_finish(chunk, item, cursor, batches)
+				STALL_WORK.finish_slow("stream.harbor.rooftops.building_life", span, 2000, item.building)
+				cursor.item = {}
+	return false
+
+
+static func _rooftop_buildings(chunk: Node3D) -> Array:
+	var result := []
 	for node in chunk.find_children("*", "Node3D", true, false):
-		if not node is UrbanBuildingBase: continue
-		var building: UrbanBuildingBase = node
-		var key := building.building_id
-		ROOFS.replace_existing(building, building.building_kind, key)
-		# A laje real (maior caixa horizontal mais alta do prédio) manda na
-		# altura e no tamanho: altura nominal de UrbanBuildingBase não bate
-		# com arquétipo que monta platibanda/penthouse próprio, e o tom de laje
-		# ficava flutuando sobre a rua.
-		var slabs := _roof_slabs(building)
-		if slabs.is_empty(): continue
-		var main_roof: AABB = slabs[0]
-		var main_occupied := []
-		# Saída do telhado: UMA por prédio (playtest 29/10: o quartel tinha três casinhas
-		# sorteadas em fila e a escada pintada chegava a nenhuma). Prédio com telhado
-		# caminhável recebe a casinha onde a escada de verdade sai (HarborRoofCirculation);
-		# os outros aceitam no máximo uma casinha ou alçapão do sorteio.
-		var roof_exit_placed := false
-		var stair_house: Variant = preload("res://world/places/harbor_buildings/HarborRoofCirculation.gd").stair_house(building)
-		if stair_house is Transform3D:
-			var house: Transform3D = stair_house
-			house.origin.y = main_roof.end.y + 0.012
-			_push(batches, "roof_shed", building.global_transform * house)
-			roof_exit_placed = true
-		for slab_index in slabs.size():
-			var roof: AABB = slabs[slab_index]
-			var unit_key := key if slab_index == 0 else "%s|u%d" % [key, slab_index]
-			var branch_roof_y := roof.end.y + 0.012
-			var branch_roof_center := Vector2(roof.get_center().x, roof.get_center().z)
-			var branch_size := Vector2(roof.size.x, roof.size.z)
-			if branch_size.x < 2.8 or branch_size.y < 2.8: continue
-			var xform := building.global_transform
-			var branch_occupied := _roof_obstacles(building, branch_roof_y)
-			branch_occupied.append_array(preload("res://world/places/harbor_buildings/HarborRoofCirculation.gd").occupied(building))
-			# Delegacia antes dos adereços genéricos: heliponto e torre pedem espaço.
-			if key == "Police" and slab_index == 0: POLICE.decorate(chunk, building, branch_roof_y, branch_roof_center, branch_size, branch_occupied, batches)
-			# Acabamento da laje: textura de verdade (manta, brita, placas, zinco...)
-			# por tipo de prédio, sem tocar no material compartilhado da fábrica.
-			# The source roof mesh owns its finish, including baked wear. Never
-			# add a second roofmat/tar plane over the existing roof surface.
-			# Laje é o que mais aparece nesta câmera: mais ocupação que o comum.
-			var wanted := clampi(int(branch_size.x * branch_size.y / 18.0), 2, 10)
-			var placed := 0
-			for attempt in wanted * 12:
-				if placed >= wanted: break
-				var akey := unit_key + "|roof|" + str(attempt)
-				var kind := _pick(ROOF_PROPS, _roll(akey) * 1.0)
-				if kind.is_empty(): continue
-				if kind in ROOF_EXITS and roof_exit_placed: continue
-				# "vent" cai no 0.5 padrão. BuildingLife._roof_life empurra outro vent (com
-				# vapor) fora deste sorteio, com STEAM_VENT_RADIUS 0.6; mantenha os dois coerentes.
-				var radius := 0.9 if kind in ["ac_unit", "roof_hatch"] else 0.5
-				if kind == "pipe_run": radius = 2.2
-				if kind in ["roof_shed", "roof_garden"]: radius = 1.6
-				if kind == "roof_chairs": radius = 0.9
-				if kind in ["water_tank", "cooling_tower"]: radius = 1.4
-				if kind == "solar_row": radius = 2.1
-				if kind == "skylight": radius = 1.0
-				# Laje estreita (unidade de casa geminada): peça que não cabe fica de fora.
-				if branch_size.x < radius * 2.0 + 0.8 or branch_size.y < radius * 2.0 + 0.8: continue
-				var local := branch_roof_center + Vector2((_roll(akey + "x") - 0.5) * (branch_size.x - 2.0 * radius - 0.6), (_roll(akey + "z") - 0.5) * (branch_size.y - 2.0 * radius - 0.6))
-				var blocked := false
-				for other in branch_occupied:
-					if local.distance_to(other.point) < radius + other.radius: blocked = true; break
-				if blocked: continue
-				branch_occupied.append({"point": local, "radius": radius})
-				var yaw := floorf(_roll(akey + "r") * 4.0) * PI * 0.5
-				_push(batches, kind, xform * Transform3D(Basis(Vector3.UP, yaw), Vector3(local.x, branch_roof_y, local.y)))
-				placed += 1
-				if kind in ROOF_EXITS: roof_exit_placed = true
-			if slab_index == 0: main_occupied = branch_occupied
-		var roof_y := main_roof.end.y + 0.012
-		var roof_center := Vector2(main_roof.get_center().x, main_roof.get_center().z)
-		var size := Vector2(main_roof.size.x, main_roof.size.z)
-		var occupied := main_occupied
-		var has_billboard := false
-		# These accessible storefronts identify themselves by their proper names;
-		# a random fuel-brand slogan above Union misidentifies the clothing shop.
-		if key not in ["NorthFrontage3", "NorthFrontage4"] and billboards < 2 and size.x >= 7.5 and roof_y >= 4.4 and _roll(key + "billboard") < 0.34:
-			has_billboard = _place_billboard(chunk, building, roof_y, roof_center, size, occupied, batches)
-			if has_billboard: billboards += 1
-		# Fachada e telhado "vivos" (escada de incêndio, ar-condicionado, varal...).
-		LIFE.decorate(chunk, building, roof_y, roof_center, size, occupied, batches, has_billboard)
+		if node is UrbanBuildingBase: result.append(node)
+	return result
+
+
+## Primeiro item do prédio: acabamento da laje existente, leitura das lajes e casinha da
+## escada. Dicionário vazio = prédio sem laje plana (o laço antigo pulava o resto dele).
+static func _rooftop_building_begin(building: UrbanBuildingBase, batches: Dictionary) -> Dictionary:
+	var key := building.building_id
+	# Primeira aparição de uma superfície gera a textura 256 px em GDScript (RoofSurfaces._image)
+	# dentro deste item: span separado para o log dizer se o pico foi isso.
+	var surfaces_before: int = ROOFS._materials.size()
+	var finish_span := STALL_WORK.begin()
+	ROOFS.replace_existing(building, building.building_kind, key)
+	if ROOFS._materials.size() != surfaces_before:
+		STALL_WORK.finish_slow("stream.harbor.rooftops.surface_first_build", finish_span, 0, building)
+	# A laje real (maior caixa horizontal mais alta do prédio) manda na
+	# altura e no tamanho: altura nominal de UrbanBuildingBase não bate
+	# com arquétipo que monta platibanda/penthouse próprio, e o tom de laje
+	# ficava flutuando sobre a rua.
+	var slabs := _roof_slabs(building)
+	if slabs.is_empty(): return {}
+	var main_roof: AABB = slabs[0]
+	# Saída do telhado: UMA por prédio (playtest 29/10: o quartel tinha três casinhas
+	# sorteadas em fila e a escada pintada chegava a nenhuma). Prédio com telhado
+	# caminhável recebe a casinha onde a escada de verdade sai (HarborRoofCirculation);
+	# os outros aceitam no máximo uma casinha ou alçapão do sorteio.
+	var roof_exit_placed := false
+	var stair_house: Variant = preload("res://world/places/harbor_buildings/HarborRoofCirculation.gd").stair_house(building)
+	if stair_house is Transform3D:
+		var house: Transform3D = stair_house
+		house.origin.y = main_roof.end.y + 0.012
+		_push(batches, "roof_shed", building.global_transform * house)
+		roof_exit_placed = true
+	return {"building": building, "key": key, "slabs": slabs, "slab_index": 0, "main_occupied": [], "roof_exit_placed": roof_exit_placed}
+
+
+## Uma laje do prédio com seus adereços (um item do cursor por laje: as casas geminadas
+## têm uma laje por unidade e cada uma lê os obstáculos do prédio inteiro).
+static func _rooftop_slab(chunk: Node3D, item: Dictionary, batches: Dictionary) -> void:
+	var building: UrbanBuildingBase = item.building
+	var key: String = item.key
+	var slab_index := int(item.slab_index)
+	item.slab_index = slab_index + 1
+	var roof: AABB = (item.slabs as Array)[slab_index]
+	var roof_exit_placed: bool = item.roof_exit_placed
+	var unit_key := key if slab_index == 0 else "%s|u%d" % [key, slab_index]
+	var branch_roof_y := roof.end.y + 0.012
+	var branch_roof_center := Vector2(roof.get_center().x, roof.get_center().z)
+	var branch_size := Vector2(roof.size.x, roof.size.z)
+	if branch_size.x < 2.8 or branch_size.y < 2.8: return
+	var xform := building.global_transform
+	var branch_occupied := _roof_obstacles(building, branch_roof_y)
+	branch_occupied.append_array(preload("res://world/places/harbor_buildings/HarborRoofCirculation.gd").occupied(building))
+	# Delegacia antes dos adereços genéricos: heliponto e torre pedem espaço.
+	if key == "Police" and slab_index == 0:
+		var police_span := STALL_WORK.begin()
+		POLICE.decorate(chunk, building, branch_roof_y, branch_roof_center, branch_size, branch_occupied, batches)
+		STALL_WORK.finish_slow("stream.harbor.rooftops.police", police_span, 2000, building)
+	# Acabamento da laje: textura de verdade (manta, brita, placas, zinco...)
+	# por tipo de prédio, sem tocar no material compartilhado da fábrica.
+	# The source roof mesh owns its finish, including baked wear. Never
+	# add a second roofmat/tar plane over the existing roof surface.
+	# Laje é o que mais aparece nesta câmera: mais ocupação que o comum.
+	var wanted := clampi(int(branch_size.x * branch_size.y / 18.0), 2, 10)
+	var placed := 0
+	for attempt in wanted * 12:
+		if placed >= wanted: break
+		var akey := unit_key + "|roof|" + str(attempt)
+		var kind := _pick(ROOF_PROPS, _roll(akey) * 1.0)
+		if kind.is_empty(): continue
+		if kind in ROOF_EXITS and roof_exit_placed: continue
+		# "vent" cai no 0.5 padrão. BuildingLife._roof_life empurra outro vent (com
+		# vapor) fora deste sorteio, com STEAM_VENT_RADIUS 0.6; mantenha os dois coerentes.
+		var radius := 0.9 if kind in ["ac_unit", "roof_hatch"] else 0.5
+		if kind == "pipe_run": radius = 2.2
+		if kind in ["roof_shed", "roof_garden"]: radius = 1.6
+		if kind == "roof_chairs": radius = 0.9
+		if kind in ["water_tank", "cooling_tower"]: radius = 1.4
+		if kind == "solar_row": radius = 2.1
+		if kind == "skylight": radius = 1.0
+		# Laje estreita (unidade de casa geminada): peça que não cabe fica de fora.
+		if branch_size.x < radius * 2.0 + 0.8 or branch_size.y < radius * 2.0 + 0.8: continue
+		var local := branch_roof_center + Vector2((_roll(akey + "x") - 0.5) * (branch_size.x - 2.0 * radius - 0.6), (_roll(akey + "z") - 0.5) * (branch_size.y - 2.0 * radius - 0.6))
+		var blocked := false
+		for other in branch_occupied:
+			if local.distance_to(other.point) < radius + other.radius: blocked = true; break
+		if blocked: continue
+		branch_occupied.append({"point": local, "radius": radius})
+		var yaw := floorf(_roll(akey + "r") * 4.0) * PI * 0.5
+		_push(batches, kind, xform * Transform3D(Basis(Vector3.UP, yaw), Vector3(local.x, branch_roof_y, local.y)))
+		placed += 1
+		if kind in ROOF_EXITS: roof_exit_placed = true
+	item.roof_exit_placed = roof_exit_placed
+	if slab_index == 0: item.main_occupied = branch_occupied
+
+
+## Último item do prédio: outdoor e a vida da fachada/telhado (BuildingLife), que cria nós.
+static func _rooftop_building_finish(chunk: Node3D, item: Dictionary, cursor: Dictionary, batches: Dictionary) -> void:
+	var building: UrbanBuildingBase = item.building
+	var key: String = item.key
+	var main_roof: AABB = (item.slabs as Array)[0]
+	var roof_y := main_roof.end.y + 0.012
+	var roof_center := Vector2(main_roof.get_center().x, main_roof.get_center().z)
+	var size := Vector2(main_roof.size.x, main_roof.size.z)
+	var occupied: Array = item.main_occupied
+	var has_billboard := false
+	# These accessible storefronts identify themselves by their proper names;
+	# a random fuel-brand slogan above Union misidentifies the clothing shop.
+	if key not in ["NorthFrontage3", "NorthFrontage4"] and int(cursor.billboards) < 2 and size.x >= 7.5 and roof_y >= 4.4 and _roll(key + "billboard") < 0.34:
+		has_billboard = _place_billboard(chunk, building, roof_y, roof_center, size, occupied, batches)
+		if has_billboard: cursor.billboards = int(cursor.billboards) + 1
+	# Fachada e telhado "vivos" (escada de incêndio, ar-condicionado, varal...).
+	LIFE.decorate(chunk, building, roof_y, roof_center, size, occupied, batches, has_billboard)
 
 
 ## Lajes do prédio: a laje única do arquétipo ou, nas casas geminadas (cada
@@ -1175,7 +1321,10 @@ static func _roof_slabs(building: UrbanBuildingBase) -> Array:
 	if single.size != Vector3.ZERO: return [single]
 	var result := []
 	var inverse := building.global_transform.affine_inverse()
-	for node in building.find_children("*", "MeshInstance3D", true, false):
+	# Uma varredura só: antes cada unidade da fileira refazia find_children no prédio
+	# inteiro (unidades × malhas). A árvore não muda dentro desta função; mesma lista.
+	var meshes := building.find_children("*", "MeshInstance3D", true, false)
+	for node in meshes:
 		var mesh := node as MeshInstance3D
 		if not mesh.mesh is BoxMesh and not mesh.get_meta("harbor_source_box", false): continue
 		var box := inverse * (mesh.global_transform * mesh.get_aabb())
@@ -1185,7 +1334,7 @@ static func _roof_slabs(building: UrbanBuildingBase) -> Array:
 	# placa de cor por cima do volume); o acabamento vai acima dela.
 	for index in result.size():
 		var unit: AABB = result[index]
-		for node in building.find_children("*", "MeshInstance3D", true, false):
+		for node in meshes:
 			var mesh := node as MeshInstance3D
 			var box := inverse * (mesh.global_transform * mesh.get_aabb())
 			if box.size.x < unit.size.x * 0.5 or box.size.z < unit.size.z * 0.5: continue
@@ -1254,15 +1403,19 @@ static func _place_billboard(chunk: Node3D, building: UrbanBuildingBase, roof_y:
 ## Prédios montados fora dos arquétipos (hospital, residências, fachadas
 ## autorais): só o acabamento da laje, sem adereços (não sabemos o que há lá).
 static func _other_roofs(chunk: Node3D, _batches: Dictionary) -> void:
-	for child in chunk.get_children():
-		# Walk-in cargo owns a retractable roof; a chunk-wide slab would remain
-		# opaque over the player after its actual roof had disappeared.
-		if child.get_meta("native_dynamic_roof",false): continue
-		if not child is Node3D or child is UrbanBuildingBase or child is MultiMeshInstance3D: continue
-		if child.find_children("*", "MeshInstance3D", true, false).size() < 3: continue
-		var roof := ROOFS.find_roof(child)
-		if roof.size == Vector3.ZERO or roof.end.y < 2.5: continue
-		ROOFS.replace_existing(child, "", String(child.name))
+	for child in chunk.get_children(): _other_roof(child)
+
+
+## Um filho do chunk por item (o passo 12 fatiado chama isto pelo cursor).
+static func _other_roof(child: Node) -> void:
+	# Walk-in cargo owns a retractable roof; a chunk-wide slab would remain
+	# opaque over the player after its actual roof had disappeared.
+	if child.get_meta("native_dynamic_roof",false): return
+	if not child is Node3D or child is UrbanBuildingBase or child is MultiMeshInstance3D: return
+	if child.find_children("*", "MeshInstance3D", true, false).size() < 3: return
+	var roof := ROOFS.find_roof(child)
+	if roof.size == Vector3.ZERO or roof.end.y < 2.5: return
+	ROOFS.replace_existing(child, "", String(child.name))
 
 
 
