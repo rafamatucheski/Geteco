@@ -4,6 +4,45 @@ extends RefCounted
 const L := preload("res://world/regions/OriginalSouthPortLayout.gd")
 const MODEL := preload("res://assets/regions/source/world/harbor/HarborPortModel3D.gd")
 const PORT_SHIP_DRESSING := preload("res://world/regions/PortShipDressing3D.gd")
+const FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
+const PAINTED_PARTS := {
+	"bac2b0":"plaster","5c6d71":"cast","4b6870":"painted","91b6b5":"painted",
+	"3d535b":"painted","d2b768":"painted","aab5ab":"painted","5e7374":"painted",
+	"957b46":"painted","909d9c":"painted","e0d1a3":"plaster","797f6c":"cast",
+}
+const PAINTED_WOOD := {"port_wood_pallet_clean":"c4a482","port_wood_pallet_weathered":"6d6359","port_wood_crate":"9c7a53"}
+
+static func painted_enabled() -> bool:
+	return OS.get_environment("GETECO_PAINTED_SOUTH_PORT") != "0"
+
+static func _finish(kind: String, color_key: String) -> StandardMaterial3D:
+	return FINISH.material(kind,Color(color_key),.88,.25 if kind=="painted" else 0.0)
+
+static func prewarm_materials() -> Array[Material]:
+	var result: Array[Material] = []
+	if painted_enabled():
+		for color_key in PAINTED_PARTS: result.append(_finish(str(PAINTED_PARTS[color_key]),str(color_key)))
+		for color_key in PAINTED_WOOD.values(): result.append(_finish("wood",str(color_key)))
+	return result
+
+## Troca só os materiais dos lotes prontos, sem tocar faces usadas pela colisão trimesh.
+## As tintas PNG do guindaste, vidro e navio já acabados ficam nos materiais originais.
+static func _paint_selected(art: Node3D, record: Dictionary) -> void:
+	if not painted_enabled(): return
+	if record.id not in ["PortBuilding4","SantaMareWheelhouse3D"] and record.model_kind not in ["crane","supplies"]: return
+	var replacements := {}
+	var original_materials: Dictionary = art.get("materials")
+	for key in original_materials:
+		var color_key := str(key).left(6)
+		if PAINTED_PARTS.has(color_key): replacements[original_materials[key]] = _finish(str(PAINTED_PARTS[color_key]),color_key)
+	for child in art.find_children("*","MeshInstance3D",true,false):
+		var mesh := child as MeshInstance3D
+		if mesh.is_queued_for_deletion(): continue
+		var original := mesh.material_override
+		if original == null: continue
+		if replacements.has(original): mesh.material_override = replacements[original]
+		elif PAINTED_WOOD.has(original.resource_name): mesh.material_override = _finish("wood",str(PAINTED_WOOD[original.resource_name]))
+
 const SCALE := 1.0/16.0
 const CARGO := [Vector2(3890,4010),Vector2(4470,4250),Vector2(5030,4250),Vector2(5380,4250),Vector2(4180,4870),Vector2(4740,4870),Vector2(5290,4870),Vector2(5520,4825),Vector2(4180,5410),Vector2(4650,5420),Vector2(5190,5420),Vector2(5830,4840)]
 const MASTS := [Vector2(3650,3400),Vector2(4550,3470),Vector2(5450,3470),Vector2(3860,4270),Vector2(5590,4280),Vector2(3860,4880),Vector2(5570,4930),Vector2(5520,5700)]
@@ -37,6 +76,7 @@ static func mount(parent: Node3D, record: Dictionary) -> Node3D:
 	parent.add_child(art)
 	var footprint: Rect2 = record.footprint
 	art.build(record.model_kind,footprint.size.x/20.0,footprint.size.y/20.0/.8,int(record.variant))
+	_paint_selected(art,record)
 	art.set_meta("source_id","world/harbor/HarborSouthPort.gd:"+str(record.id))
 	# Collision follows final batched meshes, including crane legs rather than its whole AABB.
 	for mesh in art.find_children("*","MeshInstance3D",true,false):

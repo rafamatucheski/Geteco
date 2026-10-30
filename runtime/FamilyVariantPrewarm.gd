@@ -16,6 +16,7 @@ const AUTHORED_OWNERS := [
 	"res://world/urban_detail/PaintedTallBuildings.gd",
 	"res://gameplay/urban_v1/TruckersVillageVisuals.gd",
 	"res://world/places/amusement_park/ParkGeometry.gd",
+	"res://world/regions/OriginalSouthPort.gd",
 ]
 static var _retained: Array[Material] = []
 static var _done := false
