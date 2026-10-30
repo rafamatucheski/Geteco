@@ -30,9 +30,17 @@ const CANAL_TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
 const JUNCTIONS := preload("res://gameplay/traffic_junctions/TrafficJunctions.gd")
 const PLACEMENTS := preload("res://world/editing/WorldPlacements.gd")
 const FILL := preload("res://world/city_look/SidewalkFill.gd")
+## Postes de energia, fiação e desgaste por atlas (pedido de 29/10); GETECO_HARBOR_POLES=0 desliga.
+const UTILITY := preload("res://world/city_look/HarborUtilityLines.gd")
+const WEAR := preload("res://world/city_look/HarborStreetWear.gd")
+const ROAD_WEAR := preload("res://world/shared/roads/HarborRoadWear.gd")
 const FRAGILE_KINDS := ["signal_pole", "stop_sign", "hydrant", "trash_can", "news_box", "mailbox", "phone_booth", "bench_seat", "dumpster", "trash_bags", "planter",
 	"cafe_set", "cafe_parasol", "cafe_parasol_b", "produce_stand", "a_frame", "beer_crates", "pot_plant", "wheelie_bins", "bike_rack", "pallet_stack", "tire_stack", "drums",
-	"food_cart", "ice_freezer", "clothes_rack", "flower_buckets", "gas_cylinders", "door_bench", "motorcycle", "street_tree", "street_tree_b"]
+	"food_cart", "ice_freezer", "clothes_rack", "flower_buckets", "gas_cylinders", "door_bench", "motorcycle", "street_tree", "street_tree_b",
+	# StreetJunk (lixo, porto, orla; mesma lista de StreetJunkKit.KINDS): tudo é leve o bastante para o carro espalhar.
+	"bag_single", "bag_pile", "bag_torn", "cardboard", "refuse_heap", "wood_crates", "fish_crates", "rusty_barrels", "rope_coil",
+	"fishing_net", "loose_tires", "rubble", "rubble_skip", "beach_parasol", "beach_parasol_b", "beach_chairs", "plastic_chairs", "bar_table"]
+const JUNK := preload("res://world/city_look/StreetJunk.gd")
 
 # Fração de janelas acesas à noite. Residência acende menos que vitrine.
 const WINDOW_LIT_RATIO := 0.60
@@ -62,7 +70,10 @@ const SHADOW_CASTERS := ["water_tank", "cooling_tower", "signal_pole", "dumpster
 	# flutuando sobre a calçada (relato do jogador em 2026-09-24).
 	"trash_can", "news_box", "mailbox", "hydrant", "stop_sign", "bench_seat", "planter", "bollard", "trash_bags",
 	# SidewalkFill: árvore e guarda-sol são as sombras que mais assentam a rua vista de cima.
-	"street_tree", "street_tree_b", "cafe_set", "cafe_parasol", "cafe_parasol_b", "produce_stand", "pallet_stack", "food_cart", "motorcycle", "ice_freezer"]
+	"street_tree", "street_tree_b", "cafe_set", "cafe_parasol", "cafe_parasol_b", "produce_stand", "pallet_stack", "food_cart", "motorcycle", "ice_freezer",
+	# StreetJunk: só o que tem altura (caçamba, guarda-sol, mesa, pilhas); saco solto, entulho, rede e
+	# pneu são baixos e a sombra deles custaria passe de sombra sem aparecer nesta câmera.
+	"rubble_skip", "beach_parasol", "beach_parasol_b", "bar_table", "plastic_chairs", "wood_crates", "rusty_barrels", "fish_crates", "bag_pile", "refuse_heap"]
 # Corte por distância (m, até a peça) só para peças PEQUENAS de telhado: a câmera do
 # jogo fica 25 m acima e 25 m atrás do jogador (CameraRig.EXTERIOR_OFFSET) e o quadro
 # cobre uns 50 m em volta dele; nada além de 60-80 m aparece na tela de jogo. Em
@@ -83,6 +94,7 @@ static func build_chunk(region: Node3D, chunk: Node3D, rect: Rect2) -> void:
 	var batches := {}
 	_night_pass(chunk, context)
 	_sidewalk_lamps(chunk, context)
+	UTILITY.build_chunk(chunk, context)
 	STAIRS.build_chunk(chunk)
 	_texture_walls(chunk)
 	_face_ground_up(chunk)
@@ -91,7 +103,9 @@ static func build_chunk(region: Node3D, chunk: Node3D, rect: Rect2) -> void:
 	FILL.frontage(chunk, context, batches)
 	_sidewalk_furniture(context, batches)
 	_building_surroundings(context, batches)
+	JUNK.dress(chunk, context, batches)
 	_road_wear(context, batches)
+	ROAD_WEAR.build_chunk(chunk, context)
 	_rooftops(chunk, context, batches)
 	_flush(chunk, batches)
 	GROUND_LITTER.build_chunk(chunk, context, batches, WORKSHOP_VEHICLE_ACCESS)
@@ -104,7 +118,14 @@ static func build_chunk_step(state: Dictionary) -> bool:
 			state.context = _context(state.region, state.rect)
 			state.batches = {}
 		1: _night_pass(state.chunk, state.context)
-		2: _sidewalk_lamps(state.chunk, state.context)
+		2:
+			# Postes de luz e, na volta seguinte do mesmo passo, os de energia com a fiação: fatias
+			# separadas sem renumerar os passos (o log "dressing_step.N" continua comparável).
+			if not state.get("lamps_done", false):
+				_sidewalk_lamps(state.chunk, state.context)
+				state.lamps_done = true
+				return false
+			UTILITY.build_chunk(state.chunk, state.context)
 		3: STAIRS.build_chunk(state.chunk)
 		4: _texture_walls(state.chunk)
 		5:
@@ -113,8 +134,22 @@ static func build_chunk_step(state: Dictionary) -> bool:
 		7: FILL.street_trees(state.context, state.batches)
 		8: FILL.frontage(state.chunk, state.context, state.batches)
 		9: _sidewalk_furniture(state.context, state.batches)
-		10: _building_surroundings(state.context, state.batches)
-		11: _road_wear(state.context, state.batches)
+		10:
+			# Lixo, porto e orla (StreetJunk) em fatias de ~1,5 ms dentro do mesmo passo, sem renumerar
+			# os seguintes (os logs de quadro lento citam os passos pelo número).
+			if not state.has("street_junk"):
+				_building_surroundings(state.context, state.batches)
+				state.street_junk = JUNK.begin(state.chunk, state.context, state.batches)
+				if not bool(state.street_junk.done): return false
+			if not JUNK.step(state.street_junk): return false
+		11:
+			# Desgaste novo das ruas (HarborRoadWear) em fatias de ~2 ms dentro do mesmo passo.
+			if not state.has("road_wear"):
+				_road_wear(state.context, state.batches)
+				state.road_wear = ROAD_WEAR.begin(state.chunk, state.context)
+				# O sorteio antigo já gastou a fatia: o desgaste começa na próxima chamada.
+				if not (state.road_wear as Dictionary).is_empty(): return false
+			if not ROAD_WEAR.step(state.road_wear): return false
 		12: _rooftops(state.chunk, state.context, state.batches)
 		13: _flush(state.chunk, state.batches)
 		14:
@@ -413,6 +448,17 @@ static func _sidewalk_lamps(chunk: Node3D, context: Dictionary) -> void:
 	transforms = PLACEMENTS.edit_lamps(context.region, chunk, transforms)
 	if transforms.is_empty(): return
 	var to_local := chunk.global_transform.affine_inverse()
+	# Bairro de cada poste (rua mais próxima): tinta do lote e chance de adesivo/cartaz.
+	var districts: Array[String] = []
+	var tally := {}
+	for placement in transforms:
+		var district := WEAR.district_at(context.roads, Vector2(placement.origin.x, placement.origin.z))
+		districts.append(district)
+		tally[district] = int(tally.get(district, 0)) + 1
+	var chunk_district := ""
+	for district in tally:
+		if chunk_district.is_empty() or int(tally[district]) > int(tally[chunk_district]): chunk_district = district
+	var paint: Material = UTILITY.lamp_material(chunk_district) if UTILITY.enabled else MATERIALS.flat(Color("4a5054"), 0.6)
 	var poles := _lamp_multimesh("pole", transforms.size())
 	var heads := _lamp_multimesh("head", transforms.size())
 	var lantern_frames := _lamp_multimesh("lantern_frame", transforms.size())
@@ -433,7 +479,7 @@ static func _sidewalk_lamps(chunk: Node3D, context: Dictionary) -> void:
 	var pole_instance := MultiMeshInstance3D.new()
 	pole_instance.name = "CityLook_sidewalk_lamp"
 	pole_instance.multimesh = poles
-	pole_instance.material_override = MATERIALS.flat(Color("4a5054"), 0.6)
+	pole_instance.material_override = paint
 	chunk.add_child(pole_instance)
 	var head_instance := MultiMeshInstance3D.new()
 	head_instance.name = "CityLook_sidewalk_lamp_head"
@@ -447,7 +493,7 @@ static func _sidewalk_lamps(chunk: Node3D, context: Dictionary) -> void:
 	var frame_instance := MultiMeshInstance3D.new()
 	frame_instance.name = "CityLook_street_lantern_frames"
 	frame_instance.multimesh = lantern_frames
-	frame_instance.material_override = MATERIALS.flat(Color("4a5054"), .6)
+	frame_instance.material_override = paint
 	frame_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	chunk.add_child(frame_instance)
 	var glass_instance := MultiMeshInstance3D.new()
@@ -461,15 +507,35 @@ static func _sidewalk_lamps(chunk: Node3D, context: Dictionary) -> void:
 	var pool_instance := _light_pools(pools, pool_sizes, pool_heights)
 	pool_instance.name = "CitySidewalkLampPools"
 	chunk.add_child(pool_instance)
+	# Adesivo, lambe-lambe e pichação (atlas) em parte dos postes, conforme o bairro. A cópia gira
+	# um pouco em volta da haste para não repetir o mesmo lado; vai como peça extra do poste.
+	var wear_parts := {}
+	if WEAR.available() and KIT.blender_props_enabled:
+		var wear_transforms: Array = []
+		var wear_owner: Array[int] = []
+		for index in transforms.size():
+			var key := "lamp|%d|%d" % [roundi(transforms[index].origin.x * 10.0), roundi(transforms[index].origin.z * 10.0)]
+			if WEAR.roll(key) >= float(WEAR.WEAR_CHANCE.get(districts[index], 0.0)): continue
+			var local := poles.get_instance_transform(index)
+			wear_transforms.append(local * Transform3D(Basis(Vector3.UP, (WEAR.roll(key + "yaw") - .5) * 1.2), Vector3(0, (WEAR.roll(key + "y") - .5) * .24, 0)))
+			wear_owner.append(index)
+		if not wear_transforms.is_empty():
+			var wear := WEAR.batch("CityLook_lamp_wear", WEAR.lamp_mesh(), wear_transforms)
+			chunk.add_child(wear)
+			for slot in wear_owner.size():
+				var lamp_index := wear_owner[slot]
+				wear_parts[lamp_index] = {"multimesh": wear.multimesh, "index": slot, "offset": poles.get_instance_transform(lamp_index).affine_inverse() * wear_transforms[slot]}
 	for index in transforms.size():
 		var base := poles.get_instance_transform(index)
+		var extra: Array = [{"multimesh": heads, "index": index, "offset": Transform3D.IDENTITY},
+			{"multimesh": lantern_frames, "index": index, "offset": Transform3D.IDENTITY},
+			{"multimesh": lantern_glass, "index": index, "offset": Transform3D.IDENTITY}]
+		if wear_parts.has(index): extra.append(wear_parts[index])
 		# register_instance não recebe a mancha; o registro direto é o mesmo
 		# formato, com "pool" como register_node usa para apagar a luz.
 		FRAGILE._register({"kind": "lamp", "multimesh": poles, "index": index,
 			"visual": weakref(pole_instance),
-			"extra": [{"multimesh": heads, "index": index, "offset": Transform3D.IDENTITY},
-				{"multimesh": lantern_frames, "index": index, "offset": Transform3D.IDENTITY},
-				{"multimesh": lantern_glass, "index": index, "offset": Transform3D.IDENTITY}],
+			"extra": extra,
 			"pool": {"multimesh": pool_instance.multimesh, "index": index},
 			"chunk": weakref(chunk), "base": base, "point": transforms[index].origin, "state": "standing"})
 
@@ -511,6 +577,18 @@ static func _lamp_mesh(part: String) -> ArrayMesh:
 		# decorative lights. They preserve the existing silhouette/footprint.
 		_lamp_box(tool, Vector3(0, .52, 0), Vector3(.19, .045, .19))
 		_lamp_box(tool, Vector3(0, 1.06, 0), Vector3(.14, .05, .14))
+		if UTILITY.enabled:
+			# Detalhe de perto (29/10): chumbadores com porca na placa da base, portinhola de
+			# inspeção na base do lado da calçada (-Z), relé fotoelétrico em cima da luminária e
+			# a abraçadeira do braço. Mesma malha e material da gaiola: nenhum draw call novo.
+			for corner in [Vector2(1, 1), Vector2(-1, 1), Vector2(1, -1), Vector2(-1, -1)]:
+				_lamp_box(tool, Vector3(corner.x * .131, .075, corner.y * .131), Vector3(.034, .03, .034))
+				_lamp_box(tool, Vector3(corner.x * .131, .098, corner.y * .131), Vector3(.012, .02, .012))
+			_lamp_box(tool, Vector3(0, .25, -.158), Vector3(.1, .2, .014))
+			_lamp_box(tool, Vector3(0, .25, -.166), Vector3(.018, .02, .006))
+			_lamp_box(tool, Vector3(0, LAMP_HEIGHT + .16, LAMP_ARM - .22), Vector3(.07, .05, .07))
+			_lamp_box(tool, Vector3(0, LAMP_HEIGHT + .2, LAMP_ARM - .22), Vector3(.05, .03, .05))
+			_lamp_box(tool, Vector3(0, LAMP_HEIGHT - .46, 0), Vector3(.13, .07, .13))
 	elif part == "lantern_glass":
 		_lamp_box(tool, Vector3(0, LAMP_HEIGHT - .26, LAMP_ARM + .02), Vector3(.25, .37, .29))
 	tool.generate_normals()
@@ -714,6 +792,8 @@ static func _junction_signage(context: Dictionary, batches: Dictionary, chunk: N
 				chunk.set_meta("signal_lenses", lenses)
 			else:
 				_add(batches, "stop_sign", point, d)
+				var placed: Array = batches["stop_sign"]
+				placed[placed.size() - 1] = WEAR.lean(placed[placed.size() - 1], WEAR.district_at(context.roads, base), "stop|%d|%d" % [roundi(base.x * 10.0), roundi(base.y * 10.0)])
 
 
 # ---------------------------------------------------------------------------
@@ -847,20 +927,35 @@ static func _road_wear(context: Dictionary, batches: Dictionary) -> void:
 			var b := points[index + 1]
 			var length := a.distance_to(b)
 			if length < 0.01: continue
+			# Todo decalque daqui fica a menos de meia rua + calçada da amostra: trecho e amostra longe do
+			# chunk não colocam nada. Pular só soma o comprimento (a fase das amostras segue igual); antes
+			# cada chunk formatava e sorteava a rua inteira, mesmo os quilômetros fora dele.
+			var reach := width * 0.5 + SIDEWALK + 1.0
+			var near := (context.rect as Rect2).grow(reach)
+			if not Rect2(a, Vector2.ZERO).expand(b).intersects(near, true):
+				travelled += length
+				continue
 			var tangent := (b - a) / length
 			var normal := Vector2(tangent.y, -tangent.x)
 			var yaw := atan2(tangent.x, tangent.y)
 			var s := fposmod(-travelled, 3.0)
 			while s < length:
+				var along := a + tangent * s
+				if not near.has_point(along):
+					s += 3.0
+					continue
 				var key := "%s|w|%d|%d" % [road.id, index, int(s * 10.0)]
 				var roll := _roll(key)
-				var along := a + tangent * s
 				# A ponte reconstruída não recebe os antigos remendos procedurais.
 				if BRIDGE_SURFACE.owns_surface_point(along):
 					s += 3.0
 					continue
 				var lane := (1.0 if _roll(key + "l") < 0.5 else -1.0) * width * 0.25
-				if roll < 0.22:
+				# Óleo, remendo, rachadura, bueiro e grelha da pista passaram para HarborRoadWear (um lote
+				# com atlas). A sujeira da calçada abaixo continua igual, no mesmo sorteio.
+				if roll < 0.38 and ROAD_WEAR.enabled():
+					pass
+				elif roll < 0.22:
 					# Óleo pinga no meio da faixa, onde o carro para.
 					var p := along + normal * (lane + (_roll(key + "o") - 0.5) * 0.6)
 					if _in_chunk(context, p) and not _near_junction(context, p, 1.0):

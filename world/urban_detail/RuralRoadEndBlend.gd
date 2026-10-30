@@ -66,5 +66,5 @@ func sync_material(base: Material) -> void:
 		result.set_shader_parameter("roughness",base.roughness)
 		result.set_shader_parameter("specular",base.metallic_specular)
 	elif base is ShaderMaterial:
-		for parameter in ["base_texture","roughness_texture","wetness","reflection_texture","reflection_projection","reflection_enabled","reflection_strength","reflection_texel_size","reflection_flip_y"]:
+		for parameter in ["base_texture","roughness_texture","wetness","urban_wear","reflection_texture","reflection_projection","reflection_enabled","reflection_strength","reflection_texel_size","reflection_flip_y"]:
 			result.set_shader_parameter(parameter,base.get_shader_parameter(parameter))

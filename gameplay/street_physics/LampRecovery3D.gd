@@ -77,3 +77,5 @@ static func restore(item: Dictionary) -> void:
 			if node is Light3D: node.remove_meta("street_destroyed")
 	item.state = "standing"
 	item.erase("recovery")
+	# Poste de energia de pé de novo: os fios voltam aos isoladores (HarborUtilityLines).
+	if item.has("wires") and item.has("multimesh"): preload("res://world/city_look/HarborUtilityLines.gd").follow(item, item.base)

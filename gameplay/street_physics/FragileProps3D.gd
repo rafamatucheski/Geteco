@@ -76,6 +76,26 @@ const KINDS := {
 	"gas_cylinders": {"family": "light", "radius": 0.55, "drag": 0.05, "damage": 1.0, "sound": "metal"},
 	"door_bench": {"family": "light", "radius": 0.65, "drag": 0.04, "damage": 0.5, "sound": "wood"},
 	"motorcycle": {"family": "light", "radius": 1.0, "drag": 0.18, "damage": 4.0, "sound": "metal"},
+	# Objetos soltos da rua (StreetJunk, 29/10): saco, papelão, caixote, rede e cadeira cedem quase sem
+	# segurar o carro; entulho e caçamba de entulho pesam (seguram e amassam mais).
+	"bag_single": {"family": "light", "radius": 0.35, "drag": 0.005, "damage": 0.0, "sound": "wood"},
+	"bag_pile": {"family": "light", "radius": 0.75, "drag": 0.02, "damage": 0.0, "sound": "wood"},
+	"bag_torn": {"family": "light", "radius": 0.6, "drag": 0.005, "damage": 0.0, "sound": "wood"},
+	"cardboard": {"family": "light", "radius": 0.65, "drag": 0.01, "damage": 0.0, "sound": "wood"},
+	"refuse_heap": {"family": "light", "radius": 1.05, "drag": 0.05, "damage": 0.5, "sound": "wood"},
+	"wood_crates": {"family": "light", "radius": 0.7, "drag": 0.05, "damage": 1.0, "sound": "wood"},
+	"fish_crates": {"family": "light", "radius": 0.7, "drag": 0.03, "damage": 0.5, "sound": "wood"},
+	"rusty_barrels": {"family": "light", "radius": 0.72, "drag": 0.08, "damage": 1.5, "sound": "metal"},
+	"rope_coil": {"family": "light", "radius": 0.55, "drag": 0.03, "damage": 0.0, "sound": "wood"},
+	"fishing_net": {"family": "light", "radius": 0.8, "drag": 0.02, "damage": 0.0, "sound": "wood"},
+	"loose_tires": {"family": "light", "radius": 0.65, "drag": 0.04, "damage": 0.5, "sound": "wood"},
+	"rubble": {"family": "light", "radius": 0.85, "drag": 0.15, "damage": 2.0, "sound": "stone"},
+	"rubble_skip": {"family": "light", "radius": 1.6, "drag": 0.35, "damage": 8.0, "sound": "metal"},
+	"beach_parasol": {"family": "light", "radius": 0.5, "drag": 0.02, "damage": 0.0, "sound": "wood"},
+	"beach_parasol_b": {"family": "light", "radius": 0.5, "drag": 0.02, "damage": 0.0, "sound": "wood"},
+	"beach_chairs": {"family": "light", "radius": 0.85, "drag": 0.02, "damage": 0.0, "sound": "metal"},
+	"plastic_chairs": {"family": "light", "radius": 0.55, "drag": 0.02, "damage": 0.0, "sound": "wood"},
+	"bar_table": {"family": "light", "radius": 1.0, "drag": 0.04, "damage": 0.5, "sound": "wood"},
 }
 
 static var cells := {}
@@ -263,6 +283,9 @@ static func _set_transform(item: Dictionary, xform: Transform3D) -> void:
 		for extra in item.extra:
 			var local: Transform3D = extra.offset
 			extra.multimesh.set_instance_transform(extra.index, xform * local)
+		# Poste de energia (HarborUtilityLines): os fios presos nele seguem a ponta no balanço e
+		# no tombo, até o chão; sem isto o fio ficaria pendurado no ar onde o poste estava.
+		if item.has("wires"): preload("res://world/city_look/HarborUtilityLines.gd").follow(item, xform)
 	else:
 		var root = item.root.get_ref()
 		if is_instance_valid(root): root.global_transform = xform
@@ -467,7 +490,11 @@ const DEBRIS_LIFETIME := 10.0
 ## somavam ao lançamento antigo e tudo voava como papel.
 const MASSES := {"trash_can": 28.0, "news_box": 45.0, "mailbox": 60.0, "hydrant": 60.0, "bench_seat": 70.0, "dumpster": 320.0, "trash_bags": 9.0, "planter": 300.0, "desert_rock": 180.0, "desert_tree": 35.0, "desert_shrub": 8.0, "desert_stone": 60.0, "lamp": 90.0, "signal_pole": 120.0, "stop_sign": 18.0, "phone_booth": 200.0,
 	"cafe_set": 14.0, "cafe_parasol": 18.0, "produce_stand": 40.0, "a_frame": 8.0, "beer_crates": 25.0, "pot_plant": 40.0, "wheelie_bins": 35.0, "bike_rack": 40.0, "pallet_stack": 90.0, "tire_stack": 50.0, "drums": 80.0,
-	"cafe_parasol_b": 18.0, "food_cart": 90.0, "ice_freezer": 90.0, "clothes_rack": 15.0, "flower_buckets": 20.0, "gas_cylinders": 60.0, "door_bench": 20.0, "motorcycle": 180.0, "barrel": 40.0, "pallet": 22.0}
+	"cafe_parasol_b": 18.0, "food_cart": 90.0, "ice_freezer": 90.0, "clothes_rack": 15.0, "flower_buckets": 20.0, "gas_cylinders": 60.0, "door_bench": 20.0, "motorcycle": 180.0, "barrel": 40.0, "pallet": 22.0,
+	# StreetJunk: a caçamba de entulho cheia (~1,4 t) só escorrega; o monte de entulho pesa como um vaso.
+	"bag_single": 6.0, "bag_pile": 24.0, "bag_torn": 5.0, "cardboard": 8.0, "refuse_heap": 45.0, "wood_crates": 40.0, "fish_crates": 25.0, "rusty_barrels": 90.0,
+	"rope_coil": 25.0, "fishing_net": 20.0, "loose_tires": 30.0, "rubble": 250.0, "rubble_skip": 1400.0, "beach_parasol": 8.0, "beach_parasol_b": 8.0,
+	"beach_chairs": 10.0, "plastic_chairs": 12.0, "bar_table": 18.0}
 const LID_MASS := 2.5
 ## Choque carro × objeto: conservação de momento com coeficiente de restituição baixo
 ## (lata amassando quase não devolve energia), contato de raspão (o para-choque não

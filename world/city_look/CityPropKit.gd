@@ -60,7 +60,12 @@ const DETAIL_NEAR_DISTANCE := 40.0
 const DETAIL_RANGE_MARGIN := 4.0
 const DETAIL_PROP_KINDS := ["hydrant", "trash_can", "news_box", "mailbox", "trash_bags", "bollard", "bench_seat", "planter", "vent", "dish", "pipe_run", "window_ac", "flower_box", "pigeons", "laundry", "posters", "satellite_row", "roof_chairs",
 	# Peças baixas do SidewalkFill (as de mesa, banca e árvore ficam de fora: dão volume de longe).
-	"a_frame", "beer_crates", "pot_plant", "wheelie_bins", "bike_rack", "tire_stack", "drums", "clothes_rack", "flower_buckets", "gas_cylinders", "door_bench"]
+	"a_frame", "beer_crates", "pot_plant", "wheelie_bins", "bike_rack", "tire_stack", "drums", "clothes_rack", "flower_buckets", "gas_cylinders", "door_bench",
+	# StreetJunk baixo (caçamba, guarda-sol e mesa de bar ficam de fora: dão volume de longe).
+	"bag_single", "bag_pile", "bag_torn", "cardboard", "refuse_heap", "wood_crates", "fish_crates", "rusty_barrels", "rope_coil", "fishing_net", "loose_tires",
+	"rubble", "beach_chairs", "plastic_chairs"]
+## Objetos soltos da rua (lixo, porto, orla): malhas com UV num atlas de desgaste e um material só.
+const JUNK := preload("res://world/city_look/StreetJunkKit.gd")
 
 
 static func apply_detail_range(instance: GeometryInstance3D) -> void:
@@ -108,6 +113,7 @@ const FLORA := preload("res://assets/urban_detail/FloraSurfaces.gd")
 
 ## Material do MultiMesh deste tipo; null deixa valer o material de cada superfície.
 static func material_for(kind: String) -> StandardMaterial3D:
+	if kind in JUNK.KINDS: return JUNK.material()
 	return null if LAYERED.has(kind) else material()
 
 
@@ -142,6 +148,16 @@ static func _layered_mesh(kind: String) -> ArrayMesh:
 
 static func mesh(kind: String) -> ArrayMesh:
 	if _meshes.has(kind): return _meshes[kind]
+	if kind in JUNK.KINDS:
+		var junk := SurfaceTool.new()
+		junk.begin(Mesh.PRIMITIVE_TRIANGLES)
+		# O destroço reutiliza a malha fora do MultiMeshInstance: o material vai na superfície.
+		junk.set_material(JUNK.material())
+		junk.set_smooth_group(-1)
+		JUNK.build(kind, junk)
+		junk.generate_normals()
+		_meshes[kind] = junk.commit()
+		return _meshes[kind]
 	if blender_props_enabled and (BLENDER_WHOLE.has(kind) or wave3_modeled(kind)):
 		_meshes[kind] = blender_mesh(kind, BLENDER_WHOLE.get(kind, kind))
 		return _meshes[kind]
@@ -226,6 +242,8 @@ const VARIATION := {
 
 
 static func variation_for(kind: String) -> Dictionary:
+	# Peças do StreetJunk não dependem dos interruptores do Blender: a cor por cópia é delas.
+	if JUNK.VARIATION.has(kind): return JUNK.VARIATION[kind]
 	return VARIATION.get(kind, {}) if blender_props_enabled and wave3_modeled(kind) else {}
 
 

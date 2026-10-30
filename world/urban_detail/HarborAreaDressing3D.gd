@@ -9,6 +9,15 @@ const COBRA_FINISH := preload("res://world/urban_detail/CobraMaterials.gd")
 ## Portão norte do cemitério (OriginalCemetery3D, -350 px da V1): caminho do carro funerário.
 const CEMETERY_GATE := Vector2(0, -350) * (1.0/16.0)
 var zone_id := ""
+## Adereços de rua da Vila Cobra em pixels da V1 (mundo = pixel / 16). Constantes para os postes
+## de energia (HarborUtilityLines) desviarem deles sem montar a vizinhança: a mesma lista monta e reserva.
+const COBRA_LAMPS := [Vector2(6890,1635),Vector2(7170,1765),Vector2(7450,1450),Vector2(7980,1450),Vector2(8010,1920),Vector2(7450,1960)]
+## Os três primeiros saem antes das barricadas, os outros depois (ordem original dos filhos).
+const COBRA_BARRELS := [Vector2(7185,1615),Vector2(7375,1400),Vector2(8185,1730),Vector2(7140,1620),Vector2(7200,1790),Vector2(7385,1405),Vector2(8410,1795)]
+const COBRA_BARRICADES := [Vector2(7300,1625),Vector2(7300,1775)]
+const COBRA_BENCHES := [Vector2(7630,1570),Vector2(7820,1740),Vector2(7600,1840)]
+## Painéis do território na entrada: local (-26, ±6,8) m da origem (7700,1700) px.
+const COBRA_PANELS := [Vector2(7284,1591.2),Vector2(7284,1808.8)]
 static var _materials: Dictionary = {}
 static var _box_meshes: Dictionary = {}
 static var _cylinder_meshes: Dictionary = {}
@@ -20,6 +29,16 @@ var _cobra_joint_counts: Dictionary = {}
 
 func configure(id: String) -> void:
 	zone_id = id
+
+## [ponto no mundo (x, z), raio] dos adereços de rua da Cobra que um poste novo não pode atravessar.
+static func cobra_street_clutter() -> Array:
+	var result: Array = []
+	for point in COBRA_LAMPS: result.append([point*SCALE,.4])
+	for point in COBRA_BARRELS: result.append([point*SCALE,.45])
+	for point in COBRA_BARRICADES: result.append([point*SCALE,1.6])
+	for point in COBRA_BENCHES: result.append([point*SCALE,1.3])
+	for point in COBRA_PANELS: result.append([point*SCALE,1.4])
+	return result
 
 static func ground_footprints(id: String, origin: Vector2) -> Array[PackedVector2Array]:
 	return preload("res://world/urban_detail/HarborDressingGround.gd").footprints(id,origin)
@@ -211,10 +230,10 @@ func _build_cobra() -> void:
 	for feature in features:
 		_tree((feature[0]-Vector2(7700,1700))*SCALE,float(feature[1]),bool(feature[2]))
 	for point in [Vector2(8410,1040),Vector2(8445,2340)]: _rock((point-Vector2(7700,1700))*SCALE,1.45)
-	for point in [Vector2(6890,1635),Vector2(7170,1765),Vector2(7450,1450),Vector2(7980,1450),Vector2(8010,1920),Vector2(7450,1960)]: _lamp((point-Vector2(7700,1700))*SCALE)
-	for point in [Vector2(7185,1615),Vector2(7375,1400),Vector2(8185,1730)]: _barrel((point-Vector2(7700,1700))*SCALE)
-	for point in [Vector2(7300,1625),Vector2(7300,1775)]: _tire_barricade((point-Vector2(7700,1700))*SCALE)
-	for point in [Vector2(7630,1570),Vector2(7820,1740),Vector2(7600,1840)]: _bench((point-Vector2(7700,1700))*SCALE)
+	for point in COBRA_LAMPS: _lamp((point-Vector2(7700,1700))*SCALE)
+	for point in COBRA_BARRELS.slice(0,3): _barrel((point-Vector2(7700,1700))*SCALE)
+	for point in COBRA_BARRICADES: _tire_barricade((point-Vector2(7700,1700))*SCALE)
+	for point in COBRA_BENCHES: _bench((point-Vector2(7700,1700))*SCALE)
 	for fence in [[Vector2(6870,1230),Vector2(6870,1440)],[Vector2(7380,1005),Vector2(7650,1005)],[Vector2(7860,2385),Vector2(8150,2385)]]:
 		var a: Vector2 = (fence[0]-Vector2(7700,1700))*SCALE
 		var b: Vector2 = (fence[1]-Vector2(7700,1700))*SCALE
@@ -232,7 +251,7 @@ func _build_cobra() -> void:
 			insignia.rotation = Vector3(PI*.5,side*PI*.5,0)
 			insignia.scale = Vector3.ONE*.35
 			panel.add_child(insignia)
-	for point in [Vector2(7140,1620),Vector2(7200,1790),Vector2(7385,1405),Vector2(8410,1795)]: _barrel((point-Vector2(7700,1700))*SCALE)
+	for point in COBRA_BARRELS.slice(3): _barrel((point-Vector2(7700,1700))*SCALE)
 	_connect_cobra_crossings()
 	_build_cobra_joints()
 	_scatter_grass()

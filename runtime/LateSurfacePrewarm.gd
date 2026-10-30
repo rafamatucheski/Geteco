@@ -140,6 +140,8 @@ static func _alpha_props(stage: Node3D) -> int:
 	if kit.blender_props_enabled: kinds.append_array(kit.BLENDER_WHOLE.keys())
 	for kind in kit.WAVE3_KINDS:
 		if kit.wave3_modeled(kind): kinds.append(kind)
+	# Objetos soltos da rua (StreetJunkKit): material próprio de atlas, também sai como destroço que some.
+	kinds.append_array(kit.JUNK.KINDS)
 	var placed := 0
 	for kind in kinds:
 		var mesh: Mesh = kit.mesh(str(kind))
@@ -152,6 +154,22 @@ static func _alpha_props(stage: Node3D) -> int:
 		part.position = Vector3((placed % 10 - 4.5) * .3, -1.4 - floorf(placed / 10.0) * .3, 0)
 		stage.add_child(part)
 		placed += 1
+	# O mesmo material opaco, como o chunk desenha: MultiMesh com cor por instância e sombra. As peças
+	# entram no streaming fora da cortina (o porto e a orla longe do ponto de partida).
+	var junk := MultiMesh.new()
+	junk.transform_format = MultiMesh.TRANSFORM_3D
+	junk.use_colors = true
+	junk.mesh = kit.mesh("bag_pile")
+	junk.instance_count = 1
+	junk.set_instance_transform(0, Transform3D(Basis.from_scale(Vector3.ONE * .15), Vector3.ZERO))
+	junk.set_instance_color(0, Color("e3b02e"))
+	var junk_view := MultiMeshInstance3D.new()
+	junk_view.multimesh = junk
+	junk_view.material_override = kit.JUNK.material()
+	junk_view.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+	junk_view.position = Vector3((placed % 10 - 4.5) * .3, -1.4 - floorf(placed / 10.0) * .3, 0)
+	stage.add_child(junk_view)
+	placed += 1
 	for primitive: PrimitiveMesh in [SphereMesh.new(), BoxMesh.new()]:
 		var piece := MeshInstance3D.new()
 		piece.mesh = primitive

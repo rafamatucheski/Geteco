@@ -285,6 +285,8 @@ static func carve_chunk(chunk: Node3D, rect: Rect2) -> void:
 	for node in chunk.find_children("*", "MeshInstance3D", true, false):
 		var mesh := node as MeshInstance3D
 		if mesh.mesh == null or str(mesh.get_path()).contains("CanalTunnel"): continue
+		# Lote que já nasce fora das rampas (desgaste da rua): recortar só leria a malha de volta da GPU.
+		if mesh.has_meta(&"canal_carve_skip"): continue
 		var box: AABB = mesh.global_transform * mesh.get_aabb()
 		if box.position.y < -0.12 or box.end.y > 0.12: continue
 		if not _touches(box, cuts): continue

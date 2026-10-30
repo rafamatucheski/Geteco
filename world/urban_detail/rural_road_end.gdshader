@@ -13,6 +13,9 @@ uniform float roughness = 0.9;
 uniform float specular = 0.5;
 uniform bool coastal_asphalt = false;
 uniform float wetness : hint_range(0.0,1.0) = 0.0;
+// Mesma macrovariação do asfalto do porto (coastal_wet_asphalt): sem ela a boca da rua rural
+// virava um retângulo de tom liso no meio do asfalto manchado.
+uniform float urban_wear : hint_range(0.0,1.0) = 0.0;
 uniform vec4 mouth_0;
 uniform vec4 mouth_1;
 uniform float width_0;
@@ -51,6 +54,10 @@ void fragment() {
 	if (coastal_asphalt && film>0.001) film_coverage=coastal_wet_film(coastal_world_position.xz);
 	if (coastal_asphalt) {
 		base=coastal_asphalt_aggregate(base);
+		if (urban_wear > 0.001) {
+			float wear_rough=1.0;
+			base=mix(base,coastal_urban_wear(base,ground_point,wear_rough),urban_wear);
+		}
 		base*=mix(1.0,mix(0.57,0.42,film_coverage),moisture);
 		surface_roughness=mix(1.0,mix(0.90,0.56,film_coverage),moisture);
 		surface_specular=film*film_coverage*0.10;

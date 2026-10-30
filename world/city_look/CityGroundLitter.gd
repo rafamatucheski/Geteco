@@ -9,6 +9,9 @@ const SPACING := 12.0
 const MAX_LEAVES := 96
 const MAX_PAPERS := 24
 const LIFT := .003
+## Pegada no chão das peças do StreetJunk (m), para folha e papel não boiarem sobre elas.
+const JUNK_RADIUS := {"bag_single":.4,"bag_pile":.8,"bag_torn":.8,"cardboard":.75,"refuse_heap":1.2,"wood_crates":.75,"fish_crates":.75,"rusty_barrels":.8,
+	"rope_coil":.75,"fishing_net":.9,"loose_tires":.7,"rubble":.95,"rubble_skip":1.8,"beach_parasol":.6,"beach_parasol_b":.6,"beach_chairs":.95,"plastic_chairs":.65,"bar_table":1.15}
 # Used by the rendered A/B harness; production always starts enabled.
 static var enabled := true
 static var render_visible := true
@@ -47,6 +50,10 @@ static func begin(chunk: Node3D, context: Dictionary, furniture: Dictionary, exc
 	for kind in ["trash_can","dumpster","trash_bags","planter","bench_seat","phone_booth","hydrant","news_box","mailbox","bollard","signal_pole","stop_sign"]:
 		for placement: Transform3D in furniture.get(kind,[]):
 			job.occupied.append({"point":Vector2(placement.origin.x,placement.origin.z),"radius":1.4 if kind in ["dumpster","bench_seat","phone_booth"] else .65})
+	# Objetos soltos do StreetJunk: a folha e o papel não passam por baixo da pilha nem da caçamba.
+	for kind in JUNK_RADIUS:
+		for placement: Transform3D in furniture.get(kind,[]):
+			job.occupied.append({"point":Vector2(placement.origin.x,placement.origin.z),"radius":float(JUNK_RADIUS[kind])})
 	for road in context.roads:
 		var points: PackedVector2Array = road.points
 		for segment in points.size()-1:
@@ -88,7 +95,8 @@ static func begin(chunk: Node3D, context: Dictionary, furniture: Dictionary, exc
 			var angle := rng.randf()*TAU
 			var anchor := point+Vector2(cos(angle),sin(angle))*rng.randf_range(.8,2.0)
 			_cluster(job,anchor,rng,7,false)
-	for kind in ["trash_can","dumpster","news_box"]:
+	# Pilha, saco rasgado e monte de esquina também espalham papel em volta (dentro do mesmo teto de papéis).
+	for kind in ["trash_can","dumpster","news_box","bag_pile","bag_torn","refuse_heap"]:
 		for placement: Transform3D in furniture.get(kind,[]):
 			var point := Vector2(placement.origin.x,placement.origin.z)
 			var rng := _rng("%s/%.3f/%.3f"%[kind,point.x,point.y])

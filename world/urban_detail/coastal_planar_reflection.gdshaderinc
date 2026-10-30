@@ -42,6 +42,28 @@ vec3 coastal_asphalt_aggregate(vec3 sampled) {
 	return mix(vec3(luminance),sampled,0.45)*1.55*grain_contrast;
 }
 
+// Desgaste seco do asfalto urbano (HarborRoadWear, uniform urban_wear; 0 = asfalto anterior).
+// O agregado é um ladrilho de 4 m igual no porto inteiro: de cima a rua lia como tapete novo.
+// Três campos de ruído em metros de mundo, sem derivada nem textura nova: oxidado claro e
+// cinza-quente em manchas de ~45 m, recapeado mais escuro em ~12 m e sujeira de metro em metro.
+// Remendo, buraco e rachadura de verdade são decalques (atlas), não este ruído.
+vec3 coastal_urban_wear(vec3 base, vec2 g, out float rough_scale) {
+	vec2 r = vec2(dot(g,vec2(0.8,-0.6)),dot(g,vec2(0.6,0.8)));
+	float broad = coastal_film_noise(r*0.022+vec2(31.7,-12.9));
+	float mid = coastal_film_noise(g*0.083+vec2(-7.3,19.1));
+	float fine = coastal_film_noise(r*0.55+vec2(4.9,8.3));
+	float lum = dot(base,vec3(0.2126,0.7152,0.0722));
+	float oxid = smoothstep(0.40,0.84,broad*0.65+mid*0.35);
+	vec3 aged = mix(base,vec3(lum)*vec3(1.05,1.0,0.93),0.65)*1.42;
+	vec3 color = mix(base,aged,oxid*0.85);
+	float fresh = smoothstep(0.60,0.74,mid*0.7+(1.0-broad)*0.3);
+	color *= 1.0-fresh*0.22;
+	color *= 0.91+fine*0.18;
+	// Asfalto novo é mais liso; o oxidado, mais áspero.
+	rough_scale = 1.0-fresh*0.06+oxid*0.02;
+	return color;
+}
+
 vec4 coastal_reflection_tap(vec2 uv) {
 	vec4 captured = texture(reflection_texture,uv);
 	// Filter covered radiance, not arbitrary RGB outside the geometry alpha.

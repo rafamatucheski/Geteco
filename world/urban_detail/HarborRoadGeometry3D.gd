@@ -9,6 +9,8 @@ class_name HarborRoadGeometry3D
 const SOURCE_SCALE := 1.0 / 16.0
 const CATALOG := preload("res://world/places/PlaceCatalog.gd")
 const UNIFIED_BRIDGE := preload("res://world/regions/unified_bridge/UnifiedBridgeKit.gd")
+## Desgaste das ruas: macrovariação do asfalto (urban_wear) e umidade dos decalques do atlas.
+const ROAD_WEAR := preload("res://world/shared/roads/HarborRoadWear.gd")
 const SIDEWALK_MARGIN := 42.0 * SOURCE_SCALE
 const DASH_LENGTH := 28.0 * SOURCE_SCALE
 const DASH_GAP := 26.0 * SOURCE_SCALE
@@ -133,6 +135,8 @@ func configure(source_roads: Array[Dictionary], surfaces := true) -> void:
 	_prepare_clipping_bounds()
 	_sidewalk_details.configure(source_roads, crossing_layout)
 	_traffic_signs.configure(source_roads, crossing_layout)
+	# Materiais do desgaste da rua prontos aqui (sob a cortina), não no primeiro trecho montado.
+	ROAD_WEAR.prewarm()
 
 
 func _prepare_clipping_bounds() -> void:
@@ -807,6 +811,7 @@ func set_weather_wetness(value: float) -> void:
 	value = clampf(value,0.0,1.0)
 	if absf(value-_weather_wetness)<.002: return
 	_weather_wetness = value
+	ROAD_WEAR.set_wetness(value)
 	var key := ROAD_COLOR.to_html()
 	if _materials.has(key): _apply_wetness(_materials[key])
 	if _coastal_material != null:
@@ -818,6 +823,7 @@ func _coastal_asphalt_material() -> ShaderMaterial:
 	if UNIFIED_BRIDGE.enabled():
 		_coastal_material = preload("res://world/regions/unified_bridge/UnifiedRoadAsphalt.gd").material()
 		_coastal_material.set_shader_parameter("wetness",_weather_wetness)
+		_coastal_material.set_shader_parameter("urban_wear",ROAD_WEAR.asphalt_amount())
 		_apply_coastal_reflection()
 		return _coastal_material
 	# Keep _material's StandardMaterial3D contract for bridges/tunnels and
@@ -828,6 +834,7 @@ func _coastal_asphalt_material() -> ShaderMaterial:
 	_coastal_material.set_shader_parameter("base_texture",base.albedo_texture)
 	_coastal_material.set_shader_parameter("roughness_texture",base.roughness_texture)
 	_coastal_material.set_shader_parameter("wetness",_weather_wetness)
+	_coastal_material.set_shader_parameter("urban_wear",ROAD_WEAR.asphalt_amount())
 	_apply_coastal_reflection()
 	return _coastal_material
 

@@ -236,6 +236,8 @@ static func frontage(chunk: Node3D, context: Dictionary, batches: Dictionary) ->
 	if not enabled: return
 	_prepare(context)
 	var doors := _door_points(chunk)
+	# O StreetJunk (passo seguinte) usa os mesmos vãos sem varrer o chunk de novo.
+	context.fill_doors = doors
 	for entry in context.buildings:
 		var rect: Rect2 = entry.rect
 		if not DRESSING._in_chunk(context, rect.get_center()): continue

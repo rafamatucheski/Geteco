@@ -14,6 +14,9 @@ uniform vec2 frost_entry_x = vec2(559.375,651.25);
 uniform vec2 frost_north_fade = vec2(-203.75,-128.75);
 // Frente de neve da serra (0..1, ColdSurvival): pó de neve e bancos na nevasca.
 uniform float snowfall : hint_range(0.0,1.0) = 0.0;
+// Macrovariação de tom do asfalto urbano (HarborRoadWear.asphalt_amount; 0 = desenho anterior).
+// Some onde a geada da serra começa: lá o desgaste é o de mountain_frost.
+uniform float urban_wear : hint_range(0.0,1.0) = 0.0;
 varying highp vec3 coastal_world_position;
 
 void vertex() {
@@ -56,19 +59,26 @@ vec3 mountain_frost(vec3 base, vec2 g, float frost, float footprint, out float s
 void fragment() {
 	vec2 ground_uv = coastal_world_position.xz/4.0;
 	vec3 aggregate = coastal_asphalt_aggregate(texture(base_texture,ground_uv).rgb);
-	float moisture = clamp(wetness,0.0,1.0);
-	float film = smoothstep(0.05,1.0,moisture);
-	float film_coverage = 0.0;
-	if (film > 0.001) film_coverage = coastal_wet_film(coastal_world_position.xz);
-	float rough_map = texture(roughness_texture,ground_uv).r;
-	// .42 linear matches the existing .68 sRGB wet albedo multiplier.
-	vec3 base = aggregate * mix(1.0,mix(0.57,0.42,film_coverage),moisture);
 	float frost = 0.0;
 	float frost_snow = 0.0;
 	if (mountain_finish > 0.5) {
 		frost = smoothstep(frost_entry_x.x,frost_entry_x.y,coastal_world_position.x)
 			*(1.0-smoothstep(frost_north_fade.x,frost_north_fade.y,coastal_world_position.z));
 	}
+	float wear_rough = 1.0;
+	float wear_amount = urban_wear*(1.0-frost);
+	if (wear_amount > 0.001) {
+		vec3 worn = coastal_urban_wear(aggregate,coastal_world_position.xz,wear_rough);
+		aggregate = mix(aggregate,worn,wear_amount);
+		wear_rough = mix(1.0,wear_rough,wear_amount);
+	}
+	float moisture = clamp(wetness,0.0,1.0);
+	float film = smoothstep(0.05,1.0,moisture);
+	float film_coverage = 0.0;
+	if (film > 0.001) film_coverage = coastal_wet_film(coastal_world_position.xz);
+	float rough_map = texture(roughness_texture,ground_uv).r*wear_rough;
+	// .42 linear matches the existing .68 sRGB wet albedo multiplier.
+	vec3 base = aggregate * mix(1.0,mix(0.57,0.42,film_coverage),moisture);
 	// Dentro do ramo só conta sem derivada: a pegada é medida fora dele.
 	float frost_footprint = max(length(dFdx(coastal_world_position.xz)),length(dFdy(coastal_world_position.xz)));
 	if (frost > 0.001) base = mountain_frost(base,coastal_world_position.xz,frost,frost_footprint,frost_snow);
