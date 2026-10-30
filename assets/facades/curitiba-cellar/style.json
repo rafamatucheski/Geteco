@@ -1,0 +1,46 @@
+{
+	"style": "curitiba-cellar",
+	"module": [
+		14,
+		3.6
+	],
+	"side": [
+		11,
+		3.6
+	],
+	"eave": 0.0,
+	"snow_roof": false,
+	"openings": {
+		"front": [
+			{
+				"rect": [
+					0.41678571428571426,
+					0.25555555555555554,
+					0.5832142857142857,
+					1.0
+				],
+				"leaf": false
+			}
+		],
+		"back": []
+	},
+	"doors": {},
+	"source_art": {
+		"generator": "image_gen built-in",
+		"front": "exec-8346b7ff-4e3b-44a8-8a5a-33f192c9bfcc.png",
+		"side": "exec-8c9d8e68-cf49-4245-adb6-673f9bf106ab.png",
+		"roof": "exec-439660b5-5ff9-47e9-a73d-f3b42afb6dfe.png",
+		"door_crop_px": [
+			819,
+			237,
+			1245,
+			748
+		],
+		"processing": "warp_columns alinha vao autorado; folhas conservam colisao e movimento originais",
+		"prompts": {
+			"front": "Use case: stylized-concept. Production game texture, flat orthographic elevation of a Brazilian coastal wine shop named exactly CURITIBA CELLAR. Create a single seamless-border rectangular FRONT FACADE albedo image, width 14 metres and height 3.6 metres, aspect ratio approximately 3.89:1. Full bleed facade only, zero background, sky, ground, perspective or roof visibility. GTA-inspired hand-painted realistic worn sandstone and burgundy timber, brass window frames, bottle displays behind two broad shop windows at natural human scale. Central double sliding door exactly centered; opening occupies horizontal 41.7% to 58.3% and vertical 25.56% to 100% of image. Door reaches bottom edge; no step. Burgundy fascia across upper 22% with only text CURITIBA CELLAR, warm cream letters centered. Two symmetric window bays below fascia. Soft diffuse baked albedo without cast shadows or lights/glow. No people, vehicles, slogans, labels, watermark. Image will be applied to existing 14x3.6m game facade. Save generated image as local output file.",
+			"side": "Use case: stylized-concept. Single game architectural albedo texture. Flat straight-on orthographic SIDE WALL of the wine shop Curitiba Cellar. Full bleed 11 metre wide by 3.6 metre high rectangle, no background, no perspective. Aged warm pale sandstone masonry, fine burgundy wooden cornice along the very top 7%, understated dark burgundy plinth along bottom 9%, a few slim worn brass utility details and one small high dark ventilation grille. Elegant but weathered coastal Brazilian wine merchant exterior, painterly realistic GTA-like game art. No doors, no windows, NO TEXT, no signage, no plants or props outside the wall. Uniform diffuse lighting, no directional shadows. Edges meet an aged burgundy and warm sandstone storefront. Rectangular wall fills entire image.",
+			"roof_shared": "Use case: stylized-concept. Production videogame roof albedo texture, single rectangular flat roof, exact orthographic TOP DOWN view, full bleed no background. Weathered grey green tar and mineral felt of a coastal Brazilian storefront, subtle fine grit, broad low-contrast rectangular seam patches, a few faded water marks, realistic hand-painted GTA-like environment texture. Surface is 14 by 11 metres. No equipment, no buildings, no parapet, no raised objects, no text, no shadows or lighting gradients. Entire image just the continuous roof surface."
+		}
+	}
+}
