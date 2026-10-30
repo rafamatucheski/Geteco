@@ -92,14 +92,18 @@ func side_x(z: float) -> float:
 	var taper := .10*maxf(clampf((front+.25-z)/.25,0,1),clampf((z-rear+.24)/.24,0,1))
 	return skin+flare-taper
 
-func chassis() -> void:
-	active="Body"
+func chassis_stations() -> Array[float]:
 	var stations: Array[float] = [front,front+.22,windshield_z,rear-.20,rear]
 	if not door.is_empty(): stations.append_array([float(door.zf),float(door.zr)])
 	for c in axles:
 		if c.x>0: continue
 		for j in 17: stations.append(c.z+(c.y+.055)*cos(PI*float(j)/16.0))
 	stations.sort()
+	return stations
+
+func chassis() -> void:
+	active="Body"
+	var stations := chassis_stations()
 	for s in [-1.0,1.0]:
 		for i in stations.size()-1:
 			var za:=stations[i]
@@ -265,6 +269,71 @@ func pickup_bed() -> void:
 		for s in [-1.,1.]:
 			for span:Vector2 in [Vector2(bed_front+.08,axles[1].z-axles[1].y-.07),Vector2(axles[1].z+axles[1].y+.07,bed_rear-.08)]:
 				if span.y>span.x: box("detail",Vector3(s*(skin+.01),belt_y-.20,(span.x+span.y)*.5),Vector3(.025,.14,span.y-span.x),Color("886443"))
+
+## Borda interna do ombro (topo da lataria, na cintura), linear entre as estações do chassis
+## exatamente como os quads de chassis() a desenham, para a emenda não deixar fresta.
+func shoulder_inner(z: float) -> float:
+	var stations := chassis_stations()
+	for i in stations.size()-1:
+		var za:=stations[i]
+		var zb:=stations[i+1]
+		if z<za or z>zb: continue
+		var t:=0.0 if zb-za<.00001 else (z-za)/(zb-za)
+		return lerpf(side_x(za),side_x(zb),t)-.065
+	return side_x(z)-.065
+
+## Borda externa do que já cobre o topo por dentro do ombro (capô, vidro lateral, deck
+## traseiro ou trilho da caçamba). Valor negativo = nada ali (tampa traseira da picape).
+func top_inner(z: float) -> float:
+	var hood_z:=front+.18
+	if z<windshield_z: return lerpf(side_x(hood_z),side_x(windshield_z),clampf((z-hood_z)/(windshield_z-hood_z),0,1))-.065
+	if z<=cabin_back: return skin-.075
+	if family!="pickup": return lerpf(skin-.075,side_x(rear)-.065,(z-cabin_back)/(rear-cabin_back))
+	# Entre a cabine e a frente da caçamba só a linha da parede interna (skin-.12) tem cobertura.
+	if z<=cabin_back+.10: return skin-.12
+	if z<=rear-.13: return skin-.065
+	return -1.0
+
+## Fechamento do topo (29/10, relato do jogador "as laterais não são grudadas no carro"):
+## o alargamento dos para-lamas (side_x) empurra o ombro para fora perto dos eixos, mas o capô
+## (só 3 estações) e o vidro lateral seguem em linha reta. Medido de cima (raster de 5 mm): fresta
+## de até 8,5 cm na cintura do desert_jeep_4x4 e 5,5 cm nas ranch, por onde se via o oco da
+## carroceria (fundo em y≈0,4–0,8), e o para-lama parecia peça solta. Na picape, a tampa traseira
+## (parede interna de face única em rear-.13, face externa em rear) não tinha topo: de trás a
+## parede interna some (culling) e via-se o assoalho através da tampa. Faixas na altura da
+## cintura, na tinta, fecham os dois vãos (aplicado nas cenas instaladas por fit_top_gaps_20261029).
+func top_gap_fill() -> void:
+	active="Body"
+	var stations: Array[float]=[]
+	for z in chassis_stations():
+		if z>=front+.18-.00001: stations.append(z)
+	for z in [front+.18,windshield_z,cabin_back,cabin_back+.10,rear-.13]:
+		if z>front+.17 and z<rear and not stations.has(z): stations.append(z)
+	stations.sort()
+	var tailgate:=family=="pickup"
+	for s in [-1.,1.]:
+		for i in stations.size()-1:
+			var za:=stations[i]
+			var zb:=stations[i+1]
+			if zb-za<.0005: continue
+			var mid:=(za+zb)*.5
+			# Borda interna lida um fio para dentro do trecho: a estação que divide duas regiões
+			# (para-brisa, fundo da cabine, tampa) fica com o valor do próprio lado.
+			var ia:=top_inner(za+.0001)
+			var ib:=top_inner(zb-.0001)
+			var oa:=shoulder_inner(za)
+			var ob:=shoulder_inner(zb)
+			if top_inner(mid)<0:
+				if not tailgate: continue
+				# Tampa da picape: um topo só, de ombro a ombro.
+				if s>0: quad("paint",Vector3(-oa,belt_y,za),Vector3(oa,belt_y,za),Vector3(ob,belt_y,zb),Vector3(-ob,belt_y,zb),Vector3.UP)
+				continue
+			if oa<=ia+.001 and ob<=ib+.001: continue
+			quad("paint",Vector3(s*ia,belt_y,za),Vector3(s*ib,belt_y,zb),Vector3(s*maxf(ob,ib),belt_y,zb),Vector3(s*maxf(oa,ia),belt_y,za),Vector3.UP)
+	if tailgate:
+		# A parede interna da tampa para .03 abaixo da cintura; a borda sobe até o topo novo.
+		var z:=rear-.13
+		quad("paint",Vector3(-skin+.12,belt_y-.03,z),Vector3(skin-.12,belt_y-.03,z),Vector3(skin-.12,belt_y,z),Vector3(-skin+.12,belt_y,z),Vector3.FORWARD)
 
 func fascia() -> void:
 	active="Body"
@@ -497,6 +566,7 @@ func run() -> void:
 			chassis()
 			cabin()
 			if family=="pickup": pickup_bed()
+			top_gap_fill()
 			fascia()
 		utility_wheels()
 		output[id]=save_model()
