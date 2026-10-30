@@ -1,4 +1,32 @@
 extends "res://world/places/arcade/ArcadeGeometry.gd"
+const SHELL_FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
+const SHELL_RECIPES := {
+	"stone": ["54505a", "393a48", "56515a", "42383f"],
+	"cloth": ["44374e", "745468", "56697d", "977959", "262730", "b78a55"],
+	"wood": ["49392f"],
+	"paint": ["201f2b"],
+}
+const SHELL_KINDS := {"stone": "cast", "cloth": "fabric", "wood": "wood", "paint": "plaster"}
+
+static func painted_enabled() -> bool:
+	return OS.get_environment("GETECO_PAINTED_ARCADE_INTERIOR") != "0"
+
+static func prewarm_materials() -> Array[Material]:
+	var result: Array[Material] = []
+	if not painted_enabled(): return result
+	for kind in SHELL_RECIPES:
+		for color in SHELL_RECIPES[kind]:
+			result.append(SHELL_FINISH.material(SHELL_KINDS[kind], Color(color), .9))
+	return result
+
+func material(color: String, kind := "paint") -> StandardMaterial3D:
+	if kind.begins_with("shell_"):
+		var original := kind.trim_prefix("shell_")
+		if painted_enabled():
+			return SHELL_FINISH.material(SHELL_KINDS[original], Color(color), .9)
+		return super.material(color, original)
+	return super.material(color, kind)
+
 ## Native 12 x 10 m room. Four different cabinets plus two occupied stations.
 var variant := 0
 var cabinet_bounds: Dictionary = {}
@@ -43,30 +71,30 @@ func _wall_lighting() -> void:
 		add_child(light)
 
 func _shell() -> void:
-	box("FloorSurface",Vector3(0,-.026,0),Vector3(12,.05,10),"54505a","","stone")
-	box("Carpet",Vector3(0,.012,-.45),Vector3(9.70,.021,7.4),"44374e","","cloth")
+	box("FloorSurface",Vector3(0,-.026,0),Vector3(12,.05,10),"54505a","","shell_stone")
+	box("Carpet",Vector3(0,.012,-.45),Vector3(9.70,.021,7.4),"44374e","","shell_cloth")
 	# Repeated short ribbons give the carpet an arcade identity without signs.
 	for row in 10:
 		for col in 12:
 			var x := -4.45+col*.8
 			var z := -3.7+row*.73
 			var color: String = ["745468","56697d","977959"][(row+col)%3]
-			detail(Vector3(x,.025,z),Vector3(.18,.006,.035),color,"cloth",Vector3(0,.45 if col%2==0 else -.45,0))
-			detail(Vector3(x+.11,.025,z+.12),Vector3(.045,.006,.10),color,"cloth")
-	box("BackWall",Vector3(0,1.65,-4.88),Vector3(12,3.3,.24),"393a48","BackWall","stone")
+			detail(Vector3(x,.025,z),Vector3(.18,.006,.035),color,"shell_cloth",Vector3(0,.45 if col%2==0 else -.45,0))
+			detail(Vector3(x+.11,.025,z+.12),Vector3(.045,.006,.10),color,"shell_cloth")
+	box("BackWall",Vector3(0,1.65,-4.88),Vector3(12,3.3,.24),"393a48","BackWall","shell_stone")
 	for side in [-1,1]:
-		box("SideWall%d"%side,Vector3(side*5.88,1.65,0),Vector3(.24,3.3,10),"56515a","SideWall%d"%side,"stone")
-		box("SouthWall%d"%side,Vector3(side*3.54,1.65,4.88),Vector3(4.92,3.3,.24),"42383f","SouthWall%d"%side,"stone")
+		box("SideWall%d"%side,Vector3(side*5.88,1.65,0),Vector3(.24,3.3,10),"56515a","SideWall%d"%side,"shell_stone")
+		box("SouthWall%d"%side,Vector3(side*3.54,1.65,4.88),Vector3(4.92,3.3,.24),"42383f","SouthWall%d"%side,"shell_stone")
 		box("EntryJamb%d"%side,Vector3(side*1.04,.59,4.81),Vector3(.14,1.18,.23),"ad8c59","EntryJamb%d"%side,"metal")
-		detail(Vector3(side*5.72,.55,0),Vector3(.04,1.1,9.48),"49392f","wood")
+		detail(Vector3(side*5.72,.55,0),Vector3(.04,1.1,9.48),"49392f","shell_wood")
 		detail(Vector3(side*5.68,1.14,0),Vector3(.06,.075,9.48),"a48354","metal")
 		detail(Vector3(side*5.70,2.98,0),Vector3(.06,.035,9.48),"4eafb0","screen")
-	box("RearWainscot",Vector3(0,.58,-4.72),Vector3(11.5,1.16,.035),"49392f","","wood")
+	box("RearWainscot",Vector3(0,.58,-4.72),Vector3(11.5,1.16,.035),"49392f","","shell_wood")
 	box("RearRail",Vector3(0,1.18,-4.68),Vector3(11.5,.065,.06),"ab8753","","metal")
-	box("RearCornice",Vector3(0,3.03,-4.70),Vector3(11.5,.12,.12),"201f2b")
+	box("RearCornice",Vector3(0,3.03,-4.70),Vector3(11.5,.12,.12),"201f2b","","shell_paint")
 	detail(Vector3(0,2.96,-4.62),Vector3(11.3,.034,.035),"b594c5","screen")
-	box("EntranceMat",Vector3(0,.021,4.20),Vector3(1.86,.025,1.1),"262730","","cloth")
-	for side in [-1,1]: detail(Vector3(side*.86,.036,4.20),Vector3(.025,.006,.95),"b78a55","cloth")
+	box("EntranceMat",Vector3(0,.021,4.20),Vector3(1.86,.025,1.1),"262730","","shell_cloth")
+	for side in [-1,1]: detail(Vector3(side*.86,.036,4.20),Vector3(.025,.006,.95),"b78a55","shell_cloth")
 
 func _upright(id: String, at: Vector3, yaw: float, accent: String, screen_kind: int, width := 1.05) -> void:
 	var basis := Basis(Vector3.UP,yaw)
