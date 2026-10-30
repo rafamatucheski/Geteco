@@ -1,5 +1,31 @@
 extends Node3D
 
+const SURFACE_FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
+# Finite authored palette: prewarm and shell share the exact cached instances.
+const ARCHITECTURE_SURFACES := {
+	"floor_lobby": ["epoxy","2b3542",.4,.1],
+	"floor_office": ["epoxy","1f2732",.6,.05],
+	"floor_cell": ["cast","181d24",.85,0.0],
+	"floor_border": ["epoxy","11161d",.5,.1],
+	"wall_ext": ["plaster","334155",.8,0.0],
+	"wall_base": ["wood","1e293b",.7,.05],
+	"wall_trim": ["painted","64748b",.4,.2],
+	"partition": ["plaster","283548",.75,0.0],
+}
+
+static func painted_interior_enabled() -> bool:
+	return OS.get_environment("GETECO_PAINTED_POLICE_INTERIOR") != "0"
+
+static func _surface_material(key: String) -> StandardMaterial3D:
+	var spec: Array = ARCHITECTURE_SURFACES[key]
+	return SURFACE_FINISH.material(spec[0],Color(spec[1]),spec[2],spec[3])
+
+static func prewarm_materials() -> Array:
+	var result: Array = []
+	if painted_interior_enabled():
+		for key in ARCHITECTURE_SURFACES: result.append(_surface_material(key))
+	return result
+
 ## Cenário 3D Autêntico da Delegacia de Polícia do Porto (Harbor Patrol)
 ## Renderiza em tempo real a delegacia volumétrica completa em padrão PBR:
 ## - Arquitetura institucional: piso em granilite polido no lobby, linóleo nos escritórios,
@@ -45,6 +71,9 @@ func _process(delta: float) -> void:
 
 func _mat(key: String, color: Color, metallic: float = 0.0, roughness: float = 0.6, glow: float = 0.0) -> StandardMaterial3D:
 	if materials.has(key):
+		return materials[key]
+	if painted_interior_enabled() and ARCHITECTURE_SURFACES.has(key):
+		materials[key] = _surface_material(key)
 		return materials[key]
 	var m := StandardMaterial3D.new()
 	m.albedo_color = color
