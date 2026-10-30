@@ -32,6 +32,8 @@ var _traffic_signs: Node3D
 var _paths: MeshInstance3D
 var _lamp_points: Array[Vector3] = []
 var _lamp_transforms: Array[Transform3D] = []
+## Registro de cada poste no FragileProps3D (mesmo índice de _lamp_points): poste caído não acende.
+var _lamp_items: Array = []
 static var _glass_material: StandardMaterial3D
 static var _wood_material: StandardMaterial3D
 static var _iron_material: StandardMaterial3D
@@ -192,7 +194,29 @@ func _build_delineators(region) -> void:
 					poses.append(Transform3D(Basis(Vector3.UP, atan2(direction.x, direction.z)), point))
 				step += 24.0
 			travelled += length
-	preload("res://world/shared/roads/RoadDelineatorBatches.gd").build(self, poses, "MountainDelineator")
+	# Nó próprio como "chunk" dos balizadores: a remontagem libera este nó (o MountainRoadside fica)
+	# e o FragileProps3D descarta os registros velhos junto.
+	var holder := Node3D.new()
+	holder.name = "MountainDelineators"
+	add_child(holder)
+	var cells := preload("res://world/shared/roads/RoadDelineatorBatches.gd").build(holder, poses, "MountainDelineator")
+	_register_delineators(holder, cells)
+
+## Playtest 29/10: o balizador âmbar também era só MultiMesh fora do registro. Vira "mountain_sign"
+## (números da stop_sign, caído fica sem passe alfa). Pose na base; as peças vão como irmãs.
+static func _register_delineators(holder: Node3D, cells: Array[Dictionary]) -> void:
+	if not holder.is_inside_tree():
+		holder.tree_entered.connect(_register_delineators.bind(holder, cells), CONNECT_ONE_SHOT)
+		return
+	var fragile := preload("res://gameplay/street_physics/FragileProps3D.gd")
+	for cell: Dictionary in cells:
+		var poses: Array = cell.poses
+		var pivots := fragile.pivot_batch(poses)
+		for i in poses.size():
+			var extra := []
+			for part_index in cell.batches.size():
+				extra.append({"multimesh": cell.batches[part_index], "index": i, "offset": Transform3D(Basis.IDENTITY, cell.offsets[part_index])})
+			fragile.register_instance("mountain_sign", pivots, i, holder, extra)
 
 func _build_lamps() -> void:
 	# Giro calculado uma vez: nearest_road percorre todas as estradas residentes.
@@ -208,10 +232,13 @@ func _build_lamps() -> void:
 		var key := Vector2i(floori(_lamp_points[i].x / LAMP_CELL), floori(_lamp_points[i].z / LAMP_CELL))
 		if not cells.has(key): cells[key] = []
 		cells[key].append(i)
+	_lamp_items.clear()
+	_lamp_items.resize(_lamp_points.size())
 	for key: Vector2i in cells:
 		var indices: Array = cells[key]
 		var cell := Node3D.new()
 		cell.name = "MountainLampCell_%d_%d" % [key.x, key.y]
+		var batches: Array[MultiMesh] = []
 		for part_index in parts.size():
 			var part: Array = parts[part_index]
 			var multimesh := MultiMesh.new()
@@ -230,7 +257,28 @@ func _build_lamps() -> void:
 			if part[1] == _glass_material:
 				instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 			cell.add_child(instance)
+			batches.append(multimesh)
 		add_child(cell)
+		_register_lamps(cell, indices, parts, batches)
+
+## Playtest 29/10 ("na montanha nada é derrubado"): o poste de madeira da beira da estrada era só
+## MultiMesh, sem colisão nem registro, e o carro o atravessava. Vira "lamp" como o do porto (mesmo
+## limiar, volta de pé pela LampRecovery3D, some escalado sem passe alfa). As quatro peças têm origem
+## no meio delas; um lote-pivô invisível (FragileProps3D.pivot_batch) na base de cada poste é a
+## instância que tomba e leva as peças junto. A célula é o "chunk": a remontagem da serra a libera
+## e o registro velho sai.
+func _register_lamps(cell: Node3D, indices: Array, parts: Array, batches: Array[MultiMesh]) -> void:
+	# O registro precisa da posição global; montado fora da árvore (teste) registra ao entrar.
+	if not cell.is_inside_tree():
+		cell.tree_entered.connect(_register_lamps.bind(cell, indices, parts, batches), CONNECT_ONE_SHOT)
+		return
+	var fragile := preload("res://gameplay/street_physics/FragileProps3D.gd")
+	var pivots := fragile.pivot_batch(indices.map(func(i): return _lamp_transforms[int(i)]))
+	for k in indices.size():
+		var extra := []
+		for part_index in parts.size():
+			extra.append({"multimesh": batches[part_index], "index": k, "offset": Transform3D(Basis.IDENTITY, parts[part_index][2])})
+		_lamp_items[int(indices[k])] = fragile.register_instance("lamp", pivots, k, cell, extra)
 
 ## Malhas e materiais dos postes uma vez por execução: _build roda de novo a cada remontagem de Mountain e
 ## recriava tudo (e o finish.apply de novo) sem necessidade.
@@ -279,6 +327,8 @@ func _update_lights() -> void:
 	var nearest: Array = []
 	if night > 0.02:
 		for i in _lamp_points.size():
+			# A luz é emprestada aos postes mais perto; o caído fica apagado até a LampRecovery3D.
+			if i < _lamp_items.size() and _lamp_items[i] is Dictionary and str(_lamp_items[i].get("state", "standing")) != "standing": continue
 			var gap := Vector2(_lamp_points[i].x - focus.x, _lamp_points[i].z - focus.z).length_squared()
 			if gap < 70.0 * 70.0: nearest.append([gap, i])
 		nearest.sort_custom(func(x, y): return x[0] < y[0])

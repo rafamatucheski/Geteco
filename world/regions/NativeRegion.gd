@@ -990,7 +990,10 @@ func _tree_collision(tree: Node3D, chunk: Node3D) -> void:
 		trunk.get_child(0).reparent(tree)
 		trunk.free()
 		var radius := .4 * maxf(tree.global_basis.x.length(),tree.global_basis.z.length())
-		preload("res://gameplay/street_physics/FragileProps3D.gd").register_node("harbor_tree" if region_id == "harbor" else "desert_tree",tree,chunk,{},[],radius)
+		# Pinheiro da serra (29/10): era "desert_tree", que vira destroço rígido e some por
+		# transparência, levando o material do pinheiro ao passe alfa sem pré-aquecimento.
+		# "woodland_tree" tomba na base e fica caído; o trecho reconstruído o traz de pé.
+		preload("res://gameplay/street_physics/FragileProps3D.gd").register_node("harbor_tree" if region_id == "harbor" else "woodland_tree",tree,chunk,{},[],radius)
 
 ## Chão base do porto: colisão em caixa de 0,3 m como antes; o visual é o topo só onde nenhum piso de cima
 ## (`cover`) cobre, mais as quatro laterais (a margem com o mar continua igual).

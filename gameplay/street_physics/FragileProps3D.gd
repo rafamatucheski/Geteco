@@ -45,6 +45,12 @@ const KINDS := {
 	# que a árvore de calçada. Caído fica no chão (keep_fallen): sumir por transparência levaria
 	# o material da mata ao passe alfa, pipeline que nenhum pré-aquecimento cobre.
 	"woodland_tree": {"family": "post", "radius": 0.45, "drag": 0.25, "damage": 6.0, "sound": "wood", "fall_speed": 5.0, "anchored": true, "keep_fallen": true},
+	# Placa de curva/divisa e balizador da serra (MountainTrafficSigns, MountainRoadside3D): mesmos
+	# números da stop_sign. Ancorada e caída fica (keep_fallen): o destroço rígido (stop_sign a 16 m/s)
+	# e o sumiço por transparência levariam o material da placa ao passe alfa, que nenhum
+	# pré-aquecimento cobre (placa da 3ª onda num quadro de 864 ms, DestroyedFade3D). Volta de pé
+	# quando a beira de estrada da serra é remontada.
+	"mountain_sign": {"family": "post", "radius": 0.12, "drag": 0.06, "damage": 2.0, "sound": "metal", "anchored": true, "keep_fallen": true},
 	# Chão povoado do deserto (DesertGroundCover): moita grande e pedra solta.
 	"desert_shrub": {"family": "light", "radius": 0.55, "drag": 0.04, "damage": 0.0, "sound": "wood"},
 	"desert_stone": {"family": "light", "radius": 0.45, "drag": 0.18, "damage": 2.0, "sound": "stone"},
@@ -129,14 +135,31 @@ static func _rebind_node(item: Dictionary, root: Node3D, chunk: Node3D, pool: Di
 			preload("res://gameplay/street_physics/LampRecovery3D.gd").schedule(item, director, remaining)
 
 
+## Lote-pivô invisível (nunca vai a um MultiMeshInstance3D): uma instância na base de cada adereço
+## cujas peças têm a origem no meio (poste e placa da serra). Registrado como instância principal,
+## com as peças em `extra`, faz o tombo girar na base sem refazer malha. Malha vazia porque o
+## servidor recusa recalcular o AABB de MultiMesh sem malha a cada set_instance_transform.
+static var _pivot_mesh: ArrayMesh
+static func pivot_batch(bases: Array) -> MultiMesh:
+	if _pivot_mesh == null: _pivot_mesh = ArrayMesh.new()
+	var pivots := MultiMesh.new()
+	pivots.transform_format = MultiMesh.TRANSFORM_3D
+	pivots.mesh = _pivot_mesh
+	pivots.instance_count = bases.size()
+	for i in bases.size(): pivots.set_instance_transform(i, bases[i])
+	return pivots
+
+
 ## Mobília em MultiMesh (CityLook): anima a instância.
-static func register_instance(kind: String, multimesh: MultiMesh, index: int, chunk: Node3D, extra: Array = [], colliders: Array = [], visual: MultiMeshInstance3D = null, contact_radius := -1.0) -> void:
+## Devolve o item para quem precisa acompanhar o estado (luz do poste da serra que caiu).
+static func register_instance(kind: String, multimesh: MultiMesh, index: int, chunk: Node3D, extra: Array = [], colliders: Array = [], visual: MultiMeshInstance3D = null, contact_radius := -1.0) -> Dictionary:
 	var xform := multimesh.get_instance_transform(index)
 	var point := chunk.global_transform * xform.origin
 	var item := {"kind": kind, "multimesh": multimesh, "index": index, "extra": extra, "colliders": colliders.map(func(shape): return weakref(shape)), "chunk": weakref(chunk), "base": xform, "point": point, "state": "standing"}
 	if visual != null: item.visual = weakref(visual)
 	if contact_radius > 0.0: item.radius = contact_radius
 	_register(item)
+	return item
 
 
 static func _register(item: Dictionary) -> void:

@@ -4,8 +4,11 @@ extends RefCounted
 const CELL := 64.0
 static var _parts: Array[Dictionary] = []
 
-static func build(parent: Node3D, transforms: Array[Transform3D], prefix: String) -> void:
-	if transforms.is_empty(): return
+## Devolve, por célula, as poses e os lotes das peças (mesma ordem de _parts) para quem registra
+## os balizadores como quebráveis (serra, MountainRoadside3D); o deserto ignora o retorno.
+static func build(parent: Node3D, transforms: Array[Transform3D], prefix: String) -> Array[Dictionary]:
+	var built: Array[Dictionary] = []
+	if transforms.is_empty(): return built
 	_prepare()
 	var cells: Dictionary = {}
 	for transform in transforms:
@@ -14,6 +17,8 @@ static func build(parent: Node3D, transforms: Array[Transform3D], prefix: String
 		cells[key].append(transform)
 	for key: Vector2i in cells:
 		var poses: Array = cells[key]
+		var batches: Array[MultiMesh] = []
+		var offsets: Array[Vector3] = []
 		for part_index in _parts.size():
 			var part: Dictionary = _parts[part_index]
 			var batch := MultiMesh.new()
@@ -32,6 +37,10 @@ static func build(parent: Node3D, transforms: Array[Transform3D], prefix: String
 			instance.visibility_range_end = 300.0
 			instance.visibility_range_end_margin = 24.0
 			parent.add_child(instance)
+			batches.append(batch)
+			offsets.append(part.offset)
+		built.append({"poses": poses, "batches": batches, "offsets": offsets})
+	return built
 
 
 static func _prepare() -> void:

@@ -28,9 +28,11 @@ func run() -> void:
 	region.prepare_data()
 	var roadside := MOUNTAIN.new()
 	roadside._build_delineators(region)
-	check(roadside.get_child_count()>0,"Mountain roads contain delineators")
+	# Os lotes ficam no nó MountainDelineators (dono do registro de quebráveis desde 29/10).
+	var batches := roadside.find_children("*","MultiMeshInstance3D",true,false).size()
+	check(batches>0,"Mountain roads contain delineators")
 	check(roadside.find_children("*","Light3D",true,false).is_empty(),"Passive mountain markers allocate no extra lights")
-	print("ROAD_DELINEATORS failures=",failures," desert_markers=",geometry._delineators._points.size()," mountain_batches=",roadside.get_child_count())
+	print("ROAD_DELINEATORS failures=",failures," desert_markers=",geometry._delineators._points.size()," mountain_batches=",batches)
 	roadside.free()
 	region.free()
 	quit(0 if failures==0 else 1)

@@ -104,29 +104,84 @@ func build(parent: Node3D) -> void:
 		var post_shape := CylinderShape3D.new()
 		post_shape.height = HEIGHT
 		post_shape.radius = .045
+		# Playtest 29/10 ("na montanha as placas não são derrubadas"): as placas da célula
+		# dividiam este corpo e nunca entravam no FragileProps3D, então o poste de 9 cm parava o
+		# carro a qualquer velocidade. Cada placa leva agora o próprio CollisionShape3D ao registro
+		# (o tombo desliga só o dela) e gira na base.
+		var fragile: Array[Dictionary] = []
 		for row in rows:
-			posts.append(Transform3D(row.basis,row.position+Vector3.UP*HEIGHT*.5))
-			if not groups.has(row.kind): groups[row.kind] = []
-			groups[row.kind].append(Transform3D(row.basis,row.position+Vector3.UP*HEIGHT))
 			var collision := CollisionShape3D.new()
 			collision.shape = post_shape
 			collision.position = row.position+Vector3.UP*HEIGHT*.5
 			body.add_child(collision)
 			if row.kind == "destination":
-				var label := Label3D.new()
-				label.text = row.text
-				label.font_size = 72
-				label.pixel_size = .0065
-				label.outline_size = 0
-				label.no_depth_test = false
-				label.shaded = true
-				label.transform = Transform3D(row.basis,row.position+Vector3.UP*HEIGHT+row.basis.z*.035)
-				label.visibility_range_end = 180
-				owner.add_child(label)
-		_batch(owner,"Posts",_meshes.post,posts)
-		for kind in groups: _batch(owner,kind,_meshes[kind],groups[kind])
+				# Placa de divisa tem rótulo, que não cabe na MultiMesh: nó próprio com poste,
+				# placa e texto tomba inteiro. São poucas (uma por ramal e sentido).
+				_destination(owner,row,collision)
+				continue
+			if not groups.has(row.kind): groups[row.kind] = []
+			fragile.append({"post":posts.size(),"kind":row.kind,"face":groups[row.kind].size(),"base":Transform3D(row.basis,row.position),"collision":collision})
+			posts.append(Transform3D(row.basis,row.position+Vector3.UP*HEIGHT*.5))
+			groups[row.kind].append(Transform3D(row.basis,row.position+Vector3.UP*HEIGHT))
+		var batches := {}
+		if not posts.is_empty(): batches.post = _batch(owner,"Posts",_meshes.post,posts)
+		for kind in groups: batches[kind] = _batch(owner,kind,_meshes[kind],groups[kind])
+		_register_fragile(owner,fragile,batches)
 
-func _batch(parent: Node3D, title: String, mesh: Mesh, poses: Array) -> void:
+## As malhas do poste e da placa têm a origem no meio e no alto; o tombo gira a instância
+## principal na própria origem. Um lote-pivô invisível (FragileProps3D.pivot_batch), na base de cada placa, é a instância
+## principal e leva poste e placa como peças irmãs: tomba na base sem refazer malha nenhuma.
+static func _register_fragile(owner: Node3D, entries: Array[Dictionary], batches: Dictionary) -> void:
+	if entries.is_empty(): return
+	# O registro precisa da posição global; célula montada fora da árvore registra ao entrar.
+	if not owner.is_inside_tree():
+		owner.tree_entered.connect(_register_fragile.bind(owner,entries,batches),CONNECT_ONE_SHOT)
+		return
+	var fragile := preload("res://gameplay/street_physics/FragileProps3D.gd")
+	var pivots := fragile.pivot_batch(entries.map(func(entry): return entry.base))
+	var post: MultiMesh = batches.post.multimesh
+	for i in entries.size():
+		var entry: Dictionary = entries[i]
+		var base: Transform3D = entry.base
+		var face: MultiMesh = batches[entry.kind].multimesh
+		var parts := [
+			{"multimesh":post,"index":entry.post,"offset":base.affine_inverse()*Transform3D(base.basis,base.origin+Vector3.UP*HEIGHT*.5)},
+			{"multimesh":face,"index":entry.face,"offset":base.affine_inverse()*Transform3D(base.basis,base.origin+Vector3.UP*HEIGHT)},
+		]
+		fragile.register_instance("mountain_sign",pivots,i,owner,parts,[entry.collision])
+
+func _destination(owner: Node3D, row: Dictionary, collision: CollisionShape3D) -> void:
+	var sign_root := Node3D.new()
+	sign_root.name = "MountainDestinationSign"
+	sign_root.transform = Transform3D(row.basis,row.position)
+	owner.add_child(sign_root)
+	for part in [[_meshes.post,HEIGHT*.5],[_meshes.destination,HEIGHT]]:
+		var mesh := MeshInstance3D.new()
+		mesh.mesh = part[0]
+		mesh.position.y = part[1]
+		mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		mesh.visibility_range_end = 240
+		mesh.visibility_range_end_margin = 20
+		sign_root.add_child(mesh)
+	var label := Label3D.new()
+	label.text = row.text
+	label.font_size = 72
+	label.pixel_size = .0065
+	label.outline_size = 0
+	label.no_depth_test = false
+	label.shaded = true
+	label.position = Vector3(0,HEIGHT,.035)
+	label.visibility_range_end = 180
+	sign_root.add_child(label)
+	_register_destination(sign_root,owner,collision)
+
+static func _register_destination(sign_root: Node3D, owner: Node3D, collision: CollisionShape3D) -> void:
+	if not sign_root.is_inside_tree():
+		sign_root.tree_entered.connect(_register_destination.bind(sign_root,owner,collision),CONNECT_ONE_SHOT)
+		return
+	preload("res://gameplay/street_physics/FragileProps3D.gd").register_node("mountain_sign",sign_root,owner,{},[collision])
+
+func _batch(parent: Node3D, title: String, mesh: Mesh, poses: Array) -> MultiMeshInstance3D:
 	var multi := MultiMesh.new()
 	multi.transform_format = MultiMesh.TRANSFORM_3D
 	multi.mesh = mesh
@@ -139,6 +194,7 @@ func _batch(parent: Node3D, title: String, mesh: Mesh, poses: Array) -> void:
 	visual.visibility_range_end = 240
 	visual.visibility_range_end_margin = 20
 	parent.add_child(visual)
+	return visual
 
 func _material(color: String) -> StandardMaterial3D:
 	var material := StandardMaterial3D.new()
