@@ -2123,6 +2123,23 @@ func set_traffic_hold(id: StringName, points: PackedVector3Array, radius: float)
 func clear_traffic_hold(id: StringName) -> void:
 	traffic_holds.erase(id)
 
+## Tira o trânsito ambiente de perto destes pontos já, mesmo à vista: só para quem chama sob a cortina
+## (largada da descida), onde o jogador não vê o carro sumir. Devolve quantos saíram.
+func clear_ambient_traffic_near(points: PackedVector3Array, radius: float) -> int:
+	var removed := 0
+	for index in range(vehicles.size()-1,-1,-1):
+		var car = vehicles[index]
+		if not _is_ambient_traffic(car) or not car.traffic or car == world.driving.car: continue
+		for p: Vector3 in points:
+			if car.global_position.distance_to(p) > radius: continue
+			vehicles.remove_at(index)
+			# Sem colisão já: a vaga é consultada neste mesmo quadro, antes do queue_free valer.
+			car.collision_layer = 0
+			car.queue_free()
+			removed += 1
+			break
+	return removed
+
 func in_traffic_hold(point: Vector3) -> bool:
 	for hold: Array in traffic_holds.values():
 		var limit: float = hold[1]*hold[1]

@@ -72,7 +72,7 @@ func run() -> void:
 	check(is_instance_valid(race),"production coordinator installs downhill controller")
 	if not is_instance_valid(race): finish(); return
 	var start: Vector3 = race.course.start_position()
-	var right: Vector3 = race.course.direction(10.0).cross(Vector3.UP).normalized()
+	var right: Vector3 = race.course.direction(race.course.nearest_offset(start)).cross(Vector3.UP).normalized()
 	check(world.production.travel("mountain",start+right*3.4),"actual region travel to summit admitted")
 	for i in 600:
 		await physics_frame
@@ -91,6 +91,8 @@ func run() -> void:
 	check(world.driving.occupied and world.driving.car==car,"player occupies correct physical car")
 	if not failures.is_empty(): finish(); return
 	session.weather.time_of_day = .5
+	# Contrato transacional no mesmo quadro; a cortina é conferida ao fim.
+	race.curtain = false
 	check(not race.perform("start") and not race.active,"daylight start rejected without changing clock")
 	check(is_equal_approx(float(session.weather.time_of_day),.5),"start does not silently set night")
 	session.weather.time_of_day = .9
@@ -145,6 +147,21 @@ func run() -> void:
 		check(not race.active and race.racers.is_empty() and not car.input_locked,"cancel clears activity and input ownership")
 		check(rivals.filter(func(e): return not e.player and is_instance_valid(e.car)).is_empty(),"cancel removes every race-owned rival")
 		check(race.snapshot().finishes==0 and not race.snapshot().reward_paid,"cancel cannot claim race completion or payment")
+		check(race.played_cues.slice(0,4)==["3","2","1","go"],"contagem toca 3, 2, 1 e o bipe da largada")
+		# Playtest 30/10: parado na vaga de um rival, a 8 m da largada, o E era recusado ("largada ocupada").
+		var rival_slot: Transform3D = race.course.grid(4)
+		car.place(rival_slot.origin,rival_slot.basis.get_euler().y)
+		await frames(20)
+		race.curtain = true
+		race.played_cues.clear()
+		check(not race.nearest_action().is_empty() and race.perform("start") and race.staging,"carro sobre a vaga de um rival larga sob a cortina")
+		await frames(90)
+		check(race.active and race.racers.size()==7 and car.global_position.distance_to(race.course.start_position())<1.0,"cortina leva o carro à vaga dele e monta os sete")
+		check(not session.door_transition.veil.visible,"cortina clareia antes da contagem")
+		await frames(240)
+		check(race.played_cues==["3","2","1","go"] and not car.input_locked,"contagem depois da cortina solta o carro")
+		race.cancel_attempt()
+		await frames(3)
 	finish()
 
 func drive_race(race,car) -> void:

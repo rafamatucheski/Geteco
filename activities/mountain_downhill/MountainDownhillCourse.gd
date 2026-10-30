@@ -37,11 +37,15 @@ func point(offset: float) -> Vector3:
 func direction(offset: float) -> Vector3:
 	return point(maxf(0.0,offset-.5)).direction_to(point(minf(length,offset+.5)))
 
-func grid(index: int) -> Transform3D:
-	var offset := 34.0-floori(float(index)/2.0)*8.0
+## shift anda a vaga pela pista e spread abre a faixa para fora: vagas alternativas quando
+## dois carros largos não cabem lado a lado na mesma fila.
+func grid(index: int, shift := 0.0, spread := 0.0) -> Transform3D:
+	# Grade na reta de 28–52 m (portão 0 em 52). Antes ia de 34 a 10 m e a terceira fila caía no
+	# grampo de 14–26 m: os carros lado a lado giravam ~80° e se cruzavam ("largada ocupada").
+	var offset := 49.0-floori(float(index)/2.0)*7.0+shift
 	var grid_forward := direction(offset)
 	var right := grid_forward.cross(Vector3.UP).normalized()
-	var lane := -1.8 if index%2 == 0 else 1.8
+	var lane := (-1.8-spread) if index%2 == 0 else (1.8+spread)
 	return Transform3D(Basis(Vector3.UP,atan2(-grid_forward.x,-grid_forward.z)),point(offset)+right*lane+Vector3.UP*.08)
 
 func gate(index: int) -> Vector3:
