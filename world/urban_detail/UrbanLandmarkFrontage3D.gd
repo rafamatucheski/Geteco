@@ -102,6 +102,11 @@ func _build_union_clothing() -> void:
 	var glass := UrbanMaterials.glass_display()
 	var dark := UrbanMaterials.material_for_color(Color("172a2b"), 0.78)
 	var front_z := building_size.y * 0.5
+	if _painted_landmark_enabled("union-harbor"):
+		_build_recessed_shell(masonry,1.45,1.65)
+		_build_glazed_door(front_z,0.0,1.36,2.46,dark,glass,trim)
+		_apply_painted_landmark("union-harbor",2.46)
+		return
 
 	_build_recessed_shell(masonry, 1.45, 1.65)
 	add_roof_parapet(visuals_root, height, 0.42, 0.24, UrbanMaterials.trim_stone())
