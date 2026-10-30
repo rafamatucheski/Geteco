@@ -1182,7 +1182,9 @@ const SWORD_SHIELD_MODEL := preload("res://gameplay/SwordShieldModel.gd")
 const GYM := preload("res://activities/gym/GymState.gd")
 ## Pegada da espada de uma mão no osso RightHand e escudo no osso LeftForeArm (face para fora do braço).
 ## Estimadas pelo esqueleto; conferir com tools/probe_sword_shield_grip.gd e na câmera do jogo.
-const HAND_SWORD_HELD := HAND_KATANA_HELD
+## Pegada da espada de uma mão: a da katana girada até a ponta ir para a frente e um pouco para cima no
+## ss_idle (tools/probe_sword_shield_grip.gd: ponta (0; 0,35; 0,94)). Com a da katana a lâmina ficava em pé.
+const HAND_SWORD_HELD := Transform3D(Vector3(0.4527, 0.8895, -0.0622), Vector3(0.7037, -0.3992, -0.5877), Vector3(-0.5476, 0.2223, -0.8067), Vector3.ZERO)
 ## A face do escudo olha para −X do osso (para fora do braço); o centro sai 11 cm nessa direção para a
 ## alça ficar no antebraço e a borda não entrar no peito (na captura de 30/10 a 0 cm ele atravessava).
 const SHIELD_FOREARM_LOCAL := Transform3D(Basis(Vector3.UP, PI * .5), Vector3(-0.11, 0.17, 0.0))

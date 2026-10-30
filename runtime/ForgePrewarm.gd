@@ -1,6 +1,6 @@
 extends RefCounted
 ## Forja da Serra sob a cortina: desenha por alguns quadros a forja (tábua/pedra/metal do
-## forge_surface, cascalho, peças agrupadas e a brasa) e as três lâminas lendárias (aço
+## forge_surface, cascalho, peças agrupadas e a brasa), a espada e escudo do gelo e as três lâminas lendárias (aço
 ## escuro e fio aceso), para nenhuma variante de shader compilar no quadro em que o jogador
 ## chega na clareira ou compra a lendária. Mesma receita de WildlifePrewarm/BridgeLookPrewarm.
 const GUARDS := preload("res://gameplay/emergency/EffectsPrewarm.gd")
@@ -32,6 +32,15 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 		if id == "katana": preload("res://gameplay/KatanaModel.gd").build(blade, false)
 		else: preload("res://gameplay/ArsenalWeapon3D.gd").build(blade, id)
 		VISUALS.legendary(blade, id)
+	# Espada e escudo do gelo (Meshy): materiais PBR próprios, que não existem em nenhum outro lugar do mundo.
+	var ice := Node3D.new()
+	ice.position = Vector3(1.0, .4, 1.0)
+	stage.add_child(ice)
+	preload("res://gameplay/SwordShieldModel.gd").build_sword(ice)
+	var shield := Node3D.new()
+	shield.position = Vector3(1.5, .4, 1.0)
+	stage.add_child(shield)
+	preload("res://gameplay/SwordShieldModel.gd").build_shield(shield)
 	var draws: Array[int] = [0]
 	var count_draw := func() -> void: draws[0] += 1
 	# Peças escondidas primeiro: os trabalhadores do motor compilam em paralelo (runtime/HiddenCompile.gd).
