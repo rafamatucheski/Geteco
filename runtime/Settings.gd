@@ -282,7 +282,10 @@ func apply_environment(environment: Environment) -> void:
 	environment.ssr_enabled = false
 	environment.volumetric_fog_enabled = volumetric_fog and advanced
 	if environment.volumetric_fog_enabled:
-		environment.volumetric_fog_density = .005
+		# Playtest 30/10 ("a névoa ainda é muito grande na cidade", com esta opção ligada): .005 em 100 m
+		# deixava passar só ~60% da luz (exp(-.5)) e os postes acendiam um véu claro à noite.
+		# .0018 dá ~16% em 100 m; a profundidade e os bancos rasteiros continuam por região.
+		environment.volumetric_fog_density = .0018
 		environment.volumetric_fog_length = 100.0
 
 func _apply_bus_volume(bus_name: String, linear: float) -> void:

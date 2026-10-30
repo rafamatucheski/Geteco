@@ -14,7 +14,8 @@ const DESERT_CLIMATE_END := 470.0
 ## Pedido do jogador (29/10): "a neblina é muito intensa, uns 30% a menos". Fator único da
 ## névoa de profundidade no porto/litoral; serra e deserto têm densidade própria (perfis
 ## winter/desert e a serra lavada abaixo) e ficam fora, ponderados por peso regional.
-const HARBOR_FOG_SCALE := .7
+## Playtest 30/10: ainda grande; de .7 para .5. O fim (75 m) fica: esconde a borda do streaming (3x3 trechos de 64 m).
+const HARBOR_FOG_SCALE := .5
 var current: Dictionary = {}
 var weights: Dictionary = {}
 
@@ -113,7 +114,8 @@ func apply(controller, hour: float, clouds: float, snow: float, inside: bool, de
 		env.adjustment_saturation *= 1.0 + .10*serra
 	var desert := desert_weight(point)
 	env.fog_density *= lerpf(HARBOR_FOG_SCALE,1.0,maxf(desert,weights.mountain))
-	env.fog_depth_begin = lerpf(18.0,90.0,desert)
+	# Rua próxima limpa: o véu começa em 30 m no porto (era 18 m), mesmo fim de 75 m.
+	env.fog_depth_begin = lerpf(lerpf(30.0,18.0,weights.mountain),90.0,desert)
 	env.fog_depth_end = lerpf(75.0,1400.0,desert)
 	env.fog_depth_curve = 1.25
 	env.fog_sky_affect = current.distant_haze
