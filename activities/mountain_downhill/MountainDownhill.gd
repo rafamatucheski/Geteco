@@ -49,7 +49,7 @@ func objective() -> String:
 	if active and racers.size() == 7:
 		if countdown > 0: return String(TranslationServer.translate("Descida da Meia Noite · largada em %d")) %ceili(countdown)
 		return String(TranslationServer.translate("Descida da Meia Noite · checkpoint %d/%d · %d/7")) %[mini(int(racers[6].run.checkpoint)+1,course.gate_offsets.size()),course.gate_offsets.size(),standings().find(racers[6])+1]
-	return "Descida da Meia Noite · leve um carro esportivo à largada entre 20h e 5h"
+	return "Descida da Meia Noite · leve qualquer veículo à largada entre 20h e 5h"
 
 func target_position() -> Vector3:
 	if active and racers.size()==7: return course.gate(int(racers[6].run.checkpoint))
@@ -106,15 +106,19 @@ func start_block_reason() -> String:
 	var coordinator := get_tree().get_first_node_in_group("mountain_activities")
 	if coordinator != null and not coordinator.can_start(self): return "Encerre a atividade atual antes da largada."
 	var driving = session.world.driving
-	if not driving.occupied or not is_instance_valid(driving.car): return "Entre em um carro esportivo para correr."
+	if not driving.occupied or not is_instance_valid(driving.car): return "Entre em um veículo para correr."
 	var car = driving.car
-	if not eligible_car(car): return "Use um carro esportivo em condições de correr."
+	if not eligible_car(car): return "Seu veículo não está em condições de correr."
 	if car.input_locked or car.external_input or absf(float(car.speed))>1.2: return "Pare o carro na largada."
 	if car.global_position.distance_to(course.start_position())>9.0: return "Aproxime o carro da largada."
 	return ""
 
+## Playtest 30/10: "tu pode correr com o que quiser". Antes só esportivos (lista de archetypes e
+## limite de 1,4 × 3,0 m de meia-largura/meia-comprimento) largavam; agora qualquer veículo
+## dirigível serve (moto, caminhão, jipe, lowrider, tanque). Fica só o que impede a prova de rodar:
+## veículo vivo e com motor. Veículo grande demais para a grade cai no "largada ocupada" de _start().
 static func eligible_car(car) -> bool:
-	return is_instance_valid(car) and car.archetype in ["sport_coupe","monaliza","porto_rosso","vertice_midengine","cobra_v8","muscle_classic","jessica_jetta_gli"] and car.health>0 and not car.engine_disabled and car.half_width<=1.4 and car.half_length<=3.0
+	return is_instance_valid(car) and car.health>0 and not bool(car.get("engine_disabled"))
 
 func _start() -> bool:
 	player_car = session.world.driving.car

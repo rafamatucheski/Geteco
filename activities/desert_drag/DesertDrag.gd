@@ -168,9 +168,11 @@ func start_block_reason() -> String:
 	if not session.state.campaign.active_id.is_empty(): return "Conclua a missão atual antes da arrancada."
 	if session.activities != null and not session.activities.can_rest(): return "Encerre a atividade atual antes da arrancada."
 	var driving = session.world.driving
-	if not driving.occupied or not is_instance_valid(driving.car): return "Entre em um carro para correr."
+	if not driving.occupied or not is_instance_valid(driving.car): return "Entre em um veículo para correr."
 	var car = driving.car
-	if car.health <= 0 or car.engine_disabled or car.half_width > 1.45 or car.half_length > 3.1: return "Use um carro em condições de correr."
+	# Playtest 30/10 ("tu pode correr com o que quiser"): sem limite de tamanho/tipo; moto, caminhão,
+	# jipe e tanque largam. O tamanho só pesa na grade, e grid(0) afasta a faixa do veículo largo.
+	if car.health <= 0 or bool(car.get("engine_disabled")): return "Seu veículo não está em condições de correr."
 	if car.input_locked or car.external_input or absf(car.speed)>1.0: return "Pare o carro na concentração."
 	return ""
 
@@ -193,7 +195,13 @@ func perform(target: String) -> bool:
 
 func grid(index: int) -> Transform3D:
 	var right := direction.cross(Vector3.UP).normalized()
-	return Transform3D(Basis.looking_at(direction,Vector3.UP),start_point+right*(2.0 if index==0 else -2.0))
+	# Faixas a ±2 m serviam a carros de até 1,45 m de meia-largura. Veículo mais largo (caminhão,
+	# tanque) desloca a própria faixa para fora pelo excesso, sem encostar no rival da faixa 1.
+	var lane := -2.0
+	if index==0:
+		lane = 2.0
+		if is_instance_valid(player_car): lane += maxf(0.0,float(player_car.get("half_width"))-1.45)
+	return Transform3D(Basis.looking_at(direction,Vector3.UP),start_point+right*lane)
 
 func start_rival(identity: String) -> bool:
 	if not can_race(identity): return false

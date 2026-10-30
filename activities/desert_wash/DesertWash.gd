@@ -68,9 +68,10 @@ func start_block_reason() -> String:
 	if session.world.gameplay.stars>0: return "Despiste a polícia antes de correr."
 	if nearest_action().get("target","")!="start": return "Vá à entrada do leito seco."
 	var driving=session.world.driving
-	if not driving.occupied or not is_instance_valid(driving.car) or driving.is_body_transition_active(): return "Entre em um carro para correr."
+	if not driving.occupied or not is_instance_valid(driving.car) or driving.is_body_transition_active(): return "Entre em um veículo para correr."
 	var car=driving.car
-	if car.health<=0 or car.engine_disabled or car.half_width>1.45 or car.half_length>3.1: return "Use um carro em condições de correr."
+	# Playtest 30/10: qualquer veículo dirigível larga; o leito tem 8 m de largura e a prova não usa grade.
+	if car.health<=0 or bool(car.get("engine_disabled")): return "Seu veículo não está em condições de correr."
 	if car.input_locked or car.external_input or absf(car.speed)>.5: return "Pare o carro entre os cones da largada."
 	var offset: Vector3=car.global_position-COURSE.gate(0)
 	if absf(offset.dot(COURSE.direction(0).cross(Vector3.UP)))>2.0 or absf(offset.dot(COURSE.direction(0)))>4.0: return "Alinhe o carro entre os cones da largada."
