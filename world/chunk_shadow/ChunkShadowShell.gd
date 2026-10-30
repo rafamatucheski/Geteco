@@ -1,6 +1,7 @@
 extends RefCounted
 ## Casca conservadora: só caixas opacas de geradores estáticos conhecidos.
 ## Fontes editáveis e colisões sobrevivem; o lote nasce depois das edições do trecho.
+const REVEAL_GUARD := preload("res://world/chunk_bake/RevealOptimizationGuard.gd")
 const BUILDING_BATCH := preload("res://world/urban_detail/HarborBuildingBatch.gd")
 const TUNNEL := preload("res://world/urban_detail/CanalTunnel3D.gd")
 const ORIGINAL_SHADOW := &"chunk_shell_original_shadow"
@@ -49,9 +50,12 @@ static func finish_chunk(chunk: Node3D) -> void:
 static func _finish(chunk: Node3D, budget_usec: int) -> void:
 	# A varredura serve à casca e aos oclusores; cada um tem o próprio interruptor.
 	var shell_on := enabled
+	var reveal_generation := REVEAL_GUARD.capture()
+	var reveal_scopes := {}
 	if not (shell_on or OCCLUDERS.enabled) or chunk.has_meta(FINISHED) or not chunk.has_meta("vegetation_ready_frame"): return
 	if Engine.get_meta("geteco_live_preview_build", false): return
 	chunk.set_meta(FINISHED, true)
+	chunk.set_meta("chunk_reveal_guard_shadow", {"allowed": reveal_generation >= 0})
 	var occluder_boxes: Array = []
 	var reference: WeakRef = weakref(chunk)
 	var began := STALL_WORK.begin()
@@ -70,9 +74,12 @@ static func _finish(chunk: Node3D, budget_usec: int) -> void:
 			began = STALL_WORK.begin()
 			budget_began = Time.get_ticks_usec()
 			if not is_instance_valid(reference.get_ref()) or not chunk.is_inside_tree() or GPU_RELEASE.is_retired(chunk): return
+		if reveal_generation >= 0 and not REVEAL_GUARD.still_allowed(reveal_generation):
+			_abort_reveal_generation(chunk, began)
+			return
 		if not is_instance_valid(found): continue
 		var source := found as MeshInstance3D
-		if not chunk.is_ancestor_of(source) or not _eligible(source, chunk): continue
+		if not chunk.is_ancestor_of(source) or not _eligible(source, chunk, reveal_generation >= 0, reveal_scopes): continue
 		var original := int(source.get_meta(ORIGINAL_SHADOW, source.cast_shadow))
 		if original == GeometryInstance3D.SHADOW_CASTING_SETTING_OFF: continue
 		var size := (source.global_transform * source.get_aabb()).size
@@ -80,7 +87,9 @@ static func _finish(chunk: Node3D, budget_usec: int) -> void:
 			small.append(source)
 			continue
 		var transform := inverse * source.global_transform
-		OCCLUDERS.note_box(occluder_boxes, source, transform)
+		# O worker de oclusores não participa deste experimento: mantém a fronteira anterior.
+		if OCCLUDERS.enabled and (reveal_generation < 0 or _eligible(source, chunk)):
+			OCCLUDERS.note_box(occluder_boxes, source, transform)
 		covered.append(source)
 		if not shell_on: continue
 		# A caixa local transformada preserva orientação; uma AABB mundial inflaria
@@ -105,6 +114,10 @@ static func _finish(chunk: Node3D, budget_usec: int) -> void:
 			indices[start + triangle] = offset + triangles[triangle]
 			indices[start + triangle + 1] = offset + triangles[triangle + (2 if flip else 1)]
 			indices[start + triangle + 2] = offset + triangles[triangle + (1 if flip else 2)]
+	# Nada novo foi escondido: contexto alterado abandona esta casca inteira.
+	if reveal_generation >= 0 and not REVEAL_GUARD.still_allowed(reveal_generation):
+		_abort_reveal_generation(chunk, began)
+		return
 	# Fonte liberada ou levada para outro trecho enquanto a casca era montada: a casca teria a sombra dela.
 	# Sem casca neste trecho (as fontes ficam com a sombra própria); só perde a economia.
 	for source in covered + small:
@@ -140,7 +153,17 @@ static func _finish(chunk: Node3D, budget_usec: int) -> void:
 	# Não esperada: monta num trabalhador e insere sozinha (testes de casca não dependem dela).
 	OCCLUDERS.build(chunk, occluder_boxes)
 
-static func _eligible(source: MeshInstance3D, chunk: Node3D) -> bool:
+## Uma fonte em cache pode chegar com a sombra desligada pela casca do trecho anterior.
+## Abortar sem publicar casca nova precisa restaurá-la, mesmo que ainda não tenha sido varrida.
+static func _abort_reveal_generation(chunk: Node3D, began: int) -> void:
+	for found in chunk.find_children("*", "MeshInstance3D", true, false):
+		var source := found as MeshInstance3D
+		if source.has_meta(ORIGINAL_SHADOW): source.cast_shadow = int(source.get_meta(ORIGINAL_SHADOW))
+	chunk.remove_meta(FINISHED)
+	chunk.set_meta("chunk_reveal_guard_shadow", {"allowed": true, "aborted": true})
+	STALL_WORK.finish_slow("chunk.shadow_shell", began, 1500)
+
+static func _eligible(source: MeshInstance3D, chunk: Node3D, relax_reveal := false, reveal_scopes: Dictionary = {}) -> bool:
 	if not source.is_visible_in_tree() or source.is_queued_for_deletion(): return false
 	if not source.mesh is BoxMesh or source.mesh.get_surface_count() != 1: return false
 	if source.skin != null or source.material_overlay != null or source.transparency != 0.0: return false
@@ -152,11 +175,19 @@ static func _eligible(source: MeshInstance3D, chunk: Node3D) -> bool:
 	if _near_tunnel(source.global_transform * source.get_aabb()): return false
 	var node: Node = source
 	var known_generator := false
+	var relaxed_scope := false
+	var safe_branch := true
 	while node != chunk and node != null:
+		if relax_reveal and not REVEAL_GUARD.noninteractive_node(node): safe_branch = false
 		if node is CharacterBody3D or node is RigidBody3D or node is AnimatableBody3D: return false
 		if node.has_meta("street_fragile_registered") or not str(node.get_meta("place_id", "")).is_empty(): return false
 		for group in ["exterior_reveal_building", "v2_walkin_facade", "harbor_building_facade", "canal_tunnel"]:
-			if node.is_in_group(group): return false
+			if not node.is_in_group(group): continue
+			if group == "exterior_reveal_building" and relax_reveal:
+				if safe_branch and REVEAL_GUARD.cached_scope(node, reveal_scopes):
+					relaxed_scope = true
+					continue
+			return false
 		var label := str(node.name).to_lower()
 		for protected in ["door", "shutter", "glass", "sign", "nameplate", "neon", "lamp", "light", "tree", "canopy", "trunk", "hoist", "loot", "fragile"]:
 			if label.contains(protected): return false
@@ -165,7 +196,7 @@ static func _eligible(source: MeshInstance3D, chunk: Node3D) -> bool:
 			if script.resource_path.get_file() not in STATIC_GENERATORS: return false
 			known_generator = true
 		node = node.get_parent()
-	return known_generator
+	return known_generator and (not relaxed_scope or safe_branch)
 
 static func _near_tunnel(box: AABB) -> bool:
 	# TunnelCutaway pode varrer 46 m em qualquer direção da câmera. Excluir o

@@ -26,23 +26,23 @@ const TRAFFIC_TARGET := 40
 static var population_vc_enabled := OS.get_environment("GETECO_POP_VC") != "0"
 static var sun_shadow_near_enabled := OS.get_environment("GETECO_SUN_SHADOW_NEAR") != "0"
 # A/B de cascatas do sol (fase 2 da revisão de desempenho, 15/10): padrão continua 4.
-# Com sombra só até 55 m na câmera ortográfica, 4 cascatas repetem a passada de
-# sombra dos mesmos prédios 4 vezes (CPU de culling + draw calls). GETECO_SUN_SPLITS=2
+# Na câmera ortográfica o alcance real vem do far, não dos 55 m da preferência.
+# Quatro cascatas podem repetir casters em passadas distintas. GETECO_SUN_SPLITS=2
 # mede o custo de 2 cascatas antes de qualquer troca de padrão (troca visual: menos
 # resolução de sombra perto da câmera).
 static var sun_shadow_splits := clampi(int(OS.get_environment("GETECO_SUN_SPLITS")) if OS.get_environment("GETECO_SUN_SPLITS") != "" else 4, 1, 4)
 ## Cascatas do sol para a câmera ortográfica (auditoria Godot 4.7 de 19/10, §4 "Sombra do sol").
 ## A câmera de jogo fica a ~36 m do foco (CameraRig) e o chão visível vai de ~25 a ~55 m de
-## profundidade. Pelo código-fonte do Godot (RendererSceneCull::_light_instance_setup_directional_shadow,
-## de memória, não conferido nesta versão): com câmera ortográfica o `directional_shadow_max_distance`
-## é ignorado ("impractical ... in orthogonal camera") e as cascatas dividem near..far, isto é,
+## profundidade. Conferido no Godot 4.7.2-stable, renderer_scene_cull.cpp:1965–1969 (29/10):
+## com câmera ortográfica o `directional_shadow_max_distance` é ignorado e as cascatas dividem near..far,
+## isto é,
 ## 0,1..180 m (EXTERIOR_FAR). Com os padrões (0,1 / 0,2 / 0,5) a 1ª cascata (0–18 m) quase não tem
 ## chão visível e a 3ª/4ª (36–90 / 90–180 m) cobrem sobretudo o que está fora da tela. Os valores
 ## abaixo são frações de 180 m que põem as três primeiras na faixa visível e o esmaecimento depois
 ## dela. Na perseguição do túnel (perspectiva) o max_distance volta a valer e as mesmas frações
 ## caem perto da câmera, onde a perspectiva precisa de resolução. GETECO_SUN_SHADOW_TUNE=0 volta
-## aos padrões do Godot (A/B). Se a dúvida acima se provar falsa (max_distance valendo), as frações
-## passam a ser de 40–80 m e a sombra fica mais curta que a tela: conferir com captura.
+## aos padrões do Godot (A/B). GETECO_CAMERA_FAR é outro experimento, desligado por padrão:
+## reduz o alcance exterior com piso geométrico e compensa as frações enquanto a câmera é ortográfica.
 static var sun_shadow_tune := OS.get_environment("GETECO_SUN_SHADOW_TUNE") != "0"
 const SUN_SHADOW_SPLITS := Vector3(.16, .22, .32)
 ## Com 2 cascatas (GETECO_SUN_SPLITS=2) a divisão fica no fim da faixa visível (~60 m).

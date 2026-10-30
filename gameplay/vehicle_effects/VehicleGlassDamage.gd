@@ -88,6 +88,7 @@ func contact(from: Vector3, to: Vector3) -> Dictionary:
 	var nearest := INF
 	var result: Dictionary = {}
 	for part: MeshInstance3D in vehicle.visual.find_children("*","MeshInstance3D",true,false):
+		if part.has_meta("vehicle_shadow_proxy"): continue
 		if part.mesh == null or not part.is_visible_in_tree() or part.skeleton != NodePath(""): continue
 		if part.name in ["RoofCut","WarmUp"] or "Interior" in str(part.get_path()) or "/WindshieldRain/" in str(part.get_path()): continue
 		var inverse := part.global_transform.affine_inverse()

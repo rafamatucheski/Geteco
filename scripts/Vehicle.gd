@@ -1,6 +1,8 @@
 extends CharacterBody3D
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const DAMAGE_PANELS := preload("res://gameplay/vehicle_effects/VehiclePanelCatalog.gd")
+const SHADOW_PROXY := preload("res://gameplay/vehicle_effects/VehicleShadowProxy.gd")
+var _shadow_proxy: RefCounted
 ## Process-local comparison; normal gameplay uses the prototype on authored models.
 static var damage_prototype_enabled := not ("--vehicle-damage-baseline" in OS.get_cmdline_user_args())
 
@@ -296,6 +298,13 @@ func _ready() -> void:
 		hydraulics = HYDRAULICS.new()
 		hydraulics.configure(self)
 		add_child(hydraulics)
+	if SHADOW_PROXY.enabled and SHADOW_PROXY.offer(archetype):
+		_shadow_proxy = SHADOW_PROXY.new()
+		_shadow_proxy.configure(self)
+
+## Restaura a sombra original antes de varreduras ou mudanças na topologia.
+func invalidate_shadow_proxy() -> void:
+	if _shadow_proxy != null: _shadow_proxy.invalidate()
 
 func set_external_driver(active: bool) -> void:
 	external_input = active
@@ -439,6 +448,7 @@ func _tick_wreck(delta: float) -> bool:
 	return false
 
 func _begin_wreck_fade() -> void:
+	invalidate_shadow_proxy()
 	_wreck_fade = 0.0
 	preload("res://runtime/PipelineProbe.gd").note("wreck_sink" if WRECK_SINK_ENABLED else "wreck_fade", self)
 	# Já não bloqueia ninguém enquanto some.
@@ -1217,6 +1227,7 @@ const RETIRE_SINK_DEPTH := 2.4
 var _retire_sunk := 0.0
 
 func fade_traffic_retirement(alpha: float) -> void:
+	if alpha > 0.0: invalidate_shadow_proxy()
 	if RETIRE_SINK_ENABLED:
 		if not is_instance_valid(visual): return
 		var sunk := RETIRE_SINK_DEPTH * clampf(alpha, 0.0, 1.0)
@@ -1342,11 +1353,13 @@ func _refresh_tuning_appearance() -> void:
 	# Restore paths may assign factory paint/identity after installing saved parts.
 	# Reapply the local finish without rebuilding meshes, charging or touching state.
 	if has_meta("tuning_appearance"):
+		invalidate_shadow_proxy()
 		get_meta("tuning_appearance").apply(get_meta("desert_parts",{}),paint_color)
 		if is_instance_valid(damage_look): damage_look.refresh_paint_finish()
 
 func _ensure_door_presentation() -> void:
 	if boarding_class() in ["open", "bus"]: return
+	invalidate_shadow_proxy()
 	var began := STALL_WORK.begin()
 	if not is_instance_valid(door_presentation):
 		door_presentation = preload("res://gameplay/VehicleDoorPresentation.gd").new()
@@ -1365,6 +1378,7 @@ func finish_doors() -> void:
 ## uma vez). Chamado quadro a quadro enquanto o jogador está perto; true quando pronta.
 func warm_doors(budget_usec := 2500) -> bool:
 	if boarding_class() in ["open", "bus"]: return true
+	invalidate_shadow_proxy()
 	if not is_instance_valid(door_presentation):
 		door_presentation = preload("res://gameplay/VehicleDoorPresentation.gd").new()
 		visual.add_child(door_presentation)
@@ -1385,6 +1399,7 @@ func ensure_equipment(world: Node) -> Node:
 func receive_impact(amount: float, local_point: Vector3, source: Node = null, closing_speed := -1.0, local_normal := Vector3.ZERO, presentation_velocity := Vector3.INF) -> void:
 	if not is_finite(amount) or amount <= 0 or not local_point.is_finite() or health <= 0 or PROTECTION.is_protected(self): return
 	if not is_finite(closing_speed) or not local_normal.is_finite(): return
+	invalidate_shadow_proxy()
 	var inward := Vector3(local_normal.x,0,local_normal.z).normalized()
 	var visual_amount := amount*damage_resistance
 	if damage_prototype_enabled and closing_speed>=0:
@@ -1418,6 +1433,7 @@ func restore_blood_stains(mask: int) -> void:
 
 func restore_body_dents(records: Array, panel_state: Dictionary = {}, broken_glass: Array = []) -> void:
 	if not preload("res://gameplay/vehicle_effects/VehicleBodyDents.gd").valid_records(records) or not preload("res://gameplay/vehicle_effects/VehicleBreakawayParts.gd").valid_state(panel_state) or not preload("res://gameplay/vehicle_effects/VehicleGlassDamage.gd").valid_records(broken_glass): return
+	invalidate_shadow_proxy()
 	# Restore geometry first, then hide absent panels. No debris or collision event is replayed.
 	if is_instance_valid(breakaway_parts): breakaway_parts.repair()
 	if is_instance_valid(body_dents): body_dents.restore_records(records)
@@ -1426,6 +1442,7 @@ func restore_body_dents(records: Array, panel_state: Dictionary = {}, broken_gla
 
 func receive_damage(amount: float, _source: Node = null) -> void:
 	if not is_finite(amount) or amount <= 0 or health <= 0 or PROTECTION.is_protected(self): return
+	invalidate_shadow_proxy()
 	if TRAFFIC_RAILS.enabled and traffic_rails != null: traffic_rails.wake(self,2.0)
 	var response: Callable = get_meta("gang_damage_handler",Callable())
 	if response.is_valid(): response.call(_source)
@@ -1457,12 +1474,14 @@ func crush(source: Node3D) -> bool:
 func restore_health(saved_health: float) -> void:
 	# Loading damage must not apply armor again and silently heal the vehicle.
 	if not is_finite(saved_health): return
+	if saved_health < max_health: invalidate_shadow_proxy()
 	health = clampf(saved_health, 0.0, max_health)
 	if is_instance_valid(damage_look):
 		if health <= 0.0: damage_look.wreck()
 		else: damage_look.refresh()
 
 func repair() -> void:
+	invalidate_shadow_proxy()
 	_wreck_age = 0.0
 	if _wreck_fade >= 0.0:
 		for entry in _wreck_collision_state:
@@ -1488,3 +1507,4 @@ func repair() -> void:
 	if is_instance_valid(body_dents): body_dents.clear()
 	if is_instance_valid(damage_look): damage_look.restore()
 	if is_instance_valid(breakaway_parts): breakaway_parts.repair()
+	if _shadow_proxy != null: _shadow_proxy.repair_completed()

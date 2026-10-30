@@ -18,9 +18,13 @@ func frames(count: int) -> void:
 	for index in count: await physics_frame
 
 func wait_transition() -> bool:
-	for index in 240:
+	# O mocap de 29/10 leva 4,9 / 1,3 s mais aproximação de 0,27–3,32 s:
+	# até 7,09 s. O limite antigo de 4 s falhava antes da entrada mais curta
+	# terminar (4,04 s). Oito segundos simulados preservam um limite finito.
+	for index in 8 * Engine.physics_ticks_per_second:
 		await physics_frame
 		if not world.driving.is_body_transition_active(): return true
+	print("VIDEO_VEHICLE_LIFECYCLE transição não terminou em 8 s simulados")
 	return false
 
 func run() -> void:

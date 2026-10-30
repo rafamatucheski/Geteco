@@ -72,7 +72,8 @@ const TOGGLES := ["GETECO_OCCLUSION", "GETECO_PROC_LOD", "GETECO_TUNNEL_LIGHT_SH
 	"GETECO_PED_DUMMY", "GETECO_BUILDING_BATCH", "GETECO_PROP_INSTANCING", "GETECO_GROUND_STACK", "GETECO_SHADOW_SHELL",
 	"GETECO_BRIDGE_MERGE", "GETECO_FURNITURE_MERGE", "GETECO_CELL_MERGE", "GETECO_BRIDGE_LOOK", "GETECO_PAINTED_WINDOWS", "GETECO_PAINTED_FACADES",
 	"GETECO_SUN_SPLITS", "GETECO_UNIFIED_BRIDGE", "GETECO_DESERT_CARGO_HEIST", "GETECO_DESERT_ROADSIDE", "GETECO_RAGDOLL",
-	"GETECO_SAVE_VERIFY", "GETECO_CITY_LIFE_AUDIO", "GETECO_GTA_CHASE", "GETECO_RAIN_PREWARM"]
+	"GETECO_SAVE_VERIFY", "GETECO_CITY_LIFE_AUDIO", "GETECO_GTA_CHASE", "GETECO_RAIN_PREWARM",
+	"GETECO_CAR_SHADOW_PROXY", "GETECO_CAMERA_FAR", "GETECO_REVEAL_GUARD", "GETECO_FACADE_ARRAY"]
 ## Distância ao longo da volta da rota66 (ida para o sul de z -470, volta a partir de z -860) em que cada
 ## evento nasce, 100 m antes do ponto, como o jogo faria: a van na mão da ida, o bloqueio na mão da volta
 ## (o carro do benchmark anda na faixa leste nos dois sentidos, então desvia dele pela outra mão).
@@ -258,6 +259,17 @@ func _run() -> void:
 	var frames: Array[float] = []
 	var gpu: Array[float] = []
 	var draws: Array[float] = []
+	# O StallLog só publica sombras nos picos; isso enviesava o censo da rota (29/10).
+	# Aqui os dois lados A/B amostram os mesmos contadores prontos, só durante a bancada.
+	var visible_draws: Array[float] = []
+	var shadow_draws: Array[float] = []
+	var visible_objects: Array[float] = []
+	var shadow_objects: Array[float] = []
+	var render_cpu: Array[float] = []
+	var render_setup: Array[float] = []
+	var physics_ms: Array[float] = []
+	var camera_far: Array[float] = []
+	var experiments_before_warmup := _drawcall_experiment_snapshot()
 	var previous := Time.get_ticks_usec()
 	var measured_clock := 0.0
 	# Intervalo entre desenhos (22/10): o tempo do laço abaixo é medido no retorno do await, e corrotinas
@@ -307,6 +319,14 @@ func _run() -> void:
 		frames.append(frame_ms)
 		gpu.append(RenderingServer.viewport_get_measured_render_time_gpu(viewport))
 		draws.append(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
+		visible_draws.append(RenderingServer.viewport_get_render_info(viewport, RenderingServer.VIEWPORT_RENDER_INFO_TYPE_VISIBLE, RenderingServer.VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME))
+		shadow_draws.append(RenderingServer.viewport_get_render_info(viewport, RenderingServer.VIEWPORT_RENDER_INFO_TYPE_SHADOW, RenderingServer.VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME))
+		visible_objects.append(RenderingServer.viewport_get_render_info(viewport, RenderingServer.VIEWPORT_RENDER_INFO_TYPE_VISIBLE, RenderingServer.VIEWPORT_RENDER_INFO_OBJECTS_IN_FRAME))
+		shadow_objects.append(RenderingServer.viewport_get_render_info(viewport, RenderingServer.VIEWPORT_RENDER_INFO_TYPE_SHADOW, RenderingServer.VIEWPORT_RENDER_INFO_OBJECTS_IN_FRAME))
+		render_cpu.append(RenderingServer.viewport_get_measured_render_time_cpu(viewport))
+		render_setup.append(RenderingServer.get_frame_setup_time_cpu())
+		physics_ms.append(Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0)
+		camera_far.append(world.camera.far)
 		if save_every > 0.0:
 			_save_clock += frame_ms / 1000.0
 			if _save_clock >= save_every:
@@ -325,6 +345,11 @@ func _run() -> void:
 		"route": route_name if route_name != "" else ("porto" if route == ROUTE_PORT else "oeste"), "frames": frames.size(), "frame_ms": _stats(frames),
 		"duration_ms": measured_ms, "average_fps": frames.size()*1000.0/maxf(measured_ms,.001), "frame_samples_ms": frames,
 		"gpu_ms_main": _stats(gpu), "draw_calls": _stats(draws), "toggles": toggles,
+		"visible_draw_calls": _stats(visible_draws), "shadow_draw_calls": _stats(shadow_draws),
+		"visible_objects": _stats(visible_objects), "shadow_objects": _stats(shadow_objects),
+		"render_cpu_ms": _stats(render_cpu), "physics_ms": _stats(physics_ms), "camera_far_m": _stats(camera_far),
+		"render_setup_ms": _stats(render_setup), "experiments_before_warmup": experiments_before_warmup, "experiments_after": _drawcall_experiment_snapshot(),
+		"render_metrics_scope": "Viewport principal, amostrado em toda a janela medida; CPU/GPU assíncronos. draw_calls e render_setup_ms são globais e podem incluir outras viewports. physics_ms repete por frame o último máximo de processamento físico publicado pelo motor, atualizado aproximadamente a cada segundo; os percentis ponderam esses máximos por frames, não representam cada passo físico nem toda a CPU do jogo.",
 		"frames_over_66_7ms": frames.filter(func(ms): return ms > 66.7).size(),
 		"frames_over_100ms": frames.filter(func(ms): return ms > 100.0).size(),
 		"frames_over_6_9ms": frames.filter(func(ms): return ms > 6.94).size(), "frames_over_16_7ms": frames.filter(func(ms): return ms > 16.7).size(),
@@ -392,18 +417,51 @@ func _run() -> void:
 ## MSAA e vsync, e o settings.cfg do jogador mudou SSAO, névoa, escala e sombra entre rodadas sem deixar
 ## rastro. Grava a preferência lida (settings) e o que o motor está usando (applied), porque os dois podem
 ## divergir: o benchmark desliga vsync/FPS, e SSAO/névoa só valem no Forward+.
+func _drawcall_experiment_snapshot() -> Dictionary:
+	# Só antes do aquecimento/depois da janela: varrer chunks aqui não contamina os frames medidos.
+	# A instrumentação também funciona nos commits anteriores a cada experimento.
+	var proxy_path := "res://gameplay/vehicle_effects/VehicleShadowProxy.gd"
+	var proxy: Script = load(proxy_path) if ResourceLoader.exists(proxy_path) else null
+	var result := {"car_shadow_proxy": proxy.call("snapshot") if proxy != null else {},
+		"camera_depth": world.camera.call("exterior_depth_snapshot") if world.camera.has_method("exterior_depth_snapshot") else {},
+		"reveal_guard_chunks": []}
+	var region: Variant = world.production.region
+	if is_instance_valid(region):
+		for key in region.chunks:
+			var chunk: Node = region.chunks[key]
+			if not is_instance_valid(chunk): continue
+			result.reveal_guard_chunks.append({"chunk": str(key),
+				"merge": chunk.get_meta("chunk_reveal_guard_merge", {}),
+				"shadow": chunk.get_meta("chunk_reveal_guard_shadow", {})})
+	return result
+
 func _graphics_report() -> Dictionary:
 	const SETTINGS := preload("res://runtime/Settings.gd")
 	var view := get_viewport()
+	var physics_world := view.find_world_3d()
+	var physics_space: PhysicsDirectSpaceState3D = physics_world.direct_space_state if physics_world != null else null
 	var report := {"rendering_method": RenderingServer.get_current_rendering_method(),
 		"rendering_driver": RenderingServer.get_current_rendering_driver_name(),
 		"project_rendering_method": str(ProjectSettings.get_setting("rendering/renderer/rendering_method", "")),
+		"physics_engine": str(ProjectSettings.get_setting("physics/3d/physics_engine", "")),
+		"physics_server_class": PhysicsServer3D.get_class(),
+		"physics_space_class": physics_space.get_class() if physics_space != null else "",
+		"csharp_available": ClassDB.class_exists(&"CSharpScript"),
+		"camera_projection": world.camera.projection, "camera_near_m": world.camera.near, "camera_size_m": world.camera.size,
 		"video_adapter": RenderingServer.get_video_adapter_name(), "video_api": RenderingServer.get_video_adapter_api_version(),
 		"settings_path": "", "settings_file_found": false, "preset": "", "settings": {},
 		"engine_args": OS.get_cmdline_args(), "user_args": OS.get_cmdline_user_args(),
 		# override.cfg ao lado do exe muda o projeto sem recompilar (bancada: GETECO_TRACK_CALL_STACKS=1).
 		"always_track_call_stacks": bool(ProjectSettings.get_setting("debug/settings/gdscript/always_track_call_stacks", false)),
 		"override_cfg_present": FileAccess.file_exists(OS.get_executable_path().get_base_dir().path_join("override.cfg"))}
+	var sun: DirectionalLight3D = world.production.sun
+	if is_instance_valid(sun):
+		report.sun_shadow = {"mode": sun.directional_shadow_mode, "max_distance": sun.directional_shadow_max_distance,
+			"split_1": sun.directional_shadow_split_1, "split_2": sun.directional_shadow_split_2,
+			"split_3": sun.directional_shadow_split_3, "fade_start": sun.directional_shadow_fade_start}
+	var dispatch: Variant = world.get("dispatch")
+	var router: Variant = dispatch.get("router") if is_instance_valid(dispatch) else null
+	report.router_native = router != null and router.get("_native") != null
 	var settings: Node = get_node_or_null("/root/V2Settings")
 	if settings != null:
 		var path: String = SETTINGS.default_path()

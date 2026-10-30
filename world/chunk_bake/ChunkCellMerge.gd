@@ -9,6 +9,7 @@ extends RefCounted
 ##
 ## As fontes ficam escondidas, não apagadas: o id das peças do editor de mundo depende do nome e da posição
 ## delas, e geradores podem guardar referência a uma malha. Desligar: GETECO_CELL_MERGE=0.
+const REVEAL_GUARD := preload("res://world/chunk_bake/RevealOptimizationGuard.gd")
 const TUNNEL_CUTAWAY := preload("res://world/urban_detail/TunnelCutaway.gd")
 ## Com cache de shader frio a fusão travava (travessia porto -> serra: 9 quadros acima de 250 ms, pico de
 ## 1,3 s). Com as fatias de 2 ms, o pré-aquecimento das variantes da família e o lote de material original sem
@@ -71,6 +72,11 @@ class Slice:
 	var budget_began := 0
 	var reference: WeakRef
 	var budget_usec := 0
+	var reveal_generation := -1
+	var reveal_scopes: Dictionary = {}
+	var reveal_holders: Array[WeakRef] = []
+	var reveal_hidden: Array[WeakRef] = []
+	var reveal_aborted := false
 
 static func _run(chunk: Node3D, budget_usec: int) -> Dictionary:
 	var report := {"sources": 0, "batches": 0, "scopes": 0}
@@ -85,12 +91,18 @@ static func _run(chunk: Node3D, budget_usec: int) -> Dictionary:
 	slice.budget_began = Time.get_ticks_usec()
 	slice.reference = weakref(chunk)
 	slice.budget_usec = budget_usec
+	slice.reveal_generation = REVEAL_GUARD.capture()
+	var relax_reveal := slice.reveal_generation >= 0
+	var relaxed_scopes := 0
 	# Um lote por trecho, entre objetos: as ~35 pilhas de carga do Northstar são objetos separados e, fundidas
 	# só por dentro, sobravam 239 lotes. Prédios com acesso/reveal ficam com a fusão por prédio deles.
 	var candidates: Array = []
 	for child in chunk.get_children():
 		if child is MeshInstance3D: candidates.append(child)
-		elif child is Node3D and _scope_allowed(child as Node3D): candidates.append_array(child.get_children())
+		elif child is Node3D and _scope_allowed(child as Node3D, relax_reveal, slice.reveal_scopes):
+			candidates.append_array(child.get_children())
+			if child.is_in_group(REVEAL_ONLY_GROUP): relaxed_scopes += 1
+	chunk.set_meta("chunk_reveal_guard_merge", {"allowed": relax_reveal, "scopes": relaxed_scopes})
 	_sum(report, await _merge_scope(chunk, candidates, false, slice))
 	# Prédios só com reveal (cabanas da serra: 220 malhas cada, poços do porto): o reveal escolhe peça a peça
 	# dentro do prédio pela caixa e troca o material pela cor dele, então o lote fica dentro do prédio, em
@@ -98,11 +110,16 @@ static func _run(chunk: Node3D, budget_usec: int) -> Dictionary:
 	var reveal_scopes: Array = []
 	if is_instance_valid(slice.reference.get_ref()):
 		for child in chunk.get_children():
-			if child is Node3D and _reveal_scope_allowed(child as Node3D): reveal_scopes.append(child)
+			if child is Node3D and _reveal_scope_allowed(child as Node3D):
+				# Escopo já coletado no trecho não entra de novo no passe exato.
+				if not relax_reveal or not _scope_allowed(child as Node3D, true, slice.reveal_scopes): reveal_scopes.append(child)
 	for scope in reveal_scopes:
 		if not is_instance_valid(scope) or not is_instance_valid(slice.reference.get_ref()): continue
 		_sum(report, await _merge_scope(scope as Node3D, scope.get_children(), true, slice))
 	if not _chunk_alive(slice.reference.get_ref()): return report
+	_guard_current(slice)
+	report = _guard_report(slice, report)
+	chunk.set_meta("chunk_reveal_guard_merge", {"allowed": relax_reveal, "scopes": relaxed_scopes, "sources": report.sources, "batches": report.batches, "aborted": slice.reveal_aborted})
 	STALL_WORK.finish_slow("chunk.cell_merge", slice.began, 1500)
 	# Os materiais da família nascem depois do pré-aquecimento do corte do túnel: sem isto, a primeira
 	# entrada no túnel compilava uma cópia com alfa por família (pico de 1,1 s na captura de 14/10).
@@ -122,6 +139,7 @@ static func _run(chunk: Node3D, budget_usec: int) -> Dictionary:
 
 ## Cede o quadro quando a fatia passou do orçamento. Devolve false se o trecho sumiu enquanto esperava.
 static func _yield_if_due(slice: Slice) -> bool:
+	if not _guard_current(slice): return false
 	if slice.budget_usec <= 0 or Time.get_ticks_usec() - slice.budget_began < slice.budget_usec: return true
 	var chunk: Variant = slice.reference.get_ref()
 	if not _chunk_alive(chunk): return false
@@ -130,7 +148,38 @@ static func _yield_if_due(slice: Slice) -> bool:
 	slice.began = STALL_WORK.begin()
 	slice.budget_began = Time.get_ticks_usec()
 	var still: Variant = slice.reference.get_ref()
-	return _chunk_alive(still)
+	return _chunk_alive(still) and _guard_current(slice)
+
+## Reverte só o que esta execução publicou, inclusive uma malha com superfícies ainda pendentes.
+## Não é restauração global após _run terminar: diagnósticos tardios ficam excluídos desde o boot.
+static func _guard_current(slice: Slice) -> bool:
+	if slice.reveal_generation < 0 or REVEAL_GUARD.still_allowed(slice.reveal_generation): return true
+	if slice.reveal_aborted: return false
+	slice.reveal_aborted = true
+	var chunk := slice.reference.get_ref() as Node3D
+	if is_instance_valid(chunk):
+		for reference in slice.reveal_holders:
+			var holder := reference.get_ref() as Node3D
+			if not is_instance_valid(holder) or not chunk.is_ancestor_of(holder): continue
+			holder.hide()
+			GPU_RELEASE.retire(holder)
+		for reference in slice.reveal_hidden:
+			var source := reference.get_ref() as MeshInstance3D
+			if not is_instance_valid(source) or not chunk.is_ancestor_of(source): continue
+			if source.has_meta(MERGED_SOURCE):
+				source.remove_meta(MERGED_SOURCE)
+				source.show()
+		if chunk.has_meta(FINISHED): chunk.remove_meta(FINISHED)
+	slice.reveal_holders.clear()
+	slice.reveal_hidden.clear()
+	return false
+
+static func _guard_report(slice: Slice, report: Dictionary) -> Dictionary:
+	if slice.reveal_aborted:
+		report.sources = 0
+		report.batches = 0
+		if report.has("scopes"): report.scopes = 0
+	return report
 
 ## Arrays por malha e superfície. Eram lidas uma vez por trecho, mas cada leitura espera a GPU (a fatia de
 ## 176 ms da ponte no release de 16/10): agora vêm do cache entre trechos, por parâmetros nas primitivas.
@@ -155,7 +204,7 @@ static func _sum(report: Dictionary, merged: Dictionary) -> void:
 	report.sources += merged.sources
 	report.batches += merged.batches
 
-static func _scope_allowed(scope: Node3D) -> bool:
+static func _scope_allowed(scope: Node3D, relax_reveal := false, reveal_scopes: Dictionary = {}) -> bool:
 	# A registered prop may be a plain Node3D with several mesh children (saguaro).
 	# Starting traversal at its children bypassed _protected(root), leaving a fixed
 	# batch standing after FragileProps hid the source and spawned the falling pieces.
@@ -163,7 +212,9 @@ static func _scope_allowed(scope: Node3D) -> bool:
 	if scope.has_meta(BATCH) or scope.get_node_or_null("BuildingAccess") != null: return false
 	if scope.has_meta("place_id") and not str(scope.get_meta("place_id", "")).is_empty(): return false
 	for group in PROTECTED_GROUPS:
-		if scope.is_in_group(group): return false
+		if not scope.is_in_group(group): continue
+		if group == REVEAL_ONLY_GROUP and relax_reveal and REVEAL_GUARD.cached_scope(scope, reveal_scopes): continue
+		return false
 	# Objeto que o jogo tira do trecho (saque) deixaria o lote no lugar dele.
 	var script := scope.get_script() as Script
 	if script != null and script.resource_path.get_file() in REMOVABLE_SCRIPTS: return false
@@ -194,8 +245,8 @@ static func _merge_scope(scope: Node3D, candidates: Array, exact: bool, slice: S
 	var groups := {}
 	var to_scope := scope.global_transform.affine_inverse()
 	var report := {"sources": 0, "batches": 0}
-	if not await _collect(candidates, scope, to_scope, groups, exact, slice): return report
-	if not _chunk_alive(slice.reference.get_ref()) or not is_instance_valid(scope): return report
+	if not await _collect(candidates, scope, to_scope, groups, exact, slice): return _guard_report(slice, report)
+	if not _chunk_alive(slice.reference.get_ref()) or not is_instance_valid(scope): return _guard_report(slice, report)
 	# Superfícies de cada fonte ainda sem lote. A fonte só some quando todas tiverem: uma malha com superfícies
 	# em famílias (grupos) diferentes sumia em parte ao sair o primeiro lote e só voltava inteira quando o
 	# grupo da outra superfície era montado, quadros depois (buraco visível no meio da fusão fatiada).
@@ -209,7 +260,7 @@ static func _merge_scope(scope: Node3D, candidates: Array, exact: bool, slice: S
 	for key in groups:
 		# Cada lote é atômico: a fonte só some quando o lote dela já existe, então ceder entre lotes não
 		# deixa buraco nem desenho em dobro.
-		if not await _yield_if_due(slice) or not is_instance_valid(scope) or not scope.is_inside_tree(): return report
+		if not await _yield_if_due(slice) or not is_instance_valid(scope) or not scope.is_inside_tree(): return _guard_report(slice, report)
 		# Grupo de um só também vira lote.
 		# Enquanto a fatia esperava, uma fonte pode ter sido liberada ou saído do escopo (registro que volta ao
 		# cache e entra em outro trecho): fica fora do lote, senão o lote desenharia peça que não está mais aqui.
@@ -220,16 +271,18 @@ static func _merge_scope(scope: Node3D, candidates: Array, exact: bool, slice: S
 		# Lote limitado por vértices, não pelo grupo: um grupo grande (célula de 32 m da vila) era um lote só,
 		# montado e enviado à placa de uma vez. Partes menores, mesma geometria.
 		for entries: Array in await _split_by_vertices(valid_entries, slice):
-			if not is_instance_valid(scope) or not scope.is_inside_tree(): return report
+			if not is_instance_valid(scope) or not scope.is_inside_tree(): return _guard_report(slice, report)
 			var mesh: ArrayMesh = await _build_batch(entries, exact, slice)
 			# O holder é folha do trecho: a desmontagem pode liberá-lo enquanto o trabalhador monta o lote.
-			if not _chunk_alive(slice.reference.get_ref()) or not is_instance_valid(scope) or not scope.is_inside_tree(): return report
+			if not _chunk_alive(slice.reference.get_ref()) or not is_instance_valid(scope) or not scope.is_inside_tree(): return _guard_report(slice, report)
+			# O trabalhador pode terminar depois de uma mudança real no reveal.
+			if not _guard_current(slice): return _guard_report(slice, report)
 			if not is_instance_valid(holder): holder = null
-			holder = _commit_batch(scope, holder, entries, mesh, pending_surfaces, report)
-	return report
+			holder = _commit_batch(scope, holder, entries, mesh, pending_surfaces, report, slice)
+	return _guard_report(slice, report)
 
 ## Põe o lote na árvore e esconde as fontes que ficaram com todas as superfícies em lote. Devolve o holder.
-static func _commit_batch(scope: Node3D, holder: Node3D, entries: Array, mesh: ArrayMesh, pending_surfaces: Dictionary, report: Dictionary) -> Node3D:
+static func _commit_batch(scope: Node3D, holder: Node3D, entries: Array, mesh: ArrayMesh, pending_surfaces: Dictionary, report: Dictionary, slice: Slice) -> Node3D:
 	if mesh == null or not is_instance_valid(scope) or not scope.is_inside_tree(): return holder
 	# A montagem também cede o quadro entre peças: se alguma fonte sumiu nesse meio-tempo, o lote teria a
 	# geometria dela. Descarta o lote e deixa as fontes que sobraram como estão (só perde a fusão do grupo).
@@ -240,6 +293,7 @@ static func _commit_batch(scope: Node3D, holder: Node3D, entries: Array, mesh: A
 		holder.name = "CellMergeBatches"
 		holder.set_meta(BATCH, true)
 		scope.add_child(holder)
+		if slice.reveal_generation >= 0: slice.reveal_holders.append(weakref(holder))
 	var batch := MeshInstance3D.new()
 	batch.name = "CellBatch"
 	batch.mesh = mesh
@@ -266,6 +320,7 @@ static func _commit_batch(scope: Node3D, holder: Node3D, entries: Array, mesh: A
 		if int(pending_surfaces[id]) > 0 or source.has_meta(MERGED_SOURCE): continue
 		source.set_meta(MERGED_SOURCE, true)
 		source.visible = false
+		if slice.reveal_generation >= 0: slice.reveal_hidden.append(weakref(source))
 		report.sources += 1
 	return holder
 
@@ -307,7 +362,7 @@ static func _collect(candidates: Array, scope: Node3D, to_scope: Transform3D, gr
 		if not (child as Node).is_inside_tree() or not scope.is_ancestor_of(child): continue
 		if child.has_meta(BATCH) or child.has_meta(MERGED_SOURCE): continue
 		if not child is Node3D or not (child as Node3D).visible: continue
-		if _is_dynamic(child) or _protected(child): continue
+		if _is_dynamic(child) or _protected(child, slice.reveal_generation >= 0, slice.reveal_scopes): continue
 		if child is MeshInstance3D:
 			_add_mesh(child as MeshInstance3D, scope, to_scope, groups, exact)
 			continue
@@ -317,13 +372,14 @@ static func _collect(candidates: Array, scope: Node3D, to_scope: Transform3D, gr
 		stack.append_array(children)
 	return true
 
-static func _protected(node: Node) -> bool:
+static func _protected(node: Node, relax_reveal := false, reveal_scopes: Dictionary = {}) -> bool:
 	var label := String(node.name).to_lower()
 	for word in PROTECTED_NAMES:
 		if label.contains(word): return true
 	for meta in PROTECTED_METAS:
 		if node.has_meta(meta): return true
 	for group in node.get_groups():
+		if group == REVEAL_ONLY_GROUP and relax_reveal and REVEAL_GUARD.cached_scope(node, reveal_scopes): continue
 		if not String(group).begins_with("_"): return true
 	return false
 

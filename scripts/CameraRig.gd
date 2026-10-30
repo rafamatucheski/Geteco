@@ -65,6 +65,7 @@ var _developer_camera_state: Dictionary = {}
 
 func set_developer_zoom(multiplier: float, view: int = 0) -> void:
 	if not is_finite(multiplier): return
+	_release_exterior_depth_range()
 	if _developer_camera_state.is_empty():
 		_developer_camera_state = {"projection": projection, "size": size, "far": far, "near": near, "fov": fov}
 	developer_zoom = clampf(multiplier, 1.0, 1000.0)
@@ -123,6 +124,7 @@ var locked := false:
 	set(value):
 		locked = value
 		if value and _exterior_reveal != null: _exterior_reveal.release()
+		if value: _release_exterior_depth_range()
 var offset := EXTERIOR_OFFSET
 var scope_reticle: Control
 var _smoothed_lead := Vector3.ZERO
@@ -187,6 +189,7 @@ var _desert_terrain_camera := preload("res://world/desert/DesertTerrainCamera.gd
 var _exterior_reveal := preload("res://scripts/camera/ExteriorReveal.gd").new()
 var _railway_clearance := preload("res://scripts/camera/RailwayCameraClearance.gd").new()
 var _building_clearance := preload("res://scripts/camera/BuildingCameraClearance.gd").new()
+var _exterior_depth := preload("res://scripts/camera/ExteriorDepthRange.gd").new()
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -205,7 +208,9 @@ func _ready() -> void:
 
 func _read_camera_settings() -> void:
 	var settings := get_node_or_null("/root/V2Settings")
-	if settings != null: set_preview_view(int(settings.get("camera_view")) == 1)
+	if settings != null:
+		set_preview_view(int(settings.get("camera_view")) == 1)
+		if _exterior_depth.enabled(): _exterior_depth.set_shadow_distance(settings.shadow_distance_metres())
 
 func set_preview_view(enabled: bool) -> void:
 	preview_view = enabled
@@ -280,6 +285,7 @@ func _process_traced(delta: float) -> void:
 		look_at(focus)
 		return
 	if not is_instance_valid(target):
+		_release_exterior_depth_range()
 		if _exterior_reveal.enabled: _exterior_reveal.release()
 		_tunnel_safety.restore_environment()
 		return
@@ -337,6 +343,7 @@ func _process_traced(delta: float) -> void:
 	global_position = focus + exterior_offset
 	look_at(focus)
 	_update_tunnel_chase(actual, delta, snap)
+	var exterior_retreat := 0.0
 	if not locked and projection==Camera3D.PROJECTION_ORTHOGONAL and _tunnel_chase_blend<=.001:
 		var nominal := global_position-focus
 		var view := Vector2(size*get_viewport().get_visible_rect().size.aspect(),size)
@@ -345,16 +352,46 @@ func _process_traced(delta: float) -> void:
 		# Moving on the orthographic axis changes depth only. Keep the original
 		# distant plane in world space while making room for foreground bridges.
 		global_position=focus+safe
-		far=EXTERIOR_FAR+maxf(0.0,safe.length()-nominal.length())
+		exterior_retreat=maxf(0.0,safe.length()-nominal.length())
+		if not _exterior_depth.enabled(): far=EXTERIOR_FAR+exterior_retreat
 	# look_at resets this basis each frame; the small roll never accumulates.
 	var alcohol_roll := float(get_meta("alcohol_intensity",0.0)) * float(get_meta("alcohol_sway",0.0)) * .016
 	if not is_zero_approx(alcohol_roll): rotate_object_local(Vector3.FORWARD,alcohol_roll)
+	if _exterior_depth.enabled(): _update_exterior_depth_range(exterior_retreat)
 	# Exterior transparency is diagnostic-only; normal play keeps the silhouette.
 	# Authored tunnel/interior visibility still owns its independent cutaway.
 	if _exterior_reveal.enabled:
 		_exterior_reveal.update(self,target,_is_vehicle_target(),_flat_velocity(),delta,not locked and _tunnel_blend < .001 and _tunnel_chase_blend < .001 and projection == Camera3D.PROJECTION_ORTHOGONAL and not get_tree().paused)
 	_update_cutaway()
 	_was_locked = locked
+
+func _update_exterior_depth_range(extra_retreat: float) -> void:
+	# A perspectiva mantém seu próprio far/névoa; sua luz precisa recuperar as frações originais.
+	if locked or projection != Camera3D.PROJECTION_ORTHOGONAL or _tunnel_chase_blend > .001:
+		_exterior_depth.release()
+		return
+	var world := get_parent()
+	var production: Variant = world.get("production") if world != null and "production" in world else null
+	var region: Variant = production.get("region") if is_instance_valid(production) and "region" in production else null
+	var sun: DirectionalLight3D = production.get("sun") as DirectionalLight3D if is_instance_valid(production) and "sun" in production else null
+	var next_far := EXTERIOR_FAR + extra_retreat
+	if current and is_instance_valid(region) and "region_id" in region and region.get("region_id") == "harbor":
+		next_far = _exterior_depth.apply(self, focus, extra_retreat, sun)
+	else:
+		_exterior_depth.release()
+	if not is_equal_approx(far, next_far): far = next_far
+
+func _release_exterior_depth_range() -> void:
+	if _exterior_depth == null or not _exterior_depth.active: return
+	var previous_far: float = _exterior_depth.legacy_far
+	_exterior_depth.release()
+	if not is_equal_approx(far, previous_far): far = previous_far
+
+func reflection_far() -> float:
+	return _exterior_depth.reflection_far(far)
+
+func exterior_depth_snapshot() -> Dictionary:
+	return _exterior_depth.snapshot(self)
 
 ## Perspectiva atrás do veículo ou personagem; a rua conserva seu enquadramento.
 func _update_tunnel_chase(actual: Vector3, delta: float, snap: bool) -> void:
@@ -390,7 +427,7 @@ func _update_tunnel_chase(actual: Vector3, delta: float, snap: bool) -> void:
 	_tunnel_chase_distance = distance if snap or blend <= 0.001 else lerpf(_tunnel_chase_distance, distance, 1.0 - exp(-4.2 * delta))
 	if blend <= 0.001:
 		projection = Camera3D.PROJECTION_ORTHOGONAL
-		far = EXTERIOR_FAR
+		if not _exterior_depth.enabled() or locked: far = EXTERIOR_FAR
 		_tunnel_safety.restore_environment()
 		return
 	var rear := Vector3.BACK.rotated(Vector3.UP, _tunnel_chase_heading)
@@ -453,6 +490,7 @@ func _update_cutaway() -> void:
 	_cutaway.update(chunks, focus, global_position - focus, half_width, smoothstep(0.0, 1.0, strength), get_process_delta_time())
 
 func focus_on_store(point: Vector3, final_size: float, duration: float) -> void:
+	_release_exterior_depth_range()
 	_store_focus_reverse = false
 	_transition_offsets = false
 	_store_focus_from = focus if initialized else (target.global_position if is_instance_valid(target) else point)
@@ -658,6 +696,7 @@ func _ensure_scope_reticle() -> void:
 	scope_reticle.hide()
 
 func _exit_tree() -> void:
+	_release_exterior_depth_range()
 	_end_mouse_orbit(false)
 	_exterior_reveal.release()
 	_tunnel_safety.restore_environment()

@@ -150,6 +150,8 @@ static func apply_vehicle(car: CharacterBody3D, parts: Dictionary) -> void:
 			if slot in VISUAL_KIT_SLOTS and not TUNING.compatible(str(parts[slot]),archetype): parts.erase(slot)
 	var has_style := parts.has("paint") or parts.has("finish") or parts.has("wheels") or parts.has("spoiler") or parts.has("sunroof") or parts.has("taillights") or parts.has("wheel_model") or parts.has("wheel_size") or parts.has("skirts") or parts.has("front_lip") or parts.has("diffuser")
 	if not has_style and not car.has_meta("tuning_appearance"): return
+	# Restaura a sombra real antes de kits/teto varrerem ou substituírem o Body.
+	if car.has_method("invalidate_shadow_proxy"): car.invalidate_shadow_proxy()
 	var appearance: RefCounted = car.get_meta("tuning_appearance") if car.has_meta("tuning_appearance") else null
 	if appearance == null:
 		appearance = load("res://gameplay/desert_cars/TuningAppearance.gd").new()

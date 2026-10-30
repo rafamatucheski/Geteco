@@ -3,6 +3,10 @@ extends SceneTree
 ## Cada superfície de malha visível é ~1 draw call na passada principal; com sombra, mais 1 por cascata.
 ## Não mede culling da câmera nem GPU: é o teto do que o trecho entrega ao renderizador.
 ## Uso: "$GODOT" --headless --path . --script res://tests/measure/census_chunk_draws.gd -- --no-save --chunks=3,0;3,1;1,1
+const REVEAL_GUARD := preload("res://world/chunk_bake/RevealOptimizationGuard.gd")
+const REVEAL := preload("res://scripts/camera/ExteriorReveal.gd")
+# Retido até o fim do censo; ausência de câmera nunca equivale a reveal desligado.
+var _reveal_context: RefCounted
 const REGION := preload("res://world/regions/NativeRegion.gd")
 
 func _initialize() -> void: run.call_deferred()
@@ -20,6 +24,14 @@ func _category(node: Node, chunk: Node) -> String:
 func run() -> void:
 	# Fusão inteira de uma vez: aqui não se mede tempo de quadro.
 	preload("res://world/chunk_bake/ChunkCellMerge.gd").slice_budget_usec = 0
+	preload("res://world/chunk_shadow/ChunkShadowShell.gd").slice_budget_usec = 0
+	if "--reveal-guard-census" in OS.get_cmdline_user_args():
+		if not REVEAL_GUARD.register_census(self):
+			push_error("Censo não conseguiu declarar o contexto controlado de reveal")
+			quit(1)
+			return
+		_reveal_context = REVEAL.new()
+		print("CENSO_REVEAL_CONTEXTO enabled=%s guard=%s allowed=%s" % [_reveal_context.get("enabled"), REVEAL_GUARD.enabled, REVEAL_GUARD.capture() >= 0])
 	var keys: Array[Vector2i] = []
 	var region_id := "harbor"
 	var all_chunks := false
@@ -52,7 +64,7 @@ func run() -> void:
 		var chunk: Node = region.chunks[key]
 		for frame in 8: await process_frame
 		var categories := {}
-		var totals := {"surfaces": 0, "shadow_surfaces": 0, "instances": 0}
+		var totals := {"surfaces": 0, "color_surfaces": 0, "shadow_only_surfaces": 0, "shadow_surfaces": 0, "instances": 0}
 		for node in chunk.find_children("*", "GeometryInstance3D", true, false):
 			var geometry := node as GeometryInstance3D
 			if not geometry.is_visible_in_tree(): continue
@@ -70,11 +82,17 @@ func run() -> void:
 			categories[category].nodes += 1
 			if shadow: categories[category].shadow += surfaces
 			totals.surfaces += surfaces
+			if geometry.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY:
+				totals.shadow_only_surfaces += surfaces
+			else:
+				totals.color_surfaces += surfaces
 			totals.instances += 1
 			if shadow: totals.shadow_surfaces += surfaces
 		var ranked := categories.keys()
 		ranked.sort_custom(func(a, b): return categories[a].surfaces > categories[b].surfaces)
 		print("CENSO trecho=%s x=%d z=%d %s" % [key, key.x * 64, key.y * 64, JSON.stringify(totals)])
+		if "--reveal-guard-census" in OS.get_cmdline_user_args():
+			print("CENSO_REVEAL trecho=%s merge=%s shell=%s covered=%s" % [key, JSON.stringify(chunk.get_meta("chunk_reveal_guard_merge", {})), JSON.stringify(chunk.get_meta("chunk_reveal_guard_shadow", {})), JSON.stringify(chunk.get_meta("chunk_shadow_shell_counts", {}))])
 		summary.append({"key": key, "surfaces": totals.surfaces, "shadow": totals.shadow_surfaces, "top": ranked.slice(0, 3)})
 		# Trecho medido é liberado: medir a região inteira de uma vez não cabe na memória.
 		if region_id != "desert":

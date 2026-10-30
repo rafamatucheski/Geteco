@@ -22,6 +22,7 @@ static func impact_side(car: Node3D, heading: Vector3) -> int:
 	return 4 if local.x < 0 else 8
 
 static func eligible(part: MeshInstance3D, visual: Node3D) -> bool:
+	if part.has_meta("vehicle_shadow_proxy"): return false
 	if part.mesh == null: return false
 	# Steering forks/fenders carry wheel_center too, but do not spin with tires.
 	# Their exported names contain "wheel"; name filtering hid blood on bikes.

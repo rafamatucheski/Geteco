@@ -2,6 +2,7 @@ extends RefCounted
 ## Opt-in diagnostic exterior window. Normal play keeps authored walls opaque
 ## and uses CityLook's actor/vehicle silhouette without this material effect.
 const SHADER := preload("res://scripts/camera/ExteriorReveal.gdshader")
+const OPTIMIZATION_GUARD := preload("res://world/chunk_bake/RevealOptimizationGuard.gd")
 const BUILDING_GROUP := &"exterior_reveal_building"
 const SCAN_INTERVAL := 0.10
 const RELEASE_DELAY := 0.24
@@ -23,10 +24,17 @@ var enabled := false:
 	set(value):
 		if enabled == value: return
 		enabled = value
+		OPTIMIZATION_GUARD.state_changed()
 		if not enabled: release()
 var last_query_hits := 0
 var _parameter_writes := 0
 var _instance_writes := 0
+
+func _init() -> void:
+	OPTIMIZATION_GUARD.register_context(self)
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE: OPTIMIZATION_GUARD.state_changed()
 
 func update(camera: Camera3D, target: Node3D, vehicle: bool, velocity: Vector3, delta: float, allowed: bool) -> void:
 	if not enabled: return

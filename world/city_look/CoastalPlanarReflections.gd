@@ -409,7 +409,10 @@ static func mirror_camera(source: Camera3D, target: Camera3D, normal: Vector3, p
 	target.size = source.size
 	target.fov = source.fov
 	target.near = source.near
-	target.far = minf(source.far, 220.0)
+	# O alcance curto do Harbor protege o chão da câmera principal, não o skyline espelhado.
+	# Fora do experimento reflection_far devolve o próprio far, preservando os demais enquadramentos.
+	var source_far: float = float(source.call(&"reflection_far")) if source.has_method("reflection_far") else source.far
+	target.far = minf(source_far, 220.0)
 	target.frustum_offset = source.frustum_offset
 	var position := source.global_position
 	position -= 2.0 * normal * normal.dot(position - point)

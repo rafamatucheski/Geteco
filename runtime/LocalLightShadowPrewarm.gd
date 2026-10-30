@@ -13,6 +13,7 @@ extends RefCounted
 ## GETECO_LOCAL_SHADOW_PREWARM=0 pula este passo (A/B).
 const GUARDS := preload("res://gameplay/emergency/EffectsPrewarm.gd")
 const GROUND := preload("res://world/editing/WorldGroundFactory.gd")
+const CAR_PROXY := preload("res://gameplay/vehicle_effects/VehicleShadowProxy.gd")
 const DRAW_FRAMES := 3
 const MAX_WAIT_FRAMES := 24
 static var enabled := OS.get_environment("GETECO_LOCAL_SHADOW_PREWARM") != "0"
@@ -47,6 +48,7 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 	panel.orientation = PlaneMesh.FACE_Z
 	var caster := BoxMesh.new()
 	caster.size = Vector3.ONE * .45
+	var proxy_casters := 0
 	var lights: Array[Light3D] = []
 	var omni_cube := OmniLight3D.new()
 	omni_cube.omni_shadow_mode = OmniLight3D.SHADOW_CUBE
@@ -70,6 +72,8 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 		body.material_override = grounds[(index + 1) % grounds.size()]
 		body.position = Vector3(0, 0, .5)
 		cell.add_child(body)
+		# Mesmo casco/material/formato dos carros reais, compartilhando estas luzes.
+		if CAR_PROXY.add_prewarm_caster(cell, index): proxy_casters += 1
 		var light := lights[index]
 		light.shadow_enabled = true
 		light.light_energy = 2.0
@@ -87,14 +91,17 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 	RenderingServer.frame_post_draw.connect(count_draw)
 	var completed := false
 	for frame in MAX_WAIT_FRAMES:
+		if not GUARDS._current_camera(host, camera): break
 		visual.global_transform = Transform3D(camera.global_basis, camera.global_position - camera.global_basis.z * 9.0)
 		await host.get_tree().process_frame
-		if not GUARDS._covered_loading(host, curtain) or not is_instance_valid(visual): break
+		if not GUARDS._covered_loading(host, curtain) or not GUARDS._current_camera(host, camera) or not is_instance_valid(visual): break
 		if draws[0] >= DRAW_FRAMES:
 			completed = true
 			break
 	if RenderingServer.frame_post_draw.is_connected(count_draw): RenderingServer.frame_post_draw.disconnect(count_draw)
 	if is_instance_valid(visual): visual.free()
 	_done = completed
+	if proxy_casters > 0: await CAR_PROXY.finish_prewarm(host, curtain, completed)
 	last_summary = {"lights": lights.size(), "grounds": grounds.size(), "completed": completed, "draws": draws[0], "usec": Time.get_ticks_usec() - began}
+	if CAR_PROXY.enabled: last_summary["car_shadow_proxy"] = CAR_PROXY.summary()
 	print("Sombras de luz local preparadas: ", JSON.stringify(last_summary))
