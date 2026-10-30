@@ -13,16 +13,20 @@ static var _done := false
 static var last_summary: Dictionary = {}
 
 static func run(host: Node3D, curtain: CanvasLayer) -> void:
-	if _done or not MERGE.enabled or DisplayServer.get_name() == "headless": return
+	if _done or DisplayServer.get_name() == "headless": return
 	if "--no-prewarm" in OS.get_cmdline_user_args() or not GUARDS._covered_loading(host, curtain): return
 	var camera := host.get("camera") as Camera3D
 	if not GUARDS._current_camera(host, camera): return
 	var began := Time.get_ticks_usec()
 	var materials: Array[Material] = []
-	for variant in VARIANTS.known().values():
-		var material := VARIANTS.build(variant)
-		materials.append(material)
-		materials.append(CUTAWAY.make_alpha_copy(material))
+	if MERGE.enabled:
+		for variant in VARIANTS.known().values():
+			var material := VARIANTS.build(variant)
+			materials.append(material)
+			materials.append(CUTAWAY.make_alpha_copy(material))
+	var family_count := materials.size()
+	# Pisos autorados compartilham este aquecimento de superfícies, inclusive sem fusão.
+	materials.append_array(preload("res://world/editing/WorldGroundFactory.gd").prewarm_materials())
 	if materials.is_empty(): return
 	var visual := Node3D.new()
 	visual.name = "FamilyVariantPrewarm"
@@ -31,14 +35,25 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 	# só quando o material usa mapa de normal. O formato também entra no pipeline compilado.
 	var plain := _quad(false)
 	var tangent := _quad(true)
+	var surface_quad := _quad(false, false)
+	var surface_box := BoxMesh.new()
+	surface_box.size = Vector3.ONE * .3
 	var columns := maxi(1, ceili(sqrt(float(materials.size()))))
 	for index in materials.size():
 		var part := MeshInstance3D.new()
 		var material := materials[index] as StandardMaterial3D
 		part.mesh = tangent if material != null and material.normal_enabled else plain
+		if index >= family_count: part.mesh = surface_box
 		part.material_override = materials[index]
 		part.position = Vector3((index % columns - (columns - 1) * .5) * .35, -floorf(float(index) / columns) * .35, 0)
 		visual.add_child(part)
+		if index >= family_count:
+			# O piso do editor usa ArrayMesh sem cor; pátios usam BoxMesh com tangentes.
+			var floor_part := MeshInstance3D.new()
+			floor_part.mesh = surface_quad
+			floor_part.material_override = materials[index]
+			floor_part.position = part.position + Vector3(0, .18, .2)
+			visual.add_child(floor_part)
 	host.add_child(visual)
 	var draws: Array[int] = [0]
 	var count_draw := func() -> void: draws[0] += 1
@@ -57,17 +72,17 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 	if is_instance_valid(visual): visual.free()
 	if completed: _retained.append_array(materials)
 	_done = completed
-	last_summary = {"variants": materials.size() / 2, "completed": completed, "draws": draws[0], "usec": Time.get_ticks_usec() - began}
+	last_summary = {"variants": family_count / 2, "authored_materials": materials.size()-family_count, "completed": completed, "draws": draws[0], "usec": Time.get_ticks_usec() - began}
 	print("Variantes da fusão preparadas: ", JSON.stringify(last_summary))
 
-static func _quad(with_tangent: bool) -> ArrayMesh:
+static func _quad(with_tangent: bool, with_color := true) -> ArrayMesh:
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = PackedVector3Array([Vector3(-.15, -.15, 0), Vector3(.15, -.15, 0), Vector3(.15, .15, 0), Vector3(-.15, .15, 0)])
 	arrays[Mesh.ARRAY_NORMAL] = PackedVector3Array([Vector3.BACK, Vector3.BACK, Vector3.BACK, Vector3.BACK])
 	if with_tangent: arrays[Mesh.ARRAY_TANGENT] = PackedFloat32Array([1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1])
 	arrays[Mesh.ARRAY_TEX_UV] = PackedVector2Array([Vector2(0, 1), Vector2(1, 1), Vector2(1, 0), Vector2(0, 0)])
-	arrays[Mesh.ARRAY_COLOR] = PackedColorArray([Color.WHITE, Color.WHITE, Color.WHITE, Color.WHITE])
+	if with_color: arrays[Mesh.ARRAY_COLOR] = PackedColorArray([Color.WHITE, Color.WHITE, Color.WHITE, Color.WHITE])
 	arrays[Mesh.ARRAY_INDEX] = PackedInt32Array([0, 2, 1, 0, 3, 2])
 	var mesh := ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)

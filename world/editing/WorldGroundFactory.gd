@@ -1,6 +1,9 @@
 @tool
 extends RefCounted
 ## Opaque ground, shared textures, one static mesh/body per intersected chunk.
+const PAVING := preload("res://world/urban_detail/HarborPaving.gd")
+const PAINTED_FINISHES := {"concrete":"concrete","asphalt":"service","pavers":"brick"}
+static var painted_enabled := OS.get_environment("GETECO_PAINTED_GROUND") != "0"
 const COLLISION_FACES := preload("res://world/chunk_bake/CollisionFaces.gd")
 const STEP := 4.0 # Same grid and triangle diagonal as MountainTerrain3D.
 const SURFACES := ["grass","earth","sand","gravel","concrete","asphalt","pavers"]
@@ -36,6 +39,17 @@ static var opaque_enabled := OS.get_environment("GETECO_GROUND_OPAQUE") != "0"
 const NATURAL_SHADER := preload("res://world/regions/natural_ground.gdshader")
 const NATURAL_EDGE_SHADER := preload("res://world/regions/natural_ground_edge.gdshader")
 static func material(surface: String) -> Material:
+	if painted_enabled and PAINTED_FINISHES.has(surface):
+		var key := "painted/"+surface
+		if not materials.has(key):
+			var mat := StandardMaterial3D.new()
+			mat.albedo_texture = PAVING.TILES[PAINTED_FINISHES[surface]]
+			mat.albedo_color = color(surface)
+			mat.roughness = .95
+			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+			# Conserva os UVs XZ*.5 do editor e dos chamadores; sem projeção triplanar.
+			materials[key] = mat
+		return materials[key]
 	if not materials.has(surface) and surface in NATURAL:
 		# Chão natural com detalhe procedural; a textura 64x64 lia como papel liso.
 		var natural := ShaderMaterial.new()
@@ -51,6 +65,13 @@ static func material(surface: String) -> Material:
 		mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS
 		materials[surface] = mat
 	return materials[surface]
+## As mesmas instâncias ficam retidas e desenhadas pelo FamilyVariantPrewarm sob a cortina.
+static func prewarm_materials() -> Array[Material]:
+	var result: Array[Material] = []
+	if painted_enabled:
+		for surface in PAINTED_FINISHES: result.append(material(surface))
+	return result
+
 static func footprint(row: Dictionary) -> PackedVector2Array:
 	var center := Vector2(row.position[0],row.position[1])
 	var half := Vector2(row.size[0],row.size[1])*.5
