@@ -78,11 +78,18 @@ func step(car: CharacterBody3D, delta: float, throttle: float, turn: float, hand
 	# A frente volta ao motor depois que o giro já passou parte dela para o lado; derrapando
 	# (freio de mão segura o lado) isso somaria velocidade. Com o freio puxado nunca passa da
 	# de entrada: o que sobra do lado fica e a frente encolhe (playtest 29/10).
-	if handbrake and car.horizontal_velocity.length() > entry_speed:
+	# Depois de SOLTAR o Espaço, handbrake_slide mantém o lado mole por 0,7 s e o mesmo
+	# giro seguia somando: sem acelerador o sport_coupe ia de 20,1 a 22,4 m/s numa curva com
+	# o freio só tocado (2º relato de 29/10, "pressiona e faz curva e ganha velocidade";
+	# 292 casos do test_handbrake_never_accelerates). Na janela da derrapagem o módulo só
+	# muda pelo que o motor somou ou tirou neste passo (pedal, freio-motor, rolagem), nunca
+	# pelo giro. Fora dela a aderência mata o lado rápido e a curva normal fica como era.
+	var budget := entry_speed if handbrake else maxf(0.0,entry_speed+drive.speed_mps-prior_speed)
+	if (handbrake or handbrake_slide > 0.0) and car.horizontal_velocity.length() > budget:
 		var side := lateral.length()
-		var along := sqrt(maxf(0.0,entry_speed*entry_speed-side*side))
+		var along := sqrt(maxf(0.0,budget*budget-side*side))
 		drive.speed_mps = minf(drive.speed_mps,along)
-		car.horizontal_velocity = lateral.limit_length(entry_speed)+forward*drive.speed_mps
+		car.horizontal_velocity = lateral.limit_length(budget)+forward*drive.speed_mps
 	car.speed = drive.speed_mps
 	wheelspin = drive.wheelspin
 
