@@ -1,0 +1,28 @@
+{
+  "style": "ammunation-harbor",
+  "module": [
+    8.4,
+    2.8
+  ],
+  "side": [
+    4.4,
+    2.8
+  ],
+  "eave": 0.0,
+  "snow_roof": false,
+  "openings": {
+    "front": [
+      {
+        "rect": [
+          0.39285714285714285,
+          0.3392857142857142,
+          0.6071428571428571,
+          1.0
+        ],
+        "leaf": false
+      }
+    ],
+    "back": []
+  },
+  "doors": {}
+}

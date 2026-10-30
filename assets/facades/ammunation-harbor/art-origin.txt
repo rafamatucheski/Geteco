@@ -1,0 +1,4 @@
+Arte frontal gerada por image_gen em 30/10/2026. Original: C:\Users\rafae\.codex\generated_images\01a18cfc-a50b-7a52-be83-a4c4219e50f4\exec-621fa520-7568-4044-b1f0-face14fc21e6.png
+Vao ajustado por reamostragem para preservar porta e colisao existentes. Laterais/fundos/telhado reutilizados de ammunation-serra.
+Somente o nome proprio na fachada. Luz neutra, textura ortografica, sem perspectiva.
+Laterais e fundos substituidos por arte propria sem neve: C:\Users\rafae\.codex\generated_images\01a18cfc-a50b-7a52-be83-a4c4219e50f4\exec-3791f975-1d89-469a-84e9-8980b321b06e.png

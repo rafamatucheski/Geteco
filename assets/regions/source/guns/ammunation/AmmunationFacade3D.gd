@@ -10,8 +10,21 @@ func set_open_amount(value: float) -> void:
 
 func _ready() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	if name in ["NorthFrontage2","harbor_ammunation"] and PaintedFacadeKit.enabled() and OS.get_environment("GETECO_PAINTED_AMMUNATION_HARBOR") != "0" and not PaintedFacadeKit.style_data("ammunation-harbor").is_empty():
+		# O factory conectou finalize antes de _ready: primeiro mantém as mesmas
+		# colisões trimesh; depois troca a pele, antes de capturar o cache do trecho.
+		ready.connect(_apply_painted_harbor,CONNECT_ONE_SHOT)
 	var shell := ART.box(self,Vector3(8.4,2.8,4.4),Vector3(0,1.4,0),ART.INK)
 	shell.material_override = preload("res://assets/urban_detail/UrbanMaterials.gd").textured_wall(ART.INK)
+	if ready.is_connected(_apply_painted_harbor):
+		# Este casco é a única malha que o factory converte em colisão: os demais
+		# detalhes são finos, pequenos ou acima de 2,8 m. Não remonta o desenho V1.
+		for side in [-1,1]:
+			var panel := Node3D.new()
+			add_child(panel)
+			panel.position = Vector3(side*.45,0,2.32)
+			panels.append(panel)
+		return
 	ART.box(self,Vector3(8.65,.22,4.65),Vector3(0,2.9,0),Color("515957"))
 	for side in [-1,1]: ART.box(self,Vector3(.14,.25,4.7),Vector3(side*4.3,3.06,0),ART.INK)
 	ART.box(self,Vector3(8.6,.25,.14),Vector3(0,3.06,-2.28),ART.INK)
@@ -48,3 +61,25 @@ func _ready() -> void:
 	for side in [-1,1]:
 		ART.box(self,Vector3(.15,.68,.15),Vector3(side*3.8,.34,2.9),Color("c8aa54"))
 		ART.box(self,Vector3(.17,.16,.17),Vector3(side*3.8,.4,2.9),ART.INK)
+
+func _apply_painted_harbor() -> void:
+	# O casco antigo conserva seus corpos. Só a apresentação é substituída.
+	for mesh in find_children("*","MeshInstance3D",true,false):
+		mesh.hide()
+	for label in find_children("*","Label3D",true,false):
+		label.hide()
+	var scratch := Node3D.new()
+	add_child(scratch)
+	var painted := PaintedFacadeKit.build(self,"ammunation-harbor",Vector3(8.4,2.8,4.4),scratch,NAN,{"ground_door":false})
+	scratch.free()
+	var doorway := painted.get_node_or_null("Doorway_front")
+	if doorway != null: doorway.free()
+	var art := preload("res://runtime/desert/roadside/RoadsideArt.gd")
+	for index in panels.size():
+		var leaf := art.batch()
+		var uv := Rect2(float(index)*.5,0,.5,1)
+		leaf.quad(PaintedFacadeKit.material("ammunation-harbor","door_front"),Vector3(0,.94,.055),Vector3(.44,0,0),Vector3(0,.925,0),uv)
+		leaf.quad(PaintedFacadeKit.material("ammunation-harbor","door_front_inside"),Vector3(0,.94,-.055),Vector3(-.44,0,0),Vector3(0,.925,0),uv)
+		art.instantiate(panels[index],leaf.bake())
+	# As mesmas duas folhas continuam deslizando por set_open_amount; sem zona nova.
+	set_open_amount(open_amount)
