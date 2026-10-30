@@ -50,7 +50,11 @@ static func build(village: Node3D, homes: Array) -> void:
 	for p in [Vector2(-49,-27),Vector2(-8,-27),Vector2(-8,-4),Vector2(-12,2),Vector2(-39,2),Vector2(-49,-3)]:
 		var at: Vector3 = village.STATION_TRANSFORM*Vector3(p.x,0,p.y)
 		apron.append(Vector2(at.x,at.z))
+	if village.compact_station_enabled():
+		apron=PackedVector2Array([Vector2(-41.68,-25.62),Vector2(-17.68,-25.62),Vector2(-17.68,-8),Vector2(-20,-5.62),Vector2(-39,-5.62),Vector2(-41.68,-8)])
+		concrete=preload("res://runtime/desert/roadside/RoadsideArt.gd").concrete()
 	_flat(village,"WornStationApron",apron,concrete,.037)
+	concrete=preload("res://world/editing/WorldGroundFactory.gd").material("concrete")
 	_flat(village,"WorkshopFloor",PackedVector2Array([Vector2(53.4,-9),Vector2(68.6,-9),Vector2(68.6,2),Vector2(67,3),Vector2(53.4,2)]),concrete,.038)
 
 static func _path(plots: Array[PackedVector2Array],points: PackedVector2Array,width: float) -> void:

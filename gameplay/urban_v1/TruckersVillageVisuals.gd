@@ -11,6 +11,12 @@ const ACCESS_END := Vector2(-290,78)
 const STATION_PIVOT := Vector3(-28,0,-16)
 const STATION_BASIS := Basis(Vector3(.78,0,0),Vector3(0,.8,0),Vector3(0,0,.74))
 const STATION_TRANSFORM := Transform3D(STATION_BASIS,STATION_PIVOT-STATION_BASIS*STATION_PIVOT)
+const STATION_ART := preload("res://runtime/desert/roadside/RoadsideArt.gd")
+const COMPACT_CANOPY := Rect2(-36.68,-19.5,14,9)
+
+static func compact_station_enabled() -> bool:
+	return PaintedFacadeKit.enabled() and OS.get_environment("GETECO_PAINTED_TONICO") != "0" and OS.get_environment("GETECO_PAINTED_TONICO_STATION") != "0"
+
 const HOME_LAYOUT := [
 	[Vector3(-73,0,-21),"a49673",PI*.5],
 	[Vector3(-76,0,9),"989e82",1.48],
@@ -83,7 +89,10 @@ func _process(delta: float) -> void:
 		return
 	var at := _player.global_position
 	var station_at: Vector3 = STATION_TRANSFORM.affine_inverse()*(at-ORIGIN)
-	set_cutaway(station_at.y<3.0 and Rect2(-48,-27,41,29).has_point(Vector2(station_at.x,station_at.z)))
+	if compact_station_enabled():
+		set_cutaway(at.y<3.0 and COMPACT_CANOPY.has_point(Vector2(at.x-ORIGIN.x,at.z-ORIGIN.z)))
+	else:
+		set_cutaway(station_at.y<3.0 and Rect2(-48,-27,41,29).has_point(Vector2(station_at.x,station_at.z)))
 	var tire_inside := at.y<3.0 and Rect2(-278,97,18,16).has_point(Vector2(at.x,at.z))
 	if tire_inside != _tire_cutaway:
 		_tire_cutaway = tire_inside
@@ -131,6 +140,10 @@ func _ground() -> void:
 	# The approach is a real editor road. Only worn yards and walking paths
 	# belong to this place; there is no rectangle spanning the highway.
 	preload("res://gameplay/urban_v1/TruckersVillageGround.gd").build(self,HOME_LAYOUT)
+	if compact_station_enabled():
+		for x in [-38.0,-33.0,-28.0,-23.0,-18.0]: _box(Vector3(x,.056,-15.62),Vector3(.025,.008,20),"747466")
+		for z in [-22.0,-16.0,-10.0]: _box(Vector3(-29.68,.057,z),Vector3(24,.008,.025),"747466")
+		return
 	_author_transform=STATION_TRANSFORM
 	for x in range(-46,-9,6): _box(Vector3(x,.056,-13),Vector3(.025,.008,26),"747466")
 	for z in [-22.0,-15.0,-8.0]: _box(Vector3(-29,.057,z),Vector3(38,.008,.025),"747466")
@@ -140,6 +153,9 @@ func _ground() -> void:
 	_author_transform=Transform3D.IDENTITY
 
 func _station() -> void:
+	if compact_station_enabled():
+		_compact_station()
+		return
 	_author_transform=STATION_TRANSFORM
 	# Fachada pintada (PaintedTonicoShop): paredes, telhado, porta, janelas e letreiro
 	# vêm do kit; a colisão `TonicoShop` abaixo continua a mesma.
@@ -177,6 +193,68 @@ func _station() -> void:
 	_box(Vector3(-34,.47,-26),Vector3(1.1,.94,.55),"536051")
 	_solid("ShopCooler",Vector3(-34,.47,-26),Vector3(1.1,.94,.55))
 	# Compressor is separate from the old fuel pumps; restoring it enables repairs.
+	_cylinder(Vector3(-9,.55,-7),.45,1.6,"89694c",Vector3(0,0,PI*.5))
+	_box(Vector3(-9,1.04,-7),Vector3(.6,.3,.45),"494e43")
+	_pump_lens = MeshInstance3D.new()
+	_pump_lens.name = "CompressorRepairIndicator"
+	var lens := BoxMesh.new()
+	lens.size = Vector3(.16,.1,.025)
+	_pump_lens.mesh = lens
+	_pump_lens.transform = STATION_TRANSFORM*Transform3D(Basis.IDENTITY,Vector3(-9,1.08,-6.76))
+	add_child(_pump_lens)
+	set_repaired(false)
+	_solid("AirCompressor",Vector3(-9,.7,-7),Vector3(1.8,1.4,1))
+	for x in [-10.0,-10.8]: _box(Vector3(x,.09,-7),Vector3(.065,.06,1.5),"32392d")
+	_box(Vector3(-10.4,.09,-6.25),Vector3(.8,.06,.065),"32392d")
+	for p in [Vector3(-37,2.7,-28.5),Vector3(-23,2.7,-28.5)]: _lamp(p)
+	_author_transform=Transform3D.IDENTITY
+
+func _compact_station() -> void:
+	# O interior contínuo ocupa 18,72 x 7,4 m: reduzir este casco exigiria alterar
+	# o ambiente jogável. A porta, o catálogo e o retângulo da loja ficam preservados.
+	preload("res://gameplay/urban_v1/PaintedTonicoShop.gd").build(self,STATION_TRANSFORM)
+	_author_transform=Transform3D.IDENTITY
+	_solid("TonicoShop",Vector3(-29.56,1.45,-29.32),Vector3(18.72,2.9,7.4))
+	var art := STATION_ART.batch()
+	var canopy := STATION_ART.batch()
+	var white := STATION_ART.white_sheet()
+	var metal := STATION_ART.color(Color("8d9193"))
+	var dark := STATION_ART.color(Color("2e3032"))
+	var red := STATION_ART.color(Color("a52a1d"))
+	# Todos os materiais são os mesmos retidos pelo RoadsideBuild.prewarm e pelo kit.
+	for x in [-35.68,-23.68]:
+		for z in [-18.0,-12.0]:
+			art.box(white,Transform3D(Basis.IDENTITY,Vector3(x,2.3,z)),Vector3(.4,4.6,.4))
+			art.box(red,Transform3D(Basis.IDENTITY,Vector3(x,.5,z)),Vector3(.52,1,.52))
+			_solid("CanopyPost",Vector3(x,2.3,z),Vector3(.52,4.6,.52))
+	canopy.box(white,Transform3D(Basis.IDENTITY,Vector3(-29.68,4.95,-15)),Vector3(14,.7,9))
+	var sign := PaintedFacadeKit.material("loja-tonico","front")
+	# Recorte da faixa autorada Tonico: mantém só o nome próprio, sem importar Sol Poente.
+	canopy.quad(sign,Vector3(-29.68,4.95,-10.495),Vector3(7,0,0),Vector3(0,.35,0),Rect2(0,0,1,.17))
+	canopy.quad(sign,Vector3(-29.68,4.95,-19.505),Vector3(-7,0,0),Vector3(0,.35,0),Rect2(0,0,1,.17))
+	for x in [-32.68,-27.68]:
+		var at := Vector3(x,0,-14)
+		art.box(STATION_ART.concrete(),Transform3D(Basis.IDENTITY,at+Vector3(0,.1,0)),Vector3(1.4,.2,1.2))
+		art.box(white,Transform3D(Basis.IDENTITY,at+Vector3(0,1.05,0)),Vector3(.9,1.7,.6),{"+z":STATION_ART.uv("pump"),"-z":STATION_ART.uv("pump")})
+		art.box(red,Transform3D(Basis.IDENTITY,at+Vector3(0,2.025,0)),Vector3(.98,.25,.68))
+		for side in [-1.0,1.0]:
+			art.box(dark,Transform3D(Basis.IDENTITY,at+Vector3(side*.56,.95,.1)),Vector3(.065,1.1,.065))
+			art.box(metal,Transform3D(Basis.IDENTITY,at+Vector3(side*.53,1.35,.32)),Vector3(.11,.32,.12))
+		_solid("MechanicalPump",at+Vector3(0,1.075,0),Vector3(1.4,2.15,1.2))
+	var pole: Vector3 = STATION_TRANSFORM*Vector3(33,0,-37)
+	# A placa mantém a posição e a colisão do poste já existente.
+	art.box(metal,Transform3D(Basis.IDENTITY,pole+Vector3(0,2.32,0)),Vector3(.156,4.64,.148))
+	_solid("SignPole",pole+Vector3(0,2.32,0),Vector3(.156,4.64,.148))
+	art.box(white,Transform3D(Basis.IDENTITY,pole+Vector3(0,4.24,0)),Vector3(4.8,1.2,.18))
+	art.quad(sign,pole+Vector3(0,4.24,.095),Vector3(2.4,0,0),Vector3(0,.6,0),Rect2(.42,0,.16,.17))
+	art.quad(sign,pole+Vector3(0,4.24,-.095),Vector3(-2.4,0,0),Vector3(0,.6,0),Rect2(.42,0,.16,.17))
+	STATION_ART.instantiate(_fixed,art.bake())
+	STATION_ART.instantiate(_roof,canopy.bake())
+	_bench(STATION_TRANSFORM*Vector3(-39,0,-26))
+	# Compressor e suas colisões/interação não mudam; só a arte pedida usa escala 1.
+	_author_transform=STATION_TRANSFORM
+	_box(Vector3(-34,.47,-26),Vector3(1.1,.94,.55),"536051")
+	_solid("ShopCooler",Vector3(-34,.47,-26),Vector3(1.1,.94,.55))
 	_cylinder(Vector3(-9,.55,-7),.45,1.6,"89694c",Vector3(0,0,PI*.5))
 	_box(Vector3(-9,1.04,-7),Vector3(.6,.3,.45),"494e43")
 	_pump_lens = MeshInstance3D.new()
