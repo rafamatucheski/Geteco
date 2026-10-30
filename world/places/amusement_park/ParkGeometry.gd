@@ -1,5 +1,30 @@
 extends Node3D
 ## Static material batches; tagged solids retain complete authored volumes.
+const EXTERIOR_FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
+const EXTERIOR_RECIPES := {
+	"wood":["745e49","423e4a","6d5b4e","e1cfa4","ae8856","957250","38625f","8f734e","873e4a","d1ab59","63769a"],
+	"stone":["8b8270","71665f","5a5049","706457","b59368"],
+	"metal":["385b59","d1ab59","b96748","d9ba75","3e6d67","45615d","38625f","292f38","9ca8ae","b9965a","272d35"],
+	"exterior_paint":["38625f","d0a655","773746","d9ba75","928171","4c4552","5c5260","873e4a","d1ab59","63769a","e1cfa4"],
+}
+const EXTERIOR_PAINT_PARTS := ["GatePillar","GateCap","GateHeader","StationCanopy","CanopyStripe","DoorJamb","Tower","RoofRidge","BoothStripe","BoothRoof","WardrobeRoof","LumeStallRoof","AwningStripe"]
+## Opt-in só do Parque Lume exterior: a mesma base monta o interior da Umbra.
+var painted_exterior := false
+
+static func exterior_enabled() -> bool:
+	return OS.get_environment("GETECO_PAINTED_PARK_EXTERIOR") != "0"
+
+static func prewarm_materials() -> Array[Material]:
+	var result: Array[Material] = []
+	if exterior_enabled():
+		for kind in EXTERIOR_RECIPES:
+			for color_key in EXTERIOR_RECIPES[kind]: result.append(_exterior_material(str(kind),str(color_key)))
+	return result
+
+static func _exterior_material(kind: String, color_key: String) -> StandardMaterial3D:
+	var finish: String = {"wood":"wood","stone":"cast","metal":"painted","exterior_paint":"painted"}[kind]
+	return EXTERIOR_FINISH.material(finish,Color(color_key),.48 if kind=="metal" else .84,.55 if kind=="metal" else 0.0)
+
 const SURFACES := preload("res://world/places/ShopInteriorMaterials.gd")
 ## Superfícies grandes da Umbra (21/10/2026): texturas de 1024 px emendáveis no lugar dos ladrilhos
 ## procedurais de 64 px. Mesmas opções de material do ShopInteriorMaterials (textura + triplanar local),
@@ -19,6 +44,7 @@ var _batches: Dictionary = {}
 var _body: StaticBody3D
 
 func material(color: String, kind := "paint") -> StandardMaterial3D:
+	if painted_exterior and exterior_enabled() and color in EXTERIOR_RECIPES.get(kind,[]): return _exterior_material(kind,color)
 	var key := color + kind
 	if _materials.has(key): return _materials[key]
 	var result: StandardMaterial3D
@@ -52,6 +78,7 @@ func _umbra_surface(kind: String, tint: Color) -> StandardMaterial3D:
 	return result
 
 func box(label: String, at: Vector3, size: Vector3, color: String, solid := false, kind := "paint", box_basis := Basis.IDENTITY) -> void:
+	if painted_exterior and exterior_enabled() and kind=="paint" and label in EXTERIOR_PAINT_PARTS: kind="exterior_paint"
 	var mesh := BoxMesh.new()
 	mesh.size = size
 	var box_transform := Transform3D(box_basis,at)

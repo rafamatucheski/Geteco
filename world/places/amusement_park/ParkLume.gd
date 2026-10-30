@@ -47,6 +47,7 @@ func build() -> void:
 	complete = true
 	name = "ParqueLume"
 	position = LAYOUT.ORIGIN
+	painted_exterior = true
 	direct_collisions = true
 	_ground()
 	_perimeter()
@@ -191,6 +192,7 @@ func _track() -> void:
 	_fence(Vector3(-11,0,15.5),Vector3(-11,0,19.1),1.15)
 	var gate := GEOMETRY.new()
 	gate.name = "BoardingGate"
+	gate.painted_exterior = true
 	gate.position = Vector3(-11,0,13.2)
 	add_child(gate)
 	station_gate = gate
