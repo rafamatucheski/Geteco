@@ -1,0 +1,3 @@
+Arte frontal gerada por image_gen em 30/10/2026. Original: C:\Users\rafae\.codex\generated_images\01a18cfc-a50b-7a52-be83-a4c4219e50f4\exec-dd2e37fa-e2b3-48e4-bfed-b38e3b154961.png
+Vao ajustado por reamostragem para preservar porta e colisao existentes. Laterais/fundos/telhado reutilizados de posto-deserto.
+Somente o nome proprio na fachada. Luz neutra, textura ortografica, sem perspectiva.

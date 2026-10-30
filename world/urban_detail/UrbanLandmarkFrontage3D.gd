@@ -146,6 +146,12 @@ func _build_fuel_store() -> void:
 	var glass := UrbanMaterials.glass_display()
 	var pump_red := UrbanMaterials.material_for_color(Color("b65c43"), 0.68)
 	var front_z := building_size.y * 0.5
+	if _painted_landmark_enabled("fuel-harbor"):
+		_build_recessed_shell(masonry,1.45,1.65)
+		_build_glazed_door(front_z,0.0,1.36,2.44,dark,glass,UrbanMaterials.metal_steel())
+		_apply_painted_landmark("fuel-harbor",2.44)
+		_build_painted_fuel_pumps()
+		return
 
 	_build_recessed_shell(masonry, 1.45, 1.65)
 	add_roof_parapet(visuals_root, height, 0.34, 0.24, trim)
@@ -163,6 +169,49 @@ func _build_fuel_store() -> void:
 	# They remain visual-only as in V1, so the central access corridor cannot snag.
 	for side in [-1.0, 1.0]:
 		_build_v1_fuel_pump(Vector3(side * V1_PUMP_OFFSET_X, 0.0, V1_PUMP_OFFSET_Z), pump_red, dark, glass, "West" if side < 0.0 else "East")
+
+# A pele pintada não toca no Collision root nem na dobradiça/corpo da porta.
+# O recuo continua com 0,72 m e o vão físico continua 1,89 x 2,62 m.
+func _painted_landmark_enabled(style: String) -> bool:
+	return PaintedFacadeKit.enabled() and OS.get_environment("GETECO_PAINTED_"+style.replace("-harbor","").to_upper()) != "0" and not PaintedFacadeKit.style_data(style).is_empty()
+
+func _apply_painted_landmark(style: String, door_height: float) -> void:
+	for child in visuals_root.get_children():
+		if child == entrance_door or String(child.name).begins_with("BankDoorJamb") or child.name == "BankDoorHeader": continue
+		child.free()
+	var scratch := Node3D.new()
+	add_child(scratch)
+	var painted := PaintedFacadeKit.build(visuals_root,style,Vector3(building_size.x,height,building_size.y),scratch,NAN,{"ground_door":false})
+	scratch.free()
+	# O kit usa vão sem folha: mantém o mecanismo e o corpo existentes, sem zona extra.
+	var doorway := painted.get_node_or_null("Doorway_front")
+	if doorway != null: doorway.free()
+	var skin := preload("res://runtime/desert/roadside/RoadsideArt.gd").batch()
+	var front := building_size.y*.5
+	var side_material := PaintedFacadeKit.material(style,"side")
+	for side in [-1.0,1.0]:
+		skin.quad(side_material,Vector3(side*.945,1.31,front-.36),Vector3(0,0,side*.36),Vector3(0,1.31,0),Rect2(0,0,.1,1))
+	# A folha conserva o mesmo volume, giro, altura e bloqueio do modelo anterior.
+	var glass := entrance_door.get_node_or_null("EntranceDoorGlass")
+	if glass != null: glass.free()
+	var leaf := preload("res://runtime/desert/roadside/RoadsideArt.gd").batch()
+	leaf.quad(PaintedFacadeKit.material(style,"door_front"),Vector3(.68,door_height*.5,.055),Vector3(.68,0,0),Vector3(0,door_height*.5,0),Rect2(0,0,1,1))
+	leaf.quad(PaintedFacadeKit.material(style,"door_front_inside"),Vector3(.68,door_height*.5,-.055),Vector3(-.68,0,0),Vector3(0,door_height*.5,0),Rect2(0,0,1,1))
+	preload("res://runtime/desert/roadside/RoadsideArt.gd").instantiate(entrance_door,leaf.bake())
+	preload("res://runtime/desert/roadside/RoadsideArt.gd").instantiate(visuals_root,skin.bake())
+
+func _build_painted_fuel_pumps() -> void:
+	var art := preload("res://runtime/desert/roadside/RoadsideArt.gd")
+	var batch := art.batch()
+	for side in [-1.0,1.0]:
+		var at := Vector3(side*V1_PUMP_OFFSET_X,0,V1_PUMP_OFFSET_Z)
+		batch.box(art.concrete(),Transform3D(Basis.IDENTITY,at+Vector3(0,.06,0)),Vector3(1.04,.12,.78))
+		batch.box(art.white_sheet(),Transform3D(Basis.IDENTITY,at+Vector3(0,.82,0)),Vector3(.78,1.52,.58),{"+z":art.uv("pump"),"-z":art.uv("pump")})
+		batch.box(art.color(Color("a52a1d")),Transform3D(Basis.IDENTITY,at+Vector3(0,1.65,0)),Vector3(.88,.14,.64))
+		batch.box(art.color(Color("2e3032")),Transform3D(Basis.IDENTITY,at+Vector3(.49,.74,0)),Vector3(.06,.92,.07))
+		batch.box(art.color(Color("8d9193")),Transform3D(Basis.IDENTITY,at+Vector3(.49,1.18,.12)),Vector3(.13,.24,.08))
+	# Como antes, bombas são apenas visuais: não criam obstáculo no corredor de acesso.
+	art.instantiate(visuals_root,batch.bake())
 
 func _build_recessed_shell(material: Material, door_width: float, recess_depth: float) -> void:
 	var half_w := building_size.x * 0.5
