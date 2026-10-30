@@ -20,6 +20,7 @@ const AUTHORED_OWNERS := [
 	"res://world/urban_detail/PaintedTallBuildings.gd",
 	"res://gameplay/urban_v1/TruckersVillageVisuals.gd",
 	"res://world/places/amusement_park/ParkGeometry.gd",
+	"res://world/places/amusement_park/ParkLumeGround.gd",
 	"res://world/regions/OriginalSouthPort.gd",
 	"res://world/places/curitiba_cellar/CuritibaCellarInterior.gd",
 	"res://world/places/arcade/ArcadeInterior.gd",
@@ -46,6 +47,10 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 	for path in AUTHORED_OWNERS:
 		var owner: Script = load(path)
 		materials.append_array(owner.prewarm_materials())
+	# Cais do porto sul (NativeRegion._port_surface_material): acabamento PNG da HarborPaving.
+	if preload("res://world/editing/WorldGroundFactory.gd").painted_enabled:
+		var paving := preload("res://world/urban_detail/HarborPaving.gd")
+		materials.append(paving.material(paving.FINISH_COLORS.quay,"quay"))
 	if materials.is_empty(): return
 	var visual := Node3D.new()
 	visual.name = "FamilyVariantPrewarm"

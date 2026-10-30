@@ -1575,6 +1575,7 @@ func _harbor_surface_substep(state: Dictionary) -> bool:
 			state.port_surface = port_surface
 			state.port_cover = ground_cover.duplicate()
 			if port_surface.has_area(): ground_cover.append(GROUND_CUT.rect_polygon(port_surface))
+			_place_ground_cut(chunk,rect,ground_cover)
 			var cemetery_half: Vector2 = CEMETERY.LOT_SIZE * SCALE * 0.5
 			state.cemetery_floor = Rect2(CEMETERY.SOURCE_CENTER * SCALE - cemetery_half, cemetery_half * 2.0)
 			var sewer_openings: Array[Rect2] = []
@@ -1874,6 +1875,47 @@ func _dressing_reserved(point: Vector2, radius: float) -> bool:
 				if point.distance_to(tree_point) < radius+1.2: return true
 	return false
 
+## Piso do porto sul (OriginalPortSurface): cais PNG da HarborPaving em vez da cor lisa. A malha e o
+## trimesh são os mesmos; o material é triplanar em espaço de mundo, então os UVs não mudam nada.
+## GETECO_PAINTED_GROUND=0 volta à cor lisa (mesmo interruptor dos pisos do editor).
+func _port_surface_material() -> Material:
+	if preload("res://world/editing/WorldGroundFactory.gd").painted_enabled:
+		var paving := preload("res://world/urban_detail/HarborPaving.gd")
+		return paving.material(paving.FINISH_COLORS.quay,"quay")
+	return _material(Color("737b69"))
+
+## Parque Lume e vila dos caminhoneiros descem o próprio chão até o mato no contorno externo da
+## faixa/anel. O Land (e o chão autorado) perde essa área, como o skate faz com o retângulo dele;
+## no lugar fica um substituto do mesmo mato, visível só enquanto o lugar não está montado (o
+## parque só existe a menos de 170 m e a vila some com a região inativa). Sem isso, de longe,
+## o recorte viraria um buraco. GETECO_PLACE_GROUND_CUT=0 desliga (o lugar volta a ficar por cima).
+func _place_ground_cut(chunk: Node3D, rect: Rect2, ground_cover: Array[PackedVector2Array]) -> void:
+	if region_id != "harbor" or not GROUND_CUT.enabled: return
+	var clip := GROUND_CUT.counter_clockwise(GROUND_CUT.rect_polygon(rect))
+	for place in [preload("res://world/places/amusement_park/ParkLumeGround.gd"), preload("res://gameplay/urban_v1/TruckersVillageGround.gd")]:
+		if not place.cut_enabled or not rect.intersects(place.SITE_BOUNDS): continue
+		var standin: Array[PackedVector2Array] = []
+		for polygon: PackedVector2Array in place.world_cover():
+			if not GROUND_CUT.bounds(polygon).intersects(rect): continue
+			var pieces: Array[PackedVector2Array] = []
+			for piece in Geometry2D.intersect_polygons(GROUND_CUT.counter_clockwise(polygon),clip):
+				if piece.size() >= 3 and not Geometry2D.is_polygon_clockwise(piece): pieces.append(piece)
+			# O substituto só onde ninguém mais desenha (ruas, lotes) e sem repetir anel já coberto.
+			standin.append_array(GROUND_CUT.subtract_exact(pieces,ground_cover))
+			ground_cover.append_array(pieces)
+		var mesh := GROUND_CUT.flat_mesh(standin,0.0,1.0)
+		if mesh == null: continue
+		var meadow := MeshInstance3D.new()
+		meadow.name = place.STANDIN_NAME
+		meadow.mesh = mesh
+		# Mesmo mato do Land neste trecho (_land_piece): retângulo da mata ou o chão base.
+		var woodland := Rect2(-430,-160,350,318).encloses(rect.intersection(place.SITE_BOUNDS))
+		meadow.material_override = preload("res://activities/motocross/MotocrossGroundDetail.gd").ground_material() if woodland else _material(Color("737b69"))
+		meadow.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		meadow.visible = not place.site_shown
+		meadow.add_to_group(place.STANDIN_GROUP)
+		chunk.add_child(meadow)
+
 func _authored_surface(chunk: Node3D, polygon: PackedVector2Array, woodland := false, cover: Array[PackedVector2Array] = []) -> void:
 	polygon = GROUND_CUT._without_degenerate_edges(polygon)
 	if polygon.size() < 3: return
@@ -1901,7 +1943,7 @@ func _authored_surface(chunk: Node3D, polygon: PackedVector2Array, woodland := f
 	var mesh := MeshInstance3D.new()
 	mesh.name = "SerenoForestFloor" if woodland else "OriginalPortSurface"
 	mesh.mesh = surface.commit()
-	mesh.material_override = preload("res://world/places/fishing/FishingGround.gd").material() if woodland else _material(Color("737b69"))
+	mesh.material_override = preload("res://world/places/fishing/FishingGround.gd").material() if woodland else _port_surface_material()
 	if woodland: mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	chunk.add_child(mesh)
 	mesh.create_trimesh_collision()
