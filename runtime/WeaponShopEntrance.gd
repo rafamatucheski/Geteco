@@ -12,6 +12,7 @@ const IDS := ["harbor_supermarket", "harbor_ammunation", "mountain_gunshop", "ha
 	"harbor_arcade", "harbor_curitiba_cellar", "harbor_bar", "desert_bar",
 	# Escritório da Serra Bruta: folha pintada da frente, que olha a estrada (-X).
 	"mining_office"]
+const PAINTED_SUPERMARKET := preload("res://world/places/supermarket/PaintedSupermarketFacade.gd")
 const CAMERA_SECONDS := 0.55
 const POLICE_DOOR_Z := 250.0 / 32.0 + 0.35
 ## Porta de vidro 0,72 m recuada das lojas 3D da North Frontage (UrbanLandmarkFrontage3D
@@ -367,6 +368,8 @@ func _half_width(id: String) -> float:
 		# Banco pintado: vão de ~2,9 m (a porta antiga tinha 1,42 m).
 		"harbor_bank": return _painted_half_width(id, PaintedBankBranch.opening_half_width(_bank_footprint().x)) if _painted(id) else .48
 		"harbor_clothing", "harbor_fuel": return .48
+		# Vão pintado de ~0,93 m e uma folha, como as lojas de porta de empurrar (família "shop").
+		"harbor_supermarket": return .23 if _painted(id) else .62
 		"cobra_leader_house": return .23
 		"harbor_haunted_house", "harbor_arcade", "harbor_curitiba_cellar", "harbor_bar", "desert_bar": return .9
 		# Vão pintado de ~1,46 m: meia abertura menos a cápsula.
@@ -392,6 +395,7 @@ func _painted(id: String) -> bool:
 		"harbor_bank": return not PaintedHarborHouses.style_for("NorthFrontage0", "bank_branch").is_empty()
 		"harbor_police": return not PaintedHarborHouses.style_for("Police", "police_precinct").is_empty()
 		"harbor_fire_station": return not PaintedHarborHouses.style_for("NorthFireStation", "fire_station").is_empty()
+		"harbor_supermarket": return PAINTED_SUPERMARKET.available()
 	return false
 
 ## Baia da entrada do quartel pintado (meia largura, deslocamento do meio) na pegada que a
@@ -420,6 +424,8 @@ func _door_position(id: String, definition: Dictionary) -> Vector3:
 func _original_door_position(id: String, definition: Dictionary) -> Vector3:
 	if id in preload("res://world/desert/village/DesertVillageHomes.gd").IDS or id == "mining_office": return definition.walkup_door_position
 	if id == "cobra_leader_house": return definition.walkup_door_position
+	# Boa Praça pintado: o vão da pintura fica à esquerda do meio da frente.
+	if id == "harbor_supermarket" and _painted(id): return definition.exterior_position + Vector3(PAINTED_SUPERMARKET.door_x(), 0, PAINTED_SUPERMARKET.door_z())
 	if id == "harbor_supermarket": return definition.exterior_position + Vector3(0,0,5.5)
 	# Plano da fachada da Umbra (ParkLume._house): folhas da UmbraDoor.
 	if id == "harbor_haunted_house": return definition.exterior_position + Vector3(0,0,7.5)

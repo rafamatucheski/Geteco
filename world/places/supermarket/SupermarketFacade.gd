@@ -1,10 +1,17 @@
 extends "res://world/places/supermarket/MarketGeometry.gd"
 var open_amount := 0.0
 var leaves: Array[Node3D] = []
+## Folhas do kit pintado: giram em vez de correr.
+var painted := false
+const PAINTED := preload("res://world/places/supermarket/PaintedSupermarketFacade.gd")
 func _ready() -> void:
 	name = "BoaPraca"
 	set_meta("place_id","harbor_supermarket")
 	add_to_group("v2_walkin_facade")
+	if PAINTED.available():
+		painted = true
+		leaves = PAINTED.build(self)
+		return
 	box("Back",Vector3(0,2.1,-5.5),Vector3(14.2,4.2,.3),"cfccad",true)
 	for side in [-1,1]:
 		box("Side%d"%side,Vector3(side*7,2.1,0),Vector3(.3,4.2,11),"c6c6ac",true)
@@ -64,4 +71,7 @@ func _solid(parent: Node3D, point: Vector3, size: Vector3) -> void:
 
 func set_open_amount(amount: float) -> void:
 	open_amount = clampf(amount,0,1)
+	if painted:
+		for leaf in leaves: leaf.set_open_amount(open_amount)
+		return
 	for i in leaves.size(): leaves[i].position.x = (-1 if i == 0 else 1)*(.66+open_amount*1.37)

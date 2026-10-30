@@ -35,7 +35,13 @@ static func definitions(include_deleted := false) -> Array[Dictionary]:
 				if not PaintedHarborHouses.style_for("NorthFrontage0","bank_branch").is_empty():
 					size.x=PaintedHarborHouses.footprint_width("NorthFrontage0",size.x)
 					height=PaintedBankBranch.roof_height()
-			"harbor_supermarket": size=Vector2(14.2,11); height=4.40
+			"harbor_supermarket":
+				size=Vector2(14.2,11); height=4.40
+				# Boa Praça pintado: largura natural da pintura e laje na altura dela.
+				var painted_market := preload("res://world/places/supermarket/PaintedSupermarketFacade.gd")
+				if painted_market.available():
+					size=Vector2(painted_market.size().x,painted_market.DEPTH)
+					height=painted_market.roof_height()
 			"harbor_ammunation": size=Vector2(14.20,10.70); height=3.13
 			"harbor_clothing": size=Vector2(14.375,11.25); height=6.94
 			"harbor_fuel": size=Vector2(14.375,11.25); height=5.33

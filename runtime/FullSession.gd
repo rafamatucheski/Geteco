@@ -1866,6 +1866,8 @@ func nearest() -> Dictionary:
 				if point.distance_to(room.interaction_points[id]) < 1.3: return {"id":id,"label":"Pegar peça" if id == "part" else "Conversar"}
 		else:
 			var service_point: Vector3 = room.interaction_points.service
+			# Boa Praça: os dois caixas vendem; vale o mais perto (SupermarketPlace).
+			if room.has_method("service_point_for"): service_point = room.service_point_for(point)
 			var service: String = str(room.definition.get("service",""))
 			# Police, hospital and fire station publish their terminal/NPC/healing
 			# actions through Services.nearest_action(). A second generic counter

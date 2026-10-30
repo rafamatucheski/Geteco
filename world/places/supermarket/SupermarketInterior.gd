@@ -1,10 +1,52 @@
 extends "res://world/places/supermarket/MarketGeometry.gd"
 const PALETTE := ["b34834","dda744","5d874e","437b94","e5d4a5","855671","df763f","32554e"]
+## Acabamento com textura de verdade (playtest de 30/10: "ainda tá com as texturas antigas"):
+## piso, paredes, gôndolas, balcões, geladeiras e caixotes passam pelos mapas do
+## MountainInteriorFinish, o mesmo conjunto de shader do UrbanSurfaces que o Harbor inteiro
+## desenha (nada compila ao entrar). Produtos, luminárias e miudezas seguem lisos, em lote.
+## GETECO_SUPERMARKET_FINISH=0 volta às caixas lisas (A/B).
+const FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
+const FINISH_KINDS := {"Terrazzo":"epoxy","RearWall":"plaster","SideWall":"plaster","FrontWall":"plaster",
+	"Gondola":"painted","Produce":"wood","Crate":"wood","Bakery":"wood","Fridge":"painted",
+	"Checkout":"painted","SecurityCabinet":"painted","BasketStand":"painted","EntryMat":"fabric"}
+## Vidro da geladeira e puxador continuam lisos.
+const FINISH_SKIP := ["FridgeInset", "FridgeHandle"]
+## (rótulo, cor, metal) de cada peça texturizada abaixo, para o PaintedFacadePrewarm desenhar os
+## mesmos materiais (a chave do cache é tipo + cor + rugosidade + metal) sob a cortina do
+## carregamento: a entrada pela porta de empurrar não tem véu e as texturas subiriam para a GPU
+## no primeiro quadro dentro da loja. Peça nova texturizada entra aqui também.
+const PREWARM := [["Terrazzo","9a9b8e",false],["RearWall","e1d8bf",false],["SideWall","d8d2c1",false],
+	["FrontWall","c5cab5",false],["Gondola","e2dbc4",false],["Gondola","46544a",false],["Gondola","e0dbcd",false],
+	["Gondola","d9d9cc",false],["Produce","846443",false],["Crate","ba9862",false],["Bakery","977550",false],
+	["Fridge","3a4849",true],["Fridge","485654",true],["Checkout","345e4b",false],["Checkout","c0c3b4",false],
+	["SecurityCabinet","4d5652",false],["BasketStand","315e49",false],["EntryMat","354c43",false]]
+var textured := enabled()
+
+static func enabled() -> bool:
+	return OS.get_environment("GETECO_SUPERMARKET_FINISH") != "0"
+
+static func finish_material(label: String, color: String, metal: bool) -> StandardMaterial3D:
+	if label in FINISH_SKIP: return null
+	for prefix in FINISH_KINDS:
+		if label.begins_with(prefix):
+			return FINISH.material(FINISH_KINDS[prefix], Color(color), .5 if metal else .88, .35 if metal else 0.0)
+	return null
+
+static func prewarm_materials() -> Array:
+	var list: Array = []
+	if not enabled(): return list
+	for row in PREWARM: list.append(finish_material(row[0], row[1], row[2]))
+	return list
 func _ready() -> void:
-	box("Terrazzo",Vector3(0,-.035,0),Vector3(18,.06,14),"b5b3a4")
-	for x in range(-9,9):
-		for z in range(-7,7):
-			piece("box",Vector3(x+.5,.001,z+.5),Vector3(.984,.012,.984),"848679" if (x+z)%2 == 0 else "8e9081")
+	if textured:
+		# Piso único de epóxi: o xadrez de 252 ladrilhos em MultiMesh com o material texturizado
+		# seria outra variante de pipeline (instância), compilada na primeira entrada.
+		box("Terrazzo",Vector3(0,-.035,0),Vector3(18,.06,14),"9a9b8e")
+	else:
+		box("Terrazzo",Vector3(0,-.035,0),Vector3(18,.06,14),"b5b3a4")
+		for x in range(-9,9):
+			for z in range(-7,7):
+				piece("box",Vector3(x+.5,.001,z+.5),Vector3(.984,.012,.984),"848679" if (x+z)%2 == 0 else "8e9081")
 	box("RearWall",Vector3(0,1.7,-6.9),Vector3(18,3.4,.2),"e1d8bf",true)
 	for side in [-1,1]:
 		box("SideWall%d"%side,Vector3(side*8.9,1.7,0),Vector3(.2,3.4,14),"d8d2c1",true)
@@ -38,6 +80,13 @@ func _ready() -> void:
 		light.shadow_enabled = false
 		add_child(light)
 	flush_batches()
+
+func box(label: String, point: Vector3, size: Vector3, color: String, solid := false, metal := false) -> MeshInstance3D:
+	var node := super.box(label, point, size, color, solid, metal)
+	if textured:
+		var finish := finish_material(label, color, metal)
+		if finish != null: node.material_override = finish
+	return node
 
 func _gondola(index: int,x: float) -> void:
 	var id := "Gondola%d"%index

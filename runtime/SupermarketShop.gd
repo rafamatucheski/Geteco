@@ -8,8 +8,14 @@ static func available(session) -> bool:
 	return session.ready_for_play and session.state.place_id == "harbor_supermarket" \
 		and is_instance_valid(session.room) and session.world.gameplay.health > 0 \
 		and not session.world.driving.occupied and not session.is_transition_blocked() \
-		and session.world.player.global_position.distance_to(session.room.interaction_points.service) < 1.6 \
+		and session.world.player.global_position.distance_to(_service_point(session)) < 1.6 \
 		and not session.room.threatened()
+
+## Caixa mais perto do jogador: o Boa Praça vende nos dois (SupermarketPlace.service_point_for).
+static func _service_point(session) -> Vector3:
+	var player: Vector3 = session.world.player.global_position
+	if session.room.has_method("service_point_for"): return session.room.service_point_for(player)
+	return session.room.interaction_points.service
 
 static func open(session) -> void:
 	if not available(session): return
