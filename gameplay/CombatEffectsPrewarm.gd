@@ -59,6 +59,18 @@ static func run(host: Node3D, curtain: CanvasLayer) -> void:
 	slot += 1
 	effects.explosion(origin + up * -1.2 - basis.z * 3.0, 4.0)
 	slot += 1
+	# Impacto por superfície (gameplay/fx/ImpactFx.gd): os impactos acima não passam pela água nem por todos
+	# os rodízios (coroa, gotas, brilho do vidro); aqui cada um, as faíscas, o clarão e as marcas uma vez.
+	var impact_fx: Variant = effects.get("_impact_fx")
+	if is_instance_valid(impact_fx): impact_fx.prewarm(origin - up * 1.9, basis)
+	# Tiro saindo da arma (gameplay/fx/MuzzleFx.gd): cada família de arma dispara de verdade (clarão, luz,
+	# fumaça sombreada, faíscas) e os três materiais do clarão e a cápsula quente de fuzil ficam na tela até
+	# o clear() do fim. Sem isso o primeiro tiro de cada arma compilaria o pipeline no jogo.
+	if effects.get("muzzle_fx") != null: effects.muzzle_fx.prewarm(origin, right, up)
+	# Traçado da bala (gameplay/fx/TracerFx.gd): um MultiMesh com shader próprio (núcleo, halo, rastro).
+	# Uma bala lenta com rastro atravessa a tela até o clear() do fim; o primeiro tiro não compila nada.
+	if effects.get("tracer_fx") != null: effects.tracer_fx.prewarm(_spot(origin, right, up, slot) + up * 0.45, right, up)
+	slot += 1
 	var pooled: Array = []
 	for pair in [[effects._shells, 0, effects._shell_mesh], [effects._shells, 1, effects._shotgun_shell_mesh]]:
 		var node: MeshInstance3D = pair[0][pair[1]]

@@ -1,5 +1,6 @@
 extends Node3D
 const SURFACE := preload("res://gameplay/WeaponSurface.gd")
+const MUZZLE_FX := preload("res://gameplay/fx/MuzzleFx.gd")
 signal casing_contact(point: Vector3, material: String, speed: float, shotgun: bool)
 ## Efeitos visuais 3D de combate, com orçamento fixo. Filho de `Gameplay`.
 ##
@@ -16,7 +17,10 @@ signal casing_contact(point: Vector3, material: String, speed: float, shotgun: b
 ## Custo em quadro não medido.
 const MAX_SHELLS := 16
 const MAX_STAINS := 12
-const MAX_TRACERS := 32
+## Vagas de bala do traçado (gameplay/fx/TracerFx.gd, um MultiMesh). Eram 32: a escopeta serrada (10
+## chumbos por cano) com a polícia atirando junto reaproveitava balas ainda no ar.
+const MAX_TRACERS := 48
+const TRACER_FX := preload("res://gameplay/fx/TracerFx.gd")
 const MAX_FLAME_PACKETS := 8
 const BLAST_LIGHT_ENERGY := 5.0
 const BLAST_LIGHT_TIME := 0.22
@@ -39,6 +43,10 @@ const IMPACT_COLORS := {
 	"world": Color(1.0, 0.74, 0.2), "flesh": Color(0.72, 0.04, 0.03), "concrete": Color(0.76, 0.74, 0.65),
 	"metal": Color(1.0, 0.95, 0.55), "wood": Color(0.64, 0.39, 0.18), "glass": Color(0.65, 0.9, 1.0)}
 const BLOOD_COLOR := Color(0.55, 0.02, 0.015)
+## Impacto por superfície (gameplay/fx/ImpactFx.gd, 29/10): faíscas que quicam, clarão, lascas, jato de chão,
+## respingo e marcas de bala. Nulo com GETECO_IMPACT_FX=0, e aí vale o impacto antigo de `impact()`.
+const IMPACT_FX := preload("res://gameplay/fx/ImpactFx.gd")
+var _impact_fx: Node3D = null
 
 var _impact: Dictionary = {}
 var _impact_dust: Array[CPUParticles3D] = []
@@ -74,9 +82,15 @@ var _stain_age: Array[float] = []
 # Proporção x/z de cada mancha: a mesma textura redonda repetida parecia carimbo.
 var _stain_aspect: Array[Vector2] = []
 var _stain_target_radius: Array[float] = []
+## Traçado da bala: um MultiMesh com shader próprio (gameplay/fx/TracerFx.gd), montado no _ready.
+var tracer_fx: TRACER_FX
+## Vazio desde 29/10 (não há mais um nó por bala); fica porque o pré-aquecimento antigo ainda o percorre.
 var _tracers: Array[MeshInstance3D] = []
-var _tracer_state: Array[Dictionary] = []
-var _next_tracer := 0
+## Leitura das vagas do TracerFx para quem inspeciona o tiro (testes): boca, destino, velocidade.
+var _tracer_state: Array:
+	get: return tracer_fx.states if tracer_fx != null else []
+var _next_tracer: int:
+	get: return tracer_fx.next_slot if tracer_fx != null else 0
 var _flame_packets: Array[CPUParticles3D] = []
 var _flame_packet_age: Array[float] = []
 ## Quem carrega o jato de chama (o jogador): os pacotes acompanham o deslocamento dele a cada passo.
@@ -89,6 +103,8 @@ var _flame_tongue_state: Array[Dictionary] = []
 var _spark_mesh: BoxMesh
 var _chip_mesh: BoxMesh
 var _smoke_mesh: QuadMesh
+## Tiro saindo da arma (gameplay/fx/MuzzleFx.gd); null com GETECO_MUZZLE_FX=0 (comportamento antigo).
+var muzzle_fx: Node3D = null
 
 
 func _ready() -> void:
@@ -276,22 +292,10 @@ func _ready() -> void:
 		_stain_target_radius.append(0.6)
 	# V1: o projétil tinha núcleo e cauda curta em movimento. O V2 mantém o
 	# acerto hitscan, mas a apresentação percorre a trajetória; não desenha uma
-	# barra instantânea do jogador ao alvo.
-	for index in MAX_TRACERS:
-		var local_tracer := MeshInstance3D.new()
-		var tracer_mesh := BoxMesh.new()
-		tracer_mesh.size = Vector3(0.018, 0.018, 0.42)
-		var tracer_material := StandardMaterial3D.new()
-		tracer_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		tracer_material.emission_enabled = true
-		tracer_mesh.material = tracer_material
-		local_tracer.mesh = tracer_mesh
-		local_tracer.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		local_tracer.top_level = true
-		local_tracer.visible = false
-		add_child(local_tracer)
-		_tracers.append(local_tracer)
-		_tracer_state.append({"life": 0.0})
+	# barra instantânea do jogador ao alvo. Desde 29/10 núcleo, halo, cauda e rastro
+	# saem do TracerFx (as 32 caixas de material próprio liam como tracinhos de dia).
+	tracer_fx = TRACER_FX.new(MAX_TRACERS)
+	add_child(tracer_fx)
 	for index in MAX_FLAME_PACKETS:
 		# Chama pequena no bico que se abre até a ponta; crescer de 1,1 para 3,4× fazia
 		# folhas de quase 2 m que, sobre concreto claro, liam como névoa bege.
@@ -312,6 +316,13 @@ func _ready() -> void:
 		add_child(tongue)
 		_flame_tongues.append(tongue)
 		_flame_tongue_state.append({"life": 0.0})
+	# Clarão por arma, luz pelo LightBudget, fumaça, faíscas e cápsula quente (29/10), montados aqui sob a cortina.
+	if MUZZLE_FX.enabled():
+		muzzle_fx = MUZZLE_FX.new()
+		muzzle_fx.setup(self)
+		add_child(muzzle_fx)
+	# Montado aqui, sob a cortina, e não no primeiro tiro: texturas e rodízios nascem uma vez só.
+	_impact_fx = IMPACT_FX.attach(self)
 	set_physics_process(false)
 
 ## Três aletas irregulares formam um jato volumétrico contínuo. Cores por
@@ -452,6 +463,8 @@ static func _make_scorch_texture() -> ImageTexture:
 
 ## Faísca/poeira do material atingido. `normal` aponta para fora da superfície.
 func impact(point: Vector3, normal: Vector3, material: String, damage: float) -> void:
+	# Receita nova por superfície (ImpactFx); pessoa e o interruptor desligado seguem o caminho antigo abaixo.
+	if is_instance_valid(_impact_fx) and _impact_fx.impact(point, normal, material, damage): return
 	var key := material if _impact.has(material) else "concrete"
 	var emitter := _take("impact_" + key, _impact[key])
 	var soft := material in SURFACE.SOFT
@@ -478,6 +491,8 @@ func impact(point: Vector3, normal: Vector3, material: String, damage: float) ->
 func glass_shatter(point: Vector3, normal: Vector3) -> void:
 	var emitter := _take("glass_shatter",_glass_shards)
 	_fire(emitter,point + normal*.04,(normal + Vector3.UP*.4).normalized())
+	# Por cima da chuva de cacos: brilho miúdo e pó de vidro (ImpactFx).
+	if is_instance_valid(_impact_fx): _impact_fx.glass_shatter(point, normal)
 
 static func _contact_color(material: String) -> Color:
 	match material:
@@ -501,6 +516,10 @@ func blood(point: Vector3, direction: Vector3, damage: float) -> void:
 
 ## Tufo de fumaça de pólvora saindo do cano ao disparar.
 func muzzle_smoke(origin: Vector3, direction: Vector3) -> void:
+	# Todo disparo passa aqui (jogador e NPCs): com o MuzzleFx, clarão/luz/fumaça/faíscas saem de lá.
+	if muzzle_fx != null:
+		muzzle_fx.muzzle(origin, direction)
+		return
 	_fire(_muzzle_smoke, origin, direction * 0.8 + Vector3.UP * 0.5)
 
 ## Mancha orgânica expansiva no chão sob `foot` (anel de MAX_STAINS; pooling gradual de 2,4s e fade final).
@@ -542,6 +561,8 @@ func _free_stain(radius: float) -> int:
 ## Empty cases leave the action, not the muzzle. Revolvers and break actions
 ## retain theirs until the opening part of the reload; pumps eject on cycling.
 func weapon_shot(id: String, origin: Vector3, aim: Vector3, magazine_after: int) -> void:
+	# Vem logo depois de muzzle_smoke no mesmo disparo: dá a arma ao clarão de NPC e à cápsula.
+	if muzzle_fx != null: muzzle_fx.weapon_hint(id)
 	if id in ["magnum", "sawed_off"]:
 		var capacity := 6 if id == "magnum" else 2
 		_retained_shells[id] = mini(capacity, int(_retained_shells.get(id, capacity - magazine_after - 1)) + 1)
@@ -600,6 +621,7 @@ func shell(origin: Vector3, aim: Vector3, _floor_y: float, shotgun := false, dro
 	node.global_position = origin + side * 0.025
 	node.rotation = Vector3(randf() * TAU, randf() * TAU, 0.0)
 	node.visible = true
+	if muzzle_fx != null: muzzle_fx.shell_ejected(index, node, shotgun, dropped)
 	var velocity := side * (SHELL_SIDE_SPEED + absf(seed_value) * SHELL_SIDE_SPREAD) + aim * (0.5 * seed_value) + Vector3.UP * SHELL_LIFT
 	if dropped: velocity = -aim * 0.65 + side * seed_value * 0.3 - Vector3.UP * 0.3
 	_shell_state[index] = {
@@ -607,51 +629,31 @@ func shell(origin: Vector3, aim: Vector3, _floor_y: float, shotgun := false, dro
 		"velocity": velocity, "spin": randf_range(-16.0, 16.0)}
 	set_physics_process(true)
 
-## Cauda compacta que viaja à velocidade autorada da arma. O dano continua
-## hitscan e é aplicado uma única vez por Gameplay; este nó é só apresentação.
+## Bala visual que viaja à velocidade autorada da arma, com a família (largura, brilho, rastro) da arma
+## em mão no Gameplay. O dano continua hitscan e é aplicado uma única vez por Gameplay; isto é só
+## apresentação. Entrada não finita não chega ao MultiMesh (transparente com NaN derruba a lista alfa).
 func tracer(origin: Vector3, destination: Vector3, speed: float, color: Color, damage: float) -> void:
-	if not origin.is_finite() or not destination.is_finite(): return
-	var distance := origin.distance_to(destination)
-	if distance < 0.05: return
-	var index := _next_tracer
-	_next_tracer = (_next_tracer + 1) % MAX_TRACERS
-	var node := _tracers[index]
-	var direction := origin.direction_to(destination)
-	var duration := clampf(distance / maxf(speed, 1.0), 0.045, 0.70)
-	var material := node.mesh.material as StandardMaterial3D
-	material.albedo_color = Color.WHITE.lerp(color, 0.55)
-	material.emission = color
-	material.emission_energy_multiplier = clampf(1.3 + damage / 45.0, 1.3, 3.2)
-	node.global_position = origin
-	node.look_at(origin + direction)
-	node.scale = Vector3(1.0, 1.0, clampf(0.7 + damage / 80.0, 0.7, 1.5))
-	node.visible = true
-	_tracer_state[index] = {"life": duration, "duration": duration, "from": origin, "to": destination, "direction": direction}
-	set_physics_process(true)
+	if tracer_fx == null: return
+	if not origin.is_finite() or not destination.is_finite():
+		# Recusado aqui; o registro (runtime/NonFiniteGuard.gd) diz de onde veio o NaN.
+		TRACER_FX.NON_FINITE.report("tracer", [origin, destination], get_parent())
+		return
+	var host := get_parent()
+	var weapon_id := String(host.call("equipped")) if host != null and host.has_method("equipped") else ""
+	tracer_fx.shoot(origin, destination, speed, color, damage, weapon_id)
 
 ## Police rounds own their swept flight in Gameplay, including impact timing.
-## A token prevents a reused visual slot from being moved by an older round.
+## The token carries a serial, so a reused visual slot is never moved by an older round.
 func police_tracer(origin: Vector3, direction: Vector3, speed := 55.0, color := Color(1.0, 0.9, 0.2), damage := 6.0) -> Dictionary:
-	var index := _next_tracer
-	tracer(origin, origin + direction, speed, color, damage)
-	var token := {"index": index, "state": _tracer_state[index]}
-	_tracer_state[index]["manual"] = true
-	# V1 ordinary tracer is a compact tail behind the collision front.
-	var tail := speed * 0.025 * 0.25
-	_tracers[index].scale.z = tail / 0.42
-	_tracers[index].global_position = origin - direction * tail * 0.5
-	_tracer_state[index]["tail"] = tail
-	_tracer_state[index]["direction"] = direction
-	return token
+	if tracer_fx == null: return {}
+	if not origin.is_finite() or not direction.is_finite():
+		TRACER_FX.NON_FINITE.report("npc_tracer", [origin, direction], get_parent())
+		return {}
+	return tracer_fx.incoming(origin, direction, speed, color, damage)
 
 func move_police_tracer(token: Dictionary, point: Vector3, finished := false) -> void:
-	var index := int(token.index)
-	if not is_same(_tracer_state[index], token.state): return
-	if not point.is_finite(): finished = true; point = _tracers[index].global_position
-	_tracers[index].global_position = point - (token.state.direction as Vector3) * float(token.state.tail) * 0.5
-	if finished:
-		_tracers[index].hide()
-		_tracer_state[index].life = 0.0
+	if tracer_fx == null or token.is_empty(): return
+	tracer_fx.move(token, point, finished)
 
 ## Pacote de chama com núcleo, expansão e borda irregular, usando o mesmo
 ## alcance do raio de dano. O anel evita cortar o pacote anterior a 20 Hz.
@@ -795,9 +797,7 @@ func clear() -> void:
 	for index in MAX_STAINS:
 		_stains[index].visible = false
 		_stain_age[index] = -1.0
-	for index in MAX_TRACERS:
-		_tracers[index].visible = false
-		_tracer_state[index] = {"life": 0.0}
+	if is_instance_valid(tracer_fx): tracer_fx.clear()
 	for index in MAX_FLAME_PACKETS:
 		_flame_tongues[index].visible = false
 		_flame_tongue_state[index] = {"life": 0.0}
@@ -813,6 +813,9 @@ func clear() -> void:
 		emitter.emitting = false
 	if is_instance_valid(_blast_light): _blast_light.visible = false
 	_blast_light_time = 0.0
+	# Marcas de bala, faíscas e clarão do impacto também zeram na troca de região (e depois do pré-aquecimento).
+	if is_instance_valid(_impact_fx): _impact_fx.clear()
+	if muzzle_fx != null: muzzle_fx.clear()
 	set_physics_process(false)
 
 ## Descarga: sem `restart()` (os emissores filhos podem já ter saído da árvore); só para a emissão, esconde e apaga a luz.
@@ -820,14 +823,15 @@ func shutdown() -> void:
 	for node in _shells + _stains + _scorches:
 		if is_instance_valid(node): node.visible = false
 	if is_instance_valid(_flame_light): _flame_light.visible = false
-	for tracer_node in _tracers:
-		if is_instance_valid(tracer_node): tracer_node.visible = false
+	if is_instance_valid(tracer_fx): tracer_fx.shutdown()
 	for tongue in _flame_tongues:
 		if is_instance_valid(tongue): tongue.visible = false
 	var emitters: Array = _all_emitters()
 	for emitter in emitters:
 		if is_instance_valid(emitter): emitter.emitting = false
 	if is_instance_valid(_blast_light): _blast_light.visible = false
+	if is_instance_valid(muzzle_fx): muzzle_fx.shutdown()
+	if is_instance_valid(_impact_fx): _impact_fx.shutdown()
 
 func _all_emitters() -> Array:
 	var list: Array = []
@@ -873,18 +877,7 @@ func _physics_process(delta: float) -> void:
 		tongue.global_position = (flame_state.origin as Vector3) + (flame_state.direction as Vector3) * (float(flame_state.distance) * 0.86 * flame_progress)
 		tongue.scale.z = float(flame_state.span) * minf(1.0, 0.18 + flame_progress * 4.0)
 		tongue.transparency = smoothstep(0.66, 1.0, flame_progress)
-	for index in MAX_TRACERS:
-		var tracer_data: Dictionary = _tracer_state[index]
-		if float(tracer_data.get("life", 0.0)) <= 0.0: continue
-		active = true
-		if tracer_data.get("manual", false): continue
-		tracer_data.life = float(tracer_data.life) - delta
-		var tracer_node := _tracers[index]
-		if float(tracer_data.life) <= 0.0:
-			tracer_node.visible = false
-			continue
-		var progress := 1.0 - float(tracer_data.life) / float(tracer_data.duration)
-		tracer_node.global_position = (tracer_data.from as Vector3).lerp(tracer_data.to, progress)
+	# Traçados andam no shader do TracerFx (relógio próprio em _process, liso em qualquer taxa de quadros).
 	for index in MAX_SHELLS:
 		var state: Dictionary = _shell_state[index]
 		if float(state.life) <= 0.0: continue

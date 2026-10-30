@@ -1,5 +1,6 @@
 extends RefCounted
 ## Só registra faróis e giroflex de VehicleEquipment: neon e fogo têm outros donos.
+## Luz de cano (MuzzleFx) entra como `"transient": true` no pedido: fica atrás de toda luz contínua.
 static var enabled := OS.get_environment("GETECO_LIGHT_BUDGET") != "0"
 const MAX_LIGHTS := 8
 const MAX_NPC_HEADLIGHTS := 2
@@ -43,7 +44,7 @@ static func refresh(force: bool = false) -> void:
 			var target := energy * weight
 			if not is_equal_approx(source.light.light_energy, target): source.light.light_energy = target
 			if request.player or race_headlight or distance <= LIGHT_RADIUS:
-				lights.append({"node": source.light, "player": request.player, "headlight": source.headlight, "distance": distance, "race_headlight": race_headlight})
+				lights.append({"node": source.light, "player": request.player, "headlight": source.headlight, "distance": distance, "race_headlight": race_headlight, "transient": bool(source.get("transient", false))})
 	lights.sort_custom(_nearer)
 	# Real shadowed traffic beams replace the emissive pavement decals. Bound
 	# their cost independently so the player's projectors always keep priority.
@@ -102,6 +103,11 @@ static func _apply(nodes: Array, ranked: Array[Dictionary], maximum: int) -> voi
 		if not node.visible: node.show()
 
 static func _nearer(a: Dictionary, b: Dictionary) -> bool:
+	# Clarão curto (luz do cano, gameplay/fx/MuzzleFx.gd) só ocupa vaga que sobrou: se tomasse a vaga de um
+	# farol ou giroflex, ele piscaria a cada tiro. Entre clarões, o do jogador vem primeiro.
+	var a_transient: bool = bool(a.get("transient", false))
+	var b_transient: bool = bool(b.get("transient", false))
+	if a_transient != b_transient: return b_transient
 	if a.player != b.player: return a.player
 	# Protege o par de faróis do jogador antes do halo da sua sirene.
 	if a.player and a.headlight != b.headlight: return a.headlight

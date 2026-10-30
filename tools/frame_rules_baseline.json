@@ -12,6 +12,8 @@
     "gameplay/desert_cars/TuningShowroom.gd": 1,
     "gameplay/emergency/Fire.gd": 1,
     "gameplay/emergency/SpawnVisualPrewarm.gd": 1,
+    "gameplay/fx/ImpactFx.gd": 1,
+    "gameplay/fx/MuzzleFx.gd": 1,
     "gameplay/jessica/JessicaNeon.gd": 1,
     "gameplay/police_response/air_k9/PoliceHelicopter.gd": 1,
     "gameplay/urban_v1/MountainFort.gd": 3,

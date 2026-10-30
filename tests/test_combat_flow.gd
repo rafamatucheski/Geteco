@@ -199,7 +199,7 @@ func _run() -> void:
 	check(is_equal_approx(dealt, 34.0), "um disparo da pistola tira exatamente 34 (dano único)", "dano=%.2f" % dealt)
 	check(int(state.get_ammo("pistol").magazine) == 11, "um disparo consome uma munição", str(state.get_ammo("pistol")))
 	check(not gameplay.police_case.pending.is_empty(), "disparo percebido inicia denúncia")
-	check(gameplay.effects._tracers.any(func(node): return node.visible), "trajetória da pistola usa cauda móvel visível")
+	check(gameplay.effects.tracer_fx.bolt_count() > 0, "trajetória da pistola usa cauda móvel visível")
 	await frames(4)
 	var civilian_model: Node = npc.visual.get_child(0)
 	check(civilian_model._hit.length() > 0.02, "ferimento: o tronco do civil reage sem perder o dano único", "inclinação=%s" % civilian_model._hit)

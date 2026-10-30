@@ -62,8 +62,8 @@ func run() -> void:
 	check(is_equal_approx(game._police_rounds[0].speed, float(pistol.projectile_speed) / 16.0)
 		and is_equal_approx(game._police_rounds[0].range, float(pistol.max_range) / 16.0), "Cobra uses player catalog bullet speed and range")
 	var token: Dictionary = game._police_rounds[0].visual
-	var tracer_material: StandardMaterial3D = game.effects._tracers[token.index].mesh.material
-	check(tracer_material.emission.is_equal_approx(pistol.tracer_color), "Cobra tracer uses player weapon color")
+	# Desde 29/10 o traçado é um MultiMesh (gameplay/fx/TracerFx.gd): a cor fica na vaga, não num material.
+	check(game.effects.tracer_fx.slot_color(token.index).is_equal_approx(pistol.tracer_color), "Cobra tracer uses player weapon color")
 	game._police_rounds[0].direction = (game._police_rounds[0].point as Vector3).direction_to(target.position + Vector3.UP)
 	game._advance_police_rounds(.01)
 	check(game.health == 100, "Cobra bullet cannot hit before reaching target")
