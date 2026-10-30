@@ -30,7 +30,8 @@ const ORDER = [
 const WEAPONS = {
 	"katana": {
 		"label":"KATANA DA FAMÍLIA", "short_label":"KATANA", "price":300000,
-		"damage":45, "fire_interval":0.78, "melee_range":48.0,
+		# 55: o 2º golpe derruba um pedestre (100 de vida) e já corta (pedido de 30/10); era 45, três golpes.
+		"damage":55, "fire_interval":0.78, "melee_range":48.0,
 		"falloff_start":48.0, "max_range":48.0, "min_damage_ratio":1.0,
 		"magazine_size":-1, "starting_reserve":-1, "is_melee":true,
 		"is_knife":true, "automatic":false, "stance":"katana",
@@ -38,10 +39,10 @@ const WEAPONS = {
 		"discovery_pickup":"takeshi_honor", "discovery_hint":"Vença o desafio de Takeshi nas drag races."
 	},
 	# Achada na cabana escondida da serra (`mountain_cabin_secret`); não vende na loja. Golpe um
-	# pouco mais curto e mais fraco que a katana: o escudo (segurar mira) é a vantagem.
+	# pouco mais curto e mais fraco que a katana (dois golpes ainda derrubam): o escudo é a vantagem.
 	"sword_shield": {
 		"label":"ESPADA E ESCUDO DO GELO", "short_label":"ESCUDO", "price":0,
-		"damage":38, "fire_interval":0.70, "melee_range":44.0,
+		"damage":52, "fire_interval":0.70, "melee_range":44.0,
 		"falloff_start":44.0, "max_range":44.0, "min_damage_ratio":1.0,
 		"magazine_size":-1, "starting_reserve":-1, "is_melee":true,
 		"is_knife":true, "automatic":false, "stance":"katana",

@@ -5,8 +5,9 @@ extends "res://world/places/NativePlace.gd"
 ## Mixamo pelo Gameplay (`exercise_clip`) e, completa, sobe força ou fôlego em `GymState`.
 const ID := "harbor_gym"
 const GYM := preload("res://activities/gym/GymState.gd")
-## Lote do lado do Lastro, conferido na captura (em x 22 o canto oeste encostava no ponto de ônibus).
-const EXTERIOR := Vector3(26, 0, 54)
+## Gramado vazio a oeste do Harbor, ao lado do pátio de contêineres (captura de 30/10: sem rua, trilho nem
+## prédio em volta). Em (26, 54) o galpão ficava 2,4 m dentro da Westgate Drive e os carros o atravessavam.
+const EXTERIOR := Vector3(-51, 0, 14)
 ## Onde o Dante fica em cada aparelho (local), virado para −Z. Batem com GymModel.
 const STATIONS := {
 	"punching_bag": Vector3(-4.0, 0, -2.25),

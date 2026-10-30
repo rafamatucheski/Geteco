@@ -30,7 +30,11 @@ func run() -> void:
 	for i in 30: await physics_frame
 	# A cortina de carregamento ainda cobre a tela uns segundos depois de `ready_for_play`.
 	await seconds(6.0)
-	if "--gym" in args: await _gym()
+	var spots := ""
+	for arg in args:
+		if arg.begins_with("--spots="): spots = arg.get_slice("=", 1)
+	if spots != "": await _spots(spots)
+	elif "--gym" in args: await _gym()
 	elif "--cabin" in args: await _cabin()
 	else: await _sword()
 	print("CAPTURE_SWORD_SHIELD ok ", label)
@@ -95,6 +99,15 @@ func _cabin() -> void:
 	print("CABIN enter=", await session.enter_place("mountain_cabin_secret", false))
 	await seconds(4.0)
 	await sheet("2_dentro", [0.0])
+
+## Terrenos candidatos ("x,z;x,z"): uma foto da tela inteira em cada, para ver rua, calçada e vizinhos.
+func _spots(spots: String) -> void:
+	for spot in spots.split(";"):
+		var xz := spot.split(",")
+		var at := Vector3(float(xz[0]), 1.0, float(xz[1]))
+		world.player.teleport(at)
+		await seconds(5.0)
+		await sheet("lote_%s_%s" % [xz[0], xz[1]], [0.0])
 
 func seconds(value: float) -> void:
 	var start := Time.get_ticks_usec()

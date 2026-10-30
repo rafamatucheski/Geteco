@@ -35,7 +35,8 @@ const MAX_MESHES := 6
 const LIFE := 10.0
 const SINK_SECONDS := 1.2
 const BLEED_SECONDS := 2.4
-const SEVER_WEAPONS := ["katana", "axe"]
+## Espada e escudo do gelo entra junto (pedido de 30/10: "o desmembramento tem que acontecer com espada também").
+const SEVER_WEAPONS := ["katana", "axe", "sword_shield"]
 ## Golpe cheio da katana (45) e do machado (52) passa; dano reduzido (variante fraca, golpe de raspão)
 ## não. O golpe pesado que fecha o combo e o RAGE passam sempre.
 const STRONG_DAMAGE := 40.0
@@ -53,6 +54,9 @@ const LIMBS := {
 	"right_upper_arm": {"kind": "arm", "end": "RightForearm", "bone": "LeftArm"},
 	"left_upper_leg": {"kind": "leg", "end": "left_lower_leg", "bone": "RightUpLeg"},
 	"right_upper_leg": {"kind": "leg", "end": "right_lower_leg", "bone": "LeftUpLeg"},
+	# Corte ao meio (30/10: "cortar no meio o boneco"): a junta do peito leva cabeça e braços junto; no
+	# Meshy o osso Spine1 colapsa e o pedaço é a metade de cima. O centro de escolha fica na cintura.
+	"Spine": {"kind": "torso", "end": "", "bone": "Spine1"},
 }
 ## Altura (m acima dos pés da vítima) e deslocamento para a direita do jogador de cada golpe do combo.
 ## Katana: `KATANA_ATTACKS` (de cima para baixo, potente na horizontal, baixo nas pernas).
@@ -60,6 +64,8 @@ const LIMBS := {
 const CUT_PROFILES := {
 	"katana": [Vector2(1.58, 0.06), Vector2(1.25, -0.20), Vector2(0.55, 0.12)],
 	"axe": [Vector2(1.38, 0.22), Vector2(1.22, -0.22), Vector2(1.62, 0.0)],
+	# Espada e escudo (`SHIELD_ATTACKS`): de cima na cabeça, cruzado na cintura, pesado no ombro.
+	"sword_shield": [Vector2(1.62, 0.04), Vector2(1.02, -0.18), Vector2(1.38, 0.24)],
 }
 ## Membros da versão de 07/10 por golpe do combo (`sever_defeated`, mantido para quem já usa).
 const LEGACY_LIMBS := ["right_upper_arm", "left_upper_leg", "left_upper_arm"]
@@ -89,8 +95,8 @@ static func _ensure_resources() -> void:
 		_cap_material.albedo_color = Color("671421")
 		_cap_material.roughness = 0.7
 	if _cap_meshes.is_empty():
-		for kind in ["arm", "leg", "head"]:
-			var radius: float = {"arm": 0.054, "leg": 0.074, "head": 0.06}[kind]
+		for kind in ["arm", "leg", "head", "torso"]:
+			var radius: float = {"arm": 0.054, "leg": 0.074, "head": 0.06, "torso": 0.15}[kind]
 			var shape := CylinderMesh.new()
 			shape.top_radius = radius
 			shape.bottom_radius = radius
@@ -102,7 +108,8 @@ static func _ensure_resources() -> void:
 		var arm := CapsuleShape3D.new(); arm.radius = 0.06; arm.height = 0.62
 		var leg := CapsuleShape3D.new(); leg.radius = 0.08; leg.height = 0.86
 		var head := SphereShape3D.new(); head.radius = 0.11
-		_shapes = {"arm": arm, "leg": leg, "head": head}
+		var torso := CapsuleShape3D.new(); torso.radius = 0.17; torso.height = 0.8
+		_shapes = {"arm": arm, "leg": leg, "head": head, "torso": torso}
 
 ## Disco do corte com o material do jogo, para o pré-aquecimento desenhar antes da cortina sair.
 static func prewarm_cap() -> MeshInstance3D:
@@ -277,6 +284,7 @@ func _nearest_joint(actor: Node3D, impact: Vector3) -> Node3D:
 static func _joint_center(joint: Node3D) -> Vector3:
 	var info: Dictionary = LIMBS.get(String(joint.name), {})
 	if info.get("kind", "") == "head": return joint.global_position + joint.global_basis.y.normalized() * 0.12
+	if info.get("kind", "") == "torso": return joint.global_position
 	var tip := joint.get_node_or_null(NodePath(String(info.get("end", "")))) as Node3D
 	if tip == null: return joint.global_position - joint.global_basis.y.normalized() * 0.3
 	return (joint.global_position + tip.global_position) * 0.5
@@ -323,7 +331,10 @@ func _stall_sever(actor: Node3D, joint: Node3D, direction: Vector3) -> bool:
 	body.reset_physics_interpolation()
 	var shape := slot.shape as CollisionShape3D
 	shape.shape = _shapes[kind]
-	shape.position = Vector3(0, 0.13, 0) if kind == "head" else Vector3(0, -float((_shapes[kind] as CapsuleShape3D).height) * 0.45, 0)
+	# A metade de cima do corpo fica acima do corte (+Y da junta); os membros pendem abaixo dele.
+	if kind == "head": shape.position = Vector3(0, 0.13, 0)
+	elif kind == "torso": shape.position = Vector3(0, 0.32, 0)
+	else: shape.position = Vector3(0, -float((_shapes[kind] as CapsuleShape3D).height) * 0.45, 0)
 	var cap := slot.cap as MeshInstance3D
 	cap.mesh = _cap_meshes[kind]
 	cap.transform = Transform3D.IDENTITY

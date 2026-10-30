@@ -1676,8 +1676,8 @@ func _stall_fire_at(target: Vector3) -> bool:
 		_melee_action = {"id": id, "direction": direction, "locked": false, "contact": contact_time, "window": float(profile.window), "heavy": _katana_combo == (2 if id == "sword_shield" else 1) if id in NATIVE_SWORDS else _rig_pose.heavy_attack()}
 		_pending_contact = {"id": id, "target": target, "data": data, "time": contact_time}
 		_aim_hold = (contact_time + float(profile.window)) / _melee_rate
-		if id in MELEE_FOLEY.WEAPONS and not (id == "katana" and katana_style().saber) and not _pending_swing.is_empty():
-			var peak: float = {"knife": 0.08, "bat": 0.13, "katana": 0.11, "axe": 0.145}[id]
+		if (id in MELEE_FOLEY.WEAPONS or id in NATIVE_SWORDS) and not (id == "katana" and katana_style().saber) and not _pending_swing.is_empty():
+			var peak: float = {"knife": 0.08, "bat": 0.13, "katana": 0.11, "axe": 0.145, "sword_shield": 0.11}[id]
 			_pending_swing.time = maxf(0.0, contact_time - peak * _melee_rate)
 	else:
 		_in_pellet_volley = true
@@ -1915,7 +1915,8 @@ func _melee(origin: Vector3, direction: Vector3, data: Dictionary, id: String = 
 	var severed := false
 	if actor.get("dead") == true and is_instance_valid(katana_wounds):
 		katana_wounds.register_defeated(actor)
-		var heavy_cut: bool = bool(_melee_action.get("heavy", _rig_pose.heavy_attack())) or (id == "katana" and is_instance_valid(rage) and rage.active)
+		# Lâminas longas cortam já no golpe que derruba (o 2º), não só no pesado do fim do combo.
+		var heavy_cut: bool = bool(_melee_action.get("heavy", _rig_pose.heavy_attack())) or id in NATIVE_SWORDS or (id == "katana" and is_instance_valid(rage) and rage.active)
 		# Project the stroke onto the victim rather than choosing a fixed combo limb.
 		var closest := origin + direction * maxf(0.0, direction.dot(target - origin)) if was_living else target
 		severed = katana_wounds.try_sever(actor, id, float(data.damage), heavy_cut, closest, direction)
@@ -2935,6 +2936,9 @@ func _update_swing_sound() -> void:
 	_pending_swing = {}
 	var stream: AudioStream
 	if id == "katana" and katana_style().saber: stream = KATANA_AUDIO.stream("swing")
+	# Lâminas longas: o ar das gravações do Firefly (audio/katana). O Foley do Codex na katana soava como
+	# pancada genérica (usuário, 30/10: "o som tá ruim da katana"); fica para faca, taco e machado.
+	elif id in NATIVE_SWORDS: stream = KATANA_AUDIO.swing(_rng.randi_range(0, 2))
 	elif id in MELEE_FOLEY.WEAPONS: stream = _melee_foley.swing(id)
 	else: stream = AUDIO.melee_whoosh(String(MELEE_SOUND_KIND.get(id, "punch")))
 	# V1 `Player._melee_attack`: o volume do catálogo. Tom por golpe do combo (pesado
@@ -2951,20 +2955,22 @@ func _combo_pitch() -> float:
 ## Acerto corpo a corpo no corpo: som próprio de cada arma (soco, soqueira, taco,
 ## machado), mais grave e forte no golpe pesado. A faca mantém os contatos da V1.
 func _melee_hit_sound(id: String, actor: Node3D, point: Vector3, amount: float, severed := false) -> void:
-	if id in MELEE_FOLEY.WEAPONS and not (id == "katana" and katana_style().saber):
+	if id in MELEE_FOLEY.WEAPONS and id not in NATIVE_SWORDS:
 		var material := _impact_material(actor)
 		var heavy := bool(_melee_action.get("heavy", _rig_pose.heavy_attack()))
 		var take: AudioStream = _melee_foley.hit(id, material, heavy, severed)
 		var level := -7.0 if id == "knife" else -4.5
 		_play_stream(take, point, level + (1.0 if heavy else 0.0), _rng.randf_range(0.97, 1.03), 24.0)
 		return
-	if id == "katana":
-		# Contato gravado + rasgo, só ao atingir carne; o ar sozinho não toca impacto.
-		if not katana_style().saber and _impact_material(actor) == "flesh":
-			var heavy := _rig_pose.heavy_attack()
+	if id in NATIVE_SWORDS:
+		# Contato gravado + rasgo, só ao atingir carne; o ar sozinho não toca impacto. Corte de membro
+		# soa mais forte e mais grave.
+		if not (id == "katana" and katana_style().saber) and _impact_material(actor) == "flesh":
+			var heavy := bool(_melee_action.get("heavy", _rig_pose.heavy_attack())) or severed
+			if severed: _play_stream(KATANA_AUDIO.cut(_rng.randi_range(0, 2)), point, 0.0, 0.82)
 			_play_stream(KATANA_AUDIO.cut(_rng.randi_range(0, 2)), point, -3.0 + (2.0 if heavy else 0.0), _combo_pitch() * _rng.randf_range(0.97, 1.03))
 			return
-		_play_stream(KATANA_AUDIO.stream("swing") if katana_style().saber else AUDIO.knife_sample(_rng.randi_range(0, 2)), point, -7.0, 0.7)
+		_play_stream(KATANA_AUDIO.stream("swing") if id == "katana" and katana_style().saber else AUDIO.knife_sample(_rng.randi_range(0, 2)), point, -7.0, 0.7)
 		return
 	if id == "knife" or _impact_material(actor) != "flesh" or not MELEE_HIT_KIND.has(id):
 		if id == "knife" and _impact_material(actor) == "flesh":

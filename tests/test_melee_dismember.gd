@@ -58,6 +58,7 @@ func run() -> void:
 	check(not WOUNDS.is_strong_cut("katana", 20.0, false), "reduced katana hit is weak")
 	check(WOUNDS.is_strong_cut("axe", 20.0, true), "heavy combo finisher is strong even with low damage")
 	check(not WOUNDS.is_strong_cut("bat", 80.0, true) and not WOUNDS.is_strong_cut("knife", 60.0, true), "blunt and short blades never sever")
+	check(WOUNDS.is_strong_cut("sword_shield", 52.0, false), "full ice sword hit is a strong cut")
 
 	# Corpo procedural.
 	var victim := _victim(stage, Vector3(0, 0, -2), false)
@@ -94,7 +95,7 @@ func run() -> void:
 	for joint_name: String in WOUNDS.LIMBS:
 		var remaining := wounds._visible_joint(victim, joint_name)
 		if remaining != null: wounds._sever_joint(victim, remaining, toward)
-	check(victim.get_meta("melee_removed_limbs", []).size() == 5 and not wounds.can_sever(victim), "body stops offering cuts after its five regions are gone")
+	check(victim.get_meta("melee_removed_limbs", []).size() == WOUNDS.LIMBS.size() and not wounds.can_sever(victim), "body stops offering cuts after all its regions are gone (head, arms, legs, waist)")
 	check(not wounds.try_sever(victim, "katana", 45.0, true, head_point, toward), "an exhausted body never generates duplicate pieces")
 
 	# Machado nas pernas, outro corpo procedural.

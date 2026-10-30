@@ -69,6 +69,16 @@ static func drop(actor: Node3D, impact: Vector3) -> void:
 
 ## Chuva no ponto, pelo Weather da sessão (o mesmo que molha a rua e faz espirrar a roda).
 static func rain_at(actor: Node3D) -> float:
+	# Dentro de um lugar (interior: NativePlace e derivados têm `definition`) não chove, embora o interior
+	# fique num ponto do mapa onde está chovendo (30/10: "vi gente dentro de interiores com guarda-chuva").
+	# Moradores do interior entram como filhos do mundo (FullSession), marcados com `interior_npc_id`;
+	# ocupantes dos prédios do Harbor ficam dentro do próprio lugar.
+	if actor.has_meta("interior_npc_id"): return 0.0
+	var holder := actor.get_parent()
+	for depth in 8:
+		if holder == null: break
+		if holder.get("definition") is Dictionary and holder.has_method("set_active"): return 0.0
+		holder = holder.get_parent()
 	var weather = _weather.get_ref() if _weather != null else null
 	if weather == null:
 		var node := actor.get_parent()
