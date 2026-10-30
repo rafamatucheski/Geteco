@@ -278,6 +278,7 @@ func _build_motor_workshop() -> void:
 	# Rear solid:  Rect2(-55,  -104, 110, 40) -> width 6.875m (110px), depth 2.5m (40px), center_z = -5.25m
 	# Open drive-in bay: width 6.875m (110px), clear driveway from Z = -4.0m to Z = +6.5m.
 	
+	var painted := building_id == "MotorWorkshop" and PaintedFacadeKit.enabled() and OS.get_environment("GETECO_PAINTED_MOTOR_WORKSHOP") != "0"
 	var wall_mat := UrbanMaterials.material_for_color(Color("6bd2b2").darkened(0.2), 0.86)
 	var roof_mat := UrbanMaterials.roof_tin()
 	
@@ -291,17 +292,48 @@ func _build_motor_workshop() -> void:
 	var rear_cz: float = -84.0 / 16.0     # -5.25 m
 	
 	# Left Solid Wall
-	add_solid_box(visuals_root, "WorkshopLeft", Vector3(left_cx, height * 0.5, 0), Vector3(side_w, height, side_d), wall_mat)
+	var left_visual := add_solid_box(visuals_root, "WorkshopLeft", Vector3(left_cx, height * 0.5, 0), Vector3(side_w, height, side_d), wall_mat)
 	
 	# Right Solid Wall
-	add_solid_box(visuals_root, "WorkshopRight", Vector3(right_cx, height * 0.5, 0), Vector3(side_w, height, side_d), wall_mat)
+	var right_visual := add_solid_box(visuals_root, "WorkshopRight", Vector3(right_cx, height * 0.5, 0), Vector3(side_w, height, side_d), wall_mat)
 	
 	# Rear Solid Wall (110px wide x 40px deep)
-	add_solid_box(visuals_root, "WorkshopRear", Vector3(0, height * 0.5, rear_cz), Vector3(rear_w, height, rear_d), wall_mat)
+	var rear_visual := add_solid_box(visuals_root, "WorkshopRear", Vector3(0, height * 0.5, rear_cz), Vector3(rear_w, height, rear_d), wall_mat)
 	
 	# Overhead Roof & Steel Trusses (covering the structure above drive-in height)
-	add_solid_box(visuals_root, "WorkshopRoof", Vector3(0, height + 0.15, 0), Vector3(building_size.x + 0.3, 0.30, building_size.y + 0.3), roof_mat)
+	var roof_visual := add_solid_box(visuals_root, "WorkshopRoof", Vector3(0, height + 0.15, 0), Vector3(building_size.x + 0.3, 0.30, building_size.y + 0.3), roof_mat)
 	
+	if painted:
+		# Mesmos quatro volumes e a baia livre de 6,875 m; a arte lateral não
+		# inventa o portão deslocado nem a porta extra do módulo frontal da oficina.
+		var art := preload("res://runtime/desert/roadside/RoadsideArt.gd")
+		var skin := art.batch()
+		var wall_skin := PaintedFacadeKit.material("oficina-mecanica","side")
+		for pair in [[left_visual,Vector3(side_w,height,side_d)],[right_visual,Vector3(side_w,height,side_d)],[rear_visual,Vector3(rear_w,height,rear_d)]]:
+			var visual: MeshInstance3D = pair[0]
+			var size: Vector3 = pair[1]
+			visual.hide()
+			for side in [-1.0,1.0]:
+				skin.quad(wall_skin,visual.position+Vector3(0,0,side*size.z*.5),Vector3(side*size.x*.5,0,0),Vector3(0,size.y*.5,0),Rect2(0,0,size.x/6.0,1))
+				skin.quad(wall_skin,visual.position+Vector3(side*size.x*.5,0,0),Vector3(0,0,-side*size.z*.5),Vector3(0,size.y*.5,0),Rect2(0,0,size.z/6.0,1))
+		roof_visual.hide()
+		skin.box(PaintedFacadeKit.material("oficina-mecanica","roof"),Transform3D(Basis.IDENTITY,roof_visual.position),Vector3(building_size.x+.3,.30,building_size.y+.3),{},Vector2(6,6))
+		var baked := skin.bake()
+		var index := 0
+		for key in skin.order:
+			var group: Dictionary = skin.groups[key]
+			if group.v.is_empty(): continue
+			var arrays: Array = []
+			arrays.resize(Mesh.ARRAY_MAX)
+			arrays[Mesh.ARRAY_VERTEX]=group.v
+			arrays[Mesh.ARRAY_NORMAL]=group.n
+			arrays[Mesh.ARRAY_TEX_UV]=group.t
+			arrays[Mesh.ARRAY_INDEX]=group.i
+			var mesh: ArrayMesh = baked.meshes[index][0]
+			mesh.set_meta("cpu_surface_arrays",[arrays])
+			index+=1
+		art.instantiate(visuals_root,baked)
+
 	# Yellow & Black Hazard Warning Stripes along the entrance canopy beam
 	var beam_pos := Vector3(0, height - 0.25, side_d * 0.5 + 0.05)
 	add_mesh_box(visuals_root, "HazardBeam", beam_pos, Vector3(rear_w + 0.4, 0.50, 0.15), UrbanMaterials.hazard_stripe_yellow())
