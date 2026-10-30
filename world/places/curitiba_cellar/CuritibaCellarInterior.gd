@@ -1,4 +1,31 @@
 extends "res://world/places/curitiba_cellar/CellarGeometry.gd"
+const SHELL_FINISH := preload("res://world/mountain_detail/MountainInteriorFinish.gd")
+const SHELL_RECIPES := {
+	"wood": ["745540", "71503b", "7c5940", "856044", "684837", "402d26", "624536", "95764b", "513b2e"],
+	"stone": ["c3b99f", "c7bba4", "baaf98"],
+	"cloth": ["532c3c", "b69b65"],
+}
+const SHELL_KINDS := {"wood": "wood", "stone": "cast", "cloth": "fabric"}
+
+static func painted_enabled() -> bool:
+	return OS.get_environment("GETECO_PAINTED_CELLAR_INTERIOR") != "0"
+
+static func prewarm_materials() -> Array[Material]:
+	var result: Array[Material] = []
+	if not painted_enabled(): return result
+	for kind in SHELL_RECIPES:
+		for color in SHELL_RECIPES[kind]:
+			result.append(SHELL_FINISH.material(SHELL_KINDS[kind], Color(color), .9))
+	return result
+
+func surface(color: String, kind := "wood") -> StandardMaterial3D:
+	if kind.begins_with("shell_"):
+		var original := kind.trim_prefix("shell_")
+		if painted_enabled():
+			return SHELL_FINISH.material(SHELL_KINDS[original], Color(color), .9)
+		return super.surface(color, original)
+	return super.surface(color, kind)
+
 ## Curitiba Cellar: native 14 x 11 metre shop, composed for the Maciota camera.
 ## NativePlace builds the physical volumes before admitting player/residents.
 const ROOM_SIZE := Vector2(14,11)
@@ -31,25 +58,25 @@ func _ready() -> void:
 	set_physics_process(false)
 
 func _shell() -> void:
-	box("OakFloor",Vector3(0,-.033,0),Vector3(14,.06,11),"745540")
+	box("OakFloor",Vector3(0,-.033,0),Vector3(14,.06,11),"745540","","shell_wood")
 	for row in 22:
 		for col in 7:
 			var x := -6.01+col*2.0
 			var z := -5.25+row*.5
-			piece("box",Vector3(x,.002,z),Vector3(1.983,.008,.483),["71503b","7c5940","856044"][(row+col*2)%3])
+			piece("box",Vector3(x,.002,z),Vector3(1.983,.008,.483),["71503b","7c5940","856044"][(row+col*2)%3],"shell_wood")
 	# The light stone aisle remains unobstructed from the entrance to Nelson.
-	box("StoneRunner",Vector3(.25,.01,.85),Vector3(2.8,.016,8.55),"c3b99f","","stone")
+	box("StoneRunner",Vector3(.25,.01,.85),Vector3(2.8,.016,8.55),"c3b99f","","shell_stone")
 	for x in [-1.175,1.675]: piece("box",Vector3(x,.021,.85),Vector3(.025,.008,8.55),"ad8c50","metal")
-	box("BackWall",Vector3(0,1.6,-5.38),Vector3(14,3.2,.24),"c7bba4","BackWall","stone")
+	box("BackWall",Vector3(0,1.6,-5.38),Vector3(14,3.2,.24),"c7bba4","BackWall","shell_stone")
 	for side in [-1,1]:
-		box("SideWall%d"%side,Vector3(side*6.88,1.6,0),Vector3(.24,3.2,11),"baaf98","SideWall%d"%side,"stone")
-		box("SouthWall%d"%side,Vector3(side*4.05,.22,5.38),Vector3(5.9,.44,.24),"684837","SouthWall%d"%side)
-		piece("box",Vector3(side*6.72,.13,0),Vector3(.07,.26,10.65),"402d26")
-		piece("box",Vector3(side*6.72,2.98,0),Vector3(.08,.16,10.65),"624536")
-		box("EntryJamb%d"%side,Vector3(side*1.065,.58,5.31),Vector3(.13,1.16,.20),"95764b","EntryJamb%d"%side)
-	box("RearCrown",Vector3(0,3.03,-5.20),Vector3(13.55,.20,.13),"513b2e")
-	box("EntranceMat",Vector3(0,.027,4.58),Vector3(1.86,.025,1.03),"532c3c","","cloth")
-	for side in [-1,1]: piece("box",Vector3(side*.88,.042,4.58),Vector3(.028,.006,.9),"b69b65","cloth")
+		box("SideWall%d"%side,Vector3(side*6.88,1.6,0),Vector3(.24,3.2,11),"baaf98","SideWall%d"%side,"shell_stone")
+		box("SouthWall%d"%side,Vector3(side*4.05,.22,5.38),Vector3(5.9,.44,.24),"684837","SouthWall%d"%side,"shell_wood")
+		piece("box",Vector3(side*6.72,.13,0),Vector3(.07,.26,10.65),"402d26","shell_wood")
+		piece("box",Vector3(side*6.72,2.98,0),Vector3(.08,.16,10.65),"624536","shell_wood")
+		box("EntryJamb%d"%side,Vector3(side*1.065,.58,5.31),Vector3(.13,1.16,.20),"95764b","EntryJamb%d"%side,"shell_wood")
+	box("RearCrown",Vector3(0,3.03,-5.20),Vector3(13.55,.20,.13),"513b2e","","shell_wood")
+	box("EntranceMat",Vector3(0,.027,4.58),Vector3(1.86,.025,1.03),"532c3c","","shell_cloth")
+	for side in [-1,1]: piece("box",Vector3(side*.88,.042,4.58),Vector3(.028,.006,.9),"b69b65","shell_cloth")
 
 func _wine_library() -> void:
 	# Four distinct selections use bottle/foil colors; country names stay in the
