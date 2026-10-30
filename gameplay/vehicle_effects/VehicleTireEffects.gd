@@ -9,22 +9,39 @@ const ROAD_AUDIO := preload("res://audio/VehicleRoadAudio.gd")
 const STREET_PHYSICS := preload("res://gameplay/street_physics/StreetPhysics.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 ## Imported resources are held while scripts load, before playable physics.
+# Playtest 30/10 ("o som do freio de mão e do drift é terrível"): os skid_*.wav de audio/acoustic
+# eram 1 s a 22 kHz, um seno puro com tremolo fixo e ruído branco chapado até 11 kHz, envelope
+# constante (repetição a cada segundo) e reiniciados do zero a cada liga-desliga. Agora são três
+# camadas geradas offline por tools/generate_tire_skid_loops.py (44,1 kHz, loops sem costura):
+# guincho tonal por tipo de carro, borracha grave e chiado leve, misturados pelo slip.
 const SKID_SOURCES := {
-	"street": preload("res://audio/acoustic/skid_street.wav"),
-	"sport": preload("res://audio/acoustic/skid_sport.wav"),
-	"heavy": preload("res://audio/acoustic/skid_heavy.wav"),
-	"muscle": preload("res://audio/acoustic/skid_muscle.wav"),
-	"monaliza": preload("res://audio/acoustic/skid_monaliza.wav"),
+	"street": preload("res://audio/vehicle_fx/tire_squeal_street.wav"),
+	"sport": preload("res://audio/vehicle_fx/tire_squeal_sport.wav"),
+	"heavy": preload("res://audio/vehicle_fx/tire_squeal_heavy.wav"),
+	"muscle": preload("res://audio/vehicle_fx/tire_squeal_muscle.wav"),
+	"monaliza": preload("res://audio/vehicle_fx/tire_squeal_monaliza.wav"),
+}
+const SKID_LAYER_SOURCES := {
+	"body": preload("res://audio/vehicle_fx/tire_rubber_body.wav"),
+	"hiss": preload("res://audio/vehicle_fx/tire_scrub_hiss.wav"),
 }
 static var _skid_streams: Dictionary = {}
+static var _skid_layer_streams: Dictionary = {}
+
+static func _loop_copy(source: AudioStreamWAV) -> AudioStreamWAV:
+	var stream := source.duplicate() as AudioStreamWAV
+	stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
+	# Os WAVs trazem 8 amostras extras que repetem o começo: o salto em total-8 é contínuo.
+	stream.loop_end = maxi(1, roundi(stream.get_length() * stream.mix_rate) - 8)
+	return stream
 
 static func prewarm_skid_audio() -> void:
 	for kind in SKID_SOURCES:
 		if _skid_streams.has(kind): continue
-		var stream := SKID_SOURCES[kind].duplicate() as AudioStreamWAV
-		stream.loop_mode = AudioStreamWAV.LOOP_FORWARD
-		stream.loop_end = maxi(1, roundi(stream.get_length() * stream.mix_rate) - 8)
-		_skid_streams[kind] = stream
+		_skid_streams[kind] = _loop_copy(SKID_SOURCES[kind])
+	for layer in SKID_LAYER_SOURCES:
+		if _skid_layer_streams.has(layer): continue
+		_skid_layer_streams[layer] = _loop_copy(SKID_LAYER_SOURCES[layer])
 # Voz de derrapagem, em dB relativos ao motor (camada do motor: -20 dB parado, ~-12 em cruzeiro, ~-5 a fundo):
 #  - drift pleno: -5 dB, no nível do motor a fundo (é o som principal da cena quando acontece);
 #  - início do drift: -20 dB, abaixo do motor, para a entrada não estalar;
@@ -41,6 +58,15 @@ const SKID_SLIP_FULL := .30
 const SKID_DRIFT_DB := Vector2(-20.0, -5.0)
 const SKID_SERVICE_BRAKE_DB := Vector2(-24.0, -11.0)
 const SKID_HANDBRAKE_DB := Vector2(-22.0, -10.0)
+# Envelope da voz: o probe de contato roda a 20 Hz e ligava/desligava o loop no degrau, sempre do
+# começo do arquivo. A entrada sobe em 80 ms e a saída cai em 120 ms (a cauda toca num player filho,
+# para skid_audio.playing continuar dizendo "o pneu está escorregando agora"); os níveis das
+# camadas deslizam com tau de 60 ms, sem degrau de 20 Hz.
+const SKID_ATTACK_SEC := .08
+const SKID_RELEASE_SEC := .12
+const SKID_LAYER_TAU := .06
+# Tom do guincho: só ±5% pelo slip (pneu real não sobe de nota com a velocidade do carro).
+const SKID_PITCH_SLIP := Vector2(.95, 1.05)
 const MAX_MARK_SEGMENTS := 320
 const MARK_LIFETIME_MSEC := 22000
 # Sulco em chÃ£o macio fica mais tempo que a borracha do asfalto: Ã© o rastro que o
@@ -58,8 +84,25 @@ var last_modes: Array[String] = ["",""]
 var mark_mesh: MeshInstance3D
 var geometry := ArrayMesh.new()
 var skid_audio: AudioStreamPlayer3D
+## Nível pedido para a voz (dB, antes do envelope e do jitter); é o número que os testes conferem.
+var skid_target_db := -80.0
 var _skid_foreground := false
 var _car_pitch := 1.0
+var _skid_body: AudioStreamPlayer3D
+var _skid_hiss: AudioStreamPlayer3D
+var _skid_tail: AudioStreamPlayer3D
+var _skid_gate := false
+var _skid_env := 0.0
+var _skid_mix := 0.0
+var _skid_lock := 0
+var _skid_lock_age := 0.0
+var _skid_pitch_target := 1.0
+var _skid_pitch := 1.0
+var _skid_layer_db := Vector3(-80.0, -80.0, -80.0)
+var _skid_clock := 0.0
+var _skid_phase := 0.0
+var _skid_heft := 0.0
+var _skid_tick_msec := 0
 var road_mixer: Node
 var _probe_clock := 0.0
 var _mark_timer: Timer
@@ -76,16 +119,20 @@ func _ready() -> void:
 	set_process(false)
 	set_physics_process(false)
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	# Exiting/streaming can put a stationary car to sleep before its next tire
 	# tick. This guard runs only during a held burnout, never for parked traffic.
-	if not is_instance_valid(vehicle) or not vehicle.is_physics_processing() or not vehicle.is_visible_in_tree() or vehicle.burnout_strength() <= 0.0:
+	if _burnout > 0.0 and (not is_instance_valid(vehicle) or not vehicle.is_physics_processing() or not vehicle.is_visible_in_tree() or vehicle.burnout_strength() <= 0.0):
 		_stop_emitters()
+		return
+	# Também liga enquanto a voz do pneu soa (envelope por quadro) e se desliga quando ela cala.
+	_skid_envelope(delta)
+	if _burnout <= 0.0 and not _skid_busy(): set_process(false)
 
 func _exit_tree() -> void:
 	if SKID_BUDGET.enabled: SKID_BUDGET.release(self)
 	_stop_emitters()
-	if is_instance_valid(skid_audio): skid_audio.stop()
+	_skid_hard_stop()
 	geometry.clear_surfaces()
 
 func physics_tick(delta: float, active: bool) -> void:
@@ -97,12 +144,13 @@ func physics_tick(delta: float, active: bool) -> void:
 			_idle = true
 		return
 	_idle = false
+	_skid_tick_msec = Time.get_ticks_msec()
 	# Contact probes are budgeted at 20 Hz, but the end of a drag wheel lock
 	# must release its audio on the same physics step as restored rolling grip.
 	if vehicle.has_meta("drag_service_brake_slip") and float(vehicle.get_meta("drag_service_brake_slip")) <= .15 and is_instance_valid(skid_audio) and skid_audio.playing:
 		var wet := last_contacts.any(func(contact): return not contact.is_empty() and bool(contact.get("wet",false)))
 		var lateral := absf(vehicle.horizontal_velocity.dot(vehicle.global_basis.x))
-		if lateral <= (3.125 if wet else 5.625) and vehicle.burnout_strength() <= 0.0: skid_audio.stop()
+		if lateral <= (3.125 if wet else 5.625) and vehicle.burnout_strength() <= 0.0: _skid_release()
 	_probe_clock -= delta
 	if _probe_clock > 0:
 		return
@@ -112,7 +160,7 @@ func physics_tick(delta: float, active: bool) -> void:
 	var road_speed := motion.length()
 	var lateral_speed := absf(motion.dot(vehicle.global_basis.x))
 	_burnout = vehicle.burnout_strength()
-	set_process(_burnout > 0.0)
+	set_process(_burnout > 0.0 or _skid_busy())
 	var tire_speed := maxf(road_speed, _burnout*14.0)
 	var any_wet := false
 	for contact in contacts:
@@ -304,7 +352,7 @@ func _stop_emitters() -> void:
 	set_process(false)
 	for emitter in emitters: emitter.emitting = false
 	for emitter in droplets: emitter.emitting = false
-	if is_instance_valid(skid_audio) and skid_audio.playing: skid_audio.stop()
+	_skid_hard_stop()
 	if is_instance_valid(road_mixer): road_mixer.stop()
 
 func _update_skid_audio(audible: bool, road_speed: float, lateral_speed: float, lock_kind := 0) -> void:
@@ -321,8 +369,9 @@ func _stall_update_skid_audio(audible: bool, road_speed: float, lateral_speed: f
 		if is_instance_valid(powertrain_audio) and powertrain_audio.has_method("has_wheelspin_voice") and powertrain_audio.has_wheelspin_voice():
 			audible = false
 	if not audible:
-		if is_instance_valid(skid_audio) and skid_audio.playing: skid_audio.stop()
+		_skid_release()
 		return
+	_skid_tick_msec = Time.get_ticks_msec()
 	if not is_instance_valid(skid_audio):
 		var began := STALL_WORK.begin()
 		var family: String = ENGINE_PROFILE.family(str(vehicle.archetype))
@@ -330,20 +379,18 @@ func _stall_update_skid_audio(audible: bool, road_speed: float, lateral_speed: f
 		# Also covers isolated vehicles and --no-prewarm; sources are already held.
 		prewarm_skid_audio()
 		var stream: AudioStreamWAV = _skid_streams[kind]
-		skid_audio = AudioStreamPlayer3D.new()
-		skid_audio.name = "VehicleSkid"
+		skid_audio = _skid_player("VehicleSkid", stream)
 		# Variação por carro além do take (cinco WAVs): leve guincha mais agudo, pesado mais grave
 		# (±~12% pelo peso) e ±4% fixo pelo modelo, para dois carros do mesmo take não soarem iguais.
-		_car_pitch = lerpf(1.12, .86, _heft()) * (1.0 + float(hash(str(vehicle.archetype)) % 9 - 4) * .01)
-		skid_audio.stream = stream
-		skid_audio.max_distance = 55.0
-		skid_audio.unit_size = 4.0
-		# Playtest 29/10 ("freio de mão sem barulho de pneu"): o teto de -22 dB deixava o chiado
-		# ~23 dB abaixo do motor (max_db +1) e inaudível. O volume por velocidade abaixo já
-		# dosa a intensidade; o teto só impede estouro de perto.
-		skid_audio.max_db = -4.0
-		skid_audio.bus = &"Vehicles" if AudioServer.get_bus_index("Vehicles") >= 0 else &"Master"
+		_skid_heft = _heft()
+		_car_pitch = lerpf(1.12, .86, _skid_heft) * (1.0 + float(hash(str(vehicle.archetype)) % 9 - 4) * .01)
+		_skid_phase = float(absi(hash(vehicle.get_instance_id())) % 1000) * .37
 		vehicle.add_child(skid_audio)
+		# Camadas e cauda são filhas da voz: continua um só "VehicleSkid" por carro.
+		_skid_body = _skid_player("Body", _skid_layer_streams.body)
+		_skid_hiss = _skid_player("Hiss", _skid_layer_streams.hiss)
+		_skid_tail = _skid_player("Tail", stream)
+		for layer in [_skid_body, _skid_hiss, _skid_tail]: skid_audio.add_child(layer)
 		_skid_foreground = false
 		STALL_WORK.finish("vehicle_tires.skid_voice",began,{"kind":kind})
 	_apply_skid_spatial()
@@ -354,11 +401,117 @@ func _stall_update_skid_audio(audible: bool, road_speed: float, lateral_speed: f
 	var drift_db := lerpf(SKID_DRIFT_DB.x, SKID_DRIFT_DB.y, slip * (.55 + .45 * speed_gain)) if slip > 0.0 else -80.0
 	var lock_range := SKID_HANDBRAKE_DB if lock_kind == 2 else SKID_SERVICE_BRAKE_DB
 	var lock_db := lerpf(lock_range.x, lock_range.y, speed_gain) if lock_kind > 0 else -80.0
-	skid_audio.volume_db = maxf(drift_db, lock_db)
-	# Tom: sobe com a deriva; o tom do carro (leve agudo, pesado grave) é fixo por veículo.
-	var drive := maxf(slip, speed_gain * .5) if lock_kind > 0 else slip
-	skid_audio.pitch_scale = lerpf(0.88, 1.12, drive) * _car_pitch
-	if not skid_audio.playing: skid_audio.play()
+	skid_target_db = maxf(drift_db, lock_db)
+	# Mistura das camadas: pouco slip = raspagem/chiado; slip pleno = guincho. Roda travada já
+	# guincha bem (0,6-0,75) mesmo antes de virar de lado.
+	_skid_mix = maxf(slip, (.75 if lock_kind == 2 else .6) if lock_kind > 0 else 0.0)
+	# A idade da trava conta desde o puxão: zera quando o tipo de trava muda ou a voz reabre.
+	if lock_kind != _skid_lock or not _skid_gate: _skid_lock_age = 0.0
+	_skid_lock = lock_kind
+	# Tom: quase fixo, ±5% pelo slip; nada pela velocidade. O tom do carro (leve agudo, pesado
+	# grave) é fixo por veículo; o caráter "travado" do freio de mão entra no envelope.
+	_skid_pitch_target = lerpf(SKID_PITCH_SLIP.x, SKID_PITCH_SLIP.y, _skid_mix) * _car_pitch
+	skid_audio.pitch_scale = _skid_pitch_target
+	if _skid_gate and skid_audio.playing: return
+	# Abre a voz. Começa num ponto aleatório do loop: reabrir sempre do zero era repetição audível.
+	var from := randf() * skid_audio.stream.get_length() * .95
+	if is_instance_valid(_skid_tail) and _skid_tail.playing:
+		# Volta durante a cauda: segue do mesmo ponto e do nível atual, sem novo ataque do zero.
+		from = _skid_tail.get_playback_position()
+		_skid_tail.stop()
+	else:
+		_skid_pitch = _skid_pitch_target
+		_skid_layer_db = Vector3(skid_target_db, skid_target_db, skid_target_db)
+	skid_audio.volume_db = skid_target_db + linear_to_db(maxf(_skid_env, .001))
+	skid_audio.play(from)
+	for layer in [_skid_body, _skid_hiss]:
+		if not layer.playing:
+			layer.volume_db = -60.0
+			layer.play(randf() * layer.stream.get_length() * .95)
+	_skid_gate = true
+	set_process(true)
+
+func _skid_player(label: String, stream: AudioStream) -> AudioStreamPlayer3D:
+	var player := AudioStreamPlayer3D.new()
+	player.name = label
+	player.stream = stream
+	player.max_distance = 55.0
+	player.unit_size = 4.0
+	player.volume_db = -80.0
+	# Playtest 29/10 ("freio de mão sem barulho de pneu"): o teto de -22 dB deixava o chiado
+	# ~23 dB abaixo do motor (max_db +1) e inaudível. O volume por velocidade abaixo já
+	# dosa a intensidade; o teto só impede estouro de perto.
+	player.max_db = -4.0
+	player.bus = &"Vehicles" if AudioServer.get_bus_index("Vehicles") >= 0 else &"Master"
+	return player
+
+## Fecha a porta da voz: skid_audio para já (o pneu voltou a rolar) e o guincho segue na cauda,
+## caindo em SKID_RELEASE_SEC junto com a borracha e o chiado.
+func _skid_release() -> void:
+	if not is_instance_valid(skid_audio): return
+	if _skid_gate and skid_audio.playing and _skid_env > .02:
+		_skid_tail.pitch_scale = skid_audio.pitch_scale
+		_skid_tail.volume_db = skid_audio.volume_db
+		_skid_tail.play(skid_audio.get_playback_position())
+	if skid_audio.playing: skid_audio.stop()
+	_skid_gate = false
+	if _skid_env > .02: set_process(true)
+	else: _skid_hard_stop()
+
+func _skid_hard_stop() -> void:
+	_skid_gate = false
+	_skid_env = 0.0
+	for player in [skid_audio, _skid_body, _skid_hiss, _skid_tail]:
+		if is_instance_valid(player) and player.playing: player.stop()
+	if is_instance_valid(vehicle) and vehicle.has_meta("tire_skid_duck"): vehicle.remove_meta("tire_skid_duck")
+
+func _skid_busy() -> bool:
+	return is_instance_valid(skid_audio) and (_skid_gate or _skid_env > 0.0)
+
+## Por quadro (via _process, ligado só enquanto a voz soa): envelope, mistura das camadas, caráter
+## de roda travada e um jitter lento de tom/volume para o loop não se denunciar.
+func _skid_envelope(delta: float) -> void:
+	if not _skid_busy(): return
+	if not is_instance_valid(vehicle):
+		_skid_hard_stop()
+		return
+	# Ninguém chamou physics_tick há 0,3 s (carro congelado, corrida parou de simular): corta.
+	if Time.get_ticks_msec() - _skid_tick_msec > 300:
+		_skid_hard_stop()
+		return
+	_skid_env = move_toward(_skid_env, 1.0 if _skid_gate else 0.0, delta / (SKID_ATTACK_SEC if _skid_gate else SKID_RELEASE_SEC))
+	if _skid_env <= 0.0 and not _skid_gate:
+		_skid_hard_stop()
+		return
+	if _skid_gate: _skid_lock_age += delta
+	_skid_clock += delta
+	var t := _skid_clock + _skid_phase
+	# Duas senoides lentas incomensuráveis por eixo: ±1,2% de tom e ±1,2 dB, sem período audível.
+	var wobble := sin(t * 1.7) * .6 + sin(t * 2.9 + 1.3) * .4
+	var swell := sin(t * 1.13 + .4) * .5 + sin(t * 3.7 + 2.1) * .5
+	# Roda travada soa mais grave e áspera: no puxão do freio de mão o guincho cai ~10% e a borracha
+	# sobe 5 dB; depois de ~0,45 s fica um resto (o pneu segue arrastando). Freio de serviço: meio termo.
+	var rough := 0.0
+	if _skid_lock == 2: rough = maxf(1.0 - smoothstep(0.0, .45, _skid_lock_age), .35)
+	elif _skid_lock == 1: rough = .5
+	var full := smoothstep(.15, .8, _skid_mix)
+	# x = guincho, y = borracha grave (mais no pesado e na trava), z = chiado (some no slip pleno).
+	var target := Vector3(
+		skid_target_db + linear_to_db(lerpf(.12, 1.0, full)) - 3.0 * rough,
+		skid_target_db - 7.0 + 5.0 * rough + 3.0 * _skid_heft,
+		skid_target_db - 5.0 + linear_to_db(lerpf(1.0, .35, smoothstep(.2, .9, _skid_mix))))
+	_skid_layer_db = _skid_layer_db.lerp(target, 1.0 - exp(-delta / SKID_LAYER_TAU))
+	_skid_pitch = lerpf(_skid_pitch, _skid_pitch_target * (1.0 - .10 * rough), 1.0 - exp(-delta / .08))
+	var env_db := linear_to_db(maxf(_skid_env, .001)) + 1.2 * swell
+	var squeal: AudioStreamPlayer3D = skid_audio if _skid_gate else _skid_tail
+	squeal.volume_db = _skid_layer_db.x + env_db
+	squeal.pitch_scale = _skid_pitch * (1.0 + .012 * wobble)
+	_skid_body.volume_db = _skid_layer_db.y + env_db
+	_skid_body.pitch_scale = _car_pitch * .98 * (1.0 + .006 * swell)
+	_skid_hiss.volume_db = _skid_layer_db.z + env_db
+	_skid_hiss.pitch_scale = _car_pitch * (1.0 + .01 * wobble)
+	# O motor do jogador cede até 2,5 dB no drift forte (DesertCarAudio lê esta meta).
+	if _skid_foreground: vehicle.set_meta("tire_skid_duck", _skid_env * smoothstep(.4, 1.0, _skid_mix) * clampf((skid_target_db + 20.0) / 15.0, 0.0, 1.0))
 
 ## Mesma regra de primeiro plano de DesertCarAudio/EngineDesignVoice: o carro do jogador não perde
 ## volume pela distância até a câmera; tráfego e NPCs mantêm queda e filtro posicionais.
@@ -366,10 +519,12 @@ func _apply_skid_spatial() -> void:
 	var foreground := bool(vehicle.get("controlled")) and not bool(vehicle.get("traffic")) and not bool(vehicle.get("external_input"))
 	if foreground == _skid_foreground and skid_audio.attenuation_model == (AudioStreamPlayer3D.ATTENUATION_DISABLED if foreground else AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE): return
 	_skid_foreground = foreground
-	skid_audio.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED if foreground else AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
-	skid_audio.max_distance = 0.0 if foreground else 55.0
-	skid_audio.panning_strength = 0.0 if foreground else 1.0
-	skid_audio.attenuation_filter_db = 0.0 if foreground else -24.0
+	if not foreground and vehicle.has_meta("tire_skid_duck"): vehicle.remove_meta("tire_skid_duck")
+	for player in [skid_audio, _skid_body, _skid_hiss, _skid_tail]:
+		player.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED if foreground else AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
+		player.max_distance = 0.0 if foreground else 55.0
+		player.panning_strength = 0.0 if foreground else 1.0
+		player.attenuation_filter_db = 0.0 if foreground else -24.0
 
 func _heft() -> float:
 	return clampf((STREET_PHYSICS._vehicle_mass(vehicle)-.6)/4.0,0.0,1.0)

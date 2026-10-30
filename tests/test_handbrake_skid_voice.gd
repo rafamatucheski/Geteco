@@ -56,7 +56,8 @@ func _case(stage: Node3D, id: String) -> void:
 		var audio = tires.skid_audio
 		if is_instance_valid(audio) and audio.playing:
 			played += 1
-			peak_db = maxf(peak_db, audio.volume_db)
+			# Nível pedido, sem envelope/jitter nem a mistura das camadas (30/10).
+			peak_db = maxf(peak_db, tires.skid_target_db)
 		max_voices = maxi(max_voices, _voices(car))
 	Input.action_release("handbrake")
 	# Parado, com o freio puxado, não pode chiar.

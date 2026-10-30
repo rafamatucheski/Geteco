@@ -94,7 +94,9 @@ func _ready() -> void:
 	# The driver's close race listener must not amplify rubber above the motor.
 	_tire.max_db = WHEELSPIN_MAX_DB
 	_tire.unit_size = 4.0
-	_tire.stream = _loop("res://audio/acoustic/skid_muscle.wav" if str(drivetrain.spec.engine_family)=="muscle" else "res://audio/acoustic/skid_street.wav")
+	# Mesmo guincho novo de VehicleTireEffects (tools/generate_tire_skid_loops.py); os skid_*.wav
+	# antigos eram 1 s de seno puro com ruído branco e se repetiam a cada segundo.
+	_tire.stream = _loop("res://audio/vehicle_fx/tire_squeal_muscle.wav" if str(drivetrain.spec.engine_family)=="muscle" else "res://audio/vehicle_fx/tire_squeal_street.wav")
 
 func _apply_profile() -> void:
 	var family := str(drivetrain.spec.engine_family)
@@ -189,13 +191,18 @@ func _process(delta: float) -> void:
 	# Injection increases engine load. It is not an external air-brake purge.
 	var nitro_load := 1.5 if drivetrain.nitro_active else 0.0
 	var role_gain := _race_gain()
+	# O pneu do jogador em drift forte pede espaço: o motor cede até 2,5 dB (meta de
+	# VehicleTireEffects, 0..1, já com envelope). A patinada (_tire) não entra no ducking.
+	var tire_duck := -2.5*clampf(float(vehicle.get_meta("tire_skid_duck",0.0)),0.0,1.0) if _foreground else 0.0
+	var tire_gain := role_gain
+	role_gain += tire_duck
 	if _mix_designed_engine(delta,-16.0+power*4.0+_audible_cut+exhaust*2.0+nitro_load+role_gain):
 		for player in _layers: player.stop()
 		if is_instance_valid(_recorded_idle): _recorded_idle.stop()
 		_shift.stop()
 		_last_shift = int(drivetrain.shift_serial)
 		_last_throttle = float(drivetrain.throttle)
-		_loop_level(_tire,float(drivetrain.wheelspin),WHEELSPIN_DB+role_gain,delta)
+		_loop_level(_tire,float(drivetrain.wheelspin),WHEELSPIN_DB+tire_gain,delta)
 		return
 	# Real idle recordings supply low-speed character for these two families.
 	# Do not stretch an idle recording across the entire rev range: fade it out
@@ -231,7 +238,7 @@ func _process(delta: float) -> void:
 	elif _last_throttle > .65 and float(drivetrain.throttle) < .25 and float(drivetrain.turbo_pressure) > .5:
 		_play_shift()
 	_last_throttle = float(drivetrain.throttle)
-	_loop_level(_tire,float(drivetrain.wheelspin),WHEELSPIN_DB+role_gain,delta)
+	_loop_level(_tire,float(drivetrain.wheelspin),WHEELSPIN_DB+tire_gain,delta)
 
 func _mix_designed_engine(delta: float, level: float) -> bool:
 	var archetype := str(vehicle.get("archetype"))

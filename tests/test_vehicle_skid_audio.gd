@@ -34,9 +34,15 @@ func run() -> void:
 	car.add_child(second)
 	second._update_skid_audio(true,1.0,1.0)
 	check(first.skid_audio.stream == cache.street and second.skid_audio.stream == cache.street,"vehicles use already prepared audio")
-	check(first.skid_audio != second.skid_audio and first.skid_audio.volume_db != second.skid_audio.volume_db and first.skid_audio.pitch_scale != second.skid_audio.pitch_scale,"shared waveform keeps independent voices, gain and pitch")
+	# 30/10: volume_db carrega o envelope de ataque; o ganho pedido por voz fica em skid_target_db.
+	check(first.skid_audio != second.skid_audio and first.skid_target_db != second.skid_target_db and first.skid_audio.pitch_scale != second.skid_audio.pitch_scale,"shared waveform keeps independent voices, gain and pitch")
+	check(first.skid_audio.get_child_count() == 3 and first._skid_body.stream == TIRES._skid_layer_streams.body and first._skid_hiss.stream == TIRES._skid_layer_streams.hiss,"rubber body, scrub hiss and release tail hang under the one voice")
+	check(first._skid_body.playing and first._skid_hiss.playing,"layers start with the squeal")
 	first._update_skid_audio(false,0,0)
 	check(not first.skid_audio.playing,"silence still stops the voice")
+	# A cauda de 120 ms vive no _process, que nunca roda sem physics_tick recente: corta sozinha.
+	for i in 30: await process_frame
+	check(not first._skid_tail.playing and not first._skid_body.playing and not first._skid_hiss.playing,"release tail and layers fall silent")
 	car.free()
 	await process_frame
 	print("VEHICLE_SKID_AUDIO checks=%d failures=%d" % [checks,failures.size()])

@@ -72,10 +72,11 @@ func _voice(stage: Node3D, id: String) -> Dictionary:
 	var car := await _spawn(stage, id)
 	var tires = car.effects.tire_effects
 	tires._update_skid_audio(true, 16.25, 6.0, 0)
-	var result := {"pitch": snappedf(tires.skid_audio.pitch_scale, .01), "drift": snappedf(tires.skid_audio.volume_db, .1),
+	# 30/10: volume_db agora sobe pelo envelope (80 ms) e leva jitter; o nível pedido é skid_target_db.
+	var result := {"pitch": snappedf(tires.skid_audio.pitch_scale, .01), "drift": snappedf(tires.skid_target_db, .1),
 		"stream": tires.skid_audio.stream.get_instance_id()}
 	tires._update_skid_audio(true, 16.25, 0.0, 2)
-	result["hb"] = snappedf(tires.skid_audio.volume_db, .1)
+	result["hb"] = snappedf(tires.skid_target_db, .1)
 	car.queue_free()
 	await physics_frame
 	return result

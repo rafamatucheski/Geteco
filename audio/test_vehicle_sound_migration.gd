@@ -31,7 +31,9 @@ func run() -> void:
 	_check(is_instance_valid(tires.skid_audio) and tires.skid_audio.playing,
 		"V1 skid WAV starts on a sliding V2 vehicle")
 	if is_instance_valid(tires.skid_audio):
-		_check(tires.skid_audio.stream.loop_end == 22050, "skid loop excludes V1 guard samples")
+		# 30/10: guincho novo de 3 s a 44,1 kHz (tools/generate_tire_skid_loops.py), com as mesmas
+		# 8 amostras de guarda no fim que repetem o começo.
+		_check(tires.skid_audio.stream.loop_end == 132300, "skid loop excludes the 8 guard samples")
 	tires._update_skid_audio(false, 0.0, 0.0)
 	_check(not tires.skid_audio.playing, "skid WAV stops when grip returns")
 	CRASH.play(car, null, car.global_position, 200.0)
