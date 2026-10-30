@@ -3,8 +3,8 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cxngy57dj034c"
-path.s3tc="res://.godot/imported/service.png-a3d8cc6ec2c2c3fd6dacd5c04a095f2b.s3tc.ctex"
-path.etc2="res://.godot/imported/service.png-a3d8cc6ec2c2c3fd6dacd5c04a095f2b.etc2.ctex"
+path.bptc="res://.godot/imported/service.png-a3d8cc6ec2c2c3fd6dacd5c04a095f2b.bptc.ctex"
+path.astc="res://.godot/imported/service.png-a3d8cc6ec2c2c3fd6dacd5c04a095f2b.astc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -13,12 +13,12 @@ metadata={
 [deps]
 
 source_file="res://assets/materials/harbor_paving/service.png"
-dest_files=["res://.godot/imported/service.png-a3d8cc6ec2c2c3fd6dacd5c04a095f2b.s3tc.ctex", "res://.godot/imported/service.png-a3d8cc6ec2c2c3fd6dacd5c04a095f2b.etc2.ctex"]
+dest_files=["res://.godot/imported/service.png-a3d8cc6ec2c2c3fd6dacd5c04a095f2b.bptc.ctex", "res://.godot/imported/service.png-a3d8cc6ec2c2c3fd6dacd5c04a095f2b.astc.ctex"]
 
 [params]
 
 compress/mode=2
-compress/high_quality=false
+compress/high_quality=true
 compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0

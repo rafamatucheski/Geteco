@@ -3,8 +3,8 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cbm4n3u8lj7ah"
-path.s3tc="res://.godot/imported/quay.png-069004a42e4e0242a1baaaaab045c37c.s3tc.ctex"
-path.etc2="res://.godot/imported/quay.png-069004a42e4e0242a1baaaaab045c37c.etc2.ctex"
+path.bptc="res://.godot/imported/quay.png-069004a42e4e0242a1baaaaab045c37c.bptc.ctex"
+path.astc="res://.godot/imported/quay.png-069004a42e4e0242a1baaaaab045c37c.astc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -13,12 +13,12 @@ metadata={
 [deps]
 
 source_file="res://assets/materials/harbor_paving/quay.png"
-dest_files=["res://.godot/imported/quay.png-069004a42e4e0242a1baaaaab045c37c.s3tc.ctex", "res://.godot/imported/quay.png-069004a42e4e0242a1baaaaab045c37c.etc2.ctex"]
+dest_files=["res://.godot/imported/quay.png-069004a42e4e0242a1baaaaab045c37c.bptc.ctex", "res://.godot/imported/quay.png-069004a42e4e0242a1baaaaab045c37c.astc.ctex"]
 
 [params]
 
 compress/mode=2
-compress/high_quality=false
+compress/high_quality=true
 compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
