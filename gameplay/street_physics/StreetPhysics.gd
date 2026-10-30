@@ -43,6 +43,22 @@ const RUNOVER_BODY_REACH := 0.6
 # e o mesmo corpo não repete em menos de RUNOVER_COOLDOWN_MS (dois carros em fila, ré e frente).
 const RUNOVER_REENTRY_MS := 250
 const RUNOVER_COOLDOWN_MS := 900
+# Encostão (playtest 30/10): abaixo de ~14 km/h o carro empurra em vez de atropelar. Até então
+# qualquer contato acima de PERSON_MIN_SPEED lançava o ragdoll com sangue, e manobrar ao lado de
+# alguém matava. A pessoa é levada pelo para-choque e dá passos para o lado; presa na frente por
+# tempo demais (ou contra uma parede) ela cai e o carro passa por cima.
+const NUDGE_MAX_SPEED := 4.0
+const NUDGE_SIDESTEP_SPEED := 1.8
+# Pressão por segundo de contato: ~1,2 s a 1 m/s, ~0,6 s perto do teto; presa numa parede, ~0,2 s.
+const NUDGE_PRESSURE_BASE := 0.6
+const NUDGE_PRESSURE_BLOCKED := 4.0
+const NUDGE_FORGET_MS := 400
+const NUDGE_REACT_MS := 550
+# Resistência do corpo no para-choque, por segundo de empurrão.
+const NUDGE_DRAG := 1.2
+# Dano da roda passando por cima de quem está caído vivo (fraco a 2 m/s, forte a LETHAL_SPEED).
+const RUNOVER_DAMAGE_MIN := 20.0
+const RUNOVER_DAMAGE_MAX := 60.0
 
 static var instance: Node3D
 
@@ -69,9 +85,15 @@ var runover_gore := OS.get_environment("GETECO_RUNOVER_GORE").strip_edges() != "
 var _downed: Array = []
 var _runover_seen := {}
 var _runover_last := {}
+## GETECO_VEHICLE_NUDGE=0 volta ao atropelamento em qualquer velocidade (A/B e comparação).
+var vehicle_nudge := OS.get_environment("GETECO_VEHICLE_NUDGE").strip_edges() != "0"
+## Encostões em curso por pessoa: {pressure, last, side, react}.
+var _nudges := {}
 ## Contadores para testes e diagnóstico.
 var runover_hits := 0
 var runover_sounds := 0
+var nudges := 0
+var nudge_falls := 0
 
 
 func _ready() -> void:
@@ -185,6 +207,10 @@ func _hit_people(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> 
 		toward.y = 0
 		var closing := planar.dot(toward.normalized()) if toward.length_squared() > 0.0001 else planar.length()
 		if closing < PERSON_MIN_SPEED: return
+		var soft_fall := false
+		if vehicle_nudge and planar.length() < NUDGE_MAX_SPEED and not person.is_in_group("skate_boards"):
+			if _nudge(vehicle, person, planar, motion, closing): return
+			soft_fall = true
 		_except(vehicle, person)
 		if person.is_in_group("skate_boards"):
 			# The mounted capsule represents the rider, not a solid road barrier.
@@ -193,13 +219,24 @@ func _hit_people(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> 
 			person.rotation.y = atan2(-planar.x, -planar.z)
 			person.speed = minf(closing * 0.35, 8.0)
 			continue
+		var gameplay = controller.world.get("gameplay") if controller != null else null
+		var point := person.global_position + Vector3.UP * 0.9
+		if soft_fall:
+			# Derrubado pelo encostão: cai na frente do carro, sem espirro nem poça; o sangue só vem
+			# se a roda passar por cima (run_over_downed).
+			nudge_falls += 1
+			person.set_meta("street_soft_fall", true)
+			var flight = FLIGHT.launch(person, planar, false, self, vehicle, true)
+			if flight != null: flight.min_down = 1.6
+			CONTACT_AUDIO.play_body_impact(vehicle, person, point, closing)
+			var fell_voiced: bool = gameplay != null and gameplay.has_method("person_voice") and gameplay.person_voice(person, "heavy")
+			if not fell_voiced: play("panic", point, -6.0)
+			continue
 		var lethal := planar.length() >= LETHAL_SPEED and person.has_method("receive_damage")
 		person.set_meta("vehicle_blood_side", preload("res://gameplay/vehicle_effects/VehicleBlood.gd").impact_side(vehicle, planar))
 		FLIGHT.launch(person, planar, lethal, self, vehicle, true)
 		var response := CRUSH.light_impact_response(vehicle, planar.length())
 		_scale_vehicle_speed(vehicle, 1.0 - 0.12 * response)
-		var point := person.global_position + Vector3.UP * 0.9
-		var gameplay = controller.world.get("gameplay") if controller != null else null
 		if gameplay != null and is_instance_valid(gameplay.get("effects")):
 			gameplay.effects.blood(point, planar.normalized(), 40.0 if lethal else 18.0)
 		if is_instance_valid(blood): blood.spawn_splatter(person.global_position, planar, clampf(planar.length() / LETHAL_SPEED, 0.2, 1.0))
@@ -210,6 +247,50 @@ func _hit_people(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> 
 		var voiced: bool = gameplay != null and gameplay.has_method("person_voice") and gameplay.person_voice(person, "death" if lethal else "heavy")
 		if not lethal and not voiced: play("panic", point, -4.0)
 		if response > 0.01: _shake_if_player(vehicle, (0.18 if lethal else 0.1) * response)
+
+
+## Empurra a pessoa junto do para-choque e para o lado do carro onde ela já está. true = continua de
+## pé (o carro segue sem exceção de colisão); false = a pressão passou do limite e ela vai ao chão.
+func _nudge(vehicle: CharacterBody3D, person: CharacterBody3D, planar: Vector3, motion: Vector3, closing: float) -> bool:
+	var now := Time.get_ticks_msec()
+	var id := person.get_instance_id()
+	var state: Dictionary = _nudges.get(id, {})
+	var fresh := state.is_empty() or now - int(state.last) > NUDGE_FORGET_MS
+	var forward := planar.normalized()
+	var side := Vector3.UP.cross(forward)
+	if fresh:
+		var lateral := (person.global_position - vehicle.global_position).dot(side)
+		# Bem no meio do para-choque o lado é sorte; fora dele, sai pelo lado mais perto da quina.
+		var escape := signf(lateral) if absf(lateral) > 0.15 else (1.0 if randf() < 0.5 else -1.0)
+		state = {"pressure": 0.0, "side": escape, "react": -100000}
+		_nudges[id] = state
+		if _nudges.size() > 32:
+			for key in _nudges.keys():
+				if now - int(_nudges[key].last) > NUDGE_FORGET_MS: _nudges.erase(key)
+	state.last = now
+	var delta := motion.length() / maxf(planar.length(), 0.001)
+	# A frente acompanha o carro com folga de 2 cm; o passo lateral é a pessoa tentando sair da frente.
+	var shove := forward * (motion.length() + 0.02) + side * float(state.side) * NUDGE_SIDESTEP_SPEED * delta
+	var contact := person.move_and_collide(shove)
+	var blocked := false
+	if contact != null and absf(contact.get_normal().y) <= 0.55 and contact.get_normal().dot(forward) < -0.4:
+		blocked = contact.get_remainder().length() > shove.length() * 0.5
+	state.pressure = float(state.pressure) + delta * (NUDGE_PRESSURE_BASE + closing / NUDGE_MAX_SPEED + (NUDGE_PRESSURE_BLOCKED if blocked else 0.0))
+	if float(state.pressure) >= 1.0:
+		_nudges.erase(id)
+		return false
+	_scale_vehicle_speed(vehicle, 1.0 - NUDGE_DRAG * delta)
+	if now - int(state.react) >= NUDGE_REACT_MS:
+		state.react = now
+		nudges += 1
+		var visual := FLIGHT.actor_visual(person)
+		if is_instance_valid(visual): preload("res://gameplay/CharacterFallPresentation3D.gd").apply_hit(person, visual, planar, 10.0 + closing * 4.0)
+		var point := person.global_position + Vector3.UP * 0.9
+		if fresh:
+			CONTACT_AUDIO.play_body_impact(vehicle, person, point, closing)
+			var gameplay = controller.world.get("gameplay") if controller != null and controller.get("world") != null else null
+			if gameplay != null and gameplay.has_method("person_voice"): gameplay.person_voice(person, "light")
+	return true
 
 
 func _hit_props(vehicle: CharacterBody3D, planar: Vector3, motion: Vector3) -> void:
@@ -493,6 +574,9 @@ func _update_slide(vehicle: CharacterBody3D, delta: float) -> void:
 # Pouso do atropelado: dano, queda, poça, socorro.
 
 func on_body_landed(actor: CharacterBody3D, lethal: bool, source: Node, impact_speed: float, heading: Vector3) -> void:
+	# Caiu do encostão: ralado, não ferido; sem poça nem gotejamento.
+	var soft := actor.has_meta("street_soft_fall")
+	if soft: actor.remove_meta("street_soft_fall")
 	if PROTECTION.is_protected(actor): return
 	# Authored contacts without a combat contract still fall and recover physically.
 	if not actor.has_method("receive_damage"): return
@@ -504,6 +588,7 @@ func on_body_landed(actor: CharacterBody3D, lethal: bool, source: Node, impact_s
 	else:
 		# Sobrevive caído com pouca vida (V1 deixava 1 de vida esperando a ambulância).
 		var damage := maxf(1.0, impact_speed * 3.0) if impact_speed < 3.75 else maxf(1.0, health - clampf(22.0 - impact_speed, 6.0, 18.0))
+		if soft: damage = clampf(impact_speed * 2.0, 1.0, 8.0)
 		actor.receive_damage(damage, source)
 		if actor.get("dead") != true:
 			var visual: Node3D = actor.get("visual")
@@ -517,7 +602,7 @@ func on_body_landed(actor: CharacterBody3D, lethal: bool, source: Node, impact_s
 			source.restore_blood_stains(int(source.get_meta("blood_stains", 0)) | int(actor.get_meta("vehicle_blood_side")))
 		actor.remove_meta("vehicle_blood_side")
 	# Centro no tronco: a queda da V2 desloca o corpo ~0,65 m para a frente.
-	blood.spawn_pool(actor.global_position + heading.normalized() * 0.6, dead, actor if _counts_as_corpse(actor) else null, heading)
+	if not soft or dead: blood.spawn_pool(actor.global_position + heading.normalized() * 0.6, dead, actor if _counts_as_corpse(actor) else null, heading)
 	_watch[actor.get_instance_id()] = {"health": float(actor.get("health")), "dead": dead}
 	# BodyFlight emits ground Foley at actual contact, before restitution.
 
@@ -633,6 +718,10 @@ func _run_over_effects(vehicle: CharacterBody3D, body: Node3D, point: Vector3, p
 	# Solavanco leve só na câmera do motorista; a velocidade do carro continua com Vehicle.gd.
 	_shake_if_player(vehicle, 0.05 + 0.06 * strength)
 	body.set_meta("street_runover_count", int(body.get_meta("street_runover_count", 0)) + 1)
+	# Caído vivo (encostão que derrubou, atropelamento que não matou): a roda por cima machuca de verdade.
+	if body.get("dead") != true and body.has_method("receive_damage") and not PROTECTION.is_protected(body):
+		body.set_meta("street_vehicle_hit", true)
+		body.receive_damage(lerpf(RUNOVER_DAMAGE_MIN, RUNOVER_DAMAGE_MAX, strength), vehicle)
 
 
 # ---------------------------------------------------------------------------

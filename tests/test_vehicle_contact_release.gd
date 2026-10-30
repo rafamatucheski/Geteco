@@ -30,12 +30,68 @@ func run() -> void:
 		person.position=Vector3(0,.002,2.27 if backward else -2.27)
 		street._people_cache=[] # nested actors can be missing from the periodic cache
 		await physics_frame
+		var start := person.position
 		CRUSH.set_planar(vehicle,Vector3.BACK*.15 if backward else Vector3.FORWARD*.15)
 		step(vehicle)
-		check(person.has_meta("street_flying"),"bumper contact releases person while starting %s" % backward)
-		check(vehicle.get_collision_exceptions().has(person),"car can continue through launched person")
+		# Encostão (30/10): arrancada lenta empurra, não lança nem sangra.
+		check(not person.has_meta("street_flying") and not person.has_meta("street_down"),"slow bumper contact nudges instead of launching %s" % backward)
+		check(not vehicle.get_collision_exceptions().has(person),"nudged person stays solid for the car %s" % backward)
+		check(person.position.distance_to(start) > .002 and is_equal_approx(person.health,100.0),"nudge moves the person without damage %s" % backward)
 		person.free()
 		vehicle.free()
+	# Carro insistindo devagar: a pessoa sai pelo lado e continua de pé.
+	var walker := Person.new()
+	world.add_child(walker)
+	walker.position=Vector3(.3,.002,-2.29)
+	var pusher := car(1.0)
+	pusher.controlled=true
+	street._people_cache=[walker]
+	await physics_frame
+	for frame in 150:
+		CRUSH.set_planar(pusher,Vector3.FORWARD*1.0)
+		step(pusher)
+		await physics_frame
+	check(not walker.has_meta("street_down") and walker.health == 100.0,"slow push lets the person step aside unharmed")
+	check(absf(walker.position.x) > pusher.half_width,"person ends beside the car, not in front: x=%.2f" % walker.position.x)
+	check(street.nudges > 0 and street.nudge_falls == 0,"nudge reaction counted without falls")
+	walker.free()
+	pusher.free()
+	# Presa contra a parede: a pressão derruba e o carro passa por cima, sem poça de atropelamento.
+	var pinned := Person.new()
+	world.add_child(pinned)
+	pinned.position=Vector3(0,.002,-2.29)
+	var wall_ahead := solid(Vector3(8,2,.4),Vector3(0,1,-2.85))
+	pusher = car(1.0)
+	pusher.controlled=true
+	street._people_cache=[pinned]
+	await physics_frame
+	var fell := false
+	for frame in 90:
+		CRUSH.set_planar(pusher,Vector3.FORWARD*1.0)
+		step(pusher)
+		await physics_frame
+		if pinned.has_meta("street_down"):
+			fell = true
+			break
+	check(fell and street.nudge_falls == 1,"pinned person goes down under sustained slow push")
+	check(pinned.collision_layer == 0,"downed person no longer blocks the car")
+	pinned.free()
+	pusher.free()
+	wall_ahead.free()
+	await physics_frame
+	# Acima do teto do encostão segue o atropelamento de antes.
+	var struck := Person.new()
+	world.add_child(struck)
+	struck.position=Vector3(0,.002,-2.27)
+	var fast := car(1.0)
+	fast.controlled=true
+	street._people_cache=[]
+	await physics_frame
+	CRUSH.set_planar(fast,Vector3.FORWARD*6.0)
+	step(fast)
+	check(struck.has_meta("street_flying"),"fast contact still launches the person: flying=%s down=%s pos=%s" % [struck.has_meta("street_flying"),struck.has_meta("street_down"),struck.position])
+	struck.free()
+	fast.free()
 	var contact := AuthoredContact.new()
 	world.add_child(contact)
 	contact.position=Vector3(0,.002,-2.27)
@@ -43,7 +99,7 @@ func run() -> void:
 	var vehicle := car(1.0)
 	vehicle.controlled=true
 	await physics_frame
-	CRUSH.set_planar(vehicle,Vector3.FORWARD*.15)
+	CRUSH.set_planar(vehicle,Vector3.FORWARD*6.0)
 	step(vehicle)
 	check(contact.has_meta("street_flying"),"authored contact without health gets physical response")
 	for frame in 100: await physics_frame
@@ -51,7 +107,10 @@ func run() -> void:
 	var flight := contact.get_node_or_null("BodyFlight3D")
 	if flight != null:
 		flight.down_time=8.0
-		for frame in 65: await physics_frame
+		# O lançamento a 6 m/s cai em ragdoll e levanta com o mocap, mais longo que o tween antigo.
+		for frame in 300:
+			await physics_frame
+			if not contact.has_meta("street_down"): break
 	check(not contact.has_meta("street_down") and contact.collision_layer==2,"authored contact recovers collision and pose")
 	contact.free()
 	vehicle.free()

@@ -2,7 +2,7 @@ extends RefCounted
 ## Antecipação pela velocidade física, incluindo ré e derrapagem. Carros em
 ## outra pista/altura ou que já passaram não provocam fuga.
 const HORIZON := 2.0
-const MIN_SPEED := 0.05 ## Mesmo limiar do impacto físico: manobra lenta também derruba.
+const MIN_SPEED := 0.05 ## Mesmo limiar do impacto físico: manobra lenta também empurra (e derruba quem fica preso).
 const MARGIN := 0.9
 
 static func assess(vehicle: CharacterBody3D, position: Vector3, pedestrian_velocity := Vector3.ZERO) -> Dictionary:
