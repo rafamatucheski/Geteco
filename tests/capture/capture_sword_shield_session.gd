@@ -59,6 +59,11 @@ func _sword() -> void:
 	await seconds(0.6)
 	await sheet("4_escudo", [0.0, 0.5])
 	print("SHIELD block=", world.gameplay.shield_block)
+	# Escudo erguido + ataque: chute espartano. Chamado direto no Gameplay: o clique simulado só pega
+	# o 1º golpe (o FullSession quer um aperto novo de verdade para arma não automática).
+	var g = world.gameplay
+	print("KICK pronto=", g.attack_allowed(), " melee_vazio=", g._melee_action.is_empty(), " contato_pendente=", g._pending_contact.is_empty(), " fire_at=", g.fire_at(g.aim_point), " clip=", g._clip_name)
+	await sheet("5_chute", [0.0, 0.2, 0.25])
 	Input.action_release("aim")
 
 func _gym() -> void:
