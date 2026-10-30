@@ -52,7 +52,8 @@ func turnaround(car: CharacterBody3D, graph: RefCounted) -> Dictionary:
 	if nodes.size()<2: return {}
 	var end: int = nodes[-1]
 	# Only a true two-way terminal, not a route truncated at a live junction.
-	if graph.edges[end].size()!=1: return {}
+	# Nó sem arestas no grafo atual (rota de outra região/montagem): não há retorno.
+	if not graph.edges.has(end) or graph.edges[end].size()!=1: return {}
 	var edge: Dictionary = graph.edges[end][0]
 	if edge.one_way or edge.width < 8.5: return {}
 	var forward: Vector3 = graph.vertices[end]-graph.vertices[nodes[-2]]

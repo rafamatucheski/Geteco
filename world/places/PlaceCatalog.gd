@@ -99,8 +99,8 @@ static func definitions(include_deleted := false) -> Array[Dictionary]:
 		if not walkup.is_empty(): approach = exterior + Vector3(0, 0, walkup_door_z(walkup) + 1.5)
 		# PortBossGarage.leave() restores the actor at EXTERIOR exactly.
 		return_point = exterior if id == "port_boss_garage" else approach + Vector3(0,0,1)
-		# The heater outside Ultimo Abrigo occupies the old return footprint.
-		# Return farther along the same approach, with full capsule clearance.
+		# The heater outside Ultimo Abrigo used to occupy the old return footprint
+		# (moved aside on 30/10, OriginalHeatSources); the farther return stays valid.
 		if id == "mountain_outfitters": return_point += Vector3(0,0,1.5)
 		if id == "harbor_police": return_point = approach
 		var reward: Dictionary = {}

@@ -29,6 +29,9 @@ var inventory: Array[Dictionary] = []
 var only: PackedStringArray = []
 var system_filter := ""
 var region_filter := ""
+## Graus de ângulo da aproximação (--diagonal=35): o jogador segura UMA direção, como no
+## controle com a câmera isométrica, cruzando a porta de viés. 0 = caminho reto até o vão.
+var diagonal_degrees := 0.0
 
 func _initialize() -> void: run.call_deferred()
 
@@ -42,6 +45,7 @@ func run() -> void:
 		if arg.begins_with("--only="): only = arg.trim_prefix("--only=").split(",")
 		if arg.begins_with("--system="): system_filter = arg.trim_prefix("--system=")
 		if arg.begins_with("--region="): region_filter = arg.trim_prefix("--region=")
+		if arg.begins_with("--diagonal="): diagonal_degrees = float(arg.trim_prefix("--diagonal="))
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(FOLDER))
 	# Campanha completa (deserto liberado, casa do Takeshi aberta) num save isolado;
 	# com --no-save nada é gravado de volta, nem nele nem no save pessoal.
@@ -228,9 +232,14 @@ func _audit(e: Dictionary) -> Dictionary:
 	# Caminho reto de 3 m; se um obstáculo (aquecedor, muro) barra antes da porta,
 	# tenta de novo a 1,6 m, como o jogador que contorna e chega de perto.
 	# Por último chega pelo lado, rente à fachada (portas atrás de muro/portão).
-	for attempt in [[APPROACH, 0.0], [1.6, 0.0], [0.9, -3.0], [0.9, 3.0]]:
+	var attempts := [[APPROACH, 0.0], [1.6, 0.0], [0.9, -3.0], [0.9, 3.0]]
+	# Viés: só as duas mãos (porta vista da esquerda e da direita), sem contornar.
+	if diagonal_degrees != 0.0: attempts = [[APPROACH, diagonal_degrees], [APPROACH, -diagonal_degrees]]
+	for attempt in attempts:
 		var distance: float = attempt[0]
-		var walked: Array = await _approach(e, r, door, inward, distance, attempt[1])
+		var lateral: float = 0.0 if diagonal_degrees != 0.0 else attempt[1]
+		var heading: float = attempt[1] if diagonal_degrees != 0.0 else 0.0
+		var walked: Array = await _approach(e, r, door, inward, distance, lateral, heading)
 		entered = walked[0]
 		probe_found = probe_found or walked[1]
 		opened_max = maxf(opened_max, walked[2])
@@ -278,11 +287,14 @@ func _audit(e: Dictionary) -> Dictionary:
 	return r
 
 ## Nasce `distance` metros à frente da porta e anda até ela. Devolve [entrou, achou folha, abertura máxima].
-func _approach(e: Dictionary, r: Dictionary, door: Vector3, inward: Vector3, distance: float, lateral := 0.0) -> Array:
+func _approach(e: Dictionary, r: Dictionary, door: Vector3, inward: Vector3, distance: float, lateral := 0.0, heading_degrees := 0.0) -> Array:
 	var session = world.session
 	var player = world.player
 	var across := Vector3(-inward.z, 0, inward.x)
-	var start := _ground(door - inward * distance + across * lateral)
+	# Direção fixa de viés: a reta passa pelo meio do vão e o jogador continua segurando ela
+	# depois de encostar (escorrega pela fachada como no controle).
+	var heading := inward.rotated(Vector3.UP, deg_to_rad(heading_degrees))
+	var start := _ground(door - inward * distance + across * lateral) if heading_degrees == 0.0 else _ground(door - heading * distance)
 	player.teleport(start)
 	player.automatic_direction = Vector3.ZERO
 	await _settle_at(start)
@@ -311,6 +323,7 @@ func _approach(e: Dictionary, r: Dictionary, door: Vector3, inward: Vector3, dis
 			var to: Vector3 = target - player.global_position
 			to.y = 0
 			player.automatic_direction = to.normalized() if to.length() > .15 else inward
+			if heading_degrees != 0.0: player.automatic_direction = heading
 		var amount: Variant = _door_amount(e)
 		if amount != null:
 			probe_found = true

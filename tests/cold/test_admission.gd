@@ -19,7 +19,7 @@ func run() -> void:
 	cold.configure(session)
 	world.add_child(cold)
 	cold.set_process(false)
-	var first := HEAT.to_world(Vector2(5980,715))
+	var first := HEAT.to_world(Vector2(6052,708))
 	check(not cold.prepare_collision_at(first),"first admission rejected while installing solid")
 	check(cold.presentation.visuals.size()==1,"only source within8m installed")
 	check(not cold.prepare_collision_at(first),"same physics frame still rejected")

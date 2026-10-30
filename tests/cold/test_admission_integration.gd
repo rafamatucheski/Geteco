@@ -25,7 +25,7 @@ func run() -> void:
 		if not world.production.travel_busy: break
 		await physics_frame
 	cold.set_process(false)
-	var at := HEAT.to_world(Vector2(5980,715))
+	var at := HEAT.to_world(Vector2(6052,708))
 	world.player.set_physics_process(false)
 	world.player.teleport(at+Vector3(8,.08,8))
 	world.production.region.set_focus(at)

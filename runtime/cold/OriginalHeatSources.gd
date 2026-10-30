@@ -6,7 +6,10 @@ const SOURCES := [
 	{"id":"logging_camp","point":Vector2(6440,580),"source":"MountainPass.gd:LoggingCamp/CampfireHeatSource"},
 	{"id":"summit_camp","point":Vector2(6370,-2780),"source":"MountainPass.gd:AltitudeOutpostBunker/SummitCampfire"},
 	{"id":"smuggler_camp","point":Vector2(5655,-990),"source":"MountainSceneryBuilder.gd:SecretMountainLake/SmugglerCampsite/fire_pit"},
-	{"id":"outfitters_heater","point":Vector2(5980,715),"source":"MountainExpedition.gd:shop_position+(0,65)"},
+	# Último Abrigo: a V1 punha o aquecedor em shop_position+(0,65), no meio do caminho 2,3 m à
+	# frente da porta pintada; quem chegava de viés parava nele e não entrava (auditoria de 30/10).
+	# Fica 4,5 m ao lado, junto à quina da fachada, ainda bem dentro do RADIUS da loja.
+	{"id":"outfitters_heater","point":Vector2(6052,708),"source":"MountainExpedition.gd:shop_position+(0,65)"},
 	{"id":"patrol_shelter","point":Vector2(6610,-1250),"source":"MountainSettlement.gd:PatrolShelter3D"},
 	{"id":"transit_village","point":Vector2(7650,-1553),"source":"MountainTransitVillageLayout.gd:HEAT_SOURCE"},
 	{"id":"resort_brazier","point":Vector2(7310,-2700),"source":"ResortPromenade.gd:_build_fire_brazier"},

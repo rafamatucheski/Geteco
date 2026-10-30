@@ -23,7 +23,7 @@ func run() -> void:
 	world.camera.set_process_unhandled_input(false)
 	world.camera.locked = true
 	var sites := {"resort":CATALOG._at(Vector2(7310,-2700),"mountain"),"ground":CATALOG._at(Vector2(7250,-2678),"mountain"),"village":CATALOG._at(Vector2(7650,-1553),"mountain"),"logging":CATALOG._at(Vector2(6440,580),"mountain"),"harbor":CATALOG._at(Vector2(5150,2400),"harbor")}
-	if "--review-ground" in OS.get_cmdline_user_args(): sites["outfitters"] = CATALOG._at(Vector2(5980,715),"mountain")
+	if "--review-ground" in OS.get_cmdline_user_args(): sites["outfitters"] = CATALOG._at(Vector2(6052,708),"mountain")
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--site="):
 			var chosen := arg.trim_prefix("--site=")

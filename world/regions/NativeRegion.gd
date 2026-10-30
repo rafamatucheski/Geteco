@@ -818,6 +818,11 @@ func _record_cache_key(record: Dictionary) -> String:
 	# os nós de outro.
 	if record.get("data") is Dictionary:
 		key += "|%s|%s"%[str(record.data.get("id","")),str(record.data.get("position",""))]
+		# Lugares da serra guardam a posição em exterior_position, e as três entradas do abrigo dos
+		# lenhadores dividem o id (access_id distingue): sem isto a terceira reaproveitava os nós da
+		# primeira, montados no lugar dela, e a porta da terceira ficava num terreno vazio.
+		if record.data.has("access_id") or record.data.has("exterior_position"):
+			key += "|%s|%s"%[str(record.data.get("access_id","")),str(record.data.get("exterior_position",""))]
 	var pieces: Array = [record.get("editor_piece_only", []), record.get("editor_piece_exclude", []), record.get("editor_piece_ids", [])]
 	if pieces.any(func(ids): return not ids.is_empty()):
 		key += "|pieces=" + JSON.stringify(pieces).sha256_text()
