@@ -25,6 +25,9 @@ static var headlight_shadow_policy := OS.get_environment("GETECO_HEADLIGHT_SHADO
 ## foco: com 20 m (+ o fade_length de 15 m) a sombra do facho de NPC sumia na visão normal de cima;
 ## 60 m mantém a sombra na tela e corta a dos fachos que já estão fora dela. GETECO_NPC_BEAM_SHADOW_FADE=<metros> ajusta no A/B.
 static var npc_beam_shadow_fade := float(OS.get_environment("GETECO_NPC_BEAM_SHADOW_FADE")) if OS.get_environment("GETECO_NPC_BEAM_SHADOW_FADE").is_valid_float() else 60.0
+## Farol do lowrider pendurado no visual que a hidráulica move (29/10). GETECO_LOWRIDER_LIGHT_FOLLOW=0
+## volta o projetor para o corpo (A/B e prova de que tests/test_lowrider_lights_follow.gd pega o defeito).
+static var lowrider_lights_follow := OS.get_environment("GETECO_LOWRIDER_LIGHT_FOLLOW") != "0"
 static var _shadow_quality_frame := -1
 static var _shadow_quality := 1
 var _lamp_shadow_state := -1
@@ -301,7 +304,11 @@ func _projector(mount: Vector3, energy: float, angle: float) -> SpotLight3D:
 	# amassados; filho do CharacterBody3D, o projetor ficava parado no ar à frente da lente
 	# (13/10: "farol voando"). Pendurado no visual ele acompanha a lente. Carros seguem no corpo.
 	# `mount` sai da lente já na pose atual do visual, então a conversão usa o transform atual.
-	var on_visual: bool = car.archetype.begins_with("bike_") and is_instance_valid(car.visual) and car.visual.get_parent() == car
+	# Lowrider também (29/10, jogador: "a luz do carro não acompanha"): a hidráulica levanta e
+	# inclina só o visual (LowriderHydraulics._apply); filho do corpo, o facho e o brilho ficavam
+	# na altura assada com a frente no alto. No visual seguem a lente sem nenhum custo por quadro.
+	var follows_body: bool = car.archetype.begins_with("bike_") or (lowrider_lights_follow and car.get("hydraulics") != null)
+	var on_visual: bool = follows_body and is_instance_valid(car.visual) and car.visual.get_parent() == car
 	var placement := Transform3D(Basis(Vector3.RIGHT, deg_to_rad(-7)), mount + Vector3(0, 0, -.06))
 	light.transform = car.visual.transform.affine_inverse() * placement if on_visual else placement
 	light.light_color = profile.color
