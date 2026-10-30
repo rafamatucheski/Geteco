@@ -1,0 +1,46 @@
+{
+	"style": "fagulha",
+	"module": [
+		12,
+		3.5
+	],
+	"side": [
+		10,
+		3.5
+	],
+	"eave": 0.0,
+	"snow_roof": false,
+	"openings": {
+		"front": [
+			{
+				"rect": [
+					0.4008333333333334,
+					0.2571428571428571,
+					0.5991666666666666,
+					1.0
+				],
+				"leaf": false
+			}
+		],
+		"back": []
+	},
+	"doors": {},
+	"source_art": {
+		"generator": "image_gen built-in",
+		"front": "exec-50decf52-68d6-49ba-830b-ac7292ae9e78.png",
+		"side": "exec-61ad159d-4ff8-4b19-9568-1c5d2d2bd7e2.png",
+		"roof": "exec-439660b5-5ff9-47e9-a73d-f3b42afb6dfe.png",
+		"door_crop_px": [
+			853,
+			241,
+			1310,
+			720
+		],
+		"processing": "warp_columns alinha vao autorado; folhas conservam colisao e movimento originais",
+		"prompts": {
+			"front": "Use case: stylized-concept. Production videogame FRONT FACADE albedo texture of Brazilian coastal arcade named exactly FAGULHA. Single flat orthographic straight-on elevation, facade fills entire rectangular image edge to edge, no sky/ground/background/perspective. Building 12 metres wide by 3.5 metres high. Restrained worn plum-painted masonry with aged terracotta brick base, brass framing, turquoise faded accents. Header sign occupies upper quarter, only text FAGULHA in cream retro lettering. Two large dark display windows show two human-sized arcade cabinets per side, colorful screen details painted into opaque glass. Double sliding door centered, opening spanning x40.1%–59.9%, y25.7%–100%, bottom at image edge with no step. Weathered hand-painted realistic GTA-like game texture, subdued daylight diffuse albedo, no neon glow or real light, no cast shadows, no people, no extra text or watermark.",
+			"side": "Use case: stylized-concept. Production videogame SIDE WALL albedo texture for Fagulha Brazilian coastal arcade. Single flat orthographic straight-on wall, 10 metres wide and 3.5 metres high. Full bleed rectangular wall fills image without background/perspective. Weathered muted plum painted plaster, understated aged terracotta brick plinth bottom 15%, slim turquoise and brass-painted cornice top 6%, subtle weathering where rain flowed from roof, one small high dark service vent. No text, no doors, no windows, no posters, no people, no external objects. Hand-painted realistic GTA-like environment art with gentle diffuse albedo and zero directional cast shadows. Wall edges meet a plum-and-brass arcade facade.",
+			"roof_shared": "Use case: stylized-concept. Production videogame roof albedo texture, single rectangular flat roof, exact orthographic TOP DOWN view, full bleed no background. Weathered grey green tar and mineral felt of a coastal Brazilian storefront, subtle fine grit, broad low-contrast rectangular seam patches, a few faded water marks, realistic hand-painted GTA-like environment texture. Surface is 14 by 11 metres. No equipment, no buildings, no parapet, no raised objects, no text, no shadows or lighting gradients. Entire image just the continuous roof surface."
+		}
+	}
+}

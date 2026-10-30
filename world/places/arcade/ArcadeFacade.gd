@@ -1,5 +1,8 @@
 extends "res://world/places/arcade/ArcadeGeometry.gd"
 ## A compact Fagulha storefront, authored in the gap between existing shops.
+const PAINTED := preload("res://world/urban_detail/PaintedFacadeKit.gd")
+const PAINTED_STYLE := "fagulha"
+
 var leaves: Array[Node3D] = []
 var open_amount := 0.0
 
@@ -10,6 +13,9 @@ func _ready() -> void:
 	# Entrada de empurrar (WeaponShopEntrance): as folhas deslizam ao empurrar.
 	# Antes ninguém as abria e só a ação silenciosa "Entrar" levava para dentro.
 	add_to_group("v2_walkin_facade")
+	if OS.get_environment("GETECO_PAINTED_ARCADE") != "0" and PAINTED.enabled() and FileAccess.file_exists(PAINTED.ROOT+PAINTED_STYLE+"/style.json"):
+		_build_painted()
+		return
 	box("BackShell",Vector3(0,1.75,-4.87),Vector3(12,3.5,.26),"585361","BackShell","stone")
 	for side in [-1,1]:
 		box("SideShell%d"%side,Vector3(side*5.87,1.75,0),Vector3(.26,3.5,10),"675b62","SideShell%d"%side,"stone")
@@ -91,3 +97,57 @@ func _collision(parent: Node3D, at: Vector3, size: Vector3, label: String) -> vo
 func set_open_amount(amount: float) -> void:
 	open_amount = clampf(amount,0,1)
 	for index in leaves.size(): leaves[index].position.x = (-1 if index==0 else 1)*(.565+open_amount*1.15)
+
+
+## A pintura troca somente a apresentação; caixas, folhas deslizantes e acesso são os originais.
+## O catálogo de estilos é descoberto e retido automaticamente pelo PaintedFacadePrewarm.
+func _build_painted() -> void:
+	var visual := PAINTED.build(self,PAINTED_STYLE,Vector3(12,3.5,10),null,NAN,{"ground_door":false})
+	# O kit também atende portas giratórias; este acesso conserva suas folhas de correr.
+	for child in visual.get_children():
+		if str(child.name).begins_with("Doorway_") or child.name in ["Roof","Cornice"]: child.free()
+	_collision(self,Vector3(0,1.75,-4.87),Vector3(12,3.5,.26),"BackShell")
+	for side in [-1,1]:
+		_collision(self,Vector3(side*5.87,1.75,0),Vector3(.26,3.5,10),"SideShell%d"%side)
+		_collision(self,Vector3(side*3.59,1.75,4.86),Vector3(4.80,3.5,.28),"FrontShell%d"%side)
+		_collision(self,Vector3(side*5.77,1.82,4.98),Vector3(.27,3.63,.33),"CornerPier%d"%side)
+		_painted_box("CornerPier%d"%side,Vector3(side*5.77,1.82,4.98),Vector3(.27,3.63,.33),"side")
+	_collision(self,Vector3(0,3.57,0),Vector3(12,.18,10),"Roof")
+	_collision(self,Vector3(3.61,3.98,-2.53),Vector3(1.22,.64,1.1),"Ventilator")
+	_painted_box("Roof",Vector3(0,3.57,0),Vector3(12,.18,10),"roof")
+	for side in [-1,1]:
+		_painted_box("RoofParapetSide",Vector3(side*5.75,3.79,0),Vector3(.23,.3,9.83),"side")
+		_painted_box("RoofParapetEnd",Vector3(0,3.79,side*4.75),Vector3(11.75,.3,.23),"side")
+	_painted_box("Ventilator",Vector3(3.61,3.98,-2.53),Vector3(1.22,.64,1.1),"roof")
+	_painted_box("Threshold",Vector3(0,.035,5.13),Vector3(2.25,.07,.58),"side")
+	for side in [-1,1]:
+		var leaf := Node3D.new()
+		leaf.name = "DoorLeaf%d"%side
+		leaf.position = Vector3(side*.565,0,4.91)
+		add_child(leaf)
+		# QuadMesh usa a imagem inteira: BoxMesh divide o UV entre seis faces.
+		for facing in [-1,1]:
+			var panel := MeshInstance3D.new()
+			panel.name = "DoorPanel" if facing>0 else "DoorPanelInside"
+			var quad := QuadMesh.new()
+			quad.size = Vector2(1.11,2.6)
+			panel.mesh = quad
+			panel.position = Vector3(0,1.3,facing*.0425)
+			panel.rotation.y = PI if facing<0 else 0.0
+			panel.material_override = PAINTED.material(PAINTED_STYLE,"door_front" if side<0 else "door_back")
+			leaf.add_child(panel)
+		_collision(leaf,Vector3(0,1.3,0),Vector3(1.11,2.6,0.12),"FagulhaDoor")
+		leaves.append(leaf)
+	set_process(false)
+	set_physics_process(false)
+
+func _painted_box(label: String, at: Vector3, size: Vector3, part: String) -> MeshInstance3D:
+	var instance := MeshInstance3D.new()
+	instance.name = label
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	instance.mesh = mesh
+	instance.position = at
+	instance.material_override = PAINTED.material(PAINTED_STYLE,part)
+	add_child(instance)
+	return instance
