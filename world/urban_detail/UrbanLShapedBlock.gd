@@ -6,6 +6,7 @@ class_name UrbanLShapedBlock
 ## while the Southwest Courtyard remains fully open and accessible.
 ## Features Crittall loft windows, courtyard loading dock doors, and rooftop water tower.
 
+const PAINTED_SKINS := preload("res://world/urban_detail/PaintedTallBuildings.gd")
 const L_MAIN_DEPTH := 0.55
 const L_WING_WIDTH := 0.50
 
@@ -17,20 +18,27 @@ func build() -> void:
 	var wing_d := building_size.y * (1.0 - L_MAIN_DEPTH)
 	var wing_w := building_size.x * L_WING_WIDTH
 	
+	var painted := building_id == "FoundryLofts" and PaintedFacadeKit.enabled() and OS.get_environment("GETECO_PAINTED_FOUNDRY") != "0"
 	var brick_mat := UrbanMaterials.brick_brown()
 	var trim_mat := UrbanMaterials.trim_stone()
 	
 	# 1. Main Wing (North portion across full building width)
 	# Center Z for main wing: starts at -half_d, extends +main_d
 	var main_center_z: float = -half_d + main_d * 0.5
-	add_solid_box(visuals_root, "MainWing", Vector3(0, height * 0.5, main_center_z), Vector3(building_size.x, height, main_d), brick_mat)
+	var main_visual := add_solid_box(visuals_root, "MainWing", Vector3(0, height * 0.5, main_center_z), Vector3(building_size.x, height, main_d), brick_mat)
+	if painted:
+		main_visual.hide()
+		PAINTED_SKINS.add_skin_box(visuals_root,"MainWing",main_visual.position,Vector3(building_size.x,height,main_d),"lofts-fundicao")
 	
 	# 2. East Wing (South-East wing extending forward)
 	# Center X: half_w - wing_w * 0.5
 	# Center Z: half_d - wing_d * 0.5
 	var wing_center_x: float = half_w - wing_w * 0.5
 	var wing_center_z: float = half_d - wing_d * 0.5
-	add_solid_box(visuals_root, "EastWing", Vector3(wing_center_x, height * 0.5, wing_center_z), Vector3(wing_w, height, wing_d), brick_mat)
+	var east_visual := add_solid_box(visuals_root, "EastWing", Vector3(wing_center_x, height * 0.5, wing_center_z), Vector3(wing_w, height, wing_d), brick_mat)
+	if painted:
+		east_visual.hide()
+		PAINTED_SKINS.add_skin_box(visuals_root,"EastWing",east_visual.position,Vector3(wing_w,height,wing_d),"lofts-fundicao")
 	
 	# L-Shaped Roof Surfaces: Main Wing and East Wing only (courtyard remains open to the sky)
 	add_mesh_box(visuals_root, "MainWingRoof", Vector3(0, height + 0.025, main_center_z), Vector3(building_size.x - 0.2, 0.05, main_d - 0.2), UrbanMaterials.roof_tar())
@@ -63,7 +71,7 @@ func build() -> void:
 	_build_courtyard_loading_dock(wing_center_x - wing_w * 0.5, wing_center_z, wing_d)
 	
 	# Crittall loft windows on Main Wing north/south and East Wing east/south facades
-	_build_loft_windows(main_center_z, main_d, wing_center_x, wing_center_z, wing_w, wing_d)
+	if not painted: _build_loft_windows(main_center_z, main_d, wing_center_x, wing_center_z, wing_w, wing_d)
 	
 	# Rooftop water tower on Main Wing
 	add_water_tower(visuals_root, Vector3(-half_w * 0.45, height + 0.05, main_center_z))
