@@ -18,6 +18,10 @@ config/custom_user_dir_name="GetecoV2"
 config/features=PackedStringArray("4.7", "C#", "Forward Plus")
 run/max_fps=60
 
+[audio]
+
+general/3d_panning_strength=1.0
+
 [autoload]
 
 SessionDiagnostics="*res://runtime/SessionDiagnostics.cs"

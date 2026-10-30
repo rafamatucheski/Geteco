@@ -53,9 +53,17 @@ var _cash_rng := RandomNumberGenerator.new()
 const COMBAT_VOICES := 12
 const RELOAD_VOLUME_DB := -5.0
 const FLAME_VOLUME_DB := -11.0
-const EXPLOSION_VOLUME_DB := 3.0
-## Tiro de NPC (polícia, gangue, assalto): um pouco abaixo da arma do jogador.
-const NPC_GUNFIRE_DB := -4.0
+## Explosão +7 dB (era +3 no SFX): desde 30/10 passa pelo bus Weapons, que não tem o +10 dB do SFX
+## nem o limitador esmagando o estrondo; +7 põe o pico de −3 dBFS da amostra ~3 dB no teto.
+const EXPLOSION_VOLUME_DB := 7.0
+## Tiro de NPC (polícia, gangue, assalto): abaixo da arma do jogador. Era −4 dB: com a perda por
+## distância, o tiro da polícia a 15 m chegava 14 dB abaixo do nosso e sumia sob o trânsito.
+const NPC_GUNFIRE_DB := 0.0
+## Silenciador. As amostras `suppressed_*` do V1 já foram gravadas ~10 dB abaixo do tiro (RMS −23
+## contra −13 dBFS): o −9 dB do V1 por cima disso, mais o bus, deixava o tiro inaudível
+## (playtest 30/10). A pistola silenciada dedicada tem nível de tiro cheio e só perde 6 dB.
+const SUPPRESSED_V1_DB := -1.0
+const SUPPRESSED_AUTHORED_DB := -6.0
 ## Alcance audível (m) com queda linear até zero, como o AudioStreamPlayer2D da
 ## V1 (max_distance em px ÷ 16): tiro 600 px, tiro silenciado 220 px, explosão 1600 px.
 const HEARING_GUNFIRE := 37.5
@@ -2352,7 +2360,7 @@ func _detonate_explosion(point: Vector3, radius: float, amount: float, source: N
 	var traced := Time.get_ticks_usec() if get_meta("trace_explosion",false) else 0
 	_sound("explosion", point, EXPLOSION_VOLUME_DB)
 	# Cauda: o estrondo sozinho acabava seco; o rumor e os estilhaços caindo vêm por baixo dele.
-	_firefly_sound("weapons_fire", "explosion_tail", point, EXPLOSION_VOLUME_DB - 7.0, HEARING_EXPLOSION * 1.4, 0.05)
+	_firefly_sound("weapons_fire", "explosion_tail", point, EXPLOSION_VOLUME_DB - 3.0, HEARING_EXPLOSION * 1.4, 0.05)
 	traced = _trace_explosion_cost("audio",traced)
 	if emergency != null: emergency.ignite(point, damage_source, 1.0)
 	traced = _trace_explosion_cost("ground_fire",traced)
@@ -2800,10 +2808,9 @@ func _stall_sound(kind: String, point: Vector3, base_volume_db: float = NPC_GUNF
 	var reach := HEARING_EXPLOSION if kind == "explosion" else HEARING_GUNFIRE
 	if kind == "pistol_suppressed":
 		reach = HEARING_SUPPRESSED
-		base_volume_db -= 9.0
+		base_volume_db += SUPPRESSED_AUTHORED_DB
 	var pitch := AUDIO.gunfire_pitch(_rng) * (AUDIO.variant_pitch(kind) if AUDIO.VARIANT_BASE.has(kind) else 1.0)
-	if kind == "explosion": _play_stream(stream, point, base_volume_db + AUDIO.gunfire_volume_jitter(_rng), pitch, reach)
-	else: _play_weapon_stream(stream, point, base_volume_db + AUDIO.gunfire_volume_jitter(_rng), pitch, reach)
+	_play_weapon_stream(stream, point, base_volume_db + AUDIO.gunfire_volume_jitter(_rng), pitch, reach)
 	# Camada de corpo (baque + cauda) no mesmo tom: o estalo gravado sozinho soava fraco.
 	var body := AUDIO.gun_body(kind)
 	if body != null: _play_weapon_stream(body, point, base_volume_db + float(AUDIO.GUN_BODY[kind][3]), pitch, reach * 1.3)
@@ -2885,7 +2892,8 @@ func _combat_voice(bus: String) -> AudioStreamPlayer3D:
 	var voice := AudioStreamPlayer3D.new()
 	voice.attenuation_model = AudioStreamPlayer3D.ATTENUATION_DISABLED
 	voice.max_distance = 0.0
-	voice.panning_strength = 0.6
+	# Era 0,6 (× 0,5 do projeto = 0,3): com o ouvinte 36 m atrás, tiro e grito ficavam no centro.
+	voice.panning_strength = 1.0
 	voice.bus = bus
 	return voice
 
@@ -2899,8 +2907,8 @@ func _hearing_gain_db(point: Vector3, reach: float) -> float:
 	var fraction := 1.0 - offset.length() / maxf(reach, 0.1)
 	return linear_to_db(fraction) if fraction > 0.001 else -80.0
 
-## Disparo: tiro silenciado usa a amostra `suppressed_*` do V1 (-9 dB abaixo do volume da
-## arma, como `characters/Player.gd`: `vol - (9.0 if suppressed else 0.0)`); o resto, o WAV
+## Disparo: tiro silenciado usa a amostra `suppressed_*` do V1 (ver SUPPRESSED_V1_DB: o −9 dB
+## de `characters/Player.gd` somava com a amostra já baixa e sumia); o resto, o WAV
 ## da arma na intensidade própria dela (`audio_volume_db` do catálogo — antes ignorado, o
 ## que fazia toda arma soar no mesmo volume fixo).
 func _shot_sound(id: String, data: Dictionary) -> void:
@@ -2908,9 +2916,11 @@ func _shot_sound(id: String, data: Dictionary) -> void:
 	var base_id := str(data.get("model_base",id))
 	_kick_camera(float(data.get("camera_kick",CAMERA_KICK.get(id,0.0))))
 	if data.get("suppressed", false) and base_id in SUPPRESSED_WEAPONS:
-		var muffled := AUDIO.gunfire_take(id if id == "pistol_suppressed" else "suppressed_" + base_id, _rng)
+		var authored := id == "pistol_suppressed"
+		var muffled := AUDIO.gunfire_take(id if authored else "suppressed_" + base_id, _rng)
 		if muffled != null:
-			_play_weapon_stream(muffled, player.global_position, base_volume - 9.0 + AUDIO.gunfire_volume_jitter(_rng), AUDIO.gunfire_pitch(_rng) * (AUDIO.variant_pitch(id) if AUDIO.VARIANT_BASE.has(id) else 1.0), HEARING_SUPPRESSED)
+			var offset := SUPPRESSED_AUTHORED_DB if authored and AUDIO.variant_has_shots(id) else SUPPRESSED_V1_DB
+			_play_weapon_stream(muffled, player.global_position, base_volume + offset + AUDIO.gunfire_volume_jitter(_rng), AUDIO.gunfire_pitch(_rng) * (AUDIO.variant_pitch(id) if AUDIO.VARIANT_BASE.has(id) else 1.0), HEARING_SUPPRESSED)
 			return
 	_sound(String(data.get("sound_type", id)), player.global_position, base_volume)
 
@@ -3048,15 +3058,17 @@ func _impact_sound(collider: Object, point: Vector3, amount: float, normal := Ve
 			_play_stream(body_hit, point, BODY_HIT_DB + clampf((amount - 15.0) / 15.0, -1.5, 2.0), _rng.randf_range(0.94, 1.06), HEARING_BODY_HIT)
 			return
 	_play_stream(AUDIO.impact_take(material, _rng), point, -14.0 + clampf((amount - 15.0) / 15.0, -0.8, 2.0))
-	# Bala em metal às vezes ricocheteia: assobio por cima do toc, em um terço dos impactos.
-	if material == "metal" and _rng.randf() < 0.35: _firefly_sound("weapons_fire", "ricochet", point, -13.0, 40.0, 0.08)
+	# Ricochete: assobio por cima do toc. Era −13 dB só em metal (1 em 3) e quase nunca se ouvia;
+	# concreto também desvia bala na rua.
+	var ricochet_chance := 0.5 if material == "metal" else (0.2 if material == "concrete" else 0.0)
+	if _rng.randf() < ricochet_chance: _firefly_sound("weapons_fire", "ricochet", point, -5.0, 40.0, 0.08)
 
 ## Sons de combate do Firefly (2026-10-15): pente vazio, sacar/guardar, pino da granada, cauda de
 ## explosão, ricochete e zunido de bala. Sem o arquivo importado não toca nada, como antes.
 func _firefly_sound(folder: String, key: String, point: Vector3, volume_db: float, reach: float, pitch_jitter := 0.04) -> void:
 	var take: AudioStream = AUDIO.FIREFLY.take(folder, key, _rng)
 	if take == null: return
-	if folder == "weapons_fire" and key != "explosion_tail":
+	if folder == "weapons_fire":
 		_play_weapon_stream(take, point, volume_db, _rng.randf_range(1.0 - pitch_jitter, 1.0 + pitch_jitter), reach)
 	else: _play_stream(take, point, volume_db, _rng.randf_range(1.0 - pitch_jitter, 1.0 + pitch_jitter), reach)
 

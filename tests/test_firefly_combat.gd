@@ -58,6 +58,8 @@ func run() -> void:
 		stage.add_child(channel)
 		channels.append(channel)
 	gp._audio_pool = channels
+	# Tiro, ricochete, pino e cauda de explosão vão para o pool das armas (bus Weapons).
+	gp._weapon_pool = channels
 	# Katana: sacar e embainhar.
 	gp._weapon_switch_sound("fists", "katana")
 	check(heard(channels, "res://audio/katana/draw_"), "equipar a katana toca o som de sacar")

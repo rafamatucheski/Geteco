@@ -46,10 +46,13 @@ func run() -> void:
 	for bus in ["Vehicles", "Radio", "Music", "Ambient"]:
 		var idx := AudioServer.get_bus_index(bus)
 		var duck: AudioEffectCompressor
+		var gunfire_duck: AudioEffectCompressor
 		for i in AudioServer.get_bus_effect_count(idx):
 			var effect := AudioServer.get_bus_effect(idx, i)
-			if effect is AudioEffectCompressor: duck = effect
+			if effect is AudioEffectCompressor and effect.resource_name == "VoicePriority": duck = effect
+			if effect is AudioEffectCompressor and effect.resource_name == "GunfirePriority": gunfire_duck = effect
 		check(duck != null and duck.sidechain == &"Dialogue" and duck.release_ms >= 300.0, bus + " yields to actual speech with smooth recovery")
+		check(gunfire_duck != null and gunfire_duck.sidechain == &"Weapons" and gunfire_duck.mix < 1.0, bus + " yields partially to gunfire")
 		if bus == "Vehicles":
 			check(duck != null and duck.mix < .7 and is_zero_approx(duck.gain), "engine retains dry body and has no extra +10 dB gain")
 	check(AudioServer.get_bus_index("Dialogue") > AudioServer.get_bus_index("Vehicles"), "speech processes before sidechain destinations")

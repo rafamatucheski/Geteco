@@ -209,18 +209,28 @@ func _setup_audio_buses() -> void:
 	_setup_voice_ducking("Radio", -26.0, .80)
 	_setup_voice_ducking("Music", -26.0, .70)
 	_setup_voice_ducking("Ambient", -24.0, .45)
+	# Tiro e explosão abrem espaço por ~0,3 s: é o contraste que dá peso ao disparo sem
+	# precisar subir o tiro até o limitador. Rádio e motor cedem menos que ambiente e música.
+	_setup_ducking("Ambient", "GunfirePriority", &"Weapons", -20.0, .60, 300.0)
+	_setup_ducking("Music", "GunfirePriority", &"Weapons", -20.0, .55, 350.0)
+	_setup_ducking("Vehicles", "GunfirePriority", &"Weapons", -18.0, .40, 250.0)
+	_setup_ducking("Radio", "GunfirePriority", &"Weapons", -18.0, .40, 250.0)
 
 func _setup_voice_ducking(bus_name: String, threshold_db: float, wet: float) -> void:
+	_setup_ducking(bus_name, "VoicePriority", &"Dialogue", threshold_db, wet, 450.0)
+
+func _setup_ducking(bus_name: String, effect_name: String, key_bus: StringName, threshold_db: float, wet: float, release_ms: float) -> void:
 	var idx := AudioServer.get_bus_index(bus_name)
+	if idx == -1: return
 	for effect_index in AudioServer.get_bus_effect_count(idx):
-		if AudioServer.get_bus_effect(idx, effect_index).resource_name == "VoicePriority": return
+		if AudioServer.get_bus_effect(idx, effect_index).resource_name == effect_name: return
 	var compressor := AudioEffectCompressor.new()
-	compressor.resource_name = "VoicePriority"
-	compressor.sidechain = &"Dialogue"
+	compressor.resource_name = effect_name
+	compressor.sidechain = key_bus
 	compressor.threshold = threshold_db
 	compressor.ratio = 4.0
 	compressor.attack_us = 2000.0
-	compressor.release_ms = 450.0
+	compressor.release_ms = release_ms
 	compressor.gain = 0.0
 	compressor.mix = wet
 	AudioServer.add_bus_effect(idx, compressor)

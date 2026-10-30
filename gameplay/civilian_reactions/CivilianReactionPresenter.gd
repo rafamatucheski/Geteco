@@ -27,8 +27,12 @@ func _ready() -> void:
 	for index in MAX_VOICES:
 		var voice := AudioStreamPlayer3D.new()
 		voice.max_distance = 45.0
-		voice.unit_size = 6.0
-		voice.volume_db = -4.0
+		# O ouvinte é a câmera, ~36 m atrás: com unit_size 6 o grito chegava −15 dB e o filtro
+		# padrão (−24 dB acima de 5 kHz, proporcional à perda) cortava ~20 dB do agudo — grito
+		# abafado de longe mesmo ao lado do jogador (playtest 30/10). Filtro leve fica como pista de distância.
+		voice.unit_size = 18.0
+		voice.attenuation_filter_db = -6.0
+		voice.volume_db = -3.0
 		add_child(voice)
 		voices.append(voice)
 

@@ -20,9 +20,18 @@ const AUDIO_DIR := "res://assets/gameplay/audio/"
 static var SFX_BUS_NAME: String:
 	get: return "SFX" if AudioServer.get_bus_index("SFX") != -1 else "Master"
 const WEAPON_BUS_NAME := &"Weapons"
-const WEAPON_TRIM_DB := -6.0
+## Playtest 30/10 ("arma atira baixo", "parece desenho animado"): o −6 dB de 26/10, somado ao
+## slider padrão 0,7 e à saída do +10 dB do SFX, deixava o tiro ~19 dB abaixo do que era e abaixo
+## dos passos e impactos. −2 dB com teto em −1 dBFS: o pico de uma pistola (+6 do catálogo sobre
+## amostra de −3 dBFS) passa só ~2 dB pelo limitador, sem achatar o estalo.
+const WEAPON_TRIM_DB := -2.0
+## Medido nas amostras (30/10): os tiros gravados caem 20–30 dB entre 2 e 4 kHz (pistola −29 dB em
+## 4 kHz) — é o "abafado". O EQ devolve parte do estalo e tira o embolado de 320 Hz; não recria o que
+## a amostra não tem acima de 11 kHz.
+const WEAPON_EQ_DB := {32: 0.0, 100: 2.5, 320: -2.0, 1000: 1.0, 3200: 4.0, 10000: 5.0}
 
 ## Independent firearms mix, without SFX's +10 dB presence boost.
+## Ordem: timbre → espaço → limitador (o reverb não pode empurrar o pico acima do teto).
 static func ensure_weapon_bus() -> void:
 	var index := AudioServer.get_bus_index(WEAPON_BUS_NAME)
 	if index < 0:
@@ -33,9 +42,30 @@ static func ensure_weapon_bus() -> void:
 		AudioServer.set_bus_volume_db(index,WEAPON_TRIM_DB)
 	for slot in AudioServer.get_bus_effect_count(index):
 		if AudioServer.get_bus_effect(index,slot).resource_name == "WeaponsPresence": return
+	var tone := AudioEffectEQ6.new()
+	tone.resource_name = "WeaponsTone"
+	var band := 0
+	for hz in WEAPON_EQ_DB:
+		tone.set_band_gain_db(band,float(WEAPON_EQ_DB[hz]))
+		band += 1
+	AudioServer.add_bus_effect(index,tone)
+	# Toda amostra de tiro é mono e o ouvinte (câmera) fica ~36 m atrás: sem isto o tiro saía
+	# seco e no centro. Eco curto de rua com espalhamento total abre o estéreo na cauda; o
+	# passa-alta do reverb deixa o grave do disparo seco e firme.
+	var space := AudioEffectReverb.new()
+	space.resource_name = "WeaponsSpace"
+	space.predelay_msec = 45.0
+	space.predelay_feedback = 0.25
+	space.room_size = 0.55
+	space.damping = 0.45
+	space.spread = 1.0
+	space.hipass = 0.25
+	space.dry = 1.0
+	space.wet = 0.16
+	AudioServer.add_bus_effect(index,space)
 	var limiter := AudioEffectHardLimiter.new()
 	limiter.resource_name = "WeaponsPresence"
-	limiter.ceiling_db = -3.0
+	limiter.ceiling_db = -1.0
 	limiter.pre_gain_db = 0.0
 	AudioServer.add_bus_effect(index,limiter)
 
@@ -61,6 +91,10 @@ static func _variant_bank(id: String, kind: String, count: int) -> Array:
 			if stream != null: bank.append(stream)
 	_variant_samples[key] = bank
 	return bank
+
+## A variante tem tiros próprios gravados (e não cai no banco da arma-base).
+static func variant_has_shots(id: String) -> bool:
+	return not _variant_bank(id,"shot",GUNFIRE_TAKES).is_empty()
 
 static func variant_pitch(id: String) -> float:
 	# Authored deliveries already have their final character and must play at native pitch.
