@@ -21,7 +21,11 @@ const SLOT_CHANCE := 45 # em 100
 const FILL_RATE := 1.0 / 45.0
 const DRY_RATE := 1.0 / 120.0
 const SPLASH_MIN_SPEED := 0.95 # 15 px/s da V1 a 16 px/m
-const SPLASH_POOL_SIZE := 8
+const SPLASH_POOL_SIZE := 12
+## Carro atravessando a poça levanta água a cada SPRAY_INTERVAL, não só ao entrar (30/10: "as poças não têm
+## efeito quando o carro passa em cima" — a rajada única de gotas de 6 cm sumia vista de cima).
+const SPRAY_INTERVAL := 0.12
+const SPRAY_MIN_SPEED := 3.0
 const AUDIO_POOL_SIZE := 4
 
 var controller
@@ -35,6 +39,7 @@ var _rejected: Dictionary = {}
 var _free: Array[Area3D] = []
 var _layout_focus := Vector3.INF
 var _clock := 0.0
+var _spray_clock := 0.0
 var _splashes: Array[GPUParticles3D] = []
 var _splash_cursor := 0
 var _voices: Array[AudioStreamPlayer3D] = []
@@ -116,6 +121,10 @@ func _process_traced(delta: float) -> void:
 	if wetness <= 0.0:
 		if not _active.is_empty(): _release_all()
 		return
+	_spray_clock += delta
+	if _spray_clock >= SPRAY_INTERVAL and wetness > 0.35:
+		_spray_clock = 0.0
+		_spray_vehicles()
 	_clock += delta
 	if _clock < 0.25: return
 	_clock = 0.0
@@ -240,7 +249,18 @@ func _on_body_entered(body: Node3D, puddle: Area3D) -> void:
 	puddle.set_meta("cooldown", now + 0.2)
 	splash(Vector3(body.global_position.x, puddle.global_position.y, body.global_position.z), speed)
 
-func splash(point: Vector3, speed: float) -> void:
+## Veículos dentro de poças, andando: um respingo no meio do carro por poça e por intervalo.
+func _spray_vehicles() -> void:
+	for puddle: Area3D in _active.values():
+		if not puddle.monitoring or not puddle.visible: continue
+		for body: Node3D in puddle.get_overlapping_bodies():
+			if not (body is CharacterBody3D) or (body.collision_layer & 4) == 0: continue
+			var speed := Vector2(body.velocity.x, body.velocity.z).length()
+			if speed < 0.01 and "speed" in body: speed = absf(float(body.speed))
+			if speed < SPRAY_MIN_SPEED: continue
+			splash(Vector3(body.global_position.x, puddle.global_position.y, body.global_position.z), speed, false)
+
+func splash(point: Vector3, speed: float, audible := true) -> void:
 	splash_count += 1
 	var emitter := _splashes[_splash_cursor]
 	_splash_cursor = (_splash_cursor + 1) % _splashes.size()
@@ -253,6 +273,7 @@ func splash(point: Vector3, speed: float) -> void:
 	emitter.global_position = point
 	emitter.restart()
 	emitter.emitting = true
+	if not audible: return
 	var voice := _voices[_voice_cursor]
 	_voice_cursor = (_voice_cursor + 1) % _voices.size()
 	voice.global_position = point
@@ -265,8 +286,8 @@ func _create_splash_emitter() -> GPUParticles3D:
 	particles.name = "PuddleSplash"
 	particles.emitting = false
 	particles.one_shot = true
-	particles.amount = 28
-	particles.lifetime = 0.5
+	particles.amount = 64
+	particles.lifetime = 0.6
 	particles.explosiveness = 0.95
 	particles.local_coords = false
 	particles.visibility_aabb = AABB(Vector3(-3, -1, -3), Vector3(6, 4, 6))
@@ -280,7 +301,8 @@ func _create_splash_emitter() -> GPUParticles3D:
 	process.scale_max = 1.3
 	particles.process_material = process
 	var quad := QuadMesh.new()
-	quad.size = Vector2(0.06, 0.12)
+	# Gotas legíveis na câmera alta (~36 m): 6 × 12 cm sumiam.
+	quad.size = Vector2(0.16, 0.30)
 	var drop := StandardMaterial3D.new()
 	drop.albedo_color = Color(0.82, 0.9, 1.0, 0.75)
 	drop.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
