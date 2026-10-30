@@ -17,6 +17,8 @@ const AUTHORED_OWNERS := [
 	"res://gameplay/urban_v1/TruckersVillageVisuals.gd",
 	"res://world/places/amusement_park/ParkGeometry.gd",
 	"res://world/regions/OriginalSouthPort.gd",
+	"res://world/places/curitiba_cellar/CuritibaCellarInterior.gd",
+	"res://world/places/arcade/ArcadeInterior.gd",
 ]
 static var _retained: Array[Material] = []
 static var _done := false
