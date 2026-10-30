@@ -58,7 +58,8 @@ func _run() -> void:
 	controller.add_child(controller.player)
 
 	var expected_weapons := ["pistol", "smg", "m4a1", "m4a1", "m4a1"]
-	var expected_health := [50.0, 75.0, 95.0, 110.0, 130.0]
+	# 30/10/2026: farda e FBI passaram do civil (playtest "morrem com 2 tiros"); SWAT/Exército iguais.
+	var expected_health := [100.0, 115.0, 95.0, 110.0, 130.0]
 	var expected_damage := [6.0, 6.0, 8.0, 8.0, 8.0]
 	for tier in 5:
 		controller.shots.clear()

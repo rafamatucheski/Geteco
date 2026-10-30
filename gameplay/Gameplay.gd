@@ -1545,7 +1545,7 @@ func _stall_fire_at(target: Vector3) -> bool:
 							if is_instance_valid(damage_look) and damage_look.has_method("ignite"): damage_look.ignite(player)
 				else:
 					part_span = STALL_WORK.begin()
-					_damage_bullet(hit.collider, amount, player, shot_from, shot_to, end)
+					_damage_bullet(hit.collider, amount, player, shot_from, shot_to, end, data)
 					STALL_WORK.finish_slow("gameplay.fire_at.damage", part_span, 2000, hit.collider as Node)
 					confirm_player_hit(hit.collider, amount)
 					part_span = STALL_WORK.begin()
@@ -1833,7 +1833,8 @@ func _clear_combat_registers() -> void:
 	_pain_next.clear()
 	_flame_crime_clock = 0.0
 
-func _damage_bullet(actor: Object, amount: float, source: Node, shot_from := Vector3.INF, shot_to := Vector3.INF, hit_point := Vector3.INF) -> void:
+## `weapon`: dados da arma que atirou (PoliceAgent.scale_bullet_damage lê o calibre para o colete).
+func _damage_bullet(actor: Object, amount: float, source: Node, shot_from := Vector3.INF, shot_to := Vector3.INF, hit_point := Vector3.INF, weapon: Dictionary = {}) -> void:
 	# Lataria absorve 85% dos tiros, inclusive cada chumbo de escopeta.
 	# Mantém durabilidade, blindagem, colisões, fogo e explosões independentes.
 	if is_instance_valid(actor) and actor is Node and actor.get_meta("gameplay_role", "") == "vehicle":
@@ -1856,6 +1857,9 @@ func _damage_bullet(actor: Object, amount: float, source: Node, shot_from := Vec
 			# Motorista do trânsito sentado: ferido, morto ou sai e foge (TrafficDriverPool).
 			preload("res://gameplay/traffic/TrafficDriverPool.gd").bullet_hit(world,actor,shot_from,shot_to,source)
 		amount *= 0.15
+	elif is_instance_valid(actor) and actor.has_method("scale_bullet_damage") and not _is_invulnerable(actor):
+		# Policial: cabeça × colete (PoliceAgent). Jogador, civis e demais NPCs não têm o método e não mudam.
+		amount = actor.scale_bullet_damage(amount, hit_point, weapon)
 	_damage(actor, amount, source)
 
 ## `continuous`: dano de jato ou de fogo em tique periódico (ver `_crime_due`).
@@ -2498,7 +2502,7 @@ func _advance_police_rounds(delta: float) -> void:
 		if not hit.is_empty():
 			var data: Dictionary = round_index.data
 			var damage := CATALOG.distance_damage(int(round_index.damage), float(round_index.distance) * 16.0, float(data.get("falloff_start", 170.0)), float(data.get("max_range", 420.0)), float(data.get("min_damage_ratio", 0.25)))
-			_damage_bullet(hit.collider, damage, round_index.source.get_ref(), shot_from, glass_limit, end)
+			_damage_bullet(hit.collider, damage, round_index.source.get_ref(), shot_from, glass_limit, end, data)
 			_impact_sound(hit.collider, end, damage, hit.normal)
 			_hit_effect(hit, damage, round_index.direction)
 		if finished: _police_rounds.remove_at(index)

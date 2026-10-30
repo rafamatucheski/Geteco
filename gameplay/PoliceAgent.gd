@@ -6,10 +6,29 @@ const MODEL = preload("res://gameplay/PoliceModel.gd")
 const ARSENAL = preload("res://gameplay/ArsenalWeapon3D.gd")
 const CATALOG = preload("res://gameplay/WeaponCatalog.gd")
 const AUDIO = preload("res://gameplay/CombatAudio.gd")
-const TIER_HEALTH := [50.0, 75.0, 95.0, 110.0, 130.0]
+## Vida (30/10/2026). Playtest: "as polícias morrem muito fácil, só 2 tiros". A farda tinha 50 (metade
+## de um civil, que tem 100) e a bala não olhava a zona: pistola (34) e AK (42) matavam com 2 tiros em
+## qualquer lugar. Farda e FBI agora passam do civil e usam colete macio (VEST_*); SWAT e Exército
+## ficam com a vida e as placas de antes.
+const TIER_HEALTH := [100.0, 115.0, 95.0, 110.0, 130.0]
 ## Placas balísticas das unidades pesadas: SWAT e Exército. O FBI de terno
 ## e os policiais de farda (inclusive os de biotipo robusto) não usam essas placas.
 const TIER_ARMOR := [0.0, 0.0, 80.0, 0.0, 110.0]
+## Colete macio de quem não tem placa (farda, FBI por baixo do terno, motociclista). Só a bala passa
+## por ele (Gameplay._damage_bullet -> scale_bullet_damage); explosão, fogo, soco e carro não. Segura bem
+## munição de mão e pouco a de fuzil/chumbo, por isso a pistola cai mais que a AK. À queima-roupa, no
+## tronco: farda 100 = pistola 6 tiros (17 cada), AK 3 (33,6); patamar 1 (115) e FBI (110) = 7 e 4.
+## Pernas e braços contam como corpo (a zona é só cabeça × resto).
+const VEST_HANDGUN_SCALE := 0.5
+const VEST_RIFLE_SCALE := 0.8
+const HANDGUN_AMMO := ["9mm", "44"]
+## Cabeça fica fora do colete e das placas e leva 2,5×: a mira é recompensada. Farda: pistola 2 (85),
+## AK 1 (105); SWAT/Exército: 2 de pistola ou de AK. Altura medida dos pés (cápsula vai a 1,71 m).
+const HEAD_SCALE := 2.5
+const HEAD_MIN_HEIGHT := 1.45
+## Quadro de física em que scale_bullet_damage viu tiro na cabeça: receive_damage desse mesmo quadro
+## pula as placas. Fica preso ao quadro para um tiro barrado (invulnerável) não vazar para o próximo dano.
+var _head_hit_frame := -1
 const TIER_WEAPONS := ["pistol", "smg", "m4a1", "m4a1", "m4a1"]
 const TIER_DAMAGE := [6.0, 6.0, 8.0, 8.0, 8.0]
 const TIER_INTERVAL := [0.85, 0.40, 0.32, 0.32, 0.32]
@@ -499,6 +518,18 @@ func _sync_wound_pose() -> void:
 	var limp := clampf((WOUNDED_RATIO - health / maxf(max_health, 1.0)) / WOUNDED_RATIO * 1.6, 0.0, 1.0) if not dead else 0.0
 	if visual.has_method("set_wound_pose"): visual.set_wound_pose(limp, bend)
 
+## Zona da bala, chamada por Gameplay._damage_bullet antes de receive_damage. `hit_point` infinito
+## (chamada sem raio) conta como corpo; `weapon` vazio conta como fuzil (o colete segura menos).
+func scale_bullet_damage(amount: float, hit_point: Vector3, weapon: Dictionary) -> float:
+	if dead or not is_finite(amount) or amount <= 0.0: return amount
+	if hit_point.is_finite() and hit_point.y - global_position.y >= HEAD_MIN_HEIGHT:
+		_head_hit_frame = Engine.get_physics_frames()
+		return amount * HEAD_SCALE
+	# Placa (SWAT/Exército) já é a proteção do tronco: não soma colete por cima.
+	if max_armor > 0.0: return amount
+	var handgun := String(weapon.get("ammo_family", "")) in HANDGUN_AMMO
+	return amount * (VEST_HANDGUN_SCALE if handgun else VEST_RIFLE_SCALE)
+
 func receive_damage(amount: float, source: Node = null) -> void:
 	if dead or not is_finite(amount) or amount <= 0: return
 	last_damage_time = float(Time.get_ticks_msec()) * 0.001
@@ -512,7 +543,10 @@ func receive_damage(amount: float, source: Node = null) -> void:
 			cooldown = minf(cooldown, 0.4)
 	# Uma única absorção para qualquer fonte (bala, explosão, fogo, impacto):
 	# esgotar as placas não mata; somente o excesso chega à vida, sem redução dupla.
-	var absorbed := minf(armor, amount)
+	# Tiro na cabeça (marcado por scale_bullet_damage neste quadro) passa por cima das placas.
+	var head_hit := _head_hit_frame == Engine.get_physics_frames()
+	_head_hit_frame = -1
+	var absorbed := 0.0 if head_hit else minf(armor, amount)
 	armor = maxf(0.0, armor - absorbed)
 	health = maxf(0.0, health - (amount - absorbed))
 	# Gameplay._impact_sound troca o estalo de carne pelo baque da placa neste quadro.

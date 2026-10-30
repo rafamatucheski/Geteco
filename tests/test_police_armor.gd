@@ -54,6 +54,32 @@ func run() -> void:
 	check(bundle.gameplay.stars>=2,"A hit absorbed by armor still counts as assault on police")
 	bundle.gameplay._damage(combat,70.0,bundle.player,true)
 	check(combat.armor==0.0 and combat.health==87.0,"Continuous combat damage crosses the shield through the same pipeline")
+	# Colete e cabeça (30/10/2026): contagem de tiros à queima-roupa pela mesma rota da bala do jogador.
+	var pistol: Dictionary=preload("res://gameplay/WeaponCatalog.gd").get_weapon("pistol")
+	var ak: Dictionary=preload("res://gameplay/WeaponCatalog.gd").get_weapon("ak47")
+	var patrol=spawn(0)
+	check(patrol.health==100.0 and patrol.max_armor==0.0,"Patrol spawns with civilian-level 100 health and no plates")
+	var torso: Vector3=patrol.global_position+Vector3.UP*1.1
+	var pistol_shots:=0
+	while not patrol.dead and pistol_shots<20:
+		bundle.gameplay._damage_bullet(patrol,float(pistol.damage),bundle.player,Vector3.INF,Vector3.INF,torso,pistol)
+		pistol_shots+=1
+	check(pistol_shots>=5 and pistol_shots<=7,"Vest holds 5-7 pistol shots to the torso (%d)"%pistol_shots)
+	var rifle_target=spawn(0)
+	var ak_shots:=0
+	while not rifle_target.dead and ak_shots<20:
+		bundle.gameplay._damage_bullet(rifle_target,float(ak.damage),bundle.player,Vector3.INF,Vector3.INF,rifle_target.global_position+Vector3.UP*1.1,ak)
+		ak_shots+=1
+	check(ak_shots>=3 and ak_shots<=4,"Vest holds 3-4 AK shots to the torso (%d)"%ak_shots)
+	var headshot=spawn(0)
+	var head_shots:=0
+	while not headshot.dead and head_shots<20:
+		bundle.gameplay._damage_bullet(headshot,float(pistol.damage),bundle.player,Vector3.INF,Vector3.INF,headshot.global_position+Vector3.UP*1.6,pistol)
+		head_shots+=1
+	check(head_shots>=1 and head_shots<=2,"Pistol headshot stays lethal in 1-2 hits (%d)"%head_shots)
+	var helmet=spawn(2)
+	bundle.gameplay._damage_bullet(helmet,float(pistol.damage),bundle.player,Vector3.INF,Vector3.INF,helmet.global_position+Vector3.UP*1.6,pistol)
+	check(helmet.armor==80.0 and helmet.health==95.0-float(pistol.damage)*2.5,"Headshot bypasses SWAT plates")
 	var unit:=UNIT.new()
 	unit.controller=bundle.controller
 	unit.crew_remaining=0
