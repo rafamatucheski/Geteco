@@ -13,6 +13,8 @@ const MIXAMO_DEATH_LIBRARY := "res://assets/dante/mixamo/dante_mixamo_death.res"
 ## Sacar e guardar a espada (`tools/retarget_mixamo_sword_to_dante.gd`): biblioteca "mixsword" com
 ## withdraw_katana, sheathe_katana e sheathe_greatsword.
 const MIXAMO_SWORD_LIBRARY := "res://assets/dante/mixamo/dante_mixamo_sword.res"
+## Exercícios da academia Ferro Velho (mesma ferramenta, `-- --set=gym`): biblioteca "mixgym".
+const MIXAMO_GYM_LIBRARY := "res://assets/dante/mixamo/dante_mixamo_gym.res"
 ## Entrar/sair do carro, puxar o motorista e levantar do chão (`tools/retarget_mixamo_vehicle_clips.gd`):
 ## biblioteca "mixveh" com enter_car, exit_car, pull_from_seat, getup_* e driving.
 const MIXAMO_VEHICLE_LIBRARY := "res://assets/dante/mixamo/dante_mixamo_vehicle.res"
@@ -158,15 +160,24 @@ var _sword_from_basis := Basis.IDENTITY
 const LOCOMOTION_BLEND_RATE := 7.0
 ## Katana na mão: parado, andando e correndo com os clipes da greatsword do Mixamo (Gameplay liga
 ## `sword_locomotion`). Os braços seguram a espada pelo próprio clipe (pegada nativa, como nos golpes).
-const SWORD_IDLE := "mixsword/gs_idle"
-const SWORD_WALK := "mixsword/gs_walk"
-const SWORD_RUN := "mixsword/gs_run"
+## O prefixo vem de `sword_clip_set`: "gs" (greatsword, katana) ou "ss" (espada e escudo da serra).
+const SWORD_IDLE := "mixsword/%s_idle"
+const SWORD_WALK := "mixsword/%s_walk"
+const SWORD_RUN := "mixsword/%s_run"
+## Defesa com escudo parada: o clipe de bloqueio substitui a guarda (Gameplay liga `sword_block`).
+const SHIELD_BLOCK_IDLE := "mixsword/ss_block_idle"
 ## Passada por ciclo (m) para travar a fase na distância. Natural, medido nos pés do Dante: Walk 1,61 m
 ## (1,18 m/s, ciclo de 1,37 s) e Run 2,69 m (4,48 m/s). Como o Walking comum (natural 1,46 m, tocado com
 ## 1,8 m a 3,5 m/s), a passada é ~25% maior que a natural: com a natural o Walk ciclaria 3× rápido demais.
 const SWORD_WALK_STRIDE := 2.0
 const SWORD_RUN_STRIDE := 2.8
 var sword_locomotion := false
+var sword_clip_set := "gs"
+## Armas que tocam o próprio clipe do Mixamo (Gameplay.NATIVE_SWORDS).
+const NATIVE_SWORDS := ["katana", "sword_shield"]
+var sword_block := false
+## Fôlego da academia (GymState.sprint_scale): multiplica só a velocidade da corrida.
+var sprint_scale := 1.0
 const RUN_BLEND_RATE := 4.5
 const MOVING_SPEED_EPSILON := 0.12
 const WALK_START := 0.067
@@ -202,6 +213,8 @@ func _ready() -> void:
 			animation.add_animation_library("mixamo", load(MIXAMO_DEATH_LIBRARY))
 		if animation and not animation.has_animation_library("mixsword") and ResourceLoader.exists(MIXAMO_SWORD_LIBRARY):
 			animation.add_animation_library("mixsword", load(MIXAMO_SWORD_LIBRARY))
+		if animation and not animation.has_animation_library("mixgym") and ResourceLoader.exists(MIXAMO_GYM_LIBRARY):
+			animation.add_animation_library("mixgym", load(MIXAMO_GYM_LIBRARY))
 		if animation and not animation.has_animation_library("mixveh") and ResourceLoader.exists(MIXAMO_VEHICLE_LIBRARY):
 			animation.add_animation_library("mixveh", load(MIXAMO_VEHICLE_LIBRARY))
 		skeleton = model.find_child("Skeleton3D", true, false) as Skeleton3D
@@ -330,7 +343,7 @@ func _stall_physics_tick(delta: float) -> void:
 			back.y = 0
 			direction = (right.normalized() * axis.x + back.normalized() * axis.y).limit_length()
 		# Corrida pelo `GameInput`: no controle é alternável (`sprint_toggled`), no teclado é segurar.
-		target_speed = 6.5 if get_node("/root/GameInput").sprinting() else 3.5
+		target_speed = 6.5 * sprint_scale if get_node("/root/GameInput").sprinting() else 3.5
 	elif route.size() > 1:
 		# Mira a faixa da direita do trecho, não o eixo: quem vem no sentido oposto usa a outra faixa.
 		var previous := route[(waypoint - 1 + route.size()) % route.size()]
@@ -367,12 +380,17 @@ func _stall_physics_tick(delta: float) -> void:
 			set_meta("police_restraint_left", restraint)
 			target_speed *= 0.35
 	if is_player and not is_nan(combat_facing) and direction.length_squared() > 0.001:
-		# A braced backwards/side step is not a forward sprint played in reverse.
-		# Match actual displacement to the native directional clips' stride.
-		var forward := Vector3(-sin(combat_facing), 0, -cos(combat_facing))
-		var alignment := direction.normalized().dot(forward)
-		var combat_speed := lerpf(2.3, 2.4 if alignment < 0.0 else 3.2, absf(alignment))
-		target_speed = minf(target_speed, combat_speed)
+		if combat_stance == "melee":
+			# Facing the cursor does not put a blade in the firearm's braced walk.
+			# Gameplay owns the short committed phase; recovery/guard use 1.0.
+			target_speed *= clampf(float(get_meta("melee_movement_scale", 1.0)), 0.0, 1.0)
+		else:
+			# A braced backwards/side step is not a forward sprint played in reverse.
+			# Match actual displacement to the native directional clips' stride.
+			var forward := Vector3(-sin(combat_facing), 0, -cos(combat_facing))
+			var alignment := direction.normalized().dot(forward)
+			var combat_speed := lerpf(2.3, 2.4 if alignment < 0.0 else 3.2, absf(alignment))
+			target_speed = minf(target_speed, combat_speed)
 	if is_player: target_speed *= float(get_meta("developer_speed_multiplier", 1.0))
 	move_intent = direction
 	velocity.x = direction.x * target_speed * lod_scale
@@ -415,7 +433,7 @@ func _stall_physics_tick(delta: float) -> void:
 		# clipe, só locomoção. A pose é sempre escolhida aqui; `Gameplay` só informa clipe e tempo.
 		var combat_wanted := is_player and combat_clip != "" and animation.has_animation(combat_clip)
 		var sword_legs := {}
-		if combat_wanted and combat_weapon_id == "katana" and actual_speed > MOVING_SPEED_EPSILON:
+		if combat_wanted and combat_weapon_id in NATIVE_SWORDS and actual_speed > MOVING_SPEED_EPSILON:
 			_pose_locomotion(direction, target_speed, displacement, actual_speed, delta)
 			for bone_name in ["Hips", "LeftUpLeg", "LeftLeg", "LeftFoot", "LeftToeBase", "RightUpLeg", "RightLeg", "RightFoot", "RightToeBase"]:
 				var index := skeleton.find_bone(bone_name)
@@ -462,8 +480,9 @@ func _pose_locomotion(direction: Vector3, _target_speed: float, displacement: Ve
 	_idle_clock += delta
 	var moving := actual_speed > MOVING_SPEED_EPSILON
 	var directional := is_player and not is_nan(combat_facing)
+	var melee_directional := directional and combat_stance == "melee"
 	_locomotion_weight = move_toward(_locomotion_weight, 1.0 if moving else 0.0, delta * LOCOMOTION_BLEND_RATE)
-	_run_weight = move_toward(_run_weight, smoothstep(3.8, 6.0, actual_speed) if moving and not directional else 0.0, delta * RUN_BLEND_RATE)
+	_run_weight = move_toward(_run_weight, smoothstep(3.8, 6.0, actual_speed) if moving and (not directional or melee_directional) else 0.0, delta * RUN_BLEND_RATE)
 	_directional_weight = move_toward(_directional_weight, 1.0 if directional else 0.0, delta * 8.0)
 	var sword := sword_locomotion and has_sword_locomotion()
 	if _locomotion_weight <= 0.0 and sword:
@@ -486,12 +505,17 @@ func _pose_locomotion(direction: Vector3, _target_speed: float, displacement: Ve
 	var walk_stride := SWORD_WALK_STRIDE if sword else 1.8
 	var directional_stride := lerpf(walk_stride, 1.06 if combat_stance == "grenade" else 0.91, clampf(backward, 0, 1))
 	directional_stride = lerpf(directional_stride, 0.89, clampf(lateral, 0, 1))
+	if melee_directional:
+		# Forward melee movement can actually run now. Keep the authored side/back
+		# stride where those clips take over instead of speeding up a forward walk.
+		var forward_share := (1.0 - clampf(backward, 0.0, 1.0)) * (1.0 - clampf(lateral, 0.0, 1.0))
+		directional_stride = lerpf(directional_stride, SWORD_RUN_STRIDE if sword else 3.4, _run_weight * forward_share)
 	var stride := lerpf(lerpf(walk_stride, SWORD_RUN_STRIDE if sword else 3.4, _run_weight), directional_stride, _directional_weight)
 	phase = fposmod(phase + displacement.length() / stride, 1.0)
-	_pose_cycle(SWORD_WALK if sword else "Walking", phase, 0.0 if sword else WALK_START)
+	_pose_cycle(SWORD_WALK % sword_clip_set if sword else "Walking", phase, 0.0 if sword else WALK_START)
 	if _run_weight > 0.0:
 		var walk_pose := _capture_pose()
-		_pose_cycle(SWORD_RUN if sword else "Running", phase, 0.0)
+		_pose_cycle(SWORD_RUN % sword_clip_set if sword else "Running", phase, 0.0)
 		if _run_weight < 1.0: _apply_blend(walk_pose, _capture_pose(), _run_weight)
 	if _directional_weight > 0.0:
 		# Os clipes "with_Gun" seguram um fuzil imaginário com os dois braços erguidos.
@@ -530,11 +554,12 @@ func _pose_locomotion(direction: Vector3, _target_speed: float, displacement: Ve
 	_pose_turn(delta, moving)
 
 func has_sword_locomotion() -> bool:
-	return animation != null and animation.has_animation(SWORD_IDLE) and animation.has_animation(SWORD_WALK) and animation.has_animation(SWORD_RUN)
+	return animation != null and animation.has_animation(SWORD_IDLE % sword_clip_set) and animation.has_animation(SWORD_WALK % sword_clip_set) and animation.has_animation(SWORD_RUN % sword_clip_set)
 
 ## Guarda parada da katana em laço, no relógio do parado (sem a respiração procedural: o clipe tem a sua).
 func _pose_sword_idle() -> void:
-	_pose_cycle(SWORD_IDLE, fposmod(_idle_clock / animation.get_animation(SWORD_IDLE).length, 1.0), 0.0)
+	var clip: String = SHIELD_BLOCK_IDLE if sword_block and animation.has_animation(SHIELD_BLOCK_IDLE) else SWORD_IDLE % sword_clip_set
+	_pose_cycle(clip, fposmod(_idle_clock / animation.get_animation(clip).length, 1.0), 0.0)
 
 ## A animação importada não possui Idle: `restpose` é a T-pose vista no
 ## modelo. A média de duas fases opostas de Walking cancela a passada e produz
@@ -864,7 +889,8 @@ func _two_hand_sword_transform(grip: Transform3D) -> Transform3D:
 	# Authored grips are rounded; normalize after composition so slerp receives
 	# a proper rotation even when the hand itself was already orthonormalized.
 	var result := (right * grip).orthonormalized()
-	if left_bone >= 0:
+	# Espada e escudo: a esquerda segura o escudo e nunca entra no cabo, mesmo passando perto dele.
+	if left_bone >= 0 and combat_weapon_id != "sword_shield":
 		var left := skeleton.global_transform * skeleton.get_bone_global_pose(left_bone)
 		var axis := right.origin - left.origin
 		var weight := clampf((0.30 - axis.length()) / 0.10, 0.0, 1.0)
@@ -895,7 +921,7 @@ func _sword_switch_length() -> float:
 	return SWORD_SWITCH_INTO_CLIP if _sword_native_last else SWORD_SWITCH_OUT_OF_CLIP
 
 func _sword_switching() -> bool:
-	return combat_weapon_id == "katana" and _sword_switch_age < _sword_switch_length()
+	return combat_weapon_id in NATIVE_SWORDS and _sword_switch_age < _sword_switch_length()
 
 func _track_sword_switch(native: bool) -> void:
 	if native == _sword_native_last:
@@ -932,13 +958,13 @@ func _present_native_sword_arms() -> void:
 
 func _apply_combat_weapon_pose() -> void:
 	var native_sword: bool = combat_weapon_pose.get("native_sword", false) and skeleton != null
-	if combat_weapon_id == "katana": _track_sword_switch(native_sword)
+	if combat_weapon_id in NATIVE_SWORDS: _track_sword_switch(native_sword)
 	if native_sword:
 		# Preserve the imported sword move, including its elbow and wrist arcs.
 		# A esquerda fecha no cabo quando o clipe a põe junto da direita (guarda, andar e golpes de duas mãos).
 		var two_hands := _clip_palm("Left").distance_to(_clip_palm("Right")) < 0.25
 		_set_combat_grips(true, two_hands, true, two_hands, false, not two_hands)
-		if combat_weapon_id == "katana": _present_native_sword_arms()
+		if combat_weapon_id in NATIVE_SWORDS: _present_native_sword_arms()
 		if is_instance_valid(combat_weapon_mount):
 			if _sword_switching(): combat_weapon_mount.global_transform = _sword_switch_transform()
 			else: combat_weapon_mount.global_transform = _two_hand_sword_transform(combat_weapon_pose.hand_grip) if combat_weapon_pose.has("hand_grip") else combat_weapon_transform(combat_weapon_grip)
@@ -990,7 +1016,7 @@ func _apply_combat_weapon_pose() -> void:
 	var dip := 0.0 if clip_punch else float(pose.get("dip", 0.0))
 	var step := 0.0 if clip_punch else float(pose.get("step", 0.0))
 	var weight_shift := absf(dip) > 0.0005 or absf(step) > 0.0005
-	if combat_weapon_id in ["fists", "knuckles", "knife", "axe", "bat", "katana"] and (absf(hip_yaw) > 0.001 or weight_shift) and _locomotion_weight <= 0.0 and hips >= 0:
+	if combat_weapon_id in ["fists", "knuckles", "knife", "axe", "bat", "katana", "sword_shield"] and (absf(hip_yaw) > 0.001 or weight_shift) and _locomotion_weight <= 0.0 and hips >= 0:
 		var chest_before: Basis = skeleton.get_bone_global_pose(_combat_bones.Spine02).basis
 		var planted := _turn_time >= 1.0
 		if planted and weight_shift:

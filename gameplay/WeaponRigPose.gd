@@ -31,7 +31,7 @@ const MELEE_SHOULDER := Vector3(0.23, 1.18, -0.015)
 const GRENADE_RELEASE := 0.20
 const GRENADE_RECOVERY := 0.70
 ## Instante de contato nas trajetórias abaixo; Gameplay usa o mesmo relógio.
-const MELEE_CONTACT := {"fists": 0.14, "knuckles": 0.16, "knife": 0.18, "bat": 0.36, "axe": 0.38, "katana": 0.26}
+const MELEE_CONTACT := {"fists": 0.14, "knuckles": 0.16, "knife": 0.18, "bat": 0.36, "axe": 0.38, "katana": 0.26, "sword_shield": 0.26}
 ## Repouso dos ossos no espaço do esqueleto do `dante.glb` (medido no GLB; o
 ## modelo é girado 180° dentro do Actor). Com eles o ombro sai da mesma conta
 ## que a V1 fazia em `sync_shoulders`: clavícula protraída 0,20 rad e tronco
@@ -44,7 +44,7 @@ const KNUCKLE_DURATION := 0.32
 ## Hit-stop (congelamento curto do golpe no impacto) por arma, em segundos. É o
 ## que dá peso ao contato nos jogos de ação: o braço "trava" no alvo por 3–5
 ## quadros antes do follow-through. Golpe pesado (fim da sequência) segura mais.
-const HIT_STOP := {"fists": 0.045, "knuckles": 0.055, "knife": 0.04, "bat": 0.075, "axe": 0.085, "katana": 0.055}
+const HIT_STOP := {"fists": 0.045, "knuckles": 0.055, "knife": 0.04, "bat": 0.075, "axe": 0.085, "katana": 0.055, "sword_shield": 0.055}
 const HEAVY_HIT_STOP := 0.035
 ## Velocidade angular máxima das articulações do braço (rad/s) durante o golpe.
 ## O padrão do Actor (18) é o da prontidão; um direto real passa de 25 no cotovelo.
@@ -192,7 +192,12 @@ func attack(id: String, recoil_multiplier: float = 1.0) -> void:
 		if bag_carry and String(chain[combo_step].get("side", "")) == "left": combo_step = (combo_step + 1) % chain.size()
 		_move = chain[combo_step]
 		_melee_from = _melee_now.duplicate() if _melee_now_id == id else {}
-		hit_stop = 0.0
+	else:
+		# Knife/katana own their poses; never inherit a heavy axe/bat finisher.
+		_move = {}
+		_melee_from = {}
+		combo_step = 0
+	hit_stop = 0.0
 	_attacked_id = id
 	var profile: Array = DATA.PROFILES.get(id, DATA.PROFILES.pistol)
 	recoil = minf(recoil + float(profile[2]) * recoil_multiplier, float(profile[2]) * 1.6 * recoil_multiplier)
@@ -236,7 +241,8 @@ func reset() -> void:
 	_support_weight = 0.0
 
 ## `rig` (opcional): "body_bob" (subida do quadril no passo, em metros do Actor)
-## e "loaded" (granada ainda na mão).
+## e "loaded" (granada ainda na mão). "action_rate" acelera somente o relógio
+## do golpe; não muda blends de locomoção/equipamento nem a pausa de impacto.
 func update(id: String, delta: float, aiming: bool, reloading: bool, reload_progress: float, moving: bool, sprinting: bool, phase: float, rig: Dictionary = {}) -> Dictionary:
 	reloading = reloading and id in FIREARMS
 	if id != weapon_id:
@@ -253,7 +259,7 @@ func update(id: String, delta: float, aiming: bool, reloading: bool, reload_prog
 	# Hit-stop: o golpe para no impacto; o resto do corpo (passo, respiração) segue.
 	var stopped := hit_stop > 0.0
 	if stopped: hit_stop = maxf(0.0, hit_stop - delta)
-	else: action_age += delta
+	else: action_age += delta * maxf(0.0, float(rig.get("action_rate", 1.0)))
 	recoil *= exp(-float(p[3]) * delta)
 	# Pesos suavizados de andar/correr com as mesmas taxas do Player V1.
 	_move_weight = move_toward(_move_weight, 1.0 if moving else 0.0, delta * 7.0)

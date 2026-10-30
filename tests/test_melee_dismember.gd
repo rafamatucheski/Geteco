@@ -81,10 +81,21 @@ func run() -> void:
 		if part.visible and part.mesh != null: shown += 1
 	check(shown >= 1 and (slot.body as RigidBody3D).visible, "detached piece shows the body's own meshes")
 	check((slot.meshes[0] as MeshInstance3D).mesh == (head as MeshInstance3D).mesh, "piece reuses the source mesh resource (no new mesh/material per piece)")
-	check(not wounds.try_sever(victim, "katana", 45.0, false, head_point, toward), "same corpse cannot be cut twice")
+	check(not wounds._sever_joint(victim, head, toward), "the same head cannot be detached twice")
+	var arm := _joint(victim, "left_upper_arm")
+	var health_after_death: float = victim.health
+	check(wounds.try_sever(victim, "axe", 52.0, false, WOUNDS._joint_center(arm), toward), "a deliberate second cut can detach another limb")
+	check(not arm.visible and victim.get_meta("melee_removed_limbs", []).size() == 2, "each removed region has its own ledger entry")
+	check(victim.health == health_after_death, "postmortem separation does not reapply damage")
+	check(victim in wounds.candidates_near(victim.global_position, 4.0), "recent corpse remains targetable without a live collider")
 	await frames(70)
 	var piece := slot.body as RigidBody3D
 	check(piece.global_position.y < head_start.y - 0.5 and piece.global_position.y > -0.4, "piece falls with physics and rests on the ground (y=%.2f)" % piece.global_position.y)
+	for joint_name: String in WOUNDS.LIMBS:
+		var remaining := wounds._visible_joint(victim, joint_name)
+		if remaining != null: wounds._sever_joint(victim, remaining, toward)
+	check(victim.get_meta("melee_removed_limbs", []).size() == 5 and not wounds.can_sever(victim), "body stops offering cuts after its five regions are gone")
+	check(not wounds.try_sever(victim, "katana", 45.0, true, head_point, toward), "an exhausted body never generates duplicate pieces")
 
 	# Machado nas pernas, outro corpo procedural.
 	var second := _victim(stage, Vector3(3, 0, -2), false)
@@ -119,6 +130,19 @@ func run() -> void:
 			var piece_skeleton := cut.skeleton as Skeleton3D
 			var hips := piece_skeleton.find_bone(skeleton.get_bone_name(0))
 			check(piece_skeleton.get_bone_pose_scale(hips).x < 0.01 and piece_skeleton.get_bone_pose_scale(bone).x > 0.5, "Meshy piece keeps only the limb chain posed")
+			var leg := wounds._visible_joint(meshy, "left_upper_leg")
+			check(leg != null and wounds.try_sever(meshy, "axe", 52.0, false, WOUNDS._joint_center(leg), toward), "second Meshy cut detaches a different chain")
+			var next_piece: Dictionary = _active_slot(wounds)
+			var next_skeleton := next_piece.skeleton as Skeleton3D
+			check(skeleton.get_bone_pose_scale(bone).x < 0.01 and next_skeleton.get_bone_pose_scale(bone).x < 0.01, "previous arm stays missing on corpse and is absent from new leg piece")
+
+	var protected := _victim(stage, Vector3(0, 0, 7), false)
+	await frames(2)
+	protected.receive_damage(500, null)
+	protected.set_meta("invulnerable", true)
+	wounds.register_defeated(protected)
+	check(not wounds.try_sever(protected, "axe", 52.0, true, protected.global_position + Vector3.UP, toward), "protected body never severs even if another system marked it dead")
+	check(protected not in wounds.candidates_near(protected.global_position, 4.0), "protected body never enters corpse targeting")
 
 	# Limite de pedaços ativos e pool fixo.
 	for i in 9:
@@ -139,6 +163,7 @@ func run() -> void:
 
 	wounds.clear()
 	check(wounds.part_count() == 0, "clear parks every piece")
+	check(wounds._recent_bodies.is_empty(), "clear discards corpse targets on transition")
 	stage.queue_free(); await process_frame
 	print("MELEE_DISMEMBER checks=%d failures=%s" % [checks, failures])
 	quit(0 if failures.is_empty() else 1)

@@ -8,6 +8,8 @@ const SEWERS := preload("res://world/places/sewers/SewerNetwork.gd")
 static func sewer_openings() -> Array[Rect2]:
 	return preload("res://world/editing/WorldManholes.gd").harbor_openings()
 const MOUNTAIN_OFFSET := Vector2(4300,-4960)
+## Cabana do Cavaleiro em pixels de origem (16 px/m): mundo (655,-905).
+const SECRET_CABIN := Vector2(6180,-9520)
 const SOURCE := "res://assets/regions/source/"
 const WALKUP_DOOR_Z := {"cabin":1.88, "shop":1.82, "residence":3.26, "keeper":2.8, "bunker":2.8625, "lodge":3.98}
 static func walkup_family(id: String) -> String:
@@ -39,6 +41,9 @@ static func definitions(include_deleted := false) -> Array[Dictionary]:
 		["mountain_cabin","Chalé dos Pinhais","mountain",Vector2(7480,760),"world/mountain_pass/MountainCabin3D.gd",Vector2(14,9.5),3.0,4.15,"shelter"],
 		["mountain_cabin_encosta","Chalé da Encosta","mountain",Vector2(8350,730),"world/mountain_pass/MountainCabinVariants3D.gd",Vector2(14,9.5),3.0,4.15,"shelter"],
 		["mountain_cabin_forest","Posto Florestal","mountain",Vector2(6050,780),"world/mountain_pass/MountainCabinVariants3D.gd",Vector2(14,9.5),3.0,4.15,"shelter"],
+		# Cabana do Cavaleiro: escondida no alto da serra, ~75 m a noroeste da cabana do Mestre Aurélio
+		# (ForgeHermitCabin, mundo 700,-845), sem trilha nem placa. Guarda a espada e escudo do gelo.
+		["mountain_cabin_secret","Cabana do Cavaleiro","mountain",Vector2(SECRET_CABIN.x,SECRET_CABIN.y),"world/mountain_pass/MountainCabinVariants3D.gd",Vector2(14,9.5),3.0,4.15,"shelter"],
 		["mountain_bunker","Estação Zero","mountain",Vector2(6500,-2890),"world/mountain_pass/MountainBunker3D.gd",Vector2(18,12),4.3,5.2,"bunker"],
 		["lumberjack_shelter","Abrigo dos Lenhadores","mountain",Vector2(7940,850),"world/mountain_pass/LumberjackBunkhouse3D.gd",Vector2(10,9.6),3.0,4.15,"shelter"],
 		["ski_lodge","Summit","mountain",Vector2(7140,-2760),"world/mountain_pass/SummitSkiLodgeInterior3D.gd",Vector2(16,10),4.0,4.8,"ski_rental"],
@@ -75,6 +80,7 @@ static func definitions(include_deleted := false) -> Array[Dictionary]:
 		elif id == "canal_north": variant = 2
 		if id == "mountain_cabin_encosta": variant = 1
 		elif id == "mountain_cabin_forest": variant = 2
+		elif id == "mountain_cabin_secret": variant = 2
 		elif id.begins_with("mountain_cabin_village_"): variant = int(id.right(1))+2
 		elif id == "mountain_boutique": variant = 2
 		elif id == "mountain_village_outfitters": variant = 3
@@ -101,6 +107,8 @@ static func definitions(include_deleted := false) -> Array[Dictionary]:
 		if id.begins_with("mountain_cabin") and variant > 0: reward = {"id":id+"_cash_01","kind":"cash","amount":[0,5000,850,450,1200,650,1800][variant]}
 		if id == "mountain_bunker": reward = {"id":"mountain_bunker_cash_01","kind":"cash","amount":1500}
 		if id == "ski_lodge": reward = {"id":"summit_lodge_cash_01","kind":"cash","amount":900}
+		# Espada e escudo no fundo do chalé, no lugar da caixinha de dinheiro das outras cabanas.
+		if id == "mountain_cabin_secret": reward = {"id":"mountain_cabin_secret_sword_shield","kind":"weapon","item":"sword_shield","amount":1,"local_position":Vector3(0,.08,-2.4)}
 		if id == "lumberjack_shelter": reward = {"id":"lumberjack_shelter_axe","kind":"weapon","item":"axe","amount":1}
 		if id == "mountain_mystery_cave": reward = {"id":"mountain_cave_rpg","kind":"weapon","item":"rpg","amount":1}
 		# Segredo da V1 (HarborManholeSewer.SECRET_POSITION 265,61): mesmo id e munição.
@@ -157,6 +165,8 @@ static func definitions(include_deleted := false) -> Array[Dictionary]:
 	if not Engine.get_meta("arcade_baseline",false):
 		result.append(preload("res://world/places/arcade/ArcadePlace.gd").definition_data())
 	result.append_array(preload("res://world/places/bars/BarCatalog.gd").definitions())
+	if not Engine.get_meta("gym_baseline",false):
+		result.append(preload("res://world/places/gym/GymPlace.gd").definition_data())
 	result.append(preload("res://world/places/cobra_house/CobraLeaderHouse.gd").definition_data())
 	result.append_array(preload("res://world/desert/DesertLayout.gd").place_definitions())
 	result.append_array(preload("res://world/desert/underground/DesertUnderground.gd").definitions())
@@ -185,6 +195,10 @@ static func create_place(id: String) -> Node3D:
 		var culvert = preload("res://world/desert/underground/DesertCulvertPlace.gd").new()
 		culvert.definition = definition
 		return culvert
+	if id == "harbor_gym":
+		var gym = preload("res://world/places/gym/GymPlace.gd").new()
+		gym.definition = definition
+		return gym
 	if id == "harbor_arcade":
 		var arcade = preload("res://world/places/arcade/ArcadePlace.gd").new()
 		arcade.definition = definition

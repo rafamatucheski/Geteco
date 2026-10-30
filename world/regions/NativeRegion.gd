@@ -349,6 +349,11 @@ func _prepare() -> void:
 			var bar_building := {"id":"LastroBar","position":bar.exterior_position,"size":bar.size,"height":3.9,"name":"Lastro","kind":"shop"}
 			buildings.append(bar_building)
 			_record(bar.exterior_position,{"kind":"building","data":bar_building})
+		if not Engine.get_meta("gym_baseline",false):
+			var gym := preload("res://world/places/gym/GymPlace.gd").definition_data()
+			var gym_building := {"id":"FerroVelhoGym","position":gym.exterior_position,"size":gym.size,"height":3.9,"name":"Ferro Velho","kind":"shop"}
+			buildings.append(gym_building)
+			_record(gym.exterior_position,{"kind":"building","data":gym_building})
 		_record(CATALOG._at(Vector2(-750,550),region_id),{"kind":"salvage","position":CATALOG._at(Vector2(-750,550),region_id)})
 		_record(CATALOG._at(Vector2(-750,550),region_id),{"kind":"harbor_dressing","zone_id":"salvage","position":CATALOG._at(Vector2(-750,550),region_id)})
 		_record(CATALOG._at(Vector2(7700,1700),region_id),{"kind":"harbor_dressing","zone_id":"cobra","position":CATALOG._at(Vector2(7700,1700),region_id)})
@@ -1914,6 +1919,12 @@ func _building(chunk: Node3D, data: Dictionary) -> void:
 		bar.add_to_group("exterior_reveal_building")
 		bar.position = data.position
 		chunk.add_child(bar)
+		return
+	if data.id == "FerroVelhoGym":
+		var gym := preload("res://world/places/gym/GymFacade.gd").new()
+		gym.add_to_group("exterior_reveal_building")
+		gym.position = data.position
+		chunk.add_child(gym)
 		return
 	if data.id == "Fagulha":
 		var arcade := preload("res://world/places/arcade/ArcadeFacade.gd").new()

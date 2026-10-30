@@ -9,6 +9,7 @@ const ORDER = [
 	"bat",
 	"axe",
 	"katana",
+	"sword_shield",
 	"pistol",
 	"magnum",
 	"pistol_suppressed",
@@ -35,6 +36,17 @@ const WEAPONS = {
 		"is_knife":true, "automatic":false, "stance":"katana",
 		"sound_type":"knife", "audio_volume_db":-1.0, "pitch_variance":0.06,
 		"discovery_pickup":"takeshi_honor", "discovery_hint":"Vença o desafio de Takeshi nas drag races."
+	},
+	# Achada na cabana escondida da serra (`mountain_cabin_secret`); não vende na loja. Golpe um
+	# pouco mais curto e mais fraco que a katana: o escudo (segurar mira) é a vantagem.
+	"sword_shield": {
+		"label":"ESPADA E ESCUDO DO GELO", "short_label":"ESCUDO", "price":0,
+		"damage":38, "fire_interval":0.70, "melee_range":44.0,
+		"falloff_start":44.0, "max_range":44.0, "min_damage_ratio":1.0,
+		"magazine_size":-1, "starting_reserve":-1, "is_melee":true,
+		"is_knife":true, "automatic":false, "stance":"katana",
+		"sound_type":"knife", "audio_volume_db":-1.0, "pitch_variance":0.06,
+		"discovery_pickup":"mountain_cabin_secret_sword_shield", "discovery_hint":"Dizem que um cavaleiro guardou as armas numa cabana perdida no gelo."
 	},
 	"fists": {
 		"falloff_start": 30.0, "max_range": 46.0, "min_damage_ratio": 0.65,

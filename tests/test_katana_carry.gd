@@ -131,7 +131,7 @@ func skeleton_checks() -> void:
 		gp._update_weapon_pose(DT)
 		await physics_frame
 	check(gp._sword_locomotion_clips(), "biblioteca tem Great Sword Idle, Walk e Run")
-	for state in [["parado", 0.0, actor.SWORD_IDLE], ["andando", 3.5, actor.SWORD_WALK], ["correndo", 6.5, actor.SWORD_RUN]]:
+	for state in [["parado", 0.0, actor.SWORD_IDLE % "gs"], ["andando", 3.5, actor.SWORD_WALK % "gs"], ["correndo", 6.5, actor.SWORD_RUN % "gs"]]:
 		actor.automatic_direction = Vector3.FORWARD if state[1] > 0.0 else Vector3.ZERO
 		actor.speed = state[1]
 		for i in 80: await step.call()
@@ -150,7 +150,7 @@ func skeleton_checks() -> void:
 			var edge: Vector3 = body * (gp.gun.global_basis.x as Vector3).normalized()
 			# Parado e andando: fio para baixo e para a frente. Correndo a espada vai arrastada atrás: fio para fora.
 			var want := Vector3(0, -1, -1)
-			if state[2] == actor.SWORD_RUN: want = actor.visual.to_local(gp.gun.global_transform * Vector3(0, 0, -0.6)) * Vector3(1, 0, 1)
+			if state[2] == actor.SWORD_RUN % "gs": want = actor.visual.to_local(gp.gun.global_transform * Vector3(0, 0, -0.6)) * Vector3(1, 0, 1)
 			want = (want - d * want.dot(d)).normalized()
 			edge_sum += edge.dot(want) / 60.0
 			var sk: Skeleton3D = actor.skeleton
@@ -181,7 +181,7 @@ func skeleton_checks() -> void:
 	check(gp._clip_name.begins_with("mixsword/gs_"), "golpe da katana usa o clipe do Mixamo")
 	var exit: float = await strike_exit(actor, gp, step)
 	check(exit < 15.0, "saindo do golpe a lâmina gira no máximo %.1f°/quadro (sem salto)" % exit)
-	check(actor.animation.assigned_animation == actor.SWORD_WALK, "depois do golpe volta ao Great Sword Walk")
+	check(actor.animation.assigned_animation == actor.SWORD_WALK % "gs", "depois do golpe volta ao Great Sword Walk")
 	# Reserva sem a biblioteca: tira o Walk (só em memória) e confere o carregar procedural.
 	(actor.animation.get_animation_library("mixsword") as AnimationLibrary).remove_animation("gs_walk")
 	check(not gp._sword_locomotion_clips(), "sem o Walk na biblioteca, volta ao carregar procedural")

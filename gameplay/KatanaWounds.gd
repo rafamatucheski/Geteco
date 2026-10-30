@@ -8,8 +8,8 @@ extends Node3D
 ## mudava na tela. O machado nem chamava o corte.
 ##
 ## Como fica:
-## - Só no NPC que morre com o golpe, só com katana/machado e só em golpe forte (`is_strong_cut`).
-##   Protegidos (Maciota, mecânico) e o jogador nunca. Um corte por corpo.
+## - No golpe letal e em corpos recentes, só com katana/machado e golpe forte (`is_strong_cut`).
+##   Protegidos (Maciota, mecânico) e o jogador nunca. Cada membro só pode sair uma vez.
 ## - O membro é o mais próximo do ponto do golpe (`cut_point`, altura e lado de cada golpe do combo):
 ##   cabeça, braço ou perna.
 ## - Corpo procedural: as malhas da junta (e filhas) são copiadas para o pedaço e a junta some do corpo.
@@ -28,6 +28,8 @@ extends Node3D
 const PROTECTION := preload("res://gameplay/DamageProtection.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
 const MAX_PARTS := 6
+const MAX_RECENT_BODIES := 24
+const RECENT_BODY_MS := 30000
 ## Malhas por pedaço procedural: braço = braço+antebraço (a mão vem no antebraço); perna = coxa+canela+pé.
 const MAX_MESHES := 6
 const LIFE := 10.0
@@ -69,7 +71,10 @@ static var _cap_meshes: Dictionary = {}
 static var _shapes: Dictionary = {}
 
 var effects: Node3D
+signal part_landed(point: Vector3)
 var _slots: Array[Dictionary] = []
+## Sem colliders novos nos mortos e sem varrer todos os NPCs a cada frame.
+var _recent_bodies: Array[Dictionary] = []
 ## Ordem de uso dos slots ativos (o primeiro é o mais antigo, reciclado quando o pool enche).
 var _order: Array[int] = []
 
@@ -119,6 +124,9 @@ func _build_slot(index: int) -> Dictionary:
 	body.collision_layer = 0
 	body.collision_mask = 1
 	body.continuous_cd = false
+	body.contact_monitor = true
+	body.max_contacts_reported = 1
+	body.body_entered.connect(_on_part_contact.bind(index))
 	var shape := CollisionShape3D.new()
 	shape.shape = _shapes.arm
 	body.add_child(shape)
@@ -149,7 +157,8 @@ func _build_slot(index: int) -> Dictionary:
 	add_child(stump)
 	var slot := {"body": body, "shape": shape, "meshes": meshes, "skeleton": skeleton, "skin_mesh": skin_mesh,
 		"cap": cap, "stump": stump, "active": false, "age": 0.0, "sunk": false, "bleed_next": 0.0,
-		"actor": null, "joint": null, "source_skeleton": null, "bone": -1, "direction": Vector3.ZERO}
+		"actor": null, "joint": null, "source_skeleton": null, "bone": -1, "direction": Vector3.ZERO,
+		"landed": false}
 	_park(slot)
 	return slot
 
@@ -188,6 +197,7 @@ static func cut_point(actor: Node3D, weapon_id: String, combo: int, direction: V
 
 ## Chamado por `Gameplay._melee` logo depois do dano. Devolve true se cortou.
 func try_sever(actor: Node3D, weapon_id: String, damage: float, heavy: bool, impact: Vector3, direction: Vector3) -> bool:
+	register_defeated(actor)
 	if not enabled or not is_strong_cut(weapon_id, damage, heavy): return false
 	if not _eligible(actor): return false
 	var joint := _nearest_joint(actor, impact)
@@ -203,9 +213,48 @@ func sever_defeated(actor: Node3D, direction: Vector3, combo: int) -> bool:
 
 func _eligible(actor: Node3D) -> bool:
 	if not is_instance_valid(actor) or PROTECTION.is_protected(actor) or actor.get("is_player") == true: return false
-	return actor.get("dead") == true and actor.has_method("receive_damage") and not actor.has_meta("katana_severed")
+	if actor.get("dead") != true or not actor.has_method("receive_damage"): return false
+	return _removed_limbs(actor).size() < LIMBS.size()
+
+func can_sever(actor: Node3D) -> bool:
+	return enabled and _eligible(actor)
+
+static func _removed_limbs(actor: Node3D) -> Array:
+	return actor.get_meta("melee_removed_limbs", []) as Array
+
+## Chamado após uma morte de combate; não aplica dano nem reemite morte/recompensa/crime.
+func register_defeated(actor: Node3D) -> void:
+	if not _eligible(actor): return
+	var now := Time.get_ticks_msec()
+	for entry in _recent_bodies:
+		if entry.actor.get_ref() == actor: return # Bater no corpo não renova sua vida.
+	if _recent_bodies.size() >= MAX_RECENT_BODIES: _recent_bodies.pop_front()
+	_recent_bodies.append({"actor": weakref(actor), "expires": now + RECENT_BODY_MS})
+
+func candidates_near(origin: Vector3, reach: float) -> Array[Node3D]:
+	var result: Array[Node3D] = []
+	if not enabled: return result
+	var now := Time.get_ticks_msec()
+	for i in range(_recent_bodies.size() - 1, -1, -1):
+		var entry := _recent_bodies[i]
+		var actor: Node3D = entry.actor.get_ref() as Node3D
+		if not is_instance_valid(actor) or int(entry.expires) < now or not actor.is_inside_tree():
+			_recent_bodies.remove_at(i)
+			continue
+		if not _eligible(actor): continue
+		# A posição da raiz fica nos pés depois da queda. A junta visível é a referência real.
+		var point := closest_cut_point(actor, origin)
+		if point.is_finite() and point.distance_squared_to(origin) <= reach * reach:
+			result.append(actor)
+	return result
+
+func closest_cut_point(actor: Node3D, impact: Vector3) -> Vector3:
+	if not _eligible(actor): return Vector3.INF
+	var joint := _nearest_joint(actor, impact)
+	return _joint_center(joint) if joint != null else Vector3.INF
 
 func _visible_joint(actor: Node3D, joint_name: String) -> Node3D:
+	if joint_name in _removed_limbs(actor): return null
 	# Alguns policiais mantêm um corpo antigo escondido ao lado do rig civil atual.
 	for candidate in actor.find_children(joint_name, "MeshInstance3D", true, false):
 		if (candidate as Node3D).is_visible_in_tree(): return candidate
@@ -247,6 +296,7 @@ func _sever_joint(actor: Node3D, joint: Node3D, direction: Vector3) -> bool:
 	return done
 
 func _stall_sever(actor: Node3D, joint: Node3D, direction: Vector3) -> bool:
+	if not _eligible(actor) or String(joint.name) in _removed_limbs(actor): return false
 	var info: Dictionary = LIMBS.get(String(joint.name), {"kind": "arm", "end": "", "bone": ""})
 	var kind: String = info.kind
 	var model := _body_model(joint, actor)
@@ -261,6 +311,9 @@ func _stall_sever(actor: Node3D, joint: Node3D, direction: Vector3) -> bool:
 	elif _visible_meshes(joint).is_empty():
 		return false # Rig especial sem malha nem esqueleto conhecido: fica a morte autorada.
 	actor.set_meta("katana_severed", true)
+	var removed := _removed_limbs(actor).duplicate()
+	removed.append(String(joint.name))
+	actor.set_meta("melee_removed_limbs", removed)
 	var slot := _take_slot()
 	var body := slot.body as RigidBody3D
 	var cut_origin := joint.global_position
@@ -294,6 +347,7 @@ func _stall_sever(actor: Node3D, joint: Node3D, direction: Vector3) -> bool:
 	slot.active = true
 	slot.age = 0.0
 	slot.sunk = false
+	slot.landed = false
 	slot.bleed_next = 0.4
 	slot.actor = weakref(actor)
 	slot.joint = weakref(joint)
@@ -305,6 +359,14 @@ func _stall_sever(actor: Node3D, joint: Node3D, direction: Vector3) -> bool:
 		effects.stain(actor.global_position, 0.7)
 	set_physics_process(true)
 	return true
+
+## Um único contato de queda por peça; o consumidor usa o pool de áudio existente.
+func _on_part_contact(_other: Node, index: int) -> void:
+	if index < 0 or index >= _slots.size(): return
+	var slot := _slots[index]
+	if not slot.active or slot.landed or slot.sunk: return
+	slot.landed = true
+	part_landed.emit((slot.body as RigidBody3D).global_position)
 
 static func _find_bone(skeleton: Skeleton3D, short_name: String) -> int:
 	for prefix: String in BONE_PREFIXES:
@@ -396,13 +458,23 @@ static func _copy_instance_parameters(source: GeometryInstance3D, target: Geomet
 		var value: Variant = source.get_instance_shader_parameter(key)
 		if value != null: target.set_instance_shader_parameter(key, value)
 
-## Slot livre, ou o pedaço mais antigo devolvido ao pool (limite fixo de pedaços ativos).
+## Slot livre, ou o mais antigo fora da tela antes de reciclar uma peça ainda visível.
 func _take_slot() -> Dictionary:
 	for index in _slots.size():
 		if not _slots[index].active:
 			_order.append(index)
 			return _slots[index]
-	var oldest: int = _order.pop_front()
+	var recycle := 0
+	var camera := get_viewport().get_camera_3d()
+	if is_instance_valid(camera):
+		var viewport_rect := get_viewport().get_visible_rect().grow(64.0)
+		for order_index in _order.size():
+			var body := _slots[_order[order_index]].body as RigidBody3D
+			if camera.is_position_behind(body.global_position) or not viewport_rect.has_point(camera.unproject_position(body.global_position)):
+				recycle = order_index
+				break
+	var oldest: int = _order[recycle]
+	_order.remove_at(recycle)
 	_park(_slots[oldest])
 	_order.append(oldest)
 	return _slots[oldest]
@@ -451,6 +523,7 @@ func clear() -> void:
 	for slot in _slots:
 		if slot.active: _park(slot)
 	_order.clear()
+	_recent_bodies.clear()
 	set_physics_process(false)
 
 func part_count() -> int:

@@ -66,6 +66,7 @@ static func build_cached(root: Node3D, id: String) -> Vector3:
 
 static func build(root: Node3D, id: String) -> Vector3:
 	if id == "katana": return preload("res://gameplay/KatanaModel.gd").build(root)
+	if id == "sword_shield": return preload("res://gameplay/SwordShieldModel.gd").build_sword(root)
 	if id in preload("res://gameplay/WeaponVariantModels.gd").IDS:
 		return preload("res://gameplay/WeaponVariantModels.gd").build(root,id)
 	var mat_chrome := _textured("metal", Color(0.56, 0.60, 0.65), 0.32, 0.72, 0.18)

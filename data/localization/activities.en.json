@@ -501,5 +501,22 @@
   "FAGULHA  /  ": "FAGULHA  /  ",
   "Entrada: R$ 10 por pescaria · Vara e isca incluídas\nCampeonatos: vence o maior peixe individual; empate não premia.\nA inscrição é cobrada ao começar e não é devolvida ao sair.": "Entry: R$ 10 per session · Rod and bait included\nTournaments: the largest individual fish wins; ties receive no prize.\nThe entry fee is charged at the start and is not refunded if you leave.",
   "%s · %s\nAceleração %d/5   Curva %d/5   Final %d/5": "%s · %s\nAcceleration %d/5   Handling %d/5   Top speed %d/5",
-  "%d km/h · %d pts · recorde %d\nW remar · S frear/ré · Espaço ollie · Q flip · R shove-it · E descer": "%d km/h · %d pts · record %d\nW push · S brake/reverse · Space ollie · Q flip · R shove-it · E get off"
+  "%d km/h · %d pts · recorde %d\nW remar · S frear/ré · Espaço ollie · Q flip · R shove-it · E descer": "%d km/h · %d pts · record %d\nW push · S brake/reverse · Space ollie · Q flip · R shove-it · E get off",
+  "Saco de pancada": "Punching bag",
+  "Speedbag": "Speed bag",
+  "Rosca com halter": "Dumbbell curl",
+  "Flexão": "Push-up",
+  "Pular corda": "Jump rope",
+  "Agachamento": "Squat",
+  "Abdominal": "Sit-up",
+  "Esteira": "Treadmill",
+  "Força": "Strength",
+  "Fôlego": "Stamina",
+  "%s subiu para %d/%d.": "%s rose to %d/%d.",
+  "%s no máximo (%d/%d).": "%s maxed out (%d/%d).",
+  "Dizem que um cavaleiro guardou as armas numa cabana perdida no gelo.": "They say a knight left his arms in a cabin lost in the ice.",
+  "ESPADA E ESCUDO DO GELO": "ICE SWORD AND SHIELD",
+  "ESCUDO": "SHIELD",
+  "Cabana do Cavaleiro": "Knight's Cabin",
+  "Ferro Velho": "Ferro Velho"
 }

@@ -8,7 +8,7 @@ const WORLD_SCALE := 0.2
 const WEAPON_GROUPS := [
 	["fists"], ["pistol", "magnum", "pistol_suppressed"], ["smg", "smg_compact", "smg_tactical"], ["shotgun", "sawed_off", "shotgun_auto"],
 	["ak47", "m4a1"], ["hunting_rifle"], ["rpg", "flamethrower", "grenade"],
-	["knuckles", "knife", "bat", "axe", "katana"],
+	["knuckles", "knife", "bat", "axe", "katana", "sword_shield"],
 ]
 const FOOD_GROUPS := [
 	["first_aid"], ["water", "juice"], ["apple"], ["sandwich"],

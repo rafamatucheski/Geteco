@@ -19,7 +19,7 @@ static func get_icon(id: String) -> Texture2D:
 			for x in image.get_width():
 				var alpha := image.get_pixel(x, y).a
 				image.set_pixel(x, y, Color(tint, alpha))
-	elif id == "katana" or WEAPON_ICONS.VARIANTS.SVG.has(id) or WEAPON_ICONS.ICON_DATA.has(id):
+	elif id in ["katana", "sword_shield"] or WEAPON_ICONS.VARIANTS.SVG.has(id) or WEAPON_ICONS.ICON_DATA.has(id):
 		image = WEAPON_ICONS.artwork_image(id)
 	else:
 		var paths := {

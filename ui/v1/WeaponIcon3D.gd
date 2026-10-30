@@ -49,6 +49,7 @@ func _load_textures() -> void:
 	if not icon_textures.is_empty(): return
 	var ids: Array = ICON_DATA.keys()
 	ids.append("katana")
+	ids.append("sword_shield")
 	ids.append_array(VARIANTS.SVG.keys())
 	for id: String in ids:
 		var image := artwork_image(id)
@@ -62,7 +63,10 @@ static func artwork_image(id: String) -> Image:
 	# texture sampling turned partially covered edge pixels into hard cutouts.
 	var image := Image.new()
 	var sword_svg := '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="64" viewBox="0 0 160 64"><path d="M44 42 Q97 28 151 7 Q116 39 48 48 Z" fill="#d5e3ed"/><path d="M8 50 L40 41 L44 49 L12 59 Z" fill="#303943"/><path d="M38 34 L46 32 L53 56 L45 58 Z" fill="#c3a469"/><path d="M15 48 L19 57 M25 46 L29 54 M34 43 L38 52" stroke="#b9a88b" stroke-width="2"/></svg>'
+	# Espada reta atrás de um escudo redondo com a cruz de ferro.
+	var shield_svg := '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="64" viewBox="0 0 160 64"><path d="M30 46 L140 10 L146 15 L36 52 Z" fill="#d5e3ed"/><path d="M14 52 L30 46 L34 54 L18 60 Z" fill="#303943"/><path d="M26 38 L32 36 L40 58 L34 60 Z" fill="#9fb3c4"/><circle cx="92" cy="34" r="27" fill="#6a4529" stroke="#8c96a0" stroke-width="4"/><path d="M92 9 V59 M67 34 H117" stroke="#8c96a0" stroke-width="5"/><circle cx="92" cy="34" r="7" fill="#bfe4f2"/></svg>'
 	if id == "katana": image.load_svg_from_string(sword_svg, SVG_SCALE)
+	elif id == "sword_shield": image.load_svg_from_string(shield_svg, SVG_SCALE)
 	elif id == "pistol": image.load_svg_from_string(PISTOL_SVG, SVG_SCALE)
 	elif VARIANTS.SVG.has(id): image.load_svg_from_string(VARIANTS.SVG[id], SVG_SCALE)
 	elif ICON_DATA.has(id):

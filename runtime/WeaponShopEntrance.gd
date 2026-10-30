@@ -10,6 +10,8 @@ const IDS := ["harbor_supermarket", "harbor_ammunation", "mountain_gunshop", "ha
 	"harbor_haunted_house",
 	# Fagulha e Curitiba Cellar: folhas de correr que ninguém abria (só a ação silenciosa "Entrar").
 	"harbor_arcade", "harbor_curitiba_cellar", "harbor_bar", "desert_bar",
+	# Academia Ferro Velho: mesma casca e folhas de correr do Lastro.
+	"harbor_gym",
 	# Escritório da Serra Bruta: folha pintada da frente, que olha a estrada (-X).
 	"mining_office"]
 const PAINTED_SUPERMARKET := preload("res://world/places/supermarket/PaintedSupermarketFacade.gd")
@@ -371,7 +373,7 @@ func _half_width(id: String) -> float:
 		# Vão pintado de ~0,93 m e uma folha, como as lojas de porta de empurrar (família "shop").
 		"harbor_supermarket": return .23 if _painted(id) else .62
 		"cobra_leader_house": return .23
-		"harbor_haunted_house", "harbor_arcade", "harbor_curitiba_cellar", "harbor_bar", "desert_bar": return .9
+		"harbor_haunted_house", "harbor_arcade", "harbor_curitiba_cellar", "harbor_bar", "desert_bar", "harbor_gym": return .9
 		# Vão pintado de ~1,46 m: meia abertura menos a cápsula.
 		"mining_office": return .4
 	return .62
@@ -431,6 +433,8 @@ func _original_door_position(id: String, definition: Dictionary) -> Vector3:
 	if id == "harbor_haunted_house": return definition.exterior_position + Vector3(0,0,7.5)
 	# Plano das folhas de correr (ArcadeFacade / CuritibaCellarFacade).
 	if id in ["harbor_bar", "desert_bar"]: return definition.exterior_position + Vector3(0,0,5.88)
+	# Ferro Velho: galpão de 8 m de fundo (GymFacade), folhas no plano da frente.
+	if id == "harbor_gym": return definition.exterior_position + Vector3(0,0,3.88)
 	if id == "harbor_arcade": return definition.exterior_position + Vector3(0,0,4.91)
 	if id == "harbor_curitiba_cellar": return definition.exterior_position + Vector3(0,0,5.39)
 	var family := PLACES.walkup_family(id)

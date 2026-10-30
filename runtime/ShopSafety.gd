@@ -3,7 +3,7 @@ extends RefCounted
 ## Banks and hostile/story interiors keep their existing gameplay contracts.
 const IDS := ["harbor_curitiba_cellar", "harbor_supermarket", "harbor_ammunation",
 	"mountain_gunshop", "harbor_clothing", "mountain_outfitters", "mountain_boutique",
-	"mountain_village_outfitters", "harbor_fuel", "ski_lodge", "desert_digo"]
+	"mountain_village_outfitters", "harbor_fuel", "ski_lodge", "desert_digo", "harbor_gym"]
 static var _building_policy: Dictionary = {}
 
 static func peaceful(id: String) -> bool:

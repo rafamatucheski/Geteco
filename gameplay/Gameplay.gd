@@ -103,7 +103,9 @@ const SWING_DURATION := 0.26
 ## o corpo segura o rumo por AIM_HOLD depois de cada golpe/disparo (o clique dura um quadro e o corpo piscaria de volta
 ## para a direção do movimento). Escolha da adaptação, não calibrada.
 const AIM_HOLD := 0.3
-const NON_AIM_WEAPONS := ["fists", "knife", "axe", "knuckles", "bat", "katana", "grenade"]
+const NON_AIM_WEAPONS := ["fists", "knife", "axe", "knuckles", "bat", "katana", "sword_shield", "grenade"]
+const MELEE_CONTROL = preload("res://gameplay/MeleeControl.gd")
+const MELEE_FOLEY = preload("res://gameplay/MeleeFoley.gd")
 ## Clipes do `dante.glb` para golpes: [clipe, início, fim] em segundos, tocados a 1,0× (sem acelerar). Trechos
 ## escolhidos medindo a velocidade da mão nas chaves do clipe: `Attack` tem o golpe descendente (pico ~19,7 m/s) em
 ## t = 1,1 s; `Punch_Forward_with_Both_Fists` estende as mãos à frente em t ≈ 0,95 s. O trecho começa perto do contato
@@ -139,8 +141,8 @@ const CAMERA_KICK := {"magnum": 0.07, "shotgun": 0.08, "sawed_off": 0.10, "hunti
 ## Golpe corpo a corpo que ACERTA: tranco de câmera e empurrão da vítima (metros,
 ## em ~0,14 s, com colisão). Golpe no ar não treme a tela. O golpe pesado que fecha
 ## a sequência (`WeaponRigPose.heavy_attack`) multiplica os dois.
-const MELEE_KICK := {"fists": 0.025, "knuckles": 0.035, "knife": 0.02, "bat": 0.06, "axe": 0.07}
-const MELEE_SHOVE := {"fists": 0.10, "knuckles": 0.16, "knife": 0.06, "bat": 0.32, "axe": 0.26}
+const MELEE_KICK := {"fists": 0.025, "knuckles": 0.035, "knife": 0.02, "bat": 0.06, "axe": 0.07, "katana": 0.035, "sword_shield": 0.035}
+const MELEE_SHOVE := {"fists": 0.10, "knuckles": 0.16, "knife": 0.06, "bat": 0.32, "axe": 0.26, "katana": 0.12, "sword_shield": 0.18}
 const HEAVY_IMPACT := 1.6
 ## Som do ar e do acerto por arma corpo a corpo (`CombatAudio.melee_whoosh/melee_hit`).
 const MELEE_SOUND_KIND := {"fists": "punch", "knuckles": "punch", "bat": "bat", "axe": "axe"}
@@ -219,6 +221,8 @@ var back_katana: Node3D
 ## Katana presa à mão direita só durante sacar/guardar: segue a mão do clipe, então a espada sai das
 ## costas e volta para elas junto com o gesto.
 var hand_katana: Node3D
+## Escudo no antebraço esquerdo: aparece com a espada e escudo na mão.
+var hand_shield: Node3D
 var _sheath_clip := ""
 var _sheath_kind := ""
 var _sheath_length := 0.0
@@ -282,6 +286,11 @@ var god_mode := false
 var _god_marked: Array[Node] = []
 ## Estado de mira (leitura externa): `aiming` = V1 `is_aiming`; `aim_active` = V1 `weapon_aim_active`.
 var aiming := false
+## Espada e escudo: segurar mira levanta o escudo (`_update_aim`); corta o dano que vem pela frente.
+var shield_block := false
+## Série da academia (GymPlace): clipe da biblioteca "mixgym" no corpo do Dante, por cima do combate.
+var exercise_clip := ""
+var exercise_time := 0.0
 var aim_active := false
 var _scope_active := false
 var _aim_hold := 0.0
@@ -308,6 +317,13 @@ var _flame_crime_clock := 0.0
 var _rig_pose := RIG_POSE.new()
 var _pose_frame: Dictionary = {}
 var _pending_contact: Dictionary = {}
+var _melee_buffer: Dictionary = {}
+var _melee_action: Dictionary = {}
+var _melee_rate := 1.0
+var _last_melee_direction := Vector3.FORWARD
+var _melee_feedback_cache: Dictionary = {}
+var _melee_feedback_frame := -1
+var _melee_foley := MELEE_FOLEY.new()
 ## "Vupt" agendado do golpe em curso (`_melee_swing_sound`).
 var _pending_swing: Dictionary = {}
 ## Só detonações reentrantes entram aqui; a explosão inicial continua imediata.
@@ -366,6 +382,8 @@ func _ready() -> void:
 	katana_wounds = preload("res://gameplay/KatanaWounds.gd").new()
 	katana_wounds.name = "KatanaWounds"
 	add_child(katana_wounds)
+	katana_wounds.part_landed.connect(_melee_part_landed)
+	MELEE_FOLEY.prewarm()
 	_saber_hum = AudioStreamPlayer3D.new()
 	_saber_hum.name = "SaberHum"
 	_saber_hum.volume_db = -22.0
@@ -499,6 +517,16 @@ func _build_back_katana() -> void:
 	back_katana = _katana_on_bone(skeleton, "Spine02", "BackKatana")
 	back_katana.transform = BACK_KATANA_LOCAL
 	hand_katana = _katana_on_bone(skeleton, "RightHand", "SheathHandKatana")
+	if skeleton.find_bone("LeftForeArm") < 0: return
+	var forearm := BoneAttachment3D.new()
+	forearm.bone_name = "LeftForeArm"
+	skeleton.add_child(forearm)
+	hand_shield = Node3D.new()
+	hand_shield.name = "HandShield"
+	forearm.add_child(hand_shield)
+	SWORD_SHIELD_MODEL.build_shield(hand_shield)
+	hand_shield.transform = SHIELD_FOREARM_LOCAL
+	hand_shield.visible = false
 
 func _katana_on_bone(skeleton: Skeleton3D, bone: String, node_name: String) -> Node3D:
 	var attachment := BoneAttachment3D.new()
@@ -579,6 +607,8 @@ func _stall_physics_tick(delta: float) -> void:
 			reloading_id = ""
 			changed.emit()
 	_update_aim(player_delta)
+	if "sprint_scale" in player: player.sprint_scale = GYM.sprint_scale(_gym_world())
+	_update_melee_buffer()
 	_update_weapon_pose(player_delta)
 	_update_visual()
 	_update_saber_audio()
@@ -588,7 +618,7 @@ func _stall_physics_tick(delta: float) -> void:
 	_update_contact()
 	_update_swing_sound()
 	_update_shoves(delta)
-	_update_combat_clip(player_delta)
+	_update_combat_clip(player_delta * (_melee_rate if not _melee_action.is_empty() else 1.0))
 	_update_sheath(player_delta)
 	_update_swing(player_delta)
 	_update_recoil(player_delta)
@@ -703,6 +733,7 @@ func _update_left_knuckles(id: String) -> void:
 func _update_weapon_pose(delta: float) -> void:
 	if not is_instance_valid(player): return
 	var id := equipped()
+	if id.is_empty(): id = "fists"
 	var speed_now := Vector2(player.velocity.x, player.velocity.z).length()
 	var moving := speed_now > 0.12
 	var sprinting := speed_now > 4.2
@@ -721,17 +752,20 @@ func _update_weapon_pose(delta: float) -> void:
 				ammo = state.get_ammo(id)
 				changed.emit()
 		rig.loaded = int(ammo.get("magazine", 0)) > 0
+	rig["action_rate"] = _melee_rate if not _melee_action.is_empty() else 1.0
 	_pose_frame = _rig_pose.update(id, delta, aiming, reload_timer > 0.0, progress, moving, sprinting, float(player.phase), rig)
 	if id == "shotgun" and reload_timer <= 0.0 and float(_pose_frame.get("pump", 0.0)) > 0.02 and _shotgun_pump_sound_serial != _attack_serial:
 		_shotgun_pump_sound_serial = _attack_serial
 		_play_weapon_stream(AUDIO.shotgun_pump(), player.global_position, -8.0 + _rng.randf_range(-1.0, 1.0), _rng.randf_range(0.97, 1.03), 12.0)
-	var sword_clips := id == "katana" and _sword_locomotion_clips()
+	if "sword_clip_set" in player: player.sword_clip_set = "ss" if id == "sword_shield" else "gs"
+	var sword_clips := id in NATIVE_SWORDS and _sword_locomotion_clips()
 	if "sword_locomotion" in player: player.sword_locomotion = sword_clips
-	if id == "katana":
-		if sword_clips or _clip_name.begins_with("mixsword/gs_"):
-			# Clipes da greatsword (parado, andando, correndo e golpes): o clipe move os braços e a katana vai
-			# nas duas mãos, com o fio para o inimigo.
-			_pose_frame = {"visible": true, "armed": true, "native_sword": true, "hand_grip": HAND_KATANA_HELD, "melee_action": _clip_name != ""}
+	if "sword_block" in player: player.sword_block = shield_block
+	if id in NATIVE_SWORDS:
+		if sword_clips or _clip_name.begins_with("mixsword/"):
+			# Clipes do Mixamo (parado, andando, correndo e golpes): o clipe move os braços. A katana vai nas
+			# duas mãos, com o fio para o inimigo; a espada do escudo, só na direita.
+			_pose_frame = {"visible": true, "armed": true, "native_sword": true, "hand_grip": HAND_SWORD_HELD if id == "sword_shield" else HAND_KATANA_HELD, "melee_action": _clip_name != ""}
 		else:
 			# Sem a biblioteca do Mixamo: carregar procedural (lâmina para cima) e cortes de reserva.
 			var ready: bool = aiming or _combat_clock - _katana_attack_clock < _katana_moves.READY_SECONDS or (is_instance_valid(rage) and rage.active)
@@ -943,7 +977,10 @@ func _aim_direction() -> Vector3:
 		right.y = 0.0
 		down.y = 0.0
 		var pad := right.normalized() * stick.x + down.normalized() * stick.y
-		if pad.length_squared() > 0.0001: return pad.normalized()
+		if pad.length_squared() > 0.0001:
+			_last_melee_direction = pad.normalized()
+			return _last_melee_direction
+		if CATALOG.WEAPONS.get(equipped() if not equipped().is_empty() else "fists", {}).get("is_melee", false): return _last_melee_direction
 	var flat := aim_point - player.global_position
 	flat.y = 0.0
 	return flat.normalized() if flat.length_squared() > 0.0001 else Vector3.ZERO
@@ -952,6 +989,7 @@ func _aim_direction() -> Vector3:
 ## morte, transição e bloqueio de entrada zeram tudo e devolvem a locomoção).
 func _update_aim(delta: float) -> void:
 	if not is_instance_valid(player): return
+	player.set_meta("melee_movement_scale", 1.0)
 	if _aim_hold > 0.0: _aim_hold -= delta
 	# Tipos explícitos: `player.input_locked` é acesso dinâmico (Variant); não se apoia a inferência do `:=` numa cadeia `and`.
 	var permitted: bool = attack_allowed() and not bool(player.input_locked) and _free_play_ok()
@@ -959,17 +997,36 @@ func _update_aim(delta: float) -> void:
 	var fire_pressed: bool = permitted and InputMap.has_action("fire") and Input.is_action_pressed("fire")
 	var lantern: bool = permitted and is_instance_valid(flashlight) and flashlight.visible
 	aim_active = aim_pressed and equipped() not in NON_AIM_WEAPONS
+	shield_block = aim_pressed and equipped() == "sword_shield" and _melee_action.is_empty() and _sword_locomotion_clips()
+	if shield_block: player.set_meta("melee_movement_scale", SHIELD_BLOCK_MOVE)
 	aiming = permitted and (aim_pressed or fire_pressed or lantern or _aim_hold > 0.0)
 	_scope_active = aim_pressed and CUSTOM.selected(customization, equipped(), "scope") != "none" and not bool(player.get_meta("isolated_interior", false))
 	var direction: Vector3 = _aim_direction() if aiming else Vector3.ZERO
+	if not _melee_action.is_empty():
+		var held_id := equipped() if not equipped().is_empty() else "fists"
+		if not permitted or _melee_action.id != held_id:
+			_clear_melee_action()
+		else:
+			if not bool(_melee_action.locked):
+				if direction.length_squared() > 0.001: _melee_action.direction = direction
+				if _rig_pose.action_age >= float(_melee_action.contact) - 0.04: _melee_action.locked = true
+			if _rig_pose.action_age <= float(_melee_action.contact) + float(_melee_action.window):
+				direction = _melee_action.direction
+				aiming = true
+			player.set_meta("melee_movement_scale", MELEE_CONTROL.movement(_melee_action.id, _rig_pose.action_age, _melee_action.contact))
+			if _rig_pose.action_age > 1.2 and _pending_contact.is_empty():
+				_melee_action.clear()
+				_melee_rate = 1.0
 	var facing: float = atan2(-direction.x, -direction.z) if direction != Vector3.ZERO else NAN
 	var stance := ""
 	if aiming:
-		var weapon: Dictionary = CATALOG.WEAPONS.get(equipped(), {})
+		var weapon: Dictionary = CATALOG.WEAPONS.get(equipped() if not equipped().is_empty() else "fists", {})
 		if weapon.get("is_grenade", false): stance = "grenade"
+		elif weapon.get("is_melee", false): stance = "melee"
 		elif not weapon.is_empty() and not weapon.get("is_melee", false): stance = "gun"
 	_present(facing, player.combat_clip if "combat_clip" in player else "", player.combat_clip_time if "combat_clip_time" in player else 0.0, stance)
 	if not permitted:
+		_clear_melee_action()
 		_aim_hold = 0.0
 		_cancel_combat_clip()
 
@@ -1049,6 +1106,12 @@ func _cancel_combat_clip() -> void:
 ## Interrompe (e a locomoção retoma no quadro seguinte) ao trocar de arma, morrer, bloquear ataque
 ## (garagem, veículo, ski, transição) ou terminar o trecho. Na pausa este método não roda, então o clipe congela junto.
 func _update_combat_clip(delta: float) -> void:
+	if exercise_clip != "":
+		# O Dante está travado no aparelho: `_update_aim` acabou de limpar o clipe de combate.
+		if is_instance_valid(player) and "combat_clip" in player:
+			player.combat_clip = exercise_clip
+			player.combat_clip_time = exercise_time
+		return
 	if _clip_name == "":
 		if is_instance_valid(player) and player.get("combat_clip") == "ual/Sword_Idle": player.combat_clip = ""
 		return
@@ -1072,6 +1135,7 @@ func _update_back_katana(id: String) -> void:
 		elif _sheath_last_id == "katana": _start_sheath("holster")
 		_weapon_switch_sound(_sheath_last_id, id)
 	_sheath_last_id = id
+	if hand_shield != null and is_instance_valid(player): hand_shield.visible = id == "sword_shield" and not bool(player.get("dead"))
 	if back_katana == null or not is_instance_valid(player): return
 	var carried: bool = state != null and bool(state.owns_weapon("katana")) and not bool(player.get("dead"))
 	var moving: bool = _sheath_clip != ""
@@ -1096,6 +1160,32 @@ const SHEATH_HANDOFF := 0.08
 ## Power 18,5 m/s em 0,70 s; Low 27,6 m/s em 0,84 s). O dano entra nesse instante.
 const KATANA_ATTACKS := [["mixsword/gs_downward", 0.20, 0.64, 1.10], ["mixsword/gs_power", 0.25, 0.70, 1.30], ["mixsword/gs_low", 0.40, 0.84, 1.35]]
 const KATANA_ATTACK_RATE := 1.25
+## Espadas com clipe nativo do Mixamo (pose do clipe, sem IK de arma).
+const NATIVE_SWORDS := ["katana", "sword_shield"]
+## Golpes da espada e escudo (Pro Sword and Shield Pack), mesmo formato de KATANA_ATTACKS. Pico medido no
+## Dante com tools/probe_sword_shield_grip.gd (ponta da espada): Downward 40 m/s em 0,60 s; Cross 32 m/s
+## em 0,83 s; Power 30 m/s em 1,40 s (o terceiro golpe é o pesado, com a preparação mais longa).
+const SHIELD_ATTACKS := [["mixsword/ss_slash_downward", 0.20, 0.60, 1.15], ["mixsword/ss_slash_cross", 0.30, 0.83, 1.35], ["mixsword/ss_slash_power", 0.50, 1.40, 2.05]]
+const SHIELD_ATTACK_RATE := 1.30
+## Escudo erguido + ataque = chute espartano (Sword And Shield Kick): metade do dano, empurrão 3,5× maior.
+## Contato estimado no pé esticado do clipe (0,45 s de 1,2 s); não avança o combo de cortes.
+const SHIELD_KICK := ["mixsword/ss_kick", 0.10, 0.45, 1.10]
+const SHIELD_KICK_DAMAGE := 0.5
+const SHIELD_KICK_SHOVE := 3.5
+## O chute em andamento (entre o clique e o contato): o dano e o empurrão leem isto.
+var _shield_kicking := false
+## Escudo levantado: o dano de frente (cone de ~70°) cai para esta fração, e o Dante anda mais devagar.
+const SHIELD_BLOCK_SHARE := 0.15
+const SHIELD_BLOCK_CONE := 0.34
+const SHIELD_BLOCK_MOVE := 0.55
+const SWORD_SHIELD_MODEL := preload("res://gameplay/SwordShieldModel.gd")
+const GYM := preload("res://activities/gym/GymState.gd")
+## Pegada da espada de uma mão no osso RightHand e escudo no osso LeftForeArm (face para fora do braço).
+## Estimadas pelo esqueleto; conferir com tools/probe_sword_shield_grip.gd e na câmera do jogo.
+const HAND_SWORD_HELD := HAND_KATANA_HELD
+## A face do escudo olha para −X do osso (para fora do braço); o centro sai 11 cm nessa direção para a
+## alça ficar no antebraço e a borda não entrar no peito (na captura de 30/10 a 0 cm ele atravessava).
+const SHIELD_FOREARM_LOCAL := Transform3D(Basis(Vector3.UP, PI * .5), Vector3(-0.11, 0.17, 0.0))
 ## Parado, andando e correndo com a katana na mão: clipes da greatsword do Mixamo (Great Sword Idle, Walk e
 ## Run; o Actor troca a locomoção com `sword_locomotion`). Sem eles, `KatanaMoveset` (lâmina para cima).
 ## Medidas no esqueleto do Dante com o clipe da greatsword (cabo = origem da katana, ponta em -Z):
@@ -1159,9 +1249,12 @@ func _end_sheath() -> void:
 	if is_instance_valid(player) and "combat_clip" in player and str(player.combat_clip).begins_with("mixsword/"):
 		player.combat_clip = ""
 
-func _play_katana_clip() -> void:
+func _play_katana_clip(id := "katana") -> void:
 	if not is_instance_valid(player): return
-	_katana_combo = (_katana_combo + 1) % 3
+	var attacks: Array = SHIELD_ATTACKS if id == "sword_shield" else KATANA_ATTACKS
+	_shield_kicking = id == "sword_shield" and shield_block
+	if _shield_kicking: attacks = [SHIELD_KICK]
+	else: _katana_combo = (_katana_combo + 1) % 3
 	_katana_attack_clock = _combat_clock
 	# Cycle even with deliberate clicks: returning cuts have their own authored
 	# hand/blade paths, rather than reversing or speeding up the same clip.
@@ -1171,13 +1264,13 @@ func _play_katana_clip() -> void:
 	_clip_end = 1.25
 	_clip_rate = 1.7
 	_clip_age = 0.0
-	_clip_weapon = "katana"
-	var attack: Array = KATANA_ATTACKS[_katana_combo % KATANA_ATTACKS.size()]
+	_clip_weapon = id
+	var attack: Array = attacks[0] if _shield_kicking else attacks[_katana_combo % attacks.size()]
 	if "animation" in player and player.animation != null and player.animation.has_animation(attack[0]):
 		_clip_name = attack[0]
 		_clip_start = float(attack[1])
 		_clip_end = float(attack[3])
-		_clip_rate = KATANA_ATTACK_RATE
+		_clip_rate = SHIELD_ATTACK_RATE if id == "sword_shield" else KATANA_ATTACK_RATE
 	_aim_hold = 0.8
 	if not _pending_swing.is_empty(): _pending_swing.time = _katana_contact_time() - 0.05
 
@@ -1195,8 +1288,11 @@ func request_rage() -> bool:
 	return true
 
 func _katana_contact_time() -> float:
-	var attack: Array = KATANA_ATTACKS[maxi(_katana_combo, 0) % KATANA_ATTACKS.size()]
-	if _clip_name == attack[0]: return (float(attack[2]) - float(attack[1])) / KATANA_ATTACK_RATE
+	var shield := _clip_weapon == "sword_shield"
+	if shield and _clip_name == SHIELD_KICK[0]: return (float(SHIELD_KICK[2]) - float(SHIELD_KICK[1])) / SHIELD_ATTACK_RATE
+	var attacks: Array = SHIELD_ATTACKS if shield else KATANA_ATTACKS
+	var attack: Array = attacks[maxi(_katana_combo, 0) % attacks.size()]
+	if _clip_name == attack[0]: return (float(attack[2]) - float(attack[1])) / (SHIELD_ATTACK_RATE if shield else KATANA_ATTACK_RATE)
 	return preload("res://gameplay/KatanaMoveset.gd").CONTACT[maxi(_katana_combo,0)]
 
 ## Coice de arma de fogo com o `recoil` e a velocidade de retorno de `WeaponPoseData.PROFILES`.
@@ -1382,6 +1478,58 @@ func aim_from_screen(screen: Vector2) -> Vector3:
 func aim_feedback_active() -> bool:
 	return aiming and equipped() not in NON_AIM_WEAPONS and attack_allowed() and _free_play_ok() and not player.input_locked
 
+func melee_feedback_active() -> bool:
+	# Estados de teste (FakeState) não têm arma equipada nem regra de ataque: sem aviso de mira.
+	if state == null or not "equipped_weapon" in state or not state.has_method("can_attack"): return false
+	var id := equipped() if not equipped().is_empty() else "fists"
+	if not is_instance_valid(player) or not CATALOG.WEAPONS.get(id, {}).get("is_melee", false) or not attack_allowed() or not _free_play_ok() or player.input_locked: return false
+	var preparing := InputMap.has_action("aim") and Input.is_action_pressed("aim")
+	var striking: bool = not _melee_action.is_empty() and _melee_action.id == id and _rig_pose.action_age <= float(_melee_action.contact) + float(_melee_action.window)
+	return preparing or striking
+
+func melee_feedback() -> Dictionary:
+	var frame := Engine.get_physics_frames()
+	if frame == _melee_feedback_frame and not _melee_feedback_cache.is_empty(): return _melee_feedback_cache
+	_melee_feedback_frame = frame
+	var origin := player.global_position + Vector3.UP * 1.05
+	var direction := _melee_direction()
+	var id := equipped() if not equipped().is_empty() else "fists"
+	var data := weapon_data(id)
+	var reach := float(data.get("melee_range", 46.0)) / 16.0
+	var pick := _melee_pick(origin, direction, data, id)
+	_melee_feedback_cache = {"origin": origin, "direction": direction, "reach": reach, "point": pick.get("point", origin + direction * reach), "blocked": pick.get("blocked", false), "in_range": pick.has("actor"), "confirmed": hitmarker_active()}
+	return _melee_feedback_cache
+
+func _melee_direction() -> Vector3:
+	if not _melee_action.is_empty() and bool(_melee_action.locked) and _rig_pose.action_age <= float(_melee_action.contact) + float(_melee_action.window): return _melee_action.direction
+	var direction := _aim_direction()
+	if direction.length_squared() > 0.001: _last_melee_direction = direction
+	return _last_melee_direction
+
+func _clear_melee_action() -> void:
+	_melee_buffer.clear()
+	_melee_action.clear()
+	_melee_rate = 1.0
+	_melee_feedback_cache.clear()
+	if not _pending_contact.is_empty() and _pending_contact.id != "grenade": _pending_contact.clear()
+	if not _pending_swing.is_empty(): _pending_swing.clear()
+	if is_instance_valid(player): player.set_meta("melee_movement_scale", 1.0)
+
+func _notification(what: int) -> void:
+	# A click queued before opening pause must never execute on returning.
+	if what == NOTIFICATION_PAUSED: _melee_buffer.clear()
+
+func _update_melee_buffer() -> void:
+	if _melee_buffer.is_empty(): return
+	var id := equipped()
+	if id.is_empty(): id = "fists"
+	if not attack_allowed() or not _free_play_ok() or player.input_locked or id != _melee_buffer.id or _combat_clock > float(_melee_buffer.until):
+		_melee_buffer.clear()
+		return
+	if cooldown > 0.0 or not _pending_contact.is_empty(): return
+	_melee_buffer.clear()
+	_stall_fire_at(aim_point)
+
 ## Same muzzle, horizontal trajectory, mask and range as the shot, without spread.
 func aim_feedback() -> Dictionary:
 	var origin := _muzzle_world_position()
@@ -1418,13 +1566,22 @@ func fire_at(target: Vector3) -> bool:
 	return fired
 
 func _stall_fire_at(target: Vector3) -> bool:
-	if not attack_allowed() or cooldown > 0 or reload_timer > 0 or not _pending_contact.is_empty(): return false
+	if not attack_allowed() or not _free_play_ok() or not is_instance_valid(player) or player.input_locked:
+		_clear_melee_action()
+		return false
 	var id := equipped()
 	if id.is_empty(): id = "fists"
 	if not CATALOG.WEAPONS.has(id): return false
 	if id != "fists" and not state.owns_weapon(id): return false
 	var data: Dictionary = weapon_data(id)
 	var melee: bool = data.get("is_melee", false)
+	if cooldown > 0 or reload_timer > 0 or not _pending_contact.is_empty():
+		if melee and reload_timer <= 0 and cooldown <= MELEE_CONTROL.BUFFER_SECONDS:
+			_melee_buffer = {"id": id, "until": _combat_clock + MELEE_CONTROL.BUFFER_SECONDS}
+		return false
+	_melee_buffer.clear()
+	_melee_action.clear()
+	_melee_rate = MELEE_CONTROL.rate(id, float(CATALOG.WEAPONS[id].fire_interval), float(data.fire_interval)) if melee else 1.0
 	var grenade: bool = data.get("is_grenade", false)
 	var has_ammo: bool = int(state.get_ammo(id).get("magazine", 0)) > 0 if grenade else true
 	if not melee and (not has_ammo or (not grenade and not state.consume_ammo(id, 1))):
@@ -1433,7 +1590,7 @@ func _stall_fire_at(target: Vector3) -> bool:
 		if not grenade: _firefly_sound("weapons_fire", "dry_fire", player.global_position, -7.0, 20.0)
 		if not reload_weapon(): message.emit("Sem munição.")
 		return false
-	cooldown = float(data.fire_interval)
+	cooldown = float(data.fire_interval) / float(MELEE_CONTROL.profile(id).rate) if melee else float(data.fire_interval)
 	_attack_serial += 1
 	_aim_hold = AIM_HOLD + float(RIG_POSE.MELEE_CONTACT.get(id, 0.0))
 	var bag_recoil := 3.0 if state.get("economy") != null and state.economy.grid_handbag() and not melee else 1.0
@@ -1511,8 +1668,15 @@ func _stall_fire_at(target: Vector3) -> bool:
 		# ignoravam a arma na mão; ficam fora do golpe.
 		_start_swing(data, direction)
 		_play_punch_clip(id)
-		if id == "katana": _play_katana_clip()
-		_pending_contact = {"id": id, "target": target, "data": data, "time": _katana_contact_time() if id == "katana" else float(RIG_POSE.MELEE_CONTACT.get(id, 0.14))}
+		if id in NATIVE_SWORDS: _play_katana_clip(id)
+		var contact_time := _katana_contact_time() if id in NATIVE_SWORDS else float(RIG_POSE.MELEE_CONTACT.get(id, 0.14))
+		var profile: Dictionary = MELEE_CONTROL.profile(id)
+		_melee_action = {"id": id, "direction": direction, "locked": false, "contact": contact_time, "window": float(profile.window), "heavy": _katana_combo == (2 if id == "sword_shield" else 1) if id in NATIVE_SWORDS else _rig_pose.heavy_attack()}
+		_pending_contact = {"id": id, "target": target, "data": data, "time": contact_time}
+		_aim_hold = (contact_time + float(profile.window)) / _melee_rate
+		if id in MELEE_FOLEY.WEAPONS and not (id == "katana" and katana_style().saber) and not _pending_swing.is_empty():
+			var peak: float = {"knife": 0.08, "bat": 0.13, "katana": 0.11, "axe": 0.145}[id]
+			_pending_swing.time = maxf(0.0, contact_time - peak * _melee_rate)
 	else:
 		_in_pellet_volley = true
 		part_span = STALL_WORK.begin()
@@ -1600,19 +1764,25 @@ func _update_contact() -> void:
 	var id: String = _pending_contact.id
 	var current_id := equipped()
 	if current_id.is_empty(): current_id = "fists"
-	if not attack_allowed() or current_id != id:
+	if not attack_allowed() or not _free_play_ok() or player.input_locked or current_id != id:
 		_pending_contact.clear()
+		_clear_melee_action()
 		return
 	if _rig_pose.action_age + 0.00001 < float(_pending_contact.time): return
 	var contact := _pending_contact
-	_pending_contact = {}
 	var origin: Vector3 = player.global_position + Vector3.UP * 1.05
 	var direction: Vector3 = contact.target - origin
 	direction.y = 0.0
 	direction = direction.normalized() if direction.length_squared() > 0.001 else Vector3.FORWARD
 	if id != "grenade":
-		_melee(origin, direction, contact.data, id)
+		if not _melee_action.is_empty():
+			_melee_action.locked = true
+			direction = _melee_action.direction
+		var hit := _melee(origin, direction, contact.data, id)
+		if hit or _rig_pose.action_age >= float(contact.time) + float(MELEE_CONTROL.profile(id).window):
+			_pending_contact = {}
 		return
+	_pending_contact = {}
 	if not state.consume_ammo(id, 1): return
 	if player.has_method("combat_palm_position"): origin = player.combat_palm_position("Right")
 	var flat_target: Vector3 = contact.target - origin
@@ -1673,49 +1843,100 @@ func _ignite_actor(actor: Node3D, source: Node) -> void:
 	else:
 		effect.ignite(source)
 
-func _melee(origin: Vector3, direction: Vector3, data: Dictionary, id: String = "") -> void:
+## Shared by preview and damage. Broad phase is bounded; narrow phase respects
+## the weapon arc, height, reach and solid occlusion. Never redirects the cursor.
+func _melee_pick(origin: Vector3, direction: Vector3, data: Dictionary, id: String) -> Dictionary:
 	var reach := float(data.get("melee_range", 46.0)) / 16.0
-	# Caixa à frente do jogador, do corpo até o alcance (V1: qualquer alvo a menos de `melee_range` no cone da frente).
-	# A esfera antiga ficava centrada em `reach - 0,5` e deixava uma zona morta: alvo colado (< ~1,8 m com punhos) não era
-	# atingido, e só valia de longe. Aqui vale do contato até o alcance, e acerta o mais próximo primeiro.
+	var profile: Dictionary = MELEE_CONTROL.profile(id)
+	var half_width := float(profile.width) * 0.5
+	var arc := deg_to_rad(float(profile.arc))
 	var box := BoxShape3D.new()
-	box.size = Vector3(1.3, 1.6, reach)
+	box.size = Vector3(float(profile.width) + sin(arc) * reach * 2.0, 2.1, reach + 0.4)
 	var query := PhysicsShapeQueryParameters3D.new()
 	query.shape = box
 	query.transform = Transform3D(Basis(Vector3.UP, atan2(-direction.x, -direction.z)), origin + direction * (reach * 0.5))
 	query.collision_mask = 2
 	query.exclude = [player.get_rid()]
 	var candidates: Array[Node3D] = []
-	for result in get_world_3d().direct_space_state.intersect_shape(query, 8):
-		if result.collider is Node3D: candidates.append(result.collider)
-	candidates.sort_custom(func(a: Node3D, b: Node3D): return a.global_position.distance_squared_to(origin) < b.global_position.distance_squared_to(origin))
+	for result in get_world_3d().direct_space_state.intersect_shape(query, 16):
+		if result.collider is Node3D and not candidates.has(result.collider): candidates.append(result.collider)
+	if id in ["katana", "axe"] and is_instance_valid(katana_wounds):
+		for corpse in katana_wounds.candidates_near(origin, reach):
+			if not candidates.has(corpse): candidates.append(corpse)
+	var selected: Dictionary = {}
+	var best_score := INF
+	var blocked_pick: Dictionary = {}
 	for actor in candidates:
-		if _is_invulnerable(actor) or actor.get("dead") == true: continue
+		if not is_instance_valid(actor) or actor == player or _is_invulnerable(actor) or not actor.has_method("receive_damage"): continue
+		var dead: bool = actor.get("dead") == true
+		if dead and (not id in ["katana", "axe"] or not is_instance_valid(katana_wounds) or not katana_wounds.can_sever(actor)): continue
 		var target := actor.global_position + Vector3.UP
+		if dead: target = katana_wounds.closest_cut_point(actor, origin + direction * minf(reach, origin.distance_to(actor.global_position)))
+		var flat := target - origin
+		if absf(flat.y) > 1.6: continue
+		flat.y = 0.0
+		var forward := direction.dot(flat)
+		var lateral := absf(direction.cross(flat).y)
+		if forward < -0.15 or flat.length() > reach + 0.25 or lateral > half_width + maxf(0.0, forward) * tan(arc): continue
 		var ray := PhysicsRayQueryParameters3D.create(origin, target, 7, [player.get_rid()])
+		ray.hit_from_inside = true
 		var obstruction := get_world_3d().direct_space_state.intersect_ray(ray)
-		if not obstruction.is_empty() and obstruction.collider != actor: continue
-		var was_living: bool = actor.get("dead") != true
-		_damage(actor, float(data.damage), player)
-		# Golpe letal forte de katana/machado separa o membro mais perto do ponto do golpe (`KatanaWounds`).
-		if was_living and actor.get("dead") == true and is_instance_valid(katana_wounds):
-			var combo := _katana_combo if id == "katana" else int(_rig_pose.combo_step)
-			var heavy_cut: bool = _rig_pose.heavy_attack() or (id == "katana" and is_instance_valid(rage) and rage.active)
-			katana_wounds.try_sever(actor, id, float(data.damage), heavy_cut, preload("res://gameplay/KatanaWounds.gd").cut_point(actor, id, combo, direction), direction)
-		_melee_hit_sound(id if id != "" else String(data.get("stance", "")), actor, target, float(data.damage))
+		if not obstruction.is_empty() and obstruction.collider != actor:
+			if blocked_pick.is_empty(): blocked_pick = {"point": obstruction.position, "blocked": true, "surface": obstruction.collider}
+			continue
+		var score := MELEE_CONTROL.target_score(origin, direction, target) + (100.0 if dead else 0.0)
+		if score < best_score:
+			best_score = score
+			selected = {"actor": actor, "point": target, "blocked": false}
+	if not selected.is_empty(): return selected
+	if not blocked_pick.is_empty(): return blocked_pick
+	var wall_ray := PhysicsRayQueryParameters3D.create(origin, origin + direction * reach, 5, [player.get_rid()])
+	wall_ray.hit_from_inside = true
+	var wall := get_world_3d().direct_space_state.intersect_ray(wall_ray)
+	if not wall.is_empty(): return {"point": wall.position, "blocked": true, "surface": wall.collider}
+	return {}
+
+func _melee(origin: Vector3, direction: Vector3, data: Dictionary, id: String = "") -> bool:
+	var pick := _melee_pick(origin, direction, data, id)
+	if not pick.has("actor"):
+		if pick.get("blocked", false) and pick.has("surface"):
+			_melee_hit_sound(id, pick.surface, pick.point, float(data.damage))
+			_rig_pose.impact(id)
+			return true
+		return false
+	var actor: Node3D = pick.actor
+	var target: Vector3 = pick.point
+	var was_living: bool = actor.get("dead") != true
+	# Força treinada na academia (GymState) só vale para o golpe do Dante.
+	var strength: float = GYM.melee_damage_scale(_gym_world()) * (SHIELD_KICK_DAMAGE if _shield_kicking and id == "sword_shield" else 1.0)
+	if was_living: _damage(actor, float(data.damage) * strength, player)
+	var severed := false
+	if actor.get("dead") == true and is_instance_valid(katana_wounds):
+		katana_wounds.register_defeated(actor)
+		var heavy_cut: bool = bool(_melee_action.get("heavy", _rig_pose.heavy_attack())) or (id == "katana" and is_instance_valid(rage) and rage.active)
+		# Project the stroke onto the victim rather than choosing a fixed combo limb.
+		var closest := origin + direction * maxf(0.0, direction.dot(target - origin)) if was_living else target
+		severed = katana_wounds.try_sever(actor, id, float(data.damage), heavy_cut, closest, direction)
+	if not was_living and not severed: return false
+	_melee_hit_sound(id if id != "" else String(data.get("stance", "")), actor, target, float(data.damage), severed)
+	if was_living:
 		_hit_effect({"collider": actor, "position": target, "normal": -direction}, float(data.damage), direction)
 		_melee_impact(actor, direction, id)
-		break
+	else:
+		# Post-mortem cuts produce no second damage/death/reward/crime event.
+		_rig_pose.impact(id)
+		hitmarker_until = _combat_clock + 0.16
+	return true
 
 ## Peso do contato: o golpe trava no alvo (hit-stop), a câmera dá um tranco e a
 ## vítima viva é empurrada no sentido do golpe. Só apresentação: o dano já entrou.
 func _melee_impact(actor: Node3D, direction: Vector3, id: String) -> void:
-	var heavy := _rig_pose.heavy_attack()
+	var heavy := bool(_melee_action.get("heavy", _rig_pose.heavy_attack()))
 	var factor := HEAVY_IMPACT if heavy else 1.0
 	_rig_pose.impact(id)
 	_kick_camera(float(MELEE_KICK.get(id, 0.0)) * factor)
 	if not actor is CharacterBody3D or actor == player or actor.get("dead") == true or _is_invulnerable(actor): return
-	var distance := float(MELEE_SHOVE.get(id, 0.0)) * factor
+	var distance := float(MELEE_SHOVE.get(id, 0.0)) * factor * (SHIELD_KICK_SHOVE if _shield_kicking and id == "sword_shield" else 1.0)
 	if distance <= 0.0: return
 	var flat := Vector3(direction.x, 0.0, direction.z).normalized()
 	# Velocidade decrescendo linearmente até zero: percorre `distance` em SHOVE_SECONDS.
@@ -2236,7 +2457,42 @@ func _trace_explosion_cost(stage: String, started: int) -> int:
 
 ## `from` é a posição de quem causou o dano (INF se não houver); a morte cai no lado oposto.
 func damage_player(amount: float, from := Vector3.INF) -> void:
-	_apply_player_damage(amount, true, from)
+	_apply_player_damage(_shield_blocked(amount, from), true, from)
+
+## Começa uma série: troca para os punhos (a arma na mão brigaria com o clipe) e toca o exercício.
+func play_exercise(clip: String, time: float) -> bool:
+	if not is_instance_valid(player) or not "animation" in player or player.animation == null or not player.animation.has_animation(clip): return false
+	if state != null and equipped() != "fists" and not state.equip_weapon("fists"): return false
+	_cancel_combat_clip()
+	exercise_clip = clip
+	exercise_time = time
+	return true
+
+func exercise_length() -> float:
+	if exercise_clip == "" or not is_instance_valid(player) or player.animation == null or not player.animation.has_animation(exercise_clip): return 0.0
+	return player.animation.get_animation(exercise_clip).length
+
+func stop_exercise() -> void:
+	if exercise_clip == "": return
+	exercise_clip = ""
+	if is_instance_valid(player) and "combat_clip" in player: player.combat_clip = ""
+
+## Estado do mundo para a academia; atores e estados de teste podem não ter `world_state`.
+func _gym_world() -> Dictionary:
+	var world: Variant = state.get("world_state") if state != null else null
+	return world if world is Dictionary else {}
+
+## Escudo levantado e ataque vindo da frente: sobra só SHIELD_BLOCK_SHARE do dano.
+func _shield_blocked(amount: float, from: Vector3) -> float:
+	if not shield_block or not from.is_finite() or not is_instance_valid(player) or not is_finite(amount): return amount
+	var toward := from - player.global_position
+	toward.y = 0.0
+	if toward.length_squared() < 0.0001: return amount
+	var facing: Vector3 = -player.visual.global_basis.z
+	facing.y = 0.0
+	if facing.normalized().dot(toward.normalized()) < SHIELD_BLOCK_CONE: return amount
+	player.set_meta("shield_block_frame", Engine.get_physics_frames())
+	return amount * SHIELD_BLOCK_SHARE
 
 func damage_environment(amount: float) -> void:
 	# Cold and other environmental damage do not consume ballistic armor or crime.
@@ -2675,22 +2931,31 @@ func _update_swing_sound() -> void:
 	if _rig_pose.action_age + 0.00001 < float(_pending_swing.time): return
 	var data: Dictionary = _pending_swing.data
 	_pending_swing = {}
-	var stream: AudioStream = AUDIO.knife_sample(-1) if id == "knife" else AUDIO.melee_whoosh(String(MELEE_SOUND_KIND.get(id, "punch")))
-	if id == "katana": stream = KATANA_AUDIO.stream("swing") if katana_style().saber else KATANA_AUDIO.swing(_rng.randi_range(0, 2))
+	var stream: AudioStream
+	if id == "katana" and katana_style().saber: stream = KATANA_AUDIO.stream("swing")
+	elif id in MELEE_FOLEY.WEAPONS: stream = _melee_foley.swing(id)
+	else: stream = AUDIO.melee_whoosh(String(MELEE_SOUND_KIND.get(id, "punch")))
 	# V1 `Player._melee_attack`: o volume do catálogo. Tom por golpe do combo (pesado
 	# mais grave e mais forte) e um pouco de acaso, para a sequência não soar repetida.
-	var heavy := _rig_pose.heavy_attack()
+	var heavy := bool(_melee_action.get("heavy", _rig_pose.heavy_attack()))
 	var pitch := _combo_pitch() * _rng.randf_range(0.97, 1.03)
 	_play_stream(stream, player.global_position, float(data.get("audio_volume_db", -4.0)) + (2.0 if heavy else 0.0), pitch)
 
 ## Tom do golpe atual da sequência: o pesado que fecha o combo é o mais grave.
 func _combo_pitch() -> float:
-	if _rig_pose.heavy_attack(): return COMBO_HEAVY_PITCH
+	if bool(_melee_action.get("heavy", _rig_pose.heavy_attack())): return COMBO_HEAVY_PITCH
 	return float(COMBO_PITCH[_rig_pose.combo_step % COMBO_PITCH.size()])
 
 ## Acerto corpo a corpo no corpo: som próprio de cada arma (soco, soqueira, taco,
 ## machado), mais grave e forte no golpe pesado. A faca mantém os contatos da V1.
-func _melee_hit_sound(id: String, actor: Node3D, point: Vector3, amount: float) -> void:
+func _melee_hit_sound(id: String, actor: Node3D, point: Vector3, amount: float, severed := false) -> void:
+	if id in MELEE_FOLEY.WEAPONS and not (id == "katana" and katana_style().saber):
+		var material := _impact_material(actor)
+		var heavy := bool(_melee_action.get("heavy", _rig_pose.heavy_attack()))
+		var take: AudioStream = _melee_foley.hit(id, material, heavy, severed)
+		var level := -7.0 if id == "knife" else -4.5
+		_play_stream(take, point, level + (1.0 if heavy else 0.0), _rng.randf_range(0.97, 1.03), 24.0)
+		return
 	if id == "katana":
 		# Contato gravado + rasgo, só ao atingir carne; o ar sozinho não toca impacto.
 		if not katana_style().saber and _impact_material(actor) == "flesh":
@@ -2710,6 +2975,9 @@ func _melee_hit_sound(id: String, actor: Node3D, point: Vector3, amount: float) 
 	_play_stream(AUDIO.melee_hit(String(MELEE_HIT_KIND[id]), _rng.randi_range(0, 2)), point, volume, _combo_pitch() * _rng.randf_range(0.96, 1.04))
 	# Camada de carne gravada da V1 por baixo, mais baixa: dá corpo ao sintetizado.
 	_play_stream(AUDIO.take("impact_flesh", _rng), point, volume - 9.0)
+
+func _melee_part_landed(point: Vector3) -> void:
+	_play_stream(_melee_foley.landing(), point, -12.0, _rng.randf_range(0.97, 1.03), 16.0)
 
 ## Lança-chamas: rajada de 0,38 s reiniciada enquanto o gatilho segue (V1 `_flamethrower_audio`).
 func _flame_sound() -> void:
@@ -2861,6 +3129,7 @@ func spawn_officer() -> CharacterBody3D:
 	return null
 
 func on_region_changed() -> void:
+	_clear_melee_action()
 	if is_instance_valid(rage): rage.cancel("region")
 	if is_instance_valid(katana_wounds): katana_wounds.clear()
 	if is_instance_valid(_saber_hum): _saber_hum.stop()

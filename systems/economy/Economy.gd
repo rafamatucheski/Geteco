@@ -17,7 +17,7 @@ const SUPPLIES := {"lockpick":{"price":75}, "apple":{"price":8}, "water":{"price
 const PERSONAL_SLOTS := {
 	"curta":["pistol","magnum","pistol_suppressed","smg","smg_compact","smg_tactical"],
 	"longa":["shotgun","sawed_off","shotgun_auto","ak47","m4a1","hunting_rifle","rpg","flamethrower"],
-	"corpo":["knife","axe","knuckles","bat","katana"], "granada":["grenade"]}
+	"corpo":["knife","axe","knuckles","bat","katana","sword_shield"], "granada":["grenade"]}
 ## Avisa cada crédito de dinheiro (dinheiro solto e recompensas com recibo). É o ponto único
 ## para o som de dinheiro: quem ouve não precisa saber de onde veio o pagamento.
 signal money_gained(amount: int)

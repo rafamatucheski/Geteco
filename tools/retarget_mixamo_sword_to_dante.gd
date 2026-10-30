@@ -2,9 +2,23 @@ extends SceneTree
 ## Retarget das animações de espada do Mixamo (guardar, sacar e guardar a greatsword) para o Dante.
 ## Mesmo método de tools/retarget_ual_to_dante.gd: rotação em espaço do esqueleto aplicada ao
 ## repouso do Dante, porque os repousos dos dois rigs diferem. Só o quadril recebe posição.
-## Saída: assets/dante/mixamo/dante_mixamo_death.res, com um clipe por direção.
+## Saída: assets/dante/mixamo/dante_mixamo_sword.res. Com `-- --set=gym`, os exercícios da academia
+## (assets/dante/mixamo/dante_mixamo_gym.res).
 const DST := "res://assets/dante.glb"
 const OUT := "res://assets/dante/mixamo/dante_mixamo_sword.res"
+const GYM_OUT := "res://assets/dante/mixamo/dante_mixamo_gym.res"
+## Academia do Harbor (baixados "In Place", sem pele, 30 fps). Os de saco de pancada e speedbag pedem o
+## aparelho na frente do Dante; os outros são só o corpo.
+const GYM_SOURCES := {
+	"punching_bag": "res://assets/dante/mixamo/Gym Punching Bag.fbx",
+	"speedbag": "res://assets/dante/mixamo/Gym Speedbag.fbx",
+	"jump_rope": "res://assets/dante/mixamo/Gym Jumping Rope.fbx",
+	"bicep_curl": "res://assets/dante/mixamo/Gym Bicep Curl.fbx",
+	"air_squat": "res://assets/dante/mixamo/Gym Air Squat.fbx",
+	"push_up": "res://assets/dante/mixamo/Gym Push Up.fbx",
+	"situps": "res://assets/dante/mixamo/Gym Situps.fbx",
+	"treadmill": "res://assets/dante/mixamo/Gym Treadmill.fbx",
+}
 const SOURCES := {
 	"sheathe_katana": "res://assets/dante/mixamo/Sheathing Sword.fbx",
 	"withdraw_katana": "res://assets/dante/mixamo/Withdrawing Sword.fbx",
@@ -17,6 +31,25 @@ const SOURCES := {
 	# Andar e correr da greatsword (baixados "In Place", sem pele, 30 fps): locomoção com a katana.
 	"gs_walk": "res://assets/dante/mixamo/Great Sword Walk.fbx",
 	"gs_run": "res://assets/dante/mixamo/Great Sword Run.fbx",
+	# Espada e escudo da cabana da serra (Pro Sword and Shield Pack): mesmo formato de download.
+	"ss_idle": "res://assets/dante/mixamo/SS Idle.fbx",
+	"ss_walk": "res://assets/dante/mixamo/SS Walk.fbx",
+	"ss_walk_back": "res://assets/dante/mixamo/SS Walk Back.fbx",
+	"ss_run": "res://assets/dante/mixamo/SS Run.fbx",
+	"ss_strafe_left": "res://assets/dante/mixamo/SS Strafe Left.fbx",
+	"ss_strafe_right": "res://assets/dante/mixamo/SS Strafe Right.fbx",
+	"ss_slash_downward": "res://assets/dante/mixamo/SS Slash Downward.fbx",
+	"ss_slash_cross": "res://assets/dante/mixamo/SS Slash Cross.fbx",
+	"ss_slash_power": "res://assets/dante/mixamo/SS Slash Power.fbx",
+	"ss_kick": "res://assets/dante/mixamo/SS Kick.fbx",
+	"ss_block_start": "res://assets/dante/mixamo/SS Block Start.fbx",
+	"ss_block_idle": "res://assets/dante/mixamo/SS Block Idle.fbx",
+	"ss_block_end": "res://assets/dante/mixamo/SS Block End.fbx",
+	"ss_impact_blocked": "res://assets/dante/mixamo/SS Impact Blocked.fbx",
+	"ss_impact_unblocked": "res://assets/dante/mixamo/SS Impact Unblocked.fbx",
+	"ss_death": "res://assets/dante/mixamo/SS Death.fbx",
+	"ss_draw": "res://assets/dante/mixamo/SS Draw.fbx",
+	"ss_sheath": "res://assets/dante/mixamo/SS Sheath.fbx",
 }
 const FPS := 30.0
 # Ossos do Dante -> ossos do Mixamo (o importador troca ':' por '_').
@@ -39,9 +72,11 @@ func _init() -> void:
 	var base: Node = dap.get_node(dap.root_node)
 	var skel_path := str(base.get_path_to(_ds))
 	var d_hip := _ds.find_bone("Hips")
+	var gym := "--set=gym" in OS.get_cmdline_user_args()
+	var sources: Dictionary = GYM_SOURCES if gym else SOURCES
 	var lib := AnimationLibrary.new()
-	for clip_name in SOURCES:
-		var src: Node = (load(SOURCES[clip_name]) as PackedScene).instantiate()
+	for clip_name in sources:
+		var src: Node = (load(sources[clip_name]) as PackedScene).instantiate()
 		root.add_child(src)
 		var ss: Skeleton3D = src.find_child("Skeleton3D", true, false)
 		var sap := src.find_child("AnimationPlayer", true, false) as AnimationPlayer
@@ -83,7 +118,7 @@ func _init() -> void:
 		lib.add_animation(clip_name, out)
 		print("CLIP ", clip_name, " len ", a.length, " ratio ", ratio)
 		src.free()
-	var err := ResourceSaver.save(lib, OUT)
+	var err := ResourceSaver.save(lib, GYM_OUT if gym else OUT)
 	print("SAVED ", err, " clips ", lib.get_animation_list().size())
 	quit()
 

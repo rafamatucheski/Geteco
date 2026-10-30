@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-30",
+  "period": "30 de outubro de 2026",
+  "scope": "Mapa do catálogo do Mixamo, espada e escudo do gelo na Cabana do Cavaleiro e academia Ferro Velho no Harbor (Claude, 30/10).",
+  "cards": [
+    {
+      "id": "mixamo-catalogo-20261030",
+      "title": "Mapa do catálogo inteiro do Mixamo",
+      "status": "done",
+      "area": "animation",
+      "description": "2.484 itens (1.481 nomes, 30 pacotes) lidos pela API do site logado e organizados por área do jogo, com prioridades.",
+      "sources": ["docs/mixamo-catalogo-20261030.md"],
+      "next": "Reações de golpe, nocaute e capoeira são as próximas candidatas."
+    },
+    {
+      "id": "espada-escudo-gelo-20261030",
+      "title": "Espada e escudo do gelo, achada na Cabana do Cavaleiro",
+      "status": "review",
+      "area": "combat",
+      "description": "Arma nova sword_shield com 18 clipes do Pro Sword and Shield Pack (parado, andar, correr, 3 golpes com pico medido, defesa). Segurar mira levanta o escudo: o dano pela frente cai para 15% e o Dante anda a 55%. Fica numa cabana escondida na serra, 75 m a noroeste da cabana do Mestre Aurélio, sem trilha. Modelo provisório por primitivas, com o material da katana.",
+      "sources": ["gameplay/Gameplay.gd", "scripts/Actor.gd", "gameplay/SwordShieldModel.gd", "gameplay/WeaponCatalog.gd", "world/places/PlaceCatalog.gd", "tools/retarget_mixamo_sword_to_dante.gd", "tools/probe_sword_shield_grip.gd", "tests/test_sword_shield_gym.gd"],
+      "next": "Modelo do Meshy; conferir a postura com o escudo no jogo; pista da cabana (Mestre Aurélio)."
+    },
+    {
+      "id": "academia-ferro-velho-20261030",
+      "title": "Academia Ferro Velho: treino sobe força e fôlego",
+      "status": "review",
+      "area": "activities",
+      "description": "Galpão de 11 × 8 m ao lado do Lastro com 8 aparelhos (saco, speedbag, rosca, flexão, esteira, corda, agachamento, abdominal), cada um com clipe do Mixamo. Série de 8 s; força dá até +30% de dano corpo a corpo e fôlego até +8% de corrida, no save (world_state.gym).",
+      "sources": ["world/places/gym/GymPlace.gd", "world/places/gym/GymModel.gd", "world/places/gym/GymFacade.gd", "activities/gym/GymState.gd"],
+      "next": "Pintar a fachada no kit pintado; NPCs treinando; aparelho de verdade na mão (halter, corda)."
+    }
+  ]
+}

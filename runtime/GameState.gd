@@ -87,6 +87,7 @@ func restore_snapshot(data: Dictionary) -> bool:
 	if not preload("res://activities/fishing/FishingState.gd").validate_world(data.world,data.economy): return false
 	if not preload("res://activities/amusement_park/AmusementParkCosmeticState.gd").validate_world(data.world,data.economy): return false
 	if not preload("res://systems/wardrobe/AccessoryState.gd").validate_world(data.world): return false
+	if not preload("res://activities/gym/GymState.gd").validate_world(data.world): return false
 	if data.world.has("harbor_building_floors") and not preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").valid_floors(data.world.harbor_building_floors): return false
 	if data.world.has("harbor_building_unlocks") and not preload("res://world/places/harbor_buildings/HarborBuildingContent.gd").valid_unlocks(data.world.harbor_building_unlocks,preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd").definitions()): return false
 	if data.world.has("door_lockpicks") and not preload("res://runtime/DoorLockpick.gd").valid_saved(data.world.door_lockpicks): return false
