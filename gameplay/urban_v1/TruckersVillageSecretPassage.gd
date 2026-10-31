@@ -30,6 +30,22 @@ const VAULT_DIGITS := [
 	{"id":"audio_sealed_sector","kind":"audio","digit":3,"local":Vector3(3.4,.04,-4.1),"label":"Ouvir fita rotulada",
 		"text":"A fita chia: \"...a última porta... o quarto número é 4. Depois disso, não volte.\""},
 ]
+# Gravações 01–03 do Arquivo de Vicente (docs/roteiros-arquivo-vicente-20261031.md). A 04 é
+# dígito do cofre (acima). Pontos em coordenadas locais do túnel, no chão em frente ao objeto da
+# cenografia que já existia: cama de campanha do QG (SecretHeadquartersProps, HQ_CENTER+(5,0,4.75)),
+# quadro de turnos da galeria (SecretTunnelDecor._shift_board em (12.9,1.15,-14.5)) e quadro de
+# disjuntores com três faróis (SecretTunnelDecor._power_branch em (41.5,1.45,-.48)). Ficam a mais
+# de 2 m dos consoles do QG para não disputar a ação com eles. O stream ainda não existe: coletar
+# só registra o id em audio_logs (save da rede secreta) e libera a entrada no Arquivo.
+const AUDIO_PICKUPS := [
+	{"id":"audio_vicente_field","local":Vector3(61.9,.04,6.75),"label":"Pegar fita junto à cama",
+		"text":"Uma fita com a letra do Vicente: \"Teste. Tá gravando.\""},
+	{"id":"audio_maintenance_shift","local":Vector3(12.9,.04,-13.75),"label":"Pegar fita do quadro de turnos",
+		"text":"Presa no quadro de turnos, uma fita: \"Galeria comprida.\""},
+	{"id":"audio_blackout","local":Vector3(41.5,.04,.35),"label":"Pegar fita do quadro de disjuntores",
+		"text":"Enfiada atrás das chaves do quadro, uma fita: \"Caiu tudo.\""},
+]
+const AUDIO_PICKUP_REACH := 1.3
 const ACTION_PREFIX := "truckers_village_secret_"
 const INTERACTION_REACH := 1.65
 const UNDERGROUND_LAYER := 1 << 18
@@ -203,6 +219,8 @@ func nearest_action() -> Dictionary:
 			return _action("travel_sewer","Viajar pelo esgoto")
 		var digit_action := _vault_digit_action(point)
 		if not digit_action.is_empty(): return digit_action
+		var audio_action := _audio_pickup_action(point)
+		if not audio_action.is_empty(): return audio_action
 		if _sealed_sector_discovered() and point.distance_to(tunnel.vault_console_global()) <= 1.8:
 			if _vault_unlocked(): return _action("travel_fort","Atravessar o cofre")
 			return _action("vault_keypad","Usar teclado do cofre")
@@ -346,6 +364,7 @@ func perform(target: String) -> bool:
 			return true
 	var suffix := target.trim_prefix(ACTION_PREFIX)
 	if suffix.begins_with("digit_"): return _collect_vault_digit(int(suffix.trim_prefix("digit_")))
+	if suffix.begins_with("audio_"): return _collect_audio_pickup(int(suffix.trim_prefix("audio_")))
 	return false
 
 
@@ -668,6 +687,41 @@ func _collect_vault_digit(index: int) -> bool:
 	if not added: return false
 	_emit_state_changed()
 	_show_message(str(entry.text)+"  Código: "+_vault_code_progress())
+	return true
+
+
+## Índice da gravação 01–03 ao alcance (local do túnel), ou -1. Estático para o teste de contrato
+## conferir os pontos sem montar o mundo.
+static func audio_pickup_at(progression_state, local_point: Vector3) -> int:
+	if progression_state == null: return -1
+	var best := -1
+	var best_distance := AUDIO_PICKUP_REACH
+	for index in AUDIO_PICKUPS.size():
+		var entry: Dictionary = AUDIO_PICKUPS[index]
+		if progression_state.has_audio_log(entry.id): continue
+		var distance := local_point.distance_to(entry.local)
+		if distance <= best_distance:
+			best = index
+			best_distance = distance
+	return best
+
+
+## Registra a gravação uma vez só; true quando entrou agora.
+static func collect_audio_pickup(progression_state, index: int) -> bool:
+	if progression_state == null or index < 0 or index >= AUDIO_PICKUPS.size(): return false
+	return progression_state.discover_audio_log(AUDIO_PICKUPS[index].id)
+
+
+func _audio_pickup_action(point: Vector3) -> Dictionary:
+	var index := audio_pickup_at(progression,tunnel.to_local(point))
+	if index < 0: return {}
+	return _action("audio_%d"%index,str(AUDIO_PICKUPS[index].label))
+
+
+func _collect_audio_pickup(index: int) -> bool:
+	if not collect_audio_pickup(progression,index): return false
+	_emit_state_changed()
+	_show_message(str(AUDIO_PICKUPS[index].text)+"  Gravação guardada no Arquivo de Vicente.")
 	return true
 
 

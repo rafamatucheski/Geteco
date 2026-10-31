@@ -23,10 +23,12 @@ Fontes lidas: `runtime/SecretFileRuntime.gd`, `runtime/SecretNetworkProgression.
 - **Código do cofre 3194.** A fita 04 é a única pista de áudio com dígito (o 4) e tem texto
   fixado no jogo: *"...a última porta... o quarto número é 4. Depois disso, não volte."* O
   roteiro mantém essa frase literal.
-- Só a fita 04 tem ponto de coleta no mundo hoje (`VAULT_DIGITS`, "Ouvir fita rotulada").
-  As outras três são citadas pela cenografia (mesa do gravador com uma fita por registro;
-  quadro de turnos ligado a `audio_maintenance_shift`), mas ainda não têm onde ser achadas.
-  O contexto de cada uma abaixo é **proposta**.
+- A fita 04 é coletada como dígito do cofre (`VAULT_DIGITS`, "Ouvir fita rotulada"). As 01–03
+  ganharam ponto de coleta em 31/10/2026 (`AUDIO_PICKUPS` em `TruckersVillageSecretPassage.gd`):
+  01 junto à cama de campanha do QG, 02 no quadro de turnos da galeria, 03 no quadro de
+  disjuntores de três faróis. A coleta grava o id em `audio_logs` (save da rede secreta, uma vez
+  só) e libera a entrada no Arquivo; enquanto não houver `.ogg`, tocar mostra "A gravação está
+  danificada.". Teste de contrato: `tests/test_vicente_audio_pickups.gd` (sem passada a pé).
 
 ## Voz
 
@@ -233,4 +235,5 @@ dirigido, a alternativa é registrar as quatro como `source_key` no manifest de
 7. Opcional: legenda com o roteiro durante a reprodução; a fita 04 já tem a frase canônica em
    `TruckersVillageSecretPassage.VAULT_DIGITS`.
 
-Faltam para as fitas 01–03 pontos de coleta no mundo; isso é trabalho de gameplay à parte.
+Pontos de coleta das fitas 01–03: feitos (31/10/2026, ver "Cânone e restrições"). Falta conferir
+a pé, no jogo real, que cada ponto é alcançável e não fica dentro de mobília.
