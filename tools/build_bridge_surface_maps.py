@@ -1,7 +1,7 @@
-"""Bake height-derived material data; preserve the authored concrete photograph.
+"""Assa dados de material derivados da altura; preserva a fotografia de concreto autorada.
 
-Run offline. No texture generation, image processing or new loops in gameplay.
-Low-frequency dirt is excluded from the normal map so stains never become lumps.
+Roda offline. Sem geração de textura, processamento de imagem ou loops novos no jogo.
+A sujeira de baixa frequência fica fora do normal map, para manchas nunca virarem calombos.
 """
 from pathlib import Path
 import shutil
@@ -15,8 +15,8 @@ OUT = ROOT / "assets/materials/bridge"
 
 def main():
     OUT.mkdir(parents=True, exist_ok=True)
-    # Independent import: the city version is capped at 512px. Preserve the
-    # original photograph byte for byte and retain 1024px on the bridge.
+    # Importação independente: a versão da cidade é limitada a 512px. Preserva a
+    # fotografia original byte a byte e mantém 1024px na ponte.
     shutil.copyfile(ROOT / "assets/materials/harbor_paving/concrete.png", OUT / "concrete_albedo.png")
     source = Image.open(ROOT / "assets/materials/harbor_paving/concrete.png").convert("L")
     source = source.resize((512, 512), Image.Resampling.LANCZOS)

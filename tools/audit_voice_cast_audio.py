@@ -1,8 +1,8 @@
-"""CPU-only acoustic casting aid for fictional game voices; never human identity.
+"""Apoio acústico de elenco, só na CPU, para vozes fictícias do jogo; nunca identidade humana.
 
-The binary ECAPA classifier is evidence to flag likely mismatches with authored
-casting, not a substitute for listening or a claim about real people's gender.
-Model: JaesungHuh ECAPA fine-tune, MIT ONNX export by Alice-Sabrina-Ivy.
+O classificador binário ECAPA é evidência para marcar prováveis desencontros com o elenco
+autorado, não substitui ouvir nem afirma nada sobre o gênero de pessoas reais.
+Modelo: JaesungHuh ECAPA ajustado, export ONNX MIT por Alice-Sabrina-Ivy.
 """
 from __future__ import annotations
 
@@ -23,8 +23,8 @@ for _name in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS"):
 MODEL_REVISION = "5debf995242f9851881d4e4848fe6eed2bb5ade7"
 MODEL = Path("D:/geteco/tools/opening_voice_models/hub/models--Alice-Sabrina-Ivy--voice-gender-classifier-onnx-q8/snapshots") / MODEL_REVISION / "onnx/model_quantized.onnx"
 MODEL_SHA256 = "33a7f84f17d5ceee61aae8b23488e06fc1e3295a44eaf7eb5744f3e01e380784"
-# Registered before inspecting any anchor prediction. Scores are model outputs,
-# not calibrated truth probabilities or a human judgment about an identity.
+# Registrado antes de inspecionar qualquer previsão de âncora. As notas são saídas do modelo,
+# não probabilidades calibradas de verdade nem julgamento humano sobre uma identidade.
 POLICY = {"version": 1, "confidence_threshold": .8, "window_seconds": 2,
           "distributed_windows": 3, "minimum_seconds": .75,
           "silent_window_rms_floor": .001, "aggregation": "median female softmax score",
@@ -35,7 +35,7 @@ SOURCES = ["https://huggingface.co/JaesungHuh/voice-gender-classifier",
 
 
 def evaluate_scores(predictions, expected):
-    """Classify fictional casting support; never return an approval decision."""
+    """Classifica o apoio ao elenco fictício; nunca devolve decisão de aprovação."""
     if expected not in ("male", "female") or not predictions:
         raise DirectionError("Explicit casting and usable audio windows required")
     if any(not math.isfinite(p) or not 0 <= p <= 1 for p in predictions):
@@ -88,9 +88,9 @@ def main():
     manifest_bytes = args.manifest.read_bytes()
     document = json.loads(manifest_bytes)
     anchor_scope = isinstance(document.get("characters"), dict)
-    # Future short production reactions are not adequate two-second casting
-    # samples. This adds an explicit evidence state, without changing the
-    # original anchor classifier/threshold policy or invalidating its cache.
+    # Reações curtas futuras da produção não servem como amostras de elenco de
+    # dois segundos. Isto acrescenta um estado de evidência explícito, sem mudar a
+    # política original de classificador/limiar das âncoras nem invalidar o cache dela.
     minimum_seconds = POLICY["minimum_seconds"] if anchor_scope else 2.0
     clip_policy = "anchor_v1" if anchor_scope else "production_minimum_2_seconds_v1"
     manifest_sha = hashlib.sha256(manifest_bytes).hexdigest()
@@ -160,8 +160,8 @@ def main():
                     "source_section":source.get("section",source.get("source_section","")),
                     "source_text":source.get("spoken_text",source.get("text", ""))}
         if cache_key in cached:
-            # Acoustic scores depend on bytes/cast, while path and reference
-            # wording belong to this exact manifest snapshot.
+            # As notas acústicas dependem de bytes/elenco, enquanto caminho e texto de
+            # referência pertencem a este retrato exato do manifesto.
             report["takes"].append(dict(cached[cache_key], **metadata))
             continue
         if processed >= args.limit:
@@ -232,8 +232,8 @@ def main():
     report["shared_audio_across_identities"] = [{"audio_sha256":sha, "characters":sorted(owners)}
                                                 for sha, owners in audio_owners.items() if len(owners) > 1]
     report["distinct_file_note"] = "Different WAV hashes only establish different files; they do not establish perceptually distinct voice identities."
-    # Preserve pre-retake predictions even when the current manifest replaces an
-    # anchor. One snapshot per immutable manifest/model/policy, outside the bank.
+    # Preserva as previsões de antes da regravação mesmo quando o manifesto atual troca uma
+    # âncora. Um retrato por manifesto/modelo/política imutável, fora do banco.
     snapshot = args.output.parent / "cast-acoustic-snapshots" / (manifest_sha + "_" + model_sha[:12] + "_" + policy_hash[:12] + ".json")
     report["snapshot_path"] = str(snapshot.resolve())
     write_json(snapshot, report)

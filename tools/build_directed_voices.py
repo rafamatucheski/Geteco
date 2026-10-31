@@ -1,10 +1,10 @@
-"""Plan, audition and publish expressive offline dialogue without touching old WAVs.
+"""Planeja, testa e publica diálogo expressivo offline sem mexer nos WAVs antigos.
 
-Default is a free, dependency-light dry run. Rendering is explicit, incremental,
-local-only and resource bounded. VoiceDesign auditions require listening checks
-before publication because text direction cannot guarantee gender or identity.
+O padrão é um ensaio sem custo e com poucas dependências. Renderizar é explícito, incremental,
+só local e com recursos limitados. Testes do VoiceDesign exigem audição antes da
+publicação, porque direção por texto não garante gênero nem identidade.
 
-Examples (use the existing opening_voice_design Python environment to render):
+Exemplos (use o ambiente Python opening_voice_design existente para renderizar):
   python tools/build_directed_voices.py --plan-out tmp/voice-plan.json
   python tools/build_directed_voices.py --render --speaker cida --limit 1 --device cpu
   python tools/build_directed_voices.py --publish-review tmp/voice-reviews.json
@@ -66,12 +66,12 @@ def private_memory_mb():
 
 
 def install_budget(deadline_seconds, memory_mb, reserve_mb):
-    """Watch only this renderer; never signal another application's process."""
+    """Vigia só este renderizador; nunca manda sinal ao processo de outro aplicativo."""
     import psutil
     process = psutil.Process()
     if os.name == "nt":
         process.nice(psutil.BELOW_NORMAL_PRIORITY_CLASS)
-        # Enforce commit before model imports as well as watching residency.
+        # Impõe o limite de commit antes dos imports do modelo, além de vigiar a residência.
         import ctypes
         class BasicLimits(ctypes.Structure):
             _fields_ = [("process_time", ctypes.c_int64), ("job_time", ctypes.c_int64),
@@ -117,7 +117,7 @@ def install_budget(deadline_seconds, memory_mb, reserve_mb):
 
 
 def safe_streaming_loader(torch, modeling_utils):
-    """Avoid committing a second model-sized Windows safetensors mapping."""
+    """Evita reservar um segundo mapeamento safetensors do tamanho do modelo no Windows."""
     class TensorSlice:
         def __init__(self, archive, key): self.archive, self.key = archive, key
         def get_shape(self): return self.archive.header[self.key]["shape"]
@@ -187,21 +187,21 @@ def render(takes, snapshot, output, args):
     for take in pending:
         if take_path(output, take).exists():
             raise DirectionError("Existing audio without matching valid provenance; use another --take-index")
-    # This installed CUDA-enabled PyTorch environment consumes ~2.45 GB private
-    # commit before weights, even when the model runs on CPU. Budget that known
-    # dependency cost plus a small decode reserve instead of failing natively.
+    # Este ambiente PyTorch instalado com CUDA consome ~2,45 GB de commit privado
+    # antes dos pesos, mesmo com o modelo na CPU. Orça esse custo conhecido
+    # das dependências mais uma pequena reserva de decodificação em vez de falhar no nativo.
     weight_mb = sum(path.stat().st_size for path in snapshot.rglob("*.safetensors")) / 1024**2
-    weight_mb *= 2 if args.dtype == "float32" else 1  # cached checkpoint is BF16
+    weight_mb *= 2 if args.dtype == "float32" else 1  # o checkpoint em cache é BF16
     minimum_mb = weight_mb + 2800
     if args.memory_mb < minimum_mb:
         raise DirectionError(f"Cached model and installed dependencies need at least {minimum_mb:.0f}MB process budget")
-    # DLL/private commit is larger than resident RAM on this Windows build.
-    # Estimate physical weights + 1 GiB runtime and enforce actual free memory
-    # throughout loading/decoding rather than adding commit to physical RAM.
+    # O commit de DLL/privado é maior que a RAM residente neste build do Windows.
+    # Estima pesos físicos + 1 GiB de runtime e impõe a memória livre real
+    # durante carga/decodificação, em vez de somar commit à RAM física.
     if available_memory_mb() < weight_mb + 1024 + args.reserve_mb:
         raise DirectionError("Not enough free physical RAM for model/runtime plus desktop reserve")
     os.environ.update(HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1", OMP_NUM_THREADS="2", MKL_NUM_THREADS="2")
-    # Dependencies are loaded only after an explicit render request.
+    # As dependências só carregam depois de um pedido explícito de renderização.
     install_budget(args.timeout_seconds, args.memory_mb, args.reserve_mb)
     import numpy as np
     import soundfile as sf
@@ -249,7 +249,7 @@ def render(takes, snapshot, output, args):
         path.parent.mkdir(parents=True, exist_ok=True)
         if path.exists():
             raise DirectionError("Existing audio without matching valid provenance; use another --take-index")
-        # Write once. A crashed/partial WAV never becomes a reviewable take.
+        # Grava uma vez. Um WAV parcial/de falha nunca vira tomada revisável.
         import tempfile
         with tempfile.NamedTemporaryFile(suffix=".wav", dir=path.parent, delete=False) as file:
             pending_path = Path(file.name)

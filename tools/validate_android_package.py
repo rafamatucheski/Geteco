@@ -1,4 +1,4 @@
-"""Verify an actual exported APK: imports, runtime catalogs, voices and .NET ARM64."""
+"""Verifica um APK exportado de verdade: importações, catálogos de runtime, vozes e .NET ARM64."""
 import argparse
 import configparser
 import hashlib

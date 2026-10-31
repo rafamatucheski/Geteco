@@ -1,7 +1,7 @@
-"""Minimal real Windows PCK export with production voice bytes; not a full game export.
+"""Export real mínimo de PCK para Windows com os bytes de voz de produção; não é o export do jogo todo.
 
-Reuses the isolated-project approach from test_export_mountain_dialogue.ps1.
-No generated take is fabricated, and no project assets are deleted or moved.
+Reaproveita o projeto isolado de test_export_mountain_dialogue.ps1.
+Nenhuma tomada gerada é fabricada, e nenhum asset do projeto é apagado ou movido.
 """
 from __future__ import annotations
 
@@ -93,7 +93,7 @@ func _initialize() -> void:
     print("DIRECTED_VOICE_EXPORT checks=%d failures=%s" % [checks, failures])
     quit(0 if failures.is_empty() else 1)
 '''
-    # JSON here contains only primitive string/dictionary/array values, also valid GDScript literals.
+    # O JSON aqui só tem valores primitivos string/dicionário/array, que também são literais GDScript válidos.
     selected = [{k: e[k] for k in ("source", "persona", "language", "character_id")} for e in entries]
     probe = probe.replace("__EXPECTED__", json.dumps(expected, ensure_ascii=False)).replace("__ENTRIES__", json.dumps(selected, ensure_ascii=False)).replace("__EXCLUDED__", json.dumps(["res://" + path for path in excluded]))
     (fixture / "probe.gd").write_text(probe, encoding="utf-8")

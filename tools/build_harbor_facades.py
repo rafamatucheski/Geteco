@@ -1,4 +1,4 @@
-"""Bake original, seamless facade wear. No runtime noise or per-building textures."""
+"""Assa desgaste original e sem emenda de fachada. Sem ruído no runtime nem textura por prédio."""
 from pathlib import Path
 import numpy as np
 from PIL import Image
@@ -8,7 +8,7 @@ SIZE = 512
 
 
 def noise(rng, cells):
-    # Periodic interpolation keeps every edge continuous after mip filtering.
+    # A interpolação periódica mantém toda borda contínua depois da filtragem de mip.
     values = rng.random((cells, cells)).astype(np.float32)
     p = np.arange(SIZE) * cells / SIZE
     i, f = p.astype(int), p % 1
@@ -28,7 +28,7 @@ def build():
         broad = noise(rng, 4)
         medium = noise(rng, 16)
         grain = rng.random((SIZE, SIZE))
-        # Infrequent rain streaks, not an evenly distributed camouflage pattern.
+        # Escorridos de chuva esparsos, não um padrão de camuflagem uniforme.
         rain_columns = noise(rng, 32)[0]
         streaks = np.maximum(0, rain_columns - .67)[None, :] * (.35 + broad)
         value = .91 + (broad-.5)*.095 + (medium-.5)*.045 + (grain-.5)*.045 - streaks*.20
@@ -39,19 +39,19 @@ def build():
             value *= .94 + tones[course, bx//32]*.12
             mortar = (y % 16 < 1) | (bx % 32 < 1)
             value[mortar] = .69 + broad[mortar]*.07
-            # Sparse spalled corners, low contrast so distance stays readable.
+            # Quinas lascadas esparsas, de baixo contraste para a distância continuar legível.
             chips = (grain > .985) & (medium > .65)
             value[chips] *= .73
         elif kind == "plaster":
             worn = np.maximum(0, .27-medium) * np.maximum(0, .48-broad)
             value -= worn*1.9
         else:
-            # Large cast panels: fine restrained seams rather than a tile grid.
+            # Painéis moldados grandes: juntas finas e contidas em vez de grade de azulejo.
             value[(y % 256 == 0)] *= .90
             value[(x % 256 == 0) & (broad > .45)] *= .94
         pixels = np.clip(value*255, 0, 255).astype(np.uint8)
         Image.fromarray(pixels).convert("RGB").save(OUT / f"{kind}.png", optimize=True)
-        # Godot fills remap/dependencies on import; fix GPU compression and mips.
+        # O Godot preenche remap/dependências na importação; aqui fixa compressão de GPU e mips.
         cfg = OUT / f"{kind}.png.import"
         if not cfg.exists():
             cfg.write_text('[remap]\nimporter="texture"\ntype="CompressedTexture2D"\n\n[params]\ncompress/mode=2\ncompress/high_quality=false\nmipmaps/generate=true\n', encoding="utf-8")

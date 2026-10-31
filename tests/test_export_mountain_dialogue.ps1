@@ -47,8 +47,8 @@ foreach ($match in [regex]::Matches($presets,'(?ms)^\[preset\.(\d+)\]\s*(.*?)(?=
     $excluded = @($exclude.Split(',') | Where-Object { $_.Trim() -ne '' -and $relativeJson -like $_.Trim() }).Count -gt 0
     $coverage += [pscustomobject]@{Preset=$match.Groups[1].Value;Included=$included;Excluded=$excluded}
 }
-# The actual Windows exporter receives the unchanged production preset text.
-# The fixture contains just the runtime JSON and a probe, never the game world.
+# O exportador real do Windows recebe o texto do preset de produção sem mudança.
+# O fixture tem só o JSON de runtime e uma sonda, nunca o mundo do jogo.
 [System.IO.File]::WriteAllText((Join-Path $fixture 'export_presets.cfg'),$presets)
 [System.IO.File]::WriteAllText((Join-Path $fixture 'project.godot'),"config_version=5`n[application]`nconfig/name=`"Mountain dialogue export probe`"`n[rendering]`nrenderer/rendering_method=`"gl_compatibility`"`n")
 $probe = @'
@@ -72,12 +72,12 @@ $pack = Join-Path $output 'dialogue.pck'
 $exportCode = Invoke-OwnedEngine @('--headless','--path',$fixture,'--export-pack','Geteco V2 Windows',$pack) (Join-Path $output 'export.log') 60000
 if ($exportCode -ne 0) { throw "Mini export failed ($exportCode): $output/export.log" }
 $null = Assert-GodotExclusive
-# No project JSON exists beneath this working directory: only the PCK can supply it.
+# Não há JSON do projeto abaixo desta pasta de trabalho: só o PCK pode fornecê-lo.
 $probeCode = Invoke-OwnedEngine @('--headless','--path',$runRoot,'--main-pack',$pack,'--script','res://probe.gd') (Join-Path $output 'probe.log') 15000
 $report = [pscustomobject]@{Coverage=$coverage;ExportExit=$exportCode;ProbeExit=$probeCode;SourceHash=$sourceHash;Fixture=$fixture;Pack=$pack}
 $report | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $output 'report.json')
 $report | ConvertTo-Json -Depth 5
 Get-Content -LiteralPath (Join-Path $output 'probe.log')
-# include_filter is not the entire export policy: all_resources in Godot 4.7.2
-# also packages this JSON without an explicit filter. Actual packed bytes win.
+# include_filter não é a política de export inteira: all_resources no Godot 4.7.2
+# também empacota este JSON sem filtro explícito. Valem os bytes empacotados de fato.
 if ($probeCode -ne 0) { exit 1 }

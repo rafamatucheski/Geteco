@@ -28,11 +28,11 @@ foreach ($count in $Counts) {
     $watch = [Diagnostics.Stopwatch]::StartNew()
     while (-not $process.HasExited) {
         $active = @(Get-CimInstance Win32_Process -Filter "Name LIKE 'Godot%'" | Select-Object ProcessId,ParentProcessId,CommandLine)
-        # Godot's console launcher starts the rendering executable as its child.
+        # O lançador de console do Godot inicia o executável de renderização como filho.
         $foreign = @($active | Where-Object { $_.ProcessId -ne $process.Id -and $_.ParentProcessId -ne $process.Id -and $_.CommandLine -notmatch '(^|\s)--editor(\s|$)' })
         $snapshots.Add(@{utc=[DateTime]::UtcNow.ToString('o'); phase='during'; concurrent=($foreign.Count -gt 0); processes=$active})
         if (($foreign.Count -gt 0 -and -not $AllowConcurrent) -or $watch.Elapsed.TotalSeconds -gt 95) {
-            # This PID was created above and belongs solely to this measurement.
+            # Este PID foi criado acima e pertence só a esta medição.
             Stop-Process -Id $process.Id -Force
             $snapshots | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $prototypeRoot "evidence/$label-processes.json")
             throw 'Medição interrompida: concorrência detectada ou limite de duração atingido.'

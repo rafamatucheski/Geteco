@@ -1,4 +1,4 @@
-"""Verify actual bilingual waveforms and sample newly added speech with local ASR."""
+"""Verifica as ondas bilíngues reais e amostra a fala recém-adicionada com ASR local."""
 import argparse
 import difflib
 import hashlib
@@ -37,7 +37,7 @@ def main(asr):
         from verify_english_voice_bank import word_list
         cache = Path('D:/geteco/tools/opening_voice_models/whisper/models--Systran--faster-whisper-small/snapshots/536b0662742c02347bc0e980a01041f333bce120')
         model = WhisperModel(str(cache), device='cpu', compute_type='int8', cpu_threads=1, num_workers=1, local_files_only=True)
-        # Both languages, new female/male speakers and central narrative characters.
+        # Os dois idiomas, vozes novas femininas/masculinas e personagens centrais da narrativa.
         for persona in ('joana', 'nelson', 'dante', 'dona zefa', 'passenger'):
             candidates = [r for r in rows if r['persona']==persona]
             row = min(candidates, key=lambda r:abs(len(r['text'])-150))

@@ -1,4 +1,4 @@
-"""Deterministic seamless sewer bed: enclosed flow, irregular drips and reflections."""
+"""Fundo de esgoto determinístico e sem emenda: fluxo fechado, gotas irregulares e reflexões."""
 from pathlib import Path
 import math
 import random
@@ -34,7 +34,7 @@ for _ in range(43):
             left[index] += value * math.sqrt(pan)
             right[index] += value * math.sqrt(1 - pan)
 
-# Circular short crossfade removes the noise boundary without silencing the loop.
+# Um crossfade circular curto tira a borda do ruído sem silenciar o loop.
 fade = int(.08 * RATE)
 for channel in [left, right]:
     for j in range(fade):

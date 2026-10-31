@@ -31,8 +31,8 @@ function Reset-Scenario([object[]]$Processes) {
     $script:GameCalls = 0
 }
 
-# Every process-facing command used by the inspected helper is intercepted.
-# The process objects below are PSCustomObjects; their methods cannot control OS processes.
+# Todo comando que toca processos usado pelo auxiliar inspecionado é interceptado.
+# Os objetos de processo abaixo são PSCustomObjects; os métodos deles não controlam processos do SO.
 function Get-Process {
     param([string]$Name, [object]$ErrorAction)
     if ($Name -notin @('openusage', 'ccusage')) { throw "Unexpected process lookup: $Name" }

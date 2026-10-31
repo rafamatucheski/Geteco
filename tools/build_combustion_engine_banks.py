@@ -1,9 +1,9 @@
-"""Author loaded combustion loops offline; preserve the existing idle recordings.
+"""Cria offline loops de combustão com carga; preserva as gravações de marcha lenta existentes.
 
-Requires numpy. Run with --output DIRECTORY to preview without replacing assets.
-The seven-band runtime contract is 22050 Hz mono PCM, a one-second circular
-signal and eight duplicated guard frames (EngineBankCache excludes the guard).
-No filters, procedural synthesis, extra voices or larger buffers run in game.
+Requer numpy. Rode com --output PASTA para ver a prévia sem trocar assets.
+O contrato de runtime de sete faixas é PCM mono a 22050 Hz, um sinal circular de
+um segundo e oito quadros de guarda duplicados (o EngineBankCache exclui a guarda).
+Nenhum filtro, síntese procedural, voz extra ou buffer maior roda no jogo.
 """
 import argparse
 import json
@@ -15,8 +15,8 @@ import numpy as np
 RATE = 22050
 GUARD = 8
 ROOT = Path(__file__).resolve().parents[1]
-# Four-stroke cycles per second, matching VehicleEngineProfile.NOMINAL.
-# cylinders, exhaust resonance, breathing cutoff, cylinder/bank imbalance.
+# Ciclos de quatro tempos por segundo, iguais ao VehicleEngineProfile.NOMINAL.
+# cilindros, ressonância do escape, corte da respiração, desequilíbrio cilindro/bancada.
 PROFILES = {
     "street": ([6, 9, 13, 18, 25, 35, 50], 4, 145, 1250, .10),
     "sport": ([7, 11, 15, 21, 31, 44, 62], 6, 190, 1800, .08),
@@ -47,8 +47,8 @@ def render(family, index):
     freq = np.fft.rfftfreq(RATE, 1 / RATE)
     events = cycles * cylinders
     impulses = np.zeros(RATE)
-    # Individual explosions instead of a handful of fixed sine waves. Keep the
-    # mean firing rate exact while allowing pressure and timing to vary per fire.
+    # Explosões individuais em vez de um punhado de senos fixos. Mantém a
+    # taxa média de ignição exata, deixando pressão e tempo variarem a cada disparo.
     for event in range(events):
         cylinder = event % cylinders
         at = (event + rng.uniform(-.028, .028)) * RATE / events
@@ -58,24 +58,24 @@ def render(family, index):
         frac = at - pos
         impulses[pos % RATE] += amplitude * (1 - frac)
         impulses[(pos + 1) % RATE] += amplitude * frac
-    # A finite pressure pulse and a damped exhaust cavity have broad spectra.
-    # The resonance stays tied to the vehicle, not to an oscillator's harmonic.
+    # Um pulso de pressão finito e uma cavidade de escape amortecida têm espectro largo.
+    # A ressonância fica presa ao veículo, não à harmônica de um oscilador.
     pulse = (np.exp(-t / .0028) - np.exp(-t / .00035))
     pulse += .30 * np.sin(2 * np.pi * resonance * t) * np.exp(-t / .014)
     pressure = np.fft.irfft(np.fft.rfft(impulses) * np.fft.rfft(pulse), RATE)
     pressure = unit(pressure)
     air_filter = (freq / np.maximum(freq + 65, 1)) * np.exp(-(freq / cutoff) ** 2)
     air = unit(np.fft.irfft(np.fft.rfft(rng.normal(size=RATE)) * air_filter, RATE))
-    # Turbulence is pressure-modulated, so it breathes with the exhaust instead
-    # of adding a constant white hiss. Cross-plane families retain bank rumble.
+    # A turbulência é modulada pela pressão, então respira com o escape em vez
+    # de somar um chiado branco constante. Famílias cross-plane mantêm o ronco da bancada.
     breath = air * (.62 + .38 * np.clip(np.abs(pressure), 0, 2))
     bank = np.sin(2 * np.pi * cycles * 2 * t + .12 * np.sin(2 * np.pi * 3 * t))
     signal = .68 * pressure + (.30 + .025 * index) * breath + imbalance * bank
     spectrum = np.fft.rfft(signal)
     spectrum *= (1 - np.exp(-(freq / 35) ** 2)) / np.sqrt(1 + (freq / (cutoff * .8)) ** 4)
     signal = np.fft.irfft(spectrum, RATE)
-    # Gentle saturation retains transients without harsh hard clipping. Equal
-    # RMS across loaded bands avoids an artificial loudness jump at crossfades.
+    # Saturação suave mantém os transientes sem corte duro e áspero. RMS igual
+    # entre as faixas com carga evita salto artificial de volume nos crossfades.
     signal = np.tanh(unit(signal) * .62)
     signal = unit(signal) * .245
     return signal

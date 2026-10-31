@@ -1,15 +1,15 @@
-"""Validate the offline engine-design pack, never audio realism or game performance.
+"""Valida o pacote offline de design de motor, nunca o realismo do áudio nem o desempenho do jogo.
 
-Usage: python tools/audio/validate_engine_design_pack.py --pack audio/engine_design
+Uso: python tools/audio/validate_engine_design_pack.py --pack audio/engine_design
        --report artifacts/engine-sound-design-20261016/validation.json
 
-The manifest paths are relative to the pack directory. Every profile supplies
-seven loaded and seven coast bands in increasing RPM order. Engine loops at or
-below 1500 RPM last six seconds; higher bands last two seconds. All loops use
-mono PCM16 at 22050 Hz and eight repeated guard frames. Turbo profiles supply a
-spool loop; petrol turbos also supply a 0.68-second non-looping bypass release.
-Every referenced WAV must match its manifest SHA256. Optional --baseline checks
-the original four profiles' high bands and effects against their actual files.
+Os caminhos do manifesto são relativos à pasta do pacote. Todo perfil traz
+sete faixas com carga e sete de desaceleração em RPM crescente. Loops de motor em
+1500 RPM ou menos duram seis segundos; faixas mais altas duram dois. Todos os loops
+são PCM16 mono a 22050 Hz com oito quadros de guarda repetidos. Perfis turbo trazem
+um loop de enchimento; turbos a gasolina também trazem um alívio de 0,68 s sem loop.
+Todo WAV referenciado precisa bater com o SHA256 do manifesto. O --baseline opcional
+confere as faixas altas e efeitos dos quatro perfis originais contra os arquivos reais.
 """
 
 from __future__ import annotations
@@ -30,7 +30,7 @@ LOW_RPM_FRAMES = 132300
 LOW_RPM_LIMIT = 1500
 GUARD_FRAMES = 8
 BAND_COUNT = 7
-RELEASE_FRAMES = 14994  # Exactly 0.68 seconds at 22050 Hz.
+RELEASE_FRAMES = 14994  # Exatamente 0,68 segundo a 22050 Hz.
 EXPECTED_PROFILES = {
     "jz2_i6_turbo": 6,
     "rb26_i6_turbo": 6,
@@ -94,7 +94,7 @@ def inspect_wav(path: Path, label: str, errors: list[str], looped: bool = True,
         errors.append(f"{label}: expected {useful_frames} useful + {guard_frames} guard frames, got {frames}")
     if len(raw) != frames * channels * width:
         errors.append(f"{label}: truncated PCM data")
-    # Decode only after validating the representation and expected length.
+    # Só decodifica depois de validar a representação e o tamanho esperado.
     if len(errors) != before:
         return result
 
@@ -108,10 +108,10 @@ def inspect_wav(path: Path, label: str, errors: list[str], looped: bool = True,
     peak = float(np.max(np.abs(body)))
     seam_step = float(abs(body[0] - body[-1]))
     natural_max = float(np.max(natural_steps))
-    # A normal waveform may cross the loop boundary with nonzero slope. Permit
-    # the same local movement seen inside the loop, plus a fixed 25% margin and
-    # two PCM quantization units. This only rejects an anomalous amplitude jump;
-    # it does not prove that the repeated sound is perceptually seamless.
+    # Uma onda normal pode cruzar a borda do loop com inclinação diferente de zero. Permite
+    # o mesmo movimento local visto dentro do loop, mais uma margem fixa de 25% e
+    # duas unidades de quantização PCM. Isto só rejeita um salto anômalo de amplitude;
+    # não prova que o som repetido seja sem emenda para o ouvido.
     seam_limit = natural_max * 1.25 + 2.0 / 32768.0
     result.update({
         "guard_matches": guard_matches,
@@ -141,7 +141,7 @@ def inspect_wav(path: Path, label: str, errors: list[str], looped: bool = True,
 
 
 def compare_baseline(pack: Path, baseline: Path, manifest: dict, errors: list[str]) -> dict:
-    """Compare actual WAV bytes, including the baseline manifest's integrity."""
+    """Compara os bytes reais dos WAVs, inclusive a integridade do manifesto de base."""
     baseline = baseline.resolve()
     comparison: dict = {
         "pack": str(baseline), "preserve_above_rpm": LOW_RPM_LIMIT,

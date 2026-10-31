@@ -1,7 +1,7 @@
-"""Encode the actual Godot viewport frames using their recorded timestamps.
+"""Codifica os quadros reais do viewport do Godot com os carimbos de tempo gravados.
 
-Run after capture_sport_coupe_redesign.gd, never during a frame-time benchmark.
-Requires the locally installed imageio_ffmpeg package. No desktop capture.
+Rode depois de capture_sport_coupe_redesign.gd, nunca durante um benchmark de tempo de quadro.
+Requer o pacote imageio_ffmpeg instalado localmente. Sem captura da área de trabalho.
 """
 import argparse
 import json

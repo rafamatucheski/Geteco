@@ -1,4 +1,4 @@
-"""Build a local evidence index only. Does not run Godot, encode or grant approval."""
+"""Só monta um índice local de evidências. Não roda Godot, não codifica nem aprova nada."""
 from pathlib import Path
 from html import escape
 from urllib.parse import quote
@@ -123,8 +123,8 @@ def main():
     comparison = read(PERFORMANCE / "comparison.json")
     review_summary = read(OUT / "summary.json")
     runs = discover_runs(comparison)
-    # Select at most one complete ABBA and its later finite confirmation. Never
-    # pool windows from different runtime revisions or separate executions here.
+    # Escolhe no máximo um ABBA completo e a confirmação finita posterior. Nunca
+    # junta aqui janelas de revisões de runtime diferentes ou de execuções separadas.
     current = [(name, run) for name, run in runs.items() if run["post_fix"] and run["complete"]]
     abba = [(name, run) for name, run in current if not run["raw"].get("confirm_case")]
     latest = max(abba, key=lambda item: item[1]["mtime"], default=None)
@@ -138,8 +138,8 @@ def main():
     if selected:
         exceeded = any(case.get("p95_change_percent", 0) > 5 or case.get("p99_change_percent", 0) > 5 for _, run in selected for case in run.get("cases", {}).values())
         status = "Ganho geral de performance não aprovado — percentil acima da tolerância em parte das janelas." if exceeded else "Dados pós-correção disponíveis — aprovação depende do parecer integrado no relatório."
-    # The integrated review interprets the finite confirmation without erasing
-    # the initial result or automatically approving a favorable second run.
+    # A revisão integrada interpreta a confirmação finita sem apagar
+    # o resultado inicial nem aprovar sozinha uma segunda rodada favorável.
     if review_summary.get("performance_runs") == sorted(selected_names):
         status = review_summary.get("performance_verdict", status)
     status = escape(status)

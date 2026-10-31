@@ -1,7 +1,7 @@
-"""Assemble recorded frames, without modifying gameplay assets.
+"""Monta quadros gravados, sem alterar assets do jogo.
 
-Columns: original V2 / live V1 / corrected V2. Silent frame sequences at
-10 frames/s are presentation evidence, never a frame-time measurement.
+Colunas: V2 original / V1 ao vivo / V2 corrigida. Sequências mudas de quadros a
+10 quadros/s são evidência de apresentação, nunca medição de tempo de quadro.
 """
 from pathlib import Path
 import hashlib

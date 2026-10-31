@@ -1,20 +1,20 @@
-"""Bounded own-Godot main-thread wait points, without elevation or a debugger.
+"""Pontos de espera limitados na thread principal do próprio Godot, sem elevação nem depurador.
 
-Start separately from the unelevated game; never launches/terminates a game.
-Requires a fresh same-run launch receipt and STALL_CAPTURE_READY ClockAnchor.
-Example: --label run1 --logfile evidence/.../run1.log
+Inicie separado do jogo não elevado; nunca inicia/encerra um jogo.
+Exige um recibo de lançamento novo da mesma rodada e o ClockAnchor STALL_CAPTURE_READY.
+Exemplo: --label run1 --logfile evidence/.../run1.log
   --launch-json evidence/.../run1-launch.json --out evidence/.../run1-waits.json
   --capture-json evidence/.../run1.json
 
-Launch receipt: {"pid": console_wrapper_pid, "utc": ISO8601_launch_UTC,
+Recibo de lançamento: {"pid": console_wrapper_pid, "utc": ISO8601_launch_UTC,
                  "engine": absolute_Godot_4.7.2_mono_console_exe_path}.
-Optional native_pid/main_tid must match READY when supplied. All handles are
-checked against image, parent, birth, and thread ownership by the frozen helper.
-This is diagnostic interference, never a clean FPS benchmark.
-Optional --periodic-return replaces the wait trigger with at most120 main-thread
-points, one per250ms slot between READY+30s and READY+60s. It never catches up
-missed slots in a burst. This samples CPU as well as waits; it is not a profiler
-of every script callback and native unwinding may be partial.
+native_pid/main_tid opcionais precisam bater com o READY quando fornecidos. Todos os handles
+são conferidos contra imagem, pai, nascimento e posse da thread pelo auxiliar congelado.
+Isto é interferência de diagnóstico, nunca um benchmark limpo de FPS.
+O --periodic-return opcional troca o gatilho de espera por no máximo 120 pontos na thread
+principal, um por janela de 250 ms entre READY+30s e READY+60s. Nunca recupera janelas
+perdidas numa rajada. Amostra CPU além das esperas; não é um profiler de cada callback
+de script, e o desenrolar nativo pode ser parcial.
 """
 from __future__ import annotations
 
@@ -44,7 +44,7 @@ PERIODIC_MAX_POINTS = 120
 
 
 def periodic_slot(ready_seconds, previous_slot):
-    """Return only the current eligible slot; missed slots are never replayed."""
+    """Devolve só a janela elegível atual; janelas perdidas nunca são repetidas."""
     if not PERIODIC_START <= ready_seconds < PERIODIC_END:
         return None
     slot = int((ready_seconds-PERIODIC_START)/PERIODIC_INTERVAL)
@@ -130,8 +130,8 @@ def collect(native, api, core, target, process, wrapper, thread, args, deadline)
             if current != last_cycles:
                 quiet_since, captured_episode = now, False
             elif not captured_episode and now - quiet_since >= QUIET_SECONDS and now - last_capture >= COOLDOWN_SECONDS:
-                # The held handles cannot silently refer to reused PIDs/TIDs.
-                # Recheck ownership/liveness and cycles immediately before suspend.
+                # Os handles retidos não podem apontar em silêncio para PIDs/TIDs reutilizados.
+                # Reconfere posse/vida e ciclos logo antes de suspender.
                 guard_began = api.qpc()
                 if api.pid_of_thread(thread) != target["pid"] or not api.identity(process)["alive"]:
                     result["stop_reason"] = "owned_identity_no_longer_valid"
@@ -145,17 +145,17 @@ def collect(native, api, core, target, process, wrapper, thread, args, deadline)
                     continue
                 cpu_before = core.cpu_ms(thread)
                 point = worker.point(None, target["pid"], target["tid"])
-                # Retain the resumed sample even if the game exits during the next query.
+                # Guarda a amostra retomada mesmo se o jogo sair durante a próxima consulta.
                 result["points"].append(point)
                 point.update(trigger="unchanged_main_thread_cycles", unchanged_cycles_ms=(now-quiet_since)*1000,
                              cycles_before=confirmed, cycles_after=cycles(), thread_cpu_ms_before=cpu_before,
                              thread_cpu_ms_after=core.cpu_ms(thread), guard_begin_qpc=guard_began,
                              start_ready_seconds=(point["qpc_before"]-origin)/api.frequency)
-                # Only our process module metadata, after Resume. No workers or
-                # global thread-state scans; all StackWalk/symbol work is deferred.
+                # Só os metadados de módulo do nosso processo, depois do Resume. Sem workers nem
+                # varreduras globais de estado de thread; todo StackWalk/símbolo fica para depois.
                 result["module_snapshots"].append(api.modules(process))
                 last_capture, captured_episode = time.perf_counter(), True
-                # Discard suspension-time progress from the next idle baseline.
+                # Descarta o progresso do tempo suspenso da próxima linha de base ociosa.
                 last_cycles = point["cycles_after"]
                 quiet_since = last_capture
                 if point.get("error") or point.get("api_error") or point.get("resume_previous_count") != 1:
@@ -181,7 +181,7 @@ def collect(native, api, core, target, process, wrapper, thread, args, deadline)
 
 
 def collect_periodic_return(native, api, core, target, process, wrapper, thread, args, deadline):
-    """Same owned-thread context primitive, with a finite fixed READY schedule."""
+    """Mesma primitiva de contexto de thread própria, com agenda READY fixa e finita."""
     query_cycles = core.bind(core.K, "QueryThreadCycleTime", W.BOOL, [W.HANDLE, C.POINTER(C.c_ulonglong)])
 
     def cycles():
@@ -225,7 +225,7 @@ def collect_periodic_return(native, api, core, target, process, wrapper, thread,
                 break
             if hashlib.sha256(args.launch_json.read_bytes()).hexdigest() != target["launch_sha256"]:
                 raise RuntimeError("Same-run launch receipt changed")
-            # Guard/API overhead cannot authorize a point outside the window.
+            # O custo da guarda/API não pode autorizar um ponto fora da janela.
             elapsed = (api.qpc()-origin)/api.frequency
             slot = periodic_slot(elapsed, previous_slot)
             if slot is None:
@@ -240,8 +240,8 @@ def collect_periodic_return(native, api, core, target, process, wrapper, thread,
                          guard_begin_qpc=guard_began,
                          start_ready_seconds=(point["qpc_before"]-origin)/api.frequency)
             previous_slot, last_capture = slot, time.perf_counter()
-            # All enumeration happens after Resume; the final snapshot also
-            # captures modules loaded after collection began. No symbol work here.
+            # Toda enumeração acontece depois do Resume; o retrato final também
+            # pega módulos carregados depois do início da coleta. Nada de símbolos aqui.
             if point.get("error") or point.get("api_error") or point.get("resume_previous_count") != 1:
                 result["stop_reason"] = "native_point_error"
                 break
@@ -276,8 +276,8 @@ def defer_decode(native, api, core, target, process, wrapper, thread, result, ar
             break
         time.sleep(.25)
     if reason:
-        # Frozen decoder's timeout=0 skips its folder-based waiting: the flat
-        # logfile check above already established the measurement boundary.
+        # O timeout=0 do decodificador congelado pula a espera por pasta: a conferência
+        # do logfile plano acima já fixou a fronteira da medição.
         native.finish_and_decode(api, target, process, wrapper, thread, result, None, 0)
         result["decode_deferred_until"] = reason
     else:
@@ -340,8 +340,8 @@ def main():
                             "seconds":args.seconds, "ready_timeout_seconds":150}
     process = wrapper = thread = None
     try:
-        # Startup has its own finite wait; collection/finish deadline starts at
-        # attachment so initial loading cannot consume the diagnostic window.
+        # A partida tem espera finita própria; o prazo de coleta/fim começa no
+        # anexo, para o carregamento inicial não consumir a janela de diagnóstico.
         target = resolve_target(native, api, args, time.perf_counter()+150)
         process, wrapper, thread, identity, wrapper_identity = native.open_owned(api, target)
         report.update(target=target,target_identity=identity,wrapper_identity=wrapper_identity)
@@ -360,7 +360,7 @@ def main():
         for handle in (thread, wrapper, process):
             if handle:
                 core.close(handle)
-        # Even partial decode failures must not serialize copied private bytes.
+        # Nem falhas parciais de decodificação podem serializar bytes privados copiados.
         for point in report.get("result",{}).get("points",[]):
             point.pop("context",None)
             point.pop("stack",None)

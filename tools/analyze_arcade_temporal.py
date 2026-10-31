@@ -1,7 +1,7 @@
-"""Inspect a bounded arcade JPEG sequence; these are capture timings, never FPS.
+"""Inspeciona uma sequência limitada de JPEGs do fliperama; são tempos de captura, nunca FPS.
 
-Usage: python tools/analyze_arcade_temporal.py evidence/arcade-temporal-...
-Outputs remain beside the supplied recording. No engine or saved game is touched.
+Uso: python tools/analyze_arcade_temporal.py evidence/arcade-temporal-...
+As saídas ficam ao lado da gravação fornecida. Nenhum motor ou save é tocado.
 """
 from __future__ import annotations
 
@@ -12,8 +12,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw
 
-# At 960x540 these crops exclude HUD, characters, cabinet screens and the route.
-# Confirm placement in temporal-contact-sheet.jpg for each new recording.
+# Em 960x540 estes recortes excluem HUD, personagens, telas dos gabinetes e a rota.
+# Confira o posicionamento em temporal-contact-sheet.jpg a cada gravação nova.
 REGIONS = {
     "back_wall_above_cabinets": (281, 89, 679, 109),
     "back_wall_between_cabinets": (452, 117, 501, 164),
@@ -91,7 +91,7 @@ def run(folder: Path, stage: str) -> None:
                 pixel_high[name] = gray.copy()
             previous[name] = gray
 
-    # Thresholds nominate inspection candidates; they do not diagnose flicker.
+    # Os limiares indicam candidatos para inspeção; não diagnosticam cintilação.
     mean_jumps = np.abs(np.diff(luminance, axis=0, prepend=luminance[:1]))
     static_columns = len(REGIONS)
     candidate_mask = np.any((mean_jumps[:, :static_columns] > 2.0) | (pair_changed[:, :static_columns] > 0.02), axis=1)

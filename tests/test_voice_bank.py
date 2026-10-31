@@ -1,4 +1,4 @@
-"""Anchored synthesis provenance and honest runtime publication contracts."""
+"""Proveniência da síntese ancorada e contratos honestos de publicação para o runtime."""
 import copy
 import hashlib
 from pathlib import Path

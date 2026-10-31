@@ -1,8 +1,8 @@
-"""Author the original offline engine banks used by the fleet runtime.
+"""Cria offline os bancos originais de motor usados pelo runtime da frota.
 
-Run: python tools/audio/build_engine_design_pack.py
-Requires the project's existing numpy/scipy dependencies. No network or samples.
-These are designed inspirations, not recordings or measured engine simulations.
+Rodar: python tools/audio/build_engine_design_pack.py
+Requer as dependências numpy/scipy que o projeto já tem. Sem rede nem amostras.
+São inspirações desenhadas, não gravações nem simulações medidas de motor.
 """
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ PROFILES = [
          description="I6 turbo, admissão mais presente e escape mais brilhante; inspiração RB26DETT."),
     dict(id="v8_crossplane", label="V8 · cross-plane aspirado", cylinders=8,
          rpm_bands=[720, 1200, 1800, 2640, 3720, 5040, 6480],
-         # LS-style 1-8-7-2-6-5-4-3: irregular spacing in each exhaust bank.
+         # Estilo LS 1-8-7-2-6-5-4-3: espaçamento irregular em cada bancada de escape.
          banks=[0, 1, 0, 1, 1, 0, 1, 0], runners=[.0035, .0041, .0031, .0045, .0038, .0029, .0042, .0033],
          resonances=[(92, .90), (205, .35), (430, .12)], cutoff=2100,
          pulse_ms=3.8, uneven=.14, intake=.10, turbo=False,
@@ -78,8 +78,8 @@ PROFILES = [
          resonances=[(190, .35), (430, .24), (850, .09)], cutoff=2100,
          pulse_ms=1.9, uneven=.07, intake=.12, turbo=False,
          description="I4 aspirado pequeno com escape de rua e admissão contida; candidato aos compactos da cidade."),
-    # Append-only: these indices participate in deterministic source seeds.
-    # The nine profiles approved before fleet integration retain their bytes.
+    # Só acrescentar: estes índices entram nas sementes determinísticas das fontes.
+    # Os nove perfis aprovados antes da integração da frota mantêm os bytes.
     dict(id="v8_twin_turbo", label="V8 biturbo · gran turismo moderno", cylinders=8,
          rpm_bands=[720, 1200, 1800, 2760, 3960, 5400, 7080],
          banks=[0, 1, 0, 1, 1, 0, 1, 0], runners=[.0020, .0023, .0018, .0025, .0021, .0017, .0024, .0019],
@@ -149,10 +149,10 @@ def filtered_noise(rng, n, low, high):
 
 
 def combustion_base(profile, index, loaded):
-    """Circular pressure-pulse convolution, one event/cylinder per 720 degrees.
+    """Convolução circular de pulsos de pressão, um evento por cilindro a cada 720 graus.
 
-    Randomness is seeded; FFT filtering is circular. Anchors are multiples of
-    120 RPM, so every two-second loop contains an integer number of cycles.
+    O acaso tem semente; a filtragem FFT é circular. As âncoras são múltiplos de
+    120 RPM, então todo loop de dois segundos tem um número inteiro de ciclos.
     """
     rpm = profile["rpm_bands"][index]
     cycles = rpm / 120
@@ -162,7 +162,7 @@ def combustion_base(profile, index, loaded):
     bank_count = max(profile["banks"]) + 1
     impulses = np.zeros((bank_count, FRAMES))
     cylinder_count = profile["cylinders"]
-    # Small, periodic crank-speed variation; not independent pitch jitter.
+    # Variação pequena e periódica da rotação do virabrequim; não é tremido de tom independente.
     for cycle in range(round(cycles * FRAMES / RATE)):
         wander = .0025 * np.sin(2 * np.pi * cycle / (cycles * 2))
         for event, bank in enumerate(profile["banks"]):
@@ -181,7 +181,7 @@ def combustion_base(profile, index, loaded):
         for resonance, amount in profile["resonances"]:
             f = resonance * (1 + bank * .025)
             pulse += amount * np.sin(2 * np.pi * f * t) * np.exp(-t / (.011 if loaded else .008))
-        # Collector and tailpipe reflections; unequal bank paths preserve rumble.
+        # Reflexões do coletor e da ponteira; caminhos desiguais entre bancadas preservam o ronco.
         pulse -= .32 * np.roll(pulse, round((.0052 + bank * .0009) * RATE))
         pulse += .16 * np.roll(pulse, round((.013 + bank * .0013) * RATE))
         p = np.fft.irfft(np.fft.rfft(impulses[bank]) * np.fft.rfft(pulse), FRAMES)
@@ -190,7 +190,7 @@ def combustion_base(profile, index, loaded):
     air = filtered_noise(rng, FRAMES, 130, profile["cutoff"])
     turbulence = air * (.25 + .30 * np.minimum(np.abs(pressure), 2.5))
     intake = filtered_noise(rng, FRAMES, 650, min(6500, profile["cutoff"] * 1.7))
-    # Inlet breathing follows firing order; no unrelated constant hiss.
+    # A respiração da admissão segue a ordem de ignição; nada de chiado constante sem relação.
     intake *= .45 + .55 * np.maximum(0, np.sin(2 * np.pi * cycles * cylinder_count * t + .8))
     x = pressure + (.13 + progress * .20) * turbulence
     x += profile["intake"] * (0.3 + progress) * intake
@@ -202,11 +202,11 @@ def combustion_base(profile, index, loaded):
 
 
 def combustion_low(profile, index, loaded):
-    """Long low-RPM cycle: varying pressure shapes instead of sustained ringing.
+    """Ciclo longo de baixa rotação: formas de pressão variadas em vez de ressonância sustentada.
 
-    Three short impulse responses vary combustion duration event by event.
-    Correlated cycle torque and valve noise retain firing order without making
-    a perfectly repeating oscillator. All filtering is circular at the seam.
+    Três respostas impulsivas curtas variam a duração da combustão evento a evento.
+    Torque de ciclo e ruído de válvula correlacionados mantêm a ordem de ignição sem
+    virar um oscilador que se repete perfeito. Toda filtragem é circular na emenda.
     """
     rpm = profile["rpm_bands"][index]
     cycles = rpm / 120
@@ -219,7 +219,7 @@ def combustion_low(profile, index, loaded):
     count = profile["cylinders"]
     impulses = np.zeros((bank_count, 3, n))
     mechanical = np.zeros(n)
-    # Circular, correlated variations in cycle torque; no periodic vibrato.
+    # Variações circulares e correlacionadas no torque do ciclo; sem vibrato periódico.
     torque = rng.normal(size=nc)
     torque = sum(np.roll(torque, k) * w for k, w in [(-2, 1), (-1, 2), (0, 3), (1, 2), (2, 1)]) / 9
     torque = unit(torque)
@@ -238,7 +238,7 @@ def combustion_low(profile, index, loaded):
             shape = int(rng.integers(0, 3))
             impulses[bank, shape, pos % n] += strength * (1 - frac)
             impulses[bank, shape, (pos + 1) % n] += strength * frac
-            # Valve/injection transients follow the same cylinders.
+            # Os transientes de válvula/injeção seguem os mesmos cilindros.
             valve_pos = (pos + round(.0034 * RATE)) % n
             mechanical[valve_pos] += strength * rng.uniform(.5, 1.25)
     pressure = np.zeros(n)
@@ -246,7 +246,7 @@ def combustion_low(profile, index, loaded):
         for variant, length in enumerate((.78, 1., 1.24)):
             tau = profile["pulse_ms"] / 1000 * length * (1.15 if loaded else .85)
             pulse = np.exp(-t / tau) - np.exp(-t / (.00013 if diesel else .00042))
-            # Shorter, quieter cavity tails remove the low-speed tuned drone.
+            # Caudas de cavidade mais curtas e baixas tiram o zumbido afinado em baixa rotação.
             for resonance, amount in profile["resonances"]:
                 pulse += amount * .22 * np.sin(2 * np.pi * resonance * (1 + .035 * bank) * t) * np.exp(-t / .0042)
             pulse -= .24 * np.roll(pulse, round((.0057 + bank * .0012) * RATE))
@@ -277,10 +277,10 @@ def combustion(profile, index, loaded):
 
 
 def ensure_pcm_import(path):
-    """Keep this pack's Godot imports lossless without replacing existing UIDs.
+    """Mantém sem perda as importações do Godot deste pacote, sem trocar UIDs existentes.
 
-    Only the authored audio/engine_design subtree is owned here. Previews,
-    external --output folders and existing legacy banks are left alone.
+    Só a subárvore autorada audio/engine_design é responsabilidade daqui. Prévias,
+    pastas --output externas e bancos antigos existentes ficam como estão.
     """
     path = Path(path).resolve()
     pack_root = (ROOT / "audio/engine_design").resolve()
@@ -362,7 +362,7 @@ def turbo_assets(profile):
     n = round(.68 * RATE)
     tt = np.arange(n) / RATE
     release = filtered_noise(rng, n, 900, 6500)
-    # Bypass pressure release, not sustained compressor surge/flutter.
+    # Alívio de pressão pela válvula de alívio, não surge/flutter sustentado do compressor.
     release *= (1 - np.exp(-tt / .012)) * np.exp(-tt / .13)
     release *= np.clip((.68 - tt) / .12, 0, 1)
     release = release / np.max(np.abs(release)) * .18
@@ -416,11 +416,11 @@ def demo(profile, loaded, coast, spool=None, release=None, low_only=False):
     out = np.zeros(len(rpm))
     for i in range(7):
         weight = np.sqrt(np.clip(1 - np.abs(fractional_band - i), 0, 1))
-        # One crank phase keeps all band readers at the same physical RPM.
+        # Uma fase única de virabrequim mantém todos os leitores de faixa na mesma rotação física.
         position = crank_cycles / (anchors[i] / 120) * RATE
         drive = sample_loop(loaded[i], position)
         overrun = sample_loop(coast[i], position)
-        # Idle always fires. Off-throttle at speed switches to the coast bank.
+        # A marcha lenta sempre dispara. Sem acelerador em velocidade, troca para o banco de desaceleração.
         combustion_load = np.maximum(load, 1 - smoothstep(anchors[0] * 1.1, anchors[0] * 1.8, rpm))
         out += weight * (drive * np.sqrt(combustion_load) + overrun * np.sqrt(1 - combustion_load))
     if spool is not None:
@@ -479,7 +479,7 @@ def main():
                 name = f"{profile['id']}/{prefix}_{profile['id']}_{i}.wav"
                 entry["sha256"][name] = write_wave(args.output / name, x, loop=True)
                 entry[state].append(name)
-                # Preview the quantized samples delivered to the game, minus guard.
+                # A prévia usa as amostras quantizadas entregues ao jogo, sem a guarda.
                 signals.append(np.rint(x * 32767) / 32768.)
             banks[state] = signals
         spool, release = None, None
@@ -511,8 +511,8 @@ def main():
             json.dumps(low_metadata, indent=2), encoding="utf-8")
         manifest["profiles"].append(entry)
         print(f"Authored {profile['id']}: 14 loops, {len(entry['effects'])} effects", flush=True)
-    # Common gain preserves differences between engines and avoids per-file AGC.
-    gain = 1.0  # Preserve the exact gain of the acceleration approved in v1.
+    # O ganho comum preserva as diferenças entre motores e evita AGC por arquivo.
+    gain = 1.0  # Preserva o ganho exato da aceleração aprovada na v1.
     if max(float(np.max(np.abs(x))) for _, x, _ in previews) >= .98:
         raise ValueError("A demo would clip at the approved common gain; revise its assets.")
     montage = []
@@ -528,7 +528,7 @@ def main():
         offset += len(x) / RATE + 1
     write_wave(args.previews / "compare_all_engines.wav", np.concatenate(montage))
     write_wave(args.previews / "compare_original_engines_revised.wav", np.concatenate(montage[:8]))
-    # Keep the five-engine comparison approved in the previous round stable.
+    # Mantém estável a comparação de cinco motores aprovada na rodada anterior.
     write_wave(args.previews / "compare_new_engines.wav", np.concatenate(montage[8:18]))
     if len(PROFILES) > 9:
         write_wave(args.previews / "compare_fleet_expansion.wav", np.concatenate(montage[18:]))

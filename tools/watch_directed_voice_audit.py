@@ -1,4 +1,4 @@
-"""Audit completed production snapshots while the local GPU renderer continues."""
+"""Audita retratos concluídos da produção enquanto o renderizador local na GPU continua."""
 from __future__ import annotations
 
 import argparse
@@ -29,8 +29,8 @@ def main():
         report = json.loads(output.read_text(encoding="utf-8")) if output.exists() else {}
         current_sha = hashlib.sha256(snapshot).hexdigest()
         count = len(manifest.get("takes", []))
-        # Retakes remain in the ledger; historical alternatives must not count
-        # toward completion of still-missing dialogue/language slots.
+        # Regravações ficam no registro; alternativas históricas não podem contar
+        # para completar vagas de diálogo/idioma que ainda faltam.
         slots = len({(row.get("source_key"), row.get("language"))
                      for row in manifest.get("takes", [])})
         if (report.get("manifest_sha256") == current_sha

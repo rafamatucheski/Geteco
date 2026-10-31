@@ -1,4 +1,4 @@
-"""Inspect the actual MovieWriter stream; pixel spikes are candidates, not verdicts."""
+"""Inspeciona o fluxo real do MovieWriter; picos de pixel são candidatos, não veredictos."""
 import json
 import argparse
 from pathlib import Path

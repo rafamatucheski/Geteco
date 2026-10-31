@@ -1,4 +1,4 @@
-"""Build the offline GETECO inventory board from reviewed data and source indexes."""
+"""Monta o painel offline de inventário do GETECO a partir de dados revisados e índices das fontes."""
 from pathlib import Path
 import json
 import re
@@ -14,9 +14,9 @@ def build():
     data = json.loads(read('docs/board-inventario-20261007.json'))
     story = json.loads(read('docs/board-historia-20261007.json'))
     data['cards'].extend(story['cards'])
-    # Every docs/board-atualizacoes-<date>.json, oldest first: each one updates the cards seen so
-    # far, adds its own and removes what it lists. The newest one dates the board. (The two files
-    # used to be hard-coded, so a new day's file was silently ignored.)
+    # Todo docs/board-atualizacoes-<data>.json, do mais antigo ao mais novo: cada um atualiza os cartões
+    # vistos até ali, soma os seus e tira os que lista. O mais novo data o painel. (Os dois arquivos
+    # eram fixos no código, e o arquivo de um dia novo era ignorado em silêncio.)
     latest = None
     for path in sorted(DOCS.glob('board-atualizacoes-*.json')):
         changes = json.loads(read(path.relative_to(ROOT).as_posix()))

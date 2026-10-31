@@ -1,4 +1,4 @@
-"""Index actual fleet evidence. Run after rendered validation and benchmarking."""
+"""Indexa as evidências reais da frota. Rode depois da validação renderizada e do benchmark."""
 import html
 import json
 import os

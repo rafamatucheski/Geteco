@@ -1,8 +1,8 @@
-"""Capture native stacks only after an owned x64 process main thread stops using CPU.
+"""Captura pilhas nativas só depois que a thread principal de um processo x64 próprio para de usar CPU.
 
-No debugger, symbol downloads, privilege changes or memory dumps. Each thread is
-resumed in finally immediately after copying its context/stack; symbol work occurs
-afterwards. This is diagnostic instrumentation, not a performance benchmark.
+Sem depurador, download de símbolos, mudança de privilégio ou despejo de memória. Cada thread
+é retomada no finally logo depois de copiar contexto/pilha; símbolos são resolvidos
+depois. É instrumentação de diagnóstico, não benchmark de desempenho.
 """
 import argparse
 import ctypes as C
@@ -167,8 +167,8 @@ def copy_thread(process, tid, nt_read=0):
         copied = memory(process, rsp, 65536)
         record['copy_stack_ms'] = (time.perf_counter() - copy_began) * 1000
         record.update(context=data, rsp=rsp, rbp=rbp, rip=rip, stack=copied)
-        # x64 syscall stubs preserve the first argument in R10. Duplicate only
-        # at the verified NtReadFile stub, then query the name after resuming.
+        # Stubs de syscall x64 preservam o primeiro argumento em R10. Duplica só
+        # no stub NtReadFile verificado e consulta o nome depois de retomar.
         if nt_read and nt_read <= rip < nt_read + 32:
             candidate = struct.unpack_from('<Q', data, 200)[0]
             record.update(read_syscall=True, read_handle_candidate=hex(candidate))
@@ -182,9 +182,9 @@ def copy_thread(process, tid, nt_read=0):
             if resume(handle) == 0xFFFFFFFF:
                 raise OSError(C.get_last_error(), 'ResumeThread failed')
         ended = time.perf_counter()
-        # This is request-to-resume, including time awaiting kernel context;
-        # it is not evidence of that much additional game latency.
-        record['suspended_ms'] = (ended - began) * 1000  # old readers
+        # Isto vai do pedido à retomada, incluindo a espera pelo contexto do kernel;
+        # não prova essa mesma latência extra no jogo.
+        record['suspended_ms'] = (ended - began) * 1000  # leitores antigos
         record['suspend_request_to_resume_ms'] = record['suspended_ms']
         if context_completed is not None:
             record['context_complete_to_resume_ms'] = (ended - context_completed) * 1000
@@ -200,7 +200,7 @@ def unwind(process, record):
     if owned:
         try:
             path = C.create_unicode_buffer(32768)
-            length = final_path(owned, path, len(path), 8)  # opened name, no normalization
+            length = final_path(owned, path, len(path), 8)  # nome aberto, sem normalização
             if 0 < length < len(path):
                 record['read_file_path'] = path.value
             else:

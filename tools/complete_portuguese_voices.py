@@ -1,7 +1,7 @@
-"""Fill missing Portuguese recordings without replacing approved existing takes.
+"""Preenche as gravações em português que faltam sem trocar tomadas aprovadas existentes.
 
-Uses the same finite offline-asset pipeline as English. Published manifests are
-merged only after every missing recording has been produced successfully.
+Usa o mesmo pipeline finito de assets offline do inglês. Os manifestos publicados só
+são mesclados depois que toda gravação faltante foi produzida com sucesso.
 """
 import asyncio
 import json
@@ -40,8 +40,8 @@ def main():
         generator.PROFILES[persona] = {key: PROFILE[key] for key in ('voice','rate','pitch','volume')}
     asyncio.run(generator.produce(3, 'msedge'))
     completed = json.loads((OUTPUT / 'production.json').read_text(encoding='utf8'))
-    # The shared generator publishes paths under its usual language folder.
-    # Canonicalize to this supplemental bank before exposing any take at runtime.
+    # O gerador compartilhado publica caminhos sob a pasta de idioma de sempre.
+    # Canoniza para este banco suplementar antes de expor qualquer tomada no runtime.
     for row in completed['lines']:
         row['path'] = 'res://audio/mission_voices/pt_complete/' + row['key'] + '.wav'
         bank = maciota_bank if row['persona'] in ('maciota', 'caller') else main_bank

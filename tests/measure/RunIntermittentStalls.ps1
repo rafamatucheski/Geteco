@@ -39,7 +39,7 @@ if($PrepareSnapshot) {
     foreach($file in @('project.godot','Harbor.csproj','Harbor.sln','Main.tscn','AGENTS.md')) {
         Copy-Item -LiteralPath (Join-Path $live $file) -Destination (Join-Path $Project $file)
     }
-    # Source snapshot is an independent copy; assets/import cache are copied too.
+    # O retrato das fontes é uma cópia independente; assets e cache de importação também são copiados.
     $drift=@(Get-ChildItem -LiteralPath $Project -Recurse -File | Where-Object {
         $_.FullName -notmatch '[\\/]\.godot[\\/]' -and $_.Extension -in '.gd','.cs','.gdshader','.tscn','.json','.godot','.csproj'
     } | ForEach-Object {
@@ -68,8 +68,8 @@ try {
     New-Item -ItemType Directory -Path (Join-Path $env:APPDATA 'GetecoV2'),$env:LOCALAPPDATA -Force | Out-Null
     $settings=Join-Path $savedApp 'GetecoV2/settings.cfg'
     if(Test-Path -LiteralPath $settings) { Copy-Item -LiteralPath $settings -Destination (Join-Path $env:APPDATA 'GetecoV2/settings.cfg') }
-    # Isolating saves also isolates ShaderRD cache. Declare cold runs and allow
-    # a frozen compatible seed for returning-player conditions.
+    # Isolar os saves também isola o cache do ShaderRD. Declara rodadas frias e permite
+    # uma semente compatível congelada para condições de jogador que volta.
     $cachePreparation=Prepare-IsolatedShaderCache $ShaderCacheSeed (Join-Path $env:APPDATA 'GetecoV2/shader_cache')
     $cachePreparation | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $folder 'shader-cache-preparation.json') -Encoding utf8
     foreach($key in @('HARBOR_NO_CSHARP','HARBOR_PLAN_BAKE_SOURCE','HARBOR_PLAN_BAKE_RESULT','HARBOR_PLAN_WARMUP_IDENTITY','HARBOR_PLAN_STARTUP_ORPHANS','HARBOR_WCT','HARBOR_STALL_AGGREGATE')) {
@@ -81,7 +81,7 @@ try {
     $env:HARBOR_STALL_SELF_PROFILE='1'
     $env:HARBOR_STALL_WORK=if($Observer -eq 'on'){'1'}else{'0'}
     $env:HARBOR_STALL_TRACE=if($Observer -eq 'on'){'1'}else{'0'}
-    # Keep the normal launcher StallLog in both arms; only additional probes vary.
+    # Mantém o StallLog normal do lançador nos dois braços; só as sondas extras variam.
     $profileOwned=$null
     if($ScriptProfiler) {
         $receiver=Join-Path $base 'continuation-native/godot_profile_ring_receiver.py'
@@ -115,7 +115,7 @@ try {
         $watch.Add(@{utc=[DateTime]::UtcNow.ToString('o'); foreign=@($foreign | Select-Object ProcessId,ParentProcessId,CommandLine)})
         if($foreign.Count -or $timer.Elapsed.TotalSeconds -gt 250) {
             $invalid=if($foreign.Count){'concurrent_process'}else{'timeout'}
-            # Only the exact launcher and its Godot child belong to this capture.
+            # Só o lançador exato e o filho Godot dele pertencem a esta captura.
             foreach($proc in @($active | Where-Object { $_.ProcessId -eq $owned.Id -or $_.ParentProcessId -eq $owned.Id })) { Stop-Process -Id $proc.ProcessId -Force -ErrorAction SilentlyContinue }
             break
         }

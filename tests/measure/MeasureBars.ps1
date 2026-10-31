@@ -36,7 +36,7 @@ try {
         $childProcess.Refresh()
     }
     if ($invalid) {
-        # Stop only the launcher created here and its explicitly observed child.
+        # Encerra só o lançador criado aqui e o filho observado explicitamente.
         $owned = @(Get-GodotProcesses | Where-Object { $_.ProcessId -eq $childProcess.Id -or $_.ParentProcessId -eq $childProcess.Id })
         foreach ($ownedProcess in $owned) { Stop-Process -Id $ownedProcess.ProcessId -Force -ErrorAction SilentlyContinue }
         throw $invalid

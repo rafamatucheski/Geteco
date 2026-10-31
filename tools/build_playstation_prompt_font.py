@@ -1,8 +1,8 @@
-"""Build the four inline PlayStation icons from Kenney Input Prompts 1.5A (CC0).
+"""Monta os quatro ícones PlayStation em linha a partir do Kenney Input Prompts 1.5A (CC0).
 
-Usage: python tools/build_playstation_prompt_font.py PATH_TO_UNPACKED_PACK
-Requires fonttools. Source: https://kenney.nl/assets/input-prompts
-Only the four existing prompt characters are mapped; ordinary text is untouched.
+Uso: python tools/build_playstation_prompt_font.py PATH_TO_UNPACKED_PACK
+Requer fonttools. Fonte: https://kenney.nl/assets/input-prompts
+Só os quatro caracteres de botão existentes são mapeados; texto comum fica intacto.
 """
 
 import argparse
@@ -23,7 +23,7 @@ def main():
     destination.mkdir(parents=True, exist_ok=True)
     source = args.pack / "PlayStation Series/Fonts/kenney_input_playstation_series.ttf"
     font = TTFont(source, recalcTimestamp=False)
-    # Kenney's outlined circular button artwork, indexed by the pack's map.txt.
+    # Arte de botão circular contornado do Kenney, indexada pelo map.txt do pacote.
     mapping = {0x2715: 0xE04C, 0x25CB: 0xE042, 0x25A1: 0xE052, 0x25B3: 0xE054}
     original_cmap = font.getBestCmap()
     glyphs = {codepoint: original_cmap[original] for codepoint, original in mapping.items()}
@@ -36,8 +36,8 @@ def main():
     for table in font["cmap"].tables:
         if table.isUnicode():
             table.cmap = glyphs.copy()
-    # Normalize the pack's half-em icons to readable inline buttons. Align with
-    # Barlow's cap height without increasing the surrounding text's line height.
+    # Normaliza os ícones de meio em do pacote para botões legíveis em linha. Alinha com
+    # a altura das maiúsculas da Barlow sem aumentar a altura de linha do texto em volta.
     glyph_set = font.getGlyphSet()
     replacements = {}
     for name in glyphs.values():

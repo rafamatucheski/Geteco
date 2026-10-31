@@ -1,8 +1,8 @@
-"""Compose/render Geteco's original Noite de Acerto score, entirely offline.
+"""Compõe/renderiza a trilha original Noite de Acerto do Geteco, toda offline.
 
-No external samples, melodies or model services. Requires numpy/scipy/soundfile.
-Two phase-aligned 32-bar stems; bounded native Ogg playback in the game.
-Run from any folder: python tools/audio/build_drag_night_score.py
+Sem amostras, melodias ou serviços de modelo externos. Requer numpy/scipy/soundfile.
+Duas faixas de 32 compassos alinhadas em fase; reprodução Ogg nativa e limitada no jogo.
+Rodar de qualquer pasta: python tools/audio/build_drag_night_score.py
 """
 from pathlib import Path
 import hashlib
@@ -35,7 +35,7 @@ def filtered_noise(t, lo, hi):
 
 
 def add(dest, wave, beat, gain=1, pan=0):
-    # Tails wrap into bar one so the loop retains its decay and room sound.
+    # As caudas voltam para o compasso um, e o loop mantém o decaimento e o som da sala.
     indices = (round(beat * BEAT * RATE) + np.arange(len(wave))) % N
     stereo = wave[:, None] * np.array([np.sqrt((1 - pan) / 2), np.sqrt((1 + pan) / 2)])
     dest[indices] += stereo * gain
@@ -76,7 +76,7 @@ def bass(note, beats):
 def key(note, beats=2.4):
     t = time(beats * BEAT)
     f = hz(note)
-    # Rounded electric-key transient, detuned partials, no borrowed recording.
+    # Ataque arredondado de piano elétrico, parciais desafinados, nenhuma gravação emprestada.
     wave = np.sin(2 * np.pi * f * t + .8 * np.sin(2 * np.pi * 2 * f * t) * np.exp(-t * 12))
     wave += .14 * np.sin(2 * np.pi * f * 1.002 * t)
     return wave * np.minimum(t / .007, 1) * np.exp(-t * 2.6) * np.minimum((len(t) / RATE - t) / .09, 1)
@@ -103,8 +103,8 @@ def measure(samples):
 
 
 def write_ogg(path, samples):
-    # libsndfile's Windows Vorbis writer is reliable with bounded writes; do
-    # not feed the entire 74-second stereo array as one native call.
+    # O gravador Vorbis do libsndfile no Windows é confiável com gravações limitadas; não
+    # passe o array estéreo inteiro de 74 segundos numa chamada nativa só.
     with sf.SoundFile(path, "w", samplerate=RATE, channels=2, format="OGG", subtype="VORBIS") as file:
         for start in range(0, len(samples), 32768):
             file.write(samples[start:start + 32768])
@@ -134,8 +134,8 @@ def build():
                 add(harmony, sound, b + off + .75, .026, -.42)
         if section == 2 and bar % 4 == 0:
             add(harmony, key(81, 4), b + 2.5, .08, -.3)
-        # Broken backbeat with four eight-bar arrangements and small deterministic
-        # velocity/timing variation; never a constant racing siren or metronome.
+        # Contratempo quebrado com quatro arranjos de oito compassos e pequena variação
+        # determinística de intensidade/tempo; nunca uma sirene de corrida constante ou metrônomo.
         kicks = [0, 1.75, 2.5] if bar % 2 == 0 else [0, 2, 3.25]
         if section == 2:
             kicks = [0, 2.5]
@@ -157,8 +157,8 @@ def build():
         if bar % 8 == 7:
             for off in [3.5, 3.75]:
                 add(pulse, snare(), b + off, .075, .15)
-    # Common gain preserves intended stem balance. Music ducking belongs in the
-    # runtime, while both assets remain phase-aligned and independently testable.
+    # O ganho comum preserva o equilíbrio pretendido entre as faixas. Abaixar a música é do
+    # runtime; os dois assets continuam alinhados em fase e testáveis em separado.
     scale = 10 ** (-5 / 20) / np.max(np.abs(harmony + pulse))
     harmony *= scale
     pulse *= scale

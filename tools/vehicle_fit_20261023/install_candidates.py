@@ -1,4 +1,4 @@
-"""Install reviewed candidates only while the captured production sources match."""
+"""Instala candidatos revisados só enquanto as fontes de produção capturadas batem."""
 from pathlib import Path
 import hashlib
 import json
@@ -36,7 +36,7 @@ def main():
             rows.append({"id": ident, "group": group, "source": str(source),
                          "candidate": str(candidate), "baseline_sha256": digest(baseline),
                          "installed_sha256": digest(candidate)})
-    # Preflight every file before the first mutation. No source is reset or restored.
+    # Pré-confere todo arquivo antes da primeira alteração. Nenhuma fonte é zerada ou restaurada.
     registry = ROOT / "runtime/RedesignedFleet.gd"
     text = registry.read_text(encoding="utf-8")
     for ident in GROUPS["motorcycles"]:

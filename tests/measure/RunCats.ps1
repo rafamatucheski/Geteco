@@ -21,7 +21,7 @@ foreach ($variant in @('baseline','final')) {
         $processes = Get-GameProcesses
         $foreign = @($processes | Where-Object { $_.ProcessId -ne $run.Id -and $_.ParentProcessId -ne $run.Id })
         if ($foreign.Count -gt 0 -or $watch.Elapsed.TotalSeconds -gt 280) {
-            # Stop only this measurement and its verified launcher child.
+            # Encerra só esta medição e o filho verificado do lançador.
             foreach ($child in @($processes | Where-Object { $_.ParentProcessId -eq $run.Id -and $_.CommandLine -like '*measure_cats.gd*' })) { Stop-Process -Id $child.ProcessId -ErrorAction SilentlyContinue }
             if (-not $run.HasExited) { Stop-Process -Id $run.Id -ErrorAction SilentlyContinue }
             Write-Output "CATS_MEASURE_BLOCKED $variant concurrent=$($foreign.Count) elapsed=$($watch.Elapsed.TotalSeconds)"

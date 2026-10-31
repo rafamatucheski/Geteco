@@ -1,8 +1,8 @@
-"""Finite native wait-point preflight on a synthetic child of this process only.
+"""Pré-checagem finita de pontos de espera nativos só num filho sintético deste processo.
 
-Never discovers or attaches to Godot. The production wrapper keeps its Godot
-image allowlist; only the module object loaded in this fixture substitutes our
-Python image so ownership/context/decode can be exercised on our own child.
+Nunca procura nem se anexa ao Godot. O wrapper de produção mantém a lista de imagens
+permitidas do Godot; só o objeto de módulo carregado neste fixture troca pela nossa
+imagem Python, para exercitar posse/contexto/decodificação no nosso próprio filho.
 """
 import ctypes as C
 from ctypes import wintypes as W
@@ -67,11 +67,11 @@ def run(periodic=False):
     own = api.identity(core.current_process())
     native.ENGINE = Path(sys.executable).resolve()
     native.CONSOLE = native.ENGINE
-    # No production module/file is modified; this fixture's instance is private.
+    # Nenhum módulo/arquivo de produção é alterado; a instância deste fixture é privada.
     wrapper.load_native = lambda: native
     if periodic:
-        # Shorten only this privately imported fixture's window. The production
-        # 30..60s/120-slot boundaries are covered by test_owned_wait_schedule.py.
+        # Encurta só a janela deste fixture importado em privado. As fronteiras de produção
+        # 30..60s/120 janelas são cobertas por test_owned_wait_schedule.py.
         wrapper.PERIODIC_START = .30
         wrapper.PERIODIC_END = 2.55
         wrapper.PERIODIC_MAX_POINTS = 9
@@ -80,8 +80,8 @@ def run(periodic=False):
     args = [sys.executable,str(Path(__file__).resolve()),"--child",str(folder)]
     process = subprocess.Popen(args,creationflags=subprocess.CREATE_NO_WINDOW)
     try:
-        # Reject a wrong TID while the child is still alive, so this specifically
-        # exercises thread ownership rather than the earlier liveness guard.
+        # Rejeita um TID errado com o filho ainda vivo, para isto exercitar
+        # especificamente a posse da thread e não a guarda de vida anterior.
         probe_args = SimpleNamespace(label="synthetic-owned-wait",logfile=folder/"child.log",launch_json=folder/"launch.json")
         target = wrapper.resolve_target(native,api,probe_args,time.perf_counter()+3)
         bad_target = dict(target,tid=api.current_tid())
@@ -144,7 +144,7 @@ def run(periodic=False):
         return 0 if summary["passed"] else 1
     finally:
         if process.poll() is None:
-            # Only the child launched and retained by this fixture is affected.
+            # Só o filho iniciado e retido por este fixture é afetado.
             process.terminate()
             process.wait(timeout=5)
 

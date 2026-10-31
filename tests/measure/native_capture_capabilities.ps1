@@ -1,5 +1,5 @@
-# Read-only native capture preflight. Does not start WPR/EventPipe, change
-# privileges, suspend threads, launch Godot, alter saves or modify source files.
+# Pré-checagem só leitura de captura nativa. Não inicia WPR/EventPipe, não muda
+# privilégios, não suspende threads, não abre Godot, não altera saves nem fontes.
 param(
     [string]$OutputPath,
     [string]$EnginePath='D:/Downloads Chrome/Godot_v4.7.2-stable_mono_win64/Godot_v4.7.2-stable_mono_win64/Godot_v4.7.2-stable_mono_win64.exe',
@@ -23,8 +23,8 @@ function File-Identity([string]$Path) {
 }
 
 function Native-CodeView([string]$Path) {
-    # Report the engine's embedded PDB identity, if present. A PDB with another
-    # GUID/age or a portable Harbor.pdb cannot symbolize this native executable.
+    # Informa a identidade do PDB embutido no motor, se houver. Um PDB com outro
+    # GUID/idade ou um Harbor.pdb portátil não simboliza este executável nativo.
     $stream=$null
     try {
         $stream=[IO.File]::OpenRead($Path)
@@ -109,8 +109,8 @@ $engineFolder=Split-Path -Parent $EnginePath
 if (Test-Path -LiteralPath $engineFolder -PathType Container) {
     $nativePdbs=@(Get-ChildItem -LiteralPath $engineFolder -Filter '*.pdb' -Recurse -File | ForEach-Object {File-Identity $_.FullName})
 }
-# This local QPC/UTC packet has no Godot clock. The game must emit a matching
-# bracketed packet of Godot ticks + QPC + UTC on its native main thread.
+# Este pacote local QPC/UTC não tem relógio do Godot. O jogo precisa emitir um pacote
+# correspondente entre colchetes de ticks do Godot + QPC + UTC na thread principal nativa.
 $qpcBefore=[Diagnostics.Stopwatch]::GetTimestamp()
 $utc=[DateTime]::UtcNow
 $qpcAfter=[Diagnostics.Stopwatch]::GetTimestamp()

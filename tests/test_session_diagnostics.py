@@ -1,5 +1,5 @@
-"""Integration: real Godot .NET, recoverable GDScript/C# errors, restart and remote debugger.
-Build Harbor.csproj first. Run: python tests/test_session_diagnostics.py --godot PATH
+"""Integração: Godot .NET real, erros recuperáveis de GDScript/C#, reinício e depurador remoto.
+Compile Harbor.csproj antes. Rodar: python tests/test_session_diagnostics.py --godot PATH
 """
 import argparse
 import os
@@ -69,8 +69,8 @@ def main():
                     break
                 time.sleep(.2)
             result = json.loads((fixture / "continued.json").read_text())
-            # Godot consumes built-in switches; OS.get_cmdline_args omits them.
-            # A connected debugger plus the marker written AFTER the error is the contract.
+            # O Godot consome as opções embutidas; OS.get_cmdline_args as omite.
+            # O contrato é um depurador conectado mais o marcador gravado DEPOIS do erro.
             assert result["debugger"], result
             print("PASS: real editor Play continued after script error", fixture)
         finally:

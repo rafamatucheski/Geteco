@@ -1,7 +1,7 @@
-"""Render katana air and body cuts offline; reuse credited CC0 contact Foley.
+"""Renderiza offline os cortes de katana no ar e no corpo; reaproveita Foley de contato CC0 creditado.
 
-Run from the repository root: python tools/audio/build_katana_foley.py
-Sources and licenses: audio/contact_foley/CREDITS.md. Requires numpy/scipy/soundfile.
+Rodar da raiz do repositório: python tools/audio/build_katana_foley.py
+Fontes e licenças: audio/contact_foley/CREDITS.md. Requer numpy/scipy/soundfile.
 """
 from pathlib import Path
 import sys
@@ -21,14 +21,14 @@ def build():
     for take in range(3):
         rng = np.random.default_rng(61012 + take)
         t = np.arange(round(RATE * .26)) / RATE
-        # Broad air, no pitched oscillator: sharp blade passage at 50 ms.
+        # Ar largo, sem oscilador afinado: passagem rápida da lâmina em 50 ms.
         noise = rng.normal(0, 1, len(t))
         air = sosfilt(butter(2, [650, 7400], "bandpass", fs=RATE, output="sos"), noise)
         envelope = np.where(t < .05, (t / .05) ** 2, np.exp(-(t - .05) / .035))
         air *= envelope
         air /= np.max(np.abs(air))
         swing = mix(.26, [(air, 1, 0)], -3)
-        # Recorded body/cloth contact, short tearing crunch and blade exit.
+        # Contato gravado de corpo/pano, estalo curto de rasgo e saída da lâmina.
         cut = mix(.38, [
             layer("impactSoft_medium", take, .75, 0, 1.05 + take * .035, 3400),
             layer("impactPunch_medium", take + 1, .48, .003, 1.1, 5200),

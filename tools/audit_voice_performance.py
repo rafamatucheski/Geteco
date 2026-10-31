@@ -1,7 +1,7 @@
-"""Read-only audit of shipped dialogue assets; never certifies acting by signal metrics.
+"""Auditoria só leitura dos assets de diálogo publicados; nunca certifica atuação por métricas de sinal.
 
-Writes only the explicitly requested report. Uses the live authored inventory and
-existing production provenance, not a hardcoded list of characters.
+Grava só o relatório pedido explicitamente. Usa o inventário autorado vivo e a
+proveniência de produção existente, não uma lista fixa de personagens.
 """
 from __future__ import annotations
 

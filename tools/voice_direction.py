@@ -1,8 +1,8 @@
-"""Pure, offline contracts for authored PT-BR/English performance takes.
+"""Contratos puros e offline para tomadas de atuação autoradas em PT-BR/inglês.
 
-This module never initializes a synthesizer, contacts a service, guesses a
-character's gender or selects a replacement voice. Old recording banks are inputs
-to the game only; this pipeline writes a separate, immutable audition bank.
+Este módulo nunca inicializa sintetizador, contata serviço, adivinha o gênero de
+um personagem nem escolhe voz substituta. Bancos antigos de gravação só alimentam
+o jogo; este pipeline grava um banco de testes separado e imutável.
 """
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ REVIEW_CHECKS = ("transcript", "language", "gender", "identity", "delivery", "te
 
 
 class DirectionError(ValueError):
-    """Invalid authoring/casting must stop production, never fall back."""
+    """Autoria/elenco inválido precisa parar a produção, nunca cair num substituto."""
 
 
 def digest(value):
@@ -34,7 +34,7 @@ def read_json(path):
 
 
 def write_json(path, value):
-    """Atomic replacement applies to our metadata only, never legacy WAVs."""
+    """A troca atômica vale só para os nossos metadados, nunca para WAVs antigos."""
     import os
     import tempfile
     import time
@@ -45,9 +45,9 @@ def write_json(path, value):
         json.dump(value, file, ensure_ascii=False, indent=2)
         file.write("\n")
         pending = Path(file.name)
-    # Windows readers (editor asset scans / concurrent read-only audits) may
-    # briefly hold the destination without delete-sharing. Keep the complete
-    # checkpoint and retry the metadata rename, never regenerate its WAVs.
+    # Leitores no Windows (varreduras de assets do editor / auditorias só leitura concorrentes) podem
+    # segurar o destino por instantes sem compartilhar exclusão. Mantém o checkpoint
+    # completo e repete o rename dos metadados, nunca regenera os WAVs dele.
     for attempt in range(40):
         try:
             os.replace(pending, path)
@@ -131,8 +131,8 @@ def plan_takes(cast, direction, inventory, languages=("pt_BR", "en"), *,
                                "Scene performance overrides habitual emotion, pacing and breathing while preserving voice identity:",
                                line["performance_prompt"],
                                "Perform only the supplied dialogue verbatim. No introduction, music or sound effects. Dry close-mic recording."))
-            # Stable per fictional actor; this is reproducibility, NOT a claim
-            # that VoiceDesign guarantees timbre consistency between takes.
+            # Estável por ator fictício; isto é reprodutibilidade, NÃO uma afirmação
+            # de que o VoiceDesign garante timbre consistente entre tomadas.
             seed = int(digest([identity, take_index])[:8], 16) % (2**31)
             settings = {"temperature": 0.7, "top_p": 0.9, "do_sample": True,
                         "max_new_tokens": min(1200, max(180, len(text) * 3)),
@@ -156,7 +156,7 @@ def plan_takes(cast, direction, inventory, languages=("pt_BR", "en"), *,
 
 
 def approved_manifest(production, review, *, current_plan, root=ROOT):
-    """Only explicitly auditioned matching bytes may become runtime overrides."""
+    """Só bytes correspondentes ouvidos explicitamente podem virar substituições no runtime."""
     takes = {take["signature"]: take for take in production.get("takes", [])}
     current = {take["signature"]: take for take in current_plan}
     published = {"version": 1, "lines": {"pt_BR": {}, "en": {}}}
@@ -200,10 +200,10 @@ def approved_manifest(production, review, *, current_plan, root=ROOT):
 
 
 def merge_reviews(previous, incoming, production, current_plan):
-    """Preserve earlier casting decisions; a new take replaces the same slot.
+    """Preserva decisões anteriores de elenco; uma tomada nova substitui a mesma vaga.
 
-    Stale approvals stay in review history with an explicit stale status but
-    cannot enter the current publication. Rejection is always an explicit input.
+    Aprovações vencidas ficam no histórico de revisão com status explícito de vencida, mas
+    não entram na publicação atual. Rejeição é sempre uma entrada explícita.
     """
     current = {take["signature"] for take in current_plan}
     takes = {take["signature"]: take for take in production.get("takes", [])}

@@ -7,7 +7,7 @@ function Get-Runtimes {
     @(Get-CimInstance Win32_Process -Filter "Name LIKE 'Godot%'" | Where-Object { $_.CommandLine -notmatch '(^|\s)--editor(\s|$)' })
 }
 if ((Get-Runtimes).Count -gt 0) { throw 'Comparacao pendente: ha runtimes Godot de outras sessoes. Nenhum processo foi encerrado.' }
-# Snapshot hashes detect concurrent source changes between the two runs.
+# Hashes do retrato detectam mudanças concorrentes nas fontes entre as duas rodadas.
 $sources = @(Get-ChildItem -LiteralPath (Join-Path $workspace 'runtime'),(Join-Path $workspace 'scripts'),(Join-Path $workspace 'gameplay'),(Join-Path $workspace 'world'),(Join-Path $workspace 'activities') -Recurse -File | Where-Object { $_.Extension -in '.gd','.cs' })
 function Get-Revision {
     @(Get-FileHash -LiteralPath $sources.FullName -Algorithm SHA256 | Select-Object Path,Hash) | ConvertTo-Json -Compress

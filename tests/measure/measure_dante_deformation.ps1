@@ -22,7 +22,7 @@ while (-not $danteProcess.HasExited) {
         $danteCompileFailure = [bool](Select-String -LiteralPath (Join-Path $danteOutput "$Label-measure.err") -Pattern 'Parse Error:|Compile Error:' -Quiet)
     }
     if ($danteForeign.Count -gt 0 -or $danteWatch.Elapsed.TotalSeconds -gt 240 -or $danteCompileFailure) {
-        # The console launcher owns a separate engine child on Windows.
+        # No Windows o lançador de console é dono de um filho separado do motor.
         $danteActive | Where-Object { $_.ParentProcessId -eq $danteProcess.Id } | ForEach-Object { Stop-Process -Id $_.ProcessId -ErrorAction SilentlyContinue }
         Stop-Process -Id $danteProcess.Id
         $danteProcesses | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $danteOutput "$Label-processes-aborted.json")

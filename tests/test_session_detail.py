@@ -1,4 +1,4 @@
-"""Real .NET autoload: stage watchdog, error correlation, fast-frame spans and bounded details."""
+"""Autoload .NET real: watchdog de etapa, correlação de erros, spans de quadro rápido e detalhes limitados."""
 import json
 import os
 import pathlib

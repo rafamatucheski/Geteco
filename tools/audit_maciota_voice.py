@@ -1,4 +1,4 @@
-"""Finite CPU-only waveform and transcript audit of the fixed Maciota bank."""
+"""Auditoria finita, só na CPU, de ondas e transcrições do banco fixo do Maciota."""
 import difflib
 import hashlib
 import json

@@ -1,4 +1,4 @@
-"""Offline original diesel exhaust and two-pulse turbo flutter for Digo's Amarok."""
+"""Escape diesel original e flutter de turbo de dois pulsos para a Amarok do Digo, offline."""
 from pathlib import Path
 import math
 import random
@@ -22,7 +22,7 @@ rng = random.Random(2014)
 samples = []
 for i in range(RATE * 2):
     t = i / RATE
-    # Integer-frequency periodic banks give a seamless two-second exhaust cycle.
+    # Bancos periódicos de frequência inteira dão um ciclo de escape de dois segundos sem emenda.
     phase = math.tau * 28 * t
     firing = (0.5 + 0.5 * math.sin(phase)) ** 5
     rumble = math.sin(math.tau * 56 * t) * .42 + math.sin(math.tau * 84 * t) * .21

@@ -1,4 +1,4 @@
-"""Reader contracts: mixed states in one window, rotation, truncation and legacy logs."""
+"""Contratos do leitor: estados mistos numa janela, rotação, truncamento e logs antigos."""
 import importlib.util
 import json
 from pathlib import Path

@@ -330,8 +330,8 @@ def graft(source, donor, destination, palm_sign=-1, wrist_style='suit'):
             dark_uv = npc_uv[cloth_candidates[np.argmin(np.linalg.norm(offset[cloth_candidates], axis=1))]]
             white_uv = npc_uv[white_candidates[np.argmin(np.linalg.norm(offset[white_candidates], axis=1))]]
         else:
-            # Sample sleeve fabric proximal to the cut, not a pale seam or
-            # misclassified skin vertex immediately beside the old hand.
+            # Amostra o tecido da manga perto do corte, não uma costura clara nem
+            # um vértice de pele mal classificado logo ao lado da mão antiga.
             candidates = np.flatnonzero(local & (npc_skin if wrist_style == 'skin'
                                                   else ((axial < -0.050) & (axial > -0.120)
                                                         & (w[:, fore] + w[:, hand] > 0.5))))

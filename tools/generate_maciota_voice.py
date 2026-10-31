@@ -1,7 +1,7 @@
-"""One fixed Brazilian voice for Maciota, including his opening phone call.
+"""Uma voz brasileira fixa para o Maciota, inclusive a ligação de abertura.
 
-Generation uses the existing edge-tts package; runtime only reads mono PCM WAVs.
-Existing VoiceDesign takes remain intact. No other character's manifest is changed.
+A geração usa o pacote edge-tts existente; o runtime só lê WAVs PCM mono.
+As tomadas VoiceDesign existentes ficam intactas. O manifesto de nenhum outro personagem muda.
 """
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ PROFILE = {'id': 'maciota_baritone_v1', 'voice': 'pt-BR-AntonioNeural',
 
 def lines():
     rows = [row for row in authored() if row['persona'] in ('maciota', 'caller')]
-    # Restored saves can still complete the old bench task in the workshop.
+    # Saves restaurados ainda podem concluir a tarefa antiga da bancada na oficina.
     source = (ROOT / 'data/GarageSequence.gd').read_text(encoding='utf-8-sig')
     for name in ('GREETING', 'REQUEST', 'THANKS'):
         text = json.loads(re.search(r'const ' + name + r' := ("[^\n]*")', source)[1])
@@ -46,8 +46,8 @@ async def produce(endpoint):
     import static_ffmpeg
 
     if endpoint == 'msedge':
-        # Same service endpoint supported by edge-tts 7.2.3, selected explicitly
-        # when the current speech.platform.bing.com host is unavailable.
+        # Mesmo endpoint de serviço suportado pelo edge-tts 7.2.3, escolhido explicitamente
+        # quando o host atual speech.platform.bing.com está indisponível.
         import edge_tts.communicate as communication
         from edge_tts.constants import TRUSTED_CLIENT_TOKEN
         communication.WSS_URL = ('wss://api.msedgeservices.com/tts/cognitiveservices/'
@@ -76,7 +76,7 @@ async def produce(endpoint):
                 if len(active) == 0:
                     raise RuntimeError('Silent take: ' + row['key'])
                 signal = signal[max(0, active[0] - int(rate * .08)):min(len(signal), active[-1] + int(rate * .16))]
-                # Fixed dialogue loudness; limit peak without runtime pitch or effects.
+                # Volume fixo de diálogo; limita o pico sem tom nem efeitos no runtime.
                 speech = signal[np.abs(signal) > .003]
                 rms = float(np.sqrt(np.mean(speech ** 2)))
                 signal *= min(.14 / max(rms, .0001), .85 / float(np.max(np.abs(signal))))
@@ -88,7 +88,7 @@ async def produce(endpoint):
         print(f'MACIOTA_VOICE {index + 1}/{len(rows)}', flush=True)
     output_rows = [completed[row['key']] for row in rows]
     write_json(production_path, {'profile': PROFILE, 'complete': True, 'lines': output_rows})
-    # Publish only a complete bank, so interruption never introduces a mixed voice.
+    # Só publica banco completo, para uma interrupção nunca deixar voz misturada.
     write_json(OUTPUT / 'recordings.json', {row['key']: row['path'] for row in output_rows})
     print(f'MACIOTA_VOICE_COMPLETE {len(output_rows)}', flush=True)
 

@@ -46,7 +46,7 @@ try {
         $initial = @(Get-CimInstance Win32_Process -Filter "Name LIKE 'Godot%'" | Select-Object ProcessId,ParentProcessId,CommandLine)
         $foreign = @($initial | Where-Object { $_.CommandLine -notmatch '(^|\s)--editor(\s|$)' })
         if ($foreign.Count) { throw 'Another Godot run is active. Preserve it and measure in a quiet window.' }
-        # Equal initial preferences in isolated user data; never touch player saves.
+        # Preferências iniciais iguais em dados de usuário isolados; nunca mexe nos saves do jogador.
         $env:APPDATA = Join-Path $Output ($mode + '-appdata')
         $isolatedUser = Join-Path $env:APPDATA 'GetecoV2'
         [IO.Directory]::CreateDirectory($isolatedUser) | Out-Null
@@ -85,7 +85,7 @@ try {
             }
             $samples.Add(@{elapsed=$watch.Elapsed.TotalSeconds; utc=[DateTime]::UtcNow.ToString('o'); others=$others; windows=$windowRows})
             if ($watch.Elapsed.TotalSeconds -gt $DeadlineSeconds) {
-                # Only the exact launcher/children created by this invocation.
+                # Só o lançador/filhos exatos criados por esta invocação.
                 foreach ($child in $ownedChildren) { Stop-Process -Id $child.ProcessId -Force -ErrorAction SilentlyContinue }
                 Stop-Process -Id $run.Id -Force -ErrorAction SilentlyContinue
                 $samples | ConvertTo-Json -Depth 6 | Set-Content -LiteralPath (Join-Path $Output ($label + '-processes.json'))

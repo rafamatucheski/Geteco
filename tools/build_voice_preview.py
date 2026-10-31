@@ -1,4 +1,4 @@
-"""Create aligned listening reels from the actual published PT-BR/EN bank."""
+"""Cria rolos de audição alinhados a partir do banco PT-BR/EN realmente publicado."""
 from __future__ import annotations
 
 import argparse

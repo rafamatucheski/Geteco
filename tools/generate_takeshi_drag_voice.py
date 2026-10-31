@@ -1,7 +1,7 @@
-"""Six isolated, offline Takeshi takes; publishing is separate from synthesis.
+"""Seis tomadas isoladas e offline do Takeshi; publicar é separado de sintetizar.
 
-Uses the already installed VoiceDesign/Whisper environments and cached weights.
-Never calls the global Harbor generator or the external Edge speech service.
+Usa os ambientes VoiceDesign/Whisper já instalados e os pesos em cache.
+Nunca chama o gerador global de Harbor nem o serviço externo de fala Edge.
 """
 from __future__ import annotations
 
@@ -56,7 +56,7 @@ def authored():
 
 
 def profile():
-    # Read the authored description without importing Torch or allocating GPU.
+    # Lê a descrição autorada sem importar Torch nem alocar GPU.
     tree = ast.parse((ROOT / "tools/generate_harbor_story_voices.py").read_text(encoding="utf-8"))
     assignments = {node.targets[0].id: node.value for node in tree.body if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name)}
     base = ast.literal_eval(assignments["BASE"])
@@ -87,13 +87,13 @@ def checked_plan():
 
 
 def bounded_gpu_commit(local):
-    """Keep desktop limits while allowing Windows' CUDA backing commitment.
+    """Mantém os limites da área de trabalho permitindo o commit de apoio do CUDA no Windows.
 
-    The reusable generator defaults to 6000 MiB of private commitment. With
-    this cached model Windows exhausts it on the first CUDA kernel, despite
-    3656 MiB of live GPU tensors. This isolated six-line job uses an 8192 MiB
-    private cap only when at least 10 GiB of physical RAM are available.
-    GPU 60%, resident 2048 MiB, one CPU thread and low priority stay unchanged.
+    O gerador reutilizável usa por padrão 6000 MiB de commit privado. Com
+    este modelo em cache o Windows esgota isso no primeiro kernel CUDA, apesar de
+    3656 MiB de tensores vivos na GPU. Este job isolado de seis falas usa teto
+    privado de 8192 MiB só quando há pelo menos 10 GiB de RAM física disponível.
+    GPU 60%, residente 2048 MiB, uma thread de CPU e prioridade baixa não mudam.
     """
     import ctypes
     class MemoryStatus(ctypes.Structure):
@@ -128,7 +128,7 @@ def generate(seed_offset=0):
     plan = checked_plan()
     codes = OUTPUT / "codes"
     codes.mkdir(exist_ok=True)
-    # Import reuses the existing bounded loader; its main() is never called.
+    # O import reaproveita o carregador limitado existente; o main() dele nunca é chamado.
     import generate_harbor_story_voices as local
     import numpy as np
     import torch
@@ -184,8 +184,8 @@ def generate(seed_offset=0):
     for row in missing:
         torch.manual_seed(SEED + seed_offset)
         began = time.monotonic()
-        # Same tokenization/options as Qwen3TTSModel.generate_voice_design;
-        # hold no waveform decoder while the text/codec generator is resident.
+        # Mesma tokenização/opções de Qwen3TTSModel.generate_voice_design;
+        # não segura decodificador de onda enquanto o gerador de texto/codec está residente.
         inputs = model._tokenize_texts([model._build_assistant_text(row["text"])])
         instructions = [model._tokenize_texts([model._build_instruct_text(plan["profile"])])[0]]
         options = model._merge_generate_kwargs(max_new_tokens=360, temperature=.7, top_p=.9,
@@ -346,8 +346,8 @@ def publish(reviewed_ids, pending_pronunciation_review):
             raise RuntimeError("Different production asset preserved: " + str(destination))
         if not destination.exists():
             shutil.copyfile(ROOT / row["path"], destination)
-    # Read current bytes only after asset verification. Retain every foreign key;
-    # refuse the write if another session changes the source in this interval.
+    # Lê os bytes atuais só depois de verificar o asset. Guarda toda chave alheia;
+    # recusa a gravação se outra sessão mudar a fonte neste intervalo.
     original = MANIFEST.read_bytes()
     original_hash = digest(original)
     manifest = json.loads(original.decode("utf-8-sig"))
@@ -359,7 +359,7 @@ def publish(reviewed_ids, pending_pronunciation_review):
     encoded = (json.dumps(merged, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
     if digest(MANIFEST.read_bytes()) != original_hash:
         raise RuntimeError("Concurrent recording manifest change detected; no shared write performed")
-    # Exclusive OS handle closes the last compare/write race on Windows.
+    # Um handle exclusivo do SO fecha a última corrida comparar/gravar no Windows.
     import ctypes
     import msvcrt
     kernel = ctypes.WinDLL("kernel32", use_last_error=True)

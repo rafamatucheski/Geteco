@@ -1,6 +1,6 @@
-"""Rebuild the small seamless PBR tiles authored for Digo's existing workshop.
+"""Refaz os pequenos ladrilhos PBR sem emenda autorados para a oficina existente do Digo.
 
-Offline only. Pixels are deterministic; gameplay loads imported textures once.
+Só offline. Os pixels são determinísticos; o jogo carrega as texturas importadas uma vez.
 """
 from pathlib import Path
 
@@ -37,7 +37,7 @@ def floor() -> None:
     value = cloud * 2.2 + grain * 0.9 + pores * 0.45
     rgb = np.array([119.0, 126.0, 128.0])[None, None, :] + value[:, :, None]
     rough = 181 + cloud * 6 + grain * 2
-    # Subtle scuffed patches vary the finish, never mirror-like pools or black oil.
+    # Manchas sutis de arranhado variam o acabamento, nunca poças espelhadas nem óleo preto.
     scuff = Image.new("L", (SIZE, SIZE), 0)
     draw = ImageDraw.Draw(scuff)
     for _ in range(35):

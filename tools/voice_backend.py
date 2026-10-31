@@ -1,7 +1,7 @@
-"""Local Qwen backends shared by finite benchmarks and resumable production.
+"""Backends Qwen locais compartilhados por benchmarks finitos e produção retomável.
 
-No model imports, CUDA allocation or network traffic happen on import. Numerical
-configuration is explicit and belongs in recording signatures.
+Nenhum import de modelo, alocação CUDA ou tráfego de rede acontece no import. A
+configuração numérica é explícita e entra nas assinaturas das gravações.
 """
 from __future__ import annotations
 
@@ -53,7 +53,7 @@ def backend_settings(model, snapshot, quantization="none", device="cuda"):
 
 
 def load_model(snapshot, settings, *, vram_reserve_mb=768):
-    """Keep tiny autoregressive codec predictor/encoder out of quantization."""
+    """Deixa o pequeno preditor/codificador autorregressivo do codec fora da quantização."""
     os.environ.update(HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1", OMP_NUM_THREADS="2", MKL_NUM_THREADS="2")
     import torch
     from qwen_tts import Qwen3TTSModel
@@ -71,8 +71,8 @@ def load_model(snapshot, settings, *, vram_reserve_mb=768):
         expected_mb = 4850
     if free / 1024**2 < expected_mb + vram_reserve_mb:
         raise DirectionError(f"GPU needs {expected_mb + vram_reserve_mb:.0f} MiB free including reserve; has {free / 1024**2:.0f}")
-    # Hard allocator ceiling is based on actual free memory and leaves desktop
-    # headroom. It does not evict or terminate another application.
+    # O teto rígido do alocador se baseia na memória livre real e deixa folga
+    # para a área de trabalho. Não expulsa nem encerra outro aplicativo.
     torch.cuda.set_per_process_memory_fraction(min(.8, (free - vram_reserve_mb * 1024**2) / total))
     kwargs = dict(device_map="cuda:0", dtype=torch.bfloat16, attn_implementation="sdpa",
                   local_files_only=True, low_cpu_mem_usage=True)
@@ -98,9 +98,9 @@ def load_model(snapshot, settings, *, vram_reserve_mb=768):
         modeling_utils.safe_open, modeling_utils.caching_allocator_warmup = original_open, original_warmup
         Qwen3TTSTokenizer.from_pretrained = original_tokenizer_loader
     torch.cuda.synchronize()
-    # Autoregressive text/codec generation benefits from batches; the waveform
-    # decoder has very large high-rate intermediate tensors. Decode one item at
-    # a time to avoid multiplying those activations by the TTS batch size.
+    # A geração autorregressiva de texto/codec ganha com lotes; o decodificador
+    # de onda tem tensores intermediários enormes de taxa alta. Decodifica um item
+    # por vez para não multiplicar essas ativações pelo tamanho do lote do TTS.
     original_decode = model.model.speech_tokenizer.decode
     def sequential_decode(codes, **decode_kwargs):
         if not isinstance(codes, list) or len(codes) < 2:
@@ -138,11 +138,11 @@ def condition_clone(model, anchor_path, anchor_text, *, x_vector_only=False):
 
 def synthesize_clone(model, text, language, prompt, direction, *, instruction_mode, seed,
                      max_new_tokens=700, temperature=.7):
-    """Base supports acoustic reference; text instruction is explicitly experimental.
+    """O Base aceita referência acústica; instrução por texto é explicitamente experimental.
 
-    Its low-level API accepts instruct_ids with a clone prompt, but the published
-    Base capability table does not promise instruction control. Do not label an
-    experimental sample as proven expressive merely because it generated audio.
+    A API de baixo nível aceita instruct_ids com um prompt de clone, mas a tabela
+    publicada de capacidades do Base não promete controle por instrução. Não rotule uma
+    amostra experimental como expressiva comprovada só porque gerou áudio.
     """
     import torch
     if instruction_mode not in ("reference", "experimental_text"):
@@ -158,7 +158,7 @@ def synthesize_clone(model, text, language, prompt, direction, *, instruction_mo
 
 
 def save_wave(signal, rate, path):
-    """Immutable PCM publication; return objective format checks, never listening."""
+    """Publicação PCM imutável; devolve checagens objetivas de formato, nunca audição."""
     import numpy as np
     import soundfile as sf
     import tempfile

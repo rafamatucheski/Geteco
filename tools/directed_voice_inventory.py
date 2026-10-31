@@ -1,9 +1,9 @@
-"""Directed speech inventory: legacy bank plus text-only authored human speech.
+"""Inventário de fala dirigida: banco antigo mais fala humana autorada só em texto.
 
-This adds no runtime routing and never mutates the original English generator.
-Every supplemental line records its real source and speaker-binding requirement.
-Nonverbal sounds and unused legacy dialogue are reported separately, not passed
-to text-to-speech. Procedural roles are explicitly split by gender/personality.
+Não acrescenta roteamento no runtime e nunca altera o gerador original em inglês.
+Toda fala suplementar registra a fonte real e a exigência de vínculo com o locutor.
+Sons não verbais e diálogo antigo sem uso são relatados à parte, não passam pelo
+texto-para-fala. Papéis procedurais são divididos explicitamente por gênero/personalidade.
 """
 from __future__ import annotations
 import hashlib
@@ -14,7 +14,7 @@ from pathlib import Path
 from english_voice_catalog import inventory as legacy_inventory, ROOT
 
 SOCIAL_SOURCE = "gameplay/civilian_social/CivilianSocialState.gd"
-# Portuguese source, baseline English, available personalities (empty = all).
+# Fonte em português, inglês de base, personalidades disponíveis (vazio = todas).
 SOCIAL_LINES = [
     ("Agora não. Preciso me proteger!", "Not now. I need to get somewhere safe!", ()),
     ("Só um instante.", "Just a moment.", ()),
@@ -69,7 +69,7 @@ PAIN_PERSONAS = SEWER_PERSONAS + [
 
 
 def _source_line(path: str, text: str) -> int:
-    """Fail if authored text moved/changed; no invented script may enter a plan."""
+    """Falha se o texto autorado mudou/se moveu; nenhum roteiro inventado pode entrar num plano."""
     escaped = json.dumps(text, ensure_ascii=False)[1:-1]
     for number, line in enumerate((ROOT / path).read_text(encoding="utf-8-sig").splitlines(), 1):
         if escaped in line:
@@ -155,8 +155,8 @@ def supplemental_inventory():
 
 def inventory():
     rows = [dict(row, source_status="existing_authored_voice_route") for row in legacy_inventory()]
-    # The rendered guard/staff/police body already has stable gender. Different
-    # voice keys share canonical action text without forcing those bodies male.
+    # O corpo renderizado de guarda/funcionário/polícia já tem gênero estável. Chaves
+    # de voz diferentes dividem o texto canônico da ação sem forçar esses corpos a masculinos.
     female_roles = {"guarda": ("guarda feminina", "guarda_female"),
                     "funcionário": ("funcionária", "funcionario_female"),
                     "operador": ("operadora", "operador_female"),

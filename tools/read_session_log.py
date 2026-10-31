@@ -1,4 +1,4 @@
-"""Read all rotated parts of one session. Exact frame statistics and bounded event details."""
+"""Lê todas as partes rotacionadas de uma sessão. Estatísticas exatas de quadro e detalhes limitados de eventos."""
 import argparse
 from array import array
 import collections

@@ -1,8 +1,8 @@
-"""Focused second ASR reading on CPU; never publishes or certifies listening.
+"""Segunda leitura ASR focada, na CPU; nunca publica nem certifica audição.
 
-Requires explicit selected characters/SHAs or primary review flags. The expected
-script is not supplied to ASR as a prompt. Different Whisper weights can still
-share recognition biases, so agreement is evidence, not artistic approval.
+Exige personagens/SHAs selecionados explicitamente ou marcas da revisão primária. O roteiro
+esperado não é passado ao ASR como prompt. Pesos diferentes do Whisper ainda podem
+compartilhar vieses de reconhecimento: concordância é evidência, não aprovação artística.
 """
 from __future__ import annotations
 
@@ -45,7 +45,7 @@ def selected_rows(report, characters, shas, limit):
 
 
 def cached_rows(report):
-    """Retain SHA-bound readings between small batches without reading again."""
+    """Guarda leituras presas ao SHA entre lotes pequenos sem ler de novo."""
     result = {}
     for group in ("archived_takes", "takes"):
         for row in report.get(group, []):

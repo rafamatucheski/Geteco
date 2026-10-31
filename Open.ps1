@@ -3,7 +3,7 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'tools\Godot.ps1')
 $GodotPath = Resolve-ProjectGodot $GodotPath
 Build-ProjectCSharp $PSScriptRoot $GodotPath
-# New scripts can arrive even when the import directory already exists.
+# Scripts novos podem chegar mesmo quando a pasta de importação já existe.
 $importLog = Join-Path $PSScriptRoot 'startup-import.log'
 $import = Start-Process -FilePath $GodotPath -ArgumentList @('--headless','--path',('"'+$PSScriptRoot+'"'),'--editor','--import','--quit','--log-file',('"'+$importLog+'"')) -WindowStyle Hidden -PassThru
 # Em 16/10 o Godot headless terminou a importação (o log chega a "loading_editor_layout DONE") e o

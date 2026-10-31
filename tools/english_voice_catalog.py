@@ -1,7 +1,7 @@
-"""Inventory actual character speech in the current game without starting Godot.
+"""Inventaria a fala real dos personagens no jogo atual sem iniciar o Godot.
 
-UI notices and documents/terminals are intentionally silent.
-The English recording keys remain tied to the exact Portuguese authored line.
+Avisos de interface e documentos/terminais são mudos de propósito.
+As chaves das gravações em inglês continuam presas à fala autorada exata em português.
 """
 from pathlib import Path
 import hashlib
@@ -45,8 +45,8 @@ def inventory():
         add(row['persona'], row['text'], row['en'], row['section'])
     for row in json.loads(read('cutscenes/opening/ferry/timing.json'))['lines']:
         add(row['speaker'], row['text'], row['en'], 'opening_ferry')
-    # Discover literal spoken exchanges across current gameplay, including new
-    # side quests. Do not require every new feature to update a hardcoded list.
+    # Descobre trocas faladas literais em todo o jogo atual, inclusive missões
+    # secundárias novas. Não exige que todo recurso novo atualize uma lista fixa.
     for folder in ['runtime', 'gameplay', 'activities', 'world']:
         for path in sorted((ROOT / folder).rglob('*.gd')):
             source = path.read_text(encoding='utf-8-sig')
@@ -64,8 +64,8 @@ def inventory():
     for person in literal_constant('data/catalogs/ServiceDialogue.gd', 'PEOPLE').values():
         for text in person['messages']:
             add(person['speaker'], text, section='services')
-    # Existing bilingual epilogue text is authoritative, even though the old
-    # Portuguese production helper omitted those English strings.
+    # O texto bilíngue existente do epílogo é a referência, mesmo que o antigo
+    # auxiliar de produção em português omitisse essas strings em inglês.
     for match in re.finditer(r'"speaker":(' + STRING + r'),"message":_text\((' + STRING + r'),(' + STRING + r')\)', read('runtime/MissionWorld.gd')):
         speaker, pt, en = [json.loads(x) for x in match.groups()]
         add(speaker, pt, en, 'harbor_epilogue')
@@ -74,7 +74,7 @@ def inventory():
         ('ferrugem', 'Tá. Você dirige bem. O motorista vai atender o Maciota. Teu irmão queria sair de Harbor, mas não parecia estar fugindo.', "All right. You can drive. The driver will take Maciota's call. Your brother wanted out of Harbor, but he didn't look like he was running away."),
     ]
     for speaker, pt, en in special: add(speaker, pt, en, 'harbor_race')
-    # All current desert exchanges use literal [speaker, message] pairs.
+    # Todas as trocas atuais do deserto usam pares literais [speaker, message].
     for match in re.finditer(r'\[(' + STRING + r'),(' + STRING + r')\]', read('runtime/desert/DesertCampaign.gd')):
         speaker, pt = [json.loads(x) for x in match.groups()]
         add(speaker, pt, section='desert_campaign')
@@ -98,8 +98,8 @@ def inventory():
     add('maciota', sequence['GREETING'] + '\n\n' + sequence['REQUEST'], section='garage_legacy')
     for pt in [sequence['MECHANIC_REQUEST'], 'Fala primeiro com o Maciota.', 'Pode levar a peça.', 'Tudo certo por aqui.']:
         add('mecânico', pt, section='garage_legacy')
-    # Spoken notices and custom conversation panels do not currently pass
-    # through show_dialogue; runtime consumers use the same bank keys.
+    # Avisos falados e painéis de conversa personalizados hoje não passam
+    # por show_dialogue; quem consome no runtime usa as mesmas chaves do banco.
     notice_sources = ['runtime/JessicaRuntime.gd', 'runtime/desert/DesertCampaign.gd',
                       'gameplay/urban_v1/TruckersVillageQuest.gd', 'gameplay/urban_v1/HarborPortSecurity.gd',
                       'runtime/FullSession.gd']
@@ -128,8 +128,8 @@ def inventory():
             row['en'] = translations.get(row['text'], '')
         directed = translations.get('_speaker_overrides', {}).get(row['persona'], {}).get(row['text'], '')
         if directed and directed != row['en']:
-            # A diction retake can clarify equivalent English wording while
-            # preserving the PT authoring key and any existing EN subtitle alias.
+            # Uma regravação de dicção pode esclarecer a redação equivalente em inglês
+            # preservando a chave autorada em PT e qualquer apelido de legenda EN existente.
             row['aliases'].append(row['en'])
             row['en'] = directed
     return list(rows.values())

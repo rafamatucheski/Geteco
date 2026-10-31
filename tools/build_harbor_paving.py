@@ -1,6 +1,6 @@
-"""Bake original seamless Harbor pavement albedo. Pillow + numpy, offline only.
-16 metre repeats: irregular wear, restrained construction joints and sparse litter.
-No runtime decals, nodes, physics, extra material passes or GTA assets.
+"""Assa o albedo original e sem emenda do calçamento de Harbor. Pillow + numpy, só offline.
+Repetição de 16 metros: desgaste irregular, juntas de construção contidas e lixo esparso.
+Sem decals, nós, física, passes extras de material no runtime nem assets do GTA.
 """
 from pathlib import Path
 import math
@@ -11,12 +11,12 @@ SIZE = 512
 ROOT = Path(__file__).resolve().parents[1]
 OUTPUT = ROOT / "assets/materials/harbor_paving"
 FINISHES = ["service", "limestone", "brick", "quay"]
-# concrete.png is an authored ImageGen asset; preserve it when rebuilding companion finishes.
+# concrete.png é um asset autorado no ImageGen; preserve-o ao refazer os acabamentos que o acompanham.
 
 def bake(name, seed):
     rng = np.random.default_rng(seed)
     yy, xx = np.mgrid[:SIZE, :SIZE].astype(float)
-    # Integer-frequency waves close exactly across both texture boundaries.
+    # Ondas de frequência inteira fecham exatamente nas duas bordas da textura.
     field = np.zeros((SIZE, SIZE))
     fine = np.zeros_like(field)
     for target, count, low, high in [(field, 24, 1, 8), (fine, 24, 12, 72)]:
@@ -24,7 +24,7 @@ def bake(name, seed):
             kx, ky = rng.integers(low, high, 2) * rng.choice([-1,1],2)
             target += np.sin((xx*kx+yy*ky)*2*math.pi/SIZE+rng.uniform(0,2*math.pi))/count
     tone = 232 + field*9 + fine*13 + rng.normal(0,1.5,(SIZE,SIZE))
-    # Uneven dirt accumulations, broad pale worn areas and isolated grease spots.
+    # Acúmulos irregulares de sujeira, áreas largas claras e gastas e manchas isoladas de graxa.
     stain_count = 32 if name == "service" else 9 if name == "quay" else 6
     for _ in range(stain_count):
         cx, cy = rng.uniform(0,SIZE,2)
@@ -35,7 +35,7 @@ def bake(name, seed):
         sx, sy = rng.uniform(4,22),rng.uniform(2,8)
         mask = np.exp(-.5*((u/sx)**2+(v/sy)**2))
         tone -= mask*rng.uniform(8,24)*(1+field*1.8)
-    # Cast concrete has occasional expansion cuts, never a complete square grid.
+    # Concreto moldado tem cortes de dilatação ocasionais, nunca uma grade quadrada completa.
     joints = Image.new("L",(SIZE,SIZE),0)
     draw = ImageDraw.Draw(joints)
     if name in ["concrete","service","quay"]:
@@ -44,7 +44,7 @@ def bake(name, seed):
             length = int(rng.integers(55,120))
             draw.line([(x,y),(x+length,y)],fill=18,width=1)
     else:
-        # Course heights and stone lengths vary; erosion breaks up the mortar.
+        # Altura das fiadas e comprimento das pedras variam; a erosão quebra a argamassa.
         y = 0
         while y < SIZE:
             height = int(rng.integers(10,19) if name == "brick" else rng.integers(28,55))
@@ -59,7 +59,7 @@ def bake(name, seed):
     image = Image.fromarray(rgb,"RGB").convert("RGBA")
     detail = Image.new("RGBA",image.size)
     pen = ImageDraw.Draw(detail)
-    # Short branching hairline cracks, not a second paving pattern.
+    # Trincas finas, curtas e ramificadas, não um segundo padrão de calçamento.
     for _ in range(8 if name == "service" else 4):
         x,y = rng.integers(40,SIZE-80,2)
         points = [(int(x),int(y))]
@@ -69,7 +69,7 @@ def bake(name, seed):
         pen.line(points,fill=(85,81,73,44),width=1)
         if len(points)>3:
             x,y=points[2]; pen.line([(x,y),(x+2,y-5),(x+8,y-8)],fill=(85,81,73,30),width=1)
-    # A few discarded sheets/scraps per 256m2, resting in the albedo itself.
+    # Algumas folhas/restos jogados a cada 256 m², pintados no próprio albedo.
     papers = {"concrete":6,"service":8,"limestone":2,"brick":4,"quay":3}[name]
     for n in range(papers):
         sheet = Image.new("RGBA",(18,22))

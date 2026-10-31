@@ -1,8 +1,8 @@
-"""Reviewable source inventory, not a claim that every rendered pixel was inspected.
+"""Inventário revisável das fontes, não uma afirmação de que todo pixel renderizado foi inspecionado.
 
-Catalog/format/export correctness is checked by verify_localization_catalogs.py.
-This inventory finds natural-language literals, including scenes and source data,
-and keeps unmatched candidates visible rather than treating heuristics as proof.
+A correção de catálogo/formato/export é conferida por verify_localization_catalogs.py.
+Este inventário acha literais em linguagem natural, inclusive em cenas e dados de origem,
+e deixa visíveis os candidatos sem correspondência em vez de tratar heurística como prova.
 """
 import argparse
 import json
@@ -68,8 +68,8 @@ def main():
         elif not re.search(r"[A-Za-zÀ-ÿ]{3}", FORMAT.sub("", source).replace("FPS", "").replace("RPM", "").replace("RAGE", "").replace("km/h", "")):
             category = "format_or_symbol"
         else:
-            # Includes proper names and composed strings: preserve them for review.
-            # Never silently classify an unknown sentence as translated.
+            # Inclui nomes próprios e strings compostas: preserva para revisão.
+            # Nunca classifica em silêncio uma frase desconhecida como traduzida.
             category = "review_candidate"
         categories[category].append({"source": source, "locations": locations})
     output = ROOT / args.output

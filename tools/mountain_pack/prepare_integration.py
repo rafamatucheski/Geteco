@@ -1,4 +1,4 @@
-"""Prepare a reviewable mountain-pack patch without changing shared game files."""
+"""Prepara um patch revisável do pacote da montanha sem alterar arquivos compartilhados do jogo."""
 from __future__ import annotations
 
 import argparse
@@ -52,8 +52,8 @@ def prepare(root: Path, spec_path: Path, output: Path) -> dict:
         })
         previews.append((output / "preview" / (name + ".txt"), revised))
 
-    # Recheck every source after all contexts pass. Never publish a patch assembled
-    # across changing versions of a file owned by the other campaign agent.
+    # Reconfere toda fonte depois que todos os contextos passam. Nunca publica patch montado
+    # sobre versões mudando de um arquivo que é do outro agente da campanha.
     for record in records:
         current = (root / record["path"]).read_bytes()
         if hashlib.sha256(current).hexdigest() != record["source_sha256"]:

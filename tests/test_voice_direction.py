@@ -1,4 +1,4 @@
-"""Offline regression tests for casting and release gates; no synthesis/model load."""
+"""Testes de regressão offline de elenco e portões de liberação; sem síntese nem carga de modelo."""
 from __future__ import annotations
 
 import copy

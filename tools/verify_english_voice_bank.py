@@ -1,6 +1,6 @@
-"""Verify all game English takes; optionally audit a finite cast/long-line sample.
+"""Verifica todas as tomadas em inglês do jogo; opcionalmente audita uma amostra finita de elenco/falas longas.
 
-This does not start Godot or a GPU model. ASR confirms language/content, not acting.
+Não inicia o Godot nem modelo na GPU. O ASR confirma idioma/conteúdo, não atuação.
 """
 from __future__ import annotations
 import argparse
@@ -70,8 +70,8 @@ def verify(asr, review_key=''):
     from faster_whisper import WhisperModel
     cache = Path('D:/geteco/tools/opening_voice_models/whisper/models--Systran--faster-whisper-small/snapshots/536b0662742c02347bc0e980a01041f333bce120')
     model = WhisperModel(str(cache), device='cpu', compute_type='int8', cpu_threads=1, num_workers=1, local_files_only=True)
-    # One medium-length take for every named actor, plus a longest take for
-    # every main character and both opening caller lines. No unlimited retries.
+    # Uma tomada de tamanho médio para cada ator nomeado, mais a tomada mais longa de
+    # cada personagem principal e as duas falas de quem liga na abertura. Sem repetições ilimitadas.
     chosen = {}
     for voice in sorted({PROFILES[r['persona']]['voice'] for r in catalog}):
         candidates = [r for r in actual.values() if r['voice_profile']['voice'] == voice]

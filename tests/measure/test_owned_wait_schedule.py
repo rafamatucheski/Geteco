@@ -1,4 +1,4 @@
-"""Pure scheduling checks; never opens or attaches to any process."""
+"""Checagens puras de agenda; nunca abre nem se anexa a processo algum."""
 import importlib.util
 from pathlib import Path
 import unittest

@@ -1,4 +1,4 @@
-"""Offline analysis of completed fleet windows; never starts Godot or changes inputs."""
+"""Análise offline de janelas concluídas da frota; nunca inicia o Godot nem muda entradas."""
 
 import argparse
 from bisect import bisect_left
@@ -62,8 +62,8 @@ def analyze(path):
             groups.append([])
         groups[-1].append(index)
 
-    # load_snapshot runs after timestamping the current frame; its own cost can
-    # enter the following interval. Locate that interval without modifying data.
+    # load_snapshot roda depois de carimbar o quadro atual; o custo dele pode
+    # cair no intervalo seguinte. Localiza esse intervalo sem alterar dados.
     after_probe = set()
     for sample in window.get("load_samples", []):
         index = bisect_left(ends, sample["seconds"] - 1e-7)

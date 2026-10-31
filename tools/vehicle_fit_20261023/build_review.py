@@ -1,4 +1,4 @@
-"""Publish actual rendered comparisons. No generated concept images are used."""
+"""Publica comparações realmente renderizadas. Nenhuma imagem conceitual gerada é usada."""
 from pathlib import Path
 import html
 import json
@@ -43,7 +43,7 @@ def main():
 <h1>Carros e motos: revisão de modelagem e encaixes</h1>
 <p>Comparações das cenas reais, com a mesma câmera e iluminação em cada par. Onze modelos corrigidos; outros veículos da frota não estão aprovados por esta revisão. As medições de performance usam a cidade renderizada, separadamente destas capturas de estúdio.</p>'''
     (OUT / "review.html").write_text(template + "".join(cards) + "</html>", encoding="utf-8")
-    # A concise contact sheet for inline handoff; the gallery has all eleven.
+    # Uma folha de contato concisa para entrega em linha; a galeria tem as onze.
     featured = [MODELS[i] for i in (0, 3, 7, 9)]
     width, panel_h = 800, 460
     sheet = Image.new("RGB", (width * 2, 76 + (panel_h + 45) * len(featured)), "#172027")
@@ -57,9 +57,9 @@ def main():
         draw.text((20, y + 4), row[1], font=small, fill="#edf5ee")
         for j, phase in enumerate(("before", "after")):
             im = Image.open(source(row, phase)).convert("RGB")
-            # The inline sheet compares the models. Keep the original images
-            # in the gallery; crop the same diagnostic HUD strip from both
-            # sheet panels so transient readback FPS cannot imply a benchmark.
+            # A folha em linha compara os modelos. Mantém as imagens originais
+            # na galeria; corta a mesma faixa de HUD de diagnóstico dos dois
+            # painéis da folha, para o FPS momentâneo lido não sugerir um benchmark.
             im = im.crop((0, 40, im.width, im.height))
             im.thumbnail((width - 8, panel_h), Image.Resampling.LANCZOS)
             sheet.paste(im, (j * width + (width - im.width) // 2, y + 38 + (panel_h - im.height) // 2))

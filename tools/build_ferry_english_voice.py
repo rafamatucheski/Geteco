@@ -1,7 +1,7 @@
-"""Build the English ferry stem from the same authored cast as gameplay.
+"""Monta a faixa em inglês da balsa com o mesmo elenco autorado do jogo.
 
-Keep the existing Portuguese performances; fit English only when it would
-overlap the next spoken beat. The film's visual timeline remains unchanged.
+Mantém as atuações em português existentes; só ajusta o inglês quando ele
+encostaria na próxima fala. A linha do tempo visual do filme não muda.
 """
 import hashlib
 import json
@@ -34,7 +34,7 @@ def main():
         if key not in bank:
             original = next(r for r in originals['lines'] if r['id']==row['id'])
             target = ROOT/'audio/mission_voices/pt_complete'/('ferry_'+key+'.wav')
-            # Preserve the approved cinematic actor rather than synthesizing PT again.
+            # Preserva o ator aprovado da cinemática em vez de sintetizar o PT de novo.
             shutil.copyfile(base/'production/takes'/original['file'], target)
             bank[key] = 'res://'+target.relative_to(ROOT).as_posix()
         path = ROOT/'audio/mission_voices/en'/(key+'.wav')

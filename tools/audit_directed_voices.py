@@ -1,4 +1,4 @@
-"""Resumable read-only WAV/content audit; never certifies acting or speaker gender."""
+"""Auditoria retomável e só leitura de WAV/conteúdo; nunca certifica atuação nem gênero de quem fala."""
 from __future__ import annotations
 
 import argparse
@@ -41,8 +41,8 @@ def entries(manifest):
 
 
 def write_report(path, report):
-    # Readers can briefly hold Windows handles without delete sharing. Use the
-    # same finite atomic-write retry as the producer; never discard a checkpoint.
+    # Leitores podem segurar handles do Windows por instantes sem compartilhar exclusão. Usa a
+    # mesma repetição finita de gravação atômica do produtor; nunca descarta um checkpoint.
     write_json(path, report)
 
 
@@ -151,8 +151,8 @@ def main():
                          "review": similarity < .85 or not transcript,
                          "seconds": round(time.monotonic() - began, 3)}
 
-        # CTranslate2's worker pool shares model weights. Only the main thread
-        # mutates/writes the report; every completed waveform remains resumable.
+        # O pool de workers do CTranslate2 compartilha os pesos do modelo. Só a thread principal
+        # altera/grava o relatório; toda onda concluída continua retomável.
         with ThreadPoolExecutor(max_workers=args.workers) as pool:
             futures = [pool.submit(transcribe, row) for row in pending]
             for index, future in enumerate(as_completed(futures)):

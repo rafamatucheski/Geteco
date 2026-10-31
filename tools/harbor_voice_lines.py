@@ -1,4 +1,4 @@
-"""Read authored dialogue without importing synthesis models or using a GPU."""
+"""Lê o diálogo autorado sem importar modelos de síntese nem usar GPU."""
 from pathlib import Path
 import hashlib
 import json

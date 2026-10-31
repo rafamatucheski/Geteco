@@ -1,9 +1,9 @@
-"""Build the CC0 Fronteira Country programme; offline game playback needs only the OGG.
+"""Monta o programa CC0 Fronteira Country; a reprodução offline no jogo só precisa do OGG.
 
-Sources are credited in audio/desert_country/CREDITS.md. Run from any directory:
+As fontes estão creditadas em audio/desert_country/CREDITS.md. Rodar de qualquer pasta:
     python tools/build_desert_country_radio.py
-Requires numpy, soundfile and imageio-ffmpeg (already used in the local asset toolchain).
-Downloads source files to the system temporary directory; never overwrites other music.
+Requer numpy, soundfile e imageio-ffmpeg (já usados nas ferramentas locais de assets).
+Baixa as fontes para a pasta temporária do sistema; nunca sobrescreve outra música.
 """
 from __future__ import annotations
 
@@ -62,7 +62,7 @@ def build() -> None:
             ], check=True)
             samples, rate = sf.read(decoded, dtype="float32", always_2d=True)
             assert rate == RATE and samples.shape[1] == 2
-            # Preserve each whole performance; brief edge fades prevent codec/cut clicks.
+            # Preserva cada execução inteira; fades curtos nas bordas evitam cliques de codec/corte.
             edge = min(int(.04 * RATE), len(samples) // 2)
             samples[:edge] *= np.linspace(0, 1, edge, dtype=np.float32)[:, None]
             samples[-edge:] *= np.linspace(1, 0, edge, dtype=np.float32)[:, None]

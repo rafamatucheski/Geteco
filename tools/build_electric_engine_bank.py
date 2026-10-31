@@ -1,7 +1,7 @@
-"""Export the V1 electric inverter loop to the V2 seven-band engine bank.
+"""Exporta o loop do inversor elétrico da V1 para o banco de motor de sete faixas da V2.
 
-The waveform is VehicleEngineSound._generate_electric_layer; intermediate
-bands provide the resolution expected by the V2 traffic mixer.
+A onda é VehicleEngineSound._generate_electric_layer; as faixas intermediárias
+dão a resolução que o mixer de trânsito da V2 espera.
 """
 from math import pi, sin
 from pathlib import Path

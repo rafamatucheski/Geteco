@@ -1,7 +1,7 @@
-"""Produce the complete English cast as fixed, authored offline game assets.
+"""Produz o elenco completo em inglês como assets fixos e autorados do jogo, offline.
 
-Only generation uses the existing Edge neural service. The game never requires a
-network connection or speech model. Every character retains a named actor/profile.
+Só a geração usa o serviço neural Edge existente. O jogo nunca precisa de
+conexão de rede nem de modelo de fala. Todo personagem mantém um ator/perfil nomeado.
 """
 from __future__ import annotations
 import argparse
@@ -19,8 +19,8 @@ def profile(voice, rate='+0%', pitch='+0Hz'):
     return {'voice': voice, 'rate': rate, 'pitch': pitch, 'volume': '+0%'}
 
 
-# Main cast: conversational actors with stable identities. Christopher supplies
-# Maciota's naturally low register; no extreme resampling or effect is applied.
+# Elenco principal: atores de conversa com identidade estável. Christopher dá
+# o registro naturalmente grave do Maciota; nenhuma reamostragem extrema ou efeito é aplicado.
 PROFILES = {
     'dante': profile('en-US-AndrewMultilingualNeural', '+1%', '+2Hz'),
     'maciota': profile('en-US-ChristopherNeural', '-3%', '-8Hz'),
@@ -114,7 +114,7 @@ def publish(rows, completed, complete):
                 raise ValueError('Conflicting translation/alias: ' + row['persona'] + ': ' + text)
             meanings[key] = row['en']
             manifest.setdefault(key, row['path'])
-    # A complete bank becomes visible atomically. No partial PT/EN mixture.
+    # Um banco completo aparece de forma atômica. Nada de mistura parcial PT/EN.
     write_json(OUTPUT / 'recordings.json', manifest)
 
 
@@ -145,7 +145,7 @@ async def produce(concurrency, endpoint):
                 mp3_path = Path(folder) / 'take.mp3'
                 decoded = Path(folder) / 'decoded.wav'
                 await edge_tts.Communicate(row['en'], **settings).save(str(mp3_path))
-                # One thread per short decode; never starts a GPU synthesis model.
+                # Uma thread por decodificação curta; nunca inicia modelo de síntese na GPU.
                 subprocess.run(['ffmpeg', '-hide_banner', '-loglevel', 'error', '-y', '-threads', '1',
                     '-i', str(mp3_path), '-ac', '1', '-ar', '24000', '-sample_fmt', 's16', str(decoded)], check=True)
                 signal, rate = sf.read(decoded, dtype='float32')
@@ -161,7 +161,7 @@ async def produce(concurrency, endpoint):
                 signature=signature(row), voice_profile=settings, status='generated')
             return result
 
-    # Resume only exact text + actor + direction matches.
+    # Só retoma quando texto + ator + direção batem exatamente.
     pending = [row for row in rows if row['key'] not in completed or completed[row['key']]['signature'] != signature(row)]
     tasks = [asyncio.create_task(generate(row)) for row in pending]
     for task in asyncio.as_completed(tasks):

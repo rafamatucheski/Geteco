@@ -1,4 +1,4 @@
-"""Lightweight syntax/reference checks; never starts Godot, dotnet or a game test."""
+"""Checagens leves de sintaxe/referência; nunca inicia Godot, dotnet nem teste do jogo."""
 from __future__ import annotations
 
 import ast

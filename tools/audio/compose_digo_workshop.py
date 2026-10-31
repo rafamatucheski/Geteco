@@ -1,7 +1,7 @@
-"""Original 84 BPM garage blues/funk loop; no recordings or external samples.
+"""Loop original de blues/funk de garagem a 84 BPM; sem gravações nem amostras externas.
 
-Render three identical twelve-bar choruses, take the central chorus with its
-preceding note tails, then add circular stereo room taps before Ogg export.
+Renderiza três refrões iguais de doze compassos, pega o do meio com as caudas
+das notas anteriores e adiciona ecos circulares de sala em estéreo antes do export Ogg.
 """
 from pathlib import Path
 import json
@@ -71,7 +71,7 @@ def add(at, sound, gain, pan=0):
     event += 1
 
 
-# Dominant ninth voicings and an original, sparse pentatonic answer phrase.
+# Acordes de nona dominante e uma frase de resposta pentatônica original e esparsa.
 roots = [40,40,40,40,45,45,40,40,47,45,40,47]
 voicings = {40:[56,62,66,71],45:[55,61,64,71],47:[57,63,66,73]}
 for bar, root in enumerate(roots):

@@ -1,8 +1,8 @@
-"""Bake original canyon sounds; no external recordings or runtime PCM work.
+"""Assa sons originais do cânion; sem gravações externas nem trabalho PCM no runtime.
 
-Requires numpy. Outputs deterministic 22.05 kHz signed-16 PCM WAV files.
-The two beds use periodic Fourier noise and integral-cycle modulation so their
-loop seam has the same slope distribution as the rest of the waveform.
+Requer numpy. Gera WAVs PCM 16 bits com sinal a 22,05 kHz, determinísticos.
+Os dois fundos usam ruído de Fourier periódico e modulação de ciclos inteiros, para
+a emenda do loop ter a mesma distribuição de inclinação que o resto da onda.
 """
 from pathlib import Path
 import json

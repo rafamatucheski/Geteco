@@ -1,4 +1,4 @@
-"""Bounded actual speech benchmark. Never publishes a runtime manifest."""
+"""Benchmark limitado de fala real. Nunca publica um manifesto de runtime."""
 from __future__ import annotations
 
 import argparse

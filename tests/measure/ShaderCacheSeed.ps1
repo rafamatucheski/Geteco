@@ -1,6 +1,6 @@
-# Verified ShaderRD cache copies for isolated capture userdata.
-# Caller supplies $base and $folder; no personal saves or source caches are written.
-# The empty seed keeps cold captures explicit. Copy/hash costs occur before motor launch.
+# Cópias verificadas do cache do ShaderRD para o userdata isolado de captura.
+# Quem chama fornece $base e $folder; nenhum save pessoal ou cache de origem é gravado.
+# A semente vazia deixa as capturas frias explícitas. Cópia/hash custam antes de iniciar o motor.
 function Assert-ShaderCacheEvidencePath([string]$Path) {
     $resolved=[IO.Path]::GetFullPath($Path).TrimEnd('\','/')
     $evidenceRoot=[IO.Path]::GetFullPath($base).TrimEnd('\','/')
@@ -59,8 +59,8 @@ function Prepare-IsolatedShaderCache([string]$Seed,[string]$Destination) {
     $result=@{mode='cold_fresh_user'; destination=$destinationPath; destination_absent_before=$true; seed_root=$null; manifest_sha256=$null; keys=@(); file_count=0; total_bytes=0; copied=$false}
     if($Seed) {
         $verified=Read-VerifiedShaderCacheSeed $Seed
-        # Windows PowerShell 5.1 Copy-Item uses legacy path limits. Fail before
-        # any copy rather than leave a partly seeded capture directory.
+        # O Copy-Item do Windows PowerShell 5.1 usa limites antigos de caminho. Falha antes
+        # de qualquer cópia em vez de deixar uma pasta de captura semeada pela metade.
         foreach($entry in $verified.files) {
             if((Join-Path $destinationPath $entry.relative_path).Length -ge 260) { throw 'Shader cache destination exceeds the PowerShell 5.1 path limit. Use a shorter capture label.' }
         }

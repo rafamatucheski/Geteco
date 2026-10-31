@@ -1,17 +1,17 @@
-# Elevated WPR helper ONLY. Build and gameplay runner stay in a normal terminal.
-# Adapted from evidence/performance-implementation-20261002/capture-native-cpu.ps1.
-# First-passage scheduling capture only: 55 s does not cover the 180 s route.
-# Example: .\tests\measure\capture_stall_native_cpu.ps1 -Label first-passage-01
-# Then launch the normal runner with the same unused Label. This helper creates
-# nothing until that runner creates its run directory, and waits for its READY.
-# System-wide CPU/scheduling/module metadata; no FileIO/DiskIO/NetworkIO provider.
-# 256 MiB circular buffers are not a promise of complete time-window coverage.
-# Check ETL start/end and event loss before interpreting native stacks.
-# The deadline requests stop within 55 s (50-60 configurable); saving/cleanup
-# have separate bounded command timeouts. An OS-level failure can need recovery.
-# No power policy, sampling interval, registry, services or game processes change.
-# Finally handles ordinary failures/Ctrl+C. Killing this helper/Windows can bypass
-# finally: ownership.json contains the exact GUID and manual recovery commands.
+# SÓ o auxiliar WPR elevado. Build e runner de jogo ficam num terminal normal.
+# Adaptado de evidence/performance-implementation-20261002/capture-native-cpu.ps1.
+# Só captura de agendamento da primeira passagem: 55 s não cobrem a rota de 180 s.
+# Exemplo: .\tests\measure\capture_stall_native_cpu.ps1 -Label first-passage-01
+# Depois inicie o runner normal com o mesmo Label não usado. Este auxiliar não cria
+# nada até aquele runner criar a pasta da rodada, e espera o READY dele.
+# Metadados de CPU/agendamento/módulos do sistema todo; sem provedor FileIO/DiskIO/NetworkIO.
+# Buffers circulares de 256 MiB não garantem cobertura completa da janela de tempo.
+# Confira início/fim do ETL e perda de eventos antes de interpretar pilhas nativas.
+# O prazo pede parada em até 55 s (50-60 configurável); gravação/limpeza
+# têm timeouts de comando próprios e limitados. Falha no nível do SO pode exigir recuperação.
+# Nenhuma política de energia, intervalo de amostragem, registro, serviço ou processo do jogo muda.
+# O finally trata falhas comuns/Ctrl+C. Matar este auxiliar/o Windows pode pular o
+# finally: ownership.json tem o GUID exato e os comandos de recuperação manual.
 param(
     [Parameter(Mandatory=$true)]
     [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9._-]{0,95}$')][string]$Label,
@@ -69,8 +69,8 @@ function Save-Status {
 }
 
 function Invoke-OwnedWpr([string]$Operation,[string[]]$Arguments,[int]$TimeoutSeconds) {
-    # Direct executable invocation, never a shell. Every operation is scoped to
-    # the unique instance and -instancename remains the final WPR parameter.
+    # Chamada direta do executável, nunca um shell. Toda operação se limita à
+    # instância única, e -instancename continua sendo o último parâmetro do WPR.
     foreach ($argument in $Arguments) {
         if ($argument -match '["\r\n\x00]') { throw 'Unexpected character in WPR argument' }
     }
@@ -97,8 +97,8 @@ function Invoke-OwnedWpr([string]$Operation,[string[]]$Arguments,[int]$TimeoutSe
         $stderrTask=$process.StandardError.ReadToEndAsync()
         if (-not $process.WaitForExit($TimeoutSeconds*1000)) {
             $result.timed_out=$true
-            # Killing this owned command does not stop ETW; outer finally still
-            # stops/cancels the uniquely named recording, including partial start.
+            # Matar este comando próprio não para o ETW; o finally externo ainda
+            # para/cancela a gravação de nome único, inclusive partida parcial.
             try { $process.Kill() } catch { $result['kill_error']=$_.Exception.Message }
             $null=$process.WaitForExit(2000)
         }
@@ -139,7 +139,7 @@ function Game-StillMatchesLaunch {
 }
 
 try {
-    # Never create runFolder: the normal runner must own its directory first.
+    # Nunca crie runFolder: o runner normal precisa ser dono da pasta primeiro.
     while (-not (Test-Path -LiteralPath $runFolder -PathType Container)) {
         if ($readyClock.Elapsed.TotalSeconds -ge $ReadyTimeoutSeconds) { throw 'Runner directory did not appear before the deadline. No capture started.' }
         Start-Sleep -Milliseconds 250
@@ -147,7 +147,7 @@ try {
     if (Test-Path -LiteralPath $captureFolder) { throw 'This run already has a native-cpu capture directory; choose a fresh Label.' }
     New-Item -ItemType Directory -Path $captureFolder | Out-Null
     $ownsCaptureFolder=$true
-    # Persistent ownership exists BEFORE any attempt to start an ETW session.
+    # A posse persistente existe ANTES de qualquer tentativa de iniciar sessão ETW.
     $ownership=[ordered]@{
         instance=$instance; label=$Label; helper_pid=$PID; created_utc=[DateTime]::UtcNow.ToString('o')
         wpr=$wprPath; profile=$profilePath; profile_sha256=(Get-FileHash -LiteralPath $profilePath -Algorithm SHA256).Hash
@@ -223,8 +223,8 @@ try {
             $stop=Invoke-OwnedWpr 'stop' @('-stop',$etlPath,'-skipPdbGen') 45
             $stopSucceeded=(-not $stop.timed_out -and $stop.exit_code -eq 0 -and -not $stop.Contains('error'))
         } catch { $state['stop_error']=$_.Exception.Message }
-        # Also covers partial starts and unsuccessful saves. A no-recording
-        # response after a successful stop is expected; never cancel globally.
+        # Também cobre partidas parciais e gravações malsucedidas. Uma resposta de
+        # "sem gravação" depois de parada bem-sucedida é esperada; nunca cancele globalmente.
         try { $null=Invoke-OwnedWpr 'cancel-owned' @('-cancel') 10 }
         catch { $state['cancel_error']=$_.Exception.Message }
         try {

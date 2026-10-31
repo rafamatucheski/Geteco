@@ -1,4 +1,4 @@
-"""Measure loudness and assign linear playback gain without changing any WAV."""
+"""Mede o volume e atribui ganho linear de reprodução sem alterar nenhum WAV."""
 from __future__ import annotations
 
 import argparse
@@ -20,8 +20,8 @@ POLICY = {"version": "directed_linear_lufs_v1", "target_lufs": -20.0, "max_true_
 def gain_for_measurement(integrated, true_peak, policy=POLICY):
     if not math.isfinite(true_peak):
         raise DirectionError("Cannot mix silent/unmeasurable audio")
-    # EBU R128's integration block may exceed a very short authored cry. Use a
-    # declared peak target only in that case, preserving its temporal shape.
+    # O bloco de integração do EBU R128 pode ser maior que um grito autorado muito curto. Usa
+    # um alvo de pico declarado só nesse caso, preservando a forma no tempo.
     method = "integrated_loudness" if math.isfinite(integrated) else "short_utterance_peak"
     desired = policy["target_lufs"]-integrated if math.isfinite(integrated) else policy["short_utterance_peak_db"]-true_peak
     safe = min(desired, policy["max_true_peak_db"]-true_peak)

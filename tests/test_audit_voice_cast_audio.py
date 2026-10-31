@@ -1,4 +1,4 @@
-"""Auditing thresholds are fixed before examining production predictions."""
+"""Os limiares da auditoria são fixados antes de examinar as previsões de produção."""
 import math
 from pathlib import Path
 import sys

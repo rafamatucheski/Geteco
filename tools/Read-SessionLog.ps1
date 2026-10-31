@@ -11,7 +11,7 @@ $firstPart = Get-ChildItem -LiteralPath $SessionPath -Filter 'session-*.jsonl' |
 if ($firstPart) {
     $firstLine = Get-Content -LiteralPath $firstPart.FullName -TotalCount 1 | ConvertFrom-Json
     if ($firstLine.data.schema -ge 5) {
-        # Python handles exact per-frame contexts and dictionaries with empty/ambiguous keys.
+        # O Python trata contextos exatos por quadro e dicionários com chaves vazias/ambíguas.
         $readerArguments = @((Join-Path $PSScriptRoot 'read_session_log.py'), $SessionPath)
         if ($SummaryOnly) { $readerArguments += '--summary-only' }
         & python @readerArguments
@@ -43,7 +43,7 @@ foreach ($part in Get-ChildItem -LiteralPath $SessionPath -Filter 'session-*.jso
             try { $row = $line | ConvertFrom-Json } catch { Write-Warning "Linha incompleta/invalida em $($part.Name)"; continue }
             $data = $row.data
             if ($null -eq $data) { $data = $row }
-            # schema 5 envelopes writer watchdog events too; keep older sessions readable.
+            # o schema 5 também envelopa eventos do watchdog do gravador; mantém sessões antigas legíveis.
             if ($data.type -eq 'records_dropped' -and $row.type -ne 'records_dropped') { $dropped += $data.count }
             if ($data.type -eq 'main_thread_unresponsive' -and $row.type -ne 'main_thread_unresponsive') {
                 Write-Output "[$($row.utc)] Sem novo quadro por $($data.seconds_without_frame)s (inclui cargas/debugger)."

@@ -1,8 +1,8 @@
-"""Receive one local Godot debug session; keep slow script profiles and signatures.
+"""Recebe uma sessão local de depuração do Godot; guarda perfis lentos de script e assinaturas.
 
-Uses Godot's length-prefixed Variant protocol (core/debugger/remote_debugger_peer.cpp)
-and servers/debugger/servers_debugger.cpp. This receiver sends no debugger commands.
-Enable the profiler from the diagnostic scene; it never pauses or edits the game.
+Usa o protocolo Variant com prefixo de tamanho do Godot (core/debugger/remote_debugger_peer.cpp)
+e servers/debugger/servers_debugger.cpp. Este receptor não envia comandos ao depurador.
+Ligue o profiler pela cena de diagnóstico; ele nunca pausa nem edita o jogo.
 """
 import argparse
 import collections
@@ -134,8 +134,8 @@ def receive(port, destination, seconds):
                                 message = reader.variant()
                                 if reader.offset != len(payload) or not isinstance(message, list):
                                     raise ValueError('Invalid packet boundary')
-                                # Godot 4.7 includes the sending thread ID between
-                                # the label and payload; older versions used two fields.
+                                # O Godot 4.7 inclui o ID da thread que envia entre
+                                # o rótulo e a carga; versões antigas usavam dois campos.
                                 if len(message) == 3 and isinstance(message[1], int):
                                     label, thread_id, data = message
                                 elif len(message) == 2:

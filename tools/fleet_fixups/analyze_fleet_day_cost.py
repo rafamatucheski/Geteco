@@ -1,4 +1,4 @@
-"""Align completed test-only native counters and produce static diagnostic figures."""
+"""Alinha contadores nativos concluídos, só de teste, e produz figuras estáticas de diagnóstico."""
 
 import argparse
 from collections import Counter
@@ -63,9 +63,9 @@ def load_window(path):
         and len(accepted) == len(raw["frames_ms"]) == hi - lo + 1
         and all(row["process_frame"] == lo + index for index, row in enumerate(accepted)))
     if not alignment:
-        # First/last IDs cannot identify the parent's selected samples after a
-        # focus gap. Retain all observed rows only as context; never zip them
-        # against the accepted frames or infer a selection from instantaneous focus.
+        # IDs de primeiro/último não identificam as amostras escolhidas pelo pai depois de
+        # uma falha de foco. Guarda todas as linhas observadas só como contexto; nunca as
+        # emparelha com os quadros aceitos nem deduz seleção pelo foco instantâneo.
         for row in deltas:
             row["accepted"] = False
         accepted = []

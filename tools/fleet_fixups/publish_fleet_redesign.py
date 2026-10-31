@@ -1,6 +1,6 @@
-"""Publish local geometry inventory, lazy runtime registry and photographic review.
+"""Publica o inventário local de geometria, o registro preguiçoso de runtime e a revisão fotográfica.
 
-Reads offline authoring reports; performs no gameplay tests or FPS measurement.
+Lê relatórios offline de autoria; não faz testes de jogo nem medição de FPS.
 """
 from pathlib import Path
 import hashlib

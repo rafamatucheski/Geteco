@@ -1,7 +1,7 @@
-"""Build melee Foley from the repository's credited CC0 contact recordings.
+"""Monta o Foley corpo a corpo a partir das gravações de contato CC0 creditadas do repositório.
 
-No engine, downloads, oscillators, or random noise. Source licenses and originals:
-audio/contact_foley/CREDITS.md. Run: python tools/audio/build_melee_foley.py
+Sem motor, downloads, osciladores nem ruído aleatório. Licenças das fontes e originais:
+audio/contact_foley/CREDITS.md. Rodar: python tools/audio/build_melee_foley.py
 """
 from pathlib import Path
 import hashlib
@@ -20,8 +20,8 @@ TAKES = 4
 
 
 def cloth_pass(take, duration, cutoff):
-    # Discard the impact transient, then shape recorded soft-contact texture
-    # into the cloth/air movement of the weapon. No fake impact on a miss.
+    # Descarta o transiente do impacto e molda a textura gravada de contato suave
+    # no movimento de pano/ar da arma. Nada de impacto falso num golpe errado.
     source = recording("impactSoft_medium", take, 1.15, cutoff)
     source = source[round(RATE * .025):]
     count = round(RATE * duration)
@@ -61,7 +61,7 @@ def designs():
                     length = .39
                 yield f"{weapon}_{'heavy' if heavy else 'hit'}_{take}", mix(length, layers, -5)
         for weapon, speed in [("katana", 1.18), ("axe", .91)]:
-            # A complete replacement contact, not an extra full-volume impact.
+            # Um contato substituto completo, não um impacto extra em volume cheio.
             layers = [layer("impactPunch_medium", take, .55, 0, speed, 4800),
                       layer("impactSoft_heavy", take + 1, .48, .003, speed, 3500),
                       layer("crunch", take + 2, .8, .008, speed, 7000),
@@ -105,7 +105,7 @@ edit/loop_begin=0
 edit/loop_end=-1
 compress/mode=0
 '''
-        # Preserve a UID if a later Godot import has already assigned one.
+        # Preserva o UID se uma importação posterior do Godot já tiver atribuído um.
         import_path = Path(str(path) + ".import")
         if not import_path.exists():
             import_path.write_text(settings, encoding="utf-8")

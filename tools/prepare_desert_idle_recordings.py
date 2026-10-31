@@ -1,7 +1,7 @@
-"""Prepare two licensed field-recorded idle loops; never generates engine audio.
+"""Prepara dois loops licenciados de marcha lenta gravados em campo; nunca gera áudio de motor.
 
-Usage: python tools/prepare_desert_idle_recordings.py --cache <external directory>
-Requires numpy, scipy, soundfile and requests. Sources remain in the external cache.
+Uso: python tools/prepare_desert_idle_recordings.py --cache <external directory>
+Requer numpy, scipy, soundfile e requests. As fontes ficam no cache externo.
 """
 import argparse
 import hashlib
@@ -47,15 +47,15 @@ def main():
         from math import gcd
         divisor = gcd(rate, 22050)
         data = resample_poly(data, 22050 // divisor, rate // divisor)
-        # Rotate across a 200 ms overlap. End and start continue the same source
-        # segment; this avoids an amplitude seam and a periodic fade to silence.
+        # Gira sobre uma sobreposição de 200 ms. Fim e começo continuam o mesmo trecho
+        # da fonte; isso evita emenda de amplitude e um fade periódico para o silêncio.
         overlap = 4410
         weight = np.linspace(0, 1, overlap, endpoint=False)
         seam = data[-overlap:] * (1-weight) + data[:overlap] * weight
         data = np.concatenate([seam, data[overlap:-overlap]])
         data -= data.mean()
         data *= min(.24 / np.sqrt(np.mean(data**2)), .74 / np.max(np.abs(data)))
-        data = np.concatenate([data, data[:8]])  # existing WAV mixer guard frames
+        data = np.concatenate([data, data[:8]])  # quadros de guarda do mixer de WAV existente
         dest = out / source["file"]
         sf.write(dest, data, 22050, subtype="PCM_16")
         row = dict(source, download=url, source_sha256=hashlib.sha256(original.read_bytes()).hexdigest(),

@@ -1,10 +1,10 @@
-"""Analyze bounded rendered stall captures without assigning wall time to GPU/solver.
+"""Analisa capturas limitadas de engasgos renderizados sem atribuir tempo de relógio a GPU/solver.
 
-Usage: python tests/measure/analyze_intermittent_stalls.py capture.json
+Uso: python tests/measure/analyze_intermittent_stalls.py capture.json
        --output analysis.json --markdown analysis.md
 
-All frames determine percentiles; the retained circular intervals only explain
-individual peaks. Work spans are inclusive and are never added to their parents.
+Todos os quadros determinam os percentis; os intervalos circulares retidos só explicam
+picos individuais. Spans de trabalho são inclusivos e nunca somam nos pais.
 """
 
 from __future__ import annotations
@@ -43,7 +43,7 @@ def metrics(values: list[float]) -> dict[str, Any]:
     ordered = sorted(values)
     total_ms = sum(values)
     seconds = total_ms / 1000.0
-    # Same lower empirical quantile as measure_performance_plan.gd.
+    # Mesmo quantil empírico inferior de measure_performance_plan.gd.
     result: dict[str, Any] = {
         "frames": len(values),
         "seconds": seconds,

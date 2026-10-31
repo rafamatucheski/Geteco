@@ -49,7 +49,7 @@ try {
                     $probeSeconds = '360'
                 }
                 $nativeExe = Join-Path $engineRoot 'Godot_v4.7.2-stable_mono_win64.exe'
-                # Start-Process joins ArgumentList; quote only the known path containing spaces.
+                # Start-Process junta o ArgumentList; aspas só no caminho conhecido que tem espaços.
                 $probeArgs = @($probeDll, '--pid', [string]$native.Id, '--expected-start-utc', $native.StartTime.ToUniversalTime().ToString('o'), '--expected-exe', ('"' + $nativeExe + '"'), '--seconds', $probeSeconds, '--out', (Join-Path $folder 'process-cpu.json'))
                 $processObserver = Start-Process -FilePath 'dotnet' -ArgumentList $probeArgs -WorkingDirectory $projectRoot -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $folder 'process-observer.log') -RedirectStandardError (Join-Path $folder 'process-observer.err')
                 @{utc=[DateTime]::UtcNow.ToString('o'); pid=$processObserver.Id; arguments=$probeArgs; dll_sha256=(Get-FileHash -LiteralPath $probeDll -Algorithm SHA256).Hash} | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $folder 'process-observer-launch.json') -Encoding utf8
@@ -62,7 +62,7 @@ try {
     $owned.WaitForExit()
     Write-Output "FLEET_DAY_EXIT $($owned.ExitCode) $folder"
 } finally {
-    # Only processes created here are stopped; no name-based termination.
+    # Só processos criados aqui são encerrados; nada de encerrar por nome.
     if ($null -ne $native -and -not $native.HasExited -and -not $owned.HasExited) { $native.Kill() }
     if (-not $owned.HasExited) { $owned.Kill() }
     if ($null -ne $gpuObserver -and -not $gpuObserver.HasExited) { $gpuObserver.Kill(); $gpuObserver.WaitForExit() }
@@ -75,5 +75,5 @@ try {
     @{files=$snapshot.Count; changed=$changed} | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $folder 'source-check-after.json') -Encoding utf8
 }
 if ($owned.ExitCode -ne 0 -or $changed.Count) { exit 1 }
-# Start-Process does not set LASTEXITCODE in the calling PowerShell scope.
+# Start-Process não define LASTEXITCODE no escopo do PowerShell que o chamou.
 exit 0

@@ -1,11 +1,11 @@
-"""Check authored localization data without changing runtime or player settings."""
+"""Confere os dados autorados de localização sem mudar runtime nem configurações do jogador."""
 import argparse
 import json
 import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-# Ignore literal %% and a space after a percent (e.g. '60% de integridade').
+# Ignora %% literal e espaço depois de porcentagem (ex.: '60% de integridade').
 FORMAT = re.compile(r'%(?:[-+0#]*\d*(?:\.\d+)?)?[sdif]')
 
 

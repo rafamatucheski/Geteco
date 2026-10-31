@@ -1,7 +1,7 @@
-"""Finite Windows CPU observer for one known game PID; never enumerates processes.
+"""Observador finito de CPU no Windows para um PID de jogo conhecido; nunca enumera processos.
 
-Example: python tests/measure/observe_fleet_cpu.py --pid 1234 --seconds 240 --out run/cpu.json
-Counters are buffered in memory; the exclusive output file is created at completion.
+Exemplo: python tests/measure/observe_fleet_cpu.py --pid 1234 --seconds 240 --out run/cpu.json
+Os contadores ficam em memória; o arquivo de saída exclusivo é criado no fim.
 """
 from __future__ import annotations
 
@@ -168,7 +168,7 @@ def main():
             raise RuntimeError("GetSystemTimes processor-group coverage is not supported above 64 logical processors")
         report.update(qpc_frequency=probe.frequency, logical_processors=probe.logical_processors,
                       process_birth_filetime_100ns=probe.births.copy())
-        probe.sample()  # Resolve Python/ctypes paths before the retained baseline.
+        probe.sample()  # Resolve caminhos de Python/ctypes antes da linha de base retida.
         started = probe.query("QueryPerformanceCounter")
         deadline = started + round(args.seconds * probe.frequency)
         step = round(args.interval_ms * probe.frequency / 1000)
@@ -192,7 +192,7 @@ def main():
                 break
             if row["qpc_after"] >= deadline:
                 break
-            # Do not catch up with bursts if scheduling skipped an interval.
+            # Não recupera com rajadas se o agendamento pulou um intervalo.
             elapsed_slots = max(1, (row["qpc_after"] - started) // step + 1)
             target = min(started + elapsed_slots * step, deadline)
     except KeyboardInterrupt:

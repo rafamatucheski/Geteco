@@ -1,7 +1,7 @@
-"""Finite local VoiceDesign production for the authored Harbor chapter.
+"""Produção local e finita com VoiceDesign para o capítulo autorado de Harbor.
 
-Uses the project's already-cached model/environment, without network or voice cloning.
-Exact text/persona keys keep recordings and subtitles coupled.
+Usa o modelo/ambiente já em cache do projeto, sem rede nem clonagem de voz.
+Chaves exatas de texto/persona mantêm gravações e legendas acopladas.
 """
 from pathlib import Path
 import hashlib, json, os, re, time, sys, ctypes
@@ -12,12 +12,12 @@ os.environ['HF_HUB_OFFLINE'] = '1'
 os.environ['TRANSFORMERS_OFFLINE'] = '1'
 LIGHT = '--throughput' not in sys.argv
 os.environ['OMP_NUM_THREADS'] = '1' if LIGHT else '4'
-PRIVATE_LIMIT_MB = 6000  # Windows also charges CUDA backing allocations here.
+PRIVATE_LIMIT_MB = 6000  # O Windows também cobra aqui as alocações de apoio do CUDA.
 RESIDENT_LIMIT_MB = 2048
 
 def constrain_desktop_process():
-    # Windows enforces this before model imports/loading, including temporary
-    # weight allocations. A decode-only check cannot protect the load peak.
+    # O Windows impõe isto antes dos imports/carga do modelo, inclusive alocações
+    # temporárias de pesos. Uma checagem só na decodificação não protege o pico da carga.
     if os.name != 'nt': raise RuntimeError('Light voice production requires the Windows memory limiter')
     class BasicLimits(ctypes.Structure):
         _fields_ = [('PerProcessUserTimeLimit',ctypes.c_int64),('PerJobUserTimeLimit',ctypes.c_int64),
@@ -40,9 +40,9 @@ def constrain_desktop_process():
     kernel.SetPriorityClass.argtypes = [ctypes.c_void_p,ctypes.c_uint32]
     job = kernel.CreateJobObjectW(None,None)
     limits = ExtendedLimits()
-    # A working-set job quota requires privileges the desktop user lacks.
-    # Private commit is enforced by Windows; residency is checked at every
-    # 8 MB loading block and generated token, without requesting admin access.
+    # Uma cota de working set por job exige privilégios que o usuário da área de trabalho não tem.
+    # O commit privado é imposto pelo Windows; a residência é conferida a cada
+    # bloco de 8 MB carregado e token gerado, sem pedir acesso de administrador.
     limits.BasicLimitInformation.LimitFlags = 0x100
     limits.ProcessMemoryLimit = PRIVATE_LIMIT_MB*1024**2
     if not job or not kernel.SetInformationJobObject(job,9,ctypes.byref(limits),ctypes.sizeof(limits)):
@@ -67,11 +67,11 @@ class StreamingTensorSlice:
     def __getitem__(self,index): return self.archive.get_tensor(self.key)[index]
 
 class StreamingSafeOpen:
-    """Read one verified tensor at a time instead of mapping a 3.6 GB file.
+    """Lê um tensor verificado por vez em vez de mapear um arquivo de 3,6 GB.
 
-    Windows charges the entire private safetensors mapping to the process
-    budget, even when the model is being loaded directly onto the GPU.
-    This adapter is scoped to this offline, single-device production process.
+    O Windows cobra o mapeamento privado inteiro do safetensors no orçamento do
+    processo, mesmo quando o modelo carrega direto na GPU.
+    Este adaptador vale só para este processo de produção offline de um dispositivo.
     """
     def __init__(self,filename,framework,device='cpu'):
         if framework != 'pt': raise ValueError('Only the local PyTorch checkpoint is supported')
@@ -108,7 +108,7 @@ class StreamingSafeOpen:
                 first=at//item_size
                 tensor[first:first+len(chunk)//item_size].copy_(torch.frombuffer(chunk,dtype=dtype))
                 check_desktop_memory()
-                time.sleep(len(chunk)/(64*1024**2))  # cap model reads at 64 MB/s
+                time.sleep(len(chunk)/(64*1024**2))  # limita a leitura do modelo a 64 MB/s
         return tensor.reshape(description['shape'])
 
 class ProcessMemory(ctypes.Structure):
@@ -179,8 +179,8 @@ def main():
         original_warmup=modeling_utils.caching_allocator_warmup
         if LIGHT:
             modeling_utils.safe_open=StreamingSafeOpen
-            # Optional allocator prewarming reserves a second model-sized
-            # block, defeating the GPU budget before loading any weights.
+            # O pré-aquecimento opcional do alocador reserva um segundo bloco do
+            # tamanho do modelo, estourando o orçamento da GPU antes de carregar qualquer peso.
             modeling_utils.caching_allocator_warmup=lambda *args,**kwargs: None
         try:
             model=Qwen3TTSModel.from_pretrained(str(cached),device_map='cuda:0',dtype=torch.bfloat16,attn_implementation='sdpa',local_files_only=True,low_cpu_mem_usage=True)
@@ -188,8 +188,8 @@ def main():
             modeling_utils.safe_open=original_open
             modeling_utils.caching_allocator_warmup=original_warmup
         if LIGHT and private_memory_mb()>PRIVATE_LIMIT_MB: raise MemoryError('Voice model exceeds the desktop allocation budget')
-    # Desktop production defaults to one take and strict resource budgets.
-    # Throughput batches require an explicit command-line opt-in.
+    # A produção na área de trabalho usa por padrão uma tomada e orçamentos rígidos de recursos.
+    # Lotes de vazão exigem adesão explícita na linha de comando.
     batch_size=1 if LIGHT else 3
     budget=DesktopBudget() if LIGHT else None
     for offset in range(0,len(missing),batch_size):

@@ -1,8 +1,8 @@
-"""Receive one local Godot debug session; aggregate every script/native frame and retain slow profiles.
+"""Recebe uma sessão local de depuração do Godot; agrega todo quadro de script/nativo e guarda perfis lentos.
 
-Uses Godot's length-prefixed Variant protocol (core/debugger/remote_debugger_peer.cpp)
-and servers/debugger/servers_debugger.cpp. This receiver sends no debugger commands.
-Enable the profiler from the diagnostic scene; it never pauses or edits the game.
+Usa o protocolo Variant com prefixo de tamanho do Godot (core/debugger/remote_debugger_peer.cpp)
+e servers/debugger/servers_debugger.cpp. Este receptor não envia comandos ao depurador.
+Ligue o profiler pela cena de diagnóstico; ele nunca pausa nem edita o jogo.
 """
 import argparse
 import collections
@@ -96,7 +96,7 @@ def frame_profile(data, signatures):
 
 
 class FrameAggregate:
-    """Disjoint per-frame self times; final cumulative summaries never enter here."""
+    """Tempos próprios disjuntos por quadro; resumos cumulativos finais nunca entram aqui."""
 
     def __init__(self, function_cap=2048):
         self.function_cap = function_cap
@@ -191,8 +191,8 @@ def receive(port, destination, seconds, function_cap=2048):
                                 message = reader.variant()
                                 if reader.offset != len(payload) or not isinstance(message, list):
                                     raise ValueError('Invalid packet boundary')
-                                # Godot 4.7 includes the sending thread ID between
-                                # the label and payload; older versions used two fields.
+                                # O Godot 4.7 inclui o ID da thread que envia entre
+                                # o rótulo e a carga; versões antigas usavam dois campos.
                                 if len(message) == 3 and isinstance(message[1], int):
                                     label, thread_id, data = message
                                 elif len(message) == 2:

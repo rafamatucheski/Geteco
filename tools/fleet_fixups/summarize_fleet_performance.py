@@ -1,7 +1,7 @@
-"""Enrich a completed fleet benchmark without recalculating paired percentiles.
+"""Enriquece um benchmark concluído da frota sem recalcular os percentis pareados.
 
-Usage: python tools/fleet_fixups/summarize_fleet_performance.py BENCHMARK_DIRECTORY
-Only comparison-detail.json is written; source measurements remain unchanged.
+Uso: python tools/fleet_fixups/summarize_fleet_performance.py BENCHMARK_DIRECTORY
+Só comparison-detail.json é gravado; as medições de origem não mudam.
 """
 
 import argparse

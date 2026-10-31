@@ -1,6 +1,6 @@
-"""Analyze a real capture_drag_audio_identity.gd output without claiming audition.
+"""Analisa uma saída real de capture_drag_audio_identity.gd sem afirmar que houve audição.
 
-Usage: python tools/audio/analyze_drag_capture.py evidence/drag-audio-identity-...
+Uso: python tools/audio/analyze_drag_capture.py evidence/drag-audio-identity-...
 """
 from pathlib import Path
 import json
@@ -44,9 +44,9 @@ def main():
             selected = values[max(start, 0):max(start, end)]
             intervals[mark["label"]] = {**stats(selected), "longest_digital_zero_seconds": longest_zero_run(selected, rate)}
         report["intervals"][label] = intervals
-    # Compare engines at the SAME samples and real start-grid positions, after
-    # spatial attenuation and before the shared SFX bus. Avoid far-ahead wins
-    # being mistaken for proof of close-lane balance.
+    # Compara motores nas MESMAS amostras e posições reais do grid de largada, depois
+    # da atenuação espacial e antes do bus SFX compartilhado. Evita que vitórias muito à frente
+    # passem por prova de equilíbrio entre raias próximas.
     eligible = [step["seconds"] for step in capture["steps"] if step["phase"] in ("staging", "racing") and abs(step["player_x"] - step["rival_x"]) <= 12]
     if eligible:
         start, end = round((min(eligible) + .3) * rate), round((max(eligible) - .3) * rate)

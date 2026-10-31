@@ -1,8 +1,8 @@
-"""Resumable anchored PT-BR/EN bank. Existing legacy/audio auditions are immutable.
+"""Banco PT-BR/EN ancorado e retomável. Os testes antigos/de áudio existentes são imutáveis.
 
-Stages are explicit: plan, anchors, render, publish. A completed recording is not
-an assertion of human artistic approval. The runtime manifest preserves that
-distinction, along with each actor reference and actual synthesis configuration.
+As etapas são explícitas: plan, anchors, render, publish. Uma gravação concluída não é
+afirmação de aprovação artística humana. O manifesto de runtime preserva essa
+distinção, junto com a referência de cada ator e a configuração real da síntese.
 """
 from __future__ import annotations
 
@@ -52,8 +52,8 @@ def anchor_plan(takes, design_settings):
         identity = take["character_id"]
         if identity in selected:
             continue
-        # Use only the stable character direction, not an arbitrary situation,
-        # when designing the reusable fictional voice.
+        # Usa só a direção estável do personagem, não uma situação qualquer,
+        # ao desenhar a voz fictícia reutilizável.
         voice = take["voice_profile"]
         text = voice.get("anchor_text_pt", "").strip()
         performance = voice.get("anchor_performance", "").strip()
@@ -89,8 +89,8 @@ def clone_plan(takes, anchors, settings, instruction_mode, *, batch_size=1):
             raise DirectionError("Missing actor reference: " + take["character_id"])
         if anchor.get("voice_gender") != take["voice_gender"] or not audio_valid(anchor):
             raise DirectionError("Actor reference gender/provenance invalid: " + take["character_id"])
-        # Hash every input actually fed to this backend; retain the original
-        # authored plan signature separately rather than pretending Base=Design.
+        # Faz hash de toda entrada de fato passada a este backend; guarda a assinatura
+        # do plano autorado original à parte em vez de fingir que Base=Design.
         spec = {"version": 1, "authored_signature": take["signature"], "backend": settings,
                 "anchor_id": take["character_id"], "anchor_sha256": anchor["audio_sha256"],
                 "anchor_text": anchor["text"], "instruction_mode": instruction_mode,
@@ -101,8 +101,8 @@ def clone_plan(takes, anchors, settings, instruction_mode, *, batch_size=1):
         result.append({**take, **spec, "signature": digest(spec),
                        "anchor_path": anchor["path"], "model": settings["model"],
                        "model_revision": settings["model_revision"], "status": "planned"})
-    # Stable batches use similar utterance lengths, reducing padding. Membership
-    # and sampling seed are signed because batching changes stochastic output.
+    # Lotes estáveis usam falas de tamanho parecido, reduzindo o preenchimento. A composição
+    # e a semente de amostragem são assinadas porque o lote muda a saída estocástica.
     result.sort(key=lambda t: (len(t["spoken_text"]) // 40, t["character_id"], t["language"], t["source_key"]))
     for at in range(0, len(result), batch_size):
         batch = result[at:at+batch_size]
@@ -132,7 +132,7 @@ def complete_character_batches(takes, characters):
 
 
 def repair_plan(current_takes, requests, backend):
-    """Create only explicitly selected immutable alternatives; keep good takes."""
+    """Cria só alternativas imutáveis selecionadas explicitamente; mantém as boas tomadas."""
     batch_size = requests.get("batch_size", 1)
     if batch_size not in (1, 2, 4, 8):
         raise DirectionError("Retake batch size must be 1, 2, 4 or 8")
@@ -209,7 +209,7 @@ def repair_plan(current_takes, requests, backend):
 
 
 def validate_repair_targets(current_takes, requests, records, replacements):
-    """A diagnostic belongs to specific bytes; it cannot reject a newer take."""
+    """Um diagnóstico pertence a bytes específicos; não pode rejeitar uma tomada mais nova."""
     by_slot = {(t["source_key"], t["language"]): t for t in current_takes}
     completed = {t["signature"]: t for t in records}
     alternatives = {(t["source_key"], t["language"]): t for t in replacements}
@@ -217,7 +217,7 @@ def validate_repair_targets(current_takes, requests, records, replacements):
         slot = request["source_key"], request["language"]
         alternate = completed.get(alternatives[slot]["signature"])
         if alternate and audio_valid(alternate):
-            continue  # Resuming this exact immutable alternative.
+            continue  # Retomando esta alternativa imutável exata.
         original = completed.get(by_slot[slot]["signature"])
         expected_sha = request.get("supersedes_audio_sha256")
         if expected_sha and (not original or original.get("audio_sha256") != expected_sha or not audio_valid(original)):
@@ -263,8 +263,8 @@ def selected_repaired_plan(current_takes, selections):
             if any(repair.get(k) != original.get(k) for k in ("source_key", "source", "persona", "spoken_text", "language",
                                                             "character_id", "voice_gender", "anchor_sha256")):
                 raise DirectionError("Repair changed an authored word, actor or reference")
-            # Use present publication blockers/cast metadata, not a historical
-            # release state copied into the replacement recipe.
+            # Usa os bloqueios de publicação/metadados de elenco atuais, não um estado
+            # histórico de liberação copiado para a receita substituta.
             repair = {**repair, "casting_blockers": original["casting_blockers"], "cast_revision": original.get("cast_revision")}
         result.append(repair or original)
     return result
@@ -275,8 +275,8 @@ def render_anchors(specs, args, design_snapshot, settings):
     anchors = document["characters"]
     valid = {identity for identity, spec in specs.items()
              if identity in anchors and anchor_matches_spec(anchors[identity], spec)}
-    # Jessica's revised delivery is an actual prior fictional reference with an
-    # exact transcript. Preserve and use it rather than redesigning her actor.
+    # A leitura revisada da Jessica é uma referência fictícia anterior real, com
+    # transcrição exata. Preserva e usa em vez de redesenhar a atriz dela.
     jessica_spec = specs.get("jessica")
     if jessica_spec and "jessica" not in anchors:
         audition_path = OUTPUT / "production.json"
@@ -441,8 +441,8 @@ def render_bank(takes, args, snapshot, settings):
         batches.setdefault(take["batch_id"], []).append(take)
     pending = [sorted(batch, key=lambda take: take["batch_position"]) for batch in batches.values()
                if any(t["signature"] not in valid for t in batch)]
-    # Keep deterministic membership while delivering cinematic/lead-character
-    # coverage early enough for runtime and timing validation during production.
+    # Mantém a composição determinística e entrega cobertura de cinemáticas/personagens
+    # principais cedo o bastante para validar runtime e tempo durante a produção.
     pending.sort(key=lambda batch: (0 if any(t.get("section") == "opening_ferry" for t in batch) else
                                     1 if any(t["source_key"] == JESSICA for t in batch) else
                                     2 if any(t["character_id"] in ("cida", "dante", "civilian_reaction_female", "civilian_reaction_male") for t in batch) else 3))
@@ -490,9 +490,9 @@ def render_bank(takes, args, snapshot, settings):
                      "batch_raw_audio_seconds": round(sum(len(wave)/rate for wave in waves), 3)}
         for position, (take, wave) in enumerate(zip(batch, waves)):
             if take["signature"] in valid:
-                continue  # Resuming a partial batch preserves earlier immutable WAVs.
-            # Reuse the resident speaker encoder as a measured consistency cue.
-            # This score does not certify perceived gender or artistic delivery.
+                continue  # Retomar um lote parcial preserva os WAVs imutáveis anteriores.
+            # Reaproveita o codificador de locutor residente como indício medido de consistência.
+            # Esta nota não certifica gênero percebido nem interpretação artística.
             similarity = None
             if len(wave) / rate >= 2:
                 import numpy as np
@@ -526,7 +526,7 @@ def render_bank(takes, args, snapshot, settings):
 
 
 def apply_content_audits(records, reports, decisions=None):
-    """Join immutable audio/text tuples; never transfer a verdict to a retake."""
+    """Junta tuplas imutáveis de áudio/texto; nunca transfere um veredicto para uma regravação."""
     audited = {}
     for report in reports:
         for row in report.get("takes", []):
@@ -696,7 +696,7 @@ def main():
         selection_path = OUTPUT / "repair-selections.json"
         previous = read_json(selection_path) if selection_path.exists() else {"version": 1, "repairs": []}
         merged = {take["repair_of"]: take for take in previous["repairs"]}
-        # Only choose alternatives that actually completed with matching bytes.
+        # Só escolhe alternativas que de fato concluíram com bytes correspondentes.
         completed = {take["signature"]: take for take in read_json(OUTPUT / "cloned-production.json")["takes"]}
         for replacement in replacements:
             if replacement["signature"] in completed and audio_valid(completed[replacement["signature"]]) and completed[replacement["signature"]].get("timing_validation", {}).get("passed") is not False and completed[replacement["signature"]].get("generation_validation", {}).get("passed") is not False:
