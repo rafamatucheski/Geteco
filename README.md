@@ -82,5 +82,6 @@ Godot roda sempre pela fila `tools/run_godot_locked.sh`, um por vez; o guia comp
 
 Cada teste é um script `SceneTree` que sai com 0 (passou) ou 1 (falhou), roda sem janela e
 com `--no-save`. Medições de desempenho exigem renderização real e ficam em
-`tests/measure/`. Convenções para agentes e desenvolvedores: [CLAUDE.md](CLAUDE.md) e
+`tests/measure/`. O CI (`.github/workflows/ci.yml`) compila o C# e roda os contratos rápidos
+de `tools/run_core_suite.sh` em headless a cada push e pull request. Convenções para agentes e desenvolvedores: [CLAUDE.md](CLAUDE.md) e
 [AGENTS.md](AGENTS.md).
