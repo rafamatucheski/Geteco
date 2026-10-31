@@ -1,5 +1,5 @@
 extends RefCounted
-## Cached workwear and tools reuse the existing civilian shader and mesh kit.
+## Roupas de trabalho e ferramentas em cache reaproveitam o shader e o kit de malhas civis existentes.
 const KIT := preload("res://assets/civilians/CivilianMeshKit.gd")
 static var _cache: Dictionary = {}
 
@@ -34,7 +34,7 @@ static func add(parent: Node3D, kind: String, point := Vector3.ZERO, female := f
 	return part
 
 static func _box(b, center: Vector3, size: Vector3, slot: int, basis := Basis.IDENTITY) -> void:
-	# Rounded corners, one shared surface instead of a node for every small part.
+	# Cantos arredondados, uma superfície compartilhada em vez de um nó para cada peça pequena.
 	b.loft([[size.y*.5,size.x*.5,size.z*.5,slot,0,20.0],[-size.y*.5,size.x*.5,size.z*.5,slot,0,20.0]],
 		slot,Transform3D(basis,center),8)
 
@@ -42,7 +42,7 @@ static func _rod(b, center: Vector3, radius: float, length: float, slot: int, ba
 	b.loft([[length*.5,radius,radius,slot],[-length*.5,radius,radius,slot]],slot,Transform3D(basis,center),10)
 
 static func _helmet(b) -> void:
-	# Neutral model-space coordinates; anchored to the existing head joint.
+	# Coordenadas neutras de espaço do modelo; ancoradas na junta existente da cabeça.
 	b.ellipsoid(Vector3(0,1.776,-.012),Vector3(.137,.095,.152),KIT.SLOT_INNER,Basis.IDENTITY,16,8)
 	b.ellipsoid(Vector3(0,1.719,.008),Vector3(.171,.012,.189),KIT.SLOT_INNER,Basis.IDENTITY,16,4)
 	_box(b,Vector3(0,1.863,-.014),Vector3(.023,.012,.21),KIT.SLOT_INNER)
@@ -54,7 +54,7 @@ static func _vest(b, female: bool) -> void:
 	var profile := KIT.build_profile(female,1)
 	var waist: Vector2 = profile.waist+Vector2(.024,.023)
 	var chest: Vector2 = profile.chest+Vector2(.021,.052 if female else .027)
-	# Local to the spine: fitted hem, reflective waist band and chest panels.
+	# Local à coluna: barra ajustada, faixa refletiva na cintura e painéis do peito.
 	b.loft([[-.115,waist.x,waist.y,KIT.SLOT_ACCENT,0,2.6],
 		[.005,waist.x,waist.y,KIT.SLOT_SOLE,0,2.6],
 		[.050,waist.x+.004,waist.y+.005,KIT.SLOT_ACCENT,0,2.6],
