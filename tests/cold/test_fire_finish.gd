@@ -36,7 +36,7 @@ func _run() -> void:
 		view.update_sources(1, Vector3.ZERO, false)
 		await process_frame
 		check(view.visuals.is_empty() and not is_instance_valid(fire), str(source.id) + " unload removes presentation")
-	# Real native provider must retain ownership and not duplicate the fuel bed.
+	# O provedor nativo real precisa manter a posse e não duplicar o leito de combustível.
 	var lake := preload("res://world/regions/NativeLake.gd").new()
 	lake.variant = "secret"
 	lake.position = SOURCES.to_world(Vector2(5450, -1150))

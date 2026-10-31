@@ -27,7 +27,7 @@ func sawmill_ground(region: Node3D,label: String) -> void:
 	var yards := chunk.find_children("OriginalSawmillYard","MeshInstance3D",true,false)
 	var drives := chunk.find_children("OriginalSawmillDriveway","MeshInstance3D",true,false)
 	check(yards.size()==1 and drives.is_empty(),label+" one authoritative yard and intentionally removed driveway plate")
-	# The V1 work pickup occupies x=7.5,z=1.875. Test the free corridor beside it.
+	# A picape de trabalho da V1 ocupa x=7.5,z=1.875. Testa o corredor livre ao lado dela.
 	for entry in [[yards,Vector3(4.4,0,0)]]:
 		if entry[0].size()!=1: continue
 		var mesh: MeshInstance3D = entry[0][0]
@@ -127,7 +127,7 @@ func run() -> void:
 	sawmill_ground(region,"return after unload")
 	alpine.free()
 	region.free()
-	# Retired chunks use queue_free; allow the deferred SceneTree cleanup before quitting.
+	# Chunks aposentados usam queue_free; espera a limpeza adiada da SceneTree antes de sair.
 	for i in 5: await process_frame
 	print("COLD_TERRAIN checks=",checks," failures=",errors)
 	quit(0 if errors.is_empty() else 1)
