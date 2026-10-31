@@ -1,11 +1,11 @@
 extends Node3D
-## Architecture in the facade's actual metre footprint. Furnishings are batched
-## separately; every inhabited storey shares the main world and native depth.
+## Arquitetura na área real em metros da fachada. Os móveis vão em lote
+## à parte; todo andar habitado divide o mundo principal e a profundidade nativa.
 const MATERIALS = preload("res://world/places/ShopInteriorMaterials.gd")
 const DRESSING = preload("res://world/places/harbor_buildings/HarborBuildingDressing.gd")
 const CONTENT = preload("res://world/places/harbor_buildings/HarborBuildingContent.gd")
 const STALL_WORK := preload("res://runtime/StallWorkTrace.gd")
-# Keep shell outer faces behind the resident facade, without moving inner faces.
+# Mantém as faces externas da casca atrás da fachada residente, sem mover as faces internas.
 const EXTERIOR_CLEARANCE := .02
 var definition: Dictionary = {}
 var variant := 0
@@ -105,8 +105,8 @@ func _shell() -> void:
 			box(Vector3(window_x+edge*(window_width*.5+.04),1.85,-depth*.5+.30),Vector3(.08,1.26,.11),"554d40")
 		box(Vector3(window_x,1.85,-depth*.5+.33),Vector3(.055,1.12,.09),"88755c")
 		box(Vector3(window_x,1.24,-depth*.5+.35),Vector3(window_width+.2,.1,.28),"88755c")
-	# Thin rugs remain walkable. Floor trim communicates circulation without
-	# descriptive labels or the orange ground entry marker.
+	# Tapetes finos continuam caminháveis. O acabamento do piso comunica a circulação sem
+	# etiquetas descritivas nem o marcador laranja de entrada no chão.
 	box(Vector3(entry_x,.005,depth*.5-1.2),Vector3(1.75,.016,.8),"494e45","","cloth")
 	for side in [-1,1]:
 		box(Vector3(side*.97,-.012,0),Vector3(.035,.025,depth-.5),"b5a384","","stone")
@@ -143,8 +143,8 @@ func _stairs() -> void:
 	for side in [-1,1]:
 		box(Vector3(x+side*(stair_width*.5+.045),.67,-.55),Vector3(.065,1.34,1.85),"474b47","StairRail%d"%side,"metal")
 	box(Vector3(x,1.28,-1.6),Vector3(stair_width+.12,2.56,.12),"373e3b","StairBack","stone")
-	# The destination is operated at the landing. The visible continuation is
-	# solid so walking cannot clip through a flight during floor preparation.
+	# O destino é acionado no patamar. A continuação visível é
+	# sólida para a caminhada não atravessar um lance durante a preparação do andar.
 	var plate := Label3D.new()
 	plate.name = "FunctionalFloorNumber"
 	plate.text = "T" if floor_index == 0 else str(floor_index)

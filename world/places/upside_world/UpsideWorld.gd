@@ -1,6 +1,6 @@
 extends "res://world/places/upside_world/UpsideGeometry.gd"
-## A finite, remote hallucination stage. Runtime owns teleport, first-person
-## camera, duration and recovery; this node owns only scenery and apparitions.
+## Um palco de alucinação finito e remoto. O runtime é dono do teleporte, da câmera em
+## primeira pessoa, da duração e da recuperação; este nó só é dono do cenário e das aparições.
 const APPARITION := preload("res://world/places/upside_world/Apparition.gd")
 const SPAWN := Vector3(0,.08,7)
 const METEOR_COUNT := 22
@@ -62,8 +62,8 @@ func _ground() -> void:
 		for col in 14:
 			var shade: String = ["383041","3c3348","332d3c"][(row*7+col)%3]
 			piece("box",Vector3(-13+col*2,.010,-13+row*2),Vector3(1.98,.019,1.98),shade)
-	# Broken-looking markings sit on the continuous physical floor; the player
-	# never drops into a cosmetic crack or spawns above floating debris.
+	# Marcas de aparência quebrada ficam no piso físico contínuo; o jogador
+	# nunca cai numa rachadura cosmética nem aparece acima de destroços flutuando.
 	for side in [-1,1]:
 		for segment in 10:
 			piece("box",Vector3(side*2.45,.023,-10+segment*2.1),Vector3(.055,.013,1.28),"807384","metal",Vector3(0,sin(segment)*.10,0))
@@ -73,8 +73,8 @@ func _ground() -> void:
 		piece("box",Vector3(x,.022,z),Vector3(.05,.013,.35+fmod(i*.7,1.2)),"161321", "metal",Vector3(0,i*1.7,0))
 
 func _borders() -> void:
-	# The walkable arena ends in actual masonry, never an unmarked invisible
-	# barrier. Repeated external silhouettes make a larger ruined skyline.
+	# A arena caminhável termina em alvenaria real, nunca numa barreira invisível
+	# sem marca. Silhuetas externas repetidas fazem um skyline em ruínas maior.
 	for side in [-1,1]:
 		box("EastWestBoundary%d"%side,Vector3(side*13.85,1.65,0),Vector3(.30,3.3,28),"393043",true)
 		box("NorthSouthBoundary%d"%side,Vector3(0,1.65,side*13.85),Vector3(27.4,3.3,.30),"3f3248",true)
@@ -104,15 +104,15 @@ func _ruins() -> void:
 				box(label+"Pillar%d"%edge,Vector3(x+edge*1.65,2.30,z+1.7),Vector3(.38,4.6,.4),"6a586e",true)
 				piece("box",Vector3(x+edge*.87,3.2,z-1.97),Vector3(.8,1.6,.035),"201b2b","metal")
 				piece("box",Vector3(x+edge*.87,3.2,z-1.94),Vector3(.055,1.6,.045),"978b95","metal")
-			# Leaning overhang stays above a human capsule and has its own real
-			# rotated solid; it does not project an invisible wall to the floor.
+			# A saliência inclinada fica acima de uma cápsula humana e tem o próprio sólido
+			# real girado; não projeta uma parede invisível até o piso.
 			box(label+"BrokenLintel",Vector3(x,4.2,z+1.7),Vector3(3.85,.5,.5),"877286",true,"stone",Vector3(0,0,side*.13))
 			piece("box",Vector3(x,5.25,z-.40),Vector3(3.7,.21,3.7),"473549","stone",Vector3(.20,0,side*.15))
 			for beam in 3: piece("box",Vector3(x-1.2+beam*1.2,4.90,z),Vector3(.12,.20,3.9),"776776","metal",Vector3(.13,0,side*.06))
 			for rubble in 6:
 				var at := Vector3(x-1.45+(rubble%3)*1.12,.3,z-1.4+floorf(rubble/3.0)*1.8)
 				piece("rock",at,Vector3(.65,.5,.55),"746176","stone",Vector3(.2*rubble,.6*rubble,.3))
-	# A tall broken doorway draws the first-person gaze to the distant center.
+	# Uma porta alta quebrada leva o olhar em primeira pessoa ao centro distante.
 	for side in [-1,1]:
 		box("PortalPier%d"%side,Vector3(side*2.65,2.7,-11.3),Vector3(1.25,5.4,1.0),"6c5675",true)
 		piece("box",Vector3(side*2.65,2.7,-10.78),Vector3(.09,4.9,.03),"9b4ecc","glow")
@@ -121,8 +121,8 @@ func _ruins() -> void:
 	for band in 3: piece("box",Vector3(0,4.97+band*.17,-10.76),Vector3(3.85,.035,.04),"ae76d5","glow",Vector3(0,0,-.08))
 
 func _broken_furniture() -> void:
-	# Full footprints cover tabletop and fallen planks. All remain outside
-	# the central arrival corridor and the monsters' starting capsules.
+	# Áreas inteiras cobrem o tampo e as tábuas caídas. Tudo fica fora
+	# do corredor central de chegada e das cápsulas iniciais dos monstros.
 	box("OverturnedDesk",Vector3(-5.2,.45,.4),Vector3(1.7,.90,1.15),"55404a",true,"wood",Vector3(0,.20,0))
 	for side in [-1,1]: piece("box",Vector3(-5.2+side*.7,1.02,.4),Vector3(.08,.5,1.05),"7c5b64","wood",Vector3(.14,0,side*.1))
 	box("BrokenBench",Vector3(5.65,.43,-.75),Vector3(2.4,.86,.80),"5c4c60",true,"wood",Vector3(0,-.28,0))
@@ -190,8 +190,8 @@ func make_environment(source: Environment = null) -> Environment:
 	result.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	result.ambient_light_color = Color("9b80b1")
 	result.ambient_light_energy = .44
-	# Camera-local exposure also keeps a daytime Harbor sun from washing out
-	# the violet nightmare. The shared world's lighting is never changed.
+	# A exposição local à câmera também impede que um sol diurno do Harbor desbote
+	# o pesadelo violeta. A iluminação do mundo compartilhado nunca muda.
 	result.tonemap_exposure = .32
 	result.fog_enabled = true
 	result.fog_light_color = Color("56336d")
@@ -206,7 +206,7 @@ func _dynamic_batch(label: String, count: int, shape: String, color: String, kin
 	multi.mesh = primitive(shape)
 	multi.instance_count = count
 	var node := MultiMeshInstance3D.new()
-	# These cosmetic trajectories are advanced every render frame, not tick.
+	# Estas trajetórias cosméticas avançam a cada quadro renderizado, não a cada tick.
 	node.physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
 	node.name = label
 	node.multimesh = multi

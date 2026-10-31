@@ -25,7 +25,7 @@ static func _prepare() -> void:
 		for iz in 27:
 			var point := Vector2(-578+ix*7.5,-121+iz*7.2)+Vector2(rng.randf_range(-1.2,1.2),rng.randf_range(-1.2,1.2))
 			if LAYOUT.tree_available(point): candidates.append(point)
-	# Shuffle with this local generator only, preserving every other system's RNG.
+	# Embaralha só com este gerador local, preservando o RNG de todos os outros sistemas.
 	for index in range(candidates.size()-1,0,-1):
 		var other := rng.randi_range(0,index)
 		var temporary := candidates[index]

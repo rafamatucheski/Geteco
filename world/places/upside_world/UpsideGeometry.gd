@@ -1,5 +1,5 @@
 extends Node3D
-## Native solid volumes and batched detail; no viewport or gameplay hooks.
+## Volumes sólidos nativos e detalhe em lote; sem viewport nem ganchos de gameplay.
 const MATERIALS := preload("res://world/places/ShopInteriorMaterials.gd")
 var _materials: Dictionary = {}
 var _batches: Dictionary = {}

@@ -1,6 +1,6 @@
 extends RefCounted
-## Floor-specific views keep nearby exterior structures out of the living space.
-## Offsets are in the building's local orientation; the runtime applies its yaw.
+## Vistas por andar mantêm as estruturas externas próximas fora do espaço de moradia.
+## Os deslocamentos estão na orientação local do prédio; o runtime aplica o yaw dele.
 const FLOOR_OFFSETS := {
 	"ColdStorage": {0:Vector3(8,21,12)},
 	"NorthFrontage5": {1:Vector3(0,22,11)},

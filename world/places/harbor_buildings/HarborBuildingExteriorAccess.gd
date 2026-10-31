@@ -1,6 +1,6 @@
 extends Node3D
-## A lazy doorway/collision adapter. Original exteriors stay intact until a
-## nearby room has been prepared; the same cut volumes serve visuals and solids.
+## Um adaptador preguiçoso de porta/colisão. Os exteriores originais ficam intactos até
+## um cômodo próximo ser preparado; os mesmos volumes cortados servem ao visual e aos sólidos.
 const CATALOG = preload("res://world/places/harbor_buildings/HarborBuildingCatalog.gd")
 const RESTAURANT_VENUES := {"CornerDiner":"anchor","PromenadeCafe":"tideline","ServiceCafe":"early_shift"}
 var definition: Dictionary
@@ -131,8 +131,8 @@ func _apply_floor_view(key: String, floor_index: int, storey_height: float, roof
 		if is_instance_valid(item.node): item.node.visible = item.visible and (rooftop or floor_index<0)
 	var cuts: Array[AABB] = [_door_cut()]
 	if floor_index >= 0 and not rooftop:
-		# Camera-facing walls and upper volumes cut away together, while their
-		# full colliders remain. The active floor supplies the inner wall finish.
+		# Paredes viradas para a câmera e volumes superiores são cortados juntos, e os
+		# colisores inteiros ficam. O andar ativo fornece o acabamento da parede interna.
 		var size: Vector2 = definition.size
 		var front_margin := float(definition.get("facade_cut_front",1.2))
 		cuts.append(AABB(Vector3(-size.x*.5-1.2,floor_index*storey_height+.78,-size.y*.5-1.2),Vector3(size.x+2.4,500,size.y+1.2+front_margin)))
@@ -143,13 +143,13 @@ func _apply_floor_view(key: String, floor_index: int, storey_height: float, roof
 			if rooftop or floor_index<0: item.views[key] = item.open_mesh
 			elif item.get("hide_inside",false): item.views[key] = null
 			elif item.get("owned_architecture",false):
-				# All wings and projections of this building share its cutaway.
-				# A narrow playable parcel must not leave its own forward wing,
-				# doorway glass or awning projected over the room.
+				# Todas as alas e projeções deste prédio dividem o corte.
+				# Um lote jogável estreito não pode deixar a própria ala da frente,
+				# o vidro da porta ou o toldo projetados sobre o cômodo.
 				var bounds: AABB = item.transform*item.original.get_aabb()
 				var owned_cut := AABB(Vector3(bounds.position.x-1.0,floor_index*storey_height+.78,bounds.position.z-1.0),Vector3(bounds.size.x+2.0,500,bounds.size.z+2.0))
-				# Setback crowns may sit inside the playable footprint: remove the
-				# same cavity as their collider, including the bottom 78cm.
+				# Coroas recuadas podem ficar dentro da área jogável: remove a
+				# mesma cavidade do colisor delas, incluindo os 78cm de baixo.
 				item.views[key] = _cut_mesh(item.original,item.transform,[_door_cut(),_interior_cut(),owned_cut])
 			else: item.views[key] = _cut_mesh(item.original,item.transform,cuts)
 		var result: Mesh = item.views[key]
@@ -162,8 +162,8 @@ func _process(delta: float) -> void:
 	if _scan_clock>0 or not _open: return
 	_scan_clock = .5
 	var began := STALL_WORK.begin()
-	# City dressing is scheduled after the building record. Capture only newly
-	# mounted presentation nodes so late rooftop details cannot float indoors.
+	# O mobiliário da cidade é agendado depois do registro do prédio. Captura só nós
+	# de apresentação recém-montados para detalhes tardios de telhado não flutuarem dentro.
 	var known := {}
 	for item in _meshes:
 		if is_instance_valid(item.node): known[item.node.get_instance_id()] = true
@@ -201,8 +201,8 @@ func _process(delta: float) -> void:
 
 func _door_cut() -> AABB:
 	var half_depth: float = definition.size.y*.5
-	# Includes the original .85m recessed shop alcove as well as its doorstep.
-	# Otherwise the shallow rear wall remains visible across the open threshold.
+	# Inclui o nicho rebaixado original de .85m da loja e também a soleira.
+	# Senão a parede rasa do fundo continua visível pela soleira aberta.
 	var inward := 1.2
 	if str(definition.building_kind)=="urban_slab":
 		# This model's residential wall sits behind its .14-depth balcony bay.
@@ -264,7 +264,7 @@ func _run_prepare(ticket: int, budget_usec: int) -> bool:
 	if not await _prep_slice(state, "labels"): return _prep_discard(state)
 	_capture_effects_into(state.effects)
 	if not await _prep_slice(state, "effects"): return _prep_discard(state)
-	# Snapshot before creating adapter-owned meshes and collisions.
+	# Snapshot antes de criar malhas e colisões pertencentes ao adaptador.
 	var mesh_nodes := _presentation_nodes("MeshInstance3D")
 	if not await _prep_slice(state, "mesh_scan"): return _prep_discard(state)
 	for node in mesh_nodes:
@@ -411,8 +411,8 @@ func _access_bounds() -> AABB:
 	return AABB(Vector3(-size.x*.5-1.2,-.5,-size.y*.5-1.2),Vector3(size.x+2.4,float(definition.roof_height)+12.0,size.y+4.8))
 
 func _owns_architecture(node: Node) -> bool:
-	# Some storefront adapters own a whole batched village/meet site. Only
-	# a single native building has an unambiguous architectural boundary.
+	# Alguns adaptadores de fachada são donos de um vilarejo/encontro inteiro em lote. Só
+	# um prédio nativo único tem um limite arquitetônico sem ambiguidade.
 	return facade is UrbanBuildingBase and (node==facade or facade.is_ancestor_of(node))
 
 func _restaurant_venue() -> String:
@@ -420,9 +420,9 @@ func _restaurant_venue() -> String:
 
 func _belongs_to_native_roof(bounds: AABB) -> bool:
 	if not facade is UrbanBuildingBase or bounds.end.y<float(definition.roof_height)-.30: return false
-	# Roof finishes are chunk siblings. The east wing of an L-shaped building
-	# extends beyond its playable north wing, but still owns its roof dressing.
-	# Associate by the original building footprint, never the sidewalk margin.
+	# Acabamentos de telhado são irmãos no chunk. A ala leste de um prédio em L
+	# se estende além da ala norte jogável, mas ainda é dona do mobiliário do telhado.
+	# Associa pela área original do prédio, nunca pela margem da calçada.
 	var native := facade as UrbanBuildingBase
 	var center := native.to_local(to_global(bounds.get_center()))
 	return absf(center.x)<=native.building_size.x*.5+.08 and absf(center.z)<=native.building_size.y*.5+.08
@@ -430,8 +430,8 @@ func _belongs_to_native_roof(bounds: AABB) -> bool:
 func _is_attached_fire_escape(batch: Node, bounds: AABB) -> bool:
 	if not str(batch.name).begins_with("CityLook_fe_"): return false
 	var size: Vector2 = definition.size
-	# These batches mix several buildings; associate only the platforms and
-	# stairs on this facade's front, never another parcel's street furniture.
+	# Estes lotes misturam vários prédios; associa só as plataformas e
+	# escadas na frente desta fachada, nunca o mobiliário de rua de outro lote.
 	return absf(bounds.get_center().x)<size.x*.5+.15 and bounds.end.z>size.y*.5-.2 and bounds.position.z<size.y*.5+1.9 and bounds.position.z>size.y*.5-.4
 
 func _is_venue_canopy(node: Node) -> bool:
@@ -448,19 +448,19 @@ func _is_venue_canopy(node: Node) -> bool:
 func _relevant_visual(bounds: AABB, owned := false) -> bool:
 	if owned: return true
 	if not _access_bounds().intersects(bounds): return false
-	# Torque batches the facade together with matching materials elsewhere
-	# on its lot. Capture that batch, but clip only its bounded storefront.
+	# O Torque põe a fachada em lote junto com materiais iguais em outros pontos
+	# do lote. Captura esse lote, mas recorta só a fachada de loja limitada.
 	if str(definition.get("source_id","")) == "TorqueStore": return true
 	var center := bounds.get_center()
-	# Street furniture is beside the room, and must remain complete. Elevated
-	# attachments (window ACs, pipes, neon) still participate in floor cutaway.
+	# O mobiliário de rua fica ao lado do cômodo e precisa continuar completo. Acessórios
+	# elevados (ar-condicionado de janela, canos, neon) ainda participam do corte do andar.
 	if bounds.position.y<.35 and (absf(center.x)>definition.size.x*.5+.12 or absf(center.z)>definition.size.y*.5+.12): return false
 	return true
 
 func _presentation_nodes(type: String) -> Array[Node]:
-	# Chunk dressing is owned by streamed chunks, beside (not below) the
-	# building. Restrict the extra search to those known presentation roots;
-	# roads, neighboring building architecture and gameplay bodies stay owned.
+	# O mobiliário de chunk pertence aos chunks em streaming, ao lado (não abaixo) do
+	# prédio. Restringe a busca extra a essas raízes de apresentação conhecidas;
+	# ruas, arquitetura de prédios vizinhos e corpos de gameplay continuam com seus donos.
 	var result: Array[Node] = []
 	var roots: Array[Node] = [facade]
 	var chunk := facade.get_parent()
@@ -504,8 +504,8 @@ func _prepare_multimeshes() -> void:
 ## Lotes MultiMesh da parcela. Com orçamento, cede o quadro entre instâncias e deixa o corte
 ## da porta como tarefa; devolve false se a preparação fatiada deixou de valer.
 func _scan_multimesh_batches(state: Dictionary) -> bool:
-	# The village/meet owners batch their whole sites. Split only instances in
-	# this parcel, leaving their neighbors, actors and materials in the batch.
+	# Os donos do vilarejo/encontro põem o sítio inteiro em lote. Divide só as instâncias
+	# deste lote, deixando vizinhos, atores e materiais no lote.
 	var batches := _presentation_nodes("MultiMeshInstance3D")
 	if not await _prep_slice(state, "multimesh_scan"): return false
 	for batch in batches:
@@ -559,8 +559,8 @@ func _scan_multimesh_batches(state: Dictionary) -> bool:
 	return true
 
 static func _copy_multimesh(source: MultiMesh) -> MultiMesh:
-	# Resource.duplicate can replay the buffer before instance_count on Godot
-	# 4.7.2. Allocate the destination layout first, then copy each instance.
+	# Resource.duplicate pode reproduzir o buffer antes de instance_count no Godot
+	# 4.7.2. Aloca primeiro o layout de destino e depois copia cada instância.
 	var copy := MultiMesh.new()
 	copy.transform_format = source.transform_format
 	copy.use_colors = source.use_colors
@@ -584,7 +584,7 @@ func _add_roof_prop_solids() -> void:
 		var roof_y: float = definition.roof_height
 		if bounds.position.y < roof_y-.35 or bounds.end.y < roof_y+.12 or bounds.size.y < .12: continue
 		if bounds.size.x < .12 or bounds.size.z < .12: continue
-		# Only physical rooftop objects; pitched roof planes are floors/roofscape.
+		# Só objetos físicos de telhado; planos de telhado inclinado são pisos/paisagem de telhados.
 		if bounds.size.x > definition.size.x*.75 or bounds.size.z > definition.size.y*.75: continue
 		bounds.size.y = bounds.end.y-roof_y
 		bounds.position.y = roof_y

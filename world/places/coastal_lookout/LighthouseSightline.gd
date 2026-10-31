@@ -1,6 +1,6 @@
 extends Node
-## Local visual cut through tower/stair/gallery only. A shared-mesh shadow-only
-## instance preserves each original solid shadow and no collision is changed.
+## Corte visual local só pela torre/escada/galeria. Uma instância só de sombra com a malha
+## compartilhada preserva cada sombra sólida original e nenhuma colisão muda.
 const SHADER := preload("res://world/places/coastal_lookout/LighthouseSightline.gdshader")
 const LAYOUT := preload("res://world/places/coastal_lookout/LighthouseGeometry.gd")
 var _player: CharacterBody3D

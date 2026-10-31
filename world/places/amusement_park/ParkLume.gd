@@ -1,5 +1,5 @@
 extends "res://world/places/amusement_park/ParkGeometry.gd"
-## Fairground scenery. Only the occupied carriage moves, driven by the session.
+## Cenário do parque. Só o carrinho ocupado se move, guiado pela sessão.
 const LAYOUT := preload("res://world/places/amusement_park/AmusementParkLayout.gd")
 const GEOMETRY := preload("res://world/places/amusement_park/ParkGeometry.gd")
 var complete := false
@@ -70,7 +70,7 @@ func sample_coaster(distance: float) -> Transform3D:
 	var front := (curve.sample_baked(fposmod(progress+.18,length),true)-curve.sample_baked(fposmod(progress-.18,length),true)).normalized()
 	var right := front.cross(Vector3.UP).normalized()
 	var pose := Transform3D(Basis(right,right.cross(front).normalized(),-front),at)
-	# Works while detached during template preparation as well as in the world.
+	# Funciona destacado durante a preparação do template e também no mundo.
 	return global_transform*pose if is_inside_tree() else transform*pose
 
 func coaster_eye(distance: float) -> Transform3D:
@@ -115,7 +115,7 @@ func _ground_before() -> void:
 	body.add_child(collision)
 	add_child(body)
 	box("EntranceWalk",Vector3(45.5,-.06,16),Vector3(11,.17,5.8),"b3a185",true,"stone")
-	# A wide cross-shaped promenade links the two attractions and the gate.
+	# Um passeio largo em cruz liga as duas atrações e o portão.
 	box("MainWalk",Vector3(13,.044,15),Vector3(54,.028,6),"d4c5a2",false,"stone")
 	box("UmbraWalk",Vector3(20,.047,4),Vector3(5.2,.03,18),"d4c5a2",false,"stone")
 	for z in [11.85,18.15]: box("PavingBorder",Vector3(13,.063,z),Vector3(54,.02,.13),"736951")
@@ -167,7 +167,7 @@ func _track() -> void:
 				var foot := Vector3(top.x,0,top.z)
 				box("CoasterSupport",(top+foot)*.5,Vector3(.20,top.y,.20),"45615d",true,"metal")
 				box("SupportFoundation",foot+Vector3.UP*.12,Vector3(.66,.24,.66),"8b8270",true,"stone")
-	# Public circulation stays outside the rail envelope and its supporting legs.
+	# A circulação pública fica fora do envelope do trilho e dos pés de apoio.
 	for line in [[Vector3(-37,0,-30),Vector3(-5,0,-30)],[Vector3(-37,0,-30),Vector3(-37,0,23)],
 		[Vector3(-37,0,23),Vector3(-5,0,23)],[Vector3(-5,0,-30),Vector3(-5,0,10)],
 		[Vector3(-5,0,19),Vector3(-5,0,23)]]: _fence(line[0],line[1],1.25)
@@ -185,8 +185,8 @@ func _track() -> void:
 	deck_collision.position = Vector3(-8.45,.06,14.7)
 	deck.add_child(deck_collision)
 	add_child(deck)
-	# The public station opens east. Its visible rail keeps walkers off the track;
-	# boarding is the explicit seated attraction interaction at the deck centre.
+	# A estação pública abre para o leste. O trilho visível mantém os pedestres fora da via;
+	# o embarque é a interação explícita de atração sentada no centro do deck.
 	_fence(Vector3(-11,0,10.3),Vector3(-5,0,10.3),1.15)
 	_fence(Vector3(-11,0,10.3),Vector3(-11,0,13.2),1.15)
 	_fence(Vector3(-11,0,15.5),Vector3(-11,0,19.1),1.15)
@@ -210,7 +210,7 @@ func _track() -> void:
 	gate_shape.shape = gate_box
 	gate_shape.position = Vector3(0,.625,1.15)
 	gate_body.add_child(gate_shape)
-	# A short, solid step bridges the deck and the stationary car's doorway.
+	# Um degrau curto e sólido liga o deck à porta do carrinho parado.
 	box("BoardingStep",Vector3(-11.15,.22,14.35),Vector3(.65,.44,1.6),"745e49",true,"wood")
 	_fence(Vector3(-11,0,19.1),Vector3(-5,0,19.1),1.15)
 	for x in [-10.4,-6.5]:
@@ -251,7 +251,7 @@ func _house() -> void:
 		ball(c+Vector3(x,.97,9.2),Vector3(1.25,1.35,1.0),"43574a")
 
 func _plaza() -> void:
-	# Small striped booth; the coat secret is tucked behind, not on the counter.
+	# Pequena cabine listrada; o segredo do casaco fica escondido atrás, não no balcão.
 	var c := Vector3(-30,0,31)
 	box("Booth",c+Vector3(0,1.0,0),Vector3(5.0,2.0,2.2),"e1cfa4",true,"wood")
 	for i in 9: box("BoothStripe",c+Vector3(-2.2+i*.55,1.0,-1.12),Vector3(.25,1.9,.04),"873e4a")
@@ -290,7 +290,7 @@ func _plaza() -> void:
 	box("WardrobeRoof",Vector3(31,2.45,20),Vector3(2.4,.16,3.5),"773746")
 	box("WardrobeMirror",Vector3(31.87,1.35,20),Vector3(.03,1.6,1.25),"9ca8ae",false,"metal")
 	box("WardrobeMirrorFrame",Vector3(31.92,1.35,20),Vector3(.045,1.82,1.45),"b9965a",false,"metal")
-	# Low reveal trays are shallow floor details, never furniture that blocks pickup.
+	# Bandejas baixas de revelação são detalhes rasos do piso, nunca móveis que bloqueiam a coleta.
 	for p in [Vector3(-31,0,27),Vector3(28,0,27),Vector3(-2,0,-28),Vector3(31,0,-3)]:
 		box("SecretTray",p+Vector3.UP*.057,Vector3(.72,.064,.58),"8f734e",false,"wood")
 

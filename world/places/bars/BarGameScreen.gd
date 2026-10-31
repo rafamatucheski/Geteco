@@ -1,5 +1,5 @@
 extends CanvasLayer
-## Native canvas with remappable gameplay actions and mouse/touch buttons.
+## Canvas nativo com ações de jogo remapeáveis e botões de mouse/toque.
 var adapter
 var game = preload("res://world/places/bars/BarGames.gd").new()
 var root_control: Control
@@ -183,7 +183,7 @@ func _draw_board() -> void:
 			var cue: Vector2 = origin+game.balls[0].position*scale_factor
 			var shot_dir := Vector2.from_angle(game.angle)
 			board.draw_dashed_line(cue,cue+shot_dir*_guide_length()*scale_factor,Color("e9cf84",.7),2,8*scale_factor)
-			# Stick pulls back with strength so the power reads on the table itself.
+			# O taco puxa para trás com a força para a potência aparecer na própria mesa.
 			var butt: Vector2 = cue-shot_dir*(14+game.strength*46)*scale_factor
 			var stick := 300*scale_factor
 			var thick: float = stick*cue_art.get_height()/cue_art.get_width()
@@ -192,7 +192,7 @@ func _draw_board() -> void:
 			board.draw_set_transform(Vector2.ZERO)
 	board.draw_rect(Rect2(Vector2(8,area.y-8),Vector2((area.x-16)*game.strength,5)),Color("edbd69"))
 
-# Guide stops at the first ball in the line of the shot, or at the cushion.
+# A guia para na primeira bola na linha da tacada, ou na tabela.
 func _guide_length() -> float:
 	var start: Vector2 = game.balls[0].position
 	var shot_dir := Vector2.from_angle(game.angle)

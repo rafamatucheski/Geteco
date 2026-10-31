@@ -1,5 +1,5 @@
 extends Node3D
-## Purchase cue only: no collider, light, viewport or input handler.
+## Só indicação de compra: sem colisor, luz, viewport nem tratador de entrada.
 const HOMES := preload("res://data/catalogs/ResidenceCatalog.gd")
 const PLACES := preload("res://world/places/PlaceCatalog.gd")
 var property_id := ""
@@ -18,7 +18,7 @@ static func install(facade: Node3D) -> void:
 	marker.property_id = id
 	facade.add_child(marker)
 	var definition: Dictionary = PLACES.get_definition(id)
-	# Beside the walking approach, within the existing purchase interaction.
+	# Ao lado do caminho a pé, dentro da interação de compra existente.
 	marker.global_position = definition.entry_position + Vector3(1.1,1.55,.55).rotated(Vector3.UP,float(definition.get("editor_rotation",0)))
 
 func _ready() -> void:

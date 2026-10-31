@@ -1,8 +1,8 @@
 extends "res://assets/CivilianModel.gd"
-## Human rig with a staggered sip cycle. The cup follows the same hand target.
-## Variants 0-3 are Lastro's regulars and 4-7 Sede's; slot 3 of each bar works the counter.
+## Rig humano com ciclo de goles defasado. O copo segue o mesmo alvo da mão.
+## As variantes 0-3 são os frequentadores do Lastro e 4-7 os do Sede; o slot 3 de cada bar trabalha no balcão.
 const BODY_INDEX := [0,3,2,5, 1,4,2,5]
-# Desert regulars wear caps and a warmer tone so the shared bodies never read as the same people.
+# Os frequentadores do deserto usam boné e um tom mais quente para os corpos compartilhados nunca parecerem as mesmas pessoas.
 const DESERT_CAPS := [Color("8a3b2c"),Color("c9a25a"),Color("39505a"),Color("5b4a35")]
 var patron_variant := 0
 var character_name := ""
@@ -72,14 +72,14 @@ func _sip() -> float:
 func _drinking_hands() -> Array:
 	if not _can_drink(): return [null,null]
 	var drink := to_global(Vector3(.18,lerpf(1.02,1.51,_sip()),lerpf(.27,.12,_sip())))
-	# The rig's talk gesture lives on the cup hand, so the free hand talks instead.
+	# O gesto de fala do rig fica na mão do copo, então quem fala é a mão livre.
 	if activity != "talk": return [null,drink]
 	var phase := clock*2.1+patron_variant*1.3
 	var gesture := Vector3(-.2+sin(phase*.7)*.05,1.08+sin(phase)*.09,.28+sin(phase*1.6)*.04)
-	# Blends toward a hand resting at the hip while sipping, never snapping between targets.
+	# Mistura em direção a uma mão apoiada no quadril enquanto bebe, nunca saltando entre alvos.
 	return [to_global(Vector3(-.22,.86,.06).lerp(gesture,1.0-smoothstep(0.0,.3,_sip()))),drink]
 
-# Wipes the counter in bursts, resting between them, so the bar has someone working it.
+# Limpa o balcão em surtos, descansando entre eles, para o bar ter alguém trabalhando.
 func _wipe() -> Vector3:
 	var working := smoothstep(-.2,.2,sin(clock*.38+patron_variant))
 	return Vector3(.18+sin(clock*2.2)*.2*working,lerpf(1.0,1.17,working),lerpf(.22,.46,working))

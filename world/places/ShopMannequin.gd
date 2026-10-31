@@ -1,6 +1,6 @@
 extends "res://assets/CivilianModel.gd"
-## A static display built from the same tailored body as living pedestrians.
-## No physics, idle animation or per-frame work is needed for shop furniture.
+## Uma exibição estática montada do mesmo corpo ajustado dos pedestres vivos.
+## Móveis de loja não precisam de física, animação ociosa nem trabalho por quadro.
 
 static func create(id: String, coat: Color, style: int = 0) -> Node3D:
 	var display = load("res://world/places/ShopMannequin.gd").new()
@@ -18,8 +18,8 @@ static func create(id: String, coat: Color, style: int = 0) -> Node3D:
 
 func _ready() -> void:
 	super._ready()
-	# _ready builds and poses the rig synchronously, before the room collects
-	# its solid volumes. Preserve that pose even while the store is occupied.
+	# _ready monta e posa o rig de forma síncrona, antes de o cômodo coletar
+	# os volumes sólidos. Preserva essa pose mesmo com a loja ocupada.
 	set_process(false)
 	set_physics_process(false)
 	process_mode = Node.PROCESS_MODE_DISABLED

@@ -12,7 +12,7 @@ func _ready() -> void:
 		box("SideBrick",Vector3(side*7.88,1.65,0),Vector3(.24,3.3,12),"71675c","SideWall%d"%side,"stone")
 		box("FrontBrick",Vector3(side*4.55,1.65,5.88),Vector3(6.9,3.3,.24),"665448","FrontWall%d"%side,"stone")
 		for y in [.18,2.92]: detail(Vector3(side*7.72,y,0),Vector3(.1,.15,11.5),"42362f","wood")
-	# Northern counter; patrons stand on the customer side and staff behind it.
+	# Balcão norte; os frequentadores ficam do lado do cliente e os funcionários atrás.
 	box("Counter",Vector3(-3.7,.55,-3.6),Vector3(6.6,1.1,.9),"49362e","Counter","wood")
 	box("CounterTop",Vector3(-3.7,1.14,-3.6),Vector3(6.85,.13,1.06),"ad865c","Counter","wood")
 	box("RearShelf",Vector3(-3.7,1.15,-5.55),Vector3(6.8,2.3,.36),"44362b","RearShelf","wood")
@@ -22,12 +22,12 @@ func _ready() -> void:
 	for x in [-5.7,-3.6,-1.5]:
 		box("CounterMat",Vector3(x,1.22,-3.4),Vector3(.5,.025,.35),"35342d","","cloth")
 		detail(Vector3(x+.12,1.37,-3.4),Vector3(.09,.27,.09),"9b713c","paint",Vector3.ZERO,true)
-	# Booth west side: explicitly solid benches and table, kept clear of the entry.
+	# Lado oeste das mesas de canto: bancos e mesa explicitamente sólidos, longe da entrada.
 	for z in [1.0,3.6]:
 		box("Booth",Vector3(-7,.45,z),Vector3(1.1,.9,1.5),"61424b","Booth"+str(z),"cloth")
 	box("SocialTable",Vector3(-5.75,.75,2.25),Vector3(1.5,.14,1.2),"98724d","SocialTable","wood")
 	box("SocialTableBase",Vector3(-5.75,.35,2.25),Vector3(.65,.7,.65),"443b36","SocialTable","metal")
-	# Billiards at natural scale: full footprint blocks movement, not only legs.
+	# Sinuca em escala natural: a área inteira bloqueia o movimento, não só os pés.
 	box("PoolBody",Vector3(3.5,.48,0),Vector3(2.0,.96,3.5),"493b31","PoolTable","wood")
 	box("PoolFelt",Vector3(3.5,.982,0),Vector3(1.68,.055,3.18),"315f57","PoolTable","cloth")
 	for side in [-1,1]:
@@ -35,14 +35,14 @@ func _ready() -> void:
 		box("PoolRailEnd",Vector3(3.5,1.01,side*1.65),Vector3(1.84,.13,.18),"9f7c50","PoolTable","wood")
 		for z in [-1.52,0.0,1.52]: detail(Vector3(3.5+side*.78,1.022,z),Vector3(.18,.024,.18),"171d1b","paint",Vector3.ZERO,true)
 	for i in 7: detail(Vector3(3.2+(i%3)*.16,1.08,-.5+floori(i/3)*.15),Vector3(.09,.09,.09),["e9e0b8","bd963d","a94b3d","4d658a"][i%4],"paint",Vector3.ZERO,true)
-	# Regulation board: 45 cm sisal face, bull at 1.73 m, with the black number ring around it.
+	# Alvo oficial: face de sisal de 45 cm, centro a 1.73 m, com o anel preto de números em volta.
 	box("DartBackboard",Vector3(5.3,1.73,-5.68),Vector3(.9,.9,.10),"654934","DartBackboard","wood")
 	for ring in ([] if painted else [[.46,"1f2727"],[.34,"a34f3c"],[.32,"d1c9ae"],[.21,"41836a"],[.19,"273f37"],[.032,"41836a"],[.013,"a34f3c"]]):
 		_dart_detail(Vector3(5.3,1.73,-5.56-float(ring[0])*.02),Vector3(float(ring[0]),.025,float(ring[0])),str(ring[1]),"paint",Vector3(PI*.5,0,0),true)
 	for i in (0 if painted else 20):
 		var angle := TAU*i/20.0
 		_dart_detail(Vector3(5.3+sin(angle)*.093,1.73+cos(angle)*.093,-5.542),Vector3(.006,.155,.006),"b9ae96","metal",Vector3(0,0,-angle))
-	# Oche runs parallel to the wall at the regulation 2.37 m from the board face.
+	# A linha de arremesso corre paralela à parede nos 2.37 m oficiais da face do alvo.
 	detail(Vector3(5.3,.009,-3.19),Vector3(1.25,.012,.05),"d9c29b")
 	box("Jukebox",Vector3(6.75,.7,3.8),Vector3(.75,1.4,.65),"593d32","Jukebox","wood")
 	box("JukeboxFace",Vector3(6.75,1.05,4.14),Vector3(.58,.49,.026),"a5814f","","screen")
@@ -77,7 +77,7 @@ func _paintings() -> void:
 	DECOR.panel(self,"lastro_fish",Vector3(-7.745,1.95,2.3),Vector2(1.0,.6),PI*.5)
 
 func _dart_detail(at: Vector3, size: Vector3, color: String, kind := "paint", rotation := Vector3.ZERO, round_shape := false) -> void:
-	# Scale in primitive-local axes before rotation; wall discs retain their circle.
+	# Escala nos eixos locais da primitiva antes da rotação; os discos de parede mantêm o círculo.
 	var key := color+kind+str(round_shape)
 	if not _batches.has(key): _batches[key]={"color":color,"kind":kind,"round":round_shape,"transforms":[]}
 	_batches[key].transforms.append(Transform3D(Basis.from_euler(rotation)*Basis.from_scale(size),at))

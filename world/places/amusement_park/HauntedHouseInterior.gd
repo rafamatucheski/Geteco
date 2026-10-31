@@ -1,5 +1,5 @@
 extends "res://world/places/amusement_park/ParkGeometry.gd"
-## Umbra is a harmless walk-through attraction. Frights are mechanical props.
+## Umbra é uma atração inofensiva de percorrer a pé. Os sustos são props mecânicos.
 var variant := 0
 var puppet: Node3D
 var brute: Node3D
@@ -39,14 +39,14 @@ func _shell() -> void:
 	box("Roof",Vector3(0,3.4,0),Vector3(18,.2,15),"272833",false,"wood")
 	for x in [-6,-2,2,6]: box("RoofBeam",Vector3(x,3.18,0),Vector3(.18,.25,14.7),"56473e")
 	box("EntranceCarpet",Vector3(0,.014,5.2),Vector3(2.15,.02,4.1),"70414e",false,"velvet")
-	# Front return wall is physical even when viewed in first person.
+	# A parede de retorno da frente é física mesmo vista em primeira pessoa.
 	box("DoorHeader",Vector3(0,2.98,7.36),Vector3(2.5,.64,.28),"80705c")
 	box("ExitDoorPanel",Vector3(0,1.35,7.36),Vector3(2.35,2.7,.16),"645140",true,"wood")
 	box("ExitDoorInset",Vector3(0,1.45,7.267),Vector3(1.97,2.02,.018),"493c35",false,"wood")
 	box("ExitHandlePlate",Vector3(-.82,1.15,7.242),Vector3(.09,.28,.035),"b69757",false,"metal")
 	box("ExitHandle",Vector3(-.70,1.15,7.19),Vector3(.27,.055,.075),"c9af71",false,"metal")
 	for side in [-1,1]: box("DoorJamb%d"%side,Vector3(side*1.27,1.4,7.32),Vector3(.16,2.8,.30),"80705c",true)
-	# Tall scenery forms a loop with >=2.1 m side aisles and an open rear gallery.
+	# O cenário alto forma um circuito com corredores laterais de >=2.1 m e uma galeria aberta no fundo.
 	box("WestDisplayWall",Vector3(-3.7,1.35,-.6),Vector3(.24,2.7,7.1),"443b43",true,"wallpaper")
 	box("EastDisplayWall",Vector3(3.7,1.35,-.6),Vector3(.24,2.7,7.1),"443b43",true,"wallpaper")
 	box("CentralStageFront",Vector3(0,.44,2.8),Vector3(7.45,.88,.28),"65544a",true,"wood")
@@ -62,7 +62,7 @@ func _displays() -> void:
 		box("PortraitVelvet",base+Vector3(-side*.47,1.43,0),Vector3(.018,1.43,1.36),"2d323b",false,"velvet")
 		ball(base+Vector3(-side*.51,1.5,0),Vector3(.10,.52,.34),"beaa86")
 		for z in [-.09,.09]: ball(base+Vector3(-side*.57,1.60,z),Vector3(.045,.055,.055),"cba985", "glow")
-		# Low coffers fit the outer bays without pinching the 6.4 m circulation line.
+		# Caixotões baixos cabem nas baias externas sem estrangular a linha de circulação de 6.4 m.
 		box("SecretCoffer%d"%side,Vector3(side*7.8,.32,-5.9),Vector3(1.05,.64,1.15),"655244",true,"wood")
 		for y in [.12,.54]: box("CofferBand",Vector3(side*7.8,y,-5.9),Vector3(1.08,.08,1.18),"917a56",false,"metal")
 		box("SecretTray",Vector3(side*6.4,.028,-5.2),Vector3(.60,.05,.48),"8f734e",false,"wood")
@@ -106,7 +106,7 @@ func _displays() -> void:
 	for side in [-1,1]:
 		box("RearCurtain",Vector3(side*1.85,1.5,-7.13),Vector3(.8,2.9,.11),"603341",false,"cloth")
 		for i in 4: box("CurtainFold",Vector3(side*(1.52+i*.2),1.5,-7.03),Vector3(.10,2.9,.10),"79424e",false,"cloth")
-	# Hanging cobweb threads remain high enough for a standing actor to pass.
+	# Fios de teia pendurados ficam altos o bastante para um ator em pé passar.
 	for side in [-1,1]:
 		var corner := Vector3(side*8.6,3.1,-7.1)
 		for i in 6:

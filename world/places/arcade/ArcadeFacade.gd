@@ -1,5 +1,5 @@
 extends "res://world/places/arcade/ArcadeGeometry.gd"
-## A compact Fagulha storefront, authored in the gap between existing shops.
+## Uma fachada compacta da Fagulha, autorada no vão entre lojas existentes.
 const PAINTED := preload("res://world/urban_detail/PaintedFacadeKit.gd")
 const PAINTED_STYLE := "fagulha"
 

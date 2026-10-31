@@ -1,5 +1,5 @@
 extends RefCounted
-## Static dressing is appended to the park's material batches and solid inventory.
+## O mobiliário estático é somado aos lotes de material e ao inventário de sólidos do parque.
 const VENDING := preload("res://activities/amusement_park/AmusementParkVending.gd")
 const TABLES := [Vector3(-18,0,26),Vector3(-9,0,26),Vector3(6,0,24),Vector3(16,0,31),Vector3(11,0,6)]
 const STALLS := [Vector3(-21,0,32),Vector3(-12,0,32),Vector3(3,0,-25),Vector3(3,0,3)]
@@ -29,7 +29,7 @@ static func build(g: Node3D) -> void:
 
 static func _stall(g: Node3D, at: Vector3, index: int) -> void:
 	var color: String = COLORS[index]
-	# All furniture, including the projecting counter, has its full solid volume.
+	# Todo móvel, incluindo o balcão saliente, tem o volume sólido inteiro.
 	g.box("LumeStallBody",at+Vector3(0,.72,0),Vector3(4.8,1.44,2.5),color,true,"wood")
 	g.box("LumeStallBack",at+Vector3(0,1.95,-1.13),Vector3(4.8,1.1,.24),"e1cfa4",true,"wood")
 	g.box("LumeStallCounter",at+Vector3(0,1.20,1.25),Vector3(5.1,.16,.7),"ae8856",true,"wood")

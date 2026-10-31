@@ -43,8 +43,8 @@ static func gallery_route_points() -> PackedVector3Array:
 	return LIGHTHOUSE.gallery_route_points()
 
 static func promenade_route_points() -> PackedVector3Array:
-	# The first 17 m stay inside the 7 m gap between the two BridgeCourt houses.
-	# The coast rail at z=-150 stays intact underneath the raised promenade.
+	# Os primeiros 17 m ficam dentro do vão de 7 m entre as duas casas do BridgeCourt.
+	# O guarda-corpo da costa em z=-150 fica intacto embaixo do passeio elevado.
 	var controls := PackedVector3Array([ENTRANCE, Vector3(319.5,2.2,-147),
 		Vector3(319.5,3.8,-159), Vector3(302,6.1,-171),
 		Vector3(319,8.5,-183), Vector3(309,10.2,-192), BASE_PLAZA])
@@ -56,8 +56,8 @@ static func promenade_route_points() -> PackedVector3Array:
 		for k in range(1,9):
 			var t := float(k)/8.0
 			rounded.append(a.lerp(controls[i],t).lerp(controls[i].lerp(b,t),t))
-	# The path meets the plaza tangentially; its end is inside the open SE arc.
-	# Reach terrace height before its masonry perimeter to avoid a hidden lip.
+	# O caminho encontra a praça na tangente; o fim dele fica dentro do arco SE aberto.
+	# Alcança a altura do terraço antes do perímetro de alvenaria para evitar uma borda escondida.
 	var plaza_landing := BASE_PLAZA + (controls[-2]-BASE_PLAZA).normalized()*10.25
 	rounded.append(plaza_landing)
 	var plaza_entry := BASE_PLAZA + (controls[-2]-BASE_PLAZA).normalized()*7.9
@@ -126,7 +126,7 @@ func _build_walk() -> void:
 	for i in range(path.size()-1):
 		if path[i].distance_squared_to(path[i+1])<.0001: continue
 		_quad("paving",left[i],right[i],right[i+1],left[i+1],Vector3.UP,true)
-		# The retaining masonry is a real volume down into the rock, never a floating slab.
+		# A alvenaria de contenção é um volume real descendo na rocha, nunca uma laje flutuando.
 		for edge in [[left[i],left[i+1]],[right[i],right[i+1]]]:
 			var a: Vector3 = edge[0]
 			var b: Vector3 = edge[1]
@@ -146,7 +146,7 @@ func _guard(a: Vector3, b: Vector3, prefix := "") -> void:
 	_beam(prefix+"coping",a+Vector3.UP*.12,b+Vector3.UP*.12,.34,.24,true)
 	_beam(prefix+"bronze",a+Vector3.UP*1.14,b+Vector3.UP*1.14,.075,.075)
 	_beam(prefix+"bronze",a+Vector3.UP*.43,b+Vector3.UP*.43,.05,.05)
-	# Invisible panel matches the visible railing; do not allow slipping between rods.
+	# O painel invisível bate com o guarda-corpo visível; não deixa escorregar entre as barras.
 	_collision_box((a+b)*.5+Vector3.UP*.65,Vector3(.13,1.16,a.distance_to(b)+.025),_beam_basis(a,b))
 	var count := maxi(1,ceili(a.distance_to(b)/.55))
 	for i in count:
@@ -167,9 +167,9 @@ func _build_plaza() -> void:
 		_triangle("paving",BASE_PLAZA,a,b,Vector3.UP,true)
 		var outward := ((a+b)*.5-BASE_PLAZA).normalized()
 		_quad("wall",a,b,b-Vector3.UP*2.9,a-Vector3.UP*2.9,outward,true)
-		# The swept walk enters from southeast; this arc is the sole railing opening.
+		# O passeio varrido entra pelo sudeste; este arco é a única abertura do guarda-corpo.
 		if outward.dot(opening_center)<.94: _guard(a,b)
-		# Pale radial border is a solid stone inlay, offset only 4mm above paving.
+		# A borda radial clara é um embutido de pedra sólida, só 4mm acima do calçamento.
 		var inner_a := BASE_PLAZA+(a-BASE_PLAZA)*.925+Vector3.UP*.004
 		var inner_b := BASE_PLAZA+(b-BASE_PLAZA)*.925+Vector3.UP*.004
 		_quad("coping",inner_a,inner_b,b+Vector3.UP*.004,a+Vector3.UP*.004,Vector3.UP)
@@ -199,7 +199,7 @@ func _build_promontory() -> void:
 		var size := Vector3(rng.randf_range(2.1,4.6),rng.randf_range(1.4,4.0),rng.randf_range(2.4,5.0))
 		_rock(center,size,200+i)
 		if i%2==0: _surf(center,size.x*.86,size.z*.86,angle)
-	# Small planted pockets sit outside the walk, on broad stone shoulders.
+	# Pequenos canteiros ficam fora do passeio, em ombros largos de pedra.
 	for p: Vector3 in [Vector3(294,6.7,-198),Vector3(309,7.8,-207),Vector3(309,4.0,-177)]:
 		for i in 5:
 			var angle := TAU*i/5.0
@@ -238,8 +238,8 @@ func _surf(center: Vector3, radius_x: float, radius_z: float, phase: float) -> v
 	for i in 24:
 		var a := TAU*i/24.0
 		var b := TAU*(i+1)/24.0
-		# Start under the submerged rock footprint. Noise removes the exposed
-		# outer edge; the apron cannot appear as a detached ring round the rock.
+		# Começa sob a área da rocha submersa. O ruído remove a borda externa
+		# exposta; o pátio não pode aparecer como um anel solto em volta da rocha.
 		var points := [Vector3(cos(a)*radius_x*.58,0,sin(a)*radius_z*.58),Vector3(cos(b)*radius_x*.58,0,sin(b)*radius_z*.58),Vector3(cos(b)*(radius_x+3.0),0,sin(b)*(radius_z+3.0)),Vector3(cos(a)*(radius_x+3.0),0,sin(a)*(radius_z+3.0))]
 		var uvs := [Vector2(a*radius_x+phase,0),Vector2(b*radius_x+phase,0),Vector2(b*radius_x+phase,1),Vector2(a*radius_x+phase,1)]
 		for index in [0,2,1,0,3,2]:
@@ -336,10 +336,10 @@ func _append_mesh(id: String, mesh: Mesh, mesh_transform: Transform3D, solid: bo
 		var st := SurfaceTool.new()
 		st.begin(Mesh.PRIMITIVE_TRIANGLES)
 		_batches[id] = st
-	# All batches are non-indexed triangles. append_from() on an indexed Box/
-	# Cylinder creates an index buffer referring only to primitive vertices;
-	# manually emitted ring/quad vertices then disappear from that same batch.
-	# Expand source indices here, preserving each primitive's normals and UVs.
+	# Todos os lotes são triângulos sem índice. append_from() num Box/
+	# Cylinder indexado cria um buffer de índice que só aponta para vértices da primitiva;
+	# os vértices de anel/quad emitidos à mão somem então desse mesmo lote.
+	# Expande aqui os índices da fonte, preservando as normais e UVs de cada primitiva.
 	# Cópia na CPU (compartilhada, só leitura): surface_get_arrays lia a malha de volta da GPU.
 	var arrays := MESH_ARRAYS.arrays_of(mesh, 0)
 	var vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]

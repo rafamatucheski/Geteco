@@ -1,5 +1,5 @@
 extends RefCounted
-## Pedestrian fairground west of Harbor; northeast corner follows the rural road.
+## Parque de diversões de pedestres a oeste do Harbor; o canto nordeste segue a estrada rural.
 const ORIGIN := Vector3(-176,0,78)
 const FOOTPRINT := Rect2(-216,42,80,72)
 const APPROACH := Rect2(-136,91,11,6)
@@ -28,8 +28,8 @@ static func coaster_curve() -> Curve3D:
 		Vector3(-16,15,-23),Vector3(-24,16,-26),Vector3(-32,11,-21),
 		Vector3(-34,2,-8),Vector3(-31,6,3),Vector3(-34,3,14),
 		Vector3(-28,.8,20),Vector3(-19,.38,20)])
-	# One simple perimeter circuit: no overlapping inner returns or pillars
-	# through another rail. The last/first section is straight and level to dock.
+	# Um circuito de perímetro simples: sem retornos internos sobrepostos nem pilares
+	# atravessando outro trilho. O último/primeiro trecho é reto e nivelado para atracar.
 	for i in knots.size():
 		var tangent := (knots[(i+1)%knots.size()]-knots[posmod(i-1,knots.size())])*.15
 		if i == 0: tangent = Vector3(0,0,-2.4)
@@ -37,7 +37,7 @@ static func coaster_curve() -> Curve3D:
 		if knots[i].y <= .38: tangent.y = 0
 		var incoming := -tangent
 		var outgoing := tangent
-		# Low station/return handles cannot pull the cubic rail under the ground.
+		# Alças baixas de estação/retorno não podem puxar o trilho cúbico para baixo do chão.
 		incoming.y = maxf(incoming.y,.38-knots[i].y)
 		outgoing.y = maxf(outgoing.y,.38-knots[i].y)
 		curve.add_point(knots[i],incoming,outgoing)

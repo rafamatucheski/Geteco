@@ -1,6 +1,6 @@
 extends "res://assets/CivilianModel.gd"
-## Shop staff use the current articulated pedestrian directly, without a
-## second hidden legacy body or the old resident scale multipliers.
+## Os funcionários da loja usam direto o pedestre articulado atual, sem um
+## segundo corpo legado escondido nem os antigos multiplicadores de escala de morador.
 var character_name := "Atendente"
 var is_female := false
 ## Lojas da serra (OriginalResidents): roupa de neve, como os moradores lá fora. O mercado Boa Praça do

@@ -26,8 +26,8 @@ func surface(color: String, kind := "wood") -> StandardMaterial3D:
 		return super.surface(color, original)
 	return super.surface(color, kind)
 
-## Curitiba Cellar: native 14 x 11 metre shop, composed for the Maciota camera.
-## NativePlace builds the physical volumes before admitting player/residents.
+## Curitiba Cellar: loja nativa de 14 x 11 metros, composta para a câmera do Maciota.
+## O NativePlace monta os volumes físicos antes de admitir jogador/moradores.
 const ROOM_SIZE := Vector2(14,11)
 const ENTRY := Vector3(0,0,4.0)
 const EXIT := Vector3(0,0,4.95)
@@ -64,7 +64,7 @@ func _shell() -> void:
 			var x := -6.01+col*2.0
 			var z := -5.25+row*.5
 			piece("box",Vector3(x,.002,z),Vector3(1.983,.008,.483),["71503b","7c5940","856044"][(row+col*2)%3],"shell_wood")
-	# The light stone aisle remains unobstructed from the entrance to Nelson.
+	# O corredor de pedra clara fica desobstruído da entrada até o Nelson.
 	box("StoneRunner",Vector3(.25,.01,.85),Vector3(2.8,.016,8.55),"c3b99f","","shell_stone")
 	for x in [-1.175,1.675]: piece("box",Vector3(x,.021,.85),Vector3(.025,.008,8.55),"ad8c50","metal")
 	box("BackWall",Vector3(0,1.6,-5.38),Vector3(14,3.2,.24),"c7bba4","BackWall","shell_stone")
@@ -79,8 +79,8 @@ func _shell() -> void:
 	for side in [-1,1]: piece("box",Vector3(side*.88,.042,4.58),Vector3(.028,.006,.9),"b69b65","shell_cloth")
 
 func _wine_library() -> void:
-	# Four distinct selections use bottle/foil colors; country names stay in the
-	# functional buying UI, never on decorative explanatory signs.
+	# Quatro seleções distintas usam cores de garrafa/lacre; os nomes de país ficam na
+	# interface funcional de compra, nunca em placas decorativas explicativas.
 	var labels := ["eee5c4","e4d2a1","d6c3a9","e4dcc5"]
 	var foils := ["274f70","487046","762f3a","9b573c"]
 	for index in 4:
@@ -97,8 +97,8 @@ func _wine_library() -> void:
 				bottle(Vector3(x-1.0+item*.181,y+.034,-4.55),labels[index],"253a2a" if index%2 == 0 else "313524",foils[index])
 			piece("box",Vector3(x,y+.415,-4.56),Vector3(2.13,.02,.025),"f0c68b","glow")
 		for edge in [-1,1]: piece("box",Vector3(x+edge*1.105,1.25,-4.52),Vector3(.035,2.14,.032),"ae8c51","metal")
-	# Wine cubbies on the left, a shorter display on the right leaving the
-	# financial workspace open to the room and keeping the service path clear.
+	# Nichos de vinho à esquerda, uma vitrine mais baixa à direita deixando o
+	# espaço de trabalho financeiro aberto para o cômodo e a rota de atendimento livre.
 	for side in [-1,1]:
 		for bay in (3 if side < 0 else 2):
 			var z := -.95+bay*1.65
@@ -140,8 +140,8 @@ func _tasting_counter() -> void:
 		for side in [-1,1]: piece("box",Vector3(x+side*.22,.44,-.665),Vector3(.035,.04,.035),"a89570","metal")
 
 func _financial_office() -> void:
-	# Half-height screens keep Luisa visible and the office reachable from the
-	# right aisle. The inhabited chair belongs to her native actor model.
+	# Divisórias de meia altura mantêm a Luisa visível e o escritório alcançável pelo
+	# corredor da direita. A cadeira ocupada pertence ao modelo de ator nativo dela.
 	box("OfficeCredenza",Vector3(5.86,.40,-3.84),Vector3(.81,.8,1.09),"684933","OfficeCredenza")
 	box("OfficeDesk",Vector3(4.65,.645,-2.94),Vector3(2.25,.25,1.0),"755139","OfficeDesk")
 	box("OfficeDrawers",Vector3(5.48,.34,-2.94),Vector3(.49,.68,.91),"664732","OfficeDesk")
@@ -187,7 +187,7 @@ func _display_islands() -> void:
 		for row in 3:
 			for col in 5:
 				bottle(Vector3(x-.56+col*.28,1.026,1.57+row*.47),"e0d3ad","283c2b","6c2c3b" if side<0 else "947743")
-		# A wooden gift box and linen wrapping make the premium offer readable.
+		# Uma caixa de presente de madeira e um embrulho de linho deixam a oferta premium legível.
 		box("GiftBox",Vector3(x+.46,1.05,2.75),Vector3(.42,.08,.41),"c6aa7a")
 		piece("box",Vector3(x+.46,1.092,2.75),Vector3(.035,.009,.41),"732e40","cloth")
 	box("WaterSideboard",Vector3(3.98,.43,.10),Vector3(1.45,.86,.64),"705039","WaterSideboard")
@@ -205,8 +205,8 @@ func _planter(at: Vector3, id: String) -> void:
 		piece("leaf",at+Vector3(sin(angle)*.22,1.14+sin(i*1.7)*.16,cos(angle)*.18),Vector3(.34,.24,.30),"5c6b42","cloth")
 
 func _greek_details() -> void:
-	# Aegean architecture and a small classical amphora express Nelson's
-	# interest in Greece through objects, without wall paragraphs or slogans.
+	# Arquitetura do Egeu e uma pequena ânfora clássica expressam o interesse do Nelson
+	# pela Grécia por meio de objetos, sem parágrafos na parede nem slogans.
 	box("AegeanFrame",Vector3(-1.35,2.76,-5.21),Vector3(2.9,.69,.065),"a78a57","","metal")
 	box("AegeanSky",Vector3(-1.35,2.76,-5.167),Vector3(2.78,.58,.023),"708e9a","","paper")
 	box("AegeanSea",Vector3(-1.35,2.57,-5.146),Vector3(2.78,.18,.01),"335d78","","paper")
@@ -223,8 +223,8 @@ func _greek_details() -> void:
 			piece("leaf",Vector3(x+handle_side*.16,1.46,4.2),Vector3(.075,.19,.065),"9b603e","stone")
 
 func _lighting() -> void:
-	# The office pendant is offset from Luisa's head in the fixed gameplay
-	# camera, so the occupied workstation stays readable while she types.
+	# O pendente do escritório fica deslocado da cabeça da Luisa na câmera fixa do
+	# jogo, para a estação ocupada continuar legível enquanto ela digita.
 	for at: Vector3 in [Vector3(-3.6,0,-1.2),Vector3(.1,0,-1.2),Vector3(3.45,0,-2.5)]:
 		piece("round",at+Vector3(0,2.86,0),Vector3(.025,.55,.025),"45413a","metal")
 		piece("cup",at+Vector3(0,2.55,0),Vector3(.56,.27,.56),"ac8650","metal")

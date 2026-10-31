@@ -1,7 +1,7 @@
 extends Node3D
-## Takeshi's ground-floor living room and race office, in human-scale metres.
+## Sala de estar e escritório de corrida no térreo do Takeshi, em metros de escala humana.
 var solids: Array[Rect2] = [Rect2(-6,-4.5,12,.25),Rect2(-6,-4.5,.25,9),Rect2(5.75,-4.5,.25,9),Rect2(-6,4.25,4.8,.25),Rect2(1.2,4.25,4.8,.25),Rect2(1.15,-2.4,2.5,1.3),Rect2(-5.45,-2.8,1.15,3.9),Rect2(-1.3,-4.15,4.8,.65)]
-# East service wall leaves the living room, desk and entrance axis unobstructed.
+# A parede de serviço leste deixa a sala, a mesa e o eixo da entrada desobstruídos.
 var roof_access_point := Vector3(4.86,0,2.0)
 var roof_access_yaw := PI*.5
 

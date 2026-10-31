@@ -1,7 +1,7 @@
 extends Node3D
 
-## Human-scale hold beneath Santa Mare's working deck. NativePlace owns the
-## matching physical solids, while this model supplies the visible interior.
+## Porão em escala humana sob o convés de trabalho do Santa Mare. O NativePlace é dono dos
+## sólidos físicos correspondentes, e este modelo fornece o interior visível.
 var solid_rects := {
 	"PortBulkhead": Rect2(-9.0, -6.0, .28, 12.0),
 	"StarboardBulkhead": Rect2(8.72, -6.0, .28, 12.0),
@@ -52,7 +52,7 @@ func _ready() -> void:
 	_box("HatchLadder",Vector3(-.15,1.2,5.42),Vector3(.12,2.4,.12),"c9af64")
 	for y in 6:
 		_box("LadderRung",Vector3(-.55,.32+float(y)*.36,5.42),Vector3(.86,.07,.12),"d1ba75")
-	# A narrow gap around the forward racks reveals the hidden sea chest.
+	# Um vão estreito em volta das prateleiras da frente revela o baú marítimo escondido.
 	_box("TreasureChest",Vector3(6.7,.36,-4.6),Vector3(1.1,.72,.9),"7b5638")
 	_box("TreasureLid",Vector3(6.7,.77,-4.6),Vector3(1.15,.13,.95),"ae8851")
 	for x in [6.27,7.13]:

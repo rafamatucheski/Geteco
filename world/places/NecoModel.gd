@@ -16,7 +16,7 @@ func _tailor_neco() -> void:
 		detail.piece(torso_node,Vector3(.035,.25,.04),Vector3(side*.10,.13,-.18),Color("bda478"))
 	detail.piece(torso_node,Vector3(.19,.12,.035),Vector3(0,-.10,-.225),Color("647367"))
 	detail.piece(torso_node,Vector3(.05,.045,.04),Vector3(.13,-.22,-.18),Color("ddb96c"))
-	# Grey moustache and safety goggles resting on the cap are unique to Neco.
+	# Bigode grisalho e óculos de proteção apoiados no boné são exclusivos do Neco.
 	for side in [-1,1]:
 		detail.piece(head_node,Vector3(.065,.032,.035),Vector3(side*.033,-.052,-.151),Color("a6a292"))
 		detail.piece(head_node,Vector3(.09,.06,.04),Vector3(side*.055,.10,-.16),Color("202e2c"))

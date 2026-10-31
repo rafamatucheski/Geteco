@@ -1,5 +1,5 @@
 extends "res://assets/CivilianModel.gd"
-## Shared civilian rig and gait, with small accessories attached to its real joints.
+## Rig e andar civis compartilhados, com pequenos acessórios presos às juntas reais.
 const ART := preload("res://world/places/amusement_park/ParkGeometry.gd")
 const PALETTES := [["347f95","a63f55","e4b754"],["a64951","3c626b","ddbd57"],["735290","cab44a","46978a"],["c47c38","496aa0","a63f55"]]
 var clown_index := 0

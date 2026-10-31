@@ -30,7 +30,7 @@ func _shell() -> void:
 			box("MoonGlass",Vector3(side*8.57,5.4,z),Vector3(.025,1.8,1.3),"263c51",false,"glow")
 			for cross in [-.47,0,.47]: box("WindowMullion",Vector3(side*8.54,5.4,z+cross),Vector3(.06,1.85,.07),"292b30")
 	box("WingCeiling",Vector3(0,7.15,-17.5),Vector3(18,.24,20),"191c23",true,"wood")
-	# Upper gallery spans the back half; below it the crypt remains accessible.
+	# A galeria superior cobre a metade do fundo; abaixo dela a cripta continua acessível.
 	box("UpperGallery",Vector3(0,3.36,-22.7),Vector3(17.7,.28,9.4),"46382f",true,"floorboards")
 	for x in [-4,4]: box("GalleryColumn",Vector3(x,1.65,-18.6),Vector3(.35,3.3,.38),"695847",true,"wood")
 	for z in [-10,-15,-20,-25]: box("CeilingBeam",Vector3(0,6.9,z),Vector3(17.8,.30,.26),"514538")
@@ -90,7 +90,7 @@ func _rail(a: Vector3,b: Vector3) -> void:
 		beam(p,p-Vector3.UP*.95,.045,.045,"876f50","wood")
 
 func _dressing() -> void:
-	# Banquet/crypt, fireplace, library and nursery arranged off the walking lines.
+	# Banquete/cripta, lareira, biblioteca e quarto infantil arranjados fora das linhas de caminhada.
 	box("BanquetTable",Vector3(0,.58,-15.7),Vector3(4.3,1.16,2.3),"40332b",true,"wood")
 	box("TableCloth",Vector3(0,1.17,-15.7),Vector3(4.42,.04,2.36),"512c32",false,"velvet")
 	for x in [-1.5,0,1.5]:
@@ -126,7 +126,7 @@ func _dressing() -> void:
 	for side in [-1,1]:
 		box("CryptCoffin",Vector3(side*6,.5,-24.5),Vector3(1.6,1.0,2.8),"4a3935",true,"wood")
 		for z in [-23.7,-25.3]: box("CoffinBand",Vector3(side*6,1.01,z),Vector3(1.65,.07,.14),"8b7650",false,"metal")
-		# Frames and cracked faces on the stairwell wall.
+		# Molduras e rostos rachados na parede da escadaria.
 		for z in [-10,-15,-20]:
 			box("PortraitFrame",Vector3(side*8.48,2.0,z),Vector3(.18,1.5,1.05),"8a714d",false,"wood")
 			box("PortraitCanvas",Vector3(side*8.37,2.0,z),Vector3(.035,1.23,.80),"292c32",false,"cloth")

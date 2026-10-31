@@ -1,5 +1,5 @@
 extends "res://assets/CivilianModel.gd"
-## Existing human rig, with hands reaching the occupied machine's controls.
+## Rig humano existente, com as mãos alcançando os controles da máquina ocupada.
 var character_name := ""
 var player_variant := 0
 var _machine_position := Vector3.ZERO
@@ -30,8 +30,8 @@ func _playing_hands() -> Array:
 	if is_instance_valid(_owner_actor) and (_owner_actor.get("dead") == true or _owner_actor.get_meta("workplace_threatened", false)):
 		return [null, null]
 	if global_position.distance_to(_machine_position) > .12: return [null, null]
-	# Keep a bend at the elbows rather than stretching to unreachable controls.
-	# Alternate taps with a brief hand rest so the residents visibly play.
+	# Mantém uma dobra nos cotovelos em vez de esticar até controles inalcançáveis.
+	# Alterna toques com um breve descanso da mão para os moradores visivelmente jogarem.
 	var phase := clock + player_variant * 1.7
 	var tapping := maxf(0.0,sin(phase*5.4))
 	var resting := smoothstep(.65,.95,sin(phase*.7))

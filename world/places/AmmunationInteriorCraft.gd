@@ -16,7 +16,7 @@ static func build(root: Node3D) -> void:
 	_rear_displays(root)
 	_counter(root)
 	_side_displays(root)
-	# Same authored work position and reactive NPC contract as the shared kit.
+	# Mesma posição de trabalho autorada e contrato de NPC reativo do kit compartilhado.
 	var npc := ART.gunsmith(root, true)
 	npc.position = Vector3(0, 0, -3.4)
 
@@ -37,7 +37,7 @@ static func _part(root: Node3D, id: String, size: Vector3, point: Vector3, color
 
 static func _floor(root: Node3D) -> void:
 	_part(root,"Floor",Vector3(14,.16,10),Vector3(0,-.09,0),Color("686b62"))
-	# Large stone tiles, with shallow seams below the actors' physical sole.
+	# Ladrilhos grandes de pedra, com juntas rasas abaixo da sola física dos atores.
 	for x in range(-6,7,2):
 		_part(root,"FloorJoint",Vector3(.014,.008,10),Vector3(x,-.004,0),Color("484f49"))
 	for z in range(-4,5,2):
@@ -55,7 +55,7 @@ static func _walls(root: Node3D) -> void:
 		_part(root,"ExitCutaway",Vector3(5.8,.42,.22),Vector3(side*4.1,.21,4.9),WOOD)
 		var jamb := _part(root,"EntranceJamb",Vector3(.18,1.4,.26),Vector3(side*1.15,.7,4.82),METAL)
 		jamb.set_meta("interior_solid_id","HarborEntranceJamb%d"%side)
-	# The store name is the only decorative lettering.
+	# O nome da loja é o único letreiro decorativo.
 	_part(root,"BrandBoard",Vector3(5.8,.67,.10),Vector3(0,2.52,-4.78),RED)
 	ART.text(root,"AMMU-NATION",Vector3(0,2.53,-4.71),.012,Color("e4dfcc"))
 
@@ -64,7 +64,7 @@ static func _rear_displays(root: Node3D) -> void:
 		var x: float = side*4.8
 		_part(root,"WeaponCabinet",Vector3(3.5,1.85,.18),Vector3(x,1.22,-4.73),METAL)
 		_part(root,"WeaponBacking",Vector3(3.28,1.63,.04),Vector3(x,1.23,-4.61),Color("616d61"))
-		# Rails read as workshop fittings instead of hundreds of individual peg dots.
+		# Os trilhos parecem acessórios de oficina em vez de centenas de pontinhos de pino individuais.
 		for row in 3:
 			var y := .63+row*.51
 			_part(root,"WeaponRail",Vector3(3.15,.035,.05),Vector3(x,y,-4.55),Color("929589"))
@@ -89,7 +89,7 @@ static func _counter(root: Node3D) -> void:
 	for x in [-1.68,0,1.68]:
 		_part(root,"CounterFrontPanel",Vector3(1.52,.42,.025),Vector3(x,.43,-1.645),Color("84735a"))
 	_part(root,"CounterFelt",Vector3(4.98,.05,1.1),Vector3(0,.75,-2.2),FELT)
-	# Reuse the kit glass shader; no extra light or animated effect is needed.
+	# Reaproveita o shader de vidro do kit; não precisa de luz extra nem efeito animado.
 	if _counter_glass == null:
 		_counter_glass = StandardMaterial3D.new()
 		_counter_glass.albedo_color = Color(.62,.78,.74,.12)

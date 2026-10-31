@@ -1,6 +1,6 @@
 extends Node3D
-## Visual-only silhouettes from the production geography. No remote chunks,
-## physics, actors, lights, guessed town placement or save state are mounted.
+## Silhuetas só visuais da geografia de produção. Não monta chunks remotos,
+## física, atores, luzes, posições de cidade chutadas nem estado de save.
 const DESERT := preload("res://world/editing/EditableDesertRegion.gd")
 const LAYOUT := preload("res://world/desert/DesertLayout.gd")
 const VILLAGE := preload("res://world/desert/DesertMoonVillage.gd")
@@ -29,8 +29,8 @@ func build(production) -> void:
 	_cylinder.top_radius = .5
 	_cylinder.bottom_radius = .5
 	_cylinder.height = 1.0
-	# prepare_data is read-only geography preparation; the detached region never
-	# enters the tree, so no ambient life, horizon, chunks or mining systems start.
+	# prepare_data é preparação de geografia só de leitura; a região destacada nunca
+	# entra na árvore, então nenhuma vida ambiente, horizonte, chunk ou sistema de mineração começa.
 	var desert = DESERT.new()
 	desert.prepare_data()
 	for data: Dictionary in desert.buildings:
@@ -50,7 +50,7 @@ func build(production) -> void:
 	var harbor = production.regions.get("harbor")
 	if is_instance_valid(harbor):
 		for data: Dictionary in harbor.buildings:
-			# Primary garage and underground/manhole services have independent art.
+			# A garagem principal e os serviços subterrâneos/de bueiro têm arte independente.
 			if str(data.get("id","")) in ["Garage","maciota_garage"]: continue
 			if str(data.get("kind","")) in ["sewer","manhole"]: continue
 			var row := data.duplicate(true)
@@ -209,8 +209,8 @@ func _flush() -> void:
 	_geometry.clear()
 
 func restore_prebuilt(sources: Array[Dictionary]) -> void:
-	# PackedScene preserves mesh/material resources and cell metadata. No
-	# generator, editor read, detached region or geometry allocation on re-entry.
+	# O PackedScene preserva recursos de malha/material e metadados de célula. Sem
+	# gerador, leitura de editor, região destacada nem alocação de geometria ao reentrar.
 	source_buildings.assign(sources)
 	_cells.clear()
 	for child in get_children():
@@ -218,8 +218,8 @@ func restore_prebuilt(sources: Array[Dictionary]) -> void:
 			_cells.append({"region":str(child.get_meta("panorama_region")),"cell":child.get_meta("panorama_cell"),"visual":child,"shown":child.visible})
 
 func refresh(production) -> void:
-	# A region can be resident with only its bridge cells. Keep all distant town
-	# cells until that exact cell's building records have finished dressing.
+	# Uma região pode estar residente só com as células da ponte. Mantém todas as células
+	# da cidade distante até os registros de prédios daquela célula terminarem o mobiliário.
 	var completed := {}
 	for id in ["harbor","desert"]:
 		var region = production.regions.get(id)

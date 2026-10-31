@@ -17,10 +17,10 @@ func _ready() -> void:
 	speed = 1.2
 	super._ready()
 	shopping_model = visual.get_child(0)
-	# Portable basket and products are parented to the body's visual, never to world.
+	# A cesta portátil e os produtos são filhos do visual do corpo, nunca do mundo.
 	var basket := preload("res://world/places/supermarket/MarketGeometry.gd").new()
 	visual.add_child(basket)
-	# Actor rotates the civilian model by PI: its front is visual -Z.
+	# O Actor gira o modelo civil em PI: a frente dele é -Z visual.
 	basket.rotation.y = PI
 	for side in [-1,1]:
 		basket.box("BasketSide",Vector3(side*.25,.93,.38),Vector3(.035,.22,.34),"bf9040")
@@ -102,7 +102,7 @@ func _advance() -> void:
 			collision_mask = 1
 			wait_time = 6.0+customer_index*1.7
 		"away":
-			# Reuse the body only at the doorway, and wait if the player occupies it.
+			# Reaproveita o corpo só na porta, e espera se o jogador a estiver ocupando.
 			if market.session.world.player.global_position.distance_to(global_position) < 1.2: return
 			show()
 			collision_layer = 2

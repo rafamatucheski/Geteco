@@ -104,8 +104,8 @@ func cylinder(parent: Node3D, at: Vector3, radius: float, height: float, color: 
 
 func _build() -> void:
 	var ground := box(stage,Vector3(0,-.14,0),Vector3(32,.22,23),"706a56")
-	# Gravel and the loading court share one elevation and meet at a cut edge.
-	# Keep the existing editable owners; replace only their ground geometry.
+	# Cascalho e o pátio de carga dividem uma elevação e se encontram numa borda cortada.
+	# Mantém os donos editáveis existentes; troca só a geometria do chão deles.
 	var court := Rect2(-6,-5.5,16,17)
 	ground.mesh = GROUND_CUT.flat_mesh(GROUND_CUT.subtract_exact([GROUND_CUT.rect_polygon(Rect2(-16,-11.5,32,23))],[GROUND_CUT.rect_polygon(court)]),.006,1.0)
 	ground.position = Vector3.ZERO
@@ -126,8 +126,8 @@ func _build() -> void:
 		box(stage,Vector3(x,.06,6),Vector3(.12,.015,5.1),"e8c86f")
 	for z in [3.5,8.5]:
 		box(stage,Vector3(-1,.06,z),Vector3(3.1,.015,.12),"e8c86f")
-	# Text and pictograms live on readable boards in the world canvas.
-	# Workshop office with corrugated roof, reception awning, window and benches.
+	# Texto e pictogramas vivem em placas legíveis na tela do mundo.
+	# Escritório da oficina com telhado ondulado, toldo de recepção, janela e bancos.
 	var first := stage.get_child_count()
 	box(stage,Vector3(-10,1.1,5),Vector3(6,2.2,3.6),"456258")
 	box(stage,Vector3(-10,2.3,5),Vector3(6.5,.17,4.1),"a1a99a")
@@ -138,7 +138,7 @@ func _build() -> void:
 	box(stage,Vector3(-10,2.16,7.55),Vector3(6.5,.12,1.5),"b97740")
 	for x in [-13.0,-7.0]: box(stage,Vector3(x,1.08,8.2),Vector3(.09,2.2,.09),"6e7261")
 	_solid_since("Office", first)
-	# Containers, sorted engines and rusty barrels; they stay outside the bay.
+	# Contêineres, motores separados e barris enferrujados; ficam fora da baia.
 	for x in [-10.0,-4.0]:
 		first = stage.get_child_count()
 		box(stage,Vector3(x,1,-8.5),Vector3(4.7,2,2.6),"80503c" if x < -5 else "536c78")
@@ -198,7 +198,7 @@ func _build() -> void:
 		for x in [-16,16]: box(stage,Vector3(x,y,0),Vector3(.05,.05,23),"797565")
 		for x in [-10,10]: box(stage,Vector3(x,y,11.5),Vector3(12,.05,.05),"797565")
 	for x in [-3.9,3.9]: box(stage,Vector3(x,1.45,11.5),Vector3(.17,2.9,.17),"7a6c4d")
-	# Keep each continuous fence span's existing mesh and collider together.
+	# Mantém juntos a malha e o colisor existentes de cada vão contínuo de cerca.
 	var fence_nodes := {"north":[],"west":[],"east":[],"south_west":[],"south_east":[]}
 	for node in stage.get_children().slice(first):
 		var p: Vector3 = node.position
@@ -239,7 +239,7 @@ func _wreck(p: Vector3, color: String, angle: float, index: int) -> void:
 	for x in [-.8,.8]:
 		box(car,Vector3(x,.5,0),Vector3(.09,.32,2.2),color)
 		for z in [-.85,.8]: box(car,Vector3(x,.95,z),Vector3(.08,.95,.08),color)
-	# Partially cut roofs leave the cabin visibly hollow from the game camera.
+	# Telhados parcialmente cortados deixam a cabine visivelmente oca na câmera do jogo.
 	box(car,Vector3(0,1.40,.55),Vector3(1.75,.09,.6),color).rotation.z=.15
 	box(car,Vector3(-.75,1.3,-.3),Vector3(.12,.1,1.35),color).rotation.x=.15
 	box(car,Vector3(.7,1.35,-.3),Vector3(.1,.1,1.35),color).rotation.z=-.25
@@ -290,7 +290,7 @@ func _build_press() -> void:
 	stage.add_child(press)
 	EDIT_PIECES.mark(press,"neco/press","Neko / Prensa (operação)",true)
 	_build_button()
-	# Compatibility reference only; no old static press or broad Press hull remains.
+	# Só referência de compatibilidade; não sobra a prensa estática antiga nem a carcaça larga da Press.
 	plate = press.get_node("RamAssembly")
 
 

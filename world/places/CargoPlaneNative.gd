@@ -1,6 +1,6 @@
 extends Node3D
 const PICKUP := preload("res://systems/inventory/PickupPresentation.gd")
-## Original aircraft and original aisle/treasure geometry in the shared native world.
+## Avião original e geometria original de corredor/tesouro no mundo nativo compartilhado.
 var model: Node3D
 var reward_points: Array[Dictionary] = []
 var _roof_parts: Array[Node3D] = []
@@ -107,17 +107,17 @@ func _open_cargo_aisle() -> void:
 	for part in model.find_children("*", "MeshInstance3D", true, false):
 		if not part is MeshInstance3D or not part.mesh is BoxMesh: continue
 		if part.material_override in [materials.get("crate_wood"),materials.get("crate_metal")]:
-			# The supplied art stacked cargo across the complete fuselage width.
-			# Lash it against the port wall and keep the middle/right aisle open.
+			# A arte fornecida empilhava carga pela largura inteira da fuselagem.
+			# Amarra-a contra a parede de bombordo e mantém o corredor do meio/direito aberto.
 			part.position.x = -0.95
 			part.mesh = part.mesh.duplicate()
 			part.mesh.size.x = minf(part.mesh.size.x,0.55)
 		if part.position.y > 2.0 and absf(part.position.x)<0.1:
-			# Wing centre and raised tail would still cover the walking corridor
-			# even with CutawayRoof removed. Treat these as overhead sections.
+			# O centro da asa e a cauda elevada ainda cobririam o corredor de caminhada
+			# mesmo com CutawayRoof removido. Trata-os como seções superiores.
 			_roof_parts.append(part)
-	# The optimized aircraft batches static boxes in MultiMeshes. Keep the same
-	# walkable aisle contract by moving only authored cargo-crate instances.
+	# O avião otimizado põe caixas estáticas em lote em MultiMeshes. Mantém o mesmo
+	# contrato de corredor caminhável movendo só as instâncias autoradas de caixas de carga.
 	for batch in model.find_children("*", "MultiMeshInstance3D", true, false):
 		if batch.material_override not in [materials.get("crate_wood"), materials.get("crate_metal")]: continue
 		var multimesh: MultiMesh = batch.multimesh
@@ -172,7 +172,7 @@ func _queue_presentation_stages() -> void:
 	# Broad bands and a front lock read as a treasure chest from the overhead camera.
 	for x in [-0.26,0.26]:
 		_presentation_jobs.append(Callable(self, "_box").bind(treasure_model,Vector3(x,0.21,0),Vector3(0.075,0.44,0.62),_treasure_brass))
-	# Each lid segment is a single bounded stage so it never appears half assembled.
+	# Cada segmento da tampa é uma etapa limitada única para nunca aparecer meio montado.
 	for segment in 8:
 		_presentation_jobs.append(Callable(self, "_stage_treasure_lid_segment").bind(segment))
 	_presentation_jobs.append(Callable(self, "_box").bind(treasure_model,Vector3(0,0.035,0),Vector3(0.79,0.07,0.64),_treasure_brass))

@@ -1,5 +1,5 @@
 extends "res://world/places/arcade/ArcadeGeometry.gd"
-## Sede's front porch and swinging saloon doors belong to the streamed chunk.
+## A varanda da frente e as portas vaivém de saloon do Sede pertencem ao chunk em streaming.
 var leaves: Array[Node3D] = []
 var open_amount := 0.0
 ## Folhas do kit pintado; a varanda, os bancos e a placa continuam 3D por cima da pintura.
@@ -39,8 +39,8 @@ func _ready() -> void:
 	label.modulate=Color("e1c48a")
 	label.position=Vector3(0,3.89,6.48)
 	add_child(label)
-	# The porch roof hides the fascia from the high camera, so the name repeats on a
-	# board standing at the porch's front edge.
+	# O telhado da varanda esconde a fachada da câmera alta, então o nome se repete numa
+	# placa em pé na borda da frente da varanda.
 	box("PorchSign",Vector3(0,3.62,8.16),Vector3(3.4,.72,.10),"59432c","","wood")
 	detail(Vector3(0,3.99,8.16),Vector3(3.5,.05,.12),"be9d63","wood")
 	var porch_label := label.duplicate()

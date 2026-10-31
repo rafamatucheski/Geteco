@@ -1,6 +1,6 @@
 extends CharacterBody3D
-## Authored hallucination, with no combat group or damage API. Native swept
-## physics keeps every body on the floor and out of the ruined architecture.
+## Alucinação autorada, sem grupo de combate nem API de dano. A física nativa
+## varrida mantém todo corpo no piso e fora da arquitetura em ruínas.
 const GEO := preload("res://world/places/upside_world/UpsideGeometry.gd")
 var appearance_index := 0
 var variant := 0
@@ -22,8 +22,8 @@ func _ready() -> void:
 	floor_snap_length = .5
 	var collision := CollisionShape3D.new()
 	if variant == 1:
-		# A circular footprint contains the entire crawler in every facing;
-		# turning the art cannot sweep long claws through a neighbouring ruin.
+		# Uma área circular contém o rastejador inteiro em qualquer direção;
+		# girar a arte não pode varrer garras longas através de uma ruína vizinha.
 		var shape := CapsuleShape3D.new()
 		shape.radius = .98
 		shape.height = 1.96
@@ -139,8 +139,8 @@ func _physics_process(delta: float) -> void:
 	var away := position-visitor_local
 	away.y = 0
 	if away.length() < 2.5 and away.length() > .01 and heading.dot(away.normalized()) < 0.0:
-		# Approach the player's perimeter instead of crossing the first-person
-		# camera on the way to the monster's opposite-side orbit position.
+		# Aproxima-se do perímetro do jogador em vez de cruzar a câmera em primeira
+		# pessoa a caminho da posição de órbita do lado oposto do monstro.
 		away = away.normalized()
 		heading -= away*heading.dot(away)
 		if heading.length_squared() < .01: heading = away.rotated(Vector3.UP,PI*.5 if appearance_index%2 == 0 else -PI*.5)

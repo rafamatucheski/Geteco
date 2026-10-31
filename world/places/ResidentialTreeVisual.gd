@@ -1,5 +1,5 @@
 extends RefCounted
-## Shared, branched oak for the immediate surroundings of purchasable homes.
+## Carvalho ramificado compartilhado para o entorno imediato das casas à venda.
 const BAKED := preload("res://assets/urban_detail/residential_tree.res")
 static func near_home(point: Vector3) -> bool:
 	for center in [Vector3(250.0/16,0,150.0/16),Vector3(2624.0/16,0,1984.0/16),Vector3(4915.0/16,0,-860.0/16)]:

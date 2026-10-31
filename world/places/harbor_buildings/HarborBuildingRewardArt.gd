@@ -1,5 +1,5 @@
 extends RefCounted
-## Readable objects for the shared walking pickup presentation; no floating text.
+## Objetos legíveis para a apresentação compartilhada de coleta a pé; sem texto flutuando.
 const MATERIALS := preload("res://world/places/harbor_buildings/HarborBuildingMaterials.gd")
 
 static func build(reward: Dictionary) -> Node3D:

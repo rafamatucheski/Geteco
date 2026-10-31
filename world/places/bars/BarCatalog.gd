@@ -1,5 +1,5 @@
 extends RefCounted
-## Stable identities and metre-space layouts for two independently authored bars.
+## Identidades estáveis e layouts em espaço de metros para dois bares autorados de forma independente.
 const IDS := ["harbor_bar", "desert_bar"]
 static func definitions() -> Array[Dictionary]:
 	if Engine.get_meta("bars_baseline", false): return []

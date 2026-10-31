@@ -75,14 +75,14 @@ static func _append(row: Dictionary) -> void:
 	var base_position: Vector3 = row.position
 	var yaw := float(row.get("editor_rotation",0.0))+(PI if row.get("entrance_north",false) else 0.0)
 	if source_id == "new_1790426066_503_97028106":
-		# The east frontage meets the edited BRT tube. Its north side opens
-		# onto the public walkway, with the same physical footprint and height.
+		# A frente leste encontra o tubo do BRT editado. O lado norte abre
+		# para o passeio público, com a mesma área física e altura.
 		size = Vector2(size.y,size.x)
 		yaw += PI*.5
 	var basis := Basis(Vector3.UP,yaw)
 	var at := base_position
-	at.y += .12 # Match the urban pavement; the native floor top is 2cm below.
-	# Preserve the open L-shaped courtyard and the covered Cobra porches.
+	at.y += .12 # Bate com o calçamento urbano; o topo do piso nativo fica 2cm abaixo.
+	# Preserva o pátio aberto em L e as varandas cobertas da Cobra.
 	if kind == "l_shaped_block":
 		at += basis*Vector3(0,0,-size.y*.225)
 		size.y *= .55
@@ -104,7 +104,7 @@ static func _append(row: Dictionary) -> void:
 	var proper: String = URBAN_SIGNAGE.extract_proper_name(source_id,str(row.get("name","")))
 	var entry_local := Vector3(float(row.get("entrance_x",0.0)),0,size.y*.5)
 	if kind == "l_shaped_block": entry_local.x = -size.x*.25
-	# Aligned to the pedestrian gate beside Maciota's M8 parking bay.
+	# Alinhado ao portão de pedestres ao lado da vaga M8 do Maciota.
 	if source_id == "FreightOffice": entry_local.x = 4.0
 	# Sobrado pintado: a entrada de verdade vai para o vão de porta desenhado mais
 	# próximo; senão o corte da porta real abria no meio das janelas pintadas.
@@ -131,11 +131,11 @@ static func _append(row: Dictionary) -> void:
 		"pitched_roof":kind in ["cobra_house","house_gable","house_duplex","warehouse_sawtooth"],
 		"integration_status":"continuous_access_pending_validation",
 	}
-	# The elevated road in front of Customs must remain real while the ground
-	# floor stays readable. A steeper interior angle looks over that foreground.
+	# A estrada elevada em frente à Alfândega precisa continuar real enquanto o térreo
+	# fica legível. Um ângulo interno mais íngreme olha por cima desse primeiro plano.
 	if source_id == "NorthFrontage5": def["ground_camera_offset"] = Vector3(0,22,9)
-	# Slab towers have fixed ventilation boxes in the front-right roof bay.
-	# Keep the discoverable cache on the open central service aisle instead.
+	# As torres laminares têm caixas de ventilação fixas na baia do telhado da frente à direita.
+	# Mantém o esconderijo descobrível no corredor de serviço central aberto.
 	if kind == "urban_slab": def["roof_cache_position"] = Vector3(0,.03,-size.y*.1)
 	if source_id == "TorqueStore": def["facade_cut_front"] = 2.4
 	def.rewards = preload("res://world/places/harbor_buildings/HarborBuildingContent.gd").all_rewards(def)
@@ -168,7 +168,7 @@ static func valid_floors(value: Variant) -> bool:
 		var definition := find(str(id))
 		if definition.is_empty(): return false
 		if typeof(value[id]) not in [TYPE_INT,TYPE_FLOAT] or not is_finite(float(value[id])): return false
-		# Batch-one saves had four floors: admission clamps to the physical roof.
+		# Saves do lote um tinham quatro andares: a admissão limita ao telhado físico.
 		var maximum := maxi(3,int(definition.floor_count)) if id in LEGACY_IDS.values() else int(definition.floor_count)
 		if value[id]<0 or value[id]>maximum or float(value[id])!=floorf(float(value[id])): return false
 	return true

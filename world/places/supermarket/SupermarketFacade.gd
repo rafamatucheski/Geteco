@@ -18,7 +18,7 @@ func _ready() -> void:
 		box("Front%d"%side,Vector3(side*4.25,1.5,5.5),Vector3(5.5,3,.2),"3c6553",true)
 		box("Window%d"%side,Vector3(side*4.25,1.55,5.62),Vector3(4.9,2.05,.045),"698d87")
 		for post in [-1,0,1]: box("WindowFrame",Vector3(side*4.25+post*1.65,1.55,5.66),Vector3(.045,2.15,.05),"d7d5bf")
-		# Display crates make the use legible without category/slogan text.
+		# Caixotes de exposição deixam o uso legível sem texto de categoria/slogan.
 		for i in 3:
 			var x: float = side*4.25-1.4+i*1.4
 			box("WindowCrate",Vector3(x,.57,5.73),Vector3(1.15,.5,.16),"b89158")

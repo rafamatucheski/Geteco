@@ -1,5 +1,5 @@
 extends RefCounted
-## PortBossGarage stock is independent of CobraBossReward / Ironback at Maciota.
+## O estoque do PortBossGarage é independente de CobraBossReward / Ironback no Maciota.
 const SOURCE := "world/harbor/PortBossGarage.gd"
 static func definitions() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []

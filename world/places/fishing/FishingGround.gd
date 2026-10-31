@@ -1,6 +1,6 @@
 extends RefCounted
-## The existing physical woodland floor owns the whole grass/soil transition.
-## Road and verge variants keep their native weights outside the venue mask.
+## O piso físico de bosque existente é dono de toda a transição grama/solo.
+## As variantes de estrada e margem mantêm os pesos nativos fora da máscara do local.
 const LOCATION := preload("res://runtime/FishingLocation.gd")
 const RURAL := preload("res://world/urban_detail/RuralGroundMaterial.gd")
 const LANDSCAPE := preload("res://activities/motocross/MotocrossGroundDetail.gd")
@@ -27,8 +27,8 @@ static func material(road_surface := false) -> Material:
 
 static func finish_entrance_roads(parent: Node3D,rect: Rect2) -> void:
 	if previous_finish() or not ENTRANCE_AREA.intersects(rect): return
-	# Native road geometry has already clipped and batched these meshes. Only
-	# their finish changes; outside the clearing the shader is the rural formula.
+	# A geometria de estrada nativa já recortou e pôs estas malhas em lote. Só
+	# o acabamento muda; fora da clareira o shader é a fórmula rural.
 	for child in parent.get_children():
 		if child is MeshInstance3D and child.name in ["HarborEarthRoad","EarthRoadVerge"]:
 			child.material_override = material(true)

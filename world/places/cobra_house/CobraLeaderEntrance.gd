@@ -1,6 +1,6 @@
 extends Node3D
-## The leader keeps a physical locked door until the won race admits Dante.
-## Geometry is adapted once during streaming, with the original wood/stone finish.
+## O líder mantém uma porta física trancada até a corrida vencida admitir o Dante.
+## A geometria é adaptada uma vez durante o streaming, com o acabamento original de madeira/pedra.
 var open_amount := 0.0
 var hinge: Node3D
 var canopy_center: MeshInstance3D
@@ -33,8 +33,8 @@ func _build(art: Node3D, front_z: float) -> void:
 		part.reparent(hinge,true)
 	_box(hinge,"DoorSolid",Vector3(.475,1.4,0),Vector3(.95,2.1,.10))
 	var porch: Node3D = art.visuals_root.get_node("FrontPorch")
-	# Only the doorway's canopy panel cuts away on approach. The porch roof
-	# keeps its exterior silhouette and the threshold becomes readable.
+	# Só o painel de cobertura da porta é cortado na aproximação. O telhado da varanda
+	# mantém a silhueta externa e a soleira fica legível.
 	canopy_center = porch.get_node("PorchRoof")
 	var canopy_size: Vector3 = canopy_center.mesh.size
 	var side_width := (canopy_size.x-2.2)*.5

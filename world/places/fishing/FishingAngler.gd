@@ -107,8 +107,8 @@ func _build_catch_fish() -> void:
 	_catch_fish.hide()
 
 func _build_fisher_details() -> void:
-	# Use the civilian kit's own cap mesh and palette so the anglers keep the
-	# same natural proportions and shared mesh cache as the rest of the crowd.
+	# Usa a malha e a paleta de boné do próprio kit civil para os pescadores manterem as
+	# mesmas proporções naturais e o cache de malhas compartilhado com o resto da multidão.
 	var wardrobe: Dictionary = person.wardrobe
 	person.head_node.mesh = CIVILIAN_KIT.head_mesh(
 		bool(wardrobe.get("female",false)),int(wardrobe.get("hair",0)),
@@ -190,7 +190,7 @@ func set_active(active: bool) -> void:
 
 func _physics_process(delta: float) -> void:
 	if dead: return
-	# Exterior admission can precede the surrounding streamed land by a frame.
+	# A admissão externa pode vir um quadro antes do terreno em streaming em volta.
 	if not _supported:
 		var support := PhysicsRayQueryParameters3D.create(global_position+Vector3.UP*.2,global_position-Vector3.UP*.3,1)
 		if get_world_3d().direct_space_state.intersect_ray(support).is_empty(): return
@@ -198,7 +198,7 @@ func _physics_process(delta: float) -> void:
 	_time += delta
 	_catch_timer = maxf(0,_catch_timer-delta)
 	_fear = maxf(0,_fear-delta)
-	# A short recoil along the dry strip cannot send an angler into the pond.
+	# Um recuo curto ao longo da faixa seca não pode mandar um pescador para o lago.
 	var away := _home-water_target
 	away.y = 0
 	var target := _home+away.normalized()*1.0 if _fear>0 else _home
@@ -217,21 +217,21 @@ func _physics_process(delta: float) -> void:
 	if not _active and _fear<=0: set_active(false)
 
 func _hands() -> Array:
-	# Keep both hands on the handle but on opposite sides of the chest. The old
-	# same-side, far-forward targets forced the IK to lock both elbows straight.
+	# Mantém as duas mãos no cabo, mas em lados opostos do peito. Os antigos
+	# alvos do mesmo lado, bem à frente, forçavam o IK a travar os dois cotovelos retos.
 	var catch_look := 0.0
 	if _catch_timer > 0.0:
 		catch_look = 1.0 - smoothstep(.65, 2.2, 4.0 - _catch_timer)
 	if is_instance_valid(_head):
-		# CivilianModel rebuilds its base pose before requesting hand targets, so
-		# these small offsets don't accumulate or replace the shared rig pose.
+		# O CivilianModel reconstrói a pose base antes de pedir alvos de mão, então
+		# estes pequenos deslocamentos não se acumulam nem substituem a pose compartilhada do rig.
 		_head.rotate_x(_idle_glance * .10 + _idle_lift * .06 + catch_look * .15)
 		_head.rotate_y(_idle_glance * sin(_time * .55 + float(identity)) * .035)
 	return [_rod.to_global(Vector3(-.025,1.205,.37)),_rod.to_global(Vector3(.025,1.105,.22))]
 
 func _update_gear() -> void:
-	# Stagger short, quiet actions across the five fishers. The same phase drives
-	# the rod, float and gaze; it adds no per-frame node scans or particles.
+	# Defasa ações curtas e quietas entre os cinco pescadores. A mesma fase move
+	# a vara, a boia e o olhar; não acrescenta varreduras de nós por quadro nem partículas.
 	var idle_phase := fposmod(_time + float(identity % 5) * 3.2, 18.0)
 	_idle_reel = _pulse(idle_phase, 2.1, 2.45, 3.55, 4.05)
 	_idle_glance = _pulse(idle_phase, 7.0, 7.4, 8.15, 8.75)

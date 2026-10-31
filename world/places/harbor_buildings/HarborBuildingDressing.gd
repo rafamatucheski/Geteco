@@ -1,6 +1,6 @@
 extends RefCounted
-## Authored activity zones with shared static batches, human-scale furniture and
-## exact envelopes for the native collision adapter. No per-frame decoration loop.
+## Zonas de atividade autoradas com lotes estáticos compartilhados, móveis em escala humana e
+## envelopes exatos para o adaptador de colisão nativo. Sem laço de decoração por quadro.
 const CONTENT := preload("res://world/places/harbor_buildings/HarborBuildingContent.gd")
 const MATERIALS := preload("res://world/places/harbor_buildings/HarborBuildingMaterials.gd")
 var _model: Node3D
@@ -38,7 +38,7 @@ func _build() -> void:
 	var left := Vector3(-x, 0, back + [0.0, -.15, .20, -.05][arrangement])
 	var near := Vector3(x * _spec.front_side + [.0, .12, -.10, .08][arrangement], 0, front + [.0, -.10, .12, -.16][arrangement])
 	var compact: bool = _spec.compact
-	# The principal work station always matches the resident's actual hand task.
+	# O posto de trabalho principal sempre bate com a tarefa de mãos real do morador.
 	match program:
 		"workshop", "toolroom": _workbench(right, "Workbench", compact)
 		"kitchen", "shared_kitchen", "cafe", "staff": _kitchen(right, "Kitchen", compact)
@@ -450,7 +450,7 @@ func _small_wall_detail() -> void:
 		for level in 2: _box(Vector3(x, 1.05 + level * .42, z), Vector3(1.15, .04, .34), _palette.wood, "WallCabinet")
 		_box(Vector3(x, 1.26, z - .10), Vector3(1.15, .66, .04), _palette.cabinet, "WallCabinet")
 		for jar in 4: _cylinder(Vector3(x - .40 + jar * .26, 1.15 + (jar % 2) * .42, z), .06, .16, [_palette.accent, "b8bca7", "8a7655"][jar % 3], "WallCabinet", "ceramic")
-	# A narrow wall recess with its cover set aside visually hints at the cache.
+	# Um nicho estreito na parede com a tampa posta de lado sugere visualmente o esconderijo.
 	var rx: float = _spec.x
 	_box(Vector3(rx, .22, size.y * .5 - .20), Vector3(.62, .42, .04), "343f39", "", "metal")
 	_box(Vector3(rx + .42, .18, size.y * .5 - .18), Vector3(.20, .32, .035), "897b5d", "", "metal")
@@ -469,7 +469,7 @@ func _room_identity() -> void:
 	var size: Vector2 = _spec.size
 	var variant: int = _rng.randi() % 6
 	var wall := size.x * .5
-	# Distinct wall installations, not just a palette swap of the same furniture.
+	# Instalações de parede distintas, não só uma troca de paleta dos mesmos móveis.
 	# Todas cabem na pegada do radiador/floreira originais junto à parede leste.
 	if _spec.program == "music":
 		_box(Vector3(wall - .4, .68, .4), Vector3(.42, 1.36, .72), "303e3e", "Speaker", "cloth")
@@ -542,8 +542,8 @@ func _partitioned_rooms(arrangement: int) -> void:
 				for door in maxi(1, floori(length / .55)):
 					_box(Vector3(start + .30 + door * .55, .54, z + .074), Vector3(.48, .96, .012), _palette.wood, id)
 					_box(Vector3(start + .48 + door * .55, .60, z + .086), Vector3(.03, .12, .02), "aaa994", id, "metal")
-		# The low cutaway opens the real sightline; collision still matches its
-		# volume. The generous opening next to the central hall is walkable.
+		# O corte baixo abre a linha de visão real; a colisão ainda bate com o
+		# volume. A abertura generosa ao lado do salão central é caminhável.
 		_box(Vector3(start + .18, .66, z + .087), Vector3(.23, .36, .025), "6c7d70", id, "paper")
 	var wall_x := size.x * .5 - .48
 	var cabinet_z := .83 if arrangement % 2 == 0 else 1.08
@@ -635,9 +635,9 @@ func _populate_large_volume() -> void:
 			_extra_stations += 1
 
 func _populate_compact_activity_zones(arrangement: int) -> void:
-	# A shallow house or a narrow tower can still have a substantial floor area.
-	# Keep the compact worker/cache positions, but furnish the usable side bays
-	# at human scale. Small port cabins retain their original clear floor plan.
+	# Uma casa rasa ou uma torre estreita ainda pode ter uma área de piso grande.
+	# Mantém as posições compactas de trabalhador/esconderijo, mas mobília as baias laterais usáveis
+	# em escala humana. Cabines pequenas do porto mantêm a planta livre original.
 	var size: Vector2 = _spec.size
 	var rear := -size.y * .5
 	var front := size.y * .5
@@ -657,8 +657,8 @@ func _populate_compact_activity_zones(arrangement: int) -> void:
 			var rear_use := "table" if _spec.program in ["meeting", "drafting"] else "archive"
 			_compact_station(rear_use, Vector3(-2.68, 0, rear + (1.08 if rear_use == "table" else .68)))
 			var middle_use := "kitchen" if _spec.program == "staff" else ("archive" if _spec.program == "records" else "desk")
-			# Right-side work and left-side waiting rooms leave the entire stair
-			# landing and the wall-side collectible approach unobstructed.
+			# Trabalho do lado direito e salas de espera do lado esquerdo deixam o patamar
+			# inteiro da escada e o acesso ao colecionável junto à parede desobstruídos.
 			_compact_station(middle_use, Vector3(2.72, 0, -1.90 - offset))
 			_compact_station("armchairs" if corner == "armchairs" else "sofa", Vector3(-2.68, 0, front - 1.05))
 		"retail":
@@ -712,8 +712,8 @@ func _compact_zone_fits(rect: Rect2) -> bool:
 	var size: Vector2 = _spec.size
 	if rect.position.x < -size.x * .5 + .25 or rect.end.x > size.x * .5 - .25: return false
 	if rect.position.y < -size.y * .5 + .25 or rect.end.y > size.y * .5 - .25: return false
-	# These are the actual compact hall and stair extents, not a scaled-down
-	# human or furniture model. A 60 cm body retains room along both aisles.
+	# Estas são as extensões reais do corredor compacto e da escada, não um modelo
+	# reduzido de humano ou de móvel. Um corpo de 60 cm mantém espaço nos dois corredores.
 	if rect.grow(.30).intersects(Rect2(-1.15, -size.y * .5, 2.30, size.y)): return false
 	if rect.grow(.30).intersects(Rect2(-size.x * .5, .80, size.x, 1.20)): return false
 	if rect.grow(.35).intersects(Rect2(-size.x * .5 + .43, -1.70, 2.06, 2.08)): return false
@@ -764,7 +764,7 @@ func _station_fits(at: Vector3, half_size: Vector2) -> bool:
 	var rect := Rect2(Vector2(at.x, at.z) - half_size, half_size * 2.0)
 	if rect.position.x < -size.x * .5 + .62 or rect.end.x > size.x * .5 - .62: return false
 	if rect.position.y < -size.y * .5 + .62 or rect.end.y > size.y * .5 - .62: return false
-	# Continuous spine and stair landing remain generous even in a full store.
+	# A espinha contínua e o patamar da escada continuam generosos mesmo numa loja cheia.
 	if rect.grow(.45).intersects(Rect2(-1.23, -size.y * .5, 2.46, size.y)): return false
 	if rect.grow(.40).intersects(Rect2(-size.x * .5, .83, size.x, 1.30)): return false
 	if _spec.floor == 0 and rect.grow(.40).intersects(Rect2(_spec.entrance.x - .65, 1.4, 1.30, size.y * .5 - 1.2)): return false
@@ -779,8 +779,8 @@ func _station_fits(at: Vector3, half_size: Vector2) -> bool:
 	for reward in _spec.rewards:
 		var point: Vector3 = reward.local_position
 		if rect.grow(.72).has_point(Vector2(point.x, point.z)): return false
-	# A locked room is furnished too, but its front/east boundaries, the clear
-	# aisle through the door and the cache's wall-side approach stay unoccupied.
+	# Um cômodo trancado também é mobiliado, mas os limites da frente/leste, o corredor
+	# livre pela porta e o acesso ao esconderijo junto à parede ficam desocupados.
 	var secret := {}
 	for reward in _spec.rewards:
 		if reward.get("locked", false): secret = reward; break
@@ -802,8 +802,8 @@ func _cold_unit(at: Vector3, id: String) -> void:
 	for grille in 9: _box(at + Vector3(-.96 + grille * .24, .15, .49), Vector3(.17, .018, .02), "5b706b", id, "metal")
 
 func _illicit_details(at: Vector3) -> void:
-	# Fictional contraband is communicated through sealed packets and an unused
-	# counting scale, without signage or any real-world production instructions.
+	# Contrabando fictício é comunicado por pacotes lacrados e uma balança de contagem
+	# sem uso, sem placas nem qualquer instrução de produção do mundo real.
 	for packet in 3:
 		_box(at + Vector3(-.46 + packet * .30, 1.04, -.26), Vector3(.23, .10, .17), "c0bdaa", "Workbench", "paper")
 		_box(at + Vector3(-.46 + packet * .30, 1.10, -.26), Vector3(.06, .014, .18), "637569", "Workbench", "cloth")
@@ -820,7 +820,7 @@ func _wall_finish() -> void:
 		_box(Vector3(0, .55, rear + .012), Vector3(size.x - .30, .90, .025), _palette.cabinet)
 		_box(Vector3(0, 1.01, rear + .03), Vector3(size.x - .30, .04, .05), _palette.wood)
 	_wall_decor(rear, x)
-	# Visible conduit belongs to the built room; no duplicate lights or effects.
+	# O eletroduto visível pertence ao cômodo construído; sem luzes ou efeitos duplicados.
 	if _spec.family == "industrial":
 		_box(Vector3(size.x * .5 - .22, 2.48, 0), Vector3(.10, .10, size.y - .35), "656d61", "", "metal")
 		for z in [-size.y * .3, size.y * .3]: _box(Vector3(size.x * .5 - .23, 2.48, z), Vector3(.14, .17, .10), "8e9181", "", "metal")
@@ -855,7 +855,7 @@ func _lighting() -> void:
 		light.omni_range = minf(10.0, maxf(size.x * .62, size.y * .42)) if positions.size() < 4 else minf(11.0, maxf(size.x, size.y) * .39)
 		light.omni_attenuation = .85
 		light.shadow_enabled = false
-		# Test-only A/B retains the identical scene, material and fixture count.
+		# O A/B só de teste mantém a cena, o material e a contagem de luminárias idênticos.
 		light.visible = not Engine.get_meta("harbor_building_lights_baseline", false)
 		_model.add_child(light)
 

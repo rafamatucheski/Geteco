@@ -54,13 +54,13 @@ static func definitions(include_deleted := false) -> Array[Dictionary]:
 		["mountain_village_outfitters","Casacos da Vila","mountain",Vector2(7790,-1640),"world/harbor/interiors/ClothingInteriorArt3D.gd",Vector2(13,9),3.0,4.0,"clothing"],
 	]
 	rows.append_array([
-		# Production V1 replaces District/NorthFrontage2, not NorthFrontage1.
-		# Keep facade, interaction point and exterior return derived from one source.
+		# A V1 de produção substitui District/NorthFrontage2, não NorthFrontage1.
+		# Mantém fachada, ponto de interação e retorno externo derivados de uma fonte só.
 		["harbor_ammunation","Ammu-Nation","harbor",Vector2(1550,140),"@AmmunationModel",Vector2(14,10),2.65,4.0,"weapons"],
 		["mountain_gunshop","Ammu-Nation","mountain",Vector2(7750,-220),"@AmmunationModel",Vector2(14,10),2.65,4.0,"weapons"],
 		["westgate_garden","Westgate Garden","harbor",Vector2(250,150),"world/harbor/residences/ResidenceInterior3D.gd",Vector2(14.4,10.4),3.5,4.5,"residence"],
-		# Keep the house and its west parking canopy in the cleared depot parcel,
-		# south of Maciota; the former anchor intersected both workshop buildings.
+		# Mantém a casa e a cobertura de estacionamento oeste no lote limpo do depósito,
+		# ao sul do Maciota; a âncora antiga cruzava os dois prédios da oficina.
 		["quayside_house","Quayside","harbor",Vector2(2624,1984),"world/harbor/residences/ResidenceInterior3D.gd",Vector2(14.4,10.4),3.5,4.5,"residence"],
 		["canal_north","Canal North","harbor",Vector2(4915,-860),"world/harbor/residences/ResidenceInterior3D.gd",Vector2(14.4,10.4),3.5,4.5,"residence"],
 		["cemetery_keeper","Casa do Zelador","harbor",Vector2(-885,1495),"world/harbor/cemetery/CemeteryHouseInterior3D.gd",Vector2(9.3,7.4),2.2,2.95,"cemetery"],
@@ -98,10 +98,10 @@ static func definitions(include_deleted := false) -> Array[Dictionary]:
 		elif id.begins_with("harbor_"): approach = exterior + Vector3(0,0,130*SCALE)
 		var walkup := walkup_family(id)
 		if not walkup.is_empty(): approach = exterior + Vector3(0, 0, walkup_door_z(walkup) + 1.5)
-		# PortBossGarage.leave() restores the actor at EXTERIOR exactly.
+		# PortBossGarage.leave() restaura o ator exatamente em EXTERIOR.
 		return_point = exterior if id == "port_boss_garage" else approach + Vector3(0,0,1)
-		# The heater outside Ultimo Abrigo used to occupy the old return footprint
-		# (moved aside on 30/10, OriginalHeatSources); the farther return stays valid.
+		# O aquecedor do lado de fora do Ultimo Abrigo ocupava a área de retorno antiga
+		# (movido para o lado em 30/10, OriginalHeatSources); o retorno mais distante continua válido.
 		if id == "mountain_outfitters": return_point += Vector3(0,0,1.5)
 		if id == "harbor_police": return_point = approach
 		var reward: Dictionary = {}
@@ -137,8 +137,8 @@ static func definitions(include_deleted := false) -> Array[Dictionary]:
 			definition.camera_size = 16.0
 			definition.camera_target = Vector3(0, .7, -.6)
 		if definition.id == "harbor_clothing":
-			# The existing transit platform in front of Union is 20 cm above
-			# the pavement. FullSession still checks the entire body and support.
+			# A plataforma de trânsito existente em frente à Union fica 20 cm acima
+			# do calçamento. O FullSession ainda checa o corpo inteiro e o apoio.
 			definition["return_clearance_offsets"] = [Vector3(0,.2,0),Vector3(0,.2,.75),Vector3(.8,.2,.75),Vector3(-.8,.2,.75)]
 		definition["npc_model"] = ""
 		definition["npc_point"] = Vector3.ZERO
@@ -180,8 +180,8 @@ static func definitions(include_deleted := false) -> Array[Dictionary]:
 		result.append(preload("res://world/places/amusement_park/HauntedHousePlace.gd").definition_data())
 	return result if include_deleted else result.filter(func(definition): return not definition.get("editor_deleted",false))
 static func get_definition(id: String) -> Dictionary:
-	# Keep stable coordinates for mission/save references even if the physical place
-	# was deliberately removed. Active enumeration and admission exclude that row.
+	# Mantém coordenadas estáveis para referências de missão/save mesmo que o lugar físico
+	# tenha sido removido de propósito. A enumeração ativa e a admissão excluem essa linha.
 	for definition in definitions(true):
 		if definition.id == id: return definition
 	return {}

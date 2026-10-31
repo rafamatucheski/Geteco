@@ -1,7 +1,7 @@
 extends CanvasLayer
-## Low camera-local ambient light and no outdoor sun while this room is occupied.
-## The overlay retains the sewer tint/vignette but preserves actual lit surfaces.
-## Weapon shadows and the original exterior environment are restored on exit.
+## Luz ambiente baixa local à câmera e sem sol externo enquanto este cômodo está ocupado.
+## A sobreposição mantém o tom/vinheta do esgoto mas preserva as superfícies realmente iluminadas.
+## Sombras de arma e o ambiente externo original são restaurados na saída.
 ## Na sessão, só desenha quando Dante já ocupa a sala, nunca durante sua preparação.
 const MAX_LIGHTS := 12
 var tint := Color(0.012, 0.02, 0.02)

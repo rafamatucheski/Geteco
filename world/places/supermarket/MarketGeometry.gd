@@ -1,5 +1,5 @@
 extends Node3D
-## Repeated groceries share mesh/material and are submitted in MultiMesh batches.
+## Mantimentos repetidos dividem malha/material e são enviados em lotes de MultiMesh.
 var batches: Dictionary = {}
 var materials: Dictionary = {}
 var product_count := 0

@@ -1,7 +1,7 @@
 extends RefCounted
-## Visual ownership adapter for the authored passenger train, not its transport
-## controller. World-space clipping follows coach, doors, engine and wheels on
-## the GPU. There is no CPU update/mesh reconstruction during motion.
+## Adaptador de posse visual para o trem de passageiros autorado, não para o controlador
+## de transporte. O recorte no espaço do mundo segue vagão, portas, locomotiva e rodas na
+## GPU. Não há atualização de CPU/reconstrução de malha durante o movimento.
 const CLIP_SHADER := preload("res://world/places/harbor_buildings/HarborBuildingMovingSightline.gdshader")
 var _saved: Array[Dictionary] = []
 var _materials: Dictionary = {}
@@ -13,8 +13,8 @@ func configure(scope: Node, projection: Transform3D, cut: AABB) -> void:
 	_projection = projection
 	_cut = cut
 	if not is_instance_valid(scope): return
-	# RailwayTransit attaches its train directly to ProductionWorld. A bounded
-	# entry-time scan of those children avoids searching the whole streamed city.
+	# O RailwayTransit anexa o trem direto ao ProductionWorld. Uma varredura limitada
+	# desses filhos na entrada evita buscar na cidade inteira em streaming.
 	for child: Node in scope.get_children():
 		if child.get_meta("railway_train",false): _capture_train(child)
 
