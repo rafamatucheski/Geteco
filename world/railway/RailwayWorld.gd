@@ -52,8 +52,8 @@ func _ready() -> void:
 		set_focus(controller.world.player.global_position)
 
 func _process(delta: float) -> void:
-	# Build one short chunk per frame. Station/tunnel instances are independent
-	# so their support is complete before admitting a passenger.
+	# Monta um chunk curto por quadro. Instâncias de estação/túnel são independentes
+	# para o apoio estar completo antes de admitir um passageiro.
 	if not _pending.is_empty():
 		var key: Vector2i = _pending.pop_front()
 		if _rebuild.has(key) and chunks.has(key):
@@ -130,7 +130,7 @@ func ensure_station(id: String) -> Node3D:
 	if station.is_empty(): return null
 	var result := _build_station(station)
 	station_nodes[id] = result
-	# Entry and platform must have their neighbouring rail floor available now.
+	# Entrada e plataforma precisam ter o piso de trilho vizinho disponível agora.
 	for key: Vector2i in _descriptors:
 		var center := Vector2(key)*CELL+Vector2.ONE*CELL*.5
 		if center.distance_to(Vector2(station.position.x,station.position.z)) < 80.0 and not chunks.has(key):
@@ -169,8 +169,8 @@ func _prepare_descriptors() -> void:
 			if seen.has(identity): continue
 			seen[identity] = true
 			_add_descriptor(a,b,index % 6 == 2,edge.id)
-	# Every terminal has enough rail beyond its stop for the powered unit and
-	# buffers. These are not passenger routes or walkable region shortcuts.
+	# Todo terminal tem trilho suficiente além da parada para a unidade motora e os
+	# para-choques. Não são rotas de passageiros nem atalhos caminháveis da região.
 	for station in NETWORK.stations():
 		if station.region == "harbor": continue
 		var point: Vector3 = station.position
@@ -185,8 +185,8 @@ func _add_descriptor(a: Vector3,b: Vector3,pillar: bool,id: String) -> void:
 	_descriptors[key].append({"a":a,"b":b,"pillar":pillar,"id":id})
 
 func _prepare_clearance_roads() -> void:
-	# Prepared regions include edits, pathways and secondary activities. Source
-	# fallback is only for isolated geometry previews without ProductionWorld.
+	# As regiões preparadas incluem edições, caminhos e atividades secundárias. O fallback
+	# da fonte é só para pré-visualizações de geometria isoladas sem ProductionWorld.
 	if controller != null:
 		var regions: Dictionary = controller._region_cache.duplicate()
 		regions.merge(controller.regions,true)
@@ -243,8 +243,8 @@ func _record_support(point: Vector3) -> void:
 func _pillar_clear(point: Vector3, road_margin := 2.8) -> bool:
 	_prepare_clearance_roads()
 	var planar := Vector2(point.x,point.z)
-	# The elevated rail may pass over the forge yard, but a bridge pier must never
-	# occupy the yard or the walk to the workshop below it.
+	# O trilho elevado pode passar sobre o pátio da forja, mas um pilar de ponte nunca pode
+	# ocupar o pátio nem a caminhada até a oficina embaixo.
 	if preload("res://world/mountain_detail/forge/MountainForge.gd").FOOTPRINT.grow(2.0).has_point(planar): return false
 	# As rampas abertas do túnel do canal descem abaixo da rua: um pilar de 1,2 m
 	# plantado no nível da rua ali cai no meio da pista na saída do túnel.
@@ -280,15 +280,15 @@ func _new_group(label: String) -> Node3D:
 
 func _build_chunk(key: Vector2i) -> void:
 	var group := _new_group("RailChunk_%d_%d" % [key.x,key.y])
-	# Reuse the camera's local glass window for rails, deck and supports.
-	# The shared shader reveals only geometry between the target and camera.
+	# Reaproveita a janela de vidro local da câmera para trilhos, tabuleiro e apoios.
+	# O shader compartilhado revela só a geometria entre o alvo e a câmera.
 	group.add_to_group("exterior_reveal_building")
 	chunks[key] = group
 	for segment in _descriptors.get(key,[]):
 		var a: Vector3 = segment.a
 		var b: Vector3 = segment.b
-		# The first 18m of existing approaches already have their rails. Only
-		# build the extension beyond the actual terminus, avoiding coplanar ties.
+		# Os primeiros 18m das aproximações existentes já têm trilhos. Só
+		# monta a extensão além do fim real da linha, evitando dormentes coplanares.
 		if segment.id == "terminal_overlap": continue
 		var length := a.distance_to(b)
 		var direction := (b-a).normalized()
@@ -299,8 +299,8 @@ func _build_chunk(key: Vector2i) -> void:
 		for side in [-1.0,1.0]:
 			_beam(a+right*.72*side+Vector3.UP*.09,b+right*.72*side+Vector3.UP*.09,.09,.12,"rail")
 			_beam(a+right*3.18*side-Vector3.UP*.37,b+right*3.18*side-Vector3.UP*.37,.16,.58,"steel")
-			# Low parapets have a real upper handrail, keeping actors on the
-			# elevated maintenance edge without obscuring the passing landscape.
+			# Parapeitos baixos têm um corrimão superior real, mantendo os atores na
+			# borda de manutenção elevada sem esconder a paisagem que passa.
 			if not _beside_platform(center,side*right.x) and not _junction_clearance(a+right*3.30*side,b+right*3.30*side):
 				_beam(a+right*3.30*side+Vector3.UP*.47,b+right*3.30*side+Vector3.UP*.47,.10,1.02,"fence",true)
 		var sleepers := maxi(1,ceili(length/1.8))
@@ -309,8 +309,8 @@ func _build_chunk(key: Vector2i) -> void:
 			_box(a.lerp(b,t),Vector3(2.5,.09,.24),"sleeper",_basis(direction))
 		var support := center
 		var support_clear: bool = segment.pillar and _pillar_clear(support)
-		# The new Foundry approach follows the sidewalk. Carry it from the
-		# setback north of the sidewalk, with a short elevated cantilever.
+		# A nova aproximação da Foundry segue a calçada. Leva-a a partir do
+		# recuo ao norte da calçada, com um balanço elevado curto.
 		if segment.pillar and not support_clear and segment.id == "harbor_viaduct" and center.x < 145.0 and absf(center.z-20.0)<.01:
 			support = center+Vector3(0,0,-2.5)
 			support_clear = _pillar_clear(support)
@@ -334,8 +334,8 @@ func _junction_clearance(a: Vector3,b: Vector3) -> bool:
 	return false
 
 func _guard_inside_corridor(point: Vector3) -> bool:
-	# Omit only a guard that actually enters another running corridor. The
-	# outside perimeter, including Northgate, remains physically protected.
+	# Omite só uma guarda que realmente entra em outro corredor de circulação. O
+	# perímetro externo, incluindo a Northgate, continua fisicamente protegido.
 	if point.x<330.0 or point.x>475.0 or point.z> -184.0 or point.z< -280.0: return false
 	# Só os trechos cuja caixa (+3 m) cobre a célula do ponto: mesmas regras de antes.
 	# A varredura de todos os descritores por ponto custava 127 ms num trecho só
@@ -377,7 +377,7 @@ func _build_station(station: Dictionary) -> Node3D:
 	_station_box(origin,side,Vector3(4.4,floor_y-.22,0),Vector3(4.8,.44,34),"platform",true)
 	_station_box(origin,side,Vector3(2.12,floor_y+.014,0),Vector3(.28,.028,33.8),"warning")
 	_station_box(origin,side,Vector3(2.38,floor_y+.024,0),Vector3(.08,.04,33.8),"ivory")
-	# The outer guard leaves the upper stair bridge unobstructed.
+	# A guarda externa deixa a ponte superior da escada desobstruída.
 	var access_z := .5 if station.region == "harbor" else -5.5
 	var opening_start := access_z-1.35
 	var opening_end := access_z+1.35
@@ -388,8 +388,8 @@ func _build_station(station: Dictionary) -> Node3D:
 	for z in [-12.0,0.0,12.0]:
 		_station_box(origin,side,Vector3(6.12,floor_y+1.65,z),Vector3(.18,3.3,.18),accent,true)
 		_station_box(origin,side,Vector3(4.38,floor_y+3.27,z),Vector3(4.8,.18,.18),accent)
-	# Two canopy wings and a central gap keep Dante visible from the gameplay
-	# camera. Shelter, ticket machine and seats use a clear free central aisle.
+	# Duas asas de cobertura e um vão central mantêm o Dante visível da câmera
+	# do jogo. Abrigo, máquina de bilhetes e assentos usam um corredor central livre.
 	for z in [-10.0,10.0]:
 		_station_box(origin,side,Vector3(4.38,floor_y+3.43,z),Vector3(5.35,.16,11.0),accent,true)
 		_detail_station_canopy(origin,side,floor_y,z,accent)
@@ -413,18 +413,18 @@ func _build_station(station: Dictionary) -> Node3D:
 	label.outline_size = 0
 	label.no_depth_test = false
 	group.add_child(label)
-	# Full-column support is only placed outside the street reservation.
+	# O apoio de coluna inteira só é posto fora da reserva da rua.
 	# Colunas na borda de fora da plataforma (6,45 m; ela vai até 6,8 m). Em 5,75 m a da Northgate descia
 	# rente à última faixa da rodovia da serra e o carro dessa faixa passava por dentro dela (30/10).
 	for z in [-15.0,15.0]:
 		var foot := Vector3(origin.x+side*STATION_COLUMN_X,0,origin.z+z)
 		if _pillar_clear(foot, STATION_ROAD_MARGIN):
 			_record_support(foot)
-			# Columns meet the underside, without a coplanar cap on the walking floor.
+			# As colunas encontram a face de baixo, sem tampa coplanar no piso de caminhada.
 			_station_box(origin,side,Vector3(STATION_COLUMN_X,floor_y*.5-.52,z),Vector3(.6,floor_y+.16,.6),"concrete",true)
 	_build_access(origin,side,floor_y,accent,station.region == "harbor")
 	if station.id == "harbor_north":
-		# A narrow supported landing joins the east sidewalk to the offshore stairs.
+		# Um patamar estreito apoiado liga a calçada leste às escadas sobre a água.
 		_station_box(origin,side,Vector3(4.99,-.13,12.0),Vector3(5.75,.26,2.4),"platform",true)
 		for x in [4.0,9.0,12.0]:
 			_station_box(origin,side,Vector3(x,-2.0,12.0),Vector3(.6,4.0,.6),"concrete",true)
@@ -444,9 +444,9 @@ func _build_station(station: Dictionary) -> Node3D:
 	return group
 
 func _detail_station_canopy(origin: Vector3,side: float,floor_y: float,z: float,accent: String) -> void:
-	# Standing seams and folded edges share the station's existing batches.
-	# All dressing stays overhead; the original roof collider and central sight
-	# opening remain unchanged, as do the platform, posts and boarding envelope.
+	# Juntas elevadas e bordas dobradas dividem os lotes existentes da estação.
+	# Todo o mobiliário fica no alto; o colisor original do telhado e a abertura
+	# central de visão ficam iguais, assim como a plataforma, os postes e o envelope de embarque.
 	for index in 8:
 		var x := 1.98 + float(index)*.68
 		_station_box(origin,side,Vector3(x,floor_y+3.55,z),Vector3(.045,.08,10.82),accent)
@@ -458,7 +458,7 @@ func _detail_station_canopy(origin: Vector3,side: float,floor_y: float,z: float,
 	for end in [-5.52,5.52]:
 		_station_box(origin,side,Vector3(4.38,floor_y+3.40,z+end),Vector3(5.36,.28,.13),accent,true)
 		_station_box(origin,side,Vector3(4.38,floor_y+3.265,z+end),Vector3(5.36,.045,.15),"steel")
-	# Open gutter: a low trough and raised lips make drainage readable from above.
+	# Calha aberta: uma canaleta baixa e bordas elevadas deixam a drenagem legível de cima.
 	_station_box(origin,side,Vector3(7.10,floor_y+3.32,z),Vector3(.25,.045,11.08),"steel",true)
 	_station_box(origin,side,Vector3(7.22,floor_y+3.38,z),Vector3(.045,.15,11.08),accent,true)
 	for end in [-5.5,5.5]:
@@ -499,7 +499,7 @@ func _build_access(origin: Vector3,side: float,floor_y: float,accent: String, co
 			var end := float(step+1)/float(count)
 			var midpoint := a.lerp(b,(start+end)*.5)
 			midpoint.y = lerpf(a.y,b.y,end)-.055
-			# The final tread ends at the landing seam instead of sharing its top.
+			# O último piso termina na emenda do patamar em vez de dividir o topo dele.
 			_box(midpoint,Vector3(2.12,.11,run/count+(0.0 if step==count-1 else .008)),"concrete")
 			var nose := a.lerp(b,end)
 			nose.y += .006
@@ -507,21 +507,21 @@ func _build_access(origin: Vector3,side: float,floor_y: float,accent: String, co
 		for rail_side in [-1.0,1.0]:
 			_access_guard(a+Vector3(rail_side*1.10,0,0),b+Vector3(rail_side*1.10,0,0))
 			_beam(a+Vector3(rail_side*1.04,-.18,0),b+Vector3(rail_side*1.04,-.18,0),.14,.28,"steel")
-	# Upper connection at the north end of the staircase, open on both sides.
-	# Join only the gap: the platform and landing already own their top faces.
+	# Ligação superior na ponta norte da escada, aberta dos dois lados.
+	# Liga só o vão: a plataforma e o patamar já são donos das faces de cima.
 	_station_box(origin,side,Vector3(7.35,floor_y-.12,landing_z),Vector3(1.1,.24,2.7),"platform",true)
 	for z in [landing_z-1.35,landing_z+1.35]:
 		_access_guard(Vector3(origin.x+side*6.3,floor_y,origin.z+z),Vector3(origin.x+side*11.3,floor_y,origin.z+z))
 	for x in [8.1,13.2]:
 		for z in [landing_z-1.1,12.7]:
 			_station_box(origin,side,Vector3(x,floor_y*.5-.12,z),Vector3(.18,floor_y-.24,.18),accent,true)
-	# Functional ticket mast at ground level; proper station name is repeated
-	# where a pedestrian approaches, without decorative descriptive text.
+	# Mastro funcional de bilhetes no nível do chão; o nome próprio da estação se repete
+	# onde o pedestre se aproxima, sem texto descritivo decorativo.
 	_station_box(origin,side,Vector3(8.2,1.7,14.1),Vector3(.16,3.4,.16),accent,true)
 	_station_box(origin,side,Vector3(8.2,3.2,14.1),Vector3(1.0,.70,.12),accent)
 
 func _access_guard(a: Vector3,b: Vector3) -> void:
-	# Open railing with continuous physical guard, not a tall opaque side wall.
+	# Guarda-corpo vazado com guarda física contínua, não uma parede lateral alta e opaca.
 	for height in [.16,.55,1.05]:
 		_beam(a+Vector3.UP*height,b+Vector3.UP*height,.055,.055,"steel")
 	var count := maxi(1,ceili(a.distance_to(b)/.85))
@@ -553,8 +553,8 @@ func _build_tunnel(tunnel: Dictionary) -> void:
 		_beam(a+right*3.25*side+Vector3.UP*2.4,b+right*3.25*side+Vector3.UP*2.4,.60,5.9,"tunnel",true)
 		_beam(a+right*2.93*side+Vector3.UP*.6,b+right*2.93*side+Vector3.UP*.6,.08,.17,"warning")
 	_beam(a+Vector3.UP*6.10,b+Vector3.UP*6.10,7.1,.45,"tunnel",true)
-	# Irregular sloping shoulders meet the existing floor without editing it;
-	# the portals retain the concrete liner and a visible open clearance box.
+	# Ombros inclinados irregulares encontram o piso existente sem editá-lo;
+	# os portais mantêm o revestimento de concreto e uma caixa de folga aberta visível.
 	preload("res://world/railway/RailwayTunnelRidge.gd").build(group,a,b,_material(finish))
 	# Articulated portal stonework frames the actual hollow passage.
 	for end in [a,b]:

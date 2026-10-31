@@ -1,6 +1,6 @@
 extends RefCounted
-## The tunnel is cut through a small authored ridge. Its skin and collision are
-## the same triangles, with buried irregular feet and genuinely open portals.
+## O túnel atravessa uma pequena serra autorada. A pele e a colisão são
+## os mesmos triângulos, com pés irregulares enterrados e portais realmente abertos.
 const COLLISION_FACES := preload("res://world/chunk_bake/CollisionFaces.gd")
 static func build(parent: Node3D, a: Vector3, b: Vector3, material: StandardMaterial3D) -> void:
 	var along := (b-a).normalized()
@@ -29,7 +29,7 @@ static func build(parent: Node3D, a: Vector3, b: Vector3, material: StandardMate
 		var previous: PackedVector3Array = rings[index-1]
 		for cross in range(ring.size()-1):
 			_face(surface,PackedVector3Array([previous[cross],previous[cross+1],ring[cross+1],ring[cross]]),Vector3.UP)
-	# Close the flank cut faces, keeping the entire clearance rectangle open.
+	# Fecha as faces de corte dos flancos, mantendo o retângulo de folga inteiro aberto.
 	for end_index in [0,count]:
 		var ring: PackedVector3Array = rings[end_index]
 		var outward := -along if end_index==0 else along
