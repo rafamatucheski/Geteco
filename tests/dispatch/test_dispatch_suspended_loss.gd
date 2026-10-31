@@ -1,6 +1,6 @@
 extends "res://tests/dispatch/test_dispatch_lifecycle.gd"
-## Real dispatch, distance suspension and child burn callbacks. The fixture
-## moves only the observing player; it never resumes or ticks the unit by hand.
+## Dispatch real, suspensão por distância e callbacks de queima dos filhos. A fixture
+## move só o jogador observador; nunca retoma nem dá tick na unidade à mão.
 const BURN := preload("res://gameplay/BurningActor.gd")
 
 func _suspended_loss(remove_body: bool) -> void:
@@ -40,8 +40,8 @@ func _suspended_loss(remove_body: bool) -> void:
 		check(responder.dead and responder.health <= 0.0, label + ": live burn child killed suspended crew")
 		check(unit.suspended, label + ": unit remained suspended through death")
 		check(responder.collision_layer == 0 and responder.collision_mask == 0, label + ": death disabled collision before resume")
-	# An old corpse/freed position must not block resuming the surviving vehicle.
-	# This small wall is separate from the parked vehicle's footprint.
+	# Um cadáver antigo/posição liberada não pode bloquear a retomada do veículo sobrevivente.
+	# Esta parede pequena fica separada da área do veículo estacionado.
 	var wall := KIT.add_wall(bundle.scene, body_position + Vector3.UP * .85, Vector3(.65, 1.7, .65))
 	await _frames(3)
 	bundle.player.global_position = Vector3(30, 0, 10)

@@ -1,13 +1,13 @@
 extends SceneTree
-## Logical native-physics contract, no Main/render/FPS. The unit starts parked
-## to isolate the shared motion owner. Dispatch, Responder, BodyFlight, burn,
-## landing damage and physics callbacks are real; none is manually ticked.
+## Contrato lógico de física nativa, sem Main/render/FPS. A unidade começa estacionada
+## para isolar o dono compartilhado do movimento. Dispatch, Responder, BodyFlight, queima,
+## dano de pouso e callbacks de física são reais; nenhum recebe tick manual.
 const KIT := preload("res://tests/dispatch/DispatchTestKit.gd")
 const FLIGHT := preload("res://gameplay/street_physics/BodyFlight3D.gd")
 const BURN := preload("res://gameplay/BurningActor.gd")
 
-# Same minimal landing director as test_body_flight.gd: only the unrelated
-# broadphase/watch/audio initialization is omitted. Landing uses the real code.
+# Mesmo diretor mínimo de pouso de test_body_flight.gd: só a inicialização não relacionada
+# de broadphase/watch/áudio é omitida. O pouso usa o código real.
 class LandingDirector extends "res://gameplay/street_physics/StreetPhysics.gd":
 	var landings := 0
 	func _ready() -> void:
@@ -37,8 +37,8 @@ func setup_case(label: String, ramp := false) -> Dictionary:
 	bundle.gameplay.set_physics_process(false)
 	bundle.player.set_physics_process(false)
 	await frames(3)
-	# The router is lazy: a parked fixture has not requested any path yet.
-	# Exercise its normal API before requiring the compiled backend.
+	# O roteador é preguiçoso: uma fixture estacionada ainda não pediu nenhum caminho.
+	# Exercita a API normal dele antes de exigir o backend compilado.
 	var edge: Dictionary = controller.router.nearest_edge(Vector3(20,0,2))
 	check(controller._ensure_bridge() and not edge.is_empty() and controller.router._native != null,label+": real bridge and C# router")
 	var patient := KIT.add_patient(bundle.scene,Vector3(34,0,14))
@@ -78,8 +78,8 @@ func wait_land(bundle: Dictionary, flight: Node, label: String) -> void:
 	check(is_instance_valid(flight) and not flight.flying and bundle.street.landings == 1,
 		label+": normal swept-body callbacks land and apply damage once")
 	check(not bundle.crew.dead and bundle.crew.health < 60.0 and bundle.crew.has_meta("street_down"),label+": survivor remains prone awaiting recovery")
-	# Verify the real support separately from clearance. A floor/ramp contact must
-	# not be confused with a newly inserted wall/beam obstructing resumption.
+	# Confere o apoio real separado da folga. Um contato de piso/rampa não pode
+	# ser confundido com uma parede/viga recém-inserida obstruindo a retomada.
 	var point: Vector3 = bundle.crew.global_position
 	var ray := PhysicsRayQueryParameters3D.create(point+Vector3.UP,point-Vector3.UP,1)
 	ray.exclude = [bundle.crew.get_rid()]
@@ -130,10 +130,10 @@ func during_flight() -> void:
 	check(is_instance_valid(flight) and bundle.crew.has_meta("street_down") and not bundle.crew.is_physics_processing(),label+": resumption keeps the impact owner exclusive")
 	check(is_equal_approx(bundle.crew.age,actor_age),label+": walking/service callback did not run beside BodyFlight")
 	await wait_land(bundle,flight,label)
-	# The native solver may settle slightly inside its support after the resumed
-	# flight. A second distance cycle must keep that supported survivor resumable.
-	# A floor inserted ABOVE the actual landing support before suspension must
-	# never become an accepted baseline merely because it already exists then.
+	# O solver nativo pode assentar um pouco dentro do apoio depois do voo
+	# retomado. Um segundo ciclo de distância precisa manter esse sobrevivente apoiado retomável.
+	# Um piso inserido ACIMA do apoio real de pouso antes da suspensão nunca
+	# pode virar linha de base aceita só porque já existia naquele momento.
 	var point: Vector3 = bundle.crew.global_position
 	var raised := KIT.add_wall(bundle.scene,Vector3(point.x,-.09,point.z),Vector3(2,.2,2))
 	await frames(3)
@@ -153,8 +153,8 @@ func during_get_up() -> void:
 	var bundle: Dictionary = await setup_case(label)
 	var flight := launch(bundle,label)
 	await wait_land(bundle,flight,label)
-	# Boundary setup only, as in test_body_flight: simulate an already elapsed
-	# injury wait. The actual get-up tween must start and complete via the engine.
+	# Só preparação de limite, como em test_body_flight: simula uma espera de ferimento
+	# já decorrida. O tween real de levantar precisa começar e terminar pelo motor.
 	flight.down_time = FLIGHT.SELF_RECOVERY_SECONDS
 	await frames(2)
 	check(flight._getting_up and flight._recovery_tween != null,label+": natural callback starts the recovery tween")
@@ -231,8 +231,8 @@ func cancel_owner(deferred: bool) -> void:
 	var bundle: Dictionary = await setup_case(label)
 	var flight := launch(bundle,label)
 	if deferred:
-		# Cancellation is queued before the controller's normal callback. The owner
-		# is still valid when suspension hides the actor, and exits at frame end.
+		# O cancelamento entra na fila antes do callback normal do controlador. O dono
+		# ainda é válido quando a suspensão esconde o ator, e sai no fim do quadro.
 		var witnessed: Array[bool] = []
 		var observer: WeakRef = weakref(flight)
 		bundle.controller.dispatch_event.connect(func(event: String, _data: Dictionary):
@@ -308,8 +308,8 @@ func recovered_under_new_beam() -> void:
 	var flight := launch(bundle,label)
 	await wait_land(bundle,flight,label)
 	await suspend(bundle,label)
-	# Healing can occur independently of motion ownership. Keep the normal get-up
-	# callback pending and add a real solid above the horizontal body.
+	# A cura pode ocorrer independente da posse do movimento. Mantém o callback normal
+	# de levantar pendente e põe um sólido real acima do corpo deitado.
 	bundle.crew.health = 60.0
 	var beam := KIT.add_wall(bundle.scene,bundle.crew.global_position+Vector3.UP*1.4,Vector3(2,.2,2))
 	await frames(2)

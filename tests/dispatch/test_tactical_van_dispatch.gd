@@ -1,6 +1,6 @@
 extends SceneTree
-## Real dispatch selection, escalation and recall. Headless contracts do not
-## certify road travel, presentation or frame time.
+## Seleção, escalada e chamada de volta reais do dispatch. Contratos headless não
+## certificam o trajeto na rua, a apresentação nem o tempo de quadro.
 const KIT := preload("res://tests/dispatch/DispatchTestKit.gd")
 const RULES := preload("res://gameplay/dispatch/DispatchRules.gd")
 var checks := 0
@@ -30,8 +30,8 @@ func dispatch(b: Dictionary, level: int) -> RefCounted:
 	var unit: RefCounted = b.controller.dispatch_police_to(Vector3.ZERO)
 	if unit != null:
 		unit.vehicle.set_physics_process(false)
-		# Keep the real road spawns free between calls. This fixture checks
-		# dispatch composition; driving the route is validated separately.
+		# Mantém os spawns reais de rua livres entre as chamadas. Esta fixture confere
+		# a composição do dispatch; dirigir a rota é validado à parte.
 		unit.vehicle.place(Vector3(60,.12,-56 + parked * 13),0.0)
 		parked += 1
 	await physics_frame

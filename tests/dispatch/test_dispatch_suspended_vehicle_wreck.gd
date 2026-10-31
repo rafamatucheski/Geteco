@@ -1,8 +1,8 @@
 extends "res://tests/dispatch/test_dispatch_lifecycle.gd"
-## Logical/native-physics contract. Real dispatch creates the ambulance; damage
-## precedes distance suspension, and VehicleDamage burns through normal callbacks.
-## Only the observer is moved. No unit/damage callback is invoked by this test.
-## No Main, rendering, timing approval or persistence is exercised here.
+## Contrato lógico/de física nativa. O dispatch real cria a ambulância; o dano
+## vem antes da suspensão por distância, e o VehicleDamage queima pelos callbacks normais.
+## Só o observador é movido. Nenhum callback de unidade/dano é chamado por este teste.
+## Main, renderização, aprovação de tempo e persistência não são exercitados aqui.
 
 func check(condition: bool, label: String) -> void:
 	checks += 1
@@ -34,8 +34,8 @@ func _vehicle_case(repair_while_suspended: bool) -> void:
 	check(bundle.controller.router._native != null, label+": compiled C# router is active")
 	check(car.health == car.max_health and car.collision_layer == 4 and car.collision_mask == 7,
 		label+": healthy native collider starts at 4/7")
-	# Ordinary nonterminal damage starts the existing burn. No health assignment
-	# or direct call to wreck()/a physics callback substitutes for the lifecycle.
+	# Dano comum não terminal inicia a queima existente. Nenhuma atribuição de vida
+	# nem chamada direta a wreck()/a um callback de física substitui o ciclo de vida.
 	car.receive_damage(car.max_health * .90 / car.damage_resistance)
 	check(car.health > 0.0 and car.damage_look.burning, label+": partial damage starts burn before suspension")
 	bundle.player.global_position = Vector3(30, 0, 220)
@@ -70,7 +70,7 @@ func _vehicle_case(repair_while_suspended: bool) -> void:
 		await _frames(20)
 		check(car.global_position.distance_to(resting_position) < .001,
 			label+": the hidden wreck remains frozen with its suspended unit")
-	# Approach the actual current point rather than assuming a stationary car.
+	# Aproxima-se do ponto atual real em vez de supor um carro parado.
 	bundle.player.global_position = car.global_position + Vector3(20, 0, 10)
 	for index in 60:
 		await physics_frame
@@ -114,8 +114,8 @@ func _preexisting_wreck() -> void:
 	check(is_instance_valid(wreck) and wreck.collision_layer == 4 and wreck.collision_mask == 7
 		and not wreck.freeze and not car.is_physics_processing(),
 		"existing_wreck: rigid body owns normal collision before suspension")
-	# The rigid body exists before dispatch's next normal callback. The observer
-	# leaves in the same turn, so no completed/adopted unit is artificially revived.
+	# O corpo rígido existe antes do próximo callback normal do dispatch. O observador
+	# sai no mesmo turno, então nenhuma unidade concluída/adotada é revivida artificialmente.
 	bundle.player.global_position = Vector3(30, 0, 220)
 	await _frames(4)
 	check(unit.suspended and not unit.finished and not car.visible,

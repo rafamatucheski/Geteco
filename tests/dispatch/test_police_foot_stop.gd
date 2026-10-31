@@ -1,5 +1,5 @@
 extends SceneTree
-## Real braking and dispatched crews when no shoulder can be planned.
+## Frenagem real e equipes despachadas quando nenhum acostamento pode ser planejado.
 const KIT := preload("res://tests/dispatch/DispatchTestKit.gd")
 const DRIVER := preload("res://gameplay/dispatch/DispatchDriver.gd")
 const VEHICLE := preload("res://scripts/Vehicle.gd")
@@ -107,7 +107,7 @@ func approach(id: String, real_shoulder := false) -> void:
 	if id == "bike_police" and not u.officers.is_empty():
 		check(not car._motorcycle_rider_parts[0].visible,"mounted rider disappears when officer dismounts")
 		check(u.officers[0].motorcycle_officer,"dismounted rider retains motorcycle police identity")
-	# The player gets back into a moving car: the same officers return, then chase.
+	# O jogador volta para um carro em movimento: os mesmos policiais voltam e depois perseguem.
 	var escaping := VEHICLE.new()
 	escaping.archetype = "metro_hatch"
 	b.scene.add_child(escaping)
@@ -117,11 +117,11 @@ func approach(id: String, real_shoulder := false) -> void:
 	u.observed_target = escaping
 	u._police_working(DT)
 	check(u.state == "recall",id + " moving vehicle target recalls the same crew")
-	# If the suspect exits again during recall, do not finish boarding by mistake.
+	# Se o suspeito sair de novo durante a chamada de volta, não termina o embarque por engano.
 	u.observed_target = b.player
 	u._police_recall(DT)
 	check(u.state == "working" and u.officers.all(func(o): return o.mode in ["combat","disembark"]),id + " foot target interrupts recall without replacing officers")
-	# A second entry finishes the physical doorway crossing, returns and resumes.
+	# Uma segunda entrada termina a travessia física da porta, volta e retoma.
 	u.observed_target = escaping
 	u._police_working(DT)
 	for _i in 600:
@@ -138,7 +138,7 @@ func approach(id: String, real_shoulder := false) -> void:
 	u.stop_planner.goal = b.player.position
 	u._stall_police_enroute(DT)
 	check(u.stop_planner.curve == null,id + " moving car target cancels stale parking route")
-	# Already stopped crews must resume instead of disembarking into a car chase.
+	# Equipes já paradas precisam retomar em vez de desembarcar numa perseguição de carro.
 	u.state = "parked"
 	u.state_age = 2.0
 	u._police_parked(DT)

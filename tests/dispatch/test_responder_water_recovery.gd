@@ -1,7 +1,7 @@
 extends SceneTree
-## Local functional contract with the real Responder, Fire, dispatch, native
-## physics and WaterJet nodes. The incident starts already parked to isolate
-## cleanup; this is not first-response coverage, visual approval or FPS evidence.
+## Contrato funcional local com Responder, Fire, dispatch, física nativa
+## e nós WaterJet reais. O incidente já começa estacionado para isolar a
+## limpeza; isto não é cobertura da primeira resposta, aprovação visual nem evidência de FPS.
 const KIT := preload("res://tests/dispatch/DispatchTestKit.gd")
 const FIRE := preload("res://gameplay/emergency/Fire.gd")
 var failures: Array[String] = []
@@ -29,9 +29,9 @@ func water_active(crew: CharacterBody3D) -> bool:
 	return jet_active(crew.stream) and jet_active(crew.cannon)
 
 func activate_cannon_contract(crew: CharacterBody3D, fire: Node3D) -> void:
-	# Explicit state injection for cleanup only. The real exported rescue_pumper
-	# currently has no fire_monitor/tip after decoration; this does not repair or
-	# approve its rig. Both actual WaterJet objects and their emitters are tested.
+	# Injeção explícita de estado só para a limpeza. O rescue_pumper exportado real
+	# hoje não tem fire_monitor/tip depois da decoração; isto não conserta nem
+	# aprova o rig dele. Os dois objetos WaterJet reais e seus emissores são testados.
 	crew.cannon.aim(crew.vehicle.global_position+Vector3.UP*3.0,fire.global_position)
 	crew.cannon.set_active(true)
 
@@ -117,8 +117,8 @@ func exercise(kind: String) -> void:
 	print("RIG_COVERAGE ", JSON.stringify({"case":kind,"monitor":crew.vehicle.has_meta("fire_monitor"),"tip":crew.vehicle.has_meta("fire_monitor_tip"),"cannon_active":jet_active(crew.cannon),"native_cannon_coverage":"observed only; missing rig is a separate unresolved defect"}))
 	var ids := water_ids(crew)
 	if kind == "natural_decay":
-		# Exercise Fire's actual expiration callback before DispatchController,
-		# matching the production parent order; do not call callbacks manually.
+		# Exercita o callback real de expiração do Fire antes do DispatchController,
+		# seguindo a ordem de pais da produção; não chama callbacks à mão.
 		fire.age = FIRE.BURN_SECONDS + 1.0
 		fire._fade_from = 1.0
 		fire.intensity = 0.00001

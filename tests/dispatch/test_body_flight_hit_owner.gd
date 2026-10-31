@@ -1,6 +1,6 @@
 extends "res://tests/dispatch/test_dispatch_body_flight_suspension.gd"
-## Independent hit/pose ownership contract. Damage, flight, landing, recovery
-## and death run through the real responder and normal engine callbacks.
+## Contrato independente de posse de golpe/pose. Dano, voo, pouso, recuperação
+## e morte passam pelo responder real e pelos callbacks normais do motor.
 
 func hit_owner() -> void:
 	var label := "hit_owner"
