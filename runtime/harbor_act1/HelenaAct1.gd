@@ -60,6 +60,7 @@ const RELEASE_DISTANCE := 80.0
 const TALK_DISTANCE := 2.0
 const ENVELOPE_REACH := 5.0
 const RIDE_LINE_SECONDS := 4.6
+const COBRA_AGENT := preload("res://gameplay/CobraAgent.gd")
 
 var session
 var helena: CharacterBody3D
@@ -436,7 +437,7 @@ func _update_cobras() -> void:
 	for offset in [Vector3(-7, 0, -6), Vector3(7, 0, -6)]:
 		var point: Vector3 = pickup + offset
 		if not session.position_clear(point + Vector3.UP * .05): continue
-		var enemy = load("res://gameplay/CobraAgent.gd").new()
+		var enemy = COBRA_AGENT.new()
 		enemy.configure(session.world.gameplay, 0)
 		enemy.position = point + Vector3.UP * .05
 		add_child(enemy)

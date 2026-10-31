@@ -35,6 +35,7 @@ const SURFACE_STAGES := 18
 ## Etapa de _build_surface_stage que monta as estradas (fatiada em _advance_surface_job).
 const ROAD_SURFACE_STAGE := 4
 const CHUNK_CACHE := preload("res://world/desert/DesertChunkCache.gd")
+const DIGO_WORKSHOP := preload("res://world/desert/drag_meet/DesertDigoWorkshop.gd")
 var region_id := "desert"
 var initial_focus := Vector3.INF
 var initial_prewarm_only := false
@@ -613,7 +614,7 @@ func prebuild_workshop() -> void:
 	for chunk: Node3D in chunks.values():
 		if is_instance_valid(chunk) and chunk.get_node_or_null("DigoWorkshop") != null: return
 	var began := STALL_WORK.begin()
-	var workshop := load("res://world/desert/drag_meet/DesertDigoWorkshop.gd").new() as Node3D
+	var workshop := DIGO_WORKSHOP.new() as Node3D
 	workshop.name="DigoWorkshop"
 	workshop.visible = false
 	add_child(workshop)
@@ -775,7 +776,7 @@ func _build_record(chunk: Node3D, record: Dictionary) -> void:
 			var workshop := _take_parked_workshop()
 			var staged: Array = []
 			if workshop == null:
-				workshop = load("res://world/desert/drag_meet/DesertDigoWorkshop.gd").new() as Node3D
+				workshop = DIGO_WORKSHOP.new() as Node3D
 				workshop.name="DigoWorkshop"
 			else:
 				# Pátio e Gol (126 de 192 nós) voltam nos quadros seguintes: no jogo a volta inteira custou

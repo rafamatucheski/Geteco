@@ -5,6 +5,7 @@ const EDITOR_TERRAIN := preload("res://world/editing/WorldTerrainEdits.gd")
 const ENTRY := Vector3(-224,.15,-37)
 const BOUNDS := Rect2(-247,-147,155,112)
 const HALF_WIDTH := 5.2
+const MOTOCROSS_PADDOCK := preload("res://activities/motocross/MotocrossPaddock.gd")
 var curve := Curve3D.new()
 var points := PackedVector3Array()
 var _original_points := PackedVector3Array()
@@ -192,7 +193,7 @@ func _step_scenery() -> void:
 var _paddock_node: Node
 
 func _step_paddock() -> void:
-	_paddock_node = load("res://activities/motocross/MotocrossPaddock.gd").new()
+	_paddock_node = MOTOCROSS_PADDOCK.new()
 	add_child(_paddock_node)
 
 func _step_trackside() -> void:

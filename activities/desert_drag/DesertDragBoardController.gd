@@ -3,6 +3,7 @@ const BOARD := preload("res://activities/desert_drag/DesertDragBoard.gd")
 const RESULTS := preload("res://activities/desert_drag/DesertDragResults.gd")
 const PROGRESS := preload("res://activities/desert_drag/DesertDragProgress.gd")
 const STYLES := preload("res://activities/desert_drag/DragInstrumentStyles.gd")
+const DRAG_INSTRUMENT_SHOP := preload("res://activities/desert_drag/DragInstrumentShop.gd")
 var race: Node3D
 var session
 var layer: CanvasLayer
@@ -121,7 +122,7 @@ func _open_meet_action(action: String) -> void:
 func _open_instruments() -> void:
 	if not session.modal or not is_instance_valid(layer) or not layer.visible or race.active: return
 	if not is_instance_valid(instrument_shop):
-		instrument_shop=load("res://activities/desert_drag/DragInstrumentShop.gd").new()
+		instrument_shop=DRAG_INSTRUMENT_SHOP.new()
 		layer.add_child(instrument_shop)
 		instrument_shop.style_requested.connect(_request_style)
 		instrument_shop.close_requested.connect(_close_instruments)

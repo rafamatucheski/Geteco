@@ -9,6 +9,7 @@ const EXISTING := {
 	"CourtyardHouse":"cobra_leader_house", "MotorWorkshop":"northgate_auto",
 }
 const LEGACY_IDS := {"NorthFrontage5":"harbor_customs_house", "Apartments":"harbor_union_apartments"}
+const URBAN_SIGNAGE := preload("res://world/urban_detail/UrbanSignage.gd")
 static var _cache: Array[Dictionary] = []
 static var _by_id: Dictionary = {}
 static var _by_source: Dictionary = {}
@@ -100,7 +101,7 @@ static func _append(row: Dictionary) -> void:
 	elif kind == "warehouse_loading": inhabited_height *= .79
 	var floor_count := maxi(1,floori(inhabited_height/2.85))
 	if kind == "cobra_house": roof_height += 1.55
-	var proper: String = load("res://world/urban_detail/UrbanSignage.gd").extract_proper_name(source_id,str(row.get("name","")))
+	var proper: String = URBAN_SIGNAGE.extract_proper_name(source_id,str(row.get("name","")))
 	var entry_local := Vector3(float(row.get("entrance_x",0.0)),0,size.y*.5)
 	if kind == "l_shaped_block": entry_local.x = -size.x*.25
 	# Aligned to the pedestrian gate beside Maciota's M8 parking bay.

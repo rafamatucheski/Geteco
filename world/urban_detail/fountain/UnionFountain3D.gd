@@ -14,6 +14,7 @@ const BASIN_WATER_Y := 0.70
 const BOWL_TOP_Y := 2.0
 const BOWL_RADIUS := 1.25
 const CURTAIN_RADIUS := 1.3
+const WATER_STREAM := preload("res://audio/living_city/water_0.ogg")
 
 func _ready() -> void:
 	name = "UnionFountain"
@@ -46,7 +47,7 @@ func _ready() -> void:
 	_landing_splash()
 	var audio := AudioStreamPlayer3D.new()
 	audio.name = "FountainSound"
-	var stream := (load("res://audio/living_city/water_0.ogg") as AudioStream).duplicate()
+	var stream := (WATER_STREAM as AudioStream).duplicate()
 	if stream is AudioStreamOggVorbis: stream.loop = true
 	audio.stream = stream
 	audio.position.y = 1.0

@@ -5,6 +5,7 @@ const WEAPONS := preload("res://gameplay/WeaponCatalog.gd")
 const HOMES := preload("res://data/catalogs/ResidenceCatalog.gd")
 const CATS := preload("res://runtime/cats/CatAdoption.gd")
 const CATCH_ITEMS := preload("res://activities/fishing/FishingCatchItems.gd")
+const RESIDENCE_PRESENTATION := preload("res://runtime/ResidencePresentation.gd")
 var session
 var _home := ""
 var _menu_health := 0.0
@@ -36,7 +37,7 @@ const LABELS := {"wardrobe":"Trocar de roupa","chest":"Abrir baú","food":"Abrir
 
 func configure(owner_session) -> void:
 	session = owner_session
-	presentation = load("res://runtime/ResidencePresentation.gd").new()
+	presentation = RESIDENCE_PRESENTATION.new()
 	add_child(presentation)
 	presentation.configure(session)
 	storage.bind_inventory(self)
